@@ -22,6 +22,10 @@ SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}")
 # so that we will find bg2e-config.hpp
 include_directories("${PROJECT_BINARY_DIR}")
 
+# bg2-base library
+include_directories("${PROJECT_SOURCE_DIR}/bg2-base/include")
+add_subdirectory(bg2-base)
+
 # bg2-file library
 include_directories("${PROJECT_SOURCE_DIR}/bg2-file/include")
 add_subdirectory(bg2-file)

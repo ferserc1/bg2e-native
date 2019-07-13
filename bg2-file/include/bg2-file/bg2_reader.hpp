@@ -26,6 +26,7 @@
 #define _bg2model_bg2_reader_hpp_
 
 #include <bg2-file/binary_parser.hpp>
+#include <bg2-base/path.hpp>
 
 #include <functional>
 
@@ -48,7 +49,12 @@ public:
 	Bg2Reader() {}
 
 	bool load(const std::string & path);
+	inline bool load(const bg2base::path& path) { return load(path.toString()); }
+	inline bool load(const char * path) { return load(std::string(path)); }
 	bool loadHeader(const std::string & path);
+	inline bool loadHeader(const bg2base::path& path) { return loadHeader(path.toString()); }
+	inline bool loadHeader(const char* path) { return load(std::string(path)); }
+
 
 	inline Bg2Reader & version(VersionClosure c) { _versionClosure = c; return *this; }
 	inline Bg2Reader & materials(StringClosure c) { _materialClosure = c; return *this; }
