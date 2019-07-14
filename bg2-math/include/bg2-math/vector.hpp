@@ -84,13 +84,16 @@ namespace bg2math {
         return v1[0] * v2[0] + v1[1] * v2[1];
     }
     template <class T> inline bool isnan(const vec2<T> & v) {
-        return isnan(v[0]) || isnan(v[1]);
+        return std::isnan(v[0]) || std::isnan(v[1]);
     }
     template <class T> inline bool isinf(const vec2<T> & v) {
-        return isinf(v[0]) || isinf(v[1]);
+        return std::isinf(v[0]) || std::isinf(v[1]);
     }
     template <class T> inline bool iszero(const vec2<T> & v) {
         return v[0] == 0 && v[1] == 0;
+    }
+    template <class T> inline bool isvalid(const vec2<T> & v) {
+        return !isnan(v) && !isinf(v);
     }
     
     
@@ -192,13 +195,16 @@ namespace bg2math {
         return v1[0] * v2[0] + v1[1] * v2[1] + v1[2] * v2[2];
     }
     template <class T> inline bool isnan(const vec3<T> & v) {
-        return isnan(v[0]) || isnan(v[1]) || isnan(v[2]);
+        return std::isnan(v[0]) || std::isnan(v[1]) || std::isnan(v[2]);
     }
     template <class T> inline bool isinf(const vec3<T> & v) {
-        return isinf(v[0]) || isinf(v[1]) || isinf(v[2]);
+        return std::isinf(v[0]) || std::isinf(v[1]) || std::isinf(v[2]);
     }
     template <class T> inline bool iszero(const vec3<T> & v) {
         return v[0] == 0 && v[1] == 0 && v[2] == 0;
+    }
+    template <class T> inline bool isvalid(const vec3<T> & v) {
+        return !isnan(v) && !isinf(v);
     }
     template <class T> inline vec3<T> cross(const vec3<T> & v1, const vec3<T> & v2) {
         return vec3<T> {
@@ -308,13 +314,16 @@ namespace bg2math {
         return v1[0] * v2[0] + v1[1] * v2[1] + v1[2] * v2[2] + v1[3] * v2[3];
     }
     template <class T> inline bool isnan(const vec4<T> & v) {
-        return isnan(v[0]) || isnan(v[1]) || isnan(v[2]) || isnan(v[3]);
+        return std::isnan(v[0]) || std::isnan(v[1]) || std::isnan(v[2]) || std::isnan(v[3]);
     }
     template <class T> inline bool isinf(const vec4<T> & v) {
-        return isinf(v[0]) || isinf(v[1]) || isinf(v[2]) || isinf(v[3]);
+        return std::isinf(v[0]) || std::isinf(v[1]) || std::isinf(v[2]) || std::isinf(v[3]);
     }
     template <class T> inline bool iszero(const vec4<T> & v) {
         return v[0] == 0 && v[1] == 0 && v[2] == 0 && v[3] == 0;
+    }
+    template <class T> inline bool isvalid(const vec4<T> & v) {
+        return !isnan(v) && !isinf(v);
     }
     
     typedef vec4<int8_t> byte4;
