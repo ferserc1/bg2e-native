@@ -217,5 +217,113 @@ namespace bg2math {
     typedef vec3<uint32_t> uint3;
     typedef vec3<float> float3;
     typedef vec3<double> double3;
+    
+    
+    
+    template <class T>
+    class vec4 {
+    public:
+        vec4<T>() {}
+        vec4<T>(T x, T y, T z, T w) :_v{ x, y, z, w } {}
+        vec4<T>(const vec4<T> & other) :_v{ other[0], other[1], other[2], other[3] } {}
+        vec4<T>(T * v) :_v{ v[0], v[1], v[2], v[3] } {}
+        vec4<T>(const std::vector<T> & v) :_v{ v[0], v[1], v[2], v[3] } {}
+        
+        inline T * operator&() { return _v; }
+        inline T & operator[](int i) { return _v[i]; }
+        inline T operator[](int i) const { return _v[i]; }
+        inline void operator=(const vec4<T> & other) { _v[0] = other[0]; _v[1] = other[1]; _v[2] = other[2]; _v[3] = other[3]; }
+        inline bool operator==(const vec4<T> & other) { return _v[0] == other[0]; _v[1] == other[1]; _v[2] == other[2]; _v[3] == other[3]; }
+        
+        inline T length() const { return sqrt(_v[0]*_v[0] + _v[1]*_v[1] + _v[2]*_v[2] + _v[3]*_v[3]); }
+        
+        inline vec4<T> & normalize() {
+            T l = length();
+            _v[0] = _v[0] / l;
+            _v[1] = _v[1] / l;
+            _v[2] = _v[2] / l;
+            _v[3] = _v[3] / l;
+            return *this;
+        }
+        
+        inline std::string toString() const {
+            return "[" + std::to_string(_v[0]) + "," + std::to_string(_v[1]) + "," + std::to_string(_v[2]) + "," + std::to_string(_v[3]) + "]";
+        }
+        
+        inline T & x() { return _v[0]; }
+        inline T x() const { return _v[0]; }
+        inline T & y() { return _v[1]; }
+        inline T y() const { return _v[1]; }
+        inline T & z() { return _v[2]; }
+        inline T z() const { return _v[2]; }
+        inline T & w() { return _v[3]; }
+        inline T w() const { return _v[3]; }
+        
+        inline vec3<T> xyz() const { return vec3<T>(_v[0], _v[1], _v[2]); }
+        
+        inline T & r() { return _v[0]; }
+        inline T r() const { return _v[0]; }
+        inline T & g() { return _v[1]; }
+        inline T g() const { return _v[1]; }
+        inline T & b() { return _v[2]; }
+        inline T b() const { return _v[2]; }
+        inline T & a() { return _v[3]; }
+        inline T a() const { return _v[3]; }
+        
+    protected:
+        T _v[4] = { static_cast<T>(0), static_cast<T>(0), static_cast<T>(0), static_cast<T>(0) };
+    };
+    
+    template <class T> inline T distance(const vec4<T> & v1, const vec4<T> & v2) {
+        return vec4<T>(v1[0] - v2[0], v1[1] - v2[1], v1[2] - v2[2], v1[3] - v2[3]).length();
+    }
+    template <class T> inline T length(const vec4<T> & v) { return v.length(); }
+    template <class T> inline vec4<T> normalize(const vec4<T> & v) {
+        vec4<T> result = v;
+        result.normalize();
+        return result;
+    }
+    template <class T> inline vec4<T> operator + (const vec4<T> & v1, const vec4<T> & v2) {
+        return vec4<T>(v1[0] + v2[0], v1[1] + v2[1], v1[2] + v2[2], v1[3] + v2[3]);
+    }
+    template <class T> inline vec4<T> operator - (const vec4<T> & v1, const vec4<T> & v2) {
+        return vec4<T>(v1[0] - v2[0], v1[1] - v2[1], v1[2] - v2[2], v1[3] - v2[3]);
+    }
+    template <class T> inline vec4<T> operator * (const vec4<T> & v1, const vec4<T> & v2) {
+        return vec4<T>(v1[0] * v2[0], v1[1] * v2[1], v1[2] * v2[2], v1[3] * v2[3]);
+    }
+    template <class T> inline vec4<T> operator / (const vec4<T> & v1, const vec4<T> & v2) {
+        return vec4<T>(v1[0] / v2[0], v1[1] / v2[1], v1[2] / v2[2], v1[3] / v2[3]);
+    }
+    template <class T> inline vec4<T> operator * (const vec4<T> & v, T s) {
+        return vec4<T>(v[0] * s, v[1] * s, v[2] * s, v[3] * s);
+    }
+    template <class T> inline vec4<T> operator * (T s, const vec4<T> & v) {
+        return vec4<T>(v[0] * s, v[1] * s, v[2] * s, v[3] * s);
+    }
+    template <class T> inline vec4<T> operator / (const vec4<T> & v, T s) {
+        return vec4<T>(v[0] / s, v[1] / s, v[2] / s, v[3] / s);
+    }
+    template <class T> inline T dot(const vec4<T> & v1, const vec4<T> & v2) {
+        return v1[0] * v2[0] + v1[1] * v2[1] + v1[2] * v2[2] + v1[3] * v2[3];
+    }
+    template <class T> inline bool isnan(const vec4<T> & v) {
+        return isnan(v[0]) || isnan(v[1]) || isnan(v[2]) || isnan(v[3]);
+    }
+    template <class T> inline bool isinf(const vec4<T> & v) {
+        return isinf(v[0]) || isinf(v[1]) || isinf(v[2]) || isinf(v[3]);
+    }
+    template <class T> inline bool iszero(const vec4<T> & v) {
+        return v[0] == 0 && v[1] == 0 && v[2] == 0 && v[3] == 0;
+    }
+    
+    typedef vec4<int8_t> byte4;
+    typedef vec4<int16_t> short4;
+    typedef vec4<int32_t> int4;
+    typedef vec4<uint8_t> ubyte4;
+    typedef vec4<uint16_t> ushort4;
+    typedef vec4<uint32_t> uint4;
+    typedef vec4<float> float4;
+    typedef vec4<double> double4;
 }
 #endif
