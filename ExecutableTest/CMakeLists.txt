@@ -2,6 +2,7 @@ set(SOURCE_FILES tutorial.cxx)
 add_executable(Tutorial ${SOURCE_FILES})
 target_link_libraries(Tutorial bg2-file)
 target_link_libraries(Tutorial bg2-base)
+target_link_libraries(Tutorial bg2-math)
 
 set_target_properties(
     Tutorial PROPERTIES

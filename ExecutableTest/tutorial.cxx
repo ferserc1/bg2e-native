@@ -1,6 +1,9 @@
 #include <iostream>
 #include <bg2-file/bg2-file.hpp>
 #include <bg2-base/path.hpp>
+#include <bg2-math/utils.hpp>
+#include <bg2-math/vector.hpp>
+
 
 int main(int argc, char ** argv) {
 
@@ -81,5 +84,27 @@ int main(int argc, char ** argv) {
 		std::cout << "Read ok" << std::endl;
 	}
 
+    std::cout << "PI is " << bg2math::kd::pi << std::endl;
+    
+    bg2math::float2 v;
+    float * fp = &v;
+    fp[0] = 0.2f;
+    v[1] = 4.1f;
+    
+    std::cout << "V=" << v[0] << "," << v[1] << std::endl;
+    
+    bg2math::float2 a(1.0f,1.0f);
+    bg2math::float2 b(2.0f,2.0f);
+    std::cout << "Distance between A and B = " << bg2math::distance(a,b) << std::endl;
+    
+
+    std::cout << bg2math::clamp(1.3f, 0.2f, 2.0f) << std::endl;
+    std::cout << bg2math::clamp(4.3f, 0.2f, 2.0f) << std::endl;
+    std::cout << bg2math::clamp(-1.3f, 0.2f, 2.0f) << std::endl;
+    
+    bg2math::float2 cv = { 0.4f, 9.2f };
+    std::cout << "cv=" << cv.toString() << std::endl;
+    std::cout << "clamped cv=" << bg2math::clamp(cv, 1.4f, 3.4f).toString() << std::endl;
+    
     return 0;
 }
