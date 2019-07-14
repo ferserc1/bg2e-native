@@ -10,7 +10,7 @@
     #endif
 #endif
 
-#include <bg2-math/vector.hpp>
+#include <bg2math/vector.hpp>
 
 namespace bg2math {
 

@@ -22,7 +22,7 @@
  */
 
 
-#include <bg2-file/binary_parser.hpp>
+#include <bg2file/binary_parser.hpp>
 
 #include <iostream>
 

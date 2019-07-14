@@ -2,8 +2,8 @@
 #ifndef _bg2_base_image_hpp_
 #define _bg2_base_image_hpp_
 
-#include <bg2-base/path.hpp>
-#include <bg2-math/vector.hpp>
+#include <bg2base/path.hpp>
+#include <bg2math/vector.hpp>
 
 #include <cstring>
 

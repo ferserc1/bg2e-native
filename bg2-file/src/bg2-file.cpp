@@ -1,5 +1,5 @@
 
-#include <bg2-file/bg2-file.hpp>
+#include <bg2file/all.hpp>
 
 #include "bg2e-config.hpp"
 

@@ -25,8 +25,8 @@
 #ifndef _bg2model_bg2_reader_hpp_
 #define _bg2model_bg2_reader_hpp_
 
-#include <bg2-file/binary_parser.hpp>
-#include <bg2-base/path.hpp>
+#include <bg2file/binary_parser.hpp>
+#include <bg2base/path.hpp>
 
 #include <functional>
 

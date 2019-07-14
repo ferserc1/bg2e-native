@@ -22,8 +22,8 @@
  */
 
 
-#include <bg2-file/bg2_reader.hpp>
-#include <bg2-file/parser.hpp>
+#include <bg2file/bg2_reader.hpp>
+#include <bg2file/parser.hpp>
 
 namespace bg2file {
 

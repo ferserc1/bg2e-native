@@ -1,5 +1,5 @@
 
-#include <bg2-base/path.hpp>
+#include <bg2base/path.hpp>
 
 namespace bg2base {
 

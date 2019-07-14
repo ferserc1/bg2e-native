@@ -1,7 +1,7 @@
 
 set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 
-file(GLOB_RECURSE BG2_DB_INCLUDES "include/bg2-db/*")
+file(GLOB_RECURSE BG2_DB_INCLUDES "include/bg2db/*")
 file(GLOB_RECURSE BG2_DB_SOURCES "src/*.cpp")
 
 source_group("Header Files" FILES ${BG2_DB_INCLUDES})

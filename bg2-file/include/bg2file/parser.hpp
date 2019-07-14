@@ -54,7 +54,7 @@ THE SOFTWARE.
 #include <sstream>
 #include <fstream>
 
-#include <bg2-file/value.hpp>
+#include <bg2file/value.hpp>
 
 
 namespace bg2file {

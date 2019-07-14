@@ -1,9 +1,9 @@
 
-#include <bg2-db/image_load.hpp>
-#include <bg2-math/vector.hpp>
+#include <bg2db/image_load.hpp>
+#include <bg2math/vector.hpp>
 
 #define STB_IMAGE_IMPLEMENTATION
-#include <bg2-db/stb_image.h>
+#include <bg2db/stb_image.h>
 
 #include <ios>
 

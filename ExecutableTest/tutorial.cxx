@@ -1,8 +1,8 @@
 #include <iostream>
-#include <bg2-file/bg2-file.hpp>
-#include <bg2-base/path.hpp>
-#include <bg2-math/utils.hpp>
-#include <bg2-math/vector.hpp>
+#include <bg2file/all.hpp>
+#include <bg2base/path.hpp>
+#include <bg2math/utils.hpp>
+#include <bg2math/vector.hpp>
 
 
 int main(int argc, char ** argv) {

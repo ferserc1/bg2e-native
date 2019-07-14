@@ -1,5 +1,5 @@
 
-#include <bg2-base/image.hpp>
+#include <bg2base/image.hpp>
 #include <exception>
 
 namespace bg2base {

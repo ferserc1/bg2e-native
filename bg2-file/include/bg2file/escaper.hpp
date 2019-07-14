@@ -24,7 +24,7 @@
 #ifndef _bg2model_json_escaper_hpp_
 #define _bg2model_json_escaper_hpp_
 
-#include <bg2-file/grammar.hpp>
+#include <bg2file/grammar.hpp>
 
 #include <streambuf>
 

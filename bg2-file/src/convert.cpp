@@ -22,7 +22,7 @@
  */
 
 
-#include <bg2-file/convert.hpp>
+#include <bg2file/convert.hpp>
 
 #include <sstream>
 

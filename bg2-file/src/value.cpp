@@ -22,10 +22,10 @@
  */
 
 
-#include <bg2-file/value.hpp>
-#include <bg2-file/grammar.hpp>
-#include <bg2-file/convert.hpp>
-#include <bg2-file/escaper.hpp>
+#include <bg2file/value.hpp>
+#include <bg2file/grammar.hpp>
+#include <bg2file/convert.hpp>
+#include <bg2file/escaper.hpp>
 
 #include <cassert>
 #include <stack>

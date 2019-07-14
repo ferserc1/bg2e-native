@@ -1,5 +1,5 @@
 
-#include <bg2-math/utils.hpp>
+#include <bg2math/utils.hpp>
 
 namespace bg2math {
     float kf::pi = 3.14159265359f;

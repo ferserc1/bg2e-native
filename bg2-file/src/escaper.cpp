@@ -22,7 +22,7 @@
  */
 
 
-#include <bg2-file/escaper.hpp>
+#include <bg2file/escaper.hpp>
 
 #include <cassert>
 #include <stack>

@@ -30,7 +30,7 @@
 #include <functional>
 #include <iostream>
 
-#include <bg2-file/types.hpp>
+#include <bg2file/types.hpp>
 
 namespace bg2file {
 namespace json {
