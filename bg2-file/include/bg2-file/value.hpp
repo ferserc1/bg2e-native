@@ -106,9 +106,9 @@ public:
 	static float Float(Value * val, float def = 0.0f);
 	static double Number(Value * val, double def = 0.0);
 	
-	static Vec2 Vector2(Value * val, const Vec2 & def = Vec2{ 0.f, 0.f });
-	static Vec3 Vector3(Value * val, const Vec3 & def = Vec3{ 0.f, 0.f, 0.f });
-	static Vec4 Vector4(Value * val, const Vec4 & def = Vec4{ 0.f, 0.f, 0.f, 0.f });
+    static Vec2 Vector2(Value * val, const Vec2 & def = Vec2{ { 0.f, 0.f } });
+    static Vec3 Vector3(Value * val, const Vec3 & def = Vec3{ { 0.f, 0.f, 0.f } });
+    static Vec4 Vector4(Value * val, const Vec4 & def = Vec4{ { 0.f, 0.f, 0.f, 0.f } });
 	
 	inline void setValue(bool b) { _type = kBool; _boolVal = b; }
 	inline void setValue(const char * v) { _type = kString; _stringVal = v; }
