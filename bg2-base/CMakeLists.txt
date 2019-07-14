@@ -6,3 +6,4 @@ file(GLOB_RECURSE BG2_FILE_SOURCES "src/*.cpp")
 
 source_group("Header Files" FILES ${BG2_FILE_INCLUDES})
 add_library(bg2-base SHARED ${BG2_FILE_SOURCES} ${BG2_FILE_INCLUDES})
+target_compile_definitions(bg2-base PRIVATE BG2_LIBRARY=1)

@@ -1,6 +1,7 @@
 
 #include <bg2base/image.hpp>
 #include <exception>
+#include <stdexcept>
 
 namespace bg2base {
     

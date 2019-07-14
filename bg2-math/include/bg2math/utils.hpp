@@ -11,17 +11,20 @@
 #endif
 
 #include <bg2math/vector.hpp>
+#include <bg2base/export.hpp>
 
 namespace bg2math {
 
-    struct kf {
+    class EXPORT kf {
+    public:
         static float pi;
         static float piOver2;
         static float piOver4;
         static float piOver180;
     };
 
-    struct kd {
+    class EXPORT kd {
+    public:
         static double pi;
         static double piOver2;
         static double piOver4;

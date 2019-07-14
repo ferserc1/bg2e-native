@@ -5,4 +5,5 @@
 #define bg2e_MINOR_VERSION @bg2e_MINOR_VERSION@
 #define bg2e_REV_VERSION @bg2e_REV_VERSION@
 
+
 #endif

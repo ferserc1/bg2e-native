@@ -24,6 +24,7 @@ include_directories("${PROJECT_BINARY_DIR}")
 
 # bg2-math library
 include_directories("${PROJECT_SOURCE_DIR}/bg2-math/include")
+include_directories("${PROJECT_SOURCE_DIR}/bg2-base/include")
 add_subdirectory(bg2-math)
 
 # bg2-base library
