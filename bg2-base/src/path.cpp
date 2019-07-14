@@ -1,6 +1,9 @@
 
 #include <bg2base/path.hpp>
 
+#include <cctype>
+#include <algorithm>
+
 namespace bg2base {
 
 
@@ -28,7 +31,7 @@ namespace bg2base {
 		return result;
 	}
 
-	std::string path::fileName() {
+	std::string path::fileName() const {
 		std::string result;
 		auto index = _pathString.find_last_of('/');
 		if (index != std::string::npos) {
@@ -37,7 +40,7 @@ namespace bg2base {
 		return result;
 	}
 
-	std::string path::extension() {
+	std::string path::extension() const {
 		std::string result;
 		auto index = _pathString.find_last_of('.');
 		if (index != std::string::npos) {
@@ -45,6 +48,16 @@ namespace bg2base {
 		}
 		return result;
 	}
+    
+    std::string path::lowerCaseExtension() const {
+        std::string result = extension();
+        std::transform(
+            result.begin(),
+            result.end(),
+            result.begin(),
+            [](unsigned char c) { return std::tolower(c); });
+        return result;
+    }
 
 	path& path::addComponent(const std::string& comp) {
 		std::string fixedComp = comp;

@@ -1,9 +1,13 @@
 #include <iostream>
+#include <memory>
+
 #include <bg2file/all.hpp>
 #include <bg2base/path.hpp>
 #include <bg2math/utils.hpp>
 #include <bg2math/vector.hpp>
-
+#include <bg2base/image.hpp>
+#include <bg2db/image_load.hpp>
+#include <bg2db/image_write.hpp>
 
 int main(int argc, char ** argv) {
 
@@ -105,6 +109,17 @@ int main(int argc, char ** argv) {
     bg2math::float2 cv = { 0.4f, 9.2f };
     std::cout << "cv=" << cv.toString() << std::endl;
     std::cout << "clamped cv=" << bg2math::clamp(cv, 1.4f, 3.4f).toString() << std::endl;
+    
+    std::unique_ptr<bg2base::image> image;
+    std::unique_ptr<bg2base::image> copy;
+    try {
+        image = std::unique_ptr<bg2base::image>(bg2db::loadImage(path.pathAddingComponent("texture.jpg")));
+        bg2db::writeImage(path.pathAddingComponent("texture_copy.jpg"), image.get());
+        copy = std::unique_ptr<bg2base::image>(bg2db::loadImage(path.pathAddingComponent("texture_copy.jpg")));
+    } catch (const std::exception & e) {
+        std::cerr << e.what() << std::endl;
+    }
+    
     
     return 0;
 }

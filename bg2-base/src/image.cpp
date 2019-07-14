@@ -30,7 +30,9 @@ namespace bg2base {
             bytesPerPixel > 0 && bytesPerPixel == static_cast<int>(format))
         {
             destroy();
-            std::memcpy(_data, data, size.x() * size.y() * bytesPerPixel);
+            size_t dataSize = size.x() * size.y() * bytesPerPixel;
+            _data = new uint8_t[dataSize];
+            std::memcpy(_data, data, dataSize);
             _size = size;
             _bytesPerPixel = bytesPerPixel;
             _format = format;

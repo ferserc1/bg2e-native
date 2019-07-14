@@ -34,7 +34,7 @@ namespace bg2base {
         void setData(const uint8_t * data, const bg2math::uint2 & size, uint8_t bytesPerPixel, ImageFormat format);
         void destroy();
         
-        inline bool valid() {
+        inline bool valid() const {
             return _data != nullptr &&
                 bg2math::isvalid(_size) && !bg2math::iszero(_size) &&
                 _bytesPerPixel>0 && _bytesPerPixel == static_cast<int>(_format);

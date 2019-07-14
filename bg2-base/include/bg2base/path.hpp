@@ -26,8 +26,9 @@ namespace bg2base {
 		path& removeLastComponent();
 		path& removeExtension();
 
-		std::string fileName();
-		std::string extension();
+		std::string fileName() const;
+		std::string extension() const;
+        std::string lowerCaseExtension() const;
 
 		inline bool empty() const { return _pathString.empty(); }
 

@@ -15,11 +15,13 @@ namespace bg2db {
         if (!data) {
             throw std::ios_base::failure("Error loading image at path: " + filePath.toString());
         }
-        return new bg2base::image(
+        auto result = new bg2base::image(
             data,
             bg2math::uint2(static_cast<uint32_t>(w),static_cast<uint32_t>(h)),
             4,bg2base::image::kFormatRGBA
         );
+        result->setFilePath(filePath);
+        return result;
     }
     
     bg2base::image * loadImage(const std::string & filePath) {
