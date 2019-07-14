@@ -30,9 +30,14 @@ add_subdirectory(bg2-math)
 include_directories("${PROJECT_SOURCE_DIR}/bg2-base/include")
 add_subdirectory(bg2-base)
 
+# bg2-db library
+include_directories("${PROJECT_SOURCE_DIR}/bg2-db/include")
+add_subdirectory(bg2-db)
+
 # bg2-file library
 include_directories("${PROJECT_SOURCE_DIR}/bg2-file/include")
 add_subdirectory(bg2-file)
+
 
 # Executable test
 add_subdirectory(ExecutableTest)
