@@ -3,6 +3,26 @@ project(bg2e-cpp)
 
 set(CMAKE_CXX_STANDARD 11)
 
+include(FindPackageHandleStandardArgs)
+
+set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
+
+
+find_package(Vulkan REQUIRED)
+find_package(GLFW REQUIRED)
+
+if (Vulkan_FOUND)
+    message("Vulkan found:")
+    message("  Include directory:" ${Vulkan_INCLUDE_DIRS})
+    message("  Library directory:" ${Vulkan_LIBRARIES})
+endif()
+
+if (GLFW_FOUND)
+    message("GLFW found:")
+    message("  Include directory:" ${GLFW_INCLUDE_DIRS})
+    message("  Library directory:" ${GLFW_LIBRARIES})
+endif()
+
 # Version number
 set (bg2e_MAJOR_VERSION 2)
 set (bg2e_MINOR_VERSION 0)
@@ -39,6 +59,12 @@ add_subdirectory(bg2-db)
 include_directories("${PROJECT_SOURCE_DIR}/bg2-file/include")
 add_subdirectory(bg2-file)
 
+# bg2-wnd library
+include_directories("${PROJECT_SOURCE_DIR}/bg2-wnd/include")
+add_subdirectory(bg2-wnd)
 
 # Executable test
 add_subdirectory(ExecutableTest)
+
+# Examples
+add_subdirectory(examples/glfw)
