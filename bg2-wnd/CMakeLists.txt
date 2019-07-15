@@ -19,6 +19,8 @@ if(APPLE)
         "-framework OpenGL"
         "-framework IOKit"
         "-framework CoreVideo")
+elseif(UNIX)
+    target_link_libraries(bg2-wnd ${X11_LIBRARIES})
 endif()
 
 target_compile_definitions(bg2-wnd PRIVATE BG2_LIBRARY=1)

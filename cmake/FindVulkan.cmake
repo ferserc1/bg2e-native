@@ -58,12 +58,19 @@ else()
       NAMES vulkan/vulkan.h
       PATHS
         "$ENV{VULKAN_SDK}/include"
-        "${PROJECT_SOURCE_DIR}/../vulkansdk/macOS/include/vulkan")
-    find_library(Vulkan_LIBRARY
-      NAMES vulkan
-      PATHS
-        "$ENV{VULKAN_SDK}/lib"
-        "${PROJECT_SOURCE_DIR}/../vulkansdk/macOS/lib")
+        "${PROJECT_SOURCE_DIR}/../vulkansdk/macOS/include/vulkan"
+        "${PROJECT_SOURCE_DIR}/../vulkansdk/x86_64/include/")
+    if(APPLE)
+      find_library(Vulkan_LIBRARY
+        NAMES vulkan
+        PATHS
+          "${PROJECT_SOURCE_DIR}/../vulkansdk/macOS/lib")
+    else()
+      find_library(Vulkan_LIBRARY
+        NAMES vulkan
+        PATHS
+          "${PROJECT_SOURCE_DIR}/../vulkansdk/x86_64/lib")
+    endif()
 endif()
 
 set(Vulkan_LIBRARIES ${Vulkan_LIBRARY})

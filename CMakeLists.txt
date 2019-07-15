@@ -7,6 +7,9 @@ include(FindPackageHandleStandardArgs)
 
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 
+if (UNIX AND NOT APPLE)
+    find_package(X11 REQUIRED)
+endif()
 
 find_package(GLFW REQUIRED)
 find_package(Vulkan REQUIRED)
