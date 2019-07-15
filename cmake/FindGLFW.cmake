@@ -5,15 +5,21 @@
 # GLFW_FOUND
 
 IF(NOT UNIX)
-    IF(NOT GLFW_ROOT)
-        MESSAGE("ERROR: GLFW_ROOT must be set!")
-    ENDIF(NOT GLFW_ROOT)
+    SET(GLFW_ROOT "${PROJECT_SOURCE_DIR}/../glfw3") 
 
     FIND_PATH(GLFW_INCLUDE_DIRS DOC "Path to GLFW include directory."
             NAMES GLFW/glfw3.h
             PATHS ${GLFW_ROOT}/include)
 
-    IF(MSVC15)
+    IF(MSVC_TOOLSET_VERSION MATCHES 142)
+        FIND_LIBRARY(GLFW_LIBRARIES DOC "Absolute path to GLFW library."
+                NAMES glfw3.lib
+                PATHS ${GLFW_ROOT}/lib-vc2019)
+    ELSEIF(MSVC_TOOLSET_VERSION MATCHES 141)
+        FIND_LIBRARY(GLFW_LIBRARIES DOC "Absolute path to GLFW library."
+                NAMES glfw3.lib
+                PATHS ${GLFW_ROOT}/lib-vc2017)
+    ELSEIF(MSVC15)
         FIND_LIBRARY(GLFW_LIBRARIES DOC "Absolute path to GLFW library."
                 NAMES glfw3.lib
                 PATHS ${GLFW_ROOT}/lib-vc2015)
@@ -43,8 +49,8 @@ IF(NOT UNIX)
         # Default to latest version of VC libs
         FIND_LIBRARY(GLFW_LIBRARIES DOC "Absolute path to GLFW library."
                 NAMES glfw3.lib
-                PATHS ${GLFW_ROOT}/lib-vc2015)
-    ENDIF(MSVC15)
+                PATHS ${GLFW_ROOT}/lib-vc2019)
+    ENDIF()
 ELSE(NOT UNIX)
     FIND_PATH(GLFW_INCLUDE_DIRS DOC "Path to GLFW include directory."
             NAMES GLFW/glfw3.h

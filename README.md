@@ -45,8 +45,10 @@ bg2 engine is divided into different libraries, and not all of them have the sam
 - Install Vulkan SDK from the website: [https://www.lunarg.com/vulkan-sdk/](https://www.lunarg.com/vulkan-sdk). If you want CMake to automatically detect the location of Vulkan, unzip the tar file in the same directory where you downloaded the bg2e-cpp repository, and rename it `vulkansdk`.
 - You can install GLFW with homebrew or compile it from the source code.
 
+### Windows
 
-
+- Install Vulkan SDK from the website: [https://www.lunarg.com/vulkan-sdk/](https://www.lunarg.com/vulkan-sdk). You can install it in any location, but make sure that the environment variable of the VulkanSDK location is registered.
+- Download the precompiled binaries and place the unzipped folder in the same location as the bg2e-cpp repository folder. To use the default CMake search options, set the folder name `glfw3`.
 
 
 
