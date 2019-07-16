@@ -11,7 +11,7 @@
 class MyDelegate : public bg2wnd::WindowDelegate {
 public:
     void init() {
-		_instance = std::make_unique<bg2render::vk::Instance>();
+		_instance = std::unique_ptr<bg2render::vk::Instance>(new bg2render::vk::Instance());
 		_instance->configureAppName("bg2e vulkan test");
 		
 		std::vector<const char*> extensions;
