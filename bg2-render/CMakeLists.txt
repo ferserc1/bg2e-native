@@ -12,3 +12,14 @@ target_link_libraries(bg2-render ${Vulkan_LIBRARIES})
 
 target_compile_definitions(bg2-render PRIVATE BG2_LIBRARY=1)
 
+# System macOS frameworks
+if(APPLE)
+    target_link_libraries(bg2-render
+        "-framework Metal"
+        "-framework CoreFoundation"
+        "-framework Foundation"
+        "-framework QuartzCore"
+        "-framework IOSurface"
+        "-framework IOKit"
+        "-framework AppKit")
+endif()

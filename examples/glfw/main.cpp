@@ -31,7 +31,8 @@ public:
 
 		if (_enableValidationLayers) {
             if (!checkValidationLayerSupport()) {
-                std::runtime_error("Validation layers requested, but not available.");
+                std::cerr << "Warning: validation layers not found. Disabling validation" << std::endl;
+                _enableValidationLayers = false;
             }
 
 
