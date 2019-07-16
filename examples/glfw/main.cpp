@@ -39,6 +39,28 @@ public:
             std::cout << "Shift + E down" << std::endl;
         }
     }
+    
+
+    void mouseMove(const bg2wnd::MouseEvent & e) {
+        std::cout << "Mouse move, x=" << e.posX() << ", y=" << e.posY() << std::endl;
+    }
+    
+    void mouseDown(const bg2wnd::MouseEvent & e) {
+        std::cout << "MouseDown: B1=" << e.button(1) <<
+            ", B2=" << e.button(2) <<
+            ", B3=" << e.button(3) << std::endl;
+    }
+    
+    void mouseUp(const bg2wnd::MouseEvent & e) {
+        std::cout << "MouseUp: B1=" << e.button(1) <<
+            ", B2=" << e.button(2) <<
+            ", B3=" << e.button(3) << std::endl;
+    }
+    
+    void mouseWheel(const bg2wnd::MouseEvent & e) {
+        std::cout << "Mouse wheel: x=" << e.wheelDeltaX() << ", y=" <<
+            e.wheelDeltaY() << std::endl;
+    }
 };
 
 int main(int argc, char ** argv) {

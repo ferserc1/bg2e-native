@@ -22,7 +22,10 @@ namespace bg2wnd {
         virtual void keyDown(const KeyboardEvent &) {}
         virtual void keyUp(const KeyboardEvent &) {}
     
-        
+        virtual void mouseMove(const MouseEvent &) {}
+        virtual void mouseDown(const MouseEvent &) {}
+        virtual void mouseUp(const MouseEvent &) {}
+        virtual void mouseWheel(const MouseEvent &) {}
     };
     
 }

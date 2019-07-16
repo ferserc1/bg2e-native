@@ -30,6 +30,51 @@ namespace bg2wnd {
         }
     }
     
+    MouseEvent getMouseEvent(GLFWwindow * window, double scrollx=0.0, double scrolly=0.0) {
+        int b1 = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_1);
+        int b2 = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_2);
+        int b3 = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_3);
+        int b4 = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_4);
+        int b5 = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_5);
+        double cx, cy;
+        glfwGetCursorPos(window, &cx, &cy);
+        return MouseEvent(static_cast<int>(cx), static_cast<int>(cy), b1, b2, b3, b4, b5, static_cast<float>(scrollx), static_cast<float>(scrolly));
+    }
+    
+    void cursorPosCallback(GLFWwindow * window, double xpos, double ypos) {
+        if (s_windowMap.find(window) != s_windowMap.end()) {
+            auto target = s_windowMap[window];
+            if (target->windowDelegate()) {
+                target->windowDelegate()->mouseMove(getMouseEvent(window));
+            }
+        }
+    }
+    
+    void mouseButtonCallback(GLFWwindow * window, int button, int action, int mods) {
+        if (s_windowMap.find(window) != s_windowMap.end()) {
+            auto target = s_windowMap[window];
+            if (target->windowDelegate()) {
+                if (action == GLFW_PRESS) {
+                    target->windowDelegate()->mouseDown(getMouseEvent(window));
+                }
+                else if (action == GLFW_RELEASE) {
+                    target->windowDelegate()->mouseUp(getMouseEvent(window));
+                }
+            }
+        }
+    }
+    
+    void scrollCallback(GLFWwindow * window, double xOffset, double yOffset) {
+        if (s_windowMap.find(window) != s_windowMap.end()) {
+            auto target = s_windowMap[window];
+            if (target->windowDelegate()) {
+                target->windowDelegate()->mouseWheel(getMouseEvent(window,xOffset,yOffset));
+            }
+        }
+    }
+    
+    
+    
     Window * Window::Create() {
         return new Window();
     }
@@ -66,6 +111,9 @@ namespace bg2wnd {
             GLFWwindow * window = glfwCreateWindow(_size.x(), _size.y(), _title.c_str(), nullptr, nullptr);
             if (window) {
                 glfwSetKeyCallback(window, keyCallback);
+                glfwSetCursorPosCallback(window, cursorPosCallback);
+                glfwSetMouseButtonCallback(window, mouseButtonCallback);
+                glfwSetScrollCallback(window, scrollCallback);
                 _windowPtr = window;
             }
             else {
