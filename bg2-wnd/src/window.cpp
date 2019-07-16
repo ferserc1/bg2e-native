@@ -2,6 +2,8 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
+#include <vulkan/vulkan.h>
+
 #include <bg2wnd/window.hpp>
 
 #include <ios>
@@ -115,6 +117,9 @@ namespace bg2wnd {
                 glfwSetMouseButtonCallback(window, mouseButtonCallback);
                 glfwSetScrollCallback(window, scrollCallback);
                 _windowPtr = window;
+				if (_windowDelegate.get()) {
+					_windowDelegate->init();
+				}
             }
             else {
                 throw std::ios_base::failure("Error building GLFW window.");
@@ -145,11 +150,21 @@ namespace bg2wnd {
     
     void Window::frame() {
         if (_windowDelegate.get() != nullptr) {
-            auto elapsed = glfwGetTime();
-            float delta = (elapsed - _lastFrameTime) * 1000.0;  // Elapsed time, converted to milliseconds
+            float elapsed = static_cast<float>(glfwGetTime());
+            float delta = (elapsed - _lastFrameTime) * 1000.0f;  // Elapsed time, converted to milliseconds
             _lastFrameTime = elapsed;
             _windowDelegate->update(delta);
             _windowDelegate->draw();
         }
     }
+
+	void Window::getVulkanRequiredInstanceExtensions(std::vector<const char *>& extensions) {
+		uint32_t glfwExtensionCount = 0;
+		const char** glfwExtensions;
+
+		glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
+		for (uint32_t i = 0; i < glfwExtensionCount; ++i) {
+			extensions.push_back(glfwExtensions[i]);
+		}
+	}
 }

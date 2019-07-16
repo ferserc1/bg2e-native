@@ -3,12 +3,30 @@
 #include <bg2wnd/application.hpp>
 #include <bg2wnd/window.hpp>
 #include <bg2wnd/window_delegate.hpp>
+#include <bg2render/vk_instance.hpp>
 #include <iostream>
+
+#include <vulkan/vulkan.h>
 
 class MyDelegate : public bg2wnd::WindowDelegate {
 public:
     void init() {
-        std::cout << "init" << std::endl;
+		_instance = std::make_unique<bg2render::vk::Instance>();
+		_instance->configureAppName("bg2e vulkan test");
+		
+		std::vector<const char*> extensions;
+		window()->getVulkanRequiredInstanceExtensions(extensions);
+		_instance->configureRequiredExtensions(extensions);
+		
+		_instance->create();
+
+		std::vector<VkExtensionProperties> extensionData;
+		_instance->enumerateInstanceExtensionProperties(extensionData);
+		std::cout << "Available extensions:" << std::endl;
+		for (const auto& ext : extensionData) {
+			std::cout << "\t" << ext.extensionName << std::endl;
+		}
+
     }
     
     void resize(const bg2math::int2 & size) {
@@ -61,6 +79,9 @@ public:
         std::cout << "Mouse wheel: x=" << e.wheelDeltaX() << ", y=" <<
             e.wheelDeltaY() << std::endl;
     }
+
+private:
+	std::unique_ptr<bg2render::vk::Instance> _instance;
 };
 
 int main(int argc, char ** argv) {

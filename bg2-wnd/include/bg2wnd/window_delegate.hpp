@@ -8,7 +8,9 @@
 
 namespace bg2wnd {
 
+	class Window;
     class WindowDelegate {
+		friend class Window;
     public:
         virtual ~WindowDelegate() {}
         
@@ -26,6 +28,12 @@ namespace bg2wnd {
         virtual void mouseDown(const MouseEvent &) {}
         virtual void mouseUp(const MouseEvent &) {}
         virtual void mouseWheel(const MouseEvent &) {}
+
+		inline Window* window() { return _window; }
+		inline const Window* window() const { return _window; }
+
+	protected:
+		Window* _window = nullptr;
     };
     
 }

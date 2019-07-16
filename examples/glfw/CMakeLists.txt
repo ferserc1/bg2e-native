@@ -8,6 +8,7 @@ target_link_libraries(example-glfw bg2-base)
 target_link_libraries(example-glfw bg2-math)
 target_link_libraries(example-glfw bg2-db)
 target_link_libraries(example-glfw bg2-wnd)
+target_link_libraries(example-glfw bg2-render)
 target_link_libraries(example-glfw ${GLFW_LIBRARIES})
 target_link_libraries(example-glfw ${Vulkan_LIBRARIES})
 

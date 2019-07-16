@@ -9,6 +9,7 @@
 #include <string>
 #include <memory>
 #include <map>
+#include <vector>
 
 namespace bg2wnd {
     class Application;
@@ -31,6 +32,8 @@ namespace bg2wnd {
         bool shouldClose();
         
         virtual ~Window();
+
+		void getVulkanRequiredInstanceExtensions(std::vector<const char *>& extensions);
         
     protected:
         Window();

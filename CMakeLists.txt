@@ -66,6 +66,10 @@ add_subdirectory(bg2-file)
 include_directories("${PROJECT_SOURCE_DIR}/bg2-wnd/include")
 add_subdirectory(bg2-wnd)
 
+# bg2-render library
+include_directories("${PROJECT_SOURCE_DIR}/bg2-render/include")
+add_subdirectory(bg2-render)
+
 # Executable test
 add_subdirectory(ExecutableTest)
 
