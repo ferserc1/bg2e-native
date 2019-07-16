@@ -26,6 +26,11 @@ namespace bg2wnd {
                     closingWindowIt = it;
                     break;
                 }
+                else {
+                    // Process window events
+                    (*it)->updateWindowSize();
+                    (*it)->frame();
+                }
             }
             if (closingWindowIt != _windows.end()) {
                 _windows.erase(closingWindowIt);

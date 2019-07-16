@@ -4,12 +4,17 @@
 #define _bg2_wnd_window_hpp_
 
 #include <bg2math/vector.hpp>
+#include <bg2wnd/window_delegate.hpp>
 
 #include <string>
+#include <memory>
+#include <map>
 
 namespace bg2wnd {
+    class Application;
     
     class Window {
+        friend class Application;
     public:
         static Window * Create();
         
@@ -17,6 +22,9 @@ namespace bg2wnd {
         inline void setTitle(const std::string & title) { _title = title; }
         inline const bg2math::int2 & size() const { return _size; }
         inline const std::string & title() const { return _title; }
+        inline void setWindowDelegate(WindowDelegate * del) { _windowDelegate = std::shared_ptr<WindowDelegate>(del); }
+        inline const WindowDelegate * windowDelegate() const { return _windowDelegate.get(); }
+        inline WindowDelegate * windowDelegate() { return _windowDelegate.get(); }
         
         void build();
         
@@ -30,6 +38,12 @@ namespace bg2wnd {
         void * _windowPtr = nullptr;
         bg2math::int2 _size = bg2math::int2(800,600);
         std::string _title = "Window";
+        float _lastFrameTime = 0.0f;
+        
+        std::shared_ptr<WindowDelegate> _windowDelegate;
+        
+        bool updateWindowSize();
+        void frame();
     };
 }
 #endif
