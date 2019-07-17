@@ -55,5 +55,28 @@ bg2 engine is divided into different libraries, and not all of them have the sam
 - Install Vulkan SDK following the instructions from the website: [https://www.lunarg.com/vulkan-sdk/](https://www.lunarg.com/vulkan-sdk). If you want CMake to automatically detect the location of Vulkan, unzip the tar file in the same directory where you downloaded the bg2e-cpp repository, and rename it to `vulkansdk`. Make sure you compile and run the Vulkan examples to check that everything is working correctly. [here](https://vulkan-tutorial.com/Development_environment#page_Linux) you can get help on installing Vulkan SDK on Linux.
 - Download, compile and install GLFW from the [website](https://www.glfw.org/)
 
+#### Debugging on Linux
+
+You can use CodeBlocks IDE to debug on Linux. You'll need to generate a project for debugging and other one for release (without debugging symbols):
+
+Cmake project WITH debug symbols
+
+```
+cd bg2e-cpp
+mkdir build-debug
+cd build-debug
+cmake .. -G"CodeBlocks - Unix Makefiles" -DCMAKE_BUILD_TYPE=Debug
+```
+
+Cmake project WHITOUT debug symbols
+
+```
+cd bg2e-cpp
+mkdir build-release
+cd build-debug
+cmake .. -G"CodeBlocks - Unix Makefiles" -DCMAKE_BUILD_TYPE=Release
+```
+
+
 
 
