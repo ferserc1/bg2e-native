@@ -17,10 +17,16 @@ public:
     void init() {
 		_instance = std::unique_ptr<bg2render::vk::Instance>(new bg2render::vk::Instance());
 		_instance->configureAppName("bg2e vulkan test");
-
-		std::vector<const char*> extensions;
-		window()->getVulkanRequiredInstanceExtensions(extensions);
-		_instance->configureRequiredExtensions(extensions);
+		if (_enableValidationLayers) {
+			_instance->setDebugCallback([](
+				VkDebugUtilsMessageSeverityFlagBitsEXT severity,
+				VkDebugUtilsMessageTypeFlagsEXT type,
+				const VkDebugUtilsMessengerCallbackDataEXT * pData) {
+					if (severity >= VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) {
+						std::cout << pData->pMessage << std::endl;
+					}
+				});
+		}
 
 		std::vector<VkExtensionProperties> extensionData;
 		_instance->enumerateInstanceExtensionProperties(extensionData);
@@ -29,14 +35,9 @@ public:
 			std::cout << "\t" << ext.extensionName << std::endl;
 		}
 
-		if (_enableValidationLayers) {
-            if (!checkValidationLayerSupport()) {
-                std::cerr << "Warning: validation layers not found. Disabling validation" << std::endl;
-                _enableValidationLayers = false;
-            }
-
-
-		}
+		std::vector<const char*> extensions;
+		window()->getVulkanRequiredInstanceExtensions(extensions);
+		_instance->configureRequiredExtensions(extensions);
 
 		_instance->create();
     }
@@ -44,7 +45,6 @@ public:
     void resize(const bg2math::int2 & size) {
         std::cout << "resize: " << size.x() << ", " << size.y() << std::endl;
     }
-
 
     void update(float delta) {
        // std::cout << "udpate: " << delta << std::endl;
@@ -55,71 +55,18 @@ public:
     }
 
     void cleanup() {
-        std::cout << "cleanup" << std::endl;
     }
 
-    void keyUp(const bg2wnd::KeyboardEvent & e) {
-        if (e.shiftEnabled() && e.keyCode() == bg2wnd::KeyboardEvent::KeyE) {
-            std::cout << "Shift + E up" << std::endl;
-        }
-    }
-
-    void keyDown(const bg2wnd::KeyboardEvent & e) {
-        if (e.shiftEnabled() && e.keyCode() == bg2wnd::KeyboardEvent::KeyE) {
-            std::cout << "Shift + E down" << std::endl;
-        }
-    }
-
-
-    void mouseMove(const bg2wnd::MouseEvent & e) {
-        std::cout << "Mouse move, x=" << e.posX() << ", y=" << e.posY() << std::endl;
-    }
-
-    void mouseDown(const bg2wnd::MouseEvent & e) {
-        std::cout << "MouseDown: B1=" << e.button(1) <<
-            ", B2=" << e.button(2) <<
-            ", B3=" << e.button(3) << std::endl;
-    }
-
-    void mouseUp(const bg2wnd::MouseEvent & e) {
-        std::cout << "MouseUp: B1=" << e.button(1) <<
-            ", B2=" << e.button(2) <<
-            ", B3=" << e.button(3) << std::endl;
-    }
-
-    void mouseWheel(const bg2wnd::MouseEvent & e) {
-        std::cout << "Mouse wheel: x=" << e.wheelDeltaX() << ", y=" <<
-            e.wheelDeltaY() << std::endl;
-    }
+    void keyUp(const bg2wnd::KeyboardEvent & e) {}
+    void keyDown(const bg2wnd::KeyboardEvent & e) {}
+    void mouseMove(const bg2wnd::MouseEvent & e) {}
+    void mouseDown(const bg2wnd::MouseEvent & e) {}
+    void mouseUp(const bg2wnd::MouseEvent & e) {}
+    void mouseWheel(const bg2wnd::MouseEvent & e) {}
 
 private:
 	std::unique_ptr<bg2render::vk::Instance> _instance;
-	const std::vector<const char*> validationLayers = {
-        "VK_LAYER_KHRONOS_validation"
-	};
 	bool _enableValidationLayers;
-
-	bool checkValidationLayerSupport() {
-        uint32_t layerCount;
-        vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
-        std::vector<VkLayerProperties> availableLayers(layerCount);
-        vkEnumerateInstanceLayerProperties(&layerCount,availableLayers.data());
-
-        for (const char * layerName : validationLayers) {
-            bool layerFound = false;
-            for (const auto & layerProperties : availableLayers) {
-                if (strcmp(layerName, layerProperties.layerName) == 0) {
-                    layerFound = true;
-                    break;
-                }
-            }
-
-            if (!layerFound) {
-                return false;
-            }
-        }
-        return true;
-	}
 };
 
 int main(int argc, char ** argv) {
