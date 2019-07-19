@@ -99,6 +99,9 @@ namespace bg2wnd {
                 // Remove from window map
                 auto it = s_windowMap.find(_windowPtr);
                 if (it!=s_windowMap.end()) {
+					if (it->second->windowDelegate()) {
+						it->second->windowDelegate()->cleanup();
+					}
                     s_windowMap.erase(it);
                 }
             }
