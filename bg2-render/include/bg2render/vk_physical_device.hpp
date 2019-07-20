@@ -12,6 +12,14 @@ namespace bg2render {
         class Instance;
         class PhysicalDevice {
         public:
+			struct QueueFamilyIndices {
+				int32_t graphicsFamily = -1;
+
+				inline bool isComplete() const {
+					return graphicsFamily != -1;
+				}
+			};
+
             PhysicalDevice(Instance * instance, VkPhysicalDevice dev);
             virtual ~PhysicalDevice();
 
@@ -20,10 +28,13 @@ namespace bg2render {
 
             inline VkPhysicalDevice physicalDevice() const { return _physicalDevice; }
 
+			inline const QueueFamilyIndices& queueIndices() const { return _queueIndices; }
+
         protected:
             Instance * _instance = nullptr;
 
             VkPhysicalDevice _physicalDevice = VK_NULL_HANDLE;
+			QueueFamilyIndices _queueIndices;
         };
 
     }

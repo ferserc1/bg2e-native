@@ -125,12 +125,7 @@ namespace bg2render {
 
 		bool Instance::isDeviceSuitableForTask(const PhysicalDevice* dev, PhysicalDeviceTask task) {
 			if (task == kDeviceTaskRender) {
-				VkPhysicalDeviceProperties properties;
-				VkPhysicalDeviceFeatures features;
-				dev->getFeatures(features);
-				dev->getProperties(properties);
-				return properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU &&
-					features.geometryShader;
+				return dev->queueIndices().graphicsFamily != -1;
 			}
 			return false;
 		}

@@ -10,6 +10,26 @@ namespace bg2render {
             :_instance(instance)
             ,_physicalDevice(dev)
         {
+			uint32_t queueFamilyCount = 0;
+			vkGetPhysicalDeviceQueueFamilyProperties(_physicalDevice, &queueFamilyCount, nullptr);
+
+			std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
+			vkGetPhysicalDeviceQueueFamilyProperties(_physicalDevice, &queueFamilyCount, queueFamilies.data());
+
+			int i = 0;
+			for (const auto& queueFamily : queueFamilies) {
+				if (queueFamily.queueCount > 0 &&
+					queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT)
+				{
+					_queueIndices.graphicsFamily = i;
+				}
+
+				if (_queueIndices.isComplete()) {
+					break;
+				}
+
+				++i;
+			}
         }
 
         PhysicalDevice::~PhysicalDevice() {
