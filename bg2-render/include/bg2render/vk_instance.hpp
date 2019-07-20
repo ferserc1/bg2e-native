@@ -16,6 +16,10 @@ namespace bg2render {
 	namespace vk {
 		class Instance {
 		public:
+			enum PhysicalDeviceTask {
+				kDeviceTaskRender = 0x1
+			};
+
 			typedef std::function<void (VkDebugUtilsMessageSeverityFlagBitsEXT, VkDebugUtilsMessageTypeFlagsEXT, const VkDebugUtilsMessengerCallbackDataEXT*)> DebugCallback;
 			Instance();
 			virtual ~Instance();
@@ -32,7 +36,13 @@ namespace bg2render {
 			inline VkInstance instance() const { return _instance; }
 
 			void enumerateInstanceExtensionProperties(std::vector<VkExtensionProperties> & ext);
-			void enumeratePhysicalDevices(std::vector<std::shared_ptr<PhysicalDevice>> & devices);
+
+			// Option 1: automatically choose the best physical devices
+			void choosePhysicalDevices();
+
+			// Option 2: (TODO) create a new APi to manually choose a custom physical device for each task
+			void enumeratePhysicalDevices(std::vector<std::shared_ptr<PhysicalDevice>>& devices);
+			bool isDeviceSuitableForTask(const PhysicalDevice * dev, PhysicalDeviceTask task);
 
 		protected:
 			VkInstance _instance = VK_NULL_HANDLE;
@@ -46,6 +56,10 @@ namespace bg2render {
 			std::vector<const char*> _requiredExtensions;
 			std::vector<const char*> _requiredLayers;
 
+			// Devices
+			std::shared_ptr<PhysicalDevice> _renderDevice;
+
+			// Validation and debug
 			static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
 				VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
 				VkDebugUtilsMessageTypeFlagsEXT messageType,

@@ -40,12 +40,7 @@ public:
 		_instance->configureRequiredExtensions(extensions);
 
 		_instance->create();
-
-		std::vector<std::shared_ptr<bg2render::vk::PhysicalDevice>> physicalDevs;
-		_instance->enumeratePhysicalDevices(physicalDevs);
-        for (auto & dev : physicalDevs) {
-
-        }
+		_instance->choosePhysicalDevices();
     }
 
     void resize(const bg2math::int2 & size) {

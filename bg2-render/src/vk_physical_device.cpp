@@ -15,6 +15,13 @@ namespace bg2render {
         PhysicalDevice::~PhysicalDevice() {
         }
 
+		void PhysicalDevice::getProperties(VkPhysicalDeviceProperties& properties) const {
+			vkGetPhysicalDeviceProperties(_physicalDevice, &properties);
+		}
+
+		void PhysicalDevice::getFeatures(VkPhysicalDeviceFeatures& features) const {
+			vkGetPhysicalDeviceFeatures(_physicalDevice, &features);
+		}
     }
 }
 

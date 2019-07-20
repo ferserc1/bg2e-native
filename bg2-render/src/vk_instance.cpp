@@ -108,6 +108,33 @@ namespace bg2render {
             }
 		}
 
+		void Instance::choosePhysicalDevices() {
+			std::vector<std::shared_ptr<PhysicalDevice>> devices;
+			enumeratePhysicalDevices(devices);
+
+			for (const auto & device : devices) {
+				if (_renderDevice==nullptr && isDeviceSuitableForTask(device.get(), kDeviceTaskRender)) {
+					_renderDevice = device;
+				}
+			}
+
+			if (_renderDevice == nullptr) {
+				throw std::runtime_error("No such suitable Vulkan device for render.");
+			}
+		}
+
+		bool Instance::isDeviceSuitableForTask(const PhysicalDevice* dev, PhysicalDeviceTask task) {
+			if (task == kDeviceTaskRender) {
+				VkPhysicalDeviceProperties properties;
+				VkPhysicalDeviceFeatures features;
+				dev->getFeatures(features);
+				dev->getProperties(properties);
+				return properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU &&
+					features.geometryShader;
+			}
+			return false;
+		}
+
 		bool Instance::checkValidationLayerSupport() {
 			if (_debugCallback) {
 				const std::vector<const char*> validationLayers = {

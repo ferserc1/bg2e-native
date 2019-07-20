@@ -15,6 +15,8 @@ namespace bg2render {
             PhysicalDevice(Instance * instance, VkPhysicalDevice dev);
             virtual ~PhysicalDevice();
 
+			void getProperties(VkPhysicalDeviceProperties& properties) const;
+			void getFeatures(VkPhysicalDeviceFeatures& features) const;
 
             inline VkPhysicalDevice physicalDevice() const { return _physicalDevice; }
 
