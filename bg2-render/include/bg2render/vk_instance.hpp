@@ -5,8 +5,11 @@
 #include <string>
 #include <vector>
 #include <functional>
+#include <memory>
 
 #include <vulkan/vulkan.h>
+
+#include <bg2render/vk_physical_device.hpp>
 
 namespace bg2render {
 
@@ -29,6 +32,7 @@ namespace bg2render {
 			inline VkInstance instance() const { return _instance; }
 
 			void enumerateInstanceExtensionProperties(std::vector<VkExtensionProperties> & ext);
+			void enumeratePhysicalDevices(std::vector<std::shared_ptr<PhysicalDevice>> & devices);
 
 		protected:
 			VkInstance _instance = VK_NULL_HANDLE;

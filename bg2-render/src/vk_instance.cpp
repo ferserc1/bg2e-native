@@ -4,8 +4,9 @@
 #include <bg2e-config.hpp>
 
 #include <stdexcept>
-
 #include <iostream>
+#include <string.h>
+
 
 namespace bg2render {
 	namespace vk {
@@ -46,7 +47,7 @@ namespace bg2render {
 			appInfo.engineVersion = VK_MAKE_VERSION(bg2e_MAJOR_VERSION, bg2e_MINOR_VERSION, bg2e_REV_VERSION);
 			appInfo.apiVersion = VK_API_VERSION_1_0;
 
-			
+
 			bool configureValidationLayers = false;
 			if (_debugCallback && checkValidationLayerSupport()) {
 				_requiredExtensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
@@ -90,6 +91,21 @@ namespace bg2render {
 			vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
 			ext.resize(extensionCount);
 			vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, ext.data());
+		}
+
+		void Instance::enumeratePhysicalDevices(std::vector<std::shared_ptr<PhysicalDevice>> & devices) {
+            uint32_t deviceCount = 0;
+            vkEnumeratePhysicalDevices(_instance, &deviceCount, nullptr);
+            if (deviceCount == 0) {
+                throw std::runtime_error("Failed to find Vulkan compatible GPUs");
+            }
+
+            std::vector<VkPhysicalDevice> vkDevices(deviceCount);
+            vkEnumeratePhysicalDevices(_instance, &deviceCount, vkDevices.data());
+
+            for (auto dev : vkDevices) {
+                devices.push_back(std::make_shared<PhysicalDevice>(this,dev));
+            }
 		}
 
 		bool Instance::checkValidationLayerSupport() {
