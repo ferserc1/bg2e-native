@@ -113,17 +113,25 @@ namespace bg2render {
 			enumeratePhysicalDevices(devices);
 
 			for (const auto & device : devices) {
-				if (_renderDevice==nullptr && isDeviceSuitableForTask(device.get(), kDeviceTaskRender)) {
-					_renderDevice = device;
+				if (_renderPhysicalDevice ==nullptr && isDeviceSuitableForTask(device.get(), kDeviceTaskRender)) {
+					_renderPhysicalDevice = device;
 				}
 			}
 
-			if (_renderDevice == nullptr) {
+			if (_renderPhysicalDevice == nullptr) {
 				throw std::runtime_error("No such suitable Vulkan device for render.");
 			}
+
+			_renderDevice = std::make_shared<Device>(_renderPhysicalDevice.get(), kDeviceTaskRender);
+			std::vector<const char*> layers;
+			if (_debugMessenger) {
+				layers.push_back("VK_LAYER_KHRONOS_validation");
+			}
+			_renderDevice->configureEnabledLayers(layers);
+			_renderDevice->create();
 		}
 
-		bool Instance::isDeviceSuitableForTask(const PhysicalDevice* dev, PhysicalDeviceTask task) {
+		bool Instance::isDeviceSuitableForTask(const PhysicalDevice* dev, DeviceTask task) {
 			if (task == kDeviceTaskRender) {
 				return dev->queueIndices().graphicsFamily != -1;
 			}

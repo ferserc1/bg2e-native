@@ -4,6 +4,7 @@
 #include <bg2wnd/window.hpp>
 #include <bg2wnd/window_delegate.hpp>
 #include <bg2render/vk_instance.hpp>
+#include <bg2render/vk_device.hpp>
 #include <iostream>
 
 #include <vulkan/vulkan.h>
@@ -41,6 +42,10 @@ public:
 
 		_instance->create();
 		_instance->choosePhysicalDevices();
+
+		auto queue = _instance->renderQueue();
+
+		std::cout << "Done" << std::endl;
     }
 
     void resize(const bg2math::int2 & size) {

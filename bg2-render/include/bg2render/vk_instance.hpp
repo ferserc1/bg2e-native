@@ -9,17 +9,16 @@
 
 #include <vulkan/vulkan.h>
 
+#include <bg2render/vk_definitions.hpp>
 #include <bg2render/vk_physical_device.hpp>
+#include <bg2render/vk_device.hpp>
 
 namespace bg2render {
 
 	namespace vk {
+
 		class Instance {
 		public:
-			enum PhysicalDeviceTask {
-				kDeviceTaskRender = 0x1
-			};
-
 			typedef std::function<void (VkDebugUtilsMessageSeverityFlagBitsEXT, VkDebugUtilsMessageTypeFlagsEXT, const VkDebugUtilsMessengerCallbackDataEXT*)> DebugCallback;
 			Instance();
 			virtual ~Instance();
@@ -34,6 +33,12 @@ namespace bg2render {
 			void create();
 
 			inline VkInstance instance() const { return _instance; }
+			inline PhysicalDevice* renderPhysicalDevice() { return _renderPhysicalDevice.get(); }
+			inline const PhysicalDevice* renderPhysicalDevice() const { return _renderPhysicalDevice.get(); }
+			inline Device* renderDevice() { return _renderDevice.get(); }
+			inline const Device* renderDevice() const { return _renderDevice.get(); }
+			inline VkQueue renderQueue() const { return _renderDevice->graphicsQueue(); }
+
 
 			void enumerateInstanceExtensionProperties(std::vector<VkExtensionProperties> & ext);
 
@@ -42,13 +47,13 @@ namespace bg2render {
 
 			// Option 2: (TODO) create a new APi to manually choose a custom physical device for each task
 			void enumeratePhysicalDevices(std::vector<std::shared_ptr<PhysicalDevice>>& devices);
-			bool isDeviceSuitableForTask(const PhysicalDevice * dev, PhysicalDeviceTask task);
+			bool isDeviceSuitableForTask(const PhysicalDevice * dev, DeviceTask task);
 
 		protected:
 			VkInstance _instance = VK_NULL_HANDLE;
 
 			DebugCallback _debugCallback;
-			VkDebugUtilsMessengerEXT _debugMessenger;
+			VkDebugUtilsMessengerEXT _debugMessenger = VK_NULL_HANDLE;
 			bool _destroyDebugCallback = false;
 
 			std::string _appName;
@@ -57,7 +62,9 @@ namespace bg2render {
 			std::vector<const char*> _requiredLayers;
 
 			// Devices
-			std::shared_ptr<PhysicalDevice> _renderDevice;
+			std::shared_ptr<PhysicalDevice> _renderPhysicalDevice;
+			std::shared_ptr<Device> _renderDevice;
+			
 
 			// Validation and debug
 			static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
