@@ -123,6 +123,8 @@ namespace bg2wnd {
 				if (_windowDelegate.get()) {
 					_windowDelegate->init();
 				}
+                
+
             }
             else {
                 throw std::ios_base::failure("Error building GLFW window.");
@@ -170,4 +172,17 @@ namespace bg2wnd {
 			extensions.push_back(glfwExtensions[i]);
 		}
 	}
+
+    VkSurfaceKHR Window::createVulkanSurface(VkInstance instance, VkAllocationCallbacks * allocationCallbacks) {
+        VkSurfaceKHR surface = VK_NULL_HANDLE;
+        if (_windowPtr) {
+            
+            GLFWwindow * window = reinterpret_cast<GLFWwindow*>(_windowPtr);
+            
+            if (glfwCreateWindowSurface(instance, window, allocationCallbacks, &surface) != VK_SUCCESS) {
+                throw std::runtime_error("Could not create Vulkan window surface");
+            }
+        }
+        return surface;
+    }
 }
