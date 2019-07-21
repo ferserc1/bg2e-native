@@ -6,7 +6,7 @@
 namespace bg2render {
     namespace vk {
 
-        PhysicalDevice::PhysicalDevice(Instance * instance, VkPhysicalDevice dev)
+        PhysicalDevice::PhysicalDevice(Instance * instance, VkPhysicalDevice dev, VkSurfaceKHR surface)
             :_instance(instance)
             ,_physicalDevice(dev)
         {
@@ -22,6 +22,14 @@ namespace bg2render {
 					queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT)
 				{
 					_queueIndices.graphicsFamily = i;
+				}
+
+				if (surface != VK_NULL_HANDLE) {
+					VkBool32 presentSupport = false;
+					vkGetPhysicalDeviceSurfaceSupportKHR(dev, i, surface, &presentSupport);
+					if (queueFamily.queueCount > 0 && presentSupport) {
+						_queueIndices.presentFamily = i;
+					}
 				}
 
 				if (_queueIndices.isComplete()) {

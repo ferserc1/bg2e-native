@@ -25,6 +25,8 @@ namespace bg2render {
 
 			// NOTE: to create the graphicsQueue, you must specify the vkDeviceTaskRender in the constructor
 			inline VkQueue graphicsQueue() const { return _graphicsQueue; }
+			// NOTE: to create the presentQueue, you must specify the vkDeviceTaskPresent in the constructor
+			inline VkQueue presentQueue() const { return _presentQueue; }
 
         protected:
 			PhysicalDevice* _physicalDevice;
@@ -34,6 +36,7 @@ namespace bg2render {
 
             VkDevice _device = VK_NULL_HANDLE;
 			VkQueue _graphicsQueue = VK_NULL_HANDLE;
+			VkQueue _presentQueue = VK_NULL_HANDLE;
         };
     }
 }

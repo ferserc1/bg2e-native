@@ -4,6 +4,7 @@
 #include <bg2render/vk_physical_device.hpp>
 
 #include <stdexcept>
+#include <set>
 
 namespace bg2render {
     namespace vk {
@@ -33,12 +34,19 @@ namespace bg2render {
 		}
 
 		void Device::create() {
-			std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
-			// Render queue requested
+			std::set<uint32_t> uniqueQueueIndices;
 			if (_deviceTasks & kDeviceTaskRender) {
+				uniqueQueueIndices.insert(_physicalDevice->queueIndices().graphicsFamily);
+			}
+			if (_deviceTasks & kDeviceTaskPresent) {
+				uniqueQueueIndices.insert(_physicalDevice->queueIndices().presentFamily);
+			}
+
+			std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
+			for (auto queueIndex : uniqueQueueIndices) {
 				VkDeviceQueueCreateInfo queueCreateInfo = {};
 				queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-				queueCreateInfo.queueFamilyIndex = _physicalDevice->queueIndices().graphicsFamily;
+				queueCreateInfo.queueFamilyIndex = queueIndex;
 				queueCreateInfo.queueCount = 1;
 				float queuePriority = 1.0f;
 				queueCreateInfo.pQueuePriorities = &queuePriority;
@@ -69,6 +77,9 @@ namespace bg2render {
 
 			if (_deviceTasks & kDeviceTaskRender) {
 				vkGetDeviceQueue(_device, _physicalDevice->queueIndices().graphicsFamily, 0, &_graphicsQueue);
+			}
+			if (_deviceTasks & kDeviceTaskPresent) {
+				vkGetDeviceQueue(_device, _physicalDevice->queueIndices().presentFamily, 0, &_presentQueue);
 			}
 		}
     }

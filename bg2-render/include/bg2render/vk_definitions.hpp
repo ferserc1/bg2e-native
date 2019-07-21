@@ -6,7 +6,8 @@ namespace bg2render {
     namespace vk {
         
         enum DeviceTask {
-			kDeviceTaskRender = 0x1
+			kDeviceTaskRender		= 0x1,
+			kDeviceTaskPresent		= 0x1 << 1
 		};
 
     }

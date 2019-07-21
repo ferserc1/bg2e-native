@@ -14,13 +14,15 @@ namespace bg2render {
         public:
 			struct QueueFamilyIndices {
 				int32_t graphicsFamily = -1;
+				int32_t presentFamily = -1;
 
 				inline bool isComplete() const {
-					return graphicsFamily != -1;
+					return graphicsFamily != -1 &&
+							presentFamily != -1;
 				}
 			};
 
-            PhysicalDevice(Instance * instance, VkPhysicalDevice dev);
+            PhysicalDevice(Instance * instance, VkPhysicalDevice dev, VkSurfaceKHR surface = VK_NULL_HANDLE);
             virtual ~PhysicalDevice();
 
 			void getProperties(VkPhysicalDeviceProperties& properties) const;

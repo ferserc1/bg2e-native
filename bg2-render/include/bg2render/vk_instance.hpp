@@ -38,6 +38,9 @@ namespace bg2render {
 			inline Device* renderDevice() { return _renderDevice.get(); }
 			inline const Device* renderDevice() const { return _renderDevice.get(); }
 			inline VkQueue renderQueue() const { return _renderDevice->graphicsQueue(); }
+			inline Device* presentDevice() { return _presentDevice.get(); }
+			inline const Device* presentDevice() const { return _presentDevice.get(); }
+			inline VkQueue presentQueue() const { return _presentDevice->presentQueue(); }
 
 			void enumerateInstanceExtensionProperties(std::vector<VkExtensionProperties> & ext);
 
@@ -66,6 +69,7 @@ namespace bg2render {
 			// Devices
 			std::shared_ptr<PhysicalDevice> _renderPhysicalDevice;
 			std::shared_ptr<Device> _renderDevice;
+			std::shared_ptr<Device> _presentDevice;
             
             // Surface
             VkSurfaceKHR _surface = VK_NULL_HANDLE;

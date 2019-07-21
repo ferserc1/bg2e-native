@@ -17,8 +17,11 @@ namespace bg2render {
 		}
 
 		Instance::~Instance() {
+			if (_surface != VK_NULL_HANDLE) {
+				vkDestroySurfaceKHR(_instance, _surface, nullptr);
+			}
 			_renderDevice = nullptr;
-			_renderDevice = nullptr;
+			_presentDevice = nullptr;
 			if (_destroyDebugCallback) {
 				destroyDebugUtilsMessengerEXT(_instance, _debugMessenger, nullptr);
 			}
@@ -106,7 +109,7 @@ namespace bg2render {
             vkEnumeratePhysicalDevices(_instance, &deviceCount, vkDevices.data());
 
             for (auto dev : vkDevices) {
-                devices.push_back(std::make_shared<PhysicalDevice>(this,dev));
+                devices.push_back(std::make_shared<PhysicalDevice>(this,dev,_surface));
             }
 		}
 
@@ -114,8 +117,11 @@ namespace bg2render {
 			std::vector<std::shared_ptr<PhysicalDevice>> devices;
 			enumeratePhysicalDevices(devices);
 
+			// In this version, we'll use the same device for render and present
 			for (const auto & device : devices) {
-				if (_renderPhysicalDevice ==nullptr && isDeviceSuitableForTask(device.get(), kDeviceTaskRender)) {
+				if (_renderPhysicalDevice ==nullptr && 
+					isDeviceSuitableForTask(device.get(), kDeviceTaskRender) &&
+					isDeviceSuitableForTask(device.get(), kDeviceTaskPresent)) {
 					_renderPhysicalDevice = device;
 				}
 			}
@@ -124,18 +130,24 @@ namespace bg2render {
 				throw std::runtime_error("No such suitable Vulkan device for render.");
 			}
 
-			_renderDevice = std::make_shared<Device>(_renderPhysicalDevice.get(), kDeviceTaskRender);
+			// We use the same device for presentation and render
+			_renderDevice = std::make_shared<Device>(_renderPhysicalDevice.get(), kDeviceTaskRender | kDeviceTaskPresent);
 			std::vector<const char*> layers;
 			if (_debugMessenger) {
 				layers.push_back("VK_LAYER_KHRONOS_validation");
 			}
 			_renderDevice->configureEnabledLayers(layers);
 			_renderDevice->create();
+
+			_presentDevice = _renderDevice;
 		}
 
 		bool Instance::isDeviceSuitableForTask(const PhysicalDevice* dev, DeviceTask task) {
 			if (task == kDeviceTaskRender) {
 				return dev->queueIndices().graphicsFamily != -1;
+			}
+			else if (task == kDeviceTaskPresent) {
+				return dev->queueIndices().presentFamily != -1;
 			}
 			return false;
 		}

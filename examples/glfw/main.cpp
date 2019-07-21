@@ -41,12 +41,15 @@ public:
 		_instance->configureRequiredExtensions(extensions);
 
 		_instance->create();
+
+		// It's important to link the window surface to vulkan instance BEFORE
+		// choose physical device, if you want to get support for presentation queues
+		_instance->setSurface(window()->createVulkanSurface(_instance->instance()));
+
 		_instance->choosePhysicalDevices();
 
 		auto queue = _instance->renderQueue();
-
-        // Link window surface to vulkan instance
-        _instance->setSurface(window()->createVulkanSurface(_instance->instance()));
+		auto presentQueue = _instance->presentQueue();
         
 		std::cout << "Done" << std::endl;
     }
