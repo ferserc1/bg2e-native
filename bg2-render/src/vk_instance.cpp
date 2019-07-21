@@ -17,6 +17,8 @@ namespace bg2render {
 		}
 
 		Instance::~Instance() {
+			_renderDevice = nullptr;
+			_renderDevice = nullptr;
 			if (_destroyDebugCallback) {
 				destroyDebugUtilsMessengerEXT(_instance, _debugMessenger, nullptr);
 			}
