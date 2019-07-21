@@ -45,6 +45,9 @@ public:
 
 		auto queue = _instance->renderQueue();
 
+        // Link window surface to vulkan instance
+        _instance->setSurface(window()->createVulkanSurface(_instance->instance()));
+        
 		std::cout << "Done" << std::endl;
     }
 

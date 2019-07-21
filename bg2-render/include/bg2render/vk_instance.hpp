@@ -39,7 +39,6 @@ namespace bg2render {
 			inline const Device* renderDevice() const { return _renderDevice.get(); }
 			inline VkQueue renderQueue() const { return _renderDevice->graphicsQueue(); }
 
-
 			void enumerateInstanceExtensionProperties(std::vector<VkExtensionProperties> & ext);
 
 			// Option 1: automatically choose the best physical devices
@@ -49,6 +48,9 @@ namespace bg2render {
 			void enumeratePhysicalDevices(std::vector<std::shared_ptr<PhysicalDevice>>& devices);
 			bool isDeviceSuitableForTask(const PhysicalDevice * dev, DeviceTask task);
 
+            inline void setSurface(VkSurfaceKHR surface) { _surface = surface; }
+            inline VkSurfaceKHR surface() const { return _surface; }
+            
 		protected:
 			VkInstance _instance = VK_NULL_HANDLE;
 
@@ -64,6 +66,9 @@ namespace bg2render {
 			// Devices
 			std::shared_ptr<PhysicalDevice> _renderPhysicalDevice;
 			std::shared_ptr<Device> _renderDevice;
+            
+            // Surface
+            VkSurfaceKHR _surface = VK_NULL_HANDLE;
 			
 
 			// Validation and debug

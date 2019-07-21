@@ -11,6 +11,8 @@
 #include <map>
 #include <vector>
 
+#include <vulkan/vulkan.h>
+
 namespace bg2wnd {
     class Application;
     
@@ -23,7 +25,7 @@ namespace bg2wnd {
         inline void setTitle(const std::string & title) { _title = title; }
         inline const bg2math::int2 & size() const { return _size; }
         inline const std::string & title() const { return _title; }
-        inline void setWindowDelegate(WindowDelegate * del) { _windowDelegate = std::shared_ptr<WindowDelegate>(del); }
+        inline void setWindowDelegate(WindowDelegate * del) { _windowDelegate = std::shared_ptr<WindowDelegate>(del); del->_window = this; }
         inline const WindowDelegate * windowDelegate() const { return _windowDelegate.get(); }
         inline WindowDelegate * windowDelegate() { return _windowDelegate.get(); }
         
@@ -35,6 +37,8 @@ namespace bg2wnd {
 
 		void getVulkanRequiredInstanceExtensions(std::vector<const char *>& extensions);
         
+        VkSurfaceKHR createVulkanSurface(VkInstance instance, VkAllocationCallbacks * allocationCallbacks = nullptr);
+
     protected:
         Window();
         
@@ -42,6 +46,7 @@ namespace bg2wnd {
         bg2math::int2 _size = bg2math::int2(800,600);
         std::string _title = "Window";
         float _lastFrameTime = 0.0f;
+        VkSurfaceKHR _surface = VK_NULL_HANDLE;
         
         std::shared_ptr<WindowDelegate> _windowDelegate;
         
