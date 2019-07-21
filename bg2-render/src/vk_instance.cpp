@@ -132,11 +132,15 @@ namespace bg2render {
 
 			// We use the same device for presentation and render
 			_renderDevice = std::make_shared<Device>(_renderPhysicalDevice.get(), kDeviceTaskRender | kDeviceTaskPresent);
-			std::vector<const char*> layers;
 			if (_debugMessenger) {
-				layers.push_back("VK_LAYER_KHRONOS_validation");
+				_renderDevice->configureEnabledLayers(std::vector<const char*>{
+					"VK_LAYER_KHRONOS_validation"
+				});
 			}
-			_renderDevice->configureEnabledLayers(layers);
+			_renderDevice->configureEnabledExtensions(std::vector<const char*>{
+				"VK_KHR_swapchain"
+			});
+			
 			_renderDevice->create();
 
 			_presentDevice = _renderDevice;
@@ -146,8 +150,12 @@ namespace bg2render {
 			if (task == kDeviceTaskRender) {
 				return dev->queueIndices().graphicsFamily != -1;
 			}
-			else if (task == kDeviceTaskPresent) {
-				return dev->queueIndices().presentFamily != -1;
+			else if (task == kDeviceTaskPresent &&
+				dev->checkExtensionSupport(std::vector<const char*>{ VK_KHR_SWAPCHAIN_EXTENSION_NAME }))
+			{
+				return dev->queueIndices().presentFamily != -1 &&
+					!dev->getSwapChainSupport().formats.empty() &&
+					!dev->getSwapChainSupport().presentModes.empty();
 			}
 			return false;
 		}

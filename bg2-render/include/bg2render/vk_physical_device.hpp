@@ -22,21 +22,32 @@ namespace bg2render {
 				}
 			};
 
+			struct SwapChainSupportDetails {
+				VkSurfaceCapabilitiesKHR capabilities;
+				std::vector<VkSurfaceFormatKHR> formats;
+				std::vector<VkPresentModeKHR> presentModes;
+			};
+
             PhysicalDevice(Instance * instance, VkPhysicalDevice dev, VkSurfaceKHR surface = VK_NULL_HANDLE);
             virtual ~PhysicalDevice();
 
 			void getProperties(VkPhysicalDeviceProperties& properties) const;
 			void getFeatures(VkPhysicalDeviceFeatures& features) const;
+			bool checkExtensionSupport(const std::vector<const char*>& ext) const;
+			void getExtensionProperties(std::vector<VkExtensionProperties>& ext) const;
+			
 
             inline VkPhysicalDevice physicalDevice() const { return _physicalDevice; }
 
 			inline const QueueFamilyIndices& queueIndices() const { return _queueIndices; }
+			inline const SwapChainSupportDetails& getSwapChainSupport() const { return _swapChainSupportDetails; }
 
         protected:
             Instance * _instance = nullptr;
 
             VkPhysicalDevice _physicalDevice = VK_NULL_HANDLE;
 			QueueFamilyIndices _queueIndices;
+			SwapChainSupportDetails _swapChainSupportDetails;
         };
 
     }
