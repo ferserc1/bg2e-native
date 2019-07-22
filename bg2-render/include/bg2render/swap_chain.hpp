@@ -23,6 +23,7 @@ namespace bg2render {
 		inline const std::vector<VkImage>& images() const { return _images; }
 		inline VkFormat format() const { return _format; }
 		inline const VkExtent2D& extent() const { return _extent; }
+		inline const std::vector<VkImageView>& imageViews() const { return _imageViews; }
 
 	protected:
 		vk::PhysicalDevice* _physicalDevice;
@@ -32,6 +33,7 @@ namespace bg2render {
 		std::vector<VkImage> _images;
 		VkFormat _format;
 		VkExtent2D _extent;
+		std::vector<VkImageView> _imageViews;
 
 		VkSurfaceFormatKHR chooseSwapSurfaceFormat();
 		VkPresentModeKHR chooseSwapPresentMode();
