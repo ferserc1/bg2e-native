@@ -5,6 +5,9 @@
 #include <bg2wnd/window_delegate.hpp>
 #include <bg2render/vk_instance.hpp>
 #include <bg2render/vk_device.hpp>
+#include <bg2render/swap_chain.hpp>
+
+
 #include <iostream>
 
 #include <vulkan/vulkan.h>
@@ -51,7 +54,16 @@ public:
 		auto queue = _instance->renderQueue();
 		auto presentQueue = _instance->presentQueue();
         
+		_swapChain = std::unique_ptr<bg2render::SwapChain>(new bg2render::SwapChain(
+			_instance->renderPhysicalDevice(), 
+			_instance->renderDevice(), 
+			_instance->surface()));
+		_swapChain->create(window()->size());
+
+
 		std::cout << "Done" << std::endl;
+
+
     }
 
     void resize(const bg2math::int2 & size) {
@@ -67,6 +79,8 @@ public:
     }
 
     void cleanup() {
+		_swapChain = nullptr;
+		_instance = nullptr;
     }
 
     void keyUp(const bg2wnd::KeyboardEvent & e) {}
@@ -78,6 +92,8 @@ public:
 
 private:
 	std::unique_ptr<bg2render::vk::Instance> _instance;
+	std::unique_ptr<bg2render::SwapChain> _swapChain;
+
 	bool _enableValidationLayers;
 };
 
