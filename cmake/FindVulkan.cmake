@@ -37,6 +37,12 @@ if(WIN32)
       "$ENV{VULKAN_SDK}/Include"
     )
 
+  find_path(Vulkan_BIN_DIR
+    NAMES glslangValidator.exe
+    PATHS
+      "$ENV{VULKAN_SDK}/Bin"
+    )
+
   if(CMAKE_SIZEOF_VOID_P EQUAL 8)
     find_library(Vulkan_LIBRARY
       NAMES vulkan-1
@@ -70,6 +76,12 @@ else()
         NAMES vulkan
         PATHS
           "${PROJECT_SOURCE_DIR}/../vulkansdk/x86_64/lib")
+
+      find_path(Vulkan_BIN_DIR
+        NAMES glslangValidator
+        PATHS
+          "$ENV{VULKAN_SDK}/Bin"
+        )
     endif()
 endif()
 

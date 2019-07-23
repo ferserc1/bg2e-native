@@ -18,6 +18,7 @@ if (Vulkan_FOUND)
     message("Vulkan found:")
     message("  Include directory:" ${Vulkan_INCLUDE_DIRS})
     message("  Library directory:" ${Vulkan_LIBRARIES})
+    message("  Shader build tool:" ${Vulkan_SHADER_BUILD})
 endif()
 
 if (GLFW_FOUND)
