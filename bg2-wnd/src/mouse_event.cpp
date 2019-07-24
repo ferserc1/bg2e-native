@@ -9,11 +9,11 @@ namespace bg2wnd {
     ,_wheelDeltaX(wheelDeltaX)
     ,_wheelDeltaY(wheelDeltaY)
     {
-        _buttons[0] = b1 > 0;
-        _buttons[1] = b2 > 0;
-        _buttons[2] = b3 > 0;
-        _buttons[3] = b4 > 0;
-        _buttons[4] = b5 > 0;
+        _buttons[0] = b1;
+        _buttons[1] = b2;
+        _buttons[2] = b3;
+        _buttons[3] = b4;
+        _buttons[4] = b5;
     }
     
 }

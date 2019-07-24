@@ -6,6 +6,9 @@
 #include <bg2render/vk_instance.hpp>
 #include <bg2render/vk_device.hpp>
 #include <bg2render/swap_chain.hpp>
+#include <bg2math/vector.hpp>
+#include <bg2db/buffer_load.hpp>
+
 
 
 #include <iostream>
@@ -14,9 +17,14 @@
 
 #include <string.h>
 
+
+
 class MyDelegate : public bg2wnd::WindowDelegate {
 public:
     MyDelegate(bool enableValidation) :_enableValidationLayers(enableValidation) {}
+
+	VkShaderModule _vertShaderModule;
+	VkShaderModule _fragShaderModule;
 
     void init() {
 		_instance = std::unique_ptr<bg2render::vk::Instance>(new bg2render::vk::Instance());
@@ -63,7 +71,38 @@ public:
 
 		std::cout << "Done" << std::endl;
 
+		///// Pipeline
+		// SHADERS: TODO: refactor shader stage create
+		bg2base::path shaderPath = "shaders";
+		auto vshader = bg2db::loadBuffer(shaderPath.pathAddingComponent("basic.vert.spv"));
+		auto fshader = bg2db::loadBuffer(shaderPath.pathAddingComponent("basic.frag.spv"));
+		VkShaderModuleCreateInfo shaderCreateInfo = {};
+		shaderCreateInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+		shaderCreateInfo.codeSize = vshader.size();
+		shaderCreateInfo.pCode = reinterpret_cast<const uint32_t*>(vshader.data());
+		if (vkCreateShaderModule(_instance->renderDevice()->device(), &shaderCreateInfo, nullptr, &_vertShaderModule) != VK_SUCCESS) {
+			throw std::runtime_error("Failed to create vertex shader module");
+		}
 
+		shaderCreateInfo.codeSize = fshader.size();
+		shaderCreateInfo.pCode = reinterpret_cast<const uint32_t*>(fshader.data());
+		if (vkCreateShaderModule(_instance->renderDevice()->device(), &shaderCreateInfo, nullptr, &_fragShaderModule) != VK_SUCCESS) {
+			throw std::runtime_error("Failed to create fragment shader module");
+		}
+
+		VkPipelineShaderStageCreateInfo vertShaderStageInfo = {};
+		vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+		vertShaderStageInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
+		vertShaderStageInfo.module = _vertShaderModule;
+		vertShaderStageInfo.pName = "main";
+
+		VkPipelineShaderStageCreateInfo fragShaderStageInfo = {};
+		fragShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+		fragShaderStageInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+		fragShaderStageInfo.module = _fragShaderModule;
+		fragShaderStageInfo.pName = "main";
+
+		VkPipelineShaderStageCreateInfo shaderStages[] = { vertShaderStageInfo, fragShaderStageInfo };
     }
 
     void resize(const bg2math::int2 & size) {
@@ -79,6 +118,9 @@ public:
     }
 
     void cleanup() {
+		vkDestroyShaderModule(_instance->renderDevice()->device, _fragShaderModule, nullptr);
+		vkDestroyShaderModule(_instance->renderDevice()->device, _vertShaderModule, nullptr);
+
 		_swapChain = nullptr;
 		_instance = nullptr;
     }
