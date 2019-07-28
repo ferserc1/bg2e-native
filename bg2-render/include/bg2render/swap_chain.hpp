@@ -20,10 +20,15 @@ namespace bg2render {
 		inline void create(const bg2math::int2& size) { create(size.x(), size.y()); }
 		void create(uint32_t width, uint32_t height);
 
+		void createFramebuffers(VkRenderPass renderPass);
+
+		inline VkSwapchainKHR swapchain() const { return _swapChain; }
+
 		inline const std::vector<VkImage>& images() const { return _images; }
 		inline VkFormat format() const { return _format; }
 		inline const VkExtent2D& extent() const { return _extent; }
 		inline const std::vector<VkImageView>& imageViews() const { return _imageViews; }
+		inline const std::vector<VkFramebuffer>& framebuffers() const { return _framebuffers; }
 
 	protected:
 		vk::PhysicalDevice* _physicalDevice;
@@ -34,6 +39,8 @@ namespace bg2render {
 		VkFormat _format;
 		VkExtent2D _extent;
 		std::vector<VkImageView> _imageViews;
+		VkRenderPass _renderPass;
+		std::vector<VkFramebuffer> _framebuffers;
 
 		VkSurfaceFormatKHR chooseSwapSurfaceFormat();
 		VkPresentModeKHR chooseSwapPresentMode();

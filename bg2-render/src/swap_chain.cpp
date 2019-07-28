@@ -17,6 +17,12 @@ namespace bg2render {
 	}
 
 	SwapChain::~SwapChain() {
+		if (_framebuffers.size()) {
+			for (auto fb : _framebuffers) {
+				vkDestroyFramebuffer(_device->device(), fb, nullptr);
+			}
+		}
+
 		if (_swapChain != VK_NULL_HANDLE) {
 			for (auto imageView : _imageViews) {
 				vkDestroyImageView(_device->device(), imageView, nullptr);
@@ -100,6 +106,30 @@ namespace bg2render {
 
 			if (vkCreateImageView(_device->device(), &createInfo, nullptr, &_imageViews[i]) != VK_SUCCESS) {
 				throw std::runtime_error("Failed to create image views");
+			}
+		}
+	}
+
+	void SwapChain::createFramebuffers(VkRenderPass renderPass) {
+		_renderPass = renderPass;
+		_framebuffers.resize(_imageViews.size());
+
+		for (size_t i = 0; i < _imageViews.size(); ++i) {
+			VkImageView attachments[] = {
+				_imageViews[i]
+			};
+
+			VkFramebufferCreateInfo framebufferInfo = {};
+			framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+			framebufferInfo.renderPass = _renderPass;
+			framebufferInfo.attachmentCount = 1;
+			framebufferInfo.pAttachments = attachments;
+			framebufferInfo.width = _extent.width;
+			framebufferInfo.height = _extent.height;
+			framebufferInfo.layers = 1;
+
+			if (vkCreateFramebuffer(_device->device(), &framebufferInfo, nullptr, &_framebuffers[i]) != VK_SUCCESS) {
+				throw std::runtime_error("Failed to create framebuffer");
 			}
 		}
 	}
