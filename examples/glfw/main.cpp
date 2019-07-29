@@ -82,8 +82,6 @@ public:
 		_swapChain->create(window()->size());
 
 
-		std::cout << "Done" << std::endl;
-
 		///// Pipeline
 		VkGraphicsPipelineCreateInfo pipelineInfo = {};
 		pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
@@ -295,6 +293,9 @@ public:
 			throw std::runtime_error("Failed to create render pass");
 		}
 
+		// Create framebuffers
+		_swapChain->createFramebuffers(_renderPass);
+
 		pipelineInfo.renderPass = _renderPass;
 		pipelineInfo.subpass = 0;
 
@@ -306,8 +307,7 @@ public:
 			throw std::runtime_error("Failed to create graphics pipeline");
 		}
 
-		// Create framebuffers
-		_swapChain->createFramebuffers(_renderPass);
+		
 
 		/////// Command pool and command buffers
 		VkCommandPoolCreateInfo poolInfo = {};
@@ -363,40 +363,38 @@ public:
 
 		// Start recording commands
 		size_t i = _currentFrame;
-//		for (size_t i = 0; i < _commandBuffers.size(); ++i) {
 		vkResetCommandBuffer(_commandBuffers[i], 0);
-			VkCommandBufferBeginInfo beginInfo = {};
-			beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-			beginInfo.flags = 0;
-			beginInfo.pInheritanceInfo = nullptr;
-			if (vkBeginCommandBuffer(_commandBuffers[i], &beginInfo) != VK_SUCCESS) {
-				throw std::runtime_error("Failed to begin recording command buffer");
-			}
+		VkCommandBufferBeginInfo beginInfo = {};
+		beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+		beginInfo.flags = 0;
+		beginInfo.pInheritanceInfo = nullptr;
+		if (vkBeginCommandBuffer(_commandBuffers[i], &beginInfo) != VK_SUCCESS) {
+			throw std::runtime_error("Failed to begin recording command buffer");
+		}
 
-			VkRenderPassBeginInfo renderPassInfo = {};
-			renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-			renderPassInfo.renderPass = _renderPass;
-			renderPassInfo.framebuffer = _swapChain->framebuffers()[i];
-			renderPassInfo.renderArea.offset = { 0, 0 };
-			renderPassInfo.renderArea.extent = _swapChain->extent();
-			VkClearValue clearColor = { 0.0f, 0.0f, 0.0f, 1.0f };
-			renderPassInfo.clearValueCount = 1;
-			renderPassInfo.pClearValues = &clearColor;
-			vkCmdBeginRenderPass(_commandBuffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+		VkRenderPassBeginInfo renderPassInfo = {};
+		renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+		renderPassInfo.renderPass = _renderPass;
+		renderPassInfo.framebuffer = _swapChain->framebuffers()[i];
+		renderPassInfo.renderArea.offset = { 0, 0 };
+		renderPassInfo.renderArea.extent = _swapChain->extent();
+		VkClearValue clearColor = { 0.0f, 0.0f, 0.0f, 1.0f };
+		renderPassInfo.clearValueCount = 1;
+		renderPassInfo.pClearValues = &clearColor;
+		vkCmdBeginRenderPass(_commandBuffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-			vkCmdBindPipeline(_commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, _graphicsPipeline);
-			vkCmdDraw(_commandBuffers[i],
-				3,	// Vertex count 
-				1,	// Instance count
-				0,	// First vertex
-				0);	// First instance
+		vkCmdBindPipeline(_commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, _graphicsPipeline);
+		vkCmdDraw(_commandBuffers[i],
+			3,	// Vertex count 
+			1,	// Instance count
+			0,	// First vertex
+			0);	// First instance
 
-			vkCmdEndRenderPass(_commandBuffers[i]);
+		vkCmdEndRenderPass(_commandBuffers[i]);
 
-			if (vkEndCommandBuffer(_commandBuffers[i]) != VK_SUCCESS) {
-				throw std::runtime_error("Failed to record command buffer");
-			}
-//		}
+		if (vkEndCommandBuffer(_commandBuffers[i]) != VK_SUCCESS) {
+			throw std::runtime_error("Failed to record command buffer");
+		}
     }
 
     void draw() {

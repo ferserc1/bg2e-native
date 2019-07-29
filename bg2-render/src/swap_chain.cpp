@@ -17,18 +17,7 @@ namespace bg2render {
 	}
 
 	SwapChain::~SwapChain() {
-		if (_framebuffers.size()) {
-			for (auto fb : _framebuffers) {
-				vkDestroyFramebuffer(_device->device(), fb, nullptr);
-			}
-		}
-
-		if (_swapChain != VK_NULL_HANDLE) {
-			for (auto imageView : _imageViews) {
-				vkDestroyImageView(_device->device(), imageView, nullptr);
-			}
-			vkDestroySwapchainKHR(_device->device(), _swapChain, nullptr);
-		}
+		release();
 	}
 
 	void SwapChain::create(uint32_t width, uint32_t height) {
@@ -134,6 +123,12 @@ namespace bg2render {
 		}
 	}
 
+	void SwapChain::resize(uint32_t width, uint32_t height, VkRenderPass renderPass) {
+		release();
+		create(width, height);
+		createFramebuffers(renderPass);
+	}
+
 	VkSurfaceFormatKHR SwapChain::chooseSwapSurfaceFormat() {
 		for (const auto& format : _physicalDevice->getSwapChainSupport().formats) {
 			if (format.format == VK_FORMAT_R8G8B8A8_UNORM && format.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
@@ -165,6 +160,21 @@ namespace bg2render {
 			actualExtent.height = std::max(capabilities.minImageExtent.height, std::min(capabilities.maxImageExtent.height, actualExtent.height));
 
 			return actualExtent;
+		}
+	}
+
+	void SwapChain::release() {
+		if (_framebuffers.size()) {
+			for (auto fb : _framebuffers) {
+				vkDestroyFramebuffer(_device->device(), fb, nullptr);
+			}
+		}
+
+		if (_swapChain != VK_NULL_HANDLE) {
+			for (auto imageView : _imageViews) {
+				vkDestroyImageView(_device->device(), imageView, nullptr);
+			}
+			vkDestroySwapchainKHR(_device->device(), _swapChain, nullptr);
 		}
 	}
 }

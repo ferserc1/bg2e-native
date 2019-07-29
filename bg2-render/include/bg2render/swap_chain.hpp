@@ -22,6 +22,8 @@ namespace bg2render {
 
 		void createFramebuffers(VkRenderPass renderPass);
 
+		void resize(uint32_t width, uint32_t height, VkRenderPass renderPass);
+
 		inline VkSwapchainKHR swapchain() const { return _swapChain; }
 
 		inline const std::vector<VkImage>& images() const { return _images; }
@@ -45,6 +47,8 @@ namespace bg2render {
 		VkSurfaceFormatKHR chooseSwapSurfaceFormat();
 		VkPresentModeKHR chooseSwapPresentMode();
 		VkExtent2D chooseSwapExtent(uint32_t w, uint32_t h);
+
+		void release();
     };
 
 }
