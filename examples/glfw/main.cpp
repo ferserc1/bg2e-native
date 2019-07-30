@@ -8,6 +8,7 @@
 #include <bg2render/swap_chain.hpp>
 #include <bg2math/vector.hpp>
 #include <bg2db/buffer_load.hpp>
+#include <bg2render/pipeline.hpp>
 
 
 
@@ -25,8 +26,8 @@ public:
 
 	int _maxFramesInFlight;
 
-	VkShaderModule _vertShaderModule;
-	VkShaderModule _fragShaderModule;
+	std::unique_ptr<bg2render::Pipeline> _pipeline;
+
 	VkPipelineLayout _pipelineLayout;
 	VkRenderPass _renderPass;
 	VkPipeline _graphicsPipeline;
@@ -83,6 +84,8 @@ public:
 
 
 		///// Pipeline
+		_pipeline = std::make_unique<bg2render::Pipeline>(_instance.get());
+
 		VkGraphicsPipelineCreateInfo pipelineInfo = {};
 		pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
 
@@ -90,92 +93,27 @@ public:
 		bg2base::path shaderPath = "shaders";
 		auto vshader = bg2db::loadBuffer(shaderPath.pathAddingComponent("basic.vert.spv"));
 		auto fshader = bg2db::loadBuffer(shaderPath.pathAddingComponent("basic.frag.spv"));
-		VkShaderModuleCreateInfo shaderCreateInfo = {};
-		shaderCreateInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-		shaderCreateInfo.codeSize = vshader.size();
-		shaderCreateInfo.pCode = reinterpret_cast<const uint32_t*>(vshader.data());
-		if (vkCreateShaderModule(_instance->renderDevice()->device(), &shaderCreateInfo, nullptr, &_vertShaderModule) != VK_SUCCESS) {
-			throw std::runtime_error("Failed to create vertex shader module");
-		}
+		_pipeline->addShader(vshader, VK_SHADER_STAGE_VERTEX_BIT, "main");
+		_pipeline->addShader(fshader, VK_SHADER_STAGE_FRAGMENT_BIT, "main");
 
-		shaderCreateInfo.codeSize = fshader.size();
-		shaderCreateInfo.pCode = reinterpret_cast<const uint32_t*>(fshader.data());
-		if (vkCreateShaderModule(_instance->renderDevice()->device(), &shaderCreateInfo, nullptr, &_fragShaderModule) != VK_SUCCESS) {
-			throw std::runtime_error("Failed to create fragment shader module");
-		}
-
-		VkPipelineShaderStageCreateInfo vertShaderStageInfo = {};
-		vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-		vertShaderStageInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
-		vertShaderStageInfo.module = _vertShaderModule;
-		vertShaderStageInfo.pName = "main";
-
-		VkPipelineShaderStageCreateInfo fragShaderStageInfo = {};
-		fragShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-		fragShaderStageInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-		fragShaderStageInfo.module = _fragShaderModule;
-		fragShaderStageInfo.pName = "main";
-
-		VkPipelineShaderStageCreateInfo shaderStages[] = { vertShaderStageInfo, fragShaderStageInfo };
-		pipelineInfo.stageCount = 2;
-		pipelineInfo.pStages = shaderStages;
-
+		pipelineInfo.stageCount = static_cast<uint32_t>(_pipeline->shaderStages().size());
+		pipelineInfo.pStages = _pipeline->shaderStages().data();
 
 		// Vertex input
-		VkPipelineVertexInputStateCreateInfo vertexInputInfo = {};
-		vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-		vertexInputInfo.vertexBindingDescriptionCount = 0;
-		vertexInputInfo.pVertexBindingDescriptions = nullptr;
-		vertexInputInfo.vertexAttributeDescriptionCount = 0;
-		vertexInputInfo.pVertexAttributeDescriptions = nullptr;
+		pipelineInfo.pVertexInputState = &_pipeline->vertexInputInfo();
 
-		pipelineInfo.pVertexInputState = &vertexInputInfo;
-
-		// Input Assembly
-		VkPipelineInputAssemblyStateCreateInfo inputAssembly = {};
-		inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-		inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-		inputAssembly.primitiveRestartEnable = VK_FALSE;
-
-		pipelineInfo.pInputAssemblyState = &inputAssembly;
+		// Input Assembly		
+		_pipeline->inputAssemblyInfo().topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+		pipelineInfo.pInputAssemblyState = &_pipeline->inputAssemblyInfo();
 
 		// Viewport and scissor
-		VkViewport viewport = {};
-		viewport.x = 0.0f;
-		viewport.y = 0.0f;
-		viewport.width = static_cast<float>(window()->size().x());
-		viewport.height = static_cast<float>(window()->size().y());
-		viewport.minDepth = 0.0f;
-		viewport.maxDepth = 1.0f;
-
-		VkRect2D scissor = {};
-		scissor.offset = { 0, 0 };
-		scissor.extent.width = window()->size().x();
-		scissor.extent.height = window()->size().y();
-
-		VkPipelineViewportStateCreateInfo viewportState = {};
-		viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
-		viewportState.viewportCount = 1;
-		viewportState.pViewports = &viewport;
-		viewportState.scissorCount = 1;
-		viewportState.pScissors = &scissor;
-
-		pipelineInfo.pViewportState = &viewportState;
+		_pipeline->setViewport(window()->size());
+		pipelineInfo.pViewportState = &_pipeline->viewportState();//&viewportState;
 
 		// Rasterizer
-		VkPipelineRasterizationStateCreateInfo rasterizer = {};
-		rasterizer.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
-		rasterizer.depthClampEnable = VK_FALSE;
-		rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
-		rasterizer.lineWidth = 1.0f;
-		rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
-		rasterizer.frontFace = VK_FRONT_FACE_CLOCKWISE;
-		rasterizer.depthBiasEnable = VK_FALSE;
-		rasterizer.depthBiasConstantFactor = 0.0f;
-		rasterizer.depthBiasClamp = 0.0f;
-		rasterizer.depthBiasSlopeFactor = 0.0f;
-
-		pipelineInfo.pRasterizationState = &rasterizer;
+		_pipeline->rasterizationStateInfo().cullMode = VK_CULL_MODE_BACK_BIT;
+		_pipeline->rasterizationStateInfo().frontFace = VK_FRONT_FACE_CLOCKWISE;
+		pipelineInfo.pRasterizationState = &_pipeline->rasterizationStateInfo();
 
 		// Multisampling
 		VkPipelineMultisampleStateCreateInfo multisampling = {};
@@ -332,7 +270,7 @@ public:
 		}
 
 		////// CPU-GPU rendering sinchronization
-		_maxFramesInFlight = _swapChain->images().size();
+		_maxFramesInFlight = static_cast<uint32_t>(_swapChain->images().size());
 		_imageAvailableSemaphore.resize(_maxFramesInFlight);
 		_renderFinishedSemaphore.resize(_maxFramesInFlight);
 		_inFlightFences.resize(_maxFramesInFlight);
@@ -453,11 +391,14 @@ public:
 		}
 
 		vkDestroyCommandPool(_instance->renderDevice()->device(), _commandPool, nullptr);
+
+
 		vkDestroyPipeline(_instance->renderDevice()->device(), _graphicsPipeline, nullptr);
 		vkDestroyPipelineLayout(_instance->renderDevice()->device(), _pipelineLayout, nullptr);
 		vkDestroyRenderPass(_instance->renderDevice()->device(), _renderPass, nullptr);
-		vkDestroyShaderModule(_instance->renderDevice()->device(), _fragShaderModule, nullptr);
-		vkDestroyShaderModule(_instance->renderDevice()->device(), _vertShaderModule, nullptr);
+		
+		_pipeline = nullptr;
+
 
 		_swapChain = nullptr;
 		_instance = nullptr;

@@ -13,7 +13,7 @@ namespace bg2render {
 
 	Pipeline::~Pipeline() {
 		for (auto& shaderData : _shaderStagesData) {
-			vkDestroyShaderModule(_instance->renderDevice()->device, shaderData.module, nullptr);
+			vkDestroyShaderModule(_instance->renderDevice()->device(), shaderData.module, nullptr);
 		}
 		_shaderStagesData.clear();
 		_shaderStages.clear();
@@ -32,14 +32,19 @@ namespace bg2render {
 
 		ShaderData data;
 		data.module = shaderModule;
-		data.mainFunction = mainFunction;
+		data.mainFunction = std::vector<char>(mainFunction.c_str(), mainFunction.c_str() + mainFunction.size() + 1);
 		_shaderStagesData.push_back(data);
-		
-		VkPipelineShaderStageCreateInfo shaderStageInfo = {};
-		shaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-		shaderStageInfo.module = shaderModule;
-		shaderStageInfo.stage = type;
-		shaderStageInfo.pName = data.mainFunction.c_str();
+		auto& dataPtr = _shaderStagesData.back();
+	
+		_shaderStages.push_back({
+			VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
+			nullptr,		// pNext
+			0,	// flags
+			type,
+			shaderModule,
+			dataPtr.mainFunction.data(),
+			nullptr	// pSpecializationInfo
+		});
 	}
 
 }
