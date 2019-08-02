@@ -64,6 +64,32 @@ namespace bg2render {
 		inline const VkPipelineRasterizationStateCreateInfo& rasterizationStateInfo() const { return _rasterizationStateInfo; }
 		inline VkPipelineRasterizationStateCreateInfo& rasterizationStateInfo() { return _rasterizationStateInfo; }
 
+		// Multisampling
+		inline const VkPipelineMultisampleStateCreateInfo& multisamplingStateInfo() const { return _multisamplingStateInfo; }
+		inline VkPipelineMultisampleStateCreateInfo& multisamplingStateInfo() { return _multisamplingStateInfo; }
+
+		// Color blend
+		void addColorBlendAttachment(const VkPipelineColorBlendAttachmentState& att);
+		void loadDefaultBlendAttachments();
+		inline const VkPipelineColorBlendStateCreateInfo & colorBlendInfo() const { return _colorBlendInfo; }
+		inline VkPipelineColorBlendStateCreateInfo & colorBlendInfo() { return _colorBlendInfo; }
+
+		// Dynamic state
+		inline void addDynamicState(VkDynamicState s) {
+			_dynamicStates.push_back(s);
+			_dynamicStateInfo.dynamicStateCount = static_cast<uint32_t>(_dynamicStates.size());
+			_dynamicStateInfo.pDynamicStates = _dynamicStates.data();
+		}
+		inline const VkPipelineDynamicStateCreateInfo& dynamicStateInfo() const { return _dynamicStateInfo; }
+
+		// Pipeline layout
+		// If you create the layout using this utility class functions, it will be automatically removed
+		void createDefaultLayout();	
+		// If you use the setPipelineLayout function, you will need to delete the layout
+		void setPipelineLayout(VkPipelineLayout lo);
+		inline VkPipelineLayout pipelineLayout() const { return _pipelineLayout; }
+
+		
 	protected:
 		// Instance
 		vk::Instance* _instance;
@@ -113,6 +139,45 @@ namespace bg2render {
 			0.0f,	// depthBiasSlopeFactor;
 			1.0f	// lineWidth;
 		};
+		VkPipelineMultisampleStateCreateInfo _multisamplingStateInfo = {
+			VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO,
+			nullptr,
+			0,
+			VK_SAMPLE_COUNT_1_BIT,
+			VK_FALSE,
+			1.0f,
+			nullptr,
+			VK_FALSE,
+			VK_FALSE
+		};
+		// TODO: depthStencil info default values
+		VkPipelineDepthStencilStateCreateInfo _depthStencilInfo = {
+		};
+		// Color blend
+		std::vector<VkPipelineColorBlendAttachmentState> _colorBlendAttachments;
+		VkPipelineColorBlendStateCreateInfo _colorBlendInfo = {
+			VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO,
+			nullptr,
+			0,
+			VK_FALSE,
+			VK_LOGIC_OP_COPY,
+			0,
+			nullptr,
+			{ 0.0f, 0.0f, 0.0f, 0.0f }
+		};
+		// Dynamic state
+		std::vector<VkDynamicState> _dynamicStates;
+		VkPipelineDynamicStateCreateInfo _dynamicStateInfo = {
+			VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO,
+			nullptr,
+			0,
+			0,
+			nullptr
+		};
+
+		// Pipeline layout
+		VkPipelineLayout _pipelineLayout = VK_NULL_HANDLE;
+		bool _destroyLayout = false;
     };
 
 }

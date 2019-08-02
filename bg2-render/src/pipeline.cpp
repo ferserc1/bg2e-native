@@ -17,6 +17,9 @@ namespace bg2render {
 		}
 		_shaderStagesData.clear();
 		_shaderStages.clear();
+		if (_pipelineLayout != VK_NULL_HANDLE && _destroyLayout) {
+			vkDestroyPipelineLayout(_instance->renderDevice()->device(), _pipelineLayout, nullptr);
+		}
 	}
 
 	void Pipeline::addShader(const std::vector<char>& buffer, VkShaderStageFlagBits type, const std::string& mainFunction) {
@@ -47,4 +50,59 @@ namespace bg2render {
 		});
 	}
 
+	void Pipeline::addColorBlendAttachment(const VkPipelineColorBlendAttachmentState& att) {
+		_colorBlendAttachments.push_back({
+				att.blendEnable,
+				att.srcColorBlendFactor,
+				att.dstColorBlendFactor,
+				att.colorBlendOp,
+				att.srcAlphaBlendFactor,
+				att.dstAlphaBlendFactor,
+				att.alphaBlendOp,
+				att.colorWriteMask
+			});
+		_colorBlendInfo.attachmentCount = static_cast<uint32_t>(_colorBlendAttachments.size());
+		_colorBlendInfo.pAttachments = _colorBlendAttachments.data();
+	}
+
+	void Pipeline::loadDefaultBlendAttachments() {
+		addColorBlendAttachment({
+			VK_FALSE,				// blendEnable;
+			VK_BLEND_FACTOR_ONE,	// srcColorBlendFactor;
+			VK_BLEND_FACTOR_ZERO,	// dstColorBlendFactor;
+			VK_BLEND_OP_ADD,		// colorBlendOp;
+			VK_BLEND_FACTOR_ONE,		// srcAlphaBlendFactor;
+			VK_BLEND_FACTOR_ZERO,	// dstAlphaBlendFactor;
+			VK_BLEND_OP_ADD,	// alphaBlendOp;
+			VK_COLOR_COMPONENT_R_BIT |
+			VK_COLOR_COMPONENT_G_BIT |
+			VK_COLOR_COMPONENT_B_BIT |
+			VK_COLOR_COMPONENT_A_BIT	// colorWriteMask;
+			});
+	}
+
+	void Pipeline::createDefaultLayout() {
+		if (_destroyLayout && _pipelineLayout != VK_NULL_HANDLE) {
+			vkDestroyPipelineLayout(_instance->renderDevice()->device(), _pipelineLayout, nullptr);
+		}
+
+		VkPipelineLayoutCreateInfo createInfo = {};
+		createInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+		createInfo.setLayoutCount = 0;
+		createInfo.pSetLayouts = nullptr;
+		createInfo.pushConstantRangeCount = 0;
+		createInfo.pPushConstantRanges = nullptr;
+		if (vkCreatePipelineLayout(_instance->renderDevice()->device(), &createInfo, nullptr, &_pipelineLayout) != VK_SUCCESS) {
+			throw std::runtime_error("Error creating pipeline layout");
+		}
+		_destroyLayout = true;
+	}
+
+	void Pipeline::setPipelineLayout(VkPipelineLayout lo) {
+		if (_destroyLayout && _pipelineLayout != VK_NULL_HANDLE) {
+			vkDestroyPipelineLayout(_instance->renderDevice()->device(), _pipelineLayout, nullptr);
+		}
+		_pipelineLayout = lo;
+		_destroyLayout = false;
+	}
 }

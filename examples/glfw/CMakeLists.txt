@@ -23,7 +23,7 @@ endif()
 
 set_target_properties(
     example-glfw PROPERTIES
-    VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/${CMAKE_BUILD_TYPE}/")
+    VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/$<CONFIG>/")
 
 # Data directory
 add_custom_command(TARGET example-glfw POST_BUILD
