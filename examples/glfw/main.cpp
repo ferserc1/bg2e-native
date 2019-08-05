@@ -28,9 +28,7 @@ public:
 
 	std::unique_ptr<bg2render::Pipeline> _pipeline;
 
-	VkPipelineLayout _pipelineLayout;
-	VkRenderPass _renderPass;
-	VkPipeline _graphicsPipeline;
+	//VkPipeline _graphicsPipeline;
 	VkCommandPool _commandPool;
 	std::vector<VkCommandBuffer> _commandBuffers;
 
@@ -86,8 +84,8 @@ public:
 		///// Pipeline
 		_pipeline = std::make_unique<bg2render::Pipeline>(_instance.get());
 
-		VkGraphicsPipelineCreateInfo pipelineInfo = {};
-		pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+		//VkGraphicsPipelineCreateInfo pipelineInfo = {};
+		//pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
 
 		// SHADERS
 		bg2base::path shaderPath = "shaders";
@@ -96,104 +94,39 @@ public:
 		_pipeline->addShader(vshader, VK_SHADER_STAGE_VERTEX_BIT, "main");
 		_pipeline->addShader(fshader, VK_SHADER_STAGE_FRAGMENT_BIT, "main");
 
-		pipelineInfo.stageCount = static_cast<uint32_t>(_pipeline->shaderStages().size());
-		pipelineInfo.pStages = _pipeline->shaderStages().data();
-
-		// Vertex input
-		pipelineInfo.pVertexInputState = &_pipeline->vertexInputInfo();
-
+		// TODO: Vertex input
+		
 		// Input Assembly		
 		_pipeline->inputAssemblyInfo().topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-		pipelineInfo.pInputAssemblyState = &_pipeline->inputAssemblyInfo();
-
+		
 		// Viewport and scissor
 		_pipeline->setViewport(window()->size());
-		pipelineInfo.pViewportState = &_pipeline->viewportState();//&viewportState;
-
+		
 		// Rasterizer
 		_pipeline->rasterizationStateInfo().cullMode = VK_CULL_MODE_BACK_BIT;
 		_pipeline->rasterizationStateInfo().frontFace = VK_FRONT_FACE_CLOCKWISE;
-		pipelineInfo.pRasterizationState = &_pipeline->rasterizationStateInfo();
-
-		// Multisampling
-		pipelineInfo.pMultisampleState = &_pipeline->multisamplingStateInfo();
-
+		
 		// Depth and stencil test
 		// TODO: configure depth test
-		pipelineInfo.pDepthStencilState = nullptr;
-
+		
 		// Color blend
 		_pipeline->loadDefaultBlendAttachments();
-		pipelineInfo.pColorBlendState = &_pipeline->colorBlendInfo();
-
+		
 		// Dynamic state
 		// TODO: Use dynamic state
-		_pipeline->addDynamicState(VK_DYNAMIC_STATE_VIEWPORT);
-		_pipeline->addDynamicState(VK_DYNAMIC_STATE_LINE_WIDTH);
-		pipelineInfo.pDynamicState = &_pipeline->dynamicStateInfo();
-		pipelineInfo.pDynamicState = nullptr;
-
-		_pipeline->createDefaultLayout();
-		pipelineInfo.layout = _pipeline->pipelineLayout();
-
-		///// Render passes
-		VkAttachmentDescription colorAttachment = {};
-		colorAttachment.format = _swapChain->format();
-		colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
-		colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-		colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-		colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-		colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-		colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-		colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-
-		// Subpasses and attachment references
-		VkAttachmentReference colorAttachmentRef = {};
-		colorAttachmentRef.attachment = 0;
-		colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-
-		VkSubpassDescription subpass = {};
-		subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-		subpass.colorAttachmentCount = 1;
-		subpass.pColorAttachments = &colorAttachmentRef;
+	//	_pipeline->addDynamicState(VK_DYNAMIC_STATE_VIEWPORT);
+	//	_pipeline->addDynamicState(VK_DYNAMIC_STATE_LINE_WIDTH);
 		
-		VkRenderPassCreateInfo renderPassInfo = {};
-		renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-		renderPassInfo.attachmentCount = 1;
-		renderPassInfo.pAttachments = &colorAttachment;
-		renderPassInfo.subpassCount = 1;
-		renderPassInfo.pSubpasses = &subpass;
-
-		// Subpass dependencies
-		VkSubpassDependency dependency = {};
-		dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
-		dependency.dstSubpass = 0;
-		dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-		dependency.srcAccessMask = 0;
-		dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-		dependency.dstAccessMask =
-			VK_ACCESS_COLOR_ATTACHMENT_READ_BIT |
-			VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-		renderPassInfo.dependencyCount = 1;
-		renderPassInfo.pDependencies = &dependency;
-
-		if (vkCreateRenderPass(_instance->renderDevice()->device(), &renderPassInfo, nullptr, &_renderPass) != VK_SUCCESS) {
-			throw std::runtime_error("Failed to create render pass");
-		}
+		_pipeline->createDefaultLayout();
+		
+		///// Render passes
+		_pipeline->createDefaultRenderPass(_swapChain->format());
 
 		// Create framebuffers
-		_swapChain->createFramebuffers(_renderPass);
-
-		pipelineInfo.renderPass = _renderPass;
-		pipelineInfo.subpass = 0;
-
-		pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
-		pipelineInfo.basePipelineIndex = -1;
+		_swapChain->createFramebuffers(_pipeline->renderPass());
 
 		////// Create pipeline
-		if (vkCreateGraphicsPipelines(_instance->renderDevice()->device(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &_graphicsPipeline) != VK_SUCCESS) {
-			throw std::runtime_error("Failed to create graphics pipeline");
-		}
+		_pipeline->create();
 
 		
 
@@ -262,7 +195,7 @@ public:
 
 		VkRenderPassBeginInfo renderPassInfo = {};
 		renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-		renderPassInfo.renderPass = _renderPass;
+		renderPassInfo.renderPass = _pipeline->renderPass()->renderPass();// _renderPass;
 		renderPassInfo.framebuffer = _swapChain->framebuffers()[i];
 		renderPassInfo.renderArea.offset = { 0, 0 };
 		renderPassInfo.renderArea.extent = _swapChain->extent();
@@ -271,7 +204,7 @@ public:
 		renderPassInfo.pClearValues = &clearColor;
 		vkCmdBeginRenderPass(_commandBuffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-		vkCmdBindPipeline(_commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, _graphicsPipeline);
+		vkCmdBindPipeline(_commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, _pipeline->pipeline());// _graphicsPipeline);
 		vkCmdDraw(_commandBuffers[i],
 			3,	// Vertex count 
 			1,	// Instance count
@@ -342,14 +275,7 @@ public:
 
 		vkDestroyCommandPool(_instance->renderDevice()->device(), _commandPool, nullptr);
 
-
-		vkDestroyPipeline(_instance->renderDevice()->device(), _graphicsPipeline, nullptr);
-		vkDestroyPipelineLayout(_instance->renderDevice()->device(), _pipelineLayout, nullptr);
-		vkDestroyRenderPass(_instance->renderDevice()->device(), _renderPass, nullptr);
-		
 		_pipeline = nullptr;
-
-
 		_swapChain = nullptr;
 		_instance = nullptr;
     }

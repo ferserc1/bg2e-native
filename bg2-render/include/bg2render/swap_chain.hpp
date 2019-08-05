@@ -6,6 +6,7 @@
 
 #include <bg2render/vk_physical_device.hpp>
 #include <bg2render/vk_device.hpp>
+#include <bg2render/render_pass.hpp>
 #include <bg2math/vector.hpp>
 
 #include <vector>
@@ -20,6 +21,7 @@ namespace bg2render {
 		inline void create(const bg2math::int2& size) { create(size.x(), size.y()); }
 		void create(uint32_t width, uint32_t height);
 
+		inline void createFramebuffers(RenderPass* renderPass) { createFramebuffers(renderPass->renderPass()); }
 		void createFramebuffers(VkRenderPass renderPass);
 
 		void resize(uint32_t width, uint32_t height, VkRenderPass renderPass);

@@ -9,6 +9,7 @@
 
 #include <bg2math/vector.hpp>
 #include <bg2render/vk_instance.hpp>
+#include <bg2render/render_pass.hpp>
 
 namespace bg2render {
     
@@ -89,6 +90,16 @@ namespace bg2render {
 		void setPipelineLayout(VkPipelineLayout lo);
 		inline VkPipelineLayout pipelineLayout() const { return _pipelineLayout; }
 
+		// Render pass
+		inline void setRenderPass(RenderPass* rp, uint32_t subpass = 0) { _renderPass = std::shared_ptr<RenderPass>(rp); _subpass = subpass; }
+		void createDefaultRenderPass(VkFormat format);
+		inline const RenderPass* renderPass() const { return _renderPass.get(); }
+		inline RenderPass* renderPass() { return _renderPass.get(); }
+
+		// Create pipeline
+		void create();
+
+		inline VkPipeline pipeline() const { return _pipeline; }
 		
 	protected:
 		// Instance
@@ -178,6 +189,13 @@ namespace bg2render {
 		// Pipeline layout
 		VkPipelineLayout _pipelineLayout = VK_NULL_HANDLE;
 		bool _destroyLayout = false;
+
+		// Render pass
+		std::shared_ptr<RenderPass> _renderPass;
+		uint32_t _subpass;
+
+		// Pipeline
+		VkPipeline _pipeline = VK_NULL_HANDLE;
     };
 
 }
