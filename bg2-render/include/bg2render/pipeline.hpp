@@ -100,6 +100,8 @@ namespace bg2render {
 		void create();
 
 		inline VkPipeline pipeline() const { return _pipeline; }
+
+		void resize(const bg2math::int2 & size);
 		
 	protected:
 		// Instance

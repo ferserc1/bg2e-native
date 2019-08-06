@@ -146,7 +146,7 @@ namespace bg2render {
 			_presentDevice = _renderDevice;
 		}
 
-		bool Instance::isDeviceSuitableForTask(const PhysicalDevice* dev, DeviceTask task) {
+		bool Instance::isDeviceSuitableForTask(PhysicalDevice* dev, DeviceTask task) {
 			if (task == kDeviceTaskRender) {
 				return dev->queueIndices().graphicsFamily != -1;
 			}

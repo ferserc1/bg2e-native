@@ -210,4 +210,22 @@ namespace bg2render {
 			throw std::runtime_error("Failed to create graphics pipeline");
 		}
 	}
+
+	void Pipeline::resize(const bg2math::int2& size) {
+		if (_pipeline == VK_NULL_HANDLE) {
+			throw std::runtime_error("Failed to resize pipeline: the pipeline is not created.");
+		}
+
+		vkDestroyPipeline(_instance->renderDevice()->device(), _pipeline, nullptr);
+
+		if (_scissor.extent.width == static_cast<uint32_t>(_viewport.width) &&
+			_scissor.extent.height == static_cast<uint32_t>(_viewport.height)) {
+			_scissor.extent.width = size.x();
+			_scissor.extent.height = size.y();
+		}
+		_viewport.width = static_cast<float>(size.x());
+		_viewport.height = static_cast<float>(size.y());
+
+		create();
+	}
 }

@@ -150,30 +150,28 @@ namespace bg2render {
 
 	VkExtent2D SwapChain::chooseSwapExtent(uint32_t w, uint32_t h) {
 		const auto& capabilities = _physicalDevice->getSwapChainSupport().capabilities;
-		if (capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max()) {
-			return capabilities.currentExtent;
-		}
-		else {
-			VkExtent2D actualExtent = { w, h };
+		VkExtent2D actualExtent = { w, h };
 
-			actualExtent.width = std::max(capabilities.minImageExtent.width, std::min(capabilities.maxImageExtent.width, actualExtent.width));
-			actualExtent.height = std::max(capabilities.minImageExtent.height, std::min(capabilities.maxImageExtent.height, actualExtent.height));
+		actualExtent.width = std::max(capabilities.minImageExtent.width, std::min(capabilities.maxImageExtent.width, actualExtent.width));
+		actualExtent.height = std::max(capabilities.minImageExtent.height, std::min(capabilities.maxImageExtent.height, actualExtent.height));
 
-			return actualExtent;
-		}
+		return actualExtent;
 	}
 
 	void SwapChain::release() {
+		_images.clear();
 		if (_framebuffers.size()) {
 			for (auto fb : _framebuffers) {
 				vkDestroyFramebuffer(_device->device(), fb, nullptr);
 			}
+			_framebuffers.clear();
 		}
 
 		if (_swapChain != VK_NULL_HANDLE) {
 			for (auto imageView : _imageViews) {
 				vkDestroyImageView(_device->device(), imageView, nullptr);
 			}
+			_imageViews.clear();
 			vkDestroySwapchainKHR(_device->device(), _swapChain, nullptr);
 		}
 	}

@@ -40,11 +40,12 @@ namespace bg2render {
             inline VkPhysicalDevice physicalDevice() const { return _physicalDevice; }
 
 			inline const QueueFamilyIndices& queueIndices() const { return _queueIndices; }
-			inline const SwapChainSupportDetails& getSwapChainSupport() const { return _swapChainSupportDetails; }
+			const SwapChainSupportDetails& getSwapChainSupport();
 
         protected:
             Instance * _instance = nullptr;
 
+			VkSurfaceKHR _surface = VK_NULL_HANDLE;
             VkPhysicalDevice _physicalDevice = VK_NULL_HANDLE;
 			QueueFamilyIndices _queueIndices;
 			SwapChainSupportDetails _swapChainSupportDetails;

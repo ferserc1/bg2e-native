@@ -49,7 +49,7 @@ namespace bg2render {
 
 			// Option 2: (TODO) create a new APi to manually choose a custom physical device for each task
 			void enumeratePhysicalDevices(std::vector<std::shared_ptr<PhysicalDevice>>& devices);
-			bool isDeviceSuitableForTask(const PhysicalDevice * dev, DeviceTask task);
+			bool isDeviceSuitableForTask(PhysicalDevice * dev, DeviceTask task);
 
             inline void setSurface(VkSurfaceKHR surface) { _surface = surface; }
             inline VkSurfaceKHR surface() const { return _surface; }

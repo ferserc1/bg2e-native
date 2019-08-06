@@ -131,6 +131,9 @@ public:
 		
 
 		/////// Command pool and command buffers
+		// TODO: Refactor command buffers recreation. It's necessary to recreate
+		// the command buffers after swap chain recreation, to abort drawing with the
+		// previous resources (framebuffers)
 		VkCommandPoolCreateInfo poolInfo = {};
 		poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
 		poolInfo.queueFamilyIndex = _instance->renderPhysicalDevice()->queueIndices().graphicsFamily;
@@ -180,7 +183,6 @@ public:
 
     void update(float delta) {
 		vkWaitForFences(_instance->renderDevice()->device(), 1, &_inFlightFences[_currentFrame], VK_TRUE, std::numeric_limits<uint64_t>::max());
-		vkResetFences(_instance->renderDevice()->device(), 1, &_inFlightFences[_currentFrame]);
 
 		// Start recording commands
 		size_t i = _currentFrame;
@@ -222,13 +224,24 @@ public:
 		
 
 		uint32_t imageIndex;
-		vkAcquireNextImageKHR(
+		VkResult result= vkAcquireNextImageKHR(
 			_instance->renderDevice()->device(),
 			_swapChain->swapchain(),
 			std::numeric_limits<uint64_t>::max(),
 			_imageAvailableSemaphore[_currentFrame],
 			VK_NULL_HANDLE,
 			&imageIndex);
+
+		if (result == VK_ERROR_OUT_OF_DATE_KHR) {
+			bg2math::int2 size = window()->size();
+			vkDeviceWaitIdle(_instance->renderDevice()->device());
+			_swapChain->resize(size, _pipeline->renderPass()->renderPass());
+			_pipeline->resize(size);
+			return;
+		}
+		else if (result != VK_SUCCESS) {
+			throw std::runtime_error("Failed to acquire swap chain image");
+		}
 
 		VkSubmitInfo submitInfo = {};
 		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -244,6 +257,8 @@ public:
 		VkSemaphore signalSemaphores[] = { _renderFinishedSemaphore[_currentFrame] };
 		submitInfo.signalSemaphoreCount = 1;
 		submitInfo.pSignalSemaphores = signalSemaphores;
+
+		vkResetFences(_instance->renderDevice()->device(), 1, &_inFlightFences[_currentFrame]);
 
 		if (vkQueueSubmit(_instance->renderQueue(), 1, &submitInfo, _inFlightFences[_currentFrame]) != VK_SUCCESS) {
 			throw std::runtime_error("Failed to submit draw command buffer");

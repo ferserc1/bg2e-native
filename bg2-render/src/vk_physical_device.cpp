@@ -10,6 +10,7 @@ namespace bg2render {
 
         PhysicalDevice::PhysicalDevice(Instance * instance, VkPhysicalDevice dev, VkSurfaceKHR surface)
             :_instance(instance)
+			,_surface(surface)
             ,_physicalDevice(dev)
         {
 			uint32_t queueFamilyCount = 0;
@@ -40,24 +41,6 @@ namespace bg2render {
 
 				++i;
 			}
-
-			if (surface != VK_NULL_HANDLE) {
-				vkGetPhysicalDeviceSurfaceCapabilitiesKHR(_physicalDevice, surface, &_swapChainSupportDetails.capabilities);
-
-				uint32_t formatCount = 0;
-				vkGetPhysicalDeviceSurfaceFormatsKHR(_physicalDevice, surface, &formatCount, nullptr);
-				if (formatCount > 0) {
-					_swapChainSupportDetails.formats.resize(formatCount);
-					vkGetPhysicalDeviceSurfaceFormatsKHR(_physicalDevice, surface, &formatCount, _swapChainSupportDetails.formats.data());
-				}
-
-				uint32_t presentModeCount = 0;
-				vkGetPhysicalDeviceSurfacePresentModesKHR(_physicalDevice, surface, &presentModeCount, nullptr);
-				if (presentModeCount > 0) {
-					_swapChainSupportDetails.presentModes.resize(presentModeCount);
-					vkGetPhysicalDeviceSurfacePresentModesKHR(_physicalDevice, surface, &presentModeCount, _swapChainSupportDetails.presentModes.data());
-				}
-			}
         }
 
         PhysicalDevice::~PhysicalDevice() {
@@ -87,6 +70,27 @@ namespace bg2render {
 			vkEnumerateDeviceExtensionProperties(_physicalDevice, nullptr, &extensionCount, nullptr);
 			ext.resize(extensionCount);
 			vkEnumerateDeviceExtensionProperties(_physicalDevice, nullptr, &extensionCount, ext.data());
+		}
+
+		const PhysicalDevice::SwapChainSupportDetails& PhysicalDevice::getSwapChainSupport() {
+			if (_surface != VK_NULL_HANDLE) {
+				vkGetPhysicalDeviceSurfaceCapabilitiesKHR(_physicalDevice, _surface, &_swapChainSupportDetails.capabilities);
+
+				uint32_t formatCount = 0;
+				vkGetPhysicalDeviceSurfaceFormatsKHR(_physicalDevice, _surface, &formatCount, nullptr);
+				if (formatCount > 0) {
+					_swapChainSupportDetails.formats.resize(formatCount);
+					vkGetPhysicalDeviceSurfaceFormatsKHR(_physicalDevice, _surface, &formatCount, _swapChainSupportDetails.formats.data());
+				}
+
+				uint32_t presentModeCount = 0;
+				vkGetPhysicalDeviceSurfacePresentModesKHR(_physicalDevice, _surface, &presentModeCount, nullptr);
+				if (presentModeCount > 0) {
+					_swapChainSupportDetails.presentModes.resize(presentModeCount);
+					vkGetPhysicalDeviceSurfacePresentModesKHR(_physicalDevice, _surface, &presentModeCount, _swapChainSupportDetails.presentModes.data());
+				}
+			}
+			return _swapChainSupportDetails;
 		}
     }
 }
