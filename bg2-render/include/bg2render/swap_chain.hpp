@@ -24,8 +24,8 @@ namespace bg2render {
 		inline void createFramebuffers(RenderPass* renderPass) { createFramebuffers(renderPass->renderPass()); }
 		void createFramebuffers(VkRenderPass renderPass);
 
-		inline void resize(const bg2math::int2& size, VkRenderPass renderPass) { resize(size.x(), size.y(), renderPass); }
-		void resize(uint32_t width, uint32_t height, VkRenderPass renderPass);
+		inline void resize(const bg2math::int2& size, RenderPass * renderPass) { resize(size.x(), size.y(), renderPass); }
+		void resize(uint32_t width, uint32_t height, RenderPass * renderPass);
 
 		inline VkSwapchainKHR swapchain() const { return _swapChain; }
 

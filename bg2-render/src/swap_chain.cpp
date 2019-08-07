@@ -123,10 +123,10 @@ namespace bg2render {
 		}
 	}
 
-	void SwapChain::resize(uint32_t width, uint32_t height, VkRenderPass renderPass) {
+	void SwapChain::resize(uint32_t width, uint32_t height, RenderPass * renderPass) {
 		release();
 		create(width, height);
-		createFramebuffers(renderPass);
+		createFramebuffers(renderPass->renderPass());
 	}
 
 	VkSurfaceFormatKHR SwapChain::chooseSwapSurfaceFormat() {
