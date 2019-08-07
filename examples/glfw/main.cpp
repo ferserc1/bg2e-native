@@ -33,6 +33,7 @@ public:
 	std::vector<VkCommandBuffer> _commandBuffers;
 
 	size_t _currentFrame = 0;
+	bool _windowResized = false;
 	std::vector<VkSemaphore> _imageAvailableSemaphore;
 	std::vector<VkSemaphore> _renderFinishedSemaphore;
 	std::vector<VkFence> _inFlightFences;
@@ -128,12 +129,14 @@ public:
 		////// Create pipeline
 		_pipeline->create();
 
-		
-
 		/////// Command pool and command buffers
-		// TODO: Refactor command buffers recreation. It's necessary to recreate
-		// the command buffers after swap chain recreation, to abort drawing with the
-		// previous resources (framebuffers)
+		createCommandBuffers();
+
+		
+		
+    }
+
+	void createCommandBuffers() {
 		VkCommandPoolCreateInfo poolInfo = {};
 		poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
 		poolInfo.queueFamilyIndex = _instance->renderPhysicalDevice()->queueIndices().graphicsFamily;
@@ -143,7 +146,7 @@ public:
 		if (vkCreateCommandPool(_instance->renderDevice()->device(), &poolInfo, nullptr, &_commandPool) != VK_SUCCESS) {
 			throw std::runtime_error("Error creating command pool");
 		}
-		
+
 		// One command buffer for each framebuffer
 		_commandBuffers.resize(_swapChain->framebuffers().size());
 		VkCommandBufferAllocateInfo allocInfo = {};
@@ -175,10 +178,23 @@ public:
 				throw std::runtime_error("Failed to create sinchronization objects");
 			}
 		}
-    }
+	}
+
+	void destroyCommandBuffers() {
+		vkFreeCommandBuffers(_instance->renderDevice()->device(), _commandPool, static_cast<uint32_t>(_commandBuffers.size()), _commandBuffers.data());
+		_commandBuffers.clear();
+		vkDestroyCommandPool(_instance->renderDevice()->device(), _commandPool, nullptr);
+
+		for (size_t i = 0; i < _maxFramesInFlight; ++i) {
+			vkDestroySemaphore(_instance->renderDevice()->device(), _imageAvailableSemaphore[i], nullptr);
+			vkDestroySemaphore(_instance->renderDevice()->device(), _renderFinishedSemaphore[i], nullptr);
+			vkDestroyFence(_instance->renderDevice()->device(), _inFlightFences[i], nullptr);
+		}
+	}
 
     void resize(const bg2math::int2 & size) {
         std::cout << "resize: " << size.x() << ", " << size.y() << std::endl;
+		_windowResized = true;
     }
 
     void update(float delta) {
@@ -232,11 +248,16 @@ public:
 			VK_NULL_HANDLE,
 			&imageIndex);
 
-		if (result == VK_ERROR_OUT_OF_DATE_KHR) {
+		if (result == VK_ERROR_OUT_OF_DATE_KHR || _windowResized) {
 			bg2math::int2 size = window()->size();
 			vkDeviceWaitIdle(_instance->renderDevice()->device());
+			vkResetCommandPool(_instance->renderDevice()->device(), _commandPool, 0);
+			destroyCommandBuffers();
 			_swapChain->resize(size, _pipeline->renderPass()->renderPass());
 			_pipeline->resize(size);
+			createCommandBuffers();
+			_currentFrame = 0;
+			_windowResized = false;
 			return;
 		}
 		else if (result != VK_SUCCESS) {
@@ -282,13 +303,7 @@ public:
     void cleanup() {
 		vkDeviceWaitIdle(_instance->renderDevice()->device());
 
-		for (size_t i = 0; i < _maxFramesInFlight; ++i) {
-			vkDestroySemaphore(_instance->renderDevice()->device(), _imageAvailableSemaphore[i], nullptr);
-			vkDestroySemaphore(_instance->renderDevice()->device(), _renderFinishedSemaphore[i], nullptr);
-			vkDestroyFence(_instance->renderDevice()->device(), _inFlightFences[i], nullptr);
-		}
-
-		vkDestroyCommandPool(_instance->renderDevice()->device(), _commandPool, nullptr);
+		destroyCommandBuffers();
 
 		_pipeline = nullptr;
 		_swapChain = nullptr;
