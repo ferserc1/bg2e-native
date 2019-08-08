@@ -60,7 +60,6 @@ namespace bg2render {
 		vkWaitForFences(_instance->renderDevice()->device(), 1, &_inFlightFences[_currentFrame], VK_TRUE, std::numeric_limits<uint64_t>::max());
 
 		// Start recording commands
-		// TODO: Delegate this to a renderer delegate
 		auto commandBuffer = _commandBuffers[_currentFrame].get();
 
 		// TODO: Use command buffer helper class functions, instead of using vulkan functions

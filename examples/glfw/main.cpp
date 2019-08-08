@@ -13,11 +13,6 @@
 
 #include <iostream>
 
-#include <vulkan/vulkan.h>
-
-#include <string.h>
-
-
 class MyRendererDelegate : public bg2render::RendererDelegate {
 public:
 	virtual bg2render::Pipeline * configurePipeline(bg2render::vk::Instance* instance, bg2render::SwapChain* swapChain, const bg2math::int2& frameSize) {
@@ -59,47 +54,14 @@ public:
 	MyWindowDelegate(bool enableValidation) :_enableValidationLayers(enableValidation) {}
 
 	void init() {
-		_instance = std::shared_ptr<bg2render::vk::Instance>(new bg2render::vk::Instance());
-		_instance->configureAppName("bg2e vulkan test");
-		if (_enableValidationLayers) {
-			_instance->setDebugCallback([](
-				VkDebugUtilsMessageSeverityFlagBitsEXT severity,
-				VkDebugUtilsMessageTypeFlagsEXT type,
-				const VkDebugUtilsMessengerCallbackDataEXT* pData) {
-					if (severity >= VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) {
-						std::cout << pData->pMessage << std::endl;
-					}
-				});
-		}
-
-		std::vector<VkExtensionProperties> extensionData;
-		_instance->enumerateInstanceExtensionProperties(extensionData);
-		std::cout << "Available extensions:" << std::endl;
-		for (const auto& ext : extensionData) {
-			std::cout << "\t" << ext.extensionName << std::endl;
-		}
-
-		std::vector<const char*> extensions;
-		window()->getVulkanRequiredInstanceExtensions(extensions);
-		_instance->configureRequiredExtensions(extensions);
-
-		_instance->create();
-
-		// It's important to link the window surface to vulkan instance BEFORE
-		// choose physical device, if you want to get support for presentation queues
-		_instance->setSurface(window()->createVulkanSurface(_instance->instance()));
-
-		_instance->choosePhysicalDevices();
-
+		_instance = std::shared_ptr<bg2render::vk::Instance>(bg2render::vk::Instance::CreateDefault(window(),"bg2 vulkan test"));
 
 		_renderer = std::make_unique<bg2render::Renderer>(_instance.get());
 		_renderer->setDelegate(new MyRendererDelegate());
 		_renderer->init(window()->size());
     }
 
-
     void resize(const bg2math::int2 & size) {
-        std::cout << "resize: " << size.x() << ", " << size.y() << std::endl;
 		_renderer->resize(size);
     }
 

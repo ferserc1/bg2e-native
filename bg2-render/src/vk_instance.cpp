@@ -10,6 +10,45 @@
 
 namespace bg2render {
 	namespace vk {
+		VkDebugUtilsMessageSeverityFlagBitsEXT Instance::VulkanDebugMessageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT;
+
+		Instance* Instance::CreateDefault(bg2wnd::Window* window, const std::string& appName) {
+			Instance* instance = nullptr;
+
+			instance = new Instance();
+			instance->configureAppName(appName);
+			#ifdef _DEBUG
+				instance->setDebugCallback([](
+					VkDebugUtilsMessageSeverityFlagBitsEXT severity,
+					VkDebugUtilsMessageTypeFlagsEXT type,
+					const VkDebugUtilsMessengerCallbackDataEXT * pData) {
+					if (severity >= VulkanDebugMessageSeverity) {
+						std::cout << pData->pMessage << std::endl;
+					}
+				});
+
+				std::vector<VkExtensionProperties> extensionData;
+				instance->enumerateInstanceExtensionProperties(extensionData);
+				std::cout << "Available Vulkan extensions: " << std::endl;
+				for (const auto& ext : extensionData) {
+					std::cout << "\t" << ext.extensionName << std::endl;
+				}
+			#endif
+
+			std::vector<const char*> extensions;
+			window->getVulkanRequiredInstanceExtensions(extensions);
+			instance->configureRequiredExtensions(extensions);
+			instance->create();
+
+			// It's important to link the window surface to vulkan instance BEFORE
+			// choose physical device, if you want to get support for presentation queues
+			instance->setSurface(window->createVulkanSurface(instance->instance()));
+
+			instance->choosePhysicalDevices();
+
+			return instance;
+		}
+
 
 		Instance::Instance()
 		{

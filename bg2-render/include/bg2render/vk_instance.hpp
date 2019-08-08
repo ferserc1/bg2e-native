@@ -12,6 +12,7 @@
 #include <bg2render/vk_definitions.hpp>
 #include <bg2render/vk_physical_device.hpp>
 #include <bg2render/vk_device.hpp>
+#include <bg2wnd/window.hpp>
 
 namespace bg2render {
 
@@ -19,6 +20,11 @@ namespace bg2render {
 
 		class Instance {
 		public:
+			static VkDebugUtilsMessageSeverityFlagBitsEXT VulkanDebugMessageSeverity;
+
+			// Create the default Vulkan instance, with debug support if the target is compiled in DEBUG mode
+			static Instance* CreateDefault(bg2wnd::Window * window, const std::string & appName);
+
 			typedef std::function<void (VkDebugUtilsMessageSeverityFlagBitsEXT, VkDebugUtilsMessageTypeFlagsEXT, const VkDebugUtilsMessengerCallbackDataEXT*)> DebugCallback;
 			Instance();
 			virtual ~Instance();
