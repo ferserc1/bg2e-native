@@ -20,10 +20,35 @@
 #include <string.h>
 
 
-
-class MyDelegate : public bg2wnd::WindowDelegate {
+class MyRendererDelegate : public bg2render::RendererDelegate {
 public:
-    MyDelegate(bool enableValidation) :_enableValidationLayers(enableValidation) {}
+	virtual bg2render::Pipeline * configurePipeline(bg2render::vk::Instance* instance, bg2render::SwapChain* swapChain, const bg2math::int2& frameSize) {
+		bg2render::Pipeline * pipeline = new bg2render::Pipeline(instance);
+
+		bg2base::path shaderPath = "shaders";
+		auto vshader = bg2db::loadBuffer(shaderPath.pathAddingComponent("basic.vert.spv"));
+		auto fshader = bg2db::loadBuffer(shaderPath.pathAddingComponent("basic.frag.spv"));
+		pipeline->addShader(vshader, VK_SHADER_STAGE_VERTEX_BIT, "main");
+		pipeline->addShader(fshader, VK_SHADER_STAGE_FRAGMENT_BIT, "main");
+
+		pipeline->inputAssemblyInfo().topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+		pipeline->setViewport(frameSize);
+		pipeline->rasterizationStateInfo().cullMode = VK_CULL_MODE_BACK_BIT;
+		pipeline->rasterizationStateInfo().frontFace = VK_FRONT_FACE_CLOCKWISE;
+
+		pipeline->loadDefaultBlendAttachments();
+
+		pipeline->createDefaultLayout();
+
+		pipeline->createDefaultRenderPass(swapChain->format());
+
+		return pipeline;
+	}
+};
+
+class MyWindowDelegate : public bg2wnd::WindowDelegate {
+public:
+	MyWindowDelegate(bool enableValidation) :_enableValidationLayers(enableValidation) {}
 
 
 
@@ -64,6 +89,7 @@ public:
 
 
 		_renderer = std::make_unique<bg2render::Renderer>(_instance.get());
+		_renderer->setDelegate(new MyRendererDelegate());
 		_renderer->init(window()->size());
     }
 
@@ -103,7 +129,7 @@ int main(int argc, char ** argv) {
     bg2wnd::Application app;
 
     auto window = bg2wnd::Window::Create();
-    window->setWindowDelegate(new MyDelegate(true));
+    window->setWindowDelegate(new MyWindowDelegate(true));
     app.addWindow(window);
     app.run();
 

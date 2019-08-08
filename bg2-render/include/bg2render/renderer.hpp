@@ -7,6 +7,7 @@
 #include <bg2render/pipeline.hpp>
 #include <bg2render/swap_chain.hpp>
 #include <bg2render/render_pass.hpp>
+#include <bg2render/renderer_delegate.hpp>
 
 #include <memory>
 
@@ -16,6 +17,8 @@ namespace bg2render {
 	public:
 		Renderer(vk::Instance* instance);
 		virtual ~Renderer();
+
+		inline void setDelegate(RendererDelegate* del) { _delegate = std::shared_ptr<RendererDelegate>(del); }
 
 		void init(const bg2math::int2 & frameSize);
 
@@ -28,10 +31,12 @@ namespace bg2render {
 	protected:
 		vk::Instance * _instance;
 
-		// Swap chain
-		std::unique_ptr<SwapChain> _swapChain;
+		std::shared_ptr<RendererDelegate> _delegate;
 
-		std::unique_ptr<Pipeline> _pipeline;
+		// Swap chain
+		std::shared_ptr<SwapChain> _swapChain;
+
+		std::shared_ptr<Pipeline> _pipeline;
 
 		// Commands
 		VkCommandPool _commandPool = VK_NULL_HANDLE;

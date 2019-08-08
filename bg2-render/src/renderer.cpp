@@ -25,7 +25,7 @@ namespace bg2render {
 	}
 
 	void Renderer::init(const bg2math::int2& frameSize) {
-		_swapChain = std::unique_ptr<bg2render::SwapChain>(new bg2render::SwapChain(
+		_swapChain = std::shared_ptr<bg2render::SwapChain>(new bg2render::SwapChain(
 			_instance->renderPhysicalDevice(),
 			_instance->renderDevice(),
 			_instance->surface()
@@ -202,34 +202,15 @@ namespace bg2render {
 	}
 
 	void Renderer::createPipeline(const bg2math::int2& frameSize) {
-		// TODO: Delegate pipeline creation in a RendererDelegate
-		// Pipeline
-		_pipeline = std::make_unique<bg2render::Pipeline>(_instance);
+		if (_delegate != nullptr) {
+			_pipeline = std::shared_ptr<Pipeline>(_delegate->configurePipeline(_instance, _swapChain.get(), frameSize));
 
+			_swapChain->createFramebuffers(_pipeline->renderPass());
 
-		bg2base::path shaderPath = "shaders";
-		auto vshader = bg2db::loadBuffer(shaderPath.pathAddingComponent("basic.vert.spv"));
-		auto fshader = bg2db::loadBuffer(shaderPath.pathAddingComponent("basic.frag.spv"));
-		_pipeline->addShader(vshader, VK_SHADER_STAGE_VERTEX_BIT, "main");
-		_pipeline->addShader(fshader, VK_SHADER_STAGE_FRAGMENT_BIT, "main");
-
-		// TODO: vertex input
-
-		_pipeline->inputAssemblyInfo().topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-
-		_pipeline->setViewport(frameSize);
-
-		_pipeline->rasterizationStateInfo().cullMode = VK_CULL_MODE_BACK_BIT;
-		_pipeline->rasterizationStateInfo().frontFace = VK_FRONT_FACE_CLOCKWISE;
-
-		_pipeline->loadDefaultBlendAttachments();
-
-		_pipeline->createDefaultLayout();
-
-		_pipeline->createDefaultRenderPass(_swapChain->format());
-
-		_swapChain->createFramebuffers(_pipeline->renderPass());
-
-		_pipeline->create();
+			_pipeline->create();
+		}
+		else {
+			throw std::invalid_argument("Failed to create renderer: the renderer delegate instance is not set.");
+		}
 	}
 }
