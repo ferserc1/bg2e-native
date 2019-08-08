@@ -11,8 +11,6 @@
 #include <bg2db/buffer_load.hpp>
 #include <bg2render/pipeline.hpp>
 
-
-
 #include <iostream>
 
 #include <vulkan/vulkan.h>
@@ -44,15 +42,21 @@ public:
 
 		return pipeline;
 	}
+
+	void recordCommandBuffer(float delta, bg2render::vk::CommandBuffer* cmdBuffer, bg2render::Pipeline* pipeline, bg2render::SwapChain* swapChain) {
+		cmdBuffer->bindPipeline(pipeline);
+		cmdBuffer->draw(
+			3,	// vertex count
+			1,	// instance count
+			0,	// first vertex
+			0	// first instance
+		);
+	}
 };
 
 class MyWindowDelegate : public bg2wnd::WindowDelegate {
 public:
 	MyWindowDelegate(bool enableValidation) :_enableValidationLayers(enableValidation) {}
-
-
-
-	std::unique_ptr<bg2render::Renderer> _renderer;
 
 	void init() {
 		_instance = std::shared_ptr<bg2render::vk::Instance>(new bg2render::vk::Instance());
@@ -121,6 +125,7 @@ public:
 
 private:
 	std::shared_ptr<bg2render::vk::Instance> _instance;
+	std::unique_ptr<bg2render::Renderer> _renderer;
 
 	bool _enableValidationLayers;
 };

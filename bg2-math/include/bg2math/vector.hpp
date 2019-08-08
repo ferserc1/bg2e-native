@@ -334,5 +334,6 @@ namespace bg2math {
     typedef vec4<uint32_t> uint4;
     typedef vec4<float> float4;
     typedef vec4<double> double4;
+	typedef float4 color;
 }
 #endif

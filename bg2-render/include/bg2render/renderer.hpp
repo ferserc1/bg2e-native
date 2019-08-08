@@ -7,6 +7,7 @@
 #include <bg2render/pipeline.hpp>
 #include <bg2render/swap_chain.hpp>
 #include <bg2render/render_pass.hpp>
+#include <bg2render/vk_command_buffer.hpp>
 #include <bg2render/renderer_delegate.hpp>
 
 #include <memory>
@@ -40,7 +41,7 @@ namespace bg2render {
 
 		// Commands
 		VkCommandPool _commandPool = VK_NULL_HANDLE;
-		std::vector<VkCommandBuffer> _commandBuffers;
+		std::vector<std::shared_ptr<vk::CommandBuffer>> _commandBuffers;
 
 		// synchronization
 		size_t _maxInFlightFrames = 0;

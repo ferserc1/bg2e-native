@@ -53,40 +53,29 @@ namespace bg2render {
 	}
 
 	void Renderer::update(float delta) {
+		if (_delegate == nullptr) {
+			throw std::invalid_argument("Failed to execute renderer update. Invalid renderer delegate.");
+		}
+
 		vkWaitForFences(_instance->renderDevice()->device(), 1, &_inFlightFences[_currentFrame], VK_TRUE, std::numeric_limits<uint64_t>::max());
 
 		// Start recording commands
 		// TODO: Delegate this to a renderer delegate
-		auto commandBuffer = _commandBuffers[_currentFrame];
+		auto commandBuffer = _commandBuffers[_currentFrame].get();
 
-		vkResetCommandBuffer(commandBuffer, 0);
+		// TODO: Use command buffer helper class functions, instead of using vulkan functions
+		vkResetCommandBuffer(commandBuffer->commandBuffer(), 0);
 		VkCommandBufferBeginInfo beginInfo = {};
 		beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-		if (vkBeginCommandBuffer(commandBuffer, &beginInfo) != VK_SUCCESS) {
+		if (vkBeginCommandBuffer(commandBuffer->commandBuffer(), &beginInfo) != VK_SUCCESS) {
 			throw std::runtime_error("Failed to begin recording command buffer");
 		}
 
-		VkRenderPassBeginInfo renderPassInfo = {};
-		renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-		renderPassInfo.renderPass = _pipeline->renderPass()->renderPass();
-		renderPassInfo.framebuffer = _swapChain->framebuffers()[_currentFrame];
-		renderPassInfo.renderArea.offset = { 0, 0 };
-		renderPassInfo.renderArea.extent = _swapChain->extent();
-		VkClearValue clearColor = { 0.0f, 0.0f, 0.0f, 1.0f };
-		renderPassInfo.clearValueCount = 1;
-		renderPassInfo.pClearValues = &clearColor;
-		vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+		_delegate->beginRenderPass(commandBuffer, _pipeline.get(), _swapChain->framebuffers()[_currentFrame], _swapChain.get());
+		_delegate->recordCommandBuffer(delta, commandBuffer, _pipeline.get(), _swapChain.get());
+		_delegate->endRenderPass(commandBuffer);
 
-		vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, _pipeline->pipeline());
-		vkCmdDraw(commandBuffer,
-			3,	// vertex count
-			1,	// instance count
-			0,	// first vertex
-			0);	// first instance
-
-		vkCmdEndRenderPass(commandBuffer);
-
-		if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS) {
+		if (vkEndCommandBuffer(commandBuffer->commandBuffer()) != VK_SUCCESS) {
 			throw std::runtime_error("Failed to record command buffer");
 		}
 	}
@@ -118,7 +107,8 @@ namespace bg2render {
 			submitInfo.pWaitSemaphores = waitSemaphores;
 			submitInfo.pWaitDstStageMask = waitStages;
 			submitInfo.commandBufferCount = 1;
-			submitInfo.pCommandBuffers = &_commandBuffers[_currentFrame];
+			VkCommandBuffer cmdBuffers[] = { _commandBuffers[_currentFrame]->commandBuffer() };
+			submitInfo.pCommandBuffers = cmdBuffers;
 			submitInfo.signalSemaphoreCount = 1;
 			submitInfo.pSignalSemaphores = signalSemaphores;
 
@@ -156,15 +146,7 @@ namespace bg2render {
 		}
 
 		// Allocate one command buffer for each framebuffer
-		_commandBuffers.resize(_swapChain->framebuffers().size());
-		VkCommandBufferAllocateInfo allocInfo = {};
-		allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-		allocInfo.commandPool = _commandPool;
-		allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-		allocInfo.commandBufferCount = static_cast<uint32_t>(_commandBuffers.size());
-		if (vkAllocateCommandBuffers(_instance->renderDevice()->device(), &allocInfo, _commandBuffers.data()) != VK_SUCCESS) {
-			throw std::runtime_error("Failed to allocate command buffers");
-		}
+		vk::CommandBuffer::Allocate(_instance->renderDevice(), _commandPool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, _swapChain->framebuffers().size(), _commandBuffers);
 
 		// CPU-GPU synchronization
 		_maxInFlightFrames = static_cast<uint32_t>(_swapChain->images().size());
@@ -190,8 +172,7 @@ namespace bg2render {
 	}
 
 	void Renderer::freeRenderingObjects() {
-		vkFreeCommandBuffers(_instance->renderDevice()->device(), _commandPool, static_cast<uint32_t>(_commandBuffers.size()), _commandBuffers.data());
-		_commandBuffers.clear();
+		vk::CommandBuffer::Free(_commandBuffers);
 		vkDestroyCommandPool(_instance->renderDevice()->device(), _commandPool, nullptr);
 
 		for (size_t i = 0; i < _maxInFlightFrames; ++i) {
