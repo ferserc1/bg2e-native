@@ -10,6 +10,7 @@
 #include <bg2math/vector.hpp>
 #include <bg2db/buffer_load.hpp>
 #include <bg2render/pipeline.hpp>
+#include <bg2math/matrix.hpp>
 
 #include <iostream>
 
@@ -54,7 +55,7 @@ public:
 	MyWindowDelegate(bool enableValidation) :_enableValidationLayers(enableValidation) {}
 
 	void init() {
-		_instance = std::shared_ptr<bg2render::vk::Instance>(bg2render::vk::Instance::CreateDefault(window(),"bg2 vulkan test"));
+		_instance = std::shared_ptr<bg2render::vk::Instance>(bg2render::vk::Instance::CreateDefault (window(),"bg2 vulkan test"));
 
 		_renderer = std::make_unique<bg2render::Renderer>(_instance.get());
 		_renderer->setDelegate(new MyRendererDelegate());

@@ -8,6 +8,7 @@
 #include <bg2base/image.hpp>
 #include <bg2db/image_load.hpp>
 #include <bg2db/image_write.hpp>
+#include <bg2math/matrix.hpp>
 
 int main(int argc, char ** argv) {
 
@@ -120,6 +121,41 @@ int main(int argc, char ** argv) {
         std::cerr << e.what() << std::endl;
     }
     
+	bg2math::float3x3 mat(
+		bg2math::float3(0.0f, 1.0f, 2.0f),
+		bg2math::float3(3.0f, 4.0f, 5.0f),
+		bg2math::float3(6.0f, 7.0f, 8.0f)
+	);
+
+	std::cout << mat.toString() << std::endl;
+
+	mat.transpose();
+
+	std::cout << mat.toString() << std::endl;
+
+	bg2math::float3x3 idMat = bg2math::float3x3::Identity();
+	if (idMat.isIdentity()) {
+		std::cout << "isIdentity ok" << std::endl;
+	}
+	bg2math::float3x3 zeroMat;
+	if (zeroMat.isZero()) {
+		std::cout << "isZero ok" << std::endl;
+	}
+	bg2math::float3x3 nanMat;
+	auto other = 0.0f;
+	nanMat[2] = 0.0f / other;
+	if (nanMat.isNaN()) {
+		std::cout << "NaN ok" << std::endl;
+	}
+
+	auto m1 = bg2math::float4x4::Identity();
+	m1.rotate(bg2math::kf::piOver2, 0.0f, 1.0f, 0.0f)
+		.translate(0.0f, 0.0f, 2.0f);
+
+	std::cout << m1.toString() << std::endl;
+	m1.invert();
+	std::cout << m1.toString() << std::endl;
+
     
     return 0;
 }
