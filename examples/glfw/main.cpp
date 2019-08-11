@@ -95,13 +95,7 @@ public:
 
 	void recordCommandBuffer(float delta, bg2render::vk::CommandBuffer* cmdBuffer, bg2render::Pipeline* pipeline, bg2render::SwapChain* swapChain) {
 		cmdBuffer->bindPipeline(pipeline);
-
-		//VkBuffer vertexBuffers[] = { _vertexBuffer->buffer() };
-		VkBuffer vertexBuffers[] = { _vertexBuffer->buffer()->buffer() };
-		VkDeviceSize offsets[] = { 0 };
-		vkCmdBindVertexBuffers(cmdBuffer->commandBuffer(), 0, 1, vertexBuffers, offsets);
-
-
+		cmdBuffer->bindVertexBuffer(0, 1, _vertexBuffer);
 		cmdBuffer->draw(
 			static_cast<uint32_t>(vertices.size()),	// vertex count
 			1,	// instance count

@@ -10,6 +10,7 @@
 #include <bg2render/pipeline.hpp>
 #include <bg2render/render_pass.hpp>
 #include <bg2render/swap_chain.hpp>
+#include <bg2render/vertex_buffer.hpp>
 #include <bg2math/vector.hpp>
 
 namespace bg2render {
@@ -33,6 +34,15 @@ namespace bg2render {
 			void endRenderPass();
 
 			void bindPipeline(Pipeline * pipeline, VkPipelineBindPoint bindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS);
+			inline void bindVertexBuffer(uint32_t firstBinding, uint32_t bindingCount, const std::shared_ptr<VertexBuffer> & buffer, uint32_t offset = 0) {
+				bindVertexBuffer(firstBinding, bindingCount, buffer.get(), offset);
+			}
+			inline void bindVertexBuffer(uint32_t firstBinding, uint32_t bindingCount, const std::unique_ptr<VertexBuffer> & buffer, uint32_t offset = 0) {
+				bindVertexBuffer(firstBinding, bindingCount, buffer.get(), offset);
+			}
+			void bindVertexBuffer(uint32_t firstBinding, uint32_t bindingCount, VertexBuffer* buffer, uint32_t offset = 0);
+			void bindVertexBuffer(uint32_t firstBinding, uint32_t bindingCount,vk::Buffer * buffer, uint32_t offset = 0);
+			void bindVertexBuffers(uint32_t firstBinding, uint32_t bindingCount, const std::vector<vk::Buffer*>& buffers, const std::vector<VkDeviceSize>& offsets);
 			void draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance);
 
 		private:

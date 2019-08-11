@@ -71,6 +71,26 @@ namespace bg2render {
 			vkCmdBindPipeline(commandBuffer(), bindPoint, pipeline->pipeline());
 		}
 
+		void CommandBuffer::bindVertexBuffer(uint32_t firstBinding, uint32_t bindingCount, VertexBuffer* buffer, uint32_t offset) {
+			VkBuffer buffers[] = { buffer->buffer()->buffer() };
+			VkDeviceSize offsets[] = { offset };
+			vkCmdBindVertexBuffers(commandBuffer(), firstBinding, bindingCount, buffers, offsets);
+		}
+
+		void CommandBuffer::bindVertexBuffer(uint32_t firstBinding, uint32_t bindingCount, vk::Buffer* buffer, uint32_t offset) {
+			VkBuffer buffers[] = { buffer->buffer() };
+			VkDeviceSize offsets[] = { offset };
+			vkCmdBindVertexBuffers(commandBuffer(), firstBinding, bindingCount, buffers, offsets);
+		}
+
+		void CommandBuffer::bindVertexBuffers(uint32_t firstBinding, uint32_t bindingCount, const std::vector<vk::Buffer*>& buffers, const std::vector<VkDeviceSize>& offsets) {
+			std::vector<VkBuffer> vkBuffers;
+			for (auto b : buffers) {
+				vkBuffers.push_back(b->buffer());
+			}
+			vkCmdBindVertexBuffers(commandBuffer(), firstBinding, bindingCount, vkBuffers.data(), offsets.data());
+		}
+
 		void CommandBuffer::draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance) {
 			vkCmdDraw(commandBuffer(), vertexCount, instanceCount, firstVertex, firstInstance);
 		}
