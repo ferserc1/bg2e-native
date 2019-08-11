@@ -19,6 +19,7 @@ namespace bg2render {
 
 		virtual void beginRenderPass(vk::CommandBuffer* cmdBuffer, Pipeline* pipeline, VkFramebuffer framebuffer, SwapChain * swapChain);
 		virtual void endRenderPass(vk::CommandBuffer * cmdBuffer);
+		virtual void cleanup() {}
 
 		inline void setClearColor(const bg2math::color& color) { _clearColor = color; }
 		inline bg2math::color& clearColor() { return _clearColor; }

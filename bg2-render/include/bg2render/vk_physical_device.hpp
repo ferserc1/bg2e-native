@@ -41,6 +41,7 @@ namespace bg2render {
 
 			inline const QueueFamilyIndices& queueIndices() const { return _queueIndices; }
 			const SwapChainSupportDetails& getSwapChainSupport();
+			uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties) const;
 
         protected:
             Instance * _instance = nullptr;

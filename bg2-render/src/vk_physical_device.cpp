@@ -3,6 +3,7 @@
 
 #include <bg2render/vk_instance.hpp>
 
+#include <stdexcept>
 #include <set>
 
 namespace bg2render {
@@ -91,6 +92,20 @@ namespace bg2render {
 				}
 			}
 			return _swapChainSupportDetails;
+		}
+
+		uint32_t PhysicalDevice::findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties) const {
+			VkPhysicalDeviceMemoryProperties memProperties;
+			vkGetPhysicalDeviceMemoryProperties(_physicalDevice, &memProperties);
+
+			for (uint32_t i = 0; i < memProperties.memoryTypeCount; ++i) {
+				if (typeFilter & (1 << i) &&
+					(memProperties.memoryTypes[i].propertyFlags & properties)) {
+					return i;
+				}
+			}
+
+			throw std::runtime_error("Failed to find suitable memory type.");
 		}
     }
 }

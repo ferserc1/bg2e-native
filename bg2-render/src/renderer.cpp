@@ -18,6 +18,11 @@ namespace bg2render {
 	Renderer::~Renderer() {
 		vkDeviceWaitIdle(_instance->renderDevice()->device());
 
+		if (_delegate != nullptr) {
+			_delegate->cleanup();
+			_delegate = nullptr;
+		}
+
 		freeRenderingObjects();
 
 		_pipeline = nullptr;
