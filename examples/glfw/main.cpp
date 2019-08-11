@@ -10,6 +10,8 @@
 #include <bg2math/vector.hpp>
 #include <bg2db/buffer_load.hpp>
 #include <bg2render/pipeline.hpp>
+#include <bg2render/vk_buffer.hpp>
+#include <bg2render/vk_device_memory.hpp>
 #include <bg2math/matrix.hpp>
 
 #include <iostream>
@@ -60,7 +62,7 @@ public:
 
 		// It's important to ensure that we create the vertex buffers only once, because the
 		// configurePipeline() function will be called every time the user resize the window
-		if (vertexBuffer == VK_NULL_HANDLE) {
+		if (_vertexBuffer == nullptr) {
 			createVertexBuffer(instance);
 		}
 
@@ -95,7 +97,7 @@ public:
 	void recordCommandBuffer(float delta, bg2render::vk::CommandBuffer* cmdBuffer, bg2render::Pipeline* pipeline, bg2render::SwapChain* swapChain) {
 		cmdBuffer->bindPipeline(pipeline);
 
-		VkBuffer vertexBuffers[] = { vertexBuffer };
+		VkBuffer vertexBuffers[] = { _vertexBuffer->buffer() };
 		VkDeviceSize offsets[] = { 0 };
 		vkCmdBindVertexBuffers(cmdBuffer->commandBuffer(), 0, 1, vertexBuffers, offsets);
 
@@ -110,59 +112,42 @@ public:
 
 private:
 	// Vertex buffers
-	VkBuffer vertexBuffer = VK_NULL_HANDLE;
-	VkDeviceMemory vertexBufferMemory = VK_NULL_HANDLE;
-
-	// TODO: Create a buffer structure that stores the instance to release the buffer in the class destructor
-	bg2render::vk::Instance* _instance;
+	std::unique_ptr<bg2render::vk::Buffer> _vertexBuffer;
+	std::unique_ptr<bg2render::vk::DeviceMemory> _vertexBufferMemory;
 
 	// Utility functions to manage the vertex buffers
 	void createVertexBuffer(bg2render::vk::Instance * instance) {
-		_instance = instance;
-		
 		// Create the buffer
-		VkBufferCreateInfo bufferInfo = {};
-		bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-		bufferInfo.size = sizeof(vertices[0]) * vertices.size();
-		bufferInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
-		bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-
-		if (vkCreateBuffer(instance->renderDevice()->device(), &bufferInfo, nullptr, &vertexBuffer) != VK_SUCCESS) {
-			throw std::runtime_error("Failed to create vertex buffer");
-		}
+		_vertexBuffer = std::make_unique<bg2render::vk::Buffer>(instance);
+		_vertexBuffer->create(
+			sizeof(vertices[0]) * vertices.size(), 
+			VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, 
+			VK_SHARING_MODE_EXCLUSIVE);
 
 		// Allocate memory
-		VkMemoryRequirements memRequirements;
-		vkGetBufferMemoryRequirements(instance->renderDevice()->device(), vertexBuffer, &memRequirements);
-		VkMemoryAllocateInfo allocInfo = {};
-		allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-		allocInfo.allocationSize = memRequirements.size;
-		allocInfo.memoryTypeIndex = instance->renderPhysicalDevice()->findMemoryType(
-			memRequirements.memoryTypeBits,
+		_vertexBufferMemory = std::make_unique<bg2render::vk::DeviceMemory>(instance);
+		_vertexBufferMemory->allocate(
+			_vertexBuffer->memoryRequirements(),
 			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
-		if (vkAllocateMemory(instance->renderDevice()->device(), &allocInfo, nullptr, &vertexBufferMemory) != VK_SUCCESS) {
-			throw std::runtime_error("Failed to allocate vertex buffer memory");
-		}
-
 		// Bind memory to vetex buffer
-		vkBindBufferMemory(instance->renderDevice()->device(), vertexBuffer, vertexBufferMemory, 0);
+		vkBindBufferMemory(instance->renderDevice()->device(), _vertexBuffer->buffer(), _vertexBufferMemory->deviceMemory(), 0);
 
 		// Filling the vertex buffer
 		void* data;
-		vkMapMemory(instance->renderDevice()->device(), vertexBufferMemory, 0, bufferInfo.size, 0, &data);
-		memcpy(data, vertices.data(), static_cast<size_t>(bufferInfo.size));
-		vkUnmapMemory(instance->renderDevice()->device(), vertexBufferMemory);
+		_vertexBufferMemory->map(0, _vertexBuffer->size(), 0, &data);
+		memcpy(data, vertices.data(), static_cast<size_t>(_vertexBuffer->size()));
+		_vertexBufferMemory->unmap();
+
+		// TODO: Create a vertex buffer utility class:
+		// - Contains buffer and buffer memory objects
+		// - Automatically binds both buffers
+		// - Contains utility functions to upload a std::vector of vertex data
 	}
 
 	virtual void cleanup() {
-		if (vertexBuffer != VK_NULL_HANDLE) {
-			vkDestroyBuffer(_instance->renderDevice()->device(), vertexBuffer, nullptr);
-		}
-
-		if (vertexBufferMemory != VK_NULL_HANDLE) {
-			vkFreeMemory(_instance->renderDevice()->device(), vertexBufferMemory, nullptr);
-		}
+		_vertexBuffer = nullptr;
+		_vertexBufferMemory = nullptr;
 	}
 };
 
