@@ -40,6 +40,10 @@ namespace bg2render {
 		createPipeline(frameSize);
 		
 		configureRenderingObjects();
+
+		if (_delegate != nullptr) {
+			_delegate->initDone(_instance);
+		}
 	}
 
 	void Renderer::resize(const bg2math::int2& frameSize) {

@@ -19,7 +19,7 @@ namespace bg2render {
 		Renderer(vk::Instance* instance);
 		virtual ~Renderer();
 
-		inline void setDelegate(RendererDelegate* del) { _delegate = std::shared_ptr<RendererDelegate>(del); }
+		inline void setDelegate(RendererDelegate* del) { _delegate = std::shared_ptr<RendererDelegate>(del); _delegate->_renderer = this; }
 
 		void init(const bg2math::int2 & frameSize);
 
@@ -28,6 +28,8 @@ namespace bg2render {
 		void update(float delta);
 
 		void draw();
+
+		inline VkCommandPool commandPool() const { return _commandPool; }
 
 	protected:
 		vk::Instance * _instance;

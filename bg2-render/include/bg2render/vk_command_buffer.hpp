@@ -22,14 +22,18 @@ namespace bg2render {
 				Allocate(dev, pool, level, static_cast<uint32_t>(count), result);
 			}
 			static void Allocate(Device *, VkCommandPool pool, VkCommandBufferLevel level, uint32_t count, std::vector<std::shared_ptr<CommandBuffer>> & result);
-
+			static CommandBuffer * Allocate(Device*, VkCommandPool pool, VkCommandBufferLevel level);
 			static void Free(std::vector<std::shared_ptr<CommandBuffer>>& cmdBuffers);
+			static void Free(CommandBuffer* cmdBuffer);
 
 			inline VkCommandBuffer commandBuffer() const { return _commandBuffer; }
 
 			CommandBuffer(VkDevice,VkCommandPool,VkCommandBuffer);
 
 			// Command buffer wrapper functions
+			void begin(VkCommandBufferUsageFlags usage);
+			void end();
+
 			void beginRenderPass(RenderPass * rp, VkFramebuffer fb, SwapChain * swapChain, const bg2math::color & clearColor, VkSubpassContents subpassContents = VK_SUBPASS_CONTENTS_INLINE);
 			void endRenderPass();
 
@@ -45,6 +49,8 @@ namespace bg2render {
 			void bindVertexBuffers(uint32_t firstBinding, uint32_t bindingCount, const std::vector<vk::Buffer*>& buffers, const std::vector<VkDeviceSize>& offsets);
 			void draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance);
 
+			void copyBuffer(vk::Buffer* src, vk::Buffer* dst, VkDeviceSize srcOffset = 0, VkDeviceSize dstOffset = 0);
+			
 		private:
 			VkDevice _device;
 			VkCommandPool _pool;

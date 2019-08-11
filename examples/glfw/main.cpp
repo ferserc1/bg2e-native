@@ -47,7 +47,7 @@ public:
 	};
 
 	std::vector<Vertex> vertices = {
-		{ { 0.0f, -0.5f }, { 1.0f, 0.0f, 0.0f } },
+		{ { 0.0f, -0.5f }, { 1.0f, 1.0f, 1.0f } },
 		{ { 0.5f,  0.5f }, { 0.0f, 1.0f, 0.0f } },
 		{ {-0.5f,  0.5f }, { 0.0f, 0.0f, 1.0f } }
 	};
@@ -58,12 +58,6 @@ public:
 
 	virtual bg2render::Pipeline * configurePipeline(bg2render::vk::Instance* instance, bg2render::SwapChain* swapChain, const bg2math::int2& frameSize) {
 		bg2render::Pipeline * pipeline = new bg2render::Pipeline(instance);
-
-		// It's important to ensure that we create the vertex buffers only once, because the
-		// configurePipeline() function will be called every time the user resize the window
-		if (_vertexBuffer == nullptr) {
-			createVertexBuffer(instance);
-		}
 
 		bg2base::path shaderPath = "shaders";
 		auto vshader = bg2db::loadBuffer(shaderPath.pathAddingComponent("basic.vert.spv"));
@@ -93,7 +87,7 @@ public:
 		return pipeline;
 	}
 
-	void recordCommandBuffer(float delta, bg2render::vk::CommandBuffer* cmdBuffer, bg2render::Pipeline* pipeline, bg2render::SwapChain* swapChain) {
+	virtual void recordCommandBuffer(float delta, bg2render::vk::CommandBuffer* cmdBuffer, bg2render::Pipeline* pipeline, bg2render::SwapChain* swapChain) {
 		cmdBuffer->bindPipeline(pipeline);
 		cmdBuffer->bindVertexBuffer(0, 1, _vertexBuffer);
 		cmdBuffer->draw(
@@ -104,19 +98,19 @@ public:
 		);
 	}
 
-private:
-	// Vertex buffers
-	std::unique_ptr<bg2render::VertexBuffer> _vertexBuffer;
-
-	// Utility functions to manage the vertex buffers
-	void createVertexBuffer(bg2render::vk::Instance * instance) {
+	virtual void initDone(bg2render::vk::Instance * instance) {
 		_vertexBuffer = std::make_unique<bg2render::VertexBuffer>(instance);
-		_vertexBuffer->create<Vertex>(vertices);
+		_vertexBuffer->create<Vertex>(vertices, renderer()->commandPool());
 	}
 
 	virtual void cleanup() {
 		_vertexBuffer = nullptr;
 	}
+
+private:
+	// Vertex buffers
+	std::unique_ptr<bg2render::VertexBuffer> _vertexBuffer;
+
 };
 
 class MyWindowDelegate : public bg2wnd::WindowDelegate {

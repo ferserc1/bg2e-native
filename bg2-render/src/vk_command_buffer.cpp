@@ -24,6 +24,21 @@ namespace bg2render {
 			}
 		}
 
+		CommandBuffer* CommandBuffer::Allocate(Device* dev, VkCommandPool pool, VkCommandBufferLevel level) {
+			std::vector<VkCommandBuffer> vkCommandBuffers(1);
+
+			VkCommandBufferAllocateInfo allocInfo = {};
+			allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+			allocInfo.commandPool = pool;
+			allocInfo.level = level;
+			allocInfo.commandBufferCount = 1;
+			if (vkAllocateCommandBuffers(dev->device(), &allocInfo, vkCommandBuffers.data()) != VK_SUCCESS) {
+				throw std::runtime_error("Failed to allocate command buffers");
+			}
+
+			return new CommandBuffer(dev->device(), pool, vkCommandBuffers[0]);
+		}
+
 		void CommandBuffer::Free(std::vector<std::shared_ptr<CommandBuffer>>& cmdBuffers) {
 			std::vector<VkCommandBuffer> vkCommandBuffers;
 			VkCommandPool pool = VK_NULL_HANDLE;
@@ -42,12 +57,29 @@ namespace bg2render {
 			}
 		}
 
+		void CommandBuffer::Free(CommandBuffer* cmdBuffer) {
+			std::vector<VkCommandBuffer> vkCommandBuffers;
+			vkCommandBuffers.push_back(cmdBuffer->commandBuffer());
+			vkFreeCommandBuffers(cmdBuffer->_device, cmdBuffer->_pool, 1, vkCommandBuffers.data());
+		}
+
 		CommandBuffer::CommandBuffer(VkDevice dev, VkCommandPool pool, VkCommandBuffer cmdBuffer)
 			:_device(dev)
 			,_pool(pool)
 			,_commandBuffer(cmdBuffer)
 		{
 
+		}
+
+		void CommandBuffer::begin(VkCommandBufferUsageFlags usage) {
+			VkCommandBufferBeginInfo beginInfo = {};
+			beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+			beginInfo.flags = usage;
+			vkBeginCommandBuffer(commandBuffer(), &beginInfo);
+		}
+
+		void CommandBuffer::end() {
+			vkEndCommandBuffer(commandBuffer());
 		}
 
 		void CommandBuffer::beginRenderPass(RenderPass* rp, VkFramebuffer fb, SwapChain* swapChain, const bg2math::color& clearColor, VkSubpassContents subpassContents) {
@@ -93,6 +125,14 @@ namespace bg2render {
 
 		void CommandBuffer::draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance) {
 			vkCmdDraw(commandBuffer(), vertexCount, instanceCount, firstVertex, firstInstance);
+		}
+
+		void CommandBuffer::copyBuffer(vk::Buffer* src, vk::Buffer* dst, VkDeviceSize srcOffset, VkDeviceSize dstOffset) {
+			VkBufferCopy copyRegion = {};
+			copyRegion.srcOffset = 0;
+			copyRegion.dstOffset = 0;
+			copyRegion.size = src->size();
+			vkCmdCopyBuffer(commandBuffer(), src->buffer(), dst->buffer(), 1, &copyRegion);
 		}
     }
 }
