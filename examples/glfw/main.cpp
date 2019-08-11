@@ -10,8 +10,7 @@
 #include <bg2math/vector.hpp>
 #include <bg2db/buffer_load.hpp>
 #include <bg2render/pipeline.hpp>
-#include <bg2render/vk_buffer.hpp>
-#include <bg2render/vk_device_memory.hpp>
+#include <bg2render/vertex_buffer.hpp>
 #include <bg2math/matrix.hpp>
 
 #include <iostream>
@@ -97,7 +96,8 @@ public:
 	void recordCommandBuffer(float delta, bg2render::vk::CommandBuffer* cmdBuffer, bg2render::Pipeline* pipeline, bg2render::SwapChain* swapChain) {
 		cmdBuffer->bindPipeline(pipeline);
 
-		VkBuffer vertexBuffers[] = { _vertexBuffer->buffer() };
+		//VkBuffer vertexBuffers[] = { _vertexBuffer->buffer() };
+		VkBuffer vertexBuffers[] = { _vertexBuffer->buffer()->buffer() };
 		VkDeviceSize offsets[] = { 0 };
 		vkCmdBindVertexBuffers(cmdBuffer->commandBuffer(), 0, 1, vertexBuffers, offsets);
 
@@ -112,42 +112,16 @@ public:
 
 private:
 	// Vertex buffers
-	std::unique_ptr<bg2render::vk::Buffer> _vertexBuffer;
-	std::unique_ptr<bg2render::vk::DeviceMemory> _vertexBufferMemory;
+	std::unique_ptr<bg2render::VertexBuffer> _vertexBuffer;
 
 	// Utility functions to manage the vertex buffers
 	void createVertexBuffer(bg2render::vk::Instance * instance) {
-		// Create the buffer
-		_vertexBuffer = std::make_unique<bg2render::vk::Buffer>(instance);
-		_vertexBuffer->create(
-			sizeof(vertices[0]) * vertices.size(), 
-			VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, 
-			VK_SHARING_MODE_EXCLUSIVE);
-
-		// Allocate memory
-		_vertexBufferMemory = std::make_unique<bg2render::vk::DeviceMemory>(instance);
-		_vertexBufferMemory->allocate(
-			_vertexBuffer->memoryRequirements(),
-			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-
-		// Bind memory to vetex buffer
-		vkBindBufferMemory(instance->renderDevice()->device(), _vertexBuffer->buffer(), _vertexBufferMemory->deviceMemory(), 0);
-
-		// Filling the vertex buffer
-		void* data;
-		_vertexBufferMemory->map(0, _vertexBuffer->size(), 0, &data);
-		memcpy(data, vertices.data(), static_cast<size_t>(_vertexBuffer->size()));
-		_vertexBufferMemory->unmap();
-
-		// TODO: Create a vertex buffer utility class:
-		// - Contains buffer and buffer memory objects
-		// - Automatically binds both buffers
-		// - Contains utility functions to upload a std::vector of vertex data
+		_vertexBuffer = std::make_unique<bg2render::VertexBuffer>(instance);
+		_vertexBuffer->create<Vertex>(vertices);
 	}
 
 	virtual void cleanup() {
 		_vertexBuffer = nullptr;
-		_vertexBufferMemory = nullptr;
 	}
 };
 
