@@ -11,6 +11,7 @@
 #include <bg2render/render_pass.hpp>
 #include <bg2render/swap_chain.hpp>
 #include <bg2render/vertex_buffer.hpp>
+#include <bg2render/index_buffer.hpp>
 #include <bg2math/vector.hpp>
 
 namespace bg2render {
@@ -47,7 +48,23 @@ namespace bg2render {
 			void bindVertexBuffer(uint32_t firstBinding, uint32_t bindingCount, VertexBuffer* buffer, uint32_t offset = 0);
 			void bindVertexBuffer(uint32_t firstBinding, uint32_t bindingCount,vk::Buffer * buffer, uint32_t offset = 0);
 			void bindVertexBuffers(uint32_t firstBinding, uint32_t bindingCount, const std::vector<vk::Buffer*>& buffers, const std::vector<VkDeviceSize>& offsets);
+			inline void bindIndexBuffer(const std::shared_ptr<IndexBuffer>& buffer, VkDeviceSize offset, VkIndexType indexType) {
+				bindIndexBuffer(buffer.get(), offset, indexType);
+			}
+			inline void bindIndexBuffer(const std::unique_ptr<IndexBuffer>& buffer, VkDeviceSize offset, VkIndexType indexType) {
+				bindIndexBuffer(buffer.get(), offset, indexType);
+			}
+			void bindIndexBuffer(IndexBuffer* buffer, VkDeviceSize offset, VkIndexType indexType);
+			void bindIndexBuffer(vk::Buffer* buffer, VkDeviceSize offset, VkIndexType indexType);
+
+			inline void draw(size_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance) {
+				draw(static_cast<uint32_t>(vertexCount), instanceCount, firstVertex, firstInstance);
+			}
 			void draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance);
+			inline void drawIndexed(size_t indexCount, uint32_t instanceCount, uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance) {
+				drawIndexed(static_cast<uint32_t>(indexCount), instanceCount, firstIndex, vertexOffset, firstInstance);
+			}
+			void drawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance);
 
 			void copyBuffer(vk::Buffer* src, vk::Buffer* dst, VkDeviceSize srcOffset = 0, VkDeviceSize dstOffset = 0);
 			

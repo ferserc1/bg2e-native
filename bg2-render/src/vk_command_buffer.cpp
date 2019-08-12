@@ -123,8 +123,20 @@ namespace bg2render {
 			vkCmdBindVertexBuffers(commandBuffer(), firstBinding, bindingCount, vkBuffers.data(), offsets.data());
 		}
 
+		void CommandBuffer::bindIndexBuffer(IndexBuffer* buffer, VkDeviceSize offset, VkIndexType indexType) {
+			vkCmdBindIndexBuffer(commandBuffer(), buffer->buffer()->buffer(), offset, indexType);
+		}
+
+		void CommandBuffer::bindIndexBuffer(vk::Buffer* buffer, VkDeviceSize offset, VkIndexType indexType) {
+			vkCmdBindIndexBuffer(commandBuffer(), buffer->buffer(), offset, indexType);
+		}
+
 		void CommandBuffer::draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance) {
 			vkCmdDraw(commandBuffer(), vertexCount, instanceCount, firstVertex, firstInstance);
+		}
+
+		void CommandBuffer::drawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance) {
+			vkCmdDrawIndexed(commandBuffer(), indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
 		}
 
 		void CommandBuffer::copyBuffer(vk::Buffer* src, vk::Buffer* dst, VkDeviceSize srcOffset, VkDeviceSize dstOffset) {

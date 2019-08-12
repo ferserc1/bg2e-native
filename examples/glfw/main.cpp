@@ -96,17 +96,8 @@ public:
 	virtual void recordCommandBuffer(float delta, bg2render::vk::CommandBuffer* cmdBuffer, bg2render::Pipeline* pipeline, bg2render::SwapChain* swapChain) {
 		cmdBuffer->bindPipeline(pipeline);
 		cmdBuffer->bindVertexBuffer(0, 1, _vertexBuffer);
-
-		vkCmdBindIndexBuffer(cmdBuffer->commandBuffer(), _indexBuffer->buffer()->buffer(), 0, VK_INDEX_TYPE_UINT16);
-
-		vkCmdDrawIndexed(cmdBuffer->commandBuffer(), static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
-
-		//cmdBuffer->draw(
-		//	static_cast<uint32_t>(vertices.size()),	// vertex count
-		//	1,	// instance count
-		//	0,	// first vertex
-		//	0	// first instance
-		//);
+		cmdBuffer->bindIndexBuffer(_indexBuffer, 0, VK_INDEX_TYPE_UINT16);
+		cmdBuffer->drawIndexed(indices.size(), 1, 0, 0, 0);
 	}
 
 	virtual void initDone(bg2render::vk::Instance * instance) {
