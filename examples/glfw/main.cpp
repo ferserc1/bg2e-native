@@ -11,6 +11,7 @@
 #include <bg2db/buffer_load.hpp>
 #include <bg2render/pipeline.hpp>
 #include <bg2render/vertex_buffer.hpp>
+#include <bg2render/index_buffer.hpp>
 #include <bg2math/matrix.hpp>
 
 #include <iostream>
@@ -47,9 +48,14 @@ public:
 	};
 
 	std::vector<Vertex> vertices = {
-		{ { 0.0f, -0.5f }, { 1.0f, 1.0f, 1.0f } },
-		{ { 0.5f,  0.5f }, { 0.0f, 1.0f, 0.0f } },
-		{ {-0.5f,  0.5f }, { 0.0f, 0.0f, 1.0f } }
+		{{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
+		{{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},
+		{{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}},
+		{{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}}
+	};
+
+	std::vector<uint16_t> indices = {
+		0, 1, 2, 2, 3, 0
 	};
 
 	VkVertexInputBindingDescription bindingDescription;
@@ -90,27 +96,36 @@ public:
 	virtual void recordCommandBuffer(float delta, bg2render::vk::CommandBuffer* cmdBuffer, bg2render::Pipeline* pipeline, bg2render::SwapChain* swapChain) {
 		cmdBuffer->bindPipeline(pipeline);
 		cmdBuffer->bindVertexBuffer(0, 1, _vertexBuffer);
-		cmdBuffer->draw(
-			static_cast<uint32_t>(vertices.size()),	// vertex count
-			1,	// instance count
-			0,	// first vertex
-			0	// first instance
-		);
+
+		vkCmdBindIndexBuffer(cmdBuffer->commandBuffer(), _indexBuffer->buffer()->buffer(), 0, VK_INDEX_TYPE_UINT16);
+
+		vkCmdDrawIndexed(cmdBuffer->commandBuffer(), static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
+
+		//cmdBuffer->draw(
+		//	static_cast<uint32_t>(vertices.size()),	// vertex count
+		//	1,	// instance count
+		//	0,	// first vertex
+		//	0	// first instance
+		//);
 	}
 
 	virtual void initDone(bg2render::vk::Instance * instance) {
 		_vertexBuffer = std::make_unique<bg2render::VertexBuffer>(instance);
 		_vertexBuffer->create<Vertex>(vertices, renderer()->commandPool());
+
+		_indexBuffer = std::make_unique<bg2render::IndexBuffer>(instance);
+		_indexBuffer->create<uint16_t>(indices, renderer()->commandPool());
 	}
 
 	virtual void cleanup() {
 		_vertexBuffer = nullptr;
+		_indexBuffer = nullptr;
 	}
 
 private:
 	// Vertex buffers
 	std::unique_ptr<bg2render::VertexBuffer> _vertexBuffer;
-
+	std::unique_ptr<bg2render::IndexBuffer> _indexBuffer;
 };
 
 class MyWindowDelegate : public bg2wnd::WindowDelegate {

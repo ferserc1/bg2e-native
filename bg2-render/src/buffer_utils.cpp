@@ -22,4 +22,35 @@ namespace bg2render {
 
 		vk::CommandBuffer::Free(commandBuffer.get());
 	}
+
+	void BufferUtils::CreateBufferMemory(vk::Instance * instance, VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, vk::Buffer*& buffer, vk::DeviceMemory*& memory) {
+		buffer = new vk::Buffer(instance);
+		buffer->create(
+			size,
+			usage,
+			VK_SHARING_MODE_EXCLUSIVE
+		);
+		memory = new vk::DeviceMemory(instance);
+		memory->allocate(
+			buffer->memoryRequirements(),
+			properties
+		);
+		vkBindBufferMemory(instance->renderDevice()->device(), buffer->buffer(), memory->deviceMemory(), 0);
+	}
+
+	void BufferUtils::CreateBufferMemory(vk::Instance* instance, VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, std::shared_ptr<vk::Buffer>& buffer, std::shared_ptr<vk::DeviceMemory>& memory) {
+		vk::Buffer* resultBuffer;
+		vk::DeviceMemory* resultMemory;
+		CreateBufferMemory(instance, size, usage, properties, resultBuffer, resultMemory);
+		buffer = std::shared_ptr<vk::Buffer>(resultBuffer);
+		memory = std::shared_ptr<vk::DeviceMemory>(resultMemory);
+	}
+
+	void BufferUtils::CreateBufferMemory(vk::Instance* instance, VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, std::unique_ptr<vk::Buffer>& buffer, std::unique_ptr<vk::DeviceMemory>& memory) {
+		vk::Buffer* resultBuffer;
+		vk::DeviceMemory* resultMemory;
+		CreateBufferMemory(instance, size, usage, properties, resultBuffer, resultMemory);
+		buffer = std::unique_ptr<vk::Buffer>(resultBuffer);
+		memory = std::unique_ptr<vk::DeviceMemory>(resultMemory);
+	}
 }
