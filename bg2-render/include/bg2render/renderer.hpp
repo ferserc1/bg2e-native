@@ -30,6 +30,10 @@ namespace bg2render {
 		void draw();
 
 		inline VkCommandPool commandPool() const { return _commandPool; }
+		inline SwapChain* swapChain() { return _swapChain.get(); }
+		inline const SwapChain* swapChain() const { return _swapChain.get(); }
+		inline Pipeline* pipeline() { return _pipeline.get(); }
+		inline const Pipeline* pipeline() const { return _pipeline.get(); }
 
 	protected:
 		vk::Instance * _instance;

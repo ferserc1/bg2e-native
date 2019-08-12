@@ -31,6 +31,21 @@ namespace bg2math {
         static double piOver180;
     };
     
+	inline float radians(float deg) {
+		return deg * kf::piOver180;
+	}
+
+	inline double radians(double deg) {
+		return deg * kd::piOver180;
+	}
+
+	inline float degrees(float rad) {
+		return rad * 180 / kf::pi;
+	}
+
+	inline double degrees(double rad) {
+		return rad * 180 / kd::pi;
+	}
     
     template <class T> inline T clamp(T v, T lo, T hi) {
         return v<lo ? lo : (v>hi ? hi : v);

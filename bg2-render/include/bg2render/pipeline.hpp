@@ -10,6 +10,7 @@
 #include <bg2math/vector.hpp>
 #include <bg2render/vk_instance.hpp>
 #include <bg2render/render_pass.hpp>
+#include <bg2render/vk_pipeline_layout.hpp>
 
 namespace bg2render {
     
@@ -29,7 +30,6 @@ namespace bg2render {
 		inline const std::vector<VkPipelineShaderStageCreateInfo>& shaderStages() const { return _shaderStages; }
 
 		// Vertex input
-		// TODO: add vertex and attribute descriptions
 		inline const VkPipelineVertexInputStateCreateInfo& vertexInputInfo() const { return _vertexInputInfo; }
 		inline VkPipelineVertexInputStateCreateInfo& vertexInputInfo() { return _vertexInputInfo; }
 
@@ -84,11 +84,10 @@ namespace bg2render {
 		inline const VkPipelineDynamicStateCreateInfo& dynamicStateInfo() const { return _dynamicStateInfo; }
 
 		// Pipeline layout
-		// If you create the layout using this utility class functions, it will be automatically removed
-		void createDefaultLayout();	
-		// If you use the setPipelineLayout function, you will need to delete the layout
-		void setPipelineLayout(VkPipelineLayout lo);
-		inline VkPipelineLayout pipelineLayout() const { return _pipelineLayout; }
+		inline void setPipelineLayout(vk::PipelineLayout* lo) { _pipelineLayout = std::shared_ptr<vk::PipelineLayout>(lo); }
+		inline vk::PipelineLayout* pipelineLayout() { return _pipelineLayout.get(); }
+		inline const vk::PipelineLayout* pipelineLayout() const { return _pipelineLayout.get(); }
+		
 
 		// Render pass
 		inline void setRenderPass(RenderPass* rp, uint32_t subpass = 0) { _renderPass = std::shared_ptr<RenderPass>(rp); _subpass = subpass; }
@@ -189,8 +188,7 @@ namespace bg2render {
 		};
 
 		// Pipeline layout
-		VkPipelineLayout _pipelineLayout = VK_NULL_HANDLE;
-		bool _destroyLayout = false;
+		std::shared_ptr<vk::PipelineLayout> _pipelineLayout;
 
 		// Render pass
 		std::shared_ptr<RenderPass> _renderPass;

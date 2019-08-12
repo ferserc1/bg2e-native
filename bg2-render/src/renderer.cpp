@@ -79,9 +79,9 @@ namespace bg2render {
 			throw std::runtime_error("Failed to begin recording command buffer");
 		}
 
-		_delegate->beginRenderPass(commandBuffer, _pipeline.get(), _swapChain->framebuffers()[_currentFrame], _swapChain.get());
-		_delegate->recordCommandBuffer(delta, commandBuffer, _pipeline.get(), _swapChain.get());
-		_delegate->endRenderPass(commandBuffer);
+		_delegate->beginRenderPass(commandBuffer, _pipeline.get(), _swapChain->framebuffers()[_currentFrame], _swapChain.get(), static_cast<uint32_t>(_currentFrame));
+		_delegate->recordCommandBuffer(delta, commandBuffer, _pipeline.get(), _swapChain.get(), static_cast<uint32_t>(_currentFrame));
+		_delegate->endRenderPass(commandBuffer, static_cast<uint32_t>(_currentFrame));
 
 		if (vkEndCommandBuffer(commandBuffer->commandBuffer()) != VK_SUCCESS) {
 			throw std::runtime_error("Failed to record command buffer");
@@ -107,6 +107,8 @@ namespace bg2render {
 			///// Submit command buffer to GPU
 			VkSubmitInfo submitInfo = {};
 			submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+
+			_delegate->updateUniformBuffers(imageIndex);
 
 			VkSemaphore waitSemaphores[] = { _imageAvailableSemaphore[_currentFrame] };
 			VkSemaphore signalSemaphores[] = { _renderFinishedSemaphore[_currentFrame] };

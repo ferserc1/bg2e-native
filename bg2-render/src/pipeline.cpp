@@ -21,9 +21,8 @@ namespace bg2render {
 		}
 		_shaderStagesData.clear();
 		_shaderStages.clear();
-		if (_pipelineLayout != VK_NULL_HANDLE && _destroyLayout) {
-			vkDestroyPipelineLayout(_instance->renderDevice()->device(), _pipelineLayout, nullptr);
-		}
+
+		_pipelineLayout = nullptr;
 	}
 
 	void Pipeline::addShader(const std::vector<char>& buffer, VkShaderStageFlagBits type, const std::string& mainFunction) {
@@ -85,30 +84,23 @@ namespace bg2render {
 			});
 	}
 
-	void Pipeline::createDefaultLayout() {
-		if (_destroyLayout && _pipelineLayout != VK_NULL_HANDLE) {
-			vkDestroyPipelineLayout(_instance->renderDevice()->device(), _pipelineLayout, nullptr);
-		}
+	//void Pipeline::createDefaultLayout() {
+	//	if (_destroyLayout && _pipelineLayout != VK_NULL_HANDLE) {
+	//		vkDestroyPipelineLayout(_instance->renderDevice()->device(), _pipelineLayout, nullptr);
+	//	}
+	//
+	//	VkPipelineLayoutCreateInfo createInfo = {};
+	//	createInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+	//	createInfo.setLayoutCount = 0;
+	//	createInfo.pSetLayouts = nullptr;
+	//	createInfo.pushConstantRangeCount = 0;
+	//	createInfo.pPushConstantRanges = nullptr;
+	//	if (vkCreatePipelineLayout(_instance->renderDevice()->device(), &createInfo, nullptr, &_pipelineLayout) != VK_SUCCESS) {
+	//		throw std::runtime_error("Error creating pipeline layout");
+	//	}
+	//	_destroyLayout = true;
+	//}
 
-		VkPipelineLayoutCreateInfo createInfo = {};
-		createInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-		createInfo.setLayoutCount = 0;
-		createInfo.pSetLayouts = nullptr;
-		createInfo.pushConstantRangeCount = 0;
-		createInfo.pPushConstantRanges = nullptr;
-		if (vkCreatePipelineLayout(_instance->renderDevice()->device(), &createInfo, nullptr, &_pipelineLayout) != VK_SUCCESS) {
-			throw std::runtime_error("Error creating pipeline layout");
-		}
-		_destroyLayout = true;
-	}
-
-	void Pipeline::setPipelineLayout(VkPipelineLayout lo) {
-		if (_destroyLayout && _pipelineLayout != VK_NULL_HANDLE) {
-			vkDestroyPipelineLayout(_instance->renderDevice()->device(), _pipelineLayout, nullptr);
-		}
-		_pipelineLayout = lo;
-		_destroyLayout = false;
-	}
 
 	void Pipeline::createDefaultRenderPass(VkFormat format) {
 		VkAttachmentDescription colorAttachment = {};
@@ -196,7 +188,7 @@ namespace bg2render {
 		createInfo.pDynamicState = &dynamicStateInfo();
 
 		// Layout
-		createInfo.layout = pipelineLayout();
+		createInfo.layout = pipelineLayout()->pipelineLayout();
 
 		// Render pass
 		createInfo.renderPass = _renderPass->renderPass();

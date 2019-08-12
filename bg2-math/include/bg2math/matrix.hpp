@@ -167,7 +167,7 @@ namespace bg2math {
 		}
 	
 		static mat4x4<T> Frustum(T left, T right, T bottom, T top, T nearPlane, T farPlane) {
-			Matrix4 res;
+			mat4x4 res;
 			double A = static_cast<double>(right-left);
 			double B = static_cast<double>(top-bottom);
 			double C = static_cast<double>(farPlane-nearPlane);
@@ -407,8 +407,8 @@ namespace bg2math {
 					_m[12] == other[12] && _m[13] == other[13] && _m[14] == other[14] && _m[15] == other[15];
 		}
 
-		inline T& element(int i, int j) { return _m[i * 3 + j]; }
-		inline T element(int i, int j) const { return _m[i * 3 + j]; }
+		inline T& element(int i, int j) { return _m[i * 4 + j]; }
+		inline T element(int i, int j) const { return _m[i * 4 + j]; }
 		inline void set(T v) {
 			_m[ 0] = v; _m[ 1] = v; _m[ 2] = v; _m[ 3] = v;
 			_m[ 4] = v; _m[ 5] = v; _m[ 6] = v; _m[ 7] = v;
@@ -416,8 +416,8 @@ namespace bg2math {
 			_m[12] = v; _m[13] = v; _m[14] = v; _m[15] = v;
 		}
 
-		inline vec4<T> row(int i) const { return vec4<T>(_m[i * 3], _m[i * 3 + 1], _m[i * 3 + 2], _m[i * 3 + 3]); }
-		inline void setRow(int i, const vec4<T>& value) { _m[i * 3] = value.x(); _m[i * 3 + 1] = value.y(); _m[i * 3 + 2] = value.z(); _m[i * 3 + 3] = value.w();}
+		inline vec4<T> row(int i) const { return vec4<T>(_m[i * 4], _m[i * 4 + 1], _m[i * 4 + 2], _m[i * 4 + 3]); }
+		inline void setRow(int i, const vec4<T>& value) { _m[i * 4] = value.x(); _m[i * 4 + 1] = value.y(); _m[i * 4 + 2] = value.z(); _m[i * 4 + 3] = value.w();}
 		inline mat3x3<T> rotation() const {
 			return mat3x3<T>(
 				_m[0], _m[1], _m[2],

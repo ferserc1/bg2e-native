@@ -3,11 +3,11 @@
 
 namespace bg2render {
 
-	void RendererDelegate::beginRenderPass(vk::CommandBuffer* cmdBuffer, Pipeline* pipeline, VkFramebuffer framebuffer, SwapChain* swapChain) {
+	void RendererDelegate::beginRenderPass(vk::CommandBuffer* cmdBuffer, Pipeline* pipeline, VkFramebuffer framebuffer, SwapChain* swapChain, uint32_t frameIndex) {
 		cmdBuffer->beginRenderPass(pipeline->renderPass(), framebuffer, swapChain, _clearColor, VK_SUBPASS_CONTENTS_INLINE);
 	}
 
-	void RendererDelegate::endRenderPass(vk::CommandBuffer* cmdBuffer) {
+	void RendererDelegate::endRenderPass(vk::CommandBuffer* cmdBuffer, uint32_t frameIndex) {
 		cmdBuffer->endRenderPass();
 	}
 
