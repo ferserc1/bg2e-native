@@ -16,6 +16,8 @@
 #include <bg2render/buffer_utils.hpp>
 #include <bg2render/vk_descriptor_pool.hpp>
 #include <bg2math/matrix.hpp>
+#include <bg2base/image.hpp>
+#include <bg2db/image_load.hpp>
 
 #include <iostream>
 #include <array>
@@ -185,6 +187,59 @@ public:
 
 			vkUpdateDescriptorSets(instance->renderDevice()->device(), 1, &descriptorWrite, 0, nullptr);
 		}
+
+		// Image
+		bg2base::path path = "data";
+		_textureImage = std::shared_ptr<bg2base::image>(bg2db::loadImage(path.pathAddingComponent("texture.jpg")));
+
+		std::unique_ptr<bg2render::vk::Buffer> stagingBuffer = std::make_unique<bg2render::vk::Buffer>(instance);
+		std::unique_ptr<bg2render::vk::DeviceMemory> stagingBufferMemory = std::make_unique<bg2render::vk::DeviceMemory>(instance);
+		VkDeviceSize size = _textureImage->size().x() * _textureImage->size().y() * _textureImage->bytesPerPixel();
+		bg2render::BufferUtils::CreateBufferMemory(
+			instance, size,
+			VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+			stagingBuffer, stagingBufferMemory);
+
+		void* data;
+		stagingBufferMemory->map(0, size, 0, &data);
+		memcpy(data, _textureImage->data(), static_cast<size_t>(size));
+		stagingBufferMemory->unmap();
+
+		VkImageCreateInfo imageInfo = {};
+		imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+		imageInfo.imageType = VK_IMAGE_TYPE_2D;
+		imageInfo.extent.width = _textureImage->size().x();
+		imageInfo.extent.height = _textureImage->size().y();
+		imageInfo.extent.depth = 1;
+		imageInfo.mipLevels = 1;
+		imageInfo.arrayLayers = 1;
+		imageInfo.format = VK_FORMAT_R8G8B8A8_UNORM;
+		imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+		imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+		imageInfo.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+		imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+		imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+		imageInfo.flags = 0;
+		if (vkCreateImage(instance->renderDevice()->device(), &imageInfo, nullptr, &textureImage) != VK_SUCCESS) {
+			throw std::runtime_error("Failed to create vulkan image");
+		}
+
+		VkMemoryRequirements memRequirements;
+		vkGetImageMemoryRequirements(instance->renderDevice()->device(), textureImage, &memRequirements);
+
+		VkMemoryAllocateInfo allocInfo = {};
+		allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+		allocInfo.allocationSize = memRequirements.size;
+		allocInfo.memoryTypeIndex = instance->renderPhysicalDevice()->findMemoryType(memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+		if (vkAllocateMemory(instance->renderDevice()->device(), &allocInfo, nullptr, &textureImageMemory) != VK_SUCCESS) {
+			throw std::runtime_error("Failed to allocate texture memory");
+		}
+
+		vkBindImageMemory(instance->renderDevice()->device(), textureImage, textureImageMemory, 0);
+
+		// TODO: copy image
+
 	}
 
 	virtual void cleanup() {
@@ -205,8 +260,15 @@ private:
 	std::vector<std::unique_ptr<bg2render::vk::Buffer>> _uniformBuffers;
 	std::vector<std::unique_ptr<bg2render::vk::DeviceMemory>> _uniformBuffersMemory;
 
+	// Descriptors
 	std::shared_ptr<bg2render::vk::DescriptorPool> _descriptorPool;
 	std::vector<std::shared_ptr<bg2render::vk::DescriptorSet>> _descriptorSets;
+
+	// Texture resources
+	std::shared_ptr<bg2base::image> _textureImage;
+	VkImage textureImage;
+	VkDeviceMemory textureImageMemory;
+	//std::unique_ptr<bg2render::vk::DeviceMemory> _textureMemory;
 };
 
 class MyWindowDelegate : public bg2wnd::WindowDelegate {
