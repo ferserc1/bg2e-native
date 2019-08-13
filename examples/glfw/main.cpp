@@ -14,6 +14,7 @@
 #include <bg2render/vertex_buffer.hpp>
 #include <bg2render/index_buffer.hpp>
 #include <bg2render/buffer_utils.hpp>
+#include <bg2render/vk_descriptor_pool.hpp>
 #include <bg2math/matrix.hpp>
 
 #include <iostream>
@@ -70,11 +71,6 @@ public:
 		bg2math::float4x4 proj;
 	};
 
-	// TODO: Create helper descriptor pool that can auto release it
-	VkDescriptorPool _descriptorPool;
-	bg2render::vk::Instance * _instance;
-	std::vector<VkDescriptorSet> _descriptorSets;
-
 	virtual bg2render::Pipeline * configurePipeline(bg2render::vk::Instance* instance, bg2render::SwapChain* swapChain, const bg2math::int2& frameSize) {
 		bg2render::Pipeline * pipeline = new bg2render::Pipeline(instance);
 
@@ -120,13 +116,8 @@ public:
 		cmdBuffer->bindPipeline(pipeline);
 		cmdBuffer->bindVertexBuffer(0, 1, _vertexBuffer);
 		cmdBuffer->bindIndexBuffer(_indexBuffer, 0, VK_INDEX_TYPE_UINT16);
+		cmdBuffer->bindDescriptorSet(VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->pipelineLayout(), 0, _descriptorSets[frameIndex]);
 
-		vkCmdBindDescriptorSets(cmdBuffer->commandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->pipelineLayout()->pipelineLayout(), 0, 1, &_descriptorSets[frameIndex], 0, nullptr);
-
-		cmdBuffer->drawIndexed(indices.size(), 1, 0, 0, 0);
-	}
-
-	virtual void updateUniformBuffers(uint32_t currentImage) {
 		static auto startTime = std::chrono::high_resolution_clock::now();
 
 		auto currentTime = std::chrono::high_resolution_clock::now();
@@ -137,16 +128,18 @@ public:
 		ubo.view = bg2math::float4x4::LookAt(bg2math::float3(2.0f, 2.0f, 2.0f), bg2math::float3(0.0f, 0.0f, 0.0f), bg2math::float3(0.0f, 0.0f, 1.0f));
 		auto extent = renderer()->swapChain()->extent();
 		auto ratio = static_cast<float>(extent.width) / static_cast<float>(extent.height);
- 		ubo.proj = bg2math::float4x4::Perspective(60.0f, ratio, 0.1f, 100.0f);
+		ubo.proj = bg2math::float4x4::Perspective(60.0f, ratio, 0.1f, 100.0f);
 		ubo.proj.element(1, 1) *= -1.0;
 
 		void* data;
-		_uniformBuffersMemory[currentImage]->map(0, sizeof(ubo), 0, &data);
+		_uniformBuffersMemory[frameIndex]->map(0, sizeof(ubo), 0, &data);
 		memcpy(data, &ubo, sizeof(ubo));
-		_uniformBuffersMemory[currentImage]->unmap();
+		_uniformBuffersMemory[frameIndex]->unmap();
+
+		cmdBuffer->drawIndexed(indices.size(), 1, 0, 0, 0);
 	}
 
-	virtual void initDone(bg2render::vk::Instance * instance) {
+	virtual void initDone(bg2render::vk::Instance * instance, uint32_t simultaneousFrames) {
 		_vertexBuffer = std::make_unique<bg2render::VertexBuffer>(instance);
 		_vertexBuffer->create<Vertex>(vertices, renderer()->commandPool());
 
@@ -154,7 +147,6 @@ public:
 		_indexBuffer->create<uint16_t>(indices, renderer()->commandPool());
 
 		// Uniform buffers
-		auto simultaneousFrames = renderer()->swapChain()->images().size();
 		VkDeviceSize bufferSize = sizeof(UniformBufferObject);
 		_uniformBuffers.resize(simultaneousFrames);
 		_uniformBuffersMemory.resize(simultaneousFrames);
@@ -169,31 +161,10 @@ public:
 		}
 		
 		// Descriptor sets
-		VkDescriptorPoolSize poolSize = {};
-		poolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-		poolSize.descriptorCount = static_cast<uint32_t>(simultaneousFrames);
-		
-		VkDescriptorPoolCreateInfo poolInfo = {};
-		poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-		poolInfo.poolSizeCount = 1;
-		poolInfo.pPoolSizes = &poolSize;
-		poolInfo.maxSets = static_cast<uint32_t>(simultaneousFrames);
-		if (vkCreateDescriptorPool(instance->renderDevice()->device(), &poolInfo, nullptr, &_descriptorPool) != VK_SUCCESS) {
-			throw std::runtime_error("Failed to create descriptor pool");
-		}
-		_instance = instance;
-
-		std::vector<VkDescriptorSetLayout> layouts(simultaneousFrames, renderer()->pipeline()->pipelineLayout()->descriptorSetLayout());
-		VkDescriptorSetAllocateInfo allocInfo = {};
-		allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-		allocInfo.descriptorPool = _descriptorPool;
-		allocInfo.descriptorSetCount = static_cast<uint32_t>(simultaneousFrames);
-		allocInfo.pSetLayouts = layouts.data();
-
-		_descriptorSets.resize(simultaneousFrames);
-		if (vkAllocateDescriptorSets(instance->renderDevice()->device(), &allocInfo, _descriptorSets.data()) != VK_SUCCESS) {
-			throw std::runtime_error("Failed to allocate descriptor sets");
-		}
+		_descriptorPool = std::make_shared<bg2render::vk::DescriptorPool>(instance);
+		_descriptorPool->addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, simultaneousFrames);
+		_descriptorPool->create(simultaneousFrames);
+		_descriptorPool->allocateDescriptorSets(simultaneousFrames, renderer()->pipeline()->pipelineLayout(), _descriptorSets);
 
 		for (size_t i = 0; i < simultaneousFrames; ++i) {
 			VkDescriptorBufferInfo bufferInfo = {};
@@ -203,7 +174,7 @@ public:
 
 			VkWriteDescriptorSet descriptorWrite = {};
 			descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-			descriptorWrite.dstSet = _descriptorSets[i];
+			descriptorWrite.dstSet = _descriptorSets[i]->descriptorSet();
 			descriptorWrite.dstBinding = 0;
 			descriptorWrite.dstArrayElement = 0;
 			descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -221,8 +192,8 @@ public:
 		_indexBuffer = nullptr;
 		_uniformBuffers.clear();
 		_uniformBuffersMemory.clear();
-
-		vkDestroyDescriptorPool(_instance->renderDevice()->device(), _descriptorPool, nullptr);
+		_descriptorSets.clear();
+		_descriptorPool = nullptr;
 	}
 
 private:
@@ -234,6 +205,8 @@ private:
 	std::vector<std::unique_ptr<bg2render::vk::Buffer>> _uniformBuffers;
 	std::vector<std::unique_ptr<bg2render::vk::DeviceMemory>> _uniformBuffersMemory;
 
+	std::shared_ptr<bg2render::vk::DescriptorPool> _descriptorPool;
+	std::vector<std::shared_ptr<bg2render::vk::DescriptorSet>> _descriptorSets;
 };
 
 class MyWindowDelegate : public bg2wnd::WindowDelegate {

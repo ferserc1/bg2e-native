@@ -146,5 +146,11 @@ namespace bg2render {
 			copyRegion.size = src->size();
 			vkCmdCopyBuffer(commandBuffer(), src->buffer(), dst->buffer(), 1, &copyRegion);
 		}
+
+		void CommandBuffer::bindDescriptorSet(VkPipelineBindPoint bindPoint, PipelineLayout* pl, uint32_t firstSet, DescriptorSet* ds) {
+			VkDescriptorSet vkDescSet = ds->descriptorSet();
+			vkCmdBindDescriptorSets(commandBuffer(), bindPoint, pl->pipelineLayout(), firstSet, 1, &vkDescSet, 0, nullptr);
+		}
+
     }
 }

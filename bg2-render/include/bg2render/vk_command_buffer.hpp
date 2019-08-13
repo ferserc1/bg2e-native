@@ -12,6 +12,7 @@
 #include <bg2render/swap_chain.hpp>
 #include <bg2render/vertex_buffer.hpp>
 #include <bg2render/index_buffer.hpp>
+#include <bg2render/vk_descriptor_set.hpp>
 #include <bg2math/vector.hpp>
 
 namespace bg2render {
@@ -67,6 +68,14 @@ namespace bg2render {
 			void drawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance);
 
 			void copyBuffer(vk::Buffer* src, vk::Buffer* dst, VkDeviceSize srcOffset = 0, VkDeviceSize dstOffset = 0);
+
+			inline void bindDescriptorSet(VkPipelineBindPoint bindPoint, PipelineLayout* pl, uint32_t firstSet, const std::shared_ptr<DescriptorSet>& ds) {
+				bindDescriptorSet(bindPoint, pl, firstSet, ds.get());
+			}
+			inline void bindDescriptorSet(VkPipelineBindPoint bindPoint, PipelineLayout* pl, uint32_t firstSet, const std::unique_ptr<DescriptorSet>& ds) {
+				bindDescriptorSet(bindPoint, pl, firstSet, ds.get());
+			}
+			void bindDescriptorSet(VkPipelineBindPoint bindPoint, PipelineLayout * pl, uint32_t firstSet, DescriptorSet * ds);
 			
 		private:
 			VkDevice _device;

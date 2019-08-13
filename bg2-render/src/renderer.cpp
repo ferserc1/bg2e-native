@@ -42,7 +42,7 @@ namespace bg2render {
 		configureRenderingObjects();
 
 		if (_delegate != nullptr) {
-			_delegate->initDone(_instance);
+			_delegate->initDone(_instance, static_cast<uint32_t>(_swapChain->images().size()));
 		}
 	}
 
@@ -107,8 +107,6 @@ namespace bg2render {
 			///// Submit command buffer to GPU
 			VkSubmitInfo submitInfo = {};
 			submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-
-			_delegate->updateUniformBuffers(imageIndex);
 
 			VkSemaphore waitSemaphores[] = { _imageAvailableSemaphore[_currentFrame] };
 			VkSemaphore signalSemaphores[] = { _renderFinishedSemaphore[_currentFrame] };
