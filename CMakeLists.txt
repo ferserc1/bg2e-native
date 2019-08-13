@@ -38,6 +38,9 @@ configure_file (
     "${PROJECT_BINARY_DIR}/bg2e-config.hpp"
 )
 
+# Configure Visual Studio /MP to use object level paralellism
+ADD_COMPILE_OPTIONS($<$<CXX_COMPILER_ID:MSVC>:/MP>)
+
 # Copy all generated library to binary directory
 SET(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}")
 SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}")
