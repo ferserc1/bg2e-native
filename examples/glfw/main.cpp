@@ -15,6 +15,8 @@
 #include <bg2render/index_buffer.hpp>
 #include <bg2render/buffer_utils.hpp>
 #include <bg2render/vk_descriptor_pool.hpp>
+#include <bg2render/single_time_command_buffer.hpp>
+#include <bg2render/vk_image_view.hpp>
 #include <bg2math/matrix.hpp>
 #include <bg2base/image.hpp>
 #include <bg2db/image_load.hpp>
@@ -188,6 +190,10 @@ public:
 			vkUpdateDescriptorSets(instance->renderDevice()->device(), 1, &descriptorWrite, 0, nullptr);
 		}
 
+		createTexture(instance);
+
+	}
+	void createTexture(bg2render::vk::Instance * instance) {
 		// Image
 		bg2base::path path = "data";
 		_textureImage = std::shared_ptr<bg2base::image>(bg2db::loadImage(path.pathAddingComponent("texture.jpg")));
@@ -238,11 +244,39 @@ public:
 
 		vkBindImageMemory(instance->renderDevice()->device(), textureImage, textureImageMemory, 0);
 
-		// TODO: copy image
+		transitionImageLayout(
+			instance, textureImage,
+			VK_FORMAT_R8G8B8A8_UNORM,
+			VK_IMAGE_LAYOUT_UNDEFINED,
+			VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+
+		bg2render::BufferUtils::CopyBufferToImage(
+			instance, renderer()->commandPool(),
+			stagingBuffer.get(), textureImage,
+			_textureImage->size().x(), _textureImage->size().y());
+
+		transitionImageLayout(
+			instance, textureImage,
+			VK_FORMAT_R8G8B8A8_UNORM,
+			VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+			VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+		);
+
+		// TODO: implement and manage vk::Image self destruction
+		_instance = instance;
+
+		// Image view
+		_textureImageView = std::make_shared<bg2render::vk::ImageView>(instance);
+		_textureImageView->create(textureImage, VK_FORMAT_R8G8B8A8_UNORM);
 
 	}
 
 	virtual void cleanup() {
+
+		_textureImageView = nullptr;
+		vkDestroyImage(_instance->renderDevice()->device(), textureImage, nullptr);
+		vkFreeMemory(_instance->renderDevice()->device(), textureImageMemory, nullptr);
+
 		_vertexBuffer = nullptr;
 		_indexBuffer = nullptr;
 		_uniformBuffers.clear();
@@ -265,10 +299,63 @@ private:
 	std::vector<std::shared_ptr<bg2render::vk::DescriptorSet>> _descriptorSets;
 
 	// Texture resources
+	// TODO: refactor texture images and texture utilities
 	std::shared_ptr<bg2base::image> _textureImage;
 	VkImage textureImage;
 	VkDeviceMemory textureImageMemory;
+	std::shared_ptr<bg2render::vk::ImageView> _textureImageView;
+	bg2render::vk::Instance* _instance;	// TODO: manage vk::image self destruction
 	//std::unique_ptr<bg2render::vk::DeviceMemory> _textureMemory;
+	
+	void transitionImageLayout(bg2render::vk::Instance* instance, VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout) {
+		bg2render::SingleTimeCommandBuffer stcb(instance, renderer()->commandPool());
+
+		stcb.execute([&](bg2render::vk::CommandBuffer* cb) {
+			VkImageMemoryBarrier barrier = {};
+			barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+			barrier.oldLayout = oldLayout;
+			barrier.newLayout = newLayout;
+			barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+			barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+			barrier.image = image;
+			barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+			barrier.subresourceRange.baseMipLevel = 0;
+			barrier.subresourceRange.levelCount = 1;
+			barrier.subresourceRange.baseArrayLayer = 0;
+			barrier.subresourceRange.layerCount = 1;
+			barrier.srcAccessMask = 0;
+			barrier.dstAccessMask = 0;
+
+			VkPipelineStageFlags sourceStage;
+			VkPipelineStageFlags destinationStage;
+
+			if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) {
+				barrier.srcAccessMask = 0;
+				barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+
+				sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+				destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+			}
+			else if (oldLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
+				barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+				barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+				sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+				destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+			}
+			else {
+				throw std::invalid_argument("Unsupported layout transition");
+			}
+
+			vkCmdPipelineBarrier(
+				cb->commandBuffer(),
+				sourceStage, destinationStage,
+				0,
+				0, nullptr,
+				0, nullptr,
+				1, &barrier);
+		});
+	}
 };
 
 class MyWindowDelegate : public bg2wnd::WindowDelegate {

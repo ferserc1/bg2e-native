@@ -12,6 +12,9 @@ namespace bg2render {
 	public:
 		static void CopyBuffer(vk::Instance * instance, VkCommandPool pool, vk::Buffer * srcBuffer, vk::Buffer * dstBuffer);
 
+		// TODO: Refactor this. Use bg2render::vk::Image wrapper class
+		static void CopyBufferToImage(vk::Instance * instance, VkCommandPool pool, vk::Buffer * srcBuffer, VkImage image, uint32_t width, uint32_t height);
+
 		static void CreateBufferMemory(vk::Instance* instance, VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, vk::Buffer *& buffer, vk::DeviceMemory *& memory);
 
 		static void CreateBufferMemory(vk::Instance* instance, VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, std::shared_ptr<vk::Buffer>& buffer, std::shared_ptr<vk::DeviceMemory>& memory);
