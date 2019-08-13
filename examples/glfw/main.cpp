@@ -17,6 +17,7 @@
 #include <bg2render/vk_descriptor_pool.hpp>
 #include <bg2render/single_time_command_buffer.hpp>
 #include <bg2render/vk_image_view.hpp>
+#include <bg2render/vk_sampler.hpp>
 #include <bg2math/matrix.hpp>
 #include <bg2base/image.hpp>
 #include <bg2db/image_load.hpp>
@@ -30,6 +31,7 @@ public:
 	struct Vertex {
 		bg2math::float2 pos;
 		bg2math::float3 color;
+		bg2math::float2 texCoord;
 
 		static VkVertexInputBindingDescription getBindingDescription() {
 			VkVertexInputBindingDescription bindingDescription = {};
@@ -39,8 +41,8 @@ public:
 			return bindingDescription;
 		}
 
-		static std::array<VkVertexInputAttributeDescription, 2> getAttributeDescriptions() {
-			std::array<VkVertexInputAttributeDescription, 2> attributeDescriptions = {};
+		static std::array<VkVertexInputAttributeDescription, 3> getAttributeDescriptions() {
+			std::array<VkVertexInputAttributeDescription, 3> attributeDescriptions = {};
 			attributeDescriptions[0].binding = 0;
 			attributeDescriptions[0].location = 0;
 			attributeDescriptions[0].format = VK_FORMAT_R32G32_SFLOAT;
@@ -51,15 +53,20 @@ public:
 			attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
 			attributeDescriptions[1].offset = offsetof(Vertex, color);
 
+			attributeDescriptions[2].binding = 0;
+			attributeDescriptions[2].location = 2;
+			attributeDescriptions[2].format = VK_FORMAT_R32G32_SFLOAT;
+			attributeDescriptions[2].offset = offsetof(Vertex, texCoord);
+
 			return attributeDescriptions;
 		}
 	};
 
 	std::vector<Vertex> vertices = {
-		{{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
-		{{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},
-		{{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}},
-		{{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}}
+		{{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, { 1.0f, 0.0f }},
+		{{ 0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, { 0.0f, 0.0f }},
+		{{ 0.5f,  0.5f}, {0.0f, 0.0f, 1.0f}, { 0.0f, 1.0f }},
+		{{-0.5f,  0.5f}, {1.0f, 1.0f, 1.0f}, { 1.0f, 1.0f }}
 	};
 
 	std::vector<uint16_t> indices = {
@@ -67,7 +74,7 @@ public:
 	};
 
 	VkVertexInputBindingDescription bindingDescription;
-	std::array<VkVertexInputAttributeDescription, 2> attributeDescriptions;
+	std::array<VkVertexInputAttributeDescription, 3> attributeDescriptions;
 
 	struct UniformBufferObject {
 		bg2math::float4x4 model;
@@ -86,11 +93,19 @@ public:
 
 		// Pipeline layout
 		bg2render::vk::PipelineLayout* pipelineLayout = new bg2render::vk::PipelineLayout(instance);
+		// Descriptor set for uniform buffer
 		pipelineLayout->addDescriptorSetLayoutBinding(
 			0,	// binding
 			VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
 			1,	// descriptorCount
-			VK_SHADER_STAGE_VERTEX_BIT	// stage flags
+			VK_SHADER_STAGE_VERTEX_BIT	// stage flags: use only on vertex shader
+		);
+		// Descriptor set for texture
+		pipelineLayout->addDescriptorSetLayoutBinding(
+			1,	// binding
+			VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+			1,	// descriptor count
+			VK_SHADER_STAGE_FRAGMENT_BIT // stage flags: use only on fragment shader
 		);
 		pipelineLayout->create();
 		pipeline->setPipelineLayout(pipelineLayout);
@@ -163,10 +178,16 @@ public:
 				VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
 				_uniformBuffers[i], _uniformBuffersMemory[i]);
 		}
+
+		// Texture
+		createTexture(instance);
 		
 		// Descriptor sets
 		_descriptorPool = std::make_shared<bg2render::vk::DescriptorPool>(instance);
+		// Pool size for uniform buffer
 		_descriptorPool->addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, simultaneousFrames);
+		// Pool size for texture
+		_descriptorPool->addPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, simultaneousFrames);
 		_descriptorPool->create(simultaneousFrames);
 		_descriptorPool->allocateDescriptorSets(simultaneousFrames, renderer()->pipeline()->pipelineLayout(), _descriptorSets);
 
@@ -176,23 +197,35 @@ public:
 			bufferInfo.offset = 0;
 			bufferInfo.range = sizeof(UniformBufferObject);
 
-			VkWriteDescriptorSet descriptorWrite = {};
-			descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-			descriptorWrite.dstSet = _descriptorSets[i]->descriptorSet();
-			descriptorWrite.dstBinding = 0;
-			descriptorWrite.dstArrayElement = 0;
-			descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-			descriptorWrite.descriptorCount = 1;
-			descriptorWrite.pBufferInfo = &bufferInfo;
-			descriptorWrite.pImageInfo = nullptr;
-			descriptorWrite.pTexelBufferView = nullptr;
+			VkDescriptorImageInfo imageInfo = {};
+			imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+			imageInfo.imageView = _textureImageView->imageView();
+			imageInfo.sampler = _textureSampler->sampler();
 
-			vkUpdateDescriptorSets(instance->renderDevice()->device(), 1, &descriptorWrite, 0, nullptr);
+			std::array<VkWriteDescriptorSet, 2> descriptorWrites = {};
+
+			descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+			descriptorWrites[0].dstSet = _descriptorSets[i]->descriptorSet();
+			descriptorWrites[0].dstBinding = 0;
+			descriptorWrites[0].dstArrayElement = 0;
+			descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+			descriptorWrites[0].descriptorCount = 1;
+			descriptorWrites[0].pBufferInfo = &bufferInfo;
+			descriptorWrites[0].pImageInfo = nullptr;
+			descriptorWrites[0].pTexelBufferView = nullptr;
+
+			descriptorWrites[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+			descriptorWrites[1].dstSet = _descriptorSets[i]->descriptorSet();
+			descriptorWrites[1].dstBinding = 1;
+			descriptorWrites[1].dstArrayElement = 0;
+			descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+			descriptorWrites[1].descriptorCount = 1;
+			descriptorWrites[1].pImageInfo = &imageInfo;
+
+			vkUpdateDescriptorSets(instance->renderDevice()->device(), static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
 		}
-
-		createTexture(instance);
-
 	}
+
 	void createTexture(bg2render::vk::Instance * instance) {
 		// Image
 		bg2base::path path = "data";
@@ -269,10 +302,17 @@ public:
 		_textureImageView = std::make_shared<bg2render::vk::ImageView>(instance);
 		_textureImageView->create(textureImage, VK_FORMAT_R8G8B8A8_UNORM);
 
+
+		// Texture sampler
+		_textureSampler = std::make_shared<bg2render::vk::Sampler>(instance);
+		_textureSampler->createInfo().maxAnisotropy = 16;
+		_textureSampler->createInfo().anisotropyEnable = VK_TRUE;
+		_textureSampler->create();
 	}
 
 	virtual void cleanup() {
 
+		_textureSampler = nullptr;
 		_textureImageView = nullptr;
 		vkDestroyImage(_instance->renderDevice()->device(), textureImage, nullptr);
 		vkFreeMemory(_instance->renderDevice()->device(), textureImageMemory, nullptr);
@@ -304,6 +344,7 @@ private:
 	VkImage textureImage;
 	VkDeviceMemory textureImageMemory;
 	std::shared_ptr<bg2render::vk::ImageView> _textureImageView;
+	std::shared_ptr<bg2render::vk::Sampler> _textureSampler;
 	bg2render::vk::Instance* _instance;	// TODO: manage vk::image self destruction
 	//std::unique_ptr<bg2render::vk::DeviceMemory> _textureMemory;
 	

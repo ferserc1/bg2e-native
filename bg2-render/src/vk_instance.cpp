@@ -186,8 +186,11 @@ namespace bg2render {
 		}
 
 		bool Instance::isDeviceSuitableForTask(PhysicalDevice* dev, DeviceTask task) {
+			VkPhysicalDeviceFeatures features;
+			dev->getFeatures(features);
+
 			if (task == kDeviceTaskRender) {
-				return dev->queueIndices().graphicsFamily != -1;
+				return dev->queueIndices().graphicsFamily != -1 && features.samplerAnisotropy;
 			}
 			else if (task == kDeviceTaskPresent &&
 				dev->checkExtensionSupport(std::vector<const char*>{ VK_KHR_SWAPCHAIN_EXTENSION_NAME }))
