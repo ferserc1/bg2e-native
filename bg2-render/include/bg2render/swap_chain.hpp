@@ -7,6 +7,7 @@
 #include <bg2render/vk_physical_device.hpp>
 #include <bg2render/vk_device.hpp>
 #include <bg2render/render_pass.hpp>
+#include <bg2render/vk_image_view.hpp>
 #include <bg2math/vector.hpp>
 
 #include <vector>
@@ -32,7 +33,7 @@ namespace bg2render {
 		inline const std::vector<VkImage>& images() const { return _images; }
 		inline VkFormat format() const { return _format; }
 		inline const VkExtent2D& extent() const { return _extent; }
-		inline const std::vector<VkImageView>& imageViews() const { return _imageViews; }
+		inline const std::vector<std::shared_ptr<vk::ImageView>>& imageViews() const { return _imageViews; }
 		inline const std::vector<VkFramebuffer>& framebuffers() const { return _framebuffers; }
 
 	protected:
@@ -43,7 +44,7 @@ namespace bg2render {
 		std::vector<VkImage> _images;
 		VkFormat _format;
 		VkExtent2D _extent;
-		std::vector<VkImageView> _imageViews;
+		std::vector<std::shared_ptr<vk::ImageView>> _imageViews;
 		VkRenderPass _renderPass;
 		std::vector<VkFramebuffer> _framebuffers;
 

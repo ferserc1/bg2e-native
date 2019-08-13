@@ -76,26 +76,10 @@ namespace bg2render {
 		_format = format.format;
 		_extent = extent;
 
-		_imageViews.resize(imageCount);
 		for (size_t i = 0; i < _images.size(); ++i) {
-			VkImageViewCreateInfo createInfo = {};
-			createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-			createInfo.image = _images[i];
-			createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-			createInfo.format = _format;
-			createInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
-			createInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
-			createInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
-			createInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
-			createInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-			createInfo.subresourceRange.baseMipLevel = 0;
-			createInfo.subresourceRange.levelCount = 1;
-			createInfo.subresourceRange.baseArrayLayer = 0;
-			createInfo.subresourceRange.layerCount = 1;
-
-			if (vkCreateImageView(_device->device(), &createInfo, nullptr, &_imageViews[i]) != VK_SUCCESS) {
-				throw std::runtime_error("Failed to create image views");
-			}
+			vk::ImageView* imgView = new vk::ImageView(_device);
+			imgView->create(_images[i], _format);
+			_imageViews.push_back(std::shared_ptr<vk::ImageView>(imgView));
 		}
 	}
 
@@ -105,7 +89,7 @@ namespace bg2render {
 
 		for (size_t i = 0; i < _imageViews.size(); ++i) {
 			VkImageView attachments[] = {
-				_imageViews[i]
+				_imageViews[i]->imageView()
 			};
 
 			VkFramebufferCreateInfo framebufferInfo = {};
@@ -168,9 +152,6 @@ namespace bg2render {
 		}
 
 		if (_swapChain != VK_NULL_HANDLE) {
-			for (auto imageView : _imageViews) {
-				vkDestroyImageView(_device->device(), imageView, nullptr);
-			}
 			_imageViews.clear();
 			vkDestroySwapchainKHR(_device->device(), _swapChain, nullptr);
 		}

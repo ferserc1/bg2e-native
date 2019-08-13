@@ -10,6 +10,7 @@ namespace bg2render {
 		class ImageView {
 		public:
 			ImageView(Instance*);
+			ImageView(Device*);
 			virtual ~ImageView();
 
 			// TODO: Add a create function that uses vk::Image wrapper class
@@ -18,7 +19,7 @@ namespace bg2render {
 			const VkImageView imageView() const { return _imageView; }
 
 		protected:
-			vk::Instance* _instance;
+			vk::Device* _device;
 
 			VkImageView _imageView = VK_NULL_HANDLE;
 		};
