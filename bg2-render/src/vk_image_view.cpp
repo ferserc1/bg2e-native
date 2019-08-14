@@ -24,6 +24,10 @@ namespace bg2render {
 			}
 		}
 
+		void ImageView::create(vk::Image* image, VkFormat format) {
+			create(image->image(), format);
+		}
+
 		void ImageView::create(VkImage image, VkFormat format) {
 			VkImageViewCreateInfo viewInfo = {};
 			viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;

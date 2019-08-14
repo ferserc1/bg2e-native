@@ -76,6 +76,17 @@ namespace bg2render {
 				bindDescriptorSet(bindPoint, pl, firstSet, ds.get());
 			}
 			void bindDescriptorSet(VkPipelineBindPoint bindPoint, PipelineLayout * pl, uint32_t firstSet, DescriptorSet * ds);
+
+			void pipelineBarrier(
+				VkPipelineStageFlags srcStageMask,
+				VkPipelineStageFlags dstStageMask, 
+				VkDependencyFlags dependencyFlags,
+				uint32_t memoryBarrierCount,
+				const VkMemoryBarrier * pMemoryBarriers,
+				uint32_t bufferMemoryBarrierCount,
+				const VkBufferMemoryBarrier * pBufferMemoryBarriers,
+				uint32_t imageMemoryBarrierCount,
+				const VkImageMemoryBarrier* pImageMemoryBarriers);
 			
 		private:
 			VkDevice _device;

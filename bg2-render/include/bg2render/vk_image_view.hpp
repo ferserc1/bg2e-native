@@ -3,6 +3,7 @@
 #define _bg2render_vk_image_view_hpp_
 
 #include <bg2render/vk_instance.hpp>
+#include <bg2render/vk_image.hpp>
 
 namespace bg2render {
 	namespace vk {
@@ -13,7 +14,7 @@ namespace bg2render {
 			ImageView(Device*);
 			virtual ~ImageView();
 
-			// TODO: Add a create function that uses vk::Image wrapper class
+			void create(vk::Image * image, VkFormat format);
 			void create(VkImage image, VkFormat format);
 
 			const VkImageView imageView() const { return _imageView; }

@@ -152,5 +152,24 @@ namespace bg2render {
 			vkCmdBindDescriptorSets(commandBuffer(), bindPoint, pl->pipelineLayout(), firstSet, 1, &vkDescSet, 0, nullptr);
 		}
 
+		void CommandBuffer::pipelineBarrier(
+			VkPipelineStageFlags srcStageMask,
+			VkPipelineStageFlags dstStageMask,
+			VkDependencyFlags dependencyFlags,
+			uint32_t memoryBarrierCount,
+			const VkMemoryBarrier* pMemoryBarriers,
+			uint32_t bufferMemoryBarrierCount,
+			const VkBufferMemoryBarrier* pBufferMemoryBarriers,
+			uint32_t imageMemoryBarrierCount,
+			const VkImageMemoryBarrier* pImageMemoryBarriers)
+		{
+			vkCmdPipelineBarrier(
+				commandBuffer(),
+				srcStageMask, dstStageMask,
+				dependencyFlags,
+				memoryBarrierCount, pMemoryBarriers,
+				bufferMemoryBarrierCount, pBufferMemoryBarriers,
+				imageMemoryBarrierCount, pImageMemoryBarriers);
+		}
     }
 }
