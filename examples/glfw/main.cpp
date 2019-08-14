@@ -19,6 +19,7 @@
 #include <bg2render/vk_image_view.hpp>
 #include <bg2render/vk_sampler.hpp>
 #include <bg2render/vk_image.hpp>
+#include <bg2render/texture.hpp>
 #include <bg2math/matrix.hpp>
 #include <bg2base/image.hpp>
 #include <bg2db/image_load.hpp>
@@ -126,7 +127,6 @@ public:
 
 		pipeline->loadDefaultBlendAttachments();
 
-
 		pipeline->createDefaultRenderPass(swapChain->format());
 
 		return pipeline;
@@ -181,7 +181,10 @@ public:
 		}
 
 		// Texture
-		createTexture(instance);
+		bg2base::path path = "data";
+		auto image = std::unique_ptr<bg2base::image>(bg2db::loadImage(path.pathAddingComponent("texture.jpg")));
+		_texture = std::make_shared<bg2render::Texture>(instance);
+		_texture->create(image.get(), renderer()->commandPool(), VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
 		
 		// Descriptor sets
 		_descriptorPool = std::make_shared<bg2render::vk::DescriptorPool>(instance);
@@ -200,8 +203,8 @@ public:
 
 			VkDescriptorImageInfo imageInfo = {};
 			imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-			imageInfo.imageView = _textureImageView->imageView();
-			imageInfo.sampler = _textureSampler->sampler();
+			imageInfo.imageView = _texture->vkImageView();
+			imageInfo.sampler = _texture->vkSampler();
 
 			std::array<VkWriteDescriptorSet, 2> descriptorWrites = {};
 
@@ -227,31 +230,8 @@ public:
 		}
 	}
 
-	void createTexture(bg2render::vk::Instance * instance) {
-		// Image
-		bg2base::path path = "data";
-		auto image = std::unique_ptr<bg2base::image>(bg2db::loadImage(path.pathAddingComponent("texture.jpg")));
-
-		bg2render::BufferUtils::CreateImageMemory(
-			instance, renderer()->commandPool(),
-			image.get(),
-			_textureImage, _textureImageMemory, _textureImageView,
-			VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
-
-		// Texture sampler
-		_textureSampler = std::make_shared<bg2render::vk::Sampler>(instance);
-		_textureSampler->createInfo().maxAnisotropy = 16;
-		_textureSampler->createInfo().anisotropyEnable = VK_TRUE;
-		_textureSampler->create();
-	}
-
 	virtual void cleanup() {
-
-		_textureSampler = nullptr;
-		_textureImageView = nullptr;
-		_textureImage = nullptr;
-		_textureImageMemory = nullptr;
-
+		_texture = nullptr;
 		_vertexBuffer = nullptr;
 		_indexBuffer = nullptr;
 		_uniformBuffers.clear();
@@ -273,12 +253,8 @@ private:
 	std::shared_ptr<bg2render::vk::DescriptorPool> _descriptorPool;
 	std::vector<std::shared_ptr<bg2render::vk::DescriptorSet>> _descriptorSets;
 
-	// Texture resources
-	// TODO: refactor texture images and texture utilities
-	std::shared_ptr<bg2render::vk::Image> _textureImage;
-	std::shared_ptr<bg2render::vk::DeviceMemory> _textureImageMemory;
-	std::shared_ptr<bg2render::vk::ImageView> _textureImageView;
-	std::shared_ptr<bg2render::vk::Sampler> _textureSampler;
+	// Texture
+	std::shared_ptr<bg2render::Texture> _texture;
 };
 
 class MyWindowDelegate : public bg2wnd::WindowDelegate {
