@@ -37,6 +37,7 @@ namespace bg2render {
 			//	oldLayout: VK_IMAGE_LAYOUT_UNDEFINED, newLayout: VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL > prepare to copy a buffer to the image
 			//	oldLayout: VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, newLayout: VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL > prepare to use the image in a shader
 			//			   Use the shaderStages parameter to specify the shader stages that will use the image. Default: VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
+			//  oldLayout: VK_IMAGE_LAYOUT_UNDEFINED, newLayout: VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL > prepare image to use as depth buffer
 			void layoutTransition(VkCommandPool commandPool, VkImageLayout oldLayout, VkImageLayout newLayout, VkPipelineStageFlags shaderStages = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
 
 		protected:

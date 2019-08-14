@@ -2,6 +2,7 @@
 #include <bg2render/vk_command_buffer.hpp>
 
 #include <stdexcept>
+#include <array>
 
 namespace bg2render {
     namespace vk {
@@ -92,6 +93,36 @@ namespace bg2render {
 			VkClearValue vkClearColor = { clearColor.x(), clearColor.y(), clearColor.z(), clearColor.w() };
 			renderPassInfo.clearValueCount = 1;
 			renderPassInfo.pClearValues = &vkClearColor;
+			vkCmdBeginRenderPass(commandBuffer(), &renderPassInfo, subpassContents);
+		}
+
+		void CommandBuffer::beginRenderPass(RenderPass* rp, VkFramebuffer fb, SwapChain* swapChain, const bg2math::color& clearColor, float depthClearColor, VkSubpassContents subpassContents) {
+			VkRenderPassBeginInfo renderPassInfo = {};
+			renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+			renderPassInfo.renderPass = rp->renderPass();
+			renderPassInfo.framebuffer = fb;
+			renderPassInfo.renderArea.offset = { 0, 0 };
+			renderPassInfo.renderArea.extent = swapChain->extent();
+			std::array<VkClearValue, 2> clearValues = {};
+			clearValues[0].color = { clearColor.x(), clearColor.y(), clearColor.z(), clearColor.w() };
+			clearValues[1].depthStencil = { depthClearColor, 0 };
+			renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
+			renderPassInfo.pClearValues = clearValues.data();
+			vkCmdBeginRenderPass(commandBuffer(), &renderPassInfo, subpassContents);
+		}
+
+		void CommandBuffer::beginRenderPass(RenderPass* rp, VkFramebuffer fb, SwapChain* swapChain, const bg2math::color& clearColor, float depthClearColor, uint32_t stencilClearColor, VkSubpassContents subpassContents) {
+			VkRenderPassBeginInfo renderPassInfo = {};
+			renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+			renderPassInfo.renderPass = rp->renderPass();
+			renderPassInfo.framebuffer = fb;
+			renderPassInfo.renderArea.offset = { 0, 0 };
+			renderPassInfo.renderArea.extent = swapChain->extent();
+			std::array<VkClearValue, 2> clearValues = {};
+			clearValues[0].color = { clearColor.x(), clearColor.y(), clearColor.z(), clearColor.w() };
+			clearValues[1].depthStencil = { depthClearColor, stencilClearColor };
+			renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
+			renderPassInfo.pClearValues = clearValues.data();
 			vkCmdBeginRenderPass(commandBuffer(), &renderPassInfo, subpassContents);
 		}
 

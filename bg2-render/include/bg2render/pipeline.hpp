@@ -69,6 +69,10 @@ namespace bg2render {
 		inline const VkPipelineMultisampleStateCreateInfo& multisamplingStateInfo() const { return _multisamplingStateInfo; }
 		inline VkPipelineMultisampleStateCreateInfo& multisamplingStateInfo() { return _multisamplingStateInfo; }
 
+		// Depth stencil state
+		inline const VkPipelineDepthStencilStateCreateInfo& depthStencilInfo() const { return _depthStencilInfo; }
+		inline VkPipelineDepthStencilStateCreateInfo& depthStencilInfo(){ return _depthStencilInfo; }
+
 		// Color blend
 		void addColorBlendAttachment(const VkPipelineColorBlendAttachmentState& att);
 		void loadDefaultBlendAttachments();
@@ -91,7 +95,7 @@ namespace bg2render {
 
 		// Render pass
 		inline void setRenderPass(RenderPass* rp, uint32_t subpass = 0) { _renderPass = std::shared_ptr<RenderPass>(rp); _subpass = subpass; }
-		void createDefaultRenderPass(VkFormat format);
+		void createDefaultRenderPass(VkFormat format, bool supportDepth = true);
 		inline const RenderPass* renderPass() const { return _renderPass.get(); }
 		inline RenderPass* renderPass() { return _renderPass.get(); }
 
@@ -162,8 +166,20 @@ namespace bg2render {
 			VK_FALSE,
 			VK_FALSE
 		};
-		// TODO: depthStencil info default values
+		// Depth stencil state
 		VkPipelineDepthStencilStateCreateInfo _depthStencilInfo = {
+			VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO,
+			nullptr,
+			0,
+			VK_TRUE,
+			VK_TRUE,
+			VK_COMPARE_OP_LESS,
+			VK_FALSE,
+			VK_FALSE,
+			{},
+			{},
+			0.0f,
+			1.0f
 		};
 		// Color blend
 		std::vector<VkPipelineColorBlendAttachmentState> _colorBlendAttachments;

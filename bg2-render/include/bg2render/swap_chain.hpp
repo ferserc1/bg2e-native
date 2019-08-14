@@ -22,11 +22,11 @@ namespace bg2render {
 		inline void create(const bg2math::int2& size) { create(size.x(), size.y()); }
 		void create(uint32_t width, uint32_t height);
 
-		inline void createFramebuffers(RenderPass* renderPass) { createFramebuffers(renderPass->renderPass()); }
-		void createFramebuffers(VkRenderPass renderPass);
+		inline void createFramebuffers(RenderPass* renderPass, vk::ImageView* dephtImageView = nullptr) { createFramebuffers(renderPass->renderPass(), dephtImageView); }
+		void createFramebuffers(VkRenderPass renderPass, vk::ImageView* depthImageView = nullptr);
 
-		inline void resize(const bg2math::int2& size, RenderPass * renderPass) { resize(size.x(), size.y(), renderPass); }
-		void resize(uint32_t width, uint32_t height, RenderPass * renderPass);
+		inline void resize(const bg2math::int2& size, RenderPass * renderPass, vk::ImageView* depthImageView = nullptr) { resize(size.x(), size.y(), renderPass, depthImageView); }
+		void resize(uint32_t width, uint32_t height, RenderPass * renderPass, vk::ImageView* depthImageView = nullptr);
 
 		inline VkSwapchainKHR swapchain() const { return _swapChain; }
 

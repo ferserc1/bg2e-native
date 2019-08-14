@@ -2,6 +2,7 @@
 #include <bg2render/pipeline.hpp>
 
 #include <stdexcept>
+#include <array>
 
 namespace bg2render {
 
@@ -84,25 +85,7 @@ namespace bg2render {
 			});
 	}
 
-	//void Pipeline::createDefaultLayout() {
-	//	if (_destroyLayout && _pipelineLayout != VK_NULL_HANDLE) {
-	//		vkDestroyPipelineLayout(_instance->renderDevice()->device(), _pipelineLayout, nullptr);
-	//	}
-	//
-	//	VkPipelineLayoutCreateInfo createInfo = {};
-	//	createInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-	//	createInfo.setLayoutCount = 0;
-	//	createInfo.pSetLayouts = nullptr;
-	//	createInfo.pushConstantRangeCount = 0;
-	//	createInfo.pPushConstantRanges = nullptr;
-	//	if (vkCreatePipelineLayout(_instance->renderDevice()->device(), &createInfo, nullptr, &_pipelineLayout) != VK_SUCCESS) {
-	//		throw std::runtime_error("Error creating pipeline layout");
-	//	}
-	//	_destroyLayout = true;
-	//}
-
-
-	void Pipeline::createDefaultRenderPass(VkFormat format) {
+	void Pipeline::createDefaultRenderPass(VkFormat format, bool supportDepth) {
 		VkAttachmentDescription colorAttachment = {};
 		colorAttachment.format = format;
 		colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -113,16 +96,32 @@ namespace bg2render {
 		colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 		colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 
+		VkAttachmentDescription depthAttachment = {};
+		depthAttachment.format = _instance->renderPhysicalDevice()->findDepthFormat();
+		depthAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
+		depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+		depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+		depthAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+		depthAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+		depthAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+		depthAttachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
 		// Subpasses and attachment references
 		VkAttachmentReference colorAttachmentRef = {};
 		colorAttachmentRef.attachment = 0;
 		colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
+		VkAttachmentReference depthAttachmentRef = {};
+		depthAttachmentRef.attachment = 1;
+		depthAttachmentRef.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
 		VkSubpassDescription subpass = {};
 		subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
 		subpass.colorAttachmentCount = 1;
 		subpass.pColorAttachments = &colorAttachmentRef;
-
+		if (supportDepth) {
+			subpass.pDepthStencilAttachment = &depthAttachmentRef;
+		}
 
 		// Subpass dependencies
 		VkSubpassDependency dependency = {};
@@ -136,8 +135,15 @@ namespace bg2render {
 			VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
 
 		bg2render::RenderPass* rp = new bg2render::RenderPass(_instance->renderDevice());
-		rp->createInfo().attachmentCount = 1;
-		rp->createInfo().pAttachments = &colorAttachment;
+		std::array<VkAttachmentDescription, 2> attachments = { colorAttachment, depthAttachment };
+		if (supportDepth) {
+			rp->createInfo().attachmentCount = static_cast<uint32_t>(attachments.size());
+			rp->createInfo().pAttachments = attachments.data();
+		}
+		else {
+			rp->createInfo().attachmentCount = 1;
+			rp->createInfo().pAttachments = &colorAttachment;
+		}
 		rp->createInfo().subpassCount = 1;
 		rp->createInfo().pSubpasses = &subpass;
 		rp->createInfo().dependencyCount = 1;
@@ -178,8 +184,8 @@ namespace bg2render {
 		// Multisampling
 		createInfo.pMultisampleState = &multisamplingStateInfo();
 
-		// TODO: Implement depth stencil state
-		createInfo.pDepthStencilState = nullptr;
+		// Depth stencil state
+		createInfo.pDepthStencilState = &depthStencilInfo();
 
 		// Color blend
 		createInfo.pColorBlendState = &colorBlendInfo();

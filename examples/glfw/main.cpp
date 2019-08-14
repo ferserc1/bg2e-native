@@ -31,7 +31,7 @@
 class MyRendererDelegate : public bg2render::RendererDelegate {
 public:
 	struct Vertex {
-		bg2math::float2 pos;
+		bg2math::float3 pos;
 		bg2math::float3 color;
 		bg2math::float2 texCoord;
 
@@ -47,7 +47,7 @@ public:
 			std::array<VkVertexInputAttributeDescription, 3> attributeDescriptions = {};
 			attributeDescriptions[0].binding = 0;
 			attributeDescriptions[0].location = 0;
-			attributeDescriptions[0].format = VK_FORMAT_R32G32_SFLOAT;
+			attributeDescriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT;
 			attributeDescriptions[0].offset = offsetof(Vertex, pos);
 
 			attributeDescriptions[1].binding = 0;
@@ -65,14 +65,20 @@ public:
 	};
 
 	std::vector<Vertex> vertices = {
-		{{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, { 1.0f, 0.0f }},
-		{{ 0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, { 0.0f, 0.0f }},
-		{{ 0.5f,  0.5f}, {0.0f, 0.0f, 1.0f}, { 0.0f, 1.0f }},
-		{{-0.5f,  0.5f}, {1.0f, 1.0f, 1.0f}, { 1.0f, 1.0f }}
+		{{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
+		{{0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},
+		{{0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
+		{{-0.5f, 0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}},
+
+		{{-0.5f, -0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
+		{{0.5f, -0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},
+		{{0.5f, 0.5f, -0.5f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
+		{{-0.5f, 0.5f, -0.5f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}}
 	};
 
 	std::vector<uint16_t> indices = {
-		0, 1, 2, 2, 3, 0
+		0, 1, 2, 2, 3, 0,
+		4, 5, 6, 6, 7, 4
 	};
 
 	VkVertexInputBindingDescription bindingDescription;
@@ -122,8 +128,10 @@ public:
 
 		pipeline->inputAssemblyInfo().topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
 		pipeline->setViewport(frameSize);
-		pipeline->rasterizationStateInfo().cullMode = VK_CULL_MODE_NONE;
+		pipeline->rasterizationStateInfo().cullMode = VK_CULL_MODE_BACK_BIT;
 		pipeline->rasterizationStateInfo().frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+
+		pipeline->depthStencilInfo().depthTestEnable = VK_TRUE;
 
 		pipeline->loadDefaultBlendAttachments();
 

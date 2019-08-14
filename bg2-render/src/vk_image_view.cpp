@@ -24,11 +24,11 @@ namespace bg2render {
 			}
 		}
 
-		void ImageView::create(vk::Image* image, VkFormat format) {
-			create(image->image(), format);
+		void ImageView::create(vk::Image* image, VkFormat format, VkImageAspectFlags aspectFlags) {
+			create(image->image(), format, aspectFlags);
 		}
 
-		void ImageView::create(VkImage image, VkFormat format) {
+		void ImageView::create(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags) {
 			VkImageViewCreateInfo viewInfo = {};
 			viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
 			viewInfo.image = image;
@@ -38,7 +38,7 @@ namespace bg2render {
 			viewInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
 			viewInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
 			viewInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
-			viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+			viewInfo.subresourceRange.aspectMask = aspectFlags;
 			viewInfo.subresourceRange.baseMipLevel = 0;
 			viewInfo.subresourceRange.levelCount = 1;
 			viewInfo.subresourceRange.baseArrayLayer = 0;

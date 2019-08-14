@@ -83,20 +83,22 @@ namespace bg2render {
 		}
 	}
 
-	void SwapChain::createFramebuffers(VkRenderPass renderPass) {
+	void SwapChain::createFramebuffers(VkRenderPass renderPass, vk::ImageView* depthImageView) {
 		_renderPass = renderPass;
 		_framebuffers.resize(_imageViews.size());
 
 		for (size_t i = 0; i < _imageViews.size(); ++i) {
-			VkImageView attachments[] = {
-				_imageViews[i]->imageView()
-			};
+			std::vector<VkImageView> attachments;
+			attachments.push_back(_imageViews[i]->imageView());
+			if (depthImageView) {
+				attachments.push_back(depthImageView->imageView());
+			}
 
 			VkFramebufferCreateInfo framebufferInfo = {};
 			framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
 			framebufferInfo.renderPass = _renderPass;
-			framebufferInfo.attachmentCount = 1;
-			framebufferInfo.pAttachments = attachments;
+			framebufferInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
+			framebufferInfo.pAttachments = attachments.data();
 			framebufferInfo.width = _extent.width;
 			framebufferInfo.height = _extent.height;
 			framebufferInfo.layers = 1;
@@ -107,10 +109,10 @@ namespace bg2render {
 		}
 	}
 
-	void SwapChain::resize(uint32_t width, uint32_t height, RenderPass * renderPass) {
+	void SwapChain::resize(uint32_t width, uint32_t height, RenderPass * renderPass, vk::ImageView* depthImageView) {
 		release();
 		create(width, height);
-		createFramebuffers(renderPass->renderPass());
+		createFramebuffers(renderPass->renderPass(), depthImageView);
 	}
 
 	VkSurfaceFormatKHR SwapChain::chooseSwapSurfaceFormat() {

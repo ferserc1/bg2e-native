@@ -32,6 +32,12 @@ namespace bg2render {
 		inline VkCommandPool commandPool() const { return _commandPool; }
 		inline SwapChain* swapChain() { return _swapChain.get(); }
 		inline const SwapChain* swapChain() const { return _swapChain.get(); }
+		inline vk::Image* depthImage() { return _depthImage.get(); }
+		inline const vk::Image* depthImage() const { return _depthImage.get(); }
+		inline vk::DeviceMemory* depthImageMemory() { return _depthImageMemory.get(); }
+		inline const vk::DeviceMemory* depthImageMemory() const { return _depthImageMemory.get(); }
+		inline vk::ImageView* depthImageView() { return _depthImageView.get(); }
+		inline const vk::ImageView* depthImageView() const { return _depthImageView.get(); }
 		inline Pipeline* pipeline() { return _pipeline.get(); }
 		inline const Pipeline* pipeline() const { return _pipeline.get(); }
 
@@ -45,6 +51,11 @@ namespace bg2render {
 
 		std::shared_ptr<Pipeline> _pipeline;
 
+		// Depth images
+		std::shared_ptr<vk::Image> _depthImage;
+		std::shared_ptr<vk::DeviceMemory> _depthImageMemory;
+		std::shared_ptr<vk::ImageView> _depthImageView;
+
 		// Commands
 		VkCommandPool _commandPool = VK_NULL_HANDLE;
 		std::vector<std::shared_ptr<vk::CommandBuffer>> _commandBuffers;
@@ -56,8 +67,11 @@ namespace bg2render {
 		std::vector<VkSemaphore> _renderFinishedSemaphore;
 		std::vector<VkFence> _inFlightFences;
 
+		void createCommandPool();
 		void configureRenderingObjects();
+		void freeCommandPool();
 		void freeRenderingObjects();
+		void createDepthResources(const bg2math::int2& frameSize);
 
 		virtual void createPipeline(const bg2math::int2& frameSize);
 

@@ -36,6 +36,13 @@ namespace bg2render {
 			bool checkExtensionSupport(const std::vector<const char*>& ext) const;
 			void getExtensionProperties(std::vector<VkExtensionProperties>& ext) const;
 			
+			VkFormat findSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
+			inline VkFormat findDepthFormat() {
+				return findSupportedFormat(
+					{ VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT },
+					VK_IMAGE_TILING_OPTIMAL,
+					VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
+			}
 
             inline VkPhysicalDevice physicalDevice() const { return _physicalDevice; }
 

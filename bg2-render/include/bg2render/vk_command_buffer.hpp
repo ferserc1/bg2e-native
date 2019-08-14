@@ -37,6 +37,8 @@ namespace bg2render {
 			void end();
 
 			void beginRenderPass(RenderPass * rp, VkFramebuffer fb, SwapChain * swapChain, const bg2math::color & clearColor, VkSubpassContents subpassContents = VK_SUBPASS_CONTENTS_INLINE);
+			void beginRenderPass(RenderPass* rp, VkFramebuffer fb, SwapChain* swapChain, const bg2math::color& clearColor, float depthClearColor, VkSubpassContents subpassContents = VK_SUBPASS_CONTENTS_INLINE);
+			void beginRenderPass(RenderPass* rp, VkFramebuffer fb, SwapChain* swapChain, const bg2math::color& clearColor, float depthClearColor, uint32_t stencilClearColor, VkSubpassContents subpassContents = VK_SUBPASS_CONTENTS_INLINE);
 			void endRenderPass();
 
 			void bindPipeline(Pipeline * pipeline, VkPipelineBindPoint bindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS);

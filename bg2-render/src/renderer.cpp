@@ -24,6 +24,7 @@ namespace bg2render {
 		}
 
 		freeRenderingObjects();
+		freeCommandPool();
 
 		_pipeline = nullptr;
 		_swapChain = nullptr;
@@ -36,6 +37,8 @@ namespace bg2render {
 			_instance->surface()
 		));
 		_swapChain->create(frameSize);
+
+		createCommandPool();
 
 		createPipeline(frameSize);
 		
@@ -52,8 +55,11 @@ namespace bg2render {
 
 			vkResetCommandPool(_instance->renderDevice()->device(), _commandPool, 0);
 			freeRenderingObjects();
+			freeCommandPool();
 
-			_swapChain->resize(frameSize, _pipeline->renderPass());
+			createCommandPool();
+			createDepthResources(frameSize);
+			_swapChain->resize(frameSize, _pipeline->renderPass(), _depthImageView.get());
 			_pipeline->resize(frameSize);
 			configureRenderingObjects();
 
@@ -143,7 +149,7 @@ namespace bg2render {
 		// Otherwise: result == VK_ERROR_OUT_OF_DATE_KHR or VK_SUBOPTIMAL_KHR. The window being resized, cancel render
 	}
 
-	void Renderer::configureRenderingObjects() {
+	void Renderer::createCommandPool() {
 		// Command pool
 		VkCommandPoolCreateInfo poolInfo = {};
 		poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
@@ -152,7 +158,9 @@ namespace bg2render {
 		if (vkCreateCommandPool(_instance->renderDevice()->device(), &poolInfo, nullptr, &_commandPool) != VK_SUCCESS) {
 			throw std::runtime_error("Failed to create command pool");
 		}
+	}
 
+	void Renderer::configureRenderingObjects() {
 		// Allocate one command buffer for each framebuffer
 		vk::CommandBuffer::Allocate(_instance->renderDevice(), _commandPool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, _swapChain->framebuffers().size(), _commandBuffers);
 
@@ -179,9 +187,18 @@ namespace bg2render {
 		}
 	}
 
-	void Renderer::freeRenderingObjects() {
-		vk::CommandBuffer::Free(_commandBuffers);
+	void Renderer::freeCommandPool() {
 		vkDestroyCommandPool(_instance->renderDevice()->device(), _commandPool, nullptr);
+		_commandPool = VK_NULL_HANDLE;
+	}
+
+	void Renderer::freeRenderingObjects() {
+		_depthImage = nullptr;
+		_depthImageMemory = nullptr;
+		_depthImageView = nullptr;
+
+		vk::CommandBuffer::Free(_commandBuffers);
+		
 
 		for (size_t i = 0; i < _maxInFlightFrames; ++i) {
 			vkDestroySemaphore(_instance->renderDevice()->device(), _imageAvailableSemaphore[i], nullptr);
@@ -190,11 +207,32 @@ namespace bg2render {
 		}
 	}
 
+	void Renderer::createDepthResources(const bg2math::int2& frameSize) {
+		VkFormat depthFormat = _instance->renderPhysicalDevice()->findDepthFormat();
+		_depthImage = std::make_shared<vk::Image>(_instance);
+		_depthImage->create(depthFormat, frameSize, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+
+		_depthImageMemory = std::make_shared<vk::DeviceMemory>(_instance);
+		_depthImageMemory->allocate(_depthImage->memoryRequirements(), VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+
+		vkBindImageMemory(_instance->renderDevice()->device(), _depthImage->image(), _depthImageMemory->deviceMemory(), 0);
+
+		_depthImageView = std::make_shared<vk::ImageView>(_instance);
+		_depthImageView->create(_depthImage.get(), depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
+
+		_depthImage->layoutTransition(
+			commandPool(),
+			VK_IMAGE_LAYOUT_UNDEFINED,
+			VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+	}
+
 	void Renderer::createPipeline(const bg2math::int2& frameSize) {
 		if (_delegate != nullptr) {
 			_pipeline = std::shared_ptr<Pipeline>(_delegate->configurePipeline(_instance, _swapChain.get(), frameSize));
 
-			_swapChain->createFramebuffers(_pipeline->renderPass());
+			createDepthResources(frameSize);
+
+			_swapChain->createFramebuffers(_pipeline->renderPass(), _depthImageView.get());
 
 			_pipeline->create();
 		}

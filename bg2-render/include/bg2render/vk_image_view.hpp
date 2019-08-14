@@ -14,8 +14,8 @@ namespace bg2render {
 			ImageView(Device*);
 			virtual ~ImageView();
 
-			void create(vk::Image * image, VkFormat format);
-			void create(VkImage image, VkFormat format);
+			void create(vk::Image * image, VkFormat format, VkImageAspectFlags aspectFlags = VK_IMAGE_ASPECT_COLOR_BIT);
+			void create(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags = VK_IMAGE_ASPECT_COLOR_BIT);
 
 			const VkImageView imageView() const { return _imageView; }
 
