@@ -28,6 +28,128 @@
 #include <array>
 #include <chrono>
 
+namespace bg2render {
+
+	struct Descriptor {
+		std::shared_ptr<bg2render::vk::DescriptorPool> descriptorPool;
+		std::vector<std::shared_ptr<bg2render::vk::DescriptorSet>> descriptorSets;
+
+		inline void operator =(const Descriptor& other) {
+			descriptorPool = other.descriptorPool;
+			descriptorSets.clear();
+			for (auto item : descriptorSets) {
+				descriptorSets.push_back(item);
+			}
+		}
+	};
+
+	class DrawableDescriptor {
+	public:
+		template <class T>
+		static void Register(const std::string& identifier) {
+			s_drawableDescriptors[identifier] = std::make_unique<T>();
+		}
+
+		static DrawableDescriptor* Get(const std::string& identifier) {
+			if (s_drawableDescriptors.find(identifier) == s_drawableDescriptors.end()) {
+				throw std::invalid_argument("No such DrawableDescriptor with identifier " + identifier);
+			}
+			return s_drawableDescriptors[identifier].get();
+		}
+
+		static void Cleanup() {
+			s_drawableDescriptors.clear();
+		}
+
+		bg2render::vk::PipelineLayout* createPipelineLayout(vk::Instance* instance) {
+			auto result = new bg2render::vk::PipelineLayout(instance);
+			configureLayout(result);
+			result->create();
+			return result;
+		}
+
+		Descriptor createDescriptorPool(vk::Instance* instance, vk::PipelineLayout* pipelineLayout, uint32_t poolSize) {
+			Descriptor descriptor;
+			descriptor.descriptorPool = std::make_shared<bg2render::vk::DescriptorPool>(instance);
+			configureDescriptorPool(descriptor.descriptorPool.get(), poolSize);
+			descriptor.descriptorPool->create(poolSize);
+			descriptor.descriptorPool->allocateDescriptorSets(poolSize, pipelineLayout, descriptor.descriptorSets);
+			return descriptor;
+		}
+
+		// TODO: update descriptor writes
+
+	protected:
+		virtual void configureLayout(bg2render::vk::PipelineLayout* pipelineLayout) = 0;
+		virtual void configureDescriptorPool(bg2render::vk::DescriptorPool* descriptorPool, uint32_t poolSize) = 0;
+
+		static std::map<std::string, std::unique_ptr<DrawableDescriptor>> s_drawableDescriptors;
+	};
+
+	std::map<std::string, std::unique_ptr<DrawableDescriptor>> DrawableDescriptor::s_drawableDescriptors;
+
+	template <class T>
+	class DrawableDescriptorRegistry {
+	public:
+		DrawableDescriptorRegistry(const std::string& identifier) {
+			DrawableDescriptor::Register<T>(identifier);
+		}
+	};
+
+}
+
+class MyDrawableDescriptor : public bg2render::DrawableDescriptor {
+public:
+
+protected:
+
+	virtual void configureLayout(bg2render::vk::PipelineLayout* pipelineLayout) {
+		pipelineLayout->addDescriptorSetLayoutBinding(
+			0, // binding
+			VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+			1, // descriptor count
+			VK_SHADER_STAGE_VERTEX_BIT
+		);
+
+		pipelineLayout->addDescriptorSetLayoutBinding(
+			1,	// binding
+			VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+			1,	// descriptor count
+			VK_SHADER_STAGE_FRAGMENT_BIT
+		);
+	}
+
+	virtual void configureDescriptorPool(bg2render::vk::DescriptorPool* descriptorPool, uint32_t poolSize) {
+		descriptorPool->addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, poolSize);
+		descriptorPool->addPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, poolSize);
+	}
+};
+
+bg2render::DrawableDescriptorRegistry<MyDrawableDescriptor> testDescriptor("testDescriptor");
+
+class PolyList {
+public:
+
+
+protected:
+
+};
+
+class Material {
+public:
+	
+protected:
+
+};
+
+class DrawableItem {
+public:
+
+protected:
+	std::shared_ptr<PolyList> _polyList;
+	std::shared_ptr<Material> _material;
+};
+
 class MyRendererDelegate : public bg2render::RendererDelegate {
 public:
 	struct Vertex {
@@ -100,22 +222,7 @@ public:
 		pipeline->addShader(fshader, VK_SHADER_STAGE_FRAGMENT_BIT, "main");
 
 		// Pipeline layout
-		bg2render::vk::PipelineLayout* pipelineLayout = new bg2render::vk::PipelineLayout(instance);
-		// Descriptor set for uniform buffer
-		pipelineLayout->addDescriptorSetLayoutBinding(
-			0,	// binding
-			VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-			1,	// descriptorCount
-			VK_SHADER_STAGE_VERTEX_BIT	// stage flags: use only on vertex shader
-		);
-		// Descriptor set for texture
-		pipelineLayout->addDescriptorSetLayoutBinding(
-			1,	// binding
-			VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-			1,	// descriptor count
-			VK_SHADER_STAGE_FRAGMENT_BIT // stage flags: use only on fragment shader
-		);
-		pipelineLayout->create();
+		bg2render::vk::PipelineLayout* pipelineLayout = bg2render::DrawableDescriptor::Get("testDescriptor")->createPipelineLayout(instance);
 		pipeline->setPipelineLayout(pipelineLayout);
 
 		bindingDescription = Vertex::getBindingDescription();
@@ -195,6 +302,7 @@ public:
 		_texture->create(image.get(), renderer()->commandPool(), VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
 		
 		// Descriptor sets
+		// Every object must store its own Descriptor struct, that contains the descriptor pool and the descriptor sets
 		_descriptorPool = std::make_shared<bg2render::vk::DescriptorPool>(instance);
 		// Pool size for uniform buffer
 		_descriptorPool->addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, simultaneousFrames);
@@ -257,6 +365,9 @@ private:
 	std::vector<std::unique_ptr<bg2render::vk::Buffer>> _uniformBuffers;
 	std::vector<std::unique_ptr<bg2render::vk::DeviceMemory>> _uniformBuffersMemory;
 
+	// DrawableDescriptor
+	std::unique_ptr<bg2render::DrawableDescriptor> _drawableDescriptor;
+
 	// Descriptors
 	std::shared_ptr<bg2render::vk::DescriptorPool> _descriptorPool;
 	std::vector<std::shared_ptr<bg2render::vk::DescriptorSet>> _descriptorSets;
@@ -292,6 +403,7 @@ public:
     void cleanup() {
 		_renderer = nullptr;
 		_instance = nullptr;
+		bg2render::DrawableDescriptor::Cleanup();
     }
 
     void keyUp(const bg2wnd::KeyboardEvent & e) {}
