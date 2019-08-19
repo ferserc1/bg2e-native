@@ -96,30 +96,42 @@ namespace bg2render {
 	class PolyList {
 	public:
 		struct Vertex {
-			bg2math::float3 pos;
-			bg2math::float3 color;
-			bg2math::float2 texCoord;
+			bg2math::float3 position;
+			bg2math::float3 normal;
+			bg2math::float2 texCoord0;
+			bg2math::float2 texCoord1;
+			bg2math::float3 tangent;
 
 			static const VkVertexInputBindingDescription& getBindingDescription() {
 				return s_bindingDescription;
 			}
 
-			static const std::array<VkVertexInputAttributeDescription, 3> & getAttributeDescriptions() {
+			static const std::array<VkVertexInputAttributeDescription, 5> & getAttributeDescriptions() {
 				if (!s_attributeInitialized) {
 					s_attributeDescriptions[0].binding = 0;
 					s_attributeDescriptions[0].location = 0;
 					s_attributeDescriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT;
-					s_attributeDescriptions[0].offset = offsetof(Vertex, pos);
+					s_attributeDescriptions[0].offset = offsetof(Vertex, position);
 
 					s_attributeDescriptions[1].binding = 0;
 					s_attributeDescriptions[1].location = 1;
 					s_attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
-					s_attributeDescriptions[1].offset = offsetof(Vertex, color);
+					s_attributeDescriptions[1].offset = offsetof(Vertex, normal);
 
 					s_attributeDescriptions[2].binding = 0;
 					s_attributeDescriptions[2].location = 2;
 					s_attributeDescriptions[2].format = VK_FORMAT_R32G32_SFLOAT;
-					s_attributeDescriptions[2].offset = offsetof(Vertex, texCoord);
+					s_attributeDescriptions[2].offset = offsetof(Vertex, texCoord0);
+
+					s_attributeDescriptions[3].binding = 0;
+					s_attributeDescriptions[3].location = 3;
+					s_attributeDescriptions[3].format = VK_FORMAT_R32G32_SFLOAT;
+					s_attributeDescriptions[3].offset = offsetof(Vertex, texCoord1);
+
+					s_attributeDescriptions[4].binding = 0;
+					s_attributeDescriptions[4].location = 4;
+					s_attributeDescriptions[4].format = VK_FORMAT_R32G32B32_SFLOAT;
+					s_attributeDescriptions[4].offset = offsetof(Vertex, tangent);
 
 					s_attributeInitialized = true;
 				}
@@ -135,22 +147,31 @@ namespace bg2render {
 			pipeline->vertexInputInfo().pVertexAttributeDescriptions = PolyList::Vertex::getAttributeDescriptions().data();
 		}
 
-		std::vector<Vertex> vertices = {
-			{{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
-			{{0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},
-			{{0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
-			{{-0.5f, 0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}},
+		inline void addVertex(
+			const bg2math::float3& position,
+			const bg2math::float3& normal,
+			const bg2math::float2& texCoord0,
+			const bg2math::float2& texCoord1
+		) {
+			_vertices.push_back({ position, normal, texCoord0, texCoord1, { 0.0f, 0.0f, 0.0f } });
+		}
 
-			{{-0.5f, -0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
-			{{0.5f, -0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},
-			{{0.5f, 0.5f, -0.5f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
-			{{-0.5f, 0.5f, -0.5f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}}
-		};
+		inline void addVertex(
+			const bg2math::float3& position,
+			const bg2math::float3& normal,
+			const bg2math::float2& texCoord0
+		) {
+			_vertices.push_back({ position, normal, texCoord0, texCoord0, { 0.0f, 0.0f, 0.0f } });
+		}
 
-		std::vector<uint16_t> indices = {
-			0, 1, 2, 2, 3, 0,
-			4, 5, 6, 6, 7, 4
-		};
+		inline void addIndexedTriangle(uint32_t i0, uint32_t i1, uint32_t i2) {
+			_indices.push_back(i0); _indices.push_back(i1); _indices.push_back(i2);
+		}
+
+		inline void addIndex(uint32_t i) { _indices.push_back(i); }
+
+		inline const std::vector<Vertex>& vertices() const { return _vertices; }
+		inline const std::vector<uint32_t>& indices() const { return _indices; }
 
 		PolyList() {}
 		virtual ~PolyList() {
@@ -161,34 +182,45 @@ namespace bg2render {
 		}
 
 		void create(bg2render::vk::Instance* instance, VkCommandPool commandPool) {
+			createTangents();
+
 			_instance = instance;
 
 			_vertexBuffer = std::make_unique<bg2render::VertexBuffer>(instance);
-			_vertexBuffer->create<Vertex>(vertices, commandPool);
+			_vertexBuffer->create<Vertex>(_vertices, commandPool);
 
 			_indexBuffer = std::make_unique<bg2render::IndexBuffer>(instance);
-			_indexBuffer->create<uint16_t>(indices, commandPool);
+			_indexBuffer->create<uint32_t>(_indices, commandPool);
 		}
 
 		void bindBuffers(bg2render::vk::CommandBuffer* commandBuffer) {
 			commandBuffer->bindVertexBuffer(0, 1, _vertexBuffer);
-			commandBuffer->bindIndexBuffer(_indexBuffer, 0, VK_INDEX_TYPE_UINT16);
+			commandBuffer->bindIndexBuffer(_indexBuffer, 0, VK_INDEX_TYPE_UINT32);
 		}
 
 		void draw(bg2render::vk::CommandBuffer* commandBuffer) {
-			commandBuffer->drawIndexed(indices.size(), 1, 0, 0, 0);
+			commandBuffer->drawIndexed(_indices.size(), 1, 0, 0, 0);
 		}
 
 	protected:
 		static VkVertexInputBindingDescription s_bindingDescription;
 		static bool s_attributeInitialized;
-		static std::array<VkVertexInputAttributeDescription, 3> s_attributeDescriptions;
+		static std::array<VkVertexInputAttributeDescription, 5> s_attributeDescriptions;
 
 		bg2render::vk::Instance* _instance = VK_NULL_HANDLE;
 
 		// Vertex buffers
 		std::unique_ptr<bg2render::VertexBuffer> _vertexBuffer;
 		std::unique_ptr<bg2render::IndexBuffer> _indexBuffer;
+
+		// Vertex and index data
+		std::vector<Vertex> _vertices;
+		std::vector<uint32_t> _indices;
+
+		void createTangents() {
+			// TODO: Implement this
+			
+		}
 	};
 
 	VkVertexInputBindingDescription PolyList::s_bindingDescription = {
@@ -197,7 +229,7 @@ namespace bg2render {
 		VK_VERTEX_INPUT_RATE_VERTEX	// Input rate
 	};
 	bool PolyList::s_attributeInitialized = false;
-	std::array<VkVertexInputAttributeDescription, 3> PolyList::s_attributeDescriptions;
+	std::array<VkVertexInputAttributeDescription, 5> PolyList::s_attributeDescriptions;
 
 	class Material {
 	public:
@@ -409,7 +441,7 @@ public:
 		_drawableItem->draw(cmdBuffer, pipeline, frameIndex);
 	}
 
-	virtual void initDone(bg2render::vk::Instance * instance, uint32_t simultaneousFrames) {
+	virtual void initDone(bg2render::vk::Instance* instance, uint32_t simultaneousFrames) {
 		// Texture
 		bg2base::path path = "data";
 		auto image = std::unique_ptr<bg2base::image>(bg2db::loadImage(path.pathAddingComponent("texture.jpg")));
@@ -417,6 +449,21 @@ public:
 		_texture->create(image.get(), renderer()->commandPool(), VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
 
 		auto polyList = new bg2render::PolyList();
+
+		polyList->addVertex(bg2math::float3{ -0.5f, -0.5f, 0.0f }, bg2math::float3{ 0.0f, 1.0f, 0.0f }, bg2math::float2{ 0.0f, 0.0f });
+		polyList->addVertex(bg2math::float3{ 0.5f, -0.5f, 0.0f }, bg2math::float3{ 0.0f, 1.0f, 0.0f }, bg2math::float2{ 1.0f, 0.0f });
+		polyList->addVertex(bg2math::float3{ 0.5f, 0.5f, 0.0f }, bg2math::float3{ 0.0f, 1.0f, 0.0f }, bg2math::float2{ 1.0f, 1.0f });
+		polyList->addVertex(bg2math::float3{-0.5f, 0.5f, 0.0f}, bg2math::float3{0.0f, 1.0f, 0.0f}, bg2math::float2{0.0f, 1.0f});
+		polyList->addVertex(bg2math::float3{-0.5f, -0.5f, -0.5f}, bg2math::float3{0.0f, 1.0f, 0.0f}, bg2math::float2{0.0f, 0.0f});
+		polyList->addVertex(bg2math::float3{0.5f, -0.5f, -0.5f}, bg2math::float3{0.0f, 1.0f, 0.0f}, bg2math::float2{1.0f, 0.0f});
+		polyList->addVertex(bg2math::float3{0.5f, 0.5f, -0.5f}, bg2math::float3{0.0f, 1.0f, 0.0f}, bg2math::float2{1.0f, 1.0f});
+		polyList->addVertex(bg2math::float3{-0.5f, 0.5f, -0.5f}, bg2math::float3{0.0f, 1.0f, 0.0f}, bg2math::float2{0.0f, 1.0f});
+
+		polyList->addIndexedTriangle(0, 1, 2);
+		polyList->addIndexedTriangle(2, 3, 0);
+		polyList->addIndexedTriangle(4, 5, 6);
+		polyList->addIndexedTriangle(6, 7, 4);
+
 		polyList->create(instance, renderer()->commandPool());
 		
 		auto mat = new bg2render::Material();
