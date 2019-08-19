@@ -29,7 +29,7 @@ namespace bg2render {
 		VkDescriptorBufferInfo bufferInfo = {};
 		bufferInfo.buffer = drawableItem->uniformBuffer(frameIndex)->buffer();
 		bufferInfo.offset = 0;
-		bufferInfo.range = sizeof(bg2render::DrawableItem::UniformBufferObject);
+		bufferInfo.range = sizeof(bg2render::DrawableItem::Transform);
 
 		VkDescriptorImageInfo imageInfo = {};
 		imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;

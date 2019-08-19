@@ -11,7 +11,6 @@ namespace bg2render {
 		:_descriptorType(descriptorType)
 		, _renderer(rend)
 	{
-
 	}
 	DrawableItem::~DrawableItem() {
 		_polyList = nullptr;
@@ -24,7 +23,7 @@ namespace bg2render {
 		_polyList = std::shared_ptr<PolyList>(pl);
 		_material = std::shared_ptr<Material>(mat);
 
-		VkDeviceSize uboSize = sizeof(UniformBufferObject);
+		VkDeviceSize uboSize = sizeof(Transform);
 		_uniformBuffers.resize(_renderer->simultaneousFrames());
 		_uniformBuffersMemory.resize(_renderer->simultaneousFrames());
 		for (uint32_t i = 0; i < _renderer->simultaneousFrames(); ++i) {
@@ -46,25 +45,9 @@ namespace bg2render {
 		auto drawableDescriptor = bg2render::DrawableDescriptor::Get(_descriptorType);
 		drawableDescriptor->updateDescriptorWrites(_renderer->instance(), frameIndex, this);
 
-		// TODO: this is a testing code
-		static auto startTime = std::chrono::high_resolution_clock::now();
-
-		auto currentTime = std::chrono::high_resolution_clock::now();
-		float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
-
-
-		UniformBufferObject ubo = {};
-		ubo.model = bg2math::float4x4::Rotation(time * bg2math::radians(90.0f), 0.0f, 0.0f, 1.0f);
-		ubo.view = bg2math::float4x4::LookAt(bg2math::float3(2.0f, 2.0f, 2.0f), bg2math::float3(0.0f, 0.0f, 0.0f), bg2math::float3(0.0f, 0.0f, 1.0f));
-		auto extent = _renderer->swapChain()->extent();
-		auto ratio = static_cast<float>(extent.width) / static_cast<float>(extent.height);
-		ubo.proj = bg2math::float4x4::Perspective(60.0f, ratio, 0.1f, 100.0f);
-		ubo.proj.element(1, 1) *= -1.0;
-
-
 		void* data;
-		_uniformBuffersMemory[frameIndex]->map(0, sizeof(ubo), 0, &data);
-		memcpy(data, &ubo, sizeof(ubo));
+		_uniformBuffersMemory[frameIndex]->map(0, sizeof(_transform), 0, &data);
+		memcpy(data, &_transform, sizeof(_transform));
 		_uniformBuffersMemory[frameIndex]->unmap();
 	}
 

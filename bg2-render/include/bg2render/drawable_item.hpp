@@ -12,10 +12,10 @@
 namespace bg2render {
 	class DrawableItem {
 	public:
-		struct UniformBufferObject {
-			bg2math::float4x4 model;
-			bg2math::float4x4 view;
-			bg2math::float4x4 proj;
+		struct Transform {
+			bg2math::float4x4 model = bg2math::float4x4::Identity();
+			bg2math::float4x4 view = bg2math::float4x4::Identity();
+			bg2math::float4x4 proj = bg2math::float4x4::Identity();
 		};
 
 		DrawableItem(const std::string& descriptorType, Renderer* rend);
@@ -33,10 +33,15 @@ namespace bg2render {
 		inline Material* material() { return _material.get(); }
 		inline const PolyList* polyList() const { return _polyList.get(); }
 		inline PolyList* polyList() { return _polyList.get(); }
+		inline const Transform& transform() const { return _transform; }
+		inline Transform& transform() { return _transform; }
 
 	protected:
+		Transform _transform;
+
 		std::string _descriptorType;
 		bg2render::Renderer* _renderer;
+
 
 		std::shared_ptr<PolyList> _polyList;
 		std::shared_ptr<Material> _material;

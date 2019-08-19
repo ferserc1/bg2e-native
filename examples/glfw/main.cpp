@@ -62,6 +62,11 @@ public:
 	}
 
 	virtual void recordCommandBuffer(float delta, bg2render::vk::CommandBuffer* cmdBuffer, bg2render::Pipeline* pipeline, bg2render::SwapChain* swapChain, uint32_t frameIndex) {
+		static auto startTime = std::chrono::high_resolution_clock::now();
+		auto currentTime = std::chrono::high_resolution_clock::now();
+		float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
+		_drawableItem->transform().model = bg2math::float4x4::Rotation(time * bg2math::radians(90.0f), 0.0f, 0.0f, 1.0f);
+
 		cmdBuffer->bindPipeline(pipeline);
 		_drawableItem->update(frameIndex);
 		_drawableItem->draw(cmdBuffer, pipeline, frameIndex);
@@ -71,8 +76,8 @@ public:
 		// Texture
 		bg2base::path path = "data";
 		auto image = std::unique_ptr<bg2base::image>(bg2db::loadImage(path.pathAddingComponent("texture.jpg")));
-		auto _texture = new bg2render::Texture(instance);
-		_texture->create(image.get(), renderer()->commandPool(), VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
+		auto diffuse = new bg2render::Texture(instance);
+		diffuse->create(image.get(), renderer()->commandPool(), VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
 
 		auto polyList = new bg2render::PolyList();
 
@@ -93,10 +98,16 @@ public:
 		polyList->create(instance, renderer()->commandPool());
 		
 		auto mat = new bg2render::Material();
-		mat->setDiffuse(_texture);
+		mat->setDiffuse(diffuse);
 
 		_drawableItem = std::make_shared<bg2render::DrawableItem>("pbrDescriptor", renderer());
 		_drawableItem->create(polyList, mat);
+
+		_drawableItem->transform().view = bg2math::float4x4::LookAt(bg2math::float3(2.0f, 2.0f, 2.0f), bg2math::float3(0.0f, 0.0f, 0.0f), bg2math::float3(0.0f, 0.0f, 1.0f));
+		auto extent = _renderer->swapChain()->extent();
+		auto ratio = static_cast<float>(extent.width) / static_cast<float>(extent.height);
+		_drawableItem->transform().proj = bg2math::float4x4::Perspective(60.0f, ratio, 0.1f, 100.0f);
+		_drawableItem->transform().proj.element(1, 1) *= -1.0;
 	}
 
 	virtual void cleanup() {
