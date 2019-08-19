@@ -30,69 +30,6 @@
 #include <array>
 #include <chrono>
 
-class MyDrawableDescriptor : public bg2render::DrawableDescriptor {
-public:
-
-protected:
-
-	virtual void configureLayout(bg2render::vk::PipelineLayout* pipelineLayout) {
-		pipelineLayout->addDescriptorSetLayoutBinding(
-			0, // binding
-			VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-			1, // descriptor count
-			VK_SHADER_STAGE_VERTEX_BIT
-		);
-
-		pipelineLayout->addDescriptorSetLayoutBinding(
-			1,	// binding
-			VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-			1,	// descriptor count
-			VK_SHADER_STAGE_FRAGMENT_BIT
-		);
-	}
-
-	virtual void configureDescriptorPool(bg2render::vk::DescriptorPool* descriptorPool, uint32_t poolSize) {
-		descriptorPool->addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, poolSize);
-		descriptorPool->addPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, poolSize);
-	}
-
-	virtual void updateDescriptorWrites(bg2render::vk::Instance* instance, uint32_t frameIndex, bg2render::DrawableItem* drawableItem) {
-		VkDescriptorBufferInfo bufferInfo = {};
-		bufferInfo.buffer = drawableItem->uniformBuffer(frameIndex)->buffer();
-		bufferInfo.offset = 0;
-		bufferInfo.range = sizeof(bg2render::DrawableItem::UniformBufferObject);
-
-		VkDescriptorImageInfo imageInfo = {};
-		imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-		imageInfo.imageView = drawableItem->material()->texture()->vkImageView();
-		imageInfo.sampler = drawableItem->material()->texture()->vkSampler();
-
-		std::array<VkWriteDescriptorSet, 2> descriptorWrites = {};
-
-		descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-		descriptorWrites[0].dstSet = drawableItem->descriptor()->descriptorSets[frameIndex]->descriptorSet();
-		descriptorWrites[0].dstBinding = 0;
-		descriptorWrites[0].dstArrayElement = 0;
-		descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-		descriptorWrites[0].descriptorCount = 1;
-		descriptorWrites[0].pBufferInfo = &bufferInfo;
-		descriptorWrites[0].pImageInfo = nullptr;
-		descriptorWrites[0].pTexelBufferView = nullptr;
-
-		descriptorWrites[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-		descriptorWrites[1].dstSet = drawableItem->descriptor()->descriptorSets[frameIndex]->descriptorSet();
-		descriptorWrites[1].dstBinding = 1;
-		descriptorWrites[1].dstArrayElement = 0;
-		descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-		descriptorWrites[1].descriptorCount = 1;
-		descriptorWrites[1].pImageInfo = &imageInfo;
-
-		vkUpdateDescriptorSets(instance->renderDevice()->device(), static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
-	}
-};
-
-bg2render::DrawableDescriptorRegistry<MyDrawableDescriptor> testDescriptor("testDescriptor");
-
 class MyRendererDelegate : public bg2render::RendererDelegate {
 public:
 	virtual bg2render::Pipeline * configurePipeline(bg2render::vk::Instance* instance, bg2render::SwapChain* swapChain, const bg2math::int2& frameSize) {
@@ -105,7 +42,7 @@ public:
 		pipeline->addShader(fshader, VK_SHADER_STAGE_FRAGMENT_BIT, "main");
 
 		// Pipeline layout
-		bg2render::vk::PipelineLayout* pipelineLayout = bg2render::DrawableDescriptor::Get("testDescriptor")->createPipelineLayout(instance);
+		bg2render::vk::PipelineLayout* pipelineLayout = bg2render::DrawableDescriptor::Get("pbrDescriptor")->createPipelineLayout(instance);
 		pipeline->setPipelineLayout(pipelineLayout);
 
 		bg2render::PolyList::configureVertexInput(pipeline);
@@ -156,9 +93,9 @@ public:
 		polyList->create(instance, renderer()->commandPool());
 		
 		auto mat = new bg2render::Material();
-		mat->setTexture(_texture);
+		mat->setDiffuse(_texture);
 
-		_drawableItem = std::make_shared<bg2render::DrawableItem>("testDescriptor", renderer());
+		_drawableItem = std::make_shared<bg2render::DrawableItem>("pbrDescriptor", renderer());
 		_drawableItem->create(polyList, mat);
 	}
 
