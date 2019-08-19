@@ -15,36 +15,36 @@
 
 namespace bg2math {
 
-    class EXPORT kf {
+    class kf {
     public:
-        static float pi;
-        static float piOver2;
-        static float piOver4;
-        static float piOver180;
+        static EXPORT float pi;
+        static EXPORT float piOver2;
+        static EXPORT float piOver4;
+        static EXPORT float piOver180;
     };
 
-    class EXPORT kd {
+    class kd {
     public:
-        static double pi;
-        static double piOver2;
-        static double piOver4;
-        static double piOver180;
+        static EXPORT double pi;
+        static EXPORT double piOver2;
+        static EXPORT double piOver4;
+        static EXPORT double piOver180;
     };
     
 	inline float radians(float deg) {
-		return deg * kf::piOver180;
+		return deg * 0.01745329251994f;
 	}
 
 	inline double radians(double deg) {
-		return deg * kd::piOver180;
+		return deg * 0.01745329251994;
 	}
 
 	inline float degrees(float rad) {
-		return rad * 180 / kf::pi;
+		return rad * 180 / 3.14159265359f;
 	}
 
 	inline double degrees(double rad) {
-		return rad * 180 / kd::pi;
+		return rad * 180 / 3.14159265359f;
 	}
     
     template <class T> inline T clamp(T v, T lo, T hi) {

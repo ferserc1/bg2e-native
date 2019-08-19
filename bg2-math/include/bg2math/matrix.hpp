@@ -160,7 +160,7 @@ namespace bg2math {
 	class mat4x4 {
 	public:
 		static mat4x4<T> Perspective(T fovy, T aspect, T nearPlane, T farPlane) {
-			T fovy2 = std::tan(fovy * static_cast<T>(kf::pi) /	static_cast<T>(360)) * nearPlane;
+			T fovy2 = std::tan(fovy * static_cast<T>(3.14159265359f) /	static_cast<T>(360)) * nearPlane;
 			T fovy2aspect = fovy2 * aspect;
 		
 			return mat4x4<T>::Frustum(-fovy2aspect,fovy2aspect,-fovy2,fovy2,nearPlane,farPlane);
