@@ -29,6 +29,7 @@ namespace bg2render {
 
 		void draw();
 
+		inline vk::Instance* instance() const { return _instance; }
 		inline VkCommandPool commandPool() const { return _commandPool; }
 		inline SwapChain* swapChain() { return _swapChain.get(); }
 		inline const SwapChain* swapChain() const { return _swapChain.get(); }
@@ -40,6 +41,8 @@ namespace bg2render {
 		inline const vk::ImageView* depthImageView() const { return _depthImageView.get(); }
 		inline Pipeline* pipeline() { return _pipeline.get(); }
 		inline const Pipeline* pipeline() const { return _pipeline.get(); }
+
+		inline uint32_t simultaneousFrames() const { return static_cast<uint32_t>(_swapChain->images().size()); }
 
 	protected:
 		vk::Instance * _instance;

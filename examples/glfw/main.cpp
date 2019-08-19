@@ -33,16 +33,9 @@ namespace bg2render {
 	struct Descriptor {
 		std::shared_ptr<bg2render::vk::DescriptorPool> descriptorPool;
 		std::vector<std::shared_ptr<bg2render::vk::DescriptorSet>> descriptorSets;
-
-		inline void operator =(const Descriptor& other) {
-			descriptorPool = other.descriptorPool;
-			descriptorSets.clear();
-			for (auto item : descriptorSets) {
-				descriptorSets.push_back(item);
-			}
-		}
 	};
 
+	class DrawableItem;
 	class DrawableDescriptor {
 	public:
 		template <class T>
@@ -61,6 +54,10 @@ namespace bg2render {
 			s_drawableDescriptors.clear();
 		}
 
+		DrawableDescriptor() {}
+		virtual ~DrawableDescriptor() {
+		}
+
 		bg2render::vk::PipelineLayout* createPipelineLayout(vk::Instance* instance) {
 			auto result = new bg2render::vk::PipelineLayout(instance);
 			configureLayout(result);
@@ -68,16 +65,16 @@ namespace bg2render {
 			return result;
 		}
 
-		Descriptor createDescriptorPool(vk::Instance* instance, vk::PipelineLayout* pipelineLayout, uint32_t poolSize) {
-			Descriptor descriptor;
-			descriptor.descriptorPool = std::make_shared<bg2render::vk::DescriptorPool>(instance);
-			configureDescriptorPool(descriptor.descriptorPool.get(), poolSize);
-			descriptor.descriptorPool->create(poolSize);
-			descriptor.descriptorPool->allocateDescriptorSets(poolSize, pipelineLayout, descriptor.descriptorSets);
+		Descriptor* createDescriptorPool(vk::Instance* instance, vk::PipelineLayout* pipelineLayout, uint32_t poolSize) {
+			Descriptor* descriptor = new Descriptor();
+			descriptor->descriptorPool = std::make_shared<bg2render::vk::DescriptorPool>(instance);
+			configureDescriptorPool(descriptor->descriptorPool.get(), poolSize);
+			descriptor->descriptorPool->create(poolSize);
+			descriptor->descriptorPool->allocateDescriptorSets(poolSize, pipelineLayout, descriptor->descriptorSets);
 			return descriptor;
 		}
 
-		// TODO: update descriptor writes
+		virtual void updateDescriptorWrites(vk::Instance* instance, uint32_t frameIndex, DrawableItem*) = 0;
 
 	protected:
 		virtual void configureLayout(bg2render::vk::PipelineLayout* pipelineLayout) = 0;
@@ -94,6 +91,220 @@ namespace bg2render {
 		DrawableDescriptorRegistry(const std::string& identifier) {
 			DrawableDescriptor::Register<T>(identifier);
 		}
+	};
+
+	class PolyList {
+	public:
+		struct Vertex {
+			bg2math::float3 pos;
+			bg2math::float3 color;
+			bg2math::float2 texCoord;
+
+			static const VkVertexInputBindingDescription& getBindingDescription() {
+				return s_bindingDescription;
+			}
+
+			static const std::array<VkVertexInputAttributeDescription, 3> & getAttributeDescriptions() {
+				if (!s_attributeInitialized) {
+					s_attributeDescriptions[0].binding = 0;
+					s_attributeDescriptions[0].location = 0;
+					s_attributeDescriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT;
+					s_attributeDescriptions[0].offset = offsetof(Vertex, pos);
+
+					s_attributeDescriptions[1].binding = 0;
+					s_attributeDescriptions[1].location = 1;
+					s_attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
+					s_attributeDescriptions[1].offset = offsetof(Vertex, color);
+
+					s_attributeDescriptions[2].binding = 0;
+					s_attributeDescriptions[2].location = 2;
+					s_attributeDescriptions[2].format = VK_FORMAT_R32G32_SFLOAT;
+					s_attributeDescriptions[2].offset = offsetof(Vertex, texCoord);
+
+					s_attributeInitialized = true;
+				}
+
+				return s_attributeDescriptions;
+			}
+		};
+
+		static void configureVertexInput(bg2render::Pipeline* pipeline) {
+			pipeline->vertexInputInfo().vertexBindingDescriptionCount = 1;
+			pipeline->vertexInputInfo().pVertexBindingDescriptions = &PolyList::Vertex::getBindingDescription();
+			pipeline->vertexInputInfo().vertexAttributeDescriptionCount = static_cast<uint32_t>(PolyList::Vertex::getAttributeDescriptions().size());
+			pipeline->vertexInputInfo().pVertexAttributeDescriptions = PolyList::Vertex::getAttributeDescriptions().data();
+		}
+
+		std::vector<Vertex> vertices = {
+			{{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
+			{{0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},
+			{{0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
+			{{-0.5f, 0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}},
+
+			{{-0.5f, -0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
+			{{0.5f, -0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},
+			{{0.5f, 0.5f, -0.5f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
+			{{-0.5f, 0.5f, -0.5f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}}
+		};
+
+		std::vector<uint16_t> indices = {
+			0, 1, 2, 2, 3, 0,
+			4, 5, 6, 6, 7, 4
+		};
+
+		PolyList() {}
+		virtual ~PolyList() {
+			if (_instance) {
+				_vertexBuffer = nullptr;
+				_indexBuffer = nullptr;
+			}
+		}
+
+		void create(bg2render::vk::Instance* instance, VkCommandPool commandPool) {
+			_instance = instance;
+
+			_vertexBuffer = std::make_unique<bg2render::VertexBuffer>(instance);
+			_vertexBuffer->create<Vertex>(vertices, commandPool);
+
+			_indexBuffer = std::make_unique<bg2render::IndexBuffer>(instance);
+			_indexBuffer->create<uint16_t>(indices, commandPool);
+		}
+
+		void bindBuffers(bg2render::vk::CommandBuffer* commandBuffer) {
+			commandBuffer->bindVertexBuffer(0, 1, _vertexBuffer);
+			commandBuffer->bindIndexBuffer(_indexBuffer, 0, VK_INDEX_TYPE_UINT16);
+		}
+
+		void draw(bg2render::vk::CommandBuffer* commandBuffer) {
+			commandBuffer->drawIndexed(indices.size(), 1, 0, 0, 0);
+		}
+
+	protected:
+		static VkVertexInputBindingDescription s_bindingDescription;
+		static bool s_attributeInitialized;
+		static std::array<VkVertexInputAttributeDescription, 3> s_attributeDescriptions;
+
+		bg2render::vk::Instance* _instance = VK_NULL_HANDLE;
+
+		// Vertex buffers
+		std::unique_ptr<bg2render::VertexBuffer> _vertexBuffer;
+		std::unique_ptr<bg2render::IndexBuffer> _indexBuffer;
+	};
+
+	VkVertexInputBindingDescription PolyList::s_bindingDescription = {
+		0,	// binding
+		sizeof(PolyList::Vertex),	// Stride
+		VK_VERTEX_INPUT_RATE_VERTEX	// Input rate
+	};
+	bool PolyList::s_attributeInitialized = false;
+	std::array<VkVertexInputAttributeDescription, 3> PolyList::s_attributeDescriptions;
+
+	class Material {
+	public:
+		Material() {}
+
+		inline void setTexture(bg2render::Texture* tex) { _texture = std::shared_ptr<bg2render::Texture>(tex); }
+		inline const bg2render::Texture* texture() const { return _texture.get(); }
+
+	protected:
+		std::shared_ptr<bg2render::Texture> _texture;
+	};
+
+	class DrawableItem {
+	public:
+		struct UniformBufferObject {
+			bg2math::float4x4 model;
+			bg2math::float4x4 view;
+			bg2math::float4x4 proj;
+		};
+
+		DrawableItem(const std::string& descriptorType, bg2render::Renderer* rend)
+			:_descriptorType(descriptorType)
+			, _renderer(rend)
+		{
+
+		}
+		virtual ~DrawableItem() {
+			_polyList = nullptr;
+			_material = nullptr;
+			_uniformBuffers.clear();
+			_uniformBuffersMemory.clear();
+		}
+
+		void create(PolyList* pl, Material* mat) {
+			_polyList = std::shared_ptr<PolyList>(pl);
+			_material = std::shared_ptr<Material>(mat);
+
+			VkDeviceSize uboSize = sizeof(UniformBufferObject);
+			_uniformBuffers.resize(_renderer->simultaneousFrames());
+			_uniformBuffersMemory.resize(_renderer->simultaneousFrames());
+			for (uint32_t i = 0; i < _renderer->simultaneousFrames(); ++i) {
+				bg2render::BufferUtils::CreateBufferMemory(
+					_renderer->instance(),
+					uboSize,
+					VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+					VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+					_uniformBuffers[i], _uniformBuffersMemory[i]
+				);
+			}
+
+			auto drawableDescriptor = bg2render::DrawableDescriptor::Get(_descriptorType);
+			_pipelineLayout = std::shared_ptr<bg2render::vk::PipelineLayout>(drawableDescriptor->createPipelineLayout(_renderer->instance()));
+			_descriptor = std::shared_ptr<bg2render::Descriptor>(drawableDescriptor->createDescriptorPool(_renderer->instance(), _pipelineLayout.get(), _renderer->simultaneousFrames()));
+		}
+
+		void update(uint32_t frameIndex) {
+			auto drawableDescriptor = bg2render::DrawableDescriptor::Get(_descriptorType);
+			drawableDescriptor->updateDescriptorWrites(_renderer->instance(), frameIndex, this);
+			
+			static auto startTime = std::chrono::high_resolution_clock::now();
+
+			auto currentTime = std::chrono::high_resolution_clock::now();
+			float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
+
+
+			UniformBufferObject ubo = {};
+			ubo.model = bg2math::float4x4::Rotation(time * bg2math::radians(90.0f), 0.0f, 0.0f, 1.0f);
+			ubo.view = bg2math::float4x4::LookAt(bg2math::float3(2.0f, 2.0f, 2.0f), bg2math::float3(0.0f, 0.0f, 0.0f), bg2math::float3(0.0f, 0.0f, 1.0f));
+			auto extent = _renderer->swapChain()->extent();
+			auto ratio = static_cast<float>(extent.width) / static_cast<float>(extent.height);
+			ubo.proj = bg2math::float4x4::Perspective(60.0f, ratio, 0.1f, 100.0f);
+			ubo.proj.element(1, 1) *= -1.0;
+
+
+			void* data;
+			_uniformBuffersMemory[frameIndex]->map(0, sizeof(ubo), 0, &data);
+			memcpy(data, &ubo, sizeof(ubo));
+			_uniformBuffersMemory[frameIndex]->unmap();
+		}
+
+		void draw(bg2render::vk::CommandBuffer* commandBuffer, bg2render::Pipeline* pipeline, uint32_t frameIndex) {
+			_polyList->bindBuffers(commandBuffer);
+			commandBuffer->bindDescriptorSet(VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->pipelineLayout(), 0, _descriptor->descriptorSets[frameIndex]);
+			_polyList->draw(commandBuffer);
+		}
+
+		inline const bg2render::vk::Buffer* uniformBuffer(uint32_t frameIndex) const { return _uniformBuffers[frameIndex].get(); }
+		inline const bg2render::vk::DeviceMemory* uniformBufferMemory(uint32_t frameIndex) const { return _uniformBuffersMemory[frameIndex].get(); }
+		inline const bg2render::Descriptor* descriptor() const { return _descriptor.get(); }
+		
+		inline const Material* material() const { return _material.get(); }
+		inline Material* material() { return _material.get(); }
+		inline const PolyList* polyList() const { return _polyList.get(); }
+		inline PolyList* polyList() { return _polyList.get(); }
+
+	protected:
+		std::string _descriptorType;
+		bg2render::Renderer* _renderer;
+
+		std::shared_ptr<PolyList> _polyList;
+		std::shared_ptr<Material> _material;
+		std::shared_ptr<bg2render::Descriptor> _descriptor;
+		std::shared_ptr<bg2render::vk::PipelineLayout> _pipelineLayout;
+
+		std::vector<std::unique_ptr<bg2render::vk::Buffer>> _uniformBuffers;
+		std::vector<std::unique_ptr<bg2render::vk::DeviceMemory>> _uniformBuffersMemory;
+
 	};
 
 }
@@ -123,95 +334,46 @@ protected:
 		descriptorPool->addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, poolSize);
 		descriptorPool->addPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, poolSize);
 	}
+
+	virtual void updateDescriptorWrites(bg2render::vk::Instance* instance, uint32_t frameIndex, bg2render::DrawableItem* drawableItem) {
+		VkDescriptorBufferInfo bufferInfo = {};
+		bufferInfo.buffer = drawableItem->uniformBuffer(frameIndex)->buffer();
+		bufferInfo.offset = 0;
+		bufferInfo.range = sizeof(bg2render::DrawableItem::UniformBufferObject);
+
+		VkDescriptorImageInfo imageInfo = {};
+		imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+		imageInfo.imageView = drawableItem->material()->texture()->vkImageView();
+		imageInfo.sampler = drawableItem->material()->texture()->vkSampler();
+
+		std::array<VkWriteDescriptorSet, 2> descriptorWrites = {};
+
+		descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		descriptorWrites[0].dstSet = drawableItem->descriptor()->descriptorSets[frameIndex]->descriptorSet();
+		descriptorWrites[0].dstBinding = 0;
+		descriptorWrites[0].dstArrayElement = 0;
+		descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		descriptorWrites[0].descriptorCount = 1;
+		descriptorWrites[0].pBufferInfo = &bufferInfo;
+		descriptorWrites[0].pImageInfo = nullptr;
+		descriptorWrites[0].pTexelBufferView = nullptr;
+
+		descriptorWrites[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		descriptorWrites[1].dstSet = drawableItem->descriptor()->descriptorSets[frameIndex]->descriptorSet();
+		descriptorWrites[1].dstBinding = 1;
+		descriptorWrites[1].dstArrayElement = 0;
+		descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+		descriptorWrites[1].descriptorCount = 1;
+		descriptorWrites[1].pImageInfo = &imageInfo;
+
+		vkUpdateDescriptorSets(instance->renderDevice()->device(), static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
+	}
 };
 
 bg2render::DrawableDescriptorRegistry<MyDrawableDescriptor> testDescriptor("testDescriptor");
 
-class PolyList {
-public:
-
-
-protected:
-
-};
-
-class Material {
-public:
-	
-protected:
-
-};
-
-class DrawableItem {
-public:
-
-protected:
-	std::shared_ptr<PolyList> _polyList;
-	std::shared_ptr<Material> _material;
-};
-
 class MyRendererDelegate : public bg2render::RendererDelegate {
 public:
-	struct Vertex {
-		bg2math::float3 pos;
-		bg2math::float3 color;
-		bg2math::float2 texCoord;
-
-		static VkVertexInputBindingDescription getBindingDescription() {
-			VkVertexInputBindingDescription bindingDescription = {};
-			bindingDescription.binding = 0;
-			bindingDescription.stride = sizeof(Vertex);
-			bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-			return bindingDescription;
-		}
-
-		static std::array<VkVertexInputAttributeDescription, 3> getAttributeDescriptions() {
-			std::array<VkVertexInputAttributeDescription, 3> attributeDescriptions = {};
-			attributeDescriptions[0].binding = 0;
-			attributeDescriptions[0].location = 0;
-			attributeDescriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT;
-			attributeDescriptions[0].offset = offsetof(Vertex, pos);
-
-			attributeDescriptions[1].binding = 0;
-			attributeDescriptions[1].location = 1;
-			attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
-			attributeDescriptions[1].offset = offsetof(Vertex, color);
-
-			attributeDescriptions[2].binding = 0;
-			attributeDescriptions[2].location = 2;
-			attributeDescriptions[2].format = VK_FORMAT_R32G32_SFLOAT;
-			attributeDescriptions[2].offset = offsetof(Vertex, texCoord);
-
-			return attributeDescriptions;
-		}
-	};
-
-	std::vector<Vertex> vertices = {
-		{{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
-		{{0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},
-		{{0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
-		{{-0.5f, 0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}},
-
-		{{-0.5f, -0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
-		{{0.5f, -0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},
-		{{0.5f, 0.5f, -0.5f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
-		{{-0.5f, 0.5f, -0.5f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}}
-	};
-
-	std::vector<uint16_t> indices = {
-		0, 1, 2, 2, 3, 0,
-		4, 5, 6, 6, 7, 4
-	};
-
-	VkVertexInputBindingDescription bindingDescription;
-	std::array<VkVertexInputAttributeDescription, 3> attributeDescriptions;
-
-	struct UniformBufferObject {
-		bg2math::float4x4 model;
-		bg2math::float4x4 view;
-		bg2math::float4x4 proj;
-	};
-
 	virtual bg2render::Pipeline * configurePipeline(bg2render::vk::Instance* instance, bg2render::SwapChain* swapChain, const bg2math::int2& frameSize) {
 		bg2render::Pipeline * pipeline = new bg2render::Pipeline(instance);
 
@@ -225,13 +387,7 @@ public:
 		bg2render::vk::PipelineLayout* pipelineLayout = bg2render::DrawableDescriptor::Get("testDescriptor")->createPipelineLayout(instance);
 		pipeline->setPipelineLayout(pipelineLayout);
 
-		bindingDescription = Vertex::getBindingDescription();
-		attributeDescriptions = Vertex::getAttributeDescriptions();
-
-		pipeline->vertexInputInfo().vertexBindingDescriptionCount = 1;
-		pipeline->vertexInputInfo().pVertexBindingDescriptions = &bindingDescription;
-		pipeline->vertexInputInfo().vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size());
-		pipeline->vertexInputInfo().pVertexAttributeDescriptions = attributeDescriptions.data();
+		bg2render::PolyList::configureVertexInput(pipeline);
 
 		pipeline->inputAssemblyInfo().topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
 		pipeline->setViewport(frameSize);
@@ -249,131 +405,33 @@ public:
 
 	virtual void recordCommandBuffer(float delta, bg2render::vk::CommandBuffer* cmdBuffer, bg2render::Pipeline* pipeline, bg2render::SwapChain* swapChain, uint32_t frameIndex) {
 		cmdBuffer->bindPipeline(pipeline);
-		cmdBuffer->bindVertexBuffer(0, 1, _vertexBuffer);
-		cmdBuffer->bindIndexBuffer(_indexBuffer, 0, VK_INDEX_TYPE_UINT16);
-		cmdBuffer->bindDescriptorSet(VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->pipelineLayout(), 0, _descriptorSets[frameIndex]);
-
-		static auto startTime = std::chrono::high_resolution_clock::now();
-
-		auto currentTime = std::chrono::high_resolution_clock::now();
-		float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
-
-		UniformBufferObject ubo = {};
-		ubo.model = bg2math::float4x4::Rotation(time * bg2math::radians(90.0f), 0.0f, 0.0f, 1.0f);
-		ubo.view = bg2math::float4x4::LookAt(bg2math::float3(2.0f, 2.0f, 2.0f), bg2math::float3(0.0f, 0.0f, 0.0f), bg2math::float3(0.0f, 0.0f, 1.0f));
-		auto extent = renderer()->swapChain()->extent();
-		auto ratio = static_cast<float>(extent.width) / static_cast<float>(extent.height);
-		ubo.proj = bg2math::float4x4::Perspective(60.0f, ratio, 0.1f, 100.0f);
-		ubo.proj.element(1, 1) *= -1.0;
-
-		void* data;
-		_uniformBuffersMemory[frameIndex]->map(0, sizeof(ubo), 0, &data);
-		memcpy(data, &ubo, sizeof(ubo));
-		_uniformBuffersMemory[frameIndex]->unmap();
-
-		cmdBuffer->drawIndexed(indices.size(), 1, 0, 0, 0);
+		_drawableItem->update(frameIndex);
+		_drawableItem->draw(cmdBuffer, pipeline, frameIndex);
 	}
 
 	virtual void initDone(bg2render::vk::Instance * instance, uint32_t simultaneousFrames) {
-		_vertexBuffer = std::make_unique<bg2render::VertexBuffer>(instance);
-		_vertexBuffer->create<Vertex>(vertices, renderer()->commandPool());
-
-		_indexBuffer = std::make_unique<bg2render::IndexBuffer>(instance);
-		_indexBuffer->create<uint16_t>(indices, renderer()->commandPool());
-
-		// Uniform buffers
-		VkDeviceSize bufferSize = sizeof(UniformBufferObject);
-		_uniformBuffers.resize(simultaneousFrames);
-		_uniformBuffersMemory.resize(simultaneousFrames);
-
-		for (size_t i = 0; i < simultaneousFrames; ++i) {
-			bg2render::BufferUtils::CreateBufferMemory(
-				instance,
-				bufferSize,
-				VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-				VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-				_uniformBuffers[i], _uniformBuffersMemory[i]);
-		}
-
 		// Texture
 		bg2base::path path = "data";
 		auto image = std::unique_ptr<bg2base::image>(bg2db::loadImage(path.pathAddingComponent("texture.jpg")));
-		_texture = std::make_shared<bg2render::Texture>(instance);
+		auto _texture = new bg2render::Texture(instance);
 		_texture->create(image.get(), renderer()->commandPool(), VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
+
+		auto polyList = new bg2render::PolyList();
+		polyList->create(instance, renderer()->commandPool());
 		
-		// Descriptor sets
-		// Every object must store its own Descriptor struct, that contains the descriptor pool and the descriptor sets
-		_descriptorPool = std::make_shared<bg2render::vk::DescriptorPool>(instance);
-		// Pool size for uniform buffer
-		_descriptorPool->addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, simultaneousFrames);
-		// Pool size for texture
-		_descriptorPool->addPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, simultaneousFrames);
-		_descriptorPool->create(simultaneousFrames);
-		_descriptorPool->allocateDescriptorSets(simultaneousFrames, renderer()->pipeline()->pipelineLayout(), _descriptorSets);
+		auto mat = new bg2render::Material();
+		mat->setTexture(_texture);
 
-		for (size_t i = 0; i < simultaneousFrames; ++i) {
-			VkDescriptorBufferInfo bufferInfo = {};
-			bufferInfo.buffer = _uniformBuffers[i]->buffer();
-			bufferInfo.offset = 0;
-			bufferInfo.range = sizeof(UniformBufferObject);
-
-			VkDescriptorImageInfo imageInfo = {};
-			imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-			imageInfo.imageView = _texture->vkImageView();
-			imageInfo.sampler = _texture->vkSampler();
-
-			std::array<VkWriteDescriptorSet, 2> descriptorWrites = {};
-
-			descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-			descriptorWrites[0].dstSet = _descriptorSets[i]->descriptorSet();
-			descriptorWrites[0].dstBinding = 0;
-			descriptorWrites[0].dstArrayElement = 0;
-			descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-			descriptorWrites[0].descriptorCount = 1;
-			descriptorWrites[0].pBufferInfo = &bufferInfo;
-			descriptorWrites[0].pImageInfo = nullptr;
-			descriptorWrites[0].pTexelBufferView = nullptr;
-
-			descriptorWrites[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-			descriptorWrites[1].dstSet = _descriptorSets[i]->descriptorSet();
-			descriptorWrites[1].dstBinding = 1;
-			descriptorWrites[1].dstArrayElement = 0;
-			descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-			descriptorWrites[1].descriptorCount = 1;
-			descriptorWrites[1].pImageInfo = &imageInfo;
-
-			vkUpdateDescriptorSets(instance->renderDevice()->device(), static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
-		}
+		_drawableItem = std::make_shared<bg2render::DrawableItem>("testDescriptor", renderer());
+		_drawableItem->create(polyList, mat);
 	}
 
 	virtual void cleanup() {
-		_texture = nullptr;
-		_vertexBuffer = nullptr;
-		_indexBuffer = nullptr;
-		_uniformBuffers.clear();
-		_uniformBuffersMemory.clear();
-		_descriptorSets.clear();
-		_descriptorPool = nullptr;
+		_drawableItem = nullptr;
 	}
 
 private:
-	// Vertex buffers
-	std::unique_ptr<bg2render::VertexBuffer> _vertexBuffer;
-	std::unique_ptr<bg2render::IndexBuffer> _indexBuffer;
-
-	// Uniform buffer
-	std::vector<std::unique_ptr<bg2render::vk::Buffer>> _uniformBuffers;
-	std::vector<std::unique_ptr<bg2render::vk::DeviceMemory>> _uniformBuffersMemory;
-
-	// DrawableDescriptor
-	std::unique_ptr<bg2render::DrawableDescriptor> _drawableDescriptor;
-
-	// Descriptors
-	std::shared_ptr<bg2render::vk::DescriptorPool> _descriptorPool;
-	std::vector<std::shared_ptr<bg2render::vk::DescriptorSet>> _descriptorSets;
-
-	// Texture
-	std::shared_ptr<bg2render::Texture> _texture;
+	std::shared_ptr<bg2render::DrawableItem> _drawableItem;
 };
 
 class MyWindowDelegate : public bg2wnd::WindowDelegate {
