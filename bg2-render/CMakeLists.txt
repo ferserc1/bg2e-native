@@ -12,6 +12,7 @@ target_link_libraries(bg2-render ${Vulkan_LIBRARIES})
 target_link_libraries(bg2-render bg2-base)
 target_link_libraries(bg2-render bg2-db)
 target_link_libraries(bg2-render bg2-wnd)
+target_link_libraries(bg2-render bg2-math)
 
 target_compile_definitions(bg2-render PRIVATE BG2_LIBRARY=1)
 
