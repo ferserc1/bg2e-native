@@ -41,6 +41,11 @@ namespace bg2math {
         inline T x() const { return _v[0]; }
         inline T & y() { return _v[1]; }
         inline T y() const { return _v[1]; }
+
+		inline T& width() { return _v[0]; }
+		inline const T& width() const { return _v[0]; }
+		inline T& height() { return _v[1]; }
+		inline const T& height() const { return _v[1]; }
         
         inline bool belongsToRect(T left, T top, T width, T height) {
             return _v[0] >= left && _v[0] <= left + width && _v[1] >= top && _v[1] <= top + height;
@@ -156,6 +161,13 @@ namespace bg2math {
         inline T g() const { return _v[1]; }
         inline T & b() { return _v[2]; }
         inline T b() const { return _v[2]; }
+
+		inline T& width() { return _v[0]; }
+		inline const T& width() const { return _v[0]; }
+		inline T& height() { return _v[1]; }
+		inline const T& height() const { return _v[1]; }
+		inline T& depth() { return _v[2]; }
+		inline const T& depth() const { return _v[2]; }
         
     protected:
         T _v[3] = { static_cast<T>(0), static_cast<T>(0), static_cast<T>(0) };
