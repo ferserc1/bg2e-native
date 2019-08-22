@@ -42,10 +42,12 @@ namespace bg2render {
 		std::unique_ptr<vk::DeviceMemory> _depthImageMemory;
 		std::unique_ptr<vk::ImageView> _depthImageView;
 
-		// Render pass
+		// Render pass and framebuffer
 		std::unique_ptr<RenderPass> _renderPass;
-
 		VkFramebuffer _framebuffer;
+
+		// Descriptor set
+		VkDescriptorImageInfo descriptorCreateInfo;
 	};
 
 }

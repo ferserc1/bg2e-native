@@ -48,7 +48,7 @@ namespace bg2render {
 		_depthImageView->create(_depthImage.get(), _depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
 		
 		// Render pass
-		_renderPass = std::make_unique<RenderPass>(_instance->renderDevice()->device());
+		_renderPass = std::make_unique<RenderPass>(_instance->renderDevice());
 
 		std::array<VkAttachmentDescription, 2> attachmentDescriptions = {};
 		attachmentDescriptions[0].format = _colorFormat;
