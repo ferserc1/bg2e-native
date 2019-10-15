@@ -1,0 +1,11 @@
+{
+    "name": "bg2e-cpp",
+    "version": "3.0.0",
+    "description": "C++ graphics engine - dependency download scripts",
+    "author": "Fernando Serrano Carpena <ferserc1@gmail.com>",
+    "license": "MIT",
+    "dependencies": {
+      "unzipper": "^0.8.12"
+    }
+  }
+  

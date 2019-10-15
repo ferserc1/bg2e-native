@@ -40,6 +40,51 @@ bg2 engine is divided into different libraries, and not all of them have the sam
 - GLFW: window system.
 - Node.js: to execute the automatic dependency download system.
 
+You can use the automatic dependency download system to get BGFX and GLFW precompiled version
+
+
+
+## Usage
+
+### macOS Xcode
+
+Configure search paths
+
+Header search paths:
+
+```
+$(BG2E_DIR)/include
+$(BG2E_DIR)/deps/glfw-3.3/osx/include
+$(BG2E_DIR)/deps/bgfx/osx/include
+```
+
+You'll also need to link your app to bgfx and glfw: 
+
+- libbimg_decodeRelease.a
+- libbgfxRelease.a
+- libbxRelease.a
+- libbimgRelease.a
+- libglfw3.a
+
+Library search paths:
+
+```
+$(BG2E_DIR)/deps/glfw-3.3/osx/lib
+$(BG2E_DIR)/deps/bgfx/osx/lib
+```
+
+And you'll need also to link to the following macOS frameworks:
+
+- Cocoa.framework
+- OpenGL.framework
+- CoreVideo.framework
+- IOKit.framework
+- Metal.framework
+- MetalKit.framework
+- QuartzCore.framework
+
+To avoid glfw documentation warning like `Empty paragraph passed to '@sa' command`, disable `Documentation comments` warnings in `Build Settings`
+
 
 
 
