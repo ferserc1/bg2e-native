@@ -12,8 +12,8 @@ bg2e is a graphic engine oriented to the creation of graphic applications. It is
 bg2 engine is available in different APIs:
 
 - JavaScript/WebGL
-- C++/Vulkan (this repository)
-- Swift/Metal
+- C++ (this repository)
+- Unreal C++
 
 Please note that bg2 engine is not suitable for all projects. To help you decide whether to continue or quit, here are some tips:
 
@@ -36,58 +36,9 @@ This repository implements the C++ API for bg2 engine. Use this version of the e
 
 bg2 engine is divided into different libraries, and not all of them have the same requirements, but basically you will need:
 
-- Vulkan SDK
-- GLFW: if you want to use the bg2e APIs for window management.
-- CMake: to generate the project files.
-
-### macOS
-
-- Install Vulkan SDK from the website: [https://www.lunarg.com/vulkan-sdk/](https://www.lunarg.com/vulkan-sdk). If you want CMake to automatically detect the location of Vulkan, unzip the tar file in the same directory where you downloaded the bg2e-cpp repository, and rename it `vulkansdk`.
-- You can install GLFW with homebrew or compile it from the source code.
-
-Then, generate the xcode project using cmake
-
-#### Use Xcode beta
-
-If you want to use the beta version of Xcode, you need to set the active Xcode version using the `xcode-select` command:
-
-```bash
-$ sudo xcode-select -s /Applications/Xcode-beta.app
-```
-
-Note that if you have already generated the Xcode project with the previous version, you'll need to remove the build
-
-### Windows
-
-- Install Vulkan SDK from the website: [https://www.lunarg.com/vulkan-sdk/](https://www.lunarg.com/vulkan-sdk). You can install it in any location, but make sure that the environment variable of the VulkanSDK location is registered.
-- Download the precompiled binaries and place the unzipped folder in the same location as the bg2e-cpp repository folder. To use the default CMake search options, set the folder name `glfw3`.
-
-### Linux
-
-- Install Vulkan SDK following the instructions from the website: [https://www.lunarg.com/vulkan-sdk/](https://www.lunarg.com/vulkan-sdk). If you want CMake to automatically detect the location of Vulkan, unzip the tar file in the same directory where you downloaded the bg2e-cpp repository, and rename it to `vulkansdk`. Make sure you compile and run the Vulkan examples to check that everything is working correctly. [here](https://vulkan-tutorial.com/Development_environment#page_Linux) you can get help on installing Vulkan SDK on Linux.
-- Download, compile and install GLFW from the [website](https://www.glfw.org/)
-
-#### Debugging on Linux
-
-You can use CodeBlocks IDE to debug on Linux. You'll need to generate a project for debugging and other one for release (without debugging symbols):
-
-Cmake project WITH debug symbols
-
-```
-cd bg2e-cpp
-mkdir build-debug
-cd build-debug
-cmake .. -G"CodeBlocks - Unix Makefiles" -DCMAKE_BUILD_TYPE=Debug
-```
-
-Cmake project WHITOUT debug symbols
-
-```
-cd bg2e-cpp
-mkdir build-release
-cd build-debug
-cmake .. -G"CodeBlocks - Unix Makefiles" -DCMAKE_BUILD_TYPE=Release
-```
+- BGFX: graphical API independence layer.
+- GLFW: window system.
+- Node.js: to execute the automatic dependency download system.
 
 
 

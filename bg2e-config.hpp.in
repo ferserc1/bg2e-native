@@ -1,9 +1,0 @@
-#ifndef _bg2e_config_hpp_
-#define _bg2e_config_hpp_
-
-#define bg2e_MAJOR_VERSION @bg2e_MAJOR_VERSION@
-#define bg2e_MINOR_VERSION @bg2e_MINOR_VERSION@
-#define bg2e_REV_VERSION @bg2e_REV_VERSION@
-
-
-#endif
