@@ -86,5 +86,10 @@ And you'll need also to link to the following macOS frameworks:
 To avoid glfw documentation warning like `Empty paragraph passed to '@sa' command`, disable `Documentation comments` warnings in `Build Settings`
 
 
+## Basic usage
 
+registerXXX()/unregisterXXX():
+
+A.registerB(B): Object A will be responsible for managing the memory of B
+B.unregisterB(): Object A will no longer manage B's memory. This function returns a pointer to the managed object, which can be used to obtain the responsibility of managing the memory, or nullptr if nothing is being managed by A
 

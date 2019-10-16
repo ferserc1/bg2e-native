@@ -35,6 +35,7 @@
 		EDE6D88A2355D5CD0014D7C8 /* MetalKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = EDE6D8722355D19B0014D7C8 /* MetalKit.framework */; };
 		EDE6D88B2355D5D20014D7C8 /* QuartzCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = EDE6D86F2355D18F0014D7C8 /* QuartzCore.framework */; };
 		EDE6D88D2355D6140014D7C8 /* libbg2e.dylib in Copy bg2e library */ = {isa = PBXBuildFile; fileRef = EDE6D7B62355C5550014D7C8 /* libbg2e.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		EDE6D88F2355EDC90014D7C8 /* main_loop.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EDE6D88E2355EDC90014D7C8 /* main_loop.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -176,6 +177,11 @@
 		EDE6D8772355D1A50014D7C8 /* CoreVideo.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreVideo.framework; path = System/Library/Frameworks/CoreVideo.framework; sourceTree = SDKROOT; };
 		EDE6D8792355D1AB0014D7C8 /* OpenGL.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OpenGL.framework; path = System/Library/Frameworks/OpenGL.framework; sourceTree = SDKROOT; };
 		EDE6D87B2355D1B00014D7C8 /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = System/Library/Frameworks/Cocoa.framework; sourceTree = SDKROOT; };
+		EDE6D88E2355EDC90014D7C8 /* main_loop.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = main_loop.cpp; sourceTree = "<group>"; };
+		EDE6D8902355EDE00014D7C8 /* main_loop.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = main_loop.hpp; sourceTree = "<group>"; };
+		EDE6D8912356191C0014D7C8 /* event_handler.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = event_handler.hpp; sourceTree = "<group>"; };
+		EDE6D8922356F53E0014D7C8 /* keyboard_event.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = keyboard_event.hpp; sourceTree = "<group>"; };
+		EDE6D8932356F5CF0014D7C8 /* mouse_event.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = mouse_event.hpp; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -570,8 +576,8 @@
 		EDE6D8602355CF360014D7C8 /* bg2e */ = {
 			isa = PBXGroup;
 			children = (
-				EDE6D8612355CF360014D7C8 /* platform.hpp */,
 				EDE6D8622355CF360014D7C8 /* wnd */,
+				EDE6D8612355CF360014D7C8 /* platform.hpp */,
 				EDE6D8652355CF360014D7C8 /* wnd.hpp */,
 			);
 			path = bg2e;
@@ -580,7 +586,11 @@
 		EDE6D8622355CF360014D7C8 /* wnd */ = {
 			isa = PBXGroup;
 			children = (
+				EDE6D8912356191C0014D7C8 /* event_handler.hpp */,
+				EDE6D8922356F53E0014D7C8 /* keyboard_event.hpp */,
 				EDE6D8632355CF360014D7C8 /* window.hpp */,
+				EDE6D8902355EDE00014D7C8 /* main_loop.hpp */,
+				EDE6D8932356F5CF0014D7C8 /* mouse_event.hpp */,
 				EDE6D8642355CF360014D7C8 /* glfw_defines.hpp */,
 			);
 			path = wnd;
@@ -597,6 +607,7 @@
 		EDE6D8672355CF360014D7C8 /* wnd */ = {
 			isa = PBXGroup;
 			children = (
+				EDE6D88E2355EDC90014D7C8 /* main_loop.cpp */,
 				EDE6D8682355CF360014D7C8 /* window.cpp */,
 			);
 			path = wnd;
@@ -715,6 +726,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				EDE6D88F2355EDC90014D7C8 /* main_loop.cpp in Sources */,
 				EDE6D87D2355D1DB0014D7C8 /* window.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
