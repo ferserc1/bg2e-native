@@ -6,3 +6,12 @@ config.js file.
 
 The resulting file is included in the project, and will be compiled into the code of the
 graphic engine.
+
+To compile a specific shader or list of shaders, add as a parameter the name of the shader folder.
+that shader:
+
+```
+    node build.js shader1 shader2 shader3
+```
+
+After generating the shaders, all you have to do is recompile bg2 engine to be included in the source code.

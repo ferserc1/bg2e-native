@@ -51,9 +51,7 @@ function addBuildCommands(name,shaderFilePath,type,buildCommands = []) {
     return buildCommands;
 }
 
-// Generate command list
-let buildCommands = [];
-fs.readdirSync(config.shadersPath).forEach((shaderDir) => {
+function addCommandsForShaderPath(shaderDir) {
     let shaderPath = path.join(config.shadersPath,shaderDir);
     fs.readdirSync(shaderPath).forEach((shaderFileName) => {
         if (/\.fs\./.test(shaderFileName)) {
@@ -63,7 +61,25 @@ fs.readdirSync(config.shadersPath).forEach((shaderDir) => {
             addBuildCommands(shaderDir,path.join(shaderPath,shaderFileName),'vertex',buildCommands);
         }
     });
-});
+}
+
+// Generate command list
+let buildCommands = [];
+if (process.argv.length>2) {
+    process.argv.splice(2).forEach((shaderName) => {
+        if (fs.existsSync(path.join(config.shadersPath,shaderName))) {
+            addCommandsForShaderPath(shaderName);
+        }
+        else {
+            console.error("WARNING: No such shader directory " + shaderName);
+        }
+    });
+}
+else {
+    fs.readdirSync(config.shadersPath).forEach((shaderDir) => {
+        addCommandsForShaderPath(shaderDir);
+    });
+}
 
 // Execute commands
 let promises = [];
