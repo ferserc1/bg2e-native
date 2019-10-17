@@ -7,7 +7,10 @@
 namespace bg2e {
     namespace wnd {
 
+        class Window;
+    
         class EventHandler {
+            friend class Window;
         public:
             virtual void init() {};
             virtual void resize(uint32_t width, uint32_t height) {}
@@ -22,6 +25,13 @@ namespace bg2e {
             virtual void mouseMove(const MouseEvent &) {}
             virtual void mouseDrag(const MouseEvent &) {}
             virtual void mouseWheel(const MouseEvent &) {}
+            
+            
+            inline Window * window() { return _window; }
+            inline const Window * window() const { return _window; }
+            
+        protected:
+            Window * _window;
         };
     
     }

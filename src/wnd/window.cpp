@@ -165,6 +165,9 @@ namespace bg2e {
                 delete _eventHandler;
             }
             _eventHandler = eh;
+            if (_eventHandler) {
+                _eventHandler->_window = this;
+            }
             
             // The create() method has been called before registerEventHandler(): call init callback
             if (_wndHandle != nullptr && _eventHandler) {
@@ -176,6 +179,9 @@ namespace bg2e {
         EventHandler * Window::unregisterEventHandler() {
             auto tmp = _eventHandler;
             _eventHandler = nullptr;
+            if (tmp) {
+                _eventHandler->_window = nullptr;
+            }
             return tmp;
         }
     

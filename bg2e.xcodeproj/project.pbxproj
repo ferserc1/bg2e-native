@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		EDCEEB812357655F0087ECAB /* load.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EDCEEB802357655F0087ECAB /* load.cpp */; };
 		EDE6D7DC2355C6060014D7C8 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EDE6D7DB2355C6060014D7C8 /* main.cpp */; };
 		EDE6D86A2355D0AD0014D7C8 /* libbimg_decodeRelease.a in Frameworks */ = {isa = PBXBuildFile; fileRef = EDE6D85B2355C6340014D7C8 /* libbimg_decodeRelease.a */; };
 		EDE6D86B2355D0AF0014D7C8 /* libbgfxRelease.a in Frameworks */ = {isa = PBXBuildFile; fileRef = EDE6D85C2355C6340014D7C8 /* libbgfxRelease.a */; };
@@ -36,6 +37,21 @@
 		EDE6D88B2355D5D20014D7C8 /* QuartzCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = EDE6D86F2355D18F0014D7C8 /* QuartzCore.framework */; };
 		EDE6D88D2355D6140014D7C8 /* libbg2e.dylib in Copy bg2e library */ = {isa = PBXBuildFile; fileRef = EDE6D7B62355C5550014D7C8 /* libbg2e.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		EDE6D88F2355EDC90014D7C8 /* main_loop.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EDE6D88E2355EDC90014D7C8 /* main_loop.cpp */; };
+		EDF4241923573A7A003C6405 /* QuartzCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = EDE6D86F2355D18F0014D7C8 /* QuartzCore.framework */; };
+		EDF4241A23573A7A003C6405 /* Metal.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = EDE6D8712355D19B0014D7C8 /* Metal.framework */; };
+		EDF4241B23573A7A003C6405 /* MetalKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = EDE6D8722355D19B0014D7C8 /* MetalKit.framework */; };
+		EDF4241C23573A7A003C6405 /* CoreVideo.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = EDE6D8772355D1A50014D7C8 /* CoreVideo.framework */; };
+		EDF4241D23573A7A003C6405 /* IOKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = EDE6D8752355D1A00014D7C8 /* IOKit.framework */; };
+		EDF4241E23573A7A003C6405 /* OpenGL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = EDE6D8792355D1AB0014D7C8 /* OpenGL.framework */; };
+		EDF4241F23573A7A003C6405 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = EDE6D87B2355D1B00014D7C8 /* Cocoa.framework */; };
+		EDF4242023573A7A003C6405 /* libbg2e.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = EDE6D7B62355C5550014D7C8 /* libbg2e.dylib */; };
+		EDF4242123573A7A003C6405 /* libbimg_decodeRelease.a in Frameworks */ = {isa = PBXBuildFile; fileRef = EDE6D85B2355C6340014D7C8 /* libbimg_decodeRelease.a */; };
+		EDF4242223573A7A003C6405 /* libbgfxRelease.a in Frameworks */ = {isa = PBXBuildFile; fileRef = EDE6D85C2355C6340014D7C8 /* libbgfxRelease.a */; };
+		EDF4242323573A7A003C6405 /* libbxRelease.a in Frameworks */ = {isa = PBXBuildFile; fileRef = EDE6D85D2355C6340014D7C8 /* libbxRelease.a */; };
+		EDF4242423573A7A003C6405 /* libglfw3.a in Frameworks */ = {isa = PBXBuildFile; fileRef = EDE6D7E42355C6340014D7C8 /* libglfw3.a */; };
+		EDF4242523573A7A003C6405 /* libbimgRelease.a in Frameworks */ = {isa = PBXBuildFile; fileRef = EDE6D85E2355C6340014D7C8 /* libbimgRelease.a */; };
+		EDF4242823573A7A003C6405 /* libbg2e.dylib in Copy bg2e library */ = {isa = PBXBuildFile; fileRef = EDE6D7B62355C5550014D7C8 /* libbg2e.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		EDF4243023573B19003C6405 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EDF4242F23573B19003C6405 /* main.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -50,9 +66,23 @@
 			name = "Copy bg2e library";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		EDF4242723573A7A003C6405 /* Copy bg2e library */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 6;
+			files = (
+				EDF4242823573A7A003C6405 /* libbg2e.dylib in Copy bg2e library */,
+			);
+			name = "Copy bg2e library";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		EDCEEB7D235764420087ECAB /* load.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = load.hpp; sourceTree = "<group>"; };
+		EDCEEB7E2357649B0087ECAB /* utils.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = utils.hpp; sourceTree = "<group>"; };
+		EDCEEB802357655F0087ECAB /* load.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = load.cpp; sourceTree = "<group>"; };
 		EDE6D7B62355C5550014D7C8 /* libbg2e.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libbg2e.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
 		EDE6D7C92355C5900014D7C8 /* basic-example.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "basic-example.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		EDE6D7D32355C5910014D7C8 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -182,6 +212,9 @@
 		EDE6D8912356191C0014D7C8 /* event_handler.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = event_handler.hpp; sourceTree = "<group>"; };
 		EDE6D8922356F53E0014D7C8 /* keyboard_event.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = keyboard_event.hpp; sourceTree = "<group>"; };
 		EDE6D8932356F5CF0014D7C8 /* mouse_event.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = mouse_event.hpp; sourceTree = "<group>"; };
+		EDF4242C23573A7A003C6405 /* cubes-example.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "cubes-example.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		EDF4242D23573A7A003C6405 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = Info.plist; path = "/Users/fernando/desarrollo/bg2e-cpp/Info.plist"; sourceTree = "<absolute>"; };
+		EDF4242F23573B19003C6405 /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -224,9 +257,45 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		EDF4241823573A7A003C6405 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				EDF4241923573A7A003C6405 /* QuartzCore.framework in Frameworks */,
+				EDF4241A23573A7A003C6405 /* Metal.framework in Frameworks */,
+				EDF4241B23573A7A003C6405 /* MetalKit.framework in Frameworks */,
+				EDF4241C23573A7A003C6405 /* CoreVideo.framework in Frameworks */,
+				EDF4241D23573A7A003C6405 /* IOKit.framework in Frameworks */,
+				EDF4241E23573A7A003C6405 /* OpenGL.framework in Frameworks */,
+				EDF4241F23573A7A003C6405 /* Cocoa.framework in Frameworks */,
+				EDF4242023573A7A003C6405 /* libbg2e.dylib in Frameworks */,
+				EDF4242123573A7A003C6405 /* libbimg_decodeRelease.a in Frameworks */,
+				EDF4242223573A7A003C6405 /* libbgfxRelease.a in Frameworks */,
+				EDF4242323573A7A003C6405 /* libbxRelease.a in Frameworks */,
+				EDF4242423573A7A003C6405 /* libglfw3.a in Frameworks */,
+				EDF4242523573A7A003C6405 /* libbimgRelease.a in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		EDCEEB7C235764180087ECAB /* utils */ = {
+			isa = PBXGroup;
+			children = (
+				EDCEEB7D235764420087ECAB /* load.hpp */,
+			);
+			path = utils;
+			sourceTree = "<group>";
+		};
+		EDCEEB7F2357654A0087ECAB /* utils */ = {
+			isa = PBXGroup;
+			children = (
+				EDCEEB802357655F0087ECAB /* load.cpp */,
+			);
+			path = utils;
+			sourceTree = "<group>";
+		};
 		EDE6D7AD2355C5550014D7C8 = {
 			isa = PBXGroup;
 			children = (
@@ -243,6 +312,7 @@
 			children = (
 				EDE6D7B62355C5550014D7C8 /* libbg2e.dylib */,
 				EDE6D7C92355C5900014D7C8 /* basic-example.app */,
+				EDF4242C23573A7A003C6405 /* cubes-example.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -277,6 +347,7 @@
 		EDE6D7DA2355C5A30014D7C8 /* examples */ = {
 			isa = PBXGroup;
 			children = (
+				EDF4242E23573AD0003C6405 /* cubes */,
 				EDE6D7CA2355C5900014D7C8 /* basic */,
 			);
 			path = examples;
@@ -576,9 +647,11 @@
 		EDE6D8602355CF360014D7C8 /* bg2e */ = {
 			isa = PBXGroup;
 			children = (
+				EDCEEB7C235764180087ECAB /* utils */,
 				EDE6D8622355CF360014D7C8 /* wnd */,
 				EDE6D8612355CF360014D7C8 /* platform.hpp */,
 				EDE6D8652355CF360014D7C8 /* wnd.hpp */,
+				EDCEEB7E2357649B0087ECAB /* utils.hpp */,
 			);
 			path = bg2e;
 			sourceTree = "<group>";
@@ -599,6 +672,7 @@
 		EDE6D8662355CF360014D7C8 /* src */ = {
 			isa = PBXGroup;
 			children = (
+				EDCEEB7F2357654A0087ECAB /* utils */,
 				EDE6D8672355CF360014D7C8 /* wnd */,
 			);
 			path = src;
@@ -625,6 +699,15 @@
 				EDE6D86F2355D18F0014D7C8 /* QuartzCore.framework */,
 			);
 			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		EDF4242E23573AD0003C6405 /* cubes */ = {
+			isa = PBXGroup;
+			children = (
+				EDF4242D23573A7A003C6405 /* Info.plist */,
+				EDF4242F23573B19003C6405 /* main.cpp */,
+			);
+			path = cubes;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -675,6 +758,24 @@
 			productReference = EDE6D7C92355C5900014D7C8 /* basic-example.app */;
 			productType = "com.apple.product-type.application";
 		};
+		EDF4241523573A7A003C6405 /* cubes-example */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = EDF4242923573A7A003C6405 /* Build configuration list for PBXNativeTarget "cubes-example" */;
+			buildPhases = (
+				EDF4241623573A7A003C6405 /* Sources */,
+				EDF4241823573A7A003C6405 /* Frameworks */,
+				EDF4242623573A7A003C6405 /* Resources */,
+				EDF4242723573A7A003C6405 /* Copy bg2e library */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "cubes-example";
+			productName = "basic-example";
+			productReference = EDF4242C23573A7A003C6405 /* cubes-example.app */;
+			productType = "com.apple.product-type.application";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -707,12 +808,20 @@
 			targets = (
 				EDE6D7B52355C5550014D7C8 /* bg2e */,
 				EDE6D7C82355C5900014D7C8 /* basic-example */,
+				EDF4241523573A7A003C6405 /* cubes-example */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
 		EDE6D7C72355C5900014D7C8 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		EDF4242623573A7A003C6405 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -726,6 +835,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				EDCEEB812357655F0087ECAB /* load.cpp in Sources */,
 				EDE6D88F2355EDC90014D7C8 /* main_loop.cpp in Sources */,
 				EDE6D87D2355D1DB0014D7C8 /* window.cpp in Sources */,
 			);
@@ -736,6 +846,14 @@
 			buildActionMask = 2147483647;
 			files = (
 				EDE6D7DC2355C6060014D7C8 /* main.cpp in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		EDF4241623573A7A003C6405 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				EDF4243023573B19003C6405 /* main.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -951,6 +1069,44 @@
 			};
 			name = Release;
 		};
+		EDF4242A23573A7A003C6405 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = "";
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				DEVELOPMENT_TEAM = RP926KEE5K;
+				ENABLE_HARDENED_RUNTIME = YES;
+				INFOPLIST_FILE = Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "org.bg2engine.cubes-example";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		EDF4242B23573A7A003C6405 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = "";
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				DEVELOPMENT_TEAM = RP926KEE5K;
+				ENABLE_HARDENED_RUNTIME = YES;
+				INFOPLIST_FILE = Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "org.bg2engine.cubes-example";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -977,6 +1133,15 @@
 			buildConfigurations = (
 				EDE6D7D82355C5910014D7C8 /* Debug */,
 				EDE6D7D92355C5910014D7C8 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		EDF4242923573A7A003C6405 /* Build configuration list for PBXNativeTarget "cubes-example" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				EDF4242A23573A7A003C6405 /* Debug */,
+				EDF4242B23573A7A003C6405 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

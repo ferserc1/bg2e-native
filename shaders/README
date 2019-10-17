@@ -1,0 +1,8 @@
+# Build shader tool
+
+This tool generates the shaders.h file from the src directory code. The configuration
+of the types of shaders that will be generated for each platform is done in the
+config.js file.
+
+The resulting file is included in the project, and will be compiled into the code of the
+graphic engine.

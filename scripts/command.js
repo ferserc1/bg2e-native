@@ -9,11 +9,13 @@ module.exports = {
             params.cwd = cwd;
             exec(cmd, cwd, (err,stdout,stderr) => {
                 if (err) {
-                    reject(err);
+                    let errorMessage = err.message;
+                    errorMessage += "\n" + stdout + "\n" + stderr;
+                    reject(new Error(errorMessage));
                 }
                 else {
                     console.log(cmd + ": done" + (cmd ? ` (${ cwd })` : ''));
-                    resolve();
+                    resolve({ stdout: stdout, stderr: stderr });
                 }
             });
         });

@@ -26,9 +26,6 @@ $RECYCLE.BIN/
 # Windows shortcuts
 *.lnk
 
-# Dependencies
-deps
-
 # Xcode
 #
 # gitignore contributors: remember to update Global/Xcode.gitignore, Objective-C.gitignore & Swift.gitignore
@@ -55,3 +52,11 @@ DerivedData/
 
 ## Gcc Patch
 /*.gcno
+
+
+# Dependencies
+deps
+
+# Shader intermediate files
+shaders/include/build
+
