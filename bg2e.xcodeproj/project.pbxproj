@@ -80,6 +80,10 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		ED55B44F235A2CFF003ACDE9 /* shaders.h.template */ = {isa = PBXFileReference; lastKnownFileType = text; path = shaders.h.template; sourceTree = "<group>"; };
+		ED55B450235A2CFF003ACDE9 /* shaders.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = shaders.h; sourceTree = "<group>"; };
+		ED55B451235A2CFF003ACDE9 /* example_shaders.h.template */ = {isa = PBXFileReference; lastKnownFileType = text; path = example_shaders.h.template; sourceTree = "<group>"; };
+		ED55B452235A2CFF003ACDE9 /* example_shaders.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = example_shaders.h; sourceTree = "<group>"; };
 		EDCEEB7D235764420087ECAB /* load.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = load.hpp; sourceTree = "<group>"; };
 		EDCEEB7E2357649B0087ECAB /* utils.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = utils.hpp; sourceTree = "<group>"; };
 		EDCEEB802357655F0087ECAB /* load.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = load.cpp; sourceTree = "<group>"; };
@@ -280,6 +284,25 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		ED55B44D235A2CFF003ACDE9 /* shaders */ = {
+			isa = PBXGroup;
+			children = (
+				ED55B44E235A2CFF003ACDE9 /* include */,
+			);
+			path = shaders;
+			sourceTree = "<group>";
+		};
+		ED55B44E235A2CFF003ACDE9 /* include */ = {
+			isa = PBXGroup;
+			children = (
+				ED55B44F235A2CFF003ACDE9 /* shaders.h.template */,
+				ED55B450235A2CFF003ACDE9 /* shaders.h */,
+				ED55B451235A2CFF003ACDE9 /* example_shaders.h.template */,
+				ED55B452235A2CFF003ACDE9 /* example_shaders.h */,
+			);
+			path = include;
+			sourceTree = "<group>";
+		};
 		EDCEEB7C235764180087ECAB /* utils */ = {
 			isa = PBXGroup;
 			children = (
@@ -299,6 +322,7 @@
 		EDE6D7AD2355C5550014D7C8 = {
 			isa = PBXGroup;
 			children = (
+				ED55B44D235A2CFF003ACDE9 /* shaders */,
 				EDE6D7DA2355C5A30014D7C8 /* examples */,
 				EDE6D7C42355C5620014D7C8 /* deps */,
 				EDE6D7B82355C5550014D7C8 /* bg2e */,
@@ -914,6 +938,7 @@
 					"$(PROJECT_DIR)/include",
 					"$(PROJECT_DIR)/deps/glfw-3.3/osx/include",
 					"$(PROJECT_DIR)/deps/bgfx/osx/include",
+					"$(PROJECT_DIR)/shaders/include",
 				);
 				LIBRARY_SEARCH_PATHS = (
 					"$(PROJECT_DIR)/deps/glfw-3.3/osx/lib",
@@ -975,6 +1000,7 @@
 					"$(PROJECT_DIR)/include",
 					"$(PROJECT_DIR)/deps/glfw-3.3/osx/include",
 					"$(PROJECT_DIR)/deps/bgfx/osx/include",
+					"$(PROJECT_DIR)/shaders/include",
 				);
 				LIBRARY_SEARCH_PATHS = (
 					"$(PROJECT_DIR)/deps/glfw-3.3/osx/lib",

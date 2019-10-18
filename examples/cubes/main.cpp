@@ -8,6 +8,8 @@
 #include <bg2e/wnd.hpp>
 #include <bg2e/utils.hpp>
 
+#include "example_shaders.h"
+
 struct PosColorVertex
 {
     float m_x;
@@ -73,7 +75,7 @@ public:
                 
         _indexBuffer = bgfx::createIndexBuffer(bgfx::makeRef(s_cubeTriList, sizeof(s_cubeTriList)));
         
-        _program = bg2e::utils::loadProgram(_fileReader, "vs_cubes", "fs_cubes(");
+        //_program = bgfx::createProgram(shaders::basic_vertex_metal,shaders::basic_fragment_metal, true);
     }
     
     void resize(uint32_t w, uint32_t h) {
