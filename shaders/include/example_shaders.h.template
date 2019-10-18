@@ -1,0 +1,11 @@
+
+#ifndef _bg2e_shaders_h_
+#define _bg2e_shaders_h_
+
+namespace shaders {
+
+%SHADER_ARRAYS%
+
+}
+
+#endif

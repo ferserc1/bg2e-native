@@ -7,13 +7,20 @@ const platforms = {
 
 module.exports = {
     scriptsPath: `${ __dirname }/../scripts/`,
-    shadersPath: `${ __dirname }/src`,
     
     shaderc: `${ __dirname }/../deps/bgfx/${ platforms[process.platform] }/bin/shaderc`,
+    
+    shadersPath: `${ __dirname }/src`,
     outFileTemplate: `${ __dirname }/include/shaders.h.template`,
     outFile: `${ __dirname }/include/shaders.h`,
+    
+    exampleShadersPath: `${ __dirname }/src-examples`,
+    exampleOutFileTemplate: `${ __dirname }/include/example_shaders.h.template`,
+    exampleOutFile: `${ __dirname }/include/example_shaders.h`,
+
     intermediatePath: `${ __dirname }/include/intermediate`,
     shaderIncludePath: `${ __dirname }/lib`,
+    
 
     profiles: {
         common: {

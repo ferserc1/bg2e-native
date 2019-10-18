@@ -9,13 +9,21 @@ const platforms = {
 
 const config = require(__dirname + "/config");
 
+const libraryIntermediatePath = config.intermediatePath + '/src';
+const exampleIntermediatePath = config.intermediatePath + '/example-src'
 if (!fs.existsSync(config.intermediatePath)) {
     fs.mkdirSync(config.intermediatePath);
+}
+if (!fs.existsSync(libraryIntermediatePath)) {
+    fs.mkdirSync(libraryIntermediatePath);
+}
+if (!fs.existsSync(exampleIntermediatePath)) {
+    fs.mkdirSync(exampleIntermediatePath);
 }
 
 const command = require(config.scriptsPath + 'command');
 
-function addBuildCommands(name,shaderFilePath,type,buildCommands = []) {
+function addBuildCommands(name,shaderFilePath,type,intermediatePath,buildCommands = []) {
     let profiles = [
         '120'   // OpenGL
     ];
@@ -34,7 +42,7 @@ function addBuildCommands(name,shaderFilePath,type,buildCommands = []) {
     profiles.forEach((profile) => {
         let arrayName = `${ name }_${ type }_${ profile }`;
         let outFile = `${ arrayName }.bin.h`;
-        let outPath = `${ config.intermediatePath }/${ outFile }`;
+        let outPath = `${ intermediatePath }/${ outFile }`;
         
         let command = `${ config.shaderc } ` +
             `-f ${ shaderFilePath } ` +
@@ -51,39 +59,39 @@ function addBuildCommands(name,shaderFilePath,type,buildCommands = []) {
     return buildCommands;
 }
 
-function addCommandsForShaderPath(shaderDir) {
-    let shaderPath = path.join(config.shadersPath,shaderDir);
+function addCommandsForShaderPath(shadersPath,shaderDir,intermediatePath,buildCommands) {
+    let shaderPath = path.join(shadersPath,shaderDir);
     fs.readdirSync(shaderPath).forEach((shaderFileName) => {
         if (/\.fs\./.test(shaderFileName)) {
-            addBuildCommands(shaderDir,path.join(shaderPath,shaderFileName),'fragment',buildCommands);
+            addBuildCommands(shaderDir,path.join(shaderPath,shaderFileName),'fragment',intermediatePath,buildCommands);
         }
         else if (/\.vs\./.test(shaderFileName)) {
-            addBuildCommands(shaderDir,path.join(shaderPath,shaderFileName),'vertex',buildCommands);
+            addBuildCommands(shaderDir,path.join(shaderPath,shaderFileName),'vertex',intermediatePath,buildCommands);
         }
     });
 }
 
-// Generate command list
-let buildCommands = [];
-if (process.argv.length>2) {
-    process.argv.splice(2).forEach((shaderName) => {
-        if (fs.existsSync(path.join(config.shadersPath,shaderName))) {
-            addCommandsForShaderPath(shaderName);
-        }
-        else {
-            console.error("WARNING: No such shader directory " + shaderName);
-        }
-    });
-}
-else {
-    fs.readdirSync(config.shadersPath).forEach((shaderDir) => {
-        addCommandsForShaderPath(shaderDir);
-    });
+function generateBuildCommands(shadersPath,intermediatePath) {
+    let buildCommands = [];
+    if (process.argv.length>2) {
+        process.argv.splice(2).forEach((shaderName) => {
+            if (fs.existsSync(path.join(shadersPath,shaderName))) {
+                addCommandsForShaderPath(shadersPath,shaderDir,intermediatePath,buildCommands);
+            }
+            else {
+                console.error("WARNING: No such shader directory " + shaderName);
+            }
+        });
+    }
+    else {
+        fs.readdirSync(shadersPath).forEach((shaderDir) => {
+            addCommandsForShaderPath(shadersPath,shaderDir,intermediatePath,buildCommands);
+        });
+    }
+    return buildCommands;
 }
 
-// Execute commands
-let promises = [];
-buildCommands.forEach((buildCommand) => {
+function executeBuildCommand(buildCommand, promises) {
     promises.push(
         new Promise((resolve,reject) => {
             command.exec(buildCommand)
@@ -96,28 +104,46 @@ buildCommands.forEach((buildCommand) => {
                 });
         })
     );
-});
+}
 
-Promise.all(promises)
+function buildOutputFile(intermediatePath,outTemplate,outFile) {
+    let buffer = "";
+    fs.readdirSync(intermediatePath).forEach((intermediateFile) => {
+        let intermediateFilePath = path.join(intermediatePath,intermediateFile);
+        buffer += fs.readFileSync(intermediateFilePath, { encoding: 'utf-8'}) + "\n\n";
+    });
+
+    let headerFile = fs.readFileSync(outTemplate,{ encoding: 'utf-8' });
+    headerFile = headerFile.replace("%SHADER_ARRAYS%",buffer);
+    fs.writeFileSync(outFile, headerFile);
+}
+
+// Generate command list
+let libraryBuildCommands = generateBuildCommands(config.shadersPath,libraryIntermediatePath);
+let examplesBuildCommands = generateBuildCommands(config.exampleShadersPath,exampleIntermediatePath);
+
+
+// Execute commands
+let libraryBuildPromises = [];
+libraryBuildCommands.forEach((buildCommand) => executeBuildCommand(buildCommand,libraryBuildPromises));
+
+let exampleBuildPromises = [];
+examplesBuildCommands.forEach((buildCommand) => executeBuildCommand(buildCommand,exampleBuildPromises));
+
+Promise.all(libraryBuildPromises)
     .then(() => {
         // Create the include file from the template and the intermediate files
         console.log("Intermediate files build complete. Generating shader C header...");
 
-        let buffer = "";
-        fs.readdirSync(config.intermediatePath).forEach((intermediateFile) => {
-            let intermediateFilePath = path.join(config.intermediatePath,intermediateFile);
-            buffer += fs.readFileSync(intermediateFilePath, { encoding: 'utf-8'}) + "\n\n";
-        });
+        buildOutputFile(config.intermediatePath + "/src",config.outFileTemplate,config.outFile);
+        
+        return Promise.all(exampleBuildPromises);
+    })
 
-        let headerFile = fs.readFileSync(config.outFileTemplate,{ encoding: 'utf-8' });
-        headerFile = headerFile.replace("%SHADER_ARRAYS%",buffer);
-        fs.writeFileSync(config.outFile, headerFile);
+    .then(() => {
+        // Create examples shader include file
+        console.log("Intermediate example files build complete. Generating example shader C header...");
+        buildOutputFile(config.intermediatePath + "/example-src",config.exampleOutFileTemplate,config.exampleOutFile);
     });
 
-
-
-// command.exec('ls')
-//     .then((result) => {
-//         console.log(result.stdout);
-//     });
 
