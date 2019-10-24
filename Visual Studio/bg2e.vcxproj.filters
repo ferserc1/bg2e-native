@@ -1,0 +1,72 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Archivos de origen">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Archivos de encabezado">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="Archivos de recursos">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Archivos de encabezado\utils">
+      <UniqueIdentifier>{0d89df87-ddf0-4ce0-8263-075ada15398f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Archivos de encabezado\wnd">
+      <UniqueIdentifier>{2e7b544e-6a42-4577-abf1-46885eb28fe9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Archivos de origen\utils">
+      <UniqueIdentifier>{f577febf-4d61-4c28-8984-a6f6bf0d4fd5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Archivos de origen\wnd">
+      <UniqueIdentifier>{03109eb8-5707-4633-9dc0-c71f70eb8590}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\include\bg2e\platform.hpp">
+      <Filter>Archivos de encabezado</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\utils.hpp">
+      <Filter>Archivos de encabezado</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\wnd.hpp">
+      <Filter>Archivos de encabezado</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\wnd\event_handler.hpp">
+      <Filter>Archivos de encabezado\wnd</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\wnd\glfw_defines.hpp">
+      <Filter>Archivos de encabezado\wnd</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\wnd\keyboard_event.hpp">
+      <Filter>Archivos de encabezado\wnd</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\wnd\main_loop.hpp">
+      <Filter>Archivos de encabezado\wnd</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\wnd\mouse_event.hpp">
+      <Filter>Archivos de encabezado\wnd</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\wnd\window.hpp">
+      <Filter>Archivos de encabezado\wnd</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\utils\load.hpp">
+      <Filter>Archivos de encabezado\utils</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\src\utils\load.cpp">
+      <Filter>Archivos de origen\utils</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\wnd\main_loop.cpp">
+      <Filter>Archivos de origen\wnd</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\wnd\window.cpp">
+      <Filter>Archivos de origen\wnd</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>

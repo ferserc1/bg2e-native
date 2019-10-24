@@ -133,11 +133,11 @@ namespace bg2e {
             bgfx::Init init;
             #if BX_PLATFORM_LINUX || BX_PLATFORM_BSD
                 init.platformData.ndt = glfwGetX11Display();
-                init.platformData.nwh = (void*)(uintptr_t)glfwGetX11Window(window);
+                init.platformData.nwh = (void*)(uintptr_t)glfwGetX11Window(_wndHandle);
             #elif BX_PLATFORM_OSX
                 init.platformData.nwh = glfwGetCocoaWindow(_wndHandle);
             #elif BX_PLATFORM_WINDOWS
-                init.platformData.nwh = glfwGetWin32Window(window);
+                init.platformData.nwh = glfwGetWin32Window(_wndHandle);
             #endif
             init.resolution.width = _width;
             init.resolution.height = _height;
@@ -150,7 +150,7 @@ namespace bg2e {
             bgfx::setViewClear(_viewId, BGFX_CLEAR_COLOR);
             bgfx::setViewRect(_viewId, 0, 0, bgfx::BackbufferRatio::Equal);
             
-            _lastFrameTime = glfwGetTime();
+            _lastFrameTime = static_cast<float>(glfwGetTime());
             
             if (_eventHandler) {
                 _eventHandler->init();
