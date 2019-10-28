@@ -208,14 +208,15 @@ namespace bg2e {
         }
     
         void Window::frame() {
-            // This dummy draw call is here to make sure that view is cleared if no other draw call are submitted
-            bgfx::touch(_viewId);
-            
             if (_eventHandler) {
                 float elapsed = static_cast<float>(glfwGetTime());
                 float delta = (elapsed - _lastFrameTime) * 1000.0f;
                 _lastFrameTime = elapsed;
                 _eventHandler->update(delta);
+                
+                // This dummy draw call is here to make sure that view is cleared if no other draw call are submitted
+                bgfx::touch(_viewId);
+                
                 _eventHandler->draw();
             }
             

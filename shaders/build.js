@@ -40,7 +40,7 @@ function addBuildCommands(name,shaderFilePath,type,intermediatePath,buildCommand
     addProfiles(process.platform);
 
     profiles.forEach((profile) => {
-        let arrayName = `${ name }_${ type }_${ profile }`;
+        let arrayName = `${ name }_${ type }_${ config.arrayName[profile] }`;
         let outFile = `${ arrayName }.bin.h`;
         let outPath = `${ intermediatePath }/${ outFile }`;
         

@@ -21,6 +21,12 @@ module.exports = {
     intermediatePath: `${ __dirname }/include/intermediate`,
     shaderIncludePath: `${ __dirname }/lib`,
     
+    arrayName: {
+        "120": "glsl",
+        vs_5_0: "dx11",
+        spirv: "spv",
+        metal: "mtl"
+    },
 
     profiles: {
         common: {
