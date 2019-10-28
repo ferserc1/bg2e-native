@@ -9,7 +9,13 @@
 #include <bg2e/wnd.hpp>
 #include <bg2e/utils.hpp>
 
-#include "example_shaders.h"
+#if BG2E_PLATFORM_WINDOWS==1
+#include "win64/example_shaders.h"
+#elif BG2E_PLATFORM_OSX==1
+#include "osx/example_shaders.h"
+#elif BG2E_PLATFORM_LINUX==1
+#include "linux/example_shaders.h"
+#endif
 
 struct PosColorVertex
 {

@@ -12,11 +12,11 @@ module.exports = {
     
     shadersPath: `${ __dirname }/src`,
     outFileTemplate: `${ __dirname }/include/shaders.h.template`,
-    outFile: `${ __dirname }/include/shaders.h`,
+    outFile: `${ __dirname }/include/${ platforms[process.platform] }/shaders.h`,
     
     exampleShadersPath: `${ __dirname }/src-examples`,
     exampleOutFileTemplate: `${ __dirname }/include/example_shaders.h.template`,
-    exampleOutFile: `${ __dirname }/include/example_shaders.h`,
+    exampleOutFile: `${ __dirname }/include/${ platforms[process.platform] }/example_shaders.h`,
 
     intermediatePath: `${ __dirname }/include/intermediate`,
     shaderIncludePath: `${ __dirname }/lib`,
