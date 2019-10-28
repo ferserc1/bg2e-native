@@ -414,4 +414,9 @@ MigrationBackup/
 
 # Ionide (cross platform F# VS Code tools) working folder
 .ionide/
+
 bg2e-cpp-deps-osx-win64-v1.zip
+
+# shader intermediate
+*.bin.h
+

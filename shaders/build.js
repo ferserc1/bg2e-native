@@ -3,7 +3,7 @@ const path = require('path');
 
 const platforms = {
     "darwin": "osx",
-    "win32": "win",
+    "win32": "windows",
     "linux": "linux"
 };
 

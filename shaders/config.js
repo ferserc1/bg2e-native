@@ -1,7 +1,7 @@
 
 const platforms = {
     "darwin": "osx",
-    "win32": "win",
+    "win32": "win64",
     "linux": "linux"
 };
 
@@ -23,7 +23,10 @@ module.exports = {
     
     arrayName: {
         "120": "glsl",
-        vs_5_0: "dx11",
+        vs_4_0: "dx11",
+        ps_4_0: "dx11",
+        vs_3_0: "dx9",
+        ps_3_0: "dx9",
         spirv: "spv",
         metal: "mtl"
     },
@@ -39,12 +42,14 @@ module.exports = {
         },
         win32: {
             vertex: [
-                'vs_5_0',
-                'spirv'
+                'vs_4_0',
+                'spirv',
+                'vs_3_0'
             ],
             fragment: [
-                'ps_5_0',
-                'spirv'
+                'ps_4_0',
+                'spirv',
+                'ps_3_0'
             ]
         },
         darwin: {
