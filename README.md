@@ -85,6 +85,38 @@ And you'll need also to link to the following macOS frameworks:
 
 To avoid glfw documentation warning like `Empty paragraph passed to '@sa' command`, disable `Documentation comments` warnings in `Build Settings`
 
+### Windows Visual Studio
+
+Search paths: add the paths to locate the bg2e library and also its dependencies (Project settings > VC++ Directories)
+
+Include Directories:
+
+- $(BG2E_DIR)\include
+- $(BG2E_DIR)\deps\glfw-3.3\win64\include
+- $(BG2E_DIR)\deps\bgfx\win64\include
+
+Library Directories:
+
+- $(BG2E_DIR)\build\$(Configuration)
+- $(BG2E_DIR)\deps\glfw-3.3\win64\lib
+- $(BG2E_DIR)\deps\bgfx\win64\lib
+
+You can use the $(Configuration) variable in Visual Studio to reference the appropiate configuration (Debug or Release).
+
+Linker: link with bg2e library and its dependencies.
+
+- bgfx$(Configuration).lib
+- bimg_decode$(Configuration).lib
+- bimg$(Configuration).lib
+- bx$(Configuration).lib
+- glfw3.lib
+- bg2e.lib
+
+Other settings: To link with bg2e as a static library, you must to set, in C/C++ > Code Generation > Runtime Library:
+
+- In Debug configuration: Multi-threaded Debug (/MTd)
+- In Release configuration: Multi-threaded (/MT)
+
 
 ## Basic usage
 
