@@ -132,6 +132,9 @@
     <ClInclude Include="..\include\bg2e\db\json\value.hpp">
       <Filter>Header files\db\json</Filter>
     </ClInclude>
+    <ClInclude Include="..\include\bg2e\base\poly_list.hpp">
+      <Filter>Header files\base</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\utils\load.cpp">
@@ -169,6 +172,9 @@
     </ClCompile>
     <ClCompile Include="..\src\db\json\value.cpp">
       <Filter>Source files\db\json</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\base\poly_list.cpp">
+      <Filter>Source files\base</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

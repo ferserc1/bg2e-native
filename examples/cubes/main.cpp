@@ -20,9 +20,10 @@
 
 struct PosColorVertex
 {
-    float m_x;
-    float m_y;
-    float m_z;
+    //float m_x;
+    //float m_y;
+    //float m_z;
+	bg2e::math::float3 _position;
     uint32_t m_abgr;
 
     static void init()
@@ -39,16 +40,73 @@ struct PosColorVertex
 
 bgfx::VertexLayout PosColorVertex::ms_layout;
 
+struct PosNormalVertex {
+	bg2e::math::float3 _position;
+	bg2e::math::float3 _normal;
+	bg2e::math::float2 _tex0Coord;
+
+	static void init() {
+		ms_layout.begin()
+			.add(bgfx::Attrib::Position, 3, bgfx::AttribType::Float)
+			.add(bgfx::Attrib::Normal, 3, bgfx::AttribType::Float, true)
+			.add(bgfx::Attrib::TexCoord0, 2, bgfx::AttribType::Float)
+			.end();
+	}
+
+	static bgfx::VertexLayout ms_layout;
+};
+
+bgfx::VertexLayout PosNormalVertex::ms_layout;
+
 static PosColorVertex s_cubeVertices[] =
 {
-    {-1.0f,  1.0f,  1.0f, 0xff000000 },
-    { 1.0f,  1.0f,  1.0f, 0xff0000ff },
-    {-1.0f, -1.0f,  1.0f, 0xff00ff00 },
-    { 1.0f, -1.0f,  1.0f, 0xff00ffff },
-    {-1.0f,  1.0f, -1.0f, 0xffff0000 },
-    { 1.0f,  1.0f, -1.0f, 0xffff00ff },
-    {-1.0f, -1.0f, -1.0f, 0xffffff00 },
-    { 1.0f, -1.0f, -1.0f, 0xffffffff },
+	{{ -1.0f,  1.0f,  1.0f }, 0xff000000 },
+    {{  1.0f,  1.0f,  1.0f }, 0xff0000ff },
+    {{ -1.0f, -1.0f,  1.0f }, 0xff00ff00 },
+    {{  1.0f, -1.0f,  1.0f }, 0xff00ffff },
+    {{ -1.0f,  1.0f, -1.0f }, 0xffff0000 },
+    {{  1.0f,  1.0f, -1.0f }, 0xffff00ff },
+    {{ -1.0f, -1.0f, -1.0f }, 0xffffff00 },
+    {{  1.0f, -1.0f, -1.0f }, 0xffffffff },
+};
+
+static PosNormalVertex s_cubeNVertices[] =
+{
+	// front
+	{{ -1.0f,  1.0f,  1.0f }, { 0.0, 0.0, 1.0 }, { 0.0f, 0.0f } },
+	{{  1.0f,  1.0f,  1.0f }, { 0.0, 0.0, 1.0 }, { 1.0f, 0.0f } },
+	{{  1.0f, -1.0f,  1.0f }, { 0.0, 0.0, 1.0 }, { 1.0f, 1.0f } },
+	{{ -1.0f, -1.0f,  1.0f }, { 0.0, 0.0, 1.0 }, { 0.0f, 1.0f } },
+
+	// back
+	{{  1.0f,  1.0f, -1.0f }, { 0.0, 0.0, -1.0 }, { 0.0f, 0.0f } },
+	{{ -1.0f,  1.0f, -1.0f }, { 0.0, 0.0, -1.0 }, { 1.0f, 0.0f } },
+	{{ -1.0f, -1.0f, -1.0f }, { 0.0, 0.0, -1.0 }, { 1.0f, 1.0f } },
+	{{  1.0f, -1.0f, -1.0f }, { 0.0, 0.0, -1.0 }, { 0.0f, 1.0f } },
+
+	// left
+	{{  -1.0f,  1.0f, -1.0f }, { -1.0, 0.0, 0.0 }, { 0.0f, 0.0f } },
+	{{  -1.0f,  1.0f,  1.0f }, { -1.0, 0.0, 0.0 }, { 1.0f, 0.0f } },
+	{{  -1.0f, -1.0f,  1.0f }, { -1.0, 0.0, 0.0 }, { 1.0f, 1.0f } },
+	{{  -1.0f, -1.0f, -1.0f }, { -1.0, 0.0, 0.0 }, { 0.0f, 1.0f } },
+	
+	// right
+	{{   1.0f,  1.0f,  1.0f }, { 1.0, 0.0, 0.0 }, { 0.0f, 0.0f } },
+	{{   1.0f,  1.0f, -1.0f }, { 1.0, 0.0, 0.0 }, { 1.0f, 0.0f } },
+	{{   1.0f, -1.0f, -1.0f }, { 1.0, 0.0, 0.0 }, { 1.0f, 1.0f } },
+	{{   1.0f, -1.0f,  1.0f }, { 1.0, 0.0, 0.0 }, { 0.0f, 1.0f } },
+
+	// top
+	{{  -1.0f,  1.0f, -1.0f }, { 0.0, 1.0, 0.0 }, { 0.0f, 0.0f } },
+	{{   1.0f,  1.0f, -1.0f }, { 0.0, 1.0, 0.0 }, { 1.0f, 0.0f } },
+	{{   1.0f,  1.0f,  1.0f }, { 0.0, 1.0, 0.0 }, { 1.0f, 1.0f } },
+	{{  -1.0f,  1.0f,  1.0f }, { 0.0, 1.0, 0.0 }, { 0.0f, 1.0f } },
+
+	// bottom
+	{{  -1.0f, -1.0f,  1.0f }, { 0.0, -1.0, 0.0 }, { 0.0f, 0.0f } },
+	{{   1.0f, -1.0f,  1.0f }, { 0.0, -1.0, 0.0 }, { 1.0f, 0.0f } },
+	{{   1.0f, -1.0f, -1.0f }, { 0.0, -1.0, 0.0 }, { 1.0f, 1.0f } },
+	{{  -1.0f, -1.0f, -1.0f }, { 0.0, -1.0, 0.0 }, { 0.0f, 1.0f } }
 };
 
 static const uint16_t s_cubeTriList[] =
@@ -67,6 +125,32 @@ static const uint16_t s_cubeTriList[] =
     6, 3, 7,
 };
 
+static const uint16_t s_cubeTriList2[] =
+{
+	0, 1, 2, // front
+	2, 3, 0,
+	
+	// back
+	4, 5, 6,
+	6, 7, 4,
+
+	// left
+	8, 9, 10,
+	10, 11, 8,
+
+	// right
+	12, 13, 14,
+	14, 15, 12,
+
+	// top
+	16, 17, 18,
+	18, 19, 16,
+
+	// bottom
+	20, 21, 22,
+	22, 23, 20
+};
+
 class MyEventHandler : public  bg2e::wnd::EventHandler {
 public:
         
@@ -74,20 +158,26 @@ public:
         std::cout << "Init" << std::endl;
     
         PosColorVertex::init();
+		PosNormalVertex::init();
         
         _vertexBuffer = bgfx::createVertexBuffer(
-            bgfx::makeRef(s_cubeVertices, sizeof(s_cubeVertices)),
-            PosColorVertex::ms_layout);
+            bgfx::makeRef(s_cubeNVertices, sizeof(s_cubeNVertices)),
+            PosNormalVertex::ms_layout);
                 
-        _indexBuffer = bgfx::createIndexBuffer(bgfx::makeRef(s_cubeTriList, sizeof(s_cubeTriList)));
+        _indexBuffer = bgfx::createIndexBuffer(bgfx::makeRef(s_cubeTriList2, sizeof(s_cubeTriList2)));
         
         bgfx::RendererType::Enum type = bgfx::getRendererType();
 
-        bgfx::ShaderHandle vsh = bgfx::createEmbeddedShader(_shaders, type, "shaders::basic_vertex");
-        bgfx::ShaderHandle fsh = bgfx::createEmbeddedShader(_shaders, type, "shaders::basic_fragment");
+        //bgfx::ShaderHandle vsh = bgfx::createEmbeddedShader(_shaders, type, "shaders::basic_vertex");
+        //bgfx::ShaderHandle fsh = bgfx::createEmbeddedShader(_shaders, type, "shaders::basic_fragment");
+		bgfx::ShaderHandle vsh = bgfx::createEmbeddedShader(_shaders, type, "shaders::phong_vertex");
+		bgfx::ShaderHandle fsh = bgfx::createEmbeddedShader(_shaders, type, "shaders::phong_fragment");
 
         // Create program from shaders.
         _program = bgfx::createProgram(vsh, fsh, true /* destroy shaders when program is destroyed */);
+
+		_lightPositionHandle = bgfx::createUniform("lightPosition", bgfx::UniformType::Vec4);
+		_normalMatHandle = bgfx::createUniform("u_normal", bgfx::UniformType::Mat4);
     }
     
     static const bgfx::EmbeddedShader _shaders[];
@@ -133,11 +223,15 @@ public:
         static float elapsed = 0;
         elapsed += (delta / 1000.0f);
         bg2e::math::float4x4 mtx = bg2e::math::float4x4::Identity();
-        mtx.rotate(elapsed, 1.0f, 0.0f, 0.0f)
-            .rotate(elapsed, 0.0f, 1.0f, 0.0f);
+		mtx.rotate(elapsed, 1.0f, 0.0f, 0.0f)
+			.rotate(elapsed * 2.0f, 0.0f, 1.0f, 0.0f);
         
+		bg2e::math::float4x4 normMatrix = mtx;
+		normMatrix.invert().transpose();
+
         bgfx::setTransform(mtx.raw());
-        
+		bgfx::setUniform(_lightPositionHandle, &bg2e::math::float4(2.0f, 2.0f, -5.0f,0.0f));
+		bgfx::setUniform(_normalMatHandle, normMatrix.raw());
         bgfx::setVertexBuffer(window()->viewId(), _vertexBuffer);
         bgfx::setIndexBuffer(_indexBuffer);
         
@@ -167,6 +261,8 @@ public:
         bgfx::destroy(_indexBuffer);
         bgfx::destroy(_vertexBuffer);
         bgfx::destroy(_program);
+		bgfx::destroy(_lightPositionHandle);
+		bgfx::destroy(_normalMatHandle);
     }
     
     void keyUp(const bg2e::wnd::KeyboardEvent & evt) {
@@ -182,6 +278,8 @@ protected:
     bgfx::VertexBufferHandle _vertexBuffer;
     bgfx::IndexBufferHandle _indexBuffer;
     bgfx::ProgramHandle _program;
+	bgfx::UniformHandle _lightPositionHandle;
+	bgfx::UniformHandle _normalMatHandle;
     
     bx::DefaultAllocator _allocator;
     bx::FileReaderI * _fileReader;
@@ -190,6 +288,8 @@ protected:
 const bgfx::EmbeddedShader MyEventHandler::_shaders[] = {
    BGFX_EMBEDDED_SHADER(shaders::basic_vertex),
    BGFX_EMBEDDED_SHADER(shaders::basic_fragment),
+   BGFX_EMBEDDED_SHADER(shaders::phong_vertex),
+   BGFX_EMBEDDED_SHADER(shaders::phong_fragment),
    
    BGFX_EMBEDDED_SHADER_END()
 };

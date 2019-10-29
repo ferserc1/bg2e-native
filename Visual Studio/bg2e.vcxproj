@@ -22,6 +22,7 @@
     <ClInclude Include="..\include\bg2e\base.hpp" />
     <ClInclude Include="..\include\bg2e\base\image.hpp" />
     <ClInclude Include="..\include\bg2e\base\path.hpp" />
+    <ClInclude Include="..\include\bg2e\base\poly_list.hpp" />
     <ClInclude Include="..\include\bg2e\db.hpp" />
     <ClInclude Include="..\include\bg2e\db\bg2_reader.hpp" />
     <ClInclude Include="..\include\bg2e\db\bg2_writter.hpp" />
@@ -50,6 +51,7 @@
   <ItemGroup>
     <ClCompile Include="..\src\base\image.cpp" />
     <ClCompile Include="..\src\base\path.cpp" />
+    <ClCompile Include="..\src\base\poly_list.cpp" />
     <ClCompile Include="..\src\db\bg2_reader.cpp" />
     <ClCompile Include="..\src\db\bg2_writter.cpp" />
     <ClCompile Include="..\src\db\binary_parser.cpp" />

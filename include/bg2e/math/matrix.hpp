@@ -502,7 +502,7 @@ namespace bg2e {
 			return *this;
 		}
 
-		inline mat3x3<T>& transpose() {
+		inline mat4x4<T>& transpose() {
 			vec4<T> r0(_m[0], _m[4], _m[8], _m[12]);
 			vec4<T> r1(_m[1], _m[5], _m[9], _m[13]);
 			vec4<T> r2(_m[2], _m[6], _m[10], _m[14]);
