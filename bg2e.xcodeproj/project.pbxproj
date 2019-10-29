@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		ED4EC13123681D4700C63E45 /* utils.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED4EC13023681D4700C63E45 /* utils.cpp */; };
 		EDCEEB812357655F0087ECAB /* load.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EDCEEB802357655F0087ECAB /* load.cpp */; };
 		EDE6D7DC2355C6060014D7C8 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EDE6D7DB2355C6060014D7C8 /* main.cpp */; };
 		EDE6D86A2355D0AD0014D7C8 /* libbimg_decodeRelease.a in Frameworks */ = {isa = PBXBuildFile; fileRef = EDE6D85B2355C6340014D7C8 /* libbimg_decodeRelease.a */; };
@@ -80,10 +81,15 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		ED4EC12923681D2100C63E45 /* shaders.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = shaders.h; sourceTree = "<group>"; };
+		ED4EC12A23681D2100C63E45 /* example_shaders.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = example_shaders.h; sourceTree = "<group>"; };
+		ED4EC12C23681D3600C63E45 /* vector.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = vector.hpp; sourceTree = "<group>"; };
+		ED4EC12D23681D3600C63E45 /* matrix.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = matrix.hpp; sourceTree = "<group>"; };
+		ED4EC12E23681D3600C63E45 /* utils.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = utils.hpp; sourceTree = "<group>"; };
+		ED4EC13023681D4700C63E45 /* utils.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = utils.cpp; sourceTree = "<group>"; };
+		ED4EC13223681D9B00C63E45 /* math.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = math.hpp; sourceTree = "<group>"; };
 		ED55B44F235A2CFF003ACDE9 /* shaders.h.template */ = {isa = PBXFileReference; lastKnownFileType = text; path = shaders.h.template; sourceTree = "<group>"; };
-		ED55B450235A2CFF003ACDE9 /* shaders.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = shaders.h; sourceTree = "<group>"; };
 		ED55B451235A2CFF003ACDE9 /* example_shaders.h.template */ = {isa = PBXFileReference; lastKnownFileType = text; path = example_shaders.h.template; sourceTree = "<group>"; };
-		ED55B452235A2CFF003ACDE9 /* example_shaders.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = example_shaders.h; sourceTree = "<group>"; };
 		EDCEEB7D235764420087ECAB /* load.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = load.hpp; sourceTree = "<group>"; };
 		EDCEEB7E2357649B0087ECAB /* utils.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = utils.hpp; sourceTree = "<group>"; };
 		EDCEEB802357655F0087ECAB /* load.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = load.cpp; sourceTree = "<group>"; };
@@ -284,6 +290,33 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		ED4EC12823681D2100C63E45 /* osx */ = {
+			isa = PBXGroup;
+			children = (
+				ED4EC12923681D2100C63E45 /* shaders.h */,
+				ED4EC12A23681D2100C63E45 /* example_shaders.h */,
+			);
+			path = osx;
+			sourceTree = "<group>";
+		};
+		ED4EC12B23681D3600C63E45 /* math */ = {
+			isa = PBXGroup;
+			children = (
+				ED4EC12C23681D3600C63E45 /* vector.hpp */,
+				ED4EC12D23681D3600C63E45 /* matrix.hpp */,
+				ED4EC12E23681D3600C63E45 /* utils.hpp */,
+			);
+			path = math;
+			sourceTree = "<group>";
+		};
+		ED4EC12F23681D4700C63E45 /* math */ = {
+			isa = PBXGroup;
+			children = (
+				ED4EC13023681D4700C63E45 /* utils.cpp */,
+			);
+			path = math;
+			sourceTree = "<group>";
+		};
 		ED55B44D235A2CFF003ACDE9 /* shaders */ = {
 			isa = PBXGroup;
 			children = (
@@ -295,10 +328,9 @@
 		ED55B44E235A2CFF003ACDE9 /* include */ = {
 			isa = PBXGroup;
 			children = (
+				ED4EC12823681D2100C63E45 /* osx */,
 				ED55B44F235A2CFF003ACDE9 /* shaders.h.template */,
-				ED55B450235A2CFF003ACDE9 /* shaders.h */,
 				ED55B451235A2CFF003ACDE9 /* example_shaders.h.template */,
-				ED55B452235A2CFF003ACDE9 /* example_shaders.h */,
 			);
 			path = include;
 			sourceTree = "<group>";
@@ -671,8 +703,10 @@
 		EDE6D8602355CF360014D7C8 /* bg2e */ = {
 			isa = PBXGroup;
 			children = (
+				ED4EC12B23681D3600C63E45 /* math */,
 				EDCEEB7C235764180087ECAB /* utils */,
 				EDE6D8622355CF360014D7C8 /* wnd */,
+				ED4EC13223681D9B00C63E45 /* math.hpp */,
 				EDE6D8612355CF360014D7C8 /* platform.hpp */,
 				EDE6D8652355CF360014D7C8 /* wnd.hpp */,
 				EDCEEB7E2357649B0087ECAB /* utils.hpp */,
@@ -696,6 +730,7 @@
 		EDE6D8662355CF360014D7C8 /* src */ = {
 			isa = PBXGroup;
 			children = (
+				ED4EC12F23681D4700C63E45 /* math */,
 				EDCEEB7F2357654A0087ECAB /* utils */,
 				EDE6D8672355CF360014D7C8 /* wnd */,
 			);
@@ -862,6 +897,7 @@
 				EDCEEB812357655F0087ECAB /* load.cpp in Sources */,
 				EDE6D88F2355EDC90014D7C8 /* main_loop.cpp in Sources */,
 				EDE6D87D2355D1DB0014D7C8 /* window.cpp in Sources */,
+				ED4EC13123681D4700C63E45 /* utils.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

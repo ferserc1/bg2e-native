@@ -8,6 +8,7 @@
 
 #include <bg2e/wnd.hpp>
 #include <bg2e/utils.hpp>
+#include <bg2e/math.hpp>
 
 #if BG2E_PLATFORM_WINDOWS==1
 #include "win64/example_shaders.h"
@@ -99,19 +100,19 @@ public:
     void update(float delta) {
         auto viewId = window()->viewId();
         
-        
-        const bx::Vec3 at  = { 0.0f, 0.0f,   0.0f };
-        const bx::Vec3 eye = { 0.0f, 0.0f, -5.0f };
+        const bg2e::math::float3 at = { 0.0f, 0.0f, 0.0f };
+        const bg2e::math::float3 eye = { 0.0f, 0.0f, -5.0f };
+        const bg2e::math::float3 up = { 0.0f, 1.0f, 0.0f };
 
         // Set view and projection matrix for view 0.
         {
-            float view[16];
-            bx::mtxLookAt(view, eye, at);
+            bg2e::math::float4x4 view = bg2e::math::float4x4::Identity();
+            view.lookAt(eye, at, up);
 
-            float proj[16];
             auto aspectRatio = static_cast<float>(window()->width()) / static_cast<float>(window()->height());
-            bx::mtxProj(proj, 60.0f, aspectRatio, 0.1f, 100.0f, bgfx::getCaps()->homogeneousDepth);
-            bgfx::setViewTransform(0, view, proj);
+            
+            bg2e::math::float4x4 proj = bg2e::math::float4x4::Perspective(60.0f, aspectRatio, 0.1f, 100.0f);
+            bgfx::setViewTransform(0, view.raw(), proj.raw());
         }
         
         bgfx::setViewClear(viewId, BGFX_CLEAR_COLOR | BGFX_CLEAR_DEPTH, 0x303960ff, 1.0f, 0.0f);
@@ -124,21 +125,18 @@ public:
             | BGFX_STATE_WRITE_A
             | BGFX_STATE_WRITE_Z
             | BGFX_STATE_DEPTH_TEST_LESS
-            | BGFX_STATE_CULL_CW
+            | BGFX_STATE_CULL_CCW
             | BGFX_STATE_MSAA
             | UINT64_C(0)// triangle list     BGFX_STATE_PT_TRISTRIP
             ;
         
-        float mtx[16];
         static float elapsed = 0;
         elapsed += (delta / 1000.0f);
-        bx::mtxIdentity(mtx);
-        bx::mtxRotateXY(mtx, elapsed, elapsed);
-        mtx[12] = 0.0f;
-        mtx[13] = 0.0f;
-        mtx[14] = 0.0f;
+        bg2e::math::float4x4 mtx = bg2e::math::float4x4::Identity();
+        mtx.rotate(elapsed, 1.0f, 0.0f, 0.0f)
+            .rotate(elapsed, 0.0f, 1.0f, 0.0f);
         
-        bgfx::setTransform(mtx);
+        bgfx::setTransform(mtx.raw());
         
         bgfx::setVertexBuffer(window()->viewId(), _vertexBuffer);
         bgfx::setIndexBuffer(_indexBuffer);
@@ -166,8 +164,9 @@ public:
     void destroy() {
         std::cout << "Destroy" << std::endl;
         
-        // TODO: Destroy resources
-        
+        bgfx::destroy(_indexBuffer);
+        bgfx::destroy(_vertexBuffer);
+        bgfx::destroy(_program);
     }
     
     void keyUp(const bg2e::wnd::KeyboardEvent & evt) {
