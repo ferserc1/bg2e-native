@@ -31,6 +31,24 @@
     <Filter Include="Source files\math">
       <UniqueIdentifier>{da0ce4fc-daae-4c3c-8df1-968e61d51822}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header files\base">
+      <UniqueIdentifier>{ad692a02-ead7-47eb-9e62-f993b24f6539}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header files\db">
+      <UniqueIdentifier>{afd54c37-9ccc-4c8a-bf9c-af70e8d6a287}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source files\base">
+      <UniqueIdentifier>{f073b408-57d8-4156-872a-9646cd93976e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source files\db">
+      <UniqueIdentifier>{502d2e21-5b8d-4060-9cf8-6a03f5aa3266}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source files\db\json">
+      <UniqueIdentifier>{dcc9d232-dc76-4810-95a0-74076808f43e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header files\db\json">
+      <UniqueIdentifier>{6cb8e34a-06f6-459f-8d1d-5a35b37033df}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\include\bg2e\platform.hpp">
@@ -75,6 +93,45 @@
     <ClInclude Include="..\include\bg2e\math.hpp">
       <Filter>Header files</Filter>
     </ClInclude>
+    <ClInclude Include="..\include\bg2e\base\image.hpp">
+      <Filter>Header files\base</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\base\path.hpp">
+      <Filter>Header files\base</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\db\bg2_reader.hpp">
+      <Filter>Header files\db</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\db\bg2_writter.hpp">
+      <Filter>Header files\db</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\db\binary_parser.hpp">
+      <Filter>Header files\db</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\db\types.hpp">
+      <Filter>Header files\db</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\base.hpp">
+      <Filter>Header files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\db.hpp">
+      <Filter>Header files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\db\json\convert.hpp">
+      <Filter>Header files\db\json</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\db\json\escaper.hpp">
+      <Filter>Header files\db\json</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\db\json\grammar.hpp">
+      <Filter>Header files\db\json</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\db\json\parser.hpp">
+      <Filter>Header files\db\json</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\db\json\value.hpp">
+      <Filter>Header files\db\json</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\utils\load.cpp">
@@ -88,6 +145,30 @@
     </ClCompile>
     <ClCompile Include="..\src\math\utils.cpp">
       <Filter>Source files\math</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\base\image.cpp">
+      <Filter>Source files\base</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\base\path.cpp">
+      <Filter>Source files\base</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\db\bg2_reader.cpp">
+      <Filter>Source files\db</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\db\bg2_writter.cpp">
+      <Filter>Source files\db</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\db\binary_parser.cpp">
+      <Filter>Source files\db</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\db\json\convert.cpp">
+      <Filter>Source files\db\json</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\db\json\escaper.cpp">
+      <Filter>Source files\db\json</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\db\json\value.cpp">
+      <Filter>Source files\db\json</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
