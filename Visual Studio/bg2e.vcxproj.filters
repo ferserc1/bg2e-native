@@ -135,6 +135,18 @@
     <ClInclude Include="..\include\bg2e\base\poly_list.hpp">
       <Filter>Header files\base</Filter>
     </ClInclude>
+    <ClInclude Include="..\include\bg2e\db\image_load.hpp">
+      <Filter>Header files\db</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\db\image_write.hpp">
+      <Filter>Header files\db</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\db\stb_image.h">
+      <Filter>Source files\db</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\db\stb_image_write.h">
+      <Filter>Source files\db</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\utils\load.cpp">
@@ -175,6 +187,12 @@
     </ClCompile>
     <ClCompile Include="..\src\base\poly_list.cpp">
       <Filter>Source files\base</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\db\image_load.cpp">
+      <Filter>Source files\db</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\db\image_write.cpp">
+      <Filter>Source files\db</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
