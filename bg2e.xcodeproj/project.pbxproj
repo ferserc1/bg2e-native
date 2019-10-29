@@ -16,6 +16,8 @@
 		ED4EC1752368559000C63E45 /* escaper.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED4EC16D2368559000C63E45 /* escaper.cpp */; };
 		ED4EC1762368559000C63E45 /* binary_parser.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED4EC16E2368559000C63E45 /* binary_parser.cpp */; };
 		ED4EC1772368559000C63E45 /* bg2_reader.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED4EC16F2368559000C63E45 /* bg2_reader.cpp */; };
+		ED4EC17A236891C800C63E45 /* image_write.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED4EC178236891C700C63E45 /* image_write.cpp */; };
+		ED4EC17B236891C800C63E45 /* image_load.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED4EC179236891C700C63E45 /* image_load.cpp */; };
 		EDCEEB812357655F0087ECAB /* load.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EDCEEB802357655F0087ECAB /* load.cpp */; };
 		EDE6D7DC2355C6060014D7C8 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EDE6D7DB2355C6060014D7C8 /* main.cpp */; };
 		EDE6D86A2355D0AD0014D7C8 /* libbimg_decodeRelease.a in Frameworks */ = {isa = PBXBuildFile; fileRef = EDE6D85B2355C6340014D7C8 /* libbimg_decodeRelease.a */; };
@@ -104,7 +106,6 @@
 		ED4EC15C2368557C00C63E45 /* value.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = value.hpp; sourceTree = "<group>"; };
 		ED4EC15D2368557C00C63E45 /* grammar.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = grammar.hpp; sourceTree = "<group>"; };
 		ED4EC15E2368557C00C63E45 /* convert.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = convert.hpp; sourceTree = "<group>"; };
-		ED4EC15F2368557C00C63E45 /* types.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = types.hpp; sourceTree = "<group>"; };
 		ED4EC1602368557C00C63E45 /* db.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = db.hpp; sourceTree = "<group>"; };
 		ED4EC1612368557C00C63E45 /* base.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = base.hpp; sourceTree = "<group>"; };
 		ED4EC1632368557C00C63E45 /* path.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = path.hpp; sourceTree = "<group>"; };
@@ -117,6 +118,12 @@
 		ED4EC16D2368559000C63E45 /* escaper.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = escaper.cpp; sourceTree = "<group>"; };
 		ED4EC16E2368559000C63E45 /* binary_parser.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = binary_parser.cpp; sourceTree = "<group>"; };
 		ED4EC16F2368559000C63E45 /* bg2_reader.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = bg2_reader.cpp; sourceTree = "<group>"; };
+		ED4EC178236891C700C63E45 /* image_write.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = image_write.cpp; sourceTree = "<group>"; };
+		ED4EC179236891C700C63E45 /* image_load.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = image_load.cpp; sourceTree = "<group>"; };
+		ED4EC17C236891D200C63E45 /* stb_image.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = stb_image.h; sourceTree = "<group>"; };
+		ED4EC17D236891D200C63E45 /* stb_image_write.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = stb_image_write.h; sourceTree = "<group>"; };
+		ED4EC17E236891E800C63E45 /* image_write.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = image_write.hpp; sourceTree = "<group>"; };
+		ED4EC17F236891E800C63E45 /* image_load.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = image_load.hpp; sourceTree = "<group>"; };
 		ED55B44F235A2CFF003ACDE9 /* shaders.h.template */ = {isa = PBXFileReference; lastKnownFileType = text; path = shaders.h.template; sourceTree = "<group>"; };
 		ED55B451235A2CFF003ACDE9 /* example_shaders.h.template */ = {isa = PBXFileReference; lastKnownFileType = text; path = example_shaders.h.template; sourceTree = "<group>"; };
 		EDCEEB7D235764420087ECAB /* load.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = load.hpp; sourceTree = "<group>"; };
@@ -349,11 +356,12 @@
 		ED4EC1552368557C00C63E45 /* db */ = {
 			isa = PBXGroup;
 			children = (
+				ED4EC1592368557C00C63E45 /* json */,
 				ED4EC1562368557C00C63E45 /* binary_parser.hpp */,
 				ED4EC1572368557C00C63E45 /* bg2_reader.hpp */,
 				ED4EC1582368557C00C63E45 /* bg2_writter.hpp */,
-				ED4EC1592368557C00C63E45 /* json */,
-				ED4EC15F2368557C00C63E45 /* types.hpp */,
+				ED4EC17F236891E800C63E45 /* image_load.hpp */,
+				ED4EC17E236891E800C63E45 /* image_write.hpp */,
 			);
 			path = db;
 			sourceTree = "<group>";
@@ -391,10 +399,14 @@
 		ED4EC1682368559000C63E45 /* db */ = {
 			isa = PBXGroup;
 			children = (
-				ED4EC1692368559000C63E45 /* bg2_writter.cpp */,
 				ED4EC16A2368559000C63E45 /* json */,
+				ED4EC1692368559000C63E45 /* bg2_writter.cpp */,
 				ED4EC16E2368559000C63E45 /* binary_parser.cpp */,
 				ED4EC16F2368559000C63E45 /* bg2_reader.cpp */,
+				ED4EC179236891C700C63E45 /* image_load.cpp */,
+				ED4EC178236891C700C63E45 /* image_write.cpp */,
+				ED4EC17D236891D200C63E45 /* stb_image_write.h */,
+				ED4EC17C236891D200C63E45 /* stb_image.h */,
 			);
 			path = db;
 			sourceTree = "<group>";
@@ -996,12 +1008,14 @@
 				EDE6D88F2355EDC90014D7C8 /* main_loop.cpp in Sources */,
 				ED4EC1722368559000C63E45 /* bg2_writter.cpp in Sources */,
 				ED4EC1712368559000C63E45 /* path.cpp in Sources */,
+				ED4EC17A236891C800C63E45 /* image_write.cpp in Sources */,
 				ED4EC1772368559000C63E45 /* bg2_reader.cpp in Sources */,
 				ED4EC1742368559000C63E45 /* value.cpp in Sources */,
 				ED4EC1702368559000C63E45 /* image.cpp in Sources */,
 				ED4EC1762368559000C63E45 /* binary_parser.cpp in Sources */,
 				ED4EC1732368559000C63E45 /* convert.cpp in Sources */,
 				EDE6D87D2355D1DB0014D7C8 /* window.cpp in Sources */,
+				ED4EC17B236891C800C63E45 /* image_load.cpp in Sources */,
 				ED4EC13123681D4700C63E45 /* utils.cpp in Sources */,
 				ED4EC1752368559000C63E45 /* escaper.cpp in Sources */,
 			);
