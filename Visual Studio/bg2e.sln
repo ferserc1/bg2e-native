@@ -6,10 +6,16 @@ MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "bg2e", "bg2e.vcxproj", "{4A39024A-BC49-4ADC-8F9D-29BF653D5A32}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "basic", "basic\basic.vcxproj", "{821FAF6A-CD68-401E-88B3-43C48C331E66}"
+	ProjectSection(ProjectDependencies) = postProject
+		{4A39024A-BC49-4ADC-8F9D-29BF653D5A32} = {4A39024A-BC49-4ADC-8F9D-29BF653D5A32}
+	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "example", "example", "{811324EE-6D10-486B-B717-6AA9E444EA7F}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "cubes", "cubes\cubes.vcxproj", "{3370D047-E829-4671-8DBB-1D8EEF790F39}"
+	ProjectSection(ProjectDependencies) = postProject
+		{4A39024A-BC49-4ADC-8F9D-29BF653D5A32} = {4A39024A-BC49-4ADC-8F9D-29BF653D5A32}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

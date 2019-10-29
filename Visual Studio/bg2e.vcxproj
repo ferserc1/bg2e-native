@@ -19,6 +19,10 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\include\bg2e\math.hpp" />
+    <ClInclude Include="..\include\bg2e\math\matrix.hpp" />
+    <ClInclude Include="..\include\bg2e\math\utils.hpp" />
+    <ClInclude Include="..\include\bg2e\math\vector.hpp" />
     <ClInclude Include="..\include\bg2e\platform.hpp" />
     <ClInclude Include="..\include\bg2e\utils.hpp" />
     <ClInclude Include="..\include\bg2e\utils\load.hpp" />
@@ -31,6 +35,7 @@
     <ClInclude Include="..\include\bg2e\wnd\window.hpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\src\math\utils.cpp" />
     <ClCompile Include="..\src\utils\load.cpp" />
     <ClCompile Include="..\src\wnd\main_loop.cpp" />
     <ClCompile Include="..\src\wnd\window.cpp" />
