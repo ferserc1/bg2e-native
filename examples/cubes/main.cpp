@@ -46,12 +46,16 @@ struct PosNormalVertex {
 	bg2e::math::float3 _position;
 	bg2e::math::float3 _normal;
 	bg2e::math::float2 _tex0Coord;
+	bg2e::math::float2 _tex1Coord;
+	bg2e::math::float3 _tangent;
 
 	static void init() {
 		ms_layout.begin()
 			.add(bgfx::Attrib::Position, 3, bgfx::AttribType::Float)
 			.add(bgfx::Attrib::Normal, 3, bgfx::AttribType::Float, true)
 			.add(bgfx::Attrib::TexCoord0, 2, bgfx::AttribType::Float)
+			.add(bgfx::Attrib::TexCoord1, 2, bgfx::AttribType::Float)
+			.add(bgfx::Attrib::Tangent, 3, bgfx::AttribType::Float)
 			.end();
 	}
 
@@ -75,40 +79,40 @@ static PosColorVertex s_cubeVertices[] =
 static PosNormalVertex s_cubeNVertices[] =
 {
 	// front
-	{{ -1.0f,  1.0f,  1.0f }, { 0.0, 0.0, 1.0 }, { 0.0f, 0.0f } },
-	{{  1.0f,  1.0f,  1.0f }, { 0.0, 0.0, 1.0 }, { 1.0f, 0.0f } },
-	{{  1.0f, -1.0f,  1.0f }, { 0.0, 0.0, 1.0 }, { 1.0f, 1.0f } },
-	{{ -1.0f, -1.0f,  1.0f }, { 0.0, 0.0, 1.0 }, { 0.0f, 1.0f } },
+	{{ -1.0f,  1.0f,  1.0f }, { 0.0, 0.0, 1.0 }, { 0.0f, 0.0f }, { 0.0f, 0.0f }, { 0.0, 1.0, 0.0 } },
+	{{  1.0f,  1.0f,  1.0f }, { 0.0, 0.0, 1.0 }, { 1.0f, 0.0f }, { 1.0f, 0.0f }, { 0.0, 1.0, 0.0 } },
+	{{  1.0f, -1.0f,  1.0f }, { 0.0, 0.0, 1.0 }, { 1.0f, 1.0f }, { 1.0f, 1.0f }, { 0.0, 1.0, 0.0 } },
+	{{ -1.0f, -1.0f,  1.0f }, { 0.0, 0.0, 1.0 }, { 0.0f, 1.0f }, { 0.0f, 1.0f }, { 0.0, 1.0, 0.0 } },
 
 	// back
-	{{  1.0f,  1.0f, -1.0f }, { 0.0, 0.0, -1.0 }, { 0.0f, 0.0f } },
-	{{ -1.0f,  1.0f, -1.0f }, { 0.0, 0.0, -1.0 }, { 1.0f, 0.0f } },
-	{{ -1.0f, -1.0f, -1.0f }, { 0.0, 0.0, -1.0 }, { 1.0f, 1.0f } },
-	{{  1.0f, -1.0f, -1.0f }, { 0.0, 0.0, -1.0 }, { 0.0f, 1.0f } },
+	{{  1.0f,  1.0f, -1.0f }, { 0.0, 0.0, -1.0 }, { 0.0f, 0.0f }, { 0.0f, 0.0f }, { 0.0, -1.0, 0.0 } },
+	{{ -1.0f,  1.0f, -1.0f }, { 0.0, 0.0, -1.0 }, { 1.0f, 0.0f }, { 1.0f, 0.0f }, { 0.0, -1.0, 0.0 } },
+	{{ -1.0f, -1.0f, -1.0f }, { 0.0, 0.0, -1.0 }, { 1.0f, 1.0f }, { 1.0f, 1.0f }, { 0.0, -1.0, 0.0 } },
+	{{  1.0f, -1.0f, -1.0f }, { 0.0, 0.0, -1.0 }, { 0.0f, 1.0f }, { 0.0f, 1.0f }, { 0.0, -1.0, 0.0 } },
 
 	// left
-	{{  -1.0f,  1.0f, -1.0f }, { -1.0, 0.0, 0.0 }, { 0.0f, 0.0f } },
-	{{  -1.0f,  1.0f,  1.0f }, { -1.0, 0.0, 0.0 }, { 1.0f, 0.0f } },
-	{{  -1.0f, -1.0f,  1.0f }, { -1.0, 0.0, 0.0 }, { 1.0f, 1.0f } },
-	{{  -1.0f, -1.0f, -1.0f }, { -1.0, 0.0, 0.0 }, { 0.0f, 1.0f } },
+	{{  -1.0f,  1.0f, -1.0f }, { -1.0, 0.0, 0.0 }, { 0.0f, 0.0f }, { 0.0f, 0.0f }, { 0.0, -1.0, 0.0 } },
+	{{  -1.0f,  1.0f,  1.0f }, { -1.0, 0.0, 0.0 }, { 1.0f, 0.0f }, { 1.0f, 0.0f }, { 0.0, -1.0, 0.0 } },
+	{{  -1.0f, -1.0f,  1.0f }, { -1.0, 0.0, 0.0 }, { 1.0f, 1.0f }, { 1.0f, 1.0f }, { 0.0, -1.0, 0.0 } },
+	{{  -1.0f, -1.0f, -1.0f }, { -1.0, 0.0, 0.0 }, { 0.0f, 1.0f }, { 0.0f, 1.0f }, { 0.0, -1.0, 0.0 } },
 	
 	// right
-	{{   1.0f,  1.0f,  1.0f }, { 1.0, 0.0, 0.0 }, { 0.0f, 0.0f } },
-	{{   1.0f,  1.0f, -1.0f }, { 1.0, 0.0, 0.0 }, { 1.0f, 0.0f } },
-	{{   1.0f, -1.0f, -1.0f }, { 1.0, 0.0, 0.0 }, { 1.0f, 1.0f } },
-	{{   1.0f, -1.0f,  1.0f }, { 1.0, 0.0, 0.0 }, { 0.0f, 1.0f } },
+	{{   1.0f,  1.0f,  1.0f }, { 1.0, 0.0, 0.0 }, { 0.0f, 0.0f }, { 0.0f, 0.0f }, { 0.0, 1.0, 0.0 } },
+	{{   1.0f,  1.0f, -1.0f }, { 1.0, 0.0, 0.0 }, { 1.0f, 0.0f }, { 1.0f, 0.0f }, { 0.0, 1.0, 0.0 } },
+	{{   1.0f, -1.0f, -1.0f }, { 1.0, 0.0, 0.0 }, { 1.0f, 1.0f }, { 1.0f, 1.0f }, { 0.0, 1.0, 0.0 } },
+	{{   1.0f, -1.0f,  1.0f }, { 1.0, 0.0, 0.0 }, { 0.0f, 1.0f }, { 0.0f, 1.0f }, { 0.0, 1.0, 0.0 } },
 
 	// top
-	{{  -1.0f,  1.0f, -1.0f }, { 0.0, 1.0, 0.0 }, { 0.0f, 0.0f } },
-	{{   1.0f,  1.0f, -1.0f }, { 0.0, 1.0, 0.0 }, { 1.0f, 0.0f } },
-	{{   1.0f,  1.0f,  1.0f }, { 0.0, 1.0, 0.0 }, { 1.0f, 1.0f } },
-	{{  -1.0f,  1.0f,  1.0f }, { 0.0, 1.0, 0.0 }, { 0.0f, 1.0f } },
+	{{  -1.0f,  1.0f, -1.0f }, { 0.0, 1.0, 0.0 }, { 0.0f, 0.0f }, { 0.0f, 0.0f }, { 1.0, 0.0, 0.0 } },
+	{{   1.0f,  1.0f, -1.0f }, { 0.0, 1.0, 0.0 }, { 1.0f, 0.0f }, { 1.0f, 0.0f }, { 1.0, 0.0, 0.0 } },
+	{{   1.0f,  1.0f,  1.0f }, { 0.0, 1.0, 0.0 }, { 1.0f, 1.0f }, { 1.0f, 1.0f }, { 1.0, 0.0, 0.0 } },
+	{{  -1.0f,  1.0f,  1.0f }, { 0.0, 1.0, 0.0 }, { 0.0f, 1.0f }, { 0.0f, 1.0f }, { 1.0, 0.0, 0.0 } },
 
 	// bottom
-	{{  -1.0f, -1.0f,  1.0f }, { 0.0, -1.0, 0.0 }, { 0.0f, 0.0f } },
-	{{   1.0f, -1.0f,  1.0f }, { 0.0, -1.0, 0.0 }, { 1.0f, 0.0f } },
-	{{   1.0f, -1.0f, -1.0f }, { 0.0, -1.0, 0.0 }, { 1.0f, 1.0f } },
-	{{  -1.0f, -1.0f, -1.0f }, { 0.0, -1.0, 0.0 }, { 0.0f, 1.0f } }
+	{{  -1.0f, -1.0f,  1.0f }, { 0.0, -1.0, 0.0 }, { 0.0f, 0.0f }, { 0.0f, 0.0f }, { -1.0, 0.0, 0.0 } },
+	{{   1.0f, -1.0f,  1.0f }, { 0.0, -1.0, 0.0 }, { 1.0f, 0.0f }, { 1.0f, 0.0f }, { -1.0, 0.0, 0.0 } },
+	{{   1.0f, -1.0f, -1.0f }, { 0.0, -1.0, 0.0 }, { 1.0f, 1.0f }, { 1.0f, 1.0f }, { -1.0, 0.0, 0.0 } },
+	{{  -1.0f, -1.0f, -1.0f }, { 0.0, -1.0, 0.0 }, { 0.0f, 1.0f }, { 0.0f, 1.0f }, { -1.0, 0.0, 0.0 } }
 };
 
 static const uint16_t s_cubeTriList[] =
@@ -203,6 +207,27 @@ public:
 		}
 
 		_textureUniformHandle = bgfx::createUniform("s_diffuseTexture", bgfx::UniformType::Sampler);
+
+		_normalImage = bg2e::db::loadImage(dataPath.pathAddingComponent("texture_nm.jpg"));
+
+		const bgfx::Memory* mem2 = bgfx::makeRef(
+			_normalImage->data(),
+			_normalImage->dataSize());
+		_normalHandle = bgfx::createTexture2D(
+			uint16_t(_normalImage->size().width()),
+			uint16_t(_normalImage->size().height()),
+			false,
+			1,
+			bgfx::TextureFormat::RGBA8,
+			0,
+			mem2
+		);
+
+		if (bgfx::isValid(_normalHandle)) {
+			bgfx::setName(_normalHandle, "texture_nm.jpg");
+		}
+
+		_normalUniformHandle = bgfx::createUniform("s_normalTexture", bgfx::UniformType::Sampler);
     }
     
     static const bgfx::EmbeddedShader _shaders[];
@@ -258,6 +283,7 @@ public:
 		bgfx::setUniform(_lightPositionHandle, &bg2e::math::float4(2.0f, 2.0f, -5.0f,0.0f));
 		bgfx::setUniform(_normalMatHandle, normMatrix.raw());
 		bgfx::setTexture(0, _textureUniformHandle, _textureHandle);
+		bgfx::setTexture(1, _normalUniformHandle, _normalHandle);
         bgfx::setVertexBuffer(window()->viewId(), _vertexBuffer);
         bgfx::setIndexBuffer(_indexBuffer);
         
@@ -290,7 +316,10 @@ public:
 		bgfx::destroy(_lightPositionHandle);
 		bgfx::destroy(_normalMatHandle);
 		bgfx::destroy(_textureHandle);
+		bgfx::destroy(_normalUniformHandle);
+		bgfx::destroy(_normalHandle);
 		if (_textureImage) delete _textureImage;
+		if (_normalImage) delete _normalImage;
     }
     
     void keyUp(const bg2e::wnd::KeyboardEvent & evt) {
@@ -310,8 +339,11 @@ protected:
 	bgfx::UniformHandle _normalMatHandle;
 	bgfx::UniformHandle _textureUniformHandle;
 	bgfx::TextureHandle _textureHandle;
+	bgfx::UniformHandle _normalUniformHandle;
+	bgfx::TextureHandle _normalHandle;
 
 	bg2e::base::image* _textureImage = nullptr;
+	bg2e::base::image* _normalImage = nullptr;
     
     bx::DefaultAllocator _allocator;
     bx::FileReaderI * _fileReader;
