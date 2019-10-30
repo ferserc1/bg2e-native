@@ -194,7 +194,7 @@ public:
 			false,
 			1,
 			bgfx::TextureFormat::RGBA8,
-			0Ui64,
+			0,
 			mem
 		);
 

@@ -126,6 +126,7 @@
 		ED4EC17F236891E800C63E45 /* image_load.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = image_load.hpp; sourceTree = "<group>"; };
 		ED55B44F235A2CFF003ACDE9 /* shaders.h.template */ = {isa = PBXFileReference; lastKnownFileType = text; path = shaders.h.template; sourceTree = "<group>"; };
 		ED55B451235A2CFF003ACDE9 /* example_shaders.h.template */ = {isa = PBXFileReference; lastKnownFileType = text; path = example_shaders.h.template; sourceTree = "<group>"; };
+		ED763DEB2369EA2D002F6E00 /* bgfx_tools.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = bgfx_tools.hpp; sourceTree = "<group>"; };
 		EDCEEB7D235764420087ECAB /* load.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = load.hpp; sourceTree = "<group>"; };
 		EDCEEB7E2357649B0087ECAB /* utils.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = utils.hpp; sourceTree = "<group>"; };
 		EDCEEB802357655F0087ECAB /* load.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = load.cpp; sourceTree = "<group>"; };
@@ -813,6 +814,7 @@
 				EDCEEB7C235764180087ECAB /* utils */,
 				EDE6D8622355CF360014D7C8 /* wnd */,
 				ED4EC1612368557C00C63E45 /* base.hpp */,
+				ED763DEB2369EA2D002F6E00 /* bgfx_tools.hpp */,
 				ED4EC1602368557C00C63E45 /* db.hpp */,
 				ED4EC13223681D9B00C63E45 /* math.hpp */,
 				EDE6D8612355CF360014D7C8 /* platform.hpp */,
