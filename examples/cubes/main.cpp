@@ -4,11 +4,13 @@
 #include <bx/file.h>
 #include <bgfx/bgfx.h>
 #include <bgfx/platform.h>
-#include <bgfx/embedded_shader.h>
+
+#include <bg2e/bgfx_tools.hpp>
 
 #include <bg2e/wnd.hpp>
 #include <bg2e/utils.hpp>
 #include <bg2e/math.hpp>
+#include <bg2e/db.hpp>
 
 #if BG2E_PLATFORM_WINDOWS==1
 #include "win64/example_shaders.h"
@@ -178,6 +180,29 @@ public:
 
 		_lightPositionHandle = bgfx::createUniform("lightPosition", bgfx::UniformType::Vec4);
 		_normalMatHandle = bgfx::createUniform("u_normal", bgfx::UniformType::Mat4);
+
+		bg2e::base::path dataPath("data");
+		_textureImage = bg2e::db::loadImage(dataPath.pathAddingComponent("texture.jpg"));
+
+		// TODO: create texture
+		const bgfx::Memory* mem = bgfx::makeRef(
+			_textureImage->data(),
+			_textureImage->dataSize());
+		_textureHandle = bgfx::createTexture2D(
+			uint16_t(_textureImage->size().width()),
+			uint16_t(_textureImage->size().height()),
+			false,
+			1,
+			bgfx::TextureFormat::RGBA8,
+			0Ui64,
+			mem
+		);
+
+		if (bgfx::isValid(_textureHandle)) {
+			bgfx::setName(_textureHandle, "texture.jpg");
+		}
+
+		_textureUniformHandle = bgfx::createUniform("s_diffuseTexture", bgfx::UniformType::Sampler);
     }
     
     static const bgfx::EmbeddedShader _shaders[];
@@ -232,6 +257,7 @@ public:
         bgfx::setTransform(mtx.raw());
 		bgfx::setUniform(_lightPositionHandle, &bg2e::math::float4(2.0f, 2.0f, -5.0f,0.0f));
 		bgfx::setUniform(_normalMatHandle, normMatrix.raw());
+		bgfx::setTexture(0, _textureUniformHandle, _textureHandle);
         bgfx::setVertexBuffer(window()->viewId(), _vertexBuffer);
         bgfx::setIndexBuffer(_indexBuffer);
         
@@ -263,6 +289,8 @@ public:
         bgfx::destroy(_program);
 		bgfx::destroy(_lightPositionHandle);
 		bgfx::destroy(_normalMatHandle);
+		bgfx::destroy(_textureHandle);
+		if (_textureImage) delete _textureImage;
     }
     
     void keyUp(const bg2e::wnd::KeyboardEvent & evt) {
@@ -280,18 +308,22 @@ protected:
     bgfx::ProgramHandle _program;
 	bgfx::UniformHandle _lightPositionHandle;
 	bgfx::UniformHandle _normalMatHandle;
+	bgfx::UniformHandle _textureUniformHandle;
+	bgfx::TextureHandle _textureHandle;
+
+	bg2e::base::image* _textureImage = nullptr;
     
     bx::DefaultAllocator _allocator;
     bx::FileReaderI * _fileReader;
 };
 
 const bgfx::EmbeddedShader MyEventHandler::_shaders[] = {
-   BGFX_EMBEDDED_SHADER(shaders::basic_vertex),
-   BGFX_EMBEDDED_SHADER(shaders::basic_fragment),
-   BGFX_EMBEDDED_SHADER(shaders::phong_vertex),
-   BGFX_EMBEDDED_SHADER(shaders::phong_fragment),
+   BG2E_EMBEDDED_SHADER(shaders::basic_vertex),
+   BG2E_EMBEDDED_SHADER(shaders::basic_fragment),
+   BG2E_EMBEDDED_SHADER(shaders::phong_vertex),
+   BG2E_EMBEDDED_SHADER(shaders::phong_fragment),
    
-   BGFX_EMBEDDED_SHADER_END()
+   BG2E_EMBEDDED_SHADER_END()
 };
 
 int main(int argc, char ** argv) {

@@ -43,31 +43,31 @@ module.exports = {
         win32: {
             vertex: [
                 'vs_4_0',
-                'spirv',
+                //'spirv',
                 'vs_3_0'
             ],
             fragment: [
                 'ps_4_0',
-                'spirv',
+                //'spirv',
                 'ps_3_0'
             ]
         },
         darwin: {
             vertex: [
                 'metal',
-                'spirv'
+                //'spirv'
             ],
             fragment: [
                 'metal',
-                'spirv'
+                //'spirv'
             ]
         },
         linux: {
             vertex: [
-                'spirv'
+                //'spirv'
             ],
             fragment: [
-                'spirv'
+                //'spirv'
             ]
         }
     }

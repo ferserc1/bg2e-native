@@ -29,6 +29,7 @@ namespace bg2e {
         inline const math::uint2 & size() const { return _size; }
         inline uint8_t bytesPerPixel() const { return _bytesPerPixel; }
         inline ImageFormat format() const { return _format; }
+		inline uint32_t dataSize() const { return _size.width() * _size.height() * _bytesPerPixel; }
         
         inline void setFilePath(const path & p) { _filePath = p; }
         

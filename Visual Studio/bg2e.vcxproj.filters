@@ -147,6 +147,9 @@
     <ClInclude Include="..\src\db\stb_image_write.h">
       <Filter>Source files\db</Filter>
     </ClInclude>
+    <ClInclude Include="..\include\bg2e\bgfx_tools.hpp">
+      <Filter>Header files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\utils\load.cpp">
