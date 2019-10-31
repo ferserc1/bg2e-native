@@ -8,13 +8,13 @@
 namespace bg2e {
 namespace db {
 
-	extern void writeImage(const bg2e::base::path& dest, const bg2e::base::image& img);
-	extern void writeImage(const std::string& dest, const bg2e::base::image& img);
-	extern void writeImage(const char* dest, const bg2e::base::image& img);
+	extern void writeImage(const bg2e::base::path& dest, const bg2e::base::Image& img);
+	extern void writeImage(const std::string& dest, const bg2e::base::Image& img);
+	extern void writeImage(const char* dest, const bg2e::base::Image& img);
 
-	extern void writeImage(const bg2e::base::path& dest, const bg2e::base::image* img);
-	extern void writeImage(const std::string& dest, const bg2e::base::image* img);
-	extern void writeImage(const char* dest, const bg2e::base::image* img);
+	extern void writeImage(const bg2e::base::path& dest, const bg2e::base::Image* img);
+	extern void writeImage(const std::string& dest, const bg2e::base::Image* img);
+	extern void writeImage(const char* dest, const bg2e::base::Image* img);
 
 }
 }

@@ -4,13 +4,14 @@
 
 #include <bg2e/base/path.hpp>
 #include <bg2e/math/vector.hpp>
+#include <bg2e/base/referenced_pointer.hpp>
 
 #include <cstring>
 
 namespace bg2e {
-    namespace base {
+namespace base {
     
-    class image {
+    class Image : public bg2e::base::ReferencedPointer {
     public:
         enum ImageFormat {
             kFormatNone = 0,
@@ -19,10 +20,9 @@ namespace bg2e {
             kFormatRGBA = 4
         };
         
-        image();
-        image(const image & clone);
-        image(const uint8_t * buffer, const math::uint2 & size, uint8_t bytesPerPixel, ImageFormat format);
-        virtual ~image();
+        Image();
+        Image(const Image & clone);
+        Image(const uint8_t * buffer, const math::uint2 & size, uint8_t bytesPerPixel, ImageFormat format);
         
         inline const path & filePath() const { return _filePath; }
         inline const uint8_t * data() const { return _data; }
@@ -43,6 +43,8 @@ namespace bg2e {
         }
         
     protected:
+		virtual ~Image();
+
         path _filePath;
         uint8_t * _data = nullptr;
         math::uint2 _size;
@@ -50,7 +52,7 @@ namespace bg2e {
         ImageFormat _format = kFormatNone;
     };
 
-    }
+}
 }
 
 #endif

@@ -172,8 +172,9 @@ public:
 		bgfx::destroy(_textureHandle);
 		bgfx::destroy(_normalUniformHandle);
 		bgfx::destroy(_normalHandle);
-		if (_textureImage) delete _textureImage;
-		if (_normalImage) delete _normalImage;
+		_textureImage = nullptr;
+		_normalImage = nullptr;
+		_plist = nullptr;
     }
     
     void keyUp(const bg2e::wnd::KeyboardEvent & evt) {
@@ -194,10 +195,10 @@ protected:
 	bgfx::UniformHandle _normalUniformHandle;
 	bgfx::TextureHandle _normalHandle;
 
-	bg2e::base::image* _textureImage = nullptr;
-	bg2e::base::image* _normalImage = nullptr;
+	bg2e::ptr<bg2e::base::Image> _textureImage;
+	bg2e::ptr<bg2e::base::Image> _normalImage;
     
-    bg2e::base::PolyList * _plist = nullptr;
+    bg2e::ptr<bg2e::base::PolyList> _plist;
     
     bx::DefaultAllocator _allocator;
     bx::FileReaderI * _fileReader;

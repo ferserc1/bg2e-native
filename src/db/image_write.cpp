@@ -1,8 +1,8 @@
 
-#include <bg2e/db/image_write.hpp>
+#include <bg2e/db/Image_write.hpp>
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
-#include "stb_image_write.h"
+#include "stb_Image_write.h"
 
 #include <ios>
 #include <exception>
@@ -10,9 +10,9 @@
 namespace bg2e {
 namespace db {
 
-	void writeImage(const bg2e::base::path& dest, const bg2e::base::image& img) {
+	void writeImage(const bg2e::base::path& dest, const bg2e::base::Image& img) {
 		if (!img.valid()) {
-			throw std::invalid_argument("bg2db::writeImage(): invalid image.");
+			throw std::invalid_argument("bg2db::writeImage(): invalid Image.");
 		}
 
 		std::string ext = dest.lowerCaseExtension();
@@ -35,25 +35,25 @@ namespace db {
 			retValue = stbi_write_jpg(dst, w, h, comp, data, 100);
 		}
 		else {
-			throw std::invalid_argument("bg2db::writeImage(): incompatible image format '" + ext + "'");
+			throw std::invalid_argument("bg2db::writeImage(): incompatible Image format '" + ext + "'");
 		}
 
 		if (retValue == 0) {
-			throw std::ios_base::failure("bg2db::writeImage(): error saving image '" + dest.toString() + "'");
+			throw std::ios_base::failure("bg2db::writeImage(): error saving Image '" + dest.toString() + "'");
 		}
 	}
 
-	void writeImage(const std::string& dest, const bg2e::base::image& img) {
+	void writeImage(const std::string& dest, const bg2e::base::Image& img) {
 		writeImage(bg2e::base::path(dest), img);
 	}
 
-	void writeImage(const char* dest, const bg2e::base::image& img) {
+	void writeImage(const char* dest, const bg2e::base::Image& img) {
 		writeImage(bg2e::base::path(dest), img);
 	}
 
-	void writeImage(const bg2e::base::path& dest, const bg2e::base::image* img) {
+	void writeImage(const bg2e::base::path& dest, const bg2e::base::Image* img) {
 		if (img != nullptr && !img->valid()) {
-			throw std::invalid_argument("bg2db::writeImage(): invalid image.");
+			throw std::invalid_argument("bg2db::writeImage(): invalid Image.");
 		}
 
 		std::string ext = dest.lowerCaseExtension();
@@ -76,19 +76,19 @@ namespace db {
 			retValue = stbi_write_jpg(dst, w, h, comp, data, 100);
 		}
 		else {
-			throw std::invalid_argument("bg2db::writeImage(): incompatible image format '" + ext + "'");
+			throw std::invalid_argument("bg2db::writeImage(): incompatible Image format '" + ext + "'");
 		}
 
 		if (retValue == 0) {
-			throw std::ios_base::failure("bg2db::writeImage(): error saving image '" + dest.toString() + "'");
+			throw std::ios_base::failure("bg2db::writeImage(): error saving Image '" + dest.toString() + "'");
 		}
 	}
 
-	void writeImage(const std::string& dest, const bg2e::base::image* img) {
+	void writeImage(const std::string& dest, const bg2e::base::Image* img) {
 		writeImage(bg2e::base::path(dest), img);
 	}
 
-	void writeImage(const char* dest, const bg2e::base::image* img) {
+	void writeImage(const char* dest, const bg2e::base::Image* img) {
 		writeImage(bg2e::base::path(dest), img);
 	}
 }

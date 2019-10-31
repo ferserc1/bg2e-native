@@ -7,9 +7,9 @@
 namespace bg2e {
 namespace db {
 
-	extern bg2e::base::image* loadImage(const bg2e::base::path& filePath);
-	extern bg2e::base::image* loadImage(const std::string& filePath);
-	extern bg2e::base::image* loadImage(const char* filePath);
+	extern bg2e::base::Image* loadImage(const bg2e::base::path& filePath);
+	extern bg2e::base::Image* loadImage(const std::string& filePath);
+	extern bg2e::base::Image* loadImage(const char* filePath);
 
 }
 }

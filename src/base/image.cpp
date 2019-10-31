@@ -6,27 +6,27 @@
 namespace bg2e {
 namespace base {
     
-    image::image()
+    Image::Image()
     {
         
     }
     
-    image::image(const uint8_t * buffer, const math::uint2 & size, uint8_t bytesPerPixel, ImageFormat format)
+    Image::Image(const uint8_t * buffer, const math::uint2 & size, uint8_t bytesPerPixel, ImageFormat format)
     {
         setData(buffer, size, bytesPerPixel, format);
     }
     
-    image::image(const image & clone)
+    Image::Image(const Image & clone)
     {
         setData(clone.data(), clone.size(), clone.bytesPerPixel(), clone.format());
         setFilePath(clone.filePath());
     }
     
-    image::~image() {
+    Image::~Image() {
         destroy();
     }
     
-    void image::setData(const uint8_t * data, const math::uint2 & size, uint8_t bytesPerPixel, ImageFormat format) {
+    void Image::setData(const uint8_t * data, const math::uint2 & size, uint8_t bytesPerPixel, ImageFormat format) {
         if (data != nullptr &&
             math::isvalid(size) && !math::iszero(size) &&
             bytesPerPixel > 0 && bytesPerPixel == static_cast<int>(format))
@@ -44,7 +44,7 @@ namespace base {
         }
     }
     
-    void image::destroy() {
+    void Image::destroy() {
         if (_data != nullptr) {
             delete [] _data;
         }

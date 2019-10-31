@@ -1,6 +1,7 @@
 #ifndef _bg2e_base_poly_list_hpp_
 #define _bg2e_base_poly_list_hpp_
 
+#include <bg2e/base/referenced_pointer.hpp>
 #include <bg2e/math/vector.hpp>
 
 #include <bgfx/bgfx.h>
@@ -39,14 +40,13 @@ namespace base {
         std::vector<uint32_t> index;
     };
 
-	class PolyList {
+	class PolyList : public ReferencedPointer {
     protected:
         static void InitVertexLayouts();
         static bool s_vertexLayoutInitialized;
         
 	public:
 		PolyList();
-        virtual ~PolyList();
 
         inline void setMeshData(const MeshData & md) {
             setPosition(md.position);
@@ -108,6 +108,8 @@ namespace base {
         inline const bgfx::IndexBufferHandle & indexBuffer() const { return _indexBuffer; }
         
     protected:
+		virtual ~PolyList();
+
         std::vector<float> _position;
         std::vector<float> _normal;
         std::vector<float> _texCoord0;
