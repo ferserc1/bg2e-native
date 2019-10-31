@@ -3,5 +3,6 @@
 
 #include <bg2e/base/image.hpp>
 #include <bg2e/base/path.hpp>
+#include <bg2e/base/poly_list.hpp>
 
 #endif

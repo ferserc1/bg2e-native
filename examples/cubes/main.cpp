@@ -7,6 +7,7 @@
 
 #include <bg2e/bgfx_tools.hpp>
 
+#include <bg2e/base.hpp>
 #include <bg2e/wnd.hpp>
 #include <bg2e/utils.hpp>
 #include <bg2e/math.hpp>
@@ -20,166 +21,22 @@
 #include "linux/example_shaders.h"
 #endif
 
-struct PosColorVertex
-{
-    //float m_x;
-    //float m_y;
-    //float m_z;
-	bg2e::math::float3 _position;
-    uint32_t m_abgr;
-
-    static void init()
-    {
-        ms_layout
-            .begin()
-            .add(bgfx::Attrib::Position, 3, bgfx::AttribType::Float)
-            .add(bgfx::Attrib::Color0,   4, bgfx::AttribType::Uint8, true)
-            .end();
-    };
-
-    static bgfx::VertexLayout ms_layout;
-};
-
-bgfx::VertexLayout PosColorVertex::ms_layout;
-
-struct PosNormalVertex {
-	bg2e::math::float3 _position;
-	bg2e::math::float3 _normal;
-	bg2e::math::float2 _tex0Coord;
-	bg2e::math::float2 _tex1Coord;
-	bg2e::math::float3 _tangent;
-
-	static void init() {
-		ms_layout.begin()
-			.add(bgfx::Attrib::Position, 3, bgfx::AttribType::Float)
-			.add(bgfx::Attrib::Normal, 3, bgfx::AttribType::Float, true)
-			.add(bgfx::Attrib::TexCoord0, 2, bgfx::AttribType::Float)
-			.add(bgfx::Attrib::TexCoord1, 2, bgfx::AttribType::Float)
-			.add(bgfx::Attrib::Tangent, 3, bgfx::AttribType::Float)
-			.end();
-	}
-
-	static bgfx::VertexLayout ms_layout;
-};
-
-bgfx::VertexLayout PosNormalVertex::ms_layout;
-
-static PosColorVertex s_cubeVertices[] =
-{
-	{{ -1.0f,  1.0f,  1.0f }, 0xff000000 },
-    {{  1.0f,  1.0f,  1.0f }, 0xff0000ff },
-    {{ -1.0f, -1.0f,  1.0f }, 0xff00ff00 },
-    {{  1.0f, -1.0f,  1.0f }, 0xff00ffff },
-    {{ -1.0f,  1.0f, -1.0f }, 0xffff0000 },
-    {{  1.0f,  1.0f, -1.0f }, 0xffff00ff },
-    {{ -1.0f, -1.0f, -1.0f }, 0xffffff00 },
-    {{  1.0f, -1.0f, -1.0f }, 0xffffffff },
-};
-
-static PosNormalVertex s_cubeNVertices[] =
-{
-	// front
-	{{ -1.0f,  1.0f,  1.0f }, { 0.0, 0.0, 1.0 }, { 0.0f, 0.0f }, { 0.0f, 0.0f }, { 0.0, 1.0, 0.0 } },
-	{{  1.0f,  1.0f,  1.0f }, { 0.0, 0.0, 1.0 }, { 1.0f, 0.0f }, { 1.0f, 0.0f }, { 0.0, 1.0, 0.0 } },
-	{{  1.0f, -1.0f,  1.0f }, { 0.0, 0.0, 1.0 }, { 1.0f, 1.0f }, { 1.0f, 1.0f }, { 0.0, 1.0, 0.0 } },
-	{{ -1.0f, -1.0f,  1.0f }, { 0.0, 0.0, 1.0 }, { 0.0f, 1.0f }, { 0.0f, 1.0f }, { 0.0, 1.0, 0.0 } },
-
-	// back
-	{{  1.0f,  1.0f, -1.0f }, { 0.0, 0.0, -1.0 }, { 0.0f, 0.0f }, { 0.0f, 0.0f }, { 0.0, -1.0, 0.0 } },
-	{{ -1.0f,  1.0f, -1.0f }, { 0.0, 0.0, -1.0 }, { 1.0f, 0.0f }, { 1.0f, 0.0f }, { 0.0, -1.0, 0.0 } },
-	{{ -1.0f, -1.0f, -1.0f }, { 0.0, 0.0, -1.0 }, { 1.0f, 1.0f }, { 1.0f, 1.0f }, { 0.0, -1.0, 0.0 } },
-	{{  1.0f, -1.0f, -1.0f }, { 0.0, 0.0, -1.0 }, { 0.0f, 1.0f }, { 0.0f, 1.0f }, { 0.0, -1.0, 0.0 } },
-
-	// left
-	{{  -1.0f,  1.0f, -1.0f }, { -1.0, 0.0, 0.0 }, { 0.0f, 0.0f }, { 0.0f, 0.0f }, { 0.0, -1.0, 0.0 } },
-	{{  -1.0f,  1.0f,  1.0f }, { -1.0, 0.0, 0.0 }, { 1.0f, 0.0f }, { 1.0f, 0.0f }, { 0.0, -1.0, 0.0 } },
-	{{  -1.0f, -1.0f,  1.0f }, { -1.0, 0.0, 0.0 }, { 1.0f, 1.0f }, { 1.0f, 1.0f }, { 0.0, -1.0, 0.0 } },
-	{{  -1.0f, -1.0f, -1.0f }, { -1.0, 0.0, 0.0 }, { 0.0f, 1.0f }, { 0.0f, 1.0f }, { 0.0, -1.0, 0.0 } },
-	
-	// right
-	{{   1.0f,  1.0f,  1.0f }, { 1.0, 0.0, 0.0 }, { 0.0f, 0.0f }, { 0.0f, 0.0f }, { 0.0, 1.0, 0.0 } },
-	{{   1.0f,  1.0f, -1.0f }, { 1.0, 0.0, 0.0 }, { 1.0f, 0.0f }, { 1.0f, 0.0f }, { 0.0, 1.0, 0.0 } },
-	{{   1.0f, -1.0f, -1.0f }, { 1.0, 0.0, 0.0 }, { 1.0f, 1.0f }, { 1.0f, 1.0f }, { 0.0, 1.0, 0.0 } },
-	{{   1.0f, -1.0f,  1.0f }, { 1.0, 0.0, 0.0 }, { 0.0f, 1.0f }, { 0.0f, 1.0f }, { 0.0, 1.0, 0.0 } },
-
-	// top
-	{{  -1.0f,  1.0f, -1.0f }, { 0.0, 1.0, 0.0 }, { 0.0f, 0.0f }, { 0.0f, 0.0f }, { 1.0, 0.0, 0.0 } },
-	{{   1.0f,  1.0f, -1.0f }, { 0.0, 1.0, 0.0 }, { 1.0f, 0.0f }, { 1.0f, 0.0f }, { 1.0, 0.0, 0.0 } },
-	{{   1.0f,  1.0f,  1.0f }, { 0.0, 1.0, 0.0 }, { 1.0f, 1.0f }, { 1.0f, 1.0f }, { 1.0, 0.0, 0.0 } },
-	{{  -1.0f,  1.0f,  1.0f }, { 0.0, 1.0, 0.0 }, { 0.0f, 1.0f }, { 0.0f, 1.0f }, { 1.0, 0.0, 0.0 } },
-
-	// bottom
-	{{  -1.0f, -1.0f,  1.0f }, { 0.0, -1.0, 0.0 }, { 0.0f, 0.0f }, { 0.0f, 0.0f }, { -1.0, 0.0, 0.0 } },
-	{{   1.0f, -1.0f,  1.0f }, { 0.0, -1.0, 0.0 }, { 1.0f, 0.0f }, { 1.0f, 0.0f }, { -1.0, 0.0, 0.0 } },
-	{{   1.0f, -1.0f, -1.0f }, { 0.0, -1.0, 0.0 }, { 1.0f, 1.0f }, { 1.0f, 1.0f }, { -1.0, 0.0, 0.0 } },
-	{{  -1.0f, -1.0f, -1.0f }, { 0.0, -1.0, 0.0 }, { 0.0f, 1.0f }, { 0.0f, 1.0f }, { -1.0, 0.0, 0.0 } }
-};
-
-static const uint16_t s_cubeTriList[] =
-{
-    0, 1, 2, // 0
-    1, 3, 2,
-    4, 6, 5, // 2
-    5, 6, 7,
-    0, 2, 4, // 4
-    4, 2, 6,
-    1, 5, 3, // 6
-    5, 7, 3,
-    0, 4, 1, // 8
-    4, 5, 1,
-    2, 3, 6, // 10
-    6, 3, 7,
-};
-
-static const uint16_t s_cubeTriList2[] =
-{
-	0, 1, 2, // front
-	2, 3, 0,
-	
-	// back
-	4, 5, 6,
-	6, 7, 4,
-
-	// left
-	8, 9, 10,
-	10, 11, 8,
-
-	// right
-	12, 13, 14,
-	14, 15, 12,
-
-	// top
-	16, 17, 18,
-	18, 19, 16,
-
-	// bottom
-	20, 21, 22,
-	22, 23, 20
-};
-
 class MyEventHandler : public  bg2e::wnd::EventHandler {
 public:
         
     void init() {
         std::cout << "Init" << std::endl;
+        
+        bg2e::base::MeshData meshData;
+        bg2e::utils::generateCube(2.0f, meshData);
     
-        PosColorVertex::init();
-		PosNormalVertex::init();
-        
-        _vertexBuffer = bgfx::createVertexBuffer(
-            bgfx::makeRef(s_cubeNVertices, sizeof(s_cubeNVertices)),
-            PosNormalVertex::ms_layout);
-                
-        _indexBuffer = bgfx::createIndexBuffer(bgfx::makeRef(s_cubeTriList2, sizeof(s_cubeTriList2)));
-        
+        _plist = new bg2e::base::PolyList();
+        _plist->build(meshData);
+         
         bgfx::RendererType::Enum type = bgfx::getRendererType();
 
-        //bgfx::ShaderHandle vsh = bgfx::createEmbeddedShader(_shaders, type, "shaders::basic_vertex");
-        //bgfx::ShaderHandle fsh = bgfx::createEmbeddedShader(_shaders, type, "shaders::basic_fragment");
 		bgfx::ShaderHandle vsh = bgfx::createEmbeddedShader(_shaders, type, "shaders::phong_vertex");
 		bgfx::ShaderHandle fsh = bgfx::createEmbeddedShader(_shaders, type, "shaders::phong_fragment");
-
-        // Create program from shaders.
         _program = bgfx::createProgram(vsh, fsh, true /* destroy shaders when program is destroyed */);
 
 		_lightPositionHandle = bgfx::createUniform("lightPosition", bgfx::UniformType::Vec4);
@@ -188,7 +45,6 @@ public:
 		bg2e::base::path dataPath("data");
 		_textureImage = bg2e::db::loadImage(dataPath.pathAddingComponent("texture.jpg"));
 
-		// TODO: create texture
 		const bgfx::Memory* mem = bgfx::makeRef(
 			_textureImage->data(),
 			_textureImage->dataSize());
@@ -284,8 +140,8 @@ public:
 		bgfx::setUniform(_normalMatHandle, normMatrix.raw());
 		bgfx::setTexture(0, _textureUniformHandle, _textureHandle);
 		bgfx::setTexture(1, _normalUniformHandle, _normalHandle);
-        bgfx::setVertexBuffer(window()->viewId(), _vertexBuffer);
-        bgfx::setIndexBuffer(_indexBuffer);
+        bgfx::setVertexBuffer(window()->viewId(), _plist->vertexBuffer());
+        bgfx::setIndexBuffer(_plist->indexBuffer());
         
         bgfx::setState(state);
         
@@ -310,8 +166,6 @@ public:
     void destroy() {
         std::cout << "Destroy" << std::endl;
         
-        bgfx::destroy(_indexBuffer);
-        bgfx::destroy(_vertexBuffer);
         bgfx::destroy(_program);
 		bgfx::destroy(_lightPositionHandle);
 		bgfx::destroy(_normalMatHandle);
@@ -332,8 +186,6 @@ public:
 protected:
     bool _showStats = false;
     
-    bgfx::VertexBufferHandle _vertexBuffer;
-    bgfx::IndexBufferHandle _indexBuffer;
     bgfx::ProgramHandle _program;
 	bgfx::UniformHandle _lightPositionHandle;
 	bgfx::UniformHandle _normalMatHandle;
@@ -344,6 +196,8 @@ protected:
 
 	bg2e::base::image* _textureImage = nullptr;
 	bg2e::base::image* _normalImage = nullptr;
+    
+    bg2e::base::PolyList * _plist = nullptr;
     
     bx::DefaultAllocator _allocator;
     bx::FileReaderI * _fileReader;
