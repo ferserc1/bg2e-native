@@ -150,6 +150,9 @@
     <ClInclude Include="..\include\bg2e\bgfx_tools.hpp">
       <Filter>Header files</Filter>
     </ClInclude>
+    <ClInclude Include="..\include\bg2e\utils\mesh_generators.hpp">
+      <Filter>Header files\utils</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\utils\load.cpp">
@@ -196,6 +199,9 @@
     </ClCompile>
     <ClCompile Include="..\src\db\image_write.cpp">
       <Filter>Source files\db</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\utils\mesh_generators.cpp">
+      <Filter>Source files\utils</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

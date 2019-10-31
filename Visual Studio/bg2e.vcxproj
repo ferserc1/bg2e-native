@@ -43,6 +43,7 @@
     <ClInclude Include="..\include\bg2e\platform.hpp" />
     <ClInclude Include="..\include\bg2e\utils.hpp" />
     <ClInclude Include="..\include\bg2e\utils\load.hpp" />
+    <ClInclude Include="..\include\bg2e\utils\mesh_generators.hpp" />
     <ClInclude Include="..\include\bg2e\wnd.hpp" />
     <ClInclude Include="..\include\bg2e\wnd\event_handler.hpp" />
     <ClInclude Include="..\include\bg2e\wnd\glfw_defines.hpp" />
@@ -67,6 +68,7 @@
     <ClCompile Include="..\src\db\json\value.cpp" />
     <ClCompile Include="..\src\math\utils.cpp" />
     <ClCompile Include="..\src\utils\load.cpp" />
+    <ClCompile Include="..\src\utils\mesh_generators.cpp" />
     <ClCompile Include="..\src\wnd\main_loop.cpp" />
     <ClCompile Include="..\src\wnd\window.cpp" />
   </ItemGroup>
