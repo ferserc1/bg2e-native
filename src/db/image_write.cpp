@@ -1,8 +1,8 @@
 
-#include <bg2e/db/Image_write.hpp>
+#include <bg2e/db/image_write.hpp>
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
-#include "stb_Image_write.h"
+#include "stb_image_write.h"
 
 #include <ios>
 #include <exception>

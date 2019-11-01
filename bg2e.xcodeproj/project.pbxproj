@@ -7,6 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		ED43F302236C56E900195C21 /* texture.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED43F300236C56E900195C21 /* texture.cpp */; };
+		ED43F303236C56E900195C21 /* referenced_pointer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED43F301236C56E900195C21 /* referenced_pointer.cpp */; };
+		ED43F305236C56F300195C21 /* texture_load.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED43F304236C56F300195C21 /* texture_load.cpp */; };
 		ED4EC13123681D4700C63E45 /* utils.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED4EC13023681D4700C63E45 /* utils.cpp */; };
 		ED4EC1702368559000C63E45 /* image.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED4EC1662368559000C63E45 /* image.cpp */; };
 		ED4EC1712368559000C63E45 /* path.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED4EC1672368559000C63E45 /* path.cpp */; };
@@ -93,6 +96,12 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		ED43F2FD236C56A500195C21 /* referenced_pointer.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = referenced_pointer.hpp; sourceTree = "<group>"; };
+		ED43F2FE236C56AB00195C21 /* texture.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = texture.hpp; sourceTree = "<group>"; };
+		ED43F2FF236C56C800195C21 /* texture_load.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = texture_load.hpp; sourceTree = "<group>"; };
+		ED43F300236C56E900195C21 /* texture.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = texture.cpp; sourceTree = "<group>"; };
+		ED43F301236C56E900195C21 /* referenced_pointer.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = referenced_pointer.cpp; sourceTree = "<group>"; };
+		ED43F304236C56F300195C21 /* texture_load.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = texture_load.cpp; sourceTree = "<group>"; };
 		ED4EC12923681D2100C63E45 /* shaders.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = shaders.h; sourceTree = "<group>"; };
 		ED4EC12A23681D2100C63E45 /* example_shaders.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = example_shaders.h; sourceTree = "<group>"; };
 		ED4EC12C23681D3600C63E45 /* vector.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = vector.hpp; sourceTree = "<group>"; };
@@ -364,11 +373,12 @@
 			isa = PBXGroup;
 			children = (
 				ED4EC1592368557C00C63E45 /* json */,
-				ED4EC1562368557C00C63E45 /* binary_parser.hpp */,
 				ED4EC1572368557C00C63E45 /* bg2_reader.hpp */,
 				ED4EC1582368557C00C63E45 /* bg2_writter.hpp */,
+				ED4EC1562368557C00C63E45 /* binary_parser.hpp */,
 				ED4EC17F236891E800C63E45 /* image_load.hpp */,
 				ED4EC17E236891E800C63E45 /* image_write.hpp */,
+				ED43F2FF236C56C800195C21 /* texture_load.hpp */,
 			);
 			path = db;
 			sourceTree = "<group>";
@@ -388,9 +398,11 @@
 		ED4EC1622368557C00C63E45 /* base */ = {
 			isa = PBXGroup;
 			children = (
-				ED4EC1632368557C00C63E45 /* path.hpp */,
 				ED4EC1642368557C00C63E45 /* image.hpp */,
+				ED4EC1632368557C00C63E45 /* path.hpp */,
 				EDC4EAC2236AD18800CBD2D0 /* poly_list.hpp */,
+				ED43F2FD236C56A500195C21 /* referenced_pointer.hpp */,
+				ED43F2FE236C56AB00195C21 /* texture.hpp */,
 			);
 			path = base;
 			sourceTree = "<group>";
@@ -401,6 +413,8 @@
 				ED4EC1662368559000C63E45 /* image.cpp */,
 				ED4EC1672368559000C63E45 /* path.cpp */,
 				EDC4EAC3236AD19100CBD2D0 /* poly_list.cpp */,
+				ED43F301236C56E900195C21 /* referenced_pointer.cpp */,
+				ED43F300236C56E900195C21 /* texture.cpp */,
 			);
 			path = base;
 			sourceTree = "<group>";
@@ -416,6 +430,7 @@
 				ED4EC178236891C700C63E45 /* image_write.cpp */,
 				ED4EC17D236891D200C63E45 /* stb_image_write.h */,
 				ED4EC17C236891D200C63E45 /* stb_image.h */,
+				ED43F304236C56F300195C21 /* texture_load.cpp */,
 			);
 			path = db;
 			sourceTree = "<group>";
@@ -1018,7 +1033,9 @@
 			files = (
 				EDCEEB812357655F0087ECAB /* load.cpp in Sources */,
 				EDE6D88F2355EDC90014D7C8 /* main_loop.cpp in Sources */,
+				ED43F303236C56E900195C21 /* referenced_pointer.cpp in Sources */,
 				ED4EC1722368559000C63E45 /* bg2_writter.cpp in Sources */,
+				ED43F305236C56F300195C21 /* texture_load.cpp in Sources */,
 				ED4EC1712368559000C63E45 /* path.cpp in Sources */,
 				ED4EC17A236891C800C63E45 /* image_write.cpp in Sources */,
 				ED4EC1772368559000C63E45 /* bg2_reader.cpp in Sources */,
@@ -1029,6 +1046,7 @@
 				EDC4EAE9236B057D00CBD2D0 /* mesh_generators.cpp in Sources */,
 				ED4EC1732368559000C63E45 /* convert.cpp in Sources */,
 				EDE6D87D2355D1DB0014D7C8 /* window.cpp in Sources */,
+				ED43F302236C56E900195C21 /* texture.cpp in Sources */,
 				ED4EC17B236891C800C63E45 /* image_load.cpp in Sources */,
 				ED4EC13123681D4700C63E45 /* utils.cpp in Sources */,
 				ED4EC1752368559000C63E45 /* escaper.cpp in Sources */,
