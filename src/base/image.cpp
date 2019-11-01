@@ -53,5 +53,13 @@ namespace base {
         _format = kFormatNone;
     }
 
+	const bgfx::Memory * Image::memoryRef() const {
+		if (!_data) {
+			throw std::runtime_error("Could not get image memory reference. The image data is not valid.");
+		}
+
+		return bgfx::makeRef(data(), dataSize());
+	}
+
 }
 }

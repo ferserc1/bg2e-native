@@ -6,6 +6,8 @@
 #include <bg2e/math/vector.hpp>
 #include <bg2e/base/referenced_pointer.hpp>
 
+#include <bgfx/bgfx.h>
+
 #include <cstring>
 
 namespace bg2e {
@@ -41,6 +43,8 @@ namespace base {
                 math::isvalid(_size) && !math::iszero(_size) &&
                 _bytesPerPixel>0 && _bytesPerPixel == static_cast<int>(_format);
         }
+
+		const bgfx::Memory* memoryRef() const;
         
     protected:
 		virtual ~Image();

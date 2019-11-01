@@ -45,43 +45,15 @@ public:
 		bg2e::base::path dataPath("data");
 		_textureImage = bg2e::db::loadImage(dataPath.pathAddingComponent("texture.jpg"));
 
-		const bgfx::Memory* mem = bgfx::makeRef(
-			_textureImage->data(),
-			_textureImage->dataSize());
-		_textureHandle = bgfx::createTexture2D(
-			uint16_t(_textureImage->size().width()),
-			uint16_t(_textureImage->size().height()),
-			false,
-			1,
-			bgfx::TextureFormat::RGBA8,
-			0,
-			mem
-		);
-
-		if (bgfx::isValid(_textureHandle)) {
-			bgfx::setName(_textureHandle, "texture.jpg");
-		}
+		_diffuseTexture = new bg2e::base::Texture();
+		_diffuseTexture->create(_textureImage);
 
 		_textureUniformHandle = bgfx::createUniform("s_diffuseTexture", bgfx::UniformType::Sampler);
 
 		_normalImage = bg2e::db::loadImage(dataPath.pathAddingComponent("texture_nm.jpg"));
 
-		const bgfx::Memory* mem2 = bgfx::makeRef(
-			_normalImage->data(),
-			_normalImage->dataSize());
-		_normalHandle = bgfx::createTexture2D(
-			uint16_t(_normalImage->size().width()),
-			uint16_t(_normalImage->size().height()),
-			false,
-			1,
-			bgfx::TextureFormat::RGBA8,
-			0,
-			mem2
-		);
-
-		if (bgfx::isValid(_normalHandle)) {
-			bgfx::setName(_normalHandle, "texture_nm.jpg");
-		}
+		_normalTexture = new bg2e::base::Texture();
+		_normalTexture->create(_normalImage);
 
 		_normalUniformHandle = bgfx::createUniform("s_normalTexture", bgfx::UniformType::Sampler);
     }
@@ -138,8 +110,8 @@ public:
         bgfx::setTransform(mtx.raw());
 		bgfx::setUniform(_lightPositionHandle, &bg2e::math::float4(2.0f, 2.0f, -5.0f,0.0f));
 		bgfx::setUniform(_normalMatHandle, normMatrix.raw());
-		bgfx::setTexture(0, _textureUniformHandle, _textureHandle);
-		bgfx::setTexture(1, _normalUniformHandle, _normalHandle);
+		bgfx::setTexture(0, _textureUniformHandle, _diffuseTexture->textureHandle());
+		bgfx::setTexture(1, _normalUniformHandle, _normalTexture->textureHandle());
         bgfx::setVertexBuffer(window()->viewId(), _plist->vertexBuffer());
         bgfx::setIndexBuffer(_plist->indexBuffer());
         
@@ -169,11 +141,12 @@ public:
         bgfx::destroy(_program);
 		bgfx::destroy(_lightPositionHandle);
 		bgfx::destroy(_normalMatHandle);
-		bgfx::destroy(_textureHandle);
 		bgfx::destroy(_normalUniformHandle);
-		bgfx::destroy(_normalHandle);
+		
 		_textureImage = nullptr;
 		_normalImage = nullptr;
+		_diffuseTexture = nullptr;
+		_normalTexture = nullptr;
 		_plist = nullptr;
     }
     
@@ -191,13 +164,14 @@ protected:
 	bgfx::UniformHandle _lightPositionHandle;
 	bgfx::UniformHandle _normalMatHandle;
 	bgfx::UniformHandle _textureUniformHandle;
-	bgfx::TextureHandle _textureHandle;
 	bgfx::UniformHandle _normalUniformHandle;
-	bgfx::TextureHandle _normalHandle;
 
 	bg2e::ptr<bg2e::base::Image> _textureImage;
 	bg2e::ptr<bg2e::base::Image> _normalImage;
-    
+	bg2e::ptr<bg2e::base::Texture> _diffuseTexture;
+	bg2e::ptr<bg2e::base::Texture> _normalTexture;
+
+	
     bg2e::ptr<bg2e::base::PolyList> _plist;
     
     bx::DefaultAllocator _allocator;
