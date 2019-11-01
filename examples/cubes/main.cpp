@@ -43,18 +43,10 @@ public:
 		_normalMatHandle = bgfx::createUniform("u_normal", bgfx::UniformType::Mat4);
 
 		bg2e::base::path dataPath("data");
-		_textureImage = bg2e::db::loadImage(dataPath.pathAddingComponent("texture.jpg"));
-
-		_diffuseTexture = new bg2e::base::Texture();
-		_diffuseTexture->create(_textureImage);
-
+		_diffuseTexture = bg2e::db::loadTexture(dataPath.pathAddingComponent("texture.jpg"));
+		_normalTexture = bg2e::db::loadTexture(dataPath.pathAddingComponent("texture_nm.jpg"));
+	
 		_textureUniformHandle = bgfx::createUniform("s_diffuseTexture", bgfx::UniformType::Sampler);
-
-		_normalImage = bg2e::db::loadImage(dataPath.pathAddingComponent("texture_nm.jpg"));
-
-		_normalTexture = new bg2e::base::Texture();
-		_normalTexture->create(_normalImage);
-
 		_normalUniformHandle = bgfx::createUniform("s_normalTexture", bgfx::UniformType::Sampler);
     }
     
@@ -143,8 +135,6 @@ public:
 		bgfx::destroy(_normalMatHandle);
 		bgfx::destroy(_normalUniformHandle);
 		
-		_textureImage = nullptr;
-		_normalImage = nullptr;
 		_diffuseTexture = nullptr;
 		_normalTexture = nullptr;
 		_plist = nullptr;
@@ -166,8 +156,6 @@ protected:
 	bgfx::UniformHandle _textureUniformHandle;
 	bgfx::UniformHandle _normalUniformHandle;
 
-	bg2e::ptr<bg2e::base::Image> _textureImage;
-	bg2e::ptr<bg2e::base::Image> _normalImage;
 	bg2e::ptr<bg2e::base::Texture> _diffuseTexture;
 	bg2e::ptr<bg2e::base::Texture> _normalTexture;
 

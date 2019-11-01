@@ -12,5 +12,6 @@
 #include <bg2e/db/json/value.hpp>
 #include <bg2e/db/image_load.hpp>
 #include <bg2e/db/image_write.hpp>
+#include <bg2e/db/texture_load.hpp>
 
 #endif

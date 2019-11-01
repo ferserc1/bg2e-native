@@ -37,6 +37,7 @@
     <ClInclude Include="..\include\bg2e\db\json\grammar.hpp" />
     <ClInclude Include="..\include\bg2e\db\json\parser.hpp" />
     <ClInclude Include="..\include\bg2e\db\json\value.hpp" />
+    <ClInclude Include="..\include\bg2e\db\texture_load.hpp" />
     <ClInclude Include="..\include\bg2e\db\types.hpp" />
     <ClInclude Include="..\include\bg2e\math.hpp" />
     <ClInclude Include="..\include\bg2e\math\matrix.hpp" />
@@ -70,6 +71,7 @@
     <ClCompile Include="..\src\db\json\convert.cpp" />
     <ClCompile Include="..\src\db\json\escaper.cpp" />
     <ClCompile Include="..\src\db\json\value.cpp" />
+    <ClCompile Include="..\src\db\texture_load.cpp" />
     <ClCompile Include="..\src\math\utils.cpp" />
     <ClCompile Include="..\src\utils\load.cpp" />
     <ClCompile Include="..\src\utils\mesh_generators.cpp" />
