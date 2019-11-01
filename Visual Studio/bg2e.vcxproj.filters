@@ -156,6 +156,9 @@
     <ClInclude Include="..\include\bg2e\base\referenced_pointer.hpp">
       <Filter>Header files\base</Filter>
     </ClInclude>
+    <ClInclude Include="..\include\bg2e\base\texture.hpp">
+      <Filter>Header files\base</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\utils\load.cpp">
@@ -207,6 +210,9 @@
       <Filter>Source files\utils</Filter>
     </ClCompile>
     <ClCompile Include="..\src\base\referenced_pointer.cpp">
+      <Filter>Source files\base</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\base\texture.cpp">
       <Filter>Source files\base</Filter>
     </ClCompile>
   </ItemGroup>
