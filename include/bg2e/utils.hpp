@@ -3,5 +3,6 @@
 
 #include <bg2e/utils/load.hpp>
 #include <bg2e/utils/mesh_generators.hpp>
+#include <bg2e/utils/texture_generator.hpp>
 
 #endif

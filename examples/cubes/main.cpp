@@ -45,7 +45,7 @@ public:
 		bg2e::base::path dataPath("data");
 		_diffuseTexture = bg2e::db::loadTexture(dataPath.pathAddingComponent("texture.jpg"));
 		_normalTexture = bg2e::db::loadTexture(dataPath.pathAddingComponent("texture_nm.jpg"));
-	
+
 		_textureUniformHandle = bgfx::createUniform("s_diffuseTexture", bgfx::UniformType::Sampler);
 		_normalUniformHandle = bgfx::createUniform("s_normalTexture", bgfx::UniformType::Sampler);
     }
