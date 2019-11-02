@@ -4,8 +4,10 @@
 #include <bg2e/base/image.hpp>
 #include <bg2e/base/material.hpp>
 #include <bg2e/base/path.hpp>
+#include <bg2e/base/pipeline.hpp>
 #include <bg2e/base/poly_list.hpp>
 #include <bg2e/base/referenced_pointer.hpp>
+#include <bg2e/base/shader.hpp>
 #include <bg2e/base/texture.hpp>
 
 #endif
