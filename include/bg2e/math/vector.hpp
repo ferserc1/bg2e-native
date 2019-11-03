@@ -247,6 +247,15 @@ namespace bg2e {
         vec4<T>(const vec4<T> & other) :_v{ other[0], other[1], other[2], other[3] } {}
         vec4<T>(T * v) :_v{ v[0], v[1], v[2], v[3] } {}
         vec4<T>(const std::vector<T> & v) :_v{ v[0], v[1], v[2], v[3] } {}
+		vec4<T>(uint32_t hexColor)
+			: _v{
+				static_cast<T>(hexColor >> 24) / static_cast<T>(255),
+				static_cast<T>(hexColor >> 16) / static_cast<T>(255),
+				static_cast<T>(hexColor >> 8) / static_cast<T>(255),
+				static_cast<T>(hexColor) / static_cast<T>(255)
+			}
+		{
+		}
         
         inline T * operator&() { return _v; }
         inline T & operator[](int i) { return _v[i]; }
@@ -289,6 +298,21 @@ namespace bg2e {
         inline T & a() { return _v[3]; }
         inline T a() const { return _v[3]; }
         
+		inline uint32_t hexColor() const {
+			return
+				(static_cast<uint32_t>(_v[0] * static_cast<T>(255)) << 24) +
+				(static_cast<uint32_t>(_v[1] * static_cast<T>(255)) << 16) +
+				(static_cast<uint32_t>(_v[2] * static_cast<T>(255)) << 8) +
+				static_cast<uint32_t>(_v[3] * static_cast<T>(255));
+		}
+
+		inline void setHexColor(uint32_t color) {
+			_v[0] = static_cast<T>(color >> 24) / static_cast<T>(255);
+			_v[1] = static_cast<T>(color >> 16) / static_cast<T>(255);
+			_v[2] = static_cast<T>(color >> 8) / static_cast<T>(255);
+			_v[3] = static_cast<T>(color) / static_cast<T>(255);
+		}
+
     protected:
         T _v[4] = { static_cast<T>(0), static_cast<T>(0), static_cast<T>(0), static_cast<T>(0) };
     };

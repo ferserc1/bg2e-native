@@ -168,6 +168,12 @@
     <ClInclude Include="..\include\bg2e\utils\texture_generator.hpp">
       <Filter>Header files\utils</Filter>
     </ClInclude>
+    <ClInclude Include="..\include\bg2e\base\pipeline.hpp">
+      <Filter>Header files\base</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\base\shader.hpp">
+      <Filter>Header files\base</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\utils\load.cpp">
@@ -232,6 +238,12 @@
     </ClCompile>
     <ClCompile Include="..\src\utils\texture_generator.cpp">
       <Filter>Source files\utils</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\base\pipeline.cpp">
+      <Filter>Source files\base</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\base\shader.cpp">
+      <Filter>Source files\base</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

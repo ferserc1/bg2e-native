@@ -10,7 +10,7 @@
 namespace bg2e {
 namespace base {
 
-	class Material {
+	class Material : public ReferencedPointer {
 	public:
 
 		struct TextureSet {

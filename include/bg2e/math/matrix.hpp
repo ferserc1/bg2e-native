@@ -73,6 +73,11 @@ namespace bg2e {
 					isnan(_m[6]) || isnan(_m[7]) || isnan(_m[8]);
 		}
 
+		inline mat3x3<T>& identity() {
+			*this = mat3x3<T>::Identity();
+			return *this;
+		}
+
 		inline T* operator&() { return _m; }
 		inline T* raw() { return _m; }
 		inline const T* raw() const { return _m; }
@@ -323,6 +328,11 @@ namespace bg2e {
 			other[6], other[7], other[8], static_cast<T>(0),
 			static_cast<T>(0), static_cast<T>(0), static_cast<T>(0), static_cast<T>(1)
 		} {}
+
+		inline mat4x4<T>& identity() {
+			*this = mat4x4<T>::Identity();
+			return *this;
+		}
 
 		inline mat4x4<T>& perspective(float fovy, float aspect, float nearPlane, float farPlane) {
 			*this = mat4x4<T>::Perspective(fovy, aspect, nearPlane, farPlane);

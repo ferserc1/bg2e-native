@@ -21,95 +21,96 @@
 #include "linux/example_shaders.h"
 #endif
 
+const bgfx::EmbeddedShader s_phongShadersBasic[] = {
+   BG2E_EMBEDDED_SHADER(shaders::phong_vertex),
+   BG2E_EMBEDDED_SHADER(shaders::phong_fragment),
+
+   BG2E_EMBEDDED_SHADER_END()
+};
+
+class PhongShader : public bg2e::base::Shader {
+public:
+	PhongShader() {}
+
+	virtual void bindUniforms(bg2e::base::Pipeline*, bg2e::base::PolyList* plist, bg2e::base::Material* material, const bg2e::math::float4x4& modelMatrix) {
+		bg2e::math::float4x4 normalMatrix = modelMatrix;
+		normalMatrix.invert().transpose();
+
+		bgfx::setUniform(_lightPositionHandle, &bg2e::math::float4(2.0f, 2.0f, -5.0f, 0.0f));
+		bgfx::setUniform(_normalMatHandle, normalMatrix.raw());
+		bgfx::setTexture(0, _textureUniformHandle, material->diffuse().texture->textureHandle());
+		bgfx::setTexture(1, _normalUniformHandle, material->normal().texture->textureHandle());
+	}
+
+protected:
+	virtual ~PhongShader() {}
+
+	virtual bgfx::ProgramHandle loadProgram(bgfx::RendererType::Enum type) {
+		_lightPositionHandle = bgfx::createUniform("lightPosition", bgfx::UniformType::Vec4);
+		_normalMatHandle = bgfx::createUniform("u_normal", bgfx::UniformType::Mat4);
+		_textureUniformHandle = bgfx::createUniform("s_diffuseTexture", bgfx::UniformType::Sampler);
+		_normalUniformHandle = bgfx::createUniform("s_normalTexture", bgfx::UniformType::Sampler);
+
+		bgfx::ShaderHandle vsh = bgfx::createEmbeddedShader(s_phongShadersBasic, type, "shaders::phong_vertex");
+		bgfx::ShaderHandle fsh = bgfx::createEmbeddedShader(s_phongShadersBasic, type, "shaders::phong_fragment");
+
+		return bgfx::createProgram(vsh, fsh, true);
+	}
+
+	bgfx::UniformHandle _lightPositionHandle = BGFX_INVALID_HANDLE;
+	bgfx::UniformHandle _normalMatHandle = BGFX_INVALID_HANDLE;
+	bgfx::UniformHandle _textureUniformHandle = BGFX_INVALID_HANDLE;
+	bgfx::UniformHandle _normalUniformHandle = BGFX_INVALID_HANDLE;
+};
+
 class MyEventHandler : public  bg2e::wnd::EventHandler {
 public:
         
     void init() {
-        std::cout << "Init" << std::endl;
-        
         bg2e::base::MeshData meshData;
         bg2e::utils::generateCube(2.0f, meshData);
     
         _plist = new bg2e::base::PolyList();
         _plist->build(meshData);
          
-        bgfx::RendererType::Enum type = bgfx::getRendererType();
+       	bg2e::base::path dataPath("data");
+		auto diffuse = bg2e::db::loadTexture(dataPath.pathAddingComponent("texture.jpg"));
+		auto normal = bg2e::db::loadTexture(dataPath.pathAddingComponent("texture_nm.jpg"));
 
-		bgfx::ShaderHandle vsh = bgfx::createEmbeddedShader(_shaders, type, "shaders::phong_vertex");
-		bgfx::ShaderHandle fsh = bgfx::createEmbeddedShader(_shaders, type, "shaders::phong_fragment");
-        _program = bgfx::createProgram(vsh, fsh, true /* destroy shaders when program is destroyed */);
+		_material = new bg2e::base::Material();
+		_material->setDiffuse(diffuse);
+		_material->setNormal(normal);
 
-		_lightPositionHandle = bgfx::createUniform("lightPosition", bgfx::UniformType::Vec4);
-		_normalMatHandle = bgfx::createUniform("u_normal", bgfx::UniformType::Mat4);
-
-		bg2e::base::path dataPath("data");
-		_diffuseTexture = bg2e::db::loadTexture(dataPath.pathAddingComponent("texture.jpg"));
-		_normalTexture = bg2e::db::loadTexture(dataPath.pathAddingComponent("texture_nm.jpg"));
-
-		_textureUniformHandle = bgfx::createUniform("s_diffuseTexture", bgfx::UniformType::Sampler);
-		_normalUniformHandle = bgfx::createUniform("s_normalTexture", bgfx::UniformType::Sampler);
+		_pipeline = new bg2e::base::Pipeline(window()->viewId());
+		_pipeline->setShader(new PhongShader());
+		_pipeline->setClearColor(bg2e::math::color(0x222455FF));
     }
-    
-    static const bgfx::EmbeddedShader _shaders[];
-    
+        
     void resize(uint32_t w, uint32_t h) {
-        std::cout << "Resize: " << w << ", " << h << std::endl;
         bgfx::setViewRect(window()->viewId(), 0, 0, window()->width(), window()->height());
     }
     
-    void update(float delta) {
-        auto viewId = window()->viewId();
-        
+    void update(float delta) {        
         const bg2e::math::float3 at = { 0.0f, 0.0f, 0.0f };
         const bg2e::math::float3 eye = { 0.0f, 0.0f, -5.0f };
         const bg2e::math::float3 up = { 0.0f, 1.0f, 0.0f };
-
-        // Set view and projection matrix for view 0.
-        {
-            bg2e::math::float4x4 view = bg2e::math::float4x4::Identity();
-            view.lookAt(eye, at, up);
-
-            auto aspectRatio = static_cast<float>(window()->width()) / static_cast<float>(window()->height());
-            
-            bg2e::math::float4x4 proj = bg2e::math::float4x4::Perspective(60.0f, aspectRatio, 0.1f, 100.0f);
-            bgfx::setViewTransform(0, view.raw(), proj.raw());
-        }
+        auto aspectRatio = static_cast<float>(window()->width()) / static_cast<float>(window()->height());
+		_pipeline->view()
+			.identity()
+			.lookAt(eye, at, up);
+		_pipeline->projection()
+			.perspective(60.0f, aspectRatio, 0.1f, 100.0f);
         
-        bgfx::setViewClear(viewId, BGFX_CLEAR_COLOR | BGFX_CLEAR_DEPTH, 0x303960ff, 1.0f, 0.0f);
-        
-        bgfx::touch(window()->viewId());
-        uint64_t state = 0
-            | BGFX_STATE_WRITE_R
-            | BGFX_STATE_WRITE_G
-            | BGFX_STATE_WRITE_B
-            | BGFX_STATE_WRITE_A
-            | BGFX_STATE_WRITE_Z
-            | BGFX_STATE_DEPTH_TEST_LESS
-            | BGFX_STATE_CULL_CCW
-            | BGFX_STATE_MSAA
-            | UINT64_C(0)// triangle list     BGFX_STATE_PT_TRISTRIP
-            ;
         
         static float elapsed = 0;
         elapsed += (delta / 1000.0f);
         bg2e::math::float4x4 mtx = bg2e::math::float4x4::Identity();
 		mtx.rotate(elapsed, 1.0f, 0.0f, 0.0f)
 			.rotate(elapsed * 2.0f, 0.0f, 1.0f, 0.0f);
-        
-		bg2e::math::float4x4 normMatrix = mtx;
-		normMatrix.invert().transpose();
 
-        bgfx::setTransform(mtx.raw());
-		bgfx::setUniform(_lightPositionHandle, &bg2e::math::float4(2.0f, 2.0f, -5.0f,0.0f));
-		bgfx::setUniform(_normalMatHandle, normMatrix.raw());
-		bgfx::setTexture(0, _textureUniformHandle, _diffuseTexture->textureHandle());
-		bgfx::setTexture(1, _normalUniformHandle, _normalTexture->textureHandle());
-        bgfx::setVertexBuffer(window()->viewId(), _plist->vertexBuffer());
-        bgfx::setIndexBuffer(_plist->indexBuffer());
-        
-        bgfx::setState(state);
-        
-        bgfx::submit(window()->viewId(), _program);
+		_pipeline->beginDraw();
+
+		_pipeline->draw(_plist.getPtr(), _material.getPtr(), mtx);
     }
     
     void draw() {
@@ -128,15 +129,8 @@ public:
     }
     
     void destroy() {
-        std::cout << "Destroy" << std::endl;
-        
-        bgfx::destroy(_program);
-		bgfx::destroy(_lightPositionHandle);
-		bgfx::destroy(_normalMatHandle);
-		bgfx::destroy(_normalUniformHandle);
-		
-		_diffuseTexture = nullptr;
-		_normalTexture = nullptr;
+		_plist = nullptr;
+		_material = nullptr;
 		_plist = nullptr;
     }
     
@@ -144,35 +138,14 @@ public:
         if (evt.keyCode() == bg2e::wnd::KeyboardEvent::KeyF1) {
             _showStats = !_showStats;
         }
-        std::cout << "Key up" << std::endl;
     }
     
 protected:
     bool _showStats = false;
-    
-    bgfx::ProgramHandle _program;
-	bgfx::UniformHandle _lightPositionHandle;
-	bgfx::UniformHandle _normalMatHandle;
-	bgfx::UniformHandle _textureUniformHandle;
-	bgfx::UniformHandle _normalUniformHandle;
 
-	bg2e::ptr<bg2e::base::Texture> _diffuseTexture;
-	bg2e::ptr<bg2e::base::Texture> _normalTexture;
-
-	
     bg2e::ptr<bg2e::base::PolyList> _plist;
-    
-    bx::DefaultAllocator _allocator;
-    bx::FileReaderI * _fileReader;
-};
-
-const bgfx::EmbeddedShader MyEventHandler::_shaders[] = {
-   BG2E_EMBEDDED_SHADER(shaders::basic_vertex),
-   BG2E_EMBEDDED_SHADER(shaders::basic_fragment),
-   BG2E_EMBEDDED_SHADER(shaders::phong_vertex),
-   BG2E_EMBEDDED_SHADER(shaders::phong_fragment),
-   
-   BG2E_EMBEDDED_SHADER_END()
+	bg2e::ptr<bg2e::base::Material> _material;
+	bg2e::ptr<bg2e::base::Pipeline> _pipeline;
 };
 
 int main(int argc, char ** argv) {

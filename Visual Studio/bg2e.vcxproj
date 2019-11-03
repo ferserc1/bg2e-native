@@ -23,8 +23,10 @@
     <ClInclude Include="..\include\bg2e\base\image.hpp" />
     <ClInclude Include="..\include\bg2e\base\material.hpp" />
     <ClInclude Include="..\include\bg2e\base\path.hpp" />
+    <ClInclude Include="..\include\bg2e\base\pipeline.hpp" />
     <ClInclude Include="..\include\bg2e\base\poly_list.hpp" />
     <ClInclude Include="..\include\bg2e\base\referenced_pointer.hpp" />
+    <ClInclude Include="..\include\bg2e\base\shader.hpp" />
     <ClInclude Include="..\include\bg2e\base\texture.hpp" />
     <ClInclude Include="..\include\bg2e\bgfx_tools.hpp" />
     <ClInclude Include="..\include\bg2e\db.hpp" />
@@ -63,8 +65,10 @@
     <ClCompile Include="..\src\base\image.cpp" />
     <ClCompile Include="..\src\base\material.cpp" />
     <ClCompile Include="..\src\base\path.cpp" />
+    <ClCompile Include="..\src\base\pipeline.cpp" />
     <ClCompile Include="..\src\base\poly_list.cpp" />
     <ClCompile Include="..\src\base\referenced_pointer.cpp" />
+    <ClCompile Include="..\src\base\shader.cpp" />
     <ClCompile Include="..\src\base\texture.cpp" />
     <ClCompile Include="..\src\db\bg2_reader.cpp" />
     <ClCompile Include="..\src\db\bg2_writter.cpp" />
