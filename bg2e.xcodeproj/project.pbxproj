@@ -24,6 +24,10 @@
 		EDC4EAC4236AD19100CBD2D0 /* poly_list.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EDC4EAC3236AD19100CBD2D0 /* poly_list.cpp */; };
 		EDC4EAE9236B057D00CBD2D0 /* mesh_generators.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EDC4EAE8236B057D00CBD2D0 /* mesh_generators.cpp */; };
 		EDCEEB812357655F0087ECAB /* load.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EDCEEB802357655F0087ECAB /* load.cpp */; };
+		EDDE6109236ECEF2007991F1 /* shader.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EDDE6106236ECEF2007991F1 /* shader.cpp */; };
+		EDDE610A236ECEF2007991F1 /* pipeline.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EDDE6107236ECEF2007991F1 /* pipeline.cpp */; };
+		EDDE610B236ECEF2007991F1 /* material.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EDDE6108236ECEF2007991F1 /* material.cpp */; };
+		EDDE610D236ECF06007991F1 /* texture_generator.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EDDE610C236ECF06007991F1 /* texture_generator.cpp */; };
 		EDE6D7DC2355C6060014D7C8 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EDE6D7DB2355C6060014D7C8 /* main.cpp */; };
 		EDE6D86A2355D0AD0014D7C8 /* libbimg_decodeRelease.a in Frameworks */ = {isa = PBXBuildFile; fileRef = EDE6D85B2355C6340014D7C8 /* libbimg_decodeRelease.a */; };
 		EDE6D86B2355D0AF0014D7C8 /* libbgfxRelease.a in Frameworks */ = {isa = PBXBuildFile; fileRef = EDE6D85C2355C6340014D7C8 /* libbgfxRelease.a */; };
@@ -145,6 +149,14 @@
 		EDCEEB7D235764420087ECAB /* load.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = load.hpp; sourceTree = "<group>"; };
 		EDCEEB7E2357649B0087ECAB /* utils.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = utils.hpp; sourceTree = "<group>"; };
 		EDCEEB802357655F0087ECAB /* load.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = load.cpp; sourceTree = "<group>"; };
+		EDDE6103236ECED4007991F1 /* material.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = material.hpp; sourceTree = "<group>"; };
+		EDDE6104236ECED4007991F1 /* pipeline.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = pipeline.hpp; sourceTree = "<group>"; };
+		EDDE6105236ECED4007991F1 /* shader.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = shader.hpp; sourceTree = "<group>"; };
+		EDDE6106236ECEF2007991F1 /* shader.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = shader.cpp; sourceTree = "<group>"; };
+		EDDE6107236ECEF2007991F1 /* pipeline.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = pipeline.cpp; sourceTree = "<group>"; };
+		EDDE6108236ECEF2007991F1 /* material.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = material.cpp; sourceTree = "<group>"; };
+		EDDE610C236ECF06007991F1 /* texture_generator.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = texture_generator.cpp; sourceTree = "<group>"; };
+		EDDE610E236ECF15007991F1 /* texture_generator.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = texture_generator.hpp; sourceTree = "<group>"; };
 		EDE6D7B62355C5550014D7C8 /* libbg2e.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libbg2e.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
 		EDE6D7C92355C5900014D7C8 /* basic-example.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "basic-example.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		EDE6D7D32355C5910014D7C8 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -399,9 +411,12 @@
 			isa = PBXGroup;
 			children = (
 				ED4EC1642368557C00C63E45 /* image.hpp */,
+				EDDE6103236ECED4007991F1 /* material.hpp */,
 				ED4EC1632368557C00C63E45 /* path.hpp */,
+				EDDE6104236ECED4007991F1 /* pipeline.hpp */,
 				EDC4EAC2236AD18800CBD2D0 /* poly_list.hpp */,
 				ED43F2FD236C56A500195C21 /* referenced_pointer.hpp */,
+				EDDE6105236ECED4007991F1 /* shader.hpp */,
 				ED43F2FE236C56AB00195C21 /* texture.hpp */,
 			);
 			path = base;
@@ -411,9 +426,12 @@
 			isa = PBXGroup;
 			children = (
 				ED4EC1662368559000C63E45 /* image.cpp */,
+				EDDE6108236ECEF2007991F1 /* material.cpp */,
 				ED4EC1672368559000C63E45 /* path.cpp */,
+				EDDE6107236ECEF2007991F1 /* pipeline.cpp */,
 				EDC4EAC3236AD19100CBD2D0 /* poly_list.cpp */,
 				ED43F301236C56E900195C21 /* referenced_pointer.cpp */,
+				EDDE6106236ECEF2007991F1 /* shader.cpp */,
 				ED43F300236C56E900195C21 /* texture.cpp */,
 			);
 			path = base;
@@ -468,6 +486,7 @@
 			children = (
 				EDCEEB7D235764420087ECAB /* load.hpp */,
 				EDC4EAE7236B04CA00CBD2D0 /* mesh_generators.hpp */,
+				EDDE610E236ECF15007991F1 /* texture_generator.hpp */,
 			);
 			path = utils;
 			sourceTree = "<group>";
@@ -477,6 +496,7 @@
 			children = (
 				EDCEEB802357655F0087ECAB /* load.cpp */,
 				EDC4EAE8236B057D00CBD2D0 /* mesh_generators.cpp */,
+				EDDE610C236ECF06007991F1 /* texture_generator.cpp */,
 			);
 			path = utils;
 			sourceTree = "<group>";
@@ -1040,14 +1060,18 @@
 				ED4EC17A236891C800C63E45 /* image_write.cpp in Sources */,
 				ED4EC1772368559000C63E45 /* bg2_reader.cpp in Sources */,
 				ED4EC1742368559000C63E45 /* value.cpp in Sources */,
+				EDDE610D236ECF06007991F1 /* texture_generator.cpp in Sources */,
 				EDC4EAC4236AD19100CBD2D0 /* poly_list.cpp in Sources */,
+				EDDE6109236ECEF2007991F1 /* shader.cpp in Sources */,
 				ED4EC1702368559000C63E45 /* image.cpp in Sources */,
 				ED4EC1762368559000C63E45 /* binary_parser.cpp in Sources */,
 				EDC4EAE9236B057D00CBD2D0 /* mesh_generators.cpp in Sources */,
+				EDDE610B236ECEF2007991F1 /* material.cpp in Sources */,
 				ED4EC1732368559000C63E45 /* convert.cpp in Sources */,
 				EDE6D87D2355D1DB0014D7C8 /* window.cpp in Sources */,
 				ED43F302236C56E900195C21 /* texture.cpp in Sources */,
 				ED4EC17B236891C800C63E45 /* image_load.cpp in Sources */,
+				EDDE610A236ECEF2007991F1 /* pipeline.cpp in Sources */,
 				ED4EC13123681D4700C63E45 /* utils.cpp in Sources */,
 				ED4EC1752368559000C63E45 /* escaper.cpp in Sources */,
 			);

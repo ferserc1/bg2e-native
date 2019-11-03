@@ -83,7 +83,7 @@ public:
 
 		_pipeline = new bg2e::base::Pipeline(window()->viewId());
 		_pipeline->setShader(new PhongShader());
-		_pipeline->setClearColor(bg2e::math::color(0x222455FF));
+		_pipeline->setClearColor(bg2e::math::color(0x51B868FF));
     }
         
     void resize(uint32_t w, uint32_t h) {
