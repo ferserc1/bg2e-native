@@ -47,9 +47,12 @@
     <ClInclude Include="..\include\bg2e\math\utils.hpp" />
     <ClInclude Include="..\include\bg2e\math\vector.hpp" />
     <ClInclude Include="..\include\bg2e\platform.hpp" />
+    <ClInclude Include="..\include\bg2e\shaders.hpp" />
+    <ClInclude Include="..\include\bg2e\shaders\phong.hpp" />
     <ClInclude Include="..\include\bg2e\utils.hpp" />
     <ClInclude Include="..\include\bg2e\utils\load.hpp" />
     <ClInclude Include="..\include\bg2e\utils\mesh_generators.hpp" />
+    <ClInclude Include="..\include\bg2e\utils\texture_cache.hpp" />
     <ClInclude Include="..\include\bg2e\utils\texture_generator.hpp" />
     <ClInclude Include="..\include\bg2e\wnd.hpp" />
     <ClInclude Include="..\include\bg2e\wnd\event_handler.hpp" />
@@ -80,8 +83,10 @@
     <ClCompile Include="..\src\db\json\value.cpp" />
     <ClCompile Include="..\src\db\texture_load.cpp" />
     <ClCompile Include="..\src\math\utils.cpp" />
+    <ClCompile Include="..\src\shaders\phong.cpp" />
     <ClCompile Include="..\src\utils\load.cpp" />
     <ClCompile Include="..\src\utils\mesh_generators.cpp" />
+    <ClCompile Include="..\src\utils\texture_cache.cpp" />
     <ClCompile Include="..\src\utils\texture_generator.cpp" />
     <ClCompile Include="..\src\wnd\main_loop.cpp" />
     <ClCompile Include="..\src\wnd\window.cpp" />
@@ -143,7 +148,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>$(SolutionDir)..\include;$(SolutionDir)..\deps\bgfx\win64\include;$(SolutionDir)..\deps\glfw-3.3\win64\include;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)..\shaders\include;$(SolutionDir)..\include;$(SolutionDir)..\deps\bgfx\win64\include;$(SolutionDir)..\deps\glfw-3.3\win64\include;$(IncludePath)</IncludePath>
     <LibraryPath>$(SolutionDir)..\deps\bgfx\win64\lib;$(SolutionDir)..\deps\glfw-3.3\win64\lib;$(LibraryPath)</LibraryPath>
     <OutDir>$(SolutionDir)..\build\$(Configuration)\</OutDir>
   </PropertyGroup>
@@ -152,7 +157,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(SolutionDir)..\include;$(SolutionDir)..\deps\bgfx\win64\include;$(SolutionDir)..\deps\glfw-3.3\win64\include;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)..\shaders\include;$(SolutionDir)..\include;$(SolutionDir)..\deps\bgfx\win64\include;$(SolutionDir)..\deps\glfw-3.3\win64\include;$(IncludePath)</IncludePath>
     <LibraryPath>$(SolutionDir)..\deps\bgfx\win64\lib;$(SolutionDir)..\deps\glfw-3.3\win64\lib;$(LibraryPath)</LibraryPath>
     <OutDir>$(SolutionDir)..\build\$(Configuration)\</OutDir>
   </PropertyGroup>
@@ -182,6 +187,7 @@
       <PrecompiledHeaderFile>
       </PrecompiledHeaderFile>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -220,6 +226,7 @@
       <PrecompiledHeaderFile>
       </PrecompiledHeaderFile>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>

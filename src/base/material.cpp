@@ -1,13 +1,20 @@
 
 #include <bg2e/base/material.hpp>
 #include <bg2e/utils/texture_generator.hpp>
+#include <bg2e/utils/texture_cache.hpp>
 
 namespace bg2e {
 namespace base {
 
 	Material::Material()
 	{
-
+		_diffuse.texture = utils::TextureCache::Get()->whiteTexture();
+		_normal.texture = utils::TextureCache::Get()->normalMapTexture();
+		_ambientOcclussion.texture = utils::TextureCache::Get()->whiteTexture();
+		_metallic.texture = utils::TextureCache::Get()->blackTexture();
+		_roughness.texture = utils::TextureCache::Get()->whiteTexture();
+		_height.texture = utils::TextureCache::Get()->blackTexture();
+		_lightEmission.texture = utils::TextureCache::Get()->blackTexture();
 	}
 
 	Material::~Material() {

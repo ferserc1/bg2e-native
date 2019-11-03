@@ -19,16 +19,14 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\examples\cubes\cubes_example.cpp" />
-    <ClCompile Include="..\..\examples\cubes\phong_shader.cpp" />
+    <ClCompile Include="..\..\examples\material\material_example.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\examples\cubes\phong_shader.hpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
-    <ProjectGuid>{3370D047-E829-4671-8DBB-1D8EEF790F39}</ProjectGuid>
-    <RootNamespace>cubes</RootNamespace>
+    <ProjectGuid>{12D3498C-BF88-4D3E-9707-1A94271576A6}</ProjectGuid>
+    <RootNamespace>material</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />

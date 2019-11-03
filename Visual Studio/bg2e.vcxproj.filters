@@ -49,6 +49,12 @@
     <Filter Include="Header files\db\json">
       <UniqueIdentifier>{6cb8e34a-06f6-459f-8d1d-5a35b37033df}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header files\shaders">
+      <UniqueIdentifier>{7d1840bb-e2fc-4c5d-bedb-fcef033cb31a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source files\shaders">
+      <UniqueIdentifier>{699abfe6-b70c-4636-b534-d8c4863fb3cc}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\include\bg2e\platform.hpp">
@@ -174,6 +180,15 @@
     <ClInclude Include="..\include\bg2e\base\shader.hpp">
       <Filter>Header files\base</Filter>
     </ClInclude>
+    <ClInclude Include="..\include\bg2e\shaders\phong.hpp">
+      <Filter>Header files\shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\shaders.hpp">
+      <Filter>Header files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\utils\texture_cache.hpp">
+      <Filter>Header files\utils</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\utils\load.cpp">
@@ -244,6 +259,12 @@
     </ClCompile>
     <ClCompile Include="..\src\base\shader.cpp">
       <Filter>Source files\base</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\shaders\phong.cpp">
+      <Filter>Source files\shaders</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\utils\texture_cache.cpp">
+      <Filter>Source files\utils</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
