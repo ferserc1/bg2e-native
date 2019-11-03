@@ -1,11 +1,5 @@
 
 #include <iostream>
-#include <bx/bx.h>
-#include <bx/file.h>
-#include <bgfx/bgfx.h>
-#include <bgfx/platform.h>
-
-#include <bg2e/bgfx_tools.hpp>
 
 #include <bg2e/base.hpp>
 #include <bg2e/wnd.hpp>
@@ -13,55 +7,7 @@
 #include <bg2e/math.hpp>
 #include <bg2e/db.hpp>
 
-#if BG2E_PLATFORM_WINDOWS==1
-#include "win64/example_shaders.h"
-#elif BG2E_PLATFORM_OSX==1
-#include "osx/example_shaders.h"
-#elif BG2E_PLATFORM_LINUX==1
-#include "linux/example_shaders.h"
-#endif
-
-const bgfx::EmbeddedShader s_phongShadersBasic[] = {
-   BG2E_EMBEDDED_SHADER(shaders::phong_vertex),
-   BG2E_EMBEDDED_SHADER(shaders::phong_fragment),
-
-   BG2E_EMBEDDED_SHADER_END()
-};
-
-class PhongShader : public bg2e::base::Shader {
-public:
-	PhongShader() {}
-
-	virtual void bindUniforms(bg2e::base::Pipeline*, bg2e::base::PolyList* plist, bg2e::base::Material* material, const bg2e::math::float4x4& modelMatrix) {
-		bg2e::math::float4x4 normalMatrix = modelMatrix;
-		normalMatrix.invert().transpose();
-
-		bgfx::setUniform(_lightPositionHandle, &bg2e::math::float4(2.0f, 2.0f, -5.0f, 0.0f));
-		bgfx::setUniform(_normalMatHandle, normalMatrix.raw());
-		bgfx::setTexture(0, _textureUniformHandle, material->diffuse().texture->textureHandle());
-		bgfx::setTexture(1, _normalUniformHandle, material->normal().texture->textureHandle());
-	}
-
-protected:
-	virtual ~PhongShader() {}
-
-	virtual bgfx::ProgramHandle loadProgram(bgfx::RendererType::Enum type) {
-		_lightPositionHandle = bgfx::createUniform("lightPosition", bgfx::UniformType::Vec4);
-		_normalMatHandle = bgfx::createUniform("u_normal", bgfx::UniformType::Mat4);
-		_textureUniformHandle = bgfx::createUniform("s_diffuseTexture", bgfx::UniformType::Sampler);
-		_normalUniformHandle = bgfx::createUniform("s_normalTexture", bgfx::UniformType::Sampler);
-
-		bgfx::ShaderHandle vsh = bgfx::createEmbeddedShader(s_phongShadersBasic, type, "shaders::phong_vertex");
-		bgfx::ShaderHandle fsh = bgfx::createEmbeddedShader(s_phongShadersBasic, type, "shaders::phong_fragment");
-
-		return bgfx::createProgram(vsh, fsh, true);
-	}
-
-	bgfx::UniformHandle _lightPositionHandle = BGFX_INVALID_HANDLE;
-	bgfx::UniformHandle _normalMatHandle = BGFX_INVALID_HANDLE;
-	bgfx::UniformHandle _textureUniformHandle = BGFX_INVALID_HANDLE;
-	bgfx::UniformHandle _normalUniformHandle = BGFX_INVALID_HANDLE;
-};
+#include "phong_shader.hpp"
 
 class MyEventHandler : public  bg2e::wnd::EventHandler {
 public:
@@ -101,15 +47,13 @@ public:
 		_pipeline->projection()
 			.perspective(60.0f, aspectRatio, 0.1f, 100.0f);
         
-        
+		_pipeline->beginDraw();
+
         static float elapsed = 0;
         elapsed += (delta / 1000.0f);
         bg2e::math::float4x4 mtx = bg2e::math::float4x4::Identity();
-		mtx.rotate(elapsed, 1.0f, 0.0f, 0.0f)
-			.rotate(elapsed * 2.0f, 0.0f, 1.0f, 0.0f);
-
-		_pipeline->beginDraw();
-
+        mtx.rotate(elapsed, 1.0f, 0.0f, 0.0f)
+            .rotate(elapsed * 2.0f, 0.0f, 1.0f, 0.0f);
 		_pipeline->draw(_plist.getPtr(), _material.getPtr(), mtx);
     }
     
