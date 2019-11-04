@@ -31,6 +31,11 @@ public:
 		_pipeline = new bg2e::base::Pipeline(window()->viewId());
 		_pipeline->setShader(new bg2e::shaders::Phong());
 		_pipeline->setClearColor(bg2e::math::color(0x51B868FF));
+
+		_light = new bg2e::base::Light(window()->viewId());
+		_light->setPosition(bg2e::math::float3(2.0f, 2.0f, 2.0f));
+		_light->setDirection(bg2e::math::float3(-0.5, -0.5, -0.5));
+		bg2e::base::Light::ActivateLight(_light);
     }
         
     void resize(uint32_t w, uint32_t h) {
@@ -91,6 +96,7 @@ protected:
     bg2e::ptr<bg2e::base::PolyList> _plist;
 	bg2e::ptr<bg2e::base::Material> _material;
 	bg2e::ptr<bg2e::base::Pipeline> _pipeline;
+	bg2e::ptr<bg2e::base::Light> _light;
 };
 
 int main(int argc, char ** argv) {

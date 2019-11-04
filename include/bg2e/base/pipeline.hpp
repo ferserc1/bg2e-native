@@ -15,6 +15,8 @@ namespace base {
 	public:
 		Pipeline(bgfx::ViewId viewId);
 
+		inline bgfx::ViewId viewId() const { return _viewId; }
+
 		inline void setProjection(const math::float4x4 & p) { _projection = p; }
 		inline void setView(const math::float4x4 & v) { _view = v; }
 		inline math::float4x4 & projection() { return _projection; }

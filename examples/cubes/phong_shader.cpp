@@ -38,11 +38,14 @@ PhongShader::~PhongShader() {
     
 }
 
+void PhongShader::bindFrameUniforms(bg2e::base::Pipeline*) {
+	bgfx::setUniform(_lightPositionHandle, &bg2e::math::float4(2.0f, 2.0f, -5.0f, 0.0f));
+}
+
 void PhongShader::bindUniforms(bg2e::base::Pipeline*, bg2e::base::PolyList* plist, bg2e::base::Material* material, const bg2e::math::float4x4& modelMatrix) {
     bg2e::math::float4x4 normalMatrix = modelMatrix;
     normalMatrix.invert().transpose();
 
-    bgfx::setUniform(_lightPositionHandle, &bg2e::math::float4(2.0f, 2.0f, -5.0f, 0.0f));
     bgfx::setUniform(_normalMatHandle, normalMatrix.raw());
     bgfx::setTexture(0, _textureUniformHandle, material->diffuse().texture->textureHandle());
     bgfx::setTexture(1, _normalUniformHandle, material->normal().texture->textureHandle());

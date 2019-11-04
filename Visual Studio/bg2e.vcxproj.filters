@@ -189,6 +189,9 @@
     <ClInclude Include="..\include\bg2e\utils\texture_cache.hpp">
       <Filter>Header files\utils</Filter>
     </ClInclude>
+    <ClInclude Include="..\include\bg2e\base\light.hpp">
+      <Filter>Header files\base</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\utils\load.cpp">
@@ -265,6 +268,9 @@
     </ClCompile>
     <ClCompile Include="..\src\utils\texture_cache.cpp">
       <Filter>Source files\utils</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\base\light.cpp">
+      <Filter>Source files\base</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

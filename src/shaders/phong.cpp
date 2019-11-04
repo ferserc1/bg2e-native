@@ -3,6 +3,8 @@
 
 #include <bg2e/platform.hpp>
 #include <bg2e/bgfx_tools.hpp>
+#include <bg2e/base/light.hpp>
+#include <bg2e/base/pipeline.hpp>
 
 #include <bgfx/embedded_shader.h>
 
@@ -33,13 +35,31 @@ namespace shaders {
 
     }
 
+	void Phong::bindFrameUniforms(base::Pipeline * pl) {
+		base::Light* light = nullptr;
+
+		for (auto* l : base::Light::ActiveLights()) {
+			if (l->enabled() && pl->viewId()==l->viewId()) {
+				light = l;
+				break;
+			}
+		}
+
+		if (light) {
+			auto lightDir = light->direction();
+			bgfx::setUniform(_uniforms.lightDirection, &lightDir);
+		}
+		else {
+			math::float3 lightDir = math::float3(-0.8, 0.9, -0.5);
+			lightDir.normalize();
+			bgfx::setUniform(_uniforms.lightDirection, &lightDir);
+		}
+	}
+
     void Phong::bindUniforms(base::Pipeline *, base::PolyList * plist, base::Material * material, const math::float4x4 & modelMatrix) {
         math::float4x4 normalMatrix = modelMatrix;
         normalMatrix.invert().transpose();
-
-        math::float3 lightDir(-0.8f, 0.9f, -0.5f);
-        lightDir.normalize();
-        bgfx::setUniform(_uniforms.lightDirection, &lightDir);
+        
         bgfx::setUniform(_uniforms.normalMatrix, normalMatrix.raw());
 
         bgfx::setTexture(0, _uniforms.diffuse, material->diffuse().texture->textureHandle());

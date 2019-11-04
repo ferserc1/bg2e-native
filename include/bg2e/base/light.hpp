@@ -4,13 +4,23 @@
 #include <bg2e/base/referenced_pointer.hpp>
 #include <bg2e/math/vector.hpp>
 #include <bg2e/math/matrix.hpp>
+#include <bgfx/bgfx.h>
 
+#include <vector>
 
 namespace bg2e {
 namespace base {
 
 	class Light : public ReferencedPointer {
 	public:
+		typedef std::vector<Light *> LightRegistry;
+
+		static void ActivateLight(ptr<Light> & l) { ActivateLight(l.getPtr()); }
+		static void DeactivateLight(ptr<Light> & l) { DeactivateLight(l.getPtr()); }
+		static void ActivateLight(Light *);
+		static void DeactivateLight(Light *);
+		static const LightRegistry & ActiveLights();
+
 		enum LightType {
 			kDirectional = 4,
 			kSpot = 1,
@@ -18,7 +28,9 @@ namespace base {
 			kDisabled = 10
 		};
 
-		Light();
+		Light(bgfx::ViewId viewId);
+
+		inline bgfx::ViewId viewId() const { return _viewId; }
 
 		inline void setType(LightType t) { _type = t; }
 		inline LightType type() const { return _type; }
@@ -26,7 +38,7 @@ namespace base {
 		inline bool enabled() const { return _enabled; }
 		inline void setPosition(const math::float3 & p) { _position = p; }
 		inline const math::float3 & position() const { return _position; }
-		inline void setDirection(const math::float3 & d) { _direction = d; }
+		inline void setDirection(const math::float3 & d, bool normalize = true) { _direction = d; if (normalize) _direction.normalize(); }
 		inline const math::float3 & direction() const { return _direction; }
 		inline void setDiffuse(const math::color & d) { _diffuse = d;}
 		inline const math::color & diffuse() const { return _diffuse; }
@@ -56,6 +68,8 @@ namespace base {
 	protected:
 		virtual ~Light();
 
+		bgfx::ViewId _viewId;
+
 		LightType _type = kDirectional;
 		bool _enabled = true;
 		math::float3 _position = { 0.0f, 0.0f, 0.0f };
@@ -67,8 +81,10 @@ namespace base {
 		float _spotExponent = 30.0f;
 		float _shadowStrength = 0.5f;
 		float _cutoffDistance = -1.0f;
-		float _shadowBias = 0.00002;
+		float _shadowBias = 0.00002f;
 		bool _castShadows = true;
+
+		static LightRegistry s_lightRegistry;
 	};
 
 }

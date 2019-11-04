@@ -23,7 +23,11 @@ namespace base {
 
 		inline bool isCreated() const { return _created; }
 
-		virtual void bindUniforms(Pipeline*, PolyList * plist, Material* material, const math::float4x4 & modelMatrix) = 0;
+		// Bind uniforms used once per frame
+		virtual void bindFrameUniforms(base::Pipeline *) = 0;
+
+		// Bind uniforms used once per object
+		virtual void bindUniforms(Pipeline *, PolyList * plist, Material* material, const math::float4x4 & modelMatrix) = 0;
 
 		inline const bgfx::ProgramHandle & programHandle() const { return _program; }
 

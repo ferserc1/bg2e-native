@@ -21,6 +21,7 @@
   <ItemGroup>
     <ClInclude Include="..\include\bg2e\base.hpp" />
     <ClInclude Include="..\include\bg2e\base\image.hpp" />
+    <ClInclude Include="..\include\bg2e\base\light.hpp" />
     <ClInclude Include="..\include\bg2e\base\material.hpp" />
     <ClInclude Include="..\include\bg2e\base\path.hpp" />
     <ClInclude Include="..\include\bg2e\base\pipeline.hpp" />
@@ -66,6 +67,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\base\image.cpp" />
+    <ClCompile Include="..\src\base\light.cpp" />
     <ClCompile Include="..\src\base\material.cpp" />
     <ClCompile Include="..\src\base\path.cpp" />
     <ClCompile Include="..\src\base\pipeline.cpp" />

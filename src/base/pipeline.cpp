@@ -18,6 +18,10 @@ namespace base {
 	}
 
 	void Pipeline::beginDraw() {
+		if (!_shader.valid()) {
+			throw std::runtime_error("Error drawing polyList: no shader configured in pipeline.");
+		}
+
 		bgfx::setViewTransform(_viewId, _view.raw(), _projection.raw());
 
 		if (_clearFlags != 0) {
@@ -38,6 +42,7 @@ namespace base {
 			;
 		bgfx::setState(state);
 
+		_shader->bindFrameUniforms(this);
 	}
 
 	void Pipeline::draw(PolyList* plist, Material* material, const math::float4x4& modelMatrix) {

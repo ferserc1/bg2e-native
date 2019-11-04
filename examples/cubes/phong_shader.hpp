@@ -15,6 +15,7 @@ class PhongShader : public bg2e::base::Shader {
 public:
     PhongShader();
 
+	virtual void bindFrameUniforms(bg2e::base::Pipeline*);
     virtual void bindUniforms(bg2e::base::Pipeline*, bg2e::base::PolyList* plist, bg2e::base::Material* material, const bg2e::math::float4x4& modelMatrix);
 
 protected:

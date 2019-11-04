@@ -17,11 +17,13 @@ namespace shaders {
      *  - Roughness: The shininess value is generated as 1 / roughness.
      *  - Fresnel: Used as specular color.
      *  - The rest of the material properties are ignored.
+	 *  - Only compatible with one light source (the first active and enabled light).
      */
     class Phong : public base::Shader {
     public:
         Phong();
 
+		virtual void bindFrameUniforms(base::Pipeline *);
         virtual void bindUniforms(base::Pipeline *, base::PolyList * plist, base::Material * material, const math::float4x4 & modelMatrix);
 
     protected:
