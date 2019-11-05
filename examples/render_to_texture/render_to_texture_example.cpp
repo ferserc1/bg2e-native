@@ -8,6 +8,7 @@
 #include <bg2e/db.hpp>
 #include <bg2e/shaders.hpp>
 
+#define RENDER_TEXTURE_PASS 1
 
 class MyEventHandler : public  bg2e::wnd::EventHandler {
 public:
@@ -21,7 +22,7 @@ public:
          
        	bg2e::base::path dataPath("data");
 		auto diffuse = bg2e::db::loadTexture(dataPath.pathAddingComponent("texture.jpg"));
-		auto normal = bg2e::db::loadTexture(dataPath.pathAddingComponent("texture_nm.jpg"));
+		//auto normal = bg2e::db::loadTexture(dataPath.pathAddingComponent("texture_nm.jpg"));
 
 		_material = new bg2e::base::Material();
 		_material->setDiffuse(diffuse);
@@ -36,13 +37,41 @@ public:
 		_light->setPosition(bg2e::math::float3(2.0f, 2.0f, 2.0f));
 		_light->setDirection(bg2e::math::float3(-0.5, -0.5, -0.5));
 		bg2e::base::Light::ActivateLight(_light);
+        
+        bgfx::TextureHandle fbtextures[] =
+        {
+            bgfx::createTexture2D(
+                _fbSize.width(),
+                _fbSize.height(),
+                false,
+                1,
+                bgfx::TextureFormat::RGBA8,
+                BGFX_TEXTURE_RT),
+            bgfx::createTexture2D(
+                _fbSize.width(),
+                _fbSize.height(),
+                false,
+                1,
+                bgfx::TextureFormat::D16,
+                BGFX_TEXTURE_RT_WRITE_ONLY),
+            
+        };
+        _fbHandle = bgfx::createFrameBuffer(BX_COUNTOF(fbtextures), fbtextures, true);
     }
         
     void resize(uint32_t w, uint32_t h) {
         bgfx::setViewRect(window()->viewId(), 0, 0, window()->width(), window()->height());
     }
     
-    void update(float delta) {        
+    void update(float delta) {
+        // Render texture
+        const bg2e::math::float4x4 fbView = bg2e::math::float4x4::Identity();
+        const bg2e::math::float4x4 fbProj = bg2e::math::float4x4::Perspective(60.0f, 1.0f, 0.1f, 100.0f);
+        bgfx::setViewRect(RENDER_TEXTURE_PASS, 0, 0, _fbSize.width(), _fbSize.height());
+        bgfx::setViewFrameBuffer(RENDER_TEXTURE_PASS, _fbHandle);
+        bgfx::setViewTransform(RENDER_TEXTURE_PASS, fbView.raw(), fbProj.raw());
+        bgfx::setViewClear(RENDER_TEXTURE_PASS, BGFX_CLEAR_COLOR | BGFX_CLEAR_DEPTH, 0x305089ff, 1.0f, 0);
+
         const bg2e::math::float3 at = { 0.0f, 0.0f, 0.0f };
         const bg2e::math::float3 eye = { 0.0f, 0.0f, -5.0f };
         const bg2e::math::float3 up = { 0.0f, 1.0f, 0.0f };
@@ -82,6 +111,8 @@ public:
 		_plist = nullptr;
 		_material = nullptr;
 		_plist = nullptr;
+        
+        bgfx::destroy(_fbHandle);
     }
     
     void keyUp(const bg2e::wnd::KeyboardEvent & evt) {
@@ -97,6 +128,10 @@ protected:
 	bg2e::ptr<bg2e::base::Material> _material;
 	bg2e::ptr<bg2e::base::Pipeline> _pipeline;
 	bg2e::ptr<bg2e::base::Light> _light;
+    
+    // render to texture example
+    bg2e::math::int2 _fbSize = bg2e::math::int2(512,512);
+    bgfx::FrameBufferHandle _fbHandle = BGFX_INVALID_HANDLE;
 };
 
 int main(int argc, char ** argv) {
