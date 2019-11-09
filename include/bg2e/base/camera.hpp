@@ -11,8 +11,27 @@ namespace base {
 	public:
 		Camera();
 
-	protected:
+		inline math::float4x4 & projection() { return _projection; }
+		inline const math::float4x4& projection() const { return _projection; }
+		inline math::float4x4 & view() { return _view; }
+		inline const math::float4x4 & view() const { return _view; }
+
+		inline const math::viewport & viewport() const { return _viewport; }
+		void setViewport(const math::viewport & vp);
+
+		void setProjectionStrategy(ProjectionStrategy *);
+
+		template <class T>
+		inline T * projectionStrategy() { return dynamic_cast<T*>(_projectionStrategy.getPtr()); }
+
+	protected:;
 		virtual ~Camera();
+
+		math::float4x4 _projection;
+		math::float4x4 _view;
+		math::viewport _viewport;
+
+		ptr<ProjectionStrategy> _projectionStrategy;
 	};
 
 }

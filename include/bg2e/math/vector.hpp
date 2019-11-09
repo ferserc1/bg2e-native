@@ -375,6 +375,10 @@ namespace bg2e {
     
 	class viewport : uint4 {
 	public:
+		viewport() {}
+		viewport(uint32_t w, uint32_t h) :uint4(0, 0, w, h) {}
+		viewport(uint32_t x, uint32_t y, uint32_t w, uint32_t h) :uint4{ x, y, w, h } {}
+
 		inline uint32_t width() const { return _v[2]; }
 		inline uint32_t height() const { return _v[3]; }
 		inline float aspectRatio() const { return static_cast<float>(width()) / static_cast<float>(height()); }
