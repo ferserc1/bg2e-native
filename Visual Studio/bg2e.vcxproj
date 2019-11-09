@@ -50,7 +50,7 @@
     <ClInclude Include="..\include\bg2e\platform.hpp" />
     <ClInclude Include="..\include\bg2e\scene.hpp" />
     <ClInclude Include="..\include\bg2e\scene\component.hpp" />
-    <ClInclude Include="..\include\bg2e\scene\scene_object.hpp" />
+    <ClInclude Include="..\include\bg2e\scene\node.hpp" />
     <ClInclude Include="..\include\bg2e\shaders.hpp" />
     <ClInclude Include="..\include\bg2e\shaders\phong.hpp" />
     <ClInclude Include="..\include\bg2e\utils.hpp" />
@@ -89,7 +89,7 @@
     <ClCompile Include="..\src\db\texture_load.cpp" />
     <ClCompile Include="..\src\math\utils.cpp" />
     <ClCompile Include="..\src\scene\component.cpp" />
-    <ClCompile Include="..\src\scene\scene_object.cpp" />
+    <ClCompile Include="..\src\scene\node.cpp" />
     <ClCompile Include="..\src\shaders\phong.cpp" />
     <ClCompile Include="..\src\utils\load.cpp" />
     <ClCompile Include="..\src\utils\mesh_generators.cpp" />

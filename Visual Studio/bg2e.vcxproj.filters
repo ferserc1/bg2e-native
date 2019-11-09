@@ -201,11 +201,11 @@
     <ClInclude Include="..\include\bg2e\scene\component.hpp">
       <Filter>Header files\scene</Filter>
     </ClInclude>
-    <ClInclude Include="..\include\bg2e\scene\scene_object.hpp">
-      <Filter>Header files\scene</Filter>
-    </ClInclude>
     <ClInclude Include="..\include\bg2e\scene.hpp">
       <Filter>Header files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\scene\node.hpp">
+      <Filter>Header files\scene</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -290,7 +290,7 @@
     <ClCompile Include="..\src\scene\component.cpp">
       <Filter>Source files\scene</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\scene\scene_object.cpp">
+    <ClCompile Include="..\src\scene\node.cpp">
       <Filter>Source files\scene</Filter>
     </ClCompile>
   </ItemGroup>

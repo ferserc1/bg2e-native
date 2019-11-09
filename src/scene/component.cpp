@@ -1,7 +1,7 @@
 
 #include <bg2e/scene/component.hpp>
 
-#include <bg2e/scene/scene_object.hpp>
+#include <bg2e/scene/node.hpp>
 
 namespace bg2e {
 namespace scene {

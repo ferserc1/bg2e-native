@@ -12,9 +12,9 @@
 namespace bg2e {
 namespace scene {
 
-    class SceneObject;
+    class Node;
     class Component : public base::ReferencedPointer {
-        friend class SceneObject;
+        friend class Node;
     public:
         static Component * Factory(bg2e::db::json::Value * componentData, const bg2e::base::path & resourcePath);
 
@@ -22,14 +22,14 @@ namespace scene {
 
         virtual Component * clone() = 0;
 
-        inline SceneObject * sceneObject() { return _sceneObject; }
-        inline const SceneObject * sceneObject() const { return _sceneObject; }
+        inline Node * node() { return _node; }
+        inline const Node * node() const { return _node; }
         // Node * node();
         // const Node * node() const;
 
         // TODO: rest of life cycle functions
-        virtual void addedToNode(SceneObject *) {}
-        virtual void remomvedFromNode(SceneObject *) {}
+        virtual void addedToNode(Node *) {}
+        virtual void removedFromNode(Node *) {}
 
         inline void setIgnoreSerialize(bool i) { _ignoreSerialize = i; }
         inline bool ignoreSerialize() const { return _ignoreSerialize; }
@@ -41,7 +41,7 @@ namespace scene {
     protected:
         virtual ~Component();
 
-        SceneObject * _sceneObject = nullptr;
+        Node * _node = nullptr;
         bool _ignoreSerialize = false;
     };
 
@@ -79,6 +79,8 @@ namespace scene {
     };
 
     typedef std::unordered_map<size_t, ptr<Component>> ComponentMap;
+	typedef std::vector<ptr<Component>> ComponentVector;
+	typedef std::vector<Component*> ComponentVectorWeak;
     
 }
 }
