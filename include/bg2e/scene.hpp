@@ -3,6 +3,7 @@
 #define _bg2e_scene_hpp_
 
 #include <bg2e/scene/component.hpp>
-#include <bg2e/scene/scene_object.hpp>
+#include <bg2e/scene/node_visitor.hpp>
+#include <bg2e/scene/node.hpp>
 
 #endif

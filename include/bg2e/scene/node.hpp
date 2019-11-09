@@ -4,14 +4,20 @@
 
 #include <bg2e/base/referenced_pointer.hpp>
 #include <bg2e/scene/component.hpp>
+#include <bg2e/scene/node_visitor.hpp>
 
 #include <string>
 
 namespace bg2e {
 namespace scene {
 
+	class Node;
+	typedef std::vector<ptr<Node>> NodeVector;
+
     class Node : public base::ReferencedPointer {
     public:
+		typedef std::function<void(Node*)> SceneChangeFunction;
+
         Node();
         Node(const std::string & name);
         Node(const char * name);
@@ -21,6 +27,7 @@ namespace scene {
 		inline void setEnabled(bool e) { _enabled = e; }
 		inline bool isEnabled() const { return _enabled; }
 
+		// Begin of component manipulation functions
 		void addComponent(Component* c) {
 			if (c) {
 				ptr<Component> preventDelete = c;
@@ -62,7 +69,42 @@ namespace scene {
 		}
 
 		inline const ComponentVectorWeak & components() const { return _componentVector; }
+
+		// End of component manipulation functions
+
+		// Begin of child node manipulation functions
+		bool addChild(Node * child);
+		bool removeChild(Node * child);
+		void clearChildren();
+
+		inline NodeVector & children() { return _children; }
+		inline const NodeVector & children() const { return _children; }
+
+		inline Node * parent() { return _parent; }
+		inline const Node * parent() const { return _parent; }
 		
+		bool findChild(const Node * node);
+		NodeVector::iterator findChildIterator(const Node * node);
+		bool isAncestorOf(const Node * ancient) const;
+		static bool IsAncestor(const Node * node, const Node * antient);
+		inline Node * sceneRoot() { return _parent ? _parent->sceneRoot() : this; }
+		inline const Node * sceneRoot() const { return _parent ? _parent->sceneRoot() : this; }
+		// End of child node manipulation functions
+
+		// Node visitor functions
+		virtual void accept(NodeVisitor * visitor);
+		virtual void acceptReverse(NodeVisitor * visitor);
+
+		/// To add or remove nodes inside a life cycle function, use the static
+		/// node manipulation functions. The node will be removed asynchronously when is
+		/// safe to do it
+		static void RemoveFromScene(Node *, SceneChangeFunction didRemoved = nullptr);
+		static void AddToScene(Node * node, Node * parent, SceneChangeFunction didAdded = nullptr);
+		static void AddComponent(Component * comp, Node * node, SceneChangeFunction didAdded = nullptr);
+
+		// This function is called to apply the changes made by the static scene manipulation functions
+		// It must be called rigth after the frame() function
+		void ApplySceneChanges();
 
     protected:
         virtual ~Node();
@@ -79,6 +121,30 @@ namespace scene {
 		inline size_t hash(Component * component) const { return typeid(*component).hash_code(); }
 
 		void updateComponentVector();
+
+		NodeVector _children;
+		Node * _parent;
+
+		struct RemoveNodeData {
+			ptr<Node> node;
+			SceneChangeFunction didRemoved;
+		};
+
+		struct AddNodeData {
+			ptr<Node> parent;
+			ptr<Node> child;
+			SceneChangeFunction didAdded;
+		};
+
+		struct AddComponentData {
+			ptr<Component> component;
+			ptr<Node> node;
+			SceneChangeFunction didAdded;
+		};
+
+		static std::vector<RemoveNodeData> s_removeNodeVector;
+		static std::vector<AddNodeData> s_addNodeVector;
+		static std::vector<AddComponentData> s_addComponentVector;
     };
 
 }

@@ -207,6 +207,9 @@
     <ClInclude Include="..\include\bg2e\scene\node.hpp">
       <Filter>Header files\scene</Filter>
     </ClInclude>
+    <ClInclude Include="..\include\bg2e\scene\node_visitor.hpp">
+      <Filter>Header files\scene</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\utils\load.cpp">
@@ -291,6 +294,9 @@
       <Filter>Source files\scene</Filter>
     </ClCompile>
     <ClCompile Include="..\src\scene\node.cpp">
+      <Filter>Source files\scene</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\scene\node_visitor.cpp">
       <Filter>Source files\scene</Filter>
     </ClCompile>
   </ItemGroup>
