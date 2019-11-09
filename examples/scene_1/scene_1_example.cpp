@@ -1,12 +1,7 @@
 
 #include <iostream>
 
-#include <bg2e/base.hpp>
-#include <bg2e/wnd.hpp>
-#include <bg2e/utils.hpp>
-#include <bg2e/math.hpp>
-#include <bg2e/db.hpp>
-#include <bg2e/shaders.hpp>
+#include <bg2e/bg2e.hpp>
 
 
 class MyEventHandler : public  bg2e::wnd::EventHandler {
