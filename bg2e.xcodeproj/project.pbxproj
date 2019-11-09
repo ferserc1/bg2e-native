@@ -39,6 +39,13 @@
 		EDACE2AC237165940076754B /* material_example.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EDACE2AB237165450076754B /* material_example.cpp */; };
 		EDACE2AF237165CE0076754B /* texture_cache.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EDACE2AE237165CE0076754B /* texture_cache.cpp */; };
 		EDACE2B2237165E90076754B /* phong.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EDACE2B1237165E90076754B /* phong.cpp */; };
+		EDC47A072376F6FA00F4CD7C /* camera.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EDC47A062376F6FA00F4CD7C /* camera.cpp */; };
+		EDC47A092376F70000F4CD7C /* projection_strategy.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EDC47A082376F70000F4CD7C /* projection_strategy.cpp */; };
+		EDC47A0D2376F71B00F4CD7C /* forward_render_layer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EDC47A0B2376F71B00F4CD7C /* forward_render_layer.cpp */; };
+		EDC47A0E2376F71B00F4CD7C /* renderer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EDC47A0C2376F71B00F4CD7C /* renderer.cpp */; };
+		EDC47A132376F72700F4CD7C /* node_visitor.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EDC47A102376F72700F4CD7C /* node_visitor.cpp */; };
+		EDC47A142376F72700F4CD7C /* component.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EDC47A112376F72700F4CD7C /* component.cpp */; };
+		EDC47A152376F72700F4CD7C /* node.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EDC47A122376F72700F4CD7C /* node.cpp */; };
 		EDC4EAC4236AD19100CBD2D0 /* poly_list.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EDC4EAC3236AD19100CBD2D0 /* poly_list.cpp */; };
 		EDC4EAE9236B057D00CBD2D0 /* mesh_generators.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EDC4EAE8236B057D00CBD2D0 /* mesh_generators.cpp */; };
 		EDCEEB812357655F0087ECAB /* load.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EDCEEB802357655F0087ECAB /* load.cpp */; };
@@ -208,6 +215,23 @@
 		EDACE2B1237165E90076754B /* phong.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = phong.cpp; sourceTree = "<group>"; };
 		EDACE2B4237165FE0076754B /* phong.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = phong.hpp; sourceTree = "<group>"; };
 		EDACE2B5237166070076754B /* shaders.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = shaders.hpp; sourceTree = "<group>"; };
+		EDC479FE2376F6A200F4CD7C /* camera.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = camera.hpp; sourceTree = "<group>"; };
+		EDC479FF2376F6A900F4CD7C /* projection_strategy.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = projection_strategy.hpp; sourceTree = "<group>"; };
+		EDC47A002376F6B700F4CD7C /* matrix_strategy.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = matrix_strategy.hpp; sourceTree = "<group>"; };
+		EDC47A022376F6CC00F4CD7C /* renderer.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = renderer.hpp; sourceTree = "<group>"; };
+		EDC47A032376F6CC00F4CD7C /* render_layer.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = render_layer.hpp; sourceTree = "<group>"; };
+		EDC47A042376F6CC00F4CD7C /* forward_render_layer.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = forward_render_layer.hpp; sourceTree = "<group>"; };
+		EDC47A052376F6D600F4CD7C /* render.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = render.hpp; sourceTree = "<group>"; };
+		EDC47A062376F6FA00F4CD7C /* camera.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = camera.cpp; sourceTree = "<group>"; };
+		EDC47A082376F70000F4CD7C /* projection_strategy.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = projection_strategy.cpp; sourceTree = "<group>"; };
+		EDC47A0B2376F71B00F4CD7C /* forward_render_layer.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = forward_render_layer.cpp; sourceTree = "<group>"; };
+		EDC47A0C2376F71B00F4CD7C /* renderer.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = renderer.cpp; sourceTree = "<group>"; };
+		EDC47A102376F72700F4CD7C /* node_visitor.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = node_visitor.cpp; sourceTree = "<group>"; };
+		EDC47A112376F72700F4CD7C /* component.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = component.cpp; sourceTree = "<group>"; };
+		EDC47A122376F72700F4CD7C /* node.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = node.cpp; sourceTree = "<group>"; };
+		EDC47A172376F73F00F4CD7C /* node_visitor.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = node_visitor.hpp; sourceTree = "<group>"; };
+		EDC47A182376F73F00F4CD7C /* component.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = component.hpp; sourceTree = "<group>"; };
+		EDC47A192376F73F00F4CD7C /* node.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = node.hpp; sourceTree = "<group>"; };
 		EDC4EAC2236AD18800CBD2D0 /* poly_list.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = poly_list.hpp; sourceTree = "<group>"; };
 		EDC4EAC3236AD19100CBD2D0 /* poly_list.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = poly_list.cpp; sourceTree = "<group>"; };
 		EDC4EAE7236B04CA00CBD2D0 /* mesh_generators.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = mesh_generators.hpp; sourceTree = "<group>"; };
@@ -477,8 +501,9 @@
 		ED4EC12B23681D3600C63E45 /* math */ = {
 			isa = PBXGroup;
 			children = (
-				ED4EC12C23681D3600C63E45 /* vector.hpp */,
+				EDC47A002376F6B700F4CD7C /* matrix_strategy.hpp */,
 				ED4EC12D23681D3600C63E45 /* matrix.hpp */,
+				ED4EC12C23681D3600C63E45 /* vector.hpp */,
 				ED4EC12E23681D3600C63E45 /* utils.hpp */,
 			);
 			path = math;
@@ -521,12 +546,14 @@
 		ED4EC1622368557C00C63E45 /* base */ = {
 			isa = PBXGroup;
 			children = (
+				EDC479FE2376F6A200F4CD7C /* camera.hpp */,
 				ED4EC1642368557C00C63E45 /* image.hpp */,
 				EDACE28C237164E10076754B /* light.hpp */,
 				EDDE6103236ECED4007991F1 /* material.hpp */,
 				ED4EC1632368557C00C63E45 /* path.hpp */,
 				EDDE6104236ECED4007991F1 /* pipeline.hpp */,
 				EDC4EAC2236AD18800CBD2D0 /* poly_list.hpp */,
+				EDC479FF2376F6A900F4CD7C /* projection_strategy.hpp */,
 				ED43F2FD236C56A500195C21 /* referenced_pointer.hpp */,
 				EDDE6105236ECED4007991F1 /* shader.hpp */,
 				ED43F2FE236C56AB00195C21 /* texture.hpp */,
@@ -537,12 +564,14 @@
 		ED4EC1652368559000C63E45 /* base */ = {
 			isa = PBXGroup;
 			children = (
+				EDC47A062376F6FA00F4CD7C /* camera.cpp */,
 				ED4EC1662368559000C63E45 /* image.cpp */,
 				EDACE28D237164E80076754B /* light.cpp */,
 				EDDE6108236ECEF2007991F1 /* material.cpp */,
 				ED4EC1672368559000C63E45 /* path.cpp */,
 				EDDE6107236ECEF2007991F1 /* pipeline.cpp */,
 				EDC4EAC3236AD19100CBD2D0 /* poly_list.cpp */,
+				EDC47A082376F70000F4CD7C /* projection_strategy.cpp */,
 				ED43F301236C56E900195C21 /* referenced_pointer.cpp */,
 				EDDE6106236ECEF2007991F1 /* shader.cpp */,
 				ED43F300236C56E900195C21 /* texture.cpp */,
@@ -617,6 +646,45 @@
 				EDACE2B4237165FE0076754B /* phong.hpp */,
 			);
 			path = shaders;
+			sourceTree = "<group>";
+		};
+		EDC47A012376F6CC00F4CD7C /* render */ = {
+			isa = PBXGroup;
+			children = (
+				EDC47A022376F6CC00F4CD7C /* renderer.hpp */,
+				EDC47A032376F6CC00F4CD7C /* render_layer.hpp */,
+				EDC47A042376F6CC00F4CD7C /* forward_render_layer.hpp */,
+			);
+			path = render;
+			sourceTree = "<group>";
+		};
+		EDC47A0A2376F71B00F4CD7C /* render */ = {
+			isa = PBXGroup;
+			children = (
+				EDC47A0B2376F71B00F4CD7C /* forward_render_layer.cpp */,
+				EDC47A0C2376F71B00F4CD7C /* renderer.cpp */,
+			);
+			path = render;
+			sourceTree = "<group>";
+		};
+		EDC47A0F2376F72700F4CD7C /* scene */ = {
+			isa = PBXGroup;
+			children = (
+				EDC47A102376F72700F4CD7C /* node_visitor.cpp */,
+				EDC47A112376F72700F4CD7C /* component.cpp */,
+				EDC47A122376F72700F4CD7C /* node.cpp */,
+			);
+			path = scene;
+			sourceTree = "<group>";
+		};
+		EDC47A162376F73F00F4CD7C /* scene */ = {
+			isa = PBXGroup;
+			children = (
+				EDC47A172376F73F00F4CD7C /* node_visitor.hpp */,
+				EDC47A182376F73F00F4CD7C /* component.hpp */,
+				EDC47A192376F73F00F4CD7C /* node.hpp */,
+			);
+			path = scene;
 			sourceTree = "<group>";
 		};
 		EDCEEB7C235764180087ECAB /* utils */ = {
@@ -1009,6 +1077,8 @@
 				ED4EC1622368557C00C63E45 /* base */,
 				ED4EC1552368557C00C63E45 /* db */,
 				ED4EC12B23681D3600C63E45 /* math */,
+				EDC47A012376F6CC00F4CD7C /* render */,
+				EDC47A162376F73F00F4CD7C /* scene */,
 				EDACE2B3237165FE0076754B /* shaders */,
 				EDCEEB7C235764180087ECAB /* utils */,
 				EDE6D8622355CF360014D7C8 /* wnd */,
@@ -1017,6 +1087,7 @@
 				ED4EC1602368557C00C63E45 /* db.hpp */,
 				ED4EC13223681D9B00C63E45 /* math.hpp */,
 				EDE6D8612355CF360014D7C8 /* platform.hpp */,
+				EDC47A052376F6D600F4CD7C /* render.hpp */,
 				EDACE2B5237166070076754B /* shaders.hpp */,
 				EDE6D8652355CF360014D7C8 /* wnd.hpp */,
 				EDCEEB7E2357649B0087ECAB /* utils.hpp */,
@@ -1043,6 +1114,8 @@
 				ED4EC1652368559000C63E45 /* base */,
 				ED4EC1682368559000C63E45 /* db */,
 				ED4EC12F23681D4700C63E45 /* math */,
+				EDC47A0A2376F71B00F4CD7C /* render */,
+				EDC47A0F2376F72700F4CD7C /* scene */,
 				EDACE2B0237165E90076754B /* shaders */,
 				EDCEEB7F2357654A0087ECAB /* utils */,
 				EDE6D8672355CF360014D7C8 /* wnd */,
@@ -1279,8 +1352,10 @@
 			files = (
 				EDCEEB812357655F0087ECAB /* load.cpp in Sources */,
 				EDE6D88F2355EDC90014D7C8 /* main_loop.cpp in Sources */,
+				EDC47A152376F72700F4CD7C /* node.cpp in Sources */,
 				EDACE28E237164E80076754B /* light.cpp in Sources */,
 				ED43F303236C56E900195C21 /* referenced_pointer.cpp in Sources */,
+				EDC47A132376F72700F4CD7C /* node_visitor.cpp in Sources */,
 				ED4EC1722368559000C63E45 /* bg2_writter.cpp in Sources */,
 				ED43F305236C56F300195C21 /* texture_load.cpp in Sources */,
 				ED4EC1712368559000C63E45 /* path.cpp in Sources */,
@@ -1293,16 +1368,21 @@
 				EDDE6109236ECEF2007991F1 /* shader.cpp in Sources */,
 				ED4EC1702368559000C63E45 /* image.cpp in Sources */,
 				ED4EC1762368559000C63E45 /* binary_parser.cpp in Sources */,
+				EDC47A142376F72700F4CD7C /* component.cpp in Sources */,
 				EDC4EAE9236B057D00CBD2D0 /* mesh_generators.cpp in Sources */,
 				EDACE2AF237165CE0076754B /* texture_cache.cpp in Sources */,
 				EDDE610B236ECEF2007991F1 /* material.cpp in Sources */,
 				ED4EC1732368559000C63E45 /* convert.cpp in Sources */,
 				EDE6D87D2355D1DB0014D7C8 /* window.cpp in Sources */,
 				ED43F302236C56E900195C21 /* texture.cpp in Sources */,
+				EDC47A0E2376F71B00F4CD7C /* renderer.cpp in Sources */,
+				EDC47A072376F6FA00F4CD7C /* camera.cpp in Sources */,
 				ED4EC17B236891C800C63E45 /* image_load.cpp in Sources */,
 				EDDE610A236ECEF2007991F1 /* pipeline.cpp in Sources */,
 				ED4EC13123681D4700C63E45 /* utils.cpp in Sources */,
+				EDC47A0D2376F71B00F4CD7C /* forward_render_layer.cpp in Sources */,
 				ED4EC1752368559000C63E45 /* escaper.cpp in Sources */,
+				EDC47A092376F70000F4CD7C /* projection_strategy.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -62,11 +62,11 @@ namespace scene {
 				updateComponentVector();
 			}
 		}
-
+        
 		template <class T>
 		T * component() {
-			return dynamic_cast<T*>(_componentMap[typeid(T).hash_code()]).getPtr();
-		}
+            return dynamic_cast<T*>(_componentMap[typeid(T).hash_code()].getPtr());
+        }
 
 		inline const ComponentVectorWeak & components() const { return _componentVector; }
 
