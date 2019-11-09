@@ -373,6 +373,13 @@ namespace bg2e {
     typedef vec4<double> double4;
 	typedef float4 color;
     
+	class viewport : uint4 {
+	public:
+		inline uint32_t width() const { return _v[2]; }
+		inline uint32_t height() const { return _v[3]; }
+		inline float aspectRatio() const { return static_cast<float>(width()) / static_cast<float>(height()); }
+	};
+
     }
 }
 #endif

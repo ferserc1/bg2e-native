@@ -61,6 +61,12 @@
     <Filter Include="Source files\scene">
       <UniqueIdentifier>{031e98fc-7bfc-4c94-ab21-93712b8eda60}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source files\render">
+      <UniqueIdentifier>{e303e9a6-929c-4d29-b2d4-26ec3f031f5f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header files\render">
+      <UniqueIdentifier>{15c8d552-d2cc-4c76-8e6e-c3be64a41aef}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\include\bg2e\platform.hpp">
@@ -210,6 +216,30 @@
     <ClInclude Include="..\include\bg2e\scene\node_visitor.hpp">
       <Filter>Header files\scene</Filter>
     </ClInclude>
+    <ClInclude Include="..\include\bg2e\render\renderer.hpp">
+      <Filter>Header files\render</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\render.hpp">
+      <Filter>Header files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\bg2e.hpp">
+      <Filter>Header files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\render\render_layer.hpp">
+      <Filter>Header files\render</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\render\forward_render_layer.hpp">
+      <Filter>Header files\render</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\base\camera.hpp">
+      <Filter>Header files\base</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\math\matrix_strategy.hpp">
+      <Filter>Header files\math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\base\projection_strategy.hpp">
+      <Filter>Header files\base</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\utils\load.cpp">
@@ -298,6 +328,18 @@
     </ClCompile>
     <ClCompile Include="..\src\scene\node_visitor.cpp">
       <Filter>Source files\scene</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\render\renderer.cpp">
+      <Filter>Source files\render</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\render\forward_render_layer.cpp">
+      <Filter>Source files\render</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\base\camera.cpp">
+      <Filter>Source files\base</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\base\projection_strategy.cpp">
+      <Filter>Source files\base</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

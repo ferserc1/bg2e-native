@@ -20,15 +20,18 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\include\bg2e\base.hpp" />
+    <ClInclude Include="..\include\bg2e\base\camera.hpp" />
     <ClInclude Include="..\include\bg2e\base\image.hpp" />
     <ClInclude Include="..\include\bg2e\base\light.hpp" />
     <ClInclude Include="..\include\bg2e\base\material.hpp" />
     <ClInclude Include="..\include\bg2e\base\path.hpp" />
     <ClInclude Include="..\include\bg2e\base\pipeline.hpp" />
     <ClInclude Include="..\include\bg2e\base\poly_list.hpp" />
+    <ClInclude Include="..\include\bg2e\base\projection_strategy.hpp" />
     <ClInclude Include="..\include\bg2e\base\referenced_pointer.hpp" />
     <ClInclude Include="..\include\bg2e\base\shader.hpp" />
     <ClInclude Include="..\include\bg2e\base\texture.hpp" />
+    <ClInclude Include="..\include\bg2e\bg2e.hpp" />
     <ClInclude Include="..\include\bg2e\bgfx_tools.hpp" />
     <ClInclude Include="..\include\bg2e\db.hpp" />
     <ClInclude Include="..\include\bg2e\db\bg2_reader.hpp" />
@@ -43,11 +46,16 @@
     <ClInclude Include="..\include\bg2e\db\json\value.hpp" />
     <ClInclude Include="..\include\bg2e\db\texture_load.hpp" />
     <ClInclude Include="..\include\bg2e\db\types.hpp" />
+    <ClInclude Include="..\include\bg2e\math\matrix_strategy.hpp" />
+    <ClInclude Include="..\include\bg2e\render.hpp" />
     <ClInclude Include="..\include\bg2e\math.hpp" />
     <ClInclude Include="..\include\bg2e\math\matrix.hpp" />
     <ClInclude Include="..\include\bg2e\math\utils.hpp" />
     <ClInclude Include="..\include\bg2e\math\vector.hpp" />
     <ClInclude Include="..\include\bg2e\platform.hpp" />
+    <ClInclude Include="..\include\bg2e\render\forward_render_layer.hpp" />
+    <ClInclude Include="..\include\bg2e\render\renderer.hpp" />
+    <ClInclude Include="..\include\bg2e\render\render_layer.hpp" />
     <ClInclude Include="..\include\bg2e\scene.hpp" />
     <ClInclude Include="..\include\bg2e\scene\component.hpp" />
     <ClInclude Include="..\include\bg2e\scene\node.hpp" />
@@ -70,12 +78,14 @@
     <ClInclude Include="..\src\db\stb_image_write.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\src\base\camera.cpp" />
     <ClCompile Include="..\src\base\image.cpp" />
     <ClCompile Include="..\src\base\light.cpp" />
     <ClCompile Include="..\src\base\material.cpp" />
     <ClCompile Include="..\src\base\path.cpp" />
     <ClCompile Include="..\src\base\pipeline.cpp" />
     <ClCompile Include="..\src\base\poly_list.cpp" />
+    <ClCompile Include="..\src\base\projection_strategy.cpp" />
     <ClCompile Include="..\src\base\referenced_pointer.cpp" />
     <ClCompile Include="..\src\base\shader.cpp" />
     <ClCompile Include="..\src\base\texture.cpp" />
@@ -89,6 +99,8 @@
     <ClCompile Include="..\src\db\json\value.cpp" />
     <ClCompile Include="..\src\db\texture_load.cpp" />
     <ClCompile Include="..\src\math\utils.cpp" />
+    <ClCompile Include="..\src\render\forward_render_layer.cpp" />
+    <ClCompile Include="..\src\render\renderer.cpp" />
     <ClCompile Include="..\src\scene\component.cpp" />
     <ClCompile Include="..\src\scene\node.cpp" />
     <ClCompile Include="..\src\scene\node_visitor.cpp" />

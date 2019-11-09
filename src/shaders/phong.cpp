@@ -50,7 +50,7 @@ namespace shaders {
 			bgfx::setUniform(_uniforms.lightDirection, &lightDir);
 		}
 		else {
-			math::float3 lightDir = math::float3(-0.8, 0.9, -0.5);
+			math::float3 lightDir = math::float3(-0.8f, 0.9f, -0.5f);
 			lightDir.normalize();
 			bgfx::setUniform(_uniforms.lightDirection, &lightDir);
 		}

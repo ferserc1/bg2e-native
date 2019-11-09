@@ -58,7 +58,7 @@ namespace base {
 
 		_shader->bindUniforms(this, plist, material, modelMatrix);
 
-		bgfx::setVertexBuffer(_viewId, plist->vertexBuffer());
+		bgfx::setVertexBuffer(static_cast<uint8_t>(_viewId), plist->vertexBuffer());
 		bgfx::setIndexBuffer(plist->indexBuffer());
 
 		bgfx::submit(_viewId, _shader->programHandle());
