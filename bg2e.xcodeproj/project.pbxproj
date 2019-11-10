@@ -10,6 +10,21 @@
 		ED43F302236C56E900195C21 /* texture.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED43F300236C56E900195C21 /* texture.cpp */; };
 		ED43F303236C56E900195C21 /* referenced_pointer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED43F301236C56E900195C21 /* referenced_pointer.cpp */; };
 		ED43F305236C56F300195C21 /* texture_load.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED43F304236C56F300195C21 /* texture_load.cpp */; };
+		ED46485723781EFA006D17F7 /* QuartzCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = EDE6D86F2355D18F0014D7C8 /* QuartzCore.framework */; };
+		ED46485823781EFA006D17F7 /* Metal.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = EDE6D8712355D19B0014D7C8 /* Metal.framework */; };
+		ED46485923781EFA006D17F7 /* MetalKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = EDE6D8722355D19B0014D7C8 /* MetalKit.framework */; };
+		ED46485A23781EFA006D17F7 /* CoreVideo.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = EDE6D8772355D1A50014D7C8 /* CoreVideo.framework */; };
+		ED46485B23781EFA006D17F7 /* IOKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = EDE6D8752355D1A00014D7C8 /* IOKit.framework */; };
+		ED46485C23781EFA006D17F7 /* OpenGL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = EDE6D8792355D1AB0014D7C8 /* OpenGL.framework */; };
+		ED46485D23781EFA006D17F7 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = EDE6D87B2355D1B00014D7C8 /* Cocoa.framework */; };
+		ED46485E23781EFA006D17F7 /* libbg2e.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = EDE6D7B62355C5550014D7C8 /* libbg2e.dylib */; };
+		ED46485F23781EFA006D17F7 /* libbimg_decodeRelease.a in Frameworks */ = {isa = PBXBuildFile; fileRef = EDE6D85B2355C6340014D7C8 /* libbimg_decodeRelease.a */; };
+		ED46486023781EFA006D17F7 /* libbgfxRelease.a in Frameworks */ = {isa = PBXBuildFile; fileRef = EDE6D85C2355C6340014D7C8 /* libbgfxRelease.a */; };
+		ED46486123781EFA006D17F7 /* libbxRelease.a in Frameworks */ = {isa = PBXBuildFile; fileRef = EDE6D85D2355C6340014D7C8 /* libbxRelease.a */; };
+		ED46486223781EFA006D17F7 /* libglfw3.a in Frameworks */ = {isa = PBXBuildFile; fileRef = EDE6D7E42355C6340014D7C8 /* libglfw3.a */; };
+		ED46486323781EFA006D17F7 /* libbimgRelease.a in Frameworks */ = {isa = PBXBuildFile; fileRef = EDE6D85E2355C6340014D7C8 /* libbimgRelease.a */; };
+		ED46486623781EFA006D17F7 /* libbg2e.dylib in Copy bg2e library */ = {isa = PBXBuildFile; fileRef = EDE6D7B62355C5550014D7C8 /* libbg2e.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		ED46486E23781F5D006D17F7 /* scene_1_example.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED46486D23781F24006D17F7 /* scene_1_example.cpp */; };
 		ED4EC13123681D4700C63E45 /* utils.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED4EC13023681D4700C63E45 /* utils.cpp */; };
 		ED4EC1702368559000C63E45 /* image.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED4EC1662368559000C63E45 /* image.cpp */; };
 		ED4EC1712368559000C63E45 /* path.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED4EC1672368559000C63E45 /* path.cpp */; };
@@ -116,6 +131,17 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
+		ED46486523781EFA006D17F7 /* Copy bg2e library */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 6;
+			files = (
+				ED46486623781EFA006D17F7 /* libbg2e.dylib in Copy bg2e library */,
+			);
+			name = "Copy bg2e library";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		EDACE2A2237165150076754B /* Copy bg2e library */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
@@ -169,6 +195,9 @@
 		ED43F300236C56E900195C21 /* texture.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = texture.cpp; sourceTree = "<group>"; };
 		ED43F301236C56E900195C21 /* referenced_pointer.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = referenced_pointer.cpp; sourceTree = "<group>"; };
 		ED43F304236C56F300195C21 /* texture_load.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = texture_load.cpp; sourceTree = "<group>"; };
+		ED46486A23781EFA006D17F7 /* scene-1.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "scene-1.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		ED46486B23781EFA006D17F7 /* scene-1-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = "scene-1-Info.plist"; path = "/Users/fernando/desarrollo/bg2e-cpp/examples/scene_1/scene-1-Info.plist"; sourceTree = "<absolute>"; };
+		ED46486D23781F24006D17F7 /* scene_1_example.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = scene_1_example.cpp; sourceTree = "<group>"; };
 		ED4EC12923681D2100C63E45 /* shaders.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = shaders.h; sourceTree = "<group>"; };
 		ED4EC12A23681D2100C63E45 /* example_shaders.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = example_shaders.h; sourceTree = "<group>"; };
 		ED4EC12C23681D3600C63E45 /* vector.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = vector.hpp; sourceTree = "<group>"; };
@@ -240,7 +269,7 @@
 		EDCEEB7E2357649B0087ECAB /* utils.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = utils.hpp; sourceTree = "<group>"; };
 		EDCEEB802357655F0087ECAB /* load.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = load.cpp; sourceTree = "<group>"; };
 		EDDBAC8923719E67007BECE3 /* render-to-texture-example.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "render-to-texture-example.app"; sourceTree = BUILT_PRODUCTS_DIR; };
-		EDDBAC8A23719E67007BECE3 /* material-example copy-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = "material-example copy-Info.plist"; path = "/Users/fernando/desarrollo/bg2e-cpp/material-example copy-Info.plist"; sourceTree = "<absolute>"; };
+		EDDBAC8A23719E67007BECE3 /* render-to-texture-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = "render-to-texture-Info.plist"; path = "/Users/fernando/desarrollo/bg2e-cpp/examples/render_to_texture/render-to-texture-Info.plist"; sourceTree = "<absolute>"; };
 		EDDBAC8C23719E85007BECE3 /* render_to_texture_example.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = render_to_texture_example.cpp; sourceTree = "<group>"; };
 		EDDE6103236ECED4007991F1 /* material.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = material.hpp; sourceTree = "<group>"; };
 		EDDE6104236ECED4007991F1 /* pipeline.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = pipeline.hpp; sourceTree = "<group>"; };
@@ -382,11 +411,31 @@
 		EDE6D8922356F53E0014D7C8 /* keyboard_event.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = keyboard_event.hpp; sourceTree = "<group>"; };
 		EDE6D8932356F5CF0014D7C8 /* mouse_event.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = mouse_event.hpp; sourceTree = "<group>"; };
 		EDF4242C23573A7A003C6405 /* cubes-example.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "cubes-example.app"; sourceTree = BUILT_PRODUCTS_DIR; };
-		EDF4242D23573A7A003C6405 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = Info.plist; path = "/Users/fernando/desarrollo/bg2e-cpp/Info.plist"; sourceTree = "<absolute>"; };
+		EDF4242D23573A7A003C6405 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = Info.plist; path = "/Users/fernando/desarrollo/bg2e-cpp/examples/cubes/Info.plist"; sourceTree = "<absolute>"; };
 		EDF4242F23573B19003C6405 /* cubes_example.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = cubes_example.cpp; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		ED46485623781EFA006D17F7 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				ED46485723781EFA006D17F7 /* QuartzCore.framework in Frameworks */,
+				ED46485823781EFA006D17F7 /* Metal.framework in Frameworks */,
+				ED46485923781EFA006D17F7 /* MetalKit.framework in Frameworks */,
+				ED46485A23781EFA006D17F7 /* CoreVideo.framework in Frameworks */,
+				ED46485B23781EFA006D17F7 /* IOKit.framework in Frameworks */,
+				ED46485C23781EFA006D17F7 /* OpenGL.framework in Frameworks */,
+				ED46485D23781EFA006D17F7 /* Cocoa.framework in Frameworks */,
+				ED46485E23781EFA006D17F7 /* libbg2e.dylib in Frameworks */,
+				ED46485F23781EFA006D17F7 /* libbimg_decodeRelease.a in Frameworks */,
+				ED46486023781EFA006D17F7 /* libbgfxRelease.a in Frameworks */,
+				ED46486123781EFA006D17F7 /* libbxRelease.a in Frameworks */,
+				ED46486223781EFA006D17F7 /* libglfw3.a in Frameworks */,
+				ED46486323781EFA006D17F7 /* libbimgRelease.a in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		EDACE293237165150076754B /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -489,6 +538,15 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		ED46486C23781F24006D17F7 /* scene_1 */ = {
+			isa = PBXGroup;
+			children = (
+				ED46486B23781EFA006D17F7 /* scene-1-Info.plist */,
+				ED46486D23781F24006D17F7 /* scene_1_example.cpp */,
+			);
+			path = scene_1;
+			sourceTree = "<group>";
+		};
 		ED4EC12823681D2100C63E45 /* osx */ = {
 			isa = PBXGroup;
 			children = (
@@ -713,7 +771,7 @@
 			isa = PBXGroup;
 			children = (
 				EDDBAC8C23719E85007BECE3 /* render_to_texture_example.cpp */,
-				EDDBAC8A23719E67007BECE3 /* material-example copy-Info.plist */,
+				EDDBAC8A23719E67007BECE3 /* render-to-texture-Info.plist */,
 			);
 			path = render_to_texture;
 			sourceTree = "<group>";
@@ -738,6 +796,7 @@
 				EDF4242C23573A7A003C6405 /* cubes-example.app */,
 				EDACE2A7237165150076754B /* material-example.app */,
 				EDDBAC8923719E67007BECE3 /* render-to-texture-example.app */,
+				ED46486A23781EFA006D17F7 /* scene-1.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -772,6 +831,7 @@
 		EDE6D7DA2355C5A30014D7C8 /* examples */ = {
 			isa = PBXGroup;
 			children = (
+				ED46486C23781F24006D17F7 /* scene_1 */,
 				EDDBAC8B23719E85007BECE3 /* render_to_texture */,
 				EDE6D7CA2355C5900014D7C8 /* basic */,
 				EDF4242E23573AD0003C6405 /* cubes */,
@@ -1170,6 +1230,24 @@
 /* End PBXHeadersBuildPhase section */
 
 /* Begin PBXNativeTarget section */
+		ED46485323781EFA006D17F7 /* scene-1 */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = ED46486723781EFA006D17F7 /* Build configuration list for PBXNativeTarget "scene-1" */;
+			buildPhases = (
+				ED46485423781EFA006D17F7 /* Sources */,
+				ED46485623781EFA006D17F7 /* Frameworks */,
+				ED46486423781EFA006D17F7 /* Resources */,
+				ED46486523781EFA006D17F7 /* Copy bg2e library */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "scene-1";
+			productName = "basic-example";
+			productReference = ED46486A23781EFA006D17F7 /* scene-1.app */;
+			productType = "com.apple.product-type.application";
+		};
 		EDACE28F237165150076754B /* material-example */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = EDACE2A4237165150076754B /* Build configuration list for PBXNativeTarget "material-example" */;
@@ -1294,11 +1372,19 @@
 				EDF4241523573A7A003C6405 /* cubes-example */,
 				EDACE28F237165150076754B /* material-example */,
 				EDDBAC7223719E67007BECE3 /* render-to-texture-example */,
+				ED46485323781EFA006D17F7 /* scene-1 */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		ED46486423781EFA006D17F7 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		EDACE2A1237165150076754B /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -1330,6 +1416,14 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		ED46485423781EFA006D17F7 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				ED46486E23781F5D006D17F7 /* scene_1_example.cpp in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		EDACE290237165150076754B /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -1406,6 +1500,44 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin XCBuildConfiguration section */
+		ED46486823781EFA006D17F7 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = "";
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				DEVELOPMENT_TEAM = RP926KEE5K;
+				ENABLE_HARDENED_RUNTIME = YES;
+				INFOPLIST_FILE = "$(SRCROOT)/examples/scene_1/scene-1-Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "org.bg2engine.render-to-texture-example";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		ED46486923781EFA006D17F7 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = "";
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				DEVELOPMENT_TEAM = RP926KEE5K;
+				ENABLE_HARDENED_RUNTIME = YES;
+				INFOPLIST_FILE = "$(SRCROOT)/examples/scene_1/scene-1-Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "org.bg2engine.render-to-texture-example";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
 		EDACE2A5237165150076754B /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -1415,7 +1547,7 @@
 				COMBINE_HIDPI_IMAGES = YES;
 				DEVELOPMENT_TEAM = RP926KEE5K;
 				ENABLE_HARDENED_RUNTIME = YES;
-				INFOPLIST_FILE = Info.plist;
+				INFOPLIST_FILE = examples/material/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
@@ -1434,7 +1566,7 @@
 				COMBINE_HIDPI_IMAGES = YES;
 				DEVELOPMENT_TEAM = RP926KEE5K;
 				ENABLE_HARDENED_RUNTIME = YES;
-				INFOPLIST_FILE = Info.plist;
+				INFOPLIST_FILE = examples/material/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
@@ -1453,7 +1585,7 @@
 				COMBINE_HIDPI_IMAGES = YES;
 				DEVELOPMENT_TEAM = RP926KEE5K;
 				ENABLE_HARDENED_RUNTIME = YES;
-				INFOPLIST_FILE = "material-example copy-Info.plist";
+				INFOPLIST_FILE = "examples/render_to_texture/render-to-texture-Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
@@ -1472,7 +1604,7 @@
 				COMBINE_HIDPI_IMAGES = YES;
 				DEVELOPMENT_TEAM = RP926KEE5K;
 				ENABLE_HARDENED_RUNTIME = YES;
-				INFOPLIST_FILE = "material-example copy-Info.plist";
+				INFOPLIST_FILE = "examples/render_to_texture/render-to-texture-Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
@@ -1702,7 +1834,7 @@
 				COMBINE_HIDPI_IMAGES = YES;
 				DEVELOPMENT_TEAM = RP926KEE5K;
 				ENABLE_HARDENED_RUNTIME = YES;
-				INFOPLIST_FILE = Info.plist;
+				INFOPLIST_FILE = examples/cubes/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
@@ -1721,7 +1853,7 @@
 				COMBINE_HIDPI_IMAGES = YES;
 				DEVELOPMENT_TEAM = RP926KEE5K;
 				ENABLE_HARDENED_RUNTIME = YES;
-				INFOPLIST_FILE = Info.plist;
+				INFOPLIST_FILE = examples/cubes/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
@@ -1734,6 +1866,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		ED46486723781EFA006D17F7 /* Build configuration list for PBXNativeTarget "scene-1" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				ED46486823781EFA006D17F7 /* Debug */,
+				ED46486923781EFA006D17F7 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		EDACE2A4237165150076754B /* Build configuration list for PBXNativeTarget "material-example" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
