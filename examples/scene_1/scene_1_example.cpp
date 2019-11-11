@@ -31,23 +31,24 @@ public:
 		_light->setPosition(bg2e::math::float3(2.0f, 2.0f, 2.0f));
 		_light->setDirection(bg2e::math::float3(-0.5, -0.5, -0.5));
 		bg2e::base::Light::ActivateLight(_light);
+        
+        auto projStrategy = new bg2e::base::OpticalProjectionStrategy();
+        projStrategy->setFrameSize(35.0f);
+        projStrategy->setFocalLength(55.0f);
+        projStrategy->setNear(0.1f);
+        projStrategy->setFar(100.0f);
+        _camera.setProjectionStrategy(projStrategy);
+        _camera.view().lookAt({ 0.0f, 0.0f, -10.0f}, { 0.0f, 0.0f, 0.0f }, { 0.0f, 1.0f, 0.0f });
     }
         
     void resize(uint32_t w, uint32_t h) {
         bgfx::setViewRect(window()->viewId(), 0, 0, window()->width(), window()->height());
+        _camera.setViewport({ window()->width(), window()->height() });
     }
     
-    void update(float delta) {        
-        const bg2e::math::float3 at = { 0.0f, 0.0f, 0.0f };
-        const bg2e::math::float3 eye = { 0.0f, 0.0f, -5.0f };
-        const bg2e::math::float3 up = { 0.0f, 1.0f, 0.0f };
-        auto aspectRatio = static_cast<float>(window()->width()) / static_cast<float>(window()->height());
-		_pipeline->view()
-			.identity()
-			.lookAt(eye, at, up);
-		_pipeline->projection()
-			.perspective(60.0f, aspectRatio, 0.1f, 100.0f);
-        
+    void update(float delta) {
+        _pipeline->setView(_camera.view());
+        _pipeline->setProjection((_camera.projection()));
 		_pipeline->beginDraw();
 
         static float elapsed = 0;
@@ -92,6 +93,8 @@ protected:
 	bg2e::ptr<bg2e::base::Material> _material;
 	bg2e::ptr<bg2e::base::Pipeline> _pipeline;
 	bg2e::ptr<bg2e::base::Light> _light;
+    
+    bg2e::base::Camera _camera;
 };
 
 int main(int argc, char ** argv) {

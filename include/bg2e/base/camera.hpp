@@ -7,9 +7,10 @@
 namespace bg2e {
 namespace base {
 
-	class Camera : public ReferencedPointer {
+	class Camera {
 	public:
 		Camera();
+        virtual ~Camera();
 
 		inline math::float4x4 & projection() { return _projection; }
 		inline const math::float4x4& projection() const { return _projection; }
@@ -24,8 +25,7 @@ namespace base {
 		template <class T>
 		inline T * projectionStrategy() { return dynamic_cast<T*>(_projectionStrategy.getPtr()); }
 
-	protected:;
-		virtual ~Camera();
+	protected:
 
 		math::float4x4 _projection;
 		math::float4x4 _view;
