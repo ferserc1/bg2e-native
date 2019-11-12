@@ -240,6 +240,15 @@
     <ClInclude Include="..\include\bg2e\base\projection_strategy.hpp">
       <Filter>Header files\base</Filter>
     </ClInclude>
+    <ClInclude Include="..\include\bg2e\scene\camera.hpp">
+      <Filter>Header files\scene</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\scene\drawable.hpp">
+      <Filter>Header files\scene</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\scene\transform.hpp">
+      <Filter>Header files\scene</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\utils\load.cpp">
@@ -340,6 +349,15 @@
     </ClCompile>
     <ClCompile Include="..\src\base\projection_strategy.cpp">
       <Filter>Source files\base</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\scene\drawable.cpp">
+      <Filter>Source files\scene</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\scene\transform.cpp">
+      <Filter>Source files\scene</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\scene\camera_component.cpp">
+      <Filter>Source files\scene</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

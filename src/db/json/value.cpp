@@ -839,7 +839,7 @@ namespace json {
 		return def;
 	}
 
-	math::float2 Value::Vector2(Value * val, const math::float2 & def) {
+	math::float2 Value::Float2(Value * val, const math::float2 & def) {
 		math::float2 result;
 		if(val && val->type() == kArray && val->array().size() >= 2) {
 			result.x() = Float((*val)[0], def.x());
@@ -848,7 +848,7 @@ namespace json {
 		return result;
 	}
 
-	math::float3 Value::Vector3(Value * val, const math::float3 & def) {
+	math::float3 Value::Float3(Value * val, const math::float3 & def) {
 		math::float3 result;
 		if(val && val->type() == kArray && val->array().size() >= 3) {
 			result.x() = Float((*val)[0], def.x());
@@ -858,7 +858,7 @@ namespace json {
 		return result;
 	}
 
-	math::float4 Value::Vector4(Value * val, const math::float4 & def) {
+	math::float4 Value::Float4(Value * val, const math::float4 & def) {
 		math::float4 result;
 		if(val && val->type() == kArray && val->array().size() >= 4) {
 			result.x() = Float((*val)[0], def.x());
@@ -868,6 +868,78 @@ namespace json {
 		}
 		return result;
 	}
+
+	math::color Value::Color(Value * val, const math::color & def) {
+		math::color result = def;
+		if (val && val->type() == kArray && val->array().size() >= 4) {
+			result = math::color(Float((*val)[0], def.x()),
+				Float((*val)[1], def.y()),
+				Float((*val)[2], def.z()),
+				Float((*val)[3], def.w()));
+		}
+		return result;
+	}
+
+	math::float3x3 Value::Float3x3(Value * val, const math::float3x3 & def) {
+		math::float3x3 result = def;
+		if (val && val->type() == kArray && val->array().size() >= 9) {
+			result.setRow(0, math::float3(Float((*val)[0], def.element(0,0)), Float((*val)[1], def.element(0,1)), Float((*val)[2], def.element(0,2))));
+			result.setRow(1, math::float3(Float((*val)[3], def.element(1,0)), Float((*val)[4], def.element(1,1)), Float((*val)[5], def.element(2,2))));
+			result.setRow(2, math::float3(Float((*val)[6], def.element(2,0)), Float((*val)[7], def.element(2,1)), Float((*val)[8], def.element(2,2))));
+		}
+		return result;
+	}
+
+	math::float4x4 Value::Float4x4(Value * val, const math::float4x4 & def) {
+		math::float4x4 result = def;
+		if (val && val->type() == kArray && val->array().size() >= 16) {
+			result.setRow(0, math::float4(Float((*val)[0], def.element(0,0)), Float((*val)[1], def.element(0,1)), Float((*val)[2], def.element(0,2)), Float((*val)[3], def.element(0,3))));
+			result.setRow(1, math::float4(Float((*val)[4], def.element(1,0)), Float((*val)[5], def.element(1,1)), Float((*val)[6], def.element(1,2)), Float((*val)[7], def.element(1,3))));
+			result.setRow(2, math::float4(Float((*val)[8], def.element(2,0)), Float((*val)[9], def.element(2,1)), Float((*val)[10], def.element(2,2)), Float((*val)[11], def.element(2,3))));
+			result.setRow(3, math::float4(Float((*val)[12], def.element(3,0)), Float((*val)[13], def.element(3,1)), Float((*val)[14], def.element(3,2)), Float((*val)[15], def.element(3,3))));
+		}
+		return result;
+	}
+
+	void Value::FloatVector(Value * val, math::FloatVector & result) {
+		if (val && val->type() == kArray) {
+			result.clear();
+			for (size_t i = 0; i < val->array().size(); ++i) {
+				result.push_back(Float((*val)[i]));
+			}
+		}
+	}
+
+	math::int2 Value::Int2(Value * val, const math::int2 & def) {
+		math::int2 result = def;
+		if (val && val->type() == kArray && val->array().size() >= 2) {
+			result = math::int2(Int((*val)[0], def.x()),
+				Int((*val)[1], def.y()));
+		}
+		return result;
+	}
+
+	math::int3 Value::Int3(Value * val, const math::int3 & def) {
+		math::int3 result = def;
+		if (val && val->type() == kArray && val->array().size() >= 3) {
+			result = math::int3(Int((*val)[0], def.x()),
+				Int((*val)[1], def.y()),
+				Int((*val)[2], def.z()));
+		}
+		return result;
+	}
+
+	math::int4 Value::Int4(Value * val, const math::int4 & def) {
+		math::int4 result = def;
+		if (val && val->type() == kArray && val->array().size() >= 4) {
+			result = math::int4(Int((*val)[0], def.x()),
+				Int((*val)[1], def.y()),
+				Int((*val)[2], def.z()),
+				Int((*val)[3], def.w()));
+		}
+		return result;
+	}
+
 
 }
 }

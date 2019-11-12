@@ -31,6 +31,7 @@
 #include <iostream>
 
 #include <bg2e/math/vector.hpp>
+#include <bg2e/math/matrix.hpp>
 
 namespace bg2e {
 namespace db {
@@ -107,9 +108,16 @@ namespace json {
 		static float Float(Value * val, float def = 0.0f);
 		static double Number(Value * val, double def = 0.0);
 		
-		static math::float2 Vector2(Value * val, const math::float2 & def = math::float2{ { 0.f, 0.f } });
-		static math::float3 Vector3(Value * val, const math::float3 & def = math::float3{ { 0.f, 0.f, 0.f } });
-		static math::float4 Vector4(Value * val, const math::float4 & def = math::float4{ { 0.f, 0.f, 0.f, 0.f } });
+		static math::float2 Float2(Value * val, const math::float2 & def = math::float2{ { 0.f, 0.f } });
+		static math::float3 Float3(Value * val, const math::float3 & def = math::float3{ { 0.f, 0.f, 0.f } });
+		static math::float4 Float4(Value * val, const math::float4 & def = math::float4{ { 0.f, 0.f, 0.f, 0.f } });
+		static math::color Color(Value * val, const math::color & def = math::color(0xFFFFFFFF));
+		static math::float3x3 Float3x3(Value * val, const math::float3x3 & def = math::float3x3::Identity());
+		static math::float4x4 Float4x4(Value * val, const math::float4x4 & def = math::float4x4::Identity());
+		static void FloatVector(Value * val, math::FloatVector & result);
+		static math::int2 Int2(Value * val, const math::int2 & def = { { 0, 0 } });
+		static math::int3 Int3(Value * val, const math::int3 & def = { { 0, 0, 0 } });
+		static math::int4 Int4(Value * val, const math::int4 & def = { {0, 0, 0, 0 } });
 		
 		inline void setValue(bool b) { _type = kBool; _boolVal = b; }
 		inline void setValue(const char * v) { _type = kString; _stringVal = v; }
@@ -165,7 +173,55 @@ namespace json {
 		inline void setValue(const std::string & key, const ValueArray & v) { _type = kObject; _map[key] = new Value(v); }
 		inline void setValue(const std::string & key, const ValueMap & v) { _type = kObject; _map[key] = new Value(v); }
 		inline void setValue(const std::string & key, Value * val) { _type = kObject; _map[key] = val ? val : new Value(kNull); }
-		
+		inline void setValue(const std::string & key, const math::float2 & v) {
+			setValue(key, ValueArray{ new Value(v.x()), new Value(v.y()) });
+		}
+
+		inline void setValue(const std::string & key, const math::float3 & v) {
+			setValue(key, ValueArray{ new Value(v.x()), new Value(v.y()), new Value(v.z()) });
+		}
+
+		inline void setValue(const std::string & key, const math::float4 & v) {
+			setValue(key, ValueArray{ new Value(v.x()), new Value(v.y()), new Value(v.z()), new Value(v.w()) });
+		}
+
+		inline void setValue(const std::string & key, const math::int2 & v) {
+			setValue(key, ValueArray{ new Value(v.x()), new Value(v.y()) });
+		}
+
+		inline void setValue(const std::string & key, const math::int3 & v) {
+			setValue(key, ValueArray{ new Value(v.x()), new Value(v.y()), new Value(v.z()) });
+		}
+
+		inline void setValue(const std::string & key, const math::int4 & v) {
+			setValue(key, ValueArray{ new Value(v.x()), new Value(v.y()), new Value(v.z()), new Value(v.w()) });
+		}
+
+		inline void setValue(const std::string & key, const math::float3x3 & v) {
+			setValue(key, ValueArray{
+				new Value(v.element(0,0)), new Value(v.element(0,1)), new Value(v.element(0,2)),
+				new Value(v.element(1,0)), new Value(v.element(1,1)), new Value(v.element(1,2)),
+				new Value(v.element(2,0)), new Value(v.element(2,1)), new Value(v.element(2,2))
+			});
+		}
+
+		inline void setValue(const std::string & key, const math::float4x4 & v) {
+			setValue(key, ValueArray{
+				new Value(v.element(0,0)), new Value(v.element(0,1)), new Value(v.element(0,2)), new Value(v.element(0,3)),
+				new Value(v.element(1,0)), new Value(v.element(1,1)), new Value(v.element(1,2)), new Value(v.element(1,3)),
+				new Value(v.element(2,0)), new Value(v.element(2,1)), new Value(v.element(2,2)), new Value(v.element(2,3)),
+				new Value(v.element(3,0)), new Value(v.element(3,1)), new Value(v.element(3,2)), new Value(v.element(3,3))
+			});
+		}
+
+		inline void setValue(const std::string & key, const math::FloatVector & values) {
+			ValueArray array;
+			for (auto v : values) {
+				array.push_back(new Value(v));
+			}
+			setValue(key, array);
+		}
+
 		inline Value * operator[](size_t i) { return _array.size()>i ? _array[i]:nullptr; }
 		
 		inline Value * operator[](const std::string & key) { return _map[key]; }

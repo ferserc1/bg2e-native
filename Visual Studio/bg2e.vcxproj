@@ -57,9 +57,12 @@
     <ClInclude Include="..\include\bg2e\render\renderer.hpp" />
     <ClInclude Include="..\include\bg2e\render\render_layer.hpp" />
     <ClInclude Include="..\include\bg2e\scene.hpp" />
+    <ClInclude Include="..\include\bg2e\scene\camera.hpp" />
     <ClInclude Include="..\include\bg2e\scene\component.hpp" />
+    <ClInclude Include="..\include\bg2e\scene\drawable.hpp" />
     <ClInclude Include="..\include\bg2e\scene\node.hpp" />
     <ClInclude Include="..\include\bg2e\scene\node_visitor.hpp" />
+    <ClInclude Include="..\include\bg2e\scene\transform.hpp" />
     <ClInclude Include="..\include\bg2e\shaders.hpp" />
     <ClInclude Include="..\include\bg2e\shaders\phong.hpp" />
     <ClInclude Include="..\include\bg2e\utils.hpp" />
@@ -101,9 +104,12 @@
     <ClCompile Include="..\src\math\utils.cpp" />
     <ClCompile Include="..\src\render\forward_render_layer.cpp" />
     <ClCompile Include="..\src\render\renderer.cpp" />
+    <ClCompile Include="..\src\scene\camera_component.cpp" />
     <ClCompile Include="..\src\scene\component.cpp" />
+    <ClCompile Include="..\src\scene\drawable.cpp" />
     <ClCompile Include="..\src\scene\node.cpp" />
     <ClCompile Include="..\src\scene\node_visitor.cpp" />
+    <ClCompile Include="..\src\scene\transform.cpp" />
     <ClCompile Include="..\src\shaders\phong.cpp" />
     <ClCompile Include="..\src\utils\load.cpp" />
     <ClCompile Include="..\src\utils\mesh_generators.cpp" />

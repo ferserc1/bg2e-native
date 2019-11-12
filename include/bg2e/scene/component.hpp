@@ -24,8 +24,6 @@ namespace scene {
 
         inline Node * node() { return _node; }
         inline const Node * node() const { return _node; }
-        // Node * node();
-        // const Node * node() const;
 
         // TODO: rest of life cycle functions
         virtual void addedToNode(Node *) {}

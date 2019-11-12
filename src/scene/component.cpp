@@ -19,11 +19,6 @@ namespace scene {
     Component::~Component() {
 
     }
-
-    // Node * Component::node() {
-    //     return dynamic_cast<Node*>(sceneObject());
-    // }
-
     
     Component * Component::Factory(bg2e::db::json::Value * componentData, const bg2e::base::path & resourcePath) {
         using namespace bg2e::db::json;

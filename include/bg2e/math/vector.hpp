@@ -384,6 +384,9 @@ namespace bg2e {
 		inline float aspectRatio() const { return static_cast<float>(width()) / static_cast<float>(height()); }
 	};
 
+	typedef std::vector<float> FloatVector;
+	typedef std::vector<unsigned int> UIntVector;
+
     }
 }
 #endif
