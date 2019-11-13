@@ -14,6 +14,7 @@ namespace base {
 		ptr<base::Material> material;
 		math::float4x4 transform = math::float4x4::Identity();
 		bool useTransform = false;
+		float cameraDistance = 0.0f;
 
 		inline void operator=(const DrawableElement & e) {
 			polyList = e.polyList;

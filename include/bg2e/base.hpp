@@ -2,6 +2,7 @@
 #define _bg2e_base_hpp_
 
 #include <bg2e/base/camera.hpp>
+#include <bg2e/base/drawable_element.hpp>
 #include <bg2e/base/image.hpp>
 #include <bg2e/base/light.hpp>
 #include <bg2e/base/material.hpp>
