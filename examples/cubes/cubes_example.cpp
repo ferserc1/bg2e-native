@@ -36,7 +36,11 @@ public:
         bgfx::setViewRect(window()->viewId(), 0, 0, window()->width(), window()->height());
     }
     
-    void update(float delta) {        
+    void update(float delta) {
+		_pipeline->projection().beginFrame();
+		_pipeline->view().beginFrame();
+		_pipeline->model().beginFrame();
+
         const bg2e::math::float3 at = { 0.0f, 0.0f, 0.0f };
         const bg2e::math::float3 eye = { 0.0f, 0.0f, -5.0f };
         const bg2e::math::float3 up = { 0.0f, 1.0f, 0.0f };
@@ -51,9 +55,11 @@ public:
 
         static float elapsed = 0;
         elapsed += (delta / 1000.0f);
-        bg2e::math::float4x4 mtx = bg2e::math::float4x4::Identity();
-        mtx.rotate(elapsed, 1.0f, 0.0f, 0.0f)
-            .rotate(elapsed * 2.0f, 0.0f, 1.0f, 0.0f);
+   
+		_pipeline->model()
+			.identity()
+			.rotate(elapsed, 1.0f, 0.0f, 0.0f)
+			.rotate(elapsed * 2.0f, 0.0f, 1.0f, 0.0f);
 		_pipeline->draw(_plist.getPtr(), _material.getPtr());
     }
     
