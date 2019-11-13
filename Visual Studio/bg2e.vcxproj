@@ -25,6 +25,7 @@
     <ClInclude Include="..\include\bg2e\base\image.hpp" />
     <ClInclude Include="..\include\bg2e\base\light.hpp" />
     <ClInclude Include="..\include\bg2e\base\material.hpp" />
+    <ClInclude Include="..\include\bg2e\base\matrix_stack.hpp" />
     <ClInclude Include="..\include\bg2e\base\path.hpp" />
     <ClInclude Include="..\include\bg2e\base\pipeline.hpp" />
     <ClInclude Include="..\include\bg2e\base\poly_list.hpp" />

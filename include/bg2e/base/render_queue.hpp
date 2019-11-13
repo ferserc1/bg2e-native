@@ -3,6 +3,7 @@
 
 #include <bg2e/base/drawable_element.hpp>
 #include <bg2e/base/camera.hpp>
+#include <bg2e/base/pipeline.hpp>
 
 #include <vector>
 
@@ -14,9 +15,12 @@ namespace base {
 		RenderQueue();
 		virtual ~RenderQueue();
 
-		void beginDraw(const Camera & cam);
-		void draw(base::PolyList * plist, base::Material * mat, const math::float4x4 & trx);
-		void endDraw();
+		void begin(const Camera & cam);
+		void addPolyList(base::PolyList * plist, base::Material * mat, const math::float4x4 & trx);
+		void end();
+
+		inline const base::DrawableElementVector & opaqueQueue() const { return _opaqueQueue; }
+		inline const base::DrawableElementVector & transparentQueue() const { return _transparentQueue; }
 		
 	protected:
 

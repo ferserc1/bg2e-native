@@ -13,11 +13,13 @@ namespace base {
 
 	}
 
-	void RenderQueue::beginDraw(const Camera & cam) {
+	void RenderQueue::begin(const Camera & cam) {
+		_opaqueQueue.clear();
+		_transparentQueue.clear();
 		_cameraPosition = cam.view().position() * -1.0f;
 	}
 
-	void RenderQueue::draw(base::PolyList * plist, base::Material * mat, const math::float4x4 & trx) {
+	void RenderQueue::addPolyList(base::PolyList * plist, base::Material * mat, const math::float4x4 & trx) {
 		math::float3 pos = trx.position();
 		float distance = (_cameraPosition - pos).length();
 		if (mat->isTransparent()) {
@@ -40,8 +42,9 @@ namespace base {
 		}
 	}
 
-	void RenderQueue::endDraw() {
+	void RenderQueue::end() {
 		// TODO: short transparent queue elements by camera distance
 	}
+
 }
 }

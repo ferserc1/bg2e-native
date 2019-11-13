@@ -11,6 +11,7 @@
 #include <bg2e/base/poly_list.hpp>
 #include <bg2e/base/projection_strategy.hpp>
 #include <bg2e/base/referenced_pointer.hpp>
+#include <bg2e/base/render_queue.hpp>
 #include <bg2e/base/shader.hpp>
 #include <bg2e/base/texture.hpp>
 

@@ -11,16 +11,16 @@ public:
         bg2e::base::MeshData meshData;
         bg2e::utils::generateCube(2.0f, meshData);
     
-        _plist = new bg2e::base::PolyList();
-        _plist->build(meshData);
+        auto plist = new bg2e::base::PolyList();
+        plist->build(meshData);
          
        	bg2e::base::path dataPath("data");
 		auto diffuse = bg2e::db::loadTexture(dataPath.pathAddingComponent("texture.jpg"));
 		auto normal = bg2e::db::loadTexture(dataPath.pathAddingComponent("texture_nm.jpg"));
 
-		_material = new bg2e::base::Material();
-		_material->setDiffuse(diffuse);
-		_material->setNormal(normal);
+		auto material = new bg2e::base::Material();
+		material->setDiffuse(diffuse);
+		material->setNormal(normal);
 
 
 		_pipeline = new bg2e::base::Pipeline(window()->viewId());
@@ -32,23 +32,31 @@ public:
 		_light->setDirection(bg2e::math::float3(-0.5, -0.5, -0.5));
 		bg2e::base::Light::ActivateLight(_light);
         
-        auto projStrategy = new bg2e::base::OpticalProjectionStrategy();
-        projStrategy->setFrameSize(35.0f);
-        projStrategy->setFocalLength(55.0f);
-        projStrategy->setNear(0.1f);
-        projStrategy->setFar(100.0f);
-        _camera.setProjectionStrategy(projStrategy);
-        _camera.view().lookAt({ 0.0f, 0.0f, -10.0f}, { 0.0f, 0.0f, 0.0f }, { 0.0f, 1.0f, 0.0f });
+		_sceneRoot = new bg2e::scene::Node();
+
+		auto camNode = new bg2e::scene::Node();
+		auto cam = new bg2e::scene::Camera();
+		auto projStrategy = new bg2e::base::OpticalProjectionStrategy();
+		projStrategy->setFrameSize(35.0f);
+		projStrategy->setFocalLength(55.0f);
+		projStrategy->setNear(0.1f);
+		projStrategy->setFar(100.0f);
+		cam->camera().setProjectionStrategy(projStrategy);
+		camNode->addComponent(cam);
+
+		auto drawable = new bg2e::scene::Drawable();
+		drawable->addPolyList(plist, material);
+		
     }
         
     void resize(uint32_t w, uint32_t h) {
         bgfx::setViewRect(window()->viewId(), 0, 0, window()->width(), window()->height());
-        _camera.setViewport({ window()->width(), window()->height() });
+        //_camera.setViewport({ window()->width(), window()->height() });
     }
     
     void update(float delta) {
-        _pipeline->setView(_camera.view());
-        _pipeline->setProjection((_camera.projection()));
+        //_pipeline->setView(_camera.view());
+        //_pipeline->setProjection((_camera.projection()));
 		_pipeline->beginDraw();
 
         static float elapsed = 0;
@@ -56,7 +64,7 @@ public:
         bg2e::math::float4x4 mtx = bg2e::math::float4x4::Identity();
         mtx.rotate(elapsed, 1.0f, 0.0f, 0.0f)
             .rotate(elapsed * 2.0f, 0.0f, 1.0f, 0.0f);
-		_pipeline->draw(_plist.getPtr(), _material.getPtr(), mtx);
+		//_pipeline->draw(_plist.getPtr(), _material.getPtr(), mtx);
     }
     
     void draw() {
@@ -75,9 +83,9 @@ public:
     }
     
     void destroy() {
-		_plist = nullptr;
-		_material = nullptr;
-		_plist = nullptr;
+		//_plist = nullptr;
+		//_material = nullptr;
+		
     }
     
     void keyUp(const bg2e::wnd::KeyboardEvent & evt) {
@@ -89,12 +97,16 @@ public:
 protected:
     bool _showStats = false;
 
-    bg2e::ptr<bg2e::base::PolyList> _plist;
-	bg2e::ptr<bg2e::base::Material> _material;
+    //bg2e::ptr<bg2e::base::PolyList> _plist;
+	//bg2e::ptr<bg2e::base::Material> _material;
 	bg2e::ptr<bg2e::base::Pipeline> _pipeline;
 	bg2e::ptr<bg2e::base::Light> _light;
     
-    bg2e::base::Camera _camera;
+    //bg2e::base::Camera _camera;
+
+	bg2e::ptr<bg2e::scene::Node> _sceneRoot;
+
+	bg2e::base::RenderQueue _renderQueue;
 };
 
 int main(int argc, char ** argv) {
