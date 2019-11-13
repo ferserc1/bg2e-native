@@ -60,7 +60,7 @@ public:
         bg2e::math::float4x4 mtx = bg2e::math::float4x4::Identity();
         mtx.rotate(elapsed, 1.0f, 0.0f, 0.0f)
             .rotate(elapsed * 2.0f, 0.0f, 1.0f, 0.0f);
-		_pipeline->draw(_plist.getPtr(), _material.getPtr(), mtx);
+		_pipeline->draw(_plist.getPtr(), _material.getPtr());
     }
     
     void draw() {

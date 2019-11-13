@@ -4,7 +4,7 @@
 #include <bg2e/base/referenced_pointer.hpp>
 #include <bg2e/base/material.hpp>
 #include <bg2e/base/poly_list.hpp>
-#include <bg2e/math/matrix.hpp>
+#include <bg2e/base/matrix_stack.hpp>
 
 #include <bgfx/bgfx.h>
 
@@ -27,7 +27,7 @@ namespace base {
 		virtual void bindFrameUniforms(base::Pipeline *) = 0;
 
 		// Bind uniforms used once per object
-		virtual void bindUniforms(Pipeline *, PolyList * plist, Material* material, const math::float4x4 & modelMatrix) = 0;
+		virtual void bindUniforms(Pipeline *, PolyList * plist, Material* material, MatrixStack & modelMatrixStack) = 0;
 
 		inline const bgfx::ProgramHandle & programHandle() const { return _program; }
 

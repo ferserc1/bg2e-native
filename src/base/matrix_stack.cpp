@@ -57,7 +57,7 @@ namespace base {
 		_updateInverse = false;
 	}
 
-	MatrixStack & MatrixStack::loadIdentity() {
+	MatrixStack & MatrixStack::identity() {
 		load(math::float4x4::Identity());
 		return *this;
 	}

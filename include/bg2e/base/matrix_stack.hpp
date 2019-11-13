@@ -24,7 +24,7 @@ namespace base {
 
 		void beginFrame();
 
-		MatrixStack & loadIdentity();
+		MatrixStack & identity();
 		MatrixStack & translate(float x, float y, float z);
 		MatrixStack & translate(const math::float3 & trx);
 		MatrixStack & rotate(float alpha, float x, float y, float z);
