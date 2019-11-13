@@ -21,6 +21,7 @@
   <ItemGroup>
     <ClInclude Include="..\include\bg2e\base.hpp" />
     <ClInclude Include="..\include\bg2e\base\camera.hpp" />
+    <ClInclude Include="..\include\bg2e\base\drawable_element.hpp" />
     <ClInclude Include="..\include\bg2e\base\image.hpp" />
     <ClInclude Include="..\include\bg2e\base\light.hpp" />
     <ClInclude Include="..\include\bg2e\base\material.hpp" />
@@ -29,6 +30,7 @@
     <ClInclude Include="..\include\bg2e\base\poly_list.hpp" />
     <ClInclude Include="..\include\bg2e\base\projection_strategy.hpp" />
     <ClInclude Include="..\include\bg2e\base\referenced_pointer.hpp" />
+    <ClInclude Include="..\include\bg2e\base\render_queue.hpp" />
     <ClInclude Include="..\include\bg2e\base\shader.hpp" />
     <ClInclude Include="..\include\bg2e\base\texture.hpp" />
     <ClInclude Include="..\include\bg2e\bg2e.hpp" />
@@ -90,6 +92,7 @@
     <ClCompile Include="..\src\base\poly_list.cpp" />
     <ClCompile Include="..\src\base\projection_strategy.cpp" />
     <ClCompile Include="..\src\base\referenced_pointer.cpp" />
+    <ClCompile Include="..\src\base\render_queue.cpp" />
     <ClCompile Include="..\src\base\shader.cpp" />
     <ClCompile Include="..\src\base\texture.cpp" />
     <ClCompile Include="..\src\db\bg2_reader.cpp" />

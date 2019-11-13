@@ -105,14 +105,14 @@ namespace scene {
 		return 0;
 	}
 
-	DrawableElementVector::iterator Drawable::element(size_t index) {
+	base::DrawableElementVector::iterator Drawable::element(size_t index) {
 		if (index < _drawableElements.size()) {
 			return _drawableElements.begin() + index;
 		}
 		return _drawableElements.end();
 	}
 
-	const DrawableElementVector::const_iterator Drawable::element(size_t index) const {
+	const base::DrawableElementVector::const_iterator Drawable::element(size_t index) const {
 		if (index < _drawableElements.size()) {
 			return _drawableElements.cbegin() + index;
 		}
@@ -120,7 +120,7 @@ namespace scene {
 	}
 
 	void Drawable::draw(base::Pipeline * pipeline) {
-		// TODO: implement draw queue
+		// TODO: implement render queue
 	}
 
 	void Drawable::deserialize(bg2e::db::json::Value *, const bg2e::base::path &) {

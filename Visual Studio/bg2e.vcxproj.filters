@@ -249,6 +249,12 @@
     <ClInclude Include="..\include\bg2e\scene\transform.hpp">
       <Filter>Header files\scene</Filter>
     </ClInclude>
+    <ClInclude Include="..\include\bg2e\base\render_queue.hpp">
+      <Filter>Header files\base</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\base\drawable_element.hpp">
+      <Filter>Header files\base</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\utils\load.cpp">
@@ -358,6 +364,9 @@
     </ClCompile>
     <ClCompile Include="..\src\scene\camera_component.cpp">
       <Filter>Source files\scene</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\base\render_queue.cpp">
+      <Filter>Source files\base</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
