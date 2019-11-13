@@ -371,5 +371,8 @@
     <ClCompile Include="..\src\base\render_queue.cpp">
       <Filter>Source files\base</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\base\matrix_stack.cpp">
+      <Filter>Source files\base</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

@@ -88,6 +88,7 @@
     <ClCompile Include="..\src\base\image.cpp" />
     <ClCompile Include="..\src\base\light.cpp" />
     <ClCompile Include="..\src\base\material.cpp" />
+    <ClCompile Include="..\src\base\matrix_stack.cpp" />
     <ClCompile Include="..\src\base\path.cpp" />
     <ClCompile Include="..\src\base\pipeline.cpp" />
     <ClCompile Include="..\src\base\poly_list.cpp" />
