@@ -14,6 +14,10 @@ namespace scene {
 	class Node;
 	typedef std::vector<ptr<Node>> NodeVector;
 
+	class Camera;
+	class Transform;
+	class Drawable;
+
     class Node : public base::ReferencedPointer {
     public:
 		typedef std::function<void(Node*)> SceneChangeFunction;
@@ -26,6 +30,9 @@ namespace scene {
 		inline bool isSteady() const { return _steady; }
 		inline void setEnabled(bool e) { _enabled = e; }
 		inline bool isEnabled() const { return _enabled; }
+
+		inline void setName(const std::string & name) { _name = name; }
+		inline const std::string & name() const { return _name; }
 
 		// Begin of component manipulation functions
 		void addComponent(Component* c) {
@@ -105,6 +112,12 @@ namespace scene {
 		// This function is called to apply the changes made by the static scene manipulation functions
 		// It must be called rigth after the frame() function
 		void ApplySceneChanges();
+
+		// Direct access to the most common components
+		Camera * camera();
+		Transform * transform();
+		Drawable * drawable();
+		
 
     protected:
         virtual ~Node();

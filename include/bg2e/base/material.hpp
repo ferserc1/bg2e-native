@@ -18,9 +18,18 @@ namespace base {
 			math::float2	scale;
 			uint16_t		uvSet;
 			uint16_t		channel;
+
+			inline void operator =(const TextureSet & other) {
+				texture = other.texture;
+				scale = other.scale;
+				uvSet = other.uvSet;
+				channel = other.channel;
+			}
 		};
 
 		Material();
+
+		Material * clone();
 
 		inline const TextureSet& diffuse() const { return _diffuse; }
 		inline const TextureSet& metallic() const { return _metallic; }

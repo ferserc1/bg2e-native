@@ -21,6 +21,27 @@ namespace base {
 
 	}
 
+	Material * Material::clone() {
+		Material * newMat = new Material();
+
+		newMat->_diffuse = _diffuse;
+		newMat->_metallic = _metallic;
+		newMat->_roughness = _roughness;
+		newMat->_lightEmission = _lightEmission;
+		newMat->_ambientOcclussion = _ambientOcclussion;
+		newMat->_height = _height;
+		newMat->_normal = _normal;
+		newMat->_fresnel = _fresnel;
+		newMat->_isTransparent = _isTransparent;
+		newMat->_alphaCutoff = _alphaCutoff;
+		newMat->_heightIntensity = _heightIntensity;
+		newMat->_castShadows = _castShadows;
+		newMat->_cullFace = _cullFace;
+		newMat->_unlit = _unlit;
+
+		return newMat;
+	}
+
 	void Material::setDiffuse(const math::color& c) {
 		_diffuse.texture = utils::textureWithColor(c);
 	}

@@ -47,6 +47,14 @@ namespace base {
         
 	public:
 		PolyList();
+		PolyList(const std::string & name);
+		
+		PolyList * clone(const std::string & name = "");
+
+		inline const std::string & name() const { return _name; }
+		inline void setName(const std::string & name) { _name = name; }
+		inline const std::string & groupName() const { return _name; }
+		inline void setGroupName(const std::string & groupName) { _groupName = groupName; }
 
         inline void setMeshData(const MeshData & md) {
             setPosition(md.position);
@@ -109,6 +117,9 @@ namespace base {
         
     protected:
 		virtual ~PolyList();
+
+		std::string _name;
+		std::string _groupName;
 
         std::vector<float> _position;
         std::vector<float> _normal;

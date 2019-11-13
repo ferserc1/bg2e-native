@@ -1,6 +1,10 @@
 
 #include <bg2e/scene/node.hpp>
 
+#include <bg2e/scene/camera.hpp>
+#include <bg2e/scene/drawable.hpp>
+#include <bg2e/scene/transform.hpp>
+
 #include <stdexcept>
 
 namespace bg2e {
@@ -170,6 +174,18 @@ namespace scene {
 		for (auto c : _componentMap) {
 			_componentVector.push_back(c.second.getPtr());
 		}
+	}
+
+	Camera * Node::camera() {
+		return component<Camera>();
+	}
+
+	Transform * Node::transform() {
+		return component<Transform>();
+	}
+
+	Drawable * Node::drawable() {
+		return component<Drawable>();
 	}
 
 }

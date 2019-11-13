@@ -24,10 +24,33 @@ namespace base {
         InitVertexLayouts();
 	}
 
+	PolyList::PolyList(const std::string & name)
+		:_name(name)
+	{
+		InitVertexLayouts();
+	}
+
     PolyList::~PolyList() {
         bgfx::destroy(_vertexBuffer);
         bgfx::destroy(_indexBuffer);
     }
+
+	PolyList * PolyList::clone(const std::string & name) {
+		PolyList * newPlist = new PolyList();
+		newPlist->_name = name.empty() ? name : _name;
+		newPlist->_groupName = _groupName;
+
+		newPlist->_position = _position;
+		newPlist->_normal = _normal;
+		newPlist->_texCoord0 = _texCoord0;
+		newPlist->_texCoord1 = _texCoord1;
+		newPlist->_tangent = _tangent;
+		newPlist->_index = _index;
+
+		newPlist->build();
+
+		return newPlist;
+	}
 
     void PolyList::buildTangents() {
         _tangent.clear();
