@@ -16,18 +16,24 @@ namespace scene {
 
     Node::Node()
         :_name()
+		,_steady(false)
+		,_enabled(true)
     {
 
     }
 
     Node::Node(const std::string & name)
         :_name(name)
+		,_steady(false)
+		,_enabled(true)
     {
 
     }
 
     Node::Node(const char * name)
         :_name(name)
+		,_steady(false)
+		,_enabled(true)
     {
 
     }
@@ -186,6 +192,30 @@ namespace scene {
 
 	Drawable * Node::drawable() {
 		return component<Drawable>();
+	}
+
+	void Node::resize(uint32_t width, uint32_t height) {
+		for (auto c : components()) {
+			c->resize(width, height);
+		}
+	}
+
+	void Node::update(base::Pipeline * pipeline, float delta) {
+		for (auto c : components()) {
+			c->update(pipeline, delta);
+		}
+	}
+
+	void Node::draw(base::RenderQueue & renderQueue, base::Pipeline * pipeline) {
+		for (auto c : components()) {
+			c->willDraw(pipeline);
+		}
+		for (auto c : components()) {
+			c->draw(renderQueue, pipeline);
+		}
+		for (auto c : components()) {
+			c->didDraw(pipeline);
+		}
 	}
 
 }

@@ -20,6 +20,9 @@ namespace scene {
 		virtual void deserialize(bg2e::db::json::Value*, const bg2e::base::path&);
 		virtual bg2e::db::json::Value* serialize(const bg2e::base::path&);
 
+		virtual void resize(uint32_t w, uint32_t h);
+		virtual void update(base::Pipeline *, float delta);
+
     protected:
         virtual ~Camera();
         

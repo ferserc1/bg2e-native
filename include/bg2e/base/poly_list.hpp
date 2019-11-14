@@ -55,6 +55,10 @@ namespace base {
 		inline void setName(const std::string & name) { _name = name; }
 		inline const std::string & groupName() const { return _name; }
 		inline void setGroupName(const std::string & groupName) { _groupName = groupName; }
+		inline bool isVisible() const { return _visible; }
+		inline bool isVisibleToShadows() const { return _visibleToShadows; }
+		inline void setVisible(bool v) { _visible = v; }
+		inline void setVisibleToShadows(bool v) { _visibleToShadows = v; }
 
         inline void setMeshData(const MeshData & md) {
             setPosition(md.position);
@@ -120,6 +124,8 @@ namespace base {
 
 		std::string _name;
 		std::string _groupName;
+		bool _visible = true;
+		bool _visibleToShadows = true;
 
         std::vector<float> _position;
         std::vector<float> _normal;

@@ -104,7 +104,7 @@ namespace scene {
 			return nullptr;
 		}
 
-		void draw(base::Pipeline * pipeline);
+		void draw(base::RenderQueue &, base::Pipeline * pipeline);
 
 		virtual void deserialize(bg2e::db::json::Value *, const bg2e::base::path &);
 		virtual bg2e::db::json::Value* serialize(const bg2e::base::path &);

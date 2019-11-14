@@ -1,32 +1,44 @@
 
 #include <iostream>
 
-#include <bg2e/base.hpp>
-#include <bg2e/wnd.hpp>
-#include <bg2e/utils.hpp>
-#include <bg2e/math.hpp>
-#include <bg2e/db.hpp>
-#include <bg2e/shaders.hpp>
+#include <bg2e/bg2e.hpp>
 
 
 class MyEventHandler : public  bg2e::wnd::EventHandler {
 public:
         
     void init() {
+		_sceneRoot = new bg2e::scene::Node("Scene root");
+
         bg2e::base::MeshData meshData;
         bg2e::utils::generateCube(2.0f, meshData);
     
-        _plist = new bg2e::base::PolyList();
-        _plist->build(meshData);
+        auto plist = new bg2e::base::PolyList();
+        plist->build(meshData);
          
        	bg2e::base::path dataPath("data");
 		auto diffuse = bg2e::db::loadTexture(dataPath.pathAddingComponent("texture.jpg"));
 		auto normal = bg2e::db::loadTexture(dataPath.pathAddingComponent("texture_nm.jpg"));
 
-		_material = new bg2e::base::Material();
-		_material->setDiffuse(diffuse);
-		_material->setNormal(normal);
+		auto material = new bg2e::base::Material();
+		material->setDiffuse(diffuse);
+		material->setNormal(normal);
 
+		auto cube = new bg2e::scene::Node("Cube");
+		auto drawable = new bg2e::scene::Drawable();
+		drawable->addPolyList(plist, material);
+		cube->addComponent(drawable);
+		_sceneRoot->addChild(cube);
+
+		_camera = new bg2e::scene::Camera();
+		auto projection = new bg2e::base::OpticalProjectionStrategy();
+		_camera->camera().setProjectionStrategy(projection);
+		auto cameraNode = new bg2e::scene::Node("Camera");
+		cameraNode->addComponent(_camera.getPtr());
+		_sceneRoot->addChild(cameraNode);
+
+		// TODO: Remove this
+		_camera->camera().view().lookAt({ 0.0f, 0.0f, -5.0f }, { 0.0f, 0.0f, 0.0f }, { 0.0f, 1.0f, 0.0f });
 
 		_pipeline = new bg2e::base::Pipeline(window()->viewId());
 		_pipeline->setShader(new bg2e::shaders::Phong());
@@ -57,10 +69,10 @@ public:
 
         static float elapsed = 0;
         elapsed += (delta / 1000.0f);
-        bg2e::math::float4x4 mtx = bg2e::math::float4x4::Identity();
-        mtx.rotate(elapsed, 1.0f, 0.0f, 0.0f)
-            .rotate(elapsed * 2.0f, 0.0f, 1.0f, 0.0f);
-		_pipeline->draw(_plist.getPtr(), _material.getPtr());
+		_pipeline->model().identity()
+			.rotate(elapsed, 1.0f, 0.0f, 0.0f)
+			.rotate(elapsed * 2.0f, 0.0f, 1.0f, 0.0f);
+		//_pipeline->draw(_plist.getPtr(), _material.getPtr());
     }
     
     void draw() {
@@ -79,9 +91,6 @@ public:
     }
     
     void destroy() {
-		_plist = nullptr;
-		_material = nullptr;
-		_plist = nullptr;
     }
     
     void keyUp(const bg2e::wnd::KeyboardEvent & evt) {
@@ -93,10 +102,13 @@ public:
 protected:
     bool _showStats = false;
 
-    bg2e::ptr<bg2e::base::PolyList> _plist;
-	bg2e::ptr<bg2e::base::Material> _material;
+ 
+	bg2e::base::RenderQueue _renderQueue;
 	bg2e::ptr<bg2e::base::Pipeline> _pipeline;
 	bg2e::ptr<bg2e::base::Light> _light;
+
+	bg2e::ptr<bg2e::scene::Node> _sceneRoot;
+	bg2e::ptr<bg2e::scene::Camera> _camera;
 };
 
 int main(int argc, char ** argv) {

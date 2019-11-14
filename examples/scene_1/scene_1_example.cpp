@@ -35,36 +35,49 @@ public:
 		_sceneRoot = new bg2e::scene::Node();
 
 		auto camNode = new bg2e::scene::Node();
-		auto cam = new bg2e::scene::Camera();
+		_mainCamera = new bg2e::scene::Camera();
 		auto projStrategy = new bg2e::base::OpticalProjectionStrategy();
 		projStrategy->setFrameSize(35.0f);
 		projStrategy->setFocalLength(55.0f);
 		projStrategy->setNear(0.1f);
 		projStrategy->setFar(100.0f);
-		cam->camera().setProjectionStrategy(projStrategy);
-		camNode->addComponent(cam);
+		_mainCamera->camera().setProjectionStrategy(projStrategy);
+		camNode->addComponent(_mainCamera.getPtr());
+		auto cameraTrx = new bg2e::scene::Transform();
+		cameraTrx->matrix().translate({ 0.0f, 0.0f, 5.0f });
+		camNode->addComponent(cameraTrx);
+		_sceneRoot->addChild(camNode);
 
+		auto cubeNode = new bg2e::scene::Node("Cube");
 		auto drawable = new bg2e::scene::Drawable();
 		drawable->addPolyList(plist, material);
+		cubeNode->addComponent(drawable);
+		auto cubeTrx = new bg2e::scene::Transform();
+		cubeTrx->matrix().rotate(bg2e::math::radians(45.0f), 0.0f, 1.0f, 0.0f);
+		cubeNode->addComponent(cubeTrx);
+		_sceneRoot->addChild(cubeNode);
+
 		
+		_drawVisitor = new bg2e::scene::DrawVisitor();
+		_resizeVisitor = new bg2e::scene::ResizeVisitor();
+		_updateVisitor = new bg2e::scene::UpdateVisitor();
     }
         
     void resize(uint32_t w, uint32_t h) {
         bgfx::setViewRect(window()->viewId(), 0, 0, window()->width(), window()->height());
+		_resizeVisitor->resize(_sceneRoot.getPtr(), w, h);
         //_camera.setViewport({ window()->width(), window()->height() });
     }
     
     void update(float delta) {
-        //_pipeline->setView(_camera.view());
-        //_pipeline->setProjection((_camera.projection()));
-		_pipeline->beginDraw();
+		static float elapsed = 0;
+		elapsed += (delta / 1000.0f);
+		bg2e::math::float4x4 mtx = bg2e::math::float4x4::Identity();
+		mtx.rotate(elapsed, 1.0f, 0.0f, 0.0f)
+			.rotate(elapsed * 2.0f, 0.0f, 1.0f, 0.0f);
 
-        static float elapsed = 0;
-        elapsed += (delta / 1000.0f);
-        bg2e::math::float4x4 mtx = bg2e::math::float4x4::Identity();
-        mtx.rotate(elapsed, 1.0f, 0.0f, 0.0f)
-            .rotate(elapsed * 2.0f, 0.0f, 1.0f, 0.0f);
-		//_pipeline->draw(_plist.getPtr(), _material.getPtr(), mtx);
+
+		_updateVisitor->update(_sceneRoot.getPtr(), _pipeline.getPtr(), delta);
     }
     
     void draw() {
@@ -79,6 +92,21 @@ public:
         // Enable stats or debug text.
         bgfx::setDebug(_showStats ? BGFX_DEBUG_STATS : BGFX_DEBUG_TEXT);
         
+
+
+		//_pipeline->setView(_camera.view());
+		//_pipeline->setProjection((_camera.projection()));
+		_pipeline->beginDraw();
+		_renderQueue.begin(_mainCamera->camera());
+		//_pipeline->draw(_plist.getPtr(), _material.getPtr(), mtx);
+		_drawVisitor->draw(_sceneRoot.getPtr(), &_renderQueue, _pipeline.getPtr());
+
+
+		for (auto & elem : _renderQueue.opaqueQueue()) {
+
+			//_pipeline->draw(elem.polyList.getPtr(), elem.material.getPtr());
+		}
+
         bgfx::frame();
     }
     
@@ -105,8 +133,12 @@ protected:
     //bg2e::base::Camera _camera;
 
 	bg2e::ptr<bg2e::scene::Node> _sceneRoot;
+	bg2e::ptr<bg2e::scene::Camera> _mainCamera;
 
 	bg2e::base::RenderQueue _renderQueue;
+	bg2e::ptr<bg2e::scene::DrawVisitor> _drawVisitor;
+	bg2e::ptr<bg2e::scene::UpdateVisitor> _updateVisitor;
+	bg2e::ptr<bg2e::scene::ResizeVisitor> _resizeVisitor;
 };
 
 int main(int argc, char ** argv) {

@@ -18,7 +18,7 @@ namespace base {
 		_updateInverse = true;
 	}
 
-	void MatrixStack::pull() {
+	void MatrixStack::pop() {
 		if (_matrixStack.size() > 1) {
 			_matrixStack.pop_back();
 			_updateInverse = true;

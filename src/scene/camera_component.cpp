@@ -2,6 +2,7 @@
 #include <bg2e/scene/camera.hpp>
 #include <bg2e/db/json/value.hpp>
 #include <bg2e/base/projection_strategy.hpp>
+#include <bg2e/scene/transform.hpp>
 
 namespace bg2e {
 namespace scene {
@@ -47,5 +48,18 @@ namespace scene {
 		return cameraData;
 	}
 
+	void Camera::resize(uint32_t w, uint32_t h) {
+		_camera.setViewport({ w, h });
+	}
+
+	void Camera::update(base::Pipeline * pipeline, float delta) {
+		auto viewMatrix = Transform::WorldMatrix(node()).invert();
+		_camera.setView(viewMatrix);
+
+		// Update pipeline matrixes
+		pipeline->view().load(_camera.view());
+		pipeline->projection().load(_camera.projection());
+
+	}
 }
 }

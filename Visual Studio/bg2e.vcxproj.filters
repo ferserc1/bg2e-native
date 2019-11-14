@@ -258,6 +258,15 @@
     <ClInclude Include="..\include\bg2e\base\matrix_stack.hpp">
       <Filter>Header files\base</Filter>
     </ClInclude>
+    <ClInclude Include="..\include\bg2e\scene\draw_visitor.hpp">
+      <Filter>Header files\scene</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\scene\update_visitor.hpp">
+      <Filter>Header files\scene</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\scene\resize_visitor.hpp">
+      <Filter>Header files\scene</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\utils\load.cpp">
@@ -373,6 +382,9 @@
     </ClCompile>
     <ClCompile Include="..\src\base\matrix_stack.cpp">
       <Filter>Source files\base</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\scene\draw_visitor.cpp">
+      <Filter>Source files\scene</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

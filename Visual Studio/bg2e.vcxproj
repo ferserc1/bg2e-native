@@ -63,9 +63,12 @@
     <ClInclude Include="..\include\bg2e\scene\camera.hpp" />
     <ClInclude Include="..\include\bg2e\scene\component.hpp" />
     <ClInclude Include="..\include\bg2e\scene\drawable.hpp" />
+    <ClInclude Include="..\include\bg2e\scene\draw_visitor.hpp" />
     <ClInclude Include="..\include\bg2e\scene\node.hpp" />
     <ClInclude Include="..\include\bg2e\scene\node_visitor.hpp" />
+    <ClInclude Include="..\include\bg2e\scene\resize_visitor.hpp" />
     <ClInclude Include="..\include\bg2e\scene\transform.hpp" />
+    <ClInclude Include="..\include\bg2e\scene\update_visitor.hpp" />
     <ClInclude Include="..\include\bg2e\shaders.hpp" />
     <ClInclude Include="..\include\bg2e\shaders\phong.hpp" />
     <ClInclude Include="..\include\bg2e\utils.hpp" />
@@ -112,6 +115,7 @@
     <ClCompile Include="..\src\scene\camera_component.cpp" />
     <ClCompile Include="..\src\scene\component.cpp" />
     <ClCompile Include="..\src\scene\drawable.cpp" />
+    <ClCompile Include="..\src\scene\draw_visitor.cpp" />
     <ClCompile Include="..\src\scene\node.cpp" />
     <ClCompile Include="..\src\scene\node_visitor.cpp" />
     <ClCompile Include="..\src\scene\transform.cpp" />

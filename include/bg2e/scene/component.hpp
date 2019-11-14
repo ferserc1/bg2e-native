@@ -5,6 +5,8 @@
 #include <bg2e/base/referenced_pointer.hpp>
 #include <bg2e/base/path.hpp>
 #include <bg2e/db/json/value.hpp>
+#include <bg2e/base/render_queue.hpp>
+#include <bg2e/base/pipeline.hpp>
 
 #include <functional>
 #include <unordered_map>
@@ -28,6 +30,11 @@ namespace scene {
         // TODO: rest of life cycle functions
         virtual void addedToNode(Node *) {}
         virtual void removedFromNode(Node *) {}
+		virtual void resize(uint32_t, uint32_t) {}
+		virtual void update(base::Pipeline *,float) {}
+		virtual void willDraw(base::Pipeline *) {}
+		virtual void draw(base::RenderQueue &, base::Pipeline *) {}
+		virtual void didDraw(base::RenderQueue &, base::Pipeline *) {}
 
         inline void setIgnoreSerialize(bool i) { _ignoreSerialize = i; }
         inline bool ignoreSerialize() const { return _ignoreSerialize; }

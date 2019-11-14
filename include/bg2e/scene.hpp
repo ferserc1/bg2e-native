@@ -5,8 +5,11 @@
 #include <bg2e/scene/camera.hpp>
 #include <bg2e/scene/component.hpp>
 #include <bg2e/scene/drawable.hpp>
+#include <bg2e/scene/draw_visitor.hpp>
 #include <bg2e/scene/node_visitor.hpp>
 #include <bg2e/scene/node.hpp>
+#include <bg2e/scene/resize_visitor.hpp>
 #include <bg2e/scene/transform.hpp>
+#include <bg2e/scene/update_visitor.hpp>
 
 #endif

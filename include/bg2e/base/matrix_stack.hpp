@@ -15,7 +15,7 @@ namespace base {
 		MatrixStack();
 
 		void push();
-		void pull();
+		void pop();
 		void load(const math::float4x4 & m);
 		const math::float4x4 & matrix() const;
 		math::float4x4 & matrix();

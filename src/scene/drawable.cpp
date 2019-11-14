@@ -119,8 +119,16 @@ namespace scene {
 		return _drawableElements.cend();
 	}
 
-	void Drawable::draw(base::Pipeline * pipeline) {
-		// TODO: implement render queue
+	void Drawable::draw(base::RenderQueue & renderQueue, base::Pipeline * pipeline) {
+		for (auto item : drawableElements()) {
+			auto trx = pipeline->model().matrix();
+			if (item.polyList->isVisible()) {
+				renderQueue.addPolyList(
+					item.polyList.getPtr(),
+					item.material.getPtr(),
+					pipeline->model().matrix());
+			}
+		}
 	}
 
 	void Drawable::deserialize(bg2e::db::json::Value *, const bg2e::base::path &) {
