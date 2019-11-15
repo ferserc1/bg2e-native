@@ -17,12 +17,12 @@ namespace base {
 
 	}
 
-	void Pipeline::beginDraw() {
+	void Pipeline::beginDraw(const math::float4x4 & viewMatrix, const math::float4x4 & projMatrix) {
 		if (!_shader.valid()) {
 			throw std::runtime_error("Error drawing polyList: no shader configured in pipeline.");
 		}
 
-		bgfx::setViewTransform(_viewId, view().matrix().raw(), projection().matrix().raw());
+		bgfx::setViewTransform(_viewId, viewMatrix.raw(), projMatrix.raw());
 
 		if (_clearFlags != 0) {
 			bgfx::setViewClear(_viewId, _clearFlags, _clearColor.hexColor(), _clearDepth);
@@ -45,7 +45,7 @@ namespace base {
 		_shader->bindFrameUniforms(this);
 	}
 
-	void Pipeline::draw(PolyList* plist, Material* material) {
+	void Pipeline::draw(PolyList* plist, Material* material, const math::float4x4 & modelMatrix, const math::float4x4 & inverseModelMatrix) {
 		if (!_shader.valid()) {
 			throw std::runtime_error("Error drawing polyList: no shader configured in pipeline.");
 		}
@@ -53,9 +53,9 @@ namespace base {
 			throw std::invalid_argument("Drawing error: invalid material or polyList");
 		}
 
-		bgfx::setTransform(_modelMatrixStack.matrix().raw());
+		bgfx::setTransform(modelMatrix.raw());
 
-		_shader->bindUniforms(this, plist, material, _modelMatrixStack);
+		_shader->bindUniforms(this, plist, material, modelMatrix, inverseModelMatrix);
 
 		bgfx::setVertexBuffer(static_cast<uint8_t>(_viewId), plist->vertexBuffer());
 		bgfx::setIndexBuffer(plist->indexBuffer());

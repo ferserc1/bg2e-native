@@ -20,8 +20,10 @@ namespace base {
 		void end();
 
 		inline const base::DrawableElementVector & opaqueQueue() const { return _opaqueQueue; }
+        inline base::DrawableElementVector & opaqueQueue() { return _opaqueQueue; }
 		inline const base::DrawableElementVector & transparentQueue() const { return _transparentQueue; }
-		
+		inline base::DrawableElementVector & transparentQueue() { return _transparentQueue; }
+        
 	protected:
 
 		math::float3 _cameraPosition;

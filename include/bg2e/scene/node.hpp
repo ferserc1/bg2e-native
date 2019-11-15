@@ -143,7 +143,7 @@ namespace scene {
 		void updateComponentVector();
 
 		NodeVector _children;
-		Node * _parent;
+		Node * _parent = nullptr;
 
 		struct RemoveNodeData {
 			ptr<Node> node;

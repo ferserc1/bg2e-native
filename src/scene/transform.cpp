@@ -40,7 +40,7 @@ namespace scene {
 		pipeline->model().mult(_matrix);
 	}
 
-	void Transform::didDraw(base::Pipeline * pipeline) {
+	void Transform::didDraw(base::RenderQueue &, base::Pipeline * pipeline) {
 		pipeline->model().pop();
 	}
 

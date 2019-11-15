@@ -104,7 +104,7 @@ public:
 
 		for (auto & elem : _renderQueue.opaqueQueue()) {
 
-			//_pipeline->draw(elem.polyList.getPtr(), elem.material.getPtr());
+			_pipeline->draw(elem.polyList.getPtr(), elem.material.getPtr());
 		}
 
         bgfx::frame();

@@ -4,7 +4,7 @@
 #include <bg2e/base/referenced_pointer.hpp>
 #include <bg2e/base/poly_list.hpp>
 #include <bg2e/base/shader.hpp>
-#include <bg2e/base/matrix_stack.hpp>
+#include <bg2e/math/matrix.hpp>
 #include <bg2e/base/material.hpp>
 
 
@@ -16,13 +16,6 @@ namespace base {
 		Pipeline(bgfx::ViewId viewId);
 
 		inline bgfx::ViewId viewId() const { return _viewId; }
-
-		inline MatrixStack & projection() { return _projectionMatrixStack; }
-		inline const MatrixStack & projection() const { return _projectionMatrixStack; }
-		inline MatrixStack & view() { return _viewMatrixStack; }
-		inline const MatrixStack & view() const { return _viewMatrixStack; }
-		inline MatrixStack & model() { return _modelMatrixStack; }
-		inline const MatrixStack & model() const { return _modelMatrixStack; }
 
 
 		inline void setClearColor(const math::color & c) { _clearColor = c; }
@@ -49,8 +42,8 @@ namespace base {
 		inline const Shader * shader() const { return _shader.getPtr(); }
 
 
-		void beginDraw();
-		void draw(PolyList * plist, Material * material);
+		void beginDraw(const math::float4x4 & viewMatrix, const math::float4x4 & projMatrix);
+		void draw(PolyList * plist, Material * material, const math::float4x4 & modelMatrix, const math::float4x4 & inverseModelMatrix);
 
 	protected:
 		virtual ~Pipeline();
@@ -62,10 +55,6 @@ namespace base {
 		uint16_t _clearFlags = BGFX_CLEAR_COLOR | BGFX_CLEAR_DEPTH;
 
 		ptr<Shader> _shader;
-
-		MatrixStack _projectionMatrixStack;
-		MatrixStack _viewMatrixStack;
-		MatrixStack _modelMatrixStack;
 	};
 }
 }

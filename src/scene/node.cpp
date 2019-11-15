@@ -214,7 +214,7 @@ namespace scene {
 			c->draw(renderQueue, pipeline);
 		}
 		for (auto c : components()) {
-			c->didDraw(pipeline);
+			c->didDraw(renderQueue, pipeline);
 		}
 	}
 
