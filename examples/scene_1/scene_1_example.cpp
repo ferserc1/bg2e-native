@@ -30,7 +30,7 @@ public:
 
 		_light = new bg2e::base::Light(window()->viewId());
 		_light->setPosition(bg2e::math::float3(2.0f, 2.0f, 2.0f));
-		_light->setDirection(bg2e::math::float3(-0.5, -0.5, -0.5));
+		_light->setDirection(bg2e::math::float3(-0.2, -0.5, -0.5f));
 		bg2e::base::Light::ActivateLight(_light);
         
 		_sceneRoot = new bg2e::scene::Node();
@@ -56,6 +56,7 @@ public:
 		auto cubeTrx = new bg2e::scene::Transform();
 		cubeTrx->matrix().rotate(bg2e::math::radians(45.0f), 0.0f, 1.0f, 0.0f);
 		cubeNode->addComponent(cubeTrx);
+        _cubeTransform = cubeNode->transform();
 		_sceneRoot->addChild(cubeNode);
 
 		
@@ -78,6 +79,7 @@ public:
 		bg2e::math::float4x4 mtx = bg2e::math::float4x4::Identity();
 		mtx.rotate(elapsed, 1.0f, 0.0f, 0.0f)
 			.rotate(elapsed * 2.0f, 0.0f, 1.0f, 0.0f);
+        _cubeTransform->matrix() = mtx;
 
 
 		_updateVisitor->update(_sceneRoot.getPtr(), _matrixState.getPtr(), delta);
@@ -105,6 +107,14 @@ public:
 		for (auto & elem : _renderQueue.opaqueQueue()) {
 			_pipeline->draw(elem.polyList.getPtr(), elem.material.getPtr(), elem.transform, elem.inverseTransform);
 		}
+        
+        // TODO: Enable transparent pipeline
+        // TODO: Enable blend
+        // TODO: Set blend function
+        // TODO: Disable depth function write
+        for (auto & elem : _renderQueue.transparentQueue()) {
+            _pipeline->draw(elem.polyList.getPtr(), elem.material.getPtr(), elem.transform, elem.inverseTransform);
+        }
 
         bgfx::frame();
     }
@@ -124,16 +134,13 @@ public:
 protected:
     bool _showStats = false;
 
-    //bg2e::ptr<bg2e::base::PolyList> _plist;
-	//bg2e::ptr<bg2e::base::Material> _material;
 	bg2e::ptr<bg2e::base::Pipeline> _pipeline;
 	bg2e::ptr<bg2e::base::MatrixState> _matrixState;
 	bg2e::ptr<bg2e::base::Light> _light;
-    
-    //bg2e::base::Camera _camera;
 
 	bg2e::ptr<bg2e::scene::Node> _sceneRoot;
 	bg2e::ptr<bg2e::scene::Camera> _mainCamera;
+    bg2e::ptr<bg2e::scene::Transform> _cubeTransform;
 
 	bg2e::base::RenderQueue _renderQueue;
 	bg2e::ptr<bg2e::scene::DrawVisitor> _drawVisitor;

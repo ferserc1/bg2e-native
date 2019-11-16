@@ -26,7 +26,7 @@ void main() {
 
     vec3 combinedNormal = combineNormalWithMap(v_normal, v_tangent, v_bitangent, normalColor);
     //vec3 lightDir = normalize(lightPosition.xyz - v_fragPos);
-    float diff = max(dot(combinedNormal,u_lightDirection), 0.0);
+    float diff = max(dot(combinedNormal,-u_lightDirection), 0.0);
     vec3 lightColor = vec3(1.0,1.0,1.0);
     vec3 diffuse = lightColor * diff;
 
