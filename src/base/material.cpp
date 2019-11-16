@@ -7,6 +7,13 @@ namespace bg2e {
 namespace base {
 
 	Material::Material()
+        :_fresnel(0xFFFFFFFF)
+        ,_isTransparent(false)
+        ,_alphaCutoff(0.5f)
+        ,_heightIntensity(1.0f)
+        ,_castShadows(true)
+        ,_cullFace(true)
+        ,_unlit(false)
 	{
 		_diffuse.texture = utils::TextureCache::Get()->whiteTexture();
 		_normal.texture = utils::TextureCache::Get()->normalMapTexture();

@@ -96,13 +96,9 @@ public:
         bgfx::setDebug(_showStats ? BGFX_DEBUG_STATS : BGFX_DEBUG_TEXT);
         
 
-
-		//_pipeline->setView(_camera.view());
-		//_pipeline->setProjection((_camera.projection()));
 		_pipeline->beginDraw(_matrixState.getPtr());
 
 		_renderQueue.begin(_mainCamera->camera());
-		//_pipeline->draw(_plist.getPtr(), _material.getPtr(), mtx);
 		_drawVisitor->draw(_sceneRoot.getPtr(), &_renderQueue, _matrixState.getPtr());
 
 
