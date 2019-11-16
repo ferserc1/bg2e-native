@@ -12,6 +12,8 @@ namespace base {
     public:
         MatrixState();
         
+		void beginFrame();
+
         inline MatrixStack & projection() { return _projectionMatrixStack; }
         inline const MatrixStack & projection() const { return _projectionMatrixStack; }
         inline MatrixStack & view() { return _viewMatrixStack; }

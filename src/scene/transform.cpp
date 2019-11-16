@@ -35,13 +35,13 @@ namespace scene {
 		return nullptr;
 	}
 
-	void Transform::willDraw(base::Pipeline * pipeline) {
-		pipeline->model().push();
-		pipeline->model().mult(_matrix);
+	void Transform::willDraw(base::MatrixState * matrixState) {
+		matrixState->model().push();
+		matrixState->model().mult(_matrix);
 	}
 
-	void Transform::didDraw(base::RenderQueue &, base::Pipeline * pipeline) {
-		pipeline->model().pop();
+	void Transform::didDraw(base::RenderQueue &, base::MatrixState * matrixState) {
+		matrixState->model().pop();
 	}
 
 	void Transform::deserialize(bg2e::db::json::Value *, const bg2e::base::path &) {

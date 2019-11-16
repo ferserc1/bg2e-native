@@ -14,6 +14,11 @@ namespace base {
         
     }
 
+	void MatrixState::beginFrame() {
+		_projectionMatrixStack.beginFrame();
+		_viewMatrixStack.beginFrame();
+		_modelMatrixStack.beginFrame();
+	}
 }
 }
 

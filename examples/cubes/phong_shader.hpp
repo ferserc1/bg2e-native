@@ -10,13 +10,14 @@
 #define phong_shader_hpp
 
 #include <bg2e/base/shader.hpp>
+#include <bg2e/math/matrix.hpp>
 
 class PhongShader : public bg2e::base::Shader {
 public:
     PhongShader();
 
 	virtual void bindFrameUniforms(bg2e::base::Pipeline*);
-    virtual void bindUniforms(bg2e::base::Pipeline*, bg2e::base::PolyList* plist, bg2e::base::Material* material, bg2e::base::MatrixStack & modelMatrixStack);
+    virtual void bindUniforms(bg2e::base::Pipeline*, bg2e::base::PolyList* plist, bg2e::base::Material* material, const bg2e::math::float4x4 & modelMatrix, const bg2e::math::float4x4 & inverseModelMatrix);
 
 protected:
     virtual ~PhongShader();

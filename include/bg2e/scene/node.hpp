@@ -5,7 +5,7 @@
 #include <bg2e/base/referenced_pointer.hpp>
 #include <bg2e/scene/component.hpp>
 #include <bg2e/scene/node_visitor.hpp>
-#include <bg2e/base/pipeline.hpp>
+#include <bg2e/base/matrix_state.hpp>
 #include <bg2e/base/render_queue.hpp>
 
 #include <string>
@@ -123,8 +123,8 @@ namespace scene {
 		// Scene life cycle functions
 		// TODO: complete the rest of the life cycle functions
 		void resize(uint32_t width, uint32_t height);
-		void update(base::Pipeline *, float delta);
-		void draw(base::RenderQueue & renderQueue, base::Pipeline * pipeline);
+		void update(base::MatrixState *, float delta);
+		void draw(base::RenderQueue & renderQueue, base::MatrixState * matrixState);
 
     protected:
         virtual ~Node();

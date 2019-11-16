@@ -6,6 +6,7 @@
 #include <bg2e/base/shader.hpp>
 #include <bg2e/math/matrix.hpp>
 #include <bg2e/base/material.hpp>
+#include <bg2e/base/matrix_state.hpp>
 
 
 namespace bg2e {
@@ -43,6 +44,7 @@ namespace base {
 
 
 		void beginDraw(const math::float4x4 & viewMatrix, const math::float4x4 & projMatrix);
+		inline void beginDraw(MatrixState * matrixState) { beginDraw(matrixState->view().matrix(), matrixState->projection().matrix()); }
 		void draw(PolyList * plist, Material * material, const math::float4x4 & modelMatrix, const math::float4x4 & inverseModelMatrix);
 
 	protected:

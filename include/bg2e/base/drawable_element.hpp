@@ -15,19 +15,25 @@ namespace base {
 		math::float4x4 transform = math::float4x4::Identity();
 		bool useTransform = false;
 		float cameraDistance = 0.0f;
+		math::float4x4 inverseTransform = math::float4x4::Identity();
+		bool useInverseTransform = false;
 
 		inline void operator=(const DrawableElement & e) {
 			polyList = e.polyList;
 			material = e.material;
 			transform = e.transform;
 			useTransform = e.useTransform;
+			inverseTransform = e.inverseTransform;
+			useInverseTransform = e.useInverseTransform;
 		}
 
 		inline bool operator==(const DrawableElement & e) {
 			return polyList.getPtr() == e.polyList.getPtr() &&
 				material.getPtr() == e.material.getPtr() &&
 				transform == e.transform &&
-				useTransform == e.useTransform;
+				useTransform == e.useTransform &&
+				inverseTransform == e.inverseTransform &&
+				useInverseTransform == e.useInverseTransform;
 		}
 	};
 

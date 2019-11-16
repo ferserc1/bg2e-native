@@ -14,9 +14,9 @@ namespace scene {
 	class DrawVisitor : public NodeVisitor {
 	public:
 
-		inline void draw(Node * sceneRoot, base::RenderQueue * renderQueue, base::Pipeline * pipeline) {
+		inline void draw(Node * sceneRoot, base::RenderQueue * renderQueue, base::MatrixState * matrixState) {
 			_renderQueue = renderQueue;
-			_pipeline = pipeline;
+			_matrixState = matrixState;
 			sceneRoot->accept(this);
 		}
 
@@ -26,7 +26,7 @@ namespace scene {
 		virtual ~DrawVisitor();
 
 		base::RenderQueue * _renderQueue;
-		base::Pipeline * _pipeline;
+		base::MatrixState * _matrixState;
 	};
 }
 }

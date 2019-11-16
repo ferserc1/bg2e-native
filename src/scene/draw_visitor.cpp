@@ -12,7 +12,7 @@ namespace scene {
 	}
 
 	void DrawVisitor::visit(Node * node) {
-		node->draw(*_renderQueue, _pipeline);
+		node->draw(*_renderQueue, _matrixState);
 	}
 
 }

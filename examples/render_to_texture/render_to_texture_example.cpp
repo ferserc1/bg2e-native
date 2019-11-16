@@ -1,12 +1,7 @@
 
 #include <iostream>
 
-#include <bg2e/base.hpp>
-#include <bg2e/wnd.hpp>
-#include <bg2e/utils.hpp>
-#include <bg2e/math.hpp>
-#include <bg2e/db.hpp>
-#include <bg2e/shaders.hpp>
+#include <bg2e/bg2e.hpp>
 
 #define RENDER_TEXTURE_PASS 1
 
@@ -28,6 +23,7 @@ public:
 		_material->setDiffuse(diffuse);
 		//_material->setNormal(normal);
 
+		_matrixState = new bg2e::base::MatrixState();
 
 		_pipeline = new bg2e::base::Pipeline(window()->viewId());
 		_pipeline->setShader(new bg2e::shaders::Phong());
@@ -64,6 +60,9 @@ public:
     }
     
     void update(float delta) {
+		_matrixState->beginFrame();
+		
+
         // Render texture
         const bg2e::math::float4x4 fbView = bg2e::math::float4x4::Identity();
         const bg2e::math::float4x4 fbProj = bg2e::math::float4x4::Perspective(60.0f, 1.0f, 0.1f, 100.0f);
@@ -76,20 +75,20 @@ public:
         const bg2e::math::float3 eye = { 0.0f, 0.0f, -5.0f };
         const bg2e::math::float3 up = { 0.0f, 1.0f, 0.0f };
         auto aspectRatio = static_cast<float>(window()->width()) / static_cast<float>(window()->height());
-		_pipeline->view()
+		_matrixState->view()
 			.identity()
 			.lookAt(eye, at, up);
-		_pipeline->projection()
+		_matrixState->projection()
 			.perspective(60.0f, aspectRatio, 0.1f, 100.0f);
         
-		_pipeline->beginDraw();
+		_pipeline->beginDraw(_matrixState.getPtr());
 
         static float elapsed = 0;
         elapsed += (delta / 1000.0f);
         bg2e::math::float4x4 mtx = bg2e::math::float4x4::Identity();
         mtx.rotate(elapsed, 1.0f, 0.0f, 0.0f)
             .rotate(elapsed * 2.0f, 0.0f, 1.0f, 0.0f);
-		_pipeline->draw(_plist.getPtr(), _material.getPtr());
+		_pipeline->draw(_plist.getPtr(), _material.getPtr(), _matrixState->model().matrix(), _matrixState->model().inverseMatrix());
     }
     
     void draw() {
@@ -124,6 +123,7 @@ public:
 protected:
     bool _showStats = false;
 
+	bg2e::ptr<bg2e::base::MatrixState> _matrixState;
     bg2e::ptr<bg2e::base::PolyList> _plist;
 	bg2e::ptr<bg2e::base::Material> _material;
 	bg2e::ptr<bg2e::base::Pipeline> _pipeline;

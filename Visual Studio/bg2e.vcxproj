@@ -26,6 +26,7 @@
     <ClInclude Include="..\include\bg2e\base\light.hpp" />
     <ClInclude Include="..\include\bg2e\base\material.hpp" />
     <ClInclude Include="..\include\bg2e\base\matrix_stack.hpp" />
+    <ClInclude Include="..\include\bg2e\base\matrix_state.hpp" />
     <ClInclude Include="..\include\bg2e\base\path.hpp" />
     <ClInclude Include="..\include\bg2e\base\pipeline.hpp" />
     <ClInclude Include="..\include\bg2e\base\poly_list.hpp" />
@@ -92,6 +93,7 @@
     <ClCompile Include="..\src\base\light.cpp" />
     <ClCompile Include="..\src\base\material.cpp" />
     <ClCompile Include="..\src\base\matrix_stack.cpp" />
+    <ClCompile Include="..\src\base\matrix_state.cpp" />
     <ClCompile Include="..\src\base\path.cpp" />
     <ClCompile Include="..\src\base\pipeline.cpp" />
     <ClCompile Include="..\src\base\poly_list.cpp" />

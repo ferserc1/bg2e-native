@@ -56,8 +56,8 @@ namespace shaders {
 		}
 	}
 
-    void Phong::bindUniforms(base::Pipeline *, base::PolyList * plist, base::Material * material, base::MatrixStack & modelMatrixStack) {
-        math::float4x4 normalMatrix = modelMatrixStack.inverseMatrix();
+    void Phong::bindUniforms(base::Pipeline *, base::PolyList * plist, base::Material * material, const math::float4x4 & modelMatrix, const math::float4x4 & inverseModelMatrix) {
+		math::float4x4 normalMatrix = inverseModelMatrix;
         normalMatrix.transpose();
         
         bgfx::setUniform(_uniforms.normalMatrix, normalMatrix.raw());

@@ -4,7 +4,6 @@
 
 #include <bg2e/scene/component.hpp>
 #include <bg2e/base/drawable_element.hpp>
-#include <bg2e/base/pipeline.hpp>
 
 namespace bg2e {
 namespace scene {
@@ -104,7 +103,7 @@ namespace scene {
 			return nullptr;
 		}
 
-		void draw(base::RenderQueue &, base::Pipeline * pipeline);
+		void draw(base::RenderQueue &, base::MatrixState * matrixState);
 
 		virtual void deserialize(bg2e::db::json::Value *, const bg2e::base::path &);
 		virtual bg2e::db::json::Value* serialize(const bg2e::base::path &);

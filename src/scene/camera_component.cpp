@@ -52,13 +52,13 @@ namespace scene {
 		_camera.setViewport({ w, h });
 	}
 
-	void Camera::update(base::Pipeline * pipeline, float delta) {
+	void Camera::update(base::MatrixState * matrixState, float delta) {
 		auto viewMatrix = Transform::WorldMatrix(node()).invert();
 		_camera.setView(viewMatrix);
 
-		// Update pipeline matrixes
-		pipeline->view().load(_camera.view());
-		pipeline->projection().load(_camera.projection());
+		// Update matrixes
+		matrixState->view().load(_camera.view());
+		matrixState->projection().load(_camera.projection());
 
 	}
 }

@@ -119,14 +119,14 @@ namespace scene {
 		return _drawableElements.cend();
 	}
 
-	void Drawable::draw(base::RenderQueue & renderQueue, base::Pipeline * pipeline) {
+	void Drawable::draw(base::RenderQueue & renderQueue, base::MatrixState * matrixState) {
 		for (auto item : drawableElements()) {
-			auto trx = pipeline->model().matrix();
 			if (item.polyList->isVisible()) {
 				renderQueue.addPolyList(
 					item.polyList.getPtr(),
 					item.material.getPtr(),
-					pipeline->model().matrix());
+					matrixState->model().matrix(),
+					matrixState->model().inverseMatrix());
 			}
 		}
 	}

@@ -19,7 +19,7 @@ namespace base {
 		_cameraPosition = cam.view().position() * -1.0f;
 	}
 
-	void RenderQueue::addPolyList(base::PolyList * plist, base::Material * mat, const math::float4x4 & trx) {
+	void RenderQueue::addPolyList(base::PolyList * plist, base::Material * mat, const math::float4x4 & trx, const math::float4x4 & invTrx) {
 		math::float3 pos = trx.position();
 		float distance = (_cameraPosition - pos).length();
 		if (mat->isTransparent()) {
@@ -28,7 +28,9 @@ namespace base {
 				mat,
 				trx,
 				true,
-				distance
+				distance,
+				invTrx,
+				true
 			});
 		}
 		else {
@@ -37,7 +39,9 @@ namespace base {
 				mat,
 				trx,
 				true,
-				distance
+				distance,
+				invTrx,
+				true
 			});
 		}
 	}

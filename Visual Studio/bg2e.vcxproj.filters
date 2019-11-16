@@ -267,6 +267,9 @@
     <ClInclude Include="..\include\bg2e\scene\resize_visitor.hpp">
       <Filter>Header files\scene</Filter>
     </ClInclude>
+    <ClInclude Include="..\include\bg2e\base\matrix_state.hpp">
+      <Filter>Header files\base</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\utils\load.cpp">
@@ -385,6 +388,9 @@
     </ClCompile>
     <ClCompile Include="..\src\scene\draw_visitor.cpp">
       <Filter>Source files\scene</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\base\matrix_state.cpp">
+      <Filter>Source files\base</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

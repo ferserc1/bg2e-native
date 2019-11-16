@@ -1,11 +1,7 @@
 
 #include <iostream>
 
-#include <bg2e/base.hpp>
-#include <bg2e/wnd.hpp>
-#include <bg2e/utils.hpp>
-#include <bg2e/math.hpp>
-#include <bg2e/db.hpp>
+#include <bg2e/bg2e.hpp>
 
 #include "phong_shader.hpp"
 
@@ -27,6 +23,7 @@ public:
 		_material->setDiffuse(diffuse);
 		_material->setNormal(normal);
 
+		_matrixState = new bg2e::base::MatrixState();
 		_pipeline = new bg2e::base::Pipeline(window()->viewId());
 		_pipeline->setShader(new PhongShader());
 		_pipeline->setClearColor(bg2e::math::color(0x51B868FF));
@@ -37,30 +34,28 @@ public:
     }
     
     void update(float delta) {
-		_pipeline->projection().beginFrame();
-		_pipeline->view().beginFrame();
-		_pipeline->model().beginFrame();
+		_matrixState->beginFrame();
 
         const bg2e::math::float3 at = { 0.0f, 0.0f, 0.0f };
         const bg2e::math::float3 eye = { 0.0f, 0.0f, -5.0f };
         const bg2e::math::float3 up = { 0.0f, 1.0f, 0.0f };
         auto aspectRatio = static_cast<float>(window()->width()) / static_cast<float>(window()->height());
-		_pipeline->view()
+		_matrixState->view()
 			.identity()
 			.lookAt(eye, at, up);
-		_pipeline->projection()
+		_matrixState->projection()
 			.perspective(60.0f, aspectRatio, 0.1f, 100.0f);
         
-		_pipeline->beginDraw();
+		_pipeline->beginDraw(_matrixState->view().matrix(), _matrixState->projection().matrix());
 
         static float elapsed = 0;
         elapsed += (delta / 1000.0f);
    
-		_pipeline->model()
+		_matrixState->model()
 			.identity()
 			.rotate(elapsed, 1.0f, 0.0f, 0.0f)
 			.rotate(elapsed * 2.0f, 0.0f, 1.0f, 0.0f);
-		_pipeline->draw(_plist.getPtr(), _material.getPtr());
+		_pipeline->draw(_plist.getPtr(), _material.getPtr(), _matrixState->model().matrix(), _matrixState->model().inverseMatrix());
     }
     
     void draw() {
@@ -96,6 +91,7 @@ protected:
     bg2e::ptr<bg2e::base::PolyList> _plist;
 	bg2e::ptr<bg2e::base::Material> _material;
 	bg2e::ptr<bg2e::base::Pipeline> _pipeline;
+	bg2e::ptr<bg2e::base::MatrixState> _matrixState;
 };
 
 int main(int argc, char ** argv) {

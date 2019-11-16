@@ -200,21 +200,21 @@ namespace scene {
 		}
 	}
 
-	void Node::update(base::Pipeline * pipeline, float delta) {
+	void Node::update(base::MatrixState * matrixState, float delta) {
 		for (auto c : components()) {
-			c->update(pipeline, delta);
+			c->update(matrixState, delta);
 		}
 	}
 
-	void Node::draw(base::RenderQueue & renderQueue, base::Pipeline * pipeline) {
+	void Node::draw(base::RenderQueue & renderQueue, base::MatrixState * matrixState) {
 		for (auto c : components()) {
-			c->willDraw(pipeline);
+			c->willDraw(matrixState);
 		}
 		for (auto c : components()) {
-			c->draw(renderQueue, pipeline);
+			c->draw(renderQueue, matrixState);
 		}
 		for (auto c : components()) {
-			c->didDraw(renderQueue, pipeline);
+			c->didDraw(renderQueue, matrixState);
 		}
 	}
 

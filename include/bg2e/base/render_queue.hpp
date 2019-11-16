@@ -16,7 +16,7 @@ namespace base {
 		virtual ~RenderQueue();
 
 		void begin(const Camera & cam);
-		void addPolyList(base::PolyList * plist, base::Material * mat, const math::float4x4 & trx);
+		void addPolyList(base::PolyList * plist, base::Material * mat, const math::float4x4 & trx, const math::float4x4 & invTrx);
 		void end();
 
 		inline const base::DrawableElementVector & opaqueQueue() const { return _opaqueQueue; }

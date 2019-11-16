@@ -22,6 +22,7 @@ public:
 		material->setDiffuse(diffuse);
 		material->setNormal(normal);
 
+		_matrixState = new bg2e::base::MatrixState();
 
 		_pipeline = new bg2e::base::Pipeline(window()->viewId());
 		_pipeline->setShader(new bg2e::shaders::Phong());
@@ -70,6 +71,8 @@ public:
     }
     
     void update(float delta) {
+		_matrixState->beginFrame();
+
 		static float elapsed = 0;
 		elapsed += (delta / 1000.0f);
 		bg2e::math::float4x4 mtx = bg2e::math::float4x4::Identity();
@@ -77,7 +80,7 @@ public:
 			.rotate(elapsed * 2.0f, 0.0f, 1.0f, 0.0f);
 
 
-		_updateVisitor->update(_sceneRoot.getPtr(), _pipeline.getPtr(), delta);
+		_updateVisitor->update(_sceneRoot.getPtr(), _matrixState.getPtr(), delta);
     }
     
     void draw() {
@@ -96,15 +99,15 @@ public:
 
 		//_pipeline->setView(_camera.view());
 		//_pipeline->setProjection((_camera.projection()));
-		_pipeline->beginDraw();
+		_pipeline->beginDraw(_matrixState.getPtr());
+
 		_renderQueue.begin(_mainCamera->camera());
 		//_pipeline->draw(_plist.getPtr(), _material.getPtr(), mtx);
-		_drawVisitor->draw(_sceneRoot.getPtr(), &_renderQueue, _pipeline.getPtr());
+		_drawVisitor->draw(_sceneRoot.getPtr(), &_renderQueue, _matrixState.getPtr());
 
 
 		for (auto & elem : _renderQueue.opaqueQueue()) {
-
-			_pipeline->draw(elem.polyList.getPtr(), elem.material.getPtr());
+			_pipeline->draw(elem.polyList.getPtr(), elem.material.getPtr(), elem.transform, elem.inverseTransform);
 		}
 
         bgfx::frame();
@@ -128,6 +131,7 @@ protected:
     //bg2e::ptr<bg2e::base::PolyList> _plist;
 	//bg2e::ptr<bg2e::base::Material> _material;
 	bg2e::ptr<bg2e::base::Pipeline> _pipeline;
+	bg2e::ptr<bg2e::base::MatrixState> _matrixState;
 	bg2e::ptr<bg2e::base::Light> _light;
     
     //bg2e::base::Camera _camera;

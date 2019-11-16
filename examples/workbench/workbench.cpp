@@ -22,6 +22,7 @@ public:
 		material->setDiffuse(diffuse);
 		material->setNormal(normal);
 
+		_matrixState = new bg2e::base::MatrixState();
 
 		_pipeline = new bg2e::base::Pipeline(window()->viewId());
 		_pipeline->setShader(new bg2e::shaders::Phong());
@@ -55,9 +56,11 @@ public:
     }
     
     void update(float delta) {
+		_matrixState->beginFrame();
+
         //_pipeline->setView(_camera.view());
         //_pipeline->setProjection((_camera.projection()));
-		_pipeline->beginDraw();
+		_pipeline->beginDraw(_matrixState.getPtr());
 
         static float elapsed = 0;
         elapsed += (delta / 1000.0f);
@@ -99,6 +102,7 @@ protected:
 
     //bg2e::ptr<bg2e::base::PolyList> _plist;
 	//bg2e::ptr<bg2e::base::Material> _material;
+	bg2e::ptr<bg2e::base::MatrixState> _matrixState;
 	bg2e::ptr<bg2e::base::Pipeline> _pipeline;
 	bg2e::ptr<bg2e::base::Light> _light;
     

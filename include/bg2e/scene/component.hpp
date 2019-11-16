@@ -7,6 +7,7 @@
 #include <bg2e/db/json/value.hpp>
 #include <bg2e/base/render_queue.hpp>
 #include <bg2e/base/pipeline.hpp>
+#include <bg2e/base/matrix_state.hpp>
 
 #include <functional>
 #include <unordered_map>
@@ -31,10 +32,10 @@ namespace scene {
         virtual void addedToNode(Node *) {}
         virtual void removedFromNode(Node *) {}
 		virtual void resize(uint32_t, uint32_t) {}
-		virtual void update(base::Pipeline *,float) {}
-		virtual void willDraw(base::Pipeline *) {}
-		virtual void draw(base::RenderQueue &, base::Pipeline *) {}
-		virtual void didDraw(base::RenderQueue &, base::Pipeline *) {}
+		virtual void update(base::MatrixState *,float) {}
+		virtual void willDraw(base::MatrixState *) {}
+		virtual void draw(base::RenderQueue &, base::MatrixState *) {}
+		virtual void didDraw(base::RenderQueue &, base::MatrixState *) {}
 
         inline void setIgnoreSerialize(bool i) { _ignoreSerialize = i; }
         inline bool ignoreSerialize() const { return _ignoreSerialize; }

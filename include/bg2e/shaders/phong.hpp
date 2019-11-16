@@ -24,7 +24,7 @@ namespace shaders {
         Phong();
 
 		virtual void bindFrameUniforms(base::Pipeline *);
-        virtual void bindUniforms(base::Pipeline *, base::PolyList * plist, base::Material * material, base::MatrixStack & modelMatrixStack);
+        virtual void bindUniforms(base::Pipeline *, base::PolyList * plist, base::Material * material, const math::float4x4 & modelMatrix, const math::float4x4 & inverseModelMatrix);
 
     protected:
         virtual ~Phong();

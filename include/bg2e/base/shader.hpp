@@ -27,7 +27,7 @@ namespace base {
 		virtual void bindFrameUniforms(base::Pipeline *) = 0;
 
 		// Bind uniforms used once per object
-		virtual void bindUniforms(Pipeline *, PolyList * plist, Material* material, MatrixStack & modelMatrixStack) = 0;
+		virtual void bindUniforms(Pipeline *, PolyList * plist, Material* material, const math::float4x4 & modelMatrix, const math::float4x4 & inverseModelMatrix) = 0;
 
 		inline const bgfx::ProgramHandle & programHandle() const { return _program; }
 
