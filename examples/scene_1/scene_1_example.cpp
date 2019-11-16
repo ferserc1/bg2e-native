@@ -6,22 +6,46 @@
 
 class MyEventHandler : public  bg2e::wnd::EventHandler {
 public:
+
+	bg2e::scene::Node * createCube() {
+		using namespace bg2e;
+		base::MeshData data;
+		utils::generateCube(1.0f, data);
+		auto plist = new base::PolyList();
+		plist->build(data);
+
+		auto drawable = new scene::Drawable();
+		drawable->addPolyList(plist);
+
+		auto node = new scene::Node();
+		node->addComponent(drawable);
+		node->addComponent(new scene::Transform());
+
+		return node;
+	}
         
-    void init() {
-        bg2e::base::MeshData meshData;
-        bg2e::utils::generateCube(2.0f, meshData);
-    
-        auto plist = new bg2e::base::PolyList();
-        plist->build(meshData);
-         
+    void init() { 
+		_sceneRoot = new bg2e::scene::Node();
+
        	bg2e::base::path dataPath("data");
 		auto diffuse = bg2e::db::loadTexture(dataPath.pathAddingComponent("texture.jpg"));
 		auto normal = bg2e::db::loadTexture(dataPath.pathAddingComponent("texture_nm.jpg"));
 
-		auto material = new bg2e::base::Material();
-		material->setDiffuse(diffuse);
-		material->setNormal(normal);
+		
+		auto cube1 = createCube();
+		cube1->drawable()->material(0)->setDiffuse(diffuse);
+		cube1->drawable()->material(0)->setNormal(normal);
+		_sceneRoot->addChild(cube1);
 
+		_cubeTransform = cube1->transform();
+		_cubeTransform->matrix().rotate(bg2e::math::radians(45.0f), 0.0f, 1.0f, 0.0f);
+
+		auto cube2 = createCube();
+		cube2->drawable()->material(0)->setDiffuse(bg2e::math::color(0xFF8888FF));
+		cube1->drawable()->material(0)->setNormal(normal);
+		cube2->drawable()->material(0)->setIsTransparent(true);
+		cube2->transform()->matrix().translate(bg2e::math::float3(1.0f, 1.0f, -1.0f));
+		_sceneRoot->addChild(cube2);
 		_matrixState = new bg2e::base::MatrixState();
 
 		_pipeline = new bg2e::base::Pipeline(window()->viewId());
@@ -33,7 +57,7 @@ public:
 		_light->setDirection(bg2e::math::float3(-0.2, -0.5, -0.5f));
 		bg2e::base::Light::ActivateLight(_light);
         
-		_sceneRoot = new bg2e::scene::Node();
+		
 
 		auto camNode = new bg2e::scene::Node();
 		_mainCamera = new bg2e::scene::Camera();
@@ -45,20 +69,9 @@ public:
 		_mainCamera->camera().setProjectionStrategy(projStrategy);
 		camNode->addComponent(_mainCamera.getPtr());
 		auto cameraTrx = new bg2e::scene::Transform();
-		cameraTrx->matrix().translate({ 0.0f, 0.0f, 5.0f });
+		cameraTrx->matrix().translate({ 0.0f, 0.0f, 10.0f });
 		camNode->addComponent(cameraTrx);
 		_sceneRoot->addChild(camNode);
-
-		auto cubeNode = new bg2e::scene::Node("Cube");
-		auto drawable = new bg2e::scene::Drawable();
-		drawable->addPolyList(plist, material);
-		cubeNode->addComponent(drawable);
-		auto cubeTrx = new bg2e::scene::Transform();
-		cubeTrx->matrix().rotate(bg2e::math::radians(45.0f), 0.0f, 1.0f, 0.0f);
-		cubeNode->addComponent(cubeTrx);
-        _cubeTransform = cubeNode->transform();
-		_sceneRoot->addChild(cubeNode);
-
 		
 		_drawVisitor = new bg2e::scene::DrawVisitor();
 		_resizeVisitor = new bg2e::scene::ResizeVisitor();
