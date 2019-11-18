@@ -28,6 +28,19 @@ namespace base {
 			bgfx::setViewClear(_viewId, _clearFlags, _clearColor.hexColor(), _clearDepth);
 		}
 
+		_shader->bindFrameUniforms(this);
+	}
+
+	void Pipeline::draw(PolyList* plist, Material* material, const math::float4x4 & modelMatrix, const math::float4x4 & inverseModelMatrix) {
+		if (!_shader.valid()) {
+			throw std::runtime_error("Error drawing polyList: no shader configured in pipeline.");
+		}
+		if (!plist || !material) {
+			throw std::invalid_argument("Drawing error: invalid material or polyList");
+		}
+
+		bgfx::setTransform(modelMatrix.raw());
+
 		// TODO: set state
 		uint64_t state = 0
 			| BGFX_STATE_WRITE_R
@@ -41,19 +54,6 @@ namespace base {
 			| UINT64_C(0)// triangle list     BGFX_STATE_PT_TRISTRIP
 			;
 		bgfx::setState(state);
-
-		_shader->bindFrameUniforms(this);
-	}
-
-	void Pipeline::draw(PolyList* plist, Material* material, const math::float4x4 & modelMatrix, const math::float4x4 & inverseModelMatrix) {
-		if (!_shader.valid()) {
-			throw std::runtime_error("Error drawing polyList: no shader configured in pipeline.");
-		}
-		if (!plist || !material) {
-			throw std::invalid_argument("Drawing error: invalid material or polyList");
-		}
-
-		bgfx::setTransform(modelMatrix.raw());
 
 		_shader->bindUniforms(this, plist, material, modelMatrix, inverseModelMatrix);
 

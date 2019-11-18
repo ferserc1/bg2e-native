@@ -44,7 +44,9 @@ public:
 		cube2->drawable()->material(0)->setDiffuse(bg2e::math::color(0xFF8888FF));
 		cube1->drawable()->material(0)->setNormal(normal);
 		cube2->drawable()->material(0)->setIsTransparent(true);
-		cube2->transform()->matrix().translate(bg2e::math::float3(1.0f, 1.0f, -1.0f));
+		cube2->transform()->matrix()
+			.translate(bg2e::math::float3(1.0f, 1.0f, 0.0f))
+			.rotate(bg2e::math::degrees(45.0f), 0.0f, 1.0f, 0.0f);
 		_sceneRoot->addChild(cube2);
 		_matrixState = new bg2e::base::MatrixState();
 
