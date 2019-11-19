@@ -37,7 +37,8 @@ namespace base {
         kBlendFunctionSrcAlphaSaturate   = BGFX_STATE_BLEND_SRC_ALPHA_SAT,
         kBlendFunctionFactor             = BGFX_STATE_BLEND_FACTOR,
         kBlendFunctionOneMinusFactor     = BGFX_STATE_BLEND_INV_FACTOR,
-        kBlendFunctionDisabled           = 0
+        kBlendFunctionDisabled           = 0,
+        kBlendFunctionAlpha             = BGFX_STATE_BLEND_ALPHA
     };
 
     enum BlendEquation {
@@ -84,9 +85,12 @@ namespace base {
 		inline void beginDraw(MatrixState * matrixState) { beginDraw(matrixState->view().matrix(), matrixState->projection().matrix()); }
 		void draw(PolyList * plist, Material * material, const math::float4x4 & modelMatrix, const math::float4x4 & inverseModelMatrix);
 
+        inline void setDepthTestEnabled(bool e) { _depthTestEnabled = e; }
+        inline bool isDepthTestEnabled() const { return _depthTestEnabled; }
         inline void setDepthTest(DepthTest dt) { _depthTest = dt; }
         inline DepthTest depthTest() const { return static_cast<DepthTest>(_depthTest); }
         inline void setBlendFunction(BlendFunction src, BlendFunction dst) { _blendFunctionSrc = src; _blendFunctionDst = dst; }
+        inline void setBlendFunction(BlendFunction bf) { _blendFunctionSrc = bf; _blendFunctionDst = kBlendFunctionDisabled; }
         inline BlendFunction blendFunctionSrc() const { return static_cast<BlendFunction>(_blendFunctionSrc); }
         inline BlendFunction blendFunctionDst() const { return static_cast<BlendFunction>(_blendFunctionDst); }
         inline void setBlendEquation(BlendEquation be) { _blendEquation = be; }
@@ -103,6 +107,7 @@ namespace base {
 
 		ptr<Shader> _shader;
         
+        bool _depthTestEnabled = true;
         uint64_t _depthTest = kDepthTestLess;
         uint64_t _blendFunctionSrc = kBlendFunctionDisabled;
         uint64_t _blendFunctionDst = kBlendFunctionDisabled;

@@ -19,7 +19,7 @@ vec3 combineNormalWithMap(vec3 normalCoord, vec3 tangent, vec3 bitangent, vec3 n
 }
 
 void main() {
-    vec3 textureColor = texture2D(u_diffuse, v_texcoord0).rgb;
+    vec4 textureColor = texture2D(u_diffuse, v_texcoord0);
     vec3 normalColor = texture2D(u_normal, v_texcoord0).rgb * 2.0 - 1.0;
     vec3 aoColor = texture2D(u_ambientOcclussion, v_texcoord0).rgb;
     float roughness = texture2D(u_roughness, v_texcoord0).x;
@@ -33,6 +33,6 @@ void main() {
     float shininess = (1.0 / roughness) * 255.0f;
     // TODO: specular with shininess and u_fresnel;
     
-    diffuse = diffuse * textureColor * aoColor;
-    gl_FragColor = vec4(diffuse,1.0);
+    diffuse = diffuse * textureColor.rgb * aoColor;
+    gl_FragColor = vec4(diffuse,textureColor.a);
 }

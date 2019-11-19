@@ -41,8 +41,7 @@ public:
 		_cubeTransform->matrix().rotate(bg2e::math::radians(45.0f), 0.0f, 1.0f, 0.0f);
 
 		auto cube2 = createCube();
-		cube2->drawable()->material(0)->setDiffuse(bg2e::math::color(0xFF8888FF));
-		cube1->drawable()->material(0)->setNormal(normal);
+		cube2->drawable()->material(0)->setDiffuse(bg2e::math::color(1.0f, 0.5f, 0.5f, 0.4f));
 		cube2->drawable()->material(0)->setIsTransparent(true);
 		cube2->transform()->matrix()
 			.translate(bg2e::math::float3(1.0f, 1.0f, 0.0f))
@@ -119,14 +118,16 @@ public:
 		_drawVisitor->draw(_sceneRoot.getPtr(), &_renderQueue, _matrixState.getPtr());
 
 
+        _pipeline->setDepthTest(bg2e::base::kDepthTestLess);
+        _pipeline->setDepthTestEnabled(true);
+        _pipeline->setBlendFunction(bg2e::base::kBlendFunctionDisabled, bg2e::base::kBlendFunctionDisabled);
 		for (auto & elem : _renderQueue.opaqueQueue()) {
 			_pipeline->draw(elem.polyList.getPtr(), elem.material.getPtr(), elem.transform, elem.inverseTransform);
 		}
         
-        // TODO: Enable transparent pipeline
-        // TODO: Enable blend
-        // TODO: Set blend function
-        // TODO: Disable depth function write
+        _pipeline->setDepthTest(bg2e::base::kDepthTestLess);
+        _pipeline->setDepthTestEnabled(false);
+        _pipeline->setBlendFunction(bg2e::base::kBlendFunctionSrcAlpha, bg2e::base::kBlendFunctionOneMinusSrcAlpha);
         for (auto & elem : _renderQueue.transparentQueue()) {
             _pipeline->draw(elem.polyList.getPtr(), elem.material.getPtr(), elem.transform, elem.inverseTransform);
         }

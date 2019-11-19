@@ -47,13 +47,22 @@ namespace base {
 			| BGFX_STATE_WRITE_G
 			| BGFX_STATE_WRITE_B
 			| BGFX_STATE_WRITE_A
-			| BGFX_STATE_WRITE_Z
 			| _depthTest
             | _blendEquation
 			| plist->cullFace()
 			| BGFX_STATE_MSAA
 			| plist->polygonMode()
 			;
+        
+        if (_depthTestEnabled) {
+            state |= BGFX_STATE_WRITE_Z;
+        }
+        if (_blendFunctionDst != 0 && _blendFunctionSrc != 0) {
+            state |= BGFX_STATE_BLEND_FUNC(_blendFunctionSrc, _blendFunctionDst);
+        }
+        else if (_blendFunctionSrc != 0) {
+            state |= _blendFunctionSrc;
+        }
 
 		bgfx::setState(state);
 
