@@ -55,7 +55,7 @@ public:
 
 		_light = new bg2e::base::Light(window()->viewId());
 		_light->setPosition(bg2e::math::float3(2.0f, 2.0f, 2.0f));
-		_light->setDirection(bg2e::math::float3(-0.2, -0.5, -0.5f));
+		_light->setDirection(bg2e::math::float3(-0.2f, -0.5, -0.5f));
 		bg2e::base::Light::ActivateLight(_light);
         
 		

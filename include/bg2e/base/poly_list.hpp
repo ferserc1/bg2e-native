@@ -11,12 +11,12 @@
 namespace bg2e {
 namespace base {
 
-    enum CullFace {
+    enum CullFace : uint64_t{
         kCullFaceCW     = BGFX_STATE_CULL_CW,
         kCullFaceCCW    = BGFX_STATE_CULL_CCW
     };
 
-    enum PolygonMode {
+    enum PolygonMode : uint64_t {
         kPolygonModeTriangleStrip   = BGFX_STATE_PT_TRISTRIP,
         kPolygonModeLines           = BGFX_STATE_PT_LINES,
         kPolygonModeLineStrip       = BGFX_STATE_PT_LINESTRIP,

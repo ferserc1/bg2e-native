@@ -12,7 +12,7 @@
 namespace bg2e {
 namespace base {
 
-    enum DepthTest {
+    enum DepthTest : uint64_t {
         kDepthTestLess               = BGFX_STATE_DEPTH_TEST_LESS,
         kDepthTestLessOrEqual        = BGFX_STATE_DEPTH_TEST_LEQUAL,
         kDepthTestEqual              = BGFX_STATE_DEPTH_TEST_EQUAL,
@@ -23,7 +23,7 @@ namespace base {
         kDepthTestAlways             = BGFX_STATE_DEPTH_TEST_ALWAYS
     };
 
-    enum BlendFunction {
+    enum BlendFunction : uint64_t {
         kBlendFunctionZero               = BGFX_STATE_BLEND_ZERO,
         kBlendFunctionOne                = BGFX_STATE_BLEND_ONE,
         kBlendFunctionSrcColor           = BGFX_STATE_BLEND_SRC_COLOR,
@@ -41,7 +41,7 @@ namespace base {
         kBlendFunctionAlpha             = BGFX_STATE_BLEND_ALPHA
     };
 
-    enum BlendEquation {
+    enum BlendEquation : uint64_t {
         kBlendEquationAdd        = BGFX_STATE_BLEND_EQUATION_ADD,
         kBlendEquationSub        = BGFX_STATE_BLEND_EQUATION_SUB,
         kBlendEquationReverseSub = BGFX_STATE_BLEND_EQUATION_REVSUB,
