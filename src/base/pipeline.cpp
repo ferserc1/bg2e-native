@@ -48,11 +48,13 @@ namespace base {
 			| BGFX_STATE_WRITE_B
 			| BGFX_STATE_WRITE_A
 			| BGFX_STATE_WRITE_Z
-			| BGFX_STATE_DEPTH_TEST_LESS
-			| BGFX_STATE_CULL_CCW
+			| _depthTest
+            | _blendEquation
+			| plist->cullFace()
 			| BGFX_STATE_MSAA
-			| UINT64_C(0)// triangle list     BGFX_STATE_PT_TRISTRIP
+			| plist->polygonMode()
 			;
+
 		bgfx::setState(state);
 
 		_shader->bindUniforms(this, plist, material, modelMatrix, inverseModelMatrix);

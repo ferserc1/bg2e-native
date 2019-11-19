@@ -11,6 +11,19 @@
 namespace bg2e {
 namespace base {
 
+    enum CullFace {
+        kCullFaceCW     = BGFX_STATE_CULL_CW,
+        kCullFaceCCW    = BGFX_STATE_CULL_CCW
+    };
+
+    enum PolygonMode {
+        kPolygonModeTriangleStrip   = BGFX_STATE_PT_TRISTRIP,
+        kPolygonModeLines           = BGFX_STATE_PT_LINES,
+        kPolygonModeLineStrip       = BGFX_STATE_PT_LINESTRIP,
+        kPolygonModePoints          = BGFX_STATE_PT_POINTS,
+        kPolygonModeTriangles       = 0
+    };
+
 	struct Vertex {
 		math::float3 position;
 		math::float3 normal;
@@ -119,6 +132,11 @@ namespace base {
         inline const bgfx::VertexBufferHandle & vertexBuffer() const { return _vertexBuffer; }
         inline const bgfx::IndexBufferHandle & indexBuffer() const { return _indexBuffer; }
         
+        inline CullFace cullFace() const { return _cullFace; }
+        inline void setCullFace(CullFace cf) { _cullFace = cf; }
+        inline PolygonMode polygonMode() const { return _polygonMode; }
+        inline void setPolygonMode(PolygonMode pm) { _polygonMode = pm; }
+        
     protected:
 		virtual ~PolyList();
 
@@ -139,6 +157,9 @@ namespace base {
         // bgfx data
         bgfx::VertexBufferHandle _vertexBuffer = BGFX_INVALID_HANDLE;
         bgfx::IndexBufferHandle _indexBuffer = BGFX_INVALID_HANDLE;
+        
+        CullFace _cullFace = kCullFaceCCW;
+        PolygonMode _polygonMode = kPolygonModeTriangles;
 	};
 
 }
