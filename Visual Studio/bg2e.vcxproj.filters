@@ -270,6 +270,12 @@
     <ClInclude Include="..\include\bg2e\base\matrix_state.hpp">
       <Filter>Header files\base</Filter>
     </ClInclude>
+    <ClInclude Include="..\include\bg2e\db\plugin.hpp">
+      <Filter>Header files\db</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\db\drawable.hpp">
+      <Filter>Header files\db</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\utils\load.cpp">
@@ -391,6 +397,9 @@
     </ClCompile>
     <ClCompile Include="..\src\base\matrix_state.cpp">
       <Filter>Source files\base</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\db\drawable_db.cpp">
+      <Filter>Source files\db</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
