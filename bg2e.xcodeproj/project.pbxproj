@@ -39,6 +39,7 @@
 		ED4EC1772368559000C63E45 /* bg2_reader.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED4EC16F2368559000C63E45 /* bg2_reader.cpp */; };
 		ED4EC17A236891C800C63E45 /* image_write.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED4EC178236891C700C63E45 /* image_write.cpp */; };
 		ED4EC17B236891C800C63E45 /* image_load.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED4EC179236891C700C63E45 /* image_load.cpp */; };
+		EDA6BC1C2385911D009A2EF0 /* drawable_db.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EDA6BC1B2385911D009A2EF0 /* drawable_db.cpp */; };
 		EDACE28E237164E80076754B /* light.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EDACE28D237164E80076754B /* light.cpp */; };
 		EDACE294237165150076754B /* QuartzCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = EDE6D86F2355D18F0014D7C8 /* QuartzCore.framework */; };
 		EDACE295237165150076754B /* Metal.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = EDE6D8712355D19B0014D7C8 /* Metal.framework */; };
@@ -249,6 +250,9 @@
 		ED55B44F235A2CFF003ACDE9 /* shaders.h.template */ = {isa = PBXFileReference; lastKnownFileType = text; path = shaders.h.template; sourceTree = "<group>"; };
 		ED55B451235A2CFF003ACDE9 /* example_shaders.h.template */ = {isa = PBXFileReference; lastKnownFileType = text; path = example_shaders.h.template; sourceTree = "<group>"; };
 		ED763DEB2369EA2D002F6E00 /* bgfx_tools.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = bgfx_tools.hpp; sourceTree = "<group>"; };
+		EDA6BC19238590FA009A2EF0 /* drawable.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = drawable.hpp; sourceTree = "<group>"; };
+		EDA6BC1A2385910B009A2EF0 /* plugin.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = plugin.hpp; sourceTree = "<group>"; };
+		EDA6BC1B2385911D009A2EF0 /* drawable_db.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = drawable_db.cpp; sourceTree = "<group>"; };
 		EDACE28C237164E10076754B /* light.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = light.hpp; sourceTree = "<group>"; };
 		EDACE28D237164E80076754B /* light.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = light.cpp; sourceTree = "<group>"; };
 		EDACE2A7237165150076754B /* material-example.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "material-example.app"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -608,8 +612,10 @@
 				ED4EC1572368557C00C63E45 /* bg2_reader.hpp */,
 				ED4EC1582368557C00C63E45 /* bg2_writter.hpp */,
 				ED4EC1562368557C00C63E45 /* binary_parser.hpp */,
+				EDA6BC19238590FA009A2EF0 /* drawable.hpp */,
 				ED4EC17F236891E800C63E45 /* image_load.hpp */,
 				ED4EC17E236891E800C63E45 /* image_write.hpp */,
+				EDA6BC1A2385910B009A2EF0 /* plugin.hpp */,
 				ED43F2FF236C56C800195C21 /* texture_load.hpp */,
 			);
 			path = db;
@@ -676,6 +682,7 @@
 				ED4EC16A2368559000C63E45 /* json */,
 				ED4EC1692368559000C63E45 /* bg2_writter.cpp */,
 				ED4EC16E2368559000C63E45 /* binary_parser.cpp */,
+				EDA6BC1B2385911D009A2EF0 /* drawable_db.cpp */,
 				ED4EC16F2368559000C63E45 /* bg2_reader.cpp */,
 				ED4EC179236891C700C63E45 /* image_load.cpp */,
 				ED4EC178236891C700C63E45 /* image_write.cpp */,
@@ -1507,6 +1514,7 @@
 				EDB55707237E91A5007F3A86 /* render_queue.cpp in Sources */,
 				ED4EC1742368559000C63E45 /* value.cpp in Sources */,
 				EDDE610D236ECF06007991F1 /* texture_generator.cpp in Sources */,
+				EDA6BC1C2385911D009A2EF0 /* drawable_db.cpp in Sources */,
 				EDC4EAC4236AD19100CBD2D0 /* poly_list.cpp in Sources */,
 				EDDE6109236ECEF2007991F1 /* shader.cpp in Sources */,
 				ED4EC1702368559000C63E45 /* image.cpp in Sources */,
