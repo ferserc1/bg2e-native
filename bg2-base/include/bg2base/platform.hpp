@@ -23,4 +23,12 @@
 #define BG2_PLATFORM_LINUX      1
 #endif
 
+// void pointers
+namespace bg2base {
+
+	template <class T> T native_cast(void * nativePtr) { return static_cast<T>(nativePtr); }
+	typedef void * plain_ptr;
+
+}
+
 #endif

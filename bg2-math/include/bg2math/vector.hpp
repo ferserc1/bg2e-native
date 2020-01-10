@@ -46,6 +46,8 @@ namespace bg2math {
 		inline const T& width() const { return _v[0]; }
 		inline T& height() { return _v[1]; }
 		inline const T& height() const { return _v[1]; }
+        inline void setWidth(T w) { _v[0] = w; }
+        inline void setHeight(T h) { _v[1] = h; }
         
         inline bool belongsToRect(T left, T top, T width, T height) {
             return _v[0] >= left && _v[0] <= left + width && _v[1] >= top && _v[1] <= top + height;
@@ -168,6 +170,10 @@ namespace bg2math {
 		inline const T& height() const { return _v[1]; }
 		inline T& depth() { return _v[2]; }
 		inline const T& depth() const { return _v[2]; }
+
+        inline void setWidth(T w) { _v[0] = w; }
+        inline void height(T h) { _v[1] = h; }
+        inline void depth(T d) { _v[2] = d; }
         
     protected:
         T _v[3] = { static_cast<T>(0), static_cast<T>(0), static_cast<T>(0) };
@@ -347,5 +353,16 @@ namespace bg2math {
     typedef vec4<float> float4;
     typedef vec4<double> double4;
 	typedef float4 color;
+
+    class Viewport : public vec4<int32_t> {
+    public:
+        inline void setWidth(int32_t w) { _v[2] = w; }
+        inline void setHeight(int32_t h) { _v[3] = h; }
+        inline int32_t width() const { return _v[2]; }
+        inline int32_t height() const { return _v[3]; }
+        inline int32_t & width() { return _v[2]; }
+        inline int32_t & height() { return _v[3]; }
+        inline float aspectRatio() const { return _v[3] != 0 ? static_cast<float>(_v[2]) / static_cast<float>(_v[3]) : 1; }
+    };
 }
 #endif

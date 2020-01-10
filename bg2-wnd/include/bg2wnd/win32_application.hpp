@@ -2,6 +2,7 @@
 #define _bg2_wnd_win32_application_hpp_
 
 #include <bg2wnd/application.hpp>
+#include <bg2base/platform.hpp>
 
 namespace bg2wnd {
 

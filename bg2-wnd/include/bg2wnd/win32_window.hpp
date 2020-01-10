@@ -2,6 +2,7 @@
 #define _bg2_wnd_win32_application_hpp_
 
 #include <bg2wnd/window.hpp>
+#include <bg2base/platform.hpp>
 
 namespace bg2wnd {
 
@@ -12,6 +13,10 @@ namespace bg2wnd {
 
 		virtual bool shouldClose() override;
 	
+	protected:
+		bg2base::plain_ptr _hDC = nullptr;
+		bg2base::plain_ptr _hWnd = nullptr;
+		bg2base::plain_ptr _hInstance = nullptr;
 	};
 
 }

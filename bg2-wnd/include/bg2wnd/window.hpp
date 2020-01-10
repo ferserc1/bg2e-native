@@ -21,6 +21,11 @@ namespace bg2wnd {
     public:
         static Window * Create();
         
+        inline void setPosition(const bg2math::int2 & pos) {
+            windowPositionWillChange(pos);
+            _position = pos;
+            windowPositionDidChange(pos);
+        }
         inline void setSize(const bg2math::int2 & size) {
             windowSizeWillChange(size);
             _size = size;
@@ -56,6 +61,7 @@ namespace bg2wnd {
     protected:
         Window();
         
+        bg2math::int2 _position = bg2math::int2(100, 100);
         bg2math::int2 _size = bg2math::int2(800,600);
         std::string _title = "Window";
         float _lastFrameTime = 0.0f;
@@ -63,6 +69,8 @@ namespace bg2wnd {
         
         std::shared_ptr<WindowDelegate> _windowDelegate;
 
+        virtual void windowPositionWillChange(const bg2math::int2 & newpos) {}
+        virtual void windowPositionDidChange(const bg2math::int2 & newpos) {}
         virtual void windowSizeWillChange(const bg2math::int2 & newSize) {}
         virtual void windowSizeDidChange(const bg2math::int2 & newSize) {}
         virtual void windowTitleWillChange(const std::string & newTitle) {}
