@@ -163,12 +163,12 @@ private:
 };
 
 int main(int argc, char ** argv) {
-    bg2wnd::Application app;
+	std::unique_ptr<bg2wnd::Application> app(bg2wnd::Application::Create());
 
     auto window = bg2wnd::Window::Create();
     window->setWindowDelegate(new MyWindowDelegate(true));
-    app.addWindow(window);
-    app.run();
+    app->addWindow(window);
+    app->run();
 
     return 0;
 }

@@ -43,9 +43,9 @@ namespace bg2wnd {
         inline const WindowDelegate * windowDelegate() const { return _windowDelegate.get(); }
         inline WindowDelegate * windowDelegate() { return _windowDelegate.get(); }
         
-        virtual void build();
+        virtual void build() = 0;
         
-        virtual bool shouldClose();
+        virtual bool shouldClose() = 0;
         
         virtual ~Window();
 

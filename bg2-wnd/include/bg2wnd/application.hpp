@@ -12,13 +12,20 @@ namespace bg2wnd {
     
     class Application {
     public:
-        Application();
+        virtual ~Application();
+
+        static Application * Create();
        
         void addWindow(Window * wnd);
         
-        int run();
+        virtual void build() = 0;
+
+        virtual int run() = 0;
         
     protected:
+
+        Application();
+
         std::vector<std::shared_ptr<Window>> _windows;
     
     };

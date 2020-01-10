@@ -1,7 +1,9 @@
 #ifndef _bg2_base_export_hpp_
 #define _bg2_base_export_hpp_
 
-#ifdef _WIN32
+#include <bg2base/platform.hpp>
+
+#if BG2_PLATFORM_WINDOWS
 
     #ifdef BG2_LIBRARY
         #define EXPORT __declspec(dllexport)
