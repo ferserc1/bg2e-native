@@ -1,8 +1,6 @@
 
 #include <bg2wnd/application.hpp>
 
-#define GLFW_INCLUDE_VULKAN
-#include <GLFW/glfw3.h>
 
 #include <iostream>
 
@@ -10,7 +8,7 @@ namespace bg2wnd {
     
     Application::Application()
     {
-        glfwInit();
+
     }
     
     void Application::addWindow(Window * wnd) {
@@ -19,26 +17,7 @@ namespace bg2wnd {
     }
 
     int Application::run() {        
-        while (_windows.size() > 0) {
-            auto closingWindowIt = _windows.end();
-            for (auto it = _windows.begin(); it != _windows.end(); ++it) {
-                if ((*it)->shouldClose()) {
-                    closingWindowIt = it;
-                    break;
-                }
-                else {
-                    // Process window events
-                    (*it)->updateWindowSize();
-                    (*it)->frame();
-                }
-            }
-            if (closingWindowIt != _windows.end()) {
-                _windows.erase(closingWindowIt);
-            }
-            glfwPollEvents();
-        }
-        
-        glfwTerminate();
+
         return 0;
     }
     

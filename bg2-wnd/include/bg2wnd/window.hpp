@@ -21,37 +21,54 @@ namespace bg2wnd {
     public:
         static Window * Create();
         
-        inline void setSize(const bg2math::int2 & size) { _size = size; }
-        inline void setTitle(const std::string & title) { _title = title; }
+        inline void setSize(const bg2math::int2 & size) {
+            windowSizeWillChange(size);
+            _size = size;
+            windowSizeDidChange(size);
+        }
+        inline void setTitle(const std::string & title) {
+            windowTitleWillChange(title);
+            _title = title;
+            windowTitleDidChange(title);
+        }
+        inline void setWindowDelegate(WindowDelegate * del) {
+            windowDelegateWillChange(del);
+            _windowDelegate = std::shared_ptr<WindowDelegate>(del);
+            del->_window = this;
+            windowDelegateDidChange(del);
+        }
+        
         inline const bg2math::int2 & size() const { return _size; }
         inline const std::string & title() const { return _title; }
-        inline void setWindowDelegate(WindowDelegate * del) { _windowDelegate = std::shared_ptr<WindowDelegate>(del); del->_window = this; }
         inline const WindowDelegate * windowDelegate() const { return _windowDelegate.get(); }
         inline WindowDelegate * windowDelegate() { return _windowDelegate.get(); }
         
-        void build();
+        virtual void build();
         
-        bool shouldClose();
+        virtual bool shouldClose();
         
         virtual ~Window();
 
-		void getVulkanRequiredInstanceExtensions(std::vector<const char *>& extensions);
+		virtual void getVulkanRequiredInstanceExtensions(std::vector<const char *>& extensions);
         
-        VkSurfaceKHR createVulkanSurface(VkInstance instance, VkAllocationCallbacks * allocationCallbacks = nullptr);
+        virtual VkSurfaceKHR createVulkanSurface(VkInstance instance, VkAllocationCallbacks * allocationCallbacks = nullptr);
 
     protected:
         Window();
         
-        void * _windowPtr = nullptr;
         bg2math::int2 _size = bg2math::int2(800,600);
         std::string _title = "Window";
         float _lastFrameTime = 0.0f;
         VkSurfaceKHR _surface = VK_NULL_HANDLE;
         
         std::shared_ptr<WindowDelegate> _windowDelegate;
-        
-        bool updateWindowSize();
-        void frame();
+
+        virtual void windowSizeWillChange(const bg2math::int2 & newSize) {}
+        virtual void windowSizeDidChange(const bg2math::int2 & newSize) {}
+        virtual void windowTitleWillChange(const std::string & newTitle) {}
+        virtual void windowTitleDidChange(const std::string & title) {}
+        virtual void windowDelegateWillChange(WindowDelegate * del) {}
+        virtual void windowDelegateDidChange(WindowDelegate * del) {}
     };
 }
 #endif
