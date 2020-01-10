@@ -11,7 +11,6 @@ if (UNIX AND NOT APPLE)
     find_package(X11 REQUIRED)
 endif()
 
-find_package(GLFW REQUIRED)
 find_package(Vulkan REQUIRED)
 
 if (Vulkan_FOUND)
@@ -19,12 +18,6 @@ if (Vulkan_FOUND)
     message("  Include directory:" ${Vulkan_INCLUDE_DIRS})
     message("  Library directory:" ${Vulkan_LIBRARIES})
     message("  Shader build tool:" ${Vulkan_SHADER_BUILD})
-endif()
-
-if (GLFW_FOUND)
-    message("GLFW found:")
-    message("  Include directory:" ${GLFW_INCLUDE_DIRS})
-    message("  Library directory:" ${GLFW_LIBRARIES})
 endif()
 
 # Version number
@@ -78,4 +71,4 @@ add_subdirectory(bg2-render)
 add_subdirectory(ExecutableTest)
 
 # Examples
-add_subdirectory(examples/glfw)
+add_subdirectory(examples/wnd)
