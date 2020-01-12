@@ -4,15 +4,23 @@
 
 #if BG2_PLATFORM_WINDOWS
 #include <windows.h>
+
+// Header and library for high dpi support
 #include <ShellScalingApi.h>
+#pragma comment(lib, "shcore.lib")
+
+#include <stdexcept>
 
 static LPCSTR WindowClass = "Bg2NativeWindow";
+
 
 #endif
 
 namespace bg2wnd {
 
 #if BG2_PLATFORM_WINDOWS
+
+	LRESULT CALLBACK _WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 	void Win32Window::build() {
 		WNDCLASSA wc;
@@ -35,23 +43,23 @@ namespace bg2wnd {
 		rect.bottom = static_cast<long>(_size.height() + _position.y());
 
 
-//		_hInstance = GetModuleHandle(0);
-//		wc.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
-//		wc.lpfnWndProc = (WNDPROC) vwgl_app_WindowProc;
-//		wc.cbClsExtra = 0;
-//		wc.cbWndExtra = 0;
-//		wc.hInstance = bg::native_cast<HINSTANCE>(_hInstance);
-//		wc.hIcon = LoadIcon(0, IDI_WINLOGO);
-//		wc.hCursor = LoadCursor(0, IDC_ARROW);
-//		wc.hbrBackground = 0;
-//		wc.lpszMenuName = 0;
-//		wc.lpszClassName = WindowClass;
-//
+		_hInstance = GetModuleHandle(0);
+		wc.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
+		wc.lpfnWndProc = (WNDPROC) _WindowProc;
+		wc.cbClsExtra = 0;
+		wc.cbWndExtra = 0;
+		wc.hInstance = bg2base::native_cast<HINSTANCE>(_hInstance);
+		wc.hIcon = LoadIcon(0, IDI_WINLOGO);
+		wc.hCursor = LoadCursor(0, IDC_ARROW);
+		wc.hbrBackground = 0;
+		wc.lpszMenuName = 0;
+		wc.lpszClassName = WindowClass;
+
 //		_controller->eventHandler()->buildMenu(_menu);
-//
-//		if (!RegisterClassA(&wc)) {
-//			return false;
-//		}
+
+		if (!RegisterClassA(&wc)) {
+			throw std::runtime_error("Unexpected error registering window class.");
+		}
 //
 //		if (_fullscreen) {
 //			DEVMODE dmScreenSettings;
@@ -78,28 +86,29 @@ namespace bg2wnd {
 //			rect.bottom = static_cast<long>(_rect.height());
 //		}
 //		else {
-//			dwExStyle = WS_EX_APPWINDOW | WS_EX_WINDOWEDGE;
-//			dwStyle = WS_OVERLAPPEDWINDOW;
+			dwExStyle = WS_EX_APPWINDOW | WS_EX_WINDOWEDGE;
+			dwStyle = WS_OVERLAPPEDWINDOW;
 //		}
 //
-//		AdjustWindowRectEx(&rect, dwStyle, _menu.size() > 0, dwExStyle);
-//		int newPosX = _rect.x() + _rect.x() - rect.left;
-//		int newPosY = _rect.y() + _rect.y() - rect.top;
+		bool haveMenu = false;
+		AdjustWindowRectEx(&rect, dwStyle, haveMenu, dwExStyle);
+		int newPosX = _position.x() + _position.x() - rect.left;
+		int newPosY = _position.y() + _position.y() - rect.top;
 //
-//		LPCSTR title = _title.c_str();
-//		if (!(_hWnd = CreateWindowExA(dwExStyle, WindowClass, title, dwStyle | WS_CLIPSIBLINGS | WS_CLIPCHILDREN,
-//			_rect.x(), _rect.y(), rect.right - rect.left, rect.bottom - rect.top,
-//			0, 0, bg::native_cast<HINSTANCE>(_hInstance), 0)))
-//		{
-//			destroy();
-//			return false;
-//		}
+		LPCSTR title = _title.c_str();
+		if (!(_hWnd = CreateWindowExA(dwExStyle, WindowClass, title, dwStyle | WS_CLIPSIBLINGS | WS_CLIPCHILDREN,
+			_position.x(), _position.y(), rect.right - rect.left, rect.bottom - rect.top,
+			0, 0, bg2base::native_cast<HINSTANCE>(_hInstance), 0)))
+		{
+			destroy();
+			throw std::runtime_error("Unexpected error creating window");
+		}
 //
 //		if (_controller->eventHandler()) {
 //			buildMenu();
 //			_controller->eventHandler()->willCreateContext();
 //		}
-//
+
 //		if (//bg::Engine::Get()->identifier()==bg::Engine::Identifier<bg::engine::OpenGLCompatibility>() ||
 //			bg::Engine::Get()->identifier() == bg::Engine::Identifier<bg::engine::OpenGLCore>()) {
 //			if (!(_hDC = GetDC(bg::native_cast<HWND>(_hWnd)))) {
@@ -118,9 +127,9 @@ namespace bg2wnd {
 //
 //		}
 //
-//		ShowWindow(bg::native_cast<HWND>(_hWnd), SW_SHOW);
-//		SetForegroundWindow(bg::native_cast<HWND>(_hWnd));
-//		SetFocus(bg::native_cast<HWND>(_hWnd));
+		ShowWindow(bg2base::native_cast<HWND>(_hWnd), SW_SHOW);
+		SetForegroundWindow(bg2base::native_cast<HWND>(_hWnd));
+		SetFocus(bg2base::native_cast<HWND>(_hWnd));
 //
 //		if (bg::Engine::Get()->identifier() == bg::Engine::Identifier<bg::engine::DirectX11>()) {
 //			DirectXContext * dxContext = new DirectXContext(this);
@@ -137,8 +146,8 @@ namespace bg2wnd {
 //		}
 //
 //		_controller->initGL();
-//		_rect.x(newPosX);
-//		_rect.y(newPosY);
+		_position.setX(newPosX);
+		_position.setY(newPosY);
 //
 //		_controller->reshape(_rect.width(), _rect.height());
 //
@@ -150,6 +159,26 @@ namespace bg2wnd {
 
 	bool Win32Window::shouldClose() {
 		return true;
+	}
+
+	void Win32Window::destroy() {
+		//_controller->destroy();
+
+		//if (_fullscreen) {
+		//	ChangeDisplaySettings(0, 0);
+		//}
+
+		if (_hDC) {
+			ReleaseDC(bg2base::native_cast<HWND>(_hWnd), bg2base::native_cast<HDC>(_hDC));
+			_hDC = 0;
+		}
+
+		if (_hWnd) {
+			DestroyWindow(bg2base::native_cast<HWND>(_hWnd));
+			_hWnd = 0;
+		}
+
+		UnregisterClassA(WindowClass, bg2base::native_cast<HINSTANCE>(_hInstance));
 	}
 
 	LRESULT CALLBACK _WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {

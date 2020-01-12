@@ -51,6 +51,8 @@ namespace bg2wnd {
         virtual void build() = 0;
         
         virtual bool shouldClose() = 0;
+
+        virtual void destroy() = 0;
         
         virtual ~Window();
 

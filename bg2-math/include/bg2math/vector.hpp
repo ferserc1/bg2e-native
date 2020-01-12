@@ -41,6 +41,8 @@ namespace bg2math {
         inline T x() const { return _v[0]; }
         inline T & y() { return _v[1]; }
         inline T y() const { return _v[1]; }
+        inline void setX(T x) { _v[0] = x; }
+        inline void setY(T y) { _v[1] = y; }
 
 		inline T& width() { return _v[0]; }
 		inline const T& width() const { return _v[0]; }
@@ -153,6 +155,10 @@ namespace bg2math {
         inline T & z() { return _v[2]; }
         inline T z() const { return _v[2]; }
         
+        inline void setX(T x) { _v[0] = x; }
+        inline void setY(T y) { _v[1] = y; }
+        inline void setZ(T z) { _v[2] = z; }
+
         inline vec2<T> xy() const { return vec2<T>(_v[0], _v[1]); }
         inline vec2<T> yz() const { return vec2<T>(_v[1], _v[2]); }
         inline vec2<T> xz() const { return vec2<T>(_v[0], _v[2]); }
@@ -283,6 +289,11 @@ namespace bg2math {
         inline T & w() { return _v[3]; }
         inline T w() const { return _v[3]; }
         
+        inline void setX(T x) { _v[0] = x; }
+        inline void setY(T y) { _v[1] = y; }
+        inline void setZ(T z) { _v[2] = z; }
+        inline void setW(T w) { _v[3] = w; }
+
         inline vec3<T> xyz() const { return vec3<T>(_v[0], _v[1], _v[2]); }
         
         inline T & r() { return _v[0]; }

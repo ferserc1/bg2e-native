@@ -3,6 +3,7 @@
 
 #include <bg2wnd/window.hpp>
 #include <bg2base/platform.hpp>
+#include <bg2base/export.hpp>
 
 namespace bg2wnd {
 
@@ -13,6 +14,8 @@ namespace bg2wnd {
 
 		virtual bool shouldClose() override;
 	
+		virtual void destroy() override;
+
 	protected:
 		bg2base::plain_ptr _hDC = nullptr;
 		bg2base::plain_ptr _hWnd = nullptr;
