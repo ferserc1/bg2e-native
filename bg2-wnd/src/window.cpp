@@ -13,7 +13,7 @@
 
 namespace bg2wnd {
     
-    Window * Window::Create() {
+    Window * Window::New() {
 #if BG2_PLATFORM_WINDOWS
         return new Win32Window();
 #elif BG2_PLATFORM_MACOS
@@ -25,8 +25,10 @@ namespace bg2wnd {
 #endif
     }
     
-    Window::Window() {
-        
+    Window::Window()
+        :_t0Clock(std::clock())
+        ,_t1Clock(std::clock())
+    {
     }
     
     Window::~Window() {

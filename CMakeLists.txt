@@ -72,3 +72,4 @@ add_subdirectory(ExecutableTest)
 
 # Examples
 add_subdirectory(examples/wnd)
+add_subdirectory(examples/cube)

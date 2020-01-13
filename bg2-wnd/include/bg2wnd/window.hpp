@@ -10,6 +10,7 @@
 #include <memory>
 #include <map>
 #include <vector>
+#include <ctime>
 
 #include <vulkan/vulkan.h>
 
@@ -19,7 +20,7 @@ namespace bg2wnd {
     class Window {
         friend class Application;
     public:
-        static Window * Create();
+        static Window * New();
         
         inline void setPosition(const bg2math::int2 & pos) {
             windowPositionWillChange(pos);
@@ -60,6 +61,12 @@ namespace bg2wnd {
         
         virtual VkSurfaceKHR createVulkanSurface(VkInstance instance, VkAllocationCallbacks * allocationCallbacks = nullptr);
 
+        inline void setT0Clock(std::clock_t t) { _t0Clock = t; }
+        inline std::clock_t t0Clock() const { return _t0Clock; }
+        inline void setT1Clock(std::clock_t t) { _t1Clock = t; }
+        inline std::clock_t t1Clock() const { return _t1Clock; }
+        inline float deltaTime() const { return _t1Clock<_t0Clock ? 0.0f : static_cast<float>(_t1Clock - _t0Clock) / CLOCKS_PER_SEC; }
+
     protected:
         Window();
         
@@ -70,6 +77,9 @@ namespace bg2wnd {
         VkSurfaceKHR _surface = VK_NULL_HANDLE;
         
         std::shared_ptr<WindowDelegate> _windowDelegate;
+
+        std::clock_t _t0Clock;
+        std::clock_t _t1Clock;
 
         virtual void windowPositionWillChange(const bg2math::int2 & newpos) {}
         virtual void windowPositionDidChange(const bg2math::int2 & newpos) {}

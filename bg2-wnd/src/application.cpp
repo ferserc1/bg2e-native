@@ -8,16 +8,31 @@
 
 namespace bg2wnd {
     
-    Application * Application::Create() {
-#if BG2_PLATFORM_WINDOWS
-        return new Win32Application();
-#elif BG2_PLATFORM_MACOS
-        return nullptr;
-#elif BG2_PLATFORM_LINUX
-        return nullptr;
-#else
-        return nullptr;
-#endif
+    Application * Application::s_Application = nullptr;
+    static bool s_destroyCalled = false;
+
+    Application * Application::Get() {
+        if (!s_Application) {
+            if (s_destroyCalled) {
+                throw std::runtime_error("Attempting to create application singleton after the end of the main event loop.");
+            }
+
+    #if BG2_PLATFORM_WINDOWS
+            s_Application = new Win32Application();
+    #elif BG2_PLATFORM_MACOS
+            throw std::runtime_error("This platform is not implemented.");
+    #elif BG2_PLATFORM_LINUX
+            throw std::runtime_error("This platform is not implemented.");
+    #else
+            throw std::runtime_error("Unrecognized platform.");
+    #endif
+        }
+        return s_Application;
+    }
+
+    void Application::Destroy() {
+        s_destroyCalled = true;
+        delete s_Application;
     }
 
     Application::Application()

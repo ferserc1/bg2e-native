@@ -1,5 +1,6 @@
 
 #include <bg2wnd/win32_application.hpp>
+#include <bg2wnd/win32_window.hpp>
 
 #if BG2_PLATFORM_WINDOWS
 #include <windows.h>
@@ -15,34 +16,56 @@ namespace bg2wnd {
 
 	int Win32Application::run() {
 		MSG msg;
-		bool done = false;
-
-		while (!done) {
+		int exitCode = 0;
+		while (_windows.size() > 0) {
 			if (PeekMessage(&msg, 0, 0, 0, PM_REMOVE)) {
 				if (msg.message == WM_QUIT) {
-					done = true;
+					_windows.empty();
 				}
 				TranslateMessage(&msg);
 				DispatchMessage(&msg);
 			}
 			else {
-				//std::clock_t lastClock = controller->getLastClock();
-				//std::clock_t clock = std::clock();
-				//delta = static_cast<float>(clock - lastClock) / CLOCKS_PER_SEC;
-				//controller->setLastClock(std::clock());
-				//controller->frame(delta);
-				//controller->draw();
+				std::vector<std::shared_ptr<Window>>::iterator closingWindow = _windows.end(), w;
+				for (w = _windows.begin(); w != _windows.end(); ++w) {
+					if ((*w)->shouldClose()) {
+						closingWindow = w;
+						break;
+					}
+					else if ((*w)->windowDelegate()) {		
+						(*w)->setT1Clock(std::clock());
+						(*w)->windowDelegate()->update((*w)->deltaTime());
+						(*w)->windowDelegate()->draw();						
+						(*w)->setT0Clock(std::clock());
+					}
+				}
+
+				if (closingWindow != _windows.end()) {
+					(*closingWindow)->destroy();
+					_windows.erase(closingWindow);
+				}
 			}
 		}
 
-		// TODO: destroy application
-		// this->destroy();
-		return 0;
+		Destroy();
+
+		return exitCode;
+	}
+
+	Window * Win32Application::getWindow(bg2base::plain_ptr nativeWindowHandler) {
+		for (auto w : _windows) {
+			Win32Window * window = dynamic_cast<Win32Window*>(w.get());
+			if (window && window->hWnd() == nativeWindowHandler) {
+				return w.get();
+			}
+		}
+		return nullptr;
 	}
 
 #else
 	void Win32Application::build() {}
 	int Win32Application::run() {}
+	Window * Win32Application::getWindow(bg2base::plain_ptr nativeWindowHandler) {}
 #endif
 
 }

@@ -20,9 +20,9 @@ namespace bg2wnd {
         virtual void draw() {}
         virtual void cleanup() {}
         
-        // TODO: implement events
         virtual void keyDown(const KeyboardEvent &) {}
         virtual void keyUp(const KeyboardEvent &) {}
+        virtual void charPress(const KeyboardEvent &) {}
     
         virtual void mouseMove(const MouseEvent &) {}
         virtual void mouseDown(const MouseEvent &) {}
