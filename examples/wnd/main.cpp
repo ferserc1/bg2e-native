@@ -67,10 +67,44 @@ public:
         printKeyEvent(e);
     }
 
-    void mouseMove(const bg2wnd::MouseEvent & e) {}
-    void mouseDown(const bg2wnd::MouseEvent & e) {}
-    void mouseUp(const bg2wnd::MouseEvent & e) {}
-    void mouseWheel(const bg2wnd::MouseEvent & e) {}
+    void mouseMove(const bg2wnd::MouseEvent & e) {
+        std::cout << window()->title() << ": MouseMove - " << e.posX() << "," << e.posY() << std::endl;
+    }
+
+    void mouseDown(const bg2wnd::MouseEvent & e) {
+        std::cout << window()->title() << ": MouseDown - "
+            << "Button: " << eventButtonString(e) 
+            << e.posX() << "," << e.posY() << std::endl;
+    }
+
+    void mouseUp(const bg2wnd::MouseEvent & e) {
+        std::cout << window()->title() << ": MouseUp - " 
+            << "Button: " << eventButtonString(e)
+            << e.posX() << "," << e.posY() << std::endl;
+    }
+
+    void mouseWheel(const bg2wnd::MouseEvent & e) {
+        std::cout << window()->title() << ": MouseWheel - "
+            << e.posX() << "," << e.posY() << 
+            ", delta=" << e.wheelDeltaX() << "," << e.wheelDeltaY() << std::endl;
+    }
+
+    inline std::string eventButtonString(const bg2wnd::MouseEvent & e) {
+        switch (e.eventButton()) {
+        case bg2wnd::MouseButton::ButtonLeft:
+            return "Left";
+        case bg2wnd::MouseButton::ButtonMiddle:
+            return "Middle";
+        case bg2wnd::MouseButton::ButtonRight:
+            return "Right";
+        case bg2wnd::MouseButton::Button4:
+            return "4";
+        case bg2wnd::MouseButton::Button5:
+            return "5";
+        default:
+            return "None";
+        }
+    }
 
     inline void printKeyEvent(const bg2wnd::KeyboardEvent & e) const {
         std::cout << " " <<
