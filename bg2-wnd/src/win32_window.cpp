@@ -152,10 +152,187 @@ namespace bg2wnd {
 		UnregisterClassA(_windowClass.c_str(), bg2base::native_cast<HINSTANCE>(_hInstance));
 	}
 
+	static std::map<WPARAM, KeyCode> s_KeyCodes = {
+		{ VK_OEM_COMMA, KeyCode::KeyCOMMA },
+		{ VK_OEM_MINUS, KeyCode::KeyMINUS },
+		{ VK_OEM_PERIOD, KeyCode::KeyPERIOD },
+		{ VK_BACK, KeyCode::KeyBACKSPACE },
+		{ VK_TAB, KeyCode::KeyTAB },
+		{ VK_CLEAR, KeyCode::KeyUNKNOWN },
+		{ VK_RETURN, KeyCode::KeyENTER },
+		{ VK_PAUSE, KeyCode::KeyPAUSE },
+		{ VK_ESCAPE, KeyCode::KeyESCAPE },
+		{ VK_SPACE, KeyCode::KeySPACE },
+		{ VK_PRIOR, KeyCode::KeyPAGE_UP },
+		{ VK_NEXT, KeyCode::KeyPAGE_DOWN },
+		{ VK_END, KeyCode::KeyEND },
+		{ VK_HOME, KeyCode::KeyHOME },
+		{ VK_LEFT, KeyCode::KeyLEFT },
+		{ VK_UP, KeyCode::KeyUP },
+		{ VK_RIGHT, KeyCode::KeyRIGHT },
+		{ VK_DOWN, KeyCode::KeyDOWN },
+		{ VK_PRINT, KeyCode::KeyPRINT_SCREEN },
+		{ VK_INSERT, KeyCode::KeyINSERT },
+		{ VK_DELETE, KeyCode::KeyDELETE },
+		{ VK_NUMPAD0, KeyCode::KeyNUMPAD0 },
+		{ VK_NUMPAD1, KeyCode::KeyNUMPAD1 },
+		{ VK_NUMPAD2, KeyCode::KeyNUMPAD2 },
+		{ VK_NUMPAD3, KeyCode::KeyNUMPAD3 },
+		{ VK_NUMPAD4, KeyCode::KeyNUMPAD4 },
+		{ VK_NUMPAD5, KeyCode::KeyNUMPAD5 },
+		{ VK_NUMPAD6, KeyCode::KeyNUMPAD6 },
+		{ VK_NUMPAD7, KeyCode::KeyNUMPAD7 },
+		{ VK_NUMPAD8, KeyCode::KeyNUMPAD8 },
+		{ VK_NUMPAD9, KeyCode::KeyNUMPAD9 },
+		{ VK_MULTIPLY, KeyCode::KeyKP_MULTIPLY },
+		{ VK_ADD, KeyCode::KeyKP_ADD },
+		{ VK_SUBTRACT, KeyCode::KeyKP_SUBTRACT },
+		{ VK_DECIMAL, KeyCode::KeyKP_DECIMAL },
+		{ VK_DIVIDE, KeyCode::KeyKP_DIVIDE },
+		{ VK_F1, KeyCode::KeyF1 },
+		{ VK_F2, KeyCode::KeyF2 },
+		{ VK_F3, KeyCode::KeyF3 },
+		{ VK_F4, KeyCode::KeyF4 },
+		{ VK_F5, KeyCode::KeyF5 },
+		{ VK_F6, KeyCode::KeyF6 },
+		{ VK_F7, KeyCode::KeyF7 },
+		{ VK_F8, KeyCode::KeyF8 },
+		{ VK_F9, KeyCode::KeyF9 },
+		{ VK_F10, KeyCode::KeyF10 },
+		{ VK_F11, KeyCode::KeyF11 },
+		{ VK_F12, KeyCode::KeyF12 },
+		{ VK_F13, KeyCode::KeyF13 },
+		{ VK_F14, KeyCode::KeyF14 },
+		{ VK_F15, KeyCode::KeyF15 },
+		{ VK_F16, KeyCode::KeyF16 },
+		{ VK_F17, KeyCode::KeyF17 },
+		{ VK_F18, KeyCode::KeyF18 },
+		{ VK_F19, KeyCode::KeyF19 },
+		{ VK_F20, KeyCode::KeyF20 },
+		{ VK_F21, KeyCode::KeyF21 },
+		{ VK_F22, KeyCode::KeyF22 },
+		{ VK_F23, KeyCode::KeyF23 },
+		{ VK_F24, KeyCode::KeyF24 },
+		{ 0x30, KeyCode::Key0 },
+		{ 0x31, KeyCode::Key1 },
+		{ 0x32, KeyCode::Key2 },
+		{ 0x33, KeyCode::Key3 },
+		{ 0x34, KeyCode::Key4 },
+		{ 0x35, KeyCode::Key5 },
+		{ 0x36, KeyCode::Key6 },
+		{ 0x37, KeyCode::Key7 },
+		{ 0x38, KeyCode::Key8 },
+		{ 0x39, KeyCode::Key9 },
+		{ 0x41, KeyCode::KeyA },
+		{ 0x42, KeyCode::KeyB },
+		{ 0x43, KeyCode::KeyC },
+		{ 0x44, KeyCode::KeyD },
+		{ 0x45, KeyCode::KeyE },
+		{ 0x46, KeyCode::KeyF },
+		{ 0x47, KeyCode::KeyG },
+		{ 0x48, KeyCode::KeyH },
+		{ 0x49, KeyCode::KeyI },
+		{ 0x4A, KeyCode::KeyJ },
+		{ 0x4B, KeyCode::KeyK },
+		{ 0x4C, KeyCode::KeyL },
+		{ 0x4D, KeyCode::KeyM },
+		{ 0x4E, KeyCode::KeyN },
+		{ 0x4F, KeyCode::KeyO },
+		{ 0x50, KeyCode::KeyP },
+		{ 0x51, KeyCode::KeyQ },
+		{ 0x52, KeyCode::KeyR },
+		{ 0x53, KeyCode::KeyS },
+		{ 0x54, KeyCode::KeyT },
+		{ 0x55, KeyCode::KeyU },
+		{ 0x56, KeyCode::KeyV },
+		{ 0x57, KeyCode::KeyW },
+		{ 0x58, KeyCode::KeyX },
+		{ 0x59, KeyCode::KeyY },
+		{ 0x5A, KeyCode::KeyZ }
+	};
+
+	static std::map<WPARAM, std::string> s_KeyCharacters = {
+		{ VK_OEM_COMMA, "," },
+		{ VK_OEM_MINUS, "-" },
+		{ VK_OEM_PERIOD, "." },
+		{ VK_TAB, "\t" },
+		{ VK_RETURN, "\r" },
+		{ VK_SPACE, " " },
+		{ VK_NUMPAD0, "0" },
+		{ VK_NUMPAD1, "1" },
+		{ VK_NUMPAD2, "2" },
+		{ VK_NUMPAD3, "3" },
+		{ VK_NUMPAD4, "4" },
+		{ VK_NUMPAD5, "5" },
+		{ VK_NUMPAD6, "6" },
+		{ VK_NUMPAD7, "7" },
+		{ VK_NUMPAD8, "8" },
+		{ VK_NUMPAD9, "9" },
+		{ VK_MULTIPLY, "*" },
+		{ VK_ADD, "+" },
+		{ VK_SUBTRACT, "-" },
+		{ VK_DECIMAL, "." },
+		{ VK_DIVIDE, "/" },
+		{ 0x30, "0" },
+		{ 0x31, "1" },
+		{ 0x32, "2" },
+		{ 0x33, "3" },
+		{ 0x34, "4" },
+		{ 0x35, "5" },
+		{ 0x36, "6" },
+		{ 0x37, "7" },
+		{ 0x38, "8" },
+		{ 0x39, "9" },
+		{ 0x41, "A" },
+		{ 0x42, "B" },
+		{ 0x43, "C" },
+		{ 0x44, "D" },
+		{ 0x45, "E" },
+		{ 0x46, "F" },
+		{ 0x47, "G" },
+		{ 0x48, "H" },
+		{ 0x49, "I" },
+		{ 0x4A, "J" },
+		{ 0x4B, "K" },
+		{ 0x4C, "L" },
+		{ 0x4D, "M" },
+		{ 0x4E, "N" },
+		{ 0x4F, "O" },
+		{ 0x50, "P" },
+		{ 0x51, "Q" },
+		{ 0x52, "R" },
+		{ 0x53, "S" },
+		{ 0x54, "T" },
+		{ 0x55, "U" },
+		{ 0x56, "V" },
+		{ 0x57, "W" },
+		{ 0x58, "X" },
+		{ 0x59, "Y" },
+		{ 0x5A, "Z" }
+	};
+
 	LRESULT CALLBACK Win32Window::WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 		Win32Window * window = Application::Get()->getWindow<Win32Window>(hWnd);
 		WindowDelegate * winDelegate = window != nullptr ? window->windowDelegate() : nullptr;
-		KeyboardEvent kbEvent(KeyCode::KeyUNKNOWN, false, false, false, false);
+
+		auto getKeyEvent = [wParam]() -> KeyboardEvent {
+			KeyCode code = KeyCode::KeyUNKNOWN;
+			std::string character = "";
+			if (s_KeyCodes.find(wParam) != s_KeyCodes.end()) {
+				code = s_KeyCodes[wParam];
+			}
+			if (s_KeyCharacters.find(wParam) != s_KeyCharacters.end()) {
+				character = s_KeyCharacters[wParam];
+			}
+			return KeyboardEvent(
+				code,
+				character,
+				GetKeyState(VK_SHIFT) & 8000, 
+				GetKeyState(VK_CONTROL) & 8000, 
+				GetKeyState(VK_MENU) & 8000, 
+				GetKeyState(VK_CAPITAL) & 8000);
+		};
+
 		MouseEvent mouseEvent(0,0,false, false, false, false, false, 0.0f, 0.0f);
 
 		if (window && winDelegate) {
@@ -165,24 +342,14 @@ namespace bg2wnd {
 				break;
 			case WM_SYSKEYDOWN:
 			case WM_KEYDOWN:
-				if (wParam == VK_MENU) {
-					//altPressed = true;
-				}
-//				fillKeyboard(kbEvent.keyboard(), static_cast<unsigned char>(wParam), altPressed);
-
-				winDelegate->keyDown(kbEvent);
+				winDelegate->keyDown(getKeyEvent());
 				break;
 			case WM_CHAR:
-//				fillKeyboard(kbEvent.keyboard(), static_cast<unsigned long>(wParam), false);
-				winDelegate->charPress(kbEvent);
+				winDelegate->charPress(getKeyEvent());
 				break;
 			case WM_KEYUP:
 			case WM_SYSKEYUP:
-				if (wParam == VK_MENU) {
-//					altPressed = false;
-				}
-//				fillKeyboard(kbEvent.keyboard(), static_cast<unsigned char>(wParam), altPressed);
-				winDelegate->keyUp(kbEvent);
+				winDelegate->keyUp(getKeyEvent());
 				break;
 			case WM_LBUTTONDOWN:
 //				mainLoop->mouse().setMouseDown(bg::base::Mouse::kLeftButton);

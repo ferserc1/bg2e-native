@@ -2,6 +2,8 @@
 #ifndef _bg2_wnd_keyboard_event_hpp_
 #define _bg2_wnd_keyboard_event_hpp_
 
+#include <string>
+
 namespace bg2wnd {
 
     enum class KeyCode {
@@ -22,6 +24,16 @@ namespace bg2wnd {
         Key7 = 55,
         Key8 = 56,
         Key9 = 57,
+        KeyNUMPAD0 = 2048,
+        KeyNUMPAD1 = 2049,
+        KeyNUMPAD2 = 2050,
+        KeyNUMPAD3 = 2051,
+        KeyNUMPAD4 = 2052,
+        KeyNUMPAD5 = 2053,
+        KeyNUMPAD6 = 2054,
+        KeyNUMPAD7 = 2055,
+        KeyNUMPAD8 = 2056,
+        KeyNUMPAD9 = 2057,
         KeySEMICOLON = 59,
         KeyEQUAL = 61,
         KeyA = 65,
@@ -100,16 +112,6 @@ namespace bg2wnd {
         KeyF23 = 312,
         KeyF24 = 313,
         KeyF25 = 314,
-        KeyKP_0 = 320,
-        KeyKP_1 = 321,
-        KeyKP_2 = 322,
-        KeyKP_3 = 323,
-        KeyKP_4 = 324,
-        KeyKP_5 = 325,
-        KeyKP_6 = 326,
-        KeyKP_7 = 327,
-        KeyKP_8 = 328,
-        KeyKP_9 = 329,
         KeyKP_DECIMAL = 330,
         KeyKP_DIVIDE = 331,
         KeyKP_MULTIPLY = 332,
@@ -130,13 +132,14 @@ namespace bg2wnd {
 
     class KeyboardEvent {
     public:
-        KeyboardEvent(KeyCode key, bool shift, bool ctrl, bool alt, bool capsLock);
+        KeyboardEvent(KeyCode key, const std::string & character, bool shift, bool ctrl, bool alt, bool capsLock);
         
         inline bool shiftEnabled() const { return _shift; }
         inline bool controlEnabled() const { return _control; }
         inline bool altEnabled() const { return _alt; } 
         inline bool capsLockEnabled() const { return _capsLock; }
         inline KeyCode keyCode() const { return _key; }
+        inline const std::string & character() const { return _character; }
 
         protected:
             bool _shift;
@@ -145,6 +148,8 @@ namespace bg2wnd {
             bool _capsLock;
 
             KeyCode _key;
+            
+            std::string _character;
         };
 
    }

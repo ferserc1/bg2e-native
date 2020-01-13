@@ -29,6 +29,7 @@
 #include <iostream>
 #include <array>
 #include <chrono>
+#include <thread>
 
 class MyWindowDelegate : public bg2wnd::WindowDelegate {
 public:
@@ -43,24 +44,41 @@ public:
     }
 
     void update(float delta) {
-        std::cout << window()->title() << ": Update (" << delta * 1000.0f << "ms)" << std::endl;
+        //std::cout << window()->title() << ": Update (" << delta * 1000.0f << "ms)" << std::endl;
     }
 
     void draw() {
-        std::cout << window()->title() << ": Draw" << std::endl;
+        //std::cout << window()->title() << ": Draw" << std::endl;
     }
 
     void cleanup() {
         std::cout << window()->title() << ": Cleanup" << std::endl;
     }
 
-    void keyUp(const bg2wnd::KeyboardEvent & e) {}
+    void keyUp(const bg2wnd::KeyboardEvent & e) {
+        std::cout << window()->title() << ": KeyUp - " << e.character();
+        printKeyEvent(e);
+    }
+
     void charPress(const bg2wnd::KeyboardEvent & e) {}
-    void keyDown(const bg2wnd::KeyboardEvent & e) {}
+
+    void keyDown(const bg2wnd::KeyboardEvent & e) {
+        std::cout << window()->title() << ": KeyDown - " << e.character();
+        printKeyEvent(e);
+    }
+
     void mouseMove(const bg2wnd::MouseEvent & e) {}
     void mouseDown(const bg2wnd::MouseEvent & e) {}
     void mouseUp(const bg2wnd::MouseEvent & e) {}
     void mouseWheel(const bg2wnd::MouseEvent & e) {}
+
+    inline void printKeyEvent(const bg2wnd::KeyboardEvent & e) const {
+        std::cout << " " <<
+            "alt:" << (e.altEnabled() ? "true" : "false") << ", " <<
+            "ctrl:" << (e.controlEnabled() ? "true" : "false") << ", " <<
+            "shift:" << (e.shiftEnabled() ? "true" : "false") << ", " <<
+            "capsLock:" << (e.capsLockEnabled() ? "true" : "false") << std::endl;
+    }
 };
 
 int main(int argc, char ** argv) {
