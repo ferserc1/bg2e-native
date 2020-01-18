@@ -73,13 +73,13 @@ public:
 
     void mouseDown(const bg2wnd::MouseEvent & e) {
         std::cout << window()->title() << ": MouseDown - "
-            << "Button: " << eventButtonString(e) 
+            << "Button: " << eventButtonString(e) << " - "
             << e.posX() << "," << e.posY() << std::endl;
     }
 
     void mouseUp(const bg2wnd::MouseEvent & e) {
         std::cout << window()->title() << ": MouseUp - " 
-            << "Button: " << eventButtonString(e)
+            << "Button: " << eventButtonString(e) << " - "
             << e.posX() << "," << e.posY() << std::endl;
     }
 

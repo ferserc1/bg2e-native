@@ -333,7 +333,7 @@ namespace bg2wnd {
 				GetKeyState(VK_CAPITAL) & 8000);
 		};
 
-		auto getMouseEvent = [wParam, lParam, window](MouseButton evtButton = MouseButton::ButtonNone, float wheelDelta = 0) -> MouseEvent {
+		auto getMouseEvent = [wParam, lParam, window](MouseButton evtButton = MouseButton::ButtonNone, float wheelDelta = 0.0f) -> MouseEvent {
 			POINT p;
 			bg2math::int2 position;
 			GetCursorPos(&p);
@@ -367,54 +367,28 @@ namespace bg2wnd {
 				winDelegate->keyUp(getKeyEvent());
 				break;
 			case WM_LBUTTONDOWN:
-//				mainLoop->mouse().setMouseDown(bg::base::Mouse::kLeftButton);
-//				fillKeyboard(mouseEvent.keyboard(), '\0', altPressed);
-//				fillMouseEvent(mouseEvent, mainLoop);
 				winDelegate->mouseDown(getMouseEvent(MouseButton::ButtonLeft));
 				break;
 			case WM_LBUTTONUP:
-//				mainLoop->mouse().setMouseUp(bg::base::Mouse::kLeftButton);
-//				fillKeyboard(mouseEvent.keyboard(), '\0', altPressed);
-//				mouseEvent.mouse().setReleasedButton(bg::base::Mouse::kLeftButton);
-//				fillMouseEvent(mouseEvent, mainLoop);
 				winDelegate->mouseUp(getMouseEvent(MouseButton::ButtonLeft));
 				break;
 			case WM_RBUTTONDOWN:
-//				mainLoop->mouse().setMouseDown(bg::base::Mouse::kRightButton);
-//				fillKeyboard(mouseEvent.keyboard(), '\0', altPressed);
-//				fillMouseEvent(mouseEvent, mainLoop);
 				winDelegate->mouseDown(getMouseEvent(MouseButton::ButtonRight));
 				break;
 			case WM_RBUTTONUP:
-//				mainLoop->mouse().setMouseUp(bg::base::Mouse::kRightButton);
-//				fillKeyboard(mouseEvent.keyboard(), '\0', altPressed);
-//				mouseEvent.mouse().setReleasedButton(bg::base::Mouse::kRightButton);
-//				fillMouseEvent(mouseEvent, mainLoop);
 				winDelegate->mouseUp(getMouseEvent(MouseButton::ButtonRight));
 				break;
 			case WM_MBUTTONDOWN:
-//				mainLoop->mouse().setMouseDown(bg::base::Mouse::kMiddleButton);
-//				fillKeyboard(mouseEvent.keyboard(), '\0', altPressed);
-//				fillMouseEvent(mouseEvent, mainLoop);
 				winDelegate->mouseDown(getMouseEvent(MouseButton::ButtonMiddle));
 				break;
 			case WM_MBUTTONUP:
-//				mainLoop->mouse().setMouseUp(bg::base::Mouse::kMiddleButton);
-//				fillKeyboard(mouseEvent.keyboard(), '\0', altPressed);
-//				mouseEvent.mouse().setReleasedButton(bg::base::Mouse::kMiddleButton);
-//				fillMouseEvent(mouseEvent, mainLoop);
 				winDelegate->mouseUp(getMouseEvent(MouseButton::ButtonMiddle));
 				break;
 			case WM_MOUSEMOVE:
-//				fillKeyboard(mouseEvent.keyboard(), '\0', altPressed);
-//				fillMouseEvent(mouseEvent, mainLoop);
-//				if (mouseEvent.mouse().anyButtonPressed()) {
-//					controller->mouseDrag(mouseEvent);
-//				}
 				winDelegate->mouseMove(getMouseEvent());
 				break;
 			case WM_MOUSEWHEEL:
-				winDelegate->mouseWheel(getMouseEvent(MouseButton::ButtonNone, HIWORD(wParam) > 0 ? -1.0f : 1.0f));
+				winDelegate->mouseWheel(getMouseEvent(MouseButton::ButtonNone, static_cast<short>(HIWORD(wParam)) > 0 ? -1.0f : 1.0f));
 				break;
 			case WM_MOUSELEAVE:
 //				if (mainLoop->mouse().getButtonStatus(bg::base::Mouse::kLeftButton)) {
