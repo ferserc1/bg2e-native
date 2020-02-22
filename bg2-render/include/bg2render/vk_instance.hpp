@@ -9,6 +9,7 @@
 
 #include <vulkan/vulkan.h>
 
+#include <bg2base/export.hpp>
 #include <bg2render/vk_definitions.hpp>
 #include <bg2render/vk_physical_device.hpp>
 #include <bg2render/vk_device.hpp>
@@ -26,6 +27,7 @@ namespace bg2render {
 			static Instance* CreateDefault(bg2wnd::Window * window, const std::string & appName);
 
 			typedef std::function<void (VkDebugUtilsMessageSeverityFlagBitsEXT, VkDebugUtilsMessageTypeFlagsEXT, const VkDebugUtilsMessengerCallbackDataEXT*)> DebugCallback;
+
 			Instance();
 			virtual ~Instance();
 

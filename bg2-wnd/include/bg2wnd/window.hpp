@@ -3,6 +3,7 @@
 #ifndef _bg2_wnd_window_hpp_
 #define _bg2_wnd_window_hpp_
 
+#include <bg2base/platform.hpp>
 #include <bg2math/vector.hpp>
 #include <bg2wnd/window_delegate.hpp>
 
@@ -12,6 +13,12 @@
 #include <vector>
 #include <ctime>
 
+#if BG2_PLATFORM_WINDOWS
+#define VK_USE_PLATFORM_WIN32_KHR
+#elif BG2_PLATFORM_LINUX
+#define VK_USE_PLATFORM_XLIB_KHR
+// TODO: other platforms
+#endif
 #include <vulkan/vulkan.h>
 
 namespace bg2wnd {

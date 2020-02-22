@@ -20,7 +20,7 @@ namespace bg2wnd {
 		while (_windows.size() > 0) {
 			if (PeekMessage(&msg, 0, 0, 0, PM_REMOVE)) {
 				if (msg.message == WM_QUIT) {
-					_windows.empty();
+					_windows.clear();
 				}
 				TranslateMessage(&msg);
 				DispatchMessage(&msg);

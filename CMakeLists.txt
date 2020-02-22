@@ -44,6 +44,7 @@ include_directories("${PROJECT_BINARY_DIR}")
 
 # bg2-math library
 include_directories("${PROJECT_SOURCE_DIR}/bg2-math/include")
+# this is necesary to find export.hpp
 include_directories("${PROJECT_SOURCE_DIR}/bg2-base/include")
 add_subdirectory(bg2-math)
 
@@ -67,9 +68,13 @@ add_subdirectory(bg2-wnd)
 include_directories("${PROJECT_SOURCE_DIR}/bg2-render/include")
 add_subdirectory(bg2-render)
 
+# bg2 main include
+include_directories("${PROJECT_SOURCE_DIR}/include")
+
 # Executable test
 add_subdirectory(ExecutableTest)
 
 # Examples
 add_subdirectory(examples/wnd)
+add_subdirectory(examples/vk-instance)
 add_subdirectory(examples/cube)

@@ -1,30 +1,7 @@
 
 
-#include <bg2wnd/application.hpp>
-#include <bg2wnd/window.hpp>
-#include <bg2wnd/window_delegate.hpp>
-#include <bg2render/vk_instance.hpp>
-#include <bg2render/vk_device.hpp>
-#include <bg2render/swap_chain.hpp>
-#include <bg2render/renderer.hpp>
-#include <bg2math/vector.hpp>
-#include <bg2math/utils.hpp>
-#include <bg2db/buffer_load.hpp>
-#include <bg2render/pipeline.hpp>
-#include <bg2render/vertex_buffer.hpp>
-#include <bg2render/index_buffer.hpp>
-#include <bg2render/buffer_utils.hpp>
-#include <bg2render/vk_descriptor_pool.hpp>
-#include <bg2render/single_time_command_buffer.hpp>
-#include <bg2render/vk_image_view.hpp>
-#include <bg2render/vk_sampler.hpp>
-#include <bg2render/vk_image.hpp>
-#include <bg2render/texture.hpp>
-#include <bg2render/drawable_item.hpp>
-#include <bg2render/drawable_descriptor.hpp>
-#include <bg2math/matrix.hpp>
-#include <bg2base/image.hpp>
-#include <bg2db/image_load.hpp>
+
+#include <bg2engine.hpp>
 
 #include <iostream>
 #include <array>

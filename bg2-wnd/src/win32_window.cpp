@@ -6,6 +6,9 @@
 #if BG2_PLATFORM_WINDOWS
 #include <windows.h>
 
+
+
+
 // Header and library for high dpi support
 #include <ShellScalingApi.h>
 #pragma comment(lib, "shcore.lib")
@@ -124,6 +127,29 @@ namespace bg2wnd {
 //			setIcon(_iconPath);
 //		}
 	}
+
+	void Win32Window::getVulkanRequiredInstanceExtensions(std::vector<const char*>& extensions) {
+		extensions.push_back(VK_KHR_SURFACE_EXTENSION_NAME);
+		extensions.push_back(VK_KHR_WIN32_SURFACE_EXTENSION_NAME);
+	}
+
+	VkSurfaceKHR Win32Window::createVulkanSurface(VkInstance instance, VkAllocationCallbacks* allocationCallbacks) {
+		VkSurfaceKHR surface;
+		VkWin32SurfaceCreateInfoKHR surfaceCreateInfo = {
+			VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR,
+			nullptr,
+			0,
+			bg2base::native_cast<HINSTANCE>(_hInstance),
+			bg2base::native_cast<HWND>(_hWnd)
+		};
+		VkResult result = vkCreateWin32SurfaceKHR(instance, &surfaceCreateInfo, nullptr, &surface);
+		if (result != VK_SUCCESS) {
+			throw std::runtime_error("Error creating Win32 vulkan surface.");
+		}
+		return surface;
+	}
+
+
 
 	bool Win32Window::shouldClose() {
 		return _shouldClose;

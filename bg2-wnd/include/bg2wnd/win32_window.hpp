@@ -26,6 +26,11 @@ namespace bg2wnd {
 		const bg2base::plain_ptr hWnd() const { return _hWnd; }
 		const bg2base::plain_ptr hInstance() const { return _hInstance; }
 
+		virtual void getVulkanRequiredInstanceExtensions(std::vector<const char*>& extensions);
+
+		virtual VkSurfaceKHR createVulkanSurface(VkInstance instance, VkAllocationCallbacks* allocationCallbacks = nullptr);
+
+
 	protected:
 		bg2base::plain_ptr _hDC = nullptr;
 		bg2base::plain_ptr _hWnd = nullptr;
