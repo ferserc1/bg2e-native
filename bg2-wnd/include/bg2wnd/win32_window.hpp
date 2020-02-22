@@ -17,6 +17,8 @@ namespace bg2wnd {
 
 		virtual void build() override;
 
+		virtual void close() override;
+
 		virtual bool shouldClose() override;
 	
 		virtual void destroy() override;

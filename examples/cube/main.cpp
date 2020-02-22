@@ -146,9 +146,5 @@ int main(int argc, char ** argv) {
     window->setWindowDelegate(new MyWindowDelegate(true));
     app->addWindow(window);
 
-	auto win2 = bg2wnd::Window::New();
-	window->setWindowDelegate(new MyWindowDelegate(true));
-	app->addWindow(win2);
-
     return app->run();
 }

@@ -57,6 +57,8 @@ namespace bg2wnd {
         inline WindowDelegate * windowDelegate() { return _windowDelegate.get(); }
         
         virtual void build() = 0;
+
+        virtual void close() = 0;
         
         virtual bool shouldClose() = 0;
 

@@ -63,10 +63,13 @@ public:
 
     void cleanup() {
         std::cout << window()->title() << ": Cleanup" << std::endl;
+        _instance = nullptr;
     }
 
     void keyUp(const bg2wnd::KeyboardEvent & e) {
-        std::cout << window()->title() << ": KeyUp - " << e.character();
+        if (e.keyCode() == bg2wnd::KeyCode::KeyESCAPE) {
+            window()->close();
+        }
     }
 
 protected:
@@ -79,7 +82,7 @@ int main(int argc, char ** argv) {
 
     auto window = bg2wnd::Window::New();
     window->setWindowDelegate(new MyWindowDelegate());
-    window->setTitle("Window 1");
+    window->setTitle("vulkan instance");
     window->setPosition({ 40, 40, });
     window->setSize({ 800, 600 });
     app->addWindow(window);
