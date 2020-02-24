@@ -27,7 +27,7 @@ Si utilizas las APIs de más alto nivel, verás que la implementación es bastan
 
 - [Sistema de ventanas](examples/example-wnd.md)
 - [Instancia de Vulkan](examples/example-vk-instance.md)
-- Ejemplo: cubo con textura
+- [cubo con textura](examples/example-cube.md)
 
 ## Frameworks
 
