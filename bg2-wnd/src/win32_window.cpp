@@ -366,8 +366,7 @@ namespace bg2wnd {
 			bg2math::int2 position;
 			GetCursorPos(&p);
 			ScreenToClient(bg2base::native_cast<HWND>(window->hWnd()), &p);
-			GetKeyState(VK_LBUTTON) & 8000;
-
+			
 			return MouseEvent(p.x, p.y, evtButton,
 				GetKeyState(VK_LBUTTON) & 8000, 
 				GetKeyState(VK_MBUTTON) & 8000, 
