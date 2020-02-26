@@ -2,6 +2,7 @@
 #include <memory>
 
 #include <bg2file/all.hpp>
+#include <bg2base/all.hpp>
 #include <bg2base/path.hpp>
 #include <bg2math/utils.hpp>
 #include <bg2math/vector.hpp>

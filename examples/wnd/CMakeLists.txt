@@ -10,6 +10,7 @@ target_link_libraries(example-wnd bg2-wnd)
 target_link_libraries(example-wnd bg2-render)
 target_link_libraries(example-wnd ${Vulkan_LIBRARIES})
 
+
 # System macOS frameworks
 if(APPLE)
     target_link_libraries(example-wnd

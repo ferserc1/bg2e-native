@@ -9,7 +9,7 @@
 
 #ifdef _MSC_VER
 #ifndef isnan
-#define isnan(x) _isnan(x)
+#define std::isnan(x) _std::isnan(x)
 #endif
 #ifdef near
 #undef near
@@ -67,9 +67,9 @@ namespace bg2math {
 		}
 
 		inline bool isNaN() const {
-			return	isnan(_m[0]) || isnan(_m[1]) || isnan(_m[2]) ||
-					isnan(_m[3]) || isnan(_m[4]) || isnan(_m[5]) ||
-					isnan(_m[6]) || isnan(_m[7]) || isnan(_m[8]);
+			return	std::isnan(_m[0]) || std::isnan(_m[1]) || std::isnan(_m[2]) ||
+					std::isnan(_m[3]) || std::isnan(_m[4]) || std::isnan(_m[5]) ||
+					std::isnan(_m[6]) || std::isnan(_m[7]) || std::isnan(_m[8]);
 		}
 
 		inline T* operator&() { return _m; }
@@ -383,10 +383,10 @@ namespace bg2math {
 		}
 
 		inline bool isNaN() const {
-			return	isnan(_m[ 0]) || isnan(_m[ 1]) || isnan(_m[ 2]) || isnan(_m[ 3]) ||
-					isnan(_m[ 4]) || isnan(_m[ 5]) || isnan(_m[ 6]) || isnan(_m[ 7]) ||
-					isnan(_m[ 8]) || isnan(_m[ 9]) || isnan(_m[10]) || isnan(_m[11]) ||
-					isnan(_m[12]) || isnan(_m[13]) || isnan(_m[14]) || isnan(_m[15]);
+			return	std::isnan(_m[ 0]) || std::isnan(_m[ 1]) || std::isnan(_m[ 2]) || std::isnan(_m[ 3]) ||
+					std::isnan(_m[ 4]) || std::isnan(_m[ 5]) || std::isnan(_m[ 6]) || std::isnan(_m[ 7]) ||
+					std::isnan(_m[ 8]) || std::isnan(_m[ 9]) || std::isnan(_m[10]) || std::isnan(_m[11]) ||
+					std::isnan(_m[12]) || std::isnan(_m[13]) || std::isnan(_m[14]) || std::isnan(_m[15]);
 		}
 
 		inline T* operator&() { return _m; }

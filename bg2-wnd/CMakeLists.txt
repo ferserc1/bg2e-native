@@ -18,7 +18,8 @@ if(APPLE)
         "-framework IOKit"
         "-framework CoreVideo")
 elseif(UNIX)
-    target_link_libraries(bg2-wnd ${X11_LIBRARIES})
+    target_link_libraries(bg2-wnd ${GLFW_LIBRARIES})
+    target_link_libraries(bg2-wnd ${GLFW_DEPS})
 endif()
 
 target_compile_definitions(bg2-wnd PRIVATE BG2_LIBRARY=1)

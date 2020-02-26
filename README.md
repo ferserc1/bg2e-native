@@ -62,8 +62,8 @@ Note that if you have already generated the Xcode project with the previous vers
 ### Linux
 
 - Install Vulkan SDK following the instructions from the website: [https://www.lunarg.com/vulkan-sdk/](https://www.lunarg.com/vulkan-sdk). If you want CMake to automatically detect the location of Vulkan, unzip the tar file in the same directory where you downloaded the bg2e-cpp repository, and rename it to `vulkansdk`. Make sure you compile and run the Vulkan examples to check that everything is working correctly. [here](https://vulkan-tutorial.com/Development_environment#page_Linux) you can get help on installing Vulkan SDK on Linux.
-
-- Install GLFW3 compiling form source and place it at the same directory as bg2e-cpp repository
+- Install xorg-dev package (required by GLFW3)
+- Install GLFW3 compiling form source. 
 
 
 #### Debugging on Linux

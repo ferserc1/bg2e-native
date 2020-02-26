@@ -499,6 +499,7 @@ namespace bg2wnd {
 	void Win32Window::build() {}
 	void Win32Window::close() {}
 	bool Win32Window::shouldClose() { return true; }
+	void Win32Window::destroy() {}
 	void Win32Window::getVulkanRequiredInstanceExtensions(std::vector<const char*>& extensions) {}
 	VkSurfaceKHR Win32Window::createVulkanSurface(VkInstance, VkAllocationCallbacks*) { return VK_NULL_HANDLE; }
 #endif

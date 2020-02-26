@@ -1,7 +1,8 @@
 cmake_minimum_required(VERSION 3.4)
 project(bg2e-cpp)
 
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-multichar")
 
 include(FindPackageHandleStandardArgs)
 
@@ -10,6 +11,7 @@ set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 if (UNIX AND NOT APPLE)
     find_package(X11 REQUIRED)
     find_package(GLFW REQUIRED)
+    set(GLFW_DEPS X11 Xrandr Xinerama Xxf86vm Xcursor dl pthread)
 endif()
 
 find_package(Vulkan REQUIRED)
