@@ -2,6 +2,7 @@
 #ifndef _bg2math_matrix_hpp_
 #define _bg2math_matrix_hpp_
 
+#include <bg2base/platform.hpp>
 #include <bg2math/utils.hpp>
 #include <bg2math/vector.hpp>
 
@@ -9,7 +10,7 @@
 
 #ifdef _MSC_VER
 #ifndef isnan
-#define std::isnan(x) _std::isnan(x)
+#define isnan(x) _isnan(x)
 #endif
 #ifdef near
 #undef near
@@ -67,9 +68,15 @@ namespace bg2math {
 		}
 
 		inline bool isNaN() const {
+#if BG2_PLATFORM_WINDOWS
+			return	isnan(_m[0]) || isnan(_m[1]) || isnan(_m[2]) ||
+					isnan(_m[3]) || isnan(_m[4]) || isnan(_m[5]) ||
+					isnan(_m[6]) || isnan(_m[7]) || isnan(_m[8]);
+#else
 			return	std::isnan(_m[0]) || std::isnan(_m[1]) || std::isnan(_m[2]) ||
 					std::isnan(_m[3]) || std::isnan(_m[4]) || std::isnan(_m[5]) ||
 					std::isnan(_m[6]) || std::isnan(_m[7]) || std::isnan(_m[8]);
+#endif
 		}
 
 		inline T* operator&() { return _m; }
@@ -383,10 +390,17 @@ namespace bg2math {
 		}
 
 		inline bool isNaN() const {
+#if BG2_PLATFORM_WINDOWS
+			return	std::isnan(_m[0]) || std::isnan(_m[1]) || std::isnan(_m[2]) || std::isnan(_m[3]) ||
+					std::isnan(_m[4]) || std::isnan(_m[5]) || std::isnan(_m[6]) || std::isnan(_m[7]) ||
+					std::isnan(_m[8]) || std::isnan(_m[9]) || std::isnan(_m[10]) || std::isnan(_m[11]) ||
+					std::isnan(_m[12]) || std::isnan(_m[13]) || std::isnan(_m[14]) || std::isnan(_m[15]);
+#else
 			return	std::isnan(_m[ 0]) || std::isnan(_m[ 1]) || std::isnan(_m[ 2]) || std::isnan(_m[ 3]) ||
 					std::isnan(_m[ 4]) || std::isnan(_m[ 5]) || std::isnan(_m[ 6]) || std::isnan(_m[ 7]) ||
 					std::isnan(_m[ 8]) || std::isnan(_m[ 9]) || std::isnan(_m[10]) || std::isnan(_m[11]) ||
 					std::isnan(_m[12]) || std::isnan(_m[13]) || std::isnan(_m[14]) || std::isnan(_m[15]);
+#endif
 		}
 
 		inline T* operator&() { return _m; }
