@@ -3,6 +3,7 @@
 
 #include <bg2base/platform.hpp>
 #include <bg2wnd/win32_application.hpp>
+#include <bg2wnd/glfw_application.hpp>
 
 #include <iostream>
 
@@ -22,10 +23,12 @@ namespace bg2wnd {
     #elif BG2_PLATFORM_MACOS
             throw std::runtime_error("This platform is not implemented.");
     #elif BG2_PLATFORM_LINUX
-            throw std::runtime_error("This platform is not implemented.");
+            s_Application = new GlfwApplication();
     #else
             throw std::runtime_error("Unrecognized platform.");
     #endif
+    
+            s_Application->build();
         }
         return s_Application;
     }

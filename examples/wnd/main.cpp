@@ -34,6 +34,9 @@ public:
     void keyUp(const bg2wnd::KeyboardEvent & e) {
         std::cout << window()->title() << ": KeyUp - " << e.character();
         printKeyEvent(e);
+        if (e.keyCode() == bg2wnd::KeyCode::KeyESCAPE) {
+            window()->close();
+        }
     }
 
     void charPress(const bg2wnd::KeyboardEvent & e) {}
@@ -101,12 +104,6 @@ int main(int argc, char ** argv) {
     window->setSize({ 800, 600 });
     app->addWindow(window);
 
-	auto win2 = bg2wnd::Window::New();
-    win2->setTitle("Window 2");
-    win2->setPosition({ 110, 110 });
-    win2->setSize({ 640, 480 });
-	win2->setWindowDelegate(new MyWindowDelegate());
-	app->addWindow(win2);
 
     return app->run();
 }

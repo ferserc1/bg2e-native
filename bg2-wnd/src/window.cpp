@@ -7,6 +7,7 @@
 #include <bg2wnd/window.hpp>
 
 #include <bg2wnd/win32_window.hpp>
+#include <bg2wnd/glfw_window.hpp>
 
 #include <ios>
 #include <iostream>
@@ -19,7 +20,7 @@ namespace bg2wnd {
 #elif BG2_PLATFORM_MACOS
         return nullptr;
 #elif BG2_PLATFORM_LINUX
-        return nullptr;
+        return new GlfwWindow();
 #else
         return nullptr;
 #endif

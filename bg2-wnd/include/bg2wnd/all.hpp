@@ -3,6 +3,8 @@
 #define _bg2_wnd_all_hpp_
 
 #include <bg2wnd/application.hpp>
+#include <bg2wnd/glfw_application.hpp>
+#include <bg2wnd/glfw_window.hpp>
 #include <bg2wnd/keyboard_event.hpp>
 #include <bg2wnd/mouse_event.hpp>
 #include <bg2wnd/win32_application.hpp>
