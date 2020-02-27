@@ -8,21 +8,29 @@
 
 
 namespace bg2wnd {
+
+    bg2wnd::KeyboardEvent getKeyboardEvent(int key, int scancode, int mods) {
+        const char * byteCharacter = glfwGetKeyName(key, scancode);
+        std::string character = byteCharacter ? byteCharacter : "";
+        return bg2wnd::KeyboardEvent(
+            static_cast<KeyCode>(key),
+            character,
+            mods & GLFW_MOD_SHIFT,
+            mods & GLFW_MOD_CONTROL,
+            mods & GLFW_MOD_ALT,
+            mods & GLFW_MOD_CAPS_LOCK);
+    }
+
     static void key_callback(GLFWwindow * window, int key, int scancode, int action, int mods) {
-        // TODO: Implement key events
         bg2wnd::Application * app = bg2wnd::Application::Get();
         auto win = app->getWindow(window);
         if (win && win->windowDelegate()) {
-            bg2wnd::KeyboardEvent evt(KeyCode::KeyESCAPE, "", false, false, false, false);
             if (action == GLFW_PRESS) {
-                win->windowDelegate()->keyDown(evt);
+                win->windowDelegate()->keyDown(getKeyboardEvent(key,scancode,mods));
             }
             else if (action == GLFW_RELEASE) {
-                win->windowDelegate()->keyUp(evt);
+                win->windowDelegate()->keyUp(getKeyboardEvent(key,scancode,mods));
             }        
-        }
-        if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
-            std::cout << "Escape" << std::endl;
         }
     }
 
