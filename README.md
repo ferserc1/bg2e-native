@@ -62,32 +62,68 @@ Note that if you have already generated the Xcode project with the previous vers
 ### Linux
 
 - Install Vulkan SDK following the instructions from the website: [https://www.lunarg.com/vulkan-sdk/](https://www.lunarg.com/vulkan-sdk). If you want CMake to automatically detect the location of Vulkan, unzip the tar file in the same directory where you downloaded the bg2e-cpp repository, and rename it to `vulkansdk`. Make sure you compile and run the Vulkan examples to check that everything is working correctly. [here](https://vulkan-tutorial.com/Development_environment#page_Linux) you can get help on installing Vulkan SDK on Linux.
+- Install CMake
 - Install xorg-dev package (required by GLFW3)
-- Install GLFW3 compiling form source. 
+- Install GLFW3 compiling form source:
+
+To install GLFW 3, download glfw from web or clone from git repository, and then exeucte:
+
+```bash
+$ cd [path to the glfw3 directory you just downlaoded]
+$ mkdir build
+$ cd build
+$ cmake ..
+$ make
+$ sudo make install
+```
+
 
 
 #### Debugging on Linux
 
-You can use CodeBlocks IDE to debug on Linux. You'll need to generate a project for debugging and other one for release (without debugging symbols):
+The best option I have currently found to debug on Linux with CMake is to use Visual Studio Code with CMakeTools (these instructions are for Ubuntu based distributions):
 
-Cmake project WITH debug symbols
+- Install build_essentials
+- Install instalar gdb
+- Install Visual Studio Code, and within it, install the extensions:
+    - C/C++ (Microsoft)
+    - CMake Tools (Microsoft)
 
-```
-cd bg2e-cpp
-mkdir build-debug
-cd build-debug
-cmake .. -G"CodeBlocks - Unix Makefiles" -DCMAKE_BUILD_TYPE=Debug
-```
+Once installed, open the `bg2e-cpp` directory in Visual Studio Code. In the status bar:
 
-Cmake project WHITOUT debug symbols
+- Select the kit, for example, GCC 7.4.0
+- Select the configuration (where it says CMake:), for example, Debug
+- Click on the sprocket to compile
 
-```
-cd bg2e-cpp
-mkdir build-release
-cd build-debug
-cmake .. -G"CodeBlocks - Unix Makefiles" -DCMAKE_BUILD_TYPE=Release
-```
+To debug, click on the bug icon and select the application you want to debug. You can use breakpoints and inspect variables in the same way as you can do it in Visual Studio 2019 or Xcode.
 
+If it is not possible to debug, check that the file `.vscode/launch.json' exists, although with CMake Tools it is not essential to have this file:
 
-
-
+```json
+{ 
+  "version": "0.2.0", 
+  "configurations": [ 
+  { 
+    "name": "g++-7 build and debug active file", 
+    "type": "cppdbg", 
+    "request": "launch", 
+    "program": "${command:cmake.launchTargetPath}", 
+    "args": [], 
+    "stopAtEntry": false, 
+    "cwd": "${workspaceFolder}", 
+    "environment": [], 
+    "externalConsole": false, 
+    "MIMode": "gdb", 
+    "setupCommands": [ 
+      { 
+        "description": "Habilitar la impresión con sangría para gdb", 
+        "text": "-enable-pretty-printing", 
+        "ignoreFailures": true 
+      } 
+    ], 
+    "preLaunchTask": "g++-7 build active file", 
+    "miDebuggerPath": "/usr/bin/gdb" 
+  }]
+} 
+``` 
+This setting can be used in a similar way for debugging with Windows or macOS.
