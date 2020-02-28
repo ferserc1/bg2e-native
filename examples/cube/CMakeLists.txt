@@ -27,3 +27,6 @@ set_target_properties(
 add_custom_command(TARGET example-cube POST_BUILD
     COMMAND "${CMAKE_COMMAND}" -E copy_directory "${PROJECT_SOURCE_DIR}/data" "${CMAKE_BINARY_DIR}/$<CONFIG>/data"
 )
+add_custom_command(TARGET example-cube POST_BUILD
+    COMMAND "${CMAKE_COMMAND}" -E copy_directory "${PROJECT_SOURCE_DIR}/data" "${CMAKE_BINARY_DIR}/data"
+)

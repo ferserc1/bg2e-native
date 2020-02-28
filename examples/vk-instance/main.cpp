@@ -59,9 +59,13 @@ public:
         std::cout << "resize" << size.toString() << std::endl;
     }
 
-    void update(float delta) {}
+    void update(float delta) {
+        std::cout << delta << std::endl;
+    }
 
-    void draw() {}
+    void draw() {
+        std::cout << "Draw" << std::endl;
+    }
 
     void cleanup() {
         std::cout << window()->title() << ": Cleanup" << std::endl;

@@ -45,9 +45,11 @@ function(build_shaders SHADER_FILES)
         get_filename_component(SHADER_FILE_NAME ${SHADER_FILE} NAME)
         file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/Debug/shaders/")
         file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/Release/shaders/")
+        file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/shaders/")
         add_custom_command(
             TARGET bg2-render POST_BUILD
             COMMAND ${SHADER_BUILD} -V ${SHADER_FILE} -o "${CMAKE_BINARY_DIR}/$<CONFIG>/shaders/${SHADER_FILE_NAME}.spv"
+            COMMAND ${SHADER_BUILD} -V ${SHADER_FILE} -o "${CMAKE_BINARY_DIR}/shaders/${SHADER_FILE_NAME}.spv"
             DEPENDS ${SHADER_FILE}
             COMMENT "Building shader ${SHADER_FILE}"
             VERBATIM)
