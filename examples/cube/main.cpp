@@ -125,7 +125,21 @@ public:
 		bg2render::DrawableDescriptor::Cleanup();
     }
 
-    void keyUp(const bg2wnd::KeyboardEvent & e) {}
+    void keyUp(const bg2wnd::KeyboardEvent & e) {
+		if (e.keyCode()==bg2wnd::KeyCode::KeyESCAPE) {
+			window()->close();
+		}
+		else if (e.keyCode()==bg2wnd::KeyCode::Key1) {
+			window()->setSize(bg2math::int2(640,480));
+		}
+		else if (e.keyCode()==bg2wnd::KeyCode::Key2) {
+			window()->setSize(bg2math::int2(800,600));
+		}
+		else if (e.keyCode()==bg2wnd::KeyCode::Key3) {
+			window()->setSize(bg2math::int2(1024,768));
+		}
+	}
+
     void keyDown(const bg2wnd::KeyboardEvent & e) {}
     void mouseMove(const bg2wnd::MouseEvent & e) {}
     void mouseDown(const bg2wnd::MouseEvent & e) {}

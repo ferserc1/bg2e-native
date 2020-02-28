@@ -75,6 +75,15 @@ namespace bg2wnd {
         }
     }
 
+    void GlfwWindow::windowSizeCallback(GLFWwindow * window, int width, int height) {
+        bg2wnd::Application * app = bg2wnd::Application::Get();
+        auto win = dynamic_cast<GlfwWindow*>(app->getWindow(window));
+        if (win && win->windowDelegate()) {
+            win->_size = bg2math::int2(width, height);
+            win->windowDelegate()->resize(bg2math::int2(width,height));
+        }
+    }
+
     GlfwWindow::~GlfwWindow() {
         
     }
@@ -86,7 +95,7 @@ namespace bg2wnd {
         glfwSetCursorPosCallback(_windowHandler, cursorPosCallback);
         glfwSetMouseButtonCallback(_windowHandler, mouseButtonCallback);
         glfwSetScrollCallback(_windowHandler, scrollCallback);
-
+        glfwSetWindowSizeCallback(_windowHandler, GlfwWindow::windowSizeCallback);
         if (windowDelegate()) {
 			windowDelegate()->init();
 			windowDelegate()->resize(_size);
@@ -125,6 +134,40 @@ namespace bg2wnd {
         }
 		return surface;
 	}
+
+    void GlfwWindow::windowPositionWillChange(const bg2math::int2 & newpos) {
+    }
+
+    void GlfwWindow::windowPositionDidChange(const bg2math::int2 & newpos) {
+        glfwSetWindowPos(_windowHandler, newpos.x(), newpos.y());
+    }
+
+    void GlfwWindow::windowSizeWillChange(const bg2math::int2 & newSize) {
+    }
+
+    void GlfwWindow::windowSizeDidChange(const bg2math::int2 & newSize) {
+        glfwSetWindowSize(_windowHandler, newSize.width(), newSize.height());
+        if (windowDelegate()) {
+            windowDelegate()->resize(newSize);
+        }
+    }
+
+    void GlfwWindow::windowTitleWillChange(const std::string & newTitle) {
+
+    }
+
+    void GlfwWindow::windowTitleDidChange(const std::string & title) {
+        glfwSetWindowTitle(_windowHandler, title.c_str());
+    }
+
+    void GlfwWindow::windowDelegateWillChange(WindowDelegate * del) {
+
+    }
+
+    void GlfwWindow::windowDelegateDidChange(WindowDelegate * del) {
+
+    }
+
 
 }
 

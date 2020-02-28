@@ -35,7 +35,20 @@ namespace bg2wnd {
     #if BG2_PLATFORM_LINUX
     
         GLFWwindow * _windowHandler = nullptr;
-        
+
+        virtual void windowPositionWillChange(const bg2math::int2 & newpos);
+        virtual void windowPositionDidChange(const bg2math::int2 & newpos);
+        virtual void windowSizeWillChange(const bg2math::int2 & newSize);
+        virtual void windowSizeDidChange(const bg2math::int2 & newSize);
+        virtual void windowTitleWillChange(const std::string & newTitle);
+        virtual void windowTitleDidChange(const std::string & title);
+        virtual void windowDelegateWillChange(WindowDelegate * del);
+        virtual void windowDelegateDidChange(WindowDelegate * del);
+
+        static void windowSizeCallback(GLFWwindow * window, int width, int height);
+
+        inline void updateSize(const bg2math::int2 & s) { _size = s; }
+
     #endif
     
     };
