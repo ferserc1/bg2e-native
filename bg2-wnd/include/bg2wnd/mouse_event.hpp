@@ -7,8 +7,8 @@ namespace bg2wnd {
     enum class MouseButton {
         ButtonNone = 0,
         ButtonLeft = 1,
-        ButtonMiddle = 2,
-        ButtonRight = 3,
+        ButtonMiddle = 3,
+        ButtonRight = 2,
         Button4 = 4,
         Button5 = 5
     };

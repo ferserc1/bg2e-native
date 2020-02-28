@@ -25,6 +25,10 @@ namespace bg2wnd {
         virtual void destroy() override;
         
         bg2base::plain_ptr glfWindowPtr();
+
+        void getVulkanRequiredInstanceExtensions(std::vector<const char *>& extensions);
+
+        VkSurfaceKHR createVulkanSurface(VkInstance instance, VkAllocationCallbacks * allocationCallbacks);
         
     protected:
     

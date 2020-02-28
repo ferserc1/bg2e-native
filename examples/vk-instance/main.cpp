@@ -55,7 +55,9 @@ public:
         _instance->choosePhysicalDevices();
     }
 
-    void resize(const bg2math::int2 & size) {}
+    void resize(const bg2math::int2 & size) {
+        std::cout << "resize" << size.toString() << std::endl;
+    }
 
     void update(float delta) {}
 
