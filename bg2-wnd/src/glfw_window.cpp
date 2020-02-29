@@ -181,6 +181,8 @@ namespace bg2wnd {
     bool GlfwWindow::shouldClose() { return true; }
     void GlfwWindow::destroy() {}
     bg2base::plain_ptr glfWindowPtr() { return nullptr; }
+    void GlfwWindow::getVulkanRequiredInstanceExtensions(std::vector<const char*>& extensions) {}
+    VkSurfaceKHR GlfwWindow::createVulkanSurface(VkInstance instance, VkAllocationCallbacks* allocationCallbacks) { return VK_NULL_HANDLE;  }
         
 }
 
