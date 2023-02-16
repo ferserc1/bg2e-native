@@ -38,14 +38,56 @@ bg2 engine is divided into different libraries, and not all of them have the sam
 
 - GLFW: window system.
 - GLM: math library
-
+- stb_image
+- bg2io
+- VulkanSDK version 1.3
 
 ## Usage
 
 ### macOS Xcode
 
+#### Setup script
 
-TODO:
+TODO: create a script to setup the dependencies automatically, for example:
+
+```sh
+% setup-deps.sh ~/VulkanSDK/1.3.239.0
+```
+
+#### Setup VulkanSDK
+
+The first thing we have to do is to download VulkanSDK from the web and install it. It doesn't matter where we install it, but it is important that you point the path to the SDK. The default installation leaves the SDK in the location ~/VulkanSDK/1.3.xxx.x (where 1.3.xxx.x is the SDK version). The path we are interested in is the path to the folder that has the version. What we will do is create a symbolic link from this folder to the `[bg2e-cpp-repo]/deps/VulkanSDK` folder.
+
+For example, if you have installed VulkanSDK in `~/VulkanSDK/1.3.239.0` you would have to create the symlink like this:
+
+```sh
+% cd [path-to-bg2e-cpp-repo]
+% ln -s ~/VulkanSDK/1.3.239.0 deps/VulkanSDK
+%
+% ls -l deps
+total 0
+lrwxr-xr-x  1 your-user  staff  35 16 feb 19:52 VulkanSDK -> /Users/your-user/VulkanSDK/1.3.239.0
+drwxr-xr-x  2 your-user  staff  64 16 feb 19:53 glm
+... other dependencies
+```
+
+This way, the Xcode project will be able to find all VulkanSDK resources, regardless of the particular version you have installed and the location you have chosen.
+
+#### bg2io
+
+This library is part of the bg2 engine library package, and is responsible for reading and writing files in binary format native to bg2 engine. It is composed of a series of C and C++ files. The Xcode project automatically includes the references to the bg2io files, you only have to download the repository in the deps folder:
+
+```sh
+% cd [path-to-bg2e-cpp-repo]/deps
+% git clone https://github.com/ferserc1/bg2-io
+```
+
+#### Header only libraries
+
+bg2e-cpp has other dependencies that are in the form of header files. These dependencies are included directly in the `deps` directory, so you do not have to download them:
+
+- GLM
+- stb_image
 
 To avoid glfw documentation warning like `Empty paragraph passed to '@sa' command`, disable `Documentation comments` warnings in `Build Settings`
 
