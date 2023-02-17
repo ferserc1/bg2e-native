@@ -89,3 +89,21 @@ Note about GLFW headers: To avoid glfw documentation warning like `Empty paragra
 ### Windows Visual Studio
 
 TODO: setup script and installation setup
+
+
+## Usage
+
+### macOS
+
+If you prefer to use bg2 engine as a static library, you will have to link the following macOS native frameworks in your application (for example, using the `Link Binary With Libraries` build phase in Xcode):
+
+- AppKit.framework
+- CoreFoundation.framework
+- IOKit.framework
+- CoreGraphics.framework
+- TODO: the rest of the dependencies (vulkan, metal, etc.)
+
+as well as the `libbg2e.a` library, of course.
+
+
+
