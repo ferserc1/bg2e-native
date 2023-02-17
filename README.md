@@ -36,61 +36,56 @@ This repository implements the C++ API for bg2 engine. Use this version of the e
 
 bg2 engine is divided into different libraries, and not all of them have the same requirements, but basically you will need:
 
+- VulkanSDK version 1.3
 - GLFW: window system.
 - GLM: math library
 - stb_image
 - bg2io
-- VulkanSDK version 1.3
+- tiny_obj_loader
 
-## Usage
+You only have to install VulkanSDK v1.3 from the official website. The rest of the dependencies are downloaded and configured with the installation script included for your platform.
 
 ### macOS Xcode
-
 #### Setup script
 
-TODO: create a script to setup the dependencies automatically, for example:
+Install Xcode Tools from the Mac App Store and Vulkan SDK version 1.3.x from the official Vulkan site. It is important that you note the location of the VulkanSDK installation to complete the installation:
+
+[https://www.lunarg.com/vulkan-sdk/](https://www.lunarg.com/vulkan-sdk/)
+
+To use the configuration script, you must supply the path to the particular version of VulkanSDK. It is possible to have several SDKs installed simultaneously, so each SDK is installed in a location in the following form:
+
+`/installation/dir/VulkanSDK/1.3.xxx.x`
+
+To run the dependency installation script, just pass as a parameter the path to the folder of the version you want to use. For example, if you install versions `1.3.204.1` and `1.3.239.0` in your user folder (which is the default location in the installer), and you want to use the latter, just run:
 
 ```sh
-% setup-deps.sh ~/VulkanSDK/1.3.239.0
+% ./setup-deps-mac.sh ~/VulkanSDK/1.3.239.0
 ```
 
-#### Setup VulkanSDK
+#### Clean script
 
-The first thing we have to do is to download VulkanSDK from the web and install it. It doesn't matter where we install it, but it is important that you point the path to the SDK. The default installation leaves the SDK in the location ~/VulkanSDK/1.3.xxx.x (where 1.3.xxx.x is the SDK version). The path we are interested in is the path to the folder that has the version. What we will do is create a symbolic link from this folder to the `[bg2e-cpp-repo]/deps/VulkanSDK` folder.
-
-For example, if you have installed VulkanSDK in `~/VulkanSDK/1.3.239.0` you would have to create the symlink like this:
+You can clean the dependencies folder using the following script:
 
 ```sh
-% cd [path-to-bg2e-cpp-repo]
-% ln -s ~/VulkanSDK/1.3.239.0 deps/VulkanSDK
-%
-% ls -l deps
-total 0
-lrwxr-xr-x  1 your-user  staff  35 16 feb 19:52 VulkanSDK -> /Users/your-user/VulkanSDK/1.3.239.0
-drwxr-xr-x  2 your-user  staff  64 16 feb 19:53 glm
-... other dependencies
+% ./clean-deps.sh
 ```
 
-This way, the Xcode project will be able to find all VulkanSDK resources, regardless of the particular version you have installed and the location you have chosen.
+#### Manual setup
 
-#### bg2io
-
-This library is part of the bg2 engine library package, and is responsible for reading and writing files in binary format native to bg2 engine. It is composed of a series of C and C++ files. The Xcode project automatically includes the references to the bg2io files, you only have to download the repository in the deps folder:
+Basically, the dependency installation script executes the following commands, after checking that each of the dependencies are not configured:
 
 ```sh
-% cd [path-to-bg2e-cpp-repo]/deps
+% VK_SDK_PATH=path to the VulkanSDK version directory
+% ln -s $VK_SDK_PATH deps/VulkanSDK
 % git clone https://github.com/ferserc1/bg2-io
+% https://github.com/glfw/glfw/releases/download/3.3.8/glfw-3.3.8.bin.MACOS.zip --output deps/glfw.zip
+% unzip deps/glfw.zip -d deps
+% mv deps/glfw-3.3.8.bin.MACOS deps/glfw
+% rm deps/glfw.zip
 ```
 
-#### Header only libraries
-
-bg2e-cpp has other dependencies that are in the form of header files. These dependencies are included directly in the `deps` directory, so you do not have to download them:
-
-- GLM
-- stb_image
-
-To avoid glfw documentation warning like `Empty paragraph passed to '@sa' command`, disable `Documentation comments` warnings in `Build Settings`
+Note about GLFW headers: To avoid glfw documentation warning like `Empty paragraph passed to '@sa' command`, disable `Documentation comments` warnings in `Build Settings`
 
 ### Windows Visual Studio
 
-
+TODO: setup script and installation setup

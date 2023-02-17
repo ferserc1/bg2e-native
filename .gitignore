@@ -57,6 +57,8 @@ DerivedData/
 # Dependencies
 deps/bg2-io
 deps/VulkanSDK
+deps/glfw
+deps/glfw.zip
 
 # Shader intermediate files
 shaders/include/build
