@@ -55,8 +55,8 @@ DerivedData/
 
 
 # Dependencies
-deps
-deps*
+deps/bg2-io
+deps/VulkanSDK
 
 # Shader intermediate files
 shaders/include/build
