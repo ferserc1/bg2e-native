@@ -1617,6 +1617,7 @@
 		ED43332E299FC3960055AC3B /* AppKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppKit.framework; path = System/Library/Frameworks/AppKit.framework; sourceTree = SDKROOT; };
 		ED433330299FC4F00055AC3B /* Window.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Window.cpp; sourceTree = "<group>"; };
 		ED433332299FC5040055AC3B /* Window.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Window.hpp; sourceTree = "<group>"; };
+		EDB575F729A17C0900A3840E /* export.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = export.hpp; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -1705,6 +1706,7 @@
 		ED432C8B299FC0700055AC3B /* bg2e */ = {
 			isa = PBXGroup;
 			children = (
+				EDB575F729A17C0900A3840E /* export.hpp */,
 				ED432C8C299FC0700055AC3B /* app */,
 			);
 			path = bg2e;
