@@ -87,8 +87,42 @@ Basically, the dependency installation script executes the following commands, a
 Note about GLFW headers: To avoid glfw documentation warning like `Empty paragraph passed to '@sa' command`, disable `Documentation comments` warnings in `Build Settings`
 
 ### Windows Visual Studio
+#### Vulkan SDK
 
-TODO: setup script and installation setup
+You need to download and install VulkanSDK for Windows 64 bits, version 1.3 or higher. In Windows platform, the VulkanSDK installer configures the `VK_SDK_PATH` environment variable to be accessible from Visual Studio, so you don't need to do anything else to setup Vulkan.
+
+#### Setup script
+
+To setup the dependencies using the PowerShell script, you must to meet the following requirements:
+
+- You must to allow the execution of PowerShell scripts.
+- You need `git` access from PowerShell.
+
+You can enable script execution by opening a PowerShell window with administrator privileges and executing the following line:
+
+```ps
+Set-ExecutionPolicy -ExecutionPolicy Bypass
+```
+
+After configuring the dependencies, it is recommended to leave script execution disabled:
+
+```ps
+Set-ExecutionPolicy -ExecutionPolicy Restricted
+```
+
+After that, you can use the dependency download script in a PowerShell console:
+
+```ps
+cd path\to\bg2e-cpp
+.\setup-deps-win.ps1
+```
+
+You can clean the dependencies with the `clean-deps.ps1` script if you need it, but the downloaded dependencies are set up in the `.gitignore` file.
+
+#### Manual setup
+
+1. Download GLFW binaries for Windows 64 bits, extract it and put it in `deps/glfw` directory.
+2. Clone or download `bg2-io` from the repository [https://github.com/ferserc1/bg2-io](https://github.com/ferserc1/bg2-io) and put it in `deps/bg2-io` directory.
 
 
 ## Usage
@@ -106,4 +140,6 @@ If you prefer to use bg2 engine as a static library, you will have to link the f
 as well as the `libbg2e.a` library, of course.
 
 
+### Windows
 
+TODO: complete this
