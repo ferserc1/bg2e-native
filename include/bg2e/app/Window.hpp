@@ -8,12 +8,14 @@
 #ifndef bg2e_app_window_hpp
 #define bg2e_app_window_hpp
 
+#include <bg2e/export.hpp>
+
 #include <string>
 
 namespace bg2e {
 namespace app {
 
-class Window {
+class BG2_EXPORT Window {
 public:
     Window(const std::string & title = "", uint32_t width = 800, uint32_t height = 600);
     
@@ -30,7 +32,7 @@ public:
     
     inline bool created() const { return _wnd != nullptr; }
     
-protected:
+private:
     void* _wnd = nullptr;
     
     std::string _title = "";

@@ -1,0 +1,198 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>16.0</VCProjectVersion>
+    <Keyword>Win32Proj</Keyword>
+    <ProjectGuid>{a1fa3ef8-6217-4842-b0aa-af11a9a76714}</ProjectGuid>
+    <RootNamespace>bg2engine</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+    <UseOfMfc>false</UseOfMfc>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+    <UseOfMfc>false</UseOfMfc>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+    <UseOfMfc>false</UseOfMfc>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+    <UseOfMfc>false</UseOfMfc>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <OutDir>$(SolutionDir)..\build\</OutDir>
+    <IntDir>$(SolutionDir)..\build\bg2e\$(Configuration)\</IntDir>
+    <TargetName>$(ProjectName)d</TargetName>
+    <IncludePath>$(VK_SDK_PATH)\Include;$(SolutionDir)..\deps\glfw\include;$(SolutionDir)..\include;$(SolutionDir)..\deps\bg2-io\src\bg2-io;$(SolutionDir)..\deps\glm;$(SolutionDir)..\deps\obj;$(SolutionDir)..\deps\stb;$(IncludePath)</IncludePath>
+    <LibraryPath>$(VK_SDK_PATH)\Lib;$(SolutionDir)..\deps\glfw\lib-vc2022;$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <OutDir>$(SolutionDir)..\build\</OutDir>
+    <IntDir>$(SolutionDir)..\build\bg2e\$(Configuration)\</IntDir>
+    <IncludePath>$(VK_SDK_PATH)\Include;$(SolutionDir)..\deps\glfw\include;$(SolutionDir)..\include;$(SolutionDir)..\deps\bg2-io\src\bg2-io;$(SolutionDir)..\deps\glm;$(SolutionDir)..\deps\obj;$(SolutionDir)..\deps\stb;$(IncludePath)</IncludePath>
+    <LibraryPath>$(VK_SDK_PATH)\Lib;$(SolutionDir)..\deps\glfw\lib-vc2022;$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <OutDir>$(SolutionDir)..\build\</OutDir>
+    <IntDir>$(SolutionDir)..\build\bg2e\$(Configuration)\</IntDir>
+    <TargetName>$(ProjectName)d</TargetName>
+    <IncludePath>$(VK_SDK_PATH)\Include;$(SolutionDir)..\deps\glfw\include;$(SolutionDir)..\include;$(SolutionDir)..\deps\bg2-io\src\bg2-io;$(SolutionDir)..\deps\glm;$(SolutionDir)..\deps\obj;$(SolutionDir)..\deps\stb;$(IncludePath)</IncludePath>
+    <LibraryPath>$(VK_SDK_PATH)\Lib;$(SolutionDir)..\deps\glfw\lib-vc2022;$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <OutDir>$(SolutionDir)..\build\</OutDir>
+    <IntDir>$(SolutionDir)..\build\bg2e\$(Configuration)\</IntDir>
+    <IncludePath>$(VK_SDK_PATH)\Include;$(SolutionDir)..\deps\glfw\include;$(SolutionDir)..\include;$(SolutionDir)..\deps\bg2-io\src\bg2-io;$(SolutionDir)..\deps\glm;$(SolutionDir)..\deps\obj;$(SolutionDir)..\deps\stb;$(IncludePath)</IncludePath>
+    <LibraryPath>$(VK_SDK_PATH)\Lib;$(SolutionDir)..\deps\glfw\lib-vc2022;$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <LanguageStandard_C>stdc17</LanguageStandard_C>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>vulkan-1.lib;glfw3.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <LanguageStandard_C>stdc17</LanguageStandard_C>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>vulkan-1.lib;glfw3.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <LanguageStandard_C>stdc17</LanguageStandard_C>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>vulkan-1.lib;glfw3.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <LanguageStandard_C>stdc17</LanguageStandard_C>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>vulkan-1.lib;glfw3.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClInclude Include="..\deps\bg2-io\src\bg2-io\bg2-io.h" />
+    <ClInclude Include="..\deps\bg2-io\src\bg2-io\bg2-loader.h" />
+    <ClInclude Include="..\deps\bg2-io\src\bg2-io\bg2-writer.h" />
+    <ClInclude Include="..\deps\bg2-io\src\bg2-io\buffer-io.h" />
+    <ClInclude Include="..\deps\bg2-io\src\bg2-io\buffer-memory.h" />
+    <ClInclude Include="..\deps\bg2-io\src\bg2-io\errors.h" />
+    <ClInclude Include="..\deps\bg2-io\src\bg2-io\types.h" />
+    <ClInclude Include="..\deps\bg2-io\src\bg2-io\utils.h" />
+    <ClInclude Include="..\include\bg2e\app\MainLoop.hpp" />
+    <ClInclude Include="..\include\bg2e\app\Window.hpp" />
+    <ClInclude Include="..\include\bg2e\export.hpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\deps\bg2-io\src\bg2-io\bg2-io.c" />
+    <ClCompile Include="..\deps\bg2-io\src\bg2-io\bg2-loader.c" />
+    <ClCompile Include="..\deps\bg2-io\src\bg2-io\bg2-writer.c" />
+    <ClCompile Include="..\deps\bg2-io\src\bg2-io\buffer-io.c" />
+    <ClCompile Include="..\deps\bg2-io\src\bg2-io\buffer-memory.c" />
+    <ClCompile Include="..\deps\bg2-io\src\bg2-io\types.c" />
+    <ClCompile Include="..\deps\bg2-io\src\bg2-io\utils.c" />
+    <ClCompile Include="..\src\app\MainLoop.cpp" />
+    <ClCompile Include="..\src\app\Window.cpp" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

@@ -1,0 +1,93 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Header Files\app">
+      <UniqueIdentifier>{5f1eeacd-5a05-4030-b2b3-7fa91c008cf9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\bg2e">
+      <UniqueIdentifier>{9d64ad53-d31d-4b18-9c53-bc1dadcfaa4e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\bg2e\app">
+      <UniqueIdentifier>{e44ffef8-bc63-419e-ab36-d0417db05716}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\bg2-io">
+      <UniqueIdentifier>{1ea51531-5454-4469-b50d-52ac5a52d033}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\include\bg2e\app\MainLoop.hpp">
+      <Filter>Header Files\app</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\app\Window.hpp">
+      <Filter>Header Files\app</Filter>
+    </ClInclude>
+    <ClInclude Include="..\deps\bg2-io\src\bg2-io\bg2-io.h">
+      <Filter>Source Files\bg2-io</Filter>
+    </ClInclude>
+    <ClInclude Include="..\deps\bg2-io\src\bg2-io\bg2-loader.h">
+      <Filter>Source Files\bg2-io</Filter>
+    </ClInclude>
+    <ClInclude Include="..\deps\bg2-io\src\bg2-io\bg2-writer.h">
+      <Filter>Source Files\bg2-io</Filter>
+    </ClInclude>
+    <ClInclude Include="..\deps\bg2-io\src\bg2-io\buffer-io.h">
+      <Filter>Source Files\bg2-io</Filter>
+    </ClInclude>
+    <ClInclude Include="..\deps\bg2-io\src\bg2-io\buffer-memory.h">
+      <Filter>Source Files\bg2-io</Filter>
+    </ClInclude>
+    <ClInclude Include="..\deps\bg2-io\src\bg2-io\errors.h">
+      <Filter>Source Files\bg2-io</Filter>
+    </ClInclude>
+    <ClInclude Include="..\deps\bg2-io\src\bg2-io\types.h">
+      <Filter>Source Files\bg2-io</Filter>
+    </ClInclude>
+    <ClInclude Include="..\deps\bg2-io\src\bg2-io\utils.h">
+      <Filter>Source Files\bg2-io</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\export.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\src\app\MainLoop.cpp">
+      <Filter>Source Files\bg2e\app</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\app\Window.cpp">
+      <Filter>Source Files\bg2e\app</Filter>
+    </ClCompile>
+    <ClCompile Include="..\deps\bg2-io\src\bg2-io\bg2-io.c">
+      <Filter>Source Files\bg2-io</Filter>
+    </ClCompile>
+    <ClCompile Include="..\deps\bg2-io\src\bg2-io\bg2-loader.c">
+      <Filter>Source Files\bg2-io</Filter>
+    </ClCompile>
+    <ClCompile Include="..\deps\bg2-io\src\bg2-io\bg2-writer.c">
+      <Filter>Source Files\bg2-io</Filter>
+    </ClCompile>
+    <ClCompile Include="..\deps\bg2-io\src\bg2-io\buffer-io.c">
+      <Filter>Source Files\bg2-io</Filter>
+    </ClCompile>
+    <ClCompile Include="..\deps\bg2-io\src\bg2-io\buffer-memory.c">
+      <Filter>Source Files\bg2-io</Filter>
+    </ClCompile>
+    <ClCompile Include="..\deps\bg2-io\src\bg2-io\types.c">
+      <Filter>Source Files\bg2-io</Filter>
+    </ClCompile>
+    <ClCompile Include="..\deps\bg2-io\src\bg2-io\utils.c">
+      <Filter>Source Files\bg2-io</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>
