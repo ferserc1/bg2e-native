@@ -12,7 +12,7 @@ namespace app {
 
 class BG2_EXPORT MainLoop {
 public:
-    MainLoop(Window * wnd);
+    MainLoop(std::unique_ptr<Window> wnd);
     
     int run();
     

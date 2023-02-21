@@ -9,6 +9,7 @@
 #define bg2e_app_window_hpp
 
 #include <bg2e/export.hpp>
+#include <bg2e/app/AppController.hpp>
 
 #include <string>
 
@@ -18,6 +19,13 @@ namespace app {
 class BG2_EXPORT Window {
 public:
     Window(const std::string & title = "", uint32_t width = 800, uint32_t height = 600);
+    
+    inline void setAppController(std::unique_ptr<AppController> ctrl) {
+        _appController = std::move(ctrl);
+        _appController->_window = this;
+    }
+    
+    inline AppController* appController() { return _appController.get(); }
     
     inline void setTitle(const std::string & title) { _title = title; }
     inline const std::string& title() const { return _title; }
@@ -38,6 +46,8 @@ private:
     std::string _title = "";
     uint32_t _width = 800;
     uint32_t _height = 600;
+    
+    std::unique_ptr<AppController> _appController;
 };
 
 
