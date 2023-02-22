@@ -27,7 +27,7 @@ public:
     
     inline AppController* appController() { return _appController.get(); }
     
-    inline void setTitle(const std::string & title) { _title = title; }
+    void setTitle(const std::string & title);
     inline const std::string& title() const { return _title; }
     inline void setSize(uint32_t width, uint32_t height) { _width = width; height = _height; }
     inline uint32_t width() const { return _width; }

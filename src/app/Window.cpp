@@ -122,6 +122,16 @@ Window::Window(const std::string & title, uint32_t width, uint32_t height)
     
 }
 
+void Window::setTitle(const std::string & title)
+{
+    _title = title;
+    if (_wnd)
+    {
+        auto window = reinterpret_cast<GLFWwindow*>(_wnd);
+        glfwSetWindowTitle(window, title.c_str());
+    }
+}
+
 void Window::create()
 {
     if (_wnd)

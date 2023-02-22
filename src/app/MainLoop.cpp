@@ -38,7 +38,7 @@ int MainLoop::run()
         _window->appController()->display();
         auto endTime = std::chrono::high_resolution_clock::now();
         std::chrono::duration<float> elapsed = endTime - startTime;
-        delta = elapsed.count();
+        delta = elapsed.count() * std::chrono::seconds::period::num / std::chrono::seconds::period::den;
     }
     
     _window->appController()->destroy();

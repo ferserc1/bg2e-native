@@ -4,6 +4,7 @@
 
 #include <iostream>
 #include <iomanip>
+#include <thread>
 
 class MyAppController : public bg2e::app::AppController
 {
@@ -15,12 +16,24 @@ public:
     
     void frame(float delta)
     {
-        //std::cout << "Frame: " << std::fixed << std::setprecision(10) << delta << std::endl;
+        static uint32_t frames = 0;
+        static float elapsed = 0.0f;
+        if (elapsed >= 1.0f)
+        {
+            window().setTitle("Hello World! - " + std::to_string(frames) +  " fps");
+            frames = 0;
+            elapsed = 0.0f;
+        }
+        else
+        {
+            ++frames;
+            elapsed += delta;
+        }
     }
     
     void display()
     {
-        //std::cout << "Draw" << std::endl;
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
     
     void destroy()
