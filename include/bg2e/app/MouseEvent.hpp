@@ -5,10 +5,10 @@ namespace bg2e {
 namespace app {
 
 typedef enum {
-    None = 0,
-    Left,
-    Middle,
-    Right
+    ButtonNone = 0,
+    ButtonLeft,
+    ButtonMiddle,
+    ButtonRight
 } MouseButton;
 
 struct MouseStatus {
@@ -25,7 +25,7 @@ class MouseEvent {
 public:
     
 
-    MouseEvent(MouseStatus status, MouseButton button = MouseButton::None)
+    MouseEvent(MouseStatus status, MouseButton button = MouseButton::ButtonNone)
         :_mouseStatus{ status }, _button{ button }
     {
     }

@@ -2,10 +2,6 @@
 #include <bg2e/app/MainLoop.hpp>
 #include <bg2e/app/AppController.hpp>
 
-#include <glm/glm.hpp>
-#include <glm/ext/matrix_transform.hpp>
-#include <glm/ext/matrix_clip_space.hpp>
-
 #include <iostream>
 #include <iomanip>
 
@@ -32,6 +28,16 @@ public:
         std::cout << "Destroy" << std::endl;
     }
     
+    void keyDown(const bg2e::app::KeyboardEvent& evt)
+    {
+        std::cout << "Key down: " << evt.keyName() << std::endl;
+    }
+    
+    void keyUp(const bg2e::app::KeyboardEvent& evt)
+    {
+        std::cout << "Key up: " << evt.keyName() << std::endl;
+    }
+    
     void mouseMove(const bg2e::app::MouseEvent& evt)
     {
         std::cout << "mouseMove(" << evt.mouseStatus().posX << "," << evt.mouseStatus().posY << ")"
@@ -54,16 +60,16 @@ public:
         std::cout << "mouseDown - ";
         switch (evt.button())
         {
-        case MouseButton::Left:
+        case MouseButton::ButtonLeft:
             std::cout << "left" << std::endl;
             break;
-        case MouseButton::Middle:
+        case MouseButton::ButtonMiddle:
             std::cout << "middle" << std::endl;
             break;
-        case MouseButton::Right:
+        case MouseButton::ButtonRight:
             std::cout << "right" << std::endl;
             break;
-        case MouseButton::None:
+        case MouseButton::ButtonNone:
             break;
         }
     }
@@ -74,16 +80,16 @@ public:
         std::cout << "mouseUp - ";
         switch (evt.button())
         {
-        case MouseButton::Left:
+        case MouseButton::ButtonLeft:
             std::cout << "left" << std::endl;
             break;
-        case MouseButton::Middle:
+        case MouseButton::ButtonMiddle:
             std::cout << "middle" << std::endl;
             break;
-        case MouseButton::Right:
+        case MouseButton::ButtonRight:
             std::cout << "right" << std::endl;
             break;
-        case MouseButton::None:
+        case MouseButton::ButtonNone:
             break;
         }
     }
@@ -103,10 +109,7 @@ int main(int argc, char ** argv)
     auto wnd = std::make_unique<Window>("Hello World!", 1024, 768);
     
     wnd->setAppController(std::make_unique<MyAppController>());
-    
-    glm::mat4 test = glm::perspective(glm::pi<float>() * 0.25f, 4.0f / 3.0f, 0.1f, 100.0f);
 
-    
     MainLoop mainLoop(std::move(wnd));
     return mainLoop.run();
 }

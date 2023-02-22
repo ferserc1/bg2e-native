@@ -16,7 +16,7 @@
 namespace bg2e {
 namespace app {
 
-class BG2_EXPORT Window {
+class BG2E_EXPORT Window {
 public:
     Window(const std::string & title = "", uint32_t width = 800, uint32_t height = 600);
     

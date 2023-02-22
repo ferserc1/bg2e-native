@@ -10,7 +10,7 @@
 namespace bg2e {
 namespace app {
 
-class BG2_EXPORT MainLoop {
+class BG2E_EXPORT MainLoop {
 public:
     MainLoop(std::unique_ptr<Window> wnd);
     

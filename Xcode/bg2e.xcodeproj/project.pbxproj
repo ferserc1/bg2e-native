@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		ED3E08C329A631C100768122 /* KeyboardEvent.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED3E08C229A631C100768122 /* KeyboardEvent.cpp */; };
 		ED432C7C299FBE6A0055AC3B /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = ED432C7B299FBE6A0055AC3B /* Assets.xcassets */; };
 		ED432C89299FBFB90055AC3B /* libbg2e.a in Frameworks */ = {isa = PBXBuildFile; fileRef = ED432C64299FBD8A0055AC3B /* libbg2e.a */; };
 		ED432C91299FC07C0055AC3B /* MainLoop.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED432C90299FC07C0055AC3B /* MainLoop.cpp */; };
@@ -32,6 +33,7 @@
 /* Begin PBXFileReference section */
 		ED34884729A4EF4700971FB3 /* KeyboardEvent.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = KeyboardEvent.hpp; sourceTree = "<group>"; };
 		ED34884829A4EF4700971FB3 /* MouseEvent.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = MouseEvent.hpp; sourceTree = "<group>"; };
+		ED3E08C229A631C100768122 /* KeyboardEvent.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = KeyboardEvent.cpp; sourceTree = "<group>"; };
 		ED432C64299FBD8A0055AC3B /* libbg2e.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libbg2e.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		ED432C76299FBE6A0055AC3B /* app-test.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "app-test.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		ED432C7B299FBE6A0055AC3B /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -1311,6 +1313,7 @@
 		ED432C8F299FC07C0055AC3B /* app */ = {
 			isa = PBXGroup;
 			children = (
+				ED3E08C229A631C100768122 /* KeyboardEvent.cpp */,
 				ED432C90299FC07C0055AC3B /* MainLoop.cpp */,
 				ED433330299FC4F00055AC3B /* Window.cpp */,
 			);
@@ -3372,6 +3375,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				ED432C91299FC07C0055AC3B /* MainLoop.cpp in Sources */,
+				ED3E08C329A631C100768122 /* KeyboardEvent.cpp in Sources */,
 				ED433331299FC4F00055AC3B /* Window.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

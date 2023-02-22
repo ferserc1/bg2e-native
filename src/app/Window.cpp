@@ -27,13 +27,20 @@ void keyCallback(GLFWwindow* glfwWindow, int key, int scancode, int action, int 
 {
     auto window = reinterpret_cast<Window*>(glfwGetWindowUserPointer(glfwWindow));
     
+    KeyboardEvent event(
+        static_cast<KeyCode>(key),
+        mods & GLFW_MOD_SHIFT,
+        mods & GLFW_MOD_CONTROL,
+        mods & GLFW_MOD_ALT,
+        mods & GLFW_MOD_CAPS_LOCK,
+        mods & GLFW_MOD_NUM_LOCK);
     if (action == GLFW_PRESS)
     {
-        std::cout << "press" << std::endl;
+        window->appController()->keyDown(event);
     }
     else if (action == GLFW_RELEASE)
     {
-        std::cout << "release" << std::endl;
+        window->appController()->keyUp(event);
     }
 }
 
@@ -42,13 +49,13 @@ MouseButton getMouseButton(int glfwButton)
     switch (glfwButton)
     {
     case GLFW_MOUSE_BUTTON_LEFT:
-        return MouseButton::Left;
+        return MouseButton::ButtonLeft;
     case GLFW_MOUSE_BUTTON_MIDDLE:
-        return MouseButton::Middle;
+        return MouseButton::ButtonMiddle;
     case GLFW_MOUSE_BUTTON_RIGHT:
-        return MouseButton::Right;
+        return MouseButton::ButtonRight;
     default:
-        return MouseButton::None;
+        return MouseButton::ButtonNone;
     }
 }
 
