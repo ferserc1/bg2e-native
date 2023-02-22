@@ -177,7 +177,10 @@
     <ClInclude Include="..\deps\bg2-io\src\bg2-io\errors.h" />
     <ClInclude Include="..\deps\bg2-io\src\bg2-io\types.h" />
     <ClInclude Include="..\deps\bg2-io\src\bg2-io\utils.h" />
+    <ClInclude Include="..\include\bg2e\app\AppController.hpp" />
+    <ClInclude Include="..\include\bg2e\app\KeyboardEvent.hpp" />
     <ClInclude Include="..\include\bg2e\app\MainLoop.hpp" />
+    <ClInclude Include="..\include\bg2e\app\MouseEvent.hpp" />
     <ClInclude Include="..\include\bg2e\app\Window.hpp" />
     <ClInclude Include="..\include\bg2e\export.hpp" />
   </ItemGroup>
@@ -189,6 +192,7 @@
     <ClCompile Include="..\deps\bg2-io\src\bg2-io\buffer-memory.c" />
     <ClCompile Include="..\deps\bg2-io\src\bg2-io\types.c" />
     <ClCompile Include="..\deps\bg2-io\src\bg2-io\utils.c" />
+    <ClCompile Include="..\src\app\KeyboardEvent.cpp" />
     <ClCompile Include="..\src\app\MainLoop.cpp" />
     <ClCompile Include="..\src\app\Window.cpp" />
   </ItemGroup>

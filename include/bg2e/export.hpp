@@ -3,6 +3,9 @@
 
 #ifdef _WIN32
 
+#pragma warning( disable: 4251 )
+#pragma warning( disable: 4275 )
+
 #ifdef _WINDLL
 
 #define BG2E_EXPORT __declspec( dllexport )

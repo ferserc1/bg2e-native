@@ -63,6 +63,15 @@
     <ClInclude Include="..\include\bg2e\export.hpp">
       <Filter>Header Files\bg2e</Filter>
     </ClInclude>
+    <ClInclude Include="..\include\bg2e\app\AppController.hpp">
+      <Filter>Header Files\bg2e\app</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\app\KeyboardEvent.hpp">
+      <Filter>Header Files\bg2e\app</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\app\MouseEvent.hpp">
+      <Filter>Header Files\bg2e\app</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\app\MainLoop.cpp">
@@ -91,6 +100,9 @@
     </ClCompile>
     <ClCompile Include="..\deps\bg2-io\src\bg2-io\utils.c">
       <Filter>Source Files\bg2-io</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\app\KeyboardEvent.cpp">
+      <Filter>Source Files\bg2e\app</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
