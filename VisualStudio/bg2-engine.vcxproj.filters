@@ -28,6 +28,21 @@
     <Filter Include="Header Files\bg2e\app">
       <UniqueIdentifier>{5f1eeacd-5a05-4030-b2b3-7fa91c008cf9}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\bg2-scene">
+      <UniqueIdentifier>{1ece5f72-9889-468e-998e-ccd7f291af04}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\bg2e\base">
+      <UniqueIdentifier>{8fc45897-fc11-4f02-b8f9-2bb08da37367}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\bg2e\render">
+      <UniqueIdentifier>{12ab4c10-bb84-4611-9d4e-7d1fa7ff0cec}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\bg2e\base">
+      <UniqueIdentifier>{c29749e1-eb73-4a41-a1e8-a730c3e438f8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\bg2e\render">
+      <UniqueIdentifier>{2ad57bd9-d4f3-4353-86b5-38eaba3c2bed}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\include\bg2e\app\MainLoop.hpp">
@@ -72,6 +87,42 @@
     <ClInclude Include="..\include\bg2e\app\MouseEvent.hpp">
       <Filter>Header Files\bg2e\app</Filter>
     </ClInclude>
+    <ClInclude Include="\\wsl.localhost\Ubuntu-20.04\home\fernando\desarrollo\bg2-io\src\bg2-scene\bg2-scene.hpp">
+      <Filter>Source Files\bg2-scene</Filter>
+    </ClInclude>
+    <ClInclude Include="\\wsl.localhost\Ubuntu-20.04\home\fernando\desarrollo\bg2-io\src\bg2-scene\component.hpp">
+      <Filter>Source Files\bg2-scene</Filter>
+    </ClInclude>
+    <ClInclude Include="\\wsl.localhost\Ubuntu-20.04\home\fernando\desarrollo\bg2-io\src\bg2-scene\json.hpp">
+      <Filter>Source Files\bg2-scene</Filter>
+    </ClInclude>
+    <ClInclude Include="\\wsl.localhost\Ubuntu-20.04\home\fernando\desarrollo\bg2-io\src\bg2-scene\json-parser.hpp">
+      <Filter>Source Files\bg2-scene</Filter>
+    </ClInclude>
+    <ClInclude Include="\\wsl.localhost\Ubuntu-20.04\home\fernando\desarrollo\bg2-io\src\bg2-scene\json-token.hpp">
+      <Filter>Source Files\bg2-scene</Filter>
+    </ClInclude>
+    <ClInclude Include="\\wsl.localhost\Ubuntu-20.04\home\fernando\desarrollo\bg2-io\src\bg2-scene\node.hpp">
+      <Filter>Source Files\bg2-scene</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\base\Environment.hpp">
+      <Filter>Header Files\bg2e\base</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\base\Light.hpp">
+      <Filter>Header Files\bg2e\base</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\base\Material.hpp">
+      <Filter>Header Files\bg2e\base</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\base\PolyList.hpp">
+      <Filter>Header Files\bg2e\base</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\base\Texture.hpp">
+      <Filter>Header Files\bg2e\base</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\render\Renderer.hpp">
+      <Filter>Header Files\bg2e\render</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\app\MainLoop.cpp">
@@ -103,6 +154,42 @@
     </ClCompile>
     <ClCompile Include="..\src\app\KeyboardEvent.cpp">
       <Filter>Source Files\bg2e\app</Filter>
+    </ClCompile>
+    <ClCompile Include="\\wsl.localhost\Ubuntu-20.04\home\fernando\desarrollo\bg2-io\src\bg2-scene\bg2-scene.cpp">
+      <Filter>Source Files\bg2-scene</Filter>
+    </ClCompile>
+    <ClCompile Include="\\wsl.localhost\Ubuntu-20.04\home\fernando\desarrollo\bg2-io\src\bg2-scene\component.cpp">
+      <Filter>Source Files\bg2-scene</Filter>
+    </ClCompile>
+    <ClCompile Include="\\wsl.localhost\Ubuntu-20.04\home\fernando\desarrollo\bg2-io\src\bg2-scene\json.cpp">
+      <Filter>Source Files\bg2-scene</Filter>
+    </ClCompile>
+    <ClCompile Include="\\wsl.localhost\Ubuntu-20.04\home\fernando\desarrollo\bg2-io\src\bg2-scene\json-parser.cpp">
+      <Filter>Source Files\bg2-scene</Filter>
+    </ClCompile>
+    <ClCompile Include="\\wsl.localhost\Ubuntu-20.04\home\fernando\desarrollo\bg2-io\src\bg2-scene\json-token.cpp">
+      <Filter>Source Files\bg2-scene</Filter>
+    </ClCompile>
+    <ClCompile Include="\\wsl.localhost\Ubuntu-20.04\home\fernando\desarrollo\bg2-io\src\bg2-scene\node.cpp">
+      <Filter>Source Files\bg2-scene</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\base\Environment.cpp">
+      <Filter>Source Files\bg2e\base</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\base\Light.cpp">
+      <Filter>Source Files\bg2e\base</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\base\Material.cpp">
+      <Filter>Source Files\bg2e\base</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\base\PolyList.cpp">
+      <Filter>Source Files\bg2e\base</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\base\Texture.cpp">
+      <Filter>Source Files\bg2e\base</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\render\Renderer.cpp">
+      <Filter>Source Files\bg2e\render</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
