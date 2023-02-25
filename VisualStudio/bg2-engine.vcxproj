@@ -30,7 +30,7 @@
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v143</PlatformToolset>
-    <CharacterSet>Unicode</CharacterSet>
+    <CharacterSet>MultiByte</CharacterSet>
     <UseOfMfc>false</UseOfMfc>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
@@ -38,14 +38,14 @@
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v143</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
-    <CharacterSet>Unicode</CharacterSet>
+    <CharacterSet>MultiByte</CharacterSet>
     <UseOfMfc>false</UseOfMfc>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v143</PlatformToolset>
-    <CharacterSet>Unicode</CharacterSet>
+    <CharacterSet>MultiByte</CharacterSet>
     <UseOfMfc>false</UseOfMfc>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
@@ -53,7 +53,7 @@
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v143</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
-    <CharacterSet>Unicode</CharacterSet>
+    <CharacterSet>MultiByte</CharacterSet>
     <UseOfMfc>false</UseOfMfc>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
@@ -181,6 +181,12 @@
     <ClInclude Include="..\deps\bg2-io\src\bg2-io\errors.h" />
     <ClInclude Include="..\deps\bg2-io\src\bg2-io\types.h" />
     <ClInclude Include="..\deps\bg2-io\src\bg2-io\utils.h" />
+    <ClInclude Include="..\deps\bg2-io\src\bg2-scene\bg2-scene.hpp" />
+    <ClInclude Include="..\deps\bg2-io\src\bg2-scene\component.hpp" />
+    <ClInclude Include="..\deps\bg2-io\src\bg2-scene\json-parser.hpp" />
+    <ClInclude Include="..\deps\bg2-io\src\bg2-scene\json-token.hpp" />
+    <ClInclude Include="..\deps\bg2-io\src\bg2-scene\json.hpp" />
+    <ClInclude Include="..\deps\bg2-io\src\bg2-scene\node.hpp" />
     <ClInclude Include="..\include\bg2e\app\AppController.hpp" />
     <ClInclude Include="..\include\bg2e\app\KeyboardEvent.hpp" />
     <ClInclude Include="..\include\bg2e\app\MainLoop.hpp" />
@@ -193,12 +199,6 @@
     <ClInclude Include="..\include\bg2e\base\Texture.hpp" />
     <ClInclude Include="..\include\bg2e\export.hpp" />
     <ClInclude Include="..\include\bg2e\render\Renderer.hpp" />
-    <ClInclude Include="\\wsl.localhost\Ubuntu-20.04\home\fernando\desarrollo\bg2-io\src\bg2-scene\bg2-scene.hpp" />
-    <ClInclude Include="\\wsl.localhost\Ubuntu-20.04\home\fernando\desarrollo\bg2-io\src\bg2-scene\component.hpp" />
-    <ClInclude Include="\\wsl.localhost\Ubuntu-20.04\home\fernando\desarrollo\bg2-io\src\bg2-scene\json-parser.hpp" />
-    <ClInclude Include="\\wsl.localhost\Ubuntu-20.04\home\fernando\desarrollo\bg2-io\src\bg2-scene\json-token.hpp" />
-    <ClInclude Include="\\wsl.localhost\Ubuntu-20.04\home\fernando\desarrollo\bg2-io\src\bg2-scene\json.hpp" />
-    <ClInclude Include="\\wsl.localhost\Ubuntu-20.04\home\fernando\desarrollo\bg2-io\src\bg2-scene\node.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\deps\bg2-io\src\bg2-io\bg2-io.c" />
@@ -208,6 +208,12 @@
     <ClCompile Include="..\deps\bg2-io\src\bg2-io\buffer-memory.c" />
     <ClCompile Include="..\deps\bg2-io\src\bg2-io\types.c" />
     <ClCompile Include="..\deps\bg2-io\src\bg2-io\utils.c" />
+    <ClCompile Include="..\deps\bg2-io\src\bg2-scene\bg2-scene.cpp" />
+    <ClCompile Include="..\deps\bg2-io\src\bg2-scene\component.cpp" />
+    <ClCompile Include="..\deps\bg2-io\src\bg2-scene\json-parser.cpp" />
+    <ClCompile Include="..\deps\bg2-io\src\bg2-scene\json-token.cpp" />
+    <ClCompile Include="..\deps\bg2-io\src\bg2-scene\json.cpp" />
+    <ClCompile Include="..\deps\bg2-io\src\bg2-scene\node.cpp" />
     <ClCompile Include="..\src\app\KeyboardEvent.cpp" />
     <ClCompile Include="..\src\app\MainLoop.cpp" />
     <ClCompile Include="..\src\app\Window.cpp" />
@@ -217,12 +223,6 @@
     <ClCompile Include="..\src\base\PolyList.cpp" />
     <ClCompile Include="..\src\base\Texture.cpp" />
     <ClCompile Include="..\src\render\Renderer.cpp" />
-    <ClCompile Include="\\wsl.localhost\Ubuntu-20.04\home\fernando\desarrollo\bg2-io\src\bg2-scene\bg2-scene.cpp" />
-    <ClCompile Include="\\wsl.localhost\Ubuntu-20.04\home\fernando\desarrollo\bg2-io\src\bg2-scene\component.cpp" />
-    <ClCompile Include="\\wsl.localhost\Ubuntu-20.04\home\fernando\desarrollo\bg2-io\src\bg2-scene\json-parser.cpp" />
-    <ClCompile Include="\\wsl.localhost\Ubuntu-20.04\home\fernando\desarrollo\bg2-io\src\bg2-scene\json-token.cpp" />
-    <ClCompile Include="\\wsl.localhost\Ubuntu-20.04\home\fernando\desarrollo\bg2-io\src\bg2-scene\json.cpp" />
-    <ClCompile Include="\\wsl.localhost\Ubuntu-20.04\home\fernando\desarrollo\bg2-io\src\bg2-scene\node.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

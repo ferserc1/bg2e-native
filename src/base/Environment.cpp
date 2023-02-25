@@ -8,5 +8,15 @@ Environment::Environment()
 {
 }
 
+void Environment::deserialize(const std::shared_ptr<bg2scene::json::JsonNode>&)
+{
+
+}
+
+void Environment::serialize(bg2scene::json::JsonObject&)
+{
+
+}
+
 }
 }

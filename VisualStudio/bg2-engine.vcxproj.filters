@@ -51,6 +51,54 @@
     <ClInclude Include="..\include\bg2e\app\Window.hpp">
       <Filter>Header Files\bg2e\app</Filter>
     </ClInclude>
+    <ClInclude Include="..\include\bg2e\export.hpp">
+      <Filter>Header Files\bg2e</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\app\AppController.hpp">
+      <Filter>Header Files\bg2e\app</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\app\KeyboardEvent.hpp">
+      <Filter>Header Files\bg2e\app</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\app\MouseEvent.hpp">
+      <Filter>Header Files\bg2e\app</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\base\Environment.hpp">
+      <Filter>Header Files\bg2e\base</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\base\Light.hpp">
+      <Filter>Header Files\bg2e\base</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\base\Material.hpp">
+      <Filter>Header Files\bg2e\base</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\base\PolyList.hpp">
+      <Filter>Header Files\bg2e\base</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\base\Texture.hpp">
+      <Filter>Header Files\bg2e\base</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\render\Renderer.hpp">
+      <Filter>Header Files\bg2e\render</Filter>
+    </ClInclude>
+    <ClInclude Include="..\deps\bg2-io\src\bg2-scene\bg2-scene.hpp">
+      <Filter>Source Files\bg2-scene</Filter>
+    </ClInclude>
+    <ClInclude Include="..\deps\bg2-io\src\bg2-scene\component.hpp">
+      <Filter>Source Files\bg2-scene</Filter>
+    </ClInclude>
+    <ClInclude Include="..\deps\bg2-io\src\bg2-scene\json.hpp">
+      <Filter>Source Files\bg2-scene</Filter>
+    </ClInclude>
+    <ClInclude Include="..\deps\bg2-io\src\bg2-scene\json-parser.hpp">
+      <Filter>Source Files\bg2-scene</Filter>
+    </ClInclude>
+    <ClInclude Include="..\deps\bg2-io\src\bg2-scene\json-token.hpp">
+      <Filter>Source Files\bg2-scene</Filter>
+    </ClInclude>
+    <ClInclude Include="..\deps\bg2-io\src\bg2-scene\node.hpp">
+      <Filter>Source Files\bg2-scene</Filter>
+    </ClInclude>
     <ClInclude Include="..\deps\bg2-io\src\bg2-io\bg2-io.h">
       <Filter>Source Files\bg2-io</Filter>
     </ClInclude>
@@ -75,54 +123,6 @@
     <ClInclude Include="..\deps\bg2-io\src\bg2-io\utils.h">
       <Filter>Source Files\bg2-io</Filter>
     </ClInclude>
-    <ClInclude Include="..\include\bg2e\export.hpp">
-      <Filter>Header Files\bg2e</Filter>
-    </ClInclude>
-    <ClInclude Include="..\include\bg2e\app\AppController.hpp">
-      <Filter>Header Files\bg2e\app</Filter>
-    </ClInclude>
-    <ClInclude Include="..\include\bg2e\app\KeyboardEvent.hpp">
-      <Filter>Header Files\bg2e\app</Filter>
-    </ClInclude>
-    <ClInclude Include="..\include\bg2e\app\MouseEvent.hpp">
-      <Filter>Header Files\bg2e\app</Filter>
-    </ClInclude>
-    <ClInclude Include="\\wsl.localhost\Ubuntu-20.04\home\fernando\desarrollo\bg2-io\src\bg2-scene\bg2-scene.hpp">
-      <Filter>Source Files\bg2-scene</Filter>
-    </ClInclude>
-    <ClInclude Include="\\wsl.localhost\Ubuntu-20.04\home\fernando\desarrollo\bg2-io\src\bg2-scene\component.hpp">
-      <Filter>Source Files\bg2-scene</Filter>
-    </ClInclude>
-    <ClInclude Include="\\wsl.localhost\Ubuntu-20.04\home\fernando\desarrollo\bg2-io\src\bg2-scene\json.hpp">
-      <Filter>Source Files\bg2-scene</Filter>
-    </ClInclude>
-    <ClInclude Include="\\wsl.localhost\Ubuntu-20.04\home\fernando\desarrollo\bg2-io\src\bg2-scene\json-parser.hpp">
-      <Filter>Source Files\bg2-scene</Filter>
-    </ClInclude>
-    <ClInclude Include="\\wsl.localhost\Ubuntu-20.04\home\fernando\desarrollo\bg2-io\src\bg2-scene\json-token.hpp">
-      <Filter>Source Files\bg2-scene</Filter>
-    </ClInclude>
-    <ClInclude Include="\\wsl.localhost\Ubuntu-20.04\home\fernando\desarrollo\bg2-io\src\bg2-scene\node.hpp">
-      <Filter>Source Files\bg2-scene</Filter>
-    </ClInclude>
-    <ClInclude Include="..\include\bg2e\base\Environment.hpp">
-      <Filter>Header Files\bg2e\base</Filter>
-    </ClInclude>
-    <ClInclude Include="..\include\bg2e\base\Light.hpp">
-      <Filter>Header Files\bg2e\base</Filter>
-    </ClInclude>
-    <ClInclude Include="..\include\bg2e\base\Material.hpp">
-      <Filter>Header Files\bg2e\base</Filter>
-    </ClInclude>
-    <ClInclude Include="..\include\bg2e\base\PolyList.hpp">
-      <Filter>Header Files\bg2e\base</Filter>
-    </ClInclude>
-    <ClInclude Include="..\include\bg2e\base\Texture.hpp">
-      <Filter>Header Files\bg2e\base</Filter>
-    </ClInclude>
-    <ClInclude Include="..\include\bg2e\render\Renderer.hpp">
-      <Filter>Header Files\bg2e\render</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\app\MainLoop.cpp">
@@ -130,6 +130,45 @@
     </ClCompile>
     <ClCompile Include="..\src\app\Window.cpp">
       <Filter>Source Files\bg2e\app</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\app\KeyboardEvent.cpp">
+      <Filter>Source Files\bg2e\app</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\base\Environment.cpp">
+      <Filter>Source Files\bg2e\base</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\base\Light.cpp">
+      <Filter>Source Files\bg2e\base</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\base\Material.cpp">
+      <Filter>Source Files\bg2e\base</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\base\PolyList.cpp">
+      <Filter>Source Files\bg2e\base</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\base\Texture.cpp">
+      <Filter>Source Files\bg2e\base</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\render\Renderer.cpp">
+      <Filter>Source Files\bg2e\render</Filter>
+    </ClCompile>
+    <ClCompile Include="..\deps\bg2-io\src\bg2-scene\bg2-scene.cpp">
+      <Filter>Source Files\bg2-scene</Filter>
+    </ClCompile>
+    <ClCompile Include="..\deps\bg2-io\src\bg2-scene\component.cpp">
+      <Filter>Source Files\bg2-scene</Filter>
+    </ClCompile>
+    <ClCompile Include="..\deps\bg2-io\src\bg2-scene\json.cpp">
+      <Filter>Source Files\bg2-scene</Filter>
+    </ClCompile>
+    <ClCompile Include="..\deps\bg2-io\src\bg2-scene\json-parser.cpp">
+      <Filter>Source Files\bg2-scene</Filter>
+    </ClCompile>
+    <ClCompile Include="..\deps\bg2-io\src\bg2-scene\json-token.cpp">
+      <Filter>Source Files\bg2-scene</Filter>
+    </ClCompile>
+    <ClCompile Include="..\deps\bg2-io\src\bg2-scene\node.cpp">
+      <Filter>Source Files\bg2-scene</Filter>
     </ClCompile>
     <ClCompile Include="..\deps\bg2-io\src\bg2-io\bg2-io.c">
       <Filter>Source Files\bg2-io</Filter>
@@ -151,45 +190,6 @@
     </ClCompile>
     <ClCompile Include="..\deps\bg2-io\src\bg2-io\utils.c">
       <Filter>Source Files\bg2-io</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\app\KeyboardEvent.cpp">
-      <Filter>Source Files\bg2e\app</Filter>
-    </ClCompile>
-    <ClCompile Include="\\wsl.localhost\Ubuntu-20.04\home\fernando\desarrollo\bg2-io\src\bg2-scene\bg2-scene.cpp">
-      <Filter>Source Files\bg2-scene</Filter>
-    </ClCompile>
-    <ClCompile Include="\\wsl.localhost\Ubuntu-20.04\home\fernando\desarrollo\bg2-io\src\bg2-scene\component.cpp">
-      <Filter>Source Files\bg2-scene</Filter>
-    </ClCompile>
-    <ClCompile Include="\\wsl.localhost\Ubuntu-20.04\home\fernando\desarrollo\bg2-io\src\bg2-scene\json.cpp">
-      <Filter>Source Files\bg2-scene</Filter>
-    </ClCompile>
-    <ClCompile Include="\\wsl.localhost\Ubuntu-20.04\home\fernando\desarrollo\bg2-io\src\bg2-scene\json-parser.cpp">
-      <Filter>Source Files\bg2-scene</Filter>
-    </ClCompile>
-    <ClCompile Include="\\wsl.localhost\Ubuntu-20.04\home\fernando\desarrollo\bg2-io\src\bg2-scene\json-token.cpp">
-      <Filter>Source Files\bg2-scene</Filter>
-    </ClCompile>
-    <ClCompile Include="\\wsl.localhost\Ubuntu-20.04\home\fernando\desarrollo\bg2-io\src\bg2-scene\node.cpp">
-      <Filter>Source Files\bg2-scene</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\base\Environment.cpp">
-      <Filter>Source Files\bg2e\base</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\base\Light.cpp">
-      <Filter>Source Files\bg2e\base</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\base\Material.cpp">
-      <Filter>Source Files\bg2e\base</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\base\PolyList.cpp">
-      <Filter>Source Files\bg2e\base</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\base\Texture.cpp">
-      <Filter>Source Files\bg2e\base</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\render\Renderer.cpp">
-      <Filter>Source Files\bg2e\render</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
