@@ -24,6 +24,9 @@
 		ED5CDE3229A7ACC800797D21 /* PolyList.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED5CDE2D29A7ACC800797D21 /* PolyList.cpp */; };
 		ED5CDE3329A7ACC800797D21 /* Material.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED5CDE2E29A7ACC800797D21 /* Material.cpp */; };
 		ED5CDE3E29A7AE8E00797D21 /* Renderer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED5CDE3D29A7AE8E00797D21 /* Renderer.cpp */; };
+		EDFF9C7229ACEBE000B0BFD2 /* JsonParser.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EDFF9C6F29ACEBE000B0BFD2 /* JsonParser.cpp */; };
+		EDFF9C7329ACEBE000B0BFD2 /* JsonToken.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EDFF9C7029ACEBE000B0BFD2 /* JsonToken.cpp */; };
+		EDFF9C7629ACEC9100B0BFD2 /* Json.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EDFF9C7529ACEC9100B0BFD2 /* Json.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -1213,6 +1216,12 @@
 		ED5CDE3D29A7AE8E00797D21 /* Renderer.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Renderer.cpp; sourceTree = "<group>"; };
 		EDB575F729A17C0900A3840E /* export.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = export.hpp; sourceTree = "<group>"; };
 		EDFCED5129A4CEF8008337AE /* AppController.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = AppController.hpp; sourceTree = "<group>"; };
+		EDFF9C6B29ACEBCA00B0BFD2 /* Json.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Json.hpp; sourceTree = "<group>"; };
+		EDFF9C6C29ACEBCA00B0BFD2 /* JsonToken.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = JsonToken.hpp; sourceTree = "<group>"; };
+		EDFF9C6D29ACEBCA00B0BFD2 /* JsonParser.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = JsonParser.hpp; sourceTree = "<group>"; };
+		EDFF9C6F29ACEBE000B0BFD2 /* JsonParser.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = JsonParser.cpp; sourceTree = "<group>"; };
+		EDFF9C7029ACEBE000B0BFD2 /* JsonToken.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = JsonToken.cpp; sourceTree = "<group>"; };
+		EDFF9C7529ACEC9100B0BFD2 /* Json.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Json.cpp; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -1305,6 +1314,7 @@
 				ED432C8C299FC0700055AC3B /* app */,
 				ED5CDE3429A7ACE700797D21 /* base */,
 				ED5CDE3A29A7AE7700797D21 /* render */,
+				EDFF9C6A29ACEBCA00B0BFD2 /* tools */,
 			);
 			path = bg2e;
 			sourceTree = "<group>";
@@ -1327,6 +1337,7 @@
 				ED432C8F299FC07C0055AC3B /* app */,
 				ED5CDE2929A7ACC800797D21 /* base */,
 				ED5CDE3C29A7AE8E00797D21 /* render */,
+				EDFF9C6E29ACEBE000B0BFD2 /* tools */,
 			);
 			name = src;
 			path = ../../src;
@@ -3336,6 +3347,26 @@
 			path = render;
 			sourceTree = "<group>";
 		};
+		EDFF9C6A29ACEBCA00B0BFD2 /* tools */ = {
+			isa = PBXGroup;
+			children = (
+				EDFF9C6B29ACEBCA00B0BFD2 /* Json.hpp */,
+				EDFF9C6C29ACEBCA00B0BFD2 /* JsonToken.hpp */,
+				EDFF9C6D29ACEBCA00B0BFD2 /* JsonParser.hpp */,
+			);
+			path = tools;
+			sourceTree = "<group>";
+		};
+		EDFF9C6E29ACEBE000B0BFD2 /* tools */ = {
+			isa = PBXGroup;
+			children = (
+				EDFF9C6F29ACEBE000B0BFD2 /* JsonParser.cpp */,
+				EDFF9C7029ACEBE000B0BFD2 /* JsonToken.cpp */,
+				EDFF9C7529ACEC9100B0BFD2 /* Json.cpp */,
+			);
+			path = tools;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXHeadersBuildPhase section */
@@ -3437,14 +3468,17 @@
 			buildActionMask = 2147483647;
 			files = (
 				ED5CDE3E29A7AE8E00797D21 /* Renderer.cpp in Sources */,
+				EDFF9C7329ACEBE000B0BFD2 /* JsonToken.cpp in Sources */,
 				ED5CDE3029A7ACC800797D21 /* Light.cpp in Sources */,
 				ED432C91299FC07C0055AC3B /* MainLoop.cpp in Sources */,
 				ED5CDE2F29A7ACC800797D21 /* Environment.cpp in Sources */,
 				ED5CDE3129A7ACC800797D21 /* Texture.cpp in Sources */,
 				ED5CDE3329A7ACC800797D21 /* Material.cpp in Sources */,
+				EDFF9C7229ACEBE000B0BFD2 /* JsonParser.cpp in Sources */,
 				ED5CDE3229A7ACC800797D21 /* PolyList.cpp in Sources */,
 				ED3E08C329A631C100768122 /* KeyboardEvent.cpp in Sources */,
 				ED433331299FC4F00055AC3B /* Window.cpp in Sources */,
+				EDFF9C7629ACEC9100B0BFD2 /* Json.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

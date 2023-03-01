@@ -3,7 +3,7 @@
 
 #include <bg2e/export.hpp>
 
-#include <json.hpp>
+#include <bg2e/tools/Json.hpp>
 
 #include <string>
 #include <memory>
@@ -26,13 +26,13 @@ public:
     inline uint32_t specularMapSize() const { return _specularMapSize; }
     inline uint32_t specularMapL2Size() const { return _specularMapL2Size; }
 
-    inline void setequirectangularTexture(const std::string& p) { _equirectangularTexture = p; _dirty = true; }
-    inline void setirradianceIntensity(float p) { _irradianceIntensity = p; _dirty = true; }
-    inline void setshowSkybox(bool p) { _showSkybox = p; _dirty = true; }
-    inline void setcubemapSize(uint32_t p) { _cubemapSize = p; _dirty = true; }
-    inline void setirradianceMapSize(uint32_t p) { _irradianceMapSize = p; _dirty = true; }
-    inline void setspecularMapSize(uint32_t p) { _specularMapSize = p; _dirty = true; }
-    inline void setspecularMapL2Size(uint32_t p) { _specularMapL2Size = p; _dirty = true; }
+    inline void setEquirectangularTexture(const std::string& p) { _equirectangularTexture = p; _dirty = true; }
+    inline void setIrradianceIntensity(float p) { _irradianceIntensity = p; _dirty = true; }
+    inline void setShowSkybox(bool p) { _showSkybox = p; _dirty = true; }
+    inline void setCubemapSize(uint32_t p) { _cubemapSize = p; _dirty = true; }
+    inline void setIrradianceMapSize(uint32_t p) { _irradianceMapSize = p; _dirty = true; }
+    inline void setSpecularMapSize(uint32_t p) { _specularMapSize = p; _dirty = true; }
+    inline void setSpecularMapL2Size(uint32_t p) { _specularMapL2Size = p; _dirty = true; }
 
     std::shared_ptr<Environment> clone()
     {
@@ -54,9 +54,9 @@ public:
     }
     
     // TODO: serialize/deserialize
-    void deserialize(const std::shared_ptr<bg2scene::json::JsonNode>&);
+    void deserialize(const std::shared_ptr<tools::JsonNode>&);
 
-    void serialize(bg2scene::json::JsonObject&);
+    void serialize(tools::JsonObject&);
 
 protected:
     std::string _equirectangularTexture = "";
