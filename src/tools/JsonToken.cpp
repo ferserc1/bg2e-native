@@ -133,7 +133,7 @@ bool JsonTokenizer::hasMoreTokens() {
     try {
         getToken();
     }
-    catch(std::exception & e) {
+    catch(std::exception &) {
         result = false;
     }
     stream->seekg(prevPos);

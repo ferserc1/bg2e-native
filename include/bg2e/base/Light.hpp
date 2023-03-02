@@ -7,6 +7,16 @@ namespace bg2e {
 namespace base {
 
 
+class BG2E_EXPORT Light
+{
+public:
+	Light();
+
+protected:
+	bool _enabled;
+
+
+};
 
 }
 }

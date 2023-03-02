@@ -28,9 +28,6 @@
     <Filter Include="Header Files\bg2e\app">
       <UniqueIdentifier>{5f1eeacd-5a05-4030-b2b3-7fa91c008cf9}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\bg2-scene">
-      <UniqueIdentifier>{1ece5f72-9889-468e-998e-ccd7f291af04}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source Files\bg2e\base">
       <UniqueIdentifier>{8fc45897-fc11-4f02-b8f9-2bb08da37367}</UniqueIdentifier>
     </Filter>
@@ -42,6 +39,12 @@
     </Filter>
     <Filter Include="Header Files\bg2e\render">
       <UniqueIdentifier>{2ad57bd9-d4f3-4353-86b5-38eaba3c2bed}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\bg2e\tools">
+      <UniqueIdentifier>{4c8ac4cf-218a-4c8c-98c7-d3aa1bf2e1bf}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\bg2e\tools">
+      <UniqueIdentifier>{d3e250a8-ed9a-4fe2-b6f8-c4e549c426ca}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -81,24 +84,6 @@
     <ClInclude Include="..\include\bg2e\render\Renderer.hpp">
       <Filter>Header Files\bg2e\render</Filter>
     </ClInclude>
-    <ClInclude Include="..\deps\bg2-io\src\bg2-scene\bg2-scene.hpp">
-      <Filter>Source Files\bg2-scene</Filter>
-    </ClInclude>
-    <ClInclude Include="..\deps\bg2-io\src\bg2-scene\component.hpp">
-      <Filter>Source Files\bg2-scene</Filter>
-    </ClInclude>
-    <ClInclude Include="..\deps\bg2-io\src\bg2-scene\json.hpp">
-      <Filter>Source Files\bg2-scene</Filter>
-    </ClInclude>
-    <ClInclude Include="..\deps\bg2-io\src\bg2-scene\json-parser.hpp">
-      <Filter>Source Files\bg2-scene</Filter>
-    </ClInclude>
-    <ClInclude Include="..\deps\bg2-io\src\bg2-scene\json-token.hpp">
-      <Filter>Source Files\bg2-scene</Filter>
-    </ClInclude>
-    <ClInclude Include="..\deps\bg2-io\src\bg2-scene\node.hpp">
-      <Filter>Source Files\bg2-scene</Filter>
-    </ClInclude>
     <ClInclude Include="..\deps\bg2-io\src\bg2-io\bg2-io.h">
       <Filter>Source Files\bg2-io</Filter>
     </ClInclude>
@@ -122,6 +107,15 @@
     </ClInclude>
     <ClInclude Include="..\deps\bg2-io\src\bg2-io\utils.h">
       <Filter>Source Files\bg2-io</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\tools\Json.hpp">
+      <Filter>Header Files\bg2e\tools</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\tools\JsonParser.hpp">
+      <Filter>Header Files\bg2e\tools</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\tools\JsonToken.hpp">
+      <Filter>Header Files\bg2e\tools</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -152,24 +146,6 @@
     <ClCompile Include="..\src\render\Renderer.cpp">
       <Filter>Source Files\bg2e\render</Filter>
     </ClCompile>
-    <ClCompile Include="..\deps\bg2-io\src\bg2-scene\bg2-scene.cpp">
-      <Filter>Source Files\bg2-scene</Filter>
-    </ClCompile>
-    <ClCompile Include="..\deps\bg2-io\src\bg2-scene\component.cpp">
-      <Filter>Source Files\bg2-scene</Filter>
-    </ClCompile>
-    <ClCompile Include="..\deps\bg2-io\src\bg2-scene\json.cpp">
-      <Filter>Source Files\bg2-scene</Filter>
-    </ClCompile>
-    <ClCompile Include="..\deps\bg2-io\src\bg2-scene\json-parser.cpp">
-      <Filter>Source Files\bg2-scene</Filter>
-    </ClCompile>
-    <ClCompile Include="..\deps\bg2-io\src\bg2-scene\json-token.cpp">
-      <Filter>Source Files\bg2-scene</Filter>
-    </ClCompile>
-    <ClCompile Include="..\deps\bg2-io\src\bg2-scene\node.cpp">
-      <Filter>Source Files\bg2-scene</Filter>
-    </ClCompile>
     <ClCompile Include="..\deps\bg2-io\src\bg2-io\bg2-io.c">
       <Filter>Source Files\bg2-io</Filter>
     </ClCompile>
@@ -190,6 +166,15 @@
     </ClCompile>
     <ClCompile Include="..\deps\bg2-io\src\bg2-io\utils.c">
       <Filter>Source Files\bg2-io</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\tools\Json.cpp">
+      <Filter>Source Files\bg2e\tools</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\tools\JsonParser.cpp">
+      <Filter>Source Files\bg2e\tools</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\tools\JsonToken.cpp">
+      <Filter>Source Files\bg2e\tools</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

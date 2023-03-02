@@ -4,6 +4,11 @@
 namespace bg2e {
 namespace base {
 
+Light::Light()
+{
+
+}
+
 
 
 }
