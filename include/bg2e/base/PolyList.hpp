@@ -9,7 +9,10 @@
 
 #include <string>
 #include <vector>
-
+#include <stdexcept>
+#include <algorithm>
+#include <iterator>
+#include <memory>
 
 namespace bg2e {
 namespace base {
@@ -91,19 +94,65 @@ typedef enum {
 class PolyList {
 public:
     PolyList();
+
+    std::shared_ptr<PolyList> clone();
+    PolyList& operator=(const PolyList&);
     
-    const std::vector<float>& vertex() const { return _vertex; }
-    const std::vector<float>& normal() const { return _normal; }
-    const std::vector<float>& texCoord0() const { return _texCoord0; }
-    const std::vector<float>& texCoord1() const { return _texCoord1; }
-    const std::vector<float>& texCoord2() const { return _texCoord2; }
-    const std::vector<float>& color() const { return _color; }
+    inline RenderLayers renderLayers() const { return _renderLayers; }
+    inline DrawMode drawMode() const { return _drawMode; }
+    inline const std::string& name() const { return _name; }
+    inline const std::string& groupName() const { return _groupName; }
+    inline bool visible() const { return _visible; }
+    inline bool visibleToShadows() const { return _visibleToShadows; }
+    inline PolyListCullFace cullFace() const { return _cullFace; }
+    inline PolyListFrontFace frontFace() const { return _frontFace; }
+    inline bool cullFaceEnabled() const { return _cullFaceEnabled; }
+
+    inline void setRenderLayers(RenderLayers layers) { _renderLayers = layers; }
+    inline void setDrawMode(DrawMode mode) { _drawMode = mode; }
+    inline void setName(const std::string& name) { _name = name; }
+    inline void setGroupName(const std::string& groupName) { _groupName = groupName; }
+    inline void setVisible(bool visible) { _visible = visible; }
+    inline void setVisibleToShadows(bool vts) { _visibleToShadows = vts; }
+    inline void setCullFace(PolyListCullFace cf) { _cullFace = cf; }
+    inline void setFrontFace(PolyListFrontFace ff) { _frontFace = ff; }
+    inline void setCullFaceEnabled(bool cf) { _cullFaceEnabled = cf; }
+
+
+    inline const std::vector<float>& vertex() const { return _vertex; }
+    inline const std::vector<float>& normal() const { return _normal; }
+    inline const std::vector<float>& texCoord0() const { return _texCoord0; }
+    inline const std::vector<float>& texCoord1() const { return _texCoord1; }
+    inline const std::vector<float>& texCoord2() const { return _texCoord2; }
+    inline const std::vector<float>& color() const { return _color; }
+    inline const std::vector<uint32_t>& index() const { return _index; }
     
-    const std::vector<uint32_t>& index() const { return _index; }
+    inline const std::vector<float>& tangent() const {
+        if (!validTangents())
+        {
+            throw std::runtime_error("PolyList::tangent(): Invalid tangents. Call assertValidTangents() before get the tangent vector.");
+        }
+        return _tangent;
+    }
+
+    inline void setVertex(const std::vector<float>& v) { std::copy(v.begin(), v.end(), std::back_inserter(_vertex)); }
+    inline void setVertex(std::vector<float>&& v) { _vertex = v; }
+    inline void setNormal(const std::vector<float>& v) { std::copy(v.begin(), v.end(), std::back_inserter(_normal)); }
+    inline void setNormal(std::vector<float>&& v) { _normal = v; }
+    inline void setTexCoord0(const std::vector<float>& v) { std::copy(v.begin(), v.end(), std::back_inserter(_texCoord0)); }
+    inline void setTexCoord0(std::vector<float>&& v) { _texCoord0 = v; }
+    inline void setTexCoord1(const std::vector<float>& v) { std::copy(v.begin(), v.end(), std::back_inserter(_texCoord1)); }
+    inline void setTexCoord1(std::vector<float>&& v) { _texCoord1 = v; }
+    inline void setTexCoord2(const std::vector<float>& v) { std::copy(v.begin(), v.end(), std::back_inserter(_texCoord2)); }
+    inline void setTexCoord2(std::vector<float>&& v) { _texCoord2 = v; }
+    inline void setColor(const std::vector<float>& v) { std::copy(v.begin(), v.end(), std::back_inserter(_color)); }
+    inline void setColor(std::vector<float>&& v) { _color = v; }
+    inline void setIndex(const std::vector<uint32_t>& v) { std::copy(v.begin(), v.end(), std::back_inserter(_index)); }
+    inline void setIndex(std::vector<uint32_t>&& v) { _index = v; }
     
-    const std::vector<float>& tangent();
+    void assertValidTangents();
     
-    bool validTangents();
+    bool validTangents() const;
 
     void rebuildTangents();
     
@@ -119,7 +168,7 @@ protected:
     
     PolyListCullFace _cullFace = CullFaceBack;
     PolyListFrontFace _frontFace = FrontFaceCCW;
-    bool _enableCullFace = true;
+    bool _cullFaceEnabled = true;
     
     std::vector<float> _vertex;
     std::vector<float> _normal;
