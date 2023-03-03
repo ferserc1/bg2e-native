@@ -53,7 +53,6 @@ public:
         return *this;
     }
     
-    // TODO: serialize/deserialize
     void deserialize(const std::shared_ptr<tools::JsonNode>&);
 
     void serialize(tools::JsonObject&);

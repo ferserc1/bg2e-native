@@ -10,7 +10,8 @@ Environment::Environment()
 
 void Environment::deserialize(const std::shared_ptr<tools::JsonNode>& sceneData)
 {
-    if (sceneData->isObject()) {
+    if (sceneData->isObject())
+    {
         setEquirectangularTexture((*sceneData)["equirectangularTexture"]->stringValue(
             std::string(equirectangularTexture())
         ));

@@ -10,6 +10,11 @@
 #include <stdexcept>
 #include <memory>
 
+#include <glm/vec2.hpp>
+#include <glm/vec3.hpp>
+#include <glm/vec4.hpp>
+#include <glm/mat4x4.hpp>
+
 namespace bg2e {
 namespace tools {
 
@@ -53,6 +58,10 @@ public:
     JsonNode(float);
     JsonNode(double);
     JsonNode(bool);
+    JsonNode(const glm::vec2&);
+    JsonNode(const glm::vec3&);
+    JsonNode(const glm::vec4&);
+    JsonNode(const glm::mat4&);
     virtual ~JsonNode();
     
     JsonObject& objectValue() {
@@ -307,6 +316,105 @@ public:
     bool isNull() {
         return type == Type::Null;
     }
+    
+    // glm object functions
+    glm::vec2 vec2Value(const glm::vec2& defaultValue = glm::vec2{0.0f, 0.0f}) {
+        if (type == Type::List) {
+            auto val = this->listValue();
+            if (val.size() >= 2) {
+                glm::vec2 result(val[0]->numberValue(), val[1]->numberValue());
+                return result;
+            }
+        }
+        return defaultValue;
+    }
+    
+    glm::vec3 vec3Value(const glm::vec3& defaultValue = glm::vec3{0.0f, 0.0f, 0.0f}) {
+        if (type == Type::List) {
+            auto val = this->listValue();
+            if (val.size() >= 3) {
+                glm::vec3 result(val[0]->numberValue(), val[1]->numberValue(), val[2]->numberValue());
+                return result;
+            }
+        }
+        return defaultValue;
+    }
+    
+    glm::vec4 vec4Value(const glm::vec4& defaultValue = glm::vec4{0.0f, 0.0f, 0.0f, 0.0f}) {
+        if (type == Type::List) {
+            auto val = this->listValue();
+            if (val.size() >= 3) {
+                glm::vec4 result(val[0]->numberValue(), val[1]->numberValue(), val[2]->numberValue(), val[3]->numberValue());
+                return result;
+            }
+        }
+        return defaultValue;
+    }
+    
+    glm::mat4 mat4Value(const glm::mat4& defaultValue = glm::mat4{}) {
+        if (type == Type::List) {
+            auto val = this->listValue();
+            if (val.size() >= 16) {
+                // TODO: glm is column major, maybe this must be transposed?
+                glm::mat4 result(
+                    val[ 0]->numberValue(), val[ 1]->numberValue(), val[ 2]->numberValue(), val[ 3]->numberValue(),
+                    val[ 4]->numberValue(), val[ 5]->numberValue(), val[ 6]->numberValue(), val[ 7]->numberValue(),
+                    val[ 8]->numberValue(), val[ 9]->numberValue(), val[10]->numberValue(), val[11]->numberValue(),
+                    val[12]->numberValue(), val[13]->numberValue(), val[14]->numberValue(), val[15]->numberValue());
+                return result;
+            }
+        }
+        return defaultValue;
+    }
+    
+    void setValue(const glm::vec2& value) {
+        setValue(JsonList{
+            std::make_shared<JsonNode>(value.x),
+            std::make_shared<JsonNode>(value.y)
+        });
+    }
+    
+    void setValue(const glm::vec3& value) {
+        setValue(JsonList{
+            std::make_shared<JsonNode>(value.x),
+            std::make_shared<JsonNode>(value.y),
+            std::make_shared<JsonNode>(value.z)
+        });
+    }
+    
+    void setValue(const glm::vec4& value) {
+        setValue(JsonList{
+            std::make_shared<JsonNode>(value.x),
+            std::make_shared<JsonNode>(value.y),
+            std::make_shared<JsonNode>(value.z),
+            std::make_shared<JsonNode>(value.w)
+        });
+    }
+    
+    void setValue(const glm::mat4& value) {
+        // TODO: glm is column major, maybe this must be transposed?
+        setValue(JsonList{
+            std::make_shared<JsonNode>(value[0][0]),
+            std::make_shared<JsonNode>(value[0][1]),
+            std::make_shared<JsonNode>(value[0][2]),
+            std::make_shared<JsonNode>(value[0][3]),
+            
+            std::make_shared<JsonNode>(value[1][0]),
+            std::make_shared<JsonNode>(value[1][1]),
+            std::make_shared<JsonNode>(value[1][2]),
+            std::make_shared<JsonNode>(value[1][3]),
+            
+            std::make_shared<JsonNode>(value[2][0]),
+            std::make_shared<JsonNode>(value[2][1]),
+            std::make_shared<JsonNode>(value[2][2]),
+            std::make_shared<JsonNode>(value[2][3]),
+            
+            std::make_shared<JsonNode>(value[3][0]),
+            std::make_shared<JsonNode>(value[3][1]),
+            std::make_shared<JsonNode>(value[3][2]),
+            std::make_shared<JsonNode>(value[3][3])
+        });
+    }
 
     void printNode(int indentationLevel = 0);
 
@@ -326,7 +434,10 @@ extern BG2E_EXPORT std::shared_ptr<JsonNode> JSON(uint32_t p);
 extern BG2E_EXPORT std::shared_ptr<JsonNode> JSON(float p);
 extern BG2E_EXPORT std::shared_ptr<JsonNode> JSON(double p);
 extern BG2E_EXPORT std::shared_ptr<JsonNode> JSON(bool p);
-
+extern BG2E_EXPORT std::shared_ptr<JsonNode> JSON(const glm::vec2&);
+extern BG2E_EXPORT std::shared_ptr<JsonNode> JSON(const glm::vec3&);
+extern BG2E_EXPORT std::shared_ptr<JsonNode> JSON(const glm::vec4&);
+extern BG2E_EXPORT std::shared_ptr<JsonNode> JSON(const glm::mat4&);
 }
 }
 
