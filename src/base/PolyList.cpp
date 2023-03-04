@@ -1,6 +1,9 @@
 
 #include <bg2e/base/PolyList.hpp>
 
+#include <unordered_map>
+#include <iostream>
+
 namespace bg2e {
 namespace base {
 
@@ -56,100 +59,108 @@ bool PolyList::validTangents() const
 
 void PolyList::rebuildTangents()
 {
-    // TODO: Implement this function
-    /*
-     
-    //This is the equivalent code in JavaScript version of PolyList.buildTangents()
+    _tangent.clear();
+
+    if (_texCoord0.size() == 0 || _vertex.size() == 0)
+    {
+        return;
+    }
     
-    plist._tangent = [];
-
-    if (!plist.texCoord0 || !plist.texCoord0.length || !plist.vertex || !plist.vertex.length) return;
-
-    
-    const result = [];
-    const generatedIndexes = {};
-    let invalidUV = false;
-
-    if (plist.index.length%3==0) {
-        // Triangles
-        for (let i=0; i<plist.index.length - 2; i+=3) {
-            const v0i = plist.index[i] * 3;
-            const v1i = plist.index[i + 1] * 3;
-            const v2i = plist.index[i + 2] * 3;
+    bool invalidUV = false;
+    if (_index.size() % 3 == 0)
+    {
+        std::unordered_map<uint32_t, bool> generatedIndexes;
+        for (uint32_t i = 0; i < _index.size(); i += 3)
+        {
+            auto v0i = _index[i] * 3;
+            auto v1i = _index[i + 1] * 3;
+            auto v2i = _index[i + 2] * 3;
             
-            const t0i = plist.index[i] * 2;
-            const t1i = plist.index[i + 1] * 2;
-            const t2i = plist.index[i + 2] * 2;
+            auto t0i = _index[i] * 2;
+            auto t1i = _index[i + 1] * 2;
+            auto t2i = _index[i + 2] * 2;
             
-            const v0 = new Vec(plist.vertex[v0i], plist.vertex[v0i + 1], plist.vertex[v0i + 2]);
-            const v1 = new Vec(plist.vertex[v1i], plist.vertex[v1i + 1], plist.vertex[v1i + 2]);
-            const v2 = new Vec(plist.vertex[v2i], plist.vertex[v2i + 1], plist.vertex[v2i + 2]);
+            glm::vec3 v0{ _vertex[v0i], _vertex[v0i + 1], _vertex[v0i + 2] };
+            glm::vec3 v1{ _vertex[v1i], _vertex[v1i + 1], _vertex[v1i + 2] };
+            glm::vec3 v2{ _vertex[v2i], _vertex[v2i + 1], _vertex[v2i + 2] };
             
-            const t0 = new Vec(plist.texCoord0[t0i], plist.texCoord0[t0i + 1]);
-            const t1 = new Vec(plist.texCoord0[t1i], plist.texCoord0[t1i + 1]);
-            const t2 = new Vec(plist.texCoord0[t2i], plist.texCoord0[t2i + 1]);
+            glm::vec2 t0{ _texCoord0[t0i], _texCoord0[t0i + 1] };
+            glm::vec2 t1{ _texCoord0[t1i], _texCoord0[t1i + 1] };
+            glm::vec2 t2{ _texCoord0[t2i], _texCoord0[t2i + 1] };
             
-            const edge1 = Vec.Sub(v1, v0);
-            const edge2 = Vec.Sub(v2, v0);
+            auto edge1 = v1 - v0;
+            auto edge2 = v2 - v0;
             
-            const deltaU1 = t1.x - t0.x;
-            const deltaV1 = t1.y - t0.y;
-            const deltaU2 = t2.x - t0.x;
-            const deltaV2 = t2.y - t0.y;
+            auto deltaU1 = t1.x - t0.x;
+            auto deltaV1 = t1.y - t0.y;
+            auto deltaU2 = t2.x - t0.x;
+            auto deltaV2 = t2.y - t0.y;
             
-            const den = (deltaU1 * deltaV2 - deltaU2 * deltaV1);
-            let tangent = null;
-            if (den==0) {
-                const n = plist.normal.length === plist.vertex.length ?
-                    new Vec(plist.normal[v0i], plist.normal[v0i + 1], plist.normal[v0i + 2]) :
-                    new Vec(1, 0, 0);
-
+            auto den = (deltaU1 * deltaV2 - deltaU2 * deltaV1);
+            glm::vec3 tangent;
+            if (den == 0)
+            {
+                if (_normal.size() == _vertex.size())
+                {
+                    tangent = glm::vec3{_normal[v0i + 1], _normal[v0i + 2], _normal[v0i]};
+                }
+                else
+                {
+                    tangent = glm::vec3{ 0.0f, 0.0f, 1.0f };
+                }
+                
                 invalidUV = true;
-                tangent = new Vec(n.y, n.z, n.x);
             }
-            else {
-                const f = 1 / den;
-            
-                tangent = new Vec(f * (deltaV2 * edge1.x - deltaV1 * edge2.x),
-                                  f * (deltaV2 * edge1.y - deltaV1 * edge2.y),
-                                  f * (deltaV2 * edge1.z - deltaV1 * edge2.z));
-                tangent.normalize();
-            }
-            
-            if (generatedIndexes[v0i]===undefined) {
-                result.push(tangent.x);
-                result.push(tangent.y);
-                result.push(tangent.z);
-                generatedIndexes[v0i] = tangent;
+            else
+            {
+                auto f = 1.0f / den;
+                tangent = glm::normalize(glm::vec3{
+                    f * (deltaV2 * edge1.x - deltaV1 * edge2.x),
+                    f * (deltaV2 * edge1.y - deltaV1 * edge2.y),
+                    f * (deltaV2 * edge1.z - deltaV1 * edge2.z)
+                });
             }
             
-            if (generatedIndexes[v1i]===undefined) {
-                result.push(tangent.x);
-                result.push(tangent.y);
-                result.push(tangent.z);
-                generatedIndexes[v1i] = tangent;
+            if (!generatedIndexes[v0i])
+            {
+                _tangent.push_back(tangent.x);
+                _tangent.push_back(tangent.y);
+                _tangent.push_back(tangent.z);
+                generatedIndexes[v0i] = true;
             }
             
-            if (generatedIndexes[v2i]===undefined) {
-                result.push(tangent.x);
-                result.push(tangent.y);
-                result.push(tangent.z);
-                generatedIndexes[v2i] = tangent;
+            if (!generatedIndexes[v1i])
+            {
+                _tangent.push_back(tangent.x);
+                _tangent.push_back(tangent.y);
+                _tangent.push_back(tangent.z);
+                generatedIndexes[v1i] = true;
+            }
+            
+            if (generatedIndexes[v2i])
+            {
+                _tangent.push_back(tangent.x);
+                _tangent.push_back(tangent.y);
+                _tangent.push_back(tangent.z);
+                generatedIndexes[v2i] = true;
             }
         }
     }
-    else {	// other draw modes: lines, line_strip
-        for (let i=0; i<plist.vertex.length; i+=3) {
-            result.push(0,0,1);
+    else
+    {
+        for (uint32_t i = 0; i < _index.size(); i += 3)
+        {
+            _tangent.push_back(0.0f);
+            _tangent.push_back(0.0f);
+            _tangent.push_back(1.0f);
         }
     }
-
-    if (invalidUV) {
-        console.warn(`Invalid UV texture coords found in PolyList '${ plist.name }'. Some objects may present artifacts in the lighting, and not display textures properly.`)
+    
+    if (invalidUV)
+    {
+        std::cerr << "WARN: Invalid UV texture coords found in PolyList '" << name()
+            << "'. Some objects may present artifacts in lighting, and not display textures properly." << std::endl;
     }
-
-    plist._tangent = result;
-    */
 }
 
 }
