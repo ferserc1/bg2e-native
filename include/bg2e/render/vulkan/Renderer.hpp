@@ -25,6 +25,7 @@ public:
     
 private:
     std::unique_ptr<VulkanAPI> _vulkanApi;
+    std::string _appName;
 };
 
 }

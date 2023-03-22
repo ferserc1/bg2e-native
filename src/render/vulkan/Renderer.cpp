@@ -19,15 +19,15 @@ Renderer::Renderer()
 void Renderer::init(const std::string& appName)
 {
     _vulkanApi = std::make_unique<VulkanAPI>();
-    // TODO: Enable validation layers only if debut
-    bool validationLayers = true;
-
-    _vulkanApi->init(validationLayers, appName);
+    _appName = appName;
 }
 
 void Renderer::bindWindow(app::Window& window)
 {
-    _vulkanApi->createSurface(window);
+    // TODO: Enable validation layers only if debug
+    bool validationLayers = true;
+
+    _vulkanApi->init(validationLayers, _appName, window);
 }
 
 void Renderer::destroy()

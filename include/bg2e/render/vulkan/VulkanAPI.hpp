@@ -16,9 +16,7 @@ namespace vulkan {
 
 class BG2E_EXPORT VulkanAPI {
 public:
-    void init(bool validationLayers, const std::string& appName);
-    
-    void createSurface(app::Window&);
+    void init(bool validationLayers, const std::string& appName, app::Window& window);
     
     void destroy();
     
@@ -35,8 +33,11 @@ protected:
     vk::Instance _instance = nullptr;
     vk::DebugUtilsMessengerEXT _debugMessenger;
     vk::SurfaceKHR _surface = nullptr;
+    vk::PhysicalDevice _physicalDevice = nullptr;
+    vk::Device _device = nullptr;
+    vk::Queue _graphicsQueue = nullptr;
+    vk::Queue _presentQueue = nullptr;
     
-
 };
 
 
