@@ -10,15 +10,20 @@
 
 #include <bg2e/export.hpp>
 #include <bg2e/app/AppController.hpp>
+#include <bg2e/render/Renderer.hpp>
 
 #include <string>
+#include <memory>
 
 namespace bg2e {
 namespace app {
 
+
 class BG2E_EXPORT Window {
 public:
     Window(const std::string & title = "", uint32_t width = 800, uint32_t height = 600);
+    
+    void setRenderer(std::unique_ptr<render::Renderer>&&);
     
     inline void setAppController(std::unique_ptr<AppController> ctrl) {
         _appController = std::move(ctrl);
@@ -48,6 +53,7 @@ private:
     uint32_t _height = 600;
     
     std::unique_ptr<AppController> _appController;
+    std::unique_ptr<render::Renderer> _renderer;
 };
 
 

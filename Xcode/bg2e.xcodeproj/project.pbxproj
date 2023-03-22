@@ -7,43 +7,116 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		ED3E08C329A631C100768122 /* KeyboardEvent.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED3E08C229A631C100768122 /* KeyboardEvent.cpp */; };
-		ED432C7C299FBE6A0055AC3B /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = ED432C7B299FBE6A0055AC3B /* Assets.xcassets */; };
-		ED432C89299FBFB90055AC3B /* libbg2e.a in Frameworks */ = {isa = PBXBuildFile; fileRef = ED432C64299FBD8A0055AC3B /* libbg2e.a */; };
-		ED432C91299FC07C0055AC3B /* MainLoop.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED432C90299FC07C0055AC3B /* MainLoop.cpp */; };
 		ED432C93299FC1500055AC3B /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED432C92299FC1500055AC3B /* main.cpp */; };
-		ED433326299FC2340055AC3B /* libglfw3.a in Frameworks */ = {isa = PBXBuildFile; fileRef = ED433034299FC2200055AC3B /* libglfw3.a */; };
-		ED43332A299FC3580055AC3B /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = ED433329299FC3580055AC3B /* CoreGraphics.framework */; };
-		ED43332C299FC3870055AC3B /* IOKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = ED43332B299FC3870055AC3B /* IOKit.framework */; };
-		ED43332D299FC38E0055AC3B /* CoreFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = ED433327299FC34B0055AC3B /* CoreFoundation.framework */; };
-		ED43332F299FC3960055AC3B /* AppKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = ED43332E299FC3960055AC3B /* AppKit.framework */; };
-		ED433331299FC4F00055AC3B /* Window.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED433330299FC4F00055AC3B /* Window.cpp */; };
-		ED5CDE2F29A7ACC800797D21 /* Environment.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED5CDE2A29A7ACC800797D21 /* Environment.cpp */; };
-		ED5CDE3029A7ACC800797D21 /* Light.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED5CDE2B29A7ACC800797D21 /* Light.cpp */; };
-		ED5CDE3129A7ACC800797D21 /* Texture.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED5CDE2C29A7ACC800797D21 /* Texture.cpp */; };
-		ED5CDE3229A7ACC800797D21 /* PolyList.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED5CDE2D29A7ACC800797D21 /* PolyList.cpp */; };
-		ED5CDE3329A7ACC800797D21 /* Material.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED5CDE2E29A7ACC800797D21 /* Material.cpp */; };
-		ED5CDE3E29A7AE8E00797D21 /* Renderer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED5CDE3D29A7AE8E00797D21 /* Renderer.cpp */; };
-		EDFF9C7229ACEBE000B0BFD2 /* JsonParser.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EDFF9C6F29ACEBE000B0BFD2 /* JsonParser.cpp */; };
-		EDFF9C7329ACEBE000B0BFD2 /* JsonToken.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EDFF9C7029ACEBE000B0BFD2 /* JsonToken.cpp */; };
-		EDFF9C7629ACEC9100B0BFD2 /* Json.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EDFF9C7529ACEC9100B0BFD2 /* Json.cpp */; };
+		EDDEDD9C29CAF8170039BF51 /* KeyboardEvent.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED3E08C229A631C100768122 /* KeyboardEvent.cpp */; };
+		EDDEDD9D29CAF8170039BF51 /* MainLoop.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED432C90299FC07C0055AC3B /* MainLoop.cpp */; };
+		EDDEDD9E29CAF8170039BF51 /* Window.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED433330299FC4F00055AC3B /* Window.cpp */; };
+		EDDEDD9F29CAF8170039BF51 /* Environment.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED5CDE2A29A7ACC800797D21 /* Environment.cpp */; };
+		EDDEDDA029CAF8170039BF51 /* Light.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED5CDE2B29A7ACC800797D21 /* Light.cpp */; };
+		EDDEDDA129CAF8170039BF51 /* Material.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED5CDE2E29A7ACC800797D21 /* Material.cpp */; };
+		EDDEDDA229CAF8170039BF51 /* PolyList.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED5CDE2D29A7ACC800797D21 /* PolyList.cpp */; };
+		EDDEDDA329CAF8170039BF51 /* Texture.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED5CDE2C29A7ACC800797D21 /* Texture.cpp */; };
+		EDDEDDA429CAF8170039BF51 /* Renderer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED5CDE3D29A7AE8E00797D21 /* Renderer.cpp */; };
+		EDDEDDA529CAF8170039BF51 /* JsonParser.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EDFF9C6F29ACEBE000B0BFD2 /* JsonParser.cpp */; };
+		EDDEDDA629CAF8170039BF51 /* JsonToken.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EDFF9C7029ACEBE000B0BFD2 /* JsonToken.cpp */; };
+		EDDEDDA729CAF8170039BF51 /* Json.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EDFF9C7529ACEC9100B0BFD2 /* Json.cpp */; };
+		EDDEDDA829CAF9D70039BF51 /* buffer-memory.c in Sources */ = {isa = PBXBuildFile; fileRef = ED433317299FC2200055AC3B /* buffer-memory.c */; };
+		EDDEDDA929CAF9D70039BF51 /* bg2-loader.c in Sources */ = {isa = PBXBuildFile; fileRef = ED43331B299FC2200055AC3B /* bg2-loader.c */; };
+		EDDEDDAA29CAF9D70039BF51 /* bg2-writer.c in Sources */ = {isa = PBXBuildFile; fileRef = ED43331E299FC2200055AC3B /* bg2-writer.c */; };
+		EDDEDDAB29CAF9D70039BF51 /* buffer-io.c in Sources */ = {isa = PBXBuildFile; fileRef = ED43331F299FC2200055AC3B /* buffer-io.c */; };
+		EDDEDDAC29CAF9D70039BF51 /* utils.c in Sources */ = {isa = PBXBuildFile; fileRef = ED433320299FC2200055AC3B /* utils.c */; };
+		EDDEDDAD29CAF9D70039BF51 /* types.c in Sources */ = {isa = PBXBuildFile; fileRef = ED433322299FC2200055AC3B /* types.c */; };
+		EDDEDDAE29CAF9D70039BF51 /* bg2-io.c in Sources */ = {isa = PBXBuildFile; fileRef = ED433323299FC2200055AC3B /* bg2-io.c */; };
+		EDDEDDB129CAFA2E0039BF51 /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = ED433329299FC3580055AC3B /* CoreGraphics.framework */; };
+		EDDEDDB229CAFA370039BF51 /* IOKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = ED43332B299FC3870055AC3B /* IOKit.framework */; };
+		EDDEDDB329CAFA4C0039BF51 /* AppKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = ED43332E299FC3960055AC3B /* AppKit.framework */; };
+		EDDEDDC329CB0E4C0039BF51 /* Renderer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EDDEDDC229CB0E4C0039BF51 /* Renderer.cpp */; };
+		EDDEDDC829CB13EF0039BF51 /* libbg2e.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = EDDEDD8E29CAF2B50039BF51 /* libbg2e.dylib */; };
+		EDDEDDD829CB21AB0039BF51 /* VulkanAPI.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EDDEDDD729CB21AB0039BF51 /* VulkanAPI.cpp */; };
+		EDDEDDDE29CB34A20039BF51 /* tools.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EDDEDDDD29CB34A20039BF51 /* tools.cpp */; };
+		EDDEDDEE29CB5A420039BF51 /* libglfw.3.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = ED433035299FC2200055AC3B /* libglfw.3.dylib */; };
+		EDDEDDFE29CB66C20039BF51 /* libglfw.3.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = ED433035299FC2200055AC3B /* libglfw.3.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		EDDEDE0029CB67BF0039BF51 /* libbg2e.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = EDDEDD8E29CAF2B50039BF51 /* libbg2e.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		EDDEDE1329CB6E9A0039BF51 /* libMoltenVK.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = ED432FEC299FC2200055AC3B /* libMoltenVK.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		EDDEDE1429CB72130039BF51 /* libvulkan.1.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = ED432FB8299FC2200055AC3B /* libvulkan.1.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		EDDEDE1529CB72250039BF51 /* libvulkan.1.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = ED432FB8299FC2200055AC3B /* libvulkan.1.dylib */; };
+		EDDEDE2929CB7E910039BF51 /* VkLayer_api_dump.json in CopyFiles */ = {isa = PBXBuildFile; fileRef = EDDEDE2329CB7E7B0039BF51 /* VkLayer_api_dump.json */; };
+		EDDEDE2A29CB7E930039BF51 /* VkLayer_khronos_profiles.json in CopyFiles */ = {isa = PBXBuildFile; fileRef = EDDEDE2429CB7E7B0039BF51 /* VkLayer_khronos_profiles.json */; };
+		EDDEDE2B29CB7E950039BF51 /* VkLayer_khronos_validation.json in CopyFiles */ = {isa = PBXBuildFile; fileRef = EDDEDE2529CB7E7B0039BF51 /* VkLayer_khronos_validation.json */; };
+		EDDEDE2C29CB7E980039BF51 /* VkLayer_khronos_synchronization2.json in CopyFiles */ = {isa = PBXBuildFile; fileRef = EDDEDE2629CB7E7B0039BF51 /* VkLayer_khronos_synchronization2.json */; };
+		EDDEDE2D29CB7EAE0039BF51 /* MoltenVK_icd.json in CopyFiles */ = {isa = PBXBuildFile; fileRef = EDDEDE2829CB7E7B0039BF51 /* MoltenVK_icd.json */; };
+		EDDEDE2E29CB7EFE0039BF51 /* libVkLayer_khronos_validation.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = ED432F96299FC2200055AC3B /* libVkLayer_khronos_validation.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		EDDEDE2F29CB7EFE0039BF51 /* libVkLayer_api_dump.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = ED432F97299FC2200055AC3B /* libVkLayer_api_dump.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		EDDEDE3029CB7EFE0039BF51 /* libVkLayer_khronos_profiles.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = ED432F99299FC2200055AC3B /* libVkLayer_khronos_profiles.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		EDDEDE3129CB7EFE0039BF51 /* libVkLayer_khronos_synchronization2.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = ED432FA1299FC2200055AC3B /* libVkLayer_khronos_synchronization2.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
-		ED432C86299FBE7F0055AC3B /* PBXContainerItemProxy */ = {
+		EDDEDDC629CB13220039BF51 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = ED432C5C299FBD8A0055AC3B /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = ED432C63299FBD8A0055AC3B;
+			remoteGlobalIDString = EDDEDD8D29CAF2B50039BF51;
 			remoteInfo = bg2e;
 		};
 /* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		EDDEDDC929CB14A90039BF51 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 6;
+			files = (
+				EDDEDE0029CB67BF0039BF51 /* libbg2e.dylib in CopyFiles */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		EDDEDDCD29CB152A0039BF51 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				EDDEDE2E29CB7EFE0039BF51 /* libVkLayer_khronos_validation.dylib in CopyFiles */,
+				EDDEDE2F29CB7EFE0039BF51 /* libVkLayer_api_dump.dylib in CopyFiles */,
+				EDDEDE3029CB7EFE0039BF51 /* libVkLayer_khronos_profiles.dylib in CopyFiles */,
+				EDDEDE3129CB7EFE0039BF51 /* libVkLayer_khronos_synchronization2.dylib in CopyFiles */,
+				EDDEDDFE29CB66C20039BF51 /* libglfw.3.dylib in CopyFiles */,
+				EDDEDE1329CB6E9A0039BF51 /* libMoltenVK.dylib in CopyFiles */,
+				EDDEDE1429CB72130039BF51 /* libvulkan.1.dylib in CopyFiles */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		EDDEDDE629CB53150039BF51 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = vulkan/icd.d;
+			dstSubfolderSpec = 7;
+			files = (
+				EDDEDE2D29CB7EAE0039BF51 /* MoltenVK_icd.json in CopyFiles */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		EDDEDE1B29CB77F50039BF51 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = vulkan/explicit_layer.d;
+			dstSubfolderSpec = 7;
+			files = (
+				EDDEDE2929CB7E910039BF51 /* VkLayer_api_dump.json in CopyFiles */,
+				EDDEDE2A29CB7E930039BF51 /* VkLayer_khronos_profiles.json in CopyFiles */,
+				EDDEDE2B29CB7E950039BF51 /* VkLayer_khronos_validation.json in CopyFiles */,
+				EDDEDE2C29CB7E980039BF51 /* VkLayer_khronos_synchronization2.json in CopyFiles */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		ED34884729A4EF4700971FB3 /* KeyboardEvent.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = KeyboardEvent.hpp; sourceTree = "<group>"; };
 		ED34884829A4EF4700971FB3 /* MouseEvent.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = MouseEvent.hpp; sourceTree = "<group>"; };
 		ED3E08C229A631C100768122 /* KeyboardEvent.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = KeyboardEvent.cpp; sourceTree = "<group>"; };
-		ED432C64299FBD8A0055AC3B /* libbg2e.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libbg2e.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		ED432C76299FBE6A0055AC3B /* app-test.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "app-test.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		ED432C7B299FBE6A0055AC3B /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		ED432C82299FBE6B0055AC3B /* app_test.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = app_test.entitlements; sourceTree = "<group>"; };
@@ -1215,6 +1288,26 @@
 		ED5CDE3B29A7AE7700797D21 /* Renderer.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Renderer.hpp; sourceTree = "<group>"; };
 		ED5CDE3D29A7AE8E00797D21 /* Renderer.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Renderer.cpp; sourceTree = "<group>"; };
 		EDB575F729A17C0900A3840E /* export.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = export.hpp; sourceTree = "<group>"; };
+		EDDEDD7529CAF1180039BF51 /* vk_mem_alloc.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = vk_mem_alloc.h; sourceTree = "<group>"; };
+		EDDEDD8E29CAF2B50039BF51 /* libbg2e.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libbg2e.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
+		EDDEDDBC29CAFE410039BF51 /* libvulkan.1.3.239.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libvulkan.1.3.239.dylib; path = ../../../VulkanSDK/1.3.239.0/macOS/lib/libvulkan.1.3.239.dylib; sourceTree = "<group>"; };
+		EDDEDDC229CB0E4C0039BF51 /* Renderer.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Renderer.cpp; sourceTree = "<group>"; };
+		EDDEDDC529CB0E620039BF51 /* Renderer.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Renderer.hpp; sourceTree = "<group>"; };
+		EDDEDDD629CB21920039BF51 /* VulkanAPI.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = VulkanAPI.hpp; sourceTree = "<group>"; };
+		EDDEDDD729CB21AB0039BF51 /* VulkanAPI.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = VulkanAPI.cpp; sourceTree = "<group>"; };
+		EDDEDDDC29CB34970039BF51 /* tools.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = tools.hpp; sourceTree = "<group>"; };
+		EDDEDDDD29CB34A20039BF51 /* tools.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = tools.cpp; sourceTree = "<group>"; };
+		EDDEDDE429CB517A0039BF51 /* MoltenVK_icd.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = MoltenVK_icd.json; path = ../../examples/01_app/MoltenVK_icd.json; sourceTree = "<group>"; };
+		EDDEDDF229CB5C720039BF51 /* IOSurface.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = IOSurface.framework; path = System/Library/Frameworks/IOSurface.framework; sourceTree = SDKROOT; };
+		EDDEDDF429CB5C7E0039BF51 /* Metal.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Metal.framework; path = System/Library/Frameworks/Metal.framework; sourceTree = SDKROOT; };
+		EDDEDDF629CB5C8A0039BF51 /* MetalKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MetalKit.framework; path = System/Library/Frameworks/MetalKit.framework; sourceTree = SDKROOT; };
+		EDDEDDF829CB5CE90039BF51 /* QuartzCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuartzCore.framework; path = System/Library/Frameworks/QuartzCore.framework; sourceTree = SDKROOT; };
+		EDDEDE2329CB7E7B0039BF51 /* VkLayer_api_dump.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = VkLayer_api_dump.json; sourceTree = "<group>"; };
+		EDDEDE2429CB7E7B0039BF51 /* VkLayer_khronos_profiles.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = VkLayer_khronos_profiles.json; sourceTree = "<group>"; };
+		EDDEDE2529CB7E7B0039BF51 /* VkLayer_khronos_validation.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = VkLayer_khronos_validation.json; sourceTree = "<group>"; };
+		EDDEDE2629CB7E7B0039BF51 /* VkLayer_khronos_synchronization2.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = VkLayer_khronos_synchronization2.json; sourceTree = "<group>"; };
+		EDDEDE2829CB7E7B0039BF51 /* MoltenVK_icd.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = MoltenVK_icd.json; sourceTree = "<group>"; };
+		EDDEDE3229CB84C40039BF51 /* ResourceDestroyManager.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; name = ResourceDestroyManager.hpp; path = ../../../include/bg2e/render/vulkan/ResourceDestroyManager.hpp; sourceTree = "<group>"; };
 		EDFCED5129A4CEF8008337AE /* AppController.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = AppController.hpp; sourceTree = "<group>"; };
 		EDFF9C6B29ACEBCA00B0BFD2 /* Json.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Json.hpp; sourceTree = "<group>"; };
 		EDFF9C6C29ACEBCA00B0BFD2 /* JsonToken.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = JsonToken.hpp; sourceTree = "<group>"; };
@@ -1225,23 +1318,23 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
-		ED432C62299FBD8A0055AC3B /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				ED433326299FC2340055AC3B /* libglfw3.a in Frameworks */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		ED432C73299FBE6A0055AC3B /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				ED43332F299FC3960055AC3B /* AppKit.framework in Frameworks */,
-				ED43332D299FC38E0055AC3B /* CoreFoundation.framework in Frameworks */,
-				ED43332C299FC3870055AC3B /* IOKit.framework in Frameworks */,
-				ED43332A299FC3580055AC3B /* CoreGraphics.framework in Frameworks */,
-				ED432C89299FBFB90055AC3B /* libbg2e.a in Frameworks */,
+				EDDEDDC829CB13EF0039BF51 /* libbg2e.dylib in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		EDDEDD8C29CAF2B50039BF51 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				EDDEDDB329CAFA4C0039BF51 /* AppKit.framework in Frameworks */,
+				EDDEDDB229CAFA370039BF51 /* IOKit.framework in Frameworks */,
+				EDDEDDB129CAFA2E0039BF51 /* CoreGraphics.framework in Frameworks */,
+				EDDEDDEE29CB5A420039BF51 /* libglfw.3.dylib in Frameworks */,
+				EDDEDE1529CB72250039BF51 /* libvulkan.1.dylib in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1251,6 +1344,7 @@
 		ED432C5B299FBD8A0055AC3B = {
 			isa = PBXGroup;
 			children = (
+				EDDEDE2029CB7E7B0039BF51 /* vulkan_resources */,
 				ED432C66299FBD8A0055AC3B /* bg2e */,
 				ED432C77299FBE6A0055AC3B /* app-test */,
 				ED432C65299FBD8A0055AC3B /* Products */,
@@ -1262,8 +1356,8 @@
 		ED432C65299FBD8A0055AC3B /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				ED432C64299FBD8A0055AC3B /* libbg2e.a */,
 				ED432C76299FBE6A0055AC3B /* app-test.app */,
+				EDDEDD8E29CAF2B50039BF51 /* libbg2e.dylib */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -1280,6 +1374,7 @@
 		ED432C77299FBE6A0055AC3B /* app-test */ = {
 			isa = PBXGroup;
 			children = (
+				EDDEDDE429CB517A0039BF51 /* MoltenVK_icd.json */,
 				ED432C92299FC1500055AC3B /* main.cpp */,
 				ED432C7B299FBE6A0055AC3B /* Assets.xcassets */,
 				ED432C82299FBE6B0055AC3B /* app_test.entitlements */,
@@ -1290,6 +1385,11 @@
 		ED432C88299FBFB90055AC3B /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				EDDEDDF829CB5CE90039BF51 /* QuartzCore.framework */,
+				EDDEDDF629CB5C8A0039BF51 /* MetalKit.framework */,
+				EDDEDDF429CB5C7E0039BF51 /* Metal.framework */,
+				EDDEDDF229CB5C720039BF51 /* IOSurface.framework */,
+				EDDEDDBC29CAFE410039BF51 /* libvulkan.1.3.239.dylib */,
 				ED43332E299FC3960055AC3B /* AppKit.framework */,
 				ED43332B299FC3870055AC3B /* IOKit.framework */,
 				ED433329299FC3580055AC3B /* CoreGraphics.framework */,
@@ -1356,6 +1456,7 @@
 		ED432C94299FC21F0055AC3B /* deps */ = {
 			isa = PBXGroup;
 			children = (
+				EDDEDD7429CAF1180039BF51 /* vma */,
 				ED432C95299FC21F0055AC3B /* obj */,
 				ED432C97299FC21F0055AC3B /* stb */,
 				ED432C99299FC21F0055AC3B /* VulkanSDK */,
@@ -3335,6 +3436,7 @@
 			isa = PBXGroup;
 			children = (
 				ED5CDE3B29A7AE7700797D21 /* Renderer.hpp */,
+				EDDEDDC429CB0E620039BF51 /* vulkan */,
 			);
 			path = render;
 			sourceTree = "<group>";
@@ -3343,8 +3445,75 @@
 			isa = PBXGroup;
 			children = (
 				ED5CDE3D29A7AE8E00797D21 /* Renderer.cpp */,
+				EDDEDDC129CB0E4C0039BF51 /* vulkan */,
 			);
 			path = render;
+			sourceTree = "<group>";
+		};
+		EDDEDD7429CAF1180039BF51 /* vma */ = {
+			isa = PBXGroup;
+			children = (
+				EDDEDD7529CAF1180039BF51 /* vk_mem_alloc.h */,
+			);
+			path = vma;
+			sourceTree = "<group>";
+		};
+		EDDEDDC129CB0E4C0039BF51 /* vulkan */ = {
+			isa = PBXGroup;
+			children = (
+				EDDEDDC229CB0E4C0039BF51 /* Renderer.cpp */,
+				EDDEDE3229CB84C40039BF51 /* ResourceDestroyManager.hpp */,
+				EDDEDDDD29CB34A20039BF51 /* tools.cpp */,
+				EDDEDDD729CB21AB0039BF51 /* VulkanAPI.cpp */,
+			);
+			path = vulkan;
+			sourceTree = "<group>";
+		};
+		EDDEDDC429CB0E620039BF51 /* vulkan */ = {
+			isa = PBXGroup;
+			children = (
+				EDDEDDC529CB0E620039BF51 /* Renderer.hpp */,
+				EDDEDDDC29CB34970039BF51 /* tools.hpp */,
+				EDDEDDD629CB21920039BF51 /* VulkanAPI.hpp */,
+			);
+			path = vulkan;
+			sourceTree = "<group>";
+		};
+		EDDEDE2029CB7E7B0039BF51 /* vulkan_resources */ = {
+			isa = PBXGroup;
+			children = (
+				EDDEDE2129CB7E7B0039BF51 /* macOS */,
+			);
+			name = vulkan_resources;
+			path = ../vulkan_resources;
+			sourceTree = "<group>";
+		};
+		EDDEDE2129CB7E7B0039BF51 /* macOS */ = {
+			isa = PBXGroup;
+			children = (
+				EDDEDE2229CB7E7B0039BF51 /* explicit_layer.d */,
+				EDDEDE2729CB7E7B0039BF51 /* icd.d */,
+			);
+			path = macOS;
+			sourceTree = "<group>";
+		};
+		EDDEDE2229CB7E7B0039BF51 /* explicit_layer.d */ = {
+			isa = PBXGroup;
+			children = (
+				EDDEDE2329CB7E7B0039BF51 /* VkLayer_api_dump.json */,
+				EDDEDE2429CB7E7B0039BF51 /* VkLayer_khronos_profiles.json */,
+				EDDEDE2529CB7E7B0039BF51 /* VkLayer_khronos_validation.json */,
+				EDDEDE2629CB7E7B0039BF51 /* VkLayer_khronos_synchronization2.json */,
+			);
+			path = explicit_layer.d;
+			sourceTree = "<group>";
+		};
+		EDDEDE2729CB7E7B0039BF51 /* icd.d */ = {
+			isa = PBXGroup;
+			children = (
+				EDDEDE2829CB7E7B0039BF51 /* MoltenVK_icd.json */,
+			);
+			path = icd.d;
 			sourceTree = "<group>";
 		};
 		EDFF9C6A29ACEBCA00B0BFD2 /* tools */ = {
@@ -3370,7 +3539,7 @@
 /* End PBXGroup section */
 
 /* Begin PBXHeadersBuildPhase section */
-		ED432C60299FBD8A0055AC3B /* Headers */ = {
+		EDDEDD8A29CAF2B50039BF51 /* Headers */ = {
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -3380,13 +3549,34 @@
 /* End PBXHeadersBuildPhase section */
 
 /* Begin PBXNativeTarget section */
-		ED432C63299FBD8A0055AC3B /* bg2e */ = {
+		ED432C75299FBE6A0055AC3B /* app-test */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = ED432C6F299FBD8A0055AC3B /* Build configuration list for PBXNativeTarget "bg2e" */;
+			buildConfigurationList = ED432C83299FBE6B0055AC3B /* Build configuration list for PBXNativeTarget "app-test" */;
 			buildPhases = (
-				ED432C60299FBD8A0055AC3B /* Headers */,
-				ED432C61299FBD8A0055AC3B /* Sources */,
-				ED432C62299FBD8A0055AC3B /* Frameworks */,
+				ED432C72299FBE6A0055AC3B /* Sources */,
+				ED432C73299FBE6A0055AC3B /* Frameworks */,
+				EDDEDDC929CB14A90039BF51 /* CopyFiles */,
+				EDDEDDCD29CB152A0039BF51 /* CopyFiles */,
+				EDDEDDE629CB53150039BF51 /* CopyFiles */,
+				EDDEDE1B29CB77F50039BF51 /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				EDDEDDC729CB13220039BF51 /* PBXTargetDependency */,
+			);
+			name = "app-test";
+			productName = "app-test";
+			productReference = ED432C76299FBE6A0055AC3B /* app-test.app */;
+			productType = "com.apple.product-type.application";
+		};
+		EDDEDD8D29CAF2B50039BF51 /* bg2e */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = EDDEDD9629CAF2B50039BF51 /* Build configuration list for PBXNativeTarget "bg2e" */;
+			buildPhases = (
+				EDDEDD8A29CAF2B50039BF51 /* Headers */,
+				EDDEDD8B29CAF2B50039BF51 /* Sources */,
+				EDDEDD8C29CAF2B50039BF51 /* Frameworks */,
 			);
 			buildRules = (
 			);
@@ -3394,26 +3584,8 @@
 			);
 			name = bg2e;
 			productName = bg2e;
-			productReference = ED432C64299FBD8A0055AC3B /* libbg2e.a */;
-			productType = "com.apple.product-type.library.static";
-		};
-		ED432C75299FBE6A0055AC3B /* app-test */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = ED432C83299FBE6B0055AC3B /* Build configuration list for PBXNativeTarget "app-test" */;
-			buildPhases = (
-				ED432C72299FBE6A0055AC3B /* Sources */,
-				ED432C73299FBE6A0055AC3B /* Frameworks */,
-				ED432C74299FBE6A0055AC3B /* Resources */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-				ED432C87299FBE7F0055AC3B /* PBXTargetDependency */,
-			);
-			name = "app-test";
-			productName = "app-test";
-			productReference = ED432C76299FBE6A0055AC3B /* app-test.app */;
-			productType = "com.apple.product-type.application";
+			productReference = EDDEDD8E29CAF2B50039BF51 /* libbg2e.dylib */;
+			productType = "com.apple.product-type.library.dynamic";
 		};
 /* End PBXNativeTarget section */
 
@@ -3424,10 +3596,10 @@
 				BuildIndependentTargetsInParallel = 1;
 				LastUpgradeCheck = 1420;
 				TargetAttributes = {
-					ED432C63299FBD8A0055AC3B = {
+					ED432C75299FBE6A0055AC3B = {
 						CreatedOnToolsVersion = 14.2;
 					};
-					ED432C75299FBE6A0055AC3B = {
+					EDDEDD8D29CAF2B50039BF51 = {
 						CreatedOnToolsVersion = 14.2;
 					};
 				};
@@ -3445,43 +3617,13 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				ED432C63299FBD8A0055AC3B /* bg2e */,
 				ED432C75299FBE6A0055AC3B /* app-test */,
+				EDDEDD8D29CAF2B50039BF51 /* bg2e */,
 			);
 		};
 /* End PBXProject section */
 
-/* Begin PBXResourcesBuildPhase section */
-		ED432C74299FBE6A0055AC3B /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				ED432C7C299FBE6A0055AC3B /* Assets.xcassets in Resources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-/* End PBXResourcesBuildPhase section */
-
 /* Begin PBXSourcesBuildPhase section */
-		ED432C61299FBD8A0055AC3B /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				ED5CDE3E29A7AE8E00797D21 /* Renderer.cpp in Sources */,
-				EDFF9C7329ACEBE000B0BFD2 /* JsonToken.cpp in Sources */,
-				ED5CDE3029A7ACC800797D21 /* Light.cpp in Sources */,
-				ED432C91299FC07C0055AC3B /* MainLoop.cpp in Sources */,
-				ED5CDE2F29A7ACC800797D21 /* Environment.cpp in Sources */,
-				ED5CDE3129A7ACC800797D21 /* Texture.cpp in Sources */,
-				ED5CDE3329A7ACC800797D21 /* Material.cpp in Sources */,
-				EDFF9C7229ACEBE000B0BFD2 /* JsonParser.cpp in Sources */,
-				ED5CDE3229A7ACC800797D21 /* PolyList.cpp in Sources */,
-				ED3E08C329A631C100768122 /* KeyboardEvent.cpp in Sources */,
-				ED433331299FC4F00055AC3B /* Window.cpp in Sources */,
-				EDFF9C7629ACEC9100B0BFD2 /* Json.cpp in Sources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		ED432C72299FBE6A0055AC3B /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -3490,13 +3632,42 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		EDDEDD8B29CAF2B50039BF51 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				EDDEDDA829CAF9D70039BF51 /* buffer-memory.c in Sources */,
+				EDDEDDA929CAF9D70039BF51 /* bg2-loader.c in Sources */,
+				EDDEDDAA29CAF9D70039BF51 /* bg2-writer.c in Sources */,
+				EDDEDDAB29CAF9D70039BF51 /* buffer-io.c in Sources */,
+				EDDEDDAC29CAF9D70039BF51 /* utils.c in Sources */,
+				EDDEDDAD29CAF9D70039BF51 /* types.c in Sources */,
+				EDDEDDAE29CAF9D70039BF51 /* bg2-io.c in Sources */,
+				EDDEDDDE29CB34A20039BF51 /* tools.cpp in Sources */,
+				EDDEDD9C29CAF8170039BF51 /* KeyboardEvent.cpp in Sources */,
+				EDDEDD9D29CAF8170039BF51 /* MainLoop.cpp in Sources */,
+				EDDEDDD829CB21AB0039BF51 /* VulkanAPI.cpp in Sources */,
+				EDDEDD9E29CAF8170039BF51 /* Window.cpp in Sources */,
+				EDDEDD9F29CAF8170039BF51 /* Environment.cpp in Sources */,
+				EDDEDDA029CAF8170039BF51 /* Light.cpp in Sources */,
+				EDDEDDA129CAF8170039BF51 /* Material.cpp in Sources */,
+				EDDEDDA229CAF8170039BF51 /* PolyList.cpp in Sources */,
+				EDDEDDA329CAF8170039BF51 /* Texture.cpp in Sources */,
+				EDDEDDA429CAF8170039BF51 /* Renderer.cpp in Sources */,
+				EDDEDDC329CB0E4C0039BF51 /* Renderer.cpp in Sources */,
+				EDDEDDA529CAF8170039BF51 /* JsonParser.cpp in Sources */,
+				EDDEDDA629CAF8170039BF51 /* JsonToken.cpp in Sources */,
+				EDDEDDA729CAF8170039BF51 /* Json.cpp in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
-		ED432C87299FBE7F0055AC3B /* PBXTargetDependency */ = {
+		EDDEDDC729CB13220039BF51 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = ED432C63299FBD8A0055AC3B /* bg2e */;
-			targetProxy = ED432C86299FBE7F0055AC3B /* PBXContainerItemProxy */;
+			target = EDDEDD8D29CAF2B50039BF51 /* bg2e */;
+			targetProxy = EDDEDDC629CB13220039BF51 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -3610,56 +3781,6 @@
 			};
 			name = Release;
 		};
-		ED432C70299FBD8A0055AC3B /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				CLANG_WARN_DOCUMENTATION_COMMENTS = NO;
-				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = 5FVRUTMZSK;
-				EXECUTABLE_PREFIX = lib;
-				GCC_ENABLE_CPP_EXCEPTIONS = YES;
-				GCC_ENABLE_CPP_RTTI = YES;
-				HEADER_SEARCH_PATHS = (
-					"$(PROJECT_DIR)/../include",
-					"$(PROJECT_DIR)/../deps/glfw/include",
-				);
-				LIBRARY_SEARCH_PATHS = "$(PROJECT_DIR)/../deps/glfw/lib-universal";
-				OTHER_CPLUSPLUSFLAGS = (
-					"$(OTHER_CFLAGS)",
-					"-fvisibility=hidden",
-				);
-				OTHER_LDFLAGS = "";
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SKIP_INSTALL = YES;
-				SYMROOT = "$(PROJECT_DIR)/../bin";
-			};
-			name = Debug;
-		};
-		ED432C71299FBD8A0055AC3B /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				CLANG_WARN_DOCUMENTATION_COMMENTS = NO;
-				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = 5FVRUTMZSK;
-				EXECUTABLE_PREFIX = lib;
-				GCC_ENABLE_CPP_EXCEPTIONS = YES;
-				GCC_ENABLE_CPP_RTTI = YES;
-				HEADER_SEARCH_PATHS = (
-					"$(PROJECT_DIR)/../include",
-					"$(PROJECT_DIR)/../deps/glfw/include",
-				);
-				LIBRARY_SEARCH_PATHS = "$(PROJECT_DIR)/../deps/glfw/lib-universal";
-				OTHER_CPLUSPLUSFLAGS = (
-					"$(OTHER_CFLAGS)",
-					"-fvisibility=hidden",
-				);
-				OTHER_LDFLAGS = "";
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SKIP_INSTALL = YES;
-				SYMROOT = "$(PROJECT_DIR)/../bin";
-			};
-			name = Release;
-		};
 		ED432C84299FBE6B0055AC3B /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -3671,6 +3792,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 5FVRUTMZSK;
 				ENABLE_HARDENED_RUNTIME = YES;
+				FRAMEWORK_SEARCH_PATHS = "$(PROJECT_DIR)/../deps/VulkanSDK/**";
 				GENERATE_INFOPLIST_FILE = YES;
 				HEADER_SEARCH_PATHS = "$(PROJECT_DIR)/../include";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
@@ -3680,6 +3802,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
+				LIBRARY_SEARCH_PATHS = "$(PROJECT_DIR)/../deps/VulkanSDK/**";
 				MARKETING_VERSION = 1.0;
 				OTHER_LDFLAGS = "";
 				PRODUCT_BUNDLE_IDENTIFIER = "org.bg2engine.app-test";
@@ -3700,6 +3823,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 5FVRUTMZSK;
 				ENABLE_HARDENED_RUNTIME = YES;
+				FRAMEWORK_SEARCH_PATHS = "$(PROJECT_DIR)/../deps/VulkanSDK/**";
 				GENERATE_INFOPLIST_FILE = YES;
 				HEADER_SEARCH_PATHS = "$(PROJECT_DIR)/../include";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
@@ -3709,11 +3833,76 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
+				LIBRARY_SEARCH_PATHS = "$(PROJECT_DIR)/../deps/VulkanSDK/**";
 				MARKETING_VERSION = 1.0;
 				OTHER_LDFLAGS = "";
 				PRODUCT_BUNDLE_IDENTIFIER = "org.bg2engine.app-test";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
+				SYMROOT = "$(PROJECT_DIR)/../bin";
+			};
+			name = Release;
+		};
+		EDDEDD9729CAF2B50039BF51 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_WARN_DOCUMENTATION_COMMENTS = NO;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 5FVRUTMZSK;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				EXECUTABLE_PREFIX = lib;
+				FRAMEWORK_SEARCH_PATHS = "$(PROJECT_DIR)/../deps/VulkanSDK/**";
+				GCC_ENABLE_CPP_EXCEPTIONS = YES;
+				GCC_ENABLE_CPP_RTTI = YES;
+				GCC_SYMBOLS_PRIVATE_EXTERN = YES;
+				HEADER_SEARCH_PATHS = (
+					"$(PROJECT_DIR)/../deps/bg2-io/src/bg2-io",
+					"$(PROJECT_DIR)/../deps/glfw/include",
+					"$(PROJECT_DIR)/../deps/VulkanSDK/macOS/include",
+					"$(PROJECT_DIR)/../include",
+					"$(PROJECT_DIR)/../deps/vkbootstrap",
+				);
+				INSTALL_PATH = "@executable_path";
+				LIBRARY_SEARCH_PATHS = (
+					"$(PROJECT_DIR)/../deps/glfw/lib-universal",
+					"$(PROJECT_DIR)/../deps/VulkanSDK/**",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 11.0;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SYMROOT = "$(PROJECT_DIR)/../bin";
+			};
+			name = Debug;
+		};
+		EDDEDD9829CAF2B50039BF51 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_WARN_DOCUMENTATION_COMMENTS = NO;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 5FVRUTMZSK;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				EXECUTABLE_PREFIX = lib;
+				FRAMEWORK_SEARCH_PATHS = "$(PROJECT_DIR)/../deps/VulkanSDK/**";
+				GCC_ENABLE_CPP_EXCEPTIONS = YES;
+				GCC_ENABLE_CPP_RTTI = YES;
+				GCC_SYMBOLS_PRIVATE_EXTERN = YES;
+				HEADER_SEARCH_PATHS = (
+					"$(PROJECT_DIR)/../deps/bg2-io/src/bg2-io",
+					"$(PROJECT_DIR)/../deps/glfw/include",
+					"$(PROJECT_DIR)/../deps/VulkanSDK/macOS/include",
+					"$(PROJECT_DIR)/../include",
+					"$(PROJECT_DIR)/../deps/vkbootstrap",
+				);
+				INSTALL_PATH = "@executable_path";
+				LIBRARY_SEARCH_PATHS = (
+					"$(PROJECT_DIR)/../deps/glfw/lib-universal",
+					"$(PROJECT_DIR)/../deps/VulkanSDK/**",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 11.0;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
 				SYMROOT = "$(PROJECT_DIR)/../bin";
 			};
 			name = Release;
@@ -3730,20 +3919,20 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		ED432C6F299FBD8A0055AC3B /* Build configuration list for PBXNativeTarget "bg2e" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				ED432C70299FBD8A0055AC3B /* Debug */,
-				ED432C71299FBD8A0055AC3B /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
 		ED432C83299FBE6B0055AC3B /* Build configuration list for PBXNativeTarget "app-test" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				ED432C84299FBE6B0055AC3B /* Debug */,
 				ED432C85299FBE6B0055AC3B /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		EDDEDD9629CAF2B50039BF51 /* Build configuration list for PBXNativeTarget "bg2e" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				EDDEDD9729CAF2B50039BF51 /* Debug */,
+				EDDEDD9829CAF2B50039BF51 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

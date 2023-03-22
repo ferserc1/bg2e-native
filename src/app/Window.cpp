@@ -8,6 +8,9 @@
 #include <bg2e/app/Window.hpp>
 #include <bg2e/app/MouseEvent.hpp>
 
+#include <bg2e/render/vulkan/Renderer.hpp>
+
+#define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
 #include <stdexcept>
@@ -122,6 +125,11 @@ Window::Window(const std::string & title, uint32_t width, uint32_t height)
     
 }
 
+void Window::setRenderer(std::unique_ptr<render::Renderer>&& renderer)
+{
+    _renderer = std::move(renderer);
+}
+
 void Window::setTitle(const std::string & title)
 {
     _title = title;
@@ -151,12 +159,23 @@ void Window::create()
     glfwSetCursorPosCallback(window, cursorPositionCallback);
     glfwSetMouseButtonCallback(window, mouseButtonCallback);
     glfwSetScrollCallback(window , mouseScrollCallback);
+    
+    if (!_renderer.get())
+    {
+        setRenderer(std::make_unique<render::vulkan::Renderer>());
+    }
+    
+    // TODO: get application name from other parameter than window title
+    _renderer->init(_title);
+    _renderer->bindWindow(*this);
 }
 
 void Window::destroy()
 {
     if (_wnd)
     {
+        _renderer->destroy();
+        
         auto window = reinterpret_cast<GLFWwindow*>(_wnd);
         glfwDestroyWindow(window);
     }

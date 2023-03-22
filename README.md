@@ -39,6 +39,8 @@ bg2 engine is divided into different libraries, and not all of them have the sam
 - VulkanSDK version 1.3
 - GLFW: window system.
 - GLM: math library
+- Vk Bootstrap: utilities to create Vulkan objects
+- VMA: Vulkan Memory Allocator. A library from AMD to allocate buffers.
 - stb_image
 - bg2io
 - tiny_obj_loader
@@ -129,15 +131,29 @@ You can clean the dependencies with the `clean-deps.ps1` script if you need it, 
 
 ### macOS
 
-If you prefer to use bg2 engine as a static library, you will have to link the following macOS native frameworks in your application (for example, using the `Link Binary With Libraries` build phase in Xcode):
+To use the bg2 engine you only have to link to the libbg2e.dylib library, but you have to distribute the other libraries it depends on as well. You also need to specify the search directories for the header files and the bg2e library. From Xcode, the steps are as follows:
 
-- AppKit.framework
-- CoreFoundation.framework
-- IOKit.framework
-- CoreGraphics.framework
-- TODO: the rest of the dependencies (vulkan, metal, etc.)
+- Create a macOS application project, in Objective-C language.
+- Remove all the files provided by default, and add the C++ files of our application.
+- In the target configuration, add the search paths for the bg2 engine header files and for the `libbg2e.dylib` library (this step will depend on how you have organised your source code).
+- In the `Link Binary With Libraries` compilation phase, add `libg2e.dylib`.
+- Add a copy files build phase to the `Frameworks` directory and copy the following files:
+    + `libbg2e.dylib`
+    + `libMoltenVK.dylib`: found in the Vulkan SDK, in the [VulkanSDK/version]/MoltenVK/dylib/macOS folder.
+    + `libvulkan.1.dylib`: found in the Vulkan SDK, in the [VulkanSDK/version]/macOS/lib folder. This is a symbolic link, but Xcode will copy the original library file with the correct name `libvulkan.1.dylib`.
+    + `libVkLayer_khronos_validation.dylib`: found in the Vulkan SDK, in [VulkanSDK/version]/macOS/lib.
+    + `libVkLayer_api_dump.dylib`: found in the Vulkan SDK, in [VulkanSDK/version]/macOS/lib.
+    + `libVkLayer_khronos_synchronization2.dylib`: found in the Vulkan SDK, in [VulkanSDK/version]/macOS/lib.
+    + `libVkLayer_khronos_profiles.dylib`: found in the Vulkan SDK, in [VulkanSDK/version]/macOS/lib.
+- Add a copy files build phase to the `Resources` directory, setting the subpath to `vulkan/icd.d` and copy the following files, located at the `vulkan_resources/macOS/icd.d` directory in this repository:
+    + `MoltenVK_icd.json`
+- Add a copy files build phase to the `Resources` directory, setting the subpath to `vulkan/explicit_layer.d` and copy the following files, located at the `vulkan_resources/macOS/explicit_layer.d` directory in this repository:
+    + `VkLayer_api_dump.json`
+    + `VkLayer_khronos_profiles.json`
+    + `VkLayer_khronos_synchronization2.json`
+    + `VkLayer_khronos_validation.json`
 
-as well as the `libbg2e.a` library, of course.
+Note that the files included in `vulkan_resource` directory are modified versions extracted from the VulkanSDK. You can't use the original VulkanSDK files because the modified versions are designed to allow the Vulkan Loader to load the extensions and layers from the macOS application bundle. If you  want to create your own versions of these files, you can do it modifying the `library_path` attribute in the json files. Specifically, these files have been modified so that the MoltenVK dynamic libraries and Vulkan layers can be installed in the `Frameworks` folder of the application package.
 
 
 ### Windows
