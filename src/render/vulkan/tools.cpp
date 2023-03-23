@@ -327,6 +327,95 @@ vk::Device createDevice(vk::Instance instance, vk::PhysicalDevice physicalDevice
     return physicalDevice.createDevice(createInfo);
 }
 
+void createSwapChain(vk::Instance instance, vk::PhysicalDevice physicalDevice, vk::Device device, vk::SurfaceKHR surface, app::Window& window, SwapChainResources& result)
+{
+    SwapChainSupportDetails swapChainSupport = querySwapChainSupport(physicalDevice, surface);
+    result.surfaceFormat = chooseSwapSurfaceFormat(swapChainSupport.formats);
+    result.presentMode = chooseSwapPresentFormat(swapChainSupport.presentModes);
+    result.extent = chooseSwapExtent(swapChainSupport.capabilities, window);
+    
+    uint32_t imageCount = swapChainSupport.capabilities.minImageCount + 1;
+    if (swapChainSupport.capabilities.maxImageCount > 0 &&
+        imageCount > swapChainSupport.capabilities.maxImageCount)
+    {
+        imageCount = swapChainSupport.capabilities.maxImageCount;
+    }
+    
+    vk::SwapchainCreateInfoKHR createInfo;
+    createInfo.surface = surface;
+    createInfo.minImageCount = imageCount;
+    createInfo.imageFormat = result.surfaceFormat.format;
+    createInfo.imageColorSpace = result.surfaceFormat.colorSpace;
+    createInfo.imageExtent = result.extent;
+    createInfo.imageArrayLayers = 1;
+    createInfo.imageUsage = vk::ImageUsageFlagBits::eColorAttachment;
+    
+    QueueFamilyIndices indices = findQueueFamilies(physicalDevice, surface);
+    uint32_t queueFamilyIndices[] = {
+        indices.graphicsFamily.value(),
+        indices.presentFamily.value()
+    };
+    
+    if (indices.graphicsFamily != indices.presentFamily)
+    {
+        createInfo.imageSharingMode = vk::SharingMode::eConcurrent;
+        createInfo.queueFamilyIndexCount = 2;
+        createInfo.pQueueFamilyIndices = queueFamilyIndices;
+    }
+    else
+    {
+        createInfo.imageSharingMode = vk::SharingMode::eExclusive;
+    }
+    
+    createInfo.preTransform = swapChainSupport.capabilities.currentTransform;
+    createInfo.compositeAlpha = vk::CompositeAlphaFlagBitsKHR::eOpaque;
+    createInfo.presentMode = result.presentMode;
+    createInfo.clipped = true;
+    createInfo.oldSwapchain = nullptr;
+    
+    result.swapchain = device.createSwapchainKHR(createInfo);
+    result.images = device.getSwapchainImagesKHR(result.swapchain);
+    result.imageFormat = result.surfaceFormat.format;
+    
+    // Create image views
+    for (auto image : result.images)
+    {
+        vk::ImageViewCreateInfo viewCreateInfo{};
+        viewCreateInfo.image = image;
+        viewCreateInfo.viewType = vk::ImageViewType::e2D;
+        viewCreateInfo.format = result.imageFormat;
+        
+        viewCreateInfo.components.r = vk::ComponentSwizzle::eIdentity;
+        viewCreateInfo.components.g = vk::ComponentSwizzle::eIdentity;
+        viewCreateInfo.components.b = vk::ComponentSwizzle::eIdentity;
+        viewCreateInfo.components.a = vk::ComponentSwizzle::eIdentity;
+        
+        viewCreateInfo.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
+        viewCreateInfo.subresourceRange.baseMipLevel = 0;
+        viewCreateInfo.subresourceRange.levelCount = 1;
+        viewCreateInfo.subresourceRange.baseArrayLayer = 0;
+        viewCreateInfo.subresourceRange.layerCount = 1;
+        
+        result.imageViews.push_back(device.createImageView(viewCreateInfo));
+    }
+}
+
+void destroySwapChain(vk::Device device, SwapChainResources& swapchainData)
+{
+    for (auto imageView : swapchainData.imageViews)
+    {
+        device.destroyImageView(imageView);
+    }
+    
+    device.destroySwapchainKHR(swapchainData.swapchain);
+    
+    swapchainData.swapchain = nullptr;
+    swapchainData.images.clear();
+    swapchainData.imageViews.clear();
+    swapchainData.extent.width = 0;
+    swapchainData.extent.height = 0;
+}
+
 }
 }
 }

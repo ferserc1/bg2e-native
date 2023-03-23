@@ -7,6 +7,7 @@
 #include <bg2e/export.hpp>
 #include <bg2e/app/Window.hpp>
 #include <bg2e/render/vulkan/ResourceDestroyManager.hpp>
+#include <bg2e/render/vulkan/tools.hpp>
 
 #include <vector>
 
@@ -37,6 +38,7 @@ protected:
     vk::Device _device = nullptr;
     vk::Queue _graphicsQueue = nullptr;
     vk::Queue _presentQueue = nullptr;
+    SwapChainResources _swapChain;
     
 };
 

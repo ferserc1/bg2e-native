@@ -51,8 +51,8 @@ void VulkanAPI::init(bool validationLayers, const std::string& appName, app::Win
     }
     _surface = surface;
     
-    destroyManager.push_function([=]() {
-        instance().destroySurfaceKHR(surface, nullptr);
+    destroyManager.push_function([&]() {
+        instance().destroySurfaceKHR(_surface);
     });
     
     _physicalDevice = pickPhysicalDevice(_instance, _surface);
@@ -61,8 +61,14 @@ void VulkanAPI::init(bool validationLayers, const std::string& appName, app::Win
     _presentQueue = _device.getQueue(indices.presentFamily.value(), 0);
     _graphicsQueue = _device.getQueue(indices.graphicsFamily.value(), 0);
     
-    destroyManager.push_function([=]() {
+    destroyManager.push_function([&]() {
         _device.destroy();
+    });
+    
+    createSwapChain(_instance, _physicalDevice, _device, _surface, window, _swapChain);
+    
+    destroyManager.push_function([&]() {
+        destroySwapChain(_device, _swapChain);
     });
 }
 

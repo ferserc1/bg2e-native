@@ -1307,7 +1307,7 @@
 		EDDEDE2529CB7E7B0039BF51 /* VkLayer_khronos_validation.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = VkLayer_khronos_validation.json; sourceTree = "<group>"; };
 		EDDEDE2629CB7E7B0039BF51 /* VkLayer_khronos_synchronization2.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = VkLayer_khronos_synchronization2.json; sourceTree = "<group>"; };
 		EDDEDE2829CB7E7B0039BF51 /* MoltenVK_icd.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = MoltenVK_icd.json; sourceTree = "<group>"; };
-		EDDEDE3229CB84C40039BF51 /* ResourceDestroyManager.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; name = ResourceDestroyManager.hpp; path = ../../../include/bg2e/render/vulkan/ResourceDestroyManager.hpp; sourceTree = "<group>"; };
+		EDDEDE3229CB84C40039BF51 /* ResourceDestroyManager.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = ResourceDestroyManager.hpp; sourceTree = "<group>"; };
 		EDE041FB29CC46A100F03DE0 /* vec4.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = vec4.hpp; sourceTree = "<group>"; };
 		EDE041FC29CC46A100F03DE0 /* integer.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = integer.hpp; sourceTree = "<group>"; };
 		EDE041FD29CC46A100F03DE0 /* vector_relational.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = vector_relational.hpp; sourceTree = "<group>"; };
@@ -3891,7 +3891,6 @@
 			isa = PBXGroup;
 			children = (
 				EDDEDDC229CB0E4C0039BF51 /* Renderer.cpp */,
-				EDDEDE3229CB84C40039BF51 /* ResourceDestroyManager.hpp */,
 				EDDEDDDD29CB34A20039BF51 /* tools.cpp */,
 				EDDEDDD729CB21AB0039BF51 /* VulkanAPI.cpp */,
 			);
@@ -3902,6 +3901,7 @@
 			isa = PBXGroup;
 			children = (
 				EDDEDDC529CB0E620039BF51 /* Renderer.hpp */,
+				EDDEDE3229CB84C40039BF51 /* ResourceDestroyManager.hpp */,
 				EDDEDDDC29CB34970039BF51 /* tools.hpp */,
 				EDDEDDD629CB21920039BF51 /* VulkanAPI.hpp */,
 			);

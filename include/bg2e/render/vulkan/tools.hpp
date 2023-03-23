@@ -31,6 +31,21 @@ struct SwapChainSupportDetails
     std::vector<vk::PresentModeKHR> presentModes;
 };
 
+struct SwapChainResources
+{
+    vk::SwapchainKHR swapchain = nullptr;
+    std::vector<vk::Image> images;
+    std::vector<vk::ImageView> imageViews;
+    vk::SurfaceFormatKHR surfaceFormat;
+    vk::PresentModeKHR presentMode;
+    vk::Extent2D extent { 0, 0 };
+    vk::Format imageFormat;
+    
+    inline bool isValid() const {
+        return images.size() > 0 && imageViews.size() > 0;
+    }
+};
+
 bool checkValidationLayerSupport();
 
 bool checkDeviceExtensions(vk::PhysicalDevice device);
@@ -58,6 +73,11 @@ vk::Extent2D chooseSwapExtent(const vk::SurfaceCapabilitiesKHR& capabilities, ap
 vk::PhysicalDevice pickPhysicalDevice(vk::Instance, vk::SurfaceKHR);
 
 vk::Device createDevice(vk::Instance, vk::PhysicalDevice, vk::SurfaceKHR, bool enableValidationLayers);
+
+void createSwapChain(vk::Instance, vk::PhysicalDevice, vk::Device, vk::SurfaceKHR, app::Window&, SwapChainResources&);
+
+void destroySwapChain(vk::Device, SwapChainResources&);
+
 
 }
 }
