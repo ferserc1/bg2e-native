@@ -106,12 +106,6 @@ You can enable script execution by opening a PowerShell window with administrato
 Set-ExecutionPolicy -ExecutionPolicy Bypass
 ```
 
-After configuring the dependencies, it is recommended to leave script execution disabled:
-
-```ps
-Set-ExecutionPolicy -ExecutionPolicy Restricted
-```
-
 After that, you can use the dependency download script in a PowerShell console:
 
 ```ps
@@ -120,6 +114,12 @@ cd path\to\bg2e-cpp
 ```
 
 You can clean the dependencies with the `clean-deps.ps1` script if you need it, but the downloaded dependencies are set up in the `.gitignore` file.
+
+After configuring the dependencies, it is recommended to leave script execution disabled:
+
+```ps
+Set-ExecutionPolicy -ExecutionPolicy Restricted
+```
 
 #### Manual setup
 
