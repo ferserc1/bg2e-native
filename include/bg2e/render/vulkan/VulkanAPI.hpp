@@ -15,12 +15,16 @@ namespace bg2e {
 namespace render {
 namespace vulkan {
 
+
+
 class BG2E_EXPORT VulkanAPI {
 public:
     void init(bool validationLayers, const std::string& appName, app::Window& window);
     
     void destroy();
     
+    VmaAllocator allocator() const { return _allocator; }
+
     vk::Instance instance() const { return _instance; }
     
     vk::SurfaceKHR surface() const { return _surface; }
@@ -31,6 +35,8 @@ protected:
     bool _enableValidationLayers;
     std::string _appName;
     
+    VmaAllocator _allocator;
+
     vk::Instance _instance = nullptr;
     vk::DebugUtilsMessengerEXT _debugMessenger;
     vk::SurfaceKHR _surface = nullptr;
@@ -39,6 +45,8 @@ protected:
     vk::Queue _graphicsQueue = nullptr;
     vk::Queue _presentQueue = nullptr;
     SwapChainResources _swapChain;
+    vk::RenderPass _mainRenderPass = nullptr;
+    DepthResources _dephtResources;
     
 };
 

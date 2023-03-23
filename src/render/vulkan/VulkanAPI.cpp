@@ -56,13 +56,25 @@ void VulkanAPI::init(bool validationLayers, const std::string& appName, app::Win
     });
     
     _physicalDevice = pickPhysicalDevice(_instance, _surface);
+
     QueueFamilyIndices indices = findQueueFamilies(_physicalDevice, _surface);
     _device = createDevice(_instance, _physicalDevice, _surface, _enableValidationLayers);
     _presentQueue = _device.getQueue(indices.presentFamily.value(), 0);
     _graphicsQueue = _device.getQueue(indices.graphicsFamily.value(), 0);
-    
+
     destroyManager.push_function([&]() {
         _device.destroy();
+    });
+
+
+    VmaAllocatorCreateInfo allocatorInfo{};
+    allocatorInfo.physicalDevice = _physicalDevice;
+    allocatorInfo.device = _device;
+    allocatorInfo.instance = _instance;
+    vmaCreateAllocator(&allocatorInfo, &_allocator);
+    
+    destroyManager.push_function([=]() {
+        vmaDestroyAllocator(_allocator);
     });
     
     createSwapChain(_instance, _physicalDevice, _device, _surface, window, _swapChain);
@@ -70,6 +82,20 @@ void VulkanAPI::init(bool validationLayers, const std::string& appName, app::Win
     destroyManager.push_function([&]() {
         destroySwapChain(_device, _swapChain);
     });
+
+    _mainRenderPass = createBasicDepthRenderPass(_physicalDevice, _device, _swapChain.imageFormat);
+
+    destroyManager.push_function([&]() {
+        _device.destroyRenderPass(_mainRenderPass);
+    });
+
+    _dephtResources = createDepthResources(_allocator, _physicalDevice, _device, _swapChain);
+
+    destroyManager.push_function([&]() {
+        destroyDepthResources(_allocator, _device, _dephtResources);
+    });
+
+    // Create framebuffers
 }
 
 

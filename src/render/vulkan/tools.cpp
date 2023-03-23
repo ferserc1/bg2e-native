@@ -7,6 +7,10 @@
 #include <iostream>
 #include <set>
 
+// Implementation of Vulkan Memory Allocator
+#define VMA_IMPLEMENTATION
+#include <vma/vk_mem_alloc.h>
+
 namespace bg2e {
 namespace render {
 namespace vulkan {
@@ -380,23 +384,7 @@ void createSwapChain(vk::Instance instance, vk::PhysicalDevice physicalDevice, v
     // Create image views
     for (auto image : result.images)
     {
-        vk::ImageViewCreateInfo viewCreateInfo{};
-        viewCreateInfo.image = image;
-        viewCreateInfo.viewType = vk::ImageViewType::e2D;
-        viewCreateInfo.format = result.imageFormat;
-        
-        viewCreateInfo.components.r = vk::ComponentSwizzle::eIdentity;
-        viewCreateInfo.components.g = vk::ComponentSwizzle::eIdentity;
-        viewCreateInfo.components.b = vk::ComponentSwizzle::eIdentity;
-        viewCreateInfo.components.a = vk::ComponentSwizzle::eIdentity;
-        
-        viewCreateInfo.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
-        viewCreateInfo.subresourceRange.baseMipLevel = 0;
-        viewCreateInfo.subresourceRange.levelCount = 1;
-        viewCreateInfo.subresourceRange.baseArrayLayer = 0;
-        viewCreateInfo.subresourceRange.layerCount = 1;
-        
-        result.imageViews.push_back(device.createImageView(viewCreateInfo));
+        result.imageViews.push_back(createImageView(device, image, result.imageFormat, vk::ImageAspectFlagBits::eColor));
     }
 }
 
@@ -415,6 +403,162 @@ void destroySwapChain(vk::Device device, SwapChainResources& swapchainData)
     swapchainData.extent.width = 0;
     swapchainData.extent.height = 0;
 }
+
+vk::Format findSupportedFormat(vk::PhysicalDevice device, const std::vector<vk::Format>& candidates, vk::ImageTiling tiling, vk::FormatFeatureFlags features)
+{
+    for (auto format : candidates)
+    {
+        vk::FormatProperties props = device.getFormatProperties(format);
+        if (tiling == vk::ImageTiling::eLinear &&
+            (props.linearTilingFeatures & features) == features)
+        {
+            return format;
+        }
+        else if (tiling == vk::ImageTiling::eOptimal && (props.optimalTilingFeatures & features) == features)
+        {
+            return format;
+        }
+    }
+
+    throw std::runtime_error("Failed to find supported format");
+}
+
+vk::Format findDepthFormat(vk::PhysicalDevice device)
+{
+    return findSupportedFormat(
+        device,
+        { vk::Format::eD32Sfloat, vk::Format::eD32SfloatS8Uint },
+        vk::ImageTiling::eOptimal,
+        vk::FormatFeatureFlagBits::eDepthStencilAttachment
+    );
+}
+
+vk::RenderPass createBasicDepthRenderPass(vk::PhysicalDevice physicalDevice, vk::Device device, vk::Format colorFormat)
+{
+    vk::AttachmentReference colorAttachmentRef;
+    colorAttachmentRef.attachment = 0;
+    colorAttachmentRef.layout = vk::ImageLayout::eColorAttachmentOptimal;
+
+    vk::AttachmentReference depthAttachmentRef;
+    depthAttachmentRef.attachment = 1;
+    depthAttachmentRef.layout = vk::ImageLayout::eDepthStencilAttachmentOptimal;
+
+    vk::SubpassDescription subpass;
+    subpass.pipelineBindPoint = vk::PipelineBindPoint::eGraphics;
+    subpass.colorAttachmentCount = 1;
+    subpass.pColorAttachments = &colorAttachmentRef;
+    subpass.pDepthStencilAttachment = &depthAttachmentRef;
+
+    vk::SubpassDependency dependency;
+    dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+    dependency.dstSubpass = 0;
+    dependency.srcStageMask =
+        vk::PipelineStageFlagBits::eColorAttachmentOutput |
+        vk::PipelineStageFlagBits::eEarlyFragmentTests;
+    dependency.srcAccessMask = vk::AccessFlagBits::eNone;
+    dependency.dstStageMask =
+        vk::PipelineStageFlagBits::eColorAttachmentOutput |
+        vk::PipelineStageFlagBits::eEarlyFragmentTests;
+    dependency.dstAccessMask =
+        vk::AccessFlagBits::eColorAttachmentWrite |
+        vk::AccessFlagBits::eDepthStencilAttachmentRead;
+
+    vk::AttachmentDescription colorAttachment;
+    colorAttachment.format = colorFormat;
+    colorAttachment.samples = vk::SampleCountFlagBits::e1;
+    colorAttachment.loadOp = vk::AttachmentLoadOp::eClear;
+    colorAttachment.storeOp = vk::AttachmentStoreOp::eStore;
+    colorAttachment.stencilLoadOp = vk::AttachmentLoadOp::eDontCare;
+    colorAttachment.stencilStoreOp = vk::AttachmentStoreOp::eDontCare;
+    colorAttachment.initialLayout = vk::ImageLayout::eUndefined;
+    colorAttachment.finalLayout = vk::ImageLayout::ePresentSrcKHR;
+
+    vk::AttachmentDescription depthAttachment;
+    depthAttachment.format = findDepthFormat(physicalDevice);
+    depthAttachment.samples = vk::SampleCountFlagBits::e1;
+    depthAttachment.loadOp = vk::AttachmentLoadOp::eClear;
+    depthAttachment.storeOp = vk::AttachmentStoreOp::eDontCare;
+    depthAttachment.stencilLoadOp = vk::AttachmentLoadOp::eDontCare;
+    depthAttachment.stencilStoreOp = vk::AttachmentStoreOp::eDontCare;
+    depthAttachment.initialLayout = vk::ImageLayout::eUndefined;
+    depthAttachment.finalLayout = vk::ImageLayout::eDepthStencilAttachmentOptimal;
+
+    std::array<vk::AttachmentDescription, 2> attachments = {
+        colorAttachment,
+        depthAttachment
+    };
+
+    vk::RenderPassCreateInfo createInfo;
+    createInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
+    createInfo.pAttachments = attachments.data();
+    createInfo.subpassCount = 1;
+    createInfo.pSubpasses = &subpass;
+    createInfo.dependencyCount = 1;
+    createInfo.pDependencies = &dependency;
+
+    return device.createRenderPass(createInfo);
+}
+
+AllocatedImage createImage(VmaAllocator allocator, vk::Device device, uint32_t width, uint32_t height, vk::Format format, vk::ImageTiling tiling, vk::ImageUsageFlags usage, VmaMemoryUsage memoryUsage, VmaAllocationCreateFlags memoryFlags)
+{
+    VkImageCreateInfo imageInfo{};
+    imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    imageInfo.imageType = VK_IMAGE_TYPE_2D;
+    imageInfo.extent.width = static_cast<uint32_t>(width);
+    imageInfo.extent.height = static_cast<uint32_t>(height);
+    imageInfo.extent.depth = 1;
+    imageInfo.mipLevels = 1;
+    imageInfo.arrayLayers = 1;
+    imageInfo.format = static_cast<VkFormat>(format);
+    imageInfo.tiling = static_cast<VkImageTiling>(tiling);
+    imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    imageInfo.usage = static_cast<VkImageUsageFlags>(usage);
+    imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+
+    VmaAllocationCreateInfo img_allocInfo{};
+    img_allocInfo.usage = memoryUsage;
+    img_allocInfo.flags = memoryFlags;
+    AllocatedImage newImage;
+    VkImage image;
+    vmaCreateImage(allocator, &imageInfo, &img_allocInfo, &image, &newImage.allocation, nullptr);
+    newImage.image = image;
+    return newImage;
+}
+
+vk::ImageView createImageView(vk::Device device, vk::Image image, vk::Format format, vk::ImageAspectFlags aspectFlags)
+{
+    vk::ImageViewCreateInfo viewInfo;
+    viewInfo.image = image;
+    viewInfo.viewType = vk::ImageViewType::e2D;
+    viewInfo.format = format;
+    viewInfo.subresourceRange.aspectMask = aspectFlags;
+    viewInfo.subresourceRange.baseMipLevel = 0;
+    viewInfo.subresourceRange.levelCount = 1;
+    viewInfo.subresourceRange.baseArrayLayer = 0;
+    viewInfo.subresourceRange.layerCount = 1;
+
+    return device.createImageView(viewInfo);
+}
+
+DepthResources createDepthResources(VmaAllocator allocator, vk::PhysicalDevice physicalDevice, vk::Device device, const SwapChainResources& swapChainData)
+{
+    DepthResources result;
+    vk::Format depthFormat = findDepthFormat(physicalDevice);
+    result.image = createImage(allocator, device, swapChainData.extent.width, swapChainData.extent.height, depthFormat, vk::ImageTiling::eOptimal, vk::ImageUsageFlagBits::eDepthStencilAttachment, VMA_MEMORY_USAGE_AUTO, VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT);
+    result.view = createImageView(device, result.image.image, depthFormat, vk::ImageAspectFlagBits::eDepth);
+
+    // TODO: Transition image to depth stencil attachment optimal
+
+    return result;
+}
+
+void destroyDepthResources(VmaAllocator allocator, vk::Device device, DepthResources& res)
+{
+    vmaDestroyImage(allocator, res.image.image, res.image.allocation);
+    device.destroyImageView(res.view);
+}
+
 
 }
 }

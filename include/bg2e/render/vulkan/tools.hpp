@@ -3,6 +3,9 @@
 #define bg2e_render_vulkan_tools_hpp
 
 #include <vulkan/vulkan.hpp>
+
+#include <vma/vk_mem_alloc.h>
+
 #include <bg2e/app/Window.hpp>
 
 #include <vector>
@@ -12,6 +15,16 @@
 namespace bg2e {
 namespace render {
 namespace vulkan {
+
+struct AllocatedBuffer {
+    vk::Buffer buffer = nullptr;
+    VmaAllocation allocation;
+};
+
+struct AllocatedImage {
+    vk::Image image = nullptr;
+    VmaAllocation allocation;
+};
 
 struct QueueFamilyIndices
 {
@@ -46,6 +59,12 @@ struct SwapChainResources
     }
 };
 
+struct DepthResources
+{
+    AllocatedImage image;
+    vk::ImageView view;
+};
+
 bool checkValidationLayerSupport();
 
 bool checkDeviceExtensions(vk::PhysicalDevice device);
@@ -78,6 +97,19 @@ void createSwapChain(vk::Instance, vk::PhysicalDevice, vk::Device, vk::SurfaceKH
 
 void destroySwapChain(vk::Device, SwapChainResources&);
 
+vk::Format findSupportedFormat(vk::PhysicalDevice device, const std::vector<vk::Format>& candidates, vk::ImageTiling tiling, vk::FormatFeatureFlags features);
+
+vk::Format findDepthFormat(vk::PhysicalDevice device);
+
+vk::RenderPass createBasicDepthRenderPass(vk::PhysicalDevice physicalDevice, vk::Device device, vk::Format colorFormat);
+
+AllocatedImage createImage(VmaAllocator allocator, vk::Device device, uint32_t width, uint32_t height, vk::Format format, vk::ImageTiling tiling, vk::ImageUsageFlags usage, VmaMemoryUsage memoryUsage, VmaAllocationCreateFlags memoryFlags);
+
+vk::ImageView createImageView(vk::Device device, vk::Image image, vk::Format format, vk::ImageAspectFlags aspectFlags);
+
+DepthResources createDepthResources(VmaAllocator allocator, vk::PhysicalDevice physicalDevice, vk::Device device, const SwapChainResources& swapChainData);
+
+void destroyDepthResources(VmaAllocator allocator, vk::Device device, DepthResources& res);
 
 }
 }
