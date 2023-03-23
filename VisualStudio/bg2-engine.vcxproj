@@ -91,7 +91,7 @@
     <OutDir>$(SolutionDir)..\build\</OutDir>
     <IntDir>$(SolutionDir)..\build\bg2e\$(Configuration)\</IntDir>
     <TargetName>$(ProjectName)d</TargetName>
-    <IncludePath>$(VK_SDK_PATH)\Include;$(SolutionDir)..\deps\glfw\include;$(SolutionDir)..\include;$(SolutionDir)..\deps\bg2-io\src\bg2-scene;$(SolutionDir)..\deps\bg2-io\src\bg2-io;$(SolutionDir)..\deps\glm;$(SolutionDir)..\deps\obj;$(SolutionDir)..\deps\stb;$(IncludePath)</IncludePath>
+    <IncludePath>$(VK_SDK_PATH)\Include;$(SolutionDir)..\deps\glfw\include;$(SolutionDir)..\include;$(SolutionDir)..\deps\bg2-io\src\bg2-scene;$(SolutionDir)..\deps\bg2-io\src\bg2-io;$(SolutionDir)..\deps\glm;$(SolutionDir)..\deps\obj;$(SolutionDir)..\deps\stb;$(SolutionDir)..\deps\wma;$(IncludePath)</IncludePath>
     <LibraryPath>$(VK_SDK_PATH)\Lib;$(SolutionDir)..\deps\glfw\lib-vc2022;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -145,6 +145,7 @@
       <LanguageStandard>stdcpp20</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <ObjectFileName>$(IntDir)\%(RelativeDir)\</ObjectFileName>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -163,6 +164,7 @@
       <LanguageStandard>stdcpp20</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <ObjectFileName>$(IntDir)\%(RelativeDir)\</ObjectFileName>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -193,6 +195,10 @@
     <ClInclude Include="..\include\bg2e\base\Texture.hpp" />
     <ClInclude Include="..\include\bg2e\export.hpp" />
     <ClInclude Include="..\include\bg2e\render\Renderer.hpp" />
+    <ClInclude Include="..\include\bg2e\render\vulkan\Renderer.hpp" />
+    <ClInclude Include="..\include\bg2e\render\vulkan\ResourceDestroyManager.hpp" />
+    <ClInclude Include="..\include\bg2e\render\vulkan\tools.hpp" />
+    <ClInclude Include="..\include\bg2e\render\vulkan\VulkanAPI.hpp" />
     <ClInclude Include="..\include\bg2e\tools\Json.hpp" />
     <ClInclude Include="..\include\bg2e\tools\JsonParser.hpp" />
     <ClInclude Include="..\include\bg2e\tools\JsonToken.hpp" />
@@ -214,6 +220,9 @@
     <ClCompile Include="..\src\base\PolyList.cpp" />
     <ClCompile Include="..\src\base\Texture.cpp" />
     <ClCompile Include="..\src\render\Renderer.cpp" />
+    <ClCompile Include="..\src\render\vulkan\Renderer.cpp" />
+    <ClCompile Include="..\src\render\vulkan\tools.cpp" />
+    <ClCompile Include="..\src\render\vulkan\VulkanAPI.cpp" />
     <ClCompile Include="..\src\tools\Json.cpp" />
     <ClCompile Include="..\src\tools\JsonParser.cpp" />
     <ClCompile Include="..\src\tools\JsonToken.cpp" />

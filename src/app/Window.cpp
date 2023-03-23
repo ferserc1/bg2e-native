@@ -62,7 +62,7 @@ MouseButton getMouseButton(int glfwButton)
     }
 }
 
-MouseEvent&& getMouseEvent(GLFWwindow* glfwWindow, int button = -1, double xOffset = 0.0, double yOffset = 0.0)
+MouseEvent getMouseEvent(GLFWwindow* glfwWindow, int button = -1, double xOffset = 0.0, double yOffset = 0.0)
 {
     double xpos, ypos;
     glfwGetCursorPos(glfwWindow, &xpos, &ypos);
@@ -77,7 +77,7 @@ MouseEvent&& getMouseEvent(GLFWwindow* glfwWindow, int button = -1, double xOffs
         deltaX,
         deltaY
     }, getMouseButton(button));
-    return std::move(event);
+    return event;
 }
 
 void cursorPositionCallback(GLFWwindow* glfwWindow, double xpos, double ypos)

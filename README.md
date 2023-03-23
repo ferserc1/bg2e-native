@@ -98,7 +98,7 @@ You need to download and install VulkanSDK for Windows 64 bits, version 1.3 or h
 To setup the dependencies using the PowerShell script, you must to meet the following requirements:
 
 - You must to allow the execution of PowerShell scripts.
-- You need `git` access from PowerShell.
+- You need `git` access from PowerShell. Note that you can install git from the Visual Studio Installer, but I have found that this method does not give you access to git from PowerShell. It is easier to download git for Windows from [https://git-smc.com](https://git-scm.com/download/win).
 
 You can enable script execution by opening a PowerShell window with administrator privileges and executing the following line:
 

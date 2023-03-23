@@ -46,6 +46,12 @@
     <Filter Include="Source Files\bg2e\tools">
       <UniqueIdentifier>{d3e250a8-ed9a-4fe2-b6f8-c4e549c426ca}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\bg2e\render\vulkan">
+      <UniqueIdentifier>{1c9f541e-3f4a-46d8-94fd-39d9b7d41125}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\bg2e\render\vulkan">
+      <UniqueIdentifier>{402228f1-e13f-41bf-b966-6b1f96fec3b8}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\include\bg2e\app\MainLoop.hpp">
@@ -117,6 +123,18 @@
     <ClInclude Include="..\include\bg2e\tools\JsonToken.hpp">
       <Filter>Header Files\bg2e\tools</Filter>
     </ClInclude>
+    <ClInclude Include="..\include\bg2e\render\vulkan\Renderer.hpp">
+      <Filter>Header Files\bg2e\render\vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\render\vulkan\ResourceDestroyManager.hpp">
+      <Filter>Header Files\bg2e\render\vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\render\vulkan\tools.hpp">
+      <Filter>Header Files\bg2e\render\vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\render\vulkan\VulkanAPI.hpp">
+      <Filter>Header Files\bg2e\render\vulkan</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\app\MainLoop.cpp">
@@ -175,6 +193,15 @@
     </ClCompile>
     <ClCompile Include="..\src\tools\JsonToken.cpp">
       <Filter>Source Files\bg2e\tools</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\render\vulkan\Renderer.cpp">
+      <Filter>Source Files\bg2e\render\vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\render\vulkan\tools.cpp">
+      <Filter>Source Files\bg2e\render\vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\render\vulkan\VulkanAPI.cpp">
+      <Filter>Source Files\bg2e\render\vulkan</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
