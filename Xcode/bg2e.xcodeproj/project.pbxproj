@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		ED432C93299FC1500055AC3B /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED432C92299FC1500055AC3B /* main.cpp */; };
+		ED51196229CDE3D700D576C8 /* ImmediateCommandBuffer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED51196129CDE3D700D576C8 /* ImmediateCommandBuffer.cpp */; };
 		EDDEDD9C29CAF8170039BF51 /* KeyboardEvent.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED3E08C229A631C100768122 /* KeyboardEvent.cpp */; };
 		EDDEDD9D29CAF8170039BF51 /* MainLoop.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED432C90299FC07C0055AC3B /* MainLoop.cpp */; };
 		EDDEDD9E29CAF8170039BF51 /* Window.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED433330299FC4F00055AC3B /* Window.cpp */; };
@@ -1275,6 +1276,8 @@
 		ED43332E299FC3960055AC3B /* AppKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppKit.framework; path = System/Library/Frameworks/AppKit.framework; sourceTree = SDKROOT; };
 		ED433330299FC4F00055AC3B /* Window.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Window.cpp; sourceTree = "<group>"; };
 		ED433332299FC5040055AC3B /* Window.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Window.hpp; sourceTree = "<group>"; };
+		ED51196029CDE3CD00D576C8 /* ImmediateCommandBuffer.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = ImmediateCommandBuffer.hpp; sourceTree = "<group>"; };
+		ED51196129CDE3D700D576C8 /* ImmediateCommandBuffer.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ImmediateCommandBuffer.cpp; sourceTree = "<group>"; };
 		ED5CDE2A29A7ACC800797D21 /* Environment.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Environment.cpp; sourceTree = "<group>"; };
 		ED5CDE2B29A7ACC800797D21 /* Light.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Light.cpp; sourceTree = "<group>"; };
 		ED5CDE2C29A7ACC800797D21 /* Texture.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Texture.cpp; sourceTree = "<group>"; };
@@ -3890,6 +3893,7 @@
 		EDDEDDC129CB0E4C0039BF51 /* vulkan */ = {
 			isa = PBXGroup;
 			children = (
+				ED51196129CDE3D700D576C8 /* ImmediateCommandBuffer.cpp */,
 				EDDEDDC229CB0E4C0039BF51 /* Renderer.cpp */,
 				EDDEDDDD29CB34A20039BF51 /* tools.cpp */,
 				EDDEDDD729CB21AB0039BF51 /* VulkanAPI.cpp */,
@@ -3900,6 +3904,7 @@
 		EDDEDDC429CB0E620039BF51 /* vulkan */ = {
 			isa = PBXGroup;
 			children = (
+				ED51196029CDE3CD00D576C8 /* ImmediateCommandBuffer.hpp */,
 				EDDEDDC529CB0E620039BF51 /* Renderer.hpp */,
 				EDDEDE3229CB84C40039BF51 /* ResourceDestroyManager.hpp */,
 				EDDEDDDC29CB34970039BF51 /* tools.hpp */,
@@ -4560,6 +4565,7 @@
 				EDDEDDA429CAF8170039BF51 /* Renderer.cpp in Sources */,
 				EDDEDDC329CB0E4C0039BF51 /* Renderer.cpp in Sources */,
 				EDDEDDA529CAF8170039BF51 /* JsonParser.cpp in Sources */,
+				ED51196229CDE3D700D576C8 /* ImmediateCommandBuffer.cpp in Sources */,
 				EDDEDDA629CAF8170039BF51 /* JsonToken.cpp in Sources */,
 				EDDEDDA729CAF8170039BF51 /* Json.cpp in Sources */,
 			);
@@ -4751,6 +4757,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CLANG_WARN_DOCUMENTATION_COMMENTS = NO;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 5FVRUTMZSK;
 				DYLIB_COMPATIBILITY_VERSION = 1;
@@ -4760,6 +4767,7 @@
 				GCC_ENABLE_CPP_EXCEPTIONS = YES;
 				GCC_ENABLE_CPP_RTTI = YES;
 				GCC_SYMBOLS_PRIVATE_EXTERN = YES;
+				GCC_WARN_UNUSED_VARIABLE = NO;
 				HEADER_SEARCH_PATHS = (
 					"$(PROJECT_DIR)/../deps/bg2-io/src/bg2-io",
 					"$(PROJECT_DIR)/../deps/glfw/include",
@@ -4776,6 +4784,7 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				SYMROOT = "$(PROJECT_DIR)/../bin";
+				WARNING_CFLAGS = "-Wno-nullability-completeness";
 			};
 			name = Debug;
 		};
@@ -4783,6 +4792,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CLANG_WARN_DOCUMENTATION_COMMENTS = NO;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 5FVRUTMZSK;
 				DYLIB_COMPATIBILITY_VERSION = 1;
@@ -4792,6 +4802,7 @@
 				GCC_ENABLE_CPP_EXCEPTIONS = YES;
 				GCC_ENABLE_CPP_RTTI = YES;
 				GCC_SYMBOLS_PRIVATE_EXTERN = YES;
+				GCC_WARN_UNUSED_VARIABLE = NO;
 				HEADER_SEARCH_PATHS = (
 					"$(PROJECT_DIR)/../deps/bg2-io/src/bg2-io",
 					"$(PROJECT_DIR)/../deps/glfw/include",
@@ -4808,6 +4819,7 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				SYMROOT = "$(PROJECT_DIR)/../bin";
+				WARNING_CFLAGS = "-Wno-nullability-completeness";
 			};
 			name = Release;
 		};

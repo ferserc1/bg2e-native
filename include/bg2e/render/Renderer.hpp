@@ -22,6 +22,8 @@ public:
     
     virtual void init(const std::string& appName) = 0;
     virtual void bindWindow(app::Window&) = 0;
+    virtual void update(float delta) = 0;
+    virtual void drawFrame() = 0;
     virtual void destroy() = 0;
 };
 

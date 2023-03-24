@@ -5,6 +5,8 @@
 
 #include <GLFW/glfw3.h>
 
+#include <vulkan/vulkan.hpp>
+
 #include <iostream>
 
 namespace bg2e {
@@ -28,6 +30,58 @@ void Renderer::bindWindow(app::Window& window)
     bool validationLayers = true;
 
     _vulkanApi->init(validationLayers, _appName, window);
+}
+
+void Renderer::update(float delta)
+{
+    
+}
+
+void Renderer::drawFrame()
+{
+    int32_t imageIndex = _vulkanApi->beginFrame();
+    if (imageIndex >= 0)
+    {
+        // TODO: record command buffer here
+        // TODO: Wrap commands in higher level tool to begin render pass and record command buffers
+        auto commandBuffer = _vulkanApi->commandBuffer();
+        auto scExtent = _vulkanApi->swapchainResources().extent;
+        
+        commandBuffer.begin(vk::CommandBufferBeginInfo{});
+        
+        vk::RenderPassBeginInfo renderPassInfo;
+        renderPassInfo.renderPass = _vulkanApi->mainRenderPass();
+        renderPassInfo.framebuffer = _vulkanApi->framebuffer();
+        renderPassInfo.renderArea.offset = vk::Offset2D{ 0, 0 };
+        renderPassInfo.renderArea.extent = scExtent;
+        
+        std::array<vk::ClearValue, 2> clearValues;
+        clearValues[0].color = vk::ClearColorValue(0.2f, 0.4f, 0.89f, 1.0f);
+        clearValues[0].depthStencil = vk::ClearDepthStencilValue(1.0f, 0);
+        renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
+        renderPassInfo.pClearValues = clearValues.data();
+        commandBuffer.beginRenderPass(renderPassInfo, vk::SubpassContents::eInline);
+        
+        vk::Viewport viewport;
+        viewport.x = 0.0f;
+        viewport.y = 0.0f;
+        viewport.width = static_cast<float>(scExtent.width);
+        viewport.height = static_cast<float>(scExtent.height);
+        viewport.minDepth = 0.0f;
+        viewport.maxDepth = 1.0f;
+        commandBuffer.setViewport(0, 1, &viewport);
+        
+        vk::Rect2D scissor{};
+        scissor.offset = vk::Offset2D{0, 0};
+        scissor.extent = scExtent;
+        commandBuffer.setScissor(0, 1, &scissor);
+        
+        commandBuffer.endRenderPass();
+        
+        commandBuffer.end();
+        
+        _vulkanApi->endFrame(imageIndex);
+    }
 }
 
 void Renderer::destroy()

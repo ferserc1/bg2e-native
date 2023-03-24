@@ -25,6 +25,8 @@ public:
     
     void setRenderer(std::unique_ptr<render::Renderer>&&);
     
+    inline render::Renderer& renderer() { return *(_renderer.get()); }
+    
     inline void setAppController(std::unique_ptr<AppController> ctrl) {
         _appController = std::move(ctrl);
         _appController->_window = this;

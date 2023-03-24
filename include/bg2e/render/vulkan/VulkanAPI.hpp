@@ -19,7 +19,13 @@ namespace vulkan {
 
 class BG2E_EXPORT VulkanAPI {
 public:
-    void init(bool validationLayers, const std::string& appName, app::Window& window);
+    void init(bool validationLayers, const std::string& appName, app::Window& window, uint32_t simultaneousFrames = 2);
+    
+    // Returns the swap chain image index or -1 if the framebuffer is invalid
+    // (for example, after window resize)
+    int32_t beginFrame();
+    
+    void endFrame(int32_t swapChainImageIndex);
     
     void destroy();
     
@@ -29,11 +35,26 @@ public:
     
     vk::SurfaceKHR surface() const { return _surface; }
     
+    vk::RenderPass mainRenderPass() const { return _mainRenderPass; }
+    
+    uint32_t simultaneousFrames() const { return _simultaneousFrames; }
+    
+    uint32_t currentFrame() const { return _currentFrame; }
+    
+    vk::CommandBuffer commandBuffer() const { return _commandBuffers[_currentFrame]; }
+    
+    vk::Framebuffer framebuffer() const { return _framebuffers[_currentFrame]; }
+    
+    const SwapChainResources& swapchainResources() const { return _swapChain; }
+    
     ResourceDestroyManager destroyManager;
     
 protected:
     bool _enableValidationLayers;
     std::string _appName;
+    
+    uint32_t _simultaneousFrames;
+    uint32_t _currentFrame;
     
     VmaAllocator _allocator;
 
@@ -46,7 +67,12 @@ protected:
     vk::Queue _presentQueue = nullptr;
     SwapChainResources _swapChain;
     vk::RenderPass _mainRenderPass = nullptr;
-    DepthResources _dephtResources;
+    DepthResources _depthResources;
+    std::vector<vk::Framebuffer> _framebuffers;
+    vk::CommandPool _commandPool;
+    std::vector<vk::CommandBuffer> _commandBuffers;
+    std::vector<FrameSync> _frameSyncResources;
+    
     
 };
 

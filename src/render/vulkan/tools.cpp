@@ -1,6 +1,7 @@
 
 #include <bg2e/render/vulkan/tools.hpp>
 
+#include <bg2e/render/vulkan/ImmediateCommandBuffer.hpp>
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
@@ -541,6 +542,16 @@ vk::ImageView createImageView(vk::Device device, vk::Image image, vk::Format for
     return device.createImageView(viewInfo);
 }
 
+// Implement image transitions using an ImmediateCommandBuffer object
+// TODO: add transition image parameters
+void transitionImage(ImmediateCommandBuffer& cmdExec)
+{
+    cmdExec.execute([&](vk::CommandBuffer cmd) {
+        // TODO: Implement transition image
+    });
+}
+
+// TODO: pass ImmediateCommandBuffer object parameter, or command pool and command buffer objects to transition the depth resource
 DepthResources createDepthResources(VmaAllocator allocator, vk::PhysicalDevice physicalDevice, vk::Device device, const SwapChainResources& swapChainData)
 {
     DepthResources result;
@@ -549,6 +560,7 @@ DepthResources createDepthResources(VmaAllocator allocator, vk::PhysicalDevice p
     result.view = createImageView(device, result.image.image, depthFormat, vk::ImageAspectFlagBits::eDepth);
 
     // TODO: Transition image to depth stencil attachment optimal
+    
 
     return result;
 }
@@ -559,6 +571,82 @@ void destroyDepthResources(VmaAllocator allocator, vk::Device device, DepthResou
     device.destroyImageView(res.view);
 }
 
+void createFramebuffers(vk::Device device, vk::RenderPass renderPass, const SwapChainResources& swapchainData, const DepthResources& depthData, std::vector<vk::Framebuffer>& result)
+{
+    for (auto imageView : swapchainData.imageViews)
+    {
+        std::array<vk::ImageView, 2> attachments = {
+            imageView,
+            depthData.view
+        };
+        
+        vk::FramebufferCreateInfo createInfo;
+        createInfo.renderPass = renderPass;
+        createInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
+        createInfo.pAttachments = attachments.data();
+        createInfo.width = swapchainData.extent.width;
+        createInfo.height = swapchainData.extent.height;
+        createInfo.layers = 1;
+        
+        result.push_back(device.createFramebuffer(createInfo));
+    }
+}
+
+void destroyFramebuffers(vk::Device device, std::vector<vk::Framebuffer>& framebuffers)
+{
+    for (auto fb : framebuffers)
+    {
+        device.destroyFramebuffer(fb);
+    }
+    framebuffers.clear();
+}
+
+vk::CommandPool createCommandPool(vk::Device device, vk::CommandPoolCreateFlags flags, uint32_t queueFamily)
+{
+    vk::CommandPoolCreateInfo createInfo;
+    createInfo.flags = flags;
+    createInfo.queueFamilyIndex = queueFamily;
+    return device.createCommandPool(createInfo);
+}
+
+void allocateCommandBuffers(vk::Device device, vk::CommandPool pool, vk::CommandBufferLevel level, uint32_t bufferCount, std::vector<vk::CommandBuffer>& result)
+{
+    vk::CommandBufferAllocateInfo allocInfo;
+    allocInfo.commandPool = pool;
+    allocInfo.level = level;
+    allocInfo.commandBufferCount = bufferCount;
+    result = device.allocateCommandBuffers(allocInfo);
+}
+
+void createFrameSyncResources(vk::Device device, uint32_t frameCount, std::vector<FrameSync>& result, vk::FenceCreateFlags fenceFlags)
+{
+    for (auto i = 0; i < frameCount; ++i)
+    {
+        vk::FenceCreateInfo fenceInfo;
+        fenceInfo.flags = fenceFlags;
+        vk::Fence fence = device.createFence(fenceInfo);
+        
+        vk::SemaphoreCreateInfo semaphoreInfo;
+        auto presentSemaphore = device.createSemaphore(semaphoreInfo);
+        auto renderSemaphore = device.createSemaphore(semaphoreInfo);
+        result.push_back({
+            fence,
+            presentSemaphore,
+            renderSemaphore
+        });
+    }
+}
+
+void destroyFrameSyncResources(vk::Device device, std::vector<FrameSync>& syncResources)
+{
+    for (auto sync : syncResources)
+    {
+        device.destroySemaphore(sync.renderSemaphore);
+        device.destroySemaphore(sync.presentSemaphore);
+        device.destroyFence(sync.renderFence);
+    }
+    syncResources.clear();
+}
 
 }
 }

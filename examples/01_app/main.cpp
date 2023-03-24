@@ -18,6 +18,9 @@ public:
     {
         static uint32_t frames = 0;
         static float elapsed = 0.0f;
+        
+        window().renderer().update(delta);
+        
         if (elapsed >= 1.0f)
         {
             window().setTitle("Hello World! - " + std::to_string(frames) +  " fps");
@@ -34,6 +37,7 @@ public:
     void display()
     {
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        window().renderer().drawFrame();
     }
     
     void destroy()

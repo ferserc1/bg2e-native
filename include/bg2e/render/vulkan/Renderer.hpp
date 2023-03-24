@@ -21,6 +21,10 @@ public:
     
     virtual void bindWindow(app::Window&);
     
+    virtual void update(float delta);
+    
+    virtual void drawFrame();
+    
     virtual void destroy();
     
 private:

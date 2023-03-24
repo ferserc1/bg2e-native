@@ -65,6 +65,13 @@ struct DepthResources
     vk::ImageView view;
 };
 
+struct FrameSync
+{
+    vk::Fence renderFence;
+    vk::Semaphore presentSemaphore;
+    vk::Semaphore renderSemaphore;
+};
+
 bool checkValidationLayerSupport();
 
 bool checkDeviceExtensions(vk::PhysicalDevice device);
@@ -110,6 +117,18 @@ vk::ImageView createImageView(vk::Device device, vk::Image image, vk::Format for
 DepthResources createDepthResources(VmaAllocator allocator, vk::PhysicalDevice physicalDevice, vk::Device device, const SwapChainResources& swapChainData);
 
 void destroyDepthResources(VmaAllocator allocator, vk::Device device, DepthResources& res);
+
+void createFramebuffers(vk::Device device, vk::RenderPass renderPass, const SwapChainResources& swapchainData, const DepthResources& depthData, std::vector<vk::Framebuffer>& result);
+
+void destroyFramebuffers(vk::Device device, std::vector<vk::Framebuffer>& framebuffers);
+
+vk::CommandPool createCommandPool(vk::Device device, vk::CommandPoolCreateFlags flags, uint32_t queueFamily);
+
+void allocateCommandBuffers(vk::Device device, vk::CommandPool pool, vk::CommandBufferLevel level, uint32_t bufferCount, std::vector<vk::CommandBuffer>& result);
+
+void createFrameSyncResources(vk::Device device, uint32_t frameCount, std::vector<FrameSync>& result, vk::FenceCreateFlags fenceFlags = vk::FenceCreateFlagBits::eSignaled);
+
+void destroyFrameSyncResources(vk::Device device, std::vector<FrameSync>& syncResources);
 
 }
 }
