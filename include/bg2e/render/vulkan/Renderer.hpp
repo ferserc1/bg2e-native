@@ -21,6 +21,8 @@ public:
     
     virtual void bindWindow(app::Window&);
     
+    virtual void resize(uint32_t w, uint32_t h);
+    
     virtual void update(float delta);
     
     virtual void drawFrame();

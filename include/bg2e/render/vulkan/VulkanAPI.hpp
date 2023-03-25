@@ -52,9 +52,12 @@ public:
     
     ResourceDestroyManager destroyManager;
     
+    void setResized() { _framebufferResized = true; }
+    
 protected:
     bool _enableValidationLayers;
     std::string _appName;
+    app::Window* _window;
     
     uint32_t _simultaneousFrames;
     uint32_t _currentFrame;
@@ -75,8 +78,13 @@ protected:
     vk::CommandPool _commandPool;
     std::vector<vk::CommandBuffer> _commandBuffers;
     std::vector<FrameSync> _frameSyncResources;
+    bool _framebufferResized = false;
     
     std::unique_ptr<ImmediateCommandBuffer> _cmdExec;
+    
+    void getWindowSize(void* winImplPtr, int& width, int& height, bool fromFramebuffer);
+    
+    void recreateSwapChain();
 };
 
 

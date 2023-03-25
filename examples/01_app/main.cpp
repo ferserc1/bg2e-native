@@ -5,6 +5,7 @@
 #include <iostream>
 #include <iomanip>
 #include <thread>
+#include <math.h>
 
 class MyAppController : public bg2e::app::AppController
 {
@@ -14,12 +15,24 @@ public:
         std::cout << "init" << std::endl;
     }
     
+    void resize(uint32_t w, uint32_t h)
+    {
+        window().renderer().resize(w, h);
+    }
+    
     void frame(float delta)
     {
         static uint32_t frames = 0;
         static float elapsed = 0.0f;
         
         window().renderer().update(delta);
+        
+        static int frameNumber = 0;
+        ++frameNumber;
+        float r = (sin(frameNumber / 120.f) + 1.0) / 2.0f;
+        float g = (sin(frameNumber / 120.f + 3.141592653589793) + 1.0f) / 2.0f;
+        float b = (sin(frameNumber / 120.f + 1.570796326794897) + 1.0f) / 2.0f;
+        window().renderer().setClearColor({r, g, b, 1.f});
         
         if (elapsed >= 1.0f)
         {
@@ -36,7 +49,6 @@ public:
     
     void display()
     {
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
         window().renderer().drawFrame();
     }
     

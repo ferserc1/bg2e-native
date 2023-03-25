@@ -32,6 +32,11 @@ void Renderer::bindWindow(app::Window& window)
     _vulkanApi->init(validationLayers, _appName, window);
 }
 
+void Renderer::resize(uint32_t w, uint32_t h)
+{
+    _vulkanApi->setResized();
+}
+
 void Renderer::update(float delta)
 {
     
@@ -42,7 +47,6 @@ void Renderer::drawFrame()
     int32_t imageIndex = _vulkanApi->beginFrame();
     if (imageIndex >= 0)
     {
-        // TODO: record command buffer here
         // TODO: Wrap commands in higher level tool to begin render pass and record command buffers
         auto commandBuffer = _vulkanApi->commandBuffer();
         auto scExtent = _vulkanApi->swapchainResources().extent;
@@ -56,8 +60,8 @@ void Renderer::drawFrame()
         renderPassInfo.renderArea.extent = scExtent;
         
         std::array<vk::ClearValue, 2> clearValues;
-        clearValues[0].color = vk::ClearColorValue(0.2f, 0.4f, 0.89f, 1.0f);
-        clearValues[0].depthStencil = vk::ClearDepthStencilValue(1.0f, 0);
+        clearValues[0].color = vk::ClearColorValue(_clearColor.r, _clearColor.g, _clearColor.b, 1.0f);
+        clearValues[1].depthStencil = vk::ClearDepthStencilValue(1.0f, 0);
         renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
         renderPassInfo.pClearValues = clearValues.data();
         commandBuffer.beginRenderPass(renderPassInfo, vk::SubpassContents::eInline);
@@ -75,6 +79,8 @@ void Renderer::drawFrame()
         scissor.offset = vk::Offset2D{0, 0};
         scissor.extent = scExtent;
         commandBuffer.setScissor(0, 1, &scissor);
+        
+        // Draw here: pass a command buffer to record
         
         commandBuffer.endRenderPass();
         

@@ -14,6 +14,7 @@ namespace vulkan {
 
 void VulkanAPI::init(bool validationLayers, const std::string& appName, app::Window& window, uint32_t simultaneousFrames)
 {
+    _window = &window;
     _enableValidationLayers = validationLayers;
     _simultaneousFrames = simultaneousFrames;
     _currentFrame = 0;
@@ -41,14 +42,12 @@ void VulkanAPI::init(bool validationLayers, const std::string& appName, app::Win
         });
     }
     
-    auto win = reinterpret_cast<GLFWwindow*>(window.impl_ptr());
-    
     int width;
     int height;
-    glfwGetWindowSize(win, &width, &height);
+    getWindowSize(_window->impl_ptr(), width, height, false);
     
     VkSurfaceKHR surface;
-    if (glfwCreateWindowSurface(instance(), win, nullptr, &surface) != VK_SUCCESS)
+    if (glfwCreateWindowSurface(instance(), reinterpret_cast<GLFWwindow*>(_window->impl_ptr()), nullptr, &surface) != VK_SUCCESS)
     {
         throw std::runtime_error("Could not create Vulkan surface.");
     }
@@ -138,11 +137,9 @@ int32_t VulkanAPI::beginFrame()
     
     if (result == vk::Result::eErrorOutOfDateKHR)
     {
-        // TODO: Recreate swap chain
+        recreateSwapChain();
         return 0;
     }
-    
-    // TODO: Update uniform buffers and other structures
     
     if (_device.resetFences(1, &_frameSyncResources[_currentFrame].renderFence) != vk::Result::eSuccess)
     {
@@ -190,10 +187,10 @@ void VulkanAPI::endFrame(int32_t swapChainImageIndex)
         result = vk::Result::eErrorOutOfDateKHR;
     }
     
-    if (result == vk::Result::eErrorOutOfDateKHR || result == vk::Result::eSuboptimalKHR)
+    if (result == vk::Result::eErrorOutOfDateKHR || result == vk::Result::eSuboptimalKHR || _framebufferResized)
     {
-        // _framebufferResized = false;
-        // recreateSwapChain();
+        _framebufferResized = false;
+        recreateSwapChain();
     }
     
     _currentFrame = (_currentFrame + 1) % _simultaneousFrames;
@@ -203,14 +200,49 @@ void VulkanAPI::destroy()
 {
     for (int i = 0; i < _simultaneousFrames; ++i)
     {
-        _device.waitForFences(1, &_frameSyncResources[i].renderFence, true, UINT64_MAX);
+        if (_device.waitForFences(1, &_frameSyncResources[i].renderFence, true, UINT64_MAX) != vk::Result::eSuccess)
+        {
+            throw std::runtime_error("Could not wait for frame sync fence");
+        }
     }
     
     _device.waitIdle();
     destroyManager.flush();
 }
 
+void VulkanAPI::getWindowSize(void* winImplPtr, int& width, int& height, bool fromFramebuffer)
+{
+    auto win = reinterpret_cast<GLFWwindow*>(_window->impl_ptr());
+    if (fromFramebuffer)
+    {
+        width = 0;
+        height = 0;
+        while (width == 0 || height == 0) {
+            glfwGetFramebufferSize(win, &width, &height);
+            glfwWaitEvents();
+        }
+    }
+    else
+    {
+        glfwGetWindowSize(win, &width, &height);
+    }
+}
 
+void VulkanAPI::recreateSwapChain()
+{
+    int width, height;
+    getWindowSize(_window->impl_ptr(), width, height, true);
+    
+    _device.waitIdle();
+    
+    destroyFramebuffers(_device, _framebuffers);
+    destroyDepthResources(_allocator, _device, _depthResources);
+    destroySwapChain(_device, _swapChain);
+    
+    createSwapChain(_instance, _physicalDevice, _device, _surface, *_window, _swapChain);
+    _depthResources = createDepthResources(_allocator, _physicalDevice, _device, _swapChain, *(_cmdExec.get()));
+    createFramebuffers(_device, _mainRenderPass, _swapChain, _depthResources, _framebuffers);
+}
 
 
 }
