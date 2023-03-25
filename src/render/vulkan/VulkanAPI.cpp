@@ -86,8 +86,17 @@ void VulkanAPI::init(bool validationLayers, const std::string& appName, app::Win
     destroyManager.push_function([&]() {
         _device.destroyRenderPass(_mainRenderPass);
     });
+    
+    vk::CommandPool immediateCmdPool = createCommandPool(_device, vk::CommandPoolCreateFlagBits::eResetCommandBuffer, indices.graphicsFamily.value());
+    vk::Queue immediateQueue = _device.getQueue(indices.graphicsFamily.value(), 0);
+    vk::CommandBuffer immediateCmdBuffer = allocateCommandBuffer(_device, immediateCmdPool, vk::CommandBufferLevel::ePrimary);
+    _cmdExec = std::make_unique<ImmediateCommandBuffer>(_device, immediateCmdPool, immediateQueue, immediateCmdBuffer);
+    destroyManager.push_function([=]() {
+        _cmdExec = nullptr;
+        _device.destroyCommandPool(immediateCmdPool);
+    });
 
-    _depthResources = createDepthResources(_allocator, _physicalDevice, _device, _swapChain);
+    _depthResources = createDepthResources(_allocator, _physicalDevice, _device, _swapChain, *(_cmdExec.get()));
     destroyManager.push_function([&]() {
         destroyDepthResources(_allocator, _device, _depthResources);
     });
@@ -192,6 +201,12 @@ void VulkanAPI::endFrame(int32_t swapChainImageIndex)
 
 void VulkanAPI::destroy()
 {
+    for (int i = 0; i < _simultaneousFrames; ++i)
+    {
+        _device.waitForFences(1, &_frameSyncResources[i].renderFence, true, UINT64_MAX);
+    }
+    
+    _device.waitIdle();
     destroyManager.flush();
 }
 

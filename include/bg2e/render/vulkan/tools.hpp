@@ -7,6 +7,7 @@
 #include <vma/vk_mem_alloc.h>
 
 #include <bg2e/app/Window.hpp>
+#include <bg2e/render/vulkan/ImmediateCommandBuffer.hpp>
 
 #include <vector>
 #include <string>
@@ -114,7 +115,9 @@ AllocatedImage createImage(VmaAllocator allocator, vk::Device device, uint32_t w
 
 vk::ImageView createImageView(vk::Device device, vk::Image image, vk::Format format, vk::ImageAspectFlags aspectFlags);
 
-DepthResources createDepthResources(VmaAllocator allocator, vk::PhysicalDevice physicalDevice, vk::Device device, const SwapChainResources& swapChainData);
+void transitionImageLayout(vk::Image image, vk::Format format, vk::ImageLayout oldLayout, vk::ImageLayout newLayout, ImmediateCommandBuffer& cmdExec);
+
+DepthResources createDepthResources(VmaAllocator allocator, vk::PhysicalDevice physicalDevice, vk::Device device, const SwapChainResources& swapChainData, ImmediateCommandBuffer& cmdExec);
 
 void destroyDepthResources(VmaAllocator allocator, vk::Device device, DepthResources& res);
 
@@ -125,6 +128,8 @@ void destroyFramebuffers(vk::Device device, std::vector<vk::Framebuffer>& frameb
 vk::CommandPool createCommandPool(vk::Device device, vk::CommandPoolCreateFlags flags, uint32_t queueFamily);
 
 void allocateCommandBuffers(vk::Device device, vk::CommandPool pool, vk::CommandBufferLevel level, uint32_t bufferCount, std::vector<vk::CommandBuffer>& result);
+
+vk::CommandBuffer allocateCommandBuffer(vk::Device device, vk::CommandPool pool, vk::CommandBufferLevel level);
 
 void createFrameSyncResources(vk::Device device, uint32_t frameCount, std::vector<FrameSync>& result, vk::FenceCreateFlags fenceFlags = vk::FenceCreateFlagBits::eSignaled);
 

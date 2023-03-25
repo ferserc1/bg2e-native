@@ -20,7 +20,7 @@ namespace vulkan {
 class ImmediateCommandBuffer
 {
 public:
-    ImmediateCommandBuffer(vk::Device device, vk::CommandPool pool, vk::CommandBuffer cmdBuffer);
+    ImmediateCommandBuffer(vk::Device device, vk::CommandPool pool, vk::Queue queue, vk::CommandBuffer cmdBuffer);
     ~ImmediateCommandBuffer();
     
     void execute(std::function<void(vk::CommandBuffer)>&& func);
@@ -29,6 +29,7 @@ protected:
     vk::Device _device;
     vk::CommandPool _commandPool;
     vk::CommandBuffer _commandBuffer;
+    vk::Queue _queue;
     vk::Fence _commandFence;
 };
 

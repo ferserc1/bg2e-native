@@ -8,8 +8,10 @@
 #include <bg2e/app/Window.hpp>
 #include <bg2e/render/vulkan/ResourceDestroyManager.hpp>
 #include <bg2e/render/vulkan/tools.hpp>
+#include <bg2e/render/vulkan/ImmediateCommandBuffer.hpp>
 
 #include <vector>
+#include <memory>
 
 namespace bg2e {
 namespace render {
@@ -43,7 +45,8 @@ public:
     
     vk::CommandBuffer commandBuffer() const { return _commandBuffers[_currentFrame]; }
     
-    vk::Framebuffer framebuffer() const { return _framebuffers[_currentFrame]; }
+    // Image index: the index returned by beginFrame
+    vk::Framebuffer framebuffer(int32_t imageIndex) const { return _framebuffers[imageIndex]; }
     
     const SwapChainResources& swapchainResources() const { return _swapChain; }
     
@@ -73,7 +76,7 @@ protected:
     std::vector<vk::CommandBuffer> _commandBuffers;
     std::vector<FrameSync> _frameSyncResources;
     
-    
+    std::unique_ptr<ImmediateCommandBuffer> _cmdExec;
 };
 
 

@@ -5,9 +5,10 @@ namespace bg2e {
 namespace render {
 namespace vulkan {
 
-ImmediateCommandBuffer::ImmediateCommandBuffer(vk::Device device, vk::CommandPool pool, vk::CommandBuffer cmdBuffer)
+ImmediateCommandBuffer::ImmediateCommandBuffer(vk::Device device, vk::CommandPool pool, vk::Queue queue, vk::CommandBuffer cmdBuffer)
 :_device{device}
 ,_commandPool{pool}
+,_queue{queue}
 ,_commandBuffer{cmdBuffer}
 {
     vk::FenceCreateInfo fenceInfo;
@@ -21,30 +22,34 @@ ImmediateCommandBuffer::~ImmediateCommandBuffer()
 
 void ImmediateCommandBuffer::execute(std::function<void(vk::CommandBuffer)>&& func)
 {
-    /*
-
-     TODO: Get the resources needed in this function from this object
-     
-     VkCommandBuffer cmd = _uploadContext._commandBuffer;
-         
-     VkCommandBufferBeginInfo cmdBeginInfo = vkinit::command_buffer_begin_info(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
-     VK_CHECK(vkBeginCommandBuffer(cmd, &cmdBeginInfo));
-     
-     function(cmd);
-     
-     VK_CHECK(vkEndCommandBuffer(cmd));
-     
-     VkSubmitInfo submit = vkinit::submit_info(&cmd);
-     
-     VK_CHECK(vkQueueSubmit(_graphicsQueue, 1, &submit, _uploadContext._uploadFence));
-     
-     vkWaitForFences(_device, 1, &_uploadContext._uploadFence, true, 9999999999);
-     vkResetFences(_device, 1, &_uploadContext._uploadFence);
-     
-     vkResetCommandPool(_device, _uploadContext._commandPool, 0);
- 
- 
-     */
+    vk::CommandBuffer cmd = _commandBuffer;
+    
+    vk::CommandBufferBeginInfo cmdBeginInfo;
+    cmdBeginInfo.flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit;
+    cmd.begin(cmdBeginInfo);
+    
+    func(cmd);
+    
+    cmd.end();
+    
+    vk::SubmitInfo submit;
+    submit.commandBufferCount = 1;
+    submit.pCommandBuffers = &cmd;
+    if (_queue.submit(1, &submit, _commandFence) != vk::Result::eSuccess)
+    {
+        throw std::runtime_error("Could not submit one time execution command buffer");
+    }
+    
+    if (_device.waitForFences(1, &_commandFence, true, UINT64_MAX) != vk::Result::eSuccess)
+    {
+        throw std::runtime_error("Error waiting for fences");
+    }
+    if (_device.resetFences(1, &_commandFence) != vk::Result::eSuccess)
+    {
+        throw std::runtime_error("Could not reset one time execution command fence");
+    }
+    
+    _device.resetCommandPool(_commandPool);
 }
 
 }

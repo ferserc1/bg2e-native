@@ -542,25 +542,94 @@ vk::ImageView createImageView(vk::Device device, vk::Image image, vk::Format for
     return device.createImageView(viewInfo);
 }
 
-// Implement image transitions using an ImmediateCommandBuffer object
-// TODO: add transition image parameters
-void transitionImage(ImmediateCommandBuffer& cmdExec)
+void transitionImageLayout(vk::Image image, vk::Format format, vk::ImageLayout oldLayout, vk::ImageLayout newLayout, ImmediateCommandBuffer& cmdExec)
 {
     cmdExec.execute([&](vk::CommandBuffer cmd) {
-        // TODO: Implement transition image
+        vk::PipelineStageFlags sourceStage;
+        vk::PipelineStageFlags destinationStage;
+        
+        vk::ImageMemoryBarrier barrier;
+        barrier.oldLayout = oldLayout;
+        barrier.newLayout = newLayout;
+        barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        barrier.image = image;
+        barrier.subresourceRange.baseMipLevel = 0;
+        barrier.subresourceRange.levelCount = 1;
+        barrier.subresourceRange.baseArrayLayer = 0;
+        barrier.subresourceRange.layerCount = 1;
+        
+        if (newLayout == vk::ImageLayout::eDepthStencilAttachmentOptimal)
+        {
+            barrier.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eDepth;
+            
+            // If has stencil component
+            if (format == vk::Format::eD32SfloatS8Uint ||
+                format == vk::Format::eD24UnormS8Uint)
+            {
+                barrier.subresourceRange.aspectMask |= vk::ImageAspectFlagBits::eStencil;
+            }
+        }
+        else
+        {
+            barrier.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
+        }
+        
+        if (oldLayout == vk::ImageLayout::eUndefined &&
+            newLayout == vk::ImageLayout::eTransferDstOptimal)
+        {
+            barrier.srcAccessMask = {};
+            barrier.dstAccessMask = vk::AccessFlagBits::eTransferWrite;
+            sourceStage = vk::PipelineStageFlagBits::eTopOfPipe;
+            destinationStage = vk::PipelineStageFlagBits::eTransfer;
+        }
+        else if (oldLayout == vk::ImageLayout::eTransferDstOptimal &&
+                 newLayout == vk::ImageLayout::eShaderReadOnlyOptimal)
+        {
+            barrier.srcAccessMask = vk::AccessFlagBits::eTransferWrite;
+            barrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
+            sourceStage = vk::PipelineStageFlagBits::eTransfer;
+            destinationStage = vk::PipelineStageFlagBits::eFragmentShader;
+        }
+        else if (oldLayout == vk::ImageLayout::eUndefined &&
+                 newLayout == vk::ImageLayout::eDepthStencilAttachmentOptimal)
+        {
+            barrier.srcAccessMask = {};
+            barrier.dstAccessMask =
+                vk::AccessFlagBits::eDepthStencilAttachmentRead |
+                vk::AccessFlagBits::eDepthStencilAttachmentWrite;
+            
+            sourceStage = vk::PipelineStageFlagBits::eTopOfPipe;
+            destinationStage = vk::PipelineStageFlagBits::eEarlyFragmentTests;
+        }
+        else
+        {
+            throw std::invalid_argument("Unsupported layout transition");
+        }
+        
+        cmd.pipelineBarrier(
+            sourceStage,
+            destinationStage,
+            {},
+            0, nullptr,
+            0, nullptr,
+            1, &barrier);
     });
 }
 
-// TODO: pass ImmediateCommandBuffer object parameter, or command pool and command buffer objects to transition the depth resource
-DepthResources createDepthResources(VmaAllocator allocator, vk::PhysicalDevice physicalDevice, vk::Device device, const SwapChainResources& swapChainData)
+DepthResources createDepthResources(VmaAllocator allocator, vk::PhysicalDevice physicalDevice, vk::Device device, const SwapChainResources& swapChainData, ImmediateCommandBuffer& cmdExec)
 {
     DepthResources result;
     vk::Format depthFormat = findDepthFormat(physicalDevice);
     result.image = createImage(allocator, device, swapChainData.extent.width, swapChainData.extent.height, depthFormat, vk::ImageTiling::eOptimal, vk::ImageUsageFlagBits::eDepthStencilAttachment, VMA_MEMORY_USAGE_AUTO, VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT);
     result.view = createImageView(device, result.image.image, depthFormat, vk::ImageAspectFlagBits::eDepth);
 
-    // TODO: Transition image to depth stencil attachment optimal
-    
+    transitionImageLayout(
+          result.image.image,
+          depthFormat,
+          vk::ImageLayout::eUndefined,
+          vk::ImageLayout::eDepthStencilAttachmentOptimal,
+          cmdExec);
 
     return result;
 }
@@ -616,6 +685,15 @@ void allocateCommandBuffers(vk::Device device, vk::CommandPool pool, vk::Command
     allocInfo.level = level;
     allocInfo.commandBufferCount = bufferCount;
     result = device.allocateCommandBuffers(allocInfo);
+}
+
+vk::CommandBuffer allocateCommandBuffer(vk::Device device, vk::CommandPool pool, vk::CommandBufferLevel level)
+{
+    vk::CommandBufferAllocateInfo allocInfo;
+    allocInfo.commandPool = pool;
+    allocInfo.level = level;
+    allocInfo.commandBufferCount = 1;
+    return device.allocateCommandBuffers(allocInfo)[0];
 }
 
 void createFrameSyncResources(vk::Device device, uint32_t frameCount, std::vector<FrameSync>& result, vk::FenceCreateFlags fenceFlags)

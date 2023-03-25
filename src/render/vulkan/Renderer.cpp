@@ -51,7 +51,7 @@ void Renderer::drawFrame()
         
         vk::RenderPassBeginInfo renderPassInfo;
         renderPassInfo.renderPass = _vulkanApi->mainRenderPass();
-        renderPassInfo.framebuffer = _vulkanApi->framebuffer();
+        renderPassInfo.framebuffer = _vulkanApi->framebuffer(imageIndex);
         renderPassInfo.renderArea.offset = vk::Offset2D{ 0, 0 };
         renderPassInfo.renderArea.extent = scExtent;
         
