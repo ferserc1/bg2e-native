@@ -195,6 +195,7 @@
     <ClInclude Include="..\include\bg2e\base\Texture.hpp" />
     <ClInclude Include="..\include\bg2e\export.hpp" />
     <ClInclude Include="..\include\bg2e\render\Renderer.hpp" />
+    <ClInclude Include="..\include\bg2e\render\vulkan\ImmediateCommandBuffer.hpp" />
     <ClInclude Include="..\include\bg2e\render\vulkan\Renderer.hpp" />
     <ClInclude Include="..\include\bg2e\render\vulkan\ResourceDestroyManager.hpp" />
     <ClInclude Include="..\include\bg2e\render\vulkan\tools.hpp" />
@@ -220,6 +221,7 @@
     <ClCompile Include="..\src\base\PolyList.cpp" />
     <ClCompile Include="..\src\base\Texture.cpp" />
     <ClCompile Include="..\src\render\Renderer.cpp" />
+    <ClCompile Include="..\src\render\vulkan\ImmediateCommandBuffer.cpp" />
     <ClCompile Include="..\src\render\vulkan\Renderer.cpp" />
     <ClCompile Include="..\src\render\vulkan\tools.cpp" />
     <ClCompile Include="..\src\render\vulkan\VulkanAPI.cpp" />

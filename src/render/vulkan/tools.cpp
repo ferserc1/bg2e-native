@@ -698,7 +698,7 @@ vk::CommandBuffer allocateCommandBuffer(vk::Device device, vk::CommandPool pool,
 
 void createFrameSyncResources(vk::Device device, uint32_t frameCount, std::vector<FrameSync>& result, vk::FenceCreateFlags fenceFlags)
 {
-    for (auto i = 0; i < frameCount; ++i)
+    for (uint32_t i = 0; i < frameCount; ++i)
     {
         vk::FenceCreateInfo fenceInfo;
         fenceInfo.flags = fenceFlags;

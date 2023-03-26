@@ -198,7 +198,7 @@ void VulkanAPI::endFrame(int32_t swapChainImageIndex)
 
 void VulkanAPI::destroy()
 {
-    for (int i = 0; i < _simultaneousFrames; ++i)
+    for (uint32_t i = 0; i < _simultaneousFrames; ++i)
     {
         if (_device.waitForFences(1, &_frameSyncResources[i].renderFence, true, UINT64_MAX) != vk::Result::eSuccess)
         {

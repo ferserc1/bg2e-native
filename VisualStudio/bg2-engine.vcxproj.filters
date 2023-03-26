@@ -135,6 +135,9 @@
     <ClInclude Include="..\include\bg2e\render\vulkan\VulkanAPI.hpp">
       <Filter>Header Files\bg2e\render\vulkan</Filter>
     </ClInclude>
+    <ClInclude Include="..\include\bg2e\render\vulkan\ImmediateCommandBuffer.hpp">
+      <Filter>Header Files\bg2e\render\vulkan</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\app\MainLoop.cpp">
@@ -201,6 +204,9 @@
       <Filter>Source Files\bg2e\render\vulkan</Filter>
     </ClCompile>
     <ClCompile Include="..\src\render\vulkan\VulkanAPI.cpp">
+      <Filter>Source Files\bg2e\render\vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\render\vulkan\ImmediateCommandBuffer.cpp">
       <Filter>Source Files\bg2e\render\vulkan</Filter>
     </ClCompile>
   </ItemGroup>
