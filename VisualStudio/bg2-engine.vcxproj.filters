@@ -138,6 +138,12 @@
     <ClInclude Include="..\include\bg2e\render\vulkan\ImmediateCommandBuffer.hpp">
       <Filter>Header Files\bg2e\render\vulkan</Filter>
     </ClInclude>
+    <ClInclude Include="..\include\bg2e\base\Image.hpp">
+      <Filter>Header Files\bg2e\base</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\render\vulkan\CommandQueue.hpp">
+      <Filter>Header Files\bg2e\render\vulkan</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\app\MainLoop.cpp">
@@ -207,6 +213,15 @@
       <Filter>Source Files\bg2e\render\vulkan</Filter>
     </ClCompile>
     <ClCompile Include="..\src\render\vulkan\ImmediateCommandBuffer.cpp">
+      <Filter>Source Files\bg2e\render\vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\app\AppController.cpp">
+      <Filter>Source Files\bg2e\app</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\base\Image.cpp">
+      <Filter>Source Files\bg2e\base</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\render\vulkan\CommandQueue.cpp">
       <Filter>Source Files\bg2e\render\vulkan</Filter>
     </ClCompile>
   </ItemGroup>

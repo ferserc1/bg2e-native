@@ -72,6 +72,7 @@ public:
             case ImageComponentFormat::RGBA:
             case ImageComponentFormat::BGRA:
             case ImageComponentFormat::ABGR:
+            default:
                 return 4;
         }
     }

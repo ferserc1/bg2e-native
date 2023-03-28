@@ -31,7 +31,7 @@ public:
     
     virtual void destroy();
     
-    virtual CommandQueue* commandQueue();
+    virtual render::CommandQueue* commandQueue();
     
     inline VulkanAPI* vulkanApi() { return _vulkanApi.get(); }
     

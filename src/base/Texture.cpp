@@ -3,6 +3,8 @@
 
 #include <bg2e/base/Image.hpp>
 
+#include <stdexcept>
+
 namespace bg2e {
 namespace base {
 
