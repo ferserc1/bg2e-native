@@ -3,9 +3,11 @@
 #define bg2e_render_vulkan_renderer_hpp
 
 #include <bg2e/render/Renderer.hpp>
+#include <bg2e/render/CommandQueue.hpp>
 #include <bg2e/render/vulkan/VulkanAPI.hpp>
 
 #include <memory>
+#include <functional>
 
 namespace bg2e {
 namespace render {
@@ -29,8 +31,12 @@ public:
     
     virtual void destroy();
     
+    virtual CommandQueue* commandQueue();
+    
+    inline VulkanAPI* vulkanApi() { return _vulkanApi.get(); }
+    
 private:
-    std::unique_ptr<VulkanAPI> _vulkanApi;
+    std::shared_ptr<VulkanAPI> _vulkanApi;
     std::string _appName;
 };
 

@@ -119,8 +119,7 @@ void mouseScrollCallback(GLFWwindow* glfwWindow, double xOffset, double yOffset)
 
 Window::Window(const std::string & title, uint32_t width, uint32_t height)
     :_title(title)
-    ,_width(width)
-    ,_height(height)
+    ,_size{width,height}
 {
     
 }
@@ -150,7 +149,7 @@ void Window::create()
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
     
-    GLFWwindow* window = glfwCreateWindow(_width, _height, _title.c_str(), nullptr, nullptr);
+    GLFWwindow* window = glfwCreateWindow(_size.width, _size.height, _title.c_str(), nullptr, nullptr);
     _wnd = window;
     
     glfwSetWindowUserPointer(window, this);
@@ -174,8 +173,6 @@ void Window::destroy()
 {
     if (_wnd)
     {
-        _renderer->destroy();
-        
         auto window = reinterpret_cast<GLFWwindow*>(_wnd);
         glfwDestroyWindow(window);
     }

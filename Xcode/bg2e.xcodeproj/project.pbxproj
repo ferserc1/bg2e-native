@@ -7,6 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		ED37727C29D2E87400D2D21A /* AppController.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED37727B29D2E87400D2D21A /* AppController.cpp */; };
+		ED3D56CF29D1C6C000E101D6 /* Image.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED3D56CE29D1C6C000E101D6 /* Image.cpp */; };
+		ED3D56D229D1D89800E101D6 /* CommandQueue.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED3D56D129D1D89800E101D6 /* CommandQueue.cpp */; };
 		ED432C93299FC1500055AC3B /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED432C92299FC1500055AC3B /* main.cpp */; };
 		ED51196229CDE3D700D576C8 /* ImmediateCommandBuffer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED51196129CDE3D700D576C8 /* ImmediateCommandBuffer.cpp */; };
 		EDDEDD9C29CAF8170039BF51 /* KeyboardEvent.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED3E08C229A631C100768122 /* KeyboardEvent.cpp */; };
@@ -117,6 +120,13 @@
 /* Begin PBXFileReference section */
 		ED34884729A4EF4700971FB3 /* KeyboardEvent.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = KeyboardEvent.hpp; sourceTree = "<group>"; };
 		ED34884829A4EF4700971FB3 /* MouseEvent.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = MouseEvent.hpp; sourceTree = "<group>"; };
+		ED37727B29D2E87400D2D21A /* AppController.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = AppController.cpp; sourceTree = "<group>"; };
+		ED3D56CC29D1AA0A00E101D6 /* types.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = types.hpp; sourceTree = "<group>"; };
+		ED3D56CD29D1C6B300E101D6 /* Image.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Image.hpp; sourceTree = "<group>"; };
+		ED3D56CE29D1C6C000E101D6 /* Image.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Image.cpp; sourceTree = "<group>"; };
+		ED3D56D029D1D88E00E101D6 /* CommandQueue.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = CommandQueue.hpp; sourceTree = "<group>"; };
+		ED3D56D129D1D89800E101D6 /* CommandQueue.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = CommandQueue.cpp; sourceTree = "<group>"; };
+		ED3D56D329D1D8A800E101D6 /* CommandQueue.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = CommandQueue.hpp; sourceTree = "<group>"; };
 		ED3E08C229A631C100768122 /* KeyboardEvent.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = KeyboardEvent.cpp; sourceTree = "<group>"; };
 		ED432C76299FBE6A0055AC3B /* app-test.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "app-test.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		ED432C7B299FBE6A0055AC3B /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -1842,6 +1852,7 @@
 		ED432C8B299FC0700055AC3B /* bg2e */ = {
 			isa = PBXGroup;
 			children = (
+				ED3D56CC29D1AA0A00E101D6 /* types.hpp */,
 				EDB575F729A17C0900A3840E /* export.hpp */,
 				ED432C8C299FC0700055AC3B /* app */,
 				ED5CDE3429A7ACE700797D21 /* base */,
@@ -1878,6 +1889,7 @@
 		ED432C8F299FC07C0055AC3B /* app */ = {
 			isa = PBXGroup;
 			children = (
+				ED37727B29D2E87400D2D21A /* AppController.cpp */,
 				ED3E08C229A631C100768122 /* KeyboardEvent.cpp */,
 				ED432C90299FC07C0055AC3B /* MainLoop.cpp */,
 				ED433330299FC4F00055AC3B /* Window.cpp */,
@@ -3844,6 +3856,7 @@
 			isa = PBXGroup;
 			children = (
 				ED5CDE2A29A7ACC800797D21 /* Environment.cpp */,
+				ED3D56CE29D1C6C000E101D6 /* Image.cpp */,
 				ED5CDE2B29A7ACC800797D21 /* Light.cpp */,
 				ED5CDE2E29A7ACC800797D21 /* Material.cpp */,
 				ED5CDE2D29A7ACC800797D21 /* PolyList.cpp */,
@@ -3856,6 +3869,7 @@
 			isa = PBXGroup;
 			children = (
 				ED5CDE3929A7ACE700797D21 /* Environment.hpp */,
+				ED3D56CD29D1C6B300E101D6 /* Image.hpp */,
 				ED5CDE3629A7ACE700797D21 /* Light.hpp */,
 				ED5CDE3529A7ACE700797D21 /* Material.hpp */,
 				ED5CDE3829A7ACE700797D21 /* PolyList.hpp */,
@@ -3867,6 +3881,7 @@
 		ED5CDE3A29A7AE7700797D21 /* render */ = {
 			isa = PBXGroup;
 			children = (
+				ED3D56D329D1D8A800E101D6 /* CommandQueue.hpp */,
 				ED5CDE3B29A7AE7700797D21 /* Renderer.hpp */,
 				EDDEDDC429CB0E620039BF51 /* vulkan */,
 			);
@@ -3893,6 +3908,7 @@
 		EDDEDDC129CB0E4C0039BF51 /* vulkan */ = {
 			isa = PBXGroup;
 			children = (
+				ED3D56D129D1D89800E101D6 /* CommandQueue.cpp */,
 				ED51196129CDE3D700D576C8 /* ImmediateCommandBuffer.cpp */,
 				EDDEDDC229CB0E4C0039BF51 /* Renderer.cpp */,
 				EDDEDDDD29CB34A20039BF51 /* tools.cpp */,
@@ -3904,6 +3920,7 @@
 		EDDEDDC429CB0E620039BF51 /* vulkan */ = {
 			isa = PBXGroup;
 			children = (
+				ED3D56D029D1D88E00E101D6 /* CommandQueue.hpp */,
 				ED51196029CDE3CD00D576C8 /* ImmediateCommandBuffer.hpp */,
 				EDDEDDC529CB0E620039BF51 /* Renderer.hpp */,
 				EDDEDE3229CB84C40039BF51 /* ResourceDestroyManager.hpp */,
@@ -4548,12 +4565,14 @@
 				EDDEDDA829CAF9D70039BF51 /* buffer-memory.c in Sources */,
 				EDDEDDA929CAF9D70039BF51 /* bg2-loader.c in Sources */,
 				EDDEDDAA29CAF9D70039BF51 /* bg2-writer.c in Sources */,
+				ED37727C29D2E87400D2D21A /* AppController.cpp in Sources */,
 				EDDEDDAB29CAF9D70039BF51 /* buffer-io.c in Sources */,
 				EDDEDDAC29CAF9D70039BF51 /* utils.c in Sources */,
 				EDDEDDAD29CAF9D70039BF51 /* types.c in Sources */,
 				EDDEDDAE29CAF9D70039BF51 /* bg2-io.c in Sources */,
 				EDDEDDDE29CB34A20039BF51 /* tools.cpp in Sources */,
 				EDDEDD9C29CAF8170039BF51 /* KeyboardEvent.cpp in Sources */,
+				ED3D56D229D1D89800E101D6 /* CommandQueue.cpp in Sources */,
 				EDDEDD9D29CAF8170039BF51 /* MainLoop.cpp in Sources */,
 				EDDEDDD829CB21AB0039BF51 /* VulkanAPI.cpp in Sources */,
 				EDDEDD9E29CAF8170039BF51 /* Window.cpp in Sources */,
@@ -4566,6 +4585,7 @@
 				EDDEDDC329CB0E4C0039BF51 /* Renderer.cpp in Sources */,
 				EDDEDDA529CAF8170039BF51 /* JsonParser.cpp in Sources */,
 				ED51196229CDE3D700D576C8 /* ImmediateCommandBuffer.cpp in Sources */,
+				ED3D56CF29D1C6C000E101D6 /* Image.cpp in Sources */,
 				EDDEDDA629CAF8170039BF51 /* JsonToken.cpp in Sources */,
 				EDDEDDA729CAF8170039BF51 /* Json.cpp in Sources */,
 			);
@@ -4769,11 +4789,11 @@
 				GCC_SYMBOLS_PRIVATE_EXTERN = YES;
 				GCC_WARN_UNUSED_VARIABLE = NO;
 				HEADER_SEARCH_PATHS = (
+					"$(PROJECT_DIR)/../deps/stb",
 					"$(PROJECT_DIR)/../deps/bg2-io/src/bg2-io",
 					"$(PROJECT_DIR)/../deps/glfw/include",
 					"$(PROJECT_DIR)/../deps/VulkanSDK/macOS/include",
 					"$(PROJECT_DIR)/../include",
-					"$(PROJECT_DIR)/../deps/vkbootstrap",
 				);
 				INSTALL_PATH = "@executable_path";
 				LIBRARY_SEARCH_PATHS = (
@@ -4804,11 +4824,11 @@
 				GCC_SYMBOLS_PRIVATE_EXTERN = YES;
 				GCC_WARN_UNUSED_VARIABLE = NO;
 				HEADER_SEARCH_PATHS = (
+					"$(PROJECT_DIR)/../deps/stb",
 					"$(PROJECT_DIR)/../deps/bg2-io/src/bg2-io",
 					"$(PROJECT_DIR)/../deps/glfw/include",
 					"$(PROJECT_DIR)/../deps/VulkanSDK/macOS/include",
 					"$(PROJECT_DIR)/../include",
-					"$(PROJECT_DIR)/../deps/vkbootstrap",
 				);
 				INSTALL_PATH = "@executable_path";
 				LIBRARY_SEARCH_PATHS = (

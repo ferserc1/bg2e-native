@@ -147,6 +147,7 @@ int32_t VulkanAPI::beginFrame()
     }
     
     _commandBuffers[_currentFrame].reset({});
+    _currentImageIndex = imageIndex;
     return imageIndex;
 }
 

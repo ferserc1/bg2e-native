@@ -46,7 +46,7 @@ public:
     vk::CommandBuffer commandBuffer() const { return _commandBuffers[_currentFrame]; }
     
     // Image index: the index returned by beginFrame
-    vk::Framebuffer framebuffer(int32_t imageIndex) const { return _framebuffers[imageIndex]; }
+    vk::Framebuffer framebuffer() const { return _framebuffers[_currentImageIndex]; }
     
     const SwapChainResources& swapchainResources() const { return _swapChain; }
     
@@ -61,6 +61,7 @@ protected:
     
     uint32_t _simultaneousFrames;
     uint32_t _currentFrame;
+    uint32_t _currentImageIndex;
     
     VmaAllocator _allocator;
 

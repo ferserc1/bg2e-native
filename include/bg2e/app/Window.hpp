@@ -9,6 +9,8 @@
 #define bg2e_app_window_hpp
 
 #include <bg2e/export.hpp>
+#include <bg2e/types.hpp>
+
 #include <bg2e/app/AppController.hpp>
 #include <bg2e/render/Renderer.hpp>
 
@@ -22,6 +24,8 @@ namespace app {
 class BG2E_EXPORT Window {
 public:
     Window(const std::string & title = "", uint32_t width = 800, uint32_t height = 600);
+    Window(const std::string& title, const Size& size) :Window(title, size.width, size.height) {}
+    Window(const std::string& title, Size&& size) :Window(title, size.width, size.height) {}
     
     void setRenderer(std::unique_ptr<render::Renderer>&&);
     
@@ -36,9 +40,9 @@ public:
     
     void setTitle(const std::string & title);
     inline const std::string& title() const { return _title; }
-    inline void setSize(uint32_t width, uint32_t height) { _width = width; height = _height; }
-    inline uint32_t width() const { return _width; }
-    inline uint32_t height() const { return _height; }
+    inline void setSize(const Size& size) { _size = size; }
+    inline void setSize(Size&& size) { _size = size; }
+    inline const Size& size() const { return _size; }
     
     void create();
     void destroy();
@@ -51,8 +55,7 @@ private:
     void* _wnd = nullptr;
     
     std::string _title = "";
-    uint32_t _width = 800;
-    uint32_t _height = 600;
+    Size _size{800, 600};
     
     std::unique_ptr<AppController> _appController;
     std::unique_ptr<render::Renderer> _renderer;

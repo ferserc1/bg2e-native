@@ -3,9 +3,13 @@
 
 #include <bg2e/export.hpp>
 
+#include <bg2e/render/CommandQueue.hpp>
+
 #include <glm/vec4.hpp>
 
 #include <string>
+#include <memory>
+#include <functional>
 
 namespace bg2e {
 
@@ -29,11 +33,16 @@ public:
     virtual void drawFrame() = 0;
     virtual void destroy() = 0;
     
-    inline void setClearColor(const glm::vec4& c) { _clearColor = c; }
-    inline const glm::vec4& clearColor() const { return _clearColor; }
+    virtual CommandQueue* commandQueue() = 0;
+        
+    inline const Size& windowSize() const { return _windowSize; }
+    
+    inline void setDrawFunction(std::function<void(CommandQueue*)>&& drawFunc) { _drawFunction = drawFunc; }
     
 protected:
-    glm::vec4 _clearColor;
+    Size _windowSize;
+    std::shared_ptr<CommandQueue> _commandQueue;
+    std::function<void(CommandQueue*)> _drawFunction;
 };
 
 }

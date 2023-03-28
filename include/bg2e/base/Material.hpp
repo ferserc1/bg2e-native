@@ -3,10 +3,29 @@
 
 #include <bg2e/export.hpp>
 
+#include <glm/vec2.hpp>
+#include <glm/vec4.hpp>
+
 namespace bg2e {
 namespace base {
 
+typedef enum
+{
+    MaterialTypePBR
+} MaterialType;
 
+class BG2E_EXPORT Material
+{
+public:
+    Material();
+    
+protected:
+    MaterialType type = MaterialTypePBR;
+    
+    glm::vec4 _diffuse;
+    glm::vec2 _diffuseScale;
+    
+};
 
 }
 }
