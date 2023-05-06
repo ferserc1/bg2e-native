@@ -78,26 +78,26 @@
     <OutDir>$(SolutionDir)..\build\</OutDir>
     <IntDir>$(SolutionDir)..\build\bg2e\$(Configuration)\</IntDir>
     <TargetName>$(ProjectName)d</TargetName>
-    <IncludePath>$(VK_SDK_PATH)\Include;$(SolutionDir)..\deps\glfw\include;$(SolutionDir)..\include;$(SolutionDir)..\deps\bg2-io\src\bg2-scene;$(SolutionDir)..\deps\bg2-io\src\bg2-io;$(SolutionDir)..\deps\glm;$(SolutionDir)..\deps\obj;$(SolutionDir)..\deps\stb;$(IncludePath)</IncludePath>
+    <IncludePath>$(VK_SDK_PATH)\Include;$(SolutionDir)..\deps\glfw\include;$(SolutionDir)..\include;$(SolutionDir)..\deps\bg2-io\src\bg2-scene;$(SolutionDir)..\deps\bg2-io\src\bg2-io;$(SolutionDir)..\deps\glm;$(SolutionDir)..\deps\obj;$(SolutionDir)..\deps;$(SolutionDir)..\deps\stb;$(IncludePath)</IncludePath>
     <LibraryPath>$(VK_SDK_PATH)\Lib;$(SolutionDir)..\deps\glfw\lib-vc2022;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <OutDir>$(SolutionDir)..\build\</OutDir>
     <IntDir>$(SolutionDir)..\build\bg2e\$(Configuration)\</IntDir>
-    <IncludePath>$(VK_SDK_PATH)\Include;$(SolutionDir)..\deps\glfw\include;$(SolutionDir)..\include;$(SolutionDir)..\deps\bg2-io\src\bg2-scene;$(SolutionDir)..\deps\bg2-io\src\bg2-io;$(SolutionDir)..\deps\glm;$(SolutionDir)..\deps\obj;$(SolutionDir)..\deps\stb;$(IncludePath)</IncludePath>
+    <IncludePath>$(VK_SDK_PATH)\Include;$(SolutionDir)..\deps\glfw\include;$(SolutionDir)..\include;$(SolutionDir)..\deps\bg2-io\src\bg2-scene;$(SolutionDir)..\deps\bg2-io\src\bg2-io;$(SolutionDir)..\deps\glm;$(SolutionDir)..\deps\obj;$(SolutionDir)..\deps;$(SolutionDir)..\deps\stb;$(IncludePath)</IncludePath>
     <LibraryPath>$(VK_SDK_PATH)\Lib;$(SolutionDir)..\deps\glfw\lib-vc2022;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <OutDir>$(SolutionDir)..\build\</OutDir>
     <IntDir>$(SolutionDir)..\build\bg2e\$(Configuration)\</IntDir>
     <TargetName>$(ProjectName)d</TargetName>
-    <IncludePath>$(VK_SDK_PATH)\Include;$(SolutionDir)..\deps\glfw\include;$(SolutionDir)..\include;$(SolutionDir)..\deps\bg2-io\src\bg2-scene;$(SolutionDir)..\deps\bg2-io\src\bg2-io;$(SolutionDir)..\deps\glm;$(SolutionDir)..\deps\obj;$(SolutionDir)..\deps\stb;$(SolutionDir)..\deps\wma;$(IncludePath)</IncludePath>
+    <IncludePath>$(VK_SDK_PATH)\Include;$(SolutionDir)..\deps\glfw\include;$(SolutionDir)..\include;$(SolutionDir)..\deps\bg2-io\src\bg2-scene;$(SolutionDir)..\deps\bg2-io\src\bg2-io;$(SolutionDir)..\deps\glm;$(SolutionDir)..\deps\obj;$(SolutionDir)..\deps;$(SolutionDir)..\deps\stb;$(SolutionDir)..\deps\wma;$(IncludePath)</IncludePath>
     <LibraryPath>$(VK_SDK_PATH)\Lib;$(SolutionDir)..\deps\glfw\lib-vc2022;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <OutDir>$(SolutionDir)..\build\</OutDir>
     <IntDir>$(SolutionDir)..\build\bg2e\$(Configuration)\</IntDir>
-    <IncludePath>$(VK_SDK_PATH)\Include;$(SolutionDir)..\deps\glfw\include;$(SolutionDir)..\include;$(SolutionDir)..\deps\bg2-io\src\bg2-scene;$(SolutionDir)..\deps\bg2-io\src\bg2-io;$(SolutionDir)..\deps\glm;$(SolutionDir)..\deps\obj;$(SolutionDir)..\deps\stb;$(IncludePath)</IncludePath>
+    <IncludePath>$(VK_SDK_PATH)\Include;$(SolutionDir)..\deps\glfw\include;$(SolutionDir)..\include;$(SolutionDir)..\deps\bg2-io\src\bg2-scene;$(SolutionDir)..\deps\bg2-io\src\bg2-io;$(SolutionDir)..\deps\glm;$(SolutionDir)..\deps\obj;$(SolutionDir)..\deps;$(SolutionDir)..\deps\stb;$(IncludePath)</IncludePath>
     <LibraryPath>$(VK_SDK_PATH)\Lib;$(SolutionDir)..\deps\glfw\lib-vc2022;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
