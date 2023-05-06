@@ -139,8 +139,10 @@ std::vector<const char*> getRequiredExtensions(bool validationLayersSupport)
         requiredExtensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
     }
     
+#ifdef __APPLE__
     requiredExtensions.push_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
-    
+#endif
+
     return requiredExtensions;
 }
 
