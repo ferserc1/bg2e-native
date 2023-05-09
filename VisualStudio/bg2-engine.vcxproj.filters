@@ -144,6 +144,12 @@
     <ClInclude Include="..\include\bg2e\render\vulkan\CommandQueue.hpp">
       <Filter>Header Files\bg2e\render\vulkan</Filter>
     </ClInclude>
+    <ClInclude Include="..\include\bg2e\render\vulkan\Pipeline.hpp">
+      <Filter>Header Files\bg2e\render\vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\render\vulkan\PipelineLayout.hpp">
+      <Filter>Header Files\bg2e\render\vulkan</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\app\MainLoop.cpp">
@@ -222,6 +228,12 @@
       <Filter>Source Files\bg2e\base</Filter>
     </ClCompile>
     <ClCompile Include="..\src\render\vulkan\CommandQueue.cpp">
+      <Filter>Source Files\bg2e\render\vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\render\vulkan\Pipeline.cpp">
+      <Filter>Source Files\bg2e\render\vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\render\vulkan\PipelineLayout.cpp">
       <Filter>Source Files\bg2e\render\vulkan</Filter>
     </ClCompile>
   </ItemGroup>

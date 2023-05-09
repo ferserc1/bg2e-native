@@ -198,6 +198,8 @@
     <ClInclude Include="..\include\bg2e\render\Renderer.hpp" />
     <ClInclude Include="..\include\bg2e\render\vulkan\CommandQueue.hpp" />
     <ClInclude Include="..\include\bg2e\render\vulkan\ImmediateCommandBuffer.hpp" />
+    <ClInclude Include="..\include\bg2e\render\vulkan\Pipeline.hpp" />
+    <ClInclude Include="..\include\bg2e\render\vulkan\PipelineLayout.hpp" />
     <ClInclude Include="..\include\bg2e\render\vulkan\Renderer.hpp" />
     <ClInclude Include="..\include\bg2e\render\vulkan\ResourceDestroyManager.hpp" />
     <ClInclude Include="..\include\bg2e\render\vulkan\tools.hpp" />
@@ -227,6 +229,8 @@
     <ClCompile Include="..\src\render\Renderer.cpp" />
     <ClCompile Include="..\src\render\vulkan\CommandQueue.cpp" />
     <ClCompile Include="..\src\render\vulkan\ImmediateCommandBuffer.cpp" />
+    <ClCompile Include="..\src\render\vulkan\Pipeline.cpp" />
+    <ClCompile Include="..\src\render\vulkan\PipelineLayout.cpp" />
     <ClCompile Include="..\src\render\vulkan\Renderer.cpp" />
     <ClCompile Include="..\src\render\vulkan\tools.cpp" />
     <ClCompile Include="..\src\render\vulkan\VulkanAPI.cpp" />
