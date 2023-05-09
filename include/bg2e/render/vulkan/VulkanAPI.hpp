@@ -23,6 +23,10 @@ class BG2E_EXPORT VulkanAPI {
 public:
     void init(bool validationLayers, const std::string& appName, app::Window& window, uint32_t simultaneousFrames = 2);
     
+    vk::PhysicalDevice physicalDevice() const { return _physicalDevice; }
+    
+    vk::Device device() const { return _device; }
+
     // Returns the swap chain image index or -1 if the framebuffer is invalid
     // (for example, after window resize)
     int32_t beginFrame();

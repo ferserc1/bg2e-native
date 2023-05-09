@@ -3,6 +3,7 @@
 
 #include <bg2e/export.hpp>
 #include <bg2e/render/vulkan/PipelineLayout.hpp>
+#include <bg2e/render/vulkan/VulkanAPI.hpp>
 
 #include <memory>
 
@@ -19,10 +20,18 @@ public:
         _pipelineLayout = layout;
     }
     
-    void build();
+    void build(VulkanAPI *);
+
+    void destroy();
+
+    vk::Pipeline impl() const { return _pipeline;  }
     
 protected:
     std::shared_ptr<PipelineLayout> _pipelineLayout;
+
+    vk::GraphicsPipelineCreateInfo _createInfo;
+    vk::Pipeline _pipeline;
+    vk::Device _device;
 };
 
 }
