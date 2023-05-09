@@ -1,6 +1,8 @@
 # Default cmake build directory
 build
 
+.DS_Store
+
 # Windows thumbnail cache files
 Thumbs.db
 Thumbs.db:encryptable

@@ -12,6 +12,8 @@
 		ED3D56D229D1D89800E101D6 /* CommandQueue.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED3D56D129D1D89800E101D6 /* CommandQueue.cpp */; };
 		ED432C93299FC1500055AC3B /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED432C92299FC1500055AC3B /* main.cpp */; };
 		ED51196229CDE3D700D576C8 /* ImmediateCommandBuffer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED51196129CDE3D700D576C8 /* ImmediateCommandBuffer.cpp */; };
+		ED871A682A0A64FD0092C4FC /* Pipeline.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED871A672A0A64FD0092C4FC /* Pipeline.cpp */; };
+		ED871A6C2A0A66E00092C4FC /* PipelineLayout.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED871A6B2A0A66E00092C4FC /* PipelineLayout.cpp */; };
 		EDDEDD9C29CAF8170039BF51 /* KeyboardEvent.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED3E08C229A631C100768122 /* KeyboardEvent.cpp */; };
 		EDDEDD9D29CAF8170039BF51 /* MainLoop.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED432C90299FC07C0055AC3B /* MainLoop.cpp */; };
 		EDDEDD9E29CAF8170039BF51 /* Window.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED433330299FC4F00055AC3B /* Window.cpp */; };
@@ -1300,6 +1302,10 @@
 		ED5CDE3929A7ACE700797D21 /* Environment.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Environment.hpp; sourceTree = "<group>"; };
 		ED5CDE3B29A7AE7700797D21 /* Renderer.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Renderer.hpp; sourceTree = "<group>"; };
 		ED5CDE3D29A7AE8E00797D21 /* Renderer.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Renderer.cpp; sourceTree = "<group>"; };
+		ED871A672A0A64FD0092C4FC /* Pipeline.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Pipeline.cpp; sourceTree = "<group>"; };
+		ED871A692A0A65090092C4FC /* Pipeline.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Pipeline.hpp; sourceTree = "<group>"; };
+		ED871A6A2A0A66D50092C4FC /* PipelineLayout.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = PipelineLayout.hpp; sourceTree = "<group>"; };
+		ED871A6B2A0A66E00092C4FC /* PipelineLayout.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = PipelineLayout.cpp; sourceTree = "<group>"; };
 		EDB575F729A17C0900A3840E /* export.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = export.hpp; sourceTree = "<group>"; };
 		EDDEDD7529CAF1180039BF51 /* vk_mem_alloc.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = vk_mem_alloc.h; sourceTree = "<group>"; };
 		EDDEDD8E29CAF2B50039BF51 /* libbg2e.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libbg2e.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -3910,6 +3916,8 @@
 			children = (
 				ED3D56D129D1D89800E101D6 /* CommandQueue.cpp */,
 				ED51196129CDE3D700D576C8 /* ImmediateCommandBuffer.cpp */,
+				ED871A672A0A64FD0092C4FC /* Pipeline.cpp */,
+				ED871A6B2A0A66E00092C4FC /* PipelineLayout.cpp */,
 				EDDEDDC229CB0E4C0039BF51 /* Renderer.cpp */,
 				EDDEDDDD29CB34A20039BF51 /* tools.cpp */,
 				EDDEDDD729CB21AB0039BF51 /* VulkanAPI.cpp */,
@@ -3922,6 +3930,8 @@
 			children = (
 				ED3D56D029D1D88E00E101D6 /* CommandQueue.hpp */,
 				ED51196029CDE3CD00D576C8 /* ImmediateCommandBuffer.hpp */,
+				ED871A692A0A65090092C4FC /* Pipeline.hpp */,
+				ED871A6A2A0A66D50092C4FC /* PipelineLayout.hpp */,
 				EDDEDDC529CB0E620039BF51 /* Renderer.hpp */,
 				EDDEDE3229CB84C40039BF51 /* ResourceDestroyManager.hpp */,
 				EDDEDDDC29CB34970039BF51 /* tools.hpp */,
@@ -4583,11 +4593,13 @@
 				EDDEDDA329CAF8170039BF51 /* Texture.cpp in Sources */,
 				EDDEDDA429CAF8170039BF51 /* Renderer.cpp in Sources */,
 				EDDEDDC329CB0E4C0039BF51 /* Renderer.cpp in Sources */,
+				ED871A682A0A64FD0092C4FC /* Pipeline.cpp in Sources */,
 				EDDEDDA529CAF8170039BF51 /* JsonParser.cpp in Sources */,
 				ED51196229CDE3D700D576C8 /* ImmediateCommandBuffer.cpp in Sources */,
 				ED3D56CF29D1C6C000E101D6 /* Image.cpp in Sources */,
 				EDDEDDA629CAF8170039BF51 /* JsonToken.cpp in Sources */,
 				EDDEDDA729CAF8170039BF51 /* Json.cpp in Sources */,
+				ED871A6C2A0A66E00092C4FC /* PipelineLayout.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
