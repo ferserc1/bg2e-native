@@ -9,7 +9,22 @@ namespace vulkan {
 
 Pipeline::Pipeline()
 {
-    // TODO: Initialize _createInfo with default values
+    // TODO: Initialize structures with default values
+    // Default inputAssembly options
+    inputAssembly.topology = vk::PrimitiveTopology::eTriangleList;
+    inputAssembly.primitiveRestartEnable = false;
+    
+    // Default rasterizer options
+    rasterizer.depthClampEnable = false;
+    rasterizer.rasterizerDiscardEnable = false;  // Si es true, el fragmento nunca llega al fragment shader
+    rasterizer.polygonMode = vk::PolygonMode::eFill;
+    rasterizer.lineWidth = 1.0f;
+    rasterizer.cullMode = vk::CullModeFlagBits::eBack;
+    rasterizer.frontFace = vk::FrontFace::eClockwise;
+    rasterizer.depthBiasEnable = false;
+    rasterizer.depthBiasConstantFactor = 0.0f; // Optional
+    rasterizer.depthBiasClamp = 0.0f; // Optional
+    rasterizer.depthBiasSlopeFactor = 0.0f; // Optional
 }
 
 Pipeline::Pipeline(const Pipeline* pipeline)
@@ -29,18 +44,61 @@ void Pipeline::build(VulkanAPI *vulkanApi)
     // Shaders
 
     // Dynamic state
+    vk::PipelineDynamicStateCreateInfo dynamicState;
+    if (dynamicStates.size() > 0)
+    {
+        dynamicState.dynamicStateCount = static_cast<uint32_t>(dynamicStates.size());
+        dynamicState.pDynamicStates = dynamicStates.data();
+    }
+    _createInfo.pDynamicState = &dynamicState;
+    
 
     // Vertex input
+    // TODO
 
     // Input assembly
+    _createInfo.pInputAssemblyState = &inputAssembly;
 
     // Viewport anmd scissor
+    // TODO
 
     // Rasterizator
+    _createInfo.pRasterizationState = &rasterizer;
 
     // Multisample
+    // TODO
 
     // Color blend
+    if (_useDefaultColorBlend)
+    {
+        // Use default color blend
+        /*
+        * vk::PipelineColorBlendAttachmentState colorBlendAttachment;
+        colorBlendAttachment.colorWriteMask =
+            vk::ColorComponentFlagBits::eR |
+            vk::ColorComponentFlagBits::eG |
+            vk::ColorComponentFlagBits::eB |
+            vk::ColorComponentFlagBits::eA;
+        colorBlendAttachment.blendEnable = false;
+        colorBlendAttachment.srcColorBlendFactor = vk::BlendFactor::eOne; // Optional
+        colorBlendAttachment.dstColorBlendFactor = vk::BlendFactor::eZero; // Optional
+        colorBlendAttachment.colorBlendOp = vk::BlendOp::eAdd; // Optional
+        colorBlendAttachment.srcAlphaBlendFactor = vk::BlendFactor::eOne; // Optional
+        colorBlendAttachment.dstAlphaBlendFactor = vk::BlendFactor::eZero; // Optional
+        colorBlendAttachment.alphaBlendOp = vk::BlendOp::eAdd; // Optional
+        
+        vk::PipelineColorBlendStateCreateInfo colorBlending;
+        colorBlending.logicOpEnable = false;
+        colorBlending.logicOp = vk::LogicOp::eCopy; // Optional
+        colorBlending.attachmentCount = 1;
+        colorBlending.pAttachments = &colorBlendAttachment;
+        colorBlending.blendConstants[0] = 0.0f; // Optional
+        colorBlending.blendConstants[1] = 0.0f; // Optional
+        colorBlending.blendConstants[2] = 0.0f; // Optional
+        colorBlending.blendConstants[3] = 0.0f; // Optional
+        */
+    }
+    _createInfo.pColorBlendState = &_colorBlendCreateInfo;
 
 
     // Pipeline layout

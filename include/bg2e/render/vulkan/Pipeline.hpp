@@ -66,6 +66,7 @@ public:
         _colorBlendCreateInfo.logicOpEnable = logicOpEnable;
         _colorBlendCreateInfo.logicOp = logicOp;
         _colorBlendCreateInfo.blendConstants = blendConstants;
+        _useDefaultColorBlend = false;
     }
 
     inline void addColorBlendAttachment(
@@ -88,6 +89,7 @@ public:
             alphaBlendOp,
             colorWriteMask
             });
+        _useDefaultColorBlend = false;
     }
 
 
@@ -98,6 +100,7 @@ protected:
     vk::Rect2D _scissor;
     std::vector<vk::PipelineColorBlendAttachmentState> _colorBlendAttachments;
     vk::PipelineColorBlendStateCreateInfo _colorBlendCreateInfo;
+    bool _useDefaultColorBlend = true;
 
 
     vk::GraphicsPipelineCreateInfo _createInfo;
