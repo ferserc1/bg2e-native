@@ -54,13 +54,18 @@ void Pipeline::build(VulkanAPI *vulkanApi)
     
 
     // Vertex input
-    // TODO
+    // TODO: vertex input
 
     // Input assembly
     _createInfo.pInputAssemblyState = &inputAssembly;
 
     // Viewport anmd scissor
-    // TODO
+    vk::PipelineViewportStateCreateInfo viewportState;
+    viewportState.viewportCount = 1;
+    viewportState.pViewports = &_viewport;
+    viewportState.scissorCount = 1;
+    viewportState.pScissors = &_scissor;
+    _createInfo.pViewportState = &viewportState;
 
     // Rasterizator
     _createInfo.pRasterizationState = &rasterizer;
@@ -71,9 +76,7 @@ void Pipeline::build(VulkanAPI *vulkanApi)
     // Color blend
     if (_useDefaultColorBlend)
     {
-        // Use default color blend
-        /*
-        * vk::PipelineColorBlendAttachmentState colorBlendAttachment;
+        vk::PipelineColorBlendAttachmentState colorBlendAttachment;
         colorBlendAttachment.colorWriteMask =
             vk::ColorComponentFlagBits::eR |
             vk::ColorComponentFlagBits::eG |
@@ -81,22 +84,23 @@ void Pipeline::build(VulkanAPI *vulkanApi)
             vk::ColorComponentFlagBits::eA;
         colorBlendAttachment.blendEnable = false;
         colorBlendAttachment.srcColorBlendFactor = vk::BlendFactor::eOne; // Optional
-        colorBlendAttachment.dstColorBlendFactor = vk::BlendFactor::eZero; // Optional
-        colorBlendAttachment.colorBlendOp = vk::BlendOp::eAdd; // Optional
-        colorBlendAttachment.srcAlphaBlendFactor = vk::BlendFactor::eOne; // Optional
-        colorBlendAttachment.dstAlphaBlendFactor = vk::BlendFactor::eZero; // Optional
-        colorBlendAttachment.alphaBlendOp = vk::BlendOp::eAdd; // Optional
+        colorBlendAttachment.dstColorBlendFactor = vk::BlendFactor::eZero;
+        colorBlendAttachment.colorBlendOp = vk::BlendOp::eAdd;
+        colorBlendAttachment.srcAlphaBlendFactor = vk::BlendFactor::eOne;
+        colorBlendAttachment.dstAlphaBlendFactor = vk::BlendFactor::eZero;
+        colorBlendAttachment.alphaBlendOp = vk::BlendOp::eAdd;
+        _colorBlendAttachments.push_back(colorBlendAttachment);
         
-        vk::PipelineColorBlendStateCreateInfo colorBlending;
-        colorBlending.logicOpEnable = false;
-        colorBlending.logicOp = vk::LogicOp::eCopy; // Optional
-        colorBlending.attachmentCount = 1;
-        colorBlending.pAttachments = &colorBlendAttachment;
-        colorBlending.blendConstants[0] = 0.0f; // Optional
-        colorBlending.blendConstants[1] = 0.0f; // Optional
-        colorBlending.blendConstants[2] = 0.0f; // Optional
-        colorBlending.blendConstants[3] = 0.0f; // Optional
-        */
+        _colorBlendCreateInfo.logicOpEnable = false;
+        _colorBlendCreateInfo.logicOp = vk::LogicOp::eCopy;
+        _colorBlendCreateInfo.attachmentCount = static_cast<uint32_t>(_colorBlendAttachments.size());
+        _colorBlendCreateInfo.pAttachments = _colorBlendAttachments.data();
+        _colorBlendCreateInfo.blendConstants[0] = 0.0f;
+        _colorBlendCreateInfo.blendConstants[1] = 0.0f;
+        _colorBlendCreateInfo.blendConstants[2] = 0.0f;
+        _colorBlendCreateInfo.blendConstants[3] = 0.0f;
+        
+        _colorBlendCreateInfo.logicOpEnable = false;
     }
     _createInfo.pColorBlendState = &_colorBlendCreateInfo;
 
