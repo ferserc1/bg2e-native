@@ -1,5 +1,7 @@
 # Default cmake build directory
 build
+bin
+.derived_data
 
 .DS_Store
 
