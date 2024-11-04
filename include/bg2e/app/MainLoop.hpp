@@ -2,7 +2,8 @@
 
 #include <bg2e/common.hpp>
 
-namespace bg2e::app {
+namespace bg2e {
+namespace app {
 
 class BG2E_API MainLoop {
 public:
@@ -17,4 +18,5 @@ protected:
     std::string _windowTitle = "bg2 engine - native";
 };
 
+}
 }

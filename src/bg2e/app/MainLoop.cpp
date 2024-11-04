@@ -7,7 +7,8 @@
 
 #include <thread>
 
-namespace bg2e::app {
+namespace bg2e {
+namespace app {
 
 int32_t MainLoop::run() {
 	SDL_Init(SDL_INIT_VIDEO);
@@ -111,4 +112,5 @@ int32_t MainLoop::run() {
     return 0;
 }
 
+}
 }

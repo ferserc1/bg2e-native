@@ -22,6 +22,24 @@
     <Filter Include="Source Files\app">
       <UniqueIdentifier>{c70a0069-20d0-4aee-934e-b3222edab039}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\bg2e\render">
+      <UniqueIdentifier>{390e3bad-718c-4a28-a3c9-761502b0eb98}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\render">
+      <UniqueIdentifier>{b280e81e-cf04-4899-be24-dd1d6183d0c2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\bg2e\base">
+      <UniqueIdentifier>{9d6fa494-15ec-42cc-926d-103f9d53a8b1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\base">
+      <UniqueIdentifier>{e30494e5-f4cd-4ea3-afc6-8144d268f9a9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Third Party">
+      <UniqueIdentifier>{bd9fb13a-b788-4600-894a-8eec789bfbb7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Third Party\vk-bootstrap">
+      <UniqueIdentifier>{f4f3eeba-ab1d-452d-add9-4645c8e0d94f}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\include\bg2e\common.hpp">
@@ -30,10 +48,43 @@
     <ClInclude Include="..\include\bg2e\app\MainLoop.hpp">
       <Filter>Header Files\bg2e\app</Filter>
     </ClInclude>
+    <ClInclude Include="..\include\bg2e\render\Vulkan.hpp">
+      <Filter>Header Files\bg2e\render</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\render\common.hpp">
+      <Filter>Header Files\bg2e\render</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\render\extensions.hpp">
+      <Filter>Header Files\bg2e\render</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\base\PlatformTools.hpp">
+      <Filter>Header Files\bg2e\base</Filter>
+    </ClInclude>
+    <ClInclude Include="..\third_party\vk-bootstrap\src\VkBootstrap.h">
+      <Filter>Third Party\vk-bootstrap</Filter>
+    </ClInclude>
+    <ClInclude Include="..\third_party\vk-bootstrap\src\VkBootstrapDispatch.h">
+      <Filter>Third Party\vk-bootstrap</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\bg2e\app\MainLoop.cpp">
       <Filter>Source Files\app</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\bg2e\render\Vulkan.cpp">
+      <Filter>Source Files\render</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\bg2e\render\common.cpp">
+      <Filter>Source Files\render</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\bg2e\render\extensions.cpp">
+      <Filter>Source Files\render</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\bg2e\base\PlatformTools.cpp">
+      <Filter>Source Files\base</Filter>
+    </ClCompile>
+    <ClCompile Include="..\third_party\vk-bootstrap\src\VkBootstrap.cpp">
+      <Filter>Third Party\vk-bootstrap</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

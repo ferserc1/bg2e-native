@@ -12,10 +12,21 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\include\bg2e\app\MainLoop.hpp" />
+    <ClInclude Include="..\include\bg2e\base\PlatformTools.hpp" />
     <ClInclude Include="..\include\bg2e\common.hpp" />
+    <ClInclude Include="..\include\bg2e\render\common.hpp" />
+    <ClInclude Include="..\include\bg2e\render\extensions.hpp" />
+    <ClInclude Include="..\include\bg2e\render\Vulkan.hpp" />
+    <ClInclude Include="..\third_party\vk-bootstrap\src\VkBootstrap.h" />
+    <ClInclude Include="..\third_party\vk-bootstrap\src\VkBootstrapDispatch.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\bg2e\app\MainLoop.cpp" />
+    <ClCompile Include="..\src\bg2e\base\PlatformTools.cpp" />
+    <ClCompile Include="..\src\bg2e\render\common.cpp" />
+    <ClCompile Include="..\src\bg2e\render\extensions.cpp" />
+    <ClCompile Include="..\src\bg2e\render\Vulkan.cpp" />
+    <ClCompile Include="..\third_party\vk-bootstrap\src\VkBootstrap.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
@@ -53,12 +64,12 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <OutDir>$(SolutionDir)..\bin\</OutDir>
     <TargetName>$(ProjectName)d</TargetName>
-    <IncludePath>$(SolutionDir)..\include;$(VULKAN_SDK)\Include;$(VULKAN_SDK)\Include\SDL2;$(VULKAN_SDK)\Include\glm;$(VULKAN_SDK)\Include\vma;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)..\include;$(VULKAN_SDK)\Include;$(VULKAN_SDK)\Include\SDL2;$(VULKAN_SDK)\Include\glm;$(VULKAN_SDK)\Include\vma;$(SolutionDir)..\third_party\vk-bootstrap\src;$(IncludePath)</IncludePath>
     <LibraryPath>$(VULKAN_SDK)\Lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <OutDir>$(SolutionDir)..\bin\</OutDir>
-    <IncludePath>$(SolutionDir)..\include;$(VULKAN_SDK)\Include;$(VULKAN_SDK)\Include\SDL2;$(VULKAN_SDK)\Include\glm;$(VULKAN_SDK)\Include\vma;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)..\include;$(VULKAN_SDK)\Include;$(VULKAN_SDK)\Include\SDL2;$(VULKAN_SDK)\Include\glm;$(VULKAN_SDK)\Include\vma;$(SolutionDir)..\third_party\vk-bootstrap\src;$(IncludePath)</IncludePath>
     <LibraryPath>$(VULKAN_SDK)\Lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
