@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 77;
+	objectVersion = 63;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -11,6 +11,13 @@
 		ED533A222CD7AAB700136B04 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED533A212CD7AAB700136B04 /* main.cpp */; };
 		ED533A282CD7ADD600136B04 /* libbg2e.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = ED533A262CD7AD0200136B04 /* libbg2e.dylib */; };
 		ED533A2C2CD7AE9600136B04 /* libbg2e.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = ED533A262CD7AD0200136B04 /* libbg2e.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		EDD357242CD924DA009C7507 /* libSDL2-2.0.0.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = EDD357212CD924B9009C7507 /* libSDL2-2.0.0.dylib */; };
+		EDD357252CD924DC009C7507 /* libMoltenVK.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = EDD357202CD924B9009C7507 /* libMoltenVK.dylib */; };
+		EDD357262CD924DF009C7507 /* libvulkan.1.3.290.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = EDD357222CD924B9009C7507 /* libvulkan.1.3.290.dylib */; };
+		EDD357272CD926B7009C7507 /* libSDL2-2.0.0.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = EDD357212CD924B9009C7507 /* libSDL2-2.0.0.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		EDD357282CD926D7009C7507 /* libMoltenVK.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = EDD357202CD924B9009C7507 /* libMoltenVK.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		EDD357292CD926DC009C7507 /* libvulkan.1.3.290.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = EDD357222CD924B9009C7507 /* libvulkan.1.3.290.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		EDD3572D2CD927CB009C7507 /* MoltenVK_icd.json in Copy MoltenVK ICD */ = {isa = PBXBuildFile; fileRef = EDD3572C2CD92789009C7507 /* MoltenVK_icd.json */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -20,6 +27,13 @@
 			proxyType = 1;
 			remoteGlobalIDString = ED5339D72CD7A11E00136B04;
 			remoteInfo = bg2e;
+		};
+		EDD3571E2CD9247B009C7507 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = ED5339D02CD7A11E00136B04 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = EDD357192CD92300009C7507;
+			remoteInfo = "Copy Vulkan libraries";
 		};
 /* End PBXContainerItemProxy section */
 
@@ -31,7 +45,21 @@
 			dstSubfolderSpec = 10;
 			files = (
 				ED533A2C2CD7AE9600136B04 /* libbg2e.dylib in CopyFiles */,
+				EDD357272CD926B7009C7507 /* libSDL2-2.0.0.dylib in CopyFiles */,
+				EDD357282CD926D7009C7507 /* libMoltenVK.dylib in CopyFiles */,
+				EDD357292CD926DC009C7507 /* libvulkan.1.3.290.dylib in CopyFiles */,
 			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		EDD3572B2CD92768009C7507 /* Copy MoltenVK ICD */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = vulkan/icd.d;
+			dstSubfolderSpec = 7;
+			files = (
+				EDD3572D2CD927CB009C7507 /* MoltenVK_icd.json in Copy MoltenVK ICD */,
+			);
+			name = "Copy MoltenVK ICD";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXCopyFilesBuildPhase section */
@@ -44,6 +72,11 @@
 		ED533A1A2CD7A8F700136B04 /* MainLoop.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = MainLoop.cpp; sourceTree = "<group>"; };
 		ED533A212CD7AAB700136B04 /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = main.cpp; path = ../examples/app/main.cpp; sourceTree = SOURCE_ROOT; };
 		ED533A262CD7AD0200136B04 /* libbg2e.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libbg2e.dylib; path = ../bin/Debug/libbg2e.dylib; sourceTree = SOURCE_ROOT; };
+		EDD3571D2CD92341009C7507 /* copy_libraries.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = copy_libraries.sh; sourceTree = "<group>"; };
+		EDD357202CD924B9009C7507 /* libMoltenVK.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; path = libMoltenVK.dylib; sourceTree = "<group>"; };
+		EDD357212CD924B9009C7507 /* libSDL2-2.0.0.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; path = "libSDL2-2.0.0.dylib"; sourceTree = "<group>"; };
+		EDD357222CD924B9009C7507 /* libvulkan.1.3.290.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; path = libvulkan.1.3.290.dylib; sourceTree = "<group>"; };
+		EDD3572C2CD92789009C7507 /* MoltenVK_icd.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = MoltenVK_icd.json; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -51,6 +84,9 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				EDD357242CD924DA009C7507 /* libSDL2-2.0.0.dylib in Frameworks */,
+				EDD357252CD924DC009C7507 /* libMoltenVK.dylib in Frameworks */,
+				EDD357262CD924DF009C7507 /* libvulkan.1.3.290.dylib in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -68,6 +104,7 @@
 		ED5339CF2CD7A11E00136B04 = {
 			isa = PBXGroup;
 			children = (
+				EDD3570E2CD920F3009C7507 /* VulkanSDK */,
 				ED533A232CD7ACC500136B04 /* Products */,
 				ED533A202CD7AAA700136B04 /* example-app */,
 				ED533A142CD7A8CA00136B04 /* bg2e */,
@@ -176,6 +213,26 @@
 			name = Frameworks;
 			sourceTree = "<group>";
 		};
+		EDD3570E2CD920F3009C7507 /* VulkanSDK */ = {
+			isa = PBXGroup;
+			children = (
+				EDD3572C2CD92789009C7507 /* MoltenVK_icd.json */,
+				EDD357232CD924B9009C7507 /* lib */,
+				EDD3571D2CD92341009C7507 /* copy_libraries.sh */,
+			);
+			path = VulkanSDK;
+			sourceTree = "<group>";
+		};
+		EDD357232CD924B9009C7507 /* lib */ = {
+			isa = PBXGroup;
+			children = (
+				EDD357202CD924B9009C7507 /* libMoltenVK.dylib */,
+				EDD357212CD924B9009C7507 /* libSDL2-2.0.0.dylib */,
+				EDD357222CD924B9009C7507 /* libvulkan.1.3.290.dylib */,
+			);
+			path = lib;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXHeadersBuildPhase section */
@@ -187,6 +244,25 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXHeadersBuildPhase section */
+
+/* Begin PBXLegacyTarget section */
+		EDD357192CD92300009C7507 /* Copy Vulkan libraries */ = {
+			isa = PBXLegacyTarget;
+			buildArgumentsString = "$(PROJECT_DIR)/VulkanSDK/copy_libraries.sh";
+			buildConfigurationList = EDD3571A2CD92300009C7507 /* Build configuration list for PBXLegacyTarget "Copy Vulkan libraries" */;
+			buildPhases = (
+			);
+			buildToolPath = /bin/sh;
+			buildWorkingDirectory = "";
+			dependencies = (
+			);
+			name = "Copy Vulkan libraries";
+			packageProductDependencies = (
+			);
+			passBuildSettingsInEnvironment = 1;
+			productName = "Copy Vulkan libraries";
+		};
+/* End PBXLegacyTarget section */
 
 /* Begin PBXNativeTarget section */
 		ED5339D72CD7A11E00136B04 /* bg2e */ = {
@@ -200,6 +276,7 @@
 			buildRules = (
 			);
 			dependencies = (
+				EDD3571F2CD9247B009C7507 /* PBXTargetDependency */,
 			);
 			name = bg2e;
 			packageProductDependencies = (
@@ -216,6 +293,8 @@
 				ED5339ED2CD7A1E900136B04 /* Frameworks */,
 				ED5339EE2CD7A1E900136B04 /* Resources */,
 				ED533A2B2CD7AE8D00136B04 /* CopyFiles */,
+				EDD3572A2CD92700009C7507 /* Create Vulkan Sym Links */,
+				EDD3572B2CD92768009C7507 /* Copy MoltenVK ICD */,
 			);
 			buildRules = (
 			);
@@ -244,9 +323,13 @@
 					ED5339EF2CD7A1E900136B04 = {
 						CreatedOnToolsVersion = 16.1;
 					};
+					EDD357192CD92300009C7507 = {
+						CreatedOnToolsVersion = 16.1;
+					};
 				};
 			};
 			buildConfigurationList = ED5339D32CD7A11E00136B04 /* Build configuration list for PBXProject "bg2e" */;
+			compatibilityVersion = "Xcode 15.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -255,11 +338,11 @@
 			);
 			mainGroup = ED5339CF2CD7A11E00136B04;
 			minimizedProjectReferenceProxies = 1;
-			preferredProjectObjectVersion = 77;
 			productRefGroup = ED5339D92CD7A11E00136B04 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
+				EDD357192CD92300009C7507 /* Copy Vulkan libraries */,
 				ED5339D72CD7A11E00136B04 /* bg2e */,
 				ED5339EF2CD7A1E900136B04 /* example-app */,
 			);
@@ -275,6 +358,27 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		EDD3572A2CD92700009C7507 /* Create Vulkan Sym Links */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Create Vulkan Sym Links";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "ln -sf ${BUILT_PRODUCTS_DIR}/${FRAMEWORKS_FOLDER_PATH}/libvulkan.1.3.290.dylib ${BUILT_PRODUCTS_DIR}/${FRAMEWORKS_FOLDER_PATH}/libvulkan.1.dylib\n";
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		ED5339D52CD7A11E00136B04 /* Sources */ = {
@@ -300,6 +404,11 @@
 			isa = PBXTargetDependency;
 			target = ED5339D72CD7A11E00136B04 /* bg2e */;
 			targetProxy = ED533A292CD7ADE000136B04 /* PBXContainerItemProxy */;
+		};
+		EDD3571F2CD9247B009C7507 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = EDD357192CD92300009C7507 /* Copy Vulkan libraries */;
+			targetProxy = EDD3571E2CD9247B009C7507 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -364,6 +473,7 @@
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = macosx;
 				SYMROOT = "$(PROJECT_DIR)/../bin/";
+				VULKAN_SDK = "$(HOME)/VulkanSDK/1.3.290.0/macOS";
 			};
 			name = Debug;
 		};
@@ -420,6 +530,7 @@
 				OBJROOT = "$(SYMROOT)intermediate";
 				SDKROOT = macosx;
 				SYMROOT = "$(PROJECT_DIR)/../bin/";
+				VULKAN_SDK = "$(HOME)/VulkanSDK/1.3.290.0/macOS";
 			};
 			name = Release;
 		};
@@ -435,8 +546,18 @@
 				GCC_ENABLE_CPP_EXCEPTIONS = YES;
 				GCC_ENABLE_CPP_RTTI = YES;
 				GCC_SYMBOLS_PRIVATE_EXTERN = YES;
-				HEADER_SEARCH_PATHS = "$(PROJECT_DIR)/../include";
+				HEADER_SEARCH_PATHS = (
+					"$(PROJECT_DIR)/../include",
+					"$(VULKAN_SDK)/include/SDL2",
+					"$(VULKAN_SDK)/include/VMA",
+					"$(VULKAN_SDK)/include",
+				);
 				INSTALL_PATH = "@executable_path/../Frameworks";
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/VulkanSDK",
+					"$(PROJECT_DIR)/VulkanSDK/lib",
+				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 			};
@@ -454,8 +575,18 @@
 				GCC_ENABLE_CPP_EXCEPTIONS = YES;
 				GCC_ENABLE_CPP_RTTI = YES;
 				GCC_SYMBOLS_PRIVATE_EXTERN = YES;
-				HEADER_SEARCH_PATHS = "$(PROJECT_DIR)/../include";
+				HEADER_SEARCH_PATHS = (
+					"$(PROJECT_DIR)/../include",
+					"$(VULKAN_SDK)/include/SDL2",
+					"$(VULKAN_SDK)/include/VMA",
+					"$(VULKAN_SDK)/include",
+				);
 				INSTALL_PATH = "@executable_path/../Frameworks";
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/VulkanSDK",
+					"$(PROJECT_DIR)/VulkanSDK/lib",
+				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 			};
@@ -473,6 +604,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = RP926KEE5K;
 				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GENERATE_INFOPLIST_FILE = YES;
 				HEADER_SEARCH_PATHS = "$(PROJECT_DIR)/../include";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
@@ -501,6 +633,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = RP926KEE5K;
 				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GENERATE_INFOPLIST_FILE = YES;
 				HEADER_SEARCH_PATHS = "$(PROJECT_DIR)/../include";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
@@ -514,6 +647,33 @@
 				PRODUCT_BUNDLE_IDENTIFIER = "com.bg2engine.bg2e.example-app.example-app";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
+			};
+			name = Release;
+		};
+		EDD3571B2CD92300009C7507 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				DEBUGGING_SYMBOLS = YES;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = RP926KEE5K;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				OTHER_CFLAGS = "";
+				OTHER_LDFLAGS = "";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		EDD3571C2CD92300009C7507 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = RP926KEE5K;
+				OTHER_CFLAGS = "";
+				OTHER_LDFLAGS = "";
+				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;
 		};
@@ -543,6 +703,15 @@
 			buildConfigurations = (
 				ED5339FE2CD7A1EA00136B04 /* Debug */,
 				ED5339FF2CD7A1EA00136B04 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		EDD3571A2CD92300009C7507 /* Build configuration list for PBXLegacyTarget "Copy Vulkan libraries" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				EDD3571B2CD92300009C7507 /* Debug */,
+				EDD3571C2CD92300009C7507 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

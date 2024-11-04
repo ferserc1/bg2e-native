@@ -3,6 +3,9 @@ build
 bin
 .derived_data
 
+# Vulkan libraries
+Xcode/VulkanSDK/lib/*
+
 .DS_Store
 
 # Windows thumbnail cache files
