@@ -11,6 +11,14 @@
 		ED533A222CD7AAB700136B04 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED533A212CD7AAB700136B04 /* main.cpp */; };
 		ED533A282CD7ADD600136B04 /* libbg2e.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = ED533A262CD7AD0200136B04 /* libbg2e.dylib */; };
 		ED533A2C2CD7AE9600136B04 /* libbg2e.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = ED533A262CD7AD0200136B04 /* libbg2e.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		ED82EEDE2CDABC8E007A0BB1 /* DescriptorSetAllocator.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED82EED92CDABC8E007A0BB1 /* DescriptorSetAllocator.cpp */; };
+		ED82EEDF2CDABC8E007A0BB1 /* Buffer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED82EED62CDABC8E007A0BB1 /* Buffer.cpp */; };
+		ED82EEE02CDABC8E007A0BB1 /* Info.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED82EEDC2CDABC8E007A0BB1 /* Info.cpp */; };
+		ED82EEE12CDABC8E007A0BB1 /* Image.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED82EEDB2CDABC8E007A0BB1 /* Image.cpp */; };
+		ED82EEE22CDABC8E007A0BB1 /* Swapchain.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED82EEDD2CDABC8E007A0BB1 /* Swapchain.cpp */; };
+		ED82EEE32CDABC8E007A0BB1 /* Command.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED82EED72CDABC8E007A0BB1 /* Command.cpp */; };
+		ED82EEE42CDABC8E007A0BB1 /* FrameResources.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED82EEDA2CDABC8E007A0BB1 /* FrameResources.cpp */; };
+		ED82EEE52CDABC8E007A0BB1 /* DescriptorSet.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED82EED82CDABC8E007A0BB1 /* DescriptorSet.cpp */; };
 		ED8688192CDAAAE200A71ADC /* PlatformTools.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED8688172CDAAAE200A71ADC /* PlatformTools.cpp */; };
 		ED86881E2CDAAAE900A71ADC /* common.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED86881A2CDAAAE900A71ADC /* common.cpp */; };
 		ED86881F2CDAAAE900A71ADC /* extensions.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED86881B2CDAAAE900A71ADC /* extensions.cpp */; };
@@ -78,6 +86,23 @@
 		ED533A1A2CD7A8F700136B04 /* MainLoop.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = MainLoop.cpp; sourceTree = "<group>"; };
 		ED533A212CD7AAB700136B04 /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = main.cpp; path = ../examples/app/main.cpp; sourceTree = SOURCE_ROOT; };
 		ED533A262CD7AD0200136B04 /* libbg2e.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libbg2e.dylib; path = ../bin/Debug/libbg2e.dylib; sourceTree = SOURCE_ROOT; };
+		ED82EED62CDABC8E007A0BB1 /* Buffer.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Buffer.cpp; sourceTree = "<group>"; };
+		ED82EED72CDABC8E007A0BB1 /* Command.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Command.cpp; sourceTree = "<group>"; };
+		ED82EED82CDABC8E007A0BB1 /* DescriptorSet.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = DescriptorSet.cpp; sourceTree = "<group>"; };
+		ED82EED92CDABC8E007A0BB1 /* DescriptorSetAllocator.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = DescriptorSetAllocator.cpp; sourceTree = "<group>"; };
+		ED82EEDA2CDABC8E007A0BB1 /* FrameResources.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = FrameResources.cpp; sourceTree = "<group>"; };
+		ED82EEDB2CDABC8E007A0BB1 /* Image.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Image.cpp; sourceTree = "<group>"; };
+		ED82EEDC2CDABC8E007A0BB1 /* Info.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Info.cpp; sourceTree = "<group>"; };
+		ED82EEDD2CDABC8E007A0BB1 /* Swapchain.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Swapchain.cpp; sourceTree = "<group>"; };
+		ED82EEE62CDABCB6007A0BB1 /* Buffer.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Buffer.hpp; sourceTree = "<group>"; };
+		ED82EEE72CDABCB6007A0BB1 /* CleanupManager.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = CleanupManager.hpp; sourceTree = "<group>"; };
+		ED82EEE82CDABCB6007A0BB1 /* Command.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Command.hpp; sourceTree = "<group>"; };
+		ED82EEE92CDABCB6007A0BB1 /* DescriptorSet.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = DescriptorSet.hpp; sourceTree = "<group>"; };
+		ED82EEEA2CDABCB6007A0BB1 /* DescriptorSetAllocator.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = DescriptorSetAllocator.hpp; sourceTree = "<group>"; };
+		ED82EEEB2CDABCB6007A0BB1 /* FrameResources.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = FrameResources.hpp; sourceTree = "<group>"; };
+		ED82EEEC2CDABCB6007A0BB1 /* Image.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Image.hpp; sourceTree = "<group>"; };
+		ED82EEED2CDABCB6007A0BB1 /* Info.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Info.hpp; sourceTree = "<group>"; };
+		ED82EEEE2CDABCB6007A0BB1 /* Swapchain.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Swapchain.hpp; sourceTree = "<group>"; };
 		ED8688112CDAAABE00A71ADC /* PlatformTools.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = PlatformTools.hpp; sourceTree = "<group>"; };
 		ED8688132CDAAACC00A71ADC /* common.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = common.hpp; sourceTree = "<group>"; };
 		ED8688142CDAAACC00A71ADC /* extensions.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = extensions.hpp; sourceTree = "<group>"; };
@@ -278,8 +303,17 @@
 		ED8688162CDAAACC00A71ADC /* render */ = {
 			isa = PBXGroup;
 			children = (
+				ED82EEE62CDABCB6007A0BB1 /* Buffer.hpp */,
+				ED82EEE72CDABCB6007A0BB1 /* CleanupManager.hpp */,
+				ED82EEE82CDABCB6007A0BB1 /* Command.hpp */,
 				ED8688132CDAAACC00A71ADC /* common.hpp */,
 				ED8688142CDAAACC00A71ADC /* extensions.hpp */,
+				ED82EEE92CDABCB6007A0BB1 /* DescriptorSet.hpp */,
+				ED82EEEA2CDABCB6007A0BB1 /* DescriptorSetAllocator.hpp */,
+				ED82EEEB2CDABCB6007A0BB1 /* FrameResources.hpp */,
+				ED82EEEC2CDABCB6007A0BB1 /* Image.hpp */,
+				ED82EEED2CDABCB6007A0BB1 /* Info.hpp */,
+				ED82EEEE2CDABCB6007A0BB1 /* Swapchain.hpp */,
 				ED8688152CDAAACC00A71ADC /* Vulkan.hpp */,
 			);
 			path = render;
@@ -296,8 +330,16 @@
 		ED86881D2CDAAAE900A71ADC /* render */ = {
 			isa = PBXGroup;
 			children = (
+				ED82EED62CDABC8E007A0BB1 /* Buffer.cpp */,
+				ED82EED72CDABC8E007A0BB1 /* Command.cpp */,
 				ED86881A2CDAAAE900A71ADC /* common.cpp */,
+				ED82EED82CDABC8E007A0BB1 /* DescriptorSet.cpp */,
+				ED82EED92CDABC8E007A0BB1 /* DescriptorSetAllocator.cpp */,
 				ED86881B2CDAAAE900A71ADC /* extensions.cpp */,
+				ED82EEDA2CDABC8E007A0BB1 /* FrameResources.cpp */,
+				ED82EEDB2CDABC8E007A0BB1 /* Image.cpp */,
+				ED82EEDC2CDABC8E007A0BB1 /* Info.cpp */,
+				ED82EEDD2CDABC8E007A0BB1 /* Swapchain.cpp */,
 				ED86881C2CDAAAE900A71ADC /* Vulkan.cpp */,
 			);
 			path = render;
@@ -600,6 +642,14 @@
 				ED8688202CDAAAE900A71ADC /* Vulkan.cpp in Sources */,
 				ED8688192CDAAAE200A71ADC /* PlatformTools.cpp in Sources */,
 				ED533A1E2CD7A8F700136B04 /* MainLoop.cpp in Sources */,
+				ED82EEDE2CDABC8E007A0BB1 /* DescriptorSetAllocator.cpp in Sources */,
+				ED82EEDF2CDABC8E007A0BB1 /* Buffer.cpp in Sources */,
+				ED82EEE02CDABC8E007A0BB1 /* Info.cpp in Sources */,
+				ED82EEE12CDABC8E007A0BB1 /* Image.cpp in Sources */,
+				ED82EEE22CDABC8E007A0BB1 /* Swapchain.cpp in Sources */,
+				ED82EEE32CDABC8E007A0BB1 /* Command.cpp in Sources */,
+				ED82EEE42CDABC8E007A0BB1 /* FrameResources.cpp in Sources */,
+				ED82EEE52CDABC8E007A0BB1 /* DescriptorSet.cpp in Sources */,
 				ED86884E2CDAAB4700A71ADC /* VkBootstrap.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
