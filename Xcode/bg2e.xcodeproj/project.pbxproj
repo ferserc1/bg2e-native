@@ -11,6 +11,12 @@
 		ED533A222CD7AAB700136B04 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED533A212CD7AAB700136B04 /* main.cpp */; };
 		ED533A282CD7ADD600136B04 /* libbg2e.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = ED533A262CD7AD0200136B04 /* libbg2e.dylib */; };
 		ED533A2C2CD7AE9600136B04 /* libbg2e.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = ED533A262CD7AD0200136B04 /* libbg2e.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		ED8688192CDAAAE200A71ADC /* PlatformTools.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED8688172CDAAAE200A71ADC /* PlatformTools.cpp */; };
+		ED86881E2CDAAAE900A71ADC /* common.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED86881A2CDAAAE900A71ADC /* common.cpp */; };
+		ED86881F2CDAAAE900A71ADC /* extensions.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED86881B2CDAAAE900A71ADC /* extensions.cpp */; };
+		ED8688202CDAAAE900A71ADC /* Vulkan.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED86881C2CDAAAE900A71ADC /* Vulkan.cpp */; };
+		ED86884E2CDAAB4700A71ADC /* VkBootstrap.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED8688492CDAAB3400A71ADC /* VkBootstrap.cpp */; };
+		ED8688502CDAAB7300A71ADC /* CoreFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = ED86884F2CDAAB7300A71ADC /* CoreFoundation.framework */; };
 		EDD357242CD924DA009C7507 /* libSDL2-2.0.0.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = EDD357212CD924B9009C7507 /* libSDL2-2.0.0.dylib */; };
 		EDD357252CD924DC009C7507 /* libMoltenVK.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = EDD357202CD924B9009C7507 /* libMoltenVK.dylib */; };
 		EDD357262CD924DF009C7507 /* libvulkan.1.3.290.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = EDD357222CD924B9009C7507 /* libvulkan.1.3.290.dylib */; };
@@ -72,6 +78,47 @@
 		ED533A1A2CD7A8F700136B04 /* MainLoop.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = MainLoop.cpp; sourceTree = "<group>"; };
 		ED533A212CD7AAB700136B04 /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = main.cpp; path = ../examples/app/main.cpp; sourceTree = SOURCE_ROOT; };
 		ED533A262CD7AD0200136B04 /* libbg2e.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libbg2e.dylib; path = ../bin/Debug/libbg2e.dylib; sourceTree = SOURCE_ROOT; };
+		ED8688112CDAAABE00A71ADC /* PlatformTools.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = PlatformTools.hpp; sourceTree = "<group>"; };
+		ED8688132CDAAACC00A71ADC /* common.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = common.hpp; sourceTree = "<group>"; };
+		ED8688142CDAAACC00A71ADC /* extensions.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = extensions.hpp; sourceTree = "<group>"; };
+		ED8688152CDAAACC00A71ADC /* Vulkan.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Vulkan.hpp; sourceTree = "<group>"; };
+		ED8688172CDAAAE200A71ADC /* PlatformTools.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = PlatformTools.cpp; sourceTree = "<group>"; };
+		ED86881A2CDAAAE900A71ADC /* common.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = common.cpp; sourceTree = "<group>"; };
+		ED86881B2CDAAAE900A71ADC /* extensions.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = extensions.cpp; sourceTree = "<group>"; };
+		ED86881C2CDAAAE900A71ADC /* Vulkan.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Vulkan.cpp; sourceTree = "<group>"; };
+		ED8688232CDAAB3400A71ADC /* base64.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = base64.hpp; sourceTree = "<group>"; };
+		ED8688242CDAAB3400A71ADC /* glm_element_traits.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = glm_element_traits.hpp; sourceTree = "<group>"; };
+		ED8688252CDAAB3400A71ADC /* parser.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = parser.hpp; sourceTree = "<group>"; };
+		ED8688262CDAAB3400A71ADC /* tools.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = tools.hpp; sourceTree = "<group>"; };
+		ED8688272CDAAB3400A71ADC /* types.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = types.hpp; sourceTree = "<group>"; };
+		ED8688282CDAAB3400A71ADC /* util.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = util.hpp; sourceTree = "<group>"; };
+		ED86882B2CDAAB3400A71ADC /* base64.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = base64.cpp; sourceTree = "<group>"; };
+		ED86882C2CDAAB3400A71ADC /* fastgltf.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = fastgltf.cpp; sourceTree = "<group>"; };
+		ED86882F2CDAAB3400A71ADC /* imconfig.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = imconfig.h; sourceTree = "<group>"; };
+		ED8688302CDAAB3400A71ADC /* imgui.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = imgui.h; sourceTree = "<group>"; };
+		ED8688312CDAAB3400A71ADC /* imgui.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = imgui.cpp; sourceTree = "<group>"; };
+		ED8688322CDAAB3400A71ADC /* imgui_demo.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = imgui_demo.cpp; sourceTree = "<group>"; };
+		ED8688332CDAAB3400A71ADC /* imgui_draw.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = imgui_draw.cpp; sourceTree = "<group>"; };
+		ED8688342CDAAB3400A71ADC /* imgui_impl_sdl2.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = imgui_impl_sdl2.h; sourceTree = "<group>"; };
+		ED8688352CDAAB3400A71ADC /* imgui_impl_sdl2.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = imgui_impl_sdl2.cpp; sourceTree = "<group>"; };
+		ED8688362CDAAB3400A71ADC /* imgui_impl_vulkan.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = imgui_impl_vulkan.h; sourceTree = "<group>"; };
+		ED8688372CDAAB3400A71ADC /* imgui_impl_vulkan.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = imgui_impl_vulkan.cpp; sourceTree = "<group>"; };
+		ED8688382CDAAB3400A71ADC /* imgui_internal.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = imgui_internal.h; sourceTree = "<group>"; };
+		ED8688392CDAAB3400A71ADC /* imgui_tables.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = imgui_tables.cpp; sourceTree = "<group>"; };
+		ED86883A2CDAAB3400A71ADC /* imgui_widgets.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = imgui_widgets.cpp; sourceTree = "<group>"; };
+		ED86883B2CDAAB3400A71ADC /* imstb_rectpack.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = imstb_rectpack.h; sourceTree = "<group>"; };
+		ED86883C2CDAAB3400A71ADC /* imstb_textedit.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = imstb_textedit.h; sourceTree = "<group>"; };
+		ED86883D2CDAAB3400A71ADC /* imstb_truetype.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = imstb_truetype.h; sourceTree = "<group>"; };
+		ED86883E2CDAAB3400A71ADC /* LICENSE.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = LICENSE.txt; sourceTree = "<group>"; };
+		ED8688402CDAAB3400A71ADC /* simdjson.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = simdjson.h; sourceTree = "<group>"; };
+		ED8688412CDAAB3400A71ADC /* simdjson.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = simdjson.cpp; sourceTree = "<group>"; };
+		ED8688422CDAAB3400A71ADC /* twitter.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = twitter.json; sourceTree = "<group>"; };
+		ED8688442CDAAB3400A71ADC /* stb_image.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = stb_image.h; sourceTree = "<group>"; };
+		ED8688462CDAAB3400A71ADC /* tiny_obj_loader.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = tiny_obj_loader.h; sourceTree = "<group>"; };
+		ED8688482CDAAB3400A71ADC /* VkBootstrap.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = VkBootstrap.h; sourceTree = "<group>"; };
+		ED8688492CDAAB3400A71ADC /* VkBootstrap.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = VkBootstrap.cpp; sourceTree = "<group>"; };
+		ED86884A2CDAAB3400A71ADC /* VkBootstrapDispatch.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = VkBootstrapDispatch.h; sourceTree = "<group>"; };
+		ED86884F2CDAAB7300A71ADC /* CoreFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreFoundation.framework; path = System/Library/Frameworks/CoreFoundation.framework; sourceTree = SDKROOT; };
 		EDD3571D2CD92341009C7507 /* copy_libraries.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = copy_libraries.sh; sourceTree = "<group>"; };
 		EDD357202CD924B9009C7507 /* libMoltenVK.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; path = libMoltenVK.dylib; sourceTree = "<group>"; };
 		EDD357212CD924B9009C7507 /* libSDL2-2.0.0.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; path = "libSDL2-2.0.0.dylib"; sourceTree = "<group>"; };
@@ -84,6 +131,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				ED8688502CDAAB7300A71ADC /* CoreFoundation.framework in Frameworks */,
 				EDD357242CD924DA009C7507 /* libSDL2-2.0.0.dylib in Frameworks */,
 				EDD357252CD924DC009C7507 /* libMoltenVK.dylib in Frameworks */,
 				EDD357262CD924DF009C7507 /* libvulkan.1.3.290.dylib in Frameworks */,
@@ -104,6 +152,7 @@
 		ED5339CF2CD7A11E00136B04 = {
 			isa = PBXGroup;
 			children = (
+				ED86884D2CDAAB3400A71ADC /* third_party */,
 				EDD3570E2CD920F3009C7507 /* VulkanSDK */,
 				ED533A232CD7ACC500136B04 /* Products */,
 				ED533A202CD7AAA700136B04 /* example-app */,
@@ -143,7 +192,9 @@
 			isa = PBXGroup;
 			children = (
 				ED533A162CD7A8E700136B04 /* app */,
+				ED8688122CDAAABE00A71ADC /* base */,
 				ED533A172CD7A8E700136B04 /* common.hpp */,
+				ED8688162CDAAACC00A71ADC /* render */,
 			);
 			path = bg2e;
 			sourceTree = "<group>";
@@ -169,6 +220,8 @@
 			isa = PBXGroup;
 			children = (
 				ED533A1B2CD7A8F700136B04 /* app */,
+				ED8688182CDAAAE200A71ADC /* base */,
+				ED86881D2CDAAAE900A71ADC /* render */,
 			);
 			path = bg2e;
 			sourceTree = "<group>";
@@ -209,9 +262,166 @@
 		ED533A272CD7ADD600136B04 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				ED86884F2CDAAB7300A71ADC /* CoreFoundation.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
+		};
+		ED8688122CDAAABE00A71ADC /* base */ = {
+			isa = PBXGroup;
+			children = (
+				ED8688112CDAAABE00A71ADC /* PlatformTools.hpp */,
+			);
+			path = base;
+			sourceTree = "<group>";
+		};
+		ED8688162CDAAACC00A71ADC /* render */ = {
+			isa = PBXGroup;
+			children = (
+				ED8688132CDAAACC00A71ADC /* common.hpp */,
+				ED8688142CDAAACC00A71ADC /* extensions.hpp */,
+				ED8688152CDAAACC00A71ADC /* Vulkan.hpp */,
+			);
+			path = render;
+			sourceTree = "<group>";
+		};
+		ED8688182CDAAAE200A71ADC /* base */ = {
+			isa = PBXGroup;
+			children = (
+				ED8688172CDAAAE200A71ADC /* PlatformTools.cpp */,
+			);
+			path = base;
+			sourceTree = "<group>";
+		};
+		ED86881D2CDAAAE900A71ADC /* render */ = {
+			isa = PBXGroup;
+			children = (
+				ED86881A2CDAAAE900A71ADC /* common.cpp */,
+				ED86881B2CDAAAE900A71ADC /* extensions.cpp */,
+				ED86881C2CDAAAE900A71ADC /* Vulkan.cpp */,
+			);
+			path = render;
+			sourceTree = "<group>";
+		};
+		ED8688292CDAAB3400A71ADC /* fastgltf */ = {
+			isa = PBXGroup;
+			children = (
+				ED8688232CDAAB3400A71ADC /* base64.hpp */,
+				ED8688242CDAAB3400A71ADC /* glm_element_traits.hpp */,
+				ED8688252CDAAB3400A71ADC /* parser.hpp */,
+				ED8688262CDAAB3400A71ADC /* tools.hpp */,
+				ED8688272CDAAB3400A71ADC /* types.hpp */,
+				ED8688282CDAAB3400A71ADC /* util.hpp */,
+			);
+			path = fastgltf;
+			sourceTree = "<group>";
+		};
+		ED86882A2CDAAB3400A71ADC /* include */ = {
+			isa = PBXGroup;
+			children = (
+				ED8688292CDAAB3400A71ADC /* fastgltf */,
+			);
+			path = include;
+			sourceTree = "<group>";
+		};
+		ED86882D2CDAAB3400A71ADC /* src */ = {
+			isa = PBXGroup;
+			children = (
+				ED86882B2CDAAB3400A71ADC /* base64.cpp */,
+				ED86882C2CDAAB3400A71ADC /* fastgltf.cpp */,
+			);
+			path = src;
+			sourceTree = "<group>";
+		};
+		ED86882E2CDAAB3400A71ADC /* fastgltf */ = {
+			isa = PBXGroup;
+			children = (
+				ED86882A2CDAAB3400A71ADC /* include */,
+				ED86882D2CDAAB3400A71ADC /* src */,
+			);
+			path = fastgltf;
+			sourceTree = "<group>";
+		};
+		ED86883F2CDAAB3400A71ADC /* imgui */ = {
+			isa = PBXGroup;
+			children = (
+				ED86882F2CDAAB3400A71ADC /* imconfig.h */,
+				ED8688302CDAAB3400A71ADC /* imgui.h */,
+				ED8688312CDAAB3400A71ADC /* imgui.cpp */,
+				ED8688322CDAAB3400A71ADC /* imgui_demo.cpp */,
+				ED8688332CDAAB3400A71ADC /* imgui_draw.cpp */,
+				ED8688342CDAAB3400A71ADC /* imgui_impl_sdl2.h */,
+				ED8688352CDAAB3400A71ADC /* imgui_impl_sdl2.cpp */,
+				ED8688362CDAAB3400A71ADC /* imgui_impl_vulkan.h */,
+				ED8688372CDAAB3400A71ADC /* imgui_impl_vulkan.cpp */,
+				ED8688382CDAAB3400A71ADC /* imgui_internal.h */,
+				ED8688392CDAAB3400A71ADC /* imgui_tables.cpp */,
+				ED86883A2CDAAB3400A71ADC /* imgui_widgets.cpp */,
+				ED86883B2CDAAB3400A71ADC /* imstb_rectpack.h */,
+				ED86883C2CDAAB3400A71ADC /* imstb_textedit.h */,
+				ED86883D2CDAAB3400A71ADC /* imstb_truetype.h */,
+				ED86883E2CDAAB3400A71ADC /* LICENSE.txt */,
+			);
+			path = imgui;
+			sourceTree = "<group>";
+		};
+		ED8688432CDAAB3400A71ADC /* simdjson */ = {
+			isa = PBXGroup;
+			children = (
+				ED8688402CDAAB3400A71ADC /* simdjson.h */,
+				ED8688412CDAAB3400A71ADC /* simdjson.cpp */,
+				ED8688422CDAAB3400A71ADC /* twitter.json */,
+			);
+			path = simdjson;
+			sourceTree = "<group>";
+		};
+		ED8688452CDAAB3400A71ADC /* stb_image */ = {
+			isa = PBXGroup;
+			children = (
+				ED8688442CDAAB3400A71ADC /* stb_image.h */,
+			);
+			path = stb_image;
+			sourceTree = "<group>";
+		};
+		ED8688472CDAAB3400A71ADC /* tinyobj */ = {
+			isa = PBXGroup;
+			children = (
+				ED8688462CDAAB3400A71ADC /* tiny_obj_loader.h */,
+			);
+			path = tinyobj;
+			sourceTree = "<group>";
+		};
+		ED86884B2CDAAB3400A71ADC /* src */ = {
+			isa = PBXGroup;
+			children = (
+				ED8688482CDAAB3400A71ADC /* VkBootstrap.h */,
+				ED8688492CDAAB3400A71ADC /* VkBootstrap.cpp */,
+				ED86884A2CDAAB3400A71ADC /* VkBootstrapDispatch.h */,
+			);
+			path = src;
+			sourceTree = "<group>";
+		};
+		ED86884C2CDAAB3400A71ADC /* vk-bootstrap */ = {
+			isa = PBXGroup;
+			children = (
+				ED86884B2CDAAB3400A71ADC /* src */,
+			);
+			path = "vk-bootstrap";
+			sourceTree = "<group>";
+		};
+		ED86884D2CDAAB3400A71ADC /* third_party */ = {
+			isa = PBXGroup;
+			children = (
+				ED86882E2CDAAB3400A71ADC /* fastgltf */,
+				ED86883F2CDAAB3400A71ADC /* imgui */,
+				ED8688432CDAAB3400A71ADC /* simdjson */,
+				ED8688452CDAAB3400A71ADC /* stb_image */,
+				ED8688472CDAAB3400A71ADC /* tinyobj */,
+				ED86884C2CDAAB3400A71ADC /* vk-bootstrap */,
+			);
+			name = third_party;
+			path = ../third_party;
+			sourceTree = SOURCE_ROOT;
 		};
 		EDD3570E2CD920F3009C7507 /* VulkanSDK */ = {
 			isa = PBXGroup;
@@ -385,7 +595,12 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				ED86881E2CDAAAE900A71ADC /* common.cpp in Sources */,
+				ED86881F2CDAAAE900A71ADC /* extensions.cpp in Sources */,
+				ED8688202CDAAAE900A71ADC /* Vulkan.cpp in Sources */,
+				ED8688192CDAAAE200A71ADC /* PlatformTools.cpp in Sources */,
 				ED533A1E2CD7A8F700136B04 /* MainLoop.cpp in Sources */,
+				ED86884E2CDAAB4700A71ADC /* VkBootstrap.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -551,6 +766,7 @@
 					"$(VULKAN_SDK)/include/SDL2",
 					"$(VULKAN_SDK)/include/VMA",
 					"$(VULKAN_SDK)/include",
+					"$(PROJECT_DIR)/../third_party/**",
 				);
 				INSTALL_PATH = "@executable_path/../Frameworks";
 				LIBRARY_SEARCH_PATHS = (
@@ -580,6 +796,7 @@
 					"$(VULKAN_SDK)/include/SDL2",
 					"$(VULKAN_SDK)/include/VMA",
 					"$(VULKAN_SDK)/include",
+					"$(PROJECT_DIR)/../third_party/**",
 				);
 				INSTALL_PATH = "@executable_path/../Frameworks";
 				LIBRARY_SEARCH_PATHS = (
