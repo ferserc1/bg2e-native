@@ -14,8 +14,17 @@
     <ClInclude Include="..\include\bg2e\app\MainLoop.hpp" />
     <ClInclude Include="..\include\bg2e\base\PlatformTools.hpp" />
     <ClInclude Include="..\include\bg2e\common.hpp" />
+    <ClInclude Include="..\include\bg2e\render\Buffer.hpp" />
+    <ClInclude Include="..\include\bg2e\render\CleanupManager.hpp" />
+    <ClInclude Include="..\include\bg2e\render\Command.hpp" />
     <ClInclude Include="..\include\bg2e\render\common.hpp" />
+    <ClInclude Include="..\include\bg2e\render\DescriptorSet.hpp" />
+    <ClInclude Include="..\include\bg2e\render\DescriptorSetAllocator.hpp" />
     <ClInclude Include="..\include\bg2e\render\extensions.hpp" />
+    <ClInclude Include="..\include\bg2e\render\FrameResources.hpp" />
+    <ClInclude Include="..\include\bg2e\render\Image.hpp" />
+    <ClInclude Include="..\include\bg2e\render\Info.hpp" />
+    <ClInclude Include="..\include\bg2e\render\Swapchain.hpp" />
     <ClInclude Include="..\include\bg2e\render\Vulkan.hpp" />
     <ClInclude Include="..\third_party\vk-bootstrap\src\VkBootstrap.h" />
     <ClInclude Include="..\third_party\vk-bootstrap\src\VkBootstrapDispatch.h" />
@@ -23,8 +32,16 @@
   <ItemGroup>
     <ClCompile Include="..\src\bg2e\app\MainLoop.cpp" />
     <ClCompile Include="..\src\bg2e\base\PlatformTools.cpp" />
+    <ClCompile Include="..\src\bg2e\render\Buffer.cpp" />
+    <ClCompile Include="..\src\bg2e\render\Command.cpp" />
     <ClCompile Include="..\src\bg2e\render\common.cpp" />
+    <ClCompile Include="..\src\bg2e\render\DescriptorSet.cpp" />
+    <ClCompile Include="..\src\bg2e\render\DescriptorSetAllocator.cpp" />
     <ClCompile Include="..\src\bg2e\render\extensions.cpp" />
+    <ClCompile Include="..\src\bg2e\render\FrameResources.cpp" />
+    <ClCompile Include="..\src\bg2e\render\Image.cpp" />
+    <ClCompile Include="..\src\bg2e\render\Info.cpp" />
+    <ClCompile Include="..\src\bg2e\render\Swapchain.cpp" />
     <ClCompile Include="..\src\bg2e\render\Vulkan.cpp" />
     <ClCompile Include="..\third_party\vk-bootstrap\src\VkBootstrap.cpp" />
   </ItemGroup>
@@ -80,6 +97,7 @@
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -97,6 +115,7 @@
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
