@@ -1,5 +1,8 @@
 #pragma once
 
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_vulkan.h>
+
 #include <bg2e/common.hpp>
 #include <bg2e/render/common.hpp>
 #include <bg2e/render/Command.hpp>
@@ -14,7 +17,7 @@ namespace render {
 class BG2E_API Vulkan {
 public:
 
-    void init(void * windowPtr);
+    void init(SDL_Window * windowPtr);
 
     void cleanup();
 
@@ -46,7 +49,7 @@ public:
     bool newFrame();
 
 protected:
-    void* _windowPtr;
+    SDL_Window* _windowPtr;
 
 private:
 

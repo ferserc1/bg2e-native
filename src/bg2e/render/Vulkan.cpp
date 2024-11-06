@@ -7,14 +7,13 @@
 namespace bg2e {
 namespace render {
 
-void Vulkan::init(void* windowPtr)
+void Vulkan::init(SDL_Window* windowPtr)
 {
     _windowPtr = windowPtr;
 
     int width = 0;
     int height = 0;
-	SDL_Window* window = static_cast<SDL_Window*>(windowPtr);
-    SDL_GetWindowSize(window, &width, &height);
+    SDL_GetWindowSize(_windowPtr, &width, &height);
 
     createInstance();
     createSurface();
@@ -53,8 +52,7 @@ bool Vulkan::newFrame()
         vkDeviceWaitIdle(_device);
 
         int w, h;
-		SDL_Window* _window = static_cast<SDL_Window*>(_windowPtr);
-        SDL_GetWindowSize(_window, &w, &h);
+        SDL_GetWindowSize(_windowPtr, &w, &h);
         _swapchain.resize(uint32_t(w), uint32_t(h));
 
         _resizeRequested = false;
@@ -66,8 +64,18 @@ bool Vulkan::newFrame()
 
 void Vulkan::createInstance()
 {
+#if BG2E_IS_MAC
+    // Due to a bug in vk-bootstrap, it is not possible to load the dynamic rendering extension on Mac correctly.
+    // There is a workaround that consists in activating the feature through vulkan 1.3, but as MoltenVK only
+    // supports version 1.2, if the validation layers are activated this gives an error.
+    // To fix this the options are to not use vk-bootstrap, wait for them to fix the bug or wait for MoltenVK
+    // to support version 1.3. As the macOS platform is not a priority, we will leave the validation layers
+    // disabled for the time being.
+    _debugLayers = false;
+#endif
     auto instanceBuilder = bg2e::render::createInstanceBuilder("bg2 engine")
         .request_validation_layers(_debugLayers)
+        .require_api_version(VK_VERSION_1_3)
         .use_default_debug_messenger()
         .build();
 
@@ -78,8 +86,7 @@ void Vulkan::createInstance()
 
 void Vulkan::createSurface()
 {
-	SDL_Window* _window = static_cast<SDL_Window*>(_windowPtr);
-    SDL_Vulkan_CreateSurface(_window, _instance, &_surface);
+    SDL_Vulkan_CreateSurface(_windowPtr, _instance, &_surface);
 }
 
 void Vulkan::createDevicesAndQueues()

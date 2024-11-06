@@ -1,6 +1,7 @@
 #pragma once
 
 #include <bg2e/common.hpp>
+#include <bg2e/render/Vulkan.hpp>
 
 namespace bg2e {
 namespace app {
@@ -16,6 +17,8 @@ protected:
     uint32_t _windowWidth = 1440;
     uint32_t _windowHeight = 700;
     std::string _windowTitle = "bg2 engine - native";
+    
+    render::Vulkan _vulkan;
 };
 
 }
