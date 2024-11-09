@@ -3,6 +3,7 @@
 
 #include <bg2e/common.hpp>
 #include <bg2e/render/vulkan/common.hpp>
+#include <bg2e/render/vulkan/Device.hpp>
 #include <functional>
 
 
@@ -15,7 +16,7 @@ namespace vulkan {
 
 class BG2E_API Command {
 public:
-    void init(Vulkan* vulkanData, vkb::Device *bDevice);
+    void init(Vulkan* vulkanData);
     
     VkCommandPool createCommandPool(VkCommandPoolCreateFlags flags);
     

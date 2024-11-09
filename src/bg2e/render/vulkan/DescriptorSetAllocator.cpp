@@ -58,7 +58,7 @@ VkDescriptorPool DescriptorSetAllocator::createPool(uint32_t setCount)
     poolInfo.pPoolSizes = _poolSizes.data();
 
     VkDescriptorPool pool;
-    vkCreateDescriptorPool(_vulkan->device(), &poolInfo, nullptr, &pool);
+    vkCreateDescriptorPool(_vulkan->device().handle(), &poolInfo, nullptr, &pool);
     return pool;
 }
 
@@ -66,11 +66,11 @@ void DescriptorSetAllocator::clearDescriptors()
 {
     for (auto p : _readyPools)
     {
-        vkResetDescriptorPool(_vulkan->device(), p, 0);
+        vkResetDescriptorPool(_vulkan->device().handle(), p, 0);
     }
     for (auto p : _fullPools)
     {
-        vkResetDescriptorPool(_vulkan->device(), p, 0);
+        vkResetDescriptorPool(_vulkan->device().handle(), p, 0);
         _readyPools.push_back(p);
     }
     _fullPools.clear();
@@ -80,12 +80,12 @@ void DescriptorSetAllocator::destroy()
 {
     for (auto p : _readyPools)
     {
-        vkDestroyDescriptorPool(_vulkan->device(), p, nullptr);
+        vkDestroyDescriptorPool(_vulkan->device().handle(), p, nullptr);
     }
     _readyPools.clear();
     for (auto p : _fullPools)
     {
-        vkDestroyDescriptorPool(_vulkan->device(), p, nullptr);
+        vkDestroyDescriptorPool(_vulkan->device().handle(), p, nullptr);
     }
     _fullPools.clear();
 }
@@ -102,7 +102,7 @@ VkDescriptorSet DescriptorSetAllocator::allocateRaw(VkDescriptorSetLayout layout
     allocInfo.pSetLayouts = &layout;
     
     VkDescriptorSet descriptorSet;
-    auto result = vkAllocateDescriptorSets(_vulkan->device(), &allocInfo, &descriptorSet);
+    auto result = vkAllocateDescriptorSets(_vulkan->device().handle(), &allocInfo, &descriptorSet);
     
     if (result == VK_ERROR_OUT_OF_POOL_MEMORY || result == VK_ERROR_FRAGMENTED_POOL)
     {
@@ -111,7 +111,7 @@ VkDescriptorSet DescriptorSetAllocator::allocateRaw(VkDescriptorSetLayout layout
         poolToUse = getPool();
         allocInfo.descriptorPool = poolToUse;
         
-        if (vkAllocateDescriptorSets(_vulkan->device(), &allocInfo, &descriptorSet) != VK_SUCCESS)
+        if (vkAllocateDescriptorSets(_vulkan->device().handle(), &allocInfo, &descriptorSet) != VK_SUCCESS)
         {
             throw new std::runtime_error("Could not allocate descriptor set. Review the configuration of the descriptor pool ratios in initPools() call. Make sure you have included all the descriptor types you are going to use in the descriptor set layout.");
         }

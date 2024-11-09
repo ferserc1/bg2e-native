@@ -59,7 +59,7 @@ VkDeviceAddress Buffer::deviceAddress() const
     VkBufferDeviceAddressInfo deviceAddressInfo = {};
     deviceAddressInfo.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;
     deviceAddressInfo.buffer = _buffer;
-    return vkGetBufferDeviceAddress(_vulkan->device(), &deviceAddressInfo);
+    return vkGetBufferDeviceAddress(_vulkan->device().handle(), &deviceAddressInfo);
 }
     
 }

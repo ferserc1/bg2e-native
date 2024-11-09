@@ -17,6 +17,8 @@ class Instance;
 
 class PhysicalDevice {
 public:
+    static const std::vector<const char*>& getRequiredDeviceExtensions();
+    
     struct QueueFamilyIndices
     {
         std::optional<uint32_t> graphics;
@@ -43,12 +45,15 @@ public:
     };
 
     void choose(const Instance& instance, const Surface& surface);
+    
+    QueueFamilyIndices queueFamilyIndices() const;
 
 	inline VkPhysicalDevice handle() const { return _device; }
-	inline bool isValid() { return _device != VK_NULL_HANDLE; }
+	inline bool isValid() const { return _device != VK_NULL_HANDLE; }
   
 protected:
 	VkPhysicalDevice _device = VK_NULL_HANDLE;
+    const Surface * _surface = nullptr;
 
     bool isSuitable(VkPhysicalDevice device, const Surface& surface);
     bool checkDeviceExtensions(VkPhysicalDevice device);

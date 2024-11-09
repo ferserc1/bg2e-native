@@ -24,6 +24,8 @@
 		ED2191962CDF677400123781 /* Instance.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED2191952CDF677400123781 /* Instance.cpp */; };
 		ED2191992CDF678900123781 /* Log.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED2191982CDF678900123781 /* Log.cpp */; };
 		ED21919B2CDF8B8100123781 /* PhysicalDevice.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED21919A2CDF8B8100123781 /* PhysicalDevice.cpp */; };
+		ED21919F2CDFE28800123781 /* Device.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED21919E2CDFE28800123781 /* Device.cpp */; };
+		ED2191A22CDFE2A200123781 /* Surface.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED2191A12CDFE2A200123781 /* Surface.cpp */; };
 		ED533A222CD7AAB700136B04 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED533A212CD7AAB700136B04 /* main.cpp */; };
 		ED85B1D32CDB98300039B44D /* libMoltenVK.dylib in Copy Libraries */ = {isa = PBXBuildFile; fileRef = EDD357202CD924B9009C7507 /* libMoltenVK.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		ED85B1D42CDB98320039B44D /* libSDL2-2.0.0.dylib in Copy Libraries */ = {isa = PBXBuildFile; fileRef = EDD357212CD924B9009C7507 /* libSDL2-2.0.0.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
@@ -138,6 +140,10 @@
 		ED2191982CDF678900123781 /* Log.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Log.cpp; sourceTree = "<group>"; };
 		ED21919A2CDF8B8100123781 /* PhysicalDevice.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = PhysicalDevice.cpp; sourceTree = "<group>"; };
 		ED21919C2CDF8B9C00123781 /* PhysicalDevice.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = PhysicalDevice.hpp; sourceTree = "<group>"; };
+		ED21919D2CDFE27F00123781 /* Device.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Device.hpp; sourceTree = "<group>"; };
+		ED21919E2CDFE28800123781 /* Device.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Device.cpp; sourceTree = "<group>"; };
+		ED2191A02CDFE29B00123781 /* Surface.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Surface.hpp; sourceTree = "<group>"; };
+		ED2191A12CDFE2A200123781 /* Surface.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Surface.cpp; sourceTree = "<group>"; };
 		ED5339F02CD7A1E900136B04 /* example-app.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "example-app.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		ED533A152CD7A8E700136B04 /* MainLoop.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = MainLoop.hpp; sourceTree = "<group>"; };
 		ED533A172CD7A8E700136B04 /* common.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = common.hpp; sourceTree = "<group>"; };
@@ -230,12 +236,14 @@
 				ED2191672CDF4E4700123781 /* common.cpp */,
 				ED2191682CDF4E4700123781 /* DescriptorSet.cpp */,
 				ED2191692CDF4E4700123781 /* DescriptorSetAllocator.cpp */,
+				ED21919E2CDFE28800123781 /* Device.cpp */,
 				ED21916A2CDF4E4700123781 /* extensions.cpp */,
 				ED21916B2CDF4E4700123781 /* FrameResources.cpp */,
 				ED21916C2CDF4E4700123781 /* Image.cpp */,
 				ED2191952CDF677400123781 /* Instance.cpp */,
 				ED21916D2CDF4E4700123781 /* Info.cpp */,
 				ED21919A2CDF8B8100123781 /* PhysicalDevice.cpp */,
+				ED2191A12CDFE2A200123781 /* Surface.cpp */,
 				ED21916E2CDF4E4700123781 /* Swapchain.cpp */,
 			);
 			path = vulkan;
@@ -250,12 +258,14 @@
 				ED21917F2CDF4E9A00123781 /* common.hpp */,
 				ED2191802CDF4E9A00123781 /* DescriptorSet.hpp */,
 				ED2191812CDF4E9A00123781 /* DescriptorSetAllocator.hpp */,
+				ED21919D2CDFE27F00123781 /* Device.hpp */,
 				ED2191822CDF4E9A00123781 /* extensions.hpp */,
 				ED2191832CDF4E9A00123781 /* FrameResources.hpp */,
 				ED2191842CDF4E9A00123781 /* Image.hpp */,
 				ED2191852CDF4E9A00123781 /* Info.hpp */,
 				ED2191942CDF676700123781 /* Instance.hpp */,
 				ED21919C2CDF8B9C00123781 /* PhysicalDevice.hpp */,
+				ED2191A02CDFE29B00123781 /* Surface.hpp */,
 				ED2191862CDF4E9A00123781 /* Swapchain.hpp */,
 			);
 			path = vulkan;
@@ -725,6 +735,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				ED2191712CDF4E5D00123781 /* Buffer.cpp in Sources */,
+				ED21919F2CDFE28800123781 /* Device.cpp in Sources */,
 				ED2191722CDF4E5D00123781 /* Command.cpp in Sources */,
 				ED2191732CDF4E5D00123781 /* common.cpp in Sources */,
 				ED2191742CDF4E5D00123781 /* DescriptorSet.cpp in Sources */,
@@ -738,6 +749,7 @@
 				ED2191992CDF678900123781 /* Log.cpp in Sources */,
 				ED21917A2CDF4E5D00123781 /* Swapchain.cpp in Sources */,
 				ED21917B2CDF4E5D00123781 /* Vulkan.cpp in Sources */,
+				ED2191A22CDFE2A200123781 /* Surface.cpp in Sources */,
 				ED85B20C2CDBAB060039B44D /* VkBootstrap.cpp in Sources */,
 				ED85B1FF2CDBAAEB0039B44D /* MainLoop.cpp in Sources */,
 				ED85B2002CDBAAEE0039B44D /* PlatformTools.cpp in Sources */,

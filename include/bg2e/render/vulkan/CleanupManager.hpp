@@ -4,6 +4,7 @@
 #include <functional>
 
 #include <bg2e/render/vulkan/common.hpp>
+#include <bg2e/render/vulkan/Device.hpp>
 
 namespace bg2e {
 namespace render {
@@ -17,11 +18,11 @@ public:
         _deleters.push_back(fn);
     }
 
-    void flush(VkDevice device)
+    void flush(const Device& device)
     {
         for (auto it = _deleters.rbegin(); it != _deleters.rend(); ++it)
         {
-            (*it)(device);
+            (*it)(device.handle());
         }
         _deleters.clear();
     }

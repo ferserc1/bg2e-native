@@ -3,6 +3,7 @@
 #include <bg2e/render/vulkan/common.hpp>
 #include <bg2e/render/vulkan/Command.hpp>
 #include <bg2e/render/vulkan/CleanupManager.hpp>
+#include <bg2e/render/vulkan/Device.hpp>
 
 namespace bg2e {
 namespace render {
@@ -19,7 +20,7 @@ struct BG2E_API FrameResources {
     CleanupManager cleanupManager;
     DescriptorSetAllocator* descriptorAllocator;
 
-    void init(VkDevice device, Command* command);
+    void init(const Device& device, Command* command);
 
     // Remove temporary resources used by this frame
     void flushFrameData();
@@ -28,7 +29,7 @@ struct BG2E_API FrameResources {
     void cleanup();
 
 private:
-    VkDevice _device;
+    const Device * _device;
     Command* _command;
 };
 

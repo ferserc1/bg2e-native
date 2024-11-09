@@ -13,6 +13,7 @@
 #include <bg2e/render/vulkan/FrameResources.hpp>
 #include <bg2e/render/vulkan/Surface.hpp>
 #include <bg2e/render/vulkan/PhysicalDevice.hpp>
+#include <bg2e/render/vulkan/Device.hpp>
 
 namespace bg2e {
 namespace render {
@@ -30,7 +31,7 @@ public:
     inline const vulkan::Instance& instance() const { return _instance; }
     inline const vulkan::PhysicalDevice& physicalDevice() const { return _physicalDevice; }
     inline const vulkan:: Surface& surface() const { return _surface; }
-    inline VkDevice device() const { return _device; }
+    inline const vulkan::Device& device() const { return _device; }
     inline vulkan::Swapchain& swapchain() { return _swapchain; }
     inline const vulkan::Swapchain& swapchain() const { return _swapchain; }
     inline vulkan::Command& command() { return _command; }
@@ -61,9 +62,7 @@ private:
     vulkan::Instance _instance;
 	vulkan::Surface _surface;
 	vulkan::PhysicalDevice _physicalDevice;
-
-    VkDevice _device = VK_NULL_HANDLE;
-
+    vulkan::Device _device;
     vulkan::Swapchain _swapchain;
     vulkan::Command _command;
 

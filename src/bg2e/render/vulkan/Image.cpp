@@ -3,6 +3,7 @@
 #include <bg2e/render/vulkan/Image.hpp>
 #include <bg2e/render/vulkan/Info.hpp>
 #include <bg2e/render/vulkan/Buffer.hpp>
+#include <bg2e/render/vulkan/Device.hpp>
 
 #include <bg2e/render/Vulkan.hpp>
 
@@ -206,7 +207,7 @@ Image* Image::createAllocatedImage(
     {
         imgViewInfo.subresourceRange.levelCount = result->_mipLevels;
     }
-    VK_ASSERT(vkCreateImageView(vulkan->device(), &imgViewInfo, nullptr, &result->_imageView));
+    VK_ASSERT(vkCreateImageView(vulkan->device().handle(), &imgViewInfo, nullptr, &result->_imageView));
     
     return result;
 }
@@ -380,7 +381,7 @@ Image* Image::wrapSwapchainImage(
 
 void Image::cleanup()
 {
-    vkDestroyImageView(_vulkan->device(), _imageView, nullptr);
+    vkDestroyImageView(_vulkan->device().handle(), _imageView, nullptr);
     vmaDestroyImage(_vulkan->allocator(), _image, _allocation);
 }
 

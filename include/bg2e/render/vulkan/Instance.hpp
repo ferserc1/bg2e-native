@@ -26,6 +26,9 @@ public:
     void cleanup();
 
 	inline VkInstance handle() const { return _instance; }
+ 
+    bool getRequiredLayers(std::vector<const char*>& requiredLayers) const;
+    bool getRequiredExtensions(SDL_Window *, std::vector<const char*>& requiredExtensions) const;
 
 protected:
 	VkInstance _instance = VK_NULL_HANDLE;
@@ -37,8 +40,7 @@ protected:
 	std::vector<std::string> _availableExtensions;
     std::vector<std::string> _availableLayers;
 
-	bool getRequiredLayers(std::vector<const char*>& requiredLayers);
-    bool getRequiredExtensions(SDL_Window *, std::vector<const char*>& requiredExtensions);
+	
     
     VkResult createDebugMessenger();
     void destroyDebugMessenger();

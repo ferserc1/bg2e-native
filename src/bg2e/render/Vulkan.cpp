@@ -27,7 +27,7 @@ void Vulkan::init(SDL_Window* windowPtr)
 
 void Vulkan::cleanup()
 {
-    vkDeviceWaitIdle(_device);
+    _device.waitIdle();
 
     _cleanupManager.flush(_device);
 
@@ -37,8 +37,7 @@ void Vulkan::cleanup()
 
     vmaDestroyAllocator(_allocator);
 
-    vkDestroyDevice(_device, nullptr);
-
+    _device.cleanup();
     _surface.cleanup();
     _instance.cleanup();
 }
@@ -47,7 +46,7 @@ bool Vulkan::newFrame()
 {
     if (_resizeRequested)
     {
-        vkDeviceWaitIdle(_device);
+        _device.waitIdle();
 
         int w, h;
         SDL_GetWindowSize(_windowPtr, &w, &h);
@@ -73,52 +72,15 @@ void Vulkan::createSurface()
 void Vulkan::createDevicesAndQueues()
 {
 	_physicalDevice.choose(_instance, _surface);
-
-/*
-    VkPhysicalDeviceVulkan13Features features13 = {};
-    features13.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;
-    features13.dynamicRendering = true;
-    features13.synchronization2 = true;
-
-    VkPhysicalDeviceVulkan12Features features12 = {};
-    features12.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
-    features12.bufferDeviceAddress = true;
-    features12.descriptorIndexing = true;
-
-    VkPhysicalDeviceVulkan11Features features11 = {};
-    features11.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES;
-    features11.multiview = true;
-
-    VkPhysicalDeviceFeatures features = {};
-    features.samplerAnisotropy = true;
-
-    vkb::PhysicalDeviceSelector selector{ _vkbInstance };
-    vkb::PhysicalDevice physicalDevice = selector
-        .set_minimum_version(1, 2)
-        .set_required_features_13(features13)
-        .set_required_features_12(features12)
-        .set_required_features_11(features11)
-        .set_required_features(features)
-        .set_surface(_surface)
-        .select()
-        .value();
-
-    vkb::DeviceBuilder deviceBuilder{ physicalDevice };
-
-    vkb::Device vkbDevice = deviceBuilder.build().value();
-
-    _physicalDevice = physicalDevice.physical_device;
-    _device = vkbDevice.device;
-
-    _command.init(this, &vkbDevice);
-*/
+    _device.create(_instance, _physicalDevice, _surface);
+    _command.init(this);
 }
 
 void Vulkan::createMemoryAllocator()
 {
     VmaAllocatorCreateInfo allocInfo = {};
     allocInfo.physicalDevice = _physicalDevice.handle();
-    allocInfo.device = _device;
+    allocInfo.device = _device.handle();
     allocInfo.instance = _instance.handle();
     allocInfo.flags = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
     vmaCreateAllocator(&allocInfo, &_allocator);

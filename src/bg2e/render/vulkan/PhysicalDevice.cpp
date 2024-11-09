@@ -140,6 +140,18 @@ void PhysicalDevice::choose(const Instance& instance, const Surface & surface)
     {
 		throw std::runtime_error("Failed to find a suitable GPU");
     }
+    
+    _surface = &surface;
+}
+
+PhysicalDevice::QueueFamilyIndices PhysicalDevice::queueFamilyIndices() const
+{
+    if (!isValid())
+    {
+        throw std::runtime_error("PhysicalDevice::queueFamilyIndices(): No device selected.");
+    }
+    
+    return QueueFamilyIndices::get(_device, *_surface);
 }
 
 bool PhysicalDevice::isSuitable(VkPhysicalDevice device, const Surface &surface)
@@ -158,20 +170,27 @@ bool PhysicalDevice::isSuitable(VkPhysicalDevice device, const Surface &surface)
     return indices.isComplete() && extensionsSupported && swapchainAdequate;
 }
 
+static const std::vector<const char*> g_requiredDeviceExtensions = {
+    VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+    VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME,
+    VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME,
+    VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME,
+    VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME,
+    VK_KHR_MULTIVIEW_EXTENSION_NAME
+#ifdef __APPLE__
+    ,
+    "VK_KHR_portability_subset"
+#endif
+};
+
+const std::vector<const char*>& PhysicalDevice::getRequiredDeviceExtensions()
+{
+    return g_requiredDeviceExtensions;
+}
+
 bool PhysicalDevice::checkDeviceExtensions(VkPhysicalDevice device)
 {
-    const std::vector<const char*> requiredDeviceExtensions = {
-        VK_KHR_SWAPCHAIN_EXTENSION_NAME,
-        VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME,
-        VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME,
-        VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME,
-        VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME,
-        VK_KHR_MULTIVIEW_EXTENSION_NAME
-#ifdef __APPLE__
-        ,
-        "VK_KHR_portability_subset"
-#endif
-    };
+    
 
     uint32_t extensionCount = 0;
 	vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, nullptr);
@@ -179,7 +198,7 @@ bool PhysicalDevice::checkDeviceExtensions(VkPhysicalDevice device)
 	vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, availableExtensions.data());
 
 	bg2e_log_debug << "Available device extensions:" << bg2e_log_end;
-	std::set<std::string> requiredExtensionsSet(requiredDeviceExtensions.begin(), requiredDeviceExtensions.end());
+	std::set<std::string> requiredExtensionsSet(g_requiredDeviceExtensions.begin(), g_requiredDeviceExtensions.end());
     for (const auto& extension : availableExtensions)
     {
 		bg2e_log_debug << "\t" << extension.extensionName << bg2e_log_end;

@@ -52,12 +52,12 @@ Instance::Instance()
 void Instance::create(SDL_Window * sdlWindow)
 {
     std::vector<const char*> requiredLayers;
-    if (!getRequiredLayers(requiredLayers))
+    if (!Instance::getRequiredLayers(requiredLayers))
     {
         throw std::runtime_error("Instance::create(): missing required instance layers");
     }
     std::vector<const char*> instanceExtensions;
-    if (!getRequiredExtensions(sdlWindow, instanceExtensions))
+    if (!Instance::getRequiredExtensions(sdlWindow, instanceExtensions))
     {
         throw std::runtime_error("Instance::create(): missing required instance extensions");
     }
@@ -106,7 +106,7 @@ void Instance::cleanup()
     vkDestroyInstance(_instance, nullptr);
 }
 
-bool Instance::getRequiredLayers(std::vector<const char*>& requiredLayers)
+bool Instance::getRequiredLayers(std::vector<const char*>& requiredLayers) const
 {
     if (base::Log::isDebug())
     {
@@ -135,7 +135,7 @@ bool Instance::getRequiredLayers(std::vector<const char*>& requiredLayers)
 	return true;
 }
 
-bool Instance::getRequiredExtensions(SDL_Window * sdlWindow, std::vector<const char*>& requiredExtensions)
+bool Instance::getRequiredExtensions(SDL_Window * sdlWindow, std::vector<const char*>& requiredExtensions) const
 {
     unsigned int sdlExtensionCount = 0;
     SDL_Vulkan_GetInstanceExtensions(sdlWindow, &sdlExtensionCount, nullptr);

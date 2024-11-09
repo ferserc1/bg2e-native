@@ -6,9 +6,9 @@ namespace bg2e {
 namespace render {
 namespace vulkan {
 
-void FrameResources::init(VkDevice device, Command* command)
+void FrameResources::init(const Device& device, Command* command)
 {
-    _device = device;
+    _device = &device;
     _command = command;
 
     // Command pool and command buffer
@@ -28,7 +28,7 @@ void FrameResources::init(VkDevice device, Command* command)
 
 void FrameResources::flushFrameData()
 {
-    cleanupManager.flush(_device);
+    cleanupManager.flush(*_device);
     descriptorAllocator->clearDescriptors();
 }
 
@@ -47,7 +47,7 @@ void FrameResources::cleanup()
     vkDestroySemaphore(_command->device(), renderSemaphore, nullptr);
 
     // Destroy frame cleanup manager
-    cleanupManager.flush(_device);
+    cleanupManager.flush(*_device);
 }
 
 

@@ -7,6 +7,7 @@ namespace vulkan {
 
 void Swapchain::init(Vulkan * vulkan, uint32_t width, uint32_t height)
 {
+    // TODO: Implement without using vk-bootstrap
 	_vulkan = vulkan;
 
 	vkb::SwapchainBuilder builder {

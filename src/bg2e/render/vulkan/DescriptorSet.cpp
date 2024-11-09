@@ -95,7 +95,7 @@ void DescriptorSet::addBuffer(
 
 void DescriptorSet::endUpdate()
 {
-    vkUpdateDescriptorSets(_vulkan->device(), uint32_t(_writes.size()), _writes.data(), 0, nullptr);
+    vkUpdateDescriptorSets(_vulkan->device().handle(), uint32_t(_writes.size()), _writes.data(), 0, nullptr);
 }
 
 void DescriptorSet::clear()
