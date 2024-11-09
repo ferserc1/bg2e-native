@@ -4,6 +4,7 @@
 #include <SDL2/SDL_vulkan.h>
 
 #include <bg2e/common.hpp>
+#include <bg2e/render/vulkan/Instance.hpp>
 #include <bg2e/render/vulkan/common.hpp>
 #include <bg2e/render/vulkan/Command.hpp>
 #include <bg2e/render/vulkan/Swapchain.hpp>
@@ -55,9 +56,13 @@ private:
 
     bool _debugLayers = true;
 
+	// TODO: Replace this with bg2e::render::vulkan::Instance
     vkb::Instance _vkbInstance;
-
     VkInstance _instance = VK_NULL_HANDLE;
+
+    vulkan::Instance _instanceWrapper;
+
+
     VkDebugUtilsMessengerEXT _debugMessenger;
     VkPhysicalDevice _physicalDevice = VK_NULL_HANDLE;
     VkDevice _device = VK_NULL_HANDLE;

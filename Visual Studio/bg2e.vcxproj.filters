@@ -40,6 +40,12 @@
     <Filter Include="Third Party\vk-bootstrap">
       <UniqueIdentifier>{f4f3eeba-ab1d-452d-add9-4645c8e0d94f}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\bg2e\render\vulkan">
+      <UniqueIdentifier>{59181b3b-f5ba-4130-a461-7a2069e7b8cb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\render\vulkan">
+      <UniqueIdentifier>{7994a235-295b-4a6a-a035-7a2578c3f992}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\include\bg2e\common.hpp">
@@ -51,12 +57,6 @@
     <ClInclude Include="..\include\bg2e\render\Vulkan.hpp">
       <Filter>Header Files\bg2e\render</Filter>
     </ClInclude>
-    <ClInclude Include="..\include\bg2e\render\common.hpp">
-      <Filter>Header Files\bg2e\render</Filter>
-    </ClInclude>
-    <ClInclude Include="..\include\bg2e\render\extensions.hpp">
-      <Filter>Header Files\bg2e\render</Filter>
-    </ClInclude>
     <ClInclude Include="..\include\bg2e\base\PlatformTools.hpp">
       <Filter>Header Files\bg2e\base</Filter>
     </ClInclude>
@@ -66,32 +66,44 @@
     <ClInclude Include="..\third_party\vk-bootstrap\src\VkBootstrapDispatch.h">
       <Filter>Third Party\vk-bootstrap</Filter>
     </ClInclude>
-    <ClInclude Include="..\include\bg2e\render\FrameResources.hpp">
-      <Filter>Header Files\bg2e\render</Filter>
+    <ClInclude Include="..\include\bg2e\render\vulkan\Buffer.hpp">
+      <Filter>Header Files\bg2e\render\vulkan</Filter>
     </ClInclude>
-    <ClInclude Include="..\include\bg2e\render\CleanupManager.hpp">
-      <Filter>Header Files\bg2e\render</Filter>
+    <ClInclude Include="..\include\bg2e\render\vulkan\CleanupManager.hpp">
+      <Filter>Header Files\bg2e\render\vulkan</Filter>
     </ClInclude>
-    <ClInclude Include="..\include\bg2e\render\Command.hpp">
-      <Filter>Header Files\bg2e\render</Filter>
+    <ClInclude Include="..\include\bg2e\render\vulkan\Command.hpp">
+      <Filter>Header Files\bg2e\render\vulkan</Filter>
     </ClInclude>
-    <ClInclude Include="..\include\bg2e\render\Info.hpp">
-      <Filter>Header Files\bg2e\render</Filter>
+    <ClInclude Include="..\include\bg2e\render\vulkan\common.hpp">
+      <Filter>Header Files\bg2e\render\vulkan</Filter>
     </ClInclude>
-    <ClInclude Include="..\include\bg2e\render\Image.hpp">
-      <Filter>Header Files\bg2e\render</Filter>
+    <ClInclude Include="..\include\bg2e\render\vulkan\DescriptorSet.hpp">
+      <Filter>Header Files\bg2e\render\vulkan</Filter>
     </ClInclude>
-    <ClInclude Include="..\include\bg2e\render\Buffer.hpp">
-      <Filter>Header Files\bg2e\render</Filter>
+    <ClInclude Include="..\include\bg2e\render\vulkan\DescriptorSetAllocator.hpp">
+      <Filter>Header Files\bg2e\render\vulkan</Filter>
     </ClInclude>
-    <ClInclude Include="..\include\bg2e\render\Swapchain.hpp">
-      <Filter>Header Files\bg2e\render</Filter>
+    <ClInclude Include="..\include\bg2e\render\vulkan\extensions.hpp">
+      <Filter>Header Files\bg2e\render\vulkan</Filter>
     </ClInclude>
-    <ClInclude Include="..\include\bg2e\render\DescriptorSet.hpp">
-      <Filter>Header Files\bg2e\render</Filter>
+    <ClInclude Include="..\include\bg2e\render\vulkan\FrameResources.hpp">
+      <Filter>Header Files\bg2e\render\vulkan</Filter>
     </ClInclude>
-    <ClInclude Include="..\include\bg2e\render\DescriptorSetAllocator.hpp">
-      <Filter>Header Files\bg2e\render</Filter>
+    <ClInclude Include="..\include\bg2e\render\vulkan\Image.hpp">
+      <Filter>Header Files\bg2e\render\vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\render\vulkan\Info.hpp">
+      <Filter>Header Files\bg2e\render\vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\render\vulkan\Swapchain.hpp">
+      <Filter>Header Files\bg2e\render\vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\render\vulkan\Instance.hpp">
+      <Filter>Header Files\bg2e\render\vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\base\Log.hpp">
+      <Filter>Header Files\bg2e\base</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -101,41 +113,47 @@
     <ClCompile Include="..\src\bg2e\render\Vulkan.cpp">
       <Filter>Source Files\render</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\bg2e\render\common.cpp">
-      <Filter>Source Files\render</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\bg2e\render\extensions.cpp">
-      <Filter>Source Files\render</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\bg2e\base\PlatformTools.cpp">
       <Filter>Source Files\base</Filter>
     </ClCompile>
     <ClCompile Include="..\third_party\vk-bootstrap\src\VkBootstrap.cpp">
       <Filter>Third Party\vk-bootstrap</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\bg2e\render\FrameResources.cpp">
-      <Filter>Source Files\render</Filter>
+    <ClCompile Include="..\src\bg2e\render\vulkan\Buffer.cpp">
+      <Filter>Source Files\render\vulkan</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\bg2e\render\Command.cpp">
-      <Filter>Source Files\render</Filter>
+    <ClCompile Include="..\src\bg2e\render\vulkan\Command.cpp">
+      <Filter>Source Files\render\vulkan</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\bg2e\render\Info.cpp">
-      <Filter>Source Files\render</Filter>
+    <ClCompile Include="..\src\bg2e\render\vulkan\common.cpp">
+      <Filter>Source Files\render\vulkan</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\bg2e\render\Buffer.cpp">
-      <Filter>Source Files\render</Filter>
+    <ClCompile Include="..\src\bg2e\render\vulkan\DescriptorSet.cpp">
+      <Filter>Source Files\render\vulkan</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\bg2e\render\Image.cpp">
-      <Filter>Source Files\render</Filter>
+    <ClCompile Include="..\src\bg2e\render\vulkan\DescriptorSetAllocator.cpp">
+      <Filter>Source Files\render\vulkan</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\bg2e\render\Swapchain.cpp">
-      <Filter>Source Files\render</Filter>
+    <ClCompile Include="..\src\bg2e\render\vulkan\extensions.cpp">
+      <Filter>Source Files\render\vulkan</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\bg2e\render\DescriptorSet.cpp">
-      <Filter>Source Files\render</Filter>
+    <ClCompile Include="..\src\bg2e\render\vulkan\FrameResources.cpp">
+      <Filter>Source Files\render\vulkan</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\bg2e\render\DescriptorSetAllocator.cpp">
-      <Filter>Source Files\render</Filter>
+    <ClCompile Include="..\src\bg2e\render\vulkan\Image.cpp">
+      <Filter>Source Files\render\vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\bg2e\render\vulkan\Info.cpp">
+      <Filter>Source Files\render\vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\bg2e\render\vulkan\Swapchain.cpp">
+      <Filter>Source Files\render\vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\bg2e\render\vulkan\Instance.cpp">
+      <Filter>Source Files\render\vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\bg2e\base\Log.cpp">
+      <Filter>Source Files\base</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
