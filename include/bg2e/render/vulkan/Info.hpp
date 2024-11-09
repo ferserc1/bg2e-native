@@ -10,6 +10,11 @@ namespace vulkan {
 
 class BG2E_API Info {
 public:
+    static VkDebugUtilsMessengerCreateInfoEXT debugMessengerCreateInfo(
+        PFN_vkDebugUtilsMessengerCallbackEXT callback,
+        void * pUserData = nullptr
+    );
+    
     static VkCommandPoolCreateInfo commandPoolCreateInfo(
         uint32_t queueFamilyIndex,
         VkCommandPoolCreateFlags flags = 0

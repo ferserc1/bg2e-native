@@ -39,10 +39,9 @@ void Vulkan::cleanup()
 
     vkDestroyDevice(_device, nullptr);
 
-	bg2e::render::vulkan::destroySurface(_instance, _surface, nullptr);
+	bg2e::render::vulkan::destroySurface(_instance.instance(), _surface, nullptr);
 
-    vkb::destroy_debug_utils_messenger(_instance, _debugMessenger, nullptr);
-    vkDestroyInstance(_instance, nullptr);
+    _instance.cleanup();
 }
 
 bool Vulkan::newFrame()
@@ -64,36 +63,18 @@ bool Vulkan::newFrame()
 
 void Vulkan::createInstance()
 {
-    // TODO: Remove the rest of the code when the bg2e::render::vulkan::Instance is implemented
-    _instanceWrapper.create(_windowPtr);
-    
-#if BG2E_IS_MAC
-    // Due to a bug in vk-bootstrap, it is not possible to load the dynamic rendering extension on Mac correctly.
-    // There is a workaround that consists in activating the feature through vulkan 1.3, but as MoltenVK only
-    // supports version 1.2, if the validation layers are activated this gives an error.
-    // To fix this the options are to not use vk-bootstrap, wait for them to fix the bug or wait for MoltenVK
-    // to support version 1.3. As the macOS platform is not a priority, we will leave the validation layers
-    // disabled for the time being.
-    _debugLayers = false;
-#endif
-    auto instanceBuilder = bg2e::render::vulkan::createInstanceBuilder("bg2 engine")
-        .request_validation_layers(_debugLayers)
-        .require_api_version(VK_VERSION_1_3)
-        .use_default_debug_messenger()
-        .build();
-
-    _vkbInstance = instanceBuilder.value();
-    _instance = _vkbInstance.instance;
-    _debugMessenger = _vkbInstance.debug_messenger;
+    _instance.create(_windowPtr);
 }
 
 void Vulkan::createSurface()
 {
-    SDL_Vulkan_CreateSurface(_windowPtr, _instance, &_surface);
+    SDL_Vulkan_CreateSurface(_windowPtr, _instance.instance(), &_surface);
 }
 
 void Vulkan::createDevicesAndQueues()
 {
+    // TODO: Init physical device without using vk-bootstrap
+/*
     VkPhysicalDeviceVulkan13Features features13 = {};
     features13.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;
     features13.dynamicRendering = true;
@@ -130,6 +111,7 @@ void Vulkan::createDevicesAndQueues()
     _device = vkbDevice.device;
 
     _command.init(this, &vkbDevice);
+*/
 }
 
 void Vulkan::createMemoryAllocator()
@@ -137,7 +119,7 @@ void Vulkan::createMemoryAllocator()
     VmaAllocatorCreateInfo allocInfo = {};
     allocInfo.physicalDevice = _physicalDevice;
     allocInfo.device = _device;
-    allocInfo.instance = _instance;
+    allocInfo.instance = _instance.instance();
     allocInfo.flags = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
     vmaCreateAllocator(&allocInfo, &_allocator);
 }

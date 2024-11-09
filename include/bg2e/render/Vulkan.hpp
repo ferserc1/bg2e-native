@@ -25,7 +25,7 @@ public:
     inline const void* windowPtr() const { return _windowPtr; }
     inline void* windowPtr() { return _windowPtr; }
 
-    inline VkInstance instance() const { return _instance; }
+    inline VkInstance instance() const { return _instance.instance(); }
     inline VkPhysicalDevice physicalDevice() const { return _physicalDevice; }
     inline VkDevice device() const { return _device; }
     inline VkSurfaceKHR surface() const { return _surface; }
@@ -56,14 +56,8 @@ private:
 
     bool _debugLayers = true;
 
-	// TODO: Replace this with bg2e::render::vulkan::Instance
-    vkb::Instance _vkbInstance;
-    VkInstance _instance = VK_NULL_HANDLE;
+    vulkan::Instance _instance;
 
-    vulkan::Instance _instanceWrapper;
-
-
-    VkDebugUtilsMessengerEXT _debugMessenger;
     VkPhysicalDevice _physicalDevice = VK_NULL_HANDLE;
     VkDevice _device = VK_NULL_HANDLE;
     VkSurfaceKHR _surface = VK_NULL_HANDLE;

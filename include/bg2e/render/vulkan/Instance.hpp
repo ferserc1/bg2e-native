@@ -22,11 +22,14 @@ public:
 	inline const std::string& applicationName() const { return _applicationName; }
 
     void create(SDL_Window *);
+    
+    void cleanup();
 
 	inline VkInstance instance() const { return _instance; }
 
 protected:
 	VkInstance _instance = VK_NULL_HANDLE;
+    VkDebugUtilsMessengerEXT _debugMessenger = VK_NULL_HANDLE;
 
 	bool _enableValidationLayers = false;
 	std::string _applicationName = "bg2 engine Vulkan Application";
@@ -34,8 +37,11 @@ protected:
 	std::vector<std::string> _availableExtensions;
     std::vector<std::string> _availableLayers;
 
-	bool checkLayerSupport();
-    bool getRequiredExtensions(SDL_Window *, std::vector<std::string>& requiredExtensions);
+	bool getRequiredLayers(std::vector<const char*>& requiredLayers);
+    bool getRequiredExtensions(SDL_Window *, std::vector<const char*>& requiredExtensions);
+    
+    VkResult createDebugMessenger();
+    void destroyDebugMessenger();
 };
 
 }
