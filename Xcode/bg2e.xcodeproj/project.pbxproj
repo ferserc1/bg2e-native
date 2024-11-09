@@ -7,6 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		ED21915E2CDF4A7000123781 /* VkLayer_khronos_validation.json in Sources */ = {isa = PBXBuildFile; fileRef = ED21915D2CDF4A6D00123781 /* VkLayer_khronos_validation.json */; };
+		ED2191602CDF4ABC00123781 /* VkLayer_khronos_validation.json in Copy Layers Configuration */ = {isa = PBXBuildFile; fileRef = ED21915D2CDF4A6D00123781 /* VkLayer_khronos_validation.json */; };
+		ED2191632CDF4B1D00123781 /* libVkLayer_khronos_validation.dylib in Copy Libraries */ = {isa = PBXBuildFile; fileRef = ED2191622CDF4B1200123781 /* libVkLayer_khronos_validation.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		ED533A1E2CD7A8F700136B04 /* MainLoop.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED533A1A2CD7A8F700136B04 /* MainLoop.cpp */; };
 		ED533A222CD7AAB700136B04 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED533A212CD7AAB700136B04 /* main.cpp */; };
 		ED533A282CD7ADD600136B04 /* libbg2e.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = ED533A262CD7AD0200136B04 /* libbg2e.dylib */; };
@@ -52,6 +55,28 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
+		ED21915F2CDF4AAA00123781 /* Copy Layers Configuration */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = vulkan/explicit_layer.d;
+			dstSubfolderSpec = 7;
+			files = (
+				ED2191602CDF4ABC00123781 /* VkLayer_khronos_validation.json in Copy Layers Configuration */,
+			);
+			name = "Copy Layers Configuration";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		ED2191612CDF4AF600123781 /* Copy Libraries */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = ../lib;
+			dstSubfolderSpec = 7;
+			files = (
+				ED2191632CDF4B1D00123781 /* libVkLayer_khronos_validation.dylib in Copy Libraries */,
+			);
+			name = "Copy Libraries";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		ED533A2B2CD7AE8D00136B04 /* CopyFiles */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
@@ -79,6 +104,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		ED21915D2CDF4A6D00123781 /* VkLayer_khronos_validation.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = VkLayer_khronos_validation.json; sourceTree = "<group>"; };
+		ED2191622CDF4B1200123781 /* libVkLayer_khronos_validation.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.bundle"; path = libVkLayer_khronos_validation.dylib; sourceTree = "<group>"; };
 		ED5339D82CD7A11E00136B04 /* libbg2e.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libbg2e.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
 		ED5339F02CD7A1E900136B04 /* example-app.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "example-app.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		ED533A152CD7A8E700136B04 /* MainLoop.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = MainLoop.hpp; sourceTree = "<group>"; };
@@ -468,6 +495,7 @@
 		EDD3570E2CD920F3009C7507 /* VulkanSDK */ = {
 			isa = PBXGroup;
 			children = (
+				ED21915D2CDF4A6D00123781 /* VkLayer_khronos_validation.json */,
 				EDD3572C2CD92789009C7507 /* MoltenVK_icd.json */,
 				EDD357232CD924B9009C7507 /* lib */,
 				EDD3571D2CD92341009C7507 /* copy_libraries.sh */,
@@ -478,6 +506,7 @@
 		EDD357232CD924B9009C7507 /* lib */ = {
 			isa = PBXGroup;
 			children = (
+				ED2191622CDF4B1200123781 /* libVkLayer_khronos_validation.dylib */,
 				EDD357202CD924B9009C7507 /* libMoltenVK.dylib */,
 				EDD357212CD924B9009C7507 /* libSDL2-2.0.0.dylib */,
 				EDD357222CD924B9009C7507 /* libvulkan.1.3.290.dylib */,
@@ -547,6 +576,8 @@
 				ED533A2B2CD7AE8D00136B04 /* CopyFiles */,
 				EDD3572A2CD92700009C7507 /* Create Vulkan Sym Links */,
 				EDD3572B2CD92768009C7507 /* Copy MoltenVK ICD */,
+				ED21915F2CDF4AAA00123781 /* Copy Layers Configuration */,
+				ED2191612CDF4AF600123781 /* Copy Libraries */,
 			);
 			buildRules = (
 			);
@@ -574,6 +605,7 @@
 					};
 					ED5339EF2CD7A1E900136B04 = {
 						CreatedOnToolsVersion = 16.1;
+						LastSwiftMigration = 1610;
 					};
 					EDD357192CD92300009C7507 = {
 						CreatedOnToolsVersion = 16.1;
@@ -658,6 +690,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				ED21915E2CDF4A7000123781 /* VkLayer_khronos_validation.json in Sources */,
 				ED533A222CD7AAB700136B04 /* main.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -864,6 +897,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = "";
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
@@ -885,6 +919,8 @@
 				PRODUCT_BUNDLE_IDENTIFIER = "com.bg2engine.bg2e.example-app.example-app";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 6.0;
 			};
 			name = Debug;
 		};
@@ -893,6 +929,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = "";
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
@@ -914,6 +951,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = "com.bg2engine.bg2e.example-app.example-app";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 6.0;
 			};
 			name = Release;
 		};
