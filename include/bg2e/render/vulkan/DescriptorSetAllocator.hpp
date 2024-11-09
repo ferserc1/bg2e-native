@@ -1,9 +1,9 @@
 #pragma once
 
 #include <bg2e/common.hpp>
-#include <bg2e/render/common.hpp>
+#include <bg2e/render/vulkan/common.hpp>
+#include <bg2e/render/vulkan/DescriptorSet.hpp>
 #include <bg2e/render/Vulkan.hpp>
-#include <bg2e/render/DescriptorSet.hpp>
 
 namespace bg2e {
 namespace render {

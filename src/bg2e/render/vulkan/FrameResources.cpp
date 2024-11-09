@@ -1,6 +1,6 @@
-#include <bg2e/render/FrameResources.hpp>
-#include <bg2e/render/DescriptorSetAllocator.hpp>
-#include <bg2e/render/Info.hpp>
+#include <bg2e/render/vulkan/FrameResources.hpp>
+#include <bg2e/render/vulkan/DescriptorSetAllocator.hpp>
+#include <bg2e/render/vulkan/Info.hpp>
 
 namespace bg2e {
 namespace render {

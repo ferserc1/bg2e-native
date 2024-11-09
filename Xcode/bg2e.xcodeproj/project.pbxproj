@@ -10,6 +10,17 @@
 		ED21915E2CDF4A7000123781 /* VkLayer_khronos_validation.json in Sources */ = {isa = PBXBuildFile; fileRef = ED21915D2CDF4A6D00123781 /* VkLayer_khronos_validation.json */; };
 		ED2191602CDF4ABC00123781 /* VkLayer_khronos_validation.json in Copy Layers Configuration */ = {isa = PBXBuildFile; fileRef = ED21915D2CDF4A6D00123781 /* VkLayer_khronos_validation.json */; };
 		ED2191632CDF4B1D00123781 /* libVkLayer_khronos_validation.dylib in Copy Libraries */ = {isa = PBXBuildFile; fileRef = ED2191622CDF4B1200123781 /* libVkLayer_khronos_validation.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		ED2191712CDF4E5D00123781 /* Buffer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED2191652CDF4E4700123781 /* Buffer.cpp */; };
+		ED2191722CDF4E5D00123781 /* Command.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED2191662CDF4E4700123781 /* Command.cpp */; };
+		ED2191732CDF4E5D00123781 /* common.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED2191672CDF4E4700123781 /* common.cpp */; };
+		ED2191742CDF4E5D00123781 /* DescriptorSet.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED2191682CDF4E4700123781 /* DescriptorSet.cpp */; };
+		ED2191752CDF4E5D00123781 /* DescriptorSetAllocator.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED2191692CDF4E4700123781 /* DescriptorSetAllocator.cpp */; };
+		ED2191762CDF4E5D00123781 /* extensions.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED21916A2CDF4E4700123781 /* extensions.cpp */; };
+		ED2191772CDF4E5D00123781 /* FrameResources.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED21916B2CDF4E4700123781 /* FrameResources.cpp */; };
+		ED2191782CDF4E5D00123781 /* Image.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED21916C2CDF4E4700123781 /* Image.cpp */; };
+		ED2191792CDF4E5D00123781 /* Info.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED21916D2CDF4E4700123781 /* Info.cpp */; };
+		ED21917A2CDF4E5D00123781 /* Swapchain.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED21916E2CDF4E4700123781 /* Swapchain.cpp */; };
+		ED21917B2CDF4E5D00123781 /* Vulkan.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED2191702CDF4E4C00123781 /* Vulkan.cpp */; };
 		ED533A222CD7AAB700136B04 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED533A212CD7AAB700136B04 /* main.cpp */; };
 		ED85B1D32CDB98300039B44D /* libMoltenVK.dylib in Copy Libraries */ = {isa = PBXBuildFile; fileRef = EDD357202CD924B9009C7507 /* libMoltenVK.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		ED85B1D42CDB98320039B44D /* libSDL2-2.0.0.dylib in Copy Libraries */ = {isa = PBXBuildFile; fileRef = EDD357212CD924B9009C7507 /* libSDL2-2.0.0.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
@@ -17,17 +28,6 @@
 		ED85B1D92CDB9A0D0039B44D /* libVkLayer_khronos_validation.dylib in Resources */ = {isa = PBXBuildFile; fileRef = ED85B1D82CDB99FB0039B44D /* libVkLayer_khronos_validation.dylib */; };
 		ED85B1FF2CDBAAEB0039B44D /* MainLoop.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED533A1A2CD7A8F700136B04 /* MainLoop.cpp */; };
 		ED85B2002CDBAAEE0039B44D /* PlatformTools.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED8688172CDAAAE200A71ADC /* PlatformTools.cpp */; };
-		ED85B2012CDBAAF20039B44D /* Buffer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED82EED62CDABC8E007A0BB1 /* Buffer.cpp */; };
-		ED85B2022CDBAAFB0039B44D /* Command.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED82EED72CDABC8E007A0BB1 /* Command.cpp */; };
-		ED85B2032CDBAAFB0039B44D /* common.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED86881A2CDAAAE900A71ADC /* common.cpp */; };
-		ED85B2042CDBAAFB0039B44D /* DescriptorSet.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED82EED82CDABC8E007A0BB1 /* DescriptorSet.cpp */; };
-		ED85B2052CDBAAFB0039B44D /* DescriptorSetAllocator.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED82EED92CDABC8E007A0BB1 /* DescriptorSetAllocator.cpp */; };
-		ED85B2062CDBAAFB0039B44D /* extensions.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED86881B2CDAAAE900A71ADC /* extensions.cpp */; };
-		ED85B2072CDBAAFB0039B44D /* FrameResources.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED82EEDA2CDABC8E007A0BB1 /* FrameResources.cpp */; };
-		ED85B2082CDBAAFB0039B44D /* Image.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED82EEDB2CDABC8E007A0BB1 /* Image.cpp */; };
-		ED85B2092CDBAAFB0039B44D /* Info.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED82EEDC2CDABC8E007A0BB1 /* Info.cpp */; };
-		ED85B20A2CDBAAFB0039B44D /* Swapchain.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED82EEDD2CDABC8E007A0BB1 /* Swapchain.cpp */; };
-		ED85B20B2CDBAAFB0039B44D /* Vulkan.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED86881C2CDAAAE900A71ADC /* Vulkan.cpp */; };
 		ED85B20C2CDBAB060039B44D /* VkBootstrap.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED8688492CDAAB3400A71ADC /* VkBootstrap.cpp */; };
 		ED85B20E2CDBAB800039B44D /* libbg2e-native.a in Frameworks */ = {isa = PBXBuildFile; fileRef = ED85B20D2CDBAB730039B44D /* libbg2e-native.a */; };
 		ED85B20F2CDBAB940039B44D /* libMoltenVK.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = EDD357202CD924B9009C7507 /* libMoltenVK.dylib */; };
@@ -106,28 +106,34 @@
 /* Begin PBXFileReference section */
 		ED21915D2CDF4A6D00123781 /* VkLayer_khronos_validation.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = VkLayer_khronos_validation.json; sourceTree = "<group>"; };
 		ED2191622CDF4B1200123781 /* libVkLayer_khronos_validation.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.bundle"; path = libVkLayer_khronos_validation.dylib; sourceTree = "<group>"; };
+		ED2191652CDF4E4700123781 /* Buffer.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Buffer.cpp; sourceTree = "<group>"; };
+		ED2191662CDF4E4700123781 /* Command.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Command.cpp; sourceTree = "<group>"; };
+		ED2191672CDF4E4700123781 /* common.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = common.cpp; sourceTree = "<group>"; };
+		ED2191682CDF4E4700123781 /* DescriptorSet.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = DescriptorSet.cpp; sourceTree = "<group>"; };
+		ED2191692CDF4E4700123781 /* DescriptorSetAllocator.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = DescriptorSetAllocator.cpp; sourceTree = "<group>"; };
+		ED21916A2CDF4E4700123781 /* extensions.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = extensions.cpp; sourceTree = "<group>"; };
+		ED21916B2CDF4E4700123781 /* FrameResources.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = FrameResources.cpp; sourceTree = "<group>"; };
+		ED21916C2CDF4E4700123781 /* Image.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Image.cpp; sourceTree = "<group>"; };
+		ED21916D2CDF4E4700123781 /* Info.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Info.cpp; sourceTree = "<group>"; };
+		ED21916E2CDF4E4700123781 /* Swapchain.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Swapchain.cpp; sourceTree = "<group>"; };
+		ED2191702CDF4E4C00123781 /* Vulkan.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Vulkan.cpp; sourceTree = "<group>"; };
+		ED21917C2CDF4E9A00123781 /* Buffer.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Buffer.hpp; sourceTree = "<group>"; };
+		ED21917D2CDF4E9A00123781 /* CleanupManager.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = CleanupManager.hpp; sourceTree = "<group>"; };
+		ED21917E2CDF4E9A00123781 /* Command.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Command.hpp; sourceTree = "<group>"; };
+		ED21917F2CDF4E9A00123781 /* common.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = common.hpp; sourceTree = "<group>"; };
+		ED2191802CDF4E9A00123781 /* DescriptorSet.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = DescriptorSet.hpp; sourceTree = "<group>"; };
+		ED2191812CDF4E9A00123781 /* DescriptorSetAllocator.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = DescriptorSetAllocator.hpp; sourceTree = "<group>"; };
+		ED2191822CDF4E9A00123781 /* extensions.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = extensions.hpp; sourceTree = "<group>"; };
+		ED2191832CDF4E9A00123781 /* FrameResources.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = FrameResources.hpp; sourceTree = "<group>"; };
+		ED2191842CDF4E9A00123781 /* Image.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Image.hpp; sourceTree = "<group>"; };
+		ED2191852CDF4E9A00123781 /* Info.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Info.hpp; sourceTree = "<group>"; };
+		ED2191862CDF4E9A00123781 /* Swapchain.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Swapchain.hpp; sourceTree = "<group>"; };
+		ED2191882CDF4E9A00123781 /* Vulkan.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Vulkan.hpp; sourceTree = "<group>"; };
 		ED5339F02CD7A1E900136B04 /* example-app.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "example-app.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		ED533A152CD7A8E700136B04 /* MainLoop.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = MainLoop.hpp; sourceTree = "<group>"; };
 		ED533A172CD7A8E700136B04 /* common.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = common.hpp; sourceTree = "<group>"; };
 		ED533A1A2CD7A8F700136B04 /* MainLoop.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = MainLoop.cpp; sourceTree = "<group>"; };
 		ED533A212CD7AAB700136B04 /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = main.cpp; path = ../examples/app/main.cpp; sourceTree = SOURCE_ROOT; };
-		ED82EED62CDABC8E007A0BB1 /* Buffer.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Buffer.cpp; sourceTree = "<group>"; };
-		ED82EED72CDABC8E007A0BB1 /* Command.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Command.cpp; sourceTree = "<group>"; };
-		ED82EED82CDABC8E007A0BB1 /* DescriptorSet.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = DescriptorSet.cpp; sourceTree = "<group>"; };
-		ED82EED92CDABC8E007A0BB1 /* DescriptorSetAllocator.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = DescriptorSetAllocator.cpp; sourceTree = "<group>"; };
-		ED82EEDA2CDABC8E007A0BB1 /* FrameResources.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = FrameResources.cpp; sourceTree = "<group>"; };
-		ED82EEDB2CDABC8E007A0BB1 /* Image.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Image.cpp; sourceTree = "<group>"; };
-		ED82EEDC2CDABC8E007A0BB1 /* Info.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Info.cpp; sourceTree = "<group>"; };
-		ED82EEDD2CDABC8E007A0BB1 /* Swapchain.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Swapchain.cpp; sourceTree = "<group>"; };
-		ED82EEE62CDABCB6007A0BB1 /* Buffer.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Buffer.hpp; sourceTree = "<group>"; };
-		ED82EEE72CDABCB6007A0BB1 /* CleanupManager.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = CleanupManager.hpp; sourceTree = "<group>"; };
-		ED82EEE82CDABCB6007A0BB1 /* Command.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Command.hpp; sourceTree = "<group>"; };
-		ED82EEE92CDABCB6007A0BB1 /* DescriptorSet.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = DescriptorSet.hpp; sourceTree = "<group>"; };
-		ED82EEEA2CDABCB6007A0BB1 /* DescriptorSetAllocator.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = DescriptorSetAllocator.hpp; sourceTree = "<group>"; };
-		ED82EEEB2CDABCB6007A0BB1 /* FrameResources.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = FrameResources.hpp; sourceTree = "<group>"; };
-		ED82EEEC2CDABCB6007A0BB1 /* Image.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Image.hpp; sourceTree = "<group>"; };
-		ED82EEED2CDABCB6007A0BB1 /* Info.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Info.hpp; sourceTree = "<group>"; };
-		ED82EEEE2CDABCB6007A0BB1 /* Swapchain.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Swapchain.hpp; sourceTree = "<group>"; };
 		ED85B1CE2CDB95060039B44D /* VkBootstrap.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = VkBootstrap.h; sourceTree = "<group>"; };
 		ED85B1CF2CDB95060039B44D /* VkBootstrapDispatch.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = VkBootstrapDispatch.h; sourceTree = "<group>"; };
 		ED85B1D62CDB99C30039B44D /* libVkLayer_khronos_validation.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.bundle"; path = libVkLayer_khronos_validation.dylib; sourceTree = "<group>"; };
@@ -136,13 +142,7 @@
 		ED85B1F32CDBAABD0039B44D /* libbg2e-native.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libbg2e-native.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		ED85B20D2CDBAB730039B44D /* libbg2e-native.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = "libbg2e-native.a"; path = "../bin/Debug/libbg2e-native.a"; sourceTree = SOURCE_ROOT; };
 		ED8688112CDAAABE00A71ADC /* PlatformTools.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = PlatformTools.hpp; sourceTree = "<group>"; };
-		ED8688132CDAAACC00A71ADC /* common.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = common.hpp; sourceTree = "<group>"; };
-		ED8688142CDAAACC00A71ADC /* extensions.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = extensions.hpp; sourceTree = "<group>"; };
-		ED8688152CDAAACC00A71ADC /* Vulkan.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Vulkan.hpp; sourceTree = "<group>"; };
 		ED8688172CDAAAE200A71ADC /* PlatformTools.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = PlatformTools.cpp; sourceTree = "<group>"; };
-		ED86881A2CDAAAE900A71ADC /* common.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = common.cpp; sourceTree = "<group>"; };
-		ED86881B2CDAAAE900A71ADC /* extensions.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = extensions.cpp; sourceTree = "<group>"; };
-		ED86881C2CDAAAE900A71ADC /* Vulkan.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Vulkan.cpp; sourceTree = "<group>"; };
 		ED8688232CDAAB3400A71ADC /* base64.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = base64.hpp; sourceTree = "<group>"; };
 		ED8688242CDAAB3400A71ADC /* glm_element_traits.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = glm_element_traits.hpp; sourceTree = "<group>"; };
 		ED8688252CDAAB3400A71ADC /* parser.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = parser.hpp; sourceTree = "<group>"; };
@@ -211,6 +211,41 @@
 				ED85B1D62CDB99C30039B44D /* libVkLayer_khronos_validation.dylib */,
 			);
 			name = "Recovered References";
+			sourceTree = "<group>";
+		};
+		ED21916F2CDF4E4700123781 /* vulkan */ = {
+			isa = PBXGroup;
+			children = (
+				ED2191652CDF4E4700123781 /* Buffer.cpp */,
+				ED2191662CDF4E4700123781 /* Command.cpp */,
+				ED2191672CDF4E4700123781 /* common.cpp */,
+				ED2191682CDF4E4700123781 /* DescriptorSet.cpp */,
+				ED2191692CDF4E4700123781 /* DescriptorSetAllocator.cpp */,
+				ED21916A2CDF4E4700123781 /* extensions.cpp */,
+				ED21916B2CDF4E4700123781 /* FrameResources.cpp */,
+				ED21916C2CDF4E4700123781 /* Image.cpp */,
+				ED21916D2CDF4E4700123781 /* Info.cpp */,
+				ED21916E2CDF4E4700123781 /* Swapchain.cpp */,
+			);
+			path = vulkan;
+			sourceTree = "<group>";
+		};
+		ED2191872CDF4E9A00123781 /* vulkan */ = {
+			isa = PBXGroup;
+			children = (
+				ED21917C2CDF4E9A00123781 /* Buffer.hpp */,
+				ED21917D2CDF4E9A00123781 /* CleanupManager.hpp */,
+				ED21917E2CDF4E9A00123781 /* Command.hpp */,
+				ED21917F2CDF4E9A00123781 /* common.hpp */,
+				ED2191802CDF4E9A00123781 /* DescriptorSet.hpp */,
+				ED2191812CDF4E9A00123781 /* DescriptorSetAllocator.hpp */,
+				ED2191822CDF4E9A00123781 /* extensions.hpp */,
+				ED2191832CDF4E9A00123781 /* FrameResources.hpp */,
+				ED2191842CDF4E9A00123781 /* Image.hpp */,
+				ED2191852CDF4E9A00123781 /* Info.hpp */,
+				ED2191862CDF4E9A00123781 /* Swapchain.hpp */,
+			);
+			path = vulkan;
 			sourceTree = "<group>";
 		};
 		ED5339CF2CD7A11E00136B04 = {
@@ -346,18 +381,8 @@
 		ED8688162CDAAACC00A71ADC /* render */ = {
 			isa = PBXGroup;
 			children = (
-				ED82EEE62CDABCB6007A0BB1 /* Buffer.hpp */,
-				ED82EEE72CDABCB6007A0BB1 /* CleanupManager.hpp */,
-				ED82EEE82CDABCB6007A0BB1 /* Command.hpp */,
-				ED8688132CDAAACC00A71ADC /* common.hpp */,
-				ED8688142CDAAACC00A71ADC /* extensions.hpp */,
-				ED82EEE92CDABCB6007A0BB1 /* DescriptorSet.hpp */,
-				ED82EEEA2CDABCB6007A0BB1 /* DescriptorSetAllocator.hpp */,
-				ED82EEEB2CDABCB6007A0BB1 /* FrameResources.hpp */,
-				ED82EEEC2CDABCB6007A0BB1 /* Image.hpp */,
-				ED82EEED2CDABCB6007A0BB1 /* Info.hpp */,
-				ED82EEEE2CDABCB6007A0BB1 /* Swapchain.hpp */,
-				ED8688152CDAAACC00A71ADC /* Vulkan.hpp */,
+				ED2191872CDF4E9A00123781 /* vulkan */,
+				ED2191882CDF4E9A00123781 /* Vulkan.hpp */,
 			);
 			path = render;
 			sourceTree = "<group>";
@@ -373,17 +398,8 @@
 		ED86881D2CDAAAE900A71ADC /* render */ = {
 			isa = PBXGroup;
 			children = (
-				ED82EED62CDABC8E007A0BB1 /* Buffer.cpp */,
-				ED82EED72CDABC8E007A0BB1 /* Command.cpp */,
-				ED86881A2CDAAAE900A71ADC /* common.cpp */,
-				ED82EED82CDABC8E007A0BB1 /* DescriptorSet.cpp */,
-				ED82EED92CDABC8E007A0BB1 /* DescriptorSetAllocator.cpp */,
-				ED86881B2CDAAAE900A71ADC /* extensions.cpp */,
-				ED82EEDA2CDABC8E007A0BB1 /* FrameResources.cpp */,
-				ED82EEDB2CDABC8E007A0BB1 /* Image.cpp */,
-				ED82EEDC2CDABC8E007A0BB1 /* Info.cpp */,
-				ED82EEDD2CDABC8E007A0BB1 /* Swapchain.cpp */,
-				ED86881C2CDAAAE900A71ADC /* Vulkan.cpp */,
+				ED21916F2CDF4E4700123781 /* vulkan */,
+				ED2191702CDF4E4C00123781 /* Vulkan.cpp */,
 			);
 			path = render;
 			sourceTree = "<group>";
@@ -693,20 +709,20 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				ED2191712CDF4E5D00123781 /* Buffer.cpp in Sources */,
+				ED2191722CDF4E5D00123781 /* Command.cpp in Sources */,
+				ED2191732CDF4E5D00123781 /* common.cpp in Sources */,
+				ED2191742CDF4E5D00123781 /* DescriptorSet.cpp in Sources */,
+				ED2191752CDF4E5D00123781 /* DescriptorSetAllocator.cpp in Sources */,
+				ED2191762CDF4E5D00123781 /* extensions.cpp in Sources */,
+				ED2191772CDF4E5D00123781 /* FrameResources.cpp in Sources */,
+				ED2191782CDF4E5D00123781 /* Image.cpp in Sources */,
+				ED2191792CDF4E5D00123781 /* Info.cpp in Sources */,
+				ED21917A2CDF4E5D00123781 /* Swapchain.cpp in Sources */,
+				ED21917B2CDF4E5D00123781 /* Vulkan.cpp in Sources */,
 				ED85B20C2CDBAB060039B44D /* VkBootstrap.cpp in Sources */,
-				ED85B2022CDBAAFB0039B44D /* Command.cpp in Sources */,
-				ED85B2032CDBAAFB0039B44D /* common.cpp in Sources */,
-				ED85B2042CDBAAFB0039B44D /* DescriptorSet.cpp in Sources */,
-				ED85B2052CDBAAFB0039B44D /* DescriptorSetAllocator.cpp in Sources */,
-				ED85B2062CDBAAFB0039B44D /* extensions.cpp in Sources */,
-				ED85B2072CDBAAFB0039B44D /* FrameResources.cpp in Sources */,
-				ED85B2082CDBAAFB0039B44D /* Image.cpp in Sources */,
-				ED85B2092CDBAAFB0039B44D /* Info.cpp in Sources */,
-				ED85B20A2CDBAAFB0039B44D /* Swapchain.cpp in Sources */,
-				ED85B20B2CDBAAFB0039B44D /* Vulkan.cpp in Sources */,
 				ED85B1FF2CDBAAEB0039B44D /* MainLoop.cpp in Sources */,
 				ED85B2002CDBAAEE0039B44D /* PlatformTools.cpp in Sources */,
-				ED85B2012CDBAAF20039B44D /* Buffer.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

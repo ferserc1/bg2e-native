@@ -1,5 +1,5 @@
 
-#include <bg2e/render/DescriptorSetAllocator.hpp>
+#include <bg2e/render/vulkan/DescriptorSetAllocator.hpp>
 
 namespace bg2e {
 namespace render {

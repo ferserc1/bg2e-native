@@ -1,8 +1,8 @@
 
 #include <bg2e/base/PlatformTools.hpp>
-#include <bg2e/render/Image.hpp>
-#include <bg2e/render/Info.hpp>
-#include <bg2e/render/Buffer.hpp>
+#include <bg2e/render/vulkan/Image.hpp>
+#include <bg2e/render/vulkan/Info.hpp>
+#include <bg2e/render/vulkan/Buffer.hpp>
 
 #include <bg2e/render/Vulkan.hpp>
 

@@ -1,9 +1,8 @@
 #pragma once
 
-#include <bg2e/render/common.hpp>
-
-#include <bg2e/render/Command.hpp>
-#include <bg2e/render/CleanupManager.hpp>
+#include <bg2e/render/vulkan/common.hpp>
+#include <bg2e/render/vulkan/Command.hpp>
+#include <bg2e/render/vulkan/CleanupManager.hpp>
 
 namespace bg2e {
 namespace render {

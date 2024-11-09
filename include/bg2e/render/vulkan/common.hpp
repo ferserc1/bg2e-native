@@ -37,7 +37,7 @@ void* getMappedData(VmaAllocation a);
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
-#include <bg2e/render/extensions.hpp>
+#include <bg2e/render/vulkan/extensions.hpp>
 
 #define VK_ASSERT(x)                                                                         \
     do {                                                                                     \

@@ -4,12 +4,12 @@
 #include <SDL2/SDL_vulkan.h>
 
 #include <bg2e/common.hpp>
-#include <bg2e/render/common.hpp>
-#include <bg2e/render/Command.hpp>
-#include <bg2e/render/Swapchain.hpp>
-#include <bg2e/render/extensions.hpp>
-#include <bg2e/render/CleanupManager.hpp>
-#include <bg2e/render/FrameResources.hpp>
+#include <bg2e/render/vulkan/common.hpp>
+#include <bg2e/render/vulkan/Command.hpp>
+#include <bg2e/render/vulkan/Swapchain.hpp>
+#include <bg2e/render/vulkan/extensions.hpp>
+#include <bg2e/render/vulkan/CleanupManager.hpp>
+#include <bg2e/render/vulkan/FrameResources.hpp>
 
 namespace bg2e {
 namespace render {

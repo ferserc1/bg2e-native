@@ -1,7 +1,7 @@
 #pragma once
 
 #include <vulkan/vulkan.h>
-#include <bg2e/render/Image.hpp>
+#include <bg2e/render/vulkan/Image.hpp>
 #include <vector>
 #include <memory>
 

@@ -1,6 +1,7 @@
-#include <bg2e/render/DescriptorSet.hpp>
+#include <bg2e/render/vulkan/DescriptorSet.hpp>
+#include <bg2e/render/vulkan/Buffer.hpp>
+
 #include <vulkan/vulkan.h>
-#include <bg2e/render/Buffer.hpp>
 
 namespace bg2e {
 namespace render {

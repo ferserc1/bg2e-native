@@ -1,5 +1,5 @@
 
-#include <bg2e/render/common.hpp>
+#include <bg2e/render/vulkan/common.hpp>
 
 #ifndef _WIN32
 #pragma clang diagnostic push

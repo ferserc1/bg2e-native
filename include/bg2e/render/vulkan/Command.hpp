@@ -2,7 +2,7 @@
 #pragma once
 
 #include <bg2e/common.hpp>
-#include <bg2e/render/common.hpp>
+#include <bg2e/render/vulkan/common.hpp>
 #include <functional>
 
 

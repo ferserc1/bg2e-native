@@ -1,7 +1,7 @@
 
-#include <bg2e/render/Command.hpp>
-#include <bg2e/render/Info.hpp>
-#include <bg2e/render/common.hpp>
+#include <bg2e/render/vulkan/Command.hpp>
+#include <bg2e/render/vulkan/Info.hpp>
+#include <bg2e/render/vulkan/common.hpp>
 #include <bg2e/render/Vulkan.hpp>
 
 

@@ -1,4 +1,4 @@
-#include <bg2e/render/extensions.hpp>
+#include <bg2e/render/vulkan/extensions.hpp>
 #include <bg2e/base/PlatformTools.hpp>
 
 namespace bg2e {

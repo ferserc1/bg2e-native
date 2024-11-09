@@ -3,7 +3,7 @@
 #include <deque>
 #include <functional>
 
-#include <bg2e/render/common.hpp>
+#include <bg2e/render/vulkan/common.hpp>
 
 namespace bg2e {
 namespace render {

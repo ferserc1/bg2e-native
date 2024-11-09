@@ -1,5 +1,5 @@
 
-#include <bg2e/render/Info.hpp>
+#include <bg2e/render/vulkan/Info.hpp>
 
 namespace bg2e {
 namespace render {

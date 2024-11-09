@@ -1,5 +1,5 @@
 
-#include <bg2e/render/Buffer.hpp>
+#include <bg2e/render/vulkan/Buffer.hpp>
 
 namespace bg2e {
 namespace render {
