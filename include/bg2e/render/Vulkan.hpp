@@ -11,6 +11,8 @@
 #include <bg2e/render/vulkan/extensions.hpp>
 #include <bg2e/render/vulkan/CleanupManager.hpp>
 #include <bg2e/render/vulkan/FrameResources.hpp>
+#include <bg2e/render/vulkan/Surface.hpp>
+#include <bg2e/render/vulkan/PhysicalDevice.hpp>
 
 namespace bg2e {
 namespace render {
@@ -25,10 +27,10 @@ public:
     inline const void* windowPtr() const { return _windowPtr; }
     inline void* windowPtr() { return _windowPtr; }
 
-    inline VkInstance instance() const { return _instance.instance(); }
-    inline VkPhysicalDevice physicalDevice() const { return _physicalDevice; }
+    inline const vulkan::Instance& instance() const { return _instance; }
+    inline const vulkan::PhysicalDevice& physicalDevice() const { return _physicalDevice; }
+    inline const vulkan:: Surface& surface() const { return _surface; }
     inline VkDevice device() const { return _device; }
-    inline VkSurfaceKHR surface() const { return _surface; }
     inline vulkan::Swapchain& swapchain() { return _swapchain; }
     inline const vulkan::Swapchain& swapchain() const { return _swapchain; }
     inline vulkan::Command& command() { return _command; }
@@ -57,10 +59,10 @@ private:
     bool _debugLayers = true;
 
     vulkan::Instance _instance;
+	vulkan::Surface _surface;
+	vulkan::PhysicalDevice _physicalDevice;
 
-    VkPhysicalDevice _physicalDevice = VK_NULL_HANDLE;
     VkDevice _device = VK_NULL_HANDLE;
-    VkSurfaceKHR _surface = VK_NULL_HANDLE;
 
     vulkan::Swapchain _swapchain;
     vulkan::Command _command;

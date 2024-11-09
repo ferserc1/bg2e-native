@@ -10,9 +10,9 @@ void Swapchain::init(Vulkan * vulkan, uint32_t width, uint32_t height)
 	_vulkan = vulkan;
 
 	vkb::SwapchainBuilder builder {
-		vulkan->physicalDevice(),
+		vulkan->physicalDevice().handle(),
 		vulkan->device(),
-		vulkan->surface()
+		vulkan->surface().handle()
 	};
 
 	// TODO: IMGUI have an that prevents to use the specified image format 
@@ -58,9 +58,9 @@ void Swapchain::resize(uint32_t width, uint32_t height)
     cleanup();
     
     vkb::SwapchainBuilder builder{
-		_vulkan->physicalDevice(),
+		_vulkan->physicalDevice().handle(),
 		_vulkan->device(),
-		_vulkan->surface()
+		_vulkan->surface().handle()
 	};
  
     _imageFormat = VK_FORMAT_B8G8R8A8_UNORM;

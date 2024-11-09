@@ -108,6 +108,9 @@
     <ClInclude Include="..\include\bg2e\render\vulkan\PhysicalDevice.hpp">
       <Filter>Header Files\bg2e\render\vulkan</Filter>
     </ClInclude>
+    <ClInclude Include="..\include\bg2e\render\vulkan\Surface.hpp">
+      <Filter>Header Files\bg2e\render\vulkan</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\bg2e\app\MainLoop.cpp">
@@ -159,6 +162,9 @@
       <Filter>Source Files\base</Filter>
     </ClCompile>
     <ClCompile Include="..\src\bg2e\render\vulkan\PhysicalDevice.cpp">
+      <Filter>Source Files\render\vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\bg2e\render\vulkan\Surface.cpp">
       <Filter>Source Files\render\vulkan</Filter>
     </ClCompile>
   </ItemGroup>

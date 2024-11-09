@@ -25,7 +25,7 @@ public:
     
     void cleanup();
 
-	inline VkInstance instance() const { return _instance; }
+	inline VkInstance handle() const { return _instance; }
 
 protected:
 	VkInstance _instance = VK_NULL_HANDLE;

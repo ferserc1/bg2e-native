@@ -39,8 +39,7 @@ void Vulkan::cleanup()
 
     vkDestroyDevice(_device, nullptr);
 
-	bg2e::render::vulkan::destroySurface(_instance.instance(), _surface, nullptr);
-
+    _surface.cleanup();
     _instance.cleanup();
 }
 
@@ -68,12 +67,13 @@ void Vulkan::createInstance()
 
 void Vulkan::createSurface()
 {
-    SDL_Vulkan_CreateSurface(_windowPtr, _instance.instance(), &_surface);
+    _surface.create(_instance, _windowPtr);
 }
 
 void Vulkan::createDevicesAndQueues()
 {
-    // TODO: Init physical device without using vk-bootstrap
+	_physicalDevice.choose(_instance, _surface);
+
 /*
     VkPhysicalDeviceVulkan13Features features13 = {};
     features13.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;
@@ -117,9 +117,9 @@ void Vulkan::createDevicesAndQueues()
 void Vulkan::createMemoryAllocator()
 {
     VmaAllocatorCreateInfo allocInfo = {};
-    allocInfo.physicalDevice = _physicalDevice;
+    allocInfo.physicalDevice = _physicalDevice.handle();
     allocInfo.device = _device;
-    allocInfo.instance = _instance.instance();
+    allocInfo.instance = _instance.handle();
     allocInfo.flags = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
     vmaCreateAllocator(&allocInfo, &_allocator);
 }
