@@ -126,6 +126,7 @@ void PhysicalDevice::choose(const Instance& instance, const Surface & surface)
 	std::vector<VkPhysicalDevice> devices(deviceCount);
     vkEnumeratePhysicalDevices(instance.handle(), &deviceCount, devices.data());
 
+    // TODO: Pick the best physical device, not only the first suitable
     for (const auto& device : devices)
     {
         if (isSuitable(device, surface))

@@ -22,6 +22,7 @@
     <ClInclude Include="..\include\bg2e\render\vulkan\common.hpp" />
     <ClInclude Include="..\include\bg2e\render\vulkan\DescriptorSet.hpp" />
     <ClInclude Include="..\include\bg2e\render\vulkan\DescriptorSetAllocator.hpp" />
+    <ClInclude Include="..\include\bg2e\render\vulkan\Device.hpp" />
     <ClInclude Include="..\include\bg2e\render\vulkan\extensions.hpp" />
     <ClInclude Include="..\include\bg2e\render\vulkan\FrameResources.hpp" />
     <ClInclude Include="..\include\bg2e\render\vulkan\Image.hpp" />
@@ -43,6 +44,7 @@
     <ClCompile Include="..\src\bg2e\render\vulkan\common.cpp" />
     <ClCompile Include="..\src\bg2e\render\vulkan\DescriptorSet.cpp" />
     <ClCompile Include="..\src\bg2e\render\vulkan\DescriptorSetAllocator.cpp" />
+    <ClCompile Include="..\src\bg2e\render\vulkan\Device.cpp" />
     <ClCompile Include="..\src\bg2e\render\vulkan\extensions.cpp" />
     <ClCompile Include="..\src\bg2e\render\vulkan\FrameResources.cpp" />
     <ClCompile Include="..\src\bg2e\render\vulkan\Image.cpp" />
