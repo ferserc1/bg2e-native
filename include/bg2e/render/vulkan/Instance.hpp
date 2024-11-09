@@ -3,6 +3,9 @@
 #include <bg2e/common.hpp>
 #include <bg2e/render/vulkan/common.hpp>
 
+#include <SDL2/SDL.h>
+
+
 #include <vector>
 
 namespace bg2e {
@@ -18,7 +21,7 @@ public:
 	inline void setApplicationName(const std::string& name) { _applicationName = name; }
 	inline const std::string& applicationName() const { return _applicationName; }
 
-	void create();
+    void create(SDL_Window *);
 
 	inline VkInstance instance() const { return _instance; }
 
@@ -28,9 +31,11 @@ protected:
 	bool _enableValidationLayers = false;
 	std::string _applicationName = "bg2 engine Vulkan Application";
 
-	std::vector<std::string> _availableInstanceExtensions;
+	std::vector<std::string> _availableExtensions;
+    std::vector<std::string> _availableLayers;
 
-	bool checkValidationLayerSupport();
+	bool checkLayerSupport();
+    bool getRequiredExtensions(SDL_Window *, std::vector<std::string>& requiredExtensions);
 };
 
 }

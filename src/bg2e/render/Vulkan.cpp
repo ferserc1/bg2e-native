@@ -64,6 +64,9 @@ bool Vulkan::newFrame()
 
 void Vulkan::createInstance()
 {
+    // TODO: Remove the rest of the code when the bg2e::render::vulkan::Instance is implemented
+    _instanceWrapper.create(_windowPtr);
+    
 #if BG2E_IS_MAC
     // Due to a bug in vk-bootstrap, it is not possible to load the dynamic rendering extension on Mac correctly.
     // There is a workaround that consists in activating the feature through vulkan 1.3, but as MoltenVK only
