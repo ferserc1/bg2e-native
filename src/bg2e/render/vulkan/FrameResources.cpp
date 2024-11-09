@@ -4,6 +4,7 @@
 
 namespace bg2e {
 namespace render {
+namespace vulkan {
 
 void FrameResources::init(VkDevice device, Command* command)
 {
@@ -52,3 +53,5 @@ void FrameResources::cleanup()
 
 }
 }
+}
+

@@ -39,7 +39,7 @@ void Vulkan::cleanup()
 
     vkDestroyDevice(_device, nullptr);
 
-	bg2e::render::destroySurface(_instance, _surface, nullptr);
+	bg2e::render::vulkan::destroySurface(_instance, _surface, nullptr);
 
     vkb::destroy_debug_utils_messenger(_instance, _debugMessenger, nullptr);
     vkDestroyInstance(_instance, nullptr);
@@ -73,7 +73,7 @@ void Vulkan::createInstance()
     // disabled for the time being.
     _debugLayers = false;
 #endif
-    auto instanceBuilder = bg2e::render::createInstanceBuilder("bg2 engine")
+    auto instanceBuilder = bg2e::render::vulkan::createInstanceBuilder("bg2 engine")
         .request_validation_layers(_debugLayers)
         .require_api_version(VK_VERSION_1_3)
         .use_default_debug_messenger()
@@ -141,7 +141,7 @@ void Vulkan::createMemoryAllocator()
 
 void Vulkan::createFrameResources()
 {
-    for (int i = 0; i < FRAME_OVERLAP; ++i)
+    for (int i = 0; i < vulkan::FRAME_OVERLAP; ++i)
     {
         _frameResources[i].init(_device, &_command);
     }
@@ -149,15 +149,15 @@ void Vulkan::createFrameResources()
 
 void Vulkan::cleanupFrameResources()
 {
-    for (int i = 0; i < FRAME_OVERLAP; ++i)
+    for (int i = 0; i < vulkan::FRAME_OVERLAP; ++i)
     {
         _frameResources[i].cleanup();
     }
 }
 
-void Vulkan::iterateFrameResources(std::function<void(FrameResources&)> cb)
+void Vulkan::iterateFrameResources(std::function<void(vulkan::FrameResources&)> cb)
 {
-    for (auto i = 0; i < FRAME_OVERLAP; ++i)
+    for (auto i = 0; i < vulkan::FRAME_OVERLAP; ++i)
     {
         cb(_frameResources[i]);
     }

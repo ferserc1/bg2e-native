@@ -7,6 +7,7 @@
 
 namespace bg2e {
 namespace render {
+namespace vulkan {
 
 class DescriptorSet;
 
@@ -47,3 +48,5 @@ protected:
 
 }
 }
+}
+

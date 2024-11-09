@@ -8,6 +8,7 @@
 
 namespace bg2e {
 namespace render {
+namespace vulkan {
 
 class Buffer;
 
@@ -111,5 +112,6 @@ protected:
     //VkDescriptorBufferInfo _bufferInfo;
     VkDescriptorSet _ds;
 };
+}
 }
 }

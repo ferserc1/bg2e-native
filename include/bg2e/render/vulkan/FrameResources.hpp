@@ -6,6 +6,7 @@
 
 namespace bg2e {
 namespace render {
+namespace vulkan {
 
 class DescriptorSetAllocator;
 
@@ -35,3 +36,5 @@ constexpr unsigned int FRAME_OVERLAP = 2;
 
 }
 }
+}
+

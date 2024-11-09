@@ -9,6 +9,8 @@ namespace render {
 
 class Vulkan;
 
+namespace vulkan {
+
 class Swapchain;
 
 class BG2E_API Image {
@@ -137,3 +139,5 @@ protected:
 
 }
 }
+}
+

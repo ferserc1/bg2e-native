@@ -28,18 +28,18 @@ public:
     inline VkPhysicalDevice physicalDevice() const { return _physicalDevice; }
     inline VkDevice device() const { return _device; }
     inline VkSurfaceKHR surface() const { return _surface; }
-    inline Swapchain& swapchain() { return _swapchain; }
-    inline const Swapchain& swapchain() const { return _swapchain; }
-    inline Command& command() { return _command; }
-    inline const Command& command() const { return _command; }
+    inline vulkan::Swapchain& swapchain() { return _swapchain; }
+    inline const vulkan::Swapchain& swapchain() const { return _swapchain; }
+    inline vulkan::Command& command() { return _command; }
+    inline const vulkan::Command& command() const { return _command; }
 
-    inline FrameResources& currentFrameResources() { return _frameResources[_currentFrame % FRAME_OVERLAP]; }
-    inline const FrameResources& currentFrameResources() const { return _frameResources[_currentFrame % FRAME_OVERLAP]; }
+    inline vulkan::FrameResources& currentFrameResources() { return _frameResources[_currentFrame % vulkan::FRAME_OVERLAP]; }
+    inline const vulkan::FrameResources& currentFrameResources() const { return _frameResources[_currentFrame % vulkan::FRAME_OVERLAP]; }
     inline uint32_t currentFrame() const { return _currentFrame; }
     inline void nextFrame() { ++_currentFrame; }
-    void iterateFrameResources(std::function<void(FrameResources&)> cb);
+    void iterateFrameResources(std::function<void(vulkan::FrameResources&)> cb);
 
-    inline CleanupManager& cleanupManager() { return _cleanupManager; }
+    inline vulkan::CleanupManager& cleanupManager() { return _cleanupManager; }
 
     inline VmaAllocator allocator() const { return _allocator; }
 
@@ -63,13 +63,13 @@ private:
     VkDevice _device = VK_NULL_HANDLE;
     VkSurfaceKHR _surface = VK_NULL_HANDLE;
 
-    Swapchain _swapchain;
-    Command _command;
+    vulkan::Swapchain _swapchain;
+    vulkan::Command _command;
 
-    FrameResources _frameResources[FRAME_OVERLAP];
+    vulkan::FrameResources _frameResources[vulkan::FRAME_OVERLAP];
     uint32_t _currentFrame = 0;
 
-    CleanupManager _cleanupManager;
+    vulkan::CleanupManager _cleanupManager;
 
     VmaAllocator _allocator = VK_NULL_HANDLE;
 

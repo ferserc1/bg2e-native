@@ -3,6 +3,7 @@
 
 namespace bg2e {
 namespace render {
+namespace vulkan {
 
 void DescriptorSetAllocator::init(Vulkan * vulkan)
 {
@@ -129,3 +130,5 @@ DescriptorSet * DescriptorSetAllocator::allocate(VkDescriptorSetLayout layout, v
 
 }
 }
+}
+

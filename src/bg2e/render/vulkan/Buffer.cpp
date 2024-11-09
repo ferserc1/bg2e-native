@@ -3,6 +3,7 @@
 
 namespace bg2e {
 namespace render {
+namespace vulkan {
 
 Buffer* Buffer::createAllocatedBuffer(
     Vulkan * vulkan,
@@ -63,3 +64,5 @@ VkDeviceAddress Buffer::deviceAddress() const
     
 }
 }
+}
+

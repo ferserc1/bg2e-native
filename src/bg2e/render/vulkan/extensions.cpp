@@ -3,6 +3,7 @@
 
 namespace bg2e {
 namespace render {
+namespace vulkan {
 
 /*
 Since the vast majority of Windows devices support Vulkan API 1.3, but MoltenVK only implements
@@ -120,3 +121,5 @@ void cmdBlitImage2(
 
 }
 }
+}
+

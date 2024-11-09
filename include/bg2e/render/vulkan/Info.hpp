@@ -6,6 +6,7 @@
 
 namespace bg2e {
 namespace render {
+namespace vulkan {
 
 class BG2E_API Info {
 public:
@@ -83,3 +84,5 @@ public:
 
 }
 }
+}
+

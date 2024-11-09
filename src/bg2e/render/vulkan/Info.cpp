@@ -3,6 +3,7 @@
 
 namespace bg2e {
 namespace render {
+namespace vulkan {
 
 VkCommandPoolCreateInfo Info::commandPoolCreateInfo(
     uint32_t queueFamilyIndex,
@@ -214,3 +215,5 @@ VkPipelineLayoutCreateInfo Info::pipelineLayoutInfo()
 
 }
 }
+}
+

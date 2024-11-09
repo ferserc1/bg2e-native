@@ -11,6 +11,7 @@
 
 namespace bg2e {
 namespace render {
+namespace vulkan {
 
 void Image::cmdTransitionImage(
     VkCommandBuffer       cmd,
@@ -385,3 +386,5 @@ void Image::cleanup()
 
 }
 }
+}
+

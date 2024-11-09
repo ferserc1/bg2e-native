@@ -7,6 +7,7 @@
 
 namespace bg2e {
 namespace render {
+namespace vulkan {
 
 void Command::init(Vulkan *vulkan, vkb::Device *bDevice)
 {
@@ -79,5 +80,6 @@ void Command::immediateSubmit(std::function<void(VkCommandBuffer cmd)>&& functio
 	VK_ASSERT(vkWaitForFences(_vulkan->device(), 1, &_immediateCmdFence, true, 9999999999));
 }
 
+}
 }
 }

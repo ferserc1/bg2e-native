@@ -22,6 +22,7 @@
 
 namespace bg2e {
 namespace render {
+namespace vulkan {
 
 void* getMappedData(VmaAllocation a)
 {
@@ -30,3 +31,5 @@ void* getMappedData(VmaAllocation a)
 
 }
 }
+}
+

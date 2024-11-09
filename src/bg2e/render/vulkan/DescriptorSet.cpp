@@ -5,6 +5,7 @@
 
 namespace bg2e {
 namespace render {
+namespace vulkan {
 
 void DescriptorSet::init(
     Vulkan * v,
@@ -106,3 +107,5 @@ void DescriptorSet::clear()
 
 }
 }
+}
+

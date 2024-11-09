@@ -3,6 +3,7 @@
 
 namespace bg2e {
 namespace render {
+namespace vulkan {
 
 void Swapchain::init(Vulkan * vulkan, uint32_t width, uint32_t height)
 {
@@ -119,4 +120,4 @@ void Swapchain::cleanup()
 
 }
 }
-
+}

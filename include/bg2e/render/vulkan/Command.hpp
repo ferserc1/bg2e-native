@@ -8,8 +8,10 @@
 
 namespace bg2e {
 namespace render {
-    
+
 class Vulkan;
+
+namespace vulkan {
 
 class BG2E_API Command {
 public:
@@ -39,5 +41,6 @@ private:
     Vulkan* _vulkan = nullptr;
 };
 
+}
 }
 }
