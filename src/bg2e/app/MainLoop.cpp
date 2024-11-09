@@ -24,7 +24,7 @@ int32_t MainLoop::run() {
         winFlags
     );
     
-    // TODO: Init vulkan
+    _vulkan.init(window);
     
     SDL_Event event;
     bool quit = false;
@@ -54,7 +54,7 @@ int32_t MainLoop::run() {
             if (event.type == SDL_WINDOWEVENT &&
                 event.window.event == SDL_WINDOWEVENT_RESIZED)
             {
-                // _vulkanData.updateSwapchainSize();
+                _vulkan.updateSwapchainSize();
             }
             
             if (event.type == SDL_MOUSEMOTION || event.type == SDL_MOUSEBUTTONDOWN || event.type == SDL_MOUSEBUTTONUP)
@@ -95,10 +95,10 @@ int32_t MainLoop::run() {
             continue;
         }
         
-        //if (_vulkanData.newFrame())
-        //{
+        if (_vulkan.newFrame())
+        {
             // _drawLoop.swapchainResized();
-        //}
+        }
         
         // _userInterface.newFrame();
         
