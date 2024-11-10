@@ -14,13 +14,14 @@
 */
 
 
+
 namespace bg2e {
 namespace render {
 namespace vulkan {
 
 // Returns the Instance Builder from vk-bootstram. Inside this function
 // we can decide if we want to use the KHR functions or the API 1.3 functions.
-vkb::InstanceBuilder createInstanceBuilder(const char* appName);
+//vkb::InstanceBuilder createInstanceBuilder(const char* appName);
 
 // VK_KHR_dynamic_rendering
 void cmdBeginRendering(

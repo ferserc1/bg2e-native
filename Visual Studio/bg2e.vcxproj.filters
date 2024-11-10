@@ -37,9 +37,6 @@
     <Filter Include="Third Party">
       <UniqueIdentifier>{bd9fb13a-b788-4600-894a-8eec789bfbb7}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Third Party\vk-bootstrap">
-      <UniqueIdentifier>{f4f3eeba-ab1d-452d-add9-4645c8e0d94f}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Header Files\bg2e\render\vulkan">
       <UniqueIdentifier>{59181b3b-f5ba-4130-a461-7a2069e7b8cb}</UniqueIdentifier>
     </Filter>
@@ -59,12 +56,6 @@
     </ClInclude>
     <ClInclude Include="..\include\bg2e\base\PlatformTools.hpp">
       <Filter>Header Files\bg2e\base</Filter>
-    </ClInclude>
-    <ClInclude Include="..\third_party\vk-bootstrap\src\VkBootstrap.h">
-      <Filter>Third Party\vk-bootstrap</Filter>
-    </ClInclude>
-    <ClInclude Include="..\third_party\vk-bootstrap\src\VkBootstrapDispatch.h">
-      <Filter>Third Party\vk-bootstrap</Filter>
     </ClInclude>
     <ClInclude Include="..\include\bg2e\render\vulkan\Buffer.hpp">
       <Filter>Header Files\bg2e\render\vulkan</Filter>
@@ -124,9 +115,6 @@
     </ClCompile>
     <ClCompile Include="..\src\bg2e\base\PlatformTools.cpp">
       <Filter>Source Files\base</Filter>
-    </ClCompile>
-    <ClCompile Include="..\third_party\vk-bootstrap\src\VkBootstrap.cpp">
-      <Filter>Third Party\vk-bootstrap</Filter>
     </ClCompile>
     <ClCompile Include="..\src\bg2e\render\vulkan\Buffer.cpp">
       <Filter>Source Files\render\vulkan</Filter>

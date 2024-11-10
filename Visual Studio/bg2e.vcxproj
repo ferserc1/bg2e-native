@@ -31,8 +31,6 @@
     <ClInclude Include="..\include\bg2e\render\vulkan\PhysicalDevice.hpp" />
     <ClInclude Include="..\include\bg2e\render\vulkan\Surface.hpp" />
     <ClInclude Include="..\include\bg2e\render\vulkan\Swapchain.hpp" />
-    <ClInclude Include="..\third_party\vk-bootstrap\src\VkBootstrap.h" />
-    <ClInclude Include="..\third_party\vk-bootstrap\src\VkBootstrapDispatch.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\bg2e\app\MainLoop.cpp" />
@@ -53,7 +51,6 @@
     <ClCompile Include="..\src\bg2e\render\vulkan\PhysicalDevice.cpp" />
     <ClCompile Include="..\src\bg2e\render\vulkan\Surface.cpp" />
     <ClCompile Include="..\src\bg2e\render\vulkan\Swapchain.cpp" />
-    <ClCompile Include="..\third_party\vk-bootstrap\src\VkBootstrap.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>

@@ -11,19 +11,19 @@ version 1.2 with most extensions (September 2024), the strategy we use is to use
 Windows and 1.2 with extensions on macOS.
 */
 
-vkb::InstanceBuilder createInstanceBuilder(const char* appName)
-{
-    vkb::InstanceBuilder builder;
-#ifdef BG2E_IS_WINDOWS
-    auto instanceBuilder = builder.set_app_name(appName)
-        .require_api_version(1, 3, 0);
-#else
-    auto instanceBuilder = builder.set_app_name(appName)
-        .require_api_version(1, 2, 0);
-#endif
-
-    return instanceBuilder;
-}
+//vkb::InstanceBuilder createInstanceBuilder(const char* appName)
+//{
+//    vkb::InstanceBuilder builder;
+//#ifdef BG2E_IS_WINDOWS
+//    auto instanceBuilder = builder.set_app_name(appName)
+//        .require_api_version(1, 3, 0);
+//#else
+//    auto instanceBuilder = builder.set_app_name(appName)
+//        .require_api_version(1, 2, 0);
+//#endif
+//
+//    return instanceBuilder;
+//}
 
 // VK_KHR_dynamic_rendering
 void cmdBeginRendering(
