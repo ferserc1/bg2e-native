@@ -1,5 +1,6 @@
 
 #include <bg2e/render/Vulkan.hpp>
+#include <bg2e/render/vulkan/extensions.hpp>
 
 #include <SDL2/SDL.h>
 #include <SDL_vulkan.h>
@@ -16,6 +17,7 @@ void Vulkan::init(SDL_Window* windowPtr)
     SDL_GetWindowSize(_windowPtr, &width, &height);
 
     createInstance();
+    vulkan::loadExtensions(_instance.handle());
     createSurface();
     createDevicesAndQueues();
     createMemoryAllocator();

@@ -19,56 +19,26 @@ namespace bg2e {
 namespace render {
 namespace vulkan {
 
-// Returns the Instance Builder from vk-bootstram. Inside this function
-// we can decide if we want to use the KHR functions or the API 1.3 functions.
-//vkb::InstanceBuilder createInstanceBuilder(const char* appName);
+void loadExtensions(VkInstance instance);
 
 // VK_KHR_dynamic_rendering
-void cmdBeginRendering(
-    VkCommandBuffer                         commandBuffer,
-    const VkRenderingInfo* pRenderingInfo);
-
-void cmdEndRendering
-(VkCommandBuffer commandBuffer);
+extern PFN_vkCmdBeginRenderingKHR      cmdBeginRendering;
+extern PFN_vkCmdEndRenderingKHR        cmdEndRendering;
 
 // VK_KHR_swapchain
-VkResult acquireNextImage(
-    VkDevice                                    device,
-    VkSwapchainKHR                              swapchain,
-    uint64_t                                    timeout,
-    VkSemaphore                                 semaphore,
-    VkFence                                     fence,
-    uint32_t* pImageIndex);
+extern PFN_vkAcquireNextImageKHR       acquireNextImage;
+extern PFN_vkQueuePresentKHR           queuePresent;
+extern PFN_vkDestroySwapchainKHR       destroySwapchain;
 
-VkResult queuePresent(
-    VkQueue                                     queue,
-    const VkPresentInfoKHR* pPresentInfo);
-
-void destroySurface(
-    VkInstance                                  instance,
-    VkSurfaceKHR                                surface,
-    const VkAllocationCallbacks* pAllocator);
-
-void destroySwapchain(
-    VkDevice                                    device,
-    VkSwapchainKHR                              swapchain,
-    const VkAllocationCallbacks* pAllocator);
+extern PFN_vkDestroySurfaceKHR         destroySurface;
 
 // VK_KHR_synchronization2
-VkResult queueSubmit2(
-    VkQueue                                     queue,
-    uint32_t                                    submitCount,
-    const VkSubmitInfo2* pSubmits,
-    VkFence                                     fence);
+extern PFN_vkQueueSubmit2KHR           queueSubmit2;
 
-void cmdPipelineBarrier2(
-    VkCommandBuffer                             commandBuffer,
-    const VkDependencyInfo* pDependencyInfo);
+extern PFN_vkCmdPipelineBarrier2       cmdPipelineBarrier2;
 
 // VK_KHR_copy_commands2
-void cmdBlitImage2(
-    VkCommandBuffer                             commandBuffer,
-    const VkBlitImageInfo2* pBlitImageInfo);
+extern PFN_vkCmdBlitImage2             cmdBlitImage2;
 
 }
 }

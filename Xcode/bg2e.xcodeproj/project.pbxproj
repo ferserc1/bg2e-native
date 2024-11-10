@@ -33,7 +33,6 @@
 		ED85B1D92CDB9A0D0039B44D /* libVkLayer_khronos_validation.dylib in Resources */ = {isa = PBXBuildFile; fileRef = ED85B1D82CDB99FB0039B44D /* libVkLayer_khronos_validation.dylib */; };
 		ED85B1FF2CDBAAEB0039B44D /* MainLoop.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED533A1A2CD7A8F700136B04 /* MainLoop.cpp */; };
 		ED85B2002CDBAAEE0039B44D /* PlatformTools.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED8688172CDAAAE200A71ADC /* PlatformTools.cpp */; };
-		ED85B20C2CDBAB060039B44D /* VkBootstrap.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED8688492CDAAB3400A71ADC /* VkBootstrap.cpp */; };
 		ED85B20E2CDBAB800039B44D /* libbg2e-native.a in Frameworks */ = {isa = PBXBuildFile; fileRef = ED85B20D2CDBAB730039B44D /* libbg2e-native.a */; };
 		ED85B20F2CDBAB940039B44D /* libMoltenVK.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = EDD357202CD924B9009C7507 /* libMoltenVK.dylib */; };
 		ED85B2102CDBAB950039B44D /* libSDL2-2.0.0.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = EDD357212CD924B9009C7507 /* libSDL2-2.0.0.dylib */; };
@@ -187,7 +186,6 @@
 		ED8688422CDAAB3400A71ADC /* twitter.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = twitter.json; sourceTree = "<group>"; };
 		ED8688442CDAAB3400A71ADC /* stb_image.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = stb_image.h; sourceTree = "<group>"; };
 		ED8688462CDAAB3400A71ADC /* tiny_obj_loader.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = tiny_obj_loader.h; sourceTree = "<group>"; };
-		ED8688492CDAAB3400A71ADC /* VkBootstrap.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = VkBootstrap.cpp; sourceTree = "<group>"; };
 		ED86884F2CDAAB7300A71ADC /* CoreFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreFoundation.framework; path = System/Library/Frameworks/CoreFoundation.framework; sourceTree = SDKROOT; };
 		EDD3571D2CD92341009C7507 /* copy_libraries.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = copy_libraries.sh; sourceTree = "<group>"; };
 		EDD357202CD924B9009C7507 /* libMoltenVK.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; path = libMoltenVK.dylib; sourceTree = "<group>"; };
@@ -517,22 +515,6 @@
 			path = tinyobj;
 			sourceTree = "<group>";
 		};
-		ED86884B2CDAAB3400A71ADC /* src */ = {
-			isa = PBXGroup;
-			children = (
-				ED8688492CDAAB3400A71ADC /* VkBootstrap.cpp */,
-			);
-			path = src;
-			sourceTree = "<group>";
-		};
-		ED86884C2CDAAB3400A71ADC /* vk-bootstrap */ = {
-			isa = PBXGroup;
-			children = (
-				ED86884B2CDAAB3400A71ADC /* src */,
-			);
-			path = "vk-bootstrap";
-			sourceTree = "<group>";
-		};
 		ED86884D2CDAAB3400A71ADC /* third_party */ = {
 			isa = PBXGroup;
 			children = (
@@ -541,7 +523,6 @@
 				ED8688432CDAAB3400A71ADC /* simdjson */,
 				ED8688452CDAAB3400A71ADC /* stb_image */,
 				ED8688472CDAAB3400A71ADC /* tinyobj */,
-				ED86884C2CDAAB3400A71ADC /* vk-bootstrap */,
 			);
 			name = third_party;
 			path = ../third_party;
@@ -750,7 +731,6 @@
 				ED21917A2CDF4E5D00123781 /* Swapchain.cpp in Sources */,
 				ED21917B2CDF4E5D00123781 /* Vulkan.cpp in Sources */,
 				ED2191A22CDFE2A200123781 /* Surface.cpp in Sources */,
-				ED85B20C2CDBAB060039B44D /* VkBootstrap.cpp in Sources */,
 				ED85B1FF2CDBAAEB0039B44D /* MainLoop.cpp in Sources */,
 				ED85B2002CDBAAEE0039B44D /* PlatformTools.cpp in Sources */,
 			);

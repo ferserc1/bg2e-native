@@ -1,123 +1,57 @@
 #include <bg2e/render/vulkan/extensions.hpp>
 #include <bg2e/base/PlatformTools.hpp>
+#include <bg2e/base/Log.hpp>
 
 namespace bg2e {
 namespace render {
 namespace vulkan {
 
-/*
-Since the vast majority of Windows devices support Vulkan API 1.3, but MoltenVK only implements
-version 1.2 with most extensions (September 2024), the strategy we use is to use API 1.3 on
-Windows and 1.2 with extensions on macOS.
-*/
+template <class T>
+T loadExtension(VkInstance instance, const char* fnName)
+{
+    auto func = (T) vkGetInstanceProcAddr(instance, fnName);
+    if (func == nullptr)
+    {
+        throw std::runtime_error(std::string("Error loading extension: ") + fnName);
+    }
+    if (base::Log::isDebug())
+    {
+        bg2e_log_debug << "Extension function loaded: " << fnName << bg2e_log_end;
+    }
+    return func;
+}
 
-//vkb::InstanceBuilder createInstanceBuilder(const char* appName)
-//{
-//    vkb::InstanceBuilder builder;
-//#ifdef BG2E_IS_WINDOWS
-//    auto instanceBuilder = builder.set_app_name(appName)
-//        .require_api_version(1, 3, 0);
-//#else
-//    auto instanceBuilder = builder.set_app_name(appName)
-//        .require_api_version(1, 2, 0);
-//#endif
-//
-//    return instanceBuilder;
-//}
+void loadExtensions(VkInstance instance)
+{
+    cmdBeginRendering = loadExtension<PFN_vkCmdBeginRenderingKHR>(instance, "vkCmdBeginRenderingKHR");
+    cmdEndRendering = loadExtension<PFN_vkCmdEndRenderingKHR>(instance, "vkCmdEndRenderingKHR");
+    acquireNextImage = loadExtension<PFN_vkAcquireNextImageKHR>(instance, "vkAcquireNextImageKHR");
+    queuePresent = loadExtension<PFN_vkQueuePresentKHR>(instance, "vkQueuePresentKHR");
+    destroySwapchain = loadExtension<PFN_vkDestroySwapchainKHR>(instance, "vkDestroySwapchainKHR");
+    destroySurface = loadExtension<PFN_vkDestroySurfaceKHR>(instance, "vkDestroySurfaceKHR");
+    queueSubmit2 = loadExtension<PFN_vkQueueSubmit2KHR>(instance, "vkQueueSubmit2KHR");
+    cmdPipelineBarrier2 = loadExtension<PFN_vkCmdPipelineBarrier2>(instance, "vkCmdPipelineBarrier2");
+    cmdBlitImage2 = loadExtension<PFN_vkCmdBlitImage2>(instance, "vkCmdBlitImage2");
+}
 
 // VK_KHR_dynamic_rendering
-void cmdBeginRendering(
-    VkCommandBuffer                         commandBuffer,
-    const VkRenderingInfo* pRenderingInfo
-) {
-#ifdef BG2E_IS_WINDOWS
-    vkCmdBeginRendering(commandBuffer, pRenderingInfo);
-#else
-    vkCmdBeginRenderingKHR(commandBuffer, pRenderingInfo);
-#endif
-}
-
-void cmdEndRendering(
-    VkCommandBuffer commandBuffer
-) {
-#ifdef BG2E_IS_WINDOWS
-    vkCmdEndRendering(commandBuffer);
-#else
-    vkCmdEndRenderingKHR(commandBuffer);
-#endif
-}
+PFN_vkCmdBeginRenderingKHR      cmdBeginRendering;
+PFN_vkCmdEndRenderingKHR        cmdEndRendering;
 
 // VK_KHR_swapchain
-VkResult acquireNextImage(
-    VkDevice                                    device,
-    VkSwapchainKHR                              swapchain,
-    uint64_t                                    timeout,
-    VkSemaphore                                 semaphore,
-    VkFence                                     fence,
-    uint32_t* pImageIndex
-) {
-    return vkAcquireNextImageKHR(device, swapchain, timeout, semaphore, fence, pImageIndex);
-}
+PFN_vkAcquireNextImageKHR       acquireNextImage;
+PFN_vkQueuePresentKHR           queuePresent;
+PFN_vkDestroySwapchainKHR       destroySwapchain;
 
-VkResult queuePresent(
-    VkQueue                                     queue,
-    const VkPresentInfoKHR* pPresentInfo
-) {
-    return vkQueuePresentKHR(queue, pPresentInfo);
-}
-
-void destroySurface(
-    VkInstance                                  instance,
-    VkSurfaceKHR                                surface,
-    const VkAllocationCallbacks* pAllocator
-) {
-    vkDestroySurfaceKHR(instance, surface, pAllocator);
-}
-
-void destroySwapchain(
-    VkDevice                                    device,
-    VkSwapchainKHR                              swapchain,
-    const VkAllocationCallbacks* pAllocator
-) {
-    vkDestroySwapchainKHR(device, swapchain, pAllocator);
-}
+PFN_vkDestroySurfaceKHR         destroySurface;
 
 // VK_KHR_synchronization2
-VkResult queueSubmit2(
-    VkQueue                                     queue,
-    uint32_t                                    submitCount,
-    const VkSubmitInfo2* pSubmits,
-    VkFence                                     fence
-) {
-#ifdef BG2E_IS_WINDOWS
-    return vkQueueSubmit2(queue, submitCount, pSubmits, fence);
-#else
-    return vkQueueSubmit2KHR(queue, submitCount, pSubmits, fence);
-#endif
-}
+PFN_vkQueueSubmit2KHR           queueSubmit2;
 
-void cmdPipelineBarrier2(
-    VkCommandBuffer                             commandBuffer,
-    const VkDependencyInfo* pDependencyInfo
-) {
-#ifdef BG2E_IS_WINDOWS
-    vkCmdPipelineBarrier2(commandBuffer, pDependencyInfo);
-#else
-    vkCmdPipelineBarrier2KHR(commandBuffer, pDependencyInfo);
-#endif
-}
+PFN_vkCmdPipelineBarrier2       cmdPipelineBarrier2;
 
 // VK_KHR_copy_commands2
-void cmdBlitImage2(
-    VkCommandBuffer                             commandBuffer,
-    const VkBlitImageInfo2* pBlitImageInfo
-) {
-#ifdef BG2E_IS_WINDOWS
-    vkCmdBlitImage2(commandBuffer, pBlitImageInfo);
-#else
-    vkCmdBlitImage2KHR(commandBuffer, pBlitImageInfo);
-#endif
-}
+PFN_vkCmdBlitImage2             cmdBlitImage2;
 
 }
 }
