@@ -38,10 +38,11 @@ public:
 		std::vector<VkSurfaceFormatKHR> formats;
 		std::vector<VkPresentModeKHR> presentModes;
 
-		static SwapChainSupportDetails getSwapChainSupport(VkPhysicalDevice device, const Surface& surface);
-		VkSurfaceFormatKHR chooseSwapSurfaceFormat(VkFormat preferredFormat);
-		VkPresentModeKHR chooseSwapPresentMode(VkPresentModeKHR preferredPresentMode, VkPresentModeKHR fallbackMode = VK_PRESENT_MODE_FIFO_KHR);
-		VkExtent2D chooseSwapExtent(const Surface& surface);
+		static SwapChainSupportDetails get(VkPhysicalDevice device, const Surface& surface);
+		VkSurfaceFormatKHR chooseSurfaceFormat(VkFormat preferredFormat) const;
+		VkPresentModeKHR choosePresentMode(VkPresentModeKHR preferredPresentMode, VkPresentModeKHR fallbackMode = VK_PRESENT_MODE_FIFO_KHR) const;
+		VkExtent2D chooseExtent(const Surface& surface) const;
+        uint32_t imageCount() const;
     };
 
     void choose(const Instance& instance, const Surface& surface);
@@ -50,6 +51,15 @@ public:
 
 	inline VkPhysicalDevice handle() const { return _device; }
 	inline bool isValid() const { return _device != VK_NULL_HANDLE; }
+    
+    inline const Surface& surface() const
+    {
+        if (!_surface)
+        {
+            throw new std::runtime_error("No physical device choosen");
+        }
+        return *_surface;
+    }
   
 protected:
 	VkPhysicalDevice _device = VK_NULL_HANDLE;

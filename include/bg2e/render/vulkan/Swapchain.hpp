@@ -2,6 +2,7 @@
 
 #include <vulkan/vulkan.h>
 #include <bg2e/render/vulkan/Image.hpp>
+#include <bg2e/render/vulkan/PhysicalDevice.hpp>
 #include <vector>
 #include <memory>
 
@@ -49,6 +50,8 @@ protected:
     Image * _depthImage;
 
     Vulkan* _vulkan = nullptr;
+    
+    void create(uint32_t, uint32_t);
 };
 
 }

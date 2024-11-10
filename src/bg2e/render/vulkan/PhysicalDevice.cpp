@@ -45,7 +45,7 @@ PhysicalDevice::QueueFamilyIndices PhysicalDevice::QueueFamilyIndices::get(VkPhy
     return result;
 }
 
-PhysicalDevice::SwapChainSupportDetails PhysicalDevice::SwapChainSupportDetails::getSwapChainSupport(VkPhysicalDevice device, const Surface & surface)
+PhysicalDevice::SwapChainSupportDetails PhysicalDevice::SwapChainSupportDetails::get(VkPhysicalDevice device, const Surface & surface)
 {
     SwapChainSupportDetails details;
 
@@ -70,7 +70,7 @@ PhysicalDevice::SwapChainSupportDetails PhysicalDevice::SwapChainSupportDetails:
     return details;
 }
 
-VkSurfaceFormatKHR PhysicalDevice::SwapChainSupportDetails::chooseSwapSurfaceFormat(VkFormat preferredFormat)
+VkSurfaceFormatKHR PhysicalDevice::SwapChainSupportDetails::chooseSurfaceFormat(VkFormat preferredFormat) const
 {
     for (const auto& availableFormat : formats)
     {
@@ -84,8 +84,10 @@ VkSurfaceFormatKHR PhysicalDevice::SwapChainSupportDetails::chooseSwapSurfaceFor
     return formats[0];
 }
 
-VkPresentModeKHR PhysicalDevice::SwapChainSupportDetails::chooseSwapPresentMode(VkPresentModeKHR preferredPresentMode, VkPresentModeKHR fallbackMode)
-{
+VkPresentModeKHR PhysicalDevice::SwapChainSupportDetails::choosePresentMode(
+    VkPresentModeKHR preferredPresentMode,
+    VkPresentModeKHR fallbackMode
+) const {
     for (const auto& availablePresentModes : presentModes)
     {
         if (availablePresentModes == VK_PRESENT_MODE_MAILBOX_KHR)
@@ -96,7 +98,7 @@ VkPresentModeKHR PhysicalDevice::SwapChainSupportDetails::chooseSwapPresentMode(
     return fallbackMode;
 }
 
-VkExtent2D PhysicalDevice::SwapChainSupportDetails::chooseSwapExtent(const Surface& surface)
+VkExtent2D PhysicalDevice::SwapChainSupportDetails::chooseExtent(const Surface& surface) const
 {
     VkExtent2D actualExtent = surface.getExtent();
 
@@ -112,6 +114,16 @@ VkExtent2D PhysicalDevice::SwapChainSupportDetails::chooseSwapExtent(const Surfa
 	);
 
     return actualExtent;
+}
+
+uint32_t PhysicalDevice::SwapChainSupportDetails::imageCount() const
+{
+    uint32_t imageCount = capabilities.minImageCount + 1;
+    if (capabilities.maxImageCount > 0 && imageCount > capabilities.maxImageCount)
+    {
+        imageCount = capabilities.maxImageCount;
+    }
+    return imageCount;
 }
 
 void PhysicalDevice::choose(const Instance& instance, const Surface & surface)
@@ -163,7 +175,7 @@ bool PhysicalDevice::isSuitable(VkPhysicalDevice device, const Surface &surface)
 	bool swapchainAdequate = false;
     if (extensionsSupported)
     {
-		SwapChainSupportDetails swapChainSupport = SwapChainSupportDetails::getSwapChainSupport(device, surface);
+		SwapChainSupportDetails swapChainSupport = SwapChainSupportDetails::get(device, surface);
 		swapchainAdequate = !swapChainSupport.formats.empty() && !swapChainSupport.presentModes.empty();
     }
 
