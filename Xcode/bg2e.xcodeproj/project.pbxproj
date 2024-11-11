@@ -146,6 +146,8 @@
 		ED2191A12CDFE2A200123781 /* Surface.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Surface.cpp; sourceTree = "<group>"; };
 		ED342CFC2CE2652B0041BE62 /* RenderLoop.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = RenderLoop.hpp; sourceTree = "<group>"; };
 		ED342CFD2CE265370041BE62 /* RenderLoop.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = RenderLoop.cpp; sourceTree = "<group>"; };
+		ED342CFF2CE28CBE0041BE62 /* Application.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Application.hpp; sourceTree = "<group>"; };
+		ED342D002CE28CD20041BE62 /* RenderLoopDelegate.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = RenderLoopDelegate.hpp; sourceTree = "<group>"; };
 		ED5339F02CD7A1E900136B04 /* example-app.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "example-app.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		ED533A152CD7A8E700136B04 /* MainLoop.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = MainLoop.hpp; sourceTree = "<group>"; };
 		ED533A172CD7A8E700136B04 /* common.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = common.hpp; sourceTree = "<group>"; };
@@ -305,6 +307,7 @@
 		ED533A162CD7A8E700136B04 /* app */ = {
 			isa = PBXGroup;
 			children = (
+				ED342CFF2CE28CBE0041BE62 /* Application.hpp */,
 				ED533A152CD7A8E700136B04 /* MainLoop.hpp */,
 			);
 			path = app;
@@ -405,6 +408,7 @@
 				ED2191872CDF4E9A00123781 /* vulkan */,
 				ED2191882CDF4E9A00123781 /* Vulkan.hpp */,
 				ED342CFC2CE2652B0041BE62 /* RenderLoop.hpp */,
+				ED342D002CE28CD20041BE62 /* RenderLoopDelegate.hpp */,
 			);
 			path = render;
 			sourceTree = "<group>";

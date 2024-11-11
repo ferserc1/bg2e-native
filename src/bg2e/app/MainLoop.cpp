@@ -26,7 +26,7 @@ int32_t MainLoop::run(app::Application * application) {
     
     _vulkan.init(window);
 
-    _renderLoop.setDelegate(std::shared_ptr<render::RenderLoopDelegate>(application->renderDelegate()));
+    _renderLoop.setDelegate(application->renderDelegate());
 	_renderLoop.init(&_vulkan);
     
     SDL_Event event;

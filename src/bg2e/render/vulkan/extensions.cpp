@@ -31,8 +31,8 @@ void loadExtensions(VkInstance instance)
     destroySwapchain = loadExtension<PFN_vkDestroySwapchainKHR>(instance, "vkDestroySwapchainKHR");
     destroySurface = loadExtension<PFN_vkDestroySurfaceKHR>(instance, "vkDestroySurfaceKHR");
     queueSubmit2 = loadExtension<PFN_vkQueueSubmit2KHR>(instance, "vkQueueSubmit2KHR");
-    cmdPipelineBarrier2 = loadExtension<PFN_vkCmdPipelineBarrier2>(instance, "vkCmdPipelineBarrier2");
-    cmdBlitImage2 = loadExtension<PFN_vkCmdBlitImage2>(instance, "vkCmdBlitImage2");
+    cmdPipelineBarrier2 = loadExtension<PFN_vkCmdPipelineBarrier2KHR>(instance, "vkCmdPipelineBarrier2KHR");
+    cmdBlitImage2 = loadExtension<PFN_vkCmdBlitImage2KHR>(instance, "vkCmdBlitImage2KHR");
 }
 
 // VK_KHR_dynamic_rendering

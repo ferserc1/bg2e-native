@@ -29,7 +29,7 @@ public:
 		const bg2e::render::vulkan::Image* colorImage,
 		const bg2e::render::vulkan::Image* depthImage,
 		bg2e::render::vulkan::FrameResources& frameResources
-	) {
+	) override {
 		using namespace bg2e::render::vulkan;
 
 		Image::cmdTransitionImage(
@@ -53,7 +53,7 @@ public:
 			cmd,
 			_colorImage->image(),
 			VK_IMAGE_LAYOUT_GENERAL,
-			VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
+			VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
 		);
 		Image::cmdTransitionImage(
 			cmd,
