@@ -19,6 +19,8 @@ void Image::cmdTransitionImage(
     VkImage               image,
     VkImageLayout         oldLayout,
     VkImageLayout         newLayout,
+    TransitionInfo        transitionInfo
+    /*
     VkImageAspectFlags    aspectMask,
     uint32_t              mipLevel,
     uint32_t              mipLevelsCount,
@@ -28,7 +30,18 @@ void Image::cmdTransitionImage(
     VkAccessFlags2        srcAccessMask,
     VkPipelineStageFlags2 dstStageMask,
     VkAccessFlags2        dstAccessMask
+    */
 ) {
+    VkImageAspectFlags    aspectMask = transitionInfo.aspectMask;
+    uint32_t              mipLevel = transitionInfo.mipLevel;
+    uint32_t              mipLevelsCount = transitionInfo.mipLevelsCount;
+    uint32_t			  baseArrayLayer = transitionInfo.baseArrayLayer;
+    uint32_t			  layerCount = transitionInfo.layerCount;
+    VkPipelineStageFlags2 srcStageMask = transitionInfo.srcStageMask;
+    VkAccessFlags2        srcAccessMask = transitionInfo.srcAccessMask;
+    VkPipelineStageFlags2 dstStageMask = transitionInfo.dstStageMask;
+    //VkAccessFlags2        dstAccessMask = transitionInfo.dstAccessMask;
+
     VkImageMemoryBarrier2 imageBarrier = {};
     imageBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2;
     imageBarrier.srcStageMask = srcStageMask;
@@ -63,6 +76,9 @@ void Image::transitionImage(
     VkImage               image,
     VkImageLayout         oldLayout,
     VkImageLayout         newLayout,
+    TransitionInfo        transitionInfo
+    
+    /*
     VkImageAspectFlags    aspectMask,
     uint32_t              mipLevel,
     uint32_t              mipLevelsCount,
@@ -72,6 +88,7 @@ void Image::transitionImage(
     VkAccessFlags2        srcAccessMask,
     VkPipelineStageFlags2 dstStageMask,
     VkAccessFlags2        dstAccessMask
+    */
 ) {
 	vulkan->command().immediateSubmit([&](VkCommandBuffer cmd) {
 		Image::cmdTransitionImage(
@@ -79,15 +96,7 @@ void Image::transitionImage(
 			image,
 			oldLayout,
 			newLayout,
-			aspectMask,
-			mipLevel,
-			mipLevelsCount,
-			baseArrayLayer,
-			layerCount,
-			srcStageMask,
-			srcAccessMask,
-			dstStageMask,
-			dstAccessMask
+            transitionInfo
 		);
 	});
 }
@@ -307,9 +316,7 @@ Image* Image::createAllocatedImage(
                     image->image(),
                     VK_IMAGE_LAYOUT_UNDEFINED,
                     VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                    aspectFlags,
-                    i,
-                    1
+                    Image::TransitionInfo( aspectFlags, i, 1 )
                 );
 
 				vkCmdBlitImage(
@@ -328,9 +335,7 @@ Image* Image::createAllocatedImage(
                     image->image(),
                     VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                     VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                    aspectFlags,
-                    i,
-                    1
+                    Image::TransitionInfo( aspectFlags, i, 1 )
                 );
             }
 
@@ -339,9 +344,7 @@ Image* Image::createAllocatedImage(
                 image->image(),
                 VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
                 VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                aspectFlags,
-                0,
-                image->mipLevels()
+                Image::TransitionInfo( aspectFlags, 0, image->mipLevels() )
             );
         }
         else

@@ -26,6 +26,7 @@
 		ED21919B2CDF8B8100123781 /* PhysicalDevice.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED21919A2CDF8B8100123781 /* PhysicalDevice.cpp */; };
 		ED21919F2CDFE28800123781 /* Device.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED21919E2CDFE28800123781 /* Device.cpp */; };
 		ED2191A22CDFE2A200123781 /* Surface.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED2191A12CDFE2A200123781 /* Surface.cpp */; };
+		ED342CFE2CE265370041BE62 /* RenderLoop.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED342CFD2CE265370041BE62 /* RenderLoop.cpp */; };
 		ED533A222CD7AAB700136B04 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED533A212CD7AAB700136B04 /* main.cpp */; };
 		ED85B1D32CDB98300039B44D /* libMoltenVK.dylib in Copy Libraries */ = {isa = PBXBuildFile; fileRef = EDD357202CD924B9009C7507 /* libMoltenVK.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		ED85B1D42CDB98320039B44D /* libSDL2-2.0.0.dylib in Copy Libraries */ = {isa = PBXBuildFile; fileRef = EDD357212CD924B9009C7507 /* libSDL2-2.0.0.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
@@ -143,13 +144,13 @@
 		ED21919E2CDFE28800123781 /* Device.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Device.cpp; sourceTree = "<group>"; };
 		ED2191A02CDFE29B00123781 /* Surface.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Surface.hpp; sourceTree = "<group>"; };
 		ED2191A12CDFE2A200123781 /* Surface.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Surface.cpp; sourceTree = "<group>"; };
+		ED342CFC2CE2652B0041BE62 /* RenderLoop.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = RenderLoop.hpp; sourceTree = "<group>"; };
+		ED342CFD2CE265370041BE62 /* RenderLoop.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = RenderLoop.cpp; sourceTree = "<group>"; };
 		ED5339F02CD7A1E900136B04 /* example-app.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "example-app.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		ED533A152CD7A8E700136B04 /* MainLoop.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = MainLoop.hpp; sourceTree = "<group>"; };
 		ED533A172CD7A8E700136B04 /* common.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = common.hpp; sourceTree = "<group>"; };
 		ED533A1A2CD7A8F700136B04 /* MainLoop.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = MainLoop.cpp; sourceTree = "<group>"; };
 		ED533A212CD7AAB700136B04 /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = main.cpp; path = ../examples/app/main.cpp; sourceTree = SOURCE_ROOT; };
-		ED85B1CE2CDB95060039B44D /* VkBootstrap.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = VkBootstrap.h; sourceTree = "<group>"; };
-		ED85B1CF2CDB95060039B44D /* VkBootstrapDispatch.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = VkBootstrapDispatch.h; sourceTree = "<group>"; };
 		ED85B1D62CDB99C30039B44D /* libVkLayer_khronos_validation.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.bundle"; path = libVkLayer_khronos_validation.dylib; sourceTree = "<group>"; };
 		ED85B1D82CDB99FB0039B44D /* libVkLayer_khronos_validation.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.bundle"; name = libVkLayer_khronos_validation.dylib; path = VulkanSDK/lib/libVkLayer_khronos_validation.dylib; sourceTree = "<group>"; };
 		ED85B1DD2CDBA4E00039B44D /* Metal.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Metal.framework; path = System/Library/Frameworks/Metal.framework; sourceTree = SDKROOT; };
@@ -324,8 +325,6 @@
 			isa = PBXGroup;
 			children = (
 				ED533A182CD7A8E700136B04 /* bg2e */,
-				ED85B1CE2CDB95060039B44D /* VkBootstrap.h */,
-				ED85B1CF2CDB95060039B44D /* VkBootstrapDispatch.h */,
 			);
 			name = include;
 			path = ../include;
@@ -405,6 +404,7 @@
 			children = (
 				ED2191872CDF4E9A00123781 /* vulkan */,
 				ED2191882CDF4E9A00123781 /* Vulkan.hpp */,
+				ED342CFC2CE2652B0041BE62 /* RenderLoop.hpp */,
 			);
 			path = render;
 			sourceTree = "<group>";
@@ -423,6 +423,7 @@
 			children = (
 				ED21916F2CDF4E4700123781 /* vulkan */,
 				ED2191702CDF4E4C00123781 /* Vulkan.cpp */,
+				ED342CFD2CE265370041BE62 /* RenderLoop.cpp */,
 			);
 			path = render;
 			sourceTree = "<group>";
@@ -728,6 +729,7 @@
 				ED2191782CDF4E5D00123781 /* Image.cpp in Sources */,
 				ED2191792CDF4E5D00123781 /* Info.cpp in Sources */,
 				ED2191992CDF678900123781 /* Log.cpp in Sources */,
+				ED342CFE2CE265370041BE62 /* RenderLoop.cpp in Sources */,
 				ED21917A2CDF4E5D00123781 /* Swapchain.cpp in Sources */,
 				ED21917B2CDF4E5D00123781 /* Vulkan.cpp in Sources */,
 				ED2191A22CDFE2A200123781 /* Surface.cpp in Sources */,

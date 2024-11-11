@@ -15,6 +15,41 @@ class Swapchain;
 
 class BG2E_API Image {
 public:
+    struct TransitionInfo {
+        TransitionInfo(
+            VkImageAspectFlags    aspectMask = 0,
+            uint32_t              mipLevel = 0,
+            uint32_t              mipLevelsCount = VK_REMAINING_MIP_LEVELS,
+            uint32_t			  baseArrayLayer = 0,
+            uint32_t			  layerCount = VK_REMAINING_ARRAY_LAYERS,
+            VkPipelineStageFlags2 srcStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,
+            VkAccessFlags2        srcAccessMask = VK_ACCESS_2_MEMORY_WRITE_BIT,
+            VkPipelineStageFlags2 dstStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,
+            VkAccessFlags2        dstAccessMask = VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT
+        )
+            :aspectMask { aspectMask }
+            ,mipLevel { mipLevel }
+            ,mipLevelsCount { mipLevelsCount }
+            ,baseArrayLayer { baseArrayLayer }
+            ,layerCount { layerCount }
+            ,srcStageMask { srcStageMask }
+            ,srcAccessMask { srcAccessMask }
+            ,dstStageMask { dstStageMask }
+            ,dstAccessMask { dstAccessMask }
+        {}
+        
+        
+        VkImageAspectFlags    aspectMask = 0;
+        uint32_t              mipLevel = 0;
+        uint32_t              mipLevelsCount = VK_REMAINING_MIP_LEVELS;
+        uint32_t			  baseArrayLayer = 0;
+        uint32_t			  layerCount = VK_REMAINING_ARRAY_LAYERS;
+        VkPipelineStageFlags2 srcStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+        VkAccessFlags2        srcAccessMask = VK_ACCESS_2_MEMORY_WRITE_BIT;
+        VkPipelineStageFlags2 dstStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+        VkAccessFlags2        dstAccessMask = VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT;
+    };
+    
     /*
      *   Add an image transition command to the command buffer to switch from one layout
      *   to another.
@@ -29,6 +64,8 @@ public:
         VkImage               image,
         VkImageLayout         oldLayout,
         VkImageLayout         newLayout,
+        TransitionInfo        transitionInfo = TransitionInfo()
+        /*
         VkImageAspectFlags    aspectMask = 0,
         uint32_t              mipLevel = 0,
         uint32_t              mipLevelsCount = VK_REMAINING_MIP_LEVELS,
@@ -38,6 +75,7 @@ public:
         VkAccessFlags2        srcAccessMask = VK_ACCESS_2_MEMORY_WRITE_BIT,
         VkPipelineStageFlags2 dstStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,
         VkAccessFlags2        dstAccessMask = VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT
+        */
     );
 
     /*
@@ -51,6 +89,8 @@ public:
         VkImage               image,
         VkImageLayout         oldLayout,
         VkImageLayout         newLayout,
+        TransitionInfo        transitionInfo = TransitionInfo()
+        /*
         VkImageAspectFlags    aspectMask = 0,
         uint32_t              mipLevel = 0,
         uint32_t              mipLevelsCount = VK_REMAINING_MIP_LEVELS,
@@ -60,6 +100,7 @@ public:
         VkAccessFlags2        srcAccessMask = VK_ACCESS_2_MEMORY_WRITE_BIT,
         VkPipelineStageFlags2 dstStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,
         VkAccessFlags2        dstAccessMask = VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT
+        */
     );
 
     /*
