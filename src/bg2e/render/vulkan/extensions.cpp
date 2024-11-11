@@ -16,13 +16,14 @@ T loadExtension(VkInstance instance, const char* fnName)
     }
     if (base::Log::isDebug())
     {
-        bg2e_log_debug << "Extension function loaded: " << fnName << bg2e_log_end;
+        bg2e_log_debug << "\t" << fnName << bg2e_log_end;
     }
     return func;
 }
 
 void loadExtensions(VkInstance instance)
 {
+    bg2e_log_debug << "Loading extension functions:" << bg2e_log_end;
     cmdBeginRendering = loadExtension<PFN_vkCmdBeginRenderingKHR>(instance, "vkCmdBeginRenderingKHR");
     cmdEndRendering = loadExtension<PFN_vkCmdEndRenderingKHR>(instance, "vkCmdEndRenderingKHR");
     acquireNextImage = loadExtension<PFN_vkAcquireNextImageKHR>(instance, "vkAcquireNextImageKHR");
