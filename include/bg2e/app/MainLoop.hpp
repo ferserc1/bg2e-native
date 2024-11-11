@@ -4,6 +4,7 @@
 #include <bg2e/render/Vulkan.hpp>
 #include <bg2e/render/RenderLoop.hpp>
 #include <bg2e/app/Application.hpp>
+#include <bg2e/app/InputManager.hpp>
 
 namespace bg2e {
 namespace app {
@@ -22,6 +23,7 @@ protected:
     
     render::Vulkan _vulkan;
 	render::RenderLoop _renderLoop;
+	app::InputManager _inputManager;
 };
 
 }
