@@ -10,7 +10,7 @@
 namespace bg2e {
 namespace app {
 
-int32_t MainLoop::run() {
+int32_t MainLoop::run(app::Application * application) {
 	SDL_Init(SDL_INIT_VIDEO);
     
     SDL_WindowFlags winFlags = SDL_WindowFlags(SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE);
@@ -25,6 +25,9 @@ int32_t MainLoop::run() {
     );
     
     _vulkan.init(window);
+
+    _renderLoop.setDelegate(std::shared_ptr<render::RenderLoopDelegate>(application->renderDelegate()));
+	_renderLoop.init(&_vulkan);
     
     SDL_Event event;
     bool quit = false;
@@ -97,12 +100,12 @@ int32_t MainLoop::run() {
         
         if (_vulkan.newFrame())
         {
-            // _drawLoop.swapchainResized();
+            _renderLoop.swapchainResized();
         }
         
         // _userInterface.newFrame();
         
-        // _drawLoop.acquireAndPresent();
+        _renderLoop.acquireAndPresent();
     }
 
     // Cleanup UI an vulkan resources

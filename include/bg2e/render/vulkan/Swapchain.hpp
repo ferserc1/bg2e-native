@@ -20,7 +20,7 @@ public:
     void resize(uint32_t width, uint32_t height);
     void cleanup();
     
-    inline VkSwapchainKHR swapchain() const { return _swapchain; }
+    inline VkSwapchainKHR handle() const { return _swapchain; }
     inline VkFormat imageFormat() const { return _imageFormat; }
     inline const std::vector<VkImage>& images() const { return _images; }
     inline const std::vector<VkImageView>& imageViews() const { return _imageViews; }

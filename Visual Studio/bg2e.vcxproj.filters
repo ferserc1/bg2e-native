@@ -105,6 +105,15 @@
     <ClInclude Include="..\include\bg2e\render\vulkan\Device.hpp">
       <Filter>Header Files\bg2e\render\vulkan</Filter>
     </ClInclude>
+    <ClInclude Include="..\include\bg2e\render\RenderLoop.hpp">
+      <Filter>Header Files\bg2e\render</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\render\RenderLoopDelegate.hpp">
+      <Filter>Header Files\bg2e\render</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\app\Application.hpp">
+      <Filter>Header Files\bg2e\app</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\bg2e\app\MainLoop.cpp">
@@ -160,6 +169,9 @@
     </ClCompile>
     <ClCompile Include="..\src\bg2e\render\vulkan\Device.cpp">
       <Filter>Source Files\render\vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\bg2e\render\RenderLoop.cpp">
+      <Filter>Source Files\render</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
