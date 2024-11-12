@@ -245,5 +245,8 @@
     <ClCompile Include="..\third_party\imgui\imgui_widgets.cpp">
       <Filter>Third Party\imgui</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\bg2e\ui\UserInterfaceDelegate.cpp">
+      <Filter>Source Files\ui</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

@@ -92,10 +92,10 @@ void RenderLoop::acquireAndPresent()
 
     // TODO: Instead of using the swapchain image to render the user interface, we could use another image
     // and combine it with the swap chain here
-    //_userInterface->draw(
-    //    cmd,
-    //    swapchainImage->imageView()
-    //);
+	if (_beforeEndCommandBufferCallback)
+	{
+		_beforeEndCommandBufferCallback(cmd, swapchainImage->imageView());
+	}
 
     vulkan::Image::cmdTransitionImage(
         cmd,

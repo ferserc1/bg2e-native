@@ -25,11 +25,16 @@ int32_t MainLoop::run(app::Application * application) {
     );
     
     _vulkan.init(window);
-
+	_userInterface.setDelegate(application->uiDelegate());
+	_userInterface.init(&_vulkan);
     _renderLoop.setDelegate(application->renderDelegate());
 	_renderLoop.init(&_vulkan);
 
 	_inputManager.setDelegate(application->inputDelegate());
+
+	_renderLoop.beforEndCommandBuffer([&](VkCommandBuffer cmd, VkImageView targetImageView) {
+		_userInterface.draw(cmd, targetImageView);
+	});
     
     SDL_Event event;
     bool quit = false;
@@ -104,7 +109,7 @@ int32_t MainLoop::run(app::Application * application) {
                 _inputManager.mouseWheel(event.wheel.x, event.wheel.y);
             }
             
-            // _userInterface.processEvent(&event);
+            _userInterface.processEvent(&event);
         }
         
         if (stopRendering)
@@ -118,13 +123,13 @@ int32_t MainLoop::run(app::Application * application) {
             _renderLoop.swapchainResized();
         }
         
-        // _userInterface.newFrame();
+        _userInterface.newFrame();
         
         _renderLoop.acquireAndPresent();
     }
 
-    // Cleanup UI an vulkan resources
-
+	_userInterface.cleanup();
+    _vulkan.cleanup();
     SDL_DestroyWindow(window);
     
     return 0;

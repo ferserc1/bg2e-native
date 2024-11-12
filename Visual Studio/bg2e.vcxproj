@@ -69,6 +69,7 @@
     <ClCompile Include="..\src\bg2e\render\vulkan\Surface.cpp" />
     <ClCompile Include="..\src\bg2e\render\vulkan\Swapchain.cpp" />
     <ClCompile Include="..\src\bg2e\ui\UserInterface.cpp" />
+    <ClCompile Include="..\src\bg2e\ui\UserInterfaceDelegate.cpp" />
     <ClCompile Include="..\third_party\imgui\imgui.cpp" />
     <ClCompile Include="..\third_party\imgui\imgui_demo.cpp" />
     <ClCompile Include="..\third_party\imgui\imgui_draw.cpp" />

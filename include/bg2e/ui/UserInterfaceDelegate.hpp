@@ -7,10 +7,10 @@ namespace ui {
 
 class UserInterface;
 
-class UserInterfaceDelegate {
+class BG2E_API UserInterfaceDelegate {
 public:
     virtual void init(bg2e::render::Vulkan*, UserInterface*) {}
-    virtual void drawUI() {}
+    virtual void drawUI();
 };
 
 }

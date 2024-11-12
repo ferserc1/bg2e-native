@@ -1,11 +1,13 @@
 
 #include <bg2e/app/MainLoop.hpp>
 #include <bg2e/app/Application.hpp>
+#include <bg2e/ui/UserInterface.hpp>
 #include <bg2e/render/vulkan/Image.hpp>
 #include <bg2e/base/Log.hpp>
 
 class ClearScreenDelegate : public bg2e::render::RenderLoopDelegate,
-	public bg2e::app::InputDelegate
+	public bg2e::app::InputDelegate,
+	public bg2e::ui::UserInterfaceDelegate
 {
 public:
 	void init(bg2e::render::Vulkan* vulkan) override
@@ -132,8 +134,9 @@ public:
 	void init(int argc, char** argv) override
 	{
 		auto delegate = std::shared_ptr<ClearScreenDelegate>(new ClearScreenDelegate());
-		_renderDelegate = delegate;
-		_inputDelegate = delegate;
+		setRenderDelegate(delegate);
+		setInputDelegate(delegate);
+		setUiDelegate(delegate);
 	}
 };
 
