@@ -26,6 +26,16 @@
 		ED21919B2CDF8B8100123781 /* PhysicalDevice.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED21919A2CDF8B8100123781 /* PhysicalDevice.cpp */; };
 		ED21919F2CDFE28800123781 /* Device.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED21919E2CDFE28800123781 /* Device.cpp */; };
 		ED2191A22CDFE2A200123781 /* Surface.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED2191A12CDFE2A200123781 /* Surface.cpp */; };
+		ED2D565D2CE38EFE006EF072 /* InputManager.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED2D565C2CE38EFE006EF072 /* InputManager.cpp */; };
+		ED2D56612CE38F07006EF072 /* UserInterfaceDelegate.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED2D565F2CE38F07006EF072 /* UserInterfaceDelegate.cpp */; };
+		ED2D56622CE38F07006EF072 /* UserInterface.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED2D565E2CE38F07006EF072 /* UserInterface.cpp */; };
+		ED2D56632CE38F37006EF072 /* imgui.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED8688312CDAAB3400A71ADC /* imgui.cpp */; };
+		ED2D56642CE38F37006EF072 /* imgui_demo.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED8688322CDAAB3400A71ADC /* imgui_demo.cpp */; };
+		ED2D56652CE38F37006EF072 /* imgui_draw.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED8688332CDAAB3400A71ADC /* imgui_draw.cpp */; };
+		ED2D56662CE38F37006EF072 /* imgui_impl_sdl2.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED8688352CDAAB3400A71ADC /* imgui_impl_sdl2.cpp */; };
+		ED2D56672CE38F37006EF072 /* imgui_impl_vulkan.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED8688372CDAAB3400A71ADC /* imgui_impl_vulkan.cpp */; };
+		ED2D56682CE38F41006EF072 /* imgui_tables.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED8688392CDAAB3400A71ADC /* imgui_tables.cpp */; };
+		ED2D56692CE38F41006EF072 /* imgui_widgets.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED86883A2CDAAB3400A71ADC /* imgui_widgets.cpp */; };
 		ED342CFE2CE265370041BE62 /* RenderLoop.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED342CFD2CE265370041BE62 /* RenderLoop.cpp */; };
 		ED533A222CD7AAB700136B04 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED533A212CD7AAB700136B04 /* main.cpp */; };
 		ED85B1D32CDB98300039B44D /* libMoltenVK.dylib in Copy Libraries */ = {isa = PBXBuildFile; fileRef = EDD357202CD924B9009C7507 /* libMoltenVK.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
@@ -144,6 +154,14 @@
 		ED21919E2CDFE28800123781 /* Device.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Device.cpp; sourceTree = "<group>"; };
 		ED2191A02CDFE29B00123781 /* Surface.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Surface.hpp; sourceTree = "<group>"; };
 		ED2191A12CDFE2A200123781 /* Surface.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Surface.cpp; sourceTree = "<group>"; };
+		ED2D56562CE38ED6006EF072 /* UserInterface.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = UserInterface.hpp; sourceTree = "<group>"; };
+		ED2D56572CE38ED6006EF072 /* UserInterfaceDelegate.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = UserInterfaceDelegate.hpp; sourceTree = "<group>"; };
+		ED2D56592CE38EE3006EF072 /* InputDelegate.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = InputDelegate.hpp; sourceTree = "<group>"; };
+		ED2D565A2CE38EE3006EF072 /* InputManager.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = InputManager.hpp; sourceTree = "<group>"; };
+		ED2D565B2CE38EE3006EF072 /* KeyEvent.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = KeyEvent.hpp; sourceTree = "<group>"; };
+		ED2D565C2CE38EFE006EF072 /* InputManager.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = InputManager.cpp; sourceTree = "<group>"; };
+		ED2D565E2CE38F07006EF072 /* UserInterface.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = UserInterface.cpp; sourceTree = "<group>"; };
+		ED2D565F2CE38F07006EF072 /* UserInterfaceDelegate.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = UserInterfaceDelegate.cpp; sourceTree = "<group>"; };
 		ED342CFC2CE2652B0041BE62 /* RenderLoop.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = RenderLoop.hpp; sourceTree = "<group>"; };
 		ED342CFD2CE265370041BE62 /* RenderLoop.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = RenderLoop.cpp; sourceTree = "<group>"; };
 		ED342CFF2CE28CBE0041BE62 /* Application.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Application.hpp; sourceTree = "<group>"; };
@@ -272,6 +290,24 @@
 			path = vulkan;
 			sourceTree = "<group>";
 		};
+		ED2D56582CE38ED6006EF072 /* ui */ = {
+			isa = PBXGroup;
+			children = (
+				ED2D56562CE38ED6006EF072 /* UserInterface.hpp */,
+				ED2D56572CE38ED6006EF072 /* UserInterfaceDelegate.hpp */,
+			);
+			path = ui;
+			sourceTree = "<group>";
+		};
+		ED2D56602CE38F07006EF072 /* ui */ = {
+			isa = PBXGroup;
+			children = (
+				ED2D565E2CE38F07006EF072 /* UserInterface.cpp */,
+				ED2D565F2CE38F07006EF072 /* UserInterfaceDelegate.cpp */,
+			);
+			path = ui;
+			sourceTree = "<group>";
+		};
 		ED5339CF2CD7A11E00136B04 = {
 			isa = PBXGroup;
 			children = (
@@ -308,6 +344,9 @@
 			isa = PBXGroup;
 			children = (
 				ED342CFF2CE28CBE0041BE62 /* Application.hpp */,
+				ED2D56592CE38EE3006EF072 /* InputDelegate.hpp */,
+				ED2D565A2CE38EE3006EF072 /* InputManager.hpp */,
+				ED2D565B2CE38EE3006EF072 /* KeyEvent.hpp */,
 				ED533A152CD7A8E700136B04 /* MainLoop.hpp */,
 			);
 			path = app;
@@ -320,6 +359,7 @@
 				ED8688122CDAAABE00A71ADC /* base */,
 				ED533A172CD7A8E700136B04 /* common.hpp */,
 				ED8688162CDAAACC00A71ADC /* render */,
+				ED2D56582CE38ED6006EF072 /* ui */,
 			);
 			path = bg2e;
 			sourceTree = "<group>";
@@ -336,6 +376,7 @@
 		ED533A1B2CD7A8F700136B04 /* app */ = {
 			isa = PBXGroup;
 			children = (
+				ED2D565C2CE38EFE006EF072 /* InputManager.cpp */,
 				ED533A1A2CD7A8F700136B04 /* MainLoop.cpp */,
 			);
 			path = app;
@@ -347,6 +388,7 @@
 				ED533A1B2CD7A8F700136B04 /* app */,
 				ED8688182CDAAAE200A71ADC /* base */,
 				ED86881D2CDAAAE900A71ADC /* render */,
+				ED2D56602CE38F07006EF072 /* ui */,
 			);
 			path = bg2e;
 			sourceTree = "<group>";
@@ -720,10 +762,18 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				ED2D56682CE38F41006EF072 /* imgui_tables.cpp in Sources */,
+				ED2D56692CE38F41006EF072 /* imgui_widgets.cpp in Sources */,
+				ED2D56632CE38F37006EF072 /* imgui.cpp in Sources */,
+				ED2D56642CE38F37006EF072 /* imgui_demo.cpp in Sources */,
+				ED2D56652CE38F37006EF072 /* imgui_draw.cpp in Sources */,
+				ED2D56662CE38F37006EF072 /* imgui_impl_sdl2.cpp in Sources */,
+				ED2D56672CE38F37006EF072 /* imgui_impl_vulkan.cpp in Sources */,
 				ED2191712CDF4E5D00123781 /* Buffer.cpp in Sources */,
 				ED21919F2CDFE28800123781 /* Device.cpp in Sources */,
 				ED2191722CDF4E5D00123781 /* Command.cpp in Sources */,
 				ED2191732CDF4E5D00123781 /* common.cpp in Sources */,
+				ED2D565D2CE38EFE006EF072 /* InputManager.cpp in Sources */,
 				ED2191742CDF4E5D00123781 /* DescriptorSet.cpp in Sources */,
 				ED21919B2CDF8B8100123781 /* PhysicalDevice.cpp in Sources */,
 				ED2191752CDF4E5D00123781 /* DescriptorSetAllocator.cpp in Sources */,
@@ -738,6 +788,8 @@
 				ED21917B2CDF4E5D00123781 /* Vulkan.cpp in Sources */,
 				ED2191A22CDFE2A200123781 /* Surface.cpp in Sources */,
 				ED85B1FF2CDBAAEB0039B44D /* MainLoop.cpp in Sources */,
+				ED2D56612CE38F07006EF072 /* UserInterfaceDelegate.cpp in Sources */,
+				ED2D56622CE38F07006EF072 /* UserInterface.cpp in Sources */,
 				ED85B2002CDBAAEE0039B44D /* PlatformTools.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -970,7 +1022,7 @@
 					"$(VULKAN_SDK)/include/SDL2",
 					"$(VULKAN_SDK)/include/VMA",
 					"$(VULKAN_SDK)/include",
-					"$(PROJECT_DIR)/../third_party/**",
+					"$(PROJECT_DIR)/../third_party",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -990,7 +1042,7 @@
 					"$(VULKAN_SDK)/include/SDL2",
 					"$(VULKAN_SDK)/include/VMA",
 					"$(VULKAN_SDK)/include",
-					"$(PROJECT_DIR)/../third_party/**",
+					"$(PROJECT_DIR)/../third_party",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				PRODUCT_NAME = "$(TARGET_NAME)";
