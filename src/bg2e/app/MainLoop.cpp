@@ -28,6 +28,8 @@ int32_t MainLoop::run(app::Application * application) {
 
     _renderLoop.setDelegate(application->renderDelegate());
 	_renderLoop.init(&_vulkan);
+
+	_inputManager.setDelegate(application->inputDelegate());
     
     SDL_Event event;
     bool quit = false;
@@ -59,6 +61,19 @@ int32_t MainLoop::run(app::Application * application) {
             {
                 _vulkan.updateSwapchainSize();
             }
+
+			if (event.type == SDL_KEYUP || event.type == SDL_KEYDOWN)
+			{
+				auto key = event.key.keysym.sym;
+                if (event.key.state == SDL_PRESSED)
+                {
+					_inputManager.keyDown(KeyEvent::fromSDLEvent(event));
+                }
+                else if (event.key.state == SDL_RELEASED)
+                {
+                    _inputManager.keyUp(KeyEvent::fromSDLEvent(event));
+                }
+			}
             
             if (event.type == SDL_MOUSEMOTION || event.type == SDL_MOUSEBUTTONDOWN || event.type == SDL_MOUSEBUTTONUP)
             {
@@ -72,21 +87,21 @@ int32_t MainLoop::run(app::Application * application) {
                         1 : 2;
                     if (event.button.state == SDL_PRESSED)
                     {
-                        //_inputManager.mouseButtonDown(button, x, y);
+                        _inputManager.mouseButtonDown(button, x, y);
                     }
                     else
                     {
-                        //_inputManager.mouseButtonUp(button, x, y);
+                        _inputManager.mouseButtonUp(button, x, y);
                     }
                 }
                 else
                 {
-                    // _inputManager.mouseMove(x, y);
+                    _inputManager.mouseMove(x, y);
                 }
             }
             if (event.type == SDL_MOUSEWHEEL)
             {
-                // _inputManager.mouseWheel(event.wheel.x, event.wheel.y);
+                _inputManager.mouseWheel(event.wheel.x, event.wheel.y);
             }
             
             // _userInterface.processEvent(&event);

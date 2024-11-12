@@ -12,6 +12,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\include\bg2e\app\Application.hpp" />
+    <ClInclude Include="..\include\bg2e\app\InputDelegate.hpp" />
+    <ClInclude Include="..\include\bg2e\app\InputManager.hpp" />
+    <ClInclude Include="..\include\bg2e\app\KeyEvent.hpp" />
     <ClInclude Include="..\include\bg2e\app\MainLoop.hpp" />
     <ClInclude Include="..\include\bg2e\base\Log.hpp" />
     <ClInclude Include="..\include\bg2e\base\PlatformTools.hpp" />
@@ -34,8 +37,18 @@
     <ClInclude Include="..\include\bg2e\render\vulkan\PhysicalDevice.hpp" />
     <ClInclude Include="..\include\bg2e\render\vulkan\Surface.hpp" />
     <ClInclude Include="..\include\bg2e\render\vulkan\Swapchain.hpp" />
+    <ClInclude Include="..\include\bg2e\ui\UserInterface.hpp" />
+    <ClInclude Include="..\third_party\imgui\imconfig.h" />
+    <ClInclude Include="..\third_party\imgui\imgui.h" />
+    <ClInclude Include="..\third_party\imgui\imgui_impl_sdl2.h" />
+    <ClInclude Include="..\third_party\imgui\imgui_impl_vulkan.h" />
+    <ClInclude Include="..\third_party\imgui\imgui_internal.h" />
+    <ClInclude Include="..\third_party\imgui\imstb_rectpack.h" />
+    <ClInclude Include="..\third_party\imgui\imstb_textedit.h" />
+    <ClInclude Include="..\third_party\imgui\imstb_truetype.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\src\bg2e\app\InputManager.cpp" />
     <ClCompile Include="..\src\bg2e\app\MainLoop.cpp" />
     <ClCompile Include="..\src\bg2e\base\Log.cpp" />
     <ClCompile Include="..\src\bg2e\base\PlatformTools.cpp" />
@@ -55,6 +68,14 @@
     <ClCompile Include="..\src\bg2e\render\vulkan\PhysicalDevice.cpp" />
     <ClCompile Include="..\src\bg2e\render\vulkan\Surface.cpp" />
     <ClCompile Include="..\src\bg2e\render\vulkan\Swapchain.cpp" />
+    <ClCompile Include="..\src\bg2e\ui\UserInterface.cpp" />
+    <ClCompile Include="..\third_party\imgui\imgui.cpp" />
+    <ClCompile Include="..\third_party\imgui\imgui_demo.cpp" />
+    <ClCompile Include="..\third_party\imgui\imgui_draw.cpp" />
+    <ClCompile Include="..\third_party\imgui\imgui_impl_sdl2.cpp" />
+    <ClCompile Include="..\third_party\imgui\imgui_impl_vulkan.cpp" />
+    <ClCompile Include="..\third_party\imgui\imgui_tables.cpp" />
+    <ClCompile Include="..\third_party\imgui\imgui_widgets.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
@@ -92,12 +113,12 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <OutDir>$(SolutionDir)..\bin\</OutDir>
     <TargetName>$(ProjectName)d</TargetName>
-    <IncludePath>$(SolutionDir)..\include;$(VULKAN_SDK)\Include;$(VULKAN_SDK)\Include\SDL2;$(VULKAN_SDK)\Include\glm;$(VULKAN_SDK)\Include\vma;$(SolutionDir)..\third_party\vk-bootstrap\src;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)..\include;$(VULKAN_SDK)\Include;$(VULKAN_SDK)\Include\SDL2;$(VULKAN_SDK)\Include\glm;$(VULKAN_SDK)\Include\vma;$(SolutionDir)..\third_party\imgui;$(IncludePath)</IncludePath>
     <LibraryPath>$(VULKAN_SDK)\Lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <OutDir>$(SolutionDir)..\bin\</OutDir>
-    <IncludePath>$(SolutionDir)..\include;$(VULKAN_SDK)\Include;$(VULKAN_SDK)\Include\SDL2;$(VULKAN_SDK)\Include\glm;$(VULKAN_SDK)\Include\vma;$(SolutionDir)..\third_party\vk-bootstrap\src;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)..\include;$(VULKAN_SDK)\Include;$(VULKAN_SDK)\Include\SDL2;$(VULKAN_SDK)\Include\glm;$(VULKAN_SDK)\Include\vma;$(SolutionDir)..\third_party\imgui;$(IncludePath)</IncludePath>
     <LibraryPath>$(VULKAN_SDK)\Lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">

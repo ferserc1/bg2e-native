@@ -2,8 +2,11 @@
 #include <bg2e/app/MainLoop.hpp>
 #include <bg2e/app/Application.hpp>
 #include <bg2e/render/vulkan/Image.hpp>
+#include <bg2e/base/Log.hpp>
 
-class ClearScreenDelegate : public bg2e::render::RenderLoopDelegate {
+class ClearScreenDelegate : public bg2e::render::RenderLoopDelegate,
+	public bg2e::app::InputDelegate
+{
 public:
 	void init(bg2e::render::Vulkan* vulkan) override
 	{
@@ -71,6 +74,36 @@ public:
 		return VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
 	}
 
+	void keyDown(const bg2e::app::KeyEvent& event) override
+	{
+		bg2e_log_debug << "Key down: " << event.key() << bg2e_log_end;
+	}
+
+	void keyUp(const bg2e::app::KeyEvent& event) override
+	{
+		bg2e_log_debug << "Key up: " << event.key() << bg2e_log_end;
+	}
+
+	void mouseMove(int x, int y) override
+	{
+		bg2e_log_debug << "Mouse move: " << x << ", " << y << bg2e_log_end;
+	}
+
+	void mouseButtonDown(int button, int x, int y) override
+	{
+		bg2e_log_debug << "Mouse button down: " << button << " at " << x << ", " << y << bg2e_log_end;
+	}
+
+	void mouseButtonUp(int button, int x, int y) override
+	{
+		bg2e_log_debug << "Mouse button up: " << button << " at " << x << ", " << y << bg2e_log_end;
+	}
+
+	void mouseWheel(int deltaX, int deltaY) override
+	{
+		bg2e_log_debug << "Mouse wheel: " << deltaX << ", " << deltaY << bg2e_log_end;
+	}
+
 protected:
 	std::shared_ptr<bg2e::render::vulkan::Image> _colorImage;
 
@@ -98,7 +131,9 @@ class MyApplication : public bg2e::app::Application {
 public:
 	void init(int argc, char** argv) override
 	{
-		_renderDelegate = std::shared_ptr<bg2e::render::RenderLoopDelegate>(new ClearScreenDelegate());
+		auto delegate = std::shared_ptr<ClearScreenDelegate>(new ClearScreenDelegate());
+		_renderDelegate = delegate;
+		_inputDelegate = delegate;
 	}
 };
 

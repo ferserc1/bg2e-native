@@ -2,12 +2,13 @@
 
 #include <iostream>
 
+#include <bg2e/common.hpp>
 #include <bg2e/base/PlatformTools.hpp>
 
 namespace bg2e {
 namespace base {
 
-class Log {
+class BG2E_API Log {
 public:
     enum class Level {
         Info = 0,

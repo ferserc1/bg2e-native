@@ -43,6 +43,15 @@
     <Filter Include="Source Files\render\vulkan">
       <UniqueIdentifier>{7994a235-295b-4a6a-a035-7a2578c3f992}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\ui">
+      <UniqueIdentifier>{35bdbc01-d76b-4e3a-8f8d-abd4e183b0ab}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\bg2e\ui">
+      <UniqueIdentifier>{efb507ba-9548-4e3b-8b36-62a4891a7172}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Third Party\imgui">
+      <UniqueIdentifier>{736c3a8d-0e22-476a-8755-f5d9f4d22322}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\include\bg2e\common.hpp">
@@ -114,6 +123,42 @@
     <ClInclude Include="..\include\bg2e\app\Application.hpp">
       <Filter>Header Files\bg2e\app</Filter>
     </ClInclude>
+    <ClInclude Include="..\include\bg2e\app\InputDelegate.hpp">
+      <Filter>Header Files\bg2e\app</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\app\InputManager.hpp">
+      <Filter>Header Files\bg2e\app</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\app\KeyEvent.hpp">
+      <Filter>Header Files\bg2e\app</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\ui\UserInterface.hpp">
+      <Filter>Header Files\bg2e\ui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\third_party\imgui\imconfig.h">
+      <Filter>Third Party\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\third_party\imgui\imgui.h">
+      <Filter>Third Party\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\third_party\imgui\imgui_impl_sdl2.h">
+      <Filter>Third Party\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\third_party\imgui\imgui_impl_vulkan.h">
+      <Filter>Third Party\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\third_party\imgui\imgui_internal.h">
+      <Filter>Third Party\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\third_party\imgui\imstb_rectpack.h">
+      <Filter>Third Party\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\third_party\imgui\imstb_textedit.h">
+      <Filter>Third Party\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\third_party\imgui\imstb_truetype.h">
+      <Filter>Third Party\imgui</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\bg2e\app\MainLoop.cpp">
@@ -172,6 +217,33 @@
     </ClCompile>
     <ClCompile Include="..\src\bg2e\render\RenderLoop.cpp">
       <Filter>Source Files\render</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\bg2e\app\InputManager.cpp">
+      <Filter>Source Files\app</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\bg2e\ui\UserInterface.cpp">
+      <Filter>Source Files\ui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\third_party\imgui\imgui.cpp">
+      <Filter>Third Party\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\third_party\imgui\imgui_demo.cpp">
+      <Filter>Third Party\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\third_party\imgui\imgui_draw.cpp">
+      <Filter>Third Party\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\third_party\imgui\imgui_impl_sdl2.cpp">
+      <Filter>Third Party\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\third_party\imgui\imgui_impl_vulkan.cpp">
+      <Filter>Third Party\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\third_party\imgui\imgui_tables.cpp">
+      <Filter>Third Party\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\third_party\imgui\imgui_widgets.cpp">
+      <Filter>Third Party\imgui</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
