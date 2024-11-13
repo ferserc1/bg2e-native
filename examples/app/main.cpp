@@ -9,7 +9,7 @@
 #include <bg2e/ui/BasicWidgets.hpp>
 #include <bg2e/ui/Window.hpp>
 
-#include <imgui.h>
+#include "imgui.h"
 
 class ClearScreenDelegate : public bg2e::render::RenderLoopDelegate,
 	public bg2e::app::InputDelegate,
