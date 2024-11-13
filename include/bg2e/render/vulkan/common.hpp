@@ -30,7 +30,6 @@ void* getMappedData(VmaAllocation a);
 }
 }
 
-#include <VkBootstrap.h>
 #include <iostream>
 #include <stdexcept>
 

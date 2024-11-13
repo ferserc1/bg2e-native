@@ -49,12 +49,12 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <OutDir>$(SolutionDir)..\bin\</OutDir>
     <TargetName>$(ProjectName)d</TargetName>
-    <IncludePath>$(VULKAN_SDK)\Include\vma;$(VULKAN_SDK)\Include;$(SolutionDir)..\include;$(IncludePath)</IncludePath>
+    <IncludePath>$(VULKAN_SDK)\Include\vma;$(VULKAN_SDK)\Include;$(SolutionDir)..\include;$(SolutionDir)..\third_party\imgui;$(IncludePath)</IncludePath>
     <LibraryPath>$(OutDir);$(VULKAN_SDK)\Lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <OutDir>$(SolutionDir)..\bin\</OutDir>
-    <IncludePath>$(VULKAN_SDK)\Include\vma;$(VULKAN_SDK)\Include;$(SolutionDir)..\include;$(IncludePath)</IncludePath>
+    <IncludePath>$(VULKAN_SDK)\Include\vma;$(VULKAN_SDK)\Include;$(SolutionDir)..\include;$(SolutionDir)..\third_party\imgui;$(IncludePath)</IncludePath>
     <LibraryPath>$(OutDir);$(VULKAN_SDK)\Lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">

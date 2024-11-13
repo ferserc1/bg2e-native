@@ -159,6 +159,15 @@
     <ClInclude Include="..\third_party\imgui\imstb_truetype.h">
       <Filter>Third Party\imgui</Filter>
     </ClInclude>
+    <ClInclude Include="..\include\bg2e\ui\DemoWindow.hpp">
+      <Filter>Header Files\bg2e\ui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\ui\UserInterfaceDelegate.hpp">
+      <Filter>Header Files\bg2e\ui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\ui\Window.hpp">
+      <Filter>Header Files\bg2e\ui</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\bg2e\app\MainLoop.cpp">
@@ -246,6 +255,15 @@
       <Filter>Third Party\imgui</Filter>
     </ClCompile>
     <ClCompile Include="..\src\bg2e\ui\UserInterfaceDelegate.cpp">
+      <Filter>Source Files\ui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\bg2e\ui\DemoWindow.cpp">
+      <Filter>Source Files\ui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\bg2e\ui\Window.cpp">
+      <Filter>Source Files\ui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\bg2e\ui\BasicWidgets.cpp">
       <Filter>Source Files\ui</Filter>
     </ClCompile>
   </ItemGroup>

@@ -1,5 +1,6 @@
 #include <bg2e/ui/UserInterfaceDelegate.hpp>
 #include <bg2e/ui/UserInterface.hpp>
+#include <bg2e/ui/DemoWindow.hpp>
 
 #include "imgui.h"
 
@@ -8,7 +9,7 @@ namespace ui {
 
 void UserInterfaceDelegate::drawUI()
 {
-	ImGui::ShowDemoWindow();
+	DemoWindow::draw();
 }
 
 }

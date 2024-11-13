@@ -59,7 +59,7 @@ public:
         KeyGraveAccent = 96,
         KeyWorld1 = 161,
         KeyWorld2 = 162,
-        KeyEscape = 256,
+        KeyEscape = 27,
         KeyEnter = 257,
         KeyTab = 258,
         KeyBackspace = 259,

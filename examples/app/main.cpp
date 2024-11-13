@@ -5,6 +5,12 @@
 #include <bg2e/render/vulkan/Image.hpp>
 #include <bg2e/base/Log.hpp>
 
+#include <bg2e/ui/DemoWindow.hpp>
+#include <bg2e/ui/BasicWidgets.hpp>
+#include <bg2e/ui/Window.hpp>
+
+#include <imgui.h>
+
 class ClearScreenDelegate : public bg2e::render::RenderLoopDelegate,
 	public bg2e::app::InputDelegate,
 	public bg2e::ui::UserInterfaceDelegate
@@ -84,6 +90,15 @@ public:
 	void keyUp(const bg2e::app::KeyEvent& event) override
 	{
 		bg2e_log_debug << "Key up: " << event.key() << bg2e_log_end;
+
+		if (event.key() == bg2e::app::KeyEvent::Key::KeySpace)
+		{
+			_window.open();
+		}
+		else if (event.key() == bg2e::app::KeyEvent::Key::KeyEscape)
+		{
+			_window.close();
+		}
 	}
 
 	void mouseMove(int x, int y) override
@@ -106,8 +121,26 @@ public:
 		bg2e_log_debug << "Mouse wheel: " << deltaX << ", " << deltaY << bg2e_log_end;
 	}
 
+	// ============ User Interface Delegate Functions =========
+	void init(bg2e::render::Vulkan*, bg2e::ui::UserInterface*) {
+		_window.setTitle("ImGui Wrapper Demo");
+		_window.options.noClose = true;
+	}
+
+	void drawUI() override
+	{
+		using namespace bg2e::ui;
+
+		//bg2e::ui::DemoWindow::draw();
+		_window.draw([]() {
+			BasicWidgets::text("Hello, world!");
+		});
+	}
+
 protected:
 	std::shared_ptr<bg2e::render::vulkan::Image> _colorImage;
+
+	bg2e::ui::Window _window;
 
 	void createImage(VkExtent2D extent)
 	{

@@ -37,7 +37,10 @@
     <ClInclude Include="..\include\bg2e\render\vulkan\PhysicalDevice.hpp" />
     <ClInclude Include="..\include\bg2e\render\vulkan\Surface.hpp" />
     <ClInclude Include="..\include\bg2e\render\vulkan\Swapchain.hpp" />
+    <ClInclude Include="..\include\bg2e\ui\DemoWindow.hpp" />
     <ClInclude Include="..\include\bg2e\ui\UserInterface.hpp" />
+    <ClInclude Include="..\include\bg2e\ui\UserInterfaceDelegate.hpp" />
+    <ClInclude Include="..\include\bg2e\ui\Window.hpp" />
     <ClInclude Include="..\third_party\imgui\imconfig.h" />
     <ClInclude Include="..\third_party\imgui\imgui.h" />
     <ClInclude Include="..\third_party\imgui\imgui_impl_sdl2.h" />
@@ -68,8 +71,11 @@
     <ClCompile Include="..\src\bg2e\render\vulkan\PhysicalDevice.cpp" />
     <ClCompile Include="..\src\bg2e\render\vulkan\Surface.cpp" />
     <ClCompile Include="..\src\bg2e\render\vulkan\Swapchain.cpp" />
+    <ClCompile Include="..\src\bg2e\ui\BasicWidgets.cpp" />
+    <ClCompile Include="..\src\bg2e\ui\DemoWindow.cpp" />
     <ClCompile Include="..\src\bg2e\ui\UserInterface.cpp" />
     <ClCompile Include="..\src\bg2e\ui\UserInterfaceDelegate.cpp" />
+    <ClCompile Include="..\src\bg2e\ui\Window.cpp" />
     <ClCompile Include="..\third_party\imgui\imgui.cpp" />
     <ClCompile Include="..\third_party\imgui\imgui_demo.cpp" />
     <ClCompile Include="..\third_party\imgui\imgui_draw.cpp" />

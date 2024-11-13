@@ -2,18 +2,6 @@
 
 #include <bg2e/base/PlatformTools.hpp>
 #include <vulkan/vulkan.h>
-#include <VkBootstrap.h>
-
-/*
-    Currently MoltenVK does not support Vulkan API 1.3, so we have to use the KHR extension functions
-    from API 1.2 on macOS. On Windows we have the problem that we have to load the KHR functions manually,
-    or use API 1.3. A simpler solution to manage these problems is to create a facade for these functions,
-    instead of using the Vulkan functions directly.
-
-    This file provides that facade to make these calls seamless.
-*/
-
-
 
 namespace bg2e {
 namespace render {
