@@ -41,6 +41,7 @@
 		ED2D56692CE38F41006EF072 /* imgui_widgets.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED86883A2CDAAB3400A71ADC /* imgui_widgets.cpp */; };
 		ED342CFE2CE265370041BE62 /* RenderLoop.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED342CFD2CE265370041BE62 /* RenderLoop.cpp */; };
 		ED533A222CD7AAB700136B04 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED533A212CD7AAB700136B04 /* main.cpp */; };
+		ED6862D32CE53E4100A90EE1 /* Input.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED6862D22CE53E4100A90EE1 /* Input.cpp */; };
 		ED85B1D32CDB98300039B44D /* libMoltenVK.dylib in Copy Libraries */ = {isa = PBXBuildFile; fileRef = EDD357202CD924B9009C7507 /* libMoltenVK.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		ED85B1D42CDB98320039B44D /* libSDL2-2.0.0.dylib in Copy Libraries */ = {isa = PBXBuildFile; fileRef = EDD357212CD924B9009C7507 /* libSDL2-2.0.0.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		ED85B1D52CDB98350039B44D /* libvulkan.1.3.290.dylib in Copy Libraries */ = {isa = PBXBuildFile; fileRef = EDD357222CD924B9009C7507 /* libvulkan.1.3.290.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
@@ -180,6 +181,8 @@
 		ED533A172CD7A8E700136B04 /* common.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = common.hpp; sourceTree = "<group>"; };
 		ED533A1A2CD7A8F700136B04 /* MainLoop.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = MainLoop.cpp; sourceTree = "<group>"; };
 		ED533A212CD7AAB700136B04 /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = main.cpp; path = ../examples/app/main.cpp; sourceTree = SOURCE_ROOT; };
+		ED6862D22CE53E4100A90EE1 /* Input.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Input.cpp; sourceTree = "<group>"; };
+		ED6862D42CE53E4B00A90EE1 /* Input.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Input.hpp; sourceTree = "<group>"; };
 		ED85B1D62CDB99C30039B44D /* libVkLayer_khronos_validation.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.bundle"; path = libVkLayer_khronos_validation.dylib; sourceTree = "<group>"; };
 		ED85B1D82CDB99FB0039B44D /* libVkLayer_khronos_validation.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.bundle"; name = libVkLayer_khronos_validation.dylib; path = VulkanSDK/lib/libVkLayer_khronos_validation.dylib; sourceTree = "<group>"; };
 		ED85B1DD2CDBA4E00039B44D /* Metal.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Metal.framework; path = System/Library/Frameworks/Metal.framework; sourceTree = SDKROOT; };
@@ -307,6 +310,7 @@
 				ED0328172CE4D16E0037560D /* BasicWidgets.hpp */,
 				ED0328182CE4D16E0037560D /* DemoWindow.hpp */,
 				ED0328192CE4D16E0037560D /* Window.hpp */,
+				ED6862D42CE53E4B00A90EE1 /* Input.hpp */,
 			);
 			path = ui;
 			sourceTree = "<group>";
@@ -319,6 +323,7 @@
 				ED0328112CE4D1630037560D /* BasicWidgets.cpp */,
 				ED0328122CE4D1630037560D /* DemoWindow.cpp */,
 				ED0328132CE4D1630037560D /* Window.cpp */,
+				ED6862D22CE53E4100A90EE1 /* Input.cpp */,
 			);
 			path = ui;
 			sourceTree = "<group>";
@@ -780,6 +785,7 @@
 				ED2D56682CE38F41006EF072 /* imgui_tables.cpp in Sources */,
 				ED0328142CE4D1630037560D /* Window.cpp in Sources */,
 				ED0328152CE4D1630037560D /* BasicWidgets.cpp in Sources */,
+				ED6862D32CE53E4100A90EE1 /* Input.cpp in Sources */,
 				ED0328162CE4D1630037560D /* DemoWindow.cpp in Sources */,
 				ED2D56692CE38F41006EF072 /* imgui_widgets.cpp in Sources */,
 				ED2D56632CE38F37006EF072 /* imgui.cpp in Sources */,

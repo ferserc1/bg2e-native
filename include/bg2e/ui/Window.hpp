@@ -22,6 +22,10 @@ public:
 		bool noBackground = false;
 		bool noBringToFront = false;
 		bool noClose = false;
+        int minWidth = 0;
+        int minHeight = 0;
+        int maxWidth = std::numeric_limits<int>::max();
+        int maxHeight = std::numeric_limits<int>::max();
 	};
 
     Options options;
@@ -34,12 +38,24 @@ public:
 	inline void close() { _open = false; }
 	inline void open() { _open = true; }
 
-
+    inline void setPosition(int x, int y) { _posX = x; _posY = y; }
+    inline int positionX() const { return _posX; }
+    inline int positionY() const { return _posY; }
+    inline void setSize(int width, int height) { _width = width; _height = height; }
+    inline int width() const { return _width; }
+    inline int height() const { return _height; }
+    
 protected:
     std::string _title = "Window";
     bool _open = true;
+    
 
 	int32_t _windowFlags = 0;
+ 
+    int _posX = -1;
+    int _posY = -1;
+    int _width = -1;
+    int _height = -1;
 
 	void updateFlags();
 };

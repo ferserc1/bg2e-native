@@ -21,6 +21,11 @@ void UserInterface::init(render::Vulkan* vulkan)
     VK_ASSERT(vkCreateFence(_vulkan->device().handle(), &fenceInfo, nullptr, &_uiFence));
 
     initImGui();
+    
+    if (_delegate)
+    {
+        _delegate->init(vulkan, this);
+    }
 }
 
 void UserInterface::processEvent(SDL_Event* event)

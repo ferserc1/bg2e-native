@@ -15,6 +15,25 @@ void Window::draw(std::function<void()> drawFunction)
 
     updateFlags();
     bool* open = options.noClose ? nullptr : &_open;
+    ImGui::SetNextWindowSizeConstraints(
+        ImVec2(float(options.minWidth), float(options.minHeight)),
+        ImVec2(float(options.maxWidth), float(options.maxHeight))
+    );
+    if (_posX >= 0 && _posY >= 0)
+    {
+        ImGui::SetNextWindowPos(
+            ImVec2(float(_posX), float(_posY)),
+            options.noMove ? 0 : ImGuiCond_FirstUseEver
+        );
+    }
+    if (_width>0 && _height > 0)
+    {
+        ImGui::SetNextWindowSize(
+            ImVec2(float(_width), float(_height)),
+            options.noResize ? 0 : ImGuiCond_FirstUseEver
+        );
+    }
+    
     if (ImGui::Begin(_title.c_str(), open))
     {
         drawFunction();
