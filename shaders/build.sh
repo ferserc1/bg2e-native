@@ -14,7 +14,10 @@ fi
 
 GLSLANG=${VULKAN_SDK}/bin/glslang
 INPUT_DIR=$(cd $1; pwd)
+mkdir -p $2
 OUTPUT_DIR=$(cd $2; pwd)
+
+echo "Compiling shaders from ${INPUT_DIR} to ${OUTPUT_DIR}"
 
 mkdir -p ${OUTPUT_DIR}
 

@@ -240,6 +240,9 @@
 		EDF045192CE62E2B005C8B96 /* GraphicsPipeline.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = GraphicsPipeline.hpp; sourceTree = "<group>"; };
 		EDF0451A2CE62E2B005C8B96 /* Sampler.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Sampler.hpp; sourceTree = "<group>"; };
 		EDF0451B2CE62E2B005C8B96 /* ShaderModule.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = ShaderModule.hpp; sourceTree = "<group>"; };
+		EDF0451D2CE65DB8005C8B96 /* test.frag.glsl */ = {isa = PBXFileReference; lastKnownFileType = text; path = test.frag.glsl; sourceTree = "<group>"; };
+		EDF0451E2CE65DB8005C8B96 /* test.vert.glsl */ = {isa = PBXFileReference; lastKnownFileType = text; path = test.vert.glsl; sourceTree = "<group>"; };
+		EDF045222CE65DB8005C8B96 /* build.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = build.sh; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -348,6 +351,7 @@
 		ED5339CF2CD7A11E00136B04 = {
 			isa = PBXGroup;
 			children = (
+				EDF045232CE65DB8005C8B96 /* shaders */,
 				ED86884D2CDAAB3400A71ADC /* third_party */,
 				EDD3570E2CD920F3009C7507 /* VulkanSDK */,
 				ED533A232CD7ACC500136B04 /* Products */,
@@ -658,6 +662,33 @@
 			path = factory;
 			sourceTree = "<group>";
 		};
+		EDF0451F2CE65DB8005C8B96 /* test */ = {
+			isa = PBXGroup;
+			children = (
+				EDF0451D2CE65DB8005C8B96 /* test.frag.glsl */,
+				EDF0451E2CE65DB8005C8B96 /* test.vert.glsl */,
+			);
+			path = test;
+			sourceTree = "<group>";
+		};
+		EDF045202CE65DB8005C8B96 /* src */ = {
+			isa = PBXGroup;
+			children = (
+				EDF0451F2CE65DB8005C8B96 /* test */,
+			);
+			path = src;
+			sourceTree = "<group>";
+		};
+		EDF045232CE65DB8005C8B96 /* shaders */ = {
+			isa = PBXGroup;
+			children = (
+				EDF045202CE65DB8005C8B96 /* src */,
+				EDF045222CE65DB8005C8B96 /* build.sh */,
+			);
+			name = shaders;
+			path = ../shaders;
+			sourceTree = SOURCE_ROOT;
+		};
 /* End PBXGroup section */
 
 /* Begin PBXHeadersBuildPhase section */
@@ -702,6 +733,7 @@
 				EDD3572B2CD92768009C7507 /* Copy MoltenVK ICD */,
 				ED21915F2CDF4AAA00123781 /* Copy Layers Configuration */,
 				ED2191612CDF4AF600123781 /* Copy Libraries */,
+				EDF045242CE65DD7005C8B96 /* Compile Shaders */,
 			);
 			buildRules = (
 			);
@@ -806,6 +838,26 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "ln -sf ${BUILT_PRODUCTS_DIR}/${FRAMEWORKS_FOLDER_PATH}/libvulkan.1.3.290.dylib ${BUILT_PRODUCTS_DIR}/${FRAMEWORKS_FOLDER_PATH}/libvulkan.1.dylib\n";
+		};
+		EDF045242CE65DD7005C8B96 /* Compile Shaders */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Compile Shaders";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "INPUT_DIR=${PROJECT_DIR}/../shaders/src/test\nOUTPUT_DIR=${BUILT_PRODUCTS_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/shaders/test\n\n\"${PROJECT_DIR}/../shaders/build.sh\" \"${INPUT_DIR}\" \"${OUTPUT_DIR}\"\n";
+			showEnvVarsInLog = 0;
 		};
 /* End PBXShellScriptBuildPhase section */
 
