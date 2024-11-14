@@ -6,6 +6,9 @@ bin
 # Vulkan libraries
 Xcode/VulkanSDK/lib/*
 
+# Built shaders
+shaders/spv
+
 .DS_Store
 
 # Windows thumbnail cache files
