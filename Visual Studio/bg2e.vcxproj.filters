@@ -52,6 +52,12 @@
     <Filter Include="Third Party\imgui">
       <UniqueIdentifier>{736c3a8d-0e22-476a-8755-f5d9f4d22322}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\render\vulkan\factory">
+      <UniqueIdentifier>{464c2bc7-00f6-4398-a744-1ee35bda22fe}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\bg2e\render\vulkan\factory">
+      <UniqueIdentifier>{b6c4d4b9-9e5b-433c-af79-65088a191e72}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\include\bg2e\common.hpp">
@@ -168,6 +174,27 @@
     <ClInclude Include="..\include\bg2e\ui\Window.hpp">
       <Filter>Header Files\bg2e\ui</Filter>
     </ClInclude>
+    <ClInclude Include="..\include\bg2e\ui\BasicWidgets.hpp">
+      <Filter>Header Files\bg2e\ui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\ui\Input.hpp">
+      <Filter>Header Files\bg2e\ui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\render\vulkan\factory\GraphicsPipeline.hpp">
+      <Filter>Header Files\bg2e\render\vulkan\factory</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\render\vulkan\factory\ShaderModule.hpp">
+      <Filter>Header Files\bg2e\render\vulkan\factory</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\render\vulkan\factory\ComputePipeline.hpp">
+      <Filter>Header Files\bg2e\render\vulkan\factory</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\render\vulkan\factory\DescriptorSetLayout.hpp">
+      <Filter>Header Files\bg2e\render\vulkan\factory</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\render\vulkan\factory\Sampler.hpp">
+      <Filter>Header Files\bg2e\render\vulkan\factory</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\bg2e\app\MainLoop.cpp">
@@ -265,6 +292,24 @@
     </ClCompile>
     <ClCompile Include="..\src\bg2e\ui\BasicWidgets.cpp">
       <Filter>Source Files\ui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\bg2e\ui\Input.cpp">
+      <Filter>Source Files\ui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\bg2e\render\vulkan\factory\GraphicsPipeline.cpp">
+      <Filter>Source Files\render\vulkan\factory</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\bg2e\render\vulkan\factory\ShaderModule.cpp">
+      <Filter>Source Files\render\vulkan\factory</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\bg2e\render\vulkan\factory\ComputePipeline.cpp">
+      <Filter>Source Files\render\vulkan\factory</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\bg2e\render\vulkan\factory\DescriptorSetLayout.cpp">
+      <Filter>Source Files\render\vulkan\factory</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\bg2e\render\vulkan\factory\Sampler.cpp">
+      <Filter>Source Files\render\vulkan\factory</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

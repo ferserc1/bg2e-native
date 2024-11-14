@@ -30,6 +30,11 @@
     <ClInclude Include="..\include\bg2e\render\vulkan\DescriptorSetAllocator.hpp" />
     <ClInclude Include="..\include\bg2e\render\vulkan\Device.hpp" />
     <ClInclude Include="..\include\bg2e\render\vulkan\extensions.hpp" />
+    <ClInclude Include="..\include\bg2e\render\vulkan\factory\ComputePipeline.hpp" />
+    <ClInclude Include="..\include\bg2e\render\vulkan\factory\DescriptorSetLayout.hpp" />
+    <ClInclude Include="..\include\bg2e\render\vulkan\factory\GraphicsPipeline.hpp" />
+    <ClInclude Include="..\include\bg2e\render\vulkan\factory\Sampler.hpp" />
+    <ClInclude Include="..\include\bg2e\render\vulkan\factory\ShaderModule.hpp" />
     <ClInclude Include="..\include\bg2e\render\vulkan\FrameResources.hpp" />
     <ClInclude Include="..\include\bg2e\render\vulkan\Image.hpp" />
     <ClInclude Include="..\include\bg2e\render\vulkan\Info.hpp" />
@@ -37,7 +42,9 @@
     <ClInclude Include="..\include\bg2e\render\vulkan\PhysicalDevice.hpp" />
     <ClInclude Include="..\include\bg2e\render\vulkan\Surface.hpp" />
     <ClInclude Include="..\include\bg2e\render\vulkan\Swapchain.hpp" />
+    <ClInclude Include="..\include\bg2e\ui\BasicWidgets.hpp" />
     <ClInclude Include="..\include\bg2e\ui\DemoWindow.hpp" />
+    <ClInclude Include="..\include\bg2e\ui\Input.hpp" />
     <ClInclude Include="..\include\bg2e\ui\UserInterface.hpp" />
     <ClInclude Include="..\include\bg2e\ui\UserInterfaceDelegate.hpp" />
     <ClInclude Include="..\include\bg2e\ui\Window.hpp" />
@@ -64,6 +71,11 @@
     <ClCompile Include="..\src\bg2e\render\vulkan\DescriptorSetAllocator.cpp" />
     <ClCompile Include="..\src\bg2e\render\vulkan\Device.cpp" />
     <ClCompile Include="..\src\bg2e\render\vulkan\extensions.cpp" />
+    <ClCompile Include="..\src\bg2e\render\vulkan\factory\ComputePipeline.cpp" />
+    <ClCompile Include="..\src\bg2e\render\vulkan\factory\DescriptorSetLayout.cpp" />
+    <ClCompile Include="..\src\bg2e\render\vulkan\factory\GraphicsPipeline.cpp" />
+    <ClCompile Include="..\src\bg2e\render\vulkan\factory\Sampler.cpp" />
+    <ClCompile Include="..\src\bg2e\render\vulkan\factory\ShaderModule.cpp" />
     <ClCompile Include="..\src\bg2e\render\vulkan\FrameResources.cpp" />
     <ClCompile Include="..\src\bg2e\render\vulkan\Image.cpp" />
     <ClCompile Include="..\src\bg2e\render\vulkan\Info.cpp" />
@@ -73,6 +85,7 @@
     <ClCompile Include="..\src\bg2e\render\vulkan\Swapchain.cpp" />
     <ClCompile Include="..\src\bg2e\ui\BasicWidgets.cpp" />
     <ClCompile Include="..\src\bg2e\ui\DemoWindow.cpp" />
+    <ClCompile Include="..\src\bg2e\ui\Input.cpp" />
     <ClCompile Include="..\src\bg2e\ui\UserInterface.cpp" />
     <ClCompile Include="..\src\bg2e\ui\UserInterfaceDelegate.cpp" />
     <ClCompile Include="..\src\bg2e\ui\Window.cpp" />
