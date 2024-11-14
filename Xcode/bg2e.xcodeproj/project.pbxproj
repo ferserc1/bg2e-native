@@ -54,6 +54,11 @@
 		ED85B2112CDBAB970039B44D /* libvulkan.1.3.290.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = EDD357222CD924B9009C7507 /* libvulkan.1.3.290.dylib */; };
 		ED85B2122CDBAB9C0039B44D /* CoreFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = ED86884F2CDAAB7300A71ADC /* CoreFoundation.framework */; };
 		EDD3572D2CD927CB009C7507 /* MoltenVK_icd.json in Copy MoltenVK ICD */ = {isa = PBXBuildFile; fileRef = EDD3572C2CD92789009C7507 /* MoltenVK_icd.json */; };
+		EDF045122CE62E1B005C8B96 /* Sampler.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EDF0450F2CE62E1B005C8B96 /* Sampler.cpp */; };
+		EDF045132CE62E1B005C8B96 /* DescriptorSetLayout.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EDF0450D2CE62E1B005C8B96 /* DescriptorSetLayout.cpp */; };
+		EDF045142CE62E1B005C8B96 /* GraphicsPipeline.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EDF0450E2CE62E1B005C8B96 /* GraphicsPipeline.cpp */; };
+		EDF045152CE62E1B005C8B96 /* ShaderModule.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EDF045102CE62E1B005C8B96 /* ShaderModule.cpp */; };
+		EDF045162CE62E1B005C8B96 /* ComputePipeline.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EDF0450C2CE62E1B005C8B96 /* ComputePipeline.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -225,6 +230,16 @@
 		EDD357212CD924B9009C7507 /* libSDL2-2.0.0.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; path = "libSDL2-2.0.0.dylib"; sourceTree = "<group>"; };
 		EDD357222CD924B9009C7507 /* libvulkan.1.3.290.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; path = libvulkan.1.3.290.dylib; sourceTree = "<group>"; };
 		EDD3572C2CD92789009C7507 /* MoltenVK_icd.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = MoltenVK_icd.json; sourceTree = "<group>"; };
+		EDF0450C2CE62E1B005C8B96 /* ComputePipeline.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = ComputePipeline.cpp; sourceTree = "<group>"; };
+		EDF0450D2CE62E1B005C8B96 /* DescriptorSetLayout.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = DescriptorSetLayout.cpp; sourceTree = "<group>"; };
+		EDF0450E2CE62E1B005C8B96 /* GraphicsPipeline.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = GraphicsPipeline.cpp; sourceTree = "<group>"; };
+		EDF0450F2CE62E1B005C8B96 /* Sampler.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Sampler.cpp; sourceTree = "<group>"; };
+		EDF045102CE62E1B005C8B96 /* ShaderModule.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = ShaderModule.cpp; sourceTree = "<group>"; };
+		EDF045172CE62E2B005C8B96 /* ComputePipeline.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = ComputePipeline.hpp; sourceTree = "<group>"; };
+		EDF045182CE62E2B005C8B96 /* DescriptorSetLayout.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = DescriptorSetLayout.hpp; sourceTree = "<group>"; };
+		EDF045192CE62E2B005C8B96 /* GraphicsPipeline.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = GraphicsPipeline.hpp; sourceTree = "<group>"; };
+		EDF0451A2CE62E2B005C8B96 /* Sampler.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Sampler.hpp; sourceTree = "<group>"; };
+		EDF0451B2CE62E2B005C8B96 /* ShaderModule.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = ShaderModule.hpp; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -262,6 +277,7 @@
 		ED21916F2CDF4E4700123781 /* vulkan */ = {
 			isa = PBXGroup;
 			children = (
+				EDF045112CE62E1B005C8B96 /* factory */,
 				ED2191652CDF4E4700123781 /* Buffer.cpp */,
 				ED2191662CDF4E4700123781 /* Command.cpp */,
 				ED2191672CDF4E4700123781 /* common.cpp */,
@@ -283,6 +299,7 @@
 		ED2191872CDF4E9A00123781 /* vulkan */ = {
 			isa = PBXGroup;
 			children = (
+				EDF0451C2CE62E2B005C8B96 /* factory */,
 				ED21917C2CDF4E9A00123781 /* Buffer.hpp */,
 				ED21917D2CDF4E9A00123781 /* CleanupManager.hpp */,
 				ED21917E2CDF4E9A00123781 /* Command.hpp */,
@@ -617,6 +634,30 @@
 			path = lib;
 			sourceTree = "<group>";
 		};
+		EDF045112CE62E1B005C8B96 /* factory */ = {
+			isa = PBXGroup;
+			children = (
+				EDF0450C2CE62E1B005C8B96 /* ComputePipeline.cpp */,
+				EDF0450D2CE62E1B005C8B96 /* DescriptorSetLayout.cpp */,
+				EDF0450E2CE62E1B005C8B96 /* GraphicsPipeline.cpp */,
+				EDF0450F2CE62E1B005C8B96 /* Sampler.cpp */,
+				EDF045102CE62E1B005C8B96 /* ShaderModule.cpp */,
+			);
+			path = factory;
+			sourceTree = "<group>";
+		};
+		EDF0451C2CE62E2B005C8B96 /* factory */ = {
+			isa = PBXGroup;
+			children = (
+				EDF045172CE62E2B005C8B96 /* ComputePipeline.hpp */,
+				EDF045182CE62E2B005C8B96 /* DescriptorSetLayout.hpp */,
+				EDF045192CE62E2B005C8B96 /* GraphicsPipeline.hpp */,
+				EDF0451A2CE62E2B005C8B96 /* Sampler.hpp */,
+				EDF0451B2CE62E2B005C8B96 /* ShaderModule.hpp */,
+			);
+			path = factory;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXHeadersBuildPhase section */
@@ -786,6 +827,11 @@
 				ED0328142CE4D1630037560D /* Window.cpp in Sources */,
 				ED0328152CE4D1630037560D /* BasicWidgets.cpp in Sources */,
 				ED6862D32CE53E4100A90EE1 /* Input.cpp in Sources */,
+				EDF045122CE62E1B005C8B96 /* Sampler.cpp in Sources */,
+				EDF045132CE62E1B005C8B96 /* DescriptorSetLayout.cpp in Sources */,
+				EDF045142CE62E1B005C8B96 /* GraphicsPipeline.cpp in Sources */,
+				EDF045152CE62E1B005C8B96 /* ShaderModule.cpp in Sources */,
+				EDF045162CE62E1B005C8B96 /* ComputePipeline.cpp in Sources */,
 				ED0328162CE4D1630037560D /* DemoWindow.cpp in Sources */,
 				ED2D56692CE38F41006EF072 /* imgui_widgets.cpp in Sources */,
 				ED2D56632CE38F37006EF072 /* imgui.cpp in Sources */,
