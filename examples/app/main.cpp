@@ -4,6 +4,9 @@
 #include <bg2e/ui/UserInterface.hpp>
 #include <bg2e/render/vulkan/Image.hpp>
 #include <bg2e/base/Log.hpp>
+#include <bg2e/render/vulkan/factory/GraphicsPipeline.hpp>
+#include <bg2e/render/vulkan/Info.hpp>
+#include <bg2e/render/vulkan/macros/graphics.hpp>
 
 #include <bg2e/ui/DemoWindow.hpp>
 #include <bg2e/ui/BasicWidgets.hpp>
@@ -21,6 +24,8 @@ public:
 		RenderLoopDelegate::init(vulkan);
 
 		createImage(vulkan->swapchain().extent());
+  
+        createPipeline();
 
 		vulkan->cleanupManager().push([this](VkDevice) {
 			this->cleanup();
@@ -77,8 +82,27 @@ public:
 			_colorImage->image(), _colorImage->extent2D(),
 			colorImage->image(), colorImage->extent2D()
 		);
+  
+        
+        Image::cmdTransitionImage(
+            cmd, colorImage->image(),
+            VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+            VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
+        );
+        
+        auto colorAttachment = Info::attachmentInfo(colorImage->imageView(), nullptr);
+        auto renderInfo = Info::renderingInfo(colorImage->extent2D(), &colorAttachment, nullptr);
+        cmdBeginRendering(cmd, &renderInfo);
+        
+        macros::cmdSetDefaultViewportAndScissor(cmd, colorImage->extent2D());
+        
+        vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, _pipeline);
+        
+        vkCmdDraw(cmd, 3, 1, 0, 0);
+        
+        bg2e::render::vulkan::cmdEndRendering(cmd);
 
-		return VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+		return VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 	}
 
 	void keyDown(const bg2e::app::KeyEvent& event) override
@@ -229,6 +253,27 @@ protected:
 	std::shared_ptr<bg2e::render::vulkan::Image> _colorImage;
 
 	bg2e::ui::Window _window;
+ 
+    VkPipelineLayout _layout;
+    VkPipeline _pipeline;
+    
+    void createPipeline()
+    {
+        bg2e::render::vulkan::factory::GraphicsPipeline plFactory(_vulkan);
+        
+        plFactory.addShader("test/test.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
+        plFactory.addShader("test/test.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
+        
+        auto layoutInfo = bg2e::render::vulkan::Info::pipelineLayoutInfo();
+        VK_ASSERT(vkCreatePipelineLayout(_vulkan->device().handle(), &layoutInfo, nullptr, &_layout));
+        plFactory.setColorAttachmentFormat(_vulkan->swapchain().imageFormat());
+        _pipeline = plFactory.build(_layout);
+        
+        _vulkan->cleanupManager().push([&](VkDevice dev) {
+            vkDestroyPipeline(dev, _pipeline, nullptr);
+            vkDestroyPipelineLayout(dev, _layout, nullptr);
+        });
+    }
 
 	void createImage(VkExtent2D extent)
 	{

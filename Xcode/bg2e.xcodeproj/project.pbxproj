@@ -54,6 +54,7 @@
 		ED85B2112CDBAB970039B44D /* libvulkan.1.3.290.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = EDD357222CD924B9009C7507 /* libvulkan.1.3.290.dylib */; };
 		ED85B2122CDBAB9C0039B44D /* CoreFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = ED86884F2CDAAB7300A71ADC /* CoreFoundation.framework */; };
 		EDD3572D2CD927CB009C7507 /* MoltenVK_icd.json in Copy MoltenVK ICD */ = {isa = PBXBuildFile; fileRef = EDD3572C2CD92789009C7507 /* MoltenVK_icd.json */; };
+		EDEF49E62CE7B6F200EE4ADA /* graphics.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EDEF49E42CE7B6F200EE4ADA /* graphics.cpp */; };
 		EDF045122CE62E1B005C8B96 /* Sampler.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EDF0450F2CE62E1B005C8B96 /* Sampler.cpp */; };
 		EDF045132CE62E1B005C8B96 /* DescriptorSetLayout.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EDF0450D2CE62E1B005C8B96 /* DescriptorSetLayout.cpp */; };
 		EDF045142CE62E1B005C8B96 /* GraphicsPipeline.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EDF0450E2CE62E1B005C8B96 /* GraphicsPipeline.cpp */; };
@@ -230,6 +231,8 @@
 		EDD357212CD924B9009C7507 /* libSDL2-2.0.0.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; path = "libSDL2-2.0.0.dylib"; sourceTree = "<group>"; };
 		EDD357222CD924B9009C7507 /* libvulkan.1.3.290.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; path = libvulkan.1.3.290.dylib; sourceTree = "<group>"; };
 		EDD3572C2CD92789009C7507 /* MoltenVK_icd.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = MoltenVK_icd.json; sourceTree = "<group>"; };
+		EDEF49E42CE7B6F200EE4ADA /* graphics.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = graphics.cpp; sourceTree = "<group>"; };
+		EDEF49E72CE7B6FF00EE4ADA /* graphics.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = graphics.hpp; sourceTree = "<group>"; };
 		EDF0450C2CE62E1B005C8B96 /* ComputePipeline.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = ComputePipeline.cpp; sourceTree = "<group>"; };
 		EDF0450D2CE62E1B005C8B96 /* DescriptorSetLayout.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = DescriptorSetLayout.cpp; sourceTree = "<group>"; };
 		EDF0450E2CE62E1B005C8B96 /* GraphicsPipeline.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = GraphicsPipeline.cpp; sourceTree = "<group>"; };
@@ -295,6 +298,7 @@
 				ED21919A2CDF8B8100123781 /* PhysicalDevice.cpp */,
 				ED2191A12CDFE2A200123781 /* Surface.cpp */,
 				ED21916E2CDF4E4700123781 /* Swapchain.cpp */,
+				EDEF49E52CE7B6F200EE4ADA /* macros */,
 			);
 			path = vulkan;
 			sourceTree = "<group>";
@@ -318,6 +322,7 @@
 				ED21919C2CDF8B9C00123781 /* PhysicalDevice.hpp */,
 				ED2191A02CDFE29B00123781 /* Surface.hpp */,
 				ED2191862CDF4E9A00123781 /* Swapchain.hpp */,
+				EDEF49E82CE7B6FF00EE4ADA /* macros */,
 			);
 			path = vulkan;
 			sourceTree = "<group>";
@@ -638,6 +643,22 @@
 			path = lib;
 			sourceTree = "<group>";
 		};
+		EDEF49E52CE7B6F200EE4ADA /* macros */ = {
+			isa = PBXGroup;
+			children = (
+				EDEF49E42CE7B6F200EE4ADA /* graphics.cpp */,
+			);
+			path = macros;
+			sourceTree = "<group>";
+		};
+		EDEF49E82CE7B6FF00EE4ADA /* macros */ = {
+			isa = PBXGroup;
+			children = (
+				EDEF49E72CE7B6FF00EE4ADA /* graphics.hpp */,
+			);
+			path = macros;
+			sourceTree = "<group>";
+		};
 		EDF045112CE62E1B005C8B96 /* factory */ = {
 			isa = PBXGroup;
 			children = (
@@ -894,6 +915,7 @@
 				ED2191712CDF4E5D00123781 /* Buffer.cpp in Sources */,
 				ED21919F2CDFE28800123781 /* Device.cpp in Sources */,
 				ED2191722CDF4E5D00123781 /* Command.cpp in Sources */,
+				EDEF49E62CE7B6F200EE4ADA /* graphics.cpp in Sources */,
 				ED2191732CDF4E5D00123781 /* common.cpp in Sources */,
 				ED2D565D2CE38EFE006EF072 /* InputManager.cpp in Sources */,
 				ED2191742CDF4E5D00123781 /* DescriptorSet.cpp in Sources */,
