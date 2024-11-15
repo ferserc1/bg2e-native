@@ -26,15 +26,11 @@ public:
 		createImage(vulkan->swapchain().extent());
   
         createPipeline();
-
-		vulkan->cleanupManager().push([this](VkDevice) {
-			this->cleanup();
-		});
 	}
 
 	void swapchainResized(VkExtent2D newExtent) override
 	{
-		_colorImage->cleanup();
+		_targetImage->cleanup();
 		createImage(newExtent);
 	}
 
@@ -49,7 +45,7 @@ public:
 
 		Image::cmdTransitionImage(
 			cmd,
-			_colorImage->image(),
+			_targetImage->image(),
 			VK_IMAGE_LAYOUT_UNDEFINED,
 			VK_IMAGE_LAYOUT_GENERAL
 		);
@@ -59,15 +55,33 @@ public:
 		auto clearRange = Image::subresourceRange(VK_IMAGE_ASPECT_COLOR_BIT);
 		vkCmdClearColorImage(
 			cmd,
-			_colorImage->image(),
+			_targetImage->image(),
 			VK_IMAGE_LAYOUT_GENERAL,
 			&clearValue, 1, &clearRange
 		);
 
 		Image::cmdTransitionImage(
-			cmd,
-			_colorImage->image(),
+			cmd, _targetImage->image(),
 			VK_IMAGE_LAYOUT_GENERAL,
+			VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
+		);
+
+		auto colorAttachment = Info::attachmentInfo(_targetImage->imageView(), nullptr);
+		auto renderInfo = Info::renderingInfo(_targetImage->extent2D(), &colorAttachment, nullptr);
+		cmdBeginRendering(cmd, &renderInfo);
+
+		macros::cmdSetDefaultViewportAndScissor(cmd, _targetImage->extent2D());
+
+		vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, _pipeline);
+
+		vkCmdDraw(cmd, 3, 1, 0, 0);
+
+		bg2e::render::vulkan::cmdEndRendering(cmd);
+
+		Image::cmdTransitionImage(
+			cmd,
+			_targetImage->image(),
+			VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
 			VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
 		);
 		Image::cmdTransitionImage(
@@ -79,30 +93,11 @@ public:
 
 		Image::cmdCopy(
 			cmd,
-			_colorImage->image(), _colorImage->extent2D(),
+			_targetImage->image(), _targetImage->extent2D(),
 			colorImage->image(), colorImage->extent2D()
 		);
   
-        
-        Image::cmdTransitionImage(
-            cmd, colorImage->image(),
-            VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-            VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
-        );
-        
-        auto colorAttachment = Info::attachmentInfo(colorImage->imageView(), nullptr);
-        auto renderInfo = Info::renderingInfo(colorImage->extent2D(), &colorAttachment, nullptr);
-        cmdBeginRendering(cmd, &renderInfo);
-        
-        macros::cmdSetDefaultViewportAndScissor(cmd, colorImage->extent2D());
-        
-        vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, _pipeline);
-        
-        vkCmdDraw(cmd, 3, 1, 0, 0);
-        
-        bg2e::render::vulkan::cmdEndRendering(cmd);
-
-		return VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+		return VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
 	}
 
 	void keyDown(const bg2e::app::KeyEvent& event) override
@@ -250,7 +245,7 @@ public:
 	}
 
 protected:
-	std::shared_ptr<bg2e::render::vulkan::Image> _colorImage;
+	std::shared_ptr<bg2e::render::vulkan::Image> _targetImage;
 
 	bg2e::ui::Window _window;
  
@@ -266,7 +261,7 @@ protected:
         
         auto layoutInfo = bg2e::render::vulkan::Info::pipelineLayoutInfo();
         VK_ASSERT(vkCreatePipelineLayout(_vulkan->device().handle(), &layoutInfo, nullptr, &_layout));
-        plFactory.setColorAttachmentFormat(_vulkan->swapchain().imageFormat());
+        plFactory.setColorAttachmentFormat(_targetImage->format());
         _pipeline = plFactory.build(_layout);
         
         _vulkan->cleanupManager().push([&](VkDevice dev) {
@@ -279,7 +274,7 @@ protected:
 	{
 		using namespace bg2e::render::vulkan;
 		auto vulkan = this->vulkan();
-		_colorImage = std::shared_ptr<Image>(Image::createAllocatedImage(
+		_targetImage = std::shared_ptr<Image>(Image::createAllocatedImage(
 			vulkan,
 			VK_FORMAT_R16G16B16A16_SFLOAT,
 			extent,
@@ -289,9 +284,9 @@ protected:
 		));
 	}
 
-	void cleanup()
+	void cleanup() override
 	{
-		_colorImage->cleanup();
+		_targetImage->cleanup();
 	}
 };
 

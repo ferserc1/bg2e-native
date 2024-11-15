@@ -30,6 +30,8 @@ public:
         render::vulkan::FrameResources& frameResources
     ) = 0;
 
+	virtual void cleanup() {}
+
 	inline render::Vulkan* vulkan() { return _vulkan; }
 
 protected:

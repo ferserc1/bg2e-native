@@ -32,7 +32,7 @@ int32_t MainLoop::run(app::Application * application) {
 
 	_inputManager.setDelegate(application->inputDelegate());
 
-	_renderLoop.beforEndCommandBuffer([&](VkCommandBuffer cmd, VkImageView targetImageView) {
+	_renderLoop.renderUICallback([&](VkCommandBuffer cmd, VkImageView targetImageView) {
 		_userInterface.draw(cmd, targetImageView);
 	});
     
@@ -128,6 +128,7 @@ int32_t MainLoop::run(app::Application * application) {
         _renderLoop.acquireAndPresent();
     }
 
+	_renderLoop.cleanup();
 	_userInterface.cleanup();
     _vulkan.cleanup();
     SDL_DestroyWindow(window);

@@ -28,9 +28,11 @@ public:
         vulkan::FrameResources& frameResources
     );
 
+    void cleanup();
+
     inline void setDelegate(std::shared_ptr<RenderLoopDelegate> delegate) { _renderDelegate = delegate; }
 
-	inline void beforEndCommandBuffer(std::function<void(VkCommandBuffer, VkImageView)> callback) { _beforeEndCommandBufferCallback = callback; }
+	inline void renderUICallback(std::function<void(VkCommandBuffer, VkImageView)> callback) { _renderUICallback = callback; }
 
 protected:
 	Vulkan* _vulkan;
@@ -38,8 +40,7 @@ protected:
 
     std::shared_ptr<RenderLoopDelegate> _renderDelegate;
 
-    std::function<void(VkCommandBuffer, VkImageView)> _beforeEndCommandBufferCallback;
-
+    std::function<void(VkCommandBuffer, VkImageView)> _renderUICallback;
 };
 
 }

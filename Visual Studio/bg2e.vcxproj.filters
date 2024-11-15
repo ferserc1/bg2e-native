@@ -58,6 +58,12 @@
     <Filter Include="Header Files\bg2e\render\vulkan\factory">
       <UniqueIdentifier>{b6c4d4b9-9e5b-433c-af79-65088a191e72}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\bg2e\render\vulkan\macros">
+      <UniqueIdentifier>{a2fab09e-52d7-460b-b2a8-008fad65ac6d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\render\vulkan\macros">
+      <UniqueIdentifier>{d4822dce-2d12-4599-bd7c-6e1d1a2a96e8}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\include\bg2e\common.hpp">
@@ -195,6 +201,9 @@
     <ClInclude Include="..\include\bg2e\render\vulkan\factory\Sampler.hpp">
       <Filter>Header Files\bg2e\render\vulkan\factory</Filter>
     </ClInclude>
+    <ClInclude Include="..\include\bg2e\render\vulkan\macros\graphics.hpp">
+      <Filter>Header Files\bg2e\render\vulkan\macros</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\bg2e\app\MainLoop.cpp">
@@ -310,6 +319,9 @@
     </ClCompile>
     <ClCompile Include="..\src\bg2e\render\vulkan\factory\Sampler.cpp">
       <Filter>Source Files\render\vulkan\factory</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\bg2e\render\vulkan\macros\graphics.cpp">
+      <Filter>Source Files\render\vulkan\macros</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

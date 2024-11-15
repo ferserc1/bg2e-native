@@ -49,8 +49,7 @@ void Swapchain::create(uint32_t width, uint32_t height)
         surface
     );
     
-    // VK_FORMAT_B8G8R8A8_UNORM: needed to use IMGUI until we draw the UI indirectly in other image
-    auto surfaceFormat = supportDetails.chooseSurfaceFormat(VK_FORMAT_B8G8R8A8_UNORM);
+    auto surfaceFormat = supportDetails.chooseSurfaceFormat(VK_FORMAT_R8G8B8A8_UNORM);
     auto presentMode = supportDetails.choosePresentMode(VK_PRESENT_MODE_MAILBOX_KHR);
     auto extent = supportDetails.chooseExtent(surface);
     uint32_t imageCount = supportDetails.imageCount();
