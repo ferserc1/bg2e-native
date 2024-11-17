@@ -260,6 +260,9 @@ protected:
         
         plFactory.addShader("test/test.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
         plFactory.addShader("test/test.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
+
+		auto bindingDescription = bg2e::render::vulkan::geo::bindingDescription<bg2e::geo::Vertex>();
+		auto attributeDescriptions = bg2e::render::vulkan::geo::attributeDescriptions<bg2e::geo::Vertex>();
         
         auto layoutInfo = bg2e::render::vulkan::Info::pipelineLayoutInfo();
         VK_ASSERT(vkCreatePipelineLayout(_vulkan->device().handle(), &layoutInfo, nullptr, &_layout));

@@ -30,7 +30,7 @@ VkVertexInputBindingDescription bindingDescription<bg2e::geo::VertexPN>()
     VkVertexInputBindingDescription desc{};
 
     desc.binding = 0;
-    desc.stride = sizeof(VertexP);
+    desc.stride = sizeof(VertexPN);
     desc.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
     return desc;
@@ -43,7 +43,7 @@ VkVertexInputBindingDescription bindingDescription<bg2e::geo::VertexPC>()
     VkVertexInputBindingDescription desc{};
 
     desc.binding = 0;
-    desc.stride = sizeof(VertexP);
+    desc.stride = sizeof(VertexPC);
     desc.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
     return desc;
@@ -56,7 +56,7 @@ VkVertexInputBindingDescription bindingDescription<bg2e::geo::VertexPU>()
     VkVertexInputBindingDescription desc{};
 
     desc.binding = 0;
-    desc.stride = sizeof(VertexP);
+    desc.stride = sizeof(VertexPU);
     desc.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
     return desc;
@@ -69,7 +69,7 @@ VkVertexInputBindingDescription bindingDescription<bg2e::geo::VertexPNU>()
     VkVertexInputBindingDescription desc{};
 
     desc.binding = 0;
-    desc.stride = sizeof(VertexP);
+    desc.stride = sizeof(VertexPNU);
     desc.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
     return desc;
@@ -82,7 +82,7 @@ VkVertexInputBindingDescription bindingDescription<bg2e::geo::VertexPNC>()
     VkVertexInputBindingDescription desc{};
 
     desc.binding = 0;
-    desc.stride = sizeof(VertexP);
+    desc.stride = sizeof(VertexPNC);
     desc.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
     return desc;
@@ -95,7 +95,7 @@ VkVertexInputBindingDescription bindingDescription<bg2e::geo::VertexPNUC>()
     VkVertexInputBindingDescription desc{};
 
     desc.binding = 0;
-    desc.stride = sizeof(VertexP);
+    desc.stride = sizeof(VertexPNUC);
     desc.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
     return desc;
@@ -108,7 +108,7 @@ VkVertexInputBindingDescription bindingDescription<bg2e::geo::VertexPNUT>()
     VkVertexInputBindingDescription desc{};
 
     desc.binding = 0;
-    desc.stride = sizeof(VertexP);
+    desc.stride = sizeof(VertexPNUT);
     desc.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
     return desc;
@@ -121,7 +121,7 @@ VkVertexInputBindingDescription bindingDescription<bg2e::geo::VertexPNUUT>()
     VkVertexInputBindingDescription desc{};
 
     desc.binding = 0;
-    desc.stride = sizeof(VertexP);
+    desc.stride = sizeof(VertexPNUUT);
     desc.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
     return desc;

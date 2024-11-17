@@ -47,7 +47,7 @@ struct VertexPNUT {
     glm::vec3 position;
     glm::vec3 normal;
     glm::vec2 texCoord0;
-    glm::vec2 tangent;
+    glm::vec3 tangent;
 };
 
 struct VertexPNUUT {
@@ -55,9 +55,10 @@ struct VertexPNUUT {
     glm::vec3 normal;
     glm::vec2 texCoord0;
     glm::vec2 texCoord1;
-    glm::vec2 tangent;
+    glm::vec3 tangent;
 };
 
+// Default vertex type
 typedef VertexPNUUT Vertex;
 
 }
