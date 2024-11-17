@@ -71,8 +71,8 @@
 		EDD77E602CEA64E600278155 /* CoreFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreFoundation.framework; path = System/Library/Frameworks/CoreFoundation.framework; sourceTree = SDKROOT; };
 		EDD77E6A2CEA65C000278155 /* MoltenVK_icd.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = MoltenVK_icd.json; sourceTree = "<group>"; };
 		EDD77E6B2CEA65C000278155 /* VkLayer_khronos_validation.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = VkLayer_khronos_validation.json; sourceTree = "<group>"; };
-		EDD77E722CEA683600278155 /* test.frag.glsl */ = {isa = PBXFileReference; lastKnownFileType = text; path = test.frag.glsl; sourceTree = "<group>"; };
-		EDD77E732CEA683600278155 /* test.vert.glsl */ = {isa = PBXFileReference; lastKnownFileType = text; path = test.vert.glsl; sourceTree = "<group>"; };
+		EDD77E772CEA7E9D00278155 /* test.frag.glsl */ = {isa = PBXFileReference; lastKnownFileType = text; path = test.frag.glsl; sourceTree = "<group>"; };
+		EDD77E782CEA7E9D00278155 /* test.vert.glsl */ = {isa = PBXFileReference; lastKnownFileType = text; path = test.vert.glsl; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -151,10 +151,18 @@
 		EDD77E742CEA683600278155 /* shaders */ = {
 			isa = PBXGroup;
 			children = (
-				EDD77E722CEA683600278155 /* test.frag.glsl */,
-				EDD77E732CEA683600278155 /* test.vert.glsl */,
+				EDD77E792CEA7E9D00278155 /* src */,
 			);
 			path = shaders;
+			sourceTree = "<group>";
+		};
+		EDD77E792CEA7E9D00278155 /* src */ = {
+			isa = PBXGroup;
+			children = (
+				EDD77E772CEA7E9D00278155 /* test.frag.glsl */,
+				EDD77E782CEA7E9D00278155 /* test.vert.glsl */,
+			);
+			path = src;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -265,7 +273,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "INPUT_DIR=${PROJECT_DIR}/shaders\nOUTPUT_DIR=${BUILT_PRODUCTS_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/shaders\n\n\"${PROJECT_DIR}/../../shaders/build.sh\" \"${INPUT_DIR}\" \"${OUTPUT_DIR}\"\n";
+			shellScript = "INPUT_DIR=${PROJECT_DIR}/shaders/src\nOUTPUT_DIR=${BUILT_PRODUCTS_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/shaders\n\n\"${PROJECT_DIR}/../../shaders/build.sh\" \"${INPUT_DIR}\" \"${OUTPUT_DIR}\"\n";
 			showEnvVarsInLog = 0;
 		};
 /* End PBXShellScriptBuildPhase section */

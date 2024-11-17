@@ -128,6 +128,7 @@ int32_t MainLoop::run(app::Application * application) {
         _renderLoop.acquireAndPresent();
     }
 
+    _vulkan.device().waitIdle();
 	_renderLoop.cleanup();
 	_userInterface.cleanup();
     _vulkan.cleanup();
