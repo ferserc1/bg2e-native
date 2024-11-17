@@ -54,6 +54,7 @@
 		ED85B2112CDBAB970039B44D /* libvulkan.1.3.290.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = EDD357222CD924B9009C7507 /* libvulkan.1.3.290.dylib */; };
 		ED85B2122CDBAB9C0039B44D /* CoreFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = ED86884F2CDAAB7300A71ADC /* CoreFoundation.framework */; };
 		EDD3572D2CD927CB009C7507 /* MoltenVK_icd.json in Copy MoltenVK ICD */ = {isa = PBXBuildFile; fileRef = EDD3572C2CD92789009C7507 /* MoltenVK_icd.json */; };
+		EDD77E332CE9E78C00278155 /* VertexDescription.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EDD77E312CE9E78C00278155 /* VertexDescription.cpp */; };
 		EDEF49E62CE7B6F200EE4ADA /* graphics.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EDEF49E42CE7B6F200EE4ADA /* graphics.cpp */; };
 		EDF045122CE62E1B005C8B96 /* Sampler.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EDF0450F2CE62E1B005C8B96 /* Sampler.cpp */; };
 		EDF045132CE62E1B005C8B96 /* DescriptorSetLayout.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EDF0450D2CE62E1B005C8B96 /* DescriptorSetLayout.cpp */; };
@@ -231,6 +232,8 @@
 		EDD357212CD924B9009C7507 /* libSDL2-2.0.0.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; path = "libSDL2-2.0.0.dylib"; sourceTree = "<group>"; };
 		EDD357222CD924B9009C7507 /* libvulkan.1.3.290.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; path = libvulkan.1.3.290.dylib; sourceTree = "<group>"; };
 		EDD3572C2CD92789009C7507 /* MoltenVK_icd.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = MoltenVK_icd.json; sourceTree = "<group>"; };
+		EDD77E2C2CE9E76D00278155 /* Vertex.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Vertex.hpp; sourceTree = "<group>"; };
+		EDD77E312CE9E78C00278155 /* VertexDescription.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = VertexDescription.cpp; sourceTree = "<group>"; };
 		EDEF49E42CE7B6F200EE4ADA /* graphics.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = graphics.cpp; sourceTree = "<group>"; };
 		EDEF49E72CE7B6FF00EE4ADA /* graphics.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = graphics.hpp; sourceTree = "<group>"; };
 		EDF0450C2CE62E1B005C8B96 /* ComputePipeline.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = ComputePipeline.cpp; sourceTree = "<group>"; };
@@ -299,6 +302,7 @@
 				ED2191A12CDFE2A200123781 /* Surface.cpp */,
 				ED21916E2CDF4E4700123781 /* Swapchain.cpp */,
 				EDEF49E52CE7B6F200EE4ADA /* macros */,
+				EDD77E322CE9E78C00278155 /* geo */,
 			);
 			path = vulkan;
 			sourceTree = "<group>";
@@ -406,6 +410,7 @@
 				ED533A172CD7A8E700136B04 /* common.hpp */,
 				ED8688162CDAAACC00A71ADC /* render */,
 				ED2D56582CE38ED6006EF072 /* ui */,
+				EDD77E2D2CE9E76D00278155 /* geo */,
 			);
 			path = bg2e;
 			sourceTree = "<group>";
@@ -641,6 +646,22 @@
 				EDD357222CD924B9009C7507 /* libvulkan.1.3.290.dylib */,
 			);
 			path = lib;
+			sourceTree = "<group>";
+		};
+		EDD77E2D2CE9E76D00278155 /* geo */ = {
+			isa = PBXGroup;
+			children = (
+				EDD77E2C2CE9E76D00278155 /* Vertex.hpp */,
+			);
+			path = geo;
+			sourceTree = "<group>";
+		};
+		EDD77E322CE9E78C00278155 /* geo */ = {
+			isa = PBXGroup;
+			children = (
+				EDD77E312CE9E78C00278155 /* VertexDescription.cpp */,
+			);
+			path = geo;
 			sourceTree = "<group>";
 		};
 		EDEF49E52CE7B6F200EE4ADA /* macros */ = {
@@ -928,6 +949,7 @@
 				ED2191792CDF4E5D00123781 /* Info.cpp in Sources */,
 				ED2191992CDF678900123781 /* Log.cpp in Sources */,
 				ED342CFE2CE265370041BE62 /* RenderLoop.cpp in Sources */,
+				EDD77E332CE9E78C00278155 /* VertexDescription.cpp in Sources */,
 				ED21917A2CDF4E5D00123781 /* Swapchain.cpp in Sources */,
 				ED21917B2CDF4E5D00123781 /* Vulkan.cpp in Sources */,
 				ED2191A22CDFE2A200123781 /* Surface.cpp in Sources */,
