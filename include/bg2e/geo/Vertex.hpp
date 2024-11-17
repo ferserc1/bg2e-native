@@ -21,13 +21,13 @@ struct VertexPC {
 
 struct VertexPU {
     glm::vec3 position;
-    glm::vec2 texCoord;
+    glm::vec2 texCoord0;
 };
 
 struct VertexPNU {
     glm::vec3 position;
     glm::vec3 normal;
-    glm::vec2 texCoord;
+    glm::vec2 texCoord0;
 };
 
 struct VertexPNC {
@@ -39,14 +39,14 @@ struct VertexPNC {
 struct VertexPNUC {
     glm::vec3 position;
     glm::vec3 normal;
-    glm::vec2 texCoord;
+    glm::vec2 texCoord0;
     glm::vec4 color;
 };
 
 struct VertexPNUT {
     glm::vec3 position;
     glm::vec3 normal;
-    glm::vec2 texCoord;
+    glm::vec2 texCoord0;
     glm::vec2 tangent;
 };
 

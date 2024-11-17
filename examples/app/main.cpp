@@ -7,6 +7,8 @@
 #include <bg2e/render/vulkan/factory/GraphicsPipeline.hpp>
 #include <bg2e/render/vulkan/Info.hpp>
 #include <bg2e/render/vulkan/macros/graphics.hpp>
+#include <bg2e/geo/Vertex.hpp>
+#include <bg2e/render/vulkan/geo/VertexDescription.hpp>
 
 #include <bg2e/ui/DemoWindow.hpp>
 #include <bg2e/ui/BasicWidgets.hpp>
@@ -301,8 +303,8 @@ public:
 	}
 };
 
-int main(int argc, char ** argv) {
-
+int main(int argc, char ** argv)
+{
     bg2e::app::MainLoop mainLoop;
 	MyApplication app;
 	app.init(argc, argv);
