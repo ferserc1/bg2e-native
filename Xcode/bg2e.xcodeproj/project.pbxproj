@@ -49,7 +49,6 @@
 		ED85B1FF2CDBAAEB0039B44D /* MainLoop.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED533A1A2CD7A8F700136B04 /* MainLoop.cpp */; };
 		ED85B2002CDBAAEE0039B44D /* PlatformTools.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED8688172CDAAAE200A71ADC /* PlatformTools.cpp */; };
 		ED85B20E2CDBAB800039B44D /* libbg2e-native.a in Frameworks */ = {isa = PBXBuildFile; fileRef = ED85B20D2CDBAB730039B44D /* libbg2e-native.a */; };
-		ED85B20F2CDBAB940039B44D /* libMoltenVK.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = EDD357202CD924B9009C7507 /* libMoltenVK.dylib */; };
 		ED85B2102CDBAB950039B44D /* libSDL2-2.0.0.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = EDD357212CD924B9009C7507 /* libSDL2-2.0.0.dylib */; };
 		ED85B2112CDBAB970039B44D /* libvulkan.1.3.290.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = EDD357222CD924B9009C7507 /* libvulkan.1.3.290.dylib */; };
 		ED85B2122CDBAB9C0039B44D /* CoreFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = ED86884F2CDAAB7300A71ADC /* CoreFoundation.framework */; };
@@ -260,7 +259,6 @@
 				ED85B20E2CDBAB800039B44D /* libbg2e-native.a in Frameworks */,
 				ED85B2112CDBAB970039B44D /* libvulkan.1.3.290.dylib in Frameworks */,
 				ED85B2102CDBAB950039B44D /* libSDL2-2.0.0.dylib in Frameworks */,
-				ED85B20F2CDBAB940039B44D /* libMoltenVK.dylib in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -865,6 +863,7 @@
 /* Begin PBXShellScriptBuildPhase section */
 		EDD3572A2CD92700009C7507 /* Create Vulkan Sym Links */ = {
 			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
 			buildActionMask = 2147483647;
 			files = (
 			);
@@ -880,6 +879,7 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "ln -sf ${BUILT_PRODUCTS_DIR}/${FRAMEWORKS_FOLDER_PATH}/libvulkan.1.3.290.dylib ${BUILT_PRODUCTS_DIR}/${FRAMEWORKS_FOLDER_PATH}/libvulkan.1.dylib\n";
+			showEnvVarsInLog = 0;
 		};
 		EDF045242CE65DD7005C8B96 /* Compile Shaders */ = {
 			isa = PBXShellScriptBuildPhase;
