@@ -19,6 +19,7 @@
     <ClInclude Include="..\include\bg2e\base\Log.hpp" />
     <ClInclude Include="..\include\bg2e\base\PlatformTools.hpp" />
     <ClInclude Include="..\include\bg2e\common.hpp" />
+    <ClInclude Include="..\include\bg2e\geo\Vertex.hpp" />
     <ClInclude Include="..\include\bg2e\render\RenderLoop.hpp" />
     <ClInclude Include="..\include\bg2e\render\RenderLoopDelegate.hpp" />
     <ClInclude Include="..\include\bg2e\render\Vulkan.hpp" />
@@ -36,6 +37,7 @@
     <ClInclude Include="..\include\bg2e\render\vulkan\factory\Sampler.hpp" />
     <ClInclude Include="..\include\bg2e\render\vulkan\factory\ShaderModule.hpp" />
     <ClInclude Include="..\include\bg2e\render\vulkan\FrameResources.hpp" />
+    <ClInclude Include="..\include\bg2e\render\vulkan\geo\VertexDescription.hpp" />
     <ClInclude Include="..\include\bg2e\render\vulkan\Image.hpp" />
     <ClInclude Include="..\include\bg2e\render\vulkan\Info.hpp" />
     <ClInclude Include="..\include\bg2e\render\vulkan\Instance.hpp" />
@@ -78,6 +80,7 @@
     <ClCompile Include="..\src\bg2e\render\vulkan\factory\Sampler.cpp" />
     <ClCompile Include="..\src\bg2e\render\vulkan\factory\ShaderModule.cpp" />
     <ClCompile Include="..\src\bg2e\render\vulkan\FrameResources.cpp" />
+    <ClCompile Include="..\src\bg2e\render\vulkan\geo\VertexDescription.cpp" />
     <ClCompile Include="..\src\bg2e\render\vulkan\Image.cpp" />
     <ClCompile Include="..\src\bg2e\render\vulkan\Info.cpp" />
     <ClCompile Include="..\src\bg2e\render\vulkan\Instance.cpp" />

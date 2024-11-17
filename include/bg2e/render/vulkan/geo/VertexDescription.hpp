@@ -72,6 +72,7 @@ template <>
 extern BG2E_API std::vector<VkVertexInputAttributeDescription> attributeDescriptions<bg2e::geo::VertexPNUUT>();
 
 
+
 }
 }
 }

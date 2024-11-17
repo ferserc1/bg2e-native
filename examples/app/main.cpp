@@ -7,6 +7,8 @@
 #include <bg2e/render/vulkan/factory/GraphicsPipeline.hpp>
 #include <bg2e/render/vulkan/Info.hpp>
 #include <bg2e/render/vulkan/macros/graphics.hpp>
+#include <bg2e/geo/Vertex.hpp>
+#include <bg2e/render/vulkan/geo/VertexDescription.hpp>
 
 #include <bg2e/ui/DemoWindow.hpp>
 #include <bg2e/ui/BasicWidgets.hpp>
@@ -258,6 +260,9 @@ protected:
         
         plFactory.addShader("test/test.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
         plFactory.addShader("test/test.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
+
+		auto bindingDescription = bg2e::render::vulkan::geo::bindingDescription<bg2e::geo::Vertex>();
+		auto attributeDescriptions = bg2e::render::vulkan::geo::attributeDescriptions<bg2e::geo::Vertex>();
         
         auto layoutInfo = bg2e::render::vulkan::Info::pipelineLayoutInfo();
         VK_ASSERT(vkCreatePipelineLayout(_vulkan->device().handle(), &layoutInfo, nullptr, &_layout));
@@ -301,8 +306,8 @@ public:
 	}
 };
 
-int main(int argc, char ** argv) {
-
+int main(int argc, char ** argv)
+{
     bg2e::app::MainLoop mainLoop;
 	MyApplication app;
 	app.init(argc, argv);
