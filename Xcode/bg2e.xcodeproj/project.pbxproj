@@ -233,6 +233,7 @@
 		EDD3572C2CD92789009C7507 /* MoltenVK_icd.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = MoltenVK_icd.json; sourceTree = "<group>"; };
 		EDD77E2C2CE9E76D00278155 /* Vertex.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Vertex.hpp; sourceTree = "<group>"; };
 		EDD77E312CE9E78C00278155 /* VertexDescription.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = VertexDescription.cpp; sourceTree = "<group>"; };
+		EDD77E752CEA6CF600278155 /* VertexDescription.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = VertexDescription.hpp; sourceTree = "<group>"; };
 		EDEF49E42CE7B6F200EE4ADA /* graphics.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = graphics.cpp; sourceTree = "<group>"; };
 		EDEF49E72CE7B6FF00EE4ADA /* graphics.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = graphics.hpp; sourceTree = "<group>"; };
 		EDF0450C2CE62E1B005C8B96 /* ComputePipeline.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = ComputePipeline.cpp; sourceTree = "<group>"; };
@@ -325,6 +326,7 @@
 				ED2191A02CDFE29B00123781 /* Surface.hpp */,
 				ED2191862CDF4E9A00123781 /* Swapchain.hpp */,
 				EDEF49E82CE7B6FF00EE4ADA /* macros */,
+				EDD77E762CEA6CF600278155 /* geo */,
 			);
 			path = vulkan;
 			sourceTree = "<group>";
@@ -658,6 +660,14 @@
 			isa = PBXGroup;
 			children = (
 				EDD77E312CE9E78C00278155 /* VertexDescription.cpp */,
+			);
+			path = geo;
+			sourceTree = "<group>";
+		};
+		EDD77E762CEA6CF600278155 /* geo */ = {
+			isa = PBXGroup;
+			children = (
+				EDD77E752CEA6CF600278155 /* VertexDescription.hpp */,
 			);
 			path = geo;
 			sourceTree = "<group>";
