@@ -47,7 +47,7 @@ public:
 
 		Image::cmdTransitionImage(
 			cmd,
-			_targetImage->image(),
+			_targetImage->handle(),
 			VK_IMAGE_LAYOUT_UNDEFINED,
 			VK_IMAGE_LAYOUT_GENERAL
 		);
@@ -57,13 +57,13 @@ public:
 		auto clearRange = Image::subresourceRange(VK_IMAGE_ASPECT_COLOR_BIT);
 		vkCmdClearColorImage(
 			cmd,
-			_targetImage->image(),
+			_targetImage->handle(),
 			VK_IMAGE_LAYOUT_GENERAL,
 			&clearValue, 1, &clearRange
 		);
 
 		Image::cmdTransitionImage(
-			cmd, _targetImage->image(),
+			cmd, _targetImage->handle(),
 			VK_IMAGE_LAYOUT_GENERAL,
 			VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
 		);
@@ -82,21 +82,21 @@ public:
 
 		Image::cmdTransitionImage(
 			cmd,
-			_targetImage->image(),
+			_targetImage->handle(),
 			VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
 			VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
 		);
 		Image::cmdTransitionImage(
 			cmd,
-			colorImage->image(),
+			colorImage->handle(),
 			VK_IMAGE_LAYOUT_UNDEFINED,
 			VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
 		);
 
 		Image::cmdCopy(
 			cmd,
-			_targetImage->image(), _targetImage->extent2D(),
-			colorImage->image(), colorImage->extent2D()
+			_targetImage->handle(), _targetImage->extent2D(),
+			colorImage->handle(), colorImage->extent2D()
 		);
   
 		return VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
