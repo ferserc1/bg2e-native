@@ -60,7 +60,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		EDD77E3D2CEA600200278155 /* Setup.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Setup.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		EDD77E3D2CEA600200278155 /* vertex_buffer.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = vertex_buffer.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		EDD77E512CEA60F800278155 /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
 		EDD77E542CEA61AA00278155 /* libbg2e-native.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = "libbg2e-native.a"; path = "/Users/fernando/desarrollo/bg2e-native/bin/Debug/libbg2e-native.a"; sourceTree = "<absolute>"; };
 		EDD77E552CEA61BD00278155 /* Setup.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Setup.entitlements; sourceTree = "<group>"; };
@@ -104,7 +104,7 @@
 		EDD77E3E2CEA600200278155 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				EDD77E3D2CEA600200278155 /* Setup.app */,
+				EDD77E3D2CEA600200278155 /* vertex_buffer.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -137,7 +137,7 @@
 				EDD77E5B2CEA620900278155 /* libvulkan.1.3.290.dylib */,
 				EDD77E542CEA61AA00278155 /* libbg2e-native.a */,
 			);
-			path = Deps;
+			name = Deps;
 			sourceTree = "<group>";
 		};
 		EDD77E5E2CEA64D800278155 /* Frameworks */ = {
@@ -168,9 +168,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		EDD77E3C2CEA600200278155 /* Setup */ = {
+		EDD77E3C2CEA600200278155 /* vertex_buffer */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = EDD77E4D2CEA600300278155 /* Build configuration list for PBXNativeTarget "Setup" */;
+			buildConfigurationList = EDD77E4D2CEA600300278155 /* Build configuration list for PBXNativeTarget "vertex_buffer" */;
 			buildPhases = (
 				EDD77E392CEA600200278155 /* Sources */,
 				EDD77E3A2CEA600200278155 /* Frameworks */,
@@ -185,11 +185,11 @@
 			);
 			dependencies = (
 			);
-			name = Setup;
+			name = vertex_buffer;
 			packageProductDependencies = (
 			);
 			productName = Setup;
-			productReference = EDD77E3D2CEA600200278155 /* Setup.app */;
+			productReference = EDD77E3D2CEA600200278155 /* vertex_buffer.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -206,7 +206,7 @@
 					};
 				};
 			};
-			buildConfigurationList = EDD77E382CEA600200278155 /* Build configuration list for PBXProject "Setup" */;
+			buildConfigurationList = EDD77E382CEA600200278155 /* Build configuration list for PBXProject "vertex_buffer" */;
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -220,7 +220,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				EDD77E3C2CEA600200278155 /* Setup */,
+				EDD77E3C2CEA600200278155 /* vertex_buffer */,
 			);
 		};
 /* End PBXProject section */
@@ -490,7 +490,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		EDD77E382CEA600200278155 /* Build configuration list for PBXProject "Setup" */ = {
+		EDD77E382CEA600200278155 /* Build configuration list for PBXProject "vertex_buffer" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				EDD77E4B2CEA600300278155 /* Debug */,
@@ -499,7 +499,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		EDD77E4D2CEA600300278155 /* Build configuration list for PBXNativeTarget "Setup" */ = {
+		EDD77E4D2CEA600300278155 /* Build configuration list for PBXNativeTarget "vertex_buffer" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				EDD77E4E2CEA600300278155 /* Debug */,
