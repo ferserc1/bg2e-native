@@ -155,7 +155,7 @@ public:
     
     void cleanup();
 
-    inline VkImage image() const { return _image; }
+    inline VkImage handle() const { return _image; }
     inline VkImageView imageView() const { return _imageView; }
     inline VmaAllocation allocation() const { return _allocation; }
     inline const VkExtent3D& extent() const { return _extent; }

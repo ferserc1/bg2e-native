@@ -69,7 +69,7 @@ void RenderLoop::acquireAndPresent()
 
     vulkan::Image::cmdTransitionImage(
         cmd,
-        depthImage->image(),
+        depthImage->handle(),
         VK_IMAGE_LAYOUT_UNDEFINED,
         VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL
     );
@@ -84,7 +84,7 @@ void RenderLoop::acquireAndPresent()
     if (lastSwapchainLayout != VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL) {
         vulkan::Image::cmdTransitionImage(
             cmd,
-            swapchainImage->image(),
+            swapchainImage->handle(),
             lastSwapchainLayout,
             VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
         );
@@ -99,7 +99,7 @@ void RenderLoop::acquireAndPresent()
 
     vulkan::Image::cmdTransitionImage(
         cmd,
-        swapchainImage->image(),
+        swapchainImage->handle(),
         VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
         VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
     );

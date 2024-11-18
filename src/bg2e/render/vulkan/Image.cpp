@@ -264,7 +264,7 @@ Image* Image::createAllocatedImage(
     vulkan->command().immediateSubmit([&](VkCommandBuffer cmd) {
         Image::cmdTransitionImage(
             cmd,
-            image->image(),
+            image->handle(),
             VK_IMAGE_LAYOUT_UNDEFINED,
             VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
         );
@@ -278,8 +278,8 @@ Image* Image::createAllocatedImage(
         
         vkCmdCopyBufferToImage(
             cmd,
-            uploadBuffer->buffer(),
-            image->image(),
+            uploadBuffer->handle(),
+            image->handle(),
             VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
             1,
             &copyRgn
@@ -289,7 +289,7 @@ Image* Image::createAllocatedImage(
         {
             Image::cmdTransitionImage(
                 cmd,
-                image->image(),
+                image->handle(),
                 VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                 VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
             );
@@ -313,7 +313,7 @@ Image* Image::createAllocatedImage(
 
                 Image::cmdTransitionImage(
                     cmd,
-                    image->image(),
+                    image->handle(),
                     VK_IMAGE_LAYOUT_UNDEFINED,
                     VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                     Image::TransitionInfo( aspectFlags, i, 1 )
@@ -321,9 +321,9 @@ Image* Image::createAllocatedImage(
 
 				vkCmdBlitImage(
 					cmd,
-					image->image(),
+					image->handle(),
 					VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-					image->image(),
+					image->handle(),
 					VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 					1,
 					&imageBlit,
@@ -332,7 +332,7 @@ Image* Image::createAllocatedImage(
 
                 Image::cmdTransitionImage(
                     cmd,
-                    image->image(),
+                    image->handle(),
                     VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                     VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
                     Image::TransitionInfo( aspectFlags, i, 1 )
@@ -341,7 +341,7 @@ Image* Image::createAllocatedImage(
 
             Image::cmdTransitionImage(
                 cmd,
-                image->image(),
+                image->handle(),
                 VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
                 VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                 Image::TransitionInfo( aspectFlags, 0, image->mipLevels() )
@@ -351,7 +351,7 @@ Image* Image::createAllocatedImage(
         {
             Image::cmdTransitionImage(
                 cmd,
-                image->image(),
+                image->handle(),
                 VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                 VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                 aspectFlags

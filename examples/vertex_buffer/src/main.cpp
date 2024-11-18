@@ -5,8 +5,10 @@
 #include <bg2e/render/vulkan/Image.hpp>
 #include <bg2e/base/Log.hpp>
 #include <bg2e/render/vulkan/factory/GraphicsPipeline.hpp>
+#include <bg2e/render/vulkan/geo/VertexDescription.hpp>
 #include <bg2e/render/vulkan/Info.hpp>
 #include <bg2e/render/vulkan/macros/graphics.hpp>
+#include <bg2e/geo/Vertex.hpp>
 
 #include <bg2e/ui/BasicWidgets.hpp>
 #include <bg2e/ui/Window.hpp>
@@ -24,6 +26,8 @@ public:
 		createImage(vulkan->swapchain().extent());
   
         createPipeline();
+
+		createVertexData();
 	}
 
 	void swapchainResized(VkExtent2D newExtent) override
@@ -43,7 +47,7 @@ public:
 
 		Image::cmdTransitionImage(
 			cmd,
-			_targetImage->image(),
+			_targetImage->handle(),
 			VK_IMAGE_LAYOUT_UNDEFINED,
 			VK_IMAGE_LAYOUT_GENERAL
 		);
@@ -53,13 +57,13 @@ public:
 		auto clearRange = Image::subresourceRange(VK_IMAGE_ASPECT_COLOR_BIT);
 		vkCmdClearColorImage(
 			cmd,
-			_targetImage->image(),
+			_targetImage->handle(),
 			VK_IMAGE_LAYOUT_GENERAL,
 			&clearValue, 1, &clearRange
 		);
 
 		Image::cmdTransitionImage(
-			cmd, _targetImage->image(),
+			cmd, _targetImage->handle(),
 			VK_IMAGE_LAYOUT_GENERAL,
 			VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
 		);
@@ -72,27 +76,33 @@ public:
 
 		vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, _pipeline);
 
-		vkCmdDraw(cmd, 3, 1, 0, 0);
+		VkBuffer vertexBuffers[] = { _vertexBuffer->handle() };
+		VkDeviceSize offsets[] = { 0 };
+		vkCmdBindVertexBuffers(cmd, 0, 1, vertexBuffers, offsets);
+
+		vkCmdBindIndexBuffer(cmd, _indexBuffer->handle(), 0, VK_INDEX_TYPE_UINT16);
+
+		vkCmdDrawIndexed(cmd, uint32_t(_indices.size()), 1, 0, 0, 0);
 
 		bg2e::render::vulkan::cmdEndRendering(cmd);
 
 		Image::cmdTransitionImage(
 			cmd,
-			_targetImage->image(),
+			_targetImage->handle(),
 			VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
 			VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
 		);
 		Image::cmdTransitionImage(
 			cmd,
-			colorImage->image(),
+			colorImage->handle(),
 			VK_IMAGE_LAYOUT_UNDEFINED,
 			VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
 		);
 
 		Image::cmdCopy(
 			cmd,
-			_targetImage->image(), _targetImage->extent2D(),
-			colorImage->image(), colorImage->extent2D()
+			_targetImage->handle(), _targetImage->extent2D(),
+			colorImage->handle(), colorImage->extent2D()
 		);
   
 		return VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
@@ -128,6 +138,18 @@ protected:
  
     VkPipelineLayout _layout;
     VkPipeline _pipeline;
+
+	const std::vector<bg2e::geo::VertexPC> _vertices = {
+		{ { -0.5f, -0.5f, 0.0f }, { 1.0f, 0.0f, 0.0f, 1.0f } },
+		{ {  0.5f, -0.5f, 0.0f }, { 0.0f, 1.0f, 0.0f, 1.0f } },
+		{ {  0.5f,  0.5f, 0.0f }, { 0.0f, 0.0f, 1.0f, 1.0f } },
+		{ { -0.5f,  0.5f, 0.0f }, { 1.0f, 0.0f, 1.0f, 1.0f } }
+	};
+
+	const std::vector<uint16_t> _indices = { 0, 1, 2, 2, 3, 0 };
+
+	std::unique_ptr<bg2e::render::vulkan::Buffer> _vertexBuffer;
+	std::unique_ptr<bg2e::render::vulkan::Buffer> _indexBuffer;
     
     void createPipeline()
     {
@@ -135,6 +157,14 @@ protected:
         
         plFactory.addShader("test.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
         plFactory.addShader("test.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
+
+		auto bindingDescription = bg2e::render::vulkan::geo::bindingDescription<bg2e::geo::VertexPC>();
+		auto attributeDescriptions = bg2e::render::vulkan::geo::attributeDescriptions<bg2e::geo::VertexPC>();
+
+		plFactory.vertexInputState.vertexBindingDescriptionCount = 1;
+		plFactory.vertexInputState.pVertexBindingDescriptions = &bindingDescription;
+		plFactory.vertexInputState.vertexAttributeDescriptionCount = uint32_t(attributeDescriptions.size());
+		plFactory.vertexInputState.pVertexAttributeDescriptions = attributeDescriptions.data();
         
         auto layoutInfo = bg2e::render::vulkan::Info::pipelineLayoutInfo();
         VK_ASSERT(vkCreatePipelineLayout(_vulkan->device().handle(), &layoutInfo, nullptr, &_layout));
@@ -146,6 +176,67 @@ protected:
             vkDestroyPipelineLayout(dev, _layout, nullptr);
         });
     }
+
+	void createVertexData()
+	{
+		using namespace bg2e::render::vulkan;
+
+		auto bufferSize = sizeof(_vertices[0]) * _vertices.size();
+		auto stagingBuffer = std::unique_ptr<Buffer>(Buffer::createAllocatedBuffer(
+			_vulkan,
+			bufferSize,
+			VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+			VMA_MEMORY_USAGE_CPU_ONLY
+		));
+
+		void* dataPtr = stagingBuffer->allocatedData();
+
+		memcpy(dataPtr, _vertices.data(), bufferSize);
+
+		_vertexBuffer = std::unique_ptr<Buffer>(Buffer::createAllocatedBuffer(
+			_vulkan,
+			bufferSize,
+			VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+			VMA_MEMORY_USAGE_GPU_ONLY
+		));
+
+		auto indexBufferSize = sizeof(_indices[0]) * _indices.size();
+		auto indexStagingBuffer = std::unique_ptr<Buffer>(Buffer::createAllocatedBuffer(
+			_vulkan,
+			indexBufferSize,
+			VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+			VMA_MEMORY_USAGE_CPU_ONLY
+		));
+
+		dataPtr = indexStagingBuffer->allocatedData();
+		memcpy(dataPtr, _indices.data(), indexBufferSize);
+
+		_indexBuffer = std::unique_ptr<Buffer>(Buffer::createAllocatedBuffer(
+			_vulkan,
+			indexBufferSize,
+			VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+			VMA_MEMORY_USAGE_GPU_ONLY
+		));
+
+		_vulkan->command().immediateSubmit([&](VkCommandBuffer cmd) {
+			VkBufferCopy copyData = {};
+			copyData.dstOffset = 0;
+			copyData.srcOffset = 0;
+			copyData.size = bufferSize;
+			vkCmdCopyBuffer(cmd, stagingBuffer->handle(), _vertexBuffer->handle(), 1, &copyData);
+
+			copyData.size = indexBufferSize;
+			vkCmdCopyBuffer(cmd, indexStagingBuffer->handle(), _indexBuffer->handle(), 1, &copyData);
+		});
+
+		stagingBuffer->cleanup();
+		indexStagingBuffer->cleanup();
+
+		_vulkan->cleanupManager().push([this](VkDevice dev) {
+			_vertexBuffer->cleanup();
+			_indexBuffer->cleanup();
+		});
+	}
 
 	void createImage(VkExtent2D extent)
 	{

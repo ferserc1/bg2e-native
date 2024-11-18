@@ -24,7 +24,7 @@ public:
     
     void* allocatedData();
 
-    inline VkBuffer buffer() const { return _buffer; }
+    inline VkBuffer handle() const { return _buffer; }
     inline VmaAllocation allocation() const { return _allocation; }
     inline VmaAllocationInfo allocationInfo() const { return _info; }
 

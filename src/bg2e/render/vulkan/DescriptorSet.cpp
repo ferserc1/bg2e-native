@@ -90,7 +90,7 @@ void DescriptorSet::addBuffer(
     size_t size,
     size_t offset
 ) {
-    addBuffer(binding, type, buffer->buffer(), size, offset);
+    addBuffer(binding, type, buffer->handle(), size, offset);
 }
 
 void DescriptorSet::endUpdate()
