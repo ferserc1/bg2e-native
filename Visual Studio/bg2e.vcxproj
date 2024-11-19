@@ -16,9 +16,11 @@
     <ClInclude Include="..\include\bg2e\app\InputManager.hpp" />
     <ClInclude Include="..\include\bg2e\app\KeyEvent.hpp" />
     <ClInclude Include="..\include\bg2e\app\MainLoop.hpp" />
+    <ClInclude Include="..\include\bg2e\base\Image.hpp" />
     <ClInclude Include="..\include\bg2e\base\Log.hpp" />
     <ClInclude Include="..\include\bg2e\base\PlatformTools.hpp" />
     <ClInclude Include="..\include\bg2e\common.hpp" />
+    <ClInclude Include="..\include\bg2e\db\image.hpp" />
     <ClInclude Include="..\include\bg2e\geo\Mesh.hpp" />
     <ClInclude Include="..\include\bg2e\geo\Vertex.hpp" />
     <ClInclude Include="..\include\bg2e\render\RenderLoop.hpp" />
@@ -65,8 +67,10 @@
   <ItemGroup>
     <ClCompile Include="..\src\bg2e\app\InputManager.cpp" />
     <ClCompile Include="..\src\bg2e\app\MainLoop.cpp" />
+    <ClCompile Include="..\src\bg2e\base\Image_base.cpp" />
     <ClCompile Include="..\src\bg2e\base\Log.cpp" />
     <ClCompile Include="..\src\bg2e\base\PlatformTools.cpp" />
+    <ClCompile Include="..\src\bg2e\db\image_db.cpp" />
     <ClCompile Include="..\src\bg2e\render\RenderLoop.cpp" />
     <ClCompile Include="..\src\bg2e\render\Vulkan.cpp" />
     <ClCompile Include="..\src\bg2e\render\vulkan\Buffer.cpp" />
@@ -141,12 +145,12 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <OutDir>$(SolutionDir)..\bin\</OutDir>
     <TargetName>$(ProjectName)d</TargetName>
-    <IncludePath>$(SolutionDir)..\include;$(VULKAN_SDK)\Include;$(VULKAN_SDK)\Include\SDL2;$(VULKAN_SDK)\Include\glm;$(VULKAN_SDK)\Include\vma;$(SolutionDir)..\third_party\imgui;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)..\include;$(VULKAN_SDK)\Include;$(VULKAN_SDK)\Include\SDL2;$(VULKAN_SDK)\Include\glm;$(VULKAN_SDK)\Include\vma;$(SolutionDir)..\third_party;$(SolutionDir)..\third_party\imgui;$(IncludePath)</IncludePath>
     <LibraryPath>$(VULKAN_SDK)\Lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <OutDir>$(SolutionDir)..\bin\</OutDir>
-    <IncludePath>$(SolutionDir)..\include;$(VULKAN_SDK)\Include;$(VULKAN_SDK)\Include\SDL2;$(VULKAN_SDK)\Include\glm;$(VULKAN_SDK)\Include\vma;$(SolutionDir)..\third_party\imgui;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)..\include;$(VULKAN_SDK)\Include;$(VULKAN_SDK)\Include\SDL2;$(VULKAN_SDK)\Include\glm;$(VULKAN_SDK)\Include\vma;$(SolutionDir)..\third_party;$(SolutionDir)..\third_party\imgui;$(IncludePath)</IncludePath>
     <LibraryPath>$(VULKAN_SDK)\Lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -158,12 +162,16 @@
       <LanguageStandard>stdcpp20</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>SDL2d.lib;SDL2maind.lib;vulkan-1.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <PostBuildEvent>
+      <Command>xcopy "$(SolutionDir)..\assets\*.*" "$(OutDir)assets\" /F /R /I /Y</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -176,6 +184,7 @@
       <LanguageStandard>stdcpp20</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -184,6 +193,9 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>SDL2.lib;SDL2main.lib;vulkan-1.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <PostBuildEvent>
+      <Command>xcopy "$(SolutionDir)..\assets\*.*" "$(OutDir)assets\" /F /R /I /Y</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

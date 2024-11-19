@@ -3,6 +3,8 @@
 #include <string>
 #include <filesystem>
 
+#include <bg2e/common.hpp>
+
 #ifdef __APPLE__
 
 #define BG2E_IS_MAC 1
@@ -32,7 +34,7 @@ static const bool is_linux = true;
 namespace bg2e {
 namespace base {
 
-class PlatformTools {
+class BG2E_API PlatformTools {
 public:
     static std::filesystem::path shaderPath();
     static std::filesystem::path assetPath();

@@ -9,7 +9,7 @@ namespace bg2e::db {
 bg2e::base::Image * loadImage(const std::filesystem::path& filePath)
 {
     int width, height, channels;
-    unsigned char* data = stbi_load(filePath.c_str(), &width, &height, &channels, 4);
+    unsigned char* data = stbi_load(filePath.string().c_str(), &width, &height, &channels, 4);
     if (!data)
     {
         throw std::runtime_error("Error loading image at path " + filePath.string());

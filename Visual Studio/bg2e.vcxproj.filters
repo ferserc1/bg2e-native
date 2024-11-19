@@ -73,6 +73,12 @@
     <Filter Include="Source Files\render\vulkan\geo">
       <UniqueIdentifier>{74c1ccf8-f7bc-49a1-bc7c-4b72506adc83}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\bg2e\db">
+      <UniqueIdentifier>{2ab154ed-9b28-4cfb-8cad-518c4fbc94bf}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\db">
+      <UniqueIdentifier>{42c31297-f1cd-44d7-8de1-cb4934fb4aee}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\include\bg2e\common.hpp">
@@ -225,6 +231,12 @@
     <ClInclude Include="..\include\bg2e\render\vulkan\geo\Mesh.hpp">
       <Filter>Header Files\bg2e\render\vulkan\geo</Filter>
     </ClInclude>
+    <ClInclude Include="..\include\bg2e\base\Image.hpp">
+      <Filter>Header Files\bg2e\base</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\db\image.hpp">
+      <Filter>Header Files\bg2e\db</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\bg2e\app\MainLoop.cpp">
@@ -349,6 +361,12 @@
     </ClCompile>
     <ClCompile Include="..\src\bg2e\render\vulkan\geo\Mesh.cpp">
       <Filter>Source Files\render\vulkan\geo</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\bg2e\base\Image_base.cpp">
+      <Filter>Source Files\base</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\bg2e\db\image_db.cpp">
+      <Filter>Source Files\db</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
