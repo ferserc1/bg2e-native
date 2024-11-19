@@ -40,6 +40,7 @@
 		ED2D56682CE38F41006EF072 /* imgui_tables.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED8688392CDAAB3400A71ADC /* imgui_tables.cpp */; };
 		ED2D56692CE38F41006EF072 /* imgui_widgets.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED86883A2CDAAB3400A71ADC /* imgui_widgets.cpp */; };
 		ED342CFE2CE265370041BE62 /* RenderLoop.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED342CFD2CE265370041BE62 /* RenderLoop.cpp */; };
+		ED5201D42CECA7D700C94253 /* Mesh.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED5201D32CECA7D700C94253 /* Mesh.cpp */; };
 		ED533A222CD7AAB700136B04 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED533A212CD7AAB700136B04 /* main.cpp */; };
 		ED6862D32CE53E4100A90EE1 /* Input.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED6862D22CE53E4100A90EE1 /* Input.cpp */; };
 		ED85B1D32CDB98300039B44D /* libMoltenVK.dylib in Copy Libraries */ = {isa = PBXBuildFile; fileRef = EDD357202CD924B9009C7507 /* libMoltenVK.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
@@ -182,6 +183,9 @@
 		ED342CFD2CE265370041BE62 /* RenderLoop.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = RenderLoop.cpp; sourceTree = "<group>"; };
 		ED342CFF2CE28CBE0041BE62 /* Application.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Application.hpp; sourceTree = "<group>"; };
 		ED342D002CE28CD20041BE62 /* RenderLoopDelegate.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = RenderLoopDelegate.hpp; sourceTree = "<group>"; };
+		ED5201D02CECA78300C94253 /* Mesh.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Mesh.hpp; sourceTree = "<group>"; };
+		ED5201D22CECA7B000C94253 /* Mesh.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Mesh.hpp; sourceTree = "<group>"; };
+		ED5201D32CECA7D700C94253 /* Mesh.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Mesh.cpp; sourceTree = "<group>"; };
 		ED5339F02CD7A1E900136B04 /* example-app.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "example-app.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		ED533A152CD7A8E700136B04 /* MainLoop.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = MainLoop.hpp; sourceTree = "<group>"; };
 		ED533A172CD7A8E700136B04 /* common.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = common.hpp; sourceTree = "<group>"; };
@@ -286,6 +290,8 @@
 			isa = PBXGroup;
 			children = (
 				EDF045112CE62E1B005C8B96 /* factory */,
+				EDD77E322CE9E78C00278155 /* geo */,
+				EDEF49E52CE7B6F200EE4ADA /* macros */,
 				ED2191652CDF4E4700123781 /* Buffer.cpp */,
 				ED2191662CDF4E4700123781 /* Command.cpp */,
 				ED2191672CDF4E4700123781 /* common.cpp */,
@@ -300,8 +306,6 @@
 				ED21919A2CDF8B8100123781 /* PhysicalDevice.cpp */,
 				ED2191A12CDFE2A200123781 /* Surface.cpp */,
 				ED21916E2CDF4E4700123781 /* Swapchain.cpp */,
-				EDEF49E52CE7B6F200EE4ADA /* macros */,
-				EDD77E322CE9E78C00278155 /* geo */,
 			);
 			path = vulkan;
 			sourceTree = "<group>";
@@ -310,6 +314,8 @@
 			isa = PBXGroup;
 			children = (
 				EDF0451C2CE62E2B005C8B96 /* factory */,
+				EDD77E762CEA6CF600278155 /* geo */,
+				EDEF49E82CE7B6FF00EE4ADA /* macros */,
 				ED21917C2CDF4E9A00123781 /* Buffer.hpp */,
 				ED21917D2CDF4E9A00123781 /* CleanupManager.hpp */,
 				ED21917E2CDF4E9A00123781 /* Command.hpp */,
@@ -325,8 +331,6 @@
 				ED21919C2CDF8B9C00123781 /* PhysicalDevice.hpp */,
 				ED2191A02CDFE29B00123781 /* Surface.hpp */,
 				ED2191862CDF4E9A00123781 /* Swapchain.hpp */,
-				EDEF49E82CE7B6FF00EE4ADA /* macros */,
-				EDD77E762CEA6CF600278155 /* geo */,
 			);
 			path = vulkan;
 			sourceTree = "<group>";
@@ -651,6 +655,7 @@
 		EDD77E2D2CE9E76D00278155 /* geo */ = {
 			isa = PBXGroup;
 			children = (
+				ED5201D02CECA78300C94253 /* Mesh.hpp */,
 				EDD77E2C2CE9E76D00278155 /* Vertex.hpp */,
 			);
 			path = geo;
@@ -659,6 +664,7 @@
 		EDD77E322CE9E78C00278155 /* geo */ = {
 			isa = PBXGroup;
 			children = (
+				ED5201D32CECA7D700C94253 /* Mesh.cpp */,
 				EDD77E312CE9E78C00278155 /* VertexDescription.cpp */,
 			);
 			path = geo;
@@ -667,6 +673,7 @@
 		EDD77E762CEA6CF600278155 /* geo */ = {
 			isa = PBXGroup;
 			children = (
+				ED5201D22CECA7B000C94253 /* Mesh.hpp */,
 				EDD77E752CEA6CF600278155 /* VertexDescription.hpp */,
 			);
 			path = geo;
@@ -960,6 +967,7 @@
 				ED2191992CDF678900123781 /* Log.cpp in Sources */,
 				ED342CFE2CE265370041BE62 /* RenderLoop.cpp in Sources */,
 				EDD77E332CE9E78C00278155 /* VertexDescription.cpp in Sources */,
+				ED5201D42CECA7D700C94253 /* Mesh.cpp in Sources */,
 				ED21917A2CDF4E5D00123781 /* Swapchain.cpp in Sources */,
 				ED21917B2CDF4E5D00123781 /* Vulkan.cpp in Sources */,
 				ED2191A22CDFE2A200123781 /* Surface.cpp in Sources */,

@@ -209,17 +209,6 @@ template void MeshGeneric<bg2e::geo::MeshPNUUT>::draw(VkCommandBuffer cmd);
 template void MeshGeneric<bg2e::geo::MeshPNUUT>::drawSubmesh(VkCommandBuffer cmd, uint32_t submeshIndex);
 template void MeshGeneric<bg2e::geo::MeshPNUUT>::cleanup();
 
-template MeshGeneric<bg2e::geo::Mesh>::MeshGeneric(Vulkan*);
-template bg2e::geo::Mesh& MeshGeneric<bg2e::geo::Mesh>::meshData();
-template const bg2e::geo::Mesh& MeshGeneric<bg2e::geo::Mesh>::meshData() const;
-template void MeshGeneric<bg2e::geo::Mesh>::setMeshData(const bg2e::geo::Mesh& m);
-template uint32_t MeshGeneric<bg2e::geo::Mesh>::submeshCount() const;
-template const Buffer* MeshGeneric<bg2e::geo::Mesh>::vertexBuffer() const;
-template const Buffer* MeshGeneric<bg2e::geo::Mesh>::indexBuffer() const;
-template void MeshGeneric<bg2e::geo::Mesh>::build();
-template void MeshGeneric<bg2e::geo::Mesh>::draw(VkCommandBuffer cmd);
-template void MeshGeneric<bg2e::geo::Mesh>::drawSubmesh(VkCommandBuffer cmd, uint32_t submeshIndex);
-template void MeshGeneric<bg2e::geo::Mesh>::cleanup();
 
 }
 

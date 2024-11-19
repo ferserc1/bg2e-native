@@ -181,13 +181,13 @@ protected:
 			},
 			{ 0, 1, 2, 2, 3, 0 },
 			{ { 0, 3 }, { 3, 3 } }
-			});
+        });
 
 		_mesh->build();
 
 		_vulkan->cleanupManager().push([this](VkDevice dev) {
 			_mesh->cleanup();
-			});
+		});
 	}
 
 	void createImage(VkExtent2D extent)
