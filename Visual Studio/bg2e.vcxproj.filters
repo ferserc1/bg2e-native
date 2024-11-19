@@ -219,6 +219,12 @@
     <ClInclude Include="..\include\bg2e\render\vulkan\geo\VertexDescription.hpp">
       <Filter>Header Files\bg2e\render\vulkan\geo</Filter>
     </ClInclude>
+    <ClInclude Include="..\include\bg2e\geo\Mesh.hpp">
+      <Filter>Header Files\bg2e\geo</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\render\vulkan\geo\Mesh.hpp">
+      <Filter>Header Files\bg2e\render\vulkan\geo</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\bg2e\app\MainLoop.cpp">
@@ -339,6 +345,9 @@
       <Filter>Source Files\render\vulkan\macros</Filter>
     </ClCompile>
     <ClCompile Include="..\src\bg2e\render\vulkan\geo\VertexDescription.cpp">
+      <Filter>Source Files\render\vulkan\geo</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\bg2e\render\vulkan\geo\Mesh.cpp">
       <Filter>Source Files\render\vulkan\geo</Filter>
     </ClCompile>
   </ItemGroup>

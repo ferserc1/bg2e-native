@@ -69,7 +69,7 @@
       <AdditionalDependencies>vulkan-1.lib;bg2ed.lib;SDL2d.lib;SDL2maind.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy "$(SolutionDir)..\..\..\bin\*.dll" "$(OutDir)"
+      <Command>xcopy "$(SolutionDir)..\..\..\bin\*.dll" "$(OutDir)" /Y
 cd "$(SolutionDir)..\shaders"
 call build.bat src ..\bin\shaders</Command>
     </PostBuildEvent>
@@ -93,7 +93,7 @@ call build.bat src ..\bin\shaders</Command>
       <AdditionalDependencies>vulkan-1.lib;bg2e.lib;SDL2.lib;SDL2main.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy "$(SolutionDir)..\..\..\bin\*.dll" "$(OutDir)"
+      <Command>xcopy "$(SolutionDir)..\..\..\bin\*.dll" "$(OutDir)" /Y
 cd "$(SolutionDir)..\shaders"
 call build.bat src ..\bin\shaders</Command>
     </PostBuildEvent>
