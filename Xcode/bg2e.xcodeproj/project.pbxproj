@@ -41,8 +41,8 @@
 		ED2D56692CE38F41006EF072 /* imgui_widgets.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED86883A2CDAAB3400A71ADC /* imgui_widgets.cpp */; };
 		ED342CFE2CE265370041BE62 /* RenderLoop.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED342CFD2CE265370041BE62 /* RenderLoop.cpp */; };
 		ED5201D42CECA7D700C94253 /* Mesh.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED5201D32CECA7D700C94253 /* Mesh.cpp */; };
-		ED5201DC2CED095800C94253 /* image.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED5201DA2CED095800C94253 /* image.cpp */; };
-		ED5201DF2CED0AEC00C94253 /* Image.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED5201DE2CED0AEC00C94253 /* Image.cpp */; };
+		ED5201DC2CED095800C94253 /* image_db.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED5201DA2CED095800C94253 /* image_db.cpp */; };
+		ED5201DF2CED0AEC00C94253 /* Image_base.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED5201DE2CED0AEC00C94253 /* Image_base.cpp */; };
 		ED5201E12CED112500C94253 /* country_field_sun.jpg in Copy Assets */ = {isa = PBXBuildFile; fileRef = ED5201D52CED082F00C94253 /* country_field_sun.jpg */; };
 		ED533A222CD7AAB700136B04 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED533A212CD7AAB700136B04 /* main.cpp */; };
 		ED6862D32CE53E4100A90EE1 /* Input.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED6862D22CE53E4100A90EE1 /* Input.cpp */; };
@@ -202,9 +202,9 @@
 		ED5201D32CECA7D700C94253 /* Mesh.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Mesh.cpp; sourceTree = "<group>"; };
 		ED5201D52CED082F00C94253 /* country_field_sun.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = country_field_sun.jpg; sourceTree = "<group>"; };
 		ED5201D82CED093D00C94253 /* image.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = image.hpp; sourceTree = "<group>"; };
-		ED5201DA2CED095800C94253 /* image.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = image.cpp; sourceTree = "<group>"; };
+		ED5201DA2CED095800C94253 /* image_db.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = image_db.cpp; sourceTree = "<group>"; };
 		ED5201DD2CED0AD500C94253 /* Image.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Image.hpp; sourceTree = "<group>"; };
-		ED5201DE2CED0AEC00C94253 /* Image.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Image.cpp; sourceTree = "<group>"; };
+		ED5201DE2CED0AEC00C94253 /* Image_base.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Image_base.cpp; sourceTree = "<group>"; };
 		ED5339F02CD7A1E900136B04 /* example-app.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "example-app.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		ED533A152CD7A8E700136B04 /* MainLoop.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = MainLoop.hpp; sourceTree = "<group>"; };
 		ED533A172CD7A8E700136B04 /* common.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; name = common.hpp; path = bg2e/common.hpp; sourceTree = "<group>"; };
@@ -400,7 +400,7 @@
 		ED5201DB2CED095800C94253 /* db */ = {
 			isa = PBXGroup;
 			children = (
-				ED5201DA2CED095800C94253 /* image.cpp */,
+				ED5201DA2CED095800C94253 /* image_db.cpp */,
 			);
 			path = db;
 			sourceTree = "<group>";
@@ -561,7 +561,7 @@
 		ED8688182CDAAAE200A71ADC /* base */ = {
 			isa = PBXGroup;
 			children = (
-				ED5201DE2CED0AEC00C94253 /* Image.cpp */,
+				ED5201DE2CED0AEC00C94253 /* Image_base.cpp */,
 				ED2191982CDF678900123781 /* Log.cpp */,
 				ED8688172CDAAAE200A71ADC /* PlatformTools.cpp */,
 			);
@@ -991,7 +991,7 @@
 				EDF045122CE62E1B005C8B96 /* Sampler.cpp in Sources */,
 				EDF045132CE62E1B005C8B96 /* DescriptorSetLayout.cpp in Sources */,
 				EDF045142CE62E1B005C8B96 /* GraphicsPipeline.cpp in Sources */,
-				ED5201DF2CED0AEC00C94253 /* Image.cpp in Sources */,
+				ED5201DF2CED0AEC00C94253 /* Image_base.cpp in Sources */,
 				EDF045152CE62E1B005C8B96 /* ShaderModule.cpp in Sources */,
 				EDF045162CE62E1B005C8B96 /* ComputePipeline.cpp in Sources */,
 				ED0328162CE4D1630037560D /* DemoWindow.cpp in Sources */,
@@ -1014,7 +1014,7 @@
 				ED2191962CDF677400123781 /* Instance.cpp in Sources */,
 				ED2191772CDF4E5D00123781 /* FrameResources.cpp in Sources */,
 				ED2191782CDF4E5D00123781 /* Image.cpp in Sources */,
-				ED5201DC2CED095800C94253 /* image.cpp in Sources */,
+				ED5201DC2CED095800C94253 /* image_db.cpp in Sources */,
 				ED2191792CDF4E5D00123781 /* Info.cpp in Sources */,
 				ED2191992CDF678900123781 /* Log.cpp in Sources */,
 				ED342CFE2CE265370041BE62 /* RenderLoop.cpp in Sources */,
