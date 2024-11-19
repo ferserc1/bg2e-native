@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <filesystem>
 
 #ifdef __APPLE__
 
@@ -33,8 +34,8 @@ namespace base {
 
 class PlatformTools {
 public:
-    static std::string shaderPath();
-    static std::string assetPath();
+    static std::filesystem::path shaderPath();
+    static std::filesystem::path assetPath();
 };
 
 }

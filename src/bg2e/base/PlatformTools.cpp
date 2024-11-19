@@ -33,7 +33,7 @@ std::string bg2e_base_platform_tools_macos_resources_path()
 
 #endif
 
-std::string bg2e::base::PlatformTools::shaderPath()
+std::filesystem::path bg2e::base::PlatformTools::shaderPath()
 {
 #ifdef BG2E_IS_MAC
     return bg2e_base_platform_tools_macos_resources_path() + "shaders/";
@@ -42,7 +42,7 @@ std::string bg2e::base::PlatformTools::shaderPath()
 #endif
 }
 
-std::string bg2e::base::PlatformTools::assetPath()
+std::filesystem::path bg2e::base::PlatformTools::assetPath()
 {
 #ifdef BG2E_IS_MAC
     return bg2e_base_platform_tools_macos_resources_path() + "assets/";

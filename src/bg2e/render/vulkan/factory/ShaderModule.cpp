@@ -12,7 +12,7 @@ namespace factory {
 
 VkShaderModule ShaderModule::loadFromSPV(const std::string& fileName, VkDevice device, const std::string& basePath)
 {
-    std::string shaderPath = (basePath.size() == 0 ? base::PlatformTools::shaderPath() : basePath) + fileName;
+    std::string shaderPath = (basePath.size() == 0 ? base::PlatformTools::shaderPath().string() : basePath) + fileName;
     std::ifstream file(shaderPath, std::ios::ate | std::ios::binary);
     
     if (!file.is_open())

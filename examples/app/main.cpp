@@ -13,6 +13,8 @@
 #include <bg2e/ui/BasicWidgets.hpp>
 #include <bg2e/ui/Window.hpp>
 
+#include <bg2e/db/image.hpp>
+
 class ClearScreenDelegate : public bg2e::render::RenderLoopDelegate,
 	public bg2e::app::InputDelegate,
 	public bg2e::ui::UserInterfaceDelegate
@@ -22,6 +24,9 @@ public:
 	{
 		using namespace bg2e::render::vulkan;
 		RenderLoopDelegate::init(vulkan);
+  
+        std::filesystem::path imagePath = bg2e::base::PlatformTools::assetPath().append("country_field_sun.jpg");
+        _image = std::unique_ptr<bg2e::base::Image>(bg2e::db::loadImage(imagePath));
 
 		createImage(vulkan->swapchain().extent());
 
@@ -140,6 +145,8 @@ protected:
 	VkPipeline _pipeline;
 
 	std::unique_ptr<bg2e::render::vulkan::geo::MeshPC> _mesh;
+ 
+    std::unique_ptr<bg2e::base::Image> _image;
 
 	void createPipeline()
 	{
