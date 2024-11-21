@@ -9,6 +9,7 @@
 #include <bg2e/render/vulkan/Info.hpp>
 #include <bg2e/render/vulkan/macros/graphics.hpp>
 #include <bg2e/render/vulkan/geo/Mesh.hpp>
+#include <bg2e/render/Texture.hpp>
 
 #include <bg2e/ui/BasicWidgets.hpp>
 #include <bg2e/ui/Window.hpp>
@@ -25,9 +26,21 @@ public:
 		using namespace bg2e::render::vulkan;
 		RenderLoopDelegate::init(vulkan);
   
-        std::filesystem::path imagePath = bg2e::base::PlatformTools::assetPath().append("country_field_sun.jpg");
-        _image = std::unique_ptr<bg2e::base::Image>(bg2e::db::loadImage(imagePath));
+		std::filesystem::path imagePath = bg2e::base::PlatformTools::assetPath().append("country_field_sun.jpg");
 
+		// You can use plain pointers in this case, because the base::Image and base::Texture objects will not
+		// be used outside of this function. Internally, these objects will be stored in a shared_ptr and will be
+		// managed by the Texture object.
+		// But if you plan to use the objects more than once, you ALWAYS must to use a shared_ptr to share the pointer
+		// between the Texture object and the rest of the application.
+        auto image = bg2e::db::loadImage(imagePath);
+		auto texture = new bg2e::base::Texture(image);
+
+		_texture = std::shared_ptr<bg2e::render::Texture>(new bg2e::render::Texture(
+			vulkan,
+			texture
+		));
+	
 		createImage(vulkan->swapchain().extent());
 
 		createPipeline();
@@ -146,7 +159,7 @@ protected:
 
 	std::unique_ptr<bg2e::render::vulkan::geo::MeshPC> _mesh;
  
-    std::unique_ptr<bg2e::base::Image> _image;
+	std::shared_ptr<bg2e::render::Texture> _texture;
 
 	void createPipeline()
 	{

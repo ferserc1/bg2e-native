@@ -19,12 +19,14 @@
     <ClInclude Include="..\include\bg2e\base\Image.hpp" />
     <ClInclude Include="..\include\bg2e\base\Log.hpp" />
     <ClInclude Include="..\include\bg2e\base\PlatformTools.hpp" />
+    <ClInclude Include="..\include\bg2e\base\Texture.hpp" />
     <ClInclude Include="..\include\bg2e\common.hpp" />
     <ClInclude Include="..\include\bg2e\db\image.hpp" />
     <ClInclude Include="..\include\bg2e\geo\Mesh.hpp" />
     <ClInclude Include="..\include\bg2e\geo\Vertex.hpp" />
     <ClInclude Include="..\include\bg2e\render\RenderLoop.hpp" />
     <ClInclude Include="..\include\bg2e\render\RenderLoopDelegate.hpp" />
+    <ClInclude Include="..\include\bg2e\render\Texture.hpp" />
     <ClInclude Include="..\include\bg2e\render\Vulkan.hpp" />
     <ClInclude Include="..\include\bg2e\render\vulkan\Buffer.hpp" />
     <ClInclude Include="..\include\bg2e\render\vulkan\CleanupManager.hpp" />
@@ -72,6 +74,7 @@
     <ClCompile Include="..\src\bg2e\base\PlatformTools.cpp" />
     <ClCompile Include="..\src\bg2e\db\image_db.cpp" />
     <ClCompile Include="..\src\bg2e\render\RenderLoop.cpp" />
+    <ClCompile Include="..\src\bg2e\render\Texture_render.cpp" />
     <ClCompile Include="..\src\bg2e\render\Vulkan.cpp" />
     <ClCompile Include="..\src\bg2e\render\vulkan\Buffer.cpp" />
     <ClCompile Include="..\src\bg2e\render\vulkan\Command.cpp" />
