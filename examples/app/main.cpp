@@ -241,6 +241,7 @@ protected:
 		_vulkan->cleanupManager().push([&](VkDevice dev) {
 			vkDestroyPipeline(dev, _pipeline, nullptr);
 			vkDestroyPipelineLayout(dev, _layout, nullptr);
+			vkDestroyDescriptorSetLayout(dev, _textureDSLayout, nullptr);
 		});
 	}
 
