@@ -39,6 +39,7 @@
 		ED2D56672CE38F37006EF072 /* imgui_impl_vulkan.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED8688372CDAAB3400A71ADC /* imgui_impl_vulkan.cpp */; };
 		ED2D56682CE38F41006EF072 /* imgui_tables.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED8688392CDAAB3400A71ADC /* imgui_tables.cpp */; };
 		ED2D56692CE38F41006EF072 /* imgui_widgets.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED86883A2CDAAB3400A71ADC /* imgui_widgets.cpp */; };
+		ED3419F02CEF29E5000F69E8 /* Texture_render.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED3419EF2CEF29E5000F69E8 /* Texture_render.cpp */; };
 		ED342CFE2CE265370041BE62 /* RenderLoop.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED342CFD2CE265370041BE62 /* RenderLoop.cpp */; };
 		ED5201D42CECA7D700C94253 /* Mesh.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED5201D32CECA7D700C94253 /* Mesh.cpp */; };
 		ED5201DC2CED095800C94253 /* image_db.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED5201DA2CED095800C94253 /* image_db.cpp */; };
@@ -193,6 +194,9 @@
 		ED2D565C2CE38EFE006EF072 /* InputManager.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = InputManager.cpp; sourceTree = "<group>"; };
 		ED2D565E2CE38F07006EF072 /* UserInterface.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = UserInterface.cpp; sourceTree = "<group>"; };
 		ED2D565F2CE38F07006EF072 /* UserInterfaceDelegate.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = UserInterfaceDelegate.cpp; sourceTree = "<group>"; };
+		ED3419ED2CEF299D000F69E8 /* Texture.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Texture.hpp; sourceTree = "<group>"; };
+		ED3419EE2CEF29BE000F69E8 /* Texture.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Texture.hpp; sourceTree = "<group>"; };
+		ED3419EF2CEF29E5000F69E8 /* Texture_render.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Texture_render.cpp; sourceTree = "<group>"; };
 		ED342CFC2CE2652B0041BE62 /* RenderLoop.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = RenderLoop.hpp; sourceTree = "<group>"; };
 		ED342CFD2CE265370041BE62 /* RenderLoop.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = RenderLoop.cpp; sourceTree = "<group>"; };
 		ED342CFF2CE28CBE0041BE62 /* Application.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Application.hpp; sourceTree = "<group>"; };
@@ -543,6 +547,7 @@
 				ED5201DD2CED0AD500C94253 /* Image.hpp */,
 				ED2191972CDF678000123781 /* Log.hpp */,
 				ED8688112CDAAABE00A71ADC /* PlatformTools.hpp */,
+				ED3419ED2CEF299D000F69E8 /* Texture.hpp */,
 			);
 			path = base;
 			sourceTree = "<group>";
@@ -551,9 +556,10 @@
 			isa = PBXGroup;
 			children = (
 				ED2191872CDF4E9A00123781 /* vulkan */,
-				ED2191882CDF4E9A00123781 /* Vulkan.hpp */,
 				ED342CFC2CE2652B0041BE62 /* RenderLoop.hpp */,
 				ED342D002CE28CD20041BE62 /* RenderLoopDelegate.hpp */,
+				ED3419EE2CEF29BE000F69E8 /* Texture.hpp */,
+				ED2191882CDF4E9A00123781 /* Vulkan.hpp */,
 			);
 			path = render;
 			sourceTree = "<group>";
@@ -572,8 +578,9 @@
 			isa = PBXGroup;
 			children = (
 				ED21916F2CDF4E4700123781 /* vulkan */,
-				ED2191702CDF4E4C00123781 /* Vulkan.cpp */,
 				ED342CFD2CE265370041BE62 /* RenderLoop.cpp */,
+				ED3419EF2CEF29E5000F69E8 /* Texture_render.cpp */,
+				ED2191702CDF4E4C00123781 /* Vulkan.cpp */,
 			);
 			path = render;
 			sourceTree = "<group>";
@@ -987,6 +994,7 @@
 				ED2D56682CE38F41006EF072 /* imgui_tables.cpp in Sources */,
 				ED0328142CE4D1630037560D /* Window.cpp in Sources */,
 				ED0328152CE4D1630037560D /* BasicWidgets.cpp in Sources */,
+				ED3419F02CEF29E5000F69E8 /* Texture_render.cpp in Sources */,
 				ED6862D32CE53E4100A90EE1 /* Input.cpp in Sources */,
 				EDF045122CE62E1B005C8B96 /* Sampler.cpp in Sources */,
 				EDF045132CE62E1B005C8B96 /* DescriptorSetLayout.cpp in Sources */,

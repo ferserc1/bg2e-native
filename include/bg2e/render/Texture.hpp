@@ -16,12 +16,19 @@ public:
     void load(std::shared_ptr<base::Texture> texture);
 
     void cleanup();
+    
+    inline base::Texture* base() { return _texture.get(); }
+    inline const base::Texture* base() const { return _texture.get(); }
+    inline vulkan::Image* image() { return _image.get(); }
+    inline const vulkan::Image* image() const { return _image.get(); }
+    inline VkSampler sampler() const { return _sampler; }
 
 protected:
     Vulkan * _vulkan;
+    std::shared_ptr<base::Texture> _texture;
     std::shared_ptr<vulkan::Image> _image;
 
-    // TODO: sampler
+    VkSampler _sampler = VK_NULL_HANDLE;
 };
 
 }

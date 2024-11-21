@@ -5,6 +5,8 @@
 #include <bg2e/render/vulkan/Image.hpp>
 #include <bg2e/base/Log.hpp>
 #include <bg2e/render/vulkan/factory/GraphicsPipeline.hpp>
+#include <bg2e/render/vulkan/factory/DescriptorSetLayout.hpp>
+#include <bg2e/render/vulkan/DescriptorSet.hpp>
 #include <bg2e/render/vulkan/geo/VertexDescription.hpp>
 #include <bg2e/render/vulkan/Info.hpp>
 #include <bg2e/render/vulkan/macros/graphics.hpp>
@@ -35,13 +37,32 @@ public:
 		// between the Texture object and the rest of the application.
         auto image = bg2e::db::loadImage(imagePath);
 		auto texture = new bg2e::base::Texture(image);
+        texture->setAddressMode(bg2e::base::Texture::AddressModeRepeat);
+        texture->setMagFilter(bg2e::base::Texture::FilterLinear);
+        texture->setMinFilter(bg2e::base::Texture::FilterLinear);
 
 		_texture = std::shared_ptr<bg2e::render::Texture>(new bg2e::render::Texture(
 			vulkan,
 			texture
 		));
+  
+        vulkan->cleanupManager().push([&](VkDevice) {
+            _texture->cleanup();
+        });
 	
 		createImage(vulkan->swapchain().extent());
+  
+        _dsAllocator = std::unique_ptr<bg2e::render::vulkan::DescriptorSetAllocator>(
+            new bg2e::render::vulkan::DescriptorSetAllocator()
+        );
+        _dsAllocator->init(vulkan);
+        _dsAllocator->initPool(1, {
+            { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1 }
+        });
+        vulkan->cleanupManager().push([&](VkDevice) {
+            _dsAllocator->clearDescriptors();
+            _dsAllocator->destroy();
+        });
 
 		createPipeline();
 
@@ -94,6 +115,17 @@ public:
 
 		vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, _pipeline);
 
+        VkDescriptorSet sets[] = {
+            _textureDS->descriptorSet()
+        };
+        vkCmdBindDescriptorSets(
+            cmd,
+            VK_PIPELINE_BIND_POINT_GRAPHICS,
+            _layout, 0,
+            1,
+            sets,
+            0, nullptr
+        );
 		for (uint32_t i = 0; i < _mesh->submeshCount(); ++i)
 		{
 			_mesh->drawSubmesh(cmd, i);
@@ -156,28 +188,53 @@ protected:
 
 	VkPipelineLayout _layout;
 	VkPipeline _pipeline;
+ 
+    std::unique_ptr<bg2e::render::vulkan::DescriptorSetAllocator> _dsAllocator;
 
-	std::unique_ptr<bg2e::render::vulkan::geo::MeshPC> _mesh;
+	std::unique_ptr<bg2e::render::vulkan::geo::MeshPU> _mesh;
  
 	std::shared_ptr<bg2e::render::Texture> _texture;
+    VkDescriptorSetLayout _textureDSLayout;
+    std::unique_ptr<bg2e::render::vulkan::DescriptorSet> _textureDS;
 
 	void createPipeline()
 	{
 		bg2e::render::vulkan::factory::GraphicsPipeline plFactory(_vulkan);
 
-		plFactory.addShader("test/vertbuffer.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
-		plFactory.addShader("test/test.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
+		plFactory.addShader("test/texture.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
+		plFactory.addShader("test/texture.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
 
-		auto bindingDescription = bg2e::render::vulkan::geo::bindingDescription<bg2e::geo::VertexPC>();
-		auto attributeDescriptions = bg2e::render::vulkan::geo::attributeDescriptions<bg2e::geo::VertexPC>();
+		auto bindingDescription = bg2e::render::vulkan::geo::bindingDescription<bg2e::geo::VertexPU>();
+		auto attributeDescriptions = bg2e::render::vulkan::geo::attributeDescriptions<bg2e::geo::VertexPU>();
 
 		plFactory.vertexInputState.vertexBindingDescriptionCount = 1;
 		plFactory.vertexInputState.pVertexBindingDescriptions = &bindingDescription;
 		plFactory.vertexInputState.vertexAttributeDescriptionCount = uint32_t(attributeDescriptions.size());
 		plFactory.vertexInputState.pVertexAttributeDescriptions = attributeDescriptions.data();
+  
+        bg2e::render::vulkan::factory::DescriptorSetLayout dsFactory;
+        
+        dsFactory.addBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+        _textureDSLayout = dsFactory.build(_vulkan->device().handle(), VK_SHADER_STAGE_FRAGMENT_BIT);
+        _textureDS = std::unique_ptr<bg2e::render::vulkan::DescriptorSet>(
+            _dsAllocator->allocate(_textureDSLayout)
+        );
+        _textureDS->updateImage(
+            0,
+            VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+            _texture->image()->imageView(),
+            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+            _texture->sampler()
+        );
 
 		auto layoutInfo = bg2e::render::vulkan::Info::pipelineLayoutInfo();
+        VkDescriptorSetLayout setLayouts[] = {
+            _textureDSLayout
+        };
+        layoutInfo.pSetLayouts = setLayouts;
+        layoutInfo.setLayoutCount = 1;
 		VK_ASSERT(vkCreatePipelineLayout(_vulkan->device().handle(), &layoutInfo, nullptr, &_layout));
+        
 		plFactory.setColorAttachmentFormat(_targetImage->format());
 		_pipeline = plFactory.build(_layout);
 
@@ -191,13 +248,13 @@ protected:
 	{
 		using namespace bg2e::render::vulkan;
 
-		_mesh = std::unique_ptr<bg2e::render::vulkan::geo::MeshPC>(new bg2e::render::vulkan::geo::MeshPC(_vulkan));
+        _mesh = std::unique_ptr<bg2e::render::vulkan::geo::MeshPU>(new bg2e::render::vulkan::geo::MeshPU(_vulkan));
 		_mesh->setMeshData({
 			{
-				{ { -0.5f, -0.5f, 0.0f }, { 1.0f, 0.0f, 0.0f, 1.0f } },
-				{ {  0.5f, -0.5f, 0.0f }, { 0.0f, 1.0f, 0.0f, 1.0f } },
-				{ {  0.5f,  0.5f, 0.0f }, { 0.0f, 0.0f, 1.0f, 1.0f } },
-				{ { -0.5f,  0.5f, 0.0f }, { 1.0f, 0.0f, 1.0f, 1.0f } }
+				{ { -0.5f, -0.5f, 0.0f }, { 0.0f, 0.0f } },
+				{ {  0.5f, -0.5f, 0.0f }, { 2.0f, 0.0f } },
+				{ {  0.5f,  0.5f, 0.0f }, { 2.0f, 2.0f } },
+				{ { -0.5f,  0.5f, 0.0f }, { 0.0f, 2.0f } }
 			},
 			{ 0, 1, 2, 2, 3, 0 },
 			{ { 0, 3 }, { 3, 3 } }

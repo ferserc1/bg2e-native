@@ -1,17 +1,63 @@
 
 #include <bg2e/render/Texture.hpp>
+#include <bg2e/render/Vulkan.hpp>
+
+#define BG2E_ADDRESS_MODE(x)        x == base::Texture::AddressModeRepeat ? VK_SAMPLER_ADDRESS_MODE_REPEAT : \
+                                    x == base::Texture::AddressModeMirroredRepeat ? VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT : \
+                                    x == base::Texture::AddressModeClampToEdge ? VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE : \
+                                    x == base::Texture::AddressModeClampToBorder ? VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER : \
+                                    VK_SAMPLER_ADDRESS_MODE_REPEAT
+
+#define BG2E_FILTER(x)              x == base::Texture::FilterLinear ? VK_FILTER_LINEAR : \
+                                    x == base::Texture::FilterNearest ? VK_FILTER_NEAREST: \
+                                    VK_FILTER_LINEAR
 
 namespace bg2e {
 namespace render {
 
 void Texture::load(std::shared_ptr<base::Texture> texture)
 {
-    // TODO: Load vulkan image and create sampler
+    _texture = texture;
+    
+    // TODO: Create an image cache to avoid load the same image twice
+    // TODO: Extract image options, such as mipmap levels
+    // TODO: Support for HDR images
+    VkExtent2D extent = { texture->image()->width(), texture->image()->height() };
+    _image = std::shared_ptr<vulkan::Image>(vulkan::Image::createAllocatedImage(
+        _vulkan,
+        _texture->image()->data(),
+        extent,
+        4,
+        VK_FORMAT_R8G8B8A8_UNORM,
+        VK_IMAGE_USAGE_SAMPLED_BIT,
+        VK_IMAGE_ASPECT_COLOR_BIT,
+        texture->useMipmaps()
+    ));
+    
+    VkSamplerCreateInfo samplerInfo = {};
+    samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+    samplerInfo.magFilter = BG2E_FILTER(texture->magFilter());
+    samplerInfo.minFilter = BG2E_FILTER(texture->minFilter());
+    samplerInfo.maxLod = texture->maxLod() == -1.0f ? float(_image->mipLevels()) : texture->maxLod();
+    samplerInfo.minLod = texture->minLod();
+    samplerInfo.addressModeU = BG2E_ADDRESS_MODE(texture->addressModeU());
+    samplerInfo.addressModeV = BG2E_ADDRESS_MODE(texture->addressModeV());
+    samplerInfo.addressModeW = BG2E_ADDRESS_MODE(texture->addressModeW());
+    vkCreateSampler(
+        _vulkan->device().handle(),
+        &samplerInfo,
+        nullptr,
+        &_sampler
+    );
+    
 }
 
 void Texture::cleanup()
 {
-	// TODO: Cleanup vulkan image and sampler
+    _image->cleanup();
+    _image.reset();
+    _texture.reset();
+    vkDestroySampler(_vulkan->device().handle(), _sampler, nullptr);
 }
 
 

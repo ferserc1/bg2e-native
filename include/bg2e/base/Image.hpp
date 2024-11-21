@@ -21,6 +21,8 @@ public:
     inline uint32_t height() const { return _height; }
     inline uint32_t channels() const { return _channels; }
     
+    // TODO: Support for HDR images in floating point format
+    
     inline bool isValid() const { return _data != nullptr && _width > 0 && _height > 0 && _channels > 0; }
 
 protected:
