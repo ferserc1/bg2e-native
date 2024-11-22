@@ -25,6 +25,16 @@ void Vulkan::init(SDL_Window* windowPtr)
     _swapchain.init(this, uint32_t(width), uint32_t(height));
     
     createFrameResources();
+    
+    // Create main descriptor set allocator
+    _descriptorSetAllocator = std::unique_ptr<vulkan::DescriptorSetAllocator>(
+        new vulkan::DescriptorSetAllocator()
+    );
+    _descriptorSetAllocator->init(this);
+    _cleanupManager.push([&](VkDevice) {
+        _descriptorSetAllocator->clearDescriptors();
+        _descriptorSetAllocator->destroy();
+    });
 }
 
 void Vulkan::cleanup()

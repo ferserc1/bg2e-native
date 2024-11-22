@@ -13,7 +13,13 @@ namespace render {
 
 class BG2E_API RenderLoop {
 public:
+    // Init engine resources, for example, the main descriptor set allocator,
+    // render images, etc
     void init(Vulkan * vulkan);
+    
+    // Init scene resource, for example: create pipelines, load textures,
+    // load 3d models...
+    void initScene();
 
     void acquireAndPresent();
 

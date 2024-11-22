@@ -28,7 +28,19 @@ public:
 		using namespace bg2e::render::vulkan;
 		RenderLoopDelegate::init(vulkan);
   
-		std::filesystem::path imagePath = bg2e::base::PlatformTools::assetPath().append("country_field_sun.jpg");
+        // If you need to use the main descriptor set allocator, add all the required pool size ratios
+        // in the init function.
+        vulkan->descriptorSetAllocator().requirePoolSizeRatio(1, {
+            { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1 }
+        });
+	}
+ 
+    void initScene() override
+    {
+        // Use the initScene function to initialize and create scene resources, such as pipelines, 3D models
+        // or textures
+        
+        std::filesystem::path imagePath = bg2e::base::PlatformTools::assetPath().append("country_field_sun.jpg");
 
 		// You can use plain pointers in this case, because the base::Image and base::Texture objects will not
 		// be used outside of this function. Internally, these objects will be stored in a shared_ptr and will be
@@ -42,32 +54,20 @@ public:
         texture->setMinFilter(bg2e::base::Texture::FilterLinear);
 
 		_texture = std::shared_ptr<bg2e::render::Texture>(new bg2e::render::Texture(
-			vulkan,
+			_vulkan,
 			texture
 		));
   
-        vulkan->cleanupManager().push([&](VkDevice) {
+        _vulkan->cleanupManager().push([&](VkDevice) {
             _texture->cleanup();
         });
 	
-		createImage(vulkan->swapchain().extent());
-  
-        _dsAllocator = std::unique_ptr<bg2e::render::vulkan::DescriptorSetAllocator>(
-            new bg2e::render::vulkan::DescriptorSetAllocator()
-        );
-        _dsAllocator->init(vulkan);
-        _dsAllocator->initPool(1, {
-            { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1 }
-        });
-        vulkan->cleanupManager().push([&](VkDevice) {
-            _dsAllocator->clearDescriptors();
-            _dsAllocator->destroy();
-        });
+		createImage(_vulkan->swapchain().extent());
 
 		createPipeline();
 
 		createVertexData();
-	}
+    }
 
 	void swapchainResized(VkExtent2D newExtent) override
 	{
@@ -189,8 +189,6 @@ protected:
 	VkPipelineLayout _layout;
 	VkPipeline _pipeline;
  
-    std::unique_ptr<bg2e::render::vulkan::DescriptorSetAllocator> _dsAllocator;
-
 	std::unique_ptr<bg2e::render::vulkan::geo::MeshPU> _mesh;
  
 	std::shared_ptr<bg2e::render::Texture> _texture;
@@ -217,7 +215,7 @@ protected:
         dsFactory.addBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
         _textureDSLayout = dsFactory.build(_vulkan->device().handle(), VK_SHADER_STAGE_FRAGMENT_BIT);
         _textureDS = std::unique_ptr<bg2e::render::vulkan::DescriptorSet>(
-            _dsAllocator->allocate(_textureDSLayout)
+            _vulkan->descriptorSetAllocator().allocate(_textureDSLayout)
         );
         _textureDS->updateImage(
             0,

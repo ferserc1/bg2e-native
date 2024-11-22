@@ -40,6 +40,10 @@ int32_t MainLoop::run(app::Application * application) {
     bool quit = false;
     bool stopRendering = false;
     
+    
+    // Initialize the main descriptor set allocator before executing the first frame
+    _vulkan.descriptorSetAllocator().initPool();
+    _renderLoop.initScene();
     while (!quit)
     {
         while (SDL_PollEvent(&event) != 0)

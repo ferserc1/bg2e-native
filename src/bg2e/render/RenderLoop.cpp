@@ -21,6 +21,14 @@ void RenderLoop::init(Vulkan * vulkan)
 	});
 }
 
+void RenderLoop::initScene()
+{
+    if (_renderDelegate)
+    {
+        _renderDelegate->initScene();
+    }
+}
+
 void RenderLoop::acquireAndPresent()
 {
 	if (!_vulkan) {

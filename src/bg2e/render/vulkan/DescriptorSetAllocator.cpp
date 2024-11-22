@@ -1,4 +1,5 @@
 
+#include <bg2e/base/Log.hpp>
 #include <bg2e/render/vulkan/DescriptorSetAllocator.hpp>
 
 namespace bg2e {
@@ -10,22 +11,58 @@ void DescriptorSetAllocator::init(Vulkan * vulkan)
     _vulkan = vulkan;
 }
 
+void DescriptorSetAllocator::requirePoolSizeRatio(
+    uint32_t maxSets,
+    const std::vector<PoolSizeRatio> &poolRatios
+) {
+    if (_initialized)
+    {
+        throw std::runtime_error("Trying to add pool size ratio requirement on an initialized Descriptor Set Allocator. The pool size ratios can't be modified once the allocator is inialized");
+    }
+    
+    _initMaxSets = std::max(_initMaxSets, maxSets);
+    for (auto & ratio : poolRatios)
+    {
+        _initPoolRatios.push_back(ratio);
+    }
+}
+
+void DescriptorSetAllocator::initPool()
+{
+    if (_initPoolRatios.empty())
+    {
+        bg2e_log_debug << "Main descriptor set allocator creation skipped: no requirements have been added in the initialization phase of the engine." << bg2e_log_end;
+        return;
+    }
+    bg2e_log_debug << "Initializing main descriptor set allocator with " << _initPoolRatios.size() << " pool size ratio requirements." << bg2e_log_end;
+    
+    if (_initialized)
+    {
+        throw std::runtime_error("DescriptorSetAllocator already initialized.");
+    }
+    
+    _poolSizes.clear();
+    for (auto ratio : _initPoolRatios)
+    {
+        VkDescriptorPoolSize size = {};
+        size.type = ratio.type;
+        size.descriptorCount = uint32_t(ratio.ratio * _initMaxSets);
+        _poolSizes.push_back(size);
+    }
+    
+    VkDescriptorPool newPool = createPool(_initMaxSets);
+    _setsPerPool = uint32_t(std::round(float(_initMaxSets) * 1.5f));
+    _readyPools.push_back(newPool);
+    
+    _initialized = true;
+}
+
 void DescriptorSetAllocator::initPool(
     uint32_t maxSets,
     std::vector<PoolSizeRatio> poolRatios
 ) {
-    _poolSizes.clear();
-    for (auto ratio : poolRatios)
-    {
-        VkDescriptorPoolSize size = {};
-        size.type = ratio.type;
-        size.descriptorCount = uint32_t(ratio.ratio * maxSets);
-        _poolSizes.push_back(size);
-    }
-    
-    VkDescriptorPool newPool = createPool(maxSets);
-    _setsPerPool = uint32_t(std::round(float(maxSets) * 1.5f));
-    _readyPools.push_back(newPool);
+    requirePoolSizeRatio(maxSets, poolRatios);
+    initPool();
 }
 
 VkDescriptorPool DescriptorSetAllocator::getPool()

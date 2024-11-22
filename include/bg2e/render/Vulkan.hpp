@@ -18,6 +18,12 @@
 namespace bg2e {
 namespace render {
 
+namespace vulkan {
+
+class DescriptorSetAllocator;
+
+}
+
 class BG2E_API Vulkan {
 public:
 
@@ -36,6 +42,8 @@ public:
     inline const vulkan::Swapchain& swapchain() const { return _swapchain; }
     inline vulkan::Command& command() { return _command; }
     inline const vulkan::Command& command() const { return _command; }
+    inline const vulkan::DescriptorSetAllocator& descriptorSetAllocator() const { return *_descriptorSetAllocator.get(); }
+    inline vulkan::DescriptorSetAllocator& descriptorSetAllocator() { return *_descriptorSetAllocator.get(); }
 
     inline vulkan::FrameResources& currentFrameResources() { return _frameResources[_currentFrame % vulkan::FRAME_OVERLAP]; }
     inline const vulkan::FrameResources& currentFrameResources() const { return _frameResources[_currentFrame % vulkan::FRAME_OVERLAP]; }
@@ -65,6 +73,8 @@ private:
     vulkan::Device _device;
     vulkan::Swapchain _swapchain;
     vulkan::Command _command;
+    
+    std::unique_ptr<vulkan::DescriptorSetAllocator> _descriptorSetAllocator;
 
     vulkan::FrameResources _frameResources[vulkan::FRAME_OVERLAP];
     uint32_t _currentFrame = 0;
@@ -87,3 +97,6 @@ private:
 
 }
 }
+
+// Resolve the forward declaration of DescriptorSetAllocator
+#include <bg2e/render/vulkan/DescriptorSetAllocator.hpp>

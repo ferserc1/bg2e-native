@@ -11,12 +11,17 @@ class RenderLoopDelegate {
 public:
     virtual ~RenderLoopDelegate() {}
 
+    // Init engine resource, for example, the main descriptor set allocator requirements
     virtual void init(render::Vulkan* vulkan)
     {
 		_vulkan = vulkan;
     }
 
+    // Init frame resources, tipically, the frame descriptor set allocator
     virtual void initFrameResources(render::vulkan::DescriptorSetAllocator*) {}
+    
+    // Init scene data, such as pipelines, textures or 3D models
+    virtual void initScene() {}
 
     virtual void swapchainResized(VkExtent2D) = 0;
 

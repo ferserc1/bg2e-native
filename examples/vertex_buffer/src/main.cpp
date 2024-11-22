@@ -22,13 +22,16 @@ public:
 	{
 		using namespace bg2e::render::vulkan;
 		RenderLoopDelegate::init(vulkan);
-
-		createImage(vulkan->swapchain().extent());
+	}
+ 
+    void initScene() override
+    {
+        createImage(_vulkan->swapchain().extent());
 
 		createPipeline();
 
 		createVertexData();
-	}
+    }
 
 	void swapchainResized(VkExtent2D newExtent) override
 	{

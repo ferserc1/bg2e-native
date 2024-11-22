@@ -19,6 +19,13 @@ public:
     };
 
     void init(Vulkan * vulkan);
+    
+    void requirePoolSizeRatio(
+        uint32_t maxSets,
+        const std::vector<PoolSizeRatio>& poolRatios
+    );
+    
+    void initPool();
 
     void initPool(
         uint32_t maxSets,
@@ -34,6 +41,10 @@ public:
     DescriptorSet * allocate(VkDescriptorSetLayout layout, void* pNext = nullptr);
 
 protected:
+    uint32_t _initMaxSets = 0;
+    std::vector<PoolSizeRatio> _initPoolRatios;
+    bool _initialized = false;
+    
     std::vector<VkDescriptorPoolSize> _poolSizes;
     std::vector<VkDescriptorPool> _fullPools;
     std::vector<VkDescriptorPool> _readyPools;
