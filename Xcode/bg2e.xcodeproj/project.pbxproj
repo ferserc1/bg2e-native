@@ -29,6 +29,15 @@
 		ED21919B2CDF8B8100123781 /* PhysicalDevice.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED21919A2CDF8B8100123781 /* PhysicalDevice.cpp */; };
 		ED21919F2CDFE28800123781 /* Device.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED21919E2CDFE28800123781 /* Device.cpp */; };
 		ED2191A22CDFE2A200123781 /* Surface.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED2191A12CDFE2A200123781 /* Surface.cpp */; };
+		ED2BAEAA2CF211DF00FA4CA4 /* mesh_obj_db.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED2BAEA92CF211DF00FA4CA4 /* mesh_obj_db.cpp */; };
+		ED2BAEB32CF2127600FA4CA4 /* simple_cube.mtl in Copy Assets */ = {isa = PBXBuildFile; fileRef = ED2BAEAB2CF2126A00FA4CA4 /* simple_cube.mtl */; };
+		ED2BAEB42CF2127600FA4CA4 /* simple_cube.obj in Copy Assets */ = {isa = PBXBuildFile; fileRef = ED2BAEAC2CF2126A00FA4CA4 /* simple_cube.obj */; };
+		ED2BAEB52CF2127600FA4CA4 /* taza.mtl in Copy Assets */ = {isa = PBXBuildFile; fileRef = ED2BAEAD2CF2126A00FA4CA4 /* taza.mtl */; };
+		ED2BAEB62CF2127600FA4CA4 /* taza.obj in Copy Assets */ = {isa = PBXBuildFile; fileRef = ED2BAEAE2CF2126A00FA4CA4 /* taza.obj */; };
+		ED2BAEB72CF2127600FA4CA4 /* taza_albedo.png in Copy Assets */ = {isa = PBXBuildFile; fileRef = ED2BAEAF2CF2126A00FA4CA4 /* taza_albedo.png */; };
+		ED2BAEB82CF2127600FA4CA4 /* taza_metallic.png in Copy Assets */ = {isa = PBXBuildFile; fileRef = ED2BAEB02CF2126A00FA4CA4 /* taza_metallic.png */; };
+		ED2BAEB92CF2127600FA4CA4 /* taza_normal.png in Copy Assets */ = {isa = PBXBuildFile; fileRef = ED2BAEB12CF2126A00FA4CA4 /* taza_normal.png */; };
+		ED2BAEBA2CF2127600FA4CA4 /* taza_roughness.png in Copy Assets */ = {isa = PBXBuildFile; fileRef = ED2BAEB22CF2126A00FA4CA4 /* taza_roughness.png */; };
 		ED2D565D2CE38EFE006EF072 /* InputManager.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED2D565C2CE38EFE006EF072 /* InputManager.cpp */; };
 		ED2D56612CE38F07006EF072 /* UserInterfaceDelegate.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED2D565F2CE38F07006EF072 /* UserInterfaceDelegate.cpp */; };
 		ED2D56622CE38F07006EF072 /* UserInterface.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED2D565E2CE38F07006EF072 /* UserInterface.cpp */; };
@@ -113,6 +122,14 @@
 			dstPath = assets;
 			dstSubfolderSpec = 7;
 			files = (
+				ED2BAEB32CF2127600FA4CA4 /* simple_cube.mtl in Copy Assets */,
+				ED2BAEB42CF2127600FA4CA4 /* simple_cube.obj in Copy Assets */,
+				ED2BAEB52CF2127600FA4CA4 /* taza.mtl in Copy Assets */,
+				ED2BAEB62CF2127600FA4CA4 /* taza.obj in Copy Assets */,
+				ED2BAEB72CF2127600FA4CA4 /* taza_albedo.png in Copy Assets */,
+				ED2BAEB82CF2127600FA4CA4 /* taza_metallic.png in Copy Assets */,
+				ED2BAEB92CF2127600FA4CA4 /* taza_normal.png in Copy Assets */,
+				ED2BAEBA2CF2127600FA4CA4 /* taza_roughness.png in Copy Assets */,
 				ED5201E12CED112500C94253 /* country_field_sun.jpg in Copy Assets */,
 			);
 			name = "Copy Assets";
@@ -186,6 +203,16 @@
 		ED21919E2CDFE28800123781 /* Device.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Device.cpp; sourceTree = "<group>"; };
 		ED2191A02CDFE29B00123781 /* Surface.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Surface.hpp; sourceTree = "<group>"; };
 		ED2191A12CDFE2A200123781 /* Surface.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Surface.cpp; sourceTree = "<group>"; };
+		ED2BAEA82CF211CA00FA4CA4 /* mesh_obj.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = mesh_obj.hpp; sourceTree = "<group>"; };
+		ED2BAEA92CF211DF00FA4CA4 /* mesh_obj_db.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = mesh_obj_db.cpp; sourceTree = "<group>"; };
+		ED2BAEAB2CF2126A00FA4CA4 /* simple_cube.mtl */ = {isa = PBXFileReference; lastKnownFileType = text; path = simple_cube.mtl; sourceTree = "<group>"; };
+		ED2BAEAC2CF2126A00FA4CA4 /* simple_cube.obj */ = {isa = PBXFileReference; lastKnownFileType = text; path = simple_cube.obj; sourceTree = "<group>"; };
+		ED2BAEAD2CF2126A00FA4CA4 /* taza.mtl */ = {isa = PBXFileReference; lastKnownFileType = text; path = taza.mtl; sourceTree = "<group>"; };
+		ED2BAEAE2CF2126A00FA4CA4 /* taza.obj */ = {isa = PBXFileReference; lastKnownFileType = text; path = taza.obj; sourceTree = "<group>"; };
+		ED2BAEAF2CF2126A00FA4CA4 /* taza_albedo.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = taza_albedo.png; sourceTree = "<group>"; };
+		ED2BAEB02CF2126A00FA4CA4 /* taza_metallic.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = taza_metallic.png; sourceTree = "<group>"; };
+		ED2BAEB12CF2126A00FA4CA4 /* taza_normal.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = taza_normal.png; sourceTree = "<group>"; };
+		ED2BAEB22CF2126A00FA4CA4 /* taza_roughness.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = taza_roughness.png; sourceTree = "<group>"; };
 		ED2D56562CE38ED6006EF072 /* UserInterface.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = UserInterface.hpp; sourceTree = "<group>"; };
 		ED2D56572CE38ED6006EF072 /* UserInterfaceDelegate.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = UserInterfaceDelegate.hpp; sourceTree = "<group>"; };
 		ED2D56592CE38EE3006EF072 /* InputDelegate.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = InputDelegate.hpp; sourceTree = "<group>"; };
@@ -387,6 +414,14 @@
 		ED5201D62CED082F00C94253 /* assets */ = {
 			isa = PBXGroup;
 			children = (
+				ED2BAEAB2CF2126A00FA4CA4 /* simple_cube.mtl */,
+				ED2BAEAC2CF2126A00FA4CA4 /* simple_cube.obj */,
+				ED2BAEAD2CF2126A00FA4CA4 /* taza.mtl */,
+				ED2BAEAE2CF2126A00FA4CA4 /* taza.obj */,
+				ED2BAEAF2CF2126A00FA4CA4 /* taza_albedo.png */,
+				ED2BAEB02CF2126A00FA4CA4 /* taza_metallic.png */,
+				ED2BAEB12CF2126A00FA4CA4 /* taza_normal.png */,
+				ED2BAEB22CF2126A00FA4CA4 /* taza_roughness.png */,
 				ED5201D52CED082F00C94253 /* country_field_sun.jpg */,
 			);
 			name = assets;
@@ -397,6 +432,7 @@
 			isa = PBXGroup;
 			children = (
 				ED5201D82CED093D00C94253 /* image.hpp */,
+				ED2BAEA82CF211CA00FA4CA4 /* mesh_obj.hpp */,
 			);
 			path = db;
 			sourceTree = "<group>";
@@ -405,6 +441,7 @@
 			isa = PBXGroup;
 			children = (
 				ED5201DA2CED095800C94253 /* image_db.cpp */,
+				ED2BAEA92CF211DF00FA4CA4 /* mesh_obj_db.cpp */,
 			);
 			path = db;
 			sourceTree = "<group>";
@@ -1026,6 +1063,7 @@
 				ED2191792CDF4E5D00123781 /* Info.cpp in Sources */,
 				ED2191992CDF678900123781 /* Log.cpp in Sources */,
 				ED342CFE2CE265370041BE62 /* RenderLoop.cpp in Sources */,
+				ED2BAEAA2CF211DF00FA4CA4 /* mesh_obj_db.cpp in Sources */,
 				EDD77E332CE9E78C00278155 /* VertexDescription.cpp in Sources */,
 				ED5201D42CECA7D700C94253 /* Mesh.cpp in Sources */,
 				ED21917A2CDF4E5D00123781 /* Swapchain.cpp in Sources */,
