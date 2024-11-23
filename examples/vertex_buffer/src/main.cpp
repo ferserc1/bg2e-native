@@ -146,20 +146,21 @@ protected:
 
 	void createPipeline()
 	{
-		bg2e::render::vulkan::factory::GraphicsPipeline plFactory(_vulkan);
+		using namespace bg2e::render::vulkan;
+		factory::GraphicsPipeline plFactory(_vulkan);
 
 		plFactory.addShader("test.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
 		plFactory.addShader("test.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
 
-		auto bindingDescription = bg2e::render::vulkan::geo::bindingDescription<bg2e::geo::VertexPC>();
-		auto attributeDescriptions = bg2e::render::vulkan::geo::attributeDescriptions<bg2e::geo::VertexPC>();
+		auto bindingDescription = geo::bindingDescription<bg2e::geo::VertexPC>();
+		auto attributeDescriptions = geo::attributeDescriptions<bg2e::geo::VertexPC>();
 
 		plFactory.vertexInputState.vertexBindingDescriptionCount = 1;
 		plFactory.vertexInputState.pVertexBindingDescriptions = &bindingDescription;
 		plFactory.vertexInputState.vertexAttributeDescriptionCount = uint32_t(attributeDescriptions.size());
 		plFactory.vertexInputState.pVertexAttributeDescriptions = attributeDescriptions.data();
 
-		auto layoutInfo = bg2e::render::vulkan::Info::pipelineLayoutInfo();
+		auto layoutInfo = Info::pipelineLayoutInfo();
 		VK_ASSERT(vkCreatePipelineLayout(_vulkan->device().handle(), &layoutInfo, nullptr, &_layout));
 		plFactory.setColorAttachmentFormat(_targetImage->format());
 		_pipeline = plFactory.build(_layout);
@@ -167,14 +168,14 @@ protected:
 		_vulkan->cleanupManager().push([&](VkDevice dev) {
 			vkDestroyPipeline(dev, _pipeline, nullptr);
 			vkDestroyPipelineLayout(dev, _layout, nullptr);
-			});
+		});
 	}
 
 	void createVertexData()
 	{
 		using namespace bg2e::render::vulkan;
 
-		_mesh = std::unique_ptr<bg2e::render::vulkan::geo::MeshPC>(new bg2e::render::vulkan::geo::MeshPC(_vulkan));
+		_mesh = std::unique_ptr<geo::MeshPC>(new geo::MeshPC(_vulkan));
 		_mesh->setMeshData({
 			{
 				{ { -0.5f, -0.5f, 0.0f }, { 1.0f, 0.0f, 0.0f, 1.0f } },

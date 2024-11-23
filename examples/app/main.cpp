@@ -17,6 +17,7 @@
 #include <bg2e/ui/Window.hpp>
 
 #include <bg2e/db/image.hpp>
+#include <bg2e/db/mesh_obj.hpp>
 
 class ClearScreenDelegate : public bg2e::render::RenderLoopDelegate,
 	public bg2e::app::InputDelegate,
@@ -67,6 +68,8 @@ public:
 		createPipeline();
 
 		createVertexData();
+
+		auto mesh = bg2e::db::loadMeshObj<bg2e::geo::MeshPU>(bg2e::base::PlatformTools::assetPath().append("taza.obj"));
     }
 
 	void swapchainResized(VkExtent2D newExtent) override

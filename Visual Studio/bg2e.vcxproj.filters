@@ -243,6 +243,9 @@
     <ClInclude Include="..\include\bg2e\render\Texture.hpp">
       <Filter>Header Files\bg2e\render</Filter>
     </ClInclude>
+    <ClInclude Include="..\include\bg2e\db\mesh_obj.hpp">
+      <Filter>Header Files\bg2e\db</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\bg2e\app\MainLoop.cpp">
@@ -376,6 +379,9 @@
     </ClCompile>
     <ClCompile Include="..\src\bg2e\render\Texture_render.cpp">
       <Filter>Source Files\render</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\bg2e\db\mesh_obj_db.cpp">
+      <Filter>Source Files\db</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
