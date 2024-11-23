@@ -15,61 +15,61 @@ template <class T>
 extern BG2E_API VkVertexInputBindingDescription bindingDescription();
 
 template <>
-extern BG2E_API VkVertexInputBindingDescription bindingDescription<bg2e::geo::VertexP>();
+BG2E_API VkVertexInputBindingDescription bindingDescription<bg2e::geo::VertexP>();
 
 template <>
-extern BG2E_API VkVertexInputBindingDescription bindingDescription<bg2e::geo::VertexPN>();
+BG2E_API VkVertexInputBindingDescription bindingDescription<bg2e::geo::VertexPN>();
 
 template <>
-extern BG2E_API VkVertexInputBindingDescription bindingDescription<bg2e::geo::VertexPC>();
+BG2E_API VkVertexInputBindingDescription bindingDescription<bg2e::geo::VertexPC>();
 
 template <>
-extern BG2E_API VkVertexInputBindingDescription bindingDescription<bg2e::geo::VertexPU>();
+BG2E_API VkVertexInputBindingDescription bindingDescription<bg2e::geo::VertexPU>();
 
 template <>
-extern BG2E_API VkVertexInputBindingDescription bindingDescription<bg2e::geo::VertexPNU>();
+BG2E_API VkVertexInputBindingDescription bindingDescription<bg2e::geo::VertexPNU>();
 
 template <>
-extern BG2E_API VkVertexInputBindingDescription bindingDescription<bg2e::geo::VertexPNC>();
+BG2E_API VkVertexInputBindingDescription bindingDescription<bg2e::geo::VertexPNC>();
 
 template <>
-extern BG2E_API VkVertexInputBindingDescription bindingDescription<bg2e::geo::VertexPNUC>();
+BG2E_API VkVertexInputBindingDescription bindingDescription<bg2e::geo::VertexPNUC>();
 
 template <>
-extern BG2E_API VkVertexInputBindingDescription bindingDescription<bg2e::geo::VertexPNUT>();
+BG2E_API VkVertexInputBindingDescription bindingDescription<bg2e::geo::VertexPNUT>();
 
 template <>
-extern BG2E_API VkVertexInputBindingDescription bindingDescription<bg2e::geo::VertexPNUUT>();
+BG2E_API VkVertexInputBindingDescription bindingDescription<bg2e::geo::VertexPNUUT>();
 
 template <class T>
-extern BG2E_API std::vector<VkVertexInputAttributeDescription> attributeDescriptions();
+BG2E_API std::vector<VkVertexInputAttributeDescription> attributeDescriptions();
 
 template <>
-extern BG2E_API std::vector<VkVertexInputAttributeDescription> attributeDescriptions<bg2e::geo::VertexP>();
+BG2E_API std::vector<VkVertexInputAttributeDescription> attributeDescriptions<bg2e::geo::VertexP>();
 
 template <>
-extern BG2E_API std::vector<VkVertexInputAttributeDescription> attributeDescriptions<bg2e::geo::VertexPN>();
+BG2E_API std::vector<VkVertexInputAttributeDescription> attributeDescriptions<bg2e::geo::VertexPN>();
 
 template <>
-extern BG2E_API std::vector<VkVertexInputAttributeDescription> attributeDescriptions<bg2e::geo::VertexPC>();
+BG2E_API std::vector<VkVertexInputAttributeDescription> attributeDescriptions<bg2e::geo::VertexPC>();
 
 template <>
-extern BG2E_API std::vector<VkVertexInputAttributeDescription> attributeDescriptions<bg2e::geo::VertexPU>();
+BG2E_API std::vector<VkVertexInputAttributeDescription> attributeDescriptions<bg2e::geo::VertexPU>();
 
 template <>
-extern BG2E_API std::vector<VkVertexInputAttributeDescription> attributeDescriptions<bg2e::geo::VertexPNU>();
+BG2E_API std::vector<VkVertexInputAttributeDescription> attributeDescriptions<bg2e::geo::VertexPNU>();
 
 template <>
-extern BG2E_API std::vector<VkVertexInputAttributeDescription> attributeDescriptions<bg2e::geo::VertexPNC>();
+BG2E_API std::vector<VkVertexInputAttributeDescription> attributeDescriptions<bg2e::geo::VertexPNC>();
 
 template <>
-extern BG2E_API std::vector<VkVertexInputAttributeDescription> attributeDescriptions<bg2e::geo::VertexPNUC>();
+BG2E_API std::vector<VkVertexInputAttributeDescription> attributeDescriptions<bg2e::geo::VertexPNUC>();
 
 template <>
-extern BG2E_API std::vector<VkVertexInputAttributeDescription> attributeDescriptions<bg2e::geo::VertexPNUT>();
+BG2E_API std::vector<VkVertexInputAttributeDescription> attributeDescriptions<bg2e::geo::VertexPNUT>();
 
 template <>
-extern BG2E_API std::vector<VkVertexInputAttributeDescription> attributeDescriptions<bg2e::geo::VertexPNUUT>();
+BG2E_API std::vector<VkVertexInputAttributeDescription> attributeDescriptions<bg2e::geo::VertexPNUUT>();
 
 
 
