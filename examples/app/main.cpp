@@ -36,6 +36,14 @@ public:
         });
 	}
  
+    void initFrameResources(bg2e::render::vulkan::DescriptorSetAllocator* frameAllocator) override
+    {
+        frameAllocator->requirePoolSizeRatio(1, {
+            { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 2 }
+        });
+        frameAllocator->initPool();
+    }
+ 
     void initScene() override
     {
         // Use the initScene function to initialize and create scene resources, such as pipelines, 3D models
@@ -67,6 +75,14 @@ public:
 
 		createPipeline();
 
+        _sceneData.viewMatrix = glm::lookAt(glm::vec3{ 0.0f, 0.0f, -3.0f}, { 0.0f, 0.0f, 0.0f }, { 0.0f, 1.0f, 0.0f });
+        
+        auto vpSize = _vulkan->swapchain().extent();
+        _sceneData.projMatrix = glm::perspective(glm::radians(50.0f), float(vpSize.width) / float(vpSize.height), 1.0f, 10.0f);
+        _sceneData.projMatrix[1][1] *= -1.0f;
+        _sceneData.projMatrix[0][0] *= -1.0f;
+
+        _objectData.modelMatrix = glm::mat4{ 1.0f };
 		createVertexData();
 
 		auto mesh = bg2e::db::loadMeshObj<bg2e::geo::MeshPU>(bg2e::base::PlatformTools::assetPath().append("taza.obj"));
@@ -76,6 +92,13 @@ public:
 	{
 		_targetImage->cleanup();
 		createImage(newExtent);
+  
+        _sceneData.projMatrix = glm::perspective(
+            glm::radians(50.0f),
+            float(newExtent.width) / float(newExtent.height),
+            1.0f, 10.0f);
+        _sceneData.projMatrix[1][1] *= -1.0f;
+        _sceneData.projMatrix[0][0] *= -1.0f;
 	}
 
 	VkImageLayout render(
@@ -86,6 +109,41 @@ public:
 		bg2e::render::vulkan::FrameResources& frameResources
 	) override {
 		using namespace bg2e::render::vulkan;
+  
+        // Update descriptor sets for scene and object data
+        // with new uniform buffers
+        auto sceneUniformBuffer = Buffer::createAllocatedBuffer(
+            _vulkan,
+            sizeof(SceneData),
+            VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+            VMA_MEMORY_USAGE_CPU_ONLY
+        );
+        
+        auto sceneDataPtr = reinterpret_cast<SceneData*>(sceneUniformBuffer->allocatedData());
+        *sceneDataPtr = _sceneData;
+        
+        auto sceneDS = std::unique_ptr<DescriptorSet>(frameResources.descriptorAllocator->allocate(_sceneDSLayout));
+        sceneDS->updateBuffer(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, sceneUniformBuffer, sizeof(SceneData), 0);
+        
+        auto objectUniformBuffer = Buffer::createAllocatedBuffer(
+            _vulkan,
+            sizeof(ObjectData),
+            VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+            VMA_MEMORY_USAGE_CPU_ONLY
+        );
+        
+        auto objectDataPtr = reinterpret_cast<ObjectData*>(objectUniformBuffer->allocatedData());
+        *objectDataPtr = _objectData;
+        
+        auto objectDS = std::unique_ptr<DescriptorSet>(frameResources.descriptorAllocator->allocate(_objectDSLayout));
+        objectDS->updateBuffer(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, objectUniformBuffer, sizeof(ObjectData), 0);
+                                   
+        frameResources.cleanupManager.push([&, sceneUniformBuffer, objectUniformBuffer](VkDevice) {
+            sceneUniformBuffer->cleanup();
+            delete sceneUniformBuffer;
+            objectUniformBuffer->cleanup();
+            delete objectUniformBuffer;
+        });
 
 		Image::cmdTransitionImage(
 			cmd,
@@ -119,13 +177,15 @@ public:
 		vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, _pipeline);
 
         VkDescriptorSet sets[] = {
-            _textureDS->descriptorSet()
+            _textureDS->descriptorSet(),
+            sceneDS->descriptorSet(),
+            objectDS->descriptorSet()
         };
         vkCmdBindDescriptorSets(
             cmd,
             VK_PIPELINE_BIND_POINT_GRAPHICS,
             _layout, 0,
-            1,
+            3,
             sets,
             0, nullptr
         );
@@ -197,6 +257,23 @@ protected:
 	std::shared_ptr<bg2e::render::Texture> _texture;
     VkDescriptorSetLayout _textureDSLayout;
     std::unique_ptr<bg2e::render::vulkan::DescriptorSet> _textureDS;
+    
+    VkDescriptorSetLayout _sceneDSLayout;
+    VkDescriptorSetLayout _objectDSLayout;
+    
+    struct SceneData
+    {
+        glm::mat4 viewMatrix;
+        glm::mat4 projMatrix;
+    };
+    
+    SceneData _sceneData;
+    
+    struct ObjectData
+    {
+        glm::mat4 modelMatrix;
+    };
+    ObjectData _objectData;
 
 	void createPipeline()
 	{
@@ -227,13 +304,24 @@ protected:
             VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
             _texture->sampler()
         );
+        
+        dsFactory.clear();
+        dsFactory.addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
+        _sceneDSLayout = dsFactory.build(_vulkan->device().handle(), VK_SHADER_STAGE_VERTEX_BIT);
+        
+        dsFactory.clear();
+        dsFactory.addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
+        _objectDSLayout = dsFactory.build(_vulkan->device().handle(), VK_SHADER_STAGE_VERTEX_BIT);
+        
 
 		auto layoutInfo = bg2e::render::vulkan::Info::pipelineLayoutInfo();
         VkDescriptorSetLayout setLayouts[] = {
-            _textureDSLayout
+            _textureDSLayout,
+            _sceneDSLayout,
+            _objectDSLayout
         };
         layoutInfo.pSetLayouts = setLayouts;
-        layoutInfo.setLayoutCount = 1;
+        layoutInfo.setLayoutCount = 3;
 		VK_ASSERT(vkCreatePipelineLayout(_vulkan->device().handle(), &layoutInfo, nullptr, &_layout));
         
 		plFactory.setColorAttachmentFormat(_targetImage->format());
@@ -243,6 +331,8 @@ protected:
 			vkDestroyPipeline(dev, _pipeline, nullptr);
 			vkDestroyPipelineLayout(dev, _layout, nullptr);
 			vkDestroyDescriptorSetLayout(dev, _textureDSLayout, nullptr);
+            vkDestroyDescriptorSetLayout(dev, _sceneDSLayout, nullptr);
+            vkDestroyDescriptorSetLayout(dev, _objectDSLayout, nullptr);
 		});
 	}
 
@@ -253,10 +343,10 @@ protected:
         _mesh = std::unique_ptr<bg2e::render::vulkan::geo::MeshPU>(new bg2e::render::vulkan::geo::MeshPU(_vulkan));
 		_mesh->setMeshData({
 			{
-				{ { -0.5f, -0.5f, 0.0f }, { 0.0f, 0.0f } },
-				{ {  0.5f, -0.5f, 0.0f }, { 2.0f, 0.0f } },
-				{ {  0.5f,  0.5f, 0.0f }, { 2.0f, 2.0f } },
-				{ { -0.5f,  0.5f, 0.0f }, { 0.0f, 2.0f } }
+				{ { -0.5f, -0.5f, 0.0f }, { 0.0f, 2.0f } },
+				{ {  0.5f, -0.5f, 0.0f }, { 2.0f, 2.0f } },
+				{ {  0.5f,  0.5f, 0.0f }, { 2.0f, 0.0f } },
+				{ { -0.5f,  0.5f, 0.0f }, { 0.0f, 0.0f } }
 			},
 			{ 0, 1, 2, 2, 3, 0 },
 			{ { 0, 3 }, { 3, 3 } }

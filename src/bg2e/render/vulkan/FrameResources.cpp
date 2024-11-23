@@ -28,8 +28,8 @@ void FrameResources::init(const Device& device, Command* command)
 
 void FrameResources::flushFrameData()
 {
-    cleanupManager.flush(*_device);
     descriptorAllocator->clearDescriptors();
+    cleanupManager.flush(*_device);
 }
 
 void FrameResources::cleanup()
@@ -45,7 +45,7 @@ void FrameResources::cleanup()
     vkDestroyFence(_command->device(), frameFence, nullptr);
     vkDestroySemaphore(_command->device(), swapchainSemaphore, nullptr);
     vkDestroySemaphore(_command->device(), renderSemaphore, nullptr);
-
+    
     // Destroy frame cleanup manager
     cleanupManager.flush(*_device);
 }

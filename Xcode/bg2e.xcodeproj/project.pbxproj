@@ -213,6 +213,9 @@
 		ED2BAEB02CF2126A00FA4CA4 /* taza_metallic.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = taza_metallic.png; sourceTree = "<group>"; };
 		ED2BAEB12CF2126A00FA4CA4 /* taza_normal.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = taza_normal.png; sourceTree = "<group>"; };
 		ED2BAEB22CF2126A00FA4CA4 /* taza_roughness.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = taza_roughness.png; sourceTree = "<group>"; };
+		ED2BAEBB2CF2382A00FA4CA4 /* texture.frag.glsl */ = {isa = PBXFileReference; lastKnownFileType = text; path = texture.frag.glsl; sourceTree = "<group>"; };
+		ED2BAEBC2CF2382A00FA4CA4 /* texture.vert.glsl */ = {isa = PBXFileReference; lastKnownFileType = text; path = texture.vert.glsl; sourceTree = "<group>"; };
+		ED2BAEBD2CF2382A00FA4CA4 /* vertbuffer.vert.glsl */ = {isa = PBXFileReference; lastKnownFileType = text; path = vertbuffer.vert.glsl; sourceTree = "<group>"; };
 		ED2D56562CE38ED6006EF072 /* UserInterface.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = UserInterface.hpp; sourceTree = "<group>"; };
 		ED2D56572CE38ED6006EF072 /* UserInterfaceDelegate.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = UserInterfaceDelegate.hpp; sourceTree = "<group>"; };
 		ED2D56592CE38EE3006EF072 /* InputDelegate.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = InputDelegate.hpp; sourceTree = "<group>"; };
@@ -817,6 +820,9 @@
 			children = (
 				EDF0451D2CE65DB8005C8B96 /* test.frag.glsl */,
 				EDF0451E2CE65DB8005C8B96 /* test.vert.glsl */,
+				ED2BAEBB2CF2382A00FA4CA4 /* texture.frag.glsl */,
+				ED2BAEBC2CF2382A00FA4CA4 /* texture.vert.glsl */,
+				ED2BAEBD2CF2382A00FA4CA4 /* vertbuffer.vert.glsl */,
 			);
 			path = test;
 			sourceTree = "<group>";
