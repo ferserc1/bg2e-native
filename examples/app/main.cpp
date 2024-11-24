@@ -55,7 +55,7 @@ public:
 
 		// You can use plain pointers in this case, because the base::Image and base::Texture objects will not
 		// be used outside of this function. Internally, these objects will be stored in a shared_ptr and will be
-		// managed by the Texture object.
+		// managed by the render::Texture object.
 		// But if you plan to use the objects more than once, you ALWAYS must to use a shared_ptr to share the pointer
 		// between the Texture object and the rest of the application.
         auto image = bg2e::db::loadImage(imagePath);

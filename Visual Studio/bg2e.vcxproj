@@ -48,6 +48,7 @@
     <ClInclude Include="..\include\bg2e\render\vulkan\Image.hpp" />
     <ClInclude Include="..\include\bg2e\render\vulkan\Info.hpp" />
     <ClInclude Include="..\include\bg2e\render\vulkan\Instance.hpp" />
+    <ClInclude Include="..\include\bg2e\render\vulkan\macros\descriptor_set.hpp" />
     <ClInclude Include="..\include\bg2e\render\vulkan\macros\graphics.hpp" />
     <ClInclude Include="..\include\bg2e\render\vulkan\PhysicalDevice.hpp" />
     <ClInclude Include="..\include\bg2e\render\vulkan\Surface.hpp" />
