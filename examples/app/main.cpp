@@ -10,8 +10,10 @@
 #include <bg2e/render/vulkan/geo/VertexDescription.hpp>
 #include <bg2e/render/vulkan/Info.hpp>
 #include <bg2e/render/vulkan/macros/graphics.hpp>
+#include <bg2e/render/vulkan/macros/descriptor_set.hpp>
 #include <bg2e/render/vulkan/geo/Mesh.hpp>
 #include <bg2e/render/Texture.hpp>
+
 
 #include <bg2e/ui/BasicWidgets.hpp>
 #include <bg2e/ui/Window.hpp>
@@ -112,38 +114,12 @@ public:
   
         // Update descriptor sets for scene and object data
         // with new uniform buffers
-        auto sceneUniformBuffer = Buffer::createAllocatedBuffer(
-            _vulkan,
-            sizeof(SceneData),
-            VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-            VMA_MEMORY_USAGE_CPU_ONLY
-        );
-        
-        auto sceneDataPtr = reinterpret_cast<SceneData*>(sceneUniformBuffer->allocatedData());
-        *sceneDataPtr = _sceneData;
-        
-        auto sceneDS = std::unique_ptr<DescriptorSet>(frameResources.descriptorAllocator->allocate(_sceneDSLayout));
-        sceneDS->updateBuffer(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, sceneUniformBuffer, sizeof(SceneData), 0);
-        
-        auto objectUniformBuffer = Buffer::createAllocatedBuffer(
-            _vulkan,
-            sizeof(ObjectData),
-            VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-            VMA_MEMORY_USAGE_CPU_ONLY
-        );
-        
-        auto objectDataPtr = reinterpret_cast<ObjectData*>(objectUniformBuffer->allocatedData());
-        *objectDataPtr = _objectData;
-        
-        auto objectDS = std::unique_ptr<DescriptorSet>(frameResources.descriptorAllocator->allocate(_objectDSLayout));
-        objectDS->updateBuffer(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, objectUniformBuffer, sizeof(ObjectData), 0);
-                                   
-        frameResources.cleanupManager.push([&, sceneUniformBuffer, objectUniformBuffer](VkDevice) {
-            sceneUniformBuffer->cleanup();
-            delete sceneUniformBuffer;
-            objectUniformBuffer->cleanup();
-            delete objectUniformBuffer;
-        });
+        // The uniformBufferDescriptorSet function automatically create the uniform buffer and descriptor set
+        // inside the FrameResources object.
+        // You must manage the deletion of the DescriptorSet returned by the function. In this example we do it
+        // using a smart pointer
+        auto sceneDS = std::unique_ptr<DescriptorSet>(macros::uniformBufferDescriptorSet(_vulkan, frameResources, _sceneDSLayout, 0, _sceneData, currentFrame));
+        auto objectDS = std::unique_ptr<DescriptorSet>(macros::uniformBufferDescriptorSet(_vulkan, frameResources, _objectDSLayout, 0, _objectData, currentFrame));
 
 		Image::cmdTransitionImage(
 			cmd,

@@ -283,6 +283,7 @@
 		ED8688442CDAAB3400A71ADC /* stb_image.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = stb_image.h; sourceTree = "<group>"; };
 		ED8688462CDAAB3400A71ADC /* tiny_obj_loader.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = tiny_obj_loader.h; sourceTree = "<group>"; };
 		ED86884F2CDAAB7300A71ADC /* CoreFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreFoundation.framework; path = System/Library/Frameworks/CoreFoundation.framework; sourceTree = SDKROOT; };
+		EDA28E922CF311F2009AC1FB /* descriptor_set.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = descriptor_set.hpp; sourceTree = "<group>"; };
 		EDD3571D2CD92341009C7507 /* copy_libraries.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = copy_libraries.sh; sourceTree = "<group>"; };
 		EDD357202CD924B9009C7507 /* libMoltenVK.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; path = libMoltenVK.dylib; sourceTree = "<group>"; };
 		EDD357212CD924B9009C7507 /* libSDL2-2.0.0.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; path = "libSDL2-2.0.0.dylib"; sourceTree = "<group>"; };
@@ -786,6 +787,7 @@
 		EDEF49E82CE7B6FF00EE4ADA /* macros */ = {
 			isa = PBXGroup;
 			children = (
+				EDA28E922CF311F2009AC1FB /* descriptor_set.hpp */,
 				EDEF49E72CE7B6FF00EE4ADA /* graphics.hpp */,
 			);
 			path = macros;
