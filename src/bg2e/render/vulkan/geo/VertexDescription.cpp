@@ -203,7 +203,7 @@ std::vector<VkVertexInputAttributeDescription> attributeDescriptions<bg2e::geo::
 
     desc[1].binding = 0;
     desc[1].location = 1;
-    desc[1].format = VK_FORMAT_R32G32B32A32_SFLOAT;
+    desc[1].format = VK_FORMAT_R32G32_SFLOAT;
     desc[1].offset = offsetof(VertexPU, texCoord0);
 
     return desc;

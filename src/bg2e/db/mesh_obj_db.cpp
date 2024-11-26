@@ -4,6 +4,8 @@
 
 #include <bg2e/base/Log.hpp>
 
+#define GLM_FORCE_DEPTH_ZERO_TO_ONE 1
+#define GLM_FORCE_LEFT_HANDED 1
 #include <glm/glm.hpp>
 
 #define TINYOBJLOADER_IMPLEMENTATION
@@ -40,50 +42,38 @@ void readObjMesh(
 	if (!err.empty()) {
 		throw std::runtime_error(std::string("Error loading OBJ file: ") + err);
 	}
-
-	uint32_t index = 0;
-	uint32_t submesh_offset = 0;
-	for (size_t s = 0; s < shapes.size(); ++s)
-	{
-		size_t index_offset = 0;
-		uint32_t submesh_index_count = 0;
-		for (size_t f = 0; f < shapes[s].mesh.num_face_vertices.size(); ++f)
-		{
-			
-			size_t fv = 3;
-			if (size_t(shapes[s].mesh.num_face_vertices[f]) > 3)
-			{
-				bg2e_log_warning << "OBJ file contains polygons with more than 3 vertices. Only triangles are supported. Please, triangulate the mesh faces on exporting the mesh file." << bg2e_log_end;
-			}
-
-			for (size_t v = 0; v < fv; ++v) {
-				tinyobj::index_t idx = shapes[s].mesh.indices[index_offset + 0];
-				// vertex position
-				tinyobj::real_t vx = attrib.vertices[3 * idx.vertex_index];
-				tinyobj::real_t vy = attrib.vertices[3 * idx.vertex_index + 1];
-				tinyobj::real_t vz = attrib.vertices[3 * idx.vertex_index + 2];
-				// vertex normal
-				tinyobj::real_t nx = attrib.normals[3 * idx.normal_index];
-				tinyobj::real_t ny = attrib.normals[3 * idx.normal_index + 1];
-				tinyobj::real_t nz = attrib.normals[3 * idx.normal_index + 2];
-				// vertex uv
-				tinyobj::real_t s = attrib.texcoords[2 * idx.texcoord_index];
-				tinyobj::real_t t = attrib.texcoords[2 * idx.texcoord_index + 1];
-
-				vertexCallback(
-					glm::vec3(vx, vy, vz),
-					glm::vec3(nx, ny, nz),
-					glm::vec2(s, 1.0 - t)
-				);
-				indexCallback(uint32_t(index++));
-			}
-			index_offset += fv;
-			submesh_index_count++;
-		}
-
-		submeshCallback(submesh_offset, submesh_index_count);
-		submesh_offset += submesh_index_count;
-	}
+ 
+    uint32_t currentIndex = 0;
+    uint32_t submeshOffset = 0;
+    for (const auto& shape : shapes)
+    {
+        uint32_t submeshCount = 0;
+        for (const auto& index : shape.mesh.indices)
+        {
+            // Curretly, the loader only supports triangles
+            
+            glm::vec3 position {
+                attrib.vertices[3 * index.vertex_index],
+                attrib.vertices[3 * index.vertex_index + 1],
+                attrib.vertices[3 * index.vertex_index + 2]
+            };
+            glm::vec3 normal {
+                attrib.normals[3 * index.normal_index],
+                attrib.normals[3 * index.normal_index + 1],
+                attrib.normals[3 * index.normal_index + 2]
+            };
+            glm::vec2 uv {
+                attrib.texcoords[2 * index.texcoord_index],
+                1.0f - attrib.texcoords[2 * index.texcoord_index + 1]
+            };
+            
+            vertexCallback(position, normal, uv);
+            indexCallback(currentIndex++);
+            ++submeshCount;
+        }
+        submeshCallback(submeshOffset, submeshCount);
+        submeshOffset = currentIndex;
+    }
 }
 
 template <>

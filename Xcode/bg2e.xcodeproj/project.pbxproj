@@ -68,6 +68,18 @@
 		ED85B2122CDBAB9C0039B44D /* CoreFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = ED86884F2CDAAB7300A71ADC /* CoreFoundation.framework */; };
 		EDD3572D2CD927CB009C7507 /* MoltenVK_icd.json in Copy MoltenVK ICD */ = {isa = PBXBuildFile; fileRef = EDD3572C2CD92789009C7507 /* MoltenVK_icd.json */; };
 		EDD77E332CE9E78C00278155 /* VertexDescription.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EDD77E312CE9E78C00278155 /* VertexDescription.cpp */; };
+		EDE819942CF602600078084B /* two_submeshes.mtl in Copy Assets */ = {isa = PBXBuildFile; fileRef = EDE819922CF6024D0078084B /* two_submeshes.mtl */; };
+		EDE819952CF602600078084B /* two_submeshes.obj in Copy Assets */ = {isa = PBXBuildFile; fileRef = EDE819932CF6024D0078084B /* two_submeshes.obj */; };
+		EDE819A02CF624490078084B /* two_submeshes_inner_albedo.jpg in Copy Assets */ = {isa = PBXBuildFile; fileRef = EDE819962CF624400078084B /* two_submeshes_inner_albedo.jpg */; };
+		EDE819A12CF624490078084B /* two_submeshes_inner_ao.jpg in Copy Assets */ = {isa = PBXBuildFile; fileRef = EDE819972CF624400078084B /* two_submeshes_inner_ao.jpg */; };
+		EDE819A22CF624490078084B /* two_submeshes_inner_metallic.jpg in Copy Assets */ = {isa = PBXBuildFile; fileRef = EDE819982CF624400078084B /* two_submeshes_inner_metallic.jpg */; };
+		EDE819A32CF624490078084B /* two_submeshes_inner_normal.jpg in Copy Assets */ = {isa = PBXBuildFile; fileRef = EDE819992CF624400078084B /* two_submeshes_inner_normal.jpg */; };
+		EDE819A42CF624490078084B /* two_submeshes_inner_roughness.jpg in Copy Assets */ = {isa = PBXBuildFile; fileRef = EDE8199A2CF624400078084B /* two_submeshes_inner_roughness.jpg */; };
+		EDE819A52CF624490078084B /* two_submeshes_outer_albedo.jpg in Copy Assets */ = {isa = PBXBuildFile; fileRef = EDE8199B2CF624400078084B /* two_submeshes_outer_albedo.jpg */; };
+		EDE819A62CF624490078084B /* two_submeshes_outer_ao.jpg in Copy Assets */ = {isa = PBXBuildFile; fileRef = EDE8199C2CF624400078084B /* two_submeshes_outer_ao.jpg */; };
+		EDE819A72CF624490078084B /* two_submeshes_outer_metallic.jpg in Copy Assets */ = {isa = PBXBuildFile; fileRef = EDE8199D2CF624400078084B /* two_submeshes_outer_metallic.jpg */; };
+		EDE819A82CF624490078084B /* two_submeshes_outer_normal.jpg in Copy Assets */ = {isa = PBXBuildFile; fileRef = EDE8199E2CF624400078084B /* two_submeshes_outer_normal.jpg */; };
+		EDE819A92CF624490078084B /* two_submeshes_outer_roughness.jpg in Copy Assets */ = {isa = PBXBuildFile; fileRef = EDE8199F2CF624400078084B /* two_submeshes_outer_roughness.jpg */; };
 		EDEF49E62CE7B6F200EE4ADA /* graphics.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EDEF49E42CE7B6F200EE4ADA /* graphics.cpp */; };
 		EDF045122CE62E1B005C8B96 /* Sampler.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EDF0450F2CE62E1B005C8B96 /* Sampler.cpp */; };
 		EDF045132CE62E1B005C8B96 /* DescriptorSetLayout.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EDF0450D2CE62E1B005C8B96 /* DescriptorSetLayout.cpp */; };
@@ -122,6 +134,18 @@
 			dstPath = assets;
 			dstSubfolderSpec = 7;
 			files = (
+				EDE819A02CF624490078084B /* two_submeshes_inner_albedo.jpg in Copy Assets */,
+				EDE819A12CF624490078084B /* two_submeshes_inner_ao.jpg in Copy Assets */,
+				EDE819A22CF624490078084B /* two_submeshes_inner_metallic.jpg in Copy Assets */,
+				EDE819A32CF624490078084B /* two_submeshes_inner_normal.jpg in Copy Assets */,
+				EDE819A42CF624490078084B /* two_submeshes_inner_roughness.jpg in Copy Assets */,
+				EDE819A52CF624490078084B /* two_submeshes_outer_albedo.jpg in Copy Assets */,
+				EDE819A62CF624490078084B /* two_submeshes_outer_ao.jpg in Copy Assets */,
+				EDE819A72CF624490078084B /* two_submeshes_outer_metallic.jpg in Copy Assets */,
+				EDE819A82CF624490078084B /* two_submeshes_outer_normal.jpg in Copy Assets */,
+				EDE819A92CF624490078084B /* two_submeshes_outer_roughness.jpg in Copy Assets */,
+				EDE819942CF602600078084B /* two_submeshes.mtl in Copy Assets */,
+				EDE819952CF602600078084B /* two_submeshes.obj in Copy Assets */,
 				ED2BAEB32CF2127600FA4CA4 /* simple_cube.mtl in Copy Assets */,
 				ED2BAEB42CF2127600FA4CA4 /* simple_cube.obj in Copy Assets */,
 				ED2BAEB52CF2127600FA4CA4 /* taza.mtl in Copy Assets */,
@@ -292,6 +316,18 @@
 		EDD77E2C2CE9E76D00278155 /* Vertex.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Vertex.hpp; sourceTree = "<group>"; };
 		EDD77E312CE9E78C00278155 /* VertexDescription.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = VertexDescription.cpp; sourceTree = "<group>"; };
 		EDD77E752CEA6CF600278155 /* VertexDescription.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = VertexDescription.hpp; sourceTree = "<group>"; };
+		EDE819922CF6024D0078084B /* two_submeshes.mtl */ = {isa = PBXFileReference; lastKnownFileType = text; path = two_submeshes.mtl; sourceTree = "<group>"; };
+		EDE819932CF6024D0078084B /* two_submeshes.obj */ = {isa = PBXFileReference; lastKnownFileType = text; path = two_submeshes.obj; sourceTree = "<group>"; };
+		EDE819962CF624400078084B /* two_submeshes_inner_albedo.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = two_submeshes_inner_albedo.jpg; sourceTree = "<group>"; };
+		EDE819972CF624400078084B /* two_submeshes_inner_ao.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = two_submeshes_inner_ao.jpg; sourceTree = "<group>"; };
+		EDE819982CF624400078084B /* two_submeshes_inner_metallic.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = two_submeshes_inner_metallic.jpg; sourceTree = "<group>"; };
+		EDE819992CF624400078084B /* two_submeshes_inner_normal.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = two_submeshes_inner_normal.jpg; sourceTree = "<group>"; };
+		EDE8199A2CF624400078084B /* two_submeshes_inner_roughness.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = two_submeshes_inner_roughness.jpg; sourceTree = "<group>"; };
+		EDE8199B2CF624400078084B /* two_submeshes_outer_albedo.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = two_submeshes_outer_albedo.jpg; sourceTree = "<group>"; };
+		EDE8199C2CF624400078084B /* two_submeshes_outer_ao.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = two_submeshes_outer_ao.jpg; sourceTree = "<group>"; };
+		EDE8199D2CF624400078084B /* two_submeshes_outer_metallic.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = two_submeshes_outer_metallic.jpg; sourceTree = "<group>"; };
+		EDE8199E2CF624400078084B /* two_submeshes_outer_normal.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = two_submeshes_outer_normal.jpg; sourceTree = "<group>"; };
+		EDE8199F2CF624400078084B /* two_submeshes_outer_roughness.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = two_submeshes_outer_roughness.jpg; sourceTree = "<group>"; };
 		EDEF49E42CE7B6F200EE4ADA /* graphics.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = graphics.cpp; sourceTree = "<group>"; };
 		EDEF49E72CE7B6FF00EE4ADA /* graphics.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = graphics.hpp; sourceTree = "<group>"; };
 		EDF0450C2CE62E1B005C8B96 /* ComputePipeline.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = ComputePipeline.cpp; sourceTree = "<group>"; };
@@ -418,10 +454,22 @@
 		ED5201D62CED082F00C94253 /* assets */ = {
 			isa = PBXGroup;
 			children = (
+				EDE819962CF624400078084B /* two_submeshes_inner_albedo.jpg */,
+				EDE819972CF624400078084B /* two_submeshes_inner_ao.jpg */,
+				EDE819982CF624400078084B /* two_submeshes_inner_metallic.jpg */,
+				EDE819992CF624400078084B /* two_submeshes_inner_normal.jpg */,
+				EDE8199A2CF624400078084B /* two_submeshes_inner_roughness.jpg */,
+				EDE8199B2CF624400078084B /* two_submeshes_outer_albedo.jpg */,
+				EDE8199C2CF624400078084B /* two_submeshes_outer_ao.jpg */,
+				EDE8199D2CF624400078084B /* two_submeshes_outer_metallic.jpg */,
+				EDE8199E2CF624400078084B /* two_submeshes_outer_normal.jpg */,
+				EDE8199F2CF624400078084B /* two_submeshes_outer_roughness.jpg */,
 				ED2BAEAB2CF2126A00FA4CA4 /* simple_cube.mtl */,
 				ED2BAEAC2CF2126A00FA4CA4 /* simple_cube.obj */,
 				ED2BAEAD2CF2126A00FA4CA4 /* taza.mtl */,
 				ED2BAEAE2CF2126A00FA4CA4 /* taza.obj */,
+				EDE819922CF6024D0078084B /* two_submeshes.mtl */,
+				EDE819932CF6024D0078084B /* two_submeshes.obj */,
 				ED2BAEAF2CF2126A00FA4CA4 /* taza_albedo.png */,
 				ED2BAEB02CF2126A00FA4CA4 /* taza_metallic.png */,
 				ED2BAEB12CF2126A00FA4CA4 /* taza_normal.png */,

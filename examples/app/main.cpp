@@ -51,7 +51,8 @@ public:
         // Use the initScene function to initialize and create scene resources, such as pipelines, 3D models
         // or textures
         
-        std::filesystem::path imagePath = bg2e::base::PlatformTools::assetPath().append("country_field_sun.jpg");
+        std::filesystem::path imagePath = bg2e::base::PlatformTools::assetPath().append("two_submeshes_inner_albedo.jpg");
+        std::filesystem::path imagePath2 = bg2e::base::PlatformTools::assetPath().append("two_submeshes_outer_albedo.jpg");
 
 		// You can use plain pointers in this case, because the base::Image and base::Texture objects will not
 		// be used outside of this function. Internally, these objects will be stored in a shared_ptr and will be
@@ -60,7 +61,6 @@ public:
 		// between the Texture object and the rest of the application.
         auto image = bg2e::db::loadImage(imagePath);
 		auto texture = new bg2e::base::Texture(image);
-        texture->setAddressMode(bg2e::base::Texture::AddressModeRepeat);
         texture->setMagFilter(bg2e::base::Texture::FilterLinear);
         texture->setMinFilter(bg2e::base::Texture::FilterLinear);
 
@@ -69,25 +69,39 @@ public:
 			texture
 		));
   
+        auto image2 = bg2e::db::loadImage(imagePath2);
+        auto texture2 = new bg2e::base::Texture(image2);
+        texture2->setMagFilter(bg2e::base::Texture::FilterLinear);
+        texture2->setMinFilter(bg2e::base::Texture::FilterLinear);
+        
+        _texture2 = std::shared_ptr<bg2e::render::Texture>(new bg2e::render::Texture(
+            _vulkan,
+            texture2
+        ));
+  
         _vulkan->cleanupManager().push([&](VkDevice) {
             _texture->cleanup();
+            _texture2->cleanup();
         });
 	
 		createImage(_vulkan->swapchain().extent());
 
 		createPipeline();
 
-        _sceneData.viewMatrix = glm::lookAt(glm::vec3{ 0.0f, 0.0f, -3.0f}, { 0.0f, 0.0f, 0.0f }, { 0.0f, 1.0f, 0.0f });
+        _sceneData.viewMatrix = glm::lookAt(glm::vec3{ 0.0f, 0.0f, -5.0f}, { 0.0f, 0.0f, 0.0f }, { 0.0f, 1.0f, 0.0f });
         
         auto vpSize = _vulkan->swapchain().extent();
-        _sceneData.projMatrix = glm::perspective(glm::radians(50.0f), float(vpSize.width) / float(vpSize.height), 1.0f, 10.0f);
+        _sceneData.projMatrix = glm::perspective(
+            glm::radians(50.0f),
+            float(vpSize.width) / float(vpSize.height),
+            0.1f, 40.0f
+        );
         _sceneData.projMatrix[1][1] *= -1.0f;
         _sceneData.projMatrix[0][0] *= -1.0f;
 
         _objectData.modelMatrix = glm::mat4{ 1.0f };
+        
 		createVertexData();
-
-		auto mesh = bg2e::db::loadMeshObj<bg2e::geo::MeshPU>(bg2e::base::PlatformTools::assetPath().append("taza.obj"));
     }
 
 	void swapchainResized(VkExtent2D newExtent) override
@@ -98,7 +112,8 @@ public:
         _sceneData.projMatrix = glm::perspective(
             glm::radians(50.0f),
             float(newExtent.width) / float(newExtent.height),
-            1.0f, 10.0f);
+            0.1f, 40.0f
+        );
         _sceneData.projMatrix[1][1] *= -1.0f;
         _sceneData.projMatrix[0][0] *= -1.0f;
 	}
@@ -119,6 +134,8 @@ public:
         // You must manage the deletion of the DescriptorSet returned by the function. In this example we do it
         // using a smart pointer
         auto sceneDS = std::unique_ptr<DescriptorSet>(macros::uniformBufferDescriptorSet(_vulkan, frameResources, _sceneDSLayout, 0, _sceneData, currentFrame));
+        
+        _objectData.modelMatrix = glm::rotate(_objectData.modelMatrix, 0.02f, glm::vec3(0.0f, 1.0f, 0.0f));
         auto objectDS = std::unique_ptr<DescriptorSet>(macros::uniformBufferDescriptorSet(_vulkan, frameResources, _objectDSLayout, 0, _objectData, currentFrame));
 
 		Image::cmdTransitionImage(
@@ -145,28 +162,30 @@ public:
 		);
 
 		auto colorAttachment = Info::attachmentInfo(_targetImage->imageView(), nullptr);
-		auto renderInfo = Info::renderingInfo(_targetImage->extent2D(), &colorAttachment, nullptr);
+        auto depthAttachment = Info::depthAttachmentInfo(depthImage->imageView());
+        auto renderInfo = Info::renderingInfo(_targetImage->extent2D(), &colorAttachment, &depthAttachment);
 		cmdBeginRendering(cmd, &renderInfo);
 
 		macros::cmdSetDefaultViewportAndScissor(cmd, _targetImage->extent2D());
 
 		vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, _pipeline);
 
-        VkDescriptorSet sets[] = {
-            _textureDS->descriptorSet(),
-            sceneDS->descriptorSet(),
-            objectDS->descriptorSet()
-        };
-        vkCmdBindDescriptorSets(
-            cmd,
-            VK_PIPELINE_BIND_POINT_GRAPHICS,
-            _layout, 0,
-            3,
-            sets,
-            0, nullptr
-        );
+        
 		for (uint32_t i = 0; i < _mesh->submeshCount(); ++i)
 		{
+            VkDescriptorSet sets[] = {
+                i == 0 ? _texture2DS->descriptorSet() : _textureDS->descriptorSet(),
+                sceneDS->descriptorSet(),
+                objectDS->descriptorSet()
+            };
+            vkCmdBindDescriptorSets(
+                cmd,
+                VK_PIPELINE_BIND_POINT_GRAPHICS,
+                _layout, 0,
+                3,
+                sets,
+                0, nullptr
+            );
 			_mesh->drawSubmesh(cmd, i);
 		}
 
@@ -231,8 +250,10 @@ protected:
 	std::unique_ptr<bg2e::render::vulkan::geo::MeshPU> _mesh;
  
 	std::shared_ptr<bg2e::render::Texture> _texture;
+    std::shared_ptr<bg2e::render::Texture> _texture2;
     VkDescriptorSetLayout _textureDSLayout;
     std::unique_ptr<bg2e::render::vulkan::DescriptorSet> _textureDS;
+    std::unique_ptr<bg2e::render::vulkan::DescriptorSet> _texture2DS;
     
     VkDescriptorSetLayout _sceneDSLayout;
     VkDescriptorSetLayout _objectDSLayout;
@@ -280,6 +301,16 @@ protected:
             VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
             _texture->sampler()
         );
+        _texture2DS = std::unique_ptr<bg2e::render::vulkan::DescriptorSet>(
+            _vulkan->descriptorSetAllocator().allocate(_textureDSLayout)
+        );
+        _texture2DS->updateImage(
+            0,
+            VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+            _texture2->image()->imageView(),
+            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+            _texture->sampler()
+        );
         
         dsFactory.clear();
         dsFactory.addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
@@ -300,6 +331,10 @@ protected:
         layoutInfo.setLayoutCount = 3;
 		VK_ASSERT(vkCreatePipelineLayout(_vulkan->device().handle(), &layoutInfo, nullptr, &_layout));
         
+        plFactory.setDepthFormat(_vulkan->swapchain().depthImageFormat());
+        plFactory.enableDepthtest(true, VK_COMPARE_OP_LESS);
+        plFactory.inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+        plFactory.setCullMode(true, VK_FRONT_FACE_CLOCKWISE);
 		plFactory.setColorAttachmentFormat(_targetImage->format());
 		_pipeline = plFactory.build(_layout);
 
@@ -315,18 +350,13 @@ protected:
 	void createVertexData()
 	{
 		using namespace bg2e::render::vulkan;
+  
+        auto mesh = std::unique_ptr<bg2e::geo::MeshPU>(
+            bg2e::db::loadMeshObj<bg2e::geo::MeshPU>(bg2e::base::PlatformTools::assetPath().append("two_submeshes.obj"))
+        );
 
         _mesh = std::unique_ptr<bg2e::render::vulkan::geo::MeshPU>(new bg2e::render::vulkan::geo::MeshPU(_vulkan));
-		_mesh->setMeshData({
-			{
-				{ { -0.5f, -0.5f, 0.0f }, { 0.0f, 2.0f } },
-				{ {  0.5f, -0.5f, 0.0f }, { 2.0f, 2.0f } },
-				{ {  0.5f,  0.5f, 0.0f }, { 2.0f, 0.0f } },
-				{ { -0.5f,  0.5f, 0.0f }, { 0.0f, 0.0f } }
-			},
-			{ 0, 1, 2, 2, 3, 0 },
-			{ { 0, 3 }, { 3, 3 } }
-		});
+        _mesh->setMeshData(mesh.get());
 
 		_mesh->build();
 

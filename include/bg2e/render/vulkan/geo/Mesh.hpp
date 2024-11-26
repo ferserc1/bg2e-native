@@ -20,6 +20,7 @@ public:
     inline MeshT & meshData() { return _meshData; }
     inline const MeshT & meshData() const { return _meshData; }
     inline void setMeshData(const MeshT & m) { _meshData = m; }
+    inline void setMeshData(const MeshT * m) { _meshData = *m; }
 	inline uint32_t submeshCount() const { return uint32_t(_meshData.submeshes.size()); }
 
 	inline const Buffer* vertexBuffer() const { return _vertexBuffer.get(); }
