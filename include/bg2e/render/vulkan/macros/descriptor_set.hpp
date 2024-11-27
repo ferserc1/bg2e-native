@@ -6,15 +6,29 @@
 #include <bg2e/render/Vulkan.hpp>
 
 #include <memory>
+#include <functional>
 
 namespace bg2e {
 namespace render {
 namespace vulkan {
 namespace macros {
 
+// This function is usefull when we have a descriptor set that only contains
+// one uniform buffer. This function will create the buffer, upload the data,
+// create a descriptor set and update it in one single call.
+// If your descriptor set contains more elements, you must to use other
+// alternatives.
+// The DescriptorSet memory created in this function is managed by the
+// frame resources. Do not try to manage this descriptor set with any
+// kind of smart pointer, the heap memory used by the descriptor set object
+// will be automatically released when the frame is done.
 template <typename T>
-DescriptorSet* uniformBufferDescriptorSet(Vulkan* vulkan, FrameResources& frameResources, VkDescriptorSetLayout descriptorSetLayout, uint32_t binding, const T& data, uint32_t currentFrame)
-{
+DescriptorSet* uniformBufferDescriptorSet(
+    Vulkan* vulkan,
+    FrameResources& frameResources,
+    VkDescriptorSetLayout descriptorSetLayout,
+    const T& data, uint32_t currentFrame
+) {
      auto uniformBuffer = Buffer::createAllocatedBuffer(
         vulkan,
         sizeof(T),
@@ -25,8 +39,8 @@ DescriptorSet* uniformBufferDescriptorSet(Vulkan* vulkan, FrameResources& frameR
     auto dataPtr = reinterpret_cast<T*>(uniformBuffer->allocatedData());
     *dataPtr = data;
     
-    auto descriptorSet = frameResources.descriptorAllocator->allocate(descriptorSetLayout);
-    descriptorSet->updateBuffer(binding, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, uniformBuffer, sizeof(T), 0);
+    auto descriptorSet = frameResources.newDescriptorSet(descriptorSetLayout);
+    descriptorSet->updateBuffer(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, uniformBuffer, sizeof(T), 0);
     frameResources.cleanupManager.push([&, uniformBuffer](VkDevice dev) {
         uniformBuffer->cleanup();
         delete uniformBuffer;

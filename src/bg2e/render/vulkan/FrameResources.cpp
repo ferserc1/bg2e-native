@@ -50,6 +50,15 @@ void FrameResources::cleanup()
     cleanupManager.flush(*_device);
 }
 
+DescriptorSet* FrameResources::newDescriptorSet(VkDescriptorSetLayout layout)
+{
+    auto ds = descriptorAllocator->allocate(layout);
+    cleanupManager.push([ds](VkDevice) {
+        delete ds;
+    });
+    return ds;
+}
+
 
 }
 }

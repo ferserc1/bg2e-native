@@ -192,6 +192,7 @@
 		ED0328172CE4D16E0037560D /* BasicWidgets.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = BasicWidgets.hpp; sourceTree = "<group>"; };
 		ED0328182CE4D16E0037560D /* DemoWindow.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = DemoWindow.hpp; sourceTree = "<group>"; };
 		ED0328192CE4D16E0037560D /* Window.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Window.hpp; sourceTree = "<group>"; };
+		ED17CF5C2CF765530099269A /* frame_resources.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = frame_resources.hpp; sourceTree = "<group>"; };
 		ED21915D2CDF4A6D00123781 /* VkLayer_khronos_validation.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = VkLayer_khronos_validation.json; sourceTree = "<group>"; };
 		ED2191622CDF4B1200123781 /* libVkLayer_khronos_validation.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.bundle"; path = libVkLayer_khronos_validation.dylib; sourceTree = "<group>"; };
 		ED2191652CDF4E4700123781 /* Buffer.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Buffer.cpp; sourceTree = "<group>"; };
@@ -836,6 +837,7 @@
 			isa = PBXGroup;
 			children = (
 				EDA28E922CF311F2009AC1FB /* descriptor_set.hpp */,
+				ED17CF5C2CF765530099269A /* frame_resources.hpp */,
 				EDEF49E72CE7B6FF00EE4ADA /* graphics.hpp */,
 			);
 			path = macros;

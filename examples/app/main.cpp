@@ -11,6 +11,7 @@
 #include <bg2e/render/vulkan/Info.hpp>
 #include <bg2e/render/vulkan/macros/graphics.hpp>
 #include <bg2e/render/vulkan/macros/descriptor_set.hpp>
+#include <bg2e/render/vulkan/macros/frame_resources.hpp>
 #include <bg2e/render/vulkan/geo/Mesh.hpp>
 #include <bg2e/render/Texture.hpp>
 
@@ -127,17 +128,38 @@ public:
 	) override {
 		using namespace bg2e::render::vulkan;
   
-        // Update descriptor sets for scene and object data
-        // with new uniform buffers
+        // You can use this function when a descriptor set only contains one unique uniform buffer.
         // The uniformBufferDescriptorSet function automatically create the uniform buffer and descriptor set
-        // inside the FrameResources object.
-        // You must manage the deletion of the DescriptorSet returned by the function. In this example we do it
-        // using a smart pointer
-        auto sceneDS = std::unique_ptr<DescriptorSet>(macros::uniformBufferDescriptorSet(_vulkan, frameResources, _sceneDSLayout, 0, _sceneData, currentFrame));
+        // inside the FrameResources object, upload the buffer data and update the descriptor set in one single
+        // call. This function will also manage the allocated Vulkan memory and the heap memory. The descriptor
+        // set object memory will be managed by the frameResources, so you don't need to delete it or manage
+        // using a smart pointer. The object will be removed when the frame rendering is done.
+        // You can save the pointer to the set descriptor and use it safely in other functions, as long as
+        // they are used within the same frame.
+        auto sceneDS = macros::uniformBufferDescriptorSet(
+            _vulkan, frameResources,
+            _sceneDSLayout, _sceneData, currentFrame
+        );
         
+        // You can use macros::createBuffer to create a buffer, copy the data and manage the buffer allocation
+        // inside a frame resource in one single function.
+        // Vulkan objects as well as buffer stack memory and descriptor set memory are automatically managed by
+        // frameResources.
+        // Then, you can use frameResources.newDescriptorSet() to allocate a descriptor set and update it with
+        // the buffer. The descriptor set memory will be also managed by the frameResources object.
+        // Using this method you can manage descriptor sets formed by more than one uniform buffer.
         _objectData.modelMatrix = glm::rotate(_objectData.modelMatrix, 0.02f, glm::vec3(0.0f, 1.0f, 0.0f));
-        auto objectDS = std::unique_ptr<DescriptorSet>(macros::uniformBufferDescriptorSet(_vulkan, frameResources, _objectDSLayout, 0, _objectData, currentFrame));
-
+        auto objectDataBuffer = macros::createBuffer(_vulkan, frameResources, _objectData);
+        auto objectDS = frameResources.newDescriptorSet(_objectDSLayout);
+        objectDS->beginUpdate();
+        objectDS->addBuffer(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, objectDataBuffer, sizeof(ObjectData), 0);
+        // Example: update the texture image
+        // objectDS->addImage(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, _texture->image()->imageView(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _texture->sampler());
+        objectDS->endUpdate();
+        
+        // TODO: implement this same example, but using a single descriptor set for objectData and texture.
+        // TODO: Move the previous code inside the render loop, to update the image for each submesh
+        
 		Image::cmdTransitionImage(
 			cmd,
 			_targetImage->handle(),

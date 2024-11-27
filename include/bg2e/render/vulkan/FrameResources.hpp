@@ -10,6 +10,7 @@ namespace render {
 namespace vulkan {
 
 class DescriptorSetAllocator;
+class DescriptorSet;
 
 struct BG2E_API FrameResources {
     VkCommandPool commandPool;
@@ -27,6 +28,12 @@ struct BG2E_API FrameResources {
 
     // Remove all the resources used by the frame
     void cleanup();
+    
+    // A simple way to allocate a descriptor set. The pointer to this
+    // DescriptorSet object will be automatically released after the
+    // frame is done. Important: do not store this pointer in any kind
+    // of smart pointer
+    DescriptorSet* newDescriptorSet(VkDescriptorSetLayout);
 
 private:
     const Device * _device;
