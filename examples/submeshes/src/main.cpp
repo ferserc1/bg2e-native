@@ -1,4 +1,31 @@
 
+/*
+    In this example:
+    
+    - We load an OBJ model into a MeshPU mesh. There are several types of meshes depending on the type of vertices they have:
+        * VertexP: the vertex contains only positions.
+        * VertexPC: the vertex contains both positions and colours.
+        * VertexPU: vertex contains positions and UV coordinates
+        * ...
+      From the suffix we can know the type of vertex or mesh. The suffix will always start with P, because all meshes have positions,
+      but it can also have:
+       * N: normal vectors
+       * C: colours
+       * U: UV coordinates
+       * T: tangent vectors
+      The default mesh type (Mesh) is MeshPNUUT because by default in bg2 engine two sets of UV coordinates are used, one for the material and one for the lighting map.
+      material and one for the lighting map
+    
+    - We use two different descriptor sets:
+        * Scene: a descriptor set to pass a uniform buffer with the projection and view matrix. This is done because if we are going to render
+        a scene, this descriptor set will be composed by all the objects in the scene for that frame, so we can update it only once for all the objects in the scene.
+        once for all objects.
+        * Object: a descriptor set for the uniform buffer with the model matrix and for the texture, in bindings 0 and 1 respectively.
+    
+    - We will use the frameResources object to hold object resources that will live only for that frame. This technique greatly simplifies
+      the updating of resources.
+ */
+ 
 #include <bg2e/app/MainLoop.hpp>
 #include <bg2e/app/Application.hpp>
 #include <bg2e/ui/UserInterface.hpp>
@@ -22,7 +49,7 @@
 #include <bg2e/db/image.hpp>
 #include <bg2e/db/mesh_obj.hpp>
 
-class ClearScreenDelegate : public bg2e::render::RenderLoopDelegate,
+class SubmeshesDelegate : public bg2e::render::RenderLoopDelegate,
 	public bg2e::app::InputDelegate,
 	public bg2e::ui::UserInterfaceDelegate
 {
@@ -306,8 +333,8 @@ protected:
 	{
 		bg2e::render::vulkan::factory::GraphicsPipeline plFactory(_vulkan);
 
-		plFactory.addShader("test/texture.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
-		plFactory.addShader("test/texture.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
+		plFactory.addShader("test.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
+		plFactory.addShader("test.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
 
 		auto bindingDescription = bg2e::render::vulkan::geo::bindingDescription<bg2e::geo::VertexPU>();
 		auto attributeDescriptions = bg2e::render::vulkan::geo::attributeDescriptions<bg2e::geo::VertexPU>();
@@ -390,7 +417,7 @@ class MyApplication : public bg2e::app::Application {
 public:
 	void init(int argc, char** argv) override
 	{
-		auto delegate = std::shared_ptr<ClearScreenDelegate>(new ClearScreenDelegate());
+		auto delegate = std::shared_ptr<SubmeshesDelegate>(new SubmeshesDelegate());
 		setRenderDelegate(delegate);
 		setInputDelegate(delegate);
 		setUiDelegate(delegate);
