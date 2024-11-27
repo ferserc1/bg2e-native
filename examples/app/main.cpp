@@ -42,7 +42,8 @@ public:
     void initFrameResources(bg2e::render::vulkan::DescriptorSetAllocator* frameAllocator) override
     {
         frameAllocator->requirePoolSizeRatio(1, {
-            { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 2 }
+            { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 2 },
+            { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1 }
         });
         frameAllocator->initPool();
     }
@@ -141,25 +142,6 @@ public:
             _sceneDSLayout, _sceneData, currentFrame
         );
         
-        // You can use macros::createBuffer to create a buffer, copy the data and manage the buffer allocation
-        // inside a frame resource in one single function.
-        // Vulkan objects as well as buffer stack memory and descriptor set memory are automatically managed by
-        // frameResources.
-        // Then, you can use frameResources.newDescriptorSet() to allocate a descriptor set and update it with
-        // the buffer. The descriptor set memory will be also managed by the frameResources object.
-        // Using this method you can manage descriptor sets formed by more than one uniform buffer.
-        _objectData.modelMatrix = glm::rotate(_objectData.modelMatrix, 0.02f, glm::vec3(0.0f, 1.0f, 0.0f));
-        auto objectDataBuffer = macros::createBuffer(_vulkan, frameResources, _objectData);
-        auto objectDS = frameResources.newDescriptorSet(_objectDSLayout);
-        objectDS->beginUpdate();
-        objectDS->addBuffer(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, objectDataBuffer, sizeof(ObjectData), 0);
-        // Example: update the texture image
-        // objectDS->addImage(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, _texture->image()->imageView(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _texture->sampler());
-        objectDS->endUpdate();
-        
-        // TODO: implement this same example, but using a single descriptor set for objectData and texture.
-        // TODO: Move the previous code inside the render loop, to update the image for each submesh
-        
 		Image::cmdTransitionImage(
 			cmd,
 			_targetImage->handle(),
@@ -193,19 +175,48 @@ public:
 		vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, _pipeline);
 
         
+        // You can use macros::createBuffer to create a buffer, copy the data and manage the buffer allocation
+        // inside a frame resource in one single function.
+        // Vulkan objects as well as buffer stack memory and descriptor set memory are automatically managed by
+        // frameResources.
+        // Then, you can use frameResources.newDescriptorSet() to allocate a descriptor set and update it with
+        // the buffer. The descriptor set memory will be also managed by the frameResources object.
+        // Using this method you can manage descriptor sets formed by more than one uniform buffer.
+        
+        // In this example, we create an uniform buffer to store the object model matrix. Then, we create
+        // a descriptor set for each submesh. The descriptor set contains the uniform buffer and the texture.
+        // The uniform buffer with the model matrix is the same for every submeshes, but the texture can
+        // be different.
+        _objectData.modelMatrix = glm::rotate(_objectData.modelMatrix, 0.02f, glm::vec3(0.0f, 1.0f, 0.0f));
+        auto objectDataBuffer = macros::createBuffer(_vulkan, frameResources, _objectData);
+        
 		for (uint32_t i = 0; i < _mesh->submeshCount(); ++i)
 		{
-            VkDescriptorSet sets[] = {
-                i == 0 ? _texture2DS->descriptorSet() : _textureDS->descriptorSet(),
+            auto objectDS = frameResources.newDescriptorSet(_objectDSLayout);
+            auto texture = i == 0 ? _texture2.get() : _texture.get();
+            objectDS->beginUpdate();
+                objectDS->addBuffer(
+                    0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                    objectDataBuffer, sizeof(ObjectData), 0
+                );
+                objectDS->addImage(
+                    1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                    texture->image()->imageView(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                    _texture->sampler()
+                );
+            objectDS->endUpdate();
+            
+            std::array<VkDescriptorSet, 2> sets = {
                 sceneDS->descriptorSet(),
                 objectDS->descriptorSet()
             };
+            
             vkCmdBindDescriptorSets(
                 cmd,
                 VK_PIPELINE_BIND_POINT_GRAPHICS,
                 _layout, 0,
-                3,
-                sets,
+                uint32_t(sets.size()),
+                sets.data(),
                 0, nullptr
             );
 			_mesh->drawSubmesh(cmd, i);
@@ -273,9 +284,6 @@ protected:
  
 	std::shared_ptr<bg2e::render::Texture> _texture;
     std::shared_ptr<bg2e::render::Texture> _texture2;
-    VkDescriptorSetLayout _textureDSLayout;
-    std::unique_ptr<bg2e::render::vulkan::DescriptorSet> _textureDS;
-    std::unique_ptr<bg2e::render::vulkan::DescriptorSet> _texture2DS;
     
     VkDescriptorSetLayout _sceneDSLayout;
     VkDescriptorSetLayout _objectDSLayout;
@@ -311,46 +319,23 @@ protected:
   
         bg2e::render::vulkan::factory::DescriptorSetLayout dsFactory;
         
-        dsFactory.addBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
-        _textureDSLayout = dsFactory.build(_vulkan->device().handle(), VK_SHADER_STAGE_FRAGMENT_BIT);
-        _textureDS = std::unique_ptr<bg2e::render::vulkan::DescriptorSet>(
-            _vulkan->descriptorSetAllocator().allocate(_textureDSLayout)
-        );
-        _textureDS->updateImage(
-            0,
-            VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-            _texture->image()->imageView(),
-            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-            _texture->sampler()
-        );
-        _texture2DS = std::unique_ptr<bg2e::render::vulkan::DescriptorSet>(
-            _vulkan->descriptorSetAllocator().allocate(_textureDSLayout)
-        );
-        _texture2DS->updateImage(
-            0,
-            VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-            _texture2->image()->imageView(),
-            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-            _texture->sampler()
-        );
-        
         dsFactory.clear();
         dsFactory.addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
         _sceneDSLayout = dsFactory.build(_vulkan->device().handle(), VK_SHADER_STAGE_VERTEX_BIT);
         
         dsFactory.clear();
         dsFactory.addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
-        _objectDSLayout = dsFactory.build(_vulkan->device().handle(), VK_SHADER_STAGE_VERTEX_BIT);
+        dsFactory.addBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+        _objectDSLayout = dsFactory.build(_vulkan->device().handle(), VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT);
         
 
 		auto layoutInfo = bg2e::render::vulkan::Info::pipelineLayoutInfo();
         VkDescriptorSetLayout setLayouts[] = {
-            _textureDSLayout,
             _sceneDSLayout,
             _objectDSLayout
         };
         layoutInfo.pSetLayouts = setLayouts;
-        layoutInfo.setLayoutCount = 3;
+        layoutInfo.setLayoutCount = 2;
 		VK_ASSERT(vkCreatePipelineLayout(_vulkan->device().handle(), &layoutInfo, nullptr, &_layout));
         
         plFactory.setDepthFormat(_vulkan->swapchain().depthImageFormat());
@@ -363,7 +348,6 @@ protected:
 		_vulkan->cleanupManager().push([&](VkDevice dev) {
 			vkDestroyPipeline(dev, _pipeline, nullptr);
 			vkDestroyPipelineLayout(dev, _layout, nullptr);
-			vkDestroyDescriptorSetLayout(dev, _textureDSLayout, nullptr);
             vkDestroyDescriptorSetLayout(dev, _sceneDSLayout, nullptr);
             vkDestroyDescriptorSetLayout(dev, _objectDSLayout, nullptr);
 		});
