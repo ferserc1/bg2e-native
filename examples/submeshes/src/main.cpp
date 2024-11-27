@@ -49,6 +49,8 @@
 #include <bg2e/db/image.hpp>
 #include <bg2e/db/mesh_obj.hpp>
 
+#include <array>
+
 class SubmeshesDelegate : public bg2e::render::RenderLoopDelegate,
 	public bg2e::app::InputDelegate,
 	public bg2e::ui::UserInterfaceDelegate

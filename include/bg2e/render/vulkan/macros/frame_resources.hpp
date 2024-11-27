@@ -28,7 +28,7 @@ Buffer* createBuffer(
     auto vkBuffer = buffer->handle();
     auto bufferAllocation = buffer->allocation();
     frameResources.cleanupManager.push([&, vulkan, vkBuffer, bufferAllocation, buffer](VkDevice) {
-        vmaDestroyBuffer(vulkan->allocator(), vkBuffer, bufferAllocation);
+        vulkan->destroyBuffer(vkBuffer, bufferAllocation);
         delete buffer;
     });
     

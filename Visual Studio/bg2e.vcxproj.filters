@@ -249,6 +249,9 @@
     <ClInclude Include="..\include\bg2e\render\vulkan\macros\descriptor_set.hpp">
       <Filter>Header Files\bg2e\render\vulkan\macros</Filter>
     </ClInclude>
+    <ClInclude Include="..\include\bg2e\render\vulkan\macros\frame_resources.hpp">
+      <Filter>Header Files\bg2e\render\vulkan\macros</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\bg2e\app\MainLoop.cpp">

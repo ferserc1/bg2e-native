@@ -122,5 +122,10 @@ void Vulkan::iterateFrameResources(std::function<void(vulkan::FrameResources&)> 
     }
 }
 
+void Vulkan::destroyBuffer(VkBuffer buffer, VmaAllocation allocation)
+{
+    vmaDestroyBuffer(_allocator, buffer, allocation);
+}
+
 }
 }

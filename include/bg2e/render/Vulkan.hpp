@@ -60,6 +60,9 @@ public:
     // This function returns true if the swapchain have been resized
     bool newFrame();
 
+	// Destroy a buffer allocated with the Vulkan Memory Allocator
+	void destroyBuffer(VkBuffer buffer, VmaAllocation allocation);
+
 protected:
     SDL_Window* _windowPtr;
 

@@ -71,6 +71,7 @@
     <PostBuildEvent>
       <Command>xcopy "$(SolutionDir)..\..\..\bin\*.dll" "$(OutDir)" /I /Y /R
 xcopy "$(SolutionDir)..\..\..\bin\*.pbd" "$(OutDir)" /I /Y /R
+xcopy "$(SolutionDir)..\..\..\assets\*.*" "$(OutDir)\assets\" /I /Y /R /F
 cd "$(SolutionDir)..\shaders"
 call build.bat src ..\bin\shaders</Command>
     </PostBuildEvent>
@@ -96,6 +97,7 @@ call build.bat src ..\bin\shaders</Command>
     <PostBuildEvent>
       <Command>xcopy "$(SolutionDir)..\..\..\bin\*.dll" "$(OutDir)" /I /Y /R
 xcopy "$(SolutionDir)..\..\..\bin\*.pbd" "$(OutDir)" /I /Y /R
+xcopy "$(SolutionDir)..\..\..\assets\*.*" "$(OutDir)\assets\" /I /Y /R /F
 cd "$(SolutionDir)..\shaders"
 call build.bat src ..\bin\shaders</Command>
     </PostBuildEvent>
