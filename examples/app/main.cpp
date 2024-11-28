@@ -23,6 +23,96 @@
 #include <bg2e/db/mesh_obj.hpp>
 
 #include <array>
+#include <numbers>
+
+bg2e::geo::MeshPU * createSphere(float radius, uint32_t latitudes, uint32_t longitudes)
+{
+    auto result = new bg2e::geo::MeshPU();
+    
+    float latAlpha = 0.0f;
+    float longAlpha = 0.0f;
+    float latDelta = std::numbers::pi_v<float> / float(latitudes);
+    float longDelta = 2.0f * std::numbers::pi_v<float> / float(longitudes);
+    for (uint32_t u = 0; u <= latitudes; ++u)
+    {
+        longAlpha = 0.0f;
+        for (uint32_t v = 0; v < longitudes; ++v)
+        {
+            float x = (std::sin(longAlpha) * std::sin(latAlpha)) * radius;
+            float y = std::cos(latAlpha) * radius;
+            float z = (std::cos(longAlpha) * std::sin(latAlpha)) * radius;
+            
+            float nx = 0.0f;
+            float ny = 0.0f;
+            float nz = 0.0f;
+            
+            float ux = 0.0f;
+            float uy = 0.0f;
+            
+            float tx = 0.0f;
+            float ty = 0.0f;
+            float tz = 0.0f;
+            
+            result->vertices.push_back({
+                { x, y, z },
+                //{ nx, ny, nz },
+                { ux, uy },
+                //{ tx, ty, tz }
+            });
+            std::cout << v + (u * longitudes) << ": x = " << x << ", y = " << y << ", z = " << z << std::endl;
+            longAlpha += longDelta;
+        }
+        latAlpha += latDelta;
+    }
+    
+    for (uint32_t u = 0; u < latitudes - 1; ++u)
+    {
+        for (uint32_t v = 0; v < longitudes; ++v)
+        {
+            uint32_t i0 = v + u * longitudes;
+            uint32_t i1 = (u + 1) * longitudes + v;
+            uint32_t i2 = v == longitudes - 1 ? (u + 1) * longitudes : i1 + 1;
+
+            std::cout << i0 << ", " << i1 << ", " << i2 << std::endl;
+            result->indices.push_back(i0);
+            result->indices.push_back(i1);
+            result->indices.push_back(i2);
+            
+            // The top and bottom caps are triangles, but the res
+            // of the faces are quads. Here we add the second triangle
+            // for each quad
+            if (u > 0)
+            {
+                uint32_t i3 = i2;
+                uint32_t i4 = v == longitudes - 1 ? u * longitudes : i0 + 1;
+                uint32_t i5 = i0;
+                
+                std::cout << "(quad) " << i3 << ", " << i4 << ", " << i5 << std::endl;
+                result->indices.push_back(i3);
+                result->indices.push_back(i4);
+                result->indices.push_back(i5);
+            }
+        }
+    }
+    
+    // Botom cap indexes
+    uint32_t u = latitudes - 1;
+    for (uint32_t v = 0; v < longitudes; ++v)
+    {
+        uint32_t i0 = v + u * longitudes;
+        uint32_t i1 = (u + 1) * longitudes + v;
+        uint32_t i2 = v == longitudes - 1 ? u * longitudes : i0 + 1;
+        
+        std::cout << i0 << ", " << i1 << ", " << i2 << std::endl;
+        result->indices.push_back(i0);
+        result->indices.push_back(i1);
+        result->indices.push_back(i2);
+    }
+    
+    result->submeshes.push_back({ 0, uint32_t(result->indices.size()) });
+    
+    return result;
+}
 
 class ClearScreenDelegate : public bg2e::render::RenderLoopDelegate,
 	public bg2e::app::InputDelegate,
@@ -55,8 +145,7 @@ public:
         // Use the initScene function to initialize and create scene resources, such as pipelines, 3D models
         // or textures
         
-        std::filesystem::path imagePath = bg2e::base::PlatformTools::assetPath().append("two_submeshes_inner_albedo.jpg");
-        std::filesystem::path imagePath2 = bg2e::base::PlatformTools::assetPath().append("two_submeshes_outer_albedo.jpg");
+        std::filesystem::path imagePath = bg2e::base::PlatformTools::assetPath().append("country_field_sun.jpg");
 
 		// You can use plain pointers in this case, because the base::Image and base::Texture objects will not
 		// be used outside of this function. Internally, these objects will be stored in a shared_ptr and will be
@@ -73,19 +162,8 @@ public:
 			texture
 		));
   
-        auto image2 = bg2e::db::loadImage(imagePath2);
-        auto texture2 = new bg2e::base::Texture(image2);
-        texture2->setMagFilter(bg2e::base::Texture::FilterLinear);
-        texture2->setMinFilter(bg2e::base::Texture::FilterLinear);
-        
-        _texture2 = std::shared_ptr<bg2e::render::Texture>(new bg2e::render::Texture(
-            _vulkan,
-            texture2
-        ));
-  
         _vulkan->cleanupManager().push([&](VkDevice) {
             _texture->cleanup();
-            _texture2->cleanup();
         });
 	
 		createImage(_vulkan->swapchain().extent());
@@ -195,7 +273,6 @@ public:
 		for (uint32_t i = 0; i < _mesh->submeshCount(); ++i)
 		{
             auto objectDS = frameResources.newDescriptorSet(_objectDSLayout);
-            auto texture = i == 0 ? _texture2.get() : _texture.get();
             objectDS->beginUpdate();
                 objectDS->addBuffer(
                     0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
@@ -203,7 +280,7 @@ public:
                 );
                 objectDS->addImage(
                     1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                    texture->image()->imageView(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                    _texture->image()->imageView(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                     _texture->sampler()
                 );
             objectDS->endUpdate();
@@ -285,8 +362,7 @@ protected:
 	std::unique_ptr<bg2e::render::vulkan::geo::MeshPU> _mesh;
  
 	std::shared_ptr<bg2e::render::Texture> _texture;
-    std::shared_ptr<bg2e::render::Texture> _texture2;
-    
+
     VkDescriptorSetLayout _sceneDSLayout;
     VkDescriptorSetLayout _objectDSLayout;
     
@@ -359,8 +435,12 @@ protected:
 	{
 		using namespace bg2e::render::vulkan;
   
+        //auto mesh = std::unique_ptr<bg2e::geo::MeshPU>(
+        //    bg2e::db::loadMeshObj<bg2e::geo::MeshPU>(bg2e::base::PlatformTools::assetPath().append("two_submeshes.obj"))
+        //);
+        
         auto mesh = std::unique_ptr<bg2e::geo::MeshPU>(
-            bg2e::db::loadMeshObj<bg2e::geo::MeshPU>(bg2e::base::PlatformTools::assetPath().append("two_submeshes.obj"))
+            createSphere(1.0f, 4, 6)
         );
 
         _mesh = std::unique_ptr<bg2e::render::vulkan::geo::MeshPU>(new bg2e::render::vulkan::geo::MeshPU(_vulkan));
@@ -400,7 +480,6 @@ public:
 };
 
 int main(int argc, char** argv) {
-
 	bg2e::app::MainLoop mainLoop;
 	MyApplication app;
 	app.init(argc, argv);
