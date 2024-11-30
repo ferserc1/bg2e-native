@@ -218,25 +218,25 @@ template void MeshGeneric<bg2e::geo::MeshPNUUT>::draw(VkCommandBuffer cmd);
 template void MeshGeneric<bg2e::geo::MeshPNUUT>::drawSubmesh(VkCommandBuffer cmd, uint32_t submeshIndex);
 template void MeshGeneric<bg2e::geo::MeshPNUUT>::cleanup();
 
-VkVertexInputBindingDescription MeshGeneric<bg2e::geo::MeshP>::bindingDescription() { return bindingDescriptionP(); }
-VkVertexInputBindingDescription MeshGeneric<bg2e::geo::MeshPC>::bindingDescription() { return bindingDescriptionPC(); }
-VkVertexInputBindingDescription MeshGeneric<bg2e::geo::MeshPU>::bindingDescription() { return bindingDescriptionPU(); }
-VkVertexInputBindingDescription MeshGeneric<bg2e::geo::MeshPN>::bindingDescription() { return bindingDescriptionPN(); }
-VkVertexInputBindingDescription MeshGeneric<bg2e::geo::MeshPNU>::bindingDescription() { return bindingDescriptionPNU(); }
-VkVertexInputBindingDescription MeshGeneric<bg2e::geo::MeshPNC>::bindingDescription() { return bindingDescriptionPNC(); }
-VkVertexInputBindingDescription MeshGeneric<bg2e::geo::MeshPNUC>::bindingDescription() { return bindingDescriptionPNUC(); }
-VkVertexInputBindingDescription MeshGeneric<bg2e::geo::MeshPNUT>::bindingDescription() { return bindingDescriptionPNUT(); }
-VkVertexInputBindingDescription MeshGeneric<bg2e::geo::MeshPNUUT>::bindingDescription() { return bindingDescriptionPNUUT(); }
+template <> VkVertexInputBindingDescription MeshGeneric<bg2e::geo::MeshP>::bindingDescription() { return bindingDescriptionP(); }
+template <> VkVertexInputBindingDescription MeshGeneric<bg2e::geo::MeshPC>::bindingDescription() { return bindingDescriptionPC(); }
+template <> VkVertexInputBindingDescription MeshGeneric<bg2e::geo::MeshPU>::bindingDescription() { return bindingDescriptionPU(); }
+template <> VkVertexInputBindingDescription MeshGeneric<bg2e::geo::MeshPN>::bindingDescription() { return bindingDescriptionPN(); }
+template <> VkVertexInputBindingDescription MeshGeneric<bg2e::geo::MeshPNU>::bindingDescription() { return bindingDescriptionPNU(); }
+template <> VkVertexInputBindingDescription MeshGeneric<bg2e::geo::MeshPNC>::bindingDescription() { return bindingDescriptionPNC(); }
+template <> VkVertexInputBindingDescription MeshGeneric<bg2e::geo::MeshPNUC>::bindingDescription() { return bindingDescriptionPNUC(); }
+template <> VkVertexInputBindingDescription MeshGeneric<bg2e::geo::MeshPNUT>::bindingDescription() { return bindingDescriptionPNUT(); }
+template <> VkVertexInputBindingDescription MeshGeneric<bg2e::geo::MeshPNUUT>::bindingDescription() { return bindingDescriptionPNUUT(); }
 
-std::vector<VkVertexInputAttributeDescription> MeshGeneric<bg2e::geo::MeshP>::attributeDescriptions() { return attributeDescriptionsP(); }
-std::vector<VkVertexInputAttributeDescription> MeshGeneric<bg2e::geo::MeshPC>::attributeDescriptions() { return attributeDescriptionsPC(); }
-std::vector<VkVertexInputAttributeDescription> MeshGeneric<bg2e::geo::MeshPU>::attributeDescriptions() { return attributeDescriptionsPU(); }
-std::vector<VkVertexInputAttributeDescription> MeshGeneric<bg2e::geo::MeshPN>::attributeDescriptions() { return attributeDescriptionsPN(); }
-std::vector<VkVertexInputAttributeDescription> MeshGeneric<bg2e::geo::MeshPNU>::attributeDescriptions() { return attributeDescriptionsPNU(); }
-std::vector<VkVertexInputAttributeDescription> MeshGeneric<bg2e::geo::MeshPNC>::attributeDescriptions() { return attributeDescriptionsPNC(); }
-std::vector<VkVertexInputAttributeDescription> MeshGeneric<bg2e::geo::MeshPNUC>::attributeDescriptions() { return attributeDescriptionsPNUC(); }
-std::vector<VkVertexInputAttributeDescription> MeshGeneric<bg2e::geo::MeshPNUT>::attributeDescriptions() { return attributeDescriptionsPNUT(); }
-std::vector<VkVertexInputAttributeDescription> MeshGeneric<bg2e::geo::MeshPNUUT>::attributeDescriptions() { return attributeDescriptionsPNUUT(); }
+template <> std::vector<VkVertexInputAttributeDescription> MeshGeneric<bg2e::geo::MeshP>::attributeDescriptions() { return attributeDescriptionsP(); }
+template <> std::vector<VkVertexInputAttributeDescription> MeshGeneric<bg2e::geo::MeshPC>::attributeDescriptions() { return attributeDescriptionsPC(); }
+template <> std::vector<VkVertexInputAttributeDescription> MeshGeneric<bg2e::geo::MeshPU>::attributeDescriptions() { return attributeDescriptionsPU(); }
+template <> std::vector<VkVertexInputAttributeDescription> MeshGeneric<bg2e::geo::MeshPN>::attributeDescriptions() { return attributeDescriptionsPN(); }
+template <> std::vector<VkVertexInputAttributeDescription> MeshGeneric<bg2e::geo::MeshPNU>::attributeDescriptions() { return attributeDescriptionsPNU(); }
+template <> std::vector<VkVertexInputAttributeDescription> MeshGeneric<bg2e::geo::MeshPNC>::attributeDescriptions() { return attributeDescriptionsPNC(); }
+template <> std::vector<VkVertexInputAttributeDescription> MeshGeneric<bg2e::geo::MeshPNUC>::attributeDescriptions() { return attributeDescriptionsPNUC(); }
+template <> std::vector<VkVertexInputAttributeDescription> MeshGeneric<bg2e::geo::MeshPNUT>::attributeDescriptions() { return attributeDescriptionsPNUT(); }
+template <> std::vector<VkVertexInputAttributeDescription> MeshGeneric<bg2e::geo::MeshPNUUT>::attributeDescriptions() { return attributeDescriptionsPNUUT(); }
 
 
 }
