@@ -271,7 +271,7 @@ protected:
 	VkPipelineLayout _layout;
 	VkPipeline _pipeline;
  
-	std::unique_ptr<bg2e::render::vulkan::geo::MeshPNUT> _mesh;
+	std::unique_ptr<bg2e::render::vulkan::geo::MeshPU> _mesh;
  
 	std::shared_ptr<bg2e::render::Texture> _texture;
 
@@ -299,10 +299,8 @@ protected:
 		plFactory.addShader("test/texture.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
 		plFactory.addShader("test/texture.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
 
-		//auto bindingDescription = bg2e::render::vulkan::geo::bindingDescriptionPNUT();
-		auto bindingDescription = bg2e::render::vulkan::geo::MeshPNUT::bindingDescription();
-		//auto attributeDescriptions = bg2e::render::vulkan::geo::attributeDescriptionsPNUT();
-		auto attributeDescriptions = bg2e::render::vulkan::geo::MeshPNUT::attributeDescriptions();
+		auto bindingDescription = bg2e::render::vulkan::geo::MeshPU::bindingDescription();
+		auto attributeDescriptions = bg2e::render::vulkan::geo::MeshPU::attributeDescriptions();
 
 		plFactory.vertexInputState.vertexBindingDescriptionCount = 1;
 		plFactory.vertexInputState.pVertexBindingDescriptions = &bindingDescription;
@@ -353,11 +351,11 @@ protected:
         //    bg2e::db::loadMeshObj<bg2e::geo::MeshPU>(bg2e::base::PlatformTools::assetPath().append("two_submeshes.obj"))
         //);
         
-        auto mesh = std::unique_ptr<bg2e::geo::MeshPNUT>(
-            bg2e::geo::createSpherePNUT(1.0f, 30, 30)
+        auto mesh = std::unique_ptr<bg2e::geo::MeshPU>(
+            bg2e::geo::createSpherePU(1.0f, 30, 30)
         );
 
-        _mesh = std::unique_ptr<bg2e::render::vulkan::geo::MeshPNUT>(new bg2e::render::vulkan::geo::MeshPNUT(_vulkan));
+        _mesh = std::unique_ptr<bg2e::render::vulkan::geo::MeshPU>(new bg2e::render::vulkan::geo::MeshPU(_vulkan));
         _mesh->setMeshData(mesh.get());
 
 		_mesh->build();
