@@ -79,6 +79,9 @@
     <Filter Include="Source Files\db">
       <UniqueIdentifier>{42c31297-f1cd-44d7-8de1-cb4934fb4aee}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\geo">
+      <UniqueIdentifier>{cdd146f3-409f-4296-86fe-e31fe47295b3}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\include\bg2e\common.hpp">
@@ -252,6 +255,9 @@
     <ClInclude Include="..\include\bg2e\render\vulkan\macros\frame_resources.hpp">
       <Filter>Header Files\bg2e\render\vulkan\macros</Filter>
     </ClInclude>
+    <ClInclude Include="..\include\bg2e\geo\sphere.hpp">
+      <Filter>Header Files\bg2e\geo</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\bg2e\app\MainLoop.cpp">
@@ -388,6 +394,9 @@
     </ClCompile>
     <ClCompile Include="..\src\bg2e\db\mesh_obj_db.cpp">
       <Filter>Source Files\db</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\bg2e\geo\sphere.cpp">
+      <Filter>Source Files\geo</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

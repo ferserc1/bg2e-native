@@ -24,6 +24,7 @@
     <ClInclude Include="..\include\bg2e\db\image.hpp" />
     <ClInclude Include="..\include\bg2e\db\mesh_obj.hpp" />
     <ClInclude Include="..\include\bg2e\geo\Mesh.hpp" />
+    <ClInclude Include="..\include\bg2e\geo\sphere.hpp" />
     <ClInclude Include="..\include\bg2e\geo\Vertex.hpp" />
     <ClInclude Include="..\include\bg2e\render\RenderLoop.hpp" />
     <ClInclude Include="..\include\bg2e\render\RenderLoopDelegate.hpp" />
@@ -77,6 +78,7 @@
     <ClCompile Include="..\src\bg2e\base\PlatformTools.cpp" />
     <ClCompile Include="..\src\bg2e\db\image_db.cpp" />
     <ClCompile Include="..\src\bg2e\db\mesh_obj_db.cpp" />
+    <ClCompile Include="..\src\bg2e\geo\sphere.cpp" />
     <ClCompile Include="..\src\bg2e\render\RenderLoop.cpp" />
     <ClCompile Include="..\src\bg2e\render\Texture_render.cpp" />
     <ClCompile Include="..\src\bg2e\render\Vulkan.cpp" />

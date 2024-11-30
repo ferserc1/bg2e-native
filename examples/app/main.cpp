@@ -13,6 +13,7 @@
 #include <bg2e/render/vulkan/macros/descriptor_set.hpp>
 #include <bg2e/render/vulkan/macros/frame_resources.hpp>
 #include <bg2e/render/vulkan/geo/Mesh.hpp>
+#include <bg2e/geo/sphere.hpp>
 #include <bg2e/render/Texture.hpp>
 
 
@@ -24,106 +25,6 @@
 
 #include <array>
 #include <numbers>
-
-float epsilonRound(float v) {
-    return std::abs(v) < std::numeric_limits<float>::epsilon() ? 0.0f : v;
-}
-
-bg2e::geo::MeshPNUT * createSphere(float radius, uint32_t longitudes, uint32_t latitudes)
-{
-    auto result = new bg2e::geo::MeshPNUT();
-    
-    float latAlpha = 0.0f;
-    float longAlpha = 0.0f;
-    float latDelta = std::numbers::pi_v<float> / float(latitudes);
-    float longDelta = 2.0f * std::numbers::pi_v<float> / float(longitudes);
-    float vDelta = 1.0f / float(latitudes);
-    float uDelta = 1.0f / float(longitudes);
-    uint32_t index = 0;
-    for (uint32_t u = 0; u <= latitudes; ++u)
-    {
-        longAlpha = 0.0f;
-        for (uint32_t v = 0; v <= longitudes; ++v)
-        {
-            float x = epsilonRound((std::sin(longAlpha) * std::sin(latAlpha)) * radius);
-            float y = epsilonRound(std::cos(latAlpha) * radius);
-            float z = epsilonRound((std::cos(longAlpha) * std::sin(latAlpha)) * radius);
-            
-            float nx = epsilonRound(std::sin(latAlpha) * std::sin(longAlpha));
-            float ny = epsilonRound(std::cos(latAlpha));
-            float nz = epsilonRound(std::sin(latAlpha) * std::cos(longAlpha));
-            
-            float uvx = v * uDelta;
-            float uvy = u * vDelta;
-            
-            float tx = std::cos(longAlpha);
-            float ty = 0.0f;
-            float tz = -std::sin(longAlpha);
-            
-            result->vertices.push_back({
-                { x, y, z },
-                { nx, ny, nz },
-                { uvx, uvy },
-                { tx, ty, tz }
-            });
-            std::cout << index++ << ": x = " << x << ", y = " << y << ", z = " << z <<
-                ", nx = " << nx << ", ny = " << ny << ", nz = " << nz <<
-                ", u = " << uvx << ", v = " << uvy <<
-                ", tx = " << tx << ", ty = " << ty << ", tz = " << tz <<
-                std::endl;
-            longAlpha += longDelta;
-        }
-        latAlpha += latDelta;
-    }
-    
-    for (uint32_t u = 0; u < latitudes - 1; ++u)
-    {
-        for (uint32_t v = 0; v < longitudes; ++v)
-        {
-            uint32_t i0 = v + u * (longitudes + 1);
-            uint32_t i1 = (longitudes + 1) * (1 + u) + v;
-            uint32_t i2 = i1 + 1;
-
-            std::cout << i0 << ", " << i1 << ", " << i2 << std::endl;
-            result->indices.push_back(i0);
-            result->indices.push_back(i1);
-            result->indices.push_back(i2);
-            
-            // The top and bottom caps are triangles, but the res
-            // of the faces are quads. Here we add the second triangle
-            // for each quad
-            if (u > 0)
-            {
-                uint32_t i3 = i2;
-                uint32_t i4 = i0 + 1;
-                uint32_t i5 = i0;
-                
-                std::cout << "(quad) " << i3 << ", " << i4 << ", " << i5 << std::endl;
-                result->indices.push_back(i3);
-                result->indices.push_back(i4);
-                result->indices.push_back(i5);
-            }
-        }
-    }
-    
-    // Botom cap indexes
-    uint32_t u = latitudes - 1;
-    for (uint32_t v = 0; v < longitudes; ++v)
-    {
-        uint32_t i0 = v + u * (longitudes + 1);
-        uint32_t i1 = (longitudes + 1) * (1 + u) + v;
-        uint32_t i2 = i0 + 1;
-        
-        std::cout << i0 << ", " << i1 << ", " << i2 << std::endl;
-        result->indices.push_back(i0);
-        result->indices.push_back(i1);
-        result->indices.push_back(i2);
-    }
-    
-    result->submeshes.push_back({ 0, uint32_t(result->indices.size()) });
-    
-    return result;
-}
 
 class ClearScreenDelegate : public bg2e::render::RenderLoopDelegate,
 	public bg2e::app::InputDelegate,
@@ -398,8 +299,10 @@ protected:
 		plFactory.addShader("test/texture.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
 		plFactory.addShader("test/texture.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
 
-		auto bindingDescription = bg2e::render::vulkan::geo::bindingDescriptionPNUT();
-		auto attributeDescriptions = bg2e::render::vulkan::geo::attributeDescriptionsPNUT();
+		//auto bindingDescription = bg2e::render::vulkan::geo::bindingDescriptionPNUT();
+		auto bindingDescription = bg2e::render::vulkan::geo::MeshPNUT::bindingDescription();
+		//auto attributeDescriptions = bg2e::render::vulkan::geo::attributeDescriptionsPNUT();
+		auto attributeDescriptions = bg2e::render::vulkan::geo::MeshPNUT::attributeDescriptions();
 
 		plFactory.vertexInputState.vertexBindingDescriptionCount = 1;
 		plFactory.vertexInputState.pVertexBindingDescriptions = &bindingDescription;
@@ -451,7 +354,7 @@ protected:
         //);
         
         auto mesh = std::unique_ptr<bg2e::geo::MeshPNUT>(
-            createSphere(1.0f, 8, 4)
+            bg2e::geo::createSpherePNUT(1.0f, 30, 30)
         );
 
         _mesh = std::unique_ptr<bg2e::render::vulkan::geo::MeshPNUT>(new bg2e::render::vulkan::geo::MeshPNUT(_vulkan));

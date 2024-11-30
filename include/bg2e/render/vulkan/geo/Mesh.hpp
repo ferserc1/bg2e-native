@@ -4,6 +4,7 @@
 #include <bg2e/geo/Mesh.hpp>
 #include <bg2e/render/Vulkan.hpp>
 #include <bg2e/render/vulkan/Buffer.hpp>
+#include <bg2e/render/vulkan/geo/VertexDescription.hpp>
 
 #include <memory>
 
@@ -30,6 +31,9 @@ public:
 	void draw(VkCommandBuffer cmd);
 	void drawSubmesh(VkCommandBuffer cmd, uint32_t submeshIndex);
 	void cleanup();
+
+	static VkVertexInputBindingDescription bindingDescription();
+	static std::vector<VkVertexInputAttributeDescription> attributeDescriptions();
 
 protected:
 	Vulkan* _vulkan;
