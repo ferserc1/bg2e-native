@@ -25,41 +25,52 @@
 #include <array>
 #include <numbers>
 
-bg2e::geo::MeshPU * createSphere(float radius, uint32_t latitudes, uint32_t longitudes)
+float epsilonRound(float v) {
+    return std::abs(v) < std::numeric_limits<float>::epsilon() ? 0.0f : v;
+}
+
+bg2e::geo::MeshPNUT * createSphere(float radius, uint32_t longitudes, uint32_t latitudes)
 {
-    auto result = new bg2e::geo::MeshPU();
+    auto result = new bg2e::geo::MeshPNUT();
     
     float latAlpha = 0.0f;
     float longAlpha = 0.0f;
     float latDelta = std::numbers::pi_v<float> / float(latitudes);
     float longDelta = 2.0f * std::numbers::pi_v<float> / float(longitudes);
+    float vDelta = 1.0f / float(latitudes);
+    float uDelta = 1.0f / float(longitudes);
+    uint32_t index = 0;
     for (uint32_t u = 0; u <= latitudes; ++u)
     {
         longAlpha = 0.0f;
-        for (uint32_t v = 0; v < longitudes; ++v)
+        for (uint32_t v = 0; v <= longitudes; ++v)
         {
-            float x = (std::sin(longAlpha) * std::sin(latAlpha)) * radius;
-            float y = std::cos(latAlpha) * radius;
-            float z = (std::cos(longAlpha) * std::sin(latAlpha)) * radius;
+            float x = epsilonRound((std::sin(longAlpha) * std::sin(latAlpha)) * radius);
+            float y = epsilonRound(std::cos(latAlpha) * radius);
+            float z = epsilonRound((std::cos(longAlpha) * std::sin(latAlpha)) * radius);
             
-            float nx = 0.0f;
-            float ny = 0.0f;
-            float nz = 0.0f;
+            float nx = epsilonRound(std::sin(latAlpha) * std::sin(longAlpha));
+            float ny = epsilonRound(std::cos(latAlpha));
+            float nz = epsilonRound(std::sin(latAlpha) * std::cos(longAlpha));
             
-            float ux = 0.0f;
-            float uy = 0.0f;
+            float uvx = v * uDelta;
+            float uvy = u * vDelta;
             
-            float tx = 0.0f;
+            float tx = std::cos(longAlpha);
             float ty = 0.0f;
-            float tz = 0.0f;
+            float tz = -std::sin(longAlpha);
             
             result->vertices.push_back({
                 { x, y, z },
-                //{ nx, ny, nz },
-                { ux, uy },
-                //{ tx, ty, tz }
+                { nx, ny, nz },
+                { uvx, uvy },
+                { tx, ty, tz }
             });
-            std::cout << v + (u * longitudes) << ": x = " << x << ", y = " << y << ", z = " << z << std::endl;
+            std::cout << index++ << ": x = " << x << ", y = " << y << ", z = " << z <<
+                ", nx = " << nx << ", ny = " << ny << ", nz = " << nz <<
+                ", u = " << uvx << ", v = " << uvy <<
+                ", tx = " << tx << ", ty = " << ty << ", tz = " << tz <<
+                std::endl;
             longAlpha += longDelta;
         }
         latAlpha += latDelta;
@@ -69,9 +80,9 @@ bg2e::geo::MeshPU * createSphere(float radius, uint32_t latitudes, uint32_t long
     {
         for (uint32_t v = 0; v < longitudes; ++v)
         {
-            uint32_t i0 = v + u * longitudes;
-            uint32_t i1 = (u + 1) * longitudes + v;
-            uint32_t i2 = v == longitudes - 1 ? (u + 1) * longitudes : i1 + 1;
+            uint32_t i0 = v + u * (longitudes + 1);
+            uint32_t i1 = (longitudes + 1) * (1 + u) + v;
+            uint32_t i2 = i1 + 1;
 
             std::cout << i0 << ", " << i1 << ", " << i2 << std::endl;
             result->indices.push_back(i0);
@@ -84,7 +95,7 @@ bg2e::geo::MeshPU * createSphere(float radius, uint32_t latitudes, uint32_t long
             if (u > 0)
             {
                 uint32_t i3 = i2;
-                uint32_t i4 = v == longitudes - 1 ? u * longitudes : i0 + 1;
+                uint32_t i4 = i0 + 1;
                 uint32_t i5 = i0;
                 
                 std::cout << "(quad) " << i3 << ", " << i4 << ", " << i5 << std::endl;
@@ -99,9 +110,9 @@ bg2e::geo::MeshPU * createSphere(float radius, uint32_t latitudes, uint32_t long
     uint32_t u = latitudes - 1;
     for (uint32_t v = 0; v < longitudes; ++v)
     {
-        uint32_t i0 = v + u * longitudes;
-        uint32_t i1 = (u + 1) * longitudes + v;
-        uint32_t i2 = v == longitudes - 1 ? u * longitudes : i0 + 1;
+        uint32_t i0 = v + u * (longitudes + 1);
+        uint32_t i1 = (longitudes + 1) * (1 + u) + v;
+        uint32_t i2 = i0 + 1;
         
         std::cout << i0 << ", " << i1 << ", " << i2 << std::endl;
         result->indices.push_back(i0);
@@ -359,7 +370,7 @@ protected:
 	VkPipelineLayout _layout;
 	VkPipeline _pipeline;
  
-	std::unique_ptr<bg2e::render::vulkan::geo::MeshPU> _mesh;
+	std::unique_ptr<bg2e::render::vulkan::geo::MeshPNUT> _mesh;
  
 	std::shared_ptr<bg2e::render::Texture> _texture;
 
@@ -387,8 +398,8 @@ protected:
 		plFactory.addShader("test/texture.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
 		plFactory.addShader("test/texture.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
 
-		auto bindingDescription = bg2e::render::vulkan::geo::bindingDescription<bg2e::geo::VertexPU>();
-		auto attributeDescriptions = bg2e::render::vulkan::geo::attributeDescriptions<bg2e::geo::VertexPU>();
+		auto bindingDescription = bg2e::render::vulkan::geo::bindingDescription<bg2e::geo::VertexPNUT>();
+		auto attributeDescriptions = bg2e::render::vulkan::geo::attributeDescriptions<bg2e::geo::VertexPNUT>();
 
 		plFactory.vertexInputState.vertexBindingDescriptionCount = 1;
 		plFactory.vertexInputState.pVertexBindingDescriptions = &bindingDescription;
@@ -439,11 +450,11 @@ protected:
         //    bg2e::db::loadMeshObj<bg2e::geo::MeshPU>(bg2e::base::PlatformTools::assetPath().append("two_submeshes.obj"))
         //);
         
-        auto mesh = std::unique_ptr<bg2e::geo::MeshPU>(
-            createSphere(1.0f, 4, 6)
+        auto mesh = std::unique_ptr<bg2e::geo::MeshPNUT>(
+            createSphere(1.0f, 8, 4)
         );
 
-        _mesh = std::unique_ptr<bg2e::render::vulkan::geo::MeshPU>(new bg2e::render::vulkan::geo::MeshPU(_vulkan));
+        _mesh = std::unique_ptr<bg2e::render::vulkan::geo::MeshPNUT>(new bg2e::render::vulkan::geo::MeshPNUT(_vulkan));
         _mesh->setMeshData(mesh.get());
 
 		_mesh->build();

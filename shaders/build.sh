@@ -19,8 +19,6 @@ OUTPUT_DIR=$(cd $2; pwd)
 
 echo "Compiling shaders from ${INPUT_DIR} to ${OUTPUT_DIR}"
 
-mkdir -p ${OUTPUT_DIR}
-
 for path in ${INPUT_DIR}/*.glsl; do
     file_name=$(basename ${path} .glsl)
     echo ${GLSLANG} -V ${path} -o ${OUTPUT_DIR}/${file_name}.spv

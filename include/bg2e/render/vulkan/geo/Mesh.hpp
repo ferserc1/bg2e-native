@@ -4,6 +4,7 @@
 #include <bg2e/geo/Mesh.hpp>
 #include <bg2e/render/Vulkan.hpp>
 #include <bg2e/render/vulkan/Buffer.hpp>
+#include <bg2e/render/vulkan/geo/VertexDescription.hpp>
 
 #include <memory>
 
