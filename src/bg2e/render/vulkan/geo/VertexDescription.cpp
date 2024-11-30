@@ -3,15 +3,8 @@
 
 namespace bg2e::render::vulkan::geo {
 
-template <class T>
-VkVertexInputBindingDescription bindingDescription()
-{
-    VkVertexInputBindingDescription desc{};
-    return desc;
-}
 
-template <>
-VkVertexInputBindingDescription bindingDescription<bg2e::geo::VertexP>()
+VkVertexInputBindingDescription bindingDescriptionP()
 {
     using namespace bg2e::geo;
     VkVertexInputBindingDescription desc {};
@@ -23,8 +16,8 @@ VkVertexInputBindingDescription bindingDescription<bg2e::geo::VertexP>()
     return desc;
 }
 
-template <>
-VkVertexInputBindingDescription bindingDescription<bg2e::geo::VertexPN>()
+
+VkVertexInputBindingDescription bindingDescriptionPN()
 {
     using namespace bg2e::geo;
     VkVertexInputBindingDescription desc{};
@@ -36,8 +29,8 @@ VkVertexInputBindingDescription bindingDescription<bg2e::geo::VertexPN>()
     return desc;
 }
 
-template <>
-VkVertexInputBindingDescription bindingDescription<bg2e::geo::VertexPC>()
+
+VkVertexInputBindingDescription bindingDescriptionPC()
 {
     using namespace bg2e::geo;
     VkVertexInputBindingDescription desc{};
@@ -49,8 +42,8 @@ VkVertexInputBindingDescription bindingDescription<bg2e::geo::VertexPC>()
     return desc;
 }
 
-template <>
-VkVertexInputBindingDescription bindingDescription<bg2e::geo::VertexPU>()
+
+VkVertexInputBindingDescription bindingDescriptionPU()
 {
     using namespace bg2e::geo;
     VkVertexInputBindingDescription desc{};
@@ -62,8 +55,8 @@ VkVertexInputBindingDescription bindingDescription<bg2e::geo::VertexPU>()
     return desc;
 }
 
-template <>
-VkVertexInputBindingDescription bindingDescription<bg2e::geo::VertexPNU>()
+
+VkVertexInputBindingDescription bindingDescriptionPNU()
 {
     using namespace bg2e::geo;
     VkVertexInputBindingDescription desc{};
@@ -75,8 +68,8 @@ VkVertexInputBindingDescription bindingDescription<bg2e::geo::VertexPNU>()
     return desc;
 }
 
-template <>
-VkVertexInputBindingDescription bindingDescription<bg2e::geo::VertexPNC>()
+
+VkVertexInputBindingDescription bindingDescriptionPNC()
 {
     using namespace bg2e::geo;
     VkVertexInputBindingDescription desc{};
@@ -88,8 +81,8 @@ VkVertexInputBindingDescription bindingDescription<bg2e::geo::VertexPNC>()
     return desc;
 }
 
-template <>
-VkVertexInputBindingDescription bindingDescription<bg2e::geo::VertexPNUC>()
+
+VkVertexInputBindingDescription bindingDescriptionPNUC()
 {
     using namespace bg2e::geo;
     VkVertexInputBindingDescription desc{};
@@ -101,8 +94,8 @@ VkVertexInputBindingDescription bindingDescription<bg2e::geo::VertexPNUC>()
     return desc;
 }
 
-template <>
-VkVertexInputBindingDescription bindingDescription<bg2e::geo::VertexPNUT>()
+
+VkVertexInputBindingDescription bindingDescriptionPNUT()
 {
     using namespace bg2e::geo;
     VkVertexInputBindingDescription desc{};
@@ -114,8 +107,8 @@ VkVertexInputBindingDescription bindingDescription<bg2e::geo::VertexPNUT>()
     return desc;
 }
 
-template <>
-VkVertexInputBindingDescription bindingDescription<bg2e::geo::VertexPNUUT>()
+
+VkVertexInputBindingDescription bindingDescriptionPNUUT()
 {
     using namespace bg2e::geo;
     VkVertexInputBindingDescription desc{};
@@ -127,15 +120,7 @@ VkVertexInputBindingDescription bindingDescription<bg2e::geo::VertexPNUUT>()
     return desc;
 }
 
-template <class T>
-std::vector<VkVertexInputAttributeDescription> attributeDescriptions()
-{
-    std::vector<VkVertexInputAttributeDescription> desc{};
-    return desc;
-}
-
-template <>
-std::vector<VkVertexInputAttributeDescription> attributeDescriptions<bg2e::geo::VertexP>()
+std::vector<VkVertexInputAttributeDescription> attributeDescriptionsP()
 {
     using namespace bg2e::geo;
     std::vector<VkVertexInputAttributeDescription> desc{};
@@ -149,8 +134,8 @@ std::vector<VkVertexInputAttributeDescription> attributeDescriptions<bg2e::geo::
     return desc;
 }
 
-template <>
-std::vector<VkVertexInputAttributeDescription> attributeDescriptions<bg2e::geo::VertexPN>()
+
+std::vector<VkVertexInputAttributeDescription> attributeDescriptionsPN()
 {
     using namespace bg2e::geo;
     std::vector<VkVertexInputAttributeDescription> desc{};
@@ -169,8 +154,8 @@ std::vector<VkVertexInputAttributeDescription> attributeDescriptions<bg2e::geo::
     return desc;
 }
 
-template <>
-std::vector<VkVertexInputAttributeDescription> attributeDescriptions<bg2e::geo::VertexPC>()
+
+std::vector<VkVertexInputAttributeDescription> attributeDescriptionsPC()
 {
     using namespace bg2e::geo;
     std::vector<VkVertexInputAttributeDescription> desc{};
@@ -189,8 +174,8 @@ std::vector<VkVertexInputAttributeDescription> attributeDescriptions<bg2e::geo::
     return desc;
 }
 
-template <>
-std::vector<VkVertexInputAttributeDescription> attributeDescriptions<bg2e::geo::VertexPU>()
+
+std::vector<VkVertexInputAttributeDescription> attributeDescriptionsPU()
 {
     using namespace bg2e::geo;
     std::vector<VkVertexInputAttributeDescription> desc{};
@@ -209,8 +194,8 @@ std::vector<VkVertexInputAttributeDescription> attributeDescriptions<bg2e::geo::
     return desc;
 }
 
-template <>
-std::vector<VkVertexInputAttributeDescription> attributeDescriptions<bg2e::geo::VertexPNU>()
+
+std::vector<VkVertexInputAttributeDescription> attributeDescriptionsPNU()
 {
     using namespace bg2e::geo;
     std::vector<VkVertexInputAttributeDescription> desc{};
@@ -234,8 +219,8 @@ std::vector<VkVertexInputAttributeDescription> attributeDescriptions<bg2e::geo::
     return desc;
 }
 
-template <>
-std::vector<VkVertexInputAttributeDescription> attributeDescriptions<bg2e::geo::VertexPNC>()
+
+std::vector<VkVertexInputAttributeDescription> attributeDescriptionsPNC()
 {
     using namespace bg2e::geo;
     std::vector<VkVertexInputAttributeDescription> desc{};
@@ -259,8 +244,8 @@ std::vector<VkVertexInputAttributeDescription> attributeDescriptions<bg2e::geo::
     return desc;
 }
 
-template <>
-std::vector<VkVertexInputAttributeDescription> attributeDescriptions<bg2e::geo::VertexPNUC>()
+
+std::vector<VkVertexInputAttributeDescription> attributeDescriptionsPNUC()
 {
     using namespace bg2e::geo;
     std::vector<VkVertexInputAttributeDescription> desc{};
@@ -289,8 +274,8 @@ std::vector<VkVertexInputAttributeDescription> attributeDescriptions<bg2e::geo::
     return desc;
 }
 
-template <>
-std::vector<VkVertexInputAttributeDescription> attributeDescriptions<bg2e::geo::VertexPNUT>()
+
+std::vector<VkVertexInputAttributeDescription> attributeDescriptionsPNUT()
 {
     using namespace bg2e::geo;
     std::vector<VkVertexInputAttributeDescription> desc{};
@@ -319,8 +304,8 @@ std::vector<VkVertexInputAttributeDescription> attributeDescriptions<bg2e::geo::
     return desc;
 }
 
-template <>
-std::vector<VkVertexInputAttributeDescription> attributeDescriptions<bg2e::geo::VertexPNUUT>()
+
+std::vector<VkVertexInputAttributeDescription> attributeDescriptionsPNUUT()
 {
     using namespace bg2e::geo;
     std::vector<VkVertexInputAttributeDescription> desc{};

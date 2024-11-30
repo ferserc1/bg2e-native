@@ -11,65 +11,41 @@ namespace vulkan {
 namespace geo {
 
 
-template <class T>
-extern BG2E_API VkVertexInputBindingDescription bindingDescription();
+BG2E_API VkVertexInputBindingDescription bindingDescriptionP();
 
-template <>
-BG2E_API VkVertexInputBindingDescription bindingDescription<bg2e::geo::VertexP>();
+BG2E_API VkVertexInputBindingDescription bindingDescriptionPN();
 
-template <>
-BG2E_API VkVertexInputBindingDescription bindingDescription<bg2e::geo::VertexPN>();
+BG2E_API VkVertexInputBindingDescription bindingDescriptionPC();
 
-template <>
-BG2E_API VkVertexInputBindingDescription bindingDescription<bg2e::geo::VertexPC>();
+BG2E_API VkVertexInputBindingDescription bindingDescriptionPU();
 
-template <>
-BG2E_API VkVertexInputBindingDescription bindingDescription<bg2e::geo::VertexPU>();
+BG2E_API VkVertexInputBindingDescription bindingDescriptionPNU();
 
-template <>
-BG2E_API VkVertexInputBindingDescription bindingDescription<bg2e::geo::VertexPNU>();
+BG2E_API VkVertexInputBindingDescription bindingDescriptionPNC();
 
-template <>
-BG2E_API VkVertexInputBindingDescription bindingDescription<bg2e::geo::VertexPNC>();
+BG2E_API VkVertexInputBindingDescription bindingDescriptionPNUC();
 
-template <>
-BG2E_API VkVertexInputBindingDescription bindingDescription<bg2e::geo::VertexPNUC>();
+BG2E_API VkVertexInputBindingDescription bindingDescriptionPNUT();
 
-template <>
-BG2E_API VkVertexInputBindingDescription bindingDescription<bg2e::geo::VertexPNUT>();
+BG2E_API VkVertexInputBindingDescription bindingDescriptionPNUUT();
 
-template <>
-BG2E_API VkVertexInputBindingDescription bindingDescription<bg2e::geo::VertexPNUUT>();
+BG2E_API std::vector<VkVertexInputAttributeDescription> attributeDescriptionsP();
 
-template <class T>
-BG2E_API std::vector<VkVertexInputAttributeDescription> attributeDescriptions();
+BG2E_API std::vector<VkVertexInputAttributeDescription> attributeDescriptionsPN();
 
-template <>
-BG2E_API std::vector<VkVertexInputAttributeDescription> attributeDescriptions<bg2e::geo::VertexP>();
+BG2E_API std::vector<VkVertexInputAttributeDescription> attributeDescriptionsPC();
 
-template <>
-BG2E_API std::vector<VkVertexInputAttributeDescription> attributeDescriptions<bg2e::geo::VertexPN>();
+BG2E_API std::vector<VkVertexInputAttributeDescription> attributeDescriptionsPU();
 
-template <>
-BG2E_API std::vector<VkVertexInputAttributeDescription> attributeDescriptions<bg2e::geo::VertexPC>();
+BG2E_API std::vector<VkVertexInputAttributeDescription> attributeDescriptionsPNU();
 
-template <>
-BG2E_API std::vector<VkVertexInputAttributeDescription> attributeDescriptions<bg2e::geo::VertexPU>();
+BG2E_API std::vector<VkVertexInputAttributeDescription> attributeDescriptionsPNC();
 
-template <>
-BG2E_API std::vector<VkVertexInputAttributeDescription> attributeDescriptions<bg2e::geo::VertexPNU>();
+BG2E_API std::vector<VkVertexInputAttributeDescription> attributeDescriptionsPNUC();
 
-template <>
-BG2E_API std::vector<VkVertexInputAttributeDescription> attributeDescriptions<bg2e::geo::VertexPNC>();
+BG2E_API std::vector<VkVertexInputAttributeDescription> attributeDescriptionsPNUT();
 
-template <>
-BG2E_API std::vector<VkVertexInputAttributeDescription> attributeDescriptions<bg2e::geo::VertexPNUC>();
-
-template <>
-BG2E_API std::vector<VkVertexInputAttributeDescription> attributeDescriptions<bg2e::geo::VertexPNUT>();
-
-template <>
-BG2E_API std::vector<VkVertexInputAttributeDescription> attributeDescriptions<bg2e::geo::VertexPNUUT>();
+BG2E_API std::vector<VkVertexInputAttributeDescription> attributeDescriptionsPNUUT();
 
 
 

@@ -398,8 +398,8 @@ protected:
 		plFactory.addShader("test/texture.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
 		plFactory.addShader("test/texture.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
 
-		auto bindingDescription = bg2e::render::vulkan::geo::bindingDescription<bg2e::geo::VertexPNUT>();
-		auto attributeDescriptions = bg2e::render::vulkan::geo::attributeDescriptions<bg2e::geo::VertexPNUT>();
+		auto bindingDescription = bg2e::render::vulkan::geo::bindingDescriptionPNUT();
+		auto attributeDescriptions = bg2e::render::vulkan::geo::attributeDescriptionsPNUT();
 
 		plFactory.vertexInputState.vertexBindingDescriptionCount = 1;
 		plFactory.vertexInputState.pVertexBindingDescriptions = &bindingDescription;
