@@ -274,6 +274,7 @@
 		ED6862D42CE53E4B00A90EE1 /* Input.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Input.hpp; sourceTree = "<group>"; };
 		ED7DE84F2CFB864500AB280D /* sphere.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = sphere.hpp; sourceTree = "<group>"; };
 		ED7DE8502CFB866600AB280D /* sphere.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = sphere.cpp; sourceTree = "<group>"; };
+		ED7DE8532CFC677C00AB280D /* modifiers.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = modifiers.hpp; sourceTree = "<group>"; };
 		ED85B1D62CDB99C30039B44D /* libVkLayer_khronos_validation.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.bundle"; path = libVkLayer_khronos_validation.dylib; sourceTree = "<group>"; };
 		ED85B1D82CDB99FB0039B44D /* libVkLayer_khronos_validation.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.bundle"; name = libVkLayer_khronos_validation.dylib; path = VulkanSDK/lib/libVkLayer_khronos_validation.dylib; sourceTree = "<group>"; };
 		ED85B1DD2CDBA4E00039B44D /* Metal.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Metal.framework; path = System/Library/Frameworks/Metal.framework; sourceTree = SDKROOT; };
@@ -814,6 +815,7 @@
 			isa = PBXGroup;
 			children = (
 				ED5201D02CECA78300C94253 /* Mesh.hpp */,
+				ED7DE8532CFC677C00AB280D /* modifiers.hpp */,
 				ED7DE84F2CFB864500AB280D /* sphere.hpp */,
 				EDD77E2C2CE9E76D00278155 /* Vertex.hpp */,
 			);

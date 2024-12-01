@@ -15,6 +15,7 @@
 #include <bg2e/render/vulkan/geo/Mesh.hpp>
 #include <bg2e/geo/sphere.hpp>
 #include <bg2e/render/Texture.hpp>
+#include <bg2e/geo/modifiers.hpp>
 
 
 #include <bg2e/ui/BasicWidgets.hpp>
@@ -356,6 +357,16 @@ protected:
         auto mesh = std::unique_ptr<bg2e::geo::MeshPNUT>(
             bg2e::geo::createSpherePNUT(1.0f, 30, 30)
         );
+        
+        std::vector<std::unique_ptr<bg2e::geo::Modifier>> modifiers;
+        modifiers.push_back(std::unique_ptr<bg2e::geo::Modifier>(
+            new bg2e::geo::FlipFacesModifier<bg2e::geo::MeshPNUT>(mesh.get()))
+        );
+        
+        for (auto& mod : modifiers)
+        {
+            mod->apply();
+        }
 
         _mesh = std::unique_ptr<bg2e::render::vulkan::geo::MeshPNUT>(new bg2e::render::vulkan::geo::MeshPNUT(_vulkan));
         _mesh->setMeshData(mesh.get());
