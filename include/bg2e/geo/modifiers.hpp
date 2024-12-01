@@ -7,6 +7,8 @@ namespace geo {
 
 class Modifier {
 public:
+    virtual ~Modifier() {}
+    
     virtual void apply() = 0;
 };
 

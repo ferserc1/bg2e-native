@@ -348,17 +348,13 @@ protected:
 	{
 		using namespace bg2e::render::vulkan;
   
-        //auto mesh = std::unique_ptr<bg2e::geo::MeshPU>(
-        //    bg2e::db::loadMeshObj<bg2e::geo::MeshPU>(bg2e::base::PlatformTools::assetPath().append("two_submeshes.obj"))
-        //);
-        
         auto mesh = std::unique_ptr<bg2e::geo::MeshPU>(
-            bg2e::geo::createSpherePU(1.0f, 30, 30)
+            bg2e::geo::createSpherePU(10.0f, 30, 30)
         );
         
         std::vector<std::unique_ptr<bg2e::geo::Modifier>> modifiers;
         modifiers.push_back(std::unique_ptr<bg2e::geo::Modifier>(
-            new bg2e::geo::FlipFacesModifier<bg2e::geo::MeshPNUT>(mesh.get()))
+            new bg2e::geo::FlipFacesModifier<bg2e::geo::MeshPU>(mesh.get()))
         );
         
         for (auto& mod : modifiers)

@@ -10,7 +10,6 @@
 		ED0328142CE4D1630037560D /* Window.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED0328132CE4D1630037560D /* Window.cpp */; };
 		ED0328152CE4D1630037560D /* BasicWidgets.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED0328112CE4D1630037560D /* BasicWidgets.cpp */; };
 		ED0328162CE4D1630037560D /* DemoWindow.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED0328122CE4D1630037560D /* DemoWindow.cpp */; };
-		ED21915E2CDF4A7000123781 /* VkLayer_khronos_validation.json in Sources */ = {isa = PBXBuildFile; fileRef = ED21915D2CDF4A6D00123781 /* VkLayer_khronos_validation.json */; };
 		ED2191602CDF4ABC00123781 /* VkLayer_khronos_validation.json in Copy Layers Configuration */ = {isa = PBXBuildFile; fileRef = ED21915D2CDF4A6D00123781 /* VkLayer_khronos_validation.json */; };
 		ED2191632CDF4B1D00123781 /* libVkLayer_khronos_validation.dylib in Copy Libraries */ = {isa = PBXBuildFile; fileRef = ED2191622CDF4B1200123781 /* libVkLayer_khronos_validation.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		ED2191712CDF4E5D00123781 /* Buffer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED2191652CDF4E4700123781 /* Buffer.cpp */; };
@@ -1092,7 +1091,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				ED21915E2CDF4A7000123781 /* VkLayer_khronos_validation.json in Sources */,
 				ED533A222CD7AAB700136B04 /* main.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
