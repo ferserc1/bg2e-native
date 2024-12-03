@@ -14,6 +14,7 @@
 #include <bg2e/render/vulkan/macros/frame_resources.hpp>
 #include <bg2e/render/vulkan/geo/Mesh.hpp>
 #include <bg2e/geo/sphere.hpp>
+#include <bg2e/geo/cube.hpp>
 #include <bg2e/render/Texture.hpp>
 #include <bg2e/geo/modifiers.hpp>
 
@@ -58,7 +59,9 @@ public:
         // Use the initScene function to initialize and create scene resources, such as pipelines, 3D models
         // or textures
         
-        std::filesystem::path imagePath = bg2e::base::PlatformTools::assetPath().append("country_field_sun.jpg");
+        auto assetsPath = bg2e::base::PlatformTools::assetPath();
+        auto imagePath = assetsPath;
+        imagePath.append("country_field_sun.jpg");
 
 		// You can use plain pointers in this case, because the base::Image and base::Texture objects will not
 		// be used outside of this function. Internally, these objects will be stored in a shared_ptr and will be
@@ -69,14 +72,30 @@ public:
 		auto texture = new bg2e::base::Texture(image);
         texture->setMagFilter(bg2e::base::Texture::FilterLinear);
         texture->setMinFilter(bg2e::base::Texture::FilterLinear);
+        texture->setUseMipmaps(true);
 
 		_texture = std::shared_ptr<bg2e::render::Texture>(new bg2e::render::Texture(
 			_vulkan,
 			texture
 		));
-  
+ 
+        auto cubePath = assetsPath;
+        cubePath.append("logo_2a.png");
+
+        image = bg2e::db::loadImage(cubePath);
+        auto cubeTexture = new bg2e::base::Texture(image);
+        cubeTexture->setMagFilter(bg2e::base::Texture::FilterLinear);
+        cubeTexture->setMinFilter(bg2e::base::Texture::FilterLinear);
+        cubeTexture->setUseMipmaps(true);
+        
+        _cubeTexture = std::shared_ptr<bg2e::render::Texture>(new bg2e::render::Texture(
+            _vulkan,
+            cubeTexture
+        ));
+        
         _vulkan->cleanupManager().push([&](VkDevice) {
             _texture->cleanup();
+            _cubeTexture->cleanup();
         });
 	
 		createImage(_vulkan->swapchain().extent());
@@ -94,7 +113,8 @@ public:
         _sceneData.projMatrix[1][1] *= -1.0f;
         _sceneData.projMatrix[0][0] *= -1.0f;
 
-        _objectData.modelMatrix = glm::mat4{ 1.0f };
+        _skyData.modelMatrix = glm::mat4{ 1.0f };
+        _cubeData.modelMatrix = glm::mat4{ 1.0f };
         
 		createVertexData();
     }
@@ -180,10 +200,10 @@ public:
         // a descriptor set for each submesh. The descriptor set contains the uniform buffer and the texture.
         // The uniform buffer with the model matrix is the same for every submeshes, but the texture can
         // be different.
-        _objectData.modelMatrix = glm::rotate(_objectData.modelMatrix, 0.02f, glm::vec3(0.0f, 1.0f, 0.0f));
-        auto objectDataBuffer = macros::createBuffer(_vulkan, frameResources, _objectData);
+        _skyData.modelMatrix = glm::rotate(_skyData.modelMatrix, 0.02f, glm::vec3(0.0f, 1.0f, 0.0f));
+        auto objectDataBuffer = macros::createBuffer(_vulkan, frameResources, _skyData);
         
-		for (uint32_t i = 0; i < _mesh->submeshCount(); ++i)
+		for (uint32_t i = 0; i < _skyMesh->submeshCount(); ++i)
 		{
             auto objectDS = frameResources.newDescriptorSet(_objectDSLayout);
             objectDS->beginUpdate();
@@ -211,11 +231,42 @@ public:
                 sets.data(),
                 0, nullptr
             );
-			_mesh->drawSubmesh(cmd, i);
+			_skyMesh->drawSubmesh(cmd, i);
 		}
 
 		// Use this function to draw one unique mesh including all the indexes
-		// _mesh->draw(cmd);
+		// _skyMesh->draw(cmd);
+  
+        // Draw the cube
+        _cubeData.modelMatrix = glm::rotate(_cubeData.modelMatrix, -0.025f, glm::vec3(1.0f, 1.0f, 0.0f));
+        auto cubeDataBuffer = macros::createBuffer(_vulkan, frameResources, _cubeData);
+        
+        auto objectDS = frameResources.newDescriptorSet(_objectDSLayout);
+        objectDS->beginUpdate();
+            objectDS->addBuffer(
+                0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                cubeDataBuffer, sizeof(ObjectData), 0
+            );
+            objectDS->addImage(
+                1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                _cubeTexture->image()->imageView(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                _cubeTexture->sampler()
+            );
+        objectDS->endUpdate();
+        
+        std::array<VkDescriptorSet, 2> sets = {
+            sceneDS->descriptorSet(),
+            objectDS->descriptorSet()
+        };
+        vkCmdBindDescriptorSets(
+            cmd,
+            VK_PIPELINE_BIND_POINT_GRAPHICS,
+            _layout, 0,
+            uint32_t(sets.size()),
+            sets.data(),
+            0, nullptr
+        );
+        _cube->draw(cmd);
 
 		bg2e::render::vulkan::cmdEndRendering(cmd);
 
@@ -272,9 +323,11 @@ protected:
 	VkPipelineLayout _layout;
 	VkPipeline _pipeline;
  
-	std::unique_ptr<bg2e::render::vulkan::geo::MeshPU> _mesh;
- 
+	std::unique_ptr<bg2e::render::vulkan::geo::MeshPU> _skyMesh;
+    std::unique_ptr<bg2e::render::vulkan::geo::MeshPU> _cube;
+
 	std::shared_ptr<bg2e::render::Texture> _texture;
+    std::shared_ptr<bg2e::render::Texture> _cubeTexture;
 
     VkDescriptorSetLayout _sceneDSLayout;
     VkDescriptorSetLayout _objectDSLayout;
@@ -291,7 +344,8 @@ protected:
     {
         glm::mat4 modelMatrix;
     };
-    ObjectData _objectData;
+    ObjectData _skyData;
+    ObjectData _cubeData;
 
 	void createPipeline()
 	{
@@ -332,10 +386,10 @@ protected:
         plFactory.setDepthFormat(_vulkan->swapchain().depthImageFormat());
         plFactory.enableDepthtest(true, VK_COMPARE_OP_LESS);
         plFactory.inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-        plFactory.setCullMode(true, VK_FRONT_FACE_CLOCKWISE);
+        plFactory.setCullMode(true, VK_FRONT_FACE_COUNTER_CLOCKWISE);
 		plFactory.setColorAttachmentFormat(_targetImage->format());
 		_pipeline = plFactory.build(_layout);
-
+  
 		_vulkan->cleanupManager().push([&](VkDevice dev) {
 			vkDestroyPipeline(dev, _pipeline, nullptr);
 			vkDestroyPipelineLayout(dev, _layout, nullptr);
@@ -349,20 +403,24 @@ protected:
 		using namespace bg2e::render::vulkan;
   
         auto mesh = std::unique_ptr<bg2e::geo::MeshPU>(
-            bg2e::geo::createSpherePU(10.0f, 30, 30)
+            bg2e::geo::createSpherePU(10.0f, 30, 30, true)
         );
         
-        // Use a flip faces modifier to convert the sphere into an sky sphere
-        bg2e::geo::FlipFacesModifier<bg2e::geo::MeshPU> flipFaces(mesh.get());
-        flipFaces.apply();
-
-        _mesh = std::unique_ptr<bg2e::render::vulkan::geo::MeshPU>(new bg2e::render::vulkan::geo::MeshPU(_vulkan));
-        _mesh->setMeshData(mesh.get());
-
-		_mesh->build();
+        _skyMesh = std::unique_ptr<bg2e::render::vulkan::geo::MeshPU>(new bg2e::render::vulkan::geo::MeshPU(_vulkan));
+        _skyMesh->setMeshData(mesh.get());
+		_skyMesh->build();
+  
+        mesh = std::unique_ptr<bg2e::geo::MeshPU>(
+            bg2e::geo::createCubePU(1.0f, 1.0f, 1.0f)
+        );
+        
+        _cube = std::unique_ptr<bg2e::render::vulkan::geo::MeshPU>(new bg2e::render::vulkan::geo::MeshPU(_vulkan));
+        _cube->setMeshData(mesh.get());
+        _cube->build();
 
 		_vulkan->cleanupManager().push([this](VkDevice dev) {
-			_mesh->cleanup();
+			_skyMesh->cleanup();
+            _cube->cleanup();
 		});
 	}
 

@@ -15,6 +15,7 @@ void createBaseSphere(
     float radius, 
     uint32_t longitudes, 
     uint32_t latitudes,
+    bool invertFaces,
     std::function<void(VertexPNUT)> vertexCallback,
 	std::function<void(uint32_t)> indexCallback,
 	std::function<void(uint32_t, uint32_t)> submeshCallback
@@ -66,9 +67,19 @@ void createBaseSphere(
             uint32_t i2 = i1 + 1;
             
 
-			indexCallback(i0);
-			indexCallback(i1);
-			indexCallback(i2);
+            if (invertFaces)
+            {
+                indexCallback(i0);
+                indexCallback(i1);
+                indexCallback(i2);
+            }
+            else
+            {
+                indexCallback(i2);
+                indexCallback(i1);
+                indexCallback(i0);
+            }
+			
 			numIndices += 3;
 
             // The top and bottom caps are triangles, but the res
@@ -80,9 +91,19 @@ void createBaseSphere(
                 uint32_t i4 = i0 + 1;
                 uint32_t i5 = i0;
 
-				indexCallback(i3);
-				indexCallback(i4);
-				indexCallback(i5);
+                if (invertFaces)
+                {
+                    indexCallback(i3);
+                    indexCallback(i4);
+                    indexCallback(i5);
+                }
+                else
+                {
+                    indexCallback(i5);
+                    indexCallback(i4);
+                    indexCallback(i3);
+                }
+				
                 numIndices += 3;
             }
         }
@@ -105,10 +126,10 @@ void createBaseSphere(
 	submeshCallback(0, numIndices);
 }
 
-bg2e::geo::MeshP* createSphereP(float radius, uint32_t longitudes, uint32_t latitudes)
+bg2e::geo::MeshP* createSphereP(float radius, uint32_t longitudes, uint32_t latitudes, bool invertFaces)
 {
     auto sphere = new bg2e::geo::MeshP();
-    createBaseSphere(radius, longitudes, latitudes,
+    createBaseSphere(radius, longitudes, latitudes, invertFaces,
         [&](VertexPNUT vertex) {
             sphere->vertices.push_back({
                 vertex.position
@@ -124,10 +145,10 @@ bg2e::geo::MeshP* createSphereP(float radius, uint32_t longitudes, uint32_t lati
     return sphere;
 }
 
-bg2e::geo::MeshPC* createSpherePC(float radius, uint32_t longitudes, uint32_t latitudes)
+bg2e::geo::MeshPC* createSpherePC(float radius, uint32_t longitudes, uint32_t latitudes, bool invertFaces)
 {
     auto sphere = new bg2e::geo::MeshPC();
-    createBaseSphere(radius, longitudes, latitudes,
+    createBaseSphere(radius, longitudes, latitudes, invertFaces,
         [&](VertexPNUT vertex) {
             sphere->vertices.push_back({
                 vertex.position,
@@ -144,10 +165,10 @@ bg2e::geo::MeshPC* createSpherePC(float radius, uint32_t longitudes, uint32_t la
     return sphere;
 }
 
-bg2e::geo::MeshPN* createSpherePN(float radius, uint32_t longitudes, uint32_t latitudes)
+bg2e::geo::MeshPN* createSpherePN(float radius, uint32_t longitudes, uint32_t latitudes, bool invertFaces)
 {
     auto sphere = new bg2e::geo::MeshPN();
-    createBaseSphere(radius, longitudes, latitudes,
+    createBaseSphere(radius, longitudes, latitudes, invertFaces,
         [&](VertexPNUT vertex) {
             sphere->vertices.push_back({
                 vertex.position,
@@ -164,10 +185,10 @@ bg2e::geo::MeshPN* createSpherePN(float radius, uint32_t longitudes, uint32_t la
     return sphere;
 }
 
-bg2e::geo::MeshPU* createSpherePU(float radius, uint32_t longitudes, uint32_t latitudes)
+bg2e::geo::MeshPU* createSpherePU(float radius, uint32_t longitudes, uint32_t latitudes, bool invertFaces)
 {
     auto sphere = new bg2e::geo::MeshPU();
-    createBaseSphere(radius, longitudes, latitudes,
+    createBaseSphere(radius, longitudes, latitudes, invertFaces,
         [&](VertexPNUT vertex) {
             sphere->vertices.push_back({
                 vertex.position,
@@ -184,10 +205,10 @@ bg2e::geo::MeshPU* createSpherePU(float radius, uint32_t longitudes, uint32_t la
     return sphere;
 }
 
-bg2e::geo::MeshPNU* createSpherePNU(float radius, uint32_t longitudes, uint32_t latitudes)
+bg2e::geo::MeshPNU* createSpherePNU(float radius, uint32_t longitudes, uint32_t latitudes, bool invertFaces)
 {
     auto sphere = new bg2e::geo::MeshPNU();
-    createBaseSphere(radius, longitudes, latitudes,
+    createBaseSphere(radius, longitudes, latitudes, invertFaces,
         [&](VertexPNUT vertex) {
             sphere->vertices.push_back({
                 vertex.position,
@@ -205,10 +226,10 @@ bg2e::geo::MeshPNU* createSpherePNU(float radius, uint32_t longitudes, uint32_t 
     return sphere;
 }
 
-bg2e::geo::MeshPNC* createSpherePNC(float radius, uint32_t longitudes, uint32_t latitudes)
+bg2e::geo::MeshPNC* createSpherePNC(float radius, uint32_t longitudes, uint32_t latitudes, bool invertFaces)
 {
     auto sphere = new bg2e::geo::MeshPNC();
-    createBaseSphere(radius, longitudes, latitudes,
+    createBaseSphere(radius, longitudes, latitudes, invertFaces,
         [&](VertexPNUT vertex) {
             sphere->vertices.push_back({
                 vertex.position,
@@ -226,10 +247,10 @@ bg2e::geo::MeshPNC* createSpherePNC(float radius, uint32_t longitudes, uint32_t 
     return sphere;
 }
 
-bg2e::geo::MeshPNUC* createSpherePNUC(float radius, uint32_t longitudes, uint32_t latitudes)
+bg2e::geo::MeshPNUC* createSpherePNUC(float radius, uint32_t longitudes, uint32_t latitudes, bool invertFaces)
 {
     auto sphere = new bg2e::geo::MeshPNUC();
-    createBaseSphere(radius, longitudes, latitudes,
+    createBaseSphere(radius, longitudes, latitudes, invertFaces,
         [&](VertexPNUT vertex) {
             sphere->vertices.push_back({
                 vertex.position,
@@ -248,10 +269,10 @@ bg2e::geo::MeshPNUC* createSpherePNUC(float radius, uint32_t longitudes, uint32_
     return sphere;
 }
 
-bg2e::geo::MeshPNUT* createSpherePNUT(float radius, uint32_t longitudes, uint32_t latitudes)
+bg2e::geo::MeshPNUT* createSpherePNUT(float radius, uint32_t longitudes, uint32_t latitudes, bool invertFaces)
 {
     auto sphere = new bg2e::geo::MeshPNUT();
-    createBaseSphere(radius, longitudes, latitudes,
+    createBaseSphere(radius, longitudes, latitudes, invertFaces,
         [&](VertexPNUT vertex) {
 			sphere->vertices.push_back(vertex);
         },
@@ -265,10 +286,10 @@ bg2e::geo::MeshPNUT* createSpherePNUT(float radius, uint32_t longitudes, uint32_
 	return sphere;
 }
 
-bg2e::geo::MeshPNUUT* createSpherePNUUT(float radius, uint32_t longitudes, uint32_t latitudes)
+bg2e::geo::MeshPNUUT* createSpherePNUUT(float radius, uint32_t longitudes, uint32_t latitudes, bool invertFaces)
 {
     auto sphere = new bg2e::geo::MeshPNUUT();
-    createBaseSphere(radius, longitudes, latitudes,
+    createBaseSphere(radius, longitudes, latitudes, invertFaces,
         [&](VertexPNUT vertex) {
             sphere->vertices.push_back({
 				vertex.position,
@@ -288,9 +309,9 @@ bg2e::geo::MeshPNUUT* createSpherePNUUT(float radius, uint32_t longitudes, uint3
     return sphere;
 }
 
-bg2e::geo::MeshPNUUT* createSphere(float radius, uint32_t longitudes, uint32_t latitudes)
+bg2e::geo::MeshPNUUT* createSphere(float radius, uint32_t longitudes, uint32_t latitudes, bool invertFaces)
 {
-    return createSpherePNUUT(radius, longitudes, latitudes);
+    return createSpherePNUUT(radius, longitudes, latitudes, invertFaces);
 }
 
 }

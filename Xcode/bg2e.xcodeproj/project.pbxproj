@@ -66,6 +66,8 @@
 		ED85B2102CDBAB950039B44D /* libSDL2-2.0.0.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = EDD357212CD924B9009C7507 /* libSDL2-2.0.0.dylib */; };
 		ED85B2112CDBAB970039B44D /* libvulkan.1.3.290.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = EDD357222CD924B9009C7507 /* libvulkan.1.3.290.dylib */; };
 		ED85B2122CDBAB9C0039B44D /* CoreFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = ED86884F2CDAAB7300A71ADC /* CoreFoundation.framework */; };
+		EDB10C082CFF8BE8002A1B0E /* cube.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EDB10C072CFF8BE8002A1B0E /* cube.cpp */; };
+		EDB10C0B2CFF93A1002A1B0E /* logo_2a.png in Copy Assets */ = {isa = PBXBuildFile; fileRef = EDB10C0A2CFF9398002A1B0E /* logo_2a.png */; };
 		EDD3572D2CD927CB009C7507 /* MoltenVK_icd.json in Copy MoltenVK ICD */ = {isa = PBXBuildFile; fileRef = EDD3572C2CD92789009C7507 /* MoltenVK_icd.json */; };
 		EDD77E332CE9E78C00278155 /* VertexDescription.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EDD77E312CE9E78C00278155 /* VertexDescription.cpp */; };
 		EDE819942CF602600078084B /* two_submeshes.mtl in Copy Assets */ = {isa = PBXBuildFile; fileRef = EDE819922CF6024D0078084B /* two_submeshes.mtl */; };
@@ -134,6 +136,7 @@
 			dstPath = assets;
 			dstSubfolderSpec = 7;
 			files = (
+				EDB10C0B2CFF93A1002A1B0E /* logo_2a.png in Copy Assets */,
 				EDE819A02CF624490078084B /* two_submeshes_inner_albedo.jpg in Copy Assets */,
 				EDE819A12CF624490078084B /* two_submeshes_inner_ao.jpg in Copy Assets */,
 				EDE819A22CF624490078084B /* two_submeshes_inner_metallic.jpg in Copy Assets */,
@@ -312,6 +315,9 @@
 		ED8688462CDAAB3400A71ADC /* tiny_obj_loader.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = tiny_obj_loader.h; sourceTree = "<group>"; };
 		ED86884F2CDAAB7300A71ADC /* CoreFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreFoundation.framework; path = System/Library/Frameworks/CoreFoundation.framework; sourceTree = SDKROOT; };
 		EDA28E922CF311F2009AC1FB /* descriptor_set.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = descriptor_set.hpp; sourceTree = "<group>"; };
+		EDB10C072CFF8BE8002A1B0E /* cube.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = cube.cpp; sourceTree = "<group>"; };
+		EDB10C092CFF8C01002A1B0E /* cube.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = cube.hpp; sourceTree = "<group>"; };
+		EDB10C0A2CFF9398002A1B0E /* logo_2a.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = logo_2a.png; sourceTree = "<group>"; };
 		EDD3571D2CD92341009C7507 /* copy_libraries.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = copy_libraries.sh; sourceTree = "<group>"; };
 		EDD357202CD924B9009C7507 /* libMoltenVK.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; path = libMoltenVK.dylib; sourceTree = "<group>"; };
 		EDD357212CD924B9009C7507 /* libSDL2-2.0.0.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; path = "libSDL2-2.0.0.dylib"; sourceTree = "<group>"; };
@@ -479,6 +485,7 @@
 				ED2BAEB12CF2126A00FA4CA4 /* taza_normal.png */,
 				ED2BAEB22CF2126A00FA4CA4 /* taza_roughness.png */,
 				ED5201D52CED082F00C94253 /* country_field_sun.jpg */,
+				EDB10C0A2CFF9398002A1B0E /* logo_2a.png */,
 			);
 			name = assets;
 			path = ../assets;
@@ -639,6 +646,7 @@
 			isa = PBXGroup;
 			children = (
 				ED7DE8502CFB866600AB280D /* sphere.cpp */,
+				EDB10C072CFF8BE8002A1B0E /* cube.cpp */,
 			);
 			path = geo;
 			sourceTree = "<group>";
@@ -813,6 +821,7 @@
 		EDD77E2D2CE9E76D00278155 /* geo */ = {
 			isa = PBXGroup;
 			children = (
+				EDB10C092CFF8C01002A1B0E /* cube.hpp */,
 				ED5201D02CECA78300C94253 /* Mesh.hpp */,
 				ED7DE8532CFC677C00AB280D /* modifiers.hpp */,
 				ED7DE84F2CFB864500AB280D /* sphere.hpp */,
@@ -1133,6 +1142,7 @@
 				ED2191782CDF4E5D00123781 /* Image.cpp in Sources */,
 				ED5201DC2CED095800C94253 /* image_db.cpp in Sources */,
 				ED2191792CDF4E5D00123781 /* Info.cpp in Sources */,
+				EDB10C082CFF8BE8002A1B0E /* cube.cpp in Sources */,
 				ED2191992CDF678900123781 /* Log.cpp in Sources */,
 				ED342CFE2CE265370041BE62 /* RenderLoop.cpp in Sources */,
 				ED2BAEAA2CF211DF00FA4CA4 /* mesh_obj_db.cpp in Sources */,
