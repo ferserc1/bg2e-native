@@ -24,6 +24,7 @@
     <ClInclude Include="..\include\bg2e\db\image.hpp" />
     <ClInclude Include="..\include\bg2e\db\mesh_obj.hpp" />
     <ClInclude Include="..\include\bg2e\geo\Mesh.hpp" />
+    <ClInclude Include="..\include\bg2e\geo\modifiers.hpp" />
     <ClInclude Include="..\include\bg2e\geo\sphere.hpp" />
     <ClInclude Include="..\include\bg2e\geo\Vertex.hpp" />
     <ClInclude Include="..\include\bg2e\render\RenderLoop.hpp" />
