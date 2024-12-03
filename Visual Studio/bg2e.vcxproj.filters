@@ -261,6 +261,9 @@
     <ClInclude Include="..\include\bg2e\geo\modifiers.hpp">
       <Filter>Header Files\bg2e\geo</Filter>
     </ClInclude>
+    <ClInclude Include="..\include\bg2e\geo\cube.hpp">
+      <Filter>Header Files\bg2e\geo</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\bg2e\app\MainLoop.cpp">
@@ -399,6 +402,9 @@
       <Filter>Source Files\db</Filter>
     </ClCompile>
     <ClCompile Include="..\src\bg2e\geo\sphere.cpp">
+      <Filter>Source Files\geo</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\bg2e\geo\cube.cpp">
       <Filter>Source Files\geo</Filter>
     </ClCompile>
   </ItemGroup>
