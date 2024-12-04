@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		ED7DE86B2CFCCF0600AB280D /* country_field_sun.jpg in Copy Assets */ = {isa = PBXBuildFile; fileRef = ED7DE8542CFCCEE600AB280D /* country_field_sun.jpg */; };
+		EDC3FD4D2D00341600C3BE02 /* logo_2a.png in Copy Assets */ = {isa = PBXBuildFile; fileRef = EDC3FD4C2D00338400C3BE02 /* logo_2a.png */; };
 		EDD77E532CEA60F800278155 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EDD77E512CEA60F800278155 /* main.cpp */; };
 		EDD77E5F2CEA64D800278155 /* libSDL2-2.0.0.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = EDD77E592CEA620900278155 /* libSDL2-2.0.0.dylib */; };
 		EDD77E612CEA64E600278155 /* CoreFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = EDD77E602CEA64E600278155 /* CoreFoundation.framework */; };
@@ -29,6 +30,7 @@
 			dstSubfolderSpec = 7;
 			files = (
 				ED7DE86B2CFCCF0600AB280D /* country_field_sun.jpg in Copy Assets */,
+				EDC3FD4D2D00341600C3BE02 /* logo_2a.png in Copy Assets */,
 			);
 			name = "Copy Assets";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -93,6 +95,7 @@
 		ED7DE8662CFCCEE600AB280D /* two_submeshes_outer_metallic.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = two_submeshes_outer_metallic.jpg; sourceTree = "<group>"; };
 		ED7DE8672CFCCEE600AB280D /* two_submeshes_outer_normal.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = two_submeshes_outer_normal.jpg; sourceTree = "<group>"; };
 		ED7DE8682CFCCEE600AB280D /* two_submeshes_outer_roughness.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = two_submeshes_outer_roughness.jpg; sourceTree = "<group>"; };
+		EDC3FD4C2D00338400C3BE02 /* logo_2a.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = logo_2a.png; sourceTree = "<group>"; };
 		EDD77E3D2CEA600200278155 /* sky_sphere.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = sky_sphere.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		EDD77E512CEA60F800278155 /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
 		EDD77E542CEA61AA00278155 /* libbg2e-native.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = "libbg2e-native.a"; path = "/Users/fernando/desarrollo/bg2e-native/bin/Debug/libbg2e-native.a"; sourceTree = "<absolute>"; };
@@ -126,6 +129,7 @@
 		ED7DE8692CFCCEE600AB280D /* assets */ = {
 			isa = PBXGroup;
 			children = (
+				EDC3FD4C2D00338400C3BE02 /* logo_2a.png */,
 				ED7DE8542CFCCEE600AB280D /* country_field_sun.jpg */,
 				ED7DE8552CFCCEE600AB280D /* simple_cube.mtl */,
 				ED7DE8562CFCCEE600AB280D /* simple_cube.obj */,
