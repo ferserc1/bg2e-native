@@ -65,17 +65,6 @@ public:
         VkImageLayout         oldLayout,
         VkImageLayout         newLayout,
         TransitionInfo        transitionInfo = TransitionInfo()
-        /*
-        VkImageAspectFlags    aspectMask = 0,
-        uint32_t              mipLevel = 0,
-        uint32_t              mipLevelsCount = VK_REMAINING_MIP_LEVELS,
-        uint32_t			  baseArrayLayer = 0,
-        uint32_t			  layerCount = VK_REMAINING_ARRAY_LAYERS,
-        VkPipelineStageFlags2 srcStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,
-        VkAccessFlags2        srcAccessMask = VK_ACCESS_2_MEMORY_WRITE_BIT,
-        VkPipelineStageFlags2 dstStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,
-        VkAccessFlags2        dstAccessMask = VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT
-        */
     );
 
     /*
@@ -90,17 +79,6 @@ public:
         VkImageLayout         oldLayout,
         VkImageLayout         newLayout,
         TransitionInfo        transitionInfo = TransitionInfo()
-        /*
-        VkImageAspectFlags    aspectMask = 0,
-        uint32_t              mipLevel = 0,
-        uint32_t              mipLevelsCount = VK_REMAINING_MIP_LEVELS,
-        uint32_t			  baseArrayLayer = 0,
-        uint32_t			  layerCount = VK_REMAINING_ARRAY_LAYERS,
-        VkPipelineStageFlags2 srcStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,
-        VkAccessFlags2        srcAccessMask = VK_ACCESS_2_MEMORY_WRITE_BIT,
-        VkPipelineStageFlags2 dstStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,
-        VkAccessFlags2        dstAccessMask = VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT
-        */
     );
 
     /*
@@ -119,10 +97,29 @@ public:
      */
     static void cmdCopy(
         VkCommandBuffer cmd,
-        VkImage srcImage,
-        VkExtent2D srcSize,
-        VkImage dstImage,
-        VkExtent2D dstSize
+        VkImage         srcImage,
+        VkExtent2D      srcSize,
+        VkImage         dstImage,
+        VkExtent2D      dstSize
+    );
+    
+    /*
+     *  Setup an image to image copy command, but also adds the
+     *  required transitions to the source and destination image.
+     *  Optionally, the final layout of the images can also be
+     *  configured if srcFinalLayout and dstFinalLayout are set
+     *  to other layout other than VK_IMAGE_LAYOUT_UNDEFINED
+     */
+    static void cmdCopy(
+        VkCommandBuffer cmd,
+        VkImage         srcImage,
+        VkExtent2D      srcSize,
+        VkImageLayout 	srcInitialLayout,
+        VkImage         dstImage,
+        VkExtent2D      dstSize,
+        VkImageLayout   dstInitialLayout,
+        VkImageLayout 	srcFinalLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+        VkImageLayout   dstFinalLayout = VK_IMAGE_LAYOUT_UNDEFINED
     );
     
     static Image* createAllocatedImage(

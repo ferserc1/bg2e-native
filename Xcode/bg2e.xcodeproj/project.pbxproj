@@ -70,6 +70,9 @@
 		EDB10C0B2CFF93A1002A1B0E /* logo_2a.png in Copy Assets */ = {isa = PBXBuildFile; fileRef = EDB10C0A2CFF9398002A1B0E /* logo_2a.png */; };
 		EDD3572D2CD927CB009C7507 /* MoltenVK_icd.json in Copy MoltenVK ICD */ = {isa = PBXBuildFile; fileRef = EDD3572C2CD92789009C7507 /* MoltenVK_icd.json */; };
 		EDD77E332CE9E78C00278155 /* VertexDescription.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EDD77E312CE9E78C00278155 /* VertexDescription.cpp */; };
+		EDE525A32D0192090080A45C /* cone.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EDE525A22D0192090080A45C /* cone.cpp */; };
+		EDE525A52D0192100080A45C /* cylinder.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EDE525A42D0192100080A45C /* cylinder.cpp */; };
+		EDE525A72D0192170080A45C /* plane.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EDE525A62D0192170080A45C /* plane.cpp */; };
 		EDE819942CF602600078084B /* two_submeshes.mtl in Copy Assets */ = {isa = PBXBuildFile; fileRef = EDE819922CF6024D0078084B /* two_submeshes.mtl */; };
 		EDE819952CF602600078084B /* two_submeshes.obj in Copy Assets */ = {isa = PBXBuildFile; fileRef = EDE819932CF6024D0078084B /* two_submeshes.obj */; };
 		EDE819A02CF624490078084B /* two_submeshes_inner_albedo.jpg in Copy Assets */ = {isa = PBXBuildFile; fileRef = EDE819962CF624400078084B /* two_submeshes_inner_albedo.jpg */; };
@@ -326,6 +329,12 @@
 		EDD77E2C2CE9E76D00278155 /* Vertex.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Vertex.hpp; sourceTree = "<group>"; };
 		EDD77E312CE9E78C00278155 /* VertexDescription.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = VertexDescription.cpp; sourceTree = "<group>"; };
 		EDD77E752CEA6CF600278155 /* VertexDescription.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = VertexDescription.hpp; sourceTree = "<group>"; };
+		EDE5259F2D0191EB0080A45C /* cone.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = cone.hpp; sourceTree = "<group>"; };
+		EDE525A02D0191F30080A45C /* cylinder.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = cylinder.hpp; sourceTree = "<group>"; };
+		EDE525A12D0191F90080A45C /* plane.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = plane.hpp; sourceTree = "<group>"; };
+		EDE525A22D0192090080A45C /* cone.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = cone.cpp; sourceTree = "<group>"; };
+		EDE525A42D0192100080A45C /* cylinder.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = cylinder.cpp; sourceTree = "<group>"; };
+		EDE525A62D0192170080A45C /* plane.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = plane.cpp; sourceTree = "<group>"; };
 		EDE819922CF6024D0078084B /* two_submeshes.mtl */ = {isa = PBXFileReference; lastKnownFileType = text; path = two_submeshes.mtl; sourceTree = "<group>"; };
 		EDE819932CF6024D0078084B /* two_submeshes.obj */ = {isa = PBXFileReference; lastKnownFileType = text; path = two_submeshes.obj; sourceTree = "<group>"; };
 		EDE819962CF624400078084B /* two_submeshes_inner_albedo.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = two_submeshes_inner_albedo.jpg; sourceTree = "<group>"; };
@@ -561,9 +570,9 @@
 				ED533A162CD7A8E700136B04 /* app */,
 				ED8688122CDAAABE00A71ADC /* base */,
 				ED5201D92CED093D00C94253 /* db */,
+				EDD77E2D2CE9E76D00278155 /* geo */,
 				ED8688162CDAAACC00A71ADC /* render */,
 				ED2D56582CE38ED6006EF072 /* ui */,
-				EDD77E2D2CE9E76D00278155 /* geo */,
 			);
 			path = bg2e;
 			sourceTree = "<group>";
@@ -645,8 +654,11 @@
 		ED7DE8512CFB866600AB280D /* geo */ = {
 			isa = PBXGroup;
 			children = (
-				ED7DE8502CFB866600AB280D /* sphere.cpp */,
+				EDE525A22D0192090080A45C /* cone.cpp */,
 				EDB10C072CFF8BE8002A1B0E /* cube.cpp */,
+				EDE525A42D0192100080A45C /* cylinder.cpp */,
+				EDE525A62D0192170080A45C /* plane.cpp */,
+				ED7DE8502CFB866600AB280D /* sphere.cpp */,
 			);
 			path = geo;
 			sourceTree = "<group>";
@@ -821,9 +833,12 @@
 		EDD77E2D2CE9E76D00278155 /* geo */ = {
 			isa = PBXGroup;
 			children = (
+				EDE5259F2D0191EB0080A45C /* cone.hpp */,
 				EDB10C092CFF8C01002A1B0E /* cube.hpp */,
+				EDE525A02D0191F30080A45C /* cylinder.hpp */,
 				ED5201D02CECA78300C94253 /* Mesh.hpp */,
 				ED7DE8532CFC677C00AB280D /* modifiers.hpp */,
+				EDE525A12D0191F90080A45C /* plane.hpp */,
 				ED7DE84F2CFB864500AB280D /* sphere.hpp */,
 				EDD77E2C2CE9E76D00278155 /* Vertex.hpp */,
 			);
@@ -1108,6 +1123,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				EDE525A52D0192100080A45C /* cylinder.cpp in Sources */,
 				ED2D56682CE38F41006EF072 /* imgui_tables.cpp in Sources */,
 				ED0328142CE4D1630037560D /* Window.cpp in Sources */,
 				ED0328152CE4D1630037560D /* BasicWidgets.cpp in Sources */,
@@ -1122,6 +1138,7 @@
 				ED0328162CE4D1630037560D /* DemoWindow.cpp in Sources */,
 				ED2D56692CE38F41006EF072 /* imgui_widgets.cpp in Sources */,
 				ED2D56632CE38F37006EF072 /* imgui.cpp in Sources */,
+				EDE525A32D0192090080A45C /* cone.cpp in Sources */,
 				ED2D56642CE38F37006EF072 /* imgui_demo.cpp in Sources */,
 				ED2D56652CE38F37006EF072 /* imgui_draw.cpp in Sources */,
 				ED7DE8522CFB866600AB280D /* sphere.cpp in Sources */,
@@ -1146,6 +1163,7 @@
 				ED2191992CDF678900123781 /* Log.cpp in Sources */,
 				ED342CFE2CE265370041BE62 /* RenderLoop.cpp in Sources */,
 				ED2BAEAA2CF211DF00FA4CA4 /* mesh_obj_db.cpp in Sources */,
+				EDE525A72D0192170080A45C /* plane.cpp in Sources */,
 				EDD77E332CE9E78C00278155 /* VertexDescription.cpp in Sources */,
 				ED5201D42CECA7D700C94253 /* Mesh.cpp in Sources */,
 				ED21917A2CDF4E5D00123781 /* Swapchain.cpp in Sources */,

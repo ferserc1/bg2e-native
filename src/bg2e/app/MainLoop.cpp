@@ -73,7 +73,6 @@ int32_t MainLoop::run(app::Application * application) {
 
 			if (event.type == SDL_KEYUP || event.type == SDL_KEYDOWN)
 			{
-				auto key = event.key.keysym.sym;
                 if (event.key.state == SDL_PRESSED)
                 {
 					_inputManager.keyDown(KeyEvent::fromSDLEvent(event));

@@ -154,33 +154,14 @@ public:
             _sceneDSLayout, _sceneData, currentFrame
         );
         
-		Image::cmdTransitionImage(
-			cmd,
-			_targetImage->handle(),
-			VK_IMAGE_LAYOUT_UNDEFINED,
-			VK_IMAGE_LAYOUT_GENERAL
-		);
-
+    
 		float flash = std::abs(std::sin(currentFrame / 120.0f));
 		VkClearColorValue clearValue{ { 0.0f, 0.0f, flash, 1.0f } };
-		auto clearRange = Image::subresourceRange(VK_IMAGE_ASPECT_COLOR_BIT);
-		vkCmdClearColorImage(
-			cmd,
-			_targetImage->handle(),
-			VK_IMAGE_LAYOUT_GENERAL,
-			&clearValue, 1, &clearRange
-		);
-
-		Image::cmdTransitionImage(
-			cmd, _targetImage->handle(),
-			VK_IMAGE_LAYOUT_GENERAL,
-			VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
-		);
-
-		auto colorAttachment = Info::attachmentInfo(_targetImage->imageView(), nullptr);
-        auto depthAttachment = Info::depthAttachmentInfo(depthImage->imageView());
-        auto renderInfo = Info::renderingInfo(_targetImage->extent2D(), &colorAttachment, &depthAttachment);
-		cmdBeginRendering(cmd, &renderInfo);
+        macros::cmdClearImageAndBeginRendering(
+            cmd,
+            _targetImage.get(), clearValue, VK_IMAGE_LAYOUT_UNDEFINED,
+            depthImage, 1.0f
+        );
 
 		macros::cmdSetDefaultViewportAndScissor(cmd, _targetImage->extent2D());
 
@@ -266,23 +247,10 @@ public:
         
 		bg2e::render::vulkan::cmdEndRendering(cmd);
 
-		Image::cmdTransitionImage(
-			cmd,
-			_targetImage->handle(),
-			VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-			VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
-		);
-		Image::cmdTransitionImage(
-			cmd,
-			colorImage->handle(),
-			VK_IMAGE_LAYOUT_UNDEFINED,
-			VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
-		);
-
 		Image::cmdCopy(
 			cmd,
-			_targetImage->handle(), _targetImage->extent2D(),
-			colorImage->handle(), colorImage->extent2D()
+            _targetImage->handle(), _targetImage->extent2D(), VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+			colorImage->handle(), colorImage->extent2D(), VK_IMAGE_LAYOUT_UNDEFINED
 		);
 
 		return VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;

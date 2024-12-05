@@ -15,6 +15,8 @@
 #include <bg2e/render/vulkan/geo/Mesh.hpp>
 #include <bg2e/geo/sphere.hpp>
 #include <bg2e/geo/cube.hpp>
+#include <bg2e/geo/cylinder.hpp>
+#include <bg2e/geo/plane.hpp>
 #include <bg2e/render/Texture.hpp>
 #include <bg2e/geo/modifiers.hpp>
 
@@ -155,34 +157,14 @@ public:
             _sceneDSLayout, _sceneData, currentFrame
         );
         
-		Image::cmdTransitionImage(
-			cmd,
-			_targetImage->handle(),
-			VK_IMAGE_LAYOUT_UNDEFINED,
-			VK_IMAGE_LAYOUT_GENERAL
-		);
-
 		float flash = std::abs(std::sin(currentFrame / 120.0f));
 		VkClearColorValue clearValue{ { 0.0f, 0.0f, flash, 1.0f } };
-		auto clearRange = Image::subresourceRange(VK_IMAGE_ASPECT_COLOR_BIT);
-		vkCmdClearColorImage(
-			cmd,
-			_targetImage->handle(),
-			VK_IMAGE_LAYOUT_GENERAL,
-			&clearValue, 1, &clearRange
-		);
-
-		Image::cmdTransitionImage(
-			cmd, _targetImage->handle(),
-			VK_IMAGE_LAYOUT_GENERAL,
-			VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
-		);
-
-		auto colorAttachment = Info::attachmentInfo(_targetImage->imageView(), nullptr);
-        auto depthAttachment = Info::depthAttachmentInfo(depthImage->imageView());
-        auto renderInfo = Info::renderingInfo(_targetImage->extent2D(), &colorAttachment, &depthAttachment);
-		cmdBeginRendering(cmd, &renderInfo);
-
+        macros::cmdClearImageAndBeginRendering(
+            cmd,
+            _targetImage.get(), clearValue, VK_IMAGE_LAYOUT_UNDEFINED,
+            depthImage, 1.0f
+        );
+        
 		macros::cmdSetDefaultViewportAndScissor(cmd, _targetImage->extent2D());
 
 		vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, _pipeline);
@@ -267,26 +249,50 @@ public:
             0, nullptr
         );
         _cube->draw(cmd);
+        
+        _cylinderRotation += 0.015f;
+        if (_cylinderRotation >= std::numbers::pi_v<float> * 2.0f)
+        {
+            _cylinderRotation = 0.0f;
+        }
+        _planeData.modelMatrix = glm::translate(glm::mat4{ 1.0f }, glm::vec3(2.0f, 1.5 * std::sin(0.01f * float(currentFrame)), 0.0f));
+        _planeData.modelMatrix = glm::rotate(_planeData.modelMatrix, _cylinderRotation, glm::vec3(0.0f, 1.0f, 0.0f));
+        auto planeDataBuffer = macros::createBuffer(_vulkan, frameResources, _planeData);
+        
+        auto planeDS = frameResources.newDescriptorSet(_objectDSLayout);
+        planeDS->beginUpdate();
+            planeDS->addBuffer(
+                0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                planeDataBuffer, sizeof(ObjectData), 0
+            );
+            planeDS->addImage(
+                1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+              _cubeTexture->image()->imageView(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+              _cubeTexture->sampler()
+            );
+        planeDS->endUpdate();
+        
+        std::array<VkDescriptorSet, 2> planeSets = {
+            sceneDS->descriptorSet(),
+            planeDS->descriptorSet()
+        };
+        vkCmdBindDescriptorSets(
+            cmd,
+            VK_PIPELINE_BIND_POINT_GRAPHICS,
+            _layout,
+            0,
+            uint32_t(planeSets.size()),
+            planeSets.data(),
+            0, nullptr
+        );
+        _plane->draw(cmd);
 
 		bg2e::render::vulkan::cmdEndRendering(cmd);
 
-		Image::cmdTransitionImage(
-			cmd,
-			_targetImage->handle(),
-			VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-			VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
-		);
-		Image::cmdTransitionImage(
-			cmd,
-			colorImage->handle(),
-			VK_IMAGE_LAYOUT_UNDEFINED,
-			VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
-		);
-
 		Image::cmdCopy(
 			cmd,
-			_targetImage->handle(), _targetImage->extent2D(),
-			colorImage->handle(), colorImage->extent2D()
+            _targetImage->handle(), _targetImage->extent2D(), VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+            colorImage->handle(), colorImage->extent2D(), VK_IMAGE_LAYOUT_UNDEFINED
 		);
 
 		return VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
@@ -325,6 +331,7 @@ protected:
  
 	std::unique_ptr<bg2e::render::vulkan::geo::MeshPU> _skyMesh;
     std::unique_ptr<bg2e::render::vulkan::geo::MeshPU> _cube;
+    std::unique_ptr<bg2e::render::vulkan::geo::MeshPU> _plane;
 
 	std::shared_ptr<bg2e::render::Texture> _texture;
     std::shared_ptr<bg2e::render::Texture> _cubeTexture;
@@ -346,6 +353,8 @@ protected:
     };
     ObjectData _skyData;
     ObjectData _cubeData;
+    ObjectData _planeData;
+    float _cylinderRotation = 0.0f;
 
 	void createPipeline()
 	{
@@ -417,10 +426,21 @@ protected:
         _cube = std::unique_ptr<bg2e::render::vulkan::geo::MeshPU>(new bg2e::render::vulkan::geo::MeshPU(_vulkan));
         _cube->setMeshData(mesh.get());
         _cube->build();
+        
+        mesh = std::unique_ptr<bg2e::geo::MeshPU>(
+            //bg2e::geo::createPlanePU(5.0f, 5.0f, false)
+            bg2e::geo::createCylinderPU(0.5f, 1.0f, 8, false)
+        );
+        
+        _plane = std::unique_ptr<bg2e::render::vulkan::geo::MeshPU>(new bg2e::render::vulkan::geo::MeshPU(_vulkan));
+        _plane->setMeshData(mesh.get());
+        _plane->build();
+        _planeData.modelMatrix = glm::translate(glm::mat4{ 1.0f }, glm::vec3(2.0f, 0.0f, 0.0f));
 
 		_vulkan->cleanupManager().push([this](VkDevice dev) {
 			_skyMesh->cleanup();
             _cube->cleanup();
+            _plane->cleanup();
 		});
 	}
 
