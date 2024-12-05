@@ -264,6 +264,15 @@
     <ClInclude Include="..\include\bg2e\geo\cube.hpp">
       <Filter>Header Files\bg2e\geo</Filter>
     </ClInclude>
+    <ClInclude Include="..\include\bg2e\geo\cone.hpp">
+      <Filter>Header Files\bg2e\geo</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\geo\cylinder.hpp">
+      <Filter>Header Files\bg2e\geo</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\geo\plane.hpp">
+      <Filter>Header Files\bg2e\geo</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\bg2e\app\MainLoop.cpp">
@@ -405,6 +414,15 @@
       <Filter>Source Files\geo</Filter>
     </ClCompile>
     <ClCompile Include="..\src\bg2e\geo\cube.cpp">
+      <Filter>Source Files\geo</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\bg2e\geo\cone.cpp">
+      <Filter>Source Files\geo</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\bg2e\geo\cylinder.cpp">
+      <Filter>Source Files\geo</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\bg2e\geo\plane.cpp">
       <Filter>Source Files\geo</Filter>
     </ClCompile>
   </ItemGroup>

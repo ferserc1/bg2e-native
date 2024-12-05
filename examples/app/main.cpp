@@ -429,7 +429,7 @@ protected:
         
         mesh = std::unique_ptr<bg2e::geo::MeshPU>(
             //bg2e::geo::createPlanePU(5.0f, 5.0f, false)
-            bg2e::geo::createCylinderPU(0.5f, 1.0f, 8, false)
+            bg2e::geo::createCylinderPU(0.5f, 1.0f, 14, false)
         );
         
         _plane = std::unique_ptr<bg2e::render::vulkan::geo::MeshPU>(new bg2e::render::vulkan::geo::MeshPU(_vulkan));
