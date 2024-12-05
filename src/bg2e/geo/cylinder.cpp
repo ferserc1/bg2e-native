@@ -100,11 +100,7 @@ void createCylinderBase(
             { u, v },
             { 0.0f, -1.0f, 0.0f }
         });
-        
-        std::cout << "x=" << x << ", y=" << y << ", z=" << z <<
-            " - nx=" << nx << ", ny=" << ny << ", nz=" << nz <<
-            " - u=" << u << ", v=" << v << std::endl;
-        
+            
         y = -halfHeight;
         
         v = 1.0f;
@@ -191,9 +187,6 @@ void createCylinderBase(
         uint32_t i3 = i + 3;
         uint32_t i4 = i + 2;
         uint32_t i5 = i;
-        
-        std::cout << i0 << "," << i1 << "," << i2 <<
-            " - " << i3 << "," << i4 << "," << i5 << std::endl;
         
         if (invertFaces)
         {
