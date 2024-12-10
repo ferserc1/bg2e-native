@@ -18,7 +18,7 @@ public:
     inline void addDescriptorSetLayout(VkDescriptorSetLayout dsLayout) { _descriptorSetLayouts.push_back(dsLayout); }
     inline void addPushConstantRange(uint32_t offset, size_t size, VkShaderStageFlags stageFlags)
     {
-        addPushConstantRange({ .offset = offset, .size = uint32_t(size), .stageFlags = stageFlags });
+        addPushConstantRange({ .stageFlags = stageFlags, .offset = offset, .size = uint32_t(size) });
     }
     
     VkPipelineLayout build();

@@ -33,6 +33,7 @@
     <ClInclude Include="..\include\bg2e\geo\Vertex.hpp" />
     <ClInclude Include="..\include\bg2e\render\RenderLoop.hpp" />
     <ClInclude Include="..\include\bg2e\render\RenderLoopDelegate.hpp" />
+    <ClInclude Include="..\include\bg2e\render\SphereToCubemapRenderer.hpp" />
     <ClInclude Include="..\include\bg2e\render\Texture.hpp" />
     <ClInclude Include="..\include\bg2e\render\Vulkan.hpp" />
     <ClInclude Include="..\include\bg2e\render\vulkan\Buffer.hpp" />
@@ -46,6 +47,7 @@
     <ClInclude Include="..\include\bg2e\render\vulkan\factory\ComputePipeline.hpp" />
     <ClInclude Include="..\include\bg2e\render\vulkan\factory\DescriptorSetLayout.hpp" />
     <ClInclude Include="..\include\bg2e\render\vulkan\factory\GraphicsPipeline.hpp" />
+    <ClInclude Include="..\include\bg2e\render\vulkan\factory\PipelineLayout.hpp" />
     <ClInclude Include="..\include\bg2e\render\vulkan\factory\Sampler.hpp" />
     <ClInclude Include="..\include\bg2e\render\vulkan\factory\ShaderModule.hpp" />
     <ClInclude Include="..\include\bg2e\render\vulkan\FrameResources.hpp" />
@@ -89,6 +91,7 @@
     <ClCompile Include="..\src\bg2e\geo\plane.cpp" />
     <ClCompile Include="..\src\bg2e\geo\sphere.cpp" />
     <ClCompile Include="..\src\bg2e\render\RenderLoop.cpp" />
+    <ClCompile Include="..\src\bg2e\render\SphereToCubemapRenderer.cpp" />
     <ClCompile Include="..\src\bg2e\render\Texture_render.cpp" />
     <ClCompile Include="..\src\bg2e\render\Vulkan.cpp" />
     <ClCompile Include="..\src\bg2e\render\vulkan\Buffer.cpp" />
@@ -101,6 +104,7 @@
     <ClCompile Include="..\src\bg2e\render\vulkan\factory\ComputePipeline.cpp" />
     <ClCompile Include="..\src\bg2e\render\vulkan\factory\DescriptorSetLayout.cpp" />
     <ClCompile Include="..\src\bg2e\render\vulkan\factory\GraphicsPipeline.cpp" />
+    <ClCompile Include="..\src\bg2e\render\vulkan\factory\PipelineLayout.cpp" />
     <ClCompile Include="..\src\bg2e\render\vulkan\factory\Sampler.cpp" />
     <ClCompile Include="..\src\bg2e\render\vulkan\factory\ShaderModule.cpp" />
     <ClCompile Include="..\src\bg2e\render\vulkan\FrameResources.cpp" />
@@ -188,7 +192,9 @@
       <AdditionalDependencies>SDL2d.lib;SDL2maind.lib;vulkan-1.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy "$(SolutionDir)..\assets\*.*" "$(OutDir)assets\" /F /R /I /Y</Command>
+      <Command>xcopy "$(SolutionDir)..\assets\*.*" "$(OutDir)assets\" /F /R /I /Y
+cd "$(SolutionDir)..\shaders"
+call build.bat src ..\bin\shaders</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -212,7 +218,9 @@
       <AdditionalDependencies>SDL2.lib;SDL2main.lib;vulkan-1.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy "$(SolutionDir)..\assets\*.*" "$(OutDir)assets\" /F /R /I /Y</Command>
+      <Command>xcopy "$(SolutionDir)..\assets\*.*" "$(OutDir)assets\" /F /R /I /Y
+cd "$(SolutionDir)..\shaders"
+call build.bat src ..\bin\shaders</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
