@@ -56,6 +56,38 @@ void GraphicsPipeline::clearShaders()
     _shaders.clear();
 }
 
+void GraphicsPipeline::addInputBindingDescription(VkVertexInputBindingDescription desc)
+{
+    _bindingDescriptions.push_back(desc);
+}
+
+void GraphicsPipeline::addInputAttributeDescription(VkVertexInputAttributeDescription desc)
+{
+    _attributeDescriptions.push_back(desc);
+}
+
+void GraphicsPipeline::setInputBindingDescription(VkVertexInputBindingDescription desc)
+{
+    _bindingDescriptions.clear();
+    _bindingDescriptions.push_back(desc);
+}
+
+void GraphicsPipeline::setInputAttributeDescriptions(const std::vector<VkVertexInputAttributeDescription>& desc)
+{
+    _attributeDescriptions.clear();
+    _attributeDescriptions.assign(desc.begin(), desc.end());
+}
+
+void GraphicsPipeline::clearInputBindingDescriptions()
+{
+    _bindingDescriptions.clear();
+}
+
+void GraphicsPipeline::clearInputAttributeDescriptions()
+{
+    _attributeDescriptions.clear();
+}
+
 void GraphicsPipeline::setInputTopology(VkPrimitiveTopology topology)
 {
     inputAssembly.topology = topology;
@@ -170,6 +202,18 @@ VkPipeline GraphicsPipeline::build(VkPipelineLayout layout)
     viewportInfo.viewportCount = 1;
     viewportInfo.scissorCount = 1;
     
+    if (_bindingDescriptions.size() > 0)
+    {
+        vertexInputState.vertexBindingDescriptionCount = uint32_t(_bindingDescriptions.size());
+        vertexInputState.pVertexBindingDescriptions = _bindingDescriptions.data();
+    }
+    
+    if (_attributeDescriptions.size() > 0)
+    {
+        vertexInputState.vertexAttributeDescriptionCount = uint32_t(_attributeDescriptions.size());
+        vertexInputState.pVertexAttributeDescriptions = _attributeDescriptions.data();
+    }
+    
     VkPipelineColorBlendStateCreateInfo colorBlending = {};
     colorBlending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
     colorBlending.logicOpEnable = VK_FALSE;
@@ -217,6 +261,30 @@ VkPipeline GraphicsPipeline::build(VkPipelineLayout layout)
     VkPipeline pipeline;
     VK_ASSERT(vkCreateGraphicsPipelines(_vulkan->device().handle(), nullptr, 1, &pipelineInfo, nullptr, &pipeline));
     return pipeline;
+}
+
+void GraphicsPipeline::reset()
+{
+    clearInputBindingDescriptions();
+    clearInputAttributeDescriptions();
+    clearShaders();
+    
+    vertexInputState.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+    inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+    rasterizer.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+    colorBlendAttachment = {};
+    multisampling.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+    depthStencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+    _renderInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO;
+    _renderInfo.depthAttachmentFormat = VK_FORMAT_UNDEFINED;
+    
+    // Default values
+    setInputTopology(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
+    setPolygonMode(VK_POLYGON_MODE_FILL);
+    setCullMode(VK_CULL_MODE_NONE, VK_FRONT_FACE_COUNTER_CLOCKWISE);
+    disableMultisample();
+    disableBlending();
+    disableDepthtest();
 }
 
 }

@@ -22,14 +22,16 @@ public:
 
     void build(
         const std::filesystem::path& imagePath,
-        const std::string& vertexShader = "sphere_to_cubemap_renderer.vert.spv",
-        const std::string& fragmentShader = "sphere_to_cubemap_renderer.frag.spv",
+        const std::string& vertexShader = "sphere_to_cubemap.vert.spv",
+        const std::string& fragmentShader = "sphere_to_cubemap.frag.spv",
         VkExtent2D cubeImageSize = { 1024, 1024 }
     );
     
     void updateImage(const std::filesystem::path& imagePath);
     
     void update(VkCommandBuffer commandBuffer, vulkan::FrameResources& frameResources);
+    
+    void cleanup();
 
     std::shared_ptr<vulkan::Image> cubeMapImage() { return _cubeMapImage; }
     
