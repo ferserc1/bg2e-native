@@ -5,7 +5,10 @@
 #include <bg2e/render/vulkan/factory/PipelineLayout.hpp>
 #include <bg2e/base/Texture.hpp>
 #include <bg2e/render/vulkan/factory/GraphicsPipeline.hpp>
+#include <bg2e/render/vulkan/extensions.hpp>
+#include <bg2e/geo/sphere.hpp>
 #include <bg2e/db/image.hpp>
+#include <bg2e/render/vulkan/macros/graphics.hpp>
 
 namespace bg2e::render {
 
@@ -15,9 +18,9 @@ SphereToCubemapRenderer::SphereToCubemapRenderer(Vulkan * vulkan)
 
 }
 
-void SphereToCubemapRenderer::initFrameResources(vulkan::FrameResources& frameResources)
+void SphereToCubemapRenderer::initFrameResources(vulkan::DescriptorSetAllocator* frameAllocator)
 {
-    frameResources.descriptorAllocator->requirePoolSizeRatio(1, {
+    frameAllocator->requirePoolSizeRatio(1, {
         { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1 },
         { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1 }
     });
@@ -36,6 +39,27 @@ void SphereToCubemapRenderer::build(
         _vulkan->device().handle(),
         VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT
     );
+    
+    _projectionData.view[0] = glm::lookAt(glm::vec3(0.0f), glm::vec3( 1.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    _projectionData.view[1] = glm::lookAt(glm::vec3(0.0f), glm::vec3(-1.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    _projectionData.view[2] = glm::lookAt(glm::vec3(0.0f), glm::vec3( 0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+    _projectionData.view[3] = glm::lookAt(glm::vec3(0.0f), glm::vec3( 0.0f,-1.0f, 0.0f), glm::vec3(0.0f, 0.0f,-1.0f));
+    _projectionData.view[4] = glm::lookAt(glm::vec3(0.0f), glm::vec3( 0.0f, 0.0f,-1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    _projectionData.view[5] = glm::lookAt(glm::vec3(0.0f), glm::vec3( 0.0f, 0.0f, 1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+
+    _projectionData.proj = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, _sphereRadius * 10.0f);
+    _projectionData.proj[1][1] *= -1.0f;
+    _projectionData.proj[0][0] *= -1.0f;
+    
+    _projectionDataBuffer = std::unique_ptr<vulkan::Buffer>(vulkan::Buffer::createAllocatedBuffer(
+        _vulkan,
+        sizeof(ProjectionData),
+        VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+        VMA_MEMORY_USAGE_CPU_TO_GPU
+    ));
+    
+    auto projectionDataBufferPtr = reinterpret_cast<ProjectionData*>(_projectionDataBuffer->allocatedData());
+    *projectionDataBufferPtr = _projectionData;
     
     updateImage(imagePath);
     initImages(cubeImageSize);
@@ -63,11 +87,73 @@ void SphereToCubemapRenderer::updateImage(const std::filesystem::path& imagePath
     
 void SphereToCubemapRenderer::update(VkCommandBuffer commandBuffer, vulkan::FrameResources& frameResources)
 {
-
+    VkClearColorValue clearValue = { { 0.5f, 0.5f, 0.5f, 1.0f } };
+    vulkan::macros::cmdClearImageAndSetLayout(commandBuffer, _cubeMapImage.get(), clearValue);
+    
+    auto descriptorSet = frameResources.newDescriptorSet(_dsLayout);
+    descriptorSet->beginUpdate();
+    descriptorSet->addBuffer(
+        0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, _projectionDataBuffer.get(),
+        sizeof(ProjectionData), 0
+    );
+    descriptorSet->addImage(
+        1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+        _skyTexture->image()->imageView(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+        _skyTexture->sampler()
+    );
+    descriptorSet->endUpdate();
+    std::array<VkDescriptorSet, 1> descSets = {
+        descriptorSet->descriptorSet()
+    };
+    
+    for (auto i = 0; i < 6; ++i)
+    {
+        auto view = _cubeMapImageViews[i];
+        auto colorAttachment = vulkan::Info::attachmentInfo(view, nullptr);
+        auto renderInfo = vulkan::Info::renderingInfo(_cubeMapImage->extent2D(), &colorAttachment, nullptr);
+        vulkan::cmdBeginRendering(commandBuffer, &renderInfo);
+        
+        vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, _pipeline);
+        
+        vulkan::macros::cmdSetDefaultViewportAndScissor(commandBuffer, _cubeMapImage->extent2D());
+        
+        RenderSpherePushConstant pushConstants = { .currentFace = i };
+        vkCmdPushConstants(
+            commandBuffer,
+            _pipelineLayout,
+            VK_SHADER_STAGE_VERTEX_BIT,
+            0,
+            sizeof(RenderSpherePushConstant),
+            &pushConstants
+        );
+        
+        vkCmdBindDescriptorSets(
+            commandBuffer,
+            VK_PIPELINE_BIND_POINT_GRAPHICS,
+            _pipelineLayout, 0,
+            uint32_t(descSets.size()),
+            descSets.data(),
+            0, nullptr
+        );
+        
+        _sphere->draw(commandBuffer);
+        
+        vulkan::cmdEndRendering(commandBuffer);
+    }
 }
 
 void SphereToCubemapRenderer::cleanup()
 {
+    if (_projectionDataBuffer)
+    {
+        _projectionDataBuffer->cleanup();
+    }
+    
+    if (_sphere)
+    {
+        _sphere->cleanup();
+    }
+    
     vkDestroyPipeline(_vulkan->device().handle(), _pipeline, nullptr);
     vkDestroyPipelineLayout(_vulkan->device().handle(), _pipelineLayout, nullptr);
     
@@ -121,7 +207,7 @@ void SphereToCubemapRenderer::initPipeline(const std::string& vshaderFile, const
     layoutFactory.addPushConstantRange(
         0,
         sizeof(RenderSpherePushConstant),
-        VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT
+        VK_SHADER_STAGE_VERTEX_BIT
     );
     layoutFactory.addDescriptorSetLayout(_dsLayout);
     _pipelineLayout = layoutFactory.build();
@@ -136,7 +222,15 @@ void SphereToCubemapRenderer::initPipeline(const std::string& vshaderFile, const
 
 void SphereToCubemapRenderer::initGeometry()
 {
-
+    auto mesh = std::unique_ptr<bg2e::geo::MeshPU>(
+        bg2e::geo::createSpherePU(_sphereRadius, 8, 8, true)
+    );
+    
+    _sphere = std::unique_ptr<vulkan::geo::MeshPU>(new vulkan::geo::MeshPU(_vulkan));
+    _sphere->setMeshData(mesh.get());
+    _sphere->build();
+    
+    
 }
 
 }

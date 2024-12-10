@@ -47,6 +47,10 @@ public:
         vulkan->descriptorSetAllocator().requirePoolSizeRatio(1, {
             { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1 }
         });
+        
+        _cubemapRenderer = std::unique_ptr<bg2e::render::SphereToCubemapRenderer>(
+            new bg2e::render::SphereToCubemapRenderer(_vulkan)
+        );
 	}
  
     void initFrameResources(bg2e::render::vulkan::DescriptorSetAllocator* frameAllocator) override
@@ -55,6 +59,9 @@ public:
             { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 2 },
             { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1 }
         });
+        
+        _cubemapRenderer->initFrameResources(frameAllocator);
+        
         frameAllocator->initPool();
     }
  
@@ -62,10 +69,6 @@ public:
     {
         // Use the initScene function to initialize and create scene resources, such as pipelines, 3D models
         // or textures
-        
-        _cubemapRenderer = std::unique_ptr<bg2e::render::SphereToCubemapRenderer>(
-            new bg2e::render::SphereToCubemapRenderer(_vulkan)
-        );
         
         _vulkan->cleanupManager().push([&](VkDevice) {
             _cubemapRenderer->cleanup();
@@ -156,6 +159,8 @@ public:
 		bg2e::render::vulkan::FrameResources& frameResources
 	) override {
 		using namespace bg2e::render::vulkan;
+  
+        _cubemapRenderer->update(cmd, frameResources);
   
         // You can use this function when a descriptor set only contains one unique uniform buffer.
         // The uniformBufferDescriptorSet function automatically create the uniform buffer and descriptor set

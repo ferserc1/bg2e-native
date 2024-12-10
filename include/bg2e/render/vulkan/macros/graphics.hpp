@@ -20,6 +20,14 @@ extern BG2E_API void cmdClearImageAndBeginRendering(
     float depthValue = 1.0f
 );
 
+extern BG2E_API void cmdClearImageAndSetLayout(
+    VkCommandBuffer cmd,
+    const Image* colorImage,
+    VkClearColorValue clearValue,
+    VkImageLayout initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+    VkImageLayout finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
+);
+
 }
 }
 }

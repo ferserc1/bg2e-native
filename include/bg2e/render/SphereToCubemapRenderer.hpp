@@ -18,7 +18,7 @@ class BG2E_API SphereToCubemapRenderer {
 public:
     SphereToCubemapRenderer(Vulkan * vulkan);
 
-    void initFrameResources(vulkan::FrameResources&);
+    void initFrameResources(vulkan::DescriptorSetAllocator*);
 
     void build(
         const std::filesystem::path& imagePath,
@@ -39,6 +39,7 @@ protected:
     Vulkan * _vulkan;
 
     std::shared_ptr<vulkan::geo::MeshPU> _sphere;
+    float _sphereRadius = 10.0f;
     
     struct RenderSpherePushConstant
     {
