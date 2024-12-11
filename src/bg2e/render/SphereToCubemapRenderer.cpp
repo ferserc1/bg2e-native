@@ -223,7 +223,7 @@ void SphereToCubemapRenderer::initPipeline(const std::string& vshaderFile, const
 void SphereToCubemapRenderer::initGeometry()
 {
     auto mesh = std::unique_ptr<bg2e::geo::MeshPU>(
-        bg2e::geo::createSpherePU(_sphereRadius, 8, 8, true)
+        bg2e::geo::createSpherePU(_sphereRadius, 20, 20, true)
     );
     
     _sphere = std::unique_ptr<vulkan::geo::MeshPU>(new vulkan::geo::MeshPU(_vulkan));
