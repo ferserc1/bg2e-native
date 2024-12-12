@@ -10,6 +10,8 @@
 #include <bg2e/db/image.hpp>
 #include <bg2e/render/vulkan/macros/graphics.hpp>
 
+#include <array>
+
 namespace bg2e::render {
 
 SphereToCubemapRenderer::SphereToCubemapRenderer(Vulkan * vulkan)
