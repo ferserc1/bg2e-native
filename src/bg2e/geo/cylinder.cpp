@@ -17,7 +17,7 @@ void createCylinderBase(
     std::function<void(uint32_t index)> indexCallback,
     std::function<void(uint32_t start, uint32_t count)> submeshCallback
 ) {
-    float halfHeight = height / 2;
+    float halfHeight = height / 2.0f;
     float angleDelta = 2 * std::numbers::pi_v<float> / float(slices);
     
     // Top cap
