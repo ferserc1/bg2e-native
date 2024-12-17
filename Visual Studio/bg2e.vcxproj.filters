@@ -273,6 +273,12 @@
     <ClInclude Include="..\include\bg2e\geo\plane.hpp">
       <Filter>Header Files\bg2e\geo</Filter>
     </ClInclude>
+    <ClInclude Include="..\include\bg2e\render\vulkan\factory\PipelineLayout.hpp">
+      <Filter>Header Files\bg2e\render\vulkan\factory</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\render\SphereToCubemapRenderer.hpp">
+      <Filter>Header Files\bg2e\render</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\bg2e\app\MainLoop.cpp">
@@ -424,6 +430,12 @@
     </ClCompile>
     <ClCompile Include="..\src\bg2e\geo\plane.cpp">
       <Filter>Source Files\geo</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\bg2e\render\SphereToCubemapRenderer.cpp">
+      <Filter>Source Files\render</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\bg2e\render\vulkan\factory\PipelineLayout.cpp">
+      <Filter>Source Files\render\vulkan\factory</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

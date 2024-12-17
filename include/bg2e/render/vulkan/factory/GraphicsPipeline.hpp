@@ -1,6 +1,9 @@
 
+#pragma once
+
 #include <bg2e/common.hpp>
 #include <bg2e/render/Vulkan.hpp>
+#include <bg2e/geo/Mesh.hpp>
 
 #include <vector>
 
@@ -17,6 +20,22 @@ public:
     void addShader(const std::string& fileName, VkShaderStageFlagBits stage, const std::string& entryPoint = "main", const std::string& basePath = "");
     void addShader(VkShaderModule shaderModule, VkShaderStageFlagBits stage, const std::string& entryPoint = "main");
     void clearShaders();
+    
+    void addInputBindingDescription(VkVertexInputBindingDescription desc);
+    void addInputAttributeDescription(VkVertexInputAttributeDescription desc);
+    void setInputBindingDescription(VkVertexInputBindingDescription desc);
+    void setInputAttributeDescriptions(const std::vector<VkVertexInputAttributeDescription>& desc);
+    void clearInputBindingDescriptions();
+    void clearInputAttributeDescriptions();
+    
+    // Template function to add both input binding and attribute descriptions depending on the type of mesh
+    // TODO: Check if this is working on Visual Studio/Windows
+    template <typename MeshT>
+    void setInputState()
+    {
+        setInputBindingDescription(MeshT::bindingDescription());
+        setInputAttributeDescriptions(MeshT::attributeDescriptions());
+    }
 
     void setInputTopology(VkPrimitiveTopology topology);
     void setPolygonMode(VkPolygonMode mode, float lineWidth = 1.0f);
@@ -40,6 +59,8 @@ public:
     
     VkPipeline build(VkPipelineLayout layout);
     
+    void reset();
+    
 protected:
     Vulkan * _vulkan;
 
@@ -53,6 +74,9 @@ protected:
     };
     
     std::vector<ShaderData> _shaders;
+    
+    std::vector<VkVertexInputBindingDescription> _bindingDescriptions;
+    std::vector<VkVertexInputAttributeDescription> _attributeDescriptions;
 };
 
 }

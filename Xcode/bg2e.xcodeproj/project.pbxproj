@@ -10,6 +10,7 @@
 		ED0328142CE4D1630037560D /* Window.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED0328132CE4D1630037560D /* Window.cpp */; };
 		ED0328152CE4D1630037560D /* BasicWidgets.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED0328112CE4D1630037560D /* BasicWidgets.cpp */; };
 		ED0328162CE4D1630037560D /* DemoWindow.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED0328122CE4D1630037560D /* DemoWindow.cpp */; };
+		ED150D5C2D043A7700EB93F2 /* SphereToCubemapRenderer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED150D5B2D043A7700EB93F2 /* SphereToCubemapRenderer.cpp */; };
 		ED2191602CDF4ABC00123781 /* VkLayer_khronos_validation.json in Copy Layers Configuration */ = {isa = PBXBuildFile; fileRef = ED21915D2CDF4A6D00123781 /* VkLayer_khronos_validation.json */; };
 		ED2191632CDF4B1D00123781 /* libVkLayer_khronos_validation.dylib in Copy Libraries */ = {isa = PBXBuildFile; fileRef = ED2191622CDF4B1200123781 /* libVkLayer_khronos_validation.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		ED2191712CDF4E5D00123781 /* Buffer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED2191652CDF4E4700123781 /* Buffer.cpp */; };
@@ -66,10 +67,12 @@
 		ED85B2102CDBAB950039B44D /* libSDL2-2.0.0.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = EDD357212CD924B9009C7507 /* libSDL2-2.0.0.dylib */; };
 		ED85B2112CDBAB970039B44D /* libvulkan.1.3.290.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = EDD357222CD924B9009C7507 /* libvulkan.1.3.290.dylib */; };
 		ED85B2122CDBAB9C0039B44D /* CoreFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = ED86884F2CDAAB7300A71ADC /* CoreFoundation.framework */; };
+		ED8A97252D082F5300D35DB8 /* PipelineLayout.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED8A97242D082F5300D35DB8 /* PipelineLayout.cpp */; };
 		EDB10C082CFF8BE8002A1B0E /* cube.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EDB10C072CFF8BE8002A1B0E /* cube.cpp */; };
 		EDB10C0B2CFF93A1002A1B0E /* logo_2a.png in Copy Assets */ = {isa = PBXBuildFile; fileRef = EDB10C0A2CFF9398002A1B0E /* logo_2a.png */; };
 		EDD3572D2CD927CB009C7507 /* MoltenVK_icd.json in Copy MoltenVK ICD */ = {isa = PBXBuildFile; fileRef = EDD3572C2CD92789009C7507 /* MoltenVK_icd.json */; };
 		EDD77E332CE9E78C00278155 /* VertexDescription.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EDD77E312CE9E78C00278155 /* VertexDescription.cpp */; };
+		EDE192782D09D64F004CD803 /* SkyboxRenderer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EDE192772D09D64F004CD803 /* SkyboxRenderer.cpp */; };
 		EDE525A32D0192090080A45C /* cone.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EDE525A22D0192090080A45C /* cone.cpp */; };
 		EDE525A52D0192100080A45C /* cylinder.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EDE525A42D0192100080A45C /* cylinder.cpp */; };
 		EDE525A72D0192170080A45C /* plane.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EDE525A62D0192170080A45C /* plane.cpp */; };
@@ -198,6 +201,8 @@
 		ED0328172CE4D16E0037560D /* BasicWidgets.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = BasicWidgets.hpp; sourceTree = "<group>"; };
 		ED0328182CE4D16E0037560D /* DemoWindow.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = DemoWindow.hpp; sourceTree = "<group>"; };
 		ED0328192CE4D16E0037560D /* Window.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Window.hpp; sourceTree = "<group>"; };
+		ED150D5A2D043A6200EB93F2 /* SphereToCubemapRenderer.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = SphereToCubemapRenderer.hpp; sourceTree = "<group>"; };
+		ED150D5B2D043A7700EB93F2 /* SphereToCubemapRenderer.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = SphereToCubemapRenderer.cpp; sourceTree = "<group>"; };
 		ED17CF5C2CF765530099269A /* frame_resources.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = frame_resources.hpp; sourceTree = "<group>"; };
 		ED21915D2CDF4A6D00123781 /* VkLayer_khronos_validation.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = VkLayer_khronos_validation.json; sourceTree = "<group>"; };
 		ED2191622CDF4B1200123781 /* libVkLayer_khronos_validation.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.bundle"; path = libVkLayer_khronos_validation.dylib; sourceTree = "<group>"; };
@@ -317,6 +322,10 @@
 		ED8688442CDAAB3400A71ADC /* stb_image.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = stb_image.h; sourceTree = "<group>"; };
 		ED8688462CDAAB3400A71ADC /* tiny_obj_loader.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = tiny_obj_loader.h; sourceTree = "<group>"; };
 		ED86884F2CDAAB7300A71ADC /* CoreFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreFoundation.framework; path = System/Library/Frameworks/CoreFoundation.framework; sourceTree = SDKROOT; };
+		ED8A97212D073F5400D35DB8 /* sphere_to_cubemap.frag.glsl */ = {isa = PBXFileReference; lastKnownFileType = text; path = sphere_to_cubemap.frag.glsl; sourceTree = "<group>"; };
+		ED8A97222D073F5400D35DB8 /* sphere_to_cubemap.vert.glsl */ = {isa = PBXFileReference; lastKnownFileType = text; path = sphere_to_cubemap.vert.glsl; sourceTree = "<group>"; };
+		ED8A97232D082F1C00D35DB8 /* PipelineLayout.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = PipelineLayout.hpp; sourceTree = "<group>"; };
+		ED8A97242D082F5300D35DB8 /* PipelineLayout.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = PipelineLayout.cpp; sourceTree = "<group>"; };
 		EDA28E922CF311F2009AC1FB /* descriptor_set.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = descriptor_set.hpp; sourceTree = "<group>"; };
 		EDB10C072CFF8BE8002A1B0E /* cube.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = cube.cpp; sourceTree = "<group>"; };
 		EDB10C092CFF8C01002A1B0E /* cube.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = cube.hpp; sourceTree = "<group>"; };
@@ -329,6 +338,8 @@
 		EDD77E2C2CE9E76D00278155 /* Vertex.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Vertex.hpp; sourceTree = "<group>"; };
 		EDD77E312CE9E78C00278155 /* VertexDescription.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = VertexDescription.cpp; sourceTree = "<group>"; };
 		EDD77E752CEA6CF600278155 /* VertexDescription.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = VertexDescription.hpp; sourceTree = "<group>"; };
+		EDE192772D09D64F004CD803 /* SkyboxRenderer.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = SkyboxRenderer.cpp; sourceTree = "<group>"; };
+		EDE192792D09D660004CD803 /* SkyboxRenderer.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = SkyboxRenderer.hpp; sourceTree = "<group>"; };
 		EDE5259F2D0191EB0080A45C /* cone.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = cone.hpp; sourceTree = "<group>"; };
 		EDE525A02D0191F30080A45C /* cylinder.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = cylinder.hpp; sourceTree = "<group>"; };
 		EDE525A12D0191F90080A45C /* plane.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = plane.hpp; sourceTree = "<group>"; };
@@ -680,6 +691,8 @@
 				ED2191872CDF4E9A00123781 /* vulkan */,
 				ED342CFC2CE2652B0041BE62 /* RenderLoop.hpp */,
 				ED342D002CE28CD20041BE62 /* RenderLoopDelegate.hpp */,
+				EDE192792D09D660004CD803 /* SkyboxRenderer.hpp */,
+				ED150D5A2D043A6200EB93F2 /* SphereToCubemapRenderer.hpp */,
 				ED3419EE2CEF29BE000F69E8 /* Texture.hpp */,
 				ED2191882CDF4E9A00123781 /* Vulkan.hpp */,
 			);
@@ -701,6 +714,8 @@
 			children = (
 				ED21916F2CDF4E4700123781 /* vulkan */,
 				ED342CFD2CE265370041BE62 /* RenderLoop.cpp */,
+				EDE192772D09D64F004CD803 /* SkyboxRenderer.cpp */,
+				ED150D5B2D043A7700EB93F2 /* SphereToCubemapRenderer.cpp */,
 				ED3419EF2CEF29E5000F69E8 /* Texture_render.cpp */,
 				ED2191702CDF4E4C00123781 /* Vulkan.cpp */,
 			);
@@ -887,6 +902,7 @@
 				EDF0450C2CE62E1B005C8B96 /* ComputePipeline.cpp */,
 				EDF0450D2CE62E1B005C8B96 /* DescriptorSetLayout.cpp */,
 				EDF0450E2CE62E1B005C8B96 /* GraphicsPipeline.cpp */,
+				ED8A97242D082F5300D35DB8 /* PipelineLayout.cpp */,
 				EDF0450F2CE62E1B005C8B96 /* Sampler.cpp */,
 				EDF045102CE62E1B005C8B96 /* ShaderModule.cpp */,
 			);
@@ -899,6 +915,7 @@
 				EDF045172CE62E2B005C8B96 /* ComputePipeline.hpp */,
 				EDF045182CE62E2B005C8B96 /* DescriptorSetLayout.hpp */,
 				EDF045192CE62E2B005C8B96 /* GraphicsPipeline.hpp */,
+				ED8A97232D082F1C00D35DB8 /* PipelineLayout.hpp */,
 				EDF0451A2CE62E2B005C8B96 /* Sampler.hpp */,
 				EDF0451B2CE62E2B005C8B96 /* ShaderModule.hpp */,
 			);
@@ -921,6 +938,8 @@
 			isa = PBXGroup;
 			children = (
 				EDF0451F2CE65DB8005C8B96 /* test */,
+				ED8A97212D073F5400D35DB8 /* sphere_to_cubemap.frag.glsl */,
+				ED8A97222D073F5400D35DB8 /* sphere_to_cubemap.vert.glsl */,
 			);
 			path = src;
 			sourceTree = "<group>";
@@ -1105,7 +1124,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "INPUT_DIR=${PROJECT_DIR}/../shaders/src/test\nOUTPUT_DIR=${BUILT_PRODUCTS_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/shaders/test\n\n\"${PROJECT_DIR}/../shaders/build.sh\" \"${INPUT_DIR}\" \"${OUTPUT_DIR}\"\n";
+			shellScript = "INPUT_DIR=${PROJECT_DIR}/../shaders/src\nOUTPUT_DIR=${BUILT_PRODUCTS_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/shaders\n\n\"${PROJECT_DIR}/../shaders/build.sh\" \"${INPUT_DIR}/test\" \"${OUTPUT_DIR}/test\"\n\"${PROJECT_DIR}/../shaders/build.sh\" \"${INPUT_DIR}\" \"${OUTPUT_DIR}\"\n";
 			showEnvVarsInLog = 0;
 		};
 /* End PBXShellScriptBuildPhase section */
@@ -1127,6 +1146,7 @@
 				ED2D56682CE38F41006EF072 /* imgui_tables.cpp in Sources */,
 				ED0328142CE4D1630037560D /* Window.cpp in Sources */,
 				ED0328152CE4D1630037560D /* BasicWidgets.cpp in Sources */,
+				ED150D5C2D043A7700EB93F2 /* SphereToCubemapRenderer.cpp in Sources */,
 				ED3419F02CEF29E5000F69E8 /* Texture_render.cpp in Sources */,
 				ED6862D32CE53E4100A90EE1 /* Input.cpp in Sources */,
 				EDF045122CE62E1B005C8B96 /* Sampler.cpp in Sources */,
@@ -1156,7 +1176,9 @@
 				ED2191762CDF4E5D00123781 /* extensions.cpp in Sources */,
 				ED2191962CDF677400123781 /* Instance.cpp in Sources */,
 				ED2191772CDF4E5D00123781 /* FrameResources.cpp in Sources */,
+				EDE192782D09D64F004CD803 /* SkyboxRenderer.cpp in Sources */,
 				ED2191782CDF4E5D00123781 /* Image.cpp in Sources */,
+				ED8A97252D082F5300D35DB8 /* PipelineLayout.cpp in Sources */,
 				ED5201DC2CED095800C94253 /* image_db.cpp in Sources */,
 				ED2191792CDF4E5D00123781 /* Info.cpp in Sources */,
 				EDB10C082CFF8BE8002A1B0E /* cube.cpp in Sources */,

@@ -6,6 +6,7 @@
 #include <bg2e/base/Log.hpp>
 #include <bg2e/render/vulkan/factory/GraphicsPipeline.hpp>
 #include <bg2e/render/vulkan/factory/DescriptorSetLayout.hpp>
+#include <bg2e/render/vulkan/factory/PipelineLayout.hpp>
 #include <bg2e/render/vulkan/DescriptorSet.hpp>
 #include <bg2e/render/vulkan/geo/VertexDescription.hpp>
 #include <bg2e/render/vulkan/Info.hpp>
@@ -19,6 +20,7 @@
 #include <bg2e/geo/plane.hpp>
 #include <bg2e/render/Texture.hpp>
 #include <bg2e/geo/modifiers.hpp>
+#include <bg2e/render/SphereToCubemapRenderer.hpp>
 
 
 #include <bg2e/ui/BasicWidgets.hpp>
@@ -45,6 +47,10 @@ public:
         vulkan->descriptorSetAllocator().requirePoolSizeRatio(1, {
             { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1 }
         });
+        
+        _cubemapRenderer = std::unique_ptr<bg2e::render::SphereToCubemapRenderer>(
+            new bg2e::render::SphereToCubemapRenderer(_vulkan)
+        );
 	}
  
     void initFrameResources(bg2e::render::vulkan::DescriptorSetAllocator* frameAllocator) override
@@ -53,6 +59,9 @@ public:
             { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 2 },
             { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1 }
         });
+        
+        _cubemapRenderer->initFrameResources(frameAllocator);
+        
         frameAllocator->initPool();
     }
  
@@ -61,9 +70,16 @@ public:
         // Use the initScene function to initialize and create scene resources, such as pipelines, 3D models
         // or textures
         
+        _vulkan->cleanupManager().push([&](VkDevice) {
+            _cubemapRenderer->cleanup();
+        });
+    
+        
         auto assetsPath = bg2e::base::PlatformTools::assetPath();
         auto imagePath = assetsPath;
         imagePath.append("country_field_sun.jpg");
+        
+        _cubemapRenderer->build(imagePath);
 
 		// You can use plain pointers in this case, because the base::Image and base::Texture objects will not
 		// be used outside of this function. Internally, these objects will be stored in a shared_ptr and will be
@@ -143,6 +159,8 @@ public:
 		bg2e::render::vulkan::FrameResources& frameResources
 	) override {
 		using namespace bg2e::render::vulkan;
+  
+        _cubemapRenderer->update(cmd, frameResources);
   
         // You can use this function when a descriptor set only contains one unique uniform buffer.
         // The uniformBufferDescriptorSet function automatically create the uniform buffer and descriptor set
@@ -339,6 +357,8 @@ protected:
     VkDescriptorSetLayout _sceneDSLayout;
     VkDescriptorSetLayout _objectDSLayout;
     
+    std::unique_ptr<bg2e::render::SphereToCubemapRenderer> _cubemapRenderer;
+    
     struct SceneData
     {
         glm::mat4 viewMatrix;
@@ -363,13 +383,9 @@ protected:
 		plFactory.addShader("test/texture.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
 		plFactory.addShader("test/texture.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
 
-		auto bindingDescription = bg2e::render::vulkan::geo::MeshPU::bindingDescription();
-		auto attributeDescriptions = bg2e::render::vulkan::geo::MeshPU::attributeDescriptions();
-
-		plFactory.vertexInputState.vertexBindingDescriptionCount = 1;
-		plFactory.vertexInputState.pVertexBindingDescriptions = &bindingDescription;
-		plFactory.vertexInputState.vertexAttributeDescriptionCount = uint32_t(attributeDescriptions.size());
-		plFactory.vertexInputState.pVertexAttributeDescriptions = attributeDescriptions.data();
+        //plFactory.setInputBindingDescription(bg2e::render::vulkan::geo::MeshPU::bindingDescription());
+        //plFactory.setInputAttributeDescriptions(bg2e::render::vulkan::geo::MeshPU::attributeDescriptions());
+        plFactory.setInputState<bg2e::render::vulkan::geo::MeshPU>();
   
         bg2e::render::vulkan::factory::DescriptorSetLayout dsFactory;
         
@@ -382,15 +398,10 @@ protected:
         dsFactory.addBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
         _objectDSLayout = dsFactory.build(_vulkan->device().handle(), VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT);
         
-
-		auto layoutInfo = bg2e::render::vulkan::Info::pipelineLayoutInfo();
-        VkDescriptorSetLayout setLayouts[] = {
-            _sceneDSLayout,
-            _objectDSLayout
-        };
-        layoutInfo.pSetLayouts = setLayouts;
-        layoutInfo.setLayoutCount = 2;
-		VK_ASSERT(vkCreatePipelineLayout(_vulkan->device().handle(), &layoutInfo, nullptr, &_layout));
+        bg2e::render::vulkan::factory::PipelineLayout layoutFactory(_vulkan);
+        layoutFactory.addDescriptorSetLayout(_sceneDSLayout);
+        layoutFactory.addDescriptorSetLayout(_objectDSLayout);
+        _layout = layoutFactory.build();
         
         plFactory.setDepthFormat(_vulkan->swapchain().depthImageFormat());
         plFactory.enableDepthtest(true, VK_COMPARE_OP_LESS);

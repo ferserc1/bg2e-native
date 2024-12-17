@@ -62,4 +62,33 @@ void cmdClearImageAndBeginRendering(
     }
 }
 
+void cmdClearImageAndSetLayout(
+    VkCommandBuffer cmd,
+    const Image* colorImage,
+    VkClearColorValue clearValue,
+    VkImageLayout initialLayout,
+    VkImageLayout finalLayout
+) {
+    Image::cmdTransitionImage(
+        cmd,
+        colorImage->handle(),
+        initialLayout,
+        VK_IMAGE_LAYOUT_GENERAL
+    );
+
+    auto clearRange = Image::subresourceRange(VK_IMAGE_ASPECT_COLOR_BIT);
+    vkCmdClearColorImage(
+        cmd,
+        colorImage->handle(),
+        VK_IMAGE_LAYOUT_GENERAL,
+        &clearValue, 1, &clearRange
+    );
+
+    Image::cmdTransitionImage(
+        cmd, colorImage->handle(),
+        VK_IMAGE_LAYOUT_GENERAL,
+        finalLayout
+    );
+}
+
 }
