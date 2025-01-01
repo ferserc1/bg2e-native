@@ -21,6 +21,7 @@
 #include <bg2e/render/Texture.hpp>
 #include <bg2e/geo/modifiers.hpp>
 #include <bg2e/render/SphereToCubemapRenderer.hpp>
+#include <bg2e/render/SkyboxRenderer.hpp>
 
 
 #include <bg2e/ui/BasicWidgets.hpp>
@@ -51,6 +52,10 @@ public:
         _cubemapRenderer = std::unique_ptr<bg2e::render::SphereToCubemapRenderer>(
             new bg2e::render::SphereToCubemapRenderer(_vulkan)
         );
+        
+        _skyboxRenderer = std::unique_ptr<bg2e::render::SkyboxRenderer>(
+            new bg2e::render::SkyboxRenderer(_vulkan)
+        );
 	}
  
     void initFrameResources(bg2e::render::vulkan::DescriptorSetAllocator* frameAllocator) override
@@ -62,6 +67,8 @@ public:
         
         _cubemapRenderer->initFrameResources(frameAllocator);
         
+        _skyboxRenderer->initFrameResources(frameAllocator);
+        
         frameAllocator->initPool();
     }
  
@@ -70,17 +77,14 @@ public:
         // Use the initScene function to initialize and create scene resources, such as pipelines, 3D models
         // or textures
         
-        _vulkan->cleanupManager().push([&](VkDevice) {
-            _cubemapRenderer->cleanup();
-        });
-    
         
         auto assetsPath = bg2e::base::PlatformTools::assetPath();
         auto imagePath = assetsPath;
         imagePath.append("country_field_sun.jpg");
         
         _cubemapRenderer->build(imagePath);
-
+        
+    
 		// You can use plain pointers in this case, because the base::Image and base::Texture objects will not
 		// be used outside of this function. Internally, these objects will be stored in a shared_ptr and will be
 		// managed by the render::Texture object.
@@ -117,6 +121,19 @@ public:
         });
 	
 		createImage(_vulkan->swapchain().extent());
+  
+        // Create the skybox renderer after the target image, because we need access to the
+        // target image format to initialize the skybox renderer
+        auto cubeMapTexture = std::shared_ptr<bg2e::render::Texture>(
+            new bg2e::render::Texture(_vulkan, _cubemapRenderer->cubeMapImage())
+        );
+        _skyboxRenderer->build(cubeMapTexture, _targetImage->format());
+        
+        _vulkan->cleanupManager().push([&, cubeMapTexture](VkDevice) {
+            _cubemapRenderer->cleanup();
+            cubeMapTexture->cleanup();
+            _skyboxRenderer->cleanup();
+        });
 
 		createPipeline();
 
@@ -236,6 +253,9 @@ public:
 
 		// Use this function to draw one unique mesh including all the indexes
 		// _skyMesh->draw(cmd);
+  
+        // TODO: Replace the sky mesh rendering with the skybox renderer
+  
   
         // Draw the cube
         _cubeData.modelMatrix = glm::rotate(_cubeData.modelMatrix, -0.025f, glm::vec3(1.0f, 1.0f, 0.0f));
@@ -358,6 +378,7 @@ protected:
     VkDescriptorSetLayout _objectDSLayout;
     
     std::unique_ptr<bg2e::render::SphereToCubemapRenderer> _cubemapRenderer;
+    std::unique_ptr<bg2e::render::SkyboxRenderer> _skyboxRenderer;
     
     struct SceneData
     {

@@ -25,7 +25,7 @@ void SkyboxRenderer::initFrameResources(vulkan::DescriptorSetAllocator* allocato
 }
 
 void SkyboxRenderer::build(
-    std::shared_ptr<Texture>&& skyTexture,
+    std::shared_ptr<Texture> skyTexture,
     VkFormat colorAttachmentFormat,
     const std::string& vshaderFile,
     const std::string& fshaderFile

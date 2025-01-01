@@ -15,6 +15,11 @@
 namespace bg2e {
 namespace render {
 
+Texture::~Texture()
+{
+    
+}
+
 void Texture::load(std::shared_ptr<base::Texture> texture)
 {
     _texture = texture;
@@ -23,6 +28,7 @@ void Texture::load(std::shared_ptr<base::Texture> texture)
     // TODO: Extract image options, such as mipmap levels
     // TODO: Support for HDR images
     VkExtent2D extent = { texture->image()->width(), texture->image()->height() };
+    _hasImageOwnership = true;
     _image = std::shared_ptr<vulkan::Image>(vulkan::Image::createAllocatedImage(
         _vulkan,
         _texture->image()->data(),
@@ -52,9 +58,35 @@ void Texture::load(std::shared_ptr<base::Texture> texture)
     
 }
 
+void Texture::load(std::shared_ptr<base::Texture> texture, std::shared_ptr<vulkan::Image> image)
+{
+    _texture = texture;
+    _image = image;
+    _hasImageOwnership = false;
+    
+    VkSamplerCreateInfo samplerInfo = {};
+    samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+    samplerInfo.magFilter = BG2E_FILTER(texture->magFilter());
+    samplerInfo.minFilter = BG2E_FILTER(texture->minFilter());
+    samplerInfo.maxLod = texture->maxLod() == -1.0f ? float(_image->mipLevels()) : texture->maxLod();
+    samplerInfo.minLod = texture->minLod();
+    samplerInfo.addressModeU = BG2E_ADDRESS_MODE(texture->addressModeU());
+    samplerInfo.addressModeV = BG2E_ADDRESS_MODE(texture->addressModeV());
+    samplerInfo.addressModeW = BG2E_ADDRESS_MODE(texture->addressModeW());
+    vkCreateSampler(
+        _vulkan->device().handle(),
+        &samplerInfo,
+        nullptr,
+        &_sampler
+    );
+}
+
 void Texture::cleanup()
 {
-    _image->cleanup();
+    if (_hasImageOwnership)
+    {
+        _image->cleanup();
+    }
     _image.reset();
     _texture.reset();
     vkDestroySampler(_vulkan->device().handle(), _sampler, nullptr);
