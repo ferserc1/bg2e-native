@@ -27,13 +27,15 @@ void SkyboxRenderer::initFrameResources(vulkan::DescriptorSetAllocator* allocato
 void SkyboxRenderer::build(
     std::shared_ptr<Texture> skyTexture,
     VkFormat colorAttachmentFormat,
+    VkFormat depthAttachmentFormat,
     const std::string& vshaderFile,
-    const std::string& fshaderFile
+    const std::string& fshaderFile,
+    float cubeSize
 ) {
     _skyTexture = skyTexture;
     
     auto cubeMesh = std::unique_ptr<bg2e::geo::MeshP>(
-        bg2e::geo::createCubeP(_cubeSize, _cubeSize, _cubeSize, true)
+        bg2e::geo::createCubeP(cubeSize, cubeSize, cubeSize, true)
     );
     
     _cube = std::shared_ptr<vulkan::geo::MeshP>(new vulkan::geo::MeshP(_vulkan));
@@ -57,6 +59,7 @@ void SkyboxRenderer::build(
     plFactory.addShader(fshaderFile, VK_SHADER_STAGE_FRAGMENT_BIT);
     plFactory.setInputState<vulkan::geo::MeshP>();
     plFactory.setColorAttachmentFormat(colorAttachmentFormat);
+    plFactory.setDepthFormat(depthAttachmentFormat);
     plFactory.disableDepthtest();
     plFactory.inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
     plFactory.setCullMode(true, VK_FRONT_FACE_COUNTER_CLOCKWISE);
@@ -89,6 +92,8 @@ void SkyboxRenderer::draw(
         );
     descriptorSet->endUpdate();
     std::array<VkDescriptorSet, 1> ds = { descriptorSet->descriptorSet() };
+    
+    vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, _pipeline);
     
     vkCmdBindDescriptorSets(
         commandBuffer,

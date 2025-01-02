@@ -127,7 +127,7 @@ public:
         auto cubeMapTexture = std::shared_ptr<bg2e::render::Texture>(
             new bg2e::render::Texture(_vulkan, _cubemapRenderer->cubeMapImage())
         );
-        _skyboxRenderer->build(cubeMapTexture, _targetImage->format());
+        _skyboxRenderer->build(cubeMapTexture, _targetImage->format(), _vulkan->swapchain().depthImageFormat());
         
         _vulkan->cleanupManager().push([&, cubeMapTexture](VkDevice) {
             _cubemapRenderer->cleanup();
@@ -201,61 +201,14 @@ public:
         );
         
 		macros::cmdSetDefaultViewportAndScissor(cmd, _targetImage->extent2D());
-
-		vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, _pipeline);
-
-        
-        // You can use macros::createBuffer to create a buffer, copy the data and manage the buffer allocation
-        // inside a frame resource in one single function.
-        // Vulkan objects as well as buffer stack memory and descriptor set memory are automatically managed by
-        // frameResources.
-        // Then, you can use frameResources.newDescriptorSet() to allocate a descriptor set and update it with
-        // the buffer. The descriptor set memory will be also managed by the frameResources object.
-        // Using this method you can manage descriptor sets formed by more than one uniform buffer.
-        
-        // In this example, we create an uniform buffer to store the object model matrix. Then, we create
-        // a descriptor set for each submesh. The descriptor set contains the uniform buffer and the texture.
-        // The uniform buffer with the model matrix is the same for every submeshes, but the texture can
-        // be different.
-        _skyData.modelMatrix = glm::rotate(_skyData.modelMatrix, 0.02f, glm::vec3(0.0f, 1.0f, 0.0f));
-        auto objectDataBuffer = macros::createBuffer(_vulkan, frameResources, _skyData);
-        
-		for (uint32_t i = 0; i < _skyMesh->submeshCount(); ++i)
-		{
-            auto objectDS = frameResources.newDescriptorSet(_objectDSLayout);
-            objectDS->beginUpdate();
-                objectDS->addBuffer(
-                    0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-                    objectDataBuffer, sizeof(ObjectData), 0
-                );
-                objectDS->addImage(
-                    1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                    _texture->image()->imageView(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                    _texture->sampler()
-                );
-            objectDS->endUpdate();
-            
-            std::array<VkDescriptorSet, 2> sets = {
-                sceneDS->descriptorSet(),
-                objectDS->descriptorSet()
-            };
-            
-            vkCmdBindDescriptorSets(
-                cmd,
-                VK_PIPELINE_BIND_POINT_GRAPHICS,
-                _layout, 0,
-                uint32_t(sets.size()),
-                sets.data(),
-                0, nullptr
-            );
-			_skyMesh->drawSubmesh(cmd, i);
-		}
-
-		// Use this function to draw one unique mesh including all the indexes
-		// _skyMesh->draw(cmd);
   
-        // TODO: Replace the sky mesh rendering with the skybox renderer
+        // Rotate the view along Y axis
+        _sceneData.viewMatrix = glm::rotate(_sceneData.viewMatrix, 0.02f, glm::vec3(0.0f, 1.0f, 0.0f));
+        
+        _skyboxRenderer->update(_sceneData.viewMatrix, _sceneData.projMatrix);
+        _skyboxRenderer->draw(cmd, currentFrame, frameResources);
   
+        vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, _pipeline);
   
         // Draw the cube
         _cubeData.modelMatrix = glm::rotate(_cubeData.modelMatrix, -0.025f, glm::vec3(1.0f, 1.0f, 0.0f));
@@ -367,7 +320,6 @@ protected:
 	VkPipelineLayout _layout;
 	VkPipeline _pipeline;
  
-	std::unique_ptr<bg2e::render::vulkan::geo::MeshPU> _skyMesh;
     std::unique_ptr<bg2e::render::vulkan::geo::MeshPU> _cube;
     std::unique_ptr<bg2e::render::vulkan::geo::MeshPU> _plane;
 
@@ -444,14 +396,6 @@ protected:
 		using namespace bg2e::render::vulkan;
   
         auto mesh = std::unique_ptr<bg2e::geo::MeshPU>(
-            bg2e::geo::createSpherePU(10.0f, 30, 30, true)
-        );
-        
-        _skyMesh = std::unique_ptr<bg2e::render::vulkan::geo::MeshPU>(new bg2e::render::vulkan::geo::MeshPU(_vulkan));
-        _skyMesh->setMeshData(mesh.get());
-		_skyMesh->build();
-  
-        mesh = std::unique_ptr<bg2e::geo::MeshPU>(
             bg2e::geo::createCubePU(1.0f, 1.0f, 1.0f)
         );
         
@@ -470,7 +414,6 @@ protected:
         _planeData.modelMatrix = glm::translate(glm::mat4{ 1.0f }, glm::vec3(2.0f, 0.0f, 0.0f));
 
 		_vulkan->cleanupManager().push([this](VkDevice dev) {
-			_skyMesh->cleanup();
             _cube->cleanup();
             _plane->cleanup();
 		});

@@ -22,8 +22,10 @@ public:
     void build(
         std::shared_ptr<Texture> skyTexture,
         VkFormat colorAttachmentFormat,
+        VkFormat depthAttachmentFormat,
         const std::string& vshaderFile = "skybox_renderer.vert.spv",
-        const std::string& fshaderFile = "skybox_renderer.frag.spv"
+        const std::string& fshaderFile = "skybox_renderer.frag.spv",
+        float cubeSize = 10.0f
     );
     
     void update(const glm::mat4& view, const glm::mat4& proj);
@@ -51,7 +53,6 @@ protected:
     
     std::shared_ptr<Texture> _skyTexture;
     std::shared_ptr<vulkan::geo::MeshP> _cube;
-    float _cubeSize = 100.0f;
 };
 
 }

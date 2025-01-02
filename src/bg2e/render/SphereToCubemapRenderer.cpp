@@ -142,6 +142,13 @@ void SphereToCubemapRenderer::update(VkCommandBuffer commandBuffer, vulkan::Fram
         
         vulkan::cmdEndRendering(commandBuffer);
     }
+    
+    vulkan::Image::cmdTransitionImage(
+        commandBuffer,
+        _cubeMapImage->handle(),
+        VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+        VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+    );
 }
 
 void SphereToCubemapRenderer::cleanup()
