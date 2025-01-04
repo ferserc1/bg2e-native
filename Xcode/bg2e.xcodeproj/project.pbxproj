@@ -57,6 +57,8 @@
 		ED533A222CD7AAB700136B04 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED533A212CD7AAB700136B04 /* main.cpp */; };
 		ED6862D32CE53E4100A90EE1 /* Input.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED6862D22CE53E4100A90EE1 /* Input.cpp */; };
 		ED7DE8522CFB866600AB280D /* sphere.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED7DE8502CFB866600AB280D /* sphere.cpp */; };
+		ED7E8C1A2D2929FE00798406 /* IrradianceCubemapRenderer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED7E8C192D2929FE00798406 /* IrradianceCubemapRenderer.cpp */; };
+		ED7E8C1C2D292AE000798406 /* CubemapRenderer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED7E8C1B2D292AE000798406 /* CubemapRenderer.cpp */; };
 		ED85B1D32CDB98300039B44D /* libMoltenVK.dylib in Copy Libraries */ = {isa = PBXBuildFile; fileRef = EDD357202CD924B9009C7507 /* libMoltenVK.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		ED85B1D42CDB98320039B44D /* libSDL2-2.0.0.dylib in Copy Libraries */ = {isa = PBXBuildFile; fileRef = EDD357212CD924B9009C7507 /* libSDL2-2.0.0.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		ED85B1D52CDB98350039B44D /* libvulkan.1.3.290.dylib in Copy Libraries */ = {isa = PBXBuildFile; fileRef = EDD357222CD924B9009C7507 /* libvulkan.1.3.290.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
@@ -285,6 +287,10 @@
 		ED7DE84F2CFB864500AB280D /* sphere.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = sphere.hpp; sourceTree = "<group>"; };
 		ED7DE8502CFB866600AB280D /* sphere.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = sphere.cpp; sourceTree = "<group>"; };
 		ED7DE8532CFC677C00AB280D /* modifiers.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = modifiers.hpp; sourceTree = "<group>"; };
+		ED7E8C182D2929E600798406 /* IrradianceCubemapRenderer.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = IrradianceCubemapRenderer.hpp; sourceTree = "<group>"; };
+		ED7E8C192D2929FE00798406 /* IrradianceCubemapRenderer.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = IrradianceCubemapRenderer.cpp; sourceTree = "<group>"; };
+		ED7E8C1B2D292AE000798406 /* CubemapRenderer.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = CubemapRenderer.cpp; sourceTree = "<group>"; };
+		ED7E8C1D2D292AF000798406 /* CubemapRenderer.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = CubemapRenderer.hpp; sourceTree = "<group>"; };
 		ED85B1D62CDB99C30039B44D /* libVkLayer_khronos_validation.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.bundle"; path = libVkLayer_khronos_validation.dylib; sourceTree = "<group>"; };
 		ED85B1D82CDB99FB0039B44D /* libVkLayer_khronos_validation.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.bundle"; name = libVkLayer_khronos_validation.dylib; path = VulkanSDK/lib/libVkLayer_khronos_validation.dylib; sourceTree = "<group>"; };
 		ED85B1DD2CDBA4E00039B44D /* Metal.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Metal.framework; path = System/Library/Frameworks/Metal.framework; sourceTree = SDKROOT; };
@@ -689,6 +695,8 @@
 			isa = PBXGroup;
 			children = (
 				ED2191872CDF4E9A00123781 /* vulkan */,
+				ED7E8C1D2D292AF000798406 /* CubemapRenderer.hpp */,
+				ED7E8C182D2929E600798406 /* IrradianceCubemapRenderer.hpp */,
 				ED342CFC2CE2652B0041BE62 /* RenderLoop.hpp */,
 				ED342D002CE28CD20041BE62 /* RenderLoopDelegate.hpp */,
 				EDE192792D09D660004CD803 /* SkyboxRenderer.hpp */,
@@ -713,6 +721,8 @@
 			isa = PBXGroup;
 			children = (
 				ED21916F2CDF4E4700123781 /* vulkan */,
+				ED7E8C1B2D292AE000798406 /* CubemapRenderer.cpp */,
+				ED7E8C192D2929FE00798406 /* IrradianceCubemapRenderer.cpp */,
 				ED342CFD2CE265370041BE62 /* RenderLoop.cpp */,
 				EDE192772D09D64F004CD803 /* SkyboxRenderer.cpp */,
 				ED150D5B2D043A7700EB93F2 /* SphereToCubemapRenderer.cpp */,
@@ -1164,6 +1174,7 @@
 				ED7DE8522CFB866600AB280D /* sphere.cpp in Sources */,
 				ED2D56662CE38F37006EF072 /* imgui_impl_sdl2.cpp in Sources */,
 				ED2D56672CE38F37006EF072 /* imgui_impl_vulkan.cpp in Sources */,
+				ED7E8C1A2D2929FE00798406 /* IrradianceCubemapRenderer.cpp in Sources */,
 				ED2191712CDF4E5D00123781 /* Buffer.cpp in Sources */,
 				ED21919F2CDFE28800123781 /* Device.cpp in Sources */,
 				ED2191722CDF4E5D00123781 /* Command.cpp in Sources */,
@@ -1195,6 +1206,7 @@
 				ED2D56612CE38F07006EF072 /* UserInterfaceDelegate.cpp in Sources */,
 				ED2D56622CE38F07006EF072 /* UserInterface.cpp in Sources */,
 				ED85B2002CDBAAEE0039B44D /* PlatformTools.cpp in Sources */,
+				ED7E8C1C2D292AE000798406 /* CubemapRenderer.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
