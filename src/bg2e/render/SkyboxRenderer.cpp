@@ -1,6 +1,8 @@
 
 #include <bg2e/render/SkyboxRenderer.hpp>
 
+#include <array>
+
 namespace bg2e::render {
 
 SkyboxRenderer::SkyboxRenderer(Vulkan * vulkan)

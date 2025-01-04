@@ -11,7 +11,7 @@ namespace bg2e::geo {
 void createConeBase(
     float radius,
     float height,
-    float slices,
+    uint32_t slices,
     bool invertFaces,
     std::function<void(VertexPNUT)> vertexCallback,
     std::function<void(uint32_t)> indexCallback,
