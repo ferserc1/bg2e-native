@@ -8,6 +8,8 @@
 #include <bg2e/render/vulkan/macros/frame_resources.hpp>
 #include <bg2e/render/vulkan/macros/graphics.hpp>
 
+#include <array>
+
 namespace bg2e::render {
 
 SkyboxRenderer::SkyboxRenderer(Vulkan * vulkan)
