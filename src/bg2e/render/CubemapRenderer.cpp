@@ -55,7 +55,106 @@ void CubemapRenderer::update(
     uint32_t currentFrame,
     vulkan::FrameResources& frameResources
 ) {
+    auto transitionInfo = vulkan::Image::TransitionInfo();
+    transitionInfo.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    transitionInfo.mipLevelsCount = _cubeMapImage->mipLevels();
+    vulkan::Image::cmdTransitionImage(
+        commandBuffer,
+        _cubeMapImage->handle(),
+        VK_IMAGE_LAYOUT_UNDEFINED,
+        VK_IMAGE_LAYOUT_GENERAL,
+        transitionInfo
+    );
     
+    VkClearColorValue clearValue {{ 0.5f, 0.5f, 0.5f, 1.0f }};
+    auto clearRange = vulkan::Image::subresourceRange(VK_IMAGE_ASPECT_COLOR_BIT);
+    vkCmdClearColorImage(
+        commandBuffer,
+        _cubeMapImage->handle(),
+        VK_IMAGE_LAYOUT_GENERAL,
+        &clearValue,
+        1,
+        &clearRange
+    );
+    
+    vulkan::Image::cmdTransitionImage(
+        commandBuffer,
+        _cubeMapImage->handle(),
+        VK_IMAGE_LAYOUT_GENERAL,
+        VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+        transitionInfo
+    );
+    
+    auto descriptorSet = frameResources.newDescriptorSet(_descriptorSetLayout);
+    descriptorSet->beginUpdate();
+        descriptorSet->addBuffer(
+            0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+            _projectionDataBuffer->handle(), sizeof(ProjectionData), 0
+        );
+        descriptorSet->addImage(
+            1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+            _inputSkybox->imageView(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+            _skyImageSampler
+        );
+    descriptorSet->endUpdate();
+    std::array<VkDescriptorSet, 1> descSets = {
+        descriptorSet->descriptorSet()
+    };
+    
+    auto mipLevels = cubeMapImage()->mipLevels();
+    for (uint32_t mipLevel = 0; mipLevel < mipLevels; ++mipLevel)
+    {
+        // Draw geometry
+        for (auto i = 0; i < 6; ++i)
+        {
+            auto view = _cubeMapImageViews[mipLevel].imageViews[i];
+            auto colorAttachment = vulkan::Info::attachmentInfo(view, nullptr);
+            VkExtent2D extent{
+                uint32_t(vulkan::Image::getMipLevelSize(_cubeMapImage->extent2D().width, mipLevel)),
+                uint32_t(vulkan::Image::getMipLevelSize(_cubeMapImage->extent2D().height, mipLevel))
+            };
+            auto renderInfo = vulkan::Info::renderingInfo(extent, &colorAttachment, nullptr);
+            vulkan::cmdBeginRendering(commandBuffer, &renderInfo);
+            
+            vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, _pipeline);
+            
+            vulkan::macros::cmdSetDefaultViewportAndScissor(commandBuffer, extent);
+            
+            // Draw the sky mesh
+            SkyPushConstants pushConstants;
+            pushConstants.currentFace = i;
+            pushConstants.currentMipLevel = mipLevel;
+            pushConstants.totalMipLevels = mipLevels;
+            vkCmdPushConstants(
+                commandBuffer,
+                _layout,
+                VK_SHADER_STAGE_VERTEX_BIT,
+                0,
+                sizeof(SkyPushConstants),
+                &pushConstants
+            );
+            
+            vkCmdBindDescriptorSets(
+                commandBuffer,
+                VK_PIPELINE_BIND_POINT_GRAPHICS,
+                _layout, 0,
+                uint32_t(descSets.size()), descSets.data(),
+                0, nullptr
+            );
+            
+            _cube->draw(commandBuffer);
+            
+            vulkan::cmdEndRendering(commandBuffer);
+        }
+    }
+    
+    vulkan::Image::cmdTransitionImage(
+        commandBuffer,
+        _cubeMapImage->handle(),
+        VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+        VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+        transitionInfo
+    );
 }
 
 void CubemapRenderer::initImages(
