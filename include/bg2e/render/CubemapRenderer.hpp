@@ -20,39 +20,68 @@ public:
     void initFrameResources(vulkan::DescriptorSetAllocator*);
     
     void build(
-        std::shared_ptr<Texture> skyTexture,
-        VkFormat colorAttachmentFormat,
-        VkFormat depthAttachmentFormat,
+        std::shared_ptr<vulkan::Image> inputSkyBox,
         const std::string& vshaderFile,
         const std::string& fshaderFile,
-        float cubeSize
+        VkExtent2D cubeImageSize = { 1024, 1024 },
+        bool useMipmaps = false,
+        uint32_t maxMipmapLevels = 20
     );
     
-    void update(const glm::mat4& view, const glm::mat4& proj);
-    
-    void draw(
+    void update(
         VkCommandBuffer commandBuffer,
         uint32_t currentFrame,
         vulkan::FrameResources& frameResources
     );
     
-    void cleanup();
+    std::shared_ptr<vulkan::Image> cubeMapImage() { return _cubeMapImage; }
     
 protected:
     Vulkan * _vulkan;
     
-    VkDescriptorSetLayout _dsLayout;
-    VkPipelineLayout _pipelineLayout;
-    VkPipeline _pipeline;
+    std::shared_ptr<vulkan::Image> _inputSkybox;
+    VkSampler _skyImageSampler;
     
-    struct SkyData {
-        glm::mat4 view;
+    struct MipLevelImageViews
+    {
+        VkImageView imageViews[6];
+    };
+    std::shared_ptr<vulkan::Image> _cubeMapImage;
+    std::vector<MipLevelImageViews> _cubeMapImageViews;
+    
+    struct ProjectionData
+    {
+        glm::mat4 view[6];
         glm::mat4 proj;
     };
-    SkyData _skyData;
+    ProjectionData _projectionData;
+    std::unique_ptr<vulkan::Buffer> _projectionDataBuffer;
     
-    std::shared_ptr<Texture> _skyTexture;
-    std::shared_ptr<vulkan::geo::MeshP> _cube;
+    struct SkyPushConstants {
+        int currentFace;
+        int currentMipLevel;
+        int totalMipLevels;
+    };
+    
+    VkDescriptorSetLayout _descriptorSetLayout;
+    VkPipelineLayout _layout;
+    VkPipeline _pipeline;
+    
+    
+    std::unique_ptr<vulkan::geo::MeshP> _cube;
+    
+    void initImages(
+        VkExtent2D cubeImageSize,
+        bool useMipmaps,
+        uint32_t maxMipmapLevels
+    );
+    
+    void initPipeline(
+        const std::string& vshaderFile,
+        const std::string& fshaderFile
+    );
+    
+    void initGeometry();
 };
 
 }

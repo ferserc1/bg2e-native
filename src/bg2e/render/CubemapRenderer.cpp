@@ -7,6 +7,9 @@
 #include <bg2e/render/vulkan/macros/descriptor_set.hpp>
 #include <bg2e/render/vulkan/macros/frame_resources.hpp>
 #include <bg2e/render/vulkan/macros/graphics.hpp>
+#include <bg2e/render/vulkan/Info.hpp>
+#include <bg2e/render/vulkan/factory/Sampler.hpp>
+#include <bg2e/geo/cube.hpp>
 
 namespace bg2e::render {
 
@@ -18,103 +21,192 @@ CubemapRenderer::CubemapRenderer(Vulkan * vulkan)
     
 void CubemapRenderer::initFrameResources(vulkan::DescriptorSetAllocator* allocator)
 {
-    allocator->requirePoolSizeRatio(1, {
-        { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1 },
-        { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1 }
-    });
+    //allocator->requirePoolSizeRatio(1, {
+    //    { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1 },
+    //    { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1 }
+    //});
 }
 
 void CubemapRenderer::build(
-    std::shared_ptr<Texture> skyTexture,
-    VkFormat colorAttachmentFormat,
-    VkFormat depthAttachmentFormat,
+    std::shared_ptr<vulkan::Image> inputSkyBox,
     const std::string& vshaderFile,
     const std::string& fshaderFile,
-    float cubeSize
+    VkExtent2D cubeImageSize,
+    bool useMipmaps,
+    uint32_t maxMipmapLevels
 ) {
-    _skyTexture = skyTexture;
+    _inputSkybox = inputSkyBox;
     
-    auto cubeMesh = std::unique_ptr<bg2e::geo::MeshP>(
-        bg2e::geo::createCubeP(cubeSize, cubeSize, cubeSize, true)
+    initImages(cubeImageSize, true, maxMipmapLevels);
+    
+    vulkan::factory::Sampler samplerFactory(_vulkan);
+    _skyImageSampler = samplerFactory.build(
+        VK_FILTER_LINEAR,
+        VK_FILTER_LINEAR
     );
     
-    _cube = std::shared_ptr<vulkan::geo::MeshP>(new vulkan::geo::MeshP(_vulkan));
-    _cube->setMeshData(cubeMesh.get());
-    _cube->build();
+    initPipeline(vshaderFile, fshaderFile);
     
-    vulkan::factory::DescriptorSetLayout dsFactory;
-    dsFactory.addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
-    dsFactory.addBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
-    _dsLayout = dsFactory.build(
-        _vulkan->device().handle(),
-        VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT
-    );
-    
-    vulkan::factory::PipelineLayout layoutFactory(_vulkan);
-    layoutFactory.addDescriptorSetLayout(_dsLayout);
-    _pipelineLayout = layoutFactory.build();
-    
-    vulkan::factory::GraphicsPipeline plFactory(_vulkan);
-    plFactory.addShader(vshaderFile, VK_SHADER_STAGE_VERTEX_BIT);
-    plFactory.addShader(fshaderFile, VK_SHADER_STAGE_FRAGMENT_BIT);
-    plFactory.setInputState<vulkan::geo::MeshP>();
-    plFactory.setColorAttachmentFormat(colorAttachmentFormat);
-    plFactory.setDepthFormat(depthAttachmentFormat);
-    plFactory.disableDepthtest();
-    plFactory.inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-    plFactory.setCullMode(true, VK_FRONT_FACE_COUNTER_CLOCKWISE);
-    _pipeline = plFactory.build(_pipelineLayout);
+    initGeometry();
 }
 
-void CubemapRenderer::update(const glm::mat4& view, const glm::mat4& proj)
-{
-    _skyData.view = view;
-    _skyData.proj = proj;
-}
-
-void CubemapRenderer::draw(
+void CubemapRenderer::update(
     VkCommandBuffer commandBuffer,
     uint32_t currentFrame,
     vulkan::FrameResources& frameResources
 ) {
-    auto skyDataBuffer = vulkan::macros::createBuffer(_vulkan, frameResources, _skyData);
     
-    auto descriptorSet = frameResources.newDescriptorSet(_dsLayout);
-    descriptorSet->beginUpdate();
-        descriptorSet->addBuffer(
-            0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-            skyDataBuffer, sizeof(SkyData), 0
-        );
-        descriptorSet->addImage(
-            1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-            _skyTexture->image(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-            _skyTexture->sampler()
-        );
-    descriptorSet->endUpdate();
-    std::array<VkDescriptorSet, 1> ds = { descriptorSet->descriptorSet() };
-    
-    vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, _pipeline);
-    
-    vkCmdBindDescriptorSets(
-        commandBuffer,
-        VK_PIPELINE_BIND_POINT_GRAPHICS,
-        _pipelineLayout,
-        0,
-        uint32_t(ds.size()),
-        ds.data(),
-        0, nullptr
-    );
-    
-    _cube->draw(commandBuffer);
 }
 
-void CubemapRenderer::cleanup()
-{
-    vkDestroyPipeline(_vulkan->device().handle(), _pipeline, nullptr);
-    vkDestroyPipelineLayout(_vulkan->device().handle(), _pipelineLayout, nullptr);
-    vkDestroyDescriptorSetLayout(_vulkan->device().handle(), _dsLayout, nullptr);
-    _cube->cleanup();
+void CubemapRenderer::initImages(
+    VkExtent2D cubeImageSize,
+    bool useMipmaps,
+    uint32_t maxMipmapLevels
+) {
+    _cubeMapImage = std::shared_ptr<vulkan::Image>(vulkan::Image::createAllocatedImage(
+       _vulkan,
+       VK_FORMAT_R16G16B16A16_SFLOAT,
+       cubeImageSize,
+       VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT |
+       VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+       6, // 6 layers. When specify this parameter, the image is created as a cube map compatible image with 6 layers
+       useMipmaps,
+       maxMipmapLevels
+    ));
+    
+    // Initialize the imag layout for all the mipmap levels
+    vulkan::Image::TransitionInfo info;
+    info.mipLevelsCount = _cubeMapImage->mipLevels();
+    _vulkan->command().immediateSubmit([&](VkCommandBuffer cmd) {
+        vulkan::Image::cmdTransitionImage(
+            cmd,
+            _cubeMapImage->handle(),
+            VK_IMAGE_LAYOUT_UNDEFINED,
+            VK_IMAGE_LAYOUT_GENERAL,
+            info
+        );
+    });
+    
+    auto viewInfo = vulkan::Info::imageViewCreateInfo(
+        VK_FORMAT_R16G16B16A16_SFLOAT,
+        _cubeMapImage->handle(),
+        VK_IMAGE_ASPECT_COLOR_BIT
+    );
+    VkImageView imgView;
+    auto mipLevels = _cubeMapImage->mipLevels();
+    for (uint32_t mipLevel = 0; mipLevel < mipLevels; ++mipLevel)
+    {
+        _cubeMapImageViews.push_back({ VK_NULL_HANDLE, VK_NULL_HANDLE, VK_NULL_HANDLE, VK_NULL_HANDLE, VK_NULL_HANDLE, VK_NULL_HANDLE });
+        viewInfo.subresourceRange.baseMipLevel = mipLevel;
+        for (int i = 0; i < 6; ++i)
+        {
+            viewInfo.subresourceRange.baseArrayLayer = i;
+            vkCreateImageView(_vulkan->device().handle(), &viewInfo, nullptr, &imgView);
+            _cubeMapImageViews[mipLevel].imageViews[i] = imgView;
+        }
+    }
+    
+    _vulkan->cleanupManager().push([&](VkDevice dev) {
+        auto mipLevels = _cubeMapImage->mipLevels();
+        for (size_t mipLevel = 0; mipLevel < mipLevels; ++mipLevel)
+        {
+            for (int i = 0; i < 6; ++i)
+            {
+                vkDestroyImageView(dev, _cubeMapImageViews[mipLevel].imageViews[i], nullptr);
+            }
+        }
+        
+        _cubeMapImage->cleanup();
+    });
+    
+    vulkan::Image::transitionImage(
+        _vulkan,
+        _cubeMapImage->handle(),
+        VK_IMAGE_LAYOUT_GENERAL,
+        VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+    );
+}
+
+void CubemapRenderer::initPipeline(
+    const std::string &vshaderFile,
+    const std::string &fshaderFile
+) {
+    vulkan::factory::GraphicsPipeline plFactory(_vulkan);
+    
+    plFactory.addShader(vshaderFile, VK_SHADER_STAGE_VERTEX_BIT);
+    plFactory.addShader(fshaderFile, VK_SHADER_STAGE_FRAGMENT_BIT);
+    
+    vulkan::factory::DescriptorSetLayout dsFactory;
+    dsFactory.addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);         // Projection data buffer
+    dsFactory.addBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER); // Input skybox image
+    _descriptorSetLayout = dsFactory.build(
+        _vulkan->device().handle(),
+        VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT
+    );
+    
+    VkPushConstantRange pushConstantRange = {};
+    pushConstantRange.offset = 0;
+    pushConstantRange.size = sizeof(SkyPushConstants);
+    pushConstantRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+    
+    auto layoutInfo = vulkan::Info::pipelineLayoutInfo();
+    layoutInfo.pPushConstantRanges = &pushConstantRange;
+    layoutInfo.pushConstantRangeCount = 1;
+    
+    std::vector<VkDescriptorSetLayout> layouts = {
+        _descriptorSetLayout
+    };
+    layoutInfo.pSetLayouts = layouts.data();
+    layoutInfo.setLayoutCount = uint32_t(layouts.size());
+    
+    VK_ASSERT(vkCreatePipelineLayout(_vulkan->device().handle(), &layoutInfo, nullptr, &_layout));
+    
+    plFactory.setColorAttachmentFormat(VK_FORMAT_R16G16B16A16_SFLOAT);
+    plFactory.disableDepthtest();
+    plFactory.inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+    plFactory.setCullMode(true, VK_FRONT_FACE_COUNTER_CLOCKWISE);
+    
+    _pipeline = plFactory.build(_layout);
+    
+    _vulkan->cleanupManager().push([&](VkDevice dev) {
+        vkDestroyPipeline(dev, _pipeline, nullptr);
+        vkDestroyPipelineLayout(dev, _layout, nullptr);
+        vkDestroyDescriptorSetLayout(dev, _descriptorSetLayout, nullptr);
+    });
 }
     
+void CubemapRenderer::initGeometry()
+{
+    _projectionData.view[0] = glm::lookAt(glm::vec3(0.0f), glm::vec3( 1.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    _projectionData.view[1] = glm::lookAt(glm::vec3(0.0f), glm::vec3(-1.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    _projectionData.view[2] = glm::lookAt(glm::vec3(0.0f), glm::vec3( 0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+    _projectionData.view[3] = glm::lookAt(glm::vec3(0.0f), glm::vec3( 0.0f,-1.0f, 0.0f), glm::vec3(0.0f, 0.0f,-1.0f));
+    _projectionData.view[4] = glm::lookAt(glm::vec3(0.0f), glm::vec3( 0.0f, 0.0f,-1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    _projectionData.view[5] = glm::lookAt(glm::vec3(0.0f), glm::vec3( 0.0f, 0.0f, 1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+
+	_projectionData.proj = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 1000.0f);
+    _projectionData.proj[1][1] *= -1.0f;
+    _projectionData.proj[0][0] *= -1.0f;
+   
+    _projectionDataBuffer = std::unique_ptr<vulkan::Buffer>(vulkan::Buffer::createAllocatedBuffer(
+        _vulkan,
+        sizeof(ProjectionData),
+        VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+        VMA_MEMORY_USAGE_CPU_TO_GPU
+    ));
+    
+    auto cubeMesh = std::unique_ptr<bg2e::geo::MeshP>(
+        bg2e::geo::createCubeP(10.0f, 10.0f, 10.0f, true)
+    );
+    
+    _cube = std::unique_ptr<vulkan::geo::MeshP>(new vulkan::geo::MeshP(_vulkan));
+    _cube->setMeshData(cubeMesh.get());
+    _cube->build();
+    
+    _vulkan->cleanupManager().push([&](VkDevice) {
+        _projectionDataBuffer->cleanup();
+        _cube->cleanup();
+    });
+}
 
 }
