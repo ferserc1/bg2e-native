@@ -21,10 +21,10 @@ CubemapRenderer::CubemapRenderer(Vulkan * vulkan)
     
 void CubemapRenderer::initFrameResources(vulkan::DescriptorSetAllocator* allocator)
 {
-    //allocator->requirePoolSizeRatio(1, {
-    //    { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1 },
-    //    { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1 }
-    //});
+    allocator->requirePoolSizeRatio(1, {
+        { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1 },
+        { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1 }
+    });
 }
 
 void CubemapRenderer::build(
@@ -162,12 +162,15 @@ void CubemapRenderer::initImages(
     bool useMipmaps,
     uint32_t maxMipmapLevels
 ) {
+    // TODO: The format is hardcoded and should be configurable
+    
     _cubeMapImage = std::shared_ptr<vulkan::Image>(vulkan::Image::createAllocatedImage(
        _vulkan,
        VK_FORMAT_R16G16B16A16_SFLOAT,
        cubeImageSize,
        VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT |
        VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+       VK_IMAGE_ASPECT_COLOR_BIT,
        6, // 6 layers. When specify this parameter, the image is created as a cube map compatible image with 6 layers
        useMipmaps,
        maxMipmapLevels
@@ -260,10 +263,11 @@ void CubemapRenderer::initPipeline(
     
     VK_ASSERT(vkCreatePipelineLayout(_vulkan->device().handle(), &layoutInfo, nullptr, &_layout));
     
+    plFactory.setInputState<vulkan::geo::MeshP>();
     plFactory.setColorAttachmentFormat(VK_FORMAT_R16G16B16A16_SFLOAT);
     plFactory.disableDepthtest();
     plFactory.inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-    plFactory.setCullMode(true, VK_FRONT_FACE_COUNTER_CLOCKWISE);
+    plFactory.setCullMode(false, VK_FRONT_FACE_COUNTER_CLOCKWISE);
     
     _pipeline = plFactory.build(_layout);
     
@@ -293,6 +297,9 @@ void CubemapRenderer::initGeometry()
         VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
         VMA_MEMORY_USAGE_CPU_TO_GPU
     ));
+    
+    ProjectionData* projectionDataPtr = reinterpret_cast<ProjectionData*>(_projectionDataBuffer->allocatedData());
+    *projectionDataPtr = _projectionData;
     
     auto cubeMesh = std::unique_ptr<bg2e::geo::MeshP>(
         bg2e::geo::createCubeP(10.0f, 10.0f, 10.0f, true)

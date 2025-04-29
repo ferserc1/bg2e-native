@@ -203,6 +203,11 @@
 		ED0328172CE4D16E0037560D /* BasicWidgets.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = BasicWidgets.hpp; sourceTree = "<group>"; };
 		ED0328182CE4D16E0037560D /* DemoWindow.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = DemoWindow.hpp; sourceTree = "<group>"; };
 		ED0328192CE4D16E0037560D /* Window.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Window.hpp; sourceTree = "<group>"; };
+		ED12E1882D54D10F005B7833 /* irradiance_map_renderer.frag.glsl */ = {isa = PBXFileReference; lastKnownFileType = text; path = irradiance_map_renderer.frag.glsl; sourceTree = "<group>"; };
+		ED12E1892D54D10F005B7833 /* skybox_renderer.frag.glsl */ = {isa = PBXFileReference; lastKnownFileType = text; path = skybox_renderer.frag.glsl; sourceTree = "<group>"; };
+		ED12E18A2D54D10F005B7833 /* skybox_renderer.vert.glsl */ = {isa = PBXFileReference; lastKnownFileType = text; path = skybox_renderer.vert.glsl; sourceTree = "<group>"; };
+		ED12E18B2D54D10F005B7833 /* specular_reflection_renderer.frag.glsl */ = {isa = PBXFileReference; lastKnownFileType = text; path = specular_reflection_renderer.frag.glsl; sourceTree = "<group>"; };
+		ED12E18C2D54D4DD005B7833 /* cubemap_renderer.vert.glsl */ = {isa = PBXFileReference; lastKnownFileType = text; path = cubemap_renderer.vert.glsl; sourceTree = "<group>"; };
 		ED150D5A2D043A6200EB93F2 /* SphereToCubemapRenderer.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = SphereToCubemapRenderer.hpp; sourceTree = "<group>"; };
 		ED150D5B2D043A7700EB93F2 /* SphereToCubemapRenderer.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = SphereToCubemapRenderer.cpp; sourceTree = "<group>"; };
 		ED17CF5C2CF765530099269A /* frame_resources.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = frame_resources.hpp; sourceTree = "<group>"; };
@@ -948,6 +953,11 @@
 			isa = PBXGroup;
 			children = (
 				EDF0451F2CE65DB8005C8B96 /* test */,
+				ED12E18C2D54D4DD005B7833 /* cubemap_renderer.vert.glsl */,
+				ED12E1882D54D10F005B7833 /* irradiance_map_renderer.frag.glsl */,
+				ED12E1892D54D10F005B7833 /* skybox_renderer.frag.glsl */,
+				ED12E18A2D54D10F005B7833 /* skybox_renderer.vert.glsl */,
+				ED12E18B2D54D10F005B7833 /* specular_reflection_renderer.frag.glsl */,
 				ED8A97212D073F5400D35DB8 /* sphere_to_cubemap.frag.glsl */,
 				ED8A97222D073F5400D35DB8 /* sphere_to_cubemap.vert.glsl */,
 			);

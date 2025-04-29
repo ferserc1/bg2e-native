@@ -49,7 +49,7 @@ public:
             { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1 }
         });
         
-        _cubemapRenderer = std::unique_ptr<bg2e::render::SphereToCubemapRenderer>(
+        _sphereToCubemap = std::unique_ptr<bg2e::render::SphereToCubemapRenderer>(
             new bg2e::render::SphereToCubemapRenderer(_vulkan)
         );
         
@@ -65,9 +65,11 @@ public:
             { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1 }
         });
         
-        _cubemapRenderer->initFrameResources(frameAllocator);
+        _sphereToCubemap->initFrameResources(frameAllocator);
         
         _skyboxRenderer->initFrameResources(frameAllocator);
+        
+        _testCubemapRenderer->initFrameResources(frameAllocator);
         
         frameAllocator->initPool();
     }
@@ -82,7 +84,18 @@ public:
         auto imagePath = assetsPath;
         imagePath.append("country_field_sun.jpg");
         
-        _cubemapRenderer->build(imagePath);
+        _sphereToCubemap->build(imagePath);
+        _updateCubemap = true;
+        
+        _testCubemapRenderer = std::unique_ptr<bg2e::render::CubemapRenderer>(new bg2e::render::CubemapRenderer(_vulkan));
+        _testCubemapRenderer->build(
+            _sphereToCubemap->cubeMapImage(),
+            "cubemap_renderer.vert.spv", // vertex shader
+            "irradiance_map_renderer.frag.spv", // fragment shader
+            { 128, 128 },
+            true, // use mipmaps
+            20 // max mipmap levels
+        );
         
     
 		// You can use plain pointers in this case, because the base::Image and base::Texture objects will not
@@ -125,12 +138,12 @@ public:
         // Create the skybox renderer after the target image, because we need access to the
         // target image format to initialize the skybox renderer
         auto cubeMapTexture = std::shared_ptr<bg2e::render::Texture>(
-            new bg2e::render::Texture(_vulkan, _cubemapRenderer->cubeMapImage())
+            new bg2e::render::Texture(_vulkan, _sphereToCubemap->cubeMapImage())
         );
         _skyboxRenderer->build(cubeMapTexture, _targetImage->format(), _vulkan->swapchain().depthImageFormat());
         
         _vulkan->cleanupManager().push([&, cubeMapTexture](VkDevice) {
-            _cubemapRenderer->cleanup();
+            _sphereToCubemap->cleanup();
             cubeMapTexture->cleanup();
             _skyboxRenderer->cleanup();
         });
@@ -177,7 +190,13 @@ public:
 	) override {
 		using namespace bg2e::render::vulkan;
   
-        _cubemapRenderer->update(cmd, frameResources);
+        if (_updateCubemap) {
+            _sphereToCubemap->update(cmd, frameResources);
+            
+            _testCubemapRenderer->update(cmd, currentFrame, frameResources);
+            _updateCubemap = false;
+        }
+        
   
         // You can use this function when a descriptor set only contains one unique uniform buffer.
         // The uniformBufferDescriptorSet function automatically create the uniform buffer and descriptor set
@@ -329,8 +348,11 @@ protected:
     VkDescriptorSetLayout _sceneDSLayout;
     VkDescriptorSetLayout _objectDSLayout;
     
-    std::unique_ptr<bg2e::render::SphereToCubemapRenderer> _cubemapRenderer;
+    std::unique_ptr<bg2e::render::SphereToCubemapRenderer> _sphereToCubemap;
+    bool _updateCubemap;
     std::unique_ptr<bg2e::render::SkyboxRenderer> _skyboxRenderer;
+    
+    std::unique_ptr<bg2e::render::CubemapRenderer> _testCubemapRenderer;
     
     struct SceneData
     {

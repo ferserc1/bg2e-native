@@ -1,13 +1,17 @@
 #version 450
 
 layout (location = 0) in vec3 fragNormal;
+layout (location = 1) in flat int inCurrentMipLevel;
+layout (location = 2) in flat int inTotalMipLevels;
+layout (location = 3) in flat int inFaceIndex;
 
 layout (location = 0) out vec4 outFragColor;
 
-layout (set = 1, binding = 0) uniform samplerCube skyTexture;
+layout (set = 0, binding = 1) uniform samplerCube skyTexture;
 
 void main()
 {
+    // Compute the irradiance using the pre-filtered environment map
     const float sampleDelta = 0.05;
     const float PI = 3.14159265359;
     vec3 normal = normalize(fragNormal);
