@@ -12,7 +12,7 @@ layout (set = 0, binding = 1) uniform samplerCube skyTexture;
 void main()
 {
     // Compute the irradiance using the pre-filtered environment map
-    const float sampleDelta = 0.05;
+    const float sampleDelta = 0.025;
     const float PI = 3.14159265359;
     vec3 normal = normalize(fragNormal);
     vec3 irradiance = vec3(0.0);

@@ -77,7 +77,7 @@ void MeshGeneric<MeshT>::drawSubmesh(VkCommandBuffer cmd, uint32_t submeshIndex)
 {
 	if (submeshIndex >= _meshData.submeshes.size()) {
 		throw std::runtime_error("Submesh index out of range");
-	}
+	} 
 
 	VkBuffer vertexBuffers[] = { _vertexBuffer->handle() };
 	VkDeviceSize offsets[] = { 0 };

@@ -6,9 +6,9 @@ layout (location = 2) in flat int inTotalMipLevels;
 
 layout (location = 0) out vec4 outFragColor;
 
-layout (set = 1, binding = 0) uniform samplerCube skyTexture;
+layout (set = 0, binding = 1) uniform samplerCube skyTexture;
 
-layout(set = 2, binding = 0) uniform SpecularReflection {
+layout(set = 0, binding = 2) uniform SpecularReflection {
     float roughness;
     int sampleCount;
 } specularReflection;

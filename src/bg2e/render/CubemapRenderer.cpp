@@ -45,6 +45,10 @@ void CubemapRenderer::build(
         VK_FILTER_LINEAR
     );
     
+    _vulkan->cleanupManager().push([&](VkDevice device) {
+        vkDestroySampler(device, _skyImageSampler, nullptr);
+    });
+    
     initPipeline(vshaderFile, fshaderFile);
     
     initGeometry();
