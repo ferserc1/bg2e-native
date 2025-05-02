@@ -9,7 +9,8 @@
 #include <bg2e/render/vulkan/macros/graphics.hpp>
 #include <bg2e/render/vulkan/Info.hpp>
 #include <bg2e/render/vulkan/factory/Sampler.hpp>
-#include <bg2e/geo/cube.hpp>
+
+#include <array>
 
 namespace bg2e::render {
 

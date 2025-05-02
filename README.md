@@ -38,3 +38,8 @@ In the project configuration, check that the `VULKAN_SDK` setting corresponds wi
 
 - VULKAN_SDK Default value: `$(HOME)/VulkanSDK/1.3.290.0/macOS`
 
+### Windows
+
+On Windows there is no special configuration to do, apart from installing Visual Studio 2022 and Vulkan SDK. But to run the code from Visual Studio you have to modify the working directory in the project options (Debugging > Workind Directory) to be the output directory (`$(OutDir)`)
+
+![Visual Studio 2022 configuration](doc/images/vs_2022_settings.jpg)
