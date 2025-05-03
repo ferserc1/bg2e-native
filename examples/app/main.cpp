@@ -22,6 +22,8 @@
 #include <bg2e/geo/modifiers.hpp>
 #include <bg2e/render/SphereToCubemapRenderer.hpp>
 #include <bg2e/render/SkyboxRenderer.hpp>
+#include <bg2e/render/IrradianceCubemapRenderer.hpp>
+#include <bg2e/render/SpecularReflectionCubemapRenderer.hpp>
 
 
 #include <bg2e/ui/BasicWidgets.hpp>
@@ -69,7 +71,8 @@ public:
         
         _skyboxRenderer->initFrameResources(frameAllocator);
         
-        _testCubemapRenderer->initFrameResources(frameAllocator);
+        _irradianceMapRenderer->initFrameResources(frameAllocator);
+        _specularReflectionMapRenderer->initFrameResources(frameAllocator);
         
         frameAllocator->initPool();
     }
@@ -87,15 +90,11 @@ public:
         _sphereToCubemap->build(imagePath);
         _updateCubemap = true;
         
-        _testCubemapRenderer = std::unique_ptr<bg2e::render::CubemapRenderer>(new bg2e::render::CubemapRenderer(_vulkan));
-        _testCubemapRenderer->build(
-            _sphereToCubemap->cubeMapImage(),
-            "cubemap_renderer.vert.spv", // vertex shader
-            "irradiance_map_renderer.frag.spv", // fragment shader
-            { 128, 128 },
-            true, // use mipmaps
-            20 // max mipmap levels
-        );
+        _irradianceMapRenderer = std::unique_ptr<bg2e::render::IrradianceCubemapRenderer>(new bg2e::render::IrradianceCubemapRenderer(_vulkan));
+        _irradianceMapRenderer->build(_sphereToCubemap->cubeMapImage());
+        
+        _specularReflectionMapRenderer = std::unique_ptr<bg2e::render::SpecularReflectionCubemapRenderer>(new bg2e::render::SpecularReflectionCubemapRenderer(_vulkan));
+        _specularReflectionMapRenderer->build(_sphereToCubemap->cubeMapImage());
         
     
 		// You can use plain pointers in this case, because the base::Image and base::Texture objects will not
@@ -193,7 +192,10 @@ public:
         if (_updateCubemap) {
             _sphereToCubemap->update(cmd, frameResources);
             
-            _testCubemapRenderer->update(cmd, currentFrame, frameResources);
+            _irradianceMapRenderer->update(cmd, currentFrame, frameResources);
+            
+            _specularReflectionMapRenderer->update(cmd, currentFrame, frameResources);
+            
             _updateCubemap = false;
         }
         
@@ -352,7 +354,8 @@ protected:
     bool _updateCubemap;
     std::unique_ptr<bg2e::render::SkyboxRenderer> _skyboxRenderer;
     
-    std::unique_ptr<bg2e::render::CubemapRenderer> _testCubemapRenderer;
+    std::unique_ptr<bg2e::render::IrradianceCubemapRenderer> _irradianceMapRenderer;
+    std::unique_ptr<bg2e::render::SpecularReflectionCubemapRenderer> _specularReflectionMapRenderer;
     
     struct SceneData
     {

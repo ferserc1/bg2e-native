@@ -34,11 +34,12 @@ void CubemapRenderer::build(
     const std::string& fshaderFile,
     VkExtent2D cubeImageSize,
     bool useMipmaps,
-    uint32_t maxMipmapLevels
+    uint32_t maxMipmapLevels,
+    VkFormat imageFormat
 ) {
     _inputSkybox = inputSkyBox;
     
-    initImages(cubeImageSize, true, maxMipmapLevels);
+    initImages(cubeImageSize, useMipmaps, maxMipmapLevels, imageFormat);
     
     vulkan::factory::Sampler samplerFactory(_vulkan);
     _skyImageSampler = samplerFactory.build(
@@ -165,13 +166,12 @@ void CubemapRenderer::update(
 void CubemapRenderer::initImages(
     VkExtent2D cubeImageSize,
     bool useMipmaps,
-    uint32_t maxMipmapLevels
+    uint32_t maxMipmapLevels,
+    VkFormat imageFormat
 ) {
-    // TODO: The format is hardcoded and should be configurable
-    
     _cubeMapImage = std::shared_ptr<vulkan::Image>(vulkan::Image::createAllocatedImage(
        _vulkan,
-       VK_FORMAT_R16G16B16A16_SFLOAT,
+       imageFormat,
        cubeImageSize,
        VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT |
        VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
@@ -195,7 +195,7 @@ void CubemapRenderer::initImages(
     });
     
     auto viewInfo = vulkan::Info::imageViewCreateInfo(
-        VK_FORMAT_R16G16B16A16_SFLOAT,
+        imageFormat,
         _cubeMapImage->handle(),
         VK_IMAGE_ASPECT_COLOR_BIT
     );
@@ -234,15 +234,8 @@ void CubemapRenderer::initImages(
     );
 }
 
-void CubemapRenderer::initPipeline(
-    const std::string &vshaderFile,
-    const std::string &fshaderFile
-) {
-    vulkan::factory::GraphicsPipeline plFactory(_vulkan);
-    
-    plFactory.addShader(vshaderFile, VK_SHADER_STAGE_VERTEX_BIT);
-    plFactory.addShader(fshaderFile, VK_SHADER_STAGE_FRAGMENT_BIT);
-    
+void CubemapRenderer::createPipelineLayout()
+{
     vulkan::factory::DescriptorSetLayout dsFactory;
     dsFactory.addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);         // Projection data buffer
     dsFactory.addBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER); // Input skybox image
@@ -268,8 +261,25 @@ void CubemapRenderer::initPipeline(
     
     VK_ASSERT(vkCreatePipelineLayout(_vulkan->device().handle(), &layoutInfo, nullptr, &_layout));
     
+    _vulkan->cleanupManager().push([&](VkDevice dev) {
+        vkDestroyPipelineLayout(dev, _layout, nullptr);
+        vkDestroyDescriptorSetLayout(dev, _descriptorSetLayout, nullptr);
+    });
+}
+
+void CubemapRenderer::initPipeline(
+    const std::string &vshaderFile,
+    const std::string &fshaderFile
+) {
+    vulkan::factory::GraphicsPipeline plFactory(_vulkan);
+    
+    plFactory.addShader(vshaderFile, VK_SHADER_STAGE_VERTEX_BIT);
+    plFactory.addShader(fshaderFile, VK_SHADER_STAGE_FRAGMENT_BIT);
+    
+    createPipelineLayout();
+    
     plFactory.setInputState<vulkan::geo::MeshP>();
-    plFactory.setColorAttachmentFormat(VK_FORMAT_R16G16B16A16_SFLOAT);
+    plFactory.setColorAttachmentFormat(_cubeMapImage->format());
     plFactory.disableDepthtest();
     plFactory.inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
     plFactory.setCullMode(false, VK_FRONT_FACE_COUNTER_CLOCKWISE);
@@ -278,8 +288,6 @@ void CubemapRenderer::initPipeline(
     
     _vulkan->cleanupManager().push([&](VkDevice dev) {
         vkDestroyPipeline(dev, _pipeline, nullptr);
-        vkDestroyPipelineLayout(dev, _layout, nullptr);
-        vkDestroyDescriptorSetLayout(dev, _descriptorSetLayout, nullptr);
     });
 }
     

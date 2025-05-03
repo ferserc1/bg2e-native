@@ -25,7 +25,8 @@ public:
         const std::string& fshaderFile,
         VkExtent2D cubeImageSize = { 1024, 1024 },
         bool useMipmaps = false,
-        uint32_t maxMipmapLevels = 20
+        uint32_t maxMipmapLevels = 20,
+        VkFormat imageFormat = VK_FORMAT_R16G16B16A16_SFLOAT
     );
     
     void update(
@@ -73,8 +74,11 @@ protected:
     void initImages(
         VkExtent2D cubeImageSize,
         bool useMipmaps,
-        uint32_t maxMipmapLevels
+        uint32_t maxMipmapLevels,
+        VkFormat imageFormat = VK_FORMAT_R16G16B16A16_SFLOAT
     );
+    
+    void createPipelineLayout();
     
     void initPipeline(
         const std::string& vshaderFile,

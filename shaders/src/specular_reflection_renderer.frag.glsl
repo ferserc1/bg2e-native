@@ -8,17 +8,12 @@ layout (location = 0) out vec4 outFragColor;
 
 layout (set = 0, binding = 1) uniform samplerCube skyTexture;
 
-layout(set = 0, binding = 2) uniform SpecularReflection {
-    float roughness;
-    int sampleCount;
-} specularReflection;
-
 float vanDerCorpus(int n, int base) {
     float invBase = 1.0 / float(base);
     float denom   = 1.0;
     float result  = 0.0;
 
-    for(int i = 0; i < 16; ++i)
+    for(int i = 0; i < 8; ++i)
     {
         if(n > 0)
         {
@@ -60,7 +55,7 @@ vec3 importanceSampleGGX(vec2 Xi, vec3 N, float roughness) {
 
 void main()
 {
-    int sampleCount = specularReflection.sampleCount;
+    int sampleCount = 128;
 
     vec3 N = normalize(inNormal);
     vec3 R = N;
