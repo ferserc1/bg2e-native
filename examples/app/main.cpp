@@ -20,10 +20,10 @@
 #include <bg2e/geo/plane.hpp>
 #include <bg2e/render/Texture.hpp>
 #include <bg2e/geo/modifiers.hpp>
-#include <bg2e/render/SphereToCubemapRenderer.hpp>
+
 #include <bg2e/render/SkyboxRenderer.hpp>
-#include <bg2e/render/IrradianceCubemapRenderer.hpp>
-#include <bg2e/render/SpecularReflectionCubemapRenderer.hpp>
+
+#include <bg2e/render/EnvironmentResources.hpp>
 
 
 #include <bg2e/ui/BasicWidgets.hpp>
@@ -51,20 +51,14 @@ public:
             { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1 }
         });
         
-        _sphereToCubemap = std::unique_ptr<bg2e::render::SphereToCubemapRenderer>(
-            new bg2e::render::SphereToCubemapRenderer(_vulkan)
-        );
-        
-        _skyboxRenderer = std::unique_ptr<bg2e::render::SkyboxRenderer>(
-            new bg2e::render::SkyboxRenderer(_vulkan)
-        );
-        
-        _irradianceMapRenderer = std::unique_ptr<bg2e::render::IrradianceCubemapRenderer>(
-            new bg2e::render::IrradianceCubemapRenderer(_vulkan)
-        );
-        
-        _specularReflectionMapRenderer = std::unique_ptr<bg2e::render::SpecularReflectionCubemapRenderer>(
-            new bg2e::render::SpecularReflectionCubemapRenderer(_vulkan)
+        _environment = std::unique_ptr<bg2e::render::EnvironmentResources>(
+            new bg2e::render::EnvironmentResources(
+                _vulkan,
+
+                // Use this parameters to build the SkyboxRenderer in EnvironmentResources
+                _targetImageFormat,
+                _vulkan->swapchain().depthImageFormat()
+            )
         );
 	}
  
@@ -75,12 +69,7 @@ public:
             { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1 }
         });
         
-        _sphereToCubemap->initFrameResources(frameAllocator);
-        
-        _skyboxRenderer->initFrameResources(frameAllocator);
-        
-        _irradianceMapRenderer->initFrameResources(frameAllocator);
-        _specularReflectionMapRenderer->initFrameResources(frameAllocator);
+        _environment->initFrameResources(frameAllocator);
         
         frameAllocator->initPool();
     }
@@ -90,19 +79,16 @@ public:
         // Use the initScene function to initialize and create scene resources, such as pipelines, 3D models
         // or textures
         
-        
         auto assetsPath = bg2e::base::PlatformTools::assetPath();
         auto imagePath = assetsPath;
         imagePath.append("country_field_sun.jpg");
         
-        _sphereToCubemap->build(imagePath);
-        _updateCubemap = true;
-        
-        
-        _irradianceMapRenderer->build(_sphereToCubemap->cubeMapImage());
-        
-        _specularReflectionMapRenderer->build(_sphereToCubemap->cubeMapImage());
-        
+        _environment->build(
+            imagePath,          // Path to equirectangular image
+            { 2048, 2048 },     // Cube map size
+            { 32, 32 },         // Irradiance map size
+            { 1024, 1024 }      // Specular reflection map size
+        );
     
 		// You can use plain pointers in this case, because the base::Image and base::Texture objects will not
 		// be used outside of this function. Internally, these objects will be stored in a shared_ptr and will be
@@ -140,19 +126,6 @@ public:
         });
 	
 		createImage(_vulkan->swapchain().extent());
-  
-        // Create the skybox renderer after the target image, because we need access to the
-        // target image format to initialize the skybox renderer
-        auto cubeMapTexture = std::shared_ptr<bg2e::render::Texture>(
-            new bg2e::render::Texture(_vulkan, _sphereToCubemap->cubeMapImage())
-        );
-        _skyboxRenderer->build(cubeMapTexture, _targetImage->format(), _vulkan->swapchain().depthImageFormat());
-        
-        _vulkan->cleanupManager().push([&, cubeMapTexture](VkDevice) {
-            _sphereToCubemap->cleanup();
-            cubeMapTexture->cleanup();
-            _skyboxRenderer->cleanup();
-        });
 
 		createPipeline();
 
@@ -196,16 +169,7 @@ public:
 	) override {
 		using namespace bg2e::render::vulkan;
   
-        if (_updateCubemap) {
-            _sphereToCubemap->update(cmd, frameResources);
-            
-            _irradianceMapRenderer->update(cmd, currentFrame, frameResources);
-            
-            _specularReflectionMapRenderer->update(cmd, currentFrame, frameResources);
-            
-            _updateCubemap = false;
-        }
-        
+        _environment->update(cmd, currentFrame, frameResources);
   
         // You can use this function when a descriptor set only contains one unique uniform buffer.
         // The uniformBufferDescriptorSet function automatically create the uniform buffer and descriptor set
@@ -232,9 +196,12 @@ public:
   
         // Rotate the view along Y axis
         _sceneData.viewMatrix = glm::rotate(_sceneData.viewMatrix, 0.02f, glm::vec3(0.0f, 1.0f, 0.0f));
-        
-        _skyboxRenderer->update(_sceneData.viewMatrix, _sceneData.projMatrix);
-        _skyboxRenderer->draw(cmd, currentFrame, frameResources);
+
+        // Draw skybox. This functions will only generate a skybox if the skybox renderer
+        // is initialized in _environment. To do it, call de EnvironmentResources constructor
+        // with the target image and depth format
+        _environment->updateSkybox(_sceneData.viewMatrix, _sceneData.projMatrix);
+        _environment->drawSkybox(cmd, currentFrame, frameResources);
   
         vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, _pipeline);
   
@@ -341,6 +308,7 @@ public:
 	}
 
 protected:
+    VkFormat _targetImageFormat = VK_FORMAT_R16G16B16A16_SFLOAT;
 	std::shared_ptr<bg2e::render::vulkan::Image> _targetImage;
 
 	bg2e::ui::Window _window;
@@ -356,14 +324,11 @@ protected:
 
     VkDescriptorSetLayout _sceneDSLayout;
     VkDescriptorSetLayout _objectDSLayout;
-    
-    std::unique_ptr<bg2e::render::SphereToCubemapRenderer> _sphereToCubemap;
-    bool _updateCubemap;
-    std::unique_ptr<bg2e::render::SkyboxRenderer> _skyboxRenderer;
-    
-    std::unique_ptr<bg2e::render::IrradianceCubemapRenderer> _irradianceMapRenderer;
-    std::unique_ptr<bg2e::render::SpecularReflectionCubemapRenderer> _specularReflectionMapRenderer;
-    
+
+    // Load the environment skybox, generate the irradiance and specular reflection maps,
+    // and manage the sky box renderer
+    std::unique_ptr<bg2e::render::EnvironmentResources> _environment;
+        
     struct SceneData
     {
         glm::mat4 viewMatrix;
@@ -457,7 +422,7 @@ protected:
 		auto vulkan = this->vulkan();
 		_targetImage = std::shared_ptr<Image>(Image::createAllocatedImage(
 			vulkan,
-			VK_FORMAT_R16G16B16A16_SFLOAT,
+			_targetImageFormat,
 			extent,
 			VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT |
 			VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,

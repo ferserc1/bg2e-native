@@ -26,9 +26,9 @@ void SpecularReflectionCubemapRenderer::build(
         inputCubemap,
         "cubemap_renderer.vert.spv",
         "specular_reflection_renderer.frag.spv",
-        { 256, 256 },
+        cubeImageSize,
         true,
-        7,
+        10,
         VK_FORMAT_B8G8R8A8_UNORM
     );
 }

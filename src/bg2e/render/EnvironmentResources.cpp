@@ -18,11 +18,35 @@ EnvironmentResources::EnvironmentResources(bg2e::render::Vulkan *vulkan)
     );
 }
 
+EnvironmentResources::EnvironmentResources(bg2e::render::Vulkan *vulkan, VkFormat targetImage, VkFormat depthFormat)
+    :_vulkan(vulkan)
+    ,_targetImageFormat(targetImage)
+    ,_depthImageFormat(depthFormat)
+{
+    _sphereToCubemap = std::unique_ptr<SphereToCubemapRenderer>(
+        new SphereToCubemapRenderer(_vulkan)
+    );
+    _irradianceRenderer = std::unique_ptr<IrradianceCubemapRenderer>(
+        new IrradianceCubemapRenderer(_vulkan)
+    );
+    _specularRenderer = std::unique_ptr<SpecularReflectionCubemapRenderer>(
+        new SpecularReflectionCubemapRenderer(_vulkan)
+    );
+    _skyboxRenderer = std::unique_ptr<SkyboxRenderer>(
+        new SkyboxRenderer(_vulkan)
+    );
+}
+
 void EnvironmentResources::initFrameResources(bg2e::render::vulkan::DescriptorSetAllocator *frameAllocator)
 {
     _sphereToCubemap->initFrameResources(frameAllocator);
     _irradianceRenderer->initFrameResources(frameAllocator);
     _specularRenderer->initFrameResources(frameAllocator);
+    
+    if (_skyboxRenderer.get())
+    {
+        _skyboxRenderer->initFrameResources(frameAllocator);
+    }
 }
 
 void EnvironmentResources::build(
@@ -35,6 +59,29 @@ void EnvironmentResources::build(
     _cubemapChanged = true;
     _irradianceRenderer->build(_sphereToCubemap->cubeMapImage(), irradianceMapSize);
     _specularRenderer->build(_sphereToCubemap->cubeMapImage(), specularReflectionSize);
+    
+    if (_skyboxRenderer.get())
+    {
+        auto cubeMapTexture = std::shared_ptr<bg2e::render::Texture>(
+            new bg2e::render::Texture(_vulkan, _sphereToCubemap->cubeMapImage())
+        );
+        _vulkan->cleanupManager().push([&, cubeMapTexture](VkDevice) {
+            cubeMapTexture->cleanup();
+            _skyboxRenderer->cleanup();
+            _sphereToCubemap->cleanup();
+        });
+        _skyboxRenderer->build(
+            cubeMapTexture,
+            _targetImageFormat,
+            _depthImageFormat
+        );
+    }
+    else
+    {
+        _vulkan->cleanupManager().push([&](VkDevice) {
+            _sphereToCubemap->cleanup();
+        });
+    }
 }
 
 void EnvironmentResources::update(
@@ -48,6 +95,27 @@ void EnvironmentResources::update(
         _irradianceRenderer->update(cmd, currentFrame, frameResources);
         _specularRenderer->update(cmd, currentFrame, frameResources);
         _cubemapChanged = false;
+    }
+}
+
+void EnvironmentResources::updateSkybox(
+    const glm::mat4& viewMatrix,
+    const glm::mat4& projMatrix
+) {
+    if (_skyboxRenderer.get())
+    {
+        _skyboxRenderer->update(viewMatrix, projMatrix);
+    }
+}
+
+void EnvironmentResources::drawSkybox(
+    VkCommandBuffer cmd,
+    uint32_t currentFrame,
+    vulkan::FrameResources& frameResources
+) {
+    if (_skyboxRenderer.get())
+    {
+        _skyboxRenderer->draw(cmd, currentFrame, frameResources);
     }
 }
 
