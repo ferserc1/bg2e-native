@@ -32,6 +32,7 @@
     <ClInclude Include="..\include\bg2e\geo\sphere.hpp" />
     <ClInclude Include="..\include\bg2e\geo\Vertex.hpp" />
     <ClInclude Include="..\include\bg2e\render\CubemapRenderer.hpp" />
+    <ClInclude Include="..\include\bg2e\render\EnvironmentResources.hpp" />
     <ClInclude Include="..\include\bg2e\render\IrradianceCubemapRenderer.hpp" />
     <ClInclude Include="..\include\bg2e\render\RenderLoop.hpp" />
     <ClInclude Include="..\include\bg2e\render\RenderLoopDelegate.hpp" />
@@ -95,6 +96,7 @@
     <ClCompile Include="..\src\bg2e\geo\plane.cpp" />
     <ClCompile Include="..\src\bg2e\geo\sphere.cpp" />
     <ClCompile Include="..\src\bg2e\render\CubemapRenderer.cpp" />
+    <ClCompile Include="..\src\bg2e\render\EnvironmentResources.cpp" />
     <ClCompile Include="..\src\bg2e\render\IrradianceCubemapRenderer.cpp" />
     <ClCompile Include="..\src\bg2e\render\RenderLoop.cpp" />
     <ClCompile Include="..\src\bg2e\render\SkyboxRenderer.cpp" />

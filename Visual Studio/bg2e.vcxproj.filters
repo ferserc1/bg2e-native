@@ -291,6 +291,9 @@
     <ClInclude Include="..\include\bg2e\render\SkyboxRenderer.hpp">
       <Filter>Header Files\bg2e\render</Filter>
     </ClInclude>
+    <ClInclude Include="..\include\bg2e\render\EnvironmentResources.hpp">
+      <Filter>Header Files\bg2e\render</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\bg2e\app\MainLoop.cpp">
@@ -459,6 +462,9 @@
       <Filter>Source Files\render</Filter>
     </ClCompile>
     <ClCompile Include="..\src\bg2e\render\SkyboxRenderer.cpp">
+      <Filter>Source Files\render</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\bg2e\render\EnvironmentResources.cpp">
       <Filter>Source Files\render</Filter>
     </ClCompile>
   </ItemGroup>
