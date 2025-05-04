@@ -58,6 +58,14 @@ public:
         _skyboxRenderer = std::unique_ptr<bg2e::render::SkyboxRenderer>(
             new bg2e::render::SkyboxRenderer(_vulkan)
         );
+        
+        _irradianceMapRenderer = std::unique_ptr<bg2e::render::IrradianceCubemapRenderer>(
+            new bg2e::render::IrradianceCubemapRenderer(_vulkan)
+        );
+        
+        _specularReflectionMapRenderer = std::unique_ptr<bg2e::render::SpecularReflectionCubemapRenderer>(
+            new bg2e::render::SpecularReflectionCubemapRenderer(_vulkan)
+        );
 	}
  
     void initFrameResources(bg2e::render::vulkan::DescriptorSetAllocator* frameAllocator) override
@@ -90,10 +98,9 @@ public:
         _sphereToCubemap->build(imagePath);
         _updateCubemap = true;
         
-        _irradianceMapRenderer = std::unique_ptr<bg2e::render::IrradianceCubemapRenderer>(new bg2e::render::IrradianceCubemapRenderer(_vulkan));
+        
         _irradianceMapRenderer->build(_sphereToCubemap->cubeMapImage());
         
-        _specularReflectionMapRenderer = std::unique_ptr<bg2e::render::SpecularReflectionCubemapRenderer>(new bg2e::render::SpecularReflectionCubemapRenderer(_vulkan));
         _specularReflectionMapRenderer->build(_sphereToCubemap->cubeMapImage());
         
     

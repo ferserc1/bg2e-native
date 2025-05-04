@@ -27,6 +27,13 @@ public:
         VkExtent2D cubeImageSize = { 1024, 1024 }
     );
     
+    void build(
+        const std::filesystem::path& imagePath,
+        VkExtent2D cubeImageSize
+    ) {
+        build(imagePath, "sphere_to_cubemap.vert.spv", "sphere_to_cubemap.frag.spv", cubeImageSize);
+    }
+    
     void updateImage(const std::filesystem::path& imagePath);
     
     void update(VkCommandBuffer commandBuffer, vulkan::FrameResources& frameResources);
