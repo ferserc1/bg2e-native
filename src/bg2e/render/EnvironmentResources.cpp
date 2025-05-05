@@ -1,5 +1,6 @@
 
 #include <bg2e/render/EnvironmentResources.hpp>
+#include <bg2e/render/vulkan/factory/Sampler.hpp>
 
 namespace bg2e {
 namespace render {
@@ -16,6 +17,17 @@ EnvironmentResources::EnvironmentResources(bg2e::render::Vulkan *vulkan)
     _specularRenderer = std::unique_ptr<SpecularReflectionCubemapRenderer>(
         new SpecularReflectionCubemapRenderer(_vulkan)
     );
+    
+    vulkan::factory::Sampler samplerFactory(_vulkan);
+    _cubeMapSampler = samplerFactory.build();
+    _irradianceMapSampler = samplerFactory.build();
+    _specularReflectionSampler = samplerFactory.build();
+    
+    _vulkan->cleanupManager().push([&](VkDevice device) {
+        vkDestroySampler(device, _cubeMapSampler, nullptr);
+        vkDestroySampler(device, _irradianceMapSampler, nullptr);
+        vkDestroySampler(device, _specularReflectionSampler, nullptr);
+    });
 }
 
 EnvironmentResources::EnvironmentResources(bg2e::render::Vulkan *vulkan, VkFormat targetImage, VkFormat depthFormat)
@@ -35,6 +47,17 @@ EnvironmentResources::EnvironmentResources(bg2e::render::Vulkan *vulkan, VkForma
     _skyboxRenderer = std::unique_ptr<SkyboxRenderer>(
         new SkyboxRenderer(_vulkan)
     );
+    
+    vulkan::factory::Sampler samplerFactory(_vulkan);
+    _cubeMapSampler = samplerFactory.build();
+    _irradianceMapSampler = samplerFactory.build();
+    _specularReflectionSampler = samplerFactory.build();
+    
+    _vulkan->cleanupManager().push([&](VkDevice device) {
+        vkDestroySampler(device, _cubeMapSampler, nullptr);
+        vkDestroySampler(device, _irradianceMapSampler, nullptr);
+        vkDestroySampler(device, _specularReflectionSampler, nullptr);
+    });
 }
 
 void EnvironmentResources::initFrameResources(bg2e::render::vulkan::DescriptorSetAllocator *frameAllocator)

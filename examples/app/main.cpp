@@ -66,7 +66,7 @@ public:
     {
         frameAllocator->requirePoolSizeRatio(1, {
             { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 2 },
-            { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1 }
+            { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2 }
         });
         
         _environment->initFrameResources(frameAllocator);
@@ -220,6 +220,11 @@ public:
                 _cubeTexture->image()->imageView(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                 _cubeTexture->sampler()
             );
+            objectDS->addImage(
+                2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                _environment->irradianceMapImage()->imageView(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                _environment->irradianceMapSampler()
+            );
         objectDS->endUpdate();
         
         std::array<VkDescriptorSet, 2> sets = {
@@ -255,6 +260,11 @@ public:
                 1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
               _cubeTexture->image()->imageView(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
               _cubeTexture->sampler()
+            );
+            planeDS->addImage(
+                2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                _environment->irradianceMapImage()->imageView(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                _environment->irradianceMapSampler()
             );
         planeDS->endUpdate();
         
@@ -350,8 +360,9 @@ protected:
 	{
 		bg2e::render::vulkan::factory::GraphicsPipeline plFactory(_vulkan);
 
-		plFactory.addShader("test/texture.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
-		plFactory.addShader("test/texture.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
+		plFactory.addShader("test/texture_gi.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
+		// plFactory.addShader("test/texture.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
+        plFactory.addShader("test/texture_gi.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
 
         //plFactory.setInputBindingDescription(bg2e::render::vulkan::geo::MeshPU::bindingDescription());
         //plFactory.setInputAttributeDescriptions(bg2e::render::vulkan::geo::MeshPU::attributeDescriptions());
@@ -366,6 +377,7 @@ protected:
         dsFactory.clear();
         dsFactory.addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
         dsFactory.addBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+        dsFactory.addBinding(2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
         _objectDSLayout = dsFactory.build(_vulkan->device().handle(), VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT);
         
         bg2e::render::vulkan::factory::PipelineLayout layoutFactory(_vulkan);

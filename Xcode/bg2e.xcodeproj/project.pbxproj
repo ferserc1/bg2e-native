@@ -293,6 +293,7 @@
 		ED533A212CD7AAB700136B04 /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = main.cpp; path = ../examples/app/main.cpp; sourceTree = SOURCE_ROOT; };
 		ED6862D22CE53E4100A90EE1 /* Input.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Input.cpp; sourceTree = "<group>"; };
 		ED6862D42CE53E4B00A90EE1 /* Input.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Input.hpp; sourceTree = "<group>"; };
+		ED6B4B842DC937240003814C /* texture_gi.frag.glsl */ = {isa = PBXFileReference; lastKnownFileType = text; path = texture_gi.frag.glsl; sourceTree = "<group>"; };
 		ED7DE84F2CFB864500AB280D /* sphere.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = sphere.hpp; sourceTree = "<group>"; };
 		ED7DE8502CFB866600AB280D /* sphere.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = sphere.cpp; sourceTree = "<group>"; };
 		ED7DE8532CFC677C00AB280D /* modifiers.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = modifiers.hpp; sourceTree = "<group>"; };
@@ -952,6 +953,7 @@
 			children = (
 				EDF0451D2CE65DB8005C8B96 /* test.frag.glsl */,
 				EDF0451E2CE65DB8005C8B96 /* test.vert.glsl */,
+				ED6B4B842DC937240003814C /* texture_gi.frag.glsl */,
 				ED2BAEBB2CF2382A00FA4CA4 /* texture.frag.glsl */,
 				ED2BAEBC2CF2382A00FA4CA4 /* texture.vert.glsl */,
 				ED2BAEBD2CF2382A00FA4CA4 /* vertbuffer.vert.glsl */,

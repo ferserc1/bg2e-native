@@ -41,7 +41,10 @@ public:
     std::shared_ptr<vulkan::Image> cubeMapImage() { return _sphereToCubemap->cubeMapImage(); }
     std::shared_ptr<vulkan::Image> irradianceMapImage() { return _irradianceRenderer->cubeMapImage(); }
     std::shared_ptr<vulkan::Image> specularReflectionMapImage() { return _specularRenderer->cubeMapImage(); }
-    
+
+    inline VkSampler cubeMapSampler() const { return _cubeMapSampler; }
+    inline VkSampler irradianceMapSampler() const { return _irradianceMapSampler; }
+    inline VkSampler specularReflectionMapSampler() const { return _specularReflectionSampler; }
 
 protected:
     bg2e::render::Vulkan * _vulkan;
@@ -54,6 +57,10 @@ protected:
     VkFormat _targetImageFormat = VK_FORMAT_B8G8R8A8_UNORM;
     VkFormat _depthImageFormat = VK_FORMAT_D16_UNORM_S8_UINT;
     std::unique_ptr<bg2e::render::SkyboxRenderer> _skyboxRenderer;
+    
+    VkSampler _cubeMapSampler = VK_NULL_HANDLE;
+    VkSampler _irradianceMapSampler = VK_NULL_HANDLE;
+    VkSampler _specularReflectionSampler = VK_NULL_HANDLE;
 };
 
 }
