@@ -28,7 +28,7 @@ You will also need the development tools specific for your operating system:
 
 ## Configuration
 
-### macOS
+### macOS
 
 On macOS the configuration of Vulkan is a bit special, as on this platform there is no concept of a system or user environment variable. Environment variables only work for command line applications, so you have to set the paths to Vulkan manually.
 
@@ -43,3 +43,17 @@ In the project configuration, check that the `VULKAN_SDK` setting corresponds wi
 On Windows there is no special configuration to do, apart from installing Visual Studio 2022 and Vulkan SDK. But to run the code from Visual Studio you have to modify the working directory in the project options (Debugging > Workind Directory) to be the output directory (`$(OutDir)`)
 
 ![Visual Studio 2022 configuration](doc/images/vs_2022_settings.jpg)
+
+### Linux
+
+On Linux we will install the dependencies in one way or another depending on the distro we are using. The other dependencies we will need are GLM, SDL2 and Vulkan Memory Allocator (vma). The GLM library is header-based, but it is also available in apt, so if you are using Debian you can also install it as a package.
+
+```sh
+$ sudo apt install libsdl2-2.0-0 libsdl2-dev libglm-dev
+```
+
+The Vulkan Memory Allocator library is installed together with Vulkan, so you don't need to do anything else.
+
+Following the package-based installation process, the Vulkan header files, SDL2, GLM and Vulkan Memory Allocator, are placed in the system header files directory (`/usr/include`). Vulkan layers configuration files are installed in `/usr/share/vulkan`. Vulkan executables are in `/usr/bin`. In this case, since the libraries are installed on the system, we don't have to set any environment variables like `$VULKAN_SDK`.
+
+
