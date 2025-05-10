@@ -54,6 +54,6 @@ $ sudo apt install libsdl2-2.0-0 libsdl2-dev libglm-dev
 
 The Vulkan Memory Allocator library is installed together with Vulkan, so you don't need to do anything else.
 
-Following the package-based installation process, the Vulkan header files, SDL2, GLM and Vulkan Memory Allocator, are placed in the system header files directory (`/usr/include`). Vulkan layers configuration files are installed in `/usr/share/vulkan`. Vulkan executables are in `/usr/bin`. In this case, since the libraries are installed on the system, we don't have to set any environment variables like `$VULKAN_SDK`.
+Following the package-based installation process, the Vulkan header files, SDL2, GLM and Vulkan Memory Allocator, are placed in the system header files directory (`/usr/include`). Vulkan layers configuration files are installed in `/usr/share/vulkan`. Vulkan executables are in `/usr/bin`. The vulkan libraries and layers are installed in `/usr/lib/x86_64` In this case, since the libraries are installed on the system, we don't have to set any environment variables like `$VULKAN_SDK`.
 
 
