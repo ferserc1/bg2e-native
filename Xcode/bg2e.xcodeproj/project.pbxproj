@@ -348,6 +348,7 @@
 		EDB10C072CFF8BE8002A1B0E /* cube.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = cube.cpp; sourceTree = "<group>"; };
 		EDB10C092CFF8C01002A1B0E /* cube.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = cube.hpp; sourceTree = "<group>"; };
 		EDB10C0A2CFF9398002A1B0E /* logo_2a.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = logo_2a.png; sourceTree = "<group>"; };
+		EDBDC84B2DD0FC46009EC1E7 /* texture_gi.vert.glsl */ = {isa = PBXFileReference; lastKnownFileType = text; path = texture_gi.vert.glsl; sourceTree = "<group>"; };
 		EDD3571D2CD92341009C7507 /* copy_libraries.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = copy_libraries.sh; sourceTree = "<group>"; };
 		EDD357202CD924B9009C7507 /* libMoltenVK.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; path = libMoltenVK.dylib; sourceTree = "<group>"; };
 		EDD357212CD924B9009C7507 /* libSDL2-2.0.0.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; path = "libSDL2-2.0.0.dylib"; sourceTree = "<group>"; };
@@ -954,6 +955,7 @@
 				EDF0451D2CE65DB8005C8B96 /* test.frag.glsl */,
 				EDF0451E2CE65DB8005C8B96 /* test.vert.glsl */,
 				ED6B4B842DC937240003814C /* texture_gi.frag.glsl */,
+				EDBDC84B2DD0FC46009EC1E7 /* texture_gi.vert.glsl */,
 				ED2BAEBB2CF2382A00FA4CA4 /* texture.frag.glsl */,
 				ED2BAEBC2CF2382A00FA4CA4 /* texture.vert.glsl */,
 				ED2BAEBD2CF2382A00FA4CA4 /* vertbuffer.vert.glsl */,

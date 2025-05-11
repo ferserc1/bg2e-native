@@ -153,7 +153,7 @@ void createCubeBase(
     // Bottom face
     vertexCallback({
         { -halfWidth, halfHeight, halfDepth },
-        { 0.0f, 1.0f, 0.0f },
+        { 0.0f, -1.0f, 0.0f },
         { 0.0f, 0.0f },
         { -1.0f, 0.0f, 0.0f }
     });

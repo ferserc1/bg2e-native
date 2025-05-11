@@ -246,31 +246,31 @@ public:
         {
             _cylinderRotation = 0.0f;
         }
-        _planeData.modelMatrix = glm::translate(glm::mat4{ 1.0f }, glm::vec3(2.0f, 1.5 * std::sin(0.01f * float(currentFrame)), 0.0f));
-        _planeData.modelMatrix = glm::rotate(_planeData.modelMatrix, _cylinderRotation, glm::vec3(0.0f, 1.0f, 0.0f));
-        auto planeDataBuffer = macros::createBuffer(_vulkan, frameResources, _planeData);
+        _cylinderData.modelMatrix = glm::translate(glm::mat4{ 1.0f }, glm::vec3(2.0f, 1.5 * std::sin(0.01f * float(currentFrame)), 0.0f));
+        _cylinderData.modelMatrix = glm::rotate(_cylinderData.modelMatrix, _cylinderRotation, glm::vec3(0.0f, 1.0f, 0.0f));
+        auto planeDataBuffer = macros::createBuffer(_vulkan, frameResources, _cylinderData);
         
-        auto planeDS = frameResources.newDescriptorSet(_objectDSLayout);
-        planeDS->beginUpdate();
-            planeDS->addBuffer(
+        auto cylinderDS = frameResources.newDescriptorSet(_objectDSLayout);
+        cylinderDS->beginUpdate();
+            cylinderDS->addBuffer(
                 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
                 planeDataBuffer, sizeof(ObjectData), 0
             );
-            planeDS->addImage(
+            cylinderDS->addImage(
                 1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
               _cubeTexture->image()->imageView(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
               _cubeTexture->sampler()
             );
-            planeDS->addImage(
+            cylinderDS->addImage(
                 2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
                 _environment->irradianceMapImage()->imageView(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                 _environment->irradianceMapSampler()
             );
-        planeDS->endUpdate();
+        cylinderDS->endUpdate();
         
         std::array<VkDescriptorSet, 2> planeSets = {
             sceneDS->descriptorSet(),
-            planeDS->descriptorSet()
+            cylinderDS->descriptorSet()
         };
         vkCmdBindDescriptorSets(
             cmd,
@@ -281,7 +281,43 @@ public:
             planeSets.data(),
             0, nullptr
         );
-        _plane->draw(cmd);
+        _cylinder->draw(cmd);
+        
+        _sphereData.modelMatrix = glm::translate(glm::mat4{1.0f}, glm::vec3(-2.0f, 1.5 * std::cos(0.01f * float(currentFrame)), 0.0f));
+        auto sphereDataBuffer = macros::createBuffer(_vulkan, frameResources, _sphereData);
+        
+        auto sphereDS = frameResources.newDescriptorSet(_objectDSLayout);
+        sphereDS->beginUpdate();
+            sphereDS->addBuffer(
+                0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                sphereDataBuffer, sizeof(ObjectData), 0
+            );
+            sphereDS->addImage(
+                1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                _cubeTexture->image()->imageView(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                _cubeTexture->sampler()
+            );
+            sphereDS->addImage(
+                2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                _environment->irradianceMapImage()->imageView(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                _environment->irradianceMapSampler()
+            );
+        sphereDS->endUpdate();
+        
+        std::array<VkDescriptorSet, 2> sphereSets = {
+            sceneDS->descriptorSet(),
+            sphereDS->descriptorSet()
+        };
+        vkCmdBindDescriptorSets(
+            cmd,
+            VK_PIPELINE_BIND_POINT_GRAPHICS,
+            _layout,
+            0,
+            uint32_t(sphereSets.size()),
+            sphereSets.data(),
+            0, nullptr
+        );
+        _sphere->draw(cmd);
 
 		bg2e::render::vulkan::cmdEndRendering(cmd);
 
@@ -326,8 +362,9 @@ protected:
 	VkPipelineLayout _layout;
 	VkPipeline _pipeline;
  
-    std::unique_ptr<bg2e::render::vulkan::geo::MeshPU> _cube;
-    std::unique_ptr<bg2e::render::vulkan::geo::MeshPU> _plane;
+    std::unique_ptr<bg2e::render::vulkan::geo::MeshPNU> _cube;
+    std::unique_ptr<bg2e::render::vulkan::geo::MeshPNU> _cylinder;
+    std::unique_ptr<bg2e::render::vulkan::geo::MeshPNU> _sphere;
 
 	std::shared_ptr<bg2e::render::Texture> _texture;
     std::shared_ptr<bg2e::render::Texture> _cubeTexture;
@@ -353,7 +390,8 @@ protected:
     };
     ObjectData _skyData;
     ObjectData _cubeData;
-    ObjectData _planeData;
+    ObjectData _cylinderData;
+    ObjectData _sphereData;
     float _cylinderRotation = 0.0f;
 
 	void createPipeline()
@@ -364,9 +402,9 @@ protected:
 		// plFactory.addShader("test/texture.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
         plFactory.addShader("test/texture_gi.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
 
-        //plFactory.setInputBindingDescription(bg2e::render::vulkan::geo::MeshPU::bindingDescription());
-        //plFactory.setInputAttributeDescriptions(bg2e::render::vulkan::geo::MeshPU::attributeDescriptions());
-        plFactory.setInputState<bg2e::render::vulkan::geo::MeshPU>();
+        //plFactory.setInputBindingDescription(bg2e::render::vulkan::geo::MeshPNU::bindingDescription());
+        //plFactory.setInputAttributeDescriptions(bg2e::render::vulkan::geo::MeshPNU::attributeDescriptions());
+        plFactory.setInputState<bg2e::render::vulkan::geo::MeshPNU>();
   
         bg2e::render::vulkan::factory::DescriptorSetLayout dsFactory;
         
@@ -404,27 +442,38 @@ protected:
 	{
 		using namespace bg2e::render::vulkan;
   
-        auto mesh = std::unique_ptr<bg2e::geo::MeshPU>(
-            bg2e::geo::createCubePU(1.0f, 1.0f, 1.0f)
+        auto mesh = std::unique_ptr<bg2e::geo::MeshPNU>(
+            bg2e::geo::createCubePNU(1.0f, 1.0f, 1.0f)
         );
         
-        _cube = std::unique_ptr<bg2e::render::vulkan::geo::MeshPU>(new bg2e::render::vulkan::geo::MeshPU(_vulkan));
+        _cube = std::unique_ptr<bg2e::render::vulkan::geo::MeshPNU>(new bg2e::render::vulkan::geo::MeshPNU(_vulkan));
         _cube->setMeshData(mesh.get());
         _cube->build();
         
-        mesh = std::unique_ptr<bg2e::geo::MeshPU>(
+        mesh = std::unique_ptr<bg2e::geo::MeshPNU>(
             //bg2e::geo::createPlanePU(5.0f, 5.0f, false)
-            bg2e::geo::createCylinderPU(0.5f, 1.0f, 14, false)
+            bg2e::geo::createCylinderPNU(0.5f, 1.0f, 14, false)
         );
         
-        _plane = std::unique_ptr<bg2e::render::vulkan::geo::MeshPU>(new bg2e::render::vulkan::geo::MeshPU(_vulkan));
-        _plane->setMeshData(mesh.get());
-        _plane->build();
-        _planeData.modelMatrix = glm::translate(glm::mat4{ 1.0f }, glm::vec3(2.0f, 0.0f, 0.0f));
+        _cylinder = std::unique_ptr<bg2e::render::vulkan::geo::MeshPNU>(new bg2e::render::vulkan::geo::MeshPNU(_vulkan));
+        _cylinder->setMeshData(mesh.get());
+        _cylinder->build();
+        _cylinderData.modelMatrix = glm::translate(glm::mat4{ 1.0f }, glm::vec3(2.0f, 0.0f, 0.0f));
+        
+        mesh = std::unique_ptr<bg2e::geo::MeshPNU>(
+            bg2e::geo::createSpherePNU(0.6f, 30, 30)
+        );
+        
+        _sphere = std::unique_ptr<bg2e::render::vulkan::geo::MeshPNU>(new bg2e::render::vulkan::geo::MeshPNU(_vulkan));
+        _sphere->setMeshData(mesh.get());
+        _sphere->build();
+        _sphereData.modelMatrix = glm::translate(glm::mat4{ 1.0f }, glm::vec3(0.0f, 0.0f, -2.0f));
+        
 
 		_vulkan->cleanupManager().push([this](VkDevice dev) {
             _cube->cleanup();
-            _plane->cleanup();
+            _cylinder->cleanup();
+            _sphere->cleanup();
 		});
 	}
 
