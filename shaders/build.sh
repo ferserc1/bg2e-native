@@ -1,5 +1,12 @@
 #!/bin/sh
 
+PLATFORM=$(uname)
+
+# If linux and VULKAN_SDK is not set, use /usr
+if [ "$PLATFORM" = "Linux" ]; then
+    VULKAN_SDK=/usr
+fi
+
 # Check if the first and second arguments are set
 if [ -z "$1" ] || [ -z "$2" ]; then
     echo "Usage: $0 <SHADERS_DIR> <OUT_DIR>"
