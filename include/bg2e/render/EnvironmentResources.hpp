@@ -25,6 +25,8 @@ public:
         VkExtent2D specularReflectionSize = { 512, 512 }
     );
     
+    void swapEnvironmentTexture(const std::filesystem::path& environmentTexture);
+    
     void update(
         VkCommandBuffer cmd,
         uint32_t currentFrame,

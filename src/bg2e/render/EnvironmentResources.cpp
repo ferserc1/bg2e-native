@@ -107,6 +107,12 @@ void EnvironmentResources::build(
     }
 }
 
+void EnvironmentResources::swapEnvironmentTexture(const std::filesystem::path& environmentTexture)
+{
+    _sphereToCubemap->updateImage(environmentTexture);
+    _cubemapChanged = true;
+}
+
 void EnvironmentResources::update(
     VkCommandBuffer cmd,
     uint32_t currentFrame,

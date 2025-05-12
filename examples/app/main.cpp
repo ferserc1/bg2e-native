@@ -343,10 +343,98 @@ public:
 	void drawUI() override
 	{
 		using namespace bg2e::ui;
-		_window.draw([]() {
+		_window.draw([&]() {
 			BasicWidgets::text("Hello, world!");
+   
+            if (BasicWidgets::button("Environment 1"))
+            {
+                loadEnvironment1();
+            }
+            
+            if (BasicWidgets::button("Environment 2"))
+            {
+                loadEnvironment2();
+            }
+            
+            if (BasicWidgets::button("Environment 3"))
+            {
+                loadEnvironment3();
+            }
+            
+            if (BasicWidgets::button("Environment 4"))
+            {
+                loadEnvironment4();
+            }
+            
+            if (BasicWidgets::button("Environment 5"))
+            {
+                loadEnvironment5();
+            }
+            
+            if (BasicWidgets::button("Environment 6"))
+            {
+                loadEnvironment6();
+            }
+            
+            if (BasicWidgets::button("Environment 7"))
+            {
+                loadEnvironment7();
+            }
+            
+            if (BasicWidgets::button("Environment 8"))
+            {
+                loadEnvironment8();
+            }
 		});
 	}
+ 
+    void loadEnvironment1()
+    {
+        loadEnvironment("country_field_sun.jpg");
+    }
+    
+    void loadEnvironment2()
+    {
+        loadEnvironment("equirectangular-env.jpg");
+    }
+    
+    void loadEnvironment3()
+    {
+        loadEnvironment("equirectangular-env2.jpg");
+    }
+    
+    void loadEnvironment4()
+    {
+        loadEnvironment("equirectangular-env3.jpg");
+    }
+    
+    void loadEnvironment5()
+    {
+        loadEnvironment("equirectangular-env4.jpg");
+    }
+    
+    void loadEnvironment6()
+    {
+        loadEnvironment("equirectangular-env5.jpg");
+    }
+    
+    void loadEnvironment7()
+    {
+        loadEnvironment("equirectangular-env6.jpg");
+    }
+    
+    void loadEnvironment8()
+    {
+        loadEnvironment("equirectangular-env7.jpg");
+    }
+    
+    void loadEnvironment(const std::string& fileName)
+    {
+        auto assetsPath = bg2e::base::PlatformTools::assetPath();
+        auto imagePath = assetsPath;
+        imagePath.append(fileName);
+        _environment->swapEnvironmentTexture(imagePath);
+    }
 
 	void cleanup() override
 	{
