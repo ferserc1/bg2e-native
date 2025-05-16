@@ -1082,6 +1082,7 @@
 				ED85B1EF2CDBAABD0039B44D /* Headers */,
 				ED85B1F02CDBAABD0039B44D /* Sources */,
 				ED85B1F12CDBAABD0039B44D /* Frameworks */,
+				ED0B6D572DD78D3000CCB2EC /* Compile Shaders */,
 			);
 			buildRules = (
 			);
@@ -1149,6 +1150,24 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
+		ED0B6D572DD78D3000CCB2EC /* Compile Shaders */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Compile Shaders";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "# Type a script or drag a script file from your workspace to insert its path.\nINPUT_DIR=${PROJECT_DIR}/../shaders/src\nOUTPUT_DIR=${PROJECT_DIR}/../shaders/spv\n\n\"${PROJECT_DIR}/../shaders/build.sh\" \"${INPUT_DIR}/test\" \"${OUTPUT_DIR}/test\"\n\"${PROJECT_DIR}/../shaders/build.sh\" \"${INPUT_DIR}\" \"${OUTPUT_DIR}\"\n";
+		};
 		EDD3572A2CD92700009C7507 /* Create Vulkan Sym Links */ = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 1;
@@ -1484,6 +1503,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				EXECUTABLE_PREFIX = lib;
 				GCC_ENABLE_CPP_EXCEPTIONS = YES;
 				GCC_ENABLE_CPP_RTTI = YES;
@@ -1504,6 +1524,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				EXECUTABLE_PREFIX = lib;
 				GCC_ENABLE_CPP_EXCEPTIONS = YES;
 				GCC_ENABLE_CPP_RTTI = YES;

@@ -36,14 +36,14 @@
 #include <numbers>
 
 class ClearScreenDelegate : public bg2e::render::RenderLoopDelegate,
-	public bg2e::app::InputDelegate,
-	public bg2e::ui::UserInterfaceDelegate
+    public bg2e::app::InputDelegate,
+    public bg2e::ui::UserInterfaceDelegate
 {
 public:
-	void init(bg2e::render::Vulkan* vulkan) override
-	{
-		using namespace bg2e::render::vulkan;
-		RenderLoopDelegate::init(vulkan);
+    void init(bg2e::render::Vulkan* vulkan) override
+    {
+        using namespace bg2e::render::vulkan;
+        RenderLoopDelegate::init(vulkan);
   
         // If you need to use the main descriptor set allocator, add all the required pool size ratios
         // in the init function.
@@ -60,7 +60,7 @@ public:
                 _vulkan->swapchain().depthImageFormat()
             )
         );
-	}
+    }
  
     void initFrameResources(bg2e::render::vulkan::DescriptorSetAllocator* frameAllocator) override
     {
@@ -90,21 +90,21 @@ public:
             { 1024, 1024 }      // Specular reflection map size
         );
     
-		// You can use plain pointers in this case, because the base::Image and base::Texture objects will not
-		// be used outside of this function. Internally, these objects will be stored in a shared_ptr and will be
-		// managed by the render::Texture object.
-		// But if you plan to use the objects more than once, you ALWAYS must to use a shared_ptr to share the pointer
-		// between the Texture object and the rest of the application.
+        // You can use plain pointers in this case, because the base::Image and base::Texture objects will not
+        // be used outside of this function. Internally, these objects will be stored in a shared_ptr and will be
+        // managed by the render::Texture object.
+        // But if you plan to use the objects more than once, you ALWAYS must to use a shared_ptr to share the pointer
+        // between the Texture object and the rest of the application.
         auto image = bg2e::db::loadImage(imagePath);
-		auto texture = new bg2e::base::Texture(image);
+        auto texture = new bg2e::base::Texture(image);
         texture->setMagFilter(bg2e::base::Texture::FilterLinear);
         texture->setMinFilter(bg2e::base::Texture::FilterLinear);
         texture->setUseMipmaps(true);
 
-		_texture = std::shared_ptr<bg2e::render::Texture>(new bg2e::render::Texture(
-			_vulkan,
-			texture
-		));
+        _texture = std::shared_ptr<bg2e::render::Texture>(new bg2e::render::Texture(
+            _vulkan,
+            texture
+        ));
  
         auto cubePath = assetsPath;
         cubePath.append("logo_2a.png");
@@ -124,10 +124,10 @@ public:
             _texture->cleanup();
             _cubeTexture->cleanup();
         });
-	
-		createImage(_vulkan->swapchain().extent());
+    
+        createImage(_vulkan->swapchain().extent());
 
-		createPipeline();
+        createPipeline();
 
         _sceneData.viewMatrix = glm::lookAt(glm::vec3{ 0.0f, 0.0f, -5.0f}, { 0.0f, 0.0f, 0.0f }, { 0.0f, 1.0f, 0.0f });
         
@@ -143,13 +143,13 @@ public:
         _skyData.modelMatrix = glm::mat4{ 1.0f };
         _cubeData.modelMatrix = glm::mat4{ 1.0f };
         
-		createVertexData();
+        createVertexData();
     }
 
-	void swapchainResized(VkExtent2D newExtent) override
-	{
-		_targetImage->cleanup();
-		createImage(newExtent);
+    void swapchainResized(VkExtent2D newExtent) override
+    {
+        _targetImage->cleanup();
+        createImage(newExtent);
   
         _sceneData.projMatrix = glm::perspective(
             glm::radians(50.0f),
@@ -158,16 +158,16 @@ public:
         );
         _sceneData.projMatrix[1][1] *= -1.0f;
         _sceneData.projMatrix[0][0] *= -1.0f;
-	}
+    }
 
-	VkImageLayout render(
-		VkCommandBuffer cmd,
-		uint32_t currentFrame,
-		const bg2e::render::vulkan::Image* colorImage,
-		const bg2e::render::vulkan::Image* depthImage,
-		bg2e::render::vulkan::FrameResources& frameResources
-	) override {
-		using namespace bg2e::render::vulkan;
+    VkImageLayout render(
+        VkCommandBuffer cmd,
+        uint32_t currentFrame,
+        const bg2e::render::vulkan::Image* colorImage,
+        const bg2e::render::vulkan::Image* depthImage,
+        bg2e::render::vulkan::FrameResources& frameResources
+    ) override {
+        using namespace bg2e::render::vulkan;
   
         _environment->update(cmd, currentFrame, frameResources);
   
@@ -184,15 +184,15 @@ public:
             _sceneDSLayout, _sceneData, currentFrame
         );
         
-		float flash = std::abs(std::sin(currentFrame / 120.0f));
-		VkClearColorValue clearValue{ { 0.0f, 0.0f, flash, 1.0f } };
+        float flash = std::abs(std::sin(currentFrame / 120.0f));
+        VkClearColorValue clearValue{ { 0.0f, 0.0f, flash, 1.0f } };
         macros::cmdClearImageAndBeginRendering(
             cmd,
             _targetImage.get(), clearValue, VK_IMAGE_LAYOUT_UNDEFINED,
             depthImage, 1.0f
         );
         
-		macros::cmdSetDefaultViewportAndScissor(cmd, _targetImage->extent2D());
+        macros::cmdSetDefaultViewportAndScissor(cmd, _targetImage->extent2D());
   
         // Rotate the view along Y axis
         _sceneData.viewMatrix = glm::rotate(_sceneData.viewMatrix, 0.02f, glm::vec3(0.0f, 1.0f, 0.0f));
@@ -324,32 +324,32 @@ public:
         );
         _sphere->draw(cmd);
 
-		bg2e::render::vulkan::cmdEndRendering(cmd);
+        bg2e::render::vulkan::cmdEndRendering(cmd);
 
-		Image::cmdCopy(
-			cmd,
+        Image::cmdCopy(
+            cmd,
             _targetImage->handle(), _targetImage->extent2D(), VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
             colorImage->handle(), colorImage->extent2D(), VK_IMAGE_LAYOUT_UNDEFINED
-		);
+        );
 
-		return VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-	}
+        return VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    }
 
-	// ============ User Interface Delegate Functions =========
-	void init(bg2e::render::Vulkan*, bg2e::ui::UserInterface*) override {
-		_window.setTitle("ImGui Wrapper Demo");
-		_window.options.noClose = true;
-		_window.options.minWidth = 100;
-		_window.options.minHeight = 250;
-		_window.setPosition(0, 0);
-		_window.setSize(150, 270);
-	}
+    // ============ User Interface Delegate Functions =========
+    void init(bg2e::render::Vulkan*, bg2e::ui::UserInterface*) override {
+        _window.setTitle("ImGui Wrapper Demo");
+        _window.options.noClose = true;
+        _window.options.minWidth = 100;
+        _window.options.minHeight = 250;
+        _window.setPosition(0, 0);
+        _window.setSize(150, 270);
+    }
 
-	void drawUI() override
-	{
-		using namespace bg2e::ui;
-		_window.draw([&]() {
-			BasicWidgets::text("Hello, world!");
+    void drawUI() override
+    {
+        using namespace bg2e::ui;
+        _window.draw([&]() {
+            BasicWidgets::text("Hello, world!");
    
             BasicWidgets::checkBox("Draw Skybox", &_drawSkybox);
             
@@ -392,8 +392,8 @@ public:
             {
                 loadEnvironment8();
             }
-		});
-	}
+        });
+    }
  
     void loadEnvironment1()
     {
@@ -443,25 +443,25 @@ public:
         _environment->swapEnvironmentTexture(imagePath);
     }
 
-	void cleanup() override
-	{
-		_targetImage->cleanup();
-	}
+    void cleanup() override
+    {
+        _targetImage->cleanup();
+    }
 
 protected:
     VkFormat _targetImageFormat = VK_FORMAT_R16G16B16A16_SFLOAT;
-	std::shared_ptr<bg2e::render::vulkan::Image> _targetImage;
+    std::shared_ptr<bg2e::render::vulkan::Image> _targetImage;
 
-	bg2e::ui::Window _window;
+    bg2e::ui::Window _window;
 
-	VkPipelineLayout _layout;
-	VkPipeline _pipeline;
+    VkPipelineLayout _layout;
+    VkPipeline _pipeline;
  
     std::unique_ptr<bg2e::render::vulkan::geo::MeshPNU> _cube;
     std::unique_ptr<bg2e::render::vulkan::geo::MeshPNU> _cylinder;
     std::unique_ptr<bg2e::render::vulkan::geo::MeshPNU> _sphere;
 
-	std::shared_ptr<bg2e::render::Texture> _texture;
+    std::shared_ptr<bg2e::render::Texture> _texture;
     std::shared_ptr<bg2e::render::Texture> _cubeTexture;
 
     VkDescriptorSetLayout _sceneDSLayout;
@@ -491,12 +491,12 @@ protected:
     ObjectData _sphereData;
     float _cylinderRotation = 0.0f;
 
-	void createPipeline()
-	{
-		bg2e::render::vulkan::factory::GraphicsPipeline plFactory(_vulkan);
+    void createPipeline()
+    {
+        bg2e::render::vulkan::factory::GraphicsPipeline plFactory(_vulkan);
 
-		plFactory.addShader("test/texture_gi.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
-		// plFactory.addShader("test/texture.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
+        plFactory.addShader("test/texture_gi.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
+        // plFactory.addShader("test/texture.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
         plFactory.addShader("test/texture_gi.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
 
         //plFactory.setInputBindingDescription(bg2e::render::vulkan::geo::MeshPNU::bindingDescription());
@@ -524,20 +524,20 @@ protected:
         plFactory.enableDepthtest(true, VK_COMPARE_OP_LESS);
         plFactory.inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
         plFactory.setCullMode(true, VK_FRONT_FACE_COUNTER_CLOCKWISE);
-		plFactory.setColorAttachmentFormat(_targetImage->format());
-		_pipeline = plFactory.build(_layout);
+        plFactory.setColorAttachmentFormat(_targetImage->format());
+        _pipeline = plFactory.build(_layout);
   
-		_vulkan->cleanupManager().push([&](VkDevice dev) {
-			vkDestroyPipeline(dev, _pipeline, nullptr);
-			vkDestroyPipelineLayout(dev, _layout, nullptr);
+        _vulkan->cleanupManager().push([&](VkDevice dev) {
+            vkDestroyPipeline(dev, _pipeline, nullptr);
+            vkDestroyPipelineLayout(dev, _layout, nullptr);
             vkDestroyDescriptorSetLayout(dev, _sceneDSLayout, nullptr);
             vkDestroyDescriptorSetLayout(dev, _objectDSLayout, nullptr);
-		});
-	}
+        });
+    }
 
-	void createVertexData()
-	{
-		using namespace bg2e::render::vulkan;
+    void createVertexData()
+    {
+        using namespace bg2e::render::vulkan;
   
         auto mesh = std::unique_ptr<bg2e::geo::MeshPNU>(
             bg2e::geo::createCubePNU(1.0f, 1.0f, 1.0f)
@@ -567,42 +567,42 @@ protected:
         _sphereData.modelMatrix = glm::translate(glm::mat4{ 1.0f }, glm::vec3(0.0f, 0.0f, -2.0f));
         
 
-		_vulkan->cleanupManager().push([this](VkDevice dev) {
+        _vulkan->cleanupManager().push([this](VkDevice dev) {
             _cube->cleanup();
             _cylinder->cleanup();
             _sphere->cleanup();
-		});
-	}
+        });
+    }
 
-	void createImage(VkExtent2D extent)
-	{
-		using namespace bg2e::render::vulkan;
-		auto vulkan = this->vulkan();
-		_targetImage = std::shared_ptr<Image>(Image::createAllocatedImage(
-			vulkan,
-			_targetImageFormat,
-			extent,
-			VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT |
-			VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
-			VK_IMAGE_ASPECT_COLOR_BIT
-		));
-	}
+    void createImage(VkExtent2D extent)
+    {
+        using namespace bg2e::render::vulkan;
+        auto vulkan = this->vulkan();
+        _targetImage = std::shared_ptr<Image>(Image::createAllocatedImage(
+            vulkan,
+            _targetImageFormat,
+            extent,
+            VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT |
+            VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+            VK_IMAGE_ASPECT_COLOR_BIT
+        ));
+    }
 };
 
 class MyApplication : public bg2e::app::Application {
 public:
-	void init(int argc, char** argv) override
-	{
-		auto delegate = std::shared_ptr<ClearScreenDelegate>(new ClearScreenDelegate());
-		setRenderDelegate(delegate);
-		setInputDelegate(delegate);
-		setUiDelegate(delegate);
-	}
+    void init(int argc, char** argv) override
+    {
+        auto delegate = std::shared_ptr<ClearScreenDelegate>(new ClearScreenDelegate());
+        setRenderDelegate(delegate);
+        setInputDelegate(delegate);
+        setUiDelegate(delegate);
+    }
 };
 
 int main(int argc, char** argv) {
-	bg2e::app::MainLoop mainLoop;
-	MyApplication app;
-	app.init(argc, argv);
-	return mainLoop.run(&app);
+    bg2e::app::MainLoop mainLoop;
+    MyApplication app;
+    app.init(argc, argv);
+    return mainLoop.run(&app);
 }
