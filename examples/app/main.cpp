@@ -140,7 +140,7 @@ public:
         );
         _sceneData.projMatrix[1][1] *= -1.0f;
 
-        _cubeData.modelMatrix = glm::mat4{ 1.0f };
+        _modelData.modelMatrix = glm::mat4{ 1.0f };
         
 		createVertexData();
     }
@@ -208,7 +208,7 @@ public:
   
         vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, _pipeline);
   
-        _modelData.modelMatrix = glm::rotate(_cubeData.modelMatrix, 0.018f, glm::vec3(1.0f, 1.0f, 0.0f));
+        _modelData.modelMatrix = glm::rotate(_modelData.modelMatrix, 0.018f, glm::vec3(1.0f, 1.0f, 0.0f));
         auto modelDataBuffer = macros::createBuffer(_vulkan, frameResources, _modelData);
         auto modelDS = frameResources.newDescriptorSet(_objectDSLayout);
         modelDS->beginUpdate();
@@ -240,121 +240,6 @@ public:
             0, nullptr
         );
         _model->draw(cmd);
-        
-        
-        // Draw the cube
-//        _cubeData.modelMatrix = glm::rotate(_cubeData.modelMatrix, -0.025f, glm::vec3(1.0f, 1.0f, 0.0f));
-//        auto cubeDataBuffer = macros::createBuffer(_vulkan, frameResources, _cubeData);
-//        
-//        auto objectDS = frameResources.newDescriptorSet(_objectDSLayout);
-//        objectDS->beginUpdate();
-//            objectDS->addBuffer(
-//                0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-//                cubeDataBuffer, sizeof(ObjectData), 0
-//            );
-//            objectDS->addImage(
-//                1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-//                _cubeTexture->image()->imageView(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-//                _cubeTexture->sampler()
-//            );
-//            objectDS->addImage(
-//                2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-//                _environment->irradianceMapImage()->imageView(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-//                _environment->irradianceMapSampler()
-//            );
-//        objectDS->endUpdate();
-//        
-//        std::array<VkDescriptorSet, 2> sets = {
-//            sceneDS->descriptorSet(),
-//            objectDS->descriptorSet()
-//        };
-//        vkCmdBindDescriptorSets(
-//            cmd,
-//            VK_PIPELINE_BIND_POINT_GRAPHICS,
-//            _layout, 0,
-//            uint32_t(sets.size()),
-//            sets.data(),
-//            0, nullptr
-//        );
-//        _cube->draw(cmd);
-        
-        _cylinderRotation += 0.015f;
-        if (_cylinderRotation >= std::numbers::pi_v<float> * 2.0f)
-        {
-            _cylinderRotation = 0.0f;
-        }
-        _cylinderData.modelMatrix = glm::translate(glm::mat4{ 1.0f }, glm::vec3(2.0f, 1.5 * std::sin(0.01f * float(currentFrame)), 0.0f));
-        _cylinderData.modelMatrix = glm::rotate(_cylinderData.modelMatrix, _cylinderRotation, glm::vec3(0.0f, 1.0f, 0.0f));
-        auto planeDataBuffer = macros::createBuffer(_vulkan, frameResources, _cylinderData);
-        
-        auto cylinderDS = frameResources.newDescriptorSet(_objectDSLayout);
-        cylinderDS->beginUpdate();
-            cylinderDS->addBuffer(
-                0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-                planeDataBuffer, sizeof(ObjectData), 0
-            );
-            cylinderDS->addImage(
-                1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-              _cubeTexture->image()->imageView(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-              _cubeTexture->sampler()
-            );
-            cylinderDS->addImage(
-                2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                _environment->irradianceMapImage()->imageView(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                _environment->irradianceMapSampler()
-            );
-        cylinderDS->endUpdate();
-        
-        std::array<VkDescriptorSet, 2> planeSets = {
-            sceneDS->descriptorSet(),
-            cylinderDS->descriptorSet()
-        };
-        vkCmdBindDescriptorSets(
-            cmd,
-            VK_PIPELINE_BIND_POINT_GRAPHICS,
-            _layout,
-            0,
-            uint32_t(planeSets.size()),
-            planeSets.data(),
-            0, nullptr
-        );
-        _cylinder->draw(cmd);
-        
-        _sphereData.modelMatrix = glm::translate(glm::mat4{1.0f}, glm::vec3(-2.0f, 1.5 * std::cos(0.01f * float(currentFrame)), 0.0f));
-        auto sphereDataBuffer = macros::createBuffer(_vulkan, frameResources, _sphereData);
-        
-        auto sphereDS = frameResources.newDescriptorSet(_objectDSLayout);
-        sphereDS->beginUpdate();
-            sphereDS->addBuffer(
-                0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-                sphereDataBuffer, sizeof(ObjectData), 0
-            );
-            sphereDS->addImage(
-                1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                _cubeTexture->image()->imageView(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                _cubeTexture->sampler()
-            );
-            sphereDS->addImage(
-                2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                _environment->irradianceMapImage()->imageView(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                _environment->irradianceMapSampler()
-            );
-        sphereDS->endUpdate();
-        
-        std::array<VkDescriptorSet, 2> sphereSets = {
-            sceneDS->descriptorSet(),
-            sphereDS->descriptorSet()
-        };
-        vkCmdBindDescriptorSets(
-            cmd,
-            VK_PIPELINE_BIND_POINT_GRAPHICS,
-            _layout,
-            0,
-            uint32_t(sphereSets.size()),
-            sphereSets.data(),
-            0, nullptr
-        );
-        _sphere->draw(cmd);
 
 		bg2e::render::vulkan::cmdEndRendering(cmd);
 
@@ -490,10 +375,7 @@ protected:
 	VkPipeline _pipeline;
  
     std::unique_ptr<bg2e::render::vulkan::geo::MeshPNU> _model;
-    std::unique_ptr<bg2e::render::vulkan::geo::MeshPNU> _cube;
-    std::unique_ptr<bg2e::render::vulkan::geo::MeshPNU> _cylinder;
-    std::unique_ptr<bg2e::render::vulkan::geo::MeshPNU> _sphere;
-
+    
 	std::shared_ptr<bg2e::render::Texture> _texture;
     std::shared_ptr<bg2e::render::Texture> _cubeTexture;
 
@@ -520,10 +402,6 @@ protected:
     };
     
     ObjectData _modelData;
-    ObjectData _cubeData;
-    ObjectData _cylinderData;
-    ObjectData _sphereData;
-    float _cylinderRotation = 0.0f;
 
 	void createPipeline()
 	{
@@ -584,40 +462,10 @@ protected:
         _model->setMeshData(modelMesh.get());
         _model->build();
   
-        auto mesh = std::unique_ptr<bg2e::geo::MeshPNU>(
-            bg2e::geo::createCubePNU(1.0f, 1.0f, 1.0f)
-        );
-        
-        _cube = std::unique_ptr<bg2e::render::vulkan::geo::MeshPNU>(new bg2e::render::vulkan::geo::MeshPNU(_vulkan));
-        _cube->setMeshData(mesh.get());
-        _cube->build();
-        
-        mesh = std::unique_ptr<bg2e::geo::MeshPNU>(
-            //bg2e::geo::createPlanePU(5.0f, 5.0f, false)
-            bg2e::geo::createCylinderPNU(0.5f, 1.0f, 14, false)
-        );
-        
-        _cylinder = std::unique_ptr<bg2e::render::vulkan::geo::MeshPNU>(new bg2e::render::vulkan::geo::MeshPNU(_vulkan));
-        _cylinder->setMeshData(mesh.get());
-        _cylinder->build();
-        _cylinderData.modelMatrix = glm::translate(glm::mat4{ 1.0f }, glm::vec3(2.0f, 0.0f, 0.0f));
-        
-        mesh = std::unique_ptr<bg2e::geo::MeshPNU>(
-            bg2e::geo::createSpherePNU(0.6f, 30, 30)
-        );
-        
-        _sphere = std::unique_ptr<bg2e::render::vulkan::geo::MeshPNU>(new bg2e::render::vulkan::geo::MeshPNU(_vulkan));
-        _sphere->setMeshData(mesh.get());
-        _sphere->build();
-        _sphereData.modelMatrix = glm::translate(glm::mat4{ 1.0f }, glm::vec3(0.0f, 0.0f, -2.0f));
-        
 
 		_vulkan->cleanupManager().push([this](VkDevice dev) {
             _model->cleanup();
-            _cube->cleanup();
-            _cylinder->cleanup();
-            _sphere->cleanup();
-		});
+  		});
 	}
 
 	void createImage(VkExtent2D extent)
