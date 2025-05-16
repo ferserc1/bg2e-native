@@ -119,7 +119,7 @@ void createCylinderBase(
     // Top cap
     for (; i < slices - 1; ++i)
     {
-        if (invertFaces)
+        if (!invertFaces)
         {
             indexCallback(topCenterIndex);
             indexCallback(i + 1);
@@ -132,7 +132,7 @@ void createCylinderBase(
             indexCallback(topCenterIndex);
         }
     }
-    if (invertFaces)
+    if (!invertFaces)
     {
         indexCallback(topCenterIndex);
         indexCallback(i + 1);
@@ -149,7 +149,7 @@ void createCylinderBase(
     // Bottom cap
     for (uint32_t j = 0; j < slices; ++j)
     {
-        if (invertFaces)
+        if (!invertFaces)
         {
             indexCallback(bottomCenterIndex);
             indexCallback(i + 1);
@@ -163,7 +163,7 @@ void createCylinderBase(
         }
         ++i;
     }
-    if (invertFaces)
+    if (!invertFaces)
     {
         indexCallback(bottomCenterIndex);
         indexCallback(i + 1);
@@ -188,7 +188,7 @@ void createCylinderBase(
         uint32_t i4 = i + 2;
         uint32_t i5 = i;
         
-        if (invertFaces)
+        if (!invertFaces)
         {
             indexCallback(i0);
             indexCallback(i1);

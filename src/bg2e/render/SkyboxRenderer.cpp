@@ -36,7 +36,7 @@ void SkyboxRenderer::build(
     _skyTexture = skyTexture;
     
     auto cubeMesh = std::unique_ptr<bg2e::geo::MeshP>(
-        bg2e::geo::createCubeP(cubeSize, cubeSize, cubeSize, true)
+        bg2e::geo::createCubeP(cubeSize, cubeSize, cubeSize, false)
     );
     
     _cube = std::shared_ptr<vulkan::geo::MeshP>(new vulkan::geo::MeshP(_vulkan));
@@ -63,7 +63,7 @@ void SkyboxRenderer::build(
     plFactory.setDepthFormat(depthAttachmentFormat);
     plFactory.disableDepthtest();
     plFactory.inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-    plFactory.setCullMode(true, VK_FRONT_FACE_COUNTER_CLOCKWISE);
+    plFactory.setCullMode(true, VK_FRONT_FACE_CLOCKWISE);
     _pipeline = plFactory.build(_pipelineLayout);
 }
 

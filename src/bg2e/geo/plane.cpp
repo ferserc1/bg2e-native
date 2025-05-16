@@ -46,7 +46,7 @@ void createPlaneBase(
         { 1.0f, 0.0f, 0.0f }
     });
     
-    if (invertPlane)
+    if (!invertPlane)
     {
         indexCallback(0);
         indexCallback(1);

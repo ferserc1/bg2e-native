@@ -20,6 +20,7 @@
 #include <bg2e/geo/plane.hpp>
 #include <bg2e/render/Texture.hpp>
 #include <bg2e/geo/modifiers.hpp>
+#include <bg2e/db/mesh_obj.hpp>
 
 #include <bg2e/render/SkyboxRenderer.hpp>
 
@@ -138,9 +139,7 @@ public:
             0.1f, 40.0f
         );
         _sceneData.projMatrix[1][1] *= -1.0f;
-        _sceneData.projMatrix[0][0] *= -1.0f;
 
-        _skyData.modelMatrix = glm::mat4{ 1.0f };
         _cubeData.modelMatrix = glm::mat4{ 1.0f };
         
 		createVertexData();
@@ -156,8 +155,7 @@ public:
             float(newExtent.width) / float(newExtent.height),
             0.1f, 40.0f
         );
-        _sceneData.projMatrix[1][1] *= -1.0f;
-        _sceneData.projMatrix[0][0] *= -1.0f;
+        _sceneData.projMatrix[1][1] *= -1.0f;	
 	}
 
 	VkImageLayout render(
@@ -210,41 +208,75 @@ public:
   
         vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, _pipeline);
   
-        // Draw the cube
-        _cubeData.modelMatrix = glm::rotate(_cubeData.modelMatrix, -0.025f, glm::vec3(1.0f, 1.0f, 0.0f));
-        auto cubeDataBuffer = macros::createBuffer(_vulkan, frameResources, _cubeData);
-        
-        auto objectDS = frameResources.newDescriptorSet(_objectDSLayout);
-        objectDS->beginUpdate();
-            objectDS->addBuffer(
+        _modelData.modelMatrix = glm::rotate(_cubeData.modelMatrix, 0.018f, glm::vec3(1.0f, 1.0f, 0.0f));
+        auto modelDataBuffer = macros::createBuffer(_vulkan, frameResources, _modelData);
+        auto modelDS = frameResources.newDescriptorSet(_objectDSLayout);
+        modelDS->beginUpdate();
+            modelDS->addBuffer(
                 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-                cubeDataBuffer, sizeof(ObjectData), 0
+                modelDataBuffer, sizeof(ObjectData), 0
             );
-            objectDS->addImage(
+            modelDS->addImage(
                 1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
                 _cubeTexture->image()->imageView(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                 _cubeTexture->sampler()
             );
-            objectDS->addImage(
+            modelDS->addImage(
                 2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
                 _environment->irradianceMapImage()->imageView(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                 _environment->irradianceMapSampler()
             );
-        objectDS->endUpdate();
-        
-        std::array<VkDescriptorSet, 2> sets = {
+        modelDS->endUpdate();
+        std::array<VkDescriptorSet, 2> objectSets = {
             sceneDS->descriptorSet(),
-            objectDS->descriptorSet()
+            modelDS->descriptorSet()
         };
         vkCmdBindDescriptorSets(
             cmd,
             VK_PIPELINE_BIND_POINT_GRAPHICS,
             _layout, 0,
-            uint32_t(sets.size()),
-            sets.data(),
+            uint32_t(objectSets.size()),
+            objectSets.data(),
             0, nullptr
         );
-        _cube->draw(cmd);
+        _model->draw(cmd);
+        
+        
+        // Draw the cube
+//        _cubeData.modelMatrix = glm::rotate(_cubeData.modelMatrix, -0.025f, glm::vec3(1.0f, 1.0f, 0.0f));
+//        auto cubeDataBuffer = macros::createBuffer(_vulkan, frameResources, _cubeData);
+//        
+//        auto objectDS = frameResources.newDescriptorSet(_objectDSLayout);
+//        objectDS->beginUpdate();
+//            objectDS->addBuffer(
+//                0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+//                cubeDataBuffer, sizeof(ObjectData), 0
+//            );
+//            objectDS->addImage(
+//                1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+//                _cubeTexture->image()->imageView(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+//                _cubeTexture->sampler()
+//            );
+//            objectDS->addImage(
+//                2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+//                _environment->irradianceMapImage()->imageView(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+//                _environment->irradianceMapSampler()
+//            );
+//        objectDS->endUpdate();
+//        
+//        std::array<VkDescriptorSet, 2> sets = {
+//            sceneDS->descriptorSet(),
+//            objectDS->descriptorSet()
+//        };
+//        vkCmdBindDescriptorSets(
+//            cmd,
+//            VK_PIPELINE_BIND_POINT_GRAPHICS,
+//            _layout, 0,
+//            uint32_t(sets.size()),
+//            sets.data(),
+//            0, nullptr
+//        );
+//        _cube->draw(cmd);
         
         _cylinderRotation += 0.015f;
         if (_cylinderRotation >= std::numbers::pi_v<float> * 2.0f)
@@ -457,6 +489,7 @@ protected:
 	VkPipelineLayout _layout;
 	VkPipeline _pipeline;
  
+    std::unique_ptr<bg2e::render::vulkan::geo::MeshPNU> _model;
     std::unique_ptr<bg2e::render::vulkan::geo::MeshPNU> _cube;
     std::unique_ptr<bg2e::render::vulkan::geo::MeshPNU> _cylinder;
     std::unique_ptr<bg2e::render::vulkan::geo::MeshPNU> _sphere;
@@ -485,7 +518,8 @@ protected:
     {
         glm::mat4 modelMatrix;
     };
-    ObjectData _skyData;
+    
+    ObjectData _modelData;
     ObjectData _cubeData;
     ObjectData _cylinderData;
     ObjectData _sphereData;
@@ -539,6 +573,17 @@ protected:
 	{
 		using namespace bg2e::render::vulkan;
   
+        std::filesystem::path modelPath = bg2e::base::PlatformTools::assetPath();
+        modelPath.append("simple_cube.obj");
+        
+        auto modelMesh = std::unique_ptr<bg2e::geo::MeshPNU>(
+            bg2e::db::loadMeshObj<bg2e::geo::MeshPNU>(modelPath)
+        );
+        
+        _model = std::unique_ptr<bg2e::render::vulkan::geo::MeshPNU>(new bg2e::render::vulkan::geo::MeshPNU(_vulkan));
+        _model->setMeshData(modelMesh.get());
+        _model->build();
+  
         auto mesh = std::unique_ptr<bg2e::geo::MeshPNU>(
             bg2e::geo::createCubePNU(1.0f, 1.0f, 1.0f)
         );
@@ -568,6 +613,7 @@ protected:
         
 
 		_vulkan->cleanupManager().push([this](VkDevice dev) {
+            _model->cleanup();
             _cube->cleanup();
             _cylinder->cleanup();
             _sphere->cleanup();

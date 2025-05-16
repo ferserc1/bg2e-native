@@ -176,7 +176,7 @@ void createCubeBase(
         { -1.0f, 0.0f, 0.0f }
     });
 
-    if (flipFaces)
+    if (!flipFaces)
     {
         indexCallback(2);
         indexCallback(1);

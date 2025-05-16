@@ -67,7 +67,7 @@ void createBaseSphere(
             uint32_t i2 = i1 + 1;
             
 
-            if (invertFaces)
+            if (!invertFaces)
             {
                 indexCallback(i0);
                 indexCallback(i1);
@@ -91,7 +91,7 @@ void createBaseSphere(
                 uint32_t i4 = i0 + 1;
                 uint32_t i5 = i0;
 
-                if (invertFaces)
+                if (!invertFaces)
                 {
                     indexCallback(i3);
                     indexCallback(i4);

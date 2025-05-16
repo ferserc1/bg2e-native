@@ -138,7 +138,6 @@ public:
             0.1f, 40.0f
         );
         _sceneData.projMatrix[1][1] *= -1.0f;
-        _sceneData.projMatrix[0][0] *= -1.0f;
 
         _skyData.modelMatrix = glm::mat4{ 1.0f };
         _cubeData.modelMatrix = glm::mat4{ 1.0f };
@@ -157,7 +156,6 @@ public:
             0.1f, 40.0f
         );
         _sceneData.projMatrix[1][1] *= -1.0f;
-        _sceneData.projMatrix[0][0] *= -1.0f;
     }
 
     VkImageLayout render(
