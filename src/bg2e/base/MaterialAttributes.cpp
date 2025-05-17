@@ -8,6 +8,14 @@ MaterialAttributes::MaterialAttributes()
 {
 }
 
+void MaterialAttributes::setUpdated()
+{
+    _albedoTextureUpdated = true;
+    _metalnessTextureUpdated = true;
+    _roughnessTextureUpdated = true;
+    _normalTextureUpdated = true;
+    _aoTextureUpdated = true;
+}
 
 }
 }

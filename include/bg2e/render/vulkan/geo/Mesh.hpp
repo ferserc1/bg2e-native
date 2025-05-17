@@ -17,6 +17,7 @@ template <typename MeshT>
 class BG2E_API MeshGeneric {
 public:
 	MeshGeneric(Vulkan* vulkan) :_vulkan{ vulkan } {}
+    virtual ~MeshGeneric();
 
     inline MeshT & meshData() { return _meshData; }
     inline const MeshT & meshData() const { return _meshData; }
@@ -30,7 +31,6 @@ public:
 	void build();
 	void draw(VkCommandBuffer cmd);
 	void drawSubmesh(VkCommandBuffer cmd, uint32_t submeshIndex);
-	void cleanup();
 
 	static VkVertexInputBindingDescription bindingDescription();
 	static std::vector<VkVertexInputAttributeDescription> attributeDescriptions();
@@ -42,6 +42,8 @@ protected:
 
 	std::unique_ptr<Buffer> _vertexBuffer;
 	std::unique_ptr<Buffer> _indexBuffer;
+ 
+    void cleanup();
 };
 
 typedef BG2E_API MeshGeneric<bg2e::geo::MeshP> MeshP;

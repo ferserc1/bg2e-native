@@ -51,6 +51,7 @@ public:
 protected:
     bg2e::render::Vulkan * _vulkan;
     
+    std::shared_ptr<bg2e::render::Texture> _cubeMapTexture;
     std::unique_ptr<SphereToCubemapRenderer> _sphereToCubemap;
     std::unique_ptr<IrradianceCubemapRenderer> _irradianceRenderer;
     std::unique_ptr<SpecularReflectionCubemapRenderer> _specularRenderer;

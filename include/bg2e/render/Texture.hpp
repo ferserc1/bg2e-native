@@ -51,8 +51,6 @@ public:
         load(new base::Texture(), image);
     }
     
-    void cleanup();
-    
     inline base::Texture* base() { return _texture.get(); }
     inline const base::Texture* base() const { return _texture.get(); }
     inline vulkan::Image* image() { return _image.get(); }
@@ -66,6 +64,9 @@ protected:
     bool _hasImageOwnership = false;
 
     VkSampler _sampler = VK_NULL_HANDLE;
+    
+    // Called by destructor
+    void cleanup();
 };
 
 }

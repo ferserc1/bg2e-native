@@ -22,6 +22,7 @@
 #include <bg2e/render/Texture.hpp>
 #include <bg2e/geo/modifiers.hpp>
 #include <bg2e/db/mesh_obj.hpp>
+#include <bg2e/render/MaterialBase.hpp>
 
 #include <bg2e/render/SkyboxRenderer.hpp>
 
@@ -112,7 +113,7 @@ public:
         ));
         
         _vulkan->cleanupManager().push([&](VkDevice) {
-            _cubeTexture->cleanup();
+            _cubeTexture = nullptr;
         });
 	
 		createImage(_vulkan->swapchain().extent());
@@ -207,8 +208,8 @@ public:
             );
             modelDS->addImage(
                 1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                _cubeTexture->image()->imageView(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                _cubeTexture->sampler()
+                VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                _modelMaterial->albedoTexture()
             );
             modelDS->addImage(
                 2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
@@ -364,7 +365,7 @@ protected:
 	VkPipeline _pipeline;
  
     std::unique_ptr<bg2e::render::vulkan::geo::MeshPNU> _model;
-    bg2e::base::MaterialAttributes _modelMaterial;
+    std::shared_ptr<bg2e::render::MaterialBase> _modelMaterial;
     
     std::shared_ptr<bg2e::render::Texture> _cubeTexture;
 
@@ -450,15 +451,20 @@ protected:
         _model->build();
         
         auto image = bg2e::db::loadImage(bg2e::base::PlatformTools::assetPath(), "two_submeshes_inner_albedo.jpg");
-        auto modelTexture = new bg2e::base::Texture(image);
+        auto modelTexture = std::make_shared<bg2e::base::Texture>(image);
         modelTexture->setMagFilter(bg2e::base::Texture::FilterLinear);
         modelTexture->setMinFilter(bg2e::base::Texture::FilterLinear);
         modelTexture->setUseMipmaps(true);
         
-        _modelMaterial.setAlbedo(std::shared_ptr<bg2e::base::Texture>(modelTexture));
+        _modelMaterial = std::make_shared<bg2e::render::MaterialBase>(_vulkan);
+        _modelMaterial->materialAttributes().setAlbedo(modelTexture);
+        
+        // Call this function every time you change something in materialAttributes
+        _modelMaterial->update();
         
 		_vulkan->cleanupManager().push([this](VkDevice dev) {
-            _model->cleanup();
+            _model.reset();
+            _modelMaterial.reset();
   		});
 	}
 

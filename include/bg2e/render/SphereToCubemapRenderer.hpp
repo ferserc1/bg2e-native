@@ -17,6 +17,7 @@ namespace render {
 class BG2E_API SphereToCubemapRenderer {
 public:
     SphereToCubemapRenderer(Vulkan * vulkan);
+    virtual ~SphereToCubemapRenderer();
 
     void initFrameResources(vulkan::DescriptorSetAllocator*);
 
@@ -37,8 +38,6 @@ public:
     void updateImage(const std::filesystem::path& imagePath);
     
     void update(VkCommandBuffer commandBuffer, vulkan::FrameResources& frameResources);
-    
-    void cleanup();
 
     std::shared_ptr<vulkan::Image> cubeMapImage() { return _cubeMapImage; }
     
@@ -74,6 +73,9 @@ protected:
     void initImages(VkExtent2D);
     void initPipeline(const std::string& vshaderFile, const std::string& fshaderFile);
     void initGeometry();
+    
+    // Called by destructor
+    void cleanup();
     
 };
 

@@ -17,7 +17,7 @@ namespace render {
 
 Texture::~Texture()
 {
-    
+    cleanup();
 }
 
 void Texture::load(std::shared_ptr<base::Texture> texture)

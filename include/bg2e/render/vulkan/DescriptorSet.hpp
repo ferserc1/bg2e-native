@@ -4,6 +4,7 @@
 #include <bg2e/render/vulkan/Image.hpp>
 #include <bg2e/render/vulkan/Buffer.hpp>
 #include <bg2e/render/Vulkan.hpp>
+#include <bg2e/render/Texture.hpp>
 #include <vector>
 
 namespace bg2e {
@@ -75,6 +76,24 @@ public:
         VkImageLayout layout,
         VkSampler sampler = VK_NULL_HANDLE
     );
+    
+    void addImage(
+        uint32_t binding,
+        VkDescriptorType type,
+        VkImageLayout layout,
+        render::Texture* texture
+    ) {
+        addImage(binding, type, texture->image()->imageView(), layout, texture->sampler());
+    }
+    
+    void addImage(
+        uint32_t binding,
+        VkDescriptorType type,
+        VkImageLayout layout,
+        const std::shared_ptr<render::Texture>& texture
+    ) {
+        addImage(binding, type, texture->image()->imageView(), layout, texture->sampler());
+    }
     
     void addBuffer(
         uint32_t binding,

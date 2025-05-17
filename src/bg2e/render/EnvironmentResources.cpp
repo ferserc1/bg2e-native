@@ -85,16 +85,16 @@ void EnvironmentResources::build(
     
     if (_skyboxRenderer.get())
     {
-        auto cubeMapTexture = std::shared_ptr<bg2e::render::Texture>(
+        _cubeMapTexture = std::shared_ptr<bg2e::render::Texture>(
             new bg2e::render::Texture(_vulkan, _sphereToCubemap->cubeMapImage())
         );
-        _vulkan->cleanupManager().push([&, cubeMapTexture](VkDevice) {
-            cubeMapTexture->cleanup();
-            _skyboxRenderer->cleanup();
-            _sphereToCubemap->cleanup();
+        _vulkan->cleanupManager().push([&](VkDevice) {
+            _cubeMapTexture.reset();
+            _skyboxRenderer.reset();
+            _sphereToCubemap.reset();
         });
         _skyboxRenderer->build(
-            cubeMapTexture,
+            _cubeMapTexture,
             _targetImageFormat,
             _depthImageFormat
         );
@@ -102,7 +102,7 @@ void EnvironmentResources::build(
     else
     {
         _vulkan->cleanupManager().push([&](VkDevice) {
-            _sphereToCubemap->cleanup();
+            _sphereToCubemap = nullptr;
         });
     }
 }

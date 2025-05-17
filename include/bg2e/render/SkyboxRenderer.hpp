@@ -8,6 +8,7 @@ namespace render {
 class BG2E_API SkyboxRenderer {
 public:
     SkyboxRenderer(Vulkan *);
+    virtual ~SkyboxRenderer();
     
     void initFrameResources(vulkan::DescriptorSetAllocator*);
     
@@ -28,8 +29,6 @@ public:
         vulkan::FrameResources& frameResources
     );
     
-    void cleanup();
-    
 protected:
     Vulkan * _vulkan;
     
@@ -45,6 +44,9 @@ protected:
     
     std::shared_ptr<Texture> _skyTexture;
     std::shared_ptr<vulkan::geo::MeshP> _cube;
+    
+    // Called by destructor
+    void cleanup();
 };
 
 }

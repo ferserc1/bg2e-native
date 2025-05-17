@@ -16,7 +16,12 @@ SkyboxRenderer::SkyboxRenderer(Vulkan * vulkan)
 {
 
 }
-    
+
+SkyboxRenderer::~SkyboxRenderer()
+{
+    cleanup();
+}
+
 void SkyboxRenderer::initFrameResources(vulkan::DescriptorSetAllocator* allocator)
 {
     allocator->requirePoolSizeRatio(1, {
@@ -114,7 +119,7 @@ void SkyboxRenderer::cleanup()
     vkDestroyPipeline(_vulkan->device().handle(), _pipeline, nullptr);
     vkDestroyPipelineLayout(_vulkan->device().handle(), _pipelineLayout, nullptr);
     vkDestroyDescriptorSetLayout(_vulkan->device().handle(), _dsLayout, nullptr);
-    _cube->cleanup();
+    _cube.reset();
 }
     
 

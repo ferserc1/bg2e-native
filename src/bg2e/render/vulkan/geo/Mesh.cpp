@@ -4,6 +4,12 @@
 namespace bg2e::render::vulkan::geo {
 
 template <typename MeshT>
+MeshGeneric<MeshT>::~MeshGeneric()
+{
+    cleanup();
+}
+
+template <typename MeshT>
 void MeshGeneric<MeshT>::build()
 {
 	if (_meshData.vertices.empty() || _meshData.indices.empty()) {

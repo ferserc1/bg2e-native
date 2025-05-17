@@ -20,6 +20,11 @@ SphereToCubemapRenderer::SphereToCubemapRenderer(Vulkan * vulkan)
 
 }
 
+SphereToCubemapRenderer::~SphereToCubemapRenderer()
+{
+    cleanup();
+}
+
 void SphereToCubemapRenderer::initFrameResources(vulkan::DescriptorSetAllocator* frameAllocator)
 {
     frameAllocator->requirePoolSizeRatio(1, {
@@ -73,7 +78,7 @@ void SphereToCubemapRenderer::updateImage(const std::filesystem::path& imagePath
 {
     if (_skyTexture.get())
     {
-        _skyTexture->cleanup();
+        _skyTexture = nullptr;
     }
     
     auto image = bg2e::db::loadImage(imagePath);
@@ -160,7 +165,7 @@ void SphereToCubemapRenderer::cleanup()
     
     if (_sphere)
     {
-        _sphere->cleanup();
+        _sphere.reset();
     }
     
     vkDestroyPipeline(_vulkan->device().handle(), _pipeline, nullptr);
@@ -171,7 +176,7 @@ void SphereToCubemapRenderer::cleanup()
         vkDestroyImageView(_vulkan->device().handle(), _cubeMapImageViews[i], nullptr);
     }
     _cubeMapImage->cleanup();
-    _skyTexture->cleanup();
+    _skyTexture = nullptr;
     vkDestroyDescriptorSetLayout(_vulkan->device().handle(), _dsLayout, nullptr);
 }
 
