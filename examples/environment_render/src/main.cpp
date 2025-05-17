@@ -95,33 +95,22 @@ public:
         // managed by the render::Texture object.
         // But if you plan to use the objects more than once, you ALWAYS must to use a shared_ptr to share the pointer
         // between the Texture object and the rest of the application.
-        auto image = bg2e::db::loadImage(imagePath);
-        auto texture = new bg2e::base::Texture(image);
-        texture->setMagFilter(bg2e::base::Texture::FilterLinear);
-        texture->setMinFilter(bg2e::base::Texture::FilterLinear);
-        texture->setUseMipmaps(true);
-
-        _texture = std::shared_ptr<bg2e::render::Texture>(new bg2e::render::Texture(
-            _vulkan,
-            texture
-        ));
- 
         auto cubePath = assetsPath;
         cubePath.append("logo_2a.png");
 
-        image = bg2e::db::loadImage(cubePath);
+        auto image = bg2e::db::loadImage(cubePath);
         auto cubeTexture = new bg2e::base::Texture(image);
         cubeTexture->setMagFilter(bg2e::base::Texture::FilterLinear);
         cubeTexture->setMinFilter(bg2e::base::Texture::FilterLinear);
         cubeTexture->setUseMipmaps(true);
         
+        // The render::Texture is used outside the function, for this reason we use managed pointers
         _cubeTexture = std::shared_ptr<bg2e::render::Texture>(new bg2e::render::Texture(
             _vulkan,
             cubeTexture
         ));
         
         _vulkan->cleanupManager().push([&](VkDevice) {
-            _texture->cleanup();
             _cubeTexture->cleanup();
         });
     
@@ -459,7 +448,6 @@ protected:
     std::unique_ptr<bg2e::render::vulkan::geo::MeshPNU> _cylinder;
     std::unique_ptr<bg2e::render::vulkan::geo::MeshPNU> _sphere;
 
-    std::shared_ptr<bg2e::render::Texture> _texture;
     std::shared_ptr<bg2e::render::Texture> _cubeTexture;
 
     VkDescriptorSetLayout _sceneDSLayout;

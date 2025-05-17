@@ -9,6 +9,7 @@ struct Color {
     float b = 0.0f;
     float a = 0.0f;
     
+    Color() :r{0.0f}, g{0.0f}, b{0.0f}, a{0.0f} {}
     Color(float red, float green, float blue, float alpha = 1.0f ) :r{red}, g{green}, b{blue}, a{alpha} {}
     
     static Color Black() { return Color{ 0.0f, 0.0f, 0.0f, 1.0f }; }

@@ -23,4 +23,12 @@ bg2e::base::Image * loadImage(const std::filesystem::path& filePath)
     );
 }
 
+bg2e::base::Image * loadImage(const std::filesystem::path& basePath, const std::string& fileName)
+{
+    auto fullPath = basePath;
+    fullPath.append(fileName);
+    
+    return loadImage(fullPath);
+}
+
 }

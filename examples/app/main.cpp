@@ -4,6 +4,7 @@
 #include <bg2e/ui/UserInterface.hpp>
 #include <bg2e/render/vulkan/Image.hpp>
 #include <bg2e/base/Log.hpp>
+#include <bg2e/base/MaterialAttributes.hpp>
 #include <bg2e/render/vulkan/factory/GraphicsPipeline.hpp>
 #include <bg2e/render/vulkan/factory/DescriptorSetLayout.hpp>
 #include <bg2e/render/vulkan/factory/PipelineLayout.hpp>
@@ -96,21 +97,10 @@ public:
 		// managed by the render::Texture object.
 		// But if you plan to use the objects more than once, you ALWAYS must to use a shared_ptr to share the pointer
 		// between the Texture object and the rest of the application.
-        auto image = bg2e::db::loadImage(imagePath);
-		auto texture = new bg2e::base::Texture(image);
-        texture->setMagFilter(bg2e::base::Texture::FilterLinear);
-        texture->setMinFilter(bg2e::base::Texture::FilterLinear);
-        texture->setUseMipmaps(true);
-
-		_texture = std::shared_ptr<bg2e::render::Texture>(new bg2e::render::Texture(
-			_vulkan,
-			texture
-		));
- 
         auto cubePath = assetsPath;
         cubePath.append("logo_2a.png");
 
-        image = bg2e::db::loadImage(cubePath);
+        auto image = bg2e::db::loadImage(cubePath);
         auto cubeTexture = new bg2e::base::Texture(image);
         cubeTexture->setMagFilter(bg2e::base::Texture::FilterLinear);
         cubeTexture->setMinFilter(bg2e::base::Texture::FilterLinear);
@@ -122,7 +112,6 @@ public:
         ));
         
         _vulkan->cleanupManager().push([&](VkDevice) {
-            _texture->cleanup();
             _cubeTexture->cleanup();
         });
 	
@@ -375,8 +364,8 @@ protected:
 	VkPipeline _pipeline;
  
     std::unique_ptr<bg2e::render::vulkan::geo::MeshPNU> _model;
+    bg2e::base::MaterialAttributes _modelMaterial;
     
-	std::shared_ptr<bg2e::render::Texture> _texture;
     std::shared_ptr<bg2e::render::Texture> _cubeTexture;
 
     VkDescriptorSetLayout _sceneDSLayout;
@@ -410,9 +399,7 @@ protected:
 		plFactory.addShader("test/texture_gi.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
 		// plFactory.addShader("test/texture.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
         plFactory.addShader("test/texture_gi.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
-
-        //plFactory.setInputBindingDescription(bg2e::render::vulkan::geo::MeshPNU::bindingDescription());
-        //plFactory.setInputAttributeDescriptions(bg2e::render::vulkan::geo::MeshPNU::attributeDescriptions());
+        
         plFactory.setInputState<bg2e::render::vulkan::geo::MeshPNU>();
   
         bg2e::render::vulkan::factory::DescriptorSetLayout dsFactory;
@@ -452,7 +439,7 @@ protected:
 		using namespace bg2e::render::vulkan;
   
         std::filesystem::path modelPath = bg2e::base::PlatformTools::assetPath();
-        modelPath.append("simple_cube.obj");
+        modelPath.append("two_submeshes.obj");
         
         auto modelMesh = std::unique_ptr<bg2e::geo::MeshPNU>(
             bg2e::db::loadMeshObj<bg2e::geo::MeshPNU>(modelPath)
@@ -461,8 +448,15 @@ protected:
         _model = std::unique_ptr<bg2e::render::vulkan::geo::MeshPNU>(new bg2e::render::vulkan::geo::MeshPNU(_vulkan));
         _model->setMeshData(modelMesh.get());
         _model->build();
-  
-
+        
+        auto image = bg2e::db::loadImage(bg2e::base::PlatformTools::assetPath(), "two_submeshes_inner_albedo.jpg");
+        auto modelTexture = new bg2e::base::Texture(image);
+        modelTexture->setMagFilter(bg2e::base::Texture::FilterLinear);
+        modelTexture->setMinFilter(bg2e::base::Texture::FilterLinear);
+        modelTexture->setUseMipmaps(true);
+        
+        _modelMaterial.setAlbedo(std::shared_ptr<bg2e::base::Texture>(modelTexture));
+        
 		_vulkan->cleanupManager().push([this](VkDevice dev) {
             _model->cleanup();
   		});
