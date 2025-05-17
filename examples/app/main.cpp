@@ -229,7 +229,39 @@ public:
             objectSets.data(),
             0, nullptr
         );
-        _model->draw(cmd);
+        _model->drawSubmesh(cmd, 1);
+        
+        auto modelDS2 = frameResources.newDescriptorSet(_objectDSLayout);
+        modelDS2->beginUpdate();
+            modelDS2->addBuffer(
+                0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                modelDataBuffer, sizeof(ObjectData), 0
+            );
+            modelDS2->addImage(
+                1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                _modelMaterial2->albedoTexture()
+            );
+            modelDS2->addImage(
+                2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                _environment->irradianceMapImage()->imageView(),
+                VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                _environment->irradianceMapSampler()
+            );
+        modelDS2->endUpdate();
+        std::array<VkDescriptorSet, 2> objectSets2 = {
+            sceneDS->descriptorSet(),
+            modelDS2->descriptorSet()
+        };
+        vkCmdBindDescriptorSets(
+            cmd,
+            VK_PIPELINE_BIND_POINT_GRAPHICS,
+            _layout, 0,
+            uint32_t(objectSets2.size()),
+            objectSets2.data(),
+            0, nullptr
+        );
+        _model->drawSubmesh(cmd, 0);
 
 		bg2e::render::vulkan::cmdEndRendering(cmd);
 
@@ -366,6 +398,7 @@ protected:
  
     std::unique_ptr<bg2e::render::vulkan::geo::MeshPNU> _model;
     std::shared_ptr<bg2e::render::MaterialBase> _modelMaterial;
+    std::shared_ptr<bg2e::render::MaterialBase> _modelMaterial2;
     
     std::shared_ptr<bg2e::render::Texture> _cubeTexture;
 
@@ -450,11 +483,9 @@ protected:
         _model->setMeshData(modelMesh.get());
         _model->build();
         
-        auto image = bg2e::db::loadImage(bg2e::base::PlatformTools::assetPath(), "two_submeshes_inner_albedo.jpg");
-        auto modelTexture = std::make_shared<bg2e::base::Texture>(image);
-        modelTexture->setMagFilter(bg2e::base::Texture::FilterLinear);
-        modelTexture->setMinFilter(bg2e::base::Texture::FilterLinear);
-        modelTexture->setUseMipmaps(true);
+        auto modelTexture = std::shared_ptr<bg2e::base::Texture>(
+            bg2e::db::loadImageAsTexture(bg2e::base::PlatformTools::assetPath(), "two_submeshes_inner_albedo.jpg")
+        );
         
         _modelMaterial = std::make_shared<bg2e::render::MaterialBase>(_vulkan);
         _modelMaterial->materialAttributes().setAlbedo(modelTexture);
@@ -462,9 +493,19 @@ protected:
         // Call this function every time you change something in materialAttributes
         _modelMaterial->update();
         
+        auto modelTexture2 = std::shared_ptr<bg2e::base::Texture>(
+            bg2e::db::loadImageAsTexture(bg2e::base::PlatformTools::assetPath(), "two_submeshes_outer_albedo.jpg")
+        );
+        
+        _modelMaterial2 = std::make_shared<bg2e::render::MaterialBase>(_vulkan);
+        _modelMaterial2->materialAttributes().setAlbedo(modelTexture2);
+        
+        _modelMaterial2->update();
+        
 		_vulkan->cleanupManager().push([this](VkDevice dev) {
             _model.reset();
             _modelMaterial.reset();
+            _modelMaterial2.reset();
   		});
 	}
 

@@ -31,4 +31,24 @@ bg2e::base::Image * loadImage(const std::filesystem::path& basePath, const std::
     return loadImage(fullPath);
 }
 
+bg2e::base::Texture * loadImageAsTexture(const std::filesystem::path& filePath)
+{
+    auto image = loadImage(filePath);
+    auto texture = new bg2e::base::Texture(image);
+    texture->setMagFilter(bg2e::base::Texture::FilterLinear);
+    texture->setMinFilter(bg2e::base::Texture::FilterLinear);
+    texture->setUseMipmaps(true);
+    return texture;
+}
+
+bg2e::base::Texture * loadImageAsTexture(const std::filesystem::path& basePath, const std::string& fileName)
+{
+    auto image = loadImage(basePath, fileName);
+    auto texture = new bg2e::base::Texture(image);
+    texture->setMagFilter(bg2e::base::Texture::FilterLinear);
+    texture->setMinFilter(bg2e::base::Texture::FilterLinear);
+    texture->setUseMipmaps(true);
+    return texture;
+}
+
 }
