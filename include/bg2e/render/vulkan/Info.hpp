@@ -81,7 +81,8 @@ public:
     static VkRenderingInfo renderingInfo(
         VkExtent2D renderExtent,
         VkRenderingAttachmentInfo* colorAttachment,
-        VkRenderingAttachmentInfo* depthAttachment
+        VkRenderingAttachmentInfo* depthAttachment,
+        uint32_t colorAttachmentsCount = 1
     );
 
     static VkPipelineLayoutCreateInfo pipelineLayoutInfo();

@@ -174,9 +174,10 @@ public:
         
 		float flash = std::abs(std::sin(currentFrame / 120.0f));
 		VkClearColorValue clearValue{ { 0.0f, 0.0f, flash, 1.0f } };
-        macros::cmdClearImageAndBeginRendering(
+        std::vector<const bg2e::render::vulkan::Image *> targetImages = { _targetImage.get() };
+        macros::cmdClearImagesAndBeginRendering(
             cmd,
-            _targetImage.get(), clearValue, VK_IMAGE_LAYOUT_UNDEFINED,
+            targetImages, clearValue, VK_IMAGE_LAYOUT_UNDEFINED,
             depthImage, 1.0f
         );
         

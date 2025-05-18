@@ -62,6 +62,71 @@ void cmdClearImageAndBeginRendering(
     }
 }
 
+extern BG2E_API void cmdClearImagesAndBeginRendering(
+    VkCommandBuffer cmd,
+    std::vector<const Image *> colorImages,
+    VkClearColorValue clearValue,
+    VkImageLayout colorImageInitialLayout,
+    const Image * depthImage,
+    float depthValue
+) {
+    if (colorImages.size() == 0)
+    {
+        throw new std::runtime_error("cmdClearImagesAndBeginRender - parameter error: the colorImage vector is empty");
+    }
+    
+    auto clearRange = Image::subresourceRange(VK_IMAGE_ASPECT_COLOR_BIT);
+    std::vector<VkRenderingAttachmentInfo> colorAttachments;
+    VkExtent2D imageExtent = colorImages[0]->extent2D();
+    for (auto image : colorImages)
+    {
+        Image::cmdTransitionImage(
+            cmd, image->handle(),
+            colorImageInitialLayout,
+            VK_IMAGE_LAYOUT_GENERAL
+        );
+        
+        vkCmdClearColorImage(
+            cmd,
+            image->handle(),
+            VK_IMAGE_LAYOUT_GENERAL,
+            &clearValue, 1, &clearRange
+        );
+        
+        Image::cmdTransitionImage(
+            cmd, image->handle(),
+            VK_IMAGE_LAYOUT_GENERAL,
+            VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
+        );
+        
+        auto colorAttachment = Info::attachmentInfo(image->imageView(), nullptr);
+        colorAttachments.push_back(colorAttachment);
+    }
+    
+    
+    if (depthImage)
+    {
+        auto depthAttachment = Info::depthAttachmentInfo(depthImage->imageView(), depthValue);
+        auto renderInfo = Info::renderingInfo(
+            imageExtent,
+            colorAttachments.data(),
+            &depthAttachment,
+            static_cast<uint32_t>(colorAttachments.size())
+        );
+        cmdBeginRendering(cmd, &renderInfo);
+    }
+    else
+    {
+        auto renderInfo = Info::renderingInfo(
+            imageExtent,
+            colorAttachments.data(),
+            nullptr,
+            static_cast<uint32_t>(colorAttachments.size())
+        );
+        cmdBeginRendering(cmd, &renderInfo);
+    }
+}
+
 void cmdClearImageAndSetLayout(
     VkCommandBuffer cmd,
     const Image* colorImage,

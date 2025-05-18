@@ -4,6 +4,8 @@
 #include <bg2e/render/vulkan/common.hpp>
 #include <bg2e/render/vulkan/Image.hpp>
 
+#include <vector>
+
 namespace bg2e {
 namespace render {
 namespace vulkan {
@@ -19,6 +21,17 @@ extern BG2E_API void cmdClearImageAndBeginRendering(
     const Image * depthImage = nullptr,
     float depthValue = 1.0f
 );
+
+
+extern BG2E_API void cmdClearImagesAndBeginRendering(
+    VkCommandBuffer cmd,
+    std::vector<const Image *> colorImages,
+    VkClearColorValue clearValue,
+    VkImageLayout colorImageInitialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+    const Image * depthImage = nullptr,
+    float depthValue = 1.0f
+);
+
 
 extern BG2E_API void cmdClearImageAndSetLayout(
     VkCommandBuffer cmd,
