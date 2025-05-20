@@ -1,0 +1,19 @@
+//
+//  all.hpp
+
+#pragma once
+
+#include <bg2e/render/Vulkan.hpp>
+#include <bg2e/render/ColorAttachments.hpp>
+#include <bg2e/render/CubemapRenderer.hpp>
+#include <bg2e/render/EnvironmentResources.hpp>
+#include <bg2e/render/IrradianceCubemapRenderer.hpp>
+#include <bg2e/render/MaterialBase.hpp>
+#include <bg2e/render/RenderLoop.hpp>
+#include <bg2e/render/RenderLoopDelegate.hpp>
+#include <bg2e/render/SkyboxRenderer.hpp>
+#include <bg2e/render/SpecularReflectionCubemapRenderer.hpp>
+#include <bg2e/render/SphereToCubemapRenderer.hpp>
+#include <bg2e/render/Texture.hpp>
+
+#include <bg2e/render/vulkan/all.hpp>

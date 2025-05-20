@@ -10,6 +10,18 @@
 		ED0328142CE4D1630037560D /* Window.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED0328132CE4D1630037560D /* Window.cpp */; };
 		ED0328152CE4D1630037560D /* BasicWidgets.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED0328112CE4D1630037560D /* BasicWidgets.cpp */; };
 		ED0328162CE4D1630037560D /* DemoWindow.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED0328122CE4D1630037560D /* DemoWindow.cpp */; };
+		ED0468452DDCEA7500EE8020 /* bg2e.hpp in Headers */ = {isa = PBXBuildFile; fileRef = ED0468442DDCEA7000EE8020 /* bg2e.hpp */; };
+		ED0468512DDCF09B00EE8020 /* all.hpp in Headers */ = {isa = PBXBuildFile; fileRef = ED0468502DDCF09100EE8020 /* all.hpp */; };
+		ED0468532DDCF0FF00EE8020 /* all.hpp in Headers */ = {isa = PBXBuildFile; fileRef = ED0468522DDCF0FC00EE8020 /* all.hpp */; };
+		ED0468552DDCF12000EE8020 /* all.hpp in Headers */ = {isa = PBXBuildFile; fileRef = ED0468542DDCF11B00EE8020 /* all.hpp */; };
+		ED0468572DDCF13900EE8020 /* all.hpp in Headers */ = {isa = PBXBuildFile; fileRef = ED0468562DDCF13500EE8020 /* all.hpp */; };
+		ED0468592DDCF15100EE8020 /* all.hpp in Headers */ = {isa = PBXBuildFile; fileRef = ED0468582DDCF14D00EE8020 /* all.hpp */; };
+		ED04685B2DDCF16F00EE8020 /* all.hpp in Headers */ = {isa = PBXBuildFile; fileRef = ED04685A2DDCF16B00EE8020 /* all.hpp */; };
+		ED04685D2DDCF1AB00EE8020 /* all.hpp in Headers */ = {isa = PBXBuildFile; fileRef = ED04685C2DDCF1A700EE8020 /* all.hpp */; };
+		ED04685F2DDCF1F300EE8020 /* all.hpp in Headers */ = {isa = PBXBuildFile; fileRef = ED04685E2DDCF1EF00EE8020 /* all.hpp */; };
+		ED0468612DDCF22200EE8020 /* all.hpp in Headers */ = {isa = PBXBuildFile; fileRef = ED0468602DDCF21F00EE8020 /* all.hpp */; };
+		ED0468632DDCF24C00EE8020 /* all.hpp in Headers */ = {isa = PBXBuildFile; fileRef = ED0468622DDCF24700EE8020 /* all.hpp */; };
+		ED0468652DDCF26200EE8020 /* all.hpp in Headers */ = {isa = PBXBuildFile; fileRef = ED0468642DDCF25E00EE8020 /* all.hpp */; };
 		ED0B6D872DD7C59200CCB2EC /* MaterialAttributes.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED0B6D862DD7C59200CCB2EC /* MaterialAttributes.cpp */; };
 		ED150D5C2D043A7700EB93F2 /* SphereToCubemapRenderer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED150D5B2D043A7700EB93F2 /* SphereToCubemapRenderer.cpp */; };
 		ED2191602CDF4ABC00123781 /* VkLayer_khronos_validation.json in Copy Layers Configuration */ = {isa = PBXBuildFile; fileRef = ED21915D2CDF4A6D00123781 /* VkLayer_khronos_validation.json */; };
@@ -223,6 +235,18 @@
 		ED0328172CE4D16E0037560D /* BasicWidgets.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = BasicWidgets.hpp; sourceTree = "<group>"; };
 		ED0328182CE4D16E0037560D /* DemoWindow.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = DemoWindow.hpp; sourceTree = "<group>"; };
 		ED0328192CE4D16E0037560D /* Window.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Window.hpp; sourceTree = "<group>"; };
+		ED0468442DDCEA7000EE8020 /* bg2e.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = bg2e.hpp; sourceTree = "<group>"; };
+		ED0468502DDCF09100EE8020 /* all.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = all.hpp; sourceTree = "<group>"; };
+		ED0468522DDCF0FC00EE8020 /* all.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = all.hpp; sourceTree = "<group>"; };
+		ED0468542DDCF11B00EE8020 /* all.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = all.hpp; sourceTree = "<group>"; };
+		ED0468562DDCF13500EE8020 /* all.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = all.hpp; sourceTree = "<group>"; };
+		ED0468582DDCF14D00EE8020 /* all.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = all.hpp; sourceTree = "<group>"; };
+		ED04685A2DDCF16B00EE8020 /* all.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = all.hpp; sourceTree = "<group>"; };
+		ED04685C2DDCF1A700EE8020 /* all.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = all.hpp; sourceTree = "<group>"; };
+		ED04685E2DDCF1EF00EE8020 /* all.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = all.hpp; sourceTree = "<group>"; };
+		ED0468602DDCF21F00EE8020 /* all.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = all.hpp; sourceTree = "<group>"; };
+		ED0468622DDCF24700EE8020 /* all.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = all.hpp; sourceTree = "<group>"; };
+		ED0468642DDCF25E00EE8020 /* all.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = all.hpp; sourceTree = "<group>"; };
 		ED0B6D852DD7C53F00CCB2EC /* MaterialAttributes.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = MaterialAttributes.hpp; sourceTree = "<group>"; };
 		ED0B6D862DD7C59200CCB2EC /* MaterialAttributes.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = MaterialAttributes.cpp; sourceTree = "<group>"; };
 		ED0B6D882DD7C66400CCB2EC /* Color.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Color.hpp; sourceTree = "<group>"; };
@@ -484,6 +508,7 @@
 		ED2191872CDF4E9A00123781 /* vulkan */ = {
 			isa = PBXGroup;
 			children = (
+				ED04685E2DDCF1EF00EE8020 /* all.hpp */,
 				EDF0451C2CE62E2B005C8B96 /* factory */,
 				EDD77E762CEA6CF600278155 /* geo */,
 				EDEF49E82CE7B6FF00EE4ADA /* macros */,
@@ -509,6 +534,7 @@
 		ED2D56582CE38ED6006EF072 /* ui */ = {
 			isa = PBXGroup;
 			children = (
+				ED04685C2DDCF1A700EE8020 /* all.hpp */,
 				ED2D56562CE38ED6006EF072 /* UserInterface.hpp */,
 				ED2D56572CE38ED6006EF072 /* UserInterfaceDelegate.hpp */,
 				ED0328172CE4D16E0037560D /* BasicWidgets.hpp */,
@@ -572,6 +598,7 @@
 		ED5201D92CED093D00C94253 /* db */ = {
 			isa = PBXGroup;
 			children = (
+				ED0468562DDCF13500EE8020 /* all.hpp */,
 				ED5201D82CED093D00C94253 /* image.hpp */,
 				ED2BAEA82CF211CA00FA4CA4 /* mesh_obj.hpp */,
 			);
@@ -624,6 +651,7 @@
 		ED533A162CD7A8E700136B04 /* app */ = {
 			isa = PBXGroup;
 			children = (
+				ED0468522DDCF0FC00EE8020 /* all.hpp */,
 				ED342CFF2CE28CBE0041BE62 /* Application.hpp */,
 				ED2D56592CE38EE3006EF072 /* InputDelegate.hpp */,
 				ED2D565A2CE38EE3006EF072 /* InputManager.hpp */,
@@ -636,6 +664,7 @@
 		ED533A182CD7A8E700136B04 /* bg2e */ = {
 			isa = PBXGroup;
 			children = (
+				ED0468502DDCF09100EE8020 /* all.hpp */,
 				ED533A162CD7A8E700136B04 /* app */,
 				ED8688122CDAAABE00A71ADC /* base */,
 				ED5201D92CED093D00C94253 /* db */,
@@ -649,6 +678,7 @@
 		ED533A192CD7A8E700136B04 /* include */ = {
 			isa = PBXGroup;
 			children = (
+				ED0468442DDCEA7000EE8020 /* bg2e.hpp */,
 				ED533A182CD7A8E700136B04 /* bg2e */,
 				ED533A172CD7A8E700136B04 /* common.hpp */,
 			);
@@ -735,6 +765,7 @@
 		ED8688122CDAAABE00A71ADC /* base */ = {
 			isa = PBXGroup;
 			children = (
+				ED0468542DDCF11B00EE8020 /* all.hpp */,
 				ED0B6D882DD7C66400CCB2EC /* Color.hpp */,
 				ED5201DD2CED0AD500C94253 /* Image.hpp */,
 				ED2191972CDF678000123781 /* Log.hpp */,
@@ -748,6 +779,7 @@
 		ED8688162CDAAACC00A71ADC /* render */ = {
 			isa = PBXGroup;
 			children = (
+				ED04685A2DDCF16B00EE8020 /* all.hpp */,
 				ED2191872CDF4E9A00123781 /* vulkan */,
 				ED28C2812DDCCCF900320C2C /* ColorAttachments.hpp */,
 				ED7E8C1D2D292AF000798406 /* CubemapRenderer.hpp */,
@@ -921,6 +953,7 @@
 		EDD77E2D2CE9E76D00278155 /* geo */ = {
 			isa = PBXGroup;
 			children = (
+				ED0468582DDCF14D00EE8020 /* all.hpp */,
 				EDE5259F2D0191EB0080A45C /* cone.hpp */,
 				EDB10C092CFF8C01002A1B0E /* cube.hpp */,
 				EDE525A02D0191F30080A45C /* cylinder.hpp */,
@@ -945,6 +978,7 @@
 		EDD77E762CEA6CF600278155 /* geo */ = {
 			isa = PBXGroup;
 			children = (
+				ED0468622DDCF24700EE8020 /* all.hpp */,
 				ED5201D22CECA7B000C94253 /* Mesh.hpp */,
 				EDD77E752CEA6CF600278155 /* VertexDescription.hpp */,
 			);
@@ -962,6 +996,7 @@
 		EDEF49E82CE7B6FF00EE4ADA /* macros */ = {
 			isa = PBXGroup;
 			children = (
+				ED0468642DDCF25E00EE8020 /* all.hpp */,
 				EDA28E922CF311F2009AC1FB /* descriptor_set.hpp */,
 				ED17CF5C2CF765530099269A /* frame_resources.hpp */,
 				EDEF49E72CE7B6FF00EE4ADA /* graphics.hpp */,
@@ -985,6 +1020,7 @@
 		EDF0451C2CE62E2B005C8B96 /* factory */ = {
 			isa = PBXGroup;
 			children = (
+				ED0468602DDCF21F00EE8020 /* all.hpp */,
 				EDF045172CE62E2B005C8B96 /* ComputePipeline.hpp */,
 				EDF045182CE62E2B005C8B96 /* DescriptorSetLayout.hpp */,
 				EDF045192CE62E2B005C8B96 /* GraphicsPipeline.hpp */,
@@ -1041,7 +1077,19 @@
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				ED0468452DDCEA7500EE8020 /* bg2e.hpp in Headers */,
+				ED0468612DDCF22200EE8020 /* all.hpp in Headers */,
+				ED0468532DDCF0FF00EE8020 /* all.hpp in Headers */,
+				ED04685D2DDCF1AB00EE8020 /* all.hpp in Headers */,
+				ED0468552DDCF12000EE8020 /* all.hpp in Headers */,
+				ED0468572DDCF13900EE8020 /* all.hpp in Headers */,
+				ED0468632DDCF24C00EE8020 /* all.hpp in Headers */,
+				ED0468592DDCF15100EE8020 /* all.hpp in Headers */,
+				ED04685B2DDCF16F00EE8020 /* all.hpp in Headers */,
+				ED0468512DDCF09B00EE8020 /* all.hpp in Headers */,
+				ED04685F2DDCF1F300EE8020 /* all.hpp in Headers */,
 				ED28C2822DDCCD0000320C2C /* ColorAttachments.hpp in Headers */,
+				ED0468652DDCF26200EE8020 /* all.hpp in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1129,7 +1177,7 @@
 					};
 					ED85B1F22CDBAABD0039B44D = {
 						CreatedOnToolsVersion = 16.1;
-						LastSwiftMigration = 1610;
+						LastSwiftMigration = 1630;
 					};
 					EDD357192CD92300009C7507 = {
 						CreatedOnToolsVersion = 16.1;
@@ -1524,6 +1572,7 @@
 		ED85B1FC2CDBAABD0039B44D /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_STYLE = Automatic;
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				EXECUTABLE_PREFIX = lib;
@@ -1539,12 +1588,15 @@
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 6.0;
 			};
 			name = Debug;
 		};
 		ED85B1FD2CDBAABD0039B44D /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_STYLE = Automatic;
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				EXECUTABLE_PREFIX = lib;
@@ -1560,6 +1612,7 @@
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 6.0;
 			};
 			name = Release;
 		};
