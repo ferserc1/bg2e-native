@@ -30,6 +30,8 @@
 		ED21919B2CDF8B8100123781 /* PhysicalDevice.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED21919A2CDF8B8100123781 /* PhysicalDevice.cpp */; };
 		ED21919F2CDFE28800123781 /* Device.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED21919E2CDFE28800123781 /* Device.cpp */; };
 		ED2191A22CDFE2A200123781 /* Surface.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED2191A12CDFE2A200123781 /* Surface.cpp */; };
+		ED28C2802DDCCCE800320C2C /* ColorAttachments.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED28C27F2DDCC94B00320C2C /* ColorAttachments.cpp */; };
+		ED28C2822DDCCD0000320C2C /* ColorAttachments.hpp in Headers */ = {isa = PBXBuildFile; fileRef = ED28C2812DDCCCF900320C2C /* ColorAttachments.hpp */; };
 		ED2BAEAA2CF211DF00FA4CA4 /* mesh_obj_db.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED2BAEA92CF211DF00FA4CA4 /* mesh_obj_db.cpp */; };
 		ED2BAEB32CF2127600FA4CA4 /* simple_cube.mtl in Copy Assets */ = {isa = PBXBuildFile; fileRef = ED2BAEAB2CF2126A00FA4CA4 /* simple_cube.mtl */; };
 		ED2BAEB42CF2127600FA4CA4 /* simple_cube.obj in Copy Assets */ = {isa = PBXBuildFile; fileRef = ED2BAEAC2CF2126A00FA4CA4 /* simple_cube.obj */; };
@@ -267,6 +269,8 @@
 		ED21919E2CDFE28800123781 /* Device.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Device.cpp; sourceTree = "<group>"; };
 		ED2191A02CDFE29B00123781 /* Surface.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Surface.hpp; sourceTree = "<group>"; };
 		ED2191A12CDFE2A200123781 /* Surface.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Surface.cpp; sourceTree = "<group>"; };
+		ED28C27F2DDCC94B00320C2C /* ColorAttachments.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = ColorAttachments.cpp; sourceTree = "<group>"; };
+		ED28C2812DDCCCF900320C2C /* ColorAttachments.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = ColorAttachments.hpp; sourceTree = "<group>"; };
 		ED2BAEA82CF211CA00FA4CA4 /* mesh_obj.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = mesh_obj.hpp; sourceTree = "<group>"; };
 		ED2BAEA92CF211DF00FA4CA4 /* mesh_obj_db.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = mesh_obj_db.cpp; sourceTree = "<group>"; };
 		ED2BAEAB2CF2126A00FA4CA4 /* simple_cube.mtl */ = {isa = PBXFileReference; lastKnownFileType = text; path = simple_cube.mtl; sourceTree = "<group>"; };
@@ -745,6 +749,7 @@
 			isa = PBXGroup;
 			children = (
 				ED2191872CDF4E9A00123781 /* vulkan */,
+				ED28C2812DDCCCF900320C2C /* ColorAttachments.hpp */,
 				ED7E8C1D2D292AF000798406 /* CubemapRenderer.hpp */,
 				ED41D4202DC7500000710509 /* EnvironmentResources.hpp */,
 				ED7E8C182D2929E600798406 /* IrradianceCubemapRenderer.hpp */,
@@ -775,6 +780,7 @@
 			isa = PBXGroup;
 			children = (
 				ED21916F2CDF4E4700123781 /* vulkan */,
+				ED28C27F2DDCC94B00320C2C /* ColorAttachments.cpp */,
 				ED7E8C1B2D292AE000798406 /* CubemapRenderer.cpp */,
 				ED41D41E2DC74FEC00710509 /* EnvironmentResources.cpp */,
 				ED7E8C192D2929FE00798406 /* IrradianceCubemapRenderer.cpp */,
@@ -1035,6 +1041,7 @@
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				ED28C2822DDCCD0000320C2C /* ColorAttachments.hpp in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1247,6 +1254,7 @@
 				EDF045142CE62E1B005C8B96 /* GraphicsPipeline.cpp in Sources */,
 				ED5201DF2CED0AEC00C94253 /* Image_base.cpp in Sources */,
 				EDF045152CE62E1B005C8B96 /* ShaderModule.cpp in Sources */,
+				ED28C2802DDCCCE800320C2C /* ColorAttachments.cpp in Sources */,
 				ED8B30B82DC6607A004BA5E9 /* SpecularReflectionCubemapRenderer.cpp in Sources */,
 				EDF045162CE62E1B005C8B96 /* ComputePipeline.cpp in Sources */,
 				ED0328162CE4D1630037560D /* DemoWindow.cpp in Sources */,

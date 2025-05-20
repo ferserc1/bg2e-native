@@ -460,10 +460,23 @@ Image* Image::wrapSwapchainImage(
     return result;
 }
 
+Image::~Image()
+{
+    cleanup();
+}
+
 void Image::cleanup()
 {
-    vkDestroyImageView(_vulkan->device().handle(), _imageView, nullptr);
-    vmaDestroyImage(_vulkan->allocator(), _image, _allocation);
+    if (_imageView != VK_NULL_HANDLE)
+    {
+        vkDestroyImageView(_vulkan->device().handle(), _imageView, nullptr);
+    }
+    if (_image != VK_NULL_HANDLE)
+    {
+        vmaDestroyImage(_vulkan->allocator(), _image, _allocation);
+    }
+    _imageView = VK_NULL_HANDLE;
+    _image = VK_NULL_HANDLE;
 }
 
 }

@@ -64,7 +64,7 @@ void cmdClearImageAndBeginRendering(
 
 extern BG2E_API void cmdClearImagesAndBeginRendering(
     VkCommandBuffer cmd,
-    std::vector<const Image *> colorImages,
+    const std::vector<const Image *>& colorImages,
     VkClearColorValue clearValue,
     VkImageLayout colorImageInitialLayout,
     const Image * depthImage,

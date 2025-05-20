@@ -150,6 +150,8 @@ public:
         uint32_t swapchainImageIndex
     );
     
+    virtual ~Image();
+    
     void cleanup();
 
     inline VkImage handle() const { return _image; }

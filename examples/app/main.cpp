@@ -23,6 +23,7 @@
 #include <bg2e/geo/modifiers.hpp>
 #include <bg2e/db/mesh_obj.hpp>
 #include <bg2e/render/MaterialBase.hpp>
+#include <bg2e/render/ColorAttachments.hpp>
 
 #include <bg2e/render/SkyboxRenderer.hpp>
 
@@ -48,22 +49,25 @@ public:
 		using namespace bg2e::render::vulkan;
 		RenderLoopDelegate::init(vulkan);
   
+        _colorAttachments = std::shared_ptr<bg2e::render::ColorAttachments>(
+            new bg2e::render::ColorAttachments(_vulkan, {
+                VK_FORMAT_R16G16B16A16_SFLOAT,
+                VK_FORMAT_R8G8B8A8_UNORM
+            })
+        );
+  
         // If you need to use the main descriptor set allocator, add all the required pool size ratios
         // in the init function.
         vulkan->descriptorSetAllocator().requirePoolSizeRatio(1, {
             { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1 }
         });
         
-        std::vector<VkFormat> colorAttachmentFormats = {
-            _targetImageFormat,
-            _target2ImageFormat
-        };
         _environment = std::unique_ptr<bg2e::render::EnvironmentResources>(
             new bg2e::render::EnvironmentResources(
                 _vulkan,
 
                 // Use this parameters to build the SkyboxRenderer in EnvironmentResources
-                colorAttachmentFormats,
+                _colorAttachments->attachmentFormats(),
                 _vulkan->swapchain().depthImageFormat()
             )
         );
@@ -120,7 +124,7 @@ public:
             _cubeTexture = nullptr;
         });
 	
-		createTargetImages(_vulkan->swapchain().extent());
+        _colorAttachments->build(_vulkan->swapchain().extent());
 
 		createPipeline();
 
@@ -141,9 +145,8 @@ public:
 
 	void swapchainResized(VkExtent2D newExtent) override
 	{
-		_targetImage->cleanup();
-        _target2Image->cleanup();
-		createTargetImages(newExtent);
+        // This function releases all previous resources before recreate the images
+		_colorAttachments->build(newExtent);
   
         _sceneData.projMatrix = glm::perspective(
             glm::radians(50.0f),
@@ -179,17 +182,16 @@ public:
         
 		float flash = std::abs(std::sin(currentFrame / 120.0f));
 		VkClearColorValue clearValue{ { 0.0f, 0.0f, flash, 1.0f } };
-        std::vector<const bg2e::render::vulkan::Image *> targetImages = {
-            _targetImage.get(),
-            _target2Image.get()
-        };
         macros::cmdClearImagesAndBeginRendering(
             cmd,
-            targetImages, clearValue, VK_IMAGE_LAYOUT_UNDEFINED,
+            _colorAttachments->images(),
+            clearValue, VK_IMAGE_LAYOUT_UNDEFINED,
             depthImage, 1.0f
         );
         
-		macros::cmdSetDefaultViewportAndScissor(cmd, _targetImage->extent2D());
+		macros::cmdSetDefaultViewportAndScissor(cmd,
+            _colorAttachments->extent()
+        );
   
         // Rotate the view along Y axis
         _sceneData.viewMatrix = glm::rotate(_sceneData.viewMatrix, 0.02f, glm::vec3(0.0f, 1.0f, 0.0f));
@@ -276,7 +278,9 @@ public:
 
 		Image::cmdCopy(
 			cmd,
-            _targetImage->handle(), _targetImage->extent2D(), VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+            _colorAttachments->imageWithIndex(0)->handle(),
+            _colorAttachments->extent(),
+            VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
             colorImage->handle(), colorImage->extent2D(), VK_IMAGE_LAYOUT_UNDEFINED
 		);
 
@@ -393,15 +397,11 @@ public:
 
 	void cleanup() override
 	{
-		_targetImage->cleanup();
-        _target2Image->cleanup();
+        _colorAttachments->cleanup();
 	}
 
 protected:
-    VkFormat _targetImageFormat = VK_FORMAT_R16G16B16A16_SFLOAT;
-	std::shared_ptr<bg2e::render::vulkan::Image> _targetImage;
-    VkFormat _target2ImageFormat = VK_FORMAT_R8G8B8A8_UNORM;
-    std::shared_ptr<bg2e::render::vulkan::Image> _target2Image;
+    std::shared_ptr<bg2e::render::ColorAttachments> _colorAttachments;
 
 	bg2e::ui::Window _window;
 
@@ -470,11 +470,7 @@ protected:
         plFactory.inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
         plFactory.setCullMode(true, VK_FRONT_FACE_COUNTER_CLOCKWISE);
         
-        std::vector<VkFormat> formats = {
-            _targetImage->format(),
-            _target2Image->format()
-        };
-		plFactory.setColorAttachmentFormat(formats);
+        plFactory.setColorAttachmentFormat(_colorAttachments->attachmentFormats());
 		_pipeline = plFactory.build(_layout);
   
 		_vulkan->cleanupManager().push([&](VkDevice dev) {
@@ -524,28 +520,6 @@ protected:
             _modelMaterial.reset();
             _modelMaterial2.reset();
   		});
-	}
-
-	void createTargetImages(VkExtent2D extent)
-	{
-		using namespace bg2e::render::vulkan;
-		auto vulkan = this->vulkan();
-		_targetImage = std::shared_ptr<Image>(Image::createAllocatedImage(
-			vulkan,
-			_targetImageFormat,
-			extent,
-			VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT |
-			VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
-			VK_IMAGE_ASPECT_COLOR_BIT
-		));
-        _target2Image = std::shared_ptr<Image>(Image::createAllocatedImage(
-            vulkan,
-            _target2ImageFormat,
-            extent,
-            VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT |
-            VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
-            VK_IMAGE_ASPECT_COLOR_BIT
-        ));
 	}
 };
 
