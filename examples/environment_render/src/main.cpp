@@ -1,36 +1,5 @@
 
-#include <bg2e/app/MainLoop.hpp>
-#include <bg2e/app/Application.hpp>
-#include <bg2e/ui/UserInterface.hpp>
-#include <bg2e/render/vulkan/Image.hpp>
-#include <bg2e/base/Log.hpp>
-#include <bg2e/render/vulkan/factory/GraphicsPipeline.hpp>
-#include <bg2e/render/vulkan/factory/DescriptorSetLayout.hpp>
-#include <bg2e/render/vulkan/factory/PipelineLayout.hpp>
-#include <bg2e/render/vulkan/DescriptorSet.hpp>
-#include <bg2e/render/vulkan/geo/VertexDescription.hpp>
-#include <bg2e/render/vulkan/Info.hpp>
-#include <bg2e/render/vulkan/macros/graphics.hpp>
-#include <bg2e/render/vulkan/macros/descriptor_set.hpp>
-#include <bg2e/render/vulkan/macros/frame_resources.hpp>
-#include <bg2e/render/vulkan/geo/Mesh.hpp>
-#include <bg2e/geo/sphere.hpp>
-#include <bg2e/geo/cube.hpp>
-#include <bg2e/geo/cylinder.hpp>
-#include <bg2e/geo/plane.hpp>
-#include <bg2e/render/Texture.hpp>
-#include <bg2e/geo/modifiers.hpp>
-
-#include <bg2e/render/SkyboxRenderer.hpp>
-
-#include <bg2e/render/EnvironmentResources.hpp>
-
-
-#include <bg2e/ui/BasicWidgets.hpp>
-#include <bg2e/ui/Window.hpp>
-
-#include <bg2e/db/image.hpp>
-#include <bg2e/db/mesh_obj.hpp>
+#include <bg2e.hpp>
 
 #include <array>
 #include <numbers>

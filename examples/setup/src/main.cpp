@@ -1,15 +1,5 @@
 
-#include <bg2e/app/MainLoop.hpp>
-#include <bg2e/app/Application.hpp>
-#include <bg2e/ui/UserInterface.hpp>
-#include <bg2e/render/vulkan/Image.hpp>
-#include <bg2e/base/Log.hpp>
-#include <bg2e/render/vulkan/factory/GraphicsPipeline.hpp>
-#include <bg2e/render/vulkan/Info.hpp>
-#include <bg2e/render/vulkan/macros/graphics.hpp>
-
-#include <bg2e/ui/BasicWidgets.hpp>
-#include <bg2e/ui/Window.hpp>
+#include <bg2e.hpp>
 
 class ClearScreenDelegate : public bg2e::render::RenderLoopDelegate,
 	public bg2e::app::InputDelegate,
