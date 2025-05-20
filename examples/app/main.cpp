@@ -243,7 +243,7 @@ public:
 
 		Image::cmdCopy(
 			cmd,
-            _colorAttachments->imageWithIndex(0)->handle(),
+            _colorAttachments->imageWithIndex(_showRenderTargetIndex)->handle(),
             _colorAttachments->extent(),
             VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
             colorImage->handle(), colorImage->extent2D(), VK_IMAGE_LAYOUT_UNDEFINED
@@ -269,6 +269,10 @@ public:
 			BasicWidgets::text("Hello, world!");
    
             BasicWidgets::checkBox("Draw Skybox", &_drawSkybox);
+            
+            BasicWidgets::text("Show Attachment:");
+            BasicWidgets::radioButton("Attachment 1", &_showRenderTargetIndex, 0);
+            BasicWidgets::radioButton("Attachment 2", &_showRenderTargetIndex, 1);
             
             if (BasicWidgets::button("Environment 1"))
             {
@@ -387,6 +391,7 @@ protected:
     std::unique_ptr<bg2e::render::EnvironmentResources> _environment;
     
     bool _drawSkybox = true;
+    int _showRenderTargetIndex = 0;
         
     struct SceneData
     {
