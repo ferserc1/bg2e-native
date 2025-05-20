@@ -129,8 +129,8 @@ public:
         ));
         
         _vulkan->cleanupManager().push([&](VkDevice) {
-            _texture->cleanup();
-            _cubeTexture->cleanup();
+            _texture.reset();
+            _cubeTexture.reset();
         });
 	
 		createImage(_vulkan->swapchain().extent());
@@ -140,12 +140,15 @@ public:
         auto cubeMapTexture = std::shared_ptr<bg2e::render::Texture>(
             new bg2e::render::Texture(_vulkan, _sphereToCubemap->cubeMapImage())
         );
-        _skyboxRenderer->build(cubeMapTexture, _targetImage->format(), _vulkan->swapchain().depthImageFormat());
+        _skyboxRenderer->build(
+            cubeMapTexture, {
+                _targetImage->format()
+            }, _vulkan->swapchain().depthImageFormat()
+        );
         
-        _vulkan->cleanupManager().push([&, cubeMapTexture](VkDevice) {
-            _sphereToCubemap->cleanup();
-            cubeMapTexture->cleanup();
-            _skyboxRenderer->cleanup();
+        _vulkan->cleanupManager().push([&](VkDevice) {
+            _sphereToCubemap.reset();
+            cubeMapTexture.reset();
         });
 
 		createPipeline();
@@ -327,6 +330,7 @@ public:
 	void cleanup() override
 	{
 		_targetImage->cleanup();
+        _skyboxRenderer.reset();
 	}
 
 protected:
@@ -434,8 +438,8 @@ protected:
         _planeData.modelMatrix = glm::translate(glm::mat4{ 1.0f }, glm::vec3(2.0f, 0.0f, 0.0f));
 
 		_vulkan->cleanupManager().push([this](VkDevice dev) {
-            _cube->cleanup();
-            _plane->cleanup();
+            _cube.reset();
+            _plane.reset();
 		});
 	}
 

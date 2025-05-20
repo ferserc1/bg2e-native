@@ -116,9 +116,21 @@ void SkyboxRenderer::draw(
 
 void SkyboxRenderer::cleanup()
 {
-    vkDestroyPipeline(_vulkan->device().handle(), _pipeline, nullptr);
-    vkDestroyPipelineLayout(_vulkan->device().handle(), _pipelineLayout, nullptr);
-    vkDestroyDescriptorSetLayout(_vulkan->device().handle(), _dsLayout, nullptr);
+    if (_pipeline != VK_NULL_HANDLE)
+    {
+        vkDestroyPipeline(_vulkan->device().handle(), _pipeline, nullptr);
+    }
+    if (_pipelineLayout != VK_NULL_HANDLE)
+    {
+        vkDestroyPipelineLayout(_vulkan->device().handle(), _pipelineLayout, nullptr);
+    }
+    if (_dsLayout != VK_NULL_HANDLE)
+    {
+        vkDestroyDescriptorSetLayout(_vulkan->device().handle(), _dsLayout, nullptr);
+    }
+    _pipeline = VK_NULL_HANDLE;
+    _pipelineLayout = VK_NULL_HANDLE;
+    _dsLayout = VK_NULL_HANDLE;
     _cube.reset();
 }
     

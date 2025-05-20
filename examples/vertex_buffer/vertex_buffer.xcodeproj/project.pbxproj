@@ -21,6 +21,16 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
+		ED28C2A52DDCE4C300320C2C /* Copy Assets */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = assets;
+			dstSubfolderSpec = 7;
+			files = (
+			);
+			name = "Copy Assets";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		EDD77E642CEA650100278155 /* Copy Libraries */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
@@ -71,9 +81,33 @@
 		EDD77E602CEA64E600278155 /* CoreFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreFoundation.framework; path = System/Library/Frameworks/CoreFoundation.framework; sourceTree = SDKROOT; };
 		EDD77E6A2CEA65C000278155 /* MoltenVK_icd.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = MoltenVK_icd.json; sourceTree = "<group>"; };
 		EDD77E6B2CEA65C000278155 /* VkLayer_khronos_validation.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = VkLayer_khronos_validation.json; sourceTree = "<group>"; };
-		EDD77E772CEA7E9D00278155 /* test.frag.glsl */ = {isa = PBXFileReference; lastKnownFileType = text; path = test.frag.glsl; sourceTree = "<group>"; };
-		EDD77E782CEA7E9D00278155 /* test.vert.glsl */ = {isa = PBXFileReference; lastKnownFileType = text; path = test.vert.glsl; sourceTree = "<group>"; };
+		EDD77E772CEA7E9D00278155 /* texture.frag.glsl */ = {isa = PBXFileReference; lastKnownFileType = text; path = texture.frag.glsl; sourceTree = "<group>"; };
+		EDD77E782CEA7E9D00278155 /* texture.vert.glsl */ = {isa = PBXFileReference; lastKnownFileType = text; path = texture.vert.glsl; sourceTree = "<group>"; };
 /* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet section */
+		ED28C2A72DDCE4D200320C2C /* Exceptions for "assets" folder in "Copy Assets" phase from "vertex_buffer" target */ = {
+			isa = PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet;
+			buildPhase = ED28C2A52DDCE4C300320C2C /* Copy Assets */;
+			membershipExceptions = (
+				two_submeshes_inner_albedo.jpg,
+				two_submeshes_outer_albedo.jpg,
+				two_submeshes.obj,
+			);
+		};
+/* End PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		ED28C2A02DDCE46C00320C2C /* assets */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				ED28C2A72DDCE4D200320C2C /* Exceptions for "assets" folder in "Copy Assets" phase from "vertex_buffer" target */,
+			);
+			name = assets;
+			path = "/Users/fernando/desarrollo/bg2e-native/assets";
+			sourceTree = "<absolute>";
+		};
+/* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		EDD77E3A2CEA600200278155 /* Frameworks */ = {
@@ -93,6 +127,7 @@
 		EDD77E342CEA600200278155 = {
 			isa = PBXGroup;
 			children = (
+				ED28C2A02DDCE46C00320C2C /* assets */,
 				EDD77E562CEA61BD00278155 /* Xcode Resources */,
 				EDD77E3E2CEA600200278155 /* Products */,
 				EDD77E522CEA60F800278155 /* src */,
@@ -159,8 +194,8 @@
 		EDD77E792CEA7E9D00278155 /* src */ = {
 			isa = PBXGroup;
 			children = (
-				EDD77E772CEA7E9D00278155 /* test.frag.glsl */,
-				EDD77E782CEA7E9D00278155 /* test.vert.glsl */,
+				EDD77E772CEA7E9D00278155 /* texture.frag.glsl */,
+				EDD77E782CEA7E9D00278155 /* texture.vert.glsl */,
 			);
 			path = src;
 			sourceTree = "<group>";
@@ -180,6 +215,7 @@
 				EDD77E6C2CEA65F400278155 /* Copy MoltenVK ICD */,
 				EDD77E6E2CEA666A00278155 /* Copy Layers Configuration */,
 				EDD77E712CEA67F300278155 /* Compile shaders */,
+				ED28C2A52DDCE4C300320C2C /* Copy Assets */,
 			);
 			buildRules = (
 			);
@@ -273,7 +309,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "INPUT_DIR=${PROJECT_DIR}/shaders/src\nOUTPUT_DIR=${BUILT_PRODUCTS_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/shaders\n\n\"${PROJECT_DIR}/../../shaders/build.sh\" \"${INPUT_DIR}\" \"${OUTPUT_DIR}\"\n";
+			shellScript = "INPUT_DIR=${PROJECT_DIR}/shaders/src\nOUTPUT_DIR=${BUILT_PRODUCTS_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/shaders/test\n\n\"${PROJECT_DIR}/../../shaders/build.sh\" \"${INPUT_DIR}\" \"${OUTPUT_DIR}\"\n";
 			showEnvVarsInLog = 0;
 		};
 /* End PBXShellScriptBuildPhase section */

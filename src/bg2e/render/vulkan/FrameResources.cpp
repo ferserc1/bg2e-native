@@ -34,20 +34,32 @@ void FrameResources::flushFrameData()
 
 void FrameResources::cleanup()
 {
-    descriptorAllocator->clearDescriptors();
-    descriptorAllocator->destroy();
-    delete descriptorAllocator;
+    if (descriptorAllocator)
+    {
+        descriptorAllocator->clearDescriptors();
+        descriptorAllocator->destroy();
+        delete descriptorAllocator;
 
-    // Destroy command pool
-    _command->destroyComandPool(commandPool);
+        // Destroy command pool
+        _command->destroyComandPool(commandPool);
 
-    // Destroy synchronization structures
-    vkDestroyFence(_command->device(), frameFence, nullptr);
-    vkDestroySemaphore(_command->device(), swapchainSemaphore, nullptr);
-    vkDestroySemaphore(_command->device(), renderSemaphore, nullptr);
+        // Destroy synchronization structures
+        vkDestroyFence(_command->device(), frameFence, nullptr);
+        vkDestroySemaphore(_command->device(), swapchainSemaphore, nullptr);
+        vkDestroySemaphore(_command->device(), renderSemaphore, nullptr);
+        
+        // Destroy frame cleanup manager
+        cleanupManager.flush(*_device);
+    }
     
-    // Destroy frame cleanup manager
-    cleanupManager.flush(*_device);
+    _device = nullptr;
+    _command = nullptr;
+    descriptorAllocator = nullptr;
+    commandPool = VK_NULL_HANDLE;
+    commandBuffer = VK_NULL_HANDLE;
+    swapchainSemaphore = VK_NULL_HANDLE;
+    renderSemaphore = VK_NULL_HANDLE;
+    frameFence = VK_NULL_HANDLE;
 }
 
 DescriptorSet* FrameResources::newDescriptorSet(VkDescriptorSetLayout layout)

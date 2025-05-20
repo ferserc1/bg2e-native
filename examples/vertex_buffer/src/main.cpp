@@ -82,8 +82,8 @@ public:
         ));
   
         _vulkan->cleanupManager().push([&](VkDevice) {
-            _texture->cleanup();
-            _texture2->cleanup();
+            _texture.reset();
+            _texture2.reset();
         });
 	
 		createImage(_vulkan->swapchain().extent());
@@ -309,8 +309,8 @@ protected:
 		plFactory.addShader("test/texture.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
 		plFactory.addShader("test/texture.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
 
-		auto bindingDescription = bg2e::render::vulkan::geo::bindingDescription<bg2e::geo::VertexPU>();
-		auto attributeDescriptions = bg2e::render::vulkan::geo::attributeDescriptions<bg2e::geo::VertexPU>();
+        auto bindingDescription = bg2e::render::vulkan::geo::bindingDescriptionPU();
+        auto attributeDescriptions = bg2e::render::vulkan::geo::attributeDescriptionsPU();
 
 		plFactory.vertexInputState.vertexBindingDescriptionCount = 1;
 		plFactory.vertexInputState.pVertexBindingDescriptions = &bindingDescription;
@@ -367,7 +367,7 @@ protected:
 		_mesh->build();
 
 		_vulkan->cleanupManager().push([this](VkDevice dev) {
-			_mesh->cleanup();
+			_mesh.reset();
 		});
 	}
 

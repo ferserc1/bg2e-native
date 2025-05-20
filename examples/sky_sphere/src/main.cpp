@@ -92,8 +92,8 @@ public:
         ));
   
         _vulkan->cleanupManager().push([&](VkDevice) {
-            _skyTexture->cleanup();
-            _boxTexture->cleanup();
+            _skyTexture.reset();
+            _boxTexture.reset();
         });
 	
 		createImage(_vulkan->swapchain().extent());
@@ -381,8 +381,8 @@ protected:
         _boxMesh->build();
 
 		_vulkan->cleanupManager().push([this](VkDevice dev) {
-			_skyMesh->cleanup();
-            _boxMesh->cleanup();
+			_skyMesh.reset();
+            _boxMesh.reset();
 		});
 	}
 

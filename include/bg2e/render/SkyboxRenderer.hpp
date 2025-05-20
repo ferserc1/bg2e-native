@@ -34,9 +34,9 @@ public:
 protected:
     Vulkan * _vulkan;
     
-    VkDescriptorSetLayout _dsLayout;
-    VkPipelineLayout _pipelineLayout;
-    VkPipeline _pipeline;
+    VkDescriptorSetLayout _dsLayout = VK_NULL_HANDLE;
+    VkPipelineLayout _pipelineLayout = VK_NULL_HANDLE;
+    VkPipeline _pipeline = VK_NULL_HANDLE;
     
     struct SkyData {
         glm::mat4 view;

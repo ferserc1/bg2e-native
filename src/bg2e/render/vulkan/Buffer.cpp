@@ -38,7 +38,10 @@ Buffer* Buffer::createAllocatedBuffer(
 
 void Buffer::cleanup()
 {
-    vmaDestroyBuffer(_vulkan->allocator(), _buffer, _allocation);
+    if (_buffer != VK_NULL_HANDLE)
+    {
+        vmaDestroyBuffer(_vulkan->allocator(), _buffer, _allocation);
+    }
     _buffer = VK_NULL_HANDLE;
     _allocation = VK_NULL_HANDLE;
     _info = {};

@@ -13,13 +13,13 @@ class DescriptorSetAllocator;
 class DescriptorSet;
 
 struct BG2E_API FrameResources {
-    VkCommandPool commandPool;
-    VkCommandBuffer commandBuffer;
-    VkSemaphore swapchainSemaphore;
-    VkSemaphore renderSemaphore;
-    VkFence frameFence;
+    VkCommandPool commandPool = VK_NULL_HANDLE;
+    VkCommandBuffer commandBuffer = VK_NULL_HANDLE;
+    VkSemaphore swapchainSemaphore = VK_NULL_HANDLE;
+    VkSemaphore renderSemaphore = VK_NULL_HANDLE;
+    VkFence frameFence = VK_NULL_HANDLE;
     CleanupManager cleanupManager;
-    DescriptorSetAllocator* descriptorAllocator;
+    DescriptorSetAllocator* descriptorAllocator = nullptr;
 
     void init(const Device& device, Command* command);
 
@@ -37,7 +37,7 @@ struct BG2E_API FrameResources {
 
 private:
     const Device * _device;
-    Command* _command;
+    Command* _command = nullptr;
 };
 
 constexpr unsigned int FRAME_OVERLAP = 2;

@@ -95,7 +95,9 @@ void Device::create(const Instance& instance, const PhysicalDevice& physicalDevi
 
 void Device::cleanup()
 {
-    vkDestroyDevice(_device, nullptr);
+    if (_device != VK_NULL_HANDLE) {
+        vkDestroyDevice(_device, nullptr);
+    }
 }
 
 void Device::waitIdle() const

@@ -39,7 +39,7 @@ public:
     inline const VkFormat depthImageFormat() const { return _depthImage != nullptr ? _depthImage->format() : VK_FORMAT_UNDEFINED; }
 
 protected:
-    VkSwapchainKHR _swapchain;
+    VkSwapchainKHR _swapchain = VK_NULL_HANDLE;
     VkFormat _imageFormat;
 
     std::vector<VkImage> _images;

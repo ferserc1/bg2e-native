@@ -37,6 +37,7 @@ void Swapchain::cleanup()
             vkDestroyImageView(_vulkan->device().handle(), *it, nullptr);
         }
     }
+    _swapchain = VK_NULL_HANDLE;
 }
 
 void Swapchain::create(uint32_t width, uint32_t height)

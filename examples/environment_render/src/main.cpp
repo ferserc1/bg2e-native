@@ -56,7 +56,9 @@ public:
                 _vulkan,
 
                 // Use this parameters to build the SkyboxRenderer in EnvironmentResources
-                _targetImageFormat,
+                {
+                    _targetImageFormat
+                },
                 _vulkan->swapchain().depthImageFormat()
             )
         );
@@ -111,7 +113,7 @@ public:
         ));
         
         _vulkan->cleanupManager().push([&](VkDevice) {
-            _cubeTexture->cleanup();
+            _cubeTexture.reset();
         });
     
         createImage(_vulkan->swapchain().extent());
@@ -554,9 +556,9 @@ protected:
         
 
         _vulkan->cleanupManager().push([this](VkDevice dev) {
-            _cube->cleanup();
-            _cylinder->cleanup();
-            _sphere->cleanup();
+            _cube.reset();
+            _cylinder.reset();
+            _sphere.reset();
         });
     }
 

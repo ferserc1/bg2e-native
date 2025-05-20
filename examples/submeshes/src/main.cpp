@@ -111,8 +111,8 @@ public:
         ));
   
         _vulkan->cleanupManager().push([&](VkDevice) {
-            _texture->cleanup();
-            _texture2->cleanup();
+            _texture.reset();
+            _texture2.reset();
         });
 	
 		createImage(_vulkan->swapchain().extent());
@@ -396,7 +396,7 @@ protected:
 		_mesh->build();
 
 		_vulkan->cleanupManager().push([this](VkDevice dev) {
-			_mesh->cleanup();
+			_mesh.reset();
 		});
 	}
 
