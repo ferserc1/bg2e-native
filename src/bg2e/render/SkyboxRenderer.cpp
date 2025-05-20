@@ -32,7 +32,7 @@ void SkyboxRenderer::initFrameResources(vulkan::DescriptorSetAllocator* allocato
 
 void SkyboxRenderer::build(
     std::shared_ptr<Texture> skyTexture,
-    VkFormat colorAttachmentFormat,
+    const std::vector<VkFormat>& colorAttachmentFormats,
     VkFormat depthAttachmentFormat,
     const std::string& vshaderFile,
     const std::string& fshaderFile,
@@ -64,7 +64,7 @@ void SkyboxRenderer::build(
     plFactory.addShader(vshaderFile, VK_SHADER_STAGE_VERTEX_BIT);
     plFactory.addShader(fshaderFile, VK_SHADER_STAGE_FRAGMENT_BIT);
     plFactory.setInputState<vulkan::geo::MeshP>();
-    plFactory.setColorAttachmentFormat(colorAttachmentFormat);
+    plFactory.setColorAttachmentFormat(colorAttachmentFormats);
     plFactory.setDepthFormat(depthAttachmentFormat);
     plFactory.disableDepthtest();
     plFactory.inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;

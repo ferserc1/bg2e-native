@@ -2,6 +2,8 @@
 
 #include <bg2e/render/CubemapRenderer.hpp>
 
+#include <vector>
+
 namespace bg2e {
 namespace render {
 
@@ -14,7 +16,7 @@ public:
     
     void build(
         std::shared_ptr<Texture> skyTexture,
-        VkFormat colorAttachmentFormat,
+        const std::vector<VkFormat>& colorAttachmentFormat,
         VkFormat depthAttachmentFormat,
         const std::string& vshaderFile = "skybox_renderer.vert.spv",
         const std::string& fshaderFile = "skybox_renderer.frag.spv",

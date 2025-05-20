@@ -118,9 +118,20 @@ void GraphicsPipeline::disableMultisample()
 
 void GraphicsPipeline::setColorAttachmentFormat(VkFormat format, uint32_t viewMask)
 {
-    _colorAttachmentformat = format;
+    _colorAttachmentformat.clear();
+    _colorAttachmentformat.push_back(format);
+    
     _renderInfo.colorAttachmentCount = 1;
-    _renderInfo.pColorAttachmentFormats = &_colorAttachmentformat;
+    _renderInfo.pColorAttachmentFormats = &_colorAttachmentformat[0];
+    _renderInfo.viewMask = viewMask;
+}
+
+void GraphicsPipeline::setColorAttachmentFormat(const std::vector<VkFormat>& formats, uint32_t viewMask)
+{
+    _colorAttachmentformat.assign(formats.begin(), formats.end());
+    
+    _renderInfo.colorAttachmentCount = static_cast<uint32_t>(_colorAttachmentformat.size());
+    _renderInfo.pColorAttachmentFormats = _colorAttachmentformat.data();
     _renderInfo.viewMask = viewMask;
 }
 
@@ -214,12 +225,19 @@ VkPipeline GraphicsPipeline::build(VkPipelineLayout layout)
         vertexInputState.pVertexAttributeDescriptions = _attributeDescriptions.data();
     }
     
+    // For now, if we are using color blend, we'll use the same configuration
+    // for all attachments
+    std::vector<VkPipelineColorBlendAttachmentState> colorBlendAttachments;
+    for (size_t i = 0; i < _colorAttachmentformat.size(); ++i)
+    {
+        colorBlendAttachments.push_back(colorBlendAttachment);
+    }
     VkPipelineColorBlendStateCreateInfo colorBlending = {};
     colorBlending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
     colorBlending.logicOpEnable = VK_FALSE;
     colorBlending.logicOp = VK_LOGIC_OP_COPY;
-    colorBlending.attachmentCount = 1;
-    colorBlending.pAttachments = &colorBlendAttachment;
+    colorBlending.attachmentCount = static_cast<uint32_t>(colorBlendAttachments.size());
+    colorBlending.pAttachments = colorBlendAttachments.data();
     
     VkGraphicsPipelineCreateInfo pipelineInfo = {};
     pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;

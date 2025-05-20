@@ -14,7 +14,7 @@ namespace render {
 class BG2E_API EnvironmentResources {
 public:
     EnvironmentResources(bg2e::render::Vulkan*);
-    EnvironmentResources(bg2e::render::Vulkan*, VkFormat targetImage, VkFormat depthFormat);
+    EnvironmentResources(bg2e::render::Vulkan*, const std::vector<VkFormat>& targetImages, VkFormat depthFormat);
     
     void initFrameResources(bg2e::render::vulkan::DescriptorSetAllocator *frameAllocator);
         
@@ -57,7 +57,7 @@ protected:
     std::unique_ptr<SpecularReflectionCubemapRenderer> _specularRenderer;
     bool _cubemapChanged = true;
     
-    VkFormat _targetImageFormat = VK_FORMAT_B8G8R8A8_UNORM;
+    std::vector<VkFormat> _targetImagesFormat;
     VkFormat _depthImageFormat = VK_FORMAT_D16_UNORM_S8_UINT;
     std::unique_ptr<bg2e::render::SkyboxRenderer> _skyboxRenderer;
     

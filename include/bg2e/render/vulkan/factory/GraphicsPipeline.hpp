@@ -43,6 +43,7 @@ public:
 
     void disableMultisample();
     void setColorAttachmentFormat(VkFormat format, uint32_t viewMask = 0);
+    void setColorAttachmentFormat(const std::vector<VkFormat>& format, uint32_t viewMask = 0);
     void setDepthFormat(VkFormat format);
     void disableDepthtest();
     void enableDepthtest(bool depthWriteEnable, VkCompareOp op);
@@ -65,7 +66,7 @@ protected:
     Vulkan * _vulkan;
 
     VkPipelineRenderingCreateInfo _renderInfo = {};
-    VkFormat _colorAttachmentformat;
+    std::vector<VkFormat> _colorAttachmentformat;
     
     struct ShaderData {
         VkShaderModule shaderModule;

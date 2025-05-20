@@ -30,11 +30,12 @@ EnvironmentResources::EnvironmentResources(bg2e::render::Vulkan *vulkan)
     });
 }
 
-EnvironmentResources::EnvironmentResources(bg2e::render::Vulkan *vulkan, VkFormat targetImage, VkFormat depthFormat)
+EnvironmentResources::EnvironmentResources(bg2e::render::Vulkan* vulkan, const std::vector<VkFormat>& targetImages, VkFormat depthFormat)
     :_vulkan(vulkan)
-    ,_targetImageFormat(targetImage)
     ,_depthImageFormat(depthFormat)
 {
+    _targetImagesFormat.assign(targetImages.begin(), targetImages.end());
+    
     _sphereToCubemap = std::unique_ptr<SphereToCubemapRenderer>(
         new SphereToCubemapRenderer(_vulkan)
     );
@@ -95,7 +96,7 @@ void EnvironmentResources::build(
         });
         _skyboxRenderer->build(
             _cubeMapTexture,
-            _targetImageFormat,
+            _targetImagesFormat,
             _depthImageFormat
         );
     }
