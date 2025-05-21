@@ -74,6 +74,47 @@ void SphereToCubemapRenderer::build(
     initGeometry();
 }
 
+void SphereToCubemapRenderer::build(
+    std::shared_ptr<render::Texture> texture,
+    const std::string& vertexShader,
+    const std::string& fragmentShader,
+    VkExtent2D cubeImageSize
+) {
+    vulkan::factory::DescriptorSetLayout dsFactory;
+    dsFactory.addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
+    dsFactory.addBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+    _dsLayout = dsFactory.build(
+        _vulkan->device().handle(),
+        VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT
+    );
+    
+    _projectionData.view[0] = glm::lookAt(glm::vec3(0.0f), glm::vec3( 1.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    _projectionData.view[1] = glm::lookAt(glm::vec3(0.0f), glm::vec3(-1.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    _projectionData.view[2] = glm::lookAt(glm::vec3(0.0f), glm::vec3( 0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+    _projectionData.view[3] = glm::lookAt(glm::vec3(0.0f), glm::vec3( 0.0f,-1.0f, 0.0f), glm::vec3(0.0f, 0.0f,-1.0f));
+    _projectionData.view[4] = glm::lookAt(glm::vec3(0.0f), glm::vec3( 0.0f, 0.0f,-1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    _projectionData.view[5] = glm::lookAt(glm::vec3(0.0f), glm::vec3( 0.0f, 0.0f, 1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+
+    _projectionData.proj = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, _sphereRadius * 10.0f);
+    _projectionData.proj[1][1] *= -1.0f;
+    _projectionData.proj[0][0] *= -1.0f;
+    
+    _projectionDataBuffer = std::unique_ptr<vulkan::Buffer>(vulkan::Buffer::createAllocatedBuffer(
+        _vulkan,
+        sizeof(ProjectionData),
+        VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+        VMA_MEMORY_USAGE_CPU_TO_GPU
+    ));
+    
+    auto projectionDataBufferPtr = reinterpret_cast<ProjectionData*>(_projectionDataBuffer->allocatedData());
+    *projectionDataBufferPtr = _projectionData;
+    
+    updateImage(texture);
+    initImages(cubeImageSize);
+    initPipeline(vertexShader, fragmentShader);
+    initGeometry();
+}
+
 void SphereToCubemapRenderer::updateImage(const std::filesystem::path& imagePath)
 {
     if (_skyTexture.get())
@@ -90,6 +131,16 @@ void SphereToCubemapRenderer::updateImage(const std::filesystem::path& imagePath
         _vulkan,
         texture
     ));
+}
+
+void SphereToCubemapRenderer::updateImage(std::shared_ptr<render::Texture> texture)
+{
+    if (_skyTexture.get())
+    {
+        _skyTexture.reset();
+    }
+    
+    _skyTexture = texture;
 }
     
 void SphereToCubemapRenderer::update(VkCommandBuffer commandBuffer, vulkan::FrameResources& frameResources)

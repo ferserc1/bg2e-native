@@ -25,7 +25,15 @@ public:
         VkExtent2D specularReflectionSize = { 512, 512 }
     );
     
+    void build(
+        std::shared_ptr<render::Texture> texture,
+        VkExtent2D cubeMapSize = { 2048, 2048 },
+        VkExtent2D irradianceMapSize = { 32, 32 },
+        VkExtent2D specularReflectionSize = { 512, 512 }
+    );
+    
     void swapEnvironmentTexture(const std::filesystem::path& environmentTexture);
+    void swapEnvironmentTexture(std::shared_ptr<render::Texture> texture);
     
     void update(
         VkCommandBuffer cmd,

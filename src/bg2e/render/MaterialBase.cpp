@@ -1,5 +1,6 @@
 
 #include <bg2e/render/MaterialBase.hpp>
+#include <bg2e/utils/TextureCache.hpp>
 
 namespace bg2e::render {
 
@@ -17,7 +18,8 @@ MaterialBase::~MaterialBase()
 void updateTexture(
     Vulkan * vulkan,
     const std::shared_ptr<base::Texture>& texData,
-    std::shared_ptr<Texture>& outTexture
+    std::shared_ptr<Texture>& outTexture,
+    bool useCache
 ) {
     if (outTexture.get())
     {
@@ -26,10 +28,12 @@ void updateTexture(
     
     if (texData.get() != nullptr)
     {
-        outTexture = std::make_shared<Texture>(
-            vulkan,
-            texData
-        );
+        outTexture = useCache ?
+            utils::TextureCache::get().load(vulkan, texData) :
+            std::make_shared<Texture>(
+                vulkan,
+                texData
+            );
     }
 }
 
@@ -42,27 +46,27 @@ void MaterialBase::update()
     
     if (!_materialAttributes.albedoTextureUpdated())
     {
-        updateTexture(_vulkan, _materialAttributes.albedoTexture(), _albedoTexture);
+        updateTexture(_vulkan, _materialAttributes.albedoTexture(), _albedoTexture, useTextureCache());
     }
     
     if (!_materialAttributes.metalnessTextureUpdated())
     {
-        updateTexture(_vulkan, _materialAttributes.metalnessTexture(), _metalnessTexture);
+        updateTexture(_vulkan, _materialAttributes.metalnessTexture(), _metalnessTexture, useTextureCache());
     }
     
     if (!_materialAttributes.roughnessTextureUpdated())
     {
-        updateTexture(_vulkan, _materialAttributes.roughnessTexture(), _roughnessTexture);
+        updateTexture(_vulkan, _materialAttributes.roughnessTexture(), _roughnessTexture, useTextureCache());
     }
     
     if (!_materialAttributes.normalTextureUpdated())
     {
-        updateTexture(_vulkan, _materialAttributes.normalTexture(), _normalTexture);
+        updateTexture(_vulkan, _materialAttributes.normalTexture(), _normalTexture, useTextureCache());
     }
     
     if (!_materialAttributes.aoTextureUpdated())
     {
-        updateTexture(_vulkan, _materialAttributes.aoTexture(), _aoTexture);
+        updateTexture(_vulkan, _materialAttributes.aoTexture(), _aoTexture, useTextureCache());
     }
     
     _materialAttributes.setUpdated();

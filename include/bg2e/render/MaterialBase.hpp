@@ -22,6 +22,9 @@ public:
     inline std::shared_ptr<Texture> normalTexture() { return _normalTexture; }
     inline std::shared_ptr<Texture> aoTexture() { return _aoTexture; }
     
+    inline bool useTextureCache() const { return _useTextureCache; }
+    inline void setUseTextureCache(bool tc) { _useTextureCache = tc; }
+
 protected:
     Vulkan * _vulkan;
     
@@ -32,6 +35,8 @@ protected:
     std::shared_ptr<Texture> _roughnessTexture;
     std::shared_ptr<Texture> _normalTexture;
     std::shared_ptr<Texture> _aoTexture;
+    
+    bool _useTextureCache = false;
     
     // Called by destructor
     void cleanup();

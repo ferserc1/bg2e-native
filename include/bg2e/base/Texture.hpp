@@ -53,8 +53,13 @@ public:
     inline AddressMode addressModeV() const { return _addressModeV; }
     inline AddressMode addressModeW() const { return _addressModeW; }
     
+    inline void setCacheHash(const std::string& hash) { _cacheHash = hash; }
+    inline const std::string& cacheHash() const { return _cacheHash; }
+
 protected:
     std::shared_ptr<Image> _image;
+    
+    std::string _cacheHash;
 
     bool _useMipmaps = true;
     Filter _magFilter = FilterLinear;

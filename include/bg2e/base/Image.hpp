@@ -24,12 +24,17 @@ public:
     // TODO: Support for HDR images in floating point format
     
     inline bool isValid() const { return _data != nullptr && _width > 0 && _height > 0 && _channels > 0; }
+    
+    inline void setPath(const std::string& path) { _path = path; }
+    inline const std::string& path() const { return _path; }
 
 protected:
     unsigned char* _data = nullptr;
     uint32_t _width = 0;
     uint32_t _height = 0;
     uint32_t _channels = 0;
+    
+    std::string _path;
 };
 
 }

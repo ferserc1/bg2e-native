@@ -59,35 +59,14 @@ public:
         auto imagePath = assetsPath;
         imagePath.append("country_field_sun.jpg");
         
+        auto envTexture = bg2e::utils::TextureCache::get().load(_vulkan, imagePath);
+        
         _environment->build(
-            imagePath,          // Path to equirectangular image
+            envTexture,         // Equirectangular texture
             { 2048, 2048 },     // Cube map size
             { 32, 32 },         // Irradiance map size
             { 1024, 1024 }      // Specular reflection map size
         );
-    
-		// You can use plain pointers in this case, because the base::Image and base::Texture objects will not
-		// be used outside of this function. Internally, these objects will be stored in a shared_ptr and will be
-		// managed by the render::Texture object.
-		// But if you plan to use the objects more than once, you ALWAYS must to use a shared_ptr to share the pointer
-		// between the Texture object and the rest of the application.
-        auto cubePath = assetsPath;
-        cubePath.append("logo_2a.png");
-
-        auto image = bg2e::db::loadImage(cubePath);
-        auto cubeTexture = new bg2e::base::Texture(image);
-        cubeTexture->setMagFilter(bg2e::base::Texture::FilterLinear);
-        cubeTexture->setMinFilter(bg2e::base::Texture::FilterLinear);
-        cubeTexture->setUseMipmaps(true);
-        
-        _cubeTexture = std::shared_ptr<bg2e::render::Texture>(new bg2e::render::Texture(
-            _vulkan,
-            cubeTexture
-        ));
-        
-        _vulkan->cleanupManager().push([&](VkDevice) {
-            _cubeTexture = nullptr;
-        });
 	
         _colorAttachments->build(_vulkan->swapchain().extent());
 
@@ -274,102 +253,46 @@ public:
             BasicWidgets::radioButton("Attachment 1", &_showRenderTargetIndex, 0);
             BasicWidgets::radioButton("Attachment 2", &_showRenderTargetIndex, 1);
             
-            if (BasicWidgets::button("Environment 1"))
+            for (auto & pair : _environments)
             {
-                loadEnvironment1();
-            }
-            
-            if (BasicWidgets::button("Environment 2"))
-            {
-                loadEnvironment2();
-            }
-            
-            if (BasicWidgets::button("Environment 3"))
-            {
-                loadEnvironment3();
-            }
-            
-            if (BasicWidgets::button("Environment 4"))
-            {
-                loadEnvironment4();
-            }
-            
-            if (BasicWidgets::button("Environment 5"))
-            {
-                loadEnvironment5();
-            }
-            
-            if (BasicWidgets::button("Environment 6"))
-            {
-                loadEnvironment6();
-            }
-            
-            if (BasicWidgets::button("Environment 7"))
-            {
-                loadEnvironment7();
-            }
-            
-            if (BasicWidgets::button("Environment 8"))
-            {
-                loadEnvironment8();
+                if (BasicWidgets::button(pair.first))
+                {
+                    loadEnvironment(pair.second);
+                }
             }
 		});
 	}
- 
-    void loadEnvironment1()
-    {
-        loadEnvironment("country_field_sun.jpg");
-    }
-    
-    void loadEnvironment2()
-    {
-        loadEnvironment("equirectangular-env.jpg");
-    }
-    
-    void loadEnvironment3()
-    {
-        loadEnvironment("equirectangular-env2.jpg");
-    }
-    
-    void loadEnvironment4()
-    {
-        loadEnvironment("equirectangular-env3.jpg");
-    }
-    
-    void loadEnvironment5()
-    {
-        loadEnvironment("equirectangular-env4.jpg");
-    }
-    
-    void loadEnvironment6()
-    {
-        loadEnvironment("equirectangular-env5.jpg");
-    }
-    
-    void loadEnvironment7()
-    {
-        loadEnvironment("equirectangular-env6.jpg");
-    }
-    
-    void loadEnvironment8()
-    {
-        loadEnvironment("equirectangular-env7.jpg");
-    }
     
     void loadEnvironment(const std::string& fileName)
     {
         auto assetsPath = bg2e::base::PlatformTools::assetPath();
         auto imagePath = assetsPath;
         imagePath.append(fileName);
-        _environment->swapEnvironmentTexture(imagePath);
+        
+        auto texture = bg2e::utils::TextureCache::get().load(_vulkan, imagePath);
+        
+        _environment->swapEnvironmentTexture(texture);
     }
 
 	void cleanup() override
 	{
         _colorAttachments->cleanup();
+        bg2e::utils::TextureCache::destroy();
 	}
 
 protected:
+
+    std::array<std::pair<const std::string, const std::string>, 8> _environments = {{
+        { "Environment 1", "country_field_sun.jpg" },
+        { "Environment 2", "equirectangular-env.jpg" },
+        { "Environment 3", "equirectangular-env2.jpg" },
+        { "Environment 4", "equirectangular-env3.jpg" },
+        { "Environment 5", "equirectangular-env4.jpg" },
+        { "Environment 6", "equirectangular-env5.jpg" },
+        { "Environment 7", "equirectangular-env6.jpg" },
+        { "Environment 8", "equirectangular-env7.jpg" }
+    }};
+
     std::shared_ptr<bg2e::render::ColorAttachments> _colorAttachments;
 
 	bg2e::ui::Window _window;
@@ -380,8 +303,6 @@ protected:
     std::unique_ptr<bg2e::render::vulkan::geo::MeshPNU> _model;
     std::shared_ptr<bg2e::render::MaterialBase> _modelMaterial;
     std::shared_ptr<bg2e::render::MaterialBase> _modelMaterial2;
-    
-    std::shared_ptr<bg2e::render::Texture> _cubeTexture;
 
     VkDescriptorSetLayout _sceneDSLayout;
     VkDescriptorSetLayout _objectDSLayout;
@@ -471,6 +392,7 @@ protected:
         );
         
         _modelMaterial = std::make_shared<bg2e::render::MaterialBase>(_vulkan);
+        _modelMaterial->setUseTextureCache(true);
         _modelMaterial->materialAttributes().setAlbedo(modelTexture);
         
         // Call this function every time you change something in materialAttributes
@@ -481,6 +403,7 @@ protected:
         );
         
         _modelMaterial2 = std::make_shared<bg2e::render::MaterialBase>(_vulkan);
+        _modelMaterial2->setUseTextureCache(true);
         _modelMaterial2->materialAttributes().setAlbedo(modelTexture2);
         
         _modelMaterial2->update();

@@ -15,12 +15,16 @@ bg2e::base::Image * loadImage(const std::filesystem::path& filePath)
         throw std::runtime_error("Error loading image at path " + filePath.string());
     }
     
-    return new bg2e::base::Image(
+    auto result = new bg2e::base::Image(
         data,
         uint32_t(width),
         uint32_t(height),
         uint32_t(channels)
     );
+    
+    result->setPath(filePath.string());
+    
+    return result;
 }
 
 bg2e::base::Image * loadImage(const std::filesystem::path& basePath, const std::string& fileName)
@@ -38,6 +42,7 @@ bg2e::base::Texture * loadImageAsTexture(const std::filesystem::path& filePath)
     texture->setMagFilter(bg2e::base::Texture::FilterLinear);
     texture->setMinFilter(bg2e::base::Texture::FilterLinear);
     texture->setUseMipmaps(true);
+    texture->setCacheHash(image->path());
     return texture;
 }
 
@@ -48,6 +53,7 @@ bg2e::base::Texture * loadImageAsTexture(const std::filesystem::path& basePath, 
     texture->setMagFilter(bg2e::base::Texture::FilterLinear);
     texture->setMinFilter(bg2e::base::Texture::FilterLinear);
     texture->setUseMipmaps(true);
+    texture->setCacheHash(image->path());
     return texture;
 }
 

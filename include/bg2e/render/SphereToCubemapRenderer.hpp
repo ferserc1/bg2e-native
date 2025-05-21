@@ -29,13 +29,28 @@ public:
     );
     
     void build(
+        std::shared_ptr<render::Texture> texture,
+        const std::string& vertexShader = "sphere_to_cubemap.vert.spv",
+        const std::string& fragmentShader = "sphere_to_cubemap.frag.spv",
+        VkExtent2D cubeImageSize = { 1024, 1024 }
+    );
+    
+    void build(
         const std::filesystem::path& imagePath,
         VkExtent2D cubeImageSize
     ) {
         build(imagePath, "sphere_to_cubemap.vert.spv", "sphere_to_cubemap.frag.spv", cubeImageSize);
     }
     
+    void build(
+        std::shared_ptr<render::Texture> texture,
+        VkExtent2D cubeImageSize = { 1024, 1024 }
+    ) {
+        build(texture, "sphere_to_cubemap.vert.spv", "sphere_to_cubemap.frag.spv", cubeImageSize);
+    }
+    
     void updateImage(const std::filesystem::path& imagePath);
+    void updateImage(std::shared_ptr<render::Texture> texture);
     
     void update(VkCommandBuffer commandBuffer, vulkan::FrameResources& frameResources);
 

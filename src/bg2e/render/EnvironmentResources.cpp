@@ -108,9 +108,50 @@ void EnvironmentResources::build(
     }
 }
 
+void EnvironmentResources::build(
+    std::shared_ptr<render::Texture> texture,
+    VkExtent2D cubeMapSize,
+    VkExtent2D irradianceMapSize,
+    VkExtent2D specularReflectionSize
+) {
+    _sphereToCubemap->build(texture, cubeMapSize);
+    _cubemapChanged = true;
+    _irradianceRenderer->build(_sphereToCubemap->cubeMapImage(), irradianceMapSize);
+    _specularRenderer->build(_sphereToCubemap->cubeMapImage(), specularReflectionSize);
+    
+    if (_skyboxRenderer.get())
+    {
+        _cubeMapTexture = std::shared_ptr<bg2e::render::Texture>(
+            new bg2e::render::Texture(_vulkan, _sphereToCubemap->cubeMapImage())
+        );
+        _vulkan->cleanupManager().push([&](VkDevice) {
+            _cubeMapTexture.reset();
+            _skyboxRenderer.reset();
+            _sphereToCubemap.reset();
+        });
+        _skyboxRenderer->build(
+            _cubeMapTexture,
+            _targetImagesFormat,
+            _depthImageFormat
+        );
+    }
+    else
+    {
+        _vulkan->cleanupManager().push([&](VkDevice) {
+            _sphereToCubemap = nullptr;
+        });
+    }
+}
+
 void EnvironmentResources::swapEnvironmentTexture(const std::filesystem::path& environmentTexture)
 {
     _sphereToCubemap->updateImage(environmentTexture);
+    _cubemapChanged = true;
+}
+
+void EnvironmentResources::swapEnvironmentTexture(std::shared_ptr<render::Texture> texture)
+{
+    _sphereToCubemap->updateImage(texture);
     _cubemapChanged = true;
 }
 

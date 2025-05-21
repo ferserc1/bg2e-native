@@ -100,6 +100,9 @@
 		EDD3572D2CD927CB009C7507 /* MoltenVK_icd.json in Copy MoltenVK ICD */ = {isa = PBXBuildFile; fileRef = EDD3572C2CD92789009C7507 /* MoltenVK_icd.json */; };
 		EDD77E332CE9E78C00278155 /* VertexDescription.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EDD77E312CE9E78C00278155 /* VertexDescription.cpp */; };
 		EDE192782D09D64F004CD803 /* SkyboxRenderer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EDE192772D09D64F004CD803 /* SkyboxRenderer.cpp */; };
+		EDE4512C2DDE472F0025C7DA /* all.hpp in Headers */ = {isa = PBXBuildFile; fileRef = EDE4512B2DDE472C0025C7DA /* all.hpp */; };
+		EDE4512E2DDE473F0025C7DA /* TextureCache.hpp in Headers */ = {isa = PBXBuildFile; fileRef = EDE4512D2DDE47380025C7DA /* TextureCache.hpp */; };
+		EDE451302DDE47A50025C7DA /* TextureCache.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EDE4512F2DDE47A00025C7DA /* TextureCache.cpp */; };
 		EDE525A32D0192090080A45C /* cone.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EDE525A22D0192090080A45C /* cone.cpp */; };
 		EDE525A52D0192100080A45C /* cylinder.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EDE525A42D0192100080A45C /* cylinder.cpp */; };
 		EDE525A72D0192170080A45C /* plane.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EDE525A62D0192170080A45C /* plane.cpp */; };
@@ -415,6 +418,9 @@
 		EDD77E752CEA6CF600278155 /* VertexDescription.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = VertexDescription.hpp; sourceTree = "<group>"; };
 		EDE192772D09D64F004CD803 /* SkyboxRenderer.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = SkyboxRenderer.cpp; sourceTree = "<group>"; };
 		EDE192792D09D660004CD803 /* SkyboxRenderer.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = SkyboxRenderer.hpp; sourceTree = "<group>"; };
+		EDE4512B2DDE472C0025C7DA /* all.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = all.hpp; sourceTree = "<group>"; };
+		EDE4512D2DDE47380025C7DA /* TextureCache.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = TextureCache.hpp; sourceTree = "<group>"; };
+		EDE4512F2DDE47A00025C7DA /* TextureCache.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = TextureCache.cpp; sourceTree = "<group>"; };
 		EDE5259F2D0191EB0080A45C /* cone.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = cone.hpp; sourceTree = "<group>"; };
 		EDE525A02D0191F30080A45C /* cylinder.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = cylinder.hpp; sourceTree = "<group>"; };
 		EDE525A12D0191F90080A45C /* plane.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = plane.hpp; sourceTree = "<group>"; };
@@ -671,6 +677,7 @@
 				EDD77E2D2CE9E76D00278155 /* geo */,
 				ED8688162CDAAACC00A71ADC /* render */,
 				ED2D56582CE38ED6006EF072 /* ui */,
+				EDE451292DDE47090025C7DA /* utils */,
 			);
 			path = bg2e;
 			sourceTree = "<group>";
@@ -704,6 +711,7 @@
 				ED7DE8512CFB866600AB280D /* geo */,
 				ED86881D2CDAAAE900A71ADC /* render */,
 				ED2D56602CE38F07006EF072 /* ui */,
+				EDE4512A2DDE47200025C7DA /* utils */,
 			);
 			path = bg2e;
 			sourceTree = "<group>";
@@ -985,6 +993,23 @@
 			path = geo;
 			sourceTree = "<group>";
 		};
+		EDE451292DDE47090025C7DA /* utils */ = {
+			isa = PBXGroup;
+			children = (
+				EDE4512D2DDE47380025C7DA /* TextureCache.hpp */,
+				EDE4512B2DDE472C0025C7DA /* all.hpp */,
+			);
+			path = utils;
+			sourceTree = "<group>";
+		};
+		EDE4512A2DDE47200025C7DA /* utils */ = {
+			isa = PBXGroup;
+			children = (
+				EDE4512F2DDE47A00025C7DA /* TextureCache.cpp */,
+			);
+			path = utils;
+			sourceTree = "<group>";
+		};
 		EDEF49E52CE7B6F200EE4ADA /* macros */ = {
 			isa = PBXGroup;
 			children = (
@@ -1077,10 +1102,12 @@
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				EDE4512E2DDE473F0025C7DA /* TextureCache.hpp in Headers */,
 				ED0468452DDCEA7500EE8020 /* bg2e.hpp in Headers */,
 				ED0468612DDCF22200EE8020 /* all.hpp in Headers */,
 				ED0468532DDCF0FF00EE8020 /* all.hpp in Headers */,
 				ED04685D2DDCF1AB00EE8020 /* all.hpp in Headers */,
+				EDE4512C2DDE472F0025C7DA /* all.hpp in Headers */,
 				ED0468552DDCF12000EE8020 /* all.hpp in Headers */,
 				ED0468572DDCF13900EE8020 /* all.hpp in Headers */,
 				ED0468632DDCF24C00EE8020 /* all.hpp in Headers */,
@@ -1305,6 +1332,7 @@
 				ED28C2802DDCCCE800320C2C /* ColorAttachments.cpp in Sources */,
 				ED8B30B82DC6607A004BA5E9 /* SpecularReflectionCubemapRenderer.cpp in Sources */,
 				EDF045162CE62E1B005C8B96 /* ComputePipeline.cpp in Sources */,
+				EDE451302DDE47A50025C7DA /* TextureCache.cpp in Sources */,
 				ED0328162CE4D1630037560D /* DemoWindow.cpp in Sources */,
 				ED2D56692CE38F41006EF072 /* imgui_widgets.cpp in Sources */,
 				ED2D56632CE38F37006EF072 /* imgui.cpp in Sources */,
