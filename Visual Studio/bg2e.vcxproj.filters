@@ -294,6 +294,54 @@
     <ClInclude Include="..\include\bg2e\render\EnvironmentResources.hpp">
       <Filter>Header Files\bg2e\render</Filter>
     </ClInclude>
+    <ClInclude Include="..\include\bg2e.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\all.hpp">
+      <Filter>Header Files\bg2e</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\ui\all.hpp">
+      <Filter>Header Files\bg2e\ui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\render\all.hpp">
+      <Filter>Header Files\bg2e\render</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\render\vulkan\all.hpp">
+      <Filter>Header Files\bg2e\render\vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\render\vulkan\macros\all.hpp">
+      <Filter>Header Files\bg2e\render\vulkan\macros</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\render\vulkan\geo\all.hpp">
+      <Filter>Header Files\bg2e\render\vulkan\geo</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\render\vulkan\factory\all.hpp">
+      <Filter>Header Files\bg2e\render\vulkan\factory</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\geo\all.hpp">
+      <Filter>Header Files\bg2e\geo</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\db\all.hpp">
+      <Filter>Header Files\bg2e\db</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\base\all.hpp">
+      <Filter>Header Files\bg2e\base</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\app\all.hpp">
+      <Filter>Header Files\bg2e\app</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\base\MaterialAttributes.hpp">
+      <Filter>Header Files\bg2e\base</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\base\Color.hpp">
+      <Filter>Header Files\bg2e\base</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\render\ColorAttachments.hpp">
+      <Filter>Header Files\bg2e\render</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\render\MaterialBase.hpp">
+      <Filter>Header Files\bg2e\render</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\bg2e\app\MainLoop.cpp">
@@ -465,6 +513,15 @@
       <Filter>Source Files\render</Filter>
     </ClCompile>
     <ClCompile Include="..\src\bg2e\render\EnvironmentResources.cpp">
+      <Filter>Source Files\render</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\bg2e\base\MaterialAttributes.cpp">
+      <Filter>Source Files\base</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\bg2e\render\MaterialBase.cpp">
+      <Filter>Source Files\render</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\bg2e\render\ColorAttachments.cpp">
       <Filter>Source Files\render</Filter>
     </ClCompile>
   </ItemGroup>

@@ -11,18 +11,26 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\include\bg2e.hpp" />
+    <ClInclude Include="..\include\bg2e\all.hpp" />
+    <ClInclude Include="..\include\bg2e\app\all.hpp" />
     <ClInclude Include="..\include\bg2e\app\Application.hpp" />
     <ClInclude Include="..\include\bg2e\app\InputDelegate.hpp" />
     <ClInclude Include="..\include\bg2e\app\InputManager.hpp" />
     <ClInclude Include="..\include\bg2e\app\KeyEvent.hpp" />
     <ClInclude Include="..\include\bg2e\app\MainLoop.hpp" />
+    <ClInclude Include="..\include\bg2e\base\all.hpp" />
+    <ClInclude Include="..\include\bg2e\base\Color.hpp" />
     <ClInclude Include="..\include\bg2e\base\Image.hpp" />
     <ClInclude Include="..\include\bg2e\base\Log.hpp" />
+    <ClInclude Include="..\include\bg2e\base\MaterialAttributes.hpp" />
     <ClInclude Include="..\include\bg2e\base\PlatformTools.hpp" />
     <ClInclude Include="..\include\bg2e\base\Texture.hpp" />
     <ClInclude Include="..\include\bg2e\common.hpp" />
+    <ClInclude Include="..\include\bg2e\db\all.hpp" />
     <ClInclude Include="..\include\bg2e\db\image.hpp" />
     <ClInclude Include="..\include\bg2e\db\mesh_obj.hpp" />
+    <ClInclude Include="..\include\bg2e\geo\all.hpp" />
     <ClInclude Include="..\include\bg2e\geo\cone.hpp" />
     <ClInclude Include="..\include\bg2e\geo\cube.hpp" />
     <ClInclude Include="..\include\bg2e\geo\cylinder.hpp" />
@@ -31,9 +39,12 @@
     <ClInclude Include="..\include\bg2e\geo\plane.hpp" />
     <ClInclude Include="..\include\bg2e\geo\sphere.hpp" />
     <ClInclude Include="..\include\bg2e\geo\Vertex.hpp" />
+    <ClInclude Include="..\include\bg2e\render\all.hpp" />
+    <ClInclude Include="..\include\bg2e\render\ColorAttachments.hpp" />
     <ClInclude Include="..\include\bg2e\render\CubemapRenderer.hpp" />
     <ClInclude Include="..\include\bg2e\render\EnvironmentResources.hpp" />
     <ClInclude Include="..\include\bg2e\render\IrradianceCubemapRenderer.hpp" />
+    <ClInclude Include="..\include\bg2e\render\MaterialBase.hpp" />
     <ClInclude Include="..\include\bg2e\render\RenderLoop.hpp" />
     <ClInclude Include="..\include\bg2e\render\RenderLoopDelegate.hpp" />
     <ClInclude Include="..\include\bg2e\render\SkyboxRenderer.hpp" />
@@ -41,6 +52,7 @@
     <ClInclude Include="..\include\bg2e\render\SphereToCubemapRenderer.hpp" />
     <ClInclude Include="..\include\bg2e\render\Texture.hpp" />
     <ClInclude Include="..\include\bg2e\render\Vulkan.hpp" />
+    <ClInclude Include="..\include\bg2e\render\vulkan\all.hpp" />
     <ClInclude Include="..\include\bg2e\render\vulkan\Buffer.hpp" />
     <ClInclude Include="..\include\bg2e\render\vulkan\CleanupManager.hpp" />
     <ClInclude Include="..\include\bg2e\render\vulkan\Command.hpp" />
@@ -49,6 +61,7 @@
     <ClInclude Include="..\include\bg2e\render\vulkan\DescriptorSetAllocator.hpp" />
     <ClInclude Include="..\include\bg2e\render\vulkan\Device.hpp" />
     <ClInclude Include="..\include\bg2e\render\vulkan\extensions.hpp" />
+    <ClInclude Include="..\include\bg2e\render\vulkan\factory\all.hpp" />
     <ClInclude Include="..\include\bg2e\render\vulkan\factory\ComputePipeline.hpp" />
     <ClInclude Include="..\include\bg2e\render\vulkan\factory\DescriptorSetLayout.hpp" />
     <ClInclude Include="..\include\bg2e\render\vulkan\factory\GraphicsPipeline.hpp" />
@@ -56,17 +69,20 @@
     <ClInclude Include="..\include\bg2e\render\vulkan\factory\Sampler.hpp" />
     <ClInclude Include="..\include\bg2e\render\vulkan\factory\ShaderModule.hpp" />
     <ClInclude Include="..\include\bg2e\render\vulkan\FrameResources.hpp" />
+    <ClInclude Include="..\include\bg2e\render\vulkan\geo\all.hpp" />
     <ClInclude Include="..\include\bg2e\render\vulkan\geo\Mesh.hpp" />
     <ClInclude Include="..\include\bg2e\render\vulkan\geo\VertexDescription.hpp" />
     <ClInclude Include="..\include\bg2e\render\vulkan\Image.hpp" />
     <ClInclude Include="..\include\bg2e\render\vulkan\Info.hpp" />
     <ClInclude Include="..\include\bg2e\render\vulkan\Instance.hpp" />
+    <ClInclude Include="..\include\bg2e\render\vulkan\macros\all.hpp" />
     <ClInclude Include="..\include\bg2e\render\vulkan\macros\descriptor_set.hpp" />
     <ClInclude Include="..\include\bg2e\render\vulkan\macros\frame_resources.hpp" />
     <ClInclude Include="..\include\bg2e\render\vulkan\macros\graphics.hpp" />
     <ClInclude Include="..\include\bg2e\render\vulkan\PhysicalDevice.hpp" />
     <ClInclude Include="..\include\bg2e\render\vulkan\Surface.hpp" />
     <ClInclude Include="..\include\bg2e\render\vulkan\Swapchain.hpp" />
+    <ClInclude Include="..\include\bg2e\ui\all.hpp" />
     <ClInclude Include="..\include\bg2e\ui\BasicWidgets.hpp" />
     <ClInclude Include="..\include\bg2e\ui\DemoWindow.hpp" />
     <ClInclude Include="..\include\bg2e\ui\Input.hpp" />
@@ -87,6 +103,7 @@
     <ClCompile Include="..\src\bg2e\app\MainLoop.cpp" />
     <ClCompile Include="..\src\bg2e\base\Image_base.cpp" />
     <ClCompile Include="..\src\bg2e\base\Log.cpp" />
+    <ClCompile Include="..\src\bg2e\base\MaterialAttributes.cpp" />
     <ClCompile Include="..\src\bg2e\base\PlatformTools.cpp" />
     <ClCompile Include="..\src\bg2e\db\image_db.cpp" />
     <ClCompile Include="..\src\bg2e\db\mesh_obj_db.cpp" />
@@ -95,9 +112,11 @@
     <ClCompile Include="..\src\bg2e\geo\cylinder.cpp" />
     <ClCompile Include="..\src\bg2e\geo\plane.cpp" />
     <ClCompile Include="..\src\bg2e\geo\sphere.cpp" />
+    <ClCompile Include="..\src\bg2e\render\ColorAttachments.cpp" />
     <ClCompile Include="..\src\bg2e\render\CubemapRenderer.cpp" />
     <ClCompile Include="..\src\bg2e\render\EnvironmentResources.cpp" />
     <ClCompile Include="..\src\bg2e\render\IrradianceCubemapRenderer.cpp" />
+    <ClCompile Include="..\src\bg2e\render\MaterialBase.cpp" />
     <ClCompile Include="..\src\bg2e\render\RenderLoop.cpp" />
     <ClCompile Include="..\src\bg2e\render\SkyboxRenderer.cpp" />
     <ClCompile Include="..\src\bg2e\render\SpecularReflectionCubemapRenderer.cpp" />
