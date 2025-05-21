@@ -387,8 +387,9 @@ protected:
         _model->setMeshData(modelMesh.get());
         _model->build();
         
-        auto modelTexture = std::shared_ptr<bg2e::base::Texture>(
-            bg2e::db::loadImageAsTexture(bg2e::base::PlatformTools::assetPath(), "two_submeshes_inner_albedo.jpg")
+        auto modelTexture = std::make_shared<bg2e::base::Texture>(
+            bg2e::base::PlatformTools::assetPath(),
+            "two_submeshes_inner_albedo.jpg"
         );
         
         _modelMaterial = std::make_shared<bg2e::render::MaterialBase>(_vulkan);
@@ -398,8 +399,9 @@ protected:
         // Call this function every time you change something in materialAttributes
         _modelMaterial->update();
         
-        auto modelTexture2 = std::shared_ptr<bg2e::base::Texture>(
-            bg2e::db::loadImageAsTexture(bg2e::base::PlatformTools::assetPath(), "two_submeshes_outer_albedo.jpg")
+        auto modelTexture2 = std::make_shared<bg2e::base::Texture>(
+            bg2e::base::PlatformTools::assetPath(),
+            "two_submeshes_outer_albedo.jpg"
         );
         
         _modelMaterial2 = std::make_shared<bg2e::render::MaterialBase>(_vulkan);

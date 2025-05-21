@@ -26,12 +26,7 @@ void TextureCache::destroy()
 
 std::shared_ptr<render::Texture> TextureCache::load(render::Vulkan * vk, const std::filesystem::path& filePath)
 {
-    base::Texture defaultSettings;
-    defaultSettings.setAddressMode(base::Texture::AddressModeRepeat);
-    defaultSettings.setMagFilter(base::Texture::FilterLinear);
-    defaultSettings.setMinFilter(base::Texture::FilterLinear);
-    defaultSettings.setUseMipmaps(true);
-    return load(vk, filePath, defaultSettings);
+    return load(vk, filePath.string());
 }
 
 std::shared_ptr<render::Texture> TextureCache::load(render::Vulkan * vk, const std::filesystem::path& filePath, const std::string& fileName)
@@ -41,51 +36,42 @@ std::shared_ptr<render::Texture> TextureCache::load(render::Vulkan * vk, const s
     return load(vk, fullPath);
 }
 
-std::shared_ptr<render::Texture> TextureCache::load(render::Vulkan * vk, const std::filesystem::path& filePath, const base::Texture& settings)
+std::shared_ptr<render::Texture> TextureCache::load(render::Vulkan * vk, const std::string& filePath)
 {
-    if (_textures.find(filePath.string()) == _textures.end())
+    base::Texture defaultSettings;
+    defaultSettings.setAddressMode(base::Texture::AddressModeRepeat);
+    defaultSettings.setMagFilter(base::Texture::FilterLinear);
+    defaultSettings.setMinFilter(base::Texture::FilterLinear);
+    defaultSettings.setUseMipmaps(true);
+    defaultSettings.setImageFilePath(filePath);
+    return load(vk, defaultSettings);
+}
+
+std::shared_ptr<render::Texture> TextureCache::load(render::Vulkan * vk, const base::Texture& settings)
+{
+    auto filePath = settings.imageFilePath();
+    if (filePath == "")
+    {
+        throw std::runtime_error("TextureCache: could not load texture because the texture data does not contains an image file path");
+    }
+    
+    if (_textures.find(filePath) == _textures.end())
     {
         std::cout << "Texture not found in cache: " << filePath << std::endl;
-        auto image = db::loadImage(filePath);
-        auto texture = new base::Texture(image);
+        auto texture = new base::Texture(filePath);
         texture->setMagFilter(settings.magFilter());
         texture->setMinFilter(settings.minFilter());
         texture->setMaxLod(settings.maxLod());
         texture->setMinLod(settings.minLod());
-        texture->setCacheHash(image->path());
+        texture->setImageFilePath(filePath);
         texture->setMagFilter(settings.magFilter());
         texture->setMinFilter(settings.minFilter());
         texture->setUseMipmaps(settings.useMipmaps());
         texture->setAddressMode(settings.addressModeU(), settings.addressModeV(), settings.addressModeW());
         auto result = std::make_shared<render::Texture>(vk, texture);
-        _textures[filePath.string()] = result;
+        _textures[filePath] = result;
     }
-    return _textures.find(filePath.string())->second;
-}
-
-std::shared_ptr<render::Texture> TextureCache::load(render::Vulkan * vk, const std::filesystem::path& filePath, const std::string & fileName, const base::Texture& settings)
-{
-    auto fullPath = filePath;
-    fullPath.append(fileName);
-    return load(vk, fullPath, settings);
-}
-
-std::shared_ptr<render::Texture> TextureCache::load(render::Vulkan * vk, std::shared_ptr<base::Texture> texture)
-{
-    auto hash = texture->cacheHash();
-    if (hash == "")
-    {
-        throw std::runtime_error("Could not create cached texture: the supplied texture does not contains a valid hash");
-    }
-    
-    if (_textures.find(hash) == _textures.end())
-    {
-        std::cout << "Texture not cached. Adding texture to cache: " << hash << std::endl;
-        auto result = std::make_shared<render::Texture>(vk, texture.get());
-        _textures[hash] = result;
-    }
-    
-    return _textures[hash];
+    return _textures.find(filePath)->second;
 }
 
 void TextureCache::emptyCache()

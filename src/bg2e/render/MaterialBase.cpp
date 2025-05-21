@@ -26,14 +26,20 @@ void updateTexture(
         outTexture.reset();
     }
     
-    if (texData.get() != nullptr)
+    if (texData.get() != nullptr && !useCache)
     {
-        outTexture = useCache ?
-            utils::TextureCache::get().load(vulkan, texData) :
-            std::make_shared<Texture>(
+        outTexture = std::make_shared<Texture>(
                 vulkan,
                 texData
             );
+    }
+    else if (texData.get() != nullptr)
+    {
+        if (texData->imageFilePath() == "")
+        {
+            throw std::runtime_error("TextureCache: could not load cached texture because the source texture data does not contains a file path");
+        }
+        outTexture = utils::TextureCache::get().load(vulkan, texData->imageFilePath());
     }
 }
 

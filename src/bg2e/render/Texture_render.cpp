@@ -1,6 +1,7 @@
 
 #include <bg2e/render/Texture.hpp>
 #include <bg2e/render/Vulkan.hpp>
+#include <bg2e/db/image.hpp>
 
 #define BG2E_ADDRESS_MODE(x)        x == base::Texture::AddressModeRepeat ? VK_SAMPLER_ADDRESS_MODE_REPEAT : \
                                     x == base::Texture::AddressModeMirroredRepeat ? VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT : \
@@ -24,14 +25,15 @@ void Texture::load(std::shared_ptr<base::Texture> texture)
 {
     _texture = texture;
     
-    // TODO: Create an image cache to avoid load the same image twice
+    std::unique_ptr<base::Image> img = std::unique_ptr<base::Image>(db::loadImage(texture->imageFilePath()));
+    
     // TODO: Extract image options, such as mipmap levels
     // TODO: Support for HDR images
-    VkExtent2D extent = { texture->image()->width(), texture->image()->height() };
+    VkExtent2D extent = { img->width(), img->height() };
     _hasImageOwnership = true;
     _image = std::shared_ptr<vulkan::Image>(vulkan::Image::createAllocatedImage(
         _vulkan,
-        _texture->image()->data(),
+        img->data(),
         extent,
         4,
         VK_FORMAT_R8G8B8A8_UNORM,

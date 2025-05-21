@@ -3,6 +3,8 @@
 #include <bg2e/base/Image.hpp>
 
 #include <memory>
+#include <filesystem>
+#include <string>
 
 namespace bg2e {
 namespace base {
@@ -23,14 +25,14 @@ public:
     
     Texture() {}
 
-    Texture(Image* image, bool useMipmaps = true) : _image(std::shared_ptr<Image>(image)), _useMipmaps(useMipmaps) {}
-    Texture(std::shared_ptr<Image> image, bool useMipmaps = true) : _image(image), _useMipmaps(useMipmaps) {}
+    Texture(const std::filesystem::path& path) :_imageFilePath(path.string()) {}
+    Texture(const std::string& path) :_imageFilePath(path) {}
+    Texture(const std::filesystem::path& filePath, const std::string & fileName) {
+        auto fullPath = filePath;
+        fullPath.append(fileName);
+        _imageFilePath = fullPath.string();
+    }
 
-	inline Image* image() { return _image.get(); }
-	inline const Image* image() const { return _image.get(); }
-
-	inline void setImage(Image* image) { _image = std::shared_ptr<Image>(image); }
-    inline void setImage(std::shared_ptr<Image> image) { _image = image; }
     inline void setUseMipmaps(bool mipmaps) { _useMipmaps = mipmaps; }
     inline bool useMipmaps() const { return _useMipmaps; }
     inline void setMagFilter(Filter filter) { _magFilter = filter; }
@@ -53,13 +55,11 @@ public:
     inline AddressMode addressModeV() const { return _addressModeV; }
     inline AddressMode addressModeW() const { return _addressModeW; }
     
-    inline void setCacheHash(const std::string& hash) { _cacheHash = hash; }
-    inline const std::string& cacheHash() const { return _cacheHash; }
+    inline void setImageFilePath(const std::string& filePath) { _imageFilePath = filePath; }
+    inline const std::string& imageFilePath() const { return _imageFilePath; }
 
 protected:
-    std::shared_ptr<Image> _image;
-    
-    std::string _cacheHash;
+    std::string _imageFilePath;
 
     bool _useMipmaps = true;
     Filter _magFilter = FilterLinear;

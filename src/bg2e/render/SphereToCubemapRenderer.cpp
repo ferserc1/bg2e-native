@@ -122,8 +122,7 @@ void SphereToCubemapRenderer::updateImage(const std::filesystem::path& imagePath
         _skyTexture = nullptr;
     }
     
-    auto image = bg2e::db::loadImage(imagePath);
-    auto texture = new bg2e::base::Texture(image);
+    auto texture = new bg2e::base::Texture(imagePath);
     texture->setMagFilter(bg2e::base::Texture::FilterLinear);
     texture->setMinFilter(bg2e::base::Texture::FilterLinear);
 
