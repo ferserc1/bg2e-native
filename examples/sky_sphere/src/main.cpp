@@ -36,16 +36,13 @@ public:
         // or textures
         
         auto assetsPath = bg2e::base::PlatformTools::assetPath();
-        auto skyImagePath = assetsPath;
-        skyImagePath.append("country_field_sun.jpg");
-
+        
 		// You can use plain pointers in this case, because the base::Image and base::Texture objects will not
 		// be used outside of this function. Internally, these objects will be stored in a shared_ptr and will be
 		// managed by the render::Texture object.
 		// But if you plan to use the objects more than once, you ALWAYS must to use a shared_ptr to share the pointer
 		// between the Texture object and the rest of the application.
-        auto image = bg2e::db::loadImage(skyImagePath);
-		auto texture = new bg2e::base::Texture(image);
+		auto texture = new bg2e::base::Texture(assetsPath, "country_field_sun.jpg");
         texture->setMagFilter(bg2e::base::Texture::FilterLinear);
         texture->setMinFilter(bg2e::base::Texture::FilterLinear);
 
@@ -54,11 +51,7 @@ public:
 			texture
 		));
   
-        auto logoPath = assetsPath;
-        logoPath.append("logo_2a.png");
-        
-        image = bg2e::db::loadImage(logoPath);
-        texture = new bg2e::base::Texture(image);
+        texture = new bg2e::base::Texture(assetsPath, "logo_2a.png");
         texture->setMagFilter(bg2e::base::Texture::FilterLinear);
         texture->setMinFilter(bg2e::base::Texture::FilterLinear);
         texture->setUseMipmaps(true);

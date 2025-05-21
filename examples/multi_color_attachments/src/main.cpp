@@ -52,21 +52,15 @@ public:
     void initScene() override
     {
         auto assetsPath = bg2e::base::PlatformTools::assetPath();
-        auto imagePath = assetsPath;
-        imagePath.append("country_field_sun.jpg");
         
         _environment->build(
-            imagePath,          // Path to equirectangular image
+            bg2e::utils::TextureCache::get().load(_vulkan, assetsPath, "country_field_sun.jpg"),
             { 2048, 2048 },     // Cube map size
             { 32, 32 },         // Irradiance map size
             { 1024, 1024 }      // Specular reflection map size
         );
     
-        auto cubePath = assetsPath;
-        cubePath.append("logo_2a.png");
-
-        auto image = bg2e::db::loadImage(cubePath);
-        auto cubeTexture = new bg2e::base::Texture(image);
+        auto cubeTexture = new bg2e::base::Texture(assetsPath, "logo_2a.png");
         cubeTexture->setMagFilter(bg2e::base::Texture::FilterLinear);
         cubeTexture->setMinFilter(bg2e::base::Texture::FilterLinear);
         cubeTexture->setUseMipmaps(true);
@@ -265,15 +259,17 @@ public:
  
     void loadEnvironment(const std::string& fileName)
     {
-        auto assetsPath = bg2e::base::PlatformTools::assetPath();
-        auto imagePath = assetsPath;
-        imagePath.append(fileName);
-        _environment->swapEnvironmentTexture(imagePath);
+        _environment->swapEnvironmentTexture(bg2e::utils::TextureCache::get().load(
+            _vulkan,
+            bg2e::base::PlatformTools::assetPath(),
+            fileName
+        ));
     }
 
 	void cleanup() override
 	{
         _colorAttachments->cleanup();
+        bg2e::utils::TextureCache::destroy();
 	}
 
 protected:
@@ -383,8 +379,9 @@ protected:
         _model->setMeshData(modelMesh.get());
         _model->build();
         
-        auto modelTexture = std::shared_ptr<bg2e::base::Texture>(
-            bg2e::db::loadImageAsTexture(bg2e::base::PlatformTools::assetPath(), "two_submeshes_inner_albedo.jpg")
+        auto modelTexture = std::make_shared<bg2e::base::Texture>(
+            bg2e::base::PlatformTools::assetPath(),
+            "two_submeshes_inner_albedo.jpg"
         );
         
         _modelMaterial = std::make_shared<bg2e::render::MaterialBase>(_vulkan);
@@ -393,8 +390,9 @@ protected:
         // Call this function every time you change something in materialAttributes
         _modelMaterial->update();
         
-        auto modelTexture2 = std::shared_ptr<bg2e::base::Texture>(
-            bg2e::db::loadImageAsTexture(bg2e::base::PlatformTools::assetPath(), "two_submeshes_outer_albedo.jpg")
+        auto modelTexture2 = std::make_shared<bg2e::base::Texture>(
+            bg2e::base::PlatformTools::assetPath(),
+            "two_submeshes_outer_albedo.jpg"
         );
         
         _modelMaterial2 = std::make_shared<bg2e::render::MaterialBase>(_vulkan);

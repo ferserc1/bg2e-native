@@ -36,17 +36,14 @@ public:
     {
         // Use the initScene function to initialize and create scene resources, such as pipelines, 3D models
         // or textures
-        
-        std::filesystem::path imagePath = bg2e::base::PlatformTools::assetPath().append("two_submeshes_inner_albedo.jpg");
-        std::filesystem::path imagePath2 = bg2e::base::PlatformTools::assetPath().append("two_submeshes_outer_albedo.jpg");
+        auto assetPath = bg2e::base::PlatformTools::assetPath();
 
 		// You can use plain pointers in this case, because the base::Image and base::Texture objects will not
 		// be used outside of this function. Internally, these objects will be stored in a shared_ptr and will be
 		// managed by the render::Texture object.
 		// But if you plan to use the objects more than once, you ALWAYS must to use a shared_ptr to share the pointer
 		// between the Texture object and the rest of the application.
-        auto image = bg2e::db::loadImage(imagePath);
-		auto texture = new bg2e::base::Texture(image);
+		auto texture = new bg2e::base::Texture(assetPath, "two_submeshes_inner_albedo.jpg");
         texture->setMagFilter(bg2e::base::Texture::FilterLinear);
         texture->setMinFilter(bg2e::base::Texture::FilterLinear);
 
@@ -55,8 +52,7 @@ public:
 			texture
 		));
   
-        auto image2 = bg2e::db::loadImage(imagePath2);
-        auto texture2 = new bg2e::base::Texture(image2);
+        auto texture2 = new bg2e::base::Texture(assetPath, "two_submeshes_outer_albedo.jpg");
         texture2->setMagFilter(bg2e::base::Texture::FilterLinear);
         texture2->setMinFilter(bg2e::base::Texture::FilterLinear);
         

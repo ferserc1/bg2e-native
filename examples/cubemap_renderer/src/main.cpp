@@ -74,8 +74,7 @@ public:
 		// managed by the render::Texture object.
 		// But if you plan to use the objects more than once, you ALWAYS must to use a shared_ptr to share the pointer
 		// between the Texture object and the rest of the application.
-        auto image = bg2e::db::loadImage(imagePath);
-		auto texture = new bg2e::base::Texture(image);
+		auto texture = new bg2e::base::Texture(imagePath);
         texture->setMagFilter(bg2e::base::Texture::FilterLinear);
         texture->setMinFilter(bg2e::base::Texture::FilterLinear);
         texture->setUseMipmaps(true);
@@ -85,11 +84,7 @@ public:
 			texture
 		));
  
-        auto cubePath = assetsPath;
-        cubePath.append("logo_2a.png");
-
-        image = bg2e::db::loadImage(cubePath);
-        auto cubeTexture = new bg2e::base::Texture(image);
+        auto cubeTexture = new bg2e::base::Texture(assetsPath, "logo_2a.png");
         cubeTexture->setMagFilter(bg2e::base::Texture::FilterLinear);
         cubeTexture->setMinFilter(bg2e::base::Texture::FilterLinear);
         cubeTexture->setUseMipmaps(true);
