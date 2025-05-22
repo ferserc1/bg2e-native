@@ -43,7 +43,7 @@ void updateTexture(
     }
 }
 
-void MaterialBase::update()
+void MaterialBase::updateTextures()
 {
     if (_materialAttributes.isUpdated())
     {
@@ -54,25 +54,40 @@ void MaterialBase::update()
     {
         updateTexture(_vulkan, _materialAttributes.albedoTexture(), _albedoTexture, useTextureCache());
     }
+    else {
+        // TODO: Set 1x1 white texture
+    }
     
     if (!_materialAttributes.metalnessTextureUpdated())
     {
         updateTexture(_vulkan, _materialAttributes.metalnessTexture(), _metalnessTexture, useTextureCache());
+    }
+    else {
+        // TODO: Set 1x1 white texture
     }
     
     if (!_materialAttributes.roughnessTextureUpdated())
     {
         updateTexture(_vulkan, _materialAttributes.roughnessTexture(), _roughnessTexture, useTextureCache());
     }
+    else {
+        // TODO: Set 1x1 white texture
+    }
     
     if (!_materialAttributes.normalTextureUpdated())
     {
         updateTexture(_vulkan, _materialAttributes.normalTexture(), _normalTexture, useTextureCache());
     }
+    else {
+        // TODO: Set 1x1 normal texture
+    }
     
     if (!_materialAttributes.aoTextureUpdated())
     {
         updateTexture(_vulkan, _materialAttributes.aoTexture(), _aoTexture, useTextureCache());
+    }
+    else {
+        // TODO: Set 1x1 white texture
     }
     
     _materialAttributes.setUpdated();

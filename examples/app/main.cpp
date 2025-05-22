@@ -27,6 +27,10 @@ public:
             { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1 }
         });
         
+        _objectData = std::make_unique<bg2e::scene::vk::ObjectData>(vulkan);
+        
+        _environmentData = std::make_unique<bg2e::scene::vk::EnvironmentData>(vulkan);
+        
         _environment = std::unique_ptr<bg2e::render::EnvironmentResources>(
             new bg2e::render::EnvironmentResources(
                 _vulkan,
@@ -40,10 +44,8 @@ public:
  
     void initFrameResources(bg2e::render::vulkan::DescriptorSetAllocator* frameAllocator) override
     {
-        frameAllocator->requirePoolSizeRatio(1, {
-            { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 2 },
-            { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2 }
-        });
+        _objectData->initFrameResources(frameAllocator);
+        _environmentData->initFrameResources(frameAllocator);
         
         _environment->initFrameResources(frameAllocator);
         
@@ -82,7 +84,7 @@ public:
         );
         _sceneData.projMatrix[1][1] *= -1.0f;
 
-        _modelData.modelMatrix = glm::mat4{ 1.0f };
+        _modelMatrix = glm::mat4{ 1.0f };
         
 		createVertexData();
     }
@@ -152,29 +154,19 @@ public:
 
   
         vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, _pipeline);
+        
+        auto envDS = _environmentData->newDescriptorSet(frameResources, _environment.get());
   
-        _modelData.modelMatrix = glm::rotate(_modelData.modelMatrix, 0.018f, glm::vec3(1.0f, 1.0f, 0.0f));
-        auto modelDataBuffer = macros::createBuffer(_vulkan, frameResources, _modelData);
-        auto modelDS = frameResources.newDescriptorSet(_objectDSLayout);
-        modelDS->beginUpdate();
-            modelDS->addBuffer(
-                0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-                modelDataBuffer, sizeof(ObjectData), 0
-            );
-            modelDS->addImage(
-                1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                _modelMaterial->albedoTexture()
-            );
-            modelDS->addImage(
-                2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                _environment->irradianceMapImage()->imageView(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                _environment->irradianceMapSampler()
-            );
-        modelDS->endUpdate();
-        std::array<VkDescriptorSet, 2> objectSets = {
+        auto modelDS = _objectData->newDescriptorSet(
+            frameResources,
+            _modelMaterial.get(),
+            _modelMatrix
+        );
+        
+        std::array<VkDescriptorSet, 3> objectSets = {
             sceneDS->descriptorSet(),
-            modelDS->descriptorSet()
+            modelDS,
+            envDS
         };
         vkCmdBindDescriptorSets(
             cmd,
@@ -186,27 +178,15 @@ public:
         );
         _model->drawSubmesh(cmd, 1);
         
-        auto modelDS2 = frameResources.newDescriptorSet(_objectDSLayout);
-        modelDS2->beginUpdate();
-            modelDS2->addBuffer(
-                0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-                modelDataBuffer, sizeof(ObjectData), 0
-            );
-            modelDS2->addImage(
-                1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                _modelMaterial2->albedoTexture()
-            );
-            modelDS2->addImage(
-                2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                _environment->irradianceMapImage()->imageView(),
-                VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                _environment->irradianceMapSampler()
-            );
-        modelDS2->endUpdate();
-        std::array<VkDescriptorSet, 2> objectSets2 = {
+        auto modelDS2 = _objectData->newDescriptorSet(
+            frameResources,
+            _modelMaterial2.get(),
+            _modelMatrix
+        );
+        std::array<VkDescriptorSet, 3> objectSets2 = {
             sceneDS->descriptorSet(),
-            modelDS2->descriptorSet()
+            modelDS2,
+            envDS
         };
         vkCmdBindDescriptorSets(
             cmd,
@@ -300,16 +280,19 @@ protected:
 	VkPipelineLayout _layout;
 	VkPipeline _pipeline;
  
+    glm::mat4 _modelMatrix;
     std::unique_ptr<bg2e::render::vulkan::geo::MeshPNU> _model;
     std::shared_ptr<bg2e::render::MaterialBase> _modelMaterial;
     std::shared_ptr<bg2e::render::MaterialBase> _modelMaterial2;
 
     VkDescriptorSetLayout _sceneDSLayout;
-    VkDescriptorSetLayout _objectDSLayout;
+    
+    std::unique_ptr<bg2e::scene::vk::ObjectData> _objectData;
 
     // Load the environment skybox, generate the irradiance and specular reflection maps,
     // and manage the sky box renderer
     std::unique_ptr<bg2e::render::EnvironmentResources> _environment;
+    std::unique_ptr<bg2e::scene::vk::EnvironmentData> _environmentData;
     
     bool _drawSkybox = true;
     int _showRenderTargetIndex = 0;
@@ -321,20 +304,12 @@ protected:
     };
     
     SceneData _sceneData;
-    
-    struct ObjectData
-    {
-        glm::mat4 modelMatrix;
-    };
-    
-    ObjectData _modelData;
 
 	void createPipeline()
 	{
 		bg2e::render::vulkan::factory::GraphicsPipeline plFactory(_vulkan);
 
 		plFactory.addShader("test/texture_gi.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
-		// plFactory.addShader("test/texture.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
         plFactory.addShader("test/texture_gi.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
         
         plFactory.setInputState<bg2e::render::vulkan::geo::MeshPNU>();
@@ -344,16 +319,15 @@ protected:
         dsFactory.clear();
         dsFactory.addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
         _sceneDSLayout = dsFactory.build(_vulkan->device().handle(), VK_SHADER_STAGE_VERTEX_BIT);
-        
-        dsFactory.clear();
-        dsFactory.addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
-        dsFactory.addBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
-        dsFactory.addBinding(2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
-        _objectDSLayout = dsFactory.build(_vulkan->device().handle(), VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT);
+    
+        // Create object and environment descriptor set
+        auto objectDSLayout = _objectData->createLayout();
+        auto envDSLayout = _environmentData->createLayout();
         
         bg2e::render::vulkan::factory::PipelineLayout layoutFactory(_vulkan);
         layoutFactory.addDescriptorSetLayout(_sceneDSLayout);
-        layoutFactory.addDescriptorSetLayout(_objectDSLayout);
+        layoutFactory.addDescriptorSetLayout(objectDSLayout);
+        layoutFactory.addDescriptorSetLayout(envDSLayout);
         _layout = layoutFactory.build();
         
         plFactory.setDepthFormat(_vulkan->swapchain().depthImageFormat());
@@ -364,11 +338,12 @@ protected:
         plFactory.setColorAttachmentFormat(_colorAttachments->attachmentFormats());
 		_pipeline = plFactory.build(_layout);
   
-		_vulkan->cleanupManager().push([&](VkDevice dev) {
+		_vulkan->cleanupManager().push([&, objectDSLayout, envDSLayout](VkDevice dev) {
 			vkDestroyPipeline(dev, _pipeline, nullptr);
 			vkDestroyPipelineLayout(dev, _layout, nullptr);
             vkDestroyDescriptorSetLayout(dev, _sceneDSLayout, nullptr);
-            vkDestroyDescriptorSetLayout(dev, _objectDSLayout, nullptr);
+            vkDestroyDescriptorSetLayout(dev, objectDSLayout, nullptr);
+            vkDestroyDescriptorSetLayout(dev, envDSLayout, nullptr);
 		});
 	}
 
@@ -397,7 +372,7 @@ protected:
         _modelMaterial->materialAttributes().setAlbedo(modelTexture);
         
         // Call this function every time you change something in materialAttributes
-        _modelMaterial->update();
+        _modelMaterial->updateTextures();
         
         auto modelTexture2 = std::make_shared<bg2e::base::Texture>(
             bg2e::base::PlatformTools::assetPath(),
@@ -408,7 +383,7 @@ protected:
         _modelMaterial2->setUseTextureCache(true);
         _modelMaterial2->materialAttributes().setAlbedo(modelTexture2);
         
-        _modelMaterial2->update();
+        _modelMaterial2->updateTextures();
         
 		_vulkan->cleanupManager().push([this](VkDevice dev) {
             _model.reset();

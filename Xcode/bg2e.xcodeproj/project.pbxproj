@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 63;
+	objectVersion = 70;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -456,6 +456,11 @@
 		EDF045222CE65DB8005C8B96 /* build.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = build.sh; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		ED14CD012DDF458D007468D5 /* scene */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = scene; sourceTree = "<group>"; };
+		ED14CD092DDF469F007468D5 /* scene */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = scene; sourceTree = "<group>"; };
+/* End PBXFileSystemSynchronizedRootGroup section */
+
 /* Begin PBXFrameworksBuildPhase section */
 		ED5339ED2CD7A1E900136B04 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
@@ -676,6 +681,7 @@
 				ED5201D92CED093D00C94253 /* db */,
 				EDD77E2D2CE9E76D00278155 /* geo */,
 				ED8688162CDAAACC00A71ADC /* render */,
+				ED14CD012DDF458D007468D5 /* scene */,
 				ED2D56582CE38ED6006EF072 /* ui */,
 				EDE451292DDE47090025C7DA /* utils */,
 			);
@@ -710,6 +716,7 @@
 				ED5201DB2CED095800C94253 /* db */,
 				ED7DE8512CFB866600AB280D /* geo */,
 				ED86881D2CDAAAE900A71ADC /* render */,
+				ED14CD092DDF469F007468D5 /* scene */,
 				ED2D56602CE38F07006EF072 /* ui */,
 				EDE4512A2DDE47200025C7DA /* utils */,
 			);
@@ -1182,6 +1189,9 @@
 			);
 			dependencies = (
 				ED85B2162CDBABBB0039B44D /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				ED14CD092DDF469F007468D5 /* scene */,
 			);
 			name = "bg2e-native";
 			packageProductDependencies = (

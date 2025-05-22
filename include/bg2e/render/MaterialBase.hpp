@@ -11,7 +11,7 @@ public:
     MaterialBase(Vulkan *);
     virtual ~MaterialBase();
 
-    void update();
+    void updateTextures();
 
     inline base::MaterialAttributes& materialAttributes() { return _materialAttributes; }
     inline const base::MaterialAttributes& materialAttributes() const { return _materialAttributes; }
