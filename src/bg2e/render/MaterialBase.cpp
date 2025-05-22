@@ -7,7 +7,11 @@ namespace bg2e::render {
 MaterialBase::MaterialBase(Vulkan * vulkan)
     :_vulkan(vulkan)
 {
-    
+    _albedoTexture = Texture::whiteTexture(vulkan);
+    _normalTexture = Texture::whiteTexture(vulkan);
+    _roughnessTexture = Texture::whiteTexture(vulkan);
+    _normalTexture = Texture::normalTexture(vulkan);
+    _aoTexture = Texture::whiteTexture(vulkan);
 }
 
 MaterialBase::~MaterialBase()
@@ -54,40 +58,25 @@ void MaterialBase::updateTextures()
     {
         updateTexture(_vulkan, _materialAttributes.albedoTexture().get(), _albedoTexture, useTextureCache());
     }
-    else {
-        _albedoTexture = render::Texture::whiteTexture(_vulkan);
-    }
     
     if (!_materialAttributes.metalnessTextureUpdated())
     {
         updateTexture(_vulkan, _materialAttributes.metalnessTexture().get(), _metalnessTexture, useTextureCache());
-    }
-    else {
-        _metalnessTexture = render::Texture::whiteTexture(_vulkan);
     }
     
     if (!_materialAttributes.roughnessTextureUpdated())
     {
         updateTexture(_vulkan, _materialAttributes.roughnessTexture().get(), _roughnessTexture, useTextureCache());
     }
-    else {
-        _roughnessTexture = render::Texture::whiteTexture(_vulkan);
-    }
     
     if (!_materialAttributes.normalTextureUpdated())
     {
         updateTexture(_vulkan, _materialAttributes.normalTexture().get(), _normalTexture, useTextureCache());
     }
-    else {
-        _normalTexture = render::Texture::normalTexture(_vulkan);
-    }
     
     if (!_materialAttributes.aoTextureUpdated())
     {
         updateTexture(_vulkan, _materialAttributes.aoTexture().get(), _aoTexture, useTextureCache());
-    }
-    else {
-        _normalTexture = render::Texture::whiteTexture(_vulkan);
     }
     
     _materialAttributes.setUpdated();

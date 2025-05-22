@@ -128,7 +128,7 @@ protected:
     glm::vec2 _aoScale{ 1.0f, 1.0f };
     uint32_t _aoChannel = 0;
     uint32_t _aoUVSet = 0;
-    bool _aoTextureUpdated;
+    bool _aoTextureUpdated = true;
     
 };
 

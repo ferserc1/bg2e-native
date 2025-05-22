@@ -23,8 +23,29 @@ std::shared_ptr<Texture> Texture::_normalTexture;
 
 Texture * Texture::colorTexture(Vulkan *vulkan, const base::Color &color, VkExtent2D size)
 {
-    // TODO: Implement this
-    return nullptr;
+    uint32_t bytes = 4;
+    size_t dataSize = size.width * size.height * bytes;
+    std::vector<uint8_t> data(dataSize, 0);
+    
+    for (auto i = 0; i < dataSize; i += bytes)
+    {
+        data[i] = color.r * 255.0f;
+        data[i + 1] = color.g * 255.0f;
+        data[i + 2] = color.b * 255.0f;
+        data[i + 3] = color.a * 255.0f;
+    }
+    
+    auto image = vulkan::Image::createAllocatedImage(
+        vulkan,
+        reinterpret_cast<void*>(data.data()),
+        size, bytes,
+        VK_FORMAT_R8G8B8A8_UNORM,
+        VK_IMAGE_USAGE_SAMPLED_BIT,
+        VK_IMAGE_ASPECT_COLOR_BIT,
+        false
+    );
+    
+    return new Texture(vulkan, image);
 }
 
 std::shared_ptr<Texture> Texture::blackTexture(Vulkan *vulkan)
