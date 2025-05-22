@@ -1,6 +1,6 @@
 #pragma once
 
-#include <bg2e/scene/vk/SceneData.hpp>
+#include <bg2e/scene/vk/SceneDataBinding.hpp>
 #include <bg2e/render/vulkan/FrameResources.hpp>
 #include <bg2e/render/EnvironmentResources.hpp>
 
@@ -8,9 +8,9 @@ namespace bg2e {
 namespace scene {
 namespace vk {
 
-class BG2E_API EnvironmentData : public SceneData {
+class BG2E_API EnvironmentDataBinding : public SceneDataBinding {
 public:
-    EnvironmentData(bg2e::render::Vulkan * vk) : SceneData(vk) {}
+    EnvironmentDataBinding(bg2e::render::Vulkan * vk) : SceneDataBinding(vk) {}
 
     void initFrameResources(bg2e::render::vulkan::DescriptorSetAllocator * frameAllocator) override;
 

@@ -1,18 +1,18 @@
 
-#include <bg2e/scene/vk/EnvironmentData.hpp>
+#include <bg2e/scene/vk/EnvironmentDataBinding.hpp>
 #include <bg2e/render/vulkan/macros/frame_resources.hpp>
 #include <bg2e/render/vulkan/factory/DescriptorSetLayout.hpp>
 
 namespace bg2e::scene::vk {
 
-void EnvironmentData::initFrameResources(bg2e::render::vulkan::DescriptorSetAllocator * frameAllocator)
+void EnvironmentDataBinding::initFrameResources(bg2e::render::vulkan::DescriptorSetAllocator * frameAllocator)
 {
     frameAllocator->requirePoolSizeRatio(1, {
         { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2 }
     });
 }
 
-VkDescriptorSetLayout EnvironmentData::createLayout()
+VkDescriptorSetLayout EnvironmentDataBinding::createLayout()
 {
     if (_layout == VK_NULL_HANDLE)
     {
@@ -26,7 +26,7 @@ VkDescriptorSetLayout EnvironmentData::createLayout()
     return _layout;
 }
 
-VkDescriptorSet EnvironmentData::newDescriptorSet(
+VkDescriptorSet EnvironmentDataBinding::newDescriptorSet(
     bg2e::render::vulkan::FrameResources & frameResources,
     bg2e::render::EnvironmentResources * environmentResources
 ) {

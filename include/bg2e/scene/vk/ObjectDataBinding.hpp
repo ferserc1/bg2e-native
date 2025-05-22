@@ -1,16 +1,15 @@
 
 #pragma once
 
-#include <bg2e/scene/vk/SceneData.hpp>
+#include <bg2e/scene/vk/SceneDataBinding.hpp>
 #include <bg2e/render/vulkan/FrameResources.hpp>
 #include <bg2e/render/MaterialBase.hpp>
-#include <bg2e/render/vulkan/Image.hpp>
 
 namespace bg2e {
 namespace scene {
 namespace vk {
 
-class BG2E_API ObjectData : public SceneData {
+class BG2E_API ObjectDataBinding : public SceneDataBinding {
 public:
     struct ObjectUniforms
     {
@@ -19,7 +18,7 @@ public:
         // TODO: add material uniforms
     };
 
-    ObjectData(bg2e::render::Vulkan *);
+    ObjectDataBinding(bg2e::render::Vulkan * vk) :SceneDataBinding(vk) {}
     
     void initFrameResources(bg2e::render::vulkan::DescriptorSetAllocator * frameAllocator) override;
     

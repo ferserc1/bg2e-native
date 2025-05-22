@@ -16,6 +16,53 @@
 namespace bg2e {
 namespace render {
 
+
+std::shared_ptr<Texture> Texture::_blackTexture;
+std::shared_ptr<Texture> Texture::_whiteTexture;
+std::shared_ptr<Texture> Texture::_normalTexture;
+
+Texture * Texture::colorTexture(Vulkan *vulkan, const base::Color &color, VkExtent2D size)
+{
+    // TODO: Implement this
+    return nullptr;
+}
+
+std::shared_ptr<Texture> Texture::blackTexture(Vulkan *vulkan)
+{
+    if (_blackTexture.get() == nullptr)
+    {
+        _blackTexture = std::shared_ptr<Texture>(colorTexture(vulkan, base::Color::Black(), { 2, 2 }));
+        vulkan->cleanupManager().push([](VkDevice dev) {
+            _blackTexture.reset();
+        });
+    }
+    return _blackTexture;
+}
+
+std::shared_ptr<Texture> Texture::whiteTexture(Vulkan *vulkan)
+{
+    if (_whiteTexture.get() == nullptr)
+    {
+        _whiteTexture = std::shared_ptr<Texture>(colorTexture(vulkan, base::Color::White(), { 2, 2 }));
+        vulkan->cleanupManager().push([](VkDevice dev) {
+            _whiteTexture.reset();
+        });
+    }
+    return _whiteTexture;
+}
+
+std::shared_ptr<Texture> Texture::normalTexture(Vulkan *vulkan)
+{
+    if (_normalTexture.get() == nullptr)
+    {
+        _normalTexture = std::shared_ptr<Texture>(colorTexture(vulkan, base::Color(0.5f, 0.5f, 1.0f, 1.0f), { 2, 2 }));
+        vulkan->cleanupManager().push([](VkDevice dev) {
+            _normalTexture.reset();
+        });
+    }
+    return _normalTexture;
+}
+
 Texture::~Texture()
 {
     cleanup();

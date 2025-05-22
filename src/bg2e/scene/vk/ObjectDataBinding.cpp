@@ -1,18 +1,11 @@
 
-#include <bg2e/scene/vk/ObjectData.hpp>
+#include <bg2e/scene/vk/ObjectDataBinding.hpp>
 #include <bg2e/render/vulkan/macros/frame_resources.hpp>
 #include <bg2e/render/vulkan/factory/DescriptorSetLayout.hpp>
 
 namespace bg2e::scene::vk {
 
-
-ObjectData::ObjectData(bg2e::render::Vulkan * vulkan)
-    :SceneData(vulkan)
-{
-
-}
-
-void ObjectData::initFrameResources(bg2e::render::vulkan::DescriptorSetAllocator * frameAllocator)
+void ObjectDataBinding::initFrameResources(bg2e::render::vulkan::DescriptorSetAllocator * frameAllocator)
 {
     frameAllocator->requirePoolSizeRatio(1, {
         { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1 },
@@ -22,7 +15,7 @@ void ObjectData::initFrameResources(bg2e::render::vulkan::DescriptorSetAllocator
     });
 }
 
-VkDescriptorSetLayout ObjectData::createLayout()
+VkDescriptorSetLayout ObjectDataBinding::createLayout()
 {
     if (_layout == VK_NULL_HANDLE)
     {
@@ -39,7 +32,7 @@ VkDescriptorSetLayout ObjectData::createLayout()
     return _layout;
 }
 
-VkDescriptorSet ObjectData::newDescriptorSet(
+VkDescriptorSet ObjectDataBinding::newDescriptorSet(
     bg2e::render::vulkan::FrameResources & frameResources,
     bg2e::render::MaterialBase * material,
     const glm::mat4 & modelMatrix

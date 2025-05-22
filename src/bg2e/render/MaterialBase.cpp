@@ -17,7 +17,7 @@ MaterialBase::~MaterialBase()
 
 void updateTexture(
     Vulkan * vulkan,
-    const std::shared_ptr<base::Texture>& texData,
+    base::Texture * texData,
     std::shared_ptr<Texture>& outTexture,
     bool useCache
 ) {
@@ -26,14 +26,14 @@ void updateTexture(
         outTexture.reset();
     }
     
-    if (texData.get() != nullptr && !useCache)
+    if (texData != nullptr && !useCache)
     {
         outTexture = std::make_shared<Texture>(
                 vulkan,
                 texData
             );
     }
-    else if (texData.get() != nullptr)
+    else if (texData != nullptr)
     {
         if (texData->imageFilePath() == "")
         {
@@ -52,42 +52,42 @@ void MaterialBase::updateTextures()
     
     if (!_materialAttributes.albedoTextureUpdated())
     {
-        updateTexture(_vulkan, _materialAttributes.albedoTexture(), _albedoTexture, useTextureCache());
+        updateTexture(_vulkan, _materialAttributes.albedoTexture().get(), _albedoTexture, useTextureCache());
     }
     else {
-        // TODO: Set 1x1 white texture
+        _albedoTexture = render::Texture::whiteTexture(_vulkan);
     }
     
     if (!_materialAttributes.metalnessTextureUpdated())
     {
-        updateTexture(_vulkan, _materialAttributes.metalnessTexture(), _metalnessTexture, useTextureCache());
+        updateTexture(_vulkan, _materialAttributes.metalnessTexture().get(), _metalnessTexture, useTextureCache());
     }
     else {
-        // TODO: Set 1x1 white texture
+        _metalnessTexture = render::Texture::whiteTexture(_vulkan);
     }
     
     if (!_materialAttributes.roughnessTextureUpdated())
     {
-        updateTexture(_vulkan, _materialAttributes.roughnessTexture(), _roughnessTexture, useTextureCache());
+        updateTexture(_vulkan, _materialAttributes.roughnessTexture().get(), _roughnessTexture, useTextureCache());
     }
     else {
-        // TODO: Set 1x1 white texture
+        _roughnessTexture = render::Texture::whiteTexture(_vulkan);
     }
     
     if (!_materialAttributes.normalTextureUpdated())
     {
-        updateTexture(_vulkan, _materialAttributes.normalTexture(), _normalTexture, useTextureCache());
+        updateTexture(_vulkan, _materialAttributes.normalTexture().get(), _normalTexture, useTextureCache());
     }
     else {
-        // TODO: Set 1x1 normal texture
+        _normalTexture = render::Texture::normalTexture(_vulkan);
     }
     
     if (!_materialAttributes.aoTextureUpdated())
     {
-        updateTexture(_vulkan, _materialAttributes.aoTexture(), _aoTexture, useTextureCache());
+        updateTexture(_vulkan, _materialAttributes.aoTexture().get(), _aoTexture, useTextureCache());
     }
     else {
-        // TODO: Set 1x1 white texture
+        _normalTexture = render::Texture::whiteTexture(_vulkan);
     }
     
     _materialAttributes.setUpdated();

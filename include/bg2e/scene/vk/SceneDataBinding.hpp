@@ -6,10 +6,10 @@ namespace bg2e {
 namespace scene {
 namespace vk {
 
-class SceneData {
+class SceneDataBinding {
 public:
-    SceneData(bg2e::render::Vulkan * vk) : _vulkan(vk) {}
-    virtual ~SceneData() = default;
+    SceneDataBinding(bg2e::render::Vulkan * vk) : _vulkan(vk) {}
+    virtual ~SceneDataBinding() = default;
 
     virtual void initFrameResources(bg2e::render::vulkan::DescriptorSetAllocator * frameAllocator) = 0;
 

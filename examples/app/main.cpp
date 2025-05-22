@@ -20,22 +20,16 @@ public:
                 VK_FORMAT_R8G8B8A8_UNORM
             })
         );
-  
-        // If you need to use the main descriptor set allocator, add all the required pool size ratios
-        // in the init function.
-        vulkan->descriptorSetAllocator().requirePoolSizeRatio(1, {
-            { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1 }
-        });
         
-        _objectData = std::make_unique<bg2e::scene::vk::ObjectData>(vulkan);
+        _frameDataBinding = std::make_unique<bg2e::scene::vk::FrameDataBinding>(vulkan);
         
-        _environmentData = std::make_unique<bg2e::scene::vk::EnvironmentData>(vulkan);
+        _objectDataBinding = std::make_unique<bg2e::scene::vk::ObjectDataBinding>(vulkan);
+        
+        _environmentDataBinding = std::make_unique<bg2e::scene::vk::EnvironmentDataBinding>(vulkan);
         
         _environment = std::unique_ptr<bg2e::render::EnvironmentResources>(
             new bg2e::render::EnvironmentResources(
                 _vulkan,
-
-                // Use this parameters to build the SkyboxRenderer in EnvironmentResources
                 _colorAttachments->attachmentFormats(),
                 _vulkan->swapchain().depthImageFormat()
             )
@@ -44,8 +38,9 @@ public:
  
     void initFrameResources(bg2e::render::vulkan::DescriptorSetAllocator* frameAllocator) override
     {
-        _objectData->initFrameResources(frameAllocator);
-        _environmentData->initFrameResources(frameAllocator);
+        _frameDataBinding->initFrameResources(frameAllocator);
+        _objectDataBinding->initFrameResources(frameAllocator);
+        _environmentDataBinding->initFrameResources(frameAllocator);
         
         _environment->initFrameResources(frameAllocator);
         
@@ -74,16 +69,16 @@ public:
 
 		createPipeline();
 
-        _sceneData.viewMatrix = glm::lookAt(glm::vec3{ 0.0f, 0.0f, -5.0f}, { 0.0f, 0.0f, 0.0f }, { 0.0f, 1.0f, 0.0f });
+        _viewMatrix = glm::lookAt(glm::vec3{ 0.0f, 0.0f, -5.0f}, { 0.0f, 0.0f, 0.0f }, { 0.0f, 1.0f, 0.0f });
         
         auto vpSize = _vulkan->swapchain().extent();
-        _sceneData.projMatrix = glm::perspective(
+        _projMatrix = glm::perspective(
             glm::radians(50.0f),
             float(vpSize.width) / float(vpSize.height),
             0.1f, 40.0f
         );
-        _sceneData.projMatrix[1][1] *= -1.0f;
-
+        _projMatrix[1][1] *= -1.0f;
+        
         _modelMatrix = glm::mat4{ 1.0f };
         
 		createVertexData();
@@ -94,12 +89,12 @@ public:
         // This function releases all previous resources before recreate the images
 		_colorAttachments->build(newExtent);
   
-        _sceneData.projMatrix = glm::perspective(
+        _projMatrix = glm::perspective(
             glm::radians(50.0f),
             float(newExtent.width) / float(newExtent.height),
             0.1f, 40.0f
         );
-        _sceneData.projMatrix[1][1] *= -1.0f;	
+        _projMatrix[1][1] *= -1.0f;
 	}
 
 	VkImageLayout render(
@@ -113,19 +108,6 @@ public:
   
         _environment->update(cmd, currentFrame, frameResources);
   
-        // You can use this function when a descriptor set only contains one unique uniform buffer.
-        // The uniformBufferDescriptorSet function automatically create the uniform buffer and descriptor set
-        // inside the FrameResources object, upload the buffer data and update the descriptor set in one single
-        // call. This function will also manage the allocated Vulkan memory and the heap memory. The descriptor
-        // set object memory will be managed by the frameResources, so you don't need to delete it or manage
-        // using a smart pointer. The object will be removed when the frame rendering is done.
-        // You can save the pointer to the set descriptor and use it safely in other functions, as long as
-        // they are used within the same frame.
-        auto sceneDS = macros::uniformBufferDescriptorSet(
-            _vulkan, frameResources,
-            _sceneDSLayout, _sceneData, currentFrame
-        );
-        
 		float flash = std::abs(std::sin(currentFrame / 120.0f));
 		VkClearColorValue clearValue{ { 0.0f, 0.0f, flash, 1.0f } };
         macros::cmdClearImagesAndBeginRendering(
@@ -140,12 +122,15 @@ public:
         );
   
         // Rotate the view along Y axis
-        _sceneData.viewMatrix = glm::rotate(_sceneData.viewMatrix, 0.02f, glm::vec3(0.0f, 1.0f, 0.0f));
-
-        // Draw skybox. This functions will only generate a skybox if the skybox renderer
-        // is initialized in _environment. To do it, call de EnvironmentResources constructor
-        // with the target image and depth format
-        _environment->updateSkybox(_sceneData.viewMatrix, _sceneData.projMatrix);
+        _viewMatrix = glm::rotate(_viewMatrix, 0.02f, glm::vec3(0.0f, 1.0f, 0.0f));
+        
+        auto sceneDS = _frameDataBinding->newDescriptorSet(
+            frameResources,
+            _viewMatrix,
+            _projMatrix
+        );
+        
+        _environment->updateSkybox(_viewMatrix, _projMatrix);
         
         if (_drawSkybox)
         {
@@ -155,16 +140,16 @@ public:
   
         vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, _pipeline);
         
-        auto envDS = _environmentData->newDescriptorSet(frameResources, _environment.get());
+        auto envDS = _environmentDataBinding->newDescriptorSet(frameResources, _environment.get());
   
-        auto modelDS = _objectData->newDescriptorSet(
+        auto modelDS = _objectDataBinding->newDescriptorSet(
             frameResources,
             _modelMaterial.get(),
             _modelMatrix
         );
         
         std::array<VkDescriptorSet, 3> objectSets = {
-            sceneDS->descriptorSet(),
+            sceneDS,
             modelDS,
             envDS
         };
@@ -178,13 +163,13 @@ public:
         );
         _model->drawSubmesh(cmd, 1);
         
-        auto modelDS2 = _objectData->newDescriptorSet(
+        auto modelDS2 = _objectDataBinding->newDescriptorSet(
             frameResources,
             _modelMaterial2.get(),
             _modelMatrix
         );
         std::array<VkDescriptorSet, 3> objectSets2 = {
-            sceneDS->descriptorSet(),
+            sceneDS,
             modelDS2,
             envDS
         };
@@ -284,26 +269,20 @@ protected:
     std::unique_ptr<bg2e::render::vulkan::geo::MeshPNU> _model;
     std::shared_ptr<bg2e::render::MaterialBase> _modelMaterial;
     std::shared_ptr<bg2e::render::MaterialBase> _modelMaterial2;
-
-    VkDescriptorSetLayout _sceneDSLayout;
     
-    std::unique_ptr<bg2e::scene::vk::ObjectData> _objectData;
+    std::unique_ptr<bg2e::scene::vk::ObjectDataBinding> _objectDataBinding;
 
     // Load the environment skybox, generate the irradiance and specular reflection maps,
     // and manage the sky box renderer
     std::unique_ptr<bg2e::render::EnvironmentResources> _environment;
-    std::unique_ptr<bg2e::scene::vk::EnvironmentData> _environmentData;
+    std::unique_ptr<bg2e::scene::vk::EnvironmentDataBinding> _environmentDataBinding;
     
     bool _drawSkybox = true;
     int _showRenderTargetIndex = 0;
-        
-    struct SceneData
-    {
-        glm::mat4 viewMatrix;
-        glm::mat4 projMatrix;
-    };
-    
-    SceneData _sceneData;
+      
+    glm::mat4 _viewMatrix;
+    glm::mat4 _projMatrix;
+    std::unique_ptr<bg2e::scene::vk::FrameDataBinding> _frameDataBinding;
 
 	void createPipeline()
 	{
@@ -313,19 +292,14 @@ protected:
         plFactory.addShader("test/texture_gi.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
         
         plFactory.setInputState<bg2e::render::vulkan::geo::MeshPNU>();
-  
-        bg2e::render::vulkan::factory::DescriptorSetLayout dsFactory;
-        
-        dsFactory.clear();
-        dsFactory.addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
-        _sceneDSLayout = dsFactory.build(_vulkan->device().handle(), VK_SHADER_STAGE_VERTEX_BIT);
     
-        // Create object and environment descriptor set
-        auto objectDSLayout = _objectData->createLayout();
-        auto envDSLayout = _environmentData->createLayout();
+        // Create object and environment descriptor set+
+        auto frameDSLayout = _frameDataBinding->createLayout();
+        auto objectDSLayout = _objectDataBinding->createLayout();
+        auto envDSLayout = _environmentDataBinding->createLayout();
         
         bg2e::render::vulkan::factory::PipelineLayout layoutFactory(_vulkan);
-        layoutFactory.addDescriptorSetLayout(_sceneDSLayout);
+        layoutFactory.addDescriptorSetLayout(frameDSLayout);
         layoutFactory.addDescriptorSetLayout(objectDSLayout);
         layoutFactory.addDescriptorSetLayout(envDSLayout);
         _layout = layoutFactory.build();
@@ -338,12 +312,12 @@ protected:
         plFactory.setColorAttachmentFormat(_colorAttachments->attachmentFormats());
 		_pipeline = plFactory.build(_layout);
   
-		_vulkan->cleanupManager().push([&, objectDSLayout, envDSLayout](VkDevice dev) {
+		_vulkan->cleanupManager().push([&, objectDSLayout, envDSLayout, frameDSLayout](VkDevice dev) {
 			vkDestroyPipeline(dev, _pipeline, nullptr);
 			vkDestroyPipelineLayout(dev, _layout, nullptr);
-            vkDestroyDescriptorSetLayout(dev, _sceneDSLayout, nullptr);
             vkDestroyDescriptorSetLayout(dev, objectDSLayout, nullptr);
             vkDestroyDescriptorSetLayout(dev, envDSLayout, nullptr);
+            vkDestroyDescriptorSetLayout(dev, frameDSLayout, nullptr);
 		});
 	}
 

@@ -2,12 +2,23 @@
 
 #include <bg2e/render/vulkan/Image.hpp>
 #include <bg2e/base/Texture.hpp>
+#include <bg2e/base/Color.hpp>
 
 namespace bg2e {
 namespace render {
 
 class BG2E_API Texture {
+private:
+    static std::shared_ptr<Texture> _blackTexture;
+    static std::shared_ptr<Texture> _whiteTexture;
+    static std::shared_ptr<Texture> _normalTexture;
+
 public:
+    static Texture* colorTexture(Vulkan * vulkan, const base::Color& color, VkExtent2D size);
+    static std::shared_ptr<Texture> blackTexture(Vulkan * vulkan);
+    static std::shared_ptr<Texture> whiteTexture(Vulkan * vulkan);
+    static std::shared_ptr<Texture> normalTexture(Vulkan * vulkan);
+    
     Texture(Vulkan * vulkan) : _vulkan(vulkan) {}
 	Texture(Vulkan* vulkan, std::shared_ptr<base::Texture> texture) : _vulkan(vulkan) { load(texture); }
 	Texture(Vulkan* vulkan, base::Texture* texture) : _vulkan(vulkan) { load(std::shared_ptr<base::Texture>(texture)); }
