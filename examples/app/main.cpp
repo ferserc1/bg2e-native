@@ -142,46 +142,21 @@ public:
         
         auto envDS = _environmentDataBinding->newDescriptorSet(frameResources, _environment.get());
   
-        auto modelDS = _objectDataBinding->newDescriptorSet(
-            frameResources,
-            _modelMaterial.get(),
-            _modelMatrix
-        );
-        
-        std::array<VkDescriptorSet, 3> objectSets = {
-            sceneDS,
-            modelDS,
-            envDS
-        };
-        vkCmdBindDescriptorSets(
+        _drawable->draw(
             cmd,
-            VK_PIPELINE_BIND_POINT_GRAPHICS,
-            _layout, 0,
-            uint32_t(objectSets.size()),
-            objectSets.data(),
-            0, nullptr
-        );
-        _model->drawSubmesh(cmd, 1);
-        
-        auto modelDS2 = _objectDataBinding->newDescriptorSet(
-            frameResources,
-            _modelMaterial2.get(),
-            _modelMatrix
-        );
-        std::array<VkDescriptorSet, 3> objectSets2 = {
-            sceneDS,
-            modelDS2,
-            envDS
-        };
-        vkCmdBindDescriptorSets(
-            cmd,
-            VK_PIPELINE_BIND_POINT_GRAPHICS,
-            _layout, 0,
-            uint32_t(objectSets2.size()),
-            objectSets2.data(),
-            0, nullptr
-        );
-        _model->drawSubmesh(cmd, 0);
+            _layout,
+            [&](bg2e::render::MaterialBase * mat, const glm::mat4& transform, uint32_t submesh) {
+                auto modelDS = _objectDataBinding->newDescriptorSet(
+                    frameResources,
+                    mat,
+                    _modelMatrix * transform
+                );
+                return std::vector<VkDescriptorSet>{
+                    sceneDS,
+                    modelDS,
+                    envDS
+                };
+            });
 
 		bg2e::render::vulkan::cmdEndRendering(cmd);
 
@@ -266,9 +241,7 @@ protected:
 	VkPipeline _pipeline;
  
     glm::mat4 _modelMatrix;
-    std::unique_ptr<bg2e::render::vulkan::geo::MeshPNU> _model;
-    std::shared_ptr<bg2e::render::MaterialBase> _modelMaterial;
-    std::shared_ptr<bg2e::render::MaterialBase> _modelMaterial2;
+    std::unique_ptr<bg2e::scene::DrawablePNU> _drawable;
     
     std::unique_ptr<bg2e::scene::vk::ObjectDataBinding> _objectDataBinding;
 
@@ -328,42 +301,30 @@ protected:
         std::filesystem::path modelPath = bg2e::base::PlatformTools::assetPath();
         modelPath.append("two_submeshes.obj");
         
-        auto modelMesh = std::unique_ptr<bg2e::geo::MeshPNU>(
-            bg2e::db::loadMeshObj<bg2e::geo::MeshPNU>(modelPath)
-        );
-        
-        _model = std::unique_ptr<bg2e::render::vulkan::geo::MeshPNU>(new bg2e::render::vulkan::geo::MeshPNU(_vulkan));
-        _model->setMeshData(modelMesh.get());
-        _model->build();
-        
-        auto modelTexture = std::make_shared<bg2e::base::Texture>(
+        auto innerAlbedoTexture = std::make_shared<bg2e::base::Texture>(
             bg2e::base::PlatformTools::assetPath(),
             "two_submeshes_inner_albedo.jpg"
         );
         
-        _modelMaterial = std::make_shared<bg2e::render::MaterialBase>(_vulkan);
-        _modelMaterial->setUseTextureCache(true);
-        _modelMaterial->materialAttributes().setAlbedo(modelTexture);
-        
-        // Call this function every time you change something in materialAttributes
-        _modelMaterial->updateTextures();
-        
-        auto modelTexture2 = std::make_shared<bg2e::base::Texture>(
+        auto outerAlbedoTexture = std::make_shared<bg2e::base::Texture>(
             bg2e::base::PlatformTools::assetPath(),
             "two_submeshes_outer_albedo.jpg"
         );
         
-        _modelMaterial2 = std::make_shared<bg2e::render::MaterialBase>(_vulkan);
-        _modelMaterial2->setUseTextureCache(true);
-        _modelMaterial2->materialAttributes().setAlbedo(modelTexture2);
+        _drawable = std::make_unique<bg2e::scene::DrawablePNU>();
+        _drawable->setMesh(bg2e::db::loadMeshObj<bg2e::geo::MeshPNU>(modelPath));
         
-        _modelMaterial2->updateTextures();
+        _drawable->material(0).setAlbedo(outerAlbedoTexture);
+        _drawable->material(1).setAlbedo(innerAlbedoTexture);
+        _drawable->load(_vulkan);
         
-		_vulkan->cleanupManager().push([this](VkDevice dev) {
-            _model.reset();
-            _modelMaterial.reset();
-            _modelMaterial2.reset();
-  		});
+        _vulkan->cleanupManager().push([&](VkDevice) {
+            _drawable.reset();
+        });
+        
+        auto modelMesh = std::unique_ptr<bg2e::geo::MeshPNU>(
+            bg2e::db::loadMeshObj<bg2e::geo::MeshPNU>(modelPath)
+        );
 	}
 };
 

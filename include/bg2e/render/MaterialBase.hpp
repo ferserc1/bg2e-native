@@ -13,6 +13,7 @@ public:
 
     void updateTextures();
 
+    inline void setMaterialAttributes(const base::MaterialAttributes& att) { _materialAttributes = att; }
     inline base::MaterialAttributes& materialAttributes() { return _materialAttributes; }
     inline const base::MaterialAttributes& materialAttributes() const { return _materialAttributes; }
     

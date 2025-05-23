@@ -79,11 +79,28 @@ void MeshGeneric<MeshT>::draw(VkCommandBuffer cmd)
 }
 
 template <typename MeshT>
+void MeshGeneric<MeshT>::draw(
+    VkCommandBuffer cmd,
+    VkPipelineLayout layout,
+    const std::vector<VkDescriptorSet> &ds,
+    VkPipelineBindPoint bindPoint
+) {
+    vkCmdBindDescriptorSets(
+        cmd, bindPoint,
+        layout, 0,
+        static_cast<uint32_t>(ds.size()),
+        ds.data(),
+        0, nullptr
+    );
+    draw(cmd);
+}
+    
+template <typename MeshT>
 void MeshGeneric<MeshT>::drawSubmesh(VkCommandBuffer cmd, uint32_t submeshIndex)
 {
 	if (submeshIndex >= _meshData.submeshes.size()) {
 		throw std::runtime_error("Submesh index out of range");
-	} 
+	}
 
 	VkBuffer vertexBuffers[] = { _vertexBuffer->handle() };
 	VkDeviceSize offsets[] = { 0 };
@@ -92,6 +109,24 @@ void MeshGeneric<MeshT>::drawSubmesh(VkCommandBuffer cmd, uint32_t submeshIndex)
 	vkCmdBindIndexBuffer(cmd, _indexBuffer->handle(), 0, VK_INDEX_TYPE_UINT32);
 	auto& submesh = _meshData.submeshes[submeshIndex];
 	vkCmdDrawIndexed(cmd, submesh.indexCount, 1, submesh.firstIndex, 0, 0);
+}
+
+template <typename MeshT>
+void MeshGeneric<MeshT>::drawSubmesh(
+    VkCommandBuffer cmd,
+    VkPipelineLayout layout,
+    const std::vector<VkDescriptorSet> &ds,
+    uint32_t submeshIndex,
+    VkPipelineBindPoint bindPoint)
+{
+    vkCmdBindDescriptorSets(
+        cmd, bindPoint,
+        layout, 0,
+        static_cast<uint32_t>(ds.size()),
+        ds.data(),
+        0, nullptr
+    );
+    drawSubmesh(cmd, submeshIndex);
 }
 
 template <typename MeshT>
@@ -117,7 +152,9 @@ template const Buffer* MeshGeneric<bg2e::geo::MeshP>::vertexBuffer() const;
 template const Buffer* MeshGeneric<bg2e::geo::MeshP>::indexBuffer() const;
 template void MeshGeneric<bg2e::geo::MeshP>::build();
 template void MeshGeneric<bg2e::geo::MeshP>::draw(VkCommandBuffer cmd);
+template void MeshGeneric<bg2e::geo::MeshP>::draw(VkCommandBuffer cmd, VkPipelineLayout layout, const std::vector<VkDescriptorSet> &ds, VkPipelineBindPoint bindPoint);
 template void MeshGeneric<bg2e::geo::MeshP>::drawSubmesh(VkCommandBuffer cmd, uint32_t submeshIndex);
+template void MeshGeneric<bg2e::geo::MeshP>::drawSubmesh(VkCommandBuffer cmd, VkPipelineLayout layout, const std::vector<VkDescriptorSet> &ds, uint32_t submeshIndex, VkPipelineBindPoint bindPoint);
 template void MeshGeneric<bg2e::geo::MeshP>::cleanup();
 
 template MeshGeneric<bg2e::geo::MeshPN>::MeshGeneric(Vulkan*);
@@ -130,7 +167,9 @@ template const Buffer* MeshGeneric<bg2e::geo::MeshPN>::vertexBuffer() const;
 template const Buffer* MeshGeneric<bg2e::geo::MeshPN>::indexBuffer() const;
 template void MeshGeneric<bg2e::geo::MeshPN>::build();
 template void MeshGeneric<bg2e::geo::MeshPN>::draw(VkCommandBuffer cmd);
+template void MeshGeneric<bg2e::geo::MeshPN>::draw(VkCommandBuffer cmd, VkPipelineLayout layout, const std::vector<VkDescriptorSet> &ds, VkPipelineBindPoint bindPoint);
 template void MeshGeneric<bg2e::geo::MeshPN>::drawSubmesh(VkCommandBuffer cmd, uint32_t submeshIndex);
+template void MeshGeneric<bg2e::geo::MeshPN>::drawSubmesh(VkCommandBuffer cmd, VkPipelineLayout layout, const std::vector<VkDescriptorSet> &ds, uint32_t submeshIndex, VkPipelineBindPoint bindPoint);
 template void MeshGeneric<bg2e::geo::MeshPN>::cleanup();
 
 template MeshGeneric<bg2e::geo::MeshPC>::MeshGeneric(Vulkan*);
@@ -143,7 +182,9 @@ template const Buffer* MeshGeneric<bg2e::geo::MeshPC>::vertexBuffer() const;
 template const Buffer* MeshGeneric<bg2e::geo::MeshPC>::indexBuffer() const;
 template void MeshGeneric<bg2e::geo::MeshPC>::build();
 template void MeshGeneric<bg2e::geo::MeshPC>::draw(VkCommandBuffer cmd);
+template void MeshGeneric<bg2e::geo::MeshPC>::draw(VkCommandBuffer cmd, VkPipelineLayout layout, const std::vector<VkDescriptorSet> &ds, VkPipelineBindPoint bindPoint);
 template void MeshGeneric<bg2e::geo::MeshPC>::drawSubmesh(VkCommandBuffer cmd, uint32_t submeshIndex);
+template void MeshGeneric<bg2e::geo::MeshPC>::drawSubmesh(VkCommandBuffer cmd, VkPipelineLayout layout, const std::vector<VkDescriptorSet> &ds, uint32_t submeshIndex, VkPipelineBindPoint bindPoint);
 template void MeshGeneric<bg2e::geo::MeshPC>::cleanup();
 
 template MeshGeneric<bg2e::geo::MeshPU>::MeshGeneric(Vulkan*);
@@ -156,7 +197,9 @@ template const Buffer* MeshGeneric<bg2e::geo::MeshPU>::vertexBuffer() const;
 template const Buffer* MeshGeneric<bg2e::geo::MeshPU>::indexBuffer() const;
 template void MeshGeneric<bg2e::geo::MeshPU>::build();
 template void MeshGeneric<bg2e::geo::MeshPU>::draw(VkCommandBuffer cmd);
+template void MeshGeneric<bg2e::geo::MeshPU>::draw(VkCommandBuffer cmd, VkPipelineLayout layout, const std::vector<VkDescriptorSet> &ds, VkPipelineBindPoint bindPoint);
 template void MeshGeneric<bg2e::geo::MeshPU>::drawSubmesh(VkCommandBuffer cmd, uint32_t submeshIndex);
+template void MeshGeneric<bg2e::geo::MeshPU>::drawSubmesh(VkCommandBuffer cmd, VkPipelineLayout layout, const std::vector<VkDescriptorSet> &ds, uint32_t submeshIndex, VkPipelineBindPoint bindPoint);
 template void MeshGeneric<bg2e::geo::MeshPU>::cleanup();
 
 template MeshGeneric<bg2e::geo::MeshPNU>::MeshGeneric(Vulkan*);
@@ -169,7 +212,9 @@ template const Buffer* MeshGeneric<bg2e::geo::MeshPNU>::vertexBuffer() const;
 template const Buffer* MeshGeneric<bg2e::geo::MeshPNU>::indexBuffer() const;
 template void MeshGeneric<bg2e::geo::MeshPNU>::build();
 template void MeshGeneric<bg2e::geo::MeshPNU>::draw(VkCommandBuffer cmd);
+template void MeshGeneric<bg2e::geo::MeshPNU>::draw(VkCommandBuffer cmd, VkPipelineLayout layout, const std::vector<VkDescriptorSet> &ds, VkPipelineBindPoint bindPoint);
 template void MeshGeneric<bg2e::geo::MeshPNU>::drawSubmesh(VkCommandBuffer cmd, uint32_t submeshIndex);
+template void MeshGeneric<bg2e::geo::MeshPNU>::drawSubmesh(VkCommandBuffer cmd, VkPipelineLayout layout, const std::vector<VkDescriptorSet> &ds, uint32_t submeshIndex, VkPipelineBindPoint bindPoint);
 template void MeshGeneric<bg2e::geo::MeshPNU>::cleanup();
 
 template MeshGeneric<bg2e::geo::MeshPNC>::MeshGeneric(Vulkan*);
@@ -182,7 +227,9 @@ template const Buffer* MeshGeneric<bg2e::geo::MeshPNC>::vertexBuffer() const;
 template const Buffer* MeshGeneric<bg2e::geo::MeshPNC>::indexBuffer() const;
 template void MeshGeneric<bg2e::geo::MeshPNC>::build();
 template void MeshGeneric<bg2e::geo::MeshPNC>::draw(VkCommandBuffer cmd);
+template void MeshGeneric<bg2e::geo::MeshPNC>::draw(VkCommandBuffer cmd, VkPipelineLayout layout, const std::vector<VkDescriptorSet> &ds, VkPipelineBindPoint bindPoint);
 template void MeshGeneric<bg2e::geo::MeshPNC>::drawSubmesh(VkCommandBuffer cmd, uint32_t submeshIndex);
+template void MeshGeneric<bg2e::geo::MeshPNC>::drawSubmesh(VkCommandBuffer cmd, VkPipelineLayout layout, const std::vector<VkDescriptorSet> &ds, uint32_t submeshIndex, VkPipelineBindPoint bindPoint);
 template void MeshGeneric<bg2e::geo::MeshPNC>::cleanup();
 
 template MeshGeneric<bg2e::geo::MeshPNUC>::MeshGeneric(Vulkan*);
@@ -195,7 +242,9 @@ template const Buffer* MeshGeneric<bg2e::geo::MeshPNUC>::vertexBuffer() const;
 template const Buffer* MeshGeneric<bg2e::geo::MeshPNUC>::indexBuffer() const;
 template void MeshGeneric<bg2e::geo::MeshPNUC>::build();
 template void MeshGeneric<bg2e::geo::MeshPNUC>::draw(VkCommandBuffer cmd);
+template void MeshGeneric<bg2e::geo::MeshPNUC>::draw(VkCommandBuffer cmd, VkPipelineLayout layout, const std::vector<VkDescriptorSet> &ds, VkPipelineBindPoint bindPoint);
 template void MeshGeneric<bg2e::geo::MeshPNUC>::drawSubmesh(VkCommandBuffer cmd, uint32_t submeshIndex);
+template void MeshGeneric<bg2e::geo::MeshPNUC>::drawSubmesh(VkCommandBuffer cmd, VkPipelineLayout layout, const std::vector<VkDescriptorSet> &ds, uint32_t submeshIndex, VkPipelineBindPoint bindPoint);
 template void MeshGeneric<bg2e::geo::MeshPNUC>::cleanup();
 
 template MeshGeneric<bg2e::geo::MeshPNUT>::MeshGeneric(Vulkan*);
@@ -208,7 +257,9 @@ template const Buffer* MeshGeneric<bg2e::geo::MeshPNUT>::vertexBuffer() const;
 template const Buffer* MeshGeneric<bg2e::geo::MeshPNUT>::indexBuffer() const;
 template void MeshGeneric<bg2e::geo::MeshPNUT>::build();
 template void MeshGeneric<bg2e::geo::MeshPNUT>::draw(VkCommandBuffer cmd);
+template void MeshGeneric<bg2e::geo::MeshPNUT>::draw(VkCommandBuffer cmd, VkPipelineLayout layout, const std::vector<VkDescriptorSet> &ds, VkPipelineBindPoint bindPoint);
 template void MeshGeneric<bg2e::geo::MeshPNUT>::drawSubmesh(VkCommandBuffer cmd, uint32_t submeshIndex);
+template void MeshGeneric<bg2e::geo::MeshPNUT>::drawSubmesh(VkCommandBuffer cmd, VkPipelineLayout layout, const std::vector<VkDescriptorSet> &ds, uint32_t submeshIndex, VkPipelineBindPoint bindPoint);
 template void MeshGeneric<bg2e::geo::MeshPNUT>::cleanup();
 
 template MeshGeneric<bg2e::geo::MeshPNUUT>::MeshGeneric(Vulkan*);
@@ -221,7 +272,9 @@ template const Buffer* MeshGeneric<bg2e::geo::MeshPNUUT>::vertexBuffer() const;
 template const Buffer* MeshGeneric<bg2e::geo::MeshPNUUT>::indexBuffer() const;
 template void MeshGeneric<bg2e::geo::MeshPNUUT>::build();
 template void MeshGeneric<bg2e::geo::MeshPNUUT>::draw(VkCommandBuffer cmd);
+template void MeshGeneric<bg2e::geo::MeshPNUUT>::draw(VkCommandBuffer cmd, VkPipelineLayout layout, const std::vector<VkDescriptorSet> &ds, VkPipelineBindPoint bindPoint);
 template void MeshGeneric<bg2e::geo::MeshPNUUT>::drawSubmesh(VkCommandBuffer cmd, uint32_t submeshIndex);
+template void MeshGeneric<bg2e::geo::MeshPNUUT>::drawSubmesh(VkCommandBuffer cmd, VkPipelineLayout layout, const std::vector<VkDescriptorSet> &ds, uint32_t submeshIndex, VkPipelineBindPoint bindPoint);
 template void MeshGeneric<bg2e::geo::MeshPNUUT>::cleanup();
 
 template <> VkVertexInputBindingDescription MeshGeneric<bg2e::geo::MeshP>::bindingDescription() { return bindingDescriptionP(); }

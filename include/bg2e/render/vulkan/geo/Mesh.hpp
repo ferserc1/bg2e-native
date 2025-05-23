@@ -29,7 +29,20 @@ public:
 
 	void build();
 	void draw(VkCommandBuffer cmd);
+    void draw(
+        VkCommandBuffer cmd,
+        VkPipelineLayout layout,
+        const std::vector<VkDescriptorSet> &ds,
+        VkPipelineBindPoint bindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS
+    );
 	void drawSubmesh(VkCommandBuffer cmd, uint32_t submeshIndex);
+    void drawSubmesh(
+        VkCommandBuffer cmd,
+        VkPipelineLayout layout,
+        const std::vector<VkDescriptorSet> &ds,
+        uint32_t submeshIndex,
+        VkPipelineBindPoint bindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS
+    );   
 
 	static VkVertexInputBindingDescription bindingDescription();
 	static std::vector<VkVertexInputAttributeDescription> attributeDescriptions();
