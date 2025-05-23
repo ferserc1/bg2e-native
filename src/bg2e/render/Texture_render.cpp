@@ -29,10 +29,10 @@ Texture * Texture::colorTexture(Vulkan *vulkan, const base::Color &color, VkExte
     
     for (auto i = 0; i < dataSize; i += bytes)
     {
-        data[i] = color.r * 255.0f;
-        data[i + 1] = color.g * 255.0f;
-        data[i + 2] = color.b * 255.0f;
-        data[i + 3] = color.a * 255.0f;
+        data[i] = static_cast<uint8_t>(color.r * 255.0f);
+        data[i + 1] = static_cast<uint8_t>(color.g * 255.0f);
+        data[i + 2] = static_cast<uint8_t>(color.b * 255.0f);
+        data[i + 3] = static_cast<uint8_t>(color.a * 255.0f);
     }
     
     auto image = vulkan::Image::createAllocatedImage(

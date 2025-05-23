@@ -14,7 +14,7 @@
 namespace bg2e {
 namespace utils {
 
-class TextureCache {
+class BG2E_API TextureCache {
 public:
 
     static TextureCache& get();

@@ -16,7 +16,6 @@ namespace scene {
 template <typename MeshT, typename RenderMeshT>
 class BG2E_API DrawableGeneric {
 public:
-    DrawableGeneric() = default;
     virtual ~DrawableGeneric() {}
     
     struct SubmeshAttributes {
@@ -24,11 +23,9 @@ public:
         glm::mat4 transform = glm::mat4 { 1.0f } ;
     };
 
-    inline void setMesh(MeshT * mesh) {
-        setMesh(std::shared_ptr<MeshT>(mesh));
-    }
+    void setMesh(MeshT* mesh);
     void setMesh(std::shared_ptr<MeshT> mesh);
-    inline const std::shared_ptr<MeshT> & mesh() const { return _mesh; }
+    const std::shared_ptr<MeshT>& mesh() const;
     
     void setMaterial(const base::MaterialAttributes& mat, uint32_t submeshIndex = 0);
     void setTransform(const glm::mat4& mat, uint32_t submeshIndex = 0);
@@ -44,7 +41,7 @@ public:
     void updateMaterials();
     
     std::shared_ptr<RenderMeshT> renderMesh();
-    const std::unique_ptr<render::MaterialBase>& renderMaterial(uint32_t submeshIndex);
+    const std::shared_ptr<render::MaterialBase>& renderMaterial(uint32_t submeshIndex);
     
     void drawSubmesh(
         VkCommandBuffer cmd,
@@ -75,7 +72,7 @@ protected:
     // several Drawable objects
     render::Vulkan * _vulkan;
     std::shared_ptr<RenderMeshT> _renderMesh;
-    std::vector<std::unique_ptr<render::MaterialBase>> _materials;
+    std::vector<std::shared_ptr<render::MaterialBase>> _materials;
     
 };
 

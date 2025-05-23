@@ -12,8 +12,8 @@ namespace scene {
 //typedef geo::MeshPNUUT Mesh;
 //typedef render::vulkan::geo::MeshPNUUT RenderMesh;
 
-typedef geo::MeshPNUUT Mesh;
-typedef render::vulkan::geo::MeshPNUUT RenderMesh;
+typedef BG2E_API geo::MeshPNUUT Mesh;
+typedef BG2E_API render::vulkan::geo::MeshPNUUT RenderMesh;
 
 }
 }

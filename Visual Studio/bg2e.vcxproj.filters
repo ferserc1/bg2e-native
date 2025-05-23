@@ -82,6 +82,24 @@
     <Filter Include="Source Files\geo">
       <UniqueIdentifier>{cdd146f3-409f-4296-86fe-e31fe47295b3}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\bg2e\scene">
+      <UniqueIdentifier>{54e4343f-f0ab-4418-b937-9bd44d0ff8c6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\bg2e\scene\vk">
+      <UniqueIdentifier>{663c6be7-0e6e-419d-bd3a-13163a3eafa0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\bg2e\utils">
+      <UniqueIdentifier>{d7664106-9d50-42bf-80be-62e76c21a2fe}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\scene">
+      <UniqueIdentifier>{1512b139-c7b0-4b34-8e1d-55b4c78f5099}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\scene\vk">
+      <UniqueIdentifier>{1962b4b5-5906-414f-8b15-8bc41bf4e817}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\utils">
+      <UniqueIdentifier>{154041d2-2a62-4cbf-83eb-f374b78cb7b4}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\include\bg2e\common.hpp">
@@ -342,6 +360,36 @@
     <ClInclude Include="..\include\bg2e\render\MaterialBase.hpp">
       <Filter>Header Files\bg2e\render</Filter>
     </ClInclude>
+    <ClInclude Include="..\include\bg2e\utils\all.hpp">
+      <Filter>Header Files\bg2e\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\utils\TextureCache.hpp">
+      <Filter>Header Files\bg2e\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\scene\all.hpp">
+      <Filter>Header Files\bg2e\scene</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\scene\Drawable.hpp">
+      <Filter>Header Files\bg2e\scene</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\scene\Mesh.hpp">
+      <Filter>Header Files\bg2e\scene</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\scene\vk\all.hpp">
+      <Filter>Header Files\bg2e\scene\vk</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\scene\vk\EnvironmentDataBinding.hpp">
+      <Filter>Header Files\bg2e\scene\vk</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\scene\vk\FrameDataBinding.hpp">
+      <Filter>Header Files\bg2e\scene\vk</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\scene\vk\ObjectDataBinding.hpp">
+      <Filter>Header Files\bg2e\scene\vk</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\scene\vk\SceneDataBinding.hpp">
+      <Filter>Header Files\bg2e\scene\vk</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\bg2e\app\MainLoop.cpp">
@@ -523,6 +571,21 @@
     </ClCompile>
     <ClCompile Include="..\src\bg2e\render\ColorAttachments.cpp">
       <Filter>Source Files\render</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\bg2e\utils\TextureCache.cpp">
+      <Filter>Source Files\utils</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\bg2e\scene\Drawable.cpp">
+      <Filter>Source Files\scene</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\bg2e\scene\vk\EnvironmentDataBinding.cpp">
+      <Filter>Source Files\scene\vk</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\bg2e\scene\vk\FrameDataBinding.cpp">
+      <Filter>Source Files\scene\vk</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\bg2e\scene\vk\ObjectDataBinding.cpp">
+      <Filter>Source Files\scene\vk</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

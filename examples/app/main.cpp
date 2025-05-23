@@ -313,6 +313,8 @@ protected:
         
         _drawable = std::make_unique<bg2e::scene::DrawablePNU>();
         _drawable->setMesh(bg2e::db::loadMeshObj<bg2e::geo::MeshPNU>(modelPath));
+
+        _drawable->mesh();
         
         _drawable->material(0).setAlbedo(outerAlbedoTexture);
         _drawable->material(1).setAlbedo(innerAlbedoTexture);
