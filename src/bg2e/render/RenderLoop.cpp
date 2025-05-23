@@ -66,6 +66,7 @@ void RenderLoop::acquireAndPresent()
     if (_renderDelegate.get())
     {
         _renderDelegate->update(_vulkan->currentFrame(), frameResources);
+        _renderDelegate->setDelta(this->_delta);
     }
 
     auto swapchainImage = swapchainData.colorImage(swapchainImageIndex);

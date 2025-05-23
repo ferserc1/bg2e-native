@@ -39,8 +39,13 @@ public:
 
 	inline render::Vulkan* vulkan() { return _vulkan; }
 
+    inline float delta() const { return _delta; }
+    inline void setDelta(float d) { _delta = d; }
+
 protected:
 	render::Vulkan* _vulkan = nullptr;
+    
+    float _delta = 0.0f;
 };
 
 }

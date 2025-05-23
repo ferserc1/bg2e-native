@@ -40,6 +40,8 @@ public:
 
 	inline void renderUICallback(std::function<void(VkCommandBuffer, VkImageView)> callback) { _renderUICallback = callback; }
 
+    inline void setDelta(float d) { _delta = d; }
+    
 protected:
 	Vulkan* _vulkan;
     bool _resizeRequested = false;
@@ -47,6 +49,8 @@ protected:
     std::shared_ptr<RenderLoopDelegate> _renderDelegate;
 
     std::function<void(VkCommandBuffer, VkImageView)> _renderUICallback;
+    
+    float _delta;
 };
 
 }

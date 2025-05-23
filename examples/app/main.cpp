@@ -105,7 +105,7 @@ public:
 		bg2e::render::vulkan::FrameResources& frameResources
 	) override {
 		using namespace bg2e::render::vulkan;
-  
+    
         _environment->update(cmd, currentFrame, frameResources);
   
 		float flash = std::abs(std::sin(currentFrame / 120.0f));
@@ -122,7 +122,7 @@ public:
         );
   
         // Rotate the view along Y axis
-        _viewMatrix = glm::rotate(_viewMatrix, 0.02f, glm::vec3(0.0f, 1.0f, 0.0f));
+        _viewMatrix = glm::rotate(_viewMatrix, 0.02f * this->delta() / 10.0f, glm::vec3(0.0f, 1.0f, 0.0f));
         
         auto sceneDS = _frameDataBinding->newDescriptorSet(
             frameResources,
@@ -142,9 +142,7 @@ public:
         
         auto envDS = _environmentDataBinding->newDescriptorSet(frameResources, _environment.get());
   
-        _drawable->draw(
-            cmd,
-            _layout,
+        _drawable->draw(cmd, _layout,
             [&](bg2e::render::MaterialBase * mat, const glm::mat4& transform, uint32_t submesh) {
                 auto modelDS = _objectDataBinding->newDescriptorSet(
                     frameResources,

@@ -44,10 +44,13 @@ int32_t MainLoop::run(app::Application * application) {
     // Initialize the main descriptor set allocator before executing the first frame
     _vulkan.descriptorSetAllocator().initPool();
     _renderLoop.initScene();
+    auto start = std::chrono::high_resolution_clock::now();
+    
     while (!quit)
     {
         while (SDL_PollEvent(&event) != 0)
         {
+            
             if (event.type == SDL_QUIT)
             {
                 quit = true;
@@ -129,6 +132,14 @@ int32_t MainLoop::run(app::Application * application) {
         _userInterface.newFrame();
         
         _renderLoop.acquireAndPresent();
+        auto end = std::chrono::high_resolution_clock::now();
+    
+        auto millis = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+    
+        //std::cout << millis.count() << std::endl;
+        _renderLoop.setDelta(static_cast<float>(millis.count()));
+        
+        start = std::chrono::high_resolution_clock::now();
     }
 
     _vulkan.device().waitIdle();
