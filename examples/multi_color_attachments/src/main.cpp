@@ -291,7 +291,7 @@ protected:
 	VkPipelineLayout _layout;
 	VkPipeline _pipeline;
  
-    std::unique_ptr<bg2e::render::vulkan::geo::MeshPNU> _model;
+    std::shared_ptr<bg2e::render::vulkan::geo::MeshPNU> _model;
     std::shared_ptr<bg2e::render::MaterialBase> _modelMaterial;
     std::shared_ptr<bg2e::render::MaterialBase> _modelMaterial2;
     
@@ -302,7 +302,7 @@ protected:
 
     // Load the environment skybox, generate the irradiance and specular reflection maps,
     // and manage the sky box renderer
-    std::unique_ptr<bg2e::render::EnvironmentResources> _environment;
+    std::shared_ptr<bg2e::render::EnvironmentResources> _environment;
     
     bool _drawSkybox = true;
     int _showRenderTargetIndex = 0;
@@ -375,7 +375,7 @@ protected:
             bg2e::db::loadMeshObj<bg2e::geo::MeshPNU>(modelPath)
         );
         
-        _model = std::unique_ptr<bg2e::render::vulkan::geo::MeshPNU>(new bg2e::render::vulkan::geo::MeshPNU(_vulkan));
+        _model = std::shared_ptr<bg2e::render::vulkan::geo::MeshPNU>(new bg2e::render::vulkan::geo::MeshPNU(_vulkan));
         _model->setMeshData(modelMesh.get());
         _model->build();
         
@@ -388,7 +388,7 @@ protected:
         _modelMaterial->materialAttributes().setAlbedo(modelTexture);
         
         // Call this function every time you change something in materialAttributes
-        _modelMaterial->update();
+        _modelMaterial->updateTextures();
         
         auto modelTexture2 = std::make_shared<bg2e::base::Texture>(
             bg2e::base::PlatformTools::assetPath(),
@@ -398,7 +398,7 @@ protected:
         _modelMaterial2 = std::make_shared<bg2e::render::MaterialBase>(_vulkan);
         _modelMaterial2->materialAttributes().setAlbedo(modelTexture2);
         
-        _modelMaterial2->update();
+        _modelMaterial2->updateTextures();
         
 		_vulkan->cleanupManager().push([this](VkDevice dev) {
             _model.reset();

@@ -58,7 +58,7 @@ std::shared_ptr<render::Texture> TextureCache::load(render::Vulkan * vk, const b
     if (_textures.find(filePath) == _textures.end())
     {
         std::cout << "Texture not found in cache: " << filePath << std::endl;
-        auto texture = new base::Texture(filePath);
+        auto texture = std::make_shared<base::Texture>(filePath);
         texture->setMagFilter(settings.magFilter());
         texture->setMinFilter(settings.minFilter());
         texture->setMaxLod(settings.maxLod());

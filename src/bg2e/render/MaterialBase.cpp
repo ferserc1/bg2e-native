@@ -21,7 +21,7 @@ MaterialBase::~MaterialBase()
 
 void updateTexture(
     Vulkan * vulkan,
-    base::Texture * texData,
+    std::shared_ptr<base::Texture> texData,
     std::shared_ptr<Texture>& outTexture,
     bool useCache
 ) {
@@ -56,27 +56,27 @@ void MaterialBase::updateTextures()
     
     if (!_materialAttributes.albedoTextureUpdated())
     {
-        updateTexture(_vulkan, _materialAttributes.albedoTexture().get(), _albedoTexture, useTextureCache());
+        updateTexture(_vulkan, _materialAttributes.albedoTexture(), _albedoTexture, useTextureCache());
     }
     
     if (!_materialAttributes.metalnessTextureUpdated())
     {
-        updateTexture(_vulkan, _materialAttributes.metalnessTexture().get(), _metalnessTexture, useTextureCache());
+        updateTexture(_vulkan, _materialAttributes.metalnessTexture(), _metalnessTexture, useTextureCache());
     }
     
     if (!_materialAttributes.roughnessTextureUpdated())
     {
-        updateTexture(_vulkan, _materialAttributes.roughnessTexture().get(), _roughnessTexture, useTextureCache());
+        updateTexture(_vulkan, _materialAttributes.roughnessTexture(), _roughnessTexture, useTextureCache());
     }
     
     if (!_materialAttributes.normalTextureUpdated())
     {
-        updateTexture(_vulkan, _materialAttributes.normalTexture().get(), _normalTexture, useTextureCache());
+        updateTexture(_vulkan, _materialAttributes.normalTexture(), _normalTexture, useTextureCache());
     }
     
     if (!_materialAttributes.aoTextureUpdated())
     {
-        updateTexture(_vulkan, _materialAttributes.aoTexture().get(), _aoTexture, useTextureCache());
+        updateTexture(_vulkan, _materialAttributes.aoTexture(), _aoTexture, useTextureCache());
     }
     
     _materialAttributes.setUpdated();
