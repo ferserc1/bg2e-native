@@ -32,7 +32,7 @@ public:
 protected:
     Buffer() = default;
 
-    Vulkan * _vulkan;
+    Vulkan * _vulkan = nullptr;
 
     VkBuffer _buffer = VK_NULL_HANDLE;
     VmaAllocation _allocation = VK_NULL_HANDLE;

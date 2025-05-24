@@ -40,14 +40,14 @@ public:
 
 protected:
     VkSwapchainKHR _swapchain = VK_NULL_HANDLE;
-    VkFormat _imageFormat;
+    VkFormat _imageFormat = VK_FORMAT_R8G8B8A8_UNORM;
 
     std::vector<VkImage> _images;
     std::vector<VkImageView> _imageViews;
     VkExtent2D _extent;
     
     std::vector<Image *> _colorImages;
-    Image * _depthImage;
+    Image * _depthImage = nullptr;
 
     Vulkan* _vulkan = nullptr;
     

@@ -4,6 +4,7 @@
 #include <array>
 #include <numbers>
 
+
 class ClearScreenDelegate : public bg2e::render::RenderLoopDelegate,
 	public bg2e::app::InputDelegate,
 	public bg2e::ui::UserInterfaceDelegate
@@ -79,8 +80,6 @@ public:
         );
         _projMatrix[1][1] *= -1.0f;
         
-        _modelMatrix = glm::mat4{ 1.0f };
-        
 		createVertexData();
     }
 
@@ -147,7 +146,7 @@ public:
                 auto modelDS = _objectDataBinding->newDescriptorSet(
                     frameResources,
                     mat,
-                    _modelMatrix * transform
+                    transform
                 );
                 return std::vector<VkDescriptorSet>{
                     sceneDS,
@@ -235,10 +234,9 @@ protected:
 
 	bg2e::ui::Window _window;
 
-	VkPipelineLayout _layout;
-	VkPipeline _pipeline;
+	VkPipelineLayout _layout = VK_NULL_HANDLE;
+	VkPipeline _pipeline = VK_NULL_HANDLE;
  
-    glm::mat4 _modelMatrix;
     std::unique_ptr<bg2e::scene::DrawablePNU> _drawable;
     
     std::unique_ptr<bg2e::scene::vk::ObjectDataBinding> _objectDataBinding;
@@ -251,8 +249,8 @@ protected:
     bool _drawSkybox = true;
     int _showRenderTargetIndex = 0;
       
-    glm::mat4 _viewMatrix;
-    glm::mat4 _projMatrix;
+    glm::mat4 _viewMatrix = { 1.0f };
+    glm::mat4 _projMatrix = { 1.0f };
     std::unique_ptr<bg2e::scene::vk::FrameDataBinding> _frameDataBinding;
 
 	void createPipeline()
@@ -311,8 +309,9 @@ protected:
         
         _drawable = std::make_unique<bg2e::scene::DrawablePNU>();
         _drawable->setMesh(bg2e::db::loadMeshObj<bg2e::geo::MeshPNU>(modelPath));
-
-        _drawable->mesh();
+		_drawable->setSubmeshTransform(
+			glm::translate(glm::mat4{ 1.0f }, glm::vec3{ 0.0f, -2.0f, 0.0f }), 0);
+        _drawable->setTransform(glm::translate(glm::mat4{ 1.0f }, glm::vec3{ 0.0f, 1.0f, 0.0f }));
         
         _drawable->material(0).setAlbedo(outerAlbedoTexture);
         _drawable->material(1).setAlbedo(innerAlbedoTexture);

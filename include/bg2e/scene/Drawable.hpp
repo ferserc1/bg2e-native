@@ -20,7 +20,7 @@ public:
     
     struct SubmeshAttributes {
         base::MaterialAttributes material;
-        glm::mat4 transform = glm::mat4 { 1.0f } ;
+        glm::mat4 transform { 1.0f } ;
     };
 
     void setMesh(MeshT* mesh);
@@ -28,11 +28,14 @@ public:
     const std::shared_ptr<MeshT>& mesh() const;
     
     void setMaterial(const base::MaterialAttributes& mat, uint32_t submeshIndex = 0);
-    void setTransform(const glm::mat4& mat, uint32_t submeshIndex = 0);
+    void setSubmeshTransform(const glm::mat4& mat, uint32_t submeshIndex = 0);
     const base::MaterialAttributes& material(uint32_t index = 0) const;
     base::MaterialAttributes& material(uint32_t index = 0);
-    const glm::mat4& transform(uint32_t index = 0) const;
-    glm::mat4& transform(uint32_t index = 0);
+    glm::mat4 submeshTransform(uint32_t index = 0) const;
+    
+    void setTransform(const glm::mat4& mat);
+    const glm::mat4& transform() const;
+    glm::mat4& transform();
     
     void load(render::Vulkan * vk);
     inline bool isLoaded() const { return _renderMesh.get() != nullptr; }
@@ -61,16 +64,21 @@ public:
 protected:
     std::shared_ptr<MeshT> _mesh;
     std::vector<SubmeshAttributes> _submeshAttributes;
+
     
-    // Default matrix and material attributes. They are used only to return something if the
-    // submesh attributes accessors are called with an out of bound index
+    // Default material attributes. It is used only to return something if the
+    // submesh attributes accessors are called with an out of bound index, because we don't
+	// whant that the access to the attributes to crash the program.
     base::MaterialAttributes _defaultMaterial;
-    glm::mat4 _defaultTransform;
+
+
+    // This transformation is applied to the whole mesh
+    glm::mat4 _transform { 1.0f };
     
     // Render resources
     // TODO: create a render::Mesh cache to avoid duplicities loading a shared geo::Mesh in
     // several Drawable objects
-    render::Vulkan * _vulkan;
+    render::Vulkan * _vulkan = nullptr;
     std::shared_ptr<RenderMeshT> _renderMesh;
     std::vector<std::shared_ptr<render::MaterialBase>> _materials;
     

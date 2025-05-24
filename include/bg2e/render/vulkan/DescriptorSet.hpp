@@ -121,7 +121,7 @@ public:
     inline VkDescriptorSet* operator&() { return &_ds; }
 
 protected:
-    Vulkan * _vulkan;
+    Vulkan * _vulkan = nullptr;
     
     std::deque<VkDescriptorImageInfo> _imageInfos;
     std::deque<VkDescriptorBufferInfo> _bufferInfos;
@@ -129,7 +129,7 @@ protected:
     
     //VkDescriptorImageInfo _imageInfo;
     //VkDescriptorBufferInfo _bufferInfo;
-    VkDescriptorSet _ds;
+    VkDescriptorSet _ds = VK_NULL_HANDLE;
 };
 }
 }

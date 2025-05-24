@@ -64,7 +64,7 @@ public:
 	void destroyBuffer(VkBuffer buffer, VmaAllocation allocation);
 
 protected:
-    SDL_Window* _windowPtr;
+    SDL_Window* _windowPtr = nullptr;
 
 private:
 

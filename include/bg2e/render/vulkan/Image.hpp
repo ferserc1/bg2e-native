@@ -171,10 +171,10 @@ protected:
     VkImageView _imageView = VK_NULL_HANDLE;
     VmaAllocation _allocation = VK_NULL_HANDLE;
     VkExtent3D _extent = { 0, 0 };
-    VkFormat _format;
+    VkFormat _format = VK_FORMAT_R8G8B8A8_UNORM;
     uint32_t _mipLevels = 1;
     
-    Vulkan * _vulkan;
+    Vulkan * _vulkan = nullptr;
 };
 
 }

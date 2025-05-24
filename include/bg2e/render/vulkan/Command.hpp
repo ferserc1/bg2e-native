@@ -31,12 +31,12 @@ public:
     void immediateSubmit(std::function<void(VkCommandBuffer cmd)>&& function);
 
 protected:
-    VkQueue _graphicsQueue;
-    uint32_t _graphicsQueueFamily;
+    VkQueue _graphicsQueue = VK_NULL_HANDLE;
+    uint32_t _graphicsQueueFamily = 0;
 
-    VkCommandPool _immediateCmdPool;
-    VkCommandBuffer _immediateCmdBuffer;
-    VkFence _immediateCmdFence;
+    VkCommandPool _immediateCmdPool = VK_NULL_HANDLE;
+    VkCommandBuffer _immediateCmdBuffer = VK_NULL_HANDLE;
+    VkFence _immediateCmdFence = VK_NULL_HANDLE;
 
 private:
     Vulkan* _vulkan = nullptr;
