@@ -238,6 +238,7 @@
 		ED0328172CE4D16E0037560D /* BasicWidgets.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = BasicWidgets.hpp; sourceTree = "<group>"; };
 		ED0328182CE4D16E0037560D /* DemoWindow.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = DemoWindow.hpp; sourceTree = "<group>"; };
 		ED0328192CE4D16E0037560D /* Window.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Window.hpp; sourceTree = "<group>"; };
+		ED037EA02DE203A800F01643 /* color_correction.glsl */ = {isa = PBXFileReference; lastKnownFileType = text; path = color_correction.glsl; sourceTree = "<group>"; };
 		ED0468442DDCEA7000EE8020 /* bg2e.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = bg2e.hpp; sourceTree = "<group>"; };
 		ED0468502DDCF09100EE8020 /* all.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = all.hpp; sourceTree = "<group>"; };
 		ED0468522DDCF0FC00EE8020 /* all.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = all.hpp; sourceTree = "<group>"; };
@@ -483,6 +484,14 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		ED037EA12DE203A800F01643 /* lib */ = {
+			isa = PBXGroup;
+			children = (
+				ED037EA02DE203A800F01643 /* color_correction.glsl */,
+			);
+			path = lib;
+			sourceTree = "<group>";
+		};
 		ED2191642CDF4C2600123781 /* Recovered References */ = {
 			isa = PBXGroup;
 			children = (
@@ -1080,6 +1089,7 @@
 		EDF045202CE65DB8005C8B96 /* src */ = {
 			isa = PBXGroup;
 			children = (
+				ED037EA12DE203A800F01643 /* lib */,
 				EDF0451F2CE65DB8005C8B96 /* test */,
 				ED12E18C2D54D4DD005B7833 /* cubemap_renderer.vert.glsl */,
 				ED12E1882D54D10F005B7833 /* irradiance_map_renderer.frag.glsl */,
