@@ -11,6 +11,7 @@ layout (push_constant) uniform constants {
     int currentFace;
     int currentMipLevel;
     int totalMipLevels;
+    float gamma;
 } pushConstants;
 
 layout (set = 0, binding = 0) uniform ProjectionData {

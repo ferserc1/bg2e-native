@@ -309,10 +309,6 @@ protected:
         
         _drawable = std::make_unique<bg2e::scene::DrawablePNU>();
         _drawable->setMesh(bg2e::db::loadMeshObj<bg2e::geo::MeshPNU>(modelPath));
-		_drawable->setSubmeshTransform(
-			glm::translate(glm::mat4{ 1.0f }, glm::vec3{ 0.0f, -2.0f, 0.0f }), 0);
-        _drawable->setTransform(glm::translate(glm::mat4{ 1.0f }, glm::vec3{ 0.0f, 1.0f, 0.0f }));
-        
         _drawable->material(0).setAlbedo(outerAlbedoTexture);
         _drawable->material(1).setAlbedo(innerAlbedoTexture);
         _drawable->load(_vulkan);

@@ -67,6 +67,7 @@ protected:
         int currentFace;
         int currentMipLevel = 0;
         int totalMipLevels = 1;
+        float gamma;
     };
     
     struct ProjectionData
