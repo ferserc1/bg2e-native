@@ -1,4 +1,7 @@
 #version 450
+#extension GL_ARB_shading_language_include : require
+
+#include "lib/color_correction.glsl"
 
 layout (location = 0) in vec3 inNormal;
 layout (location = 1) in flat int inCurrentMipLevel;
@@ -55,6 +58,7 @@ vec3 importanceSampleGGX(vec2 Xi, vec3 N, float roughness) {
 
 void main()
 {
+    float gamma = 1.5;
     int sampleCount = 128;
 
     vec3 N = normalize(inNormal);
@@ -66,7 +70,7 @@ void main()
     float roughness = float(inCurrentMipLevel) / float(inTotalMipLevels - 1);
     if (roughness < 0.01)
     {
-        prefilteredColor = texture(skyTexture, inNormal).rgb;
+        prefilteredColor = gammaCorrection(texture(skyTexture, inNormal), gamma).rgb;
     }
     else {
         for (int i = 0; i < sampleCount; ++i)
@@ -82,7 +86,7 @@ void main()
                 totalWeight += NdotL;
             }
         }
-        prefilteredColor = prefilteredColor / totalWeight;
+        prefilteredColor = gammaCorrection(prefilteredColor / totalWeight, gamma);
     }
 
     outFragColor = vec4(prefilteredColor, 1.0);

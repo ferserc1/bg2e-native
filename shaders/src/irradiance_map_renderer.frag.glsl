@@ -1,4 +1,7 @@
 #version 450
+#extension GL_ARB_shading_language_include : require
+
+#include "lib/color_correction.glsl"
 
 layout (location = 0) in vec3 fragNormal;
 layout (location = 1) in flat int inCurrentMipLevel;
@@ -16,6 +19,8 @@ void main()
     const float PI = 3.14159265359;
     vec3 normal = normalize(fragNormal);
     vec3 irradiance = vec3(0.0);
+    
+    float gamma = 1.5;
 
     vec3 up = vec3(0.0, 1.0, 0.0);
     vec3 right = cross(up, normal);
@@ -32,7 +37,7 @@ void main()
             // tangent space to world space
             vec3 sampleVec = tangentSample.x * right + tangentSample.y * up + tangentSample.z * normal;
 
-            irradiance += texture(skyTexture, sampleVec).rgb * cos(theta) * sin(theta);
+            irradiance += gammaCorrection(texture(skyTexture, sampleVec).rgb, gamma) * cos(theta) * sin(theta);
             nrSamples++;
         }
     }
