@@ -179,7 +179,7 @@ void SphereToCubemapRenderer::update(VkCommandBuffer commandBuffer, vulkan::Fram
         #if BG2E_IS_MAC
             .gamma = 2.2f
         #else
-            .gamma = 1.0f;
+            .gamma = 1.0f
         #endif
         };
         vkCmdPushConstants(

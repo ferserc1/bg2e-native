@@ -6,6 +6,9 @@
 #include <bg2e/base/Log.hpp>
 #include <bg2e.hpp>
 
+#include <array>
+
+
 class ClearScreenDelegate : public bg2e::render::RenderLoopDelegate,
 	public bg2e::app::InputDelegate,
 	public bg2e::ui::UserInterfaceDelegate
