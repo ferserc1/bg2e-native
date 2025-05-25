@@ -98,8 +98,13 @@
 #endif
 
 // SDL
+#if __linux__
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_syswm.h>
+#else
 #include <SDL.h>
 #include <SDL_syswm.h>
+#endif
 #ifdef __APPLE__
 #include <TargetConditionals.h>
 #endif

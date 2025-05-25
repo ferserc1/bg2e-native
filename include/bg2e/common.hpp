@@ -13,8 +13,16 @@
 #define BG2E_API __declspec(dllimport)
 #endif
 
-#else
+#elif __APPLE__
 
 #define BG2E_API
+
+#else
+
+#define BG2E_LINUX
+
+#define BG2E_API
+
+#include <cstdint>
 
 #endif

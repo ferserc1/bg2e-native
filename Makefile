@@ -15,6 +15,8 @@ DEPS_INCLUDE_DIR := $(shell find $(DEPS_DIR) -type d)
 INCLUDE_DIR := $(BG2E_INCLUDE_DIR) $(DEPS_INCLUDE_DIR)
 INC_FLAGS := $(addprefix -I,$(INCLUDE_DIR))
 
+CPPFLAGS := -std=c++20
+
 bg2e: $(OBJ_FILES)
 	$(CXX) $(OBJ_FILES) -o $@ $(LDFLAGS)
 

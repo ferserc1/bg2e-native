@@ -1,7 +1,16 @@
 #include <bg2e/app/MainLoop.hpp>
 
+#ifdef BG2E_LINUX
+
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_vulkan.h>
+
+#else
+
 #include <SDL.h>
 #include <SDL_vulkan.h>
+
+#endif
 
 #include <iostream>
 

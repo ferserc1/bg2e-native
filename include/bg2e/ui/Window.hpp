@@ -4,6 +4,7 @@
 
 #include <functional>
 #include <string>
+#include <limits>
 
 namespace bg2e {
 namespace ui {

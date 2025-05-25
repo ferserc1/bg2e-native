@@ -2,8 +2,17 @@
 #include <bg2e/render/Vulkan.hpp>
 #include <bg2e/render/vulkan/extensions.hpp>
 
+#ifdef BG2E_LINUX
+
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_vulkan.h>
+
+#else
+
 #include <SDL2/SDL.h>
 #include <SDL_vulkan.h>
+
+#endif
 
 namespace bg2e {
 namespace render {
