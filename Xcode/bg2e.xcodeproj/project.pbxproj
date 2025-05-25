@@ -97,6 +97,8 @@
 		ED8B30B82DC6607A004BA5E9 /* SpecularReflectionCubemapRenderer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED8B30B72DC6607A004BA5E9 /* SpecularReflectionCubemapRenderer.cpp */; };
 		EDB10C082CFF8BE8002A1B0E /* cube.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EDB10C072CFF8BE8002A1B0E /* cube.cpp */; };
 		EDB10C0B2CFF93A1002A1B0E /* logo_2a.png in Copy Assets */ = {isa = PBXBuildFile; fileRef = EDB10C0A2CFF9398002A1B0E /* logo_2a.png */; };
+		EDB3FA0E2DE38F0B00E22418 /* utils.hpp in Headers */ = {isa = PBXBuildFile; fileRef = EDB3FA0D2DE38F0600E22418 /* utils.hpp */; };
+		EDB3FA102DE38F6300E22418 /* utils.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EDB3FA0F2DE38F5E00E22418 /* utils.cpp */; };
 		EDD3572D2CD927CB009C7507 /* MoltenVK_icd.json in Copy MoltenVK ICD */ = {isa = PBXBuildFile; fileRef = EDD3572C2CD92789009C7507 /* MoltenVK_icd.json */; };
 		EDD77E332CE9E78C00278155 /* VertexDescription.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EDD77E312CE9E78C00278155 /* VertexDescription.cpp */; };
 		EDE192782D09D64F004CD803 /* SkyboxRenderer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EDE192772D09D64F004CD803 /* SkyboxRenderer.cpp */; };
@@ -342,7 +344,7 @@
 		ED5201DE2CED0AEC00C94253 /* Image_base.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Image_base.cpp; sourceTree = "<group>"; };
 		ED5339F02CD7A1E900136B04 /* example-app.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "example-app.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		ED533A152CD7A8E700136B04 /* MainLoop.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = MainLoop.hpp; sourceTree = "<group>"; };
-		ED533A172CD7A8E700136B04 /* common.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; name = common.hpp; path = bg2e/common.hpp; sourceTree = "<group>"; };
+		ED533A172CD7A8E700136B04 /* common.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = common.hpp; sourceTree = "<group>"; };
 		ED533A1A2CD7A8F700136B04 /* MainLoop.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = MainLoop.cpp; sourceTree = "<group>"; };
 		ED533A212CD7AAB700136B04 /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = main.cpp; path = ../examples/app/main.cpp; sourceTree = SOURCE_ROOT; };
 		ED6862D22CE53E4100A90EE1 /* Input.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Input.cpp; sourceTree = "<group>"; };
@@ -409,6 +411,8 @@
 		EDB10C072CFF8BE8002A1B0E /* cube.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = cube.cpp; sourceTree = "<group>"; };
 		EDB10C092CFF8C01002A1B0E /* cube.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = cube.hpp; sourceTree = "<group>"; };
 		EDB10C0A2CFF9398002A1B0E /* logo_2a.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = logo_2a.png; sourceTree = "<group>"; };
+		EDB3FA0D2DE38F0600E22418 /* utils.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = utils.hpp; sourceTree = "<group>"; };
+		EDB3FA0F2DE38F5E00E22418 /* utils.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = utils.cpp; sourceTree = "<group>"; };
 		EDBDC84B2DD0FC46009EC1E7 /* texture_gi.vert.glsl */ = {isa = PBXFileReference; lastKnownFileType = text; path = texture_gi.vert.glsl; sourceTree = "<group>"; };
 		EDD3571D2CD92341009C7507 /* copy_libraries.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = copy_libraries.sh; sourceTree = "<group>"; };
 		EDD357202CD924B9009C7507 /* libMoltenVK.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; path = libMoltenVK.dylib; sourceTree = "<group>"; };
@@ -694,6 +698,7 @@
 				ED14CD012DDF458D007468D5 /* scene */,
 				ED2D56582CE38ED6006EF072 /* ui */,
 				EDE451292DDE47090025C7DA /* utils */,
+				ED533A172CD7A8E700136B04 /* common.hpp */,
 			);
 			path = bg2e;
 			sourceTree = "<group>";
@@ -703,7 +708,6 @@
 			children = (
 				ED0468442DDCEA7000EE8020 /* bg2e.hpp */,
 				ED533A182CD7A8E700136B04 /* bg2e */,
-				ED533A172CD7A8E700136B04 /* common.hpp */,
 			);
 			name = include;
 			path = ../include;
@@ -1013,6 +1017,7 @@
 		EDE451292DDE47090025C7DA /* utils */ = {
 			isa = PBXGroup;
 			children = (
+				EDB3FA0D2DE38F0600E22418 /* utils.hpp */,
 				EDE4512D2DDE47380025C7DA /* TextureCache.hpp */,
 				EDE4512B2DDE472C0025C7DA /* all.hpp */,
 			);
@@ -1022,6 +1027,7 @@
 		EDE4512A2DDE47200025C7DA /* utils */ = {
 			isa = PBXGroup;
 			children = (
+				EDB3FA0F2DE38F5E00E22418 /* utils.cpp */,
 				EDE4512F2DDE47A00025C7DA /* TextureCache.cpp */,
 			);
 			path = utils;
@@ -1121,6 +1127,7 @@
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				EDB3FA0E2DE38F0B00E22418 /* utils.hpp in Headers */,
 				EDE4512E2DDE473F0025C7DA /* TextureCache.hpp in Headers */,
 				ED0468452DDCEA7500EE8020 /* bg2e.hpp in Headers */,
 				ED0468612DDCF22200EE8020 /* all.hpp in Headers */,
@@ -1384,6 +1391,7 @@
 				ED8A97252D082F5300D35DB8 /* PipelineLayout.cpp in Sources */,
 				ED5201DC2CED095800C94253 /* image_db.cpp in Sources */,
 				ED2191792CDF4E5D00123781 /* Info.cpp in Sources */,
+				EDB3FA102DE38F6300E22418 /* utils.cpp in Sources */,
 				EDB10C082CFF8BE8002A1B0E /* cube.cpp in Sources */,
 				ED2191992CDF678900123781 /* Log.cpp in Sources */,
 				ED342CFE2CE265370041BE62 /* RenderLoop.cpp in Sources */,
