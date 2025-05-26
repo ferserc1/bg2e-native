@@ -5,7 +5,7 @@
 #include <numbers>
 
 
-class ClearScreenDelegate : public bg2e::render::RenderLoopDelegate,
+class BasicSceneDelegate : public bg2e::render::RenderLoopDelegate,
 	public bg2e::app::InputDelegate,
 	public bg2e::ui::UserInterfaceDelegate
 {
@@ -327,7 +327,7 @@ class MyApplication : public bg2e::app::Application {
 public:
 	void init(int argc, char** argv) override
 	{
-		auto delegate = std::shared_ptr<ClearScreenDelegate>(new ClearScreenDelegate());
+		auto delegate = std::make_shared<BasicSceneDelegate>();
 		setRenderDelegate(delegate);
 		setInputDelegate(delegate);
 		setUiDelegate(delegate);
