@@ -24,6 +24,11 @@ Node::~Node()
 
 }
 
+void Node::addChild(Node * node)
+{
+    addChild(std::shared_ptr<Node>(node));
+}
+
 void Node::addChild(std::shared_ptr<Node> node)
 {
     _children.push_back(node);
@@ -38,6 +43,11 @@ void Node::removeChild(std::shared_ptr<Node> node)
 const std::vector<std::shared_ptr<Node>>& Node::children() const
 {
     return _children;
+}
+
+void Node::addComponent(Component * comp)
+{
+    addComponent(std::shared_ptr<Component>(comp));
 }
 
 void Node::addComponent(std::shared_ptr<Component> comp)

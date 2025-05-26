@@ -29,12 +29,14 @@ public:
     inline void setDisabled(bool d) { _disabled = d; }
     
     
+    void addChild(Node * node);
     void addChild(std::shared_ptr<Node> node);
     void removeChild(std::shared_ptr<Node> node);
     const std::vector<std::shared_ptr<Node>>& children() const;
     
     Node * parent() { return _parent; }
     
+    void addComponent(Component * comp);
     void addComponent(std::shared_ptr<Component> comp);
     void removeComponent(std::shared_ptr<Component> comp);
     const std::unordered_map<size_t, std::shared_ptr<Component>>& components() const;

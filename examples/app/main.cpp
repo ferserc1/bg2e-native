@@ -81,11 +81,22 @@ public:
   
         _sceneRoot = std::make_shared<bg2e::scene::Node>("Scene Root");
         
-        auto drawable = createVertexData();
+        auto anotherNode = new bg2e::scene::Node("Transform Node");
+        anotherNode->addComponent(new bg2e::scene::TransformComponent(glm::translate( glm::mat4 { 1.0f }, glm::vec3(0.0f, 1.0f, 0.0f) )));
+        _sceneRoot->addChild(anotherNode);
+        
+        auto drawable = std::shared_ptr<bg2e::scene::DrawableBase>(createVertexData());
         auto drawableComponent = std::make_shared<bg2e::scene::DrawableComponent>(drawable);
         auto modelNode = std::make_shared<bg2e::scene::Node>("3D Model");
         modelNode->addComponent(drawableComponent);
-        _sceneRoot->addChild(modelNode);
+        modelNode->addComponent(new bg2e::scene::TransformComponent(glm::translate( glm::mat4 { 1.0f }, glm::vec3(2.0f, 0.0f, 0.0f) )));
+        anotherNode->addChild(modelNode);
+        
+        auto secondModel = new bg2e::scene::Node("Second 3D model");
+        auto anotherDrawable = new bg2e::scene::DrawableComponent(drawable);
+        secondModel->addComponent(anotherDrawable);
+        secondModel->addComponent(new bg2e::scene::TransformComponent(glm::translate( glm::mat4 { 1.0f }, glm::vec3(0.0f, 0.0f, 2.0f ) )));
+        _sceneRoot->addChild(secondModel);
         
         _vulkan->cleanupManager().push([&](VkDevice) {
             _sceneRoot.reset();
