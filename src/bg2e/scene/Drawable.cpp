@@ -74,24 +74,6 @@ glm::mat4 DrawableGeneric<MeshT, RenderMeshT>::submeshTransform(uint32_t index) 
 }
 
 template <typename MeshT, typename RenderMeshT>
-void DrawableGeneric<MeshT, RenderMeshT>::setTransform(const glm::mat4& mat)
-{
-    _transform = mat;
-}
-
-template <typename MeshT, typename RenderMeshT>
-const glm::mat4& DrawableGeneric<MeshT, RenderMeshT>::transform() const
-{
-    return _transform;
-}
-
-template <typename MeshT, typename RenderMeshT>
-glm::mat4& DrawableGeneric<MeshT, RenderMeshT>::transform()
-{
-    return _transform;
-}
-
-template <typename MeshT, typename RenderMeshT>
 void DrawableGeneric<MeshT, RenderMeshT>::load(render::Vulkan * vk)
 {
     if (_mesh.get() == nullptr)
@@ -155,7 +137,7 @@ void DrawableGeneric<MeshT, RenderMeshT>::drawSubmesh(
     VkCommandBuffer cmd,
     VkPipelineLayout layout,
     uint32_t submesh,
-    std::function<std::vector<VkDescriptorSet>(render::MaterialBase *, const glm::mat4&)> cb,
+    DrawSubmeshFunction cb,
     VkPipelineBindPoint bp
 ) {
     auto mat = renderMaterial(submesh).get();
@@ -170,7 +152,7 @@ template <typename MeshT, typename RenderMeshT>
 void DrawableGeneric<MeshT, RenderMeshT>::draw(
     VkCommandBuffer cmd,
     VkPipelineLayout layout,
-    std::function<std::vector<VkDescriptorSet>(render::MaterialBase *, const glm::mat4&, uint32_t submIndex)> cb,
+    DrawFunction cb,
     VkPipelineBindPoint bp
 ) {
     for (auto i = 0; i < _materials.size(); ++i)
@@ -194,9 +176,6 @@ template void DrawableGeneric<geo::MeshP, render::vulkan::geo::MeshP>::setSubmes
 template const base::MaterialAttributes& DrawableGeneric<geo::MeshP, render::vulkan::geo::MeshP>::material(uint32_t index) const;
 template base::MaterialAttributes& DrawableGeneric<geo::MeshP, render::vulkan::geo::MeshP>::material(uint32_t index);
 template glm::mat4 DrawableGeneric<geo::MeshP, render::vulkan::geo::MeshP>::submeshTransform(uint32_t index) const;
-template void DrawableGeneric<geo::MeshP, render::vulkan::geo::MeshP>::setTransform(const glm::mat4& mat);
-template const glm::mat4& DrawableGeneric<geo::MeshP, render::vulkan::geo::MeshP>::transform() const;
-template glm::mat4& DrawableGeneric<geo::MeshP, render::vulkan::geo::MeshP>::transform();
 template void DrawableGeneric<geo::MeshP, render::vulkan::geo::MeshP>::load(render::Vulkan * vk);
 template void DrawableGeneric<geo::MeshP, render::vulkan::geo::MeshP>::updateMaterials();
 template std::shared_ptr<render::vulkan::geo::MeshP> DrawableGeneric<geo::MeshP, render::vulkan::geo::MeshP>::renderMesh();
@@ -209,9 +188,6 @@ template void DrawableGeneric<geo::MeshPN, render::vulkan::geo::MeshPN>::setMesh
 template const std::shared_ptr<geo::MeshPN>& DrawableGeneric<geo::MeshPN, render::vulkan::geo::MeshPN>::mesh() const;
 template void DrawableGeneric<geo::MeshPN, render::vulkan::geo::MeshPN>::setMaterial(const base::MaterialAttributes& mat, uint32_t submeshIndex);
 template void DrawableGeneric<geo::MeshPN, render::vulkan::geo::MeshPN>::setSubmeshTransform(const glm::mat4& mat, uint32_t submeshIndex);
-template void DrawableGeneric<geo::MeshPN, render::vulkan::geo::MeshPN>::setTransform(const glm::mat4& mat);
-template const glm::mat4& DrawableGeneric<geo::MeshPN, render::vulkan::geo::MeshPN>::transform() const;
-template glm::mat4& DrawableGeneric<geo::MeshPN, render::vulkan::geo::MeshPN>::transform();
 template const base::MaterialAttributes& DrawableGeneric<geo::MeshPN, render::vulkan::geo::MeshPN>::material(uint32_t index) const;
 template base::MaterialAttributes& DrawableGeneric<geo::MeshPN, render::vulkan::geo::MeshPN>::material(uint32_t index);
 template glm::mat4 DrawableGeneric<geo::MeshPN, render::vulkan::geo::MeshPN>::submeshTransform(uint32_t index) const;
@@ -230,9 +206,6 @@ template void DrawableGeneric<geo::MeshPC, render::vulkan::geo::MeshPC>::setSubm
 template const base::MaterialAttributes& DrawableGeneric<geo::MeshPC, render::vulkan::geo::MeshPC>::material(uint32_t index) const;
 template base::MaterialAttributes& DrawableGeneric<geo::MeshPC, render::vulkan::geo::MeshPC>::material(uint32_t index);
 template glm::mat4 DrawableGeneric<geo::MeshPC, render::vulkan::geo::MeshPC>::submeshTransform(uint32_t index) const;
-template void DrawableGeneric<geo::MeshPC, render::vulkan::geo::MeshPC>::setTransform(const glm::mat4& mat);
-template const glm::mat4& DrawableGeneric<geo::MeshPC, render::vulkan::geo::MeshPC>::transform() const;
-template glm::mat4& DrawableGeneric<geo::MeshPC, render::vulkan::geo::MeshPC>::transform();
 template void DrawableGeneric<geo::MeshPC, render::vulkan::geo::MeshPC>::load(render::Vulkan * vk);
 template void DrawableGeneric<geo::MeshPC, render::vulkan::geo::MeshPC>::updateMaterials();
 template std::shared_ptr<render::vulkan::geo::MeshPC> DrawableGeneric<geo::MeshPC, render::vulkan::geo::MeshPC>::renderMesh();
@@ -248,9 +221,6 @@ template void DrawableGeneric<geo::MeshPU, render::vulkan::geo::MeshPU>::setSubm
 template const base::MaterialAttributes& DrawableGeneric<geo::MeshPU, render::vulkan::geo::MeshPU>::material(uint32_t index) const;
 template base::MaterialAttributes& DrawableGeneric<geo::MeshPU, render::vulkan::geo::MeshPU>::material(uint32_t index);
 template glm::mat4 DrawableGeneric<geo::MeshPU, render::vulkan::geo::MeshPU>::submeshTransform(uint32_t index) const;
-template void DrawableGeneric<geo::MeshPU, render::vulkan::geo::MeshPU>::setTransform(const glm::mat4& mat);
-template const glm::mat4& DrawableGeneric<geo::MeshPU, render::vulkan::geo::MeshPU>::transform() const;
-template glm::mat4& DrawableGeneric<geo::MeshPU, render::vulkan::geo::MeshPU>::transform();
 template void DrawableGeneric<geo::MeshPU, render::vulkan::geo::MeshPU>::load(render::Vulkan * vk);
 template void DrawableGeneric<geo::MeshPU, render::vulkan::geo::MeshPU>::updateMaterials();
 template std::shared_ptr<render::vulkan::geo::MeshPU> DrawableGeneric<geo::MeshPU, render::vulkan::geo::MeshPU>::renderMesh();
@@ -263,9 +233,6 @@ template void DrawableGeneric<geo::MeshPNU, render::vulkan::geo::MeshPNU>::setMe
 template const std::shared_ptr<geo::MeshPNU>& DrawableGeneric<geo::MeshPNU, render::vulkan::geo::MeshPNU>::mesh() const;
 template void DrawableGeneric<geo::MeshPNU, render::vulkan::geo::MeshPNU>::setMaterial(const base::MaterialAttributes& mat, uint32_t submeshIndex);
 template void DrawableGeneric<geo::MeshPNU, render::vulkan::geo::MeshPNU>::setSubmeshTransform(const glm::mat4& mat, uint32_t submeshIndex);
-template void DrawableGeneric<geo::MeshPNU, render::vulkan::geo::MeshPNU>::setTransform(const glm::mat4& mat);
-template const glm::mat4& DrawableGeneric<geo::MeshPNU, render::vulkan::geo::MeshPNU>::transform() const;
-template glm::mat4& DrawableGeneric<geo::MeshPNU, render::vulkan::geo::MeshPNU>::transform();
 template const base::MaterialAttributes& DrawableGeneric<geo::MeshPNU, render::vulkan::geo::MeshPNU>::material(uint32_t index) const;
 template base::MaterialAttributes& DrawableGeneric<geo::MeshPNU, render::vulkan::geo::MeshPNU>::material(uint32_t index);
 template glm::mat4 DrawableGeneric<geo::MeshPNU, render::vulkan::geo::MeshPNU>::submeshTransform(uint32_t index) const;
@@ -281,9 +248,6 @@ template void DrawableGeneric<geo::MeshPNC, render::vulkan::geo::MeshPNC>::setMe
 template const std::shared_ptr<geo::MeshPNC>& DrawableGeneric<geo::MeshPNC, render::vulkan::geo::MeshPNC>::mesh() const;
 template void DrawableGeneric<geo::MeshPNC, render::vulkan::geo::MeshPNC>::setMaterial(const base::MaterialAttributes& mat, uint32_t submeshIndex);
 template void DrawableGeneric<geo::MeshPNC, render::vulkan::geo::MeshPNC>::setSubmeshTransform(const glm::mat4& mat, uint32_t submeshIndex);
-template void DrawableGeneric<geo::MeshPNC, render::vulkan::geo::MeshPNC>::setTransform(const glm::mat4& mat);
-template const glm::mat4& DrawableGeneric<geo::MeshPNC, render::vulkan::geo::MeshPNC>::transform() const;
-template glm::mat4& DrawableGeneric<geo::MeshPNC, render::vulkan::geo::MeshPNC>::transform();
 template const base::MaterialAttributes& DrawableGeneric<geo::MeshPNC, render::vulkan::geo::MeshPNC>::material(uint32_t index) const;
 template base::MaterialAttributes& DrawableGeneric<geo::MeshPNC, render::vulkan::geo::MeshPNC>::material(uint32_t index);
 template glm::mat4 DrawableGeneric<geo::MeshPNC, render::vulkan::geo::MeshPNC>::submeshTransform(uint32_t index) const;
@@ -302,9 +266,6 @@ template void DrawableGeneric<geo::MeshPNUC, render::vulkan::geo::MeshPNUC>::set
 template const base::MaterialAttributes& DrawableGeneric<geo::MeshPNUC, render::vulkan::geo::MeshPNUC>::material(uint32_t index) const;
 template base::MaterialAttributes& DrawableGeneric<geo::MeshPNUC, render::vulkan::geo::MeshPNUC>::material(uint32_t index);
 template glm::mat4 DrawableGeneric<geo::MeshPNUC, render::vulkan::geo::MeshPNUC>::submeshTransform(uint32_t index) const;
-template void DrawableGeneric<geo::MeshPNUC, render::vulkan::geo::MeshPNUC>::setTransform(const glm::mat4& mat);
-template const glm::mat4& DrawableGeneric<geo::MeshPNUC, render::vulkan::geo::MeshPNUC>::transform() const;
-template glm::mat4& DrawableGeneric<geo::MeshPNUC, render::vulkan::geo::MeshPNUC>::transform();
 template void DrawableGeneric<geo::MeshPNUC, render::vulkan::geo::MeshPNUC>::load(render::Vulkan * vk);
 template void DrawableGeneric<geo::MeshPNUC, render::vulkan::geo::MeshPNUC>::updateMaterials();
 template std::shared_ptr<render::vulkan::geo::MeshPNUC> DrawableGeneric<geo::MeshPNUC, render::vulkan::geo::MeshPNUC>::renderMesh();
@@ -320,9 +281,6 @@ template void DrawableGeneric<geo::MeshPNUT, render::vulkan::geo::MeshPNUT>::set
 template const base::MaterialAttributes& DrawableGeneric<geo::MeshPNUT, render::vulkan::geo::MeshPNUT>::material(uint32_t index) const;
 template base::MaterialAttributes& DrawableGeneric<geo::MeshPNUT, render::vulkan::geo::MeshPNUT>::material(uint32_t index);
 template glm::mat4 DrawableGeneric<geo::MeshPNUT, render::vulkan::geo::MeshPNUT>::submeshTransform(uint32_t index) const;
-template void DrawableGeneric<geo::MeshPNUT, render::vulkan::geo::MeshPNUT>::setTransform(const glm::mat4& mat);
-template const glm::mat4& DrawableGeneric<geo::MeshPNUT, render::vulkan::geo::MeshPNUT>::transform() const;
-template glm::mat4& DrawableGeneric<geo::MeshPNUT, render::vulkan::geo::MeshPNUT>::transform();
 template void DrawableGeneric<geo::MeshPNUT, render::vulkan::geo::MeshPNUT>::load(render::Vulkan * vk);
 template void DrawableGeneric<geo::MeshPNUT, render::vulkan::geo::MeshPNUT>::updateMaterials();
 template std::shared_ptr<render::vulkan::geo::MeshPNUT> DrawableGeneric<geo::MeshPNUT, render::vulkan::geo::MeshPNUT>::renderMesh();
@@ -338,9 +296,6 @@ template void DrawableGeneric<geo::MeshPNUUT, render::vulkan::geo::MeshPNUUT>::s
 template const base::MaterialAttributes& DrawableGeneric<geo::MeshPNUUT, render::vulkan::geo::MeshPNUUT>::material(uint32_t index) const;
 template base::MaterialAttributes& DrawableGeneric<geo::MeshPNUUT, render::vulkan::geo::MeshPNUUT>::material(uint32_t index);
 template glm::mat4 DrawableGeneric<geo::MeshPNUUT, render::vulkan::geo::MeshPNUUT>::submeshTransform(uint32_t index) const;
-template void DrawableGeneric<geo::MeshPNUUT, render::vulkan::geo::MeshPNUUT>::setTransform(const glm::mat4& mat);
-template const glm::mat4& DrawableGeneric<geo::MeshPNUUT, render::vulkan::geo::MeshPNUUT>::transform() const;
-template glm::mat4& DrawableGeneric<geo::MeshPNUUT, render::vulkan::geo::MeshPNUUT>::transform();
 template void DrawableGeneric<geo::MeshPNUUT, render::vulkan::geo::MeshPNUUT>::load(render::Vulkan * vk);
 template void DrawableGeneric<geo::MeshPNUUT, render::vulkan::geo::MeshPNUUT>::updateMaterials();
 template std::shared_ptr<render::vulkan::geo::MeshPNUUT> DrawableGeneric<geo::MeshPNUUT, render::vulkan::geo::MeshPNUUT>::renderMesh();

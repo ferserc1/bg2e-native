@@ -4,29 +4,6 @@
 #include <array>
 #include <numbers>
 
-class DrawVisitor : public bg2e::scene::NodeVisitor {
-public:
-    // TODO: Store a draw lambda function
-    
-    void visit(bg2e::scene::Node * node)
-    {
-        auto drawable = node->getComponent<bg2e::scene::DrawableComponent>();
-        
-        if (drawable)
-        {
-            std::cout << "Drawable component found" << std::endl;
-            // TODO: Call the stored lambda function. The transformation matrix must have the accumulated
-            // transformation of the node in the scene and the submesh transform matrix
-//            drawable->draw(cmd, layout, [&](render::MaterialBase *, const glm::mat4 &, uint32_t) {
-//                std::vector<VkDescriptorSet> ds {
-//                
-//                }
-//                return ds;
-//            });
-        }
-    }
-};
-
 class BasicSceneDelegate : public bg2e::render::RenderLoopDelegate,
 	public bg2e::app::InputDelegate,
 	public bg2e::ui::UserInterfaceDelegate
@@ -101,12 +78,11 @@ public:
             0.1f, 40.0f
         );
         _projMatrix[1][1] *= -1.0f;
-        
-		createVertexData();
   
         _sceneRoot = std::make_shared<bg2e::scene::Node>("Scene Root");
         
-        auto drawableComponent = std::make_shared<bg2e::scene::DrawableComponent>(_drawable);
+        auto drawable = createVertexData();
+        auto drawableComponent = std::make_shared<bg2e::scene::DrawableComponent>(drawable);
         auto modelNode = std::make_shared<bg2e::scene::Node>("3D Model");
         modelNode->addComponent(drawableComponent);
         _sceneRoot->addChild(modelNode);
@@ -115,8 +91,7 @@ public:
             _sceneRoot.reset();
         });
         
-        DrawVisitor testVisitor;
-        _sceneRoot->accept(&testVisitor);
+        _drawVisitor = std::make_unique<bg2e::scene::DrawVisitor>();
     }
 
 	void swapchainResized(VkExtent2D newExtent) override
@@ -177,7 +152,10 @@ public:
         
         auto envDS = _environmentDataBinding->newDescriptorSet(frameResources, _environment.get());
   
-        _drawable->draw(cmd, _layout,
+        _drawVisitor->draw(
+            _sceneRoot.get(),
+            cmd,
+            _layout,
             [&](bg2e::render::MaterialBase * mat, const glm::mat4& transform, uint32_t submesh) {
                 auto modelDS = _objectDataBinding->newDescriptorSet(
                     frameResources,
@@ -275,8 +253,7 @@ protected:
  
     std::shared_ptr<bg2e::scene::Node> _sceneRoot;
     
-    
-    std::shared_ptr<bg2e::scene::DrawableBase> _drawable;
+    std::unique_ptr<bg2e::scene::DrawVisitor> _drawVisitor;
     
     std::unique_ptr<bg2e::scene::vk::ObjectDataBinding> _objectDataBinding;
 
@@ -329,7 +306,7 @@ protected:
 		});
 	}
 
-	void createVertexData()
+	bg2e::scene::DrawableBase * createVertexData()
 	{
 		using namespace bg2e::render::vulkan;
   
@@ -353,11 +330,7 @@ protected:
         drawable->material(1).setAlbedo(innerAlbedoTexture);
         drawable->load(_vulkan);
         
-        _drawable = std::shared_ptr<bg2e::scene::DrawablePNU>(drawable);
-        
-        _vulkan->cleanupManager().push([&](VkDevice) {
-            _drawable.reset();
-        });
+        return drawable;
 	}
 };
 

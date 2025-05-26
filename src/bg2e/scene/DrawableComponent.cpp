@@ -17,11 +17,17 @@ void DrawableComponent::setDrawable(std::shared_ptr<DrawableBase> drw)
 }
 
 void DrawableComponent::draw(
+    const glm::mat4& nodeTransform,
     VkCommandBuffer cmd,
     VkPipelineLayout layout,
     std::function<std::vector<VkDescriptorSet>(render::MaterialBase *, const glm::mat4&, uint32_t submIndex)> cb,
     VkPipelineBindPoint bp
 ) {
-    std::cout << "Draw drawable" << std::endl;
+    auto drawable = _drawable.get();
+    if (drawable)
+    {
+        drawable->setTransform(nodeTransform);
+        drawable->draw(cmd, layout, cb, bp);
+    }
 }
 }

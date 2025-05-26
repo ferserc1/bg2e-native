@@ -14,12 +14,14 @@ class BG2E_API DrawableComponent : public Component {
 public:
     DrawableComponent() = default;
     DrawableComponent(std::shared_ptr<DrawableBase> drw) :_drawable { drw } {}
+    DrawableComponent(DrawableBase * drw) :_drawable { std::shared_ptr<DrawableBase>(drw) } {}
     virtual ~DrawableComponent() = default;
     
     std::shared_ptr<DrawableBase> drawable();
     void setDrawable(std::shared_ptr<DrawableBase> drw);
 
     void draw(
+        const glm::mat4& nodeTransform,
         VkCommandBuffer cmd,
         VkPipelineLayout layout,
         std::function<std::vector<VkDescriptorSet>(render::MaterialBase *, const glm::mat4&, uint32_t submIndex)> cb,

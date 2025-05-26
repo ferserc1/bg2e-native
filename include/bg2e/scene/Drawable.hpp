@@ -13,9 +13,20 @@
 
 namespace bg2e {
 namespace scene {
-
+        
 class DrawableBase {
 public:
+    typedef std::function<std::vector<VkDescriptorSet>(
+            bg2e::render::MaterialBase* material,
+            const glm::mat4& transform,
+            uint32_t submeshIndex
+    )> DrawFunction;
+    
+    typedef std::function<std::vector<VkDescriptorSet>(
+            bg2e::render::MaterialBase* material,
+            const glm::mat4& transform
+    )> DrawSubmeshFunction;
+    
     DrawableBase() {}
     virtual ~DrawableBase() {}
 
@@ -23,16 +34,35 @@ public:
         VkCommandBuffer cmd,
         VkPipelineLayout layout,
         uint32_t submesh,
-        std::function<std::vector<VkDescriptorSet>(render::MaterialBase *, const glm::mat4&)> cb,
+        DrawSubmeshFunction cb,
         VkPipelineBindPoint bp = VK_PIPELINE_BIND_POINT_GRAPHICS
     ) = 0;
     
     virtual void draw(
         VkCommandBuffer cmd,
         VkPipelineLayout layout,
-        std::function<std::vector<VkDescriptorSet>(render::MaterialBase *, const glm::mat4&, uint32_t submIndex)> cb,
+        DrawFunction cb,
         VkPipelineBindPoint bp = VK_PIPELINE_BIND_POINT_GRAPHICS
     ) = 0;
+    
+    inline void setTransform(const glm::mat4& mat)
+    {
+        _transform = mat;
+    }
+    
+    inline const glm::mat4& transform() const
+    {
+        return _transform;
+    }
+    
+    inline glm::mat4& transform()
+    {
+        return _transform;
+    }
+    
+protected:
+    // This transformation is applied to the whole mesh
+    glm::mat4 _transform { 1.0f };
 };
 
 template <typename MeshT, typename RenderMeshT>
@@ -55,10 +85,6 @@ public:
     base::MaterialAttributes& material(uint32_t index = 0);
     glm::mat4 submeshTransform(uint32_t index = 0) const;
     
-    void setTransform(const glm::mat4& mat);
-    const glm::mat4& transform() const;
-    glm::mat4& transform();
-    
     void load(render::Vulkan * vk);
     inline bool isLoaded() const { return _renderMesh.get() != nullptr; }
     
@@ -72,14 +98,14 @@ public:
         VkCommandBuffer cmd,
         VkPipelineLayout layout,
         uint32_t submesh,
-        std::function<std::vector<VkDescriptorSet>(render::MaterialBase *, const glm::mat4&)> cb,
+        DrawSubmeshFunction cb,
         VkPipelineBindPoint bp = VK_PIPELINE_BIND_POINT_GRAPHICS
     );
     
     void draw(
         VkCommandBuffer cmd,
         VkPipelineLayout layout,
-        std::function<std::vector<VkDescriptorSet>(render::MaterialBase *, const glm::mat4&, uint32_t submIndex)> cb,
+        DrawFunction cb,
         VkPipelineBindPoint bp = VK_PIPELINE_BIND_POINT_GRAPHICS
     );
     
@@ -92,10 +118,6 @@ protected:
     // submesh attributes accessors are called with an out of bound index, because we don't
 	// whant that the access to the attributes to crash the program.
     base::MaterialAttributes _defaultMaterial;
-
-
-    // This transformation is applied to the whole mesh
-    glm::mat4 _transform { 1.0f };
     
     // Render resources
     // TODO: create a render::Mesh cache to avoid duplicities loading a shared geo::Mesh in
