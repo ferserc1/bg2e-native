@@ -29,11 +29,6 @@ std::string uniqueId()
     ss << std::hex << uniqueId;
     std::string uniqueIdString = ss.str();
     
-    uniqueIdString.insert(8, "-");
-    uniqueIdString.insert(13, "-");
-    uniqueIdString.insert(18, "-");
-    uniqueIdString.insert(23, "-");
-    
     return uniqueIdString;
 }
 

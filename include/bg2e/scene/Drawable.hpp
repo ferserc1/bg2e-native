@@ -7,14 +7,36 @@
 #include <bg2e/render/Vulkan.hpp>
 #include <bg2e/render/MaterialBase.hpp>
 #include <bg2e/render/vulkan/geo/Mesh.hpp>
+#include <bg2e/scene/Component.hpp>
 
 #include <memory>
 
 namespace bg2e {
 namespace scene {
 
+class DrawableBase {
+public:
+    DrawableBase() {}
+    virtual ~DrawableBase() {}
+
+    virtual void drawSubmesh(
+        VkCommandBuffer cmd,
+        VkPipelineLayout layout,
+        uint32_t submesh,
+        std::function<std::vector<VkDescriptorSet>(render::MaterialBase *, const glm::mat4&)> cb,
+        VkPipelineBindPoint bp = VK_PIPELINE_BIND_POINT_GRAPHICS
+    ) = 0;
+    
+    virtual void draw(
+        VkCommandBuffer cmd,
+        VkPipelineLayout layout,
+        std::function<std::vector<VkDescriptorSet>(render::MaterialBase *, const glm::mat4&, uint32_t submIndex)> cb,
+        VkPipelineBindPoint bp = VK_PIPELINE_BIND_POINT_GRAPHICS
+    ) = 0;
+};
+
 template <typename MeshT, typename RenderMeshT>
-class BG2E_API DrawableGeneric {
+class BG2E_API DrawableGeneric : public DrawableBase {
 public:
     virtual ~DrawableGeneric() {}
     

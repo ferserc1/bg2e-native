@@ -4,6 +4,18 @@
 #include <array>
 #include <numbers>
 
+class DrawVisitor : public bg2e::scene::NodeVisitor {
+public:
+    void visit(bg2e::scene::Node * node)
+    {
+        auto drawable = node->getComponent<bg2e::scene::DrawableComponent>();
+        
+        if (drawable)
+        {
+            std::cout << "Drawable component found" << std::endl;
+        }
+    }
+};
 
 class BasicSceneDelegate : public bg2e::render::RenderLoopDelegate,
 	public bg2e::app::InputDelegate,
@@ -81,6 +93,20 @@ public:
         _projMatrix[1][1] *= -1.0f;
         
 		createVertexData();
+  
+        _sceneRoot = std::make_shared<bg2e::scene::Node>("Scene Root");
+        
+        auto drawableComponent = std::make_shared<bg2e::scene::DrawableComponent>(_drawable);
+        auto modelNode = std::make_shared<bg2e::scene::Node>("3D Model");
+        modelNode->addComponent(drawableComponent);
+        _sceneRoot->addChild(modelNode);
+        
+        _vulkan->cleanupManager().push([&](VkDevice) {
+            _sceneRoot.reset();
+        });
+        
+        DrawVisitor testVisitor;
+        _sceneRoot->accept(&testVisitor);
     }
 
 	void swapchainResized(VkExtent2D newExtent) override
@@ -237,7 +263,10 @@ protected:
 	VkPipelineLayout _layout = VK_NULL_HANDLE;
 	VkPipeline _pipeline = VK_NULL_HANDLE;
  
-    std::unique_ptr<bg2e::scene::DrawablePNU> _drawable;
+    std::shared_ptr<bg2e::scene::Node> _sceneRoot;
+    
+    
+    std::shared_ptr<bg2e::scene::DrawableBase> _drawable;
     
     std::unique_ptr<bg2e::scene::vk::ObjectDataBinding> _objectDataBinding;
 
@@ -307,19 +336,18 @@ protected:
             "two_submeshes_outer_albedo.jpg"
         );
         
-        _drawable = std::make_unique<bg2e::scene::DrawablePNU>();
-        _drawable->setMesh(bg2e::db::loadMeshObj<bg2e::geo::MeshPNU>(modelPath));
-        _drawable->material(0).setAlbedo(outerAlbedoTexture);
-        _drawable->material(1).setAlbedo(innerAlbedoTexture);
-        _drawable->load(_vulkan);
+        auto drawable = new bg2e::scene::DrawablePNU();
+        
+        drawable->setMesh(bg2e::db::loadMeshObj<bg2e::geo::MeshPNU>(modelPath));
+        drawable->material(0).setAlbedo(outerAlbedoTexture);
+        drawable->material(1).setAlbedo(innerAlbedoTexture);
+        drawable->load(_vulkan);
+        
+        _drawable = std::shared_ptr<bg2e::scene::DrawablePNU>(drawable);
         
         _vulkan->cleanupManager().push([&](VkDevice) {
             _drawable.reset();
         });
-        
-        auto modelMesh = std::unique_ptr<bg2e::geo::MeshPNU>(
-            bg2e::db::loadMeshObj<bg2e::geo::MeshPNU>(modelPath)
-        );
 	}
 };
 
