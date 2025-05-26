@@ -6,6 +6,8 @@
 
 class DrawVisitor : public bg2e::scene::NodeVisitor {
 public:
+    // TODO: Store a draw lambda function
+    
     void visit(bg2e::scene::Node * node)
     {
         auto drawable = node->getComponent<bg2e::scene::DrawableComponent>();
@@ -13,6 +15,14 @@ public:
         if (drawable)
         {
             std::cout << "Drawable component found" << std::endl;
+            // TODO: Call the stored lambda function. The transformation matrix must have the accumulated
+            // transformation of the node in the scene and the submesh transform matrix
+//            drawable->draw(cmd, layout, [&](render::MaterialBase *, const glm::mat4 &, uint32_t) {
+//                std::vector<VkDescriptorSet> ds {
+//                
+//                }
+//                return ds;
+//            });
         }
     }
 };
