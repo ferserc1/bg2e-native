@@ -100,6 +100,9 @@
     <Filter Include="Source Files\utils">
       <UniqueIdentifier>{154041d2-2a62-4cbf-83eb-f374b78cb7b4}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\bg2e\math">
+      <UniqueIdentifier>{289d6ead-f1e8-4cb2-a590-3e019fdccb65}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\include\bg2e\common.hpp">
@@ -390,6 +393,33 @@
     <ClInclude Include="..\include\bg2e\scene\vk\SceneDataBinding.hpp">
       <Filter>Header Files\bg2e\scene\vk</Filter>
     </ClInclude>
+    <ClInclude Include="..\include\bg2e\math\all.hpp">
+      <Filter>Header Files\bg2e\math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\math\base.hpp">
+      <Filter>Header Files\bg2e\math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\scene\Component.hpp">
+      <Filter>Header Files\bg2e\scene</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\scene\DrawableComponent.hpp">
+      <Filter>Header Files\bg2e\scene</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\scene\DrawVisitor.hpp">
+      <Filter>Header Files\bg2e\scene</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\scene\Node.hpp">
+      <Filter>Header Files\bg2e\scene</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\scene\NodeVisitor.hpp">
+      <Filter>Header Files\bg2e\scene</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\scene\TransformComponent.hpp">
+      <Filter>Header Files\bg2e\scene</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\scene\TransformVisitor.hpp">
+      <Filter>Header Files\bg2e\scene</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\bg2e\app\MainLoop.cpp">
@@ -586,6 +616,24 @@
     </ClCompile>
     <ClCompile Include="..\src\bg2e\scene\vk\ObjectDataBinding.cpp">
       <Filter>Source Files\scene\vk</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\bg2e\scene\Component.cpp">
+      <Filter>Source Files\scene</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\bg2e\scene\DrawableComponent.cpp">
+      <Filter>Source Files\scene</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\bg2e\scene\DrawVisitor.cpp">
+      <Filter>Source Files\scene</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\bg2e\scene\Node.cpp">
+      <Filter>Source Files\scene</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\bg2e\scene\TransformComponent.cpp">
+      <Filter>Source Files\scene</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\bg2e\utils\utils.cpp">
+      <Filter>Source Files\utils</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
