@@ -465,6 +465,7 @@
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		ED14CD012DDF458D007468D5 /* scene */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = scene; sourceTree = "<group>"; };
 		ED14CD092DDF469F007468D5 /* scene */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = scene; sourceTree = "<group>"; };
+		EDC9F8852DE6113800745B80 /* math */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = math; sourceTree = "<group>"; };
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -689,6 +690,7 @@
 		ED533A182CD7A8E700136B04 /* bg2e */ = {
 			isa = PBXGroup;
 			children = (
+				EDC9F8852DE6113800745B80 /* math */,
 				ED0468502DDCF09100EE8020 /* all.hpp */,
 				ED533A162CD7A8E700136B04 /* app */,
 				ED8688122CDAAABE00A71ADC /* base */,

@@ -26,7 +26,7 @@ void DrawVisitor::visit(bg2e::scene::Node * node)
     if (transformComponent)
     {
         _transformStack.push(_currentTransform);
-        _currentTransform = _currentTransform * transformComponent->transform();
+        _currentTransform = _currentTransform * transformComponent->matrix();
     }
     
     if (drawable && _drawFunction && _commandBuffer != VK_NULL_HANDLE && _pipelineLayout != VK_NULL_HANDLE)

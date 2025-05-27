@@ -12,6 +12,8 @@
 #include <string>
 #include <unordered_map>
 
+#include <bg2e/scene/TransformComponent.hpp>
+#include <bg2e/scene/DrawableComponent.hpp>
 
 namespace bg2e {
 namespace scene {
@@ -52,8 +54,14 @@ public:
         return nullptr;
     }
     
+    inline TransformComponent * transform() { return getComponent<TransformComponent>(); }
+    inline DrawableComponent * drawable() { return getComponent<DrawableComponent>(); }
+    
     void accept(NodeVisitor * visitor);
     void acceptReverse(NodeVisitor * visitor);
+    
+    glm::mat4 worldMatrix();
+    glm::mat4 invertedWorldMatrix();
     
 protected:
     std::vector<std::shared_ptr<Node>> _children;

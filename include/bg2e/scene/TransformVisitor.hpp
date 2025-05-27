@@ -14,6 +14,11 @@ public:
 
     static glm::mat4 getWorldMatrix(Node * node)
     {
+        if (!node)
+        {
+            return glm::mat4{ 1.0f };
+        }
+        
         TransformVisitor visitor;
         node->acceptReverse(&visitor);
         return visitor._worldMatrix;
@@ -24,7 +29,7 @@ public:
         auto transform = node->getComponent<TransformComponent>();
         if (transform)
         {
-            _worldMatrix = _worldMatrix * transform->transform();
+            _worldMatrix = _worldMatrix * transform->matrix();
         }
     }
     

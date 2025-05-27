@@ -82,28 +82,28 @@ public:
         _sceneRoot = std::make_shared<bg2e::scene::Node>("Scene Root");
         
         auto anotherNode = new bg2e::scene::Node("Transform Node");
-        anotherNode->addComponent(new bg2e::scene::TransformComponent(glm::translate( glm::mat4 { 1.0f }, glm::vec3(0.0f, 1.0f, 0.0f) )));
+        anotherNode->addComponent(bg2e::scene::TransformComponent::makeTranslated(0.0f, 1.0f, 0.0f));
         _sceneRoot->addChild(anotherNode);
         
         auto drawable = std::shared_ptr<bg2e::scene::DrawableBase>(createVertexData());
         auto drawableComponent = std::make_shared<bg2e::scene::DrawableComponent>(drawable);
         auto modelNode = std::make_shared<bg2e::scene::Node>("3D Model");
         modelNode->addComponent(drawableComponent);
-        modelNode->addComponent(new bg2e::scene::TransformComponent(glm::translate( glm::mat4 { 1.0f }, glm::vec3(2.0f, 0.0f, 0.0f) )));
+        modelNode->addComponent(bg2e::scene::TransformComponent::makeTranslated(2.0f, 0.0f, 0.0f));
         anotherNode->addChild(modelNode);
         
         auto secondModel = new bg2e::scene::Node("Second 3D model");
         auto anotherDrawable = new bg2e::scene::DrawableComponent(drawable);
         secondModel->addComponent(anotherDrawable);
-        secondModel->addComponent(new bg2e::scene::TransformComponent(glm::translate( glm::mat4 { 1.0f }, glm::vec3(-2.0f, 0.0f, 0.0f ) )));
+        secondModel->addComponent(bg2e::scene::TransformComponent::makeTranslated(-2.0f, 0.0f, 0.0f ));
         _sceneRoot->addChild(secondModel);
         
         auto tripod = std::shared_ptr<bg2e::scene::Node>(new bg2e::scene::Node("Camera Tripod"));
-        tripod->addComponent(new bg2e::scene::TransformComponent(glm::translate( glm::mat4 { 1.0f }, glm::vec3( 0.0f, 1.0f, -10.0f ) )));
+        tripod->addComponent(bg2e::scene::TransformComponent::makeTranslated(0.0f, 1.0f, -10.0f ));
         auto camera = new bg2e::scene::Node("Camera");
         camera->addComponent(new bg2e::scene::TransformComponent());
         camera->addChild(tripod);
-                
+
         _sceneRoot->addChild(camera);
         
         _cameraNode = tripod;
@@ -154,12 +154,13 @@ public:
         );
   
         // Rotate the view along Y axis
+        // sceneRoot
+        //  |- cameraParent     > Rotate the camera parent along the vertical axis
+        //      |- cameraNode   > Place the camera 10 units from the center of the scene and 1 unit along the vertical axis
         auto cameraParent = _cameraNode->parent();
-        auto trx = cameraParent->getComponent<bg2e::scene::TransformComponent>();
-        trx->setTransform(glm::rotate(trx->transform(), 0.02f * this->delta() / 10.0f, glm::vec3(0.0f, 1.0f, 0.0f)));
-        auto cameraWorldMatrix = bg2e::scene::TransformVisitor::getWorldMatrix(_cameraNode.get());
-        //_viewMatrix = glm::rotate(_viewMatrix, 0.02f * this->delta() / 10.0f, glm::vec3(0.0f, 1.0f, 0.0f));
-        _viewMatrix = glm::inverse(cameraWorldMatrix);
+        auto trx = cameraParent->transform();
+        trx->rotate(0.02f * this->delta() / 10.0f, 0.0f, 1.0f, 0.0f);
+        _viewMatrix = _cameraNode->invertedWorldMatrix();
         
         auto sceneDS = _frameDataBinding->newDescriptorSet(
             frameResources,
@@ -223,8 +224,6 @@ public:
 	{
 		using namespace bg2e::ui;
 		_window.draw([&]() {
-			BasicWidgets::text("Hello, world!");
-   
             BasicWidgets::checkBox("Draw Skybox", &_drawSkybox);
             
             BasicWidgets::text("Show Attachment:");

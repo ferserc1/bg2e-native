@@ -3,6 +3,7 @@
 
 #include <bg2e/scene/Node.hpp>
 #include <bg2e/utils/utils.hpp>
+#include <bg2e/scene/TransformVisitor.hpp>
 
 namespace bg2e::scene {
 
@@ -52,7 +53,16 @@ void Node::addComponent(Component * comp)
 
 void Node::addComponent(std::shared_ptr<Component> comp)
 {
+    auto prevOwner = comp->_owner;
+    comp->_owner = nullptr;
+    if (prevOwner)
+    {
+        comp->removedFromNode(prevOwner);
+    }
+    
     _components[componentHash(comp.get())] = comp;
+    comp->_owner = this;
+    comp->addedToNode(this);
 }
 
 void Node::removeComponent(std::shared_ptr<Component> comp)
@@ -89,5 +99,16 @@ void Node::acceptReverse(NodeVisitor * visitor)
         visitor->visit(this);
     }
 }
-    
+
+glm::mat4 Node::worldMatrix()
+{
+    TransformVisitor visitor;
+    return visitor.getWorldMatrix(this);
+}
+
+glm::mat4 Node::invertedWorldMatrix()
+{
+    return glm::inverse(worldMatrix());
+}
+
 }
