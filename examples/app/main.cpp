@@ -95,11 +95,22 @@ public:
         auto secondModel = new bg2e::scene::Node("Second 3D model");
         auto anotherDrawable = new bg2e::scene::DrawableComponent(drawable);
         secondModel->addComponent(anotherDrawable);
-        secondModel->addComponent(new bg2e::scene::TransformComponent(glm::translate( glm::mat4 { 1.0f }, glm::vec3(0.0f, 0.0f, 2.0f ) )));
+        secondModel->addComponent(new bg2e::scene::TransformComponent(glm::translate( glm::mat4 { 1.0f }, glm::vec3(-2.0f, 0.0f, 0.0f ) )));
         _sceneRoot->addChild(secondModel);
+        
+        auto tripod = std::shared_ptr<bg2e::scene::Node>(new bg2e::scene::Node("Camera Tripod"));
+        tripod->addComponent(new bg2e::scene::TransformComponent(glm::translate( glm::mat4 { 1.0f }, glm::vec3( 0.0f, 1.0f, -10.0f ) )));
+        auto camera = new bg2e::scene::Node("Camera");
+        camera->addComponent(new bg2e::scene::TransformComponent());
+        camera->addChild(tripod);
+                
+        _sceneRoot->addChild(camera);
+        
+        _cameraNode = tripod;
         
         _vulkan->cleanupManager().push([&](VkDevice) {
             _sceneRoot.reset();
+            _cameraNode.reset();
         });
         
         _drawVisitor = std::make_unique<bg2e::scene::DrawVisitor>();
@@ -143,7 +154,12 @@ public:
         );
   
         // Rotate the view along Y axis
-        _viewMatrix = glm::rotate(_viewMatrix, 0.02f * this->delta() / 10.0f, glm::vec3(0.0f, 1.0f, 0.0f));
+        auto cameraParent = _cameraNode->parent();
+        auto trx = cameraParent->getComponent<bg2e::scene::TransformComponent>();
+        trx->setTransform(glm::rotate(trx->transform(), 0.02f * this->delta() / 10.0f, glm::vec3(0.0f, 1.0f, 0.0f)));
+        auto cameraWorldMatrix = bg2e::scene::TransformVisitor::getWorldMatrix(_cameraNode.get());
+        //_viewMatrix = glm::rotate(_viewMatrix, 0.02f * this->delta() / 10.0f, glm::vec3(0.0f, 1.0f, 0.0f));
+        _viewMatrix = glm::inverse(cameraWorldMatrix);
         
         auto sceneDS = _frameDataBinding->newDescriptorSet(
             frameResources,
@@ -263,6 +279,8 @@ protected:
 	VkPipeline _pipeline = VK_NULL_HANDLE;
  
     std::shared_ptr<bg2e::scene::Node> _sceneRoot;
+    
+    std::shared_ptr<bg2e::scene::Node> _cameraNode;
     
     std::unique_ptr<bg2e::scene::DrawVisitor> _drawVisitor;
     
