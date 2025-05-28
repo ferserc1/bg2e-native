@@ -9,6 +9,8 @@ namespace scene {
 
 class BG2E_API UpdateVisitor : public NodeVisitor {
 public:
+    UpdateVisitor() {}
+    
     void update(Node * sceneRoot, float delta);
     
     void visit(Node *) override;

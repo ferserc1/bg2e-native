@@ -3,6 +3,7 @@
 #pragma once
 
 #include <bg2e/common.hpp>
+#include <bg2e/math/projections.hpp>
 
 #include <string>
 
@@ -19,6 +20,13 @@ public:
     
     inline Node * ownerNode() { return _owner; }
 
+    virtual void resizeViewport(const math::Viewport&) {}
+    
+    // Use this function to update animation data.
+    virtual void animate(float delta) {}
+    
+    // Use this function to update matrixes generated from
+    // the animation data.
     virtual void update(float delta) {}
 
 protected:

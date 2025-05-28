@@ -81,17 +81,7 @@ public:
         _colorAttachments->build(_vulkan->swapchain().extent());
 
 		createPipeline();
-
-        _viewMatrix = glm::lookAt(glm::vec3{ 0.0f, 0.0f, -5.0f}, { 0.0f, 0.0f, 0.0f }, { 0.0f, 1.0f, 0.0f });
         
-        auto vpSize = _vulkan->swapchain().extent();
-        _projMatrix = glm::perspective(
-            glm::radians(50.0f),
-            float(vpSize.width) / float(vpSize.height),
-            0.1f, 40.0f
-        );
-        _projMatrix[1][1] *= -1.0f;
-  
         _sceneRoot = std::make_shared<bg2e::scene::Node>("Scene Root");
         
         auto anotherNode = new bg2e::scene::Node("Transform Node");
@@ -113,6 +103,10 @@ public:
         
         auto tripod = std::shared_ptr<bg2e::scene::Node>(new bg2e::scene::Node("Camera Tripod"));
         tripod->addComponent(bg2e::scene::TransformComponent::makeTranslated(0.0f, 1.0f, -10.0f ));
+        tripod->addComponent(new bg2e::scene::CameraComponent());
+        auto projection = new bg2e::math::OpticalProjection();
+        tripod->camera()->setProjection(projection);
+        
         auto camera = new bg2e::scene::Node("Camera");
         camera->addComponent(new bg2e::scene::TransformComponent());
         camera->addComponent(new RotateCameraComponent());
@@ -121,6 +115,9 @@ public:
         _sceneRoot->addChild(camera);
         
         _cameraNode = tripod;
+        
+        // Set the initial viewport size
+        _resizeVisitor.resizeViewport(_sceneRoot.get(), _vulkan->swapchain().extent());
         
         _vulkan->cleanupManager().push([&](VkDevice) {
             _sceneRoot.reset();
@@ -133,12 +130,7 @@ public:
         // This function releases all previous resources before recreate the images
 		_colorAttachments->build(newExtent);
   
-        _projMatrix = glm::perspective(
-            glm::radians(50.0f),
-            float(newExtent.width) / float(newExtent.height),
-            0.1f, 40.0f
-        );
-        _projMatrix[1][1] *= -1.0f;
+        _resizeVisitor.resizeViewport(_sceneRoot.get(), newExtent);
 	}
 
 	VkImageLayout render(
@@ -167,16 +159,20 @@ public:
             _colorAttachments->extent()
         );
   
+        auto projMatrix = _cameraNode->camera()->projectionMatrix();
+        projMatrix[1][1] *= -1.0f; // Flip Vulkan Y coord
+        
         // TODO: Create a CameraComponent to provide utilities such as get the main scene camera
-        _viewMatrix = _cameraNode->invertedWorldMatrix();
+
+        auto viewMatrix = _cameraNode->invertedWorldMatrix();
         
         auto sceneDS = _frameDataBinding->newDescriptorSet(
             frameResources,
-            _viewMatrix,
-            _projMatrix
+            viewMatrix,
+            projMatrix
         );
         
-        _environment->updateSkybox(_viewMatrix, _projMatrix);
+        _environment->updateSkybox(viewMatrix, projMatrix);
         
         if (_drawSkybox)
         {
@@ -289,8 +285,9 @@ protected:
     
     std::shared_ptr<bg2e::scene::Node> _cameraNode;
     
-    bg2e::scene::DrawVisitor _drawVisitor;
+    bg2e::scene::ResizeViewportVisitor _resizeVisitor;
     bg2e::scene::UpdateVisitor _updateVisitor;
+    bg2e::scene::DrawVisitor _drawVisitor;
     
     std::unique_ptr<bg2e::scene::vk::ObjectDataBinding> _objectDataBinding;
 
@@ -302,8 +299,6 @@ protected:
     bool _drawSkybox = true;
     int _showRenderTargetIndex = 0;
       
-    glm::mat4 _viewMatrix = { 1.0f };
-    glm::mat4 _projMatrix = { 1.0f };
     std::unique_ptr<bg2e::scene::vk::FrameDataBinding> _frameDataBinding;
 
 	void createPipeline()

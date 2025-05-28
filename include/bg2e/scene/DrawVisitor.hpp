@@ -12,6 +12,7 @@ namespace scene {
 
 class BG2E_API DrawVisitor : public bg2e::scene::NodeVisitor {
 public:
+    DrawVisitor() {}
     
     void draw(
         bg2e::scene::Node* sceneRoot,
