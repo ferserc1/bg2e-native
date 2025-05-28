@@ -4,6 +4,19 @@
 #include <array>
 #include <numbers>
 
+class RotateCameraComponent : public bg2e::scene::Component {
+public:
+    void update(float delta) override
+    {
+        auto transform = ownerNode()->transform();
+        
+        if (transform)
+        {
+            transform->rotate(0.02f * delta / 10.0f, 0.0f, 1.0f, 0.0f);
+        }
+    }
+};
+
 class BasicSceneDelegate : public bg2e::render::RenderLoopDelegate,
 	public bg2e::app::InputDelegate,
 	public bg2e::ui::UserInterfaceDelegate
@@ -102,6 +115,7 @@ public:
         tripod->addComponent(bg2e::scene::TransformComponent::makeTranslated(0.0f, 1.0f, -10.0f ));
         auto camera = new bg2e::scene::Node("Camera");
         camera->addComponent(new bg2e::scene::TransformComponent());
+        camera->addComponent(new RotateCameraComponent());
         camera->addChild(tripod);
 
         _sceneRoot->addChild(camera);
@@ -112,8 +126,6 @@ public:
             _sceneRoot.reset();
             _cameraNode.reset();
         });
-        
-        _drawVisitor = std::make_unique<bg2e::scene::DrawVisitor>();
     }
 
 	void swapchainResized(VkExtent2D newExtent) override
@@ -137,6 +149,8 @@ public:
 		bg2e::render::vulkan::FrameResources& frameResources
 	) override {
 		using namespace bg2e::render::vulkan;
+  
+        _updateVisitor.update(_sceneRoot.get(), delta());
     
         _environment->update(cmd, currentFrame, frameResources);
   
@@ -153,13 +167,7 @@ public:
             _colorAttachments->extent()
         );
   
-        // Rotate the view along Y axis
-        // sceneRoot
-        //  |- cameraParent     > Rotate the camera parent along the vertical axis
-        //      |- cameraNode   > Place the camera 10 units from the center of the scene and 1 unit along the vertical axis
-        auto cameraParent = _cameraNode->parent();
-        auto trx = cameraParent->transform();
-        trx->rotate(0.02f * this->delta() / 10.0f, 0.0f, 1.0f, 0.0f);
+        // TODO: Create a CameraComponent to provide utilities such as get the main scene camera
         _viewMatrix = _cameraNode->invertedWorldMatrix();
         
         auto sceneDS = _frameDataBinding->newDescriptorSet(
@@ -180,7 +188,7 @@ public:
         
         auto envDS = _environmentDataBinding->newDescriptorSet(frameResources, _environment.get());
   
-        _drawVisitor->draw(
+        _drawVisitor.draw(
             _sceneRoot.get(),
             cmd,
             _layout,
@@ -281,7 +289,8 @@ protected:
     
     std::shared_ptr<bg2e::scene::Node> _cameraNode;
     
-    std::unique_ptr<bg2e::scene::DrawVisitor> _drawVisitor;
+    bg2e::scene::DrawVisitor _drawVisitor;
+    bg2e::scene::UpdateVisitor _updateVisitor;
     
     std::unique_ptr<bg2e::scene::vk::ObjectDataBinding> _objectDataBinding;
 

@@ -17,7 +17,9 @@ public:
     
     virtual ~Component() = default;
     
-    virtual Node * ownerNode() { return _owner; }
+    inline Node * ownerNode() { return _owner; }
+
+    virtual void update(float delta) {}
 
 protected:
 

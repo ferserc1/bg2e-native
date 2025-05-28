@@ -11,3 +11,4 @@
 #include <bg2e/scene/Node.hpp>
 #include <bg2e/scene/TransformComponent.hpp>
 #include <bg2e/scene/TransformVisitor.hpp>
+#include <bg2e/scene/UpdateVisitor.hpp>
