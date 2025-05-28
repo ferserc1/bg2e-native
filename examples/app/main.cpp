@@ -40,6 +40,8 @@ public:
         
         _environmentDataBinding = std::make_unique<bg2e::scene::vk::EnvironmentDataBinding>(vulkan);
         
+        
+        // TODO: Wrap this object into an scene component
         _environment = std::unique_ptr<bg2e::render::EnvironmentResources>(
             new bg2e::render::EnvironmentResources(
                 _vulkan,
@@ -71,6 +73,7 @@ public:
         
         auto envTexture = bg2e::utils::TextureCache::get().load(_vulkan, imagePath);
         
+        // TODO: Wrap this object into an scene component
         _environment->build(
             envTexture,         // Equirectangular texture
             { 2048, 2048 },     // Cube map size
@@ -82,47 +85,7 @@ public:
 
 		createPipeline();
         
-        _sceneRoot = std::make_shared<bg2e::scene::Node>("Scene Root");
-        
-        auto anotherNode = new bg2e::scene::Node("Transform Node");
-        anotherNode->addComponent(bg2e::scene::TransformComponent::makeTranslated(0.0f, 1.0f, 0.0f));
-        _sceneRoot->addChild(anotherNode);
-        
-        auto drawable = std::shared_ptr<bg2e::scene::DrawableBase>(createVertexData());
-        auto drawableComponent = std::make_shared<bg2e::scene::DrawableComponent>(drawable);
-        auto modelNode = std::make_shared<bg2e::scene::Node>("3D Model");
-        modelNode->addComponent(drawableComponent);
-        modelNode->addComponent(bg2e::scene::TransformComponent::makeTranslated(2.0f, 0.0f, 0.0f));
-        anotherNode->addChild(modelNode);
-        
-        auto secondModel = new bg2e::scene::Node("Second 3D model");
-        auto anotherDrawable = new bg2e::scene::DrawableComponent(drawable);
-        secondModel->addComponent(anotherDrawable);
-        secondModel->addComponent(bg2e::scene::TransformComponent::makeTranslated(-2.0f, 0.0f, 0.0f ));
-        _sceneRoot->addChild(secondModel);
-        
-        auto tripod = std::shared_ptr<bg2e::scene::Node>(new bg2e::scene::Node("Camera Tripod"));
-        tripod->addComponent(bg2e::scene::TransformComponent::makeTranslated(0.0f, 1.0f, -10.0f ));
-        tripod->addComponent(new bg2e::scene::CameraComponent());
-        auto projection = new bg2e::math::OpticalProjection();
-        tripod->camera()->setProjection(projection);
-        
-        auto camera = new bg2e::scene::Node("Camera");
-        camera->addComponent(new bg2e::scene::TransformComponent());
-        camera->addComponent(new RotateCameraComponent());
-        camera->addChild(tripod);
-
-        _sceneRoot->addChild(camera);
-        
-        _cameraNode = tripod;
-        
-        // Set the initial viewport size
-        _resizeVisitor.resizeViewport(_sceneRoot.get(), _vulkan->swapchain().extent());
-        
-        _vulkan->cleanupManager().push([&](VkDevice) {
-            _sceneRoot.reset();
-            _cameraNode.reset();
-        });
+        createScene();
     }
 
 	void swapchainResized(VkExtent2D newExtent) override
@@ -130,6 +93,7 @@ public:
         // This function releases all previous resources before recreate the images
 		_colorAttachments->build(newExtent);
   
+        // Call resizeViewport() on the scene components
         _resizeVisitor.resizeViewport(_sceneRoot.get(), newExtent);
 	}
 
@@ -144,6 +108,7 @@ public:
   
         _updateVisitor.update(_sceneRoot.get(), delta());
     
+        // TODO: wrap this object in a scene component
         _environment->update(cmd, currentFrame, frameResources);
   
 		float flash = std::abs(std::sin(currentFrame / 120.0f));
@@ -172,6 +137,7 @@ public:
             projMatrix
         );
         
+        // TODO: Wrap the environment into an scene component
         _environment->updateSkybox(viewMatrix, projMatrix);
         
         if (_drawSkybox)
@@ -295,12 +261,11 @@ protected:
     // and manage the sky box renderer
     std::unique_ptr<bg2e::render::EnvironmentResources> _environment;
     std::unique_ptr<bg2e::scene::vk::EnvironmentDataBinding> _environmentDataBinding;
+    std::unique_ptr<bg2e::scene::vk::FrameDataBinding> _frameDataBinding;
     
     bool _drawSkybox = true;
     int _showRenderTargetIndex = 0;
       
-    std::unique_ptr<bg2e::scene::vk::FrameDataBinding> _frameDataBinding;
-
 	void createPipeline()
 	{
 		bg2e::render::vulkan::factory::GraphicsPipeline plFactory(_vulkan);
@@ -337,8 +302,53 @@ protected:
             vkDestroyDescriptorSetLayout(dev, frameDSLayout, nullptr);
 		});
 	}
+ 
+    void createScene()
+    {
+        _sceneRoot = std::make_shared<bg2e::scene::Node>("Scene Root");
+        
+        auto anotherNode = new bg2e::scene::Node("Transform Node");
+        anotherNode->addComponent(bg2e::scene::TransformComponent::makeTranslated(0.0f, 1.0f, 0.0f));
+        _sceneRoot->addChild(anotherNode);
+        
+        auto drawable = std::shared_ptr<bg2e::scene::DrawableBase>(loadDrawable());
+        auto drawableComponent = std::make_shared<bg2e::scene::DrawableComponent>(drawable);
+        auto modelNode = std::make_shared<bg2e::scene::Node>("3D Model");
+        modelNode->addComponent(drawableComponent);
+        modelNode->addComponent(bg2e::scene::TransformComponent::makeTranslated(2.0f, 0.0f, 0.0f));
+        anotherNode->addChild(modelNode);
+        
+        auto secondModel = new bg2e::scene::Node("Second 3D model");
+        auto anotherDrawable = new bg2e::scene::DrawableComponent(drawable);
+        secondModel->addComponent(anotherDrawable);
+        secondModel->addComponent(bg2e::scene::TransformComponent::makeTranslated(-2.0f, 0.0f, 0.0f ));
+        _sceneRoot->addChild(secondModel);
+        
+        auto tripod = std::shared_ptr<bg2e::scene::Node>(new bg2e::scene::Node("Camera Tripod"));
+        tripod->addComponent(bg2e::scene::TransformComponent::makeTranslated(0.0f, 1.0f, -10.0f ));
+        tripod->addComponent(new bg2e::scene::CameraComponent());
+        auto projection = new bg2e::math::OpticalProjection();
+        tripod->camera()->setProjection(projection);
+        
+        auto camera = new bg2e::scene::Node("Camera");
+        camera->addComponent(new bg2e::scene::TransformComponent());
+        camera->addComponent(new RotateCameraComponent());
+        camera->addChild(tripod);
 
-	bg2e::scene::DrawableBase * createVertexData()
+        _sceneRoot->addChild(camera);
+        
+        _cameraNode = tripod;
+        
+        // Set the initial viewport size
+        _resizeVisitor.resizeViewport(_sceneRoot.get(), _vulkan->swapchain().extent());
+        
+        _vulkan->cleanupManager().push([&](VkDevice) {
+            _sceneRoot.reset();
+            _cameraNode.reset();
+        });
+    }
+
+	bg2e::scene::DrawableBase * loadDrawable()
 	{
 		using namespace bg2e::render::vulkan;
   
