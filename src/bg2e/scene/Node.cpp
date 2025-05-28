@@ -82,7 +82,15 @@ void Node::accept(NodeVisitor * visitor)
         visitor->visit(this);
         for (auto child : _children)
         {
+            if (visitor->cancel())
+            {
+                return;
+            }
             child->accept(visitor);
+        }
+        if (visitor->cancel())
+        {
+            return;
         }
         visitor->didVisit(this);
     }

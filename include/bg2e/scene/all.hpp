@@ -11,6 +11,7 @@
 #include <bg2e/scene/Mesh.hpp>
 #include <bg2e/scene/NodeVisitor.hpp>
 #include <bg2e/scene/ResizeViewportVisitor.hpp>
+#include <bg2e/scene/Scene.hpp>
 #include <bg2e/scene/TransformComponent.hpp>
 #include <bg2e/scene/TransformVisitor.hpp>
 #include <bg2e/scene/UpdateVisitor.hpp>

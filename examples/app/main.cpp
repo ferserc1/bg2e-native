@@ -94,7 +94,7 @@ public:
 		_colorAttachments->build(newExtent);
   
         // Call resizeViewport() on the scene components
-        _resizeVisitor.resizeViewport(_sceneRoot.get(), newExtent);
+        _resizeVisitor.resizeViewport(_scene->rootNode(), newExtent);
 	}
 
 	VkImageLayout render(
@@ -106,7 +106,7 @@ public:
 	) override {
 		using namespace bg2e::render::vulkan;
   
-        _updateVisitor.update(_sceneRoot.get(), delta());
+        _updateVisitor.update(_scene->rootNode(), delta());
     
         // TODO: wrap this object in a scene component
         _environment->update(cmd, currentFrame, frameResources);
@@ -124,12 +124,11 @@ public:
             _colorAttachments->extent()
         );
   
-        auto projMatrix = _cameraNode->camera()->projectionMatrix();
+        auto mainCamera = _scene->mainCamera();
+        auto projMatrix = mainCamera->projectionMatrix();
         projMatrix[1][1] *= -1.0f; // Flip Vulkan Y coord
         
-        // TODO: Create a CameraComponent to provide utilities such as get the main scene camera
-
-        auto viewMatrix = _cameraNode->invertedWorldMatrix();
+        auto viewMatrix = mainCamera->ownerNode()->invertedWorldMatrix();
         
         auto sceneDS = _frameDataBinding->newDescriptorSet(
             frameResources,
@@ -151,7 +150,7 @@ public:
         auto envDS = _environmentDataBinding->newDescriptorSet(frameResources, _environment.get());
   
         _drawVisitor.draw(
-            _sceneRoot.get(),
+            _scene->rootNode(),
             cmd,
             _layout,
             [&](bg2e::render::MaterialBase * mat, const glm::mat4& transform, uint32_t submesh) {
@@ -247,9 +246,7 @@ protected:
 	VkPipelineLayout _layout = VK_NULL_HANDLE;
 	VkPipeline _pipeline = VK_NULL_HANDLE;
  
-    std::shared_ptr<bg2e::scene::Node> _sceneRoot;
-    
-    std::shared_ptr<bg2e::scene::Node> _cameraNode;
+    std::shared_ptr<bg2e::scene::Scene> _scene;
     
     bg2e::scene::ResizeViewportVisitor _resizeVisitor;
     bg2e::scene::UpdateVisitor _updateVisitor;
@@ -305,11 +302,11 @@ protected:
  
     void createScene()
     {
-        _sceneRoot = std::make_shared<bg2e::scene::Node>("Scene Root");
+        auto sceneRoot = std::make_shared<bg2e::scene::Node>("Scene Root");
         
         auto anotherNode = new bg2e::scene::Node("Transform Node");
         anotherNode->addComponent(bg2e::scene::TransformComponent::makeTranslated(0.0f, 1.0f, 0.0f));
-        _sceneRoot->addChild(anotherNode);
+        sceneRoot->addChild(anotherNode);
         
         auto drawable = std::shared_ptr<bg2e::scene::DrawableBase>(loadDrawable());
         auto drawableComponent = std::make_shared<bg2e::scene::DrawableComponent>(drawable);
@@ -322,29 +319,30 @@ protected:
         auto anotherDrawable = new bg2e::scene::DrawableComponent(drawable);
         secondModel->addComponent(anotherDrawable);
         secondModel->addComponent(bg2e::scene::TransformComponent::makeTranslated(-2.0f, 0.0f, 0.0f ));
-        _sceneRoot->addChild(secondModel);
+        sceneRoot->addChild(secondModel);
         
-        auto tripod = std::shared_ptr<bg2e::scene::Node>(new bg2e::scene::Node("Camera Tripod"));
-        tripod->addComponent(bg2e::scene::TransformComponent::makeTranslated(0.0f, 1.0f, -10.0f ));
-        tripod->addComponent(new bg2e::scene::CameraComponent());
+        auto cameraNode = std::shared_ptr<bg2e::scene::Node>(new bg2e::scene::Node("Camera"));
+        cameraNode->addComponent(bg2e::scene::TransformComponent::makeTranslated(0.0f, 1.0f, -10.0f ));
+        cameraNode->addComponent(new bg2e::scene::CameraComponent());
         auto projection = new bg2e::math::OpticalProjection();
-        tripod->camera()->setProjection(projection);
+        cameraNode->camera()->setProjection(projection);
         
-        auto camera = new bg2e::scene::Node("Camera");
-        camera->addComponent(new bg2e::scene::TransformComponent());
-        camera->addComponent(new RotateCameraComponent());
-        camera->addChild(tripod);
+        auto cameraRotation = new bg2e::scene::Node("Camera Rotation");
+        cameraRotation->addComponent(new bg2e::scene::TransformComponent());
+        cameraRotation->addComponent(new RotateCameraComponent());
+        cameraRotation->addChild(cameraNode);
 
-        _sceneRoot->addChild(camera);
-        
-        _cameraNode = tripod;
+        sceneRoot->addChild(cameraRotation);
         
         // Set the initial viewport size
-        _resizeVisitor.resizeViewport(_sceneRoot.get(), _vulkan->swapchain().extent());
+        _resizeVisitor.resizeViewport(sceneRoot.get(), _vulkan->swapchain().extent());
+        
+        _scene = std::make_shared<bg2e::scene::Scene>();
+        
+        _scene->setSceneRoot(sceneRoot);
         
         _vulkan->cleanupManager().push([&](VkDevice) {
-            _sceneRoot.reset();
-            _cameraNode.reset();
+            _scene.reset();
         });
     }
 

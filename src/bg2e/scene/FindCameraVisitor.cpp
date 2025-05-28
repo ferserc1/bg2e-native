@@ -9,7 +9,7 @@ namespace bg2e::scene {
 void FindCameraVisitor::findCameras(Node * node)
 {
     cleanup();
-    visit(node);
+    node->accept(this);
 }
 
 void FindCameraVisitor::visit(Node * node)
