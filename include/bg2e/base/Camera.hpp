@@ -5,6 +5,8 @@
 #include <bg2e/common.hpp>
 #include <bg2e/math/projections.hpp>
 
+#include <memory>
+
 namespace bg2e {
 namespace base {
 

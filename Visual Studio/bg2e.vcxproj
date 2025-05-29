@@ -20,6 +20,7 @@
     <ClInclude Include="..\include\bg2e\app\KeyEvent.hpp" />
     <ClInclude Include="..\include\bg2e\app\MainLoop.hpp" />
     <ClInclude Include="..\include\bg2e\base\all.hpp" />
+    <ClInclude Include="..\include\bg2e\base\Camera.hpp" />
     <ClInclude Include="..\include\bg2e\base\Color.hpp" />
     <ClInclude Include="..\include\bg2e\base\Image.hpp" />
     <ClInclude Include="..\include\bg2e\base\Log.hpp" />
@@ -41,6 +42,7 @@
     <ClInclude Include="..\include\bg2e\geo\Vertex.hpp" />
     <ClInclude Include="..\include\bg2e\math\all.hpp" />
     <ClInclude Include="..\include\bg2e\math\base.hpp" />
+    <ClInclude Include="..\include\bg2e\math\projections.hpp" />
     <ClInclude Include="..\include\bg2e\render\all.hpp" />
     <ClInclude Include="..\include\bg2e\render\ColorAttachments.hpp" />
     <ClInclude Include="..\include\bg2e\render\CubemapRenderer.hpp" />
@@ -85,15 +87,21 @@
     <ClInclude Include="..\include\bg2e\render\vulkan\Surface.hpp" />
     <ClInclude Include="..\include\bg2e\render\vulkan\Swapchain.hpp" />
     <ClInclude Include="..\include\bg2e\scene\all.hpp" />
+    <ClInclude Include="..\include\bg2e\scene\CameraComponent.hpp" />
     <ClInclude Include="..\include\bg2e\scene\Component.hpp" />
     <ClInclude Include="..\include\bg2e\scene\Drawable.hpp" />
     <ClInclude Include="..\include\bg2e\scene\DrawableComponent.hpp" />
     <ClInclude Include="..\include\bg2e\scene\DrawVisitor.hpp" />
+    <ClInclude Include="..\include\bg2e\scene\FindCameraVisitor.hpp" />
+    <ClInclude Include="..\include\bg2e\scene\FindNodeVisitor.hpp" />
     <ClInclude Include="..\include\bg2e\scene\Mesh.hpp" />
     <ClInclude Include="..\include\bg2e\scene\Node.hpp" />
     <ClInclude Include="..\include\bg2e\scene\NodeVisitor.hpp" />
+    <ClInclude Include="..\include\bg2e\scene\ResizeViewportVisitor.hpp" />
+    <ClInclude Include="..\include\bg2e\scene\Scene.hpp" />
     <ClInclude Include="..\include\bg2e\scene\TransformComponent.hpp" />
     <ClInclude Include="..\include\bg2e\scene\TransformVisitor.hpp" />
+    <ClInclude Include="..\include\bg2e\scene\UpdateVisitor.hpp" />
     <ClInclude Include="..\include\bg2e\scene\vk\all.hpp" />
     <ClInclude Include="..\include\bg2e\scene\vk\EnvironmentDataBinding.hpp" />
     <ClInclude Include="..\include\bg2e\scene\vk\FrameDataBinding.hpp" />
@@ -108,6 +116,7 @@
     <ClInclude Include="..\include\bg2e\ui\Window.hpp" />
     <ClInclude Include="..\include\bg2e\utils\all.hpp" />
     <ClInclude Include="..\include\bg2e\utils\TextureCache.hpp" />
+    <ClInclude Include="..\include\bg2e\utils\utils.hpp" />
     <ClInclude Include="..\third_party\imgui\imconfig.h" />
     <ClInclude Include="..\third_party\imgui\imgui.h" />
     <ClInclude Include="..\third_party\imgui\imgui_impl_sdl2.h" />
@@ -120,6 +129,7 @@
   <ItemGroup>
     <ClCompile Include="..\src\bg2e\app\InputManager.cpp" />
     <ClCompile Include="..\src\bg2e\app\MainLoop.cpp" />
+    <ClCompile Include="..\src\bg2e\base\Camera.cpp" />
     <ClCompile Include="..\src\bg2e\base\Image_base.cpp" />
     <ClCompile Include="..\src\bg2e\base\Log.cpp" />
     <ClCompile Include="..\src\bg2e\base\MaterialAttributes.cpp" />
@@ -165,12 +175,18 @@
     <ClCompile Include="..\src\bg2e\render\vulkan\PhysicalDevice.cpp" />
     <ClCompile Include="..\src\bg2e\render\vulkan\Surface.cpp" />
     <ClCompile Include="..\src\bg2e\render\vulkan\Swapchain.cpp" />
+    <ClCompile Include="..\src\bg2e\scene\CameraComponent.cpp" />
     <ClCompile Include="..\src\bg2e\scene\Component.cpp" />
     <ClCompile Include="..\src\bg2e\scene\Drawable.cpp" />
     <ClCompile Include="..\src\bg2e\scene\DrawableComponent.cpp" />
     <ClCompile Include="..\src\bg2e\scene\DrawVisitor.cpp" />
+    <ClCompile Include="..\src\bg2e\scene\FindCameraVisitor.cpp" />
+    <ClCompile Include="..\src\bg2e\scene\FindNodeVisitor.cpp" />
     <ClCompile Include="..\src\bg2e\scene\Node.cpp" />
+    <ClCompile Include="..\src\bg2e\scene\ResizeViewportVisitor.cpp" />
+    <ClCompile Include="..\src\bg2e\scene\Scene.cpp" />
     <ClCompile Include="..\src\bg2e\scene\TransformComponent.cpp" />
+    <ClCompile Include="..\src\bg2e\scene\UpdateVisitor.cpp" />
     <ClCompile Include="..\src\bg2e\scene\vk\EnvironmentDataBinding.cpp" />
     <ClCompile Include="..\src\bg2e\scene\vk\FrameDataBinding.cpp" />
     <ClCompile Include="..\src\bg2e\scene\vk\ObjectDataBinding.cpp" />

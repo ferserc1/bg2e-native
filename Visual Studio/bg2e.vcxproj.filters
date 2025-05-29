@@ -420,6 +420,33 @@
     <ClInclude Include="..\include\bg2e\scene\TransformVisitor.hpp">
       <Filter>Header Files\bg2e\scene</Filter>
     </ClInclude>
+    <ClInclude Include="..\include\bg2e\base\Camera.hpp">
+      <Filter>Header Files\bg2e\base</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\math\projections.hpp">
+      <Filter>Header Files\bg2e\math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\scene\CameraComponent.hpp">
+      <Filter>Header Files\bg2e\scene</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\scene\FindCameraVisitor.hpp">
+      <Filter>Header Files\bg2e\scene</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\scene\FindNodeVisitor.hpp">
+      <Filter>Header Files\bg2e\scene</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\scene\ResizeViewportVisitor.hpp">
+      <Filter>Header Files\bg2e\scene</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\scene\Scene.hpp">
+      <Filter>Header Files\bg2e\scene</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\scene\UpdateVisitor.hpp">
+      <Filter>Header Files\bg2e\scene</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\utils\utils.hpp">
+      <Filter>Header Files\bg2e\utils</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\bg2e\app\MainLoop.cpp">
@@ -634,6 +661,27 @@
     </ClCompile>
     <ClCompile Include="..\src\bg2e\utils\utils.cpp">
       <Filter>Source Files\utils</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\bg2e\base\Camera.cpp">
+      <Filter>Source Files\base</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\bg2e\scene\CameraComponent.cpp">
+      <Filter>Source Files\scene</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\bg2e\scene\FindCameraVisitor.cpp">
+      <Filter>Source Files\scene</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\bg2e\scene\FindNodeVisitor.cpp">
+      <Filter>Source Files\scene</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\bg2e\scene\ResizeViewportVisitor.cpp">
+      <Filter>Source Files\scene</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\bg2e\scene\Scene.cpp">
+      <Filter>Source Files\scene</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\bg2e\scene\UpdateVisitor.cpp">
+      <Filter>Source Files\scene</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
