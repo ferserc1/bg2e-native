@@ -4,6 +4,8 @@
 
 #include <bg2e/scene/Node.hpp>
 #include <bg2e/scene/CameraComponent.hpp>
+#include <bg2e/scene/EnvironmentComponent.hpp>
+
 
 namespace bg2e {
 namespace scene {
@@ -16,10 +18,13 @@ public:
     inline Node * rootNode() { return _sceneRoot.get(); }
     
     CameraComponent * mainCamera();
+    EnvironmentComponent * mainEnvironment();
     
-protected:
+    
+protected:    
     std::shared_ptr<Node> _sceneRoot;
     Node * _mainCameraNode;
+    Node * _mainEnvironment;
 };
 
 }
