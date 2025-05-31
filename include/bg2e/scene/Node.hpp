@@ -15,6 +15,7 @@
 #include <bg2e/scene/TransformComponent.hpp>
 #include <bg2e/scene/DrawableComponent.hpp>
 #include <bg2e/scene/CameraComponent.hpp>
+#include <bg2e/scene/EnvironmentComponent.hpp>
 
 namespace bg2e {
 namespace scene {
@@ -58,6 +59,7 @@ public:
     inline TransformComponent * transform() { return getComponent<TransformComponent>(); }
     inline DrawableComponent * drawable() { return getComponent<DrawableComponent>(); }
     inline CameraComponent * camera() { return getComponent<CameraComponent>(); }
+    inline EnvironmentComponent * environment() { return getComponent<EnvironmentComponent>(); }
     
     void accept(NodeVisitor * visitor);
     void acceptReverse(NodeVisitor * visitor);

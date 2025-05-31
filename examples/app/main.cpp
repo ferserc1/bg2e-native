@@ -27,6 +27,8 @@ public:
 		using namespace bg2e::render::vulkan;
 		RenderLoopDelegate::init(vulkan);
   
+        /// Renderer resources:
+        /// - Color Attachments: Color output of the renderer shaders
         _colorAttachments = std::shared_ptr<bg2e::render::ColorAttachments>(
             new bg2e::render::ColorAttachments(_vulkan, {
                 VK_FORMAT_R16G16B16A16_SFLOAT,
@@ -34,14 +36,20 @@ public:
             })
         );
         
+        /// - Data bindings: used to bind data to the shaders. There are three types of data bindings
+        ///     * Frame data bindings: bind frame resources, such as the view and projection matrix
         _frameDataBinding = std::make_unique<bg2e::scene::vk::FrameDataBinding>(vulkan);
         
+        ///     * Object data binding: bind resorces for one object, for example a 3D model submesh
         _objectDataBinding = std::make_unique<bg2e::scene::vk::ObjectDataBinding>(vulkan);
         
+        ///     * Environment data binding: bind resources for the environment, such as the lights or the environment cube map.
+        ///       This is separated from the frame data binding because there is no need to bind environment resources if we are
+        ///       rendering g-buffers for deferred render
         _environmentDataBinding = std::make_unique<bg2e::scene::vk::EnvironmentDataBinding>(vulkan);
         
-        
-        // TODO: Wrap this object into an scene component
+        ///     * Environment resources: used to generate the environment cube map, the irradiance map and the specular
+        ///       reflection map. It is also used to draw the skybox.
         _environment = std::unique_ptr<bg2e::render::EnvironmentResources>(
             new bg2e::render::EnvironmentResources(
                 _vulkan,
@@ -56,7 +64,6 @@ public:
         _frameDataBinding->initFrameResources(frameAllocator);
         _objectDataBinding->initFrameResources(frameAllocator);
         _environmentDataBinding->initFrameResources(frameAllocator);
-        
         _environment->initFrameResources(frameAllocator);
         
         frameAllocator->initPool();
@@ -73,7 +80,8 @@ public:
         
         auto envTexture = bg2e::utils::TextureCache::get().load(_vulkan, imagePath);
         
-        // TODO: Wrap this object into an scene component
+        // Initialize the environment resources with a procedural generic sky texture
+        // TODO: Use a ProceduralTextureGenerator to build an equirectangular sky dome image
         _environment->build(
             envTexture,         // Equirectangular texture
             { 2048, 2048 },     // Cube map size

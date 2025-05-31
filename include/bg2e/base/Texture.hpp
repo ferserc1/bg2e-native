@@ -5,12 +5,47 @@
 #include <memory>
 #include <filesystem>
 #include <string>
+#include <functional>
 
 namespace bg2e {
 namespace base {
 
+class ProceduralTextureGenerator {
+public:
+    ProceduralTextureGenerator() :_width{0}, _height{0}, _bpp{0} {}
+    ProceduralTextureGenerator(uint32_t w, uint32_t h, uint32_t bpp) :_width{w}, _height{h}, _bpp{bpp} {}
+    
+    // Generate the buffer based on _width, _height and _bpp parameters.
+    virtual uint8_t* generate() = 0;
+    
+    // Return a texture image identifier, used to compare it with the TextureCache mechanism
+    // and prevent duplication identical textures.
+    virtual std::string imageIdentifier() = 0;
+    
+    inline void setDimensions(uint32_t w, uint32_t h, uint32_t bpp)
+    {
+        _width = w;
+        _height = h;
+        _bpp = bpp;
+    }
+
+    inline void setWidth(uint32_t w) { _width = w; }
+    inline void setHeight(uint32_t h) { _height = h; }
+    inline void setBytesPerPixel(uint32_t bpp) { _bpp = bpp; }
+    
+    inline uint32_t width() const { return _width; }
+    inline uint32_t height() const { return _height; }
+    inline uint32_t bytesPerPixel() const { return _bpp; }
+
+protected:
+    uint32_t _width;
+    uint32_t _height;
+    uint32_t _bpp;
+};
+
 class Texture {
 public:
+    
     enum Filter {
         FilterLinear = 0,
         FilterNearest = 1
@@ -32,7 +67,13 @@ public:
         fullPath.append(fileName);
         _imageFilePath = fullPath.string();
     }
+    Texture(ProceduralTextureGenerator * gen) { _proceduralGenerator = std::shared_ptr<ProceduralTextureGenerator>(gen); }
+    Texture(std::shared_ptr<ProceduralTextureGenerator> gen) { _proceduralGenerator = gen; }
 
+    inline void setProceduralGenerator(ProceduralTextureGenerator * gen) { _proceduralGenerator = std::shared_ptr<ProceduralTextureGenerator>(gen); }
+    inline void setProceduralGenerator(std::shared_ptr<ProceduralTextureGenerator> gen) { _proceduralGenerator = gen; }
+    ProceduralTextureGenerator * proceduralTextureGenerator() { return _proceduralGenerator.get(); }
+    
     inline void setUseMipmaps(bool mipmaps) { _useMipmaps = mipmaps; }
     inline bool useMipmaps() const { return _useMipmaps; }
     inline void setMagFilter(Filter filter) { _magFilter = filter; }
@@ -70,6 +111,8 @@ protected:
     AddressMode _addressModeU = AddressModeRepeat;
     AddressMode _addressModeV = AddressModeRepeat;
     AddressMode _addressModeW = AddressModeRepeat;
+    
+    std::shared_ptr<ProceduralTextureGenerator> _proceduralGenerator;
 };
 
 }
