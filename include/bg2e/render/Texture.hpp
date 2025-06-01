@@ -68,11 +68,15 @@ public:
     inline const vulkan::Image* image() const { return _image.get(); }
     inline VkSampler sampler() const { return _sampler; }
 
+    inline void setColorType(base::Color::Type t) { _colorType = t; }
+    inline base::Color::Type colorType() const { return _colorType; }
+    
 protected:
     Vulkan * _vulkan;
     std::shared_ptr<base::Texture> _texture;
     std::shared_ptr<vulkan::Image> _image;
     bool _hasImageOwnership = false;
+    base::Color::Type _colorType = base::Color::TypeSRGB;
 
     VkSampler _sampler = VK_NULL_HANDLE;
     

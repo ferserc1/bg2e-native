@@ -177,7 +177,7 @@ void SphereToCubemapRenderer::update(VkCommandBuffer commandBuffer, vulkan::Fram
         RenderSpherePushConstant pushConstants = {
             .currentFace = i,
         #if BG2E_IS_MAC
-            .gamma = 2.2f
+            .gamma = _skyTexture->colorType() == base::Color::TypeSRGB ? 2.2f : 1.0f
         #else
             .gamma = 1.0f
         #endif

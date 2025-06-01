@@ -78,10 +78,17 @@ public:
         auto imagePath = assetsPath;
         imagePath.append("country_field_sun.jpg");
         
-        auto envTexture = bg2e::utils::TextureCache::get().load(_vulkan, imagePath);
+        //auto envTexture = bg2e::utils::TextureCache::get().load(_vulkan, imagePath);
         
         // Initialize the environment resources with a procedural generic sky texture
         // TODO: Use a ProceduralTextureGenerator to build an equirectangular sky dome image
+        auto skyDomeTexture = std::make_shared<bg2e::base::Texture>();
+        auto skyDomeGenerator = new bg2e::scene::SkyDomeTextureGenerator(2048, 1024, 4);
+        skyDomeTexture->setProceduralGenerator(skyDomeGenerator);
+        skyDomeTexture->setUseMipmaps(false);
+        
+        auto envTexture = std::make_shared<bg2e::render::Texture>(_vulkan);
+        envTexture->load(skyDomeTexture);
         _environment->build(
             envTexture,         // Equirectangular texture
             { 2048, 2048 },     // Cube map size
@@ -330,7 +337,7 @@ protected:
         sceneRoot->addChild(secondModel);
         
         auto cameraNode = std::shared_ptr<bg2e::scene::Node>(new bg2e::scene::Node("Camera"));
-        cameraNode->addComponent(bg2e::scene::TransformComponent::makeTranslated(0.0f, 1.0f, -10.0f ));
+        cameraNode->addComponent(bg2e::scene::TransformComponent::makeTranslated(0.0f, 1.3f, -10.0f ));
         cameraNode->addComponent(new bg2e::scene::CameraComponent());
         auto projection = new bg2e::math::OpticalProjection();
         cameraNode->camera()->setProjection(projection);

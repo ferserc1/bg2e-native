@@ -4,6 +4,11 @@ namespace bg2e {
 namespace base {
 
 struct Color {
+    enum Type {
+        TypeSRGB = 1,
+        TypeLinear = 2
+    };
+    
     float r = 0.0f;
     float g = 0.0f;
     float b = 0.0f;
@@ -41,6 +46,14 @@ struct Color {
     static Color Mint() { return Color{ 0.6f, 1.0f, 0.6f, 1.0f }; }
     static Color Indigo() { return Color{ 0.29f, 0.0f, 0.51f, 1.0f }; }
     static Color Violet() { return Color{ 0.93f, 0.51f, 0.93f, 1.0f }; }
+
+    std::string toString() const {
+        int r_int = static_cast<int>(r * 255.0f);
+        int g_int = static_cast<int>(g * 255.0f);
+        int b_int = static_cast<int>(b * 255.0f);
+        int a_int = static_cast<int>(a * 255.0f);
+        return "Color(" + std::to_string(r_int) + ", " + std::to_string(g_int) + ", " + std::to_string(b_int) + ", " + std::to_string(a_int) + ")";
+    }
 };
 
 }

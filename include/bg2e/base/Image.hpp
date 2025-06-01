@@ -2,6 +2,7 @@
 #pragma once
 
 #include <bg2e/common.hpp>
+#include <bg2e/base/Color.hpp>
 
 namespace bg2e {
 namespace base {
@@ -28,6 +29,9 @@ public:
     inline void setPath(const std::string& path) { _path = path; }
     inline const std::string& path() const { return _path; }
 
+    inline void setColorType(Color::Type t) { _colorType = t; }
+    inline Color::Type colorType() const { return _colorType; }
+    
 protected:
     unsigned char* _data = nullptr;
     uint32_t _width = 0;
@@ -35,6 +39,8 @@ protected:
     uint32_t _channels = 0;
     
     std::string _path;
+    
+    Color::Type _colorType = Color::TypeSRGB;
 };
 
 }

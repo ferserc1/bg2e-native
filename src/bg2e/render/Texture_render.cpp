@@ -93,7 +93,18 @@ void Texture::load(std::shared_ptr<base::Texture> texture)
 {
     _texture = texture;
     
-    std::unique_ptr<base::Image> img = std::unique_ptr<base::Image>(db::loadImage(texture->imageFilePath()));
+    std::unique_ptr<base::Image> img;
+    
+    switch (_texture->type())
+    {
+        case base::Texture::TypeFilesystem:
+            img = std::unique_ptr<base::Image>(db::loadImage(texture->imageFilePath()));
+            break;
+        case base::Texture::TypeProcedural:
+            img = std::unique_ptr<base::Image>(texture->generateImage());
+            break;
+    }
+
     
     // TODO: Extract image options, such as mipmap levels
     // TODO: Support for HDR images
@@ -126,6 +137,7 @@ void Texture::load(std::shared_ptr<base::Texture> texture)
         &_sampler
     );
     
+    _colorType = texture->colorType();
 }
 
 void Texture::load(std::shared_ptr<base::Texture> texture, std::shared_ptr<vulkan::Image> image)
@@ -133,6 +145,7 @@ void Texture::load(std::shared_ptr<base::Texture> texture, std::shared_ptr<vulka
     _texture = texture;
     _image = image;
     _hasImageOwnership = false;
+    _colorType = texture->colorType();
     
     VkSamplerCreateInfo samplerInfo = {};
     samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
