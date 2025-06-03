@@ -20,7 +20,10 @@
 namespace bg2e {
 namespace scene {
 
+class Scene;
+
 class BG2E_API Node {
+    friend class Scene;
 public:
     Node();
     Node(const std::string& name);
@@ -67,9 +70,14 @@ public:
     glm::mat4 worldMatrix();
     glm::mat4 invertedWorldMatrix();
     
+    Node * sceneRoot();
+   
+    inline Scene * scene() { return sceneRoot()->_scene; }
+
 protected:
     std::vector<std::shared_ptr<Node>> _children;
     Node * _parent = nullptr;
+    Scene * _scene = nullptr;
     
     std::unordered_map<size_t, std::shared_ptr<Component>> _components;
     

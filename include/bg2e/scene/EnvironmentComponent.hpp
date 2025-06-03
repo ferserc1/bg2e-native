@@ -4,6 +4,10 @@
 
 #include <bg2e/scene/Component.hpp>
 
+#include <string>
+#include <filesystem>
+
+
 namespace bg2e {
 namespace scene {
 
@@ -11,13 +15,30 @@ class BG2E_API EnvironmentComponent : public Component {
 public:
     EnvironmentComponent();
     EnvironmentComponent(const std::string& img);
+    EnvironmentComponent(const std::filesystem::path& resourcePath, const std::string& file);
     virtual ~EnvironmentComponent();
     
-    inline void setEnvironmentImage(const std::string& img) { _environmentImage = img; }
+    inline void setEnvironmentImage(const std::string& img)
+    {
+        _environmentImage = img;
+        _imgHash = std::hash<std::string>{}(img);
+    }
+    
+    inline void setEnvironmentImage(const std::filesystem::path& resourcePath, const std::string& img)
+    {
+        auto fullPath = resourcePath;
+        fullPath.append(img);
+        setEnvironmentImage(fullPath.string());
+    }
     inline const std::string& environmentImage() const { return _environmentImage; }
+    
+    inline size_t imgHash() const { return _imgHash; }
 
 protected:
     std::string _environmentImage;
+    size_t _imgHash = 0;
+    
+
     
     // TODO: Other environment parameters
 };

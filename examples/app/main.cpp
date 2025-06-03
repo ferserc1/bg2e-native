@@ -61,6 +61,7 @@ public:
  
     void initFrameResources(bg2e::render::vulkan::DescriptorSetAllocator* frameAllocator) override
     {
+        /// Initialize descriptor set frame resources for the renderer resources
         _frameDataBinding->initFrameResources(frameAllocator);
         _objectDataBinding->initFrameResources(frameAllocator);
         _environmentDataBinding->initFrameResources(frameAllocator);
@@ -74,19 +75,12 @@ public:
         // Use the initScene function to initialize and create scene resources, such as pipelines, 3D models
         // or textures
         
-        auto assetsPath = bg2e::base::PlatformTools::assetPath();
-        auto imagePath = assetsPath;
-        imagePath.append("country_field_sun.jpg");
         
-        //auto envTexture = bg2e::utils::TextureCache::get().load(_vulkan, imagePath);
-        
-        // Initialize the environment resources with a procedural generic sky texture
-        // TODO: Use a ProceduralTextureGenerator to build an equirectangular sky dome image
+        /// Renderer: initialize the sky dome generator with a procedural texture
         auto skyDomeTexture = std::make_shared<bg2e::base::Texture>();
         auto skyDomeGenerator = new bg2e::scene::SkyDomeTextureGenerator(2048, 1024, 4);
         skyDomeTexture->setProceduralGenerator(skyDomeGenerator);
         skyDomeTexture->setUseMipmaps(false);
-        
         auto envTexture = std::make_shared<bg2e::render::Texture>(_vulkan);
         envTexture->load(skyDomeTexture);
         _environment->build(
@@ -108,6 +102,7 @@ public:
         // This function releases all previous resources before recreate the images
 		_colorAttachments->build(newExtent);
   
+        /// Renderer: call the resize visitor to update the camera projection matrix
         // Call resizeViewport() on the scene components
         _resizeVisitor.resizeViewport(_scene->rootNode(), newExtent);
 	}
@@ -122,9 +117,15 @@ public:
 		using namespace bg2e::render::vulkan;
   
         _updateVisitor.update(_scene->rootNode(), delta());
-    
-        // TODO: wrap this object in a scene component
-        _environment->update(cmd, currentFrame, frameResources);
+        
+        /// Renderer: check if the environment texture has been changed using the environment component image hash
+        /// and update the environment matrixes
+        if (_scene->mainEnvironment() && _scene->mainEnvironment()->imgHash() != _skyboxImageHash)
+        {
+            _environment->swapEnvironmentTexture(_scene->mainEnvironment()->environmentImage());
+            _skyboxImageHash = _scene->mainEnvironment()->imgHash();
+        }
+        _environment->update(cmd, currentFrame, frameResources);  // This function will update the sky box textures only if the skybox image has changed
   
 		float flash = std::abs(std::sin(currentFrame / 120.0f));
 		VkClearColorValue clearValue{ { 0.0f, 0.0f, flash, 1.0f } };
@@ -139,31 +140,31 @@ public:
             _colorAttachments->extent()
         );
   
+        /// Renderer: get the view and projection matrixes from the main scene camera and create the scene descriptor set
         auto mainCamera = _scene->mainCamera();
         auto projMatrix = mainCamera->projectionMatrix();
         projMatrix[1][1] *= -1.0f; // Flip Vulkan Y coord
-        
         auto viewMatrix = mainCamera->ownerNode()->invertedWorldMatrix();
-        
         auto sceneDS = _frameDataBinding->newDescriptorSet(
             frameResources,
             viewMatrix,
             projMatrix
         );
         
-        // TODO: Wrap the environment into an scene component
-        _environment->updateSkybox(viewMatrix, projMatrix);
-        
+
+        /// Renderer: update and render the skybox. This is only needed if we want to draw the skybox in the output color attachments, it may be not neccesary
+        /// in some renderers at this point (for example in deferred renderer)
         if (_drawSkybox)
         {
+            _environment->updateSkybox(viewMatrix, projMatrix);
             _environment->drawSkybox(cmd, currentFrame, frameResources);
         }
-
   
         vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, _pipeline);
         
         auto envDS = _environmentDataBinding->newDescriptorSet(frameResources, _environment.get());
   
+        /// Renderer: draw the scene
         _drawVisitor.draw(
             _scene->rootNode(),
             cmd,
@@ -213,28 +214,9 @@ public:
             BasicWidgets::text("Show Attachment:");
             BasicWidgets::radioButton("Attachment 1", &_showRenderTargetIndex, 0);
             BasicWidgets::radioButton("Attachment 2", &_showRenderTargetIndex, 1);
-            
-            for (auto & pair : _environments)
-            {
-                if (BasicWidgets::button(pair.first))
-                {
-                    loadEnvironment(pair.second);
-                }
-            }
 		});
 	}
     
-    void loadEnvironment(const std::string& fileName)
-    {
-        auto assetsPath = bg2e::base::PlatformTools::assetPath();
-        auto imagePath = assetsPath;
-        imagePath.append(fileName);
-        
-        auto texture = bg2e::utils::TextureCache::get().load(_vulkan, imagePath);
-        
-        _environment->swapEnvironmentTexture(texture);
-    }
-
 	void cleanup() override
 	{
         _colorAttachments->cleanup();
@@ -242,17 +224,6 @@ public:
 	}
 
 protected:
-
-    std::array<std::pair<const std::string, const std::string>, 8> _environments = {{
-        { "Environment 1", "country_field_sun.jpg" },
-        { "Environment 2", "equirectangular-env.jpg" },
-        { "Environment 3", "equirectangular-env2.jpg" },
-        { "Environment 4", "equirectangular-env3.jpg" },
-        { "Environment 5", "equirectangular-env4.jpg" },
-        { "Environment 6", "equirectangular-env5.jpg" },
-        { "Environment 7", "equirectangular-env6.jpg" },
-        { "Environment 8", "equirectangular-env7.jpg" }
-    }};
 
     std::shared_ptr<bg2e::render::ColorAttachments> _colorAttachments;
 
@@ -262,6 +233,7 @@ protected:
 	VkPipeline _pipeline = VK_NULL_HANDLE;
  
     std::shared_ptr<bg2e::scene::Scene> _scene;
+    size_t _skyboxImageHash = 0;
     
     bg2e::scene::ResizeViewportVisitor _resizeVisitor;
     bg2e::scene::UpdateVisitor _updateVisitor;
@@ -318,6 +290,7 @@ protected:
     void createScene()
     {
         auto sceneRoot = std::make_shared<bg2e::scene::Node>("Scene Root");
+        sceneRoot->addComponent(new bg2e::scene::EnvironmentComponent(bg2e::base::PlatformTools::assetPath(), "country_field_sun.jpg"));
         
         auto anotherNode = new bg2e::scene::Node("Transform Node");
         anotherNode->addComponent(bg2e::scene::TransformComponent::makeTranslated(0.0f, 1.0f, 0.0f));

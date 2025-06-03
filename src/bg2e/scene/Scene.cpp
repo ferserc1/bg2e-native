@@ -8,11 +8,17 @@
 
 namespace bg2e::scene {
 
-void Scene::setSceneRoot(std::shared_ptr<Node> scene)
+void Scene::setSceneRoot(std::shared_ptr<Node> sceneRoot)
 {
-    _sceneRoot = scene;
+    if (sceneRoot->_scene != nullptr)
+    {
+        throw std::runtime_error("Scene::setSceneRoot(): The specified scene root is already added to an scene.");
+    }
+    
+    _sceneRoot = sceneRoot;
     _mainEnvironment = nullptr;
     _mainCameraNode = nullptr;
+    _sceneRoot->_scene = this;
 }
 
 void Scene::setMainCamera(CameraComponent * camera)
@@ -61,8 +67,11 @@ EnvironmentComponent * Scene::mainEnvironment()
         // Get the first environment found in the scene.
         // TODO: improve this
         // It should be possible to choose which environment you want to use if there are several in the scene
-        _mainEnvironment = *envs.begin();
+        if (envs.size() > 0)
+        {
+            _mainEnvironment = *envs.begin();
+        }
     }
-    return _mainEnvironment->environment();
+    return _mainEnvironment != nullptr ? _mainEnvironment->environment() : nullptr;
 }
 }

@@ -119,4 +119,13 @@ glm::mat4 Node::invertedWorldMatrix()
     return glm::inverse(worldMatrix());
 }
 
+Node * Node::sceneRoot()
+{
+    if (_parent == nullptr)
+    {
+        return this;
+    }
+    return _parent->sceneRoot();
+}
+
 }

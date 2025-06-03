@@ -466,9 +466,20 @@
 		EDF045222CE65DB8005C8B96 /* build.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = build.sh; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		ED437F612DEF4CB200B9397A /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Untitled.cpp,
+				Untitled.h,
+			);
+			target = ED85B1F22CDBAABD0039B44D /* bg2e-native */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		ED14CD012DDF458D007468D5 /* scene */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = scene; sourceTree = "<group>"; };
-		ED14CD092DDF469F007468D5 /* scene */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = scene; sourceTree = "<group>"; };
+		ED14CD092DDF469F007468D5 /* scene */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (ED437F612DEF4CB200B9397A /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = scene; sourceTree = "<group>"; };
 		EDC9F8852DE6113800745B80 /* math */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = math; sourceTree = "<group>"; };
 /* End PBXFileSystemSynchronizedRootGroup section */
 

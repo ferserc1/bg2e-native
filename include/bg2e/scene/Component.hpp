@@ -11,14 +11,16 @@ namespace bg2e {
 namespace scene {
 
 class Node;
+class Scene;
 
-class Component {
+class BG2E_API Component {
     friend class Node;
 public:
     
     virtual ~Component() = default;
     
     inline Node * ownerNode() { return _owner; }
+    Scene * scene();
 
     virtual void resizeViewport(const math::Viewport&) {}
     
