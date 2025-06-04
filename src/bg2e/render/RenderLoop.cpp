@@ -6,17 +6,17 @@
 namespace bg2e {
 namespace render {
 
-void RenderLoop::init(Vulkan * vulkan)
+void RenderLoop::init(Engine * engine)
 {
-	_vulkan = vulkan;
+	_engine = engine;
 
     if (_renderDelegate)
     {
-        _renderDelegate->init(vulkan);
+        _renderDelegate->init(engine);
     }
 
-	_vulkan->iterateFrameResources([&](vulkan::FrameResources& frameResources) {
-        frameResources.descriptorAllocator->init(_vulkan);
+	_engine->iterateFrameResources([&](vulkan::FrameResources& frameResources) {
+        frameResources.descriptorAllocator->init(_engine);
 		initFrameResources(frameResources.descriptorAllocator);
 	});
 }
@@ -31,16 +31,16 @@ void RenderLoop::initScene()
 
 void RenderLoop::acquireAndPresent()
 {
-	if (!_vulkan) {
+	if (!_engine) {
         throw new std::runtime_error("RenderLoop::render(): The frame cannot be rendered because Vulkan object has not been set.");
 	}
 
-    VkDevice dev = _vulkan->device().handle();
-    auto swapchainData = _vulkan->swapchain();
+    VkDevice dev = _engine->device().handle();
+    auto swapchainData = _engine->swapchain();
     auto swapchain = swapchainData.handle();
-    auto graphicsQueue = _vulkan->device().graphicsQueue();
+    auto graphicsQueue = _engine->device().graphicsQueue();
 
-    auto& frameResources = _vulkan->currentFrameResources();
+    auto& frameResources = _engine->currentFrameResources();
 	auto cmd = frameResources.commandBuffer;
     auto frameFence = frameResources.frameFence;
     auto swapchainSemaphore = frameResources.swapchainSemaphore;
@@ -55,17 +55,17 @@ void RenderLoop::acquireAndPresent()
 	auto acquireResult = vulkan::acquireNextImage(dev, swapchain, 10000000000, swapchainSemaphore, nullptr, &swapchainImageIndex);
     if (acquireResult == VK_SUBOPTIMAL_KHR)
     {
-        _vulkan->updateSwapchainSize();
+        _engine->updateSwapchainSize();
     }
     else if (acquireResult == VK_ERROR_OUT_OF_DATE_KHR)
     {
-        _vulkan->updateSwapchainSize();
+        _engine->updateSwapchainSize();
         return;
     }
 
     if (_renderDelegate.get())
     {
-        _renderDelegate->update(_vulkan->currentFrame(), frameResources);
+        _renderDelegate->update(_engine->currentFrame(), frameResources);
         _renderDelegate->setDelta(this->_delta);
     }
 
@@ -134,18 +134,18 @@ void RenderLoop::acquireAndPresent()
     auto presentResult = vulkan::queuePresent(graphicsQueue, &presentInfo);
     if (presentResult == VK_ERROR_OUT_OF_DATE_KHR || presentResult == VK_SUBOPTIMAL_KHR)
     {
-        _vulkan->updateSwapchainSize();
+        _engine->updateSwapchainSize();
     }
 
     // Next frame
-    _vulkan->nextFrame();
+    _engine->nextFrame();
 }
 
 void RenderLoop::swapchainResized()
 {
     if (_renderDelegate)
     {
-        auto newExtent = _vulkan->swapchain().extent();
+        auto newExtent = _engine->swapchain().extent();
 		_renderDelegate->swapchainResized(newExtent);
     }
 }
@@ -166,7 +166,7 @@ VkImageLayout RenderLoop::render(
 ) {
     if (_renderDelegate)
     {
-        return _renderDelegate->render(cmd, _vulkan->currentFrame(), colorImage, depthImage, frameResources);
+        return _renderDelegate->render(cmd, _engine->currentFrame(), colorImage, depthImage, frameResources);
     }
     else
     {

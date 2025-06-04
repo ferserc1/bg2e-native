@@ -6,14 +6,14 @@ namespace render {
 namespace vulkan {
 
 Buffer* Buffer::createAllocatedBuffer(
-    Vulkan * vulkan,
+    Engine * engine,
     size_t allocSize,
     VkBufferUsageFlags usage,
     VmaMemoryUsage memoryUsage
 ) {
     auto buffer = new Buffer();
     
-    buffer->_vulkan = vulkan;
+    buffer->_engine = engine;
     
     VkBufferCreateInfo bufferInfo = {};
     bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
@@ -25,7 +25,7 @@ Buffer* Buffer::createAllocatedBuffer(
     allocInfo.flags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
     
     VK_ASSERT(vmaCreateBuffer(
-        vulkan->allocator(),
+        engine->allocator(),
         &bufferInfo,
         &allocInfo,
         &buffer->_buffer,
@@ -40,7 +40,7 @@ void Buffer::cleanup()
 {
     if (_buffer != VK_NULL_HANDLE)
     {
-        vmaDestroyBuffer(_vulkan->allocator(), _buffer, _allocation);
+        vmaDestroyBuffer(_engine->allocator(), _buffer, _allocation);
     }
     _buffer = VK_NULL_HANDLE;
     _allocation = VK_NULL_HANDLE;
@@ -62,7 +62,7 @@ VkDeviceAddress Buffer::deviceAddress() const
     VkBufferDeviceAddressInfo deviceAddressInfo = {};
     deviceAddressInfo.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;
     deviceAddressInfo.buffer = _buffer;
-    return vkGetBufferDeviceAddress(_vulkan->device().handle(), &deviceAddressInfo);
+    return vkGetBufferDeviceAddress(_engine->device().handle(), &deviceAddressInfo);
 }
     
 }

@@ -6,7 +6,7 @@ class ClearScreenDelegate : public bg2e::render::RenderLoopDelegate,
 	public bg2e::ui::UserInterfaceDelegate
 {
 public:
-	void init(bg2e::render::Vulkan* vulkan) override
+	void init(bg2e::render::Engine * vulkan) override
 	{
 		using namespace bg2e::render::vulkan;
 		RenderLoopDelegate::init(vulkan);
@@ -14,7 +14,7 @@ public:
  
     void initScene() override
     {
-        createImage(_vulkan->swapchain().extent());
+        createImage(_engine->swapchain().extent());
   
         createPipeline();
     }
@@ -92,7 +92,7 @@ public:
 	}
 
 	// ============ User Interface Delegate Functions =========
-	void init(bg2e::render::Vulkan*, bg2e::ui::UserInterface*) override {
+	void init(bg2e::render::Engine *, bg2e::ui::UserInterface*) override {
 		_window.setTitle("ImGui Wrapper Demo");
 		_window.options.noClose = true;
         _window.options.minWidth = 100;
@@ -119,17 +119,17 @@ protected:
     
     void createPipeline()
     {
-        bg2e::render::vulkan::factory::GraphicsPipeline plFactory(_vulkan);
+        bg2e::render::vulkan::factory::GraphicsPipeline plFactory(_engine);
         
         plFactory.addShader("test.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
         plFactory.addShader("test.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
         
         auto layoutInfo = bg2e::render::vulkan::Info::pipelineLayoutInfo();
-        VK_ASSERT(vkCreatePipelineLayout(_vulkan->device().handle(), &layoutInfo, nullptr, &_layout));
+        VK_ASSERT(vkCreatePipelineLayout(_engine->device().handle(), &layoutInfo, nullptr, &_layout));
         plFactory.setColorAttachmentFormat(_targetImage->format());
         _pipeline = plFactory.build(_layout);
         
-        _vulkan->cleanupManager().push([&](VkDevice dev) {
+        _engine->cleanupManager().push([&](VkDevice dev) {
             vkDestroyPipeline(dev, _pipeline, nullptr);
             vkDestroyPipelineLayout(dev, _layout, nullptr);
         });
@@ -138,9 +138,9 @@ protected:
 	void createImage(VkExtent2D extent)
 	{
 		using namespace bg2e::render::vulkan;
-		auto vulkan = this->vulkan();
+		auto engine = this->engine();
 		_targetImage = std::shared_ptr<Image>(Image::createAllocatedImage(
-			vulkan,
+			engine,
 			VK_FORMAT_R16G16B16A16_SFLOAT,
 			extent,
 			VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT |

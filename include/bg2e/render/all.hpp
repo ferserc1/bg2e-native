@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include <bg2e/render/Vulkan.hpp>
+#include <bg2e/render/Engine.hpp>
 #include <bg2e/render/ColorAttachments.hpp>
 #include <bg2e/render/CubemapRenderer.hpp>
 #include <bg2e/render/EnvironmentResources.hpp>

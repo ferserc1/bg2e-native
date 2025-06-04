@@ -2,7 +2,7 @@
 
 #include <bg2e/common.hpp>
 #include <bg2e/render/vulkan/common.hpp>
-#include <bg2e/render/Vulkan.hpp>
+#include <bg2e/render/Engine.hpp>
 
 namespace bg2e {
 namespace render {
@@ -12,7 +12,7 @@ class BG2E_API Buffer {
 public:
 
     static Buffer* createAllocatedBuffer(
-        Vulkan * vulkan,
+        Engine * engine,
         size_t allocSize,
         VkBufferUsageFlags usage,
         VmaMemoryUsage memoryUsage
@@ -32,7 +32,7 @@ public:
 protected:
     Buffer() = default;
 
-    Vulkan * _vulkan = nullptr;
+    Engine * _engine = nullptr;
 
     VkBuffer _buffer = VK_NULL_HANDLE;
     VmaAllocation _allocation = VK_NULL_HANDLE;

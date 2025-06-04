@@ -10,13 +10,13 @@ class ClearScreenDelegate : public bg2e::render::RenderLoopDelegate,
 	public bg2e::ui::UserInterfaceDelegate
 {
 public:
-	void init(bg2e::render::Vulkan* vulkan) override
+	void init(bg2e::render::Engine * vulkan) override
 	{
 		using namespace bg2e::render::vulkan;
 		RenderLoopDelegate::init(vulkan);
   
         _colorAttachments = std::shared_ptr<bg2e::render::ColorAttachments>(
-            new bg2e::render::ColorAttachments(_vulkan, {
+            new bg2e::render::ColorAttachments(_engine, {
                 VK_FORMAT_R16G16B16A16_SFLOAT,
                 VK_FORMAT_R8G8B8A8_UNORM
             })
@@ -28,11 +28,11 @@ public:
         
         _environment = std::unique_ptr<bg2e::render::EnvironmentResources>(
             new bg2e::render::EnvironmentResources(
-                _vulkan,
+                _engine,
 
                 // Use this parameters to build the SkyboxRenderer in EnvironmentResources
                 _colorAttachments->attachmentFormats(),
-                _vulkan->swapchain().depthImageFormat()
+                _engine->swapchain().depthImageFormat()
             )
         );
 	}
@@ -54,7 +54,7 @@ public:
         auto assetsPath = bg2e::base::PlatformTools::assetPath();
         
         _environment->build(
-            bg2e::utils::TextureCache::get().load(_vulkan, assetsPath, "country_field_sun.jpg"),
+            bg2e::utils::TextureCache::get().load(_engine, assetsPath, "country_field_sun.jpg"),
             { 2048, 2048 },     // Cube map size
             { 32, 32 },         // Irradiance map size
             { 1024, 1024 }      // Specular reflection map size
@@ -66,21 +66,21 @@ public:
         cubeTexture->setUseMipmaps(true);
         
         _cubeTexture = std::shared_ptr<bg2e::render::Texture>(new bg2e::render::Texture(
-            _vulkan,
+            _engine,
             cubeTexture
         ));
         
-        _vulkan->cleanupManager().push([&](VkDevice) {
+        _engine->cleanupManager().push([&](VkDevice) {
             _cubeTexture = nullptr;
         });
 	
-        _colorAttachments->build(_vulkan->swapchain().extent());
+        _colorAttachments->build(_engine->swapchain().extent());
 
 		createPipeline();
 
         _sceneData.viewMatrix = glm::lookAt(glm::vec3{ 0.0f, 0.0f, -5.0f}, { 0.0f, 0.0f, 0.0f }, { 0.0f, 1.0f, 0.0f });
         
-        auto vpSize = _vulkan->swapchain().extent();
+        auto vpSize = _engine->swapchain().extent();
         _sceneData.projMatrix = glm::perspective(
             glm::radians(50.0f),
             float(vpSize.width) / float(vpSize.height),
@@ -118,7 +118,7 @@ public:
         _environment->update(cmd, currentFrame, frameResources);
   
         auto sceneDS = macros::uniformBufferDescriptorSet(
-            _vulkan, frameResources,
+            _engine, frameResources,
             _sceneDSLayout, _sceneData, currentFrame
         );
         
@@ -148,7 +148,7 @@ public:
         vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, _pipeline);
   
         _modelData.modelMatrix = glm::rotate(_modelData.modelMatrix, 0.018f, glm::vec3(1.0f, 1.0f, 0.0f));
-        auto modelDataBuffer = macros::createBuffer(_vulkan, frameResources, _modelData);
+        auto modelDataBuffer = macros::createBuffer(_engine, frameResources, _modelData);
         auto modelDS = frameResources.newDescriptorSet(_objectDSLayout);
         modelDS->beginUpdate();
             modelDS->addBuffer(
@@ -226,7 +226,7 @@ public:
 	}
 
 	// ============ User Interface Delegate Functions =========
-	void init(bg2e::render::Vulkan*, bg2e::ui::UserInterface*) override {
+	void init(bg2e::render::Engine *, bg2e::ui::UserInterface*) override {
 		_window.setTitle("ImGui Wrapper Demo");
 		_window.options.noClose = true;
 		_window.options.minWidth = 130;
@@ -260,7 +260,7 @@ public:
     void loadEnvironment(const std::string& fileName)
     {
         _environment->swapEnvironmentTexture(bg2e::utils::TextureCache::get().load(
-            _vulkan,
+            _engine,
             bg2e::base::PlatformTools::assetPath(),
             fileName
         ));
@@ -324,7 +324,7 @@ protected:
 
 	void createPipeline()
 	{
-		bg2e::render::vulkan::factory::GraphicsPipeline plFactory(_vulkan);
+		bg2e::render::vulkan::factory::GraphicsPipeline plFactory(_engine);
 
 		plFactory.addShader("test/texture_gi.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
         plFactory.addShader("test/texture_gi.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
@@ -335,20 +335,20 @@ protected:
         
         dsFactory.clear();
         dsFactory.addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
-        _sceneDSLayout = dsFactory.build(_vulkan->device().handle(), VK_SHADER_STAGE_VERTEX_BIT);
+        _sceneDSLayout = dsFactory.build(_engine->device().handle(), VK_SHADER_STAGE_VERTEX_BIT);
         
         dsFactory.clear();
         dsFactory.addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
         dsFactory.addBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
         dsFactory.addBinding(2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
-        _objectDSLayout = dsFactory.build(_vulkan->device().handle(), VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT);
+        _objectDSLayout = dsFactory.build(_engine->device().handle(), VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT);
         
-        bg2e::render::vulkan::factory::PipelineLayout layoutFactory(_vulkan);
+        bg2e::render::vulkan::factory::PipelineLayout layoutFactory(_engine);
         layoutFactory.addDescriptorSetLayout(_sceneDSLayout);
         layoutFactory.addDescriptorSetLayout(_objectDSLayout);
         _layout = layoutFactory.build();
         
-        plFactory.setDepthFormat(_vulkan->swapchain().depthImageFormat());
+        plFactory.setDepthFormat(_engine->swapchain().depthImageFormat());
         plFactory.enableDepthtest(true, VK_COMPARE_OP_LESS);
         plFactory.inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
         plFactory.setCullMode(true, VK_FRONT_FACE_COUNTER_CLOCKWISE);
@@ -356,7 +356,7 @@ protected:
         plFactory.setColorAttachmentFormat(_colorAttachments->attachmentFormats());
 		_pipeline = plFactory.build(_layout);
   
-		_vulkan->cleanupManager().push([&](VkDevice dev) {
+		_engine->cleanupManager().push([&](VkDevice dev) {
 			vkDestroyPipeline(dev, _pipeline, nullptr);
 			vkDestroyPipelineLayout(dev, _layout, nullptr);
             vkDestroyDescriptorSetLayout(dev, _sceneDSLayout, nullptr);
@@ -375,7 +375,7 @@ protected:
             bg2e::db::loadMeshObj<bg2e::geo::MeshPNU>(modelPath)
         );
         
-        _model = std::shared_ptr<bg2e::render::vulkan::geo::MeshPNU>(new bg2e::render::vulkan::geo::MeshPNU(_vulkan));
+        _model = std::shared_ptr<bg2e::render::vulkan::geo::MeshPNU>(new bg2e::render::vulkan::geo::MeshPNU(_engine));
         _model->setMeshData(modelMesh.get());
         _model->build();
         
@@ -384,7 +384,7 @@ protected:
             "two_submeshes_inner_albedo.jpg"
         );
         
-        _modelMaterial = std::make_shared<bg2e::render::MaterialBase>(_vulkan);
+        _modelMaterial = std::make_shared<bg2e::render::MaterialBase>(_engine);
         _modelMaterial->materialAttributes().setAlbedo(modelTexture);
         
         // Call this function every time you change something in materialAttributes
@@ -395,12 +395,12 @@ protected:
             "two_submeshes_outer_albedo.jpg"
         );
         
-        _modelMaterial2 = std::make_shared<bg2e::render::MaterialBase>(_vulkan);
+        _modelMaterial2 = std::make_shared<bg2e::render::MaterialBase>(_engine);
         _modelMaterial2->materialAttributes().setAlbedo(modelTexture2);
         
         _modelMaterial2->updateTextures();
         
-		_vulkan->cleanupManager().push([this](VkDevice dev) {
+		_engine->cleanupManager().push([this](VkDevice dev) {
             _model.reset();
             _modelMaterial.reset();
             _modelMaterial2.reset();

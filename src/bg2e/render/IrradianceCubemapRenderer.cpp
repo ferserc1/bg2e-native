@@ -3,8 +3,8 @@
 
 namespace bg2e::render {
 
-IrradianceCubemapRenderer::IrradianceCubemapRenderer(Vulkan * vulkan)
-    :CubemapRenderer(vulkan)
+IrradianceCubemapRenderer::IrradianceCubemapRenderer(Engine * engine)
+    :CubemapRenderer(engine)
 {
 }
     

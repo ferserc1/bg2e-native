@@ -4,14 +4,14 @@
 
 namespace bg2e::render {
 
-MaterialBase::MaterialBase(Vulkan * vulkan)
-    :_vulkan(vulkan)
+MaterialBase::MaterialBase(Engine * engine)
+    :_engine(engine)
 {
-    _albedoTexture = Texture::whiteTexture(vulkan);
-    _normalTexture = Texture::whiteTexture(vulkan);
-    _roughnessTexture = Texture::whiteTexture(vulkan);
-    _normalTexture = Texture::normalTexture(vulkan);
-    _aoTexture = Texture::whiteTexture(vulkan);
+    _albedoTexture = Texture::whiteTexture(engine);
+    _normalTexture = Texture::whiteTexture(engine);
+    _roughnessTexture = Texture::whiteTexture(engine);
+    _normalTexture = Texture::normalTexture(engine);
+    _aoTexture = Texture::whiteTexture(engine);
 }
 
 MaterialBase::~MaterialBase()
@@ -20,7 +20,7 @@ MaterialBase::~MaterialBase()
 }
 
 void updateTexture(
-    Vulkan * vulkan,
+    Engine * engine,
     std::shared_ptr<base::Texture> texData,
     std::shared_ptr<Texture>& outTexture,
     bool useCache
@@ -33,7 +33,7 @@ void updateTexture(
     if (texData != nullptr && !useCache)
     {
         outTexture = std::make_shared<Texture>(
-                vulkan,
+                engine,
                 texData
             );
     }
@@ -43,7 +43,7 @@ void updateTexture(
         {
             throw std::runtime_error("TextureCache: could not load cached texture because the source texture data does not contains a file path");
         }
-        outTexture = utils::TextureCache::get().load(vulkan, texData->imageFilePath());
+        outTexture = utils::TextureCache::get().load(engine, texData->imageFilePath());
     }
 }
 
@@ -56,27 +56,27 @@ void MaterialBase::updateTextures()
     
     if (!_materialAttributes.albedoTextureUpdated())
     {
-        updateTexture(_vulkan, _materialAttributes.albedoTexture(), _albedoTexture, useTextureCache());
+        updateTexture(_engine, _materialAttributes.albedoTexture(), _albedoTexture, useTextureCache());
     }
     
     if (!_materialAttributes.metalnessTextureUpdated())
     {
-        updateTexture(_vulkan, _materialAttributes.metalnessTexture(), _metalnessTexture, useTextureCache());
+        updateTexture(_engine, _materialAttributes.metalnessTexture(), _metalnessTexture, useTextureCache());
     }
     
     if (!_materialAttributes.roughnessTextureUpdated())
     {
-        updateTexture(_vulkan, _materialAttributes.roughnessTexture(), _roughnessTexture, useTextureCache());
+        updateTexture(_engine, _materialAttributes.roughnessTexture(), _roughnessTexture, useTextureCache());
     }
     
     if (!_materialAttributes.normalTextureUpdated())
     {
-        updateTexture(_vulkan, _materialAttributes.normalTexture(), _normalTexture, useTextureCache());
+        updateTexture(_engine, _materialAttributes.normalTexture(), _normalTexture, useTextureCache());
     }
     
     if (!_materialAttributes.aoTextureUpdated())
     {
-        updateTexture(_vulkan, _materialAttributes.aoTexture(), _aoTexture, useTextureCache());
+        updateTexture(_engine, _materialAttributes.aoTexture(), _aoTexture, useTextureCache());
     }
     
     _materialAttributes.setUpdated();

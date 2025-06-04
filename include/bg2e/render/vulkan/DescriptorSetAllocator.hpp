@@ -3,7 +3,7 @@
 #include <bg2e/common.hpp>
 #include <bg2e/render/vulkan/common.hpp>
 #include <bg2e/render/vulkan/DescriptorSet.hpp>
-#include <bg2e/render/Vulkan.hpp>
+#include <bg2e/render/Engine.hpp>
 
 namespace bg2e {
 namespace render {
@@ -18,7 +18,7 @@ public:
         float ratio;
     };
 
-    void init(Vulkan * vulkan);
+    void init(Engine * engine);
     
     void requirePoolSizeRatio(
         uint32_t maxSets,
@@ -53,7 +53,7 @@ protected:
     VkDescriptorPool getPool();
     VkDescriptorPool createPool(uint32_t setCount);
 
-    Vulkan * _vulkan;
+    Engine * _engine;
     
 };
 

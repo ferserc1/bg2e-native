@@ -1,6 +1,6 @@
 #pragma once
 
-#include <bg2e/render/Vulkan.hpp>
+#include <bg2e/render/Engine.hpp>
 #include <bg2e/render/vulkan/Image.hpp>
 #include <bg2e/render/vulkan/DescriptorSetAllocator.hpp>
 
@@ -12,9 +12,9 @@ public:
     virtual ~RenderLoopDelegate() {}
 
     // Init engine resource, for example, the main descriptor set allocator requirements
-    virtual void init(render::Vulkan* vulkan)
+    virtual void init(render::Engine * engine)
     {
-		_vulkan = vulkan;
+		_engine = engine;
     }
 
     // Init frame resources, tipically, the frame descriptor set allocator
@@ -37,13 +37,13 @@ public:
 
 	virtual void cleanup() {}
 
-	inline render::Vulkan* vulkan() { return _vulkan; }
+	inline render::Engine * engine() { return _engine; }
 
     inline float delta() const { return _delta; }
     inline void setDelta(float d) { _delta = d; }
 
 protected:
-	render::Vulkan* _vulkan = nullptr;
+	render::Engine * _engine = nullptr;
     
     float _delta = 0.0f;
 };

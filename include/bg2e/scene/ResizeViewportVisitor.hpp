@@ -4,7 +4,7 @@
 
 #include <bg2e/scene/NodeVisitor.hpp>
 #include <bg2e/math/projections.hpp>
-#include <bg2e/render/Vulkan.hpp>
+#include <bg2e/render/Engine.hpp>
 
 namespace bg2e {
 namespace scene {

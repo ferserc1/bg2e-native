@@ -1,7 +1,7 @@
 #pragma once
 
 #include <bg2e/common.hpp>
-#include <bg2e/render/Vulkan.hpp>
+#include <bg2e/render/Engine.hpp>
 #include <bg2e/ui/UserInterfaceDelegate.hpp>
 #include <SDL2/SDL.h>
 
@@ -11,7 +11,7 @@ namespace ui {
 
 class BG2E_API UserInterface {
 public:
-    void init(render::Vulkan *);
+    void init(render::Engine *);
 
     void processEvent(SDL_Event * event);
 
@@ -24,7 +24,7 @@ public:
     inline void setDelegate(std::shared_ptr<UserInterfaceDelegate> delegate) { _delegate = delegate; }
 
 protected:
-    render::Vulkan * _vulkan;
+    render::Engine * _engine;
     
     VkFence _uiFence;
     VkCommandBuffer _commandBuffer;

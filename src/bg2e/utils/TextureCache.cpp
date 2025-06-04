@@ -24,19 +24,19 @@ void TextureCache::destroy()
     }
 }
 
-std::shared_ptr<render::Texture> TextureCache::load(render::Vulkan * vk, const std::filesystem::path& filePath)
+std::shared_ptr<render::Texture> TextureCache::load(render::Engine * engine, const std::filesystem::path& filePath)
 {
-    return load(vk, filePath.string());
+    return load(engine, filePath.string());
 }
 
-std::shared_ptr<render::Texture> TextureCache::load(render::Vulkan * vk, const std::filesystem::path& filePath, const std::string& fileName)
+std::shared_ptr<render::Texture> TextureCache::load(render::Engine * engine, const std::filesystem::path& filePath, const std::string& fileName)
 {
     auto fullPath = filePath;
     fullPath.append(fileName);
-    return load(vk, fullPath);
+    return load(engine, fullPath);
 }
 
-std::shared_ptr<render::Texture> TextureCache::load(render::Vulkan * vk, const std::string& filePath)
+std::shared_ptr<render::Texture> TextureCache::load(render::Engine * engine, const std::string& filePath)
 {
     base::Texture defaultSettings;
     defaultSettings.setAddressMode(base::Texture::AddressModeRepeat);
@@ -44,10 +44,10 @@ std::shared_ptr<render::Texture> TextureCache::load(render::Vulkan * vk, const s
     defaultSettings.setMinFilter(base::Texture::FilterLinear);
     defaultSettings.setUseMipmaps(true);
     defaultSettings.setImageFilePath(filePath);
-    return load(vk, defaultSettings);
+    return load(engine, defaultSettings);
 }
 
-std::shared_ptr<render::Texture> TextureCache::load(render::Vulkan * vk, const base::Texture& settings)
+std::shared_ptr<render::Texture> TextureCache::load(render::Engine * engine, const base::Texture& settings)
 {
     auto filePath = settings.imageFilePath();
     if (filePath == "")
@@ -68,7 +68,7 @@ std::shared_ptr<render::Texture> TextureCache::load(render::Vulkan * vk, const b
         texture->setMinFilter(settings.minFilter());
         texture->setUseMipmaps(settings.useMipmaps());
         texture->setAddressMode(settings.addressModeU(), settings.addressModeV(), settings.addressModeW());
-        auto result = std::make_shared<render::Texture>(vk, texture);
+        auto result = std::make_shared<render::Texture>(engine, texture);
         _textures[filePath] = result;
     }
     return _textures.find(filePath)->second;

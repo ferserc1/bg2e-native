@@ -2,7 +2,7 @@
 #pragma once
 
 #include <bg2e/common.hpp>
-#include <bg2e/render/Vulkan.hpp>
+#include <bg2e/render/Engine.hpp>
 #include <bg2e/geo/Mesh.hpp>
 
 #include <vector>
@@ -14,7 +14,7 @@ namespace factory {
 
 class BG2E_API GraphicsPipeline {
 public:
-    GraphicsPipeline(Vulkan * vulkan);
+    GraphicsPipeline(Engine * engine);
     ~GraphicsPipeline();
     
     void addShader(const std::string& fileName, VkShaderStageFlagBits stage, const std::string& entryPoint = "main", const std::string& basePath = "");
@@ -63,7 +63,7 @@ public:
     void reset();
     
 protected:
-    Vulkan * _vulkan;
+    Engine * _engine;
 
     VkPipelineRenderingCreateInfo _renderInfo = {};
     std::vector<VkFormat> _colorAttachmentformat;

@@ -1,7 +1,7 @@
 #pragma once
 
 #include <bg2e/common.hpp>
-#include <bg2e/render/Vulkan.hpp>
+#include <bg2e/render/Engine.hpp>
 #include <bg2e/render/vulkan/DescriptorSetAllocator.hpp>
 #include <bg2e/render/RenderLoopDelegate.hpp>
 
@@ -15,7 +15,7 @@ class BG2E_API RenderLoop {
 public:
     // Init engine resources, for example, the main descriptor set allocator,
     // render images, etc
-    void init(Vulkan * vulkan);
+    void init(Engine * engine);
     
     // Init scene resource, for example: create pipelines, load textures,
     // load 3d models...
@@ -43,7 +43,7 @@ public:
     inline void setDelta(float d) { _delta = d; }
     
 protected:
-	Vulkan* _vulkan;
+	Engine * _engine;
     bool _resizeRequested = false;
 
     std::shared_ptr<RenderLoopDelegate> _renderDelegate;

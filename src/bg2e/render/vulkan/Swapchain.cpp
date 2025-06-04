@@ -1,14 +1,14 @@
 #include <bg2e/render/vulkan/Swapchain.hpp>
 #include <bg2e/render/vulkan/Info.hpp>
-#include <bg2e/render/Vulkan.hpp>
+#include <bg2e/render/Engine.hpp>
 
 namespace bg2e {
 namespace render {
 namespace vulkan {
 
-void Swapchain::init(Vulkan * vulkan, uint32_t width, uint32_t height)
+void Swapchain::init(Engine * engine, uint32_t width, uint32_t height)
 {
-    _vulkan = vulkan;
+    _engine = engine;
     create(width, height);
 }
 
@@ -20,7 +20,7 @@ void Swapchain::resize(uint32_t width, uint32_t height)
 
 void Swapchain::cleanup()
 {
-    if (_vulkan)
+    if (_engine)
     {
         // This images should not be cleared because they are wrappers
         // of the swapchain images and image views, that are cleared
@@ -30,11 +30,11 @@ void Swapchain::cleanup()
         _depthImage->cleanup();
         delete _depthImage;
         
-        vkDestroySwapchainKHR(_vulkan->device().handle(), _swapchain, nullptr);
+        vkDestroySwapchainKHR(_engine->device().handle(), _swapchain, nullptr);
 
         for (auto it = _imageViews.begin(); it != _imageViews.end(); ++it)
         {
-            vkDestroyImageView(_vulkan->device().handle(), *it, nullptr);
+            vkDestroyImageView(_engine->device().handle(), *it, nullptr);
         }
     }
     _swapchain = VK_NULL_HANDLE;
@@ -42,9 +42,9 @@ void Swapchain::cleanup()
 
 void Swapchain::create(uint32_t width, uint32_t height)
 {
-    auto device = _vulkan->device();
-    auto physicalDevice = _vulkan->physicalDevice();
-    auto surface = _vulkan->surface();
+    auto device = _engine->device();
+    auto physicalDevice = _engine->physicalDevice();
+    auto surface = _engine->surface();
     auto supportDetails = PhysicalDevice::SwapChainSupportDetails::get(
         physicalDevice.handle(),
         surface
@@ -60,7 +60,7 @@ void Swapchain::create(uint32_t width, uint32_t height)
     
     VkSwapchainCreateInfoKHR createInfo {};
     createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-    createInfo.surface = _vulkan->surface().handle();
+    createInfo.surface = _engine->surface().handle();
     createInfo.minImageCount = imageCount;
     createInfo.imageFormat = surfaceFormat.format;
     createInfo.imageColorSpace = surfaceFormat.colorSpace;
@@ -85,16 +85,16 @@ void Swapchain::create(uint32_t width, uint32_t height)
     createInfo.clipped = VK_TRUE;
     createInfo.oldSwapchain = VK_NULL_HANDLE;
     
-    VK_ASSERT(vkCreateSwapchainKHR(_vulkan->device().handle(), &createInfo, nullptr, &_swapchain));
+    VK_ASSERT(vkCreateSwapchainKHR(_engine->device().handle(), &createInfo, nullptr, &_swapchain));
     
-    vkGetSwapchainImagesKHR(_vulkan->device().handle(), _swapchain, &imageCount, nullptr);
+    vkGetSwapchainImagesKHR(_engine->device().handle(), _swapchain, &imageCount, nullptr);
     _images.resize(imageCount);
-    vkGetSwapchainImagesKHR(_vulkan->device().handle(), _swapchain, &imageCount, _images.data());
+    vkGetSwapchainImagesKHR(_engine->device().handle(), _swapchain, &imageCount, _images.data());
     _imageFormat = surfaceFormat.format;
     _extent = extent;
     
     _depthImage = Image::createAllocatedImage(
-        _vulkan,
+        _engine,
         VK_FORMAT_D32_SFLOAT,
         extent,
         VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,

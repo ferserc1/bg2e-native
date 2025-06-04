@@ -21,7 +21,7 @@ VkDescriptorSetLayout EnvironmentDataBinding::createLayout()
         dsFactory.addBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
         // TODO: Add specular reflection map
         
-        _layout = dsFactory.build(_vulkan->device().handle(), VK_SHADER_STAGE_FRAGMENT_BIT);
+        _layout = dsFactory.build(_engine->device().handle(), VK_SHADER_STAGE_FRAGMENT_BIT);
     }
     return _layout;
 }

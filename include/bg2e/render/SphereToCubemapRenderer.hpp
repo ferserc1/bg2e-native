@@ -3,7 +3,7 @@
 
 #include <bg2e/common.hpp>
 #include <bg2e/base/Image.hpp>
-#include <bg2e/render/Vulkan.hpp>
+#include <bg2e/render/Engine.hpp>
 #include <bg2e/render/vulkan/geo/Mesh.hpp>
 #include <bg2e/render/vulkan/Buffer.hpp>
 #include <bg2e/render/Texture.hpp>
@@ -16,7 +16,7 @@ namespace render {
 
 class BG2E_API SphereToCubemapRenderer {
 public:
-    SphereToCubemapRenderer(Vulkan * vulkan);
+    SphereToCubemapRenderer(Engine * engine);
     virtual ~SphereToCubemapRenderer();
 
     void initFrameResources(vulkan::DescriptorSetAllocator*);
@@ -57,7 +57,7 @@ public:
     std::shared_ptr<vulkan::Image> cubeMapImage() { return _cubeMapImage; }
     
 protected:
-    Vulkan * _vulkan;
+    Engine * _engine;
 
     std::shared_ptr<vulkan::geo::MeshPU> _sphere;
     float _sphereRadius = 10.0f;

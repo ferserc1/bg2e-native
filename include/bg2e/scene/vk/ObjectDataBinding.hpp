@@ -18,7 +18,7 @@ public:
         // TODO: add material uniforms
     };
 
-    ObjectDataBinding(bg2e::render::Vulkan * vk) :SceneDataBinding(vk) {}
+    ObjectDataBinding(bg2e::render::Engine * engine) :SceneDataBinding(engine) {}
     
     void initFrameResources(bg2e::render::vulkan::DescriptorSetAllocator * frameAllocator) override;
     

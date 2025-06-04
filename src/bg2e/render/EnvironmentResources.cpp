@@ -5,56 +5,56 @@
 namespace bg2e {
 namespace render {
 
-EnvironmentResources::EnvironmentResources(bg2e::render::Vulkan *vulkan)
-    :_vulkan(vulkan)
+EnvironmentResources::EnvironmentResources(bg2e::render::Engine * engine)
+    :_engine(engine)
 {
     _sphereToCubemap = std::unique_ptr<SphereToCubemapRenderer>(
-        new SphereToCubemapRenderer(_vulkan)
+        new SphereToCubemapRenderer(_engine)
     );
     _irradianceRenderer = std::unique_ptr<IrradianceCubemapRenderer>(
-        new IrradianceCubemapRenderer(_vulkan)
+        new IrradianceCubemapRenderer(_engine)
     );
     _specularRenderer = std::unique_ptr<SpecularReflectionCubemapRenderer>(
-        new SpecularReflectionCubemapRenderer(_vulkan)
+        new SpecularReflectionCubemapRenderer(_engine)
     );
     
-    vulkan::factory::Sampler samplerFactory(_vulkan);
+    vulkan::factory::Sampler samplerFactory(_engine);
     _cubeMapSampler = samplerFactory.build();
     _irradianceMapSampler = samplerFactory.build();
     _specularReflectionSampler = samplerFactory.build();
     
-    _vulkan->cleanupManager().push([&](VkDevice device) {
+    _engine->cleanupManager().push([&](VkDevice device) {
         vkDestroySampler(device, _cubeMapSampler, nullptr);
         vkDestroySampler(device, _irradianceMapSampler, nullptr);
         vkDestroySampler(device, _specularReflectionSampler, nullptr);
     });
 }
 
-EnvironmentResources::EnvironmentResources(bg2e::render::Vulkan* vulkan, const std::vector<VkFormat>& targetImages, VkFormat depthFormat)
-    :_vulkan(vulkan)
+EnvironmentResources::EnvironmentResources(bg2e::render::Engine * engine, const std::vector<VkFormat>& targetImages, VkFormat depthFormat)
+    :_engine(engine)
     ,_depthImageFormat(depthFormat)
 {
     _targetImagesFormat.assign(targetImages.begin(), targetImages.end());
     
     _sphereToCubemap = std::unique_ptr<SphereToCubemapRenderer>(
-        new SphereToCubemapRenderer(_vulkan)
+        new SphereToCubemapRenderer(_engine)
     );
     _irradianceRenderer = std::unique_ptr<IrradianceCubemapRenderer>(
-        new IrradianceCubemapRenderer(_vulkan)
+        new IrradianceCubemapRenderer(_engine)
     );
     _specularRenderer = std::unique_ptr<SpecularReflectionCubemapRenderer>(
-        new SpecularReflectionCubemapRenderer(_vulkan)
+        new SpecularReflectionCubemapRenderer(_engine)
     );
     _skyboxRenderer = std::unique_ptr<SkyboxRenderer>(
-        new SkyboxRenderer(_vulkan)
+        new SkyboxRenderer(_engine)
     );
     
-    vulkan::factory::Sampler samplerFactory(_vulkan);
+    vulkan::factory::Sampler samplerFactory(_engine);
     _cubeMapSampler = samplerFactory.build();
     _irradianceMapSampler = samplerFactory.build();
     _specularReflectionSampler = samplerFactory.build();
     
-    _vulkan->cleanupManager().push([&](VkDevice device) {
+    _engine->cleanupManager().push([&](VkDevice device) {
         vkDestroySampler(device, _cubeMapSampler, nullptr);
         vkDestroySampler(device, _irradianceMapSampler, nullptr);
         vkDestroySampler(device, _specularReflectionSampler, nullptr);
@@ -87,9 +87,9 @@ void EnvironmentResources::build(
     if (_skyboxRenderer.get())
     {
         _cubeMapTexture = std::shared_ptr<bg2e::render::Texture>(
-            new bg2e::render::Texture(_vulkan, _sphereToCubemap->cubeMapImage())
+            new bg2e::render::Texture(_engine, _sphereToCubemap->cubeMapImage())
         );
-        _vulkan->cleanupManager().push([&](VkDevice) {
+        _engine->cleanupManager().push([&](VkDevice) {
             _cubeMapTexture.reset();
             _skyboxRenderer.reset();
             _sphereToCubemap.reset();
@@ -102,7 +102,7 @@ void EnvironmentResources::build(
     }
     else
     {
-        _vulkan->cleanupManager().push([&](VkDevice) {
+        _engine->cleanupManager().push([&](VkDevice) {
             _sphereToCubemap = nullptr;
         });
     }
@@ -122,9 +122,9 @@ void EnvironmentResources::build(
     if (_skyboxRenderer.get())
     {
         _cubeMapTexture = std::shared_ptr<bg2e::render::Texture>(
-            new bg2e::render::Texture(_vulkan, _sphereToCubemap->cubeMapImage())
+            new bg2e::render::Texture(_engine, _sphereToCubemap->cubeMapImage())
         );
-        _vulkan->cleanupManager().push([&](VkDevice) {
+        _engine->cleanupManager().push([&](VkDevice) {
             _cubeMapTexture.reset();
             _skyboxRenderer.reset();
             _sphereToCubemap.reset();
@@ -137,7 +137,7 @@ void EnvironmentResources::build(
     }
     else
     {
-        _vulkan->cleanupManager().push([&](VkDevice) {
+        _engine->cleanupManager().push([&](VkDevice) {
             _sphereToCubemap = nullptr;
         });
     }

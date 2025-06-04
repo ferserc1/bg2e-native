@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include <bg2e/render/Vulkan.hpp>
+#include <bg2e/render/Engine.hpp>
 #include <bg2e/render/vulkan/Image.hpp>
 
 #include <vector>
@@ -14,7 +14,7 @@ namespace render {
 
 class BG2E_API ColorAttachments {
 public:
-    ColorAttachments(Vulkan *, const std::vector<VkFormat>& formats);
+    ColorAttachments(Engine *, const std::vector<VkFormat>& formats);
     virtual ~ColorAttachments();
     
     void build(VkExtent2D extent);
@@ -30,7 +30,7 @@ public:
     void cleanup();
     
 protected:
-    Vulkan * _vulkan;
+    Engine * _engine;
     
     VkExtent2D _extent;
     std::vector<std::shared_ptr<vulkan::Image>> _images;

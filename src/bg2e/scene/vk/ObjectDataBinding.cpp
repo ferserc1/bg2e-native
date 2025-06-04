@@ -26,7 +26,7 @@ VkDescriptorSetLayout ObjectDataBinding::createLayout()
         
         // TODO: Add other textures
         
-        _layout = dsFactory.build(_vulkan->device().handle(), VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT);
+        _layout = dsFactory.build(_engine->device().handle(), VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT);
     }
     
     return _layout;
@@ -48,7 +48,7 @@ VkDescriptorSet ObjectDataBinding::newDescriptorSet(
     
     // TODO: Add uniform buffer data from material
     
-    auto uniformBuffer = bg2e::render::vulkan::macros::createBuffer(_vulkan, frameResources, uniforms);
+    auto uniformBuffer = bg2e::render::vulkan::macros::createBuffer(_engine, frameResources, uniforms);
     
     auto ds = frameResources.newDescriptorSet(_layout);
     ds->beginUpdate();

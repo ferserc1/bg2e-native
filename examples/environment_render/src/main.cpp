@@ -9,7 +9,7 @@ class ClearScreenDelegate : public bg2e::render::RenderLoopDelegate,
     public bg2e::ui::UserInterfaceDelegate
 {
 public:
-    void init(bg2e::render::Vulkan* vulkan) override
+    void init(bg2e::render::Engine * vulkan) override
     {
         using namespace bg2e::render::vulkan;
         RenderLoopDelegate::init(vulkan);
@@ -22,13 +22,13 @@ public:
         
         _environment = std::unique_ptr<bg2e::render::EnvironmentResources>(
             new bg2e::render::EnvironmentResources(
-                _vulkan,
+                _engine,
 
                 // Use this parameters to build the SkyboxRenderer in EnvironmentResources
                 {
                     _targetImageFormat
                 },
-                _vulkan->swapchain().depthImageFormat()
+                _engine->swapchain().depthImageFormat()
             )
         );
     }
@@ -73,21 +73,21 @@ public:
         
         // The render::Texture is used outside the function, for this reason we use managed pointers
         _cubeTexture = std::shared_ptr<bg2e::render::Texture>(new bg2e::render::Texture(
-            _vulkan,
+            _engine,
             cubeTexture
         ));
         
-        _vulkan->cleanupManager().push([&](VkDevice) {
+        _engine->cleanupManager().push([&](VkDevice) {
             _cubeTexture.reset();
         });
     
-        createImage(_vulkan->swapchain().extent());
+        createImage(_engine->swapchain().extent());
 
         createPipeline();
 
         _sceneData.viewMatrix = glm::lookAt(glm::vec3{ 0.0f, 0.0f, -5.0f}, { 0.0f, 0.0f, 0.0f }, { 0.0f, 1.0f, 0.0f });
         
-        auto vpSize = _vulkan->swapchain().extent();
+        auto vpSize = _engine->swapchain().extent();
         _sceneData.projMatrix = glm::perspective(
             glm::radians(50.0f),
             float(vpSize.width) / float(vpSize.height),
@@ -134,7 +134,7 @@ public:
         // You can save the pointer to the set descriptor and use it safely in other functions, as long as
         // they are used within the same frame.
         auto sceneDS = macros::uniformBufferDescriptorSet(
-            _vulkan, frameResources,
+            _engine, frameResources,
             _sceneDSLayout, _sceneData, currentFrame
         );
         
@@ -166,7 +166,7 @@ public:
   
         // Draw the cube
         _cubeData.modelMatrix = glm::rotate(_cubeData.modelMatrix, -0.025f, glm::vec3(1.0f, 1.0f, 0.0f));
-        auto cubeDataBuffer = macros::createBuffer(_vulkan, frameResources, _cubeData);
+        auto cubeDataBuffer = macros::createBuffer(_engine, frameResources, _cubeData);
         
         auto objectDS = frameResources.newDescriptorSet(_objectDSLayout);
         objectDS->beginUpdate();
@@ -207,7 +207,7 @@ public:
         }
         _cylinderData.modelMatrix = glm::translate(glm::mat4{ 1.0f }, glm::vec3(2.0f, 1.5 * std::sin(0.01f * float(currentFrame)), 0.0f));
         _cylinderData.modelMatrix = glm::rotate(_cylinderData.modelMatrix, _cylinderRotation, glm::vec3(0.0f, 1.0f, 0.0f));
-        auto planeDataBuffer = macros::createBuffer(_vulkan, frameResources, _cylinderData);
+        auto planeDataBuffer = macros::createBuffer(_engine, frameResources, _cylinderData);
         
         auto cylinderDS = frameResources.newDescriptorSet(_objectDSLayout);
         cylinderDS->beginUpdate();
@@ -243,7 +243,7 @@ public:
         _cylinder->draw(cmd);
         
         _sphereData.modelMatrix = glm::translate(glm::mat4{1.0f}, glm::vec3(-2.0f, 1.5 * std::cos(0.01f * float(currentFrame)), 0.0f));
-        auto sphereDataBuffer = macros::createBuffer(_vulkan, frameResources, _sphereData);
+        auto sphereDataBuffer = macros::createBuffer(_engine, frameResources, _sphereData);
         
         auto sphereDS = frameResources.newDescriptorSet(_objectDSLayout);
         sphereDS->beginUpdate();
@@ -290,7 +290,7 @@ public:
     }
 
     // ============ User Interface Delegate Functions =========
-    void init(bg2e::render::Vulkan*, bg2e::ui::UserInterface*) override {
+    void init(bg2e::render::Engine *, bg2e::ui::UserInterface*) override {
         _window.setTitle("ImGui Wrapper Demo");
         _window.options.noClose = true;
         _window.options.minWidth = 100;
@@ -446,7 +446,7 @@ protected:
 
     void createPipeline()
     {
-        bg2e::render::vulkan::factory::GraphicsPipeline plFactory(_vulkan);
+        bg2e::render::vulkan::factory::GraphicsPipeline plFactory(_engine);
 
         plFactory.addShader("test/texture_gi.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
         // plFactory.addShader("test/texture.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
@@ -460,27 +460,27 @@ protected:
         
         dsFactory.clear();
         dsFactory.addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
-        _sceneDSLayout = dsFactory.build(_vulkan->device().handle(), VK_SHADER_STAGE_VERTEX_BIT);
+        _sceneDSLayout = dsFactory.build(_engine->device().handle(), VK_SHADER_STAGE_VERTEX_BIT);
         
         dsFactory.clear();
         dsFactory.addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
         dsFactory.addBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
         dsFactory.addBinding(2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
-        _objectDSLayout = dsFactory.build(_vulkan->device().handle(), VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT);
+        _objectDSLayout = dsFactory.build(_engine->device().handle(), VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT);
         
-        bg2e::render::vulkan::factory::PipelineLayout layoutFactory(_vulkan);
+        bg2e::render::vulkan::factory::PipelineLayout layoutFactory(_engine);
         layoutFactory.addDescriptorSetLayout(_sceneDSLayout);
         layoutFactory.addDescriptorSetLayout(_objectDSLayout);
         _layout = layoutFactory.build();
         
-        plFactory.setDepthFormat(_vulkan->swapchain().depthImageFormat());
+        plFactory.setDepthFormat(_engine->swapchain().depthImageFormat());
         plFactory.enableDepthtest(true, VK_COMPARE_OP_LESS);
         plFactory.inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
         plFactory.setCullMode(true, VK_FRONT_FACE_COUNTER_CLOCKWISE);
         plFactory.setColorAttachmentFormat(_targetImage->format());
         _pipeline = plFactory.build(_layout);
   
-        _vulkan->cleanupManager().push([&](VkDevice dev) {
+        _engine->cleanupManager().push([&](VkDevice dev) {
             vkDestroyPipeline(dev, _pipeline, nullptr);
             vkDestroyPipelineLayout(dev, _layout, nullptr);
             vkDestroyDescriptorSetLayout(dev, _sceneDSLayout, nullptr);
@@ -496,7 +496,7 @@ protected:
             bg2e::geo::createCubePNU(1.0f, 1.0f, 1.0f)
         );
         
-        _cube = std::unique_ptr<bg2e::render::vulkan::geo::MeshPNU>(new bg2e::render::vulkan::geo::MeshPNU(_vulkan));
+        _cube = std::unique_ptr<bg2e::render::vulkan::geo::MeshPNU>(new bg2e::render::vulkan::geo::MeshPNU(_engine));
         _cube->setMeshData(mesh.get());
         _cube->build();
         
@@ -505,7 +505,7 @@ protected:
             bg2e::geo::createCylinderPNU(0.5f, 1.0f, 14, false)
         );
         
-        _cylinder = std::unique_ptr<bg2e::render::vulkan::geo::MeshPNU>(new bg2e::render::vulkan::geo::MeshPNU(_vulkan));
+        _cylinder = std::unique_ptr<bg2e::render::vulkan::geo::MeshPNU>(new bg2e::render::vulkan::geo::MeshPNU(_engine));
         _cylinder->setMeshData(mesh.get());
         _cylinder->build();
         _cylinderData.modelMatrix = glm::translate(glm::mat4{ 1.0f }, glm::vec3(2.0f, 0.0f, 0.0f));
@@ -514,13 +514,13 @@ protected:
             bg2e::geo::createSpherePNU(0.6f, 30, 30)
         );
         
-        _sphere = std::unique_ptr<bg2e::render::vulkan::geo::MeshPNU>(new bg2e::render::vulkan::geo::MeshPNU(_vulkan));
+        _sphere = std::unique_ptr<bg2e::render::vulkan::geo::MeshPNU>(new bg2e::render::vulkan::geo::MeshPNU(_engine));
         _sphere->setMeshData(mesh.get());
         _sphere->build();
         _sphereData.modelMatrix = glm::translate(glm::mat4{ 1.0f }, glm::vec3(0.0f, 0.0f, -2.0f));
         
 
-        _vulkan->cleanupManager().push([this](VkDevice dev) {
+        _engine->cleanupManager().push([this](VkDevice dev) {
             _cube.reset();
             _cylinder.reset();
             _sphere.reset();
@@ -530,9 +530,9 @@ protected:
     void createImage(VkExtent2D extent)
     {
         using namespace bg2e::render::vulkan;
-        auto vulkan = this->vulkan();
+        auto engine = this->engine();
         _targetImage = std::shared_ptr<Image>(Image::createAllocatedImage(
-            vulkan,
+            engine,
             _targetImageFormat,
             extent,
             VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT |

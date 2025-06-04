@@ -10,13 +10,13 @@
 namespace bg2e {
 namespace render {
 
-class Vulkan;
+class Engine;
 
 namespace vulkan {
 
 class BG2E_API Command {
 public:
-    void init(Vulkan* vulkanData);
+    void init(Engine * engine);
     
     VkCommandPool createCommandPool(VkCommandPoolCreateFlags flags);
     
@@ -38,8 +38,8 @@ protected:
     VkCommandBuffer _immediateCmdBuffer = VK_NULL_HANDLE;
     VkFence _immediateCmdFence = VK_NULL_HANDLE;
 
-private:
-    Vulkan* _vulkan = nullptr;
+
+    Engine * _engine;
 };
 
 }

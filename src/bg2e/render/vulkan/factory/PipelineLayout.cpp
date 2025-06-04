@@ -20,7 +20,7 @@ VkPipelineLayout PipelineLayout::build()
     }
 
     VkPipelineLayout result = VK_NULL_HANDLE;
-    VK_ASSERT(vkCreatePipelineLayout(_vulkan->device().handle(), &layoutInfo, nullptr, &result));
+    VK_ASSERT(vkCreatePipelineLayout(_engine->device().handle(), &layoutInfo, nullptr, &result));
     return result;
 }
 

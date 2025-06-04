@@ -1,6 +1,6 @@
 
 #include <bg2e/render/Texture.hpp>
-#include <bg2e/render/Vulkan.hpp>
+#include <bg2e/render/Engine.hpp>
 #include <bg2e/db/image.hpp>
 
 #define BG2E_ADDRESS_MODE(x)        x == base::Texture::AddressModeRepeat ? VK_SAMPLER_ADDRESS_MODE_REPEAT : \
@@ -21,7 +21,7 @@ std::shared_ptr<Texture> Texture::_blackTexture;
 std::shared_ptr<Texture> Texture::_whiteTexture;
 std::shared_ptr<Texture> Texture::_normalTexture;
 
-Texture * Texture::colorTexture(Vulkan *vulkan, const base::Color &color, VkExtent2D size)
+Texture * Texture::colorTexture(Engine *engine, const base::Color &color, VkExtent2D size)
 {
     uint32_t bytes = 4;
     size_t dataSize = size.width * size.height * bytes;
@@ -36,7 +36,7 @@ Texture * Texture::colorTexture(Vulkan *vulkan, const base::Color &color, VkExte
     }
     
     auto image = vulkan::Image::createAllocatedImage(
-        vulkan,
+        engine,
         reinterpret_cast<void*>(data.data()),
         size, bytes,
         VK_FORMAT_R8G8B8A8_UNORM,
@@ -45,39 +45,39 @@ Texture * Texture::colorTexture(Vulkan *vulkan, const base::Color &color, VkExte
         false
     );
     
-    return new Texture(vulkan, image);
+    return new Texture(engine, image);
 }
 
-std::shared_ptr<Texture> Texture::blackTexture(Vulkan *vulkan)
+std::shared_ptr<Texture> Texture::blackTexture(Engine *engine)
 {
     if (_blackTexture.get() == nullptr)
     {
-        _blackTexture = std::shared_ptr<Texture>(colorTexture(vulkan, base::Color::Black(), { 2, 2 }));
-        vulkan->cleanupManager().push([](VkDevice dev) {
+        _blackTexture = std::shared_ptr<Texture>(colorTexture(engine, base::Color::Black(), { 2, 2 }));
+        engine->cleanupManager().push([](VkDevice dev) {
             _blackTexture.reset();
         });
     }
     return _blackTexture;
 }
 
-std::shared_ptr<Texture> Texture::whiteTexture(Vulkan *vulkan)
+std::shared_ptr<Texture> Texture::whiteTexture(Engine *engine)
 {
     if (_whiteTexture.get() == nullptr)
     {
-        _whiteTexture = std::shared_ptr<Texture>(colorTexture(vulkan, base::Color::White(), { 2, 2 }));
-        vulkan->cleanupManager().push([](VkDevice dev) {
+        _whiteTexture = std::shared_ptr<Texture>(colorTexture(engine, base::Color::White(), { 2, 2 }));
+        engine->cleanupManager().push([](VkDevice dev) {
             _whiteTexture.reset();
         });
     }
     return _whiteTexture;
 }
 
-std::shared_ptr<Texture> Texture::normalTexture(Vulkan *vulkan)
+std::shared_ptr<Texture> Texture::normalTexture(Engine *engine)
 {
     if (_normalTexture.get() == nullptr)
     {
-        _normalTexture = std::shared_ptr<Texture>(colorTexture(vulkan, base::Color(0.5f, 0.5f, 1.0f, 1.0f), { 2, 2 }));
-        vulkan->cleanupManager().push([](VkDevice dev) {
+        _normalTexture = std::shared_ptr<Texture>(colorTexture(engine, base::Color(0.5f, 0.5f, 1.0f, 1.0f), { 2, 2 }));
+        engine->cleanupManager().push([](VkDevice dev) {
             _normalTexture.reset();
         });
     }
@@ -111,7 +111,7 @@ void Texture::load(std::shared_ptr<base::Texture> texture)
     VkExtent2D extent = { img->width(), img->height() };
     _hasImageOwnership = true;
     _image = std::shared_ptr<vulkan::Image>(vulkan::Image::createAllocatedImage(
-        _vulkan,
+        _engine,
         img->data(),
         extent,
         4,
@@ -131,7 +131,7 @@ void Texture::load(std::shared_ptr<base::Texture> texture)
     samplerInfo.addressModeV = BG2E_ADDRESS_MODE(texture->addressModeV());
     samplerInfo.addressModeW = BG2E_ADDRESS_MODE(texture->addressModeW());
     vkCreateSampler(
-        _vulkan->device().handle(),
+        _engine->device().handle(),
         &samplerInfo,
         nullptr,
         &_sampler
@@ -157,7 +157,7 @@ void Texture::load(std::shared_ptr<base::Texture> texture, std::shared_ptr<vulka
     samplerInfo.addressModeV = BG2E_ADDRESS_MODE(texture->addressModeV());
     samplerInfo.addressModeW = BG2E_ADDRESS_MODE(texture->addressModeW());
     vkCreateSampler(
-        _vulkan->device().handle(),
+        _engine->device().handle(),
         &samplerInfo,
         nullptr,
         &_sampler
@@ -172,7 +172,7 @@ void Texture::cleanup()
     }
     _image.reset();
     _texture.reset();
-    vkDestroySampler(_vulkan->device().handle(), _sampler, nullptr);
+    vkDestroySampler(_engine->device().handle(), _sampler, nullptr);
 }
 
 

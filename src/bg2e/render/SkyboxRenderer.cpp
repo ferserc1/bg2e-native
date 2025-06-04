@@ -11,8 +11,8 @@
 
 namespace bg2e::render {
 
-SkyboxRenderer::SkyboxRenderer(Vulkan * vulkan)
-    :_vulkan { vulkan }
+SkyboxRenderer::SkyboxRenderer(Engine * engine)
+    :_engine { engine }
 {
 
 }
@@ -44,7 +44,7 @@ void SkyboxRenderer::build(
         bg2e::geo::createCubeP(cubeSize, cubeSize, cubeSize, false)
     );
     
-    _cube = std::shared_ptr<vulkan::geo::MeshP>(new vulkan::geo::MeshP(_vulkan));
+    _cube = std::shared_ptr<vulkan::geo::MeshP>(new vulkan::geo::MeshP(_engine));
     _cube->setMeshData(cubeMesh.get());
     _cube->build();
     
@@ -52,15 +52,15 @@ void SkyboxRenderer::build(
     dsFactory.addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
     dsFactory.addBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
     _dsLayout = dsFactory.build(
-        _vulkan->device().handle(),
+        _engine->device().handle(),
         VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT
     );
     
-    vulkan::factory::PipelineLayout layoutFactory(_vulkan);
+    vulkan::factory::PipelineLayout layoutFactory(_engine);
     layoutFactory.addDescriptorSetLayout(_dsLayout);
     _pipelineLayout = layoutFactory.build();
     
-    vulkan::factory::GraphicsPipeline plFactory(_vulkan);
+    vulkan::factory::GraphicsPipeline plFactory(_engine);
     plFactory.addShader(vshaderFile, VK_SHADER_STAGE_VERTEX_BIT);
     plFactory.addShader(fshaderFile, VK_SHADER_STAGE_FRAGMENT_BIT);
     plFactory.setInputState<vulkan::geo::MeshP>();
@@ -83,7 +83,7 @@ void SkyboxRenderer::draw(
     uint32_t currentFrame,
     vulkan::FrameResources& frameResources
 ) {
-    auto skyDataBuffer = vulkan::macros::createBuffer(_vulkan, frameResources, _skyData);
+    auto skyDataBuffer = vulkan::macros::createBuffer(_engine, frameResources, _skyData);
     
     auto descriptorSet = frameResources.newDescriptorSet(_dsLayout);
     descriptorSet->beginUpdate();
@@ -118,15 +118,15 @@ void SkyboxRenderer::cleanup()
 {
     if (_pipeline != VK_NULL_HANDLE)
     {
-        vkDestroyPipeline(_vulkan->device().handle(), _pipeline, nullptr);
+        vkDestroyPipeline(_engine->device().handle(), _pipeline, nullptr);
     }
     if (_pipelineLayout != VK_NULL_HANDLE)
     {
-        vkDestroyPipelineLayout(_vulkan->device().handle(), _pipelineLayout, nullptr);
+        vkDestroyPipelineLayout(_engine->device().handle(), _pipelineLayout, nullptr);
     }
     if (_dsLayout != VK_NULL_HANDLE)
     {
-        vkDestroyDescriptorSetLayout(_vulkan->device().handle(), _dsLayout, nullptr);
+        vkDestroyDescriptorSetLayout(_engine->device().handle(), _dsLayout, nullptr);
     }
     _pipeline = VK_NULL_HANDLE;
     _pipelineLayout = VK_NULL_HANDLE;

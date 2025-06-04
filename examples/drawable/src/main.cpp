@@ -9,13 +9,13 @@ class DrawableDelegate : public bg2e::render::RenderLoopDelegate,
 	public bg2e::ui::UserInterfaceDelegate
 {
 public:
-	void init(bg2e::render::Vulkan* vulkan) override
+	void init(bg2e::render::Engine * vulkan) override
 	{
 		using namespace bg2e::render::vulkan;
 		RenderLoopDelegate::init(vulkan);
   
         _colorAttachments = std::shared_ptr<bg2e::render::ColorAttachments>(
-            new bg2e::render::ColorAttachments(_vulkan, {
+            new bg2e::render::ColorAttachments(_engine, {
                 VK_FORMAT_R16G16B16A16_SFLOAT,
                 VK_FORMAT_R8G8B8A8_UNORM
             })
@@ -29,9 +29,9 @@ public:
         
         _environment = std::unique_ptr<bg2e::render::EnvironmentResources>(
             new bg2e::render::EnvironmentResources(
-                _vulkan,
+                _engine,
                 _colorAttachments->attachmentFormats(),
-                _vulkan->swapchain().depthImageFormat()
+                _engine->swapchain().depthImageFormat()
             )
         );
 	}
@@ -56,7 +56,7 @@ public:
         auto imagePath = assetsPath;
         imagePath.append("country_field_sun.jpg");
         
-        auto envTexture = bg2e::utils::TextureCache::get().load(_vulkan, imagePath);
+        auto envTexture = bg2e::utils::TextureCache::get().load(_engine, imagePath);
         
         _environment->build(
             envTexture,         // Equirectangular texture
@@ -65,13 +65,13 @@ public:
             { 1024, 1024 }      // Specular reflection map size
         );
 	
-        _colorAttachments->build(_vulkan->swapchain().extent());
+        _colorAttachments->build(_engine->swapchain().extent());
 
 		createPipeline();
 
         _viewMatrix = glm::lookAt(glm::vec3{ 0.0f, 0.0f, -5.0f}, { 0.0f, 0.0f, 0.0f }, { 0.0f, 1.0f, 0.0f });
         
-        auto vpSize = _vulkan->swapchain().extent();
+        auto vpSize = _engine->swapchain().extent();
         _projMatrix = glm::perspective(
             glm::radians(50.0f),
             float(vpSize.width) / float(vpSize.height),
@@ -172,7 +172,7 @@ public:
 	}
 
 	// ============ User Interface Delegate Functions =========
-	void init(bg2e::render::Vulkan*, bg2e::ui::UserInterface*) override {
+	void init(bg2e::render::Engine *, bg2e::ui::UserInterface*) override {
 		_window.setTitle("ImGui Wrapper Demo");
 		_window.options.noClose = true;
 		_window.options.minWidth = 100;
@@ -209,7 +209,7 @@ public:
         auto imagePath = assetsPath;
         imagePath.append(fileName);
         
-        auto texture = bg2e::utils::TextureCache::get().load(_vulkan, imagePath);
+        auto texture = bg2e::utils::TextureCache::get().load(_engine, imagePath);
         
         _environment->swapEnvironmentTexture(texture);
     }
@@ -259,7 +259,7 @@ protected:
 
 	void createPipeline()
 	{
-		bg2e::render::vulkan::factory::GraphicsPipeline plFactory(_vulkan);
+		bg2e::render::vulkan::factory::GraphicsPipeline plFactory(_engine);
 
 		plFactory.addShader("test/texture_gi.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
         plFactory.addShader("test/texture_gi.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
@@ -271,13 +271,13 @@ protected:
         auto objectDSLayout = _objectDataBinding->createLayout();
         auto envDSLayout = _environmentDataBinding->createLayout();
         
-        bg2e::render::vulkan::factory::PipelineLayout layoutFactory(_vulkan);
+        bg2e::render::vulkan::factory::PipelineLayout layoutFactory(_engine);
         layoutFactory.addDescriptorSetLayout(frameDSLayout);
         layoutFactory.addDescriptorSetLayout(objectDSLayout);
         layoutFactory.addDescriptorSetLayout(envDSLayout);
         _layout = layoutFactory.build();
         
-        plFactory.setDepthFormat(_vulkan->swapchain().depthImageFormat());
+        plFactory.setDepthFormat(_engine->swapchain().depthImageFormat());
         plFactory.enableDepthtest(true, VK_COMPARE_OP_LESS);
         plFactory.inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
         plFactory.setCullMode(true, VK_FRONT_FACE_COUNTER_CLOCKWISE);
@@ -285,7 +285,7 @@ protected:
         plFactory.setColorAttachmentFormat(_colorAttachments->attachmentFormats());
 		_pipeline = plFactory.build(_layout);
   
-		_vulkan->cleanupManager().push([&, objectDSLayout, envDSLayout, frameDSLayout](VkDevice dev) {
+		_engine->cleanupManager().push([&, objectDSLayout, envDSLayout, frameDSLayout](VkDevice dev) {
 			vkDestroyPipeline(dev, _pipeline, nullptr);
 			vkDestroyPipelineLayout(dev, _layout, nullptr);
             vkDestroyDescriptorSetLayout(dev, objectDSLayout, nullptr);
@@ -316,9 +316,9 @@ protected:
         
         _drawable->material(0).setAlbedo(outerAlbedoTexture);
         _drawable->material(1).setAlbedo(innerAlbedoTexture);
-        _drawable->load(_vulkan);
+        _drawable->load(_engine);
         
-        _vulkan->cleanupManager().push([&](VkDevice) {
+        _engine->cleanupManager().push([&](VkDevice) {
             _drawable.reset();
         });
         

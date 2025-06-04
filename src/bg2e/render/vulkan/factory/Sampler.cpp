@@ -4,8 +4,8 @@
 
 namespace bg2e::render::vulkan::factory {
 
-Sampler::Sampler(Vulkan* vulkan)
-	:_vulkan(vulkan)
+Sampler::Sampler(Engine * engine)
+	:_engine(engine)
 {
 	createInfo = {};
 	createInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
@@ -37,7 +37,7 @@ VkSampler Sampler::build(
 	createInfo.addressModeW = addressModeW;
 
 	VkSampler sampler;
-	vkCreateSampler(_vulkan->device().handle(), &createInfo, nullptr, &sampler);
+	vkCreateSampler(_engine->device().handle(), &createInfo, nullptr, &sampler);
 
 	return sampler;
 }

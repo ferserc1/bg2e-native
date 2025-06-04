@@ -7,8 +7,8 @@ namespace render {
 namespace vulkan {
 namespace factory {
 
-ComputePipeline::ComputePipeline(Vulkan* vulkan)
-    :_vulkan(vulkan)
+ComputePipeline::ComputePipeline(Engine * engine)
+    :_engine(engine)
     , _shaderModule(VK_NULL_HANDLE)
 {
 }
@@ -17,7 +17,7 @@ ComputePipeline::~ComputePipeline()
 {
     if (_shaderModule != VK_NULL_HANDLE)
     {
-        vkDestroyShaderModule(_vulkan->device().handle(), _shaderModule, nullptr);
+        vkDestroyShaderModule(_engine->device().handle(), _shaderModule, nullptr);
     }
 }
 
@@ -25,10 +25,10 @@ void ComputePipeline::setShader(const std::string& fileName, const std::string& 
 {
     if (_shaderModule != VK_NULL_HANDLE)
     {
-        vkDestroyShaderModule(_vulkan->device().handle(), _shaderModule, nullptr);
+        vkDestroyShaderModule(_engine->device().handle(), _shaderModule, nullptr);
         _shaderModule = VK_NULL_HANDLE;
     }
-    auto shaderModule = ShaderModule::loadFromSPV(fileName, _vulkan->device().handle(), basePath);
+    auto shaderModule = ShaderModule::loadFromSPV(fileName, _engine->device().handle(), basePath);
     setShader(shaderModule, entryPoint);
 }
 
@@ -36,7 +36,7 @@ void ComputePipeline::setShader(VkShaderModule shaderModule, const std::string& 
 {
     if (_shaderModule != VK_NULL_HANDLE)
     {
-        vkDestroyShaderModule(_vulkan->device().handle(), _shaderModule, nullptr);
+        vkDestroyShaderModule(_engine->device().handle(), _shaderModule, nullptr);
     }
     _shaderModule = shaderModule;
 
@@ -56,7 +56,7 @@ VkPipeline ComputePipeline::build(VkPipelineLayout layout)
 
     VkPipeline pipeline;
     VK_ASSERT(vkCreateComputePipelines(
-        _vulkan->device().handle(),
+        _engine->device().handle(),
         VK_NULL_HANDLE,
         1,
         &pipelineInfo,

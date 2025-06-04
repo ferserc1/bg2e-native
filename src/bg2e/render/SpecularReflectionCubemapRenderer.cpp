@@ -5,8 +5,8 @@
 
 namespace bg2e::render {
 
-SpecularReflectionCubemapRenderer::SpecularReflectionCubemapRenderer(Vulkan * vulkan)
-    :CubemapRenderer(vulkan)
+SpecularReflectionCubemapRenderer::SpecularReflectionCubemapRenderer(Engine * engine)
+    :CubemapRenderer(engine)
 {
 }
     
@@ -39,7 +39,7 @@ void SpecularReflectionCubemapRenderer::createPipelineLayout()
     dsFactory.addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);         // Projection data buffer
     dsFactory.addBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER); // Input skybox image
     _descriptorSetLayout = dsFactory.build(
-        _vulkan->device().handle(),
+        _engine->device().handle(),
         VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT
     );
     
@@ -58,9 +58,9 @@ void SpecularReflectionCubemapRenderer::createPipelineLayout()
     layoutInfo.pSetLayouts = layouts.data();
     layoutInfo.setLayoutCount = uint32_t(layouts.size());
     
-    VK_ASSERT(vkCreatePipelineLayout(_vulkan->device().handle(), &layoutInfo, nullptr, &_layout));
+    VK_ASSERT(vkCreatePipelineLayout(_engine->device().handle(), &layoutInfo, nullptr, &_layout));
     
-    _vulkan->cleanupManager().push([&](VkDevice dev) {
+    _engine->cleanupManager().push([&](VkDevice dev) {
         vkDestroyPipelineLayout(dev, _layout, nullptr);
         vkDestroyDescriptorSetLayout(dev, _descriptorSetLayout, nullptr);
     });

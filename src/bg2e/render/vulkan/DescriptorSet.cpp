@@ -8,10 +8,10 @@ namespace render {
 namespace vulkan {
 
 void DescriptorSet::init(
-    Vulkan * v,
+    Engine * engine,
     VkDescriptorSet ds
 ) {
-    _vulkan = v;
+    _engine = engine;
     _ds = ds;
 }
 
@@ -95,7 +95,7 @@ void DescriptorSet::addBuffer(
 
 void DescriptorSet::endUpdate()
 {
-    vkUpdateDescriptorSets(_vulkan->device().handle(), uint32_t(_writes.size()), _writes.data(), 0, nullptr);
+    vkUpdateDescriptorSets(_engine->device().handle(), uint32_t(_writes.size()), _writes.data(), 0, nullptr);
 }
 
 void DescriptorSet::clear()

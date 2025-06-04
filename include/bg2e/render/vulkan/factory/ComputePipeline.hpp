@@ -2,7 +2,7 @@
 
 #include <bg2e/common.hpp>
 #include <bg2e/render/vulkan/common.hpp>
-#include <bg2e/render/Vulkan.hpp>
+#include <bg2e/render/Engine.hpp>
 
 namespace bg2e {
 namespace render {
@@ -11,7 +11,7 @@ namespace factory {
 
 class BG2E_API ComputePipeline {
 public:
-    ComputePipeline(Vulkan * vulkan);
+    ComputePipeline(Engine * engine);
     ~ComputePipeline();
 
     void setShader(const std::string& fileName, const std::string& entryPoint = "main", const std::string& basePath = "");
@@ -20,7 +20,7 @@ public:
     VkPipeline build(VkPipelineLayout layout);
 
 protected:
-    Vulkan * _vulkan;
+    Engine * _engine;
 
     VkShaderModule _shaderModule;
     std::string _shaderEntryPoint = "main";

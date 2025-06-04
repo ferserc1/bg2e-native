@@ -7,7 +7,7 @@
 namespace bg2e {
 namespace render {
 
-class Vulkan;
+class Engine;
 
 namespace vulkan {
 
@@ -74,7 +74,7 @@ public:
 	 * of receiving the command buffer directly.
      */
     static void transitionImage(
-        Vulkan*               vulkanData,
+        Engine*               engine,
         VkImage               image,
         VkImageLayout         oldLayout,
         VkImageLayout         newLayout,
@@ -123,7 +123,7 @@ public:
     );
     
     static Image* createAllocatedImage(
-        Vulkan * vulkanData,
+        Engine * vulkanData,
         VkFormat format,
         VkExtent2D extent,
         VkImageUsageFlags usage,
@@ -134,7 +134,7 @@ public:
     );
     
     static Image* createAllocatedImage(
-        Vulkan * vulkanData,
+        Engine * vulkanData,
         void* data,
         VkExtent2D extent,
         uint32_t dataBytesPerPixel,  // WARNING: for now, it only works with 4 bpp
@@ -174,7 +174,7 @@ protected:
     VkFormat _format = VK_FORMAT_R8G8B8A8_UNORM;
     uint32_t _mipLevels = 1;
     
-    Vulkan * _vulkan = nullptr;
+    Engine * _engine = nullptr;
 };
 
 }

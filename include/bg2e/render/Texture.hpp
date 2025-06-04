@@ -14,20 +14,20 @@ private:
     static std::shared_ptr<Texture> _normalTexture;
 
 public:
-    static Texture* colorTexture(Vulkan * vulkan, const base::Color& color, VkExtent2D size);
-    static std::shared_ptr<Texture> blackTexture(Vulkan * vulkan);
-    static std::shared_ptr<Texture> whiteTexture(Vulkan * vulkan);
-    static std::shared_ptr<Texture> normalTexture(Vulkan * vulkan);
+    static Texture* colorTexture(Engine * engine, const base::Color& color, VkExtent2D size);
+    static std::shared_ptr<Texture> blackTexture(Engine * engine);
+    static std::shared_ptr<Texture> whiteTexture(Engine * engine);
+    static std::shared_ptr<Texture> normalTexture(Engine * engine);
     
-    Texture(Vulkan * vulkan) : _vulkan(vulkan) {}
-	Texture(Vulkan* vulkan, std::shared_ptr<base::Texture> texture) : _vulkan(vulkan) { load(texture); }
-	Texture(Vulkan* vulkan, base::Texture* texture) : _vulkan(vulkan) { load(std::shared_ptr<base::Texture>(texture)); }
-    Texture(Vulkan* vulkan, std::shared_ptr<base::Texture> texture, std::shared_ptr<vulkan::Image> image) : _vulkan(vulkan) { load(texture, image); }
-    Texture(Vulkan* vulkan, base::Texture* texture, std::shared_ptr<vulkan::Image> image) : _vulkan(vulkan) { load(texture, image); }
-    Texture(Vulkan* vulkan, base::Texture* texture, vulkan::Image* image) : _vulkan(vulkan) { load(texture, image); }
-    Texture(Vulkan* vulkan, std::shared_ptr<base::Texture> texture, vulkan::Image* image) : _vulkan(vulkan) { load(texture, image); }
-    Texture(Vulkan* vulkan, std::shared_ptr<vulkan::Image> image) : _vulkan(vulkan) { load(image); }
-    Texture(Vulkan* vulkan, vulkan::Image* image) : _vulkan(vulkan) { load(image); }
+    Texture(Engine * engine) : _engine(engine) {}
+	Texture(Engine * engine, std::shared_ptr<base::Texture> texture) : _engine(engine) { load(texture); }
+	Texture(Engine * engine, base::Texture* texture) : _engine(engine) { load(std::shared_ptr<base::Texture>(texture)); }
+    Texture(Engine * engine, std::shared_ptr<base::Texture> texture, std::shared_ptr<vulkan::Image> image) : _engine(engine) { load(texture, image); }
+    Texture(Engine * engine, base::Texture* texture, std::shared_ptr<vulkan::Image> image) : _engine(engine) { load(texture, image); }
+    Texture(Engine * engine, base::Texture* texture, vulkan::Image* image) : _engine(engine) { load(texture, image); }
+    Texture(Engine * engine, std::shared_ptr<base::Texture> texture, vulkan::Image* image) : _engine(engine) { load(texture, image); }
+    Texture(Engine * engine, std::shared_ptr<vulkan::Image> image) : _engine(engine) { load(image); }
+    Texture(Engine * engine, vulkan::Image* image) : _engine(engine) { load(image); }
     ~Texture();
 
 	inline void load(base::Texture* texture) { load(std::shared_ptr<base::Texture>(texture)); }
@@ -72,7 +72,7 @@ public:
     inline base::Color::Type colorType() const { return _colorType; }
     
 protected:
-    Vulkan * _vulkan;
+    Engine * _engine;
     std::shared_ptr<base::Texture> _texture;
     std::shared_ptr<vulkan::Image> _image;
     bool _hasImageOwnership = false;

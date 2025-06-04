@@ -1,6 +1,6 @@
 #pragma once
 
-#include <bg2e/render/Vulkan.hpp>
+#include <bg2e/render/Engine.hpp>
 
 namespace bg2e {
 namespace scene {
@@ -8,7 +8,7 @@ namespace vk {
 
 class SceneDataBinding {
 public:
-    SceneDataBinding(bg2e::render::Vulkan * vk) : _vulkan(vk) {}
+    SceneDataBinding(bg2e::render::Engine * engine) : _engine(engine) {}
     virtual ~SceneDataBinding() = default;
 
     virtual void initFrameResources(bg2e::render::vulkan::DescriptorSetAllocator * frameAllocator) = 0;
@@ -18,7 +18,7 @@ public:
     inline VkDescriptorSetLayout layout() const { return _layout; }
 
 protected:
-    bg2e::render::Vulkan * _vulkan;
+    bg2e::render::Engine * _engine;
     
     VkDescriptorSetLayout _layout = VK_NULL_HANDLE;
 

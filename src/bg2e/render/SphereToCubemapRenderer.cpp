@@ -14,8 +14,8 @@
 
 namespace bg2e::render {
 
-SphereToCubemapRenderer::SphereToCubemapRenderer(Vulkan * vulkan)
-    :_vulkan(vulkan)
+SphereToCubemapRenderer::SphereToCubemapRenderer(Engine * engine)
+    :_engine(engine)
 {
 
 }
@@ -43,7 +43,7 @@ void SphereToCubemapRenderer::build(
     dsFactory.addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
     dsFactory.addBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
     _dsLayout = dsFactory.build(
-        _vulkan->device().handle(),
+        _engine->device().handle(),
         VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT
     );
     
@@ -59,7 +59,7 @@ void SphereToCubemapRenderer::build(
     _projectionData.proj[0][0] *= -1.0f;
     
     _projectionDataBuffer = std::unique_ptr<vulkan::Buffer>(vulkan::Buffer::createAllocatedBuffer(
-        _vulkan,
+        _engine,
         sizeof(ProjectionData),
         VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
         VMA_MEMORY_USAGE_CPU_TO_GPU
@@ -84,7 +84,7 @@ void SphereToCubemapRenderer::build(
     dsFactory.addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
     dsFactory.addBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
     _dsLayout = dsFactory.build(
-        _vulkan->device().handle(),
+        _engine->device().handle(),
         VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT
     );
     
@@ -100,7 +100,7 @@ void SphereToCubemapRenderer::build(
     _projectionData.proj[0][0] *= -1.0f;
     
     _projectionDataBuffer = std::unique_ptr<vulkan::Buffer>(vulkan::Buffer::createAllocatedBuffer(
-        _vulkan,
+        _engine,
         sizeof(ProjectionData),
         VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
         VMA_MEMORY_USAGE_CPU_TO_GPU
@@ -127,7 +127,7 @@ void SphereToCubemapRenderer::updateImage(const std::filesystem::path& imagePath
     texture->setMinFilter(bg2e::base::Texture::FilterLinear);
 
     _skyTexture = std::shared_ptr<bg2e::render::Texture>(new bg2e::render::Texture(
-        _vulkan,
+        _engine,
         texture
     ));
 }
@@ -225,22 +225,22 @@ void SphereToCubemapRenderer::cleanup()
         _sphere.reset();
     }
     
-    vkDestroyPipeline(_vulkan->device().handle(), _pipeline, nullptr);
-    vkDestroyPipelineLayout(_vulkan->device().handle(), _pipelineLayout, nullptr);
+    vkDestroyPipeline(_engine->device().handle(), _pipeline, nullptr);
+    vkDestroyPipelineLayout(_engine->device().handle(), _pipelineLayout, nullptr);
     
     for (int32_t i = 0; i < 6; ++i)
     {
-        vkDestroyImageView(_vulkan->device().handle(), _cubeMapImageViews[i], nullptr);
+        vkDestroyImageView(_engine->device().handle(), _cubeMapImageViews[i], nullptr);
     }
     _cubeMapImage->cleanup();
     _skyTexture = nullptr;
-    vkDestroyDescriptorSetLayout(_vulkan->device().handle(), _dsLayout, nullptr);
+    vkDestroyDescriptorSetLayout(_engine->device().handle(), _dsLayout, nullptr);
 }
 
 void SphereToCubemapRenderer::initImages(VkExtent2D extent)
 {
     _cubeMapImage = std::shared_ptr<bg2e::render::vulkan::Image>(bg2e::render::vulkan::Image::createAllocatedImage(
-        _vulkan,
+        _engine,
         VK_FORMAT_R16G16B16A16_SFLOAT,
         extent,
         VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT |
@@ -260,21 +260,21 @@ void SphereToCubemapRenderer::initImages(VkExtent2D extent)
     for (int32_t i = 0; i < 6; ++i)
     {
         viewInfo.subresourceRange.baseArrayLayer = i;
-        vkCreateImageView(_vulkan->device().handle(), &viewInfo, nullptr, &imgView);
+        vkCreateImageView(_engine->device().handle(), &viewInfo, nullptr, &imgView);
         _cubeMapImageViews[i] = imgView;
     }
 }
 
 void SphereToCubemapRenderer::initPipeline(const std::string& vshaderFile, const std::string& fshaderFile)
 {
-    vulkan::factory::GraphicsPipeline plFactory(_vulkan);
+    vulkan::factory::GraphicsPipeline plFactory(_engine);
     
     plFactory.addShader(vshaderFile, VK_SHADER_STAGE_VERTEX_BIT);
     plFactory.addShader(fshaderFile, VK_SHADER_STAGE_FRAGMENT_BIT);
     
     plFactory.setInputState<vulkan::geo::MeshPU>();
     
-    vulkan::factory::PipelineLayout layoutFactory(_vulkan);
+    vulkan::factory::PipelineLayout layoutFactory(_engine);
     layoutFactory.addPushConstantRange(
         0,
         sizeof(RenderSpherePushConstant),
@@ -297,7 +297,7 @@ void SphereToCubemapRenderer::initGeometry()
         bg2e::geo::createSpherePU(_sphereRadius, 20, 20, true)
     );
     
-    _sphere = std::unique_ptr<vulkan::geo::MeshPU>(new vulkan::geo::MeshPU(_vulkan));
+    _sphere = std::unique_ptr<vulkan::geo::MeshPU>(new vulkan::geo::MeshPU(_engine));
     _sphere->setMeshData(mesh.get());
     _sphere->build();
     

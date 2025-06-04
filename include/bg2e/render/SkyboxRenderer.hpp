@@ -9,7 +9,7 @@ namespace render {
 
 class BG2E_API SkyboxRenderer {
 public:
-    SkyboxRenderer(Vulkan *);
+    SkyboxRenderer(Engine *);
     virtual ~SkyboxRenderer();
     
     void initFrameResources(vulkan::DescriptorSetAllocator*);
@@ -32,7 +32,7 @@ public:
     );
     
 protected:
-    Vulkan * _vulkan;
+    Engine * _engine;
     
     VkDescriptorSetLayout _dsLayout = VK_NULL_HANDLE;
     VkPipelineLayout _pipelineLayout = VK_NULL_HANDLE;

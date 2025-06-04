@@ -4,7 +4,7 @@
 
 #include <bg2e/scene/Mesh.hpp>
 #include <bg2e/base/MaterialAttributes.hpp>
-#include <bg2e/render/Vulkan.hpp>
+#include <bg2e/render/Engine.hpp>
 #include <bg2e/render/MaterialBase.hpp>
 #include <bg2e/render/vulkan/geo/Mesh.hpp>
 #include <bg2e/scene/Component.hpp>
@@ -85,7 +85,7 @@ public:
     base::MaterialAttributes& material(uint32_t index = 0);
     glm::mat4 submeshTransform(uint32_t index = 0) const;
     
-    void load(render::Vulkan * vk);
+    void load(render::Engine * engine);
     inline bool isLoaded() const { return _renderMesh.get() != nullptr; }
     
     // Call this function when a material property has changed after calling the load() method
@@ -122,7 +122,7 @@ protected:
     // Render resources
     // TODO: create a render::Mesh cache to avoid duplicities loading a shared geo::Mesh in
     // several Drawable objects
-    render::Vulkan * _vulkan = nullptr;
+    render::Engine * _engine = nullptr;
     std::shared_ptr<RenderMeshT> _renderMesh;
     std::vector<std::shared_ptr<render::MaterialBase>> _materials;
     

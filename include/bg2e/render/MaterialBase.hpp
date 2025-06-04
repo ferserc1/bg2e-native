@@ -8,7 +8,7 @@ namespace render {
 
 class BG2E_API MaterialBase {
 public:
-    MaterialBase(Vulkan *);
+    MaterialBase(Engine *);
     virtual ~MaterialBase();
 
     void updateTextures();
@@ -27,7 +27,7 @@ public:
     inline void setUseTextureCache(bool tc) { _useTextureCache = tc; }
 
 protected:
-    Vulkan * _vulkan;
+    Engine * _engine;
     
     base::MaterialAttributes _materialAttributes;
     

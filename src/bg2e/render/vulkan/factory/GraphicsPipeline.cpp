@@ -6,8 +6,8 @@ namespace render {
 namespace vulkan {
 namespace factory {
 
-GraphicsPipeline::GraphicsPipeline(Vulkan * vulkan)
-    :_vulkan(vulkan)
+GraphicsPipeline::GraphicsPipeline(Engine * engine)
+    :_engine(engine)
 {
     vertexInputState.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
     inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
@@ -34,7 +34,7 @@ GraphicsPipeline::~GraphicsPipeline()
 
 void GraphicsPipeline::addShader(const std::string& fileName, VkShaderStageFlagBits stage, const std::string& entryPoint, const std::string& basePath)
 {
-    auto shaderModule = factory::ShaderModule::loadFromSPV(fileName, _vulkan->device().handle(), basePath);
+    auto shaderModule = factory::ShaderModule::loadFromSPV(fileName, _engine->device().handle(), basePath);
     addShader(shaderModule, stage, entryPoint);
 }
 
@@ -51,7 +51,7 @@ void GraphicsPipeline::clearShaders()
 {
     for (auto& shaderData : _shaders)
     {
-        vkDestroyShaderModule(_vulkan->device().handle(), shaderData.shaderModule, nullptr);
+        vkDestroyShaderModule(_engine->device().handle(), shaderData.shaderModule, nullptr);
     }
     _shaders.clear();
 }
@@ -277,7 +277,7 @@ VkPipeline GraphicsPipeline::build(VkPipelineLayout layout)
     pipelineInfo.pDynamicState = &dynamicInfo;
     
     VkPipeline pipeline;
-    VK_ASSERT(vkCreateGraphicsPipelines(_vulkan->device().handle(), nullptr, 1, &pipelineInfo, nullptr, &pipeline));
+    VK_ASSERT(vkCreateGraphicsPipelines(_engine->device().handle(), nullptr, 1, &pipelineInfo, nullptr, &pipeline));
     return pipeline;
 }
 

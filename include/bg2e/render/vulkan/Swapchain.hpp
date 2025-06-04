@@ -9,14 +9,14 @@
 namespace bg2e {
 namespace render {
 
-class Vulkan;
+class Engine;
 
 namespace vulkan {
 
 class BG2E_API Swapchain {
 public:
     
-    void init(Vulkan * vulkan, uint32_t width, uint32_t height);
+    void init(Engine * engine, uint32_t width, uint32_t height);
     void resize(uint32_t width, uint32_t height);
     void cleanup();
     
@@ -49,7 +49,7 @@ protected:
     std::vector<Image *> _colorImages;
     Image * _depthImage = nullptr;
 
-    Vulkan* _vulkan = nullptr;
+    Engine* _engine = nullptr;
     
     void create(uint32_t, uint32_t);
 };

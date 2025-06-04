@@ -24,7 +24,7 @@ class DescriptorSetAllocator;
 
 }
 
-class BG2E_API Vulkan {
+class BG2E_API Engine {
 public:
 
     void init(SDL_Window * windowPtr);

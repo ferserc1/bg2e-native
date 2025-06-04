@@ -33,11 +33,11 @@ int32_t MainLoop::run(app::Application * application) {
         winFlags
     );
     
-    _vulkan.init(window);
+    _engine.init(window);
 	_userInterface.setDelegate(application->uiDelegate());
-	_userInterface.init(&_vulkan);
+	_userInterface.init(&_engine);
     _renderLoop.setDelegate(application->renderDelegate());
-	_renderLoop.init(&_vulkan);
+	_renderLoop.init(&_engine);
 
 	_inputManager.setDelegate(application->inputDelegate());
 
@@ -51,7 +51,7 @@ int32_t MainLoop::run(app::Application * application) {
     
     
     // Initialize the main descriptor set allocator before executing the first frame
-    _vulkan.descriptorSetAllocator().initPool();
+    _engine.descriptorSetAllocator().initPool();
     _renderLoop.initScene();
     auto start = std::chrono::high_resolution_clock::now();
     
@@ -80,7 +80,7 @@ int32_t MainLoop::run(app::Application * application) {
             if (event.type == SDL_WINDOWEVENT &&
                 event.window.event == SDL_WINDOWEVENT_RESIZED)
             {
-                _vulkan.updateSwapchainSize();
+                _engine.updateSwapchainSize();
             }
 
 			if (event.type == SDL_KEYUP || event.type == SDL_KEYDOWN)
@@ -133,7 +133,7 @@ int32_t MainLoop::run(app::Application * application) {
             continue;
         }
         
-        if (_vulkan.newFrame())
+        if (_engine.newFrame())
         {
             _renderLoop.swapchainResized();
         }
@@ -151,10 +151,10 @@ int32_t MainLoop::run(app::Application * application) {
         start = std::chrono::high_resolution_clock::now();
     }
 
-    _vulkan.device().waitIdle();
+    _engine.device().waitIdle();
 	_renderLoop.cleanup();
 	_userInterface.cleanup();
-    _vulkan.cleanup();
+    _engine.cleanup();
     SDL_DestroyWindow(window);
     
     return 0;

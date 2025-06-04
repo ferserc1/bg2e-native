@@ -9,7 +9,7 @@ class ClearScreenDelegate : public bg2e::render::RenderLoopDelegate,
 	public bg2e::ui::UserInterfaceDelegate
 {
 public:
-	void init(bg2e::render::Vulkan* vulkan) override
+	void init(bg2e::render::Engine * vulkan) override
 	{
 		using namespace bg2e::render::vulkan;
 		RenderLoopDelegate::init(vulkan);
@@ -47,7 +47,7 @@ public:
         texture->setMinFilter(bg2e::base::Texture::FilterLinear);
 
 		_skyTexture = std::shared_ptr<bg2e::render::Texture>(new bg2e::render::Texture(
-			_vulkan,
+			_engine,
 			texture
 		));
   
@@ -56,22 +56,22 @@ public:
         texture->setMinFilter(bg2e::base::Texture::FilterLinear);
         texture->setUseMipmaps(true);
         _boxTexture = std::shared_ptr<bg2e::render::Texture>(new bg2e::render::Texture(
-            _vulkan,
+            _engine,
             texture
         ));
   
-        _vulkan->cleanupManager().push([&](VkDevice) {
+        _engine->cleanupManager().push([&](VkDevice) {
             _skyTexture.reset();
             _boxTexture.reset();
         });
 	
-		createImage(_vulkan->swapchain().extent());
+		createImage(_engine->swapchain().extent());
 
 		createPipeline();
 
         _sceneData.viewMatrix = glm::lookAt(glm::vec3{ 0.0f, 0.0f, -5.0f}, { 0.0f, 0.0f, 0.0f }, { 0.0f, 1.0f, 0.0f });
         
-        auto vpSize = _vulkan->swapchain().extent();
+        auto vpSize = _engine->swapchain().extent();
         _sceneData.projMatrix = glm::perspective(
             glm::radians(50.0f),
             float(vpSize.width) / float(vpSize.height),
@@ -117,7 +117,7 @@ public:
         // You can save the pointer to the set descriptor and use it safely in other functions, as long as
         // they are used within the same frame.
         auto sceneDS = macros::uniformBufferDescriptorSet(
-            _vulkan, frameResources,
+            _engine, frameResources,
             _sceneDSLayout, _sceneData, currentFrame
         );
         
@@ -148,7 +148,7 @@ public:
         // The uniform buffer with the model matrix is the same for every submeshes, but the texture can
         // be different.
         _objectData.modelMatrix = glm::rotate(_objectData.modelMatrix, 0.02f, glm::vec3(0.0f, 1.0f, 0.0f));
-        auto objectDataBuffer = macros::createBuffer(_vulkan, frameResources, _objectData);
+        auto objectDataBuffer = macros::createBuffer(_engine, frameResources, _objectData);
         
 		for (uint32_t i = 0; i < _skyMesh->submeshCount(); ++i)
 		{
@@ -185,7 +185,7 @@ public:
 		// _skyMesh->draw(cmd);
   
         _boxData.modelMatrix = glm::rotate(_boxData.modelMatrix, 0.015f, glm::vec3(1.0f, 1.0f, 0.0f));
-        auto boxDataBuffer = macros::createBuffer(_vulkan, frameResources, _boxData);
+        auto boxDataBuffer = macros::createBuffer(_engine, frameResources, _boxData);
         auto boxDS = frameResources.newDescriptorSet(_objectDSLayout);
         boxDS->beginUpdate();
             boxDS->addBuffer(
@@ -224,7 +224,7 @@ public:
 	}
 
 	// ============ User Interface Delegate Functions =========
-	void init(bg2e::render::Vulkan*, bg2e::ui::UserInterface*) override {
+	void init(bg2e::render::Engine *, bg2e::ui::UserInterface*) override {
 		_window.setTitle("ImGui Wrapper Demo");
 		_window.options.noClose = true;
 		_window.options.minWidth = 100;
@@ -280,7 +280,7 @@ protected:
 
 	void createPipeline()
 	{
-		bg2e::render::vulkan::factory::GraphicsPipeline plFactory(_vulkan);
+		bg2e::render::vulkan::factory::GraphicsPipeline plFactory(_engine);
 
 		plFactory.addShader("texture.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
 		plFactory.addShader("texture.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
@@ -297,12 +297,12 @@ protected:
         
         dsFactory.clear();
         dsFactory.addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
-        _sceneDSLayout = dsFactory.build(_vulkan->device().handle(), VK_SHADER_STAGE_VERTEX_BIT);
+        _sceneDSLayout = dsFactory.build(_engine->device().handle(), VK_SHADER_STAGE_VERTEX_BIT);
         
         dsFactory.clear();
         dsFactory.addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
         dsFactory.addBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
-        _objectDSLayout = dsFactory.build(_vulkan->device().handle(), VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT);
+        _objectDSLayout = dsFactory.build(_engine->device().handle(), VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT);
         
 
 		auto layoutInfo = bg2e::render::vulkan::Info::pipelineLayoutInfo();
@@ -312,16 +312,16 @@ protected:
         };
         layoutInfo.pSetLayouts = setLayouts;
         layoutInfo.setLayoutCount = 2;
-		VK_ASSERT(vkCreatePipelineLayout(_vulkan->device().handle(), &layoutInfo, nullptr, &_layout));
+		VK_ASSERT(vkCreatePipelineLayout(_engine->device().handle(), &layoutInfo, nullptr, &_layout));
         
-        plFactory.setDepthFormat(_vulkan->swapchain().depthImageFormat());
+        plFactory.setDepthFormat(_engine->swapchain().depthImageFormat());
         plFactory.enableDepthtest(true, VK_COMPARE_OP_LESS);
         plFactory.inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
         plFactory.setCullMode(true, VK_FRONT_FACE_COUNTER_CLOCKWISE);
 		plFactory.setColorAttachmentFormat(_targetImage->format());
 		_pipeline = plFactory.build(_layout);
 
-		_vulkan->cleanupManager().push([&](VkDevice dev) {
+		_engine->cleanupManager().push([&](VkDevice dev) {
 			vkDestroyPipeline(dev, _pipeline, nullptr);
 			vkDestroyPipelineLayout(dev, _layout, nullptr);
             vkDestroyDescriptorSetLayout(dev, _sceneDSLayout, nullptr);
@@ -337,7 +337,7 @@ protected:
             bg2e::geo::createSpherePU(10.0f, 30, 30, true)
         );
         
-        _skyMesh = std::unique_ptr<bg2e::render::vulkan::geo::MeshPU>(new bg2e::render::vulkan::geo::MeshPU(_vulkan));
+        _skyMesh = std::unique_ptr<bg2e::render::vulkan::geo::MeshPU>(new bg2e::render::vulkan::geo::MeshPU(_engine));
         _skyMesh->setMeshData(mesh.get());
 		_skyMesh->build();
   
@@ -345,11 +345,11 @@ protected:
             bg2e::geo::createCubePU(1.0f, 1.0f, 1.0f)
         );
         
-        _boxMesh = std::unique_ptr<bg2e::render::vulkan::geo::MeshPU>(new bg2e::render::vulkan::geo::MeshPU(_vulkan));
+        _boxMesh = std::unique_ptr<bg2e::render::vulkan::geo::MeshPU>(new bg2e::render::vulkan::geo::MeshPU(_engine));
         _boxMesh->setMeshData(mesh.get());
         _boxMesh->build();
 
-		_vulkan->cleanupManager().push([this](VkDevice dev) {
+		_engine->cleanupManager().push([this](VkDevice dev) {
 			_skyMesh.reset();
             _boxMesh.reset();
 		});
@@ -358,9 +358,9 @@ protected:
 	void createImage(VkExtent2D extent)
 	{
 		using namespace bg2e::render::vulkan;
-		auto vulkan = this->vulkan();
+		auto engine = this->engine();
 		_targetImage = std::shared_ptr<Image>(Image::createAllocatedImage(
-			vulkan,
+			engine,
 			VK_FORMAT_R16G16B16A16_SFLOAT,
 			extent,
 			VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT |

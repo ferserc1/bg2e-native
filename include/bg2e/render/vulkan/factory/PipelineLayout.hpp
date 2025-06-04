@@ -2,7 +2,7 @@
 #pragma once
 
 #include <bg2e/common.hpp>
-#include <bg2e/render/Vulkan.hpp>
+#include <bg2e/render/Engine.hpp>
 #include <vector>
 
 namespace bg2e {
@@ -12,7 +12,7 @@ namespace factory {
 
 class BG2E_API PipelineLayout {
 public:
-    PipelineLayout(Vulkan * vulkan) :_vulkan{vulkan} {}
+    PipelineLayout(Engine * engine) :_engine{engine} {}
 
     inline void addPushConstantRange(VkPushConstantRange pushConstant) { _pushConstantRanges.push_back(pushConstant); }
     inline void addDescriptorSetLayout(VkDescriptorSetLayout dsLayout) { _descriptorSetLayouts.push_back(dsLayout); }
@@ -26,7 +26,7 @@ public:
     void reset();
     
 protected:
-    Vulkan * _vulkan;
+    Engine * _engine;
     std::vector<VkPushConstantRange> _pushConstantRanges;
     std::vector<VkDescriptorSetLayout> _descriptorSetLayouts;
     

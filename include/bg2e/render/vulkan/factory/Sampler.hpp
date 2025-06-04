@@ -2,7 +2,7 @@
 
 #include <bg2e/common.hpp>
 #include <bg2e/render/vulkan/common.hpp>
-#include <bg2e/render/Vulkan.hpp>
+#include <bg2e/render/Engine.hpp>
 
 
 namespace bg2e {
@@ -12,7 +12,7 @@ namespace factory {
 
 class BG2E_API Sampler {
 public:
-    Sampler(Vulkan * vulkan);
+    Sampler(Engine * engine);
     
     VkSamplerCreateInfo createInfo;
 
@@ -25,7 +25,7 @@ public:
     );
     
 protected:
-    Vulkan * _vulkan;
+    Engine * _engine;
 };
 
 }

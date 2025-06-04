@@ -1,7 +1,7 @@
 #pragma once
 
 #include <bg2e/common.hpp>
-#include <bg2e/render/Vulkan.hpp>
+#include <bg2e/render/Engine.hpp>
 
 #include <string>
 

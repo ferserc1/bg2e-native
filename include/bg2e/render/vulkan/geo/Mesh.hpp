@@ -2,7 +2,7 @@
 
 #include <bg2e/common.hpp>
 #include <bg2e/geo/Mesh.hpp>
-#include <bg2e/render/Vulkan.hpp>
+#include <bg2e/render/Engine.hpp>
 #include <bg2e/render/vulkan/geo/VertexDescription.hpp>
 
 #include <memory>
@@ -15,7 +15,7 @@ namespace geo {
 template <typename MeshT>
 class BG2E_API MeshGeneric {
 public:
-	MeshGeneric(Vulkan* vulkan) :_vulkan{ vulkan } {}
+	MeshGeneric(Engine* engine) :_engine{ engine } {}
     virtual ~MeshGeneric();
 
     inline MeshT & meshData() { return _meshData; }
@@ -48,7 +48,7 @@ public:
 	static std::vector<VkVertexInputAttributeDescription> attributeDescriptions();
 
 protected:
-	Vulkan* _vulkan;
+	Engine* _engine;
 
     MeshT _meshData;
 

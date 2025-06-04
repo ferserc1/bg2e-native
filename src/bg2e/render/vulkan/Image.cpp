@@ -5,7 +5,7 @@
 #include <bg2e/render/vulkan/Buffer.hpp>
 #include <bg2e/render/vulkan/Device.hpp>
 
-#include <bg2e/render/Vulkan.hpp>
+#include <bg2e/render/Engine.hpp>
 
 
 #include <algorithm>
@@ -72,7 +72,7 @@ void Image::cmdTransitionImage(
 }
 
 void Image::transitionImage(
-    Vulkan*               vulkan,
+    Engine*               engine,
     VkImage               image,
     VkImageLayout         oldLayout,
     VkImageLayout         newLayout,
@@ -90,7 +90,7 @@ void Image::transitionImage(
     VkAccessFlags2        dstAccessMask
     */
 ) {
-	vulkan->command().immediateSubmit([&](VkCommandBuffer cmd) {
+	engine->command().immediateSubmit([&](VkCommandBuffer cmd) {
 		Image::cmdTransitionImage(
 			cmd,
 			image,
@@ -237,7 +237,7 @@ uint32_t Image::getMipLevels(VkExtent2D extent)
 }
 
 Image* Image::createAllocatedImage(
-    Vulkan * vulkan,
+    Engine * engine,
     VkFormat format,
     VkExtent2D extent,
     VkImageUsageFlags usage,
@@ -248,7 +248,7 @@ Image* Image::createAllocatedImage(
 )
 {
     auto result = new Image();
-    result->_vulkan = vulkan;
+    result->_engine = engine;
     result->_extent = { extent.width, extent.height, 1 };
     result->_format = format;
     
@@ -274,7 +274,7 @@ Image* Image::createAllocatedImage(
     allocInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
     allocInfo.requiredFlags = VkMemoryPropertyFlags(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
     
-    VmaAllocator alloc = vulkan->allocator();
+    VmaAllocator alloc = engine->allocator();
     vmaCreateImage(
         alloc,
         &imgInfo,
@@ -294,13 +294,13 @@ Image* Image::createAllocatedImage(
     {
         imgViewInfo.subresourceRange.levelCount = result->_mipLevels;
     }
-    VK_ASSERT(vkCreateImageView(vulkan->device().handle(), &imgViewInfo, nullptr, &result->_imageView));
+    VK_ASSERT(vkCreateImageView(engine->device().handle(), &imgViewInfo, nullptr, &result->_imageView));
     
     return result;
 }
 
 Image* Image::createAllocatedImage(
-    Vulkan * vulkan,
+    Engine * engine,
     void* data,
     VkExtent2D extent,
     uint32_t dataBytesPerPixel,  // WARNING: for now, it only works with 4 bpp
@@ -313,7 +313,7 @@ Image* Image::createAllocatedImage(
     size_t dataSize = extent.width * extent.height * dataBytesPerPixel;
     auto uploadBuffer = std::unique_ptr<Buffer>(
         Buffer::createAllocatedBuffer(
-            vulkan,
+            engine,
             dataSize,
             VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
             VMA_MEMORY_USAGE_CPU_TO_GPU
@@ -329,7 +329,7 @@ Image* Image::createAllocatedImage(
 	}
 
     auto image = createAllocatedImage(
-        vulkan,
+        engine,
         imageFormat,
         extent,
         usage | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
@@ -339,7 +339,7 @@ Image* Image::createAllocatedImage(
         maxMipmapLevels
     );
  
-    vulkan->command().immediateSubmit([&](VkCommandBuffer cmd) {
+    engine->command().immediateSubmit([&](VkCommandBuffer cmd) {
         Image::cmdTransitionImage(
             cmd,
             image->handle(),
@@ -469,11 +469,11 @@ void Image::cleanup()
 {
     if (_imageView != VK_NULL_HANDLE)
     {
-        vkDestroyImageView(_vulkan->device().handle(), _imageView, nullptr);
+        vkDestroyImageView(_engine->device().handle(), _imageView, nullptr);
     }
     if (_image != VK_NULL_HANDLE)
     {
-        vmaDestroyImage(_vulkan->allocator(), _image, _allocation);
+        vmaDestroyImage(_engine->allocator(), _image, _allocation);
     }
     _imageView = VK_NULL_HANDLE;
     _image = VK_NULL_HANDLE;

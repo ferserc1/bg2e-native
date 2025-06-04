@@ -8,7 +8,7 @@ namespace render {
 
 class BG2E_API IrradianceCubemapRenderer : public CubemapRenderer {
 public:
-    IrradianceCubemapRenderer(Vulkan * vulkan);
+    IrradianceCubemapRenderer(Engine * engine);
     
     void initFrameResources(vulkan::DescriptorSetAllocator*);
     

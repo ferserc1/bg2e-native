@@ -11,20 +11,20 @@
 namespace bg2e {
 namespace ui {
 
-void UserInterface::init(render::Vulkan* vulkan)
+void UserInterface::init(render::Engine * engine)
 {
-    _vulkan = vulkan;
+    _engine = engine;
 
     initCommands();
 
     auto fenceInfo = render::vulkan::Info::fenceCreateInfo(VK_FENCE_CREATE_SIGNALED_BIT);
-    VK_ASSERT(vkCreateFence(_vulkan->device().handle(), &fenceInfo, nullptr, &_uiFence));
+    VK_ASSERT(vkCreateFence(_engine->device().handle(), &fenceInfo, nullptr, &_uiFence));
 
     initImGui();
     
     if (_delegate)
     {
-        _delegate->init(vulkan, this);
+        _delegate->init(engine, this);
     }
 }
 
@@ -54,7 +54,7 @@ void UserInterface::draw(VkCommandBuffer cmd, VkImageView targetImageView)
         nullptr,
         VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
     );
-    auto extent = _vulkan->swapchain().extent();
+    auto extent = _engine->swapchain().extent();
     auto renderingInfo = Info::renderingInfo(
         extent,
         &colorAttachment,
@@ -75,12 +75,12 @@ void UserInterface::cleanup()
 
 void UserInterface::initCommands()
 {
-    _commandPool = _vulkan->command().createCommandPool(VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
-    _commandBuffer = _vulkan->command().allocateCommandBuffer(_commandPool, 1);
+    _commandPool = _engine->command().createCommandPool(VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+    _commandBuffer = _engine->command().allocateCommandBuffer(_commandPool, 1);
 
-    _vulkan->cleanupManager().push([&](VkDevice dev) {
+    _engine->cleanupManager().push([&](VkDevice dev) {
         vkDestroyFence(dev, _uiFence, nullptr);
-        _vulkan->command().destroyComandPool(_commandPool);
+        _engine->command().destroyComandPool(_commandPool);
     });
 }
 
@@ -107,18 +107,18 @@ void UserInterface::initImGui()
     poolInfo.poolSizeCount = uint32_t(std::size(poolSizes));
     poolInfo.pPoolSizes = poolSizes;
 
-    VK_ASSERT(vkCreateDescriptorPool(_vulkan->device().handle(), &poolInfo, nullptr, &_imguiPool));
+    VK_ASSERT(vkCreateDescriptorPool(_engine->device().handle(), &poolInfo, nullptr, &_imguiPool));
 
     ImGui::CreateContext();
 
-    SDL_Window* window = reinterpret_cast<SDL_Window*>(_vulkan->windowPtr());
+    SDL_Window* window = reinterpret_cast<SDL_Window*>(_engine->windowPtr());
     ImGui_ImplSDL2_InitForVulkan(window);
 
     ImGui_ImplVulkan_InitInfo initInfo = {};
-    initInfo.Instance = _vulkan->instance().handle();
-    initInfo.PhysicalDevice = _vulkan->physicalDevice().handle();
-    initInfo.Device = _vulkan->device().handle();
-    initInfo.Queue = _vulkan->command().graphicsQueue();
+    initInfo.Instance = _engine->instance().handle();
+    initInfo.PhysicalDevice = _engine->physicalDevice().handle();
+    initInfo.Device = _engine->device().handle();
+    initInfo.Queue = _engine->command().graphicsQueue();
     initInfo.DescriptorPool = _imguiPool;
     initInfo.MinImageCount = 3;
     initInfo.ImageCount = 3;
@@ -126,13 +126,13 @@ void UserInterface::initImGui()
     initInfo.PipelineRenderingCreateInfo = {};
     initInfo.PipelineRenderingCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO;
     initInfo.PipelineRenderingCreateInfo.colorAttachmentCount = 1;
-    VkFormat format = _vulkan->swapchain().imageFormat();
+    VkFormat format = _engine->swapchain().imageFormat();
     initInfo.PipelineRenderingCreateInfo.pColorAttachmentFormats = &format;
     initInfo.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
 
     ImGui_ImplVulkan_Init(&initInfo);
 
-    _vulkan->cleanupManager().push([&, this](VkDevice dev) {
+    _engine->cleanupManager().push([&, this](VkDevice dev) {
         ImGui_ImplVulkan_Shutdown();
         vkDestroyDescriptorPool(dev, _imguiPool, nullptr);
     });

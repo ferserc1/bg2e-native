@@ -22,7 +22,7 @@ class BasicSceneDelegate : public bg2e::render::RenderLoopDelegate,
 	public bg2e::ui::UserInterfaceDelegate
 {
 public:
-	void init(bg2e::render::Vulkan* vulkan) override
+	void init(bg2e::render::Engine * vulkan) override
 	{
 		using namespace bg2e::render::vulkan;
 		RenderLoopDelegate::init(vulkan);
@@ -30,7 +30,7 @@ public:
         /// Renderer resources:
         /// - Color Attachments: Color output of the renderer shaders
         _colorAttachments = std::shared_ptr<bg2e::render::ColorAttachments>(
-            new bg2e::render::ColorAttachments(_vulkan, {
+            new bg2e::render::ColorAttachments(_engine, {
                 VK_FORMAT_R16G16B16A16_SFLOAT,
                 VK_FORMAT_R8G8B8A8_UNORM
             })
@@ -52,9 +52,9 @@ public:
         ///       reflection map. It is also used to draw the skybox.
         _environment = std::unique_ptr<bg2e::render::EnvironmentResources>(
             new bg2e::render::EnvironmentResources(
-                _vulkan,
+                _engine,
                 _colorAttachments->attachmentFormats(),
-                _vulkan->swapchain().depthImageFormat()
+                _engine->swapchain().depthImageFormat()
             )
         );
 	}
@@ -81,7 +81,7 @@ public:
         auto skyDomeGenerator = new bg2e::scene::SkyDomeTextureGenerator(2048, 1024, 4);
         skyDomeTexture->setProceduralGenerator(skyDomeGenerator);
         skyDomeTexture->setUseMipmaps(false);
-        auto envTexture = std::make_shared<bg2e::render::Texture>(_vulkan);
+        auto envTexture = std::make_shared<bg2e::render::Texture>(_engine);
         envTexture->load(skyDomeTexture);
         _environment->build(
             envTexture,         // Equirectangular texture
@@ -90,7 +90,7 @@ public:
             { 1024, 1024 }      // Specular reflection map size
         );
 	
-        _colorAttachments->build(_vulkan->swapchain().extent());
+        _colorAttachments->build(_engine->swapchain().extent());
 
 		createPipeline();
         
@@ -200,7 +200,7 @@ public:
 	}
 
 	// ============ User Interface Delegate Functions =========
-	void init(bg2e::render::Vulkan*, bg2e::ui::UserInterface*) override {
+	void init(bg2e::render::Engine *, bg2e::ui::UserInterface*) override {
 		_window.setTitle("ImGui Wrapper Demo");
 		_window.options.noClose = true;
 		_window.options.minWidth = 100;
@@ -261,7 +261,7 @@ protected:
     
 	void createPipeline()
 	{
-		bg2e::render::vulkan::factory::GraphicsPipeline plFactory(_vulkan);
+		bg2e::render::vulkan::factory::GraphicsPipeline plFactory(_engine);
 
 		plFactory.addShader("test/texture_gi.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
         plFactory.addShader("test/texture_gi.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
@@ -273,14 +273,14 @@ protected:
         auto objectDSLayout = _objectDataBinding->createLayout();
         auto envDSLayout = _environmentDataBinding->createLayout();
         
-        bg2e::render::vulkan::factory::PipelineLayout layoutFactory(_vulkan);
+        bg2e::render::vulkan::factory::PipelineLayout layoutFactory(_engine);
         layoutFactory.addDescriptorSetLayout(frameDSLayout);
         layoutFactory.addDescriptorSetLayout(objectDSLayout);
         layoutFactory.addDescriptorSetLayout(envDSLayout);
         layoutFactory.addPushConstantRange(0, sizeof(PushConstants), VK_SHADER_STAGE_FRAGMENT_BIT);
         _layout = layoutFactory.build();
         
-        plFactory.setDepthFormat(_vulkan->swapchain().depthImageFormat());
+        plFactory.setDepthFormat(_engine->swapchain().depthImageFormat());
         plFactory.enableDepthtest(true, VK_COMPARE_OP_LESS);
         plFactory.inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
         plFactory.setCullMode(true, VK_FRONT_FACE_COUNTER_CLOCKWISE);
@@ -288,7 +288,7 @@ protected:
         plFactory.setColorAttachmentFormat(_colorAttachments->attachmentFormats());
 		_pipeline = plFactory.build(_layout);
   
-		_vulkan->cleanupManager().push([&, objectDSLayout, envDSLayout, frameDSLayout](VkDevice dev) {
+		_engine->cleanupManager().push([&, objectDSLayout, envDSLayout, frameDSLayout](VkDevice dev) {
 			vkDestroyPipeline(dev, _pipeline, nullptr);
 			vkDestroyPipelineLayout(dev, _layout, nullptr);
             vkDestroyDescriptorSetLayout(dev, objectDSLayout, nullptr);
@@ -333,13 +333,13 @@ protected:
         sceneRoot->addChild(cameraRotation);
         
         // Set the initial viewport size
-        _resizeVisitor.resizeViewport(sceneRoot.get(), _vulkan->swapchain().extent());
+        _resizeVisitor.resizeViewport(sceneRoot.get(), _engine->swapchain().extent());
         
         _scene = std::make_shared<bg2e::scene::Scene>();
         
         _scene->setSceneRoot(sceneRoot);
         
-        _vulkan->cleanupManager().push([&](VkDevice) {
+        _engine->cleanupManager().push([&](VkDevice) {
             _scene.reset();
         });
     }
@@ -366,7 +366,7 @@ protected:
         drawable->setMesh(bg2e::db::loadMeshObj<bg2e::geo::MeshPNU>(modelPath));
         drawable->material(0).setAlbedo(outerAlbedoTexture);
         drawable->material(1).setAlbedo(innerAlbedoTexture);
-        drawable->load(_vulkan);
+        drawable->load(_engine);
         
         return drawable;
 	}

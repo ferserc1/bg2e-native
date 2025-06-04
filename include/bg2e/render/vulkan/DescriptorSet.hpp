@@ -3,7 +3,7 @@
 #include <bg2e/render/vulkan/common.hpp>
 #include <bg2e/render/vulkan/Image.hpp>
 #include <bg2e/render/vulkan/Buffer.hpp>
-#include <bg2e/render/Vulkan.hpp>
+#include <bg2e/render/Engine.hpp>
 #include <bg2e/render/Texture.hpp>
 #include <vector>
 
@@ -16,7 +16,7 @@ class Buffer;
 class BG2E_API DescriptorSet {
 public:
 
-    void init(Vulkan * v, VkDescriptorSet ds);
+    void init(Engine * e, VkDescriptorSet ds);
     
     // To update a descriptor set:
     // - call beginUpdate()
@@ -121,7 +121,7 @@ public:
     inline VkDescriptorSet* operator&() { return &_ds; }
 
 protected:
-    Vulkan * _vulkan = nullptr;
+    Engine * _engine = nullptr;
     
     std::deque<VkDescriptorImageInfo> _imageInfos;
     std::deque<VkDescriptorBufferInfo> _bufferInfos;

@@ -1,7 +1,7 @@
 #pragma once
 
 #include <bg2e/common.hpp>
-#include <bg2e/render/Vulkan.hpp>
+#include <bg2e/render/Engine.hpp>
 #include <bg2e/render/RenderLoop.hpp>
 #include <bg2e/app/Application.hpp>
 #include <bg2e/app/InputManager.hpp>
@@ -22,7 +22,7 @@ protected:
     uint32_t _windowHeight = 700;
     std::string _windowTitle = "bg2 engine - native";
     
-    render::Vulkan _vulkan;
+    render::Engine _engine;
 	render::RenderLoop _renderLoop;
 	app::InputManager _inputManager;
 	ui::UserInterface _userInterface;

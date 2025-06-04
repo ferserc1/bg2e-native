@@ -8,7 +8,7 @@ namespace render {
 
 class BG2E_API SpecularReflectionCubemapRenderer : public CubemapRenderer {
 public:
-    SpecularReflectionCubemapRenderer(Vulkan * vulkan);
+    SpecularReflectionCubemapRenderer(Engine * engine);
     
     void initFrameResources(vulkan::DescriptorSetAllocator*);
     

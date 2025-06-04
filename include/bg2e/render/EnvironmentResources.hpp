@@ -13,8 +13,8 @@ namespace render {
 
 class BG2E_API EnvironmentResources {
 public:
-    EnvironmentResources(bg2e::render::Vulkan*);
-    EnvironmentResources(bg2e::render::Vulkan*, const std::vector<VkFormat>& targetImages, VkFormat depthFormat);
+    EnvironmentResources(bg2e::render::Engine*);
+    EnvironmentResources(bg2e::render::Engine*, const std::vector<VkFormat>& targetImages, VkFormat depthFormat);
     
     void initFrameResources(bg2e::render::vulkan::DescriptorSetAllocator *frameAllocator);
         
@@ -57,7 +57,7 @@ public:
     inline VkSampler specularReflectionMapSampler() const { return _specularReflectionSampler; }
 
 protected:
-    bg2e::render::Vulkan * _vulkan;
+    bg2e::render::Engine * _engine;
     
     std::shared_ptr<bg2e::render::Texture> _cubeMapTexture;
     std::unique_ptr<SphereToCubemapRenderer> _sphereToCubemap;

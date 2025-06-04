@@ -13,22 +13,22 @@ namespace macros {
 // store the Buffer object in any kind of smart pointer
 template <typename T>
 Buffer* createBuffer(
-    Vulkan * vulkan,
+    Engine * engine,
     FrameResources& frameResources,
     const T& data,
     VkBufferUsageFlags usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
     VmaMemoryUsage memoryUsage = VMA_MEMORY_USAGE_CPU_ONLY
 ) {
     auto buffer = bg2e::render::vulkan::Buffer::createAllocatedBuffer(
-        vulkan, sizeof(T),
+        engine, sizeof(T),
         usage,
         memoryUsage
     );
     
     auto vkBuffer = buffer->handle();
     auto bufferAllocation = buffer->allocation();
-    frameResources.cleanupManager.push([&, vulkan, vkBuffer, bufferAllocation, buffer](VkDevice) {
-        vulkan->destroyBuffer(vkBuffer, bufferAllocation);
+    frameResources.cleanupManager.push([&, engine, vkBuffer, bufferAllocation, buffer](VkDevice) {
+        engine->destroyBuffer(vkBuffer, bufferAllocation);
         delete buffer;
     });
     

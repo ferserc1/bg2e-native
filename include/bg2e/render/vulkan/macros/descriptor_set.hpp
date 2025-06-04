@@ -3,7 +3,7 @@
 #include <bg2e/render/vulkan/DescriptorSet.hpp>
 #include <bg2e/render/vulkan/Buffer.hpp>
 #include <bg2e/render/vulkan/FrameResources.hpp>
-#include <bg2e/render/Vulkan.hpp>
+#include <bg2e/render/Engine.hpp>
 
 #include <memory>
 #include <functional>
@@ -24,13 +24,13 @@ namespace macros {
 // will be automatically released when the frame is done.
 template <typename T>
 DescriptorSet* uniformBufferDescriptorSet(
-    Vulkan* vulkan,
+    Engine * engine,
     FrameResources& frameResources,
     VkDescriptorSetLayout descriptorSetLayout,
     const T& data, uint32_t currentFrame
 ) {
      auto uniformBuffer = Buffer::createAllocatedBuffer(
-        vulkan,
+        engine,
         sizeof(T),
         VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
         VMA_MEMORY_USAGE_CPU_ONLY

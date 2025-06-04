@@ -19,7 +19,7 @@ VkDescriptorSetLayout FrameDataBinding::createLayout()
         
         dsFactory.addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
         
-        _layout = dsFactory.build(_vulkan->device().handle(), VK_SHADER_STAGE_VERTEX_BIT);
+        _layout = dsFactory.build(_engine->device().handle(), VK_SHADER_STAGE_VERTEX_BIT);
     }
     return _layout;
 }
@@ -40,7 +40,7 @@ VkDescriptorSet FrameDataBinding::newDescriptorSet(
         projectionMatrix
     };
     
-    auto uniformBuffer = bg2e::render::vulkan::macros::createBuffer(_vulkan, frameResources, uniforms);
+    auto uniformBuffer = bg2e::render::vulkan::macros::createBuffer(_engine, frameResources, uniforms);
     
     auto ds = frameResources.newDescriptorSet(_layout);
     ds->beginUpdate();

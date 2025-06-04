@@ -1,7 +1,7 @@
 #pragma once
 
 #include <bg2e/common.hpp>
-#include <bg2e/render/Vulkan.hpp>
+#include <bg2e/render/Engine.hpp>
 #include <bg2e/render/Texture.hpp>
 #include <bg2e/render/vulkan/Buffer.hpp>
 #include <bg2e/render/vulkan/DescriptorSetAllocator.hpp>
@@ -15,7 +15,7 @@ namespace render {
 
 class BG2E_API CubemapRenderer {
 public:
-    CubemapRenderer(Vulkan *);
+    CubemapRenderer(Engine *);
     
     void initFrameResources(vulkan::DescriptorSetAllocator*);
     
@@ -38,7 +38,7 @@ public:
     std::shared_ptr<vulkan::Image> cubeMapImage() { return _cubeMapImage; }
     
 protected:
-    Vulkan * _vulkan;
+    Engine * _engine;
     
     std::shared_ptr<vulkan::Image> _inputSkybox;
     VkSampler _skyImageSampler;

@@ -14,8 +14,8 @@
 
 namespace bg2e::render {
 
-CubemapRenderer::CubemapRenderer(Vulkan * vulkan)
-    :_vulkan { vulkan }
+CubemapRenderer::CubemapRenderer(Engine * engine)
+    :_engine { engine }
 {
 
 }
@@ -41,13 +41,13 @@ void CubemapRenderer::build(
     
     initImages(cubeImageSize, useMipmaps, maxMipmapLevels, imageFormat);
     
-    vulkan::factory::Sampler samplerFactory(_vulkan);
+    vulkan::factory::Sampler samplerFactory(_engine);
     _skyImageSampler = samplerFactory.build(
         VK_FILTER_LINEAR,
         VK_FILTER_LINEAR
     );
     
-    _vulkan->cleanupManager().push([&](VkDevice device) {
+    _engine->cleanupManager().push([&](VkDevice device) {
         vkDestroySampler(device, _skyImageSampler, nullptr);
     });
     
@@ -170,7 +170,7 @@ void CubemapRenderer::initImages(
     VkFormat imageFormat
 ) {
     _cubeMapImage = std::shared_ptr<vulkan::Image>(vulkan::Image::createAllocatedImage(
-       _vulkan,
+       _engine,
        imageFormat,
        cubeImageSize,
        VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT |
@@ -184,7 +184,7 @@ void CubemapRenderer::initImages(
     // Initialize the imag layout for all the mipmap levels
     vulkan::Image::TransitionInfo info;
     info.mipLevelsCount = _cubeMapImage->mipLevels();
-    _vulkan->command().immediateSubmit([&](VkCommandBuffer cmd) {
+    _engine->command().immediateSubmit([&](VkCommandBuffer cmd) {
         vulkan::Image::cmdTransitionImage(
             cmd,
             _cubeMapImage->handle(),
@@ -208,12 +208,12 @@ void CubemapRenderer::initImages(
         for (int i = 0; i < 6; ++i)
         {
             viewInfo.subresourceRange.baseArrayLayer = i;
-            vkCreateImageView(_vulkan->device().handle(), &viewInfo, nullptr, &imgView);
+            vkCreateImageView(_engine->device().handle(), &viewInfo, nullptr, &imgView);
             _cubeMapImageViews[mipLevel].imageViews[i] = imgView;
         }
     }
     
-    _vulkan->cleanupManager().push([&](VkDevice dev) {
+    _engine->cleanupManager().push([&](VkDevice dev) {
         auto mipLevels = _cubeMapImage->mipLevels();
         for (size_t mipLevel = 0; mipLevel < mipLevels; ++mipLevel)
         {
@@ -227,7 +227,7 @@ void CubemapRenderer::initImages(
     });
     
     vulkan::Image::transitionImage(
-        _vulkan,
+        _engine,
         _cubeMapImage->handle(),
         VK_IMAGE_LAYOUT_GENERAL,
         VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
@@ -240,7 +240,7 @@ void CubemapRenderer::createPipelineLayout()
     dsFactory.addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);         // Projection data buffer
     dsFactory.addBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER); // Input skybox image
     _descriptorSetLayout = dsFactory.build(
-        _vulkan->device().handle(),
+        _engine->device().handle(),
         VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT
     );
     
@@ -259,9 +259,9 @@ void CubemapRenderer::createPipelineLayout()
     layoutInfo.pSetLayouts = layouts.data();
     layoutInfo.setLayoutCount = uint32_t(layouts.size());
     
-    VK_ASSERT(vkCreatePipelineLayout(_vulkan->device().handle(), &layoutInfo, nullptr, &_layout));
+    VK_ASSERT(vkCreatePipelineLayout(_engine->device().handle(), &layoutInfo, nullptr, &_layout));
     
-    _vulkan->cleanupManager().push([&](VkDevice dev) {
+    _engine->cleanupManager().push([&](VkDevice dev) {
         vkDestroyPipelineLayout(dev, _layout, nullptr);
         vkDestroyDescriptorSetLayout(dev, _descriptorSetLayout, nullptr);
     });
@@ -271,7 +271,7 @@ void CubemapRenderer::initPipeline(
     const std::string &vshaderFile,
     const std::string &fshaderFile
 ) {
-    vulkan::factory::GraphicsPipeline plFactory(_vulkan);
+    vulkan::factory::GraphicsPipeline plFactory(_engine);
     
     plFactory.addShader(vshaderFile, VK_SHADER_STAGE_VERTEX_BIT);
     plFactory.addShader(fshaderFile, VK_SHADER_STAGE_FRAGMENT_BIT);
@@ -286,7 +286,7 @@ void CubemapRenderer::initPipeline(
     
     _pipeline = plFactory.build(_layout);
     
-    _vulkan->cleanupManager().push([&](VkDevice dev) {
+    _engine->cleanupManager().push([&](VkDevice dev) {
         vkDestroyPipeline(dev, _pipeline, nullptr);
     });
 }
@@ -305,7 +305,7 @@ void CubemapRenderer::initGeometry()
     _projectionData.proj[0][0] *= -1.0f;
    
     _projectionDataBuffer = std::unique_ptr<vulkan::Buffer>(vulkan::Buffer::createAllocatedBuffer(
-        _vulkan,
+        _engine,
         sizeof(ProjectionData),
         VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
         VMA_MEMORY_USAGE_CPU_TO_GPU
@@ -318,11 +318,11 @@ void CubemapRenderer::initGeometry()
         bg2e::geo::createCubeP(10.0f, 10.0f, 10.0f, true)
     );
     
-    _cube = std::unique_ptr<vulkan::geo::MeshP>(new vulkan::geo::MeshP(_vulkan));
+    _cube = std::unique_ptr<vulkan::geo::MeshP>(new vulkan::geo::MeshP(_engine));
     _cube->setMeshData(cubeMesh.get());
     _cube->build();
     
-    _vulkan->cleanupManager().push([&](VkDevice) {
+    _engine->cleanupManager().push([&](VkDevice) {
         _projectionDataBuffer->cleanup();
         _cube.reset();
     });

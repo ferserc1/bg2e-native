@@ -1,5 +1,4 @@
-
-#include <bg2e/render/Vulkan.hpp>
+#include <bg2e/render/Engine.hpp>
 #include <bg2e/render/vulkan/extensions.hpp>
 
 #ifdef BG2E_LINUX
@@ -17,7 +16,7 @@
 namespace bg2e {
 namespace render {
 
-void Vulkan::init(SDL_Window* windowPtr)
+void Engine::init(SDL_Window* windowPtr)
 {
     _windowPtr = windowPtr;
 
@@ -46,7 +45,7 @@ void Vulkan::init(SDL_Window* windowPtr)
     });
 }
 
-void Vulkan::cleanup()
+void Engine::cleanup()
 {
     _device.waitIdle();
 
@@ -63,7 +62,7 @@ void Vulkan::cleanup()
     _instance.cleanup();
 }
 
-bool Vulkan::newFrame()
+bool Engine::newFrame()
 {
     if (_resizeRequested)
     {
@@ -80,24 +79,24 @@ bool Vulkan::newFrame()
     return false;
 }
 
-void Vulkan::createInstance()
+void Engine::createInstance()
 {
     _instance.create(_windowPtr);
 }
 
-void Vulkan::createSurface()
+void Engine::createSurface()
 {
     _surface.create(_instance, _windowPtr);
 }
 
-void Vulkan::createDevicesAndQueues()
+void Engine::createDevicesAndQueues()
 {
 	_physicalDevice.choose(_instance, _surface);
     _device.create(_instance, _physicalDevice, _surface);
     _command.init(this);
 }
 
-void Vulkan::createMemoryAllocator()
+void Engine::createMemoryAllocator()
 {
     VmaAllocatorCreateInfo allocInfo = {};
     allocInfo.physicalDevice = _physicalDevice.handle();
@@ -107,7 +106,7 @@ void Vulkan::createMemoryAllocator()
     vmaCreateAllocator(&allocInfo, &_allocator);
 }
 
-void Vulkan::createFrameResources()
+void Engine::createFrameResources()
 {
     for (int i = 0; i < vulkan::FRAME_OVERLAP; ++i)
     {
@@ -115,7 +114,7 @@ void Vulkan::createFrameResources()
     }
 }
 
-void Vulkan::cleanupFrameResources()
+void Engine::cleanupFrameResources()
 {
     for (int i = 0; i < vulkan::FRAME_OVERLAP; ++i)
     {
@@ -123,7 +122,7 @@ void Vulkan::cleanupFrameResources()
     }
 }
 
-void Vulkan::iterateFrameResources(std::function<void(vulkan::FrameResources&)> cb)
+void Engine::iterateFrameResources(std::function<void(vulkan::FrameResources&)> cb)
 {
     for (auto i = 0; i < vulkan::FRAME_OVERLAP; ++i)
     {
@@ -131,7 +130,7 @@ void Vulkan::iterateFrameResources(std::function<void(vulkan::FrameResources&)> 
     }
 }
 
-void Vulkan::destroyBuffer(VkBuffer buffer, VmaAllocation allocation)
+void Engine::destroyBuffer(VkBuffer buffer, VmaAllocation allocation)
 {
     vmaDestroyBuffer(_allocator, buffer, allocation);
 }

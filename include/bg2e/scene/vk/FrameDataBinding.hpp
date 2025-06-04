@@ -17,7 +17,7 @@ public:
         // TODO: Add other frame resources
     };
     
-    FrameDataBinding(bg2e::render::Vulkan * vk) :SceneDataBinding(vk) {}
+    FrameDataBinding(bg2e::render::Engine * engine) :SceneDataBinding(engine) {}
     
     void initFrameResources(bg2e::render::vulkan::DescriptorSetAllocator * frameAllocator) override;
     
