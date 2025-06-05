@@ -434,3 +434,5 @@ bg2e-cpp-deps-osx-win64-v1.zip
 # shader intermediate
 *.bin.h
 
+# Generated when the project is built in macOS using the build_macos.sh script
+imgui.ini

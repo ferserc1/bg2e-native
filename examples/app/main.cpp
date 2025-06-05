@@ -273,7 +273,7 @@ protected:
         plFactory.setDepthFormat(_engine->swapchain().depthImageFormat());
         plFactory.enableDepthtest(true, VK_COMPARE_OP_LESS);
         plFactory.inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-        plFactory.setCullMode(true, VK_FRONT_FACE_COUNTER_CLOCKWISE);
+        plFactory.setCullMode(false, VK_FRONT_FACE_COUNTER_CLOCKWISE);
         
         plFactory.setColorAttachmentFormat(_colorAttachments->attachmentFormats());
 		_pipeline = plFactory.build(_layout);
@@ -305,6 +305,7 @@ protected:
         
         auto secondModel = new bg2e::scene::Node("Second 3D model");
         auto anotherDrawable = new bg2e::scene::DrawableComponent(drawable);
+
         secondModel->addComponent(anotherDrawable);
         secondModel->addComponent(bg2e::scene::TransformComponent::makeTranslated(-2.0f, 0.0f, 0.0f ));
         sceneRoot->addChild(secondModel);
@@ -354,6 +355,8 @@ protected:
         auto drawable = new bg2e::scene::DrawablePNU();
         
         drawable->setMesh(bg2e::db::loadMeshObj<bg2e::geo::MeshPNU>(modelPath));
+        std::cout << "Submeshes loaded: " << drawable->mesh()->submeshes.size() << std::endl;
+        std::cout << "Triangles loaded: " << drawable->mesh()->indices.size() / 3 << std::endl;
         drawable->material(0).setAlbedo(outerAlbedoTexture);
         drawable->material(1).setAlbedo(innerAlbedoTexture);
         drawable->load(_engine);

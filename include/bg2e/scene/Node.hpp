@@ -46,15 +46,15 @@ public:
     void addComponent(Component * comp);
     void addComponent(std::shared_ptr<Component> comp);
     void removeComponent(std::shared_ptr<Component> comp);
-    const std::unordered_map<size_t, std::shared_ptr<Component>>& components() const;
+    const std::unordered_map<std::string, std::shared_ptr<Component>>& components() const;
     
     template <typename ComponentT>
     ComponentT * getComponent()
     {
-        auto hashCode = typeid(ComponentT).hash_code();
-        if (_components.find(hashCode) != _components.end())
+        auto className = typeid(ComponentT).name();
+        if (_components.find(className) != _components.end())
         {
-            return dynamic_cast<ComponentT*>(_components[hashCode].get());
+            return dynamic_cast<ComponentT*>(_components[className].get());
         }
         return nullptr;
     }
@@ -79,7 +79,7 @@ protected:
     Node * _parent = nullptr;
     Scene * _scene = nullptr;
     
-    std::unordered_map<size_t, std::shared_ptr<Component>> _components;
+    std::unordered_map<std::string, std::shared_ptr<Component>> _components;
     
     std::string _name;
     std::string _identifier;

@@ -7,6 +7,8 @@
 
 #include <string>
 
+#define BG2E_SCENE_COMP_CLASS_NAME(c) typeid(*c).name()
+
 namespace bg2e {
 namespace scene {
 
@@ -40,7 +42,7 @@ protected:
     virtual void addedToNode(Node * newOwner) {}
 };
 
-extern BG2E_API size_t componentHash(Component * comp);
+extern BG2E_API std::string componentName(Component * comp);
 
 
 }

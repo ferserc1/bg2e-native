@@ -11,9 +11,9 @@ Scene * Component::scene()
     return _owner != nullptr ? _owner->scene() : nullptr;
 }
 
-size_t componentHash(Component * component)
+std::string componentName(Component * component)
 {
-    return typeid(*component).hash_code();
+    return typeid(*component).name();
 }
 
 }

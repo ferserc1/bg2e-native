@@ -59,8 +59,8 @@ void Node::addComponent(std::shared_ptr<Component> comp)
     {
         comp->removedFromNode(prevOwner);
     }
-    
-    _components[componentHash(comp.get())] = comp;
+
+    _components[BG2E_SCENE_COMP_CLASS_NAME(comp.get())] = comp;
     comp->_owner = this;
     comp->addedToNode(this);
 }
@@ -70,7 +70,7 @@ void Node::removeComponent(std::shared_ptr<Component> comp)
     // TODO: Implement this
 }
 
-const std::unordered_map<size_t, std::shared_ptr<Component>>& Node::components() const
+const std::unordered_map<std::string, std::shared_ptr<Component>>& Node::components() const
 {
     return _components;
 }
