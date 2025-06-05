@@ -111,9 +111,6 @@
     <ClInclude Include="..\include\bg2e\app\MainLoop.hpp">
       <Filter>Header Files\bg2e\app</Filter>
     </ClInclude>
-    <ClInclude Include="..\include\bg2e\render\Vulkan.hpp">
-      <Filter>Header Files\bg2e\render</Filter>
-    </ClInclude>
     <ClInclude Include="..\include\bg2e\base\PlatformTools.hpp">
       <Filter>Header Files\bg2e\base</Filter>
     </ClInclude>
@@ -447,13 +444,25 @@
     <ClInclude Include="..\include\bg2e\utils\utils.hpp">
       <Filter>Header Files\bg2e\utils</Filter>
     </ClInclude>
+    <ClInclude Include="..\include\bg2e\render\Engine.hpp">
+      <Filter>Header Files\bg2e\render</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\bg2e\scene\Untitled.h">
+      <Filter>Source Files\scene</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\scene\EnvironmentComponent.hpp">
+      <Filter>Header Files\bg2e\scene</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\scene\FindNodeComponentVisitor.hpp">
+      <Filter>Header Files\bg2e\scene</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\scene\SkyDomeTextureGenerator.hpp">
+      <Filter>Header Files\bg2e\scene</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\bg2e\app\MainLoop.cpp">
       <Filter>Source Files\app</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\bg2e\render\Vulkan.cpp">
-      <Filter>Source Files\render</Filter>
     </ClCompile>
     <ClCompile Include="..\src\bg2e\base\PlatformTools.cpp">
       <Filter>Source Files\base</Filter>
@@ -681,6 +690,18 @@
       <Filter>Source Files\scene</Filter>
     </ClCompile>
     <ClCompile Include="..\src\bg2e\scene\UpdateVisitor.cpp">
+      <Filter>Source Files\scene</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\bg2e\render\Engine.cpp">
+      <Filter>Source Files\render</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\bg2e\scene\EnvironmentComponent.cpp">
+      <Filter>Source Files\scene</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\bg2e\scene\SkyDomeTextureGenerator.cpp">
+      <Filter>Source Files\scene</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\bg2e\scene\Untitled.cpp">
       <Filter>Source Files\scene</Filter>
     </ClCompile>
   </ItemGroup>

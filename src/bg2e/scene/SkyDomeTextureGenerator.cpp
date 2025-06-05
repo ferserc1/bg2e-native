@@ -23,10 +23,10 @@ uint8_t* SkyDomeTextureGenerator::generate()
     uint8_t * buffer = new uint8_t[size];
 
     auto halfHeight = _height / 2;
-    for (auto line = 0; line < _height; ++line)
+    for (uint32_t line = 0; line < _height; ++line)
     {
         auto lineOffset = line * _width * _bpp;
-        for (auto column = 0; column < _width; ++column)
+        for (uint32_t column = 0; column < _width; ++column)
         {
             auto colOffset = column * _bpp;
             if (line < halfHeight)

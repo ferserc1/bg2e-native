@@ -46,6 +46,7 @@
     <ClInclude Include="..\include\bg2e\render\all.hpp" />
     <ClInclude Include="..\include\bg2e\render\ColorAttachments.hpp" />
     <ClInclude Include="..\include\bg2e\render\CubemapRenderer.hpp" />
+    <ClInclude Include="..\include\bg2e\render\Engine.hpp" />
     <ClInclude Include="..\include\bg2e\render\EnvironmentResources.hpp" />
     <ClInclude Include="..\include\bg2e\render\IrradianceCubemapRenderer.hpp" />
     <ClInclude Include="..\include\bg2e\render\MaterialBase.hpp" />
@@ -55,7 +56,6 @@
     <ClInclude Include="..\include\bg2e\render\SpecularReflectionCubemapRenderer.hpp" />
     <ClInclude Include="..\include\bg2e\render\SphereToCubemapRenderer.hpp" />
     <ClInclude Include="..\include\bg2e\render\Texture.hpp" />
-    <ClInclude Include="..\include\bg2e\render\Vulkan.hpp" />
     <ClInclude Include="..\include\bg2e\render\vulkan\all.hpp" />
     <ClInclude Include="..\include\bg2e\render\vulkan\Buffer.hpp" />
     <ClInclude Include="..\include\bg2e\render\vulkan\CleanupManager.hpp" />
@@ -92,13 +92,16 @@
     <ClInclude Include="..\include\bg2e\scene\Drawable.hpp" />
     <ClInclude Include="..\include\bg2e\scene\DrawableComponent.hpp" />
     <ClInclude Include="..\include\bg2e\scene\DrawVisitor.hpp" />
+    <ClInclude Include="..\include\bg2e\scene\EnvironmentComponent.hpp" />
     <ClInclude Include="..\include\bg2e\scene\FindCameraVisitor.hpp" />
+    <ClInclude Include="..\include\bg2e\scene\FindNodeComponentVisitor.hpp" />
     <ClInclude Include="..\include\bg2e\scene\FindNodeVisitor.hpp" />
     <ClInclude Include="..\include\bg2e\scene\Mesh.hpp" />
     <ClInclude Include="..\include\bg2e\scene\Node.hpp" />
     <ClInclude Include="..\include\bg2e\scene\NodeVisitor.hpp" />
     <ClInclude Include="..\include\bg2e\scene\ResizeViewportVisitor.hpp" />
     <ClInclude Include="..\include\bg2e\scene\Scene.hpp" />
+    <ClInclude Include="..\include\bg2e\scene\SkyDomeTextureGenerator.hpp" />
     <ClInclude Include="..\include\bg2e\scene\TransformComponent.hpp" />
     <ClInclude Include="..\include\bg2e\scene\TransformVisitor.hpp" />
     <ClInclude Include="..\include\bg2e\scene\UpdateVisitor.hpp" />
@@ -117,6 +120,7 @@
     <ClInclude Include="..\include\bg2e\utils\all.hpp" />
     <ClInclude Include="..\include\bg2e\utils\TextureCache.hpp" />
     <ClInclude Include="..\include\bg2e\utils\utils.hpp" />
+    <ClInclude Include="..\src\bg2e\scene\Untitled.h" />
     <ClInclude Include="..\third_party\imgui\imconfig.h" />
     <ClInclude Include="..\third_party\imgui\imgui.h" />
     <ClInclude Include="..\third_party\imgui\imgui_impl_sdl2.h" />
@@ -143,6 +147,7 @@
     <ClCompile Include="..\src\bg2e\geo\sphere.cpp" />
     <ClCompile Include="..\src\bg2e\render\ColorAttachments.cpp" />
     <ClCompile Include="..\src\bg2e\render\CubemapRenderer.cpp" />
+    <ClCompile Include="..\src\bg2e\render\Engine.cpp" />
     <ClCompile Include="..\src\bg2e\render\EnvironmentResources.cpp" />
     <ClCompile Include="..\src\bg2e\render\IrradianceCubemapRenderer.cpp" />
     <ClCompile Include="..\src\bg2e\render\MaterialBase.cpp" />
@@ -151,7 +156,6 @@
     <ClCompile Include="..\src\bg2e\render\SpecularReflectionCubemapRenderer.cpp" />
     <ClCompile Include="..\src\bg2e\render\SphereToCubemapRenderer.cpp" />
     <ClCompile Include="..\src\bg2e\render\Texture_render.cpp" />
-    <ClCompile Include="..\src\bg2e\render\Vulkan.cpp" />
     <ClCompile Include="..\src\bg2e\render\vulkan\Buffer.cpp" />
     <ClCompile Include="..\src\bg2e\render\vulkan\Command.cpp" />
     <ClCompile Include="..\src\bg2e\render\vulkan\common.cpp" />
@@ -180,12 +184,15 @@
     <ClCompile Include="..\src\bg2e\scene\Drawable.cpp" />
     <ClCompile Include="..\src\bg2e\scene\DrawableComponent.cpp" />
     <ClCompile Include="..\src\bg2e\scene\DrawVisitor.cpp" />
+    <ClCompile Include="..\src\bg2e\scene\EnvironmentComponent.cpp" />
     <ClCompile Include="..\src\bg2e\scene\FindCameraVisitor.cpp" />
     <ClCompile Include="..\src\bg2e\scene\FindNodeVisitor.cpp" />
     <ClCompile Include="..\src\bg2e\scene\Node.cpp" />
     <ClCompile Include="..\src\bg2e\scene\ResizeViewportVisitor.cpp" />
     <ClCompile Include="..\src\bg2e\scene\Scene.cpp" />
+    <ClCompile Include="..\src\bg2e\scene\SkyDomeTextureGenerator.cpp" />
     <ClCompile Include="..\src\bg2e\scene\TransformComponent.cpp" />
+    <ClCompile Include="..\src\bg2e\scene\Untitled.cpp" />
     <ClCompile Include="..\src\bg2e\scene\UpdateVisitor.cpp" />
     <ClCompile Include="..\src\bg2e\scene\vk\EnvironmentDataBinding.cpp" />
     <ClCompile Include="..\src\bg2e\scene\vk\FrameDataBinding.cpp" />
