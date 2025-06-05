@@ -60,7 +60,8 @@ void Node::addComponent(std::shared_ptr<Component> comp)
         comp->removedFromNode(prevOwner);
     }
 
-    _components[BG2E_SCENE_COMP_CLASS_NAME(comp.get())] = comp;
+    auto plainPtr = comp.get();
+    _components[BG2E_SCENE_COMP_CLASS_NAME(plainPtr)] = comp;
     comp->_owner = this;
     comp->addedToNode(this);
 }
