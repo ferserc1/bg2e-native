@@ -97,6 +97,7 @@
 		ED85B2122CDBAB9C0039B44D /* CoreFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = ED86884F2CDAAB7300A71ADC /* CoreFoundation.framework */; };
 		ED8A97252D082F5300D35DB8 /* PipelineLayout.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED8A97242D082F5300D35DB8 /* PipelineLayout.cpp */; };
 		ED8B30B82DC6607A004BA5E9 /* SpecularReflectionCubemapRenderer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED8B30B72DC6607A004BA5E9 /* SpecularReflectionCubemapRenderer.cpp */; };
+		ED8F66EF2DF33615003EB7CD /* Renderer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED8F66EE2DF33615003EB7CD /* Renderer.cpp */; };
 		EDB10C082CFF8BE8002A1B0E /* cube.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EDB10C072CFF8BE8002A1B0E /* cube.cpp */; };
 		EDB10C0B2CFF93A1002A1B0E /* logo_2a.png in Copy Assets */ = {isa = PBXBuildFile; fileRef = EDB10C0A2CFF9398002A1B0E /* logo_2a.png */; };
 		EDB3FA0E2DE38F0B00E22418 /* utils.hpp in Headers */ = {isa = PBXBuildFile; fileRef = EDB3FA0D2DE38F0600E22418 /* utils.hpp */; };
@@ -411,6 +412,8 @@
 		ED8A97242D082F5300D35DB8 /* PipelineLayout.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = PipelineLayout.cpp; sourceTree = "<group>"; };
 		ED8B30B62DC66056004BA5E9 /* SpecularReflectionCubemapRenderer.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = SpecularReflectionCubemapRenderer.hpp; sourceTree = "<group>"; };
 		ED8B30B72DC6607A004BA5E9 /* SpecularReflectionCubemapRenderer.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = SpecularReflectionCubemapRenderer.cpp; sourceTree = "<group>"; };
+		ED8F66ED2DF335F3003EB7CD /* Renderer.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Renderer.hpp; sourceTree = "<group>"; };
+		ED8F66EE2DF33615003EB7CD /* Renderer.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Renderer.cpp; sourceTree = "<group>"; };
 		EDA28E922CF311F2009AC1FB /* descriptor_set.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = descriptor_set.hpp; sourceTree = "<group>"; };
 		EDB10C072CFF8BE8002A1B0E /* cube.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = cube.cpp; sourceTree = "<group>"; };
 		EDB10C092CFF8C01002A1B0E /* cube.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = cube.hpp; sourceTree = "<group>"; };
@@ -840,6 +843,7 @@
 				ED150D5A2D043A6200EB93F2 /* SphereToCubemapRenderer.hpp */,
 				ED3419EE2CEF29BE000F69E8 /* Texture.hpp */,
 				ED2191882CDF4E9A00123781 /* Engine.hpp */,
+				ED8F66ED2DF335F3003EB7CD /* Renderer.hpp */,
 			);
 			path = render;
 			sourceTree = "<group>";
@@ -871,6 +875,7 @@
 				ED150D5B2D043A7700EB93F2 /* SphereToCubemapRenderer.cpp */,
 				ED3419EF2CEF29E5000F69E8 /* Texture_render.cpp */,
 				ED2191702CDF4E4C00123781 /* Engine.cpp */,
+				ED8F66EE2DF33615003EB7CD /* Renderer.cpp */,
 			);
 			path = render;
 			sourceTree = "<group>";
@@ -1394,6 +1399,7 @@
 				ED2D56672CE38F37006EF072 /* imgui_impl_vulkan.cpp in Sources */,
 				ED7E8C1A2D2929FE00798406 /* IrradianceCubemapRenderer.cpp in Sources */,
 				ED2191712CDF4E5D00123781 /* Buffer.cpp in Sources */,
+				ED8F66EF2DF33615003EB7CD /* Renderer.cpp in Sources */,
 				ED3B2E942DD892A700C4C166 /* MaterialBase.cpp in Sources */,
 				ED21919F2CDFE28800123781 /* Device.cpp in Sources */,
 				ED2191722CDF4E5D00123781 /* Command.cpp in Sources */,
