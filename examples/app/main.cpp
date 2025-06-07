@@ -1,8 +1,5 @@
 #include <bg2e.hpp>
 
-#include <array>
-#include <numbers>
-
 class RotateCameraComponent : public bg2e::scene::Component {
 public:
     void update(float delta) override
@@ -26,10 +23,7 @@ public:
 		RenderLoopDelegate::init(engine);
   
         _renderer = std::make_unique<bg2e::render::RendererBasicForward>();
-        _renderer->build(engine,
-            VK_FORMAT_R16G16B16A16_SFLOAT,
-            engine->swapchain().depthImageFormat()
-        );
+        _renderer->build(engine);
 	}
  
     void initFrameResources(bg2e::render::vulkan::DescriptorSetAllocator* frameAllocator) override
@@ -74,7 +68,7 @@ public:
 
 		return VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
 	}
-
+ 
 	// ============ User Interface Delegate Functions =========
 	void init(bg2e::render::Engine*, bg2e::ui::UserInterface*) override {
 		_window.setTitle("Basic forward renderer");
@@ -160,11 +154,8 @@ protected:
             "two_submeshes_outer_albedo.jpg"
         );
         
-        auto drawable = new bg2e::scene::DrawablePNU();
-        
-        drawable->setMesh(bg2e::db::loadMeshObj<bg2e::geo::MeshPNU>(modelPath));
-        std::cout << "Submeshes loaded: " << drawable->mesh()->submeshes.size() << std::endl;
-        std::cout << "Triangles loaded: " << drawable->mesh()->indices.size() / 3 << std::endl;
+        auto drawable = new bg2e::scene::Drawable();
+        drawable->setMesh(bg2e::db::loadMeshObj<bg2e::geo::Mesh>(modelPath));
         drawable->material(0).setAlbedo(outerAlbedoTexture);
         drawable->material(1).setAlbedo(innerAlbedoTexture);
         drawable->load(_engine);

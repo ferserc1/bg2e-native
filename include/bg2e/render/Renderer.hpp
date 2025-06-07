@@ -21,8 +21,8 @@ public:
     
     virtual void build(
         bg2e::render::Engine* engine,
-        VkFormat colorAttachmentFormat,
-        VkFormat depthAttachmentFormat
+        VkFormat colorAttachmentFormat = VK_FORMAT_R8G8B8A8_UNORM,
+        VkFormat depthAttachmentFormat = VK_FORMAT_D32_SFLOAT
     ) = 0;
     
     virtual void initFrameResources(bg2e::render::vulkan::DescriptorSetAllocator* frameAllocator) = 0;

@@ -41,7 +41,7 @@ public:
     // This renderer is a prototype for a simple forward renderer. In the future, it will be possible to implement other rendering techniques by inheriting from this class and overriding the necessary methods.
     void build(
         bg2e::render::Engine* engine,
-        VkFormat colorAttachmentFormat = VK_FORMAT_R32G32B32A32_SFLOAT,
+        VkFormat colorAttachmentFormat = VK_FORMAT_R8G8B8A8_UNORM,
         VkFormat depthAttachmentFormat = VK_FORMAT_D32_SFLOAT
     ) override;
 
@@ -91,6 +91,10 @@ protected:
     VkPipelineLayout _pipelineLayout = VK_NULL_HANDLE;
 
     bool _drawSkybox = true;
+
+    struct PushConstants {
+        float gamma;
+    };
 };
 
 }

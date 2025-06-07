@@ -4,6 +4,7 @@
 #include <bg2e/render/vulkan/extensions.hpp>
 #include <bg2e/render/vulkan/factory/GraphicsPipeline.hpp>
 #include <bg2e/render/vulkan/factory/PipelineLayout.hpp>
+#include <bg2e/base/PlatformTools.hpp>
 
 namespace bg2e::render {
 
@@ -128,6 +129,21 @@ void RendererBasicForward::draw(
 
     auto envDS = _environmentDataBinding->newDescriptorSet(frameResources, _environment.get());
 
+    static struct PushConstants pushConstants {
+    #if BG2E_IS_MAC
+        .gamma = 2.2f // Default gamma value, can be changed later
+    #else
+        .gamma = 1.1f
+    #endif
+    };
+    vkCmdPushConstants(
+        cmd,
+        _pipelineLayout,
+        VK_SHADER_STAGE_FRAGMENT_BIT,
+        0,
+        sizeof(PushConstants),
+        &pushConstants
+    );
     _drawVisitor.draw(
         _scene->rootNode(),
         cmd,
@@ -156,10 +172,10 @@ void RendererBasicForward::cleanup() {
 void RendererBasicForward::createPipeline(bg2e::render::Engine* engine) {
     bg2e::render::vulkan::factory::GraphicsPipeline plFactory(engine);
 
-    plFactory.addShader("test/texture_gi.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
-    plFactory.addShader("test/texture_gi.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
+    plFactory.addShader("basic_forward.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
+    plFactory.addShader("basic_forward.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
 
-    plFactory.setInputState<bg2e::render::vulkan::geo::MeshPNU>();
+    plFactory.setInputState<bg2e::render::vulkan::geo::Mesh>();
 
     auto frameDSLayout = frameDataBinding()->createLayout();
     auto objectDSLayout = objectDataBinding()->createLayout();
@@ -169,6 +185,11 @@ void RendererBasicForward::createPipeline(bg2e::render::Engine* engine) {
     layoutFactory.addDescriptorSetLayout(frameDSLayout);
     layoutFactory.addDescriptorSetLayout(objectDSLayout);
     layoutFactory.addDescriptorSetLayout(envDSLayout);
+    layoutFactory.addPushConstantRange(
+        0,
+        sizeof(PushConstants),
+        VK_SHADER_STAGE_FRAGMENT_BIT
+    );
     _pipelineLayout = layoutFactory.build();
 
     plFactory.setDepthFormat(engine->swapchain().depthImageFormat());
