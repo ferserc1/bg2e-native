@@ -74,6 +74,8 @@
 		ED5201DF2CED0AEC00C94253 /* Image_base.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED5201DE2CED0AEC00C94253 /* Image_base.cpp */; };
 		ED5201E12CED112500C94253 /* country_field_sun.jpg in Copy Assets */ = {isa = PBXBuildFile; fileRef = ED5201D52CED082F00C94253 /* country_field_sun.jpg */; };
 		ED533A222CD7AAB700136B04 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED533A212CD7AAB700136B04 /* main.cpp */; };
+		ED5A58D22DF47FF80078BB45 /* DefaultRenderLoopDelegate.hpp in Headers */ = {isa = PBXBuildFile; fileRef = ED5A58D12DF47FF80078BB45 /* DefaultRenderLoopDelegate.hpp */; };
+		ED5A58D42DF480060078BB45 /* DefaultRenderLoopDelegate.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED5A58D32DF480060078BB45 /* DefaultRenderLoopDelegate.cpp */; };
 		ED6862D32CE53E4100A90EE1 /* Input.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED6862D22CE53E4100A90EE1 /* Input.cpp */; };
 		ED76F64B2DD2437000C39A56 /* equirectangular-env.jpg in Copy Assets */ = {isa = PBXBuildFile; fileRef = ED76F6442DD2425200C39A56 /* equirectangular-env.jpg */; };
 		ED76F64C2DD2437000C39A56 /* equirectangular-env2.jpg in Copy Assets */ = {isa = PBXBuildFile; fileRef = ED76F6452DD2425200C39A56 /* equirectangular-env2.jpg */; };
@@ -352,6 +354,8 @@
 		ED533A172CD7A8E700136B04 /* common.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = common.hpp; sourceTree = "<group>"; };
 		ED533A1A2CD7A8F700136B04 /* MainLoop.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = MainLoop.cpp; sourceTree = "<group>"; };
 		ED533A212CD7AAB700136B04 /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = main.cpp; path = ../examples/app/main.cpp; sourceTree = SOURCE_ROOT; };
+		ED5A58D12DF47FF80078BB45 /* DefaultRenderLoopDelegate.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = DefaultRenderLoopDelegate.hpp; sourceTree = "<group>"; };
+		ED5A58D32DF480060078BB45 /* DefaultRenderLoopDelegate.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = DefaultRenderLoopDelegate.cpp; sourceTree = "<group>"; };
 		ED6862D22CE53E4100A90EE1 /* Input.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Input.cpp; sourceTree = "<group>"; };
 		ED6862D42CE53E4B00A90EE1 /* Input.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Input.hpp; sourceTree = "<group>"; };
 		ED6B4B842DC937240003814C /* texture_gi.frag.glsl */ = {isa = PBXFileReference; lastKnownFileType = text; path = texture_gi.frag.glsl; sourceTree = "<group>"; };
@@ -834,6 +838,7 @@
 				ED2191872CDF4E9A00123781 /* vulkan */,
 				ED28C2812DDCCCF900320C2C /* ColorAttachments.hpp */,
 				ED7E8C1D2D292AF000798406 /* CubemapRenderer.hpp */,
+				ED5A58D12DF47FF80078BB45 /* DefaultRenderLoopDelegate.hpp */,
 				ED2191882CDF4E9A00123781 /* Engine.hpp */,
 				ED41D4202DC7500000710509 /* EnvironmentResources.hpp */,
 				ED7E8C182D2929E600798406 /* IrradianceCubemapRenderer.hpp */,
@@ -868,6 +873,7 @@
 				ED21916F2CDF4E4700123781 /* vulkan */,
 				ED28C27F2DDCC94B00320C2C /* ColorAttachments.cpp */,
 				ED7E8C1B2D292AE000798406 /* CubemapRenderer.cpp */,
+				ED5A58D32DF480060078BB45 /* DefaultRenderLoopDelegate.cpp */,
 				ED2191702CDF4E4C00123781 /* Engine.cpp */,
 				ED41D41E2DC74FEC00710509 /* EnvironmentResources.cpp */,
 				ED7E8C192D2929FE00798406 /* IrradianceCubemapRenderer.cpp */,
@@ -1154,6 +1160,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				EDB3FA0E2DE38F0B00E22418 /* utils.hpp in Headers */,
+				ED5A58D22DF47FF80078BB45 /* DefaultRenderLoopDelegate.hpp in Headers */,
 				EDE4512E2DDE473F0025C7DA /* TextureCache.hpp in Headers */,
 				ED0468452DDCEA7500EE8020 /* bg2e.hpp in Headers */,
 				ED0468612DDCF22200EE8020 /* all.hpp in Headers */,
@@ -1386,6 +1393,7 @@
 				EDF045142CE62E1B005C8B96 /* GraphicsPipeline.cpp in Sources */,
 				ED5201DF2CED0AEC00C94253 /* Image_base.cpp in Sources */,
 				EDF045152CE62E1B005C8B96 /* ShaderModule.cpp in Sources */,
+				ED5A58D42DF480060078BB45 /* DefaultRenderLoopDelegate.cpp in Sources */,
 				ED28C2802DDCCCE800320C2C /* ColorAttachments.cpp in Sources */,
 				ED8B30B82DC6607A004BA5E9 /* SpecularReflectionCubemapRenderer.cpp in Sources */,
 				EDF045162CE62E1B005C8B96 /* ComputePipeline.cpp in Sources */,

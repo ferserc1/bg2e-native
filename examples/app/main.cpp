@@ -43,6 +43,13 @@ public:
         _renderer->resize(newExtent);
 	}
 
+    void update(
+        uint32_t currentFrame,
+        bg2e::render::vulkan::FrameResources& frameResources
+    ) override {
+        _renderer->update(delta());
+    }
+
 	VkImageLayout render(
 		VkCommandBuffer cmd,
 		uint32_t currentFrame,
@@ -50,7 +57,6 @@ public:
 		const bg2e::render::vulkan::Image* depthImage,
 		bg2e::render::vulkan::FrameResources& frameResources
 	) override {
-        _renderer->update(delta());
         _renderer->draw(
             cmd,
             currentFrame,
