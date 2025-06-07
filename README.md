@@ -19,6 +19,12 @@ You need to install Vulkan SDK, and during the installation, make sure you also 
 
 If you have not installed Vulkan with these options, please reinstall.
 
+> Note: for now, the Linux ARM64 binaries of Vulkan SDK are not available to download. You need to build it from source, using the script provided in the VulkanSDK download from the website. In this case, you only need to install SDL2, because GLM is a dependency needed to build VulkanSDK. You can use your package manager (dnf, apt...) or build it from sources. For example:
+
+```sh
+$ sudo dnf install SDL2-devel
+```
+
 The minimum Vulkan version required is 1.3.290. If you are using macOS, pay special attention to the Vulkan configuration part.
 
 You will also need the development tools specific for your operating system:

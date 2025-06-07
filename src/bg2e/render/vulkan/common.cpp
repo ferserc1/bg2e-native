@@ -12,8 +12,13 @@
 #pragma clang diagnostic ignored "-Wunreachable-code-fallthrough"
 #endif
 
+
 #define VMA_IMPLEMENTATION
+#ifdef __linux__
+#include <vma/vk_mem_alloc.h>
+#else
 #include "vk_mem_alloc.h"
+#endif
 
 #ifndef _WIN32
 #pragma clang diagnostic pop

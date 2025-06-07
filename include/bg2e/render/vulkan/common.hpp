@@ -12,9 +12,17 @@
 #pragma clang diagnostic ignored "-Wunused-variable"
 #pragma clang diagnostic ignored "-Wimplicit-fallthrough"
 #pragma clang diagnostic ignored "-Wunreachable-code-fallthrough"
+
+
 #endif
 
+// Only in Linux
+#if defined(__linux__)
+#include <vma/vk_mem_alloc.h>
+#else
 #include "vk_mem_alloc.h"
+#endif
+
 
 #ifndef _WIN32
 #pragma clang diagnostic pop
