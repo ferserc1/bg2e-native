@@ -13,11 +13,67 @@ public:
     }
 };
 
-class BasicSceneDelegate : public bg2e::render::DefaultRenderLoopDelegate<bg2e::render::RendererBasicForward>,
+class BasicSceneDelegate : public bg2e::render::RenderLoopDelegate,
 	public bg2e::app::InputDelegate,
 	public bg2e::ui::UserInterfaceDelegate
 {
 public:
+	void init(bg2e::render::Engine * engine) override
+	{
+		RenderLoopDelegate::init(engine);
+  
+        _renderer = std::make_unique<bg2e::render::RendererBasicForward>();
+        _renderer->build(engine);
+	}
+ 
+    void initFrameResources(bg2e::render::vulkan::DescriptorSetAllocator* frameAllocator) override
+    {
+        _renderer->initFrameResources(frameAllocator);
+        
+        frameAllocator->initPool();
+    }
+ 
+    void initScene() override
+    {
+        _renderer->initScene(createScene());
+    }
+
+	void swapchainResized(VkExtent2D newExtent) override
+	{
+        _renderer->resize(newExtent);
+	}
+
+    void update(
+        uint32_t currentFrame,
+        bg2e::render::vulkan::FrameResources& frameResources
+    ) override {
+        _renderer->update(delta());
+    }
+
+	VkImageLayout render(
+		VkCommandBuffer cmd,
+		uint32_t currentFrame,
+		const bg2e::render::vulkan::Image* colorImage,
+		const bg2e::render::vulkan::Image* depthImage,
+		bg2e::render::vulkan::FrameResources& frameResources
+	) override {
+        _renderer->draw(
+            cmd,
+            currentFrame,
+            depthImage,
+            frameResources
+        );
+
+        bg2e::render::vulkan::Image::cmdCopy(
+            cmd,
+            _renderer->colorAttachments()->imageWithIndex(0)->handle(),
+            _renderer->colorAttachments()->extent(),
+            VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+            colorImage->handle(), colorImage->extent2D(), VK_IMAGE_LAYOUT_UNDEFINED
+        );
+
+		return VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+	}
  
 	// ============ User Interface Delegate Functions =========
 	void init(bg2e::render::Engine*, bg2e::ui::UserInterface*) override {
@@ -31,17 +87,27 @@ public:
 
 	void drawUI() override
 	{
-        auto drawSkybox = renderer()->drawSkybox();
-        _window.draw([&]() {
-            bg2e::ui::BasicWidgets::checkBox("Draw Skybox", &drawSkybox);
-        });
-        renderer()->setDrawSkybox(drawSkybox);
+        auto specificRenderer = dynamic_cast<bg2e::render::RendererBasicForward*>(_renderer.get());
+        if (specificRenderer) {
+            auto drawSkybox = specificRenderer->drawSkybox();
+            _window.draw([&]() {
+                bg2e::ui::BasicWidgets::checkBox("Draw Skybox", &drawSkybox);
+            });
+            specificRenderer->setDrawSkybox(drawSkybox);
+        }
+	}
+    
+	void cleanup() override
+	{
+        _renderer->cleanup();
+        bg2e::utils::TextureCache::destroy();
 	}
 
 protected:
 	bg2e::ui::Window _window;
-    
-    std::shared_ptr<bg2e::scene::Node> createScene() override
+    std::unique_ptr<bg2e::render::Renderer> _renderer;
+      
+    std::shared_ptr<bg2e::scene::Node> createScene()
     {
         auto sceneRoot = std::make_shared<bg2e::scene::Node>("Scene Root");
         sceneRoot->addComponent(new bg2e::scene::EnvironmentComponent(bg2e::base::PlatformTools::assetPath(), "country_field_sun.jpg"));

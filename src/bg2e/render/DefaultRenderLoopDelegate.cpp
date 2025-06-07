@@ -7,6 +7,12 @@
 namespace bg2e::render {
 
 template <typename RendererT>
+DefaultRenderLoopDelegate<RendererT>::~DefaultRenderLoopDelegate<RendererT>()
+{
+
+}
+
+template <typename RendererT>
 void DefaultRenderLoopDelegate<RendererT>::init(render::Engine * engine)
 {
     RenderLoopDelegate::init(engine);
@@ -77,6 +83,7 @@ void DefaultRenderLoopDelegate<RendererT>::cleanup()
     bg2e::utils::TextureCache::destroy();
 }
 
+template DefaultRenderLoopDelegate<RendererBasicForward>::~DefaultRenderLoopDelegate<RendererBasicForward>();
 template void DefaultRenderLoopDelegate<RendererBasicForward>::init(render::Engine * engine);
 template void DefaultRenderLoopDelegate<RendererBasicForward>::initFrameResources(render::vulkan::DescriptorSetAllocator*);
 template void DefaultRenderLoopDelegate<RendererBasicForward>::initScene();

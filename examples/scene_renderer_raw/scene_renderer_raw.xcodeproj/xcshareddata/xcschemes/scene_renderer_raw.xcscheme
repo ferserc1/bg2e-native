@@ -15,10 +15,10 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "ED5339EF2CD7A1E900136B04"
-               BuildableName = "example-app.app"
-               BlueprintName = "example-app"
-               ReferencedContainer = "container:bg2e.xcodeproj">
+               BlueprintIdentifier = "EDD77E3C2CEA600200278155"
+               BuildableName = "scene_renderer_raw.app"
+               BlueprintName = "scene_renderer_raw"
+               ReferencedContainer = "container:scene_renderer_raw.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -45,10 +45,10 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "ED5339EF2CD7A1E900136B04"
-            BuildableName = "example-app.app"
-            BlueprintName = "example-app"
-            ReferencedContainer = "container:bg2e.xcodeproj">
+            BlueprintIdentifier = "EDD77E3C2CEA600200278155"
+            BuildableName = "scene_renderer_raw.app"
+            BlueprintName = "scene_renderer_raw"
+            ReferencedContainer = "container:scene_renderer_raw.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </LaunchAction>
@@ -62,10 +62,10 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "ED5339EF2CD7A1E900136B04"
-            BuildableName = "example-app.app"
-            BlueprintName = "example-app"
-            ReferencedContainer = "container:bg2e.xcodeproj">
+            BlueprintIdentifier = "EDD77E3C2CEA600200278155"
+            BuildableName = "scene_renderer_raw.app"
+            BlueprintName = "scene_renderer_raw"
+            ReferencedContainer = "container:scene_renderer_raw.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </ProfileAction>

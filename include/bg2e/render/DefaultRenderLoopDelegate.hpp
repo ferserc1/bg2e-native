@@ -9,7 +9,7 @@
 namespace bg2e {
 namespace render {
 
-template<typename RendererR>
+template<typename RendererT>
 class BG2E_API DefaultRenderLoopDelegate : public RenderLoopDelegate {
 public:
     virtual ~DefaultRenderLoopDelegate() = 0;
@@ -38,8 +38,10 @@ public:
 	void cleanup() override;
 
 
+    inline RendererT * renderer() { return _renderer.get(); }
+    
 protected:
-	std::unique_ptr<Renderer> _renderer;
+	std::unique_ptr<RendererT> _renderer;
 
     virtual std::shared_ptr<scene::Node> createScene() = 0;
 };
