@@ -8,9 +8,13 @@
 namespace bg2e::render {
 
 void RendererBasicForward::build(
-    bg2e::render::Engine* engine
+    bg2e::render::Engine* engine,
+    VkFormat colorAttachmentFormat,
+    VkFormat depthAttachmentFormat
 ) {
     _engine = engine;
+    _colorAttachmentFormat = colorAttachmentFormat;
+    _depthAttachmentFormat = depthAttachmentFormat;
 
     _colorAttachments = std::unique_ptr<bg2e::render::ColorAttachments>(
         new bg2e::render::ColorAttachments(_engine, {

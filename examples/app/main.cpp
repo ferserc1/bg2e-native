@@ -23,16 +23,13 @@ class BasicSceneDelegate : public bg2e::render::RenderLoopDelegate,
 public:
 	void init(bg2e::render::Engine * engine) override
 	{
-		using namespace bg2e::render::vulkan;
 		RenderLoopDelegate::init(engine);
   
         _renderer = std::make_unique<bg2e::render::RendererBasicForward>();
-        auto specificRenderer = dynamic_cast<bg2e::render::RendererBasicForward*>(_renderer.get());
-        if (specificRenderer) {
-            specificRenderer->setColorAttachmentFormat(VK_FORMAT_R16G16B16A16_SFLOAT);
-            specificRenderer->setDepthAttachmentFormat(engine->swapchain().depthImageFormat());
-            specificRenderer->build(engine);
-        }
+        _renderer->build(engine,
+            VK_FORMAT_R16G16B16A16_SFLOAT,
+            engine->swapchain().depthImageFormat()
+        );
 	}
  
     void initFrameResources(bg2e::render::vulkan::DescriptorSetAllocator* frameAllocator) override
@@ -59,12 +56,6 @@ public:
 		const bg2e::render::vulkan::Image* depthImage,
 		bg2e::render::vulkan::FrameResources& frameResources
 	) override {
-		using namespace bg2e::render::vulkan;
-        auto forwardRenderer = dynamic_cast<bg2e::render::RendererBasicForward*>(_renderer.get());
-        if (!forwardRenderer) {
-            throw std::runtime_error("Renderer is not of type RendererBasicForward");
-        }
-  
         _renderer->update(delta());
         _renderer->draw(
             cmd,
@@ -73,10 +64,10 @@ public:
             frameResources
         );
 
-        Image::cmdCopy(
+        bg2e::render::vulkan::Image::cmdCopy(
             cmd,
-            forwardRenderer->colorAttachments()->imageWithIndex(0)->handle(),
-            forwardRenderer->colorAttachments()->extent(),
+            _renderer->colorAttachments()->imageWithIndex(0)->handle(),
+            _renderer->colorAttachments()->extent(),
             VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
             colorImage->handle(), colorImage->extent2D(), VK_IMAGE_LAYOUT_UNDEFINED
         );
@@ -86,22 +77,21 @@ public:
 
 	// ============ User Interface Delegate Functions =========
 	void init(bg2e::render::Engine*, bg2e::ui::UserInterface*) override {
-		_window.setTitle("ImGui Wrapper Demo");
+		_window.setTitle("Basic forward renderer");
 		_window.options.noClose = true;
-		_window.options.minWidth = 100;
-		_window.options.minHeight = 250;
+		_window.options.minWidth = 190;
+		_window.options.minHeight = 90;
 		_window.setPosition(0, 0);
-		_window.setSize(150, 270);
+		_window.setSize(200, 100);
 	}
 
 	void drawUI() override
 	{
-		using namespace bg2e::ui;
         auto specificRenderer = dynamic_cast<bg2e::render::RendererBasicForward*>(_renderer.get());
         if (specificRenderer) {
             auto drawSkybox = specificRenderer->drawSkybox();
             _window.draw([&]() {
-                BasicWidgets::checkBox("Draw Skybox", &drawSkybox);
+                bg2e::ui::BasicWidgets::checkBox("Draw Skybox", &drawSkybox);
             });
             specificRenderer->setDrawSkybox(drawSkybox);
         }
@@ -114,9 +104,7 @@ public:
 	}
 
 protected:
-
 	bg2e::ui::Window _window;
-     
     std::unique_ptr<bg2e::render::Renderer> _renderer;
       
     std::shared_ptr<bg2e::scene::Node> createScene()
@@ -152,16 +140,13 @@ protected:
         cameraRotation->addComponent(new bg2e::scene::TransformComponent());
         cameraRotation->addComponent(new RotateCameraComponent());
         cameraRotation->addChild(cameraNode);
-
         sceneRoot->addChild(cameraRotation);
         
         return sceneRoot;
     }
 
 	bg2e::scene::DrawableBase * loadDrawable()
-	{
-		using namespace bg2e::render::vulkan;
-  
+	{  
         std::filesystem::path modelPath = bg2e::base::PlatformTools::assetPath();
         modelPath.append("two_submeshes.obj");
         

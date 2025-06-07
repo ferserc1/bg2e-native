@@ -24,19 +24,12 @@ public:
     RendererBasicForward() = default;
     virtual ~RendererBasicForward() = default;
 
-    inline VkFormat colorAttachmentFormat() const { return _colorAttachmentFormat; }
-    inline void setColorAttachmentFormat(VkFormat format) { _colorAttachmentFormat = format; }
-
-    inline VkFormat depthAttachmentFormat() const { return _depthAttachmentFormat; }
-    inline void setDepthAttachmentFormat(VkFormat format) { _depthAttachmentFormat = format; }
-    
     inline VkPipeline pipeline() const { return _pipeline; }
     inline VkPipelineLayout pipelineLayout() const { return _pipelineLayout; }
 
     inline const bg2e::scene::vk::FrameDataBinding* frameDataBinding() const { return _frameDataBinding.get(); }
     inline const bg2e::scene::vk::ObjectDataBinding* objectDataBinding() const { return _objectDataBinding.get(); }
     inline const bg2e::scene::vk::EnvironmentDataBinding* environmentDataBinding() const { return _environmentDataBinding.get(); }
-    inline const bg2e::render::ColorAttachments* colorAttachments() const { return _colorAttachments.get(); }
 
     inline bg2e::scene::vk::FrameDataBinding* frameDataBinding() { return _frameDataBinding.get(); }
     inline bg2e::scene::vk::ObjectDataBinding* objectDataBinding() { return _objectDataBinding.get(); }
@@ -47,7 +40,9 @@ public:
 
     // This renderer is a prototype for a simple forward renderer. In the future, it will be possible to implement other rendering techniques by inheriting from this class and overriding the necessary methods.
     void build(
-        bg2e::render::Engine* engine
+        bg2e::render::Engine* engine,
+        VkFormat colorAttachmentFormat = VK_FORMAT_R32G32B32A32_SFLOAT,
+        VkFormat depthAttachmentFormat = VK_FORMAT_D32_SFLOAT
     ) override;
 
     void initFrameResources(
@@ -78,12 +73,6 @@ public:
 protected:
 
     bg2e::render::Engine* _engine = nullptr;
-
-    // Specific for forward rendering one unique color attachment and a depth attachment
-    VkFormat _colorAttachmentFormat = VK_FORMAT_R16G16B16A16_SFLOAT;
-    VkFormat _depthAttachmentFormat = VK_FORMAT_D32_SFLOAT;
-
-    std::unique_ptr<bg2e::render::ColorAttachments> _colorAttachments;
 
     std::unique_ptr<bg2e::scene::vk::FrameDataBinding> _frameDataBinding;
     std::unique_ptr<bg2e::scene::vk::ObjectDataBinding> _objectDataBinding;
