@@ -17,6 +17,8 @@ You need to install Vulkan SDK, and during the installation, make sure you also 
 - SDL2
 - Vulkan Memory Allocator
 
+> Note: If you are using macOS, see the specific notes about macOS configuration. It's important that you install the exact version of VulkanSDK described in macOS configuration notes.
+
 If you have not installed Vulkan with these options, please reinstall.
 
 > Note: for now, the Linux ARM64 binaries of Vulkan SDK are not available to download. You need to build it from source, using the script provided in the VulkanSDK download from the website. In this case, you only need to install SDL2, because GLM is a dependency needed to build VulkanSDK. You can use your package manager (dnf, apt...) or build it from sources. For example:
@@ -38,11 +40,15 @@ You will also need the development tools specific for your operating system:
 
 On macOS the configuration of Vulkan is a bit special, as on this platform there is no concept of a system or user environment variable. Environment variables only work for command line applications, so you have to set the paths to Vulkan manually.
 
-However, if you install VulkanSDK in your user folder (which is the default installation location) you won't have to make many changes.
+However, if you install VulkanSDK in your user folder (which is the default installation location) and you install the exact version of VulkanSDK specified here, you won't have to make many changes.
+
+Currently, the VulkanSDK version required form macOS is **1.4.313.1**
 
 In the project configuration, check that the `VULKAN_SDK` setting corresponds with the location of your VulkanSDK installation. If you have instaled a different version of Vulkan, you can change here this setting:
 
-- VULKAN_SDK Default value: `$(HOME)/VulkanSDK/1.3.290.0/macOS`
+- VULKAN_SDK Default value: `$(HOME)/VulkanSDK/1.4.313.1/macOS`
+
+Note that if you change the version of the VulkanSDK, you may also need to modify your Xcode projects to copy the correct versions of the library into the application package. It is best to use the version of VulkanSDK specified here, in the case of macOS
 
 ### Windows
 
