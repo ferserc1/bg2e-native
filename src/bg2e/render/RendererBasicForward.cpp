@@ -1,11 +1,13 @@
-#include <bg2e/render/Renderer.hpp>
+#include <bg2e/render/RendererBasicForward.hpp>
 #include <bg2e/scene/SkyDomeTextureGenerator.hpp>
 #include <bg2e/render/vulkan/macros/graphics.hpp>
 #include <bg2e/render/vulkan/extensions.hpp>
+#include <bg2e/render/vulkan/factory/GraphicsPipeline.hpp>
+#include <bg2e/render/vulkan/factory/PipelineLayout.hpp>
 
 namespace bg2e::render {
 
-void Renderer::build(
+void RendererBasicForward::build(
     bg2e::render::Engine* engine
 ) {
     _engine = engine;
@@ -24,9 +26,11 @@ void Renderer::build(
         _colorAttachments->attachmentFormats(),
         _engine->swapchain().depthImageFormat()
     );
+
+    createPipeline(engine);
 }
 
-void Renderer::initFrameResources(
+void RendererBasicForward::initFrameResources(
     bg2e::render::vulkan::DescriptorSetAllocator* frameAllocator
 ) {
     _frameDataBinding->initFrameResources(frameAllocator);
@@ -35,7 +39,7 @@ void Renderer::initFrameResources(
     _environment->initFrameResources(frameAllocator);
 }
 
-void Renderer::initScene(
+void RendererBasicForward::initScene(
     std::shared_ptr<bg2e::scene::Node> sceneRoot
 ) {
     _scene = std::make_unique<bg2e::scene::Scene>();
@@ -63,7 +67,7 @@ void Renderer::initScene(
     });
 }
 
-void Renderer::resize(
+void RendererBasicForward::resize(
     VkExtent2D newExtent
 ) {
     // This function releases all previous resources before recreating the images
@@ -72,7 +76,7 @@ void Renderer::resize(
     _resizeVisitor.resizeViewport(_scene->rootNode(), newExtent);
 }
 
-void Renderer::update(
+void RendererBasicForward::update(
     float delta
 ) {
     _updateVisitor.update(_scene->rootNode(), delta);
@@ -83,7 +87,7 @@ void Renderer::update(
     }
 }
 
-void Renderer::draw(
+void RendererBasicForward::draw(
     VkCommandBuffer cmd,
     uint32_t currentFrame,
     const bg2e::render::vulkan::Image* depthImage,
@@ -141,8 +145,43 @@ void Renderer::draw(
     vulkan::cmdEndRendering(cmd);
 }
 
-void Renderer::cleanup() {
+void RendererBasicForward::cleanup() {
     _colorAttachments->cleanup();
+}
+
+void RendererBasicForward::createPipeline(bg2e::render::Engine* engine) {
+    bg2e::render::vulkan::factory::GraphicsPipeline plFactory(engine);
+
+    plFactory.addShader("test/texture_gi.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
+    plFactory.addShader("test/texture_gi.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    plFactory.setInputState<bg2e::render::vulkan::geo::MeshPNU>();
+
+    auto frameDSLayout = frameDataBinding()->createLayout();
+    auto objectDSLayout = objectDataBinding()->createLayout();
+    auto envDSLayout = environmentDataBinding()->createLayout();
+
+    bg2e::render::vulkan::factory::PipelineLayout layoutFactory(engine);
+    layoutFactory.addDescriptorSetLayout(frameDSLayout);
+    layoutFactory.addDescriptorSetLayout(objectDSLayout);
+    layoutFactory.addDescriptorSetLayout(envDSLayout);
+    _pipelineLayout = layoutFactory.build();
+
+    plFactory.setDepthFormat(engine->swapchain().depthImageFormat());
+    plFactory.enableDepthtest(true, VK_COMPARE_OP_LESS);
+    plFactory.inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+    plFactory.setCullMode(false, VK_FRONT_FACE_COUNTER_CLOCKWISE);
+
+    plFactory.setColorAttachmentFormat(colorAttachments()->attachmentFormats());
+    _pipeline = plFactory.build(_pipelineLayout);
+
+    engine->cleanupManager().push([&, objectDSLayout, envDSLayout, frameDSLayout](VkDevice dev) {
+        vkDestroyPipeline(dev, _pipeline, nullptr);
+        vkDestroyPipelineLayout(dev, _pipelineLayout, nullptr);
+        vkDestroyDescriptorSetLayout(dev, objectDSLayout, nullptr);
+        vkDestroyDescriptorSetLayout(dev, envDSLayout, nullptr);
+        vkDestroyDescriptorSetLayout(dev, frameDSLayout, nullptr);
+    });
 }
 
 }

@@ -16,6 +16,7 @@ public:
     
     ProceduralTextureGenerator() :_width{0}, _height{0}, _bpp{0} {}
     ProceduralTextureGenerator(uint32_t w, uint32_t h, uint32_t bpp) :_width{w}, _height{h}, _bpp{bpp} {}
+    virtual ~ProceduralTextureGenerator() = default;
     
     // Generate the buffer based on _width, _height and _bpp parameters.
     virtual uint8_t* generate() = 0;

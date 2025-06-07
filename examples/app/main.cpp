@@ -1,4 +1,3 @@
-
 #include <bg2e.hpp>
 
 #include <array>
@@ -27,10 +26,13 @@ public:
 		using namespace bg2e::render::vulkan;
 		RenderLoopDelegate::init(engine);
   
-        _renderer = std::make_unique<bg2e::render::Renderer>();
-        _renderer->setColorAttachmentFormat(VK_FORMAT_R16G16B16A16_SFLOAT);
-        _renderer->setDepthAttachmentFormat(engine->swapchain().depthImageFormat());
-        _renderer->build(engine);
+        _renderer = std::make_unique<bg2e::render::RendererBasicForward>();
+        auto specificRenderer = dynamic_cast<bg2e::render::RendererBasicForward*>(_renderer.get());
+        if (specificRenderer) {
+            specificRenderer->setColorAttachmentFormat(VK_FORMAT_R16G16B16A16_SFLOAT);
+            specificRenderer->setDepthAttachmentFormat(engine->swapchain().depthImageFormat());
+            specificRenderer->build(engine);
+        }
 	}
  
     void initFrameResources(bg2e::render::vulkan::DescriptorSetAllocator* frameAllocator) override
@@ -42,10 +44,7 @@ public:
  
     void initScene() override
     {
-        auto scene = createScene();
-        _renderer->initScene(scene);
-        
-		createPipeline();
+        _renderer->initScene(createScene());
     }
 
 	void swapchainResized(VkExtent2D newExtent) override
@@ -61,9 +60,12 @@ public:
 		bg2e::render::vulkan::FrameResources& frameResources
 	) override {
 		using namespace bg2e::render::vulkan;
+        auto forwardRenderer = dynamic_cast<bg2e::render::RendererBasicForward*>(_renderer.get());
+        if (!forwardRenderer) {
+            throw std::runtime_error("Renderer is not of type RendererBasicForward");
+        }
   
         _renderer->update(delta());
-        
         _renderer->draw(
             cmd,
             currentFrame,
@@ -73,8 +75,8 @@ public:
 
         Image::cmdCopy(
             cmd,
-            _renderer->colorAttachments()->imageWithIndex(0)->handle(),
-            _renderer->colorAttachments()->extent(),
+            forwardRenderer->colorAttachments()->imageWithIndex(0)->handle(),
+            forwardRenderer->colorAttachments()->extent(),
             VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
             colorImage->handle(), colorImage->extent2D(), VK_IMAGE_LAYOUT_UNDEFINED
         );
@@ -95,11 +97,14 @@ public:
 	void drawUI() override
 	{
 		using namespace bg2e::ui;
-        auto drawSkybox = _renderer->drawSkybox();
-		_window.draw([&]() {
-            BasicWidgets::checkBox("Draw Skybox", &drawSkybox);
-		});
-        _renderer->setDrawSkybox(drawSkybox);
+        auto specificRenderer = dynamic_cast<bg2e::render::RendererBasicForward*>(_renderer.get());
+        if (specificRenderer) {
+            auto drawSkybox = specificRenderer->drawSkybox();
+            _window.draw([&]() {
+                BasicWidgets::checkBox("Draw Skybox", &drawSkybox);
+            });
+            specificRenderer->setDrawSkybox(drawSkybox);
+        }
 	}
     
 	void cleanup() override
@@ -111,51 +116,9 @@ public:
 protected:
 
 	bg2e::ui::Window _window;
-
-	VkPipelineLayout _layout = VK_NULL_HANDLE;
-	VkPipeline _pipeline = VK_NULL_HANDLE;
- 
+     
     std::unique_ptr<bg2e::render::Renderer> _renderer;
       
-	void createPipeline()
-	{
-		bg2e::render::vulkan::factory::GraphicsPipeline plFactory(_engine);
-
-		plFactory.addShader("test/texture_gi.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
-        plFactory.addShader("test/texture_gi.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
-        
-        plFactory.setInputState<bg2e::render::vulkan::geo::MeshPNU>();
-    
-        auto frameDSLayout = _renderer->frameDataBinding()->createLayout();
-        auto objectDSLayout = _renderer->objectDataBinding()->createLayout();
-        auto envDSLayout = _renderer->environmentDataBinding()->createLayout();
-        
-        bg2e::render::vulkan::factory::PipelineLayout layoutFactory(_engine);
-        layoutFactory.addDescriptorSetLayout(frameDSLayout);
-        layoutFactory.addDescriptorSetLayout(objectDSLayout);
-        layoutFactory.addDescriptorSetLayout(envDSLayout);
-        _layout = layoutFactory.build();
-        
-        plFactory.setDepthFormat(_engine->swapchain().depthImageFormat());
-        plFactory.enableDepthtest(true, VK_COMPARE_OP_LESS);
-        plFactory.inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-        plFactory.setCullMode(false, VK_FRONT_FACE_COUNTER_CLOCKWISE);
-        
-        plFactory.setColorAttachmentFormat(_renderer->colorAttachments()->attachmentFormats());
-		_pipeline = plFactory.build(_layout);
-  
-        _renderer->setPipelineLayout(_layout);
-        _renderer->setPipeline(_pipeline);
-  
-		_engine->cleanupManager().push([&, objectDSLayout, envDSLayout, frameDSLayout](VkDevice dev) {
-			vkDestroyPipeline(dev, _pipeline, nullptr);
-			vkDestroyPipelineLayout(dev, _layout, nullptr);
-            vkDestroyDescriptorSetLayout(dev, objectDSLayout, nullptr);
-            vkDestroyDescriptorSetLayout(dev, envDSLayout, nullptr);
-            vkDestroyDescriptorSetLayout(dev, frameDSLayout, nullptr);
-		});
-	}
- 
     std::shared_ptr<bg2e::scene::Node> createScene()
     {
         auto sceneRoot = std::make_shared<bg2e::scene::Node>("Scene Root");
