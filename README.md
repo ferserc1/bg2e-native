@@ -40,15 +40,25 @@ You will also need the development tools specific for your operating system:
 
 On macOS the configuration of Vulkan is a bit special, as on this platform there is no concept of a system or user environment variable. Environment variables only work for command line applications, so you have to set the paths to Vulkan manually.
 
-However, if you install VulkanSDK in your user folder (which is the default installation location) and you install the exact version of VulkanSDK specified here, you won't have to make many changes.
+Fortunately, inside Xcode it is possible to add environment variables, so all you have to do to compile the macOS version of the bg2 engine is to modify two variables in the project. This also applies to the example projects, which are inside the `examples` directory and are independent: to compile the examples, you will have to set the environment variables beforehand.
 
-Currently, the VulkanSDK version required form macOS is **1.4.313.1**
+However, you can skip this step by installing the preconfigured Vulkan SDK version in **your home directory**, which is currently **1.4.313.1**.
 
-In the project configuration, check that the `VULKAN_SDK` setting corresponds with the location of your VulkanSDK installation. If you have instaled a different version of Vulkan, you can change here this setting:
+The environment variables that you have to set, if you install a different version of the SDK, or if you install it in a different location, are defined in the project:
 
-- VULKAN_SDK Default value: `$(HOME)/VulkanSDK/1.4.313.1/macOS`
+1. Select the `bg2e` project in the **project navigator**.
+2. In the central panel, select the **bg2e** project to change the environment variables for all targets in the project.
+3. In the **Build Settings** panel, type the search string `VULKAN`. Modify the following properties:
+    * `VULKAN_SDK`: Set the path to the Vulkan SDK `macOS` folder here. For SDK version `1.4.313.1` this would be: `~/VulkanSDK/1.4.313.1/macOS`.
+    * VULKAN_LIB_VERSION: This is the version of the `libvulkan.1.x.xxx.dylib` library. Look for this library in the Vulkan SDK `lib` directory to make sure what the name is, but if nothing changes in the future it should correspond to the name of the SDK folder, with the last digit removed. For version `1.4.313.1` it would be `1.4.313`.
 
-Note that if you change the version of the VulkanSDK, you may also need to modify your Xcode projects to copy the correct versions of the library into the application package. It is best to use the version of VulkanSDK specified here, in the case of macOS
+With this set up, you can now compile the project. The `libbg2e-native.a` library will be generated in the `bin/Debug` or `bin/Release` folder, depending on the configuration. If you want to compile the library from the terminal, you can use the `build_macos.sh` script located in the root of the repository.
+
+> Note: The `build_macos.sh` script compiles to the **Release** version of the Xcode project, so for the compilation to work you have to take into account the previous Vulkan SDK version settings.
+
+## macOS Package bundle
+
+In the document [macOS Package Bundle](macos-app-bundle.md) you have detailed instructions on how to create an Xcode project for a bg2 engine application, with all the necessary resources to distribute the application as a bundle.
 
 ### Windows
 
