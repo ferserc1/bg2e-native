@@ -26,7 +26,7 @@ echo "Building scheme: $SCHEME"
 echo "Using project: $PROJECT_PATH"
 
 # Build the project
-xcodebuild -project "$PROJECT_PATH" -scheme "$SCHEME" -configuration $CONFIGURATION build
+xcodebuild -project "$PROJECT_PATH" -scheme "$SCHEME" -configuration $CONFIGURATION build -destination 'platform=macOS,arch=x86_64' -destination 'platform=macOS,arch=arm64'
 
 # Check if build was successful
 if [ $? -eq 0 ]; then

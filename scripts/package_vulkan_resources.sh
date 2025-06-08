@@ -69,7 +69,8 @@ for lib_file in "${LIB_FILES[@]}"; do
 done
 
 # Create symbolic link for libvulkan.1.dylib
-ln -sf "$FRAMEWORKS_DIR/$LIBVULKAN_NAME" "$FRAMEWORKS_DIR/libvulkan.1.dylib"
-echo "  - Created symbolic link libvulkan.1.dylib -> $LIBVULKAN_NAME"
+# The symbolic link does not work when distributing the application. Instead, we copy the library
+#ln -sf "$FRAMEWORKS_DIR/$LIBVULKAN_NAME" "$FRAMEWORKS_DIR/libvulkan.1.dylib"
 
-
+cp "$FRAMEWORKS_DIR/$LIBVULKAN_NAME" "$FRAMEWORKS_DIR/libvulkan.1.dylib"
+echo "  - Adding libvulkan.1.dylib library"

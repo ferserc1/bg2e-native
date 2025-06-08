@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Scheme
-   LastUpgradeVersion = "1630"
+   LastUpgradeVersion = "1640"
    version = "1.7">
    <BuildAction
       parallelizeBuildables = "YES"
@@ -14,9 +14,9 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "ED5339EF2CD7A1E900136B04"
-               BuildableName = "example-app.app"
-               BlueprintName = "example-app"
+               BlueprintIdentifier = "ED85B1F22CDBAABD0039B44D"
+               BuildableName = "libbg2e-native.a"
+               BlueprintName = "bg2e-native"
                ReferencedContainer = "container:bg2e.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
@@ -38,18 +38,7 @@
       ignoresPersistentStateOnLaunch = "NO"
       debugDocumentVersioning = "YES"
       debugServiceExtension = "internal"
-      enableGPUFrameCaptureMode = "1"
       allowLocationSimulation = "YES">
-      <BuildableProductRunnable
-         runnableDebuggingMode = "0">
-         <BuildableReference
-            BuildableIdentifier = "primary"
-            BlueprintIdentifier = "ED5339EF2CD7A1E900136B04"
-            BuildableName = "example-app.app"
-            BlueprintName = "example-app"
-            ReferencedContainer = "container:bg2e.xcodeproj">
-         </BuildableReference>
-      </BuildableProductRunnable>
    </LaunchAction>
    <ProfileAction
       buildConfiguration = "Release"
@@ -57,16 +46,15 @@
       savedToolIdentifier = ""
       useCustomWorkingDirectory = "NO"
       debugDocumentVersioning = "YES">
-      <BuildableProductRunnable
-         runnableDebuggingMode = "0">
+      <MacroExpansion>
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "ED5339EF2CD7A1E900136B04"
-            BuildableName = "example-app.app"
-            BlueprintName = "example-app"
+            BlueprintIdentifier = "ED85B1F22CDBAABD0039B44D"
+            BuildableName = "libbg2e-native.a"
+            BlueprintName = "bg2e-native"
             ReferencedContainer = "container:bg2e.xcodeproj">
          </BuildableReference>
-      </BuildableProductRunnable>
+      </MacroExpansion>
    </ProfileAction>
    <AnalyzeAction
       buildConfiguration = "Debug">
