@@ -135,8 +135,8 @@
 				ED3EFBC72DF5D719004531CE /* Exceptions for "bin" folder in "environment_render" target */,
 			);
 			name = bin;
-			path = "/Users/fernando/desarrollo/bg2e-native/bin";
-			sourceTree = "<absolute>";
+			path = ../../bin;
+			sourceTree = SOURCE_ROOT;
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
@@ -471,7 +471,7 @@
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = macosx;
 				VULKAN_LIB_VERSION = 1.4.313;
-				VULKAN_SDK = "$(HOME)/VulkanSDK/1.3.313.1/macOS";
+				VULKAN_SDK = "$(HOME)/VulkanSDK/1.4.313.1/macOS";
 			};
 			name = Debug;
 		};
@@ -535,7 +535,7 @@
 				MTL_FAST_MATH = YES;
 				SDKROOT = macosx;
 				VULKAN_LIB_VERSION = 1.4.313;
-				VULKAN_SDK = "$(HOME)/VulkanSDK/1.3.313.1/macOS";
+				VULKAN_SDK = "$(HOME)/VulkanSDK/1.4.313.1/macOS";
 			};
 			name = Release;
 		};
@@ -563,6 +563,10 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
+				LIBRARY_SEARCH_PATHS = (
+					"$(PROJECT_DIR)/../../bin/Release",
+					"$(VULKAN_SDK)/lib",
+				);
 				MARKETING_VERSION = 1.0;
 				OTHER_LDFLAGS = (
 					"-lSDL2-2.0.0",
@@ -571,7 +575,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = "com.bg2engine.bg2e.example-app.Setup";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
-				VULKAN_SDK = "$(HOME)/VulkanSDK/1.3.290.0/macOS";
+				VULKAN_SDK = "$(inherited)";
 			};
 			name = Debug;
 		};
@@ -599,6 +603,10 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
+				LIBRARY_SEARCH_PATHS = (
+					"$(PROJECT_DIR)/../../bin/Release",
+					"$(VULKAN_SDK)/lib",
+				);
 				MARKETING_VERSION = 1.0;
 				OTHER_LDFLAGS = (
 					"-lSDL2-2.0.0",
@@ -607,7 +615,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = "com.bg2engine.bg2e.example-app.Setup";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
-				VULKAN_SDK = "$(HOME)/VulkanSDK/1.3.290.0/macOS";
+				VULKAN_SDK = "$(inherited)";
 			};
 			name = Release;
 		};

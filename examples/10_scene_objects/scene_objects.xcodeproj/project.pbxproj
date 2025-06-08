@@ -125,7 +125,7 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		ED3E008B2DF5D7C9004531CE /* Exceptions for "bin" folder in "scene_objects" target */ = {
+		ED83A3482DF5DD76003F4F14 /* Exceptions for "bin" folder in "scene_objects" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				"Release/libbg2e-native.a",
@@ -138,11 +138,11 @@
 		ED3E00892DF5D772004531CE /* bin */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				ED3E008B2DF5D7C9004531CE /* Exceptions for "bin" folder in "scene_objects" target */,
+				ED83A3482DF5DD76003F4F14 /* Exceptions for "bin" folder in "scene_objects" target */,
 			);
 			name = bin;
-			path = "/Users/fernando/desarrollo/bg2e-native/bin";
-			sourceTree = "<absolute>";
+			path = ../../bin;
+			sourceTree = SOURCE_ROOT;
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
@@ -569,6 +569,10 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
+				LIBRARY_SEARCH_PATHS = (
+					"$(PROJECT_DIR)/../../bin/Release",
+					"$(VULKAN_SDK)/lib",
+				);
 				MARKETING_VERSION = 1.0;
 				OTHER_LDFLAGS = (
 					"-lSDL2-2.0.0",
@@ -577,7 +581,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = "com.bg2engine.bg2e.example-app.Setup";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
-				VULKAN_SDK = "$(HOME)/VulkanSDK/1.3.290.0/macOS";
+				VULKAN_SDK = "$(inherited)";
 			};
 			name = Debug;
 		};
@@ -605,6 +609,10 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
+				LIBRARY_SEARCH_PATHS = (
+					"$(PROJECT_DIR)/../../bin/Release",
+					"$(VULKAN_SDK)/lib",
+				);
 				MARKETING_VERSION = 1.0;
 				OTHER_LDFLAGS = (
 					"-lSDL2-2.0.0",
@@ -613,7 +621,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = "com.bg2engine.bg2e.example-app.Setup";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
-				VULKAN_SDK = "$(HOME)/VulkanSDK/1.3.290.0/macOS";
+				VULKAN_SDK = "$(inherited)";
 			};
 			name = Release;
 		};
