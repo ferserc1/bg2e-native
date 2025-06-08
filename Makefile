@@ -1,11 +1,11 @@
-
 BUILD_DIR := ./bin
 SRC_DIR := src
 DEPS_DIR := ./third_party
 PWD=$(shell pwd)
 
 BG2E_CPP_FILES := $(shell find $(SRC_DIR) -name '*.cpp')
-DEPS_CPP_FILES := $(shell find $(DEPS_DIR) -name '*.cpp' -or -name '*.c')
+DEPS := $(DEPS_DIR)/imgui $(DEPS_DIR)/simdjson
+DEPS_CPP_FILES := $(shell find $(DEPS) -name '*.cpp' -or -name '*.c')
 
 CPP_FILES := $(BG2E_CPP_FILES) $(DEPS_CPP_FILES)
 OBJ_FILES := $(CPP_FILES:%=$(BUILD_DIR)/%.o)
@@ -16,13 +16,14 @@ INCLUDE_DIR := $(BG2E_INCLUDE_DIR) $(DEPS_INCLUDE_DIR) $(VULKAN_SDK)/include
 INC_FLAGS := $(addprefix -I,$(INCLUDE_DIR))
 
 CPPFLAGS := -std=c++20
+LDFLAGS := -L$(VULKAN_SDK)/lib -lvulkan -lSDL2
 
 bg2e: $(OBJ_FILES)
-	$(CXX) $(OBJ_FILES) -o $@ $(LDFLAGS)
+	$(CXX) -shared $(OBJ_FILES) -o $(BUILD_DIR)/libbg2e-native.so $(LDFLAGS)
 
 $(BUILD_DIR)/%.cpp.o: %.cpp
 	mkdir -p $(dir $@)
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(INC_FLAGS) -c $< -o $@
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(INC_FLAGS) -fPIC -c $< -o $@
 
 .PHONY: shaders clean
 
