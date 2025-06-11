@@ -20,3 +20,4 @@
 #include <bg2e/render/Texture.hpp>
 
 #include <bg2e/render/vulkan/all.hpp>
+#include <bg2e/render/uniforms/all.hpp>

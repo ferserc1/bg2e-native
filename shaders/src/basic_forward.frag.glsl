@@ -2,6 +2,7 @@
 #extension GL_ARB_shading_language_include : require
 
 #include "lib/color_correction.glsl"
+#include "lib/uniforms.glsl"
 
 layout(location = 0) out vec4 outColor;
 
@@ -19,8 +20,13 @@ layout(push_constant) uniform PushConstant
     float gamma;
 } pushConstant;
 
+layout (set = 1, binding = 0) uniform PBRObjectData {
+    mat4 modelMatrix;
+    PBRMaterialData material;
+} objectData;
+
 void main() {
-    vec3 color = texture(colorTex, inUV0).rgb;
+    vec3 color = texture(colorTex, inUV0).rgb * objectData.material.albedo.rgb;
     vec3 lighting = texture(giTex, inNormal).rgb;
     
     outColor = lineal2SRGB(vec4(color, 1.0f) * vec4(lighting, 1.0), pushConstant.gamma);

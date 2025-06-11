@@ -2,6 +2,7 @@
 #include <bg2e/scene/vk/ObjectDataBinding.hpp>
 #include <bg2e/render/vulkan/macros/frame_resources.hpp>
 #include <bg2e/render/vulkan/factory/DescriptorSetLayout.hpp>
+#include <bg2e/render/uniforms/materials.hpp>
 
 namespace bg2e::scene::vk {
 
@@ -47,6 +48,7 @@ VkDescriptorSet ObjectDataBinding::newDescriptorSet(
     uniforms.modelMatrix = modelMatrix;
     
     // TODO: Add uniform buffer data from material
+    uniforms.material.albedo = material->materialAttributes().albedo();
     
     auto uniformBuffer = bg2e::render::vulkan::macros::createBuffer(_engine, frameResources, uniforms);
     

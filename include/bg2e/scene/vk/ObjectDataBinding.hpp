@@ -4,6 +4,7 @@
 #include <bg2e/scene/vk/SceneDataBinding.hpp>
 #include <bg2e/render/vulkan/FrameResources.hpp>
 #include <bg2e/render/MaterialBase.hpp>
+#include <bg2e/render/uniforms/materials.hpp>
 
 namespace bg2e {
 namespace scene {
@@ -15,7 +16,7 @@ public:
     {
         glm::mat4 modelMatrix;
         
-        // TODO: add material uniforms
+        render::uniforms::PBRMaterialData material;
     };
 
     ObjectDataBinding(bg2e::render::Engine * engine) :SceneDataBinding(engine) {}

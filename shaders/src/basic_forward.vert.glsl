@@ -1,6 +1,8 @@
 #version 450
 #extension GL_ARB_shading_language_include : require
 
+#include "lib/uniforms.glsl"
+
 layout(location = 0) in vec3 inPosition;
 layout(location = 1) in vec3 inNormal;
 layout(location = 2) in vec2 inUV0;
@@ -19,8 +21,9 @@ layout (set = 0, binding = 0) uniform SceneData {
     mat4 projMatrix;
 } sceneData;
 
-layout (set = 1, binding = 0) uniform ObjectData {
+layout (set = 1, binding = 0) uniform PBRObjectData {
     mat4 modelMatrix;
+    PBRMaterialData material;
 } objectData;
 
 void main() {

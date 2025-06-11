@@ -97,6 +97,7 @@ protected:
         auto drawable = new bg2e::scene::Drawable();
         drawable->setMesh(bg2e::db::loadMeshObj<bg2e::geo::Mesh>(modelPath));
         drawable->material(0).setAlbedo(outerAlbedoTexture);
+        drawable->material(0).setAlbedo(bg2e::base::Color::Red());
         drawable->material(1).setAlbedo(innerAlbedoTexture);
         drawable->load(_engine);
         
