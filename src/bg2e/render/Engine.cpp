@@ -108,7 +108,9 @@ void Engine::createMemoryAllocator()
 
 void Engine::createFrameResources()
 {
-    for (int i = 0; i < vulkan::FRAME_OVERLAP; ++i)
+    auto numImages = swapchain().images().size();
+    _frameResources.resize(numImages);
+    for (int i = 0; i < numImages; ++i)
     {
         _frameResources[i].init(_device, &_command);
     }
@@ -116,7 +118,8 @@ void Engine::createFrameResources()
 
 void Engine::cleanupFrameResources()
 {
-    for (int i = 0; i < vulkan::FRAME_OVERLAP; ++i)
+    auto numImages = swapchain().images().size();
+    for (int i = 0; i < numImages; ++i)
     {
         _frameResources[i].cleanup();
     }
@@ -124,7 +127,8 @@ void Engine::cleanupFrameResources()
 
 void Engine::iterateFrameResources(std::function<void(vulkan::FrameResources&)> cb)
 {
-    for (auto i = 0; i < vulkan::FRAME_OVERLAP; ++i)
+    auto numImages = swapchain().images().size();
+    for (auto i = 0; i < numImages; ++i)
     {
         cb(_frameResources[i]);
     }

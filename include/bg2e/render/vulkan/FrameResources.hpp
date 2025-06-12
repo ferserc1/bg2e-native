@@ -40,7 +40,6 @@ private:
     Command* _command = nullptr;
 };
 
-constexpr unsigned int FRAME_OVERLAP = 3;
 
 }
 }
