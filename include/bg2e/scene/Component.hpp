@@ -21,7 +21,7 @@ public:
     
     virtual ~Component() = default;
     
-    inline Node * ownerNode() { return _owner; }
+    inline Node * ownerNode() const { return _owner; }
     Scene * scene();
 
     virtual void resizeViewport(const math::Viewport&) {}

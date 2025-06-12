@@ -76,6 +76,33 @@ protected:
         cameraRotation->addChild(cameraNode);
         sceneRoot->addChild(cameraRotation);
         
+        auto light1 = new bg2e::scene::Node("Light 1");
+        light1->addComponent(new bg2e::scene::LightComponent());
+        light1->addComponent(new bg2e::scene::TransformComponent(glm::translate(glm::mat4 { 1.0f }, glm::vec3{ 0.5, 0.5, 1} )));
+        sceneRoot->addChild(light1);
+        
+        auto light2 = new bg2e::scene::Node("Light 2");
+        light2->addComponent(new bg2e::scene::LightComponent());
+        light2->addComponent(new bg2e::scene::TransformComponent(glm::translate(glm::mat4 { 1.0f }, glm::vec3{ 0.5,-0.5, 1} )));
+        sceneRoot->addChild(light2);
+        
+        auto light3 = new bg2e::scene::Node("Light 3");
+        light3->addComponent(new bg2e::scene::LightComponent());
+        light3->addComponent(new bg2e::scene::TransformComponent(glm::translate(glm::mat4 { 1.0f }, glm::vec3{-0.5, 0.5, 1} )));
+        sceneRoot->addChild(light3);
+        
+        auto light4 = new bg2e::scene::Node("Light 4");
+        light4->addComponent(new bg2e::scene::LightComponent());
+        light4->addComponent(new bg2e::scene::TransformComponent(glm::translate(glm::mat4 { 1.0f }, glm::vec3{-0.5,-0.5, 1} )));
+        light4->transform()->rotate(0.1, 0.0f, 1.0f, 0.0f);
+        sceneRoot->addChild(light4);
+        
+        auto pos = light4->light()->position();
+        auto dir = light4->light()->direction();
+        
+        std::cout << "light4 position = " << pos.x << "," << pos.y << "," << pos.z << std::endl;
+        std::cout << "light4 direction = " << dir.x << "," << dir.y << "," << dir.z << std::endl;
+        
         return sceneRoot;
     }
 

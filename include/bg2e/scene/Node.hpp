@@ -16,6 +16,7 @@
 #include <bg2e/scene/DrawableComponent.hpp>
 #include <bg2e/scene/CameraComponent.hpp>
 #include <bg2e/scene/EnvironmentComponent.hpp>
+#include <bg2e/scene/LightComponent.hpp>
 
 namespace bg2e {
 namespace scene {
@@ -63,6 +64,7 @@ public:
     inline DrawableComponent * drawable() { return getComponent<DrawableComponent>(); }
     inline CameraComponent * camera() { return getComponent<CameraComponent>(); }
     inline EnvironmentComponent * environment() { return getComponent<EnvironmentComponent>(); }
+    inline LightComponent * light() { return getComponent<LightComponent>(); }
     
     void accept(NodeVisitor * visitor);
     void acceptReverse(NodeVisitor * visitor);

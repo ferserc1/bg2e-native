@@ -1,5 +1,7 @@
 #pragma once
 
+#include <string>
+
 namespace bg2e {
 namespace base {
 
