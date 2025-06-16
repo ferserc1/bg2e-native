@@ -16,6 +16,42 @@
 
 namespace bg2e::db {
 
+
+template <class MeshT>
+void genTangents(MeshT * mesh)
+{
+    for (size_t i = 0; i < mesh->indices.size(); i+=3)
+    {
+        auto& v0 = mesh->vertices[i];
+        auto& v1 = mesh->vertices[i + 1];
+        auto& v2 = mesh->vertices[i + 2];
+        
+        auto pos1 = v0.position;
+        auto pos2 = v1.position;
+        auto pos3 = v2.position;
+        
+        auto uv1 = v0.texCoord0;
+        auto uv2 = v1.texCoord0;
+        auto uv3 = v2.texCoord0;
+        
+        auto edge1 = pos2 - pos1;
+        auto edge2 = pos3 - pos2;
+        auto deltaUV1 = uv2 - uv1;
+        auto deltaUV2 = uv3 - uv1;
+        
+        float f = 1.0f / (deltaUV1.x * deltaUV2.y - deltaUV2.x * deltaUV1.y);
+        
+        glm::vec3 t {
+            f * (deltaUV2.y * edge1.x - deltaUV1.y * edge2.x),
+            f * (deltaUV2.y * edge1.y - deltaUV1.y * edge2.y),
+            f * (deltaUV2.y * edge1.z - deltaUV1.y * edge2.z)
+        };
+        v0.tangent = t;
+        v1.tangent = t;
+        v2.tangent = t;
+    }
+}
+
 template <class MeshT>
 MeshT* loadMeshObj(std::istream& inputStream) {
 	throw std::runtime_error("Unsupported mesh type");
@@ -213,7 +249,7 @@ bg2e::geo::MeshPNUT* loadMeshObj<bg2e::geo::MeshPNUT>(std::istream& inputStream)
 		}
 	);
 
-	// TODO: Calculate tangents
+    genTangents(mesh);
 
 	return mesh;
 }
@@ -236,7 +272,7 @@ bg2e::geo::MeshPNUUT* loadMeshObj<bg2e::geo::MeshPNUUT>(std::istream& inputStrea
 		}
 	);
 
-	// TODO: Calculate tangents
+	genTangents(mesh);
 
 	return mesh;
 }

@@ -50,7 +50,7 @@ void main() {
 
     vec3 viewDir = normalize(inViewPos - inFragPos);
     vec3 Lo = vec3(0.0f);
-    for (int i = 0; i < 1/*inLightCount*/; ++i)
+    for (int i = 0; i < inLightCount; ++i)
     {
         Light light = inLights[i];
         vec3 lightDir = normalize(light.position - inFragPos);

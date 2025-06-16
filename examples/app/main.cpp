@@ -85,7 +85,7 @@ protected:
         auto cameraRotation = new bg2e::scene::Node("Camera Rotation");
         cameraRotation->addComponent(new bg2e::scene::TransformComponent());
         //cameraRotation->transform()->rotate(std::numbers::pi, 0.0f, 1.0f, 0.0f);
-        //cameraRotation->addComponent(new RotateCameraComponent());
+        cameraRotation->addComponent(new RotateCameraComponent(-0.002f));
         cameraRotation->addChild(cameraNode);
         sceneRoot->addChild(cameraRotation);
         
@@ -100,17 +100,17 @@ protected:
         
         auto light2 = new bg2e::scene::Node("Light 2");
         light2->addComponent(new bg2e::scene::LightComponent());
-        light2->addComponent(new bg2e::scene::TransformComponent(glm::translate(glm::mat4 { 1.0f }, glm::vec3{ 2,-2, 4} )));
+        light2->addComponent(new bg2e::scene::TransformComponent(glm::translate(glm::mat4 { 1.0f }, glm::vec3{ 4,-2,-4} )));
         sceneRoot->addChild(light2);
         
         auto light3 = new bg2e::scene::Node("Light 3");
         light3->addComponent(new bg2e::scene::LightComponent());
-        light3->addComponent(new bg2e::scene::TransformComponent(glm::translate(glm::mat4 { 1.0f }, glm::vec3{-2, 2, 4} )));
+        light3->addComponent(new bg2e::scene::TransformComponent(glm::translate(glm::mat4 { 1.0f }, glm::vec3{-4, 2, 4} )));
         sceneRoot->addChild(light3);
         
         auto light4 = new bg2e::scene::Node("Light 4");
         light4->addComponent(new bg2e::scene::LightComponent());
-        light4->addComponent(new bg2e::scene::TransformComponent(glm::translate(glm::mat4 { 1.0f }, glm::vec3{-2,-2, 4} )));
+        light4->addComponent(new bg2e::scene::TransformComponent(glm::translate(glm::mat4 { 1.0f }, glm::vec3{-4,-2,-4} )));
         light4->transform()->rotate(0.1, 0.0f, 1.0f, 0.0f);
         sceneRoot->addChild(light4);
         
@@ -227,8 +227,7 @@ protected:
         );
         auto innerNormalTexture = std::make_shared<bg2e::base::Texture>(
             bg2e::base::PlatformTools::assetPath(),
-            //"two_submeshes_inner_normal.jpg"
-            "normal_test.jpeg"
+            "two_submeshes_inner_normal.jpg"
         );
         
         auto outerAlbedoTexture = std::make_shared<bg2e::base::Texture>(
@@ -237,8 +236,7 @@ protected:
         );
         auto outerNormalTexture = std::make_shared<bg2e::base::Texture>(
             bg2e::base::PlatformTools::assetPath(),
-            //"two_submeshes_outer_normal.jpg"
-            "normal_test.jpeg"
+            "two_submeshes_outer_normal.jpg"
         );
         
         auto drawable = new bg2e::scene::Drawable();
