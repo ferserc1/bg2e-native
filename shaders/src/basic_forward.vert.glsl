@@ -50,7 +50,7 @@ void main() {
     // are performed in the vertex shader instead of the fragment shader.
     //mat3 TBN = TBNMatrix(objectData.modelMatrix, inNormal, inTangent, cross(inNormal, inTangent));
     //mat3 iTBN = transpose(TBN);
-    outTBN = TBNMatrix(objectData.modelMatrix, inNormal, inTangent, cross(inNormal, inTangent));
+    outTBN = TBNMatrix(objectData.modelMatrix, inNormal, inTangent));
     
     outNormal = mat3(objectData.modelMatrix) * inNormal;
     outTangent = mat3(objectData.modelMatrix) * inTangent;

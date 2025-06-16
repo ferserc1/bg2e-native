@@ -73,7 +73,8 @@ protected:
         sceneRoot->addChild(secondModel);
         
         auto cameraNode = std::shared_ptr<bg2e::scene::Node>(new bg2e::scene::Node("Camera"));
-        cameraNode->addComponent(bg2e::scene::TransformComponent::makeTranslated(0.0f, 0.0f, 20.0f ));
+        cameraNode->addComponent(bg2e::scene::TransformComponent::makeTranslated(0.0f, 2.5f, 10.0f ));
+        cameraNode->transform()->rotate(0.43, -1.0f, 0.0f, 0.0);
         //cameraNode->addComponent(new bg2e::scene::TransformComponent());
         //cameraNode->transform()->rotate(std::numbers::pi, 0.0f, 1.0f, 0.0f);
         //cameraNode->transform()->rotate(0.13, 1.0f, 0.0f, 0.0f);
@@ -93,8 +94,8 @@ protected:
         // loop, _scene->updateLights() must be called to rebuild the array of lights in the scene that will be passed to the shader.
         auto light1 = new bg2e::scene::Node("Light 1");
         light1->addComponent(new bg2e::scene::LightComponent());
-        light1->addComponent(new bg2e::scene::TransformComponent(glm::translate(glm::mat4 { 1.0f }, glm::vec3{ 4, 0, 4 } )));
-        light1->light()->light().setIntensity(1.0f);
+        light1->addComponent(new bg2e::scene::TransformComponent(glm::translate(glm::mat4 { 1.0f }, glm::vec3{ 4, 2, 4 } )));
+        light1->light()->light().setIntensity(5.0f);
         sceneRoot->addChild(light1);
         
         auto light2 = new bg2e::scene::Node("Light 2");
@@ -172,7 +173,7 @@ protected:
         cylinderNode->transform()->translate(0.0f, -2.0f, 2.0f);
         sceneRoot->addChild(cylinderNode);
         
-        auto cubeMesh = bg2e::geo::createCube(2.5f, 2.5f, 2.5f);
+        auto cubeMesh = bg2e::geo::createCube(2.0f, 2.0f, 2.0f);
         auto cubeDrawable = std::make_shared<bg2e::scene::Drawable>();
         cubeDrawable->setMesh(cubeMesh);
         // Front face
@@ -182,22 +183,33 @@ protected:
         
         // Back face
         cubeDrawable->material(1).setAlbedo(bg2e::base::Color::Yellow());
+        cubeDrawable->material(1).setAlbedo(new bg2e::base::Texture(bg2e::base::PlatformTools::assetPath(), "logo_2a.png"));
         cubeDrawable->material(1).setNormalTexture(new bg2e::base::Texture(bg2e::base::PlatformTools::assetPath(), "normal_test.jpeg"));
         
         // Right face
+        cubeDrawable->material(2).setAlbedo(new bg2e::base::Texture(bg2e::base::PlatformTools::assetPath(), "logo_2a.png"));
         cubeDrawable->material(2).setAlbedo(bg2e::base::Color::Green());
         cubeDrawable->material(2).setNormalTexture(new bg2e::base::Texture(bg2e::base::PlatformTools::assetPath(), "normal_test.jpeg"));
         
+        // Left face
+        cubeDrawable->material(3).setAlbedo(bg2e::base::Color::Blue());
+        cubeDrawable->material(3).setAlbedo(new bg2e::base::Texture(bg2e::base::PlatformTools::assetPath(), "logo_2a.png"));
         cubeDrawable->material(3).setNormalTexture(new bg2e::base::Texture(bg2e::base::PlatformTools::assetPath(), "normal_test.jpeg"));
+        
+        // Top Face
+        cubeDrawable->material(4).setAlbedo(new bg2e::base::Texture(bg2e::base::PlatformTools::assetPath(), "logo_2a.png"));
         cubeDrawable->material(4).setNormalTexture(new bg2e::base::Texture(bg2e::base::PlatformTools::assetPath(), "normal_test.jpeg"));
+        
+        // Bottom face
+        cubeDrawable->material(5).setAlbedo(new bg2e::base::Texture(bg2e::base::PlatformTools::assetPath(), "logo_2a.png"));
         cubeDrawable->material(5).setNormalTexture(new bg2e::base::Texture(bg2e::base::PlatformTools::assetPath(), "normal_test.jpeg"));
         cubeDrawable->load(_engine);
         
         auto cubeNode = new bg2e::scene::Node("Cube");
         cubeNode->addComponent(new bg2e::scene::DrawableComponent(cubeDrawable));
         cubeNode->addComponent(new bg2e::scene::TransformComponent());
-        //cubeNode->transform()->translate(-2.7f, -2.3f, 1.9f);
-        //cubeNode->addComponent(new RotateCameraComponent(-0.02f));
+        cubeNode->transform()->translate(2.7f, -2.7f, 2.4f);
+        cubeNode->addComponent(new RotateCameraComponent(-0.02f));
         sceneRoot->addChild(cubeNode);
         
         

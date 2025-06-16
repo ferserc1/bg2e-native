@@ -18,51 +18,53 @@ void createPlaneBase(
     float halfWidth = width / 2.0f;
     float halfDepth = depth / 2.0f;
     
-    vertexCallback({
-        { -halfWidth, 0.0f, -halfDepth },
-        { 0.0f, 1.0f, 0.0f},
-        { 0.0f, 1.0f },
-        { 1.0f, 0.0f, 0.0f }
-    });
-    
+    auto N = glm::vec3{ 0.0f, 1.0f, 0.0f };
+    auto T = glm::vec3{ 0.0f, 0.0f,-1.0f };
     vertexCallback({
         { -halfWidth, 0.0f, halfDepth },
-        { 0.0f, 1.0f, 0.0f},
+        N,
         { 0.0f, 0.0f },
-        { 1.0f, 0.0f, 0.0f }
+        T
     });
     
     vertexCallback({
-        { halfWidth, 0.0f, halfDepth },
-        { 0.0f, 1.0f, 0.0f},
+        { -halfWidth, 0.0f, -halfDepth },
+        N,
         { 1.0f, 0.0f },
-        { 1.0f, 0.0f, 0.0f }
+        T
     });
     
     vertexCallback({
         { halfWidth, 0.0f, -halfDepth },
-        { 0.0f, 1.0f, 0.0f},
+        N,
         { 1.0f, 1.0f },
-        { 1.0f, 0.0f, 0.0f }
+        T
+    });
+    
+    vertexCallback({
+        { halfWidth, 0.0f, halfDepth },
+        N,
+        { 0.0f, 1.0f },
+        T
     });
     
     if (!invertPlane)
     {
-        indexCallback(0);
+        indexCallback(2);
         indexCallback(1);
-        indexCallback(2);
-        indexCallback(2);
-        indexCallback(3);
         indexCallback(0);
+        indexCallback(0);
+        indexCallback(3);
+        indexCallback(2);
     }
     else
     {
-        indexCallback(2);
+        indexCallback(0);
         indexCallback(1);
-        indexCallback(0);
-        indexCallback(0);
-        indexCallback(3);
         indexCallback(2);
+        indexCallback(2);
+        indexCallback(3);
+        indexCallback(0);
     }
     
     submeshCallback(0, 6);

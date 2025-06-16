@@ -78,7 +78,7 @@ void createCubeBase(
 
     // Right face
     N = glm::vec3{ 1.0f, 0.0f, 0.0f };
-    T = glm::vec3{ 0.0f, 0.0f, 1.0f };
+    T = glm::vec3{ 0.0f, 0.0f, -1.0f };
     vertexCallback({
         { halfWidth, -halfHeight, halfDepth },
         N,
@@ -106,7 +106,7 @@ void createCubeBase(
 
     // Left face
     N = glm::vec3{-1.0f, 0.0f, 0.0f };
-    T = glm::vec3{ 0.0f, 0.0f,-1.0f };
+    T = glm::vec3{ 0.0f, 0.0f, 1.0f };
     vertexCallback({
         { -halfWidth, -halfHeight, -halfDepth },
         N,
