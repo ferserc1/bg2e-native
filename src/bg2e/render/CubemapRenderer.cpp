@@ -282,7 +282,7 @@ void CubemapRenderer::initPipeline(
     plFactory.setColorAttachmentFormat(_cubeMapImage->format());
     plFactory.disableDepthtest();
     plFactory.inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-    plFactory.setCullMode(false, VK_FRONT_FACE_COUNTER_CLOCKWISE);
+    plFactory.setCullMode(VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_COUNTER_CLOCKWISE);
     
     _pipeline = plFactory.build(_layout);
     
@@ -301,8 +301,6 @@ void CubemapRenderer::initGeometry()
     _projectionData.view[5] = glm::lookAt(glm::vec3(0.0f), glm::vec3( 0.0f, 0.0f, 1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
 	_projectionData.proj = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 1000.0f);
-    _projectionData.proj[1][1] *= -1.0f;
-    _projectionData.proj[0][0] *= -1.0f;
    
     _projectionDataBuffer = std::unique_ptr<vulkan::Buffer>(vulkan::Buffer::createAllocatedBuffer(
         _engine,

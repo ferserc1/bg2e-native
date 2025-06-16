@@ -28,6 +28,6 @@ echo "Compiling shaders from ${INPUT_DIR} to ${OUTPUT_DIR}"
 
 for path in ${INPUT_DIR}/*.glsl; do
     file_name=$(basename ${path} .glsl)
-    echo ${GLSLANG} -V ${path} -o ${OUTPUT_DIR}/${file_name}.spv
+    echo "glslang" -V ${path} -o ${OUTPUT_DIR}/${file_name}.spv
     ${GLSLANG} -V ${path} -o ${OUTPUT_DIR}/${file_name}.spv
 done

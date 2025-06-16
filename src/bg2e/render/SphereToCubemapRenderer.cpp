@@ -55,9 +55,7 @@ void SphereToCubemapRenderer::build(
     _projectionData.view[5] = glm::lookAt(glm::vec3(0.0f), glm::vec3( 0.0f, 0.0f, 1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
     _projectionData.proj = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, _sphereRadius * 10.0f);
-    _projectionData.proj[1][1] *= -1.0f;
-    _projectionData.proj[0][0] *= -1.0f;
-    
+
     _projectionDataBuffer = std::unique_ptr<vulkan::Buffer>(vulkan::Buffer::createAllocatedBuffer(
         _engine,
         sizeof(ProjectionData),
@@ -96,8 +94,6 @@ void SphereToCubemapRenderer::build(
     _projectionData.view[5] = glm::lookAt(glm::vec3(0.0f), glm::vec3( 0.0f, 0.0f, 1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
     _projectionData.proj = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, _sphereRadius * 10.0f);
-    _projectionData.proj[1][1] *= -1.0f;
-    _projectionData.proj[0][0] *= -1.0f;
     
     _projectionDataBuffer = std::unique_ptr<vulkan::Buffer>(vulkan::Buffer::createAllocatedBuffer(
         _engine,
@@ -286,7 +282,7 @@ void SphereToCubemapRenderer::initPipeline(const std::string& vshaderFile, const
     plFactory.setColorAttachmentFormat(VK_FORMAT_R16G16B16A16_SFLOAT);
     plFactory.disableDepthtest();
     plFactory.inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-    plFactory.setCullMode(true, VK_FRONT_FACE_CLOCKWISE);
+    plFactory.setCullMode(VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_COUNTER_CLOCKWISE);
     
     _pipeline = plFactory.build(_pipelineLayout);
 }

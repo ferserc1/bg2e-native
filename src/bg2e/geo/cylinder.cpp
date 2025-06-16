@@ -188,7 +188,7 @@ void createCylinderBase(
         uint32_t i4 = i + 2;
         uint32_t i5 = i;
         
-        if (!invertFaces)
+        if (invertFaces)
         {
             indexCallback(i0);
             indexCallback(i1);

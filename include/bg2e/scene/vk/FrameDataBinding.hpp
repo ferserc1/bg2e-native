@@ -13,8 +13,7 @@ public:
     struct SceneUniforms {
         glm::mat4 viewMatrix;
         glm::mat4 projectionMatrix;
-        
-        // TODO: Add other frame resources
+        glm::vec3 cameraPosition;
     };
     
     FrameDataBinding(bg2e::render::Engine * engine) :SceneDataBinding(engine) {}
@@ -26,8 +25,8 @@ public:
     VkDescriptorSet newDescriptorSet(
         bg2e::render::vulkan::FrameResources & frameResources,
         const glm::mat4 & viewMatrix,
-        const glm::mat4 & projectionMatrix
-        // TODO: Add other frame resources
+        const glm::mat4 & projectionMatrix,
+        const glm::vec3 & cameraPosition
     );
 };
 

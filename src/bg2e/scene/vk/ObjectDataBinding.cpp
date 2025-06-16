@@ -24,6 +24,7 @@ VkDescriptorSetLayout ObjectDataBinding::createLayout()
         
         dsFactory.addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
         dsFactory.addBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+        dsFactory.addBinding(2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
         
         // TODO: Add other textures
         
@@ -62,6 +63,11 @@ VkDescriptorSet ObjectDataBinding::newDescriptorSet(
             1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
             VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
             material->albedoTexture()
+        );
+        ds->addImage(
+            2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+            material->normalTexture()
         );
         // TODO: Add textures
         

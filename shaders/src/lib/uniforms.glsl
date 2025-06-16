@@ -19,3 +19,14 @@ struct PBRMaterialData
     int roughnessUVSet;
     int aoUVSet;
 };
+
+struct Light
+{
+    vec3 position;
+    float intensity;
+    vec4 color;
+    vec3 direction;
+    int type;
+};
+
+const int LIGHT_COUNT = 8;

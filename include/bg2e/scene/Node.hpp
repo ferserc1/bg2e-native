@@ -71,6 +71,7 @@ public:
     
     glm::mat4 worldMatrix();
     glm::mat4 invertedWorldMatrix();
+    glm::vec3 worldPosition();
     
     Node * sceneRoot();
    

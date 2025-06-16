@@ -42,9 +42,9 @@ void createBaseSphere(
             float uvx = v * uDelta;
             float uvy = u * vDelta;
 
-            float tx = std::cos(longAlpha);
+            float tx = -std::cos(longAlpha);
             float ty = 0.0f;
-            float tz = -std::sin(longAlpha);
+            float tz = std::sin(longAlpha);
 
             vertexCallback({
                 { x, y, z },

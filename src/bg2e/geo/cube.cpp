@@ -21,159 +21,171 @@ void createCubeBase(
     float halfDepth = depth / 2.0f;
 
     // Front face
+    glm::vec3 N { 0.0f, 0.0f, 1.0f };
+    glm::vec3 T { 1.0f, 0.0f, 0.0f };
     vertexCallback({
         { -halfWidth, halfHeight, halfDepth },
-        { 0.0f, 0.0f, 1.0f },
+        N,
         { 0.0f, 0.0f },
-        { 1.0f, 0.0f, 0.0f }
+        T
     });
     vertexCallback({
         { halfWidth, halfHeight, halfDepth },
-        { 0.0f, 0.0f, 1.0f },
+        N,
         { 1.0f, 0.0f },
-        { 1.0f, 0.0f, 0.0f }
+        T
     });
     vertexCallback({
         { halfWidth, -halfHeight, halfDepth },
-        { 0.0f, 0.0f, 1.0f },
+        N,
         { 1.0f, 1.0f },
-        { 1.0f, 0.0f, 0.0f }
+        T
     });
     vertexCallback({
         { -halfWidth, -halfHeight, halfDepth },
-        { 0.0f, 0.0f, 1.0f },
+        N,
         { 0.0f, 1.0f },
-        { 1.0f, 0.0f, 0.0f }
+        T
     });
 
     // Back face
+    N = glm::vec3{ 0.0f, 0.0f,-1.0f };
+    T = glm::vec3{-1.0f, 0.0f, 0.0f };
     vertexCallback({
         { halfWidth, halfHeight, -halfDepth },
-        { 0.0f, 0.0f, -1.0f },
+        N,
         { 0.0f, 0.0f },
-        { -1.0f, 0.0f, 0.0f }
+        T
     });
     vertexCallback({
         { -halfWidth, halfHeight, -halfDepth },
-        { 0.0f, 0.0f, -1.0f },
+        N,
         { 1.0f, 0.0f },
-        { -1.0f, 0.0f, 0.0f }
+        T
     });
     vertexCallback({
         { -halfWidth, -halfHeight, -halfDepth },
-        { 0.0f, 0.0f, -1.0f },
+        N,
         { 1.0f, 1.0f },
-        { -1.0f, 0.0f, 0.0f }
+        T
     });
     vertexCallback({
         { halfWidth, -halfHeight, -halfDepth },
-        { 0.0f, 0.0f, -1.0f },
+        N,
         { 0.0f, 1.0f },
-        { -1.0f, 0.0f, 0.0f }
+        T
     });
 
     // Right face
+    N = glm::vec3{ 1.0f, 0.0f, 0.0f };
+    T = glm::vec3{ 0.0f, 0.0f, 1.0f };
     vertexCallback({
         { halfWidth, -halfHeight, halfDepth },
-        { 1.0f, 0.0f, 0.0f },
+        N,
         { 0.0f, 1.0f },
-        { 0.0f, 0.0f, -1.0f }
+        T
     });
     vertexCallback({
         { halfWidth, halfHeight, halfDepth },
-        { 1.0f, 0.0f, 0.0f },
+        N,
         { 0.0f, 0.0f },
-        { 0.0f, 0.0f, -1.0f }
+        T
     });
     vertexCallback({
         { halfWidth, halfHeight, -halfDepth },
-        { 1.0f, 0.0f, 0.0f },
+        N,
         { 1.0f, 0.0f },
-        { 0.0f, 0.0f, -1.0f }
+        T
     });
     vertexCallback({
         { halfWidth, -halfHeight, -halfDepth },
-        { 1.0f, 0.0f,0.0f },
+        N,
         { 1.0f, 1.0f },
-        { 0.0f, 0.0f, -1.0f }
+        T
     });
 
     // Left face
+    N = glm::vec3{-1.0f, 0.0f, 0.0f };
+    T = glm::vec3{ 0.0f, 0.0f,-1.0f };
     vertexCallback({
         { -halfWidth, -halfHeight, -halfDepth },
-        { -1.0f, 0.0f, 0.0f },
+        N,
         { 0.0f, 1.0f },
-        { 0.0f, 0.0f, 1.0f }
+        T
     });
     vertexCallback({
         { -halfWidth, halfHeight, -halfDepth },
-        { -1.0f, 0.0f, 0.0f },
+        N,
         { 0.0f, 0.0f },
-        { 0.0f, 0.0f, 1.0f }
+        T
     });
     vertexCallback({
         { -halfWidth, halfHeight, halfDepth },
-        { -1.0f, 0.0f, 0.0f },
+        N,
         { 1.0f, 0.0f },
-        { 0.0f, 0.0f, 1.0f }
+        T
     });
     vertexCallback({
         { -halfWidth, -halfHeight, halfDepth },
-        { -1.0f, 0.0f,0.0f },
+        N,
         { 1.0f, 1.0f },
-        { 0.0f, 0.0f, 1.0f }
-    });
-
-    // Top face
-    vertexCallback({
-        { -halfWidth, -halfHeight, -halfDepth },
-        { 0.0f, 1.0f, 0.0f },
-        { 0.0f, 0.0f },
-        { 1.0f, 0.0f, 0.0f }
-    });
-    vertexCallback({
-        { -halfWidth, -halfHeight, halfDepth },
-        { 0.0f, 1.0f, 0.0f },
-        { 1.0f, 0.0f },
-        { 1.0f, 0.0f, 0.0f }
-    });
-    vertexCallback({
-        { halfWidth, -halfHeight, halfDepth },
-        { 0.0f, 1.0f, 0.0f },
-        { 1.0f, 1.0f },
-        { 1.0f, 0.0f, 0.0f }
-    });
-    vertexCallback({
-        { halfWidth, -halfHeight, -halfDepth },
-        { 0.0f, 1.0f, 0.0f },
-        { 0.0f, 1.0f },
-        { 1.0f, 0.0f, 0.0f }
+        T
     });
 
     // Bottom face
+    N = glm::vec3{ 0.0f,-1.0f, 0.0f };
+    T = glm::vec3{-1.0f, 0.0f, 0.0f };
+    vertexCallback({
+        { -halfWidth, -halfHeight, -halfDepth },
+        N,
+        { 0.0f, 0.0f },
+        T
+    });
+    vertexCallback({
+        { -halfWidth, -halfHeight, halfDepth },
+        N,
+        { 1.0f, 0.0f },
+        T
+    });
+    vertexCallback({
+        { halfWidth, -halfHeight, halfDepth },
+        N,
+        { 1.0f, 1.0f },
+        T
+    });
+    vertexCallback({
+        { halfWidth, -halfHeight, -halfDepth },
+        N,
+        { 0.0f, 1.0f },
+        T
+    });
+
+    // Top face
+    N = glm::vec3{ 0.0f, 1.0f, 0.0f };
+    T = glm::vec3{ 1.0f, 0.0f, 0.0f };
     vertexCallback({
         { -halfWidth, halfHeight, halfDepth },
-        { 0.0f, -1.0f, 0.0f },
+        N,
         { 0.0f, 0.0f },
-        { -1.0f, 0.0f, 0.0f }
+        T
     });
     vertexCallback({
         { -halfWidth, halfHeight, -halfDepth },
-        { 0.0f, -1.0f, 0.0f },
+        N,
         { 1.0f, 0.0f },
-        { -1.0f, 0.0f, 0.0f }
+        T
     });
     vertexCallback({
         { halfWidth, halfHeight, -halfDepth },
-        { 0.0f, -1.0f, 0.0f },
+        N,
         { 1.0f, 1.0f },
-        { -1.0f, 0.0f, 0.0f }
+        T
     });
     vertexCallback({
         { halfWidth, halfHeight, halfDepth },
-        { 0.0f, -1.0f, 0.0f },
+        N,
         { 0.0f, 1.0f },
-        { -1.0f, 0.0f, 0.0f }
+        T
     });
 
     if (!flipFaces)

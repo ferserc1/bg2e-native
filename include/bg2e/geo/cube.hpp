@@ -17,7 +17,7 @@ extern BG2E_API bg2e::geo::MeshPNUC* createCubePNUC(float width, float height, f
 extern BG2E_API bg2e::geo::MeshPNUT* createCubePNUT(float width, float height, float depth, bool flipFaces = false);
 extern BG2E_API bg2e::geo::MeshPNUUT* createCubePNUUT(float width, float height, float depth, bool flipFaces = false);
 
-extern BG2E_API bg2e::geo::MeshPNUUT* createCube(float width, float height, float depth, float flipFaces = false);
+extern BG2E_API bg2e::geo::MeshPNUUT* createCube(float width, float height, float depth, bool flipFaces = false);
 
 }
 }

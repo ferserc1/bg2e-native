@@ -22,6 +22,7 @@ public:
     inline void setAlbedo(const Color & c) { _albedo = c; }
     
     inline std::shared_ptr<Texture> albedoTexture() const { return _albedoTexture; }
+    inline void setAlbedo(Texture * t) { setAlbedo(std::shared_ptr<Texture>(t)); }
     inline void setAlbedo(std::shared_ptr<Texture> t) { _albedoTextureUpdated = false; _albedoTexture = t; }
     inline bool albedoTextureUpdated() const { return _albedoTextureUpdated; }
     
@@ -35,6 +36,7 @@ public:
     inline void setMetalness(float m) { _metalness = m; }
 
     inline std::shared_ptr<Texture> metalnessTexture() const { return _metalnessTexture; }
+    inline void setMetalness(Texture * t) { setMetalness(std::shared_ptr<Texture>(t)); }
     inline void setMetalness(std::shared_ptr<Texture> t) { _metalnessTextureUpdated = false; _metalnessTexture = t; }
     inline bool metalnessTextureUpdated() const { return _metalnessTextureUpdated; }
     
@@ -51,6 +53,7 @@ public:
     inline void setRoughness(float r) { _roughness = r; }
 
     inline std::shared_ptr<Texture> roughnessTexture() const { return _roughnessTexture; }
+    inline void setRoughness(Texture * t) { setRoughness(std::shared_ptr<Texture>(t)); }
     inline void setRoughness(std::shared_ptr<Texture> t) { _roughnessTextureUpdated = false; _roughnessTexture = t; }
     inline bool roughnessTextureUpdated() const { return _roughnessTextureUpdated; }
 
@@ -64,6 +67,7 @@ public:
     inline void setRoughnessUVSet(uint32_t uvSet) { _roughnessUVSet = uvSet; }
 
     inline std::shared_ptr<Texture> normalTexture() const { return _normalTexture; }
+    inline void setNormalTexture(Texture * t) { setNormalTexture(std::shared_ptr<Texture>(t)); }
     inline void setNormalTexture(std::shared_ptr<Texture> t) { _normalTextureUpdated = false; _normalTexture = t; }
     inline bool normalTextureUpdated() const { return _normalTextureUpdated; }
 
@@ -74,6 +78,7 @@ public:
     inline void setNormalUVSet(uint32_t uvSet) { _normalUVSet = uvSet; }
 
     inline std::shared_ptr<Texture> aoTexture() const { return _aoTexture; }
+    inline void setAoTexture(Texture * t) { setAoTexture(std::shared_ptr<Texture>(t)); }
     inline void setAoTexture(std::shared_ptr<Texture> t) { _aoTextureUpdated = false; _aoTexture = t; }
     inline bool aoTextureUpdated() const { return _aoTextureUpdated; }
 

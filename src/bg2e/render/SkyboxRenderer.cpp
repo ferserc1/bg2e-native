@@ -68,7 +68,7 @@ void SkyboxRenderer::build(
     plFactory.setDepthFormat(depthAttachmentFormat);
     plFactory.disableDepthtest();
     plFactory.inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-    plFactory.setCullMode(true, VK_FRONT_FACE_CLOCKWISE);
+    plFactory.setCullMode(VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_CLOCKWISE);
     _pipeline = plFactory.build(_pipelineLayout);
 }
 

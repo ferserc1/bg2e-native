@@ -4,6 +4,7 @@
 #include <bg2e/scene/vk/FrameDataBinding.hpp>
 #include <bg2e/scene/vk/ObjectDataBinding.hpp>
 #include <bg2e/scene/vk/EnvironmentDataBinding.hpp>
+#include <bg2e/scene/vk/LightDataBinding.hpp>
 #include <bg2e/render/EnvironmentResources.hpp>
 #include <bg2e/scene/ResizeViewportVisitor.hpp>
 #include <bg2e/scene/UpdateVisitor.hpp>
@@ -30,10 +31,12 @@ public:
     inline const bg2e::scene::vk::FrameDataBinding* frameDataBinding() const { return _frameDataBinding.get(); }
     inline const bg2e::scene::vk::ObjectDataBinding* objectDataBinding() const { return _objectDataBinding.get(); }
     inline const bg2e::scene::vk::EnvironmentDataBinding* environmentDataBinding() const { return _environmentDataBinding.get(); }
-
+    inline const bg2e::scene::vk::LightDataBinding* lightDataBinding() const { return _lightDataBinding.get(); }
+    
     inline bg2e::scene::vk::FrameDataBinding* frameDataBinding() { return _frameDataBinding.get(); }
     inline bg2e::scene::vk::ObjectDataBinding* objectDataBinding() { return _objectDataBinding.get(); }
     inline bg2e::scene::vk::EnvironmentDataBinding* environmentDataBinding() { return _environmentDataBinding.get(); }
+    inline bg2e::scene::vk::LightDataBinding* lightDataBinding() { return _lightDataBinding.get(); }
 
     inline bool drawSkybox() const { return _drawSkybox; }
     inline void setDrawSkybox(bool value) { _drawSkybox = value; }
@@ -77,6 +80,9 @@ protected:
     std::unique_ptr<bg2e::scene::vk::FrameDataBinding> _frameDataBinding;
     std::unique_ptr<bg2e::scene::vk::ObjectDataBinding> _objectDataBinding;
     std::unique_ptr<bg2e::scene::vk::EnvironmentDataBinding> _environmentDataBinding;
+    std::unique_ptr<bg2e::scene::vk::LightDataBinding> _lightDataBinding;
+    
+    scene::vk::LightDataBinding::LightUniforms _lightUniforms;
 
     std::unique_ptr<bg2e::render::EnvironmentResources> _environment;
     size_t _skyImageHash;

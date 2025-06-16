@@ -81,8 +81,6 @@ public:
             float(vpSize.width) / float(vpSize.height),
             0.1f, 40.0f
         );
-        _sceneData.projMatrix[1][1] *= -1.0f;
-        _sceneData.projMatrix[0][0] *= -1.0f;
 
         _objectData.modelMatrix = glm::mat4{ 1.0f };
         
@@ -99,8 +97,6 @@ public:
             float(newExtent.width) / float(newExtent.height),
             0.1f, 40.0f
         );
-        _sceneData.projMatrix[1][1] *= -1.0f;
-        _sceneData.projMatrix[0][0] *= -1.0f;
 	}
 
 	VkImageLayout render(
@@ -170,7 +166,8 @@ public:
         // a descriptor set for each submesh. The descriptor set contains the uniform buffer and the texture.
         // The uniform buffer with the model matrix is the same for every submeshes, but the texture can
         // be different.
-        _objectData.modelMatrix = glm::rotate(_objectData.modelMatrix, 0.02f, glm::vec3(0.0f, 1.0f, 0.0f));
+        //_objectData.modelMatrix = glm::rotate(_objectData.modelMatrix, 0.02f, glm::vec3(0.0f, 1.0f, 0.0f));
+        _objectData.modelMatrix = glm::translate(glm::mat4{1.0f}, glm::vec3{ 2.0f, 0.0f, 0.0f });
         auto objectDataBuffer = macros::createBuffer(_engine, frameResources, _objectData);
         
 		for (uint32_t i = 0; i < _mesh->submeshCount(); ++i)
@@ -324,7 +321,7 @@ protected:
         plFactory.setDepthFormat(_engine->swapchain().depthImageFormat());
         plFactory.enableDepthtest(true, VK_COMPARE_OP_LESS);
         plFactory.inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-        plFactory.setCullMode(true, VK_FRONT_FACE_CLOCKWISE);
+        plFactory.setCullMode(true, VK_FRONT_FACE_COUNTER_CLOCKWISE);
 		plFactory.setColorAttachmentFormat(_targetImage->format());
 		_pipeline = plFactory.build(_layout);
 

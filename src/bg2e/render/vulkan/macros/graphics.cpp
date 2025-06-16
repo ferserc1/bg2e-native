@@ -7,8 +7,14 @@ namespace bg2e::render::vulkan::macros {
 
 void cmdSetDefaultViewportAndScissor(VkCommandBuffer cmd, VkExtent2D extent) {
     VkViewport viewport = {};
+
+    viewport.x = 0.0f;
     viewport.width = static_cast<float>(extent.width);
-    viewport.height = static_cast<float>(extent.height);
+    
+    // Invert Y axis
+    viewport.height = -static_cast<float>(extent.height);
+    viewport.y = static_cast<float>(extent.height);
+
     viewport.minDepth = 0.0f;
     viewport.maxDepth = 1.0f;
     vkCmdSetViewport(cmd, 0, 1, &viewport);

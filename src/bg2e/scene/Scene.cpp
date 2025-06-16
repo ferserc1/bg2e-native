@@ -74,4 +74,47 @@ EnvironmentComponent * Scene::mainEnvironment()
     }
     return _mainEnvironment != nullptr ? _mainEnvironment->environment() : nullptr;
 }
+
+void Scene::updateLights()
+{
+    _lights.clear();
+    FindNodeComponentVisitor<LightComponent> findLights;
+    auto lightNodes = findLights.find(_sceneRoot.get());
+    for (auto l : lightNodes)
+    {
+        _lights.push_back(l->light());
+    }
+    _lightsChanged = true;
+}
+
+void Scene::willResize()
+{
+
+}
+
+void Scene::didResize()
+{
+
+}
+
+void Scene::willUpdate()
+{
+
+}
+
+void Scene::didUpdate()
+{
+
+}
+
+void Scene::willDraw()
+{
+}
+
+void Scene::didDraw()
+{
+    _lightsChanged = false;
+}
+
+
 }

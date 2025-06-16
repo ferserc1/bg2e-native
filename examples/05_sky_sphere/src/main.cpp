@@ -69,7 +69,7 @@ public:
 
 		createPipeline();
 
-        _sceneData.viewMatrix = glm::lookAt(glm::vec3{ 0.0f, 0.0f, -5.0f}, { 0.0f, 0.0f, 0.0f }, { 0.0f, 1.0f, 0.0f });
+        _sceneData.viewMatrix = glm::lookAt(glm::vec3{ 0.0f, 0.0f, 5.0f}, { 0.0f, 0.0f, 0.0f }, { 0.0f, 1.0f, 0.0f });
         
         auto vpSize = _engine->swapchain().extent();
         _sceneData.projMatrix = glm::perspective(
@@ -77,7 +77,6 @@ public:
             float(vpSize.width) / float(vpSize.height),
             0.1f, 40.0f
         );
-        _sceneData.projMatrix[1][1] *= -1.0f;
 
         _objectData.modelMatrix = glm::mat4{ 1.0f };
         
@@ -96,7 +95,6 @@ public:
             float(newExtent.width) / float(newExtent.height),
             0.1f, 40.0f
         );
-        _sceneData.projMatrix[1][1] *= -1.0f;
 	}
 
 	VkImageLayout render(
@@ -184,7 +182,8 @@ public:
 		// Use this function to draw one unique mesh including all the indexes
 		// _skyMesh->draw(cmd);
   
-        _boxData.modelMatrix = glm::rotate(_boxData.modelMatrix, 0.015f, glm::vec3(1.0f, 1.0f, 0.0f));
+        //_boxData.modelMatrix = glm::rotate(_boxData.modelMatrix, 0.015f, glm::vec3(1.0f, 1.0f, 0.0f));
+        _boxData.modelMatrix = glm::translate(glm::mat4{ 1.0f }, glm::vec3(2.0f, 0.0f, 0.0f ));
         auto boxDataBuffer = macros::createBuffer(_engine, frameResources, _boxData);
         auto boxDS = frameResources.newDescriptorSet(_objectDSLayout);
         boxDS->beginUpdate();

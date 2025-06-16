@@ -120,6 +120,11 @@ glm::mat4 Node::invertedWorldMatrix()
     return glm::inverse(worldMatrix());
 }
 
+glm::vec3 Node::worldPosition()
+{
+    return glm::vec3(worldMatrix()[3]);
+}
+
 Node * Node::sceneRoot()
 {
     if (_parent == nullptr)

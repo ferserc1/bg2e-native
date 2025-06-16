@@ -26,6 +26,7 @@ void RendererBasicForward::build(
     _frameDataBinding = std::make_unique<bg2e::scene::vk::FrameDataBinding>(_engine);
     _objectDataBinding = std::make_unique<bg2e::scene::vk::ObjectDataBinding>(_engine);
     _environmentDataBinding = std::make_unique<bg2e::scene::vk::EnvironmentDataBinding>(_engine);
+    _lightDataBinding = std::make_unique<bg2e::scene::vk::LightDataBinding>(_engine);
     _environment = std::make_unique<bg2e::render::EnvironmentResources>(
         _engine,
         _colorAttachments->attachmentFormats(),
@@ -41,6 +42,7 @@ void RendererBasicForward::initFrameResources(
     _frameDataBinding->initFrameResources(frameAllocator);
     _objectDataBinding->initFrameResources(frameAllocator);
     _environmentDataBinding->initFrameResources(frameAllocator);
+    _lightDataBinding->initFrameResources(frameAllocator);
     _environment->initFrameResources(frameAllocator);
 }
 
@@ -63,6 +65,8 @@ void RendererBasicForward::initScene(
         { 1024, 1024 }      // Specular reflection map size
     );
     _colorAttachments->build(_engine->swapchain().extent());
+    
+    _scene->updateLights();
 
     // Call the resizeViewportVisitor to set the initial viewport size in cameras
     _resizeVisitor.resizeViewport(_scene->rootNode(), _engine->swapchain().extent());
@@ -75,21 +79,46 @@ void RendererBasicForward::initScene(
 void RendererBasicForward::resize(
     VkExtent2D newExtent
 ) {
+    _scene->willResize();
+    
     // This function releases all previous resources before recreating the images
     _colorAttachments->build(newExtent);
 
     _resizeVisitor.resizeViewport(_scene->rootNode(), newExtent);
+    
+    _scene->didResize();
 }
 
 void RendererBasicForward::update(
     float delta
 ) {
+    _scene->willUpdate();
+    
     _updateVisitor.update(_scene->rootNode(), delta);
 
     if(_scene->mainEnvironment() && _scene->mainEnvironment()->imgHash() != _skyImageHash) {
         _environment->swapEnvironmentTexture(_scene->mainEnvironment()->environmentImage());
         _skyImageHash = _scene->mainEnvironment()->imgHash();
     }
+    
+    
+    // Update light resources
+    auto lightComponents = _scene->lights();
+    uint32_t lights = static_cast<uint32_t>(lightComponents.size() < BG2E_MAX_FORWARD_LIGHTS
+        ? lightComponents.size()
+        : BG2E_MAX_FORWARD_LIGHTS);
+    _lightUniforms.lightCount = lights;
+    for (uint32_t i = 0; i < lights; ++i)
+    {
+        auto comp = lightComponents[i];
+        _lightUniforms.lights[i].type = comp->light().type();
+        _lightUniforms.lights[i].color = comp->light().color();
+        _lightUniforms.lights[i].intensity = comp->light().intensity();
+        _lightUniforms.lights[i].position = comp->position();
+        _lightUniforms.lights[i].direction = comp->direction();
+    }
+    
+    _scene->didUpdate();
 }
 
 void RendererBasicForward::draw(
@@ -99,6 +128,8 @@ void RendererBasicForward::draw(
     bg2e::render::vulkan::FrameResources& frameResources
 ) {
     using namespace bg2e::render::vulkan;
+    _scene->willDraw();
+    
     _environment->update(cmd, currentFrame, frameResources);
 
     VkClearColorValue clearValue{ { 0.0f, 0.0f, 0.0f, 1.0f } };
@@ -111,13 +142,16 @@ void RendererBasicForward::draw(
 
     macros::cmdSetDefaultViewportAndScissor(cmd, _colorAttachments->extent());
     auto mainCamera = _scene->mainCamera();
+    auto cameraPosition = mainCamera->ownerNode()->worldPosition();
     auto projMatrix = mainCamera->projectionMatrix();
-    projMatrix[1][1] *= -1.0f; // Flip Vulkan Y coord
-    auto viewMatrix = mainCamera->ownerNode()->invertedWorldMatrix();
+    auto viewMatrix = mainCamera->ownerNode()->invertedWorldMatrix();    
+    
+    //viewMatrix = glm::lookAt(glm::vec3{ 0.0f, 0.0f, 10.0f }, glm::vec3{ 0.0f, 0.0f, 0.0f }, glm::vec3{ 0.0f, 1.0f, 0.0f });
     auto sceneDS = _frameDataBinding->newDescriptorSet(
         frameResources,
         viewMatrix,
-        projMatrix
+        projMatrix,
+        cameraPosition
     );
 
     if (_drawSkybox) {
@@ -128,6 +162,8 @@ void RendererBasicForward::draw(
     vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, _pipeline);
 
     auto envDS = _environmentDataBinding->newDescriptorSet(frameResources, _environment.get());
+    
+    auto lightDS = _lightDataBinding->newDescriptorSet(frameResources, _lightUniforms);
 
     static struct PushConstants pushConstants {
     #if BG2E_IS_MAC
@@ -157,12 +193,14 @@ void RendererBasicForward::draw(
             return std::vector<VkDescriptorSet>{
                 sceneDS,
                 modelDS,
-                envDS
+                envDS,
+                lightDS
             };
         }
     );
 
     vulkan::cmdEndRendering(cmd);
+    _scene->didDraw();
 }
 
 void RendererBasicForward::cleanup() {
@@ -180,11 +218,13 @@ void RendererBasicForward::createPipeline(bg2e::render::Engine* engine) {
     auto frameDSLayout = frameDataBinding()->createLayout();
     auto objectDSLayout = objectDataBinding()->createLayout();
     auto envDSLayout = environmentDataBinding()->createLayout();
+    auto lightDSLayout = lightDataBinding()->createLayout();
 
     bg2e::render::vulkan::factory::PipelineLayout layoutFactory(engine);
     layoutFactory.addDescriptorSetLayout(frameDSLayout);
     layoutFactory.addDescriptorSetLayout(objectDSLayout);
     layoutFactory.addDescriptorSetLayout(envDSLayout);
+    layoutFactory.addDescriptorSetLayout(lightDSLayout);
     layoutFactory.addPushConstantRange(
         0,
         sizeof(PushConstants),
@@ -195,17 +235,18 @@ void RendererBasicForward::createPipeline(bg2e::render::Engine* engine) {
     plFactory.setDepthFormat(engine->swapchain().depthImageFormat());
     plFactory.enableDepthtest(true, VK_COMPARE_OP_LESS);
     plFactory.inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-    plFactory.setCullMode(false, VK_FRONT_FACE_COUNTER_CLOCKWISE);
+    plFactory.setCullMode(VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_COUNTER_CLOCKWISE);
 
     plFactory.setColorAttachmentFormat(colorAttachments()->attachmentFormats());
     _pipeline = plFactory.build(_pipelineLayout);
 
-    engine->cleanupManager().push([&, objectDSLayout, envDSLayout, frameDSLayout](VkDevice dev) {
+    engine->cleanupManager().push([&, objectDSLayout, envDSLayout, frameDSLayout, lightDSLayout](VkDevice dev) {
         vkDestroyPipeline(dev, _pipeline, nullptr);
         vkDestroyPipelineLayout(dev, _pipelineLayout, nullptr);
         vkDestroyDescriptorSetLayout(dev, objectDSLayout, nullptr);
         vkDestroyDescriptorSetLayout(dev, envDSLayout, nullptr);
         vkDestroyDescriptorSetLayout(dev, frameDSLayout, nullptr);
+        vkDestroyDescriptorSetLayout(dev, lightDSLayout, nullptr);
     });
 }
 
