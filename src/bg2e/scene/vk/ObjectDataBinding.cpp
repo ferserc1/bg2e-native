@@ -10,9 +10,7 @@ void ObjectDataBinding::initFrameResources(bg2e::render::vulkan::DescriptorSetAl
 {
     frameAllocator->requirePoolSizeRatio(1, {
         { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1 },
-        
-        // TODO: Update the number of combined image samplers
-        { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2 }
+        { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 5 }
     });
 }
 
@@ -25,8 +23,9 @@ VkDescriptorSetLayout ObjectDataBinding::createLayout()
         dsFactory.addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
         dsFactory.addBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
         dsFactory.addBinding(2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
-        
-        // TODO: Add other textures
+        dsFactory.addBinding(3, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+        dsFactory.addBinding(4, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+        dsFactory.addBinding(5, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
         
         _layout = dsFactory.build(_engine->device().handle(), VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT);
     }
@@ -68,8 +67,21 @@ VkDescriptorSet ObjectDataBinding::newDescriptorSet(
             VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
             material->normalTexture()
         );
-        // TODO: Add textures
-        
+        ds->addImage(
+            3, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+            material->metalnessTexture()
+        );
+        ds->addImage(
+            4, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+            material->roughnessTexture()
+        );
+        ds->addImage(
+            5, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+            material->aoTexture()
+        );
     ds->endUpdate();
     return ds->descriptorSet();
 }

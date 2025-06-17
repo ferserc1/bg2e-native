@@ -10,6 +10,7 @@ class BG2E_API TransformComponent : public Component {
 public:
     static TransformComponent * makeTranslated(float x, float y, float z);
     static TransformComponent * makeRotated(float alpha, float x, float y, float z);
+    static TransformComponent * makeScaled(float xyz);
     static TransformComponent * makeScaled(float x, float y, float z);
     static TransformComponent * makeTranslated(const glm::vec3 &);
     static TransformComponent * makeRotated(float alpha, const glm::vec3& axis);
@@ -24,9 +25,11 @@ public:
     
     TransformComponent * setTranslation(float x, float y, float z);
     TransformComponent * setRotation(float alpha, float x, float y, float z);
+    TransformComponent * setScale(float xyz);
     TransformComponent * setScale(float x, float y, float z);
     TransformComponent * translate(float x, float y, float z);
     TransformComponent * rotate(float alpha, float x, float y, float z);
+    TransformComponent * scale(float xyz);
     TransformComponent * scale(float x, float y, float z);
     
     TransformComponent * setTranslation(const glm::vec3& t);

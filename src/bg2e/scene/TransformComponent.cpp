@@ -23,6 +23,11 @@ TransformComponent * TransformComponent::makeRotated(float alpha, const glm::vec
     return new TransformComponent(glm::rotate( glm::mat4 { 1.0f }, alpha, axis ));
 }
 
+TransformComponent * TransformComponent::makeScaled(float xyz)
+{
+    return new TransformComponent(glm::scale( glm::mat4 { 1.0f }, glm::vec3(xyz) ));
+}
+
 TransformComponent * TransformComponent::makeScaled(float x, float y, float z)
 {
     return new TransformComponent(glm::scale( glm::mat4 { 1.0f }, glm::vec3(x, y, z) ));
@@ -43,6 +48,11 @@ TransformComponent * TransformComponent::setRotation(float alpha, float x, float
     return this;
 }
 
+TransformComponent * TransformComponent::setScale(float xyz) {
+    _matrix = glm::scale(glm::mat4{1.0f}, glm::vec3(xyz));
+    return this;
+}
+
 TransformComponent * TransformComponent::setScale(float x, float y, float z) {
     _matrix = glm::scale(glm::mat4{1.0f}, glm::vec3(x, y, z));
     return this;
@@ -57,6 +67,12 @@ TransformComponent * TransformComponent::translate(float x, float y, float z)
 TransformComponent * TransformComponent::rotate(float alpha, float x, float y, float z)
 {
     _matrix = glm::rotate(_matrix, alpha, glm::vec3(x, y, z));
+    return this;
+}
+
+TransformComponent * TransformComponent::scale(float xyz)
+{
+    _matrix = glm::scale(_matrix, glm::vec3(xyz));
     return this;
 }
 

@@ -220,6 +220,21 @@ protected:
                 sceneRoot->addChild(node);
             }
         }
+        
+        auto assetPath = bg2e::base::PlatformTools::assetPath();
+        auto mainSphereDrawable = new bg2e::scene::Drawable();
+        mainSphereDrawable->setMesh(sphereMesh);
+        mainSphereDrawable->material(0).setAlbedo(new bg2e::base::Texture(assetPath, "rust_metal_albedo.jpg"));
+        mainSphereDrawable->material(0).setNormalTexture(new bg2e::base::Texture(assetPath, "rust_metal_normal.jpg"));
+        mainSphereDrawable->material(0).setMetalness(new bg2e::base::Texture(assetPath, "rust_metal_metallic.jpg"));
+        mainSphereDrawable->material(0).setRoughness(new bg2e::base::Texture(assetPath, "rust_metal_roughness.jpg"));
+        mainSphereDrawable->load(_engine);
+        
+        auto mainSphereNode = new bg2e::scene::Node("Main Sphere");
+        mainSphereNode->addComponent(bg2e::scene::TransformComponent::makeTranslated(0.0f, 0.0f, 4.0f));
+        mainSphereNode->transform()->scale(3.0f);
+        mainSphereNode->addComponent(new bg2e::scene::DrawableComponent(mainSphereDrawable));
+        sceneRoot->addChild(mainSphereNode);
        
         return sceneRoot;
     }

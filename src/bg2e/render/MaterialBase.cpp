@@ -9,6 +9,7 @@ MaterialBase::MaterialBase(Engine * engine)
 {
     _albedoTexture = Texture::whiteTexture(engine);
     _normalTexture = Texture::whiteTexture(engine);
+    _metalnessTexture = Texture::whiteTexture(engine);
     _roughnessTexture = Texture::whiteTexture(engine);
     _normalTexture = Texture::normalTexture(engine);
     _aoTexture = Texture::whiteTexture(engine);

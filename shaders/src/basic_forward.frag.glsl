@@ -19,6 +19,9 @@ layout(location = 9) in flat Light[LIGHT_COUNT] inLights;
 
 layout(set = 1, binding = 1) uniform sampler2D albedoTex;
 layout(set = 1, binding = 2) uniform sampler2D normalTex;
+layout(set = 1, binding = 3) uniform sampler2D metallicTex;
+layout(set = 1, binding = 4) uniform sampler2D roughnessTex;
+layout(set = 1, binding = 5) uniform sampler2D aoTex;
 layout(set = 2, binding = 0) uniform samplerCube giTex;
 
 layout(push_constant) uniform PushConstant
@@ -33,11 +36,14 @@ layout (set = 1, binding = 0) uniform PBRObjectData {
 
 void main()
 {
+    // TODO: get texture from the appropiate UV map
+    // TODO: add the texture scale
     vec3 albedo = SRGB2Lineal(texture(albedoTex, inUV0), pushConstant.gamma).rgb * objectData.material.albedo.rgb;
-    float metallic = objectData.material.metalness;
+    float metallic = texture(metallicTex, inUV0).r * objectData.material.metalness;
     const float minRoughness = 0.05; // Minimum roughness value: even a mirror have some roughness
-    float roughness = max(objectData.material.roughness, minRoughness);
-    float ao = 1.0; // ambient occlusion, can be added later
+    float roughness = texture(roughnessTex, inUV0).r * objectData.material.roughness;
+    roughness = max(roughness, minRoughness);
+    float ao = texture(aoTex, inUV0).r;
     mat3 TBN = inTBN;
     
     vec3 normal = normalize(TBN * sampleNormal(normalTex, inUV0));
@@ -50,12 +56,11 @@ void main()
     vec3 Lo = vec3(0.0);
     for(int i = 0; i < inLightCount; ++i)
     {
-        Light light = inLights[i];
         Lo += calcRadiance(inLights[i], viewDir, inFragPos, metallic, roughness, F0, normal, albedo);
     }
   
     vec3 ambient = vec3(0.03) * albedo * ao;
     vec3 color = ambient + Lo;
 
-    outColor = lineal2SRGB(vec4(color, 1.0), 2.2);
+    outColor = lineal2SRGB(vec4(color, 1.0), pushConstant.gamma);
 }
