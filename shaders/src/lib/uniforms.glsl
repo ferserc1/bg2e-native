@@ -30,3 +30,7 @@ struct Light
 };
 
 const int LIGHT_COUNT = 8;
+const int LIGHT_TYPE_POINT = 1;
+const int LIGHT_TYPE_DIRECTIONAL = 2;
+const int LIGHT_TYPE_SPOT = 3;
+const int LIGHT_TYPE_DISABLED = 10;

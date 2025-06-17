@@ -8,14 +8,29 @@ TransformComponent * TransformComponent::makeTranslated(float x, float y, float 
     return new TransformComponent(glm::translate( glm::mat4 { 1.0f }, glm::vec3(x, y, z) ));
 }
 
+TransformComponent * TransformComponent::makeTranslated(const glm::vec3& t)
+{
+    return new TransformComponent(glm::translate( glm::mat4 { 1.0f }, t ));
+}
+
 TransformComponent * TransformComponent::makeRotated(float alpha, float x, float y, float z)
 {
     return new TransformComponent(glm::rotate( glm::mat4 { 1.0f }, alpha, glm::vec3(x, y, z) ));
 }
 
+TransformComponent * TransformComponent::makeRotated(float alpha, const glm::vec3& axis)
+{
+    return new TransformComponent(glm::rotate( glm::mat4 { 1.0f }, alpha, axis ));
+}
+
 TransformComponent * TransformComponent::makeScaled(float x, float y, float z)
 {
     return new TransformComponent(glm::scale( glm::mat4 { 1.0f }, glm::vec3(x, y, z) ));
+}
+
+TransformComponent * TransformComponent::makeScaled(const glm::vec3& scale)
+{
+    return new TransformComponent(glm::scale( glm::mat4 { 1.0f }, scale ));
 }
 
 TransformComponent * TransformComponent::setTranslation(float x, float y, float z) {
@@ -48,6 +63,39 @@ TransformComponent * TransformComponent::rotate(float alpha, float x, float y, f
 TransformComponent * TransformComponent::scale(float x, float y, float z)
 {
     _matrix = glm::scale(_matrix, glm::vec3(x, y, z));
+    return this;
+}
+
+TransformComponent * TransformComponent::setTranslation(const glm::vec3& t) {
+    _matrix = glm::translate(glm::mat4{1.0f}, t );
+    return this;
+}
+
+TransformComponent * TransformComponent::setRotation(float alpha, const glm::vec3& axis) {
+    _matrix = glm::rotate(glm::mat4{1.0f}, alpha, axis);
+    return this;
+}
+
+TransformComponent * TransformComponent::setScale(const glm::vec3& scale) {
+    _matrix = glm::scale(glm::mat4{1.0f}, scale);
+    return this;
+}
+
+TransformComponent * TransformComponent::translate(const glm::vec3& t)
+{
+    _matrix = glm::translate(_matrix, t);
+    return this;
+}
+
+TransformComponent * TransformComponent::rotate(float alpha, const glm::vec3& axis)
+{
+    _matrix = glm::rotate(_matrix, alpha, axis);
+    return this;
+}
+
+TransformComponent * TransformComponent::scale(const glm::vec3& scale)
+{
+    _matrix = glm::scale(_matrix, scale);
     return this;
 }
 

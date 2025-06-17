@@ -24,6 +24,22 @@ struct PBRMaterialData
     uint32_t metalnessUVSet;  // UV set for metalness texture
     uint32_t roughnessUVSet;  // UV set for roughness texture
     uint32_t aoUVSet;  // UV set for ambient occlusion texture
+    
+    void operator=(const base::MaterialAttributes& att)
+    {
+        albedo = att.albedo();
+        albedoScale = att.albedoScale();
+        normalScale = att.normalScale();
+        metalnessScale = att.metalnessScale();
+        roughnessScale = att.roughnessScale();
+        metalness = att.metalness();
+        roughness = att.roughness();
+        albedoUVSet = att.albedoUVSet();
+        normalUVSet = att.normalUVSet();
+        metalnessUVSet = att.metalnessUVSet();
+        roughnessUVSet = att.roughnessUVSet();
+        aoUVSet = att.aoUVSet();        
+    }
 };
 
 }

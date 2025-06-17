@@ -26,7 +26,13 @@ class BasicSceneDelegate : public bg2e::render::DefaultRenderLoopDelegate<bg2e::
 	public bg2e::ui::UserInterfaceDelegate
 {
 public:
- 
+    void init(bg2e::render::Engine * engine) override
+    {
+        bg2e::render::DefaultRenderLoopDelegate<bg2e::render::RendererBasicForward>::init(engine);
+        
+        renderer()->setDrawSkybox(false);
+    }
+    
 	// ============ User Interface Delegate Functions =========
 	void init(bg2e::render::Engine*, bg2e::ui::UserInterface*) override {
 		_window.setTitle("Basic forward renderer");
@@ -49,7 +55,89 @@ public:
 protected:
 	bg2e::ui::Window _window;
     
-    std::shared_ptr<bg2e::scene::Node> createScene() override
+    std::shared_ptr<bg2e::scene::Node> scene1()
+    {
+        auto sceneRoot = std::make_shared<bg2e::scene::Node>("Scene Root");
+        sceneRoot->addComponent(new bg2e::scene::EnvironmentComponent(bg2e::base::PlatformTools::assetPath(), "country_field_sun.jpg"));
+        
+        
+        auto cameraNode = std::shared_ptr<bg2e::scene::Node>(new bg2e::scene::Node("Camera"));
+        cameraNode->addComponent(bg2e::scene::TransformComponent::makeTranslated(0.0f, 0.0f, 45.0f ));
+        
+        cameraNode->addComponent(new bg2e::scene::CameraComponent());
+        auto projection = new bg2e::math::OpticalProjection();
+        cameraNode->camera()->setProjection(projection);
+        
+        auto cameraRotation = new bg2e::scene::Node("Camera Rotation");
+        cameraRotation->addComponent(new bg2e::scene::TransformComponent());
+        cameraRotation->addComponent(new RotateCameraComponent(-0.002f));
+        cameraRotation->addChild(cameraNode);
+        sceneRoot->addChild(cameraRotation);
+        
+        // Lights: When you first create the scene in createScene(), you don't need to do anything with the lights, because the
+        // scene has not been initialised yet. Once the scene is initialised, if lights are added or removed during the rendering
+        // loop, _scene->updateLights() must be called to rebuild the array of lights in the scene that will be passed to the shader.
+        auto light1 = new bg2e::scene::Node("Light 1");
+        light1->addComponent(new bg2e::scene::LightComponent());
+        light1->addComponent(new bg2e::scene::TransformComponent(glm::translate(glm::mat4 { 1.0f }, glm::vec3{-10, 10, 10 } )));
+        light1->light()->light().setIntensity(300.0f);
+        sceneRoot->addChild(light1);
+        
+        auto light2 = new bg2e::scene::Node("Light 2");
+        light2->addComponent(new bg2e::scene::LightComponent());
+        light2->addComponent(new bg2e::scene::TransformComponent(glm::translate(glm::mat4 { 1.0f }, glm::vec3{ 10, 10, 10 } )));
+        light2->light()->light().setIntensity(300.0f);
+        sceneRoot->addChild(light2);
+        
+        auto light3 = new bg2e::scene::Node("Light 3");
+        light3->addComponent(new bg2e::scene::LightComponent());
+        light3->addComponent(new bg2e::scene::TransformComponent(glm::translate(glm::mat4 { 1.0f }, glm::vec3{-10,-10, 10 } )));
+        light3->light()->light().setIntensity(300.0f);
+        sceneRoot->addChild(light3);
+        
+        auto light4 = new bg2e::scene::Node("Light 4");
+        light4->addComponent(new bg2e::scene::LightComponent());
+        light4->addComponent(new bg2e::scene::TransformComponent(glm::translate(glm::mat4 { 1.0f }, glm::vec3{ 10,-10, 10 } )));
+        light4->light()->light().setIntensity(300.0f);
+        sceneRoot->addChild(light4);
+        
+        // Procedural geometry
+        glm::vec3 pos{0};
+        const uint32_t rows = 10;
+        const uint32_t cols = 10;
+        float sphereRadius = 1.0f;
+        float sphereGap = 0.5f;
+        float sphereSeparation = sphereRadius * 2.0f + sphereGap;
+        float totalWidth = static_cast<float>(rows) * sphereSeparation;
+        float totalHeight = static_cast<float>(cols) * sphereSeparation;
+        auto sphereMesh = std::shared_ptr<bg2e::geo::Mesh>(bg2e::geo::createSphere(sphereRadius, 15, 15));
+        bg2e::geo::GenTangentsModifier<bg2e::geo::MeshPNUUT> genTangents(sphereMesh.get());
+        genTangents.apply();
+        for (uint32_t row = 0; row < rows; ++row)
+        {
+            for (uint32_t col = 0; col < cols; ++col)
+            {
+                pos.x = (totalWidth / -2.0f) + sphereSeparation / 2.0f + static_cast<float>(row) * sphereSeparation;
+                pos.y = (totalHeight / -2.0f) + sphereSeparation / 2.0f + static_cast<float>(col) * sphereSeparation;
+                
+                auto sphereDrawable = std::make_shared<bg2e::scene::Drawable>();
+                sphereDrawable->setMesh(sphereMesh);
+                sphereDrawable->material(0).setMetalness(static_cast<float>(row) / rows);
+                sphereDrawable->material(0).setRoughness(static_cast<float>(col) / cols);
+                sphereDrawable->material(0).setAlbedo(bg2e::base::Color::Red());
+                
+                sphereDrawable->load(_engine);
+                auto node = std::make_shared<bg2e::scene::Node>("Sphere-" + std::to_string(row) + "-" + std::to_string(col));
+                node->addComponent(new bg2e::scene::DrawableComponent(sphereDrawable));
+                node->addComponent(bg2e::scene::TransformComponent::makeTranslated(pos));
+                sceneRoot->addChild(node);
+            }
+        }
+       
+        return sceneRoot;
+    }
+    
+    std::shared_ptr<bg2e::scene::Node> scene2()
     {
         auto sceneRoot = std::make_shared<bg2e::scene::Node>("Scene Root");
         sceneRoot->addComponent(new bg2e::scene::EnvironmentComponent(bg2e::base::PlatformTools::assetPath(), "country_field_sun.jpg"));
@@ -95,23 +183,26 @@ protected:
         auto light1 = new bg2e::scene::Node("Light 1");
         light1->addComponent(new bg2e::scene::LightComponent());
         light1->addComponent(new bg2e::scene::TransformComponent(glm::translate(glm::mat4 { 1.0f }, glm::vec3{ 4, 2, 4 } )));
-        light1->light()->light().setIntensity(5.0f);
+        light1->light()->light().setIntensity(3.7f);
         sceneRoot->addChild(light1);
         
         auto light2 = new bg2e::scene::Node("Light 2");
         light2->addComponent(new bg2e::scene::LightComponent());
         light2->addComponent(new bg2e::scene::TransformComponent(glm::translate(glm::mat4 { 1.0f }, glm::vec3{ 4,-2,-4} )));
+        light2->light()->light().setIntensity(0.3f);
         sceneRoot->addChild(light2);
         
         auto light3 = new bg2e::scene::Node("Light 3");
         light3->addComponent(new bg2e::scene::LightComponent());
         light3->addComponent(new bg2e::scene::TransformComponent(glm::translate(glm::mat4 { 1.0f }, glm::vec3{-4, 2, 4} )));
+        light3->light()->light().setIntensity(0.3f);
         sceneRoot->addChild(light3);
         
         auto light4 = new bg2e::scene::Node("Light 4");
         light4->addComponent(new bg2e::scene::LightComponent());
         light4->addComponent(new bg2e::scene::TransformComponent(glm::translate(glm::mat4 { 1.0f }, glm::vec3{-4,-2,-4} )));
         light4->transform()->rotate(0.1, 0.0f, 1.0f, 0.0f);
+        light4->light()->light().setIntensity(0.3f);
         sceneRoot->addChild(light4);
         
         
@@ -162,9 +253,14 @@ protected:
         
         // Procedural geometry
         auto cylinderMesh = bg2e::geo::createSphere(1.0f, 15, 15);
+        bg2e::geo::GenTangentsModifier<bg2e::geo::MeshPNUUT> genTangents(cylinderMesh);
+        genTangents.apply();
+        
         auto cylinderDrawable = std::make_shared<bg2e::scene::Drawable>();
         cylinderDrawable->setMesh(cylinderMesh);
         cylinderDrawable->material(0).setNormalTexture(new bg2e::base::Texture(bg2e::base::PlatformTools::assetPath(), "normal_test.jpeg"));
+        cylinderDrawable->material(0).setMetalness(1.0f);
+        cylinderDrawable->material(0).setRoughness(0.1f);
         cylinderDrawable->load(_engine);
         
         auto cylinderNode = new bg2e::scene::Node("Cylinder");
@@ -176,33 +272,31 @@ protected:
         auto cubeMesh = bg2e::geo::createCube(2.0f, 2.0f, 2.0f);
         auto cubeDrawable = std::make_shared<bg2e::scene::Drawable>();
         cubeDrawable->setMesh(cubeMesh);
+        
+        // Common material properties for all materials
+        cubeDrawable->iterateMaterials([](bg2e::base::MaterialAttributes & mat) {
+            mat.setMetalness(0.4f);
+            mat.setRoughness(0.1f);
+            mat.setAlbedo(new bg2e::base::Texture(bg2e::base::PlatformTools::assetPath(), "logo_2a.png"));
+            mat.setNormalTexture(new bg2e::base::Texture(bg2e::base::PlatformTools::assetPath(), "normal_test.jpeg"));
+        });
         // Front face
         cubeDrawable->material(0).setAlbedo(bg2e::base::Color::Red());
-        cubeDrawable->material(0).setAlbedo(new bg2e::base::Texture(bg2e::base::PlatformTools::assetPath(), "logo_2a.png"));
-        cubeDrawable->material(0).setNormalTexture(new bg2e::base::Texture(bg2e::base::PlatformTools::assetPath(), "normal_test.jpeg"));
         
         // Back face
         cubeDrawable->material(1).setAlbedo(bg2e::base::Color::Yellow());
-        cubeDrawable->material(1).setAlbedo(new bg2e::base::Texture(bg2e::base::PlatformTools::assetPath(), "logo_2a.png"));
-        cubeDrawable->material(1).setNormalTexture(new bg2e::base::Texture(bg2e::base::PlatformTools::assetPath(), "normal_test.jpeg"));
         
         // Right face
-        cubeDrawable->material(2).setAlbedo(new bg2e::base::Texture(bg2e::base::PlatformTools::assetPath(), "logo_2a.png"));
         cubeDrawable->material(2).setAlbedo(bg2e::base::Color::Green());
-        cubeDrawable->material(2).setNormalTexture(new bg2e::base::Texture(bg2e::base::PlatformTools::assetPath(), "normal_test.jpeg"));
         
         // Left face
         cubeDrawable->material(3).setAlbedo(bg2e::base::Color::Blue());
-        cubeDrawable->material(3).setAlbedo(new bg2e::base::Texture(bg2e::base::PlatformTools::assetPath(), "logo_2a.png"));
-        cubeDrawable->material(3).setNormalTexture(new bg2e::base::Texture(bg2e::base::PlatformTools::assetPath(), "normal_test.jpeg"));
         
         // Top Face
-        cubeDrawable->material(4).setAlbedo(new bg2e::base::Texture(bg2e::base::PlatformTools::assetPath(), "logo_2a.png"));
-        cubeDrawable->material(4).setNormalTexture(new bg2e::base::Texture(bg2e::base::PlatformTools::assetPath(), "normal_test.jpeg"));
-        
+        cubeDrawable->material(3).setAlbedo(bg2e::base::Color::Bronze());
+
         // Bottom face
-        cubeDrawable->material(5).setAlbedo(new bg2e::base::Texture(bg2e::base::PlatformTools::assetPath(), "logo_2a.png"));
-        cubeDrawable->material(5).setNormalTexture(new bg2e::base::Texture(bg2e::base::PlatformTools::assetPath(), "normal_test.jpeg"));
+        cubeDrawable->material(5).setAlbedo(bg2e::base::Color::Coral());
         cubeDrawable->load(_engine);
         
         auto cubeNode = new bg2e::scene::Node("Cube");
@@ -214,6 +308,11 @@ protected:
         
         
         return sceneRoot;
+    }
+    
+    std::shared_ptr<bg2e::scene::Node> createScene() override
+    {
+        return scene1();
     }
 
 	bg2e::scene::DrawableBase * loadDrawable()

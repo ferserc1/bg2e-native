@@ -10,6 +10,7 @@
 #include <bg2e/scene/Component.hpp>
 
 #include <memory>
+#include <functional>
 
 namespace bg2e {
 namespace scene {
@@ -84,6 +85,16 @@ public:
     const base::MaterialAttributes& material(uint32_t index = 0) const;
     base::MaterialAttributes& material(uint32_t index = 0);
     glm::mat4 submeshTransform(uint32_t index = 0) const;
+    
+    std::vector<std::shared_ptr<render::MaterialBase>> materials() { return _materials; }
+    
+    void iterateMaterials(std::function<void(base::MaterialAttributes&)> cb);
+//    {
+//        for (size_t i = 0; i < _submeshAttributes.size(); ++i)
+//        {
+//            cb(_submeshAttributes[index].material);
+//        }
+//    }
     
     void load(render::Engine * engine);
     inline bool isLoaded() const { return _renderMesh.get() != nullptr; }

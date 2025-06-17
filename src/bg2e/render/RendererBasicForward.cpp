@@ -142,7 +142,6 @@ void RendererBasicForward::draw(
 
     macros::cmdSetDefaultViewportAndScissor(cmd, _colorAttachments->extent());
     auto mainCamera = _scene->mainCamera();
-    auto cameraPosition = mainCamera->ownerNode()->worldPosition();
     auto projMatrix = mainCamera->projectionMatrix();
     auto viewMatrix = mainCamera->ownerNode()->invertedWorldMatrix();    
     
@@ -150,8 +149,7 @@ void RendererBasicForward::draw(
     auto sceneDS = _frameDataBinding->newDescriptorSet(
         frameResources,
         viewMatrix,
-        projMatrix,
-        cameraPosition
+        projMatrix
     );
 
     if (_drawSkybox) {

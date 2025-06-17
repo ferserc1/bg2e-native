@@ -11,6 +11,9 @@ public:
     static TransformComponent * makeTranslated(float x, float y, float z);
     static TransformComponent * makeRotated(float alpha, float x, float y, float z);
     static TransformComponent * makeScaled(float x, float y, float z);
+    static TransformComponent * makeTranslated(const glm::vec3 &);
+    static TransformComponent * makeRotated(float alpha, const glm::vec3& axis);
+    static TransformComponent * makeScaled(const glm::vec3& scale);
     
     TransformComponent() = default;
     TransformComponent(const glm::mat4& matrix) : _matrix(matrix) {}
@@ -25,6 +28,13 @@ public:
     TransformComponent * translate(float x, float y, float z);
     TransformComponent * rotate(float alpha, float x, float y, float z);
     TransformComponent * scale(float x, float y, float z);
+    
+    TransformComponent * setTranslation(const glm::vec3& t);
+    TransformComponent * setRotation(float alpha, const glm::vec3& axis);
+    TransformComponent * setScale(const glm::vec3& scale);
+    TransformComponent * translate(const glm::vec3& t);
+    TransformComponent * rotate(float alpha, const glm::vec3& axis);
+    TransformComponent * scale(const glm::vec3& scale);
     
     glm::mat4 worldMatrix();
     glm::mat4 invertedWorldMatrix();

@@ -27,8 +27,7 @@ VkDescriptorSetLayout FrameDataBinding::createLayout()
 VkDescriptorSet FrameDataBinding::newDescriptorSet(
     bg2e::render::vulkan::FrameResources & frameResources,
     const glm::mat4 & viewMatrix,
-    const glm::mat4 & projectionMatrix,
-    const glm::vec3 & cameraPosition
+    const glm::mat4 & projectionMatrix
 ) {
     if (_layout == VK_NULL_HANDLE)
     {
@@ -37,8 +36,7 @@ VkDescriptorSet FrameDataBinding::newDescriptorSet(
     
     SceneUniforms uniforms {
         viewMatrix,
-        projectionMatrix,
-        cameraPosition
+        projectionMatrix
     };
     
     auto uniformBuffer = bg2e::render::vulkan::macros::createBuffer(_engine, frameResources, uniforms);

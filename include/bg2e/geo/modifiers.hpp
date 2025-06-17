@@ -45,9 +45,13 @@ public:
     {        
         for (size_t i = 0; i < _mesh->indices.size(); i+=3)
         {
-            auto& v0 = _mesh->vertices[i];
-            auto& v1 = _mesh->vertices[i + 1];
-            auto& v2 = _mesh->vertices[i + 2];
+            auto i1 = _mesh->indices[i];
+            auto i2 = _mesh->indices[i + 1];
+            auto i3 = _mesh->indices[i + 2];
+            
+            auto& v0 = _mesh->vertices[i1];
+            auto& v1 = _mesh->vertices[i2];
+            auto& v2 = _mesh->vertices[i3];
             
             auto pos1 = v0.position;
             auto pos2 = v1.position;

@@ -48,8 +48,7 @@ VkDescriptorSet ObjectDataBinding::newDescriptorSet(
     
     uniforms.modelMatrix = modelMatrix;
     
-    // TODO: Add uniform buffer data from material
-    uniforms.material.albedo = material->materialAttributes().albedo();
+    uniforms.material = material->materialAttributes();
     
     auto uniformBuffer = bg2e::render::vulkan::macros::createBuffer(_engine, frameResources, uniforms);
     

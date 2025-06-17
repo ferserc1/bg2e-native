@@ -117,7 +117,7 @@ protected:
     uint32_t _metalnessUVSet = 0;
     bool _metalnessTextureUpdated = true;
 
-    float _roughness = 0.0f;
+    float _roughness = 0.9f;
     std::shared_ptr<Texture> _roughnessTexture;
     glm::vec2 _roughnessScale{ 1.0f, 1.0f };
     uint32_t _roughnessChannel = 0;

@@ -20,9 +20,18 @@ if [ -z "$VULKAN_SDK" ] || [ ! -d "$VULKAN_SDK" ]; then
 fi
 
 GLSLANG=${VULKAN_SDK}/bin/glslang
-INPUT_DIR=$(cd $1; pwd)
 mkdir -p $2
 OUTPUT_DIR=$(cd $2; pwd)
+
+if [ -f "${1}" ] && [[ "${1}" == *.glsl ]]; then
+    FILE_NAME=$(basename ${1} .glsl)
+    OUT_FILE=$FILE_NAME.spv
+    echo "Compiling single shader file ${1} to ${OUTPUT_DIR}/${OUT_FILE}"
+    ${GLSLANG} -V ${1} -o ${OUTPUT_DIR}/${OUT_FILE}
+    exit 0
+fi
+
+INPUT_DIR=$(cd $1; pwd)
 
 echo "Compiling shaders from ${INPUT_DIR} to ${OUTPUT_DIR}"
 
