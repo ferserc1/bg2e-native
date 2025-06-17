@@ -89,12 +89,6 @@ public:
     std::vector<std::shared_ptr<render::MaterialBase>> materials() { return _materials; }
     
     void iterateMaterials(std::function<void(base::MaterialAttributes&)> cb);
-//    {
-//        for (size_t i = 0; i < _submeshAttributes.size(); ++i)
-//        {
-//            cb(_submeshAttributes[index].material);
-//        }
-//    }
     
     void load(render::Engine * engine);
     inline bool isLoaded() const { return _renderMesh.get() != nullptr; }
