@@ -205,6 +205,11 @@ void RendererBasicForward::cleanup() {
     _colorAttachments->cleanup();
 }
 
+bg2e::scene::Scene* RendererBasicForward::scene()
+{
+    return _scene.get();
+}
+
 void RendererBasicForward::createPipeline(bg2e::render::Engine* engine) {
     bg2e::render::vulkan::factory::GraphicsPipeline plFactory(engine);
 

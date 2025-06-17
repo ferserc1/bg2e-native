@@ -70,6 +70,8 @@ public:
     ) override;
 
     void cleanup() override;
+    
+    bg2e::scene::Scene* scene() override;
 
     void createPipeline(bg2e::render::Engine* engine);
 

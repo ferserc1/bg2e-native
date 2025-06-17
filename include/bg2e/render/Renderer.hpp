@@ -3,6 +3,7 @@
 #include <memory>
 #include <vulkan/vulkan.h>
 #include <bg2e/scene/Node.hpp>
+#include <bg2e/scene/Scene.hpp>
 #include <bg2e/render/vulkan/Image.hpp>
 #include <bg2e/render/vulkan/FrameResources.hpp>
 #include <bg2e/render/Engine.hpp>
@@ -32,6 +33,8 @@ public:
     virtual void draw(VkCommandBuffer cmd, uint32_t currentFrame, const bg2e::render::vulkan::Image* depthImage, bg2e::render::vulkan::FrameResources& frameResources) = 0;
     virtual void cleanup() = 0;
 
+    virtual bg2e::scene::Scene* scene() = 0;
+    
 protected:
     VkFormat _colorAttachmentFormat = VK_FORMAT_R16G16B16A16_SFLOAT;
     VkFormat _depthAttachmentFormat = VK_FORMAT_D32_SFLOAT;

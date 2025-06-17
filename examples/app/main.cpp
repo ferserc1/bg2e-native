@@ -21,6 +21,70 @@ protected:
     float _r;
 };
 
+class CameraMouse : public bg2e::scene::Component {
+public:
+    CameraMouse(bg2e::scene::Node * cameraNode) :_cameraNode(cameraNode) {}
+    
+    void update(float delta) override
+    {
+        auto transform = ownerNode()->transform();
+        
+        if (transform)
+        {
+            transform->rotate(_diff.x * 0.01f, glm::vec3(0, 1, 0));
+            transform->rotate(_diff.y * 0.01f, glm::vec3(1, 0, 0));
+            _diff.x = 0.0f;
+            _diff.y = 0.0f;
+        }
+    }
+    
+    void mouseMove(int x, int y) override
+    {
+        if (_move)
+        {
+            _diff.x = static_cast<float>(_x - x);
+            _diff.y = static_cast<float>(_y - y);
+            _x = x;
+            _y = y;
+        }
+    }
+    
+    void mouseButtonDown(int button, int x, int y) override
+    {
+        _move = true;
+        _x = x;
+        _y = y;
+    }
+    
+    void mouseButtonUp(int button, int, int) override
+    {
+        _move = false;
+    }
+    
+    void mouseWheel(int deltaX, int deltaY) override
+    {
+        auto camera = _cameraNode ? _cameraNode->camera() : nullptr;
+        auto opticalProjection = camera ? dynamic_cast<bg2e::math::OpticalProjection*>(camera->projection()) : nullptr;
+        
+        if (opticalProjection)
+        {
+            auto fl = opticalProjection->focalLength() + static_cast<float>(deltaY) * 0.5f;
+            fl = fl < _minFocalLength ? _minFocalLength : fl;
+            fl = fl > _maxFocalLength ? _maxFocalLength : fl;
+            opticalProjection->setFocalLength(fl);
+        }
+    }
+    
+protected:
+    bg2e::scene::Node * _cameraNode = nullptr;
+    bool _move = false;
+    int _x = 0;
+    int _y = 0;
+    glm::vec2 _diff { 0, 0 };
+    float _minFocalLength = 18.0f;
+    float _maxFocalLength = 300.0f;
+};
+
 class BasicSceneDelegate : public bg2e::render::DefaultRenderLoopDelegate<bg2e::render::RendererBasicForward>,
 	public bg2e::app::InputDelegate,
 	public bg2e::ui::UserInterfaceDelegate
@@ -51,9 +115,31 @@ public:
         });
         renderer()->setDrawSkybox(drawSkybox);
 	}
+ 
+    // InputDelegate
+    void mouseMove(int x, int y) override
+    {
+        _inputVisitor.mouseMove(renderer()->scene()->rootNode(), x, y);
+    }
+    
+    void mouseButtonDown(int button, int x, int y) override
+    {
+        _inputVisitor.mouseButtonDown(renderer()->scene()->rootNode(), button, x, y);
+    }
+    
+    void mouseButtonUp(int button, int x, int y) override
+    {
+        _inputVisitor.mouseButtonUp(renderer()->scene()->rootNode(), button, x, y);
+    }
+    
+    void mouseWheel(int deltaX, int deltaY) override
+    {
+        _inputVisitor.mouseWheel(renderer()->scene()->rootNode(), deltaX, deltaY);
+    }
 
 protected:
 	bg2e::ui::Window _window;
+    bg2e::scene::InputVisitor _inputVisitor;
     
     std::shared_ptr<bg2e::scene::Node> scene1()
     {
@@ -70,7 +156,8 @@ protected:
         
         auto cameraRotation = new bg2e::scene::Node("Camera Rotation");
         cameraRotation->addComponent(new bg2e::scene::TransformComponent());
-        cameraRotation->addComponent(new RotateCameraComponent(-0.002f));
+        //cameraRotation->addComponent(new RotateCameraComponent(-0.002f));
+        cameraRotation->addComponent(new CameraMouse(cameraNode.get()));
         cameraRotation->addChild(cameraNode);
         sceneRoot->addChild(cameraRotation);
         

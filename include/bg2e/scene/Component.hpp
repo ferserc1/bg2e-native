@@ -4,6 +4,7 @@
 
 #include <bg2e/common.hpp>
 #include <bg2e/math/projections.hpp>
+#include <bg2e/app/KeyEvent.hpp>
 
 #include <string>
 
@@ -32,6 +33,13 @@ public:
     // Use this function to update matrixes generated from
     // the animation data.
     virtual void update(float delta) {}
+    
+    virtual void mouseMove(int x, int y) {}
+    virtual void mouseButtonDown(int button, int x, int y) {}
+    virtual void mouseButtonUp(int button, int x, int y) {}
+    virtual void mouseWheel(int deltaX, int deltaY) {}
+    virtual void keyDown(const app::KeyEvent& event) {}
+    virtual void keyUp(const app::KeyEvent& event) {}
 
 protected:
 
