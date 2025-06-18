@@ -79,3 +79,14 @@ The Vulkan Memory Allocator library is installed together with Vulkan, so you do
 Following the package-based installation process, the Vulkan header files, SDL2, GLM and Vulkan Memory Allocator, are placed in the system header files directory (`/usr/include`). Vulkan layers configuration files are installed in `/usr/share/vulkan`. Vulkan executables are in `/usr/bin`. The vulkan libraries and layers are installed in `/usr/lib/x86_64` In this case, since the libraries are installed on the system, we don't have to set any environment variables like `$VULKAN_SDK`.
 
 
+To generate the library and the main example application, simply use Make:
+
+```sh
+$ make -j$(grep -c processor /proc/cpuinfo)
+```
+
+To execute the example application, go to the `bin` directory and run:
+
+```sh
+$ LD_LIBRARY_PATH=LD_LIBRARY_PATH:. ./bg2e-example-app
+```
