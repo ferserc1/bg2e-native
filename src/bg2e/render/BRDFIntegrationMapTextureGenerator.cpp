@@ -2,8 +2,11 @@
 //  BRDFIntegrationMapTextureGenerator.cpp
 #include <bg2e/render/BRDFIntegrationMapTextureGenerator.hpp>
 #include <bg2e/math/all.hpp>
+#include <bg2e/base/PlatformTools.hpp>
 
 #include <numbers>
+
+#include <stb_image/stb_image.h>
 
 namespace bg2e::render {
 
@@ -113,30 +116,39 @@ glm::vec2 integrateBRDF(float NdotV, float roughness)
 
 uint8_t* BRDFIntegrationMapTextureGenerator::generate()
 {
-    using namespace glm;
-    auto size = _width * _height * _bpp;
-    uint8_t * buffer = new uint8_t[size];
+//    using namespace glm;
+//    auto size = _width * _height * _bpp;
+//    uint8_t * buffer = new uint8_t[size];
+//    
+//    uint32_t lineWidth = _width * _bpp;
+//    for (uint32_t j = 0; j < _height; ++j)
+//    {
+//        for (uint32_t i = 0; i < _width; ++i)
+//        {
+//            float u = static_cast<float>(i) / static_cast<float>(_width);
+//            float v = static_cast<float>(_height - j) / static_cast<float>(_height);
+//            vec2 result = integrateBRDF(u, v);
+//            buffer[j * lineWidth + i * _bpp] = static_cast<uint8_t>(result.x * 255.0f);
+//            buffer[j * lineWidth + i * _bpp + 1] = static_cast<uint8_t>(result.y * 255.0f);
+//            buffer[j * lineWidth + i * _bpp + 2] = 0;
+//            if (_bpp == 4) {
+//                buffer[j * lineWidth + i * _bpp + 3] = 255;
+//            }
+//        }
+//    }
+//    
+//    return buffer;
+    auto assetPath = bg2e::base::PlatformTools::assetPath();
+    assetPath.append("ibl_brdf_lut.png");
+
+    int width, height, channels;
+    unsigned char* data = stbi_load(assetPath.string().c_str(), &width, &height, &channels, 4);
     
-    uint32_t lineWidth = _width * _bpp;
-    for (uint32_t j = 0; j < _height; ++j)
-    {
-        for (uint32_t i = 0; i < _width; ++i)
-        {
-            float u = static_cast<float>(i) / static_cast<float>(_width);
-            float v = static_cast<float>(_height - j) / static_cast<float>(_height);
-            vec2 result = integrateBRDF(u, v);
-            buffer[j * lineWidth + i * _bpp] = static_cast<uint8_t>(result.x * 255.0f);
-            buffer[j * lineWidth + i * _bpp + 1] = static_cast<uint8_t>(result.y * 255.0f);
-            //buffer[j * lineWidth + i * _bpp] = static_cast<uint8_t>(u * 255.0f);
-            //buffer[j * lineWidth + i * _bpp + 1] = static_cast<uint8_t>(v * 255.0f);
-            buffer[j * lineWidth + i * _bpp + 2] = 0;
-            if (_bpp == 4) {
-                buffer[j * lineWidth + i * _bpp + 3] = 255;
-            }
-        }
-    }
+    setWidth(width);
+    setHeight(height);
+    setBytesPerPixel(channels);
     
-    return buffer;
+    return data;
 }
     
 std::string BRDFIntegrationMapTextureGenerator::imageIdentifier()

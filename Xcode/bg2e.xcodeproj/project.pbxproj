@@ -29,6 +29,7 @@
 		ED63CB8B2E02A03B00D0B673 /* rust_metal_metallic.jpg in Copy Assets */ = {isa = PBXBuildFile; fileRef = ED63CB862E02A01D00D0B673 /* rust_metal_metallic.jpg */; };
 		ED63CB8C2E02A03B00D0B673 /* rust_metal_normal.jpg in Copy Assets */ = {isa = PBXBuildFile; fileRef = ED63CB872E02A01D00D0B673 /* rust_metal_normal.jpg */; };
 		ED63CB8D2E02A03B00D0B673 /* rust_metal_roughness.jpg in Copy Assets */ = {isa = PBXBuildFile; fileRef = ED63CB882E02A01D00D0B673 /* rust_metal_roughness.jpg */; };
+		ED7558D42E049B0900033674 /* ibl_brdf_lut.png in Copy Assets */ = {isa = PBXBuildFile; fileRef = ED7558D32E049AFE00033674 /* ibl_brdf_lut.png */; };
 		ED76F64B2DD2437000C39A56 /* equirectangular-env.jpg in Copy Assets */ = {isa = PBXBuildFile; fileRef = ED76F6442DD2425200C39A56 /* equirectangular-env.jpg */; };
 		ED76F64C2DD2437000C39A56 /* equirectangular-env2.jpg in Copy Assets */ = {isa = PBXBuildFile; fileRef = ED76F6452DD2425200C39A56 /* equirectangular-env2.jpg */; };
 		ED76F64D2DD2437000C39A56 /* equirectangular-env3.jpg in Copy Assets */ = {isa = PBXBuildFile; fileRef = ED76F6462DD2425200C39A56 /* equirectangular-env3.jpg */; };
@@ -71,6 +72,7 @@
 			dstPath = assets;
 			dstSubfolderSpec = 7;
 			files = (
+				ED7558D42E049B0900033674 /* ibl_brdf_lut.png in Copy Assets */,
 				ED63CB8A2E02A03B00D0B673 /* rust_metal_albedo.jpg in Copy Assets */,
 				ED63CB8B2E02A03B00D0B673 /* rust_metal_metallic.jpg in Copy Assets */,
 				ED63CB8C2E02A03B00D0B673 /* rust_metal_normal.jpg in Copy Assets */,
@@ -128,6 +130,7 @@
 		ED63CB862E02A01D00D0B673 /* rust_metal_metallic.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = rust_metal_metallic.jpg; sourceTree = "<group>"; };
 		ED63CB872E02A01D00D0B673 /* rust_metal_normal.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = rust_metal_normal.jpg; sourceTree = "<group>"; };
 		ED63CB882E02A01D00D0B673 /* rust_metal_roughness.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = rust_metal_roughness.jpg; sourceTree = "<group>"; };
+		ED7558D32E049AFE00033674 /* ibl_brdf_lut.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = ibl_brdf_lut.png; sourceTree = "<group>"; };
 		ED76F6442DD2425200C39A56 /* equirectangular-env.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = "equirectangular-env.jpg"; sourceTree = "<group>"; };
 		ED76F6452DD2425200C39A56 /* equirectangular-env2.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = "equirectangular-env2.jpg"; sourceTree = "<group>"; };
 		ED76F6462DD2425200C39A56 /* equirectangular-env3.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = "equirectangular-env3.jpg"; sourceTree = "<group>"; };
@@ -248,6 +251,7 @@
 				ED63CB862E02A01D00D0B673 /* rust_metal_metallic.jpg */,
 				ED63CB872E02A01D00D0B673 /* rust_metal_normal.jpg */,
 				ED63CB882E02A01D00D0B673 /* rust_metal_roughness.jpg */,
+				ED7558D32E049AFE00033674 /* ibl_brdf_lut.png */,
 			);
 			name = assets;
 			path = ../assets;
