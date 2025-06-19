@@ -142,7 +142,7 @@ protected:
     std::shared_ptr<bg2e::scene::Node> scene1()
     {
         auto sceneRoot = std::make_shared<bg2e::scene::Node>("Scene Root");
-        sceneRoot->addComponent(new bg2e::scene::EnvironmentComponent(bg2e::base::PlatformTools::assetPath(), "country_field_sun.jpg"));
+        sceneRoot->addComponent(new bg2e::scene::EnvironmentComponent(bg2e::base::PlatformTools::assetPath(), "equirectangular-env.jpg"));
         
         
         auto cameraNode = std::shared_ptr<bg2e::scene::Node>(new bg2e::scene::Node("Camera"));
