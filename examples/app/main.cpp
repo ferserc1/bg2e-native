@@ -93,8 +93,6 @@ public:
     void init(bg2e::render::Engine * engine) override
     {
         bg2e::render::DefaultRenderLoopDelegate<bg2e::render::RendererBasicForward>::init(engine);
-        
-        renderer()->setDrawSkybox(false);
     }
     
 	// ============ User Interface Delegate Functions =========

@@ -1,6 +1,7 @@
 
 #include <bg2e/render/EnvironmentResources.hpp>
 #include <bg2e/render/vulkan/factory/Sampler.hpp>
+#include <bg2e/render/BRDFIntegrationMapTextureGenerator.hpp>
 
 namespace bg2e {
 namespace render {
@@ -18,15 +19,20 @@ EnvironmentResources::EnvironmentResources(bg2e::render::Engine * engine)
         new SpecularReflectionCubemapRenderer(_engine)
     );
     
+    buildBRDF();
+    
     vulkan::factory::Sampler samplerFactory(_engine);
     _cubeMapSampler = samplerFactory.build();
     _irradianceMapSampler = samplerFactory.build();
     _specularReflectionSampler = samplerFactory.build();
+    _brdfIntegrationMapSampler = samplerFactory.build();
     
     _engine->cleanupManager().push([&](VkDevice device) {
+        _brdfIntegrationMap.reset();
         vkDestroySampler(device, _cubeMapSampler, nullptr);
         vkDestroySampler(device, _irradianceMapSampler, nullptr);
         vkDestroySampler(device, _specularReflectionSampler, nullptr);
+        vkDestroySampler(device, _brdfIntegrationMapSampler, nullptr);
     });
 }
 
@@ -49,15 +55,24 @@ EnvironmentResources::EnvironmentResources(bg2e::render::Engine * engine, const 
         new SkyboxRenderer(_engine)
     );
     
+    buildBRDF();
+    
     vulkan::factory::Sampler samplerFactory(_engine);
     _cubeMapSampler = samplerFactory.build();
     _irradianceMapSampler = samplerFactory.build();
+    
+    // TODO: get this value from the specular renderer
+    samplerFactory.createInfo.maxLod = 10;
     _specularReflectionSampler = samplerFactory.build();
+    samplerFactory.createInfo.maxLod = 0;
+    _brdfIntegrationMapSampler = samplerFactory.build();
     
     _engine->cleanupManager().push([&](VkDevice device) {
+        _brdfIntegrationMap.reset();
         vkDestroySampler(device, _cubeMapSampler, nullptr);
         vkDestroySampler(device, _irradianceMapSampler, nullptr);
         vkDestroySampler(device, _specularReflectionSampler, nullptr);
+        vkDestroySampler(device, _brdfIntegrationMapSampler, nullptr);
     });
 }
 
@@ -188,6 +203,17 @@ void EnvironmentResources::drawSkybox(
     {
         _skyboxRenderer->draw(cmd, currentFrame, frameResources);
     }
+}
+
+void EnvironmentResources::buildBRDF()
+{
+    auto brdfTexture = new base::Texture();
+    auto brdfIntegrationMapGenerator = new render::BRDFIntegrationMapTextureGenerator();
+    brdfIntegrationMapGenerator->setDimensions(64, 64, 4);
+    brdfTexture->setProceduralGenerator(brdfIntegrationMapGenerator);
+    brdfTexture->setUseMipmaps(false);
+    _brdfIntegrationMap = std::make_shared<Texture>(_engine);
+    _brdfIntegrationMap->load(brdfTexture);
 }
 
 }

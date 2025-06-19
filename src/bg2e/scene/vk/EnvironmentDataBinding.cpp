@@ -8,7 +8,7 @@ namespace bg2e::scene::vk {
 void EnvironmentDataBinding::initFrameResources(bg2e::render::vulkan::DescriptorSetAllocator * frameAllocator)
 {
     frameAllocator->requirePoolSizeRatio(1, {
-        { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2 }
+        { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 3 }
     });
 }
 
@@ -19,7 +19,8 @@ VkDescriptorSetLayout EnvironmentDataBinding::createLayout()
         bg2e::render::vulkan::factory::DescriptorSetLayout dsFactory;
         
         dsFactory.addBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
-        // TODO: Add specular reflection map
+        dsFactory.addBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+        dsFactory.addBinding(2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
         
         _layout = dsFactory.build(_engine->device().handle(), VK_SHADER_STAGE_FRAGMENT_BIT);
     }
@@ -44,7 +45,18 @@ VkDescriptorSet EnvironmentDataBinding::newDescriptorSet(
             environmentResources->irradianceMapSampler()
         );
         
-        // TODO: Add specular reflection map
+        ds->addImage(
+            1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+            environmentResources->specularReflectionMapImage()->imageView(),
+            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+            environmentResources->specularReflectionMapSampler()
+        );
+        
+        ds->addImage(2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+            environmentResources->brdfIntegrationMapImage()->image()->imageView(),
+            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+            environmentResources->brdfIntegrationMapSampler()
+        );
     ds->endUpdate();
     return ds->descriptorSet();
 }

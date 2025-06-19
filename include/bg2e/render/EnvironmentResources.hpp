@@ -51,10 +51,12 @@ public:
     std::shared_ptr<vulkan::Image> cubeMapImage() { return _sphereToCubemap->cubeMapImage(); }
     std::shared_ptr<vulkan::Image> irradianceMapImage() { return _irradianceRenderer->cubeMapImage(); }
     std::shared_ptr<vulkan::Image> specularReflectionMapImage() { return _specularRenderer->cubeMapImage(); }
+    std::shared_ptr<render::Texture> brdfIntegrationMapImage() { return _brdfIntegrationMap; }
 
     inline VkSampler cubeMapSampler() const { return _cubeMapSampler; }
     inline VkSampler irradianceMapSampler() const { return _irradianceMapSampler; }
     inline VkSampler specularReflectionMapSampler() const { return _specularReflectionSampler; }
+    inline VkSampler brdfIntegrationMapSampler() const { return _brdfIntegrationMapSampler; }
 
 protected:
     bg2e::render::Engine * _engine;
@@ -63,6 +65,7 @@ protected:
     std::unique_ptr<SphereToCubemapRenderer> _sphereToCubemap;
     std::unique_ptr<IrradianceCubemapRenderer> _irradianceRenderer;
     std::unique_ptr<SpecularReflectionCubemapRenderer> _specularRenderer;
+    std::shared_ptr<bg2e::render::Texture> _brdfIntegrationMap;
     bool _cubemapChanged = true;
     
     std::vector<VkFormat> _targetImagesFormat;
@@ -72,6 +75,9 @@ protected:
     VkSampler _cubeMapSampler = VK_NULL_HANDLE;
     VkSampler _irradianceMapSampler = VK_NULL_HANDLE;
     VkSampler _specularReflectionSampler = VK_NULL_HANDLE;
+    VkSampler _brdfIntegrationMapSampler = VK_NULL_HANDLE;
+    
+    void buildBRDF();
 };
 
 }
