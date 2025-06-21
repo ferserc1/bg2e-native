@@ -10,6 +10,10 @@ namespace vk {
 
 class BG2E_API EnvironmentDataBinding : public SceneDataBinding {
 public:
+    struct EnvironmentUniforms {
+        float maxEnvMapLod;
+    };
+
     EnvironmentDataBinding(bg2e::render::Engine * engine) : SceneDataBinding(engine) {}
 
     void initFrameResources(bg2e::render::vulkan::DescriptorSetAllocator * frameAllocator) override;

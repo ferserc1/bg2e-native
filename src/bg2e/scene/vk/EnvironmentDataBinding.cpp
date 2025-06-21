@@ -8,7 +8,8 @@ namespace bg2e::scene::vk {
 void EnvironmentDataBinding::initFrameResources(bg2e::render::vulkan::DescriptorSetAllocator * frameAllocator)
 {
     frameAllocator->requirePoolSizeRatio(1, {
-        { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 3 }
+        { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 3 },
+        { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1 }
     });
 }
 
@@ -21,6 +22,7 @@ VkDescriptorSetLayout EnvironmentDataBinding::createLayout()
         dsFactory.addBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
         dsFactory.addBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
         dsFactory.addBinding(2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+        dsFactory.addBinding(3, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
         
         _layout = dsFactory.build(_engine->device().handle(), VK_SHADER_STAGE_FRAGMENT_BIT);
     }
@@ -36,6 +38,10 @@ VkDescriptorSet EnvironmentDataBinding::newDescriptorSet(
         throw std::runtime_error("EnvironmentData::newDescriptorSet() - The descriptor set layout is not created");
     }
     
+    EnvironmentUniforms envUniforms;
+    envUniforms.maxEnvMapLod = environmentResources->specularReflectionMapImage()->mipLevels();
+    auto uniformBuffer = bg2e::render::vulkan::macros::createBuffer(_engine, frameResources, envUniforms);
+
     auto ds = frameResources.newDescriptorSet(_layout);
     ds->beginUpdate();
         ds->addImage(
@@ -57,6 +63,11 @@ VkDescriptorSet EnvironmentDataBinding::newDescriptorSet(
             VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
             environmentResources->brdfIntegrationMapSampler()
         );
+
+        ds->addBuffer(3, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+            uniformBuffer, sizeof(EnvironmentUniforms), 0
+        );
+
     ds->endUpdate();
     return ds->descriptorSet();
 }

@@ -52,8 +52,16 @@ float calcAttenuation(vec3 lightPosition, vec3 fragPosition)
     return 1.0 / (distance * distance);
 }
 
-vec3 calcRadiancePoint(Light light, vec3 viewDir, vec3 fragPos, float metallic, float roughness, vec3 F0, vec3 normal, vec3 albedo)
-{
+vec3 calcRadiancePoint(
+    Light light,
+    vec3 viewDir,
+    vec3 fragPos,
+    float metallic,
+    float roughness,
+    vec3 F0,
+    vec3 normal,
+    vec3 albedo
+) {
     // calculate per-light radiance
     vec3 L = normalize(light.position - fragPos);
     vec3 H = normalize(viewDir + L);
@@ -78,11 +86,50 @@ vec3 calcRadiancePoint(Light light, vec3 viewDir, vec3 fragPos, float metallic, 
     return (kD * albedo / PI + specular) * radiance * NdotL;
 }
 
-vec3 calcRadiance(Light light, vec3 viewDir, vec3 fragPos, float metallic, float roughness, vec3 F0, vec3 normal, vec3 albedo)
-{
+vec3 calcRadiance(
+    Light light,
+    vec3 viewDir,
+    vec3 fragPos,
+    float metallic,
+    float roughness,
+    vec3 F0,
+    vec3 normal,
+    vec3 albedo
+) {
     if (light.type == LIGHT_TYPE_POINT)
     {
         return calcRadiancePoint(light, viewDir, fragPos, metallic, roughness, F0, normal, albedo);
     }
     return vec3(0.0);
+}
+
+vec3 calcAmbientLight(
+    vec3 viewDir,
+    vec3 normal,
+    vec3 F0,
+    vec3 albedo,
+    float metallic,
+    float roughness,
+    samplerCube irradianceMap,
+    samplerCube prefilteredEnvMap,
+    float maxLOD,
+    sampler2D brdfLUT,
+    float ambientOcclussion
+) {
+    vec3 R = reflect(-viewDir, normal);
+    
+    vec3 F = fresnelSchlickRoughness(max(dot(normal, viewDir), 0.0), F0, roughness);
+
+    vec3 Ks = F;
+    vec3 Kd = 1.0 - Ks;
+    Kd *= 1.0 - metallic;
+
+    vec3 irradiance = texture(irradianceMap, normal).rgb;
+    vec3 diffuse = irradiance * albedo;
+
+    vec3 prefilteredColor = textureLod(prefilteredEnvMap, R, roughness * maxLOD).rgb;
+    vec2 envBRDF = texture(brdfLUT, vec2(max(dot(normal, viewDir), 0.0), roughness)).rg;
+    vec3 specular = prefilteredColor * (F * envBRDF.x + envBRDF.y);
+
+    return (Kd * diffuse + specular) * ambientOcclussion;
 }

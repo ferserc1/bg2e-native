@@ -17,24 +17,28 @@ layout(location = 5) in flat int inLightCount;
 layout(location = 6) in mat3 inTBN;
 layout(location = 9) in flat Light[LIGHT_COUNT] inLights;
 
+layout (set = 1, binding = 0) uniform PBRObjectData {
+    mat4 modelMatrix;
+    PBRMaterialData material;
+} objectData;
+
 layout(set = 1, binding = 1) uniform sampler2D albedoTex;
 layout(set = 1, binding = 2) uniform sampler2D normalTex;
 layout(set = 1, binding = 3) uniform sampler2D metallicTex;
 layout(set = 1, binding = 4) uniform sampler2D roughnessTex;
 layout(set = 1, binding = 5) uniform sampler2D aoTex;
-layout(set = 2, binding = 0) uniform samplerCube irradianceMap;
-layout(set = 2, binding = 1) uniform samplerCube prefilteredEnvMap;
-layout(set = 2, binding = 2) uniform sampler2D brdfLUT;
 
 layout(push_constant) uniform PushConstant
 {
     float gamma;
 } pushConstant;
 
-layout (set = 1, binding = 0) uniform PBRObjectData {
-    mat4 modelMatrix;
-    PBRMaterialData material;
-} objectData;
+layout(set = 2, binding = 0) uniform samplerCube irradianceMap;
+layout(set = 2, binding = 1) uniform samplerCube prefilteredEnvMap;
+layout(set = 2, binding = 2) uniform sampler2D brdfLUT;
+layout(set = 2, binding = 3) uniform EnvironmentData {
+    float maxReflectionLOD;
+} environmentData;
 
 void main()
 {
@@ -62,23 +66,31 @@ void main()
     }
   
     // ambient light
-    vec3 R = reflect(-viewDir, normal);
+    // vec3 R = reflect(-viewDir, normal);
     
-    vec3 F = fresnelSchlickRoughness(max(dot(normal, viewDir), 0.0), F0, roughness);
+    // vec3 F = fresnelSchlickRoughness(max(dot(normal, viewDir), 0.0), F0, roughness);
 
-    vec3 Ks = F;
-    vec3 Kd = 1.0 - Ks;
-    Kd *= 1.0 - metallic;
+    // vec3 Ks = F;
+    // vec3 Kd = 1.0 - Ks;
+    // Kd *= 1.0 - metallic;
 
-    vec3 irradiance = texture(irradianceMap, normal).rgb;
-    vec3 diffuse = irradiance * albedo;
+    // vec3 irradiance = texture(irradianceMap, normal).rgb;
+    // vec3 diffuse = irradiance * albedo;
 
-    const float MAX_REFLECTION_LOD = 10.0; // TODO: Set this as uniform
-    vec3 prefilteredColor = textureLod(prefilteredEnvMap, R, roughness * MAX_REFLECTION_LOD).rgb;
-    vec2 envBRDF = texture(brdfLUT, vec2(max(dot(normal, viewDir), 0.0), roughness)).rg;
-    vec3 specular = prefilteredColor * (F * envBRDF.x + envBRDF.y);
+    // const float MAX_REFLECTION_LOD = 10.0; // TODO: Set this as uniform
+    // vec3 prefilteredColor = textureLod(prefilteredEnvMap, R, roughness * MAX_REFLECTION_LOD).rgb;
+    // vec2 envBRDF = texture(brdfLUT, vec2(max(dot(normal, viewDir), 0.0), roughness)).rg;
+    // vec3 specular = prefilteredColor * (F * envBRDF.x + envBRDF.y);
 
-    vec3 ambient = (Kd * diffuse + specular) * ao;
+    // vec3 ambient = (Kd * diffuse + specular) * ao;
+
+    //const float MAX_REFLECTION_LOD = 10.0; // TODO: Set this as uniform
+    vec3 ambient = calcAmbientLight(
+        viewDir, normal, F0, 
+        albedo, metallic, roughness,
+        irradianceMap, prefilteredEnvMap,
+        environmentData.maxReflectionLOD,
+        brdfLUT, ao);
 
     vec3 color = ambient + Lo;
 
