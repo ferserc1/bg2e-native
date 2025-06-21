@@ -8,9 +8,3 @@ mat3 TBNMatrix(mat4 model, vec3 normal, vec3 tangent)
 }
 
 
-vec3 sampleNormal(sampler2D normalMap, vec2 texCoord)
-{
-    vec3 normal = texture(normalMap, texCoord).xyz * 2.0 - 1.0;
-    return normalize(normal);
-}
-

@@ -1,3 +1,5 @@
+#ifndef COLOR_CORRECTION_GLSL
+#define COLOR_CORRECTION_GLSL
 
 // Convert lineal color to SRGB for shader output
 vec4 lineal2SRGB(vec4 color, float gamma)
@@ -22,3 +24,5 @@ vec3 SRGB2lLineal(vec3 color, float gamma)
 {
     return pow(color, vec3(gamma));
 }
+
+#endif
