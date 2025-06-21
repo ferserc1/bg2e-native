@@ -72,7 +72,10 @@ public:
     glm::mat4 worldMatrix();
     glm::mat4 invertedWorldMatrix();
     glm::vec3 worldPosition();
-    
+    glm::vec3 forwardVector();
+    glm::vec3 rightVector();
+    glm::vec3 upVector();
+
     Node * sceneRoot();
    
     inline Scene * scene() { return sceneRoot()->_scene; }

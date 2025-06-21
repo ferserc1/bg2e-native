@@ -31,19 +31,35 @@ public:
         
         if (transform)
         {
-            transform->rotate(_diff.x * 0.01f, glm::vec3(0, 1, 0));
-            transform->rotate(_diff.y * 0.01f, glm::vec3(1, 0, 0));
-            _diff.x = 0.0f;
-            _diff.y = 0.0f;
+            auto rv = _cameraNode->rightVector();
+            auto uv = _cameraNode->upVector();
+
+            transform->translate(
+                rv * glm::vec3{ _pan.x * 0.1, 0, 0 } +
+                uv * glm::vec3{ 0, -_pan.y * 0.1, 0 }
+            );
+            
+            transform->rotate(_rot.y * 0.01f, glm::vec3(1, 0, 0));
+            transform->rotate(_rot.x * 0.01f, glm::vec3(0, 1, 0));
+            
+            _rot.x = 0.0f;
+            _rot.y = 0.0f;
+            _pan = glm::vec3 { 0.0f };
         }
     }
     
     void mouseMove(int x, int y) override
     {
-        if (_move)
+        if (_action == ActionOrbit)
         {
-            _diff.x = static_cast<float>(_x - x);
-            _diff.y = static_cast<float>(_y - y);
+            _rot.x = static_cast<float>(_x - x);
+            _rot.y = static_cast<float>(_y - y);
+            _x = x;
+            _y = y;
+        }
+        else if (_action == ActionPan)
+        {
+            _pan = glm::vec2(static_cast<float>(_x - x), static_cast<float>(_y - y));
             _x = x;
             _y = y;
         }
@@ -51,14 +67,14 @@ public:
     
     void mouseButtonDown(int button, int x, int y) override
     {
-        _move = true;
+        _action = button == 0 ? ActionOrbit : ActionPan;
         _x = x;
         _y = y;
     }
     
     void mouseButtonUp(int button, int, int) override
     {
-        _move = false;
+        _action = ActionNone;
     }
     
     void mouseWheel(int deltaX, int deltaY) override
@@ -77,10 +93,16 @@ public:
     
 protected:
     bg2e::scene::Node * _cameraNode = nullptr;
-    bool _move = false;
+    enum Action {
+        ActionNone = 0,
+        ActionOrbit = 1,
+        ActionPan = 2
+    };
+    Action _action = ActionNone;
     int _x = 0;
     int _y = 0;
-    glm::vec2 _diff { 0, 0 };
+    glm::vec2 _rot { 0, 0 };
+    glm::vec2 _pan { 0, 0 };
     float _minFocalLength = 18.0f;
     float _maxFocalLength = 300.0f;
 };
@@ -99,17 +121,32 @@ public:
 	void init(bg2e::render::Engine*, bg2e::ui::UserInterface*) override {
 		_window.setTitle("Basic forward renderer");
 		_window.options.noClose = true;
-		_window.options.minWidth = 190;
-		_window.options.minHeight = 90;
+		_window.options.minWidth = 300;
+		_window.options.minHeight = 190;
 		_window.setPosition(0, 0);
-		_window.setSize(200, 100);
+		_window.setSize(300, 190);
 	}
 
 	void drawUI() override
 	{
         auto drawSkybox = renderer()->drawSkybox();
+        
+    
         _window.draw([&]() {
             bg2e::ui::BasicWidgets::checkBox("Draw Skybox", &drawSkybox);
+        
+            auto &material = _sphere->material(0);
+            float metalness = material.metalness();
+            float roughness = material.roughness();
+            bg2e::base::Color albedo = material.albedo();
+            bg2e::ui::BasicWidgets::separator();
+            bg2e::ui::Input::slider("Metalness", &metalness, 0.0f, 1.0f);
+            bg2e::ui::Input::slider("Roughness", &roughness, 0.0f, 1.0f);
+            bg2e::ui::Input::colorPicker("Albedo", albedo);
+            material.setMetalness(metalness);
+            material.setRoughness(roughness);
+            material.setAlbedo(albedo);
+            _sphere->updateMaterials();
         });
         renderer()->setDrawSkybox(drawSkybox);
 	}
@@ -139,10 +176,12 @@ protected:
 	bg2e::ui::Window _window;
     bg2e::scene::InputVisitor _inputVisitor;
     
+    std::shared_ptr<bg2e::scene::Drawable> _sphere;
+    
     std::shared_ptr<bg2e::scene::Node> scene1()
     {
         auto sceneRoot = std::make_shared<bg2e::scene::Node>("Scene Root");
-        sceneRoot->addComponent(new bg2e::scene::EnvironmentComponent(bg2e::base::PlatformTools::assetPath(), "equirectangular-env.jpg"));
+        sceneRoot->addComponent(new bg2e::scene::EnvironmentComponent(bg2e::base::PlatformTools::assetPath(), "equirectangular-env3.jpg"));
         
         
         auto cameraNode = std::shared_ptr<bg2e::scene::Node>(new bg2e::scene::Node("Camera"));
@@ -229,10 +268,26 @@ protected:
         mainSphereDrawable->load(_engine);
         
         auto mainSphereNode = new bg2e::scene::Node("Main Sphere");
-        mainSphereNode->addComponent(bg2e::scene::TransformComponent::makeTranslated(0.0f, 0.0f, 4.0f));
+        mainSphereNode->addComponent(bg2e::scene::TransformComponent::makeTranslated(-5.0f, 0.0f, 4.0f));
         mainSphereNode->transform()->scale(3.0f);
         mainSphereNode->addComponent(new bg2e::scene::DrawableComponent(mainSphereDrawable));
         sceneRoot->addChild(mainSphereNode);
+        
+        auto customSphereDrawable = std::make_shared<bg2e::scene::Drawable>();
+        customSphereDrawable->setMesh(sphereMesh);
+        customSphereDrawable->material(0).setMetalness(0.6f);
+        customSphereDrawable->material(0).setRoughness(0.2f);
+        customSphereDrawable->load(_engine);
+        _sphere = customSphereDrawable;
+        auto customSphereNode = new bg2e::scene::Node("Custom Sphere");
+        customSphereNode->addComponent(bg2e::scene::TransformComponent::makeTranslated(5.0f, 0.0f, 4.0f));
+        customSphereNode->transform()->scale(3.0f);
+        customSphereNode->addComponent(new bg2e::scene::DrawableComponent(customSphereDrawable));
+        sceneRoot->addChild(customSphereNode);
+        
+        _engine->cleanupManager().push([&](VkDevice) {
+            _sphere.reset();
+        });
        
         return sceneRoot;
     }

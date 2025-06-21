@@ -2,6 +2,7 @@
 #pragma once
 
 #include <bg2e/common.hpp>
+#include <bg2e/base/Color.hpp>
 
 namespace bg2e {
 namespace ui {
@@ -74,6 +75,28 @@ public:
     static void vec4(
         const std::string& label,
         float * value,
+        bool sameLine = false
+    );
+    
+    static void slider(
+        const std::string& label,
+        int * value,
+        int min = 0,
+        int max = 100,
+        bool sameLine = false
+    );
+    
+    static void slider(
+        const std::string& label,
+        float * value,
+        float min = 0.0f,
+        float max = 1.0f,
+        bool sameLine = false
+    );
+    
+    static void colorPicker(
+        const std::string& label,
+        bg2e::base::Color & color,
         bool sameLine = false
     );
 };

@@ -139,5 +139,50 @@ void Input::vec4(
     ImGui::InputFloat4(label.c_str(), value);
 }
 
+void Input::slider(
+    const std::string& label,
+    int * value,
+    int min,
+    int max,
+    bool sameLine
+) {
+    if (sameLine)
+    {
+        ImGui::SameLine();
+    }
+    ImGui::SliderInt(label.c_str(), value, min, max);
+}
+
+void Input::slider(
+    const std::string& label,
+    float * value,
+    float min,
+    float max,
+    bool sameLine
+)  {
+    if (sameLine)
+    {
+        ImGui::SameLine();
+    }
+    ImGui::SliderFloat(label.c_str(), value, min, max);
+}
+
+void Input::colorPicker(
+    const std::string& label,
+    bg2e::base::Color& color,
+    bool sameLine
+) {
+    if (sameLine)
+    {
+        ImGui::SameLine();
+    }
+    float col[] = { color.r, color.g, color.b, color.a };
+    ImGui::ColorEdit4(label.c_str(), col);
+    color.r = col[0];
+    color.g = col[1];
+    color.b = col[2];
+    color.a = col[3];
+}
+
 }
 }

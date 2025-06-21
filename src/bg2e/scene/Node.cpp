@@ -125,6 +125,24 @@ glm::vec3 Node::worldPosition()
     return glm::vec3(worldMatrix()[3]);
 }
 
+glm::vec3 Node::forwardVector()
+{
+    auto wm = worldMatrix();
+    return glm::normalize(glm::mat3{ wm } * glm::vec3{ 0.0f, 0.0f, 1.0f });
+}
+
+glm::vec3 Node::rightVector()
+{
+    auto wm = worldMatrix();
+    return glm::normalize(glm::mat3{ wm } * glm::vec3{ 1.0f, 0.0f, 0.0f });
+}
+
+glm::vec3 Node::upVector()
+{
+    auto wm = worldMatrix();
+    return glm::normalize(glm::mat3{wm } * glm::vec3{ 0.0f, 1.0f, 0.0f });
+}
+
 Node * Node::sceneRoot()
 {
     if (_parent == nullptr)

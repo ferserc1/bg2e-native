@@ -115,9 +115,12 @@ void DrawableGeneric<MeshT, RenderMeshT>::load(render::Engine * engine)
 template <typename MeshT, typename RenderMeshT>
 void DrawableGeneric<MeshT, RenderMeshT>::updateMaterials()
 {
-    for (auto & mat : _materials)
+    for (size_t i = 0; i < _submeshAttributes.size(); ++i)
     {
-        mat->updateTextures();
+        auto renderMat = _materials[i].get();
+        auto submesh = _submeshAttributes[i];
+        renderMat->setMaterialAttributes(submesh.material);
+        renderMat->updateTextures();
     }
 }
 
