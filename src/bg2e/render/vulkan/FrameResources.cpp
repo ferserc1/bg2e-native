@@ -36,8 +36,6 @@ void FrameResources::cleanup()
 {
     if (descriptorAllocator)
     {
-        descriptorAllocator->clearDescriptors();
-        descriptorAllocator->destroy();
         delete descriptorAllocator;
 
         // Destroy command pool

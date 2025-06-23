@@ -12,11 +12,69 @@ public:
 		RenderLoopDelegate::init(vulkan);
 	}
  
+    void executeComputeShader()
+    {
+        VkPipelineLayout computeLayout;
+        VkPipeline computePipeline;
+    
+        // Resulting image
+        _image = std::shared_ptr<bg2e::render::vulkan::Image>(bg2e::render::vulkan::Image::createAllocatedImage(
+            _engine,
+            VK_FORMAT_R8G8B8A8_UNORM, { 512, 512},
+            VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT)
+        );
+        _engine->cleanupManager().push([&](VkDevice dev) {
+            
+            _image.reset();
+        });
+        
+        bg2e::render::vulkan::factory::ComputePipeline plFactory(_engine);
+        bg2e::render::vulkan::factory::PipelineLayout layoutFactory(_engine);
+        bg2e::render::vulkan::factory::DescriptorSetLayout dsFactory;
+        
+        dsFactory.addBinding(0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE);
+        auto descriptorSetLayout = dsFactory.build(_engine->device().handle(), VK_SHADER_STAGE_COMPUTE_BIT);
+        
+        layoutFactory.addDescriptorSetLayout(descriptorSetLayout);
+        computeLayout = layoutFactory.build();
+        
+        plFactory.setShader("test.comp.spv");
+        computePipeline = plFactory.build(computeLayout);
+        
+        
+        // To execute a command shader independent of the rendering loop, we cannot
+        // use the global descriptorSetAllocator; we have to create our own.
+        auto descriptorSetAllocator = new bg2e::render::vulkan::DescriptorSetAllocator();
+        descriptorSetAllocator->init(_engine);
+        descriptorSetAllocator->initPool(1, {
+            { VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1 }
+        });
+        
+        auto descriptorSet = descriptorSetAllocator->allocate(descriptorSetLayout);
+        descriptorSet->beginUpdate();
+        //TODO: I'm not sure what layout to use here.
+        descriptorSet->addImage(0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, _image->imageView(), VK_IMAGE_LAYOUT_GENERAL);
+        descriptorSet->endUpdate();
+        
+         
+        // Execute compute shader to generate the texture
+        
+        // Release the compute shader resources
+        delete descriptorSetAllocator;
+        
+        vkDestroyPipeline(_engine->device().handle(), computePipeline, nullptr);
+        vkDestroyPipelineLayout(_engine->device().handle(), computeLayout, nullptr);
+        vkDestroyDescriptorSetLayout(_engine->device().handle(), descriptorSetLayout, nullptr);
+        
+    }
+    
     void initScene() override
     {
         createImage(_engine->swapchain().extent());
   
         createPipeline();
+        
+        executeComputeShader();
     }
 
 	void swapchainResized(VkExtent2D newExtent) override
@@ -242,6 +300,11 @@ protected:
  
     VkPipelineLayout _layout;
     VkPipeline _pipeline;
+    
+    // Texture generated in a compute shader at initialization.
+    // All the compute shader resources are created and released in the init()
+    // function, after the image is generated
+    std::shared_ptr<bg2e::render::vulkan::Image> _image;
     
     void createPipeline()
     {

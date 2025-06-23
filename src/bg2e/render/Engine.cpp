@@ -40,8 +40,7 @@ void Engine::init(SDL_Window* windowPtr)
     );
     _descriptorSetAllocator->init(this);
     _cleanupManager.push([&](VkDevice) {
-        _descriptorSetAllocator->clearDescriptors();
-        _descriptorSetAllocator->destroy();
+        _descriptorSetAllocator.reset();
     });
 }
 

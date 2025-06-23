@@ -6,6 +6,13 @@ namespace bg2e {
 namespace render {
 namespace vulkan {
 
+DescriptorSetAllocator::~DescriptorSetAllocator()
+{
+    clearDescriptors();
+    destroy();
+}
+
+
 void DescriptorSetAllocator::init(Engine * engine)
 {
     _engine = engine;

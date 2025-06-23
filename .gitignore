@@ -8,6 +8,7 @@ Xcode/VulkanSDK/lib/*
 
 # Built shaders
 shaders/spv
+examples/**/spv
 
 .DS_Store
 

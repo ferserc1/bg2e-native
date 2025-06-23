@@ -16,8 +16,6 @@
 		EDD77E512CEA60F800278155 /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
 		EDD77E552CEA61BD00278155 /* Setup.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Setup.entitlements; sourceTree = "<group>"; };
 		EDD77E602CEA64E600278155 /* CoreFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreFoundation.framework; path = System/Library/Frameworks/CoreFoundation.framework; sourceTree = SDKROOT; };
-		EDD77E772CEA7E9D00278155 /* test.frag.glsl */ = {isa = PBXFileReference; lastKnownFileType = text; path = test.frag.glsl; sourceTree = "<group>"; };
-		EDD77E782CEA7E9D00278155 /* test.vert.glsl */ = {isa = PBXFileReference; lastKnownFileType = text; path = test.vert.glsl; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -40,6 +38,11 @@
 			path = ../../bin;
 			sourceTree = SOURCE_ROOT;
 		};
+		ED9ABE742E0966F9005379C3 /* shaders */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = shaders;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -61,8 +64,8 @@
 				EDD77E3E2CEA600200278155 /* Products */,
 				EDD77E522CEA60F800278155 /* src */,
 				EDD77E5E2CEA64D800278155 /* Frameworks */,
-				EDD77E742CEA683600278155 /* shaders */,
 				ED76EBF82DF5D19B00D93ACF /* bin */,
+				ED9ABE742E0966F9005379C3 /* shaders */,
 			);
 			sourceTree = "<group>";
 		};
@@ -96,23 +99,6 @@
 				EDD77E602CEA64E600278155 /* CoreFoundation.framework */,
 			);
 			name = Frameworks;
-			sourceTree = "<group>";
-		};
-		EDD77E742CEA683600278155 /* shaders */ = {
-			isa = PBXGroup;
-			children = (
-				EDD77E792CEA7E9D00278155 /* src */,
-			);
-			path = shaders;
-			sourceTree = "<group>";
-		};
-		EDD77E792CEA7E9D00278155 /* src */ = {
-			isa = PBXGroup;
-			children = (
-				EDD77E772CEA7E9D00278155 /* test.frag.glsl */,
-				EDD77E782CEA7E9D00278155 /* test.vert.glsl */,
-			);
-			path = src;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */

@@ -14,7 +14,7 @@ void RenderLoop::init(Engine * engine)
     {
         _renderDelegate->init(engine);
     }
-
+    
 	_engine->iterateFrameResources([&](vulkan::FrameResources& frameResources) {
         frameResources.descriptorAllocator->init(_engine);
 		initFrameResources(frameResources.descriptorAllocator);

@@ -13,6 +13,8 @@ class DescriptorSet;
 
 class BG2E_API DescriptorSetAllocator {
 public:
+    ~DescriptorSetAllocator();
+    
     struct PoolSizeRatio {
         VkDescriptorType type;
         float ratio;
