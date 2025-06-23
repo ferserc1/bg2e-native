@@ -11,5 +11,5 @@ layout (push_constant) uniform PushConstants {
 
 void main()
 {
-    imageStore(outImg, ivec2(gl_GlobalInvocationID.xy), vec4(gl_GlobalInvocationID.x / float(pushConstants.width), gl_GlobalInvocationID.y / float(pushConstants.height), 0.0, 1.0));
+    imageStore(outImg, ivec2(gl_GlobalInvocationID.xy), vec4(gl_GlobalInvocationID.x / float(pushConstants.width), gl_GlobalInvocationID.y / float(pushConstants.height), 0.5, 1.0));
 }
