@@ -7,6 +7,7 @@
 namespace bg2e {
 namespace render {
 
+
 class BG2E_API Texture {
 private:
     static std::shared_ptr<Texture> _blackTexture;

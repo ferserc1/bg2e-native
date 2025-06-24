@@ -207,13 +207,8 @@ void EnvironmentResources::drawSkybox(
 
 void EnvironmentResources::buildBRDF()
 {
-    auto brdfTexture = new base::Texture();
-    auto brdfIntegrationMapGenerator = new render::BRDFIntegrationMapTextureGenerator();
-    brdfIntegrationMapGenerator->setDimensions(64, 64, 4);
-    brdfTexture->setProceduralGenerator(brdfIntegrationMapGenerator);
-    brdfTexture->setUseMipmaps(false);
-    _brdfIntegrationMap = std::make_shared<Texture>(_engine);
-    _brdfIntegrationMap->load(brdfTexture);
+    auto brdfIntegrationMapGenerator = new render::BRDFIntegrationMapTextureGenerator(_engine, 512, 512);
+    _brdfIntegrationMap = std::shared_ptr<Texture>(brdfIntegrationMapGenerator->generate());
 }
 
 }

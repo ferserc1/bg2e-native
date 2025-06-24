@@ -2,23 +2,18 @@
 //  BRDFIntegrationMapTextureGenerator.hpp
 #pragma once
 
-#include <bg2e/base/Texture.hpp>
-#include <bg2e/base/Color.hpp>
-
+#include <bg2e/render/GPUTextureGenerator.hpp>
 
 namespace bg2e {
 namespace render {
 
 
-class BG2E_API BRDFIntegrationMapTextureGenerator : public base::ProceduralTextureGenerator {
+class BG2E_API BRDFIntegrationMapTextureGenerator : public GPUTextureGenerator {
 public:
-    BRDFIntegrationMapTextureGenerator() = default;
+    BRDFIntegrationMapTextureGenerator(Engine * engine, uint32_t w, uint32_t h) :GPUTextureGenerator(engine, w, h) {}
+    virtual ~BRDFIntegrationMapTextureGenerator() = default;
     
-    uint8_t* generate() override;
-    
-    std::string imageIdentifier() override;
-    
-    base::Color::Type colorType() override { return base::Color::TypeLinear; }
+    Texture * generate() override;
 };
 
 }

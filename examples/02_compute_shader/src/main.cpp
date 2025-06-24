@@ -24,7 +24,7 @@ public:
         // Resulting image
         _image = std::shared_ptr<bg2e::render::vulkan::Image>(bg2e::render::vulkan::Image::createAllocatedImage(
             _engine,
-            VK_FORMAT_R8G8B8A8_UNORM, { 512, 512},
+            VK_FORMAT_R16G16B16A16_SFLOAT, { 512, 512},
             VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT)
         );
         _engine->cleanupManager().push([&](VkDevice dev) {
@@ -39,13 +39,6 @@ public:
         auto descriptorSetLayout = dsFactory.build(_engine->device().handle(), VK_SHADER_STAGE_COMPUTE_BIT);
         
         layoutFactory.addDescriptorSetLayout(descriptorSetLayout);
-        
-        struct ComputePushConstant
-        {
-            uint32_t imageWidth;
-            uint32_t imageHeight;
-        };
-        layoutFactory.addPushConstantRange(0, sizeof(ComputePushConstant), VK_SHADER_STAGE_COMPUTE_BIT);
         
         computeLayout = layoutFactory.build();
         
@@ -70,12 +63,6 @@ public:
         _engine->command().immediateSubmit([&, computePipeline, computeLayout, descriptorSet](VkCommandBuffer cmd) {
             // Execute compute shader to generate the texture
             vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, computePipeline);
-            
-            ComputePushConstant pushConstants {
-                _image->extent().width,
-                _image->extent().height
-            };
-            vkCmdPushConstants(cmd, computeLayout, VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(ComputePushConstant), &pushConstants);
             
             VkDescriptorSet ds = descriptorSet->descriptorSet();
             vkCmdBindDescriptorSets(
