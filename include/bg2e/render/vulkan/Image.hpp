@@ -130,7 +130,8 @@ public:
         VkImageAspectFlags aspectFlags = VK_IMAGE_ASPECT_COLOR_BIT,
         uint32_t arrayLayers = 1,
         bool useMipmaps = false,
-        uint32_t maxMipmapLevels = 20
+        uint32_t maxMipmapLevels = 20,
+        VkSampleCountFlagBits samples = VK_SAMPLE_COUNT_1_BIT
     );
     
     static Image* createAllocatedImage(
@@ -161,6 +162,7 @@ public:
     inline const VkExtent2D extent2D() const { return VkExtent2D{ _extent.width, _extent.height }; }
     inline VkFormat format() const { return _format; }
 	inline uint32_t mipLevels() const { return _mipLevels; }
+    inline VkSampleCountFlagBits sampleCount() const { return _sampleCount; }
 
 
 protected:
@@ -173,6 +175,7 @@ protected:
     VkExtent3D _extent = { 0, 0 };
     VkFormat _format = VK_FORMAT_R8G8B8A8_UNORM;
     uint32_t _mipLevels = 1;
+    VkSampleCountFlagBits _sampleCount = VK_SAMPLE_COUNT_1_BIT;
     
     Engine * _engine = nullptr;
 };

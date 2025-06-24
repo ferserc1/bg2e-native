@@ -22,7 +22,7 @@ GraphicsPipeline::GraphicsPipeline(Engine * engine)
     setInputTopology(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
     setPolygonMode(VK_POLYGON_MODE_FILL);
     setCullMode(VK_CULL_MODE_NONE, VK_FRONT_FACE_COUNTER_CLOCKWISE);
-    disableMultisample();
+    enableMultisample();
     disableBlending();
     disableDepthtest();
 }
@@ -104,6 +104,16 @@ void GraphicsPipeline::setCullMode(VkCullModeFlags cullMode, VkFrontFace frontFa
 {
     rasterizer.cullMode = cullMode;
     rasterizer.frontFace = frontFace;
+}
+
+void GraphicsPipeline::enableMultisample()
+{
+    multisampling.sampleShadingEnable = VK_FALSE;
+    multisampling.rasterizationSamples = _engine->swapchain().sampleCount();
+    multisampling.minSampleShading = 1.0f;
+    multisampling.pSampleMask = nullptr;
+    multisampling.alphaToCoverageEnable = VK_FALSE;
+    multisampling.alphaToOneEnable = VK_FALSE;
 }
 
 void GraphicsPipeline::disableMultisample()

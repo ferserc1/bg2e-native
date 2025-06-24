@@ -281,6 +281,7 @@ void CubemapRenderer::initPipeline(
     plFactory.setInputState<vulkan::geo::MeshP>();
     plFactory.setColorAttachmentFormat(_cubeMapImage->format());
     plFactory.disableDepthtest();
+    plFactory.disableMultisample();
     plFactory.inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
     plFactory.setCullMode(VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_COUNTER_CLOCKWISE);
     

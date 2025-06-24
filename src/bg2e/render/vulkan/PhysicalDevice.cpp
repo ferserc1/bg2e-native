@@ -1,4 +1,3 @@
-
 #include <bg2e/render/vulkan/PhysicalDevice.hpp>
 #include <bg2e/render/vulkan/Instance.hpp>
 #include <bg2e/base/Log.hpp>
@@ -66,6 +65,41 @@ PhysicalDevice::SwapChainSupportDetails PhysicalDevice::SwapChainSupportDetails:
 		details.presentModes.resize(presentModeCount);
 		vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface.handle(), &presentModeCount, details.presentModes.data());
 	}
+ 
+    VkPhysicalDeviceProperties deviceProperties;
+    vkGetPhysicalDeviceProperties(device, &deviceProperties);
+    VkSampleCountFlags msaaSamples =
+        deviceProperties.limits.framebufferColorSampleCounts &
+        deviceProperties.limits.framebufferDepthSampleCounts;
+    
+    if (msaaSamples & VK_SAMPLE_COUNT_64_BIT)
+    {
+        details.maxMSAASamples = VK_SAMPLE_COUNT_64_BIT;
+    }
+	else if (msaaSamples & VK_SAMPLE_COUNT_32_BIT)
+	{
+		details.maxMSAASamples = VK_SAMPLE_COUNT_32_BIT;
+	}
+	else if (msaaSamples & VK_SAMPLE_COUNT_16_BIT)
+	{
+		details.maxMSAASamples = VK_SAMPLE_COUNT_16_BIT;
+	}
+	else if (msaaSamples & VK_SAMPLE_COUNT_8_BIT)
+	{
+		details.maxMSAASamples = VK_SAMPLE_COUNT_8_BIT;
+	}
+	else if (msaaSamples & VK_SAMPLE_COUNT_4_BIT)
+	{
+		details.maxMSAASamples = VK_SAMPLE_COUNT_4_BIT;
+	}
+	else if (msaaSamples & VK_SAMPLE_COUNT_2_BIT)
+	{
+		details.maxMSAASamples = VK_SAMPLE_COUNT_2_BIT;
+	}
+    else
+    {
+        details.maxMSAASamples = VK_SAMPLE_COUNT_1_BIT; // No MSAA support
+    }
 
     return details;
 }

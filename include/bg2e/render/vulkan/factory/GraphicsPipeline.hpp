@@ -41,6 +41,7 @@ public:
     void setPolygonMode(VkPolygonMode mode, float lineWidth = 1.0f);
     void setCullMode(VkCullModeFlags cullMode, VkFrontFace frontFace);
 
+    void enableMultisample();
     void disableMultisample();
     void setColorAttachmentFormat(VkFormat format, uint32_t viewMask = 0);
     void setColorAttachmentFormat(const std::vector<VkFormat>& format, uint32_t viewMask = 0);

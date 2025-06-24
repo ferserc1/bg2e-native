@@ -37,6 +37,7 @@ public:
         VkSurfaceCapabilitiesKHR capabilities;
 		std::vector<VkSurfaceFormatKHR> formats;
 		std::vector<VkPresentModeKHR> presentModes;
+        VkSampleCountFlagBits maxMSAASamples;
 
 		static SwapChainSupportDetails get(VkPhysicalDevice device, const Surface& surface);
 		VkSurfaceFormatKHR chooseSurfaceFormat(VkFormat preferredFormat) const;

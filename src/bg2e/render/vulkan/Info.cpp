@@ -135,7 +135,8 @@ VkImageCreateInfo Info::imageCreateInfo(
     VkFormat format,
     VkImageUsageFlags usageFlags,
     VkExtent3D extent,
-    uint32_t arrayLayers
+    uint32_t arrayLayers,
+    VkSampleCountFlagBits samples
 ) {
     VkImageCreateInfo info = {};
     info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
@@ -145,7 +146,7 @@ VkImageCreateInfo Info::imageCreateInfo(
     info.extent = extent;
     info.mipLevels = 1;
     info.arrayLayers = arrayLayers;
-    info.samples = VK_SAMPLE_COUNT_1_BIT;
+    info.samples = samples;
     info.tiling = VK_IMAGE_TILING_OPTIMAL;
     info.usage = usageFlags;
     return info;
@@ -180,6 +181,8 @@ VkRenderingAttachmentInfo Info::attachmentInfo(
     info.loadOp = clearValue ? VK_ATTACHMENT_LOAD_OP_CLEAR : VK_ATTACHMENT_LOAD_OP_LOAD;
     info.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
     info.imageLayout = layout;
+    info.resolveMode = VK_RESOLVE_MODE_NONE;
+    info.resolveImageView = VK_NULL_HANDLE;
     if (clearValue) {
         info.clearValue = *clearValue;
     }

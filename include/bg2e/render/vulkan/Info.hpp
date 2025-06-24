@@ -61,7 +61,8 @@ public:
         VkFormat format,
         VkImageUsageFlags usageFlags,
         VkExtent3D extent,
-        uint32_t arrayLayers = 1
+        uint32_t arrayLayers = 1,
+        VkSampleCountFlagBits samples = VK_SAMPLE_COUNT_1_BIT
     );
 
     static VkImageViewCreateInfo imageViewCreateInfo(

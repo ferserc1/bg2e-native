@@ -269,19 +269,21 @@ Image* Image::createAllocatedImage(
     VkImageAspectFlags aspectFlags,
     uint32_t arrayLayers,
 	bool useMipmaps,
-    uint32_t maxMipmapLevels
-)
-{
+    uint32_t maxMipmapLevels,
+    VkSampleCountFlagBits samples
+) {
     auto result = new Image();
     result->_engine = engine;
     result->_extent = { extent.width, extent.height, 1 };
     result->_format = format;
+    result->_sampleCount = samples;
     
     auto imgInfo = Info::imageCreateInfo(
         result->_format,
         usage,
         result->_extent,
-        arrayLayers
+        arrayLayers,
+        samples
     );
 
     if (useMipmaps)
@@ -481,6 +483,7 @@ Image* Image::wrapSwapchainImage(
         swapchain->extent().height,
         1
     };
+    result->_sampleCount = VK_SAMPLE_COUNT_1_BIT;
 
     return result;
 }

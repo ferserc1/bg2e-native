@@ -62,6 +62,7 @@ void Device::create(const Instance& instance, const PhysicalDevice& physicalDevi
     vulkan12Features.descriptorIndexing = VK_TRUE;
     vulkan12Features.bufferDeviceAddress = VK_TRUE;
     
+    
     VkPhysicalDeviceVulkan11Features vulkan11Features {};
     vulkan11Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES;
     vulkan11Features.multiview = VK_TRUE;

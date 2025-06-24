@@ -14,7 +14,6 @@ void Swapchain::init(Engine * engine, uint32_t width, uint32_t height)
 
 void Swapchain::resize(uint32_t width, uint32_t height)
 {
-    cleanup();
     create(width, height);
 }
 
@@ -22,13 +21,11 @@ void Swapchain::cleanup()
 {
     if (_engine)
     {
-        // This images should not be cleared because they are wrappers
-        // of the swapchain images and image views, that are cleared
-        // later in this function
+        _msaaImages.clear();
+        
         _colorImages.clear();
         
-        _depthImage->cleanup();
-        delete _depthImage;
+        _depthImage.reset();
         
         vkDestroySwapchainKHR(_engine->device().handle(), _swapchain, nullptr);
 
@@ -42,6 +39,8 @@ void Swapchain::cleanup()
 
 void Swapchain::create(uint32_t width, uint32_t height)
 {
+    cleanup();
+    
     auto device = _engine->device();
     auto physicalDevice = _engine->physicalDevice();
     auto surface = _engine->surface();
@@ -57,6 +56,9 @@ void Swapchain::create(uint32_t width, uint32_t height)
     auto graphicsFamily = device.graphicsFamily();
     auto presentFamily = device.presentFamily();
     uint32_t queueFamilyIndices[] = { graphicsFamily, presentFamily };
+    _imageFormat = surfaceFormat.format;
+    _extent = extent;
+    _msaaSampleCount = supportDetails.maxMSAASamples;
     
     VkSwapchainCreateInfoKHR createInfo {};
     createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
@@ -90,16 +92,32 @@ void Swapchain::create(uint32_t width, uint32_t height)
     vkGetSwapchainImagesKHR(_engine->device().handle(), _swapchain, &imageCount, nullptr);
     _images.resize(imageCount);
     vkGetSwapchainImagesKHR(_engine->device().handle(), _swapchain, &imageCount, _images.data());
-    _imageFormat = surfaceFormat.format;
-    _extent = extent;
     
-    _depthImage = Image::createAllocatedImage(
+    // Multisampled image
+    for (auto i = 0; i < _images.size(); ++i)
+    {
+        auto msaaImage = Image::createAllocatedImage(
+            _engine,
+            _imageFormat,
+            { width, height },
+            VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
+            VK_IMAGE_ASPECT_COLOR_BIT,
+            1, false, 0,
+            _msaaSampleCount
+        );
+        _msaaImages.push_back(std::shared_ptr<Image>(msaaImage));
+    }
+    
+    // Depth image
+    _depthImage = std::shared_ptr<Image>(Image::createAllocatedImage(
         _engine,
         VK_FORMAT_D32_SFLOAT,
         extent,
         VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
-        VK_IMAGE_ASPECT_DEPTH_BIT
-    );
+        VK_IMAGE_ASPECT_DEPTH_BIT,
+        1, false, 0,
+        _msaaSampleCount
+    ));
     
     _colorImages.clear();
     _imageViews.clear();
@@ -109,7 +127,7 @@ void Swapchain::create(uint32_t width, uint32_t height)
         // It's important to create the image view before wrapping the swapchain image
         VkImageView imageView;
         imageViewCreateInfo.image = _images[i];
-        vkCreateImageView(device.handle(), &imageViewCreateInfo, nullptr, &imageView);
+        VK_ASSERT(vkCreateImageView(device.handle(), &imageViewCreateInfo, nullptr, &imageView));
         _imageViews.push_back(imageView);
         
         _colorImages.push_back(Image::wrapSwapchainImage(this, i));

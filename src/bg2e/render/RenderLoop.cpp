@@ -69,7 +69,9 @@ void RenderLoop::acquireAndPresent()
         _renderDelegate->setDelta(this->_delta);
     }
 
-    auto swapchainImage = swapchainData.colorImage(swapchainImageIndex);
+    //auto swapchainImage = swapchainData.colorImage(swapchainImageIndex);
+    auto msaaImage = swapchainData.colorImage(swapchainImageIndex);
+    auto resolveImage = swapchainData.msaaResolveImage(swapchainImageIndex);
     auto depthImage = swapchainData.depthImage();
 
     auto cmdBeginInfo = vulkan::Info::commandBufferBeginInfo(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
@@ -85,7 +87,7 @@ void RenderLoop::acquireAndPresent()
 
     auto lastSwapchainLayout = render(
         cmd,
-        swapchainImage,
+        msaaImage,
         depthImage,
         frameResources
     );
@@ -93,22 +95,48 @@ void RenderLoop::acquireAndPresent()
     if (lastSwapchainLayout != VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL) {
         vulkan::Image::cmdTransitionImage(
             cmd,
-            swapchainImage->handle(),
+            msaaImage->handle(),
             lastSwapchainLayout,
             VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
         );
     }
 
+
+    vulkan::Image::cmdTransitionImage(
+        cmd,
+        resolveImage->handle(),
+        VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+        VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
+    );
+    
+    
+    // Resolve the MSAA image to the swapchain image
+    VkImageResolve region = {};
+    region.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    region.srcSubresource.mipLevel = 0;
+    region.srcSubresource.baseArrayLayer = 0;
+    region.srcSubresource.layerCount = 1;
+    region.srcOffset = { 0, 0, 0 };
+    region.dstSubresource = region.srcSubresource;
+    region.dstOffset = { 0, 0, 0 };
+    region.extent = { msaaImage->extent() };
+    vkCmdResolveImage(
+        cmd,
+        msaaImage->handle(), VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+        resolveImage->handle(), VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+        1, &region
+    );
+    
     // TODO: Instead of using the swapchain image to render the user interface, we could use another image
     // and combine it with the swap chain here
 	if (_renderUICallback)
 	{
-		_renderUICallback(cmd, swapchainImage->imageView());
+		_renderUICallback(cmd, resolveImage->imageView());
 	}
-
+    
     vulkan::Image::cmdTransitionImage(
         cmd,
-        swapchainImage->handle(),
+        resolveImage->handle(),
         VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
         VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
     );
