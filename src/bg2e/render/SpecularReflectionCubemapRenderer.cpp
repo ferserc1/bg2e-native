@@ -29,7 +29,7 @@ void SpecularReflectionCubemapRenderer::build(
         cubeImageSize,
         true,
         8,
-        VK_FORMAT_B8G8R8A8_UNORM
+        VK_FORMAT_R32G32B32A32_SFLOAT
     );
 }
 

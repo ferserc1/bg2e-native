@@ -68,13 +68,19 @@ void SkyboxRenderer::build(
     plFactory.setDepthFormat(depthAttachmentFormat);
     plFactory.disableDepthtest();
     plFactory.inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-    plFactory.setCullMode(VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_CLOCKWISE);
+    // We want to draw the inner faces of the sphere, but here we are hiding the back faces
+    // This is because we are inverting the view matrix on the Z axis, so that the skybox is
+    // rendered consistently with the reflections of the environment. See the update() function
+    plFactory.setCullMode(VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_COUNTER_CLOCKWISE);
     _pipeline = plFactory.build(_pipelineLayout);
 }
 
 void SkyboxRenderer::update(const glm::mat4& view, const glm::mat4& proj)
 {
-    _skyData.view = view;
+    // We invert the Z axis so that reflections from the environment are consistent with the
+    // rendered skybox. This will cause faces to appear inverted, so in the pipeline we have
+    // marked the back faces to be hidden, instead of rendering the sphere from the inside.
+    _skyData.view = glm::scale(view, glm::vec3{ 1, 1, -1 });
     _skyData.proj = proj;
 }
 

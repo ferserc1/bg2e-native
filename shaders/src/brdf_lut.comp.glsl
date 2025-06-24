@@ -45,6 +45,8 @@ float geometrySchlickGGX(float NdotV, float roughness) {
 void main() {
     ivec2 size = imageSize(brdfLUT);
     ivec2 coord = ivec2(gl_GlobalInvocationID.xy);
+    // Invert y coord
+    coord.y = size.y - coord.y;
     if (coord.x >= size.x || coord.y >= size.y) return;
 
     vec2 uv = vec2(coord) / vec2(size);

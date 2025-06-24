@@ -124,13 +124,12 @@ public:
 		_window.options.minWidth = 300;
 		_window.options.minHeight = 190;
 		_window.setPosition(0, 0);
-		_window.setSize(300, 190);
+		_window.setSize(300, 290);
 	}
 
 	void drawUI() override
 	{
         auto drawSkybox = renderer()->drawSkybox();
-        
     
         _window.draw([&]() {
             bg2e::ui::BasicWidgets::checkBox("Draw Skybox", &drawSkybox);
@@ -147,6 +146,27 @@ public:
             material.setRoughness(roughness);
             material.setAlbedo(albedo);
             _sphere->updateMaterials();
+            
+            if (_environment)
+            {
+                auto assetPath = bg2e::base::PlatformTools::assetPath();
+                if (bg2e::ui::BasicWidgets::button("Mirrored Hall"))
+                {
+                    _environment->setEnvironmentImage(assetPath, "mirrored_hall_4k.hdr");
+                }
+                if (bg2e::ui::BasicWidgets::button("Theater"))
+                {
+                    _environment->setEnvironmentImage(assetPath, "theater_01_4k.hdr");
+                }
+                if (bg2e::ui::BasicWidgets::button("Autum Field"))
+                {
+                    _environment->setEnvironmentImage(assetPath, "autumn_field_4k.hdr");
+                }
+                if (bg2e::ui::BasicWidgets::button("Gothic Manor"))
+                {
+                    _environment->setEnvironmentImage(assetPath, "gothic_manor_01_4k.hdr");
+                }
+            }
         });
         renderer()->setDrawSkybox(drawSkybox);
 	}
@@ -177,11 +197,15 @@ protected:
     bg2e::scene::InputVisitor _inputVisitor;
     
     std::shared_ptr<bg2e::scene::Drawable> _sphere;
+    bg2e::scene::EnvironmentComponent * _environment;
     
     std::shared_ptr<bg2e::scene::Node> scene1()
     {
         auto sceneRoot = std::make_shared<bg2e::scene::Node>("Scene Root");
-        sceneRoot->addComponent(new bg2e::scene::EnvironmentComponent(bg2e::base::PlatformTools::assetPath(), "equirectangular-env3.jpg"));
+        //sceneRoot->addComponent(new bg2e::scene::EnvironmentComponent(bg2e::base::PlatformTools::assetPath(), "equirectangular-env3.jpg"));
+        sceneRoot->addComponent(new bg2e::scene::EnvironmentComponent(bg2e::base::PlatformTools::assetPath(), "gothic_manor_01_4k.hdr"));
+        _environment = sceneRoot->environment();
+        
         
         
         auto cameraNode = std::shared_ptr<bg2e::scene::Node>(new bg2e::scene::Node("Camera"));

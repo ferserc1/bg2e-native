@@ -14,6 +14,31 @@ namespace bg2e {
 namespace render {
 namespace vulkan {
 
+uint32_t getFormatBytesPerComponent(VkFormat fmt)
+{
+    switch (fmt)
+    {
+        case VK_FORMAT_R16_SFLOAT:
+        case VK_FORMAT_R16G16_SFLOAT:
+        case VK_FORMAT_R16G16B16_SFLOAT:
+        case VK_FORMAT_R16G16B16A16_SFLOAT:
+            return 2;
+        case VK_FORMAT_D32_SFLOAT:
+        case VK_FORMAT_R32_SFLOAT:
+        case VK_FORMAT_R32G32_SFLOAT:
+        case VK_FORMAT_R32G32B32_SFLOAT:
+        case VK_FORMAT_R32G32B32A32_SFLOAT:
+            return 4;
+        case VK_FORMAT_R64_SFLOAT:
+        case VK_FORMAT_R64G64_SFLOAT:
+        case VK_FORMAT_R64G64B64_SFLOAT:
+        case VK_FORMAT_R64G64B64A64_SFLOAT:
+            return 8;
+        default:
+            return 1;
+    }
+}
+
 void Image::cmdTransitionImage(
     VkCommandBuffer       cmd,
     VkImage               image,
@@ -310,7 +335,7 @@ Image* Image::createAllocatedImage(
     bool useMipmaps,
     uint32_t maxMipmapLevels
 ) {
-    size_t dataSize = extent.width * extent.height * dataBytesPerPixel;
+    size_t dataSize = extent.width * extent.height * dataBytesPerPixel * getFormatBytesPerComponent(imageFormat);
     auto uploadBuffer = std::unique_ptr<Buffer>(
         Buffer::createAllocatedBuffer(
             engine,

@@ -105,21 +105,37 @@ void Texture::load(std::shared_ptr<base::Texture> texture)
             break;
     }
 
-    
-    // TODO: Extract image options, such as mipmap levels
-    // TODO: Support for HDR images
     VkExtent2D extent = { img->width(), img->height() };
     _hasImageOwnership = true;
-    _image = std::shared_ptr<vulkan::Image>(vulkan::Image::createAllocatedImage(
-        _engine,
-        img->data(),
-        extent,
-        4,
-        VK_FORMAT_R8G8B8A8_UNORM,
-        VK_IMAGE_USAGE_SAMPLED_BIT,
-        VK_IMAGE_ASPECT_COLOR_BIT,
-        texture->useMipmaps()
-    ));
+    bool isHDR = img->dataf() != nullptr;
+    
+    if (isHDR)
+    {
+        _image = std::shared_ptr<vulkan::Image>(vulkan::Image::createAllocatedImage(
+            _engine,
+            img->dataf(),
+            extent,
+            img->channels(),
+            VK_FORMAT_R32G32B32A32_SFLOAT,
+            VK_IMAGE_USAGE_SAMPLED_BIT,
+            VK_IMAGE_ASPECT_COLOR_BIT,
+            texture->useMipmaps()
+        ));
+    }
+    else
+    {
+        _image = std::shared_ptr<vulkan::Image>(vulkan::Image::createAllocatedImage(
+            _engine,
+            img->data(),
+            extent,
+            img->channels(),
+            VK_FORMAT_R8G8B8A8_UNORM,
+            VK_IMAGE_USAGE_SAMPLED_BIT,
+            VK_IMAGE_ASPECT_COLOR_BIT,
+            texture->useMipmaps()
+        ));
+    }
+    
     
     VkSamplerCreateInfo samplerInfo = {};
     samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;

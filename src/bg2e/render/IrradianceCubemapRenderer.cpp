@@ -24,7 +24,7 @@ void IrradianceCubemapRenderer::build(
         { 16, 16 },
         false,
         1,
-        VK_FORMAT_B8G8R8A8_UNORM
+        VK_FORMAT_R32G32B32A32_SFLOAT
     );
 }
 
