@@ -132,7 +132,8 @@ vec3 calcAmbientLight(
     vec3 prefilteredColor1 = textureLod(prefilteredEnvMap, R, sampleRoughness).rgb;
     vec3 prefilteredColor2 = textureLod(prefilteredEnvMap, R, max(sampleRoughness - roughnessDelta, 0.0)).rgb;
     vec3 prefilteredColor = mix(prefilteredColor1, prefilteredColor2, fract(sampleRoughness));
-    vec2 envBRDF = texture(brdfLUT, vec2(max(dot(normal, viewDir), 0.0), roughness)).rg;
+    vec2 brdfUV = vec2(clamp(max(dot(normal, viewDir), 0.0), 0.01, 0.99), roughness);
+    vec2 envBRDF = texture(brdfLUT, brdfUV).rg;
     vec3 specular = prefilteredColor * (F * envBRDF.x + envBRDF.y);
 
     return (Kd * diffuse + specular) * ambientOcclussion;
