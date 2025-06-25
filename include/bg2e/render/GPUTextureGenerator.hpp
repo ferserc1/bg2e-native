@@ -23,7 +23,6 @@ protected:
     uint32_t _height;
     
     vulkan::Image * createImage(VkFormat format, VkExtent2D extent, VkImageUsageFlags usage);
-    void executeComputeShader(VkPipeline pipeline, VkPipelineLayout layout, const std::vector<VkDescriptorSet>& ds, vulkan::Image* image);
     Texture * wrapImage(
         vulkan::Image * image,
         bool useMipmaps,

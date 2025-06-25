@@ -82,46 +82,29 @@ void GPUProcess::executeShader(const std::string& shaderFile, VkExtent2D imageEx
     
     plFactory.setShader(shaderFile);
     pipeline = plFactory.build(layout);
-    
-    
-    auto descriptorSet = dsAllocator->allocate(descriptorSetLayout);
-    descriptorSet->beginUpdate();
-    for (auto binding : _bindings)
-    {
-        if (binding.type == TypeImage)
-        {
-            descriptorSet->addImage(
-                binding.index, binding.descriptorType,
-                binding.data.image, binding.initialLayout
-            );
-        }
-        else if (binding.type == TypeBuffer)
-        {
-            descriptorSet->addBuffer(
-                binding.index, binding.descriptorType,
-                binding.data.buffer, binding.bufferSize,
-                binding.bufferOffset
-            );
-        }
-    }
-    descriptorSet->endUpdate();
 
-    _engine->command().immediateSubmit([&, pipeline, layout, descriptorSet](VkCommandBuffer cmd) {
+    _engine->command().immediateSubmit([&, pipeline, layout, descriptorSetLayout, dsAllocator](VkCommandBuffer cmd) {
+        auto descriptorSet = dsAllocator->allocate(descriptorSetLayout);
+        descriptorSet->beginUpdate();
         for (auto binding : _bindings)
         {
             if (binding.type == TypeImage)
             {
-                if (binding.initialLayout != VK_IMAGE_LAYOUT_UNDEFINED)
-                {
-                    vulkan::Image::cmdTransitionImage(
-                        cmd,
-                        binding.data.image->handle(),
-                        VK_IMAGE_LAYOUT_UNDEFINED,
-                        binding.initialLayout
-                    );
-                }
+                descriptorSet->addImage(
+                    binding.index, binding.descriptorType,
+                    binding.data.image, binding.initialLayout
+                );
+            }
+            else if (binding.type == TypeBuffer)
+            {
+                descriptorSet->addBuffer(
+                    binding.index, binding.descriptorType,
+                    binding.data.buffer, binding.bufferSize,
+                    binding.bufferOffset
+                );
             }
         }
+        descriptorSet->endUpdate();
         
         vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline);
         

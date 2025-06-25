@@ -547,24 +547,29 @@
 //	app.init(argc, argv);
 //	return mainLoop.run(&app);
 //}
-
 #include <bg2e.hpp>
 
 #include <array>
 #include <numbers>
+#include <map>
 
 class ClearScreenDelegate : public bg2e::render::RenderLoopDelegate,
-    public bg2e::app::InputDelegate,
-    public bg2e::ui::UserInterfaceDelegate
+	public bg2e::app::InputDelegate,
+	public bg2e::ui::UserInterfaceDelegate
 {
 public:
-    void init(bg2e::render::Engine * vulkan) override
-    {
-        using namespace bg2e::render::vulkan;
-        RenderLoopDelegate::init(vulkan);
+	void init(bg2e::render::Engine * vulkan) override
+	{
+		using namespace bg2e::render::vulkan;
+		RenderLoopDelegate::init(vulkan);
   
-        // If you need to use the main descriptor set allocator, add all the required pool size ratios
-        // in the init function.
+        _colorAttachments = std::shared_ptr<bg2e::render::ColorAttachments>(
+            new bg2e::render::ColorAttachments(_engine, {
+                VK_FORMAT_R16G16B16A16_SFLOAT,
+                VK_FORMAT_R8G8B8A8_UNORM
+            })
+        );
+  
         vulkan->descriptorSetAllocator().requirePoolSizeRatio(1, {
             { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1 }
         });
@@ -574,13 +579,11 @@ public:
                 _engine,
 
                 // Use this parameters to build the SkyboxRenderer in EnvironmentResources
-                {
-                    _engine->swapchain().imageFormat()
-                },
+                _colorAttachments->attachmentFormats(),
                 _engine->swapchain().depthImageFormat()
             )
         );
-    }
+	}
  
     void initFrameResources(bg2e::render::vulkan::DescriptorSetAllocator* frameAllocator) override
     {
@@ -596,41 +599,32 @@ public:
  
     void initScene() override
     {
-        // Use the initScene function to initialize and create scene resources, such as pipelines, 3D models
-        // or textures
-        
         auto assetsPath = bg2e::base::PlatformTools::assetPath();
-        auto imagePath = assetsPath;
-        imagePath.append("country_field_sun.jpg");
         
         _environment->build(
-            imagePath,          // Path to equirectangular image
+            bg2e::utils::TextureCache::get().load(_engine, assetsPath, "country_field_sun.jpg"),
             { 2048, 2048 },     // Cube map size
             { 32, 32 },         // Irradiance map size
             { 1024, 1024 }      // Specular reflection map size
         );
     
-        // You can use plain pointers in this case, because the base::Image and base::Texture objects will not
-        // be used outside of this function. Internally, these objects will be stored in a shared_ptr and will be
-        // managed by the render::Texture object.
-        // But if you plan to use the objects more than once, you ALWAYS must to use a shared_ptr to share the pointer
-        // between the Texture object and the rest of the application.
         auto cubeTexture = new bg2e::base::Texture(assetsPath, "logo_2a.png");
         cubeTexture->setMagFilter(bg2e::base::Texture::FilterLinear);
         cubeTexture->setMinFilter(bg2e::base::Texture::FilterLinear);
         cubeTexture->setUseMipmaps(true);
         
-        // The render::Texture is used outside the function, for this reason we use managed pointers
         _cubeTexture = std::shared_ptr<bg2e::render::Texture>(new bg2e::render::Texture(
             _engine,
             cubeTexture
         ));
         
         _engine->cleanupManager().push([&](VkDevice) {
-            _cubeTexture.reset();
+            _cubeTexture = nullptr;
         });
-    
-        createPipeline();
+	
+        _colorAttachments->build(_engine->swapchain().extent());
+
+		createPipeline();
 
         _sceneData.viewMatrix = glm::lookAt(glm::vec3{ 0.0f, 0.0f, -5.0f}, { 0.0f, 0.0f, 0.0f }, { 0.0f, 1.0f, 0.0f });
         
@@ -642,62 +636,55 @@ public:
         );
         _sceneData.projMatrix[1][1] *= -1.0f;
 
-        _skyData.modelMatrix = glm::mat4{ 1.0f };
-        _cubeData.modelMatrix = glm::mat4{ 1.0f };
+        _modelData.modelMatrix = glm::mat4{ 1.0f };
         
-        createVertexData();
+		createVertexData();
     }
 
-    void swapchainResized(VkExtent2D newExtent) override
-    {
+	void swapchainResized(VkExtent2D newExtent) override
+	{
+        // This function releases all previous resources before recreate the images
+		_colorAttachments->build(newExtent);
+  
         _sceneData.projMatrix = glm::perspective(
             glm::radians(50.0f),
             float(newExtent.width) / float(newExtent.height),
             0.1f, 40.0f
         );
-        _sceneData.projMatrix[1][1] *= -1.0f;
-    }
+        _sceneData.projMatrix[1][1] *= -1.0f;	
+	}
 
-    VkImageLayout render(
-        VkCommandBuffer cmd,
-        uint32_t currentFrame,
-        const bg2e::render::vulkan::Image* colorImage,
-        const bg2e::render::vulkan::Image* depthImage,
-        bg2e::render::vulkan::FrameResources& frameResources
-    ) override {
-        using namespace bg2e::render::vulkan;
+	VkImageLayout render(
+		VkCommandBuffer cmd,
+		uint32_t currentFrame,
+		const bg2e::render::vulkan::Image* colorImage,
+		const bg2e::render::vulkan::Image* depthImage,
+		bg2e::render::vulkan::FrameResources& frameResources
+	) override {
+		using namespace bg2e::render::vulkan;
   
         _environment->update(cmd, currentFrame, frameResources);
   
-        // You can use this function when a descriptor set only contains one unique uniform buffer.
-        // The uniformBufferDescriptorSet function automatically create the uniform buffer and descriptor set
-        // inside the FrameResources object, upload the buffer data and update the descriptor set in one single
-        // call. This function will also manage the allocated Vulkan memory and the heap memory. The descriptor
-        // set object memory will be managed by the frameResources, so you don't need to delete it or manage
-        // using a smart pointer. The object will be removed when the frame rendering is done.
-        // You can save the pointer to the set descriptor and use it safely in other functions, as long as
-        // they are used within the same frame.
         auto sceneDS = macros::uniformBufferDescriptorSet(
             _engine, frameResources,
             _sceneDSLayout, _sceneData, currentFrame
         );
         
-        float flash = std::abs(std::sin(currentFrame / 120.0f));
-        VkClearColorValue clearValue{ { 0.0f, 0.0f, flash, 1.0f } };
-        macros::cmdClearImageAndBeginRendering(
+		float flash = std::abs(std::sin(currentFrame / 120.0f));
+		VkClearColorValue clearValue{ { 0.0f, 0.0f, flash, 1.0f } };
+        macros::cmdClearImagesAndBeginRendering(
             cmd,
-            colorImage, clearValue, VK_IMAGE_LAYOUT_UNDEFINED,
+            _colorAttachments->images(),
+            clearValue, VK_IMAGE_LAYOUT_UNDEFINED,
             depthImage, 1.0f
         );
         
-        macros::cmdSetDefaultViewportAndScissor(cmd, colorImage->extent2D());
+		macros::cmdSetDefaultViewportAndScissor(cmd,
+            _colorAttachments->extent()
+        );
   
-        // Rotate the view along Y axis
         _sceneData.viewMatrix = glm::rotate(_sceneData.viewMatrix, 0.02f, glm::vec3(0.0f, 1.0f, 0.0f));
 
-        // Draw skybox. This functions will only generate a skybox if the skybox renderer
-        // is initialized in _environment. To do it, call de EnvironmentResources constructor
-        // with the target image and depth format
         _environment->updateSkybox(_sceneData.viewMatrix, _sceneData.projMatrix);
         
         if (_drawSkybox)
@@ -708,243 +695,154 @@ public:
   
         vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, _pipeline);
   
-        // Draw the cube
-        _cubeData.modelMatrix = glm::rotate(_cubeData.modelMatrix, -0.025f, glm::vec3(1.0f, 1.0f, 0.0f));
-        auto cubeDataBuffer = macros::createBuffer(_engine, frameResources, _cubeData);
-        
-        auto objectDS = frameResources.newDescriptorSet(_objectDSLayout);
-        objectDS->beginUpdate();
-            objectDS->addBuffer(
+        _modelData.modelMatrix = glm::rotate(_modelData.modelMatrix, 0.018f, glm::vec3(1.0f, 1.0f, 0.0f));
+        auto modelDataBuffer = macros::createBuffer(_engine, frameResources, _modelData);
+        auto modelDS = frameResources.newDescriptorSet(_objectDSLayout);
+        modelDS->beginUpdate();
+            modelDS->addBuffer(
                 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-                cubeDataBuffer, sizeof(ObjectData), 0
+                modelDataBuffer, sizeof(ObjectData), 0
             );
-            objectDS->addImage(
+            modelDS->addImage(
                 1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                _cubeTexture->image()->imageView(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                _cubeTexture->sampler()
+                VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                _modelMaterial->albedoTexture()
             );
-            objectDS->addImage(
+            modelDS->addImage(
                 2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
                 _environment->irradianceMapImage()->imageView(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                 _environment->irradianceMapSampler()
             );
-        objectDS->endUpdate();
-        
-        std::array<VkDescriptorSet, 2> sets = {
+        modelDS->endUpdate();
+        std::array<VkDescriptorSet, 2> objectSets = {
             sceneDS->descriptorSet(),
-            objectDS->descriptorSet()
+            modelDS->descriptorSet()
         };
         vkCmdBindDescriptorSets(
             cmd,
             VK_PIPELINE_BIND_POINT_GRAPHICS,
             _layout, 0,
-            uint32_t(sets.size()),
-            sets.data(),
+            uint32_t(objectSets.size()),
+            objectSets.data(),
             0, nullptr
         );
-        _cube->draw(cmd);
+        _model->drawSubmesh(cmd, 1);
         
-        _cylinderRotation += 0.015f;
-        if (_cylinderRotation >= std::numbers::pi_v<float> * 2.0f)
-        {
-            _cylinderRotation = 0.0f;
-        }
-        _cylinderData.modelMatrix = glm::translate(glm::mat4{ 1.0f }, glm::vec3(2.0f, 1.5 * std::sin(0.01f * float(currentFrame)), 0.0f));
-        _cylinderData.modelMatrix = glm::rotate(_cylinderData.modelMatrix, _cylinderRotation, glm::vec3(0.0f, 1.0f, 0.0f));
-        auto planeDataBuffer = macros::createBuffer(_engine, frameResources, _cylinderData);
-        
-        auto cylinderDS = frameResources.newDescriptorSet(_objectDSLayout);
-        cylinderDS->beginUpdate();
-            cylinderDS->addBuffer(
+        auto modelDS2 = frameResources.newDescriptorSet(_objectDSLayout);
+        modelDS2->beginUpdate();
+            modelDS2->addBuffer(
                 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-                planeDataBuffer, sizeof(ObjectData), 0
+                modelDataBuffer, sizeof(ObjectData), 0
             );
-            cylinderDS->addImage(
+            modelDS2->addImage(
                 1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-              _cubeTexture->image()->imageView(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-              _cubeTexture->sampler()
+                VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                _modelMaterial2->albedoTexture()
             );
-            cylinderDS->addImage(
+            modelDS2->addImage(
                 2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                _environment->irradianceMapImage()->imageView(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                _environment->irradianceMapImage()->imageView(),
+                VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                 _environment->irradianceMapSampler()
             );
-        cylinderDS->endUpdate();
-        
-        std::array<VkDescriptorSet, 2> planeSets = {
+        modelDS2->endUpdate();
+        std::array<VkDescriptorSet, 2> objectSets2 = {
             sceneDS->descriptorSet(),
-            cylinderDS->descriptorSet()
+            modelDS2->descriptorSet()
         };
         vkCmdBindDescriptorSets(
             cmd,
             VK_PIPELINE_BIND_POINT_GRAPHICS,
-            _layout,
-            0,
-            uint32_t(planeSets.size()),
-            planeSets.data(),
+            _layout, 0,
+            uint32_t(objectSets2.size()),
+            objectSets2.data(),
             0, nullptr
         );
-        _cylinder->draw(cmd);
-        
-        _sphereData.modelMatrix = glm::translate(glm::mat4{1.0f}, glm::vec3(-2.0f, 1.5 * std::cos(0.01f * float(currentFrame)), 0.0f));
-        auto sphereDataBuffer = macros::createBuffer(_engine, frameResources, _sphereData);
-        
-        auto sphereDS = frameResources.newDescriptorSet(_objectDSLayout);
-        sphereDS->beginUpdate();
-            sphereDS->addBuffer(
-                0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-                sphereDataBuffer, sizeof(ObjectData), 0
-            );
-            sphereDS->addImage(
-                1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                _cubeTexture->image()->imageView(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                _cubeTexture->sampler()
-            );
-            sphereDS->addImage(
-                2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                _environment->irradianceMapImage()->imageView(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                _environment->irradianceMapSampler()
-            );
-        sphereDS->endUpdate();
-        
-        std::array<VkDescriptorSet, 2> sphereSets = {
-            sceneDS->descriptorSet(),
-            sphereDS->descriptorSet()
-        };
-        vkCmdBindDescriptorSets(
-            cmd,
-            VK_PIPELINE_BIND_POINT_GRAPHICS,
-            _layout,
-            0,
-            uint32_t(sphereSets.size()),
-            sphereSets.data(),
-            0, nullptr
-        );
-        _sphere->draw(cmd);
+        _model->drawSubmesh(cmd, 0);
 
-        bg2e::render::vulkan::cmdEndRendering(cmd);
+		bg2e::render::vulkan::cmdEndRendering(cmd);
 
-        return VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-    }
+		Image::cmdCopy(
+			cmd,
+            _colorAttachments->imageWithIndex(_showRenderTargetIndex)->handle(),
+            _colorAttachments->extent(),
+            VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+            colorImage->handle(), colorImage->extent2D(), VK_IMAGE_LAYOUT_UNDEFINED
+		);
 
-    // ============ User Interface Delegate Functions =========
-    void init(bg2e::render::Engine *, bg2e::ui::UserInterface*) override {
-        _window.setTitle("ImGui Wrapper Demo");
-        _window.options.noClose = true;
-        _window.options.minWidth = 100;
-        _window.options.minHeight = 250;
-        _window.setPosition(0, 0);
-        _window.setSize(150, 270);
-    }
+		return VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+	}
 
-    void drawUI() override
-    {
-        using namespace bg2e::ui;
-        _window.draw([&]() {
-            BasicWidgets::text("Hello, world!");
+	// ============ User Interface Delegate Functions =========
+	void init(bg2e::render::Engine *, bg2e::ui::UserInterface*) override {
+		_window.setTitle("ImGui Wrapper Demo");
+		_window.options.noClose = true;
+		_window.options.minWidth = 130;
+		_window.options.minHeight = 330;
+		_window.setPosition(0, 0);
+		_window.setSize(130, 330);
+	}
+
+	void drawUI() override
+	{
+		using namespace bg2e::ui;
+		_window.draw([&]() {
+			BasicWidgets::text("Hello, world!");
    
             BasicWidgets::checkBox("Draw Skybox", &_drawSkybox);
             
-            if (BasicWidgets::button("Environment 1"))
-            {
-                loadEnvironment1();
-            }
+            BasicWidgets::text("Show Attachment:");
+            BasicWidgets::radioButton("Attachment 1", &_showRenderTargetIndex, 0);
+            BasicWidgets::radioButton("Attachment 2", &_showRenderTargetIndex, 1);
             
-            if (BasicWidgets::button("Environment 2"))
+            for (auto pair : _environments)
             {
-                loadEnvironment2();
+                if (BasicWidgets::button(pair.first))
+                {
+                    loadEnvironment(pair.second);
+                }
             }
-            
-            if (BasicWidgets::button("Environment 3"))
-            {
-                loadEnvironment3();
-            }
-            
-            if (BasicWidgets::button("Environment 4"))
-            {
-                loadEnvironment4();
-            }
-            
-            if (BasicWidgets::button("Environment 5"))
-            {
-                loadEnvironment5();
-            }
-            
-            if (BasicWidgets::button("Environment 6"))
-            {
-                loadEnvironment6();
-            }
-            
-            if (BasicWidgets::button("Environment 7"))
-            {
-                loadEnvironment7();
-            }
-            
-            if (BasicWidgets::button("Environment 8"))
-            {
-                loadEnvironment8();
-            }
-        });
-    }
+		});
+	}
  
-    void loadEnvironment1()
-    {
-        loadEnvironment("country_field_sun.jpg");
-    }
-    
-    void loadEnvironment2()
-    {
-        loadEnvironment("equirectangular-env.jpg");
-    }
-    
-    void loadEnvironment3()
-    {
-        loadEnvironment("equirectangular-env2.jpg");
-    }
-    
-    void loadEnvironment4()
-    {
-        loadEnvironment("equirectangular-env3.jpg");
-    }
-    
-    void loadEnvironment5()
-    {
-        loadEnvironment("equirectangular-env4.jpg");
-    }
-    
-    void loadEnvironment6()
-    {
-        loadEnvironment("equirectangular-env5.jpg");
-    }
-    
-    void loadEnvironment7()
-    {
-        loadEnvironment("equirectangular-env6.jpg");
-    }
-    
-    void loadEnvironment8()
-    {
-        loadEnvironment("equirectangular-env7.jpg");
-    }
-    
     void loadEnvironment(const std::string& fileName)
     {
-        auto assetsPath = bg2e::base::PlatformTools::assetPath();
-        auto imagePath = assetsPath;
-        imagePath.append(fileName);
-        _environment->swapEnvironmentTexture(imagePath);
+        _environment->swapEnvironmentTexture(bg2e::utils::TextureCache::get().load(
+            _engine,
+            bg2e::base::PlatformTools::assetPath(),
+            fileName
+        ));
     }
 
+	void cleanup() override
+	{
+        _colorAttachments->cleanup();
+        bg2e::utils::TextureCache::destroy();
+	}
+
 protected:
-    bg2e::ui::Window _window;
+    std::array<std::pair<const std::string, const std::string>, 8> _environments = {{
+        { "Environment 1", "country_field_sun.jpg" },
+        { "Environment 2", "equirectangular-env.jpg" },
+        { "Environment 3", "equirectangular-env2.jpg" },
+        { "Environment 4", "equirectangular-env3.jpg" },
+        { "Environment 5", "equirectangular-env4.jpg" },
+        { "Environment 6", "equirectangular-env5.jpg" },
+        { "Environment 7", "equirectangular-env6.jpg" },
+        { "Environment 8", "equirectangular-env7.jpg" }
+    }};
+    
+    std::shared_ptr<bg2e::render::ColorAttachments> _colorAttachments;
 
-    VkPipelineLayout _layout;
-    VkPipeline _pipeline;
+	bg2e::ui::Window _window;
+
+	VkPipelineLayout _layout;
+	VkPipeline _pipeline;
  
-    std::unique_ptr<bg2e::render::vulkan::geo::MeshPNU> _cube;
-    std::unique_ptr<bg2e::render::vulkan::geo::MeshPNU> _cylinder;
-    std::unique_ptr<bg2e::render::vulkan::geo::MeshPNU> _sphere;
-
+    std::shared_ptr<bg2e::render::vulkan::geo::MeshPNU> _model;
+    std::shared_ptr<bg2e::render::MaterialBase> _modelMaterial;
+    std::shared_ptr<bg2e::render::MaterialBase> _modelMaterial2;
+    
     std::shared_ptr<bg2e::render::Texture> _cubeTexture;
 
     VkDescriptorSetLayout _sceneDSLayout;
@@ -952,9 +850,10 @@ protected:
 
     // Load the environment skybox, generate the irradiance and specular reflection maps,
     // and manage the sky box renderer
-    std::unique_ptr<bg2e::render::EnvironmentResources> _environment;
+    std::shared_ptr<bg2e::render::EnvironmentResources> _environment;
     
     bool _drawSkybox = true;
+    int _showRenderTargetIndex = 0;
         
     struct SceneData
     {
@@ -968,22 +867,16 @@ protected:
     {
         glm::mat4 modelMatrix;
     };
-    ObjectData _skyData;
-    ObjectData _cubeData;
-    ObjectData _cylinderData;
-    ObjectData _sphereData;
-    float _cylinderRotation = 0.0f;
+    
+    ObjectData _modelData;
 
-    void createPipeline()
-    {
-        bg2e::render::vulkan::factory::GraphicsPipeline plFactory(_engine);
+	void createPipeline()
+	{
+		bg2e::render::vulkan::factory::GraphicsPipeline plFactory(_engine);
 
-        plFactory.addShader("test/environment_render_example.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
-        // plFactory.addShader("test/texture.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
-        plFactory.addShader("test/environment_render_example.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
-
-        //plFactory.setInputBindingDescription(bg2e::render::vulkan::geo::MeshPNU::bindingDescription());
-        //plFactory.setInputAttributeDescriptions(bg2e::render::vulkan::geo::MeshPNU::attributeDescriptions());
+		plFactory.addShader("test/texture_gi.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
+        plFactory.addShader("test/texture_gi.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
+        
         plFactory.setInputState<bg2e::render::vulkan::geo::MeshPNU>();
   
         bg2e::render::vulkan::factory::DescriptorSetLayout dsFactory;
@@ -1007,71 +900,76 @@ protected:
         plFactory.enableDepthtest(true, VK_COMPARE_OP_LESS);
         plFactory.inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
         plFactory.setCullMode(true, VK_FRONT_FACE_COUNTER_CLOCKWISE);
-        plFactory.setColorAttachmentFormat(_engine->swapchain().imageFormat());
-        _pipeline = plFactory.build(_layout);
+        
+        plFactory.setColorAttachmentFormat(_colorAttachments->attachmentFormats());
+		_pipeline = plFactory.build(_layout);
   
-        _engine->cleanupManager().push([&](VkDevice dev) {
-            vkDestroyPipeline(dev, _pipeline, nullptr);
-            vkDestroyPipelineLayout(dev, _layout, nullptr);
+		_engine->cleanupManager().push([&](VkDevice dev) {
+			vkDestroyPipeline(dev, _pipeline, nullptr);
+			vkDestroyPipelineLayout(dev, _layout, nullptr);
             vkDestroyDescriptorSetLayout(dev, _sceneDSLayout, nullptr);
             vkDestroyDescriptorSetLayout(dev, _objectDSLayout, nullptr);
-        });
-    }
+		});
+	}
 
-    void createVertexData()
-    {
-        using namespace bg2e::render::vulkan;
+	void createVertexData()
+	{
+		using namespace bg2e::render::vulkan;
   
-        auto mesh = std::unique_ptr<bg2e::geo::MeshPNU>(
-            bg2e::geo::createCubePNU(1.0f, 1.0f, 1.0f)
+        std::filesystem::path modelPath = bg2e::base::PlatformTools::assetPath();
+        modelPath.append("two_submeshes.obj");
+        
+        auto modelMesh = std::unique_ptr<bg2e::geo::MeshPNU>(
+            bg2e::db::loadMeshObj<bg2e::geo::MeshPNU>(modelPath)
         );
         
-        _cube = std::unique_ptr<bg2e::render::vulkan::geo::MeshPNU>(new bg2e::render::vulkan::geo::MeshPNU(_engine));
-        _cube->setMeshData(mesh.get());
-        _cube->build();
+        _model = std::shared_ptr<bg2e::render::vulkan::geo::MeshPNU>(new bg2e::render::vulkan::geo::MeshPNU(_engine));
+        _model->setMeshData(modelMesh.get());
+        _model->build();
         
-        mesh = std::unique_ptr<bg2e::geo::MeshPNU>(
-            //bg2e::geo::createPlanePU(5.0f, 5.0f, false)
-            bg2e::geo::createCylinderPNU(0.5f, 1.0f, 14, false)
+        auto modelTexture = std::make_shared<bg2e::base::Texture>(
+            bg2e::base::PlatformTools::assetPath(),
+            "two_submeshes_inner_albedo.jpg"
         );
         
-        _cylinder = std::unique_ptr<bg2e::render::vulkan::geo::MeshPNU>(new bg2e::render::vulkan::geo::MeshPNU(_engine));
-        _cylinder->setMeshData(mesh.get());
-        _cylinder->build();
-        _cylinderData.modelMatrix = glm::translate(glm::mat4{ 1.0f }, glm::vec3(2.0f, 0.0f, 0.0f));
+        _modelMaterial = std::make_shared<bg2e::render::MaterialBase>(_engine);
+        _modelMaterial->materialAttributes().setAlbedo(modelTexture);
         
-        mesh = std::unique_ptr<bg2e::geo::MeshPNU>(
-            bg2e::geo::createSpherePNU(0.6f, 30, 30)
+        // Call this function every time you change something in materialAttributes
+        _modelMaterial->updateTextures();
+        
+        auto modelTexture2 = std::make_shared<bg2e::base::Texture>(
+            bg2e::base::PlatformTools::assetPath(),
+            "two_submeshes_outer_albedo.jpg"
         );
         
-        _sphere = std::unique_ptr<bg2e::render::vulkan::geo::MeshPNU>(new bg2e::render::vulkan::geo::MeshPNU(_engine));
-        _sphere->setMeshData(mesh.get());
-        _sphere->build();
-        _sphereData.modelMatrix = glm::translate(glm::mat4{ 1.0f }, glm::vec3(0.0f, 0.0f, -2.0f));
+        _modelMaterial2 = std::make_shared<bg2e::render::MaterialBase>(_engine);
+        _modelMaterial2->materialAttributes().setAlbedo(modelTexture2);
         
-
-        _engine->cleanupManager().push([this](VkDevice dev) {
-            _cube.reset();
-            _cylinder.reset();
-            _sphere.reset();
-        });
-    }
+        _modelMaterial2->updateTextures();
+        
+		_engine->cleanupManager().push([this](VkDevice dev) {
+            _model.reset();
+            _modelMaterial.reset();
+            _modelMaterial2.reset();
+  		});
+	}
 };
 
 class MyApplication : public bg2e::app::Application {
 public:
-    void init(int argc, char** argv) override
-    {
-        auto delegate = std::shared_ptr<ClearScreenDelegate>(new ClearScreenDelegate());
-        setRenderDelegate(delegate);
-        setInputDelegate(delegate);
-        setUiDelegate(delegate);
-    }
+	void init(int argc, char** argv) override
+	{
+		auto delegate = std::shared_ptr<ClearScreenDelegate>(new ClearScreenDelegate());
+		setRenderDelegate(delegate);
+		setInputDelegate(delegate);
+		setUiDelegate(delegate);
+	}
 };
 
 int main(int argc, char** argv) {
-    bg2e::app::MainLoop mainLoop;
-    MyApplication app;
-    app.init(argc, argv);
-    return mainLoop.run(&app);
+	bg2e::app::MainLoop mainLoop;
+	MyApplication app;
+	app.init(argc, argv);
+	return mainLoop.run(&app);
 }

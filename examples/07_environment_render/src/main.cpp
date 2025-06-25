@@ -1,4 +1,3 @@
-
 #include <bg2e.hpp>
 
 #include <array>
@@ -91,7 +90,6 @@ public:
             float(vpSize.width) / float(vpSize.height),
             0.1f, 40.0f
         );
-        _sceneData.projMatrix[1][1] *= -1.0f;
 
         _skyData.modelMatrix = glm::mat4{ 1.0f };
         _cubeData.modelMatrix = glm::mat4{ 1.0f };
@@ -106,7 +104,6 @@ public:
             float(newExtent.width) / float(newExtent.height),
             0.1f, 40.0f
         );
-        _sceneData.projMatrix[1][1] *= -1.0f;
     }
 
     VkImageLayout render(
@@ -429,9 +426,9 @@ protected:
     {
         bg2e::render::vulkan::factory::GraphicsPipeline plFactory(_engine);
 
-        plFactory.addShader("test/texture_gi.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
+        plFactory.addShader("test/environment_render_example.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
         // plFactory.addShader("test/texture.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
-        plFactory.addShader("test/texture_gi.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
+        plFactory.addShader("test/environment_render_example.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
 
         //plFactory.setInputBindingDescription(bg2e::render::vulkan::geo::MeshPNU::bindingDescription());
         //plFactory.setInputAttributeDescriptions(bg2e::render::vulkan::geo::MeshPNU::attributeDescriptions());
@@ -457,7 +454,7 @@ protected:
         plFactory.setDepthFormat(_engine->swapchain().depthImageFormat());
         plFactory.enableDepthtest(true, VK_COMPARE_OP_LESS);
         plFactory.inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-        plFactory.setCullMode(true, VK_FRONT_FACE_COUNTER_CLOCKWISE);
+        plFactory.setCullMode(VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_COUNTER_CLOCKWISE);
         plFactory.setColorAttachmentFormat(_engine->swapchain().imageFormat());
         _pipeline = plFactory.build(_layout);
   

@@ -18,8 +18,15 @@ Texture* BRDFIntegrationMapTextureGenerator::generate()
         VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT
     );
     
+    vulkan::Image::transitionImage(
+        _engine,
+        image->handle(),
+        VK_IMAGE_LAYOUT_UNDEFINED,
+        VK_IMAGE_LAYOUT_GENERAL
+    );
+
     GPUProcess gpu(_engine);
-    gpu.addBinding(0, image, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE);
+    gpu.addBinding(0, image, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_IMAGE_LAYOUT_GENERAL);
     gpu.executeShader("brdf_lut.comp.spv", image->extent2D());
     
     return wrapImage(

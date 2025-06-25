@@ -86,8 +86,8 @@
 		EDD77E512CEA60F800278155 /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
 		EDD77E552CEA61BD00278155 /* Setup.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Setup.entitlements; sourceTree = "<group>"; };
 		EDD77E602CEA64E600278155 /* CoreFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreFoundation.framework; path = System/Library/Frameworks/CoreFoundation.framework; sourceTree = SDKROOT; };
-		EDD77E772CEA7E9D00278155 /* texture_gi.frag.glsl */ = {isa = PBXFileReference; lastKnownFileType = text; path = texture_gi.frag.glsl; sourceTree = "<group>"; };
-		EDD77E782CEA7E9D00278155 /* texture_gi.vert.glsl */ = {isa = PBXFileReference; lastKnownFileType = text; path = texture_gi.vert.glsl; sourceTree = "<group>"; };
+		EDD77E772CEA7E9D00278155 /* environment_render_example.frag.glsl */ = {isa = PBXFileReference; lastKnownFileType = text; path = environment_render_example.frag.glsl; sourceTree = "<group>"; };
+		EDD77E782CEA7E9D00278155 /* environment_render_example.vert.glsl */ = {isa = PBXFileReference; lastKnownFileType = text; path = environment_render_example.vert.glsl; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -116,13 +116,6 @@
 				spv/specular_reflection_renderer.frag.spv,
 				spv/sphere_to_cubemap.frag.spv,
 				spv/sphere_to_cubemap.vert.spv,
-				spv/test.frag.spv,
-				spv/test.vert.spv,
-				spv/texture_gi.frag.spv,
-				spv/texture_gi.vert.spv,
-				spv/texture.frag.spv,
-				spv/texture.vert.spv,
-				spv/vertbuffer.vert.spv,
 			);
 		};
 /* End PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet section */
@@ -254,8 +247,8 @@
 		EDD77E792CEA7E9D00278155 /* src */ = {
 			isa = PBXGroup;
 			children = (
-				EDD77E772CEA7E9D00278155 /* texture_gi.frag.glsl */,
-				EDD77E782CEA7E9D00278155 /* texture_gi.vert.glsl */,
+				EDD77E772CEA7E9D00278155 /* environment_render_example.frag.glsl */,
+				EDD77E782CEA7E9D00278155 /* environment_render_example.vert.glsl */,
 			);
 			path = src;
 			sourceTree = "<group>";
@@ -542,7 +535,7 @@
 					"@executable_path/../Frameworks",
 				);
 				LIBRARY_SEARCH_PATHS = (
-					"$(PROJECT_DIR)/../../bin/Release",
+					"$(PROJECT_DIR)/../../bin/Debug",
 					"$(VULKAN_SDK)/lib",
 				);
 				MARKETING_VERSION = 1.0;
