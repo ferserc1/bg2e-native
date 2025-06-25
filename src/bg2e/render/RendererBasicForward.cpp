@@ -64,7 +64,7 @@ void RendererBasicForward::initScene(
         { 32, 32 },         // Irradiance map size
         { 1024, 1024 }      // Specular reflection map size
     );
-    _colorAttachments->build(_engine->swapchain().extent());
+    _colorAttachments->build(_engine->swapchain().extent(), _engine->swapchain().sampleCount());
     
     _scene->updateLights();
 
@@ -82,7 +82,7 @@ void RendererBasicForward::resize(
     _scene->willResize();
     
     // This function releases all previous resources before recreating the images
-    _colorAttachments->build(newExtent);
+    _colorAttachments->build(newExtent, _engine->swapchain().sampleCount());
 
     _resizeVisitor.resizeViewport(_scene->rootNode(), newExtent);
     

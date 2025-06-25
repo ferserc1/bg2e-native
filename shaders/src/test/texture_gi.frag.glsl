@@ -7,7 +7,7 @@ layout(location = 0) in vec2 inTexCoord;
 layout(location = 1) in vec3 inPosition;
 
 layout(set = 1, binding = 1) uniform sampler2D colorTex;
-layout(set = 2, binding = 0) uniform samplerCube giTex;
+layout(set = 1, binding = 2) uniform samplerCube giTex;
 
 void main() {
     float gamma = 2.2;

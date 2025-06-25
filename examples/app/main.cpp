@@ -569,6 +569,11 @@ public:
                 VK_FORMAT_R8G8B8A8_UNORM
             })
         );
+        
+        _colorAttachmentsCanvas = std::make_shared<bg2e::render::ColorAttachmentsCanvas>(
+            _engine,
+            _colorAttachments
+        );
   
         vulkan->descriptorSetAllocator().requirePoolSizeRatio(1, {
             { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1 }
@@ -593,6 +598,8 @@ public:
         });
         
         _environment->initFrameResources(frameAllocator);
+        
+        _colorAttachmentsCanvas->initFrameResources(frameAllocator);
         
         frameAllocator->initPool();
     }
@@ -622,7 +629,9 @@ public:
             _cubeTexture = nullptr;
         });
 	
-        _colorAttachments->build(_engine->swapchain().extent());
+        _colorAttachments->build(_engine->swapchain().extent(), _engine->swapchain().sampleCount());
+        
+        _colorAttachmentsCanvas->build();
 
 		createPipeline();
 
@@ -644,7 +653,7 @@ public:
 	void swapchainResized(VkExtent2D newExtent) override
 	{
         // This function releases all previous resources before recreate the images
-		_colorAttachments->build(newExtent);
+		_colorAttachments->build(newExtent, _engine->swapchain().sampleCount());
   
         _sceneData.projMatrix = glm::perspective(
             glm::radians(50.0f),
@@ -762,13 +771,15 @@ public:
 
 		bg2e::render::vulkan::cmdEndRendering(cmd);
 
-		Image::cmdCopy(
-			cmd,
-            _colorAttachments->imageWithIndex(_showRenderTargetIndex)->handle(),
-            _colorAttachments->extent(),
-            VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-            colorImage->handle(), colorImage->extent2D(), VK_IMAGE_LAYOUT_UNDEFINED
-		);
+//		Image::cmdCopy(
+//			cmd,
+//            _colorAttachments->imageWithIndex(_showRenderTargetIndex)->handle(),
+//            _colorAttachments->extent(),
+//            VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+//            colorImage->handle(), colorImage->extent2D(), VK_IMAGE_LAYOUT_UNDEFINED
+//		);
+
+        // TODO: Draw the selected color attachment into colorImage
 
 		return VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
 	}
@@ -833,6 +844,7 @@ protected:
     }};
     
     std::shared_ptr<bg2e::render::ColorAttachments> _colorAttachments;
+    std::shared_ptr<bg2e::render::ColorAttachmentsCanvas> _colorAttachmentsCanvas;
 
 	bg2e::ui::Window _window;
 
