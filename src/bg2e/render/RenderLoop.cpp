@@ -80,6 +80,20 @@ void RenderLoop::acquireAndPresent()
 
     vulkan::Image::cmdTransitionImage(
         cmd,
+        msaaImage->handle(),
+        VK_IMAGE_LAYOUT_UNDEFINED,
+        VK_IMAGE_LAYOUT_GENERAL
+    );
+    
+    vulkan::Image::cmdTransitionImage(
+        cmd,
+        resolveImage->handle(),
+        VK_IMAGE_LAYOUT_UNDEFINED,
+        VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
+    );
+    
+    vulkan::Image::cmdTransitionImage(
+        cmd,
         depthImage->handle(),
         VK_IMAGE_LAYOUT_UNDEFINED,
         VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL
@@ -92,12 +106,12 @@ void RenderLoop::acquireAndPresent()
         frameResources
     );
 
-    if (lastSwapchainLayout != VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL) {
+    if (lastSwapchainLayout != VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL) {
         vulkan::Image::cmdTransitionImage(
             cmd,
             msaaImage->handle(),
             lastSwapchainLayout,
-            VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
+            VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
         );
     }
 
@@ -106,7 +120,7 @@ void RenderLoop::acquireAndPresent()
         cmd,
         resolveImage->handle(),
         VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
-        VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
+        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
     );
     
     
@@ -122,8 +136,8 @@ void RenderLoop::acquireAndPresent()
     region.extent = { msaaImage->extent() };
     vkCmdResolveImage(
         cmd,
-        msaaImage->handle(), VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-        resolveImage->handle(), VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+        msaaImage->handle(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+        resolveImage->handle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
         1, &region
     );
     
@@ -137,7 +151,7 @@ void RenderLoop::acquireAndPresent()
     vulkan::Image::cmdTransitionImage(
         cmd,
         resolveImage->handle(),
-        VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
         VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
     );
 

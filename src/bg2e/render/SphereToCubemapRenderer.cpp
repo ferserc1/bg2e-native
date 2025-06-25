@@ -281,6 +281,7 @@ void SphereToCubemapRenderer::initPipeline(const std::string& vshaderFile, const
     
     plFactory.setColorAttachmentFormat(VK_FORMAT_R16G16B16A16_SFLOAT);
     plFactory.disableDepthtest();
+    plFactory.disableMultisample();
     plFactory.inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
     plFactory.setCullMode(VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_COUNTER_CLOCKWISE);
     

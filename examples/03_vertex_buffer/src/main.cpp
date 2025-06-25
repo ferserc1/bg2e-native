@@ -1,3 +1,4 @@
+
 #include <bg2e/app/MainLoop.hpp>
 #include <bg2e/app/Application.hpp>
 #include <bg2e/ui/UserInterface.hpp>
@@ -155,7 +156,7 @@ public:
         // The uniform buffer with the model matrix is the same for every submeshes, but the texture can
         // be different.
         //_objectData.modelMatrix = glm::rotate(_objectData.modelMatrix, 0.02f, glm::vec3(0.0f, 1.0f, 0.0f));
-        _objectData.modelMatrix = glm::translate(glm::mat4{1.0f}, glm::vec3{ 0.0f, 0.0f, 0.0f });
+        _objectData.modelMatrix = glm::rotate(_objectData.modelMatrix, delta() * 0.001f, glm::vec3{ 0.0f, 1.0f, 0.0f });
         auto objectDataBuffer = macros::createBuffer(_engine, frameResources, _objectData);
         
 		for (uint32_t i = 0; i < _mesh->submeshCount(); ++i)
@@ -296,7 +297,7 @@ protected:
         plFactory.setDepthFormat(_engine->swapchain().depthImageFormat());
         plFactory.enableDepthtest(true, VK_COMPARE_OP_LESS);
         plFactory.inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-        plFactory.setCullMode(true, VK_FRONT_FACE_COUNTER_CLOCKWISE);
+        plFactory.setCullMode(VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_COUNTER_CLOCKWISE);
 		plFactory.setColorAttachmentFormat(_engine->swapchain().imageFormat());
 		_pipeline = plFactory.build(_layout);
 

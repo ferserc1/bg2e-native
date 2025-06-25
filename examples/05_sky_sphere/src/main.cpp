@@ -65,8 +65,6 @@ public:
             _boxTexture.reset();
         });
 	
-		createImage(_engine->swapchain().extent());
-
 		createPipeline();
 
         _sceneData.viewMatrix = glm::lookAt(glm::vec3{ 0.0f, 0.0f, 5.0f}, { 0.0f, 0.0f, 0.0f }, { 0.0f, 1.0f, 0.0f });
@@ -87,9 +85,6 @@ public:
 
 	void swapchainResized(VkExtent2D newExtent) override
 	{
-		_targetImage->cleanup();
-		createImage(newExtent);
-  
         _sceneData.projMatrix = glm::perspective(
             glm::radians(50.0f),
             float(newExtent.width) / float(newExtent.height),
@@ -124,11 +119,11 @@ public:
 		VkClearColorValue clearValue{ { 0.0f, 0.0f, flash, 1.0f } };
         macros::cmdClearImageAndBeginRendering(
             cmd,
-            _targetImage.get(), clearValue, VK_IMAGE_LAYOUT_UNDEFINED,
+            colorImage, clearValue, VK_IMAGE_LAYOUT_UNDEFINED,
             depthImage, 1.0f
         );
 
-		macros::cmdSetDefaultViewportAndScissor(cmd, _targetImage->extent2D());
+		macros::cmdSetDefaultViewportAndScissor(cmd, colorImage->extent2D());
 
 		vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, _pipeline);
 
@@ -182,8 +177,7 @@ public:
 		// Use this function to draw one unique mesh including all the indexes
 		// _skyMesh->draw(cmd);
   
-        //_boxData.modelMatrix = glm::rotate(_boxData.modelMatrix, 0.015f, glm::vec3(1.0f, 1.0f, 0.0f));
-        _boxData.modelMatrix = glm::translate(glm::mat4{ 1.0f }, glm::vec3(2.0f, 0.0f, 0.0f ));
+        _boxData.modelMatrix = glm::rotate(_boxData.modelMatrix, delta() * -0.0015f, glm::vec3(1.0f, 1.0f, 0.0f));
         auto boxDataBuffer = macros::createBuffer(_engine, frameResources, _boxData);
         auto boxDS = frameResources.newDescriptorSet(_objectDSLayout);
         boxDS->beginUpdate();
@@ -213,13 +207,7 @@ public:
         
 		bg2e::render::vulkan::cmdEndRendering(cmd);
 
-		Image::cmdCopy(
-			cmd,
-            _targetImage->handle(), _targetImage->extent2D(), VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-			colorImage->handle(), colorImage->extent2D(), VK_IMAGE_LAYOUT_UNDEFINED
-		);
-
-		return VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+		return VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 	}
 
 	// ============ User Interface Delegate Functions =========
@@ -240,14 +228,7 @@ public:
 		});
 	}
 
-	void cleanup() override
-	{
-		_targetImage->cleanup();
-	}
-
 protected:
-	std::shared_ptr<bg2e::render::vulkan::Image> _targetImage;
-
 	bg2e::ui::Window _window;
 
 	VkPipelineLayout _layout;
@@ -316,8 +297,8 @@ protected:
         plFactory.setDepthFormat(_engine->swapchain().depthImageFormat());
         plFactory.enableDepthtest(true, VK_COMPARE_OP_LESS);
         plFactory.inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-        plFactory.setCullMode(true, VK_FRONT_FACE_COUNTER_CLOCKWISE);
-		plFactory.setColorAttachmentFormat(_targetImage->format());
+        plFactory.setCullMode(VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_COUNTER_CLOCKWISE);
+		plFactory.setColorAttachmentFormat(_engine->swapchain().imageFormat());
 		_pipeline = plFactory.build(_layout);
 
 		_engine->cleanupManager().push([&](VkDevice dev) {
@@ -352,20 +333,6 @@ protected:
 			_skyMesh.reset();
             _boxMesh.reset();
 		});
-	}
-
-	void createImage(VkExtent2D extent)
-	{
-		using namespace bg2e::render::vulkan;
-		auto engine = this->engine();
-		_targetImage = std::shared_ptr<Image>(Image::createAllocatedImage(
-			engine,
-			VK_FORMAT_R16G16B16A16_SFLOAT,
-			extent,
-			VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT |
-			VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
-			VK_IMAGE_ASPECT_COLOR_BIT
-		));
 	}
 };
 

@@ -15,7 +15,6 @@ void main() {
     vec3 color = texture(colorTex, inTexCoord).rgb;
     vec3 lighting = texture(giTex, inPosition).rgb;
     
-    
     color = pow(color, vec3(1.0 / gamma));
     colorAttachment1 = vec4(color, 1.0f) * vec4(lighting, 1.0);
     colorAttachment2 = vec4(lighting, 1.0);

@@ -90,8 +90,6 @@ public:
             _texture2.reset();
         });
 	
-		createImage(_engine->swapchain().extent());
-
 		createPipeline();
 
         _sceneData.viewMatrix = glm::lookAt(glm::vec3{ 0.0f, 0.0f, -5.0f}, { 0.0f, 0.0f, 0.0f }, { 0.0f, 1.0f, 0.0f });
@@ -110,9 +108,6 @@ public:
 
 	void swapchainResized(VkExtent2D newExtent) override
 	{
-		_targetImage->cleanup();
-		createImage(newExtent);
-  
         _sceneData.projMatrix = glm::perspective(
             glm::radians(50.0f),
             float(newExtent.width) / float(newExtent.height),
@@ -144,7 +139,7 @@ public:
         
 		Image::cmdTransitionImage(
 			cmd,
-			_targetImage->handle(),
+			colorImage->handle(),
 			VK_IMAGE_LAYOUT_UNDEFINED,
 			VK_IMAGE_LAYOUT_GENERAL
 		);
@@ -154,23 +149,23 @@ public:
 		auto clearRange = Image::subresourceRange(VK_IMAGE_ASPECT_COLOR_BIT);
 		vkCmdClearColorImage(
 			cmd,
-			_targetImage->handle(),
+			colorImage->handle(),
 			VK_IMAGE_LAYOUT_GENERAL,
 			&clearValue, 1, &clearRange
 		);
 
 		Image::cmdTransitionImage(
-			cmd, _targetImage->handle(),
+			cmd, colorImage->handle(),
 			VK_IMAGE_LAYOUT_GENERAL,
 			VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
 		);
 
-		auto colorAttachment = Info::attachmentInfo(_targetImage->imageView(), nullptr);
+		auto colorAttachment = Info::attachmentInfo(colorImage->imageView(), nullptr);
         auto depthAttachment = Info::depthAttachmentInfo(depthImage->imageView());
-        auto renderInfo = Info::renderingInfo(_targetImage->extent2D(), &colorAttachment, &depthAttachment);
+        auto renderInfo = Info::renderingInfo(colorImage->extent2D(), &colorAttachment, &depthAttachment);
 		cmdBeginRendering(cmd, &renderInfo);
 
-		macros::cmdSetDefaultViewportAndScissor(cmd, _targetImage->extent2D());
+		macros::cmdSetDefaultViewportAndScissor(cmd, colorImage->extent2D());
 
 		vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, _pipeline);
 
@@ -227,26 +222,7 @@ public:
 
 		bg2e::render::vulkan::cmdEndRendering(cmd);
 
-		Image::cmdTransitionImage(
-			cmd,
-			_targetImage->handle(),
-			VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-			VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
-		);
-		Image::cmdTransitionImage(
-			cmd,
-			colorImage->handle(),
-			VK_IMAGE_LAYOUT_UNDEFINED,
-			VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
-		);
-
-		Image::cmdCopy(
-			cmd,
-			_targetImage->handle(), _targetImage->extent2D(),
-			colorImage->handle(), colorImage->extent2D()
-		);
-
-		return VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+		return VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 	}
 
 	// ============ User Interface Delegate Functions =========
@@ -267,14 +243,7 @@ public:
 		});
 	}
 
-	void cleanup() override
-	{
-		_targetImage->cleanup();
-	}
-
 protected:
-	std::shared_ptr<bg2e::render::vulkan::Image> _targetImage;
-
 	bg2e::ui::Window _window;
 
 	VkPipelineLayout _layout;
@@ -341,8 +310,8 @@ protected:
         plFactory.setDepthFormat(_engine->swapchain().depthImageFormat());
         plFactory.enableDepthtest(true, VK_COMPARE_OP_LESS);
         plFactory.inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-        plFactory.setCullMode(true, VK_FRONT_FACE_COUNTER_CLOCKWISE);
-		plFactory.setColorAttachmentFormat(_targetImage->format());
+        plFactory.setCullMode(VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_COUNTER_CLOCKWISE);
+		plFactory.setColorAttachmentFormat(_engine->swapchain().imageFormat());
 		_pipeline = plFactory.build(_layout);
 
 		_engine->cleanupManager().push([&](VkDevice dev) {
@@ -369,20 +338,6 @@ protected:
 		_engine->cleanupManager().push([this](VkDevice dev) {
 			_mesh.reset();
 		});
-	}
-
-	void createImage(VkExtent2D extent)
-	{
-		using namespace bg2e::render::vulkan;
-		auto engine = this->engine();
-		_targetImage = std::shared_ptr<Image>(Image::createAllocatedImage(
-			engine,
-			VK_FORMAT_R16G16B16A16_SFLOAT,
-			extent,
-			VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT |
-			VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
-			VK_IMAGE_ASPECT_COLOR_BIT
-		));
 	}
 };
 

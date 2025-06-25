@@ -98,8 +98,7 @@ public:
             _texture.reset();
             _cubeTexture.reset();
         });
-	
-		createImage(_engine->swapchain().extent());
+
   
         // Create the skybox renderer after the target image, because we need access to the
         // target image format to initialize the skybox renderer
@@ -108,13 +107,12 @@ public:
         );
         _skyboxRenderer->build(
             cubeMapTexture, {
-                _targetImage->format()
+                _engine->swapchain().imageFormat()
             }, _engine->swapchain().depthImageFormat()
         );
         
         _engine->cleanupManager().push([&](VkDevice) {
             _sphereToCubemap.reset();
-            cubeMapTexture.reset();
         });
 
 		createPipeline();
@@ -137,9 +135,6 @@ public:
 
 	void swapchainResized(VkExtent2D newExtent) override
 	{
-		_targetImage->cleanup();
-		createImage(newExtent);
-  
         _sceneData.projMatrix = glm::perspective(
             glm::radians(50.0f),
             float(newExtent.width) / float(newExtent.height),
@@ -182,11 +177,11 @@ public:
 		VkClearColorValue clearValue{ { 0.0f, 0.0f, flash, 1.0f } };
         macros::cmdClearImageAndBeginRendering(
             cmd,
-            _targetImage.get(), clearValue, VK_IMAGE_LAYOUT_UNDEFINED,
+            colorImage, clearValue, VK_IMAGE_LAYOUT_UNDEFINED,
             depthImage, 1.0f
         );
         
-		macros::cmdSetDefaultViewportAndScissor(cmd, _targetImage->extent2D());
+		macros::cmdSetDefaultViewportAndScissor(cmd, colorImage->extent2D());
   
         // Rotate the view along Y axis
         _sceneData.viewMatrix = glm::rotate(_sceneData.viewMatrix, 0.02f, glm::vec3(0.0f, 1.0f, 0.0f));
@@ -266,13 +261,7 @@ public:
 
 		bg2e::render::vulkan::cmdEndRendering(cmd);
 
-		Image::cmdCopy(
-			cmd,
-            _targetImage->handle(), _targetImage->extent2D(), VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-            colorImage->handle(), colorImage->extent2D(), VK_IMAGE_LAYOUT_UNDEFINED
-		);
-
-		return VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+		return VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 	}
 
 	// ============ User Interface Delegate Functions =========
@@ -295,20 +284,17 @@ public:
 
 	void cleanup() override
 	{
-		_targetImage->cleanup();
         _skyboxRenderer.reset();
 	}
 
 protected:
-	std::shared_ptr<bg2e::render::vulkan::Image> _targetImage;
-
 	bg2e::ui::Window _window;
 
 	VkPipelineLayout _layout;
 	VkPipeline _pipeline;
  
-    std::unique_ptr<bg2e::render::vulkan::geo::MeshPU> _cube;
-    std::unique_ptr<bg2e::render::vulkan::geo::MeshPU> _plane;
+    std::shared_ptr<bg2e::render::vulkan::geo::MeshPU> _cube;
+    std::shared_ptr<bg2e::render::vulkan::geo::MeshPU> _plane;
 
 	std::shared_ptr<bg2e::render::Texture> _texture;
     std::shared_ptr<bg2e::render::Texture> _cubeTexture;
@@ -370,7 +356,7 @@ protected:
         plFactory.enableDepthtest(true, VK_COMPARE_OP_LESS);
         plFactory.inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
         plFactory.setCullMode(true, VK_FRONT_FACE_COUNTER_CLOCKWISE);
-		plFactory.setColorAttachmentFormat(_targetImage->format());
+		plFactory.setColorAttachmentFormat(_engine->swapchain().imageFormat());
 		_pipeline = plFactory.build(_layout);
   
 		_engine->cleanupManager().push([&](VkDevice dev) {
@@ -385,20 +371,20 @@ protected:
 	{
 		using namespace bg2e::render::vulkan;
   
-        auto mesh = std::unique_ptr<bg2e::geo::MeshPU>(
+        auto mesh = std::shared_ptr<bg2e::geo::MeshPU>(
             bg2e::geo::createCubePU(1.0f, 1.0f, 1.0f)
         );
         
-        _cube = std::unique_ptr<bg2e::render::vulkan::geo::MeshPU>(new bg2e::render::vulkan::geo::MeshPU(_engine));
+        _cube = std::shared_ptr<bg2e::render::vulkan::geo::MeshPU>(new bg2e::render::vulkan::geo::MeshPU(_engine));
         _cube->setMeshData(mesh.get());
         _cube->build();
         
-        mesh = std::unique_ptr<bg2e::geo::MeshPU>(
+        mesh = std::shared_ptr<bg2e::geo::MeshPU>(
             //bg2e::geo::createPlanePU(5.0f, 5.0f, false)
             bg2e::geo::createCylinderPU(0.5f, 1.0f, 14, false)
         );
         
-        _plane = std::unique_ptr<bg2e::render::vulkan::geo::MeshPU>(new bg2e::render::vulkan::geo::MeshPU(_engine));
+        _plane = std::shared_ptr<bg2e::render::vulkan::geo::MeshPU>(new bg2e::render::vulkan::geo::MeshPU(_engine));
         _plane->setMeshData(mesh.get());
         _plane->build();
         _planeData.modelMatrix = glm::translate(glm::mat4{ 1.0f }, glm::vec3(2.0f, 0.0f, 0.0f));
@@ -407,20 +393,6 @@ protected:
             _cube.reset();
             _plane.reset();
 		});
-	}
-
-	void createImage(VkExtent2D extent)
-	{
-		using namespace bg2e::render::vulkan;
-		auto engine = this->engine();
-		_targetImage = std::shared_ptr<Image>(Image::createAllocatedImage(
-			engine,
-			VK_FORMAT_R16G16B16A16_SFLOAT,
-			extent,
-			VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT |
-			VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
-			VK_IMAGE_ASPECT_COLOR_BIT
-		));
 	}
 };
 
