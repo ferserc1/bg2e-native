@@ -36,7 +36,12 @@ EnvironmentResources::EnvironmentResources(bg2e::render::Engine * engine)
     });
 }
 
-EnvironmentResources::EnvironmentResources(bg2e::render::Engine * engine, const std::vector<VkFormat>& targetImages, VkFormat depthFormat)
+EnvironmentResources::EnvironmentResources(
+    bg2e::render::Engine * engine,
+    const std::vector<VkFormat>& targetImages,
+    VkFormat depthFormat,
+    VkSampleCountFlagBits sampleCount
+)
     :_engine(engine)
     ,_depthImageFormat(depthFormat)
 {
@@ -54,6 +59,7 @@ EnvironmentResources::EnvironmentResources(bg2e::render::Engine * engine, const 
     _skyboxRenderer = std::unique_ptr<SkyboxRenderer>(
         new SkyboxRenderer(_engine)
     );
+    _skyboxRenderer->setSampleCount(sampleCount);
     
     buildBRDF();
     

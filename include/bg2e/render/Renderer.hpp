@@ -30,7 +30,13 @@ public:
     virtual void initScene(std::shared_ptr<bg2e::scene::Node> sceneRoot) = 0;
     virtual void resize(VkExtent2D newExtent) = 0;
     virtual void update(float delta) = 0;
-    virtual void draw(VkCommandBuffer cmd, uint32_t currentFrame, const bg2e::render::vulkan::Image* depthImage, bg2e::render::vulkan::FrameResources& frameResources) = 0;
+    virtual void draw(
+        VkCommandBuffer cmd,
+        uint32_t currentFrame,
+        const bg2e::render::vulkan::Image* depthImage,
+        const bg2e::render::vulkan::Image* msaaDepthImage,
+        bg2e::render::vulkan::FrameResources& frameResources
+    ) = 0;
     virtual void cleanup() = 0;
 
     virtual bg2e::scene::Scene* scene() = 0;

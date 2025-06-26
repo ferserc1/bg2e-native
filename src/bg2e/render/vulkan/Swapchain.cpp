@@ -27,6 +27,8 @@ void Swapchain::cleanup()
         
         _depthImage.reset();
         
+        _msaaDepthImage.reset();
+        
         vkDestroySwapchainKHR(_engine->device().handle(), _swapchain, nullptr);
 
         for (auto it = _imageViews.begin(); it != _imageViews.end(); ++it)
@@ -110,6 +112,15 @@ void Swapchain::create(uint32_t width, uint32_t height)
     
     // Depth image
     _depthImage = std::shared_ptr<Image>(Image::createAllocatedImage(
+        _engine,
+        VK_FORMAT_D32_SFLOAT,
+        extent,
+        VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+        VK_IMAGE_ASPECT_DEPTH_BIT
+    ));
+    
+    // MSAA Depth image
+    _msaaDepthImage = std::shared_ptr<Image>(Image::createAllocatedImage(
         _engine,
         VK_FORMAT_D32_SFLOAT,
         extent,

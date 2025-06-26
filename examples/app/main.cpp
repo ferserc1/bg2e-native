@@ -585,7 +585,8 @@ public:
 
                 // Use this parameters to build the SkyboxRenderer in EnvironmentResources
                 _colorAttachments->attachmentFormats(),
-                _engine->swapchain().depthImageFormat()
+                _engine->swapchain().depthImageFormat(),
+                VK_SAMPLE_COUNT_1_BIT
             )
         );
 	}
@@ -629,9 +630,13 @@ public:
             _cubeTexture = nullptr;
         });
 	
-        _colorAttachments->build(_engine->swapchain().extent(), _engine->swapchain().sampleCount());
+        _colorAttachments->build(_engine->swapchain().extent());
         
-        _colorAttachmentsCanvas->build();
+        _colorAttachmentsCanvas->build(
+            "test/color_attachment_canvas_test.frag.spv",
+            _engine->swapchain().imageFormat(),
+            _engine->swapchain().sampleCount()
+        );
 
 		createPipeline();
 
@@ -643,7 +648,6 @@ public:
             float(vpSize.width) / float(vpSize.height),
             0.1f, 40.0f
         );
-        _sceneData.projMatrix[1][1] *= -1.0f;
 
         _modelData.modelMatrix = glm::mat4{ 1.0f };
         
@@ -653,14 +657,13 @@ public:
 	void swapchainResized(VkExtent2D newExtent) override
 	{
         // This function releases all previous resources before recreate the images
-		_colorAttachments->build(newExtent, _engine->swapchain().sampleCount());
+		_colorAttachments->build(newExtent);
   
         _sceneData.projMatrix = glm::perspective(
             glm::radians(50.0f),
             float(newExtent.width) / float(newExtent.height),
             0.1f, 40.0f
-        );
-        _sceneData.projMatrix[1][1] *= -1.0f;	
+        );	
 	}
 
 	VkImageLayout render(
@@ -668,6 +671,7 @@ public:
 		uint32_t currentFrame,
 		const bg2e::render::vulkan::Image* colorImage,
 		const bg2e::render::vulkan::Image* depthImage,
+        const bg2e::render::vulkan::Image* msaaDepthImage,      
 		bg2e::render::vulkan::FrameResources& frameResources
 	) override {
 		using namespace bg2e::render::vulkan;
@@ -768,20 +772,18 @@ public:
             0, nullptr
         );
         _model->drawSubmesh(cmd, 0);
-
+        
 		bg2e::render::vulkan::cmdEndRendering(cmd);
 
-//		Image::cmdCopy(
-//			cmd,
-//            _colorAttachments->imageWithIndex(_showRenderTargetIndex)->handle(),
-//            _colorAttachments->extent(),
-//            VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-//            colorImage->handle(), colorImage->extent2D(), VK_IMAGE_LAYOUT_UNDEFINED
-//		);
+        bg2e::render::vulkan::Image::cmdTransitionImage(
+            cmd,
+            colorImage->handle(),
+            VK_IMAGE_LAYOUT_GENERAL,
+            VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
+        );
+        _colorAttachmentsCanvas->draw(cmd, currentFrame, colorImage, frameResources);
 
-        // TODO: Draw the selected color attachment into colorImage
-
-		return VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+		return VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 	}
 
 	// ============ User Interface Delegate Functions =========
@@ -911,7 +913,8 @@ protected:
         plFactory.setDepthFormat(_engine->swapchain().depthImageFormat());
         plFactory.enableDepthtest(true, VK_COMPARE_OP_LESS);
         plFactory.inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-        plFactory.setCullMode(true, VK_FRONT_FACE_COUNTER_CLOCKWISE);
+        plFactory.setCullMode(VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_COUNTER_CLOCKWISE);
+        plFactory.disableMultisample();
         
         plFactory.setColorAttachmentFormat(_colorAttachments->attachmentFormats());
 		_pipeline = plFactory.build(_layout);

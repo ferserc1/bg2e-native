@@ -32,6 +32,7 @@ public:
         uint32_t currentFrame,
         const render::vulkan::Image* colorImage,
         const render::vulkan::Image* depthImage,
+        const render::vulkan::Image* msaaDepthImage,
         render::vulkan::FrameResources& frameResources
     ) override;
 

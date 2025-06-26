@@ -1,4 +1,3 @@
-
 #include <bg2e.hpp>
 
 #include <array>
@@ -21,6 +20,11 @@ public:
                 VK_FORMAT_R8G8B8A8_UNORM
             })
         );
+        
+        _colorAttachmentsCanvas = std::make_shared<bg2e::render::ColorAttachmentsCanvas>(
+            _engine,
+            _colorAttachments
+        );
   
         vulkan->descriptorSetAllocator().requirePoolSizeRatio(1, {
             { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1 }
@@ -32,7 +36,8 @@ public:
 
                 // Use this parameters to build the SkyboxRenderer in EnvironmentResources
                 _colorAttachments->attachmentFormats(),
-                _engine->swapchain().depthImageFormat()
+                _engine->swapchain().depthImageFormat(),
+                VK_SAMPLE_COUNT_1_BIT
             )
         );
 	}
@@ -45,6 +50,8 @@ public:
         });
         
         _environment->initFrameResources(frameAllocator);
+        
+        _colorAttachmentsCanvas->initFrameResources(frameAllocator);
         
         frameAllocator->initPool();
     }
@@ -75,6 +82,12 @@ public:
         });
 	
         _colorAttachments->build(_engine->swapchain().extent());
+        
+        _colorAttachmentsCanvas->build(
+            "test/color_attachment_canvas_test.frag.spv",
+            _engine->swapchain().imageFormat(),
+            _engine->swapchain().sampleCount()
+        );
 
 		createPipeline();
 
@@ -86,7 +99,6 @@ public:
             float(vpSize.width) / float(vpSize.height),
             0.1f, 40.0f
         );
-        _sceneData.projMatrix[1][1] *= -1.0f;
 
         _modelData.modelMatrix = glm::mat4{ 1.0f };
         
@@ -102,8 +114,7 @@ public:
             glm::radians(50.0f),
             float(newExtent.width) / float(newExtent.height),
             0.1f, 40.0f
-        );
-        _sceneData.projMatrix[1][1] *= -1.0f;	
+        );	
 	}
 
 	VkImageLayout render(
@@ -111,6 +122,7 @@ public:
 		uint32_t currentFrame,
 		const bg2e::render::vulkan::Image* colorImage,
 		const bg2e::render::vulkan::Image* depthImage,
+        const bg2e::render::vulkan::Image* msaaDepthImage,      
 		bg2e::render::vulkan::FrameResources& frameResources
 	) override {
 		using namespace bg2e::render::vulkan;
@@ -211,18 +223,18 @@ public:
             0, nullptr
         );
         _model->drawSubmesh(cmd, 0);
-
+        
 		bg2e::render::vulkan::cmdEndRendering(cmd);
 
-		Image::cmdCopy(
-			cmd,
-            _colorAttachments->imageWithIndex(_showRenderTargetIndex)->handle(),
-            _colorAttachments->extent(),
-            VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-            colorImage->handle(), colorImage->extent2D(), VK_IMAGE_LAYOUT_UNDEFINED
-		);
+        bg2e::render::vulkan::Image::cmdTransitionImage(
+            cmd,
+            colorImage->handle(),
+            VK_IMAGE_LAYOUT_GENERAL,
+            VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
+        );
+        _colorAttachmentsCanvas->draw(cmd, currentFrame, colorImage, frameResources);
 
-		return VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+		return VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 	}
 
 	// ============ User Interface Delegate Functions =========
@@ -285,6 +297,7 @@ protected:
     }};
     
     std::shared_ptr<bg2e::render::ColorAttachments> _colorAttachments;
+    std::shared_ptr<bg2e::render::ColorAttachmentsCanvas> _colorAttachmentsCanvas;
 
 	bg2e::ui::Window _window;
 
@@ -351,7 +364,8 @@ protected:
         plFactory.setDepthFormat(_engine->swapchain().depthImageFormat());
         plFactory.enableDepthtest(true, VK_COMPARE_OP_LESS);
         plFactory.inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-        plFactory.setCullMode(true, VK_FRONT_FACE_COUNTER_CLOCKWISE);
+        plFactory.setCullMode(VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_COUNTER_CLOCKWISE);
+        plFactory.disableMultisample();
         
         plFactory.setColorAttachmentFormat(_colorAttachments->attachmentFormats());
 		_pipeline = plFactory.build(_layout);

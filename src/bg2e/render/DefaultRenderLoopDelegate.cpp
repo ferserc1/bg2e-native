@@ -55,12 +55,14 @@ VkImageLayout DefaultRenderLoopDelegate<RendererT>::render(
     uint32_t currentFrame,
     const render::vulkan::Image* colorImage,
     const render::vulkan::Image* depthImage,
+    const render::vulkan::Image* msaaDepthImage,
     render::vulkan::FrameResources& frameResources
 ) {
     _renderer->draw(
         cmd,
         currentFrame,
         depthImage,
+        msaaDepthImage,
         frameResources
     );
 
@@ -89,7 +91,7 @@ template void DefaultRenderLoopDelegate<RendererBasicForward>::initFrameResource
 template void DefaultRenderLoopDelegate<RendererBasicForward>::initScene();
 template void DefaultRenderLoopDelegate<RendererBasicForward>::swapchainResized(VkExtent2D);
 template void DefaultRenderLoopDelegate<RendererBasicForward>::update(uint32_t currentFrame, render::vulkan::FrameResources&);
-template VkImageLayout DefaultRenderLoopDelegate<RendererBasicForward>::render(VkCommandBuffer cmd, uint32_t currentFrame, const render::vulkan::Image* colorImage, const render::vulkan::Image* depthImage, render::vulkan::FrameResources& frameResources);
+template VkImageLayout DefaultRenderLoopDelegate<RendererBasicForward>::render(VkCommandBuffer cmd, uint32_t currentFrame, const render::vulkan::Image* colorImage, const render::vulkan::Image* depthImage, const render::vulkan::Image* msaaDepthImage, render::vulkan::FrameResources& frameResources);
 template void DefaultRenderLoopDelegate<RendererBasicForward>::cleanup();
 
 }

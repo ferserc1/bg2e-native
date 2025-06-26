@@ -12,7 +12,7 @@ void main() {
 	const vec4 colors[3] = vec4[3](
 		vec4(1.0f, 0.0f, 0.0f, 1.0f),
 		vec4(0.0f, 1.0f, 0.0f, 1.0f),
-		vec4(00.f, 0.0f, 1.0f, 1.0f)
+		vec4(0.0f, 0.0f, 1.0f, 1.0f)
 	);
 
 	gl_Position = vec4(positions[gl_VertexIndex], 1.0f);

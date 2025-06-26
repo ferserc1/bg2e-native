@@ -22,9 +22,18 @@ public:
     
     void initFrameResources(vulkan::DescriptorSetAllocator*);
     
-    void build(const std::string& fragmentShader);
+    void build(
+        const std::string& fragmentShader,
+        VkFormat targetImageFormat,
+        VkSampleCountFlagBits sampleCount
+    );
     
-    void draw(VkCommandBuffer cmd, uint32_t currentFrame, vulkan::FrameResources& frameResources);
+    void draw(
+        VkCommandBuffer cmd,
+        uint32_t currentFrame,
+        const vulkan::Image * targetImage,
+        vulkan::FrameResources& frameResources
+    );
     
 protected:
     Engine * _engine;
@@ -33,6 +42,8 @@ protected:
     
     VkPipeline _pipeline;
     VkPipelineLayout _pipelineLayout;
+    VkDescriptorSetLayout _attachmentsDSLayout;
+    VkSampler _attSampler;
 };
 
 }

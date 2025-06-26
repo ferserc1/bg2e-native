@@ -16,10 +16,9 @@ ColorAttachments::~ColorAttachments()
     cleanup();
 }
 
-void ColorAttachments::build(VkExtent2D extent, VkSampleCountFlagBits samples)
+void ColorAttachments::build(VkExtent2D extent)
 {
     _extent = extent;
-    _samples = samples;
     cleanup();
     
     for (auto format : _attachmentFormats)
@@ -29,10 +28,8 @@ void ColorAttachments::build(VkExtent2D extent, VkSampleCountFlagBits samples)
 			format,
 			extent,
 			VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT |
-			VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
-			VK_IMAGE_ASPECT_COLOR_BIT,
-            1, false, 0,
-            _samples
+			VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+			VK_IMAGE_ASPECT_COLOR_BIT
         );
         _images.push_back(std::shared_ptr<vulkan::Image>(image));
         _targetImages.push_back(image);

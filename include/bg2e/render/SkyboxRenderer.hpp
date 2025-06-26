@@ -14,6 +14,9 @@ public:
     
     void initFrameResources(vulkan::DescriptorSetAllocator*);
     
+    inline void setSampleCount(VkSampleCountFlagBits samples) { _samples = samples; }
+    inline VkSampleCountFlagBits sampleCount() const { return _samples; }
+    
     void build(
         std::shared_ptr<Texture> skyTexture,
         const std::vector<VkFormat>& colorAttachmentFormat,
@@ -37,6 +40,7 @@ protected:
     VkDescriptorSetLayout _dsLayout = VK_NULL_HANDLE;
     VkPipelineLayout _pipelineLayout = VK_NULL_HANDLE;
     VkPipeline _pipeline = VK_NULL_HANDLE;
+    VkSampleCountFlagBits _samples = VK_SAMPLE_COUNT_1_BIT;
     
     struct SkyData {
         glm::mat4 view;

@@ -30,7 +30,8 @@ void RendererBasicForward::build(
     _environment = std::make_unique<bg2e::render::EnvironmentResources>(
         _engine,
         _colorAttachments->attachmentFormats(),
-        _engine->swapchain().depthImageFormat()
+        _engine->swapchain().depthImageFormat(),
+        _engine->swapchain().sampleCount()
     );
 
     createPipeline(engine);
@@ -64,7 +65,7 @@ void RendererBasicForward::initScene(
         { 32, 32 },         // Irradiance map size
         { 1024, 1024 }      // Specular reflection map size
     );
-    _colorAttachments->build(_engine->swapchain().extent(), _engine->swapchain().sampleCount());
+    _colorAttachments->build(_engine->swapchain().extent());
     
     _scene->updateLights();
 
@@ -82,7 +83,7 @@ void RendererBasicForward::resize(
     _scene->willResize();
     
     // This function releases all previous resources before recreating the images
-    _colorAttachments->build(newExtent, _engine->swapchain().sampleCount());
+    _colorAttachments->build(newExtent);
 
     _resizeVisitor.resizeViewport(_scene->rootNode(), newExtent);
     
@@ -125,6 +126,7 @@ void RendererBasicForward::draw(
     VkCommandBuffer cmd,
     uint32_t currentFrame,
     const bg2e::render::vulkan::Image* depthImage,
+    const bg2e::render::vulkan::Image* msaaDepthImage,
     bg2e::render::vulkan::FrameResources& frameResources
 ) {
     using namespace bg2e::render::vulkan;

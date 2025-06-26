@@ -31,6 +31,7 @@ public:
         VkCommandBuffer cmd,
         const vulkan::Image* colorImage,
         const vulkan::Image* depthImage,
+        const vulkan::Image* msaaDepthImage,
         vulkan::FrameResources& frameResources
     );
 

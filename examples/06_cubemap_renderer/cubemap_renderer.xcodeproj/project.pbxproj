@@ -536,7 +536,7 @@
 					"@executable_path/../Frameworks",
 				);
 				LIBRARY_SEARCH_PATHS = (
-					"$(PROJECT_DIR)/../../bin/Release",
+					"$(PROJECT_DIR)/../../bin/Debug",
 					"$(VULKAN_SDK)/lib",
 				);
 				MARKETING_VERSION = 1.0;

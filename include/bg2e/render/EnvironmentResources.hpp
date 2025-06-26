@@ -14,7 +14,7 @@ namespace render {
 class BG2E_API EnvironmentResources {
 public:
     EnvironmentResources(bg2e::render::Engine*);
-    EnvironmentResources(bg2e::render::Engine*, const std::vector<VkFormat>& targetImages, VkFormat depthFormat);
+    EnvironmentResources(bg2e::render::Engine*, const std::vector<VkFormat>& targetImages, VkFormat depthFormat, VkSampleCountFlagBits sampleCount);
     
     void initFrameResources(bg2e::render::vulkan::DescriptorSetAllocator *frameAllocator);
         

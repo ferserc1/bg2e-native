@@ -99,6 +99,7 @@ public:
 		uint32_t currentFrame,
 		const bg2e::render::vulkan::Image* colorImage,
 		const bg2e::render::vulkan::Image* depthImage,
+        const bg2e::render::vulkan::Image* msaaDepthImage,
 		bg2e::render::vulkan::FrameResources& frameResources
 	) override {
 		using namespace bg2e::render::vulkan;
@@ -134,7 +135,7 @@ public:
 		);
 
 		auto colorAttachment = Info::attachmentInfo(colorImage->imageView(), nullptr);
-        auto depthAttachment = Info::depthAttachmentInfo(depthImage->imageView());
+        auto depthAttachment = Info::depthAttachmentInfo(msaaDepthImage->imageView());
         auto renderInfo = Info::renderingInfo(colorImage->extent2D(), &colorAttachment, &depthAttachment);
 		cmdBeginRendering(cmd, &renderInfo);
 

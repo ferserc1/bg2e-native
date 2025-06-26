@@ -73,6 +73,7 @@ void RenderLoop::acquireAndPresent()
     auto msaaImage = swapchainData.colorImage(swapchainImageIndex);
     auto resolveImage = swapchainData.msaaResolveImage(swapchainImageIndex);
     auto depthImage = swapchainData.depthImage();
+    auto msaaDepthImage = swapchainData.msaaDepthImage();
 
     auto cmdBeginInfo = vulkan::Info::commandBufferBeginInfo(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 
@@ -103,6 +104,7 @@ void RenderLoop::acquireAndPresent()
         cmd,
         msaaImage,
         depthImage,
+        msaaDepthImage,
         frameResources
     );
 
@@ -204,11 +206,19 @@ VkImageLayout RenderLoop::render(
     VkCommandBuffer cmd,
     const vulkan::Image* colorImage,
     const vulkan::Image* depthImage,
+    const vulkan::Image* msaaDepthImage,
     vulkan::FrameResources& frameResources
 ) {
     if (_renderDelegate)
     {
-        return _renderDelegate->render(cmd, _engine->currentFrame(), colorImage, depthImage, frameResources);
+        return _renderDelegate->render(
+            cmd,
+            _engine->currentFrame(),
+            colorImage,
+            depthImage,
+            msaaDepthImage,
+            frameResources
+        );
     }
     else
     {

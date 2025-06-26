@@ -67,6 +67,14 @@ void SkyboxRenderer::build(
     plFactory.setColorAttachmentFormat(colorAttachmentFormats);
     plFactory.setDepthFormat(depthAttachmentFormat);
     plFactory.disableDepthtest();
+    if (_samples != VK_SAMPLE_COUNT_1_BIT)
+    {
+        plFactory.enableMultisample();
+    }
+    else
+    {
+        plFactory.disableMultisample();
+    }
     plFactory.inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
     // We want to draw the inner faces of the sphere, but here we are hiding the back faces
     // This is because we are inverting the view matrix on the Z axis, so that the skybox is

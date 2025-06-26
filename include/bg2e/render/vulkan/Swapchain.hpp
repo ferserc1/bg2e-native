@@ -45,6 +45,8 @@ public:
     
     inline const Image* depthImage() const { return _depthImage.get(); }
     
+    inline const Image* msaaDepthImage() const { return _msaaDepthImage.get(); }
+    
     inline const VkFormat depthImageFormat() const { return _depthImage != nullptr ? _depthImage->format() : VK_FORMAT_UNDEFINED; }
 
 protected:
@@ -59,6 +61,7 @@ protected:
     std::vector<std::shared_ptr<Image>> _msaaImages;
     std::vector<Image *> _colorImages;
     std::shared_ptr<Image> _depthImage;
+    std::shared_ptr<Image> _msaaDepthImage;
 
     Engine* _engine = nullptr;
     

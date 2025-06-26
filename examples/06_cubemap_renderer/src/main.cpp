@@ -105,6 +105,7 @@ public:
         auto cubeMapTexture = std::shared_ptr<bg2e::render::Texture>(
             new bg2e::render::Texture(_engine, _sphereToCubemap->cubeMapImage())
         );
+        _skyboxRenderer->setSampleCount(_engine->swapchain().sampleCount());
         _skyboxRenderer->build(
             cubeMapTexture, {
                 _engine->swapchain().imageFormat()
@@ -148,6 +149,7 @@ public:
 		uint32_t currentFrame,
 		const bg2e::render::vulkan::Image* colorImage,
 		const bg2e::render::vulkan::Image* depthImage,
+        const bg2e::render::vulkan::Image* msaaDepthImage,
 		bg2e::render::vulkan::FrameResources& frameResources
 	) override {
 		using namespace bg2e::render::vulkan;
@@ -178,7 +180,7 @@ public:
         macros::cmdClearImageAndBeginRendering(
             cmd,
             colorImage, clearValue, VK_IMAGE_LAYOUT_UNDEFINED,
-            depthImage, 1.0f
+            msaaDepthImage, 1.0f
         );
         
 		macros::cmdSetDefaultViewportAndScissor(cmd, colorImage->extent2D());

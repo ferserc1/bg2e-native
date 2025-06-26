@@ -17,7 +17,7 @@ public:
     ColorAttachments(Engine *, const std::vector<VkFormat>& formats);
     virtual ~ColorAttachments();
     
-    void build(VkExtent2D extent, VkSampleCountFlagBits samples);
+    void build(VkExtent2D extent);
 
     std::shared_ptr<vulkan::Image> imageWithIndex(uint32_t index) const;
     
@@ -33,7 +33,6 @@ protected:
     Engine * _engine;
     
     VkExtent2D _extent;
-    VkSampleCountFlagBits _samples;
     std::vector<std::shared_ptr<vulkan::Image>> _images;
     
     // Resources and weak pointers

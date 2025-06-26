@@ -66,6 +66,7 @@ public:
         VkCommandBuffer cmd,
         uint32_t currentFrame,
         const bg2e::render::vulkan::Image* depthImage,
+        const bg2e::render::vulkan::Image* msaaDepthImage,
         bg2e::render::vulkan::FrameResources& frameResources
     ) override;
 
