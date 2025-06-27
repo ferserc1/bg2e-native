@@ -36,6 +36,11 @@ public:
             })
         );
         
+        _colorAttachmentsCanvas = std::make_shared<bg2e::render::ColorAttachmentsCanvas>(
+            _engine,
+            _colorAttachments
+        );
+        
         /// - Data bindings: used to bind data to the shaders. There are three types of data bindings
         ///     * Frame data bindings: bind frame resources, such as the view and projection matrix
         _frameDataBinding = std::make_unique<bg2e::scene::vk::FrameDataBinding>(vulkan);
@@ -54,7 +59,8 @@ public:
             new bg2e::render::EnvironmentResources(
                 _engine,
                 _colorAttachments->attachmentFormats(),
-                _engine->swapchain().depthImageFormat()
+                _engine->swapchain().depthImageFormat(),
+                VK_SAMPLE_COUNT_1_BIT
             )
         );
 	}
@@ -66,6 +72,7 @@ public:
         _objectDataBinding->initFrameResources(frameAllocator);
         _environmentDataBinding->initFrameResources(frameAllocator);
         _environment->initFrameResources(frameAllocator);
+        _colorAttachmentsCanvas->initFrameResources(frameAllocator);
         
         frameAllocator->initPool();
     }
@@ -91,6 +98,11 @@ public:
         );
 	
         _colorAttachments->build(_engine->swapchain().extent());
+        _colorAttachmentsCanvas->build(
+            "test/color_attachment_canvas_test.frag.spv",
+            _engine->swapchain().imageFormat(),
+            _engine->swapchain().sampleCount()
+        );
 
 		createPipeline();
         
@@ -112,6 +124,7 @@ public:
 		uint32_t currentFrame,
 		const bg2e::render::vulkan::Image* colorImage,
 		const bg2e::render::vulkan::Image* depthImage,
+        const bg2e::render::vulkan::Image* msaaDepthImage,
 		bg2e::render::vulkan::FrameResources& frameResources
 	) override {
 		using namespace bg2e::render::vulkan;
@@ -143,7 +156,6 @@ public:
         /// Renderer: get the view and projection matrixes from the main scene camera and create the scene descriptor set
         auto mainCamera = _scene->mainCamera();
         auto projMatrix = mainCamera->projectionMatrix();
-        projMatrix[1][1] *= -1.0f; // Flip Vulkan Y coord
         auto viewMatrix = mainCamera->ownerNode()->invertedWorldMatrix();
         auto sceneDS = _frameDataBinding->newDescriptorSet(
             frameResources,
@@ -187,16 +199,16 @@ public:
             });
 
 		bg2e::render::vulkan::cmdEndRendering(cmd);
+  
+        bg2e::render::vulkan::Image::cmdTransitionImage(
+            cmd,
+            colorImage->handle(),
+            VK_IMAGE_LAYOUT_GENERAL,
+            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+        );
+		_colorAttachmentsCanvas->draw(cmd, currentFrame, colorImage, frameResources);
 
-		Image::cmdCopy(
-			cmd,
-            _colorAttachments->imageWithIndex(_showRenderTargetIndex)->handle(),
-            _colorAttachments->extent(),
-            VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-            colorImage->handle(), colorImage->extent2D(), VK_IMAGE_LAYOUT_UNDEFINED
-		);
-
-		return VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+		return VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 	}
 
 	// ============ User Interface Delegate Functions =========
@@ -230,6 +242,7 @@ public:
 protected:
 
     std::shared_ptr<bg2e::render::ColorAttachments> _colorAttachments;
+    std::shared_ptr<bg2e::render::ColorAttachmentsCanvas> _colorAttachmentsCanvas;
 
 	bg2e::ui::Window _window;
 
@@ -283,8 +296,8 @@ protected:
         plFactory.setDepthFormat(_engine->swapchain().depthImageFormat());
         plFactory.enableDepthtest(true, VK_COMPARE_OP_LESS);
         plFactory.inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-        plFactory.setCullMode(true, VK_FRONT_FACE_COUNTER_CLOCKWISE);
-        
+        plFactory.setCullMode(VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_COUNTER_CLOCKWISE);
+        plFactory.disableMultisample();
         plFactory.setColorAttachmentFormat(_colorAttachments->attachmentFormats());
 		_pipeline = plFactory.build(_layout);
   

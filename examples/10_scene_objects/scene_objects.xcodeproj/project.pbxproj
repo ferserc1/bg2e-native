@@ -7,13 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		ED0B6D692DD78E4200CCB2EC /* cubemap_renderer.vert.spv in Copy bg2e shaders */ = {isa = PBXBuildFile; fileRef = ED0B6D602DD78DF500CCB2EC /* cubemap_renderer.vert.spv */; };
-		ED0B6D6A2DD78E4200CCB2EC /* irradiance_map_renderer.frag.spv in Copy bg2e shaders */ = {isa = PBXBuildFile; fileRef = ED0B6D612DD78DF500CCB2EC /* irradiance_map_renderer.frag.spv */; };
-		ED0B6D6B2DD78E4200CCB2EC /* skybox_renderer.frag.spv in Copy bg2e shaders */ = {isa = PBXBuildFile; fileRef = ED0B6D622DD78DF500CCB2EC /* skybox_renderer.frag.spv */; };
-		ED0B6D6C2DD78E4200CCB2EC /* skybox_renderer.vert.spv in Copy bg2e shaders */ = {isa = PBXBuildFile; fileRef = ED0B6D632DD78DF500CCB2EC /* skybox_renderer.vert.spv */; };
-		ED0B6D6D2DD78E4200CCB2EC /* specular_reflection_renderer.frag.spv in Copy bg2e shaders */ = {isa = PBXBuildFile; fileRef = ED0B6D642DD78DF500CCB2EC /* specular_reflection_renderer.frag.spv */; };
-		ED0B6D6E2DD78E4200CCB2EC /* sphere_to_cubemap.frag.spv in Copy bg2e shaders */ = {isa = PBXBuildFile; fileRef = ED0B6D652DD78DF500CCB2EC /* sphere_to_cubemap.frag.spv */; };
-		ED0B6D6F2DD78E4200CCB2EC /* sphere_to_cubemap.vert.spv in Copy bg2e shaders */ = {isa = PBXBuildFile; fileRef = ED0B6D662DD78DF500CCB2EC /* sphere_to_cubemap.vert.spv */; };
 		ED0B6D7E2DD78F4D00CCB2EC /* equirectangular-env.jpg in Copy Assets */ = {isa = PBXBuildFile; fileRef = ED0B6D702DD78F2F00CCB2EC /* equirectangular-env.jpg */; };
 		ED0B6D7F2DD78F4D00CCB2EC /* equirectangular-env2.jpg in Copy Assets */ = {isa = PBXBuildFile; fileRef = ED0B6D712DD78F2F00CCB2EC /* equirectangular-env2.jpg */; };
 		ED0B6D802DD78F4D00CCB2EC /* equirectangular-env3.jpg in Copy Assets */ = {isa = PBXBuildFile; fileRef = ED0B6D722DD78F2F00CCB2EC /* equirectangular-env3.jpg */; };
@@ -59,13 +52,6 @@
 			dstPath = shaders;
 			dstSubfolderSpec = 7;
 			files = (
-				ED0B6D692DD78E4200CCB2EC /* cubemap_renderer.vert.spv in Copy bg2e shaders */,
-				ED0B6D6A2DD78E4200CCB2EC /* irradiance_map_renderer.frag.spv in Copy bg2e shaders */,
-				ED0B6D6B2DD78E4200CCB2EC /* skybox_renderer.frag.spv in Copy bg2e shaders */,
-				ED0B6D6C2DD78E4200CCB2EC /* skybox_renderer.vert.spv in Copy bg2e shaders */,
-				ED0B6D6D2DD78E4200CCB2EC /* specular_reflection_renderer.frag.spv in Copy bg2e shaders */,
-				ED0B6D6E2DD78E4200CCB2EC /* sphere_to_cubemap.frag.spv in Copy bg2e shaders */,
-				ED0B6D6F2DD78E4200CCB2EC /* sphere_to_cubemap.vert.spv in Copy bg2e shaders */,
 			);
 			name = "Copy bg2e shaders";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -73,20 +59,6 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		ED0B6D582DD78DF500CCB2EC /* test.frag.spv */ = {isa = PBXFileReference; lastKnownFileType = file; path = test.frag.spv; sourceTree = "<group>"; };
-		ED0B6D592DD78DF500CCB2EC /* test.vert.spv */ = {isa = PBXFileReference; lastKnownFileType = file; path = test.vert.spv; sourceTree = "<group>"; };
-		ED0B6D5A2DD78DF500CCB2EC /* texture_gi.frag.spv */ = {isa = PBXFileReference; lastKnownFileType = file; path = texture_gi.frag.spv; sourceTree = "<group>"; };
-		ED0B6D5B2DD78DF500CCB2EC /* texture_gi.vert.spv */ = {isa = PBXFileReference; lastKnownFileType = file; path = texture_gi.vert.spv; sourceTree = "<group>"; };
-		ED0B6D5C2DD78DF500CCB2EC /* texture.frag.spv */ = {isa = PBXFileReference; lastKnownFileType = file; path = texture.frag.spv; sourceTree = "<group>"; };
-		ED0B6D5D2DD78DF500CCB2EC /* texture.vert.spv */ = {isa = PBXFileReference; lastKnownFileType = file; path = texture.vert.spv; sourceTree = "<group>"; };
-		ED0B6D5E2DD78DF500CCB2EC /* vertbuffer.vert.spv */ = {isa = PBXFileReference; lastKnownFileType = file; path = vertbuffer.vert.spv; sourceTree = "<group>"; };
-		ED0B6D602DD78DF500CCB2EC /* cubemap_renderer.vert.spv */ = {isa = PBXFileReference; lastKnownFileType = file; path = cubemap_renderer.vert.spv; sourceTree = "<group>"; };
-		ED0B6D612DD78DF500CCB2EC /* irradiance_map_renderer.frag.spv */ = {isa = PBXFileReference; lastKnownFileType = file; path = irradiance_map_renderer.frag.spv; sourceTree = "<group>"; };
-		ED0B6D622DD78DF500CCB2EC /* skybox_renderer.frag.spv */ = {isa = PBXFileReference; lastKnownFileType = file; path = skybox_renderer.frag.spv; sourceTree = "<group>"; };
-		ED0B6D632DD78DF500CCB2EC /* skybox_renderer.vert.spv */ = {isa = PBXFileReference; lastKnownFileType = file; path = skybox_renderer.vert.spv; sourceTree = "<group>"; };
-		ED0B6D642DD78DF500CCB2EC /* specular_reflection_renderer.frag.spv */ = {isa = PBXFileReference; lastKnownFileType = file; path = specular_reflection_renderer.frag.spv; sourceTree = "<group>"; };
-		ED0B6D652DD78DF500CCB2EC /* sphere_to_cubemap.frag.spv */ = {isa = PBXFileReference; lastKnownFileType = file; path = sphere_to_cubemap.frag.spv; sourceTree = "<group>"; };
-		ED0B6D662DD78DF500CCB2EC /* sphere_to_cubemap.vert.spv */ = {isa = PBXFileReference; lastKnownFileType = file; path = sphere_to_cubemap.vert.spv; sourceTree = "<group>"; };
 		ED0B6D702DD78F2F00CCB2EC /* equirectangular-env.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = "equirectangular-env.jpg"; sourceTree = "<group>"; };
 		ED0B6D712DD78F2F00CCB2EC /* equirectangular-env2.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = "equirectangular-env2.jpg"; sourceTree = "<group>"; };
 		ED0B6D722DD78F2F00CCB2EC /* equirectangular-env3.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = "equirectangular-env3.jpg"; sourceTree = "<group>"; };
@@ -120,8 +92,6 @@
 		EDD77E512CEA60F800278155 /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
 		EDD77E552CEA61BD00278155 /* Setup.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Setup.entitlements; sourceTree = "<group>"; };
 		EDD77E602CEA64E600278155 /* CoreFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreFoundation.framework; path = System/Library/Frameworks/CoreFoundation.framework; sourceTree = SDKROOT; };
-		EDD77E772CEA7E9D00278155 /* texture_gi.frag.glsl */ = {isa = PBXFileReference; lastKnownFileType = text; path = texture_gi.frag.glsl; sourceTree = "<group>"; };
-		EDD77E782CEA7E9D00278155 /* texture_gi.vert.glsl */ = {isa = PBXFileReference; lastKnownFileType = text; path = texture_gi.vert.glsl; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -134,6 +104,34 @@
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
+/* Begin PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet section */
+		EDD379F22E0F00F00020CB00 /* Exceptions for "spv" folder in "Copy bg2e shaders" phase from "scene_objects" target */ = {
+			isa = PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet;
+			buildPhase = ED9C6A062DC4DE8B004104AF /* Copy bg2e shaders */;
+			membershipExceptions = (
+				basic_forward.frag.spv,
+				basic_forward.vert.spv,
+				brdf_lut.comp.spv,
+				color_attachment_canvas.vert.spv,
+				color_correction.comp.spv,
+				cubemap_renderer.vert.spv,
+				irradiance_map_renderer.frag.spv,
+				skybox_renderer.frag.spv,
+				skybox_renderer.vert.spv,
+				specular_reflection_renderer.frag.spv,
+				sphere_to_cubemap.frag.spv,
+				sphere_to_cubemap.vert.spv,
+				test.frag.spv,
+				test.vert.spv,
+				texture_gi.frag.spv,
+				texture_gi.vert.spv,
+				texture.frag.spv,
+				texture.vert.spv,
+				vertbuffer.vert.spv,
+			);
+		};
+/* End PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		ED3E00892DF5D772004531CE /* bin */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
@@ -143,6 +141,20 @@
 			name = bin;
 			path = ../../bin;
 			sourceTree = SOURCE_ROOT;
+		};
+		EDD379BE2E0F00C40020CB00 /* src */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = src;
+			sourceTree = "<group>";
+		};
+		EDD379DE2E0F00D10020CB00 /* spv */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				EDD379F22E0F00F00020CB00 /* Exceptions for "spv" folder in "Copy bg2e shaders" phase from "scene_objects" target */,
+			);
+			name = spv;
+			path = "/Users/fernando/desarrollo/bg2e-native/shaders/spv";
+			sourceTree = "<absolute>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
@@ -158,36 +170,6 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		ED0B6D5F2DD78DF500CCB2EC /* test */ = {
-			isa = PBXGroup;
-			children = (
-				ED0B6D582DD78DF500CCB2EC /* test.frag.spv */,
-				ED0B6D592DD78DF500CCB2EC /* test.vert.spv */,
-				ED0B6D5A2DD78DF500CCB2EC /* texture_gi.frag.spv */,
-				ED0B6D5B2DD78DF500CCB2EC /* texture_gi.vert.spv */,
-				ED0B6D5C2DD78DF500CCB2EC /* texture.frag.spv */,
-				ED0B6D5D2DD78DF500CCB2EC /* texture.vert.spv */,
-				ED0B6D5E2DD78DF500CCB2EC /* vertbuffer.vert.spv */,
-			);
-			path = test;
-			sourceTree = "<group>";
-		};
-		ED0B6D672DD78DF500CCB2EC /* spv */ = {
-			isa = PBXGroup;
-			children = (
-				ED0B6D5F2DD78DF500CCB2EC /* test */,
-				ED0B6D602DD78DF500CCB2EC /* cubemap_renderer.vert.spv */,
-				ED0B6D612DD78DF500CCB2EC /* irradiance_map_renderer.frag.spv */,
-				ED0B6D622DD78DF500CCB2EC /* skybox_renderer.frag.spv */,
-				ED0B6D632DD78DF500CCB2EC /* skybox_renderer.vert.spv */,
-				ED0B6D642DD78DF500CCB2EC /* specular_reflection_renderer.frag.spv */,
-				ED0B6D652DD78DF500CCB2EC /* sphere_to_cubemap.frag.spv */,
-				ED0B6D662DD78DF500CCB2EC /* sphere_to_cubemap.vert.spv */,
-			);
-			name = spv;
-			path = ../../shaders/spv;
-			sourceTree = SOURCE_ROOT;
-		};
 		ED7DE8692CFCCEE600AB280D /* assets */ = {
 			isa = PBXGroup;
 			children = (
@@ -234,8 +216,8 @@
 				EDD77E522CEA60F800278155 /* src */,
 				EDD77E5E2CEA64D800278155 /* Frameworks */,
 				EDD77E742CEA683600278155 /* shaders */,
-				ED0B6D672DD78DF500CCB2EC /* spv */,
 				ED3E00892DF5D772004531CE /* bin */,
+				EDD379DE2E0F00D10020CB00 /* spv */,
 			);
 			sourceTree = "<group>";
 		};
@@ -274,18 +256,9 @@
 		EDD77E742CEA683600278155 /* shaders */ = {
 			isa = PBXGroup;
 			children = (
-				EDD77E792CEA7E9D00278155 /* src */,
+				EDD379BE2E0F00C40020CB00 /* src */,
 			);
 			path = shaders;
-			sourceTree = "<group>";
-		};
-		EDD77E792CEA7E9D00278155 /* src */ = {
-			isa = PBXGroup;
-			children = (
-				EDD77E772CEA7E9D00278155 /* texture_gi.frag.glsl */,
-				EDD77E782CEA7E9D00278155 /* texture_gi.vert.glsl */,
-			);
-			path = src;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -570,7 +543,7 @@
 					"@executable_path/../Frameworks",
 				);
 				LIBRARY_SEARCH_PATHS = (
-					"$(PROJECT_DIR)/../../bin/Release",
+					"$(PROJECT_DIR)/../../bin/Debug",
 					"$(VULKAN_SDK)/lib",
 				);
 				MARKETING_VERSION = 1.0;

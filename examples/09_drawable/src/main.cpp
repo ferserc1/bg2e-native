@@ -4,7 +4,20 @@
 #include <array>
 #include <numbers>
 
-class DrawableDelegate : public bg2e::render::RenderLoopDelegate,
+class RotateCameraComponent : public bg2e::scene::Component {
+public:
+    void update(float delta) override
+    {
+        auto transform = ownerNode()->transform();
+        
+        if (transform)
+        {
+            transform->rotate(0.02f * delta / 10.0f, 0.0f, 1.0f, 0.0f);
+        }
+    }
+};
+
+class BasicSceneDelegate : public bg2e::render::RenderLoopDelegate,
 	public bg2e::app::InputDelegate,
 	public bg2e::ui::UserInterfaceDelegate
 {
@@ -14,6 +27,8 @@ public:
 		using namespace bg2e::render::vulkan;
 		RenderLoopDelegate::init(vulkan);
   
+        /// Renderer resources:
+        /// - Color Attachments: Color output of the renderer shaders
         _colorAttachments = std::shared_ptr<bg2e::render::ColorAttachments>(
             new bg2e::render::ColorAttachments(_engine, {
                 VK_FORMAT_R16G16B16A16_SFLOAT,
@@ -21,28 +36,43 @@ public:
             })
         );
         
+        _colorAttachmentsCanvas = std::make_shared<bg2e::render::ColorAttachmentsCanvas>(
+            _engine,
+            _colorAttachments
+        );
+        
+        /// - Data bindings: used to bind data to the shaders. There are three types of data bindings
+        ///     * Frame data bindings: bind frame resources, such as the view and projection matrix
         _frameDataBinding = std::make_unique<bg2e::scene::vk::FrameDataBinding>(vulkan);
         
+        ///     * Object data binding: bind resorces for one object, for example a 3D model submesh
         _objectDataBinding = std::make_unique<bg2e::scene::vk::ObjectDataBinding>(vulkan);
         
+        ///     * Environment data binding: bind resources for the environment, such as the lights or the environment cube map.
+        ///       This is separated from the frame data binding because there is no need to bind environment resources if we are
+        ///       rendering g-buffers for deferred render
         _environmentDataBinding = std::make_unique<bg2e::scene::vk::EnvironmentDataBinding>(vulkan);
         
+        ///     * Environment resources: used to generate the environment cube map, the irradiance map and the specular
+        ///       reflection map. It is also used to draw the skybox.
         _environment = std::unique_ptr<bg2e::render::EnvironmentResources>(
             new bg2e::render::EnvironmentResources(
                 _engine,
                 _colorAttachments->attachmentFormats(),
-                _engine->swapchain().depthImageFormat()
+                _engine->swapchain().depthImageFormat(),
+                VK_SAMPLE_COUNT_1_BIT
             )
         );
 	}
  
     void initFrameResources(bg2e::render::vulkan::DescriptorSetAllocator* frameAllocator) override
     {
+        /// Initialize descriptor set frame resources for the renderer resources
         _frameDataBinding->initFrameResources(frameAllocator);
         _objectDataBinding->initFrameResources(frameAllocator);
         _environmentDataBinding->initFrameResources(frameAllocator);
-        
         _environment->initFrameResources(frameAllocator);
+        _colorAttachmentsCanvas->initFrameResources(frameAllocator);
         
         frameAllocator->initPool();
     }
@@ -52,12 +82,14 @@ public:
         // Use the initScene function to initialize and create scene resources, such as pipelines, 3D models
         // or textures
         
-        auto assetsPath = bg2e::base::PlatformTools::assetPath();
-        auto imagePath = assetsPath;
-        imagePath.append("country_field_sun.jpg");
         
-        auto envTexture = bg2e::utils::TextureCache::get().load(_engine, imagePath);
-        
+        /// Renderer: initialize the sky dome generator with a procedural texture
+        auto skyDomeTexture = std::make_shared<bg2e::base::Texture>();
+        auto skyDomeGenerator = new bg2e::scene::SkyDomeTextureGenerator(2048, 1024, 4);
+        skyDomeTexture->setProceduralGenerator(skyDomeGenerator);
+        skyDomeTexture->setUseMipmaps(false);
+        auto envTexture = std::make_shared<bg2e::render::Texture>(_engine);
+        envTexture->load(skyDomeTexture);
         _environment->build(
             envTexture,         // Equirectangular texture
             { 2048, 2048 },     // Cube map size
@@ -66,22 +98,15 @@ public:
         );
 	
         _colorAttachments->build(_engine->swapchain().extent());
+        _colorAttachmentsCanvas->build(
+            "test/color_attachment_canvas_test.frag.spv",
+            _engine->swapchain().imageFormat(),
+            _engine->swapchain().sampleCount()
+        );
 
 		createPipeline();
-
-        _viewMatrix = glm::lookAt(glm::vec3{ 0.0f, 0.0f, -5.0f}, { 0.0f, 0.0f, 0.0f }, { 0.0f, 1.0f, 0.0f });
         
-        auto vpSize = _engine->swapchain().extent();
-        _projMatrix = glm::perspective(
-            glm::radians(50.0f),
-            float(vpSize.width) / float(vpSize.height),
-            0.1f, 40.0f
-        );
-        _projMatrix[1][1] *= -1.0f;
-        
-        _modelMatrix = glm::mat4{ 1.0f };
-        
-		createVertexData();
+        createScene();
     }
 
 	void swapchainResized(VkExtent2D newExtent) override
@@ -89,12 +114,9 @@ public:
         // This function releases all previous resources before recreate the images
 		_colorAttachments->build(newExtent);
   
-        _projMatrix = glm::perspective(
-            glm::radians(50.0f),
-            float(newExtent.width) / float(newExtent.height),
-            0.1f, 40.0f
-        );
-        _projMatrix[1][1] *= -1.0f;
+        /// Renderer: call the resize visitor to update the camera projection matrix
+        // Call resizeViewport() on the scene components
+        _resizeVisitor.resizeViewport(_scene->rootNode(), newExtent);
 	}
 
 	VkImageLayout render(
@@ -102,11 +124,21 @@ public:
 		uint32_t currentFrame,
 		const bg2e::render::vulkan::Image* colorImage,
 		const bg2e::render::vulkan::Image* depthImage,
+        const bg2e::render::vulkan::Image* msaaDepthImage,
 		bg2e::render::vulkan::FrameResources& frameResources
 	) override {
 		using namespace bg2e::render::vulkan;
   
-        _environment->update(cmd, currentFrame, frameResources);
+        _updateVisitor.update(_scene->rootNode(), delta());
+        
+        /// Renderer: check if the environment texture has been changed using the environment component image hash
+        /// and update the environment matrixes
+        if (_scene->mainEnvironment() && _scene->mainEnvironment()->imgHash() != _skyboxImageHash)
+        {
+            _environment->swapEnvironmentTexture(_scene->mainEnvironment()->environmentImage());
+            _skyboxImageHash = _scene->mainEnvironment()->imgHash();
+        }
+        _environment->update(cmd, currentFrame, frameResources);  // This function will update the sky box textures only if the skybox image has changed
   
 		float flash = std::abs(std::sin(currentFrame / 120.0f));
 		VkClearColorValue clearValue{ { 0.0f, 0.0f, flash, 1.0f } };
@@ -121,35 +153,43 @@ public:
             _colorAttachments->extent()
         );
   
-        // Rotate the view along Y axis
-        _viewMatrix = glm::rotate(_viewMatrix, 0.02f, glm::vec3(0.0f, 1.0f, 0.0f));
-        
+        /// Renderer: get the view and projection matrixes from the main scene camera and create the scene descriptor set
+        auto mainCamera = _scene->mainCamera();
+        auto projMatrix = mainCamera->projectionMatrix();
+        auto viewMatrix = mainCamera->ownerNode()->invertedWorldMatrix();
         auto sceneDS = _frameDataBinding->newDescriptorSet(
             frameResources,
-            _viewMatrix,
-            _projMatrix
+            viewMatrix,
+            projMatrix
         );
         
-        _environment->updateSkybox(_viewMatrix, _projMatrix);
-        
+
+        /// Renderer: update and render the skybox. This is only needed if we want to draw the skybox in the output color attachments, it may be not neccesary
+        /// in some renderers at this point (for example in deferred renderer)
         if (_drawSkybox)
         {
+            _environment->updateSkybox(viewMatrix, projMatrix);
             _environment->drawSkybox(cmd, currentFrame, frameResources);
         }
-
   
         vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, _pipeline);
-        
+
+        PushConstants pushConstants {
+            .gamma = 2.2f
+        };
+        vkCmdPushConstants(cmd, _layout, VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(PushConstants), &pushConstants);
         auto envDS = _environmentDataBinding->newDescriptorSet(frameResources, _environment.get());
   
-        _drawable->draw(
+        /// Renderer: draw the scene
+        _drawVisitor.draw(
+            _scene->rootNode(),
             cmd,
             _layout,
             [&](bg2e::render::MaterialBase * mat, const glm::mat4& transform, uint32_t submesh) {
                 auto modelDS = _objectDataBinding->newDescriptorSet(
                     frameResources,
                     mat,
-                    _modelMatrix * transform
+                    transform
                 );
                 return std::vector<VkDescriptorSet>{
                     sceneDS,
@@ -159,16 +199,16 @@ public:
             });
 
 		bg2e::render::vulkan::cmdEndRendering(cmd);
+  
+        bg2e::render::vulkan::Image::cmdTransitionImage(
+            cmd,
+            colorImage->handle(),
+            VK_IMAGE_LAYOUT_GENERAL,
+            VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
+        );
+		_colorAttachmentsCanvas->draw(cmd, currentFrame, colorImage, frameResources);
 
-		Image::cmdCopy(
-			cmd,
-            _colorAttachments->imageWithIndex(_showRenderTargetIndex)->handle(),
-            _colorAttachments->extent(),
-            VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-            colorImage->handle(), colorImage->extent2D(), VK_IMAGE_LAYOUT_UNDEFINED
-		);
-
-		return VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+		return VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 	}
 
 	// ============ User Interface Delegate Functions =========
@@ -185,35 +225,14 @@ public:
 	{
 		using namespace bg2e::ui;
 		_window.draw([&]() {
-			BasicWidgets::text("Hello, world!");
-   
             BasicWidgets::checkBox("Draw Skybox", &_drawSkybox);
             
             BasicWidgets::text("Show Attachment:");
             BasicWidgets::radioButton("Attachment 1", &_showRenderTargetIndex, 0);
             BasicWidgets::radioButton("Attachment 2", &_showRenderTargetIndex, 1);
-            
-            for (auto & pair : _environments)
-            {
-                if (BasicWidgets::button(pair.first))
-                {
-                    loadEnvironment(pair.second);
-                }
-            }
 		});
 	}
     
-    void loadEnvironment(const std::string& fileName)
-    {
-        auto assetsPath = bg2e::base::PlatformTools::assetPath();
-        auto imagePath = assetsPath;
-        imagePath.append(fileName);
-        
-        auto texture = bg2e::utils::TextureCache::get().load(_engine, imagePath);
-        
-        _environment->swapEnvironmentTexture(texture);
-    }
-
 	void cleanup() override
 	{
         _colorAttachments->cleanup();
@@ -222,26 +241,20 @@ public:
 
 protected:
 
-    std::array<std::pair<const std::string, const std::string>, 8> _environments = {{
-        { "Environment 1", "country_field_sun.jpg" },
-        { "Environment 2", "equirectangular-env.jpg" },
-        { "Environment 3", "equirectangular-env2.jpg" },
-        { "Environment 4", "equirectangular-env3.jpg" },
-        { "Environment 5", "equirectangular-env4.jpg" },
-        { "Environment 6", "equirectangular-env5.jpg" },
-        { "Environment 7", "equirectangular-env6.jpg" },
-        { "Environment 8", "equirectangular-env7.jpg" }
-    }};
-
     std::shared_ptr<bg2e::render::ColorAttachments> _colorAttachments;
+    std::shared_ptr<bg2e::render::ColorAttachmentsCanvas> _colorAttachmentsCanvas;
 
 	bg2e::ui::Window _window;
 
-	VkPipelineLayout _layout;
-	VkPipeline _pipeline;
+	VkPipelineLayout _layout = VK_NULL_HANDLE;
+	VkPipeline _pipeline = VK_NULL_HANDLE;
  
-    glm::mat4 _modelMatrix;
-    std::unique_ptr<bg2e::scene::DrawablePNU> _drawable;
+    std::shared_ptr<bg2e::scene::Scene> _scene;
+    size_t _skyboxImageHash = 0;
+    
+    bg2e::scene::ResizeViewportVisitor _resizeVisitor;
+    bg2e::scene::UpdateVisitor _updateVisitor;
+    bg2e::scene::DrawVisitor _drawVisitor;
     
     std::unique_ptr<bg2e::scene::vk::ObjectDataBinding> _objectDataBinding;
 
@@ -249,20 +262,22 @@ protected:
     // and manage the sky box renderer
     std::unique_ptr<bg2e::render::EnvironmentResources> _environment;
     std::unique_ptr<bg2e::scene::vk::EnvironmentDataBinding> _environmentDataBinding;
+    std::unique_ptr<bg2e::scene::vk::FrameDataBinding> _frameDataBinding;
     
     bool _drawSkybox = true;
     int _showRenderTargetIndex = 0;
       
-    glm::mat4 _viewMatrix;
-    glm::mat4 _projMatrix;
-    std::unique_ptr<bg2e::scene::vk::FrameDataBinding> _frameDataBinding;
-
+    struct PushConstants
+    {
+        float gamma;
+    };
+    
 	void createPipeline()
 	{
 		bg2e::render::vulkan::factory::GraphicsPipeline plFactory(_engine);
 
-		plFactory.addShader("test/texture_gi.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
-        plFactory.addShader("test/texture_gi.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
+		plFactory.addShader("test/scene_objects.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
+        plFactory.addShader("test/scene_objects.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
         
         plFactory.setInputState<bg2e::render::vulkan::geo::MeshPNU>();
     
@@ -275,13 +290,14 @@ protected:
         layoutFactory.addDescriptorSetLayout(frameDSLayout);
         layoutFactory.addDescriptorSetLayout(objectDSLayout);
         layoutFactory.addDescriptorSetLayout(envDSLayout);
+        layoutFactory.addPushConstantRange(0, sizeof(PushConstants), VK_SHADER_STAGE_FRAGMENT_BIT);
         _layout = layoutFactory.build();
         
         plFactory.setDepthFormat(_engine->swapchain().depthImageFormat());
         plFactory.enableDepthtest(true, VK_COMPARE_OP_LESS);
         plFactory.inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-        plFactory.setCullMode(true, VK_FRONT_FACE_COUNTER_CLOCKWISE);
-        
+        plFactory.setCullMode(VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_COUNTER_CLOCKWISE);
+        plFactory.disableMultisample();
         plFactory.setColorAttachmentFormat(_colorAttachments->attachmentFormats());
 		_pipeline = plFactory.build(_layout);
   
@@ -293,8 +309,55 @@ protected:
             vkDestroyDescriptorSetLayout(dev, frameDSLayout, nullptr);
 		});
 	}
+ 
+    void createScene()
+    {
+        auto sceneRoot = std::make_shared<bg2e::scene::Node>("Scene Root");
+        sceneRoot->addComponent(new bg2e::scene::EnvironmentComponent(bg2e::base::PlatformTools::assetPath(), "country_field_sun.jpg"));
+        
+        auto anotherNode = new bg2e::scene::Node("Transform Node");
+        anotherNode->addComponent(bg2e::scene::TransformComponent::makeTranslated(0.0f, 1.0f, 0.0f));
+        sceneRoot->addChild(anotherNode);
+        
+        auto drawable = std::shared_ptr<bg2e::scene::DrawableBase>(loadDrawable());
+        auto drawableComponent = std::make_shared<bg2e::scene::DrawableComponent>(drawable);
+        auto modelNode = std::make_shared<bg2e::scene::Node>("3D Model");
+        modelNode->addComponent(drawableComponent);
+        modelNode->addComponent(bg2e::scene::TransformComponent::makeTranslated(2.0f, 0.0f, 0.0f));
+        anotherNode->addChild(modelNode);
+        
+        auto secondModel = new bg2e::scene::Node("Second 3D model");
+        auto anotherDrawable = new bg2e::scene::DrawableComponent(drawable);
+        secondModel->addComponent(anotherDrawable);
+        secondModel->addComponent(bg2e::scene::TransformComponent::makeTranslated(-2.0f, 0.0f, 0.0f ));
+        sceneRoot->addChild(secondModel);
+        
+        auto cameraNode = std::shared_ptr<bg2e::scene::Node>(new bg2e::scene::Node("Camera"));
+        cameraNode->addComponent(bg2e::scene::TransformComponent::makeTranslated(0.0f, 0.0f, 10.0f ));
+        cameraNode->addComponent(new bg2e::scene::CameraComponent());
+        auto projection = new bg2e::math::OpticalProjection();
+        cameraNode->camera()->setProjection(projection);
+        
+        auto cameraRotation = new bg2e::scene::Node("Camera Rotation");
+        cameraRotation->addComponent(new bg2e::scene::TransformComponent());
+        cameraRotation->addComponent(new RotateCameraComponent());
+        cameraRotation->addChild(cameraNode);
 
-	void createVertexData()
+        sceneRoot->addChild(cameraRotation);
+        
+        // Set the initial viewport size
+        _resizeVisitor.resizeViewport(sceneRoot.get(), _engine->swapchain().extent());
+        
+        _scene = std::make_shared<bg2e::scene::Scene>();
+        
+        _scene->setSceneRoot(sceneRoot);
+        
+        _engine->cleanupManager().push([&](VkDevice) {
+            _scene.reset();
+        });
+    }
+
+	bg2e::scene::DrawableBase * loadDrawable()
 	{
 		using namespace bg2e::render::vulkan;
   
@@ -311,20 +374,14 @@ protected:
             "two_submeshes_outer_albedo.jpg"
         );
         
-        _drawable = std::make_unique<bg2e::scene::DrawablePNU>();
-        _drawable->setMesh(bg2e::db::loadMeshObj<bg2e::geo::MeshPNU>(modelPath));
+        auto drawable = new bg2e::scene::DrawablePNU();
         
-        _drawable->material(0).setAlbedo(outerAlbedoTexture);
-        _drawable->material(1).setAlbedo(innerAlbedoTexture);
-        _drawable->load(_engine);
+        drawable->setMesh(bg2e::db::loadMeshObj<bg2e::geo::MeshPNU>(modelPath));
+        drawable->material(0).setAlbedo(outerAlbedoTexture);
+        drawable->material(1).setAlbedo(innerAlbedoTexture);
+        drawable->load(_engine);
         
-        _engine->cleanupManager().push([&](VkDevice) {
-            _drawable.reset();
-        });
-        
-        auto modelMesh = std::unique_ptr<bg2e::geo::MeshPNU>(
-            bg2e::db::loadMeshObj<bg2e::geo::MeshPNU>(modelPath)
-        );
+        return drawable;
 	}
 };
 
@@ -332,7 +389,7 @@ class MyApplication : public bg2e::app::Application {
 public:
 	void init(int argc, char** argv) override
 	{
-		auto delegate = std::make_shared<DrawableDelegate>();
+		auto delegate = std::make_shared<BasicSceneDelegate>();
 		setRenderDelegate(delegate);
 		setInputDelegate(delegate);
 		setUiDelegate(delegate);
