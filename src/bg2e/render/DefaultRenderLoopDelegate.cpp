@@ -61,21 +61,13 @@ VkImageLayout DefaultRenderLoopDelegate<RendererT>::render(
     _renderer->draw(
         cmd,
         currentFrame,
+        colorImage,
         depthImage,
         msaaDepthImage,
         frameResources
     );
 
-    vulkan::Image::cmdCopy(
-        cmd,
-        _renderer->colorAttachments()->imageWithIndex(0)->handle(),
-        _renderer->colorAttachments()->extent(),
-        VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-        colorImage->handle(), colorImage->extent2D(),
-        VK_IMAGE_LAYOUT_UNDEFINED
-    );
-
-    return VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    return VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 }
 
 template <typename RendererT>

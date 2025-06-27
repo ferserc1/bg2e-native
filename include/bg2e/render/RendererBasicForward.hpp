@@ -43,9 +43,7 @@ public:
 
     // This renderer is a prototype for a simple forward renderer. In the future, it will be possible to implement other rendering techniques by inheriting from this class and overriding the necessary methods.
     void build(
-        bg2e::render::Engine* engine,
-        VkFormat colorAttachmentFormat = VK_FORMAT_R8G8B8A8_UNORM,
-        VkFormat depthAttachmentFormat = VK_FORMAT_D32_SFLOAT
+        bg2e::render::Engine* engine
     ) override;
 
     void initFrameResources(
@@ -65,6 +63,7 @@ public:
     void draw(
         VkCommandBuffer cmd,
         uint32_t currentFrame,
+        const bg2e::render::vulkan::Image* colorImage,
         const bg2e::render::vulkan::Image* depthImage,
         const bg2e::render::vulkan::Image* msaaDepthImage,
         bg2e::render::vulkan::FrameResources& frameResources

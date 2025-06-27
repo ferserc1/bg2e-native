@@ -55,24 +55,19 @@ public:
 		uint32_t currentFrame,
 		const bg2e::render::vulkan::Image* colorImage,
 		const bg2e::render::vulkan::Image* depthImage,
+        const bg2e::render::vulkan::Image* msaaDepthImage,
 		bg2e::render::vulkan::FrameResources& frameResources
 	) override {
         _renderer->draw(
             cmd,
             currentFrame,
+            colorImage,
             depthImage,
+            msaaDepthImage,
             frameResources
         );
 
-        bg2e::render::vulkan::Image::cmdCopy(
-            cmd,
-            _renderer->colorAttachments()->imageWithIndex(0)->handle(),
-            _renderer->colorAttachments()->extent(),
-            VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-            colorImage->handle(), colorImage->extent2D(), VK_IMAGE_LAYOUT_UNDEFINED
-        );
-
-		return VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+		return VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 	}
  
 	// ============ User Interface Delegate Functions =========
@@ -131,7 +126,7 @@ protected:
         sceneRoot->addChild(secondModel);
         
         auto cameraNode = std::shared_ptr<bg2e::scene::Node>(new bg2e::scene::Node("Camera"));
-        cameraNode->addComponent(bg2e::scene::TransformComponent::makeTranslated(0.0f, 1.3f, -10.0f ));
+        cameraNode->addComponent(bg2e::scene::TransformComponent::makeTranslated(0.0f, 0.0f, 10.0f ));
         cameraNode->addComponent(new bg2e::scene::CameraComponent());
         auto projection = new bg2e::math::OpticalProjection();
         cameraNode->camera()->setProjection(projection);

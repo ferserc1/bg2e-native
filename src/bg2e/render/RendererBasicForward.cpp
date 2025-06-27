@@ -9,29 +9,21 @@
 namespace bg2e::render {
 
 void RendererBasicForward::build(
-    bg2e::render::Engine* engine,
-    VkFormat colorAttachmentFormat,
-    VkFormat depthAttachmentFormat
+    bg2e::render::Engine* engine
 ) {
     _engine = engine;
-    _colorAttachmentFormat = colorAttachmentFormat;
-    _depthAttachmentFormat = depthAttachmentFormat;
-
-    _colorAttachments = std::unique_ptr<bg2e::render::ColorAttachments>(
-        new bg2e::render::ColorAttachments(_engine, {
-            _colorAttachmentFormat
-        })
-    );
 
     _frameDataBinding = std::make_unique<bg2e::scene::vk::FrameDataBinding>(_engine);
     _objectDataBinding = std::make_unique<bg2e::scene::vk::ObjectDataBinding>(_engine);
     _environmentDataBinding = std::make_unique<bg2e::scene::vk::EnvironmentDataBinding>(_engine);
     _lightDataBinding = std::make_unique<bg2e::scene::vk::LightDataBinding>(_engine);
-    _environment = std::make_unique<bg2e::render::EnvironmentResources>(
-        _engine,
-        _colorAttachments->attachmentFormats(),
-        _engine->swapchain().depthImageFormat(),
-        _engine->swapchain().sampleCount()
+    _environment = std::unique_ptr<bg2e::render::EnvironmentResources>(
+        new bg2e::render::EnvironmentResources(
+            _engine,
+            { _engine->swapchain().imageFormat() },
+            _engine->swapchain().depthImageFormat(),
+            _engine->swapchain().sampleCount()
+        )
     );
 
     createPipeline(engine);
@@ -65,7 +57,6 @@ void RendererBasicForward::initScene(
         { 32, 32 },         // Irradiance map size
         { 1024, 1024 }      // Specular reflection map size
     );
-    _colorAttachments->build(_engine->swapchain().extent());
     
     _scene->updateLights();
 
@@ -81,9 +72,6 @@ void RendererBasicForward::resize(
     VkExtent2D newExtent
 ) {
     _scene->willResize();
-    
-    // This function releases all previous resources before recreating the images
-    _colorAttachments->build(newExtent);
 
     _resizeVisitor.resizeViewport(_scene->rootNode(), newExtent);
     
@@ -125,6 +113,7 @@ void RendererBasicForward::update(
 void RendererBasicForward::draw(
     VkCommandBuffer cmd,
     uint32_t currentFrame,
+    const bg2e::render::vulkan::Image* colorImage,
     const bg2e::render::vulkan::Image* depthImage,
     const bg2e::render::vulkan::Image* msaaDepthImage,
     bg2e::render::vulkan::FrameResources& frameResources
@@ -137,12 +126,12 @@ void RendererBasicForward::draw(
     VkClearColorValue clearValue{ { 0.0f, 0.0f, 0.0f, 1.0f } };
     macros::cmdClearImagesAndBeginRendering(
         cmd,
-        _colorAttachments->images(),
+        { colorImage },
         clearValue, VK_IMAGE_LAYOUT_UNDEFINED,
-        depthImage, 1.0f
+        msaaDepthImage, 1.0f
     );
 
-    macros::cmdSetDefaultViewportAndScissor(cmd, _colorAttachments->extent());
+    macros::cmdSetDefaultViewportAndScissor(cmd, colorImage->extent2D());
     auto mainCamera = _scene->mainCamera();
     auto projMatrix = mainCamera->projectionMatrix();
     auto viewMatrix = mainCamera->ownerNode()->invertedWorldMatrix();    
@@ -204,7 +193,6 @@ void RendererBasicForward::draw(
 }
 
 void RendererBasicForward::cleanup() {
-    _colorAttachments->cleanup();
 }
 
 bg2e::scene::Scene* RendererBasicForward::scene()
@@ -241,8 +229,8 @@ void RendererBasicForward::createPipeline(bg2e::render::Engine* engine) {
     plFactory.enableDepthtest(true, VK_COMPARE_OP_LESS);
     plFactory.inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
     plFactory.setCullMode(VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_COUNTER_CLOCKWISE);
-
-    plFactory.setColorAttachmentFormat(colorAttachments()->attachmentFormats());
+    plFactory.enableMultisample();
+    plFactory.setColorAttachmentFormat(_engine->swapchain().imageFormat());
     _pipeline = plFactory.build(_pipelineLayout);
 
     engine->cleanupManager().push([&, objectDSLayout, envDSLayout, frameDSLayout, lightDSLayout](VkDevice dev) {

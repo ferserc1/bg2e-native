@@ -113,6 +113,8 @@
 			membershipExceptions = (
 				basic_forward.frag.spv,
 				basic_forward.vert.spv,
+				brdf_lut.comp.spv,
+				color_attachment_canvas.vert.spv,
 				color_correction.comp.spv,
 				cubemap_renderer.vert.spv,
 				irradiance_map_renderer.frag.spv,
@@ -121,6 +123,13 @@
 				specular_reflection_renderer.frag.spv,
 				sphere_to_cubemap.frag.spv,
 				sphere_to_cubemap.vert.spv,
+				test.frag.spv,
+				test.vert.spv,
+				texture_gi.frag.spv,
+				texture_gi.vert.spv,
+				texture.frag.spv,
+				texture.vert.spv,
+				vertbuffer.vert.spv,
 			);
 		};
 /* End PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet section */
@@ -547,7 +556,7 @@
 					"@executable_path/../Frameworks",
 				);
 				LIBRARY_SEARCH_PATHS = (
-					"$(PROJECT_DIR)/../../bin/Release",
+					"$(PROJECT_DIR)/../../bin/Debug",
 					"$(VULKAN_SDK)/lib",
 				);
 				MARKETING_VERSION = 1.0;
