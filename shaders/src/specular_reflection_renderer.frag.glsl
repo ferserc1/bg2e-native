@@ -56,7 +56,7 @@ vec3 importanceSampleGGX(vec2 Xi, vec3 N, float roughness) {
 void main()
 {
     float gamma = 1.5;
-    int sampleCount = 128;
+    int sampleCount = 512;
 
     vec3 N = normalize(inNormal);
     vec3 R = N;

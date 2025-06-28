@@ -237,17 +237,17 @@ protected:
         light2->light()->light().setIntensity(300.0f);
         sceneRoot->addChild(light2);
         
-        auto light3 = new bg2e::scene::Node("Light 3");
-        light3->addComponent(new bg2e::scene::LightComponent());
-        light3->addComponent(new bg2e::scene::TransformComponent(glm::translate(glm::mat4 { 1.0f }, glm::vec3{-10,-10, 10 } )));
-        light3->light()->light().setIntensity(300.0f);
-        sceneRoot->addChild(light3);
+        // auto light3 = new bg2e::scene::Node("Light 3");
+        // light3->addComponent(new bg2e::scene::LightComponent());
+        // light3->addComponent(new bg2e::scene::TransformComponent(glm::translate(glm::mat4 { 1.0f }, glm::vec3{-10,-10, 10 } )));
+        // light3->light()->light().setIntensity(300.0f);
+        // sceneRoot->addChild(light3);
         
-        auto light4 = new bg2e::scene::Node("Light 4");
-        light4->addComponent(new bg2e::scene::LightComponent());
-        light4->addComponent(new bg2e::scene::TransformComponent(glm::translate(glm::mat4 { 1.0f }, glm::vec3{ 10,-10, 10 } )));
-        light4->light()->light().setIntensity(300.0f);
-        sceneRoot->addChild(light4);
+        // auto light4 = new bg2e::scene::Node("Light 4");
+        // light4->addComponent(new bg2e::scene::LightComponent());
+        // light4->addComponent(new bg2e::scene::TransformComponent(glm::translate(glm::mat4 { 1.0f }, glm::vec3{ 10,-10, 10 } )));
+        // light4->light()->light().setIntensity(300.0f);
+        // sceneRoot->addChild(light4);
         
         // Procedural geometry
         glm::vec3 pos{0};
@@ -258,7 +258,7 @@ protected:
         float sphereSeparation = sphereRadius * 2.0f + sphereGap;
         float totalWidth = static_cast<float>(rows) * sphereSeparation;
         float totalHeight = static_cast<float>(cols) * sphereSeparation;
-        auto sphereMesh = std::shared_ptr<bg2e::geo::Mesh>(bg2e::geo::createSphere(sphereRadius, 15, 15));
+        auto sphereMesh = std::shared_ptr<bg2e::geo::Mesh>(bg2e::geo::createSphere(sphereRadius, 35, 35));
         bg2e::geo::GenTangentsModifier<bg2e::geo::MeshPNUUT> genTangents(sphereMesh.get());
         genTangents.apply();
         for (uint32_t row = 0; row < rows; ++row)
