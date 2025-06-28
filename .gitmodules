@@ -1,0 +1,3 @@
+[submodule "bg2-io"]
+	path = bg2-io
+	url = git@github.com:ferserc1/bg2-io

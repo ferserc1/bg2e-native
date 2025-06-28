@@ -34,6 +34,22 @@ You will also need the development tools specific for your operating system:
 - macOS: Xcode 15.0 or higher
 - Windows: Visual Studio 2022 with the C++ development tools.
 
+## File format
+
+The native bg2 engine file format is implemented in the bg2-io project, that it is available as an external library. It has been implemented in a separate repository so that it can be easily integrated into other projects. For example, it is used in the JavaScript version of the bg2 engine through a WebAssembly module. The project also includes other implementations of the format, such as the C# implementation that can be used in engines such as Unity or Godot. The C and C++ part works simply by adding the source code files to the compilation and has no external dependencies. This makes it particularly convenient to integrate, for example, as a C++ plugin for Unreal.
+
+bg2-io is included as a Git submodule. If you did not use the `--recursive` option when downloading the repository, you will need to run the following command to download the submodule:
+
+```sh
+$ git submodule update --init
+```
+
+If you want to update the submodule, you can run:
+
+```sh
+$ git submodule update --remoate
+```
+
 ## Configuration
 
 ### macOS
