@@ -103,6 +103,21 @@
     <Filter Include="Header Files\bg2e\math">
       <UniqueIdentifier>{289d6ead-f1e8-4cb2-a590-3e019fdccb65}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\bg2e\render\uniforms">
+      <UniqueIdentifier>{a4691a54-87b0-4719-b13f-6b8eea1203b3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="bg2-io">
+      <UniqueIdentifier>{9948aafb-7e6f-479d-ab6f-d9a4b790d50d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="bg2-io\src">
+      <UniqueIdentifier>{2a3d8f53-547e-4c65-b90d-c2af6ff9c86c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="bg2-io\src\bg2-io">
+      <UniqueIdentifier>{64403ca2-6014-4917-bb8d-01f27aa497f6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="bg2-io\src\bg2-scene">
+      <UniqueIdentifier>{d1292d44-449c-4cfa-b51c-cf4fa7732c09}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\include\bg2e\common.hpp">
@@ -447,9 +462,6 @@
     <ClInclude Include="..\include\bg2e\render\Engine.hpp">
       <Filter>Header Files\bg2e\render</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\bg2e\scene\Untitled.h">
-      <Filter>Source Files\scene</Filter>
-    </ClInclude>
     <ClInclude Include="..\include\bg2e\scene\EnvironmentComponent.hpp">
       <Filter>Header Files\bg2e\scene</Filter>
     </ClInclude>
@@ -457,6 +469,90 @@
       <Filter>Header Files\bg2e\scene</Filter>
     </ClInclude>
     <ClInclude Include="..\include\bg2e\scene\SkyDomeTextureGenerator.hpp">
+      <Filter>Header Files\bg2e\scene</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\base\Light.hpp">
+      <Filter>Header Files\bg2e\base</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\render\BRDFIntegrationMapTextureGenerator.hpp">
+      <Filter>Header Files\bg2e\render</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\render\ColorAttachmentsCanvas.hpp">
+      <Filter>Header Files\bg2e\render</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\render\DefaultRenderLoopDelegate.hpp">
+      <Filter>Header Files\bg2e\render</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\render\GPUProcess.hpp">
+      <Filter>Header Files\bg2e\render</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\render\GPUTextureGenerator.hpp">
+      <Filter>Header Files\bg2e\render</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\render\RendererBasicForward.hpp">
+      <Filter>Header Files\bg2e\render</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\scene\vk\LightDataBinding.hpp">
+      <Filter>Header Files\bg2e\scene\vk</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\scene\InputVisitor.hpp">
+      <Filter>Header Files\bg2e\scene</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\render\Renderer.hpp">
+      <Filter>Header Files\bg2e\render\vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\render\uniforms\all.hpp">
+      <Filter>Header Files\bg2e\render\uniforms</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\render\uniforms\materials.hpp">
+      <Filter>Header Files\bg2e\render\uniforms</Filter>
+    </ClInclude>
+    <ClInclude Include="..\bg2-io\src\bg2-io\bg2-io.h">
+      <Filter>bg2-io\src\bg2-io</Filter>
+    </ClInclude>
+    <ClInclude Include="..\bg2-io\src\bg2-io\bg2-loader.h">
+      <Filter>bg2-io\src\bg2-io</Filter>
+    </ClInclude>
+    <ClInclude Include="..\bg2-io\src\bg2-io\bg2-writer.h">
+      <Filter>bg2-io\src\bg2-io</Filter>
+    </ClInclude>
+    <ClInclude Include="..\bg2-io\src\bg2-io\buffer-io.h">
+      <Filter>bg2-io\src\bg2-io</Filter>
+    </ClInclude>
+    <ClInclude Include="..\bg2-io\src\bg2-io\buffer-memory.h">
+      <Filter>bg2-io\src\bg2-io</Filter>
+    </ClInclude>
+    <ClInclude Include="..\bg2-io\src\bg2-io\errors.h">
+      <Filter>bg2-io\src\bg2-io</Filter>
+    </ClInclude>
+    <ClInclude Include="..\bg2-io\src\bg2-io\types.h">
+      <Filter>bg2-io\src\bg2-io</Filter>
+    </ClInclude>
+    <ClInclude Include="..\bg2-io\src\bg2-io\utils.h">
+      <Filter>bg2-io\src\bg2-io</Filter>
+    </ClInclude>
+    <ClInclude Include="..\bg2-io\src\bg2-scene\bg2-material.hpp">
+      <Filter>bg2-io\src\bg2-scene</Filter>
+    </ClInclude>
+    <ClInclude Include="..\bg2-io\src\bg2-scene\bg2-scene.hpp">
+      <Filter>bg2-io\src\bg2-scene</Filter>
+    </ClInclude>
+    <ClInclude Include="..\bg2-io\src\bg2-scene\component.hpp">
+      <Filter>bg2-io\src\bg2-scene</Filter>
+    </ClInclude>
+    <ClInclude Include="..\bg2-io\src\bg2-scene\json.hpp">
+      <Filter>bg2-io\src\bg2-scene</Filter>
+    </ClInclude>
+    <ClInclude Include="..\bg2-io\src\bg2-scene\json-parser.hpp">
+      <Filter>bg2-io\src\bg2-scene</Filter>
+    </ClInclude>
+    <ClInclude Include="..\bg2-io\src\bg2-scene\json-token.hpp">
+      <Filter>bg2-io\src\bg2-scene</Filter>
+    </ClInclude>
+    <ClInclude Include="..\bg2-io\src\bg2-scene\node.hpp">
+      <Filter>bg2-io\src\bg2-scene</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\scene\LightComponent.hpp">
       <Filter>Header Files\bg2e\scene</Filter>
     </ClInclude>
   </ItemGroup>
@@ -701,7 +797,73 @@
     <ClCompile Include="..\src\bg2e\scene\SkyDomeTextureGenerator.cpp">
       <Filter>Source Files\scene</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\bg2e\scene\Untitled.cpp">
+    <ClCompile Include="..\src\bg2e\render\DefaultRenderLoopDelegate.cpp">
+      <Filter>Source Files\render</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\bg2e\render\GPUProcess.cpp">
+      <Filter>Source Files\render</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\bg2e\render\GPUTextureGenerator.cpp">
+      <Filter>Source Files\render</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\bg2e\render\RendererBasicForward.cpp">
+      <Filter>Source Files\render</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\bg2e\render\BRDFIntegrationMapTextureGenerator.cpp">
+      <Filter>Source Files\render</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\bg2e\render\ColorAttachmentsCanvas.cpp">
+      <Filter>Source Files\render</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\bg2e\scene\vk\LightDataBinding.cpp">
+      <Filter>Source Files\scene\vk</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\bg2e\scene\InputVisitor.cpp">
+      <Filter>Source Files\scene</Filter>
+    </ClCompile>
+    <ClCompile Include="..\bg2-io\src\bg2-io\bg2-io.c">
+      <Filter>bg2-io\src\bg2-io</Filter>
+    </ClCompile>
+    <ClCompile Include="..\bg2-io\src\bg2-io\bg2-loader.c">
+      <Filter>bg2-io\src\bg2-io</Filter>
+    </ClCompile>
+    <ClCompile Include="..\bg2-io\src\bg2-io\bg2-writer.c">
+      <Filter>bg2-io\src\bg2-io</Filter>
+    </ClCompile>
+    <ClCompile Include="..\bg2-io\src\bg2-io\buffer-io.c">
+      <Filter>bg2-io\src\bg2-io</Filter>
+    </ClCompile>
+    <ClCompile Include="..\bg2-io\src\bg2-io\buffer-memory.c">
+      <Filter>bg2-io\src\bg2-io</Filter>
+    </ClCompile>
+    <ClCompile Include="..\bg2-io\src\bg2-io\types.c">
+      <Filter>bg2-io\src\bg2-io</Filter>
+    </ClCompile>
+    <ClCompile Include="..\bg2-io\src\bg2-io\utils.c">
+      <Filter>bg2-io\src\bg2-io</Filter>
+    </ClCompile>
+    <ClCompile Include="..\bg2-io\src\bg2-scene\bg2-material.cpp">
+      <Filter>bg2-io\src\bg2-scene</Filter>
+    </ClCompile>
+    <ClCompile Include="..\bg2-io\src\bg2-scene\bg2-scene.cpp">
+      <Filter>bg2-io\src\bg2-scene</Filter>
+    </ClCompile>
+    <ClCompile Include="..\bg2-io\src\bg2-scene\component.cpp">
+      <Filter>bg2-io\src\bg2-scene</Filter>
+    </ClCompile>
+    <ClCompile Include="..\bg2-io\src\bg2-scene\json.cpp">
+      <Filter>bg2-io\src\bg2-scene</Filter>
+    </ClCompile>
+    <ClCompile Include="..\bg2-io\src\bg2-scene\json-parser.cpp">
+      <Filter>bg2-io\src\bg2-scene</Filter>
+    </ClCompile>
+    <ClCompile Include="..\bg2-io\src\bg2-scene\json-token.cpp">
+      <Filter>bg2-io\src\bg2-scene</Filter>
+    </ClCompile>
+    <ClCompile Include="..\bg2-io\src\bg2-scene\node.cpp">
+      <Filter>bg2-io\src\bg2-scene</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\bg2e\scene\LightComponent.cpp">
       <Filter>Source Files\scene</Filter>
     </ClCompile>
   </ItemGroup>

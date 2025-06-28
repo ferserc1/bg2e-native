@@ -8,6 +8,9 @@
 #include <bg2e/render/vulkan/factory/Sampler.hpp>
 #include <bg2e/render/vulkan/macros/all.hpp>
 
+#include <array>
+
+
 namespace bg2e::render {
 
 ColorAttachmentsCanvas::ColorAttachmentsCanvas(Engine * engine, std::shared_ptr<ColorAttachments> attachments)

@@ -77,6 +77,12 @@ void DefaultRenderLoopDelegate<RendererT>::cleanup()
     bg2e::utils::TextureCache::destroy();
 }
 
+template <typename RendererT>
+RendererT* DefaultRenderLoopDelegate<RendererT>::renderer()
+{
+    return _renderer.get();
+}
+
 template DefaultRenderLoopDelegate<RendererBasicForward>::~DefaultRenderLoopDelegate<RendererBasicForward>();
 template void DefaultRenderLoopDelegate<RendererBasicForward>::init(render::Engine * engine);
 template void DefaultRenderLoopDelegate<RendererBasicForward>::initFrameResources(render::vulkan::DescriptorSetAllocator*);
@@ -85,5 +91,6 @@ template void DefaultRenderLoopDelegate<RendererBasicForward>::swapchainResized(
 template void DefaultRenderLoopDelegate<RendererBasicForward>::update(uint32_t currentFrame, render::vulkan::FrameResources&);
 template VkImageLayout DefaultRenderLoopDelegate<RendererBasicForward>::render(VkCommandBuffer cmd, uint32_t currentFrame, const render::vulkan::Image* colorImage, const render::vulkan::Image* depthImage, const render::vulkan::Image* msaaDepthImage, render::vulkan::FrameResources& frameResources);
 template void DefaultRenderLoopDelegate<RendererBasicForward>::cleanup();
+template RendererBasicForward* DefaultRenderLoopDelegate<RendererBasicForward>::renderer();
 
 }

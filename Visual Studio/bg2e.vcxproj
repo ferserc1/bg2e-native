@@ -11,6 +11,21 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\bg2-io\src\bg2-io\bg2-io.h" />
+    <ClInclude Include="..\bg2-io\src\bg2-io\bg2-loader.h" />
+    <ClInclude Include="..\bg2-io\src\bg2-io\bg2-writer.h" />
+    <ClInclude Include="..\bg2-io\src\bg2-io\buffer-io.h" />
+    <ClInclude Include="..\bg2-io\src\bg2-io\buffer-memory.h" />
+    <ClInclude Include="..\bg2-io\src\bg2-io\errors.h" />
+    <ClInclude Include="..\bg2-io\src\bg2-io\types.h" />
+    <ClInclude Include="..\bg2-io\src\bg2-io\utils.h" />
+    <ClInclude Include="..\bg2-io\src\bg2-scene\bg2-material.hpp" />
+    <ClInclude Include="..\bg2-io\src\bg2-scene\bg2-scene.hpp" />
+    <ClInclude Include="..\bg2-io\src\bg2-scene\component.hpp" />
+    <ClInclude Include="..\bg2-io\src\bg2-scene\json-parser.hpp" />
+    <ClInclude Include="..\bg2-io\src\bg2-scene\json-token.hpp" />
+    <ClInclude Include="..\bg2-io\src\bg2-scene\json.hpp" />
+    <ClInclude Include="..\bg2-io\src\bg2-scene\node.hpp" />
     <ClInclude Include="..\include\bg2e.hpp" />
     <ClInclude Include="..\include\bg2e\all.hpp" />
     <ClInclude Include="..\include\bg2e\app\all.hpp" />
@@ -23,6 +38,7 @@
     <ClInclude Include="..\include\bg2e\base\Camera.hpp" />
     <ClInclude Include="..\include\bg2e\base\Color.hpp" />
     <ClInclude Include="..\include\bg2e\base\Image.hpp" />
+    <ClInclude Include="..\include\bg2e\base\Light.hpp" />
     <ClInclude Include="..\include\bg2e\base\Log.hpp" />
     <ClInclude Include="..\include\bg2e\base\MaterialAttributes.hpp" />
     <ClInclude Include="..\include\bg2e\base\PlatformTools.hpp" />
@@ -44,18 +60,27 @@
     <ClInclude Include="..\include\bg2e\math\base.hpp" />
     <ClInclude Include="..\include\bg2e\math\projections.hpp" />
     <ClInclude Include="..\include\bg2e\render\all.hpp" />
+    <ClInclude Include="..\include\bg2e\render\BRDFIntegrationMapTextureGenerator.hpp" />
     <ClInclude Include="..\include\bg2e\render\ColorAttachments.hpp" />
+    <ClInclude Include="..\include\bg2e\render\ColorAttachmentsCanvas.hpp" />
     <ClInclude Include="..\include\bg2e\render\CubemapRenderer.hpp" />
+    <ClInclude Include="..\include\bg2e\render\DefaultRenderLoopDelegate.hpp" />
     <ClInclude Include="..\include\bg2e\render\Engine.hpp" />
     <ClInclude Include="..\include\bg2e\render\EnvironmentResources.hpp" />
+    <ClInclude Include="..\include\bg2e\render\GPUProcess.hpp" />
+    <ClInclude Include="..\include\bg2e\render\GPUTextureGenerator.hpp" />
     <ClInclude Include="..\include\bg2e\render\IrradianceCubemapRenderer.hpp" />
     <ClInclude Include="..\include\bg2e\render\MaterialBase.hpp" />
+    <ClInclude Include="..\include\bg2e\render\Renderer.hpp" />
+    <ClInclude Include="..\include\bg2e\render\RendererBasicForward.hpp" />
     <ClInclude Include="..\include\bg2e\render\RenderLoop.hpp" />
     <ClInclude Include="..\include\bg2e\render\RenderLoopDelegate.hpp" />
     <ClInclude Include="..\include\bg2e\render\SkyboxRenderer.hpp" />
     <ClInclude Include="..\include\bg2e\render\SpecularReflectionCubemapRenderer.hpp" />
     <ClInclude Include="..\include\bg2e\render\SphereToCubemapRenderer.hpp" />
     <ClInclude Include="..\include\bg2e\render\Texture.hpp" />
+    <ClInclude Include="..\include\bg2e\render\uniforms\all.hpp" />
+    <ClInclude Include="..\include\bg2e\render\uniforms\materials.hpp" />
     <ClInclude Include="..\include\bg2e\render\vulkan\all.hpp" />
     <ClInclude Include="..\include\bg2e\render\vulkan\Buffer.hpp" />
     <ClInclude Include="..\include\bg2e\render\vulkan\CleanupManager.hpp" />
@@ -96,6 +121,8 @@
     <ClInclude Include="..\include\bg2e\scene\FindCameraVisitor.hpp" />
     <ClInclude Include="..\include\bg2e\scene\FindNodeComponentVisitor.hpp" />
     <ClInclude Include="..\include\bg2e\scene\FindNodeVisitor.hpp" />
+    <ClInclude Include="..\include\bg2e\scene\InputVisitor.hpp" />
+    <ClInclude Include="..\include\bg2e\scene\LightComponent.hpp" />
     <ClInclude Include="..\include\bg2e\scene\Mesh.hpp" />
     <ClInclude Include="..\include\bg2e\scene\Node.hpp" />
     <ClInclude Include="..\include\bg2e\scene\NodeVisitor.hpp" />
@@ -108,6 +135,7 @@
     <ClInclude Include="..\include\bg2e\scene\vk\all.hpp" />
     <ClInclude Include="..\include\bg2e\scene\vk\EnvironmentDataBinding.hpp" />
     <ClInclude Include="..\include\bg2e\scene\vk\FrameDataBinding.hpp" />
+    <ClInclude Include="..\include\bg2e\scene\vk\LightDataBinding.hpp" />
     <ClInclude Include="..\include\bg2e\scene\vk\ObjectDataBinding.hpp" />
     <ClInclude Include="..\include\bg2e\scene\vk\SceneDataBinding.hpp" />
     <ClInclude Include="..\include\bg2e\ui\all.hpp" />
@@ -120,7 +148,6 @@
     <ClInclude Include="..\include\bg2e\utils\all.hpp" />
     <ClInclude Include="..\include\bg2e\utils\TextureCache.hpp" />
     <ClInclude Include="..\include\bg2e\utils\utils.hpp" />
-    <ClInclude Include="..\src\bg2e\scene\Untitled.h" />
     <ClInclude Include="..\third_party\imgui\imconfig.h" />
     <ClInclude Include="..\third_party\imgui\imgui.h" />
     <ClInclude Include="..\third_party\imgui\imgui_impl_sdl2.h" />
@@ -131,6 +158,29 @@
     <ClInclude Include="..\third_party\imgui\imstb_truetype.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\bg2-io\src\bg2-io\bg2-io.c" />
+    <ClCompile Include="..\bg2-io\src\bg2-io\bg2-loader.c" />
+    <ClCompile Include="..\bg2-io\src\bg2-io\bg2-writer.c" />
+    <ClCompile Include="..\bg2-io\src\bg2-io\buffer-io.c" />
+    <ClCompile Include="..\bg2-io\src\bg2-io\buffer-memory.c" />
+    <ClCompile Include="..\bg2-io\src\bg2-io\types.c" />
+    <ClCompile Include="..\bg2-io\src\bg2-io\utils.c">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)bg2io_utils</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)bg2io_utils</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\bg2-io\src\bg2-scene\bg2-material.cpp" />
+    <ClCompile Include="..\bg2-io\src\bg2-scene\bg2-scene.cpp" />
+    <ClCompile Include="..\bg2-io\src\bg2-scene\component.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)component_bg2scene</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)component_bg2scene</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\bg2-io\src\bg2-scene\json-parser.cpp" />
+    <ClCompile Include="..\bg2-io\src\bg2-scene\json-token.cpp" />
+    <ClCompile Include="..\bg2-io\src\bg2-scene\json.cpp" />
+    <ClCompile Include="..\bg2-io\src\bg2-scene\node.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)node_bg2scene</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)node_bg2scene</ObjectFileName>
+    </ClCompile>
     <ClCompile Include="..\src\bg2e\app\InputManager.cpp" />
     <ClCompile Include="..\src\bg2e\app\MainLoop.cpp" />
     <ClCompile Include="..\src\bg2e\base\Camera.cpp" />
@@ -145,12 +195,18 @@
     <ClCompile Include="..\src\bg2e\geo\cylinder.cpp" />
     <ClCompile Include="..\src\bg2e\geo\plane.cpp" />
     <ClCompile Include="..\src\bg2e\geo\sphere.cpp" />
+    <ClCompile Include="..\src\bg2e\render\BRDFIntegrationMapTextureGenerator.cpp" />
     <ClCompile Include="..\src\bg2e\render\ColorAttachments.cpp" />
+    <ClCompile Include="..\src\bg2e\render\ColorAttachmentsCanvas.cpp" />
     <ClCompile Include="..\src\bg2e\render\CubemapRenderer.cpp" />
+    <ClCompile Include="..\src\bg2e\render\DefaultRenderLoopDelegate.cpp" />
     <ClCompile Include="..\src\bg2e\render\Engine.cpp" />
     <ClCompile Include="..\src\bg2e\render\EnvironmentResources.cpp" />
+    <ClCompile Include="..\src\bg2e\render\GPUProcess.cpp" />
+    <ClCompile Include="..\src\bg2e\render\GPUTextureGenerator.cpp" />
     <ClCompile Include="..\src\bg2e\render\IrradianceCubemapRenderer.cpp" />
     <ClCompile Include="..\src\bg2e\render\MaterialBase.cpp" />
+    <ClCompile Include="..\src\bg2e\render\RendererBasicForward.cpp" />
     <ClCompile Include="..\src\bg2e\render\RenderLoop.cpp" />
     <ClCompile Include="..\src\bg2e\render\SkyboxRenderer.cpp" />
     <ClCompile Include="..\src\bg2e\render\SpecularReflectionCubemapRenderer.cpp" />
@@ -187,15 +243,17 @@
     <ClCompile Include="..\src\bg2e\scene\EnvironmentComponent.cpp" />
     <ClCompile Include="..\src\bg2e\scene\FindCameraVisitor.cpp" />
     <ClCompile Include="..\src\bg2e\scene\FindNodeVisitor.cpp" />
+    <ClCompile Include="..\src\bg2e\scene\InputVisitor.cpp" />
+    <ClCompile Include="..\src\bg2e\scene\LightComponent.cpp" />
     <ClCompile Include="..\src\bg2e\scene\Node.cpp" />
     <ClCompile Include="..\src\bg2e\scene\ResizeViewportVisitor.cpp" />
     <ClCompile Include="..\src\bg2e\scene\Scene.cpp" />
     <ClCompile Include="..\src\bg2e\scene\SkyDomeTextureGenerator.cpp" />
     <ClCompile Include="..\src\bg2e\scene\TransformComponent.cpp" />
-    <ClCompile Include="..\src\bg2e\scene\Untitled.cpp" />
     <ClCompile Include="..\src\bg2e\scene\UpdateVisitor.cpp" />
     <ClCompile Include="..\src\bg2e\scene\vk\EnvironmentDataBinding.cpp" />
     <ClCompile Include="..\src\bg2e\scene\vk\FrameDataBinding.cpp" />
+    <ClCompile Include="..\src\bg2e\scene\vk\LightDataBinding.cpp" />
     <ClCompile Include="..\src\bg2e\scene\vk\ObjectDataBinding.cpp" />
     <ClCompile Include="..\src\bg2e\ui\BasicWidgets.cpp" />
     <ClCompile Include="..\src\bg2e\ui\DemoWindow.cpp" />
@@ -249,12 +307,12 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <OutDir>$(SolutionDir)..\bin\</OutDir>
     <TargetName>$(ProjectName)d</TargetName>
-    <IncludePath>$(SolutionDir)..\include;$(VULKAN_SDK)\Include;$(VULKAN_SDK)\Include\SDL2;$(VULKAN_SDK)\Include\glm;$(VULKAN_SDK)\Include\vma;$(SolutionDir)..\third_party;$(SolutionDir)..\third_party\imgui;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)..\include;$(VULKAN_SDK)\Include;$(VULKAN_SDK)\Include\SDL2;$(VULKAN_SDK)\Include\glm;$(VULKAN_SDK)\Include\vma;$(SolutionDir)..\third_party;$(SolutionDir)..\third_party\imgui;$(SolutionDir)..\bg2-io\src\bg2-io;$(SolutionDir)..\bg2-io\src\bg2-scene;$(IncludePath)</IncludePath>
     <LibraryPath>$(VULKAN_SDK)\Lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <OutDir>$(SolutionDir)..\bin\</OutDir>
-    <IncludePath>$(SolutionDir)..\include;$(VULKAN_SDK)\Include;$(VULKAN_SDK)\Include\SDL2;$(VULKAN_SDK)\Include\glm;$(VULKAN_SDK)\Include\vma;$(SolutionDir)..\third_party;$(SolutionDir)..\third_party\imgui;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)..\include;$(VULKAN_SDK)\Include;$(VULKAN_SDK)\Include\SDL2;$(VULKAN_SDK)\Include\glm;$(VULKAN_SDK)\Include\vma;$(SolutionDir)..\third_party;$(SolutionDir)..\third_party\imgui;$(SolutionDir)..\bg2-io\src\bg2-io;$(SolutionDir)..\bg2-io\src\bg2-scene;$(IncludePath)</IncludePath>
     <LibraryPath>$(VULKAN_SDK)\Lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">

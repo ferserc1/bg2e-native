@@ -39,7 +39,7 @@ public:
 	void cleanup() override;
 
 
-    inline RendererT * renderer() { return _renderer.get(); }
+    RendererT* renderer();
     
 protected:
 	std::unique_ptr<RendererT> _renderer;
