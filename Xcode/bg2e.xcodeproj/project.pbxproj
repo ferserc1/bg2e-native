@@ -180,6 +180,7 @@
 		ED8688442CDAAB3400A71ADC /* stb_image.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = stb_image.h; sourceTree = "<group>"; };
 		ED8688462CDAAB3400A71ADC /* tiny_obj_loader.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = tiny_obj_loader.h; sourceTree = "<group>"; };
 		ED86884F2CDAAB7300A71ADC /* CoreFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreFoundation.framework; path = System/Library/Frameworks/CoreFoundation.framework; sourceTree = SDKROOT; };
+		ED9AEBF12E10534600728D8B /* bg2-io.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = "bg2-io.xcodeproj"; sourceTree = "<group>"; };
 		EDB10C0A2CFF9398002A1B0E /* logo_2a.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = logo_2a.png; sourceTree = "<group>"; };
 		EDE152352DFFFCDE0037D987 /* normal_test.jpeg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = normal_test.jpeg; sourceTree = "<group>"; };
 		EDE819922CF6024D0078084B /* two_submeshes.mtl */ = {isa = PBXFileReference; lastKnownFileType = text; path = two_submeshes.mtl; sourceTree = "<group>"; };
@@ -196,11 +197,35 @@
 		EDE8199F2CF624400078084B /* two_submeshes_outer_roughness.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = two_submeshes_outer_roughness.jpg; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		ED9AEC112E10538000728D8B /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				"src/bg2-io/bg2-io.c",
+				"src/bg2-io/bg2-loader.c",
+				"src/bg2-io/bg2-writer.c",
+				"src/bg2-io/buffer-io.c",
+				"src/bg2-io/buffer-memory.c",
+				"src/bg2-io/types.c",
+				"src/bg2-io/utils.c",
+				"src/bg2-scene/bg2-material.cpp",
+				"src/bg2-scene/bg2-scene.cpp",
+				"src/bg2-scene/component.cpp",
+				"src/bg2-scene/json-parser.cpp",
+				"src/bg2-scene/json-token.cpp",
+				"src/bg2-scene/json.cpp",
+				"src/bg2-scene/node.cpp",
+			);
+			target = ED85B1F22CDBAABD0039B44D /* bg2e-native */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		ED0EB4E52DFA0719009C3091 /* shaders */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); name = shaders; path = ../shaders; sourceTree = SOURCE_ROOT; };
 		ED6574DF2DF588130078FE8D /* scripts */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); name = scripts; path = ../scripts; sourceTree = SOURCE_ROOT; };
 		ED6D4B432DFAE33A00753DF7 /* bg2e */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = bg2e; sourceTree = "<group>"; };
 		ED6D4B9F2DFAE35900753DF7 /* bg2e */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = bg2e; sourceTree = "<group>"; };
+		ED9AEBF52E10534600728D8B /* bg2-io */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (ED9AEC112E10538000728D8B /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); name = "bg2-io"; path = "../bg2-io"; sourceTree = SOURCE_ROOT; };
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -281,6 +306,7 @@
 				ED5339D92CD7A11E00136B04 /* Products */,
 				ED6574DF2DF588130078FE8D /* scripts */,
 				ED0EB4E52DFA0719009C3091 /* shaders */,
+				ED9AEBF52E10534600728D8B /* bg2-io */,
 			);
 			sourceTree = "<group>";
 		};
@@ -455,6 +481,13 @@
 			path = ../third_party;
 			sourceTree = SOURCE_ROOT;
 		};
+		ED9AEBF62E10534600728D8B /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXHeadersBuildPhase section */
@@ -544,6 +577,12 @@
 			minimizedProjectReferenceProxies = 1;
 			productRefGroup = ED5339D92CD7A11E00136B04 /* Products */;
 			projectDirPath = "";
+			projectReferences = (
+				{
+					ProductGroup = ED9AEBF62E10534600728D8B /* Products */;
+					ProjectRef = ED9AEBF12E10534600728D8B /* bg2-io.xcodeproj */;
+				},
+			);
 			projectRoot = "";
 			targets = (
 				ED85B1F22CDBAABD0039B44D /* bg2e-native */,
@@ -870,6 +909,8 @@
 					"$(VULKAN_SDK)/include/VMA",
 					"$(VULKAN_SDK)/include",
 					"$(PROJECT_DIR)/../third_party",
+					"$(PROJECT_DIR)/../bg2-io/src/bg2-io",
+					"$(PROJECT_DIR)/../bg2-io/src/bg2-scene",
 				);
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
@@ -898,6 +939,8 @@
 					"$(VULKAN_SDK)/include/VMA",
 					"$(VULKAN_SDK)/include",
 					"$(PROJECT_DIR)/../third_party",
+					"$(PROJECT_DIR)/../bg2-io/src/bg2-io",
+					"$(PROJECT_DIR)/../bg2-io/src/bg2-scene",
 				);
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
