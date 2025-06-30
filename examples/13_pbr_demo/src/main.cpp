@@ -2,6 +2,25 @@
 #include <bg2e.hpp>
 #include <numbers>
 
+class RotateCameraComponent : public bg2e::scene::Component {
+public:
+    RotateCameraComponent() :_r{0.001f} {}
+    RotateCameraComponent(float r) :_r{r} {}
+    
+    void update(float delta) override
+    {
+        auto transform = ownerNode()->transform();
+        
+        if (transform)
+        {
+            transform->rotate(_r * delta / 10.0f, 0.0f, 1.0f, 0.0f);
+        }
+    }
+    
+protected:
+    float _r;
+};
+
 class CameraMouse : public bg2e::scene::Component {
 public:
     CameraMouse(bg2e::scene::Node * cameraNode) :_cameraNode(cameraNode) {}
@@ -114,7 +133,20 @@ public:
     
         _window.draw([&]() {
             bg2e::ui::BasicWidgets::checkBox("Draw Skybox", &drawSkybox);
-                    
+        
+            auto &material = _sphere->material(0);
+            float metalness = material.metalness();
+            float roughness = material.roughness();
+            bg2e::base::Color albedo = material.albedo();
+            bg2e::ui::BasicWidgets::separator();
+            bg2e::ui::Input::slider("Metalness", &metalness, 0.0f, 1.0f);
+            bg2e::ui::Input::slider("Roughness", &roughness, 0.0f, 1.0f);
+            bg2e::ui::Input::colorPicker("Albedo", albedo);
+            material.setMetalness(metalness);
+            material.setRoughness(roughness);
+            material.setAlbedo(albedo);
+            _sphere->updateMaterials();
+            
             if (_environment)
             {
                 auto assetPath = bg2e::base::PlatformTools::assetPath();
@@ -164,6 +196,7 @@ protected:
 	bg2e::ui::Window _window;
     bg2e::scene::InputVisitor _inputVisitor;
     
+    std::shared_ptr<bg2e::scene::Drawable> _sphere;
     bg2e::scene::EnvironmentComponent * _environment;
     
     std::shared_ptr<bg2e::scene::Node> scene1()
@@ -184,10 +217,14 @@ protected:
         
         auto cameraRotation = new bg2e::scene::Node("Camera Rotation");
         cameraRotation->addComponent(new bg2e::scene::TransformComponent());
+        //cameraRotation->addComponent(new RotateCameraComponent(-0.002f));
         cameraRotation->addComponent(new CameraMouse(cameraNode.get()));
         cameraRotation->addChild(cameraNode);
         sceneRoot->addChild(cameraRotation);
         
+        // Lights: When you first create the scene in createScene(), you don't need to do anything with the lights, because the
+        // scene has not been initialised yet. Once the scene is initialised, if lights are added or removed during the rendering
+        // loop, _scene->updateLights() must be called to rebuild the array of lights in the scene that will be passed to the shader.
         auto light1 = new bg2e::scene::Node("Light 1");
         light1->addComponent(new bg2e::scene::LightComponent());
         light1->addComponent(new bg2e::scene::TransformComponent(glm::translate(glm::mat4 { 1.0f }, glm::vec3{-10, 10, 10 } )));
@@ -200,19 +237,81 @@ protected:
         light2->light()->light().setIntensity(300.0f);
         sceneRoot->addChild(light2);
         
-        auto armchairData = std::shared_ptr<bg2e::db::Bg2Mesh>(bg2e::db::loadMeshBg2(bg2e::base::PlatformTools::assetPath(), "armchair.bg2"));
-        auto armchairNode = new bg2e::scene::Node("Armchair");
-        auto drawable = std::make_shared<bg2e::scene::Drawable>();
-        drawable->setMesh(armchairData->mesh);
-        uint32_t submesh = 0;
-        for (auto & m : armchairData->materials)
-        {
-            drawable->setMaterial(m, submesh++);
-        }
-        drawable->load(_engine);
-        armchairNode->addComponent(new bg2e::scene::DrawableComponent(drawable));
-        sceneRoot->addChild(armchairNode);
+        // auto light3 = new bg2e::scene::Node("Light 3");
+        // light3->addComponent(new bg2e::scene::LightComponent());
+        // light3->addComponent(new bg2e::scene::TransformComponent(glm::translate(glm::mat4 { 1.0f }, glm::vec3{-10,-10, 10 } )));
+        // light3->light()->light().setIntensity(300.0f);
+        // sceneRoot->addChild(light3);
         
+        // auto light4 = new bg2e::scene::Node("Light 4");
+        // light4->addComponent(new bg2e::scene::LightComponent());
+        // light4->addComponent(new bg2e::scene::TransformComponent(glm::translate(glm::mat4 { 1.0f }, glm::vec3{ 10,-10, 10 } )));
+        // light4->light()->light().setIntensity(300.0f);
+        // sceneRoot->addChild(light4);
+        
+        // Procedural geometry
+        glm::vec3 pos{0};
+        const uint32_t rows = 10;
+        const uint32_t cols = 10;
+        float sphereRadius = 1.0f;
+        float sphereGap = 0.5f;
+        float sphereSeparation = sphereRadius * 2.0f + sphereGap;
+        float totalWidth = static_cast<float>(rows) * sphereSeparation;
+        float totalHeight = static_cast<float>(cols) * sphereSeparation;
+        auto sphereMesh = std::shared_ptr<bg2e::geo::Mesh>(bg2e::geo::createSphere(sphereRadius, 35, 35));
+        bg2e::geo::GenTangentsModifier<bg2e::geo::MeshPNUUT> genTangents(sphereMesh.get());
+        genTangents.apply();
+        for (uint32_t row = 0; row < rows; ++row)
+        {
+            for (uint32_t col = 0; col < cols; ++col)
+            {
+                pos.x = (totalWidth / -2.0f) + sphereSeparation / 2.0f + static_cast<float>(row) * sphereSeparation;
+                pos.y = (totalHeight / -2.0f) + sphereSeparation / 2.0f + static_cast<float>(col) * sphereSeparation;
+                
+                auto sphereDrawable = std::make_shared<bg2e::scene::Drawable>();
+                sphereDrawable->setMesh(sphereMesh);
+                sphereDrawable->material(0).setMetalness(static_cast<float>(row) / rows);
+                sphereDrawable->material(0).setRoughness(static_cast<float>(col) / cols);
+                sphereDrawable->material(0).setAlbedo(bg2e::base::Color::Red());
+                
+                sphereDrawable->load(_engine);
+                auto node = std::make_shared<bg2e::scene::Node>("Sphere-" + std::to_string(row) + "-" + std::to_string(col));
+                node->addComponent(new bg2e::scene::DrawableComponent(sphereDrawable));
+                node->addComponent(bg2e::scene::TransformComponent::makeTranslated(pos));
+                sceneRoot->addChild(node);
+            }
+        }
+        
+        auto assetPath = bg2e::base::PlatformTools::assetPath();
+        auto mainSphereDrawable = new bg2e::scene::Drawable();
+        mainSphereDrawable->setMesh(sphereMesh);
+        mainSphereDrawable->material(0).setAlbedo(new bg2e::base::Texture(assetPath, "rust_metal_albedo.jpg"));
+        mainSphereDrawable->material(0).setNormalTexture(new bg2e::base::Texture(assetPath, "rust_metal_normal.jpg"));
+        mainSphereDrawable->material(0).setMetalness(new bg2e::base::Texture(assetPath, "rust_metal_metallic.jpg"));
+        mainSphereDrawable->material(0).setRoughness(new bg2e::base::Texture(assetPath, "rust_metal_roughness.jpg"));
+        mainSphereDrawable->load(_engine);
+        
+        auto mainSphereNode = new bg2e::scene::Node("Main Sphere");
+        mainSphereNode->addComponent(bg2e::scene::TransformComponent::makeTranslated(-5.0f, 0.0f, 4.0f));
+        mainSphereNode->transform()->scale(3.0f);
+        mainSphereNode->addComponent(new bg2e::scene::DrawableComponent(mainSphereDrawable));
+        sceneRoot->addChild(mainSphereNode);
+        
+        auto customSphereDrawable = std::make_shared<bg2e::scene::Drawable>();
+        customSphereDrawable->setMesh(sphereMesh);
+        customSphereDrawable->material(0).setMetalness(0.6f);
+        customSphereDrawable->material(0).setRoughness(0.2f);
+        customSphereDrawable->load(_engine);
+        _sphere = customSphereDrawable;
+        auto customSphereNode = new bg2e::scene::Node("Custom Sphere");
+        customSphereNode->addComponent(bg2e::scene::TransformComponent::makeTranslated(5.0f, 0.0f, 4.0f));
+        customSphereNode->transform()->scale(3.0f);
+        customSphereNode->addComponent(new bg2e::scene::DrawableComponent(customSphereDrawable));
+        sceneRoot->addChild(customSphereNode);
+        
+        _engine->cleanupManager().push([&](VkDevice) {
+            _sphere.reset();
+        });
        
         return sceneRoot;
     }
