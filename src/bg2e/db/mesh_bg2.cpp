@@ -6,10 +6,12 @@
 //
 
 #include <bg2e/db/mesh_bg2.hpp>
-
 #include <bg2e/geo/sphere.hpp>
+#include <bg2e/geo/modifiers.hpp>
+#include <bg2e/utils/MaterialSerializer.hpp>
 
 #include <bg2-io.h>
+#include <json-parser.hpp>
 
 #include <fstream>
 
@@ -38,7 +40,7 @@ uint32_t readHeader(Bg2ioBufferIterator& it)
     return static_cast<uint32_t>(numberOfPlist);
 }
 
-std::string readMaterials(Bg2ioBufferIterator& it)
+std::vector<base::MaterialAttributes> readMaterials(Bg2ioBufferIterator& it, const std::filesystem::path& basePath)
 {
     unsigned int token = 0;
     bg2io_readInteger(&it, reinterpret_cast<int*>(&token));
@@ -49,7 +51,17 @@ std::string readMaterials(Bg2ioBufferIterator& it)
     
     char * headerString;
     bg2io_readString(&it, &headerString);
-    std::string result = headerString;
+
+    utils::MaterialSerializer serializer;
+    
+    std::vector<base::MaterialAttributes> result;
+    bool status = serializer.deserializeMaterialArray(headerString, basePath, result);
+    
+    if (!status)
+    {
+        std::cout << "WARN: Error loading bg2 file material data." << std::endl;
+    }
+    
     free(headerString);
     return result;
 }
@@ -108,6 +120,7 @@ struct Bg2Plist {
     std::vector<float> texCoord0;
     std::vector<float> texCoord1;
     std::vector<uint32_t> index;
+    base::MaterialAttributes material;
 };
 
 std::vector<Bg2Plist> readPolyList(Bg2ioBufferIterator& it, uint32_t numberOfPlist)
@@ -276,12 +289,23 @@ std::vector<Bg2Plist> readBg2File(Bg2ioBuffer * buffer, const std::filesystem::p
     
     Bg2ioBufferIterator it = BG2IO_ITERATOR(buffer);
     auto numberOfPlist = readHeader(it);
-    auto materials = readMaterials(it);
+    auto materials = readMaterials(it, std::filesystem::path(filePath).remove_filename());
     skipShadowProjectors(it);
     auto joints = readJoints(it);
     
     auto result = readPolyList(it, numberOfPlist);
-    
+    for (auto & plist : result)
+    {
+        for (auto & mat : materials)
+        {
+            if (mat.name() == plist.matName)
+            {
+                plist.material = mat;
+                break;
+            }
+        }
+    }
+
     fileStream.close();
     return result;
 }
@@ -290,19 +314,35 @@ Bg2Mesh * loadMeshBg2(const std::filesystem::path& filePath)
 {
     Bg2ioBuffer buffer = BG2IO_BUFFER_INIT;
     auto plists = readBg2File(&buffer, filePath);
-    
-    // TODO: Read plist and initialize result mesh
-    
     auto result = new Bg2Mesh();
-    //result->mesh = std::make_shared<geo::MeshPNUUT>();
-    result->mesh = std::shared_ptr<bg2e::geo::Mesh>(geo::createSphere(1.3, 40, 40));
+    result->mesh = std::make_shared<bg2e::geo::Mesh>();
     
-    base::MaterialAttributes mat;
-    mat.setAlbedo(base::Color::Red());
-    mat.setMetalness(0.92);
-    mat.setRoughness(0.12);
-    result->materials.push_back(mat);
-    
+    uint32_t currentIndex = 0;
+    uint32_t submeshOffset = 0;
+    uint32_t submeshCount = 0;
+    for (auto plist : plists)
+    {
+        for (auto index : plist.index)
+        {
+            auto i3 = index * 3;
+            auto i2 = index * 2;
+            auto position = glm::vec3 { plist.positions[i3], plist.positions[i3 + 1], plist.positions[i3 + 2] };
+            auto normal = glm::vec3 { plist.normals[i3], plist.normals[i3 + 1], plist.normals[i3 + 2] };
+            auto t0 = glm::vec2 { plist.texCoord0[i2], plist.texCoord0[i2 + 1] };
+            auto t1 = glm::vec2 { plist.texCoord1[i2], plist.texCoord1[i2 + 1] };
+            result->mesh->vertices.push_back({ position, normal, t0, t1, glm::vec3(0.0) });
+            result->mesh->indices.push_back(currentIndex);
+            ++currentIndex;
+            ++submeshCount;
+        }
+        result->mesh->submeshes.push_back({ submeshOffset, submeshCount });
+        result->materials.push_back(plist.material);
+        submeshOffset = currentIndex;
+        submeshCount = 0;
+    }
+    geo::GenTangentsModifier<geo::Mesh> tangentGenerator(result->mesh.get());
+    tangentGenerator.apply();
+
     bg2io_freeBuffer(&buffer);
     return result;
 }

@@ -20,6 +20,8 @@ public:
     
     inline const Color & albedo() const { return _albedo; }
     inline void setAlbedo(const Color & c) { _albedo = c; }
+    inline void setAlbedo(const std::array<float, 3>& s) { _albedo = {s[0], s[1], s[3], 1.0f }; }
+    inline void setAlbedo(const std::array<float, 4>& s) { _albedo = {s[0], s[1], s[3], s[3]}; }
     
     inline std::shared_ptr<Texture> albedoTexture() const { return _albedoTexture; }
     inline void setAlbedo(Texture * t) { setAlbedo(std::shared_ptr<Texture>(t)); }
@@ -28,6 +30,7 @@ public:
     
     inline const glm::vec2 & albedoScale() const { return _albedoScale; }
     inline void setAlbedoScale(const glm::vec2& offset) { _albedoScale = offset; }
+    inline void setAlbedoScale(const std::array<float, 2>& s) { _albedoScale = {s[0], s[1]}; }
 
     inline uint32_t albedoUVSet() const { return _albedoUVSet; }
     inline void setAlbedoUVSet(uint32_t uvSet) { _albedoUVSet = uvSet; }
@@ -42,6 +45,7 @@ public:
     
     inline const glm::vec2 & metalnessScale() const { return _metalnessScale; }
     inline void setMetalnessScale(const glm::vec2& s) { _metalnessScale = s; }
+    inline void setMetalnessScale(const std::array<float, 2>& s) { _metalnessScale = {s[0], s[1]}; }
     
     inline const uint32_t metalnessChannel() const { return _metalnessChannel; }
     inline void setMetalnessChannel(uint32_t c) { _metalnessChannel = c; }
@@ -59,6 +63,7 @@ public:
 
     inline const glm::vec2 & roughnessScale() const { return _roughnessScale; }
     inline void setRoughnessScale(const glm::vec2& s) { _roughnessScale = s; }
+    inline void setRoughnessScale(const std::array<float, 2>& s) { _roughnessScale = {s[0], s[1]}; }
 
     inline const uint32_t roughnessChannel() const { return _roughnessChannel; }
     inline void setRoughnessChannel(uint32_t c) { _roughnessChannel = c; }
@@ -73,6 +78,7 @@ public:
 
     inline const glm::vec2 & normalScale() const { return _normalScale; }
     inline void setNormalScale(const glm::vec2& s) { _normalScale = s; }
+    inline void setNormalScale(const std::array<float, 2>& s) { _normalScale = {s[0], s[1]}; }
 
     inline uint32_t normalUVSet() const { return _normalUVSet; }
     inline void setNormalUVSet(uint32_t uvSet) { _normalUVSet = uvSet; }
@@ -84,6 +90,7 @@ public:
 
     inline const glm::vec2 & aoScale() const { return _aoScale; }
     inline void setAoScale(const glm::vec2& s) { _aoScale = s; }
+    inline void setAoScale(const std::array<float, 2>& s) { _aoScale = {s[0], s[1]}; }
 
     inline const uint32_t aoChannel() const { return _aoChannel; }
     inline void setAoChannel(uint32_t c) { _aoChannel = c; }
@@ -101,6 +108,13 @@ public:
                 _normalTextureUpdated &&
                 _aoTextureUpdated;
     }
+    
+    // Metadata
+    inline const std::string& name() const { return _name; }
+    inline void setName(const std::string& name) { _name = name; }
+    
+    inline const std::string& groupName() const { return _groupName; }
+    inline void setGroupName(const std::string& groupName) { _groupName = groupName; }
 
 protected:
     
@@ -135,6 +149,9 @@ protected:
     uint32_t _aoUVSet = 0;
     bool _aoTextureUpdated = true;
     
+    // Material metadata
+    std::string _name = "";
+    std::string _groupName = "";
 };
 
 }

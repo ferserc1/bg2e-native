@@ -16,8 +16,8 @@ public:
             auto uv = _cameraNode->upVector();
 
             transform->translate(
-                rv * glm::vec3{ _pan.x * 0.1, 0, 0 } +
-                uv * glm::vec3{ 0, -_pan.y * 0.1, 0 }
+                rv * glm::vec3{ _pan.x * 0.01, 0, 0 } +
+                uv * glm::vec3{ 0, -_pan.y * 0.01, 0 }
             );
             
             transform->rotate(_rot.y * 0.01f, glm::vec3(1, 0, 0));
@@ -176,7 +176,7 @@ protected:
         
         
         auto cameraNode = std::shared_ptr<bg2e::scene::Node>(new bg2e::scene::Node("Camera"));
-        cameraNode->addComponent(bg2e::scene::TransformComponent::makeTranslated(0.0f, 0.0f, 45.0f ));
+        cameraNode->addComponent(bg2e::scene::TransformComponent::makeTranslated(0.0f, 0.5f, 2.0f ));
         
         cameraNode->addComponent(new bg2e::scene::CameraComponent());
         auto projection = new bg2e::math::OpticalProjection();
@@ -190,15 +190,9 @@ protected:
         
         auto light1 = new bg2e::scene::Node("Light 1");
         light1->addComponent(new bg2e::scene::LightComponent());
-        light1->addComponent(new bg2e::scene::TransformComponent(glm::translate(glm::mat4 { 1.0f }, glm::vec3{-10, 10, 10 } )));
+        light1->addComponent(new bg2e::scene::TransformComponent(glm::translate(glm::mat4 { 1.0f }, glm::vec3{-5, 5, 5 } )));
         light1->light()->light().setIntensity(300.0f);
         sceneRoot->addChild(light1);
-        
-        auto light2 = new bg2e::scene::Node("Light 2");
-        light2->addComponent(new bg2e::scene::LightComponent());
-        light2->addComponent(new bg2e::scene::TransformComponent(glm::translate(glm::mat4 { 1.0f }, glm::vec3{ 10, 10, 10 } )));
-        light2->light()->light().setIntensity(300.0f);
-        sceneRoot->addChild(light2);
         
         auto armchairData = std::shared_ptr<bg2e::db::Bg2Mesh>(bg2e::db::loadMeshBg2(bg2e::base::PlatformTools::assetPath(), "armchair.bg2"));
         auto armchairNode = new bg2e::scene::Node("Armchair");
@@ -207,7 +201,8 @@ protected:
         uint32_t submesh = 0;
         for (auto & m : armchairData->materials)
         {
-            drawable->setMaterial(m, submesh++);
+            drawable->setMaterial(m, submesh);
+            submesh++;
         }
         drawable->load(_engine);
         armchairNode->addComponent(new bg2e::scene::DrawableComponent(drawable));

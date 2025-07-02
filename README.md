@@ -47,7 +47,7 @@ $ git submodule update --init
 If you want to update the submodule, you can run:
 
 ```sh
-$ git submodule update --remoate
+$ git submodule update --remote
 ```
 
 ## Configuration
