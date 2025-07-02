@@ -117,9 +117,9 @@ vec3 calcAmbientLight(
     float ambientOcclussion
 ) {
     vec3 R = reflect(-viewDir, normal);
-    
-    vec3 F = fresnelSchlickRoughness(max(dot(normal, viewDir), 0.0), F0, roughness);
 
+    vec3 F = fresnelSchlickRoughness(max(dot(normal, viewDir), 0.0), F0, roughness);
+    
     vec3 Ks = F;
     vec3 Kd = 1.0 - Ks;
     Kd *= 1.0 - metallic;

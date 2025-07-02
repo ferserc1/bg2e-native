@@ -50,8 +50,8 @@ void main() {
     if (coord.x >= size.x || coord.y >= size.y) return;
 
     vec2 uv = vec2(coord) / vec2(size);
-    float NdotV = clamp(uv.x, 0.001, 0.999);
-    float roughness = clamp(uv.y, 0.001, 0.99);
+    float NdotV = clamp(uv.x, 0.0, 1.0);
+    float roughness = clamp(uv.y, 0.0, 1.0);
 
     vec3 V = vec3(sqrt(1.0 - NdotV * NdotV), 0.0, NdotV);
     vec3 N = vec3(0.0, 0.0, 1.0);

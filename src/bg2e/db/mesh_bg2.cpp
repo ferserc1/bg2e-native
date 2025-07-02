@@ -328,8 +328,9 @@ Bg2Mesh * loadMeshBg2(const std::filesystem::path& filePath)
             auto i2 = index * 2;
             auto position = glm::vec3 { plist.positions[i3], plist.positions[i3 + 1], plist.positions[i3 + 2] };
             auto normal = glm::vec3 { plist.normals[i3], plist.normals[i3 + 1], plist.normals[i3 + 2] };
-            auto t0 = glm::vec2 { plist.texCoord0[i2], plist.texCoord0[i2 + 1] };
-            auto t1 = glm::vec2 { plist.texCoord1[i2], plist.texCoord1[i2 + 1] };
+            // Important: flip Y UV coord
+            auto t0 = glm::vec2 { plist.texCoord0[i2], 1.0 - plist.texCoord0[i2 + 1] };
+            auto t1 = glm::vec2 { plist.texCoord1[i2], 1.0 - plist.texCoord1[i2 + 1] };
             result->mesh->vertices.push_back({ position, normal, t0, t1, glm::vec3(0.0) });
             result->mesh->indices.push_back(currentIndex);
             ++currentIndex;

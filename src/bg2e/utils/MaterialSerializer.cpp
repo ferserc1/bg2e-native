@@ -34,67 +34,74 @@ bool parseMaterial(
     // Create an utility function to access json object properties that
     // returns a null Json node if the property does not exist
     
-    result.setName(mat["name"]->stringValue(""));
-    result.setGroupName(mat["groupName"]->stringValue(""));
+    if (mat["name"])
+    {
+        result.setName(mat["name"]->stringValue(""));
+    }
+    if (mat["groupName"])
+    {
+        result.setGroupName(mat["groupName"]->stringValue(""));
+    }
+    
     
     // Albedo
-    if (mat["diffuse"]->isVec4())
+    if (mat["diffuse"] && mat["diffuse"]->isVec4())
     {
         result.setAlbedo(mat["diffuse"]->vec4Value());
     }
-    else if (mat["diffuse"]->isVec3())
+    else if (mat["diffuse"] && mat["diffuse"]->isVec3())
     {
         result.setAlbedo(mat["diffuse"]->vec3Value());
     }
-    else if (mat["diffuse"]->isString())
+    else if (mat["diffuse"] && mat["diffuse"]->isString())
     { 
         result.setAlbedo(getTexture(basePath, mat["diffuse"]->stringValue()));
-        result.setAlbedoScale(mat["diffuseScale"]->vec2Value({ 1, 1 }));
-        result.setAlbedoUVSet(mat["diffuseUV"]->numberValue(0));
+        result.setAlbedoScale(mat["diffuseScale"] ? mat["diffuseScale"]->vec2Value({ 1, 1 }) : std::array<float, 2>{ 1.0f, 1.0f });
+        result.setAlbedoUVSet(mat["diffuseUV"] ? mat["diffuseUV"]->numberValue(0) : 0);
     }
     
     // Metalness
-    if (mat["metallic"]->isNumber())
+    if (mat["metallic"] && mat["metallic"]->isNumber())
     {
         result.setMetalness(mat["metallic"]->numberValue(0.0f));
     }
-    else if (mat["metallic"]->isString())
+    else if (mat["metallic"] && mat["metallic"]->isString())
     {
         result.setMetalness(getTexture(basePath, mat["metallic"]->stringValue()));
-        result.setMetalnessChannel(mat["metallicChannel"]->numberValue(0));
-        result.setMetalnessScale(mat["metallicScale"]->vec2Value({ 1, 1 }));
-        result.setMetalnessUVSet(mat["metallicUV"]->numberValue(0));
+        result.setMetalnessChannel(mat["metallicChannel"] ? mat["metallicChannel"]->numberValue(0) : 0);
+        result.setMetalnessScale(mat["metallicScale"] ? mat["metallicScale"]->vec2Value({ 1, 1 }) : std::array<float, 2>{ 1.0f, 1.0f });
+        result.setMetalnessUVSet(mat["metallicUV"] ? mat["metallicUV"]->numberValue(0) : 0);
     }
     
     // Roughness
-    if (mat["roughness"]->isNumber())
+    if (mat["roughness"] && mat["roughness"]->isNumber())
     {
         result.setRoughness(mat["roughness"]->numberValue(1.0f));
     }
-    else if (mat["roughness"]->isString())
+    else if (mat["roughness"] && mat["roughness"]->isString())
     {
         result.setRoughness(getTexture(basePath, mat["roughness"]->stringValue()));
-        result.setRoughnessChannel(mat["roughnessChannel"]->numberValue(0));
-        result.setRoughnessScale(mat["roughnessScale"]->vec2Value({ 1, 1 }));
-        result.setRoughnessUVSet(mat["roughnessUV"]->numberValue(0));
+        result.setRoughnessChannel(mat["roughnessChannel"] ? mat["roughnessChannel"]->numberValue(0) : 0);
+        result.setRoughnessScale(mat["roughnessScale"] ? mat["roughnessScale"]->vec2Value({ 1, 1 }) : std::array<float, 2>{ 1.0f, 1.0f });
+        result.setRoughnessUVSet(mat["roughnessUV"] ? mat["roughnessUV"]->numberValue(0) : 0);
     }
     
     // Normal
-    if (mat["normal"]->isString())
+    if (mat["normal"] && mat["normal"]->isString())
     {
         result.setNormalTexture(getTexture(basePath, mat["normal"]->stringValue()));
-        result.setNormalScale(mat["normalScale"]->vec2Value({ 1, 1 }));
-        result.setNormalUVSet(mat["normalUV"]->numberValue(0));
+        result.setNormalScale(mat["normalScale"] ? mat["normalScale"]->vec2Value({ 1, 1 }) : std::array<float, 2>{ 1.0f, 1.0f });
+        result.setNormalUVSet(mat["normalUV"] ? mat["normalUV"]->numberValue(0) : 0);
     }
     
     // Ambient Occlussion
-//    if (mat["ambientOcclussion"]->isString())
-//    {
-//        result.setAoTexture(getTexture(basePath, mat["ambientOcclussion"]->stringValue()));
-//        result.setAoScale(mat["ambientOcclussionScale"]->vec2Value({ 1, 1 }));
-//        result.setAoChannel(mat["ambientOcclussionChannel"]->numberValue(0));
-//        result.setAoUVSet(mat["ambientOcclussionUV"]->numberValue(0));
-//    }
+    if (mat["ambientOcclussion"] && mat["ambientOcclussion"]->isString())
+    {
+        result.setAoTexture(getTexture(basePath, mat["ambientOcclussion"]->stringValue()));
+        result.setAoScale(mat["ambientOcclussionScale"] ? mat["ambientOcclussionScale"]->vec2Value({ 1, 1 }) : std::array<float, 2>{ 1.0f, 1.0f });
+        result.setAoChannel(mat["ambientOcclussionChannel"] ? mat["ambientOcclussionChannel"]->numberValue(0) : 0);
+        result.setAoUVSet(mat["ambientOcclussionUV"] ? mat["ambientOcclussionUV"]->numberValue(1) : 1);
+    }
     
     return true;
 }

@@ -205,6 +205,7 @@ protected:
             submesh++;
         }
         drawable->load(_engine);
+        drawable->updateMaterials();
         armchairNode->addComponent(new bg2e::scene::DrawableComponent(drawable));
         sceneRoot->addChild(armchairNode);
         

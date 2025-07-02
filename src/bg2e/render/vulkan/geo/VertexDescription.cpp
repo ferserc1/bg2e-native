@@ -329,7 +329,7 @@ std::vector<VkVertexInputAttributeDescription> attributeDescriptionsPNUUT()
     desc[3].binding = 0;
     desc[3].location = 3;
     desc[3].format = VK_FORMAT_R32G32_SFLOAT;
-    desc[3].offset = offsetof(VertexPNUUT, texCoord0);
+    desc[3].offset = offsetof(VertexPNUUT, texCoord1);
 
     desc[4].binding = 0;
     desc[4].location = 4;

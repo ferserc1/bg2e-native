@@ -47,7 +47,7 @@ void main()
     float metallic = sampleMetallic(metallicTex, inUV0, inUV1, mat);
     float roughness = sampleRoughness(roughnessTex, inUV0, inUV1, mat);
     float ambientOcclussion = sampleAmbientOcclussion(aoTex, inUV0, inUV1, mat);
-    vec3 normal = sampleNormal(normalTex, inUV0, inUV1, mat, inTBN);
+    vec3 normal = sampleNormal(normalTex, inUV0, inUV1, mat, inTBN);    
 
     vec3 viewDir = normalize(inViewPos - inFragPos);
     vec3 F0 = calcF0(albedo, mat);
