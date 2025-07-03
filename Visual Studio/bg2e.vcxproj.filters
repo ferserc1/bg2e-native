@@ -555,6 +555,12 @@
     <ClInclude Include="..\include\bg2e\scene\LightComponent.hpp">
       <Filter>Header Files\bg2e\scene</Filter>
     </ClInclude>
+    <ClInclude Include="..\include\bg2e\db\mesh_bg2.hpp">
+      <Filter>Header Files\bg2e\db</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\utils\MaterialSerializer.hpp">
+      <Filter>Header Files\bg2e\utils</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\bg2e\app\MainLoop.cpp">
@@ -865,6 +871,12 @@
     </ClCompile>
     <ClCompile Include="..\src\bg2e\scene\LightComponent.cpp">
       <Filter>Source Files\scene</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\bg2e\db\mesh_bg2.cpp">
+      <Filter>Source Files\db</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\bg2e\utils\MaterialSerializer.cpp">
+      <Filter>Source Files\utils</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

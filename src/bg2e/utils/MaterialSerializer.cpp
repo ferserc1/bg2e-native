@@ -10,7 +10,7 @@ base::Texture * getTexture(const std::filesystem::path& basePath, const std::str
 {
     auto fullPath = std::filesystem::path(basePath).append(file);
     auto texture = new base::Texture();
-    texture->setImageFilePath(fullPath);
+    texture->setImageFilePath(fullPath.string());
     texture->setMagFilter(base::Texture::FilterLinear);
     texture->setMinFilter(base::Texture::FilterLinear);
     texture->setUseMipmaps(true);

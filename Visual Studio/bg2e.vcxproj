@@ -46,6 +46,7 @@
     <ClInclude Include="..\include\bg2e\common.hpp" />
     <ClInclude Include="..\include\bg2e\db\all.hpp" />
     <ClInclude Include="..\include\bg2e\db\image.hpp" />
+    <ClInclude Include="..\include\bg2e\db\mesh_bg2.hpp" />
     <ClInclude Include="..\include\bg2e\db\mesh_obj.hpp" />
     <ClInclude Include="..\include\bg2e\geo\all.hpp" />
     <ClInclude Include="..\include\bg2e\geo\cone.hpp" />
@@ -146,6 +147,7 @@
     <ClInclude Include="..\include\bg2e\ui\UserInterfaceDelegate.hpp" />
     <ClInclude Include="..\include\bg2e\ui\Window.hpp" />
     <ClInclude Include="..\include\bg2e\utils\all.hpp" />
+    <ClInclude Include="..\include\bg2e\utils\MaterialSerializer.hpp" />
     <ClInclude Include="..\include\bg2e\utils\TextureCache.hpp" />
     <ClInclude Include="..\include\bg2e\utils\utils.hpp" />
     <ClInclude Include="..\third_party\imgui\imconfig.h" />
@@ -189,6 +191,7 @@
     <ClCompile Include="..\src\bg2e\base\MaterialAttributes.cpp" />
     <ClCompile Include="..\src\bg2e\base\PlatformTools.cpp" />
     <ClCompile Include="..\src\bg2e\db\image_db.cpp" />
+    <ClCompile Include="..\src\bg2e\db\mesh_bg2.cpp" />
     <ClCompile Include="..\src\bg2e\db\mesh_obj_db.cpp" />
     <ClCompile Include="..\src\bg2e\geo\cone.cpp" />
     <ClCompile Include="..\src\bg2e\geo\cube.cpp" />
@@ -261,6 +264,7 @@
     <ClCompile Include="..\src\bg2e\ui\UserInterface.cpp" />
     <ClCompile Include="..\src\bg2e\ui\UserInterfaceDelegate.cpp" />
     <ClCompile Include="..\src\bg2e\ui\Window.cpp" />
+    <ClCompile Include="..\src\bg2e\utils\MaterialSerializer.cpp" />
     <ClCompile Include="..\src\bg2e\utils\TextureCache.cpp" />
     <ClCompile Include="..\src\bg2e\utils\utils.cpp" />
     <ClCompile Include="..\third_party\imgui\imgui.cpp" />

@@ -9,6 +9,7 @@
 #include <glm/vec2.hpp>
 
 #include <memory>
+#include <array>
 
 namespace bg2e {
 namespace base {
@@ -20,8 +21,8 @@ public:
     
     inline const Color & albedo() const { return _albedo; }
     inline void setAlbedo(const Color & c) { _albedo = c; }
-    inline void setAlbedo(const std::array<float, 3>& s) { _albedo = {s[0], s[1], s[3], 1.0f }; }
-    inline void setAlbedo(const std::array<float, 4>& s) { _albedo = {s[0], s[1], s[3], s[3]}; }
+    inline void setAlbedo(const std::array<float, 3>& s) { _albedo = base::Color{ s.at(0), s.at(1), s.at(2), 1.0f }; }
+    inline void setAlbedo(const std::array<float, 4>& s) { _albedo = base::Color{ s.at(0), s.at(1), s.at(2), s.at(3)}; }
     
     inline std::shared_ptr<Texture> albedoTexture() const { return _albedoTexture; }
     inline void setAlbedo(Texture * t) { setAlbedo(std::shared_ptr<Texture>(t)); }
