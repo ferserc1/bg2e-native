@@ -43,7 +43,7 @@ layout(set = 2, binding = 3) uniform EnvironmentData {
 void main()
 {
     PBRMaterialData mat = objectData.material;
-    vec3 albedo = sampleAlbedo(albedoTex, inUV0, inUV1, mat, pushConstant.gamma).rgb;
+    vec3 albedo = sampleAlbedo(albedoTex, inUV0, inUV1, mat, 2.2).rgb;
     float metallic = sampleMetallic(metallicTex, inUV0, inUV1, mat);
     float roughness = sampleRoughness(roughnessTex, inUV0, inUV1, mat);
     float ambientOcclussion = sampleAmbientOcclussion(aoTex, inUV0, inUV1, mat);
@@ -68,5 +68,6 @@ void main()
 
     vec3 color = ambient + Lo;
 
+    color = color / (color + vec3(1.0));
     outColor = lineal2SRGB(vec4(color, 1.0), pushConstant.gamma);
 }

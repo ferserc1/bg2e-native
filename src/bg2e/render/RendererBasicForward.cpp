@@ -158,7 +158,7 @@ void RendererBasicForward::draw(
     #if BG2E_IS_MAC
         .gamma = 2.2f // Default gamma value, can be changed later
     #else
-        .gamma = 1.1f
+        .gamma = 1.0f
     #endif
     };
     vkCmdPushConstants(
