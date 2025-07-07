@@ -12,6 +12,8 @@ void main()
     vec3 color = texture(skybox, inNormal).rgb;
     // HDR tone mapping
     color = color / (color + vec3(1.0));
+    // to SRGB
+    color = pow(color, vec3(1.0 / 1.0));
     
     outColor = vec4(color, 1.0);
 }

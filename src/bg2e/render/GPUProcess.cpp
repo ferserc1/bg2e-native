@@ -122,8 +122,8 @@ void GPUProcess::executeShader(const std::string& shaderFile, VkExtent2D imageEx
         
         vkCmdDispatch(
             cmd,
-            std::ceil(static_cast<uint32_t>(imageExtent.width / 16.0f)),
-            std::ceil(static_cast<uint32_t>(imageExtent.height / 16.0f)),
+            static_cast<uint32_t>(std::ceil(imageExtent.width / 16)),
+            static_cast<uint32_t>(std::ceil(imageExtent.height / 16)),
             1
         );
         

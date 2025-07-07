@@ -39,7 +39,7 @@ VkDescriptorSet EnvironmentDataBinding::newDescriptorSet(
     }
     
     EnvironmentUniforms envUniforms;
-    envUniforms.maxEnvMapLod = environmentResources->specularReflectionMapImage()->mipLevels();
+    envUniforms.maxEnvMapLod = static_cast<float>(environmentResources->specularReflectionMapImage()->mipLevels());
     auto uniformBuffer = bg2e::render::vulkan::macros::createBuffer(_engine, frameResources, envUniforms);
 
     auto ds = frameResources.newDescriptorSet(_layout);
