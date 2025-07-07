@@ -82,6 +82,7 @@
 		ED8688442CDAAB3400A71ADC /* stb_image.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = stb_image.h; sourceTree = "<group>"; };
 		ED8688462CDAAB3400A71ADC /* tiny_obj_loader.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = tiny_obj_loader.h; sourceTree = "<group>"; };
 		ED86884F2CDAAB7300A71ADC /* CoreFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreFoundation.framework; path = System/Library/Frameworks/CoreFoundation.framework; sourceTree = SDKROOT; };
+		ED8C95092E1C1B02002EE991 /* bg2-io.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = "bg2-io.xcodeproj"; sourceTree = "<group>"; };
 		ED9AEBF12E10534600728D8B /* bg2-io.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = "bg2-io.xcodeproj"; sourceTree = "<group>"; };
 		ED9D8BE42E1300530096E466 /* bg2-io.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = "bg2-io.xcodeproj"; sourceTree = "<group>"; };
 		EDAE2B432E1BCE2100BBE76E /* bg2-io.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = "bg2-io.xcodeproj"; sourceTree = "<group>"; };
@@ -393,6 +394,13 @@
 			path = ../third_party;
 			sourceTree = SOURCE_ROOT;
 		};
+		ED8C950D2E1C1B02002EE991 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
 		ED9AEBF62E10534600728D8B /* Products */ = {
 			isa = PBXGroup;
 			children = (
@@ -511,6 +519,10 @@
 				{
 					ProductGroup = ED1106422E15191500F37999 /* Products */;
 					ProjectRef = ED11063E2E15191500F37999 /* bg2-io.xcodeproj */;
+				},
+				{
+					ProductGroup = ED8C950D2E1C1B02002EE991 /* Products */;
+					ProjectRef = ED8C95092E1C1B02002EE991 /* bg2-io.xcodeproj */;
 				},
 				{
 					ProductGroup = EDAE2B472E1BCE2100BBE76E /* Products */;
