@@ -19,9 +19,8 @@ void main()
     const float PI = 3.14159265359;
     vec3 normal = normalize(fragNormal);
     vec3 irradiance = vec3(0.0);
+    vec3 maxRange = vec3(40.0);
     
-    float gamma = 1.5;
-
     vec3 up = vec3(0.0, 1.0, 0.0);
     vec3 right = cross(up, normal);
     up = cross(normal,right);
@@ -37,7 +36,7 @@ void main()
             // tangent space to world space
             vec3 sampleVec = tangentSample.x * right + tangentSample.y * up + tangentSample.z * normal;
 
-            irradiance += texture(skyTexture, sampleVec).rgb * cos(theta) * sin(theta);
+            irradiance += clamp(texture(skyTexture, sampleVec).rgb, vec3(0.0), maxRange) * cos(theta) * sin(theta);
             nrSamples++;
         }
     }

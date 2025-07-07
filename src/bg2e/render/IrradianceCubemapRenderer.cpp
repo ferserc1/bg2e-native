@@ -21,10 +21,10 @@ void IrradianceCubemapRenderer::build(
         inputCubemap,
         "cubemap_renderer.vert.spv",
         "irradiance_map_renderer.frag.spv",
-        { 16, 16 },
+        { 64, 64 },
         false,
         1,
-        VK_FORMAT_R32G32B32A32_SFLOAT
+        VK_FORMAT_R16G16B16A16_SFLOAT
     );
 }
 

@@ -8,6 +8,12 @@ layout (set = 0, binding = 1) uniform samplerCube skybox;
 
 void main()
 {
-    float gamma = 1.5;
-    outColor = texture(skybox, inNormal);
+    
+    vec3 color = texture(skybox, inNormal).rgb;
+    // HDR tone mapping
+    color = color / (color + vec3(1.0));
+    // to SRGB
+    color = pow(color, vec3(1.0 / 2.2));
+    
+    outColor = vec4(color, 1.0);
 }

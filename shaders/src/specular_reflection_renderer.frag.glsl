@@ -55,8 +55,8 @@ vec3 importanceSampleGGX(vec2 Xi, vec3 N, float roughness) {
 
 void main()
 {
-    float gamma = 1.5;
     int sampleCount = 512;
+    vec3 maxRange = vec3(2.0);
 
     vec3 N = normalize(inNormal);
     vec3 R = N;
@@ -67,7 +67,7 @@ void main()
     float roughness = float(inCurrentMipLevel) / float(inTotalMipLevels - 1);
     if (roughness < 0.01)
     {
-        prefilteredColor = texture(skyTexture, inNormal).rgb;
+        prefilteredColor = clamp(texture(skyTexture, inNormal).rgb, vec3(0.0), maxRange);
     }
     else {
         for (int i = 0; i < sampleCount; ++i)
@@ -79,7 +79,7 @@ void main()
             float NdotL = max(dot(N,L), 0.0);
             if (NdotL > 0.0)
             {
-                prefilteredColor += texture(skyTexture, L).rgb * NdotL;
+                prefilteredColor += clamp(texture(skyTexture, L).rgb, vec3(0.0), maxRange) * NdotL;
                 totalWeight += NdotL;
             }
         }

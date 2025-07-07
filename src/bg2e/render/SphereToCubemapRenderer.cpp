@@ -171,17 +171,12 @@ void SphereToCubemapRenderer::update(VkCommandBuffer commandBuffer, vulkan::Fram
         vulkan::macros::cmdSetDefaultViewportAndScissor(commandBuffer, _cubeMapImage->extent2D());
         
         RenderSpherePushConstant pushConstants = {
-            .currentFace = i,
-        #if BG2E_IS_MAC
-            .gamma = _skyTexture->colorType() == base::Color::TypeSRGB ? 2.2f : 1.0f
-        #else
-            .gamma = 1.0f
-        #endif
+            .currentFace = i
         };
         vkCmdPushConstants(
             commandBuffer,
             _pipelineLayout,
-            VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+            VK_SHADER_STAGE_VERTEX_BIT,
             0,
             sizeof(RenderSpherePushConstant),
             &pushConstants
@@ -274,7 +269,7 @@ void SphereToCubemapRenderer::initPipeline(const std::string& vshaderFile, const
     layoutFactory.addPushConstantRange(
         0,
         sizeof(RenderSpherePushConstant),
-        VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT
+        VK_SHADER_STAGE_VERTEX_BIT
     );
     layoutFactory.addDescriptorSetLayout(_dsLayout);
     _pipelineLayout = layoutFactory.build();
