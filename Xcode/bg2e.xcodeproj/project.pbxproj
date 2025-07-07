@@ -84,6 +84,7 @@
 		ED86884F2CDAAB7300A71ADC /* CoreFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreFoundation.framework; path = System/Library/Frameworks/CoreFoundation.framework; sourceTree = SDKROOT; };
 		ED9AEBF12E10534600728D8B /* bg2-io.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = "bg2-io.xcodeproj"; sourceTree = "<group>"; };
 		ED9D8BE42E1300530096E466 /* bg2-io.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = "bg2-io.xcodeproj"; sourceTree = "<group>"; };
+		EDAE2B432E1BCE2100BBE76E /* bg2-io.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = "bg2-io.xcodeproj"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -117,6 +118,7 @@
 				ao.jpg,
 				armchair.bg2,
 				autumn_field_4k.hdr,
+				black.jpg,
 				Copyright.txt,
 				country_field_sun.jpg,
 				"equirectangular-env.jpg",
@@ -405,6 +407,13 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
+		EDAE2B472E1BCE2100BBE76E /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXHeadersBuildPhase section */
@@ -502,6 +511,10 @@
 				{
 					ProductGroup = ED1106422E15191500F37999 /* Products */;
 					ProjectRef = ED11063E2E15191500F37999 /* bg2-io.xcodeproj */;
+				},
+				{
+					ProductGroup = EDAE2B472E1BCE2100BBE76E /* Products */;
+					ProjectRef = EDAE2B432E1BCE2100BBE76E /* bg2-io.xcodeproj */;
 				},
 				{
 					ProductGroup = ED110A5B2E15194400F37999 /* Products */;
