@@ -40,6 +40,9 @@ public:
     virtual void mouseWheel(int deltaX, int deltaY) {}
     virtual void keyDown(const app::KeyEvent& event) {}
     virtual void keyUp(const app::KeyEvent& event) {}
+    
+    virtual void deserialize(const std::string& jsonData, const std::string& basePath) {}
+    virtual std::string setialize() { return ""; }
 
 protected:
 
