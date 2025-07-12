@@ -11,6 +11,8 @@ namespace scene {
 
 class BG2E_API LightComponent : public Component {
 public:
+    static std::string componentName() { return "Light"; }
+    
     LightComponent() = default;
     virtual ~LightComponent() = default;
     

@@ -8,6 +8,8 @@ namespace scene {
 
 class BG2E_API TransformComponent : public Component {
 public:
+    static std::string componentName() { return "Transform"; }
+    
     static TransformComponent * makeTranslated(float x, float y, float z);
     static TransformComponent * makeRotated(float alpha, float x, float y, float z);
     static TransformComponent * makeScaled(float xyz);

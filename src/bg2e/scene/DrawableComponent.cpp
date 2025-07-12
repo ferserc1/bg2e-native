@@ -1,6 +1,7 @@
 //
 //  DrawableComponent.cpp
 #include <bg2e/scene/DrawableComponent.hpp>
+#include <bg2e/scene/ComponentFactoryRegistry.hpp>
 
 #include <iostream>
 
@@ -30,4 +31,7 @@ void DrawableComponent::draw(
         drawable->draw(cmd, layout, cb, bp);
     }
 }
+
+BG2E_SCENE_REGISTER_COMPONENT(DrawableComponent);
+
 }

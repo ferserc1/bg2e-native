@@ -10,6 +10,8 @@ namespace scene {
 
 class BG2E_API CameraComponent : public Component {
 public:
+    static std::string componentName() { return "Camera"; }
+    
     CameraComponent();
     virtual ~CameraComponent();
     

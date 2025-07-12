@@ -13,6 +13,8 @@ namespace scene {
 
 class BG2E_API EnvironmentComponent : public Component {
 public:
+    static std::string componentName() { return "Environment"; }
+
     EnvironmentComponent();
     EnvironmentComponent(const std::string& img);
     EnvironmentComponent(const std::filesystem::path& resourcePath, const std::string& file);
