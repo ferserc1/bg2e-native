@@ -43,6 +43,10 @@ public:
     
     glm::mat4 worldMatrix();
     glm::mat4 invertedWorldMatrix();
+    
+    void deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path& basePath) override;
+    std::shared_ptr<json::JsonNode> serialize(const std::filesystem::path& basePath) override;
+    
 
 protected:
     glm::mat4 _matrix = glm::mat4(1.0f); // Identity matrix by default

@@ -16,4 +16,19 @@ std::string componentName(Component * component)
     return typeid(*component).name();
 }
 
+void Component::deserialize(
+    std::shared_ptr<json::JsonNode> jsonData,
+    const std::filesystem::path& basePath
+) {
+
+}
+
+std::shared_ptr<json::JsonNode> Component::serialize(const std::filesystem::path& basePath)
+{
+    using namespace bg2e::json;
+    return JSON(JsonObject{
+        { "type", JSON(typeName()) }
+    });
+}
+
 }

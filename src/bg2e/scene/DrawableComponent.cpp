@@ -2,6 +2,7 @@
 //  DrawableComponent.cpp
 #include <bg2e/scene/DrawableComponent.hpp>
 #include <bg2e/scene/ComponentFactoryRegistry.hpp>
+#include <bg2e/utils/utils.hpp>
 
 #include <iostream>
 
@@ -32,6 +33,36 @@ void DrawableComponent::draw(
     }
 }
 
+void DrawableComponent::deserialize(
+    std::shared_ptr<json::JsonNode> jsonData,
+    const std::filesystem::path& basePath
+) {
+
+}
+
+std::shared_ptr<json::JsonNode> DrawableComponent::serialize(const std::filesystem::path& basePath)
+{
+    using namespace bg2e::json;
+    auto compData = Component::serialize(basePath);
+    JsonObject & obj = compData->objectValue();
+    
+
+    if (_drawable->name() == "")
+    {
+        _drawable->setName(utils::uniqueId());
+    }
+    
+    obj["name"] = JSON(_drawable->name());
+    
+    // TODO: save file
+    auto filePath = basePath;
+    filePath.append(_drawable->name());
+    filePath.replace_extension(".bg2");
+    
+    
+    return compData;
+}
+    
 BG2E_SCENE_REGISTER_COMPONENT(DrawableComponent);
 
 }

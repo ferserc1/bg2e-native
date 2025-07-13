@@ -29,6 +29,9 @@ public:
         VkPipelineBindPoint bp = VK_PIPELINE_BIND_POINT_GRAPHICS
     );
     
+    void deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path& basePath) override;
+    std::shared_ptr<json::JsonNode> serialize(const std::filesystem::path& basePath) override;
+    
 protected:
     std::shared_ptr<DrawableBase> _drawable;
 };

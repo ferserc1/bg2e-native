@@ -64,6 +64,26 @@ JsonNode::JsonNode(bool p) {
     setValue(p);
 }
 
+JsonNode::JsonNode(const glm::vec2 & p) {
+    setValue(p);
+}
+
+JsonNode::JsonNode(const glm::vec3 & p) {
+    setValue(p);
+}
+
+JsonNode::JsonNode(const glm::vec4 & p) {
+    setValue(p);
+}
+
+JsonNode::JsonNode(const glm::mat3 & p) {
+    setValue(p);
+}
+
+JsonNode::JsonNode(const glm::mat4 & p) {
+    setValue(p);
+}
+
 JsonNode::~JsonNode() {
 }
 
@@ -190,6 +210,31 @@ std::shared_ptr<JsonNode> JSON(double p)
 }
 
 std::shared_ptr<JsonNode> JSON(bool p)
+{
+    return std::make_shared<JsonNode>(p);
+}
+
+std::shared_ptr<JsonNode> JSON(const glm::vec2 & p)
+{
+    return std::make_shared<JsonNode>(p);
+}
+
+std::shared_ptr<JsonNode> JSON(const glm::vec3 & p)
+{
+    return std::make_shared<JsonNode>(p);
+}
+
+std::shared_ptr<JsonNode> JSON(const glm::vec4 & p)
+{
+    return std::make_shared<JsonNode>(p);
+}
+
+std::shared_ptr<JsonNode> JSON(const glm::mat3 & p)
+{
+    return std::make_shared<JsonNode>(p);
+}
+
+std::shared_ptr<JsonNode> JSON(const glm::mat4 & p)
 {
     return std::make_shared<JsonNode>(p);
 }

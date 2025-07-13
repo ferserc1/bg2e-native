@@ -1,6 +1,7 @@
 #pragma once
 
 #include <bg2e/common.hpp>
+#include <bg2e/math/base.hpp>
 
 #include <string>
 #include <map>
@@ -54,6 +55,12 @@ public:
     JsonNode(float);
     JsonNode(double);
     JsonNode(bool);
+    JsonNode(const glm::vec2&);
+    JsonNode(const glm::vec3&);
+    JsonNode(const glm::vec4&);
+    JsonNode(const glm::mat3&);
+    JsonNode(const glm::mat4&);
+    
     virtual ~JsonNode();
 
     JsonNode& getNullValue()
@@ -420,6 +427,70 @@ public:
         type = Type::Bool;
     }
     
+    void setValue(const glm::vec2 & v) {
+        type = Type::List;
+        _listValue = JsonList {
+            std::make_shared<JsonNode>(v.x),
+            std::make_shared<JsonNode>(v.y)
+        };
+    }
+    
+    void setValue(const glm::vec3 & v) {
+        type = Type::List;
+        _listValue = JsonList {
+            std::make_shared<JsonNode>(v.x),
+            std::make_shared<JsonNode>(v.y),
+            std::make_shared<JsonNode>(v.z)
+        };
+    }
+    
+    void setValue(const glm::vec4 & v) {
+        type = Type::List;
+        _listValue = JsonList {
+            std::make_shared<JsonNode>(v.x),
+            std::make_shared<JsonNode>(v.y),
+            std::make_shared<JsonNode>(v.z),
+            std::make_shared<JsonNode>(v.w)
+        };
+    }
+    
+    void setValue(const glm::mat3 & m) {
+        type = Type::List;
+        _listValue = JsonList {
+            std::make_shared<JsonNode>(m[0].x),
+            std::make_shared<JsonNode>(m[0].y),
+            std::make_shared<JsonNode>(m[0].z),
+            std::make_shared<JsonNode>(m[1].x),
+            std::make_shared<JsonNode>(m[1].y),
+            std::make_shared<JsonNode>(m[1].z),
+            std::make_shared<JsonNode>(m[2].x),
+            std::make_shared<JsonNode>(m[2].y),
+            std::make_shared<JsonNode>(m[2].z)
+        };
+    }
+    
+    void setValue(const glm::mat4 & m) {
+        type = Type::List;
+        _listValue = JsonList {
+            std::make_shared<JsonNode>(m[0].x),
+            std::make_shared<JsonNode>(m[0].y),
+            std::make_shared<JsonNode>(m[0].z),
+            std::make_shared<JsonNode>(m[0].w),
+            std::make_shared<JsonNode>(m[1].x),
+            std::make_shared<JsonNode>(m[1].y),
+            std::make_shared<JsonNode>(m[1].z),
+            std::make_shared<JsonNode>(m[1].w),
+            std::make_shared<JsonNode>(m[2].x),
+            std::make_shared<JsonNode>(m[2].y),
+            std::make_shared<JsonNode>(m[2].z),
+            std::make_shared<JsonNode>(m[2].w),
+            std::make_shared<JsonNode>(m[3].x),
+            std::make_shared<JsonNode>(m[3].y),
+            std::make_shared<JsonNode>(m[3].z),
+            std::make_shared<JsonNode>(m[3].w)
+        };
+    }
+    
     void setNull() {
         type = Type::Null;
     }
@@ -509,6 +580,11 @@ extern BG2E_API std::shared_ptr<JsonNode> JSON(int32_t p);
 extern BG2E_API std::shared_ptr<JsonNode> JSON(float p);
 extern BG2E_API std::shared_ptr<JsonNode> JSON(double p);
 extern BG2E_API std::shared_ptr<JsonNode> JSON(bool p);
+extern BG2E_API std::shared_ptr<JsonNode> JSON(const glm::vec2 & p);
+extern BG2E_API std::shared_ptr<JsonNode> JSON(const glm::vec3 & p);
+extern BG2E_API std::shared_ptr<JsonNode> JSON(const glm::vec4 & p);
+extern BG2E_API std::shared_ptr<JsonNode> JSON(const glm::mat3 & p);
+extern BG2E_API std::shared_ptr<JsonNode> JSON(const glm::mat4 & p);
 
 }
 }

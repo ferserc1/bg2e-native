@@ -61,9 +61,20 @@ public:
         return _transform;
     }
     
+    inline const std::string& name() const
+    {
+        return _name;
+    }
+    
+    inline void setName(const std::string& name)
+    {
+        _name = name;
+    }
+    
 protected:
     // This transformation is applied to the whole mesh
     glm::mat4 _transform { 1.0f };
+    std::string _name;
 };
 
 template <typename MeshT, typename RenderMeshT>

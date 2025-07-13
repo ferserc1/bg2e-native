@@ -164,4 +164,41 @@ Node * Node::sceneRoot()
     return _parent->sceneRoot();
 }
 
+void Node::deserialize(std::shared_ptr<json::JsonNode>, const std::filesystem::path&)
+{
+
+}
+
+std::shared_ptr<json::JsonNode> Node::serialize(const std::filesystem::path & basePath)
+{
+    using namespace bg2e::json;
+    auto result = JSON(JsonObject{});
+    auto & obj = result->objectValue();
+    
+    obj["type"] = JSON("Node");
+    obj["name"] = JSON(name());
+    obj["enabled"] = JSON(enabled());
+    obj["steady"] = JSON(steady());
+    
+    // Serialize components
+    auto components = JSON(JsonList());
+    for (auto & comp : _components)
+    {
+        auto compData = comp.second->serialize(basePath);
+        components->listValue().push_back(compData);
+    }
+    obj["components"] = components;
+    
+    // Serialize children
+    auto children = JSON(JsonList());
+    for (auto & child : _children)
+    {
+        auto childData = child->serialize(basePath);
+        children->listValue().push_back(childData);
+    }
+    obj["children"] = children;
+    
+    return result;
+}
+    
 }

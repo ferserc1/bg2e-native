@@ -131,4 +131,21 @@ glm::mat4 TransformComponent::invertedWorldMatrix()
     return glm::inverse(worldMatrix());
 }
 
+void TransformComponent::deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path& basePath)
+{
+
+}
+
+std::shared_ptr<json::JsonNode> TransformComponent::serialize(const std::filesystem::path& basePath)
+{
+    using namespace bg2e::json;
+    auto compData = Component::serialize(basePath);
+    JsonObject & obj = compData->objectValue();
+    
+    obj["transformMatrix"] = JSON(_matrix);
+    
+    return compData;
+}
+    
+    
 }

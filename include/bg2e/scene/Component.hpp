@@ -8,6 +8,7 @@
 #include <bg2e/json/JsonNode.hpp>
 
 #include <string>
+#include <filesystem>
 
 #define BG2E_SCENE_COMP_CLASS_NAME(c) typeid(*c).name()
 
@@ -44,8 +45,8 @@ public:
     
     virtual std::string typeName() const = 0;
     
-    virtual void deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::string& basePath) {}
-    virtual std::shared_ptr<json::JsonNode> setialize() { return std::make_shared<json::JsonNode>(); }
+    virtual void deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path& basePath);
+    virtual std::shared_ptr<json::JsonNode> serialize(const std::filesystem::path& basePath);
 
 protected:
 

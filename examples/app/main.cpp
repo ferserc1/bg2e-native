@@ -561,6 +561,10 @@ protected:
         customSphereNode->addComponent(bg2e::scene::TransformComponent::makeTranslated(5.0f, 0.0f, 4.0f));
         customSphereNode->transform()->scale(3.0f);
         customSphereNode->addComponent(new bg2e::scene::DrawableComponent(customSphereDrawable));
+        
+        auto json = sceneRoot->serialize("./path/to/scene");
+        std::cout << json->toString() << std::endl;
+        
         sceneRoot->addChild(customSphereNode);
         
         _engine->cleanupManager().push([&](VkDevice) {
