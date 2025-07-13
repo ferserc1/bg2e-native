@@ -6,6 +6,8 @@
 
 class RotateCameraComponent : public bg2e::scene::Component {
 public:
+    BG2E_COMPONENT_TYPE_NAME("RotateCamera")
+    
     void update(float delta) override
     {
         auto transform = ownerNode()->transform();

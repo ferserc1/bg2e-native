@@ -71,13 +71,6 @@
 				specular_reflection_renderer.frag.spv,
 				sphere_to_cubemap.frag.spv,
 				sphere_to_cubemap.vert.spv,
-				test.frag.spv,
-				test.vert.spv,
-				texture_gi.frag.spv,
-				texture_gi.vert.spv,
-				texture.frag.spv,
-				texture.vert.spv,
-				vertbuffer.vert.spv,
 			);
 		};
 		ED9D98C32E13042C0096E466 /* Exceptions for "assets" folder in "Copy Assets" phase from "bg2_model_load" target */ = {

@@ -2,7 +2,7 @@
 //  MaterialSerializer.cpp
 
 #include <bg2e/utils/MaterialSerializer.hpp>
-#include <json-parser.hpp>
+#include <bg2e/json/JsonParser.hpp>
 
 namespace bg2e::utils {
 
@@ -18,7 +18,7 @@ base::Texture * getTexture(const std::filesystem::path& basePath, const std::str
 }
 
 bool parseMaterial(
-    bg2scene::json::JsonNode * node,
+    json::JsonNode * node,
     const std::filesystem::path& basePath,
     base::MaterialAttributes & result
 )
@@ -111,7 +111,7 @@ bool MaterialSerializer::deserializeMaterial(
     const std::filesystem::path& basePath,
     base::MaterialAttributes& result
 ) {
-    bg2scene::json::JsonParser parser(jsonString);
+    json::JsonParser parser(jsonString);
     auto jsonData = parser.parse();
     
     return parseMaterial(jsonData.get(), basePath, result);
@@ -122,7 +122,7 @@ bool MaterialSerializer::deserializeMaterialArray(
     const std::filesystem::path& basePath,
     std::vector<base::MaterialAttributes>& result
 ) {
-    bg2scene::json::JsonParser parser(jsonString);
+    json::JsonParser parser(jsonString);
     auto jsonData = parser.parse();
     if (!jsonData->isList())
     {

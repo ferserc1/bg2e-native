@@ -11,7 +11,7 @@ namespace scene {
 
 class BG2E_API DrawableComponent : public Component {
 public:
-    static std::string componentName() { return "Drawable"; }
+    BG2E_COMPONENT_TYPE_NAME("Drawable");
     
     DrawableComponent() = default;
     DrawableComponent(std::shared_ptr<DrawableBase> drw) :_drawable { drw } {}

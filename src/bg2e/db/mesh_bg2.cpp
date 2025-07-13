@@ -11,7 +11,6 @@
 #include <bg2e/utils/MaterialSerializer.hpp>
 
 #include <bg2-io.h>
-#include <json-parser.hpp>
 
 #include <fstream>
 

@@ -14,7 +14,7 @@ namespace scene {
 
 class BG2E_API ComponentFactoryRegistry {
 public:
-    using Creator = std::function<Component*(const std::string& jsonData, const std::filesystem::path&)>;
+    using Creator = std::function<Component*(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path&)>;
     
     static ComponentFactoryRegistry& get();
     
@@ -30,7 +30,7 @@ template <typename ComponentT>
 class RegisterComponent {
 public:
     RegisterComponent() {
-        ComponentFactoryRegistry::get().registerComponent(ComponentT::componentName(), [](const std::string& jsonData, const std::filesystem::path& path) {
+        ComponentFactoryRegistry::get().registerComponent(ComponentT::staticTypeName(), [](std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path& path) {
             auto result = new ComponentT();
             result->deserialize(jsonData, path);
             return result;

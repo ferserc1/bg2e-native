@@ -250,6 +250,8 @@
 
 class RotateCameraComponent : public bg2e::scene::Component {
 public:
+    BG2E_COMPONENT_TYPE_NAME("RotateCamera");
+    
     RotateCameraComponent() :_r{0.001f} {}
     RotateCameraComponent(float r) :_r{r} {}
     
@@ -269,6 +271,8 @@ protected:
 
 class CameraMouse : public bg2e::scene::Component {
 public:
+    BG2E_COMPONENT_TYPE_NAME("CameraMouse");
+    
     CameraMouse(bg2e::scene::Node * cameraNode) :_cameraNode(cameraNode) {}
     
     void update(float delta) override

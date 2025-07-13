@@ -5,6 +5,7 @@
 #include <bg2e/common.hpp>
 #include <bg2e/math/projections.hpp>
 #include <bg2e/app/KeyEvent.hpp>
+#include <bg2e/json/JsonNode.hpp>
 
 #include <string>
 
@@ -41,8 +42,10 @@ public:
     virtual void keyDown(const app::KeyEvent& event) {}
     virtual void keyUp(const app::KeyEvent& event) {}
     
-    virtual void deserialize(const std::string& jsonData, const std::string& basePath) {}
-    virtual std::string setialize() { return ""; }
+    virtual std::string typeName() const = 0;
+    
+    virtual void deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::string& basePath) {}
+    virtual std::shared_ptr<json::JsonNode> setialize() { return std::make_shared<json::JsonNode>(); }
 
 protected:
 
@@ -54,6 +57,10 @@ protected:
 };
 
 extern BG2E_API std::string componentName(Component * comp);
+
+#define BG2E_COMPONENT_TYPE_NAME(typeNameString) \
+    static std::string staticTypeName() { return typeNameString; } \
+    std::string typeName() const override { return typeNameString; }
 
 
 }
