@@ -1,6 +1,7 @@
 //
 //  ComponentFactoryRegistry.cpp
 #include <bg2e/scene/ComponentFactoryRegistry.hpp>
+#include <iostream>
 
 namespace bg2e::scene {
 
@@ -16,17 +17,22 @@ void ComponentFactoryRegistry::registerComponent(const std::string& componentNam
     _registry[componentName] = creator;
 }
 
-Component* ComponentFactoryRegistry::create(const std::string& jsonData, const std::filesystem::path&)
+Component* ComponentFactoryRegistry::create(std::shared_ptr<json::JsonNode> data, const std::filesystem::path& basePath)
 {
-    // TODO: Parse json data
-    // get component name from json data
-    // if (_registry[componentName] != _registry.end()) {
-    //      auto result = _registry[componentName]();
-    //      result->deserialize(jsonData);
-    //      return result;
-    // }
+    if (!data->isObject())
+    {
+        throw std::runtime_error("ComponentFactoryRegistry::create(): invalid JSON data. Expecting object");
+    }
+    
+    std::string componentType = data->stringValue();
+    if (_registry.find(componentType) == _registry.end()) {
+        std::cout << "WARN: component type not found: " << componentType << std::endl;
+        return nullptr;
+    }
+    
+    auto result = _registry[componentType](data, basePath);
 
-    return nullptr;
+    return result;
 }
 
 }

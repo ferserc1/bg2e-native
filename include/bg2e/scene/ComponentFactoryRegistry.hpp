@@ -20,7 +20,7 @@ public:
     
     void registerComponent(const std::string& componentName, Creator creator);
     
-    Component* create(const std::string& jsonData, const std::filesystem::path&);
+    Component* create(std::shared_ptr<json::JsonNode> data, const std::filesystem::path&);
 
 private:
     std::unordered_map<std::string, Creator> _registry;
