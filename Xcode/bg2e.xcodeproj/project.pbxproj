@@ -94,6 +94,7 @@
 		EDBFD8F52E24DA3300864579 /* UniformTypeIdentifiers.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UniformTypeIdentifiers.framework; path = System/Library/Frameworks/UniformTypeIdentifiers.framework; sourceTree = SDKROOT; };
 		EDBFDD042E24DBBA00864579 /* bg2-io.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = "bg2-io.xcodeproj"; sourceTree = "<group>"; };
 		EDBFDD852E24DE6D00864579 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		EDBFE1952E2520EE00864579 /* bg2-io.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = "bg2-io.xcodeproj"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -465,6 +466,13 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
+		EDBFE1992E2520EE00864579 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXHeadersBuildPhase section */
@@ -558,6 +566,10 @@
 				{
 					ProductGroup = ED9D8BE82E1300530096E466 /* Products */;
 					ProjectRef = ED9D8BE42E1300530096E466 /* bg2-io.xcodeproj */;
+				},
+				{
+					ProductGroup = EDBFE1992E2520EE00864579 /* Products */;
+					ProjectRef = EDBFE1952E2520EE00864579 /* bg2-io.xcodeproj */;
 				},
 				{
 					ProductGroup = EDAE2B472E1BCE2100BBE76E /* Products */;

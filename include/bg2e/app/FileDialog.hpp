@@ -20,6 +20,9 @@ public:
     std::filesystem::path openFile();
     
     std::filesystem::path saveFile();
+    
+    // TODO: Pass default selected folder
+    std::filesystem::path pickFolder();
 
     void setFilters(const FileFilters& filters);
     

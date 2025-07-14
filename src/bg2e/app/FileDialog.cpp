@@ -101,6 +101,26 @@ std::filesystem::path FileDialog::saveFile()
     delete [] filters;
     return result;
 }
+
+std::filesystem::path FileDialog::pickFolder()
+{
+    NFD::Guard nfdGuard;
+    
+    NFD::UniquePath outPath;
+    std::filesystem::path result;
+    
+    nfdresult_t nfdResult = NFD::PickFolder(outPath);
+    if (nfdResult == NFD_OKAY)
+    {
+        result = outPath.get();
+    }
+    else if (nfdResult != NFD_CANCEL)
+    {
+        throw std::runtime_error("Error picking directory: " + std::string(NFD::GetError()));
+    }
+    
+    return result;
+}
     
 void FileDialog::setFilters(const FileFilters& filters)
 {

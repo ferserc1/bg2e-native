@@ -411,10 +411,29 @@ public:
             {
                 bg2e::app::FileDialog fd;
                 fd.setFilters({
-                    { "bg2e 3D model", "bg2,vwglb" }
+                    { "bg2e Scene", "vitscnj,json" }
                 });
                 auto filePath = fd.saveFile();
                 std::cout << filePath << std::endl;
+                auto rootPath = filePath;
+                rootPath.remove_filename();
+                auto sceneData = renderer()->scene()->rootNode()->serialize(rootPath);
+                std::cout << rootPath << std::endl;
+                std::cout << sceneData->toString() << std::endl;
+                
+                //auto folderPath = fd.pickFolder();
+                //std::cout << "Folder path" << std::endl;
+                
+                auto newFile = rootPath;
+                newFile.append("otherFile.vitscnj");
+                
+                std::ofstream file;
+                file.open(newFile);
+                if (file.is_open())
+                {
+                    file << sceneData->toString() << std::endl;
+                    file.close();
+                }
             }
             
             if (_environment)

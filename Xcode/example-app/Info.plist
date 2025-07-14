@@ -23,11 +23,20 @@
 		</dict>
 		<dict>
 			<key>CFBundleTypeName</key>
-			<string>El</string>
+			<string>Scene file</string>
 			<key>CFBundleTypeRole</key>
 			<string>Editor</string>
 			<key>LSHandlerRank</key>
 			<string>Default</string>
+			<key>LSItemContentTypes</key>
+			<array>
+				<string>org.bg2engine.scene</string>
+			</array>
+			<key>public.filename-extension</key>
+			<array>
+				<string>json</string>
+				<string>vitscnj</string>
+			</array>
 		</dict>
 	</array>
 </dict>
