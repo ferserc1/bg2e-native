@@ -42,6 +42,16 @@ public:
     ) {
         return deserializeMaterialArray(std::string(jsonString), basePath, result);
     }
+    
+    std::string serializeMaterial(
+        base::MaterialAttributes& mat,
+        std::vector<base::Texture*> & uniqueTextures
+    );
+    
+    std::string serializeMaterialArray(
+        std::vector<base::MaterialAttributes>& mat,
+        std::vector<base::Texture*> & uniqueTextures
+    );
 };
 
 }

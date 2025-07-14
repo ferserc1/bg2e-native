@@ -141,4 +141,26 @@ bool MaterialSerializer::deserializeMaterialArray(
     return true;
 }
 
+std::string MaterialSerializer::serializeMaterial(
+    base::MaterialAttributes& mat,
+    std::vector<base::Texture*> & uniqueTextures
+) {
+    // TODO: Not implemented
+    mat.name();
+    mat.groupName();
+    return "{\"name\": \"" + mat.name() + "\", \"groupName\": \"" + mat.groupName() + "\" }";
+}
+
+std::string MaterialSerializer::serializeMaterialArray(
+    std::vector<base::MaterialAttributes>& mat,
+    std::vector<base::Texture*> & uniqueTextures
+) {
+    std::string result = "";
+    for (auto & m : mat)
+    {
+        result += serializeMaterial(m, uniqueTextures);
+    }
+    return result;
+}
+
 }

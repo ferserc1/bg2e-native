@@ -421,9 +421,6 @@ public:
                 std::cout << rootPath << std::endl;
                 std::cout << sceneData->toString() << std::endl;
                 
-                //auto folderPath = fd.pickFolder();
-                //std::cout << "Folder path" << std::endl;
-                
                 auto newFile = rootPath;
                 newFile.append("otherFile.vitscnj");
                 
@@ -601,8 +598,7 @@ protected:
         customSphereNode->transform()->scale(3.0f);
         customSphereNode->addComponent(new bg2e::scene::DrawableComponent(customSphereDrawable));
         
-        auto json = sceneRoot->serialize("./path/to/scene");
-        std::cout << json->toString() << std::endl;
+        //auto bg2Model = bg2e::db::loadMeshBg2(assetPath, "armchair.bg2");
         
         sceneRoot->addChild(customSphereNode);
         

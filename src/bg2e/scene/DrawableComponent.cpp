@@ -3,6 +3,7 @@
 #include <bg2e/scene/DrawableComponent.hpp>
 #include <bg2e/scene/ComponentFactoryRegistry.hpp>
 #include <bg2e/utils/utils.hpp>
+#include <bg2e/db/mesh_bg2.hpp>
 
 #include <iostream>
 
@@ -46,20 +47,28 @@ std::shared_ptr<json::JsonNode> DrawableComponent::serialize(const std::filesyst
     auto compData = Component::serialize(basePath);
     JsonObject & obj = compData->objectValue();
     
-
-    if (_drawable->name() == "")
+    Drawable * drawable = dynamic_cast<Drawable*>(_drawable.get());
+    if (drawable)
     {
-        _drawable->setName(utils::uniqueId());
+         if (_drawable->name() == "")
+        {
+            _drawable->setName(utils::uniqueId());
+        }
+        
+        obj["name"] = JSON(_drawable->name());
+        
+        auto filePath = basePath;
+        filePath.append(_drawable->name());
+        filePath.replace_extension(".bg2");
+        db::Bg2Mesh meshData;
+        meshData.mesh = drawable->mesh();
+        for (auto & mat : drawable->materials())
+        {
+            meshData.materials.push_back(mat->materialAttributes());
+        }
+        db::storeMeshBg2(filePath, &meshData);
     }
-    
-    obj["name"] = JSON(_drawable->name());
-    
-    // TODO: save file
-    auto filePath = basePath;
-    filePath.append(_drawable->name());
-    filePath.replace_extension(".bg2");
-    
-    
+
     return compData;
 }
     

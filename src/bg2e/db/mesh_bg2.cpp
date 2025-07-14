@@ -9,6 +9,7 @@
 #include <bg2e/geo/sphere.hpp>
 #include <bg2e/geo/modifiers.hpp>
 #include <bg2e/utils/MaterialSerializer.hpp>
+#include <bg2e/base/Texture.hpp>
 
 #include <bg2-io.h>
 
@@ -356,7 +357,26 @@ Bg2Mesh * loadMeshBg2(const std::filesystem::path& filePath, const std::string& 
 
 void storeMeshBg2(const std::filesystem::path& filePath, Bg2Mesh * mesh)
 {
-
+    auto basePath = filePath;
+    basePath.remove_filename();
+    Bg2File * file = bg2io_createBg2File();
+    file->header.endianess = 0;
+    file->header.majorVersion = 1;
+    file->header.minorVersion = 2;
+    file->header.revision = 0;
+    file->header.numberOfPolyList = static_cast<int>(mesh->mesh->submeshes.size());
+    
+    utils::MaterialSerializer matSerializer;
+    std::vector<base::Texture*> textures;
+    auto matData = matSerializer.serializeMaterialArray(mesh->materials, textures);
+    file->materialData = const_cast<char*>(matData.c_str());
+    file->componentData = nullptr;
+    file->jointData = nullptr;
+    
+    // TODO: Implement this
+    file->plists = bg2io_createPolyListArray(file->header.numberOfPolyList);
+    
+    std::cout << mesh->mesh->indices.size() << std::endl;
 }
 
 void storeMeshBg2(const std::filesystem::path& filePath, const std::string& fileName, Bg2Mesh * mesh)
