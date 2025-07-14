@@ -30,6 +30,7 @@
     <ClInclude Include="..\include\bg2e\all.hpp" />
     <ClInclude Include="..\include\bg2e\app\all.hpp" />
     <ClInclude Include="..\include\bg2e\app\Application.hpp" />
+    <ClInclude Include="..\include\bg2e\app\FileDialog.hpp" />
     <ClInclude Include="..\include\bg2e\app\InputDelegate.hpp" />
     <ClInclude Include="..\include\bg2e\app\InputManager.hpp" />
     <ClInclude Include="..\include\bg2e\app\KeyEvent.hpp" />
@@ -57,6 +58,10 @@
     <ClInclude Include="..\include\bg2e\geo\plane.hpp" />
     <ClInclude Include="..\include\bg2e\geo\sphere.hpp" />
     <ClInclude Include="..\include\bg2e\geo\Vertex.hpp" />
+    <ClInclude Include="..\include\bg2e\json\all.hpp" />
+    <ClInclude Include="..\include\bg2e\json\JsonNode.hpp" />
+    <ClInclude Include="..\include\bg2e\json\JsonParser.hpp" />
+    <ClInclude Include="..\include\bg2e\json\JsonToken.hpp" />
     <ClInclude Include="..\include\bg2e\math\all.hpp" />
     <ClInclude Include="..\include\bg2e\math\base.hpp" />
     <ClInclude Include="..\include\bg2e\math\projections.hpp" />
@@ -115,6 +120,7 @@
     <ClInclude Include="..\include\bg2e\scene\all.hpp" />
     <ClInclude Include="..\include\bg2e\scene\CameraComponent.hpp" />
     <ClInclude Include="..\include\bg2e\scene\Component.hpp" />
+    <ClInclude Include="..\include\bg2e\scene\ComponentFactoryRegistry.hpp" />
     <ClInclude Include="..\include\bg2e\scene\Drawable.hpp" />
     <ClInclude Include="..\include\bg2e\scene\DrawableComponent.hpp" />
     <ClInclude Include="..\include\bg2e\scene\DrawVisitor.hpp" />
@@ -183,6 +189,7 @@
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)node_bg2scene</ObjectFileName>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)node_bg2scene</ObjectFileName>
     </ClCompile>
+    <ClCompile Include="..\src\bg2e\app\FileDialog.cpp" />
     <ClCompile Include="..\src\bg2e\app\InputManager.cpp" />
     <ClCompile Include="..\src\bg2e\app\MainLoop.cpp" />
     <ClCompile Include="..\src\bg2e\base\Camera.cpp" />
@@ -198,6 +205,9 @@
     <ClCompile Include="..\src\bg2e\geo\cylinder.cpp" />
     <ClCompile Include="..\src\bg2e\geo\plane.cpp" />
     <ClCompile Include="..\src\bg2e\geo\sphere.cpp" />
+    <ClCompile Include="..\src\bg2e\json\JsonNode.cpp" />
+    <ClCompile Include="..\src\bg2e\json\JsonParser.cpp" />
+    <ClCompile Include="..\src\bg2e\json\JsonToken.cpp" />
     <ClCompile Include="..\src\bg2e\render\BRDFIntegrationMapTextureGenerator.cpp" />
     <ClCompile Include="..\src\bg2e\render\ColorAttachments.cpp" />
     <ClCompile Include="..\src\bg2e\render\ColorAttachmentsCanvas.cpp" />
@@ -240,6 +250,7 @@
     <ClCompile Include="..\src\bg2e\render\vulkan\Swapchain.cpp" />
     <ClCompile Include="..\src\bg2e\scene\CameraComponent.cpp" />
     <ClCompile Include="..\src\bg2e\scene\Component.cpp" />
+    <ClCompile Include="..\src\bg2e\scene\ComponentFactoryRegistry.cpp" />
     <ClCompile Include="..\src\bg2e\scene\Drawable.cpp" />
     <ClCompile Include="..\src\bg2e\scene\DrawableComponent.cpp" />
     <ClCompile Include="..\src\bg2e\scene\DrawVisitor.cpp" />
@@ -274,6 +285,7 @@
     <ClCompile Include="..\third_party\imgui\imgui_impl_vulkan.cpp" />
     <ClCompile Include="..\third_party\imgui\imgui_tables.cpp" />
     <ClCompile Include="..\third_party\imgui\imgui_widgets.cpp" />
+    <ClCompile Include="..\third_party\nativefiledialog-extended\src\nfd_win.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
@@ -311,12 +323,12 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <OutDir>$(SolutionDir)..\bin\</OutDir>
     <TargetName>$(ProjectName)d</TargetName>
-    <IncludePath>$(SolutionDir)..\include;$(VULKAN_SDK)\Include;$(VULKAN_SDK)\Include\SDL2;$(VULKAN_SDK)\Include\glm;$(VULKAN_SDK)\Include\vma;$(SolutionDir)..\third_party;$(SolutionDir)..\third_party\imgui;$(SolutionDir)..\bg2-io\src\bg2-io;$(SolutionDir)..\bg2-io\src\bg2-scene;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)..\include;$(VULKAN_SDK)\Include;$(VULKAN_SDK)\Include\SDL2;$(VULKAN_SDK)\Include\glm;$(VULKAN_SDK)\Include\vma;$(SolutionDir)..\third_party;$(SolutionDir)..\third_party\imgui;$(SolutionDir)..\bg2-io\src\bg2-io;$(SolutionDir)..\bg2-io\src\bg2-scene;$(SolutionDir)..\third_party\nativefiledialog-extended\src\include;$(IncludePath)</IncludePath>
     <LibraryPath>$(VULKAN_SDK)\Lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <OutDir>$(SolutionDir)..\bin\</OutDir>
-    <IncludePath>$(SolutionDir)..\include;$(VULKAN_SDK)\Include;$(VULKAN_SDK)\Include\SDL2;$(VULKAN_SDK)\Include\glm;$(VULKAN_SDK)\Include\vma;$(SolutionDir)..\third_party;$(SolutionDir)..\third_party\imgui;$(SolutionDir)..\bg2-io\src\bg2-io;$(SolutionDir)..\bg2-io\src\bg2-scene;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)..\include;$(VULKAN_SDK)\Include;$(VULKAN_SDK)\Include\SDL2;$(VULKAN_SDK)\Include\glm;$(VULKAN_SDK)\Include\vma;$(SolutionDir)..\third_party;$(SolutionDir)..\third_party\imgui;$(SolutionDir)..\bg2-io\src\bg2-io;$(SolutionDir)..\bg2-io\src\bg2-scene;$(SolutionDir)..\third_party\nativefiledialog-extended\src\include;$(IncludePath)</IncludePath>
     <LibraryPath>$(VULKAN_SDK)\Lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">

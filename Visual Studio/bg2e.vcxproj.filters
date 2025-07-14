@@ -118,6 +118,15 @@
     <Filter Include="bg2-io\src\bg2-scene">
       <UniqueIdentifier>{d1292d44-449c-4cfa-b51c-cf4fa7732c09}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Third Party\nativefiledialog">
+      <UniqueIdentifier>{7aacb63f-8b11-48e4-b44d-f2e8221ad868}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\bg2e\json">
+      <UniqueIdentifier>{ebaac4c2-5faa-4f52-91c4-dcfda406f8a5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\json">
+      <UniqueIdentifier>{3b74a85b-cd4c-4329-9113-a973b932164a}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\include\bg2e\common.hpp">
@@ -561,6 +570,24 @@
     <ClInclude Include="..\include\bg2e\utils\MaterialSerializer.hpp">
       <Filter>Header Files\bg2e\utils</Filter>
     </ClInclude>
+    <ClInclude Include="..\include\bg2e\app\FileDialog.hpp">
+      <Filter>Header Files\bg2e\app</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\json\all.hpp">
+      <Filter>Header Files\bg2e\json</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\json\JsonNode.hpp">
+      <Filter>Header Files\bg2e\json</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\json\JsonParser.hpp">
+      <Filter>Header Files\bg2e\json</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\json\JsonToken.hpp">
+      <Filter>Header Files\bg2e\json</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\scene\ComponentFactoryRegistry.hpp">
+      <Filter>Header Files\bg2e\scene</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\bg2e\app\MainLoop.cpp">
@@ -877,6 +904,24 @@
     </ClCompile>
     <ClCompile Include="..\src\bg2e\utils\MaterialSerializer.cpp">
       <Filter>Source Files\utils</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\bg2e\app\FileDialog.cpp">
+      <Filter>Source Files\app</Filter>
+    </ClCompile>
+    <ClCompile Include="..\third_party\nativefiledialog-extended\src\nfd_win.cpp">
+      <Filter>Third Party\nativefiledialog</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\bg2e\json\JsonNode.cpp">
+      <Filter>Source Files\json</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\bg2e\json\JsonParser.cpp">
+      <Filter>Source Files\json</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\bg2e\json\JsonToken.cpp">
+      <Filter>Source Files\json</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\bg2e\scene\ComponentFactoryRegistry.cpp">
+      <Filter>Source Files\scene</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
