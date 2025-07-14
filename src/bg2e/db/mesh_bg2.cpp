@@ -354,4 +354,16 @@ Bg2Mesh * loadMeshBg2(const std::filesystem::path& filePath, const std::string& 
     return loadMeshBg2(fullPath);
 }
 
+void storeMeshBg2(const std::filesystem::path& filePath, Bg2Mesh * mesh)
+{
+
+}
+
+void storeMeshBg2(const std::filesystem::path& filePath, const std::string& fileName, Bg2Mesh * mesh)
+{
+    auto fullPath = filePath;
+    fullPath.append(fileName);
+    storeMeshBg2(fullPath, mesh);
+}
+
 }

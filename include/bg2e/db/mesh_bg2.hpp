@@ -29,5 +29,8 @@ struct Bg2Mesh
 extern BG2E_API Bg2Mesh * loadMeshBg2(const std::filesystem::path& filePath);
 extern BG2E_API Bg2Mesh * loadMeshBg2(const std::filesystem::path& filePath, const std::string& fileName);
 
+extern BG2E_API void storeMeshBg2(const std::filesystem::path& filePath, Bg2Mesh * mesh);
+extern BG2E_API void storeMeshBg2(const std::filesystem::path& filePath, const std::string& fileName, Bg2Mesh * mesh);
+
 }
 }
