@@ -7,4 +7,6 @@
 #include <bg2e/app/InputManager.hpp>
 #include <bg2e/app/KeyEvent.hpp>
 #include <bg2e/app/MainLoop.hpp>
+#include <bg2e/app/FileDialog.hpp>
+
 

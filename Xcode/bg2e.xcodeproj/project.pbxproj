@@ -18,6 +18,8 @@
 		ED533A222CD7AAB700136B04 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED533A212CD7AAB700136B04 /* main.cpp */; };
 		ED85B20E2CDBAB800039B44D /* libbg2e-native.a in Frameworks */ = {isa = PBXBuildFile; fileRef = ED85B20D2CDBAB730039B44D /* libbg2e-native.a */; };
 		ED85B2122CDBAB9C0039B44D /* CoreFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = ED86884F2CDAAB7300A71ADC /* CoreFoundation.framework */; };
+		EDBFD8F42E24DA2D00864579 /* AppKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = EDBFD8F32E24DA2D00864579 /* AppKit.framework */; };
+		EDBFD8F62E24DA3300864579 /* UniformTypeIdentifiers.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = EDBFD8F52E24DA3300864579 /* UniformTypeIdentifiers.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -87,6 +89,11 @@
 		ED9AEBF12E10534600728D8B /* bg2-io.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = "bg2-io.xcodeproj"; sourceTree = "<group>"; };
 		ED9D8BE42E1300530096E466 /* bg2-io.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = "bg2-io.xcodeproj"; sourceTree = "<group>"; };
 		EDAE2B432E1BCE2100BBE76E /* bg2-io.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = "bg2-io.xcodeproj"; sourceTree = "<group>"; };
+		EDBFD83C2E24CA6000864579 /* bg2-io.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = "bg2-io.xcodeproj"; sourceTree = "<group>"; };
+		EDBFD8F32E24DA2D00864579 /* AppKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppKit.framework; path = System/Library/Frameworks/AppKit.framework; sourceTree = SDKROOT; };
+		EDBFD8F52E24DA3300864579 /* UniformTypeIdentifiers.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UniformTypeIdentifiers.framework; path = System/Library/Frameworks/UniformTypeIdentifiers.framework; sourceTree = SDKROOT; };
+		EDBFDD042E24DBBA00864579 /* bg2-io.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = "bg2-io.xcodeproj"; sourceTree = "<group>"; };
+		EDBFDD852E24DE6D00864579 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -107,6 +114,13 @@
 				"src/bg2-scene/json-token.cpp",
 				"src/bg2-scene/json.cpp",
 				"src/bg2-scene/node.cpp",
+			);
+			target = ED85B1F22CDBAABD0039B44D /* bg2e-native */;
+		};
+		EDBFD8F22E24D9BC00864579 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				src/nfd_cocoa.m,
 			);
 			target = ED85B1F22CDBAABD0039B44D /* bg2e-native */;
 		};
@@ -172,6 +186,7 @@
 		ED6D4B9F2DFAE35900753DF7 /* bg2e */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = bg2e; sourceTree = "<group>"; };
 		ED9AEBF52E10534600728D8B /* bg2-io */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (ED110AC12E15199700F37999 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); name = "bg2-io"; path = "../bg2-io"; sourceTree = SOURCE_ROOT; };
 		ED9D98EB2E1304C80096E466 /* assets */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (ED9D99132E1304E90096E466 /* PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); name = assets; path = ../assets; sourceTree = SOURCE_ROOT; };
+		EDBFD8DE2E24D9A500864579 /* nativefiledialog-extended */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (EDBFD8F22E24D9BC00864579 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = "nativefiledialog-extended"; sourceTree = "<group>"; };
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -188,6 +203,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				EDBFD8F62E24DA3300864579 /* UniformTypeIdentifiers.framework in Frameworks */,
+				EDBFD8F42E24DA2D00864579 /* AppKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -264,6 +281,7 @@
 		ED533A202CD7AAA700136B04 /* example-app */ = {
 			isa = PBXGroup;
 			children = (
+				EDBFDD852E24DE6D00864579 /* Info.plist */,
 				ED533A212CD7AAB700136B04 /* main.cpp */,
 			);
 			path = "example-app";
@@ -288,6 +306,8 @@
 		ED533A272CD7ADD600136B04 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				EDBFD8F52E24DA3300864579 /* UniformTypeIdentifiers.framework */,
+				EDBFD8F32E24DA2D00864579 /* AppKit.framework */,
 				ED85B1DD2CDBA4E00039B44D /* Metal.framework */,
 				ED86884F2CDAAB7300A71ADC /* CoreFoundation.framework */,
 			);
@@ -397,6 +417,7 @@
 				ED8688432CDAAB3400A71ADC /* simdjson */,
 				ED8688452CDAAB3400A71ADC /* stb_image */,
 				ED8688472CDAAB3400A71ADC /* tinyobj */,
+				EDBFD8DE2E24D9A500864579 /* nativefiledialog-extended */,
 			);
 			name = third_party;
 			path = ../third_party;
@@ -424,6 +445,20 @@
 			sourceTree = "<group>";
 		};
 		EDAE2B472E1BCE2100BBE76E /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		EDBFD8402E24CA6000864579 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		EDBFDD082E24DBBA00864579 /* Products */ = {
 			isa = PBXGroup;
 			children = (
 			);
@@ -525,24 +560,32 @@
 					ProjectRef = ED9D8BE42E1300530096E466 /* bg2-io.xcodeproj */;
 				},
 				{
-					ProductGroup = ED1106422E15191500F37999 /* Products */;
-					ProjectRef = ED11063E2E15191500F37999 /* bg2-io.xcodeproj */;
+					ProductGroup = EDAE2B472E1BCE2100BBE76E /* Products */;
+					ProjectRef = EDAE2B432E1BCE2100BBE76E /* bg2-io.xcodeproj */;
+				},
+				{
+					ProductGroup = EDBFD8402E24CA6000864579 /* Products */;
+					ProjectRef = EDBFD83C2E24CA6000864579 /* bg2-io.xcodeproj */;
+				},
+				{
+					ProductGroup = EDBFDD082E24DBBA00864579 /* Products */;
+					ProjectRef = EDBFDD042E24DBBA00864579 /* bg2-io.xcodeproj */;
+				},
+				{
+					ProductGroup = ED69E8B32E227DC400FFE313 /* Products */;
+					ProjectRef = ED69E8AF2E227DC400FFE313 /* bg2-io.xcodeproj */;
 				},
 				{
 					ProductGroup = ED9AEBF62E10534600728D8B /* Products */;
 					ProjectRef = ED9AEBF12E10534600728D8B /* bg2-io.xcodeproj */;
 				},
 				{
-					ProductGroup = EDAE2B472E1BCE2100BBE76E /* Products */;
-					ProjectRef = EDAE2B432E1BCE2100BBE76E /* bg2-io.xcodeproj */;
+					ProductGroup = ED1106422E15191500F37999 /* Products */;
+					ProjectRef = ED11063E2E15191500F37999 /* bg2-io.xcodeproj */;
 				},
 				{
 					ProductGroup = ED110A5B2E15194400F37999 /* Products */;
 					ProjectRef = ED110A572E15194400F37999 /* bg2-io.xcodeproj */;
-				},
-				{
-					ProductGroup = ED69E8B32E227DC400FFE313 /* Products */;
-					ProjectRef = ED69E8AF2E227DC400FFE313 /* bg2-io.xcodeproj */;
 				},
 				{
 					ProductGroup = ED8C950D2E1C1B02002EE991 /* Products */;
@@ -792,6 +835,7 @@
 					"$(PROJECT_DIR)/../include",
 					"$(VULKAN_SDK)/include/**",
 				);
+				INFOPLIST_FILE = "example-app/Info.plist";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				INFOPLIST_KEY_NSMainNibFile = MainMenu;
 				INFOPLIST_KEY_NSPrincipalClass = NSApplication;
@@ -836,6 +880,7 @@
 					"$(PROJECT_DIR)/../include",
 					"$(VULKAN_SDK)/include/**",
 				);
+				INFOPLIST_FILE = "example-app/Info.plist";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				INFOPLIST_KEY_NSMainNibFile = MainMenu;
 				INFOPLIST_KEY_NSPrincipalClass = NSApplication;
@@ -864,6 +909,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = NO;
 				CODE_SIGN_STYLE = Automatic;
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				EXECUTABLE_PREFIX = lib;
@@ -877,6 +923,7 @@
 					"$(PROJECT_DIR)/../third_party",
 					"$(PROJECT_DIR)/../bg2-io/src/bg2-io",
 					"$(PROJECT_DIR)/../bg2-io/src/bg2-scene",
+					"$(PROJECT_DIR)/../third_party/nativefiledialog-extended/src/include",
 				);
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
@@ -894,6 +941,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = NO;
 				CODE_SIGN_STYLE = Automatic;
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				EXECUTABLE_PREFIX = lib;
@@ -907,6 +955,7 @@
 					"$(PROJECT_DIR)/../third_party",
 					"$(PROJECT_DIR)/../bg2-io/src/bg2-io",
 					"$(PROJECT_DIR)/../bg2-io/src/bg2-scene",
+					"$(PROJECT_DIR)/../third_party/nativefiledialog-extended/src/include",
 				);
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",

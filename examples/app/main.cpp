@@ -397,6 +397,26 @@ public:
             material.setAlbedo(albedo);
             _sphere->updateMaterials();
             
+            if (bg2e::ui::BasicWidgets::button("Open File"))
+            {
+                bg2e::app::FileDialog fd;
+                fd.setFilters({
+                    { "bg2e 3D model", "bg2,vwglb" }
+                });
+                auto filePath = fd.openFile();
+                std::cout << filePath << std::endl;
+            }
+            
+            if (bg2e::ui::BasicWidgets::button("Save File"))
+            {
+                bg2e::app::FileDialog fd;
+                fd.setFilters({
+                    { "bg2e 3D model", "bg2,vwglb" }
+                });
+                auto filePath = fd.saveFile();
+                std::cout << filePath << std::endl;
+            }
+            
             if (_environment)
             {
                 auto assetPath = bg2e::base::PlatformTools::assetPath();

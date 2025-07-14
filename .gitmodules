@@ -1,3 +1,6 @@
 [submodule "bg2-io"]
 	path = bg2-io
 	url = git@github.com:ferserc1/bg2-io
+[submodule "third_party/nativefiledialog-extended"]
+	path = third_party/nativefiledialog-extended
+	url = https://github.com/btzy/nativefiledialog-extended
