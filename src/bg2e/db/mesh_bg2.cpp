@@ -386,7 +386,7 @@ void storeMeshBg2(const std::filesystem::path& filePath, Bg2Mesh * mesh)
 
         auto submeshIndices = std::vector<uint32_t>(
             mesh->mesh->indices.begin() + submesh.firstIndex,
-            mesh->mesh->indices.end() + submesh.firstIndex + submesh.indexCount
+            mesh->mesh->indices.begin() + submesh.firstIndex + submesh.indexCount
         );
         uint32_t plistIndex = 0;
         for (auto i : submeshIndices)
@@ -400,11 +400,12 @@ void storeMeshBg2(const std::filesystem::path& filePath, Bg2Mesh * mesh)
             normal.push_back(v.normal.y);
             normal.push_back(v.normal.z);
             
+            // Flip Y coord
             uv0.push_back(v.texCoord0.x);
-            uv0.push_back(v.texCoord0.y);
+            uv0.push_back(1.0 - v.texCoord0.y);
             
             uv1.push_back(v.texCoord1.x);
-            uv1.push_back(v.texCoord1.y);
+            uv1.push_back(1.0 - v.texCoord1.y);
             
             indexes.push_back(plistIndex);
             plistIndex++;
@@ -416,11 +417,11 @@ void storeMeshBg2(const std::filesystem::path& filePath, Bg2Mesh * mesh)
         bg2io_allocateFloatArray(&plist->texCoord1, static_cast<int>(uv1.size()));
         bg2io_allocateIntArray(&plist->index, static_cast<int>(indexes.size()));
         
-        memcpy(plist->vertex.data, vertex.data(), vertex.size());
-        memcpy(plist->normal.data, normal.data(), normal.size());
-        memcpy(plist->texCoord0.data, uv0.data(), uv0.size());
-        memcpy(plist->texCoord1.data, uv1.data(), uv1.size());
-        memcpy(plist->index.data, indexes.data(), indexes.size());
+        memcpy(plist->vertex.data, vertex.data(), vertex.size() * sizeof(float));
+        memcpy(plist->normal.data, normal.data(), normal.size() * sizeof(float));
+        memcpy(plist->texCoord0.data, uv0.data(), uv0.size() * sizeof(float));
+        memcpy(plist->texCoord1.data, uv1.data(), uv1.size() * sizeof(float));
+        memcpy(plist->index.data, indexes.data(), indexes.size() * sizeof(uint32_t));
         
         if (material.name() == "")
         {

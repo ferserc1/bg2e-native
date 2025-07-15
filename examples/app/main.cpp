@@ -384,28 +384,28 @@ public:
         _window.draw([&]() {
             bg2e::ui::BasicWidgets::checkBox("Draw Skybox", &drawSkybox);
         
-            auto &material = _sphere->material(0);
-            float metalness = material.metalness();
-            float roughness = material.roughness();
-            bg2e::base::Color albedo = material.albedo();
-            bg2e::ui::BasicWidgets::separator();
-            bg2e::ui::Input::slider("Metalness", &metalness, 0.0f, 1.0f);
-            bg2e::ui::Input::slider("Roughness", &roughness, 0.0f, 1.0f);
-            bg2e::ui::Input::colorPicker("Albedo", albedo);
-            material.setMetalness(metalness);
-            material.setRoughness(roughness);
-            material.setAlbedo(albedo);
-            _sphere->material(1).setMetalness(metalness);
-            _sphere->material(1).setRoughness(roughness);
-            _sphere->material(2).setMetalness(metalness);
-            _sphere->material(2).setRoughness(roughness);
-            _sphere->material(3).setMetalness(metalness);
-            _sphere->material(3).setRoughness(roughness);
-            _sphere->material(4).setMetalness(metalness);
-            _sphere->material(4).setRoughness(roughness);
-            _sphere->material(5).setMetalness(metalness);
-            _sphere->material(5).setRoughness(roughness);
-            _sphere->updateMaterials();
+//            auto &material = _sphere->material(0);
+//            float metalness = material.metalness();
+//            float roughness = material.roughness();
+//            bg2e::base::Color albedo = material.albedo();
+//            bg2e::ui::BasicWidgets::separator();
+//            bg2e::ui::Input::slider("Metalness", &metalness, 0.0f, 1.0f);
+//            bg2e::ui::Input::slider("Roughness", &roughness, 0.0f, 1.0f);
+//            bg2e::ui::Input::colorPicker("Albedo", albedo);
+//            material.setMetalness(metalness);
+//            material.setRoughness(roughness);
+//            material.setAlbedo(albedo);
+//            _sphere->material(1).setMetalness(metalness);
+//            _sphere->material(1).setRoughness(roughness);
+//            _sphere->material(2).setMetalness(metalness);
+//            _sphere->material(2).setRoughness(roughness);
+//            _sphere->material(3).setMetalness(metalness);
+//            _sphere->material(3).setRoughness(roughness);
+//            _sphere->material(4).setMetalness(metalness);
+//            _sphere->material(4).setRoughness(roughness);
+//            _sphere->material(5).setMetalness(metalness);
+//            _sphere->material(5).setRoughness(roughness);
+//            _sphere->updateMaterials();
             
             if (bg2e::ui::BasicWidgets::button("Open File"))
             {
@@ -414,7 +414,23 @@ public:
                     { "bg2e 3D model", "bg2,vwglb" }
                 });
                 auto filePath = fd.openFile();
-                std::cout << filePath << std::endl;
+                
+                auto bg2Model = bg2e::db::loadMeshBg2(filePath);
+                auto modelDrawable = new bg2e::scene::Drawable();
+                modelDrawable->setMesh(bg2Model->mesh);
+                uint32_t i = 0;
+                for (auto m : bg2Model->materials)
+                {
+                    modelDrawable->setMaterial(m, i);
+                    ++i;
+                }
+                modelDrawable->load(_engine);
+                auto modelNode = new bg2e::scene::Node("Armchair");
+                modelNode->addComponent(new bg2e::scene::DrawableComponent(modelDrawable));
+                modelNode->addComponent(new bg2e::scene::TransformComponent());
+                modelNode->transform()->scale(4.0f);
+                renderer()->scene()->rootNode()->addChild(modelNode);
+                
             }
             
             if (bg2e::ui::BasicWidgets::button("Save File"))
@@ -537,6 +553,8 @@ protected:
         light2->light()->light().setIntensity(300.0f);
         sceneRoot->addChild(light2);
         
+        auto assetPath = bg2e::base::PlatformTools::assetPath();
+        
         // auto light3 = new bg2e::scene::Node("Light 3");
         // light3->addComponent(new bg2e::scene::LightComponent());
         // light3->addComponent(new bg2e::scene::TransformComponent(glm::translate(glm::mat4 { 1.0f }, glm::vec3{-10,-10, 10 } )));
@@ -583,7 +601,7 @@ protected:
             }
         }
         
-        auto assetPath = bg2e::base::PlatformTools::assetPath();
+        
         auto mainSphereDrawable = new bg2e::scene::Drawable();
         mainSphereDrawable->setMesh(sphereMesh);
         mainSphereDrawable->material(0).setAlbedo(new bg2e::base::Texture(assetPath, "rust_metal_albedo.jpg"));
@@ -614,20 +632,22 @@ protected:
         sceneRoot->addChild(customSphereNode);
         */
         
-        auto cubeDrawable = std::make_shared<bg2e::scene::Drawable>();
-        auto cubeMesh = std::shared_ptr<bg2e::geo::Mesh>(bg2e::geo::createCube(4.0f, 4.0f, 4.0f));
-        cubeDrawable->setMesh(cubeMesh);
-        cubeDrawable->material(0).setAlbedo(bg2e::base::Color::Red());
-        cubeDrawable->material(1).setAlbedo(bg2e::base::Color::Green());
-        cubeDrawable->material(2).setAlbedo(bg2e::base::Color::Yellow());
-        cubeDrawable->material(3).setAlbedo(bg2e::base::Color::Blue());
-        cubeDrawable->material(4).setAlbedo(bg2e::base::Color::Pink());
-        cubeDrawable->material(5).setAlbedo(bg2e::base::Color::Purple());
-        cubeDrawable->load(_engine);
-        auto cubeNode = new bg2e::scene::Node("Cube");
-        cubeNode->addComponent(new bg2e::scene::DrawableComponent(cubeDrawable));
-        sceneRoot->addChild(cubeNode);
-        _sphere = cubeDrawable;
+        
+        auto bg2Model = bg2e::db::loadMeshBg2(assetPath, "armchair.bg2");
+        auto modelDrawable = new bg2e::scene::Drawable();
+        modelDrawable->setMesh(bg2Model->mesh);
+        uint32_t i = 0;
+        for (auto m : bg2Model->materials)
+        {
+            modelDrawable->setMaterial(m, i);
+            ++i;
+        }
+        modelDrawable->load(_engine);
+        auto modelNode = new bg2e::scene::Node("Armchair");
+        modelNode->addComponent(new bg2e::scene::DrawableComponent(modelDrawable));
+        modelNode->addComponent(new bg2e::scene::TransformComponent(glm::translate(glm::mat4 { 1.0 }, glm::vec3{ 5, 0, 0 })));
+        modelNode->transform()->scale(4.0f);
+        sceneRoot->addChild(modelNode);
         
         
         _engine->cleanupManager().push([&](VkDevice) {

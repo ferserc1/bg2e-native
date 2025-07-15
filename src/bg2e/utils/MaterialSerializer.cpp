@@ -145,7 +145,9 @@ std::string MaterialSerializer::serializeMaterial(
     
     auto matJson = JSON(JsonObject{
         { "name", JSON(mat.name()) },
-        { "groupName", JSON(mat.groupName()) }
+        { "groupName", JSON(mat.groupName()) },
+        { "type", JSON("pbr") },
+        { "class", JSON("PBRMaterial") }
     });
     auto & obj = matJson->objectValue();
     
