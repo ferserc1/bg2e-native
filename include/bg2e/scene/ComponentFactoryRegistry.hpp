@@ -24,6 +24,7 @@ public:
 
 private:
     std::unordered_map<std::string, Creator> _registry;
+    static ComponentFactoryRegistry * _registrySingleton;
 };
 
 template <typename ComponentT>

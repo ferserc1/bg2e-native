@@ -5,11 +5,16 @@
 
 namespace bg2e::scene {
 
-ComponentFactoryRegistry _componentFactoryRegistrySingleton;
+
+ComponentFactoryRegistry * ComponentFactoryRegistry::_registrySingleton = nullptr;
 
 ComponentFactoryRegistry& ComponentFactoryRegistry::get()
 {
-    return _componentFactoryRegistrySingleton;
+    if (_registrySingleton == nullptr)
+    {
+        _registrySingleton = new ComponentFactoryRegistry();
+    }
+    return *_registrySingleton;
 }
     
 void ComponentFactoryRegistry::registerComponent(const std::string& componentName, Creator creator)

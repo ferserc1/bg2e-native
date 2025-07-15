@@ -52,6 +52,10 @@ JsonNode::JsonNode(int32_t p) {
     setValue(p);
 }
 
+JsonNode::JsonNode(uint32_t p) {
+    setValue(p);
+}
+
 JsonNode::JsonNode(float p) {
     setValue(p);
 }
@@ -61,6 +65,11 @@ JsonNode::JsonNode(double p) {
 }
 
 JsonNode::JsonNode(bool p) {
+    setValue(p);
+}
+
+JsonNode::JsonNode(const base::Color & p)
+{
     setValue(p);
 }
 
@@ -154,6 +163,56 @@ std::string JsonNode::toString(int indentationLevel) {
     return outputString;
 }
 
+std::string JsonNode::serialize()
+{
+    std::string outputString = "";
+
+    switch (type) {
+    case Type::String:
+        outputString += "\"" + _stringValue + "\"";
+        break;
+    case Type::Number:
+        outputString += std::to_string(_numberValue);
+        break;
+    case Type::Bool:
+        outputString += (_boolValue ? "true" : "false");
+        break;
+    case Type::Null:
+        outputString += "null";
+        break;
+    
+    case Type::List: {
+        outputString += "[";
+        size_t index = 0;
+        for (auto node : (_listValue)) {
+            outputString += node->serialize();
+            if (index < (_listValue).size() - 1) {
+                outputString += ",";
+            }
+            index++;
+        }
+        outputString += "]";
+        break;
+    }
+    case Type::Object: {
+        outputString += "{";
+        for (JsonObject::iterator i = (_objectValue).begin();
+            i != (_objectValue).end(); ++i) {
+            outputString += "\"" + i->first + "\":";
+            outputString += i->second->serialize();
+            JsonObject::iterator next = i;
+            next++;
+            if (next != (_objectValue).end()) {
+                outputString += ",";
+            }
+        }
+        outputString += "}";
+        break;
+    }
+    }
+    return outputString;
+}
+
 std::shared_ptr<JsonNode> JSON(const JsonObject& p)
 {
     return std::make_shared<JsonNode>(p);
@@ -199,6 +258,11 @@ std::shared_ptr<JsonNode> JSON(int32_t p)
     return std::make_shared<JsonNode>(p);
 }
 
+std::shared_ptr<JsonNode> JSON(uint32_t p)
+{
+    return std::make_shared<JsonNode>(p);
+}
+
 std::shared_ptr<JsonNode> JSON(float p)
 {
     return std::make_shared<JsonNode>(p);
@@ -210,6 +274,11 @@ std::shared_ptr<JsonNode> JSON(double p)
 }
 
 std::shared_ptr<JsonNode> JSON(bool p)
+{
+    return std::make_shared<JsonNode>(p);
+}
+
+std::shared_ptr<JsonNode> JSON(const base::Color & p)
 {
     return std::make_shared<JsonNode>(p);
 }

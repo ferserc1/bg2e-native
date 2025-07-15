@@ -2,6 +2,7 @@
 
 #include <bg2e/common.hpp>
 #include <bg2e/math/base.hpp>
+#include <bg2e/base/Color.hpp>
 
 #include <string>
 #include <map>
@@ -52,9 +53,11 @@ public:
     JsonNode(const std::string &);
     JsonNode(char);
     JsonNode(int32_t);
+    JsonNode(uint32_t);
     JsonNode(float);
     JsonNode(double);
     JsonNode(bool);
+    JsonNode(const base::Color&);
     JsonNode(const glm::vec2&);
     JsonNode(const glm::vec3&);
     JsonNode(const glm::vec4&);
@@ -412,6 +415,12 @@ public:
         _numberValue = static_cast<float>(n);
         type = Type::Number;
     }
+    
+    void setValue(uint32_t n) {
+        _numberValue = static_cast<float>(n);
+        type = Type::Number;
+    }
+    
     void setValue(float n) {
         _numberValue = n;
         type = Type::Number;
@@ -425,6 +434,16 @@ public:
     void setValue(bool b) {
         _boolValue = b;
         type = Type::Bool;
+    }
+    
+    void setValue(const base::Color & c) {
+        type = Type::List;
+        _listValue = JsonList {
+            std::make_shared<JsonNode>(c.r),
+            std::make_shared<JsonNode>(c.g),
+            std::make_shared<JsonNode>(c.b),
+            std::make_shared<JsonNode>(c.a)
+        };
     }
     
     void setValue(const glm::vec2 & v) {
@@ -566,6 +585,7 @@ public:
     void printNode(int indentationLevel = 0);
 
     std::string toString(int indentationLevel = 0);
+    std::string serialize();
 };
 
 extern BG2E_API std::shared_ptr<JsonNode> JSON(const JsonObject& p);
@@ -577,9 +597,11 @@ extern BG2E_API std::shared_ptr<JsonNode> JSON(std::string&& p);
 extern BG2E_API std::shared_ptr<JsonNode> JSON(const std::string& p);
 extern BG2E_API std::shared_ptr<JsonNode> JSON(char p);
 extern BG2E_API std::shared_ptr<JsonNode> JSON(int32_t p);
+extern BG2E_API std::shared_ptr<JsonNode> JSON(uint32_t p);
 extern BG2E_API std::shared_ptr<JsonNode> JSON(float p);
 extern BG2E_API std::shared_ptr<JsonNode> JSON(double p);
 extern BG2E_API std::shared_ptr<JsonNode> JSON(bool p);
+extern BG2E_API std::shared_ptr<JsonNode> JSON(const base::Color & p);
 extern BG2E_API std::shared_ptr<JsonNode> JSON(const glm::vec2 & p);
 extern BG2E_API std::shared_ptr<JsonNode> JSON(const glm::vec3 & p);
 extern BG2E_API std::shared_ptr<JsonNode> JSON(const glm::vec4 & p);

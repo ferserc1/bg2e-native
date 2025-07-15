@@ -366,17 +366,108 @@ void storeMeshBg2(const std::filesystem::path& filePath, Bg2Mesh * mesh)
     file->header.revision = 0;
     file->header.numberOfPolyList = static_cast<int>(mesh->mesh->submeshes.size());
     
-    utils::MaterialSerializer matSerializer;
-    std::vector<base::Texture*> textures;
-    auto matData = matSerializer.serializeMaterialArray(mesh->materials, textures);
-    file->materialData = const_cast<char*>(matData.c_str());
+    
     file->componentData = nullptr;
     file->jointData = nullptr;
     
-    // TODO: Implement this
     file->plists = bg2io_createPolyListArray(file->header.numberOfPolyList);
+    auto & vertices = mesh->mesh->vertices;
+    auto submeshIndex = 0;
+    for (auto submesh : mesh->mesh->submeshes)
+    {
+        Bg2ioPolyList * plist = file->plists->data[submeshIndex];
+        auto & material = mesh->materials[submeshIndex];
+        
+        std::vector<uint32_t> indexes;
+        std::vector<float> vertex;
+        std::vector<float> normal;
+        std::vector<float> uv0;
+        std::vector<float> uv1;
+
+        auto submeshIndices = std::vector<uint32_t>(
+            mesh->mesh->indices.begin() + submesh.firstIndex,
+            mesh->mesh->indices.end() + submesh.firstIndex + submesh.indexCount
+        );
+        uint32_t plistIndex = 0;
+        for (auto i : submeshIndices)
+        {
+            auto v = vertices[i];
+            vertex.push_back(v.position.x);
+            vertex.push_back(v.position.y);
+            vertex.push_back(v.position.z);
+            
+            normal.push_back(v.normal.x);
+            normal.push_back(v.normal.y);
+            normal.push_back(v.normal.z);
+            
+            uv0.push_back(v.texCoord0.x);
+            uv0.push_back(v.texCoord0.y);
+            
+            uv1.push_back(v.texCoord1.x);
+            uv1.push_back(v.texCoord1.y);
+            
+            indexes.push_back(plistIndex);
+            plistIndex++;
+        }
+        
+        bg2io_allocateFloatArray(&plist->vertex, static_cast<int>(vertex.size()));
+        bg2io_allocateFloatArray(&plist->normal, static_cast<int>(normal.size()));
+        bg2io_allocateFloatArray(&plist->texCoord0, static_cast<int>(uv0.size()));
+        bg2io_allocateFloatArray(&plist->texCoord1, static_cast<int>(uv1.size()));
+        bg2io_allocateIntArray(&plist->index, static_cast<int>(indexes.size()));
+        
+        memcpy(plist->vertex.data, vertex.data(), vertex.size());
+        memcpy(plist->normal.data, normal.data(), normal.size());
+        memcpy(plist->texCoord0.data, uv0.data(), uv0.size());
+        memcpy(plist->texCoord1.data, uv1.data(), uv1.size());
+        memcpy(plist->index.data, indexes.data(), indexes.size());
+        
+        if (material.name() == "")
+        {
+            material.setName("material" + std::to_string(submeshIndex));
+        }
+        plist->name = new char[material.name().size()];
+        strcpy(plist->name, material.name().c_str());
+        plist->matName = new char[material.name().size()];
+        strcpy(plist->matName, material.name().c_str());
+        
+        
+        plist->groupName = new char[material.groupName().size()];
+        strcpy(plist->groupName, material.groupName().c_str());
+        
+        submeshIndex++;
+    }
     
-    std::cout << mesh->mesh->indices.size() << std::endl;
+    // The component section is empty because this function does not accept a scene node
+    
+    utils::MaterialSerializer matSerializer;
+    std::vector<std::shared_ptr<base::Texture>> textures;
+    auto matData = matSerializer.serializeMaterialArray(mesh->materials, textures);
+    file->materialData = new char[matData.size()];
+    strcpy(file->materialData, matData.c_str());
+    
+    Bg2ioBuffer outBuffer = BG2IO_BUFFER_INIT;
+    int error = bg2io_writeFileToBuffer(file, &outBuffer);
+    if (error != BG2IO_NO_ERROR)
+    {
+        throw std::runtime_error("Error writting bg2 file buffer.");
+    }
+    
+    for (auto t : textures)
+    {
+        // TODO: Save textures
+    }
+    
+    std::ofstream outFile(filePath, std::ios::binary);
+    if (!outFile.is_open())
+    {
+        throw std::runtime_error("Could not open bg2 file to write.");
+    }
+    
+    outFile.write(reinterpret_cast<char*>(outBuffer.mem), outBuffer.actualLength);
+    
+    outFile.close();
+    bg2io_freeBg2File(file);
 }
 
 void storeMeshBg2(const std::filesystem::path& filePath, const std::string& fileName, Bg2Mesh * mesh)

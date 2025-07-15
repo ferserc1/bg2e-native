@@ -30,10 +30,6 @@ bool parseMaterial(
     
     auto mat = node->objectValue();
     
-    // TODO: Check all access to json properties because can be null
-    // Create an utility function to access json object properties that
-    // returns a null Json node if the property does not exist
-    
     if (mat["name"])
     {
         result.setName(mat["name"]->stringValue(""));
@@ -143,24 +139,104 @@ bool MaterialSerializer::deserializeMaterialArray(
 
 std::string MaterialSerializer::serializeMaterial(
     base::MaterialAttributes& mat,
-    std::vector<base::Texture*> & uniqueTextures
+    std::vector<std::shared_ptr<base::Texture>> & uniqueTextures
 ) {
-    // TODO: Not implemented
-    mat.name();
-    mat.groupName();
-    return "{\"name\": \"" + mat.name() + "\", \"groupName\": \"" + mat.groupName() + "\" }";
+    using namespace bg2e::json;
+    
+    auto matJson = JSON(JsonObject{
+        { "name", JSON(mat.name()) },
+        { "groupName", JSON(mat.groupName()) }
+    });
+    auto & obj = matJson->objectValue();
+    
+    if (mat.albedoTexture().get())
+    {
+        obj["diffuse"] = JSON(mat.albedoTexture()->imageFilePath());
+        addUniqueTexture(mat.albedoTexture(), uniqueTextures);
+        obj["diffuseScale"] = JSON(mat.albedoScale());
+        obj["diffuseUV"] = JSON(mat.albedoUVSet());
+    }
+    else {
+        obj["diffuse"] = JSON(mat.albedo());
+    }
+    
+    if (mat.metalnessTexture().get())
+    {
+        obj["metallic"] = JSON(mat.metalnessTexture()->imageFilePath());
+        addUniqueTexture(mat.metalnessTexture(), uniqueTextures);
+        obj["metallicChannel"] = JSON(mat.metalnessChannel());
+        obj["metallicScale"] = JSON(mat.metalnessScale());
+        obj["metallicUV"] = JSON(mat.metalnessUVSet());
+    }
+    else {
+        obj["metallic"] = JSON(mat.metalness());
+    }
+    
+    if (mat.roughnessTexture().get())
+    {
+        obj["roughness"] = JSON(mat.roughnessTexture()->imageFilePath());
+        addUniqueTexture(mat.roughnessTexture(), uniqueTextures);
+        obj["roughnessChannel"] = JSON(mat.roughnessChannel());
+        obj["roughnessScale"] = JSON(mat.roughnessScale());
+        obj["roughnessUV"] = JSON(mat.roughnessUVSet());
+    }
+    else {
+        obj["roughness"] = JSON(mat.roughness());
+    }
+    
+    if (mat.normalTexture().get())
+    {
+        obj["normal"] = JSON(mat.normalTexture()->imageFilePath());
+        addUniqueTexture(mat.normalTexture(), uniqueTextures);
+        obj["normalScale"] = JSON(mat.normalScale());
+        obj["normalUV"] = JSON(mat.normalUVSet());
+    }
+    
+    if (mat.aoTexture().get())
+    {
+        obj["ambientOcclussion"] = JSON(mat.aoTexture()->imageFilePath());
+        addUniqueTexture(mat.aoTexture(), uniqueTextures);
+        obj["ambientOcclussionScale"] = JSON(mat.aoScale());
+        obj["ambientOcclussionChannel"] = JSON(mat.aoChannel());
+        obj["ambientOcclussionUV"] = JSON(mat.aoUVSet());
+    }
+    
+    return matJson->serialize();
 }
 
 std::string MaterialSerializer::serializeMaterialArray(
     std::vector<base::MaterialAttributes>& mat,
-    std::vector<base::Texture*> & uniqueTextures
+    std::vector<std::shared_ptr<base::Texture>> & uniqueTextures
 ) {
-    std::string result = "";
+    std::string result = "[";
+    std::string sep = "";
     for (auto & m : mat)
     {
-        result += serializeMaterial(m, uniqueTextures);
+        result += sep + serializeMaterial(m, uniqueTextures);
+        sep = ",";
     }
-    return result;
+    return result + "]";
+}
+
+void MaterialSerializer::addUniqueTexture(
+    std::shared_ptr<base::Texture> tex,
+    std::vector<std::shared_ptr<base::Texture>>& textures
+) {
+    // Only add textures associated with a file
+    if (tex->imageFilePath() == "")
+    {
+        return;
+    }
+    
+    for (auto & t : textures)
+    {
+        if (t->imageFilePath() == tex->imageFilePath())
+        {
+            return;
+        }
+    }
+    
+    textures.push_back(tex);
 }
 
 }

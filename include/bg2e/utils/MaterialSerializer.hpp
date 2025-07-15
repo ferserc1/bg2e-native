@@ -45,12 +45,18 @@ public:
     
     std::string serializeMaterial(
         base::MaterialAttributes& mat,
-        std::vector<base::Texture*> & uniqueTextures
+        std::vector<std::shared_ptr<base::Texture>> & uniqueTextures
     );
     
     std::string serializeMaterialArray(
         std::vector<base::MaterialAttributes>& mat,
-        std::vector<base::Texture*> & uniqueTextures
+        std::vector<std::shared_ptr<base::Texture>> & uniqueTextures
+    );
+
+protected:
+    void addUniqueTexture(
+        std::shared_ptr<base::Texture> tex,
+        std::vector<std::shared_ptr<base::Texture>>& textures
     );
 };
 

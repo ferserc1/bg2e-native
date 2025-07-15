@@ -395,6 +395,16 @@ public:
             material.setMetalness(metalness);
             material.setRoughness(roughness);
             material.setAlbedo(albedo);
+            _sphere->material(1).setMetalness(metalness);
+            _sphere->material(1).setRoughness(roughness);
+            _sphere->material(2).setMetalness(metalness);
+            _sphere->material(2).setRoughness(roughness);
+            _sphere->material(3).setMetalness(metalness);
+            _sphere->material(3).setRoughness(roughness);
+            _sphere->material(4).setMetalness(metalness);
+            _sphere->material(4).setRoughness(roughness);
+            _sphere->material(5).setMetalness(metalness);
+            _sphere->material(5).setRoughness(roughness);
             _sphere->updateMaterials();
             
             if (bg2e::ui::BasicWidgets::button("Open File"))
@@ -540,6 +550,7 @@ protected:
         // sceneRoot->addChild(light4);
         
         // Procedural geometry
+        /*
         glm::vec3 pos{0};
         const uint32_t rows = 10;
         const uint32_t cols = 10;
@@ -601,6 +612,23 @@ protected:
         //auto bg2Model = bg2e::db::loadMeshBg2(assetPath, "armchair.bg2");
         
         sceneRoot->addChild(customSphereNode);
+        */
+        
+        auto cubeDrawable = std::make_shared<bg2e::scene::Drawable>();
+        auto cubeMesh = std::shared_ptr<bg2e::geo::Mesh>(bg2e::geo::createCube(4.0f, 4.0f, 4.0f));
+        cubeDrawable->setMesh(cubeMesh);
+        cubeDrawable->material(0).setAlbedo(bg2e::base::Color::Red());
+        cubeDrawable->material(1).setAlbedo(bg2e::base::Color::Green());
+        cubeDrawable->material(2).setAlbedo(bg2e::base::Color::Yellow());
+        cubeDrawable->material(3).setAlbedo(bg2e::base::Color::Blue());
+        cubeDrawable->material(4).setAlbedo(bg2e::base::Color::Pink());
+        cubeDrawable->material(5).setAlbedo(bg2e::base::Color::Purple());
+        cubeDrawable->load(_engine);
+        auto cubeNode = new bg2e::scene::Node("Cube");
+        cubeNode->addComponent(new bg2e::scene::DrawableComponent(cubeDrawable));
+        sceneRoot->addChild(cubeNode);
+        _sphere = cubeDrawable;
+        
         
         _engine->cleanupManager().push([&](VkDevice) {
             _sphere.reset();
