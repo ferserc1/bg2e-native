@@ -454,7 +454,9 @@ public:
                 file.open(newFile);
                 if (file.is_open())
                 {
+                    file << "{\"fileType\": \"vwgl::scene\",\"version\":{\"major\":2,\"minor\":0,\"rev\":0},\"scene\":[";
                     file << sceneData->toString() << std::endl;
+                    file << "]}";
                     file.close();
                 }
             }
@@ -525,7 +527,7 @@ protected:
         
         
         auto cameraNode = std::shared_ptr<bg2e::scene::Node>(new bg2e::scene::Node("Camera"));
-        cameraNode->addComponent(bg2e::scene::TransformComponent::makeTranslated(0.0f, 0.0f, 45.0f ));
+        cameraNode->addComponent(bg2e::scene::TransformComponent::makeTranslated(0.0f, 0.0f, 5.0f ));
         
         cameraNode->addComponent(new bg2e::scene::CameraComponent());
         auto projection = new bg2e::math::OpticalProjection();

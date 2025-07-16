@@ -139,7 +139,8 @@ bool MaterialSerializer::deserializeMaterialArray(
 
 std::string MaterialSerializer::serializeMaterial(
     base::MaterialAttributes& mat,
-    std::vector<std::shared_ptr<base::Texture>> & uniqueTextures
+    std::vector<std::shared_ptr<base::Texture>> & uniqueTextures,
+    bool relativePaths
 ) {
     using namespace bg2e::json;
     
@@ -153,7 +154,12 @@ std::string MaterialSerializer::serializeMaterial(
     
     if (mat.albedoTexture().get())
     {
-        obj["diffuse"] = JSON(mat.albedoTexture()->imageFilePath());
+        std::filesystem::path fileName = mat.albedoTexture()->imageFilePath();
+        if (relativePaths)
+        {
+            fileName = fileName.filename();
+        }
+        obj["diffuse"] = JSON(fileName);
         addUniqueTexture(mat.albedoTexture(), uniqueTextures);
         obj["diffuseScale"] = JSON(mat.albedoScale());
         obj["diffuseUV"] = JSON(mat.albedoUVSet());
@@ -164,7 +170,12 @@ std::string MaterialSerializer::serializeMaterial(
     
     if (mat.metalnessTexture().get())
     {
-        obj["metallic"] = JSON(mat.metalnessTexture()->imageFilePath());
+        std::filesystem::path fileName = mat.metalnessTexture()->imageFilePath();
+        if (relativePaths)
+        {
+            fileName = fileName.filename();
+        }
+        obj["metallic"] = JSON(fileName);
         addUniqueTexture(mat.metalnessTexture(), uniqueTextures);
         obj["metallicChannel"] = JSON(mat.metalnessChannel());
         obj["metallicScale"] = JSON(mat.metalnessScale());
@@ -176,7 +187,12 @@ std::string MaterialSerializer::serializeMaterial(
     
     if (mat.roughnessTexture().get())
     {
-        obj["roughness"] = JSON(mat.roughnessTexture()->imageFilePath());
+        std::filesystem::path fileName = mat.roughnessTexture()->imageFilePath();
+        if (relativePaths)
+        {
+            fileName = fileName.filename();
+        }
+        obj["roughness"] = JSON(fileName);
         addUniqueTexture(mat.roughnessTexture(), uniqueTextures);
         obj["roughnessChannel"] = JSON(mat.roughnessChannel());
         obj["roughnessScale"] = JSON(mat.roughnessScale());
@@ -188,7 +204,12 @@ std::string MaterialSerializer::serializeMaterial(
     
     if (mat.normalTexture().get())
     {
-        obj["normal"] = JSON(mat.normalTexture()->imageFilePath());
+        std::filesystem::path fileName = mat.normalTexture()->imageFilePath();
+        if (relativePaths)
+        {
+            fileName = fileName.filename();
+        }
+        obj["normal"] = JSON(fileName);
         addUniqueTexture(mat.normalTexture(), uniqueTextures);
         obj["normalScale"] = JSON(mat.normalScale());
         obj["normalUV"] = JSON(mat.normalUVSet());
@@ -196,7 +217,12 @@ std::string MaterialSerializer::serializeMaterial(
     
     if (mat.aoTexture().get())
     {
-        obj["ambientOcclussion"] = JSON(mat.aoTexture()->imageFilePath());
+        std::filesystem::path fileName = mat.aoTexture()->imageFilePath();
+        if (relativePaths)
+        {
+            fileName = fileName.filename();
+        }
+        obj["ambientOcclussion"] = JSON(fileName);
         addUniqueTexture(mat.aoTexture(), uniqueTextures);
         obj["ambientOcclussionScale"] = JSON(mat.aoScale());
         obj["ambientOcclussionChannel"] = JSON(mat.aoChannel());
@@ -208,13 +234,14 @@ std::string MaterialSerializer::serializeMaterial(
 
 std::string MaterialSerializer::serializeMaterialArray(
     std::vector<base::MaterialAttributes>& mat,
-    std::vector<std::shared_ptr<base::Texture>> & uniqueTextures
+    std::vector<std::shared_ptr<base::Texture>> & uniqueTextures,
+    bool relativePaths
 ) {
     std::string result = "[";
     std::string sep = "";
     for (auto & m : mat)
     {
-        result += sep + serializeMaterial(m, uniqueTextures);
+        result += sep + serializeMaterial(m, uniqueTextures, relativePaths);
         sep = ",";
     }
     return result + "]";

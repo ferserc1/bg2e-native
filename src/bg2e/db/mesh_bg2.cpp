@@ -443,20 +443,27 @@ void storeMeshBg2(const std::filesystem::path& filePath, Bg2Mesh * mesh)
     
     utils::MaterialSerializer matSerializer;
     std::vector<std::shared_ptr<base::Texture>> textures;
-    auto matData = matSerializer.serializeMaterialArray(mesh->materials, textures);
+    auto matData = matSerializer.serializeMaterialArray(mesh->materials, textures, true);
     file->materialData = new char[matData.size()];
     strcpy(file->materialData, matData.c_str());
+    
+    for (auto t : textures)
+    {
+        std::filesystem::path srcTexture = t->imageFilePath();
+        auto fileName = srcTexture.filename();
+        auto dstTexture = basePath;
+        dstTexture += fileName;
+        if (srcTexture != dstTexture)
+        {
+            std::filesystem::copy(srcTexture, dstTexture, std::filesystem::copy_options::overwrite_existing);
+        }
+    }
     
     Bg2ioBuffer outBuffer = BG2IO_BUFFER_INIT;
     int error = bg2io_writeFileToBuffer(file, &outBuffer);
     if (error != BG2IO_NO_ERROR)
     {
         throw std::runtime_error("Error writting bg2 file buffer.");
-    }
-    
-    for (auto t : textures)
-    {
-        // TODO: Save textures
     }
     
     std::ofstream outFile(filePath, std::ios::binary);
