@@ -1,5 +1,6 @@
 #include <bg2e/scene/TransformComponent.hpp>
 #include <bg2e/scene/TransformVisitor.hpp>
+#include <bg2e/scene/ComponentFactoryRegistry.hpp>
 
 namespace bg2e::scene {
 
@@ -146,6 +147,7 @@ std::shared_ptr<json::JsonNode> TransformComponent::serialize(const std::filesys
     
     return compData;
 }
-    
+
+BG2E_SCENE_REGISTER_COMPONENT(TransformComponent);
     
 }

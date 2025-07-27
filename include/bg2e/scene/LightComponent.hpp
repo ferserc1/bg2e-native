@@ -22,6 +22,9 @@ public:
     const glm::vec3 position() const;
     const glm::vec3 direction() const;
 
+    void deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path& basePath) override;
+    std::shared_ptr<json::JsonNode> serialize(const std::filesystem::path& basePath) override;
+
 protected:
     base::Light _light;
 };

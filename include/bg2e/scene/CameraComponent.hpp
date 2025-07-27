@@ -28,6 +28,9 @@ public:
     void resizeViewport(const math::Viewport& vp) override;
     void update(float delta) override;
     
+    void deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path& basePath) override;
+    std::shared_ptr<json::JsonNode> serialize(const std::filesystem::path& basePath) override;
+    
 protected:
     base::Camera _camera;
 };

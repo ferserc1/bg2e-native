@@ -527,7 +527,7 @@ protected:
         
         
         auto cameraNode = std::shared_ptr<bg2e::scene::Node>(new bg2e::scene::Node("Camera"));
-        cameraNode->addComponent(bg2e::scene::TransformComponent::makeTranslated(0.0f, 0.0f, 5.0f ));
+        cameraNode->addComponent(bg2e::scene::TransformComponent::makeTranslated(0.0f, 1.6f, 5.0f ));
         
         cameraNode->addComponent(new bg2e::scene::CameraComponent());
         auto projection = new bg2e::math::OpticalProjection();
@@ -647,7 +647,7 @@ protected:
         modelDrawable->load(_engine);
         auto modelNode = new bg2e::scene::Node("Armchair");
         modelNode->addComponent(new bg2e::scene::DrawableComponent(modelDrawable));
-        modelNode->addComponent(new bg2e::scene::TransformComponent(glm::translate(glm::mat4 { 1.0 }, glm::vec3{ 5, 0, 0 })));
+        modelNode->addComponent(new bg2e::scene::TransformComponent(glm::translate(glm::mat4 { 1.0 }, glm::vec3{ 0, 0, 0 })));
         modelNode->transform()->scale(4.0f);
         sceneRoot->addChild(modelNode);
         

@@ -35,6 +35,9 @@ public:
     inline const std::string& environmentImage() const { return _environmentImage; }
     
     inline size_t imgHash() const { return _imgHash; }
+    
+    void deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path& basePath) override;
+    std::shared_ptr<json::JsonNode> serialize(const std::filesystem::path& basePath) override;
 
 protected:
     std::string _environmentImage;
