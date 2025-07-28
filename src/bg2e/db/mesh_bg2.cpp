@@ -14,6 +14,7 @@
 #include <bg2-io.h>
 
 #include <fstream>
+#include <cstring>
 
 namespace bg2e::db {
 
