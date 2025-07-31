@@ -4,6 +4,7 @@
 
 #include <bg2e/common.hpp>
 #include <bg2e/math/projections.hpp>
+#include <bg2e/json/JsonNode.hpp>
 
 #include <memory>
 
@@ -21,6 +22,28 @@ public:
     inline const glm::mat4& projectionMatrix() const { return _projMatrix; }
     
     const glm::mat4& updateProjectionMatrix();
+    
+    void deserialize(std::shared_ptr<json::JsonNode> jsonData)
+    {
+    
+    }
+    
+    std::shared_ptr<json::JsonNode> serialize()
+    {
+        using namespace bg2e::json;
+        if (_projection.get())
+        {
+            return JSON(JsonObject{
+                { "projection", _projection->serialize() }
+            });
+        }
+        else
+        {
+            return JSON(JsonObject{
+                { "projectionMatrix", JSON(_projMatrix) }
+            });
+        }
+    }
     
 protected:
     std::shared_ptr<math::Projection> _projection;

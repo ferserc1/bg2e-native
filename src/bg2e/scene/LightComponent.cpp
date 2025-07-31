@@ -42,8 +42,9 @@ std::shared_ptr<json::JsonNode> LightComponent::serialize(const std::filesystem:
     auto compData = Component::serialize(basePath);
     JsonObject & obj = compData->objectValue();
     
-    // TODO: Implement this
-
+    auto lightData = _light.serialize();
+    obj["lightData"] = lightData;
+    
     return compData;
 }
 

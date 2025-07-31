@@ -1,6 +1,9 @@
 #pragma once
 
 #include <bg2e/base/Color.hpp>
+#include <bg2e/json/JsonNode.hpp>
+
+#include <memory>
 
 namespace bg2e {
 namespace base {
@@ -26,7 +29,37 @@ public:
 
     virtual void setType(LightType type) { _type = type; }
     virtual LightType type() const { return _type; }
+    
+    std::string typeString() const
+    {
+        switch (_type)
+        {
+            case TypeOmni:
+                return "OMNI";
+            case TypeSpot:
+                return "SPOT";
+            case TypeDirectional:
+                return "DIRECTIONAL";
+            default:
+                return "DISABLED";
+        }
+    }
 
+    void deserialize(std::shared_ptr<json::JsonNode> jsonData)
+    {
+    
+    }
+    
+    std::shared_ptr<json::JsonNode> serialize()
+    {
+        using namespace bg2e::json;
+        return JSON(JsonObject{
+            { "color", JSON(_color) },
+            { "intensity", JSON(_intensity) },
+            { "type", JSON(typeString()) }
+        });
+    }
+    
 protected:
     Color _color { 1.0f, 1.0f, 1.0f, 1.0f };
     float _intensity = 1.0f;

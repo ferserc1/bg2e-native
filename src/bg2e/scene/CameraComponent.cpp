@@ -40,7 +40,7 @@ std::shared_ptr<json::JsonNode> CameraComponent::serialize(const std::filesystem
     auto compData = Component::serialize(basePath);
     JsonObject & obj = compData->objectValue();
     
-    // TODO: Implement this
+    obj["cameraData"] = _camera.serialize();
 
     return compData;
 }

@@ -4,6 +4,9 @@
 
 #include <bg2e/common.hpp>
 #include <bg2e/math/base.hpp>
+#include <bg2e/json/JsonNode.hpp>
+
+#include <memory>
 
 namespace bg2e {
 namespace math {
@@ -44,6 +47,21 @@ public:
     inline Viewport viewport() { return _viewport; }
     inline void setViewport(const Viewport& vp) { _viewport = vp; }
     
+    virtual void deserialize(std::shared_ptr<json::JsonNode> jsonData)
+    {
+    
+    }
+    
+    virtual std::shared_ptr<json::JsonNode> serialize()
+    {
+        using namespace bg2e::json;
+        return JSON(JsonObject({
+            { "near", JSON(_near) },
+            { "far", JSON(_far) }
+            // Viewport is not serialized because is set during render
+        }));
+    }
+    
 protected:
 
     float _near = 0.1f;
@@ -68,6 +86,20 @@ public:
 
     inline void setFov(float fov) { _fov = fov; }
     inline float fov() const { return _fov; }
+    
+    void deserialize(std::shared_ptr<json::JsonNode> jsonData) override{
+    
+    }
+    
+    std::shared_ptr<json::JsonNode> serialize() override
+    {
+        using namespace bg2e::json;
+        auto result = Projection::serialize();
+        JsonObject & obj = result->objectValue();
+        obj["type"] = JSON("PerspectiveProjection");
+        obj["fov"] = JSON(_fov);
+        return result;
+    }
     
 protected:
 
@@ -94,6 +126,21 @@ public:
     inline float focalLength() const { return _focalLength; }
     inline void setFrameSize(float fs) { _frameSize = fs; }
     inline float frameSize() const { return _frameSize; }
+    
+    void deserialize(std::shared_ptr<json::JsonNode> jsonData) override{
+    
+    }
+    
+    std::shared_ptr<json::JsonNode> serialize() override
+    {
+        using namespace bg2e::json;
+        auto result = Projection::serialize();
+        JsonObject & obj = result->objectValue();
+        obj["type"] = JSON("OpticalProjection");
+        obj["focalLength"] = JSON(_focalLength);
+        obj["frameSize"] = JSON(_frameSize);
+        return result;
+    }
     
 protected:
     float _focalLength = 50.0f;
