@@ -96,6 +96,7 @@
 		EDBFDD042E24DBBA00864579 /* bg2-io.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = "bg2-io.xcodeproj"; sourceTree = "<group>"; };
 		EDBFDD852E24DE6D00864579 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		EDBFE1952E2520EE00864579 /* bg2-io.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = "bg2-io.xcodeproj"; sourceTree = "<group>"; };
+		EDC172122E3BDE76005E0A52 /* bg2-io.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = "bg2-io.xcodeproj"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -481,6 +482,13 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
+		EDC172162E3BDE76005E0A52 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXHeadersBuildPhase section */
@@ -602,6 +610,10 @@
 				{
 					ProductGroup = ED1106422E15191500F37999 /* Products */;
 					ProjectRef = ED11063E2E15191500F37999 /* bg2-io.xcodeproj */;
+				},
+				{
+					ProductGroup = EDC172162E3BDE76005E0A52 /* Products */;
+					ProjectRef = EDC172122E3BDE76005E0A52 /* bg2-io.xcodeproj */;
 				},
 				{
 					ProductGroup = ED110A5B2E15194400F37999 /* Products */;

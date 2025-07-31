@@ -441,24 +441,29 @@ public:
                 });
                 auto filePath = fd.saveFile();
                 std::cout << filePath << std::endl;
-                auto rootPath = filePath;
-                rootPath.remove_filename();
-                auto sceneData = renderer()->scene()->rootNode()->serialize(rootPath);
-                std::cout << rootPath << std::endl;
-                std::cout << sceneData->toString() << std::endl;
                 
-                auto newFile = rootPath;
-                newFile.append("otherFile.vitscnj");
-                
-                std::ofstream file;
-                file.open(newFile);
-                if (file.is_open())
-                {
-                    file << "{\"fileType\": \"vwgl::scene\",\"version\":{\"major\":2,\"minor\":0,\"rev\":0},\"scene\":[";
-                    file << sceneData->toString() << std::endl;
-                    file << "]}";
-                    file.close();
-                }
+                bg2e::db::saveScene(
+                    renderer()->scene()->rootNode(),
+                    filePath
+                );
+//                auto rootPath = filePath;
+//                rootPath.remove_filename();
+//                auto sceneData = renderer()->scene()->rootNode()->serialize(rootPath);
+//                std::cout << rootPath << std::endl;
+//                std::cout << sceneData->toString() << std::endl;
+//                
+//                auto newFile = rootPath;
+//                newFile.append("otherFile.vitscnj");
+//                
+//                std::ofstream file;
+//                file.open(newFile);
+//                if (file.is_open())
+//                {
+//                    file << "{\"fileType\": \"vwgl::scene\",\"version\":{\"major\":2,\"minor\":0,\"rev\":0},\"scene\":[";
+//                    file << sceneData->toString() << std::endl;
+//                    file << "]}";
+//                    file.close();
+//                }
             }
             
             if (_environment)
