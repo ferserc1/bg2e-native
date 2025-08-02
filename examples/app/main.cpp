@@ -415,19 +415,10 @@ public:
                 });
                 auto filePath = fd.openFile();
                 
-                auto bg2Model = bg2e::db::loadMeshBg2(filePath);
-                auto modelDrawable = new bg2e::scene::Drawable();
-                modelDrawable->setMesh(bg2Model->mesh);
-                uint32_t i = 0;
-                for (auto m : bg2Model->materials)
-                {
-                    modelDrawable->setMaterial(m, i);
-                    ++i;
-                }
-                modelDrawable->load(_engine);
+                auto modelDrawable = bg2e::db::loadDrawableBg2(filePath, _engine);
                 auto modelNode = new bg2e::scene::Node("Armchair");
                 modelNode->addComponent(new bg2e::scene::DrawableComponent(modelDrawable));
-                modelNode->addComponent(new bg2e::scene::TransformComponent());
+                modelNode->addComponent(new bg2e::scene::TransformComponent(glm::translate(glm::mat4{ 1.0 }, glm::vec3{ 5, 0, 0 })));
                 modelNode->transform()->scale(4.0f);
                 renderer()->scene()->rootNode()->addChild(modelNode);
                 
@@ -446,24 +437,6 @@ public:
                     renderer()->scene()->rootNode(),
                     filePath
                 );
-//                auto rootPath = filePath;
-//                rootPath.remove_filename();
-//                auto sceneData = renderer()->scene()->rootNode()->serialize(rootPath);
-//                std::cout << rootPath << std::endl;
-//                std::cout << sceneData->toString() << std::endl;
-//                
-//                auto newFile = rootPath;
-//                newFile.append("otherFile.vitscnj");
-//                
-//                std::ofstream file;
-//                file.open(newFile);
-//                if (file.is_open())
-//                {
-//                    file << "{\"fileType\": \"vwgl::scene\",\"version\":{\"major\":2,\"minor\":0,\"rev\":0},\"scene\":[";
-//                    file << sceneData->toString() << std::endl;
-//                    file << "]}";
-//                    file.close();
-//                }
             }
             
             if (_environment)

@@ -50,7 +50,7 @@ std::shared_ptr<json::JsonNode> DrawableComponent::serialize(const std::filesyst
     Drawable * drawable = dynamic_cast<Drawable*>(_drawable.get());
     if (drawable)
     {
-         if (_drawable->name() == "")
+        if (_drawable->name() == "")
         {
             _drawable->setName(utils::uniqueId());
         }
@@ -60,13 +60,8 @@ std::shared_ptr<json::JsonNode> DrawableComponent::serialize(const std::filesyst
         auto filePath = basePath;
         filePath.append(_drawable->name());
         filePath.replace_extension(".bg2");
-        db::Bg2Mesh meshData;
-        meshData.mesh = drawable->mesh();
-        for (auto & mat : drawable->materials())
-        {
-            meshData.materials.push_back(mat->materialAttributes());
-        }
-        db::storeMeshBg2(filePath, &meshData);
+        
+        db::storeDrawableBg2(filePath, drawable);
     }
 
     return compData;

@@ -10,6 +10,7 @@
 #include <bg2e/geo/modifiers.hpp>
 #include <bg2e/utils/MaterialSerializer.hpp>
 #include <bg2e/base/Texture.hpp>
+#include <bg2e/utils/utils.hpp>
 
 #include <bg2-io.h>
 
@@ -484,6 +485,83 @@ void storeMeshBg2(const std::filesystem::path& filePath, const std::string& file
     auto fullPath = filePath;
     fullPath.append(fileName);
     storeMeshBg2(fullPath, mesh);
+}
+
+std::shared_ptr<bg2e::scene::Drawable> loadDrawableBg2(
+    const std::filesystem::path& filePath,
+    bg2e::render::Engine * engine
+) {
+    auto bg2Model = std::unique_ptr<Bg2Mesh>(bg2e::db::loadMeshBg2(filePath));
+    auto result = std::make_shared<bg2e::scene::Drawable>();
+    result->setMesh(bg2Model->mesh);
+    uint32_t i = 0;
+    for (auto m : bg2Model->materials)
+    {
+        result->setMaterial(m, i);
+        ++i;
+    }
+    result->load(engine);
+
+    return result;
+}
+
+std::shared_ptr<bg2e::scene::Drawable> loadDrawableBg2(
+    const std::filesystem::path& basePath,
+    const std::string& fileName,
+    bg2e::render::Engine * engine
+) {
+    auto fullPath = basePath;
+    fullPath += fileName;
+    return loadDrawableBg2(fullPath, engine);
+}
+
+void storeDrawableBg2(
+    const std::filesystem::path& filePath,
+    bg2e::scene::Drawable* drawable
+) {
+    db::Bg2Mesh meshData;
+    meshData.mesh = drawable->mesh();
+    for (auto & mat : drawable->materials())
+    {
+        meshData.materials.push_back(mat->materialAttributes());
+    }
+    db::storeMeshBg2(filePath, &meshData);
+}
+
+void storeDrawableBg2(
+    const std::filesystem::path& basePath,
+    const std::string& fileName,
+    bg2e::scene::Drawable* drawable
+) {
+    auto filePath = basePath;
+    filePath += fileName;
+    storeDrawableBg2(
+        filePath,
+        drawable
+    );
+}
+
+void storeDrawableBg2(
+    const std::filesystem::path& filePath,
+    std::shared_ptr<bg2e::scene::Drawable> drawable
+) {
+    db::Bg2Mesh meshData;
+    meshData.mesh = drawable->mesh();
+    for (auto & mat : drawable->materials())
+    {
+        meshData.materials.push_back(mat->materialAttributes());
+    }
+    db::storeMeshBg2(filePath, &meshData);
+}
+
+void storeDrawableBg2(
+    const std::filesystem::path& basePath,
+    const std::string& fileName,
+    std::shared_ptr<bg2e::scene::Drawable> drawable
+) {
+    auto fullPath = basePath;
+    fullPath += fileName;
+    storeDrawableBg2(fullPath, drawable);
 }
 
 }
