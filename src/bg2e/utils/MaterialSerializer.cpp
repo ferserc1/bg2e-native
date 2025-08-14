@@ -159,7 +159,7 @@ std::string MaterialSerializer::serializeMaterial(
         {
             fileName = fileName.filename();
         }
-        obj["diffuse"] = JSON(fileName);
+        obj["diffuse"] = JSON(fileName.string());
         addUniqueTexture(mat.albedoTexture(), uniqueTextures);
         obj["diffuseScale"] = JSON(mat.albedoScale());
         obj["diffuseUV"] = JSON(mat.albedoUVSet());
@@ -175,7 +175,7 @@ std::string MaterialSerializer::serializeMaterial(
         {
             fileName = fileName.filename();
         }
-        obj["metallic"] = JSON(fileName);
+        obj["metallic"] = JSON(fileName.string());
         addUniqueTexture(mat.metalnessTexture(), uniqueTextures);
         obj["metallicChannel"] = JSON(mat.metalnessChannel());
         obj["metallicScale"] = JSON(mat.metalnessScale());
@@ -192,7 +192,7 @@ std::string MaterialSerializer::serializeMaterial(
         {
             fileName = fileName.filename();
         }
-        obj["roughness"] = JSON(fileName);
+        obj["roughness"] = JSON(fileName.string());
         addUniqueTexture(mat.roughnessTexture(), uniqueTextures);
         obj["roughnessChannel"] = JSON(mat.roughnessChannel());
         obj["roughnessScale"] = JSON(mat.roughnessScale());
@@ -209,7 +209,7 @@ std::string MaterialSerializer::serializeMaterial(
         {
             fileName = fileName.filename();
         }
-        obj["normal"] = JSON(fileName);
+        obj["normal"] = JSON(fileName.string());
         addUniqueTexture(mat.normalTexture(), uniqueTextures);
         obj["normalScale"] = JSON(mat.normalScale());
         obj["normalUV"] = JSON(mat.normalUVSet());
@@ -222,7 +222,7 @@ std::string MaterialSerializer::serializeMaterial(
         {
             fileName = fileName.filename();
         }
-        obj["ambientOcclussion"] = JSON(fileName);
+        obj["ambientOcclussion"] = JSON(fileName.string());
         addUniqueTexture(mat.aoTexture(), uniqueTextures);
         obj["ambientOcclussionScale"] = JSON(mat.aoScale());
         obj["ambientOcclussionChannel"] = JSON(mat.aoChannel());

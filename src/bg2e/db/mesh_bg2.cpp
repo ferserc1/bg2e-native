@@ -404,10 +404,10 @@ void storeMeshBg2(const std::filesystem::path& filePath, Bg2Mesh * mesh)
             
             // Flip Y coord
             uv0.push_back(v.texCoord0.x);
-            uv0.push_back(1.0 - v.texCoord0.y);
+            uv0.push_back(1.0f - v.texCoord0.y);
             
             uv1.push_back(v.texCoord1.x);
-            uv1.push_back(1.0 - v.texCoord1.y);
+            uv1.push_back(1.0f - v.texCoord1.y);
             
             indexes.push_back(plistIndex);
             plistIndex++;
@@ -430,13 +430,13 @@ void storeMeshBg2(const std::filesystem::path& filePath, Bg2Mesh * mesh)
             material.setName("material" + std::to_string(submeshIndex));
         }
         plist->name = new char[material.name().size()];
-        strcpy(plist->name, material.name().c_str());
+        strcpy_s(plist->name, material.name().size(), material.name().c_str());
         plist->matName = new char[material.name().size()];
-        strcpy(plist->matName, material.name().c_str());
+        strcpy_s(plist->matName, material.name().size(), material.name().c_str());
         
         
         plist->groupName = new char[material.groupName().size()];
-        strcpy(plist->groupName, material.groupName().c_str());
+        strcpy_s(plist->groupName, material.groupName().size(), material.groupName().c_str());
         
         submeshIndex++;
     }
@@ -447,7 +447,7 @@ void storeMeshBg2(const std::filesystem::path& filePath, Bg2Mesh * mesh)
     std::vector<std::shared_ptr<base::Texture>> textures;
     auto matData = matSerializer.serializeMaterialArray(mesh->materials, textures, true);
     file->materialData = new char[matData.size()];
-    strcpy(file->materialData, matData.c_str());
+    strcpy_s(file->materialData, matData.size(), matData.c_str());
     
     for (auto t : textures)
     {

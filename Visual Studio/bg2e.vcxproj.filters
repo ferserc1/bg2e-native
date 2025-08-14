@@ -588,6 +588,9 @@
     <ClInclude Include="..\include\bg2e\scene\ComponentFactoryRegistry.hpp">
       <Filter>Header Files\bg2e\scene</Filter>
     </ClInclude>
+    <ClInclude Include="..\include\bg2e\db\scene.hpp">
+      <Filter>Header Files\bg2e\db</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\bg2e\app\MainLoop.cpp">
@@ -922,6 +925,9 @@
     </ClCompile>
     <ClCompile Include="..\src\bg2e\scene\ComponentFactoryRegistry.cpp">
       <Filter>Source Files\scene</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\bg2e\db\scene.cpp">
+      <Filter>Source Files\db</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

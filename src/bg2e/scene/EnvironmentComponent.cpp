@@ -45,7 +45,7 @@ std::shared_ptr<json::JsonNode> EnvironmentComponent::serialize(const std::files
     auto fileName = srcFilePath.filename();
     dstFilePath += fileName;
     std::filesystem::copy(srcFilePath, dstFilePath, std::filesystem::copy_options::overwrite_existing);
-    obj["equirectangularTexture"] = JSON(fileName);
+    obj["equirectangularTexture"] = JSON(fileName.string());
     
     // The following properties are deprecated and are not serialized:
     // - irradianceIntensity
