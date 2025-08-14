@@ -430,13 +430,13 @@ void storeMeshBg2(const std::filesystem::path& filePath, Bg2Mesh * mesh)
             material.setName("material" + std::to_string(submeshIndex));
         }
         plist->name = new char[material.name().size()];
-        strcpy_s(plist->name, material.name().size(), material.name().c_str());
+        std::strncpy(plist->name, material.name().c_str(), material.name().size());
         plist->matName = new char[material.name().size()];
-        strcpy_s(plist->matName, material.name().size(), material.name().c_str());
+        std::strncpy(plist->name, material.name().c_str(), material.name().size());
         
         
         plist->groupName = new char[material.groupName().size()];
-        strcpy_s(plist->groupName, material.groupName().size(), material.groupName().c_str());
+        std::strncpy(plist->groupName, material.groupName().c_str(), material.groupName().size());
         
         submeshIndex++;
     }
@@ -447,7 +447,7 @@ void storeMeshBg2(const std::filesystem::path& filePath, Bg2Mesh * mesh)
     std::vector<std::shared_ptr<base::Texture>> textures;
     auto matData = matSerializer.serializeMaterialArray(mesh->materials, textures, true);
     file->materialData = new char[matData.size()];
-    strcpy_s(file->materialData, matData.size(), matData.c_str());
+    std::strncpy(file->materialData, matData.c_str(), matData.size());
     
     for (auto t : textures)
     {
