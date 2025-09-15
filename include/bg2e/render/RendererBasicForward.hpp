@@ -112,8 +112,8 @@ protected:
         float brightness;
         float contrast;
     };
-    float _brightness = 0.26;
-    float _contrast = 1.42f;
+    float _brightness = 0.142;
+    float _contrast = 1.621f;
 };
 
 }
