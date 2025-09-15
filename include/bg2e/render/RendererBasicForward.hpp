@@ -112,8 +112,14 @@ protected:
         float brightness;
         float contrast;
     };
+    
+#if BG2E_IS_MAC
     float _brightness = 0.142;
     float _contrast = 1.621f;
+#else
+    float _brightness = 0.132f;
+    float _contrast = 1.353f;
+#endif
 };
 
 }
