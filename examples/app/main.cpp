@@ -463,6 +463,14 @@ public:
                     _environment->setEnvironmentImage(assetPath, "black.jpg");
                 }
             }
+        
+            float brightness = renderer()->brightness();
+            float contrast = renderer()->contrast();
+            bg2e::ui::Input::slider("Brightness", &brightness, 0.0f, 1.0f);
+            bg2e::ui::Input::slider("Contrast", &contrast, 0.0f, 2.0f);
+            renderer()->setBrightness(brightness);
+            renderer()->setContrast(contrast);
+            
         });
         renderer()->setDrawSkybox(drawSkybox);
 	}

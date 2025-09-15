@@ -161,6 +161,8 @@ void RendererBasicForward::draw(
         .gamma = 1.0f
     #endif
     };
+    pushConstants.brightness = _brightness;
+    pushConstants.contrast = _contrast;
     vkCmdPushConstants(
         cmd,
         _pipelineLayout,

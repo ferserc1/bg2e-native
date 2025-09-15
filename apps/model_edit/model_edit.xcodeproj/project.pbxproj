@@ -35,7 +35,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		EDD77E3D2CEA600200278155 /* bg2_model_load.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = bg2_model_load.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		EDD77E3D2CEA600200278155 /* model_edit.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = model_edit.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		EDD77E512CEA60F800278155 /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
 		EDD77E552CEA61BD00278155 /* Setup.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Setup.entitlements; sourceTree = "<group>"; };
 		EDD77E602CEA64E600278155 /* CoreFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreFoundation.framework; path = System/Library/Frameworks/CoreFoundation.framework; sourceTree = SDKROOT; };
@@ -44,17 +44,17 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		ED83987F2DF5DAF5003F4F14 /* Exceptions for "bin" folder in "bg2_model_load" target */ = {
+		ED83987F2DF5DAF5003F4F14 /* Exceptions for "bin" folder in "model_edit" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				"Release/libbg2e-native.a",
 			);
-			target = EDD77E3C2CEA600200278155 /* bg2_model_load */;
+			target = EDD77E3C2CEA600200278155 /* model_edit */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet section */
-		ED5A58F22DF484590078BB45 /* Exceptions for "spv" folder in "Copy bg2e shaders" phase from "bg2_model_load" target */ = {
+		ED5A58F22DF484590078BB45 /* Exceptions for "spv" folder in "Copy bg2e shaders" phase from "model_edit" target */ = {
 			isa = PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet;
 			buildPhase = ED0B6D682DD78E0B00CCB2EC /* Copy bg2e shaders */;
 			membershipExceptions = (
@@ -73,7 +73,7 @@
 				sphere_to_cubemap.vert.spv,
 			);
 		};
-		ED9D98C32E13042C0096E466 /* Exceptions for "assets" folder in "Copy Assets" phase from "bg2_model_load" target */ = {
+		ED9D98C32E13042C0096E466 /* Exceptions for "assets" folder in "Copy Assets" phase from "model_edit" target */ = {
 			isa = PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet;
 			buildPhase = ED7DE86A2CFCCEF300AB280D /* Copy Assets */;
 			membershipExceptions = (
@@ -128,7 +128,7 @@
 		ED5A58E72DF4844F0078BB45 /* spv */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				ED5A58F22DF484590078BB45 /* Exceptions for "spv" folder in "Copy bg2e shaders" phase from "bg2_model_load" target */,
+				ED5A58F22DF484590078BB45 /* Exceptions for "spv" folder in "Copy bg2e shaders" phase from "model_edit" target */,
 			);
 			name = spv;
 			path = "/Users/fernando/desarrollo/bg2e-native/shaders/spv";
@@ -143,7 +143,7 @@
 		ED76DD862DF5CE6100D93ACF /* bin */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				ED83987F2DF5DAF5003F4F14 /* Exceptions for "bin" folder in "bg2_model_load" target */,
+				ED83987F2DF5DAF5003F4F14 /* Exceptions for "bin" folder in "model_edit" target */,
 			);
 			name = bin;
 			path = ../../bin;
@@ -152,7 +152,7 @@
 		ED9D989B2E1304140096E466 /* assets */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				ED9D98C32E13042C0096E466 /* Exceptions for "assets" folder in "Copy Assets" phase from "bg2_model_load" target */,
+				ED9D98C32E13042C0096E466 /* Exceptions for "assets" folder in "Copy Assets" phase from "model_edit" target */,
 			);
 			name = assets;
 			path = "/Users/fernando/desarrollo/bg2e-native/assets";
@@ -190,7 +190,7 @@
 		EDD77E3E2CEA600200278155 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				EDD77E3D2CEA600200278155 /* bg2_model_load.app */,
+				EDD77E3D2CEA600200278155 /* model_edit.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -239,9 +239,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		EDD77E3C2CEA600200278155 /* bg2_model_load */ = {
+		EDD77E3C2CEA600200278155 /* model_edit */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = EDD77E4D2CEA600300278155 /* Build configuration list for PBXNativeTarget "bg2_model_load" */;
+			buildConfigurationList = EDD77E4D2CEA600300278155 /* Build configuration list for PBXNativeTarget "model_edit" */;
 			buildPhases = (
 				EDD77E392CEA600200278155 /* Sources */,
 				EDD77E3A2CEA600200278155 /* Frameworks */,
@@ -255,11 +255,11 @@
 			);
 			dependencies = (
 			);
-			name = bg2_model_load;
+			name = model_edit;
 			packageProductDependencies = (
 			);
 			productName = Setup;
-			productReference = EDD77E3D2CEA600200278155 /* bg2_model_load.app */;
+			productReference = EDD77E3D2CEA600200278155 /* model_edit.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -276,7 +276,7 @@
 					};
 				};
 			};
-			buildConfigurationList = EDD77E382CEA600200278155 /* Build configuration list for PBXProject "bg2_model_load" */;
+			buildConfigurationList = EDD77E382CEA600200278155 /* Build configuration list for PBXProject "model_edit" */;
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -290,7 +290,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				EDD77E3C2CEA600200278155 /* bg2_model_load */,
+				EDD77E3C2CEA600200278155 /* model_edit */,
 			);
 		};
 /* End PBXProject section */
@@ -499,12 +499,12 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = "Xcode Resources/Setup.entitlements";
+				CODE_SIGN_IDENTITY = "Apple Development";
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
-				CODE_SIGN_STYLE = Manual;
+				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = "";
-				"DEVELOPMENT_TEAM[sdk=macosx*]" = RP926KEE5K;
+				DEVELOPMENT_TEAM = RP926KEE5K;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -545,12 +545,12 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = "Xcode Resources/Setup.entitlements";
+				CODE_SIGN_IDENTITY = "Apple Development";
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
-				CODE_SIGN_STYLE = Manual;
+				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = "";
-				"DEVELOPMENT_TEAM[sdk=macosx*]" = RP926KEE5K;
+				DEVELOPMENT_TEAM = RP926KEE5K;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -588,7 +588,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		EDD77E382CEA600200278155 /* Build configuration list for PBXProject "bg2_model_load" */ = {
+		EDD77E382CEA600200278155 /* Build configuration list for PBXProject "model_edit" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				EDD77E4B2CEA600300278155 /* Debug */,
@@ -597,7 +597,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		EDD77E4D2CEA600300278155 /* Build configuration list for PBXNativeTarget "bg2_model_load" */ = {
+		EDD77E4D2CEA600300278155 /* Build configuration list for PBXNativeTarget "model_edit" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				EDD77E4E2CEA600300278155 /* Debug */,

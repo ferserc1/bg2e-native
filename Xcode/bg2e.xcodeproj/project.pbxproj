@@ -53,6 +53,7 @@
 		ED5339F02CD7A1E900136B04 /* example-app.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "example-app.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		ED533A212CD7AAB700136B04 /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = main.cpp; path = ../examples/app/main.cpp; sourceTree = SOURCE_ROOT; };
 		ED69E8AF2E227DC400FFE313 /* bg2-io.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = "bg2-io.xcodeproj"; sourceTree = "<group>"; };
+		ED6E46A62E7840CA00F20180 /* bg2-io.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = "bg2-io.xcodeproj"; sourceTree = "<group>"; };
 		ED85B1DD2CDBA4E00039B44D /* Metal.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Metal.framework; path = System/Library/Frameworks/Metal.framework; sourceTree = SDKROOT; };
 		ED85B1F32CDBAABD0039B44D /* libbg2e-native.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libbg2e-native.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		ED85B20D2CDBAB730039B44D /* libbg2e-native.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = "libbg2e-native.a"; path = "../bin/Debug/libbg2e-native.a"; sourceTree = SOURCE_ROOT; };
@@ -326,6 +327,13 @@
 			sourceTree = "<group>";
 		};
 		ED69E8B32E227DC400FFE313 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		ED6E46AA2E7840CA00F20180 /* Products */ = {
 			isa = PBXGroup;
 			children = (
 			);
@@ -632,6 +640,10 @@
 					ProjectRef = ED110A572E15194400F37999 /* bg2-io.xcodeproj */;
 				},
 				{
+					ProductGroup = ED6E46AA2E7840CA00F20180 /* Products */;
+					ProjectRef = ED6E46A62E7840CA00F20180 /* bg2-io.xcodeproj */;
+				},
+				{
 					ProductGroup = ED241AE72E264EB00039BB33 /* Products */;
 					ProjectRef = ED241AE32E264EB00039BB33 /* bg2-io.xcodeproj */;
 				},
@@ -918,7 +930,7 @@
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = "";
 				CODE_SIGN_IDENTITY = "Apple Development: Fernando Serrano Carpena (E3D9BAQ32L)";
-				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;

@@ -318,7 +318,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "\nAPP_BUNDLE=${BUILT_PRODUCTS_DIR}/${PRODUCT_NAME}.app\n\"${PROJECT_DIR}/../../scripts/package_vulkan_resources.sh\" \"${APP_BUNDLE}\" ${CODE_SIGN_IDENTITY}\n";
+			shellScript = "\nAPP_BUNDLE=${BUILT_PRODUCTS_DIR}/${PRODUCT_NAME}.app\n\"${PROJECT_DIR}/../../scripts/package_vulkan_resources.sh\" \"${APP_BUNDLE}\" ${CODE_SIGN_IDENTITY}\ncodesign --deep --force --sign \"${CODE_SIGN_IDENTITY}\" \"${APP_BUNDLE}\"\n\n";
 		};
 		EDD77E712CEA67F300278155 /* Compile shaders */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -495,6 +495,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = "Xcode Resources/Setup.entitlements";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
@@ -537,6 +538,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = "Xcode Resources/Setup.entitlements";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;

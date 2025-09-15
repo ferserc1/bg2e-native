@@ -74,6 +74,13 @@ public:
     bg2e::scene::Scene* scene() override;
 
     void createPipeline(bg2e::render::Engine* engine);
+    
+    void setBrightness(float b) override { _brightness = b; }
+    float brightness() const override { return _brightness; }
+    
+    void setContrast(float c) override { _contrast = c; }
+    float contrast() const override { return _contrast; }
+    
 
 protected:
 
@@ -102,7 +109,11 @@ protected:
 
     struct PushConstants {
         float gamma;
+        float brightness;
+        float contrast;
     };
+    float _brightness = 0.26;
+    float _contrast = 1.42f;
 };
 
 }

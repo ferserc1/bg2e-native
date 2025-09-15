@@ -31,6 +31,8 @@ layout(set = 1, binding = 5) uniform sampler2D aoTex;
 layout(push_constant) uniform PushConstant
 {
     float gamma;
+    float brightness;
+    float contrast;
 } pushConstant;
 
 layout(set = 2, binding = 0) uniform samplerCube irradianceMap;
@@ -70,4 +72,5 @@ void main()
 
     color = color / (color + vec3(1.0));
     outColor = lineal2SRGB(vec4(color, 1.0), pushConstant.gamma);
+    outColor = brightnessContrast(outColor, pushConstant.brightness, pushConstant.contrast);
 }

@@ -34,6 +34,11 @@ public:
     virtual void cleanup() = 0;
 
     virtual bg2e::scene::Scene* scene() = 0;
+    
+    virtual void setBrightness(float b) = 0;
+    virtual void setContrast(float c) = 0;
+    virtual float brightness() const = 0;
+    virtual float contrast() const = 0;
 };
 
 }
