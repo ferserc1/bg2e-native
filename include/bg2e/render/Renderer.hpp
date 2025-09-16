@@ -39,6 +39,9 @@ public:
     virtual void setContrast(float c) = 0;
     virtual float brightness() const = 0;
     virtual float contrast() const = 0;
+    
+    virtual uint32_t viewportWidth() = 0;
+    virtual uint32_t viewportHeight() = 0;
 };
 
 }

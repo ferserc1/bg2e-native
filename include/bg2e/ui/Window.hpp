@@ -38,6 +38,7 @@ public:
 
 	inline void close() { _open = false; }
 	inline void open() { _open = true; }
+    inline bool isOpen() const { return _open; }
 
     inline void setPosition(int x, int y) { _posX = x; _posY = y; }
     inline int positionX() const { return _posX; }

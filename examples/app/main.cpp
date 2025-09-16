@@ -368,14 +368,31 @@ public:
     }
     
 	// ============ User Interface Delegate Functions =========
-	void init(bg2e::render::Engine*, bg2e::ui::UserInterface*) override {
+ 
+    void updateToolbarSize()
+    {
+        auto margin = 10;
+        _window.setPosition(margin, margin);
+		_window.setSize(uiWidth() - margin * 2, 290);
+    }
+    
+	void init(bg2e::render::Engine*, bg2e::ui::UserInterface*) override
+    {
 		_window.setTitle("Basic forward renderer");
 		_window.options.noClose = true;
-		_window.options.minWidth = 300;
-		_window.options.minHeight = 190;
-		_window.setPosition(0, 0);
-		_window.setSize(300, 290);
+        _window.options.noCollapse = true;
+        _window.options.noMove = true;
+        _window.options.noMenu = true;
+        _window.options.noResize = true;
+        _window.options.noTitleBar = true;
+        updateToolbarSize();
 	}
+ 
+    void swapchainResized(VkExtent2D newSize) override
+    {
+        DefaultRenderLoopDelegate::swapchainResized(newSize);
+        updateToolbarSize();
+    }
 
 	void drawUI() override
 	{

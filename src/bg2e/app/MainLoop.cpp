@@ -34,6 +34,8 @@ int32_t MainLoop::run(app::Application * application) {
     );
     
     _engine.init(window);
+    application->uiDelegate()->_viewportWidth = _windowWidth;
+    application->uiDelegate()->_viewportHeight = _windowHeight;
 	_userInterface.setDelegate(application->uiDelegate());
 	_userInterface.init(&_engine);
     _renderLoop.setDelegate(application->renderDelegate());
@@ -80,6 +82,10 @@ int32_t MainLoop::run(app::Application * application) {
             if (event.type == SDL_WINDOWEVENT &&
                 event.window.event == SDL_WINDOWEVENT_RESIZED)
             {
+                int w, h;
+                SDL_GetWindowSize(window, &w, &h);
+                application->uiDelegate()->_viewportWidth = static_cast<uint32_t>(w);
+                application->uiDelegate()->_viewportHeight = static_cast<uint32_t>(h);
                 _engine.updateSwapchainSize();
             }
 

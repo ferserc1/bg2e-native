@@ -81,6 +81,8 @@ public:
     void setContrast(float c) override { _contrast = c; }
     float contrast() const override { return _contrast; }
     
+    uint32_t viewportWidth() override { return _engine->swapchain().extent().width; }
+    uint32_t viewportHeight() override { return _engine->swapchain().extent().height; }
 
 protected:
 

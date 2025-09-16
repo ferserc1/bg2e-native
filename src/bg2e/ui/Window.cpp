@@ -35,11 +35,12 @@ void Window::draw(std::function<void()> drawFunction)
         );
     }
     
-    if (ImGui::Begin(_title.c_str(), open))
+    
+    if (ImGui::Begin(_title.c_str(), open, _windowFlags))
     {
         drawFunction();
     }
-    ImGui::End();   
+    ImGui::End();
 }
 
 void Window::updateFlags()

@@ -7,6 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		ED1E3FDC2E79E5AC000A46F7 /* ToolBar.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED1E3FDB2E79E5AA000A46F7 /* ToolBar.cpp */; };
+		ED1E3FE62E79E627000A46F7 /* EnvironmentSettings.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED1E3FE52E79E61E000A46F7 /* EnvironmentSettings.cpp */; };
+		ED1E40532E79E959000A46F7 /* AppDelegate.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED1E40522E79E956000A46F7 /* AppDelegate.cpp */; };
 		EDD77E532CEA60F800278155 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EDD77E512CEA60F800278155 /* main.cpp */; };
 		EDD77E612CEA64E600278155 /* CoreFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = EDD77E602CEA64E600278155 /* CoreFoundation.framework */; };
 /* End PBXBuildFile section */
@@ -35,6 +38,12 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		ED1E3FDA2E79E59C000A46F7 /* ToolBar.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = ToolBar.hpp; sourceTree = "<group>"; };
+		ED1E3FDB2E79E5AA000A46F7 /* ToolBar.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = ToolBar.cpp; sourceTree = "<group>"; };
+		ED1E3FE42E79E60F000A46F7 /* EnvironmentSettings.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = EnvironmentSettings.hpp; sourceTree = "<group>"; };
+		ED1E3FE52E79E61E000A46F7 /* EnvironmentSettings.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = EnvironmentSettings.cpp; sourceTree = "<group>"; };
+		ED1E40512E79E932000A46F7 /* AppDelegate.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = AppDelegate.hpp; sourceTree = "<group>"; };
+		ED1E40522E79E956000A46F7 /* AppDelegate.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = AppDelegate.cpp; sourceTree = "<group>"; };
 		EDD77E3D2CEA600200278155 /* model_edit.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = model_edit.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		EDD77E512CEA60F800278155 /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
 		EDD77E552CEA61BD00278155 /* Setup.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Setup.entitlements; sourceTree = "<group>"; };
@@ -198,6 +207,12 @@
 		EDD77E522CEA60F800278155 /* src */ = {
 			isa = PBXGroup;
 			children = (
+				ED1E40522E79E956000A46F7 /* AppDelegate.cpp */,
+				ED1E40512E79E932000A46F7 /* AppDelegate.hpp */,
+				ED1E3FE52E79E61E000A46F7 /* EnvironmentSettings.cpp */,
+				ED1E3FE42E79E60F000A46F7 /* EnvironmentSettings.hpp */,
+				ED1E3FDB2E79E5AA000A46F7 /* ToolBar.cpp */,
+				ED1E3FDA2E79E59C000A46F7 /* ToolBar.hpp */,
 				EDD77E512CEA60F800278155 /* main.cpp */,
 			);
 			path = src;
@@ -351,7 +366,10 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				ED1E40532E79E959000A46F7 /* AppDelegate.cpp in Sources */,
 				EDD77E532CEA60F800278155 /* main.cpp in Sources */,
+				ED1E3FDC2E79E5AC000A46F7 /* ToolBar.cpp in Sources */,
+				ED1E3FE62E79E627000A46F7 /* EnvironmentSettings.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
