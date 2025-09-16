@@ -107,11 +107,19 @@ call build.bat src ..\bin\shaders\test
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\src\AppDelegate.cpp" />
+    <ClCompile Include="..\src\EnvironmentSettings.cpp" />
     <ClCompile Include="..\src\main.cpp" />
+    <ClCompile Include="..\src\ToolBar.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\shaders\src\test.frag.glsl" />
     <None Include="..\shaders\src\test.vert.glsl" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\src\AppDelegate.hpp" />
+    <ClInclude Include="..\src\EnvironmentSettings.hpp" />
+    <ClInclude Include="..\src\ToolBar.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
