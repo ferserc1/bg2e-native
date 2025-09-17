@@ -46,6 +46,11 @@ const std::vector<std::shared_ptr<Node>>& Node::children() const
     return _children;
 }
 
+void Node::clearChildren()
+{
+    _children.clear();
+}
+
 void Node::addComponent(Component * comp)
 {
     addComponent(std::shared_ptr<Component>(comp));

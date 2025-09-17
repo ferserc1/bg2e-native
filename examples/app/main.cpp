@@ -281,17 +281,29 @@ public:
         
         if (transform)
         {
-            auto rv = _cameraNode->rightVector();
-            auto uv = _cameraNode->upVector();
+            bg2e::math::BasisVectors basis(transform->matrix(), false);
+            
+            auto panSpeed = 0.01f;
+            auto rotSpeed = 0.01f;
+            
+            
+            if (_pan.x != 0.0f || _pan.y != 0.0f)
+            {
+                transform->translate(_pan.x * panSpeed, -_pan.y * panSpeed, 0.0f);
+            }
 
-            transform->translate(
-                rv * glm::vec3{ _pan.x * 0.1, 0, 0 } +
-                uv * glm::vec3{ 0, -_pan.y * 0.1, 0 }
-            );
+            // --- Rotación ---
+            if (_rot.y != 0.0f) {
+                // pitch: rotar alrededor del eje Right de la cámara
+                transform->rotate(_rot.y * rotSpeed, basis.right);
+            }
+            if (_rot.x != 0.0f) {
+                // yaw: rotar alrededor del eje Up de la cámara
+                transform->rotate(_rot.x * rotSpeed, basis.up);
+            }
             
-            transform->rotate(_rot.y * 0.01f, glm::vec3(1, 0, 0));
-            transform->rotate(_rot.x * 0.01f, glm::vec3(0, 1, 0));
             
+            // Ponemos a cero los incrementos que ya hemos acumulado en la transformación
             _rot.x = 0.0f;
             _rot.y = 0.0f;
             _pan = glm::vec3 { 0.0f };
@@ -539,7 +551,10 @@ protected:
         auto cameraRotation = new bg2e::scene::Node("Camera Rotation");
         cameraRotation->addComponent(new bg2e::scene::TransformComponent());
         //cameraRotation->addComponent(new RotateCameraComponent(-0.002f));
-        cameraRotation->addComponent(new CameraMouse(cameraNode.get()));
+        
+        //cameraRotation->addComponent(new CameraMouse(cameraNode.get()));
+        
+        cameraRotation->addComponent(new bg2e::scene::OrbitCameraComponent());
         cameraRotation->addChild(cameraNode);
         sceneRoot->addChild(cameraRotation);
         

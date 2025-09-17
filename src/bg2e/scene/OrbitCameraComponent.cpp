@@ -42,8 +42,6 @@ std::shared_ptr<json::JsonNode> OrbitCameraComponent::serialize(const std::files
     obj["distance"] = JSON(_distance);
     obj["center"] = JSON(_center);
     obj["rotationSpeed"] = JSON(_rotationSpeed);
-    obj["forward"] = JSON(_forward);
-    obj["left"] = JSON(_left);
     obj["wheelSpeed"] = JSON(_wheelSpeed);
     obj["minFocus"] = JSON(_minFocus);
     obj["minPitch"] = JSON(_minPitch);
@@ -62,28 +60,31 @@ std::shared_ptr<json::JsonNode> OrbitCameraComponent::serialize(const std::files
     return compData;
 }
 
+void OrbitCameraComponent::resizeViewport(const math::Viewport& vp)
+{
+    _viewportWidth = static_cast<uint32_t>(vp.width);
+    _viewportHeight = static_cast<uint32_t>(vp.height);
+}
+
 void OrbitCameraComponent::update(float delta)
 {
     auto transform = ownerNode()->transform();
     
     if (transform && _enabled)
     {
-    // TODO: Convert this code from JavaScript version
-//        let forward = this.transform.matrix.forwardVector;
-//        let left = this.transform.matrix.leftVector;
-//        forward.scale(this._forward);
-//        left.scale(this._left);
-//        this._center = Vec.Add(Vec.Add(this._center, forward), left);
-//        
-//        let pitch = this._rotation.x>this._minPitch ? this._rotation.x:this._minPitch;
-//        pitch = pitch<this._maxPitch ? pitch : this._maxPitch;
-//        this._rotation.x = pitch;
-//
-//        this._distance = this._distance>this._minDistance ? this._distance:this._minDistance;
-//        this._distance = this._distance<this._maxDistance ? this._distance:this._maxDistance;
-//
-//        if (this._mouseButtonPressed) {
-//            let displacement = new Vec([0,0,0]);
+        math::BasisVectors basis(transform->matrix(), true);
+
+        auto pitch = _rotation.x > _minPitch ? _rotation.x : _minPitch;
+        pitch = pitch < _maxPitch ? pitch : _maxPitch;
+        _rotation.x = pitch;
+
+        _distance = _distance > _minDistance ? _distance : _minDistance;
+        _distance = _distance < _maxDistance ? _distance : _maxDistance;
+
+        if (_mouseButtonPressed)
+        {
+            // TODO: displacement using keyboard arrows
+            //            let displacement = new Vec([0,0,0]);
 //            if (this._keys[SpecialKey.UP_ARROW]) {
 //                displacement = Vec.Add(displacement, this.transform.matrix.backwardVector);
 //            }
@@ -98,33 +99,29 @@ void OrbitCameraComponent::update(float delta)
 //            }
 //            displacement.scale(this._displacementSpeed);
 //            this._center = Vec.Add(this._center, displacement);
-//        }
-//
-//        if (this._center.x<this._minX) this._center.x = this._minX;
-//        else if (this._center.x>this._maxX) this._center.x = this._maxX;
-//
-//        if (this._center.y<this._minY) this._center.y = this._minY;
-//        else if (this._center.y>this._maxY) this._center.y = this._maxY;
-//
-//        if (this._center.z<this._minZ) this._center.z = this._minZ;
-//        else if (this._center.z>this._maxZ) this._center.z = this._maxZ;
-//
-//        
-//        this.transform.matrix.identity();
-//
-//        if (orthoStrategy) {
-//            orthoStrategy.viewWidth = this._viewWidth;
-//        }
-//        else {
-//            this.transform.matrix.translate(0,0,this._distance);
-//            if (this.camera) {
-//                // Update the camera focus distance to optimize the shadow map rendering
-//                this.camera.focusDistance = this._distance;
-//            }
-//        }
-//        this.transform.matrix.rotate(degreesToRadians(pitch), -1,0,0)
-//                    .rotate(degreesToRadians(this._rotation.y), 0,1,0)
-//                    .translate(this._center);
+            
+        }
+
+        if (_center.x < _minX) _center.x = _minX;
+        else if (_center.x > _maxX) _center.x = _maxX;
+        
+        if (_center.y < _minY) _center.y = _minY;
+        else if (_center.y > _maxY) _center.y = _maxY;
+        
+        if (_center.z < _minZ) _center.z = _minZ;
+        else if (_center.z > _maxZ) _center.z = _maxZ;
+
+        
+        
+        transform->setMatrix(glm::mat4{ 1.0f });
+        
+        transform->translate(_center);
+        
+        transform->rotate(glm::radians(_rotation.y), 0.0f, 1.0f, 0.0f);
+        transform->rotate(glm::radians(pitch), -1.0f, 0.0f, 0.0f);
+        
+        
+        transform->translate(0.0f, 0.0f, _distance);
     }
 }
 
@@ -144,6 +141,7 @@ void OrbitCameraComponent::mouseButtonUp(int button, int x, int y)
 void OrbitCameraComponent::mouseMove(int x, int y)
 {
     if (!_enabled) return;
+    if (!_mouseButtonPressed) return;
     auto transform = ownerNode()->transform();
     
     if (transform && _enabled)
@@ -153,7 +151,7 @@ void OrbitCameraComponent::mouseMove(int x, int y)
             _lastPos.x - static_cast<float>(x)
         };
         _lastPos = { static_cast<float>(x), static_cast<float>(y) };
-        auto basis = math::BasisVectors(transform->matrix());
+        auto basis = math::BasisVectors(transform->matrix(), true);
         
         switch (getOrbitAction())
         {
@@ -162,15 +160,18 @@ void OrbitCameraComponent::mouseMove(int x, int y)
             _rotation = _rotation + delta * 0.5f;
             break;
         case OrbitAction::Pan: {
-            auto up = basis.up * delta.x * 0.001f * _distance;
-            auto right = basis.right * delta.y * 0.001f * _distance;
+            auto speedFactor = (std::log(_distance) + 2.0f) * 0.01f * _panSpeed;
+            auto up = basis.up * -delta.x * speedFactor;
+            auto right = basis.right * delta.y * speedFactor;
             
             _center = _center + up + right;
             break;
         }
-        case OrbitAction::Zoom:
-            _distance += delta.x * 0.01 * _distance;
+        case OrbitAction::Zoom: {
+            auto speedFactor = _distance * 0.001f * _panSpeed;
+            _distance += delta.x * speedFactor;
             break;
+        }
         case OrbitAction::None:
             break;
         }
@@ -181,7 +182,7 @@ void OrbitCameraComponent::mouseWheel(int deltaX, int deltaY)
 {
     if (!_enabled) return;
     auto mult = _distance > 0.01f ? _distance : 0.01;
-    _distance += deltaY * 0.001f * mult * _wheelSpeed;
+    _distance += deltaY * 0.1f * mult * _wheelSpeed;
 }
 
 

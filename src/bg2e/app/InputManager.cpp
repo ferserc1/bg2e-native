@@ -20,6 +20,17 @@ InputManager::MouseButtonsStatus InputManager::getMouseStatus()
     return status;
 }
 
+glm::vec2 InputManager::normalizedCursorPosition(uint32_t viewportWidth, uint32_t viewportHeight)
+{
+    int x, y;
+    SDL_GetMouseState(&x, &y);
+    
+    float nx = static_cast<float>(x) / static_cast<float>(viewportWidth);
+    float ny = static_cast<float>(y) / static_cast<float>(viewportHeight);
+    
+    return glm::vec2{ nx * 2.0f - 1.0f, ny * 2.0f - 1.0f };
+}
+
 void InputManager::keyDown(const KeyEvent& event)
 {
     ImGuiIO& io = ImGui::GetIO();

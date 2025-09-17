@@ -47,6 +47,7 @@ public:
     void addChild(std::shared_ptr<Node> node);
     void removeChild(std::shared_ptr<Node> node);
     const std::vector<std::shared_ptr<Node>>& children() const;
+    void clearChildren();
     
     Node * parent() { return _parent; }
     

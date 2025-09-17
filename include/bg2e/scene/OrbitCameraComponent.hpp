@@ -38,13 +38,6 @@ public:
     inline float rotationSpeed() const { return _rotationSpeed; }
     inline void setRotationSpeed(float s) { _rotationSpeed = s; }
 
-    // Keyboard/axis movement
-    inline float forward() const { return _forward; }
-    inline void setForward(float f) { _forward = f; }
-
-    inline float left() const { return _left; }
-    inline void setLeft(float l) { _left = l; }
-
     // Wheel speed
     inline float wheelSpeed() const { return _wheelSpeed; }
     inline void setWheelSpeed(float s) { _wheelSpeed = s; }
@@ -86,6 +79,9 @@ public:
     inline float minZ() const { return _minZ; }
     inline void setMinZ(float v) { _minZ = v; }
 
+    inline float panSpeed() const { return _panSpeed; }
+    inline void setPanSpeed(float s) { _panSpeed = s; }
+    
     // Displacement speed
     inline float displacementSpeed() const { return _displacementSpeed; }
     inline void setDisplacementSpeed(float v) { _displacementSpeed = v; }
@@ -105,6 +101,7 @@ public:
         _zoomButtons = { left, middle, right };
     }
     
+    void resizeViewport(const math::Viewport& vp) override;
     void update(float delta) override;
     
     void mouseButtonDown(int button, int x, int y) override;
@@ -121,16 +118,14 @@ protected:
     };
     
     MouseButtons _rotationButtons = { true, false, false };
-    MouseButtons _panButtons = { true, false, true };
-    MouseButtons _zoomButtons = { true, true, false };
+    MouseButtons _panButtons = { false, false, true };
+    MouseButtons _zoomButtons = { false, true, false };
     
     glm::vec2 _rotation = { 0.0f, 0.0f };
     float _distance = 5.0f;
     glm::vec3 _center = { 0.0f, 0.0f, 0.0f };
     float _rotationSpeed = 0.2f;
-    float _forward = 0.0f;
-    float _left = 0.0f;
-    float _wheelSpeed = 1.0f;
+    float _wheelSpeed = 0.5f;
     float _minFocus = 2.0f;
     
     float _minPitch = -85.0f;
@@ -143,14 +138,18 @@ protected:
     float _maxY = 45.0f;
     float _minY = -45.0f;
     float _maxZ = 45.0f;
-    float _minZ = 45.0f;
+    float _minZ = -45.0f;
     
     float _displacementSpeed = 0.1f;
     
     bool _enabled = true;
     
+    float _panSpeed = 1.0f;
+    
     bool _mouseButtonPressed = false;
     glm::vec2 _lastPos;
+    uint32_t _viewportWidth;
+    uint32_t _viewportHeight;
     
     enum OrbitAction {
         None = 0,

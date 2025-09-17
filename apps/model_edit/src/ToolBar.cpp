@@ -6,6 +6,7 @@
 //
 
 #include "ToolBar.hpp"
+#include "AppDelegate.hpp"
 
 void ToolBar::init(uint32_t uiWidth, std::shared_ptr<EnvironmentSettings> envSettings)
 {
@@ -34,7 +35,13 @@ void ToolBar::draw()
         
         if (BasicWidgets::button("Open", true))
         {
+            bg2e::app::FileDialog fd;
+            fd.setFilters({
+                { "bg2e 3D model", "bg2,vwglb" }
+            });
+            auto filePath = fd.openFile();
             
+            _appDelegate->stage()->loadModel(filePath);
         }
         if (BasicWidgets::button("Save", true))
         {

@@ -11,9 +11,11 @@
 
 #include "EnvironmentSettings.hpp"
 
+class  AppDelegate;
+
 class ToolBar {
 public:
-    ToolBar() {}
+    ToolBar(AppDelegate * delegate) :_appDelegate{ delegate } {}
 
     void init(uint32_t uiWidth, std::shared_ptr<EnvironmentSettings> envSettings);
     
@@ -22,6 +24,9 @@ public:
     void draw();
     
 protected:
+
+    AppDelegate * _appDelegate;
+    
     bg2e::ui::Window _window;
     
     std::shared_ptr<EnvironmentSettings> _environmentSettings;

@@ -3,6 +3,7 @@
 #include <bg2e/common.hpp>
 #include <bg2e/app/InputDelegate.hpp>
 #include <bg2e/app/KeyEvent.hpp>
+#include <bg2e/math/base.hpp>
 
 #include <memory>
 
@@ -20,6 +21,8 @@ public:
         uint32_t y;
     };
     static MouseButtonsStatus getMouseStatus();
+    
+    static glm::vec2 normalizedCursorPosition(uint32_t viewportWidth, uint32_t viewportHeight);
     
     void keyDown(const KeyEvent& event);
     void keyUp(const KeyEvent& event);

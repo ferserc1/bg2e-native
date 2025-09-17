@@ -10,17 +10,24 @@ namespace math {
 
 struct BasisVectors {
     BasisVectors() {}
-    BasisVectors(const glm::mat4 & mat) {
-        // TODO: Review this code
-        right = (mat * glm::vec4{ 1, 0, 0, 1 });
-        front = (mat * glm::vec4{ 0, 0, 1, 1 });
-        up = (mat * glm::vec4{ 0, 1, 0, 1 });
+    BasisVectors(const glm::mat4 & mat, bool isViewMartix) {
+        // glm::mat4 It is column-major, so each column represents an axis.
+        right = glm::normalize(glm::vec3(mat[0]));
+        up    = glm::normalize(glm::vec3(mat[1]));
+        forward = glm::normalize(glm::vec3(mat[2]));
+        
+        if (isViewMartix)
+        {
+            forward = -forward;
+        }
     }
     
     glm::vec3 right;
-    glm::vec3 front;
+    glm::vec3 forward;
     glm::vec3 up;
 };
 
+
 }
 }
+

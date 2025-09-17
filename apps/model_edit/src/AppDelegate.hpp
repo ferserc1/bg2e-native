@@ -11,6 +11,7 @@
 
 #include "ToolBar.hpp"
 #include "EnvironmentSettings.hpp"
+#include "StageScene.hpp"
 
 class AppDelegate : public bg2e::render::DefaultRenderLoopDelegate<bg2e::render::RendererBasicForward>,
 	public bg2e::app::InputDelegate,
@@ -35,6 +36,12 @@ public:
     void mouseButtonUp(int button, int x, int y) override;
     
     void mouseWheel(int deltaX, int deltaY) override;
+    
+    void cleanup() override;
+    
+    // Application resources
+    inline StageScene * stage() const { return _stage.get(); }
+    inline StageScene * stage() { return _stage.get(); }
 
 protected:
 	bg2e::ui::Window _window;
@@ -43,9 +50,7 @@ protected:
     std::unique_ptr<ToolBar> _menuBar;
     std::shared_ptr<EnvironmentSettings> _environmentSettings;
     
-    bg2e::scene::EnvironmentComponent * _environment;
-    
-    std::shared_ptr<bg2e::scene::Node> scene1();
+    std::unique_ptr<StageScene> _stage;
     
     std::shared_ptr<bg2e::scene::Node> createScene() override;
 };
