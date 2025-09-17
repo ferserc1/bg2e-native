@@ -1,10 +1,24 @@
 #include <bg2e/app/InputManager.hpp>
 
+#include <SDL2/SDL.h>
 
 #include "imgui.h"
 
 namespace bg2e {
 namespace app {
+
+InputManager::MouseButtonsStatus InputManager::getMouseStatus()
+{
+    MouseButtonsStatus status;
+    int x, y;
+    Uint32 buttons { SDL_GetMouseState(&x, &y) };
+    
+    status.left = buttons & SDL_BUTTON_LMASK;
+    status.middle = buttons & SDL_BUTTON_MMASK;
+    status.rigth = buttons & SDL_BUTTON_RMASK;
+    
+    return status;
+}
 
 void InputManager::keyDown(const KeyEvent& event)
 {

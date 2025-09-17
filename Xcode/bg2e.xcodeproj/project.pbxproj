@@ -99,6 +99,8 @@
 		EDBFDD852E24DE6D00864579 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		EDBFE1952E2520EE00864579 /* bg2-io.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = "bg2-io.xcodeproj"; sourceTree = "<group>"; };
 		EDC172122E3BDE76005E0A52 /* bg2-io.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = "bg2-io.xcodeproj"; sourceTree = "<group>"; };
+		EDD6C0A72E7AECA100EA4A2A /* bg2-io.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = "bg2-io.xcodeproj"; sourceTree = "<group>"; };
+		EDD6FB742E7B1D6B00EA4A2A /* bg2-io.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = "bg2-io.xcodeproj"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -505,6 +507,20 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
+		EDD6C0AB2E7AECA100EA4A2A /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		EDD6FB782E7B1D6B00EA4A2A /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXHeadersBuildPhase section */
@@ -630,6 +646,14 @@
 				{
 					ProductGroup = ED1106422E15191500F37999 /* Products */;
 					ProjectRef = ED11063E2E15191500F37999 /* bg2-io.xcodeproj */;
+				},
+				{
+					ProductGroup = EDD6FB782E7B1D6B00EA4A2A /* Products */;
+					ProjectRef = EDD6FB742E7B1D6B00EA4A2A /* bg2-io.xcodeproj */;
+				},
+				{
+					ProductGroup = EDD6C0AB2E7AECA100EA4A2A /* Products */;
+					ProjectRef = EDD6C0A72E7AECA100EA4A2A /* bg2-io.xcodeproj */;
 				},
 				{
 					ProductGroup = EDC172162E3BDE76005E0A52 /* Products */;

@@ -11,6 +11,16 @@ namespace app {
 
 class BG2E_API InputManager {
 public:
+    struct MouseButtonsStatus {
+        bool left;
+        bool middle;
+        bool rigth;
+        
+        uint32_t x;
+        uint32_t y;
+    };
+    static MouseButtonsStatus getMouseStatus();
+    
     void keyDown(const KeyEvent& event);
     void keyUp(const KeyEvent& event);
     void mouseMove(int x, int y);

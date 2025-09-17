@@ -90,6 +90,7 @@ protected:
     Action _action = ActionNone;
     int _x = 0;
     int _y = 0;
+    float _depth = 0.0f;
     glm::vec2 _rot { 0, 0 };
     glm::vec2 _pan { 0, 0 };
     float _minFocalLength = 18.0f;
