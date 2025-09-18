@@ -55,5 +55,10 @@ void ToolBar::draw()
         {
             
         }
+        
+        if (BasicWidgets::button("Center Camera", true))
+        {
+            _appDelegate->stage()->orbitCamera()->reset();
+        }
     });
 }

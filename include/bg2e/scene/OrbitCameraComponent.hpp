@@ -109,6 +109,8 @@ public:
     void mouseMove(int x, int y) override;
     void mouseWheel(int deltaX, int deltaY) override;
     
+    void reset();
+    
 protected:
     struct MouseButtons
     {
@@ -130,7 +132,7 @@ protected:
     
     float _minPitch = -85.0f;
     float _maxPitch = 85.0f;
-    float _minDistance = 0.4f;
+    float _minDistance = std::numeric_limits<float>::min();
     float _maxDistance = 24.0f;
     
     float _maxX = 45.0f;

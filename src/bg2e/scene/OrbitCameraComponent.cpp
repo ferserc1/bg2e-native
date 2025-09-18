@@ -78,7 +78,11 @@ void OrbitCameraComponent::update(float delta)
         pitch = pitch < _maxPitch ? pitch : _maxPitch;
         _rotation.x = pitch;
 
-        _distance = _distance > _minDistance ? _distance : _minDistance;
+        // The minimum distance is only restricted if not the minimum float value
+        if (_minDistance != std::numeric_limits<float>::min())
+        {
+            _distance = _distance > std::numeric_limits<float>::epsilon() ? _distance : std::numeric_limits<float>::epsilon();
+        }
         _distance = _distance < _maxDistance ? _distance : _maxDistance;
 
         if (_mouseButtonPressed)
@@ -160,7 +164,11 @@ void OrbitCameraComponent::mouseMove(int x, int y)
             _rotation = _rotation + delta * 0.5f;
             break;
         case OrbitAction::Pan: {
-            auto speedFactor = (std::log(_distance) + 2.0f) * 0.01f * _panSpeed;
+            auto speedFactor = std::abs((std::log(_distance) + 2.0f)) * 0.01f * _panSpeed;
+            if (std::isnan(speedFactor))
+            {
+                speedFactor = 0.01f;
+            }
             auto up = basis.up * -delta.x * speedFactor;
             auto right = basis.right * delta.y * speedFactor;
             
@@ -181,10 +189,16 @@ void OrbitCameraComponent::mouseMove(int x, int y)
 void OrbitCameraComponent::mouseWheel(int deltaX, int deltaY)
 {
     if (!_enabled) return;
-    auto mult = _distance > 0.01f ? _distance : 0.01;
+    auto mult = _distance > 0.1f ? _distance : 0.1;
     _distance += deltaY * 0.1f * mult * _wheelSpeed;
 }
 
+void OrbitCameraComponent::reset()
+{
+    _rotation = { 0.0f, 0.0f };
+    _distance = 5.0f;
+    _center = { 0.0f, 0.0f, 0.0f };
+}
 
 
 OrbitCameraComponent::OrbitAction OrbitCameraComponent::getOrbitAction()

@@ -248,127 +248,6 @@
 #include <bg2e.hpp>
 #include <numbers>
 
-class RotateCameraComponent : public bg2e::scene::Component {
-public:
-    BG2E_COMPONENT_TYPE_NAME("RotateCamera");
-    
-    RotateCameraComponent() :_r{0.001f} {}
-    RotateCameraComponent(float r) :_r{r} {}
-    
-    void update(float delta) override
-    {
-        auto transform = ownerNode()->transform();
-        
-        if (transform)
-        {
-            transform->rotate(_r * delta / 10.0f, 0.0f, 1.0f, 0.0f);
-        }
-    }
-    
-protected:
-    float _r;
-};
-
-class CameraMouse : public bg2e::scene::Component {
-public:
-    BG2E_COMPONENT_TYPE_NAME("CameraMouse");
-    
-    CameraMouse(bg2e::scene::Node * cameraNode) :_cameraNode(cameraNode) {}
-    
-    void update(float delta) override
-    {
-        auto transform = ownerNode()->transform();
-        
-        if (transform)
-        {
-            bg2e::math::BasisVectors basis(transform->matrix(), false);
-            
-            auto panSpeed = 0.01f;
-            auto rotSpeed = 0.01f;
-            
-            
-            if (_pan.x != 0.0f || _pan.y != 0.0f)
-            {
-                transform->translate(_pan.x * panSpeed, -_pan.y * panSpeed, 0.0f);
-            }
-
-            // --- Rotación ---
-            if (_rot.y != 0.0f) {
-                // pitch: rotar alrededor del eje Right de la cámara
-                transform->rotate(_rot.y * rotSpeed, basis.right);
-            }
-            if (_rot.x != 0.0f) {
-                // yaw: rotar alrededor del eje Up de la cámara
-                transform->rotate(_rot.x * rotSpeed, basis.up);
-            }
-            
-            
-            // Ponemos a cero los incrementos que ya hemos acumulado en la transformación
-            _rot.x = 0.0f;
-            _rot.y = 0.0f;
-            _pan = glm::vec3 { 0.0f };
-        }
-    }
-    
-    void mouseMove(int x, int y) override
-    {
-        if (_action == ActionOrbit)
-        {
-            _rot.x = static_cast<float>(_x - x);
-            _rot.y = static_cast<float>(_y - y);
-            _x = x;
-            _y = y;
-        }
-        else if (_action == ActionPan)
-        {
-            _pan = glm::vec2(static_cast<float>(_x - x), static_cast<float>(_y - y));
-            _x = x;
-            _y = y;
-        }
-    }
-    
-    void mouseButtonDown(int button, int x, int y) override
-    {
-        _action = button == 0 ? ActionOrbit : ActionPan;
-        _x = x;
-        _y = y;
-    }
-    
-    void mouseButtonUp(int button, int, int) override
-    {
-        _action = ActionNone;
-    }
-    
-    void mouseWheel(int deltaX, int deltaY) override
-    {
-        auto camera = _cameraNode ? _cameraNode->camera() : nullptr;
-        auto opticalProjection = camera ? dynamic_cast<bg2e::math::OpticalProjection*>(camera->projection()) : nullptr;
-        
-        if (opticalProjection)
-        {
-            auto fl = opticalProjection->focalLength() + static_cast<float>(deltaY) * 0.5f;
-            fl = fl < _minFocalLength ? _minFocalLength : fl;
-            fl = fl > _maxFocalLength ? _maxFocalLength : fl;
-            opticalProjection->setFocalLength(fl);
-        }
-    }
-    
-protected:
-    bg2e::scene::Node * _cameraNode = nullptr;
-    enum Action {
-        ActionNone = 0,
-        ActionOrbit = 1,
-        ActionPan = 2
-    };
-    Action _action = ActionNone;
-    int _x = 0;
-    int _y = 0;
-    glm::vec2 _rot { 0, 0 };
-    glm::vec2 _pan { 0, 0 };
-    float _minFocalLength = 18.0f;
-    float _maxFocalLength = 300.0f;
-};
-
 class BasicSceneDelegate : public bg2e::render::DefaultRenderLoopDelegate<bg2e::render::RendererBasicForward>,
 	public bg2e::app::InputDelegate,
 	public bg2e::ui::UserInterfaceDelegate
@@ -468,6 +347,11 @@ public:
                 );
             }
             
+            if (bg2e::ui::BasicWidgets::button("Center View"))
+            {
+                _orbitCamera->reset();
+            }
+            
             if (_environment)
             {
                 auto assetPath = bg2e::base::PlatformTools::assetPath();
@@ -531,6 +415,7 @@ protected:
     
     std::shared_ptr<bg2e::scene::Drawable> _sphere;
     bg2e::scene::EnvironmentComponent * _environment;
+    bg2e::scene::OrbitCameraComponent * _orbitCamera;
     
     std::shared_ptr<bg2e::scene::Node> scene1()
     {
@@ -554,7 +439,8 @@ protected:
         
         //cameraRotation->addComponent(new CameraMouse(cameraNode.get()));
         
-        cameraRotation->addComponent(new bg2e::scene::OrbitCameraComponent());
+        _orbitCamera = new bg2e::scene::OrbitCameraComponent();
+        cameraRotation->addComponent(_orbitCamera);
         cameraRotation->addChild(cameraNode);
         sceneRoot->addChild(cameraRotation);
         

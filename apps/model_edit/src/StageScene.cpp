@@ -28,14 +28,13 @@ std::shared_ptr<bg2e::scene::Node> StageScene::init()
     auto cameraRotation = new bg2e::scene::Node("Camera Rotation");
     cameraRotation->addComponent(new bg2e::scene::TransformComponent());
     auto cameraRotationComponent = new bg2e::scene::OrbitCameraComponent();
+    _orbitCamera = cameraRotationComponent;
     cameraRotationComponent->setMaxX(std::numeric_limits<float>::max());
     cameraRotationComponent->setMaxY(std::numeric_limits<float>::max());
     cameraRotationComponent->setMaxZ(std::numeric_limits<float>::max());
     cameraRotationComponent->setMinX(-std::numeric_limits<float>::max());
     cameraRotationComponent->setMinY(-std::numeric_limits<float>::max());
     cameraRotationComponent->setMinZ(-std::numeric_limits<float>::max());
-    cameraRotationComponent->setMinDistance(0.001f);
-    cameraRotationComponent->setPanSpeed(1.0f);
     
     cameraRotation->addComponent(cameraRotationComponent);
     cameraRotation->addChild(cameraNode);
@@ -49,7 +48,7 @@ std::shared_ptr<bg2e::scene::Node> StageScene::init()
     
     // Target node: the node where the loaded model is placed
     _targetNode = std::make_shared<bg2e::scene::Node>("Target Node");
-    _targetNode->addComponent(new bg2e::scene::TransformComponent(glm::scale(glm::mat4{1.0}, glm::vec3{10.0f})));
+    //_targetNode->addComponent(new bg2e::scene::TransformComponent(glm::scale(glm::mat4{1.0}, glm::vec3{10.0f})));
     sceneRoot->addChild(_targetNode);
     
     // Sample model
