@@ -110,6 +110,7 @@ call build.bat src ..\bin\shaders\test
     <ClCompile Include="..\src\AppDelegate.cpp" />
     <ClCompile Include="..\src\EnvironmentSettings.cpp" />
     <ClCompile Include="..\src\main.cpp" />
+    <ClCompile Include="..\src\StageScene.cpp" />
     <ClCompile Include="..\src\ToolBar.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -119,6 +120,7 @@ call build.bat src ..\bin\shaders\test
   <ItemGroup>
     <ClInclude Include="..\src\AppDelegate.hpp" />
     <ClInclude Include="..\src\EnvironmentSettings.hpp" />
+    <ClInclude Include="..\src\StageScene.hpp" />
     <ClInclude Include="..\src\ToolBar.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

@@ -134,6 +134,7 @@
     <ClInclude Include="..\include\bg2e\scene\Mesh.hpp" />
     <ClInclude Include="..\include\bg2e\scene\Node.hpp" />
     <ClInclude Include="..\include\bg2e\scene\NodeVisitor.hpp" />
+    <ClInclude Include="..\include\bg2e\scene\OrbitCameraComponent.hpp" />
     <ClInclude Include="..\include\bg2e\scene\ResizeViewportVisitor.hpp" />
     <ClInclude Include="..\include\bg2e\scene\Scene.hpp" />
     <ClInclude Include="..\include\bg2e\scene\SkyDomeTextureGenerator.hpp" />
@@ -265,6 +266,7 @@
     <ClCompile Include="..\src\bg2e\scene\InputVisitor.cpp" />
     <ClCompile Include="..\src\bg2e\scene\LightComponent.cpp" />
     <ClCompile Include="..\src\bg2e\scene\Node.cpp" />
+    <ClCompile Include="..\src\bg2e\scene\OrbitCameraComponent.cpp" />
     <ClCompile Include="..\src\bg2e\scene\ResizeViewportVisitor.cpp" />
     <ClCompile Include="..\src\bg2e\scene\Scene.cpp">
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)scene\</ObjectFileName>

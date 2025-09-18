@@ -1,7 +1,7 @@
 //
 //  OrbitCameraComponent.cpp
 
-#import <bg2e/scene/OrbitCameraComponent.hpp>
+#include <bg2e/scene/OrbitCameraComponent.hpp>
 #include <bg2e/scene/ComponentFactoryRegistry.hpp>
 #include <bg2e/scene/Node.hpp>
 #include <bg2e/app/InputManager.hpp>
@@ -189,7 +189,7 @@ void OrbitCameraComponent::mouseMove(int x, int y)
 void OrbitCameraComponent::mouseWheel(int deltaX, int deltaY)
 {
     if (!_enabled) return;
-    auto mult = _distance > 0.1f ? _distance : 0.1;
+    auto mult = _distance > 0.1f ? _distance : 0.1f;
     _distance += deltaY * 0.1f * mult * _wheelSpeed;
 }
 
