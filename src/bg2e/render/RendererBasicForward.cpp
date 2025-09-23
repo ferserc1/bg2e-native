@@ -171,6 +171,10 @@ void RendererBasicForward::draw(
         sizeof(PushConstants),
         &pushConstants
     );
+    
+    // TODO: Use render::RenderQueue and scene::RenderQueueVistior to generate
+    // the render queue for opaque and transparent objects
+    // TODO: Draw the scene using the render queue
     _drawVisitor.draw(
         _scene->rootNode(),
         cmd,
