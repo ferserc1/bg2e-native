@@ -264,7 +264,7 @@ public:
     {
         auto margin = 10;
         _window.setPosition(margin, margin);
-		_window.setSize(uiWidth() - margin * 2, 290);
+		_window.setSize(200, 290);
     }
     
 	void init(bg2e::render::Engine*, bg2e::ui::UserInterface*) override
@@ -474,7 +474,7 @@ protected:
         // sceneRoot->addChild(light4);
         
         // Procedural geometry
-        /*
+        
         glm::vec3 pos{0};
         const uint32_t rows = 10;
         const uint32_t cols = 10;
@@ -497,7 +497,16 @@ protected:
                 sphereDrawable->setMesh(sphereMesh);
                 sphereDrawable->material(0).setMetalness(static_cast<float>(row) / rows);
                 sphereDrawable->material(0).setRoughness(static_cast<float>(col) / cols);
-                sphereDrawable->material(0).setAlbedo(bg2e::base::Color::Red());
+                
+                if (col % 2 == 0 && row % 2 == 0)
+                {
+                    sphereDrawable->material(0).setIsTransparent(true);
+                    sphereDrawable->material(0).setAlbedo(bg2e::base::Color(1.0f, 0.0f, 0.0f, 0.7f));
+                }
+                else
+                {
+                    sphereDrawable->material(0).setAlbedo(bg2e::base::Color::Red());
+                }
                 
                 sphereDrawable->load(_engine);
                 auto node = std::make_shared<bg2e::scene::Node>("Sphere-" + std::to_string(row) + "-" + std::to_string(col));
@@ -536,7 +545,6 @@ protected:
         //auto bg2Model = bg2e::db::loadMeshBg2(assetPath, "armchair.bg2");
         
         sceneRoot->addChild(customSphereNode);
-        */
         
         
         auto bg2Model = bg2e::db::loadMeshBg2(assetPath, "armchair.bg2");

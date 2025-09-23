@@ -26,7 +26,7 @@ void RendererBasicForward::build(
         )
     );
 
-    createPipeline(engine);
+    createPipelines(engine);
 }
 
 void RendererBasicForward::initFrameResources(
@@ -134,7 +134,8 @@ void RendererBasicForward::draw(
     macros::cmdSetDefaultViewportAndScissor(cmd, colorImage->extent2D());
     auto mainCamera = _scene->mainCamera();
     auto projMatrix = mainCamera->projectionMatrix();
-    auto viewMatrix = mainCamera->ownerNode()->invertedWorldMatrix();    
+    auto cameraWorldPos = mainCamera->ownerNode()->worldPosition();
+    auto viewMatrix = mainCamera->ownerNode()->invertedWorldMatrix();
     
     //viewMatrix = glm::lookAt(glm::vec3{ 0.0f, 0.0f, 10.0f }, glm::vec3{ 0.0f, 0.0f, 0.0f }, glm::vec3{ 0.0f, 1.0f, 0.0f });
     auto sceneDS = _frameDataBinding->newDescriptorSet(
@@ -148,7 +149,7 @@ void RendererBasicForward::draw(
         _environment->drawSkybox(cmd, currentFrame, frameResources);
     }
 
-    vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, _pipeline);
+    
 
     auto envDS = _environmentDataBinding->newDescriptorSet(frameResources, _environment.get());
     
@@ -172,33 +173,60 @@ void RendererBasicForward::draw(
         &pushConstants
     );
     
-    // TODO: Use render::RenderQueue and scene::RenderQueueVistior to generate
-    // the render queue for opaque and transparent objects
-    // TODO: Draw the scene using the render queue
-    _drawVisitor.draw(
-        _scene->rootNode(),
+    
+    // Create the render queue from the scene objects. This will initialize two queues
+    // for opaque and transparent objects
+    _renderQueueVisitor.enqueue(_scene->rootNode(), &_renderQueue);
+
+    auto dsFunction = [&](bg2e::render::MaterialBase * mat, const glm::mat4& transform, uint32_t submesh) {
+        auto modelDS = _objectDataBinding->newDescriptorSet(
+            frameResources,
+            mat,
+            transform
+        );
+        return std::vector<VkDescriptorSet> {
+            sceneDS,
+            modelDS,
+            envDS,
+            lightDS
+        };
+    };
+    
+    vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, _opaquePipeline);
+    _renderQueue.render(
+        bg2e::render::RenderQueueType::Opaque,
         cmd,
         _pipelineLayout,
-        [&](bg2e::render::MaterialBase* mat, const glm::mat4& transform, uint32_t submesh) {
-            auto modelDS = _objectDataBinding->newDescriptorSet(
-                frameResources,
-                mat,
-                transform
-            );
-            return std::vector<VkDescriptorSet>{
-                sceneDS,
-                modelDS,
-                envDS,
-                lightDS
-            };
-        }
+        dsFunction,
+        cameraWorldPos
     );
+    
+    vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, _transparentPipeline);
+    _renderQueue.render(
+        bg2e::render::RenderQueueType::Transparent,
+        cmd,
+        _pipelineLayout,
+        dsFunction,
+        cameraWorldPos
+    );
+    
+    vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, _solidTransparentPipeline);
+    _renderQueue.render(
+        bg2e::render::RenderQueueType::SolidTransparent,
+        cmd,
+        _pipelineLayout,
+        dsFunction,
+        cameraWorldPos
+    );
+    
 
     vulkan::cmdEndRendering(cmd);
     _scene->didDraw();
 }
 
-void RendererBasicForward::cleanup() {
+void RendererBasicForward::cleanup()
+{
+    _renderQueue.cleanup();
 }
 
 bg2e::scene::Scene* RendererBasicForward::scene()
@@ -206,14 +234,7 @@ bg2e::scene::Scene* RendererBasicForward::scene()
     return _scene.get();
 }
 
-void RendererBasicForward::createPipeline(bg2e::render::Engine* engine) {
-    bg2e::render::vulkan::factory::GraphicsPipeline plFactory(engine);
-
-    plFactory.addShader("basic_forward.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
-    plFactory.addShader("basic_forward.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
-
-    plFactory.setInputState<bg2e::render::vulkan::geo::Mesh>();
-
+void RendererBasicForward::createPipelines(bg2e::render::Engine* engine) {
     auto frameDSLayout = frameDataBinding()->createLayout();
     auto objectDSLayout = objectDataBinding()->createLayout();
     auto envDSLayout = environmentDataBinding()->createLayout();
@@ -230,6 +251,28 @@ void RendererBasicForward::createPipeline(bg2e::render::Engine* engine) {
         VK_SHADER_STAGE_FRAGMENT_BIT
     );
     _pipelineLayout = layoutFactory.build();
+    
+    _opaquePipeline = createOpaquePipeline(engine, _pipelineLayout);
+    _transparentPipeline = createTransparentPipeline(engine, _pipelineLayout);
+    _solidTransparentPipeline = createSolidTransparentPipeline(engine, _pipelineLayout);
+
+    engine->cleanupManager().push([&, objectDSLayout, envDSLayout, frameDSLayout, lightDSLayout](VkDevice dev) {
+        vkDestroyPipelineLayout(dev, _pipelineLayout, nullptr);
+        vkDestroyDescriptorSetLayout(dev, objectDSLayout, nullptr);
+        vkDestroyDescriptorSetLayout(dev, envDSLayout, nullptr);
+        vkDestroyDescriptorSetLayout(dev, frameDSLayout, nullptr);
+        vkDestroyDescriptorSetLayout(dev, lightDSLayout, nullptr);
+    });
+}
+
+VkPipeline RendererBasicForward::createOpaquePipeline(bg2e::render::Engine * engine, VkPipelineLayout layout)
+{
+    bg2e::render::vulkan::factory::GraphicsPipeline plFactory(engine);
+
+    plFactory.addShader("basic_forward.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
+    plFactory.addShader("basic_forward.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    plFactory.setInputState<bg2e::render::vulkan::geo::Mesh>();
 
     plFactory.setDepthFormat(engine->swapchain().depthImageFormat());
     plFactory.enableDepthtest(true, VK_COMPARE_OP_LESS);
@@ -237,16 +280,68 @@ void RendererBasicForward::createPipeline(bg2e::render::Engine* engine) {
     plFactory.setCullMode(VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_COUNTER_CLOCKWISE);
     plFactory.enableMultisample();
     plFactory.setColorAttachmentFormat(_engine->swapchain().imageFormat());
-    _pipeline = plFactory.build(_pipelineLayout);
+    auto result = plFactory.build(_pipelineLayout);
 
-    engine->cleanupManager().push([&, objectDSLayout, envDSLayout, frameDSLayout, lightDSLayout](VkDevice dev) {
-        vkDestroyPipeline(dev, _pipeline, nullptr);
-        vkDestroyPipelineLayout(dev, _pipelineLayout, nullptr);
-        vkDestroyDescriptorSetLayout(dev, objectDSLayout, nullptr);
-        vkDestroyDescriptorSetLayout(dev, envDSLayout, nullptr);
-        vkDestroyDescriptorSetLayout(dev, frameDSLayout, nullptr);
-        vkDestroyDescriptorSetLayout(dev, lightDSLayout, nullptr);
+    engine->cleanupManager().push([&, result](VkDevice dev) {
+        vkDestroyPipeline(dev, result, nullptr);
     });
+    return result;
+}
+
+VkPipeline RendererBasicForward::createTransparentPipeline(bg2e::render::Engine * engine, VkPipelineLayout layout)
+{
+    bg2e::render::vulkan::factory::GraphicsPipeline plFactory(engine);
+
+    plFactory.addShader("basic_forward.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
+    plFactory.addShader("basic_forward.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    plFactory.setInputState<bg2e::render::vulkan::geo::Mesh>();
+
+    plFactory.setDepthFormat(engine->swapchain().depthImageFormat());
+    plFactory.enableDepthtest(
+        false,  // disable depth write for transparent objects
+        VK_COMPARE_OP_LESS
+    );
+    plFactory.inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+    plFactory.setCullMode(VK_CULL_MODE_NONE, VK_FRONT_FACE_COUNTER_CLOCKWISE);
+    plFactory.enableMultisample();
+    plFactory.setColorAttachmentFormat(_engine->swapchain().imageFormat());
+    plFactory.enableBlendingAlphablend();
+    auto result = plFactory.build(_pipelineLayout);
+
+    engine->cleanupManager().push([&, result](VkDevice dev) {
+        vkDestroyPipeline(dev, result, nullptr);
+    });
+    return result;
+}
+
+VkPipeline RendererBasicForward::createSolidTransparentPipeline(bg2e::render::Engine * engine, VkPipelineLayout layout)
+{
+    bg2e::render::vulkan::factory::GraphicsPipeline plFactory(engine);
+
+    plFactory.addShader("basic_forward.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
+    plFactory.addShader("basic_forward.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    plFactory.setInputState<bg2e::render::vulkan::geo::Mesh>();
+
+    plFactory.setDepthFormat(engine->swapchain().depthImageFormat());
+    plFactory.enableDepthtest(
+        false,  // disable depth write for solid transparent objects
+        VK_COMPARE_OP_LESS
+    );
+    plFactory.inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+    
+    // Back face culling enabled for solid transparent objects
+    plFactory.setCullMode(VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_COUNTER_CLOCKWISE);
+    plFactory.enableMultisample();
+    plFactory.setColorAttachmentFormat(_engine->swapchain().imageFormat());
+    plFactory.enableBlendingAlphablend();
+    auto result = plFactory.build(_pipelineLayout);
+
+    engine->cleanupManager().push([&, result](VkDevice dev) {
+        vkDestroyPipeline(dev, result, nullptr);
+    });
+    return result;
 }
 
 }

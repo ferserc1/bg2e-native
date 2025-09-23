@@ -46,10 +46,11 @@ public:
             {
                 for (auto i = 0; i < drawable->materials().size(); ++i)
                 {
-                    auto mat = drawable->material(i);
-                    auto trx = _currentTransform * drawable->submeshTransform(i);
-                    std::shared_ptr<RenderMeshT> renderMesh = drawable->renderMesh();
-                    _renderQueue->enqueue(renderMesh, i, mat, _currentTransform);
+                    std::shared_ptr<render::MaterialBase> mat = drawable->renderMaterial(i);
+                    auto submeshTransform = drawable->submeshTransform(i);
+                    auto trx = _currentTransform * submeshTransform;
+                    std::shared_ptr<render::vulkan::geo::Mesh> renderMesh = drawable->renderMesh();
+                    _renderQueue->enqueue(renderMesh, i, mat, trx);
                 }
             }
         }

@@ -22,6 +22,9 @@ public:
     inline bool isTransparent() const { return _isTransparent; }
     inline void setIsTransparent(bool t) { _isTransparent = t; }
     
+    inline bool isSolid() const { return _isSolid; }
+    inline void setIsSolid(bool s) { _isSolid = s; }
+    
     inline const Color & albedo() const { return _albedo; }
     inline void setAlbedo(const Color & c) { _albedo = c; }
     inline void setAlbedo(const std::array<float, 3>& s) { _albedo = base::Color{ s.at(0), s.at(1), s.at(2), 1.0f }; }
@@ -123,6 +126,7 @@ public:
 protected:
     
     bool _isTransparent = false;
+    bool _isSolid = true;
     
     Color _albedo = Color::White();
     std::shared_ptr<Texture> _albedoTexture;

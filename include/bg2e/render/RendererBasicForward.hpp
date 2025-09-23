@@ -6,11 +6,13 @@
 #include <bg2e/scene/vk/EnvironmentDataBinding.hpp>
 #include <bg2e/scene/vk/LightDataBinding.hpp>
 #include <bg2e/render/EnvironmentResources.hpp>
+#include <bg2e/render/RenderQueue.hpp>
 #include <bg2e/scene/ResizeViewportVisitor.hpp>
 #include <bg2e/scene/UpdateVisitor.hpp>
 #include <bg2e/scene/DrawVisitor.hpp>
 #include <bg2e/scene/Scene.hpp>
 #include <bg2e/scene/Node.hpp>
+#include <bg2e/scene/RenderQueueVisitor.hpp>
 #include <bg2e/render/Engine.hpp>
 #include <bg2e/render/Renderer.hpp>
 
@@ -25,7 +27,8 @@ public:
     RendererBasicForward() = default;
     virtual ~RendererBasicForward() = default;
 
-    inline VkPipeline pipeline() const { return _pipeline; }
+    inline VkPipeline opaquePipeline() const { return _opaquePipeline; }
+    inline VkPipeline transparentPipeline() const { return _transparentPipeline; }
     inline VkPipelineLayout pipelineLayout() const { return _pipelineLayout; }
 
     inline const bg2e::scene::vk::FrameDataBinding* frameDataBinding() const { return _frameDataBinding.get(); }
@@ -73,7 +76,7 @@ public:
     
     bg2e::scene::Scene* scene() override;
 
-    void createPipeline(bg2e::render::Engine* engine);
+    void createPipelines(bg2e::render::Engine* engine);
     
     void setBrightness(float b) override { _brightness = b; }
     float brightness() const override { return _brightness; }
@@ -103,8 +106,13 @@ protected:
     bg2e::scene::ResizeViewportVisitor _resizeVisitor;
     bg2e::scene::UpdateVisitor _updateVisitor;
     bg2e::scene::DrawVisitor _drawVisitor;
+    bg2e::scene::RenderQueueVisitor<bg2e::scene::Drawable> _renderQueueVisitor;
+    
+    bg2e::render::RenderQueue<bg2e::scene::Drawable> _renderQueue;
 
-    VkPipeline _pipeline = VK_NULL_HANDLE;
+    VkPipeline _opaquePipeline = VK_NULL_HANDLE;
+    VkPipeline _transparentPipeline = VK_NULL_HANDLE;
+    VkPipeline _solidTransparentPipeline = VK_NULL_HANDLE;
     VkPipelineLayout _pipelineLayout = VK_NULL_HANDLE;
 
     bool _drawSkybox = true;
@@ -122,6 +130,10 @@ protected:
     float _brightness = 0.132f;
     float _contrast = 1.353f;
 #endif
+
+    VkPipeline createOpaquePipeline(bg2e::render::Engine * engine, VkPipelineLayout layout);
+    VkPipeline createTransparentPipeline(bg2e::render::Engine * engine, VkPipelineLayout layout);
+    VkPipeline createSolidTransparentPipeline(bg2e::render::Engine * engine, VkPipelineLayout layout);
 };
 
 }
