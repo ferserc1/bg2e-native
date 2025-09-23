@@ -175,7 +175,6 @@ void DrawableGeneric<MeshT, RenderMeshT>::draw(
         auto descriptorSets = cb(mat, trx, i);
         
         _renderMesh->drawSubmesh(cmd, layout, descriptorSets, i, bp);
-        
     }
 }
 

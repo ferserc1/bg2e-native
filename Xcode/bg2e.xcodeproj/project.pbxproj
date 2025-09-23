@@ -87,6 +87,7 @@
 		ED8688442CDAAB3400A71ADC /* stb_image.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = stb_image.h; sourceTree = "<group>"; };
 		ED8688462CDAAB3400A71ADC /* tiny_obj_loader.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = tiny_obj_loader.h; sourceTree = "<group>"; };
 		ED86884F2CDAAB7300A71ADC /* CoreFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreFoundation.framework; path = System/Library/Frameworks/CoreFoundation.framework; sourceTree = SDKROOT; };
+		ED86AADB2E83088E00A3CB20 /* bg2-io.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = "bg2-io.xcodeproj"; sourceTree = "<group>"; };
 		ED8C95092E1C1B02002EE991 /* bg2-io.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = "bg2-io.xcodeproj"; sourceTree = "<group>"; };
 		ED9AEBF12E10534600728D8B /* bg2-io.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = "bg2-io.xcodeproj"; sourceTree = "<group>"; };
 		ED9D8BE42E1300530096E466 /* bg2-io.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = "bg2-io.xcodeproj"; sourceTree = "<group>"; };
@@ -444,6 +445,13 @@
 			path = ../third_party;
 			sourceTree = SOURCE_ROOT;
 		};
+		ED86AADF2E83088E00A3CB20 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
 		ED8C950D2E1C1B02002EE991 /* Products */ = {
 			isa = PBXGroup;
 			children = (
@@ -612,20 +620,8 @@
 			projectDirPath = "";
 			projectReferences = (
 				{
-					ProductGroup = ED9D8BE82E1300530096E466 /* Products */;
-					ProjectRef = ED9D8BE42E1300530096E466 /* bg2-io.xcodeproj */;
-				},
-				{
-					ProductGroup = EDBFE1992E2520EE00864579 /* Products */;
-					ProjectRef = EDBFE1952E2520EE00864579 /* bg2-io.xcodeproj */;
-				},
-				{
 					ProductGroup = EDBB65312E3BE58A00A5BD6D /* Products */;
 					ProjectRef = EDBB652D2E3BE58A00A5BD6D /* bg2-io.xcodeproj */;
-				},
-				{
-					ProductGroup = EDAE2B472E1BCE2100BBE76E /* Products */;
-					ProjectRef = EDAE2B432E1BCE2100BBE76E /* bg2-io.xcodeproj */;
 				},
 				{
 					ProductGroup = EDBFD8402E24CA6000864579 /* Products */;
@@ -636,20 +632,12 @@
 					ProjectRef = EDBFDD042E24DBBA00864579 /* bg2-io.xcodeproj */;
 				},
 				{
-					ProductGroup = ED69E8B32E227DC400FFE313 /* Products */;
-					ProjectRef = ED69E8AF2E227DC400FFE313 /* bg2-io.xcodeproj */;
-				},
-				{
 					ProductGroup = ED9AEBF62E10534600728D8B /* Products */;
 					ProjectRef = ED9AEBF12E10534600728D8B /* bg2-io.xcodeproj */;
 				},
 				{
-					ProductGroup = ED1106422E15191500F37999 /* Products */;
-					ProjectRef = ED11063E2E15191500F37999 /* bg2-io.xcodeproj */;
-				},
-				{
-					ProductGroup = EDD6FB782E7B1D6B00EA4A2A /* Products */;
-					ProjectRef = EDD6FB742E7B1D6B00EA4A2A /* bg2-io.xcodeproj */;
+					ProductGroup = ED86AADF2E83088E00A3CB20 /* Products */;
+					ProjectRef = ED86AADB2E83088E00A3CB20 /* bg2-io.xcodeproj */;
 				},
 				{
 					ProductGroup = EDD6C0AB2E7AECA100EA4A2A /* Products */;
@@ -658,6 +646,34 @@
 				{
 					ProductGroup = EDC172162E3BDE76005E0A52 /* Products */;
 					ProjectRef = EDC172122E3BDE76005E0A52 /* bg2-io.xcodeproj */;
+				},
+				{
+					ProductGroup = ED8C950D2E1C1B02002EE991 /* Products */;
+					ProjectRef = ED8C95092E1C1B02002EE991 /* bg2-io.xcodeproj */;
+				},
+				{
+					ProductGroup = ED9D8BE82E1300530096E466 /* Products */;
+					ProjectRef = ED9D8BE42E1300530096E466 /* bg2-io.xcodeproj */;
+				},
+				{
+					ProductGroup = EDBFE1992E2520EE00864579 /* Products */;
+					ProjectRef = EDBFE1952E2520EE00864579 /* bg2-io.xcodeproj */;
+				},
+				{
+					ProductGroup = EDAE2B472E1BCE2100BBE76E /* Products */;
+					ProjectRef = EDAE2B432E1BCE2100BBE76E /* bg2-io.xcodeproj */;
+				},
+				{
+					ProductGroup = ED69E8B32E227DC400FFE313 /* Products */;
+					ProjectRef = ED69E8AF2E227DC400FFE313 /* bg2-io.xcodeproj */;
+				},
+				{
+					ProductGroup = ED1106422E15191500F37999 /* Products */;
+					ProjectRef = ED11063E2E15191500F37999 /* bg2-io.xcodeproj */;
+				},
+				{
+					ProductGroup = EDD6FB782E7B1D6B00EA4A2A /* Products */;
+					ProjectRef = EDD6FB742E7B1D6B00EA4A2A /* bg2-io.xcodeproj */;
 				},
 				{
 					ProductGroup = ED110A5B2E15194400F37999 /* Products */;
@@ -670,10 +686,6 @@
 				{
 					ProductGroup = ED241AE72E264EB00039BB33 /* Products */;
 					ProjectRef = ED241AE32E264EB00039BB33 /* bg2-io.xcodeproj */;
-				},
-				{
-					ProductGroup = ED8C950D2E1C1B02002EE991 /* Products */;
-					ProjectRef = ED8C95092E1C1B02002EE991 /* bg2-io.xcodeproj */;
 				},
 			);
 			projectRoot = "";

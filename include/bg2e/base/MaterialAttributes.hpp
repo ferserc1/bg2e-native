@@ -19,6 +19,9 @@ public:
     
     MaterialAttributes();
     
+    inline bool isTransparent() const { return _isTransparent; }
+    inline void setIsTransparent(bool t) { _isTransparent = t; }
+    
     inline const Color & albedo() const { return _albedo; }
     inline void setAlbedo(const Color & c) { _albedo = c; }
     inline void setAlbedo(const std::array<float, 3>& s) { _albedo = base::Color{ s.at(0), s.at(1), s.at(2), 1.0f }; }
@@ -118,6 +121,8 @@ public:
     inline void setGroupName(const std::string& groupName) { _groupName = groupName; }
 
 protected:
+    
+    bool _isTransparent = false;
     
     Color _albedo = Color::White();
     std::shared_ptr<Texture> _albedoTexture;
