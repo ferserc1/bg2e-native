@@ -8,16 +8,16 @@
 namespace bg2e {
 namespace render {
 
-template <typename RenderMeshT>
-void RenderQueue<RenderMeshT>::beginFrame()
+template <typename DrawableT>
+void RenderQueue<DrawableT>::beginFrame()
 {
     _opaqueQueue.clear();
     _transparentQueue.clear();
     _solidTransparentQueue.clear();
 }
 
-template <typename RenderMeshT>
-void RenderQueue<RenderMeshT>::enqueue(
+template <typename DrawableT>
+void RenderQueue<DrawableT>::enqueue(
     std::shared_ptr<render::vulkan::geo::Mesh> mesh,
     uint32_t submeshIndex,
     std::shared_ptr<render::MaterialBase> material,
@@ -47,8 +47,8 @@ void RenderQueue<RenderMeshT>::enqueue(
     }
 }
 
-template <typename RenderMeshT>
-void RenderQueue<RenderMeshT>::render(
+template <typename DrawableT>
+void RenderQueue<DrawableT>::render(
     RenderQueueType queueType,
     VkCommandBuffer cmd,
     VkPipelineLayout pipelineLayout,
@@ -85,8 +85,8 @@ void RenderQueue<RenderMeshT>::render(
     }
 }
 
-template <typename RenderMeshT>
-void RenderQueue<RenderMeshT>::cleanup()
+template <typename DrawableT>
+void RenderQueue<DrawableT>::cleanup()
 {
     _opaqueQueue.clear();
     _transparentQueue.clear();

@@ -19,7 +19,7 @@ enum RenderQueueType {
     SolidTransparent = 2
 };
 
-template <typename RenderMeshT>
+template <typename DrawableT>
 class RenderQueue {
 public:
     struct Item
