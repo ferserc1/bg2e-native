@@ -431,6 +431,7 @@ protected:
         
         cameraNode->addComponent(new bg2e::scene::CameraComponent());
         auto projection = new bg2e::math::OpticalProjection();
+        projection->setFar(1000.0f);
         cameraNode->camera()->setProjection(projection);
         
         auto cameraRotation = new bg2e::scene::Node("Camera Rotation");
