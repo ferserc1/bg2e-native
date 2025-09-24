@@ -15,7 +15,7 @@
 namespace bg2e {
 namespace scene {
         
-class DrawableBase {
+class BG2E_API DrawableBase {
 public:
     typedef std::function<std::vector<VkDescriptorSet>(
             bg2e::render::MaterialBase* material,

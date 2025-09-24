@@ -82,6 +82,7 @@
     <ClInclude Include="..\include\bg2e\render\RendererBasicForward.hpp" />
     <ClInclude Include="..\include\bg2e\render\RenderLoop.hpp" />
     <ClInclude Include="..\include\bg2e\render\RenderLoopDelegate.hpp" />
+    <ClInclude Include="..\include\bg2e\render\RenderQueue.hpp" />
     <ClInclude Include="..\include\bg2e\render\SkyboxRenderer.hpp" />
     <ClInclude Include="..\include\bg2e\render\SpecularReflectionCubemapRenderer.hpp" />
     <ClInclude Include="..\include\bg2e\render\SphereToCubemapRenderer.hpp" />
@@ -135,6 +136,7 @@
     <ClInclude Include="..\include\bg2e\scene\Node.hpp" />
     <ClInclude Include="..\include\bg2e\scene\NodeVisitor.hpp" />
     <ClInclude Include="..\include\bg2e\scene\OrbitCameraComponent.hpp" />
+    <ClInclude Include="..\include\bg2e\scene\RenderQueueVisitor.hpp" />
     <ClInclude Include="..\include\bg2e\scene\ResizeViewportVisitor.hpp" />
     <ClInclude Include="..\include\bg2e\scene\Scene.hpp" />
     <ClInclude Include="..\include\bg2e\scene\SkyDomeTextureGenerator.hpp" />
@@ -227,6 +229,7 @@
     <ClCompile Include="..\src\bg2e\render\MaterialBase.cpp" />
     <ClCompile Include="..\src\bg2e\render\RendererBasicForward.cpp" />
     <ClCompile Include="..\src\bg2e\render\RenderLoop.cpp" />
+    <ClCompile Include="..\src\bg2e\render\RenderQueue.cpp" />
     <ClCompile Include="..\src\bg2e\render\SkyboxRenderer.cpp" />
     <ClCompile Include="..\src\bg2e\render\SpecularReflectionCubemapRenderer.cpp" />
     <ClCompile Include="..\src\bg2e\render\SphereToCubemapRenderer.cpp" />

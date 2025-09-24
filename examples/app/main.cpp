@@ -440,6 +440,7 @@ protected:
         //cameraRotation->addComponent(new CameraMouse(cameraNode.get()));
         
         _orbitCamera = new bg2e::scene::OrbitCameraComponent();
+        _orbitCamera->setMaxDistance(100.0f);
         cameraRotation->addComponent(_orbitCamera);
         cameraRotation->addChild(cameraNode);
         sceneRoot->addChild(cameraRotation);
