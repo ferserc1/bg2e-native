@@ -93,12 +93,6 @@ void RenderQueue<RenderMeshT>::cleanup()
     _solidTransparentQueue.clear();
 }
 
-// Default drawable
-template void RenderQueue<scene::Drawable>::beginFrame();
-template void RenderQueue<scene::Drawable>::enqueue(std::shared_ptr<render::vulkan::geo::Mesh> mesh, uint32_t submeshIndex, std::shared_ptr<render::MaterialBase> material, const glm::mat4 worldMatrix);
-template void RenderQueue<scene::Drawable>::render(RenderQueueType queueType, VkCommandBuffer cmd, VkPipelineLayout pipelineLayout, bg2e::scene::DrawableBase::DrawFunction fn, const glm::vec3& cameraPos);
-template void RenderQueue<scene::Drawable>::cleanup();
-
 // DrawableP
 template void RenderQueue<scene::DrawableP>::beginFrame();
 template void RenderQueue<scene::DrawableP>::enqueue(std::shared_ptr<render::vulkan::geo::Mesh> mesh, uint32_t submeshIndex, std::shared_ptr<render::MaterialBase> material, const glm::mat4 worldMatrix);

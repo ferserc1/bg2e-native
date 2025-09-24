@@ -174,7 +174,7 @@ void RendererBasicForward::draw(
     );
     
     
-    // Create the render queue from the scene objects. This will initialize two queues
+    // Create the render queue from the scene objeb8cts. This will initialize two queues
     // for opaque and transparent objects
     _renderQueueVisitor.enqueue(_scene->rootNode(), &_renderQueue);
 

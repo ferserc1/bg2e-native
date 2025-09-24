@@ -90,6 +90,7 @@
 		ED86AADB2E83088E00A3CB20 /* bg2-io.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = "bg2-io.xcodeproj"; sourceTree = "<group>"; };
 		ED86AF792E83105E00A3CB20 /* bg2-io.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = "bg2-io.xcodeproj"; sourceTree = "<group>"; };
 		ED8C95092E1C1B02002EE991 /* bg2-io.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = "bg2-io.xcodeproj"; sourceTree = "<group>"; };
+		ED940EE02E846C7E00807FDB /* bg2-io.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = "bg2-io.xcodeproj"; sourceTree = "<group>"; };
 		ED9AEBF12E10534600728D8B /* bg2-io.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = "bg2-io.xcodeproj"; sourceTree = "<group>"; };
 		ED9D8BE42E1300530096E466 /* bg2-io.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = "bg2-io.xcodeproj"; sourceTree = "<group>"; };
 		EDAE2B432E1BCE2100BBE76E /* bg2-io.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = "bg2-io.xcodeproj"; sourceTree = "<group>"; };
@@ -467,6 +468,13 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
+		ED940EE42E846C7E00807FDB /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
 		ED9AEBF62E10534600728D8B /* Products */ = {
 			isa = PBXGroup;
 			children = (
@@ -634,6 +642,10 @@
 				{
 					ProductGroup = EDBFD8402E24CA6000864579 /* Products */;
 					ProjectRef = EDBFD83C2E24CA6000864579 /* bg2-io.xcodeproj */;
+				},
+				{
+					ProductGroup = ED940EE42E846C7E00807FDB /* Products */;
+					ProjectRef = ED940EE02E846C7E00807FDB /* bg2-io.xcodeproj */;
 				},
 				{
 					ProductGroup = EDBFDD082E24DBBA00864579 /* Products */;
