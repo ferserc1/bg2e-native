@@ -10,6 +10,8 @@
 		ED1E3FDC2E79E5AC000A46F7 /* ToolBar.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED1E3FDB2E79E5AA000A46F7 /* ToolBar.cpp */; };
 		ED1E3FE62E79E627000A46F7 /* EnvironmentSettings.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED1E3FE52E79E61E000A46F7 /* EnvironmentSettings.cpp */; };
 		ED1E40532E79E959000A46F7 /* AppDelegate.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED1E40522E79E956000A46F7 /* AppDelegate.cpp */; };
+		ED26BE3F2E85C43900F39D0F /* SubmeshWindow.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED26BE3E2E85C43900F39D0F /* SubmeshWindow.cpp */; };
+		ED26BE482E85C44200F39D0F /* ToolWindow.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED26BE472E85C44200F39D0F /* ToolWindow.cpp */; };
 		ED57719D2E7C42CC00CA41D7 /* StageScene.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED57719C2E7C42CA00CA41D7 /* StageScene.cpp */; };
 		EDD77E532CEA60F800278155 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EDD77E512CEA60F800278155 /* main.cpp */; };
 		EDD77E612CEA64E600278155 /* CoreFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = EDD77E602CEA64E600278155 /* CoreFoundation.framework */; };
@@ -45,6 +47,10 @@
 		ED1E3FE52E79E61E000A46F7 /* EnvironmentSettings.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = EnvironmentSettings.cpp; sourceTree = "<group>"; };
 		ED1E40512E79E932000A46F7 /* AppDelegate.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = AppDelegate.hpp; sourceTree = "<group>"; };
 		ED1E40522E79E956000A46F7 /* AppDelegate.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = AppDelegate.cpp; sourceTree = "<group>"; };
+		ED26BE3D2E85C43900F39D0F /* SubmeshWindow.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = SubmeshWindow.hpp; sourceTree = "<group>"; };
+		ED26BE3E2E85C43900F39D0F /* SubmeshWindow.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = SubmeshWindow.cpp; sourceTree = "<group>"; };
+		ED26BE462E85C44200F39D0F /* ToolWindow.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = ToolWindow.hpp; sourceTree = "<group>"; };
+		ED26BE472E85C44200F39D0F /* ToolWindow.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = ToolWindow.cpp; sourceTree = "<group>"; };
 		ED57719B2E7C429100CA41D7 /* StageScene.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = StageScene.hpp; sourceTree = "<group>"; };
 		ED57719C2E7C42CA00CA41D7 /* StageScene.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = StageScene.cpp; sourceTree = "<group>"; };
 		EDD77E3D2CEA600200278155 /* model_edit.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = model_edit.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -210,14 +216,18 @@
 		EDD77E522CEA60F800278155 /* src */ = {
 			isa = PBXGroup;
 			children = (
-				ED57719B2E7C429100CA41D7 /* StageScene.hpp */,
-				ED57719C2E7C42CA00CA41D7 /* StageScene.cpp */,
 				ED1E40522E79E956000A46F7 /* AppDelegate.cpp */,
 				ED1E40512E79E932000A46F7 /* AppDelegate.hpp */,
 				ED1E3FE52E79E61E000A46F7 /* EnvironmentSettings.cpp */,
 				ED1E3FE42E79E60F000A46F7 /* EnvironmentSettings.hpp */,
+				ED57719B2E7C429100CA41D7 /* StageScene.hpp */,
+				ED57719C2E7C42CA00CA41D7 /* StageScene.cpp */,
+				ED26BE3D2E85C43900F39D0F /* SubmeshWindow.hpp */,
+				ED26BE3E2E85C43900F39D0F /* SubmeshWindow.cpp */,
 				ED1E3FDB2E79E5AA000A46F7 /* ToolBar.cpp */,
 				ED1E3FDA2E79E59C000A46F7 /* ToolBar.hpp */,
+				ED26BE462E85C44200F39D0F /* ToolWindow.hpp */,
+				ED26BE472E85C44200F39D0F /* ToolWindow.cpp */,
 				EDD77E512CEA60F800278155 /* main.cpp */,
 			);
 			path = src;
@@ -374,6 +384,8 @@
 				ED1E40532E79E959000A46F7 /* AppDelegate.cpp in Sources */,
 				EDD77E532CEA60F800278155 /* main.cpp in Sources */,
 				ED1E3FDC2E79E5AC000A46F7 /* ToolBar.cpp in Sources */,
+				ED26BE482E85C44200F39D0F /* ToolWindow.cpp in Sources */,
+				ED26BE3F2E85C43900F39D0F /* SubmeshWindow.cpp in Sources */,
 				ED1E3FE62E79E627000A46F7 /* EnvironmentSettings.cpp in Sources */,
 				ED57719D2E7C42CC00CA41D7 /* StageScene.cpp in Sources */,
 			);
