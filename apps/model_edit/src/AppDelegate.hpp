@@ -11,6 +11,7 @@
 
 #include "ToolBar.hpp"
 #include "EnvironmentSettings.hpp"
+#include "SubmeshWindow.hpp"
 #include "StageScene.hpp"
 
 class AppDelegate : public bg2e::render::DefaultRenderLoopDelegate<bg2e::render::RendererBasicForward>,
@@ -49,7 +50,8 @@ protected:
     
     std::unique_ptr<ToolBar> _menuBar;
     std::shared_ptr<EnvironmentSettings> _environmentSettings;
-    
+	std::shared_ptr<SubmeshWindow> _submeshWindow;
+
     std::unique_ptr<StageScene> _stage;
     
     std::shared_ptr<bg2e::scene::Node> createScene() override;

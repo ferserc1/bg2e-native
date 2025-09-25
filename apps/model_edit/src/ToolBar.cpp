@@ -8,8 +8,11 @@
 #include "ToolBar.hpp"
 #include "AppDelegate.hpp"
 
-void ToolBar::init(uint32_t uiWidth, std::shared_ptr<EnvironmentSettings> envSettings)
-{
+void ToolBar::init(
+    uint32_t uiWidth,
+    std::shared_ptr<EnvironmentSettings> envSettings,
+    std::shared_ptr<SubmeshWindow> submeshWindow
+) {
     _window.options.noClose = true;
     _window.options.noMove = true;
     _window.options.noTitleBar = true;
@@ -20,6 +23,7 @@ void ToolBar::init(uint32_t uiWidth, std::shared_ptr<EnvironmentSettings> envSet
     _window.setSize(uiWidth, _height);
     
     _environmentSettings = envSettings;
+    _submeshWindow = submeshWindow;
 }
 
 void ToolBar::resize(uint32_t width)
@@ -41,7 +45,10 @@ void ToolBar::draw()
             });
             auto filePath = fd.openFile();
             
-            _appDelegate->stage()->loadModel(filePath);
+            if (!filePath.empty())
+            {
+                _appDelegate->stage()->loadModel(filePath);
+            }
         }
         if (BasicWidgets::button("Save", true))
         {
@@ -50,10 +57,6 @@ void ToolBar::draw()
         if (BasicWidgets::button("Environment", true))
         {
             _environmentSettings->toggleOpen();
-        }
-        if (BasicWidgets::button("Material Editor", true))
-        {
-            
         }
         
         if (BasicWidgets::button("Center Camera", true))
@@ -64,11 +67,11 @@ void ToolBar::draw()
         auto targetDrawable = _appDelegate->stage()->targetDrawable();
         if (targetDrawable)
         {
-            static uint32_t selectedPlist = 0;
+            uint32_t selectedPlist = _appDelegate->stage()->targetSubmeshIndex();
             bg2e::ui::BasicWidgets::text("Submesh: ", true);
-            if (bg2e::ui::Input::comboBox(".",
+            if (bg2e::ui::Input::comboBox("##submesh",
                 [&](std::vector<std::string>& items) {
-                    for (auto i = 0; i < targetDrawable->submeshesCount(); ++i)
+                    for (uint32_t i = 0; i < targetDrawable->submeshesCount(); ++i)
                     {
                         items.push_back(targetDrawable->submeshName(i));
                     }
@@ -76,7 +79,12 @@ void ToolBar::draw()
                 selectedPlist,
                 true, true)
             ) {
-                std::cout << selectedPlist << std::endl;
+				_appDelegate->stage()->setTargetSubmeshIndex(selectedPlist);
+            }
+
+            if (BasicWidgets::button("Submesh Editor", true))
+            {
+                _submeshWindow->toggleOpen();
             }
         }
     });

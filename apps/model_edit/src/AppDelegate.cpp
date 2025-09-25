@@ -22,11 +22,14 @@ void AppDelegate::init(bg2e::render::Engine*, bg2e::ui::UserInterface*)
     _window.setPosition(0, 50);
     _window.setSize(300, 290);
 
-    _environmentSettings = std::make_unique<EnvironmentSettings>();
+    _environmentSettings = std::make_shared<EnvironmentSettings>(this);
     _environmentSettings->init(uiWidth(), uiHeight());
+
+	_submeshWindow = std::make_shared<SubmeshWindow>(this);
+	_submeshWindow->init(uiWidth(), uiHeight());
     
     _menuBar = std::make_unique<ToolBar>(this);
-    _menuBar->init(uiWidth(), _environmentSettings);
+    _menuBar->init(uiWidth(), _environmentSettings, _submeshWindow);
 }
 
 void AppDelegate::swapchainResized(VkExtent2D extent)
@@ -34,6 +37,7 @@ void AppDelegate::swapchainResized(VkExtent2D extent)
     DefaultRenderLoopDelegate::swapchainResized(extent);
     _menuBar->resize(uiWidth());
     _environmentSettings->resizeViewport(uiWidth(), uiHeight());
+	_submeshWindow->resizeViewport(uiWidth(), uiHeight());
 }
 
 void AppDelegate::drawUI()
@@ -41,6 +45,8 @@ void AppDelegate::drawUI()
     _menuBar->draw();
     
     _environmentSettings->draw(renderer(), _stage->environment());
+
+    _submeshWindow->draw();
 }
 
 // InputDelegate

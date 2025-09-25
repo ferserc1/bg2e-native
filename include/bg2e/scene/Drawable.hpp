@@ -107,7 +107,7 @@ public:
     std::string submeshGroupName(uint32_t index = 0) const;
     bool submeshVisibility(uint32_t index = 0) const;
     
-    inline uint32_t submeshesCount() const { return static_cast<uint32_t>(_submeshAttributes.size()); }
+    uint32_t submeshesCount() const;
     
     std::vector<std::shared_ptr<render::MaterialBase>> materials() { return _materials; }
     

@@ -944,5 +944,8 @@
     <ClCompile Include="..\src\bg2e\render\RenderQueue.cpp">
       <Filter>Source Files\render</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\bg2e\scene\RenderQueueVisitor.cpp">
+      <Filter>Source Files\scene</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

@@ -27,6 +27,8 @@ public:
     inline bg2e::scene::OrbitCameraComponent * orbitCamera() const { return _orbitCamera; }
     
     bg2e::scene::Drawable* targetDrawable();
+	inline uint32_t targetSubmeshIndex() const { return _submeshIndex; }
+    inline void setTargetSubmeshIndex(uint32_t index) { _submeshIndex = index; }
     
 protected:
     bg2e::render::Engine * _engine;
@@ -35,8 +37,10 @@ protected:
     
     // This is the node where the loaded model is placed
     std::shared_ptr<bg2e::scene::Node> _targetNode;
+    uint32_t _submeshIndex = 0;
     
     bg2e::scene::EnvironmentComponent * _environment;
     bg2e::scene::OrbitCameraComponent * _orbitCamera;
+
 };
 

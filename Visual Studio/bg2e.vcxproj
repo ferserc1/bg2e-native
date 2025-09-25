@@ -270,6 +270,7 @@
     <ClCompile Include="..\src\bg2e\scene\LightComponent.cpp" />
     <ClCompile Include="..\src\bg2e\scene\Node.cpp" />
     <ClCompile Include="..\src\bg2e\scene\OrbitCameraComponent.cpp" />
+    <ClCompile Include="..\src\bg2e\scene\RenderQueueVisitor.cpp" />
     <ClCompile Include="..\src\bg2e\scene\ResizeViewportVisitor.cpp" />
     <ClCompile Include="..\src\bg2e\scene\Scene.cpp">
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)scene\</ObjectFileName>

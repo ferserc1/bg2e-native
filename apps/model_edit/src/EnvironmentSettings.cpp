@@ -7,17 +7,18 @@
 
 #include "EnvironmentSettings.hpp"
 
+#include "AppDelegate.hpp"
+
+EnvironmentSettings::EnvironmentSettings(AppDelegate* delegate)
+	: ToolWindow(Right, delegate)
+{
+
+}
+
 void EnvironmentSettings::init(uint32_t uiWidth, uint32_t uiHeight)
 {
-    _viewportWidth = uiWidth;
-    _viewportHeight = uiHeight;
-    
+	ToolWindow::init(uiWidth, uiHeight);    
     _window.setTitle("Environment Options");
-    _window.options.noClose = true;
-    _window.options.noResize = true;
-    _window.options.noMenu = true;
-    
-    initSize();
 }
 
 void EnvironmentSettings::draw(bg2e::render::RendererBasicForward * renderer, bg2e::scene::EnvironmentComponent * environment)
@@ -49,31 +50,4 @@ void EnvironmentSettings::draw(bg2e::render::RendererBasicForward * renderer, bg
     });
     
     renderer->setDrawSkybox(drawSkybox);
-}
-
-void EnvironmentSettings::resizeViewport(uint32_t width, uint32_t height)
-{
-    _viewportWidth = width;
-    _viewportHeight = height;
-}
-
-void EnvironmentSettings::toggleOpen()
-{
-    if (_window.isOpen())
-    {
-        _window.close();
-    }
-    else
-    {
-        initSize();
-        _window.open();
-    }
-}
-
-void EnvironmentSettings::initSize()
-{
-    auto width = 300;
-    auto height = 190;
-    _window.setPosition(_viewportWidth - width, 40);
-    _window.setSize(width, height);
 }

@@ -335,7 +335,7 @@ public:
             static uint32_t selectedPlist = 0;
             if (bg2e::ui::Input::comboBox("Poly List",
                 [&](std::vector<std::string>& items) {
-                    for (auto i = 0; i < _targetDrawable->submeshesCount(); ++i)
+                    for (uint32_t i = 0; i < _targetDrawable->submeshesCount(); ++i)
                     {
                         items.push_back(_targetDrawable->submeshName(i));
                     }
