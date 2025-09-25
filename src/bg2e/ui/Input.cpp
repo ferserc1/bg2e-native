@@ -1,22 +1,30 @@
 
 #include <bg2e/ui/Input.hpp>
+#include <iostream>
 
 #include "imgui.h"
 
 namespace bg2e {
 namespace ui {
 
-void Input::text(const std::string& label, std::string& value, int maxLength, bool sameLine)
+bool Input::text(const std::string& label, std::string& value, int maxLength, bool sameLine)
 {
+    char * stringValue = new char[maxLength];
+    strcpy(stringValue, value.c_str());
     if (sameLine)
     {
         ImGui::SameLine();
     }
-    value.reserve(maxLength);
-    ImGui::InputText(label.c_str(), value.data(), maxLength);
+    if (ImGui::InputText(label.c_str(), stringValue, maxLength))
+    {
+        value = stringValue;
+        return true;
+    }
+    delete [] stringValue;
+    return false;
 }
 
-void Input::textWithHint(
+bool Input::textWithHint(
     const std::string& label,
     const std::string& hint,
     std::string& value,
@@ -28,10 +36,10 @@ void Input::textWithHint(
         ImGui::SameLine();
     }
     value.reserve(maxLength);
-    ImGui::InputTextWithHint(label.c_str(), hint.c_str(), value.data(), maxLength);
+    return ImGui::InputTextWithHint(label.c_str(), hint.c_str(), value.data(), maxLength);
 }
 
-void Input::number(
+bool Input::number(
     const std::string& label,
     int * value,
     bool sameLine
@@ -40,10 +48,10 @@ void Input::number(
     {
         ImGui::SameLine();
     }
-    ImGui::InputInt(label.c_str(), value);
+    return ImGui::InputInt(label.c_str(), value);
 }
 
-void Input::number(
+bool Input::number(
     const std::string& label,
     float * value,
     bool sameLine
@@ -52,10 +60,10 @@ void Input::number(
     {
         ImGui::SameLine();
     }
-    ImGui::InputFloat(label.c_str(), value);
+    return ImGui::InputFloat(label.c_str(), value);
 }
 
-void Input::number(
+bool Input::number(
     const std::string& label,
     double * value,
     bool sameLine
@@ -64,10 +72,10 @@ void Input::number(
     {
         ImGui::SameLine();
     }
-    ImGui::InputDouble(label.c_str(), value);
+    return ImGui::InputDouble(label.c_str(), value);
 }
 
-void Input::vec2(
+bool Input::vec2(
     const std::string& label,
     int * value,
     bool sameLine
@@ -76,10 +84,10 @@ void Input::vec2(
     {
         ImGui::SameLine();
     }
-    ImGui::InputInt2(label.c_str(), value);
+    return ImGui::InputInt2(label.c_str(), value);
 }
 
-void Input::vec3(
+bool Input::vec3(
     const std::string& label,
     int * value,
     bool sameLine
@@ -88,10 +96,10 @@ void Input::vec3(
     {
         ImGui::SameLine();
     }
-    ImGui::InputInt3(label.c_str(), value);
+    return ImGui::InputInt3(label.c_str(), value);
 }
 
-void Input::vec4(
+bool Input::vec4(
     const std::string& label,
     int * value,
     bool sameLine
@@ -100,10 +108,10 @@ void Input::vec4(
     {
         ImGui::SameLine();
     }
-    ImGui::InputInt4(label.c_str(), value);
+    return ImGui::InputInt4(label.c_str(), value);
 }
 
-void Input::vec2(
+bool Input::vec2(
     const std::string& label,
     float * value,
     bool sameLine
@@ -112,10 +120,10 @@ void Input::vec2(
     {
         ImGui::SameLine();
     }
-    ImGui::InputFloat2(label.c_str(), value);
+    return ImGui::InputFloat2(label.c_str(), value);
 }
 
-void Input::vec3(
+bool Input::vec3(
     const std::string& label,
     float * value,
     bool sameLine
@@ -124,10 +132,10 @@ void Input::vec3(
     {
         ImGui::SameLine();
     }
-    ImGui::InputFloat3(label.c_str(), value);
+    return ImGui::InputFloat3(label.c_str(), value);
 }
 
-void Input::vec4(
+bool Input::vec4(
     const std::string& label,
     float * value,
     bool sameLine
@@ -136,10 +144,10 @@ void Input::vec4(
     {
         ImGui::SameLine();
     }
-    ImGui::InputFloat4(label.c_str(), value);
+    return ImGui::InputFloat4(label.c_str(), value);
 }
 
-void Input::slider(
+bool Input::slider(
     const std::string& label,
     int * value,
     int min,
@@ -150,10 +158,10 @@ void Input::slider(
     {
         ImGui::SameLine();
     }
-    ImGui::SliderInt(label.c_str(), value, min, max);
+    return ImGui::SliderInt(label.c_str(), value, min, max);
 }
 
-void Input::slider(
+bool Input::slider(
     const std::string& label,
     float * value,
     float min,
@@ -164,10 +172,10 @@ void Input::slider(
     {
         ImGui::SameLine();
     }
-    ImGui::SliderFloat(label.c_str(), value, min, max);
+    return ImGui::SliderFloat(label.c_str(), value, min, max);
 }
 
-void Input::colorPicker(
+bool Input::colorPicker(
     const std::string& label,
     bg2e::base::Color& color,
     bool sameLine
@@ -177,12 +185,59 @@ void Input::colorPicker(
         ImGui::SameLine();
     }
     float col[] = { color.r, color.g, color.b, color.a };
-    ImGui::ColorEdit4(label.c_str(), col);
+    bool result = ImGui::ColorEdit4(label.c_str(), col);
     color.r = col[0];
     color.g = col[1];
     color.b = col[2];
     color.a = col[3];
+    return result;
 }
+
+bool Input::comboBox(
+    const std::string& label,
+    const std::vector<std::string>& items,
+    uint32_t &selected,
+    bool sameLine,
+    bool fitPreview
+) {
+    if (sameLine)
+    {
+        ImGui::SameLine();
+    }
+    
+    ImGuiComboFlags flags = 0;
+    if (fitPreview)
+    {
+        flags |= ImGuiComboFlags_WidthFitPreview;
+    }
+    bool changed = false;
+    auto selectedLabel = std::to_string(selected) + ": " + items[selected];
+    if (ImGui::BeginCombo(label.c_str(), selectedLabel.c_str(), flags))
+    {
+        for (uint32_t idx = 0; idx < static_cast<uint32_t>(items.size()); ++idx)
+        {
+            const bool isSelected = selected == idx;
+            auto label = std::to_string(idx) + ": " + items[idx];
+            if (ImGui::Selectable(label.c_str(), isSelected))
+            {
+                selected = idx;
+                changed = true;
+            }
+            
+            if (isSelected)
+            {
+                ImGui::SetItemDefaultFocus();
+            }
+        }
+        
+        
+        ImGui::EndCombo();
+    }
+    
+    return changed;
+}
+    
+    
 
 }
 }

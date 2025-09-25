@@ -432,11 +432,12 @@ void storeMeshBg2(const std::filesystem::path& filePath, Bg2Mesh * mesh)
         plist->name = new char[material.name().size()];
         std::strncpy(plist->name, material.name().c_str(), material.name().size());
         plist->matName = new char[material.name().size()];
-        std::strncpy(plist->name, material.name().c_str(), material.name().size());
-        
+        std::strncpy(plist->matName, material.name().c_str(), material.name().size());
         
         plist->groupName = new char[material.groupName().size()];
         std::strncpy(plist->groupName, material.groupName().c_str(), material.groupName().size());
+        
+        plist->visible = material.visible();
         
         submeshIndex++;
     }
@@ -498,6 +499,9 @@ std::shared_ptr<bg2e::scene::Drawable> loadDrawableBg2(
     for (auto m : bg2Model->materials)
     {
         result->setMaterial(m, i);
+        result->setSubmeshName(m.name(), i);
+        result->setSubmeshGroupName(m.groupName(), i);
+        result->setSubmeshVisibility(m.visible(), i);
         ++i;
     }
     result->load(engine);
@@ -521,9 +525,17 @@ void storeDrawableBg2(
 ) {
     db::Bg2Mesh meshData;
     meshData.mesh = drawable->mesh();
+    uint32_t idx = 0;
     for (auto & mat : drawable->materials())
     {
+        // Update material metadata from submesh attributes
+        mat->materialAttributes().setName(drawable->submeshName(idx));
+        mat->materialAttributes().setGroupName(drawable->submeshGroupName(idx));
+        mat->materialAttributes().setVisible(drawable->submeshVisibility(idx));
+        
         meshData.materials.push_back(mat->materialAttributes());
+        
+        ++idx;
     }
     db::storeMeshBg2(filePath, &meshData);
 }

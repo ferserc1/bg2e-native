@@ -26,6 +26,8 @@ public:
     inline bg2e::scene::OrbitCameraComponent * orbitCamera() { return _orbitCamera; }
     inline bg2e::scene::OrbitCameraComponent * orbitCamera() const { return _orbitCamera; }
     
+    bg2e::scene::Drawable* targetDrawable();
+    
 protected:
     bg2e::render::Engine * _engine;
     

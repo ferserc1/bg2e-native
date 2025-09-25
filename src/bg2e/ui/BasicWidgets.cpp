@@ -42,22 +42,22 @@ bool BasicWidgets::button(const std::string & title, bool sameLine)
     return ImGui::Button(title.c_str());
 }
 
-void BasicWidgets::checkBox(const std::string & title, bool * value, bool sameLine)
+bool BasicWidgets::checkBox(const std::string & title, bool * value, bool sameLine)
 {
     if (sameLine)
     {
         ImGui::SameLine();
     }
-    ImGui::Checkbox(title.c_str(), value);
+    return ImGui::Checkbox(title.c_str(), value);
 }
 
-void BasicWidgets::radioButton(const std::string & label, int * value, int id, bool sameLine)
+bool BasicWidgets::radioButton(const std::string & label, int * value, int id, bool sameLine)
 {
     if (sameLine)
     {
         ImGui::SameLine();
     }
-    ImGui::RadioButton(label.c_str(), value, id);
+    return ImGui::RadioButton(label.c_str(), value, id);
 }
 
 }

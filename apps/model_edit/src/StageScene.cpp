@@ -48,7 +48,6 @@ std::shared_ptr<bg2e::scene::Node> StageScene::init()
     
     // Target node: the node where the loaded model is placed
     _targetNode = std::make_shared<bg2e::scene::Node>("Target Node");
-    //_targetNode->addComponent(new bg2e::scene::TransformComponent(glm::scale(glm::mat4{1.0}, glm::vec3{10.0f})));
     sceneRoot->addChild(_targetNode);
     
     // Sample model
@@ -62,20 +61,23 @@ std::shared_ptr<bg2e::scene::Node> StageScene::init()
 
 void StageScene::loadModel(const std::filesystem::path& path)
 {
-    auto modelData = std::shared_ptr<bg2e::db::Bg2Mesh>(bg2e::db::loadMeshBg2(path));
+    auto modelDrawable = bg2e::db::loadDrawableBg2(path, _engine);
     auto modelNode = new bg2e::scene::Node("Target model");
-    auto drawable = std::make_shared<bg2e::scene::Drawable>();
-    drawable->setMesh(modelData->mesh);
-    uint32_t submesh = 0;
-    for (auto & m : modelData->materials)
-    {
-        drawable->setMaterial(m, submesh);
-        submesh++;
-    }
-    drawable->load(_engine);
-    drawable->updateMaterials();
-    modelNode->addComponent(new bg2e::scene::DrawableComponent(drawable));
+    modelNode->addComponent(new bg2e::scene::DrawableComponent(modelDrawable));
     
     _targetNode->clearChildren();
     _targetNode->addChild(modelNode);
+}
+
+bg2e::scene::Drawable* StageScene::targetDrawable()
+{
+    bg2e::scene::Drawable * result = nullptr;
+    if (_targetNode.get() && _targetNode->children().size() > 0)
+    {
+        auto drawableComponent = _targetNode->children()[0]->drawable();
+        result = drawableComponent ?
+            dynamic_cast<bg2e::scene::Drawable*>(drawableComponent->drawable().get())
+            : nullptr;
+    }
+    return result;
 }

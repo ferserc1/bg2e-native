@@ -116,12 +116,17 @@ public:
                 _aoTextureUpdated;
     }
     
-    // Metadata
+    // Metadata: in a bg2 file, Materials store some data from their associated submesh.
+    // This is metadata: it does not belong to the material, but to the submesh. It is
+    // stored in materialAttributes for serialisation and deserialisation to bg2 files.
     inline const std::string& name() const { return _name; }
     inline void setName(const std::string& name) { _name = name; }
     
     inline const std::string& groupName() const { return _groupName; }
     inline void setGroupName(const std::string& groupName) { _groupName = groupName; }
+    
+    inline bool visible() const { return _visible; }
+    inline void setVisible(bool v) { _visible = v; }
 
 protected:
     
@@ -162,6 +167,7 @@ protected:
     // Material metadata
     std::string _name = "";
     std::string _groupName = "";
+    bool _visible = true;
 };
 
 }

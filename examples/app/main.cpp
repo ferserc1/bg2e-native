@@ -264,7 +264,7 @@ public:
     {
         auto margin = 10;
         _window.setPosition(margin, margin);
-		_window.setSize(200, 290);
+		_window.setSize(300, 290);
     }
     
 	void init(bg2e::render::Engine*, bg2e::ui::UserInterface*) override
@@ -314,6 +314,58 @@ public:
 //            _sphere->material(5).setMetalness(metalness);
 //            _sphere->material(5).setRoughness(roughness);
 //            _sphere->updateMaterials();
+
+            auto name = _targetDrawable->name();
+            if (bg2e::ui::Input::text("Drawable Name", name))
+            {
+                _targetDrawable->setName(name);
+            }
+            
+//            for (auto i = 0; i <_targetDrawable->submeshesCount(); ++i)
+//            {
+//                auto plName = _targetDrawable->submeshName(i);
+//                auto grpName = _targetDrawable->submeshGroupName(i);
+//                auto visible = _targetDrawable->submeshVisibility(i);
+//                bg2e::ui::Input::text("Plist Name", plName);
+//                bg2e::ui::Input::text("Group Name", grpName);
+//                bg2e::ui::BasicWidgets::checkBox("Visible", &visible);
+//            }
+
+
+            static uint32_t selectedPlist = 0;
+            if (bg2e::ui::Input::comboBox("Poly List",
+                [&](std::vector<std::string>& items) {
+                    for (auto i = 0; i < _targetDrawable->submeshesCount(); ++i)
+                    {
+                        items.push_back(_targetDrawable->submeshName(i));
+                    }
+                },
+                selectedPlist,
+                false,
+                true)
+            ) {
+                std::cout << selectedPlist << std::endl;
+            }
+            
+            auto plName = _targetDrawable->submeshName(selectedPlist);
+            auto grpName = _targetDrawable->submeshGroupName(selectedPlist);
+            auto visible = _targetDrawable->submeshVisibility(selectedPlist);
+            if (bg2e::ui::Input::text("Name", plName))
+            {
+                _targetDrawable->setSubmeshName(plName, selectedPlist);
+            }
+            if (bg2e::ui::Input::text("Group Name", grpName))
+            {
+                _targetDrawable->setSubmeshGroupName(grpName, selectedPlist);
+            }
+            if (bg2e::ui::BasicWidgets::checkBox("Visibility", &visible))
+            {
+                _targetDrawable->setSubmeshVisibility(visible, selectedPlist);
+            }
+            
+            
+            
+            
             
             if (bg2e::ui::BasicWidgets::button("Open File"))
             {
@@ -413,7 +465,7 @@ protected:
 	bg2e::ui::Window _window;
     bg2e::scene::InputVisitor _inputVisitor;
     
-    std::shared_ptr<bg2e::scene::Drawable> _sphere;
+    std::shared_ptr<bg2e::scene::Drawable> _targetDrawable;
     bg2e::scene::EnvironmentComponent * _environment;
     bg2e::scene::OrbitCameraComponent * _orbitCamera;
     
@@ -488,86 +540,76 @@ protected:
         auto sphereMesh = std::shared_ptr<bg2e::geo::Mesh>(bg2e::geo::createSphere(sphereRadius, 35, 35));
         bg2e::geo::GenTangentsModifier<bg2e::geo::MeshPNUUT> genTangents(sphereMesh.get());
         genTangents.apply();
-        for (uint32_t row = 0; row < rows; ++row)
-        {
-            for (uint32_t col = 0; col < cols; ++col)
-            {
-                pos.x = (totalWidth / -2.0f) + sphereSeparation / 2.0f + static_cast<float>(row) * sphereSeparation;
-                pos.y = (totalHeight / -2.0f) + sphereSeparation / 2.0f + static_cast<float>(col) * sphereSeparation;
-                
-                auto sphereDrawable = std::make_shared<bg2e::scene::Drawable>();
-                sphereDrawable->setMesh(sphereMesh);
-                sphereDrawable->material(0).setMetalness(static_cast<float>(row) / rows);
-                sphereDrawable->material(0).setRoughness(static_cast<float>(col) / cols);
-                
-                if (col % 2 == 0 && row % 2 == 0)
-                {
-                    sphereDrawable->material(0).setIsTransparent(true);
-                    sphereDrawable->material(0).setAlbedo(bg2e::base::Color(1.0f, 0.0f, 0.0f, 0.7f));
-                }
-                else
-                {
-                    sphereDrawable->material(0).setAlbedo(bg2e::base::Color::Red());
-                }
-                
-                sphereDrawable->load(_engine);
-                auto node = std::make_shared<bg2e::scene::Node>("Sphere-" + std::to_string(row) + "-" + std::to_string(col));
-                node->addComponent(new bg2e::scene::DrawableComponent(sphereDrawable));
-                node->addComponent(bg2e::scene::TransformComponent::makeTranslated(pos));
-                sceneRoot->addChild(node);
-            }
-        }
+//        for (uint32_t row = 0; row < rows; ++row)
+//        {
+//            for (uint32_t col = 0; col < cols; ++col)
+//            {
+//                pos.x = (totalWidth / -2.0f) + sphereSeparation / 2.0f + static_cast<float>(row) * sphereSeparation;
+//                pos.y = (totalHeight / -2.0f) + sphereSeparation / 2.0f + static_cast<float>(col) * sphereSeparation;
+//                
+//                auto sphereDrawable = std::make_shared<bg2e::scene::Drawable>();
+//                sphereDrawable->setMesh(sphereMesh);
+//                sphereDrawable->material(0).setMetalness(static_cast<float>(row) / rows);
+//                sphereDrawable->material(0).setRoughness(static_cast<float>(col) / cols);
+//                
+//                if (col % 2 == 0 && row % 2 == 0)
+//                {
+//                    sphereDrawable->material(0).setIsTransparent(true);
+//                    sphereDrawable->material(0).setAlbedo(bg2e::base::Color(1.0f, 0.0f, 0.0f, 0.7f));
+//                }
+//                else
+//                {
+//                    sphereDrawable->material(0).setAlbedo(bg2e::base::Color::Red());
+//                }
+//                
+//                sphereDrawable->load(_engine);
+//                auto node = std::make_shared<bg2e::scene::Node>("Sphere-" + std::to_string(row) + "-" + std::to_string(col));
+//                node->addComponent(new bg2e::scene::DrawableComponent(sphereDrawable));
+//                node->addComponent(bg2e::scene::TransformComponent::makeTranslated(pos));
+//                sceneRoot->addChild(node);
+//            }
+//        }
+//        
+//        
+//        auto mainSphereDrawable = new bg2e::scene::Drawable();
+//        mainSphereDrawable->setMesh(sphereMesh);
+//        mainSphereDrawable->material(0).setAlbedo(new bg2e::base::Texture(assetPath, "rust_metal_albedo.jpg"));
+//        mainSphereDrawable->material(0).setNormalTexture(new bg2e::base::Texture(assetPath, "rust_metal_normal.jpg"));
+//        mainSphereDrawable->material(0).setMetalness(new bg2e::base::Texture(assetPath, "rust_metal_metallic.jpg"));
+//        mainSphereDrawable->material(0).setRoughness(new bg2e::base::Texture(assetPath, "rust_metal_roughness.jpg"));
+//        mainSphereDrawable->load(_engine);
+//        
+//        auto mainSphereNode = new bg2e::scene::Node("Main Sphere");
+//        mainSphereNode->addComponent(bg2e::scene::TransformComponent::makeTranslated(-5.0f, 0.0f, 4.0f));
+//        mainSphereNode->transform()->scale(3.0f);
+//        mainSphereNode->addComponent(new bg2e::scene::DrawableComponent(mainSphereDrawable));
+//        sceneRoot->addChild(mainSphereNode);
+//        
+//        auto customSphereDrawable = std::make_shared<bg2e::scene::Drawable>();
+//        customSphereDrawable->setMesh(sphereMesh);
+//        customSphereDrawable->material(0).setMetalness(0.6f);
+//        customSphereDrawable->material(0).setRoughness(0.2f);
+//        customSphereDrawable->load(_engine);
+//        auto sphere = customSphereDrawable;
+//        auto customSphereNode = new bg2e::scene::Node("Custom Sphere");
+//        customSphereNode->addComponent(bg2e::scene::TransformComponent::makeTranslated(5.0f, 0.0f, 4.0f));
+//        customSphereNode->transform()->scale(3.0f);
+//        customSphereNode->addComponent(new bg2e::scene::DrawableComponent(customSphereDrawable));
+//        
+//        
+//        sceneRoot->addChild(customSphereNode);
         
-        
-        auto mainSphereDrawable = new bg2e::scene::Drawable();
-        mainSphereDrawable->setMesh(sphereMesh);
-        mainSphereDrawable->material(0).setAlbedo(new bg2e::base::Texture(assetPath, "rust_metal_albedo.jpg"));
-        mainSphereDrawable->material(0).setNormalTexture(new bg2e::base::Texture(assetPath, "rust_metal_normal.jpg"));
-        mainSphereDrawable->material(0).setMetalness(new bg2e::base::Texture(assetPath, "rust_metal_metallic.jpg"));
-        mainSphereDrawable->material(0).setRoughness(new bg2e::base::Texture(assetPath, "rust_metal_roughness.jpg"));
-        mainSphereDrawable->load(_engine);
-        
-        auto mainSphereNode = new bg2e::scene::Node("Main Sphere");
-        mainSphereNode->addComponent(bg2e::scene::TransformComponent::makeTranslated(-5.0f, 0.0f, 4.0f));
-        mainSphereNode->transform()->scale(3.0f);
-        mainSphereNode->addComponent(new bg2e::scene::DrawableComponent(mainSphereDrawable));
-        sceneRoot->addChild(mainSphereNode);
-        
-        auto customSphereDrawable = std::make_shared<bg2e::scene::Drawable>();
-        customSphereDrawable->setMesh(sphereMesh);
-        customSphereDrawable->material(0).setMetalness(0.6f);
-        customSphereDrawable->material(0).setRoughness(0.2f);
-        customSphereDrawable->load(_engine);
-        _sphere = customSphereDrawable;
-        auto customSphereNode = new bg2e::scene::Node("Custom Sphere");
-        customSphereNode->addComponent(bg2e::scene::TransformComponent::makeTranslated(5.0f, 0.0f, 4.0f));
-        customSphereNode->transform()->scale(3.0f);
-        customSphereNode->addComponent(new bg2e::scene::DrawableComponent(customSphereDrawable));
-        
-        //auto bg2Model = bg2e::db::loadMeshBg2(assetPath, "armchair.bg2");
-        
-        sceneRoot->addChild(customSphereNode);
-        
-        
-        auto bg2Model = bg2e::db::loadMeshBg2(assetPath, "armchair.bg2");
-        auto modelDrawable = new bg2e::scene::Drawable();
-        modelDrawable->setMesh(bg2Model->mesh);
-        uint32_t i = 0;
-        for (auto m : bg2Model->materials)
-        {
-            modelDrawable->setMaterial(m, i);
-            ++i;
-        }
-        modelDrawable->load(_engine);
+        auto model = bg2e::db::loadDrawableBg2(assetPath, "armchair.bg2", _engine);
         auto modelNode = new bg2e::scene::Node("Armchair");
-        modelNode->addComponent(new bg2e::scene::DrawableComponent(modelDrawable));
+        _targetDrawable = std::shared_ptr<bg2e::scene::Drawable>(model);
+        modelNode->addComponent(new bg2e::scene::DrawableComponent(model));
         modelNode->addComponent(new bg2e::scene::TransformComponent(glm::translate(glm::mat4 { 1.0 }, glm::vec3{ 0, 0, 0 })));
         modelNode->transform()->scale(4.0f);
         sceneRoot->addChild(modelNode);
         
         
         _engine->cleanupManager().push([&](VkDevice) {
-            _sphere.reset();
+            _targetDrawable.reset();
         });
        
         return sceneRoot;

@@ -60,5 +60,24 @@ void ToolBar::draw()
         {
             _appDelegate->stage()->orbitCamera()->reset();
         }
+        
+        auto targetDrawable = _appDelegate->stage()->targetDrawable();
+        if (targetDrawable)
+        {
+            static uint32_t selectedPlist = 0;
+            bg2e::ui::BasicWidgets::text("Submesh: ", true);
+            if (bg2e::ui::Input::comboBox(".",
+                [&](std::vector<std::string>& items) {
+                    for (auto i = 0; i < targetDrawable->submeshesCount(); ++i)
+                    {
+                        items.push_back(targetDrawable->submeshName(i));
+                    }
+                },
+                selectedPlist,
+                true, true)
+            ) {
+                std::cout << selectedPlist << std::endl;
+            }
+        }
     });
 }

@@ -84,7 +84,10 @@ public:
     
     struct SubmeshAttributes {
         base::MaterialAttributes material;
-        glm::mat4 transform { 1.0f } ;
+        glm::mat4 transform { 1.0f };
+        std::string name;
+        std::string groupName;
+        bool visible = true;
     };
 
     void setMesh(MeshT* mesh);
@@ -93,9 +96,18 @@ public:
     
     void setMaterial(const base::MaterialAttributes& mat, uint32_t submeshIndex = 0);
     void setSubmeshTransform(const glm::mat4& mat, uint32_t submeshIndex = 0);
+    void setSubmeshName(const std::string & name, uint32_t submeshIndex = 0);
+    void setSubmeshGroupName(const std::string& groupName, uint32_t submeshIndex = 0);
+    void setSubmeshVisibility(bool visible, uint32_t submeshIndex = 0);
+    
     const base::MaterialAttributes& material(uint32_t index = 0) const;
     base::MaterialAttributes& material(uint32_t index = 0);
     glm::mat4 submeshTransform(uint32_t index = 0) const;
+    std::string submeshName(uint32_t index = 0) const;
+    std::string submeshGroupName(uint32_t index = 0) const;
+    bool submeshVisibility(uint32_t index = 0) const;
+    
+    inline uint32_t submeshesCount() const { return static_cast<uint32_t>(_submeshAttributes.size()); }
     
     std::vector<std::shared_ptr<render::MaterialBase>> materials() { return _materials; }
     
@@ -134,6 +146,7 @@ protected:
     // submesh attributes accessors are called with an out of bound index, because we don't
 	// whant that the access to the attributes to crash the program.
     base::MaterialAttributes _defaultMaterial;
+    std::string _defaultString = "";
     
     // Render resources
     // TODO: create a render::Mesh cache to avoid duplicities loading a shared geo::Mesh in

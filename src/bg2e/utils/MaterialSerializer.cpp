@@ -47,7 +47,10 @@ bool parseMaterial(
     {
         result.setIsSolid(mat["isSolid"]->boolValue(false));
     }
-    
+    if (mat["visible"])
+    {
+        result.setVisible(mat["visible"]->boolValue(true));
+    }
     
     // Albedo
     if (mat["diffuse"] && mat["diffuse"]->isVec4())
@@ -159,7 +162,8 @@ std::string MaterialSerializer::serializeMaterial(
         { "type", JSON("pbr") },
         { "class", JSON("PBRMaterial") },
         { "isTransparent", JSON(mat.isTransparent()) },
-        { "isSolid", JSON(mat.isSolid() )}
+        { "isSolid", JSON(mat.isSolid() )},
+        { "visible", JSON(mat.visible() )}
     });
     auto & obj = matJson->objectValue();
     

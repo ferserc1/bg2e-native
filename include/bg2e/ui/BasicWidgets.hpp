@@ -12,8 +12,8 @@ public:
     static void listItem(const std::string & label, bool sameLine = false);
     
     static bool button(const std::string & title, bool sameLine = false);
-    static void checkBox(const std::string & title, bool * value = nullptr, bool sameLine = false);
-    static void radioButton(const std::string & label, int * value = nullptr, int id = 0, bool sameLine = false);
+    static bool checkBox(const std::string & title, bool * value = nullptr, bool sameLine = false);
+    static bool radioButton(const std::string & label, int * value = nullptr, int id = 0, bool sameLine = false);
 };
 
 }

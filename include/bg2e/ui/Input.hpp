@@ -4,19 +4,22 @@
 #include <bg2e/common.hpp>
 #include <bg2e/base/Color.hpp>
 
+#include <vector>
+#include <functional>
+
 namespace bg2e {
 namespace ui {
 
 class BG2E_API Input {
 public:
-    static void text(
+    static bool text(
         const std::string& label,
         std::string& value,
         int maxLength = 200,
         bool sameLine = false
     );
     
-    static void textWithHint(
+    static bool textWithHint(
         const std::string& label,
         const std::string& hint,
         std::string& value,
@@ -24,61 +27,61 @@ public:
         bool sameLine = false
     );
     
-    static void number(
+    static bool number(
         const std::string& label,
         int * value,
         bool sameLine = false
     );
     
-    static void number(
+    static bool number(
         const std::string& label,
         float * value,
         bool sameLine = false
     );
     
-    static void number(
+    static bool number(
         const std::string& label,
         double * value,
         bool sameLine = false
     );
     
-    static void vec2(
+    static bool vec2(
         const std::string& label,
         int * value,
         bool sameLine = false
     );
     
-    static void vec3(
+    static bool vec3(
         const std::string& label,
         int * value,
         bool sameLine = false
     );
     
-    static void vec4(
+    static bool vec4(
         const std::string& label,
         int * value,
         bool sameLine = false
     );
     
-    static void vec2(
+    static bool vec2(
         const std::string& label,
         float * value,
         bool sameLine = false
     );
     
-    static void vec3(
+    static bool vec3(
         const std::string& label,
         float * value,
         bool sameLine = false
     );
     
-    static void vec4(
+    static bool vec4(
         const std::string& label,
         float * value,
         bool sameLine = false
     );
     
-    static void slider(
+    static bool slider(
         const std::string& label,
         int * value,
         int min = 0,
@@ -86,7 +89,7 @@ public:
         bool sameLine = false
     );
     
-    static void slider(
+    static bool slider(
         const std::string& label,
         float * value,
         float min = 0.0f,
@@ -94,11 +97,34 @@ public:
         bool sameLine = false
     );
     
-    static void colorPicker(
+    static bool colorPicker(
         const std::string& label,
         bg2e::base::Color & color,
         bool sameLine = false
     );
+    
+    static bool comboBox(
+        const std::string& label,
+        const std::vector<std::string>& items,
+        uint32_t &selected,
+        bool sameLine = false,
+        bool fitPreview = false
+    );
+    
+    typedef std::function<void(std::vector<std::string>&)> ItemListCallback;
+    
+    static bool comboBox(
+        const std::string& label,
+        ItemListCallback itemsCb,
+        uint32_t &selected,
+        bool sameLine = false,
+        bool fitPreview = false
+    ) {
+        std::vector<std::string> items;
+        itemsCb(items);
+        return Input::comboBox(label, items, selected, sameLine, fitPreview);
+    }
+        
 };
 
 }
