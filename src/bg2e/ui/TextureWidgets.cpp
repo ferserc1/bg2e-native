@@ -16,7 +16,7 @@ void TextureWidgets::drawImage(uint32_t width, uint32_t height, bool sameLine)
         {
             ImGui::SameLine();
         }
-        ImGui::Image(static_cast<ImTextureID>(_textureDS), ImVec2(width, height));
+        ImGui::Image(static_cast<ImTextureID>(_textureDS), ImVec2(static_cast<float>(width), static_cast<float>(height)));
     }
 }
 
