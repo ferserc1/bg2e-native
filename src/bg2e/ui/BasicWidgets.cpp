@@ -60,5 +60,15 @@ bool BasicWidgets::radioButton(const std::string & label, int * value, int id, b
     return ImGui::RadioButton(label.c_str(), value, id);
 }
 
+bool BasicWidgets::beginTree(const std::string & label)
+{
+    return ImGui::TreeNode(label.c_str());
+}
+
+void BasicWidgets::endTree()
+{
+    ImGui::TreePop();
+}
+
 }
 }

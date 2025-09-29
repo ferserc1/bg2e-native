@@ -120,7 +120,8 @@ public:
     void updateMaterials();
     
     std::shared_ptr<RenderMeshT> renderMesh();
-    const std::shared_ptr<render::MaterialBase>& renderMaterial(uint32_t submeshIndex);
+    const std::shared_ptr<render::MaterialBase>& renderMaterial(uint32_t submeshIndex) const;
+    std::shared_ptr<render::MaterialBase>& renderMaterial(uint32_t submeshIndex);
     
     void drawSubmesh(
         VkCommandBuffer cmd,

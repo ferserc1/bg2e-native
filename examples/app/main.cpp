@@ -344,7 +344,7 @@ public:
                 false,
                 true)
             ) {
-                std::cout << selectedPlist << std::endl;
+                _materialEditor.setEditMaterial(_targetDrawable->renderMaterial(selectedPlist));
             }
             
             auto plName = _targetDrawable->submeshName(selectedPlist);
@@ -364,7 +364,7 @@ public:
             }
             
             
-            
+            _materialEditor.draw();
             
             
             if (bg2e::ui::BasicWidgets::button("Open File"))
@@ -460,10 +460,17 @@ public:
     {
         _inputVisitor.mouseWheel(renderer()->scene()->rootNode(), deltaX, deltaY);
     }
+    
+    void cleanup() override
+    {
+        bg2e::render::DefaultRenderLoopDelegate<bg2e::render::RendererBasicForward>::cleanup();
+        _materialEditor.cleanup();
+    }
 
 protected:
 	bg2e::ui::Window _window;
     bg2e::scene::InputVisitor _inputVisitor;
+    bg2e::ui::MaterialEditor _materialEditor;
     
     std::shared_ptr<bg2e::scene::Drawable> _targetDrawable;
     bg2e::scene::EnvironmentComponent * _environment;
@@ -602,6 +609,9 @@ protected:
         auto model = bg2e::db::loadDrawableBg2(assetPath, "armchair.bg2", _engine);
         auto modelNode = new bg2e::scene::Node("Armchair");
         _targetDrawable = std::shared_ptr<bg2e::scene::Drawable>(model);
+        // Init the material editor with the first material of the loaded drawable
+        _materialEditor.setEditMaterial(_targetDrawable->renderMaterial(0));
+        
         modelNode->addComponent(new bg2e::scene::DrawableComponent(model));
         modelNode->addComponent(new bg2e::scene::TransformComponent(glm::translate(glm::mat4 { 1.0 }, glm::vec3{ 0, 0, 0 })));
         modelNode->transform()->scale(4.0f);
