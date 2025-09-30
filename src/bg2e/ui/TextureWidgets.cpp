@@ -2,6 +2,8 @@
 //  Image.cpp
 
 #include <bg2e/ui/TextureWidgets.hpp>
+#include <bg2e/ui/BasicWidgets.hpp>
+#include <bg2e/app/FileDialog.hpp>
 
 #include "imgui.h"
 #include "imgui_impl_vulkan.h"
@@ -18,6 +20,32 @@ void TextureWidgets::drawImage(uint32_t width, uint32_t height, bool sameLine)
         }
         ImGui::Image(static_cast<ImTextureID>(_textureDS), ImVec2(static_cast<float>(width), static_cast<float>(height)));
     }
+}
+
+void TextureWidgets::selectTexture(const std::string& label, std::function<std::shared_ptr<render::Texture>(base::Texture* tex)> textureCallback)
+{
+    if (BasicWidgets::button("Select##" + label))
+    {
+        app::FileDialog fd;
+        fd.setFilters({
+            { "Images", "jpg,jpeg,png,bmp,webp" }
+        });
+        
+        auto filePath = fd.openFile();
+        
+        if (!filePath.empty())
+        {
+            base::Texture * texture = new base::Texture();
+            texture->setImageFilePath(filePath);
+            texture->setMagFilter(base::Texture::FilterLinear);
+            texture->setMinFilter(base::Texture::FilterLinear);
+            texture->setUseMipmaps(true);
+            auto tex = textureCallback(texture);
+            setEditTexture(tex);
+        }
+    }
+    drawImage(42, 42, true);
+    BasicWidgets::text(label, true);
 }
 
 void TextureWidgets::cleanup()

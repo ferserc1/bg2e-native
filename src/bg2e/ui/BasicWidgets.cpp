@@ -62,7 +62,7 @@ bool BasicWidgets::radioButton(const std::string & label, int * value, int id, b
 
 bool BasicWidgets::beginTree(const std::string & label)
 {
-    return ImGui::TreeNode(label.c_str());
+    return ImGui::TreeNodeEx(label.c_str(), ImGuiTreeNodeFlags_DefaultOpen);
 }
 
 void BasicWidgets::endTree()

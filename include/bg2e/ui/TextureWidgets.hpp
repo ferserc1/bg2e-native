@@ -5,8 +5,10 @@
 
 #include <bg2e/common.hpp>
 #include <bg2e/render/Texture.hpp>
+#include <bg2e/render/MaterialBase.hpp>
 
 #include <memory>
+#include <functional>
 
 namespace bg2e {
 namespace ui {
@@ -28,6 +30,8 @@ public:
     }
     
     void drawImage(uint32_t width, uint32_t height, bool sameLine = false);
+    
+    void selectTexture(const std::string& label, std::function<std::shared_ptr<render::Texture>(base::Texture* tex)>);
     
     void cleanup();
 

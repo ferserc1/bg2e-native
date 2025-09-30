@@ -260,37 +260,26 @@ public:
     
 	// ============ User Interface Delegate Functions =========
  
-    void updateToolbarSize()
-    {
-        auto margin = 10;
-        _window.setPosition(margin, margin);
-		_window.setSize(300, 290);
-    }
-    
 	void init(bg2e::render::Engine*, bg2e::ui::UserInterface*) override
     {
-		_window.setTitle("Basic forward renderer");
-		_window.options.noClose = true;
-        _window.options.noCollapse = true;
-        _window.options.noMove = true;
-        _window.options.noMenu = true;
-        _window.options.noResize = true;
-        _window.options.noTitleBar = true;
-        updateToolbarSize();
-	}
- 
-    void swapchainResized(VkExtent2D newSize) override
-    {
-        DefaultRenderLoopDelegate::swapchainResized(newSize);
-        updateToolbarSize();
-    }
-
-	void drawUI() override
-	{
-        auto drawSkybox = renderer()->drawSkybox();
-    
-        _window.draw([&]() {
-            bg2e::ui::BasicWidgets::checkBox("Draw Skybox", &drawSkybox);
+        _leftPanel.setTitle("Model & Submeshes");
+        _rightPanel.setTitle("File");
+        _bottomPanel.setTitle("Environment");
+        
+        _workspace.leftPanelSize().min = 300;
+        _workspace.rightPanelSize().min = 250;
+        
+        _workspace.setup(
+            uiWidth(),
+            uiHeight(),
+            &_toolbar,
+            &_leftPanel,
+            &_rightPanel,
+            &_bottomPanel
+        );
+        
+        
+        _leftPanel.setDrawFunction([&]() {
         
 //            auto &material = _sphere->material(0);
 //            float metalness = material.metalness();
@@ -320,17 +309,6 @@ public:
             {
                 _targetDrawable->setName(name);
             }
-            
-//            for (auto i = 0; i <_targetDrawable->submeshesCount(); ++i)
-//            {
-//                auto plName = _targetDrawable->submeshName(i);
-//                auto grpName = _targetDrawable->submeshGroupName(i);
-//                auto visible = _targetDrawable->submeshVisibility(i);
-//                bg2e::ui::Input::text("Plist Name", plName);
-//                bg2e::ui::Input::text("Group Name", grpName);
-//                bg2e::ui::BasicWidgets::checkBox("Visible", &visible);
-//            }
-
 
             static uint32_t selectedPlist = 0;
             if (bg2e::ui::Input::comboBox("Poly List",
@@ -365,8 +343,40 @@ public:
             
             
             _materialEditor.draw();
-            
-            
+        });
+        
+        _bottomPanel.setDrawFunction([&]() {
+            auto drawSkybox = renderer()->drawSkybox();
+            bg2e::ui::BasicWidgets::checkBox("Draw Skybox", &drawSkybox);
+            if (_environment)
+            {
+                auto assetPath = bg2e::base::PlatformTools::assetPath();
+                if (bg2e::ui::BasicWidgets::button("Mirrored Hall"))
+                {
+                    _environment->setEnvironmentImage(assetPath, "mirrored_hall_4k.hdr");
+                }
+                if (bg2e::ui::BasicWidgets::button("Theater", true))
+                {
+                    _environment->setEnvironmentImage(assetPath, "theater_01_4k.hdr");
+                }
+                if (bg2e::ui::BasicWidgets::button("Autum Field", true))
+                {
+                    _environment->setEnvironmentImage(assetPath, "autumn_field_4k.hdr");
+                }
+                if (bg2e::ui::BasicWidgets::button("Gothic Manor", true))
+                {
+                    _environment->setEnvironmentImage(assetPath, "gothic_manor_01_4k.hdr");
+                }
+                if (bg2e::ui::BasicWidgets::button("Black Environment", true))
+                {
+                    _environment->setEnvironmentImage(assetPath, "black.jpg");
+                }
+            }
+        
+            renderer()->setDrawSkybox(drawSkybox);
+        });
+        
+        _rightPanel.setDrawFunction([&]() {
             if (bg2e::ui::BasicWidgets::button("Open File"))
             {
                 bg2e::app::FileDialog fd;
@@ -403,41 +413,53 @@ public:
             {
                 _orbitCamera->reset();
             }
-            
-            if (_environment)
-            {
-                auto assetPath = bg2e::base::PlatformTools::assetPath();
-                if (bg2e::ui::BasicWidgets::button("Mirrored Hall"))
-                {
-                    _environment->setEnvironmentImage(assetPath, "mirrored_hall_4k.hdr");
-                }
-                if (bg2e::ui::BasicWidgets::button("Theater"))
-                {
-                    _environment->setEnvironmentImage(assetPath, "theater_01_4k.hdr");
-                }
-                if (bg2e::ui::BasicWidgets::button("Autum Field"))
-                {
-                    _environment->setEnvironmentImage(assetPath, "autumn_field_4k.hdr");
-                }
-                if (bg2e::ui::BasicWidgets::button("Gothic Manor"))
-                {
-                    _environment->setEnvironmentImage(assetPath, "gothic_manor_01_4k.hdr");
-                }
-                if (bg2e::ui::BasicWidgets::button("Black Environment"))
-                {
-                    _environment->setEnvironmentImage(assetPath, "black.jpg");
-                }
-            }
-        
             float brightness = renderer()->brightness();
             float contrast = renderer()->contrast();
             bg2e::ui::Input::slider("Brightness", &brightness, 0.0f, 1.0f);
             bg2e::ui::Input::slider("Contrast", &contrast, 0.0f, 2.0f);
             renderer()->setBrightness(brightness);
             renderer()->setContrast(contrast);
-            
         });
-        renderer()->setDrawSkybox(drawSkybox);
+        
+        _toolbar.setDrawFunction([&]() {
+            using namespace bg2e::ui;
+            static uint32_t clicks = 0;
+            if (BasicWidgets::button("Test button"))
+            {
+                ++clicks;
+            }
+            BasicWidgets::text("Button clicked " + std::to_string(clicks) + " times", true);
+            
+            auto leftPanel = _workspace.leftPanelVisible();
+            auto rightPanel = _workspace.rightPanelVisible();
+            auto bottomPanel = _workspace.bottomPanelVisible();
+            
+            if (BasicWidgets::button(leftPanel ? "Hide Model Panel" : "Show Model Panel", true))
+            {
+                _workspace.toggleLeftPanel();
+            }
+            
+            if (BasicWidgets::button(rightPanel ? "Hide File Panel" : "Show File Panel", true))
+            {
+                _workspace.toggleRightPanel();
+            }
+            
+            if (BasicWidgets::button(bottomPanel ? "Hide Environment Panel" : "Show Environment Panel", true))
+            {
+                _workspace.toggleBottomPanel();
+            }
+        });
+	}
+ 
+    void swapchainResized(VkExtent2D newSize) override
+    {
+        DefaultRenderLoopDelegate::swapchainResized(newSize);
+        _workspace.resize(uiWidth(), uiHeight());
+    }
+
+	void drawUI() override
+	{
+        _workspace.draw();
 	}
  
     // InputDelegate
@@ -468,9 +490,13 @@ public:
     }
 
 protected:
-	bg2e::ui::Window _window;
     bg2e::scene::InputVisitor _inputVisitor;
     bg2e::ui::MaterialEditor _materialEditor;
+    bg2e::ui::Workspace _workspace;
+    bg2e::ui::Window _toolbar;
+    bg2e::ui::Window _leftPanel;
+    bg2e::ui::Window _rightPanel;
+    bg2e::ui::Window _bottomPanel;
     
     std::shared_ptr<bg2e::scene::Drawable> _targetDrawable;
     bg2e::scene::EnvironmentComponent * _environment;

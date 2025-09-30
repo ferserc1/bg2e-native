@@ -5,6 +5,7 @@
 #include <bg2e/ui/BasicWidgets.hpp>
 #include <bg2e/render/vulkan/common.hpp>
 #include <bg2e/render/vulkan/Image.hpp>
+#include <bg2e/app/FileDialog.hpp>
 
 #include "imgui.h"
 #include "imgui_impl_vulkan.h"
@@ -33,20 +34,35 @@ bool MaterialEditor::draw()
 {
     if (_material.get() && BasicWidgets::beginTree(_material->materialAttributes().name() + "'s Material Attributes"))
     {
-        _albedoWidget.drawImage(42, 42);
-        BasicWidgets::text("Albedo Texture", true);
+        _albedoWidget.selectTexture("Albedo Texture", [&](base::Texture* tex) {
+            _material->materialAttributes().setAlbedo(tex);
+            _material->updateTextures();
+            return _material->albedoTexture();
+        });
         
-        _normalWidget.drawImage(42, 42);
-        BasicWidgets::text("Normal Texture", true);
+        _normalWidget.selectTexture("Normal Texture", [&](base::Texture* tex) {
+            _material->materialAttributes().setNormalTexture(tex);
+            _material->updateTextures();
+            return _material->normalTexture();
+        });
         
-        _metallicWidget.drawImage(42, 42);
-        BasicWidgets::text("Metallic Texture", true);
+        _metallicWidget.selectTexture("Metallic Texture", [&](base::Texture* tex) {
+            _material->materialAttributes().setMetalness(tex);
+            _material->updateTextures();
+            return _material->metalnessTexture();
+        });
+
+        _roughnessWidget.selectTexture("Roughness Texture", [&](base::Texture* tex) {
+            _material->materialAttributes().setRoughness(tex);
+            _material->updateTextures();
+            return _material->roughnessTexture();
+        });
         
-        _roughnessWidget.drawImage(42, 42);
-        BasicWidgets::text("Roughness Texture", true);
-        
-        _aoWidget.drawImage(42, 42);
-        BasicWidgets::text("AO Texture", true);
+        _aoWidget.selectTexture("AO Texture", [&](base::Texture* tex) {
+            _material->materialAttributes().setAoTexture(tex);
+            _material->updateTextures();
+            return _material->aoTexture();
+        });
         
         BasicWidgets::endTree();
     }

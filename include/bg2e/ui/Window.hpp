@@ -11,6 +11,12 @@ namespace ui {
 
 class BG2E_API Window {
 public:
+    enum DockingSide {
+        DockLeft,
+        DockRight,
+        DockBottom
+    };
+    
 	struct Options
 	{
 		bool noTitleBar = false;
@@ -34,7 +40,18 @@ public:
     inline void setTitle(const std::string & title) { _title = title; }
     inline const std::string & title() const { return _title; }
 
+    // Option 1: use a generic window with the draw lambda function
     void draw(std::function<void()> drawFunction);
+    
+    // Option 2: setup the draw lambda function and call the draw function without arguments
+    inline void setDrawFunction(std::function<void()> drawFunction)
+    {
+        if (drawFunction) {
+            _drawFunction = drawFunction;
+        }
+    }
+    
+    void draw();
 
 	inline void close() { _open = false; }
 	inline void open() { _open = true; }
@@ -50,7 +67,7 @@ public:
 protected:
     std::string _title = "Window";
     bool _open = true;
-    
+    std::function<void()> _drawFunction = []() {};
 
 	int32_t _windowFlags = 0;
  

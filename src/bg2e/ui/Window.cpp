@@ -43,6 +43,11 @@ void Window::draw(std::function<void()> drawFunction)
     ImGui::End();
 }
 
+void Window::draw()
+{
+    draw(_drawFunction);
+}
+
 void Window::updateFlags()
 {
     _windowFlags = 0;

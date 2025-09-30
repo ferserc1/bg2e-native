@@ -11,3 +11,4 @@
 #include <bg2e/ui/Window.hpp>
 #include <bg2e/ui/Input.hpp>
 #include <bg2e/ui/TextureWidgets.hpp>
+#include <bg2e/ui/Workspace.hpp>
