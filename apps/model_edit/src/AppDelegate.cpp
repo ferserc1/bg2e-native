@@ -12,41 +12,15 @@ void AppDelegate::init(bg2e::render::Engine * engine)
     bg2e::render::DefaultRenderLoopDelegate<bg2e::render::RendererBasicForward>::init(engine);
 }
 
-// ============ User Interface Delegate Functions =========
-void AppDelegate::init(bg2e::render::Engine*, bg2e::ui::UserInterface*)
-{
-    _window.setTitle("Basic forward renderer");
-    _window.options.noClose = true;
-    _window.options.minWidth = 300;
-    _window.options.minHeight = 190;
-    _window.setPosition(0, 50);
-    _window.setSize(300, 290);
-
-    _environmentSettings = std::make_shared<EnvironmentSettings>(this);
-    _environmentSettings->init(uiWidth(), uiHeight());
-
-	_submeshWindow = std::make_shared<SubmeshWindow>(this);
-	_submeshWindow->init(uiWidth(), uiHeight());
-    
-    _menuBar = std::make_unique<ToolBar>(this);
-    _menuBar->init(uiWidth(), _environmentSettings, _submeshWindow);
-}
-
 void AppDelegate::swapchainResized(VkExtent2D extent)
 {
     DefaultRenderLoopDelegate::swapchainResized(extent);
-    _menuBar->resize(uiWidth());
-    _environmentSettings->resizeViewport(uiWidth(), uiHeight());
-	_submeshWindow->resizeViewport(uiWidth(), uiHeight());
+    _workspace.resize(uiWidth(), uiHeight());
 }
 
 void AppDelegate::drawUI()
 {
-    _menuBar->draw();
-    
-    _environmentSettings->draw(renderer(), _stage->environment());
-
-    _submeshWindow->draw();
+    _workspace.draw();
 }
 
 // InputDelegate
@@ -74,11 +48,32 @@ std::shared_ptr<bg2e::scene::Node> AppDelegate::createScene()
 {
     _stage = std::make_unique<StageScene>(_engine);
     
-    return _stage->init();
+    auto scene = _stage->init();
+    
+    initWorkspace();
+    
+    return scene;
 }
 
 void AppDelegate::cleanup()
 {
     DefaultRenderLoopDelegate::cleanup();
     _stage.reset();
+    _submeshPanel.cleanup();
 }
+
+void AppDelegate::initWorkspace()
+{
+    _environmentPanel.init(this, renderer(), _stage->environment());
+    _toolBar.init(this);
+    _submeshPanel.init(this);
+    
+    _workspace.setup(
+        uiWidth(), uiHeight(),
+        &_toolBar,
+        &_submeshPanel,
+        &_environmentPanel,
+        nullptr
+    );
+}
+

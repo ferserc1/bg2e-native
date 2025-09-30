@@ -17,6 +17,8 @@ public:
     virtual ~MaterialEditor();
 
     void setEditMaterial(std::shared_ptr<render::MaterialBase>& mat);
+    inline std::shared_ptr<render::MaterialBase> editMaterial() { return _material; }
+    inline const std::shared_ptr<render::MaterialBase> editMaterial() const { return _material; }
     
     void clearMaterial();
     

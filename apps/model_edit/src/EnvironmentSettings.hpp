@@ -9,16 +9,18 @@
 #pragma once
 
 #include <bg2e.hpp>
-#include "ToolWindow.hpp"
 
 class AppDelegate;
 
-class EnvironmentSettings : public ToolWindow {
+class EnvironmentSettings : public bg2e::ui::Window {
 public:
-    EnvironmentSettings(AppDelegate* delegate);
+    void init(
+        AppDelegate * delegate,
+        bg2e::render::RendererBasicForward * renderer,
+        bg2e::scene::EnvironmentComponent * environment
+    );
     
-    void init(uint32_t uiWidth, uint32_t uiHeight) override;
-    
-    void draw(bg2e::render::RendererBasicForward * renderer, bg2e::scene::EnvironmentComponent * environment);
+protected:
+    AppDelegate * _appDelegate;
 };
 

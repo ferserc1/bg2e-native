@@ -2,18 +2,19 @@
 #pragma once
 
 #include <bg2e.hpp>
-#include "ToolWindow.hpp"
 
 class AppDelegate;
-class SubmeshWindow : public ToolWindow {
+class SubmeshWindow : public bg2e::ui::Window {
 public:
-	SubmeshWindow(AppDelegate * delegate);
+	void init(AppDelegate * delegate);
 
-	void init(uint32_t uiWidth, uint32_t uiHeight);
-	
-	void draw();
-
+    void cleanup();
+    
 private:
 	void drawSubmeshEditor(bg2e::scene::Drawable* drawable, uint32_t submeshIndex);
 	void drawMaterialEditor(bg2e::scene::Drawable* drawable, uint32_t submeshIndex);
+ 
+    AppDelegate * _appDelegate;
+    
+    bg2e::ui::MaterialEditor _materialEditor;
 };

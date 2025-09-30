@@ -21,10 +21,7 @@ class AppDelegate : public bg2e::render::DefaultRenderLoopDelegate<bg2e::render:
 public:
 
     void init(bg2e::render::Engine * engine) override;
-    
-	// ============ User Interface Delegate Functions =========
-	void init(bg2e::render::Engine*, bg2e::ui::UserInterface*) override;
- 
+     
     void swapchainResized(VkExtent2D extent) override;
 
 	void drawUI() override;
@@ -43,16 +40,21 @@ public:
     // Application resources
     inline StageScene * stage() const { return _stage.get(); }
     inline StageScene * stage() { return _stage.get(); }
+    
+    inline bg2e::ui::Workspace& workspace() { return _workspace; }
+    inline const bg2e::ui::Workspace& workspace() const { return _workspace; }
 
 protected:
-	bg2e::ui::Window _window;
     bg2e::scene::InputVisitor _inputVisitor;
     
-    std::unique_ptr<ToolBar> _menuBar;
-    std::shared_ptr<EnvironmentSettings> _environmentSettings;
-	std::shared_ptr<SubmeshWindow> _submeshWindow;
-
+    bg2e::ui::Workspace _workspace;
+    ToolBar _toolBar;
+    SubmeshWindow _submeshPanel;
+    EnvironmentSettings _environmentPanel;
+    
     std::unique_ptr<StageScene> _stage;
     
     std::shared_ptr<bg2e::scene::Node> createScene() override;
+    
+    void initWorkspace();
 };

@@ -8,32 +8,10 @@
 #include "ToolBar.hpp"
 #include "AppDelegate.hpp"
 
-void ToolBar::init(
-    uint32_t uiWidth,
-    std::shared_ptr<EnvironmentSettings> envSettings,
-    std::shared_ptr<SubmeshWindow> submeshWindow
-) {
-    _window.options.noClose = true;
-    _window.options.noMove = true;
-    _window.options.noTitleBar = true;
-    _window.options.noMenu = true;
-    _window.options.noResize = true;
-    _window.options.noBringToFront = true;
-    _window.setPosition(0, 0);
-    _window.setSize(uiWidth, _height);
-    
-    _environmentSettings = envSettings;
-    _submeshWindow = submeshWindow;
-}
-
-void ToolBar::resize(uint32_t width)
+void ToolBar::init(AppDelegate * delegate)
 {
-    _window.setSize(width, _height);
-}
-
-void ToolBar::draw()
-{
-    _window.draw([&]() {
+    _appDelegate = delegate;
+    setDrawFunction([&]() {
         // TODO: Build the menu bar
         using namespace bg2e::ui;
         
@@ -54,9 +32,16 @@ void ToolBar::draw()
         {
         
         }
+        
+        auto targetDrawable = _appDelegate->stage()->targetDrawable();
+        if (targetDrawable && BasicWidgets::button("Submesh Editor", true))
+        {
+            _appDelegate->workspace().toggleLeftPanel();
+        }
+        
         if (BasicWidgets::button("Environment", true))
         {
-            _environmentSettings->toggleOpen();
+            _appDelegate->workspace().toggleRightPanel();
         }
         
         if (BasicWidgets::button("Center Camera", true))
@@ -64,28 +49,6 @@ void ToolBar::draw()
             _appDelegate->stage()->orbitCamera()->reset();
         }
         
-        auto targetDrawable = _appDelegate->stage()->targetDrawable();
-        if (targetDrawable)
-        {
-            uint32_t selectedPlist = _appDelegate->stage()->targetSubmeshIndex();
-            bg2e::ui::BasicWidgets::text("Submesh: ", true);
-            if (bg2e::ui::Input::comboBox("##submesh",
-                [&](std::vector<std::string>& items) {
-                    for (uint32_t i = 0; i < targetDrawable->submeshesCount(); ++i)
-                    {
-                        items.push_back(targetDrawable->submeshName(i));
-                    }
-                },
-                selectedPlist,
-                true, true)
-            ) {
-				_appDelegate->stage()->setTargetSubmeshIndex(selectedPlist);
-            }
-
-            if (BasicWidgets::button("Submesh Editor", true))
-            {
-                _submeshWindow->toggleOpen();
-            }
-        }
+        
     });
 }

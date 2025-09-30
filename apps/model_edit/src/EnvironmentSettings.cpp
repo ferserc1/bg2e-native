@@ -9,23 +9,21 @@
 
 #include "AppDelegate.hpp"
 
-EnvironmentSettings::EnvironmentSettings(AppDelegate* delegate)
-	: ToolWindow(Right, delegate)
-{
 
-}
-
-void EnvironmentSettings::init(uint32_t uiWidth, uint32_t uiHeight)
-{
-	ToolWindow::init(uiWidth, uiHeight);    
-    _window.setTitle("Environment Options");
-}
-
-void EnvironmentSettings::draw(bg2e::render::RendererBasicForward * renderer, bg2e::scene::EnvironmentComponent * environment)
-{
-    auto drawSkybox = renderer->drawSkybox();
-    _window.draw([&]() {
-        bg2e::ui::BasicWidgets::checkBox("Draw Skybox", &drawSkybox);
+void EnvironmentSettings::init(
+    AppDelegate * delegate,
+    bg2e::render::RendererBasicForward * renderer,
+    bg2e::scene::EnvironmentComponent * environment
+) {
+    _appDelegate = delegate;
+    setTitle("Environment Options");
+    
+    setDrawFunction([&, renderer, environment]() {
+        auto drawSkybox = renderer->drawSkybox();
+        if (bg2e::ui::BasicWidgets::checkBox("Draw Skybox", &drawSkybox))
+        {
+            renderer->setDrawSkybox(drawSkybox);
+        }
                 
         if (environment)
         {
@@ -49,5 +47,5 @@ void EnvironmentSettings::draw(bg2e::render::RendererBasicForward * renderer, bg
         }
     });
     
-    renderer->setDrawSkybox(drawSkybox);
+    
 }
