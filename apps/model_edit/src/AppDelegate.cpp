@@ -50,6 +50,8 @@ std::shared_ptr<bg2e::scene::Node> AppDelegate::createScene()
     
     auto scene = _stage->init();
     
+    renderer()->setSkyboxBlurLevel(2);
+    
     initWorkspace();
     
     return scene;
@@ -64,10 +66,11 @@ void AppDelegate::cleanup()
 
 void AppDelegate::initWorkspace()
 {
+    _workspace.leftPanelSize().min = 300;
     _environmentPanel.init(this, renderer(), _stage->environment());
     _toolBar.init(this);
     _submeshPanel.init(this);
-    
+ 
     _workspace.setup(
         uiWidth(), uiHeight(),
         &_toolBar,

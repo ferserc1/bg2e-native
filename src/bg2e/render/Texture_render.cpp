@@ -180,6 +180,28 @@ void Texture::load(std::shared_ptr<base::Texture> texture, std::shared_ptr<vulka
     );
 }
 
+void Texture::updateSampler(std::shared_ptr<base::Texture> texture)
+{
+    _engine->device().waitIdle();
+    vkDestroySampler(_engine->device().handle(), _sampler, nullptr);
+    
+    VkSamplerCreateInfo samplerInfo = {};
+    samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+    samplerInfo.magFilter = BG2E_FILTER(texture->magFilter());
+    samplerInfo.minFilter = BG2E_FILTER(texture->minFilter());
+    samplerInfo.maxLod = texture->maxLod() == -1.0f ? float(_image->mipLevels()) : texture->maxLod();
+    samplerInfo.minLod = texture->minLod();
+    samplerInfo.addressModeU = BG2E_ADDRESS_MODE(texture->addressModeU());
+    samplerInfo.addressModeV = BG2E_ADDRESS_MODE(texture->addressModeV());
+    samplerInfo.addressModeW = BG2E_ADDRESS_MODE(texture->addressModeW());
+    vkCreateSampler(
+        _engine->device().handle(),
+        &samplerInfo,
+        nullptr,
+        &_sampler
+    );
+}
+
 void Texture::cleanup()
 {
     if (_hasImageOwnership)

@@ -347,6 +347,7 @@ public:
         
         _bottomPanel.setDrawFunction([&]() {
             auto drawSkybox = renderer()->drawSkybox();
+            auto blurLevel = renderer()->skyboxBlurLevel();
             bg2e::ui::BasicWidgets::checkBox("Draw Skybox", &drawSkybox);
             if (_environment)
             {
@@ -370,6 +371,9 @@ public:
                 if (bg2e::ui::BasicWidgets::button("Black Environment", true))
                 {
                     _environment->setEnvironmentImage(assetPath, "black.jpg");
+                }
+                if (bg2e::ui::Input::slider("Skbox Blur Level", &blurLevel, 0, 5)) {
+                    renderer()->setSkyboxBlurLevel(blurLevel);
                 }
             }
         

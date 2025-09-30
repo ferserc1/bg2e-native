@@ -68,9 +68,14 @@ public:
     inline vulkan::Image* image() { return _image.get(); }
     inline const vulkan::Image* image() const { return _image.get(); }
     inline VkSampler sampler() const { return _sampler; }
-
+    void updateSampler(base::Texture * tex) { updateSampler(std::shared_ptr<base::Texture>(tex)); }
+    void updateSampler(std::shared_ptr<base::Texture> tex);
+    
     inline void setColorType(base::Color::Type t) { _colorType = t; }
     inline base::Color::Type colorType() const { return _colorType; }
+    
+    inline Engine * engine() { return _engine; }
+    inline const Engine * engine() const { return _engine; }
     
 protected:
     Engine * _engine;

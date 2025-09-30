@@ -17,6 +17,7 @@ public:
     
     static bool beginTree(const std::string & label);
     static void endTree();
+    static bool collapsingHeader(const std::string & title, bool visible = true);
 };
 
 }

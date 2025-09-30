@@ -147,6 +147,54 @@ bool Input::vec4(
     return ImGui::InputFloat4(label.c_str(), value);
 }
 
+bool Input::vec2(
+    const std::string& label,
+    glm::vec2& value,
+    bool sameLine
+) {
+    float inValue[] { value.x, value.y };
+    if (vec2(label, inValue, sameLine))
+    {
+        value.x = inValue[0];
+        value.y = inValue[1];
+        return true;
+    }
+    return false;
+}
+
+bool Input::vec3(
+    const std::string& label,
+    glm::vec3& value,
+    bool sameLine
+) {
+    float inValue[] { value.x, value.y, value.z };
+    if (vec3(label, inValue, sameLine))
+    {
+        value.x = inValue[0];
+        value.y = inValue[1];
+        value.z = inValue[2];
+        return true;
+    }
+    return false;
+}
+
+bool Input::vec4(
+    const std::string& label,
+    glm::vec4& value,
+    bool sameLine
+) {
+    float inValue[] { value.x, value.y, value.z, value.w };
+    if (vec4(label, inValue, sameLine))
+    {
+        value.x = inValue[0];
+        value.y = inValue[1];
+        value.z = inValue[2];
+        value.w = inValue[3];
+        return true;
+    }
+    return false;
+}
+
 bool Input::slider(
     const std::string& label,
     int * value,
@@ -236,7 +284,49 @@ bool Input::comboBox(
     
     return changed;
 }
-    
+
+bool Input::sliderInt(
+    const std::string& label,
+    int * value,
+    int min,
+    int max,
+    bool sameLine
+) {
+    if (sameLine)
+    {
+        ImGui::SameLine();
+    }
+    return ImGui::SliderInt(label.c_str(), value, min, max);
+}
+
+bool Input::sliderFloat(
+    const std::string& label,
+    float * value,
+    float min,
+    float max,
+    bool sameLine
+) {
+    if (sameLine)
+    {
+        ImGui::SameLine();
+    }
+    return ImGui::SliderFloat(label.c_str(), value, min, max);
+}
+
+bool Input::sliderDouble(
+    const std::string& label,
+    double * value,
+    double min,
+    double max,
+    bool sameLine
+) {
+    return sliderFloat(
+        label,
+        reinterpret_cast<float*>(value),
+        static_cast<float>(min),
+        static_cast<float>(max)
+    );
+}
     
 
 }

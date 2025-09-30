@@ -34,6 +34,8 @@ public:
     
     void swapEnvironmentTexture(const std::filesystem::path& environmentTexture);
     void swapEnvironmentTexture(std::shared_ptr<render::Texture> texture);
+    void setSkyboxBlurLevel(int blurLevel);
+    int skyboxBlurLevel() { return _skyboxBlurLevel; }
     
     void update(
         VkCommandBuffer cmd,
@@ -67,6 +69,8 @@ protected:
     std::unique_ptr<SpecularReflectionCubemapRenderer> _specularRenderer;
     std::shared_ptr<bg2e::render::Texture> _brdfIntegrationMap;
     bool _cubemapChanged = true;
+    bool _blurChanged = false;
+    uint32_t _skyboxBlurLevel = 0;
     
     std::vector<VkFormat> _targetImagesFormat;
     VkFormat _depthImageFormat = VK_FORMAT_D16_UNORM_S8_UINT;

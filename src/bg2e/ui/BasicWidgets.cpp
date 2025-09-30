@@ -70,5 +70,10 @@ void BasicWidgets::endTree()
     ImGui::TreePop();
 }
 
+bool BasicWidgets::collapsingHeader(const std::string & title, bool visible)
+{
+    return ImGui::CollapsingHeader(title.c_str(), visible ? ImGuiTreeNodeFlags_DefaultOpen : 0);
+}
+
 }
 }

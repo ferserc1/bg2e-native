@@ -20,9 +20,14 @@ void EnvironmentSettings::init(
     
     setDrawFunction([&, renderer, environment]() {
         auto drawSkybox = renderer->drawSkybox();
+        auto skyboxBlur = renderer->skyboxBlurLevel() > 0;
         if (bg2e::ui::BasicWidgets::checkBox("Draw Skybox", &drawSkybox))
         {
             renderer->setDrawSkybox(drawSkybox);
+        }
+        if (bg2e::ui::BasicWidgets::checkBox("Blur", &skyboxBlur))
+        {
+            renderer->setSkyboxBlurLevel(skyboxBlur ? 2 : 0);
         }
                 
         if (environment)

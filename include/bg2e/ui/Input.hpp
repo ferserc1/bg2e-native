@@ -3,6 +3,7 @@
 
 #include <bg2e/common.hpp>
 #include <bg2e/base/Color.hpp>
+#include <bg2e/math/base.hpp>
 
 #include <vector>
 #include <functional>
@@ -81,6 +82,24 @@ public:
         bool sameLine = false
     );
     
+    static bool vec2(
+        const std::string& label,
+        glm::vec2& value,
+        bool sameLine = false
+    );
+    
+    static bool vec3(
+        const std::string& label,
+        glm::vec3& value,
+        bool sameLine = false
+    );
+    
+    static bool vec4(
+        const std::string& label,
+        glm::vec4& value,
+        bool sameLine = false
+    );
+    
     static bool slider(
         const std::string& label,
         int * value,
@@ -124,7 +143,30 @@ public:
         itemsCb(items);
         return Input::comboBox(label, items, selected, sameLine, fitPreview);
     }
-        
+    
+    static bool sliderInt(
+        const std::string& label,
+        int * value,
+        int min = 0,
+        int max = 255,
+        bool sameLine = false
+    );
+    
+    static bool sliderFloat(
+        const std::string& label,
+        float * value,
+        float min = 0.0f,
+        float max = 1.0f,
+        bool sameLine = false
+    );
+    
+    static bool sliderDouble(
+        const std::string& label,
+        double * value,
+        double min = 0.0,
+        double max = 1.0,
+        bool sameLine = false
+    );
 };
 
 }

@@ -24,7 +24,8 @@ void updateTexture(
     Engine * engine,
     std::shared_ptr<base::Texture> texData,
     std::shared_ptr<Texture>& outTexture,
-    bool useCache
+    bool useCache,
+    std::shared_ptr<Texture> fallbackTexture
 ) {
     if (outTexture.get())
     {
@@ -46,6 +47,9 @@ void updateTexture(
         }
         outTexture = utils::TextureCache::get().load(engine, texData->imageFilePath());
     }
+    else {
+        outTexture = fallbackTexture;
+    }
 }
 
 void MaterialBase::updateTextures()
@@ -57,27 +61,27 @@ void MaterialBase::updateTextures()
     
     if (!_materialAttributes.albedoTextureUpdated())
     {
-        updateTexture(_engine, _materialAttributes.albedoTexture(), _albedoTexture, useTextureCache());
+        updateTexture(_engine, _materialAttributes.albedoTexture(), _albedoTexture, useTextureCache(), Texture::whiteTexture(_engine));
     }
     
     if (!_materialAttributes.metalnessTextureUpdated())
     {
-        updateTexture(_engine, _materialAttributes.metalnessTexture(), _metalnessTexture, useTextureCache());
+        updateTexture(_engine, _materialAttributes.metalnessTexture(), _metalnessTexture, useTextureCache(), Texture::whiteTexture(_engine));
     }
     
     if (!_materialAttributes.roughnessTextureUpdated())
     {
-        updateTexture(_engine, _materialAttributes.roughnessTexture(), _roughnessTexture, useTextureCache());
+        updateTexture(_engine, _materialAttributes.roughnessTexture(), _roughnessTexture, useTextureCache(), Texture::whiteTexture(_engine));
     }
     
     if (!_materialAttributes.normalTextureUpdated())
     {
-        updateTexture(_engine, _materialAttributes.normalTexture(), _normalTexture, useTextureCache());
+        updateTexture(_engine, _materialAttributes.normalTexture(), _normalTexture, useTextureCache(), Texture::normalTexture(_engine));
     }
     
     if (!_materialAttributes.aoTextureUpdated())
     {
-        updateTexture(_engine, _materialAttributes.aoTexture(), _aoTexture, useTextureCache());
+        updateTexture(_engine, _materialAttributes.aoTexture(), _aoTexture, useTextureCache(), Texture::whiteTexture(_engine));
     }
     
     _materialAttributes.setUpdated();

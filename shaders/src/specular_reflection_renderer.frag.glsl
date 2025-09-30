@@ -55,7 +55,7 @@ vec3 importanceSampleGGX(vec2 Xi, vec3 N, float roughness) {
 
 void main()
 {
-    int sampleCount = 512;
+    int sampleCount = 1024;
     vec3 maxRange = vec3(2.0);
 
     vec3 N = normalize(inNormal);

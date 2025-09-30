@@ -3,6 +3,7 @@
 
 #include <bg2e/ui/MaterialEditor.hpp>
 #include <bg2e/ui/BasicWidgets.hpp>
+#include <bg2e/ui/Input.hpp>
 #include <bg2e/render/vulkan/common.hpp>
 #include <bg2e/render/vulkan/Image.hpp>
 #include <bg2e/app/FileDialog.hpp>
@@ -32,39 +33,110 @@ void MaterialEditor::clearMaterial()
     
 bool MaterialEditor::draw()
 {
-    if (_material.get() && BasicWidgets::beginTree(_material->materialAttributes().name() + "'s Material Attributes"))
+    if (_material.get() && BasicWidgets::collapsingHeader(_material->materialAttributes().name() + "'s Material Attributes"))
     {
-        _albedoWidget.selectTexture("Albedo Texture", [&](base::Texture* tex) {
+        std::vector<std::string> uvOptions = { "Set 0", "Set 1" };
+        BasicWidgets::separator("Albedo");
+        auto albedoColor = _material->materialAttributes().albedo();
+        auto albedoScale = _material->materialAttributes().albedoScale();
+        auto albedoUVSet = _material->materialAttributes().albedoUVSet();
+        if (Input::colorPicker("Color##albedo", albedoColor))
+        {
+            _material->materialAttributes().setAlbedo(albedoColor);
+        }
+        _albedoWidget.selectTexture("##albedo", [&](base::Texture* tex) {
             _material->materialAttributes().setAlbedo(tex);
             _material->updateTextures();
             return _material->albedoTexture();
         });
+        if (Input::vec2("Scale", albedoScale))
+        {
+            _material->materialAttributes().setAlbedoScale(albedoScale);
+        }
+        if (Input::comboBox("UV Set", uvOptions, albedoUVSet))
+        {
+            _material->materialAttributes().setAlbedoUVSet(albedoUVSet);
+        }
         
-        _normalWidget.selectTexture("Normal Texture", [&](base::Texture* tex) {
+        BasicWidgets::separator("Normal");
+        auto normalScale = _material->materialAttributes().normalScale();
+        auto normalUVSet = _material->materialAttributes().normalUVSet();
+        _normalWidget.selectTexture("##normal", [&](base::Texture* tex) {
             _material->materialAttributes().setNormalTexture(tex);
             _material->updateTextures();
             return _material->normalTexture();
         });
+        if (Input::vec2("Scale##normal", normalScale))
+        {
+            _material->materialAttributes().setNormalScale(normalScale);
+        }
+        if (Input::comboBox("UV Set##normal", uvOptions, normalUVSet))
+        {
+            _material->materialAttributes().setNormalUVSet(normalUVSet);
+        }
         
-        _metallicWidget.selectTexture("Metallic Texture", [&](base::Texture* tex) {
+        BasicWidgets::separator("Metallic");
+        auto metallic = _material->materialAttributes().metalness();
+        auto metallicScale = _material->materialAttributes().metalnessScale();
+        auto metallicUVSet = _material->materialAttributes().metalnessChannel();
+        if (Input::sliderFloat("Value##metallic", &metallic))
+        {
+            _material->materialAttributes().setMetalness(metallic);
+        }
+        _metallicWidget.selectTexture("##metallic", [&](base::Texture* tex) {
             _material->materialAttributes().setMetalness(tex);
             _material->updateTextures();
             return _material->metalnessTexture();
         });
+        if (Input::vec2("Scale##metallic", metallicScale))
+        {
+            _material->materialAttributes().setMetalnessScale(metallicScale);
+        }
+        if (Input::comboBox("UV Set##metallic", uvOptions, metallicUVSet))
+        {
+            _material->materialAttributes().setMetalnessUVSet(metallicUVSet);
+        }
 
-        _roughnessWidget.selectTexture("Roughness Texture", [&](base::Texture* tex) {
+        BasicWidgets::separator("Roughness");
+        auto roughness = _material->materialAttributes().roughness();
+        auto roughnessScale = _material->materialAttributes().roughnessScale();
+        auto roughnessUVSet = _material->materialAttributes().roughnessChannel();
+        if (Input::sliderFloat("Value##roughness", &roughness))
+        {
+            _material->materialAttributes().setRoughness(roughness);
+        }
+        _roughnessWidget.selectTexture("##roughness", [&](base::Texture* tex) {
             _material->materialAttributes().setRoughness(tex);
             _material->updateTextures();
             return _material->roughnessTexture();
         });
+        if (Input::vec2("Scale##roughness", roughnessScale))
+        {
+            _material->materialAttributes().setRoughnessScale(roughnessScale);
+        }
+        if (Input::comboBox("UV Set##roughness", uvOptions, roughnessUVSet))
+        {
+            _material->materialAttributes().setRoughnessUVSet(roughnessUVSet);
+        }
         
-        _aoWidget.selectTexture("AO Texture", [&](base::Texture* tex) {
+        BasicWidgets::separator("Ambient Occlussion");
+        auto aoScale = _material->materialAttributes().aoScale();
+        auto aoUVSet = _material->materialAttributes().aoUVSet();
+        _aoWidget.selectTexture("##ao", [&](base::Texture* tex) {
             _material->materialAttributes().setAoTexture(tex);
             _material->updateTextures();
             return _material->aoTexture();
         });
+        if (Input::vec2("Scale##ao", aoScale))
+        {
+            _material->materialAttributes().setAoScale(aoScale);
+        }
+        if (Input::comboBox("UV Set##ao", uvOptions, aoUVSet))
+        {
+            _material->materialAttributes().setAoUVSet(aoUVSet);
+        }
         
-        BasicWidgets::endTree();
+        //BasicWidgets::endTree();
     }
     return false;
 }

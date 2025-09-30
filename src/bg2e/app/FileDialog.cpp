@@ -7,6 +7,10 @@
 
 namespace bg2e::app {
 
+FileDialog::FileFilters FileDialog::imageFilters {
+    { "Images", "jpg,jpeg,png,bmp,webp" }
+};
+
 void FileDialog::test()
 {
     NFD::Guard nfdGuard;
@@ -125,6 +129,26 @@ std::filesystem::path FileDialog::pickFolder()
 void FileDialog::setFilters(const FileFilters& filters)
 {
     _filters = filters;
+}
+
+std::filesystem::path FileDialog::getOpenFilePath(const FileFilters& filters)
+{
+    FileDialog fd;
+    fd.setFilters(filters);
+    return fd.openFile();
+}
+
+std::filesystem::path FileDialog::getSaveFilePath(const FileFilters& filters)
+{
+    FileDialog fd;
+    fd.setFilters(filters);
+    return fd.saveFile();
+}
+
+std::filesystem::path FileDialog::getPickFolderPath(const FileFilters& filters)
+{
+    FileDialog fd;
+    return fd.pickFolder();
 }
 
 }

@@ -107,9 +107,21 @@ void EnvironmentResources::build(
     
     if (_skyboxRenderer.get())
     {
+        auto bt = new base::Texture();
+        auto skyboxSource = _specularRenderer->cubeMapImage();
+        if (_skyboxBlurLevel > 0)
+        {
+            bt->setMaxLod(static_cast<float>(_skyboxBlurLevel));
+            bt->setMinLod(static_cast<float>(_skyboxBlurLevel));
+            bt->setMipLodBias(0.0f);
+            bt->setMagFilter(base::Texture::FilterLinear);
+            bt->setMinFilter(base::Texture::FilterLinear);
+        }
+        
         _cubeMapTexture = std::shared_ptr<bg2e::render::Texture>(
-            new bg2e::render::Texture(_engine, _sphereToCubemap->cubeMapImage())
+            new bg2e::render::Texture(_engine, bt, skyboxSource)
         );
+
         _engine->cleanupManager().push([&](VkDevice) {
             _cubeMapTexture.reset();
             _skyboxRenderer.reset();
@@ -142,9 +154,21 @@ void EnvironmentResources::build(
     
     if (_skyboxRenderer.get())
     {
+        auto bt = new base::Texture();
+        auto skyboxSource = _specularRenderer->cubeMapImage();
+        if (_skyboxBlurLevel > 0)
+        {
+            bt->setMaxLod(static_cast<float>(_skyboxBlurLevel));
+            bt->setMinLod(static_cast<float>(_skyboxBlurLevel));
+            bt->setMipLodBias(0.0f);
+            bt->setMagFilter(base::Texture::FilterLinear);
+            bt->setMinFilter(base::Texture::FilterLinear);
+        }
+        
         _cubeMapTexture = std::shared_ptr<bg2e::render::Texture>(
-            new bg2e::render::Texture(_engine, _sphereToCubemap->cubeMapImage())
+            new bg2e::render::Texture(_engine, bt, skyboxSource)
         );
+        
         _engine->cleanupManager().push([&](VkDevice) {
             _cubeMapTexture.reset();
             _skyboxRenderer.reset();
@@ -176,6 +200,12 @@ void EnvironmentResources::swapEnvironmentTexture(std::shared_ptr<render::Textur
     _cubemapChanged = true;
 }
 
+void EnvironmentResources::setSkyboxBlurLevel(int blurLevel)
+{
+    _skyboxBlurLevel = blurLevel;
+    _blurChanged = true;
+}
+
 void EnvironmentResources::update(
     VkCommandBuffer cmd,
     uint32_t currentFrame,
@@ -196,6 +226,20 @@ void EnvironmentResources::updateSkybox(
 ) {
     if (_skyboxRenderer.get())
     {
+        if (_blurChanged)
+        {
+            auto bt = new base::Texture();
+            if (_skyboxBlurLevel > 0)
+            {
+                bt->setMaxLod(static_cast<float>(_skyboxBlurLevel));
+                bt->setMinLod(static_cast<float>(_skyboxBlurLevel));
+                bt->setMipLodBias(0.0f);
+                bt->setMagFilter(base::Texture::FilterLinear);
+                bt->setMinFilter(base::Texture::FilterLinear);
+            }
+            _cubeMapTexture->updateSampler(bt);
+            _blurChanged = false;
+        }
         _skyboxRenderer->update(viewMatrix, projMatrix);
     }
 }

@@ -26,6 +26,12 @@ public:
 
     void setFilters(const FileFilters& filters);
     
+    static std::filesystem::path getOpenFilePath(const FileFilters& filters);
+    static std::filesystem::path getSaveFilePath(const FileFilters& filters);
+    static std::filesystem::path getPickFolderPath(const FileFilters& filters);
+    
+    static FileFilters imageFilters;
+    
 protected:
     FileFilters _filters;
 };
