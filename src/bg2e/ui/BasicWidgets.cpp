@@ -46,31 +46,58 @@ void BasicWidgets::listItem(const std::string & label, bool sameLine)
     ImGui::BulletText("%s", label.c_str());
 }
 
-bool BasicWidgets::button(const std::string & title, bool sameLine)
+bool BasicWidgets::button(const std::string & title, bool sameLine, bool disabled)
 {
+    if (disabled)
+    {
+        ImGui::BeginDisabled();
+    }
     if (sameLine)
     {
         ImGui::SameLine();
     }
-    return ImGui::Button(title.c_str());
+    auto result = ImGui::Button(title.c_str());
+    if (disabled)
+    {
+        ImGui::EndDisabled();
+    }
+    return result;
 }
 
-bool BasicWidgets::checkBox(const std::string & title, bool * value, bool sameLine)
+bool BasicWidgets::checkBox(const std::string & title, bool * value, bool sameLine, bool disabled)
 {
+    if (disabled)
+    {
+        ImGui::BeginDisabled();
+    }
     if (sameLine)
     {
         ImGui::SameLine();
     }
-    return ImGui::Checkbox(title.c_str(), value);
+    auto result = ImGui::Checkbox(title.c_str(), value);
+    if (disabled)
+    {
+        ImGui::EndDisabled();
+    }
+    return result;
 }
 
-bool BasicWidgets::radioButton(const std::string & label, int * value, int id, bool sameLine)
+bool BasicWidgets::radioButton(const std::string & label, int * value, int id, bool sameLine, bool disabled)
 {
+    if (disabled)
+    {
+        ImGui::BeginDisabled();
+    }
     if (sameLine)
     {
         ImGui::SameLine();
     }
-    return ImGui::RadioButton(label.c_str(), value, id);
+    auto result = ImGui::RadioButton(label.c_str(), value, id);
+    if (disabled)
+    {
+        ImGui::EndDisabled();
+    }
+    return result;
 }
 
 bool BasicWidgets::beginTree(const std::string & label)

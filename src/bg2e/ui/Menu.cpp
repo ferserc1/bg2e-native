@@ -21,6 +21,11 @@ bool Menu::menuItem(const std::string& label, const std::string& shortcut, bool 
     return ImGui::MenuItem(label.c_str(), shortcut.empty() ? nullptr : shortcut.c_str(), selected, enabled);
 }
 
+void Menu::separator()
+{
+    ImGui::Separator();
+}
+
 void Menu::endMenu()
 {
     ImGui::EndMenu();

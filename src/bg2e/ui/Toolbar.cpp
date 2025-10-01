@@ -40,7 +40,7 @@ void Toolbar::draw()
     draw([&]() {
         for (auto & btn : _leftButtons)
         {
-            if (btn.action != nullptr && BasicWidgets::button(btn.label, true))
+            if (btn.action != nullptr && BasicWidgets::button(btn.label, true, btn.disabled))
             {
                 btn.action();
             }
@@ -67,7 +67,7 @@ void Toolbar::draw()
         for (auto & btn : _rightButtons)
         {
             btnIndex == 0 ? BasicWidgets::sameLine(-rightButtonsSize) : BasicWidgets::sameLine();
-            if (btn.action != nullptr && BasicWidgets::button(btn.label))
+            if (btn.action != nullptr && BasicWidgets::button(btn.label, false, btn.disabled))
             {
                 btn.action();
             }
@@ -80,7 +80,7 @@ void Toolbar::draw()
     });
 }
 
-void Toolbar::updateButton(int32_t buttonId, const std::string & newLabel)
+void Toolbar::updateButtonLabel(int32_t buttonId, const std::string & newLabel)
 {
     auto btn = findButton(buttonId);
     if (btn)
@@ -89,12 +89,30 @@ void Toolbar::updateButton(int32_t buttonId, const std::string & newLabel)
     }
 }
 
-void Toolbar::updateButton(int32_t buttonId, std::string && newLabel)
+void Toolbar::updateButtonLabel(int32_t buttonId, std::string && newLabel)
 {
     auto btn = findButton(buttonId);
     if (btn)
     {
         btn->label = newLabel;
+    }
+}
+
+void Toolbar::enableButton(int32_t buttonId)
+{
+    auto btn = findButton(buttonId);
+    if (btn)
+    {
+        btn->disabled = false;
+    }
+}
+
+void Toolbar::disableButton(int32_t buttonId)
+{
+    auto btn = findButton(buttonId);
+    if (btn)
+    {
+        btn->disabled = true;
     }
 }
 

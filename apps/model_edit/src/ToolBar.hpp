@@ -14,7 +14,7 @@
 
 class  AppDelegate;
 
-class ToolBar : public bg2e::ui::Window {
+class ToolBar : public bg2e::ui::Toolbar {
 public:
 
     void init(AppDelegate * delegate);

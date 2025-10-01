@@ -49,6 +49,16 @@ void EnvironmentSettings::init(
             {
                 environment->setEnvironmentImage(assetPath, "gothic_manor_01_4k.hdr");
             }
+            if (bg2e::ui::BasicWidgets::button("Custom Environment"))
+            {
+                auto path = bg2e::app::FileDialog::getOpenFilePath({
+                    { "HDR Environments", "hdr" }
+                });
+                if (!path.empty())
+                {
+                    environment->setEnvironmentImage(path);
+                }
+            }
         }
     });
     

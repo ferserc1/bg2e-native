@@ -26,6 +26,8 @@ public:
         bool enabled = true
     );
     
+    static void separator();
+    
     static void endMenu();
     
     static void endMenuBar();

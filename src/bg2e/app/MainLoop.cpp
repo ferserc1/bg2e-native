@@ -19,7 +19,10 @@
 namespace bg2e {
 namespace app {
 
+MainLoop * MainLoop::_mainLoopInstance = nullptr;
+
 int32_t MainLoop::run(app::Application * application) {
+    _mainLoopInstance = this;
 	SDL_Init(SDL_INIT_VIDEO);
     
     SDL_WindowFlags winFlags = SDL_WindowFlags(SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE);
@@ -64,7 +67,13 @@ int32_t MainLoop::run(app::Application * application) {
             
             if (event.type == SDL_QUIT)
             {
-                quit = true;
+                if (_onExitFunction)
+                {
+                    quit = _onExitFunction();
+                }
+                else {
+                    quit = true;
+                }
             }
             
             if (event.type == SDL_WINDOWEVENT &&
@@ -164,6 +173,13 @@ int32_t MainLoop::run(app::Application * application) {
     SDL_DestroyWindow(window);
     
     return 0;
+}
+
+void MainLoop::exit()
+{
+    SDL_Event event;
+    event.type = SDL_QUIT;
+    SDL_PushEvent(&event);
 }
 
 }

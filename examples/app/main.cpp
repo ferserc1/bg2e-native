@@ -262,6 +262,18 @@ public:
  
 	void init(bg2e::render::Engine*, bg2e::ui::UserInterface*) override
     {
+    
+        bg2e::app::MainLoop::current()->setOnExitFunction([]() -> bool {
+            auto status = bg2e::app::MessageBox::showWarning(
+                "Quit", "Are you sure you want to quit?",
+                {
+                    { .label = "Quit", .code = 1 },
+                    { .label = "Cancel", .code = 2, .key = bg2e::app::MessageBox::Esc }
+                }
+            );
+            return status == 1;
+        });
+    
         _leftPanel.setTitle("Model & Submeshes");
         _rightPanel.setTitle("File");
         _bottomPanel.setTitle("Environment");
@@ -314,6 +326,11 @@ public:
                             filePath
                         );
                     }
+                }
+                bg2e::ui::Menu::separator();
+                if (bg2e::ui::Menu::menuItem("Quit"))
+                {
+                    bg2e::app::MainLoop::current()->exit();
                 }
                 bg2e::ui::Menu::endMenu();
             }
@@ -440,7 +457,8 @@ public:
             renderer()->setContrast(contrast);
         });
         
-        _toolbar.addButton({
+        
+        int32_t testButtonId = _toolbar.addButton({
             .label = "Test Button",
             .action = []() { std::cout << "Hello World" << std::endl; }
         });
@@ -463,9 +481,25 @@ public:
             .label = "Right Button",
             .action = [&, textId]() {
                 ++value;
-                _toolbar.updateButton(textId, "Count = " + std::to_string(value));
+                _toolbar.updateButtonLabel(textId, "Count = " + std::to_string(value));
             }
         }, bg2e::ui::Toolbar::AlignRight);
+        
+        static bool buttonEnabled = true;
+        _toolbar.addButton({
+            .label = "Test Enabled",
+            .action = [&,testButtonId]() {
+                if (buttonEnabled)
+                {
+                    _toolbar.disableButton(testButtonId);
+                }
+                else
+                {
+                    _toolbar.enableButton(testButtonId);
+                }
+                buttonEnabled = !buttonEnabled;
+            }
+        });
         
 //        _toolbar.setDrawFunction([&]() {
 //            using namespace bg2e::ui;

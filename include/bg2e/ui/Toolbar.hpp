@@ -18,6 +18,7 @@ struct ToolbarButton {
     int32_t id = -1;
     std::string label;
     std::function<void()> action = nullptr;
+    bool disabled = false;
 };
 
 class BG2E_API Toolbar : public Window {
@@ -59,8 +60,10 @@ public:
 
     void draw() override;
     
-    void updateButton(int32_t buttonId, const std::string & newLabel);
-    void updateButton(int32_t buttonId, std::string && newLabel);
+    void updateButtonLabel(int32_t buttonId, const std::string & newLabel);
+    void updateButtonLabel(int32_t buttonId, std::string && newLabel);
+    void enableButton(int32_t buttonId);
+    void disableButton(int32_t buttonId);
     
     ToolbarButton * findButton(int32_t buttonId);
 

@@ -55,6 +55,7 @@ protected:
         glm::mat4 view[6];
         glm::mat4 proj;
     };
+    glm::mat4 _viewTransform = glm::mat4{ 1.0f };
     ProjectionData _projectionData;
     std::unique_ptr<vulkan::Buffer> _projectionDataBuffer;
     

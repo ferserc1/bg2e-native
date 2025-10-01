@@ -14,9 +14,9 @@ public:
     static void separator(const std::string & title = "", bool sameLine = false);
     static void listItem(const std::string & label, bool sameLine = false);
     
-    static bool button(const std::string & title, bool sameLine = false);
-    static bool checkBox(const std::string & title, bool * value = nullptr, bool sameLine = false);
-    static bool radioButton(const std::string & label, int * value = nullptr, int id = 0, bool sameLine = false);
+    static bool button(const std::string & title, bool sameLine = false, bool disabled = false);
+    static bool checkBox(const std::string & title, bool * value = nullptr, bool sameLine = false, bool disabled = false);
+    static bool radioButton(const std::string & label, int * value = nullptr, int id = 0, bool sameLine = false, bool disabled = false);
     
     static bool beginTree(const std::string & label);
     static void endTree();
