@@ -6,6 +6,19 @@
 namespace bg2e {
 namespace ui {
 
+void BasicWidgets::sameLine(int32_t xPos)
+{
+    if (xPos < 0)
+    {
+        xPos = std::abs(xPos);
+        auto winWidth = ImGui::GetWindowWidth();
+        ImGui::SameLine(winWidth - static_cast<float>(xPos));
+    }
+    else {
+        ImGui::SameLine(xPos);
+    }
+}
+
 void BasicWidgets::text(const std::string & text, bool sameLine)
 {
     if (sameLine)
@@ -75,5 +88,30 @@ bool BasicWidgets::collapsingHeader(const std::string & title, bool visible)
     return ImGui::CollapsingHeader(title.c_str(), visible ? ImGuiTreeNodeFlags_DefaultOpen : 0);
 }
 
+uint32_t BasicWidgets::calcTextWidth(const std::string & title)
+{
+    ImVec2 textSize = ImGui::CalcTextSize(title.c_str());
+    return static_cast<uint32_t>(textSize.x);
+}
+
+uint32_t BasicWidgets::calcButtonWidth(const std::string & title)
+{
+    ImVec2 textSize = ImGui::CalcTextSize(title.c_str());
+    ImVec2 padding = ImGui::GetStyle().FramePadding;
+    return static_cast<uint32_t>(textSize.x + padding.x * 2.0f);
+}
+
+uint32_t BasicWidgets::getItemHorizontalSpacing()
+{
+    ImVec2 spacing = ImGui::GetStyle().ItemSpacing;
+    return static_cast<uint32_t>(spacing.x);
+}
+
+uint32_t BasicWidgets::getItemVerticalSpacing()
+{
+    ImVec2 spacing = ImGui::GetStyle().ItemSpacing;
+    return static_cast<uint32_t>(spacing.y);
+}
+    
 }
 }

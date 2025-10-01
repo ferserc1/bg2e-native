@@ -7,8 +7,10 @@
 namespace bg2e {
 namespace ui {
 
-void Window::draw(std::function<void()> drawFunction)
-{
+void Window::draw(
+    std::function<void()> drawFunction,
+    std::function<void()> menuFunction
+) {
 	if (!_open)
 	{
 		return;
@@ -38,6 +40,22 @@ void Window::draw(std::function<void()> drawFunction)
     
     if (ImGui::Begin(_title.c_str(), open, _windowFlags))
     {
+        // Draw menu
+        if (menuFunction || _menuFunction)
+        {
+            if (ImGui::BeginMenuBar())
+            {
+                if (_menuFunction)
+                {
+                    _menuFunction();
+                }
+                if (menuFunction)
+                {
+                    menuFunction();
+                }
+                ImGui::EndMenuBar();
+            }
+        }
         drawFunction();
     }
     ImGui::End();

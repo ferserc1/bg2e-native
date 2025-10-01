@@ -278,6 +278,57 @@ public:
             &_bottomPanel
         );
         
+        _toolbar.setMenuFunction([&]() {
+            if (bg2e::ui::Menu::beginMenu("File"))
+            {
+                if (bg2e::ui::Menu::menuItem("Open"))
+                {
+                    bg2e::app::FileDialog fd;
+                    fd.setFilters({
+                        { "bg2e 3D model", "bg2,vwglb" }
+                    });
+                    auto filePath = fd.openFile();
+                    
+                    if (!filePath.empty())
+                    {
+                        auto modelDrawable = bg2e::db::loadDrawableBg2(filePath, _engine);
+                        auto modelNode = new bg2e::scene::Node("Armchair");
+                        modelNode->addComponent(new bg2e::scene::DrawableComponent(modelDrawable));
+                        modelNode->addComponent(new bg2e::scene::TransformComponent(glm::translate(glm::mat4{ 1.0 }, glm::vec3{ 5, 0, 0 })));
+                        modelNode->transform()->scale(4.0f);
+                        renderer()->scene()->rootNode()->addChild(modelNode);
+                    }
+                }
+                if (bg2e::ui::Menu::menuItem("Save Scene"))
+                {
+                    bg2e::app::FileDialog fd;
+                    fd.setFilters({
+                        { "bg2e Scene", "vitscnj,json" }
+                    });
+                    auto filePath = fd.saveFile();
+                    
+                    if (!filePath.empty())
+                    {
+                        bg2e::db::saveScene(
+                            renderer()->scene()->rootNode(),
+                            filePath
+                        );
+                    }
+                }
+                bg2e::ui::Menu::endMenu();
+            }
+            
+            if (bg2e::ui::Menu::beginMenu("View"))
+            {
+                if (bg2e::ui::Menu::menuItem("Center View", "Ctrl+A"))
+                {
+                    _orbitCamera->reset();
+                }
+                bg2e::ui::Menu::endMenu();
+            }
+            
+        });
+        
         
         _leftPanel.setDrawFunction([&]() {
         
@@ -381,42 +432,6 @@ public:
         });
         
         _rightPanel.setDrawFunction([&]() {
-            if (bg2e::ui::BasicWidgets::button("Open File"))
-            {
-                bg2e::app::FileDialog fd;
-                fd.setFilters({
-                    { "bg2e 3D model", "bg2,vwglb" }
-                });
-                auto filePath = fd.openFile();
-                
-                auto modelDrawable = bg2e::db::loadDrawableBg2(filePath, _engine);
-                auto modelNode = new bg2e::scene::Node("Armchair");
-                modelNode->addComponent(new bg2e::scene::DrawableComponent(modelDrawable));
-                modelNode->addComponent(new bg2e::scene::TransformComponent(glm::translate(glm::mat4{ 1.0 }, glm::vec3{ 5, 0, 0 })));
-                modelNode->transform()->scale(4.0f);
-                renderer()->scene()->rootNode()->addChild(modelNode);
-                
-            }
-            
-            if (bg2e::ui::BasicWidgets::button("Save File"))
-            {
-                bg2e::app::FileDialog fd;
-                fd.setFilters({
-                    { "bg2e Scene", "vitscnj,json" }
-                });
-                auto filePath = fd.saveFile();
-                std::cout << filePath << std::endl;
-                
-                bg2e::db::saveScene(
-                    renderer()->scene()->rootNode(),
-                    filePath
-                );
-            }
-            
-            if (bg2e::ui::BasicWidgets::button("Center View"))
-            {
-                _orbitCamera->reset();
-            }
             float brightness = renderer()->brightness();
             float contrast = renderer()->contrast();
             bg2e::ui::Input::slider("Brightness", &brightness, 0.0f, 1.0f);
@@ -425,34 +440,69 @@ public:
             renderer()->setContrast(contrast);
         });
         
-        _toolbar.setDrawFunction([&]() {
-            using namespace bg2e::ui;
-            static uint32_t clicks = 0;
-            if (BasicWidgets::button("Test button"))
-            {
-                ++clicks;
-            }
-            BasicWidgets::text("Button clicked " + std::to_string(clicks) + " times", true);
-            
-            auto leftPanel = _workspace.leftPanelVisible();
-            auto rightPanel = _workspace.rightPanelVisible();
-            auto bottomPanel = _workspace.bottomPanelVisible();
-            
-            if (BasicWidgets::button(leftPanel ? "Hide Model Panel" : "Show Model Panel", true))
-            {
-                _workspace.toggleLeftPanel();
-            }
-            
-            if (BasicWidgets::button(rightPanel ? "Hide File Panel" : "Show File Panel", true))
-            {
-                _workspace.toggleRightPanel();
-            }
-            
-            if (BasicWidgets::button(bottomPanel ? "Hide Environment Panel" : "Show Environment Panel", true))
-            {
-                _workspace.toggleBottomPanel();
-            }
+        _toolbar.addButton({
+            .label = "Test Button",
+            .action = []() { std::cout << "Hello World" << std::endl; }
         });
+        
+        _toolbar.addButton({
+            .label = "Other test",
+            .action = []() { std::cout << "Hello again" << std::endl; }
+        }, bg2e::ui::Toolbar::AlignRight);
+        
+        _toolbar.addButton({
+            .label = "This is a text"
+        }, bg2e::ui::Toolbar::AlignRight);
+        
+        static int32_t value = 0;
+        auto textId = _toolbar.addButton({
+            .label = "Count = " + std::to_string(value)
+        }, bg2e::ui::Toolbar::AlignRight);
+        
+        _toolbar.addButton({
+            .label = "Right Button",
+            .action = [&, textId]() {
+                ++value;
+                _toolbar.updateButton(textId, "Count = " + std::to_string(value));
+            }
+        }, bg2e::ui::Toolbar::AlignRight);
+        
+//        _toolbar.setDrawFunction([&]() {
+//            using namespace bg2e::ui;
+//            static uint32_t clicks = 0;
+//            if (BasicWidgets::button("Test button"))
+//            {
+//                ++clicks;
+//            }
+//            BasicWidgets::text("Button clicked " + std::to_string(clicks) + " times", true);
+//            
+//            auto leftPanel = _workspace.leftPanelVisible();
+//            auto rightPanel = _workspace.rightPanelVisible();
+//            auto bottomPanel = _workspace.bottomPanelVisible();
+//            
+//            auto leftText = leftPanel ? "Hide Model Panel" : "Show Model Panel";
+//            auto rightText = rightPanel ? "Hide File Panel" : "Show File Panel";
+//            auto bottomText = bottomPanel ? "Hide Environment Panel" : "Show Environment Panel";
+//            auto buttonsSize = BasicWidgets::calcButtonWidth(leftText) +
+//                BasicWidgets::calcButtonWidth(rightText) +
+//                BasicWidgets::calcButtonWidth(bottomText) +
+//                BasicWidgets::getItemHorizontalSpacing() * 3;
+//            BasicWidgets::sameLine(-buttonsSize);
+//            if (BasicWidgets::button(leftText))
+//            {
+//                _workspace.toggleLeftPanel();
+//            }
+//            
+//            if (BasicWidgets::button(rightText, true))
+//            {
+//                _workspace.toggleRightPanel();
+//            }
+//            
+//            if (BasicWidgets::button(bottomText, true))
+//            {
+//                _workspace.toggleBottomPanel();
+//            }
+//        });
 	}
  
     void swapchainResized(VkExtent2D newSize) override
@@ -497,7 +547,7 @@ protected:
     bg2e::scene::InputVisitor _inputVisitor;
     bg2e::ui::MaterialEditor _materialEditor;
     bg2e::ui::Workspace _workspace;
-    bg2e::ui::Window _toolbar;
+    bg2e::ui::Toolbar _toolbar;
     bg2e::ui::Window _leftPanel;
     bg2e::ui::Window _rightPanel;
     bg2e::ui::Window _bottomPanel;

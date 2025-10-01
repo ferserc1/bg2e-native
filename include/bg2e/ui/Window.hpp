@@ -41,17 +41,26 @@ public:
     inline const std::string & title() const { return _title; }
 
     // Option 1: use a generic window with the draw lambda function
-    void draw(std::function<void()> drawFunction);
+    virtual void draw(std::function<void()> drawFunction, std::function<void()> menuFunction = nullptr);
     
     // Option 2: setup the draw lambda function and call the draw function without arguments
-    inline void setDrawFunction(std::function<void()> drawFunction)
+    // This is a virtual function to allow Window subclasses to protect this function
+    virtual void setDrawFunction(std::function<void()> drawFunction)
     {
         if (drawFunction) {
             _drawFunction = drawFunction;
         }
     }
     
-    void draw();
+    inline void setMenuFunction(std::function<void()> menuFunction)
+    {
+        if (menuFunction)
+        {
+            _menuFunction = menuFunction;
+        }
+    }
+    
+    virtual void draw();
 
 	inline void close() { _open = false; }
 	inline void open() { _open = true; }
@@ -68,6 +77,7 @@ protected:
     std::string _title = "Window";
     bool _open = true;
     std::function<void()> _drawFunction = []() {};
+    std::function<void()> _menuFunction = []() {};
 
 	int32_t _windowFlags = 0;
  
