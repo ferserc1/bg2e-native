@@ -283,7 +283,7 @@ void CubemapRenderer::initPipeline(
     plFactory.disableDepthtest();
     plFactory.disableMultisample();
     plFactory.inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-    plFactory.setCullMode(VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_COUNTER_CLOCKWISE);
+    plFactory.setCullMode(VK_CULL_MODE_NONE, VK_FRONT_FACE_COUNTER_CLOCKWISE);
     
     _pipeline = plFactory.build(_layout);
     

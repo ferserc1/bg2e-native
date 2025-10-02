@@ -622,17 +622,17 @@ protected:
         // Lights: When you first create the scene in createScene(), you don't need to do anything with the lights, because the
         // scene has not been initialised yet. Once the scene is initialised, if lights are added or removed during the rendering
         // loop, _scene->updateLights() must be called to rebuild the array of lights in the scene that will be passed to the shader.
-        auto light1 = new bg2e::scene::Node("Light 1");
-        light1->addComponent(new bg2e::scene::LightComponent());
-        light1->addComponent(new bg2e::scene::TransformComponent(glm::translate(glm::mat4 { 1.0f }, glm::vec3{-10, 10, 10 } )));
-        light1->light()->light().setIntensity(300.0f);
-        sceneRoot->addChild(light1);
-        
-        auto light2 = new bg2e::scene::Node("Light 2");
-        light2->addComponent(new bg2e::scene::LightComponent());
-        light2->addComponent(new bg2e::scene::TransformComponent(glm::translate(glm::mat4 { 1.0f }, glm::vec3{ 10, 10, 10 } )));
-        light2->light()->light().setIntensity(300.0f);
-        sceneRoot->addChild(light2);
+//        auto light1 = new bg2e::scene::Node("Light 1");
+//        light1->addComponent(new bg2e::scene::LightComponent());
+//        light1->addComponent(new bg2e::scene::TransformComponent(glm::translate(glm::mat4 { 1.0f }, glm::vec3{-10, 10, 10 } )));
+//        light1->light()->light().setIntensity(300.0f);
+//        sceneRoot->addChild(light1);
+//        
+//        auto light2 = new bg2e::scene::Node("Light 2");
+//        light2->addComponent(new bg2e::scene::LightComponent());
+//        light2->addComponent(new bg2e::scene::TransformComponent(glm::translate(glm::mat4 { 1.0f }, glm::vec3{ 10, 10, 10 } )));
+//        light2->light()->light().setIntensity(300.0f);
+//        sceneRoot->addChild(light2);
         
         auto assetPath = bg2e::base::PlatformTools::assetPath();
         
