@@ -267,8 +267,8 @@ public:
             auto status = bg2e::app::MessageBox::showWarning(
                 "Quit", "Are you sure you want to quit?",
                 {
-                    { .label = "Quit", .code = 1 },
-                    { .label = "Cancel", .code = 2, .key = bg2e::app::MessageBox::Esc }
+                    { .code = 1, .label = "Quit" },
+                    { .code = 2,  .label = "Cancel", .key = bg2e::app::MessageBox::Esc }
                 }
             );
             return status == 1;

@@ -60,7 +60,7 @@ bool TextureWidgets::selectTexture(const std::string& label, std::function<std::
         if (!filePath.empty())
         {
             base::Texture * texture = new base::Texture();
-            texture->setImageFilePath(filePath);
+            texture->setImageFilePath(filePath.string());
             texture->setMagFilter(base::Texture::FilterLinear);
             texture->setMinFilter(base::Texture::FilterLinear);
             texture->setUseMipmaps(true);

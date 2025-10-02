@@ -113,7 +113,6 @@ call build.bat src ..\bin\shaders\test
     <ClCompile Include="..\src\StageScene.cpp" />
     <ClCompile Include="..\src\SubmeshWindow.cpp" />
     <ClCompile Include="..\src\ToolBar.cpp" />
-    <ClCompile Include="..\src\ToolWindow.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\shaders\src\test.frag.glsl" />
@@ -125,7 +124,6 @@ call build.bat src ..\bin\shaders\test
     <ClInclude Include="..\src\StageScene.hpp" />
     <ClInclude Include="..\src\SubmeshWindow.hpp" />
     <ClInclude Include="..\src\ToolBar.hpp" />
-    <ClInclude Include="..\src\ToolWindow.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

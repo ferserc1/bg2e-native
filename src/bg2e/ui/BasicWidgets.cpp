@@ -15,7 +15,7 @@ void BasicWidgets::sameLine(int32_t xPos)
         ImGui::SameLine(winWidth - static_cast<float>(xPos));
     }
     else {
-        ImGui::SameLine(xPos);
+        ImGui::SameLine(static_cast<float>(xPos));
     }
 }
 

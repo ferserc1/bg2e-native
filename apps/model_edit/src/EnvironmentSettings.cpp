@@ -56,7 +56,7 @@ void EnvironmentSettings::init(
                 });
                 if (!path.empty())
                 {
-                    environment->setEnvironmentImage(path);
+                    environment->setEnvironmentImage(path.string());
                 }
             }
         }

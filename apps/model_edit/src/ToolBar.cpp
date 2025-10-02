@@ -16,8 +16,8 @@ void ToolBar::init(AppDelegate * delegate)
     
     bg2e::app::MainLoop::current()->setOnExitFunction([]() -> bool {
         return bg2e::app::MessageBox::showWarning("Quit Model Edit", "Any unsaved changes will be lost. Are you sure you want to quit?", {
-            { .label = "Quit", .code = 1 },
-            { .label = "Cancel", .code = 2, .key = bg2e::app::MessageBox::Esc }
+            { .code = 1, .label = "Quit" },
+            { .code = 2, .label = "Cancel", .key = bg2e::app::MessageBox::Esc }
         }) == 1;
     });
     

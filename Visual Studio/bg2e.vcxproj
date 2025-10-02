@@ -35,6 +35,7 @@
     <ClInclude Include="..\include\bg2e\app\InputManager.hpp" />
     <ClInclude Include="..\include\bg2e\app\KeyEvent.hpp" />
     <ClInclude Include="..\include\bg2e\app\MainLoop.hpp" />
+    <ClInclude Include="..\include\bg2e\app\MessageBox.hpp" />
     <ClInclude Include="..\include\bg2e\base\all.hpp" />
     <ClInclude Include="..\include\bg2e\base\Camera.hpp" />
     <ClInclude Include="..\include\bg2e\base\Color.hpp" />
@@ -154,10 +155,13 @@
     <ClInclude Include="..\include\bg2e\ui\DemoWindow.hpp" />
     <ClInclude Include="..\include\bg2e\ui\Input.hpp" />
     <ClInclude Include="..\include\bg2e\ui\MaterialEditor.hpp" />
+    <ClInclude Include="..\include\bg2e\ui\Menu.hpp" />
     <ClInclude Include="..\include\bg2e\ui\TextureWidgets.hpp" />
+    <ClInclude Include="..\include\bg2e\ui\Toolbar.hpp" />
     <ClInclude Include="..\include\bg2e\ui\UserInterface.hpp" />
     <ClInclude Include="..\include\bg2e\ui\UserInterfaceDelegate.hpp" />
     <ClInclude Include="..\include\bg2e\ui\Window.hpp" />
+    <ClInclude Include="..\include\bg2e\ui\Workspace.hpp" />
     <ClInclude Include="..\include\bg2e\utils\all.hpp" />
     <ClInclude Include="..\include\bg2e\utils\MaterialSerializer.hpp" />
     <ClInclude Include="..\include\bg2e\utils\TextureCache.hpp" />
@@ -198,6 +202,7 @@
     <ClCompile Include="..\src\bg2e\app\FileDialog.cpp" />
     <ClCompile Include="..\src\bg2e\app\InputManager.cpp" />
     <ClCompile Include="..\src\bg2e\app\MainLoop.cpp" />
+    <ClCompile Include="..\src\bg2e\app\MessageBox.cpp" />
     <ClCompile Include="..\src\bg2e\base\Camera.cpp" />
     <ClCompile Include="..\src\bg2e\base\Image_base.cpp" />
     <ClCompile Include="..\src\bg2e\base\Log.cpp" />
@@ -289,10 +294,13 @@
     <ClCompile Include="..\src\bg2e\ui\DemoWindow.cpp" />
     <ClCompile Include="..\src\bg2e\ui\Input.cpp" />
     <ClCompile Include="..\src\bg2e\ui\MaterialEditor.cpp" />
+    <ClCompile Include="..\src\bg2e\ui\Menu.cpp" />
     <ClCompile Include="..\src\bg2e\ui\TextureWidgets.cpp" />
+    <ClCompile Include="..\src\bg2e\ui\Toolbar.cpp" />
     <ClCompile Include="..\src\bg2e\ui\UserInterface.cpp" />
     <ClCompile Include="..\src\bg2e\ui\UserInterfaceDelegate.cpp" />
     <ClCompile Include="..\src\bg2e\ui\Window.cpp" />
+    <ClCompile Include="..\src\bg2e\ui\Workspace.cpp" />
     <ClCompile Include="..\src\bg2e\utils\MaterialSerializer.cpp" />
     <ClCompile Include="..\src\bg2e\utils\TextureCache.cpp" />
     <ClCompile Include="..\src\bg2e\utils\utils.cpp" />

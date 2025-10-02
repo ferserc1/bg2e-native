@@ -606,6 +606,18 @@
     <ClInclude Include="..\include\bg2e\ui\TextureWidgets.hpp">
       <Filter>Header Files\bg2e\ui</Filter>
     </ClInclude>
+    <ClInclude Include="..\include\bg2e\app\MessageBox.hpp">
+      <Filter>Header Files\bg2e\app</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\ui\Toolbar.hpp">
+      <Filter>Header Files\bg2e\ui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\ui\Workspace.hpp">
+      <Filter>Header Files\bg2e\ui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\ui\Menu.hpp">
+      <Filter>Header Files\bg2e\ui</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\bg2e\app\MainLoop.cpp">
@@ -957,6 +969,18 @@
       <Filter>Source Files\ui</Filter>
     </ClCompile>
     <ClCompile Include="..\src\bg2e\ui\TextureWidgets.cpp">
+      <Filter>Source Files\ui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\bg2e\ui\Toolbar.cpp">
+      <Filter>Source Files\ui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\bg2e\ui\Workspace.cpp">
+      <Filter>Source Files\ui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\bg2e\app\MessageBox.cpp">
+      <Filter>Source Files\app</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\bg2e\ui\Menu.cpp">
       <Filter>Source Files\ui</Filter>
     </ClCompile>
   </ItemGroup>
