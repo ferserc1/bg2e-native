@@ -30,10 +30,10 @@ xcodebuild -project "$PROJECT_PATH" -scheme "$SCHEME" -configuration $CONFIGURAT
 
 # Check if build was successful
 if [ $? -eq 0 ]; then
-  echo "Build successful!"
   
   # Run the app if requested
   if [ $RUN_APP -eq 1 ]; then
+    echo "Build successful!"
     echo "Running $SCHEME..."
     # Get the app path from xcodebuild - usando grep más preciso para evitar PRECOMPS_INCLUDE_HEADERS_FROM_BUILT_PRODUCTS_DIR
     APP_PATH=$(xcodebuild -project "$PROJECT_PATH" -scheme "$SCHEME" -configuration $CONFIGURATION -showBuildSettings | grep "^ *BUILT_PRODUCTS_DIR =" | sed 's/^ *BUILT_PRODUCTS_DIR = //')
@@ -48,6 +48,10 @@ if [ $? -eq 0 ]; then
       echo "Could not find the application at $APP_PATH/$APP_NAME"
       exit 1
     fi
+  else
+    # Build debug
+    xcodebuild -project "$PROJECT_PATH" -scheme "$SCHEME" -configuration "Debug" build -destination 'platform=macOS,arch=x86_64' -destination 'platform=macOS,arch=arm64'
+    echo "Release build successful!"
   fi
 else
   echo "Build failed!"
