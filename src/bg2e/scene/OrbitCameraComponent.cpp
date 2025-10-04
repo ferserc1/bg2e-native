@@ -176,7 +176,7 @@ void OrbitCameraComponent::mouseMove(int x, int y)
             break;
         }
         case OrbitAction::Zoom: {
-            auto speedFactor = _distance * 0.001f * _panSpeed;
+            auto speedFactor = _distance * 0.005f * _panSpeed;
             _distance += delta.x * speedFactor;
             break;
         }
@@ -195,9 +195,9 @@ void OrbitCameraComponent::mouseWheel(int deltaX, int deltaY)
 
 void OrbitCameraComponent::reset()
 {
-    _rotation = { 0.0f, 0.0f };
-    _distance = 5.0f;
-    _center = { 0.0f, 0.0f, 0.0f };
+    _rotation = _initialRotation;
+    _distance = _initialDistance;
+    _center = _initialCenter;
 }
 
 

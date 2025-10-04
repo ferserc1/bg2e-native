@@ -22,7 +22,7 @@ std::shared_ptr<bg2e::scene::Node> StageScene::init()
     
     cameraNode->addComponent(new bg2e::scene::CameraComponent());
     auto projection = new bg2e::math::OpticalProjection();
-    projection->setFocalLength(35.0f);
+    projection->setFocalLength(50.0f);
     cameraNode->camera()->setProjection(projection);
     
     auto cameraRotation = new bg2e::scene::Node("Camera Rotation");
@@ -35,6 +35,10 @@ std::shared_ptr<bg2e::scene::Node> StageScene::init()
     cameraRotationComponent->setMinX(-std::numeric_limits<float>::max());
     cameraRotationComponent->setMinY(-std::numeric_limits<float>::max());
     cameraRotationComponent->setMinZ(-std::numeric_limits<float>::max());
+    cameraRotationComponent->setDistance(2.0f);
+    cameraRotationComponent->setInitialDistance(2.0f);
+    cameraRotationComponent->setWheelSpeed(2.0f);
+    cameraRotationComponent->setPanSpeed(0.5f);
     
     cameraRotation->addComponent(cameraRotationComponent);
     cameraRotation->addChild(cameraNode);

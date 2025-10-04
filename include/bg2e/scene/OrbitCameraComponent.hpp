@@ -100,6 +100,18 @@ public:
     {
         _zoomButtons = { left, middle, right };
     }
+
+    // Initial Rotation
+    inline const glm::vec2& initialRotation() const { return _initialRotation; }
+    inline void setInitialRotation(const glm::vec2& r) { _initialRotation = r; }
+
+    // Initial Distance
+    inline float initialDistance() const { return _initialDistance; }
+    inline void setInitialDistance(float d) { _initialDistance = d; }
+
+    // Initial Center
+    inline const glm::vec3& initialCenter() const { return _initialCenter; }
+    inline void setInitialCenter(const glm::vec3& c) { _initialCenter = c; }
     
     void resizeViewport(const math::Viewport& vp) override;
     void update(float delta) override;
@@ -122,6 +134,10 @@ protected:
     MouseButtons _rotationButtons = { true, false, false };
     MouseButtons _panButtons = { false, false, true };
     MouseButtons _zoomButtons = { false, true, false };
+
+    glm::vec2 _initialRotation = { 0.0f, 0.0f };
+	float _initialDistance = 5.0f;
+	glm::vec3 _initialCenter = { 0.0f, 0.0f, 0.0f };
     
     glm::vec2 _rotation = { 0.0f, 0.0f };
     float _distance = 5.0f;
