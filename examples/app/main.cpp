@@ -256,6 +256,9 @@ public:
     void init(bg2e::render::Engine * engine) override
     {
         bg2e::render::DefaultRenderLoopDelegate<bg2e::render::RendererBasicForward>::init(engine);
+        
+        _selectionManager = std::make_shared<bg2e::manipulation::SelectionManager>(engine);
+        _selectionManager->init();
     }
     
 	// ============ User Interface Delegate Functions =========
@@ -585,6 +588,8 @@ protected:
     bg2e::ui::Window _leftPanel;
     bg2e::ui::Window _rightPanel;
     bg2e::ui::Window _bottomPanel;
+    
+    std::shared_ptr<bg2e::manipulation::SelectionManager> _selectionManager;
     
     std::shared_ptr<bg2e::scene::Drawable> _targetDrawable;
     bg2e::scene::EnvironmentComponent * _environment;

@@ -93,6 +93,7 @@
 		ED86884F2CDAAB7300A71ADC /* CoreFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreFoundation.framework; path = System/Library/Frameworks/CoreFoundation.framework; sourceTree = SDKROOT; };
 		ED86AADB2E83088E00A3CB20 /* bg2-io.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = "bg2-io.xcodeproj"; sourceTree = "<group>"; };
 		ED86AF792E83105E00A3CB20 /* bg2-io.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = "bg2-io.xcodeproj"; sourceTree = "<group>"; };
+		ED8A7D032E950CC000F3C9BB /* bg2-io.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = "bg2-io.xcodeproj"; sourceTree = "<group>"; };
 		ED8C95092E1C1B02002EE991 /* bg2-io.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = "bg2-io.xcodeproj"; sourceTree = "<group>"; };
 		ED940EE02E846C7E00807FDB /* bg2-io.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = "bg2-io.xcodeproj"; sourceTree = "<group>"; };
 		ED9AEBF12E10534600728D8B /* bg2-io.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = "bg2-io.xcodeproj"; sourceTree = "<group>"; };
@@ -495,6 +496,13 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
+		ED8A7D072E950CC000F3C9BB /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
 		ED8C950D2E1C1B02002EE991 /* Products */ = {
 			isa = PBXGroup;
 			children = (
@@ -688,6 +696,10 @@
 					ProjectRef = EDBB652D2E3BE58A00A5BD6D /* bg2-io.xcodeproj */;
 				},
 				{
+					ProductGroup = ED8A7D072E950CC000F3C9BB /* Products */;
+					ProjectRef = ED8A7D032E950CC000F3C9BB /* bg2-io.xcodeproj */;
+				},
+				{
 					ProductGroup = EDBFD8402E24CA6000864579 /* Products */;
 					ProjectRef = EDBFD83C2E24CA6000864579 /* bg2-io.xcodeproj */;
 				},
@@ -728,8 +740,8 @@
 					ProjectRef = EDC172122E3BDE76005E0A52 /* bg2-io.xcodeproj */;
 				},
 				{
-					ProductGroup = ED5477832E85054A00CC53BC /* Products */;
-					ProjectRef = ED54777F2E85054A00CC53BC /* bg2-io.xcodeproj */;
+					ProductGroup = ED8C950D2E1C1B02002EE991 /* Products */;
+					ProjectRef = ED8C95092E1C1B02002EE991 /* bg2-io.xcodeproj */;
 				},
 				{
 					ProductGroup = ED9D8BE82E1300530096E466 /* Products */;
@@ -748,8 +760,8 @@
 					ProjectRef = EDAE2B432E1BCE2100BBE76E /* bg2-io.xcodeproj */;
 				},
 				{
-					ProductGroup = ED8C950D2E1C1B02002EE991 /* Products */;
-					ProjectRef = ED8C95092E1C1B02002EE991 /* bg2-io.xcodeproj */;
+					ProductGroup = ED5477832E85054A00CC53BC /* Products */;
+					ProjectRef = ED54777F2E85054A00CC53BC /* bg2-io.xcodeproj */;
 				},
 				{
 					ProductGroup = ED69E8B32E227DC400FFE313 /* Products */;

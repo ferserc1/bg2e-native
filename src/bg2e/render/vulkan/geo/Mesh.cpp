@@ -119,13 +119,16 @@ void MeshGeneric<MeshT>::drawSubmesh(
     uint32_t submeshIndex,
     VkPipelineBindPoint bindPoint)
 {
-    vkCmdBindDescriptorSets(
-        cmd, bindPoint,
-        layout, 0,
-        static_cast<uint32_t>(ds.size()),
-        ds.data(),
-        0, nullptr
-    );
+    if (ds.size() > 0)
+    {
+        vkCmdBindDescriptorSets(
+            cmd, bindPoint,
+            layout, 0,
+            static_cast<uint32_t>(ds.size()),
+            ds.data(),
+            0, nullptr
+        );
+    }
     drawSubmesh(cmd, submeshIndex);
 }
 

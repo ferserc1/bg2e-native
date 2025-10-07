@@ -17,10 +17,59 @@ void SelectionManager::init()
 {
     createImage();
     createPipeline();
+    
+    _pickVisitor = std::make_shared<manipulation::PickSelectionVisitor>();
 }
 
-bool SelectionManager::pick(scene::Node * rootNode, const math::Viewport & vp, uint32_t x, uint32_t y)
-{
+bool SelectionManager::pick(
+    scene::Node * rootNode,
+    const glm::mat4 & viewMatrix,
+    const glm::mat4 & projMatrix,
+    const math::Viewport & vp,
+    uint32_t x,
+    uint32_t y
+) {
+    using namespace render::vulkan;
+    _engine->command().immediateSubmit([&](VkCommandBuffer cmd) {
+        VkClearColorValue clearValue { { 0.0f, 0.0f, 0.0f, 0.0f } };
+        auto clearRange = Image::subresourceRange(VK_IMAGE_ASPECT_COLOR_BIT);
+        vkCmdClearColorImage(
+            cmd,
+            _image->handle(), VK_IMAGE_LAYOUT_GENERAL,
+            &clearValue, 1, &clearRange
+        );
+        
+        Image::cmdTransitionImage(
+            cmd,
+            _image->handle(),
+            VK_IMAGE_LAYOUT_GENERAL,
+            VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
+        );
+        
+        auto colorAttachment = Info::attachmentInfo(_image->imageView(), nullptr);
+        auto depthAttachment = Info::depthAttachmentInfo(_engine->swapchain().depthImage()->imageView());
+        auto renderInfo = Info::renderingInfo(_image->extent2D(), &colorAttachment, &depthAttachment);
+        
+        cmdBeginRendering(cmd, &renderInfo);
+        
+        macros::cmdSetDefaultViewportAndScissor(cmd, _image->extent2D());
+        
+        vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, _pipeline);
+
+        _pickVisitor->pick(rootNode, viewMatrix, projMatrix, cmd, _pipelineLayout);
+        
+        cmdEndRendering(cmd);
+        
+        // TODO: Transition image (read pixels)
+    });
+    
+    // TODO: Read pixels in image
+    
+    // TODO: Get buffer value at pick position (x, y)
+    
+    // TODO: Search drawable & submesh
+    
+    // TODO: Return true if item picked
     return false;
 }
 
@@ -28,7 +77,15 @@ void SelectionManager::createImage()
 {
     using namespace bg2e::render::vulkan;
 
-    // TODO: Create image
+auto extent = _engine->swapchain().extent();
+    _image = std::shared_ptr<render::vulkan::Image>(
+        render::vulkan::Image::createAllocatedImage(
+            _engine,
+            VK_FORMAT_R8G8B8A8_UNORM,
+            extent,
+            VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
+            VK_IMAGE_USAGE_TRANSFER_SRC_BIT)
+    );
 }
 
 void SelectionManager::createPipeline()
@@ -36,8 +93,8 @@ void SelectionManager::createPipeline()
     using namespace bg2e::render::vulkan;
     factory::GraphicsPipeline plFactory(_engine);
     
-    plFactory.addShader("pick_selection.vert.glsl", VK_SHADER_STAGE_VERTEX_BIT);
-    plFactory.addShader("pick_selection.frag.glsl", VK_SHADER_STAGE_FRAGMENT_BIT);
+    plFactory.addShader("pick_selection.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
+    plFactory.addShader("pick_selection.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
     
     VkPushConstantRange pushConstantRange = {};
     pushConstantRange.offset = 0;

@@ -8,6 +8,7 @@
 #include <bg2e/scene/Drawable.hpp>
 #include <bg2e/math/projections.hpp>
 #include <bg2e/scene/Node.hpp>
+#include <bg2e/manipulation/PickSelectionVisitor.hpp>
 #include <bg2e/render/vulkan/Image.hpp>
 
 #include <memory>
@@ -23,12 +24,24 @@ class SelectionItem {
 
 class BG2E_API SelectionManager {
 public:
+    struct PushConstantData {
+        glm::mat4 mvp;
+        uint32_t identifier;
+    };
+    
     SelectionManager(render::Engine * engine);
     virtual ~SelectionManager() = default;
 
     void init();
 
-    bool pick(scene::Node * rootNode, const math::Viewport & vp, uint32_t x, uint32_t y);
+    bool pick(
+        scene::Node * rootNode,
+        const glm::mat4 & viewMatrix,
+        const glm::mat4 & projMatrix,
+        const math::Viewport & vp,
+        uint32_t x,
+        uint32_t y
+    );
 
 protected:
     render::Engine * _engine;
@@ -36,11 +49,7 @@ protected:
     VkPipeline _pipeline;
     VkPipelineLayout _pipelineLayout;
     std::shared_ptr<render::vulkan::Image> _image;
-    
-    struct PushConstantData {
-        glm::mat4 mvp;
-        uint32_t identifier;
-    };
+    std::shared_ptr<PickSelectionVisitor> _pickVisitor;
     
     void createImage();
     void createPipeline();

@@ -4,7 +4,7 @@ layout (location = 0) in vec3 inPosition;
 
 layout (location = 0) out flat uint outIdentifier;
 
-layout (set = 0, binding = 0) uniform PickSelectionData {
+layout(push_constant) uniform PickSelectionData {
     mat4 mvp;
     uint identifier;
 } pickSelectionData;
