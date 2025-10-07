@@ -77,7 +77,7 @@ void SelectionManager::createImage()
 {
     using namespace bg2e::render::vulkan;
 
-auto extent = _engine->swapchain().extent();
+    auto extent = _engine->swapchain().extent();
     _image = std::shared_ptr<render::vulkan::Image>(
         render::vulkan::Image::createAllocatedImage(
             _engine,
@@ -86,6 +86,10 @@ auto extent = _engine->swapchain().extent();
             VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
             VK_IMAGE_USAGE_TRANSFER_SRC_BIT)
     );
+    
+    _engine->cleanupManager().push([&](VkDevice) {
+        _image.reset();
+    });
 }
 
 void SelectionManager::createPipeline()

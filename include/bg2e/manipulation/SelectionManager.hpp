@@ -42,7 +42,7 @@ public:
         uint32_t x,
         uint32_t y
     );
-
+    
 protected:
     render::Engine * _engine;
     
