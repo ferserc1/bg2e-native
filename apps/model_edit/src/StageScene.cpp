@@ -14,7 +14,7 @@ StageScene::StageScene(bg2e::render::Engine * engine)
 std::shared_ptr<bg2e::scene::Node> StageScene::init()
 {
     auto sceneRoot = std::make_shared<bg2e::scene::Node>("Scene Root");
-    sceneRoot->addComponent(new bg2e::scene::EnvironmentComponent(bg2e::base::PlatformTools::assetPath(), "gothic_manor_01_4k.hdr"));
+    sceneRoot->addComponent(new bg2e::scene::EnvironmentComponent(bg2e::base::PlatformTools::assetPath(), "mirrored_hall_4k.hdr"));
     _environment = sceneRoot->environment();
     
     auto cameraNode = std::shared_ptr<bg2e::scene::Node>(new bg2e::scene::Node("Camera"));
@@ -55,9 +55,9 @@ std::shared_ptr<bg2e::scene::Node> StageScene::init()
     sceneRoot->addChild(_targetNode);
     
     // Sample model
-    auto samplePath = bg2e::base::PlatformTools::assetPath();
-    samplePath.append("armchair.bg2");
-    loadModel(samplePath);
+    //auto samplePath = bg2e::base::PlatformTools::assetPath();
+    //samplePath.append("armchair.bg2");
+    //loadModel(samplePath);
     
     _sceneRoot = sceneRoot;
     return _sceneRoot;
@@ -71,6 +71,19 @@ void StageScene::loadModel(const std::filesystem::path& path)
     
     _targetNode->clearChildren();
     _targetNode->addChild(modelNode);
+    
+    _filePath = path;
+}
+
+void StageScene::saveModel(const std::filesystem::path& path)
+{
+    auto drw = targetDrawable();
+    if (drw)
+    {
+        bg2e::db::storeDrawableBg2(path, drw);
+        _filePath = path;
+    }
+    
 }
 
 bg2e::scene::Drawable* StageScene::targetDrawable()

@@ -307,6 +307,7 @@ public:
                     if (!filePath.empty())
                     {
                         auto modelDrawable = bg2e::db::loadDrawableBg2(filePath, _engine);
+                        _targetDrawable = modelDrawable;
                         auto modelNode = new bg2e::scene::Node("Armchair");
                         modelNode->addComponent(new bg2e::scene::DrawableComponent(modelDrawable));
                         modelNode->addComponent(new bg2e::scene::TransformComponent(glm::translate(glm::mat4{ 1.0 }, glm::vec3{ 5, 0, 0 })));
@@ -314,19 +315,23 @@ public:
                         renderer()->scene()->rootNode()->addChild(modelNode);
                     }
                 }
-                if (bg2e::ui::Menu::menuItem("Save Scene"))
+                if (bg2e::ui::Menu::menuItem("Save Object"))
                 {
                     bg2e::app::FileDialog fd;
                     fd.setFilters({
-                        { "bg2e Scene", "vitscnj,json" }
+                        { "bg2e 3D model", "bg2" }
                     });
                     auto filePath = fd.saveFile();
                     
                     if (!filePath.empty())
                     {
-                        bg2e::db::saveScene(
-                            renderer()->scene()->rootNode(),
-                            filePath
+//                        bg2e::db::saveScene(
+//                            renderer()->scene()->rootNode(),
+//                            filePath
+//                        );
+                        bg2e::db::storeDrawableBg2(
+                            filePath,
+                            _targetDrawable
                         );
                     }
                 }

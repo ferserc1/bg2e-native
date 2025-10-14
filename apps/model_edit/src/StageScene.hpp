@@ -18,6 +18,8 @@ public:
     
     void loadModel(const std::filesystem::path& path);
     
+    void saveModel(const std::filesystem::path& path);
+    
     inline std::shared_ptr<bg2e::scene::Node> sceneRoot() const { return _sceneRoot; }
     
     inline bg2e::scene::EnvironmentComponent * environment() { return _environment; }
@@ -30,6 +32,8 @@ public:
 	inline uint32_t targetSubmeshIndex() const { return _submeshIndex; }
     inline void setTargetSubmeshIndex(uint32_t index) { _submeshIndex = index; }
     
+    inline const std::filesystem::path & filePath() const { return _filePath; }
+    
 protected:
     bg2e::render::Engine * _engine;
     
@@ -38,6 +42,9 @@ protected:
     // This is the node where the loaded model is placed
     std::shared_ptr<bg2e::scene::Node> _targetNode;
     uint32_t _submeshIndex = 0;
+    
+    // Path of the last opened or saved file
+    std::filesystem::path _filePath;
     
     bg2e::scene::EnvironmentComponent * _environment;
     bg2e::scene::OrbitCameraComponent * _orbitCamera;

@@ -153,7 +153,7 @@ public:
                 listValue()[2]->numberValue(0.f)
             };
         }
-        throw std::logic_error("Improper return type: vec2");
+        throw std::logic_error("Improper return type: vec3");
     }
     
     std::array<float,4> vec4Value() {
@@ -165,7 +165,19 @@ public:
                 listValue()[3]->numberValue(0.f)
             };
         }
-        throw std::logic_error("Improper return type: vec2");
+        throw std::logic_error("Improper return type: vec4");
+    }
+    
+    base::Color colorValue() {
+        if (isVec4()) {
+            return base::Color(
+                listValue()[0]->numberValue(0.f),
+                listValue()[1]->numberValue(0.f),
+                listValue()[2]->numberValue(0.f),
+                listValue()[3]->numberValue(0.f)
+            );
+        }
+        throw std::logic_error("Improper return type: Color");
     }
     
     std::array<float,16> mat4Value() {
@@ -336,6 +348,20 @@ public:
                 listValue()[2]->numberValue(0.f),
                 listValue()[3]->numberValue(0.f)
             };
+        }
+        else {
+            return defaultValue;
+        }
+    }
+    
+    base::Color colorValue(const base::Color& defaultValue) {
+        if (isVec4()) {
+            return base::Color(
+                listValue()[0]->numberValue(0.f),
+                listValue()[1]->numberValue(0.f),
+                listValue()[2]->numberValue(0.f),
+                listValue()[3]->numberValue(0.f)
+            );
         }
         else {
             return defaultValue;
@@ -553,6 +579,10 @@ public:
             listValue()[1]->isNumber() &&
             listValue()[2]->isNumber() &&
             listValue()[3]->isNumber();
+    }
+    
+    inline bool isColor() {
+        return isVec4();
     }
     
     bool isMat4() {

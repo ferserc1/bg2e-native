@@ -57,7 +57,7 @@ void main()
     vec3 Lo = vec3(0.0);
     for(int i = 0; i < inLightCount; ++i)
     {
-        Lo += calcRadiance(inLights[i], viewDir, inFragPos, metallic, roughness, F0, normal, albedo);
+        Lo += calcRadiance(inLights[i], viewDir, inFragPos, metallic, roughness, F0, normal, albedo, mat.sheenIntensity, mat.sheenColor.rgb, ambientOcclussion);
     }
   
     vec3 ambient = calcAmbientLight(
@@ -65,7 +65,8 @@ void main()
         albedo, metallic, roughness,
         irradianceMap, prefilteredEnvMap,
         environmentData.maxReflectionLOD,
-        brdfLUT, ambientOcclussion
+        brdfLUT, ambientOcclussion,
+        mat.sheenIntensity, mat.sheenColor.rgb
     );
 
     vec3 color = ambient + Lo;

@@ -10,6 +10,7 @@ namespace uniforms {
 struct PBRMaterialData
 {
     bg2e::base::Color albedo;  // Base color of the material
+    bg2e::base::Color fresnelTint;
 
     glm::vec2 albedoScale;  // Scale for albedo texture
     glm::vec2 normalScale;  // Scale for normal texture
@@ -25,9 +26,13 @@ struct PBRMaterialData
     uint32_t roughnessUVSet;  // UV set for roughness texture
     uint32_t aoUVSet;  // UV set for ambient occlusion texture
     
+    float sheenIntensity;
+    bg2e::base::Color sheenColor;
+    
     void operator=(const base::MaterialAttributes& att)
     {
         albedo = att.albedo();
+        fresnelTint = att.fresnelTint();
         albedoScale = att.albedoScale();
         normalScale = att.normalScale();
         metalnessScale = att.metalnessScale();
@@ -38,7 +43,9 @@ struct PBRMaterialData
         normalUVSet = att.normalUVSet();
         metalnessUVSet = att.metalnessUVSet();
         roughnessUVSet = att.roughnessUVSet();
-        aoUVSet = att.aoUVSet();        
+        aoUVSet = att.aoUVSet();
+        sheenIntensity = att.sheenIntensity();
+        sheenColor = att.sheenColor();
     }
 };
 

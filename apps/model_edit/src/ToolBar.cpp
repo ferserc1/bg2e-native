@@ -39,11 +39,33 @@ void ToolBar::init(AppDelegate * delegate)
             }
             if (Menu::menuItem("Save", "Cmd+S"))
             {
-                // TODO: Implement this
+                auto filePath = _appDelegate->stage()->filePath();
+                if (filePath.empty())
+                {
+                    bg2e::app::FileDialog fd;
+                    fd.setFilters({
+                        { "bg2e 3D model", "bg2,vwglb" }
+                    });
+                    filePath = fd.saveFile();
+                }
+                
+                if (!filePath.empty())
+                {
+                    _appDelegate->stage()->saveModel(filePath);
+                }
             }
             if (Menu::menuItem("Save As..."))
             {
-                // TODO: Implement this
+                bg2e::app::FileDialog fd;
+                fd.setFilters({
+                    { "bg2e 3D model", "bg2,vwglb" }
+                });
+                auto filePath = fd.saveFile();
+                
+                if (!filePath.empty())
+                {
+                    _appDelegate->stage()->saveModel(filePath);
+                }
             }
             Menu::separator();
             if (Menu::menuItem("Quit"))

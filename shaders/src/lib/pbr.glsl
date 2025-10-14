@@ -1,6 +1,7 @@
 //
 //  pbr.glsl
 #include "lib/constants.glsl"
+#include "lib/uniforms.glsl"
 
 vec3 fresnelSchlick(float cosTheta, vec3 F0)
 {
@@ -60,7 +61,10 @@ vec3 calcRadiancePoint(
     float roughness,
     vec3 F0,
     vec3 normal,
-    vec3 albedo
+    vec3 albedo,
+    float sheenIntensity,
+    vec3 sheenColor,
+    float ambientOcclussion
 ) {
     // calculate per-light radiance
     vec3 L = normalize(light.position - fragPos);
@@ -83,7 +87,11 @@ vec3 calcRadiancePoint(
         
     // add to outgoing radiance Lo
     float NdotL = max(dot(normal, L), 0.0);
-    return (kD * albedo / PI + specular) * radiance * NdotL;
+    vec3 base = (kD * albedo / PI + specular) * radiance * NdotL;
+    
+    vec3 sheen = calcSheen(normal, viewDir, sheenColor, sheenIntensity) * ambientOcclussion;
+    
+    return base + sheen;
 }
 
 vec3 calcRadiance(
@@ -94,11 +102,14 @@ vec3 calcRadiance(
     float roughness,
     vec3 F0,
     vec3 normal,
-    vec3 albedo
+    vec3 albedo,
+    float sheenIntensity,
+    vec3 sheenColor,
+    float ambientOcclussion
 ) {
     if (light.type == LIGHT_TYPE_POINT)
     {
-        return calcRadiancePoint(light, viewDir, fragPos, metallic, roughness, F0, normal, albedo);
+        return calcRadiancePoint(light, viewDir, fragPos, metallic, roughness, F0, normal, albedo, sheenIntensity, sheenColor, ambientOcclussion);
     }
     return vec3(0.0);
 }
@@ -114,10 +125,12 @@ vec3 calcAmbientLight(
     samplerCube prefilteredEnvMap,
     float maxLOD,
     sampler2D brdfLUT,
-    float ambientOcclussion
+    float ambientOcclussion,
+    float sheenIntensity,
+    vec3 sheenColor
 ) {
     vec3 R = reflect(-viewDir, normal);
-
+    
     vec3 F = fresnelSchlickRoughness(max(dot(normal, viewDir), 0.0), F0, roughness);
     
     vec3 Ks = F;
@@ -134,7 +147,12 @@ vec3 calcAmbientLight(
     vec3 prefilteredColor = mix(prefilteredColor1, prefilteredColor2, fract(sampleRoughness));
     vec2 brdfUV = vec2(clamp(max(dot(normal, viewDir), 0.0), 0.01, 0.99), roughness);
     vec2 envBRDF = texture(brdfLUT, brdfUV).rg;
+    
     vec3 specular = prefilteredColor * (F * envBRDF.x + envBRDF.y);
+    
 
-    return (Kd * diffuse + specular) * ambientOcclussion;
+    vec3 base = (Kd * diffuse + specular) * ambientOcclussion;
+    vec3 sheen = calcSheen(normal, viewDir, sheenColor, sheenIntensity) * ambientOcclussion;
+    
+    return base + sheen;
 }

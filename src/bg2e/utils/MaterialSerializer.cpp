@@ -23,6 +23,22 @@ bool parseMaterial(
     base::MaterialAttributes & result
 )
 {
+    // TODO: Parse V2.0 textures:
+    // dataType
+    // wrapModeX
+    // wrapModeY
+    // magFilter
+    // minFilter
+    // target > deprecated
+    // size
+    // fileName
+    // proceduralFunction
+    // proceduralParameters
+    // name
+    // componentFormat
+    // See Texture.js file in bg2e-js
+    
+    
     if (!node->isObject())
     {
         return false;
@@ -53,29 +69,31 @@ bool parseMaterial(
     }
     
     // Albedo
-    if (mat["diffuse"] && mat["diffuse"]->isVec4())
+    if (mat["albedo"] && mat["albedo"]->isVec4())
     {
-        result.setAlbedo(mat["diffuse"]->vec4Value());
+        result.setAlbedo(mat["albedo"]->vec4Value());
     }
-    else if (mat["diffuse"] && mat["diffuse"]->isVec3())
+    else if (mat["albedo"] && mat["albedo"]->isVec3())
     {
-        result.setAlbedo(mat["diffuse"]->vec3Value());
+        result.setAlbedo(mat["albedo"]->vec3Value());
     }
-    else if (mat["diffuse"] && mat["diffuse"]->isString())
-    { 
-        result.setAlbedo(getTexture(basePath, mat["diffuse"]->stringValue()));
-        result.setAlbedoScale(mat["diffuseScale"] ? mat["diffuseScale"]->vec2Value({ 1, 1 }) : std::array<float, 2>{ 1.0f, 1.0f });
-        result.setAlbedoUVSet(mat["diffuseUV"] ? mat["diffuseUV"]->numberValue(0) : 0);
+    
+    if (mat["albedoTexture"] && mat["albedoTexture"]->isString())
+    {
+        result.setAlbedoTexture(getTexture(basePath, mat["albedoTexture"]->stringValue()));
+        result.setAlbedoScale(mat["albedoScale"] ? mat["albedoScale"]->vec2Value({ 1, 1 }) : std::array<float, 2>{ 1.0f, 1.0f });
+        result.setAlbedoUVSet(mat["albedoUV"] ? mat["albedoUV"]->numberValue(0) : 0);
     }
     
     // Metalness
-    if (mat["metallic"] && mat["metallic"]->isNumber())
+    if (mat["metalness"] && mat["metalness"]->isNumber())
     {
-        result.setMetalness(mat["metallic"]->numberValue(0.0f));
+        result.setMetalness(mat["metalness"]->numberValue(0.0f));
     }
-    else if (mat["metallic"] && mat["metallic"]->isString())
+    
+    if (mat["metalnessTexture"] && mat["metalnessTexture"]->isString())
     {
-        result.setMetalness(getTexture(basePath, mat["metallic"]->stringValue()));
+        result.setMetalnessTexture(getTexture(basePath, mat["metallic"]->stringValue()));
         result.setMetalnessChannel(mat["metallicChannel"] ? mat["metallicChannel"]->numberValue(0) : 0);
         result.setMetalnessScale(mat["metallicScale"] ? mat["metallicScale"]->vec2Value({ 1, 1 }) : std::array<float, 2>{ 1.0f, 1.0f });
         result.setMetalnessUVSet(mat["metallicUV"] ? mat["metallicUV"]->numberValue(0) : 0);
@@ -86,20 +104,37 @@ bool parseMaterial(
     {
         result.setRoughness(mat["roughness"]->numberValue(1.0f));
     }
-    else if (mat["roughness"] && mat["roughness"]->isString())
+    
+    if (mat["roughnessTexture"] && mat["roughnessTexture"]->isString())
     {
-        result.setRoughness(getTexture(basePath, mat["roughness"]->stringValue()));
+        result.setRoughnessTexture(getTexture(basePath, mat["roughnessTexture"]->stringValue()));
         result.setRoughnessChannel(mat["roughnessChannel"] ? mat["roughnessChannel"]->numberValue(0) : 0);
         result.setRoughnessScale(mat["roughnessScale"] ? mat["roughnessScale"]->vec2Value({ 1, 1 }) : std::array<float, 2>{ 1.0f, 1.0f });
         result.setRoughnessUVSet(mat["roughnessUV"] ? mat["roughnessUV"]->numberValue(0) : 0);
     }
     
     // Normal
-    if (mat["normal"] && mat["normal"]->isString())
+    if (mat["normalTexture"] && mat["normalTexture"]->isString())
     {
-        result.setNormalTexture(getTexture(basePath, mat["normal"]->stringValue()));
+        result.setNormalTexture(getTexture(basePath, mat["normalTexture"]->stringValue()));
         result.setNormalScale(mat["normalScale"] ? mat["normalScale"]->vec2Value({ 1, 1 }) : std::array<float, 2>{ 1.0f, 1.0f });
         result.setNormalUVSet(mat["normalUV"] ? mat["normalUV"]->numberValue(0) : 0);
+    }
+    
+    // Fresnel
+    if (mat["fresnel"] && mat["fresnel"]->isColor())
+    {
+        result.setFresnelTint(mat["fresnel"]->colorValue());
+    }
+    
+    // Sheen
+    if (mat["sheenIntensity"] && mat["sheenIntensity"]->isNumber())
+    {
+        result.setSheenIntensity(mat["sheenIntensity"]->numberValue());
+    }
+    if (mat["sheenColor"] && mat["sheenColor"]->isColor())
+    {
+        result.setSheenColor(mat["sheenColor"]->colorValue());
     }
     
     // Ambient Occlussion
@@ -174,14 +209,13 @@ std::string MaterialSerializer::serializeMaterial(
         {
             fileName = fileName.filename();
         }
-        obj["diffuse"] = JSON(fileName.string());
+        obj["albedoTexture"] = JSON(fileName.string());
         addUniqueTexture(mat.albedoTexture(), uniqueTextures);
-        obj["diffuseScale"] = JSON(mat.albedoScale());
-        obj["diffuseUV"] = JSON(mat.albedoUVSet());
+        obj["albedoScale"] = JSON(mat.albedoScale());
+        obj["albedoUV"] = JSON(mat.albedoUVSet());
     }
-    else {
-        obj["diffuse"] = JSON(mat.albedo());
-    }
+    
+    obj["albedo"] = JSON(mat.albedo());
     
     if (mat.metalnessTexture().get())
     {
@@ -190,15 +224,15 @@ std::string MaterialSerializer::serializeMaterial(
         {
             fileName = fileName.filename();
         }
-        obj["metallic"] = JSON(fileName.string());
+        obj["metalnessTexture"] = JSON(fileName.string());
         addUniqueTexture(mat.metalnessTexture(), uniqueTextures);
         obj["metallicChannel"] = JSON(mat.metalnessChannel());
         obj["metallicScale"] = JSON(mat.metalnessScale());
         obj["metallicUV"] = JSON(mat.metalnessUVSet());
     }
-    else {
-        obj["metallic"] = JSON(mat.metalness());
-    }
+    
+    obj["metalness"] = JSON(mat.metalness());
+    
     
     if (mat.roughnessTexture().get())
     {
@@ -207,15 +241,16 @@ std::string MaterialSerializer::serializeMaterial(
         {
             fileName = fileName.filename();
         }
-        obj["roughness"] = JSON(fileName.string());
+        obj["roughnessTexture"] = JSON(fileName.string());
         addUniqueTexture(mat.roughnessTexture(), uniqueTextures);
         obj["roughnessChannel"] = JSON(mat.roughnessChannel());
         obj["roughnessScale"] = JSON(mat.roughnessScale());
         obj["roughnessUV"] = JSON(mat.roughnessUVSet());
     }
-    else {
-        obj["roughness"] = JSON(mat.roughness());
-    }
+    
+    
+    obj["roughness"] = JSON(mat.roughness());
+    
     
     if (mat.normalTexture().get())
     {
@@ -224,11 +259,16 @@ std::string MaterialSerializer::serializeMaterial(
         {
             fileName = fileName.filename();
         }
-        obj["normal"] = JSON(fileName.string());
+        obj["normalTexture"] = JSON(fileName.string());
         addUniqueTexture(mat.normalTexture(), uniqueTextures);
         obj["normalScale"] = JSON(mat.normalScale());
         obj["normalUV"] = JSON(mat.normalUVSet());
     }
+    
+    obj["fresnel"] = JSON(mat.fresnelTint());
+    
+    obj["sheenIntensity"] = JSON(mat.sheenIntensity());
+    obj["sheenColor"] = JSON(mat.sheenColor());
     
     if (mat.aoTexture().get())
     {

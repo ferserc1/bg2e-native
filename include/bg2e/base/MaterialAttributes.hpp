@@ -31,8 +31,8 @@ public:
     inline void setAlbedo(const std::array<float, 4>& s) { _albedo = base::Color{ s.at(0), s.at(1), s.at(2), s.at(3)}; }
     
     inline std::shared_ptr<Texture> albedoTexture() const { return _albedoTexture; }
-    inline void setAlbedo(Texture * t) { setAlbedo(std::shared_ptr<Texture>(t)); }
-    inline void setAlbedo(std::shared_ptr<Texture> t) { _albedoTextureUpdated = false; _albedoTexture = t; }
+    inline void setAlbedoTexture(Texture * t) { setAlbedoTexture(std::shared_ptr<Texture>(t)); }
+    inline void setAlbedoTexture(std::shared_ptr<Texture> t) { _albedoTextureUpdated = false; _albedoTexture = t; }
     inline bool albedoTextureUpdated() const { return _albedoTextureUpdated; }
     
     inline const glm::vec2 & albedoScale() const { return _albedoScale; }
@@ -46,8 +46,8 @@ public:
     inline void setMetalness(float m) { _metalness = m; }
 
     inline std::shared_ptr<Texture> metalnessTexture() const { return _metalnessTexture; }
-    inline void setMetalness(Texture * t) { setMetalness(std::shared_ptr<Texture>(t)); }
-    inline void setMetalness(std::shared_ptr<Texture> t) { _metalnessTextureUpdated = false; _metalnessTexture = t; }
+    inline void setMetalnessTexture(Texture * t) { setMetalnessTexture(std::shared_ptr<Texture>(t)); }
+    inline void setMetalnessTexture(std::shared_ptr<Texture> t) { _metalnessTextureUpdated = false; _metalnessTexture = t; }
     inline bool metalnessTextureUpdated() const { return _metalnessTextureUpdated; }
     
     inline const glm::vec2 & metalnessScale() const { return _metalnessScale; }
@@ -64,8 +64,8 @@ public:
     inline void setRoughness(float r) { _roughness = r; }
 
     inline std::shared_ptr<Texture> roughnessTexture() const { return _roughnessTexture; }
-    inline void setRoughness(Texture * t) { setRoughness(std::shared_ptr<Texture>(t)); }
-    inline void setRoughness(std::shared_ptr<Texture> t) { _roughnessTextureUpdated = false; _roughnessTexture = t; }
+    inline void setRoughnessTexture(Texture * t) { setRoughnessTexture(std::shared_ptr<Texture>(t)); }
+    inline void setRoughnessTexture(std::shared_ptr<Texture> t) { _roughnessTextureUpdated = false; _roughnessTexture = t; }
     inline bool roughnessTextureUpdated() const { return _roughnessTextureUpdated; }
 
     inline const glm::vec2 & roughnessScale() const { return _roughnessScale; }
@@ -89,6 +89,15 @@ public:
 
     inline uint32_t normalUVSet() const { return _normalUVSet; }
     inline void setNormalUVSet(uint32_t uvSet) { _normalUVSet = uvSet; }
+    
+    inline const Color & fresnelTint() const { return _fresnelTint; }
+    inline void setFresnelTint(const Color& c) { _fresnelTint = c; }
+    
+    inline float sheenIntensity() const { return _sheenIntensity; }
+    inline void setSheenIntensity(float s) { _sheenIntensity = s; }
+    
+    inline const Color & sheenColor() const { return _sheenColor; }
+    inline void setSheenColor(const Color & color) { _sheenColor = color; }
 
     inline std::shared_ptr<Texture> aoTexture() const { return _aoTexture; }
     inline void setAoTexture(Texture * t) { setAoTexture(std::shared_ptr<Texture>(t)); }
@@ -157,7 +166,12 @@ protected:
     glm::vec2 _normalScale{ 1.0f, 1.0f };
     uint32_t _normalUVSet = 0;
     bool _normalTextureUpdated = true;
+    
+    Color _fresnelTint = Color::White();
 
+    float _sheenIntensity = 0.0f;
+    Color _sheenColor = Color::White();
+    
     std::shared_ptr<Texture> _aoTexture;
     glm::vec2 _aoScale{ 1.0f, 1.0f };
     uint32_t _aoChannel = 0;

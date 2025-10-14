@@ -45,7 +45,7 @@ bool MaterialEditor::draw()
             _material->materialAttributes().setAlbedo(albedoColor);
         }
         _albedoWidget.selectTexture("##albedo", [&](base::Texture* tex) {
-            _material->materialAttributes().setAlbedo(tex);
+            _material->materialAttributes().setAlbedoTexture(tex);
             _material->updateTextures();
             return _material->albedoTexture();
         });
@@ -84,7 +84,7 @@ bool MaterialEditor::draw()
             _material->materialAttributes().setMetalness(metallic);
         }
         _metallicWidget.selectTexture("##metallic", [&](base::Texture* tex) {
-            _material->materialAttributes().setMetalness(tex);
+            _material->materialAttributes().setMetalnessTexture(tex);
             _material->updateTextures();
             return _material->metalnessTexture();
         });
@@ -106,7 +106,7 @@ bool MaterialEditor::draw()
             _material->materialAttributes().setRoughness(roughness);
         }
         _roughnessWidget.selectTexture("##roughness", [&](base::Texture* tex) {
-            _material->materialAttributes().setRoughness(tex);
+            _material->materialAttributes().setRoughnessTexture(tex);
             _material->updateTextures();
             return _material->roughnessTexture();
         });
@@ -118,6 +118,26 @@ bool MaterialEditor::draw()
         {
             _material->materialAttributes().setRoughnessUVSet(roughnessUVSet);
         }
+        
+        BasicWidgets::separator("Fresnel Tint");
+        auto fresnel = _material->materialAttributes().fresnelTint();
+        if (Input::colorPicker("Color##fresnel", fresnel))
+        {
+            _material->materialAttributes().setFresnelTint(fresnel);
+        }
+        
+        BasicWidgets::separator("Sheen");
+        auto sheenIntensity = _material->materialAttributes().sheenIntensity();
+        auto sheenColor = _material->materialAttributes().sheenColor();
+        if (Input::sliderFloat("Intensity##sheenIntensity", &sheenIntensity, 0.0f, 2.0f))
+        {
+            _material->materialAttributes().setSheenIntensity(sheenIntensity);
+        }
+        if (Input::colorPicker("Color##sheenColor", sheenColor))
+        {
+            _material->materialAttributes().setSheenColor(sheenColor);
+        }
+        
         
         BasicWidgets::separator("Ambient Occlussion");
         auto aoScale = _material->materialAttributes().aoScale();
@@ -135,8 +155,6 @@ bool MaterialEditor::draw()
         {
             _material->materialAttributes().setAoUVSet(aoUVSet);
         }
-        
-        //BasicWidgets::endTree();
     }
     return false;
 }
