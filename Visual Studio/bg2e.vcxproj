@@ -64,6 +64,10 @@
     <ClInclude Include="..\include\bg2e\json\JsonNode.hpp" />
     <ClInclude Include="..\include\bg2e\json\JsonParser.hpp" />
     <ClInclude Include="..\include\bg2e\json\JsonToken.hpp" />
+    <ClInclude Include="..\include\bg2e\manipulation\all.hpp" />
+    <ClInclude Include="..\include\bg2e\manipulation\PickSelectionVisitor.hpp" />
+    <ClInclude Include="..\include\bg2e\manipulation\SelectableComponent.hpp" />
+    <ClInclude Include="..\include\bg2e\manipulation\SelectionManager.hpp" />
     <ClInclude Include="..\include\bg2e\math\all.hpp" />
     <ClInclude Include="..\include\bg2e\math\base.hpp" />
     <ClInclude Include="..\include\bg2e\math\projections.hpp" />
@@ -223,6 +227,9 @@
     <ClCompile Include="..\src\bg2e\json\JsonNode.cpp" />
     <ClCompile Include="..\src\bg2e\json\JsonParser.cpp" />
     <ClCompile Include="..\src\bg2e\json\JsonToken.cpp" />
+    <ClCompile Include="..\src\bg2e\manipulation\PickSelectionVisitor.cpp" />
+    <ClCompile Include="..\src\bg2e\manipulation\SelectableComponent.cpp" />
+    <ClCompile Include="..\src\bg2e\manipulation\SelectionManager.cpp" />
     <ClCompile Include="..\src\bg2e\render\BRDFIntegrationMapTextureGenerator.cpp" />
     <ClCompile Include="..\src\bg2e\render\ColorAttachments.cpp" />
     <ClCompile Include="..\src\bg2e\render\ColorAttachmentsCanvas.cpp" />

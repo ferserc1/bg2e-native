@@ -22,7 +22,7 @@ void SelectableComponent::update(float)
     if (_submeshCount == 0 && drw)
     {
         _submeshCount = drw->submeshesCount();
-        for (auto i = 0; i < _submeshCount; ++i)
+        for (uint32_t i = 0; i < _submeshCount; ++i)
         {
             _identifier[i] = generateIdentifier();
         }

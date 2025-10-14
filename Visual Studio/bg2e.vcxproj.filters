@@ -127,6 +127,12 @@
     <Filter Include="Source Files\json">
       <UniqueIdentifier>{3b74a85b-cd4c-4329-9113-a973b932164a}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\bg2e\manipulation">
+      <UniqueIdentifier>{ad2ade7a-0aae-4988-90a3-d4ccfb3874ac}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\manipulation">
+      <UniqueIdentifier>{0f447a59-f466-471a-b95c-7d70e34eeb33}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\include\bg2e\common.hpp">
@@ -618,6 +624,18 @@
     <ClInclude Include="..\include\bg2e\ui\Menu.hpp">
       <Filter>Header Files\bg2e\ui</Filter>
     </ClInclude>
+    <ClInclude Include="..\include\bg2e\manipulation\all.hpp">
+      <Filter>Header Files\bg2e\manipulation</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\manipulation\PickSelectionVisitor.hpp">
+      <Filter>Header Files\bg2e\manipulation</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\manipulation\SelectableComponent.hpp">
+      <Filter>Header Files\bg2e\manipulation</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\bg2e\manipulation\SelectionManager.hpp">
+      <Filter>Header Files\bg2e\manipulation</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\bg2e\app\MainLoop.cpp">
@@ -982,6 +1000,15 @@
     </ClCompile>
     <ClCompile Include="..\src\bg2e\ui\Menu.cpp">
       <Filter>Source Files\ui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\bg2e\manipulation\PickSelectionVisitor.cpp">
+      <Filter>Source Files\manipulation</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\bg2e\manipulation\SelectableComponent.cpp">
+      <Filter>Source Files\manipulation</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\bg2e\manipulation\SelectionManager.cpp">
+      <Filter>Source Files\manipulation</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

@@ -7,6 +7,7 @@
 #include <bg2e/scene/DrawableComponent.hpp>
 
 #include <functional>
+#include <stack>
 
 namespace bg2e {
 namespace manipulation {
