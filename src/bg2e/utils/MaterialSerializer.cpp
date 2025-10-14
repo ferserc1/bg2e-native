@@ -93,10 +93,10 @@ bool parseMaterial(
     
     if (mat["metalnessTexture"] && mat["metalnessTexture"]->isString())
     {
-        result.setMetalnessTexture(getTexture(basePath, mat["metallic"]->stringValue()));
-        result.setMetalnessChannel(mat["metallicChannel"] ? mat["metallicChannel"]->numberValue(0) : 0);
-        result.setMetalnessScale(mat["metallicScale"] ? mat["metallicScale"]->vec2Value({ 1, 1 }) : std::array<float, 2>{ 1.0f, 1.0f });
-        result.setMetalnessUVSet(mat["metallicUV"] ? mat["metallicUV"]->numberValue(0) : 0);
+        result.setMetalnessTexture(getTexture(basePath, mat["metalnessTexture"]->stringValue()));
+        result.setMetalnessChannel(mat["metalnessChannel"] ? mat["metalnessChannel"]->numberValue(0) : 0);
+        result.setMetalnessScale(mat["metalnessScale"] ? mat["metalnessScale"]->vec2Value({ 1, 1 }) : std::array<float, 2>{ 1.0f, 1.0f });
+        result.setMetalnessUVSet(mat["metalnessUV"] ? mat["metalnessUV"]->numberValue(0) : 0);
     }
     
     // Roughness
@@ -121,10 +121,10 @@ bool parseMaterial(
         result.setNormalUVSet(mat["normalUV"] ? mat["normalUV"]->numberValue(0) : 0);
     }
     
-    // Fresnel
-    if (mat["fresnel"] && mat["fresnel"]->isColor())
+    // Fresnel tint
+    if (mat["fresnelTint"] && mat["fresnelTint"]->isColor())
     {
-        result.setFresnelTint(mat["fresnel"]->colorValue());
+        result.setFresnelTint(mat["fresnelTint"]->colorValue());
     }
     
     // Sheen
@@ -226,9 +226,9 @@ std::string MaterialSerializer::serializeMaterial(
         }
         obj["metalnessTexture"] = JSON(fileName.string());
         addUniqueTexture(mat.metalnessTexture(), uniqueTextures);
-        obj["metallicChannel"] = JSON(mat.metalnessChannel());
-        obj["metallicScale"] = JSON(mat.metalnessScale());
-        obj["metallicUV"] = JSON(mat.metalnessUVSet());
+        obj["metalnessChannel"] = JSON(mat.metalnessChannel());
+        obj["metalnessScale"] = JSON(mat.metalnessScale());
+        obj["metalnessUV"] = JSON(mat.metalnessUVSet());
     }
     
     obj["metalness"] = JSON(mat.metalness());
@@ -265,7 +265,7 @@ std::string MaterialSerializer::serializeMaterial(
         obj["normalUV"] = JSON(mat.normalUVSet());
     }
     
-    obj["fresnel"] = JSON(mat.fresnelTint());
+    obj["fresnelTint"] = JSON(mat.fresnelTint());
     
     obj["sheenIntensity"] = JSON(mat.sheenIntensity());
     obj["sheenColor"] = JSON(mat.sheenColor());
