@@ -429,13 +429,16 @@ void storeMeshBg2(const std::filesystem::path& filePath, Bg2Mesh * mesh)
         {
             material.setName("material" + std::to_string(submeshIndex));
         }
-        plist->name = new char[material.name().size()];
+        plist->name = new char[material.name().size() + 1];
         std::strncpy(plist->name, material.name().c_str(), material.name().size());
-        plist->matName = new char[material.name().size()];
+        plist->name[material.name().size()] = '\0';
+        plist->matName = new char[material.name().size() + 1];
         std::strncpy(plist->matName, material.name().c_str(), material.name().size());
+        plist->matName[material.name().size()] = '\0';
         
-        plist->groupName = new char[material.groupName().size()];
+        plist->groupName = new char[material.groupName().size() + 1];
         std::strncpy(plist->groupName, material.groupName().c_str(), material.groupName().size());
+        plist->groupName[material.groupName().size()] = '\0';
         
         plist->visible = material.visible();
         
