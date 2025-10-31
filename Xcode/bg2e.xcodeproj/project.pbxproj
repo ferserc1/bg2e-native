@@ -56,6 +56,7 @@
 		ED533A212CD7AAB700136B04 /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = main.cpp; path = ../examples/app/main.cpp; sourceTree = SOURCE_ROOT; };
 		ED54777F2E85054A00CC53BC /* bg2-io.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = "bg2-io.xcodeproj"; sourceTree = "<group>"; };
 		ED665C592E8FA467006ED0C7 /* bg2-io.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = "bg2-io.xcodeproj"; sourceTree = "<group>"; };
+		ED6919182EB50A800082D7B6 /* bg2-io.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = "bg2-io.xcodeproj"; sourceTree = "<group>"; };
 		ED69E8AF2E227DC400FFE313 /* bg2-io.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = "bg2-io.xcodeproj"; sourceTree = "<group>"; };
 		ED6E46A62E7840CA00F20180 /* bg2-io.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = "bg2-io.xcodeproj"; sourceTree = "<group>"; };
 		ED85B1DD2CDBA4E00039B44D /* Metal.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Metal.framework; path = System/Library/Frameworks/Metal.framework; sourceTree = SDKROOT; };
@@ -145,6 +146,13 @@
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet section */
+		ED69199F2EB510E40082D7B6 /* PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet */ = {
+			isa = PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet;
+			buildPhase = ED85B1EF2CDBAABD0039B44D /* Headers */;
+			membershipExceptions = (
+				ui/SelectableList.cpp,
+			);
+		};
 		ED9D99132E1304E90096E466 /* PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet */ = {
 			isa = PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet;
 			buildPhase = ED5201E02CED111200C94253 /* Copy Assets */;
@@ -201,7 +209,7 @@
 		ED0EB4E52DFA0719009C3091 /* shaders */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); name = shaders; path = ../shaders; sourceTree = SOURCE_ROOT; };
 		ED6574DF2DF588130078FE8D /* scripts */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); name = scripts; path = ../scripts; sourceTree = SOURCE_ROOT; };
 		ED6D4B432DFAE33A00753DF7 /* bg2e */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = bg2e; sourceTree = "<group>"; };
-		ED6D4B9F2DFAE35900753DF7 /* bg2e */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = bg2e; sourceTree = "<group>"; };
+		ED6D4B9F2DFAE35900753DF7 /* bg2e */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (ED69199F2EB510E40082D7B6 /* PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = bg2e; sourceTree = "<group>"; };
 		ED9AEBF52E10534600728D8B /* bg2-io */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (ED110AC12E15199700F37999 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); name = "bg2-io"; path = "../bg2-io"; sourceTree = SOURCE_ROOT; };
 		ED9D98EB2E1304C80096E466 /* assets */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (ED9D99132E1304E90096E466 /* PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); name = assets; path = ../assets; sourceTree = SOURCE_ROOT; };
 		EDBFD8DE2E24D9A500864579 /* nativefiledialog-extended */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (ED241B982E2654000039BB33 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = "nativefiledialog-extended"; sourceTree = "<group>"; };
@@ -361,6 +369,13 @@
 			sourceTree = "<group>";
 		};
 		ED665C5D2E8FA467006ED0C7 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		ED69191C2EB50A800082D7B6 /* Products */ = {
 			isa = PBXGroup;
 			children = (
 			);
@@ -790,6 +805,10 @@
 				{
 					ProductGroup = EDD6FB782E7B1D6B00EA4A2A /* Products */;
 					ProjectRef = EDD6FB742E7B1D6B00EA4A2A /* bg2-io.xcodeproj */;
+				},
+				{
+					ProductGroup = ED69191C2EB50A800082D7B6 /* Products */;
+					ProjectRef = ED6919182EB50A800082D7B6 /* bg2-io.xcodeproj */;
 				},
 				{
 					ProductGroup = ED110A5B2E15194400F37999 /* Products */;

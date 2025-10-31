@@ -313,6 +313,9 @@ public:
                         modelNode->addComponent(new bg2e::scene::TransformComponent(glm::translate(glm::mat4{ 1.0 }, glm::vec3{ 5, 0, 0 })));
                         modelNode->transform()->scale(4.0f);
                         renderer()->scene()->rootNode()->addChild(modelNode);
+                        
+                        // Update the submesh selector
+                        _submeshSelector.setEditDrawable(_targetDrawable);
                     }
                 }
                 if (bg2e::ui::Menu::menuItem("Save Object"))
@@ -386,37 +389,58 @@ public:
                 _targetDrawable->setName(name);
             }
 
-            static uint32_t selectedPlist = 0;
-            if (bg2e::ui::Input::comboBox("Poly List",
-                [&](std::vector<std::string>& items) {
-                    for (uint32_t i = 0; i < _targetDrawable->submeshesCount(); ++i)
+            // TODO: Extract this to DrawableEditor widget:
+            // - Manage the submesh selection
+            // - Edit the first selected submesh name
+            // - Edit all the selected submeshes group names
+            // - Edit all the selected submeshes visibility
+            if (bg2e::ui::BasicWidgets::collapsingHeader("Drawable"))
+            {
+                if (_submeshSelector.draw())
+                {
+                    auto selected = _submeshSelector.selectedItem();
+                    if (selected != -1)
                     {
-                        items.push_back(_targetDrawable->submeshName(i));
+                        _materialEditor.setEditMaterial(_targetDrawable->renderMaterial(selected));
                     }
-                },
-                selectedPlist,
-                false,
-                true)
-            ) {
-                _materialEditor.setEditMaterial(_targetDrawable->renderMaterial(selectedPlist));
+                    else {
+                        _materialEditor.clearMaterial();
+                    }
+                }
+                
+                auto selectedPlist = _submeshSelector.selectedItem();
+                
+                if (selectedPlist != -1)
+                {
+                    std::string separatorLabel = "Submesh Properties";
+                    if (_submeshSelector.selectedItems().size() > 1)
+                    {
+                        separatorLabel += " (" + std::to_string(_submeshSelector.selectedItems().size()) + " items)";
+                    }
+                    bg2e::ui::BasicWidgets::separator(separatorLabel);
+                    auto plName = _targetDrawable->submeshName(selectedPlist);
+                    auto grpName = _targetDrawable->submeshGroupName(selectedPlist);
+                    auto visible = _targetDrawable->submeshVisibility(selectedPlist);
+                    if (bg2e::ui::Input::text("Name", plName))
+                    {
+                        _targetDrawable->setSubmeshName(plName, selectedPlist);
+                    }
+                    if (bg2e::ui::Input::text("Group Name", grpName))
+                    {
+                        for (auto item : _submeshSelector.selectedItems())
+                        {
+                            _targetDrawable->setSubmeshGroupName(grpName, item);
+                        }
+                    }
+                    if (bg2e::ui::BasicWidgets::checkBox("Visibility", &visible))
+                    {
+                        for (auto item : _submeshSelector.selectedItems())
+                        {
+                            _targetDrawable->setSubmeshVisibility(visible, item);
+                        }
+                    }
+                }
             }
-            
-            auto plName = _targetDrawable->submeshName(selectedPlist);
-            auto grpName = _targetDrawable->submeshGroupName(selectedPlist);
-            auto visible = _targetDrawable->submeshVisibility(selectedPlist);
-            if (bg2e::ui::Input::text("Name", plName))
-            {
-                _targetDrawable->setSubmeshName(plName, selectedPlist);
-            }
-            if (bg2e::ui::Input::text("Group Name", grpName))
-            {
-                _targetDrawable->setSubmeshGroupName(grpName, selectedPlist);
-            }
-            if (bg2e::ui::BasicWidgets::checkBox("Visibility", &visible))
-            {
-                _targetDrawable->setSubmeshVisibility(visible, selectedPlist);
-            }
-            
             
             _materialEditor.draw();
         });
@@ -583,11 +607,13 @@ public:
     {
         bg2e::render::DefaultRenderLoopDelegate<bg2e::render::RendererBasicForward>::cleanup();
         _materialEditor.cleanup();
+        _submeshSelector.cleanup();
     }
 
 protected:
     bg2e::scene::InputVisitor _inputVisitor;
     bg2e::ui::MaterialEditor _materialEditor;
+    bg2e::ui::SubmeshSelector _submeshSelector;
     bg2e::ui::Workspace _workspace;
     bg2e::ui::Toolbar _toolbar;
     bg2e::ui::Window _leftPanel;
@@ -733,8 +759,9 @@ protected:
         auto model = bg2e::db::loadDrawableBg2(assetPath, "armchair.bg2", _engine);
         auto modelNode = new bg2e::scene::Node("Armchair");
         _targetDrawable = std::shared_ptr<bg2e::scene::Drawable>(model);
-        // Init the material editor with the first material of the loaded drawable
-        _materialEditor.setEditMaterial(_targetDrawable->renderMaterial(0));
+        
+        // Init the submesh selector
+        _submeshSelector.setEditDrawable(_targetDrawable);
         
         modelNode->addComponent(new bg2e::scene::DrawableComponent(model));
         modelNode->addComponent(new bg2e::scene::TransformComponent(glm::translate(glm::mat4 { 1.0 }, glm::vec3{ 0, 0, 0 })));

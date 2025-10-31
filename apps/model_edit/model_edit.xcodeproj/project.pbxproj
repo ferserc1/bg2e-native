@@ -563,7 +563,7 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_EMIT_LOC_STRINGS = YES;
-				SYMROOT = "$(PROJECT_DIR)/../../bin/examples/";
+				SYMROOT = "$(PROJECT_DIR)/../../bin/apps/";
 				VULKAN_LIB_VERSION = 1.4.313;
 				VULKAN_SDK = "$(HOME)/VulkanSDK/1.4.313.1/macOS";
 			};
@@ -609,7 +609,7 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_EMIT_LOC_STRINGS = YES;
-				SYMROOT = "$(PROJECT_DIR)/../../bin/examples/";
+				SYMROOT = "$(PROJECT_DIR)/../../bin/apps/";
 				VULKAN_LIB_VERSION = 1.4.313;
 				VULKAN_SDK = "$(HOME)/VulkanSDK/1.4.313.1/macOS";
 			};
