@@ -7,6 +7,7 @@
 #include <bg2e/ui/UserInterfaceDelegate.hpp>
 #include <bg2e/ui/BasicWidgets.hpp>
 #include <bg2e/ui/DemoWindow.hpp>
+#include <bg2e/ui/DrawableEditor.hpp>
 #include <bg2e/ui/MaterialEditor.hpp>
 #include <bg2e/ui/Menu.hpp>
 #include <bg2e/ui/Window.hpp>
