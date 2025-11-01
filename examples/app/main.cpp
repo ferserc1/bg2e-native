@@ -393,13 +393,11 @@ public:
                 auto firstSelected = _drawableEditor.selectedItem();
                 if (firstSelected != -1)
                 {
-                    _materialEditor.setEditMaterial(_targetDrawable->renderMaterial(firstSelected));
-                    
-                    // TODO: Add multi material edition capabilities
-                    // add additional materials to materialEditor that will be modified when
-                    // the properties of the main material are changed. In the additional materials,
-                    // the only properties that will be changed are those that are modified
-                    // in the main material
+                    _materialEditor.clearMaterial();
+                    for (auto selected : _drawableEditor.selectedItems())
+                    {
+                        _materialEditor.addEditMaterial(_targetDrawable->renderMaterial(selected));
+                    }
                 }
                 else {
                     _materialEditor.clearMaterial();

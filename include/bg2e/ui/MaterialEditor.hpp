@@ -8,6 +8,7 @@
 #include <bg2e/ui/TextureWidgets.hpp>
 
 #include <memory>
+#include <vector>
 
 namespace bg2e {
 namespace ui {
@@ -20,6 +21,8 @@ public:
     inline std::shared_ptr<render::MaterialBase> editMaterial() { return _material; }
     inline const std::shared_ptr<render::MaterialBase> editMaterial() const { return _material; }
     
+    void addEditMaterial(std::shared_ptr<render::MaterialBase>& mat);
+    
     void clearMaterial();
     
     bool draw();
@@ -28,6 +31,7 @@ public:
     
 protected:
     std::shared_ptr<render::MaterialBase> _material;
+    std::vector<std::shared_ptr<render::MaterialBase>> _editMaterialList;
     
     TextureWidgets _albedoWidget;
     TextureWidgets _normalWidget;

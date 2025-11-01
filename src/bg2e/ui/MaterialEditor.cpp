@@ -20,15 +20,30 @@ MaterialEditor::~MaterialEditor()
 
 void MaterialEditor::setEditMaterial(std::shared_ptr<render::MaterialBase>& mat)
 {
+    _editMaterialList.clear();
     clearWidgets();
     _material = mat;
+    _editMaterialList.push_back(mat);
     initWidgets();
 }
 
 void MaterialEditor::clearMaterial()
 {
     _material.reset();
+    _editMaterialList.clear();
     clearWidgets();
+}
+
+void MaterialEditor::addEditMaterial(std::shared_ptr<render::MaterialBase>& mat)
+{
+    if (_material.get())
+    {
+        _editMaterialList.push_back(mat);
+    }
+    else
+    {
+        setEditMaterial(mat);
+    }
 }
     
 bool MaterialEditor::draw()
@@ -42,37 +57,61 @@ bool MaterialEditor::draw()
         auto albedoUVSet = _material->materialAttributes().albedoUVSet();
         if (Input::colorPicker("Color##albedo", albedoColor))
         {
-            _material->materialAttributes().setAlbedo(albedoColor);
+            for (auto mat : _editMaterialList)
+            {
+                mat->materialAttributes().setAlbedo(albedoColor);
+            }
         }
         _albedoWidget.selectTexture("##albedo", [&](base::Texture* tex) {
-            _material->materialAttributes().setAlbedoTexture(tex);
-            _material->updateTextures();
+            auto ptrTex = std::shared_ptr<base::Texture>(tex);
+            for (auto & mat : _editMaterialList)
+            {
+                mat->materialAttributes().setAlbedoTexture(ptrTex);
+                mat->updateTextures();
+            }
+            
             return _material->albedoTexture();
         });
         if (Input::vec2("Scale", albedoScale))
         {
-            _material->materialAttributes().setAlbedoScale(albedoScale);
+            for (auto & mat : _editMaterialList)
+            {
+                mat->materialAttributes().setAlbedoScale(albedoScale);
+            }
         }
         if (Input::comboBox("UV Set", uvOptions, albedoUVSet))
         {
-            _material->materialAttributes().setAlbedoUVSet(albedoUVSet);
+            for (auto & mat : _editMaterialList)
+            {
+                mat->materialAttributes().setAlbedoUVSet(albedoUVSet);
+            }
         }
         
         BasicWidgets::separator("Normal");
         auto normalScale = _material->materialAttributes().normalScale();
         auto normalUVSet = _material->materialAttributes().normalUVSet();
         _normalWidget.selectTexture("##normal", [&](base::Texture* tex) {
-            _material->materialAttributes().setNormalTexture(tex);
-            _material->updateTextures();
+            auto ptrTex = std::shared_ptr<base::Texture>(tex);
+            for (auto & mat : _editMaterialList)
+            {
+                mat->materialAttributes().setNormalTexture(ptrTex);
+                mat->updateTextures();
+            }
             return _material->normalTexture();
         });
         if (Input::vec2("Scale##normal", normalScale))
         {
-            _material->materialAttributes().setNormalScale(normalScale);
+            for (auto & mat : _editMaterialList)
+            {
+                mat->materialAttributes().setNormalScale(normalScale);
+            }
         }
         if (Input::comboBox("UV Set##normal", uvOptions, normalUVSet))
         {
-            _material->materialAttributes().setNormalUVSet(normalUVSet);
+            for (auto & mat : _editMaterialList)
+            {
+                mat->materialAttributes().setNormalUVSet(normalUVSet);
+            }
         }
         
         BasicWidgets::separator("Metallic");
@@ -81,20 +120,33 @@ bool MaterialEditor::draw()
         auto metallicUVSet = _material->materialAttributes().metalnessChannel();
         if (Input::sliderFloat("Value##metallic", &metallic))
         {
-            _material->materialAttributes().setMetalness(metallic);
+            for (auto & mat : _editMaterialList)
+            {
+                mat->materialAttributes().setMetalness(metallic);
+            }
         }
         _metallicWidget.selectTexture("##metallic", [&](base::Texture* tex) {
-            _material->materialAttributes().setMetalnessTexture(tex);
-            _material->updateTextures();
+            auto ptrTex = std::shared_ptr<base::Texture>(tex);
+            for (auto & mat : _editMaterialList)
+            {
+                mat->materialAttributes().setMetalnessTexture(ptrTex);
+                mat->updateTextures();
+            }
             return _material->metalnessTexture();
         });
         if (Input::vec2("Scale##metallic", metallicScale))
         {
-            _material->materialAttributes().setMetalnessScale(metallicScale);
+            for (auto & mat : _editMaterialList)
+            {
+                mat->materialAttributes().setMetalnessScale(metallicScale);
+            }
         }
         if (Input::comboBox("UV Set##metallic", uvOptions, metallicUVSet))
         {
-            _material->materialAttributes().setMetalnessUVSet(metallicUVSet);
+            for (auto & mat : _editMaterialList)
+            {
+                mat->materialAttributes().setMetalnessUVSet(metallicUVSet);
+            }
         }
 
         BasicWidgets::separator("Roughness");
@@ -103,27 +155,43 @@ bool MaterialEditor::draw()
         auto roughnessUVSet = _material->materialAttributes().roughnessChannel();
         if (Input::sliderFloat("Value##roughness", &roughness))
         {
-            _material->materialAttributes().setRoughness(roughness);
+            for (auto & mat : _editMaterialList)
+            {
+                mat->materialAttributes().setRoughness(roughness);
+            }
         }
         _roughnessWidget.selectTexture("##roughness", [&](base::Texture* tex) {
-            _material->materialAttributes().setRoughnessTexture(tex);
-            _material->updateTextures();
+            auto ptrTex = std::shared_ptr<base::Texture>(tex);
+            for (auto & mat : _editMaterialList)
+            {
+                mat->materialAttributes().setRoughnessTexture(ptrTex);
+                mat->updateTextures();
+            }
             return _material->roughnessTexture();
         });
         if (Input::vec2("Scale##roughness", roughnessScale))
         {
-            _material->materialAttributes().setRoughnessScale(roughnessScale);
+            for (auto & mat : _editMaterialList)
+            {
+                mat->materialAttributes().setRoughnessScale(roughnessScale);
+            }
         }
         if (Input::comboBox("UV Set##roughness", uvOptions, roughnessUVSet))
         {
-            _material->materialAttributes().setRoughnessUVSet(roughnessUVSet);
+            for (auto & mat : _editMaterialList)
+            {
+                mat->materialAttributes().setRoughnessUVSet(roughnessUVSet);
+            }
         }
         
         BasicWidgets::separator("Fresnel Tint");
         auto fresnel = _material->materialAttributes().fresnelTint();
         if (Input::colorPicker("Color##fresnel", fresnel))
         {
-            _material->materialAttributes().setFresnelTint(fresnel);
+            for (auto & mat : _editMaterialList)
+            {
+                mat->materialAttributes().setFresnelTint(fresnel);
+            }
         }
         
         BasicWidgets::separator("Sheen");
@@ -131,11 +199,17 @@ bool MaterialEditor::draw()
         auto sheenColor = _material->materialAttributes().sheenColor();
         if (Input::sliderFloat("Intensity##sheenIntensity", &sheenIntensity, 0.0f, 2.0f))
         {
-            _material->materialAttributes().setSheenIntensity(sheenIntensity);
+            for (auto & mat : _editMaterialList)
+            {
+                mat->materialAttributes().setSheenIntensity(sheenIntensity);
+            }
         }
         if (Input::colorPicker("Color##sheenColor", sheenColor))
         {
-            _material->materialAttributes().setSheenColor(sheenColor);
+            for (auto & mat : _editMaterialList)
+            {
+                mat->materialAttributes().setSheenColor(sheenColor);
+            }
         }
         
         
@@ -143,17 +217,27 @@ bool MaterialEditor::draw()
         auto aoScale = _material->materialAttributes().aoScale();
         auto aoUVSet = _material->materialAttributes().aoUVSet();
         _aoWidget.selectTexture("##ao", [&](base::Texture* tex) {
-            _material->materialAttributes().setAoTexture(tex);
-            _material->updateTextures();
+            auto ptrTex = std::shared_ptr<base::Texture>(tex);
+            for (auto & mat : _editMaterialList)
+            {
+                mat->materialAttributes().setAoTexture(ptrTex);
+                mat->updateTextures();
+            }
             return _material->aoTexture();
         });
         if (Input::vec2("Scale##ao", aoScale))
         {
-            _material->materialAttributes().setAoScale(aoScale);
+            for (auto & mat : _editMaterialList)
+            {
+                mat->materialAttributes().setAoScale(aoScale);
+            }
         }
         if (Input::comboBox("UV Set##ao", uvOptions, aoUVSet))
         {
-            _material->materialAttributes().setAoUVSet(aoUVSet);
+            for (auto & mat : _editMaterialList)
+            {
+                mat->materialAttributes().setAoUVSet(aoUVSet);
+            }
         }
     }
     return false;
@@ -163,6 +247,7 @@ void MaterialEditor::cleanup()
 {
     clearWidgets();
     _material.reset();
+    _editMaterialList.clear();
 }
 
 

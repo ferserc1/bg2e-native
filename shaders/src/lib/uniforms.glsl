@@ -65,7 +65,7 @@ float sampleRoughness(sampler2D tex, vec2 uv0, vec2 uv1, PBRMaterialData mat)
 vec3 sampleNormal(sampler2D tex, vec2 uv0, vec2 uv1, PBRMaterialData mat, mat3 TBN)
 {
     vec2 uv[2] = { uv0, uv1 };
-    vec3 normal = texture(tex, uv[mat.normalUVSet]).xyz * 2.0 - 1.0;
+    vec3 normal = texture(tex, uv[mat.normalUVSet] * mat.normalScale).xyz * 2.0 - 1.0;
     return normalize(TBN * normal);
 }
 
