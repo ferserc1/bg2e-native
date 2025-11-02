@@ -22,6 +22,19 @@
             "MIMode": "gdb",
             "miDebuggerPath": "/usr/bin/gdb",
             "preLaunchTask": "build-engine"
+        },
+        {
+            "name": "Debug Model Edit (GDB)",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/apps/model_edit/bin/model_edit",
+            "args": [],
+            "cwd": "${workspaceFolder}/apps/model_edit/bin",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "miDebuggerPath": "/usr/bin/gdb",
+            "preLaunchTask": "build-model-edit"
         }
     ]
 }

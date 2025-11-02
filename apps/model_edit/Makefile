@@ -15,8 +15,15 @@ VULKAN_INCLUDE := $(VULKAN_SDK)/include
 INCLUDE_DIR := $(BG2E_INCLUDE_DIR) $(VULKAN_INCLUDE)
 INC_FLAGS := $(addprefix -I,$(INCLUDE_DIR))
 
-CPPFLAGS := -std=c++20
 LDFLAGS := -L$(BG2E_INCLUDE_DIR) -L$(VULKAN_SDK)/lib -lbg2e-native -lvulkan -lSDL2 -ldl -lpthread -lX11 -lXxf86vm -lXrandr -lXi -lgtk-3
+
+# Build configuration: default is release, use DEBUG=1 for debug build
+ifdef DEBUG
+    CPPFLAGS := -std=c++20 -Wall -Wextra -g -O0 -DDEBUG
+	CFLAGS := -Wall -Wextra -g -O0 -DDEBUG
+else
+#    CPPFLAGS := -std=c++20 -Wall -Wextra -O3 -DNDEBUG
+endif
 
 model-edit: $(OBJ_FILES) shaders copy-assets copy-bg2e-resources
 	$(CXX) $(OBJ_FILES) $(CPPFLAGS) $(CXXFLAGS) $(INC_FLAGS) -o $(BUILD_DIR)/model_edit $(LDFLAGS) -L$(BG2E_LIB_PATH) -L$(BUILD_DIR) -Wl,-rpath,'$$ORIGIN'
@@ -34,7 +41,7 @@ copy-assets:
 	cp -r ../../assets $(BUILD_DIR)/assets
 
 copy-bg2e-resources:
-	cp -r ../../bin/shaders $(BUILD_DIR)/shaders
+	cp -r ../../bin/shaders $(BUILD_DIR)
 	cp ../../bin/libbg2e-native.so $(BUILD_DIR)
 
 clean:

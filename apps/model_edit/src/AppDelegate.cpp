@@ -46,7 +46,7 @@ void AppDelegate::mouseWheel(int deltaX, int deltaY)
 
 std::shared_ptr<bg2e::scene::Node> AppDelegate::createScene()
 {
-    _stage = std::make_unique<StageScene>(_engine);
+    _stage = std::make_shared<StageScene>(_engine);
     
     auto scene = _stage->init();
     

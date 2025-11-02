@@ -52,7 +52,7 @@ protected:
     SubmeshWindow _submeshPanel;
     EnvironmentSettings _environmentPanel;
     
-    std::unique_ptr<StageScene> _stage;
+    std::shared_ptr<StageScene> _stage;
     
     std::shared_ptr<bg2e::scene::Node> createScene() override;
     

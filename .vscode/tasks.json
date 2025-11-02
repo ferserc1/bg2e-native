@@ -9,6 +9,15 @@
                 "kind": "build",
                 "isDefault": true
             }
+        },
+        {
+            "label": "build-model-edit",
+            "type": "shell",
+            "command": "cd apps/model_edit && make -j$(grep -c processor /proc/cpuinfo) DEBUG=1",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
         }
     ]
 }

@@ -28,11 +28,12 @@ public:
     inline bg2e::scene::OrbitCameraComponent * orbitCamera() { return _orbitCamera; }
     inline bg2e::scene::OrbitCameraComponent * orbitCamera() const { return _orbitCamera; }
     
-    bg2e::scene::Drawable* targetDrawable();
-	inline uint32_t targetSubmeshIndex() const { return _submeshIndex; }
-    inline void setTargetSubmeshIndex(uint32_t index) { _submeshIndex = index; }
+    inline bool isModelValid() const { return _targetNode.get() != nullptr; }
+    std::shared_ptr<bg2e::scene::Drawable> targetDrawable();
     
     inline const std::filesystem::path & filePath() const { return _filePath; }
+
+    void cleanup();
     
 protected:
     bg2e::render::Engine * _engine;
@@ -40,8 +41,9 @@ protected:
     std::shared_ptr<bg2e::scene::Node> _sceneRoot;
     
     // This is the node where the loaded model is placed
-    std::shared_ptr<bg2e::scene::Node> _targetNode;
-    uint32_t _submeshIndex = 0;
+    std::shared_ptr<bg2e::scene::Node> _targetNode = nullptr;
+
+    std::shared_ptr<bg2e::scene::Drawable> _targetDrawable = nullptr;
     
     // Path of the last opened or saved file
     std::filesystem::path _filePath;

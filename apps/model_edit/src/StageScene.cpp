@@ -66,6 +66,7 @@ std::shared_ptr<bg2e::scene::Node> StageScene::init()
 void StageScene::loadModel(const std::filesystem::path& path)
 {
     auto modelDrawable = bg2e::db::loadDrawableBg2(path, _engine);
+    _targetDrawable = std::shared_ptr<bg2e::scene::Drawable>(modelDrawable);
     auto modelNode = new bg2e::scene::Node("Target model");
     modelNode->addComponent(new bg2e::scene::DrawableComponent(modelDrawable));
     
@@ -86,15 +87,22 @@ void StageScene::saveModel(const std::filesystem::path& path)
     
 }
 
-bg2e::scene::Drawable* StageScene::targetDrawable()
+std::shared_ptr<bg2e::scene::Drawable> StageScene::targetDrawable()
 {
-    bg2e::scene::Drawable * result = nullptr;
-    if (_targetNode.get() && _targetNode->children().size() > 0)
-    {
-        auto drawableComponent = _targetNode->children()[0]->drawable();
-        result = drawableComponent ?
-            dynamic_cast<bg2e::scene::Drawable*>(drawableComponent->drawable().get())
-            : nullptr;
-    }
-    return result;
+    return _targetDrawable;
+    // bg2e::scene::Drawable * result = nullptr;
+    // if (_targetNode.get() && _targetNode->children().size() > 0)
+    // {
+    //     auto drawableComponent = _targetNode->children()[0]->drawable();
+    //     result = drawableComponent ?
+    //         dynamic_cast<bg2e::scene::Drawable*>(drawableComponent->drawable().get())
+    //         : nullptr;
+    // }
+    // return result;
+}
+
+
+void StageScene::cleanup()
+{
+    _targetDrawable.reset();
 }

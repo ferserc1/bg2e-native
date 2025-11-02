@@ -2,6 +2,9 @@
 #include <bg2e/json/JsonParser.hpp>
 
 #include <limits>
+#include <charconv>
+#include <string_view>
+#include <system_error>
 
 namespace bg2e::json {
 
@@ -148,22 +151,26 @@ std::shared_ptr<JsonNode> JsonParser::parseNumber()
     std::shared_ptr<JsonNode> node = std::make_shared<JsonNode>();
     JsonToken nextToken = tokenizer.getToken();
     std::string value = nextToken.value;
-    try
+
+    double dValue = 0.0;
+    auto [ptr, ec] = std::from_chars(
+        value.data(),
+        value.data() + value.size(),
+        dValue
+    );
+
+    if (ec == std::errc::invalid_argument)
     {
-        float fValue = stof(value);
-        node->setValue(fValue);
+        std::cerr << "WARN: Invalid argument parsing JSON number" << std::endl;
+        node->setValue(0);
     }
-    catch (std::out_of_range)
-    {
-        double dValue = stod(value);
-        if (static_cast<float>(dValue) == std::numeric_limits<float>::infinity())
-        {
-            node->setValue(std::numeric_limits<float>::max());
-        }
-        else if (static_cast<float>(dValue) == -std::numeric_limits<float>::infinity())
-        {
-            node->setValue(std::numeric_limits<float>::min());
-        }
+    else if (ec == std::errc::result_out_of_range ||
+            static_cast<float>(dValue) == std::numeric_limits<float>::infinity()
+    ) {
+        node->setValue(std::numeric_limits<float>::max());
+    }
+    else {
+        node->setValue(static_cast<float>(dValue));
     }
     return node;
 }
