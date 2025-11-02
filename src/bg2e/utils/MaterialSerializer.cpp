@@ -165,6 +165,7 @@ bool MaterialSerializer::deserializeMaterialArray(
     const std::filesystem::path& basePath,
     std::vector<base::MaterialAttributes>& result
 ) {
+    // TODO: Maybe this can be set in other place
     json::JsonParser parser(jsonString);
     auto jsonData = parser.parse();
     if (!jsonData->isList())

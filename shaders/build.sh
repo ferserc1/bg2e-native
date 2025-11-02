@@ -3,7 +3,7 @@
 PLATFORM=$(uname)
 
 # If linux and VULKAN_SDK is not set, use /usr
-if [ "$PLATFORM" = "Linux" ]; then
+if [ "$PLATFORM" = "Linux" ] && [ -z "$VULKAN_SDK" ]; then
     VULKAN_SDK=/usr
 fi
 
@@ -32,6 +32,7 @@ if [ -f "${1}" ] && [[ "${1}" == *.glsl ]]; then
 fi
 
 INPUT_DIR=$(cd $1; pwd)
+
 
 echo "Compiling shaders from ${INPUT_DIR} to ${OUTPUT_DIR}"
 

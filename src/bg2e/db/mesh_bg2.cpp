@@ -53,6 +53,13 @@ std::vector<base::MaterialAttributes> readMaterials(Bg2ioBufferIterator& it, con
     
     char * headerString;
     bg2io_readString(&it, &headerString);
+    auto stringSize = strlen(headerString);
+    std::cout << "-" << headerString << "-" << std::endl;
+    std::cout << headerString[stringSize - 5] << std::endl;
+    std::cout << headerString[stringSize - 4] << std::endl;
+    std::cout << headerString[stringSize - 3] << std::endl;
+    std::cout << headerString[stringSize - 2] << std::endl;
+    std::cout << headerString[stringSize - 1] << std::endl;
 
     utils::MaterialSerializer serializer;
     

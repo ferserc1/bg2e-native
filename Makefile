@@ -26,7 +26,14 @@ DEPS_INCLUDE_DIR := $(shell find $(DEPS_DIR) -type d)
 INCLUDE_DIR := $(BG2E_INCLUDE_DIR) $(DEPS_INCLUDE_DIR) $(VULKAN_SDK)/include $(BG2IO_INCLUDE_DIR) $(BG2SCENE_INCLUDE_DIR)
 INC_FLAGS := $(addprefix -I,$(INCLUDE_DIR))
 
-CPPFLAGS := -std=c++20
+# Build configuration: default is release, use DEBUG=1 for debug build
+ifdef DEBUG
+    CPPFLAGS := -std=c++20 -Wall -Wextra -g -O0 -DDEBUG
+	CFLAGS := -Wall -Wextra -g -O0 -DDEBUG
+else
+    CPPFLAGS := -std=c++20 -Wall -Wextra -O3 -DNDEBUG
+endif
+
 LDFLAGS := -L$(VULKAN_SDK)/lib -lvulkan -lSDL2 -ldl -lpthread -lX11 -lXxf86vm -lXrandr -lXi -lgtk-3
 
 example-app: bg2e copy-assets

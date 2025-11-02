@@ -165,6 +165,7 @@ std::string JsonNode::toString(int indentationLevel) {
 
 std::string JsonNode::serialize()
 {
+    std::setlocale(LC_NUMERIC, "C");
     std::string outputString = "";
 
     switch (type) {

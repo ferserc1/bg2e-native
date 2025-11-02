@@ -87,7 +87,7 @@ On Windows there is no special configuration to do, apart from installing Visual
 On Linux we will install the dependencies in one way or another depending on the distro we are using. The other dependencies we will need are GLM, SDL2 and Vulkan Memory Allocator (vma). The GLM library is header-based, but it is also available in apt, so if you are using Debian you can also install it as a package.
 
 ```sh
-$ sudo apt install libsdl2-2.0-0 libsdl2-dev libglm-dev
+$ sudo apt install libsdl2-2.0-0 libsdl2-dev libglm-dev libgtk-3-dev
 ```
 
 The Vulkan Memory Allocator library is installed together with Vulkan, so you don't need to do anything else.
