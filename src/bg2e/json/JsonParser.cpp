@@ -151,7 +151,10 @@ std::shared_ptr<JsonNode> JsonParser::parseNumber()
     std::shared_ptr<JsonNode> node = std::make_shared<JsonNode>();
     JsonToken nextToken = tokenizer.getToken();
     std::string value = nextToken.value;
-
+    
+    #ifdef BG2E_LINUX
+    // Linux version: based in from_chars because stof and stod depends on system localization
+    // settings, and will don't work in some locations where the comma is the decimal separator
     double dValue = 0.0;
     auto [ptr, ec] = std::from_chars(
         value.data(),
@@ -172,6 +175,29 @@ std::shared_ptr<JsonNode> JsonParser::parseNumber()
     else {
         node->setValue(static_cast<float>(dValue));
     }
+    
+    #else
+    // Mac/Windows version: the stod version is tested and it works well. Apart from that, the
+    // from_chars method does not work in macOS until version 26
+    try
+    {
+        float fValue = stof(value);
+        node->setValue(fValue);
+    }
+    catch (std::out_of_range)
+    {
+        double dValue = stod(value);
+        if (static_cast<float>(dValue) == std::numeric_limits<float>::infinity())
+        {
+            node->setValue(std::numeric_limits<float>::max());
+        }
+        else if (static_cast<float>(dValue) == -std::numeric_limits<float>::infinity())
+        {
+            node->setValue(std::numeric_limits<float>::min());
+        }
+    }
+    #endif
+    
     return node;
 }
 

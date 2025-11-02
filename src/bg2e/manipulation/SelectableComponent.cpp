@@ -26,7 +26,7 @@ void SelectableComponent::update(float)
         {
             _identifier[i] = generateIdentifier();
         }
-    }
+    } 
 }
 
 uint32_t SelectableComponent::_lastIdentifier = 0;

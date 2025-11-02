@@ -57,6 +57,7 @@
 		ED54777F2E85054A00CC53BC /* bg2-io.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = "bg2-io.xcodeproj"; sourceTree = "<group>"; };
 		ED665C592E8FA467006ED0C7 /* bg2-io.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = "bg2-io.xcodeproj"; sourceTree = "<group>"; };
 		ED6919182EB50A800082D7B6 /* bg2-io.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = "bg2-io.xcodeproj"; sourceTree = "<group>"; };
+		ED691E002EB7CA850082D7B6 /* bg2-io.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = "bg2-io.xcodeproj"; sourceTree = "<group>"; };
 		ED69E8AF2E227DC400FFE313 /* bg2-io.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = "bg2-io.xcodeproj"; sourceTree = "<group>"; };
 		ED6E46A62E7840CA00F20180 /* bg2-io.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = "bg2-io.xcodeproj"; sourceTree = "<group>"; };
 		ED85B1DD2CDBA4E00039B44D /* Metal.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Metal.framework; path = System/Library/Frameworks/Metal.framework; sourceTree = SDKROOT; };
@@ -376,6 +377,13 @@
 			sourceTree = "<group>";
 		};
 		ED69191C2EB50A800082D7B6 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		ED691E042EB7CA850082D7B6 /* Products */ = {
 			isa = PBXGroup;
 			children = (
 			);
@@ -737,6 +745,10 @@
 				{
 					ProductGroup = EDBFDD082E24DBBA00864579 /* Products */;
 					ProjectRef = EDBFDD042E24DBBA00864579 /* bg2-io.xcodeproj */;
+				},
+				{
+					ProductGroup = ED691E042EB7CA850082D7B6 /* Products */;
+					ProjectRef = ED691E002EB7CA850082D7B6 /* bg2-io.xcodeproj */;
 				},
 				{
 					ProductGroup = ED9AEBF62E10534600728D8B /* Products */;
@@ -1166,7 +1178,7 @@
 					"$(inherited)",
 					"$(PROJECT_DIR)/VulkanSDK/lib",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MACOSX_DEPLOYMENT_TARGET = 14.6;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
@@ -1198,7 +1210,7 @@
 					"$(inherited)",
 					"$(PROJECT_DIR)/VulkanSDK/lib",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MACOSX_DEPLOYMENT_TARGET = 14.6;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				SWIFT_VERSION = 6.0;
