@@ -157,9 +157,12 @@
     <ClInclude Include="..\include\bg2e\ui\all.hpp" />
     <ClInclude Include="..\include\bg2e\ui\BasicWidgets.hpp" />
     <ClInclude Include="..\include\bg2e\ui\DemoWindow.hpp" />
+    <ClInclude Include="..\include\bg2e\ui\DrawableEditor.hpp" />
     <ClInclude Include="..\include\bg2e\ui\Input.hpp" />
     <ClInclude Include="..\include\bg2e\ui\MaterialEditor.hpp" />
     <ClInclude Include="..\include\bg2e\ui\Menu.hpp" />
+    <ClInclude Include="..\include\bg2e\ui\SelectableList.hpp" />
+    <ClInclude Include="..\include\bg2e\ui\SubmeshSelector.hpp" />
     <ClInclude Include="..\include\bg2e\ui\TextureWidgets.hpp" />
     <ClInclude Include="..\include\bg2e\ui\Toolbar.hpp" />
     <ClInclude Include="..\include\bg2e\ui\UserInterface.hpp" />
@@ -299,9 +302,12 @@
     <ClCompile Include="..\src\bg2e\scene\vk\ObjectDataBinding.cpp" />
     <ClCompile Include="..\src\bg2e\ui\BasicWidgets.cpp" />
     <ClCompile Include="..\src\bg2e\ui\DemoWindow.cpp" />
+    <ClCompile Include="..\src\bg2e\ui\DrawableEditor.cpp" />
     <ClCompile Include="..\src\bg2e\ui\Input.cpp" />
     <ClCompile Include="..\src\bg2e\ui\MaterialEditor.cpp" />
     <ClCompile Include="..\src\bg2e\ui\Menu.cpp" />
+    <ClCompile Include="..\src\bg2e\ui\SelectableList.cpp" />
+    <ClCompile Include="..\src\bg2e\ui\SubmeshSelector.cpp" />
     <ClCompile Include="..\src\bg2e\ui\TextureWidgets.cpp" />
     <ClCompile Include="..\src\bg2e\ui\Toolbar.cpp" />
     <ClCompile Include="..\src\bg2e\ui\UserInterface.cpp" />
