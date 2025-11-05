@@ -53,6 +53,9 @@ int32_t MainLoop::run(app::Application * application) {
     SDL_Event event;
     bool quit = false;
     bool stopRendering = false;
+    bool resizing = false;
+    auto minResizeInterval = 500;
+    std::chrono::steady_clock::time_point lastResizeEventTime;
     
     
     // Initialize the main descriptor set allocator before executing the first frame
@@ -95,7 +98,12 @@ int32_t MainLoop::run(app::Application * application) {
                 SDL_GetWindowSize(window, &w, &h);
                 application->uiDelegate()->_viewportWidth = static_cast<uint32_t>(w);
                 application->uiDelegate()->_viewportHeight = static_cast<uint32_t>(h);
-                _engine.updateSwapchainSize();
+                
+                lastResizeEventTime = std::chrono::steady_clock::now();
+                if (!resizing) {
+                    _engine.updateSwapchainSize();
+                    resizing = true;
+                }
             }
 
 			if (event.type == SDL_KEYUP || event.type == SDL_KEYDOWN)
@@ -141,6 +149,14 @@ int32_t MainLoop::run(app::Application * application) {
             
             _userInterface.processEvent(&event);
         }
+
+        if (resizing)
+        {
+            auto now = std::chrono::steady_clock::now();
+            if (now - lastResizeEventTime > std::chrono::milliseconds(minResizeInterval)) {
+                resizing = false;
+            }
+        }
         
         if (stopRendering)
         {
@@ -148,14 +164,16 @@ int32_t MainLoop::run(app::Application * application) {
             continue;
         }
         
-        if (_engine.newFrame())
+        if (!resizing && _engine.newFrame())
         {
             _renderLoop.swapchainResized();
         }
         
         _userInterface.newFrame();
         
-        _renderLoop.acquireAndPresent();
+        if (!resizing) {
+            _renderLoop.acquireAndPresent();
+        }
         auto end = std::chrono::high_resolution_clock::now();
     
         auto millis = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);

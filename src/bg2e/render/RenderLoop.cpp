@@ -179,6 +179,7 @@ void RenderLoop::acquireAndPresent()
     if (presentResult == VK_ERROR_OUT_OF_DATE_KHR || presentResult == VK_SUBOPTIMAL_KHR)
     {
         _engine->updateSwapchainSize();
+        std::cout << "VK_ERROR_OUT_OF_DATE_KHR || VK_SUBOPTIMAL_KHR" << std::endl;
     }
 
     // Next frame
@@ -189,6 +190,7 @@ void RenderLoop::swapchainResized()
 {
     if (_renderDelegate)
     {
+        std::cout << "RenderLoop::swapchainResized()" << std::endl;
         auto newExtent = _engine->swapchain().extent();
 		_renderDelegate->swapchainResized(newExtent);
     }
