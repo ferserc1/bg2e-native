@@ -9,6 +9,11 @@
 #include <unistd.h>
 #endif
 
+#ifdef BG2E_IS_WINDOWS
+#include <Windows.h>
+#include <ShlObj_core.h>
+#endif
+
 #ifdef BG2E_IS_MAC
 
 #include <CoreFoundation/CoreFoundation.h>
