@@ -752,6 +752,10 @@ public:
 		setRenderDelegate(delegate);
 		setInputDelegate(delegate);
 		setUiDelegate(delegate);
+
+        // Test app settings path
+        auto settingsPath = bg2e::base::PlatformTools::settingsPath("bg2e-test-app");
+        std::cout << "Application settings path: " << settingsPath << std::endl;
 	}
 };
 
