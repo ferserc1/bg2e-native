@@ -1,5 +1,7 @@
 
 #include <bg2e/base/PlatformTools.hpp>
+#include <bg2e/app/MainLoop.hpp>
+
 #include <string>
 #include <filesystem>
 #include <iostream>
@@ -17,8 +19,6 @@
 #ifdef BG2E_IS_MAC
 
 #include <CoreFoundation/CoreFoundation.h>
-#include <pwd.h>
-#include <unistd.h>
 
 std::string bg2e_base_platform_tools_macos_bundle_path()
 {
@@ -46,46 +46,6 @@ std::string bg2e_base_platform_tools_macos_resources_path()
     return std::string(c_path) + "/";
 }
 
-std::string bg2e_base_platform_tools_macos_app_preferences_path()
-{
-    CFURLRef appSupportURL = NULL;
-    CFURLRef homeDirUrl = CFCopyHomeDirectoryURL();
-    if (homeDirURL)
-    {
-        appSupportURL = CFURLCreateCopyAppendingPathComponent(
-            kCFAllocatorDefault,
-            homeDirURL,
-            CFSTR("Library/Application Support"),
-            true
-        );
-        CFReleasse(homeDirURL);
-    }
-
-    char c_path[2048] = {0};
-    if (appSupportURL)
-    {
-        CFURLGetFileSystemRepresentation(
-            appSupportURL,
-            true,
-            reinterpret_cast<UInt8*>(c_path),
-            sizeof(c_path)
-        );
-        CFRelease(appSupportURL);
-    }
-    else
-    {
-        const char *nome = getenv("HOME");
-        if (!home)
-        {
-            struct passwd * pw = getpwuid(getuid());
-            home = pw->pw_dir;
-        }
-        snprintf(c_path, sizeof(c_path), "%s/Library/Application Support", home);
-    }
-
-    return std::string(c_path);
-}
-
 #endif
 
 std::filesystem::path bg2e::base::PlatformTools::shaderPath()
@@ -106,14 +66,16 @@ std::filesystem::path bg2e::base::PlatformTools::assetPath()
 #endif
 }
 
+// macOS version of settingsPath is defined in PlatformTools.mm
+#ifndef BG2E_IS_MAC
+
 std::filesystem::path bg2e::base::PlatformTools::settingsPath(const std::string & appId)
 {
     namespace fs = std::filesystem;
     std::filesystem::path basePath;
-#ifdef BG2E_IS_MAC
-    // TODO: Implement this
-    basePath = bg2e_base_platform_tools_macos_app_preferences_path() / appId;
-#elif BG2E_IS_LINUX
+    auto appId = app::MainLoop::current()->appId();
+
+#ifdef BG2E_IS_LINUX
     const char * home = getenv("HOME");
     if (!home)
     {
@@ -144,3 +106,6 @@ std::filesystem::path bg2e::base::PlatformTools::settingsPath(const std::string 
     }
     return basePath;
 }
+
+#endif
+

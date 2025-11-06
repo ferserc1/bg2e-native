@@ -53,7 +53,6 @@ std::vector<base::MaterialAttributes> readMaterials(Bg2ioBufferIterator& it, con
     
     char * headerString;
     bg2io_readString(&it, &headerString);
-    auto stringSize = strlen(headerString);
 
     utils::MaterialSerializer serializer;
     

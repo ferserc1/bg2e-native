@@ -51,6 +51,7 @@
 		ED110A572E15194400F37999 /* bg2-io.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = "bg2-io.xcodeproj"; sourceTree = "<group>"; };
 		ED1819122E8E5A3000CE04ED /* bg2-io.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = "bg2-io.xcodeproj"; sourceTree = "<group>"; };
 		ED241AE32E264EB00039BB33 /* bg2-io.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = "bg2-io.xcodeproj"; sourceTree = "<group>"; };
+		ED3019A92EBC9DB3008C2234 /* bg2-io.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = "bg2-io.xcodeproj"; sourceTree = "<group>"; };
 		ED4E68172E8BFB97005C24B4 /* bg2-io.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = "bg2-io.xcodeproj"; sourceTree = "<group>"; };
 		ED5339F02CD7A1E900136B04 /* example-app.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "example-app.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		ED533A212CD7AAB700136B04 /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = main.cpp; path = ../examples/app/main.cpp; sourceTree = SOURCE_ROOT; };
@@ -260,6 +261,13 @@
 			sourceTree = "<group>";
 		};
 		ED241AE72E264EB00039BB33 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		ED3019AD2EBC9DB3008C2234 /* Products */ = {
 			isa = PBXGroup;
 			children = (
 			);
@@ -773,6 +781,10 @@
 				{
 					ProductGroup = EDC172162E3BDE76005E0A52 /* Products */;
 					ProjectRef = EDC172122E3BDE76005E0A52 /* bg2-io.xcodeproj */;
+				},
+				{
+					ProductGroup = ED3019AD2EBC9DB3008C2234 /* Products */;
+					ProjectRef = ED3019A92EBC9DB3008C2234 /* bg2-io.xcodeproj */;
 				},
 				{
 					ProductGroup = ED8C950D2E1C1B02002EE991 /* Products */;

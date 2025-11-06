@@ -38,7 +38,7 @@ class BG2E_API PlatformTools {
 public:
     static std::filesystem::path shaderPath();
     static std::filesystem::path assetPath();
-    static std::filesystem::path settingsPath(const std::string & appId);
+    static std::filesystem::path settingsPath();
 };
 
 }

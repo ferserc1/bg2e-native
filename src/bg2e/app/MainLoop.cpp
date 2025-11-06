@@ -21,8 +21,36 @@ namespace app {
 
 MainLoop * MainLoop::_mainLoopInstance = nullptr;
 
+void MainLoop::initMainLoopInstance()
+{
+    if (MainLoop::_mainLoopInstance)
+    {
+        throw std::runtime_error("Fatal Error: Multiple instances of MainLoop created. MainLoop instance can only be created once. You can access existing MainLoop instance through the static MainLoop::current() method.");
+    }
+    MainLoop::_mainLoopInstance = this;
+}
+
+MainLoop::MainLoop(const std::string& appId)
+    :_appId { appId }
+{
+    initMainLoopInstance();
+}
+
+MainLoop::MainLoop(std::string && appId)
+    :_appId { appId }
+{
+    initMainLoopInstance();
+}
+
+MainLoop::~MainLoop()
+{
+    if (MainLoop::_mainLoopInstance == this)
+    {
+        _mainLoopInstance = nullptr;
+    }
+}
+
 int32_t MainLoop::run(app::Application * application) {
-    _mainLoopInstance = this;
 	SDL_Init(SDL_INIT_VIDEO);
     
     SDL_WindowFlags winFlags = SDL_WindowFlags(SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE);

@@ -52,8 +52,14 @@ public:
     JsonNode(std::string&&);
     JsonNode(const std::string &);
     JsonNode(char);
+    JsonNode(int8_t);
+    JsonNode(int16_t);
     JsonNode(int32_t);
+    JsonNode(int64_t);
+    JsonNode(uint8_t);
+    JsonNode(uint16_t);
     JsonNode(uint32_t);
+    JsonNode(uint64_t);
     JsonNode(float);
     JsonNode(double);
     JsonNode(bool);
@@ -63,6 +69,11 @@ public:
     JsonNode(const glm::vec4&);
     JsonNode(const glm::mat3&);
     JsonNode(const glm::mat4&);
+    JsonNode(const std::array<float, 2>&);
+    JsonNode(const std::array<float, 3>&);
+    JsonNode(const std::array<float, 4>&);
+    JsonNode(const std::array<float, 9>&);
+    JsonNode(const std::array<float, 16>&);
     
     virtual ~JsonNode();
 
@@ -133,6 +144,39 @@ public:
             return _boolValue;
         }
         throw std::logic_error("Improper return type: boolean");
+    }
+    
+    glm::vec2 glmVec2Value() {
+        if (isVec2()) {
+            return glm::vec2{
+                listValue()[0]->numberValue(0.f),
+                listValue()[1]->numberValue(0.f)
+            };
+        }
+        throw std::logic_error("Improper return type: vec2");
+    }
+    
+    glm::vec3 glmVec3Value() {
+        if (isVec3()) {
+            return glm::vec3{
+                listValue()[0]->numberValue(0.f),
+                listValue()[1]->numberValue(0.f),
+                listValue()[2]->numberValue(0.f)
+            };
+        }
+        throw std::logic_error("Improper return type: vec3");
+    }
+    
+    glm::vec4 glmVec4Value() {
+        if (isVec4()) {
+            return glm::vec4{
+                listValue()[0]->numberValue(0.f),
+                listValue()[1]->numberValue(0.f),
+                listValue()[2]->numberValue(0.f),
+                listValue()[3]->numberValue(0.f)
+            };
+        }
+        throw std::logic_error("Improper return type: vec4");
     }
     
     std::array<float,2> vec2Value() {
@@ -207,6 +251,33 @@ public:
         throw std::logic_error("Improper return type: mat4");
     }
     
+    glm::mat4 glmMat4Value() {
+        if (isMat4()) {
+            return glm::mat4{
+                listValue()[0]->numberValue(0.f),
+                listValue()[1]->numberValue(0.f),
+                listValue()[2]->numberValue(0.f),
+                listValue()[3]->numberValue(0.f),
+                
+                listValue()[4]->numberValue(0.f),
+                listValue()[5]->numberValue(0.f),
+                listValue()[6]->numberValue(0.f),
+                listValue()[7]->numberValue(0.f),
+                
+                listValue()[8]->numberValue(0.f),
+                listValue()[9]->numberValue(0.f),
+                listValue()[10]->numberValue(0.f),
+                listValue()[11]->numberValue(0.f),
+                
+                listValue()[12]->numberValue(0.f),
+                listValue()[13]->numberValue(0.f),
+                listValue()[14]->numberValue(0.f),
+                listValue()[15]->numberValue(0.f)
+            };
+        }
+        throw std::logic_error("Improper return type: mat4");
+    }
+    
     const std::string& stringValue(const std::string& defaultValue) {
         if (type == Type::String) {
             return _stringValue;
@@ -216,27 +287,9 @@ public:
         }
     }
 
-    uint8_t numberValue(uint8_t defaultValue) {
-        if (type == Type::Number) {
-            return static_cast<uint8_t>(_numberValue);
-        }
-        else {
-            return defaultValue;
-        }
-    }
-    
     int8_t numberValue(int8_t defaultValue) {
         if (type == Type::Number) {
             return static_cast<int8_t>(_numberValue);
-        }
-        else {
-            return defaultValue;
-        }
-    }
-    
-    uint16_t numberValue(uint16_t defaultValue) {
-        if (type == Type::Number) {
-            return static_cast<uint16_t>(_numberValue);
         }
         else {
             return defaultValue;
@@ -252,15 +305,6 @@ public:
         }
     }
     
-    uint32_t numberValue(uint32_t defaultValue) {
-        if (type == Type::Number) {
-            return static_cast<uint32_t>(_numberValue);
-        }
-        else {
-            return defaultValue;
-        }
-    }
-    
     int32_t numberValue(int32_t defaultValue) {
         if (type == Type::Number) {
             return static_cast<int32_t>(_numberValue);
@@ -270,18 +314,45 @@ public:
         }
     }
     
-    uint64_t numberValue(uint64_t defaultValue) {
+    int64_t numberValue(int64_t defaultValue) {
         if (type == Type::Number) {
-            return static_cast<uint64_t>(_numberValue);
+            return static_cast<int64_t>(_numberValue);
         }
         else {
             return defaultValue;
         }
     }
     
-    int64_t numberValue(int64_t defaultValue) {
+    uint8_t numberValue(uint8_t defaultValue) {
         if (type == Type::Number) {
-            return static_cast<int64_t>(_numberValue);
+            return static_cast<uint8_t>(_numberValue);
+        }
+        else {
+            return defaultValue;
+        }
+    }
+    
+    uint16_t numberValue(uint16_t defaultValue) {
+        if (type == Type::Number) {
+            return static_cast<uint16_t>(_numberValue);
+        }
+        else {
+            return defaultValue;
+        }
+    }
+    
+    uint32_t numberValue(uint32_t defaultValue) {
+        if (type == Type::Number) {
+            return static_cast<uint32_t>(_numberValue);
+        }
+        else {
+            return defaultValue;
+        }
+    }
+    
+    uint64_t numberValue(uint64_t defaultValue) {
+        if (type == Type::Number) {
+            return static_cast<uint64_t>(_numberValue);
         }
         else {
             return defaultValue;
@@ -354,6 +425,45 @@ public:
         }
     }
     
+    glm::vec2 glmVec2Value(const glm::vec2& defaultValue) {
+        if (isVec2()) {
+            return glm::vec2{
+                listValue()[0]->numberValue(0.f),
+                listValue()[1]->numberValue(0.f)
+            };
+        }
+        else {
+            return defaultValue;
+        }
+    }
+    
+    glm::vec3 glmVec3Value(const glm::vec3& defaultValue) {
+        if (isVec3()) {
+            return glm::vec3{
+                listValue()[0]->numberValue(0.f),
+                listValue()[1]->numberValue(0.f),
+                listValue()[2]->numberValue(0.f)
+            };
+        }
+        else {
+            return defaultValue;
+        }
+    }
+    
+    glm::vec4 glmVec4Value(const glm::vec4 & defaultValue) {
+        if (isVec4()) {
+            return glm::vec4{
+                listValue()[0]->numberValue(0.f),
+                listValue()[1]->numberValue(0.f),
+                listValue()[2]->numberValue(0.f),
+                listValue()[3]->numberValue(0.f)
+            };
+        }
+        else {
+            return defaultValue;
+        }
+    }
+    
     base::Color colorValue(const base::Color& defaultValue) {
         if (isVec4()) {
             return base::Color(
@@ -371,6 +481,35 @@ public:
     std::array<float,16> mat4Value(const std::array<float, 16>& defaultValue) {
         if (isMat4()) {
             return std::array<float, 16>{
+                listValue()[0]->numberValue(0.f),
+                listValue()[1]->numberValue(0.f),
+                listValue()[2]->numberValue(0.f),
+                listValue()[3]->numberValue(0.f),
+                
+                listValue()[4]->numberValue(0.f),
+                listValue()[5]->numberValue(0.f),
+                listValue()[6]->numberValue(0.f),
+                listValue()[7]->numberValue(0.f),
+                
+                listValue()[8]->numberValue(0.f),
+                listValue()[9]->numberValue(0.f),
+                listValue()[10]->numberValue(0.f),
+                listValue()[11]->numberValue(0.f),
+                
+                listValue()[12]->numberValue(0.f),
+                listValue()[13]->numberValue(0.f),
+                listValue()[14]->numberValue(0.f),
+                listValue()[15]->numberValue(0.f)
+            };
+        }
+        else {
+            return defaultValue;
+        }
+    }
+    
+    glm::mat4 glmMat4Value(const glm::mat4& defaultValue) {
+        if (isMat4()) {
+            return glm::mat4{
                 listValue()[0]->numberValue(0.f),
                 listValue()[1]->numberValue(0.f),
                 listValue()[2]->numberValue(0.f),
@@ -437,12 +576,42 @@ public:
         type = Type::String;
     }
     
+    void setValue(int8_t n) {
+        _numberValue = static_cast<float>(n);
+        type = Type::Number;
+    }
+    
+    void setValue(int16_t n) {
+        _numberValue = static_cast<float>(n);
+        type = Type::Number;
+    }
+    
     void setValue(int32_t n) {
         _numberValue = static_cast<float>(n);
         type = Type::Number;
     }
     
+    void setValue(int64_t n) {
+        _numberValue = static_cast<float>(n);
+        type = Type::Number;
+    }
+    
+    void setValue(uint8_t n) {
+        _numberValue = static_cast<float>(n);
+        type = Type::Number;
+    }
+    
+    void setValue(uint16_t n) {
+        _numberValue = static_cast<float>(n);
+        type = Type::Number;
+    }
+    
     void setValue(uint32_t n) {
+        _numberValue = static_cast<float>(n);
+        type = Type::Number;
+    }
+    
+    void setValue(uint64_t n) {
         _numberValue = static_cast<float>(n);
         type = Type::Number;
     }
@@ -536,6 +705,74 @@ public:
         };
     }
     
+    
+    
+    
+    
+    void setValue(const std::array<float, 2> & v) {
+        type = Type::List;
+        _listValue = JsonList {
+            std::make_shared<JsonNode>(v[0]),
+            std::make_shared<JsonNode>(v[1])
+        };
+    }
+    
+    void setValue(const std::array<float, 3> & v) {
+        type = Type::List;
+        _listValue = JsonList {
+            std::make_shared<JsonNode>(v[0]),
+            std::make_shared<JsonNode>(v[1]),
+            std::make_shared<JsonNode>(v[2])
+        };
+    }
+    
+    void setValue(const std::array<float, 4> & v) {
+        type = Type::List;
+        _listValue = JsonList {
+            std::make_shared<JsonNode>(v[0]),
+            std::make_shared<JsonNode>(v[1]),
+            std::make_shared<JsonNode>(v[2]),
+            std::make_shared<JsonNode>(v[3])
+        };
+    }
+    
+    void setValue(const std::array<float, 9> & m) {
+        type = Type::List;
+        _listValue = JsonList {
+            std::make_shared<JsonNode>(m[0]),
+            std::make_shared<JsonNode>(m[1]),
+            std::make_shared<JsonNode>(m[2]),
+            std::make_shared<JsonNode>(m[3]),
+            std::make_shared<JsonNode>(m[4]),
+            std::make_shared<JsonNode>(m[5]),
+            std::make_shared<JsonNode>(m[6]),
+            std::make_shared<JsonNode>(m[7]),
+            std::make_shared<JsonNode>(m[8])
+        };
+    }
+    
+    void setValue(const std::array<float, 16> & m) {
+        type = Type::List;
+        _listValue = JsonList {
+            std::make_shared<JsonNode>(m[ 0]),
+            std::make_shared<JsonNode>(m[ 1]),
+            std::make_shared<JsonNode>(m[ 2]),
+            std::make_shared<JsonNode>(m[ 3]),
+            std::make_shared<JsonNode>(m[ 4]),
+            std::make_shared<JsonNode>(m[ 5]),
+            std::make_shared<JsonNode>(m[ 6]),
+            std::make_shared<JsonNode>(m[ 7]),
+            std::make_shared<JsonNode>(m[ 8]),
+            std::make_shared<JsonNode>(m[ 9]),
+            std::make_shared<JsonNode>(m[10]),
+            std::make_shared<JsonNode>(m[11]),
+            std::make_shared<JsonNode>(m[12]),
+            std::make_shared<JsonNode>(m[13]),
+            std::make_shared<JsonNode>(m[14]),
+            std::make_shared<JsonNode>(m[15])
+        };
+    }
+    
     void setNull() {
         type = Type::Null;
     }
@@ -626,8 +863,14 @@ extern BG2E_API std::shared_ptr<JsonNode> JSON(const char* p);
 extern BG2E_API std::shared_ptr<JsonNode> JSON(std::string&& p);
 extern BG2E_API std::shared_ptr<JsonNode> JSON(const std::string& p);
 extern BG2E_API std::shared_ptr<JsonNode> JSON(char p);
+extern BG2E_API std::shared_ptr<JsonNode> JSON(int8_t p);
+extern BG2E_API std::shared_ptr<JsonNode> JSON(int16_t p);
 extern BG2E_API std::shared_ptr<JsonNode> JSON(int32_t p);
+extern BG2E_API std::shared_ptr<JsonNode> JSON(int64_t p);
+extern BG2E_API std::shared_ptr<JsonNode> JSON(uint8_t p);
+extern BG2E_API std::shared_ptr<JsonNode> JSON(uint16_t p);
 extern BG2E_API std::shared_ptr<JsonNode> JSON(uint32_t p);
+extern BG2E_API std::shared_ptr<JsonNode> JSON(uint64_t p);
 extern BG2E_API std::shared_ptr<JsonNode> JSON(float p);
 extern BG2E_API std::shared_ptr<JsonNode> JSON(double p);
 extern BG2E_API std::shared_ptr<JsonNode> JSON(bool p);
@@ -637,6 +880,11 @@ extern BG2E_API std::shared_ptr<JsonNode> JSON(const glm::vec3 & p);
 extern BG2E_API std::shared_ptr<JsonNode> JSON(const glm::vec4 & p);
 extern BG2E_API std::shared_ptr<JsonNode> JSON(const glm::mat3 & p);
 extern BG2E_API std::shared_ptr<JsonNode> JSON(const glm::mat4 & p);
+extern BG2E_API std::shared_ptr<JsonNode> JSON(const std::array<float, 2> & p);
+extern BG2E_API std::shared_ptr<JsonNode> JSON(const std::array<float, 3> & p);
+extern BG2E_API std::shared_ptr<JsonNode> JSON(const std::array<float, 4> & p);
+extern BG2E_API std::shared_ptr<JsonNode> JSON(const std::array<float, 9> & p);
+extern BG2E_API std::shared_ptr<JsonNode> JSON(const std::array<float, 16> & p);
 
 }
 }

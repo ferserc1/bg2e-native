@@ -48,11 +48,35 @@ JsonNode::JsonNode(char p) {
     setValue(p);
 }
 
+JsonNode::JsonNode(int8_t p) {
+    setValue(p);
+}
+
+JsonNode::JsonNode(int16_t p) {
+    setValue(p);
+}
+
 JsonNode::JsonNode(int32_t p) {
     setValue(p);
 }
 
+JsonNode::JsonNode(int64_t p) {
+    setValue(p);
+}
+
+JsonNode::JsonNode(uint8_t p) {
+    setValue(p);
+}
+
+JsonNode::JsonNode(uint16_t p) {
+    setValue(p);
+}
+
 JsonNode::JsonNode(uint32_t p) {
+    setValue(p);
+}
+
+JsonNode::JsonNode(uint64_t p) {
     setValue(p);
 }
 
@@ -92,6 +116,27 @@ JsonNode::JsonNode(const glm::mat3 & p) {
 JsonNode::JsonNode(const glm::mat4 & p) {
     setValue(p);
 }
+
+JsonNode::JsonNode(const std::array<float, 2> & p) {
+    setValue(p);
+}
+
+JsonNode::JsonNode(const std::array<float, 3> & p) {
+    setValue(p);
+}
+
+JsonNode::JsonNode(const std::array<float, 4> & p) {
+    setValue(p);
+}
+
+JsonNode::JsonNode(const std::array<float, 9> & p) {
+    setValue(p);
+}
+
+JsonNode::JsonNode(const std::array<float, 16> & p) {
+    setValue(p);
+}
+
 
 JsonNode::~JsonNode() {
 }
@@ -254,12 +299,42 @@ std::shared_ptr<JsonNode> JSON(char p)
     return std::make_shared<JsonNode>(p);
 }
 
+std::shared_ptr<JsonNode> JSON(int8_t p)
+{
+    return std::make_shared<JsonNode>(p);
+}
+
+std::shared_ptr<JsonNode> JSON(int16_t p)
+{
+    return std::make_shared<JsonNode>(p);
+}
+
 std::shared_ptr<JsonNode> JSON(int32_t p)
 {
     return std::make_shared<JsonNode>(p);
 }
 
+std::shared_ptr<JsonNode> JSON(int64_t p)
+{
+    return std::make_shared<JsonNode>(p);
+}
+
+std::shared_ptr<JsonNode> JSON(uint8_t p)
+{
+    return std::make_shared<JsonNode>(p);
+}
+
+std::shared_ptr<JsonNode> JSON(uint16_t p)
+{
+    return std::make_shared<JsonNode>(p);
+}
+
 std::shared_ptr<JsonNode> JSON(uint32_t p)
+{
+    return std::make_shared<JsonNode>(p);
+}
+
+std::shared_ptr<JsonNode> JSON(uint64_t p)
 {
     return std::make_shared<JsonNode>(p);
 }
@@ -308,5 +383,31 @@ std::shared_ptr<JsonNode> JSON(const glm::mat4 & p)
 {
     return std::make_shared<JsonNode>(p);
 }
+
+std::shared_ptr<JsonNode> JSON(const std::array<float, 2> & p)
+{
+    return std::make_shared<JsonNode>(p);
+}
+
+std::shared_ptr<JsonNode> JSON(const std::array<float, 3> & p)
+{
+    return std::make_shared<JsonNode>(p);
+}
+
+std::shared_ptr<JsonNode> JSON(const std::array<float, 4> & p)
+{
+    return std::make_shared<JsonNode>(p);
+}
+
+std::shared_ptr<JsonNode> JSON(const std::array<float, 9> & p)
+{
+    return std::make_shared<JsonNode>(p);
+}
+
+std::shared_ptr<JsonNode> JSON(const std::array<float, 16> & p)
+{
+    return std::make_shared<JsonNode>(p);
+}
+
 
 }
