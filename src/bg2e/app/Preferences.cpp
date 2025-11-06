@@ -290,6 +290,8 @@ void Preferences::set(const std::string & key, std::string&& value)
 
 template void Preferences::set<bool>(const std::string&, const bool&);
 
+#ifndef BG2E_IS_LINUX
+
 template void Preferences::set<int8_t>(const std::string&, const int8_t&);
 template void Preferences::set<int16_t>(const std::string&, const int16_t&);
 template void Preferences::set<int32_t>(const std::string&, const int32_t&);
@@ -302,6 +304,8 @@ template void Preferences::set<uint64_t>(const std::string&, const uint64_t&);
 
 template void Preferences::set<float>(const std::string&, const float&);
 template void Preferences::set<double>(const std::string&, const double&);
+
+#endif
 
 template void Preferences::set<std::array<float, 2>>(const std::string&, const std::array<float, 2>&);
 template void Preferences::set<std::array<float, 3>>(const std::string&, const std::array<float, 3>&);

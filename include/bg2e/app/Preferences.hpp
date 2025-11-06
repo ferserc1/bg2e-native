@@ -48,5 +48,6 @@ protected:
     std::string _emptyString = "";
 };
 
+
 }
 }

@@ -69,7 +69,7 @@ std::filesystem::path bg2e::base::PlatformTools::assetPath()
 // macOS version of settingsPath is defined in PlatformTools.mm
 #ifndef BG2E_IS_MAC
 
-std::filesystem::path bg2e::base::PlatformTools::settingsPath(const std::string & appId)
+std::filesystem::path bg2e::base::PlatformTools::settingsPath()
 {
     namespace fs = std::filesystem;
     std::filesystem::path basePath;
