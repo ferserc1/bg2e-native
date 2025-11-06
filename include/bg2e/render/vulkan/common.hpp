@@ -3,7 +3,7 @@
 #include <vulkan/vulkan.h>
 #include <vulkan/vk_enum_string_helper.h>
 
-#ifndef _WIN32
+#ifdef BG2E_IS_MAC
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wdocumentation"
 #pragma clang diagnostic ignored "-Wdocumentation-deprecated-sync"

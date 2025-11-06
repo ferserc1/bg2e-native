@@ -48,6 +48,8 @@ protected:
     std::string _emptyString = "";
 };
 
+#ifdef BG2E_IS_WINDOWS
+
 template BG2E_API int8_t Preferences::get<int8_t>(const std::string&, const int8_t&) const;
 template BG2E_API int16_t Preferences::get<int16_t>(const std::string&, const int16_t&) const;
 template BG2E_API int32_t Preferences::get<int32_t>(const std::string&, const int32_t&) const;
@@ -122,6 +124,8 @@ template BG2E_API void Preferences::set<glm::mat3>(const std::string&, const glm
 template BG2E_API void Preferences::set<glm::mat4>(const std::string&, const glm::mat4&);
 
 template BG2E_API void Preferences::set<std::string>(const std::string&, const std::string&);
+
+#endif
 
 }
 }
