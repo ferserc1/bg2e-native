@@ -14,7 +14,7 @@
 namespace bg2e {
 namespace app {
 
-class PreferencesStore {
+class BG2E_API PreferencesStore {
 public:
     static PreferencesStore& instance();
 

@@ -84,6 +84,19 @@ void Preferences::save() const
 }
 
 
+template int8_t Preferences::get<int8_t>(const std::string&, const int8_t&) const;
+template int16_t Preferences::get<int16_t>(const std::string&, const int16_t&) const;
+template int32_t Preferences::get<int32_t>(const std::string&, const int32_t&) const;
+template int64_t Preferences::get<int64_t>(const std::string&, const int64_t&) const;
+
+template uint8_t Preferences::get<uint8_t>(const std::string&, const uint8_t&) const;
+template uint16_t Preferences::get<uint16_t>(const std::string&, const uint16_t&) const;
+template uint32_t Preferences::get<uint32_t>(const std::string&, const uint32_t&) const;
+template uint64_t Preferences::get<uint64_t>(const std::string&, const uint64_t&) const;
+
+template float Preferences::get<float>(const std::string&, const float&) const;
+template double Preferences::get<double>(const std::string&, const double&) const;
+
 template <typename T>
 T Preferences::get(const std::string & key, const T& defaultValue) const
 {
@@ -231,7 +244,7 @@ template <>
 glm::mat4 Preferences::get<glm::mat4>(const std::string & key, const glm::mat4 & defaultValue) const
 {
     auto & prefs = _root->objectValue();
-    if (prefs[key].get() && prefs[key]->isVec4())
+    if (prefs[key].get() && prefs[key]->isMat4())
     {
         return prefs[key]->glmMat4Value(defaultValue);
     }
@@ -240,57 +253,11 @@ glm::mat4 Preferences::get<glm::mat4>(const std::string & key, const glm::mat4 &
 }
 
 
-template int8_t Preferences::get<int8_t>(const std::string&, const int8_t&) const;
-template void Preferences::set<int8_t>(const std::string&, const int8_t&);
-template int16_t Preferences::get<int16_t>(const std::string&, const int16_t&) const;
-template void Preferences::set<int16_t>(const std::string&, const int16_t&);
-template int32_t Preferences::get<int32_t>(const std::string&, const int32_t&) const;
-template void Preferences::set<int32_t>(const std::string&, const int32_t&);
-template int64_t Preferences::get<int64_t>(const std::string&, const int64_t&) const;
-template void Preferences::set<int64_t>(const std::string&, const int64_t&);
 
-template uint8_t Preferences::get<uint8_t>(const std::string&, const uint8_t&) const;
-template void Preferences::set<uint8_t>(const std::string&, const uint8_t&);
-template uint16_t Preferences::get<uint16_t>(const std::string&, const uint16_t&) const;
-template void Preferences::set<uint16_t>(const std::string&, const uint16_t&);
-template uint32_t Preferences::get<uint32_t>(const std::string&, const uint32_t&) const;
-template void Preferences::set<uint32_t>(const std::string&, const uint32_t&);
-template uint64_t Preferences::get<uint64_t>(const std::string&, const uint64_t&) const;
-template void Preferences::set<uint64_t>(const std::string&, const uint64_t&);
 
-template float Preferences::get<float>(const std::string&, const float&) const;
-template void Preferences::set<float>(const std::string&, const float&);
-template double Preferences::get<double>(const std::string&, const double&) const;
-template void Preferences::set<double>(const std::string&, const double&);
     
 // Setters
-template <typename T>
-void Preferences::set(const std::string & key, const T& value)
-{
-    auto & prefs = _root->objectValue();
-    auto newValue = json::JSON(value);
-    prefs[key] = newValue;
-    _dirty = true;
-}
-
-void Preferences::set(const std::string & key, const char * value)
-{
-    auto & prefs = _root->objectValue();
-    prefs[key] = json::JSON(value);
-    _dirty = true;
-}
-
-void Preferences::set(const std::string & key, std::string&& value)
-{
-    auto & prefs = _root->objectValue();
-    prefs[key] = json::JSON(value);
-    _dirty = true;
-}
-
-
 template void Preferences::set<bool>(const std::string&, const bool&);
-
-#ifndef BG2E_IS_LINUX
 
 template void Preferences::set<int8_t>(const std::string&, const int8_t&);
 template void Preferences::set<int16_t>(const std::string&, const int16_t&);
@@ -304,8 +271,6 @@ template void Preferences::set<uint64_t>(const std::string&, const uint64_t&);
 
 template void Preferences::set<float>(const std::string&, const float&);
 template void Preferences::set<double>(const std::string&, const double&);
-
-#endif
 
 template void Preferences::set<std::array<float, 2>>(const std::string&, const std::array<float, 2>&);
 template void Preferences::set<std::array<float, 3>>(const std::string&, const std::array<float, 3>&);
@@ -323,6 +288,29 @@ template void Preferences::set<glm::mat3>(const std::string&, const glm::mat3&);
 template void Preferences::set<glm::mat4>(const std::string&, const glm::mat4&);
 
 template void Preferences::set<std::string>(const std::string&, const std::string&);
+
+template <typename T>
+void Preferences::set(const std::string& key, const T& value)
+{
+    auto& prefs = _root->objectValue();
+    auto newValue = json::JSON(value);
+    prefs[key] = newValue;
+    _dirty = true;
+}
+
+void Preferences::set(const std::string& key, const char* value)
+{
+    auto& prefs = _root->objectValue();
+    prefs[key] = json::JSON(value);
+    _dirty = true;
+}
+
+void Preferences::set(const std::string& key, std::string&& value)
+{
+    auto& prefs = _root->objectValue();
+    prefs[key] = json::JSON(value);
+    _dirty = true;
+}
 
 void Preferences::initFilePath(const std::string & fileName)
 {
