@@ -16,7 +16,7 @@ public:
 };
 
 int main(int argc, char** argv) {
-	bg2e::app::MainLoop mainLoop;
+	bg2e::app::MainLoop mainLoop("org.bg2engine.model-edit");
     mainLoop.initWindowTitle("bg2 engine - Model Edit");
 	MyApplication app;
 	app.init(argc, argv);
