@@ -4,6 +4,7 @@
 #pragma once
 
 #include <bg2e/common.hpp>
+#include <bg2e/base/PlatformTools.hpp>
 #include <bg2e/json/JsonNode.hpp>
 #include <bg2e/base/Color.hpp>
 
