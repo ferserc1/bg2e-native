@@ -41,7 +41,7 @@ void PickSelectionVisitor::visit(bg2e::scene::Node * node)
     {
         auto drw = dynamic_cast<bg2e::scene::Drawable*>(drawable->drawable().get());
         auto mesh = drw->renderMesh();
-        for (auto submesh = 0; submesh < mesh->submeshCount(); ++submesh)
+        for (uint32_t submesh = 0; submesh < mesh->submeshCount(); ++submesh)
         {
             auto submeshTransform = drw->submeshTransform(submesh);
             SelectionManager::PushConstantData pushConstants;
