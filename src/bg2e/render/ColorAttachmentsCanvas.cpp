@@ -68,7 +68,7 @@ void ColorAttachmentsCanvas::build(
 
 void ColorAttachmentsCanvas::draw(
     VkCommandBuffer cmd,
-    uint32_t currentFrame,
+    uint32_t, // currentFrame,
     const vulkan::Image * targetImage,
     vulkan::FrameResources& frameResources
 ) {

@@ -109,7 +109,7 @@ void Engine::createFrameResources()
 {
     auto numImages = swapchain().images().size();
     _frameResources.resize(numImages);
-    for (int i = 0; i < numImages; ++i)
+    for (uint32_t i = 0; i < numImages; ++i)
     {
         _frameResources[i].init(_device, &_command);
     }
@@ -118,7 +118,7 @@ void Engine::createFrameResources()
 void Engine::cleanupFrameResources()
 {
     auto numImages = swapchain().images().size();
-    for (int i = 0; i < numImages; ++i)
+    for (uint32_t i = 0; i < numImages; ++i)
     {
         _frameResources[i].cleanup();
     }
@@ -126,8 +126,8 @@ void Engine::cleanupFrameResources()
 
 void Engine::iterateFrameResources(std::function<void(vulkan::FrameResources&)> cb)
 {
-    auto numImages = swapchain().images().size();
-    for (auto i = 0; i < numImages; ++i)
+    size_t numImages = swapchain().images().size();
+    for (size_t i = 0; i < numImages; ++i)
     {
         cb(_frameResources[i]);
     }

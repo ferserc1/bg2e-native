@@ -47,7 +47,7 @@ public:
     
     inline const Image* msaaDepthImage() const { return _msaaDepthImage.get(); }
     
-    inline const VkFormat depthImageFormat() const { return _depthImage != nullptr ? _depthImage->format() : VK_FORMAT_UNDEFINED; }
+    inline VkFormat depthImageFormat() const { return _depthImage != nullptr ? _depthImage->format() : VK_FORMAT_UNDEFINED; }
 
 protected:
     VkSwapchainKHR _swapchain = VK_NULL_HANDLE;

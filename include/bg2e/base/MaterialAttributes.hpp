@@ -54,7 +54,7 @@ public:
     inline void setMetalnessScale(const glm::vec2& s) { _metalnessScale = s; }
     inline void setMetalnessScale(const std::array<float, 2>& s) { _metalnessScale = {s[0], s[1]}; }
     
-    inline const uint32_t metalnessChannel() const { return _metalnessChannel; }
+    inline uint32_t metalnessChannel() const { return _metalnessChannel; }
     inline void setMetalnessChannel(uint32_t c) { _metalnessChannel = c; }
 
     inline uint32_t metalnessUVSet() const { return _metalnessUVSet; }
@@ -72,7 +72,7 @@ public:
     inline void setRoughnessScale(const glm::vec2& s) { _roughnessScale = s; }
     inline void setRoughnessScale(const std::array<float, 2>& s) { _roughnessScale = {s[0], s[1]}; }
 
-    inline const uint32_t roughnessChannel() const { return _roughnessChannel; }
+    inline uint32_t roughnessChannel() const { return _roughnessChannel; }
     inline void setRoughnessChannel(uint32_t c) { _roughnessChannel = c; }
 
     inline uint32_t roughnessUVSet() const { return _roughnessUVSet; }
@@ -108,7 +108,7 @@ public:
     inline void setAoScale(const glm::vec2& s) { _aoScale = s; }
     inline void setAoScale(const std::array<float, 2>& s) { _aoScale = {s[0], s[1]}; }
 
-    inline const uint32_t aoChannel() const { return _aoChannel; }
+    inline uint32_t aoChannel() const { return _aoChannel; }
     inline void setAoChannel(uint32_t c) { _aoChannel = c; }
 
     inline uint32_t aoUVSet() const { return _aoUVSet; }

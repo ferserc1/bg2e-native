@@ -23,7 +23,9 @@ void GPUProcess::addBinding(
         BindingType::TypeImage,
         type,
         initialLayout,
-        finalLayout
+        finalLayout,
+        0,
+        0
     });
 }
 

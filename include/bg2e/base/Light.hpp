@@ -45,7 +45,7 @@ public:
         }
     }
 
-    void deserialize(std::shared_ptr<json::JsonNode> jsonData)
+    void deserialize(std::shared_ptr<json::JsonNode>)
     {
     
     }

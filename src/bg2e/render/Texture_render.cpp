@@ -27,7 +27,7 @@ Texture * Texture::colorTexture(Engine *engine, const base::Color &color, VkExte
     size_t dataSize = size.width * size.height * bytes;
     std::vector<uint8_t> data(dataSize, 0);
     
-    for (auto i = 0; i < dataSize; i += bytes)
+    for (size_t i = 0; i < dataSize; i += bytes)
     {
         data[i] = static_cast<uint8_t>(color.r * 255.0f);
         data[i + 1] = static_cast<uint8_t>(color.g * 255.0f);
@@ -53,7 +53,7 @@ std::shared_ptr<Texture> Texture::blackTexture(Engine *engine)
     if (_blackTexture.get() == nullptr)
     {
         _blackTexture = std::shared_ptr<Texture>(colorTexture(engine, base::Color::Black(), { 2, 2 }));
-        engine->cleanupManager().push([](VkDevice dev) {
+        engine->cleanupManager().push([](VkDevice) {
             _blackTexture.reset();
         });
     }
@@ -65,7 +65,7 @@ std::shared_ptr<Texture> Texture::whiteTexture(Engine *engine)
     if (_whiteTexture.get() == nullptr)
     {
         _whiteTexture = std::shared_ptr<Texture>(colorTexture(engine, base::Color::White(), { 2, 2 }));
-        engine->cleanupManager().push([](VkDevice dev) {
+        engine->cleanupManager().push([](VkDevice) {
             _whiteTexture.reset();
         });
     }
@@ -77,7 +77,7 @@ std::shared_ptr<Texture> Texture::normalTexture(Engine *engine)
     if (_normalTexture.get() == nullptr)
     {
         _normalTexture = std::shared_ptr<Texture>(colorTexture(engine, base::Color(0.5f, 0.5f, 1.0f, 1.0f), { 2, 2 }));
-        engine->cleanupManager().push([](VkDevice dev) {
+        engine->cleanupManager().push([](VkDevice) {
             _normalTexture.reset();
         });
     }

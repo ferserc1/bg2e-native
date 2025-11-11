@@ -9,7 +9,7 @@ namespace bg2e {
 namespace render {
 namespace vulkan {
 
-void Device::create(const Instance& instance, const PhysicalDevice& physicalDevice, const Surface& surface)
+void Device::create(const Instance& instance, const PhysicalDevice& physicalDevice, const Surface& /*surface*/)
 {
     auto indices = physicalDevice.queueFamilyIndices();
     

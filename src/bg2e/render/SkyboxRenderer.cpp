@@ -94,7 +94,7 @@ void SkyboxRenderer::update(const glm::mat4& view, const glm::mat4& proj)
 
 void SkyboxRenderer::draw(
     VkCommandBuffer commandBuffer,
-    uint32_t currentFrame,
+    uint32_t, // currentFrame,
     vulkan::FrameResources& frameResources
 ) {
     auto skyDataBuffer = vulkan::macros::createBuffer(_engine, frameResources, _skyData);

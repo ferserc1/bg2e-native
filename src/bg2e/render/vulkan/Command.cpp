@@ -30,7 +30,7 @@ void Command::init(Engine *engine)
     });
 }
 
-VkCommandPool Command::createCommandPool(VkCommandPoolCreateFlags flags)
+VkCommandPool Command::createCommandPool(VkCommandPoolCreateFlags /*flags*/)
 {
     VkCommandPool pool;
     auto poolInfo = Info::commandPoolCreateInfo(_graphicsQueueFamily, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);

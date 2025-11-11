@@ -12,8 +12,17 @@
 #pragma clang diagnostic ignored "-Wunused-variable"
 #pragma clang diagnostic ignored "-Wimplicit-fallthrough"
 #pragma clang diagnostic ignored "-Wunreachable-code-fallthrough"
+#endif
 
-
+#ifdef BG2E_IS_LINUX
+#pragma gcc diagnostic push
+#pragma gcc diagnostic ignored "-Wdocumentation"
+#pragma gcc diagnostic ignored "-Wdocumentation-deprecated-sync"
+#pragma gcc diagnostic ignored "-Wnullability-completeness"
+#pragma gcc diagnostic ignored "-Wunused-function"
+#pragma gcc diagnostic ignored "-Wunused-variable"
+#pragma gcc diagnostic ignored "-Wimplicit-fallthrough"
+#pragma gcc diagnostic ignored "-Wunreachable-code-fallthrough"
 #endif
 
 // Only in Linux
@@ -24,9 +33,12 @@
 #endif
 
 
-#ifndef _WIN32
+#ifdef BG2E_IS_MAC
 #pragma clang diagnostic pop
-#endif 
+#endif
+#ifdef BG2E_IS_LINUX
+#pragma gcc diagnostic pop
+#endif
 
 namespace bg2e {
 namespace render {

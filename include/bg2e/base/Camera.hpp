@@ -23,7 +23,7 @@ public:
     
     const glm::mat4& updateProjectionMatrix();
     
-    void deserialize(std::shared_ptr<json::JsonNode> jsonData)
+    void deserialize(std::shared_ptr<json::JsonNode>)
     {
     
     }

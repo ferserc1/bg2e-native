@@ -47,7 +47,7 @@ public:
     inline Viewport viewport() { return _viewport; }
     inline void setViewport(const Viewport& vp) { _viewport = vp; }
     
-    virtual void deserialize(std::shared_ptr<json::JsonNode> jsonData)
+    virtual void deserialize(std::shared_ptr<json::JsonNode>)
     {
     
     }
@@ -87,7 +87,7 @@ public:
     inline void setFov(float fov) { _fov = fov; }
     inline float fov() const { return _fov; }
     
-    void deserialize(std::shared_ptr<json::JsonNode> jsonData) override{
+    void deserialize(std::shared_ptr<json::JsonNode>) override{
     
     }
     
@@ -127,7 +127,7 @@ public:
     inline void setFrameSize(float fs) { _frameSize = fs; }
     inline float frameSize() const { return _frameSize; }
     
-    void deserialize(std::shared_ptr<json::JsonNode> jsonData) override{
+    void deserialize(std::shared_ptr<json::JsonNode>) override{
     
     }
     

@@ -96,7 +96,7 @@ void Swapchain::create(uint32_t width, uint32_t height)
     vkGetSwapchainImagesKHR(_engine->device().handle(), _swapchain, &imageCount, _images.data());
     
     // Multisampled image
-    for (auto i = 0; i < _images.size(); ++i)
+    for (uint32_t i = 0; i < _images.size(); ++i)
     {
         auto msaaImage = Image::createAllocatedImage(
             _engine,
@@ -133,7 +133,7 @@ void Swapchain::create(uint32_t width, uint32_t height)
     _colorImages.clear();
     _imageViews.clear();
     auto imageViewCreateInfo = Info::imageViewCreateInfo(_imageFormat, VK_NULL_HANDLE, VK_IMAGE_ASPECT_COLOR_BIT);
-    for (auto i = 0; i < _images.size(); ++i)
+    for (size_t i = 0; i < _images.size(); ++i)
     {
         // It's important to create the image view before wrapping the swapchain image
         VkImageView imageView;

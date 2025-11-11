@@ -5,6 +5,7 @@ EXAMPLES_DIR := examples
 DEPS_DIR := ./third_party
 PWD=$(shell pwd)
 
+BG2E_EXAMPLE_APP_INCLUDES := $(EXAMPLES_DIR)/app
 BG2E_EXAMPLE_APP_FILES := $(shell find $(EXAMPLES_DIR)/app -name '*.cpp')
 BG2E_CPP_FILES := $(shell find $(SRC_DIR) -name '*.cpp')
 BG2IO_FILES := $(shell find $(BG2IO_DIR)/src/bg2-io -name '*.c')
@@ -23,15 +24,16 @@ BG2E_INCLUDE_DIR := ./include
 BG2IO_INCLUDE_DIR := $(BG2IO_DIR)/src/bg2-io
 BG2SCENE_INCLUDE_DIR := $(BG2IO_DIR)/src/bg2-scene
 DEPS_INCLUDE_DIR := $(shell find $(DEPS_DIR) -type d)
-INCLUDE_DIR := $(BG2E_INCLUDE_DIR) $(DEPS_INCLUDE_DIR) $(VULKAN_SDK)/include $(BG2IO_INCLUDE_DIR) $(BG2SCENE_INCLUDE_DIR)
+INCLUDE_DIR := $(BG2E_INCLUDE_DIR) $(DEPS_INCLUDE_DIR) $(VULKAN_SDK)/include $(BG2IO_INCLUDE_DIR) $(BG2SCENE_INCLUDE_DIR) $(BG2E_EXAMPLE_APP_INCLUDES)
 INC_FLAGS := $(addprefix -I,$(INCLUDE_DIR))
 
 # Build configuration: default is release, use DEBUG=1 for debug build
 ifdef DEBUG
     CPPFLAGS := -std=c++20 -Wall -Wextra -g -O0 -DDEBUG
-	CFLAGS := -Wall -Wextra -g -O0 -DDEBUG
+	CFLAGS := -Wall -Wextra -g -O0 -DDEBUG -Wno-multichar
 else
     CPPFLAGS := -std=c++20 -Wall -Wextra -O3 -DNDEBUG
+	CFLAGS := -Wall -Wextra -O3 -DNDEBUG -Wno-multichar
 endif
 
 LDFLAGS := -L$(VULKAN_SDK)/lib -lvulkan -lSDL2 -ldl -lpthread -lX11 -lXxf86vm -lXrandr -lXi -lgtk-3

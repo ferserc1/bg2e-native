@@ -25,9 +25,9 @@ bool SelectionManager::pick(
     scene::Node * rootNode,
     const glm::mat4 & viewMatrix,
     const glm::mat4 & projMatrix,
-    const math::Viewport & vp,
-    uint32_t x,
-    uint32_t y
+    const math::Viewport &, // vp,
+    uint32_t, // x
+    uint32_t  // y
 ) {
     using namespace render::vulkan;
     _engine->command().immediateSubmit([&](VkCommandBuffer cmd) {

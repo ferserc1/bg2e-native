@@ -25,7 +25,12 @@ public:
 
     virtual void swapchainResized(VkExtent2D) = 0;
 
-    virtual void update(uint32_t currentFrame, render::vulkan::FrameResources&) {}
+    /**
+     * Update function called every frame before rendering.
+     * @param currentFrame The current frame index.
+     * @param frameResources The frame resources for the current frame.
+     */
+    virtual void update(uint32_t, render::vulkan::FrameResources&) {}
 
     virtual VkImageLayout render(
         VkCommandBuffer cmd,

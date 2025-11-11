@@ -14,8 +14,8 @@ class NodeVisitor {
 public:
     virtual ~NodeVisitor() = default;
     
-    virtual void visit(Node * node) {}
-    virtual void didVisit(Node * node) {}
+    virtual void visit(Node *) {}
+    virtual void didVisit(Node *) {}
     
     inline void setIgnoreDisabled(bool i) { _ignoreDisabled = i; }
     inline bool ignoreDisabled() const { return _ignoreDisabled; }

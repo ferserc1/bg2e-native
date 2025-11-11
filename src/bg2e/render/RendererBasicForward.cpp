@@ -114,7 +114,7 @@ void RendererBasicForward::draw(
     VkCommandBuffer cmd,
     uint32_t currentFrame,
     const bg2e::render::vulkan::Image* colorImage,
-    const bg2e::render::vulkan::Image* depthImage,
+    const bg2e::render::vulkan::Image*, // depthImage,
     const bg2e::render::vulkan::Image* msaaDepthImage,
     bg2e::render::vulkan::FrameResources& frameResources
 ) {
@@ -157,9 +157,13 @@ void RendererBasicForward::draw(
 
     static struct PushConstants pushConstants {
     #if BG2E_IS_MAC
-        .gamma = 2.2f // Default gamma value, can be changed later
+        .gamma = 2.2f, // Default gamma value, can be changed later
+        .brightness = 0.142f,
+        .contrast = 1.621f
     #else
-        .gamma = 1.0f
+        .gamma = 1.0f,
+        .brightness = 0.132f,
+        .contrast = 1.353f
     #endif
     };
     pushConstants.brightness = _brightness;
@@ -178,7 +182,7 @@ void RendererBasicForward::draw(
     // for opaque and transparent objects
     _renderQueueVisitor.enqueue(_scene->rootNode(), &_renderQueue);
 
-    auto dsFunction = [&](bg2e::render::MaterialBase * mat, const glm::mat4& transform, uint32_t submesh) {
+    auto dsFunction = [&](bg2e::render::MaterialBase * mat, const glm::mat4& transform, uint32_t /*submesh*/) {
         auto modelDS = _objectDataBinding->newDescriptorSet(
             frameResources,
             mat,
@@ -265,8 +269,10 @@ void RendererBasicForward::createPipelines(bg2e::render::Engine* engine) {
     });
 }
 
-VkPipeline RendererBasicForward::createOpaquePipeline(bg2e::render::Engine * engine, VkPipelineLayout layout)
-{
+VkPipeline RendererBasicForward::createOpaquePipeline(
+    bg2e::render::Engine * engine,
+    VkPipelineLayout //layout
+) {
     bg2e::render::vulkan::factory::GraphicsPipeline plFactory(engine);
 
     plFactory.addShader("basic_forward.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
@@ -288,8 +294,10 @@ VkPipeline RendererBasicForward::createOpaquePipeline(bg2e::render::Engine * eng
     return result;
 }
 
-VkPipeline RendererBasicForward::createTransparentPipeline(bg2e::render::Engine * engine, VkPipelineLayout layout)
-{
+VkPipeline RendererBasicForward::createTransparentPipeline(
+    bg2e::render::Engine * engine,
+    VkPipelineLayout //layout
+) {
     bg2e::render::vulkan::factory::GraphicsPipeline plFactory(engine);
 
     plFactory.addShader("basic_forward.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
@@ -315,8 +323,10 @@ VkPipeline RendererBasicForward::createTransparentPipeline(bg2e::render::Engine 
     return result;
 }
 
-VkPipeline RendererBasicForward::createSolidTransparentPipeline(bg2e::render::Engine * engine, VkPipelineLayout layout)
-{
+VkPipeline RendererBasicForward::createSolidTransparentPipeline(
+    bg2e::render::Engine * engine,
+    VkPipelineLayout //layout
+) {
     bg2e::render::vulkan::factory::GraphicsPipeline plFactory(engine);
 
     plFactory.addShader("basic_forward.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
