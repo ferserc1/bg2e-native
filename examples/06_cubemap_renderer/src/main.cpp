@@ -126,7 +126,6 @@ public:
             float(vpSize.width) / float(vpSize.height),
             0.1f, 40.0f
         );
-        _sceneData.projMatrix[1][1] *= -1.0f;
 
         _skyData.modelMatrix = glm::mat4{ 1.0f };
         _cubeData.modelMatrix = glm::mat4{ 1.0f };
@@ -141,7 +140,6 @@ public:
             float(newExtent.width) / float(newExtent.height),
             0.1f, 40.0f
         );
-        _sceneData.projMatrix[1][1] *= -1.0f;
 	}
 
 	VkImageLayout render(
@@ -357,7 +355,7 @@ protected:
         plFactory.setDepthFormat(_engine->swapchain().depthImageFormat());
         plFactory.enableDepthtest(true, VK_COMPARE_OP_LESS);
         plFactory.inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-        plFactory.setCullMode(true, VK_FRONT_FACE_COUNTER_CLOCKWISE);
+        plFactory.setCullMode(VK_CULL_MODE_NONE, VK_FRONT_FACE_COUNTER_CLOCKWISE);
 		plFactory.setColorAttachmentFormat(_engine->swapchain().imageFormat());
 		_pipeline = plFactory.build(_layout);
   
