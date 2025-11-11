@@ -355,7 +355,7 @@ public:
 
 int main(int argc, char** argv) {
 
-	bg2e::app::MainLoop mainLoop;
+	bg2e::app::MainLoop mainLoop("org.bg2engine.examples.submeshes");
 	MyApplication app;
 	app.init(argc, argv);
 	return mainLoop.run(&app);

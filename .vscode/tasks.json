@@ -7,7 +7,7 @@
             "command": "make -j$(grep -c processor /proc/cpuinfo) DEBUG=1",
             "group": {
                 "kind": "build",
-                "isDefault": true
+                "isDefault": false
             }
         },
         {
@@ -16,8 +16,168 @@
             "command": "cd apps/model_edit && make -j$(grep -c processor /proc/cpuinfo) DEBUG=1",
             "group": {
                 "kind": "build",
-                "isDefault": true
+                "isDefault": false
             }
+        },
+
+        {
+            "label": "build-example-01-setup",
+            "type": "shell",
+            "command": "cd examples/01_setup && make -j$(grep -c processor /proc/cpuinfo) DEBUG=1",
+            "group": {
+                "kind": "build",
+                "isDefault": false
+            }
+        },
+        {
+            "label": "build-example-02-compute-shader",
+            "type": "shell",
+            "command": "cd examples/02_compute_shader && make -j$(grep -c processor /proc/cpuinfo) DEBUG=1",
+            "group": {
+                "kind": "build",
+                "isDefault": false
+            }
+        },
+        {
+            "label": "build-example-02-ui",
+            "type": "shell",
+            "command": "cd examples/02_ui && make -j$(grep -c processor /proc/cpuinfo) DEBUG=1",
+            "group": {
+                "kind": "build",
+                "isDefault": false
+            }
+        },
+        {
+            "label": "build-example-03-vertex-buffer",
+            "type": "shell",
+            "command": "cd examples/03_vertex_buffer && make -j$(grep -c processor /proc/cpuinfo) DEBUG=1",
+            "group": {
+                "kind": "build",
+                "isDefault": false
+            }
+        },
+        {
+            "label": "build-example-04-submeshes",
+            "type": "shell",
+            "command": "cd examples/04_submeshes && make -j$(grep -c processor /proc/cpuinfo) DEBUG=1",
+            "group": {
+                "kind": "build",
+                "isDefault": false
+            }
+        },
+        {
+            "label": "build-example-05-sky-sphere",
+            "type": "shell",
+            "command": "cd examples/05_sky_sphere && make -j$(grep -c processor /proc/cpuinfo) DEBUG=1",
+            "group": {
+                "kind": "build",
+                "isDefault": false
+            }
+        },
+        {
+            "label": "build-example-06-cubemap-renderer",
+            "type": "shell",
+            "command": "cd examples/06_cubemap_renderer && make -j$(grep -c processor /proc/cpuinfo) DEBUG=1",
+            "group": {
+                "kind": "build",
+                "isDefault": false
+            }
+        },
+        {
+            "label": "build-example-07-environment-render",
+            "type": "shell",
+            "command": "cd examples/07_environment_render && make -j$(grep -c processor /proc/cpuinfo) DEBUG=1",
+            "group": {
+                "kind": "build",
+                "isDefault": false
+            }
+        },
+        {
+            "label": "build-example-08-multi-color-attachments",
+            "type": "shell",
+            "command": "cd examples/08_multi_color_attachments && make -j$(grep -c processor /proc/cpuinfo) DEBUG=1",
+            "group": {
+                "kind": "build",
+                "isDefault": false
+            }
+        },
+        {
+            "label": "build-example-09-drawable",
+            "type": "shell",
+            "command": "cd examples/09_drawable && make -j$(grep -c processor /proc/cpuinfo) DEBUG=1",
+            "group": {
+                "kind": "build",
+                "isDefault": false
+            }
+        },
+        {
+            "label": "build-example-10-scene-objects",
+            "type": "shell",
+            "command": "cd examples/10_scene_objects && make -j$(grep -c processor /proc/cpuinfo) DEBUG=1",
+            "group": {
+                "kind": "build",
+                "isDefault": false
+            }
+        },
+        {
+            "label": "build-example-11-scene-renderer-raw",
+            "type": "shell",
+            "command": "cd examples/11_scene_renderer_raw && make -j$(grep -c processor /proc/cpuinfo) DEBUG=1",
+            "group": {
+                "kind": "build",
+                "isDefault": false
+            }
+        },
+        {
+            "label": "build-example-12-scene-renderer",
+            "type": "shell",
+            "command": "cd examples/12_scene_renderer && make -j$(grep -c processor /proc/cpuinfo) DEBUG=1",
+            "group": {
+                "kind": "build",
+                "isDefault": false
+            }
+        },
+        {
+            "label": "build-example-13-pbr-demo",
+            "type": "shell",
+            "command": "cd examples/13_pbr_demo && make -j$(grep -c processor /proc/cpuinfo) DEBUG=1",
+            "group": {
+                "kind": "build",
+                "isDefault": false
+            }
+        },
+        {
+            "label": "build-example-14-bg2-model-load",
+            "type": "shell",
+            "command": "cd examples/14_bg2_model_load && make -j$(grep -c processor /proc/cpuinfo) DEBUG=1",
+            "group": {
+                "kind": "build",
+                "isDefault": false
+            }
+        },
+
+        {
+            "type": "cppbuild",
+            "label": "C/C++: g++ build active file",
+            "command": "/usr/bin/g++",
+            "args": [
+                "-fdiagnostics-color=always",
+                "-g",
+                "${file}",
+                "-o",
+                "${fileDirname}/${fileBasenameNoExtension}"
+            ],
+            "options": {
+                "cwd": "${fileDirname}"
+            },
+            "problemMatcher": [
+                "$gcc"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "detail": "Task generated by Debugger."
         }
     ]
 }

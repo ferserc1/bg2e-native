@@ -399,7 +399,7 @@ protected:
         );
         
         _modelMaterial = std::make_shared<bg2e::render::MaterialBase>(_engine);
-        _modelMaterial->materialAttributes().setAlbedo(modelTexture);
+        _modelMaterial->materialAttributes().setAlbedoTexture(modelTexture);
         
         // Call this function every time you change something in materialAttributes
         _modelMaterial->updateTextures();
@@ -410,7 +410,7 @@ protected:
         );
         
         _modelMaterial2 = std::make_shared<bg2e::render::MaterialBase>(_engine);
-        _modelMaterial2->materialAttributes().setAlbedo(modelTexture2);
+        _modelMaterial2->materialAttributes().setAlbedoTexture(modelTexture2);
         
         _modelMaterial2->updateTextures();
         
@@ -434,7 +434,7 @@ public:
 };
 
 int main(int argc, char** argv) {
-	bg2e::app::MainLoop mainLoop;
+	bg2e::app::MainLoop mainLoop("org.bg2engine.examples.multi-color-attachments");
 	MyApplication app;
 	app.init(argc, argv);
 	return mainLoop.run(&app);

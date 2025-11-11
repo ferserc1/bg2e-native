@@ -15,6 +15,8 @@ public:
             transform->rotate(0.02f * delta / 10.0f, 0.0f, 1.0f, 0.0f);
         }
     }
+
+    std::string typeName() const override { return "RotateComponent"; }
 };
 
 class BasicSceneDelegate : public bg2e::render::RenderLoopDelegate,
@@ -377,8 +379,8 @@ protected:
         auto drawable = new bg2e::scene::DrawablePNU();
         
         drawable->setMesh(bg2e::db::loadMeshObj<bg2e::geo::MeshPNU>(modelPath));
-        drawable->material(0).setAlbedo(outerAlbedoTexture);
-        drawable->material(1).setAlbedo(innerAlbedoTexture);
+        drawable->material(0).setAlbedoTexture(outerAlbedoTexture);
+        drawable->material(1).setAlbedoTexture(innerAlbedoTexture);
         drawable->load(_engine);
         
         return drawable;
@@ -397,7 +399,8 @@ public:
 };
 
 int main(int argc, char** argv) {
-	bg2e::app::MainLoop mainLoop;
+	bg2e::app::MainLoop mainLoop("org.bg2engine.examples.drawable");
+    mainLoop.initWindowTitle("Drawable Example");
 	MyApplication app;
 	app.init(argc, argv);
 	return mainLoop.run(&app);

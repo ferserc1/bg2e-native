@@ -289,10 +289,10 @@ protected:
         auto assetPath = bg2e::base::PlatformTools::assetPath();
         auto mainSphereDrawable = new bg2e::scene::Drawable();
         mainSphereDrawable->setMesh(sphereMesh);
-        mainSphereDrawable->material(0).setAlbedo(new bg2e::base::Texture(assetPath, "rust_metal_albedo.jpg"));
+        mainSphereDrawable->material(0).setAlbedoTexture(new bg2e::base::Texture(assetPath, "rust_metal_albedo.jpg"));
         mainSphereDrawable->material(0).setNormalTexture(new bg2e::base::Texture(assetPath, "rust_metal_normal.jpg"));
-        mainSphereDrawable->material(0).setMetalness(new bg2e::base::Texture(assetPath, "rust_metal_metallic.jpg"));
-        mainSphereDrawable->material(0).setRoughness(new bg2e::base::Texture(assetPath, "rust_metal_roughness.jpg"));
+        mainSphereDrawable->material(0).setMetalnessTexture(new bg2e::base::Texture(assetPath, "rust_metal_metallic.jpg"));
+        mainSphereDrawable->material(0).setRoughnessTexture(new bg2e::base::Texture(assetPath, "rust_metal_roughness.jpg"));
         mainSphereDrawable->load(_engine);
         
         auto mainSphereNode = new bg2e::scene::Node("Main Sphere");
@@ -338,7 +338,7 @@ public:
 };
 
 int main(int argc, char** argv) {
-	bg2e::app::MainLoop mainLoop;
+	bg2e::app::MainLoop mainLoop("org.bg2engine.examples.pbr-demo");
 	MyApplication app;
 	app.init(argc, argv);
 	return mainLoop.run(&app);
