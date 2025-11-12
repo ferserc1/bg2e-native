@@ -31,7 +31,7 @@ const glm::vec3 LightComponent::direction() const
     return dir;
 }
 
-void LightComponent::deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path& basePath)
+void LightComponent::deserialize(std::shared_ptr<json::JsonNode> /* jsonData */, const std::filesystem::path& /* basePath */)
 {
 
 }

@@ -9,7 +9,7 @@
 
 namespace bg2e::scene {
 
-void OrbitCameraComponent::deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path&)
+void OrbitCameraComponent::deserialize(std::shared_ptr<json::JsonNode> /*jsonData*/, const std::filesystem::path& /*basePath*/)
 {
 
 }
@@ -66,7 +66,7 @@ void OrbitCameraComponent::resizeViewport(const math::Viewport& vp)
     _viewportHeight = static_cast<uint32_t>(vp.height);
 }
 
-void OrbitCameraComponent::update(float delta)
+void OrbitCameraComponent::update(float /* delta */)
 {
     auto transform = ownerNode()->transform();
     
@@ -129,14 +129,14 @@ void OrbitCameraComponent::update(float delta)
     }
 }
 
-void OrbitCameraComponent::mouseButtonDown(int button, int x, int y)
+void OrbitCameraComponent::mouseButtonDown(int /*button*/, int x, int y)
 {
     if (!_enabled) return;
     _mouseButtonPressed = true;
     _lastPos = { static_cast<float>(x), static_cast<float>(y) };
 }
 
-void OrbitCameraComponent::mouseButtonUp(int button, int x, int y)
+void OrbitCameraComponent::mouseButtonUp(int /*button*/, int /*x*/, int /*y*/)
 {
     if (!_enabled) return;
     _mouseButtonPressed = false;
@@ -186,7 +186,7 @@ void OrbitCameraComponent::mouseMove(int x, int y)
     }
 }
 
-void OrbitCameraComponent::mouseWheel(int deltaX, int deltaY)
+void OrbitCameraComponent::mouseWheel(int /*deltaX*/, int deltaY)
 {
     if (!_enabled) return;
     auto mult = _distance > 0.1f ? _distance : 0.1f;

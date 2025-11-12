@@ -7,7 +7,7 @@ namespace vulkan {
 
 VkDebugUtilsMessengerCreateInfoEXT Info::debugMessengerCreateInfo(
     PFN_vkDebugUtilsMessengerCallbackEXT callback,
-    void * pUserData
+    void * /* pUserData */
 ) {
     VkDebugUtilsMessengerCreateInfoEXT debugInfo{};
     debugInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;

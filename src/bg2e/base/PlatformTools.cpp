@@ -100,7 +100,7 @@ std::filesystem::path bg2e::base::PlatformTools::settingsPath()
     try {
         fs::create_directories(basePath);
     }
-    catch (std::runtime_error err)
+    catch (std::runtime_error const &)
     {
         std::cerr << "Unable to create settings directory at path \"" << basePath << "\"" << std::endl; 
     }

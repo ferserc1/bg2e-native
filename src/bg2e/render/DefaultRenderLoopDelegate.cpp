@@ -7,7 +7,7 @@
 namespace bg2e::render {
 
 template <typename RendererT>
-DefaultRenderLoopDelegate<RendererT>::~DefaultRenderLoopDelegate<RendererT>()
+DefaultRenderLoopDelegate<RendererT>::~DefaultRenderLoopDelegate()
 {
 
 }
@@ -43,7 +43,7 @@ void DefaultRenderLoopDelegate<RendererT>::swapchainResized(VkExtent2D newExtent
 
 template <typename RendererT>
 void DefaultRenderLoopDelegate<RendererT>::update(
-    uint32_t currentFrame,
+    uint32_t /* currentFrame */,
     render::vulkan::FrameResources&
 ) {
     _renderer->update(delta());
@@ -83,7 +83,7 @@ RendererT* DefaultRenderLoopDelegate<RendererT>::renderer()
     return _renderer.get();
 }
 
-template DefaultRenderLoopDelegate<RendererBasicForward>::~DefaultRenderLoopDelegate<RendererBasicForward>();
+template DefaultRenderLoopDelegate<RendererBasicForward>::~DefaultRenderLoopDelegate();
 template void DefaultRenderLoopDelegate<RendererBasicForward>::init(render::Engine * engine);
 template void DefaultRenderLoopDelegate<RendererBasicForward>::initFrameResources(render::vulkan::DescriptorSetAllocator*);
 template void DefaultRenderLoopDelegate<RendererBasicForward>::initScene();

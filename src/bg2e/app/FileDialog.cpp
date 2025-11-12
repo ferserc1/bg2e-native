@@ -145,7 +145,7 @@ std::filesystem::path FileDialog::getSaveFilePath(const FileFilters& filters)
     return fd.saveFile();
 }
 
-std::filesystem::path FileDialog::getPickFolderPath(const FileFilters& filters)
+std::filesystem::path FileDialog::getPickFolderPath()
 {
     FileDialog fd;
     return fd.pickFolder();

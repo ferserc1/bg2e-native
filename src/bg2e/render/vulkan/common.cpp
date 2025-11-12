@@ -1,7 +1,8 @@
 
 #include <bg2e/render/vulkan/common.hpp>
+#include <bg2e/base/PlatformTools.hpp>
 
-#ifndef _WIN32
+#ifdef BG2E_IS_MAC
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wdocumentation"
 #pragma clang diagnostic ignored "-Wdocumentation-deprecated-sync"
@@ -10,6 +11,13 @@
 #pragma clang diagnostic ignored "-Wunused-variable"
 #pragma clang diagnostic ignored "-Wimplicit-fallthrough"
 #pragma clang diagnostic ignored "-Wunreachable-code-fallthrough"
+#elif defined(BG2E_IS_LINUX)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-function"
+#pragma GCC diagnostic ignored "-Wunused-variable"
+#pragma GCC diagnostic ignored "-Wunused-parameter"
+#pragma GCC diagnostic ignored "-Wimplicit-fallthrough"
+#pragma GCC diagnostic ignored "-Wmissing-field-initializers"
 #endif
 
 
@@ -20,8 +28,10 @@
 #include "vk_mem_alloc.h"
 #endif
 
-#ifndef _WIN32
+#ifdef BG2E_IS_MAC
 #pragma clang diagnostic pop
+#elif defined(BG2E_IS_LINUX)
+#pragma GCC diagnostic pop
 #endif 
 
 

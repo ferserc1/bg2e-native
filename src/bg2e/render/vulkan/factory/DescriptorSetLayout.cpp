@@ -17,7 +17,7 @@ void DescriptorSetLayout::clear()
     _bindings.clear();
 }
 
-VkDescriptorSetLayout DescriptorSetLayout::build(VkDevice device, VkShaderStageFlags shaderStages, void* pNext, VkDescriptorSetLayoutCreateFlags flags)
+VkDescriptorSetLayout DescriptorSetLayout::build(VkDevice device, VkShaderStageFlags shaderStages, void* /*pNext*/, VkDescriptorSetLayoutCreateFlags flags)
 {
     for (auto& b : _bindings)
     {

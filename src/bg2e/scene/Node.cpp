@@ -36,7 +36,7 @@ void Node::addChild(std::shared_ptr<Node> node)
     node->_parent = this;
 }
 
-void Node::removeChild(std::shared_ptr<Node> node)
+void Node::removeChild(std::shared_ptr<Node> /* node */)
 {
     // TODO: Implement this
 }

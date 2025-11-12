@@ -404,6 +404,7 @@ bg2e::geo::MeshPNUUT* createCylinderPNUUT(float radius, float height, uint32_t s
                 vertex.position,
                 vertex.normal,
                 vertex.texCoord0,
+                vertex.texCoord0,
                 vertex.tangent
             });
         }, [&](uint32_t index) {

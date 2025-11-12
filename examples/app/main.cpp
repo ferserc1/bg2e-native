@@ -255,7 +255,8 @@ class MyApplication : public bg2e::app::Application {
 public:
 	void init(int, char**) override
 	{
-		auto delegate = std::make_shared<SpheresSceneDelegate>();
+		// auto delegate = std::make_shared<SpheresSceneDelegate>();
+        auto delegate = std::make_shared<DevSceneDelegate>();
 		setRenderDelegate(delegate);
 		setInputDelegate(delegate);
 		setUiDelegate(delegate);

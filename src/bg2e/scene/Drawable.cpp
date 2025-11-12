@@ -227,7 +227,7 @@ void DrawableGeneric<MeshT, RenderMeshT>::draw(
     DrawFunction cb,
     VkPipelineBindPoint bp
 ) {
-    for (auto i = 0; i < _materials.size(); ++i)
+    for (size_t i = 0; i < _materials.size(); ++i)
     {
         if (submeshVisibility(i))
         {

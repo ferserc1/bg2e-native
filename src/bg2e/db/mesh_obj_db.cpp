@@ -77,7 +77,7 @@ void readObjMesh(
 }
 
 template <>
-bg2e::geo::MeshP* loadMeshObj<bg2e::geo::MeshP>(std::istream& inputStream) {
+bg2e::geo::MeshP* loadMeshObj<bg2e::geo::MeshP>(std::istream& /* inputStream */) {
 	return nullptr;
 }
 
@@ -87,7 +87,7 @@ bg2e::geo::MeshPN* loadMeshObj<bg2e::geo::MeshPN>(std::istream& inputStream) {
 
 	readObjMesh(
 		inputStream,
-		[&](const glm::vec3& position, const glm::vec3& normal, const glm::vec2& uv) {
+		[&](const glm::vec3& position, const glm::vec3& normal, const glm::vec2& /* uv */ ) {
 			mesh->vertices.push_back(bg2e::geo::VertexPN{ position, normal });
 		},
 		[&](uint32_t index) {
@@ -106,7 +106,7 @@ bg2e::geo::MeshPC* loadMeshObj<bg2e::geo::MeshPC>(std::istream& inputStream) {
 
 	readObjMesh(
 		inputStream,
-		[&](const glm::vec3& position, const glm::vec3& normal, const glm::vec2& uv) {
+		[&](const glm::vec3& position, const glm::vec3& /* normal */, const glm::vec2& /* uv */) {
 			mesh->vertices.push_back(bg2e::geo::VertexPC{ position, { 1.0f, 1.0f, 1.0f, 1.0f } });
 		},
 		[&](uint32_t index) {
@@ -125,7 +125,7 @@ bg2e::geo::MeshPU* loadMeshObj<bg2e::geo::MeshPU>(std::istream& inputStream) {
 
 	readObjMesh(
 		inputStream,
-		[&](const glm::vec3& position, const glm::vec3& normal, const glm::vec2& uv) {
+		[&](const glm::vec3& position, const glm::vec3& /* normal */, const glm::vec2& uv) {
 			mesh->vertices.push_back(bg2e::geo::VertexPU{ position, uv });
 		},
 		[&](uint32_t index) {
@@ -163,7 +163,7 @@ bg2e::geo::MeshPNC* loadMeshObj<bg2e::geo::MeshPNC>(std::istream& inputStream) {
 
 	readObjMesh(
 		inputStream,
-		[&](const glm::vec3& position, const glm::vec3& normal, const glm::vec2& uv) {
+		[&](const glm::vec3& position, const glm::vec3& normal, const glm::vec2& /* uv */) {
 			mesh->vertices.push_back(bg2e::geo::VertexPNC{ position, normal, { 1.0f, 1.0f, 1.0f, 1.0f } });
 		},
 		[&](uint32_t index) {

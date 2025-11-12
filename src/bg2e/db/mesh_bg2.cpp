@@ -148,7 +148,7 @@ std::vector<Bg2Plist> readPolyList(Bg2ioBufferIterator& it, uint32_t numberOfPli
         float * t1 = nullptr;
         int numT1 = 0;
         float * t2 = nullptr;
-        int numT2 = 0;
+        // int numT2 = 0;
         int * index = nullptr;
         Bg2Plist plistData;
         int numIndex = 0;
@@ -177,7 +177,8 @@ std::vector<Bg2Plist> readPolyList(Bg2ioBufferIterator& it, uint32_t numberOfPli
                 numT1 = (int) bg2io_readFloatArray(&it, &t1);
                 break;
             case bg2io_TexCoord2Array:
-                numT2 = (int) bg2io_readFloatArray(&it, &t2);
+                // numT2 = (int) bg2io_readFloatArray(&it, &t2);
+                bg2io_readFloatArray(&it, &t2);
                 break;
             case bg2io_IndexArray:
                 numIndex = (int) bg2io_readIntArray(&it, &index);
@@ -218,7 +219,7 @@ std::vector<Bg2Plist> readPolyList(Bg2ioBufferIterator& it, uint32_t numberOfPli
                     // Not used
                     free(t2);
                     t2 = NULL;
-                    numT2 = 0;
+                    // numT2 = 0;
                 }
                 if (index != NULL)
                 {

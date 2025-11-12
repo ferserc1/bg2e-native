@@ -35,8 +35,8 @@ void DrawableComponent::draw(
 }
 
 void DrawableComponent::deserialize(
-    std::shared_ptr<json::JsonNode> jsonData,
-    const std::filesystem::path& basePath
+    std::shared_ptr<json::JsonNode> /* jsonData */,
+    const std::filesystem::path& /* basePath */
 ) {
 
 }

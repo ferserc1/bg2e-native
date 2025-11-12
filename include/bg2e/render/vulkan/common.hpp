@@ -2,6 +2,7 @@
 
 #include <vulkan/vulkan.h>
 #include <vulkan/vk_enum_string_helper.h>
+#include <bg2e/base/PlatformTools.hpp>
 
 #ifdef BG2E_IS_MAC
 #pragma clang diagnostic push
@@ -15,14 +16,10 @@
 #endif
 
 #ifdef BG2E_IS_LINUX
-#pragma gcc diagnostic push
-#pragma gcc diagnostic ignored "-Wdocumentation"
-#pragma gcc diagnostic ignored "-Wdocumentation-deprecated-sync"
-#pragma gcc diagnostic ignored "-Wnullability-completeness"
-#pragma gcc diagnostic ignored "-Wunused-function"
-#pragma gcc diagnostic ignored "-Wunused-variable"
-#pragma gcc diagnostic ignored "-Wimplicit-fallthrough"
-#pragma gcc diagnostic ignored "-Wunreachable-code-fallthrough"
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-function"
+#pragma GCC diagnostic ignored "-Wunused-variable"
+#pragma GCC diagnostic ignored "-Wimplicit-fallthrough"
 #endif
 
 // Only in Linux
@@ -37,7 +34,7 @@
 #pragma clang diagnostic pop
 #endif
 #ifdef BG2E_IS_LINUX
-#pragma gcc diagnostic pop
+#pragma GCC diagnostic pop
 #endif
 
 namespace bg2e {

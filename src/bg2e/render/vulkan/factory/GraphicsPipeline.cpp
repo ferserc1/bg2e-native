@@ -97,7 +97,7 @@ void GraphicsPipeline::setInputTopology(VkPrimitiveTopology topology)
 void GraphicsPipeline::setPolygonMode(VkPolygonMode mode, float lineWidth)
 {
     rasterizer.polygonMode = mode;
-    rasterizer.lineWidth = 1.f;
+    rasterizer.lineWidth = lineWidth;
 }
 
 void GraphicsPipeline::setCullMode(VkCullModeFlags cullMode, VkFrontFace frontFace)

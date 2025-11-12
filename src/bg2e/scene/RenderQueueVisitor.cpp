@@ -42,7 +42,7 @@ void RenderQueueVisitor<DrawableT>::visit(bg2e::scene::Node* node) {
     if (drawableComponent) {
         Drawable* drawable = dynamic_cast<Drawable*>(drawableComponent->drawable().get());
         if (drawable) {
-            for (auto i = 0; i < drawable->materials().size(); ++i) {
+            for (size_t i = 0; i < drawable->materials().size(); ++i) {
                 if (drawable->submeshVisibility(i))
                 {
                     std::shared_ptr<render::MaterialBase> mat = drawable->renderMaterial(i);

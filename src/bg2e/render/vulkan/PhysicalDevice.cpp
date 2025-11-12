@@ -104,7 +104,7 @@ PhysicalDevice::SwapChainSupportDetails PhysicalDevice::SwapChainSupportDetails:
     return details;
 }
 
-VkSurfaceFormatKHR PhysicalDevice::SwapChainSupportDetails::chooseSurfaceFormat(VkFormat preferredFormat) const
+VkSurfaceFormatKHR PhysicalDevice::SwapChainSupportDetails::chooseSurfaceFormat(VkFormat /* preferredFormat */) const
 {
     for (const auto& availableFormat : formats)
     {
@@ -119,7 +119,7 @@ VkSurfaceFormatKHR PhysicalDevice::SwapChainSupportDetails::chooseSurfaceFormat(
 }
 
 VkPresentModeKHR PhysicalDevice::SwapChainSupportDetails::choosePresentMode(
-    VkPresentModeKHR preferredPresentMode,
+    VkPresentModeKHR /* preferredPresentMode */,
     VkPresentModeKHR fallbackMode
 ) const {
     for (const auto& availablePresentModes : presentModes)

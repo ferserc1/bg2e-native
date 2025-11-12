@@ -24,12 +24,12 @@ void CameraComponent::resizeViewport(const math::Viewport& vp)
     }
 }
 
-void CameraComponent::update(float delta)
+void CameraComponent::update(float /* delta */)
 {
     _camera.updateProjectionMatrix();
 }
 
-void CameraComponent::deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path& basePath)
+void CameraComponent::deserialize(std::shared_ptr<json::JsonNode> /* jsonData */, const std::filesystem::path& /* basePath */)
 {
 
 }

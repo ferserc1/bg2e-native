@@ -12,10 +12,10 @@ void createConeBase(
     float radius,
     float height,
     uint32_t slices,
-    bool invertFaces,
+    bool /*invertFaces*/,
     std::function<void(VertexPNUT)> vertexCallback,
-    std::function<void(uint32_t)> indexCallback,
-    std::function<void(uint32_t, uint32_t)> submeshCallback
+    std::function<void(uint32_t)> /* indexCallback */,
+    std::function<void(uint32_t, uint32_t)> /* submeshCallback */
 ) {
     float halfHeight = height / 2.0f;
     float angleDelta = 2.0f * std::numbers::pi_v<float> / float(slices);
@@ -101,14 +101,14 @@ void createConeBase(
     
 }
 
-bg2e::geo::MeshP* createConeP(float radius, float height, uint32_t slices, bool invertFaces)
+bg2e::geo::MeshP* createConeP(float radius, float height, uint32_t slices, bool /*invertFaces*/)
 {
     auto result = new MeshP();
     createConeBase(
         radius,
         height,
         slices,
-        invertFaces,
+        false, // invertFaces unused
         [&](VertexPNUT vertex) {
             result->vertices.push_back({
                 vertex.position
@@ -124,14 +124,14 @@ bg2e::geo::MeshP* createConeP(float radius, float height, uint32_t slices, bool 
     return result;
 }
 
-bg2e::geo::MeshPC* createConePC(float radius, float height, uint32_t slices, bool invertFaces)
+bg2e::geo::MeshPC* createConePC(float radius, float height, uint32_t slices, bool /*invertFaces*/)
 {
     auto result = new MeshPC();
     createConeBase(
         radius,
         height,
         slices,
-        invertFaces,
+        false, // invertFaces unused
         [&](VertexPNUT vertex) {
             result->vertices.push_back({
                 vertex.position,
@@ -148,14 +148,14 @@ bg2e::geo::MeshPC* createConePC(float radius, float height, uint32_t slices, boo
     return result;
 }
 
-bg2e::geo::MeshPN* createConePN(float radius, float height, uint32_t slices, bool invertFaces)
+bg2e::geo::MeshPN* createConePN(float radius, float height, uint32_t slices, bool /*invertFaces*/)
 {
     auto result = new MeshPN();
     createConeBase(
         radius,
         height,
         slices,
-        invertFaces,
+        false, // invertFaces unused
         [&](VertexPNUT vertex) {
             result->vertices.push_back({
                 vertex.position,
@@ -172,14 +172,14 @@ bg2e::geo::MeshPN* createConePN(float radius, float height, uint32_t slices, boo
     return result;
 }
 
-bg2e::geo::MeshPU* createConePU(float radius, float height, uint32_t slices, bool invertFaces)
+bg2e::geo::MeshPU* createConePU(float radius, float height, uint32_t slices, bool /*invertFaces*/)
 {
     auto result = new MeshPU();
     createConeBase(
         radius,
         height,
         slices,
-        invertFaces,
+        false, // invertFaces unused
         [&](VertexPNUT vertex) {
             result->vertices.push_back({
                 vertex.position,
@@ -196,14 +196,14 @@ bg2e::geo::MeshPU* createConePU(float radius, float height, uint32_t slices, boo
     return result;
 }
 
-bg2e::geo::MeshPNU* createConePNU(float radius, float height, uint32_t slices, bool invertFaces)
+bg2e::geo::MeshPNU* createConePNU(float radius, float height, uint32_t slices, bool /*invertFaces*/)
 {
     auto result = new MeshPNU();
     createConeBase(
         radius,
         height,
         slices,
-        invertFaces,
+        false, // invertFaces unused
         [&](VertexPNUT vertex) {
             result->vertices.push_back({
                 vertex.position,
@@ -221,14 +221,14 @@ bg2e::geo::MeshPNU* createConePNU(float radius, float height, uint32_t slices, b
     return result;
 }
 
-bg2e::geo::MeshPNC* createConePNC(float radius, float height, uint32_t slices, bool invertFaces)
+bg2e::geo::MeshPNC* createConePNC(float radius, float height, uint32_t slices, bool /*invertFaces*/)
 {
     auto result = new MeshPNC();
     createConeBase(
         radius,
         height,
         slices,
-        invertFaces,
+        false, // invertFaces unused
         [&](VertexPNUT vertex) {
             result->vertices.push_back({
                 vertex.position,
@@ -246,14 +246,14 @@ bg2e::geo::MeshPNC* createConePNC(float radius, float height, uint32_t slices, b
     return result;
 }
 
-bg2e::geo::MeshPNUC* createConePNUC(float radius, float height, uint32_t slices, bool invertFaces)
+bg2e::geo::MeshPNUC* createConePNUC(float radius, float height, uint32_t slices, bool /*invertFaces*/)
 {
     auto result = new MeshPNUC();
     createConeBase(
         radius,
         height,
         slices,
-        invertFaces,
+        false, // invertFaces unused
         [&](VertexPNUT vertex) {
             result->vertices.push_back({
                 vertex.position,
@@ -272,14 +272,14 @@ bg2e::geo::MeshPNUC* createConePNUC(float radius, float height, uint32_t slices,
     return result;
 }
 
-bg2e::geo::MeshPNUT* createConePNUT(float radius, float height, uint32_t slices, bool invertFaces)
+bg2e::geo::MeshPNUT* createConePNUT(float radius, float height, uint32_t slices, bool /*invertFaces*/)
 {
     auto result = new MeshPNUT();
     createConeBase(
         radius,
         height,
         slices,
-        invertFaces,
+        false, // invertFaces unused
         [&](VertexPNUT vertex) {
             result->vertices.push_back(vertex);
         },
@@ -293,14 +293,14 @@ bg2e::geo::MeshPNUT* createConePNUT(float radius, float height, uint32_t slices,
     return result;
 }
 
-bg2e::geo::MeshPNUUT* createConePNUUT(float radius, float height, uint32_t slices, bool invertFaces)
+bg2e::geo::MeshPNUUT* createConePNUUT(float radius, float height, uint32_t slices, bool /*invertFaces*/)
 {
     auto result = new MeshPNUUT();
     createConeBase(
         radius,
         height,
         slices,
-        invertFaces,
+        false, // invertFaces unused
         [&](VertexPNUT vertex) {
             result->vertices.push_back({
                 vertex.position,
@@ -321,9 +321,9 @@ bg2e::geo::MeshPNUUT* createConePNUUT(float radius, float height, uint32_t slice
 }
 
 
-bg2e::geo::MeshPNUUT* createCone(float radius, float height, uint32_t slices, bool invertFaces)
+bg2e::geo::MeshPNUUT* createCone(float radius, float height, uint32_t slices, bool /*invertFaces*/)
 {
-    return createConePNUUT(radius, height, slices, invertFaces);
+    return createConePNUUT(radius, height, slices, false); // invertFaces unused
 }
 
 }

@@ -30,7 +30,7 @@ EnvironmentComponent::~EnvironmentComponent()
 
 }
 
-void EnvironmentComponent::deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path& basePath)
+void EnvironmentComponent::deserialize(std::shared_ptr<json::JsonNode> /* jsonData */, const std::filesystem::path& /* basePath */)
 {
 
 }

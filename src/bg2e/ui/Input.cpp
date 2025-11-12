@@ -318,7 +318,7 @@ bool Input::sliderDouble(
     double * value,
     double min,
     double max,
-    bool sameLine
+    bool /* sameLine */
 ) {
     return sliderFloat(
         label,

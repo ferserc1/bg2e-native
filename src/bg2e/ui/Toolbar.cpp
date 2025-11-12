@@ -134,7 +134,7 @@ ToolbarButton * Toolbar::findButton(int32_t buttonId)
     return &(*result);
 }
 
-void Toolbar::setDrawFunction(std::function<void()> drawFunction)
+void Toolbar::setDrawFunction(std::function<void()> /* drawFunction */)
 {
     // Not used
 }

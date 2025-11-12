@@ -58,7 +58,7 @@ void CubemapRenderer::build(
 
 void CubemapRenderer::update(
     VkCommandBuffer commandBuffer,
-    uint32_t currentFrame,
+    uint32_t /* currentFrame */,
     vulkan::FrameResources& frameResources
 ) {
     auto transitionInfo = vulkan::Image::TransitionInfo();
