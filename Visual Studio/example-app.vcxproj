@@ -11,7 +11,13 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\examples\app\DevSceneDelegate.cpp" />
     <ClCompile Include="..\examples\app\main.cpp" />
+    <ClCompile Include="..\examples\app\SpheresSceneDelegate.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\examples\app\DevSceneDelegate.hpp" />
+    <ClInclude Include="..\examples\app\SpheresSceneDelegate.hpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
@@ -49,12 +55,12 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <OutDir>$(SolutionDir)..\bin\</OutDir>
     <TargetName>$(ProjectName)d</TargetName>
-    <IncludePath>$(VULKAN_SDK)\Include\vma;$(VULKAN_SDK)\Include;$(SolutionDir)..\include;$(SolutionDir)..\third_party\imgui;$(IncludePath)</IncludePath>
+    <IncludePath>$(VULKAN_SDK)\Include\vma;$(VULKAN_SDK)\Include;$(SolutionDir)..\include;$(SolutionDir)..\third_party\imgui;$(SolutionDir)..\examples\app;$(IncludePath)</IncludePath>
     <LibraryPath>$(OutDir);$(VULKAN_SDK)\Lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <OutDir>$(SolutionDir)..\bin\</OutDir>
-    <IncludePath>$(VULKAN_SDK)\Include\vma;$(VULKAN_SDK)\Include;$(SolutionDir)..\include;$(SolutionDir)..\third_party\imgui;$(IncludePath)</IncludePath>
+    <IncludePath>$(VULKAN_SDK)\Include\vma;$(VULKAN_SDK)\Include;$(SolutionDir)..\include;$(SolutionDir)..\third_party\imgui;$(SolutionDir)..\examples\app;$(IncludePath)</IncludePath>
     <LibraryPath>$(OutDir);$(VULKAN_SDK)\Lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">

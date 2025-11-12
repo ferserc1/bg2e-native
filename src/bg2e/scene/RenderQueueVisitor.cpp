@@ -43,13 +43,13 @@ void RenderQueueVisitor<DrawableT>::visit(bg2e::scene::Node* node) {
         Drawable* drawable = dynamic_cast<Drawable*>(drawableComponent->drawable().get());
         if (drawable) {
             for (size_t i = 0; i < drawable->materials().size(); ++i) {
-                if (drawable->submeshVisibility(i))
+                if (drawable->submeshVisibility(static_cast<uint32_t>(i)))
                 {
-                    std::shared_ptr<render::MaterialBase> mat = drawable->renderMaterial(i);
-                    auto submeshTransform = drawable->submeshTransform(i);
+                    std::shared_ptr<render::MaterialBase> mat = drawable->renderMaterial(static_cast<uint32_t>(i));
+                    auto submeshTransform = drawable->submeshTransform(static_cast<uint32_t>(i));
                     auto trx = _currentTransform * submeshTransform;
                     std::shared_ptr<render::vulkan::geo::Mesh> renderMesh = drawable->renderMesh();
-                    _renderQueue->enqueue(renderMesh, i, mat, trx);
+                    _renderQueue->enqueue(renderMesh, static_cast<uint32_t>(i), mat, trx);
                 }
             }
         }

@@ -229,14 +229,14 @@ void DrawableGeneric<MeshT, RenderMeshT>::draw(
 ) {
     for (size_t i = 0; i < _materials.size(); ++i)
     {
-        if (submeshVisibility(i))
+        if (submeshVisibility(static_cast<uint32_t>(i)))
         {
             auto mat = _materials[i].get();
             auto trx = _transform * _submeshAttributes[i].transform;
             
-            auto descriptorSets = cb(mat, trx, i);
+            auto descriptorSets = cb(mat, trx, static_cast<uint32_t>(i));
             
-            _renderMesh->drawSubmesh(cmd, layout, descriptorSets, i, bp);
+            _renderMesh->drawSubmesh(cmd, layout, descriptorSets, static_cast<uint32_t>(i), bp);
         }
     }
 }

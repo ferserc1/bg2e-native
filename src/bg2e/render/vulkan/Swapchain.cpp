@@ -141,7 +141,7 @@ void Swapchain::create(uint32_t width, uint32_t height)
         VK_ASSERT(vkCreateImageView(device.handle(), &imageViewCreateInfo, nullptr, &imageView));
         _imageViews.push_back(imageView);
         
-        _colorImages.push_back(Image::wrapSwapchainImage(this, i));
+        _colorImages.push_back(Image::wrapSwapchainImage(this, static_cast<uint32_t>(i)));
      
     }
 }
