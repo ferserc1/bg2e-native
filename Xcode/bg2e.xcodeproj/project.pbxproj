@@ -15,6 +15,7 @@
 		ED2D56672CE38F37006EF072 /* imgui_impl_vulkan.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED8688372CDAAB3400A71ADC /* imgui_impl_vulkan.cpp */; };
 		ED2D56682CE38F41006EF072 /* imgui_tables.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED8688392CDAAB3400A71ADC /* imgui_tables.cpp */; };
 		ED2D56692CE38F41006EF072 /* imgui_widgets.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED86883A2CDAAB3400A71ADC /* imgui_widgets.cpp */; };
+		ED4A5D462EC623F000EA98C2 /* imgui_impl_opengl3.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED4A5D322EC623E200EA98C2 /* imgui_impl_opengl3.cpp */; };
 		ED85B20E2CDBAB800039B44D /* libbg2e-native.a in Frameworks */ = {isa = PBXBuildFile; fileRef = ED85B20D2CDBAB730039B44D /* libbg2e-native.a */; };
 		ED85B2122CDBAB9C0039B44D /* CoreFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = ED86884F2CDAAB7300A71ADC /* CoreFoundation.framework */; };
 		EDBFD8F42E24DA2D00864579 /* AppKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = EDBFD8F32E24DA2D00864579 /* AppKit.framework */; };
@@ -51,6 +52,10 @@
 		ED1819122E8E5A3000CE04ED /* bg2-io.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = "bg2-io.xcodeproj"; sourceTree = "<group>"; };
 		ED241AE32E264EB00039BB33 /* bg2-io.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = "bg2-io.xcodeproj"; sourceTree = "<group>"; };
 		ED3019A92EBC9DB3008C2234 /* bg2-io.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = "bg2-io.xcodeproj"; sourceTree = "<group>"; };
+		ED4A5CC32EC623B500EA98C2 /* bg2-io.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = "bg2-io.xcodeproj"; sourceTree = "<group>"; };
+		ED4A5D312EC623E200EA98C2 /* imgui_impl_opengl3.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = imgui_impl_opengl3.h; sourceTree = "<group>"; };
+		ED4A5D322EC623E200EA98C2 /* imgui_impl_opengl3.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = imgui_impl_opengl3.cpp; sourceTree = "<group>"; };
+		ED4A5D332EC623E200EA98C2 /* imgui_impl_opengl3_loader.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = imgui_impl_opengl3_loader.h; sourceTree = "<group>"; };
 		ED4E68172E8BFB97005C24B4 /* bg2-io.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = "bg2-io.xcodeproj"; sourceTree = "<group>"; };
 		ED5339F02CD7A1E900136B04 /* example-app.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "example-app.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		ED54777F2E85054A00CC53BC /* bg2-io.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = "bg2-io.xcodeproj"; sourceTree = "<group>"; };
@@ -274,6 +279,13 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
+		ED4A5CC72EC623B500EA98C2 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
 		ED4E681B2E8BFB97005C24B4 /* Products */ = {
 			isa = PBXGroup;
 			children = (
@@ -470,6 +482,9 @@
 				ED86883C2CDAAB3400A71ADC /* imstb_textedit.h */,
 				ED86883D2CDAAB3400A71ADC /* imstb_truetype.h */,
 				ED86883E2CDAAB3400A71ADC /* LICENSE.txt */,
+				ED4A5D312EC623E200EA98C2 /* imgui_impl_opengl3.h */,
+				ED4A5D322EC623E200EA98C2 /* imgui_impl_opengl3.cpp */,
+				ED4A5D332EC623E200EA98C2 /* imgui_impl_opengl3_loader.h */,
 			);
 			path = imgui;
 			sourceTree = "<group>";
@@ -777,6 +792,10 @@
 					ProjectRef = ED9AEBF12E10534600728D8B /* bg2-io.xcodeproj */;
 				},
 				{
+					ProductGroup = ED4A5CC72EC623B500EA98C2 /* Products */;
+					ProjectRef = ED4A5CC32EC623B500EA98C2 /* bg2-io.xcodeproj */;
+				},
+				{
 					ProductGroup = EDD9D7A52E8AD62F00FEE10F /* Products */;
 					ProjectRef = EDD9D7A12E8AD62F00FEE10F /* bg2-io.xcodeproj */;
 				},
@@ -945,6 +964,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				ED2D56682CE38F41006EF072 /* imgui_tables.cpp in Sources */,
+				ED4A5D462EC623F000EA98C2 /* imgui_impl_opengl3.cpp in Sources */,
 				ED2D56692CE38F41006EF072 /* imgui_widgets.cpp in Sources */,
 				ED2D56632CE38F37006EF072 /* imgui.cpp in Sources */,
 				ED2D56642CE38F37006EF072 /* imgui_demo.cpp in Sources */,

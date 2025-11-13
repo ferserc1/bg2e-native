@@ -21,7 +21,7 @@ void TextureWidgets::drawImage(uint32_t width, uint32_t height, bool sameLine)
             ImGui::SameLine();
         }
         ImGui::Image(
-            static_cast<ImTextureID>(_textureDS),
+            reinterpret_cast<ImTextureID>(_textureDS),
             ImVec2(static_cast<float>(width), static_cast<float>(height))
         );
     }
@@ -38,7 +38,7 @@ bool TextureWidgets::imageButton(const std::string& id, uint32_t width, uint32_t
         }
         if (ImGui::ImageButton(
                 id.c_str(),
-                static_cast<ImTextureID>(_textureDS),
+                reinterpret_cast<ImTextureID>(_textureDS),
                 ImVec2(static_cast<float>(width), static_cast<float>(height)),
                 ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f),
                 ImVec4(0.0f, 0.0f, 0.0f, 0.0f),
