@@ -13,10 +13,8 @@
 
 namespace bg2e::app {
 
-std::vector<std::shared_ptr<render::vulkan::PhysicalDeviceProperties>> getAvailableDevices()
+void getAvailableDevices(std::vector<std::shared_ptr<render::vulkan::PhysicalDeviceProperties>>& result)
 {
-    std::vector<std::shared_ptr<render::vulkan::PhysicalDeviceProperties>> result;
-    
     if (SDL_Init(SDL_INIT_VIDEO) != 0)
     {
         throw std::runtime_error("GPUSelectorDialog: Error initializing SDL");
@@ -43,7 +41,7 @@ std::vector<std::shared_ptr<render::vulkan::PhysicalDeviceProperties>> getAvaila
     surface.create(instance, dummyWindow);
     
     // TODO: Get devices
-    
+    render::vulkan::PhysicalDevice::listSuitableDevices(instance, surface, result);
     surface.cleanup();
     instance.cleanup();
     
@@ -51,8 +49,6 @@ std::vector<std::shared_ptr<render::vulkan::PhysicalDeviceProperties>> getAvaila
     dummyWindow = nullptr;
     
     SDL_Quit();
-    
-    return result;
 }
 
 GPUSelectionDialog::GPUSelectionDialog(const std::string & appId)
@@ -62,9 +58,24 @@ GPUSelectionDialog::GPUSelectionDialog(const std::string & appId)
     
 std::shared_ptr<render::vulkan::PhysicalDeviceProperties> GPUSelectionDialog::run()
 {
+    std::vector<std::shared_ptr<render::vulkan::PhysicalDeviceProperties>> devices;
     std::shared_ptr<render::vulkan::PhysicalDeviceProperties> result;
 
-
+    getAvailableDevices(devices);
+    
+    if (devices.size() == 0)
+    {
+        throw std::runtime_error("No Vulkan capable devices found");
+    }
+    else if (devices.size() == 1)
+    {
+        result = devices[0];
+    }
+    else {
+        // TODO: Create OpenGL SDL Window with an imgui UI to show the list of available GPUs
+        // TODO: Show a selection UI to manually choose the GPU
+    }
+    
     
     return result;
 }

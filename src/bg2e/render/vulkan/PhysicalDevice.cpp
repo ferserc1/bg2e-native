@@ -83,11 +83,27 @@ uint32_t PhysicalDeviceProperties::getScore() const
 }
 
 void PhysicalDevice::listSuitableDevices(
-    VkInstance,
+    const Instance& instance,
     const Surface& surface,
     std::vector<std::shared_ptr<PhysicalDeviceProperties>>& result
 ) {
+    uint32_t deviceCount = 0;
+	vkEnumeratePhysicalDevices(instance.handle(), &deviceCount, nullptr);
+	if (deviceCount == 0)
+	{
+		throw std::runtime_error("Failed to find GPUs with Vulkan support");
+	}
+
+	std::vector<VkPhysicalDevice> devices(deviceCount);
+    vkEnumeratePhysicalDevices(instance.handle(), &deviceCount, devices.data());
     
+    for (const auto& device : devices)
+    {
+        if (isSuitable(device, surface))
+        {
+            result.push_back(std::shared_ptr<PhysicalDeviceProperties>(PhysicalDeviceProperties::query(device)));
+        }
+    }
 }
 
 PhysicalDevice::QueueFamilyIndices PhysicalDevice::QueueFamilyIndices::get(VkPhysicalDevice device, const Surface& surface)
@@ -331,8 +347,6 @@ const std::vector<const char*>& PhysicalDevice::getRequiredDeviceExtensions()
 
 bool PhysicalDevice::checkDeviceExtensions(VkPhysicalDevice device)
 {
-    
-
     uint32_t extensionCount = 0;
 	vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, nullptr);
     std::vector<VkExtensionProperties> availableExtensions(extensionCount);

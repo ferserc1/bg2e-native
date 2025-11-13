@@ -44,7 +44,7 @@ public:
     static const std::vector<const char*>& getRequiredDeviceExtensions();
     
     static void listSuitableDevices(
-        VkInstance,
+        const Instance& instance,
         const Surface& surface,
         std::vector<std::shared_ptr<PhysicalDeviceProperties>>& result
     );
@@ -96,8 +96,8 @@ protected:
 	VkPhysicalDevice _device = VK_NULL_HANDLE;
     const Surface * _surface = nullptr;
 
-    bool isSuitable(VkPhysicalDevice device, const Surface& surface);
-    bool checkDeviceExtensions(VkPhysicalDevice device);
+    static bool isSuitable(VkPhysicalDevice device, const Surface& surface);
+    static bool checkDeviceExtensions(VkPhysicalDevice device);
 };
 
 }
