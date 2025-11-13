@@ -36,7 +36,7 @@ else
 	CFLAGS := -Wall -Wextra -O3 -DNDEBUG -Wno-multichar
 endif
 
-LDFLAGS := -L$(VULKAN_SDK)/lib -lvulkan -lSDL2 -ldl -lpthread -lX11 -lXxf86vm -lXrandr -lXi -lgtk-3
+LDFLAGS := -L$(VULKAN_SDK)/lib -lvulkan -lSDL2 -ldl -lpthread -lX11 -lXxf86vm -lXrandr -lXi -lgtk-3 -lGL
 
 example-app: bg2e copy-assets
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(INC_FLAGS) -o $(BUILD_DIR)/bg2e-example-app $(BG2E_EXAMPLE_APP_FILES) $(LDFLAGS) -L$(BUILD_DIR) -lbg2e-native -Wl,-rpath,'$$ORIGIN'
