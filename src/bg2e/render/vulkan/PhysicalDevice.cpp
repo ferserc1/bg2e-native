@@ -9,6 +9,80 @@ namespace bg2e {
 namespace render {
 namespace vulkan {
 
+PhysicalDeviceProperties * PhysicalDeviceProperties::query(VkPhysicalDevice device)
+{
+    auto props = new PhysicalDeviceProperties();
+
+    VkPhysicalDeviceProperties deviceProperties;
+    vkGetPhysicalDeviceProperties(device, &deviceProperties);
+
+    VkPhysicalDeviceMemoryProperties memoryProperties;
+    vkGetPhysicalDeviceMemoryProperties(device, &memoryProperties);
+    uint32_t totalMemory = 0;
+    for (uint32_t i = 0; i < memoryProperties.memoryHeapCount; ++i)
+    {
+        if (memoryProperties.memoryHeaps[i].flags & VK_MEMORY_HEAP_DEVICE_LOCAL_BIT)
+        {
+            totalMemory += static_cast<uint32_t>(memoryProperties.memoryHeaps[i].size);
+        }
+    }
+    props->totalHeapMemoryMB = totalMemory / (1024 * 1024);
+
+    // Discrete GPUs have a significant performance advantage
+    if (deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)
+    {
+        props->deviceType = PhysicalDeviceProperties::DiscreteGPU;
+    }
+    else if (deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU)
+    {
+        props->deviceType = PhysicalDeviceProperties::IntegratedGPU;
+    }
+    else if (deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU)
+    {
+        props->deviceType = PhysicalDeviceProperties::VirtualGPU;
+    }
+    else if (deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_CPU)
+    {
+        props->deviceType = PhysicalDeviceProperties::CPU;
+    }
+    else if (deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_OTHER)
+    {
+        props->deviceType = PhysicalDeviceProperties::Other;
+    }
+
+    props->name = deviceProperties.deviceName;
+    props->vendor = deviceProperties.vendorID;
+    props->id = deviceProperties.deviceID;
+
+    props->deviceHandle = device;
+    
+    return props;
+}
+
+uint32_t PhysicalDeviceProperties::getScore() const
+{
+    uint32_t score = totalHeapMemoryMB;
+
+    if (deviceType == DiscreteGPU)
+    {
+        score *= 20;
+    }
+    else if (deviceType == IntegratedGPU)
+    {
+        score *= 10;
+    }
+    else if (deviceType == VirtualGPU)
+    {
+        score *= 5;
+    }
+    else if (deviceType == CPU)
+    {
+        score += 1;
+    }
+
+    return score;
+}
+
 PhysicalDevice::QueueFamilyIndices PhysicalDevice::QueueFamilyIndices::get(VkPhysicalDevice device, const Surface& surface)
 {
     QueueFamilyIndices result;
@@ -160,6 +234,7 @@ uint32_t PhysicalDevice::SwapChainSupportDetails::imageCount() const
     return imageCount;
 }
 
+
 void PhysicalDevice::choose(const Instance& instance, const Surface & surface)
 {
 	uint32_t deviceCount = 0;
@@ -172,21 +247,32 @@ void PhysicalDevice::choose(const Instance& instance, const Surface & surface)
 	std::vector<VkPhysicalDevice> devices(deviceCount);
     vkEnumeratePhysicalDevices(instance.handle(), &deviceCount, devices.data());
 
-    // TODO: Pick the best physical device, not only the first suitable
+
+    std::vector<std::shared_ptr<PhysicalDeviceProperties>> suitableDevices;
+    uint32_t highestScore = 0;
+    std::shared_ptr<PhysicalDeviceProperties> bestDeviceProps;
     for (const auto& device : devices)
     {
         if (isSuitable(device, surface))
         {
-            _device = device;
-            break;
+            suitableDevices.push_back(std::shared_ptr<PhysicalDeviceProperties>(PhysicalDeviceProperties::query(device)));
+            uint32_t score = suitableDevices.back()->getScore();
+            if (score > highestScore)
+            {
+                highestScore = score;
+                bestDeviceProps = suitableDevices.back();
+            }
         }
     }
 
-    if (_device == VK_NULL_HANDLE)
+    if (bestDeviceProps == nullptr)
     {
 		throw std::runtime_error("Failed to find a suitable GPU");
     }
-    
+
+    std::cout << "Selected GPU: " << bestDeviceProps->name << std::endl;
+
+    _device = bestDeviceProps->deviceHandle;
     _surface = &surface;
 }
 
