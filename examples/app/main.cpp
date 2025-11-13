@@ -308,6 +308,16 @@ public:
 };
 
 int main(int argc, char** argv) {
+
+    bg2e::app::GPUSelectionDialog gpuSelection("bg2eExampleApp");
+    
+    auto result = gpuSelection.run();
+    
+    if (result.get())
+    {
+        std::cout << "Choosed device: " << result->name << std::endl;
+    }
+    
 	bg2e::app::MainLoop mainLoop("bg2eExampleApp");
 	MyApplication app;
 	app.init(argc, argv);

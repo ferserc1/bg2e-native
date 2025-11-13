@@ -18,15 +18,14 @@ PhysicalDeviceProperties * PhysicalDeviceProperties::query(VkPhysicalDevice devi
 
     VkPhysicalDeviceMemoryProperties memoryProperties;
     vkGetPhysicalDeviceMemoryProperties(device, &memoryProperties);
-    uint32_t totalMemory = 0;
+    VkDeviceSize totalMemory = 0;
     for (uint32_t i = 0; i < memoryProperties.memoryHeapCount; ++i)
     {
-        if (memoryProperties.memoryHeaps[i].flags & VK_MEMORY_HEAP_DEVICE_LOCAL_BIT)
-        {
-            totalMemory += static_cast<uint32_t>(memoryProperties.memoryHeaps[i].size);
+        if (memoryProperties.memoryHeaps[i].flags & VK_MEMORY_HEAP_DEVICE_LOCAL_BIT){
+            totalMemory += memoryProperties.memoryHeaps[i].size / (1024 * 1024);
         }
     }
-    props->totalHeapMemoryMB = totalMemory / (1024 * 1024);
+    props->totalHeapMemoryMB = static_cast<uint32_t>(totalMemory);
 
     // Discrete GPUs have a significant performance advantage
     if (deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)
@@ -61,7 +60,7 @@ PhysicalDeviceProperties * PhysicalDeviceProperties::query(VkPhysicalDevice devi
 
 uint32_t PhysicalDeviceProperties::getScore() const
 {
-    uint32_t score = totalHeapMemoryMB;
+    size_t score = totalHeapMemoryMB;
 
     if (deviceType == DiscreteGPU)
     {
@@ -80,7 +79,15 @@ uint32_t PhysicalDeviceProperties::getScore() const
         score += 1;
     }
 
-    return score;
+    return static_cast<uint32_t>(score);
+}
+
+void PhysicalDevice::listSuitableDevices(
+    VkInstance,
+    const Surface& surface,
+    std::vector<std::shared_ptr<PhysicalDeviceProperties>>& result
+) {
+    
 }
 
 PhysicalDevice::QueueFamilyIndices PhysicalDevice::QueueFamilyIndices::get(VkPhysicalDevice device, const Surface& surface)
@@ -257,7 +264,7 @@ void PhysicalDevice::choose(const Instance& instance, const Surface & surface)
         {
             suitableDevices.push_back(std::shared_ptr<PhysicalDeviceProperties>(PhysicalDeviceProperties::query(device)));
             uint32_t score = suitableDevices.back()->getScore();
-            if (score > highestScore)
+            if (score >= highestScore)
             {
                 highestScore = score;
                 bestDeviceProps = suitableDevices.back();

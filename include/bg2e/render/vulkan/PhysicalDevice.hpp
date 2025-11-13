@@ -43,6 +43,12 @@ class PhysicalDevice {
 public:
     static const std::vector<const char*>& getRequiredDeviceExtensions();
     
+    static void listSuitableDevices(
+        VkInstance,
+        const Surface& surface,
+        std::vector<std::shared_ptr<PhysicalDeviceProperties>>& result
+    );
+    
     struct QueueFamilyIndices
     {
         std::optional<uint32_t> graphics;
