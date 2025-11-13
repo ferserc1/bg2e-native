@@ -128,6 +128,7 @@ std::shared_ptr<render::vulkan::PhysicalDeviceProperties> showDeviceSelectorUI(
         ImGui_ImplSDL2_NewFrame();
         ImGui::NewFrame();
 
+        // TODO: Refactor this into UI helpers
         // Begin window without title bar, resize, collapse and moving options, in 0, 0 position
         // with size windowWidth, windowHeight
         ImGui::SetNextWindowPos(ImVec2(0, 0));
