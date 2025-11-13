@@ -15,6 +15,30 @@ namespace vulkan {
 
 class Instance;
 
+struct PhysicalDeviceProperties {
+    enum DeviceType {
+        IntegratedGPU,
+        DiscreteGPU,
+        VirtualGPU,
+        CPU,
+        Other
+    } deviceType = Other;
+
+    size_t totalHeapMemoryMB = 0;
+    DeviceType type = Other;
+    std::string name;
+    uint32_t vendor = 0;
+    uint32_t id = 0;
+    VkPhysicalDevice deviceHandle = VK_NULL_HANDLE;
+
+    static PhysicalDeviceProperties * query(VkPhysicalDevice device);
+
+    uint32_t getScore() const;
+
+private:
+    PhysicalDeviceProperties() = default;
+};
+
 class PhysicalDevice {
 public:
     static const std::vector<const char*>& getRequiredDeviceExtensions();
