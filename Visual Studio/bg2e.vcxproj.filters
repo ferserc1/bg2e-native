@@ -651,6 +651,15 @@
     <ClInclude Include="..\include\bg2e\app\PreferencesStore.hpp">
       <Filter>Header Files\bg2e\app</Filter>
     </ClInclude>
+    <ClInclude Include="..\include\bg2e\app\GPUSelectionDialog.hpp">
+      <Filter>Header Files\bg2e\app</Filter>
+    </ClInclude>
+    <ClInclude Include="..\third_party\imgui\imgui_impl_opengl3.h">
+      <Filter>Third Party\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\third_party\imgui\imgui_impl_opengl3_loader.h">
+      <Filter>Third Party\imgui</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\bg2e\app\MainLoop.cpp">
@@ -1040,5 +1049,16 @@
     <ClCompile Include="..\src\bg2e\app\PreferencesStore.cpp">
       <Filter>Source Files\app</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\bg2e\app\GPUSelectionDialog.cpp">
+      <Filter>Source Files\app</Filter>
+    </ClCompile>
+    <ClCompile Include="..\third_party\imgui\imgui_impl_opengl3.cpp">
+      <Filter>Third Party\imgui</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="..\third_party\imgui\LICENSE.txt">
+      <Filter>Third Party\imgui</Filter>
+    </Text>
   </ItemGroup>
 </Project>

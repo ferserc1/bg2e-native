@@ -143,7 +143,7 @@ std::shared_ptr<render::vulkan::PhysicalDeviceProperties> showDeviceSelectorUI(
         {
             auto & dev = devices[i];
             bool selected = selectionStates[i];
-            if (ui::SelectableList::item(dev->name, selected))    
+            if (ui::SelectableList::item(dev->name + "##" + std::to_string(i), selected))
             {
                 for (size_t j = 0; j < selectionStates.size(); ++j)
                 {
