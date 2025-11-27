@@ -19,5 +19,14 @@ if(NOT VULKAN_SDK OR NOT EXISTS "${VULKAN_SDK}")
         "  -DVULKAN_SDK=/path/to/VulkanSDK\n\n"
     )
 endif()
-
 message(STATUS "Vulkan SDK found at: ${VULKAN_SDK}")
+
+# Output directory
+set(PRODUCT_DIR "${CMAKE_SOURCE_DIR}/bin/${PLATFORM_NAME}")
+file(MAKE_DIRECTORY "${PRODUCT_DIR}")
+
+add_subdirectory(lib)
+add_subdirectory(app)
+add_subdirectory(examples)
+
+
