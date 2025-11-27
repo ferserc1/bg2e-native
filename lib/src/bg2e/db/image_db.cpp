@@ -2,7 +2,7 @@
 #include <bg2e/db/image.hpp>
 
 #define STB_IMAGE_IMPLEMENTATION
-#include <stb_image/stb_image.h>
+#include <stb_image.h>
 
 namespace bg2e::db {
 

@@ -9,7 +9,7 @@
 #include <bg2e/geo/modifiers.hpp>
 
 #define TINYOBJLOADER_IMPLEMENTATION
-#include <tinyobj/tiny_obj_loader.h>
+#include <tiny_obj_loader.h>
 
 #include <fstream>
 #include <functional>

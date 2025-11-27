@@ -6,15 +6,9 @@
 # - VULKAN_LIB_NAME     Binary library name (example: libvulkan.1.4.313.dylib)
 # - VULKAN_LIB_VERSION  Binary library version (example: 1.4.313)
 
-find_path(VULKAN_INCLUDE_PATH vulkan.h
-    PATHS
-        "${VULKAN_SDK}/include"
-        "${VULKAN_SDK}/Include"
-        "${VULKAN_SDK}/include/vulkan"
-        "${VULKAN_SDK}/Include/vulkan"
-)
-
 if(APPLE)
+    set(VULKAN_INCLUDE_PATH "${VULKAN_SDK}/include")
+
     set(VULKAN_LIB_PATH "${VULKAN_SDK}/lib")
     file(GLOB VULKAN_LIB_FILES
         "${VULKAN_LIB_PATH}/libvulkan.*.dylib"
@@ -26,9 +20,23 @@ if(APPLE)
     string(REGEX REPLACE "^libvulkan\\.([0-9\\.]+)\\.dylib$" "\\1"
         VULKAN_LIB_VERSION "${VULKAN_LIB_NAME}"
     )
-elseif(APPLE AND NOT UNIX)
-    # TODO: implement this
+elseif(UNIX AND NOT APPLE)
+    set(VULKAN_INCLUDE_PATH "${VULKAN_SDK}/include")
+
+    set(VULKAN_LIB_PATH "${VULKAN_SDK}/lib")
+    file(GLOB VULKAN_LIB_FILES
+        "${VULKAN_LIB_PATH}/libvulkan.so.1.*"
+    )
+    list(GET VULKAN_LIB_FILES 0 VULKAN_LIB)
+
+    get_filename_component(VULKAN_LIB_NAME "${VULKAN_LIB}" NAME)
+
+    string(REGEX REPLACE "^libvulkan\\.so\\.([0-9\\.]+)$" "\\1"
+        VULKAN_LIB_VERSION "${VULKAN_LIB_NAME}"
+    )
 else()
+    set(VULKAN_INCLUDE_PATH "${VULKAN_SDK}/Include")
+
     set(VULKAN_LIB_PATH "${VULKAN_SDK}/Lib")
     set(VULKAN_LIB_NAME "vulkan-1.lib")
     set(VULKAN_LIB "${VULKAN_LIB_PATH}/${VULKAN_LIB_NAME}")

@@ -2,8 +2,8 @@
 # - BG2E_THIRD_PARTY_INCLUDE_PATH
 # - BG2E_THIRD_PARTY_SRC
 
-set(THIRD_PARTY_PATH "${CMAKE_CURRENT_SOURCE_DIR}/../third_party")
-set(BG2IO_PATH "${CMAKE_CURRENT_SOURCE_DIR}/../bg2-io")
+set(THIRD_PARTY_PATH "${CMAKE_CURRENT_LIST_DIR}/../third_party")
+set(BG2IO_PATH "${CMAKE_CURRENT_LIST_DIR}/../bg2-io")
 
 # bg2io
 file(GLOB BG2IO_SRC "${BG2IO_PATH}/src/bg2-io/*.c")
@@ -28,7 +28,7 @@ elseif(UNIX AND NOT APPLE)
 else()
     set(NFD_SRC "${THIRD_PARTY_PATH}/nativefiledialog-extended/src/nfd_win.cpp")
 endif()
-set(NFD_INCLUDE "${THIRD_PARTY_PATH}/nativefiledialog-extended/include")
+set(NFD_INCLUDE "${THIRD_PARTY_PATH}/nativefiledialog-extended/src/include")
 
 # stb_image
 set(STBIMAGE_INCLUDE "${THIRD_PARTY_PATH}/stb_image")
@@ -52,8 +52,8 @@ set(BG2E_THIRD_PARTY_INCLUDE_PATH
     "${STBIMAGE_INCLUDE}"
     "${TINYOBJ_INCLUDE}"
     # Other dependency paths
-    PARENT_SCOPE
 )
+
 set(BG2E_THIRD_PARTY_SRC
     ${BG2IO_SRC}
     ${BG2SCENE_SRC}
@@ -61,5 +61,4 @@ set(BG2E_THIRD_PARTY_SRC
     ${NFD_SRC}
     ${SIMDJSON_SRC}
     # other dependency paths
-    PARENT_SCOPE
 )

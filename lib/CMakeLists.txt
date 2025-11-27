@@ -14,7 +14,7 @@ find_package(Vulkan REQUIRED)
 # Compiled dependencies
 # - BG2E_THIRD_PARTY_INCLUDE_PATH
 # - BG2E_THIRD_PARTY_SRC
-include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/deps.cmake")
+include("${CMAKE_CURRENT_LIST_DIR}/cmake/deps.cmake")
 
 # bg2e variables
 set(BG2E_TARGET_NAME bg2e)
@@ -34,7 +34,9 @@ add_library(${BG2E_TARGET_NAME} SHARED
 target_include_directories(${BG2E_TARGET_NAME} PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/include"
     ${BG2E_THIRD_PARTY_INCLUDE_PATH}
-    # TODO: Add Vulkan include directory
+    ${VULKAN_INCLUDE_PATH}
+    ${VMA_INCLUDE_PATH}
+    ${SDL2_INCLUDE_DIRS}
 )
 
 # GTK (Linux only, required for NFD)
@@ -48,7 +50,7 @@ if(UNIX AND NOT APPLE)
 endif()
 
 target_link_libraries(${BG2E_TARGET_NAME} PRIVATE ${SDL2_LIBRARIES})
-# TODO: Link Vulkan
+target_link_libraries(${BG2E_TARGET_NAME} PRIVATE ${VULKAN_LIB})
 
 
 set_target_properties(${BG2E_TARGET_NAME} PROPERTIES
