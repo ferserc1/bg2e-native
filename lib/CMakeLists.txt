@@ -61,6 +61,8 @@ elseif(APPLE)
         "-framework Metal"
         "-framework OpenGL"
     )
+else()
+    target_link_libraries(${BG2E_TARGET_NAME} PRIVATE "opengl32.lib")
 endif()
 
 target_link_libraries(${BG2E_TARGET_NAME} PRIVATE ${SDL2_LIBRARIES})
