@@ -1,0 +1,71 @@
+//
+//  Component.hpp
+#pragma once
+
+#include <bg2e/common.hpp>
+#include <bg2e/math/projections.hpp>
+#include <bg2e/app/KeyEvent.hpp>
+#include <bg2e/json/JsonNode.hpp>
+
+#include <string>
+#include <filesystem>
+
+#define BG2E_SCENE_COMP_CLASS_NAME(c) typeid(*c).name()
+
+namespace bg2e {
+namespace scene {
+
+class Node;
+class Scene;
+
+class BG2E_API Component {
+    friend class Node;
+public:
+    
+    virtual ~Component() = default;
+    
+    inline Node * ownerNode() const { return _owner; }
+    Scene * scene();
+
+    virtual void resizeViewport(const math::Viewport&) {}
+    
+    virtual void animate(float /* delta */) {}
+    
+    virtual void update(float /* delta */) {}
+    
+    virtual void mouseMove(int /* x */, int /* y */) {}
+
+    virtual void mouseButtonDown(int /* button */, int /* x */, int /* y */) {}
+
+    virtual void mouseButtonUp(int /* button */, int /* x */, int /* y */) {}
+
+    virtual void mouseWheel(int /* deltaX */, int /* deltaY */) {}
+
+    virtual void keyDown(const app::KeyEvent& /* keyEvent */) {}
+    
+    virtual void keyUp(const app::KeyEvent&  /* keyEvent */) {}
+    
+    virtual std::string typeName() const = 0;
+    
+    virtual void deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path& basePath);
+    virtual std::shared_ptr<json::JsonNode> serialize(const std::filesystem::path& basePath);
+
+protected:
+
+    // Weak ptr to avoid circular references
+    Node * _owner = nullptr;
+    
+    virtual void removedFromNode(Node * /* prevOwner */) {}
+
+    virtual void addedToNode(Node * /* newOwner */ ) {}
+};
+
+extern BG2E_API std::string componentName(Component * comp);
+
+#define BG2E_COMPONENT_TYPE_NAME(typeNameString) \
+    static std::string staticTypeName() { return typeNameString; } \
+    std::string typeName() const override { return typeNameString; }
+
+
+}
+}
