@@ -20,6 +20,8 @@ set(IMGUI_INCLUDE "${THIRD_PARTY_PATH}/imgui")
 # nativefiledialog-extended
 if(APPLE)
     set(NFD_SRC "${THIRD_PARTY_PATH}/nativefiledialog-extended/src/nfd_cocoa.m")
+    enable_language(OBJC)
+    enable_language(OBJCXX)
     set_source_files_properties("${NFD_SRC}"
         PROPERTIES LANGUAGE OBJC
     )

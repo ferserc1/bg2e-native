@@ -22,11 +22,7 @@
 
 
 #define VMA_IMPLEMENTATION
-#ifdef __linux__
 #include <vma/vk_mem_alloc.h>
-#else
-#include "vk_mem_alloc.h"
-#endif
 
 #ifdef BG2E_IS_MAC
 #pragma clang diagnostic pop

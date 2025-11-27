@@ -25,11 +25,17 @@ file(GLOB_RECURSE BG2E_INCLUDE_FILES
 file(GLOB_RECURSE BG2E_SRC_FILES
     "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp"
 )
+if(APPLE)
+    file(GLOB_RECURSE BG2E_MM_SRC_FILES
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/*.mm"
+    )
+endif()
 
 # bg2e library
 add_library(${BG2E_TARGET_NAME} SHARED
     ${BG2E_SRC_FILES}
     ${BG2E_THIRD_PARTY_SRC}
+    ${BG2E_MM_SRC_FILES}
 )
 target_include_directories(${BG2E_TARGET_NAME} PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/include"
@@ -47,6 +53,14 @@ if(UNIX AND NOT APPLE)
     target_include_directories(${BG2E_TARGET_NAME} PRIVATE ${GTK3_INCLUDE_DIRS})
     target_link_libraries(${BG2E_TARGET_NAME} PRIVATE ${GTK3_LIBRARIES})
     target_compile_options(${BG2E_TARGET_NAME} PRIVATE ${GTK3_CFLAGS_OTHER})
+elseif(APPLE)
+    target_link_libraries(${BG2E_TARGET_NAME} PRIVATE
+        "-framework UniformTypeIdentifiers"
+        "-framework Cocoa"
+        "-framework AppKit"
+        "-framework Metal"
+        "-framework OpenGL"
+    )
 endif()
 
 target_link_libraries(${BG2E_TARGET_NAME} PRIVATE ${SDL2_LIBRARIES})
