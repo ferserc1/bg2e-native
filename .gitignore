@@ -437,3 +437,8 @@ bg2e-cpp-deps-osx-win64-v1.zip
 
 # Generated when the project is built in macOS using the build_macos.sh script
 imgui.ini
+
+# CLion files
+
+cmake-build-debug
+.idea
