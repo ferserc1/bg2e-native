@@ -8,30 +8,30 @@ set(CMAKE_CXX_STANDARD 20)
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 find_package(SDL2 REQUIRED)
 
+# Find Vulkan
+find_package(Vulkan REQUIRED)
+
 # Compiled dependencies
 # - BG2E_THIRD_PARTY_INCLUDE_PATH
 # - BG2E_THIRD_PARTY_SRC
 include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/deps.cmake")
 
 # bg2e variables
-set(BG2E_INCLUDE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/include" PARENT_SCOPE)
-set(BG2E_TARGET_NAME bg2e PARENT_SCOPE)
+set(BG2E_TARGET_NAME bg2e)
 
 file(GLOB_RECURSE BG2E_INCLUDE_FILES
     "${CMAKE_CURRENT_SOURCE_DIR}/include/*.hpp"
 )
 file(GLOB_RECURSE BG2E_SRC_FILES
     "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp"
-    # TODO: Add third party folders
 )
-
 
 # bg2e library
 add_library(${BG2E_TARGET_NAME} SHARED
     ${BG2E_SRC_FILES}
     ${BG2E_THIRD_PARTY_SRC}
 )
-target_include_directories(${BG2E_TARGET_NAME} PUBLIC
+target_include_directories(${BG2E_TARGET_NAME} PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/include"
     ${BG2E_THIRD_PARTY_INCLUDE_PATH}
     # TODO: Add Vulkan include directory
@@ -50,7 +50,6 @@ endif()
 target_link_libraries(${BG2E_TARGET_NAME} PRIVATE ${SDL2_LIBRARIES})
 # TODO: Link Vulkan
 
-set(BG2E_RUNTIME_BINARY "$<TARGET_FILE:${BG2E_TARGET_NAME}>" PARENT_SCOPE)
 
 set_target_properties(${BG2E_TARGET_NAME} PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY "${PRODUCT_DIR}"
@@ -68,3 +67,8 @@ endif()
 # TODO: build shaders
 
 # TODO: Export shader build folder
+
+# Exported variables
+set(BG2E_LIB_TARGET ${BG2E_TARGET_NAME} PARENT_SCOPE)
+set(BG2E_RUNTIME_BINARY "$<TARGET_FILE:${BG2E_TARGET_NAME}>" PARENT_SCOPE)
+set(BG2E_INCLUDE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/include" PARENT_SCOPE)

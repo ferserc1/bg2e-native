@@ -26,7 +26,7 @@ set(PRODUCT_DIR "${CMAKE_SOURCE_DIR}/bin/${PLATFORM_NAME}")
 file(MAKE_DIRECTORY "${PRODUCT_DIR}")
 
 add_subdirectory(lib)
-add_subdirectory(app)
-add_subdirectory(examples)
+#add_subdirectory(app)
+#add_subdirectory(examples)
 
 
