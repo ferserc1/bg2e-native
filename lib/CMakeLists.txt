@@ -82,11 +82,17 @@ if(APPLE)
     )
 endif()
 
-# TODO: build shaders
-
-# TODO: Export shader build folder
+set(SRC_SHADER_DIR "${CMAKE_SOURCE_DIR}/shaders/src")
+set(DST_SHADER_DIR "${PRODUCT_DIR}/shaders")
+build_shaders(
+    ${BG2E_TARGET_NAME}
+    ${VULKAN_SDK}
+    ${SRC_SHADER_DIR}
+    ${DST_SHADER_DIR}
+)
 
 # Exported variables
 set(BG2E_LIB_TARGET ${BG2E_TARGET_NAME} PARENT_SCOPE)
 set(BG2E_RUNTIME_BINARY "$<TARGET_FILE:${BG2E_TARGET_NAME}>" PARENT_SCOPE)
 set(BG2E_INCLUDE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/include" PARENT_SCOPE)
+set(BG2E_SHADER_DIR ${DST_SHADER_DIR} PARENT_SCOPE)
