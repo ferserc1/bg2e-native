@@ -164,7 +164,7 @@ function(copy_vulkan_resources
         bundle_lib(
             TARGET_NAME ${TARGET_NAME}
             LIB_PATH "${VULKAN_SDK_PATH}/lib/${LIBVULKAN_NAME}"
-            SUBPATH "Frameworks"
+            SUBPATH "lib"
         )
 
         # MoltanVk and layers
@@ -182,8 +182,8 @@ function(copy_vulkan_resources
         add_custom_command(
             TARGET ${TARGET_NAME} POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E create_symlink
-            "$<TARGET_FILE_DIR:${TARGET_NAME}>/../Frameworks/${LIBVULKAN_NAME}"
-            "$<TARGET_FILE_DIR:${TARGET_NAME}>/../Frameworks/libvulkan.1.dylib"
+            "$<TARGET_FILE_DIR:${TARGET_NAME}>/../lib/${LIBVULKAN_NAME}"
+            "$<TARGET_FILE_DIR:${TARGET_NAME}>/../lib/libvulkan.1.dylib"
         )
     endif(APPLE)
 endfunction()
@@ -238,8 +238,8 @@ function(bundle_app)
     endif()
 
 
-    bundle_lib(TARGET_NAME ${BL_TARGET_NAME} LIB_PATH ${SDL2_LIBRARY})
-    bundle_lib(TARGET_NAME ${BL_TARGET_NAME} LIB_PATH "$<TARGET_FILE:${BL_TARGET_NAME}>")
+    bundle_lib(TARGET_NAME ${APP_TARGET_NAME} LIB_PATH ${SDL2_LIBRARY})
+    bundle_lib(TARGET_NAME ${APP_TARGET_NAME} LIB_PATH "$<TARGET_FILE:${BG2E_LIB_TARGET}>")
 
     # Engine shaders
     bundle_resources(TARGET_NAME ${BL_TARGET_NAME} SRC_PATH ${BG2E_SHADER_DIR} SUBPATH "shaders")
