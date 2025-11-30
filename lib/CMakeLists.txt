@@ -49,6 +49,9 @@ if(UNIX AND NOT APPLE)
     target_include_directories(${BG2E_TARGET_NAME} PRIVATE ${GTK3_INCLUDE_DIRS})
     target_link_libraries(${BG2E_TARGET_NAME} PRIVATE ${GTK3_LIBRARIES})
     target_compile_options(${BG2E_TARGET_NAME} PRIVATE ${GTK3_CFLAGS_OTHER})
+
+    find_package(OpenGL REQUIRED)
+    target_link_libraries(${BG2E_TARGET_NAME} PRIVATE OpenGL::GL)
 elseif(APPLE)
     target_link_libraries(${BG2E_TARGET_NAME} PRIVATE
         "-framework UniformTypeIdentifiers"
