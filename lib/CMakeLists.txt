@@ -4,17 +4,13 @@ include("${CMAKE_SOURCE_DIR}/cmake/utils.cmake")
 
 set(CMAKE_CXX_STANDARD 20)
 
-# Find SDL2
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
-find_package(SDL2 REQUIRED)
-
-# Find Vulkan
-find_package(Vulkan REQUIRED)
-
 # Compiled dependencies
 # - BG2E_THIRD_PARTY_INCLUDE_PATH
 # - BG2E_THIRD_PARTY_SRC
 include("${CMAKE_CURRENT_LIST_DIR}/cmake/deps.cmake")
+
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
+find_package(SDL2 REQUIRED)
 
 # bg2e variables
 set(BG2E_TARGET_NAME bg2e)

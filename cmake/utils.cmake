@@ -191,13 +191,46 @@ endfunction()
 # Bundle the application with its resources and libraries
 #  usage: bundle_app(
 #              TARGET_NAME my_app
-#              ASSETS_PATH ${BG2E_ASSETS}
 #              SHADERS_SRC ${BG2E_SHADERS}  # optional
 #       )
 function(bundle_app)
     set(options)
-    set(oneValueArgs TARGET_NAME ASSETS_PATH SHADERS_SRC)
+    set(oneValueArgs TARGET_NAME SHADERS_SRC)
     cmake_parse_arguments(BL "${options}" "${oneValueArgs}" "" ${ARGN})
+
+    file(GLOB APP_SOURCE_FILES
+        "${CMAKE_CURRENT_LIST_DIR}/src/*.cpp"
+    )
+    file(GLOB APP_HEADER_FILES
+        "${CMAKE_CURRENT_LIST_DIR}/src/*.hpp"
+    )
+
+    set(APP_HEADER_PATH "${CMAKE_CURRENT_LIST_DIR}/src")
+
+    if(APPLE)
+        add_executable(${APP_TARGET_NAME} MACOSX_BUNDLE ${APP_SOURCE_FILES})
+    else()
+        add_executable(${APP_TARGET_NAME} ${APP_SOURCE_FILES})
+    endif()
+
+    target_include_directories(${APP_TARGET_NAME} PUBLIC
+        ${APP_HEADER_PATH}
+        ${BG2E_INCLUDE_PATH}
+        ${VULKAN_INCLUDE_PATH}
+    )
+    target_link_libraries(${APP_TARGET_NAME} PRIVATE
+        ${BG2E_LIB_TARGET}
+    )
+
+    if(WIN32)
+        target_link_libraries(${APP_TARGET_NAME} PRIVATE ${SDL2_LIBRARIES})
+    endif()
+
+    set_target_properties(${APP_TARGET_NAME} PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY "${PRODUCT_DIR}"
+        LIBRARY_OUTPUT_DIRECTORY "${PRODUCT_DIR}"
+        ARCHIVE_OUTPUT_DIRECTORY "${PRODUCT_DIR}"
+    )
 
     # TODO: Compile the shaders if SHADERS_SRC is set
     if(BL_SHADERS_SRC)
@@ -206,10 +239,18 @@ function(bundle_app)
 
 
     bundle_lib(TARGET_NAME ${BL_TARGET_NAME} LIB_PATH ${SDL2_LIBRARY})
-    bundle_lib(TARGET_NAME ${BL_TARGET_NAME} LIB_PATH "$<TARGET_FILE:sdl_wrapper>")
-    bundle_resources(TARGET_NAME ${BL_TARGET_NAME} SRC_PATH ${BG2E_SHADERS} SUBPATH "shaders")
+    bundle_lib(TARGET_NAME ${BL_TARGET_NAME} LIB_PATH "$<TARGET_FILE:${BL_TARGET_NAME}>")
+
+    # Engine shaders
+    bundle_resources(TARGET_NAME ${BL_TARGET_NAME} SRC_PATH ${BG2E_SHADER_DIR} SUBPATH "shaders")
+
+    # Assets
     bundle_resources(TARGET_NAME ${BL_TARGET_NAME} SRC_PATH ${ASSETS_PATH} SUBPATH "assets")
+
+    # Vulkan resources
     copy_vulkan_resources(${BL_TARGET_NAME} ${VULKAN_SDK})
+
+    # Setup rpath in macOS app bundle
     if (APPLE)
         set_target_properties(${BL_TARGET_NAME} PROPERTIES
             INSTALL_RPATH "@executable_path/../lib"

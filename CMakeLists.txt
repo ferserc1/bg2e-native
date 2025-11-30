@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 4.0)
 project(bg2e_native)
 
+set(CMAKE_CXX_STANDARD 20)
+
 # VulkanSDK path
 set(VULKAN_SDK "$ENV{VULKAN_SDK}" CACHE PATH "Path to VulkanSDK")
 if(WIN32)
@@ -21,12 +23,25 @@ if(NOT VULKAN_SDK OR NOT EXISTS "${VULKAN_SDK}")
 endif()
 message(STATUS "Vulkan SDK found at: ${VULKAN_SDK}")
 
+# Find SDL2
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
+find_package(SDL2 REQUIRED)
+
+# Find Vulkan
+find_package(Vulkan REQUIRED)
+
 # Output directory
 set(PRODUCT_DIR "${CMAKE_SOURCE_DIR}/bin/${PLATFORM_NAME}")
 file(MAKE_DIRECTORY "${PRODUCT_DIR}")
+set(ASSETS_PATH "${CMAKE_SOURCE_DIR}/assets")
+
+
+if (MSVC)
+    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreadedDLL")
+endif()
 
 add_subdirectory(lib)
 #add_subdirectory(app)
-#add_subdirectory(examples)
+add_subdirectory(examples)
 
 

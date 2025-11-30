@@ -1,8 +1,5 @@
 #pragma once
 
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_vulkan.h>
-
 #include <bg2e/common.hpp>
 #include <bg2e/render/vulkan/Instance.hpp>
 #include <bg2e/render/vulkan/common.hpp>
