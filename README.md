@@ -11,28 +11,31 @@ bg2e is a graphic engine oriented to the creation of graphic applications. It is
 
 ## Requirements
 
-You need to install Vulkan SDK, and during the installation, make sure you also install the following packages:
+You need to install Vulkan SDK. In macOS and Windows, during the VulkanSDK installation, Ensure you also install the following packages:
 
 - GLM
 - SDL2
 - Vulkan Memory Allocator
 
-> Note: If you are using macOS, see the specific notes about macOS configuration. It's important that you install the exact version of VulkanSDK described in macOS configuration notes.
 
-If you have not installed Vulkan with these options, please reinstall.
-
-> Note: for now, the Linux ARM64 binaries of Vulkan SDK are not available to download. You need to build it from source, using the script provided in the VulkanSDK download from the website. In this case, you only need to install SDL2, because GLM is a dependency needed to build VulkanSDK. You can use your package manager (dnf, apt...) or build it from sources. For example:
+On Linux, install the SDL2 development packages using your distro's package manager, for example, for Debian:
 
 ```sh
-$ sudo dnf install SDL2-devel
+$ sudo apt update
+$ sudo apt install libsdl2-2.0-0 
 ```
 
-The minimum Vulkan version required is 1.3.290. If you are using macOS, pay special attention to the Vulkan configuration part.
+The minimum Vulkan version required is 1.3.290.
 
 You will also need the development tools specific for your operating system:
 
 - macOS: Xcode 15.0 or higher
 - Windows: Visual Studio 2022 with the C++ development tools.
+- Linux: build essentials. Ensure you install clang and lldb.
+
+Lastly, for all platforms, you need to install CMake 4.0 or newer
+
+> If you want to use the same IDE for all platforms, you can install CLion from JetBrains (I do not receive any funding from them, but I personally like it and recommend it). Is free for non-commercial and open source projects.
 
 ## File format
 
@@ -50,59 +53,51 @@ If you want to update the submodule, you can run:
 $ git submodule update --remote
 ```
 
-## Configuration
+## Build
 
-### macOS
+bg2 engine utiliza CMake para generar los proyectos. The recommended configuration for generating projects is
+:
 
-On macOS the configuration of Vulkan is a bit special, as on this platform there is no concept of a system or user environment variable. Environment variables only work for command line applications, so you have to set the paths to Vulkan manually.
+- Windows: Visual Studio 17
+- macOS: Xcode
+- Linux: Ninja
 
-Fortunately, inside Xcode it is possible to add environment variables, so all you have to do to compile the macOS version of the bg2 engine is to modify two variables in the project. This also applies to the example projects, which are inside the `examples` directory and are independent: to compile the examples, you will have to set the environment variables beforehand.
+> Important: On macOS, you can generate the project with Ninja, but some features of the graphics engine, such as the open and save file dialogs, do not work unless Xcode is used as the project.
 
-However, you can skip this step by installing the preconfigured Vulkan SDK version in **your home directory**, which is currently **1.4.313.1**.
 
-The environment variables that you have to set, if you install a different version of the SDK, or if you install it in a different location, are defined in the project:
+In some scenarios, you must manually specify the VULKAN_SDK variable:
 
-1. Select the `bg2e` project in the **project navigator**.
-2. In the central panel, select the **bg2e** project to change the environment variables for all targets in the project.
-3. In the **Build Settings** panel, type the search string `VULKAN`. Modify the following properties:
-    * `VULKAN_SDK`: Set the path to the Vulkan SDK `macOS` folder here. For SDK version `1.4.313.1` this would be: `~/VulkanSDK/1.4.313.1/macOS`.
-    * VULKAN_LIB_VERSION: This is the version of the `libvulkan.1.x.xxx.dylib` library. Look for this library in the Vulkan SDK `lib` directory to make sure what the name is, but if nothing changes in the future it should correspond to the name of the SDK folder, with the last digit removed. For version `1.4.313.1` it would be `1.4.313`.
+- On macOS, if the VULKAN_SDK environment variable has not been configured from the terminal
+- On macOS and Linux, if you are using CLion (because it is not able to read environment variables from the IDE)
 
-With this set up, you can now compile the project. The `libbg2e-native.a` library will be generated in the `bin/Debug` or `bin/Release` folder, depending on the configuration. If you want to compile the library from the terminal, you can use the `build_macos.sh` script located in the root of the repository.
-
-> Note: The `build_macos.sh` script compiles to the **Release** version of the Xcode project, so for the compilation to work you have to take into account the previous Vulkan SDK version settings.
-
-## macOS Package bundle
-
-In the document [macOS Package Bundle](macos-app-bundle.md) you have detailed instructions on how to create an Xcode project for a bg2 engine application, with all the necessary resources to distribute the application as a bundle.
-
-### Windows
-
-On Windows there is no special configuration to do, apart from installing Visual Studio 2022 and Vulkan SDK. But to run the code from Visual Studio you have to modify the working directory in the project options (Debugging > Workind Directory) to be the output directory (`$(OutDir)`)
-
-![Visual Studio 2022 configuration](doc/images/vs_2022_settings.jpg)
-
-### Linux
-
-On Linux we will install the dependencies in one way or another depending on the distro we are using. The other dependencies we will need are GLM, SDL2 and Vulkan Memory Allocator (vma). The GLM library is header-based, but it is also available in apt, so if you are using Debian you can also install it as a package.
+If this is one of the cases, you can manually set the VULKAN_SDK variable:
 
 ```sh
-$ sudo apt install libsdl2-2.0-0 libsdl2-dev libglm-dev libgtk-3-dev
+$ cd bg2e-native
+$ cmake -G "Xcode" -DVULKAN_SDK="/Users/myuser/VulkanSDK/1.4.313.1/macOS" -S . -B cmake-build-debug
 ```
 
-The Vulkan Memory Allocator library is installed together with Vulkan, so you don't need to do anything else.
-
-Following the package-based installation process, the Vulkan header files, SDL2, GLM and Vulkan Memory Allocator, are placed in the system header files directory (`/usr/include`). Vulkan layers configuration files are installed in `/usr/share/vulkan`. Vulkan executables are in `/usr/bin`. The vulkan libraries and layers are installed in `/usr/lib/x86_64` In this case, since the libraries are installed on the system, we don't have to set any environment variables like `$VULKAN_SDK`.
+> Note: The repository's .gitignore file includes the default file generation directory for CLion, which is `cmake-build-debug`.
 
 
-To generate the library and the main example application, simply use Make:
+If you use CMake GUI or an IDE such as CLion, you can manually set the VulkanSDK directory after the first configuration attempt (it will fail if it cannot find the VulkanSDK installation).
 
-```sh
-$ make -j$(grep -c processor /proc/cpuinfo)
-```
+In CLion, you can manually configure the variables after the first configuration attempt in `Settings > Build,
+Execution, Deployment > CMake`.
 
-To execute the example application, go to the `bin` directory and run:
+![cmake CLion variables](doc/images/clion-cmake-settings.png)
 
-```sh
-$ LD_LIBRARY_PATH=LD_LIBRARY_PATH:. ./bg2e-example-app
-```
+After configuring VULKAN_SDK, you should now be able to generate the project.
+
+Asegúrate de indicar la ruta correcta a la carpeta del SDK de Vulkan:
+
+- On Windows: you should not need to do anything, as if the VulkanSDK installation has been followed correctly, the 
+environment variable will be registered. However, the folder in this case is the folder for the version of VulkanSDK, for example `C:\VulkanSDK\1.4.313.1`.
+- On macOS, the VulkanSDK path is the `macOS` directory inside the vulkan version directory, for example 
+`/Users/my_user/VulkanSDK/1.4.313.1/macOS`
+- On Linux, the VulkanSDK path is the architecture directory inside the vulkan version directory, for example 
+`/home/my_user/VulkanSDK/1.4.313.1/x86_64`
+
+Note that if you want to use some specific version of VulkanSDK, you only need to set the VULKAN_SDK variable in 
+CMake and regenerate the project files.
+
