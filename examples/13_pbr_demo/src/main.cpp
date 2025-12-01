@@ -2,27 +2,6 @@
 #include <bg2e.hpp>
 #include <numbers>
 
-class RotateCameraComponent : public bg2e::scene::Component {
-public:
-    BG2E_COMPONENT_TYPE_NAME("RotateCamera")
-    
-    RotateCameraComponent() :_r{0.001f} {}
-    RotateCameraComponent(float r) :_r{r} {}
-    
-    void update(float delta) override
-    {
-        auto transform = ownerNode()->transform();
-        
-        if (transform)
-        {
-            transform->rotate(_r * delta / 10.0f, 0.0f, 1.0f, 0.0f);
-        }
-    }
-    
-protected:
-    float _r;
-};
-
 class CameraMouse : public bg2e::scene::Component {
 public:
     BG2E_COMPONENT_TYPE_NAME("CameraMouse")
@@ -209,22 +188,19 @@ protected:
         //sceneRoot->addComponent(new bg2e::scene::EnvironmentComponent(bg2e::base::PlatformTools::assetPath(), "equirectangular-env3.jpg"));
         sceneRoot->addComponent(new bg2e::scene::EnvironmentComponent(bg2e::base::PlatformTools::assetPath(), "gothic_manor_01_4k.hdr"));
         _environment = sceneRoot->environment();
-        
-        
-        
+
         auto cameraNode = std::shared_ptr<bg2e::scene::Node>(new bg2e::scene::Node("Camera"));
         cameraNode->addComponent(bg2e::scene::TransformComponent::makeTranslated(0.0f, 0.0f, 45.0f ));
-        
         cameraNode->addComponent(new bg2e::scene::CameraComponent());
         auto projection = new bg2e::math::OpticalProjection();
+        projection->setFar(1000.0f);
         cameraNode->camera()->setProjection(projection);
-        
-        auto cameraRotation = new bg2e::scene::Node("Camera Rotation");
-        cameraRotation->addComponent(new bg2e::scene::TransformComponent());
-        //cameraRotation->addComponent(new RotateCameraComponent(-0.002f));
-        cameraRotation->addComponent(new CameraMouse(cameraNode.get()));
-        cameraRotation->addChild(cameraNode);
-        sceneRoot->addChild(cameraRotation);
+        auto orbitComponent = new bg2e::scene::OrbitCameraComponent();
+        orbitComponent->setMaxDistance(100.0f);
+        orbitComponent->setDistance(50.0f);
+        cameraNode->addComponent(orbitComponent);
+
+        sceneRoot->addChild(cameraNode);
         
         // Lights: When you first create the scene in createScene(), you don't need to do anything with the lights, because the
         // scene has not been initialised yet. Once the scene is initialised, if lights are added or removed during the rendering

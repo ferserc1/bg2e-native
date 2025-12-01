@@ -428,9 +428,9 @@ protected:
     {
         bg2e::render::vulkan::factory::GraphicsPipeline plFactory(_engine);
 
-        plFactory.addShader("test/environment_render_example.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
+        plFactory.addShader("environment_render/environment_render_example.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
         // plFactory.addShader("test/texture.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
-        plFactory.addShader("test/environment_render_example.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
+        plFactory.addShader("environment_render/environment_render_example.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
 
         //plFactory.setInputBindingDescription(bg2e::render::vulkan::geo::MeshPNU::bindingDescription());
         //plFactory.setInputAttributeDescriptions(bg2e::render::vulkan::geo::MeshPNU::attributeDescriptions());

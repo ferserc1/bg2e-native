@@ -97,8 +97,8 @@ protected:
     {
         bg2e::render::vulkan::factory::GraphicsPipeline plFactory(_engine);
         
-        plFactory.addShader("test.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
-        plFactory.addShader("test.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
+        plFactory.addShader("setup/test.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
+        plFactory.addShader("setup/test.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
         
         auto layoutInfo = bg2e::render::vulkan::Info::pipelineLayoutInfo();
         VK_ASSERT(vkCreatePipelineLayout(_engine->device().handle(), &layoutInfo, nullptr, &_layout));

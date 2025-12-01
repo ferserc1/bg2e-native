@@ -329,8 +329,8 @@ protected:
 	{
 		bg2e::render::vulkan::factory::GraphicsPipeline plFactory(_engine);
 
-		plFactory.addShader("test/texture.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
-		plFactory.addShader("test/texture.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
+		plFactory.addShader("cubemap_renderer/texture.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
+		plFactory.addShader("cubemap_renderer/texture.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
 
         //plFactory.setInputBindingDescription(bg2e::render::vulkan::geo::MeshPU::bindingDescription());
         //plFactory.setInputAttributeDescriptions(bg2e::render::vulkan::geo::MeshPU::attributeDescriptions());

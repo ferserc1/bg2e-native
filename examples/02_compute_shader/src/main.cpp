@@ -42,7 +42,7 @@ public:
         
         computeLayout = layoutFactory.build();
         
-        plFactory.setShader("test.comp.spv");
+        plFactory.setShader("compute_shader/test.comp.spv");
         computePipeline = plFactory.build(computeLayout);
         
         
@@ -190,8 +190,8 @@ protected:
         bg2e::render::vulkan::factory::DescriptorSetLayout dsFactory;
         bg2e::render::vulkan::factory::Sampler samplerFactory(_engine);
         
-        plFactory.addShader("test.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
-        plFactory.addShader("test.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
+        plFactory.addShader("compute_shader/test.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
+        plFactory.addShader("compute_shader/test.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
         
         dsFactory.addBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
         _textureDSLayout = dsFactory.build(_engine->device().handle(), VK_SHADER_STAGE_FRAGMENT_BIT);

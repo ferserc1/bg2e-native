@@ -276,8 +276,8 @@ protected:
 	{
 		bg2e::render::vulkan::factory::GraphicsPipeline plFactory(_engine);
 
-		plFactory.addShader("test.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
-		plFactory.addShader("test.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
+		plFactory.addShader("submeshes/test.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
+		plFactory.addShader("submeshes/test.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
 
 		auto bindingDescription = bg2e::render::vulkan::geo::MeshPU::bindingDescription();
 		auto attributeDescriptions = bg2e::render::vulkan::geo::MeshPU::attributeDescriptions();

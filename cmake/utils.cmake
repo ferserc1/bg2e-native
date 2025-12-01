@@ -220,6 +220,7 @@ function(bundle_app)
     )
     target_link_libraries(${APP_TARGET_NAME} PRIVATE
         ${BG2E_LIB_TARGET}
+        ${VULKAN_LIB}  # Some apps need to access Vulkan directly
     )
 
     if(WIN32)
@@ -234,7 +235,15 @@ function(bundle_app)
 
     # TODO: Compile the shaders if SHADERS_SRC is set
     if(BL_SHADERS_SRC)
-
+        set(APP_SHADERS_DST_PATH "${PRODUCT_DIR}/${APP_TARGET_NAME}/app_shaders")
+        message(STATUS "Building app shaders: ${APP_SHADERS_DST_PATH}")
+        add_custom_command(
+            TARGET ${APP_TARGET_NAME}
+            POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E make_directory "${APP_SHADERS_DST_PATH}"
+        )
+        build_shaders(${APP_TARGET_NAME} ${VULKAN_SDK} ${BL_SHADERS_SRC} ${APP_SHADERS_DST_PATH})
+        bundle_resources(TARGET_NAME ${APP_TARGET_NAME} SRC_PATH ${APP_SHADERS_DST_PATH} SUBPATH "shaders/${APP_TARGET_NAME}")
     endif()
 
 

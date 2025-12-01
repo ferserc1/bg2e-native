@@ -1,0 +1,5 @@
+cmake_minimum_required(VERSION 4.0)
+
+set(APP_TARGET_NAME compute_shader)
+set(APP_SHADERS "${CMAKE_CURRENT_SOURCE_DIR}/shaders/src")
+bundle_app(TARGET_NAME ${APP_TARGET_NAME} SHADERS_SRC ${APP_SHADERS})

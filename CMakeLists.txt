@@ -40,8 +40,15 @@ if (MSVC)
     set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreadedDLL")
 endif()
 
+# Disable automatic codesign in macOS
+set(CMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED "NO")
+set(CMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED "NO")
+set(CMAKE_XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY "")
+set(CMAKE_XCODE_ATTRIBUTE_DEVELOPMENT_TEAM "")
+set(CMAKE_XCODE_ATTRIBUTE_CODE_SIGN_STYLE "Manual")
+
 add_subdirectory(lib)
-#add_subdirectory(app)
+add_subdirectory(apps)
 add_subdirectory(examples)
 
 

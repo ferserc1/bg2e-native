@@ -146,6 +146,7 @@ void MeshGeneric<MeshT>::cleanup()
 }
 
 template MeshGeneric<bg2e::geo::MeshP>::MeshGeneric(Engine*);
+template MeshGeneric<bg2e::geo::MeshP>::~MeshGeneric();
 template bg2e::geo::MeshP& MeshGeneric<bg2e::geo::MeshP>::meshData();
 template const bg2e::geo::MeshP& MeshGeneric<bg2e::geo::MeshP>::meshData() const;
 template void MeshGeneric<bg2e::geo::MeshP>::setMeshData(const bg2e::geo::MeshP& m);
@@ -161,6 +162,7 @@ template void MeshGeneric<bg2e::geo::MeshP>::drawSubmesh(VkCommandBuffer cmd, Vk
 template void MeshGeneric<bg2e::geo::MeshP>::cleanup();
 
 template MeshGeneric<bg2e::geo::MeshPN>::MeshGeneric(Engine*);
+template MeshGeneric<bg2e::geo::MeshPN>::~MeshGeneric();
 template bg2e::geo::MeshPN& MeshGeneric<bg2e::geo::MeshPN>::meshData();
 template const bg2e::geo::MeshPN& MeshGeneric<bg2e::geo::MeshPN>::meshData() const;
 template void MeshGeneric<bg2e::geo::MeshPN>::setMeshData(const bg2e::geo::MeshPN& m);
@@ -176,6 +178,7 @@ template void MeshGeneric<bg2e::geo::MeshPN>::drawSubmesh(VkCommandBuffer cmd, V
 template void MeshGeneric<bg2e::geo::MeshPN>::cleanup();
 
 template MeshGeneric<bg2e::geo::MeshPC>::MeshGeneric(Engine*);
+template MeshGeneric<bg2e::geo::MeshPC>::~MeshGeneric();
 template bg2e::geo::MeshPC& MeshGeneric<bg2e::geo::MeshPC>::meshData();
 template const bg2e::geo::MeshPC& MeshGeneric<bg2e::geo::MeshPC>::meshData() const;
 template void MeshGeneric<bg2e::geo::MeshPC>::setMeshData(const bg2e::geo::MeshPC& m);
@@ -191,6 +194,7 @@ template void MeshGeneric<bg2e::geo::MeshPC>::drawSubmesh(VkCommandBuffer cmd, V
 template void MeshGeneric<bg2e::geo::MeshPC>::cleanup();
 
 template MeshGeneric<bg2e::geo::MeshPU>::MeshGeneric(Engine*);
+template MeshGeneric<bg2e::geo::MeshPU>::~MeshGeneric();
 template bg2e::geo::MeshPU& MeshGeneric<bg2e::geo::MeshPU>::meshData();
 template const bg2e::geo::MeshPU& MeshGeneric<bg2e::geo::MeshPU>::meshData() const;
 template void MeshGeneric<bg2e::geo::MeshPU>::setMeshData(const bg2e::geo::MeshPU& m);
@@ -206,6 +210,7 @@ template void MeshGeneric<bg2e::geo::MeshPU>::drawSubmesh(VkCommandBuffer cmd, V
 template void MeshGeneric<bg2e::geo::MeshPU>::cleanup();
 
 template MeshGeneric<bg2e::geo::MeshPNU>::MeshGeneric(Engine*);
+template MeshGeneric<bg2e::geo::MeshPNU>::~MeshGeneric();
 template bg2e::geo::MeshPNU& MeshGeneric<bg2e::geo::MeshPNU>::meshData();
 template const bg2e::geo::MeshPNU& MeshGeneric<bg2e::geo::MeshPNU>::meshData() const;
 template void MeshGeneric<bg2e::geo::MeshPNU>::setMeshData(const bg2e::geo::MeshPNU& m);
@@ -221,6 +226,7 @@ template void MeshGeneric<bg2e::geo::MeshPNU>::drawSubmesh(VkCommandBuffer cmd, 
 template void MeshGeneric<bg2e::geo::MeshPNU>::cleanup();
 
 template MeshGeneric<bg2e::geo::MeshPNC>::MeshGeneric(Engine*);
+template MeshGeneric<bg2e::geo::MeshPNC>::~MeshGeneric();
 template bg2e::geo::MeshPNC& MeshGeneric<bg2e::geo::MeshPNC>::meshData();
 template const bg2e::geo::MeshPNC& MeshGeneric<bg2e::geo::MeshPNC>::meshData() const;
 template void MeshGeneric<bg2e::geo::MeshPNC>::setMeshData(const bg2e::geo::MeshPNC& m);
@@ -236,6 +242,7 @@ template void MeshGeneric<bg2e::geo::MeshPNC>::drawSubmesh(VkCommandBuffer cmd, 
 template void MeshGeneric<bg2e::geo::MeshPNC>::cleanup();
 
 template MeshGeneric<bg2e::geo::MeshPNUC>::MeshGeneric(Engine*);
+template MeshGeneric<bg2e::geo::MeshPNUC>::~MeshGeneric();
 template bg2e::geo::MeshPNUC& MeshGeneric<bg2e::geo::MeshPNUC>::meshData();
 template const bg2e::geo::MeshPNUC& MeshGeneric<bg2e::geo::MeshPNUC>::meshData() const;
 template void MeshGeneric<bg2e::geo::MeshPNUC>::setMeshData(const bg2e::geo::MeshPNUC& m);
@@ -251,6 +258,7 @@ template void MeshGeneric<bg2e::geo::MeshPNUC>::drawSubmesh(VkCommandBuffer cmd,
 template void MeshGeneric<bg2e::geo::MeshPNUC>::cleanup();
 
 template MeshGeneric<bg2e::geo::MeshPNUT>::MeshGeneric(Engine*);
+template MeshGeneric<bg2e::geo::MeshPNUT>::~MeshGeneric();
 template bg2e::geo::MeshPNUT& MeshGeneric<bg2e::geo::MeshPNUT>::meshData();
 template const bg2e::geo::MeshPNUT& MeshGeneric<bg2e::geo::MeshPNUT>::meshData() const;
 template void MeshGeneric<bg2e::geo::MeshPNUT>::setMeshData(const bg2e::geo::MeshPNUT& m);
@@ -266,6 +274,7 @@ template void MeshGeneric<bg2e::geo::MeshPNUT>::drawSubmesh(VkCommandBuffer cmd,
 template void MeshGeneric<bg2e::geo::MeshPNUT>::cleanup();
 
 template MeshGeneric<bg2e::geo::MeshPNUUT>::MeshGeneric(Engine*);
+template MeshGeneric<bg2e::geo::MeshPNUUT>::~MeshGeneric();
 template bg2e::geo::MeshPNUUT& MeshGeneric<bg2e::geo::MeshPNUUT>::meshData();
 template const bg2e::geo::MeshPNUUT& MeshGeneric<bg2e::geo::MeshPNUUT>::meshData() const;
 template void MeshGeneric<bg2e::geo::MeshPNUUT>::setMeshData(const bg2e::geo::MeshPNUUT& m);

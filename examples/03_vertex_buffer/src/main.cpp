@@ -263,8 +263,8 @@ protected:
 	{
 		bg2e::render::vulkan::factory::GraphicsPipeline plFactory(_engine);
 
-		plFactory.addShader("test/texture.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
-		plFactory.addShader("test/texture.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
+		plFactory.addShader("vertex_buffer/texture.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
+		plFactory.addShader("vertex_buffer/texture.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
 
         auto bindingDescription = bg2e::render::vulkan::geo::bindingDescriptionPU();
         auto attributeDescriptions = bg2e::render::vulkan::geo::attributeDescriptionsPU();

@@ -101,7 +101,7 @@ public:
 	
         _colorAttachments->build(_engine->swapchain().extent());
         _colorAttachmentsCanvas->build(
-            "test/color_attachment_canvas_test.frag.spv",
+            "scene_objects/color_attachment_canvas_test.frag.spv",
             _engine->swapchain().imageFormat(),
             _engine->swapchain().sampleCount()
         );
@@ -278,8 +278,8 @@ protected:
 	{
 		bg2e::render::vulkan::factory::GraphicsPipeline plFactory(_engine);
 
-		plFactory.addShader("test/texture_gi.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
-        plFactory.addShader("test/texture_gi.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
+		plFactory.addShader("scene_objects/texture_gi.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
+        plFactory.addShader("scene_objects/texture_gi.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
         
         plFactory.setInputState<bg2e::render::vulkan::geo::MeshPNU>();
     
@@ -298,7 +298,7 @@ protected:
         plFactory.setDepthFormat(_engine->swapchain().depthImageFormat());
         plFactory.enableDepthtest(true, VK_COMPARE_OP_LESS);
         plFactory.inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-        plFactory.setCullMode(VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_COUNTER_CLOCKWISE);
+        plFactory.setCullMode(VK_CULL_MODE_NONE, VK_FRONT_FACE_COUNTER_CLOCKWISE);
         plFactory.disableMultisample();
         plFactory.setColorAttachmentFormat(_colorAttachments->attachmentFormats());
 		_pipeline = plFactory.build(_layout);

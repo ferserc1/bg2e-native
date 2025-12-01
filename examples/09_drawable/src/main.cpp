@@ -101,7 +101,7 @@ public:
 	
         _colorAttachments->build(_engine->swapchain().extent());
         _colorAttachmentsCanvas->build(
-            "test/color_attachment_canvas_test.frag.spv",
+            "drawable/color_attachment_canvas_test.frag.spv",
             _engine->swapchain().imageFormat(),
             _engine->swapchain().sampleCount()
         );
@@ -278,8 +278,8 @@ protected:
 	{
 		bg2e::render::vulkan::factory::GraphicsPipeline plFactory(_engine);
 
-		plFactory.addShader("test/scene_objects.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
-        plFactory.addShader("test/scene_objects.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
+		plFactory.addShader("drawable/scene_objects.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
+        plFactory.addShader("drawable/scene_objects.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
         
         plFactory.setInputState<bg2e::render::vulkan::geo::MeshPNU>();
     
