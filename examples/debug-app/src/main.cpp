@@ -4,13 +4,15 @@
 
 #include <DevSceneDelegate.hpp>
 #include <SpheresSceneDelegate.hpp>
+#include <LoadGltfSceneDelegate.hpp>
 
 class MyApplication : public bg2e::app::Application {
 public:
 	void init(int, char**) override
 	{
-		auto delegate = std::make_shared<SpheresSceneDelegate>();
+		//auto delegate = std::make_shared<SpheresSceneDelegate>();
         //auto delegate = std::make_shared<DevSceneDelegate>();
+		auto delegate = std::make_shared<LoadGltfSceneDelegate>();
 		setRenderDelegate(delegate);
 		setInputDelegate(delegate);
 		setUiDelegate(delegate);

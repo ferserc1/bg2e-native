@@ -42,7 +42,11 @@ set(TINYOBJ_INCLUDE "${THIRD_PARTY_PATH}/tinyobj")
 set(SIMDJSON_SRC "${THIRD_PARTY_PATH}/simdjson/simdjson.cpp")
 set(SIMDJSON_INCLUDE "${THIRD_PARTY_PATH}/simdjson")
 
-# TODO: fastgltf
+# fastgltf
+file(GLOB FASTGLTF_SRC "${THIRD_PARTY_PATH}/fastgltf/src/*.cpp")
+set(FASTGLTF_INCLUDE "${THIRD_PARTY_PATH}/fastgltf/include")
+
+message("FastGLTF" "Includes: ${FASTGLTF_INCLUDE}")
 
 # Export final variables
 set(BG2E_THIRD_PARTY_INCLUDE_PATH
@@ -53,6 +57,7 @@ set(BG2E_THIRD_PARTY_INCLUDE_PATH
     "${SIMDJSON_INCLUDE}"
     "${STBIMAGE_INCLUDE}"
     "${TINYOBJ_INCLUDE}"
+    "${FASTGLTF_INCLUDE}"
     # Other dependency paths
 )
 
@@ -62,5 +67,6 @@ set(BG2E_THIRD_PARTY_SRC
     ${IMGUI_SRC}
     ${NFD_SRC}
     ${SIMDJSON_SRC}
+    ${FASTGLTF_SRC}
     # other dependency paths
 )
