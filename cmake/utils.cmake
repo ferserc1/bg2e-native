@@ -233,9 +233,9 @@ function(bundle_app)
         ARCHIVE_OUTPUT_DIRECTORY "${PRODUCT_DIR}"
     )
 
-    # TODO: Compile the shaders if SHADERS_SRC is set
+    # Compile the shaders if SHADERS_SRC is set
     if(BL_SHADERS_SRC)
-        set(APP_SHADERS_DST_PATH "${PRODUCT_DIR}/${APP_TARGET_NAME}/app_shaders")
+        set(APP_SHADERS_DST_PATH "${PRODUCT_DIR}/${APP_TARGET_NAME}_resources/app_shaders")
         message(STATUS "Building app shaders: ${APP_SHADERS_DST_PATH}")
         add_custom_command(
             TARGET ${APP_TARGET_NAME}
