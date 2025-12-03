@@ -339,10 +339,16 @@ std::shared_ptr<bg2e::scene::Node> LoadGltfSceneDelegate::scene1()
     projection->setFar(1000.0f);
     cameraNode->camera()->setProjection(projection);
 
-    auto gltfText = std::shared_ptr<bg2e::scene::Node>(
+    auto gltfTest = std::shared_ptr<bg2e::scene::Node>(
         bg2e::db::loadGltf(bg2e::base::PlatformTools::assetPath(),
-        "test.glb"
+        "test.glb",
+        _engine
     ));
+
+    if (gltfTest)
+    {
+        sceneRoot->addChild(gltfTest);
+    }
 
     auto cameraRotation = new bg2e::scene::Node("Camera Rotation");
     cameraRotation->addComponent(new bg2e::scene::TransformComponent());

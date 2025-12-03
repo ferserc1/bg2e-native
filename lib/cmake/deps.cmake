@@ -38,13 +38,16 @@ set(STBIMAGE_INCLUDE "${THIRD_PARTY_PATH}/stb_image")
 # tinyobj
 set(TINYOBJ_INCLUDE "${THIRD_PARTY_PATH}/tinyobj")
 
+# fastgltf has become an extremely complex, verbose library that changes between versions, which is why it has been abandoned in favor of cgltf.
 # simdjson
-set(SIMDJSON_SRC "${THIRD_PARTY_PATH}/simdjson/simdjson.cpp")
-set(SIMDJSON_INCLUDE "${THIRD_PARTY_PATH}/simdjson")
-
+# set(SIMDJSON_SRC "${THIRD_PARTY_PATH}/simdjson/simdjson.cpp")
+#set(SIMDJSON_INCLUDE "${THIRD_PARTY_PATH}/simdjson")
 # fastgltf
-file(GLOB FASTGLTF_SRC "${THIRD_PARTY_PATH}/fastgltf/src/*.cpp")
-set(FASTGLTF_INCLUDE "${THIRD_PARTY_PATH}/fastgltf/include")
+# file(GLOB FASTGLTF_SRC "${THIRD_PARTY_PATH}/fastgltf/src/*.cpp")
+# set(FASTGLTF_INCLUDE "${THIRD_PARTY_PATH}/fastgltf/include")
+
+# cgltf
+set(CGLTF_INCLUDE "${THIRD_PARTY_PATH}/cgltf")
 
 message("FastGLTF" "Includes: ${FASTGLTF_INCLUDE}")
 
@@ -54,10 +57,11 @@ set(BG2E_THIRD_PARTY_INCLUDE_PATH
     "${BG2SCENE_INCLUDE}"
     "${IMGUI_INCLUDE}"
     "${NFD_INCLUDE}"
-    "${SIMDJSON_INCLUDE}"
     "${STBIMAGE_INCLUDE}"
     "${TINYOBJ_INCLUDE}"
-    "${FASTGLTF_INCLUDE}"
+    "${CGLTF_INCLUDE}"
+    #"${SIMDJSON_INCLUDE}"
+    #"${FASTGLTF_INCLUDE}"
     # Other dependency paths
 )
 
@@ -66,7 +70,7 @@ set(BG2E_THIRD_PARTY_SRC
     ${BG2SCENE_SRC}
     ${IMGUI_SRC}
     ${NFD_SRC}
-    ${SIMDJSON_SRC}
-    ${FASTGLTF_SRC}
+    #${SIMDJSON_SRC}
+    #${FASTGLTF_SRC}
     # other dependency paths
 )

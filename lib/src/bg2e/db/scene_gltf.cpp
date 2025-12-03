@@ -2,118 +2,264 @@
 // Created by fernando on 3/12/25.
 //
 #include <bg2e/db/scene_gltf.hpp>
+#include <bg2e/geo/Mesh.hpp>
+#include <bg2e/math/base.hpp>
+#include <bg2e/scene/TransformComponent.hpp>
+#include <bg2e/scene/Drawable.hpp>
+#include <bg2e/scene/DrawableComponent.hpp>
 
-#include <iostream>
+#include <stdexcept>
+#include <vector>
+#include <memory>
 
-#include <fastgltf/core.hpp>
-#include <fastgltf/tools.hpp>
-#include <fastgltf/types.hpp>
+#define CGLTF_IMPLEMENTATION
+#include <cgltf.h>
 
 namespace bg2e::db {
 
-void dumpNodeRecursive(const fastgltf::Asset& asset,
-                       std::size_t nodeIndex,
-                       int depth = 0)
-{
-    const auto& node = asset.nodes[nodeIndex];
+namespace gltf {
 
-    // Sangrado para ver jerarquía
-    for (int i = 0; i < depth; ++i)
-        std::cout << "  ";
+    static cgltf_data* loadGltfFile(const std::filesystem::path& filePath)
+    {
+        cgltf_options options {};
+        cgltf_data* data = nullptr;
 
-    std::cout << "Node " << nodeIndex;
-
-    if (!node.name.empty())
-        std::cout << " (\"" << node.name << "\")";
-
-    if (node.meshIndex.has_value())
-        std::cout << "  mesh=" << *node.meshIndex;
-
-    std::cout << "\n";
-
-    // Hijos
-    for (auto childIndex : node.children) {
-        dumpNodeRecursive(asset, childIndex, depth + 1);
-    }
-}
-
-void dumpGltf(const std::filesystem::path& path)
-{
-    fastgltf::Parser parser;
-
-    // Cargar bytes del fichero en el buffer de fastgltf
-    auto maybeBuffer = fastgltf::GltfDataBuffer::FromPath(path);
-    if (maybeBuffer.error() != fastgltf::Error::None) {
-        std::cerr << "Error cargando fichero: " << path << "\n";
-        return;
-    }
-    fastgltf::GltfDataBuffer* data = maybeBuffer.get_if();
-    fastgltf::GltfDataBuffer& buffer = *data;
-
-    // Solo queremos la estructura, así que Options::None
-    auto assetResult = parser.loadGltf(
-        buffer,
-        path.parent_path(),
-        fastgltf::Options::None
-    );
-
-    if (auto error = assetResult.error(); error != fastgltf::Error::None) {
-        std::cerr << "Error al parsear glTF: "
-                  << static_cast<std::uint64_t>(error) << "\n";
-        return;
-    }
-
-    // Referencia al Asset ya cargado
-    const fastgltf::Asset& asset = assetResult.get();
-
-    std::cout << "File: " << path << "\n\n";
-
-    // Info general
-    std::cout << "Scenes:  " << asset.scenes.size()  << "\n";
-    std::cout << "Nodes:   " << asset.nodes.size()   << "\n";
-    std::cout << "Meshes:  " << asset.meshes.size()  << "\n";
-    std::cout << "Buffers: " << asset.buffers.size() << "\n\n";
-
-    // Escenas
-    for (std::size_t i = 0; i < asset.scenes.size(); ++i) {
-        const auto& scene = asset.scenes[i];
-        std::cout << "Scene " << i;
-        if (!scene.name.empty())
-            std::cout << " (\"" << scene.name << "\")";
-        std::cout << "\n";
-
-        // Nodos raíz de la escena
-        for (auto nodeIndex : scene.nodeIndices) {
-            dumpNodeRecursive(asset, nodeIndex, 1);
+        cgltf_result result = cgltf_parse_file(&options, filePath.string().c_str(), &data);
+        if (result != cgltf_result_success)
+        {
+            throw std::runtime_error("Failed to parse GLTF file " + filePath.string());
         }
 
-        std::cout << "\n";
+        result = cgltf_load_buffers(&options, data, filePath.string().c_str());
+        if (result != cgltf_result_success)
+        {
+            cgltf_free(data);
+            throw std::runtime_error("Failed to load buffers for " + filePath.string());
+        }
+
+        return data;
     }
 
-    // Mallas
-    for (std::size_t i = 0; i < asset.meshes.size(); ++i) {
-        const auto& mesh = asset.meshes[i];
-        std::cout << "Mesh " << i;
-        if (!mesh.name.empty())
-            std::cout << " (\"" << mesh.name << "\")";
-        std::cout << "  primitives=" << mesh.primitives.size() << "\n";
+    static cgltf_accessor* findAccessor(
+        const cgltf_primitive* primitive,
+        cgltf_attribute_type type,
+        int index = 0  // Used for the second UV set
+    ) {
+        for (cgltf_size i = 0; i < primitive->attributes_count; ++i)
+        {
+            const cgltf_attribute& attr = primitive->attributes[i];
+            if (attr.type == type && attr.index == index)
+            {
+                return attr.data;
+            }
+        }
+        return nullptr;
+    }
+
+    static void appendPrimitive(
+        const cgltf_data* data,
+        const cgltf_primitive* primitive,
+        std::shared_ptr<bg2e::geo::Mesh> mesh
+    )
+    {
+        using namespace bg2e::geo;
+
+        auto posAccessor = findAccessor(primitive, cgltf_attribute_type_position);
+        if (!posAccessor)
+        {
+            throw std::runtime_error("Invalid mesh: Primitive is missing POSITION");
+        }
+
+        auto normAccessor = findAccessor(primitive, cgltf_attribute_type_normal);
+        if (!normAccessor)
+        {
+            throw std::runtime_error("Invalid mesh: Primitive is missing NORMAL");
+        }
+
+        auto uv0Accessor = findAccessor(primitive, cgltf_attribute_type_texcoord, 0);
+        if (!uv0Accessor)
+        {
+            throw std::runtime_error("Invalid mesh: Primitive is missing UV0");
+        }
+        auto uv1Accessor = findAccessor(primitive, cgltf_attribute_type_texcoord, 1);
+        if (!uv1Accessor)
+        {
+            uv1Accessor = uv0Accessor;
+        }
+
+        // Tangents are optionals because it can be generated procedurally, but its better to import tangents
+        auto tangentAccessor = findAccessor(primitive, cgltf_attribute_type_tangent);
+        if (!tangentAccessor)
+        {
+            std::cout << "WARNING: Primitive is missing TANGENTS. The tangents will be generated procedurally, but it is better to import them from a file" << std::endl;
+        }
+
+        const uint32_t baseVertex = static_cast<uint32_t>(mesh->vertices.size());
+        const size_t vertexCount = posAccessor->count;
+
+        mesh->vertices.resize(baseVertex + vertexCount);
+
+        // Vertex data
+        for (size_t i = 0; i < vertexCount; ++i)
+        {
+            Vertex& v = mesh->vertices[baseVertex + i];
+
+            // POSITION
+            float pos[3];
+            cgltf_accessor_read_float(posAccessor, i, pos, 3);
+            v.position = glm::vec3(pos[0], pos[1], pos[2]);
+
+            // NORMAL
+            float n[3];
+            cgltf_accessor_read_float(normAccessor, i, n, 3);
+            v.normal = glm::vec3(n[0], n[1], n[2]);
+
+            // UV0
+            float uv[2];
+            cgltf_accessor_read_float(uv0Accessor, i, uv, 2);
+            v.texCoord0 = glm::vec2(uv[0], uv[1]);
+
+            // UV1
+            cgltf_accessor_read_float(uv1Accessor, i, uv, 2);
+            v.texCoord1 = glm::vec2(uv[0], uv[1]);
+
+            // TANGENT
+            if (tangentAccessor)
+            {
+                float t[4];
+                cgltf_accessor_read_float(tangentAccessor, i, t, 4);
+                v.tangent = glm::vec3(t[0], t[1], t[2]);
+            }
+        }
+
+        // Index
+        if (!primitive->indices)
+        {
+            throw std::runtime_error("Primitive without indices is not supported");
+        }
+
+        const uint32_t firstIndex = static_cast<uint32_t>(mesh->indices.size());
+        const size_t indexCount = primitive->indices->count;
+
+        mesh->indices.resize(baseVertex + indexCount);
+
+        for (size_t i = 0; i < indexCount; ++i)
+        {
+            uint32_t idx = static_cast<uint32_t>(cgltf_accessor_read_index(primitive->indices, i));
+            mesh->indices.push_back(baseVertex + idx);
+        }
+
+        mesh->submeshes.push_back(Submesh{
+            firstIndex,
+            static_cast<uint32_t>(indexCount)
+        });
+    }
+
+    static glm::mat4 nodeTransform(const cgltf_node* node)
+    {
+        if (node->has_matrix)
+        {
+            glm::mat4 m = glm::make_mat4(node->matrix);
+            return m;
+        }
+        glm::vec3 T(0.0f);
+        glm::quat R(1.0, 0.0, 0.0, 0.0);
+        glm::vec3 S(1.0f);
+
+        if (node->has_translation) {
+            T = glm::vec3(node->translation[0], node->translation[1], node->translation[2]);
+        }
+
+        if (node->has_rotation) {
+            R = glm::quat(
+                node->rotation[3],
+                node->rotation[0],
+                node->rotation[1],
+                node->rotation[2]
+            );
+        }
+
+        if (node->has_scale) {
+            S = glm::vec3(node->scale[0], node->scale[1], node->scale[2]);
+        }
+
+        return glm::translate(glm::mat4(1.0f), T)
+             * glm::mat4_cast(R)
+             * glm::scale(glm::mat4(1.0f), S);
+    }
+
+    bg2e::scene::Node* createNode(const cgltf_node* n)
+    {
+        auto * node = new bg2e::scene::Node();
+        if (n->name)
+        {
+            node->setName(n->name);
+        }
+
+        glm::mat4 transformMatrix = nodeTransform(n);
+        node->addComponent(new scene::TransformComponent(transformMatrix));
+
+        if (n->mesh)
+        {
+            // TODO: Add mesh
+        }
+
+        return node;
     }
 }
 
+
 extern BG2E_API bg2e::scene::Node * loadGltf(
-    const std::filesystem::path& filePath
+    const std::filesystem::path& filePath,
+    render::Engine* engine
 ) {
-    dumpGltf(filePath);
-    std::cerr << "loadGltf: Not implemented" << std::endl;
+    auto data = gltf::loadGltfFile(filePath);
+
+    std::cout << "Scenes: " << data->scenes_count << std::endl;
+    std::cout << "Nodes: " << data->nodes_count << std::endl;
+    std::cout << "Meshes: " << data->meshes_count << std::endl;
+
+    std::vector<std::shared_ptr<geo::Mesh>> meshes;
+
+    for (cgltf_size m = 0; m < data->meshes_count; ++m)
+    {
+        const cgltf_mesh& gltfMesh = data->meshes[m];
+        std::cout << "Mesh " << m << " has "
+            << gltfMesh.primitives_count << " primitives" << std::endl;
+
+        auto mesh = std::make_shared<geo::Mesh>();
+        for (cgltf_size p = 0; p < gltfMesh.primitives_count; ++p)
+        {
+            const cgltf_primitive& primitive = gltfMesh.primitives[p];
+            gltf::appendPrimitive(data, &primitive, mesh);
+        }
+        meshes.push_back(mesh);
+    }
+
+    // Load drawables
+    std::vector<std::shared_ptr<bg2e::scene::Drawable>> drawables;
+    for (auto & mesh : meshes)
+    {
+        auto drw = std::make_shared<bg2e::scene::Drawable>();
+        drw->setMesh(mesh);
+        drw->load(engine);
+        drawables.push_back(drw);
+    }
+
+    cgltf_free(data);
+
+    // TODO: Load scene nodes
+
     return nullptr;
 }
 
 extern BG2E_API bg2e::scene::Node * loadGltf(
     const std::filesystem::path& basePath,
-    const std::string& fileName
+    const std::string& fileName,
+    render::Engine* engine
 ) {
     auto fullPath = basePath / fileName;
-    return loadGltf(fullPath);
+    return loadGltf(fullPath, engine);
 }
 
 }
