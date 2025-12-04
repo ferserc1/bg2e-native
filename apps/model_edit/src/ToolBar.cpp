@@ -37,6 +37,32 @@ void ToolBar::init(AppDelegate * delegate)
                     _appDelegate->stage()->loadModel(filePath);
                 }
             }
+            if (Menu::menuItem("Import GLTF"))
+            {
+                bg2e::app::FileDialog fd;
+                fd.setFilters({
+                    { "gltf file", "glb,gltf" }
+                });
+                auto filePath = fd.openFile();
+
+                if (!filePath.empty())
+                {
+                    _appDelegate->stage()->importGltf(filePath);
+                }
+            }
+            if (Menu::menuItem("Import OBJ"))
+            {
+                bg2e::app::FileDialog fd;
+                fd.setFilters({
+                    { "OBJ file", "obj" }
+                });
+                auto filePath = fd.openFile();
+
+                if (!filePath.empty())
+                {
+                    _appDelegate->stage()->importObj(filePath);
+                }
+            }
             if (Menu::menuItem("Save", "Cmd+S"))
             {
                 auto filePath = _appDelegate->stage()->filePath();

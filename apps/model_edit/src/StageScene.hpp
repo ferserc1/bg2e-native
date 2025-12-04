@@ -19,6 +19,20 @@ public:
     void loadModel(const std::filesystem::path& path);
     
     void saveModel(const std::filesystem::path& path);
+
+    void close();
+
+    // Throws exception if model is invalid or format unsupported
+    void importModel(const std::filesystem::path& path);
+
+    void importObj(const std::filesystem::path& path);
+
+    void importGltf(const std::filesystem::path& path);
+
+    inline bool multiMeshScene() const { return _targetNames.size() > 0; }
+    inline const std::vector<std::string>& targetNames() const { return _targetNames; }
+    void selectTargetNode(uint32_t index);
+    inline uint32_t selectedTargetNodeIndex() const { return _selectedTargetNode; }
     
     inline std::shared_ptr<bg2e::scene::Node> sceneRoot() const { return _sceneRoot; }
     
@@ -27,7 +41,7 @@ public:
     
     inline bg2e::scene::OrbitCameraComponent * orbitCamera() { return _orbitCamera; }
     inline bg2e::scene::OrbitCameraComponent * orbitCamera() const { return _orbitCamera; }
-    
+
     inline bool isModelValid() const { return _targetNode.get() != nullptr; }
     std::shared_ptr<bg2e::scene::Drawable> targetDrawable();
     
@@ -44,7 +58,22 @@ protected:
     std::shared_ptr<bg2e::scene::Node> _targetNode = nullptr;
 
     std::shared_ptr<bg2e::scene::Drawable> _targetDrawable = nullptr;
-    
+
+    // Some file formats stores a scene (for example, GLTF). If you open a scene file, this
+    // vector will contain all the nodes that contains a DrawableComponent. You can use the
+    // targetDrawable utility functions to set the _targetDrawable from this list. When you open
+    // a model file (for example, .bg2) this array will be empty
+    std::vector<std::shared_ptr<bg2e::scene::Drawable>> _targetDrawables;
+    uint32_t _selectedTargetNode = 0;
+
+    // This contains the loaded scene when the file is a scene file (for example, GLTF).
+    // This scene is not visible, is stored only for debugging purposes
+    std::shared_ptr<bg2e::scene::Node> _targetScene = nullptr;
+
+    // This vector stores the drawable nodes names when the loaded file is a model file.
+    // Otherwise is empty
+    std::vector<std::string> _targetNames;
+
     // Path of the last opened or saved file
     std::filesystem::path _filePath;
     

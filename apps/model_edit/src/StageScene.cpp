@@ -5,6 +5,10 @@
 
 #include <bg2e.hpp>
 
+#include <algorithm>
+#include <cctype>
+#include <string>
+
 StageScene::StageScene(bg2e::render::Engine * engine)
     :_engine { engine }
 {
@@ -23,6 +27,7 @@ std::shared_ptr<bg2e::scene::Node> StageScene::init()
     cameraNode->addComponent(new bg2e::scene::CameraComponent());
     auto projection = new bg2e::math::OpticalProjection();
     projection->setFocalLength(50.0f);
+    projection->setFar(1000.0f);
     cameraNode->camera()->setProjection(projection);
     
     auto cameraRotation = new bg2e::scene::Node("Camera Rotation");
@@ -36,6 +41,7 @@ std::shared_ptr<bg2e::scene::Node> StageScene::init()
     cameraRotationComponent->setMinY(-std::numeric_limits<float>::max());
     cameraRotationComponent->setMinZ(-std::numeric_limits<float>::max());
     cameraRotationComponent->setDistance(2.0f);
+    cameraRotationComponent->setMaxDistance(300.0f);
     cameraRotationComponent->setInitialDistance(2.0f);
     cameraRotationComponent->setWheelSpeed(2.0f);
     cameraRotationComponent->setPanSpeed(0.5f);
@@ -65,12 +71,13 @@ std::shared_ptr<bg2e::scene::Node> StageScene::init()
 
 void StageScene::loadModel(const std::filesystem::path& path)
 {
+    close();
+
     auto modelDrawable = bg2e::db::loadDrawableBg2(path, _engine);
     _targetDrawable = std::shared_ptr<bg2e::scene::Drawable>(modelDrawable);
     auto modelNode = new bg2e::scene::Node("Target model");
     modelNode->addComponent(new bg2e::scene::DrawableComponent(modelDrawable));
-    
-    _targetNode->clearChildren();
+
     _targetNode->addChild(modelNode);
     
     _filePath = path;
@@ -84,7 +91,94 @@ void StageScene::saveModel(const std::filesystem::path& path)
         bg2e::db::storeDrawableBg2(path, drw);
         _filePath = path;
     }
-    
+}
+
+void StageScene::close()
+{
+    _targetDrawables.clear();
+    _targetDrawable.reset();
+    _targetNode->clearChildren();
+    _targetScene.reset();
+    _targetNames.clear();
+}
+
+
+void StageScene::importModel(const std::filesystem::path& path)
+{
+    // Get file extension
+    std::string extension = path.extension().string();
+    std::transform(
+        extension.cbegin(),
+        extension.cend(),
+        extension.begin(),
+        [](unsigned char c) { return std::tolower(c); }
+    );
+    if (extension == ".obj")
+    {
+        importObj(path);
+    }
+    else if (extension == ".glb" || extension == ".gltf")
+    {
+        importGltf(path);
+    }
+    else
+    {
+        throw std::runtime_error("Unsupported extension");
+    }
+}
+
+void StageScene::importObj(const std::filesystem::path& path)
+{
+    close();
+
+    auto objDrawable = bg2e::db::loadDrawableObj(path, _engine);
+    _targetDrawable = std::shared_ptr<bg2e::scene::Drawable>(objDrawable);
+    auto modelNode = new bg2e::scene::Node("Target model");
+    modelNode->addComponent(new bg2e::scene::DrawableComponent(objDrawable));
+
+    _targetNode->addChild(modelNode);
+
+    _filePath = path;
+}
+
+void StageScene::importGltf(const std::filesystem::path& path)
+{
+    close();
+
+    auto gltfScene = bg2e::db::loadGltf(path, _engine);
+
+    if (gltfScene != nullptr)
+    {
+        bg2e::scene::FindNodeComponentVisitor<bg2e::scene::DrawableComponent> findDrawables;
+        auto drawableNodes = findDrawables.find(gltfScene);
+        for (auto drawableNode : drawableNodes)
+        {
+            auto drawable = drawableNode->getComponent<bg2e::scene::DrawableComponent>()->drawable();
+            _targetDrawables.push_back(drawable);
+            _targetNames.push_back(drawableNode->name());
+        }
+        _targetScene = std::shared_ptr<bg2e::scene::Node>(gltfScene);
+
+        selectTargetNode(0);
+    }
+
+    _filePath = "";
+}
+
+void StageScene::selectTargetNode(uint32_t index)
+{
+    if (_targetDrawables.at(index).get() != nullptr)
+    {
+        _selectedTargetNode = index;
+        _targetNode->clearChildren();
+
+        // Get the DrawableComponent from the selected node and add it to a new empty node
+        auto drawable = _targetDrawables[index];
+        auto node = std::make_shared<bg2e::scene::Node>("Target Node");
+        node->addComponent(new bg2e::scene::DrawableComponent(drawable));
+        _targetNode->addChild(node);
+        _targetDrawable = drawable;
+    }
 }
 
 std::shared_ptr<bg2e::scene::Drawable> StageScene::targetDrawable()
@@ -105,4 +199,6 @@ std::shared_ptr<bg2e::scene::Drawable> StageScene::targetDrawable()
 void StageScene::cleanup()
 {
     _targetDrawable.reset();
+    _targetDrawables.clear();
+    _targetScene.reset();
 }

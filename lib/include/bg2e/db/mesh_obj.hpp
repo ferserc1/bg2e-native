@@ -5,6 +5,9 @@
 
 #include <bg2e/geo/Mesh.hpp>
 
+#include <bg2e/scene/Drawable.hpp>
+#include <bg2e/render/Engine.hpp>
+
 #include <filesystem>
 #include <iostream>
 #include <fstream>
@@ -52,6 +55,17 @@ MeshT* loadMeshObj(const std::filesystem::path& filePath)
 
 	return loadMeshObj<MeshT>(stream);
 }
+
+extern BG2E_API std::shared_ptr<bg2e::scene::Drawable> loadDrawableObj(
+    const std::filesystem::path& filePath,
+    bg2e::render::Engine * engine
+);
+
+extern BG2E_API std::shared_ptr<bg2e::scene::Drawable> loadDrawableObj(
+    const std::filesystem::path& basePath,
+    const std::string& fileName,
+    bg2e::render::Engine * engine
+);
 
 }
 }

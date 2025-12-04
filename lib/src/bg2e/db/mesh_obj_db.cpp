@@ -243,5 +243,28 @@ bg2e::geo::MeshPNUUT* loadMeshObj<bg2e::geo::MeshPNUUT>(std::istream& inputStrea
 	return mesh;
 }
 
+std::shared_ptr<bg2e::scene::Drawable> loadDrawableObj(
+    const std::filesystem::path& filePath,
+    bg2e::render::Engine * engine
+) {
+    auto mesh = loadMeshObj<bg2e::geo::Mesh>(filePath);
+    auto drawable = std::make_shared<bg2e::scene::Drawable>();
+    drawable->setMesh(mesh);
+    drawable->load(engine);
+    for (uint32_t i = 0; i < mesh->submeshes.size(); i++)
+    {
+        drawable->setSubmeshName("submesh_" + std::to_string(i));
+    }
+    return drawable;
+}
+
+std::shared_ptr<bg2e::scene::Drawable> loadDrawableObj(
+    const std::filesystem::path& basePath,
+    const std::string& fileName,
+    bg2e::render::Engine * engine
+) {
+    auto fullPath = basePath / fileName;
+    return loadDrawableObj(fullPath, engine);
+}
 
 }
