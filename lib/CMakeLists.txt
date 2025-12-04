@@ -83,7 +83,7 @@ endif()
 
 set(SRC_SHADER_DIR "${CMAKE_SOURCE_DIR}/shaders/src")
 set(DST_SHADER_DIR "${PRODUCT_DIR}/shaders")
-build_shaders(
+compile_shaders(
     ${BG2E_TARGET_NAME}
     ${VULKAN_SDK}
     ${SRC_SHADER_DIR}

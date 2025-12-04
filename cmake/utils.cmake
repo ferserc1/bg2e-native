@@ -28,6 +28,39 @@ function(build_shaders
     endforeach()
 endfunction()
 
+function(compile_shaders
+    TARGET_NAME
+    VULKAN_SDK_PATH
+    SRC_PATH
+    DST_PATH
+)
+    set(COMPILED_SHADERS "")
+
+    set(GLSLANG_PATH "${VULKAN_SDK_PATH}/bin/glslang")
+    file(GLOB SHADERS_SRC "${SRC_PATH}/*.glsl")
+
+    file(MAKE_DIRECTORY "${DST_PATH}")
+
+    foreach(SH ${SHADERS_SRC})
+        get_filename_component(NAME "${SH}" NAME)
+        string(REPLACE ".glsl" "" BASE "${NAME}")
+        set(SPV "${DST_PATH}/${BASE}.spv")
+        add_custom_command(
+            OUTPUT ${SPV}
+            COMMAND "${GLSLANG_PATH}" -V "${SH}" -o "${SPV}"
+            DEPENDS ${SH}
+            COMMENT "Building shader ${SH}"
+            VERBATIM
+        )
+
+        list(APPEND COMPILED_SHADERS ${SPV})
+    endforeach()
+
+    add_custom_target(${TARGET_NAME}_shaders ALL DEPENDS ${COMPILED_SHADERS})
+
+    add_dependencies(${TARGET_NAME} ${TARGET_NAME}_shaders)
+endfunction()
+
 # Copy a library to the macOS application bundle
 #  usage: bundle_library(
 #              TARGET_NAME my_app
@@ -242,7 +275,7 @@ function(bundle_app)
             POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E make_directory "${APP_SHADERS_DST_PATH}"
         )
-        build_shaders(${APP_TARGET_NAME} ${VULKAN_SDK} ${BL_SHADERS_SRC} ${APP_SHADERS_DST_PATH})
+        compile_shaders(${APP_TARGET_NAME} ${VULKAN_SDK} ${BL_SHADERS_SRC} ${APP_SHADERS_DST_PATH})
         bundle_resources(TARGET_NAME ${APP_TARGET_NAME} SRC_PATH ${APP_SHADERS_DST_PATH} SUBPATH "shaders/${APP_TARGET_NAME}")
     endif()
 
