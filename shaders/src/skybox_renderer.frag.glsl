@@ -12,5 +12,6 @@ layout (set = 0, binding = 1) uniform samplerCube skybox;
 void main()
 {
     vec3 color = texture(skybox, inNormal).rgb;
-    outColor = lineal2SRGB(vec4(color, 1.0), 2.2);
+    color = lineal2SRGB(color, 2.2);
+    outColor = vec4(color, 1.0);
 }

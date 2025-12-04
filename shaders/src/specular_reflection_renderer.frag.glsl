@@ -82,7 +82,7 @@ void main()
             float NdotL = max(dot(N,L), 0.0);
             if (NdotL > 0.0)
             {
-                vec3 tex = SRGB2Lineal(texture(skyTexture, L).rgb, 2.2);
+                vec3 tex = texture(skyTexture, L).rgb;
                 prefilteredColor += clamp(tex, vec3(0.0), maxRange) * NdotL;
                 totalWeight += NdotL;
             }
