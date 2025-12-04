@@ -18,7 +18,7 @@ void SelectableComponent::update(float)
     }
     
     auto drwComponent = ownerNode()->drawable();
-    auto drw = drwComponent ? dynamic_cast<scene::Drawable*>(drwComponent->drawable().get()) : nullptr;
+    auto drw = drwComponent ? dynamic_cast<scene::Drawable*>(drwComponent->drawableBase().get()) : nullptr;
     if (_submeshCount == 0 && drw)
     {
         _submeshCount = drw->submeshesCount();

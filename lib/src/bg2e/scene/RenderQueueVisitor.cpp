@@ -40,7 +40,7 @@ void RenderQueueVisitor<DrawableT>::visit(bg2e::scene::Node* node) {
         _currentTransform = _currentTransform * transformComponent->matrix();
     }
     if (drawableComponent) {
-        Drawable* drawable = dynamic_cast<Drawable*>(drawableComponent->drawable().get());
+        Drawable* drawable = dynamic_cast<Drawable*>(drawableComponent->drawableBase().get());
         if (drawable) {
             for (size_t i = 0; i < drawable->materials().size(); ++i) {
                 if (drawable->submeshVisibility(static_cast<uint32_t>(i)))

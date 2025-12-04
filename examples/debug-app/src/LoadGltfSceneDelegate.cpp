@@ -329,8 +329,6 @@ std::shared_ptr<bg2e::scene::Node> LoadGltfSceneDelegate::scene1()
     sceneRoot->addComponent(new bg2e::scene::EnvironmentComponent(bg2e::base::PlatformTools::assetPath(), "gothic_manor_01_4k.hdr"));
     _environment = sceneRoot->environment();
 
-
-
     auto cameraNode = std::shared_ptr<bg2e::scene::Node>(new bg2e::scene::Node("Camera"));
     cameraNode->addComponent(bg2e::scene::TransformComponent::makeTranslated(0.0f, 1.6f, 5.0f ));
 
@@ -348,6 +346,18 @@ std::shared_ptr<bg2e::scene::Node> LoadGltfSceneDelegate::scene1()
     if (gltfTest)
     {
         sceneRoot->addChild(gltfTest);
+
+        // Extract the first node with a drawable present in the loaded scene
+        bg2e::scene::FindNodeComponentVisitor<bg2e::scene::DrawableComponent> findDrawables;
+        auto drawables = findDrawables.find(gltfTest.get());
+        if (drawables.size() > 0)
+        {
+            // All drawables elements contains a DrawableComponent
+            _targetDrawable = drawables[0]->getComponent<bg2e::scene::DrawableComponent>()->drawable();
+
+            // Init the submesh selector
+            _drawableEditor.setEditDrawable(_targetDrawable);
+        }
     }
 
     auto cameraRotation = new bg2e::scene::Node("Camera Rotation");
@@ -360,19 +370,6 @@ std::shared_ptr<bg2e::scene::Node> LoadGltfSceneDelegate::scene1()
     sceneRoot->addChild(cameraRotation);
 
     auto assetPath = bg2e::base::PlatformTools::assetPath();
-
-    auto model = bg2e::db::loadDrawableBg2(assetPath, "armchair.bg2", _engine);
-    auto modelNode = new bg2e::scene::Node("Armchair");
-    _targetDrawable = std::shared_ptr<bg2e::scene::Drawable>(model);
-
-    // Init the submesh selector
-    _drawableEditor.setEditDrawable(_targetDrawable);
-
-    modelNode->addComponent(new bg2e::scene::DrawableComponent(model));
-    modelNode->addComponent(new bg2e::scene::TransformComponent(glm::translate(glm::mat4 { 1.0 }, glm::vec3{ 0, 0, 0 })));
-    modelNode->transform()->scale(4.0f);
-    sceneRoot->addChild(modelNode);
-
 
     _engine->cleanupManager().push([&](VkDevice) {
         _targetDrawable.reset();

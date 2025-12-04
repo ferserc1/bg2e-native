@@ -9,9 +9,14 @@
 
 namespace bg2e::scene {
 
-std::shared_ptr<DrawableBase> DrawableComponent::drawable()
+std::shared_ptr<DrawableBase> DrawableComponent::drawableBase()
 {
     return _drawable;
+}
+
+std::shared_ptr<Drawable> DrawableComponent::drawable()
+{
+    return std::dynamic_pointer_cast<Drawable>(_drawable);
 }
 
 void DrawableComponent::setDrawable(std::shared_ptr<DrawableBase> drw)

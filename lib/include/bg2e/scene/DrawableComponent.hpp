@@ -17,8 +17,9 @@ public:
     DrawableComponent(std::shared_ptr<DrawableBase> drw) :_drawable { drw } {}
     DrawableComponent(DrawableBase * drw) :_drawable { std::shared_ptr<DrawableBase>(drw) } {}
     virtual ~DrawableComponent() = default;
-    
-    std::shared_ptr<DrawableBase> drawable();
+
+    std::shared_ptr<DrawableBase> drawableBase();
+    std::shared_ptr<Drawable> drawable();
     void setDrawable(std::shared_ptr<DrawableBase> drw);
 
     void draw(
@@ -28,10 +29,10 @@ public:
         std::function<std::vector<VkDescriptorSet>(render::MaterialBase *, const glm::mat4&, uint32_t submIndex)> cb,
         VkPipelineBindPoint bp = VK_PIPELINE_BIND_POINT_GRAPHICS
     );
-    
+
     void deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path& basePath) override;
     std::shared_ptr<json::JsonNode> serialize(const std::filesystem::path& basePath) override;
-    
+
 protected:
     std::shared_ptr<DrawableBase> _drawable;
 };

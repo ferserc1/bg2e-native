@@ -64,6 +64,12 @@ namespace gltf {
     {
         using namespace bg2e::geo;
 
+        // Index
+        if (!primitive->indices)
+        {
+            throw std::runtime_error("Primitive without indices is not supported");
+        }
+
         auto posAccessor = findAccessor(primitive, cgltf_attribute_type_position);
         if (!posAccessor)
         {
@@ -94,16 +100,17 @@ namespace gltf {
             std::cout << "WARNING: Primitive is missing TANGENTS. The tangents will be generated procedurally, but it is better to import them from a file" << std::endl;
         }
 
-        const uint32_t baseVertex = static_cast<uint32_t>(mesh->vertices.size());
+        if (primitive->type != cgltf_primitive_type_triangles)
+        {
+            std::cout << "WARNING: Unsupported primitive type: " << primitive->type << std::endl;
+        }
+
         const size_t vertexCount = posAccessor->count;
-
-        mesh->vertices.resize(baseVertex + vertexCount);
-
+        std::vector<Vertex> localVertices;
         // Vertex data
         for (size_t i = 0; i < vertexCount; ++i)
         {
-            Vertex& v = mesh->vertices[baseVertex + i];
-
+            Vertex v;
             // POSITION
             float pos[3];
             cgltf_accessor_read_float(posAccessor, i, pos, 3);
@@ -130,27 +137,21 @@ namespace gltf {
                 cgltf_accessor_read_float(tangentAccessor, i, t, 4);
                 v.tangent = glm::vec3(t[0], t[1], t[2]);
             }
+            localVertices.push_back(v);
         }
 
-        // Index
-        if (!primitive->indices)
-        {
-            throw std::runtime_error("Primitive without indices is not supported");
-        }
-
-        const uint32_t firstIndex = static_cast<uint32_t>(mesh->indices.size());
         const size_t indexCount = primitive->indices->count;
-
-        mesh->indices.resize(baseVertex + indexCount);
-
+        size_t baseIndex = mesh->indices.size();
         for (size_t i = 0; i < indexCount; ++i)
         {
             uint32_t idx = static_cast<uint32_t>(cgltf_accessor_read_index(primitive->indices, i));
-            mesh->indices.push_back(baseVertex + idx);
+            auto & v = localVertices[idx];
+            mesh->vertices.push_back(v);
+            mesh->indices.push_back(static_cast<uint32_t>(baseIndex + i));
         }
 
         mesh->submeshes.push_back(Submesh{
-            firstIndex,
+            static_cast<uint32_t>(baseIndex),
             static_cast<uint32_t>(indexCount)
         });
     }
@@ -188,20 +189,34 @@ namespace gltf {
              * glm::scale(glm::mat4(1.0f), S);
     }
 
-    bg2e::scene::Node* createNode(const cgltf_node* n)
-    {
-        auto * node = new bg2e::scene::Node();
-        if (n->name)
+    scene::Node* createSceneTree(
+        const cgltf_data* data,
+        const cgltf_node* gltfNode,
+        const std::vector<std::shared_ptr<scene::Drawable>>& drawables
+    ) {
+        auto node = new scene::Node();
+        if (gltfNode->name)
         {
-            node->setName(n->name);
+            node->setName(gltfNode->name);
         }
 
-        glm::mat4 transformMatrix = nodeTransform(n);
-        node->addComponent(new scene::TransformComponent(transformMatrix));
+        auto localTransform = nodeTransform(gltfNode);
+        node->addComponent(new scene::TransformComponent(localTransform));
 
-        if (n->mesh)
+        if (gltfNode->mesh)
         {
-            // TODO: Add mesh
+            size_t meshIndex = gltfNode->mesh - data->meshes;
+            auto drawable = drawables[meshIndex];
+
+            node->addComponent(new scene::DrawableComponent(drawable));
+        }
+
+        // Node children
+        for (cgltf_size i = 0; i < gltfNode->children_count; ++i)
+        {
+            const cgltf_node* child = gltfNode->children[i];
+            auto childNode = createSceneTree(data, child, drawables);
+            node->addChild(childNode);
         }
 
         return node;
@@ -215,22 +230,25 @@ extern BG2E_API bg2e::scene::Node * loadGltf(
 ) {
     auto data = gltf::loadGltfFile(filePath);
 
-    std::cout << "Scenes: " << data->scenes_count << std::endl;
-    std::cout << "Nodes: " << data->nodes_count << std::endl;
-    std::cout << "Meshes: " << data->meshes_count << std::endl;
-
+    std::vector<std::string> submeshNames;
     std::vector<std::shared_ptr<geo::Mesh>> meshes;
 
     for (cgltf_size m = 0; m < data->meshes_count; ++m)
     {
         const cgltf_mesh& gltfMesh = data->meshes[m];
-        std::cout << "Mesh " << m << " has "
-            << gltfMesh.primitives_count << " primitives" << std::endl;
 
         auto mesh = std::make_shared<geo::Mesh>();
         for (cgltf_size p = 0; p < gltfMesh.primitives_count; ++p)
         {
             const cgltf_primitive& primitive = gltfMesh.primitives[p];
+            if (primitive.material && primitive.material->name)
+            {
+                submeshNames.push_back(primitive.material->name);
+            }
+            else
+            {
+                submeshNames.push_back((gltfMesh.name ? gltfMesh.name : "submesh_") + std::to_string(p));
+            }
             gltf::appendPrimitive(data, &primitive, mesh);
         }
         meshes.push_back(mesh);
@@ -238,19 +256,34 @@ extern BG2E_API bg2e::scene::Node * loadGltf(
 
     // Load drawables
     std::vector<std::shared_ptr<bg2e::scene::Drawable>> drawables;
+
+    size_t meshNameIndex = 0;
     for (auto & mesh : meshes)
     {
         auto drw = std::make_shared<bg2e::scene::Drawable>();
         drw->setMesh(mesh);
         drw->load(engine);
+        for (uint32_t submeshIndex = 0; submeshIndex < drw->submeshesCount(); ++submeshIndex)
+        {
+            drw->setSubmeshName(submeshNames[meshNameIndex], submeshIndex);
+            ++meshNameIndex;
+        }
         drawables.push_back(drw);
+    }
+
+    // Load scene nodes
+    auto result = new scene::Node();
+
+    const cgltf_scene* scene = data->scene;
+    for (cgltf_size i = 0; i < scene->nodes_count; ++i)
+    {
+        const cgltf_node* gltfRootNode = scene->nodes[i];
+        result->addChild(gltf::createSceneTree(data, gltfRootNode, drawables));
     }
 
     cgltf_free(data);
 
-    // TODO: Load scene nodes
-
-    return nullptr;
+    return result;
 }
 
 extern BG2E_API bg2e::scene::Node * loadGltf(

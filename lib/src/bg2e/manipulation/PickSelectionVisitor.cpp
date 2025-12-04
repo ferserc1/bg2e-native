@@ -39,7 +39,7 @@ void PickSelectionVisitor::visit(bg2e::scene::Node * node)
     
     if (selectableComponent && drawable && _commandBuffer != VK_NULL_HANDLE && _layout != VK_NULL_HANDLE)
     {
-        auto drw = dynamic_cast<bg2e::scene::Drawable*>(drawable->drawable().get());
+        auto drw = dynamic_cast<bg2e::scene::Drawable*>(drawable->drawableBase().get());
         auto mesh = drw->renderMesh();
         for (uint32_t submesh = 0; submesh < mesh->submeshCount(); ++submesh)
         {
