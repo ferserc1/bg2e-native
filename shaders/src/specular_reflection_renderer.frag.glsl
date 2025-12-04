@@ -1,4 +1,7 @@
 #version 450
+#extension GL_ARB_shading_language_include : require
+
+#include "lib/color_correction.glsl"
 
 layout (location = 0) in vec3 inNormal;
 layout (location = 1) in flat int inCurrentMipLevel;
@@ -79,7 +82,8 @@ void main()
             float NdotL = max(dot(N,L), 0.0);
             if (NdotL > 0.0)
             {
-                prefilteredColor += clamp(texture(skyTexture, L).rgb, vec3(0.0), maxRange) * NdotL;
+                vec3 tex = SRGB2Lineal(texture(skyTexture, L).rgb, 2.2);
+                prefilteredColor += clamp(tex, vec3(0.0), maxRange) * NdotL;
                 totalWeight += NdotL;
             }
         }

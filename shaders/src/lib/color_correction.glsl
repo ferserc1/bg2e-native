@@ -18,7 +18,7 @@ vec4 SRGB2Lineal(vec4 color, float gamma)
     return vec4(pow(color.rgb, vec3(gamma)), color.a);
 }
 
-vec3 SRGB2lLineal(vec3 color, float gamma)
+vec3 SRGB2Lineal(vec3 color, float gamma)
 {
     return pow(color, vec3(gamma));
 }
