@@ -23,11 +23,11 @@ public:
         const std::vector<VkFormat>& colorAttachmentFormat,
         VkFormat depthAttachmentFormat,
         const std::string& vshaderFile = "skybox_renderer.vert.spv",
-#ifdef BG2E_IS_MAC
-        const std::string& fshaderFile = "skybox_renderer_metal.frag.spv",
-#else
+//#ifdef BG2E_IS_MAC
+//        const std::string& fshaderFile = "skybox_renderer_metal.frag.spv",
+//#else
 		const std::string& fshaderFile = "skybox_renderer.frag.spv",
-#endif
+//#endif
         float cubeSize = 10.0f
     );
     

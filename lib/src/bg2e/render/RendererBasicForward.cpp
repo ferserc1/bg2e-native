@@ -156,15 +156,9 @@ void RendererBasicForward::draw(
     auto lightDS = _lightDataBinding->newDescriptorSet(frameResources, _lightUniforms);
 
     static struct PushConstants pushConstants {
-    #if BG2E_IS_MAC
-        .gamma = 2.2f, // Default gamma value, can be changed later
-        .brightness = 0.142f,
-        .contrast = 1.621f
-    #else
         .gamma = 1.0f,
         .brightness = 0.132f,
         .contrast = 1.353f
-    #endif
     };
     pushConstants.brightness = _brightness;
     pushConstants.contrast = _contrast;
