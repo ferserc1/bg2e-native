@@ -51,6 +51,10 @@ MainLoop::~MainLoop()
 }
 
 int32_t MainLoop::run(app::Application * application) {
+#ifdef BG2E_IS_MAC
+    SDL_SetHint(SDL_HINT_MAC_BACKGROUND_APP, "0");
+#endif
+
 	SDL_Init(SDL_INIT_VIDEO);
     
     SDL_WindowFlags winFlags = SDL_WindowFlags(SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE);

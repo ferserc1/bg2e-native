@@ -8,6 +8,7 @@
 #include "ToolBar.hpp"
 #include "AppDelegate.hpp"
 #include <bg2e/app/MainLoop.hpp>
+#include <bg2e/geo/modifiers.hpp>
 
 void ToolBar::init(AppDelegate * delegate)
 {
@@ -122,6 +123,49 @@ void ToolBar::init(AppDelegate * delegate)
             if (!filePath.empty())
             {
                 _appDelegate->stage()->loadModel(filePath);
+            }
+        }
+    });
+
+    addButton({
+        .label = "Y-axis > Z-axis",
+        .action = [&]()
+        {
+            using namespace bg2e::geo;
+            auto drw = _appDelegate->stage()->targetDrawable();
+            if (drw.get())
+            {
+                drw->applyModifier(new ConvertAxisModifier<Mesh>(ConvertAxisModifier<Mesh>::Mode::ZtoY));
+            }
+        }
+    });
+
+    addButton({
+        .label = "Center Geometry",
+        .action = [&]()
+        {
+            using namespace bg2e::geo;
+            auto drw = _appDelegate->stage()->targetDrawable();
+            if (drw.get())
+            {
+                drw->applyModifier(new CenterGeometryModifier<Mesh>());
+            }
+        }
+    });
+
+    addButton({
+        .label = "cm to m",
+        .action = [&]()
+        {
+            using namespace bg2e::geo;
+            auto drw = _appDelegate->stage()->targetDrawable();
+            if (drw.get())
+            {
+                auto trx = glm::scale(
+                    glm::mat4 { 1.0f },
+                    glm::vec3(0.01f, 0.01f, 0.01f)
+                );
+                drw->applyModifier(new ApplyTransformModifier<Mesh>(trx));
             }
         }
     });

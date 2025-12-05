@@ -213,7 +213,17 @@ void LoadGltfSceneDelegate::init(bg2e::render::Engine*, bg2e::ui::UserInterface*
     }, bg2e::ui::Toolbar::AlignRight);
 
     _toolbar.addButton({
-        .label = "This is a text"
+        .label = "This is a text",
+        .action = [this]()
+        {
+            if (!_targetDrawable)
+            {
+                return;
+            }
+            glm::mat4 scale = glm::scale(glm::mat4 { 1.0 }, glm::vec3{ 0.5, 0.5, 0.5 } );
+            bg2e::geo::ApplyTransformModifier<bg2e::geo::Mesh> applyTransform(scale);
+            _targetDrawable->applyModifier(&applyTransform);
+        }
     }, bg2e::ui::Toolbar::AlignRight);
 
     static int32_t value = 0;

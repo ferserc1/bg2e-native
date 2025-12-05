@@ -59,6 +59,8 @@ elseif(APPLE)
         "-framework AppKit"
         "-framework Metal"
         "-framework OpenGL"
+        "-framework Foundation"
+        "-framework CoreServices"
     )
 else()
     target_link_libraries(${BG2E_TARGET_NAME} PRIVATE "opengl32.lib")

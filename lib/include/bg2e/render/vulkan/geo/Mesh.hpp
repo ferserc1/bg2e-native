@@ -47,6 +47,8 @@ public:
 	static VkVertexInputBindingDescription bindingDescription();
 	static std::vector<VkVertexInputAttributeDescription> attributeDescriptions();
 
+    void cleanup();
+
 protected:
 	Engine* _engine;
 
@@ -54,8 +56,6 @@ protected:
 
 	std::unique_ptr<Buffer> _vertexBuffer;
 	std::unique_ptr<Buffer> _indexBuffer;
- 
-    void cleanup();
 };
 
 typedef BG2E_API MeshGeneric<bg2e::geo::MeshP> MeshP;

@@ -3,6 +3,7 @@
 //
 #include <bg2e/db/scene_gltf.hpp>
 #include <bg2e/geo/Mesh.hpp>
+#include <bg2e/geo/modifiers.hpp>
 #include <bg2e/math/base.hpp>
 #include <bg2e/scene/TransformComponent.hpp>
 #include <bg2e/scene/Drawable.hpp>
@@ -137,6 +138,11 @@ namespace gltf {
                 cgltf_accessor_read_float(tangentAccessor, i, t, 4);
                 v.tangent = glm::vec3(t[0], t[1], t[2]);
             }
+            else
+            {
+                // This is used to tell the load function that we want to generate the tangents procedurally.
+                v.tangent = glm::vec3(0, 0, 0);
+            }
             localVertices.push_back(v);
         }
 
@@ -261,6 +267,17 @@ extern BG2E_API bg2e::scene::Node * loadGltf(
     for (auto & mesh : meshes)
     {
         auto drw = std::make_shared<bg2e::scene::Drawable>();
+
+        // Check if the tangents must be generated procedurally
+        if (mesh->vertices.size() > 0 &&
+            mesh->vertices[0].tangent.x == 0.0f &&
+            mesh->vertices[0].tangent.y == 0.0f &&
+            mesh->vertices[0].tangent.z == 0.0f
+        ) {
+            geo::GenTangentsModifier<geo::Mesh> genTangents(mesh.get());
+            genTangents.apply();
+        }
+
         drw->setMesh(mesh);
         drw->load(engine);
         for (uint32_t submeshIndex = 0; submeshIndex < drw->submeshesCount(); ++submeshIndex)

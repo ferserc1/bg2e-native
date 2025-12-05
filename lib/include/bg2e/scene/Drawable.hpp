@@ -7,6 +7,7 @@
 #include <bg2e/render/Engine.hpp>
 #include <bg2e/render/MaterialBase.hpp>
 #include <bg2e/render/vulkan/geo/Mesh.hpp>
+#include <bg2e/geo/modifiers.hpp>
 #include <bg2e/scene/Component.hpp>
 
 #include <memory>
@@ -90,6 +91,8 @@ public:
         bool visible = true;
     };
 
+    void applyModifier(geo::Modifier<MeshT> * mod);
+
     void setMesh(MeshT* mesh);
     void setMesh(std::shared_ptr<MeshT> mesh);
     const std::shared_ptr<MeshT>& mesh() const;
@@ -115,6 +118,7 @@ public:
     
     void load(render::Engine * engine);
     inline bool isLoaded() const { return _renderMesh.get() != nullptr; }
+    void reload();
     
     // Call this function when a material property has changed after calling the load() method
     void updateMaterials();

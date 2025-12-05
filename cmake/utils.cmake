@@ -294,6 +294,13 @@ function(bundle_app)
 
     # Setup rpath in macOS app bundle
     if (APPLE)
+        target_link_libraries(${BL_TARGET_NAME} PRIVATE
+            "-framework AppKit"
+            "-framework Cocoa"
+            "-framework Foundation"
+            "-framework UniformTypeIdentifiers"
+        )
+
         set_target_properties(${BL_TARGET_NAME} PROPERTIES
             INSTALL_RPATH "@executable_path/../lib"
             BUILD_WITH_INSTALL_RPATH TRUE
