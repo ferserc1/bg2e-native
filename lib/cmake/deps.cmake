@@ -3,15 +3,14 @@
 # - BG2E_THIRD_PARTY_SRC
 
 set(THIRD_PARTY_PATH "${CMAKE_CURRENT_LIST_DIR}/../third_party")
-set(BG2IO_PATH "${CMAKE_CURRENT_LIST_DIR}/../bg2-io")
 
 # bg2io
-file(GLOB BG2IO_SRC "${BG2IO_PATH}/src/bg2-io/*.c")
-set(BG2IO_INCLUDE "${BG2IO_PATH}/src/bg2-io")
+file(GLOB BG2IO_SRC "${THIRD_PARTY_PATH}/bg2-io/*.c")
+set(BG2IO_INCLUDE "${THIRD_PARTY_PATH}/bg2-io")
 
 # bg2-scene
-file(GLOB BG2SCENE_SRC "${BG2IO_PATH}/src/bg2-scene/*.cpp")
-set(BG2SCENE_INCLUDE "${BG2IO_PATH}/src/bg2-scene")
+file(GLOB BG2SCENE_SRC "${THIRD_PARTY_PATH}/bg2-scene/*.cpp")
+set(BG2SCENE_INCLUDE "${THIRD_PARTY_PATH}/bg2-scene")
 
 # imgui
 file(GLOB IMGUI_SRC "${THIRD_PARTY_PATH}/imgui/*.cpp")
