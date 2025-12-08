@@ -488,6 +488,71 @@ Image* Image::wrapSwapchainImage(
     return result;
 }
 
+void Image::readPixelsRGBA8(
+    Engine * vulkanData,
+    Image * image,
+    uint32_t x,
+    uint32_t y,
+    uint32_t width,
+    uint32_t height,
+    std::vector<uint8_t>& outData,
+    VkImageLayout initialLayout
+)
+{
+    VkDeviceSize imageSize = width * height * 4;
+
+    auto stagingBuffer = Buffer::createAllocatedBuffer(
+        vulkanData,
+        imageSize,
+        VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+        VMA_MEMORY_USAGE_GPU_TO_CPU
+    );
+
+    vulkanData->command().immediateSubmit([&](VkCommandBuffer cmd) {
+        cmdTransitionImage(
+            cmd,
+            image->handle(),
+            initialLayout,
+            VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
+        );
+
+        VkBufferImageCopy region{};
+        region.bufferOffset = 0;
+        region.bufferRowLength = 0;
+        region.bufferImageHeight = 0;
+
+        region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        region.imageSubresource.mipLevel = 0;
+        region.imageSubresource.baseArrayLayer = 0;
+        region.imageSubresource.layerCount = 1;
+
+        region.imageOffset = { static_cast<int32_t>(x), static_cast<int32_t>(y), 0 };
+        region.imageExtent = { width, height, 1 };
+
+        vkCmdCopyImageToBuffer(
+            cmd,
+            image->handle(),
+            VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+            stagingBuffer->handle(),
+            1,
+            &region
+        );
+
+        Image::cmdTransitionImage(
+            cmd,
+            image->handle(),
+            VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+            initialLayout
+        );
+    });
+
+    auto mapped = reinterpret_cast<uint8_t*>(stagingBuffer->allocatedData());
+    outData.resize(imageSize);
+    memcpy(outData.data(), mapped, imageSize);
+
+    stagingBuffer->cleanup();
+}
+
 Image::~Image()
 {
     cleanup();

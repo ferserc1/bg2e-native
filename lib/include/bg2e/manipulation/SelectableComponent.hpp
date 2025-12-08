@@ -21,7 +21,14 @@ public:
     inline uint32_t identifier(uint32_t submeshIndex) { return _identifier[submeshIndex]; }
     inline uint32_t submeshCount() const { return _submeshCount; }
     
-    
+    static inline uint32_t decodeObjectId(const uint8_t data[4])
+    {
+        return
+            static_cast<uint32_t>(data[0]) |
+            (static_cast<uint32_t>(data[1]) << 8) |
+            (static_cast<uint32_t>(data[2]) << 16) |
+            (static_cast<uint32_t>(data[3]) << 24);
+    }
     
 protected:
     // submeshIndex, submeshIdentifier

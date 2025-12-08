@@ -4,6 +4,8 @@
 #include <bg2e/common.hpp>
 #include <bg2e/render/vulkan/common.hpp>
 
+#include <vector>
+
 namespace bg2e {
 namespace render {
 
@@ -150,7 +152,18 @@ public:
         const Swapchain* swapchain,
         uint32_t swapchainImageIndex
     );
-    
+
+    static void readPixelsRGBA8(
+        Engine * vulkanData,
+        Image * image,
+        uint32_t x,
+        uint32_t y,
+        uint32_t width,
+        uint32_t height,
+        std::vector<uint8_t>& outData,
+        VkImageLayout initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
+    );
+
     virtual ~Image();
     
     void cleanup();

@@ -5,6 +5,7 @@
 #include <DevSceneDelegate.hpp>
 #include <SpheresSceneDelegate.hpp>
 #include <LoadGltfSceneDelegate.hpp>
+#include <PickSelectionDelegate.hpp>
 
 class MyApplication : public bg2e::app::Application {
 public:
@@ -12,7 +13,8 @@ public:
 	{
 		//auto delegate = std::make_shared<SpheresSceneDelegate>();
         //auto delegate = std::make_shared<DevSceneDelegate>();
-		auto delegate = std::make_shared<LoadGltfSceneDelegate>();
+		//auto delegate = std::make_shared<LoadGltfSceneDelegate>();
+	    auto delegate = std::make_shared<PickSelectionDelegate>();
 		setRenderDelegate(delegate);
 		setInputDelegate(delegate);
 		setUiDelegate(delegate);

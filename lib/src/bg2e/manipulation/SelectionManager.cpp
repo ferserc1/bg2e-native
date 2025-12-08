@@ -5,6 +5,8 @@
 
 #include <bg2e/render/all.hpp>
 
+#include "bg2e/manipulation/SelectableComponent.hpp"
+
 namespace bg2e::manipulation {
 
 SelectionManager::SelectionManager(render::Engine * engine)
@@ -25,11 +27,13 @@ bool SelectionManager::pick(
     scene::Node * rootNode,
     const glm::mat4 & viewMatrix,
     const glm::mat4 & projMatrix,
-    const math::Viewport &, // vp,
-    uint32_t, // x
-    uint32_t  // y
+    const math::Viewport & vp,
+    uint32_t x,
+    uint32_t y
 ) {
     using namespace render::vulkan;
+    _selectedItem.reset();
+
     _engine->command().immediateSubmit([&](VkCommandBuffer cmd) {
         VkClearColorValue clearValue { { 0.0f, 0.0f, 0.0f, 0.0f } };
         auto clearRange = Image::subresourceRange(VK_IMAGE_ASPECT_COLOR_BIT);
@@ -59,17 +63,31 @@ bool SelectionManager::pick(
         _pickVisitor->pick(rootNode, viewMatrix, projMatrix, cmd, _pipelineLayout);
         
         cmdEndRendering(cmd);
-        
-        // TODO: Transition image (read pixels)
     });
     
-    // TODO: Read pixels in image
-    
-    // TODO: Get buffer value at pick position (x, y)
-    
-    // TODO: Search drawable & submesh
-    
-    // TODO: Return true if item picked
+    // Read pixels in image
+    std::vector<uint8_t> outData = { 0, 0, 0, 0 };
+    Image::readPixelsRGBA8(
+        _engine,
+        _image.get(),
+        x, y,
+        1, 1,
+        outData,
+        VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
+    );
+    auto objectId = SelectableComponent::decodeObjectId(outData.data());
+
+    auto objectData = _pickVisitor->findObject(objectId);
+    if (objectData)
+    {
+        _selectedItem = std::make_shared<SelectionItem>();
+        _selectedItem->node = objectData->node;
+        _selectedItem->drawable = objectData->node->getComponent<scene::DrawableComponent>();
+        _selectedItem->mesh = _selectedItem->drawable->drawable().get();
+        _selectedItem->submesh = objectData->submeshIndex;
+        return true;
+    }
+
     return false;
 }
 
@@ -117,6 +135,7 @@ void SelectionManager::createPipeline()
     plFactory.enableDepthtest(true, VK_COMPARE_OP_LESS);
     plFactory.inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
     plFactory.setCullMode(VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_COUNTER_CLOCKWISE);
+    plFactory.multisampling.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
     _pipeline = plFactory.build(_pipelineLayout);
     
     _engine->cleanupManager().push([&](VkDevice dev) {

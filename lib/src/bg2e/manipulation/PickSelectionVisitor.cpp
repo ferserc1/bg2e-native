@@ -22,6 +22,7 @@ void PickSelectionVisitor::pick(
     _layout = layout;
     _viewMatrix = viewMatrix;
     _projMatrix = projMatrix;
+    _lookupNodes.clear();
     sceneRoot->accept(this);
 }
 
@@ -45,7 +46,12 @@ void PickSelectionVisitor::visit(bg2e::scene::Node * node)
         {
             auto submeshTransform = drw->submeshTransform(submesh);
             SelectionManager::PushConstantData pushConstants;
-            pushConstants.identifier = selectableComponent->identifier(submesh);
+            uint32_t submeshIdentifier = selectableComponent->identifier(submesh);
+            pushConstants.identifier = submeshIdentifier;
+            _lookupNodes[submeshIdentifier] = {
+                .node = node,
+                .submeshIndex = submesh
+            };
             pushConstants.mvp = _projMatrix * _viewMatrix * _currentTransform * submeshTransform;
             vkCmdPushConstants(
                 _commandBuffer,
@@ -69,6 +75,15 @@ void PickSelectionVisitor::didVisit(bg2e::scene::Node * node)
         _currentTransform = _transformStack.top();
         _transformStack.pop();
     }
+}
+
+PickSelectionVisitor::SubmeshLookupData * PickSelectionVisitor::findObject(uint32_t identifier)
+{
+    if (_lookupNodes.find(identifier) != _lookupNodes.end())
+    {
+        return &_lookupNodes[identifier];
+    }
+    return nullptr;
 }
 
 }
