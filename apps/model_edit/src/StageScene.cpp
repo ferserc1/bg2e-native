@@ -77,6 +77,7 @@ void StageScene::loadModel(const std::filesystem::path& path)
     _targetDrawable = std::shared_ptr<bg2e::scene::Drawable>(modelDrawable);
     auto modelNode = new bg2e::scene::Node("Target model");
     modelNode->addComponent(new bg2e::scene::DrawableComponent(modelDrawable));
+    modelNode->addComponent(new bg2e::manipulation::SelectableComponent());
 
     _targetNode->addChild(modelNode);
     
@@ -135,6 +136,7 @@ void StageScene::importObj(const std::filesystem::path& path)
     _targetDrawable = std::shared_ptr<bg2e::scene::Drawable>(objDrawable);
     auto modelNode = new bg2e::scene::Node("Target model");
     modelNode->addComponent(new bg2e::scene::DrawableComponent(objDrawable));
+    modelNode->addComponent(new bg2e::manipulation::SelectableComponent());
 
     _targetNode->addChild(modelNode);
 
@@ -156,6 +158,7 @@ void StageScene::importGltf(const std::filesystem::path& path)
             auto drawable = drawableNode->getComponent<bg2e::scene::DrawableComponent>()->drawable();
             _targetDrawables.push_back(drawable);
             _targetNames.push_back(drawableNode->name());
+            drawableNode->addComponent(new bg2e::manipulation::SelectableComponent());
         }
         _targetScene = std::shared_ptr<bg2e::scene::Node>(gltfScene);
 

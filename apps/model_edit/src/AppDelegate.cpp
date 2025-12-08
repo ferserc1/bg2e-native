@@ -10,6 +10,8 @@
 void AppDelegate::init(bg2e::render::Engine * engine)
 {
     bg2e::render::DefaultRenderLoopDelegate<bg2e::render::RendererBasicForward>::init(engine);
+    _selectionManager = std::make_shared<bg2e::manipulation::SelectionManager>(engine);
+    _selectionManager->init();
 }
 
 void AppDelegate::swapchainResized(VkExtent2D extent)
@@ -31,11 +33,23 @@ void AppDelegate::mouseMove(int x, int y)
 
 void AppDelegate::mouseButtonDown(int button, int x, int y)
 {
+    _mouseDownX = x;
+    _mouseDownY = y;
     _inputVisitor.mouseButtonDown(renderer()->scene()->rootNode(), button, x, y);
 }
 
 void AppDelegate::mouseButtonUp(int button, int x, int y)
 {
+    if (_mouseDownX == x && _mouseDownY == y && button == 0)
+    {
+        // Pick selection
+        if (_selectionManager->pick(renderer()->scene(), x, y))
+        {
+            std::cout << "picked" << std::endl;
+            auto selection = _selectionManager->selectedSubmesh();
+            _submeshPanel.setEditMaterial(selection);
+        }
+    }
     _inputVisitor.mouseButtonUp(renderer()->scene()->rootNode(), button, x, y);
 }
 

@@ -44,6 +44,8 @@ public:
     inline bg2e::ui::Workspace& workspace() { return _workspace; }
     inline const bg2e::ui::Workspace& workspace() const { return _workspace; }
 
+    inline bg2e::manipulation::SelectionManager * selectionManager() const { return _selectionManager.get(); }
+
 protected:
     bg2e::scene::InputVisitor _inputVisitor;
     
@@ -55,6 +57,10 @@ protected:
     std::shared_ptr<StageScene> _stage;
     
     std::shared_ptr<bg2e::scene::Node> createScene() override;
+
+    std::shared_ptr<bg2e::manipulation::SelectionManager> _selectionManager;
+    uint32_t _mouseDownX;
+    uint32_t _mouseDownY;
     
     void initWorkspace();
 };

@@ -59,6 +59,20 @@ void SubmeshWindow::init(AppDelegate * delegate)
     });
 }
 
+void SubmeshWindow::setEditMaterial(uint32_t submeshIndex)
+{
+    auto stage = _appDelegate->stage();
+    auto targetNames = stage->targetNames();
+    auto drawable = stage->isModelValid() ?
+        _appDelegate->stage()->targetDrawable() :
+        std::shared_ptr<bg2e::scene::Drawable>();
+    if (drawable && drawable->submeshesCount() > submeshIndex)
+    {
+        _materialEditor.clearMaterial();
+        _materialEditor.addEditMaterial(drawable->renderMaterial(submeshIndex));
+    }
+}
+
 void SubmeshWindow::cleanup()
 {
     _materialEditor.cleanup();

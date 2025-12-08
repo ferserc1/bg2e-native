@@ -9,7 +9,9 @@ public:
 	void init(AppDelegate * delegate);
 
     void cleanup();
-    
+
+    void setEditMaterial(uint32_t submeshIndex);
+
 private:
     AppDelegate * _appDelegate;
     
