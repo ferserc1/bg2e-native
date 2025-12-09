@@ -37,8 +37,10 @@ public:
     
     virtual void setBrightness(float b) = 0;
     virtual void setContrast(float c) = 0;
+    virtual void setExposure(float e) = 0;
     virtual float brightness() const = 0;
     virtual float contrast() const = 0;
+    virtual float exposure() const = 0;
     
     virtual uint32_t viewportWidth() = 0;
     virtual uint32_t viewportHeight() = 0;

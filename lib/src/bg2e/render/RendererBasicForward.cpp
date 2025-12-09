@@ -145,23 +145,28 @@ void RendererBasicForward::draw(
     );
 
     if (_drawSkybox) {
+        _environment->setSkyboxColorCorrection(
+            _brightness,
+            _contrast,
+            _exposure
+        );
         _environment->updateSkybox(viewMatrix, projMatrix);
         _environment->drawSkybox(cmd, currentFrame, frameResources);
     }
-
-    
 
     auto envDS = _environmentDataBinding->newDescriptorSet(frameResources, _environment.get());
     
     auto lightDS = _lightDataBinding->newDescriptorSet(frameResources, _lightUniforms);
 
     static struct PushConstants pushConstants {
-        .gamma = 1.0f,
-        .brightness = 0.132f,
-        .contrast = 1.353f
+        .gamma = 2.2f,
+        .brightness = 0.0,
+        .contrast = 1.0f,
+        .exposure = 1.0
     };
     pushConstants.brightness = _brightness;
     pushConstants.contrast = _contrast;
+    pushConstants.exposure = _exposure;
     vkCmdPushConstants(
         cmd,
         _pipelineLayout,

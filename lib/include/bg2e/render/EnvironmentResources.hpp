@@ -59,6 +59,19 @@ public:
     inline VkSampler irradianceMapSampler() const { return _irradianceMapSampler; }
     inline VkSampler specularReflectionMapSampler() const { return _specularReflectionSampler; }
     inline VkSampler brdfIntegrationMapSampler() const { return _brdfIntegrationMapSampler; }
+    
+    inline void setSkyboxColorCorrection(
+        float brightness,
+        float contrast,
+        float exposure
+    ) const {
+        if (_skyboxRenderer)
+        {
+            _skyboxRenderer->setBrightness(brightness);
+            _skyboxRenderer->setContrast(contrast);
+            _skyboxRenderer->setExposure(exposure);
+        }
+    }
 
 protected:
     bg2e::render::Engine * _engine;

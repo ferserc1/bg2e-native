@@ -85,6 +85,9 @@ public:
     
     void setContrast(float c) override { _contrast = c; }
     float contrast() const override { return _contrast; }
+
+    void setExposure(float e) override { _exposure = e; }
+    float exposure() const override { return _exposure; }
     
     uint32_t viewportWidth() override { return _engine->swapchain().extent().width; }
     uint32_t viewportHeight() override { return _engine->swapchain().extent().height; }
@@ -123,15 +126,12 @@ protected:
         float gamma;
         float brightness;
         float contrast;
+        float exposure;
     };
     
-#if BG2E_IS_MAC
-    float _brightness = 0.142;
-    float _contrast = 1.621f;
-#else
-    float _brightness = 0.132f;
-    float _contrast = 1.353f;
-#endif
+    float _brightness = 0.0f;
+    float _contrast = 1.0f;
+    float _exposure = 1.0f;
 
     VkPipeline createOpaquePipeline(bg2e::render::Engine * engine, VkPipelineLayout layout);
     VkPipeline createTransparentPipeline(bg2e::render::Engine * engine, VkPipelineLayout layout);

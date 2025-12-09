@@ -23,11 +23,7 @@ public:
         const std::vector<VkFormat>& colorAttachmentFormat,
         VkFormat depthAttachmentFormat,
         const std::string& vshaderFile = "skybox_renderer.vert.spv",
-//#ifdef BG2E_IS_MAC
-//        const std::string& fshaderFile = "skybox_renderer_metal.frag.spv",
-//#else
 		const std::string& fshaderFile = "skybox_renderer.frag.spv",
-//#endif
         float cubeSize = 10.0f
     );
     
@@ -38,6 +34,13 @@ public:
         uint32_t currentFrame,
         vulkan::FrameResources& frameResources
     );
+
+    inline float brightness() const { return _pushConstants.brightness; }
+    inline float contrast() const { return _pushConstants.contrast; }
+    inline float exposure() const { return _pushConstants.exposure; }
+    inline void setBrightness(float brightness) { _pushConstants.brightness = brightness; }
+    inline void setContrast(float contrast) { _pushConstants.contrast = contrast; }
+    inline void setExposure(float exposure) { _pushConstants.exposure = exposure; }
     
 protected:
     Engine * _engine;
@@ -55,6 +58,15 @@ protected:
     
     std::shared_ptr<Texture> _skyTexture;
     std::shared_ptr<vulkan::geo::MeshP> _cube;
+
+    struct PushConstants
+    {
+        float brightness = 0.0f;
+        float contrast = 1.0f;
+        float exposure = 1.0f;
+    };
+
+    PushConstants _pushConstants;
     
     // Called by destructor
     void cleanup();

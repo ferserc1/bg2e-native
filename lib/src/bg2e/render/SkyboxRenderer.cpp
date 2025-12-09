@@ -58,6 +58,11 @@ void SkyboxRenderer::build(
     
     vulkan::factory::PipelineLayout layoutFactory(_engine);
     layoutFactory.addDescriptorSetLayout(_dsLayout);
+    layoutFactory.addPushConstantRange(
+        0,
+        sizeof(PushConstants),
+        VK_SHADER_STAGE_FRAGMENT_BIT
+    );
     _pipelineLayout = layoutFactory.build();
     
     vulkan::factory::GraphicsPipeline plFactory(_engine);
@@ -123,6 +128,13 @@ void SkyboxRenderer::draw(
         uint32_t(ds.size()),
         ds.data(),
         0, nullptr
+    );
+
+    vkCmdPushConstants(
+        commandBuffer,
+        _pipelineLayout,
+        VK_SHADER_STAGE_FRAGMENT_BIT,
+        0, sizeof (PushConstants), &_pushConstants
     );
     
     _cube->draw(commandBuffer);

@@ -33,6 +33,7 @@ layout(push_constant) uniform PushConstant
     float gamma;
     float brightness;
     float contrast;
+    float exposure;
 } pushConstant;
 
 layout(set = 2, binding = 0) uniform samplerCube irradianceMap;
@@ -71,7 +72,7 @@ void main()
 
     vec3 color = ambient + Lo;
 
-    color = color / (color + vec3(1.0));
+    color = exposure(color, pushConstant.exposure);
     outColor = lineal2SRGB(vec4(color, 1.0), pushConstant.gamma);
     outColor = brightnessContrast(outColor, pushConstant.brightness, pushConstant.contrast);
 }

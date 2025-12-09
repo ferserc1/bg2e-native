@@ -111,10 +111,13 @@ void PickSelectionDelegate::init(bg2e::render::Engine*, bg2e::ui::UserInterface*
     _rightPanel.setDrawFunction([&]() {
         float brightness = renderer()->brightness();
         float contrast = renderer()->contrast();
+        float exposure = renderer()->exposure();
         bg2e::ui::Input::slider("Brightness", &brightness, 0.0f, 1.0f);
         bg2e::ui::Input::slider("Contrast", &contrast, 0.0f, 2.0f);
+        bg2e::ui::Input::slider("Exposure", &exposure, 0.0f, 5.0f);
         renderer()->setBrightness(brightness);
         renderer()->setContrast(contrast);
+        renderer()->setExposure(exposure);
     });
 }
  
