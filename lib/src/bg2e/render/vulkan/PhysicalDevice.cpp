@@ -64,7 +64,7 @@ uint32_t PhysicalDeviceProperties::getScore() const
 
     if (deviceType == DiscreteGPU)
     {
-        score *= 20;
+        score *= 100;
     }
     else if (deviceType == IntegratedGPU)
     {
