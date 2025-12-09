@@ -26,6 +26,34 @@ void PickSelectionDelegate::init(bg2e::render::Engine*, bg2e::ui::UserInterface*
         &_rightPanel,
         &_bottomPanel
     );
+
+
+    _toolbar.addButton({
+        .label = "Screenshot",
+        .action = [&]() {
+            bg2e::app::FileDialog fd;
+            fd.setFilters({
+                { "Images", "jpg,jpeg,png,bmp,tga" }
+            });
+            auto filePath = fd.saveFile();
+
+            if (!filePath.empty())
+            {
+                std::vector<uint8_t> outData;
+                uint32_t width, height, bpp;
+                _engine->swapchain().screenshot(outData, width, height, bpp);
+
+                bg2e::db::saveImage(
+                    filePath,
+                    outData.data(),
+                    width,
+                    height,
+                    bpp
+                );
+            }
+
+        }
+    });
     
     
     _leftPanel.setDrawFunction([&]() {

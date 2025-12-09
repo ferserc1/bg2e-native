@@ -49,6 +49,13 @@ public:
     
     inline VkFormat depthImageFormat() const { return _depthImage != nullptr ? _depthImage->format() : VK_FORMAT_UNDEFINED; }
 
+    void screenshot(
+        std::vector<uint8_t>& outData,
+        uint32_t& outWidth,
+        uint32_t& outHeight,
+        uint32_t& outBpp
+    );
+
 protected:
     VkSwapchainKHR _swapchain = VK_NULL_HANDLE;
     VkFormat _imageFormat = VK_FORMAT_R8G8B8A8_UNORM;

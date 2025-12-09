@@ -42,8 +42,11 @@ public:
     inline const vulkan::DescriptorSetAllocator& descriptorSetAllocator() const { return *_descriptorSetAllocator.get(); }
     inline vulkan::DescriptorSetAllocator& descriptorSetAllocator() { return *_descriptorSetAllocator.get(); }
 
-    inline vulkan::FrameResources& currentFrameResources() { return _frameResources[_currentFrame % _frameResources.size()]; }
-    inline const vulkan::FrameResources& currentFrameResources() const { return _frameResources[_currentFrame % _frameResources.size()]; }
+    inline uint32_t currentFrameResourcesIndex() const { return _currentFrame % _frameResources.size(); }
+    inline uint32_t prevFrameResourcesIndex() const { return (_currentFrame - 1) % _frameResources.size(); }
+    inline vulkan::FrameResources& currentFrameResources() { return _frameResources[currentFrameResourcesIndex()]; }
+    inline const vulkan::FrameResources& currentFrameResources() const { return _frameResources[currentFrameResourcesIndex()]; }
+
     inline uint32_t currentFrame() const { return _currentFrame; }
     inline void nextFrame() { ++_currentFrame; }
     void iterateFrameResources(std::function<void(vulkan::FrameResources&)> cb);

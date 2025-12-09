@@ -155,7 +155,7 @@ public:
 
     static void readPixelsRGBA8(
         Engine * vulkanData,
-        Image * image,
+        const Image * image,
         uint32_t x,
         uint32_t y,
         uint32_t width,

@@ -39,6 +39,28 @@ void Swapchain::cleanup()
     _swapchain = VK_NULL_HANDLE;
 }
 
+void Swapchain::screenshot(
+    std::vector<uint8_t>& outData,
+    uint32_t& outWidth,
+    uint32_t& outHeight,
+    uint32_t& outBpp
+) {
+    auto prevImage = _engine->prevFrameResourcesIndex();
+    auto image = msaaResolveImage(prevImage);
+    auto extent = image->extent2D();
+    outWidth = extent.width;
+    outHeight = extent.height;
+    outBpp = 4;
+    vulkan::Image::readPixelsRGBA8(
+        _engine,
+        image,
+        0, 0,
+        extent.width, extent.height,
+        outData,
+        VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
+    );
+}
+
 void Swapchain::create(uint32_t width, uint32_t height)
 {
     cleanup();

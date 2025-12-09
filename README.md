@@ -64,6 +64,8 @@ bg2 engine utiliza CMake para generar los proyectos. The recommended configurati
 
 > Important: On macOS, you can generate the project with Ninja, but some features of the graphics engine, such as the open and save file dialogs, do not work unless Xcode is used as the project.
 
+> **DO NOT USE NINJA** generator in **Windows**. You can try using other versions of Visual Studio as a
+generator, as long as they support C++20, but if you use Ninja as a generator, **the project will not compile**.
 
 In some scenarios, you must manually specify the VULKAN_SDK variable:
 

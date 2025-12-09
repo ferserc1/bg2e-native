@@ -3,6 +3,8 @@
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include <stb_image_write.h>
 
 namespace bg2e::db {
 
@@ -54,5 +56,74 @@ bg2e::base::Image * loadImage(const std::filesystem::path& basePath, const std::
     
     return loadImage(fullPath);
 }
+
+void saveImage(
+    const std::filesystem::path& filePath,
+    const uint8_t* data,
+    uint32_t width,
+    uint32_t height,
+    uint32_t bpp
+) {
+    auto ext = filePath.extension();
+    int writtenBytes = 0;
+    if (ext == ".png")
+    {
+        writtenBytes = stbi_write_png(
+            filePath.string().c_str(),
+            width, height, bpp,
+            data,
+            0
+        );
+    }
+    else if (ext == ".jpg" || ext == ".jpeg")
+    {
+        static const int quality = 100;
+        writtenBytes = stbi_write_jpg(
+            filePath.string().c_str(),
+            width, height, bpp,
+            data,
+            quality
+        );
+    }
+    else if (ext == ".bmp")
+    {
+        writtenBytes = stbi_write_bmp(
+            filePath.string().c_str(),
+            width, height, bpp,
+            data
+        );
+    }
+    else if (ext == ".tga")
+    {
+        writtenBytes = stbi_write_tga(
+            filePath.string().c_str(),
+            width, height, bpp,
+            data
+        );
+    }
+    else
+    {
+        throw std::runtime_error("Unsupported image format");
+    }
+
+    if (writtenBytes == 0)
+    {
+        throw std::runtime_error("Error writing image at path " + filePath.string());
+    }
+}
+
+
+void saveImage(
+    const std::filesystem::path& basePath,
+    const std::string& fileName,
+    const uint8_t* data,
+    uint32_t width,
+    uint32_t height,
+    uint32_t bpp
+) {
+    auto fullPath = basePath / fileName;
+    saveImage(fullPath, data, width, height, bpp);
+}
+
 
 }
