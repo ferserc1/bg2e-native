@@ -4,17 +4,22 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
+#ifdef _WIN32
 #pragma warning(push)
 #pragma warning(disable:4996)
-
+#else
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated"
+#endif
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include <stb_image_write.h>
 
+#ifdef _WIN32
 #pragma warning(pop)
+#else
 #pragma GCC diagnostic pop
+#endif
 
 namespace bg2e::db {
 

@@ -45,7 +45,6 @@ void AppDelegate::mouseButtonUp(int button, int x, int y)
         // Pick selection
         if (_selectionManager->pick(renderer()->scene(), x, y))
         {
-            std::cout << "picked" << std::endl;
             auto selection = _selectionManager->selectedSubmesh();
             _submeshPanel.setEditMaterial(selection);
         }
