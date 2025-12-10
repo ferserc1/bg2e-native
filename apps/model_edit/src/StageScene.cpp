@@ -22,7 +22,7 @@ std::shared_ptr<bg2e::scene::Node> StageScene::init()
     _environment = sceneRoot->environment();
     
     auto cameraNode = std::shared_ptr<bg2e::scene::Node>(new bg2e::scene::Node("Camera"));
-    cameraNode->addComponent(bg2e::scene::TransformComponent::makeTranslated(0.0f, 0.5f, 2.0f ));
+    cameraNode->addComponent(bg2e::scene::TransformComponent::makeTranslated(0.0f, 0.0f, 2.0f ));
     
     cameraNode->addComponent(new bg2e::scene::CameraComponent());
     auto projection = new bg2e::math::OpticalProjection();
@@ -59,11 +59,6 @@ std::shared_ptr<bg2e::scene::Node> StageScene::init()
     // Target node: the node where the loaded model is placed
     _targetNode = std::make_shared<bg2e::scene::Node>("Target Node");
     sceneRoot->addChild(_targetNode);
-    
-    // Sample model
-    //auto samplePath = bg2e::base::PlatformTools::assetPath();
-    //samplePath.append("armchair.bg2");
-    //loadModel(samplePath);
     
     _sceneRoot = sceneRoot;
     return _sceneRoot;
@@ -158,7 +153,6 @@ void StageScene::importGltf(const std::filesystem::path& path)
             auto drawable = drawableNode->getComponent<bg2e::scene::DrawableComponent>()->drawable();
             _targetDrawables.push_back(drawable);
             _targetNames.push_back(drawableNode->name());
-            drawableNode->addComponent(new bg2e::manipulation::SelectableComponent());
         }
         _targetScene = std::shared_ptr<bg2e::scene::Node>(gltfScene);
 
@@ -179,6 +173,7 @@ void StageScene::selectTargetNode(uint32_t index)
         auto drawable = _targetDrawables[index];
         auto node = std::make_shared<bg2e::scene::Node>("Target Node");
         node->addComponent(new bg2e::scene::DrawableComponent(drawable));
+        node->addComponent(new bg2e::manipulation::SelectableComponent());
         _targetNode->addChild(node);
         _targetDrawable = drawable;
     }
@@ -187,15 +182,6 @@ void StageScene::selectTargetNode(uint32_t index)
 std::shared_ptr<bg2e::scene::Drawable> StageScene::targetDrawable()
 {
     return _targetDrawable;
-    // bg2e::scene::Drawable * result = nullptr;
-    // if (_targetNode.get() && _targetNode->children().size() > 0)
-    // {
-    //     auto drawableComponent = _targetNode->children()[0]->drawable();
-    //     result = drawableComponent ?
-    //         dynamic_cast<bg2e::scene::Drawable*>(drawableComponent->drawable().get())
-    //         : nullptr;
-    // }
-    // return result;
 }
 
 

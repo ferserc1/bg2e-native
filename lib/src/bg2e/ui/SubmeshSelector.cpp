@@ -40,6 +40,18 @@ void SubmeshSelector::clearSelection()
     }
 }
 
+void SubmeshSelector::addSelectedItem(uint32_t index)
+{
+    if (index < _selectedSubmeshes.size())
+    {
+        _selectedSubmeshes[index] = true;
+        if (std::find(_selectedItems.begin(), _selectedItems.end(), index) == _selectedItems.end())
+        {
+            _selectedItems.push_back(index);
+        }
+    }
+}
+
 bool SubmeshSelector::draw()
 {
     auto drawableName = _drawable.get() ? _drawable->name() : "";

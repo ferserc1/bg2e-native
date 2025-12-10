@@ -68,6 +68,8 @@ void SubmeshWindow::setEditMaterial(uint32_t submeshIndex)
         std::shared_ptr<bg2e::scene::Drawable>();
     if (drawable && drawable->submeshesCount() > submeshIndex)
     {
+        _submeshSelector.setEditDrawable(drawable);
+        _submeshSelector.addSelectedItem(submeshIndex);
         _materialEditor.clearMaterial();
         _materialEditor.addEditMaterial(drawable->renderMaterial(submeshIndex));
     }

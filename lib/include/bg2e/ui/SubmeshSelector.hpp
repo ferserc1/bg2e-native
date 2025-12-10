@@ -34,6 +34,8 @@ public:
     inline const std::vector<uint32_t>& selectedItems() const { return _selectedItems; }
     
     void clearSelection();
+
+    void addSelectedItem(uint32_t index);
     
     bool draw();
 
