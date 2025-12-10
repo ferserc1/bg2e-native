@@ -19,6 +19,42 @@
 namespace bg2e {
 namespace app {
 
+
+SDL_Window* createSDLWindow(const WindowConfig& cfg) {
+    // Position
+    int xpos = (cfg.x < 0) ? SDL_WINDOWPOS_CENTERED : cfg.x;
+    int ypos = (cfg.y < 0) ? SDL_WINDOWPOS_CENTERED : cfg.y;
+
+    // SDL flags derived from WindowConfig
+    Uint32 flags = SDL_WINDOW_VULKAN;
+
+    if (cfg.resizable)       flags |= SDL_WINDOW_RESIZABLE;
+    if (!cfg.decorated)      flags |= SDL_WINDOW_BORDERLESS;
+    if (cfg.alwaysOnTop)     flags |= SDL_WINDOW_ALWAYS_ON_TOP;
+
+    // States
+    if (cfg.isFullscreen)    flags |= SDL_WINDOW_FULLSCREEN_DESKTOP;
+    if (cfg.isMaximized)     flags |= SDL_WINDOW_MAXIMIZED;
+
+    SDL_Window* window = SDL_CreateWindow(
+        cfg.title.c_str(),
+        xpos,
+        ypos,
+        cfg.width,
+        cfg.height,
+        flags
+    );
+
+    if (!window) {
+        throw std::runtime_error(
+            std::string("Failed to create SDL window: ") + SDL_GetError()
+        );
+    }
+
+    return window;
+}
+
+
 MainLoop * MainLoop::_mainLoopInstance = nullptr;
 
 void MainLoop::initMainLoopInstance()
@@ -56,22 +92,20 @@ int32_t MainLoop::run(app::Application * application) {
 #endif
 
 	SDL_Init(SDL_INIT_VIDEO);
-    
-    SDL_WindowFlags winFlags = SDL_WindowFlags(SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE);
-    
-    auto window = SDL_CreateWindow(
-        _windowTitle.c_str(),
-        SDL_WINDOWPOS_CENTERED,
-        SDL_WINDOWPOS_CENTERED,
-        _windowWidth,
-        _windowHeight,
-        winFlags
-    );
-    
+
+    auto window = createSDLWindow(_windowConfig);
+
     _engine.init(window);
-    application->uiDelegate()->_viewportWidth = _windowWidth;
-    application->uiDelegate()->_viewportHeight = _windowHeight;
+
+    int viewportW = 0;
+    int viewportH = 0;
+
+    SDL_GetWindowSize(window, &viewportW, &viewportH);
+
+    application->uiDelegate()->_viewportWidth = viewportW;
+    application->uiDelegate()->_viewportHeight = viewportH;
 	_userInterface.setDelegate(application->uiDelegate());
+
 	_userInterface.init(&_engine);
     _renderLoop.setDelegate(application->renderDelegate());
 	_renderLoop.init(&_engine);

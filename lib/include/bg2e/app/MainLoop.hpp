@@ -12,6 +12,74 @@
 namespace bg2e {
 namespace app {
 
+struct WindowConfig {
+    std::string title = "";
+
+    // Initial position. Negative values → default system position.
+    int32_t x = -1;
+    int32_t y = -1;
+
+    // Initial size when not maximised or in full screen mode.
+    uint32_t width = 1280;
+    uint32_t height = 720;
+
+    // Window states
+    bool isMaximized = false;
+    bool isFullscreen = false;
+
+    // Common options
+    bool resizable = true;
+    bool decorated = true;       // With border and title bar
+    bool alwaysOnTop = false;
+
+    // ------------------------------------------------
+    // Factory methods
+    // ------------------------------------------------
+
+    static WindowConfig withSize(
+        const std::string& title,
+        uint32_t w,
+        uint32_t h
+    ) {
+        WindowConfig c;
+        c.title = title;
+        c.width = w;
+        c.height = h;
+        return c;
+    }
+
+    static WindowConfig withPositionAndSize(
+        const std::string& title,
+        int32_t x, int32_t y,
+        uint32_t w, uint32_t h
+    ) {
+        WindowConfig c;
+        c.title = title;
+        c.x = x;
+        c.y = y;
+        c.width = w;
+        c.height = h;
+        return c;
+    }
+
+    static WindowConfig maximized(const std::string& title)
+    {
+        WindowConfig c;
+        c.title = title;
+        c.isMaximized = true;
+        return c;
+    }
+
+    static WindowConfig fullscreen(const std::string& title)
+    {
+        WindowConfig c;
+        c.title = title;
+        c.isFullscreen = true;
+        return c;
+    }
+};
+
+
 class BG2E_API MainLoop {
 public:
     MainLoop(const std::string& appId);
@@ -20,8 +88,8 @@ public:
     
     inline const std::string & appId() const { return _appId; }
     
-    inline void initWindowSize(uint32_t width, uint32_t height) { _windowWidth = width; _windowHeight = height; }
-    inline void initWindowTitle(const std::string& title) { _windowTitle = title; }
+    inline void initWindowConfig(const WindowConfig& config) { _windowConfig = config; }
+    inline void initWindowConfig(WindowConfig&& config) { _windowConfig = std::move(config); }
     
     static MainLoop * current() { return _mainLoopInstance; }
     
@@ -32,9 +100,8 @@ public:
     inline void setOnExitFunction(std::function<bool()> fn) { _onExitFunction = fn; }
     
 protected:
-    uint32_t _windowWidth = 1440;
-    uint32_t _windowHeight = 700;
-    std::string _windowTitle = "bg2 engine - native";
+    WindowConfig _windowConfig;
+
     bool _quit = false;
     
     std::string _appId;

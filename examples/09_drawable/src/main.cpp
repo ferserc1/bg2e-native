@@ -400,7 +400,7 @@ public:
 
 int main(int argc, char** argv) {
 	bg2e::app::MainLoop mainLoop("org.bg2engine.examples.drawable");
-    mainLoop.initWindowTitle("Drawable Example");
+    mainLoop.initWindowConfig(bg2e::app::WindowConfig::withSize("Drawable", 1440, 700));
 	MyApplication app;
 	app.init(argc, argv);
 	return mainLoop.run(&app);
