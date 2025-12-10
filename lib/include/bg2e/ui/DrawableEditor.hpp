@@ -10,6 +10,8 @@
 #include <bg2e/common.hpp>
 #include <bg2e/ui/SubmeshSelector.hpp>
 
+#include <functional>
+
 namespace bg2e {
 namespace ui {
 
@@ -17,7 +19,12 @@ class BG2E_API DrawableEditor {
 public:
     virtual ~DrawableEditor();
     
-    inline void setEditDrawable(std::shared_ptr<scene::Drawable> drawable) { _submeshSelector.setEditDrawable(drawable); }
+    inline void setEditDrawable(std::shared_ptr<scene::Drawable> drawable, uint32_t submeshIndex)
+    {
+        _submeshSelector.setEditDrawable(drawable);
+        _submeshSelector.clearSelection();
+        _submeshSelector.addSelectedItem(submeshIndex);
+    }
     inline std::shared_ptr<scene::Drawable> editDrawable() { return _drawable; }
     inline const std::shared_ptr<scene::Drawable> editDrawable() const { return _drawable; }
     void clearDrawable();
@@ -34,11 +41,23 @@ public:
     bool draw();
     
     void cleanup();
-    
+
+    inline void onChanged(std::function<void()> cb) { _onChange = cb; }
+
 protected:
     std::shared_ptr<scene::Drawable> _drawable;
     
     SubmeshSelector _submeshSelector;
+
+    std::function<void()> _onChange;
+
+    inline void notifyOnChange()
+    {
+        if (_onChange)
+        {
+            _onChange();
+        }
+    }
 };
 
 }

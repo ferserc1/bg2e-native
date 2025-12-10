@@ -48,6 +48,11 @@ public:
     inline const std::filesystem::path & filePath() const { return _filePath; }
 
     void cleanup();
+
+    bool checkUnsavedChanges();
+
+    inline bool unsavedChanges() const { return _unsavedChanges; }
+    inline void setUnsavedChanges(bool c = true) { _unsavedChanges = c; }
     
 protected:
     bg2e::render::Engine * _engine;
@@ -80,5 +85,6 @@ protected:
     bg2e::scene::EnvironmentComponent * _environment;
     bg2e::scene::OrbitCameraComponent * _orbitCamera;
 
+    bool _unsavedChanges = false;
 };
 

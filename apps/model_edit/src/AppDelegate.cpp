@@ -57,6 +57,29 @@ void AppDelegate::mouseWheel(int deltaX, int deltaY)
     _inputVisitor.mouseWheel(renderer()->scene()->rootNode(), deltaX, deltaY);
 }
 
+void AppDelegate::fileDropped(const std::filesystem::path& path)
+{
+    auto ext = path.extension();
+
+    if (!stage()->checkUnsavedChanges())
+    {
+        return;
+    }
+
+    if (ext == ".bg2" || ext == ".vwglb")
+    {
+        stage()->loadModel(path);
+    }
+    else if (ext == ".obj")
+    {
+        stage()->importObj(path);
+    }
+    else if (ext == ".glb" || ext == ".gltf")
+    {
+        stage()->importGltf(path);
+    }
+}
+
 std::shared_ptr<bg2e::scene::Node> AppDelegate::createScene()
 {
     _stage = std::make_shared<StageScene>(_engine);

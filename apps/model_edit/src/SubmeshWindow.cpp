@@ -9,7 +9,17 @@ void SubmeshWindow::init(AppDelegate * delegate)
 {
     _appDelegate = delegate;
     setTitle("Model Properties");
-    
+
+    _materialEditor.onChanged([&]()
+    {
+        _appDelegate->stage()->setUnsavedChanges();
+    });
+
+    _drawableEditor.onChanged([&]()
+    {
+        _appDelegate->stage()->setUnsavedChanges();
+    });
+
     setDrawFunction([&]() {
 
         auto stage = _appDelegate->stage();
@@ -39,16 +49,12 @@ void SubmeshWindow::init(AppDelegate * delegate)
 
 		        bg2e::ui::SelectableList::endList();
 		    }
-
-            if (drawable.get() != _submeshSelector.editDrawable().get())
-            {
-                _submeshSelector.setEditDrawable(drawable);
-            }
            
-            if (_submeshSelector.draw())
+            if (_drawableEditor.draw())
             {
                 _materialEditor.clearMaterial();
-                for (auto sel : _submeshSelector.selectedItems())
+
+                for (auto sel : _drawableEditor.selectedItems())
                 {
                     _materialEditor.addEditMaterial(drawable->renderMaterial(sel));
                 }
@@ -68,8 +74,7 @@ void SubmeshWindow::setEditMaterial(uint32_t submeshIndex)
         std::shared_ptr<bg2e::scene::Drawable>();
     if (drawable && drawable->submeshesCount() > submeshIndex)
     {
-        _submeshSelector.setEditDrawable(drawable);
-        _submeshSelector.addSelectedItem(submeshIndex);
+        _drawableEditor.setEditDrawable(drawable, submeshIndex);
         _materialEditor.clearMaterial();
         _materialEditor.addEditMaterial(drawable->renderMaterial(submeshIndex));
     }
@@ -78,6 +83,6 @@ void SubmeshWindow::setEditMaterial(uint32_t submeshIndex)
 void SubmeshWindow::cleanup()
 {
     _materialEditor.cleanup();
-    _submeshSelector.cleanup();
+    _drawableEditor.cleanup();
 }
 

@@ -60,6 +60,7 @@ bool MaterialEditor::draw()
             for (auto mat : _editMaterialList)
             {
                 mat->materialAttributes().setAlbedo(albedoColor);
+                notifyOnChange();
             }
         }
         _albedoWidget.selectTexture("##albedo", [&](base::Texture* tex) {
@@ -68,6 +69,7 @@ bool MaterialEditor::draw()
             {
                 mat->materialAttributes().setAlbedoTexture(ptrTex);
                 mat->updateTextures();
+                notifyOnChange();
             }
             
             return _material->albedoTexture();
@@ -78,6 +80,7 @@ bool MaterialEditor::draw()
             {
                 mat->materialAttributes().setAlbedoScale(albedoScale);
             }
+            notifyOnChange();
         }
         if (Input::comboBox("UV Set", uvOptions, albedoUVSet))
         {
@@ -85,6 +88,7 @@ bool MaterialEditor::draw()
             {
                 mat->materialAttributes().setAlbedoUVSet(albedoUVSet);
             }
+            notifyOnChange();
         }
         
         BasicWidgets::separator("Normal");
@@ -97,6 +101,7 @@ bool MaterialEditor::draw()
                 mat->materialAttributes().setNormalTexture(ptrTex);
                 mat->updateTextures();
             }
+            notifyOnChange();
             return _material->normalTexture();
         });
         if (Input::vec2("Scale##normal", normalScale))
@@ -105,6 +110,7 @@ bool MaterialEditor::draw()
             {
                 mat->materialAttributes().setNormalScale(normalScale);
             }
+            notifyOnChange();
         }
         if (Input::comboBox("UV Set##normal", uvOptions, normalUVSet))
         {
@@ -112,6 +118,7 @@ bool MaterialEditor::draw()
             {
                 mat->materialAttributes().setNormalUVSet(normalUVSet);
             }
+            notifyOnChange();
         }
         
         BasicWidgets::separator("Metallic");
@@ -124,6 +131,7 @@ bool MaterialEditor::draw()
             {
                 mat->materialAttributes().setMetalness(metallic);
             }
+            notifyOnChange();
         }
         _metallicWidget.selectTexture("##metallic", [&](base::Texture* tex) {
             auto ptrTex = std::shared_ptr<base::Texture>(tex);
@@ -132,6 +140,7 @@ bool MaterialEditor::draw()
                 mat->materialAttributes().setMetalnessTexture(ptrTex);
                 mat->updateTextures();
             }
+            notifyOnChange();
             return _material->metalnessTexture();
         });
         if (Input::vec2("Scale##metallic", metallicScale))
@@ -140,6 +149,7 @@ bool MaterialEditor::draw()
             {
                 mat->materialAttributes().setMetalnessScale(metallicScale);
             }
+            notifyOnChange();
         }
         if (Input::comboBox("UV Set##metallic", uvOptions, metallicUVSet))
         {
@@ -147,6 +157,7 @@ bool MaterialEditor::draw()
             {
                 mat->materialAttributes().setMetalnessUVSet(metallicUVSet);
             }
+            notifyOnChange();
         }
 
         BasicWidgets::separator("Roughness");
@@ -159,6 +170,7 @@ bool MaterialEditor::draw()
             {
                 mat->materialAttributes().setRoughness(roughness);
             }
+            notifyOnChange();
         }
         _roughnessWidget.selectTexture("##roughness", [&](base::Texture* tex) {
             auto ptrTex = std::shared_ptr<base::Texture>(tex);
@@ -167,6 +179,7 @@ bool MaterialEditor::draw()
                 mat->materialAttributes().setRoughnessTexture(ptrTex);
                 mat->updateTextures();
             }
+            notifyOnChange();
             return _material->roughnessTexture();
         });
         if (Input::vec2("Scale##roughness", roughnessScale))
@@ -175,6 +188,7 @@ bool MaterialEditor::draw()
             {
                 mat->materialAttributes().setRoughnessScale(roughnessScale);
             }
+            notifyOnChange();
         }
         if (Input::comboBox("UV Set##roughness", uvOptions, roughnessUVSet))
         {
@@ -182,6 +196,7 @@ bool MaterialEditor::draw()
             {
                 mat->materialAttributes().setRoughnessUVSet(roughnessUVSet);
             }
+            notifyOnChange();
         }
         
         BasicWidgets::separator("Fresnel Tint");
@@ -192,6 +207,7 @@ bool MaterialEditor::draw()
             {
                 mat->materialAttributes().setFresnelTint(fresnel);
             }
+            notifyOnChange();
         }
         
         BasicWidgets::separator("Sheen");
@@ -203,6 +219,7 @@ bool MaterialEditor::draw()
             {
                 mat->materialAttributes().setSheenIntensity(sheenIntensity);
             }
+            notifyOnChange();
         }
         if (Input::colorPicker("Color##sheenColor", sheenColor))
         {
@@ -210,6 +227,7 @@ bool MaterialEditor::draw()
             {
                 mat->materialAttributes().setSheenColor(sheenColor);
             }
+            notifyOnChange();
         }
         
         
@@ -223,6 +241,7 @@ bool MaterialEditor::draw()
                 mat->materialAttributes().setAoTexture(ptrTex);
                 mat->updateTextures();
             }
+            notifyOnChange();
             return _material->aoTexture();
         });
         if (Input::vec2("Scale##ao", aoScale))
@@ -231,6 +250,7 @@ bool MaterialEditor::draw()
             {
                 mat->materialAttributes().setAoScale(aoScale);
             }
+            notifyOnChange();
         }
         if (Input::comboBox("UV Set##ao", uvOptions, aoUVSet))
         {
@@ -238,6 +258,7 @@ bool MaterialEditor::draw()
             {
                 mat->materialAttributes().setAoUVSet(aoUVSet);
             }
+            notifyOnChange();
         }
     }
     return false;

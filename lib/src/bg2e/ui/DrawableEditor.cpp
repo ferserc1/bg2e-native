@@ -54,6 +54,7 @@ bool DrawableEditor::draw()
             if (Input::text(nameLabel, plName))
             {
                 drawable->setSubmeshName(plName, selectedPlist);
+                notifyOnChange();
             }
             if (_submeshSelector.selectedItems().size() > 1)
             {
@@ -65,6 +66,7 @@ bool DrawableEditor::draw()
                 {
                     drawable->setSubmeshGroupName(grpName, item);
                 }
+                notifyOnChange();
             }
             if (BasicWidgets::checkBox("Visibility", &visible))
             {
@@ -72,6 +74,7 @@ bool DrawableEditor::draw()
                 {
                     drawable->setSubmeshVisibility(visible, item);
                 }
+                notifyOnChange();
             }
         }
     }

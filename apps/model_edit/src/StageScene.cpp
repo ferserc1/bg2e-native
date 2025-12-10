@@ -77,6 +77,7 @@ void StageScene::loadModel(const std::filesystem::path& path)
     _targetNode->addChild(modelNode);
     
     _filePath = path;
+    _unsavedChanges = false;
 }
 
 void StageScene::saveModel(const std::filesystem::path& path)
@@ -87,6 +88,7 @@ void StageScene::saveModel(const std::filesystem::path& path)
         bg2e::db::storeDrawableBg2(path, drw);
         _filePath = path;
     }
+    _unsavedChanges = false;
 }
 
 void StageScene::close()
@@ -96,6 +98,8 @@ void StageScene::close()
     _targetNode->clearChildren();
     _targetScene.reset();
     _targetNames.clear();
+    _unsavedChanges = true;
+    _filePath = "";
 }
 
 
@@ -121,6 +125,7 @@ void StageScene::importModel(const std::filesystem::path& path)
     {
         throw std::runtime_error("Unsupported extension");
     }
+    _unsavedChanges = true;
 }
 
 void StageScene::importObj(const std::filesystem::path& path)
@@ -135,7 +140,8 @@ void StageScene::importObj(const std::filesystem::path& path)
 
     _targetNode->addChild(modelNode);
 
-    _filePath = path;
+    _filePath = "";
+    _unsavedChanges = true;
 }
 
 void StageScene::importGltf(const std::filesystem::path& path)
@@ -160,6 +166,7 @@ void StageScene::importGltf(const std::filesystem::path& path)
     }
 
     _filePath = "";
+    _unsavedChanges = true;
 }
 
 void StageScene::selectTargetNode(uint32_t index)
@@ -190,4 +197,52 @@ void StageScene::cleanup()
     _targetDrawable.reset();
     _targetDrawables.clear();
     _targetScene.reset();
+    _filePath = "";
+    _unsavedChanges = false;
+}
+
+bool StageScene::checkUnsavedChanges()
+{
+    using namespace bg2e::app;
+    if (_unsavedChanges)
+    {
+        auto response = bg2e::app::MessageBox::showWarning(
+            "Unsaved changes",
+            "There are unsaved changes. Do you want to save your changes before continuing?",
+            {
+                { .code = 0, .label = "Cancel", },
+                { .code = 1, .label = "Save" },
+                { .code = 2, .label = "No" }
+            }
+        );
+
+        if (response == 0)
+        {
+            return false;
+        }
+        else if (response == 1)
+        {
+            if (_filePath.empty())
+            {
+                bg2e::app::FileDialog fd;
+                fd.setFilters({
+                    { "bg2e 3D model", "bg2,vwglb" }
+                });
+                auto filePath = fd.saveFile();
+                if (filePath.empty())
+                {
+                    return false;
+                }
+
+                _filePath = filePath;
+            }
+            saveModel(_filePath);
+            return true;
+        }
+        else if (response == 2)
+        {
+            return true;
+        }
+    }
+    return true;
 }

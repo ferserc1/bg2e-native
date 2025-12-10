@@ -16,5 +16,5 @@ private:
     AppDelegate * _appDelegate;
     
     bg2e::ui::MaterialEditor _materialEditor;
-    bg2e::ui::SubmeshSelector _submeshSelector;
+    bg2e::ui::DrawableEditor _drawableEditor;
 };

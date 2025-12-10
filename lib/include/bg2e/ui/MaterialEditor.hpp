@@ -9,6 +9,7 @@
 
 #include <memory>
 #include <vector>
+#include <functional>
 
 namespace bg2e {
 namespace ui {
@@ -28,7 +29,9 @@ public:
     bool draw();
 
     void cleanup();
-    
+
+    inline void onChanged(std::function<void()> cb) { _onChangedFunction = cb; }
+
 protected:
     std::shared_ptr<render::MaterialBase> _material;
     std::vector<std::shared_ptr<render::MaterialBase>> _editMaterialList;
@@ -38,9 +41,19 @@ protected:
     TextureWidgets _metallicWidget;
     TextureWidgets _roughnessWidget;
     TextureWidgets _aoWidget;
+
+    std::function<void()> _onChangedFunction;
     
     void initWidgets();
     void clearWidgets();
+
+    inline void notifyOnChange()
+    {
+        if (_onChangedFunction)
+        {
+            _onChangedFunction();
+        }
+    }
 };
 
 }

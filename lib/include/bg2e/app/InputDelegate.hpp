@@ -2,22 +2,26 @@
 
 #include <bg2e/app/KeyEvent.hpp>
 
+#include <filesystem>
+
 namespace bg2e {
 namespace app {
 
 class InputDelegate {
 public:
-    virtual void keyDown(const KeyEvent&) {}
+    virtual void keyDown([[maybe_unused]] const KeyEvent& keyEvent) {}
 
-    virtual void keyUp(const KeyEvent& /* keyEvent */) {}
+    virtual void keyUp([[maybe_unused]] const KeyEvent& keyEvent) {}
 
-    virtual void mouseMove(int /* x */, int /* y */) {}
+    virtual void mouseMove([[maybe_unused]] int x, [[maybe_unused]] int y) {}
 
-    virtual void mouseButtonDown(int /* button */, int /* x */, int /* y */) {}
+    virtual void mouseButtonDown([[maybe_unused]] int button, [[maybe_unused]] int x, [[maybe_unused]] int y) {}
 
-    virtual void mouseButtonUp(int /* button */, int /* x */, int /* y */) {}
+    virtual void mouseButtonUp([[maybe_unused]] int button, [[maybe_unused]] int x, [[maybe_unused]] int y) {}
 
-    virtual void mouseWheel(int /* deltaX */, int /* deltaY */) {}
+    virtual void mouseWheel([[maybe_unused]] int deltaX, [[maybe_unused]] int deltaY) {}
+
+    virtual void fileDropped([[maybe_unused]] const std::filesystem::path &) {}
 };
 
 }

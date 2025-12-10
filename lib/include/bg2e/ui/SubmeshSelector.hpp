@@ -14,6 +14,7 @@
 #include <vector>
 #include <string>
 #include <memory>
+#include <functional>
 
 namespace bg2e {
 namespace ui {
@@ -46,11 +47,11 @@ protected:
     void initWidgets();
 
     void clearWidgets();
-    
-    
+
     std::shared_ptr<scene::Drawable> _drawable;
     std::vector<bool> _selectedSubmeshes;
     std::vector<uint32_t> _selectedItems;
+
 };
 
 }

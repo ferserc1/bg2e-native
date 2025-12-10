@@ -34,6 +34,8 @@ public:
     void mouseButtonUp(int button, int x, int y) override;
     
     void mouseWheel(int deltaX, int deltaY) override;
+
+    void fileDropped(const std::filesystem::path&) override;
     
     void cleanup() override;
     

@@ -40,8 +40,8 @@ SDL_Window* createSDLWindow(const WindowConfig& cfg) {
         cfg.title.c_str(),
         xpos,
         ypos,
-        cfg.width,
-        cfg.height,
+        static_cast<int>(cfg.width),
+        static_cast<int>(cfg.height),
         flags
     );
 
@@ -144,20 +144,24 @@ int32_t MainLoop::run(app::Application * application) {
                     quit = true;
                 }
             }
-            
-            if (event.type == SDL_WINDOWEVENT &&
+            else if (event.type == SDL_DROPFILE)
+            {
+                std::string pathStr(event.drop.file);
+                SDL_free(event.drop.file);
+
+                application->inputDelegate()->fileDropped(std::filesystem::path(pathStr));
+            }
+            else if (event.type == SDL_WINDOWEVENT &&
                 event.window.event == SDL_WINDOWEVENT_MINIMIZED)
             {
                 stopRendering = true;
             }
-            
-            if (event.type == SDL_WINDOWEVENT &&
+            else if (event.type == SDL_WINDOWEVENT &&
                 event.window.event == SDL_WINDOWEVENT_RESTORED)
             {
                 stopRendering = false;
             }
-            
-            if (event.type == SDL_WINDOWEVENT &&
+            else if (event.type == SDL_WINDOWEVENT &&
                 event.window.event == SDL_WINDOWEVENT_RESIZED)
             {
                 int w, h;
@@ -171,8 +175,7 @@ int32_t MainLoop::run(app::Application * application) {
                     resizing = true;
                 }
             }
-
-			if (event.type == SDL_KEYUP || event.type == SDL_KEYDOWN)
+			else if (event.type == SDL_KEYUP || event.type == SDL_KEYDOWN)
 			{
                 if (event.key.state == SDL_PRESSED)
                 {
@@ -183,8 +186,7 @@ int32_t MainLoop::run(app::Application * application) {
                     _inputManager.keyUp(KeyEvent::fromSDLEvent(event));
                 }
 			}
-            
-            if (event.type == SDL_MOUSEMOTION || event.type == SDL_MOUSEBUTTONDOWN || event.type == SDL_MOUSEBUTTONUP)
+            else if (event.type == SDL_MOUSEMOTION || event.type == SDL_MOUSEBUTTONDOWN || event.type == SDL_MOUSEBUTTONUP)
             {
                 int x, y;
                 SDL_GetMouseState(&x, &y);
@@ -208,7 +210,7 @@ int32_t MainLoop::run(app::Application * application) {
                     _inputManager.mouseMove(x, y);
                 }
             }
-            if (event.type == SDL_MOUSEWHEEL)
+            else if (event.type == SDL_MOUSEWHEEL)
             {
                 _inputManager.mouseWheel(event.wheel.x, event.wheel.y);
             }

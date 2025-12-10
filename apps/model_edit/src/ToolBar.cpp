@@ -132,6 +132,7 @@ void ToolBar::init(AppDelegate * delegate)
         .action = [&]()
         {
             using namespace bg2e::geo;
+            _appDelegate->stage()->setUnsavedChanges();
             auto drw = _appDelegate->stage()->targetDrawable();
             if (drw.get())
             {
@@ -145,6 +146,7 @@ void ToolBar::init(AppDelegate * delegate)
         .action = [&]()
         {
             using namespace bg2e::geo;
+            _appDelegate->stage()->setUnsavedChanges();
             auto drw = _appDelegate->stage()->targetDrawable();
             if (drw.get())
             {
@@ -158,6 +160,7 @@ void ToolBar::init(AppDelegate * delegate)
         .action = [&]()
         {
             using namespace bg2e::geo;
+            _appDelegate->stage()->setUnsavedChanges();
             auto drw = _appDelegate->stage()->targetDrawable();
             if (drw.get())
             {
@@ -169,6 +172,14 @@ void ToolBar::init(AppDelegate * delegate)
             }
         }
     });
+
+    addButton({
+        .label = "Center View",
+        .action = [&]()
+        {
+            _appDelegate->stage()->orbitCamera()->reset();
+        }
+    }, AlignRight);
     
     addButton({
         .label = "Submesh Editor",
