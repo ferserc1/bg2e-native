@@ -563,9 +563,17 @@ void storeDrawableBg2(
 ) {
     db::Bg2Mesh meshData;
     meshData.mesh = drawable->mesh();
+    uint32_t submeshIdx = 0;
     for (auto & mat : drawable->materials())
     {
+        auto name = drawable->submeshName(submeshIdx);
+        auto groupName = drawable->submeshGroupName(submeshIdx);
+        auto visible = drawable->submeshVisibility(submeshIdx);
+        mat->materialAttributes().setName(name);
+        mat->materialAttributes().setGroupName(groupName);
+        mat->materialAttributes().setVisible(visible);
         meshData.materials.push_back(mat->materialAttributes());
+        ++submeshIdx;
     }
     db::storeMeshBg2(filePath, &meshData);
 }
