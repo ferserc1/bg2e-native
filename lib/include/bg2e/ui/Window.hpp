@@ -11,6 +11,7 @@ namespace ui {
 
 class BG2E_API Window {
 public:
+
     enum DockingSide {
         DockLeft,
         DockRight,
@@ -74,7 +75,10 @@ public:
     inline int height() const { return _height; }
     
 protected:
-    std::string _title = "Window";
+    static const char * s_defaultWindowTitle;
+    static uint32_t s_windowIndex;
+
+    std::string _title = s_defaultWindowTitle;
     bool _open = true;
     std::function<void()> _drawFunction = []() {};
     std::function<void()> _menuFunction = []() {};

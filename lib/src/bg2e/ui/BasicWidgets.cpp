@@ -121,11 +121,24 @@ uint32_t BasicWidgets::calcTextWidth(const std::string & title)
     return static_cast<uint32_t>(textSize.x);
 }
 
+uint32_t BasicWidgets::calcTextHeight(const std::string & title)
+{
+ImVec2 textSize = ImGui::CalcTextSize(title.c_str());
+return static_cast<uint32_t>(textSize.y);
+}
+
 uint32_t BasicWidgets::calcButtonWidth(const std::string & title)
 {
     ImVec2 textSize = ImGui::CalcTextSize(title.c_str());
     ImVec2 padding = ImGui::GetStyle().FramePadding;
     return static_cast<uint32_t>(textSize.x + padding.x * 2.0f);
+}
+
+uint32_t BasicWidgets::calcButtonHeight(const std::string & title)
+{
+    ImVec2 textSize = ImGui::CalcTextSize(title.c_str());
+    ImVec2 padding = ImGui::GetStyle().FramePadding;
+    return static_cast<uint32_t>(textSize.y + padding.y * 2.0f);
 }
 
 uint32_t BasicWidgets::getItemHorizontalSpacing()
@@ -139,6 +152,11 @@ uint32_t BasicWidgets::getItemVerticalSpacing()
     ImVec2 spacing = ImGui::GetStyle().ItemSpacing;
     return static_cast<uint32_t>(spacing.y);
 }
-    
+
+void BasicWidgets::padding(uint32_t width, uint32_t height)
+{
+    ImGui::Dummy(ImVec2(static_cast<float>(width), static_cast<float>(height)));
+}
+
 }
 }

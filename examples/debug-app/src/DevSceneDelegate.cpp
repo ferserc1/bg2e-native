@@ -61,7 +61,7 @@ void DevSceneDelegate::init(bg2e::render::Engine*, bg2e::ui::UserInterface*)
                     renderer()->scene()->rootNode()->addChild(modelNode);
                     
                     // Update the drawable editor
-                    _drawableEditor.setEditDrawable(_targetDrawable);
+                    _drawableEditor.setEditDrawable(_targetDrawable, 0);
                 }
             }
             if (bg2e::ui::Menu::menuItem("Save Object"))

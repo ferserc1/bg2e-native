@@ -17,7 +17,8 @@ public:
         Window * toolBar,
         Window * leftPanel,
         Window * rightPanel,
-        Window * bottomPanel
+        Window * bottomPanel,
+        Window * statusBar = nullptr
     );
 
     void resize(uint32_t width, uint32_t height);
@@ -32,26 +33,31 @@ public:
     inline bool leftPanelVisible() const { return _drawLeftPanel; }
     inline bool rightPanelVisible() const { return _drawRightPanel; }
     inline bool bottomPanelVisible() const { return _drawBottomPanel; }
+    inline bool statusBarVisible() const { return _drawStatusBar; }
 
     inline void toggleToolBar() { _drawToolBar = !_drawToolBar; updateWindows(); }
     inline void toggleLeftPanel() { _drawLeftPanel = !_drawLeftPanel; updateWindows(); }
     inline void toggleRightPanel() { _drawRightPanel = !_drawRightPanel; updateWindows(); }
     inline void toggleBottomPanel() { _drawBottomPanel = !_drawBottomPanel; updateWindows(); }
+    inline void toggleStatusBar() { _drawStatusBar = !_drawStatusBar; updateWindows(); }
     
     inline void showToolBar() { _drawToolBar = true; updateWindows(); }
     inline void showLeftPanel() { _drawLeftPanel = true; updateWindows(); }
     inline void showRightPanel() { _drawRightPanel = true; updateWindows(); }
     inline void showBottomPanel() { _drawBottomPanel = true; updateWindows(); }
+    inline void showStatusBar() { _drawStatusBar = true; updateWindows(); }
     
     inline void hideToolBar() { _drawToolBar = false; updateWindows(); }
     inline void hideLeftPanel() { _drawLeftPanel = false; updateWindows(); }
     inline void hideRightPanel() { _drawRightPanel = false; updateWindows(); }
     inline void hideBottomPanel() { _drawBottomPanel = false; updateWindows(); }
+    inline void hideStatusBar() { _drawStatusBar = false; updateWindows(); }
     
     inline void setToolBarVisible(bool v) { _drawToolBar = v; updateWindows(); }
     inline void setLeftPanelVisible(bool v) { _drawLeftPanel = v; updateWindows(); }
     inline void setRightPanelVisible(bool v) { _drawRightPanel = v; updateWindows(); }
     inline void setBottomPanelVisible(bool v) { _drawBottomPanel = v; updateWindows(); }
+    inline void setStatusBarVisible(bool v) { _drawStatusBar = v; updateWindows(); }
     
     struct PanelSize
     {
@@ -74,17 +80,19 @@ protected:
     Window * _leftPanel = nullptr;
     Window * _rightPanel = nullptr;
     Window * _bottomPanel = nullptr;
+    Window * _statusBar = nullptr;
     
     bool _drawToolBar = true;
     bool _drawLeftPanel = true;
     bool _drawRightPanel = true;
     bool _drawBottomPanel = true;
+    bool _drawStatusBar = true;
     
     uint32_t _viewportWidth = 0;
     uint32_t _viewportHeight = 0;
     
     uint32_t _toolBarHeight = 50;
-    
+    uint32_t _statusBarHeight = 50;
     
     
     PanelSize _leftPanelSize = {

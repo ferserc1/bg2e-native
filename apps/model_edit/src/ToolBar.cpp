@@ -66,7 +66,7 @@ void ToolBar::init(AppDelegate * delegate)
             }
             if (Menu::menuItem("Save", "Cmd+S"))
             {
-                auto filePath = _appDelegate->stage()->filePath();
+                auto filePath = _appDelegate->stage()->document()->path();
                 if (filePath.empty())
                 {
                     bg2e::app::FileDialog fd;
@@ -132,7 +132,7 @@ void ToolBar::init(AppDelegate * delegate)
         .action = [&]()
         {
             using namespace bg2e::geo;
-            _appDelegate->stage()->setUnsavedChanges();
+            _appDelegate->stage()->document()->setUnsavedChanges(true);
             auto drw = _appDelegate->stage()->targetDrawable();
             if (drw.get())
             {
@@ -146,7 +146,7 @@ void ToolBar::init(AppDelegate * delegate)
         .action = [&]()
         {
             using namespace bg2e::geo;
-            _appDelegate->stage()->setUnsavedChanges();
+            _appDelegate->stage()->document()->setUnsavedChanges(true);
             auto drw = _appDelegate->stage()->targetDrawable();
             if (drw.get())
             {
@@ -160,7 +160,7 @@ void ToolBar::init(AppDelegate * delegate)
         .action = [&]()
         {
             using namespace bg2e::geo;
-            _appDelegate->stage()->setUnsavedChanges();
+            _appDelegate->stage()->document()->setUnsavedChanges(true);
             auto drw = _appDelegate->stage()->targetDrawable();
             if (drw.get())
             {

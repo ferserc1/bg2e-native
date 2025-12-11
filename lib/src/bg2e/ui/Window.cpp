@@ -7,6 +7,9 @@
 namespace bg2e {
 namespace ui {
 
+const char * Window::s_defaultWindowTitle = "Window";
+uint32_t Window::s_windowIndex = 0;
+
 void Window::draw(
     std::function<void()> drawFunction,
     std::function<void()> menuFunction
@@ -15,6 +18,12 @@ void Window::draw(
 	{
 		return;
 	}
+
+    // The default window title is Window, but there cannot be more than one window with the same title
+    if (_title == s_defaultWindowTitle)
+    {
+        _title = std::string(s_defaultWindowTitle) + "##" + std::to_string(++s_windowIndex);
+    }
 
     updateFlags();
     bool* open = options.noClose ? nullptr : &_open;
@@ -36,8 +45,7 @@ void Window::draw(
             options.noResize ? 0 : ImGuiCond_FirstUseEver
         );
     }
-    
-    
+
     if (ImGui::Begin(_title.c_str(), open, _windowFlags))
     {
         // Draw menu

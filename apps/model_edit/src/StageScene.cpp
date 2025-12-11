@@ -3,16 +3,19 @@
 
 #include "StageScene.hpp"
 
+#include <AppDelegate.hpp>
+
 #include <bg2e.hpp>
 
 #include <algorithm>
 #include <cctype>
 #include <string>
 
-StageScene::StageScene(bg2e::render::Engine * engine)
+StageScene::StageScene(bg2e::render::Engine * engine, AppDelegate * appDelegate)
     :_engine { engine }
+    ,_appDelegate { appDelegate }
+    ,_document(std::make_unique<Document>(appDelegate) )
 {
-
 }
 
 std::shared_ptr<bg2e::scene::Node> StageScene::init()
@@ -61,6 +64,7 @@ std::shared_ptr<bg2e::scene::Node> StageScene::init()
     sceneRoot->addChild(_targetNode);
     
     _sceneRoot = sceneRoot;
+
     return _sceneRoot;
 }
 
@@ -75,9 +79,10 @@ void StageScene::loadModel(const std::filesystem::path& path)
     modelNode->addComponent(new bg2e::manipulation::SelectableComponent());
 
     _targetNode->addChild(modelNode);
-    
-    _filePath = path;
-    _unsavedChanges = false;
+
+    _document->setPath(path);
+    _document->setUnsavedChanges(false);
+
 }
 
 void StageScene::saveModel(const std::filesystem::path& path)
@@ -86,9 +91,9 @@ void StageScene::saveModel(const std::filesystem::path& path)
     if (drw)
     {
         bg2e::db::storeDrawableBg2(path, drw);
-        _filePath = path;
+        _document->setPath(path);
     }
-    _unsavedChanges = false;
+    _document->setUnsavedChanges(false);
 }
 
 void StageScene::close()
@@ -98,8 +103,7 @@ void StageScene::close()
     _targetNode->clearChildren();
     _targetScene.reset();
     _targetNames.clear();
-    _unsavedChanges = true;
-    _filePath = "";
+    _document->setStatus("", false);
 }
 
 
@@ -125,7 +129,7 @@ void StageScene::importModel(const std::filesystem::path& path)
     {
         throw std::runtime_error("Unsupported extension");
     }
-    _unsavedChanges = true;
+    _document->setUnsavedChanges(true);
 }
 
 void StageScene::importObj(const std::filesystem::path& path)
@@ -140,8 +144,7 @@ void StageScene::importObj(const std::filesystem::path& path)
 
     _targetNode->addChild(modelNode);
 
-    _filePath = "";
-    _unsavedChanges = true;
+    _document->setStatus("", true);
 }
 
 void StageScene::importGltf(const std::filesystem::path& path)
@@ -165,8 +168,7 @@ void StageScene::importGltf(const std::filesystem::path& path)
         selectTargetNode(0);
     }
 
-    _filePath = "";
-    _unsavedChanges = true;
+    _document->setStatus("", true);
 }
 
 void StageScene::selectTargetNode(uint32_t index)
@@ -197,14 +199,13 @@ void StageScene::cleanup()
     _targetDrawable.reset();
     _targetDrawables.clear();
     _targetScene.reset();
-    _filePath = "";
-    _unsavedChanges = false;
+    _document->setStatus("", false);
 }
 
 bool StageScene::checkUnsavedChanges()
 {
     using namespace bg2e::app;
-    if (_unsavedChanges)
+    if (_document->unsavedChanges())
     {
         auto response = bg2e::app::MessageBox::showWarning(
             "Unsaved changes",
@@ -222,7 +223,7 @@ bool StageScene::checkUnsavedChanges()
         }
         else if (response == 1)
         {
-            if (_filePath.empty())
+            if (_document->path().empty())
             {
                 bg2e::app::FileDialog fd;
                 fd.setFilters({
@@ -234,9 +235,9 @@ bool StageScene::checkUnsavedChanges()
                     return false;
                 }
 
-                _filePath = filePath;
+                _document->setPath(filePath);
             }
-            saveModel(_filePath);
+            saveModel(_document->path());
             return true;
         }
         else if (response == 2)

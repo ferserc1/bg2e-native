@@ -23,9 +23,13 @@ public:
     static bool collapsingHeader(const std::string & title, bool visible = true);
     
     static uint32_t calcTextWidth(const std::string & title);
+    static uint32_t calcTextHeight(const std::string & title);
     static uint32_t calcButtonWidth(const std::string & title);
+    static uint32_t calcButtonHeight(const std::string & title);
     static uint32_t getItemHorizontalSpacing();
     static uint32_t getItemVerticalSpacing();
+
+    static void padding(uint32_t width, uint32_t height);
     
 };
 

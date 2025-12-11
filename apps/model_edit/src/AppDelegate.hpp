@@ -48,6 +48,10 @@ public:
 
     inline bg2e::manipulation::SelectionManager * selectionManager() const { return _selectionManager.get(); }
 
+    inline bg2e::ui::StatusItem * fileStatus() { return _fileStatus.get(); }
+    inline bg2e::ui::StatusItem * saveStatus() { return _saveStatus.get(); }
+    void updateStatus();
+
 protected:
     bg2e::scene::InputVisitor _inputVisitor;
     
@@ -55,6 +59,10 @@ protected:
     ToolBar _toolBar;
     SubmeshWindow _submeshPanel;
     EnvironmentSettings _environmentPanel;
+
+    std::shared_ptr<bg2e::ui::StatusItem> _fileStatus;
+    std::shared_ptr<bg2e::ui::StatusItem> _saveStatus;
+    bg2e::ui::StatusBar _statusBar;
     
     std::shared_ptr<StageScene> _stage;
     

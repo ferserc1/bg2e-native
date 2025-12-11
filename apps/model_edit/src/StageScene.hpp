@@ -7,12 +7,16 @@
 #include <bg2e/render/Engine.hpp>
 #include <bg2e/scene/OrbitCameraComponent.hpp>
 
+#include <Document.hpp>
+
 #include <memory>
 #include <filesystem>
 
+class AppDelegate;
+
 class StageScene {
 public:
-    StageScene(bg2e::render::Engine * engine);
+    StageScene(bg2e::render::Engine * engine, AppDelegate * appDelegate);
     
     std::shared_ptr<bg2e::scene::Node> init();
     
@@ -44,19 +48,20 @@ public:
 
     inline bool isModelValid() const { return _targetNode.get() != nullptr; }
     std::shared_ptr<bg2e::scene::Drawable> targetDrawable();
-    
-    inline const std::filesystem::path & filePath() const { return _filePath; }
 
     void cleanup();
 
     bool checkUnsavedChanges();
 
-    inline bool unsavedChanges() const { return _unsavedChanges; }
-    inline void setUnsavedChanges(bool c = true) { _unsavedChanges = c; }
-    
+    inline Document * document() { return _document.get(); }
+
 protected:
     bg2e::render::Engine * _engine;
-    
+
+    AppDelegate * _appDelegate;
+
+    std::unique_ptr<Document> _document;
+
     std::shared_ptr<bg2e::scene::Node> _sceneRoot;
     
     // This is the node where the loaded model is placed
@@ -79,12 +84,7 @@ protected:
     // Otherwise is empty
     std::vector<std::string> _targetNames;
 
-    // Path of the last opened or saved file
-    std::filesystem::path _filePath;
-    
     bg2e::scene::EnvironmentComponent * _environment;
     bg2e::scene::OrbitCameraComponent * _orbitCamera;
-
-    bool _unsavedChanges = false;
 };
 

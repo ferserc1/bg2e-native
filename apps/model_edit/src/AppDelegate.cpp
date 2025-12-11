@@ -82,7 +82,7 @@ void AppDelegate::fileDropped(const std::filesystem::path& path)
 
 std::shared_ptr<bg2e::scene::Node> AppDelegate::createScene()
 {
-    _stage = std::make_shared<StageScene>(_engine);
+    _stage = std::make_shared<StageScene>(_engine, this);
     
     auto scene = _stage->init();
     
@@ -106,13 +106,23 @@ void AppDelegate::initWorkspace()
     _environmentPanel.init(this, renderer(), _stage->environment());
     _toolBar.init(this);
     _submeshPanel.init(this);
+
+    _fileStatus = std::make_shared<bg2e::ui::StatusItem>();
+    _saveStatus = std::make_shared<bg2e::ui::StatusItem>();
+    _statusBar.addItem(_fileStatus, bg2e::ui::StatusBar::AlignLeft);
+    _statusBar.addItem(_saveStatus, bg2e::ui::StatusBar::AlignRight);
+
+    // Force update status to setup the initial state of
+    // fileStatus and saveStatus
+    _stage->document()->updateStatus();
  
     _workspace.setup(
         uiWidth(), uiHeight(),
         &_toolBar,
         &_submeshPanel,
         &_environmentPanel,
-        nullptr
+        nullptr,  // Use nullptr if you dont't want to use this panel
+        &_statusBar
     );
 }
 

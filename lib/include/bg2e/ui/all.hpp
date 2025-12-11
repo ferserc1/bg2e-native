@@ -13,6 +13,7 @@
 #include <bg2e/ui/Window.hpp>
 #include <bg2e/ui/Input.hpp>
 #include <bg2e/ui/SelectableList.hpp>
+#include <bg2e/ui/StatusBar.hpp>
 #include <bg2e/ui/SubmeshSelector.hpp>
 #include <bg2e/ui/TextureWidgets.hpp>
 #include <bg2e/ui/Toolbar.hpp>

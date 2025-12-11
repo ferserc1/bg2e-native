@@ -12,12 +12,12 @@ void SubmeshWindow::init(AppDelegate * delegate)
 
     _materialEditor.onChanged([&]()
     {
-        _appDelegate->stage()->setUnsavedChanges();
+        _appDelegate->stage()->document()->setUnsavedChanges(true);
     });
 
     _drawableEditor.onChanged([&]()
     {
-        _appDelegate->stage()->setUnsavedChanges();
+        _appDelegate->stage()->document()->setUnsavedChanges(true);
     });
 
     setDrawFunction([&]() {
