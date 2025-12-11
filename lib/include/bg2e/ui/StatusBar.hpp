@@ -5,6 +5,7 @@
 
 #include <vector>
 #include <string>
+#include <memory>
 
 namespace bg2e {
 namespace ui {
