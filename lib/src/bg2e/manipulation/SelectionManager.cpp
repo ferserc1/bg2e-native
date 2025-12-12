@@ -35,6 +35,12 @@ bool SelectionManager::pick(
     _selectedItem.reset();
 
     _engine->command().immediateSubmit([&](VkCommandBuffer cmd) {
+        Image::cmdTransitionImage(
+            cmd,
+            _image->handle(),
+            VK_IMAGE_LAYOUT_UNDEFINED,
+            VK_IMAGE_LAYOUT_GENERAL
+        );
         VkClearColorValue clearValue { { 0.0f, 0.0f, 0.0f, 0.0f } };
         auto clearRange = Image::subresourceRange(VK_IMAGE_ASPECT_COLOR_BIT);
         vkCmdClearColorImage(
@@ -102,7 +108,7 @@ void SelectionManager::createImage()
             VK_FORMAT_R8G8B8A8_UNORM,
             extent,
             VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
-            VK_IMAGE_USAGE_TRANSFER_SRC_BIT)
+            VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT)
     );
     
     _engine->cleanupManager().push([&](VkDevice) {
