@@ -164,8 +164,25 @@ void Swapchain::create(uint32_t width, uint32_t height)
         _imageViews.push_back(imageView);
         
         _colorImages.push_back(Image::wrapSwapchainImage(this, static_cast<uint32_t>(i)));
-     
     }
+
+    // Transition depth image to VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL
+    _engine->command().immediateSubmit([&](VkCommandBuffer cmd)
+    {
+        Image::cmdTransitionImage(
+            cmd,
+            _msaaDepthImage->handle(),
+            VK_IMAGE_LAYOUT_UNDEFINED,
+            VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL
+        );
+
+        Image::cmdTransitionImage(
+            cmd,
+            _depthImage->handle(),
+            VK_IMAGE_LAYOUT_UNDEFINED,
+            VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL
+        );
+    });
 }
 
 }

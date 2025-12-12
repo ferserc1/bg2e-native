@@ -92,13 +92,6 @@ void RenderLoop::acquireAndPresent()
         VK_IMAGE_LAYOUT_UNDEFINED,
         VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
     );
-    
-    vulkan::Image::cmdTransitionImage(
-        cmd,
-        depthImage->handle(),
-        VK_IMAGE_LAYOUT_UNDEFINED,
-        VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL
-    );
 
     auto lastSwapchainLayout = render(
         cmd,
@@ -142,6 +135,13 @@ void RenderLoop::acquireAndPresent()
         resolveImage->handle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
         1, &region
     );
+
+    vulkan::Image::cmdTransitionImage(
+        cmd,
+        resolveImage->handle(),
+        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+        VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
+    );
     
     // TODO: Instead of using the swapchain image to render the user interface, we could use another image
     // and combine it with the swap chain here
@@ -153,9 +153,11 @@ void RenderLoop::acquireAndPresent()
     vulkan::Image::cmdTransitionImage(
         cmd,
         resolveImage->handle(),
-        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+        VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
         VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
     );
+
+
 
     // End command buffer
     VK_ASSERT(vkEndCommandBuffer(cmd));

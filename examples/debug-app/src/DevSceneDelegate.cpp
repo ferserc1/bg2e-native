@@ -351,7 +351,7 @@ std::shared_ptr<bg2e::scene::Node> DevSceneDelegate::scene1()
     _targetDrawable = std::shared_ptr<bg2e::scene::Drawable>(model);
     
     // Init the submesh selector
-    _drawableEditor.setEditDrawable(_targetDrawable);
+    _drawableEditor.setEditDrawable(_targetDrawable, 0);
     
     modelNode->addComponent(new bg2e::scene::DrawableComponent(model));
     modelNode->addComponent(new bg2e::scene::TransformComponent(glm::translate(glm::mat4 { 1.0 }, glm::vec3{ 0, 0, 0 })));

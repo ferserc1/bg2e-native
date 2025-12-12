@@ -22,7 +22,7 @@ On Linux, install the SDL2 development packages using your distro's package mana
 
 ```sh
 $ sudo apt update
-$ sudo apt install libsdl2-2.0-0 
+$ sudo apt install libsdl2-dev libgtk-3-dev libglm-dev
 ```
 
 The minimum Vulkan version required is 1.3.290.

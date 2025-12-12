@@ -65,7 +65,7 @@ void LoadGltfSceneDelegate::init(bg2e::render::Engine*, bg2e::ui::UserInterface*
                     renderer()->scene()->rootNode()->addChild(modelNode);
 
                     // Update the drawable editor
-                    _drawableEditor.setEditDrawable(_targetDrawable);
+                    _drawableEditor.setEditDrawable(_targetDrawable, 0);
                 }
             }
             if (bg2e::ui::Menu::menuItem("Save Object"))
@@ -366,7 +366,7 @@ std::shared_ptr<bg2e::scene::Node> LoadGltfSceneDelegate::scene1()
             _targetDrawable = drawables[0]->getComponent<bg2e::scene::DrawableComponent>()->drawable();
 
             // Init the submesh selector
-            _drawableEditor.setEditDrawable(_targetDrawable);
+            _drawableEditor.setEditDrawable(_targetDrawable, 0);
         }
     }
 
