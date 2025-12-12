@@ -47,6 +47,11 @@ set(CMAKE_XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY "")
 set(CMAKE_XCODE_ATTRIBUTE_DEVELOPMENT_TEAM "")
 set(CMAKE_XCODE_ATTRIBUTE_CODE_SIGN_STYLE "Manual")
 
+# Enable multi processor build in Windows
+if (MSVC)
+    add_compile_options(/MP)
+endif()
+
 add_subdirectory(lib)
 add_subdirectory(apps)
 add_subdirectory(examples)
