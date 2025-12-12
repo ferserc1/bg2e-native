@@ -96,6 +96,7 @@ protected:
     
     void createImage();
     void createPipeline();
+    void cleanupImage();
 };
 
 }

@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 4.0)
+cmake_minimum_required(VERSION 3.18)
 
 set(APP_TARGET_NAME cubemap_renderer)
 set(APP_SHADERS "${CMAKE_CURRENT_SOURCE_DIR}/shaders/src")

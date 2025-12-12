@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 4.0)
+cmake_minimum_required(VERSION 3.18)
 
 include("${CMAKE_SOURCE_DIR}/cmake/utils.cmake")
 

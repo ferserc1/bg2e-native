@@ -32,6 +32,14 @@ bool SelectionManager::pick(
     uint32_t y
 ) {
     using namespace render::vulkan;
+
+    if (_image->extent2D().width != static_cast<uint32_t>(vp.width) ||
+        _image->extent2D().height != static_cast<uint32_t>(vp.height)
+    ) {
+        cleanupImage();
+        createImage();
+    }
+
     _selectedItem.reset();
 
     _engine->command().immediateSubmit([&](VkCommandBuffer cmd) {
@@ -150,4 +158,8 @@ void SelectionManager::createPipeline()
     });
 }
 
+void SelectionManager::cleanupImage()
+{
+    _image.reset();
+}
 }
