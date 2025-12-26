@@ -54,15 +54,6 @@ The directory with the Vulkan version number contains a script named `setup-env.
 source ~/vulkan_sdk/1.4.313/setup-env.sh
 ```
 
-In addition to the development packages, you will also need to install **clang**, **llgb** (if you want to debug), **cmake**, and **ninja-build**:
-
-**Example for Debian/Ubuntu:**
-
-```sh
-$ sudo apt update
-$ sudo apt install clang lldb cmake ninja-build
-```
-
 ## Building
 
 The only variable required to configure the project is `VULKAN_SDK`.
