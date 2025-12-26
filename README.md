@@ -1,4 +1,3 @@
-
 ![logo](bg2-logo-web.png)
 
 # bg2 engine - C++ API
@@ -23,11 +22,13 @@ During the VulkanSDK installation, ensure you also install the following package
 - SDL2
 - Vulkan Memory Allocator
 
-Además necesitarás:
+You will also need:
 
-- En macOS: Xcode, la versión adecuada para tu sistema operativo, como mínimo la versión 15.
-- En Windows: Visual Studio 2022, instalando los paquetes de desarrollo de escritorio para C++.
-- En ambas: CMake v3.18 o superior.
+- On macOS: Xcode, the appropriate version for your operating system, at least version 15.
+
+- On Windows: Visual Studio 2022, installing the desktop development packages for C++.
+
+- On both: CMake v3.18 or higher.
 
 ### Linux
 
@@ -61,7 +62,6 @@ In addition to the development packages, you will also need to install **clang**
 $ sudo apt update
 $ sudo apt install clang lldb cmake ninja-build
 ```
-
 
 ## Building
 
