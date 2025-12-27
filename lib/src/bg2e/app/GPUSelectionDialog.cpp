@@ -20,6 +20,8 @@
 #include <vector>
 #include <iostream>
 
+#include "bg2e/app/PreferencesStore.hpp"
+
 namespace bg2e::app {
 
 void getAvailableDevices(std::vector<std::shared_ptr<render::vulkan::PhysicalDeviceProperties>>& result)
@@ -48,7 +50,7 @@ void getAvailableDevices(std::vector<std::shared_ptr<render::vulkan::PhysicalDev
     
     render::vulkan::Surface surface;
     surface.create(instance, dummyWindow);
-    
+
     // TODO: Get devices
     render::vulkan::PhysicalDevice::listSuitableDevices(instance, surface, result);
     surface.cleanup();
@@ -104,7 +106,18 @@ std::shared_ptr<render::vulkan::PhysicalDeviceProperties> showDeviceSelectorUI(
     ImGui_ImplSDL2_InitForOpenGL(window, glContext);
     ImGui_ImplOpenGL3_Init(glsl_version);
 
-    
+    // Load and apply UI scale
+    // TODO: Refactor UI Scale apply (bg2e::ui::UserInterface::updateScale())
+    auto prefs = bg2e::app::PreferencesStore::instance().preferences("ui");
+    auto uiScale = prefs.get("uiScale", 1.0f);
+    io.Fonts->Clear();
+    auto assets = base::PlatformTools::assetPath() / "DidactGothic-Regular.ttf";
+    io.Fonts->AddFontFromFileTTF(assets.string().c_str(), 16.0f);
+    io.Fonts->Build();
+    auto & style = ImGui::GetStyle();
+    style.ScaleAllSizes(uiScale);
+    io.FontGlobalScale = uiScale;
+
     bool running = true;
     bool accepted = false;
 
