@@ -81,6 +81,8 @@ protected:
     Window * _rightPanel = nullptr;
     Window * _bottomPanel = nullptr;
     Window * _statusBar = nullptr;
+
+    float _uiScale = 1.0f;
     
     bool _drawToolBar = true;
     bool _drawLeftPanel = true;
@@ -91,7 +93,7 @@ protected:
     uint32_t _viewportWidth = 0;
     uint32_t _viewportHeight = 0;
     
-    uint32_t _toolBarHeight = 50;
+    uint32_t _toolBarHeight = 60;
     uint32_t _statusBarHeight = 50;
     
     

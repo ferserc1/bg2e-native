@@ -208,6 +208,16 @@ void LoadGltfSceneDelegate::init(bg2e::render::Engine*, bg2e::ui::UserInterface*
     });
 
     _toolbar.addButton({
+        .label = "UI Scale 2x",
+        .action = []() { bg2e::ui::UserInterface::setScale(2.0f); }
+    });
+
+    _toolbar.addButton({
+        .label = "UI Scale 1x",
+        .action = []() { bg2e::ui::UserInterface::setScale(1.0f); }
+    });
+
+    _toolbar.addButton({
         .label = "Other test",
         .action = []() { std::cout << "Hello again" << std::endl; }
     }, bg2e::ui::Toolbar::AlignRight);

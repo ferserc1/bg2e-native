@@ -1,6 +1,7 @@
 //
 //  Workspace.cpp
 #include <bg2e/ui/Workspace.hpp>
+#include <bg2e/ui/UserInterface.hpp>
 
 namespace bg2e::ui {
 
@@ -12,6 +13,8 @@ void Workspace::setup(
     Window * bottomPanel,
     Window * statusBar
 ) {
+    _uiScale = UserInterface::getScale();
+
     _viewportWidth = width;
     _viewportHeight = height;
     _toolBar = toolBar;
@@ -33,6 +36,12 @@ void Workspace::resize(uint32_t width, uint32_t height)
 
 void Workspace::draw()
 {
+    if (_uiScale != UserInterface::getScale())
+    {
+        updateWindows();
+        _uiScale = UserInterface::getScale();
+    }
+
     if (_toolBar && _drawToolBar)
     {
         _toolBar->draw();
@@ -59,88 +68,6 @@ void Workspace::draw()
     }
 }
 
-// void Workspace::updateWindows()
-// {
-//     uint32_t topPadding = 0;
-//     uint32_t bottomPadding = 0;
-//     if (_toolBar && _drawToolBar)
-//     {
-//         topPadding = _toolBarHeight;
-//         _toolBar->setPosition(0, 0);
-//         _toolBar->setSize(_viewportWidth, _toolBarHeight);
-//         _toolBar->options = Window::Options {
-//             .noTitleBar = true,
-//             .noScrollbar = true,
-//             .noMenu = false,
-//             .noMove = true,
-//             .noResize = true,
-//             .noCollapse = true,
-//             .noNav = true,
-//             .noBringToFront = true,
-//             .noClose = true
-//         };
-//     }
-//
-//     if (_bottomPanel && _drawBottomPanel)
-//     {
-//         bottomPadding = getPanelSize(_bottomPanelSize, _viewportHeight);
-//         _bottomPanel->setPosition(0, _viewportHeight - bottomPadding);
-//         _bottomPanel->setSize(_viewportWidth, bottomPadding);
-//         _bottomPanel->options = Window::Options {
-//             .noTitleBar = false,
-//             .noScrollbar = false,
-//             .noMenu = true,
-//             .noMove = true,
-//             .noResize = true,
-//             .noCollapse = true,
-//             .noNav = true,
-//             .noBringToFront = true,
-//             .noClose = true
-//         };
-//     }
-//
-//     if (_leftPanel && _drawLeftPanel)
-//     {
-//
-//         _leftPanel->setPosition(0, topPadding);
-//         _leftPanel->setSize(
-//             getPanelSize(_leftPanelSize, _viewportWidth),
-//             _viewportHeight - topPadding - bottomPadding
-//         );
-//         _leftPanel->options = Window::Options {
-//             .noTitleBar = false,
-//             .noScrollbar = false,
-//             .noMenu = true,
-//             .noMove = true,
-//             .noResize = true,
-//             .noCollapse = true,
-//             .noNav = true,
-//             .noBringToFront = true,
-//             .noClose = true
-//         };
-//     }
-//
-//     if (_rightPanel && _drawRightPanel)
-//     {
-//         auto panelSize = getPanelSize(_rightPanelSize, _viewportWidth);
-//         _rightPanel->setPosition(_viewportWidth - panelSize, topPadding);
-//         _rightPanel->setSize(
-//             panelSize,
-//             _viewportHeight - topPadding - bottomPadding
-//         );
-//         _rightPanel->options = Window::Options {
-//             .noTitleBar = false,
-//             .noScrollbar = false,
-//             .noMenu = true,
-//             .noMove = true,
-//             .noResize = true,
-//             .noCollapse = true,
-//             .noNav = true,
-//             .noBringToFront = true,
-//             .noClose = true
-//         };
-//     }
-// }
 void Workspace::updateWindows()
 {
     uint32_t topPadding = 0;
@@ -148,14 +75,14 @@ void Workspace::updateWindows()
     uint32_t statusPadding = 0;
 
     //
-    // TOOL BAR (arriba del todo)
+    // TOOL BAR
     //
     if (_toolBar && _drawToolBar)
     {
-        topPadding = _toolBarHeight;
+        topPadding = _toolBarHeight * UserInterface::getScale();
 
         _toolBar->setPosition(0, 0);
-        _toolBar->setSize(_viewportWidth, _toolBarHeight);
+        _toolBar->setSize(_viewportWidth, _toolBarHeight * UserInterface::getScale());
         _toolBar->options = Window::Options {
             .noTitleBar = true,
             .noScrollbar = true,
@@ -170,14 +97,14 @@ void Workspace::updateWindows()
     }
 
     //
-    // STATUS BAR (abajo del todo)
+    // STATUS BAR
     //
     if (_statusBar && _drawStatusBar)
     {
-        statusPadding = _statusBarHeight;
+        statusPadding = _statusBarHeight * UserInterface::getScale();
 
         _statusBar->setPosition(0, _viewportHeight - statusPadding);
-        _statusBar->setSize(_viewportWidth, _statusBarHeight);
+        _statusBar->setSize(_viewportWidth, _statusBarHeight * UserInterface::getScale());
 
         _statusBar->options = Window::Options {
             .noTitleBar = true,
@@ -193,11 +120,11 @@ void Workspace::updateWindows()
     }
 
     //
-    // BOTTOM PANEL (justo encima de la status bar)
+    // BOTTOM PANEL
     //
     if (_bottomPanel && _drawBottomPanel)
     {
-        bottomPadding = getPanelSize(_bottomPanelSize, _viewportHeight);
+        bottomPadding = getPanelSize(_bottomPanelSize, _viewportHeight) * UserInterface::getScale();
 
         _bottomPanel->setPosition(
             0,
@@ -222,7 +149,7 @@ void Workspace::updateWindows()
     //
     if (_leftPanel && _drawLeftPanel)
     {
-        uint32_t panelWidth = getPanelSize(_leftPanelSize, _viewportWidth);
+        uint32_t panelWidth = getPanelSize(_leftPanelSize, _viewportWidth) * UserInterface::getScale();
         uint32_t availableHeight = _viewportHeight - topPadding - bottomPadding - statusPadding;
 
         _leftPanel->setPosition(0, topPadding);
@@ -245,7 +172,7 @@ void Workspace::updateWindows()
     //
     if (_rightPanel && _drawRightPanel)
     {
-        uint32_t panelWidth = getPanelSize(_rightPanelSize, _viewportWidth);
+        uint32_t panelWidth = getPanelSize(_rightPanelSize, _viewportWidth) * UserInterface::getScale();
         uint32_t availableHeight = _viewportHeight - topPadding - bottomPadding - statusPadding;
 
         _rightPanel->setPosition(_viewportWidth - panelWidth, topPadding);

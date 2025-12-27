@@ -9,6 +9,8 @@ namespace bg2e {
 namespace render {
 namespace vulkan {
 
+bool Instance::s_debugLayerAvailable = false;
+
 static VKAPI_ATTR VkBool32 VKAPI_CALL bg2e_mainDebugCallback(
     VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
     VkDebugUtilsMessageTypeFlagsEXT /*messageType*/,
@@ -83,14 +85,14 @@ void Instance::create(SDL_Window * sdlWindow)
 #endif
     
     auto debugCreateInfo = Info::debugMessengerCreateInfo(bg2e_mainDebugCallback);
-    if (base::Log::isDebug())
+    if (base::Log::isDebug() && Instance::s_debugLayerAvailable)
     {
         createInfo.pNext = reinterpret_cast<VkDebugUtilsMessengerCreateInfoEXT*>(&debugCreateInfo);
     }
     
     VK_ASSERT(vkCreateInstance(&createInfo, nullptr, &_instance));
     
-    if (base::Log::isDebug())
+    if (base::Log::isDebug() && Instance::s_debugLayerAvailable)
     {
         VK_ASSERT(createDebugMessenger());
     }
@@ -98,7 +100,7 @@ void Instance::create(SDL_Window * sdlWindow)
 
 void Instance::cleanup()
 {
-    if (base::Log::isDebug())
+    if (base::Log::isDebug() && Instance::s_debugLayerAvailable)
     {
         destroyDebugMessenger();
     }
@@ -108,17 +110,18 @@ void Instance::cleanup()
 
 bool Instance::getRequiredLayers(std::vector<const char*>& requiredLayers) const
 {
-    if (base::Log::isDebug())
-    {
-        requiredLayers.push_back("VK_LAYER_KHRONOS_validation");
-    }
-    
+    Instance::s_debugLayerAvailable = false;
     for (const char* requiredLayer : requiredLayers)
     {
         bool found = false;
         
         for (const auto& availableLayer : _availableLayers)
         {
+            if (availableLayer == "VK_LAYER_KHRONOS_validation")
+            {
+                Instance::s_debugLayerAvailable = true;
+            }
+
             if (requiredLayer == std::string(availableLayer))
             {
                 found = true;
@@ -131,6 +134,15 @@ bool Instance::getRequiredLayers(std::vector<const char*>& requiredLayers) const
             bg2e_log_error << "Error: required layer not present - " << requiredLayer << bg2e_log_end;
             return false;
         }
+    }
+
+    if (base::Log::isDebug() && !Instance::s_debugLayerAvailable)
+    {
+        bg2e_log_warning << "Warning: VK_LAYER_KHRONOS_validation layer not present" << bg2e_log_end;
+    }
+    else
+    {
+        requiredLayers.push_back("VK_LAYER_KHRONOS_validation");
     }
 	return true;
 }
@@ -151,7 +163,7 @@ bool Instance::getRequiredExtensions(SDL_Window * sdlWindow, std::vector<const c
     requiredExtensions.push_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
 #endif
 
-    if (base::Log::isDebug())
+    if (base::Log::isDebug() && Instance::s_debugLayerAvailable)
     {
         requiredExtensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
     }

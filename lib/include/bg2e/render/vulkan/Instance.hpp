@@ -35,6 +35,7 @@ protected:
     VkDebugUtilsMessengerEXT _debugMessenger = VK_NULL_HANDLE;
 
 	bool _enableValidationLayers = false;
+    static bool s_debugLayerAvailable;
 	std::string _applicationName = "bg2 engine Vulkan Application";
 
 	std::vector<std::string> _availableExtensions;

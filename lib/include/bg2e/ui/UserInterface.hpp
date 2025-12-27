@@ -23,6 +23,9 @@ public:
 
     inline void setDelegate(std::shared_ptr<UserInterfaceDelegate> delegate) { _delegate = delegate; }
 
+    static float getScale() { return s_uiScale; }
+    static void setScale(float scale);
+
 protected:
     render::Engine * _engine;
     
@@ -35,6 +38,12 @@ protected:
     
     void initCommands();
     void initImGui();
+
+    static float s_uiScale;
+    static bool s_uiFontLoaded;
+    static bool s_uiScaleChanged;
+
+    static void updateScale();
 };
 
 }

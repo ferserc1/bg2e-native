@@ -11,6 +11,13 @@
 namespace bg2e {
 namespace ui {
 
+float UserInterface::s_uiScale = 1.0f;
+bool UserInterface::s_uiFontLoaded = false;
+bool UserInterface::s_uiScaleChanged = true;
+
+static bool s_baseStyleInitialized = false;
+static ImGuiStyle s_baseStyle;
+
 void UserInterface::init(render::Engine * engine)
 {
     _engine = engine;
@@ -28,6 +35,36 @@ void UserInterface::init(render::Engine * engine)
     }
 }
 
+void UserInterface::setScale(float scale)
+{
+    s_uiScale = scale;
+    s_uiScaleChanged = true;
+}
+
+void UserInterface::updateScale()
+{
+    if (!s_baseStyleInitialized)
+    {
+        s_baseStyle = ImGui::GetStyle();
+
+        ImGuiIO& io = ImGui::GetIO();
+        io.Fonts->Clear();
+        auto assets = base::PlatformTools::assetPath() / "DidactGothic-Regular.ttf";
+        io.Fonts->AddFontFromFileTTF(assets.string().c_str(), 16.0f);
+        io.Fonts->Build();
+        s_uiFontLoaded = true;
+        s_baseStyleInitialized = true;
+    }
+
+    auto & style = ImGui::GetStyle();
+    style = s_baseStyle;
+
+    style.ScaleAllSizes(s_uiScale);
+    ImGuiIO& io = ImGui::GetIO();
+    io.FontGlobalScale = s_uiScale;
+    s_uiScaleChanged = false;
+}
+
 void UserInterface::processEvent(SDL_Event* event)
 {
     ImGui_ImplSDL2_ProcessEvent(event);
@@ -35,6 +72,11 @@ void UserInterface::processEvent(SDL_Event* event)
 
 void UserInterface::newFrame()
 {
+    if (s_uiScaleChanged)
+    {
+        updateScale();
+    }
+
     ImGui_ImplVulkan_NewFrame();
     ImGui_ImplSDL2_NewFrame();
     ImGui::NewFrame();

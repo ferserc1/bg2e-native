@@ -31,6 +31,7 @@ void RenderLoop::initScene()
 
 void RenderLoop::acquireAndPresent()
 {
+    static VkFence skipFence = VK_NULL_HANDLE;
 	if (!_engine) {
         throw new std::runtime_error("RenderLoop::render(): The frame cannot be rendered because Vulkan object has not been set.");
 	}
@@ -46,8 +47,15 @@ void RenderLoop::acquireAndPresent()
     auto swapchainSemaphore = frameResources.swapchainSemaphore;
 	auto renderSemaphore = frameResources.renderSemaphore;
 
-    VK_ASSERT(vkWaitForFences(dev, 1, &frameFence, true, 10000000000));
-	VK_ASSERT(vkResetFences(dev, 1, &frameFence));
+    if (frameFence != skipFence)
+    {
+        VK_ASSERT(vkWaitForFences(dev, 1, &frameFence, true, 10000000000));
+        VK_ASSERT(vkResetFences(dev, 1, &frameFence));
+    }
+    else
+    {
+        skipFence = VK_NULL_HANDLE;
+    }
 
     frameResources.flushFrameData();
 
@@ -55,11 +63,16 @@ void RenderLoop::acquireAndPresent()
 	auto acquireResult = vulkan::acquireNextImage(dev, swapchain, 10000000000, swapchainSemaphore, nullptr, &swapchainImageIndex);
     if (acquireResult == VK_SUBOPTIMAL_KHR)
     {
+        std::cout << "VK_SUBOPTIMAL_KHR" << std::endl;
         _engine->updateSwapchainSize();
     }
     else if (acquireResult == VK_ERROR_OUT_OF_DATE_KHR)
     {
+        _engine->device().waitIdle();
         _engine->updateSwapchainSize();
+        std::cout << "VK_ERROR_OUT_OF_DATE_KHR" << std::endl;
+        skipFence = frameFence;
+        _engine->nextFrame();
         return;
     }
 

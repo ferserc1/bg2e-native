@@ -1,6 +1,6 @@
 
 #include <bg2e/ui/Window.hpp>
-
+#include <bg2e/base/PlatformTools.hpp>
 
 #include "imgui.h"
 
