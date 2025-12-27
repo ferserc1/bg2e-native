@@ -32,6 +32,9 @@ struct WindowConfig {
     bool decorated = true;       // With border and title bar
     bool alwaysOnTop = false;
 
+    // Preferences
+    bool persistentSize = false;
+
     // ------------------------------------------------
     // Factory methods
     // ------------------------------------------------
@@ -39,19 +42,22 @@ struct WindowConfig {
     static WindowConfig withSize(
         const std::string& title,
         uint32_t w,
-        uint32_t h
+        uint32_t h,
+        bool persistentSize = false
     ) {
         WindowConfig c;
         c.title = title;
         c.width = w;
         c.height = h;
+        c.persistentSize = persistentSize;
         return c;
     }
 
     static WindowConfig withPositionAndSize(
         const std::string& title,
         int32_t x, int32_t y,
-        uint32_t w, uint32_t h
+        uint32_t w, uint32_t h,
+        bool persistentSize = false
     ) {
         WindowConfig c;
         c.title = title;
@@ -59,14 +65,16 @@ struct WindowConfig {
         c.y = y;
         c.width = w;
         c.height = h;
+        c.persistentSize = persistentSize;
         return c;
     }
 
-    static WindowConfig maximized(const std::string& title)
+    static WindowConfig maximized(const std::string& title, bool persistentSize = false)
     {
         WindowConfig c;
         c.title = title;
         c.isMaximized = true;
+        c.persistentSize = persistentSize;
         return c;
     }
 

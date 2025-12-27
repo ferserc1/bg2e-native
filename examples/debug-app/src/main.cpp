@@ -79,6 +79,9 @@ int main(int argc, char** argv) {
 	bg2e::app::MainLoop mainLoop("bg2eExampleApp");
 	MyApplication app;
 	app.init(argc, argv);
+    mainLoop.initWindowConfig({
+        .persistentSize = true
+    });
 	return mainLoop.run(&app);
 }
 

@@ -1,4 +1,5 @@
 #include <bg2e/app/MainLoop.hpp>
+#include <bg2e/app/PreferencesStore.hpp>
 
 #ifdef BG2E_LINUX
 
@@ -19,6 +20,7 @@
 namespace bg2e {
 namespace app {
 
+static const char preferencesContext[] = "app";
 
 SDL_Window* createSDLWindow(const WindowConfig& cfg) {
     // Position
@@ -36,12 +38,25 @@ SDL_Window* createSDLWindow(const WindowConfig& cfg) {
     if (cfg.isFullscreen)    flags |= SDL_WINDOW_FULLSCREEN_DESKTOP;
     if (cfg.isMaximized)     flags |= SDL_WINDOW_MAXIMIZED;
 
+    auto width = cfg.width;
+    auto height = cfg.height;
+    if (cfg.persistentSize)
+    {
+        auto appPreferences = PreferencesStore::instance().preferences(preferencesContext);
+        auto windowSize = appPreferences.get("windowSize", glm::vec2(
+            static_cast<float>(width),
+            static_cast<float>(height)
+        ));
+        width = static_cast<int>(windowSize.x);
+        height = static_cast<int>(windowSize.y);
+    }
+
     SDL_Window* window = SDL_CreateWindow(
         cfg.title.c_str(),
         xpos,
         ypos,
-        static_cast<int>(cfg.width),
-        static_cast<int>(cfg.height),
+        width,
+        height,
         flags
     );
 
@@ -128,6 +143,8 @@ int32_t MainLoop::run(app::Application * application) {
     _engine.descriptorSetAllocator().initPool();
     _renderLoop.initScene();
     auto start = std::chrono::high_resolution_clock::now();
+    int storeWidth = _windowConfig.width;
+    int storeHeight = _windowConfig.height;
     
     while (!quit)
     {
@@ -166,6 +183,8 @@ int32_t MainLoop::run(app::Application * application) {
             {
                 int w, h;
                 SDL_GetWindowSize(window, &w, &h);
+                storeWidth = w;
+                storeHeight = h;
                 application->uiDelegate()->_viewportWidth = static_cast<uint32_t>(w);
                 application->uiDelegate()->_viewportHeight = static_cast<uint32_t>(h);
                 
@@ -252,12 +271,18 @@ int32_t MainLoop::run(app::Application * application) {
         start = std::chrono::high_resolution_clock::now();
     }
 
+    if (_windowConfig.persistentSize)
+    {
+        auto appPreferences = PreferencesStore::instance().preferences(preferencesContext);
+        appPreferences.set("windowSize", glm::vec2{ storeWidth, storeHeight });
+    }
+
     _engine.device().waitIdle();
 	_renderLoop.cleanup();
 	_userInterface.cleanup();
     _engine.cleanup();
     SDL_DestroyWindow(window);
-    
+
     return 0;
 }
 

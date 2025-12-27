@@ -17,7 +17,10 @@ public:
 
 int main(int argc, char** argv) {
 	bg2e::app::MainLoop mainLoop("org.bg2engine.model-edit");
-    mainLoop.initWindowConfig(bg2e::app::WindowConfig::maximized("bg2e Model Edit"));
+    mainLoop.initWindowConfig(bg2e::app::WindowConfig::maximized(
+        "bg2e Model Edit",
+            true
+        ));
 	MyApplication app;
 	app.init(argc, argv);
 	return mainLoop.run(&app);
