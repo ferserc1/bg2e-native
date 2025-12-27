@@ -7,6 +7,8 @@
 #include "imgui.h"
 #include "imgui_impl_sdl2.h"
 #include "imgui_impl_vulkan.h"
+#include "bg2e/app/Preferences.hpp"
+#include "bg2e/app/PreferencesStore.hpp"
 
 namespace bg2e {
 namespace ui {
@@ -20,6 +22,9 @@ static ImGuiStyle s_baseStyle;
 
 void UserInterface::init(render::Engine * engine)
 {
+    auto preferences = bg2e::app::PreferencesStore::instance().preferences("ui");
+    s_uiScale = preferences.get("uiScale", s_uiScale);
+
     _engine = engine;
 
     initCommands();
@@ -112,7 +117,8 @@ void UserInterface::draw(VkCommandBuffer cmd, VkImageView targetImageView)
 
 void UserInterface::cleanup()
 {
-
+    auto preferences = bg2e::app::PreferencesStore::instance().preferences("ui");
+    preferences.set("uiScale", s_uiScale);
 }
 
 void UserInterface::initCommands()
