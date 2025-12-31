@@ -65,7 +65,9 @@ public:
 	}
 };
 
-int main(int argc, char** argv) {
+int main(int argc, char** argv)
+{
+    bg2e::app::MainLoop mainLoop("bg2eExampleApp");
 
     bg2e::app::GPUSelectionDialog gpuSelection("bg2eExampleApp");
     
@@ -76,7 +78,7 @@ int main(int argc, char** argv) {
         std::cout << "Choosed device: " << result->name << std::endl;
     }
     
-	bg2e::app::MainLoop mainLoop("bg2eExampleApp");
+
 	MyApplication app;
 	app.init(argc, argv);
     mainLoop.initWindowConfig({
