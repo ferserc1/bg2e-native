@@ -29,8 +29,8 @@ public:
         VkPipelineLayout layout
     );
     
-    void visit(bg2e::scene::Node *);
-    void didVisit(bg2e::scene::Node * node);
+    void visit(bg2e::scene::Node *) override;
+    void didVisit(bg2e::scene::Node * node) override;
 
     SubmeshLookupData * findObject(uint32_t identifier);
 

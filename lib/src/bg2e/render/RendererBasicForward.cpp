@@ -26,6 +26,8 @@ void RendererBasicForward::build(
         )
     );
 
+    _selectionHighlight = std::make_unique<bg2e::manipulation::SelectionHighlight>();
+
     createPipelines(engine);
 }
 
@@ -221,7 +223,13 @@ void RendererBasicForward::draw(
         dsFunction,
         cameraWorldPos
     );
-    
+
+    _selectionHighlight->draw(
+        _scene->rootNode(),
+        viewMatrix,
+        projMatrix,
+        cmd
+    );
 
     vulkan::cmdEndRendering(cmd);
     _scene->didDraw();

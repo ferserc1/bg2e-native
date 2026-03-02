@@ -33,6 +33,8 @@ bool SelectionManager::pick(
 ) {
     using namespace render::vulkan;
 
+    deselect();
+    
     if (_image->extent2D().width != static_cast<uint32_t>(vp.width) ||
         _image->extent2D().height != static_cast<uint32_t>(vp.height)
     ) {
@@ -99,10 +101,27 @@ bool SelectionManager::pick(
         _selectedItem->drawable = objectData->node->getComponent<scene::DrawableComponent>();
         _selectedItem->mesh = _selectedItem->drawable->drawable().get();
         _selectedItem->submesh = objectData->submeshIndex;
+        auto selectComponent = _selectedItem->node->getComponent<SelectableComponent>();
+        if (selectComponent)
+        {
+            selectComponent->setSelected(objectData->submeshIndex, true);
+        }
         return true;
     }
 
     return false;
+}
+
+void SelectionManager::deselect()
+{
+    if (_selectedItem && _selectedItem->node)
+    {
+        auto sel = _selectedItem->node->getComponent<SelectableComponent>();
+        if (sel)
+        {
+            sel->unselectAll();
+        }
+    }
 }
 
 void SelectionManager::createImage()

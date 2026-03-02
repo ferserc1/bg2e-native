@@ -15,6 +15,7 @@
 #include <bg2e/scene/RenderQueueVisitor.hpp>
 #include <bg2e/render/Engine.hpp>
 #include <bg2e/render/Renderer.hpp>
+#include <bg2e/manipulation/SelectionHighlight.hpp>
 
 #include <memory>
 
@@ -114,6 +115,8 @@ protected:
     bg2e::scene::RenderQueueVisitor<bg2e::scene::Drawable> _renderQueueVisitor;
     
     bg2e::render::RenderQueue<bg2e::scene::Drawable> _renderQueue;
+
+    std::unique_ptr<bg2e::manipulation::SelectionHighlight> _selectionHighlight;
 
     VkPipeline _opaquePipeline = VK_NULL_HANDLE;
     VkPipeline _transparentPipeline = VK_NULL_HANDLE;

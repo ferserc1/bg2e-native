@@ -77,7 +77,7 @@ public:
         return pick(rootNode, camera, x, y);
     }
 
-
+    void deselect();
 
     inline scene::Node * selectedNode() { return _selectedItem ? _selectedItem->node : nullptr; }
     inline scene::DrawableComponent * selectedDrawable() { return _selectedItem ? _selectedItem->drawable : nullptr; }

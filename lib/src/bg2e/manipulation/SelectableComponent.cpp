@@ -22,9 +22,11 @@ void SelectableComponent::update(float)
     if (_submeshCount == 0 && drw)
     {
         _submeshCount = drw->submeshesCount();
+        _submeshSelected.resize(_submeshCount);
         for (uint32_t i = 0; i < _submeshCount; ++i)
         {
             _identifier[i] = generateIdentifier();
+            _submeshSelected[i] = false;
         }
     } 
 }

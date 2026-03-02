@@ -5,6 +5,8 @@
 #include <bg2e/scene/Component.hpp>
 
 #include <unordered_map>
+#include <vector>
+#include <algorithm>
 
 namespace bg2e {
 namespace manipulation {
@@ -29,10 +31,15 @@ public:
             (static_cast<uint32_t>(data[2]) << 16) |
             (static_cast<uint32_t>(data[3]) << 24);
     }
+
+    inline bool isSelected(uint32_t submeshIndex) const { return _submeshSelected[submeshIndex]; }
+    inline void setSelected(uint32_t submeshIndex, bool selected) { _submeshSelected[submeshIndex] = selected; }
+    inline void unselectAll() { std::fill(_submeshSelected.begin(), _submeshSelected.end(), false); }
     
 protected:
     // submeshIndex, submeshIdentifier
     std::unordered_map<uint32_t, uint32_t> _identifier;
+    std::vector<bool> _submeshSelected;
     uint32_t _submeshCount = 0;
     
     static uint32_t _lastIdentifier;
