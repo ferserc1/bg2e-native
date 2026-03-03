@@ -34,7 +34,7 @@ bool SelectionManager::pick(
     using namespace render::vulkan;
 
     deselect();
-    
+
     if (_image->extent2D().width != static_cast<uint32_t>(vp.width) ||
         _image->extent2D().height != static_cast<uint32_t>(vp.height)
     ) {

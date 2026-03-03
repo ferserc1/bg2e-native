@@ -6,6 +6,7 @@
 #include <bg2e/geo/Mesh.hpp>
 
 #include <vector>
+#include <set>
 
 namespace bg2e {
 namespace render {
@@ -58,6 +59,8 @@ public:
     VkPipelineColorBlendAttachmentState colorBlendAttachment = {};
     VkPipelineMultisampleStateCreateInfo multisampling = {};
     VkPipelineDepthStencilStateCreateInfo depthStencil = {};
+
+    void addDynamicState(VkDynamicState state) { _dynamicStates.emplace(state); }
     
     VkPipeline build(VkPipelineLayout layout);
     
@@ -76,6 +79,9 @@ protected:
     };
     
     std::vector<ShaderData> _shaders;
+
+    // Viewport and scissor are allways dynamic
+    std::set<VkDynamicState> _dynamicStates = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR };
     
     std::vector<VkVertexInputBindingDescription> _bindingDescriptions;
     std::vector<VkVertexInputAttributeDescription> _attributeDescriptions;

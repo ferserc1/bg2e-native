@@ -27,6 +27,7 @@ void RendererBasicForward::build(
     );
 
     _selectionHighlight = std::make_unique<bg2e::manipulation::SelectionHighlight>();
+    _selectionHighlight->init(engine);
 
     createPipelines(engine);
 }

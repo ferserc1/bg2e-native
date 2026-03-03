@@ -277,13 +277,13 @@ VkPipeline GraphicsPipeline::build(VkPipelineLayout layout)
     
     // In dynamic rendering mode, we use pNext to store the color and depth attachments formats
     pipelineInfo.pNext = &_renderInfo;
-    
-    VkDynamicState dynamicState[] = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR };
+
+    std::vector<VkDynamicState> dynamicStates = { _dynamicStates.begin(), _dynamicStates.end() };
     
     VkPipelineDynamicStateCreateInfo dynamicInfo = {};
     dynamicInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
-    dynamicInfo.pDynamicStates = &dynamicState[0];
-    dynamicInfo.dynamicStateCount = 2;
+    dynamicInfo.pDynamicStates = dynamicStates.data();
+    dynamicInfo.dynamicStateCount = static_cast<uint32_t>(dynamicStates.size());
     pipelineInfo.pDynamicState = &dynamicInfo;
     
     VkPipeline pipeline;

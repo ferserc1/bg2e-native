@@ -87,8 +87,8 @@ public:
 protected:
     render::Engine * _engine;
     
-    VkPipeline _pipeline;
-    VkPipelineLayout _pipelineLayout;
+    VkPipeline _pipeline = VK_NULL_HANDLE;
+    VkPipelineLayout _pipelineLayout = VK_NULL_HANDLE;
     std::shared_ptr<render::vulkan::Image> _image;
     std::shared_ptr<PickSelectionVisitor> _pickVisitor;
 
