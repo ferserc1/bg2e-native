@@ -19,7 +19,9 @@ public:
     virtual ~DrawableComponent() = default;
 
     std::shared_ptr<DrawableBase> drawableBase();
+    [[nodiscard]] const std::shared_ptr<DrawableBase> drawableBase() const;
     std::shared_ptr<Drawable> drawable();
+    [[nodiscard]] const std::shared_ptr<Drawable> drawable() const;
     void setDrawable(std::shared_ptr<DrawableBase> drw);
 
     void draw(

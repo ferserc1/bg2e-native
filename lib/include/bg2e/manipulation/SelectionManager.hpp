@@ -26,13 +26,14 @@ struct SelectionItem {
     uint32_t submesh;
 };
 
-class BG2E_API SelectionManager {
+class BG2E_API SelectionManager
+{
 public:
     struct PushConstantData {
         glm::mat4 mvp;
         uint32_t identifier;
     };
-    
+
     SelectionManager(render::Engine * engine);
     virtual ~SelectionManager() = default;
 
@@ -77,13 +78,70 @@ public:
         return pick(rootNode, camera, x, y);
     }
 
+    // This functions does not modify the selection
+    bool pickObject(
+        scene::Node * rootNode,
+        const glm::mat4 & viewMatrix,
+        const glm::mat4 & projMatrix,
+        const math::Viewport & vp,
+        uint32_t x,
+        uint32_t y,
+        SelectionItem * result
+    );
+
+    inline bool pickObject(
+        scene::Node * rootNode,
+        scene::CameraComponent * camera,
+        uint32_t x,
+        uint32_t y,
+        SelectionItem * result
+    ) {
+        if (!camera->projection())
+        {
+            return false;
+        }
+        auto viewport = camera->projection()->viewport();
+        auto projection = camera->projectionMatrix();
+        auto viewMatrix = camera->ownerNode()->invertedWorldMatrix();
+        return pickObject(rootNode, viewMatrix, projection, viewport, x, y, result);
+    }
+
+    inline bool pickObject(
+        scene::Scene * scene,
+        uint32_t x,
+        uint32_t y,
+        SelectionItem * result
+    ) {
+        if (!scene->rootNode() || !scene->mainCamera())
+        {
+            return false;
+        }
+        auto rootNode = scene->rootNode();
+        auto camera = scene->mainCamera();
+        return pickObject(rootNode, camera, x, y, result);
+    }
+
     void deselect();
 
-    inline scene::Node * selectedNode() { return _selectedItem ? _selectedItem->node : nullptr; }
-    inline scene::DrawableComponent * selectedDrawable() { return _selectedItem ? _selectedItem->drawable : nullptr; }
-    inline scene::Drawable * selectedMesh() { return _selectedItem ? _selectedItem->mesh : nullptr; }
-    inline uint32_t selectedSubmesh() { return _selectedItem ? _selectedItem->submesh : 0; }
-    
+    // selectedItem returns the first item in the selection array, when multi select is enabled
+    [[nodiscard]] inline std::shared_ptr<SelectionItem> selectedItem() const { return _selectedItem; }
+
+    [[nodiscard]] inline scene::Node * selectedNode() const { return selectedItem() ? selectedItem()->node : nullptr; }
+    [[nodiscard]] inline scene::DrawableComponent * selectedDrawable() const { return selectedItem() ? selectedItem()->drawable : nullptr; }
+    [[nodiscard]] inline scene::Drawable * selectedMesh() const { return selectedItem() ? selectedItem()->mesh : nullptr; }
+    [[nodiscard]] inline uint32_t selectedSubmesh() const { return selectedItem() ? selectedItem()->submesh : 0; }
+
+    [[nodiscard]] inline bool multiSelection() const { return _multiSelection; }
+    inline void setMultiSelectionEnabled(bool e) { _multiSelection = e; }
+    [[nodiscard]] inline const std::vector<std::shared_ptr<SelectionItem>>& selectedItems() const { return _selectedItems; }
+
+    bool isSelected(const scene::Node * node, const scene::DrawableComponent * drawable, uint32_t submesh);
+    bool isSelected(const scene::Node * node, const scene::Drawable * drawable, uint32_t submesh);
+    bool addToSelectedItems(scene::Node * node, scene::DrawableComponent * drawable, uint32_t submesh);
+    void removeFromSelectedItems(scene::Node * node);
+    void removeFromSelectedItems(scene::Node * node, uint32_t submesh);
+    void removeFromSelectedItems(scene::DrawableComponent* drawable, uint32_t submesh);
+
 protected:
     render::Engine * _engine;
     
@@ -93,7 +151,18 @@ protected:
     std::shared_ptr<PickSelectionVisitor> _pickVisitor;
 
     std::shared_ptr<SelectionItem> _selectedItem;
-    
+
+    bool _multiSelection = true;
+    std::vector<std::shared_ptr<SelectionItem>> _selectedItems;
+
+    uint32_t pickObjectId(
+        scene::Node * rootNode,
+        const glm::mat4 & viewMatrix,
+        const glm::mat4 & projMatrix,
+        const math::Viewport & vp,
+        uint32_t x,
+        uint32_t y
+    );
     void createImage();
     void createPipeline();
     void cleanupImage();

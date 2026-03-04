@@ -31,9 +31,199 @@ bool SelectionManager::pick(
     uint32_t x,
     uint32_t y
 ) {
-    using namespace render::vulkan;
+    SelectionItem result {};
+    if (pickObject(rootNode, viewMatrix, projMatrix, vp, x, y, &result))
+    {
+        if (isSelected(result.node, result.drawable, result.submesh))
+        {
+            removeFromSelectedItems(result.node, result.submesh);
+        }
+        else
+        {
+            addToSelectedItems(result.node, result.drawable, result.submesh);
+        }
+        return true;
+    }
 
-    deselect();
+    return false;
+}
+
+bool SelectionManager::pickObject(
+    scene::Node * rootNode,
+    const glm::mat4 & viewMatrix,
+    const glm::mat4 & projMatrix,
+    const math::Viewport & vp,
+    uint32_t x,
+    uint32_t y,
+    SelectionItem * result
+) {
+    if (!result)
+    {
+        throw std::runtime_error("SelectionManager::pickObject: result is null");
+    }
+
+    auto objectId = pickObjectId(rootNode, viewMatrix, projMatrix, vp, x, y);
+    if (auto objectData = _pickVisitor->findObject(objectId))
+    {
+        result->node = objectData->node;
+        result->drawable = objectData->node->getComponent<scene::DrawableComponent>();
+        result->mesh = result->drawable->drawable().get();
+        result->submesh = objectData->submeshIndex;
+        return true;
+    }
+
+    return false;
+}
+
+void SelectionManager::deselect()
+{
+    for (const auto & item : _selectedItems)
+    {
+        if (const auto& sel = item->node->getComponent<SelectableComponent>())
+        {
+            sel->setSelected(item->submesh, false);
+        }
+    }
+
+    _selectedItems.clear();
+}
+
+bool SelectionManager::isSelected(const scene::Node * node, const scene::DrawableComponent * drawable, uint32_t submesh)
+{
+    return isSelected(node, drawable->drawable().get(), submesh);
+}
+
+bool SelectionManager::isSelected(const scene::Node * node, const scene::Drawable * drawable, uint32_t submesh)
+{
+    if (!node || !drawable)
+    {
+        return false;
+    }
+
+    return std::find_if(
+        _selectedItems.cbegin(),
+        _selectedItems.cend(),
+        [node, drawable, submesh](const std::shared_ptr<SelectionItem>& curItem)
+        {
+            return node == curItem->node && drawable == curItem->mesh && submesh == curItem->submesh;
+        }
+    ) != _selectedItems.cend();
+}
+
+bool SelectionManager::addToSelectedItems(scene::Node * node, scene::DrawableComponent * drawable, uint32_t submesh)
+{
+    // Are the pointets valid?
+    if (!node || !drawable || !drawable->drawable().get())
+    {
+        return false;
+    }
+
+    // Is the node selectable?
+    auto selComponent = node->getComponent<SelectableComponent>();
+    if (!selComponent)
+    {
+        return false;
+    }
+
+    // Is the submesh index valid?
+    auto mesh = drawable->drawable().get();
+    if (submesh >= mesh->submeshesCount())
+    {
+        return false;
+    }
+
+    // If the node is already selected, return true
+    if (isSelected(node, drawable, submesh))
+    {
+        return true;
+    }
+
+    // If multi selection is disabled, deselect all items
+    if (!multiSelection())
+    {
+        deselect();
+    }
+
+    // Build the SelectionItem class
+    auto selectItem = std::make_shared<SelectionItem>();
+    selectItem->node = node;
+    selectItem->drawable = drawable;
+    selectItem->mesh = mesh;
+    selectItem->submesh = submesh;
+    _selectedItems.push_back(selectItem);
+
+    // Mark the submesh as selected
+    selComponent->setSelected(submesh, true);
+
+    return true;
+}
+
+void SelectionManager::removeFromSelectedItems(scene::Node * node)
+{
+    if (!node)
+    {
+        throw std::runtime_error("SelectionManager: invalid node pointer supplied calling removeFromSelectedItems()");
+    }
+    std::erase_if(
+        _selectedItems,
+        [node](const std::shared_ptr<SelectionItem>& curItem)
+        {
+            if (curItem->node == node)
+            {
+                auto sel = curItem->node->getComponent<SelectableComponent>();
+                if (!sel)
+                {
+                    return false;
+                }
+                sel->setSelected(curItem->submesh, false);
+                return true;
+            }
+            return false;
+        }
+    );
+}
+
+void SelectionManager::removeFromSelectedItems(scene::Node * node, uint32_t submesh)
+{
+    const auto drawable = const_cast<scene::DrawableComponent*>(node->getComponent<scene::DrawableComponent>());
+    return removeFromSelectedItems(drawable, submesh);
+}
+
+void SelectionManager::removeFromSelectedItems(scene::DrawableComponent* drawable, uint32_t submesh)
+{
+    if (!drawable || !drawable->ownerNode())
+    {
+        throw std::runtime_error("SelectionManager: invalid drawable pointer supplied calling removeFromSelectedItems()");
+    }
+    auto node = drawable->ownerNode();
+    std::erase_if(
+        _selectedItems,
+        [drawable, submesh](const std::shared_ptr<SelectionItem>& curItem)
+        {
+            auto sel = curItem->node->getComponent<SelectableComponent>();
+            if (!sel)
+            {
+                return false;
+            }
+            if (curItem->drawable == drawable && curItem->submesh == submesh)
+            {
+                sel->setSelected(curItem->submesh, false);
+                return true;
+            }
+            return false;
+        }
+    );
+}
+
+uint32_t SelectionManager::pickObjectId(
+    scene::Node * rootNode,
+    const glm::mat4 & viewMatrix,
+    const glm::mat4 & projMatrix,
+    const math::Viewport & vp,
+    uint32_t x,
+    uint32_t y
+) {
+    using namespace render::vulkan;
 
     if (_image->extent2D().width != static_cast<uint32_t>(vp.width) ||
         _image->extent2D().height != static_cast<uint32_t>(vp.height)
@@ -58,29 +248,29 @@ bool SelectionManager::pick(
             _image->handle(), VK_IMAGE_LAYOUT_GENERAL,
             &clearValue, 1, &clearRange
         );
-        
+
         Image::cmdTransitionImage(
             cmd,
             _image->handle(),
             VK_IMAGE_LAYOUT_GENERAL,
             VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
         );
-        
+
         auto colorAttachment = Info::attachmentInfo(_image->imageView(), nullptr);
         auto depthAttachment = Info::depthAttachmentInfo(_engine->swapchain().depthImage()->imageView());
         auto renderInfo = Info::renderingInfo(_image->extent2D(), &colorAttachment, &depthAttachment);
-        
+
         cmdBeginRendering(cmd, &renderInfo);
-        
+
         macros::cmdSetDefaultViewportAndScissor(cmd, _image->extent2D());
-        
+
         vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, _pipeline);
 
         _pickVisitor->pick(rootNode, viewMatrix, projMatrix, cmd, _pipelineLayout);
-        
+
         cmdEndRendering(cmd);
     });
-    
+
     // Read pixels in image
     std::vector<uint8_t> outData = { 0, 0, 0, 0 };
     Image::readPixelsRGBA8(
@@ -91,37 +281,7 @@ bool SelectionManager::pick(
         outData,
         VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
     );
-    auto objectId = SelectableComponent::decodeObjectId(outData.data());
-
-    auto objectData = _pickVisitor->findObject(objectId);
-    if (objectData)
-    {
-        _selectedItem = std::make_shared<SelectionItem>();
-        _selectedItem->node = objectData->node;
-        _selectedItem->drawable = objectData->node->getComponent<scene::DrawableComponent>();
-        _selectedItem->mesh = _selectedItem->drawable->drawable().get();
-        _selectedItem->submesh = objectData->submeshIndex;
-        auto selectComponent = _selectedItem->node->getComponent<SelectableComponent>();
-        if (selectComponent)
-        {
-            selectComponent->setSelected(objectData->submeshIndex, true);
-        }
-        return true;
-    }
-
-    return false;
-}
-
-void SelectionManager::deselect()
-{
-    if (_selectedItem && _selectedItem->node)
-    {
-        auto sel = _selectedItem->node->getComponent<SelectableComponent>();
-        if (sel)
-        {
-            sel->unselectAll();
-        }
-    }
+    return SelectableComponent::decodeObjectId(outData.data());
 }
 
 void SelectionManager::createImage()
