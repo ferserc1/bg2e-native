@@ -142,6 +142,9 @@ public:
     void removeFromSelectedItems(scene::Node * node, uint32_t submesh);
     void removeFromSelectedItems(scene::DrawableComponent* drawable, uint32_t submesh);
 
+    [[nodiscard]] inline bool clearSelectionOnEmptyPick() const { return _clearSelectionOnEmptyPick; }
+    inline void setClearSelectionOnEmptyPick(bool e) { _clearSelectionOnEmptyPick = e; }
+
 protected:
     render::Engine * _engine;
     
@@ -153,6 +156,7 @@ protected:
     std::shared_ptr<SelectionItem> _selectedItem;
 
     bool _multiSelection = true;
+    bool _clearSelectionOnEmptyPick = true;
     std::vector<std::shared_ptr<SelectionItem>> _selectedItems;
 
     uint32_t pickObjectId(

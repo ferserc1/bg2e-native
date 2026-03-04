@@ -44,6 +44,10 @@ bool SelectionManager::pick(
         }
         return true;
     }
+    else if (_clearSelectionOnEmptyPick)
+    {
+        deselect();
+    }
 
     return false;
 }
