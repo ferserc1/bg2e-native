@@ -20,6 +20,10 @@ MaterialEditor::~MaterialEditor()
 
 void MaterialEditor::setEditMaterial(std::shared_ptr<render::MaterialBase>& mat)
 {
+    if (_selectionManager.get())
+    {
+        return;
+    }
     _editMaterialList.clear();
     clearWidgets();
     _material = mat;
@@ -27,8 +31,22 @@ void MaterialEditor::setEditMaterial(std::shared_ptr<render::MaterialBase>& mat)
     initWidgets();
 }
 
+std::shared_ptr<render::MaterialBase> MaterialEditor::editMaterial()
+{
+    return _material;
+}
+
+std::shared_ptr<render::MaterialBase> MaterialEditor::editMaterial() const
+{
+    return _material;
+}
+
 void MaterialEditor::clearMaterial()
 {
+    if (_selectionManager.get())
+    {
+        return;
+    }
     _material.reset();
     _editMaterialList.clear();
     clearWidgets();
@@ -36,6 +54,11 @@ void MaterialEditor::clearMaterial()
 
 void MaterialEditor::addEditMaterial(std::shared_ptr<render::MaterialBase>& mat)
 {
+    if (_selectionManager.get())
+    {
+        return;
+    }
+
     if (_material.get())
     {
         _editMaterialList.push_back(mat);
@@ -45,7 +68,35 @@ void MaterialEditor::addEditMaterial(std::shared_ptr<render::MaterialBase>& mat)
         setEditMaterial(mat);
     }
 }
-    
+
+void MaterialEditor::setSelectionManager(const std::shared_ptr<manipulation::SelectionManager>& sm)
+{
+    _selectionManager = sm;
+    _selectionManager->onSelect([&]()
+    {
+        clearWidgets();
+        _material.reset();
+        _editMaterialList.clear();
+
+        scene::DrawableComponent * drw = nullptr;
+        for (const auto& item : _selectionManager->selectedItems())
+        {
+            if (!drw && item->drawable)
+            {
+                drw = item->drawable;
+                _material = item->mesh->renderMaterial(item->submesh);
+            }
+
+            if (item->drawable)
+            {
+                _editMaterialList.push_back(item->mesh->renderMaterial(item->submesh));
+            }
+        }
+
+        initWidgets();
+    });
+}
+
 bool MaterialEditor::draw()
 {
     if (_material.get() && BasicWidgets::collapsingHeader(_material->materialAttributes().name() + "'s Material Attributes"))

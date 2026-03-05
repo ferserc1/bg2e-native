@@ -6,6 +6,7 @@
 #include <bg2e/common.hpp>
 #include <bg2e/render/MaterialBase.hpp>
 #include <bg2e/ui/TextureWidgets.hpp>
+#include <bg2e/manipulation/SelectionManager.hpp>
 
 #include <memory>
 #include <vector>
@@ -18,14 +19,19 @@ class BG2E_API MaterialEditor {
 public:
     virtual ~MaterialEditor();
 
+    // These functions allow you to manage the editing of materials manually, setting direct pointers to the materials to be edited.
     void setEditMaterial(std::shared_ptr<render::MaterialBase>& mat);
-    inline std::shared_ptr<render::MaterialBase> editMaterial() { return _material; }
-    inline const std::shared_ptr<render::MaterialBase> editMaterial() const { return _material; }
-    
     void addEditMaterial(std::shared_ptr<render::MaterialBase>& mat);
-    
     void clearMaterial();
-    
+
+    // If a selection manager is set, the setEditMaterial(), addEditMaterial() and clearMaterial() functions
+    // will be ignored, and the editMaterial() getter will get the editing material from the selection manager
+    void setSelectionManager(const std::shared_ptr<manipulation::SelectionManager>& sm);
+
+    // Return the main material: the first material selected in material list
+    std::shared_ptr<render::MaterialBase> editMaterial();
+    std::shared_ptr<render::MaterialBase> editMaterial() const;
+
     bool draw();
 
     void cleanup();
@@ -33,6 +39,8 @@ public:
     inline void onChanged(std::function<void()> cb) { _onChangedFunction = cb; }
 
 protected:
+    std::shared_ptr<manipulation::SelectionManager> _selectionManager;
+
     std::shared_ptr<render::MaterialBase> _material;
     std::vector<std::shared_ptr<render::MaterialBase>> _editMaterialList;
     
@@ -47,7 +55,7 @@ protected:
     void initWidgets();
     void clearWidgets();
 
-    inline void notifyOnChange()
+    inline void notifyOnChange() const
     {
         if (_onChangedFunction)
         {

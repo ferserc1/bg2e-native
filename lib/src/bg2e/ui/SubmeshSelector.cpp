@@ -141,15 +141,6 @@ bool SubmeshSelector::draw()
             }
             changed = true;
         }
-
-        // TODO: Decide if we mantain the Deselect/Select button or if we delegate
-        // this behaviour in SelectionManager
-        // std::string buttonText = selected ? "Deselect" : "Select";
-        // if (SelectableList::itemButton(buttonText + "##" + std::to_string(i)))
-        // {
-        //     selected = !selected;
-        //     changed = true;
-        // }
     }
     SelectableList::endList();
     if (BasicWidgets::button("Clear Selection"))
