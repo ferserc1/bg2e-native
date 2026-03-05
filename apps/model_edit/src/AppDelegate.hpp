@@ -46,7 +46,7 @@ public:
     inline bg2e::ui::Workspace& workspace() { return _workspace; }
     inline const bg2e::ui::Workspace& workspace() const { return _workspace; }
 
-    inline bg2e::manipulation::SelectionManager * selectionManager() const { return _selectionManager.get(); }
+    inline std::shared_ptr<bg2e::manipulation::SelectionManager> selectionManager() const { return _selectionManager; }
 
     inline bg2e::ui::StatusItem * fileStatus() { return _fileStatus.get(); }
     inline bg2e::ui::StatusItem * saveStatus() { return _saveStatus.get(); }

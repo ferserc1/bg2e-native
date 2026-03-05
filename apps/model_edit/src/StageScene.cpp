@@ -186,6 +186,8 @@ void StageScene::selectTargetNode(uint32_t index)
         _targetNode->addChild(node);
         _targetDrawable = drawable;
     }
+
+    _appDelegate->selectionManager()->deselect();
 }
 
 std::shared_ptr<bg2e::scene::Drawable> StageScene::targetDrawable()

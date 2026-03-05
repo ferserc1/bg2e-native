@@ -90,6 +90,7 @@ void SelectionManager::deselect()
     }
 
     _selectedItems.clear();
+    callOnChange();
 }
 
 bool SelectionManager::isSelected(const scene::Node * node, const scene::DrawableComponent * drawable, uint32_t submesh)
@@ -158,6 +159,7 @@ bool SelectionManager::addToSelectedItems(scene::Node * node, scene::DrawableCom
 
     // Mark the submesh as selected
     selComponent->setSelected(submesh, true);
+    callOnChange();
 
     return true;
 }
@@ -168,9 +170,10 @@ void SelectionManager::removeFromSelectedItems(scene::Node * node)
     {
         throw std::runtime_error("SelectionManager: invalid node pointer supplied calling removeFromSelectedItems()");
     }
+    bool changed = false;
     std::erase_if(
         _selectedItems,
-        [node](const std::shared_ptr<SelectionItem>& curItem)
+        [&, node](const std::shared_ptr<SelectionItem>& curItem)
         {
             if (curItem->node == node)
             {
@@ -180,11 +183,17 @@ void SelectionManager::removeFromSelectedItems(scene::Node * node)
                     return false;
                 }
                 sel->setSelected(curItem->submesh, false);
+                changed = true;
                 return true;
             }
             return false;
         }
     );
+
+    if (changed)
+    {
+        callOnChange();
+    }
 }
 
 void SelectionManager::removeFromSelectedItems(scene::Node * node, uint32_t submesh)
@@ -200,9 +209,10 @@ void SelectionManager::removeFromSelectedItems(scene::DrawableComponent* drawabl
         throw std::runtime_error("SelectionManager: invalid drawable pointer supplied calling removeFromSelectedItems()");
     }
     auto node = drawable->ownerNode();
+    bool changed = false;
     std::erase_if(
         _selectedItems,
-        [drawable, submesh](const std::shared_ptr<SelectionItem>& curItem)
+        [&, drawable, submesh](const std::shared_ptr<SelectionItem>& curItem)
         {
             auto sel = curItem->node->getComponent<SelectableComponent>();
             if (!sel)
@@ -212,11 +222,17 @@ void SelectionManager::removeFromSelectedItems(scene::DrawableComponent* drawabl
             if (curItem->drawable == drawable && curItem->submesh == submesh)
             {
                 sel->setSelected(curItem->submesh, false);
+                changed = true;
                 return true;
             }
             return false;
         }
     );
+
+    if (changed)
+    {
+        callOnChange();
+    }
 }
 
 uint32_t SelectionManager::pickObjectId(
@@ -345,4 +361,13 @@ void SelectionManager::cleanupImage()
 {
     _image.reset();
 }
+
+void SelectionManager::callOnChange() const
+{
+    for (auto & cb : _onSelectCallbacks)
+    {
+        cb();
+    }
+}
+
 }

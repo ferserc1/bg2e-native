@@ -15,6 +15,8 @@ void SubmeshWindow::init(AppDelegate * delegate)
         _appDelegate->stage()->document()->setUnsavedChanges(true);
     });
 
+    _drawableEditor.init(delegate->selectionManager());
+
     _drawableEditor.onChanged([&]()
     {
         _appDelegate->stage()->document()->setUnsavedChanges(true);
@@ -74,7 +76,6 @@ void SubmeshWindow::setEditMaterial(uint32_t submeshIndex)
         std::shared_ptr<bg2e::scene::Drawable>();
     if (drawable && drawable->submeshesCount() > submeshIndex)
     {
-        _drawableEditor.setEditDrawable(drawable, submeshIndex);
         _materialEditor.clearMaterial();
         _materialEditor.addEditMaterial(drawable->renderMaterial(submeshIndex));
     }

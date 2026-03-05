@@ -33,7 +33,13 @@ public:
     }
 
     inline bool isSelected(uint32_t submeshIndex) const { return _submeshSelected[submeshIndex]; }
-    inline void setSelected(uint32_t submeshIndex, bool selected) { _submeshSelected[submeshIndex] = selected; }
+    inline void setSelected(uint32_t submeshIndex, bool selected)
+    {
+        if (_submeshSelected.size() > submeshIndex)
+        {
+            _submeshSelected[submeshIndex] = selected;
+        }
+    }
     inline void unselectAll() { std::fill(_submeshSelected.begin(), _submeshSelected.end(), false); }
     
 protected:

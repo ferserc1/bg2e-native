@@ -25,7 +25,7 @@ namespace scene {
 
 class Scene;
 
-class BG2E_API Node {
+class BG2E_API Node : public std::enable_shared_from_this<Node> {
     friend class Scene;
 public:
     Node();
