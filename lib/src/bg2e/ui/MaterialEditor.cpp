@@ -87,7 +87,7 @@ void MaterialEditor::setSelectionManager(const std::shared_ptr<manipulation::Sel
                 _material = item->mesh->renderMaterial(item->submesh);
             }
 
-            if (item->drawable)
+            if (item->drawable == drw)
             {
                 _editMaterialList.push_back(item->mesh->renderMaterial(item->submesh));
             }

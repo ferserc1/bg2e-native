@@ -22,6 +22,8 @@ void SubmeshWindow::init(AppDelegate * delegate)
         _appDelegate->stage()->document()->setUnsavedChanges(true);
     });
 
+    _materialEditor.setSelectionManager(delegate->selectionManager());
+
     setDrawFunction([&]() {
 
         auto stage = _appDelegate->stage();
