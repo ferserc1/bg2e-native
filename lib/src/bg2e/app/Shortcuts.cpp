@@ -24,9 +24,11 @@ void Shortcuts::keyDown(const KeyEvent& evt)
         case KeyEvent::KeyRightControl:
         case KeyEvent::KeyLeftControl:
             _ctrlModifier = true;
+            break;
         case KeyEvent::KeyLeftSuper:
         case KeyEvent::KeyRightSuper:
             _cmdModifier = true;
+            break;
         default:
             break;
         }
@@ -50,18 +52,23 @@ void Shortcuts::keyUp(const KeyEvent& evt)
         case KeyEvent::KeyRightControl:
         case KeyEvent::KeyLeftControl:
             _ctrlModifier = false;
+            break;
         case KeyEvent::KeyLeftSuper:
         case KeyEvent::KeyRightSuper:
             _cmdModifier = false;
+            break;
         default:
             break;
         }
     }
-    for (const auto & sc : _shortcutData)
+    else
     {
-        if (matchShortcut(evt.key(), sc))
+        for (const auto & sc : _shortcutData)
         {
-            sc.handler();
+            if (matchShortcut(evt.key(), sc))
+            {
+                sc.handler();
+            }
         }
     }
 }
@@ -77,9 +84,11 @@ bool Shortcuts::matchShortcut(const KeyEvent::Key currentKey, const ShortcutData
         _altModifier == sc.altModifier &&
         _shiftModifier == sc.shiftModifier &&
 #ifdef BG2E_IS_MAC
-            (sc.cmdOrCtrlModifier == _cmdModifier || sc.cmdModifier == _cmdModifier) &&
-#endif
+        (sc.cmdOrCtrlModifier == _cmdModifier || sc.cmdModifier == _cmdModifier) &&
+        sc.ctrlModifier == _ctrlModifier;
+#else
         (sc.cmdOrCtrlModifier == _ctrlModifier || _ctrlModifier == sc.ctrlModifier);
+#endif
 }
 
 }

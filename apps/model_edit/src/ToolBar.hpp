@@ -16,10 +16,11 @@ class  AppDelegate;
 
 class ToolBar : public bg2e::ui::Toolbar {
 public:
+    virtual ~ToolBar() = default;
 
     void init(AppDelegate * delegate);
     
 protected:
 
-    AppDelegate * _appDelegate;
+    AppDelegate * _appDelegate = nullptr;
 };
