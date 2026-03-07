@@ -219,7 +219,7 @@ std::string JsonNode::serialize()
         outputString += "\"" + _stringValue + "\"";
         break;
     case Type::Number:
-        outputString += std::to_string(_numberValue);
+        outputString += std::format("{}", _numberValue);
         break;
     case Type::Bool:
         outputString += (_boolValue ? "true" : "false");
