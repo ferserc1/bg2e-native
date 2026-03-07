@@ -1,5 +1,6 @@
 
 #include <bg2e/app/Shortcuts.hpp>
+#include <bg2e/base/PlatformTools.hpp>
 
 #include <iostream>
 
@@ -75,11 +76,10 @@ bool Shortcuts::matchShortcut(const KeyEvent::Key currentKey, const ShortcutData
     return currentKey == sc.key &&
         _altModifier == sc.altModifier &&
         _shiftModifier == sc.shiftModifier &&
-        (
-            (sc.cmdOrCtrlModifier == _cmdModifier || sc.cmdOrCtrlModifier == _ctrlModifier) ||
-            sc.cmdModifier && _cmdModifier ||
-            sc.cmdModifier && _cmdModifier
-        );
+#ifdef BG2E_IS_MAC
+            (sc.cmdOrCtrlModifier == _cmdModifier || sc.cmdModifier == _cmdModifier) &&
+#endif
+        _ctrlModifier == sc.ctrlModifier;
 }
 
 }
