@@ -18,114 +18,153 @@ SubmeshSelector::~SubmeshSelector()
     
 }
 
-void SubmeshSelector::setEditDrawable(std::shared_ptr<scene::Drawable> drawable)
+void SubmeshSelector::init(std::shared_ptr<manipulation::SelectionManager> sm)
 {
-    clearWidgets();
-    _drawable = drawable;
-    initWidgets();
-}
-
-void SubmeshSelector::clearDrawable()
-{
-    _drawable.reset();
-    clearWidgets();
-}
-
-void SubmeshSelector::clearSelection()
-{
-    _selectedItems.clear();
-    for (size_t i = 0; i < _selectedSubmeshes.size(); ++i)
+    _selectionMgr = sm;
+    _selectionMgr->onSelect([&]()
     {
-        _selectedSubmeshes[i] = false;
-    }
-}
-
-void SubmeshSelector::addSelectedItem(uint32_t index)
-{
-    if (index < _selectedSubmeshes.size())
-    {
-        _selectedSubmeshes[index] = true;
-        if (std::find(_selectedItems.begin(), _selectedItems.end(), index) == _selectedItems.end())
+        _currentSelection.node = nullptr;
+        _currentSelection.drawable = nullptr;
+        _currentSelection.mesh = nullptr;
+        _currentSelection.submesh = -1;
+        for (auto item : _selectionMgr->selectedItems())
         {
-            _selectedItems.push_back(index);
+            if (item->drawable)
+            {
+                _currentSelection.node = item->node;
+                _currentSelection.drawable = item->drawable;
+                _currentSelection.mesh = item->mesh;
+                _currentSelection.submesh = item->submesh;
+                break;
+            }
         }
+        clearWidgets();
+        initWidgets();
+    });
+}
+
+std::shared_ptr<scene::Drawable> SubmeshSelector::editDrawable()
+{
+    if (_currentSelection.drawable)
+    {
+        return _currentSelection.drawable->drawable();
+    }
+    return std::shared_ptr<scene::Drawable>();
+}
+
+std::shared_ptr<scene::Drawable> SubmeshSelector::editDrawable() const
+{
+    if (_currentSelection.drawable)
+    {
+        return _currentSelection.drawable->drawable();
+    }
+    return std::shared_ptr<scene::Drawable>();
+}
+
+int32_t SubmeshSelector::selectedItem() const
+{
+    if (_currentSelection.drawable)
+    {
+        return _currentSelection.submesh;
+    }
+    return -1;
+}
+
+std::vector<uint32_t> SubmeshSelector::selectedItems() const
+{
+    std::vector<uint32_t> selectedItems;
+    auto curDrawable = editDrawable();
+
+    if (curDrawable.get())
+    {
+        for (auto & item : _selectionMgr->selectedItems())
+        {
+            if (item->mesh == curDrawable.get())
+            {
+                selectedItems.push_back(item->submesh);
+            }
+        }
+    }
+
+    return selectedItems;
+}
+
+void SubmeshSelector::addSelectedItem(uint32_t index) const
+{
+    if (_currentSelection.node &&
+        !_selectionMgr->isSelected(
+            _currentSelection.node,
+            _currentSelection.drawable,
+            index
+        )
+    )
+    {
+        _selectionMgr->addToSelectedItems(
+            _currentSelection.node,
+            _currentSelection.drawable,
+            index
+        );
     }
 }
 
 bool SubmeshSelector::draw()
 {
-    auto drawableName = _drawable.get() ? _drawable->name() : "";
+    if (!_currentSelection.drawable || !_currentSelection.mesh)
+    {
+        return false;
+    }
+
+    auto drawable = _currentSelection.mesh;
+    auto drawableName = drawable->name();
     if (drawableName.empty())
     {
         drawableName = "Drawable";
     }
-    if (_drawable.get())
+
+
+    BasicWidgets::separator("Submeshes");
+    SelectableList::beginList(1);
+    bool changed = false;
+    for (uint32_t i = 0; i < drawable->submeshesCount(); ++i)
     {
-        BasicWidgets::separator("Submeshes");
-        SelectableList::beginList(2);
-        auto changed = false;
-        for (uint32_t i = 0; i < _drawable->submeshesCount(); ++i)
+        auto submeshName = std::to_string(i) + " - " + drawable->submeshName(i);
+        bool selected = _selectionMgr->isSelected(_currentSelection.node, _currentSelection.drawable, i);
+        if (SelectableList::item(submeshName, selected))
         {
-            auto submeshName = std::to_string(i) + " - " + _drawable->submeshName(i);
-            bool selected = _selectedSubmeshes[i];
-            if (SelectableList::item(submeshName, selected))
+            if (_selectionMgr->isSelected(_currentSelection.node, _currentSelection.drawable, i))
             {
-                clearSelection();
-                _selectedSubmeshes[i] = true;
-                _selectedItems.push_back(i);
-                changed = true;
+                _selectionMgr->removeFromSelectedItems(_currentSelection.node, i);
             }
-            std::string buttonText = selected ? "Deselect" : "Select";
-            if (SelectableList::itemButton(buttonText + "##" + std::to_string(i)))
+            else
             {
-                selected = !selected;
-                _selectedSubmeshes[i] = selected;
-                auto itemIterator = std::ranges::find(_selectedItems, i);
-                if (selected && itemIterator == _selectedItems.end())
-                {
-                    _selectedItems.push_back(i);
-                }
-                if (!selected && itemIterator != _selectedItems.end())
-                {
-                    _selectedItems.erase(itemIterator);
-                }
-                changed = true;
+                _selectionMgr->addToSelectedItems(_currentSelection.node, _currentSelection.drawable, i);
             }
-        }
-        SelectableList::endList();
-        if (BasicWidgets::button("Clear Selection"))
-        {
-            clearSelection();
             changed = true;
         }
-        return changed;
     }
-    return false;
+    SelectableList::endList();
+    if (BasicWidgets::button("Clear Selection"))
+    {
+        _selectionMgr->deselect();
+        changed = true;
+    }
+    return changed;
 }
 
 void SubmeshSelector::cleanup()
 {
-    _drawable.reset();
     clearWidgets();
 }
 
 void SubmeshSelector::initWidgets()
 {
-    if (!_drawable.get())
-    {
-        return;
-    }
-    
-    for (uint32_t i = 0; i < _drawable->submeshesCount(); ++i)
-    {
-        _selectedSubmeshes.push_back(false);
-    }
+
+
 }
 
 void SubmeshSelector::clearWidgets()
 {
-    _selectedSubmeshes.clear();
-    _selectedItems.clear();
+
 }
 
 }

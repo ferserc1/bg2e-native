@@ -7,6 +7,9 @@ void DevSceneDelegate::init(bg2e::render::Engine * engine)
     
     _selectionManager = std::make_shared<bg2e::manipulation::SelectionManager>(engine);
     _selectionManager->init();
+
+    _drawableEditor.init(_selectionManager);
+    _materialEditor.setSelectionManager(_selectionManager);
 }
     
 void DevSceneDelegate::init(bg2e::render::Engine*, bg2e::ui::UserInterface*)
@@ -59,9 +62,6 @@ void DevSceneDelegate::init(bg2e::render::Engine*, bg2e::ui::UserInterface*)
                     modelNode->addComponent(new bg2e::scene::TransformComponent(glm::translate(glm::mat4{ 1.0 }, glm::vec3{ 5, 0, 0 })));
                     modelNode->transform()->scale(4.0f);
                     renderer()->scene()->rootNode()->addChild(modelNode);
-                    
-                    // Update the drawable editor
-                    _drawableEditor.setEditDrawable(_targetDrawable, 0);
                 }
             }
             if (bg2e::ui::Menu::menuItem("Save Object"))
@@ -135,21 +135,7 @@ void DevSceneDelegate::init(bg2e::render::Engine*, bg2e::ui::UserInterface*)
             _targetDrawable->setName(name);
         }
 
-        if (_drawableEditor.draw()) {
-            auto firstSelected = _drawableEditor.selectedItem();
-            if (firstSelected != -1)
-            {
-                _materialEditor.clearMaterial();
-                for (auto selected : _drawableEditor.selectedItems())
-                {
-                    _materialEditor.addEditMaterial(_targetDrawable->renderMaterial(selected));
-                }
-            }
-            else {
-                _materialEditor.clearMaterial();
-            }
-        }
-        
+        _drawableEditor.draw();
         _materialEditor.draw();
     });
     
@@ -304,6 +290,7 @@ void DevSceneDelegate::mouseButtonDown(int button, int x, int y)
 void DevSceneDelegate::mouseButtonUp(int button, int x, int y)
 {
     _inputVisitor.mouseButtonUp(renderer()->scene()->rootNode(), button, x, y);
+    _selectionManager->pick(this->renderer()->scene(), x, y);
 }
 
 void DevSceneDelegate::mouseWheel(int deltaX, int deltaY)
@@ -349,10 +336,8 @@ std::shared_ptr<bg2e::scene::Node> DevSceneDelegate::scene1()
     auto model = bg2e::db::loadDrawableBg2(assetPath, "armchair.bg2", _engine);
     auto modelNode = new bg2e::scene::Node("Armchair");
     _targetDrawable = std::shared_ptr<bg2e::scene::Drawable>(model);
-    
-    // Init the submesh selector
-    _drawableEditor.setEditDrawable(_targetDrawable, 0);
-    
+
+    modelNode->addComponent(new bg2e::manipulation::SelectableComponent());
     modelNode->addComponent(new bg2e::scene::DrawableComponent(model));
     modelNode->addComponent(new bg2e::scene::TransformComponent(glm::translate(glm::mat4 { 1.0 }, glm::vec3{ 0, 0, 0 })));
     modelNode->transform()->scale(4.0f);

@@ -16,9 +16,9 @@ DrawableEditor::~DrawableEditor()
 
 }
 
-void DrawableEditor::clearDrawable()
+void DrawableEditor::init(const std::shared_ptr<manipulation::SelectionManager> & selectionManager)
 {
-    _submeshSelector.clearDrawable();
+    _submeshSelector.init(selectionManager);
 }
 
 bool DrawableEditor::draw()

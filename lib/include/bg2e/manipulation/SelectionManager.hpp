@@ -15,6 +15,7 @@
 
 #include <memory>
 #include <vector>
+#include <functional>
 
 namespace bg2e {
 namespace manipulation {
@@ -25,6 +26,8 @@ struct SelectionItem {
     scene::Drawable* mesh;
     uint32_t submesh;
 };
+
+typedef std::function<void()> OnSelectCallback;
 
 class BG2E_API SelectionManager
 {
@@ -145,6 +148,11 @@ public:
     [[nodiscard]] inline bool clearSelectionOnEmptyPick() const { return _clearSelectionOnEmptyPick; }
     inline void setClearSelectionOnEmptyPick(bool e) { _clearSelectionOnEmptyPick = e; }
 
+    inline void onSelect(OnSelectCallback&& cb)
+    {
+        _onSelectCallbacks.push_back(std::move(cb));
+    }
+
 protected:
     render::Engine * _engine;
     
@@ -170,6 +178,9 @@ protected:
     void createImage();
     void createPipeline();
     void cleanupImage();
+
+    std::vector<OnSelectCallback> _onSelectCallbacks;
+    void callOnChange() const;
 };
 
 }
