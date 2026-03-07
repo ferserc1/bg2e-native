@@ -101,6 +101,8 @@ public:
     inline void initWindowConfig(WindowConfig&& config) { _windowConfig = std::move(config); }
     
     static MainLoop * current() { return _mainLoopInstance; }
+
+    static Shortcuts & shortcuts() { return MainLoop::current()->_shortcuts; }
     
     int32_t run(Application* application);
 

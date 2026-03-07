@@ -4,29 +4,40 @@
 #include <bg2e/app/KeyEvent.hpp>
 
 #include <functional>
-#include <unordered_map>
+#include <vector>
 
 namespace bg2e::app
 {
 
 class BG2E_API Shortcuts {
 public:
-    typedef std::function<void(const KeyEvent&)> ShortcutHandler;
+    typedef std::function<void()> ShortcutHandler;
 
     struct ShortcutData
     {
         bool altModifier = false;
         bool ctrlModifier = false;
         bool shiftModifier = false;
+        bool cmdModifier = false; // macOS only
+        bool cmdOrCtrlModifier = false;
+        KeyEvent::Key key;
+        ShortcutHandler handler;
     };
 
-    void keyDown(const KeyEvent& evt) const;
-    void keyUp(const KeyEvent& evt) const;
+    void keyDown(const KeyEvent& evt);
+    void keyUp(const KeyEvent& evt);
 
-    void addShortcutMapper(const KeyEvent::Key key, const ShortcutHandler& handler);
+    void addShortcutMapper(const ShortcutData & shortcut);
 
 protected:
-    std::unordered_map<KeyEvent::Key, ShortcutHandler> _keyMap;
+    std::vector<ShortcutData> _shortcutData;
+
+    bool _altModifier = false;
+    bool _ctrlModifier = false;
+    bool _shiftModifier = false;
+    bool _cmdModifier = false;
+
+    bool matchShortcut(KeyEvent::Key currentKey, const ShortcutData & sc) const;
 };
 
 }

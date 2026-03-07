@@ -138,6 +138,23 @@ public:
 
     inline Key key() const { return _key; }
 
+    inline bool isModifier() const
+    {
+        switch (_key) {
+        case KeyLeftShift:
+        case KeyRightShift:
+        case KeyLeftControl:
+        case KeyRightControl:
+        case KeyLeftAlt:
+        case KeyRightAlt:
+        case KeyLeftSuper:
+        case KeyRightSuper:
+            return true;
+        default:
+            return false;
+        }
+    }
+
     static const char* keyName(const KeyEvent& e) {
         switch (e.key()) {
             case KeyUnknown: return "KeyUnknown";

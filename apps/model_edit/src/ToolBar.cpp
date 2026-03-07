@@ -173,6 +173,16 @@ void ToolBar::init(AppDelegate * delegate)
         }
     });
 
+    bg2e::app::MainLoop::current()->shortcuts().addShortcutMapper(
+    {
+        .cmdOrCtrlModifier = true,
+        .key = bg2e::app::KeyEvent::KeyS,
+        .handler = []()
+        {
+            std::cout << "Save changes" << std::endl;
+        }
+    });
+
     addButton({
         .label = "Selection Wireframe",
         .action = [&]()
