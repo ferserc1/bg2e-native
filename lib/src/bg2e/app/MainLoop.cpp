@@ -62,7 +62,7 @@ void InitSdlVideoDriver()
 #else
 
 void InitSdlVideoDriver() {}
-    
+
 #endif
 
 

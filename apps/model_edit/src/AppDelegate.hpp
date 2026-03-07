@@ -48,17 +48,27 @@ public:
 
     inline std::shared_ptr<bg2e::manipulation::SelectionManager> selectionManager() const { return _selectionManager; }
 
-    inline bg2e::ui::StatusItem * fileStatus() { return _fileStatus.get(); }
-    inline bg2e::ui::StatusItem * saveStatus() { return _saveStatus.get(); }
-    void updateStatus();
+    inline bg2e::ui::StatusItem * fileStatus() const { return _fileStatus.get(); }
+    inline bg2e::ui::StatusItem * saveStatus() const { return _saveStatus.get(); }
+
+    enum SelectionHighlightMode
+    {
+        SelectionFull,
+        SelectionHard,
+        SelectionSoft,
+        SelectionHide
+    };
+
+    void toggleSelectionHighlight();
+    void setSelectionHighlightMode(SelectionHighlightMode mode);
 
 protected:
     bg2e::scene::InputVisitor _inputVisitor;
     
     bg2e::ui::Workspace _workspace;
-    ToolBar _toolBar;
-    SubmeshWindow _submeshPanel;
-    EnvironmentSettings _environmentPanel;
+    ToolBar _toolBar {};
+    SubmeshWindow _submeshPanel {};
+    EnvironmentSettings _environmentPanel {};
 
     std::shared_ptr<bg2e::ui::StatusItem> _fileStatus;
     std::shared_ptr<bg2e::ui::StatusItem> _saveStatus;
@@ -69,8 +79,12 @@ protected:
     std::shared_ptr<bg2e::scene::Node> createScene() override;
 
     std::shared_ptr<bg2e::manipulation::SelectionManager> _selectionManager;
-    uint32_t _mouseDownX;
-    uint32_t _mouseDownY;
+    uint32_t _mouseDownX = 0;
+    uint32_t _mouseDownY = 0;
+
+    SelectionHighlightMode _selectionHighlightMode = SelectionHard;
     
     void initWorkspace();
+
+    void updateSelectionHighlight();
 };

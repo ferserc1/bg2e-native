@@ -174,6 +174,14 @@ void ToolBar::init(AppDelegate * delegate)
     });
 
     addButton({
+        .label = "Selection Wireframe",
+        .action = [&]()
+        {
+            _appDelegate->toggleSelectionHighlight();
+        }
+    }, AlignRight);
+
+    addButton({
         .label = "Center View",
         .action = [&]()
         {

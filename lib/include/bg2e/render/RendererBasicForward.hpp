@@ -45,7 +45,9 @@ public:
     inline bool drawSkybox() const { return _drawSkybox; }
     inline void setDrawSkybox(bool value) { _drawSkybox = value; }
     inline int skyboxBlurLevel() const { return _environment->skyboxBlurLevel(); }
-    inline void setSkyboxBlurLevel(int l) { _environment->setSkyboxBlurLevel(l); }
+    inline void setSkyboxBlurLevel(int l) const { _environment->setSkyboxBlurLevel(l); }
+
+    inline manipulation::SelectionHighlight * selectionHighlight() const { return _selectionHighlight.get(); }
 
     // This renderer is a prototype for a simple forward renderer. In the future, it will be possible to implement other rendering techniques by inheriting from this class and overriding the necessary methods.
     void build(

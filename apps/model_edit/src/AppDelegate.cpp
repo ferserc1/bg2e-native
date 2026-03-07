@@ -100,6 +100,32 @@ void AppDelegate::cleanup()
     _submeshPanel.cleanup();
 }
 
+void AppDelegate::toggleSelectionHighlight()
+{
+    switch (_selectionHighlightMode)
+    {
+    case SelectionFull:
+        _selectionHighlightMode = SelectionHard;
+        break;
+    case SelectionHard:
+        _selectionHighlightMode = SelectionSoft;
+        break;
+    case SelectionSoft:
+        _selectionHighlightMode = SelectionHide;
+        break;
+    case SelectionHide:
+        _selectionHighlightMode = SelectionFull;
+        break;
+    }
+    updateSelectionHighlight();
+}
+
+void AppDelegate::setSelectionHighlightMode(SelectionHighlightMode mode)
+{
+    _selectionHighlightMode = mode;
+    updateSelectionHighlight();
+}
+
 void AppDelegate::initWorkspace()
 {
     _workspace.leftPanelSize().min = 300;
@@ -126,3 +152,21 @@ void AppDelegate::initWorkspace()
     );
 }
 
+void AppDelegate::updateSelectionHighlight()
+{
+    switch (_selectionHighlightMode)
+    {
+    case SelectionFull:
+        renderer()->selectionHighlight()->setLineIntensity(0.5f);
+        break;
+    case SelectionHard:
+        renderer()->selectionHighlight()->setLineIntensity(0.3f);
+        break;
+    case SelectionSoft:
+        renderer()->selectionHighlight()->setLineIntensity(0.1f);
+        break;
+    case SelectionHide:
+        renderer()->selectionHighlight()->setLineIntensity(0.0f);
+        break;
+    }
+}
