@@ -1,6 +1,9 @@
 
 #include <bg2e/app/GtkMessageBox.hpp>
+
+#ifdef BG2E_LINUX
 #include <gtk/gtk.h>
+#endif
 
 namespace bg2e::app::internal
 {
