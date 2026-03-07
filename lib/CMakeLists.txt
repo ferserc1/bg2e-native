@@ -41,7 +41,7 @@ target_include_directories(${BG2E_TARGET_NAME} PRIVATE
     ${SDL2_INCLUDE_DIRS}
 )
 
-# GTK (Linux only, required for NFD)
+# GTK (Linux only, required for NFD and UI scale detection)
 if(UNIX AND NOT APPLE)
     find_package(PkgConfig REQUIRED)
     pkg_check_modules(GTK3 REQUIRED gtk+-3.0)
@@ -52,6 +52,10 @@ if(UNIX AND NOT APPLE)
 
     find_package(OpenGL REQUIRED)
     target_link_libraries(${BG2E_TARGET_NAME} PRIVATE OpenGL::GL)
+
+    # Wayland: used to calculate the UI scale factor
+    pkg_check_modules(WAYLAND_CLIENT REQUIRED IMPORTED_TARGET wayland-client)
+    target_link_libraries(${BG2E_TARGET_NAME} PRIVATE PkgConfig::WAYLAND_CLIENT)
 elseif(APPLE)
     target_link_libraries(${BG2E_TARGET_NAME} PRIVATE
         "-framework UniformTypeIdentifiers"

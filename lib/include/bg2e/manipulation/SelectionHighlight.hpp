@@ -37,7 +37,7 @@ protected:
     glm::mat4 _currentTransform { 1.0f };
     std::stack<glm::mat4> _transformStack;
 
-    float _lineIntensity = 0.3f;
+    float _lineIntensity = 0.8f;
 
     struct FrameData
     {
