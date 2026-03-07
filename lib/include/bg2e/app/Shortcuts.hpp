@@ -16,10 +16,10 @@ public:
     struct ShortcutData
     {
         bool altModifier = false;
-        bool ctrlModifier = false;
+        bool ctrlModifier = false; // In Windows/Linux is better to use cmdOrCtrlModifier instead.
         bool shiftModifier = false;
         bool cmdModifier = false; // macOS only
-        bool cmdOrCtrlModifier = false;
+        bool cmdOrCtrlModifier = false; // ctrl in Windows/Linux or cmd in macOS
         KeyEvent::Key key;
         ShortcutHandler handler;
     };
