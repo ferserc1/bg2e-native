@@ -3,6 +3,7 @@
 
 
 #include <bg2e/app/MessageBox.hpp>
+#include <bg2e/app/GtkMessageBox.hpp>
 
 #include <SDL2/SDL.h>
 
@@ -59,6 +60,12 @@ int32_t MessageBox::showMessage(
     const std::string & message,
     const std::vector<Button>& buttons
 ) {
+#ifdef BG2E_LINUX
+    internal::GtkMessageBox gtkMessageBox;
+    gtkMessageBox.setButtons(buttons);
+    gtkMessageBox.setType(type);
+    return gtkMessageBox.showMessage(title, message);
+#else
     std::vector<SDL_MessageBoxButtonData> sdlButtons;
     int sdlType = type == Info ? SDL_MESSAGEBOX_INFORMATION :
         type == Warning ? SDL_MESSAGEBOX_WARNING : SDL_MESSAGEBOX_ERROR;
@@ -90,6 +97,7 @@ int32_t MessageBox::showMessage(
         return static_cast<int32_t>(resultId);
     }
     return -1;
+#endif
 }
 
 }
