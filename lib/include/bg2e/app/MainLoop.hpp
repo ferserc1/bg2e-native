@@ -5,6 +5,7 @@
 #include <bg2e/render/RenderLoop.hpp>
 #include <bg2e/app/Application.hpp>
 #include <bg2e/app/InputManager.hpp>
+#include <bg2e/app/Shortcuts.hpp>
 #include <bg2e/ui/UserInterface.hpp>
 
 #include <functional>
@@ -122,6 +123,8 @@ protected:
 	ui::UserInterface _userInterface;
  
     std::function<bool()> _onExitFunction = nullptr;
+
+    Shortcuts _shortcuts;
     
     void initMainLoopInstance();
 };

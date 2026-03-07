@@ -241,13 +241,16 @@ int32_t MainLoop::run(app::Application * application) {
             }
 			else if (event.type == SDL_KEYUP || event.type == SDL_KEYDOWN)
 			{
+			    const auto bg2eEvent = KeyEvent::fromSDLEvent(event);
                 if (event.key.state == SDL_PRESSED)
                 {
-					_inputManager.keyDown(KeyEvent::fromSDLEvent(event));
+					_inputManager.keyDown(bg2eEvent);
+                    _shortcuts.keyDown(bg2eEvent);
                 }
                 else if (event.key.state == SDL_RELEASED)
                 {
-                    _inputManager.keyUp(KeyEvent::fromSDLEvent(event));
+                    _inputManager.keyUp(bg2eEvent);
+                    _shortcuts.keyUp(bg2eEvent);
                 }
 			}
             else if (event.type == SDL_MOUSEMOTION || event.type == SDL_MOUSEBUTTONDOWN || event.type == SDL_MOUSEBUTTONUP)
