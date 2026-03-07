@@ -1,3 +1,4 @@
+#include <format>
 #include <bg2e/json/JsonNode.hpp>
 
 #include <iostream>
@@ -155,7 +156,7 @@ std::string JsonNode::toString(int indentationLevel) {
         outputString += "\"" + _stringValue + "\"";
         break;
     case Type::Number:
-        outputString += std::to_string(_numberValue);
+        outputString += std::format("{}", _numberValue);
         break;
     case Type::Bool:
         outputString += (_boolValue ? "true" : "false");
