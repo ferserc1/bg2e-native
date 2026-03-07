@@ -79,7 +79,7 @@ bool Shortcuts::matchShortcut(const KeyEvent::Key currentKey, const ShortcutData
 #ifdef BG2E_IS_MAC
             (sc.cmdOrCtrlModifier == _cmdModifier || sc.cmdModifier == _cmdModifier) &&
 #endif
-        _ctrlModifier == sc.ctrlModifier;
+        (sc.cmdOrCtrlModifier == _ctrlModifier || _ctrlModifier == sc.ctrlModifier);
 }
 
 }

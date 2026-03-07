@@ -103,6 +103,10 @@ void ToolBar::init(AppDelegate * delegate)
         }
         if (Menu::beginMenu("View"))
         {
+            if (Menu::menuItem("Toggle Selection Highlight", "Shift+Space"))
+            {
+                _appDelegate->toggleSelectionHighlight();
+            }
             if (Menu::menuItem("Center Camera", "Ctrl+A"))
             {
                 _appDelegate->stage()->orbitCamera()->reset();
@@ -173,31 +177,35 @@ void ToolBar::init(AppDelegate * delegate)
         }
     });
 
-    bg2e::app::MainLoop::current()->shortcuts().addShortcutMapper(
+    auto & shortcuts = bg2e::app::MainLoop::current()->shortcuts();
+    shortcuts.addShortcutMapper(
     {
         .cmdOrCtrlModifier = true,
         .key = bg2e::app::KeyEvent::KeyS,
         .handler = []()
         {
+            // TODO: Implement this
             std::cout << "Save changes" << std::endl;
         }
     });
 
-    addButton({
-        .label = "Selection Wireframe",
-        .action = [&]()
+    shortcuts.addShortcutMapper({
+        .shiftModifier = true,
+        .key = bg2e::app::KeyEvent::KeySpace,
+        .handler = [&]()
         {
             _appDelegate->toggleSelectionHighlight();
         }
-    }, AlignRight);
+    });
 
-    addButton({
-        .label = "Center View",
-        .action = [&]()
+    shortcuts.addShortcutMapper({
+        .ctrlModifier = true,
+        .key = bg2e::app::KeyEvent::KeyA,
+        .handler = [&]()
         {
             _appDelegate->stage()->orbitCamera()->reset();
         }
-    }, AlignRight);
+    });
     
     addButton({
         .label = "Submesh Editor",
