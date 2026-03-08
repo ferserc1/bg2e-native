@@ -144,6 +144,13 @@ void Toolbar::draw(
     std::function<void()> menuFunction
 ) {
     Window::draw(drawFunc, menuFunction);
+    if (!_menuInitialized)
+    {
+        setMenuFunction([&]() {
+            _menu.draw();
+        });
+        _menuInitialized = false;
+    }
 }
 
 int32_t Toolbar::genId()

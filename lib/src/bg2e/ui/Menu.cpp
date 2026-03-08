@@ -2,9 +2,49 @@
 //  Menu.cpp
 
 #include <bg2e/ui/Menu.hpp>
+#include <bg2e/app/MainLoop.hpp>
+
 #include "imgui.h"
 
 namespace bg2e::ui {
+
+void MenuItem::draw()
+{
+    switch (_type) {
+    case MenuItemType::Submenu:
+        if (Menu::beginMenu(label))
+        {
+            for (auto & subItem : _children)
+            {
+                subItem.draw();
+            }
+            Menu::endMenu();
+        }
+        break;
+    case MenuItemType::Action:
+        // TODO: Shortcut
+        // - add shortcut
+        // - generate shortcut string
+        if (Menu::menuItem(label, ""))
+        {
+            _shortcut.handler();
+        }
+
+        if (!_shortcutInitialized)
+        {
+            if (_shortcut.key != app::KeyEvent::KeyUnknown)
+            {
+                auto shortcuts = app::MainLoop::current()->shortcuts();
+                shortcuts.addShortcutMapper(_shortcut);
+            }
+            _shortcutInitialized = true;
+        }
+        break;
+    case MenuItemType::Separator:
+        Menu::separator();
+        break;
+    }
+}
 
 bool Menu::beginMenuBar()
 {
@@ -34,6 +74,14 @@ void Menu::endMenu()
 void Menu::endMenuBar()
 {
     ImGui::EndMenuBar();
+}
+
+void Menu::draw()
+{
+    for (auto & item : _menuItems)
+    {
+        item.draw();
+    }
 }
 
 }

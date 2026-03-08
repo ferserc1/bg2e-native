@@ -5,6 +5,7 @@
 
 #include <bg2e/common.hpp>
 #include <bg2e/ui/Window.hpp>
+#include <bg2e/ui/Menu.hpp>
 
 #include <string>
 #include <functional>
@@ -67,9 +68,16 @@ public:
     
     ToolbarButton * findButton(int32_t buttonId);
 
+    void addMenuItem(const MenuItem & menuItem)
+    {
+        _menu.addMenuItem(menuItem);
+    }
+
 protected:
     std::vector<ToolbarButton> _leftButtons;
     std::vector<ToolbarButton> _rightButtons;
+    Menu _menu;
+    bool _menuInitialized = false;
     
     void setDrawFunction(std::function<void()> drawFunction) override;
     void draw(std::function<void()> drawFunc, std::function<void()> menuFunction = nullptr) override;

@@ -21,8 +21,26 @@ void ToolBar::init(AppDelegate * delegate)
             { .code = 2, .label = "Cancel", .key = bg2e::app::MessageBox::Esc }
         }) == 1;
     });
-    
-    setMenuFunction([&]() {
+
+    bg2e::ui::MenuItem file("File");
+    file.addMenuItem({ "Open", {
+        .cmdOrCtrlModifier = true,
+        .key = bg2e::app::KeyEvent::KeyO,
+        .handler = [&]() {
+            bg2e::app::FileDialog fd;
+            fd.setFilters({
+                { "bg2e 3D model", "bg2,vwglb" }
+            });
+            auto filePath = fd.openFile();
+
+            if (!filePath.empty())
+            {
+                _appDelegate->stage()->loadModel(filePath);
+            }
+        }
+    }});
+    addMenuItem(file);
+    /*setMenuFunction([&]() {
         if (Menu::beginMenu("File"))
         {
             if (Menu::menuItem("Open", "Cmd+O"))
@@ -114,6 +132,7 @@ void ToolBar::init(AppDelegate * delegate)
             Menu::endMenu();
         }
     });
+    */
     
     addButton({
         .label = "Open",

@@ -20,7 +20,7 @@ public:
         bool shiftModifier = false;
         bool cmdModifier = false; // macOS only
         bool cmdOrCtrlModifier = false; // ctrl in Windows/Linux or cmd in macOS
-        KeyEvent::Key key;
+        KeyEvent::Key key = KeyEvent::KeyUnknown;
         ShortcutHandler handler;
     };
 
