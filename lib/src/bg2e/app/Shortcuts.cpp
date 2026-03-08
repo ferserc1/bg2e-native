@@ -3,11 +3,52 @@
 #include <bg2e/base/PlatformTools.hpp>
 
 #include <iostream>
+#include <sstream>
 
 namespace bg2e::app
 {
+std::string Shortcuts::ShortcutData::getShortcutString() const
+{
+    std::stringstream ss;
 
-void Shortcuts::keyDown(const KeyEvent& evt)
+    if (key != KeyEvent::KeyUnknown)
+    {
+        std::string sep;
+        if (altModifier)
+        {
+            ss << "Alt";
+            sep = "+";
+        }
+        if (shiftModifier)
+        {
+            ss << sep + "Shift";
+            sep = "+";
+        }
+#ifdef BG2E_IS_MAC
+        if (ctrlModifier)
+        {
+            ss << sep << "Ctrl";
+            sep = "+";
+        }
+        if (cmdModifier || cmdOrCtrlModifier)
+        {
+            ss << sep << "Cmd";
+            sep = "+";
+        }
+#else
+        if (ctrlModifier || cmdOrCtrlModifier)
+        {
+            ss << sep << "Ctrl";
+            sep = "+";
+        }
+#endif
+        ss << sep << KeyEvent::keyName(key);
+    }
+
+    return ss.str();
+}
+
+    void Shortcuts::keyDown(const KeyEvent& evt)
 {
     if (evt.isModifier())
     {

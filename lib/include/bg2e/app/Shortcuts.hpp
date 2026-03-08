@@ -22,6 +22,8 @@ public:
         bool cmdOrCtrlModifier = false; // ctrl in Windows/Linux or cmd in macOS
         KeyEvent::Key key = KeyEvent::KeyUnknown;
         ShortcutHandler handler;
+
+        std::string getShortcutString() const;
     };
 
     void keyDown(const KeyEvent& evt);

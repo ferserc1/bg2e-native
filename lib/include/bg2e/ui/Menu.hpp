@@ -34,7 +34,9 @@ public:
         _children.push_back(item);
     }
 
-    void draw();
+    void draw() const;
+
+    void initShortcuts() const;
 
 protected:
     std::vector<MenuItem> _children;
@@ -75,6 +77,7 @@ public:
 
 protected:
     std::vector<MenuItem> _menuItems;
+    bool _shortcutInitialized = false;
 };
 
 }

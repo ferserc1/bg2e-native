@@ -8,7 +8,7 @@
 
 namespace bg2e::ui {
 
-void MenuItem::draw()
+void MenuItem::draw() const
 {
     switch (_type) {
     case MenuItemType::Submenu:
@@ -22,26 +22,39 @@ void MenuItem::draw()
         }
         break;
     case MenuItemType::Action:
-        // TODO: Shortcut
-        // - add shortcut
-        // - generate shortcut string
-        if (Menu::menuItem(label, ""))
         {
-            _shortcut.handler();
-        }
-
-        if (!_shortcutInitialized)
-        {
-            if (_shortcut.key != app::KeyEvent::KeyUnknown)
+            std::string shortcut = _shortcut.getShortcutString();
+            if (Menu::menuItem(label, shortcut))
             {
-                auto shortcuts = app::MainLoop::current()->shortcuts();
-                shortcuts.addShortcutMapper(_shortcut);
+                _shortcut.handler();
             }
-            _shortcutInitialized = true;
+            break;
+        }
+    case MenuItemType::Separator:
+        Menu::separator();
+        break;
+    }
+}
+
+void MenuItem::initShortcuts() const
+{
+    switch (_type)
+    {
+    case MenuItemType::Submenu:
+        for (auto &menuItem : _children)
+        {
+            menuItem.initShortcuts();
+        }
+        break;
+    case MenuItemType::Action:
+        if (_shortcut.key != app::KeyEvent::KeyUnknown)
+        {
+            auto & shortcuts = app::MainLoop::current()->shortcuts();
+            shortcuts.addShortcutMapper(_shortcut);
         }
         break;
     case MenuItemType::Separator:
-        Menu::separator();
+    default:
         break;
     }
 }
@@ -80,8 +93,13 @@ void Menu::draw()
 {
     for (auto & item : _menuItems)
     {
+        if (!_shortcutInitialized)
+        {
+            item.initShortcuts();
+        }
         item.draw();
     }
+    _shortcutInitialized = true;
 }
 
 }

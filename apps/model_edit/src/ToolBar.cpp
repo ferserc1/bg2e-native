@@ -39,39 +39,25 @@ void ToolBar::init(AppDelegate * delegate)
             }
         }
     }});
-    addMenuItem(file);
-    /*setMenuFunction([&]() {
-        if (Menu::beginMenu("File"))
+    file.addMenuItem({ "Import GLTF", {
+        .handler = [&]()
         {
-            if (Menu::menuItem("Open", "Cmd+O"))
-            {
-                bg2e::app::FileDialog fd;
-                fd.setFilters({
-                    { "bg2e 3D model", "bg2,vwglb" }
-                });
-                auto filePath = fd.openFile();
-                
-                if (!filePath.empty())
-                {
-                    _appDelegate->stage()->loadModel(filePath);
-                }
-            }
-            if (Menu::menuItem("Import GLTF"))
-            {
-                bg2e::app::FileDialog fd;
-                fd.setFilters({
-                    { "gltf file", "glb,gltf" }
-                });
-                auto filePath = fd.openFile();
+            bg2e::app::FileDialog fd;
+            fd.setFilters({
+                { "gltf file", "glb,gltf" }
+            });
+            auto filePath = fd.openFile();
 
-                if (!filePath.empty())
-                {
-                    _appDelegate->stage()->importGltf(filePath);
-                }
-            }
-            if (Menu::menuItem("Import OBJ"))
+            if (!filePath.empty())
             {
-                bg2e::app::FileDialog fd;
+                _appDelegate->stage()->importGltf(filePath);
+            }
+        }
+    }});
+    file.addMenuItem({ "Import OBJ", {
+        .handler = [&]()
+        {
+            bg2e::app::FileDialog fd;
                 fd.setFilters({
                     { "OBJ file", "obj" }
                 });
@@ -81,74 +67,76 @@ void ToolBar::init(AppDelegate * delegate)
                 {
                     _appDelegate->stage()->importObj(filePath);
                 }
-            }
-            if (Menu::menuItem("Save", "Cmd+S"))
-            {
-                auto filePath = _appDelegate->stage()->document()->path();
-                if (filePath.empty())
-                {
-                    bg2e::app::FileDialog fd;
-                    fd.setFilters({
-                        { "bg2e 3D model", "bg2,vwglb" }
-                    });
-                    filePath = fd.saveFile();
-                }
-                
-                if (!filePath.empty())
-                {
-                    _appDelegate->stage()->saveModel(filePath);
-                }
-            }
-            if (Menu::menuItem("Save As..."))
+        }
+    }});
+    file.addMenuItem({ "Save", {
+        .cmdOrCtrlModifier = true,
+        .key = bg2e::app::KeyEvent::KeyS,
+        .handler = [&]()
+        {
+            auto filePath = _appDelegate->stage()->document()->path();
+            if (filePath.empty())
             {
                 bg2e::app::FileDialog fd;
                 fd.setFilters({
                     { "bg2e 3D model", "bg2,vwglb" }
                 });
-                auto filePath = fd.saveFile();
-                
-                if (!filePath.empty())
-                {
-                    _appDelegate->stage()->saveModel(filePath);
-                }
+                filePath = fd.saveFile();
             }
-            Menu::separator();
-            if (Menu::menuItem("Quit"))
+
+            if (!filePath.empty())
             {
-                bg2e::app::MainLoop::current()->exit();
+                _appDelegate->stage()->saveModel(filePath);
             }
-            Menu::endMenu();
         }
-        if (Menu::beginMenu("View"))
+    }});
+    file.addMenuItem({ "Save As...", {
+        .shiftModifier = true,
+        .cmdOrCtrlModifier = true,
+        .key = bg2e::app::KeyEvent::KeyS,
+        .handler = [&]()
         {
-            if (Menu::menuItem("Toggle Selection Highlight", "Shift+Space"))
-            {
-                _appDelegate->toggleSelectionHighlight();
-            }
-            if (Menu::menuItem("Center Camera", "Ctrl+A"))
-            {
-                _appDelegate->stage()->orbitCamera()->reset();
-            }
-            Menu::endMenu();
-        }
-    });
-    */
-    
-    addButton({
-        .label = "Open",
-        .action = [&]() {
             bg2e::app::FileDialog fd;
             fd.setFilters({
                 { "bg2e 3D model", "bg2,vwglb" }
             });
-            auto filePath = fd.openFile();
-            
+            auto filePath = fd.saveFile();
+
             if (!filePath.empty())
             {
-                _appDelegate->stage()->loadModel(filePath);
+                _appDelegate->stage()->saveModel(filePath);
             }
         }
-    });
+    }});
+    file.addMenuItem({});   // Separator
+    file.addMenuItem({ "Quit", {
+        .cmdOrCtrlModifier = true,
+        .key = bg2e::app::KeyEvent::KeyQ,
+        .handler = [&]()
+        {
+            bg2e::app::MainLoop::current()->exit();
+        }
+    }});
+    addMenuItem(file);
+
+    bg2e::ui::MenuItem view("View");
+    view.addMenuItem({ "Toggle Selection Highlight", {
+        .shiftModifier = true,
+        .key = bg2e::app::KeyEvent::KeySpace,
+        .handler = [&]()
+        {
+            _appDelegate->toggleSelectionHighlight();
+        }
+    }});
+    view.addMenuItem({ "Center Camera", {
+        .ctrlModifier = true,
+        .key = bg2e::app::KeyEvent::KeyA,
+        .handler = [&]()
+        {
+            _appDelegate->stage()->orbitCamera()->reset();
+        }
+    }});
+    addMenuItem(view);
 
     addButton({
         .label = "Y-axis > Z-axis",
@@ -193,36 +181,6 @@ void ToolBar::init(AppDelegate * delegate)
                 );
                 drw->applyModifier(new ApplyTransformModifier<Mesh>(trx));
             }
-        }
-    });
-
-    auto & shortcuts = bg2e::app::MainLoop::current()->shortcuts();
-    shortcuts.addShortcutMapper(
-    {
-        .cmdOrCtrlModifier = true,
-        .key = bg2e::app::KeyEvent::KeyS,
-        .handler = []()
-        {
-            // TODO: Implement this
-            std::cout << "Save changes" << std::endl;
-        }
-    });
-
-    shortcuts.addShortcutMapper({
-        .shiftModifier = true,
-        .key = bg2e::app::KeyEvent::KeySpace,
-        .handler = [&]()
-        {
-            _appDelegate->toggleSelectionHighlight();
-        }
-    });
-
-    shortcuts.addShortcutMapper({
-        .ctrlModifier = true,
-        .key = bg2e::app::KeyEvent::KeyA,
-        .handler = [&]()
-        {
-            _appDelegate->stage()->orbitCamera()->reset();
         }
     });
     
