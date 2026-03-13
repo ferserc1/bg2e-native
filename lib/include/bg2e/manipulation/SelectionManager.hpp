@@ -124,6 +124,7 @@ public:
         return pickObject(rootNode, camera, x, y, result);
     }
 
+    // IMPORTANT: Be sure to deselect the elements you want to remove from the scene before deleting them.
     void deselect();
 
     // selectedItem returns the first item in the selection array, when multi select is enabled

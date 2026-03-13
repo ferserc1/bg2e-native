@@ -98,6 +98,7 @@ void StageScene::saveModel(const std::filesystem::path& path)
 
 void StageScene::close()
 {
+    _appDelegate->selectionManager()->deselect();
     _targetDrawables.clear();
     _targetDrawable.reset();
     _targetNode->clearChildren();
