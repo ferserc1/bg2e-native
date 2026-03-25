@@ -24,24 +24,11 @@ std::string Shortcuts::ShortcutData::getShortcutString() const
             ss << sep + "Shift";
             sep = "+";
         }
-#ifdef BG2E_IS_MAC
         if (ctrlModifier)
         {
             ss << sep << "Ctrl";
             sep = "+";
         }
-        if (cmdModifier || cmdOrCtrlModifier)
-        {
-            ss << sep << "Cmd";
-            sep = "+";
-        }
-#else
-        if (ctrlModifier || cmdOrCtrlModifier)
-        {
-            ss << sep << "Ctrl";
-            sep = "+";
-        }
-#endif
         ss << sep << KeyEvent::keyName(key);
     }
 
@@ -66,10 +53,6 @@ std::string Shortcuts::ShortcutData::getShortcutString() const
         case KeyEvent::KeyLeftControl:
             _ctrlModifier = true;
             break;
-        case KeyEvent::KeyLeftSuper:
-        case KeyEvent::KeyRightSuper:
-            _cmdModifier = true;
-            break;
         default:
             break;
         }
@@ -93,10 +76,6 @@ void Shortcuts::keyUp(const KeyEvent& evt)
         case KeyEvent::KeyRightControl:
         case KeyEvent::KeyLeftControl:
             _ctrlModifier = false;
-            break;
-        case KeyEvent::KeyLeftSuper:
-        case KeyEvent::KeyRightSuper:
-            _cmdModifier = false;
             break;
         default:
             break;
@@ -124,12 +103,7 @@ bool Shortcuts::matchShortcut(const KeyEvent::Key currentKey, const ShortcutData
     return currentKey == sc.key &&
         _altModifier == sc.altModifier &&
         _shiftModifier == sc.shiftModifier &&
-#ifdef BG2E_IS_MAC
-        (sc.cmdOrCtrlModifier == _cmdModifier || sc.cmdModifier == _cmdModifier) &&
         sc.ctrlModifier == _ctrlModifier;
-#else
-        (sc.cmdOrCtrlModifier == _ctrlModifier || _ctrlModifier == sc.ctrlModifier);
-#endif
 }
 
 }

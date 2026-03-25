@@ -24,7 +24,7 @@ void ToolBar::init(AppDelegate * delegate)
 
     bg2e::ui::MenuItem file("File");
     file.addMenuItem({ "Open", {
-        .cmdOrCtrlModifier = true,
+        .ctrlModifier = true,
         .key = bg2e::app::KeyEvent::KeyO,
         .handler = [&]() {
             bg2e::app::FileDialog fd;
@@ -70,7 +70,7 @@ void ToolBar::init(AppDelegate * delegate)
         }
     }});
     file.addMenuItem({ "Save", {
-        .cmdOrCtrlModifier = true,
+        .ctrlModifier = true,
         .key = bg2e::app::KeyEvent::KeyS,
         .handler = [&]()
         {
@@ -92,7 +92,7 @@ void ToolBar::init(AppDelegate * delegate)
     }});
     file.addMenuItem({ "Save As...", {
         .shiftModifier = true,
-        .cmdOrCtrlModifier = true,
+        .ctrlModifier = true,
         .key = bg2e::app::KeyEvent::KeyS,
         .handler = [&]()
         {
@@ -110,7 +110,7 @@ void ToolBar::init(AppDelegate * delegate)
     }});
     file.addMenuItem({});   // Separator
     file.addMenuItem({ "Quit", {
-        .cmdOrCtrlModifier = true,
+        .ctrlModifier = true,
         .key = bg2e::app::KeyEvent::KeyQ,
         .handler = [&]()
         {
