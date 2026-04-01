@@ -1,31 +1,20 @@
-
 /*
-    In this example:
-    
-    - We load an OBJ model into a MeshPU mesh. There are several types of meshes depending on the type of vertices they have:
-        * VertexP: the vertex contains only positions.
-        * VertexPC: the vertex contains both positions and colours.
-        * VertexPU: vertex contains positions and UV coordinates
-        * ...
-      From the suffix we can know the type of vertex or mesh. The suffix will always start with P, because all meshes have positions,
-      but it can also have:
-       * N: normal vectors
-       * C: colours
-       * U: UV coordinates
-       * T: tangent vectors
-      The default mesh type (Mesh) is MeshPNUUT because by default in bg2 engine two sets of UV coordinates are used, one for the material and one for the lighting map.
-      material and one for the lighting map
-    
-    - We use two different descriptor sets:
-        * Scene: a descriptor set to pass a uniform buffer with the projection and view matrix. This is done because if we are going to render
-        a scene, this descriptor set will be composed by all the objects in the scene for that frame, so we can update it only once for all the objects in the scene.
-        once for all objects.
-        * Object: a descriptor set for the uniform buffer with the model matrix and for the texture, in bindings 0 and 1 respectively.
-    
-    - We will use the frameResources object to hold object resources that will live only for that frame. This technique greatly simplifies
-      the updating of resources.
+ *    business grade graphic engine (bg2 engine)
+ *    Copyright (C) 2026  Fernando Serrano Carpena
+ *
+ *    This program is free software: you can redistribute it and/or modify
+ *    it under the terms of the GNU General Public License as published by
+ *    the Free Software Foundation, either version 3 of the License, or
+ *    (at your option) any later version.
+ *
+ *    This program is distributed in the hope that it will be useful,
+ *    but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *    GNU General Public License for more details.
+ *
+ *    You should have received a copy of the GNU General Public License
+ *    along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
- 
 #include <bg2e.hpp>
 
 #include <array>
