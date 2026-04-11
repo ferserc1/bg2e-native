@@ -18,6 +18,7 @@
 
 #include <bg2e/render/vulkan/extensions.hpp>
 #include <bg2e/base/PlatformTools.hpp>
+#include <bg2e/render/vulkan/PhysicalDevice.hpp>
 #include <bg2e/base/Log.hpp>
 
 namespace bg2e {
@@ -39,7 +40,7 @@ T loadExtension(VkInstance instance, const char* fnName)
     return func;
 }
 
-void loadExtensions(VkInstance instance)
+void loadInstanceExtensions(VkInstance instance)
 {
     bg2e_log_debug << "Loading extension functions:" << bg2e_log_end;
     cmdBeginRendering = loadExtension<PFN_vkCmdBeginRenderingKHR>(instance, "vkCmdBeginRenderingKHR");
@@ -51,22 +52,96 @@ void loadExtensions(VkInstance instance)
     queueSubmit2 = loadExtension<PFN_vkQueueSubmit2KHR>(instance, "vkQueueSubmit2KHR");
     cmdPipelineBarrier2 = loadExtension<PFN_vkCmdPipelineBarrier2KHR>(instance, "vkCmdPipelineBarrier2KHR");
     cmdBlitImage2 = loadExtension<PFN_vkCmdBlitImage2KHR>(instance, "vkCmdBlitImage2KHR");
-    
-    PFN_vkGetDeviceProcAddr getDeviceProcAddr = (PFN_vkGetDeviceProcAddr) vkGetInstanceProcAddr(instance, "vkGetDeviceProcAddr");
-    if (getDeviceProcAddr) {
-        cmdBuildAccelerationStructures = (PFN_vkCmdBuildAccelerationStructuresKHR) getDeviceProcAddr(nullptr, "vkCmdBuildAccelerationStructuresKHR");
-        cmdCopyAccelerationStructure = (PFN_vkCmdCopyAccelerationStructureKHR) getDeviceProcAddr(nullptr, "vkCmdCopyAccelerationStructureKHR");
-        cmdCopyAccelerationStructureToMemory = (PFN_vkCmdCopyAccelerationStructureToMemoryKHR) getDeviceProcAddr(nullptr, "vkCmdCopyAccelerationStructureToMemoryKHR");
-        cmdCopyMemoryToAccelerationStructure = (PFN_vkCmdCopyMemoryToAccelerationStructureKHR) getDeviceProcAddr(nullptr, "vkCmdCopyMemoryToAccelerationStructureKHR");
-        cmdWriteAccelerationStructuresProperties = (PFN_vkCmdWriteAccelerationStructuresPropertiesKHR) getDeviceProcAddr(nullptr, "vkCmdWriteAccelerationStructuresPropertiesKHR");
-        getAccelerationStructureBuildSizes = (PFN_vkGetAccelerationStructureBuildSizesKHR) getDeviceProcAddr(nullptr, "vkGetAccelerationStructureBuildSizesKHR");
-        createRayTracingPipelines = (PFN_vkCreateRayTracingPipelinesKHR) getDeviceProcAddr(nullptr, "vkCreateRayTracingPipelinesKHR");
-        cmdTraceRays = (PFN_vkCmdTraceRaysKHR) getDeviceProcAddr(nullptr, "vkCmdTraceRaysKHR");
-        getRayTracingCaptureReplayShaderGroupHandles = (PFN_vkGetRayTracingCaptureReplayShaderGroupHandlesKHR) getDeviceProcAddr(nullptr, "vkGetRayTracingCaptureReplayShaderGroupHandlesKHR");
-        createDeferredOperation = (PFN_vkCreateDeferredOperationKHR) getDeviceProcAddr(nullptr, "vkCreateDeferredOperationKHR");
-        destroyDeferredOperation = (PFN_vkDestroyDeferredOperationKHR) getDeviceProcAddr(nullptr, "vkDestroyDeferredOperationKHR");
-        getDeferredOperationResult = (PFN_vkGetDeferredOperationResultKHR) getDeviceProcAddr(nullptr, "vkGetDeferredOperationResultKHR");
-        deferredOperationJoin = (PFN_vkDeferredOperationJoinKHR) getDeviceProcAddr(nullptr, "vkDeferredOperationJoinKHR");
+}
+
+void loadDeviceExtensions(const PhysicalDevice& physDev, VkDevice device)
+{
+    bg2e_log_debug << "Loading device extension functions:" << bg2e_log_end;
+
+    if (device == VK_NULL_HANDLE) {
+        bg2e_log_error << "Invalid VkDevice while loading device extension functions" << bg2e_log_end;
+        return;
+    }
+
+    auto loadDeviceExtension = [device](const char* name) -> PFN_vkVoidFunction {
+        PFN_vkVoidFunction fn = vkGetDeviceProcAddr(device, name);
+        if (!fn) {
+            bg2e_log_warning << "Device extension function not available: " << name << bg2e_log_end;
+        }
+        else {
+            bg2e_log_debug << "Loaded device extension function: " << name << bg2e_log_end;
+        }
+        return fn;
+    };
+
+    if (physDev.properties()->rayTracingSupported()) {
+        // Acceleration structure
+        cmdBuildAccelerationStructures =
+            reinterpret_cast<PFN_vkCmdBuildAccelerationStructuresKHR>(
+                loadDeviceExtension("vkCmdBuildAccelerationStructuresKHR")
+            );
+
+        cmdCopyAccelerationStructure =
+            reinterpret_cast<PFN_vkCmdCopyAccelerationStructureKHR>(
+                loadDeviceExtension("vkCmdCopyAccelerationStructureKHR")
+            );
+
+        cmdCopyAccelerationStructureToMemory =
+            reinterpret_cast<PFN_vkCmdCopyAccelerationStructureToMemoryKHR>(
+                loadDeviceExtension("vkCmdCopyAccelerationStructureToMemoryKHR")
+            );
+
+        cmdCopyMemoryToAccelerationStructure =
+            reinterpret_cast<PFN_vkCmdCopyMemoryToAccelerationStructureKHR>(
+                loadDeviceExtension("vkCmdCopyMemoryToAccelerationStructureKHR")
+            );
+
+        cmdWriteAccelerationStructuresProperties =
+            reinterpret_cast<PFN_vkCmdWriteAccelerationStructuresPropertiesKHR>(
+                loadDeviceExtension("vkCmdWriteAccelerationStructuresPropertiesKHR")
+            );
+
+        getAccelerationStructureBuildSizes =
+            reinterpret_cast<PFN_vkGetAccelerationStructureBuildSizesKHR>(
+                loadDeviceExtension("vkGetAccelerationStructureBuildSizesKHR")
+            );
+
+        // Ray tracing pipeline
+        createRayTracingPipelines =
+            reinterpret_cast<PFN_vkCreateRayTracingPipelinesKHR>(
+                loadDeviceExtension("vkCreateRayTracingPipelinesKHR")
+            );
+
+        cmdTraceRays =
+            reinterpret_cast<PFN_vkCmdTraceRaysKHR>(
+                loadDeviceExtension("vkCmdTraceRaysKHR")
+            );
+
+        getRayTracingCaptureReplayShaderGroupHandles =
+            reinterpret_cast<PFN_vkGetRayTracingCaptureReplayShaderGroupHandlesKHR>(
+                loadDeviceExtension("vkGetRayTracingCaptureReplayShaderGroupHandlesKHR")
+            );
+
+        // Deferred host operations
+        createDeferredOperation =
+            reinterpret_cast<PFN_vkCreateDeferredOperationKHR>(
+                loadDeviceExtension("vkCreateDeferredOperationKHR")
+            );
+
+        destroyDeferredOperation =
+            reinterpret_cast<PFN_vkDestroyDeferredOperationKHR>(
+                loadDeviceExtension("vkDestroyDeferredOperationKHR")
+            );
+
+        getDeferredOperationResult =
+            reinterpret_cast<PFN_vkGetDeferredOperationResultKHR>(
+                loadDeviceExtension("vkGetDeferredOperationResultKHR")
+            );
+
+        deferredOperationJoin =
+            reinterpret_cast<PFN_vkDeferredOperationJoinKHR>(
+                loadDeviceExtension("vkDeferredOperationJoinKHR")
+            );
     }
 }
 

@@ -26,7 +26,11 @@ namespace bg2e {
 namespace render {
 namespace vulkan {
 
-void loadExtensions(VkInstance instance);
+class PhysicalDevice;
+
+void loadInstanceExtensions(VkInstance instance);
+
+void loadDeviceExtensions(const bg2e::render::vulkan::PhysicalDevice& physDev, VkDevice device);
 
 // VK_KHR_dynamic_rendering
 extern BG2E_API PFN_vkCmdBeginRenderingKHR      cmdBeginRendering;

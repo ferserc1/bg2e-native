@@ -43,10 +43,12 @@ void Engine::init(SDL_Window* windowPtr)
     SDL_GetWindowSize(_windowPtr, &width, &height);
 
     createInstance();
-    vulkan::loadExtensions(_instance.handle());
+    vulkan::loadInstanceExtensions(_instance.handle());
     createSurface();
     createDevicesAndQueues();
     createMemoryAllocator();
+
+    vulkan::loadDeviceExtensions(_physicalDevice, _device.handle());
     
     _swapchain.init(this, uint32_t(width), uint32_t(height));
     
