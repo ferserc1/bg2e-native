@@ -38,6 +38,15 @@ struct RayTracingCapabilities {
     bool rayQuery = false;
     bool accelerationStructure = false;
     bool bufferDeviceAddress = false;
+
+    inline bool fullSupported() const
+    {
+        return available &&
+            rayTracingPipeline &&
+            rayQuery &&
+            accelerationStructure &&
+            bufferDeviceAddress;
+    }
 };
 
 struct PhysicalDeviceProperties {
@@ -61,6 +70,8 @@ struct PhysicalDeviceProperties {
     static PhysicalDeviceProperties * query(VkPhysicalDevice device);
 
     uint32_t getScore() const;
+
+    bool rayTracingSupported() const;
 
 private:
     PhysicalDeviceProperties() = default;
@@ -118,10 +129,13 @@ public:
         }
         return *_surface;
     }
-  
+
+    const std::shared_ptr<PhysicalDeviceProperties> properties() const { return _properties; }
+
 protected:
 	VkPhysicalDevice _device = VK_NULL_HANDLE;
     const Surface * _surface = nullptr;
+    std::shared_ptr<PhysicalDeviceProperties> _properties;
 
     static bool isSuitable(VkPhysicalDevice device, const Surface& surface);
     static bool checkDeviceExtensions(VkPhysicalDevice device);

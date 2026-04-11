@@ -72,6 +72,57 @@ PhysicalDeviceProperties * PhysicalDeviceProperties::query(VkPhysicalDevice devi
     props->id = deviceProperties.deviceID;
 
     props->deviceHandle = device;
+
+    // Check ray tracing capabilities
+    VkPhysicalDeviceRayTracingPipelinePropertiesKHR rtPipelineProps = {};
+    rtPipelineProps.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_PROPERTIES_KHR;
+    
+    VkPhysicalDeviceAccelerationStructurePropertiesKHR asProps = {};
+    asProps.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_PROPERTIES_KHR;
+    asProps.pNext = &rtPipelineProps;
+
+    VkPhysicalDeviceBufferDeviceAddressFeatures bufferDeviceAddressFeatures = {};
+    bufferDeviceAddressFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES;
+    
+    VkPhysicalDeviceRayTracingPipelineFeaturesKHR rtPipelineFeatures = {};
+    rtPipelineFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_FEATURES_KHR;
+    rtPipelineFeatures.pNext = &bufferDeviceAddressFeatures;
+
+    VkPhysicalDeviceAccelerationStructureFeaturesKHR asFeatures = {};
+    asFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR;
+    asFeatures.pNext = &rtPipelineFeatures;
+
+    VkPhysicalDeviceRayQueryFeaturesKHR rayQueryFeatures = {};
+    rayQueryFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_QUERY_FEATURES_KHR;
+    rayQueryFeatures.pNext = &asFeatures;
+
+    VkPhysicalDeviceFeatures2 deviceFeatures = {};
+    deviceFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+    deviceFeatures.pNext = &rayQueryFeatures;
+
+    vkGetPhysicalDeviceFeatures2(device, &deviceFeatures);
+
+    // Check for ray tracing extensions
+    uint32_t extensionCount = 0;
+    vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, nullptr);
+    std::vector<VkExtensionProperties> availableExtensions(extensionCount);
+    vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, availableExtensions.data());
+
+    std::set<std::string> availableExtensionNames;
+    for (const auto& ext : availableExtensions) {
+        availableExtensionNames.insert(ext.extensionName);
+    }
+
+    bool hasRTExtensions = 
+        availableExtensionNames.count(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME) &&
+        availableExtensionNames.count(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME) &&
+        availableExtensionNames.count(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
+
+    props->rayTracing.available = hasRTExtensions;
+    props->rayTracing.rayTracingPipeline = rtPipelineFeatures.rayTracingPipeline;
+    props->rayTracing.rayQuery = rayQueryFeatures.rayQuery;
+    props->rayTracing.accelerationStructure = asFeatures.accelerationStructure;
+    props->rayTracing.bufferDeviceAddress = bufferDeviceAddressFeatures.bufferDeviceAddress;
     
     return props;
 }
@@ -97,7 +148,17 @@ uint32_t PhysicalDeviceProperties::getScore() const
         score += 1;
     }
 
+    if (rayTracingSupported())
+    {
+        score *= 100;
+    }
+
     return static_cast<uint32_t>(score);
+}
+
+bool PhysicalDeviceProperties::rayTracingSupported() const
+{
+    return rayTracing.fullSupported();
 }
 
 void PhysicalDevice::listSuitableDevices(
@@ -315,6 +376,7 @@ void PhysicalDevice::choose(const Instance& instance, const Surface & surface)
 
     _device = bestDeviceProps->deviceHandle;
     _surface = &surface;
+    _properties = bestDeviceProps;
 }
 
 PhysicalDevice::QueueFamilyIndices PhysicalDevice::queueFamilyIndices() const

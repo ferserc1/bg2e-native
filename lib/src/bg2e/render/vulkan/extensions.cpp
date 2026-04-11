@@ -51,6 +51,23 @@ void loadExtensions(VkInstance instance)
     queueSubmit2 = loadExtension<PFN_vkQueueSubmit2KHR>(instance, "vkQueueSubmit2KHR");
     cmdPipelineBarrier2 = loadExtension<PFN_vkCmdPipelineBarrier2KHR>(instance, "vkCmdPipelineBarrier2KHR");
     cmdBlitImage2 = loadExtension<PFN_vkCmdBlitImage2KHR>(instance, "vkCmdBlitImage2KHR");
+    
+    PFN_vkGetDeviceProcAddr getDeviceProcAddr = (PFN_vkGetDeviceProcAddr) vkGetInstanceProcAddr(instance, "vkGetDeviceProcAddr");
+    if (getDeviceProcAddr) {
+        cmdBuildAccelerationStructures = (PFN_vkCmdBuildAccelerationStructuresKHR) getDeviceProcAddr(nullptr, "vkCmdBuildAccelerationStructuresKHR");
+        cmdCopyAccelerationStructure = (PFN_vkCmdCopyAccelerationStructureKHR) getDeviceProcAddr(nullptr, "vkCmdCopyAccelerationStructureKHR");
+        cmdCopyAccelerationStructureToMemory = (PFN_vkCmdCopyAccelerationStructureToMemoryKHR) getDeviceProcAddr(nullptr, "vkCmdCopyAccelerationStructureToMemoryKHR");
+        cmdCopyMemoryToAccelerationStructure = (PFN_vkCmdCopyMemoryToAccelerationStructureKHR) getDeviceProcAddr(nullptr, "vkCmdCopyMemoryToAccelerationStructureKHR");
+        cmdWriteAccelerationStructuresProperties = (PFN_vkCmdWriteAccelerationStructuresPropertiesKHR) getDeviceProcAddr(nullptr, "vkCmdWriteAccelerationStructuresPropertiesKHR");
+        getAccelerationStructureBuildSizes = (PFN_vkGetAccelerationStructureBuildSizesKHR) getDeviceProcAddr(nullptr, "vkGetAccelerationStructureBuildSizesKHR");
+        createRayTracingPipelines = (PFN_vkCreateRayTracingPipelinesKHR) getDeviceProcAddr(nullptr, "vkCreateRayTracingPipelinesKHR");
+        cmdTraceRays = (PFN_vkCmdTraceRaysKHR) getDeviceProcAddr(nullptr, "vkCmdTraceRaysKHR");
+        getRayTracingCaptureReplayShaderGroupHandles = (PFN_vkGetRayTracingCaptureReplayShaderGroupHandlesKHR) getDeviceProcAddr(nullptr, "vkGetRayTracingCaptureReplayShaderGroupHandlesKHR");
+        createDeferredOperation = (PFN_vkCreateDeferredOperationKHR) getDeviceProcAddr(nullptr, "vkCreateDeferredOperationKHR");
+        destroyDeferredOperation = (PFN_vkDestroyDeferredOperationKHR) getDeviceProcAddr(nullptr, "vkDestroyDeferredOperationKHR");
+        getDeferredOperationResult = (PFN_vkGetDeferredOperationResultKHR) getDeviceProcAddr(nullptr, "vkGetDeferredOperationResultKHR");
+        deferredOperationJoin = (PFN_vkDeferredOperationJoinKHR) getDeviceProcAddr(nullptr, "vkDeferredOperationJoinKHR");
+    }
 }
 
 // VK_KHR_dynamic_rendering
@@ -71,6 +88,25 @@ PFN_vkCmdPipelineBarrier2       cmdPipelineBarrier2;
 
 // VK_KHR_copy_commands2
 PFN_vkCmdBlitImage2             cmdBlitImage2;
+
+// VK_KHR_acceleration_structure
+PFN_vkCmdBuildAccelerationStructuresKHR                cmdBuildAccelerationStructures;
+PFN_vkCmdCopyAccelerationStructureKHR                  cmdCopyAccelerationStructure;
+PFN_vkCmdCopyAccelerationStructureToMemoryKHR          cmdCopyAccelerationStructureToMemory;
+PFN_vkCmdCopyMemoryToAccelerationStructureKHR          cmdCopyMemoryToAccelerationStructure;
+PFN_vkCmdWriteAccelerationStructuresPropertiesKHR      cmdWriteAccelerationStructuresProperties;
+PFN_vkGetAccelerationStructureBuildSizesKHR            getAccelerationStructureBuildSizes;
+
+// VK_KHR_ray_tracing_pipeline
+PFN_vkCreateRayTracingPipelinesKHR                     createRayTracingPipelines;
+PFN_vkCmdTraceRaysKHR                                  cmdTraceRays;
+PFN_vkGetRayTracingCaptureReplayShaderGroupHandlesKHR  getRayTracingCaptureReplayShaderGroupHandles;
+
+// VK_KHR_deferred_host_operations
+PFN_vkCreateDeferredOperationKHR                       createDeferredOperation;
+PFN_vkDestroyDeferredOperationKHR                      destroyDeferredOperation;
+PFN_vkGetDeferredOperationResultKHR                    getDeferredOperationResult;
+PFN_vkDeferredOperationJoinKHR                         deferredOperationJoin;
 
 }
 }

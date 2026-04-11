@@ -91,10 +91,52 @@ void Device::create(const Instance& instance, const PhysicalDevice& physicalDevi
     createInfo.pQueueCreateInfos = queueCreateInfos.data();
     createInfo.queueCreateInfoCount = uint32_t(queueCreateInfos.size());
     createInfo.pNext = &vulkan11Features;
+
+    // Ray tracing extensions, only if ray tracing is supported in the device
+    std::vector<const char*> rtExtensions;
+    if (physicalDevice.properties()->rayTracing.fullSupported())
+    {
+        const std::vector<const char*> optionalRTExtensions = {
+            VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME,
+            VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME,
+            VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME,
+            VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME,
+            VK_KHR_SPIRV_1_4_EXTENSION_NAME,
+            VK_KHR_SHADER_FLOAT_CONTROLS_EXTENSION_NAME,
+            VK_KHR_PIPELINE_LIBRARY_EXTENSION_NAME,
+            VK_KHR_RAY_QUERY_EXTENSION_NAME
+        };
+        
+        uint32_t extensionCount = 0;
+        vkEnumerateDeviceExtensionProperties(physicalDevice.handle(), nullptr, &extensionCount, nullptr);
+        std::vector<VkExtensionProperties> availableExtensions(extensionCount);
+        vkEnumerateDeviceExtensionProperties(physicalDevice.handle(), nullptr, &extensionCount, availableExtensions.data());
+        
+        std::set<std::string> availableExtensionNames;
+        for (const auto& ext : availableExtensions) {
+            availableExtensionNames.insert(ext.extensionName);
+        }
+        
+        for (const auto* ext : optionalRTExtensions) {
+            if (availableExtensionNames.count(ext) > 0) {
+                rtExtensions.push_back(ext);
+            }
+        }
+        
+        if (base::Log::isDebug() && !rtExtensions.empty()) {
+            bg2e_log_debug << "Enabled ray tracing extensions:" << bg2e_log_end;
+            for (const auto* ext : rtExtensions) {
+                bg2e_log_debug << "\t" << ext << bg2e_log_end;
+            }
+        }
+    }
     
     auto deviceExtensions = PhysicalDevice::getRequiredDeviceExtensions();
-    createInfo.enabledExtensionCount = uint32_t(deviceExtensions.size());
-    createInfo.ppEnabledExtensionNames = deviceExtensions.data();
+    
+    createInfo.enabledExtensionCount = uint32_t(deviceExtensions.size() + rtExtensions.size());
+    std::vector<const char*> allExtensions = deviceExtensions;
+    allExtensions.insert(allExtensions.end(), rtExtensions.begin(), rtExtensions.end());
+    createInfo.ppEnabledExtensionNames = allExtensions.data();
     
     std::vector<const char*> requiredLayers;
     instance.getRequiredLayers(requiredLayers);

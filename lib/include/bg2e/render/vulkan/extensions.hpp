@@ -47,6 +47,25 @@ extern BG2E_API PFN_vkCmdPipelineBarrier2       cmdPipelineBarrier2;
 // VK_KHR_copy_commands2
 extern BG2E_API PFN_vkCmdBlitImage2             cmdBlitImage2;
 
+// VK_KHR_acceleration_structure
+extern BG2E_API PFN_vkCmdBuildAccelerationStructuresKHR                cmdBuildAccelerationStructures;
+extern BG2E_API PFN_vkCmdCopyAccelerationStructureKHR                  cmdCopyAccelerationStructure;
+extern BG2E_API PFN_vkCmdCopyAccelerationStructureToMemoryKHR          cmdCopyAccelerationStructureToMemory;
+extern BG2E_API PFN_vkCmdCopyMemoryToAccelerationStructureKHR          cmdCopyMemoryToAccelerationStructure;
+extern BG2E_API PFN_vkCmdWriteAccelerationStructuresPropertiesKHR      cmdWriteAccelerationStructuresProperties;
+extern BG2E_API PFN_vkGetAccelerationStructureBuildSizesKHR            getAccelerationStructureBuildSizes;
+
+// VK_KHR_ray_tracing_pipeline
+extern BG2E_API PFN_vkCreateRayTracingPipelinesKHR                     createRayTracingPipelines;
+extern BG2E_API PFN_vkCmdTraceRaysKHR                                  cmdTraceRays;
+extern BG2E_API PFN_vkGetRayTracingCaptureReplayShaderGroupHandlesKHR  getRayTracingCaptureReplayShaderGroupHandles;
+
+// VK_KHR_deferred_host_operations
+extern BG2E_API PFN_vkCreateDeferredOperationKHR                       createDeferredOperation;
+extern BG2E_API PFN_vkDestroyDeferredOperationKHR                      destroyDeferredOperation;
+extern BG2E_API PFN_vkGetDeferredOperationResultKHR                    getDeferredOperationResult;
+extern BG2E_API PFN_vkDeferredOperationJoinKHR                         deferredOperationJoin;
+
 }
 }
 }
