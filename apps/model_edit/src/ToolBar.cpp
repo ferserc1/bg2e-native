@@ -101,8 +101,8 @@ void ToolBar::init(AppDelegate * delegate)
         }
     }});
     file.addMenuItem({ "Save As...", {
-        .shiftModifier = true,
         .ctrlModifier = true,
+        .shiftModifier = true,
         .key = bg2e::app::KeyEvent::KeyS,
         .handler = [&]()
         {

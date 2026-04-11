@@ -32,6 +32,14 @@ namespace vulkan {
 
 class Instance;
 
+struct RayTracingCapabilities {
+    bool available = false;
+    bool rayTracingPipeline = false;
+    bool rayQuery = false;
+    bool accelerationStructure = false;
+    bool bufferDeviceAddress = false;
+};
+
 struct PhysicalDeviceProperties {
     enum DeviceType {
         IntegratedGPU,
@@ -47,6 +55,8 @@ struct PhysicalDeviceProperties {
     uint32_t vendor = 0;
     uint32_t id = 0;
     VkPhysicalDevice deviceHandle = VK_NULL_HANDLE;
+
+    RayTracingCapabilities rayTracing;
 
     static PhysicalDeviceProperties * query(VkPhysicalDevice device);
 
