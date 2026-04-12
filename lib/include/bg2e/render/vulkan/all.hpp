@@ -35,3 +35,4 @@
 #include <bg2e/render/vulkan/factory/all.hpp>
 #include <bg2e/render/vulkan/geo/all.hpp>
 #include <bg2e/render/vulkan/macros/all.hpp>
+#include <bg2e/render/vulkan/rt/all.hpp>
