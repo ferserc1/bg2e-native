@@ -73,6 +73,8 @@ public:
 
     inline VmaAllocator allocator() const { return _allocator; }
 
+    inline bool rayTracingSupported() const { return _physicalDevice.properties()->rayTracingSupported(); }
+
     inline void updateSwapchainSize() { _resizeRequested = true; }
 
     // This function returns true if the swapchain have been resized

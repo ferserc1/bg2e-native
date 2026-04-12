@@ -67,6 +67,9 @@ public:
 
     void cleanup();
 
+    VkDeviceAddress vertexDeviceAddress() const;
+    VkDeviceAddress indexDeviceAddress() const;
+
 protected:
 	Engine* _engine;
 
