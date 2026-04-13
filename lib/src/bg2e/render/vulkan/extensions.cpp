@@ -101,10 +101,23 @@ void loadDeviceExtensions(const PhysicalDevice& physDev, VkDevice device)
                 loadDeviceExtension("vkCmdWriteAccelerationStructuresPropertiesKHR")
             );
 
-        getAccelerationStructureBuildSizes =
-            reinterpret_cast<PFN_vkGetAccelerationStructureBuildSizesKHR>(
+        getAccelerationStructureBuildSizes = reinterpret_cast<PFN_vkGetAccelerationStructureBuildSizesKHR>(
                 loadDeviceExtension("vkGetAccelerationStructureBuildSizesKHR")
             );
+
+        getAccelerationStructureDeviceAddress =
+            reinterpret_cast<PFN_vkGetAccelerationStructureDeviceAddressKHR>(
+                loadDeviceExtension("vkGetAccelerationStructureDeviceAddressKHR")
+            );
+        createAccelerationStructure =
+            reinterpret_cast<PFN_vkCreateAccelerationStructureKHR>(
+                loadDeviceExtension("vkCreateAccelerationStructureKHR")
+            );
+        destroyAccelerationStructure =
+            reinterpret_cast<PFN_vkDestroyAccelerationStructureKHR>(
+                loadDeviceExtension("vkDestroyAccelerationStructureKHR")
+            );
+
 
         // Ray tracing pipeline
         createRayTracingPipelines =
@@ -171,6 +184,9 @@ PFN_vkCmdCopyAccelerationStructureToMemoryKHR          cmdCopyAccelerationStruct
 PFN_vkCmdCopyMemoryToAccelerationStructureKHR          cmdCopyMemoryToAccelerationStructure;
 PFN_vkCmdWriteAccelerationStructuresPropertiesKHR      cmdWriteAccelerationStructuresProperties;
 PFN_vkGetAccelerationStructureBuildSizesKHR            getAccelerationStructureBuildSizes;
+PFN_vkCreateAccelerationStructureKHR                   createAccelerationStructure;
+PFN_vkDestroyAccelerationStructureKHR                  destroyAccelerationStructure;
+PFN_vkGetAccelerationStructureDeviceAddressKHR         getAccelerationStructureDeviceAddress;
 
 // VK_KHR_ray_tracing_pipeline
 PFN_vkCreateRayTracingPipelinesKHR                     createRayTracingPipelines;

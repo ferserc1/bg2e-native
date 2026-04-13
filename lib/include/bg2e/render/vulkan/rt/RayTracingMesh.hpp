@@ -28,9 +28,18 @@ namespace vulkan {
 namespace rt {
 
 template <typename MeshT>
-class BG2E_API RayTracingMesh {
+class BG2E_API RayTracingMeshGeneric {
 public:
-    RayTracingMesh(geo::MeshGeneric<MeshT>* mesh, uint32_t firstIndex, uint32_t indexCount);
+    RayTracingMeshGeneric(Engine* engine, geo::MeshGeneric<MeshT>* mesh, uint32_t firstIndex, uint32_t indexCount);
+    ~RayTracingMeshGeneric();
+
+    void build();
+
+    bool isBuilt() const;
+
+    uint32_t firstIndex() const;
+    uint32_t indexCount() const;
+    uint32_t triangleCount() const;
 
     VkDeviceAddress vertexDeviceAddress() const;
     VkDeviceAddress indexDeviceAddress() const;
@@ -39,18 +48,37 @@ public:
     uint32_t vertexStride() const;
     VkDeviceSize positionOffset() const;
 
-    uint32_t firstIndex() const;
-    uint32_t indexCount() const;
-    uint32_t triangleCount() const;
+    VkAccelerationStructureKHR handle() const;
+    VkDeviceAddress deviceAddress() const;
 
 private:
-    geo::MeshGeneric<MeshT>* _mesh;
-    uint32_t _firstIndex;
-    uint32_t _indexCount;
+    void cleanup(); // Called from destructor
+
+private:
+    Engine* _engine = nullptr;
+    geo::MeshGeneric<MeshT>* _mesh = nullptr;
+    uint32_t _firstIndex = 0;
+    uint32_t _indexCount = 0;
+
+    VkAccelerationStructureKHR _blas = VK_NULL_HANDLE;
+    std::unique_ptr<Buffer> _blasBuffer;
+    VkDeviceAddress _blasDeviceAddress = 0;
 };
 
-}
-}
-}
-}
+typedef BG2E_API RayTracingMeshGeneric<bg2e::geo::MeshP> RayTracingMeshP;
+typedef BG2E_API RayTracingMeshGeneric<bg2e::geo::MeshPN> RayTracingMeshPN;
+typedef BG2E_API RayTracingMeshGeneric<bg2e::geo::MeshPC> RayTracingMeshPC;
+typedef BG2E_API RayTracingMeshGeneric<bg2e::geo::MeshPU> RayTracingMeshPU;
+typedef BG2E_API RayTracingMeshGeneric<bg2e::geo::MeshPNU> RayTracingMeshPNU;
+typedef BG2E_API RayTracingMeshGeneric<bg2e::geo::MeshPNC> RayTracingMeshPNC;
+typedef BG2E_API RayTracingMeshGeneric<bg2e::geo::MeshPNUC> RayTracingMeshPNUC;
+typedef BG2E_API RayTracingMeshGeneric<bg2e::geo::MeshPNUT> RayTracingMeshPNUT;
+typedef BG2E_API RayTracingMeshGeneric<bg2e::geo::MeshPNUUT> RayTracingMeshPNUUT;
 
+// Default mesh type
+typedef BG2E_API RayTracingMeshGeneric<bg2e::geo::Mesh> RayTracingMesh;
+
+}
+}
+}
+}

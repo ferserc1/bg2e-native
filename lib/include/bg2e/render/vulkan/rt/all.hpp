@@ -19,3 +19,5 @@
 #pragma once
 
 #include <bg2e/render/vulkan/rt/RayTracingVertexInfo.hpp>
+#include <bg2e/render/vulkan/rt/RayTracingMesh.hpp>
+

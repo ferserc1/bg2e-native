@@ -16,73 +16,153 @@
  *    along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include <stdexcept>
+
 #include <bg2e/render/vulkan/rt/RayTracingMesh.hpp>
 #include <bg2e/render/vulkan/geo/Mesh.hpp>
+#include <bg2e/render/vulkan/common.hpp>
+#include <bg2e/render/vulkan/Device.hpp>
 
-namespace bg2e::render::vulkan::rt {
+namespace bg2e {
+namespace render {
+namespace vulkan {
+namespace rt {
 
 template <typename MeshT>
-RayTracingMesh<MeshT>::RayTracingMesh(geo::MeshGeneric<MeshT>* mesh, uint32_t firstIndex, uint32_t indexCount)
-    : _mesh{ mesh }, _firstIndex{ firstIndex }, _indexCount{ indexCount }
+RayTracingMeshGeneric<MeshT>::RayTracingMeshGeneric(Engine* engine,
+												   geo::MeshGeneric<MeshT>* mesh,
+												   uint32_t firstIndex,
+												   uint32_t indexCount)
+	: _engine{ engine }
+	, _mesh{ mesh }
+	, _firstIndex{ firstIndex }
+	, _indexCount{ indexCount }
 {
 }
 
 template <typename MeshT>
-VkDeviceAddress RayTracingMesh<MeshT>::vertexDeviceAddress() const
+RayTracingMeshGeneric<MeshT>::~RayTracingMeshGeneric()
 {
-    return _mesh->vertexDeviceAddress();
+	cleanup();
 }
 
 template <typename MeshT>
-VkDeviceAddress RayTracingMesh<MeshT>::indexDeviceAddress() const
+void RayTracingMeshGeneric<MeshT>::build()
 {
-    return _mesh->indexDeviceAddress();
+	if (isBuilt()) {
+		return;
+	}
+
+	if (!_mesh) {
+		throw std::runtime_error("RayTracingMeshGeneric::build(): mesh is null");
+	}
+
+	if (_mesh->meshData().vertices.empty() || _mesh->meshData().indices.empty()) {
+		throw std::runtime_error("RayTracingMeshGeneric::build(): mesh data is empty");
+	}
+
+	if (_indexCount == 0) {
+		throw std::runtime_error("RayTracingMeshGeneric::build(): indexCount is zero");
+	}
+
+	if ((_indexCount % 3) != 0) {
+		throw std::runtime_error("RayTracingMeshGeneric::build(): indexCount is not a multiple of 3");
+	}
+
+	// Vulkan BLAS build will be implemented later.
 }
 
 template <typename MeshT>
-VkFormat RayTracingMesh<MeshT>::positionFormat() const
+void RayTracingMeshGeneric<MeshT>::cleanup()
 {
-    return RayTracingVertexInfo<MeshT>::kPositionFormat;
+	if (_blasBuffer) {
+		_blasBuffer->cleanup();
+		_blasBuffer.reset();
+	}
+
+	_blas = VK_NULL_HANDLE;
+	_blasDeviceAddress = 0;
 }
 
 template <typename MeshT>
-uint32_t RayTracingMesh<MeshT>::vertexStride() const
+bool RayTracingMeshGeneric<MeshT>::isBuilt() const
 {
-    return static_cast<uint32_t>(RayTracingVertexInfo<MeshT>::kStride);
+	return _blas != VK_NULL_HANDLE;
 }
 
 template <typename MeshT>
-VkDeviceSize RayTracingMesh<MeshT>::positionOffset() const
+uint32_t RayTracingMeshGeneric<MeshT>::firstIndex() const
 {
-    return RayTracingVertexInfo<MeshT>::kPositionOffset;
+	return _firstIndex;
 }
 
 template <typename MeshT>
-uint32_t RayTracingMesh<MeshT>::firstIndex() const
+uint32_t RayTracingMeshGeneric<MeshT>::indexCount() const
 {
-    return _firstIndex;
+	return _indexCount;
 }
 
 template <typename MeshT>
-uint32_t RayTracingMesh<MeshT>::indexCount() const
+uint32_t RayTracingMeshGeneric<MeshT>::triangleCount() const
 {
-    return _indexCount;
+	return _indexCount / 3;
 }
 
 template <typename MeshT>
-uint32_t RayTracingMesh<MeshT>::triangleCount() const
+VkDeviceAddress RayTracingMeshGeneric<MeshT>::vertexDeviceAddress() const
 {
-    return _indexCount / 3;
+	return _mesh ? _mesh->vertexDeviceAddress() : 0;
 }
 
-template class RayTracingMesh<bg2e::geo::MeshP>;
-template class RayTracingMesh<bg2e::geo::MeshPN>;
-template class RayTracingMesh<bg2e::geo::MeshPC>;
-template class RayTracingMesh<bg2e::geo::MeshPU>;
-template class RayTracingMesh<bg2e::geo::MeshPNU>;
-template class RayTracingMesh<bg2e::geo::MeshPNC>;
-template class RayTracingMesh<bg2e::geo::MeshPNUC>;
-template class RayTracingMesh<bg2e::geo::MeshPNUT>;
-template class RayTracingMesh<bg2e::geo::MeshPNUUT>;
+template <typename MeshT>
+VkDeviceAddress RayTracingMeshGeneric<MeshT>::indexDeviceAddress() const
+{
+	return _mesh ? _mesh->indexDeviceAddress() : 0;
+}
 
+template <typename MeshT>
+VkFormat RayTracingMeshGeneric<MeshT>::positionFormat() const
+{
+	return RayTracingVertexInfo<MeshT>::kPositionFormat;
+}
+
+template <typename MeshT>
+uint32_t RayTracingMeshGeneric<MeshT>::vertexStride() const
+{
+	return static_cast<uint32_t>(RayTracingVertexInfo<MeshT>::kStride);
+}
+
+template <typename MeshT>
+VkDeviceSize RayTracingMeshGeneric<MeshT>::positionOffset() const
+{
+	return RayTracingVertexInfo<MeshT>::kPositionOffset;
+}
+
+template <typename MeshT>
+VkAccelerationStructureKHR RayTracingMeshGeneric<MeshT>::handle() const
+{
+	return _blas;
+}
+
+template <typename MeshT>
+VkDeviceAddress RayTracingMeshGeneric<MeshT>::deviceAddress() const
+{
+	return _blasDeviceAddress;
+}
+
+// Explicit template instantiations
+
+template class BG2E_API RayTracingMeshGeneric<bg2e::geo::MeshP>;
+template class BG2E_API RayTracingMeshGeneric<bg2e::geo::MeshPN>;
+template class BG2E_API RayTracingMeshGeneric<bg2e::geo::MeshPC>;
+template class BG2E_API RayTracingMeshGeneric<bg2e::geo::MeshPU>;
+template class BG2E_API RayTracingMeshGeneric<bg2e::geo::MeshPNU>;
+template class BG2E_API RayTracingMeshGeneric<bg2e::geo::MeshPNC>;
+template class BG2E_API RayTracingMeshGeneric<bg2e::geo::MeshPNUC>;
+template class BG2E_API RayTracingMeshGeneric<bg2e::geo::MeshPNUT>;
+template class BG2E_API RayTracingMeshGeneric<bg2e::geo::MeshPNUUT>;
+
+}
+}
+}
 }

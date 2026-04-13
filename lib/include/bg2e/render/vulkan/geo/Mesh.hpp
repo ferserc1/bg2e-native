@@ -40,12 +40,12 @@ public:
     inline const MeshT & meshData() const { return _meshData; }
     inline void setMeshData(const MeshT & m) { _meshData = m; }
     inline void setMeshData(const MeshT * m) { _meshData = *m; }
-	inline uint32_t submeshCount() const { return uint32_t(_meshData.submeshes.size()); }
+    inline uint32_t submeshCount() const { return uint32_t(_meshData.submeshes.size()); }
 
-	inline const Buffer* vertexBuffer() const { return _vertexBuffer.get(); }
-	inline const Buffer* indexBuffer() const { return _indexBuffer.get(); }
+    inline const Buffer* vertexBuffer() const { return _vertexBuffer.get(); }
+    inline const Buffer* indexBuffer() const { return _indexBuffer.get(); }
 
-	void build();
+    void build();
 	void draw(VkCommandBuffer cmd);
     void draw(
         VkCommandBuffer cmd,
