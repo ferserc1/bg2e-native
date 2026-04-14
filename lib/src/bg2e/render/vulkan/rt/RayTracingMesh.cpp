@@ -19,6 +19,7 @@
 #include <stdexcept>
 
 #include <bg2e/render/vulkan/rt/RayTracingMesh.hpp>
+#include <bg2e/render/vulkan/rt/RayTracingVertexInfo.hpp>
 #include <bg2e/render/vulkan/geo/Mesh.hpp>
 #include <bg2e/render/vulkan/common.hpp>
 #include <bg2e/render/vulkan/Device.hpp>
@@ -69,12 +70,117 @@ void RayTracingMeshGeneric<MeshT>::build()
 		throw std::runtime_error("RayTracingMeshGeneric::build(): indexCount is not a multiple of 3");
 	}
 
-	// Vulkan BLAS build will be implemented later.
+    if (!_engine->rayTracingSupported())
+    {
+        throw std::runtime_error("RayTracingMeshGeneric::build(): Ray tracing is not supported in this system");
+    }
+
+    VkAccelerationStructureGeometryTrianglesDataKHR trianglesData{};
+    trianglesData.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR;
+    trianglesData.vertexData.deviceAddress = vertexDeviceAddress();
+    trianglesData.indexData.deviceAddress = indexDeviceAddress();
+    trianglesData.indexType = VK_INDEX_TYPE_UINT32;
+    trianglesData.vertexFormat = positionFormat();
+    trianglesData.vertexStride = vertexStride();
+    trianglesData.maxVertex = static_cast<uint32_t>(_mesh->meshData().vertices.size() - 1);
+
+    VkAccelerationStructureGeometryKHR trianglesGeometry{};
+    trianglesGeometry.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;
+    trianglesGeometry.geometryType = VK_GEOMETRY_TYPE_TRIANGLES_KHR;
+    trianglesGeometry.flags = VK_GEOMETRY_OPAQUE_BIT_KHR;
+    trianglesGeometry.geometry.triangles = trianglesData;
+
+    VkAccelerationStructureBuildGeometryInfoKHR buildInfo{};
+    buildInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR;
+    buildInfo.flags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR;
+    buildInfo.geometryCount = 1;
+    buildInfo.pGeometries = &trianglesGeometry;
+    buildInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
+    auto primitiveCount = triangleCount();
+
+    VkAccelerationStructureBuildSizesInfoKHR buildSizesInfo{};
+    buildSizesInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_SIZES_INFO_KHR;
+
+    getAccelerationStructureBuildSizes(
+        _engine->device().handle(),
+        VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR,
+        &buildInfo,
+        &primitiveCount,
+        &buildSizesInfo
+    );
+
+    _blasBuffer = std::unique_ptr<Buffer>(Buffer::createAllocatedBuffer(
+        _engine,
+        buildSizesInfo.accelerationStructureSize,
+        VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
+        VMA_MEMORY_USAGE_GPU_ONLY
+    ));
+
+    std::unique_ptr<Buffer> scratchBuffer = std::unique_ptr<Buffer>(Buffer::createAllocatedBuffer(
+        _engine,
+        buildSizesInfo.buildScratchSize,
+        VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
+        VMA_MEMORY_USAGE_GPU_ONLY
+    ));
+
+    VkAccelerationStructureCreateInfoKHR blasInfo{};
+    blasInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_KHR;
+    blasInfo.buffer = _blasBuffer->handle();
+    blasInfo.offset = 0;
+    blasInfo.size = buildSizesInfo.accelerationStructureSize;
+    blasInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
+    if (createAccelerationStructure(
+        _engine->device().handle(),
+        &blasInfo,
+        nullptr,
+        &_blas
+    ) != VK_SUCCESS)
+    {
+        cleanup();
+        throw std::runtime_error("failed to create acceleration structure!");
+    }
+
+    // Complete the buildInfo to build the BLAS
+    buildInfo.mode = VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR;
+    buildInfo.dstAccelerationStructure = _blas;
+    buildInfo.scratchData.deviceAddress = scratchBuffer->deviceAddress();
+
+    VkAccelerationStructureBuildRangeInfoKHR buildRangeInfo{};
+    buildRangeInfo.primitiveCount = triangleCount();
+    buildRangeInfo.primitiveOffset = firstIndex() * sizeof(uint32_t);
+    buildRangeInfo.firstVertex = 0;
+    buildRangeInfo.transformOffset = 0;
+
+    const VkAccelerationStructureBuildRangeInfoKHR* buildRangeInfos[] = { &buildRangeInfo };
+    _engine->command().immediateSubmit([&](VkCommandBuffer cmd) {
+        cmdBuildAccelerationStructures(
+            cmd, 1, &buildInfo, buildRangeInfos
+        );
+    });
+
+    // Get the BLAS device address
+    VkAccelerationStructureDeviceAddressInfoKHR addressInfo{};
+    addressInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_DEVICE_ADDRESS_INFO_KHR;
+    addressInfo.accelerationStructure = _blas;
+    _blasDeviceAddress = getAccelerationStructureDeviceAddress(
+        _engine->device().handle(),
+        &addressInfo
+    );
+
+    scratchBuffer->cleanup();
 }
 
 template <typename MeshT>
 void RayTracingMeshGeneric<MeshT>::cleanup()
 {
+    if (_blas != VK_NULL_HANDLE)
+    {
+        destroyAccelerationStructure(
+            _engine->device().handle(),
+            _blas,
+            nullptr
+        );
+    }
 	if (_blasBuffer) {
 		_blasBuffer->cleanup();
 		_blasBuffer.reset();
