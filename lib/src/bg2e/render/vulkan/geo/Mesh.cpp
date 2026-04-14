@@ -47,8 +47,13 @@ void MeshGeneric<MeshT>::build()
 
     VkBufferUsageFlags usageFlags = VK_BUFFER_USAGE_TRANSFER_DST_BIT |
         VK_BUFFER_USAGE_VERTEX_BUFFER_BIT |
-        VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT |
-        VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
+        VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT; // Allow to pass the buffer device address in a push constant
+
+	if (_engine->rayTracingSupported())
+	{
+		usageFlags |= VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
+	}
+
 	_vertexBuffer = std::unique_ptr<Buffer>(Buffer::createAllocatedBuffer(
 		_engine,
 		bufferSize,
@@ -69,8 +74,13 @@ void MeshGeneric<MeshT>::build()
 
     usageFlags = VK_BUFFER_USAGE_TRANSFER_DST_BIT |
         VK_BUFFER_USAGE_INDEX_BUFFER_BIT |
-        VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT |
-        VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
+        VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
+
+	if (_engine->rayTracingSupported())
+	{
+		usageFlags |= VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
+	}
+
 	_indexBuffer = std::unique_ptr<Buffer>(Buffer::createAllocatedBuffer(
 		_engine,
 		indexBufferSize,
