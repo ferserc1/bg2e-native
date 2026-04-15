@@ -25,9 +25,11 @@
 #include <bg2e/render/vulkan/geo/Mesh.hpp>
 #include <bg2e/geo/modifiers.hpp>
 #include <bg2e/scene/Component.hpp>
+#include <bg2e/render/vulkan/rt/RayTracingMesh.hpp>
 
 #include <memory>
 #include <functional>
+#include <vector>
 
 namespace bg2e {
 namespace scene {
@@ -45,22 +47,22 @@ public:
             const glm::mat4& transform
     )> DrawSubmeshFunction;
     
-    DrawableBase() {}
-    virtual ~DrawableBase() {}
+    DrawableBase() = default;
+    virtual ~DrawableBase() = default;
 
     virtual void drawSubmesh(
         VkCommandBuffer cmd,
         VkPipelineLayout layout,
         uint32_t submesh,
         DrawSubmeshFunction cb,
-        VkPipelineBindPoint bp = VK_PIPELINE_BIND_POINT_GRAPHICS
+        VkPipelineBindPoint bp
     ) = 0;
     
     virtual void draw(
         VkCommandBuffer cmd,
         VkPipelineLayout layout,
         DrawFunction cb,
-        VkPipelineBindPoint bp = VK_PIPELINE_BIND_POINT_GRAPHICS
+        VkPipelineBindPoint bp
     ) = 0;
     
     inline void setTransform(const glm::mat4& mat)
@@ -68,7 +70,7 @@ public:
         _transform = mat;
     }
     
-    inline const glm::mat4& transform() const
+    [[nodiscard]] inline const glm::mat4& transform() const
     {
         return _transform;
     }
@@ -78,7 +80,7 @@ public:
         return _transform;
     }
     
-    inline const std::string& name() const
+    [[nodiscard]] inline const std::string& name() const
     {
         return _name;
     }
@@ -97,7 +99,7 @@ protected:
 template <typename MeshT, typename RenderMeshT>
 class BG2E_API DrawableGeneric : public DrawableBase {
 public:
-    virtual ~DrawableGeneric() {}
+    ~DrawableGeneric() override = default;
     
     struct SubmeshAttributes {
         base::MaterialAttributes material;
@@ -119,44 +121,53 @@ public:
     void setSubmeshGroupName(const std::string& groupName, uint32_t submeshIndex = 0);
     void setSubmeshVisibility(bool visible, uint32_t submeshIndex = 0);
     
-    const base::MaterialAttributes& material(uint32_t index = 0) const;
-    base::MaterialAttributes& material(uint32_t index = 0);
-    glm::mat4 submeshTransform(uint32_t index = 0) const;
-    std::string submeshName(uint32_t index = 0) const;
-    std::string submeshGroupName(uint32_t index = 0) const;
-    bool submeshVisibility(uint32_t index = 0) const;
+    [[nodiscard]] const base::MaterialAttributes& material(uint32_t index = 0) const;
+    [[nodiscard]] base::MaterialAttributes& material(uint32_t index = 0);
+    [[nodiscard]] glm::mat4 submeshTransform(uint32_t index = 0) const;
+    [[nodiscard]] std::string submeshName(uint32_t index = 0) const;
+    [[nodiscard]] std::string submeshGroupName(uint32_t index = 0) const;
+    [[nodiscard]] bool submeshVisibility(uint32_t index = 0) const;
     
-    uint32_t submeshesCount() const;
+    [[nodiscard]] uint32_t submeshesCount() const;
+
+    [[nodiscard]] bg2e::geo::Submesh submeshData(uint32_t index = 0) const;
     
     std::vector<std::shared_ptr<render::MaterialBase>> materials() { return _materials; }
     
     void iterateMaterials(std::function<void(base::MaterialAttributes&)> cb);
-    
+
     void load(render::Engine * engine);
-    inline bool isLoaded() const { return _renderMesh.get() != nullptr; }
+    [[nodiscard]] inline bool isLoaded() const { return _renderMesh.get() != nullptr; }
     void reload();
     
     // Call this function when a material property has changed after calling the load() method
     void updateMaterials();
     
     std::shared_ptr<RenderMeshT> renderMesh();
-    const std::shared_ptr<render::MaterialBase>& renderMaterial(uint32_t submeshIndex) const;
+    [[nodiscard]] const std::shared_ptr<render::MaterialBase>& renderMaterial(uint32_t submeshIndex) const;
     std::shared_ptr<render::MaterialBase>& renderMaterial(uint32_t submeshIndex);
+
+    inline void setRayTracingEnabled(bool enabled) { _rayTracingEnabled = enabled; }
+    [[nodiscard]] inline bool rayTracingEnabled() const { return _rayTracingEnabled && _engine && _engine->rayTracingSupported(); }
+
+    inline const std::vector<std::unique_ptr<bg2e::render::vulkan::rt::RayTracingMeshGeneric<MeshT>>>& rayTracingMeshes() const { return _rayTracingMeshes; }
+    inline std::unique_ptr<bg2e::render::vulkan::rt::RayTracingMeshGeneric<MeshT>> & rayTracingMesh(uint32_t submesh) { return _rayTracingMeshes[submesh]; }
+    inline const std::unique_ptr<bg2e::render::vulkan::rt::RayTracingMeshGeneric<MeshT>> & rayTracingMesh(uint32_t submesh) const { return _rayTracingMeshes[submesh]; }
     
     void drawSubmesh(
         VkCommandBuffer cmd,
         VkPipelineLayout layout,
         uint32_t submesh,
         DrawSubmeshFunction cb,
-        VkPipelineBindPoint bp = VK_PIPELINE_BIND_POINT_GRAPHICS
-    );
+        VkPipelineBindPoint bp
+    ) override;
     
     void draw(
         VkCommandBuffer cmd,
         VkPipelineLayout layout,
         DrawFunction cb,
-        VkPipelineBindPoint bp = VK_PIPELINE_BIND_POINT_GRAPHICS
-    );
+        VkPipelineBindPoint bp
+    ) override;
     
 protected:
     std::shared_ptr<MeshT> _mesh;
@@ -167,15 +178,20 @@ protected:
     // submesh attributes accessors are called with an out of bound index, because we don't
 	// whant that the access to the attributes to crash the program.
     base::MaterialAttributes _defaultMaterial;
-    std::string _defaultString = "";
+    std::string _defaultString;
     
     // Render resources
-    // TODO: create a render::Mesh cache to avoid duplicities loading a shared geo::Mesh in
-    // several Drawable objects
     render::Engine * _engine = nullptr;
     std::shared_ptr<RenderMeshT> _renderMesh;
     std::vector<std::shared_ptr<render::MaterialBase>> _materials;
-    
+
+    // Ray tracing resources
+    std::vector<std::unique_ptr<render::vulkan::rt::RayTracingMeshGeneric<MeshT>>> _rayTracingMeshes;
+    bool _rayTracingEnabled = true;
+
+    void buildRenderMesh();
+    void buildMaterials();
+    void buildRayTracingMeshes();
 };
 
 typedef BG2E_API DrawableGeneric<bg2e::geo::MeshP, bg2e::render::vulkan::geo::MeshP> DrawableP;

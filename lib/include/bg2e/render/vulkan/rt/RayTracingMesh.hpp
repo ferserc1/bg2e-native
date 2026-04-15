@@ -35,6 +35,8 @@ public:
 
     void build();
 
+    void cleanup();
+
     bool isBuilt() const;
 
     uint32_t firstIndex() const;
@@ -51,10 +53,7 @@ public:
     VkAccelerationStructureKHR handle() const;
     VkDeviceAddress deviceAddress() const;
 
-private:
-    void cleanup(); // Called from destructor
-
-private:
+protected:
     Engine* _engine = nullptr;
     geo::MeshGeneric<MeshT>* _mesh = nullptr;
     uint32_t _firstIndex = 0;
