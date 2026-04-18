@@ -19,11 +19,13 @@
 #pragma once
 
 #include <bg2e/common.hpp>
-#include <vulkan/vulkan_core.h>
+#include <bg2e/render/Engine.hpp>
 #include <bg2e/scene/NodeVisitor.hpp>
 #include <bg2e/math/base.hpp>
+#include <bg2e/render/vulkan/rt/RayTracingSceneInstance.hpp>
 
 #include <stack>
+#include <vector>
 
 namespace bg2e {
 namespace render {
@@ -32,13 +34,16 @@ namespace rt {
 
 class BG2E_API CollectRayTracingInstancesVisitor : public scene::NodeVisitor {
 public:
+    CollectRayTracingInstancesVisitor(Engine * engine);
     ~CollectRayTracingInstancesVisitor() override = default;
 
     void visit(scene::Node *node) override;
     void didVisit(scene::Node *node) override;
 
 protected:
-    VkAccelerationStructureInstanceKHR _instance{};
+    Engine * _engine = nullptr;
+
+    std::vector<RayTracingSceneInstance> _instances;
 
     glm::mat4 _currentTransform{ 1.0f };
     std::stack<glm::mat4> _transformStack;

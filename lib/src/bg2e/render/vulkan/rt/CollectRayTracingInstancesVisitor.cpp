@@ -25,17 +25,44 @@ namespace render {
 namespace vulkan {
 namespace rt {
 
+CollectRayTracingInstancesVisitor::CollectRayTracingInstancesVisitor(Engine *engine)
+    : _engine {engine}
+{
+}
+
 void CollectRayTracingInstancesVisitor::visit(scene::Node * node)
 {
-    auto transformComponent = node->getComponent<scene::TransformComponent>();
-
+    auto transformComponent = node->transform();
+    auto drawableComp = node->drawable();
+    auto drw = drawableComp ? drawableComp->drawable() : nullptr;
     if (transformComponent)
     {
         _transformStack.push(_currentTransform);
         _currentTransform = _currentTransform * transformComponent->matrix();
     }
 
-    // TODO: implement acceleration structure update
+    if (drw && _engine->rayTracingSupported())
+    {
+        for (uint32_t i = 0; i < drw->submeshesCount(); ++i)
+        {
+            const auto & rtMesh = drw->rayTracingMesh(i);
+            if (!rtMesh)
+            {
+                std::cerr << "WARN: invalid rayTracingMesh found in submesh. Check Drawable initialization ("
+                    << node->name() << " - "
+                    << drw->name() << ")" << std::endl;
+                continue;
+            }
+            _instances.push_back({
+                .blasDeviceAddress = rtMesh->deviceAddress(),
+                .transform = _currentTransform * drw->submeshTransform(i),
+                .instanceCustomIndex = 0,
+                .mask = 0xFF,
+                .stbRecordOffset = 0,
+                .flags = VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR
+            });
+        }
+    }
 }
 
 void CollectRayTracingInstancesVisitor::didVisit(scene::Node * node)
