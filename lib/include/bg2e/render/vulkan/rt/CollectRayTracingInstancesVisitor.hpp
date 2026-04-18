@@ -21,6 +21,9 @@
 #include <bg2e/common.hpp>
 #include <vulkan/vulkan_core.h>
 #include <bg2e/scene/NodeVisitor.hpp>
+#include <bg2e/math/base.hpp>
+
+#include <stack>
 
 namespace bg2e {
 namespace render {
@@ -36,6 +39,9 @@ public:
 
 protected:
     VkAccelerationStructureInstanceKHR _instance{};
+
+    glm::mat4 _currentTransform{ 1.0f };
+    std::stack<glm::mat4> _transformStack;
 };
 
 }

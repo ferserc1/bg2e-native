@@ -17,18 +17,36 @@
  */
 
 #include <bg2e/render/vulkan/rt/CollectRayTracingInstancesVisitor.hpp>
+#include <bg2e/scene/TransformComponent.hpp>
+#include <bg2e/scene/Node.hpp>
 
 namespace bg2e {
 namespace render {
 namespace vulkan {
 namespace rt {
 
-void CollectRayTracingInstancesVisitor::visit(scene::Node *)
+void CollectRayTracingInstancesVisitor::visit(scene::Node * node)
 {
+    auto transformComponent = node->getComponent<scene::TransformComponent>();
+
+    if (transformComponent)
+    {
+        _transformStack.push(_currentTransform);
+        _currentTransform = _currentTransform * transformComponent->matrix();
+    }
+
+    // TODO: implement acceleration structure update
 }
 
-void CollectRayTracingInstancesVisitor::didVisit(scene::Node *)
+void CollectRayTracingInstancesVisitor::didVisit(scene::Node * node)
 {
+    auto transformComponent = node->getComponent<scene::TransformComponent>();
+
+    if (transformComponent)
+    {
+        _currentTransform = _transformStack.top();
+        _transformStack.pop();
+    }
 }
 
 }
