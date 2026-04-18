@@ -1,0 +1,153 @@
+# bg2e-native — Agent Instructions
+
+## Build
+
+```sh
+cmake -S . -B build -G Ninja -DVULKAN_SDK=/path/to/vulkan/sdk
+cmake --build build
+```
+
+**Generator is platform-locked:**
+- Linux: `Ninja` (only supported)
+- macOS: `Xcode` only for native file dialogs; Ninja works for dev but dialogs break
+- Windows: `Visual Studio 17 2022` only
+
+**VULKAN_SDK is the only required CMake variable.** It defaults to `$VULKAN_SDK` env var. CLion does not inherit it automatically — set it in CMake cache variables.
+
+## Structure
+
+- `lib/` — engine shared library (`bg2e`). Headers in `lib/include/bg2e/`, sources in `lib/src/bg2e/`
+- `apps/model_edit/` — model editor application
+- `examples/{01_setup..14_bg2_model_load}/` — progressive engine examples
+- `shaders/src/` — GLSL sources (compiled to `.spv` at build time via `glslang`)
+- `lib/third_party/` — vendored deps: bg2-io, bg2-scene, imgui, nativefiledialog, stb_image, tinyobj, cgltf (git submodules)
+- `assets/` — textures, HDR envmaps, test models (.bg2, .glb, .obj)
+- `bin/{linux|macos|windows}/` — runtime output (binary + shaders + assets)
+
+## Key architecture facts
+
+- **Vulkan dynamic rendering** — no `VkRenderPass`; uses `VK_KHR_dynamic_rendering`
+- **Scene graph**: hierarchical `Node` + `Component` tree with Visitor pattern (UpdateVisitor, DrawVisitor, InputVisitor)
+- **Render path**: `RendererBasicForward` — forward PBR with up to 8 lights, IBL (irradiance + prefiltered envmap + BRDF LUT)
+- **Descriptor sets**: set=0 SceneData (view/proj), set=1 ObjectData (model + material + 5 texture samplers), set=2 EnvironmentData (lights + IBL)
+- **Delegate pattern**: `Application` configures `RenderLoopDelegate`, `InputDelegate`, `UserInterfaceDelegate`
+- **macOS**: bundles Vulkan dylibs (MoltenVK, validation layers) and icd.d/explicit_layer.d into the app bundle at build time
+
+## Detailed Dependencies by Module
+
+### math (Layer 0 - Foundation)
+- **No internal dependencies**. It is the engine's pure foundation.
+- `projections.hpp` includes `bg2e/json/JsonNode` (for camera serialization).
+
+### base (Layer 0 - Foundation)
+- `Camera.hpp` → math/projections, json/JsonNode
+- `Light.hpp` → base/Color, json/JsonNode
+- `MaterialAttributes.hpp` → common, base/Color, base/Texture
+- `Texture.hpp` → base/Image, base/Color
+
+### json (Layer 1 - Data Structures)
+- `JsonNode.hpp` → common, math/base, base/Color
+
+### geo (Layer 1 - Data Structures)
+- `Mesh.hpp` → common, geo/Vertex
+- Primitives (cube, plane, sphere, cylinder, cone) → common, geo/Mesh
+
+### render (Layer 2 - Rendering Engine)
+- `Engine.hpp` → vulkan/Instance, Command, Swapchain, extensions, CleanupManager, FrameResources, Surface, PhysicalDevice, Device
+- `Renderer.hpp` → scene/Node, scene/Scene, vulkan/Image, FrameResources, Engine
+- `Texture.hpp` → vulkan/Image, base/Texture, base/Color
+- `MaterialBase.hpp` → base/MaterialAttributes, render/Texture
+- `RenderQueue.hpp` → MaterialBase, math/base, scene/Drawable
+- `CubemapRenderer.hpp` → Engine, Texture, vulkan/Buffer, DescriptorSetAllocator, vulkan/geo/Mesh
+- `SkyboxRenderer.hpp` → CubemapRenderer, base/PlatformTools
+
+### scene (Layer 3 - Scene Graph)
+- `Component.hpp` → common, math/projections, app/KeyEvent, json/JsonNode
+- `Node.hpp` → Component, NodeVisitor, json/JsonNode, TransformComponent, DrawableComponent, CameraComponent, EnvironmentComponent, LightComponent
+- `Drawable.hpp` → scene/Mesh, base/MaterialAttributes, render/Engine, MaterialBase, vulkan/geo/Mesh, geo/modifiers, Component, vulkan/rt/RayTracingMesh
+- `scene/vk/all.hpp` → EnvironmentDataBinding, ObjectDataBinding, FrameDataBinding
+
+### db (Layer 4 - Data Loading)
+- `image.hpp` → common, base/Image, base/Texture
+- `mesh_bg2.hpp` → common, base/MaterialAttributes, geo/Mesh, scene/Drawable, render/Engine
+- `mesh_obj.hpp` → common, geo/Mesh, scene/Drawable, render/Engine
+- `scene_gltf.hpp` → common, scene/Node, render/Engine
+
+### manipulation (Layer 5 - Interaction)
+- `PickSelectionVisitor.hpp` → scene/NodeVisitor, scene/DrawableComponent
+- `SelectableComponent.hpp` → common, scene/Component
+- `SelectionManager.hpp` → render/Engine, scene/Drawable, scene/CameraComponent, scene/Scene, math/projections, scene/Node, PickSelectionVisitor, vulkan/Image
+- `SelectionHighlight.hpp` → scene/NodeVisitor, math/all, scene/Drawable, render/Engine
+
+### utils (Layer 6 - Utilities)
+- `TextureCache.hpp` → render/Texture, base/Texture, render/Engine
+- `MaterialSerializer.hpp` → common, base/MaterialAttributes
+
+### app (Layer 7 - Application)
+- `Application.hpp` → common, base/*, ui/*
+- `InputManager.hpp` → InputDelegate, KeyEvent
+
+### ui (Layer 8 - User Interface)
+- `UserInterface.hpp` → common, app/KeyEvent, scene/*, render/Engine
+
+
+## Third-Party Dependencies
+
+| Library | Usage |
+|---------|-------|
+| **GLM** | math/base, geo/Vertex -- vector/matrix mathematics |
+| **Vulkan SDK** | render/vulkan/* -- primary graphics API |
+| **VMA** (Vulkan Memory Allocator) | render/vulkan/common.hpp -- GPU memory management |
+| **SDL2** | render/Engine.hpp -- window creation |
+| **GTK3/Wayland** (Linux) | nfd_gtk.cpp, UI scale detection |
+| **std::filesystem / iostream** | Multiple modules -- file operations and logging |
+
+
+## Key Directory Structure
+
+```
+lib/include/bg2e/              # Main engine headers
+  all.hpp                      # Includes all modules (entry point)
+  common.hpp                   # Platform defines and BG2E_API macros
+  math/                        # Layer 0: projections, utilities (GLM)
+  base/                        # Layer 0: Color, Camera, Texture, MaterialAttributes
+  json/                        # Layer 1: JSON parser for serialization
+  geo/                         # Layer 1: procedural geometry (Mesh, primitives)
+  render/                      # Layer 2: Engine, Renderer, RenderLoop, Textures
+    vulkan/                    # Low-level Vulkan backend
+      factory/                 # Builders for pipelines, shaders, samplers
+      geo/                     # Vulkan mesh wrappers
+      rt/                      # Ray tracing meshes
+      macros/                  # C++ helper macros
+    uniforms/                  # PBR structs for shaders
+  scene/                       # Layer 3: Node, Component, Drawable, Visitors
+    vk/                        # Data bindings for Vulkan (uniforms)
+  manipulation/                # Layer 5: selection, highlight, pick visitor
+  utils/                       # Layer 6: TextureCache, MaterialSerializer
+  db/                          # Layer 4: glTF, OBJ, .bg2 format loading
+  app/                         # Layer 7: Application, MainLoop, Input, Preferences
+  ui/                          # Layer 8: UserInterface, Windows, Widgets, Editors
+
+lib/src/bg2e/                  # .cpp implementations for all modules
+apps/model_edit/               # Model editor (main app)
+examples/                      # 15 examples + debug-app
+shaders/src/                   # GLSL shaders (PBR forward, skybox, IBL)
+```
+
+## Shader workflow
+
+GLSL in `shaders/src/` compiles to `.spv` via CMake post-build using `${VULKAN_SDK}/bin/glslang`. Shaders use `#include "lib/*.glsl"` for shared PBR functions. Built `.spv` files land in `bin/{platform}/shaders/`.
+
+## Gotchas
+
+- **No test framework** — examples are the primary verification surface
+- **C++20 required**, shared library output (not static)
+- **MSVC**: uses `/MP` for parallel build and `MultiThreadedDLL` runtime
+- **macOS code signing** is explicitly disabled in CMake (`CMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED "NO"`)
+- **GLSL includes** are resolved by glslang's include path — don't move `shaders/src/lib/` relative to other shader files
+- **`.bg2` format** is the engine's proprietary binary mesh format (separate from glTF/OBJ)
+- **`skills.md`** contains the full architecture reference — read it before modifying engine internals
+
+## Note about token generation
+
+ALWAYS use English as text generation language, even when the user ask questions in other languate.
