@@ -18,8 +18,42 @@
 
 #pragma once
 
-#include <bg2e/render/vulkan/rt/RayTracingVertexInfo.hpp>
-#include <bg2e/render/vulkan/rt/RayTracingMesh.hpp>
+#include <bg2e/common.hpp>
 #include <bg2e/render/vulkan/rt/RayTracingSceneInstance.hpp>
-#include <bg2e/render/vulkan/rt/RayTracingScene.hpp>
+#include <bg2e/render/vulkan/Buffer.hpp>
+#include <bg2e/render/Engine.hpp>
+#include <memory>
+#include <vector>
+#include <vulkan/vulkan_core.h>
 
+namespace bg2e {
+namespace render {
+namespace vulkan {
+namespace rt {
+
+class BG2E_API RayTracingScene {
+public:
+    RayTracingScene(Engine * engine);
+
+    void clear();
+    void addInstance(const RayTracingSceneInstance& instance);
+    void build();
+    void update();
+    void cleanup();
+
+protected:
+    render::Engine* _engine = nullptr;
+
+    std::vector<RayTracingSceneInstance> _instances;
+
+    std::unique_ptr<Buffer> _instanceBuffer;
+    std::unique_ptr<Buffer> _tlasBuffer;
+    
+    VkAccelerationStructureKHR _tlas = VK_NULL_HANDLE;
+    uint64_t _tlasDeviceAddress = 0;
+};
+
+}
+}
+}
+}

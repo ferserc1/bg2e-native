@@ -16,10 +16,39 @@
  *    along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#pragma once
-
-#include <bg2e/render/vulkan/rt/RayTracingVertexInfo.hpp>
-#include <bg2e/render/vulkan/rt/RayTracingMesh.hpp>
-#include <bg2e/render/vulkan/rt/RayTracingSceneInstance.hpp>
 #include <bg2e/render/vulkan/rt/RayTracingScene.hpp>
 
+namespace bg2e {
+namespace render {
+namespace vulkan {
+namespace rt {
+
+RayTracingScene::RayTracingScene(Engine * engine)
+    :_engine(engine)
+{
+}
+
+void RayTracingScene::clear()
+{
+}
+
+void RayTracingScene::addInstance(const RayTracingSceneInstance& instance)
+{
+}
+
+void RayTracingScene::build()
+{
+}
+
+void RayTracingScene::update()
+{
+}
+
+void RayTracingScene::cleanup()
+{
+}
+
+}
+}
+}
+}

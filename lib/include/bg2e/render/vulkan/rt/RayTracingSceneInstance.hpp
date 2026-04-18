@@ -18,8 +18,25 @@
 
 #pragma once
 
-#include <bg2e/render/vulkan/rt/RayTracingVertexInfo.hpp>
-#include <bg2e/render/vulkan/rt/RayTracingMesh.hpp>
-#include <bg2e/render/vulkan/rt/RayTracingSceneInstance.hpp>
-#include <bg2e/render/vulkan/rt/RayTracingScene.hpp>
+#include <bg2e/common.hpp>
+#include <glm/mat4x4.hpp>
+#include <vulkan/vulkan_core.h>
 
+namespace bg2e {
+namespace render {
+namespace vulkan {
+namespace rt {
+
+struct BG2E_API RayTracingSceneInstance {
+    uint64_t blasDeviceAddress = 0;
+    glm::mat4 transform = glm::mat4(1.0f);
+    uint32_t instanceCustomIndex = 0;
+    uint8_t mask = 0xFF;
+    uint32_t stbRecordOffset = 0;
+    VkGeometryInstanceFlagsKHR flags = VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR;
+};
+
+}
+}
+}
+}
