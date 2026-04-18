@@ -60,11 +60,7 @@ extern BG2E_API PFN_vkCmdWriteAccelerationStructuresPropertiesKHR      cmdWriteA
 extern BG2E_API PFN_vkGetAccelerationStructureBuildSizesKHR            getAccelerationStructureBuildSizes;
 extern BG2E_API PFN_vkCreateAccelerationStructureKHR                   createAccelerationStructure;
 extern BG2E_API PFN_vkDestroyAccelerationStructureKHR                  destroyAccelerationStructure;
-extern BG2E_API PFN_vkCreateAccelerationStructureKHR                   createAccelerationStructure;
-extern BG2E_API PFN_vkDestroyAccelerationStructureKHR                  destroyAccelerationStructure;
 extern BG2E_API PFN_vkGetAccelerationStructureDeviceAddressKHR         getAccelerationStructureDeviceAddress;
-extern BG2E_API PFN_vkCreateAccelerationStructureKHR                   createAccelerationStructure;
-extern BG2E_API PFN_vkDestroyAccelerationStructureKHR                  destroyAccelerationStructure;
 
 // VK_KHR_ray_tracing_pipeline
 extern BG2E_API PFN_vkCreateRayTracingPipelinesKHR                     createRayTracingPipelines;
