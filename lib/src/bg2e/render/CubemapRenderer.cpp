@@ -334,6 +334,7 @@ void CubemapRenderer::initGeometry()
     
     ProjectionData* projectionDataPtr = reinterpret_cast<ProjectionData*>(_projectionDataBuffer->allocatedData());
     *projectionDataPtr = _projectionData;
+    _projectionDataBuffer->flushAllocatedData();
     
     auto cubeMesh = std::unique_ptr<bg2e::geo::MeshP>(
         bg2e::geo::createCubeP(10.0f, 10.0f, 10.0f, true)

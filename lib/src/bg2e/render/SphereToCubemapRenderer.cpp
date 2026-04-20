@@ -82,6 +82,7 @@ void SphereToCubemapRenderer::build(
     
     auto projectionDataBufferPtr = reinterpret_cast<ProjectionData*>(_projectionDataBuffer->allocatedData());
     *projectionDataBufferPtr = _projectionData;
+    _projectionDataBuffer->flushAllocatedData();
     
     updateImage(imagePath);
     initImages(cubeImageSize);
@@ -121,6 +122,7 @@ void SphereToCubemapRenderer::build(
     
     auto projectionDataBufferPtr = reinterpret_cast<ProjectionData*>(_projectionDataBuffer->allocatedData());
     *projectionDataBufferPtr = _projectionData;
+    _projectionDataBuffer->flushAllocatedData();
     
     updateImage(texture);
     initImages(cubeImageSize);

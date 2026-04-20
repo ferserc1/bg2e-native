@@ -22,7 +22,6 @@
 #include <bg2e/render/Engine.hpp>
 #include <bg2e/scene/NodeVisitor.hpp>
 #include <bg2e/math/base.hpp>
-#include <bg2e/render/vulkan/rt/RayTracingSceneInstance.hpp>
 
 #include <stack>
 #include <vector>
@@ -40,10 +39,15 @@ public:
     void visit(scene::Node *node) override;
     void didVisit(scene::Node *node) override;
 
+    [[nodiscard]] const std::vector<VkAccelerationStructureInstanceKHR>& rayTracingInstances() const
+    {
+        return _instances;
+    }
+
 protected:
     Engine * _engine = nullptr;
 
-    std::vector<RayTracingSceneInstance> _instances;
+    std::vector<VkAccelerationStructureInstanceKHR> _instances;
 
     glm::mat4 _currentTransform{ 1.0f };
     std::stack<glm::mat4> _transformStack;

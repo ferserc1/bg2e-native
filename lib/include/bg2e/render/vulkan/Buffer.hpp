@@ -41,6 +41,7 @@ public:
     VkDeviceAddress deviceAddress() const;
     
     void* allocatedData();
+    void flushAllocatedData();
 
     inline VkBuffer handle() const { return _buffer; }
     inline VmaAllocation allocation() const { return _allocation; }

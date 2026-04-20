@@ -366,7 +366,8 @@ Image* Image::createAllocatedImage(
     
     auto uploadData = uploadBuffer->allocatedData();
     memcpy(uploadData, data, dataSize);
-    
+    uploadBuffer->flushAllocatedData();
+
     if (useMipmaps)
 	{
 		usage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
@@ -566,6 +567,7 @@ void Image::readPixelsRGBA8(
     auto mapped = reinterpret_cast<uint8_t*>(stagingBuffer->allocatedData());
     outData.resize(imageSize);
     memcpy(outData.data(), mapped, imageSize);
+    stagingBuffer->flushAllocatedData();
 
     stagingBuffer->cleanup();
 }

@@ -1,5 +1,5 @@
 /*
- *    business grade graphic engine (bg2 engine)
+*    business grade graphic engine (bg2 engine)
  *    Copyright (C) 2026  Fernando Serrano Carpena
  *
  *    This program is free software: you can redistribute it and/or modify
@@ -16,11 +16,31 @@
  *    along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#pragma once
-
-#include <bg2e/render/vulkan/rt/RayTracingVertexInfo.hpp>
-#include <bg2e/render/vulkan/rt/RayTracingMesh.hpp>
-#include <bg2e/render/vulkan/rt/RayTracingScene.hpp>
-#include <bg2e/render/vulkan/rt/RTAccelerationStructureSize.hpp>
 #include <bg2e/render/vulkan/rt/utils.hpp>
 
+namespace bg2e::render::vulkan::rt
+{
+
+VkTransformMatrixKHR mat4ToVkTransformMatrix(const glm::mat4 &m)
+{
+    VkTransformMatrixKHR out{};
+
+    out.matrix[0][0] = m[0][0];
+    out.matrix[0][1] = m[1][0];
+    out.matrix[0][2] = m[2][0];
+    out.matrix[0][3] = m[3][0];
+
+    out.matrix[1][0] = m[0][1];
+    out.matrix[1][1] = m[1][1];
+    out.matrix[1][2] = m[2][1];
+    out.matrix[1][3] = m[3][1];
+
+    out.matrix[2][0] = m[0][2];
+    out.matrix[2][1] = m[1][2];
+    out.matrix[2][2] = m[2][2];
+    out.matrix[2][3] = m[3][2];
+
+    return out;
+}
+
+}

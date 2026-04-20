@@ -56,6 +56,7 @@ DescriptorSet* uniformBufferDescriptorSet(
     
     auto dataPtr = reinterpret_cast<T*>(uniformBuffer->allocatedData());
     *dataPtr = data;
+    uniformBuffer->flushAllocatedData();
     
     auto descriptorSet = frameResources.newDescriptorSet(descriptorSetLayout);
     descriptorSet->updateBuffer(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, uniformBuffer, sizeof(T), 0);

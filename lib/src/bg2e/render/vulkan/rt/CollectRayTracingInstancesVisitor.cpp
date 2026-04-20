@@ -19,6 +19,8 @@
 #include <bg2e/render/vulkan/rt/CollectRayTracingInstancesVisitor.hpp>
 #include <bg2e/scene/TransformComponent.hpp>
 #include <bg2e/scene/Node.hpp>
+#include <bg2e/render/vulkan/rt/utils.hpp>
+#include <bg2e/render/vulkan/rt/RayTracingScene.hpp>
 
 namespace bg2e {
 namespace render {
@@ -53,13 +55,14 @@ void CollectRayTracingInstancesVisitor::visit(scene::Node * node)
                     << drw->name() << ")" << std::endl;
                 continue;
             }
+            auto mat = mat4ToVkTransformMatrix(_currentTransform * drw->submeshTransform(i));
             _instances.push_back({
-                .blasDeviceAddress = rtMesh->deviceAddress(),
-                .transform = _currentTransform * drw->submeshTransform(i),
+                .transform = mat,
                 .instanceCustomIndex = 0,
                 .mask = 0xFF,
-                .stbRecordOffset = 0,
-                .flags = VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR
+                .instanceShaderBindingTableRecordOffset = 0,
+                .flags = VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR,
+                .accelerationStructureReference = rtMesh->deviceAddress()
             });
         }
     }

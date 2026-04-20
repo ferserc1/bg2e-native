@@ -44,6 +44,7 @@ void MeshGeneric<MeshT>::build()
 	void* dataPtr = stagingBuffer->allocatedData();
 
 	memcpy(dataPtr, _meshData.vertices.data(), bufferSize);
+	stagingBuffer->flushAllocatedData();
 
     VkBufferUsageFlags usageFlags = VK_BUFFER_USAGE_TRANSFER_DST_BIT |
         VK_BUFFER_USAGE_VERTEX_BUFFER_BIT |
@@ -71,6 +72,7 @@ void MeshGeneric<MeshT>::build()
 
 	dataPtr = indexStagingBuffer->allocatedData();
 	memcpy(dataPtr, _meshData.indices.data(), indexBufferSize);
+	indexStagingBuffer->flushAllocatedData();
 
     usageFlags = VK_BUFFER_USAGE_TRANSFER_DST_BIT |
         VK_BUFFER_USAGE_INDEX_BUFFER_BIT |

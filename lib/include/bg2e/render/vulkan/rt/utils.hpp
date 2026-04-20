@@ -1,5 +1,5 @@
 /*
- *    business grade graphic engine (bg2 engine)
+*    business grade graphic engine (bg2 engine)
  *    Copyright (C) 2026  Fernando Serrano Carpena
  *
  *    This program is free software: you can redistribute it and/or modify
@@ -18,25 +18,14 @@
 
 #pragma once
 
-#include <bg2e/common.hpp>
-#include <glm/mat4x4.hpp>
-#include <vulkan/vulkan_core.h>
+#include <bg2e/render/vulkan/common.hpp>
+#include <bg2e/math/base.hpp>
 
-namespace bg2e {
-namespace render {
-namespace vulkan {
-namespace rt {
+namespace bg2e::render::vulkan::rt
+{
 
-struct BG2E_API RayTracingSceneInstance {
-    uint64_t blasDeviceAddress = 0;
-    glm::mat4 transform = glm::mat4(1.0f);
-    uint32_t instanceCustomIndex = 0;
-    uint8_t mask = 0xFF;
-    uint32_t stbRecordOffset = 0;
-    VkGeometryInstanceFlagsKHR flags = VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR;
-};
 
-}
-}
-}
+extern VkTransformMatrixKHR BG2E_API mat4ToVkTransformMatrix(const glm::mat4 &m);
+
+
 }

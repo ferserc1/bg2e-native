@@ -29,18 +29,18 @@ Buffer* Buffer::createAllocatedBuffer(
     VmaMemoryUsage memoryUsage
 ) {
     auto buffer = new Buffer();
-    
+
     buffer->_engine = engine;
-    
+
     VkBufferCreateInfo bufferInfo = {};
     bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
     bufferInfo.size = allocSize;
     bufferInfo.usage = usage;
-    
+
     VmaAllocationCreateInfo allocInfo = {};
     allocInfo.usage = memoryUsage;
     allocInfo.flags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
-    
+
     VK_ASSERT(vmaCreateBuffer(
         engine->allocator(),
         &bufferInfo,
@@ -49,7 +49,7 @@ Buffer* Buffer::createAllocatedBuffer(
         &buffer->_allocation,
         &buffer->_info
     ));
-    
+
     return buffer;
 }
 
@@ -69,6 +69,16 @@ void* Buffer::allocatedData()
     return getMappedData(_allocation);
 }
 
+void Buffer::flushAllocatedData()
+{
+    vmaFlushAllocation(
+        _engine->allocator(),
+        _allocation,
+        0,
+        VK_WHOLE_SIZE
+    );
+}
+
 VkDeviceAddress Buffer::deviceAddress() const
 {
     if (_buffer == VK_NULL_HANDLE)
@@ -81,7 +91,7 @@ VkDeviceAddress Buffer::deviceAddress() const
     deviceAddressInfo.buffer = _buffer;
     return vkGetBufferDeviceAddress(_engine->device().handle(), &deviceAddressInfo);
 }
-    
+
 }
 }
 }

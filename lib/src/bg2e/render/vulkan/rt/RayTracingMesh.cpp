@@ -23,6 +23,7 @@
 #include <bg2e/render/vulkan/geo/Mesh.hpp>
 #include <bg2e/render/vulkan/common.hpp>
 #include <bg2e/render/vulkan/Device.hpp>
+#include <bg2e/render/vulkan/rt/RTAccelerationStructureSize.hpp>
 
 namespace bg2e {
 namespace render {
@@ -75,38 +76,15 @@ void RayTracingMeshGeneric<MeshT>::build()
         throw std::runtime_error("RayTracingMeshGeneric::build(): Ray tracing is not supported in this system");
     }
 
-    VkAccelerationStructureGeometryTrianglesDataKHR trianglesData{};
-    trianglesData.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR;
-    trianglesData.vertexData.deviceAddress = vertexDeviceAddress();
-    trianglesData.indexData.deviceAddress = indexDeviceAddress();
-    trianglesData.indexType = VK_INDEX_TYPE_UINT32;
-    trianglesData.vertexFormat = positionFormat();
-    trianglesData.vertexStride = vertexStride();
-    trianglesData.maxVertex = static_cast<uint32_t>(_mesh->meshData().vertices.size() - 1);
-
-    VkAccelerationStructureGeometryKHR trianglesGeometry{};
-    trianglesGeometry.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;
-    trianglesGeometry.geometryType = VK_GEOMETRY_TYPE_TRIANGLES_KHR;
-    trianglesGeometry.flags = VK_GEOMETRY_OPAQUE_BIT_KHR;
-    trianglesGeometry.geometry.triangles = trianglesData;
-
-    VkAccelerationStructureBuildGeometryInfoKHR buildInfo{};
-    buildInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR;
-    buildInfo.flags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR;
-    buildInfo.geometryCount = 1;
-    buildInfo.pGeometries = &trianglesGeometry;
-    buildInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
-    auto primitiveCount = triangleCount();
-
-    VkAccelerationStructureBuildSizesInfoKHR buildSizesInfo{};
-    buildSizesInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_SIZES_INFO_KHR;
-
-    getAccelerationStructureBuildSizes(
-        _engine->device().handle(),
-        VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR,
-        &buildInfo,
-        &primitiveCount,
-        &buildSizesInfo
+    RTAccelerationStructureSize size(_engine);
+    auto buildSizesInfo = size.getBLASSizes(
+        vertexDeviceAddress(),
+        indexDeviceAddress(),
+        positionFormat(),
+        vertexStride(),
+        static_cast<uint32_t>(_mesh->meshData().vertices.size() - 1),
+        triangleCount(),
+        VK_INDEX_TYPE_UINT32
     );
 
     _blasBuffer = std::unique_ptr<Buffer>(Buffer::createAllocatedBuffer(
@@ -141,6 +119,7 @@ void RayTracingMeshGeneric<MeshT>::build()
     }
 
     // Complete the buildInfo to build the BLAS
+    auto buildInfo = size.buildInfo();
     buildInfo.mode = VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR;
     buildInfo.dstAccelerationStructure = _blas;
     buildInfo.scratchData.deviceAddress = scratchBuffer->deviceAddress();
@@ -166,8 +145,6 @@ void RayTracingMeshGeneric<MeshT>::build()
         _engine->device().handle(),
         &addressInfo
     );
-
-    scratchBuffer->cleanup();
 }
 
 template <typename MeshT>

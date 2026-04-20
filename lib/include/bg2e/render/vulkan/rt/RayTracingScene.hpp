@@ -19,9 +19,10 @@
 #pragma once
 
 #include <bg2e/common.hpp>
-#include <bg2e/render/vulkan/rt/RayTracingSceneInstance.hpp>
 #include <bg2e/render/vulkan/Buffer.hpp>
 #include <bg2e/render/Engine.hpp>
+#include <bg2e/scene/Node.hpp>
+
 #include <memory>
 #include <vector>
 #include <vulkan/vulkan_core.h>
@@ -35,20 +36,19 @@ class BG2E_API RayTracingScene {
 public:
     RayTracingScene(Engine * engine);
 
-    void clear();
-    void addInstance(const RayTracingSceneInstance& instance);
-    void build();
-    void update();
+    bool update(VkCommandBuffer cmd, scene::Node * node);
     void cleanup();
 
 protected:
     render::Engine* _engine = nullptr;
 
-    std::vector<RayTracingSceneInstance> _instances;
-
     std::unique_ptr<Buffer> _instanceBuffer;
     std::unique_ptr<Buffer> _tlasBuffer;
-    
+
+    // We need to store the scratch buffer because the build TLAS command is added
+    // to the command buffer and the TLAS build process is asyncrhonous
+    std::unique_ptr<Buffer> _scratchBuffer;
+
     VkAccelerationStructureKHR _tlas = VK_NULL_HANDLE;
     uint64_t _tlasDeviceAddress = 0;
 };

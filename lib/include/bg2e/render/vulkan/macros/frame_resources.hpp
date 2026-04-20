@@ -52,6 +52,7 @@ Buffer* createBuffer(
     
     auto dataPtr = reinterpret_cast<T*>(buffer->allocatedData());
     *dataPtr = data;
+    buffer->flushAllocatedData();
     
     return buffer;
 }
