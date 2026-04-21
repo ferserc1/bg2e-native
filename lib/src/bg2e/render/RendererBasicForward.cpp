@@ -24,6 +24,8 @@
 #include <bg2e/render/vulkan/factory/PipelineLayout.hpp>
 #include <bg2e/base/PlatformTools.hpp>
 
+#include "bg2e/render/vulkan/rt/RayTracingScene.hpp"
+
 namespace bg2e::render {
 
 void RendererBasicForward::build(
@@ -141,6 +143,8 @@ void RendererBasicForward::draw(
 ) {
     using namespace bg2e::render::vulkan;
     _scene->willDraw();
+
+    frameResources.rayTracingScene->update(cmd, _scene->rootNode());
     
     _environment->update(cmd, currentFrame, frameResources);
 

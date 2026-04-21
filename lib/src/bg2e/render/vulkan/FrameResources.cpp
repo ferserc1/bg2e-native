@@ -20,6 +20,7 @@
 #include <bg2e/render/vulkan/DescriptorSetAllocator.hpp>
 #include <bg2e/render/vulkan/Info.hpp>
 #include <bg2e/render/Engine.hpp>
+#include <bg2e/render/vulkan/rt/RayTracingScene.hpp>
 
 namespace bg2e {
 namespace render {
@@ -44,6 +45,8 @@ void FrameResources::init(bg2e::render::Engine * engine, Command* command)
     VK_ASSERT(vkCreateSemaphore(_command->device(), &semaphoreInfo, nullptr, &renderSemaphore));
 
     descriptorAllocator = new DescriptorSetAllocator();
+
+    rayTracingScene = new rt::RayTracingScene(_engine);
 }
 
 void FrameResources::flushFrameData()
@@ -54,6 +57,11 @@ void FrameResources::flushFrameData()
 
 void FrameResources::cleanup()
 {
+    if (rayTracingScene)
+    {
+        delete rayTracingScene;
+    }
+
     if (descriptorAllocator)
     {
         delete descriptorAllocator;

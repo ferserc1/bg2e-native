@@ -33,6 +33,11 @@ namespace vulkan {
 class DescriptorSetAllocator;
 class DescriptorSet;
 
+namespace rt
+{
+    class RayTracingScene;
+}
+
 struct BG2E_API FrameResources {
     VkCommandPool commandPool = VK_NULL_HANDLE;
     VkCommandBuffer commandBuffer = VK_NULL_HANDLE;
@@ -41,6 +46,7 @@ struct BG2E_API FrameResources {
     VkFence frameFence = VK_NULL_HANDLE;
     CleanupManager cleanupManager;
     DescriptorSetAllocator* descriptorAllocator = nullptr;
+    rt::RayTracingScene * rayTracingScene = nullptr;
 
     void init(bg2e::render::Engine * engine, Command* command);
 
