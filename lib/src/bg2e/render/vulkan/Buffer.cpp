@@ -22,6 +22,11 @@ namespace bg2e {
 namespace render {
 namespace vulkan {
 
+Buffer::~Buffer()
+{
+    cleanup();
+}
+
 Buffer* Buffer::createAllocatedBuffer(
     Engine * engine,
     size_t allocSize,

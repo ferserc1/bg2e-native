@@ -146,6 +146,29 @@ bool RayTracingScene::update(VkCommandBuffer cmd, scene::Node* node)
 
 void RayTracingScene::cleanup()
 {
+    if (_tlas != VK_NULL_HANDLE)
+    {
+        destroyAccelerationStructure(
+            _engine->device().handle(),
+            _tlas,
+            nullptr
+        );
+    }
+    _tlas = VK_NULL_HANDLE;
+
+    if (_tlasBuffer) {
+        _tlasBuffer.reset();
+    }
+
+    if (_instanceBuffer) {
+        _instanceBuffer.reset();
+    }
+
+    if (_scratchBuffer) {
+        _scratchBuffer.reset();
+    }
+
+    _tlasDeviceAddress = 0;
 }
 
 }

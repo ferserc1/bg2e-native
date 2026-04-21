@@ -145,9 +145,6 @@ void RayTracingMeshGeneric<MeshT>::build()
         _engine->device().handle(),
         &addressInfo
     );
-
-    // Destory scratch buffer
-    scratchBuffer->cleanup();
 }
 
 template <typename MeshT>

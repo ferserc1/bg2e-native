@@ -46,7 +46,6 @@ Buffer* createBuffer(
     auto vkBuffer = buffer->handle();
     auto bufferAllocation = buffer->allocation();
     frameResources.cleanupManager.push([&, engine, vkBuffer, bufferAllocation, buffer](VkDevice) {
-        engine->destroyBuffer(vkBuffer, bufferAllocation);
         delete buffer;
     });
     

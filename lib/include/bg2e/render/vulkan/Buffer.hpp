@@ -28,6 +28,7 @@ namespace vulkan {
 
 class BG2E_API Buffer {
 public:
+    virtual ~Buffer();
 
     static Buffer* createAllocatedBuffer(
         Engine * engine,
