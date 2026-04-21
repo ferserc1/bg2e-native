@@ -131,7 +131,7 @@ void Engine::createFrameResources()
     _frameResources.resize(numImages);
     for (uint32_t i = 0; i < numImages; ++i)
     {
-        _frameResources[i].init(_device, &_command);
+        _frameResources[i].init(this, &_command);
     }
 }
 

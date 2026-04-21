@@ -25,6 +25,9 @@
 
 namespace bg2e {
 namespace render {
+
+class Engine;
+
 namespace vulkan {
 
 class DescriptorSetAllocator;
@@ -39,7 +42,7 @@ struct BG2E_API FrameResources {
     CleanupManager cleanupManager;
     DescriptorSetAllocator* descriptorAllocator = nullptr;
 
-    void init(const Device& device, Command* command);
+    void init(bg2e::render::Engine * engine, Command* command);
 
     // Remove temporary resources used by this frame
     void flushFrameData();
@@ -54,6 +57,7 @@ struct BG2E_API FrameResources {
     DescriptorSet* newDescriptorSet(VkDescriptorSetLayout);
 
 private:
+    Engine * _engine;
     const Device * _device;
     Command* _command = nullptr;
 };

@@ -19,14 +19,16 @@
 #include <bg2e/render/vulkan/FrameResources.hpp>
 #include <bg2e/render/vulkan/DescriptorSetAllocator.hpp>
 #include <bg2e/render/vulkan/Info.hpp>
+#include <bg2e/render/Engine.hpp>
 
 namespace bg2e {
 namespace render {
 namespace vulkan {
 
-void FrameResources::init(const Device& device, Command* command)
+void FrameResources::init(bg2e::render::Engine * engine, Command* command)
 {
-    _device = &device;
+    _engine = engine;
+    _device = &_engine->device();
     _command = command;
 
     // Command pool and command buffer
