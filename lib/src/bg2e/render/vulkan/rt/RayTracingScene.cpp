@@ -61,8 +61,9 @@ bool RayTracingScene::update(VkCommandBuffer cmd, scene::Node* node)
         _engine,
         bufferSize,
         VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT |
-        VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR,
-        VMA_MEMORY_USAGE_CPU_TO_GPU
+        VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+        VMA_MEMORY_USAGE_CPU_TO_GPU,
+        "TLAS instances buffer"
     ));
     auto dataPtr = _instanceBuffer->allocatedData();
     memcpy(dataPtr,instances.data(), bufferSize);
@@ -80,15 +81,17 @@ bool RayTracingScene::update(VkCommandBuffer cmd, scene::Node* node)
     _tlasBuffer = std::unique_ptr<Buffer>(Buffer::createAllocatedBuffer(
         _engine,
         buildSizes.accelerationStructureSize,
-        VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
-        VMA_MEMORY_USAGE_GPU_ONLY
+        VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT  | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+        VMA_MEMORY_USAGE_GPU_ONLY,
+        "TLAS buffer"
     ));
 
     _scratchBuffer = std::unique_ptr<Buffer>(Buffer::createAllocatedBuffer(
         _engine,
         buildSizes.buildScratchSize,
-        VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
-        VMA_MEMORY_USAGE_GPU_ONLY
+        VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+        VMA_MEMORY_USAGE_GPU_ONLY,
+        "TLAS scratch buffer"
     ));
 
     VkAccelerationStructureCreateInfoKHR tlasInfo = {};

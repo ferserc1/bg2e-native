@@ -50,6 +50,7 @@ public:
     DrawableBase() = default;
     virtual ~DrawableBase() = default;
 
+
     virtual void drawSubmesh(
         VkCommandBuffer cmd,
         VkPipelineLayout layout,
@@ -99,6 +100,9 @@ protected:
 template <typename MeshT, typename RenderMeshT>
 class BG2E_API DrawableGeneric : public DrawableBase {
 public:
+    DrawableGeneric() = default;
+    DrawableGeneric(const DrawableGeneric&) = delete;
+    DrawableGeneric& operator=(const DrawableGeneric&) = delete;
     ~DrawableGeneric() override = default;
     
     struct SubmeshAttributes {

@@ -240,7 +240,14 @@ std::shared_ptr<bg2e::scene::Node> SpheresSceneDelegate::scene1()
     customSphereNode->transform()->scale(3.0f);
     customSphereNode->addComponent(new bg2e::scene::DrawableComponent(customSphereDrawable));
     _sphere = customSphereDrawable;
-    
+
+    auto lightNode = std::make_shared<bg2e::scene::Node>("Light Node");
+    lightNode->addComponent(new bg2e::scene::LightComponent());
+    auto light = lightNode->light()->light();
+    light.setType(bg2e::base::Light::TypeDirectional);
+    lightNode->addComponent(new bg2e::scene::TransformComponent());
+    lightNode->transform()->rotate(1.1f, -1.0f, 0.0f, 0.0f);
+    sceneRoot->addChild(lightNode);
     
     sceneRoot->addChild(customSphereNode);
     

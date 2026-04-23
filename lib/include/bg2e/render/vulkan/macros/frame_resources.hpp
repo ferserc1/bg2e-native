@@ -19,6 +19,7 @@
 #pragma once
 
 #include <bg2e/render/vulkan/Buffer.hpp>
+#include <string>
 
 namespace bg2e {
 namespace render {
@@ -35,12 +36,14 @@ Buffer* createBuffer(
     FrameResources& frameResources,
     const T& data,
     VkBufferUsageFlags usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-    VmaMemoryUsage memoryUsage = VMA_MEMORY_USAGE_CPU_ONLY
+    VmaMemoryUsage memoryUsage = VMA_MEMORY_USAGE_CPU_ONLY,
+    const std::string & name = ""
 ) {
     auto buffer = bg2e::render::vulkan::Buffer::createAllocatedBuffer(
         engine, sizeof(T),
         usage,
-        memoryUsage
+        memoryUsage,
+        name
     );
     
     auto vkBuffer = buffer->handle();

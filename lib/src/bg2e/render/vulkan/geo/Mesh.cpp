@@ -38,7 +38,8 @@ void MeshGeneric<MeshT>::build()
 		_engine,
 		bufferSize,
 		VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-		VMA_MEMORY_USAGE_CPU_ONLY
+		VMA_MEMORY_USAGE_CPU_ONLY,
+		"Mesh vertex staging buffer"
 	));
 
 	void* dataPtr = stagingBuffer->allocatedData();
@@ -48,6 +49,7 @@ void MeshGeneric<MeshT>::build()
 
     VkBufferUsageFlags usageFlags = VK_BUFFER_USAGE_TRANSFER_DST_BIT |
         VK_BUFFER_USAGE_VERTEX_BUFFER_BIT |
+        VK_BUFFER_USAGE_STORAGE_BUFFER_BIT |
         VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT; // Allow to pass the buffer device address in a push constant
 
 	if (_engine->rayTracingSupported())
@@ -59,7 +61,8 @@ void MeshGeneric<MeshT>::build()
 		_engine,
 		bufferSize,
 		usageFlags,
-		VMA_MEMORY_USAGE_GPU_ONLY
+		VMA_MEMORY_USAGE_GPU_ONLY,
+		"Mesh vertex buffer"
 	));
 
 	auto indexBufferSize = sizeof(_meshData.indices[0]) * _meshData.indices.size();
@@ -67,7 +70,8 @@ void MeshGeneric<MeshT>::build()
 		_engine,
 		indexBufferSize,
 		VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-		VMA_MEMORY_USAGE_CPU_ONLY
+		VMA_MEMORY_USAGE_CPU_ONLY,
+		"Mesh index staging buffer"
 	));
 
 	dataPtr = indexStagingBuffer->allocatedData();
@@ -76,6 +80,7 @@ void MeshGeneric<MeshT>::build()
 
     usageFlags = VK_BUFFER_USAGE_TRANSFER_DST_BIT |
         VK_BUFFER_USAGE_INDEX_BUFFER_BIT |
+        VK_BUFFER_USAGE_STORAGE_BUFFER_BIT |
         VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
 
 	if (_engine->rayTracingSupported())
@@ -87,7 +92,8 @@ void MeshGeneric<MeshT>::build()
 		_engine,
 		indexBufferSize,
 		usageFlags,
-		VMA_MEMORY_USAGE_GPU_ONLY
+		VMA_MEMORY_USAGE_GPU_ONLY,
+		"Mesh index buffer"
 	));
 
 	_engine->command().immediateSubmit([&](VkCommandBuffer cmd) {

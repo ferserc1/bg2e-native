@@ -360,7 +360,8 @@ Image* Image::createAllocatedImage(
             engine,
             dataSize,
             VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-            VMA_MEMORY_USAGE_CPU_TO_GPU
+            VMA_MEMORY_USAGE_CPU_TO_GPU,
+            "Image copy source buffer"
         )
     );
     
@@ -523,7 +524,8 @@ void Image::readPixelsRGBA8(
         vulkanData,
         imageSize,
         VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-        VMA_MEMORY_USAGE_GPU_TO_CPU
+        VMA_MEMORY_USAGE_GPU_TO_CPU,
+        "Image read GPU > CPU staging buffer"
     );
 
     vulkanData->command().immediateSubmit([&](VkCommandBuffer cmd) {

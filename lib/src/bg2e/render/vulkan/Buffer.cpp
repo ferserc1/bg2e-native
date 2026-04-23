@@ -16,6 +16,7 @@
  *    along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include <bg2e/base/Log.hpp>
 #include <bg2e/render/vulkan/Buffer.hpp>
 
 namespace bg2e {
@@ -31,11 +32,13 @@ Buffer* Buffer::createAllocatedBuffer(
     Engine * engine,
     size_t allocSize,
     VkBufferUsageFlags usage,
-    VmaMemoryUsage memoryUsage
+    VmaMemoryUsage memoryUsage,
+    const std::string & name
 ) {
     auto buffer = new Buffer();
 
     buffer->_engine = engine;
+    buffer->_debugName = name;
 
     VkBufferCreateInfo bufferInfo = {};
     bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
@@ -54,6 +57,20 @@ Buffer* Buffer::createAllocatedBuffer(
         &buffer->_allocation,
         &buffer->_info
     ));
+
+    if (base::Log::isDebug() && !name.empty())
+    {
+        VkDebugUtilsObjectNameInfoEXT nameInfo = {};
+        nameInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
+        nameInfo.objectType = VK_OBJECT_TYPE_BUFFER;
+        nameInfo.objectHandle = reinterpret_cast<uint64_t>(buffer->handle());
+        nameInfo.pObjectName = name.c_str();
+
+        setDebugUtilsObjectName(
+            engine->device().handle(),
+            &nameInfo
+        );
+    }
 
     return buffer;
 }

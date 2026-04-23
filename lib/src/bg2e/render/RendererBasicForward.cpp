@@ -314,7 +314,7 @@ void RendererBasicForward::createPipelines(bg2e::render::Engine* engine) {
     _transparentPipeline = createTransparentPipeline(engine, _pipelineLayout);
     _solidTransparentPipeline = createSolidTransparentPipeline(engine, _pipelineLayout);
 
-    engine->cleanupManager().push([&, objectDSLayout, envDSLayout, frameDSLayout, lightDSLayout](VkDevice dev) {
+    engine->cleanupManager().push([&, objectDSLayout, envDSLayout, frameDSLayout, lightDSLayout, rtDSLayout](VkDevice dev) {
         vkDestroyPipelineLayout(dev, _pipelineLayout, nullptr);
         vkDestroyDescriptorSetLayout(dev, objectDSLayout, nullptr);
         vkDestroyDescriptorSetLayout(dev, envDSLayout, nullptr);

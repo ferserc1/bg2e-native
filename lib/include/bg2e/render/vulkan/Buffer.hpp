@@ -34,21 +34,22 @@ public:
         Engine * engine,
         size_t allocSize,
         VkBufferUsageFlags usage,
-        VmaMemoryUsage memoryUsage
+        VmaMemoryUsage memoryUsage,
+        const std::string & name = ""
     );
 
     void cleanup();
 
-    VkDeviceAddress deviceAddress() const;
+    [[nodiscard]] VkDeviceAddress deviceAddress() const;
     
     void* allocatedData();
     void flushAllocatedData();
 
-    inline VkBuffer handle() const { return _buffer; }
-    inline VmaAllocation allocation() const { return _allocation; }
-    inline VmaAllocationInfo allocationInfo() const { return _info; }
+    [[nodiscard]] VkBuffer handle() const { return _buffer; }
+    [[nodiscard]] VmaAllocation allocation() const { return _allocation; }
+    [[nodiscard]] VmaAllocationInfo allocationInfo() const { return _info; }
 
-
+    [[nodiscard]] const std::string & debugName() const { return _debugName; }
 protected:
     Buffer() = default;
 
@@ -57,6 +58,8 @@ protected:
     VkBuffer _buffer = VK_NULL_HANDLE;
     VmaAllocation _allocation = VK_NULL_HANDLE;
     VmaAllocationInfo _info = {};
+
+    std::string _debugName;
 };
 
 }

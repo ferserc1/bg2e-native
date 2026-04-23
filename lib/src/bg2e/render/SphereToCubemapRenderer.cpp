@@ -77,7 +77,8 @@ void SphereToCubemapRenderer::build(
         _engine,
         sizeof(ProjectionData),
         VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-        VMA_MEMORY_USAGE_CPU_TO_GPU
+        VMA_MEMORY_USAGE_CPU_TO_GPU,
+        "SphereToCubemap projection data buffer"
     ));
     
     auto projectionDataBufferPtr = reinterpret_cast<ProjectionData*>(_projectionDataBuffer->allocatedData());
@@ -117,7 +118,8 @@ void SphereToCubemapRenderer::build(
         _engine,
         sizeof(ProjectionData),
         VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-        VMA_MEMORY_USAGE_CPU_TO_GPU
+        VMA_MEMORY_USAGE_CPU_TO_GPU,
+        "SphereToCubemapRenderer projection data buffer"
     ));
     
     auto projectionDataBufferPtr = reinterpret_cast<ProjectionData*>(_projectionDataBuffer->allocatedData());

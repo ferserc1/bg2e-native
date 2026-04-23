@@ -52,6 +52,11 @@ void loadInstanceExtensions(VkInstance instance)
     queueSubmit2 = loadExtension<PFN_vkQueueSubmit2KHR>(instance, "vkQueueSubmit2KHR");
     cmdPipelineBarrier2 = loadExtension<PFN_vkCmdPipelineBarrier2KHR>(instance, "vkCmdPipelineBarrier2KHR");
     cmdBlitImage2 = loadExtension<PFN_vkCmdBlitImage2KHR>(instance, "vkCmdBlitImage2KHR");
+
+    if (base::Log::isDebug())
+    {
+        setDebugUtilsObjectName = loadExtension<PFN_vkSetDebugUtilsObjectNameEXT>(instance, "vkSetDebugUtilsObjectNameEXT");
+    }
 }
 
 void loadDeviceExtensions(const PhysicalDevice& physDev, VkDevice device)
@@ -198,6 +203,9 @@ PFN_vkCreateDeferredOperationKHR                       createDeferredOperation;
 PFN_vkDestroyDeferredOperationKHR                      destroyDeferredOperation;
 PFN_vkGetDeferredOperationResultKHR                    getDeferredOperationResult;
 PFN_vkDeferredOperationJoinKHR                         deferredOperationJoin;
+
+// VK_EXT_DEBUG_UTILS_EXTENSION_NAME
+PFN_vkSetDebugUtilsObjectNameEXT                       setDebugUtilsObjectName;
 
 }
 }

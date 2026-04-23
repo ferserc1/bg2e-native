@@ -188,6 +188,7 @@ bool Instance::getRequiredExtensions(SDL_Window * sdlWindow, std::vector<const c
     if (base::Log::isDebug() && Instance::s_debugLayerAvailable)
     {
         requiredExtensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+        requiredExtensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
     }
     
     for (auto& requiredExtension : requiredExtensions)

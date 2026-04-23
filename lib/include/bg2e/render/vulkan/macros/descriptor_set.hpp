@@ -51,7 +51,8 @@ DescriptorSet* uniformBufferDescriptorSet(
         engine,
         sizeof(T),
         VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-        VMA_MEMORY_USAGE_CPU_ONLY
+        VMA_MEMORY_USAGE_CPU_ONLY,
+        "Uniform Buffer Descriptor Set"
     );
     
     auto dataPtr = reinterpret_cast<T*>(uniformBuffer->allocatedData());

@@ -91,14 +91,16 @@ void RayTracingMeshGeneric<MeshT>::build()
         _engine,
         buildSizesInfo.accelerationStructureSize,
         VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
-        VMA_MEMORY_USAGE_GPU_ONLY
+        VMA_MEMORY_USAGE_GPU_ONLY,
+        "BLAS buffer"
     ));
 
     std::unique_ptr<Buffer> scratchBuffer = std::unique_ptr<Buffer>(Buffer::createAllocatedBuffer(
         _engine,
         buildSizesInfo.buildScratchSize,
         VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
-        VMA_MEMORY_USAGE_GPU_ONLY
+        VMA_MEMORY_USAGE_GPU_ONLY,
+        "BLAS scratch buffer"
     ));
 
     VkAccelerationStructureCreateInfoKHR blasInfo{};

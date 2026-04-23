@@ -96,7 +96,7 @@ void main()
         {
         }
 
-        if (rayQueryGetIntersectionTypeEXT(rq, true) != gl_RayQueryCommittedIntersectionNoneEXT)
+        if (rayQueryGetIntersectionTypeEXT(rq, true) == gl_RayQueryCommittedIntersectionNoneEXT)
         {
             Lo += calcRadiance(inLights[i], viewDir, inFragPos, metallic, roughness, F0, normal, albedo, mat.sheenIntensity, mat.sheenColor.rgb, ambientOcclussion);
         }
