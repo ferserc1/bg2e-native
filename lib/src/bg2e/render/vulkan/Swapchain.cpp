@@ -49,10 +49,16 @@ void Swapchain::cleanup()
         
         vkDestroySwapchainKHR(_engine->device().handle(), _swapchain, nullptr);
 
-        for (auto it = _imageViews.begin(); it != _imageViews.end(); ++it)
+        for (auto i = 0; i < _imageViews.size(); ++i)
         {
-            vkDestroyImageView(_engine->device().handle(), *it, nullptr);
+            auto imageView = _imageViews[i];
+            auto semaphore = _renderSemaphore[i];
+            vkDestroySemaphore(_engine->device().handle(), semaphore, nullptr);
+            vkDestroyImageView(_engine->device().handle(), imageView, nullptr);
         }
+
+        _renderSemaphore.clear();
+        _imageViews.clear();
     }
     _swapchain = VK_NULL_HANDLE;
 }
@@ -134,7 +140,16 @@ void Swapchain::create(uint32_t width, uint32_t height)
     vkGetSwapchainImagesKHR(_engine->device().handle(), _swapchain, &imageCount, nullptr);
     _images.resize(imageCount);
     vkGetSwapchainImagesKHR(_engine->device().handle(), _swapchain, &imageCount, _images.data());
-    
+
+    // Semaphores
+    auto semaphoreInfo = Info::semaphoreCreateInfo();
+    for (uint32_t i = 0; i < imageCount; ++i)
+    {
+        VkSemaphore sem = VK_NULL_HANDLE;
+        VK_ASSERT(vkCreateSemaphore(_engine->device().handle(), &semaphoreInfo, nullptr, &sem));
+        _renderSemaphore.push_back(sem);
+    }
+
     // Multisampled image
     for (uint32_t i = 0; i < _images.size(); ++i)
     {

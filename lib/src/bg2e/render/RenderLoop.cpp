@@ -62,7 +62,6 @@ void RenderLoop::acquireAndPresent()
 	auto cmd = frameResources.commandBuffer;
     auto frameFence = frameResources.frameFence;
     auto swapchainSemaphore = frameResources.swapchainSemaphore;
-	auto renderSemaphore = frameResources.renderSemaphore;
 
     if (frameFence != skipFence)
     {
@@ -92,6 +91,8 @@ void RenderLoop::acquireAndPresent()
         _engine->nextFrame();
         return;
     }
+
+    auto renderSemaphore = swapchainData.renderSemaphore(swapchainImageIndex);
 
     if (_renderDelegate.get())
     {

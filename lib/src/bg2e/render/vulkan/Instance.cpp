@@ -72,6 +72,10 @@ Instance::Instance()
 void Instance::create(SDL_Window * sdlWindow)
 {
     std::vector<const char*> requiredLayers;
+    if (base::Log::isDebug())
+    {
+        requiredLayers.push_back("VK_LAYER_KHRONOS_validation");
+    }
     if (!Instance::getRequiredLayers(requiredLayers))
     {
         throw std::runtime_error("Instance::create(): missing required instance layers");
