@@ -18,21 +18,21 @@
 
 #pragma once
 
-#include <bg2e/scene/vk/SceneDataBinding.hpp>
+#include <bg2e/render/vulkan/PipelineDataBinding.hpp>
 #include <bg2e/render/vulkan/FrameResources.hpp>
 
 namespace bg2e {
 namespace scene {
 namespace vk {
 
-class BG2E_API FrameDataBinding : public SceneDataBinding {
+class BG2E_API FrameDataBinding : public bg2e::render::vulkan::PipelineDataBinding {
 public:
     struct SceneUniforms {
         glm::mat4 viewMatrix;
         glm::mat4 projectionMatrix;
     };
     
-    FrameDataBinding(bg2e::render::Engine * engine) :SceneDataBinding(engine) {}
+    FrameDataBinding(bg2e::render::Engine * engine) : PipelineDataBinding(engine) {}
     
     void initFrameResources(bg2e::render::vulkan::DescriptorSetAllocator * frameAllocator) override;
     

@@ -21,6 +21,7 @@
 #include <bg2e/render/vulkan/rt/RayTracingVertexInfo.hpp>
 #include <bg2e/render/vulkan/rt/RayTracingMesh.hpp>
 #include <bg2e/render/vulkan/rt/RayTracingScene.hpp>
+#include <bg2e/render/vulkan/rt/RayTracingSceneDataBinding.hpp>
 #include <bg2e/render/vulkan/rt/RTAccelerationStructureSize.hpp>
 #include <bg2e/render/vulkan/rt/utils.hpp>
 

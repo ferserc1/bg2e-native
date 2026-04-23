@@ -18,7 +18,7 @@
 
 #pragma once
 
-#include <bg2e/scene/vk/SceneDataBinding.hpp>
+#include <bg2e/render/vulkan/PipelineDataBinding.hpp>
 #include <bg2e/base/Light.hpp>
 #include <glm/glm.hpp>
 
@@ -30,7 +30,7 @@ namespace bg2e {
 namespace scene {
 namespace vk {
 
-class BG2E_API LightDataBinding : public SceneDataBinding {
+class BG2E_API LightDataBinding : public bg2e::render::vulkan::PipelineDataBinding {
 public:
     struct LightData {
         glm::vec3 position;
@@ -46,7 +46,7 @@ public:
         float padding[3]; // Padding to make the struct size a multiple of 16 bytes
     };
 
-    LightDataBinding(bg2e::render::Engine * engine) : SceneDataBinding(engine) {}
+    LightDataBinding(bg2e::render::Engine * engine) : PipelineDataBinding(engine) {}
 
     void initFrameResources(bg2e::render::vulkan::DescriptorSetAllocator * frameAllocator) override;
 

@@ -34,6 +34,7 @@
 #include <bg2e/render/Engine.hpp>
 #include <bg2e/render/Renderer.hpp>
 #include <bg2e/manipulation/SelectionHighlight.hpp>
+#include <bg2e/render/vulkan/rt/RayTracingSceneDataBinding.hpp>
 
 #include <memory>
 
@@ -44,28 +45,30 @@ namespace render {
 class BG2E_API RendererBasicForward : public Renderer {
 public:
     RendererBasicForward() = default;
-    virtual ~RendererBasicForward() = default;
+    ~RendererBasicForward() override = default;
 
-    inline VkPipeline opaquePipeline() const { return _opaquePipeline; }
-    inline VkPipeline transparentPipeline() const { return _transparentPipeline; }
-    inline VkPipelineLayout pipelineLayout() const { return _pipelineLayout; }
+    [[nodiscard]] VkPipeline opaquePipeline() const { return _opaquePipeline; }
+    [[nodiscard]] VkPipeline transparentPipeline() const { return _transparentPipeline; }
+    [[nodiscard]] VkPipelineLayout pipelineLayout() const { return _pipelineLayout; }
 
-    inline const bg2e::scene::vk::FrameDataBinding* frameDataBinding() const { return _frameDataBinding.get(); }
-    inline const bg2e::scene::vk::ObjectDataBinding* objectDataBinding() const { return _objectDataBinding.get(); }
-    inline const bg2e::scene::vk::EnvironmentDataBinding* environmentDataBinding() const { return _environmentDataBinding.get(); }
-    inline const bg2e::scene::vk::LightDataBinding* lightDataBinding() const { return _lightDataBinding.get(); }
-    
+    [[nodiscard]] const bg2e::scene::vk::FrameDataBinding* frameDataBinding() const { return _frameDataBinding.get(); }
+    [[nodiscard]] const bg2e::scene::vk::ObjectDataBinding* objectDataBinding() const { return _objectDataBinding.get(); }
+    [[nodiscard]] const bg2e::scene::vk::EnvironmentDataBinding* environmentDataBinding() const { return _environmentDataBinding.get(); }
+    [[nodiscard]] const bg2e::scene::vk::LightDataBinding* lightDataBinding() const { return _lightDataBinding.get(); }
+    [[nodiscard]] const bg2e::render::vulkan::rt::RayTracingSceneDataBinding* rtDataBinding() const { return _rtDataBinding.get(); }
+
     inline bg2e::scene::vk::FrameDataBinding* frameDataBinding() { return _frameDataBinding.get(); }
     inline bg2e::scene::vk::ObjectDataBinding* objectDataBinding() { return _objectDataBinding.get(); }
     inline bg2e::scene::vk::EnvironmentDataBinding* environmentDataBinding() { return _environmentDataBinding.get(); }
     inline bg2e::scene::vk::LightDataBinding* lightDataBinding() { return _lightDataBinding.get(); }
+    inline bg2e::render::vulkan::rt::RayTracingSceneDataBinding* rtDataBinding() { return _rtDataBinding.get(); }
 
-    inline bool drawSkybox() const { return _drawSkybox; }
+    [[nodiscard]] bool drawSkybox() const { return _drawSkybox; }
     inline void setDrawSkybox(bool value) { _drawSkybox = value; }
-    inline int skyboxBlurLevel() const { return _environment->skyboxBlurLevel(); }
+    [[nodiscard]] int skyboxBlurLevel() const { return _environment->skyboxBlurLevel(); }
     inline void setSkyboxBlurLevel(int l) const { _environment->setSkyboxBlurLevel(l); }
 
-    inline manipulation::SelectionHighlight * selectionHighlight() const { return _selectionHighlight.get(); }
+    [[nodiscard]] manipulation::SelectionHighlight * selectionHighlight() const { return _selectionHighlight.get(); }
 
     // This renderer is a prototype for a simple forward renderer. In the future, it will be possible to implement other rendering techniques by inheriting from this class and overriding the necessary methods.
     void build(
@@ -102,13 +105,13 @@ public:
     void createPipelines(bg2e::render::Engine* engine);
     
     void setBrightness(float b) override { _brightness = b; }
-    float brightness() const override { return _brightness; }
+    [[nodiscard]] float brightness() const override { return _brightness; }
     
     void setContrast(float c) override { _contrast = c; }
-    float contrast() const override { return _contrast; }
+    [[nodiscard]] float contrast() const override { return _contrast; }
 
     void setExposure(float e) override { _exposure = e; }
-    float exposure() const override { return _exposure; }
+    [[nodiscard]] float exposure() const override { return _exposure; }
     
     uint32_t viewportWidth() override { return _engine->swapchain().extent().width; }
     uint32_t viewportHeight() override { return _engine->swapchain().extent().height; }
@@ -121,6 +124,7 @@ protected:
     std::unique_ptr<bg2e::scene::vk::ObjectDataBinding> _objectDataBinding;
     std::unique_ptr<bg2e::scene::vk::EnvironmentDataBinding> _environmentDataBinding;
     std::unique_ptr<bg2e::scene::vk::LightDataBinding> _lightDataBinding;
+    std::unique_ptr<bg2e::render::vulkan::rt::RayTracingSceneDataBinding> _rtDataBinding;
     
     scene::vk::LightDataBinding::LightUniforms _lightUniforms;
 

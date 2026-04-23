@@ -37,6 +37,7 @@ void RendererBasicForward::build(
     _objectDataBinding = std::make_unique<bg2e::scene::vk::ObjectDataBinding>(_engine);
     _environmentDataBinding = std::make_unique<bg2e::scene::vk::EnvironmentDataBinding>(_engine);
     _lightDataBinding = std::make_unique<bg2e::scene::vk::LightDataBinding>(_engine);
+    _rtDataBinding = std::make_unique<bg2e::render::vulkan::rt::RayTracingSceneDataBinding>(_engine);
     _environment = std::unique_ptr<bg2e::render::EnvironmentResources>(
         new bg2e::render::EnvironmentResources(
             _engine,
@@ -59,6 +60,7 @@ void RendererBasicForward::initFrameResources(
     _objectDataBinding->initFrameResources(frameAllocator);
     _environmentDataBinding->initFrameResources(frameAllocator);
     _lightDataBinding->initFrameResources(frameAllocator);
+    _rtDataBinding->initFrameResources(frameAllocator);
     _environment->initFrameResources(frameAllocator);
 }
 
@@ -116,7 +118,7 @@ void RendererBasicForward::update(
     
     // Update light resources
     auto lightComponents = _scene->lights();
-    uint32_t lights = static_cast<uint32_t>(lightComponents.size() < BG2E_MAX_FORWARD_LIGHTS
+    auto lights = static_cast<uint32_t>(lightComponents.size() < BG2E_MAX_FORWARD_LIGHTS
         ? lightComponents.size()
         : BG2E_MAX_FORWARD_LIGHTS);
     _lightUniforms.lightCount = lights;
@@ -140,7 +142,8 @@ void RendererBasicForward::draw(
     const bg2e::render::vulkan::Image*, // depthImage,
     const bg2e::render::vulkan::Image* msaaDepthImage,
     bg2e::render::vulkan::FrameResources& frameResources
-) {
+)
+{
     using namespace bg2e::render::vulkan;
     _scene->willDraw();
 
@@ -183,6 +186,11 @@ void RendererBasicForward::draw(
     
     auto lightDS = _lightDataBinding->newDescriptorSet(frameResources, _lightUniforms);
 
+    auto rtSceneDS = _rtDataBinding->newDescriptorSet(
+        frameResources,
+        frameResources.rayTracingScene->tlas()
+    );
+
     static struct PushConstants pushConstants {
         .gamma = 2.2f,
         .brightness = 0.0,
@@ -216,7 +224,8 @@ void RendererBasicForward::draw(
             sceneDS,
             modelDS,
             envDS,
-            lightDS
+            lightDS,
+            rtSceneDS
         };
     };
     
@@ -273,12 +282,14 @@ void RendererBasicForward::createPipelines(bg2e::render::Engine* engine) {
     auto objectDSLayout = objectDataBinding()->createLayout();
     auto envDSLayout = environmentDataBinding()->createLayout();
     auto lightDSLayout = lightDataBinding()->createLayout();
+    auto rtDSLayout = rtDataBinding()->createLayout();
 
     bg2e::render::vulkan::factory::PipelineLayout layoutFactory(engine);
     layoutFactory.addDescriptorSetLayout(frameDSLayout);
     layoutFactory.addDescriptorSetLayout(objectDSLayout);
     layoutFactory.addDescriptorSetLayout(envDSLayout);
     layoutFactory.addDescriptorSetLayout(lightDSLayout);
+    layoutFactory.addDescriptorSetLayout(rtDSLayout);
     layoutFactory.addPushConstantRange(
         0,
         sizeof(PushConstants),
@@ -296,6 +307,7 @@ void RendererBasicForward::createPipelines(bg2e::render::Engine* engine) {
         vkDestroyDescriptorSetLayout(dev, envDSLayout, nullptr);
         vkDestroyDescriptorSetLayout(dev, frameDSLayout, nullptr);
         vkDestroyDescriptorSetLayout(dev, lightDSLayout, nullptr);
+        vkDestroyDescriptorSetLayout(dev, rtDSLayout, nullptr);
     });
 }
 
@@ -306,7 +318,7 @@ VkPipeline RendererBasicForward::createOpaquePipeline(
     bg2e::render::vulkan::factory::GraphicsPipeline plFactory(engine);
 
     plFactory.addShader("basic_forward.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
-    plFactory.addShader("basic_forward.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
+    plFactory.addShader("basic_forward_rt_shadows.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
 
     plFactory.setInputState<bg2e::render::vulkan::geo::Mesh>();
 
@@ -331,7 +343,7 @@ VkPipeline RendererBasicForward::createTransparentPipeline(
     bg2e::render::vulkan::factory::GraphicsPipeline plFactory(engine);
 
     plFactory.addShader("basic_forward.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
-    plFactory.addShader("basic_forward.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
+    plFactory.addShader("basic_forward_rt_shadows.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
 
     plFactory.setInputState<bg2e::render::vulkan::geo::Mesh>();
 
@@ -360,7 +372,7 @@ VkPipeline RendererBasicForward::createSolidTransparentPipeline(
     bg2e::render::vulkan::factory::GraphicsPipeline plFactory(engine);
 
     plFactory.addShader("basic_forward.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
-    plFactory.addShader("basic_forward.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
+    plFactory.addShader("basic_forward_rt_shadows.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
 
     plFactory.setInputState<bg2e::render::vulkan::geo::Mesh>();
 

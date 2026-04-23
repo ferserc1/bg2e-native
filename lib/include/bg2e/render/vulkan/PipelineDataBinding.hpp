@@ -18,30 +18,29 @@
 
 #pragma once
 
-#include <bg2e/render/vulkan/PipelineDataBinding.hpp>
-#include <bg2e/render/vulkan/FrameResources.hpp>
-#include <bg2e/render/EnvironmentResources.hpp>
+#include <bg2e/render/Engine.hpp>
 
 namespace bg2e {
-namespace scene {
-namespace vk {
+namespace render {
+namespace vulkan {
 
-class BG2E_API EnvironmentDataBinding : public bg2e::render::vulkan::PipelineDataBinding {
+class PipelineDataBinding {
 public:
-    struct EnvironmentUniforms {
-        float maxEnvMapLod;
-    };
+    PipelineDataBinding(bg2e::render::Engine * engine) : _engine(engine) {}
+    virtual ~PipelineDataBinding() = default;
 
-    EnvironmentDataBinding(bg2e::render::Engine * engine) : PipelineDataBinding(engine) {}
+    virtual void initFrameResources(bg2e::render::vulkan::DescriptorSetAllocator * frameAllocator) = 0;
 
-    void initFrameResources(bg2e::render::vulkan::DescriptorSetAllocator * frameAllocator) override;
+    virtual VkDescriptorSetLayout createLayout() = 0;
+    
+    inline VkDescriptorSetLayout layout() const { return _layout; }
 
-    VkDescriptorSetLayout createLayout() override;
+protected:
+    bg2e::render::Engine * _engine;
+    
+    VkDescriptorSetLayout _layout = VK_NULL_HANDLE;
 
-    VkDescriptorSet newDescriptorSet(
-        bg2e::render::vulkan::FrameResources & frameResources,
-        bg2e::render::EnvironmentResources * environmentResources
-    );
+    
 };
 
 }

@@ -84,7 +84,6 @@ void DescriptorSet::addBuffer(
     size_t size,
     size_t offset
 ) {
-    // TODO: Implement this
     VkDescriptorBufferInfo bufInfo = {};
     bufInfo.buffer = buffer;
     bufInfo.offset = offset;
@@ -111,6 +110,29 @@ void DescriptorSet::addBuffer(
     addBuffer(binding, type, buffer->handle(), size, offset);
 }
 
+void DescriptorSet::addAccelerationStructure(
+    uint32_t binding,
+    VkAccelerationStructureKHR accelerationStructure
+) {
+    _accelerationStructures.push_back(accelerationStructure);
+
+    _asInfo.push_back({
+        .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR,
+        .accelerationStructureCount = 1,
+        .pAccelerationStructures = &_accelerationStructures.back()
+    });
+
+    VkWriteDescriptorSet write = {};
+    write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    write.dstBinding = binding;
+    write.dstSet = _ds;
+    write.descriptorCount = 1;
+    write.descriptorType = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
+    write.pNext = &_asInfo.back();
+
+    _writes.push_back(write);
+}
+
 void DescriptorSet::endUpdate()
 {
     vkUpdateDescriptorSets(_engine->device().handle(), uint32_t(_writes.size()), _writes.data(), 0, nullptr);
@@ -120,6 +142,8 @@ void DescriptorSet::clear()
 {
     _imageInfos.clear();
     _bufferInfos.clear();
+    _accelerationStructures.clear();
+    _asInfo.clear();
     _writes.clear();
 }
 

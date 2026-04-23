@@ -18,31 +18,29 @@
 
 #pragma once
 
-#include <bg2e/render/Engine.hpp>
+#include <bg2e/render/vulkan/PipelineDataBinding.hpp>
+#include <bg2e/render/vulkan/FrameResources.hpp>
 
 namespace bg2e {
-namespace scene {
-namespace vk {
+namespace render {
+namespace vulkan {
+namespace rt {
 
-class SceneDataBinding {
+class BG2E_API RayTracingSceneDataBinding : public PipelineDataBinding {
 public:
-    SceneDataBinding(bg2e::render::Engine * engine) : _engine(engine) {}
-    virtual ~SceneDataBinding() = default;
+    RayTracingSceneDataBinding(bg2e::render::Engine * engine) : PipelineDataBinding(engine) {}
 
-    virtual void initFrameResources(bg2e::render::vulkan::DescriptorSetAllocator * frameAllocator) = 0;
+    void initFrameResources(bg2e::render::vulkan::DescriptorSetAllocator * frameAllocator) override;
 
-    virtual VkDescriptorSetLayout createLayout() = 0;
-    
-    inline VkDescriptorSetLayout layout() const { return _layout; }
+    VkDescriptorSetLayout createLayout() override;
 
-protected:
-    bg2e::render::Engine * _engine;
-    
-    VkDescriptorSetLayout _layout = VK_NULL_HANDLE;
-
-    
+    VkDescriptorSet newDescriptorSet(
+        bg2e::render::vulkan::FrameResources & frameResources,
+        VkAccelerationStructureKHR tlas
+    );
 };
 
+}
 }
 }
 }

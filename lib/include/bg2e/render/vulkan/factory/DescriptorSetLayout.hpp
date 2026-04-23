@@ -21,6 +21,7 @@
 #include <bg2e/common.hpp>
 #include <bg2e/render/vulkan/common.hpp>
 #include <vector>
+#include <unordered_set>
 
 namespace bg2e {
 namespace render {
@@ -34,7 +35,6 @@ public:
     VkDescriptorSetLayout build(
         VkDevice device,
         VkShaderStageFlags shaderStages,
-        void* pNext = nullptr,
         VkDescriptorSetLayoutCreateFlags flags = 0
     );
 

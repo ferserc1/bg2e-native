@@ -26,6 +26,7 @@ void DescriptorSetLayout::addBinding(uint32_t binding, VkDescriptorType type)
     bindingInfo.binding = binding;
     bindingInfo.descriptorCount = 1;
     bindingInfo.descriptorType = type;
+    bindingInfo.pImmutableSamplers = nullptr;
     _bindings.push_back(bindingInfo);
 }
 
@@ -34,7 +35,7 @@ void DescriptorSetLayout::clear()
     _bindings.clear();
 }
 
-VkDescriptorSetLayout DescriptorSetLayout::build(VkDevice device, VkShaderStageFlags shaderStages, void* /*pNext*/, VkDescriptorSetLayoutCreateFlags flags)
+VkDescriptorSetLayout DescriptorSetLayout::build(VkDevice device, VkShaderStageFlags shaderStages, VkDescriptorSetLayoutCreateFlags flags)
 {
     for (auto& b : _bindings)
     {
@@ -43,7 +44,7 @@ VkDescriptorSetLayout DescriptorSetLayout::build(VkDevice device, VkShaderStageF
 
     VkDescriptorSetLayoutCreateInfo layoutInfo = {};
     layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-    layoutInfo.bindingCount = uint32_t(_bindings.size());
+    layoutInfo.bindingCount = static_cast<uint32_t>(_bindings.size());
     layoutInfo.pBindings = _bindings.data();
     layoutInfo.flags = flags;
     VkDescriptorSetLayout set;

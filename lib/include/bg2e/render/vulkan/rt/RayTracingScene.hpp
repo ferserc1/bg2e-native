@@ -39,6 +39,9 @@ public:
     bool update(VkCommandBuffer cmd, scene::Node * node);
     void cleanup();
 
+    [[nodiscard]] VkAccelerationStructureKHR tlas() const { return _tlas; }
+    [[nodiscard]] uint64_t deviceAddress() const { return _tlasDeviceAddress; }
+
 protected:
     render::Engine* _engine = nullptr;
 

@@ -35,20 +35,20 @@ class BG2E_API DescriptorSet {
 public:
 
     void init(Engine * e, VkDescriptorSet ds);
-    
+
     // To update a descriptor set:
     // - call beginUpdate()
-    // - call addImage and/or addBuffer until you
+    // - call addImage, addBuffer and/or addAccelerationStructure until you
     //   complete the descriptor set info
     // - call endUpdate()
-    
+
     // OR
-    
+
     // If the descriptor set only have one image
     // or one buffer, you can use the funtions
     // updateImage() and updateBuffer(), that
     // does the previous steps for you in one call
-    
+
     inline void updateImage(
         uint32_t binding,
         VkDescriptorType type,
@@ -66,7 +66,7 @@ public:
         );
         endUpdate();
     }
-    
+
     void updateBuffer(
         uint32_t binding,
         VkDescriptorType type,
@@ -74,9 +74,9 @@ public:
         size_t size,
         size_t offset
     );
-    
+
     inline void beginUpdate() { clear(); }
-    
+
     inline void addImage(
         uint32_t binding,
         VkDescriptorType type,
@@ -86,7 +86,7 @@ public:
     ) {
         addImage(binding, type, image->imageView(), layout, sampler);
     }
-    
+
     void addImage(
         uint32_t binding,
         VkDescriptorType type,
@@ -94,7 +94,7 @@ public:
         VkImageLayout layout,
         VkSampler sampler = VK_NULL_HANDLE
     );
-    
+
     void addImage(
         uint32_t binding,
         VkDescriptorType type,
@@ -103,7 +103,7 @@ public:
     ) {
         addImage(binding, type, texture->image()->imageView(), layout, texture->sampler());
     }
-    
+
     void addImage(
         uint32_t binding,
         VkDescriptorType type,
@@ -112,7 +112,7 @@ public:
     ) {
         addImage(binding, type, texture->image()->imageView(), layout, texture->sampler());
     }
-    
+
     void addBuffer(
         uint32_t binding,
         VkDescriptorType type,
@@ -120,7 +120,7 @@ public:
         size_t size,
         size_t offset
     );
-    
+
     void addBuffer(
         uint32_t binding,
         VkDescriptorType type,
@@ -128,9 +128,14 @@ public:
         size_t size,
         size_t offset
     );
-    
+
+    void addAccelerationStructure(
+        uint32_t binding,
+        VkAccelerationStructureKHR accelerationStructure
+    );
+
     void endUpdate();
-    
+
     // Clear all descriptor writes to add images and buffers again
     void clear();
 
@@ -140,11 +145,13 @@ public:
 
 protected:
     Engine * _engine = nullptr;
-    
+
     std::deque<VkDescriptorImageInfo> _imageInfos;
     std::deque<VkDescriptorBufferInfo> _bufferInfos;
+    std::deque<VkAccelerationStructureKHR> _accelerationStructures;
+    std::deque<VkWriteDescriptorSetAccelerationStructureKHR> _asInfo;
     std::vector<VkWriteDescriptorSet> _writes;
-    
+
     //VkDescriptorImageInfo _imageInfo;
     //VkDescriptorBufferInfo _bufferInfo;
     VkDescriptorSet _ds = VK_NULL_HANDLE;
