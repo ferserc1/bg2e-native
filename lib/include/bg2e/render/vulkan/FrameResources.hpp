@@ -42,7 +42,6 @@ struct BG2E_API FrameResources {
     VkCommandPool commandPool = VK_NULL_HANDLE;
     VkCommandBuffer commandBuffer = VK_NULL_HANDLE;
     VkSemaphore swapchainSemaphore = VK_NULL_HANDLE;
-    VkSemaphore renderSemaphore = VK_NULL_HANDLE;
     VkFence frameFence = VK_NULL_HANDLE;
     CleanupManager cleanupManager;
     DescriptorSetAllocator* descriptorAllocator = nullptr;

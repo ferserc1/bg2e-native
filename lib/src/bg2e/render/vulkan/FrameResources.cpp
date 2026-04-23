@@ -42,7 +42,6 @@ void FrameResources::init(bg2e::render::Engine * engine, Command* command)
 
     auto semaphoreInfo = Info::semaphoreCreateInfo();
     VK_ASSERT(vkCreateSemaphore(_command->device(), &semaphoreInfo, nullptr, &swapchainSemaphore));
-    VK_ASSERT(vkCreateSemaphore(_command->device(), &semaphoreInfo, nullptr, &renderSemaphore));
 
     descriptorAllocator = new DescriptorSetAllocator();
 
@@ -72,8 +71,7 @@ void FrameResources::cleanup()
         // Destroy synchronization structures
         vkDestroyFence(_command->device(), frameFence, nullptr);
         vkDestroySemaphore(_command->device(), swapchainSemaphore, nullptr);
-        vkDestroySemaphore(_command->device(), renderSemaphore, nullptr);
-        
+
         // Destroy frame cleanup manager
         cleanupManager.flush(*_device);
     }
@@ -84,7 +82,6 @@ void FrameResources::cleanup()
     commandPool = VK_NULL_HANDLE;
     commandBuffer = VK_NULL_HANDLE;
     swapchainSemaphore = VK_NULL_HANDLE;
-    renderSemaphore = VK_NULL_HANDLE;
     frameFence = VK_NULL_HANDLE;
 }
 
