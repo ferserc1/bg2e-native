@@ -52,6 +52,10 @@ void FrameResources::flushFrameData()
 {
     descriptorAllocator->clearDescriptors();
     cleanupManager.flush(*_device);
+    if (rayTracingScene)
+    {
+        rayTracingScene->cleanup();
+    }
 }
 
 void FrameResources::cleanup()
@@ -59,11 +63,13 @@ void FrameResources::cleanup()
     if (rayTracingScene)
     {
         delete rayTracingScene;
+        rayTracingScene = nullptr;
     }
 
     if (descriptorAllocator)
     {
         delete descriptorAllocator;
+        descriptorAllocator = nullptr;
 
         // Destroy command pool
         _command->destroyComandPool(commandPool);

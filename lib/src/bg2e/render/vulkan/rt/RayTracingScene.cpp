@@ -32,6 +32,11 @@ RayTracingScene::RayTracingScene(Engine * engine)
 {
 }
 
+RayTracingScene::~RayTracingScene()
+{
+    cleanup();
+}
+
 bool RayTracingScene::update(VkCommandBuffer cmd, scene::Node* node)
 {
     // This method can be called without ray tracing support
