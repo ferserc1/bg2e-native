@@ -79,7 +79,14 @@ void main()
     vec3 Lo = vec3(0.0);
     for(int i = 0; i < inLightCount; ++i)
     {
+        float tMax = 10000000.0;
         vec3 dir = normalize(-inLights[i].direction);
+        if (inLights[i].type == LIGHT_TYPE_POINT)
+        {
+            vec3 toLight = inLights[i].position - inFragPos.xyz;
+            tMax = length(toLight);
+            dir = normalize(toLight);
+        }
         vec3 origin = inFragPos.xyz + normal.xyz * 0.01;
         rayQueryEXT rq;
         rayQueryInitializeEXT(
@@ -90,7 +97,7 @@ void main()
             origin,
             0.001,
             dir,
-            1000000.0
+            tMax
         );
         while (rayQueryProceedEXT(rq))
         {

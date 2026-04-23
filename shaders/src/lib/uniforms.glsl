@@ -54,9 +54,9 @@ struct Light
 };
 
 const int LIGHT_COUNT = 8;
-const int LIGHT_TYPE_POINT = 1;
-const int LIGHT_TYPE_DIRECTIONAL = 2;
-const int LIGHT_TYPE_SPOT = 3;
+const int LIGHT_TYPE_POINT = 5;
+const int LIGHT_TYPE_DIRECTIONAL = 4;
+const int LIGHT_TYPE_SPOT = 1;
 const int LIGHT_TYPE_DISABLED = 10;
 
 vec4 sampleAlbedo(sampler2D tex, vec2 uv0, vec2 uv1, PBRMaterialData mat, float gamma)

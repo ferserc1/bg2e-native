@@ -29,9 +29,9 @@ namespace base {
 class Light {
 public:
     enum LightType {
-        TypeOmni = 1,
-        TypeSpot = 2,
-        TypeDirectional = 3,
+        TypeOmni = 5,
+        TypeSpot = 1,
+        TypeDirectional = 4,
 
         TypeDisabled = 10
     };

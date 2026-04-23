@@ -110,6 +110,32 @@ vec3 calcRadiancePoint(
     return base + sheen;
 }
 
+vec3 calcRadianceDirectional(Light light, vec3 viewDir, vec3 fragPos, float metallic, float roughness, vec3 F0, vec3 normal, vec3 albedo, float sheenIntensity, vec3 sheenColor, float ambientOcclussion)
+{
+    vec3 L = normalize(-light.direction);
+    vec3 H = normalize(viewDir + L);
+    vec3 radiance     = light.color.rgb * light.intensity;
+
+    // cook-torrance brdf
+    float NDF = distributionGGX(normal, H, roughness);
+    float G   = geometrySmith(normal, viewDir, L, roughness);
+    vec3 F    = fresnelSchlick(max(dot(H, viewDir), 0.0), F0);
+
+    vec3 kS = F;
+    vec3 kD = vec3(1.0) - kS;
+    kD *= 1.0 - metallic;
+
+    vec3 numerator    = NDF * G * F;
+    float denominator = 4.0 * max(dot(normal, viewDir), 0.0) * max(dot(normal, L), 0.0) + 0.0001;
+    vec3 specular     = numerator / denominator;
+
+    // add to outgoing radiance Lo
+    float NdotL = max(dot(normal, L), 0.0);
+    vec3 base = (kD * albedo / PI + specular) * radiance * NdotL;
+    vec3 sheen = calcSheen(normal, viewDir, sheenColor, sheenIntensity) * ambientOcclussion;
+    return base + sheen;
+}
+
 vec3 calcRadiance(
     Light light,
     vec3 viewDir,
@@ -126,6 +152,10 @@ vec3 calcRadiance(
     if (light.type == LIGHT_TYPE_POINT)
     {
         return calcRadiancePoint(light, viewDir, fragPos, metallic, roughness, F0, normal, albedo, sheenIntensity, sheenColor, ambientOcclussion);
+    }
+    else if (light.type == LIGHT_TYPE_DIRECTIONAL)
+    {
+        return calcRadianceDirectional(light, viewDir, fragPos, metallic, roughness, F0, normal, albedo, sheenIntensity, sheenColor, ambientOcclussion);
     }
     return vec3(0.0);
 }
