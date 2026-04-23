@@ -302,7 +302,11 @@ void RendererBasicForward::createPipelines(bg2e::render::Engine* engine) {
     layoutFactory.addDescriptorSetLayout(objectDSLayout);
     layoutFactory.addDescriptorSetLayout(envDSLayout);
     layoutFactory.addDescriptorSetLayout(lightDSLayout);
-    layoutFactory.addDescriptorSetLayout(rtDSLayout);
+    if (rtDSLayout)
+    {
+        layoutFactory.addDescriptorSetLayout(rtDSLayout);
+    }
+
     layoutFactory.addPushConstantRange(
         0,
         sizeof(PushConstants),
@@ -320,7 +324,10 @@ void RendererBasicForward::createPipelines(bg2e::render::Engine* engine) {
         vkDestroyDescriptorSetLayout(dev, envDSLayout, nullptr);
         vkDestroyDescriptorSetLayout(dev, frameDSLayout, nullptr);
         vkDestroyDescriptorSetLayout(dev, lightDSLayout, nullptr);
-        vkDestroyDescriptorSetLayout(dev, rtDSLayout, nullptr);
+        if (rtDSLayout)
+        {
+            vkDestroyDescriptorSetLayout(dev, rtDSLayout, nullptr);
+        }
     });
 }
 
@@ -331,7 +338,15 @@ VkPipeline RendererBasicForward::createOpaquePipeline(
     bg2e::render::vulkan::factory::GraphicsPipeline plFactory(engine);
 
     plFactory.addShader("basic_forward.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
-    plFactory.addShader("basic_forward_rt_shadows.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
+    if (_engine->rayTracingSupported())
+    {
+        plFactory.addShader("basic_forward_rt_shadows.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
+    }
+    else
+    {
+        plFactory.addShader("basic_forward.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
+    }
+
 
     plFactory.setInputState<bg2e::render::vulkan::geo::Mesh>();
 
@@ -356,7 +371,14 @@ VkPipeline RendererBasicForward::createTransparentPipeline(
     bg2e::render::vulkan::factory::GraphicsPipeline plFactory(engine);
 
     plFactory.addShader("basic_forward.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
-    plFactory.addShader("basic_forward_rt_shadows.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
+    if (_engine->rayTracingSupported())
+    {
+        plFactory.addShader("basic_forward_rt_shadows.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
+    }
+    else
+    {
+        plFactory.addShader("basic_forward.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
+    }
 
     plFactory.setInputState<bg2e::render::vulkan::geo::Mesh>();
 
@@ -385,7 +407,14 @@ VkPipeline RendererBasicForward::createSolidTransparentPipeline(
     bg2e::render::vulkan::factory::GraphicsPipeline plFactory(engine);
 
     plFactory.addShader("basic_forward.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
-    plFactory.addShader("basic_forward_rt_shadows.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
+    if (_engine->rayTracingSupported())
+    {
+        plFactory.addShader("basic_forward_rt_shadows.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
+    }
+    else
+    {
+        plFactory.addShader("basic_forward.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
+    }
 
     plFactory.setInputState<bg2e::render::vulkan::geo::Mesh>();
 

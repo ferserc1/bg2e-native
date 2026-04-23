@@ -23,14 +23,17 @@ namespace bg2e::render::vulkan::rt {
 
 void RayTracingSceneDataBinding::initFrameResources(bg2e::render::vulkan::DescriptorSetAllocator * frameAllocator)
 {
-    frameAllocator->requirePoolSizeRatio(1, {
+    if (_engine->rayTracingSupported())
+    {
+        frameAllocator->requirePoolSizeRatio(1, {
         { VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 1 }
-    });
+        });
+    }
 }
 
 VkDescriptorSetLayout RayTracingSceneDataBinding::createLayout()
 {
-    if (_layout == VK_NULL_HANDLE)
+    if (_layout == VK_NULL_HANDLE && _engine->rayTracingSupported())
     {
         bg2e::render::vulkan::factory::DescriptorSetLayout dsFactory;
 
@@ -53,6 +56,11 @@ VkDescriptorSet RayTracingSceneDataBinding::newDescriptorSet(
     bg2e::render::vulkan::FrameResources & frameResources,
     VkAccelerationStructureKHR tlas
 ) {
+    if (!_engine->rayTracingSupported())
+    {
+        return VK_NULL_HANDLE;
+    }
+
     if (_layout == VK_NULL_HANDLE)
     {
         throw std::runtime_error("RayTracingSceneDataBinding::newDescriptorSet() - The descriptor set layout is not created");
