@@ -79,7 +79,7 @@ void main()
     vec3 Lo = vec3(0.0);
     for(int i = 0; i < inLightCount; ++i)
     {
-        vec3 dir = normalize(vec3(0.0, -1.0, 0.0)); // normalize(-inLights[i].direction)
+        vec3 dir = normalize(-inLights[i].direction);
         vec3 origin = inFragPos.xyz + normal.xyz * 0.01;
         rayQueryEXT rq;
         rayQueryInitializeEXT(
@@ -90,7 +90,7 @@ void main()
             origin,
             0.001,
             dir,
-            100000.0
+            1000000.0
         );
         while (rayQueryProceedEXT(rq))
         {

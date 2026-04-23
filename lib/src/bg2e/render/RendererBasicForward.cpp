@@ -186,10 +186,11 @@ void RendererBasicForward::draw(
     
     auto lightDS = _lightDataBinding->newDescriptorSet(frameResources, _lightUniforms);
 
-    auto rtSceneDS = _rtDataBinding->newDescriptorSet(
+    auto tlas = frameResources.rayTracingScene->tlas();
+    auto rtSceneDS =  tlas != nullptr ? _rtDataBinding->newDescriptorSet(
         frameResources,
-        frameResources.rayTracingScene->tlas()
-    );
+        tlas
+    ) : VK_NULL_HANDLE;
 
     static struct PushConstants pushConstants {
         .gamma = 2.2f,
@@ -220,13 +221,25 @@ void RendererBasicForward::draw(
             mat,
             transform
         );
-        return std::vector<VkDescriptorSet> {
-            sceneDS,
-            modelDS,
-            envDS,
-            lightDS,
-            rtSceneDS
-        };
+        if (rtSceneDS)
+        {
+            return std::vector<VkDescriptorSet> {
+                sceneDS,
+                modelDS,
+                envDS,
+                lightDS,
+                rtSceneDS
+            };
+        }
+        else
+        {
+            return std::vector<VkDescriptorSet> {
+                sceneDS,
+                modelDS,
+                envDS,
+                lightDS
+            };
+        }
     };
     
     vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, _opaquePipeline);

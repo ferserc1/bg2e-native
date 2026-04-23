@@ -39,7 +39,12 @@ VkDescriptorSetLayout RayTracingSceneDataBinding::createLayout()
             VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR
         );
 
-        _layout = dsFactory.build(_engine->device().handle(), VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR | VK_SHADER_STAGE_RAYGEN_BIT_KHR);
+        _layout = dsFactory.build(
+            _engine->device().handle(),
+            VK_SHADER_STAGE_FRAGMENT_BIT |
+            VK_SHADER_STAGE_RAYGEN_BIT_KHR |
+            VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR
+        );
     }
     return _layout;
 }
