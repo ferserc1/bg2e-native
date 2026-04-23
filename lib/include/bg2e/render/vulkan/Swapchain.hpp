@@ -42,30 +42,32 @@ public:
     void resize(uint32_t width, uint32_t height);
     void cleanup();
     
-    inline VkSwapchainKHR handle() const { return _swapchain; }
-    inline VkFormat imageFormat() const { return _imageFormat; }
-    inline const std::vector<VkImage>& images() const { return _images; }
-    inline const std::vector<VkImageView>& imageViews() const { return _imageViews; }
-    inline const VkExtent2D& extent() const { return _extent; }
-    inline VkImage image(uint32_t index) const { return _images[index]; }
-    inline VkImageView imageView(uint32_t index) const { return _imageViews[index]; }
-    inline VkSampleCountFlagBits sampleCount() const { return _msaaSampleCount; }
+    [[nodiscard]] VkSwapchainKHR handle() const { return _swapchain; }
+    [[nodiscard]] VkFormat imageFormat() const { return _imageFormat; }
+    [[nodiscard]] const std::vector<VkImage>& images() const { return _images; }
+    [[nodiscard]] const std::vector<VkImageView>& imageViews() const { return _imageViews; }
+    [[nodiscard]] const VkExtent2D& extent() const { return _extent; }
+    [[nodiscard]] VkImage image(uint32_t index) const { return _images[index]; }
+    [[nodiscard]] VkImageView imageView(uint32_t index) const { return _imageViews[index]; }
+    [[nodiscard]] VkSampleCountFlagBits sampleCount() const { return _msaaSampleCount; }
 
     // Return the image, imageView, extent and format, wrapped into
     // a vmke::core::Image object.
-    inline const Image* colorImage(uint32_t index) const {
+    [[nodiscard]] const Image* colorImage(uint32_t index) const {
         return _msaaImages[index].get();
     }
     
-    inline const Image* msaaResolveImage(uint32_t index) const {
+    [[nodiscard]] const Image* msaaResolveImage(uint32_t index) const {
         return _colorImages[index];
     }
     
-    inline const Image* depthImage() const { return _depthImage.get(); }
+    [[nodiscard]] const Image* depthImage() const { return _depthImage.get(); }
     
-    inline const Image* msaaDepthImage() const { return _msaaDepthImage.get(); }
+    [[nodiscard]] const Image* msaaDepthImage() const { return _msaaDepthImage.get(); }
     
-    inline VkFormat depthImageFormat() const { return _depthImage != nullptr ? _depthImage->format() : VK_FORMAT_UNDEFINED; }
+    [[nodiscard]] VkFormat depthImageFormat() const { return _depthImage != nullptr ? _depthImage->format() : VK_FORMAT_UNDEFINED; }
+
+    [[nodiscard]] VkSemaphore renderSemaphore(uint32_t index) const { return _renderSemaphore[index]; }
 
     void screenshot(
         std::vector<uint8_t>& outData,
@@ -87,6 +89,8 @@ protected:
     std::vector<Image *> _colorImages;
     std::shared_ptr<Image> _depthImage;
     std::shared_ptr<Image> _msaaDepthImage;
+
+    std::vector<VkSemaphore> _renderSemaphore;
 
     Engine* _engine = nullptr;
     

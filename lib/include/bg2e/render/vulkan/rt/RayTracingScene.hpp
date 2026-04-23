@@ -35,6 +35,7 @@ namespace rt {
 class BG2E_API RayTracingScene {
 public:
     RayTracingScene(Engine * engine);
+    ~RayTracingScene();
 
     bool update(VkCommandBuffer cmd, scene::Node * node);
     void cleanup();

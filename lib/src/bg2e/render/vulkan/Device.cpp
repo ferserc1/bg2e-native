@@ -155,6 +155,10 @@ void Device::create(const Instance& instance, const PhysicalDevice& physicalDevi
     createInfo.ppEnabledExtensionNames = allExtensions.data();
 
     std::vector<const char*> requiredLayers;
+    if (base::Log::isDebug())
+    {
+        requiredLayers.push_back("VK_LAYER_KHRONOS_validation");
+    }
     instance.getRequiredLayers(requiredLayers);
     if (base::Log::isDebug())
     {
