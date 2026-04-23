@@ -32,6 +32,10 @@ void loadInstanceExtensions(VkInstance instance);
 
 void loadDeviceExtensions(const bg2e::render::vulkan::PhysicalDevice& physDev, VkDevice device);
 
+// Functions with _OPT suffix are optional and may be nullptr if the hardware
+// or the layer configuration does not support it.
+// Allways check that _OPT function pointers are valid before use them
+
 // VK_KHR_dynamic_rendering
 extern BG2E_API PFN_vkCmdBeginRenderingKHR      cmdBeginRendering;
 extern BG2E_API PFN_vkCmdEndRenderingKHR        cmdEndRendering;
@@ -74,7 +78,7 @@ extern BG2E_API PFN_vkGetDeferredOperationResultKHR                    getDeferr
 extern BG2E_API PFN_vkDeferredOperationJoinKHR                         deferredOperationJoin;
 
 // VK_EXT_DEBUG_UTILS_EXTENSION_NAME
-extern BG2E_API PFN_vkSetDebugUtilsObjectNameEXT                       setDebugUtilsObjectName;
+extern BG2E_API PFN_vkSetDebugUtilsObjectNameEXT                       setDebugUtilsObjectName_OPT;
 
 }
 }

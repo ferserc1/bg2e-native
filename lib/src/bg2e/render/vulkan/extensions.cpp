@@ -26,12 +26,16 @@ namespace render {
 namespace vulkan {
 
 template <class T>
-T loadExtension(VkInstance instance, const char* fnName)
+T loadExtension(VkInstance instance, const char* fnName, bool isOptional = false)
 {
     auto func = (T) vkGetInstanceProcAddr(instance, fnName);
-    if (func == nullptr)
+    if (func == nullptr && !isOptional)
     {
         throw std::runtime_error(std::string("Error loading extension: ") + fnName);
+    }
+    else if (func == nullptr)
+    {
+        bg2e_log_warning << "\t WARN: " << fnName << " extension function not loaded" << bg2e_log_end;
     }
     if (base::Log::isDebug())
     {
@@ -55,7 +59,7 @@ void loadInstanceExtensions(VkInstance instance)
 
     if (base::Log::isDebug())
     {
-        setDebugUtilsObjectName = loadExtension<PFN_vkSetDebugUtilsObjectNameEXT>(instance, "vkSetDebugUtilsObjectNameEXT");
+        setDebugUtilsObjectName_OPT = loadExtension<PFN_vkSetDebugUtilsObjectNameEXT>(instance, "vkSetDebugUtilsObjectNameEXT", true);
     }
 }
 
@@ -205,7 +209,7 @@ PFN_vkGetDeferredOperationResultKHR                    getDeferredOperationResul
 PFN_vkDeferredOperationJoinKHR                         deferredOperationJoin;
 
 // VK_EXT_DEBUG_UTILS_EXTENSION_NAME
-PFN_vkSetDebugUtilsObjectNameEXT                       setDebugUtilsObjectName;
+PFN_vkSetDebugUtilsObjectNameEXT                       setDebugUtilsObjectName_OPT;
 
 }
 }
