@@ -148,6 +148,33 @@ GLSL in `shaders/src/` compiles to `.spv` via CMake post-build using `${VULKAN_S
 - **`.bg2` format** is the engine's proprietary binary mesh format (separate from glTF/OBJ)
 - **`skills.md`** contains the full architecture reference — read it before modifying engine internals
 
+## Building
+
+The system uses CMake. The project is configured to automatically include all code files placed in the following folders:
+
+- lib/include/**.hpp
+- lib/src/**/*.cpp
+- lib/include/**.h
+- lib/src/**/*.c
+- shaders/**/*.glsl
+- examples/**/*.hpp
+- examples/**/*.cpp
+- examples/**/*.h
+- examples/**/*.c
+- apps/**/*.hpp
+- apps/**/*.cpp
+- apps/**/*.h
+- apps/**/*.c
+
+* DO NOT RUN ANY TASKS THAT MODIFY CMAKE FILES, UNLESS THE USER EXPLICITLY REQUESTS IT.
+
+
 ## Note about token generation
 
 ALWAYS use English as text generation language, even when the user ask questions in other languate.
+
+
+## VERY IMPORTANT
+
+* Avoid getting stuck in loops by repeating the same responses over and over.
+* Do not attempt to compile the code unless the user explicitly requests it.
