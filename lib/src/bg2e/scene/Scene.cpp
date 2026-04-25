@@ -34,6 +34,7 @@ void Scene::setSceneRoot(std::shared_ptr<Node> sceneRoot)
     _mainEnvironment = nullptr;
     _mainCameraNode = nullptr;
     _sceneRoot->_scene = this;
+    updateLights();
 }
 
 void Scene::setMainCamera(CameraComponent * camera)
@@ -98,8 +99,12 @@ void Scene::updateLights()
     auto lightNodes = findLights.find(_sceneRoot.get());
     for (auto l : lightNodes)
     {
-        _lightComponents.push_back(l->light());
-        _lights.push_back(&l->light()->light());
+        auto lc = std::dynamic_pointer_cast<LightComponent>(l->light()->shared_from_this());
+        if (lc.get() != nullptr)
+        {
+            _lightComponents.push_back(lc);
+            _lights.push_back(&l->light()->light());
+        }
     }
     _lightsChanged = true;
 }

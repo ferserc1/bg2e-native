@@ -42,7 +42,7 @@ public:
     // or removed from the scene
     void updateLights();
     
-    [[nodiscard]] const std::vector<LightComponent*> lightComponents() const { return _lightComponents; }
+    [[nodiscard]] const std::vector<std::shared_ptr<LightComponent>>& lightComponents() const { return _lightComponents; }
     [[nodiscard]] const std::vector<base::Light*> lights() const { return _lights; }
     
     // Indicates whether the lights have changed since the last frame. This flag is set to false in didDraw().
@@ -60,7 +60,7 @@ protected:
     std::shared_ptr<Node> _sceneRoot;
     Node * _mainCameraNode;
     Node * _mainEnvironment;
-    std::vector<LightComponent*> _lightComponents;
+    std::vector<std::shared_ptr<LightComponent>> _lightComponents;
     std::vector<base::Light*> _lights;
 
     bool _lightsChanged = false;

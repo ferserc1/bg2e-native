@@ -276,6 +276,14 @@ bool Input::comboBox(
         flags |= ImGuiComboFlags_WidthFitPreview;
     }
     bool changed = false;
+    if (selected < 0)
+    {
+        selected = 0;
+    }
+    if (selected >= items.size())
+    {
+        selected = items.size() - 1;
+    }
     auto selectedLabel = std::to_string(selected) + ": " + items[selected];
     if (ImGui::BeginCombo(label.c_str(), selectedLabel.c_str(), flags))
     {

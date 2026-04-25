@@ -27,6 +27,8 @@
 #include <memory>
 #include <filesystem>
 
+#include "bg2e/scene/Scene.hpp"
+
 class AppDelegate;
 
 class StageScene {
@@ -70,7 +72,11 @@ public:
 
     inline Document * document() { return _document.get(); }
 
-    void iterateLights(std::function<void(bg2e::base::Light*)> cb);
+    const std::vector<std::shared_ptr<bg2e::scene::LightComponent>>& lights() const
+    {
+        return _sceneRoot->scene()->lightComponents();
+    }
+    void iterateLights(std::function<void(std::shared_ptr<bg2e::scene::LightComponent>)> cb);
 
 
 protected:

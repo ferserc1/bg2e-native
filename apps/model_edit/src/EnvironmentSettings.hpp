@@ -31,5 +31,9 @@ public:
     
 protected:
     AppDelegate * _appDelegate;
+
+    std::shared_ptr<bg2e::ui::LightEditor> _lightEditor;
+    uint32_t _selectedLightIndex = 0;
+    std::shared_ptr<bg2e::scene::LightComponent> _selectedLight;
 };
 

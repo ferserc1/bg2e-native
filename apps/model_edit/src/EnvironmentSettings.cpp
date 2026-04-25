@@ -19,6 +19,8 @@
 
 #include "AppDelegate.hpp"
 
+#include <algorithm>
+
 
 void EnvironmentSettings::init(
     AppDelegate * delegate,
@@ -27,6 +29,8 @@ void EnvironmentSettings::init(
 ) {
     _appDelegate = delegate;
     setTitle("Environment Options");
+
+    _lightEditor = std::make_shared<bg2e::ui::LightEditor>();
     
     setDrawFunction([&, renderer, environment]() {
         auto drawSkybox = renderer->drawSkybox();
@@ -59,6 +63,10 @@ void EnvironmentSettings::init(
             {
                 environment->setEnvironmentImage(assetPath, "gothic_manor_01_4k.hdr");
             }
+            if (bg2e::ui::BasicWidgets::button("Black Environment"))
+            {
+                environment->setEnvironmentImage(assetPath, "black.jpg");
+            }
             if (bg2e::ui::BasicWidgets::button("Custom Environment"))
             {
                 auto path = bg2e::app::FileDialog::getOpenFilePath({
@@ -70,6 +78,30 @@ void EnvironmentSettings::init(
                 }
             }
         }
+
+
+        bg2e::ui::BasicWidgets::separator("Lighting");
+        auto numLights = _appDelegate->stage()->lights().size();
+        std::vector<std::string> lightNames(numLights);
+        size_t i = 0;
+        std::generate(lightNames.begin(), lightNames.end(), [&]()
+        {
+            return "Light " + std::to_string(i++);
+        });
+        if (bg2e::ui::Input::comboBox(
+            "Lights in Scene",
+            lightNames,
+            _selectedLightIndex
+        )) {
+            _selectedLight = _appDelegate->stage()->lights()[_selectedLightIndex];
+        }
+
+        if (_selectedLight.get() != nullptr)
+        {
+            _lightEditor->setLightComponent(_selectedLight);
+        }
+        _lightEditor->draw();
+
 
         bg2e::ui::BasicWidgets::separator("User Interface");
         if (bg2e::ui::BasicWidgets::button("Scale 2x"))

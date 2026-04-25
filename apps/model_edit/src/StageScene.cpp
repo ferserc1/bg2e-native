@@ -76,14 +76,14 @@ std::shared_ptr<bg2e::scene::Node> StageScene::init()
     light1->light()->light().setType(bg2e::base::Light::TypeDirectional);
     sceneRoot->addChild(light1);
 
-    //auto light2 = new bg2e::scene::Node("Light 2");
-    //light2->addComponent(new bg2e::scene::LightComponent());
-    //light2->addComponent(new bg2e::scene::TransformComponent());
-    //light2->transform()->translate(1.2f, -0.4f, 1.5f);
-    //light2->light()->light().setType(bg2e::base::Light::TypeOmni);
-    //light2->light()->light().setIntensity(20.0f);
-    //light2->light()->light().setColor(bg2e::base::Color(0.3f, 0.5f, 0.9f, 1.0f));
-    //sceneRoot->addChild(light2);
+    auto light2 = new bg2e::scene::Node("Light 2");
+    light2->addComponent(new bg2e::scene::LightComponent());
+    light2->addComponent(new bg2e::scene::TransformComponent());
+    light2->transform()->translate(1.2f, -0.4f, 1.5f);
+    light2->light()->light().setType(bg2e::base::Light::TypeOmni);
+    light2->light()->light().setIntensity(20.0f);
+    light2->light()->light().setColor(bg2e::base::Color(0.3f, 0.5f, 0.9f, 1.0f));
+    sceneRoot->addChild(light2);
 
     
     // Target node: the node where the loaded model is placed
@@ -278,9 +278,9 @@ bool StageScene::checkUnsavedChanges()
     return true;
 }
 
-void StageScene::iterateLights(std::function<void(bg2e::base::Light*)> cb)
+void StageScene::iterateLights(std::function<void(std::shared_ptr<bg2e::scene::LightComponent> lightComp)> cb)
 {
-    for (auto * l : _sceneRoot->scene()->lights())
+    for (auto l : _sceneRoot->scene()->lightComponents())
     {
         cb(l);
     }
