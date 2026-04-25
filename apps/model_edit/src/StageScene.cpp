@@ -277,3 +277,11 @@ bool StageScene::checkUnsavedChanges()
     }
     return true;
 }
+
+void StageScene::iterateLights(std::function<void(bg2e::base::Light*)> cb)
+{
+    for (auto * l : _sceneRoot->scene()->lights())
+    {
+        cb(l);
+    }
+}

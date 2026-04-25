@@ -43,6 +43,9 @@ public:
 
 protected:
     base::Light _light;
+
+    void didAddToNode(Node*) override;
+    void didRemoveFromNode(Node*) override;
 };
 
 }

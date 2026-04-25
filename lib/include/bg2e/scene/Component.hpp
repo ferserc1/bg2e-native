@@ -70,10 +70,11 @@ protected:
 
     // Weak ptr to avoid circular references
     Node * _owner = nullptr;
-    
-    virtual void removedFromNode(Node * /* prevOwner */) {}
 
-    virtual void addedToNode(Node * /* newOwner */ ) {}
+    virtual void willAddToNode(Node *) {}
+    virtual void didAddToNode(Node *) {}
+    virtual void willRemoveFromNode(Node *) {}
+    virtual void didRemoveFromNode(Node *) {}
 };
 
 extern BG2E_API std::string componentName(Component * comp);

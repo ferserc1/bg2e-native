@@ -117,7 +117,7 @@ void RendererBasicForward::update(
     
     
     // Update light resources
-    auto lightComponents = _scene->lights();
+    auto lightComponents = _scene->lightComponents();
     auto lights = static_cast<uint32_t>(lightComponents.size() < BG2E_MAX_FORWARD_LIGHTS
         ? lightComponents.size()
         : BG2E_MAX_FORWARD_LIGHTS);

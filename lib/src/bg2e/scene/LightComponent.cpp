@@ -20,6 +20,8 @@
 #include <bg2e/scene/ComponentFactoryRegistry.hpp>
 #include <bg2e/scene/TransformVisitor.hpp>
 
+#include "bg2e/scene/Scene.hpp"
+
 namespace bg2e::scene {
 
 const glm::vec3 LightComponent::position() const
@@ -62,6 +64,24 @@ std::shared_ptr<json::JsonNode> LightComponent::serialize(const std::filesystem:
     obj["lightData"] = lightData;
     
     return compData;
+}
+
+void LightComponent::didAddToNode(Node* owner)
+{
+    auto scene = owner->scene();
+    if (scene)
+    {
+        scene->updateLights();
+    }
+}
+
+void LightComponent::didRemoveFromNode(Node* prevOwner)
+{
+    auto scene = prevOwner->scene();
+    if (scene)
+    {
+        scene->updateLights();
+    }
 }
 
 BG2E_SCENE_REGISTER_COMPONENT(LightComponent);

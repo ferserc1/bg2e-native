@@ -92,12 +92,14 @@ EnvironmentComponent * Scene::mainEnvironment()
 
 void Scene::updateLights()
 {
+    _lightComponents.clear();
     _lights.clear();
     FindNodeComponentVisitor<LightComponent> findLights;
     auto lightNodes = findLights.find(_sceneRoot.get());
     for (auto l : lightNodes)
     {
-        _lights.push_back(l->light());
+        _lightComponents.push_back(l->light());
+        _lights.push_back(&l->light()->light());
     }
     _lightsChanged = true;
 }

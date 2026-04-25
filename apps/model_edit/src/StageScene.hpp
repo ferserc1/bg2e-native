@@ -70,6 +70,9 @@ public:
 
     inline Document * document() { return _document.get(); }
 
+    void iterateLights(std::function<void(bg2e::base::Light*)> cb);
+
+
 protected:
     bg2e::render::Engine * _engine;
 
@@ -98,6 +101,9 @@ protected:
     // This vector stores the drawable nodes names when the loaded file is a model file.
     // Otherwise is empty
     std::vector<std::string> _targetNames;
+
+    // Lighting setup
+    bg2e::scene::Node * _lightsNode = nullptr;
 
     bg2e::scene::EnvironmentComponent * _environment;
     bg2e::scene::OrbitCameraComponent * _orbitCamera;

@@ -20,6 +20,8 @@
 #include <bg2e/utils/utils.hpp>
 #include <bg2e/scene/TransformVisitor.hpp>
 
+#include "bg2e/base/Log.hpp"
+
 namespace bg2e::scene {
 
 Node::Node()
@@ -73,32 +75,43 @@ void Node::addComponent(Component * comp)
 
 void Node::addComponent(std::shared_ptr<Component> comp)
 {
+    if (!comp.get())
+    {
+        bg2e_log_warning << "Trying to add null component to node " << name() << bg2e_log_end;
+        return;
+    }
     auto prevOwner = comp->_owner;
+    if (prevOwner)
+    {
+        comp->willRemoveFromNode(prevOwner);
+    }
     comp->_owner = nullptr;
     if (prevOwner)
     {
-        comp->removedFromNode(prevOwner);
+        comp->didRemoveFromNode(prevOwner);
     }
 
+    comp->willAddToNode(this);
     auto plainPtr = comp.get();
     _components[BG2E_SCENE_COMP_CLASS_NAME(plainPtr)] = comp;
     comp->_owner = this;
-    comp->addedToNode(this);
+    comp->didAddToNode(this);
 }
 
 void Node::removeComponent(std::shared_ptr<Component> comp)
 {
     if (!comp) return;
 
+    comp->willRemoveFromNode(this);
     auto plainPtr = comp.get();
     auto it = _components.find(BG2E_SCENE_COMP_CLASS_NAME(plainPtr));
     if (it != _components.end())
     {
-        comp->removedFromNode(this);
-
         _components.erase(it);
 
         comp->_owner = nullptr;
+
+        comp->didRemoveFromNode(this);
     }
 }
 
