@@ -45,6 +45,21 @@ void PolarTransformControllerComponent::setDistance(float value)
     _distance = value < 0.0f ? 0.0f : value;
 }
 
+void PolarTransformControllerComponent::setEulerX(float value)
+{
+    _eulerX = value;
+}
+
+void PolarTransformControllerComponent::setEulerY(float value)
+{
+    _eulerY = value;
+}
+
+void PolarTransformControllerComponent::setEulerZ(float value)
+{
+    _eulerZ = value;
+}
+
 void PolarTransformControllerComponent::update(float /* delta */)
 {
     auto transform = ownerNode()->transform();
@@ -59,6 +74,13 @@ void PolarTransformControllerComponent::update(float /* delta */)
         transform->rotate(glm::radians(_elevation), 1.0f, 0.0f, 0.0f);
 
         transform->translate(0.0f, 0.0f, _distance);
+
+        if (_eulerY != 0.0f)
+            transform->rotate(glm::radians(_eulerY), 0.0f, 1.0f, 0.0f);
+        if (_eulerX != 0.0f)
+            transform->rotate(glm::radians(_eulerX), 1.0f, 0.0f, 0.0f);
+        if (_eulerZ != 0.0f)
+            transform->rotate(glm::radians(_eulerZ), 0.0f, 0.0f, 1.0f);
     }
 }
 
@@ -86,6 +108,15 @@ void PolarTransformControllerComponent::deserialize(std::shared_ptr<json::JsonNo
             _target = targetNode->glmVec3Value();
         }
     }
+
+    if (obj.count("eulerX"))
+        _eulerX = obj["eulerX"]->numberValue(_eulerX);
+
+    if (obj.count("eulerY"))
+        _eulerY = obj["eulerY"]->numberValue(_eulerY);
+
+    if (obj.count("eulerZ"))
+        _eulerZ = obj["eulerZ"]->numberValue(_eulerZ);
 }
 
 std::shared_ptr<json::JsonNode> PolarTransformControllerComponent::serialize(const std::filesystem::path& basePath)
@@ -98,6 +129,9 @@ std::shared_ptr<json::JsonNode> PolarTransformControllerComponent::serialize(con
     obj["elevation"] = JSON(_elevation);
     obj["distance"] = JSON(_distance);
     obj["target"] = JSON(_target);
+    obj["eulerX"] = JSON(_eulerX);
+    obj["eulerY"] = JSON(_eulerY);
+    obj["eulerZ"] = JSON(_eulerZ);
 
     return compData;
 }

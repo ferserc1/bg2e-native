@@ -96,10 +96,13 @@ void EnvironmentSettings::init(
             _selectedLight = _appDelegate->stage()->lights()[_selectedLightIndex];
         }
 
+        bg2e::base::Light::LightType type = bg2e::base::Light::TypeDisabled;
         if (_selectedLight.get() != nullptr)
         {
             _lightEditor->setLightComponent(_selectedLight);
+            type = _selectedLight->light().type();
         }
+
         _lightEditor->draw();
 
         if (_selectedLight.get() != nullptr)
@@ -122,6 +125,22 @@ void EnvironmentSettings::init(
                 if (bg2e::ui::Input::sliderFloat("Distance", &distance, 0.0f, 50.0f))
                 {
                     polarCtrl->setDistance(distance);
+                }
+
+                float eulerX = polarCtrl->eulerX();
+                float eulerY = polarCtrl->eulerY();
+                float eulerZ = polarCtrl->eulerZ();
+                if (bg2e::ui::Input::sliderFloat("Euler X", &eulerX, -360.0f, 360.0f))
+                {
+                    polarCtrl->setEulerX(eulerX);
+                }
+                if (bg2e::ui::Input::sliderFloat("Euler Y", &eulerY, -360.0f, 360.0f))
+                {
+                    polarCtrl->setEulerY(eulerY);
+                }
+                if (bg2e::ui::Input::sliderFloat("Euler Z", &eulerZ, -360.0f, 360.0f))
+                {
+                    polarCtrl->setEulerZ(eulerZ);
                 }
             }
         }

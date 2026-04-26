@@ -34,17 +34,26 @@ public:
     inline bool enabled() const { return _enabled; }
     inline void setEnabled(bool value) { _enabled = value; }
 
-    inline float azimuth() const { return _azimuth; }
-    inline void setAzimuth(float value);
+    float azimuth() const { return _azimuth; }
+    void setAzimuth(float value);
 
-    inline float elevation() const { return _elevation; }
-    inline void setElevation(float value);
+    float elevation() const { return _elevation; }
+    void setElevation(float value);
 
-    inline float distance() const { return _distance; }
-    inline void setDistance(float value);
+    float distance() const { return _distance; }
+    void setDistance(float value);
 
-    inline const glm::vec3& target() const { return _target; }
-    inline void setTarget(const glm::vec3& target) { _target = target; }
+    const glm::vec3& target() const { return _target; }
+    void setTarget(const glm::vec3& target) { _target = target; }
+
+    float eulerX() const { return _eulerX; }
+    void setEulerX(float value);
+
+    float eulerY() const { return _eulerY; }
+    void setEulerY(float value);
+
+    float eulerZ() const { return _eulerZ; }
+    void setEulerZ(float value);
 
     void update(float delta) override;
 
@@ -53,6 +62,9 @@ protected:
     float _elevation = 0.0f;
     float _distance = 5.0f;
     glm::vec3 _target = {0.0f, 0.0f, 0.0f};
+    float _eulerX = 0.0f;
+    float _eulerY = 0.0f;
+    float _eulerZ = 0.0f;
     bool _enabled = true;
 };
 

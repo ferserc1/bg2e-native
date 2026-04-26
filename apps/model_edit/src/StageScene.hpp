@@ -77,6 +77,10 @@ public:
         return _sceneRoot->scene()->lightComponents();
     }
     void iterateLights(std::function<void(std::shared_ptr<bg2e::scene::LightComponent>)> cb);
+    [[nodiscard]] uint32_t maxLights() const { return 7; }
+
+    void addLight();
+    void removeLight(uint32_t index);
 
 
 protected:

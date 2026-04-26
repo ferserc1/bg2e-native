@@ -66,10 +66,23 @@ std::shared_ptr<bg2e::scene::Node> StageScene::init()
     cameraRotation->addComponent(cameraRotationComponent);
     cameraRotation->addChild(cameraNode);
     sceneRoot->addChild(cameraRotation);
-    
+
+    auto sphereRadius = 0.02f;
+    auto sphereMesh = std::shared_ptr<bg2e::geo::Mesh>(bg2e::geo::createSphere(sphereRadius, 10, 10));
+    auto sphereDrawable = std::make_shared<bg2e::scene::Drawable>();
+    sphereDrawable->setMesh(sphereMesh);
+    sphereDrawable->load(_engine);
+    sphereDrawable->setRayTracingEnabled(false);
+
     auto light1 = new bg2e::scene::Node("Light 1");
+    light1->addComponent(new bg2e::scene::DrawableComponent(sphereDrawable));
     light1->addComponent(new bg2e::scene::LightComponent());
     light1->addComponent(new bg2e::scene::TransformComponent());
+    auto polarController = new bg2e::scene::PolarTransformControllerComponent();
+    polarController->setDistance(6.0f);
+    polarController->setEulerX(12.0f);
+    polarController->setEulerY(45.0f);
+    light1->addComponent(polarController);
     light1->transform()->rotate(0.2f, 0.0f, 1.0f, 0.0f);
     light1->transform()->rotate(0.6f, 1.0f, 0.0f, 0.0f);
     light1->light()->light().setIntensity(2.0f);
@@ -77,9 +90,10 @@ std::shared_ptr<bg2e::scene::Node> StageScene::init()
     sceneRoot->addChild(light1);
 
     auto light2 = new bg2e::scene::Node("Light 2");
+    light2->addComponent(new bg2e::scene::DrawableComponent(sphereDrawable));
     light2->addComponent(new bg2e::scene::LightComponent());
     light2->addComponent(new bg2e::scene::TransformComponent());
-    auto polarController = new bg2e::scene::PolarTransformControllerComponent();
+    polarController = new bg2e::scene::PolarTransformControllerComponent();
     polarController->setAzimuth(45.0f);
     polarController->setElevation(-10.0f);
     polarController->setDistance(2.0f);
@@ -87,6 +101,7 @@ std::shared_ptr<bg2e::scene::Node> StageScene::init()
     light2->light()->light().setType(bg2e::base::Light::TypeOmni);
     light2->light()->light().setIntensity(20.0f);
     light2->light()->light().setColor(bg2e::base::Color(0.3f, 0.5f, 0.9f, 1.0f));
+
     sceneRoot->addChild(light2);
 
     

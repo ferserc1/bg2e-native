@@ -43,7 +43,7 @@ void CollectRayTracingInstancesVisitor::visit(scene::Node * node)
         _currentTransform = _currentTransform * transformComponent->matrix();
     }
 
-    if (drw && _engine->rayTracingSupported())
+    if (drw && _engine->rayTracingSupported() && drw->rayTracingEnabled())
     {
         for (uint32_t i = 0; i < drw->submeshesCount(); ++i)
         {
