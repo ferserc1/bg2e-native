@@ -33,6 +33,7 @@
 #include <bg2e/scene/Mesh.hpp>
 #include <bg2e/scene/NodeVisitor.hpp>
 #include <bg2e/scene/OrbitCameraComponent.hpp>
+#include <bg2e/scene/PolarTransformController.hpp>
 #include <bg2e/scene/RenderQueueVisitor.hpp>
 #include <bg2e/scene/ResizeViewportVisitor.hpp>
 #include <bg2e/scene/Scene.hpp>
