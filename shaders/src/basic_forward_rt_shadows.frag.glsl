@@ -73,6 +73,20 @@ void main()
     float ambientOcclussion = sampleAmbientOcclussion(aoTex, inUV0, inUV1, mat);
     vec3 normal = sampleNormal(normalTex, inUV0, inUV1, mat, inTBN);
 
+    bool unlit = (objectData.material.unlit & MATERIAL_FLAG_UNLIT) != 0u;
+
+    if (unlit)
+    {
+        outColor = fragmentShaderOutput(
+            vec4(albedo, 1.0),
+            pushConstant.exposure,
+            pushConstant.gamma,
+            pushConstant.brightness,
+            pushConstant.contrast
+        );
+        return;
+    }
+
     vec3 viewDir = normalize(inViewPos - inFragPos);
     vec3 F0 = calcF0(albedo, mat);
 
@@ -120,7 +134,11 @@ void main()
 
     vec3 color = ambient + Lo;
 
-    color = exposure(color, pushConstant.exposure);
-    outColor = lineal2SRGB(vec4(color, 1.0), pushConstant.gamma);
-    outColor = brightnessContrast(outColor, pushConstant.brightness, pushConstant.contrast);
+    outColor = fragmentShaderOutput(
+        vec4(color, 1.0),
+        pushConstant.exposure,
+        pushConstant.gamma,
+        pushConstant.brightness,
+        pushConstant.contrast
+    );
 }

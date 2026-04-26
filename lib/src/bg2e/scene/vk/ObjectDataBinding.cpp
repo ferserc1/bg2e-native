@@ -65,7 +65,6 @@ VkDescriptorSet ObjectDataBinding::newDescriptorSet(
     uniforms.modelMatrix = modelMatrix;
     
     uniforms.material = material->materialAttributes();
-    
     auto uniformBuffer = bg2e::render::vulkan::macros::createBuffer(_engine, frameResources, uniforms);
     
     auto ds = frameResources.newDescriptorSet(_layout);

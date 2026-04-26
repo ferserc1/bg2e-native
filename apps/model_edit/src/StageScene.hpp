@@ -113,9 +113,19 @@ protected:
     std::vector<std::string> _targetNames;
 
     // Lighting setup
-    bg2e::scene::Node * _lightsNode = nullptr;
+    std::shared_ptr<bg2e::scene::Node> _lightsNode = nullptr;
 
     bg2e::scene::EnvironmentComponent * _environment;
     bg2e::scene::OrbitCameraComponent * _orbitCamera;
+
+// The "name" parameter is mandatory if the scene is not build yet
+    std::shared_ptr<bg2e::scene::Node> createLightNode(
+        bg2e::base::Light::LightType type,
+        float azimuth,
+        float elevation,
+        float distance = 2.0f,
+        const bg2e::base::Color& color = bg2e::base::Color::White(),
+        const std::string & name = ""
+    );
 };
 

@@ -42,7 +42,13 @@ struct PBRMaterialData
     
     float sheenIntensity;
     vec4 sheenColor;
+
+    uint unlit;
+
+    uint padding[3];
 };
+
+const uint MATERIAL_FLAG_UNLIT          = 0x1u;
 
 struct Light
 {

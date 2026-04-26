@@ -60,27 +60,33 @@ void PolarTransformControllerComponent::setEulerZ(float value)
     _eulerZ = value;
 }
 
-void PolarTransformControllerComponent::update(float /* delta */)
+void PolarTransformControllerComponent::update([[maybe_unused]] float delta)
 {
     auto transform = ownerNode()->transform();
 
     if (transform && _enabled)
     {
-        transform->setMatrix(glm::mat4{1.0f});
+        glm::mat4 polarMatrix{1.0f};
 
-        transform->translate(_target);
+        polarMatrix = glm::translate(polarMatrix, _target);
+        polarMatrix = glm::rotate(polarMatrix, glm::radians(_azimuth), glm::vec3{0.0f, 1.0f, 0.0f});
+        polarMatrix = glm::rotate(polarMatrix, glm::radians(_elevation), glm::vec3{1.0f, 0.0f, 0.0f});
 
-        transform->rotate(glm::radians(_azimuth), 0.0f, 1.0f, 0.0f);
-        transform->rotate(glm::radians(_elevation), 1.0f, 0.0f, 0.0f);
+        glm::vec3 position = glm::vec3(
+            polarMatrix * glm::vec4{0.0f, 0.0f, _distance, 1.0f}
+        );
 
-        transform->translate(0.0f, 0.0f, _distance);
+        glm::mat4 finalMatrix{1.0f};
+        finalMatrix = glm::translate(finalMatrix, position);
 
         if (_eulerY != 0.0f)
-            transform->rotate(glm::radians(_eulerY), 0.0f, 1.0f, 0.0f);
+            finalMatrix = glm::rotate(finalMatrix, glm::radians(_eulerY), glm::vec3{0.0f, 1.0f, 0.0f});
         if (_eulerX != 0.0f)
-            transform->rotate(glm::radians(_eulerX), 1.0f, 0.0f, 0.0f);
+            finalMatrix = glm::rotate(finalMatrix, glm::radians(_eulerX), glm::vec3{1.0f, 0.0f, 0.0f});
         if (_eulerZ != 0.0f)
-            transform->rotate(glm::radians(_eulerZ), 0.0f, 0.0f, 1.0f);
+            finalMatrix = glm::rotate(finalMatrix, glm::radians(_eulerZ), glm::vec3{0.0f, 0.0f, 1.0f});
+
+        transform->setMatrix(finalMatrix);
     }
 }
 

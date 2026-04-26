@@ -21,6 +21,7 @@
 #include <bg2e/scene/TransformVisitor.hpp>
 
 #include "bg2e/base/Log.hpp"
+#include "bg2e/scene/Scene.hpp"
 
 namespace bg2e::scene {
 
@@ -53,9 +54,25 @@ void Node::addChild(std::shared_ptr<Node> node)
     node->_parent = this;
 }
 
-void Node::removeChild(std::shared_ptr<Node> /* node */)
+void Node::removeChild(std::shared_ptr<Node> node)
 {
-    // TODO: Implement this
+    if (!node)
+    {
+        return;
+    }
+
+    auto it = std::find(_children.begin(), _children.end(), node);
+    if (it != _children.end())
+    {
+        _children.erase(it);
+    }
+
+    node->_parent = nullptr;
+    auto root = sceneRoot();
+    if (root && root->scene())
+    {
+        root->scene()->updateLights();
+    }
 }
 
 const std::vector<std::shared_ptr<Node>>& Node::children() const

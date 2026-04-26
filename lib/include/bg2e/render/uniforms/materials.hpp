@@ -27,6 +27,12 @@ namespace uniforms {
 
 struct PBRMaterialData
 {
+    enum Flags : uint32_t
+    {
+        NONE = 0x0,
+        UNLIT = 0x1u << 0,
+    };
+
     bg2e::base::Color albedo;  // Base color of the material
     bg2e::base::Color fresnelTint;
 
@@ -46,6 +52,9 @@ struct PBRMaterialData
     
     float sheenIntensity;
     bg2e::base::Color sheenColor;
+
+    uint32_t flags;
+    uint32_t padding[3] = {};
     
     void operator=(const base::MaterialAttributes& att)
     {
@@ -64,6 +73,9 @@ struct PBRMaterialData
         aoUVSet = att.aoUVSet();
         sheenIntensity = att.sheenIntensity();
         sheenColor = att.sheenColor();
+
+        flags = 0;
+        flags |= att.isUnlit() ? 0x1 : 0x0;
     }
 };
 

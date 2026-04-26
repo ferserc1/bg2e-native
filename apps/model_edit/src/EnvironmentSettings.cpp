@@ -102,8 +102,22 @@ void EnvironmentSettings::init(
             _lightEditor->setLightComponent(_selectedLight);
             type = _selectedLight->light().type();
         }
+        if (numLights < _appDelegate->stage()->maxLights() &&
+            bg2e::ui::BasicWidgets::button("Add Light")
+        ) {
+            _appDelegate->stage()->addLight();
+        }
 
-        _lightEditor->draw();
+        if (_lightEditor->draw())
+        {
+            auto lightDrwComp = _selectedLight->ownerNode()->drawable();
+            auto lightDrw = lightDrwComp != nullptr ? lightDrwComp->drawable() : nullptr;
+            if (lightDrw)
+            {
+                lightDrw->material(0).setAlbedo(_selectedLight->light().color());
+                lightDrw->updateMaterials();
+            }
+        }
 
         if (_selectedLight.get() != nullptr)
         {
@@ -141,6 +155,12 @@ void EnvironmentSettings::init(
                 if (bg2e::ui::Input::sliderFloat("Euler Z", &eulerZ, -360.0f, 360.0f))
                 {
                     polarCtrl->setEulerZ(eulerZ);
+                }
+
+                if (bg2e::ui::BasicWidgets::button("Remove Light"))
+                {
+                    _appDelegate->stage()->removeLight(_selectedLightIndex);
+                    _selectedLight.reset();
                 }
             }
         }

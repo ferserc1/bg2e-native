@@ -87,4 +87,11 @@ vec3 exposure(vec3 color, float exposure)
     return vec3(1.0) - exp(-color * exposure);
 }
 
+vec4 fragmentShaderOutput(vec4 inColor, float exposureAmount, float gamma, float brightness, float contrast)
+{
+    vec4 outColor = exposure(inColor, exposureAmount);
+    outColor = lineal2SRGB(outColor, gamma);
+    return brightnessContrast(outColor, brightness, contrast);
+}
+
 #endif

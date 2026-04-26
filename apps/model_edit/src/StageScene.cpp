@@ -67,44 +67,35 @@ std::shared_ptr<bg2e::scene::Node> StageScene::init()
     cameraRotation->addChild(cameraNode);
     sceneRoot->addChild(cameraRotation);
 
-    auto sphereRadius = 0.02f;
+    auto sphereRadius = 0.05f;
     auto sphereMesh = std::shared_ptr<bg2e::geo::Mesh>(bg2e::geo::createSphere(sphereRadius, 10, 10));
     auto sphereDrawable = std::make_shared<bg2e::scene::Drawable>();
     sphereDrawable->setMesh(sphereMesh);
     sphereDrawable->load(_engine);
+    sphereDrawable->material(0).setIsUnlit(true);
     sphereDrawable->setRayTracingEnabled(false);
+    sphereDrawable->updateMaterials();
 
-    auto light1 = new bg2e::scene::Node("Light 1");
-    light1->addComponent(new bg2e::scene::DrawableComponent(sphereDrawable));
-    light1->addComponent(new bg2e::scene::LightComponent());
-    light1->addComponent(new bg2e::scene::TransformComponent());
-    auto polarController = new bg2e::scene::PolarTransformControllerComponent();
-    polarController->setDistance(6.0f);
-    polarController->setEulerX(12.0f);
-    polarController->setEulerY(45.0f);
-    light1->addComponent(polarController);
-    light1->transform()->rotate(0.2f, 0.0f, 1.0f, 0.0f);
-    light1->transform()->rotate(0.6f, 1.0f, 0.0f, 0.0f);
-    light1->light()->light().setIntensity(2.0f);
-    light1->light()->light().setType(bg2e::base::Light::TypeDirectional);
-    sceneRoot->addChild(light1);
+    _lightsNode = std::make_shared<bg2e::scene::Node>("Lights");
+    _lightsNode->addComponent(new bg2e::scene::TransformComponent());
+    sceneRoot->addChild(_lightsNode);
 
-    auto light2 = new bg2e::scene::Node("Light 2");
-    light2->addComponent(new bg2e::scene::DrawableComponent(sphereDrawable));
-    light2->addComponent(new bg2e::scene::LightComponent());
-    light2->addComponent(new bg2e::scene::TransformComponent());
-    polarController = new bg2e::scene::PolarTransformControllerComponent();
-    polarController->setAzimuth(45.0f);
-    polarController->setElevation(-10.0f);
-    polarController->setDistance(2.0f);
-    light2->addComponent(polarController);
-    light2->light()->light().setType(bg2e::base::Light::TypeOmni);
-    light2->light()->light().setIntensity(20.0f);
-    light2->light()->light().setColor(bg2e::base::Color(0.3f, 0.5f, 0.9f, 1.0f));
+    auto directionalLight = createLightNode(
+        bg2e::base::Light::TypeDirectional,
+        10.0f, 25.0f, 2.0f,
+        bg2e::base::Color::White(),
+        "Directional Light"
+    );
+    _lightsNode->addChild(directionalLight);
 
-    sceneRoot->addChild(light2);
+    auto pointLight = createLightNode(
+        bg2e::base::Light::TypeOmni,
+        45.0f, -10.0f, 2.0,
+        bg2e::base::Color(0.3f, 0.5f, 0.9f, 1.0f),
+        "Point Light"
+    );
+    _lightsNode->addChild(pointLight);
 
-    
     // Target node: the node where the loaded model is placed
     _targetNode = std::make_shared<bg2e::scene::Node>("Target Node");
     sceneRoot->addChild(_targetNode);
@@ -303,4 +294,74 @@ void StageScene::iterateLights(std::function<void(std::shared_ptr<bg2e::scene::L
     {
         cb(l);
     }
+}
+
+void StageScene::addLight()
+{
+    auto azimuth = std::rand() % 360;
+    auto elevation = std::rand() % 180 - 90;
+    auto distance = 2.0f;
+    auto l = createLightNode(
+        bg2e::base::Light::TypeOmni,
+        static_cast<float>(azimuth), static_cast<float>(elevation)
+    );
+    _lightsNode->addChild(l);
+    _sceneRoot->scene()->updateLights();
+}
+
+void StageScene::removeLight(uint32_t index)
+{
+    if (_sceneRoot->scene()->lightComponents().size() > index)
+    {
+        auto lightComp = _sceneRoot->scene()->lightComponents()[index];
+        if (lightComp)
+        {
+            auto node = lightComp->ownerNode();
+            _lightsNode->removeChild(node->shared_from_this());
+        }
+    }
+}
+
+std::shared_ptr<bg2e::scene::Node> StageScene::createLightNode(
+   bg2e::base::Light::LightType type,
+   float azimuth,
+   float elevation,
+   float distance,
+   const bg2e::base::Color& color,
+   const std::string & name
+) {
+    using namespace bg2e::scene;
+    auto lightName = name;
+    if (lightName == "")
+    {
+        auto lightNumber = lights().size();
+        lightName = "Light " + std::to_string(++lightNumber);
+    }
+
+    auto node = std::make_shared<bg2e::scene::Node>(lightName);
+
+    auto sphereRadius = 0.05f;
+    auto sphereMesh = std::shared_ptr<bg2e::geo::Mesh>(bg2e::geo::createSphere(sphereRadius, 10, 10));
+    auto sphereDrawable = std::make_shared<bg2e::scene::Drawable>();
+    sphereDrawable->setMesh(sphereMesh);
+    sphereDrawable->load(_engine);
+    sphereDrawable->material(0).setIsUnlit(true);
+    sphereDrawable->material(0).setAlbedo(color);
+    sphereDrawable->setRayTracingEnabled(false);
+    sphereDrawable->updateMaterials();
+
+    node->addComponent(new bg2e::scene::DrawableComponent(sphereDrawable));
+    node->addComponent(new bg2e::scene::LightComponent());
+    node->addComponent(new bg2e::scene::TransformComponent());
+    auto polarController = new bg2e::scene::PolarTransformControllerComponent();
+    polarController->setAzimuth(azimuth);
+    polarController->setElevation(elevation);
+    polarController->setDistance(distance);
+    polarController->setEulerX(45.0f);
+    polarController->setEulerY(45.0f);
+    node->addComponent(polarController);
+    node->light()->light().setIntensity(2.0f);
+    node->light()->light().setType(type);
+
+    return node;
 }
