@@ -79,7 +79,11 @@ std::shared_ptr<bg2e::scene::Node> StageScene::init()
     auto light2 = new bg2e::scene::Node("Light 2");
     light2->addComponent(new bg2e::scene::LightComponent());
     light2->addComponent(new bg2e::scene::TransformComponent());
-    light2->transform()->translate(1.2f, -0.4f, 1.5f);
+    auto polarController = new bg2e::scene::PolarTransformControllerComponent();
+    polarController->setAzimuth(45.0f);
+    polarController->setElevation(-10.0f);
+    polarController->setDistance(2.0f);
+    light2->addComponent(polarController);
     light2->light()->light().setType(bg2e::base::Light::TypeOmni);
     light2->light()->light().setIntensity(20.0f);
     light2->light()->light().setColor(bg2e::base::Color(0.3f, 0.5f, 0.9f, 1.0f));

@@ -102,6 +102,33 @@ void EnvironmentSettings::init(
         }
         _lightEditor->draw();
 
+        if (_selectedLight.get() != nullptr)
+        {
+            bg2e::ui::BasicWidgets::separator("Position and Orientation");
+            auto polarCtrl = _selectedLight->ownerNode()->getComponent<bg2e::scene::PolarTransformControllerComponent>();
+            if (polarCtrl)
+            {
+                float azimuth = polarCtrl->azimuth();
+                float elevation = polarCtrl->elevation();
+                float distance = polarCtrl->distance();
+                if (bg2e::ui::Input::sliderFloat("Azimuth", &azimuth, 0.0f, 360.0f))
+                {
+                    polarCtrl->setAzimuth(azimuth);
+                }
+                if (bg2e::ui::Input::sliderFloat("Elevation", &elevation, -90.0f, 90.0f))
+                {
+                    polarCtrl->setElevation(elevation);
+                }
+                if (bg2e::ui::Input::sliderFloat("Distance", &distance, 0.0f, 50.0f))
+                {
+                    polarCtrl->setDistance(distance);
+                }
+            }
+        }
+
+
+
+
 
         bg2e::ui::BasicWidgets::separator("User Interface");
         if (bg2e::ui::BasicWidgets::button("Scale 2x"))
