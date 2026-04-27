@@ -30,7 +30,7 @@ namespace scene {
 template <typename DrawableT>
 class BG2E_API RenderQueueVisitor : public bg2e::scene::NodeVisitor {
 public:
-    RenderQueueVisitor() {}
+    RenderQueueVisitor();
     
     void enqueue(bg2e::scene::Node* sceneRoot, bg2e::render::RenderQueue<DrawableT>* renderQueue);
     void visit(bg2e::scene::Node* node);

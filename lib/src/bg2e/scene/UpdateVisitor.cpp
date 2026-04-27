@@ -22,6 +22,10 @@
 
 namespace bg2e::scene {
 
+UpdateVisitor::UpdateVisitor()
+{
+    _ignoreDisabled = true;
+}
 
 void UpdateVisitor::update(Node * sceneRoot, float delta)
 {

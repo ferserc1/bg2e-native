@@ -62,6 +62,7 @@ std::shared_ptr<bg2e::scene::Node> StageScene::init()
     cameraRotationComponent->setInitialDistance(2.0f);
     cameraRotationComponent->setWheelSpeed(2.0f);
     cameraRotationComponent->setPanSpeed(0.5f);
+    cameraRotationComponent->setRotation(glm::vec2{ 13.0f, 10.0f });
     
     cameraRotation->addComponent(cameraRotationComponent);
     cameraRotation->addChild(cameraNode);
@@ -82,7 +83,7 @@ std::shared_ptr<bg2e::scene::Node> StageScene::init()
 
     auto directionalLight = createLightNode(
         bg2e::base::Light::TypeDirectional,
-        10.0f, 25.0f, 2.0f,
+        -45.0f, 50.0f, 2.0f,
         bg2e::base::Color::White(),
         "Directional Light"
     );
@@ -90,7 +91,7 @@ std::shared_ptr<bg2e::scene::Node> StageScene::init()
 
     auto pointLight = createLightNode(
         bg2e::base::Light::TypeOmni,
-        45.0f, -10.0f, 2.0,
+        45.0f, 30.0f, 2.0,
         bg2e::base::Color(0.3f, 0.5f, 0.9f, 1.0f),
         "Point Light"
     );
@@ -99,6 +100,9 @@ std::shared_ptr<bg2e::scene::Node> StageScene::init()
     // Target node: the node where the loaded model is placed
     _targetNode = std::make_shared<bg2e::scene::Node>("Target Node");
     sceneRoot->addChild(_targetNode);
+
+    auto floor = createFloorNode();
+    sceneRoot->addChild(floor);
     
     _sceneRoot = sceneRoot;
 
@@ -395,4 +399,38 @@ std::shared_ptr<bg2e::geo::Mesh> StageScene::getLightMesh(bg2e::base::Light::Lig
         result = _pointLightMesh;
     }
     return result;
+}
+
+void StageScene::setFlorHeight(float h)
+{
+    _floorHeight = h;
+    if (_floorNode && _floorNode->transform())
+    {
+        _floorNode->transform()->setTranslation(0.0f, _floorHeight, 0.0f);
+    }
+}
+
+void StageScene::showFloor(bool show)
+{
+    _showFloor = show;
+    if (_floorNode)
+    {
+        _floorNode->setEnabled(_showFloor);
+    }
+}
+
+std::shared_ptr<bg2e::scene::Node> StageScene::createFloorNode()
+{
+    _floorNode = std::make_shared<bg2e::scene::Node>("Floor");
+    _floorNode->setEnabled(_showFloor);
+    _floorNode->addComponent(new bg2e::scene::TransformComponent());
+    _floorNode->transform()->setTranslation(0.0f, _floorHeight, 0.0f);
+
+    auto floorGeo = bg2e::geo::createPlane(100.0f, 100.0f);
+    auto drawable = std::make_shared<bg2e::scene::Drawable>();
+    drawable->setMesh(floorGeo);
+    drawable->load(_engine);
+    _floorNode->addComponent(new bg2e::scene::DrawableComponent(drawable));
+
+    return _floorNode;
 }

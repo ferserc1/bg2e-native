@@ -166,7 +166,27 @@ void EnvironmentSettings::init(
         }
 
 
-
+        bg2e::ui::BasicWidgets::separator("Floor");
+        auto floorVisible = _appDelegate->stage()->isFloorVisible();
+        if (floorVisible)
+        {
+            if (bg2e::ui::BasicWidgets::button("Hide floor"))
+            {
+                _appDelegate->stage()->showFloor(false);
+            }
+            auto floorHeight = _appDelegate->stage()->floorHeight();
+            if (bg2e::ui::Input::number("Floor Height", &floorHeight))
+            {
+                _appDelegate->stage()->setFlorHeight(floorHeight);
+            }
+        }
+        else
+        {
+            if (bg2e::ui::BasicWidgets::button("Show floor"))
+            {
+                _appDelegate->stage()->showFloor(true);
+            }
+        }
 
 
         bg2e::ui::BasicWidgets::separator("User Interface");

@@ -25,7 +25,7 @@ namespace scene {
 
 class BG2E_API UpdateVisitor : public NodeVisitor {
 public:
-    UpdateVisitor() {}
+    UpdateVisitor();
     
     void update(Node * sceneRoot, float delta);
     

@@ -82,6 +82,12 @@ public:
     void addLight();
     void removeLight(uint32_t index);
 
+    void showFloor(bool show);
+    [[nodiscard]] bool isFloorVisible() const { return _showFloor; }
+
+    void setFlorHeight(float h);
+    [[nodiscard]] float floorHeight() const { return _floorHeight; }
+
 
 protected:
     bg2e::render::Engine * _engine;
@@ -113,7 +119,12 @@ protected:
     std::vector<std::string> _targetNames;
 
     // Lighting setup
-    std::shared_ptr<bg2e::scene::Node> _lightsNode = nullptr;
+    std::shared_ptr<bg2e::scene::Node> _lightsNode;
+
+    // Floor node
+    std::shared_ptr<bg2e::scene::Node> _floorNode;
+    bool _showFloor = true;
+    float _floorHeight = 0.0f;
 
     bg2e::scene::EnvironmentComponent * _environment;
     bg2e::scene::OrbitCameraComponent * _orbitCamera;
@@ -132,5 +143,7 @@ protected:
     std::shared_ptr<bg2e::geo::Mesh> _directionalLightMesh;
 
     std::shared_ptr<bg2e::geo::Mesh> getLightMesh(bg2e::base::Light::LightType type);
+
+    std::shared_ptr<bg2e::scene::Node> createFloorNode();
 };
 

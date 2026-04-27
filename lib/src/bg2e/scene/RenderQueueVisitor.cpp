@@ -33,6 +33,12 @@ namespace scene {
 // Especialización explícita de enqueue
 
 template <typename DrawableT>
+RenderQueueVisitor<DrawableT>::RenderQueueVisitor()
+{
+    _ignoreDisabled = true;
+}
+
+template <typename DrawableT>
 void RenderQueueVisitor<DrawableT>::enqueue(
     bg2e::scene::Node* sceneRoot,
     bg2e::render::RenderQueue<DrawableT>* renderQueue
@@ -77,49 +83,58 @@ void RenderQueueVisitor<DrawableT>::didVisit(bg2e::scene::Node* node) {
 }
 
 // DrawableP
- template void RenderQueueVisitor<scene::DrawableP>::enqueue(Node*, bg2e::render::RenderQueue<scene::DrawableP>*);
- template void RenderQueueVisitor<scene::DrawableP>::visit(Node*);
- template void RenderQueueVisitor<scene::DrawableP>::didVisit(Node*);
+template RenderQueueVisitor<scene::DrawableP>::RenderQueueVisitor();
+template void RenderQueueVisitor<scene::DrawableP>::enqueue(Node*, bg2e::render::RenderQueue<scene::DrawableP>*);
+template void RenderQueueVisitor<scene::DrawableP>::visit(Node*);
+template void RenderQueueVisitor<scene::DrawableP>::didVisit(Node*);
 
 // DrawablePN
- template void RenderQueueVisitor<scene::DrawablePN>::enqueue(Node*, bg2e::render::RenderQueue<scene::DrawablePN>*);
- template void RenderQueueVisitor<scene::DrawablePN>::visit(Node*);
- template void RenderQueueVisitor<scene::DrawablePN>::didVisit(Node*);
+template RenderQueueVisitor<scene::DrawablePN>::RenderQueueVisitor();
+template void RenderQueueVisitor<scene::DrawablePN>::enqueue(Node*, bg2e::render::RenderQueue<scene::DrawablePN>*);
+template void RenderQueueVisitor<scene::DrawablePN>::visit(Node*);
+template void RenderQueueVisitor<scene::DrawablePN>::didVisit(Node*);
 
 // DrawablePC
- template void RenderQueueVisitor<scene::DrawablePC>::enqueue(Node*, bg2e::render::RenderQueue<scene::DrawablePC>*);
- template void RenderQueueVisitor<scene::DrawablePC>::visit(Node*);
- template void RenderQueueVisitor<scene::DrawablePC>::didVisit(Node*);
+template RenderQueueVisitor<scene::DrawablePC>::RenderQueueVisitor();
+template void RenderQueueVisitor<scene::DrawablePC>::enqueue(Node*, bg2e::render::RenderQueue<scene::DrawablePC>*);
+template void RenderQueueVisitor<scene::DrawablePC>::visit(Node*);
+template void RenderQueueVisitor<scene::DrawablePC>::didVisit(Node*);
 
 // DrawablePU
- template void RenderQueueVisitor<scene::DrawablePU>::enqueue(Node*, bg2e::render::RenderQueue<scene::DrawablePU>*);
- template void RenderQueueVisitor<scene::DrawablePU>::visit(Node*);
- template void RenderQueueVisitor<scene::DrawablePU>::didVisit(Node*);
+template RenderQueueVisitor<scene::DrawablePU>::RenderQueueVisitor();
+template void RenderQueueVisitor<scene::DrawablePU>::enqueue(Node*, bg2e::render::RenderQueue<scene::DrawablePU>*);
+template void RenderQueueVisitor<scene::DrawablePU>::visit(Node*);
+template void RenderQueueVisitor<scene::DrawablePU>::didVisit(Node*);
 
 // DrawablePNU
- template void RenderQueueVisitor<scene::DrawablePNU>::enqueue(Node*, bg2e::render::RenderQueue<scene::DrawablePNU>*);
- template void RenderQueueVisitor<scene::DrawablePNU>::visit(Node*);
- template void RenderQueueVisitor<scene::DrawablePNU>::didVisit(Node*);
+template RenderQueueVisitor<scene::DrawablePNU>::RenderQueueVisitor();
+template void RenderQueueVisitor<scene::DrawablePNU>::enqueue(Node*, bg2e::render::RenderQueue<scene::DrawablePNU>*);
+template void RenderQueueVisitor<scene::DrawablePNU>::visit(Node*);
+template void RenderQueueVisitor<scene::DrawablePNU>::didVisit(Node*);
 
 // DrawablePNC
- template void RenderQueueVisitor<scene::DrawablePNC>::enqueue(Node*, bg2e::render::RenderQueue<scene::DrawablePNC>*);
- template void RenderQueueVisitor<scene::DrawablePNC>::visit(Node*);
- template void RenderQueueVisitor<scene::DrawablePNC>::didVisit(Node*);
+template RenderQueueVisitor<scene::DrawablePNC>::RenderQueueVisitor();
+template void RenderQueueVisitor<scene::DrawablePNC>::enqueue(Node*, bg2e::render::RenderQueue<scene::DrawablePNC>*);
+template void RenderQueueVisitor<scene::DrawablePNC>::visit(Node*);
+template void RenderQueueVisitor<scene::DrawablePNC>::didVisit(Node*);
 
 // DrawablePNUC
- template void RenderQueueVisitor<scene::DrawablePNUC>::enqueue(Node*, bg2e::render::RenderQueue<scene::DrawablePNUC>*);
- template void RenderQueueVisitor<scene::DrawablePNUC>::visit(Node*);
- template void RenderQueueVisitor<scene::DrawablePNUC>::didVisit(Node*);
+template RenderQueueVisitor<scene::DrawablePNUC>::RenderQueueVisitor();
+template void RenderQueueVisitor<scene::DrawablePNUC>::enqueue(Node*, bg2e::render::RenderQueue<scene::DrawablePNUC>*);
+template void RenderQueueVisitor<scene::DrawablePNUC>::visit(Node*);
+template void RenderQueueVisitor<scene::DrawablePNUC>::didVisit(Node*);
 
 // DrawablePNUT
- template void RenderQueueVisitor<scene::DrawablePNUT>::enqueue(Node*, bg2e::render::RenderQueue<scene::DrawablePNUT>*);
- template void RenderQueueVisitor<scene::DrawablePNUT>::visit(Node*);
- template void RenderQueueVisitor<scene::DrawablePNUT>::didVisit(Node*);
+template RenderQueueVisitor<scene::DrawablePNUT>::RenderQueueVisitor();
+template void RenderQueueVisitor<scene::DrawablePNUT>::enqueue(Node*, bg2e::render::RenderQueue<scene::DrawablePNUT>*);
+template void RenderQueueVisitor<scene::DrawablePNUT>::visit(Node*);
+template void RenderQueueVisitor<scene::DrawablePNUT>::didVisit(Node*);
 
 // DrawablePNUUT
- template void RenderQueueVisitor<scene::DrawablePNUUT>::enqueue(Node*, bg2e::render::RenderQueue<scene::DrawablePNUUT>*);
- template void RenderQueueVisitor<scene::DrawablePNUUT>::visit(Node*);
- template void RenderQueueVisitor<scene::DrawablePNUUT>::didVisit(Node*);
+template RenderQueueVisitor<scene::DrawablePNUUT>::RenderQueueVisitor();
+template void RenderQueueVisitor<scene::DrawablePNUUT>::enqueue(Node*, bg2e::render::RenderQueue<scene::DrawablePNUUT>*);
+template void RenderQueueVisitor<scene::DrawablePNUUT>::visit(Node*);
+template void RenderQueueVisitor<scene::DrawablePNUUT>::didVisit(Node*);
 
 
 

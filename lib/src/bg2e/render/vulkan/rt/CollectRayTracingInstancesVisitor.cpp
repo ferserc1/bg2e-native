@@ -30,6 +30,7 @@ namespace rt {
 CollectRayTracingInstancesVisitor::CollectRayTracingInstancesVisitor(Engine *engine)
     : _engine {engine}
 {
+    _ignoreDisabled = true;
 }
 
 void CollectRayTracingInstancesVisitor::visit(scene::Node * node)

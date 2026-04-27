@@ -101,6 +101,12 @@ TransformComponent * TransformComponent::scale(float x, float y, float z)
     return this;
 }
 
+TransformComponent * TransformComponent::setIdentity()
+{
+    _matrix = glm::identity<glm::mat4>();
+    return this;
+}
+
 TransformComponent * TransformComponent::setTranslation(const glm::vec3& t) {
     _matrix = glm::translate(glm::mat4{1.0f}, t );
     return this;

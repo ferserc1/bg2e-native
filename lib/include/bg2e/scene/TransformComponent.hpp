@@ -42,7 +42,8 @@ public:
 
     const glm::mat4& matrix() const { return _matrix; }
     void setMatrix(const glm::mat4& matrix) { _matrix = matrix; }
-    
+
+    TransformComponent * setIdentity();
     TransformComponent * setTranslation(float x, float y, float z);
     TransformComponent * setRotation(float alpha, float x, float y, float z);
     TransformComponent * setScale(float xyz);
