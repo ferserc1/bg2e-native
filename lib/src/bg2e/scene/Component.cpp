@@ -22,6 +22,18 @@
 
 namespace bg2e::scene {
 
+void Component::setPriority(uint32_t newPriority)
+{
+    if (_priority != newPriority)
+    {
+        _priority = newPriority;
+        if (_owner)
+        {
+            _owner->setComponentsOrderDirty();
+        }
+    }
+}
+
 Scene * Component::scene()
 {
     return _owner != nullptr ? _owner->scene() : nullptr;

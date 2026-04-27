@@ -76,28 +76,28 @@ void InputVisitor::mouseWheel(Node * sceneRoot, int deltaX, int deltaY)
 
 void InputVisitor::visit(Node * node)
 {
-    for (auto &comp : node->components())
+    for (auto &comp : node->orderedComponents())
     {
         switch (_eventType) {
         case EventNone:
             break;
         case EventKeyDown:
-            comp.second->keyDown(*_keyEvent);
+            comp->keyDown(*_keyEvent);
             break;
         case EventKeyUp:
-            comp.second->keyUp(*_keyEvent);
+            comp->keyUp(*_keyEvent);
             break;
         case EventMouseMove:
-            comp.second->mouseMove(_x, _y);
+            comp->mouseMove(_x, _y);
             break;
         case EventButtonDown:
-            comp.second->mouseButtonDown(_button, _x, _y);
+            comp->mouseButtonDown(_button, _x, _y);
             break;
         case EventButtonUp:
-            comp.second->mouseButtonUp(_button, _x, _y);
+            comp->mouseButtonUp(_button, _x, _y);
             break;
         case EventWheel:
-            comp.second->mouseWheel(_deltaX, _deltaY);
+            comp->mouseWheel(_deltaX, _deltaY);
             break;
         }
     }

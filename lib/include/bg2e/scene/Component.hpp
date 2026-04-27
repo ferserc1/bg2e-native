@@ -43,6 +43,9 @@ public:
     inline Node * ownerNode() const { return _owner; }
     Scene * scene();
 
+    uint32_t priority() const { return _priority; }
+    void setPriority(uint32_t newPriority);
+
     virtual void resizeViewport(const math::Viewport&) {}
     
     virtual void animate(float /* delta */) {}
@@ -70,6 +73,8 @@ protected:
 
     // Weak ptr to avoid circular references
     Node * _owner = nullptr;
+
+    uint32_t _priority = 0;
 
     virtual void willAddToNode(Node *) {}
     virtual void didAddToNode(Node *) {}

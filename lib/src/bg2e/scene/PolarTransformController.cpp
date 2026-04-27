@@ -70,7 +70,7 @@ void PolarTransformControllerComponent::update([[maybe_unused]] float delta)
 
         polarMatrix = glm::translate(polarMatrix, _target);
         polarMatrix = glm::rotate(polarMatrix, glm::radians(_azimuth), glm::vec3{0.0f, 1.0f, 0.0f});
-        polarMatrix = glm::rotate(polarMatrix, glm::radians(_elevation), glm::vec3{1.0f, 0.0f, 0.0f});
+        polarMatrix = glm::rotate(polarMatrix, glm::radians(_elevation), glm::vec3{-1.0f, 0.0f, 0.0f});
 
         glm::vec3 position = glm::vec3(
             polarMatrix * glm::vec4{0.0f, 0.0f, _distance, 1.0f}

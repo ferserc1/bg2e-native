@@ -127,5 +127,10 @@ protected:
         const bg2e::base::Color& color = bg2e::base::Color::White(),
         const std::string & name = ""
     );
+
+    std::shared_ptr<bg2e::geo::Mesh> _pointLightMesh;
+    std::shared_ptr<bg2e::geo::Mesh> _directionalLightMesh;
+
+    std::shared_ptr<bg2e::geo::Mesh> getLightMesh(bg2e::base::Light::LightType type);
 };
 

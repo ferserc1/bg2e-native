@@ -340,17 +340,16 @@ std::shared_ptr<bg2e::scene::Node> StageScene::createLightNode(
 
     auto node = std::make_shared<bg2e::scene::Node>(lightName);
 
-    auto sphereRadius = 0.05f;
-    auto sphereMesh = std::shared_ptr<bg2e::geo::Mesh>(bg2e::geo::createSphere(sphereRadius, 10, 10));
-    auto sphereDrawable = std::make_shared<bg2e::scene::Drawable>();
-    sphereDrawable->setMesh(sphereMesh);
-    sphereDrawable->load(_engine);
-    sphereDrawable->material(0).setIsUnlit(true);
-    sphereDrawable->material(0).setAlbedo(color);
-    sphereDrawable->setRayTracingEnabled(false);
-    sphereDrawable->updateMaterials();
+    auto lightMesh = getLightMesh(type);
+    auto lightDrawable = std::make_shared<bg2e::scene::Drawable>();
+    lightDrawable->setMesh(lightMesh);
+    lightDrawable->load(_engine);
+    lightDrawable->material(0).setIsUnlit(true);
+    lightDrawable->material(0).setAlbedo(color);
+    lightDrawable->setRayTracingEnabled(false);
+    lightDrawable->updateMaterials();
 
-    node->addComponent(new bg2e::scene::DrawableComponent(sphereDrawable));
+    node->addComponent(new bg2e::scene::DrawableComponent(lightDrawable));
     node->addComponent(new bg2e::scene::LightComponent());
     node->addComponent(new bg2e::scene::TransformComponent());
     auto polarController = new bg2e::scene::PolarTransformControllerComponent();
@@ -359,9 +358,41 @@ std::shared_ptr<bg2e::scene::Node> StageScene::createLightNode(
     polarController->setDistance(distance);
     polarController->setEulerX(45.0f);
     polarController->setEulerY(45.0f);
+    polarController->setPriority(2);
     node->addComponent(polarController);
+
+    auto fixedScale = new bg2e::scene::FixedScaleTransformControllerComponent();
+    fixedScale->setScale(0.08f);
+    fixedScale->setPriority(1);
+    node->addComponent(fixedScale);
+
     node->light()->light().setIntensity(2.0f);
     node->light()->light().setType(type);
 
     return node;
+}
+
+std::shared_ptr<bg2e::geo::Mesh> StageScene::getLightMesh(bg2e::base::Light::LightType type)
+{
+    std::shared_ptr<bg2e::geo::Mesh> result;
+    auto assetsPath = bg2e::base::PlatformTools::assetPath();
+    if (type == bg2e::base::Light::TypeDirectional)
+    {
+        if (_directionalLightMesh == nullptr)
+        {
+            auto meshData = bg2e::db::loadMeshBg2(assetsPath, "dir-light-gizmo.bg2");
+            _directionalLightMesh = meshData->mesh;
+        }
+        result = _directionalLightMesh;
+    }
+    else
+    {
+        if (_pointLightMesh == nullptr)
+        {
+            auto sphereRadius = 0.5f;
+            _pointLightMesh = std::shared_ptr<bg2e::geo::Mesh>(bg2e::geo::createSphere(sphereRadius, 10, 10));
+        }
+        result = _pointLightMesh;
+    }
+    return result;
 }

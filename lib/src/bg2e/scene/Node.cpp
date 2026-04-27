@@ -23,6 +23,8 @@
 #include "bg2e/base/Log.hpp"
 #include "bg2e/scene/Scene.hpp"
 
+#include <algorithm>
+
 namespace bg2e::scene {
 
 Node::Node()
@@ -54,7 +56,7 @@ void Node::addChild(std::shared_ptr<Node> node)
     node->_parent = this;
 }
 
-void Node::removeChild(std::shared_ptr<Node> node)
+void Node::removeChild(const std::shared_ptr<Node> & node)
 {
     if (!node)
     {
@@ -111,8 +113,11 @@ void Node::addComponent(std::shared_ptr<Component> comp)
     comp->willAddToNode(this);
     auto plainPtr = comp.get();
     _components[BG2E_SCENE_COMP_CLASS_NAME(plainPtr)] = comp;
+    _componentsOrderDirty = true;
     comp->_owner = this;
     comp->didAddToNode(this);
+
+    sortComponents();
 }
 
 void Node::removeComponent(std::shared_ptr<Component> comp)
@@ -125,17 +130,26 @@ void Node::removeComponent(std::shared_ptr<Component> comp)
     if (it != _components.end())
     {
         _components.erase(it);
+        _componentsOrderDirty = true;
 
         comp->_owner = nullptr;
 
         comp->didRemoveFromNode(this);
     }
+
+    sortComponents();
 }
 
 
 const std::unordered_map<std::string, std::shared_ptr<Component>>& Node::components() const
 {
     return _components;
+}
+
+const std::vector<std::shared_ptr<Component>>& Node::orderedComponents() const
+{
+    sortComponents();
+    return _orderedComponents;
 }
 
 void Node::accept(NodeVisitor * visitor)
@@ -249,6 +263,28 @@ std::shared_ptr<json::JsonNode> Node::serialize(const std::filesystem::path & ba
     obj["children"] = children;
     
     return result;
+}
+
+void Node::sortComponents() const
+{
+    if (_componentsOrderDirty)
+    {
+        _orderedComponents.clear();
+        _orderedComponents.reserve(_components.size());
+        for (auto& [_, comp] : _components)
+        {
+            _orderedComponents.push_back(comp);
+        }
+        std::stable_sort(
+            _orderedComponents.begin(),
+            _orderedComponents.end(),
+            [](const auto& a, const auto& b)
+            {
+                return a->priority() > b->priority();
+            }
+        );
+        _componentsOrderDirty = false;
+    }
 }
     
 }

@@ -16,30 +16,29 @@
  *    along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <bg2e/scene/ResizeViewportVisitor.hpp>
+#pragma once
 
-#include <bg2e/scene/Node.hpp>
+#include <bg2e/scene/Component.hpp>
+#include <bg2e/math/base.hpp>
 
-namespace bg2e::scene {
+namespace bg2e {
+namespace scene {
 
-void ResizeViewportVisitor::resizeViewport(Node * sceneRoot, const math::Viewport& vp)
-{
-    _vp = vp;
-    sceneRoot->accept(this);
+class BG2E_API FixedScaleTransformControllerComponent : public Component {
+public:
+    BG2E_COMPONENT_TYPE_NAME("FixedScaleTransform");
+
+    void deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path&) override;
+    std::shared_ptr<json::JsonNode> serialize(const std::filesystem::path&) override;
+
+    float scale() const { return _scale; }
+    void setScale(float value) { _scale = value; }
+
+    void update(float delta) override;
+
+protected:
+    float _scale = 1.0f;
+};
+
 }
-
-void ResizeViewportVisitor::resizeViewport(Node *sceneRoot, const VkExtent2D &viewportExtent)
-{
-    _vp = math::Viewport(viewportExtent.width, viewportExtent.height);
-    sceneRoot->accept(this);
-}
-    
-void ResizeViewportVisitor::visit(Node * node)
-{
-    for (auto comp : node->orderedComponents())
-    {
-        comp->resizeViewport(_vp);
-    }
-}
-
 }

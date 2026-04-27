@@ -32,15 +32,15 @@ void UpdateVisitor::update(Node * sceneRoot, float delta)
 void UpdateVisitor::visit(Node * node)
 {
     // Animation
-    for (auto comp : node->components())
+    for (const auto comp : node->orderedComponents())
     {
-        comp.second->animate(_delta);
+        comp->animate(_delta);
     }
     
     // Update
-    for (auto comp : node->components())
+    for (const auto comp : node->orderedComponents())
     {
-        comp.second->update(_delta);
+        comp->update(_delta);
     }
 }
 

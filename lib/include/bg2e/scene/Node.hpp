@@ -61,7 +61,7 @@ public:
     
     void addChild(Node * node);
     void addChild(std::shared_ptr<Node> node);
-    void removeChild(std::shared_ptr<Node> node);
+    void removeChild(const std::shared_ptr<Node> & node);
     const std::vector<std::shared_ptr<Node>>& children() const;
     void clearChildren();
     
@@ -71,6 +71,7 @@ public:
     void addComponent(std::shared_ptr<Component> comp);
     void removeComponent(std::shared_ptr<Component> comp);
     const std::unordered_map<std::string, std::shared_ptr<Component>>& components() const;
+    const std::vector<std::shared_ptr<Component>>& orderedComponents() const;
     
     template <typename ComponentT>
     ComponentT * getComponent()
@@ -82,6 +83,8 @@ public:
         }
         return nullptr;
     }
+
+    void setComponentsOrderDirty() const { _componentsOrderDirty = true; }
     
     inline TransformComponent * transform() { return getComponent<TransformComponent>(); }
     inline DrawableComponent * drawable() { return getComponent<DrawableComponent>(); }
@@ -112,11 +115,15 @@ protected:
     Scene * _scene = nullptr;
     
     std::unordered_map<std::string, std::shared_ptr<Component>> _components;
+    mutable std::vector<std::shared_ptr<Component>> _orderedComponents;
+    mutable bool _componentsOrderDirty = false;
     
     std::string _name;
     std::string _identifier;
     bool _disabled = false;
     bool _steady = false;
+
+    void sortComponents() const;
 };
 
 }
