@@ -80,11 +80,17 @@ void PolarTransformControllerComponent::update([[maybe_unused]] float delta)
         finalMatrix = glm::translate(finalMatrix, position);
 
         if (_eulerY != 0.0f)
+        {
             finalMatrix = glm::rotate(finalMatrix, glm::radians(_eulerY), glm::vec3{0.0f, 1.0f, 0.0f});
+        }
         if (_eulerX != 0.0f)
+        {
             finalMatrix = glm::rotate(finalMatrix, glm::radians(_eulerX), glm::vec3{1.0f, 0.0f, 0.0f});
+        }
         if (_eulerZ != 0.0f)
+        {
             finalMatrix = glm::rotate(finalMatrix, glm::radians(_eulerZ), glm::vec3{0.0f, 0.0f, 1.0f});
+        }
 
         transform->setMatrix(finalMatrix);
     }
@@ -98,13 +104,19 @@ void PolarTransformControllerComponent::deserialize(std::shared_ptr<json::JsonNo
     json::JsonObject& obj = jsonData->objectValue();
 
     if (obj.count("azimuth"))
+    {
         setAzimuth(obj["azimuth"]->numberValue(_azimuth));
+    }
 
     if (obj.count("elevation"))
+    {
         setElevation(obj["elevation"]->numberValue(_elevation));
+    }
 
     if (obj.count("distance"))
+    {
         setDistance(obj["distance"]->numberValue(_distance));
+    }
 
     if (obj.count("target"))
     {
@@ -116,13 +128,19 @@ void PolarTransformControllerComponent::deserialize(std::shared_ptr<json::JsonNo
     }
 
     if (obj.count("eulerX"))
+    {
         _eulerX = obj["eulerX"]->numberValue(_eulerX);
+    }
 
     if (obj.count("eulerY"))
+    {
         _eulerY = obj["eulerY"]->numberValue(_eulerY);
+    }
 
     if (obj.count("eulerZ"))
+    {
         _eulerZ = obj["eulerZ"]->numberValue(_eulerZ);
+    }
 }
 
 std::shared_ptr<json::JsonNode> PolarTransformControllerComponent::serialize(const std::filesystem::path& basePath)

@@ -129,16 +129,20 @@ void Instance::cleanup()
 bool Instance::getRequiredLayers(std::vector<const char*>& requiredLayers) const
 {
     Instance::s_debugLayerAvailable = false;
+    for (const auto& availableLayer : _availableLayers)
+    {
+        if (availableLayer == "VK_LAYER_KHRONOS_validation")
+        {
+            Instance::s_debugLayerAvailable = true;
+        }
+    }
+
     for (const char* requiredLayer : requiredLayers)
     {
         bool found = false;
         
         for (const auto& availableLayer : _availableLayers)
         {
-            if (availableLayer == "VK_LAYER_KHRONOS_validation")
-            {
-                Instance::s_debugLayerAvailable = true;
-            }
 
             if (requiredLayer == std::string(availableLayer))
             {

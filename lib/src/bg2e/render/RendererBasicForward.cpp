@@ -130,6 +130,8 @@ void RendererBasicForward::update(
         _lightUniforms.lights[i].intensity = comp->light().intensity();
         _lightUniforms.lights[i].position = comp->position();
         _lightUniforms.lights[i].direction = comp->direction();
+        _lightUniforms.lights[i].spotAngle = comp->light().spotAngle();
+        _lightUniforms.lights[i].spotCutoff = comp->light().spotCutoff();
     }
     
     _scene->didUpdate();

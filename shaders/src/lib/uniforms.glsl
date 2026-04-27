@@ -57,6 +57,10 @@ struct Light
     vec4 color;
     vec3 direction;
     int type;
+    float spotAngle;
+    float spotCutoff;
+
+    vec2 padding;
 };
 
 const int LIGHT_COUNT = 8;

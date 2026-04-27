@@ -47,6 +47,12 @@ public:
 
     virtual void setType(LightType type) { _type = type; }
     virtual LightType type() const { return _type; }
+
+    virtual void setSpotAngle(float a) { _spotAngle = a; }
+    virtual float spotAngle() const { return _spotAngle; }
+
+    virtual void setSpotCutoff(float a) { _spotCutoff = a; }
+    virtual float spotCutoff() const { return _spotCutoff; }
     
     std::string typeString() const
     {
@@ -74,7 +80,9 @@ public:
         return JSON(JsonObject{
             { "color", JSON(_color) },
             { "intensity", JSON(_intensity) },
-            { "type", JSON(typeString()) }
+            { "type", JSON(typeString()) },
+            { "spotAngle", JSON(_spotAngle) },
+            { "spotCutoff", JSON(_spotCutoff) },
         });
     }
     
@@ -82,6 +90,8 @@ protected:
     Color _color { 1.0f, 1.0f, 1.0f, 1.0f };
     float _intensity = 1.0f;
     LightType _type = TypeOmni;
+    float _spotAngle = 22.0f;
+    float _spotCutoff = 14.0f;
 };
 
 }
