@@ -22,7 +22,7 @@ class MyOffscreenApplication : public bg2e::app::OffscreenApplicationDelegate
 public:
     void initConfig(
         [[maybe_unused]] int argc, [[maybe_unused]] char ** argv,
-        bg2e::app::OffscreenConfig & outConfig
+        bg2e::app::OffscreenApplicationConfig & outConfig
     ) override {
         outConfig.width = 1920;
         outConfig.height = 1080;
@@ -33,7 +33,25 @@ public:
         _engine = engine;
     }
 
-    void render() override
+    void initScene() override
+    {
+
+    }
+
+    void resize(uint32_t width, uint32_t height) override
+    {
+    }
+
+    void frame(float delta, uint32_t frameIndex, bg2e::render::vulkan::FrameResources& frameResources) override
+    {
+    }
+
+    bool render(VkCommandBuffer cmd, uint32_t frameIndex, bg2e::render::vulkan::FrameResources& frameResources) override
+    {
+        return false;
+    }
+
+    void didRenderFrame(uint32_t frameIndex, double elapsedMs) override
     {
     }
 

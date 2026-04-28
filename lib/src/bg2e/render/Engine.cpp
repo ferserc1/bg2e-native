@@ -65,10 +65,8 @@ void Engine::init(SDL_Window* windowPtr)
     });
 }
 
-void Engine::init(uint32_t width, uint32_t height)
+void Engine::init()
 {
-    _offscreenWidth = width;
-    _offscreenHeight = height;
 
     createInstance();
     vulkan::loadInstanceExtensions(_instance.handle(), true);
@@ -76,6 +74,8 @@ void Engine::init(uint32_t width, uint32_t height)
     createMemoryAllocator();
 
     vulkan::loadDeviceExtensions(_physicalDevice, _device.handle(), true);
+
+    createFrameResources();
 
     _descriptorSetAllocator = std::make_unique<vulkan::DescriptorSetAllocator>();
     _descriptorSetAllocator->init(this);
@@ -133,7 +133,7 @@ bool Engine::newFrame()
 {
     if (isOffscreen())
     {
-        throw std::runtime_error("Engine::newFrame(): not allowed in offscreen application");
+        return false;
     }
     if (_resizeRequested)
     {
@@ -194,7 +194,7 @@ void Engine::createMemoryAllocator()
 
 void Engine::createFrameResources()
 {
-    auto numImages = swapchain().images().size();
+    auto numImages = this->numImages();
     _frameResources.resize(numImages);
     for (uint32_t i = 0; i < numImages; ++i)
     {
@@ -204,8 +204,7 @@ void Engine::createFrameResources()
 
 void Engine::cleanupFrameResources()
 {
-    auto numImages = swapchain().images().size();
-    for (uint32_t i = 0; i < numImages; ++i)
+    for (uint32_t i = 0; i < numImages(); ++i)
     {
         _frameResources[i].cleanup();
     }
@@ -213,47 +212,26 @@ void Engine::cleanupFrameResources()
 
 uint32_t Engine::currentFrameResourcesIndex() const
 {
-    if (isOffscreen())
-    {
-        throw std::runtime_error("Engine::currentFrameResourcesIndex(): not allowed in offscreen application");
-    }
-    return _currentFrame % _frameResources.size();
+    return isOffscreen() ? 0 : _currentFrame % _frameResources.size();
 }
 
 uint32_t Engine::prevFrameResourcesIndex() const
 {
-    if (isOffscreen())
-    {
-        throw std::runtime_error("Engine::prevFrameResourcesIndex(): not allowed in offscreen application");
-    }
-    return (_currentFrame - 1) % _frameResources.size();
+    return isOffscreen() ? 0 : (_currentFrame - 1) % _frameResources.size();
 }
 
 vulkan::FrameResources& Engine::currentFrameResources() {
-    if (isOffscreen())
-    {
-        throw std::runtime_error("Engine::currentFrameResourcesIndex(): not allowed in offscreen application");
-    }
     return _frameResources[currentFrameResourcesIndex()];
 }
 
 const vulkan::FrameResources& Engine::currentFrameResources() const
 {
-    if (isOffscreen())
-    {
-        throw std::runtime_error("Engine::currentFrameResourcesIndex(): not allowed in offscreen application");
-    }
     return _frameResources[currentFrameResourcesIndex()];
 }
 
 void Engine::iterateFrameResources(std::function<void(vulkan::FrameResources&)> cb)
 {
-    if (isOffscreen())
-    {
-        throw std::runtime_error("Engine::iterateFrameResources(): not allowed in offscreen application");
-    }
-    size_t numImages = swapchain().images().size();
-    for (size_t i = 0; i < numImages; ++i)
+    for (size_t i = 0; i < numImages(); ++i)
     {
         cb(_frameResources[i]);
     }

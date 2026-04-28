@@ -331,7 +331,6 @@ int32_t MainLoop::run(app::Application * application) {
     
         auto millis = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
     
-        //std::cout << millis.count() << std::endl;
         _renderLoop.setDelta(static_cast<float>(millis.count()));
         
         start = std::chrono::high_resolution_clock::now();

@@ -26,26 +26,38 @@
 
 namespace bg2e::app {
 
-struct OffscreenConfig {
-    // Render target width (default 1920)
+struct OffscreenApplicationConfig
+{
     uint32_t width = 1920;
-    // Render target height (default 1080)
     uint32_t height = 1080;
-    // Output image format
-    const std::string& format = "png";
-    // Output image path
-    const std::filesystem::path& path = "";
 };
 
 class OffscreenApplicationDelegate
 {
 public:
-    virtual void initConfig(int argc, char ** argv, OffscreenConfig & outConfig) {}
+    virtual void initConfig(
+        [[maybe_unused]] int argc, [[maybe_unused]] char ** argv,
+        [[maybe_unused]] OffscreenApplicationConfig & outConfig
+    ) {}
 
     virtual void init(bg2e::render::Engine *) {}
 
-    // TODO: add parameters
-    virtual void render() = 0;
+    virtual void initFrameResources(render::vulkan::DescriptorSetAllocator *) {}
+
+    virtual void initScene() {}
+
+    virtual void resize(uint32_t width, uint32_t height) {}
+
+    virtual void frame(
+        [[maybe_unused]] float delta,
+        [[maybe_unused]] uint32_t frameIndex,
+        [[maybe_unused]] render::vulkan::FrameResources& frameResources
+    ) {}
+
+    // Return true to generate another frame, return false to stop rendering
+    virtual bool render(VkCommandBuffer, uint32_t frameIndex, render::vulkan::FrameResources& frameResources) = 0;
+
+    virtual void didRenderFrame([[maybe_unused]] uint32_t frameIndex, [[maybe_unused]] double elapsedMs) {}
 
     virtual void cleanup() {}
 };
@@ -63,6 +75,8 @@ public:
 
 protected:
     void cleanup();
+
+    OffscreenApplicationConfig _config;
 
     std::shared_ptr<OffscreenApplicationDelegate> _delegate;
 

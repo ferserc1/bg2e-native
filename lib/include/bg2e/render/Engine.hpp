@@ -45,7 +45,7 @@ public:
     void init(SDL_Window * windowPtr);
 
     // Offscreen application
-    void init(uint32_t width, uint32_t height);
+    void init();
 
     void cleanup();
 
@@ -63,6 +63,7 @@ public:
     inline const vulkan::DescriptorSetAllocator& descriptorSetAllocator() const { return *_descriptorSetAllocator.get(); }
     inline vulkan::DescriptorSetAllocator& descriptorSetAllocator() { return *_descriptorSetAllocator.get(); }
 
+    inline uint32_t numImages() const { return isOffscreen() ? 1 : _swapchain.images().size(); }
     uint32_t currentFrameResourcesIndex() const;
     uint32_t prevFrameResourcesIndex() const;
     vulkan::FrameResources& currentFrameResources();
@@ -90,8 +91,6 @@ public:
 
 protected:
     SDL_Window* _windowPtr = nullptr;
-    uint32_t _offscreenWidth = 0;
-    uint32_t _offscreenHeight = 0;
 
 private:
 
