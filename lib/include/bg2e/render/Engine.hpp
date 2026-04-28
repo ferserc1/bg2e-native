@@ -44,6 +44,9 @@ public:
 
     void init(SDL_Window * windowPtr);
 
+    // Offscreen application
+    void init(uint32_t width, uint32_t height);
+
     void cleanup();
 
     inline const void* windowPtr() const { return _windowPtr; }
@@ -51,19 +54,19 @@ public:
 
     inline const vulkan::Instance& instance() const { return _instance; }
     inline const vulkan::PhysicalDevice& physicalDevice() const { return _physicalDevice; }
-    inline const vulkan:: Surface& surface() const { return _surface; }
+    const vulkan:: Surface& surface() const;
     inline const vulkan::Device& device() const { return _device; }
-    inline vulkan::Swapchain& swapchain() { return _swapchain; }
-    inline const vulkan::Swapchain& swapchain() const { return _swapchain; }
+    vulkan::Swapchain& swapchain();
+    const vulkan::Swapchain& swapchain() const;
     inline vulkan::Command& command() { return _command; }
     inline const vulkan::Command& command() const { return _command; }
     inline const vulkan::DescriptorSetAllocator& descriptorSetAllocator() const { return *_descriptorSetAllocator.get(); }
     inline vulkan::DescriptorSetAllocator& descriptorSetAllocator() { return *_descriptorSetAllocator.get(); }
 
-    inline uint32_t currentFrameResourcesIndex() const { return _currentFrame % _frameResources.size(); }
-    inline uint32_t prevFrameResourcesIndex() const { return (_currentFrame - 1) % _frameResources.size(); }
-    inline vulkan::FrameResources& currentFrameResources() { return _frameResources[currentFrameResourcesIndex()]; }
-    inline const vulkan::FrameResources& currentFrameResources() const { return _frameResources[currentFrameResourcesIndex()]; }
+    uint32_t currentFrameResourcesIndex() const;
+    uint32_t prevFrameResourcesIndex() const;
+    vulkan::FrameResources& currentFrameResources();
+    const vulkan::FrameResources& currentFrameResources() const;
 
     inline uint32_t currentFrame() const { return _currentFrame; }
     inline void nextFrame() { ++_currentFrame; }
@@ -83,8 +86,12 @@ public:
 	// Destroy a buffer allocated with the Vulkan Memory Allocator
 	void destroyBuffer(VkBuffer buffer, VmaAllocation allocation);
 
+    bool isOffscreen() const { return _windowPtr == nullptr; }
+
 protected:
     SDL_Window* _windowPtr = nullptr;
+    uint32_t _offscreenWidth = 0;
+    uint32_t _offscreenHeight = 0;
 
 private:
 

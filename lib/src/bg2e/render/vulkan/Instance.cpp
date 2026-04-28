@@ -116,6 +116,87 @@ void Instance::create(SDL_Window * sdlWindow)
     }
 }
 
+bool Instance::getRequiredExtensions(std::vector<const char*>& requiredExtensions) const
+{
+#if BG2E_IS_MAC
+    requiredExtensions.push_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
+#endif
+
+    if (base::Log::isDebug() && Instance::s_debugLayerAvailable)
+    {
+        requiredExtensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    }
+
+    for (auto& requiredExtension : requiredExtensions)
+    {
+        bool present = false;
+
+        for (const auto& availableExtension : _availableExtensions)
+        {
+            if (availableExtension == std::string(requiredExtension))
+            {
+                present = true;
+                break;
+            }
+        }
+
+        if (!present)
+        {
+            bg2e_log_error << "Error: required extension not present - " << requiredExtension << bg2e_log_end;
+            return false;
+        }
+    }
+
+    return true;
+}
+
+void Instance::create()
+{
+    std::vector<const char*> requiredLayers;
+    if (!Instance::getRequiredLayers(requiredLayers))
+    {
+        throw std::runtime_error("Instance::create(): missing required instance layers");
+    }
+    std::vector<const char*> instanceExtensions;
+    if (!Instance::getRequiredExtensions(instanceExtensions))
+    {
+        throw std::runtime_error("Instance::create(): missing required instance extensions");
+    }
+
+    VkApplicationInfo appInfo{};
+    appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
+    appInfo.pApplicationName = _applicationName.c_str();
+    appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
+    appInfo.pEngineName = "bg2 engine - native";
+    appInfo.engineVersion = VK_MAKE_VERSION(2, 0, 0);
+    appInfo.apiVersion = VK_API_VERSION_1_3;
+
+    VkInstanceCreateInfo createInfo{};
+    createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
+    createInfo.pApplicationInfo = &appInfo;
+    createInfo.enabledExtensionCount = uint32_t(instanceExtensions.size());
+    createInfo.ppEnabledExtensionNames = instanceExtensions.data();
+    createInfo.enabledLayerCount = uint32_t(requiredLayers.size());
+    createInfo.ppEnabledLayerNames = requiredLayers.data();
+
+#ifdef BG2E_IS_MAC
+    createInfo.flags |= VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
+#endif
+
+    auto debugCreateInfo = Info::debugMessengerCreateInfo(bg2e_mainDebugCallback);
+    if (base::Log::isDebug() && Instance::s_debugLayerAvailable)
+    {
+        createInfo.pNext = reinterpret_cast<VkDebugUtilsMessengerCreateInfoEXT*>(&debugCreateInfo);
+    }
+
+    VK_ASSERT(vkCreateInstance(&createInfo, nullptr, &_instance));
+
+    if (base::Log::isDebug() && Instance::s_debugLayerAvailable)
+    {
+        VK_ASSERT(createDebugMessenger());
+    }
+}
+
 void Instance::cleanup()
 {
     if (base::Log::isDebug() && Instance::s_debugLayerAvailable)

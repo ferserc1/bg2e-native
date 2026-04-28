@@ -17,8 +17,41 @@
  */
 #include <bg2e.hpp>
 
+class MyOffscreenApplication : public bg2e::app::OffscreenApplicationDelegate
+{
+public:
+    void initConfig(
+        [[maybe_unused]] int argc, [[maybe_unused]] char ** argv,
+        bg2e::app::OffscreenConfig & outConfig
+    ) override {
+        outConfig.width = 1920;
+        outConfig.height = 1080;
+    }
+
+    void init(bg2e::render::Engine* engine) override
+    {
+        _engine = engine;
+    }
+
+    void render() override
+    {
+    }
+
+protected:
+    bg2e::render::Engine * _engine;
+};
+
 int main(int argc, char** argv)
 {
     bg2e_log_info << "bg2 engine offscreen render CLI example" << bg2e_log_end;
+
+    bg2e::app::OffscreenApplication app;
+    app.init(
+        argc, argv,
+        "my-offscreen-app",
+        std::make_shared<MyOffscreenApplication>()
+    );
+
+    return app.run();
 }
 

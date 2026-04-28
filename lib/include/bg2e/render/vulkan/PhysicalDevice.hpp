@@ -79,7 +79,7 @@ private:
 
 class PhysicalDevice {
 public:
-    static const std::vector<const char*>& getRequiredDeviceExtensions();
+    static const std::vector<const char*>& getRequiredDeviceExtensions(bool offscreen);
     
     static void listSuitableDevices(
         const Instance& instance,
@@ -96,8 +96,14 @@ public:
         {
             return graphics.has_value() && present.has_value();
         }
+
+        inline bool isCompleteHeadless()
+        {
+            return graphics.has_value();
+        }
         
         static QueueFamilyIndices get(VkPhysicalDevice device, const Surface& surface);
+        static QueueFamilyIndices graphicsOnly(VkPhysicalDevice device);
     };
 
     struct SwapChainSupportDetails
@@ -115,7 +121,10 @@ public:
     };
 
     void choose(const Instance& instance, const Surface& surface);
-    
+
+    // Used for offscreen applications
+    void choose(const Instance& instance);
+
     QueueFamilyIndices queueFamilyIndices() const;
 
 	inline VkPhysicalDevice handle() const { return _device; }
@@ -138,6 +147,7 @@ protected:
     std::shared_ptr<PhysicalDeviceProperties> _properties;
 
     static bool isSuitable(VkPhysicalDevice device, const Surface& surface);
+    static bool isSuitableHeadless(VkPhysicalDevice device);
     static bool checkDeviceExtensions(VkPhysicalDevice device);
 };
 

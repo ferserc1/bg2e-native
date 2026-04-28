@@ -185,9 +185,9 @@ void PhysicalDevice::listSuitableDevices(
     }
 }
 
-PhysicalDevice::QueueFamilyIndices PhysicalDevice::QueueFamilyIndices::get(VkPhysicalDevice device, const Surface& surface)
+static PhysicalDevice::QueueFamilyIndices queryQueueFamilies(VkPhysicalDevice device, VkSurfaceKHR surface = VK_NULL_HANDLE, bool checkPresent = false)
 {
-    QueueFamilyIndices result;
+    PhysicalDevice::QueueFamilyIndices result;
 
 	uint32_t queueFamilyCount = 0;
 	vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
@@ -202,11 +202,14 @@ PhysicalDevice::QueueFamilyIndices PhysicalDevice::QueueFamilyIndices::get(VkPhy
             result.graphics = i;
         }
 
-        VkBool32 presentSupport = false;
-        vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface.handle(), &presentSupport);
-        if (presentSupport)
+        if (checkPresent && surface != VK_NULL_HANDLE)
         {
-            result.present = i;
+            VkBool32 presentSupport = false;
+            vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, &presentSupport);
+            if (presentSupport)
+            {
+                result.present = i;
+            }
         }
 
         if (result.isComplete())
@@ -218,6 +221,16 @@ PhysicalDevice::QueueFamilyIndices PhysicalDevice::QueueFamilyIndices::get(VkPhy
     }
 
     return result;
+}
+
+PhysicalDevice::QueueFamilyIndices PhysicalDevice::QueueFamilyIndices::get(VkPhysicalDevice device, const Surface& surface)
+{
+    return queryQueueFamilies(device, surface.handle(), true);
+}
+
+PhysicalDevice::QueueFamilyIndices PhysicalDevice::QueueFamilyIndices::graphicsOnly(VkPhysicalDevice device)
+{
+    return queryQueueFamilies(device, VK_NULL_HANDLE, false);
 }
 
 PhysicalDevice::SwapChainSupportDetails PhysicalDevice::SwapChainSupportDetails::get(VkPhysicalDevice device, const Surface & surface)
@@ -379,11 +392,56 @@ void PhysicalDevice::choose(const Instance& instance, const Surface & surface)
     _properties = bestDeviceProps;
 }
 
+void PhysicalDevice::choose(const Instance& instance)
+{
+    uint32_t deviceCount = 0;
+    vkEnumeratePhysicalDevices(instance.handle(), &deviceCount, nullptr);
+    if (deviceCount == 0)
+    {
+        throw std::runtime_error("Failed to find GPUs with Vulkan support");
+    }
+
+    std::vector<VkPhysicalDevice> devices(deviceCount);
+    vkEnumeratePhysicalDevices(instance.handle(), &deviceCount, devices.data());
+
+    std::vector<std::shared_ptr<PhysicalDeviceProperties>> suitableDevices;
+    uint32_t highestScore = 0;
+    std::shared_ptr<PhysicalDeviceProperties> bestDeviceProps;
+    for (const auto& device : devices)
+    {
+        if (isSuitableHeadless(device))
+        {
+            suitableDevices.push_back(std::shared_ptr<PhysicalDeviceProperties>(PhysicalDeviceProperties::query(device)));
+            uint32_t score = suitableDevices.back()->getScore();
+            if (score >= highestScore)
+            {
+                highestScore = score;
+                bestDeviceProps = suitableDevices.back();
+            }
+        }
+    }
+
+    if (bestDeviceProps == nullptr)
+    {
+        throw std::runtime_error("Failed to find a suitable GPU");
+    }
+
+    std::cout << "Selected GPU (headless): " << bestDeviceProps->name << std::endl;
+
+    _device = bestDeviceProps->deviceHandle;
+    _properties = bestDeviceProps;
+}
+
 PhysicalDevice::QueueFamilyIndices PhysicalDevice::queueFamilyIndices() const
 {
     if (!isValid())
     {
         throw std::runtime_error("PhysicalDevice::queueFamilyIndices(): No device selected.");
+    }
+
+    if (_surface == nullptr)
+    {
+        return QueueFamilyIndices::graphicsOnly(_device);
     }
     
     return QueueFamilyIndices::get(_device, *_surface);
@@ -405,6 +463,15 @@ bool PhysicalDevice::isSuitable(VkPhysicalDevice device, const Surface &surface)
     return indices.isComplete() && extensionsSupported && swapchainAdequate;
 }
 
+bool PhysicalDevice::isSuitableHeadless(VkPhysicalDevice device)
+{
+    QueueFamilyIndices indices = QueueFamilyIndices::graphicsOnly(device);
+
+    bool extensionsSupported = checkDeviceExtensions(device);
+
+    return indices.isCompleteHeadless() && extensionsSupported;
+}
+
 static const std::vector<const char*> g_requiredDeviceExtensions = {
     VK_KHR_SWAPCHAIN_EXTENSION_NAME,
     VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME,
@@ -420,9 +487,23 @@ static const std::vector<const char*> g_requiredDeviceExtensions = {
 #endif
 };
 
-const std::vector<const char*>& PhysicalDevice::getRequiredDeviceExtensions()
+static const std::vector<const char*> g_offscreenRequiredDeviceExtensions = {
+    VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME,
+    VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME,
+    VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME,
+    VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME,
+    VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME,
+    VK_KHR_MULTIVIEW_EXTENSION_NAME,
+    VK_KHR_MAINTENANCE_1_EXTENSION_NAME
+#ifdef __APPLE__
+    ,
+    "VK_KHR_portability_subset"
+#endif
+};
+
+const std::vector<const char*>& PhysicalDevice::getRequiredDeviceExtensions(bool offscreen)
 {
-    return g_requiredDeviceExtensions;
+    return offscreen ? g_offscreenRequiredDeviceExtensions : g_requiredDeviceExtensions;
 }
 
 bool PhysicalDevice::checkDeviceExtensions(VkPhysicalDevice device)

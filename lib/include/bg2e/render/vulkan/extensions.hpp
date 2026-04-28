@@ -28,9 +28,9 @@ namespace vulkan {
 
 class PhysicalDevice;
 
-void loadInstanceExtensions(VkInstance instance);
+void loadInstanceExtensions(VkInstance instance, bool offscreen);
 
-void loadDeviceExtensions(const bg2e::render::vulkan::PhysicalDevice& physDev, VkDevice device);
+void loadDeviceExtensions(const bg2e::render::vulkan::PhysicalDevice& physDev, VkDevice device, bool offscreen);
 
 // Functions with _OPT suffix are optional and may be nullptr if the hardware
 // or the layer configuration does not support it.

@@ -27,15 +27,20 @@ namespace bg2e {
 namespace render {
 namespace vulkan {
 
-void Device::create(const Instance& instance, const PhysicalDevice& physicalDevice, const Surface&)
+void Device::create(const Instance& instance, const PhysicalDevice& physicalDevice, bool offscreen)
 {
     auto indices = physicalDevice.queueFamilyIndices();
 
     std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
     std::set<uint32_t> uniqueQueueFamilies = {
-        indices.graphics.value(),
-        indices.present.value()
+        indices.graphics.value()
     };
+
+    if (!offscreen)
+    {
+        uniqueQueueFamilies.insert(indices.present.value());
+    }
+
 
     float queuePriority = 1.0f;
     for (auto queueFamily : uniqueQueueFamilies)
@@ -48,7 +53,7 @@ void Device::create(const Instance& instance, const PhysicalDevice& physicalDevi
         queueCreateInfos.push_back(queueCreateInfo);
     }
 
-    // --- FEATURE CHAIN (COMPLETA) ---
+    // --- FEATURE CHAIN
 
     VkPhysicalDeviceDynamicRenderingFeaturesKHR dynamicRenderingFeatures{};
     dynamicRenderingFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES_KHR;
@@ -147,7 +152,7 @@ void Device::create(const Instance& instance, const PhysicalDevice& physicalDevi
     createInfo.queueCreateInfoCount = uint32_t(queueCreateInfos.size());
     createInfo.pNext = &features2;
 
-    auto deviceExtensions = PhysicalDevice::getRequiredDeviceExtensions();
+    auto deviceExtensions = PhysicalDevice::getRequiredDeviceExtensions(offscreen);
     std::vector<const char*> allExtensions = deviceExtensions;
     allExtensions.insert(allExtensions.end(), rtExtensions.begin(), rtExtensions.end());
 
@@ -169,9 +174,13 @@ void Device::create(const Instance& instance, const PhysicalDevice& physicalDevi
     VK_ASSERT(vkCreateDevice(physicalDevice.handle(), &createInfo, nullptr, &_device));
 
     _graphicsFamily = indices.graphics.value();
-    _presentFamily = indices.present.value();
     vkGetDeviceQueue(_device, _graphicsFamily, 0, &_graphicsQueue);
-    vkGetDeviceQueue(_device, _presentFamily, 0, &_presentQueue);
+
+    if (!offscreen)
+    {
+        _presentFamily = indices.present.value();
+        vkGetDeviceQueue(_device, _presentFamily, 0, &_presentQueue);
+    }
 }
 
 void Device::cleanup()

@@ -31,9 +31,7 @@ layout(location = 1) in vec2 inUV0;
 layout(location = 2) in vec2 inUV1;
 layout(location = 3) in vec3 inViewPos;
 layout(location = 4) in vec3 inFragPos;
-layout(location = 5) in flat int inLightCount;
-layout(location = 6) in mat3 inTBN;
-layout(location = 9) in flat Light[LIGHT_COUNT] inLights;
+layout(location = 5) in mat3 inTBN;
 
 layout (set = 1, binding = 0) uniform PBRObjectData {
     mat4 modelMatrix;
@@ -61,6 +59,12 @@ layout(set = 2, binding = 3) uniform EnvironmentData {
     float maxReflectionLOD;
 } environmentData;
 
+layout (set = 3, binding = 0) uniform LightData {
+    Light lights[LIGHT_COUNT];
+    int lightCount;
+    vec3 padding;
+} lightData;
+
 void main()
 {
     PBRMaterialData mat = objectData.material;
@@ -68,15 +72,30 @@ void main()
     float metallic = sampleMetallic(metallicTex, inUV0, inUV1, mat);
     float roughness = sampleRoughness(roughnessTex, inUV0, inUV1, mat);
     float ambientOcclussion = sampleAmbientOcclussion(aoTex, inUV0, inUV1, mat);
-    vec3 normal = sampleNormal(normalTex, inUV0, inUV1, mat, inTBN);    
+    vec3 normal = sampleNormal(normalTex, inUV0, inUV1, mat, inTBN);
+
+    bool unlit = (objectData.material.unlit & MATERIAL_FLAG_UNLIT) != 0u;
+
+    if (unlit)
+    {
+        outColor = fragmentShaderOutput(
+            vec4(albedo, 1.0),
+            pushConstant.exposure,
+            pushConstant.gamma,
+            pushConstant.brightness,
+            pushConstant.contrast
+        );
+        return;
+    }
 
     vec3 viewDir = normalize(inViewPos - inFragPos);
     vec3 F0 = calcF0(albedo, mat);
 
     vec3 Lo = vec3(0.0);
-    for(int i = 0; i < inLightCount; ++i)
+    int lightCount = lightData.lightCount;
+    for(int i = 0; i < lightCount; ++i)
     {
-        Lo += calcRadiance(inLights[i], viewDir, inFragPos, metallic, roughness, F0, normal, albedo, mat.sheenIntensity, mat.sheenColor.rgb, ambientOcclussion);
+        Lo += calcRadiance(lightData.lights[i], viewDir, inFragPos, metallic, roughness, F0, normal, albedo, mat.sheenIntensity, mat.sheenColor.rgb, ambientOcclussion);
     }
   
     vec3 ambient = calcAmbientLight(

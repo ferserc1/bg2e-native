@@ -30,8 +30,8 @@ namespace vulkan {
 class BG2E_API Device {
 public:
 
-	void create(const Instance& instance, const PhysicalDevice& physicalDevice, const Surface& surface);
-	
+	void create(const Instance& instance, const PhysicalDevice& physicalDevice, bool offscreen);
+
 	void cleanup();
 
 	inline VkDevice handle() const { return _device; }

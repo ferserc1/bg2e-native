@@ -44,7 +44,7 @@ T loadExtension(VkInstance instance, const char* fnName, bool isOptional = false
     return func;
 }
 
-void loadInstanceExtensions(VkInstance instance)
+void loadInstanceExtensions(VkInstance instance, bool offscreen)
 {
     bg2e_log_debug << "Loading extension functions:" << bg2e_log_end;
     cmdBeginRendering = loadExtension<PFN_vkCmdBeginRenderingKHR>(instance, "vkCmdBeginRenderingKHR");
@@ -52,7 +52,7 @@ void loadInstanceExtensions(VkInstance instance)
     acquireNextImage = loadExtension<PFN_vkAcquireNextImageKHR>(instance, "vkAcquireNextImageKHR");
     queuePresent = loadExtension<PFN_vkQueuePresentKHR>(instance, "vkQueuePresentKHR");
     destroySwapchain = loadExtension<PFN_vkDestroySwapchainKHR>(instance, "vkDestroySwapchainKHR");
-    destroySurface = loadExtension<PFN_vkDestroySurfaceKHR>(instance, "vkDestroySurfaceKHR");
+    destroySurface = loadExtension<PFN_vkDestroySurfaceKHR>(instance, "vkDestroySurfaceKHR", offscreen);
     queueSubmit2 = loadExtension<PFN_vkQueueSubmit2KHR>(instance, "vkQueueSubmit2KHR");
     cmdPipelineBarrier2 = loadExtension<PFN_vkCmdPipelineBarrier2KHR>(instance, "vkCmdPipelineBarrier2KHR");
     cmdBlitImage2 = loadExtension<PFN_vkCmdBlitImage2KHR>(instance, "vkCmdBlitImage2KHR");
@@ -63,7 +63,7 @@ void loadInstanceExtensions(VkInstance instance)
     }
 }
 
-void loadDeviceExtensions(const PhysicalDevice& physDev, VkDevice device)
+void loadDeviceExtensions(const PhysicalDevice& physDev, VkDevice device, bool offscreen)
 {
     bg2e_log_debug << "Loading device extension functions:" << bg2e_log_end;
 

@@ -16,19 +16,36 @@
  *    along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#pragma once
-#include <bg2e/app/Application.hpp>
 #include <bg2e/app/OffscreenApplication.hpp>
 
-#include <bg2e/app/GPUSelectionDialog.hpp>
-#include <bg2e/app/InputDelegate.hpp>
-#include <bg2e/app/InputManager.hpp>
-#include <bg2e/app/KeyEvent.hpp>
-#include <bg2e/app/MainLoop.hpp>
-#include <bg2e/app/MessageBox.hpp>
-#include <bg2e/app/FileDialog.hpp>
-#include <bg2e/app/Preferences.hpp>
-#include <bg2e/app/PreferencesStore.hpp>
-#include <bg2e/app/Shortcuts.hpp>
+namespace bg2e::app {
 
+void OffscreenApplication::init(
+    int argc, char ** argv,
+    const std::string& appId,
+    std::shared_ptr<OffscreenApplicationDelegate> delegate
+) {
+    OffscreenConfig config = {};
+    _delegate = delegate;
 
+    _delegate->initConfig(argc, argv, config);
+
+    _engine = std::make_unique<render::Engine>();
+    _engine->init(config.width, config.height);
+
+    _delegate->init(_engine.get());
+
+    // TODO: Create output image
+}
+
+int OffscreenApplication::run()
+{
+    return 0;
+}
+
+void OffscreenApplication::cleanup()
+{
+    _engine->cleanup();
+}
+
+}

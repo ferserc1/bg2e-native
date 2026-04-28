@@ -40,13 +40,15 @@ public:
 	inline const std::string& applicationName() const { return _applicationName; }
 
     void create(SDL_Window *);
-    
+    void create();
+
     void cleanup();
 
 	inline VkInstance handle() const { return _instance; }
  
     bool getRequiredLayers(std::vector<const char*>& requiredLayers) const;
     bool getRequiredExtensions(SDL_Window *, std::vector<const char*>& requiredExtensions) const;
+    bool getRequiredExtensions(std::vector<const char*>& requiredExtensions) const;
 
 protected:
 	VkInstance _instance = VK_NULL_HANDLE;
