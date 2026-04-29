@@ -40,7 +40,15 @@ GraphicsPipeline::GraphicsPipeline(Engine * engine)
     setInputTopology(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
     setPolygonMode(VK_POLYGON_MODE_FILL);
     setCullMode(VK_CULL_MODE_NONE, VK_FRONT_FACE_COUNTER_CLOCKWISE);
-    enableMultisample();
+    if (_engine->isOffscreen())
+    {
+        disableMultisample();
+    }
+    else
+    {
+        enableMultisample();
+    }
+
     disableBlending();
     disableDepthtest();
 }

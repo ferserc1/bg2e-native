@@ -29,13 +29,58 @@ void OffscreenApplication::init(
     std::shared_ptr<OffscreenApplicationDelegate> delegate
 ) {
     _delegate = delegate;
+    _appId = appId;
 
     _delegate->initConfig(argc, argv, _config);
 
     _engine = std::make_unique<render::Engine>();
     _engine->init();
 
-    _delegate->init(_engine.get());
+    if (_config.createColorImage || _config.createDepthImage)
+    {
+        // All the flags needed to use the image for a color buffer or
+        // in a compute shader
+        VkImageUsageFlags usage =   VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
+                                    VK_IMAGE_USAGE_STORAGE_BIT |
+                                    VK_IMAGE_USAGE_SAMPLED_BIT |
+                                    VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
+                                    VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+        _colorImage = std::shared_ptr<render::vulkan::Image>(
+            render::vulkan::Image::createAllocatedImage(
+                _engine.get(),
+                _config.colorFormat,
+                { _config.width, _config.height },
+                usage
+        ));
+        _engine->cleanupManager().push([this](VkDevice dev)
+        {
+            _colorImage->cleanup();
+        });
+    }
+
+    if (_config.createDepthImage)
+    {
+        _depthImage = std::shared_ptr<render::vulkan::Image>(
+            render::vulkan::Image::createAllocatedImage(
+                _engine.get(),
+                VK_FORMAT_D32_SFLOAT,
+                { _config.width, _config.height },
+                VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+                VK_IMAGE_ASPECT_DEPTH_BIT
+        ));
+        render::vulkan::Image::transitionImage(
+            _engine.get(),
+            _depthImage->handle(),
+            VK_IMAGE_LAYOUT_UNDEFINED,
+            VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL
+        );
+        _engine->cleanupManager().push([this](VkDevice dev)
+        {
+            _depthImage->cleanup();
+        });
+    }
+
+    _delegate->init(_engine.get(), _colorImage, _depthImage);
     _engine->iterateFrameResources([&](render::vulkan::FrameResources& frameResources)
     {
         frameResources.descriptorAllocator->init(_engine.get());
@@ -49,7 +94,7 @@ int OffscreenApplication::run()
 {
     if (!_engine)
     {
-        throw new std::runtime_error("OffscreenApplication::run(): the application is not initialized");
+        throw std::runtime_error("OffscreenApplication::run(): the application is not initialized");
     }
 
     VkDevice device = _engine->device().handle();
@@ -70,6 +115,7 @@ int OffscreenApplication::run()
     double elapsedMs = 0.0;
     uint32_t frameIndex = 0;
 
+    VkImageLayout colorImageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     while (renderFrame)
     {
         using namespace render::vulkan;
@@ -78,12 +124,43 @@ int OffscreenApplication::run()
 
         frameResources.flushFrameData();
 
+        _delegate->setDelta(static_cast<float>(elapsedMs));
         _delegate->frame(static_cast<float>(elapsedMs), frameIndex, frameResources);
 
         auto cmdBeginInfo = Info::commandBufferBeginInfo(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
         VK_ASSERT(vkBeginCommandBuffer(commandBuffer, &cmdBeginInfo));
 
-        renderFrame = _delegate->render(commandBuffer, frameIndex, frameResources);
+        if (_colorImage != nullptr && colorImageLayout != VK_IMAGE_LAYOUT_GENERAL)
+        {
+            render::vulkan::Image::cmdTransitionImage(
+                commandBuffer,
+                _colorImage->handle(),
+                colorImageLayout,
+                VK_IMAGE_LAYOUT_GENERAL
+            );
+            colorImageLayout = VK_IMAGE_LAYOUT_GENERAL;
+        }
+
+        VkImageLayout finalLayout = colorImageLayout;
+        renderFrame = _delegate->render(
+            commandBuffer,
+            frameIndex,
+            frameResources,
+            colorImageLayout,
+            finalLayout
+        );
+        colorImageLayout = finalLayout;
+
+        if (_colorImage != nullptr && colorImageLayout != VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL)
+        {
+            render::vulkan::Image::cmdTransitionImage(
+                commandBuffer,
+                _colorImage->handle(),
+                colorImageLayout,
+                VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
+            );
+            colorImageLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+        }
 
         VK_ASSERT(vkEndCommandBuffer(commandBuffer));
 
@@ -97,7 +174,12 @@ int OffscreenApplication::run()
 
         elapsedMs = std::chrono::duration<double, std::milli>(endTime - startTime).count();
 
-        _delegate->didRenderFrame(frameIndex, elapsedMs);
+        frameResources.flushFrameData();
+        _delegate->didRenderFrame(
+            frameIndex,
+            elapsedMs,
+            colorImageLayout
+        );
 
         ++frameIndex;
         _engine->nextFrame();

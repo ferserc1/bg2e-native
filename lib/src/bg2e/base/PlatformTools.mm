@@ -41,4 +41,16 @@ std::filesystem::path PlatformTools::settingsPath()
     return basePath;
 }
 
+std::filesystem::path PlatformTools::homePath()
+{
+    std::filesystem::path basePath;
+
+    @autoreleasepool {
+        NSString * homeDir = NSHomeDirectory();
+        basePath = std::filesystem::path([homeDir UTF8String]);
+    }
+
+    return basePath;
+}
+
 }

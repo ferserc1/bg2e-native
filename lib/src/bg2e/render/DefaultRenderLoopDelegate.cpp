@@ -33,10 +33,16 @@ template <typename RendererT>
 void DefaultRenderLoopDelegate<RendererT>::init(render::Engine * engine)
 {
     RenderLoopDelegate::init(engine);
-    
+
     _renderer = std::make_unique<RendererT>();
-    // TODO: allow RendererT to specify color and depth formats
-    _renderer->build(engine);
+    _renderer->build(
+        engine,
+        engine->swapchain().extent(),
+        engine->swapchain().imageFormat(),
+        engine->swapchain().depthImageFormat(),
+        engine->swapchain().sampleCount(),
+        false
+    );
 }
 
 template <typename RendererT>

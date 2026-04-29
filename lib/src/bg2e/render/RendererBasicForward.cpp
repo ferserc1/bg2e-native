@@ -29,9 +29,19 @@
 namespace bg2e::render {
 
 void RendererBasicForward::build(
-    bg2e::render::Engine* engine
+    bg2e::render::Engine* engine,
+    VkExtent2D initialExtent,
+    VkFormat colorImageFormat,
+    VkFormat depthImageFormat,
+    VkSampleCountFlagBits sampleCount,
+    bool isOffscreen
 ) {
     _engine = engine;
+    _viewportExtent = initialExtent;
+    _colorImageFormat = colorImageFormat;
+    _depthImageFormat = depthImageFormat;
+    _sampleCount = sampleCount;
+    _isOffscreen = isOffscreen;
 
     _frameDataBinding = std::make_unique<bg2e::scene::vk::FrameDataBinding>(_engine);
     _objectDataBinding = std::make_unique<bg2e::scene::vk::ObjectDataBinding>(_engine);
@@ -41,14 +51,18 @@ void RendererBasicForward::build(
     _environment = std::unique_ptr<bg2e::render::EnvironmentResources>(
         new bg2e::render::EnvironmentResources(
             _engine,
-            { _engine->swapchain().imageFormat() },
-            _engine->swapchain().depthImageFormat(),
-            _engine->swapchain().sampleCount()
+            { colorImageFormat },
+            depthImageFormat,
+            sampleCount
         )
     );
 
-    _selectionHighlight = std::make_unique<bg2e::manipulation::SelectionHighlight>();
-    _selectionHighlight->init(engine);
+    if (!isOffscreen)
+    {
+        _selectionHighlight = std::make_unique<bg2e::manipulation::SelectionHighlight>();
+        _selectionHighlight->init(engine);
+
+    }
 
     createPipelines(engine);
 }
@@ -86,7 +100,8 @@ void RendererBasicForward::initScene(
     _scene->updateLights();
 
     // Call the resizeViewportVisitor to set the initial viewport size in cameras
-    _resizeVisitor.resizeViewport(_scene->rootNode(), _engine->swapchain().extent());
+    // TODO: get the image size from other source than swapchain
+    _resizeVisitor.resizeViewport(_scene->rootNode(), _viewportExtent);
 
     _engine->cleanupManager().push([&](VkDevice) {
         _scene.reset();
@@ -96,6 +111,7 @@ void RendererBasicForward::initScene(
 void RendererBasicForward::resize(
     VkExtent2D newExtent
 ) {
+    _viewportExtent = newExtent;
     _scene->willResize();
 
     _resizeVisitor.resizeViewport(_scene->rootNode(), newExtent);
@@ -271,12 +287,15 @@ void RendererBasicForward::draw(
         cameraWorldPos
     );
 
-    _selectionHighlight->draw(
-        _scene->rootNode(),
-        viewMatrix,
-        projMatrix,
-        cmd
-    );
+    if (!_isOffscreen)
+    {
+        _selectionHighlight->draw(
+            _scene->rootNode(),
+            viewMatrix,
+            projMatrix,
+            cmd
+        );
+    }
 
     vulkan::cmdEndRendering(cmd);
     _scene->didDraw();
@@ -352,12 +371,12 @@ VkPipeline RendererBasicForward::createOpaquePipeline(
 
     plFactory.setInputState<bg2e::render::vulkan::geo::Mesh>();
 
-    plFactory.setDepthFormat(engine->swapchain().depthImageFormat());
+    plFactory.setDepthFormat(_depthImageFormat);
     plFactory.enableDepthtest(true, VK_COMPARE_OP_LESS);
     plFactory.inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
     plFactory.setCullMode(VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_COUNTER_CLOCKWISE);
-    plFactory.enableMultisample();
-    plFactory.setColorAttachmentFormat(_engine->swapchain().imageFormat());
+    _isOffscreen ? plFactory.disableMultisample() : plFactory.enableMultisample();
+    plFactory.setColorAttachmentFormat(_colorImageFormat);
     auto result = plFactory.build(_pipelineLayout);
 
     engine->cleanupManager().push([&, result](VkDevice dev) {
@@ -384,15 +403,15 @@ VkPipeline RendererBasicForward::createTransparentPipeline(
 
     plFactory.setInputState<bg2e::render::vulkan::geo::Mesh>();
 
-    plFactory.setDepthFormat(engine->swapchain().depthImageFormat());
+    plFactory.setDepthFormat(_depthImageFormat);
     plFactory.enableDepthtest(
         false,  // disable depth write for transparent objects
         VK_COMPARE_OP_LESS
     );
     plFactory.inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
     plFactory.setCullMode(VK_CULL_MODE_NONE, VK_FRONT_FACE_COUNTER_CLOCKWISE);
-    plFactory.enableMultisample();
-    plFactory.setColorAttachmentFormat(_engine->swapchain().imageFormat());
+    _isOffscreen ? plFactory.disableMultisample() : plFactory.enableMultisample();
+    plFactory.setColorAttachmentFormat(_colorImageFormat);
     plFactory.enableBlendingAlphablend();
     auto result = plFactory.build(_pipelineLayout);
 
@@ -420,7 +439,7 @@ VkPipeline RendererBasicForward::createSolidTransparentPipeline(
 
     plFactory.setInputState<bg2e::render::vulkan::geo::Mesh>();
 
-    plFactory.setDepthFormat(engine->swapchain().depthImageFormat());
+    plFactory.setDepthFormat(_depthImageFormat);
     plFactory.enableDepthtest(
         false,  // disable depth write for solid transparent objects
         VK_COMPARE_OP_LESS
@@ -429,8 +448,8 @@ VkPipeline RendererBasicForward::createSolidTransparentPipeline(
     
     // Back face culling enabled for solid transparent objects
     plFactory.setCullMode(VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_COUNTER_CLOCKWISE);
-    plFactory.enableMultisample();
-    plFactory.setColorAttachmentFormat(_engine->swapchain().imageFormat());
+    _isOffscreen ? plFactory.disableMultisample() : plFactory.enableMultisample();
+    plFactory.setColorAttachmentFormat(_colorImageFormat);
     plFactory.enableBlendingAlphablend();
     auto result = plFactory.build(_pipelineLayout);
 

@@ -29,8 +29,10 @@
 #endif
 
 #ifdef BG2E_IS_WINDOWS
+
 #include <Windows.h>
 #include <ShlObj_core.h>
+
 #endif
 
 #ifdef BG2E_IS_MAC
@@ -122,6 +124,31 @@ std::filesystem::path bg2e::base::PlatformTools::settingsPath()
         std::cerr << "Unable to create settings directory at path \"" << basePath << "\"" << std::endl; 
     }
     return basePath;
+}
+
+std::filesystem::path bg2e::base::PlatformTools::homePath()
+{
+    namespace fs = std::filesystem;
+
+#ifdef BG2E_IS_LINUX
+    const char * home = getenv("HOME");
+    if (!home)
+    {
+        struct passwd * pw = getpwuid(getuid());
+        home = pw->pw_dir;
+    }
+    return fs::path(home);
+#elif defined BG2E_IS_WINDOWS
+    wchar_t path[MAX_PATH];
+    if (SUCCEEDED(SHGetFolderPathW(NULL, CSIDL_PROFILE, NULL, SHGFP_TYPE_CURRENT, path)))
+    {
+        return fs::path(path);
+    }
+    char * home = getenv("USERPROFILE");
+    return home ? fs::path(home) : ".";
+#else
+#error "Unresolved platform"
+#endif
 }
 
 #endif

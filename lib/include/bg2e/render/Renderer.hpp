@@ -32,9 +32,14 @@ namespace render {
 class Renderer {
 public:
     virtual ~Renderer() = default;
-    
+
     virtual void build(
-        bg2e::render::Engine* engine
+        bg2e::render::Engine* engine,
+        VkExtent2D initialExtent,
+        VkFormat colorImageFormat,
+        VkFormat depthImageFormat,
+        VkSampleCountFlagBits sampleCount,
+        bool isOffscreen
     ) = 0;
     
     virtual void initFrameResources(bg2e::render::vulkan::DescriptorSetAllocator* frameAllocator) = 0;

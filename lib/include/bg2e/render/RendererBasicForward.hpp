@@ -72,7 +72,12 @@ public:
 
     // This renderer is a prototype for a simple forward renderer. In the future, it will be possible to implement other rendering techniques by inheriting from this class and overriding the necessary methods.
     void build(
-        bg2e::render::Engine* engine
+        bg2e::render::Engine* engine,
+        VkExtent2D initialExtent,
+        VkFormat colorImageFormat,
+        VkFormat depthImageFormat,
+        VkSampleCountFlagBits sampleCount,
+        bool isOffscreen
     ) override;
 
     void initFrameResources(
@@ -119,6 +124,13 @@ public:
 protected:
 
     bg2e::render::Engine* _engine = nullptr;
+
+    VkExtent2D _viewportExtent;
+    VkFormat _colorImageFormat;
+    VkFormat _depthImageFormat;
+    VkSampleCountFlagBits _sampleCount;
+
+    bool _isOffscreen;
 
     std::unique_ptr<bg2e::scene::vk::FrameDataBinding> _frameDataBinding;
     std::unique_ptr<bg2e::scene::vk::ObjectDataBinding> _objectDataBinding;
