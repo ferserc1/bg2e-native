@@ -42,7 +42,14 @@ public:
 		RenderLoopDelegate::init(engine);
   
         _renderer = std::make_unique<bg2e::render::RendererBasicForward>();
-        _renderer->build(engine);
+        _renderer->build(
+            engine,
+            engine->swapchain().extent(),
+            engine->swapchain().imageFormat(),
+            engine->swapchain().depthImageFormat(),
+            engine->swapchain().sampleCount(),
+            false
+        );
 	}
  
     void initFrameResources(bg2e::render::vulkan::DescriptorSetAllocator* frameAllocator) override
