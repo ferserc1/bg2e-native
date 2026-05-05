@@ -1,93 +1,93 @@
-# Fase 3 — RendererDeferred (Implementación Completa)
+# Phase 3 — RendererDeferred (Full Implementation)
 
-## Objetivo
+## Objective
 
-Implementar los métodos virtuales de `RendererDeferred` con la lógica completa del pipeline deferred:
-1. **G-buffer pass:** renderiza geometría en los G-buffers (albedo, normales, materiales).
-2. **Compositing pass:** renderiza un full-screen quad que lee los G-buffers y calcula iluminación PBR.
-3. **Transparent passthrough:** renderiza objetos transparentes directamente al swapchain con alpha blending.
+Implement the virtual methods of `RendererDeferred` with the complete deferred pipeline logic:
+1. **G-buffer pass:** render geometry into G-buffers (albedo, normals, materials).
+2. **Compositing pass:** render a full-screen quad that reads G-buffers and calculates PBR lighting.
+3. **Transparent passthrough:** render transparent objects directly to the swapchain with alpha blending.
 
-## Objetivo de la draw() per frame
+## draw() Per Frame Objective
 
 ```
 renderer.draw(cmd, currentFrame, colorImage, depthImage, msaaDepthImage, frameResources)
 │
-├─ 1. Escena will-draw (actualizar scene graph)
-├─ 2. Actualizar ray-tracing TLAS si es soportado (scene->rootNode → TLAS update)
-├─ 3. Actualizar resources del ambiente (env.update, IBL updates)
+├─ 1. Scene will-draw (update scene graph)
+├─ 2. Update ray-tracing TLAS if supported (scene->rootNode → TLAS update)
+├─ 3. Update environment resources (env.update, IBL updates)
 │
 ├─ 4. G-BUFFER PASS:
-│   ├─ 4a. Clear de todos los attachments (G-buffers + depth a black/0)
+│   ├─ 4a. Clear all attachments (G-buffers + depth to black/0)
 │   ├─ 4b. Begin rendering: multiple color attachments (G-buffers) + single-sample depth
-│   ├─ 4c. Depth prepass (solo write depth, sin colores) → renderQueue.Opaque
-│   ├─ 4d. G-buffer color pass (no write depth, color attachments) → renderQueue.Opaque
+│   ├─ 4c. Depth prepass (write only depth, no colors) → renderQueue.Opaque
+│   ├─ 4d. G-buffer color pass (no depth write, color attachments) → renderQueue.Opaque
 │   ├─ 4e. End rendering (G-buffer pass)
-│   ├─ 4f. MSAA resolve de color attachments a single-sample targets (blit)
-│   └─ 4g. Transicionar layouts: G-buffer MSAA → SHADER_READ_ONLY_OPTIMAL
+│   ├─ 4f. MSAA resolve of color attachments to single-sample targets (blit)
+│   └─ 4g. Transition layouts: G-buffer MSAA → SHADER_READ_ONLY_OPTIMAL
 │
 ├─ 5. COMPOSITING PASS:
-│   ├─ 5a. Begin rendering: single color attachment (swapchain colorImage), sin depth
-│   ├─ 5b. Set viewport/scissor a extencion del swapchain (full-screen quad)
-│   ├─ 5c. Crear descriptor sets: scene, env, lights (reutilizar bindings existentes)
-│   ├─ 5d. Crear descriptor set de G-buffers (muestreador con samplers)
+│   ├─ 5a. Begin rendering: single color attachment (swapchain colorImage), no depth
+│   ├─ 5b. Set viewport/scissor to swapchain extent (full-screen quad)
+│   ├─ 5c. Create descriptor sets: scene, env, lights (reuse existing bindings)
+│   ├─ 5d. Create G-buffer descriptor set (sampler with samplers)
 │   ├─ 5e. Push constants (gamma, brightness, contrast, exposure)
-│   ├─ 5f. Bind composite pipeline y render fullscreen quad
+│   ├─ 5f. Bind composite pipeline and render fullscreen quad
 │   └─ 5g. End rendering (compositing pass)
 │
 ├─ 6. TRANSPARENT PASS:
-│   ├─ 6a. Begin rendering: color attachment del swapchain + depth testing (sin write)
-│   ├─ 6b. Bind transparent pipeline con alpha blending
-│   ├─ 6c. Crear descriptor sets por material: scene, object, env, lights
-│   ├─ 6d. Renderizar renderQueue.Transparent + SolidTransparent directamente al colorImage
+│   ├─ 6a. Begin rendering: swapchain color attachment + depth testing (no write)
+│   ├─ 6b. Bind transparent pipeline with alpha blending
+│   ├─ 6c. Create descriptor sets per material: scene, object, env, lights
+│   ├─ 6d. Render renderQueue.Transparent + SolidTransparent directly to colorImage
 │   └─ 6e. End rendering (transparent pass)
 │
-├─ 7. Selección highlight si no es offscreen
+├─ 7. Selection highlight if not offscreen
 │
-└─ 8. Escena did-draw (resetar flags)
+└─ 8. Scene did-draw (reset flags)
 ```
 
 ---
 
-## Método `draw()` — Implementación paso a paso
+## `draw()` Method — Step-by-Step Implementation
 
-### Pass 4: G-buffer rendering (depth prepass + color pass)
+### Pass 4: G-buffer Rendering (depth prepass + color pass)
 
-El G-buffer render se divide en **dos sub-pases**: primero depth-only, después color. Ambos usan el mismo pipeline (depth prepass para optimizar), pero la diferencia está en qué attachments se habilitan:
+The G-buffer render is divided into **two sub-passes**: first depth-only, then color. Both use the same pipeline (depth prepass for optimization), but the difference lies in which attachments are enabled:
 
 **Depth prepass:**
-- Solo writes depth (single-sample). No color attachments. Esto optimiza el throughput porque no se escriben colores (albedo, normales, materiales).
-- Todos lo objetos opacos escriben su profundidad.
+- Writes only depth (single-sample). No color attachments. This optimizes throughput because no colors (albedo, normals, materials) are written.
+- All opaque objects write their depth.
 
 **Color pass:**
-- Depth test pero NO depth write (no-write). Solo color attachments.
-- Los objetos opacos leen la profundidad del prepass para hacer depth testing, pero **no escriben**.
+- Depth test but NO depth write (read-only). Only color attachments.
+- Opaque objects read the prepass depth for depth testing but **do not write**.
 
-#### Pipeline G-buffer
-Se crea en `build()` con:
-- Vertex shader: reutilizar el existente `basic_forward.vert.spv` (ya TBT + uv outputs).
-- Fragment shader: nuevo `deferred_gbuffer.frag.spv` (solo escribe G-buffers, NO calcula iluminación).
-- **Depth write enabled** en prepass, disabled en color pass. En dynamic rendering se puede hacer esto con `enableDepthtest(true)` vs. `enableDepthtest(false)`.
+#### G-buffer Pipeline
+Created in `build()` with:
+- Vertex shader: reuse existing `basic_forward.vert.spv` (already TBT + uv outputs).
+- Fragment shader: new `deferred_gbuffer.frag.spv` (only writes G-buffers, NO lighting calculation).
+- **Depth write enabled** in prepass, disabled in color pass. In dynamic rendering this can be done with `enableDepthtest(true)` vs. `enableDepthtest(false)`.
 
 ```cpp
 VkPipeline RendererDeferred::createGBufferPipeline(...) {
     bg2e::render::vulkan::factory::GraphicsPipeline plFactory(_engine);
     
-    // Reutilizar vertex shader de forward renderer
+    // Reuse forward renderer vertex shader
     plFactory.addShader("basic_forward.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
     
-    // Fragment shader nuevo: solo escribe G-buffers
+    // New fragment shader: only writes G-buffers
     plFactory.addShader("deferred_gbuffer.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
     
     plFactory.setInputState<bg2e::render::vulkan::geo::Mesh>();
     
-    // Depth format y prepass config: enable depth test + write for opaque objects.
+    // Depth format and prepass config: enable depth test + write for opaque objects.
     plFactory.setDepthFormat(_depthImageFormat);  // Single-sample depth format (D32_SFLOAT)
     plFactory.enableDepthtest(true, VK_COMPARE_OP_LESS);  // Depth write enabled for depth prepass
     
     plFactory.inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
     plFactory.setCullMode(VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_COUNTER_CLOCKWISE);
     
-    // MSAA: habilitar multisampling para color attachments → solo aplica si no-offscreen
+    // MSAA: enable multisampling for color attachments → only applies if not offscreen
     _isOffscreen ? plFactory.disableMultisample() : plFactory.enableMultisample();
     
     // Multi-color attachments: 3 G-buffer formats
@@ -104,10 +104,10 @@ VkPipeline RendererDeferred::createGBufferPipeline(...) {
 }
 ```
 
-> **Nota sobre el G-buffer fragment shader:**
-> Este shader debe escribir en 3 color attachments (locations 0, 1, 2). Usa los samplers de textura del material (como el forward renderer). No usa iluminación alguna. Escribe los datos directamente a G-buffers.
+> **Note on the G-buffer fragment shader:**
+> This shader must write to 3 color attachments (locations 0, 1, 2). It uses the material texture samplers (like the forward renderer). It uses no lighting at all. It writes data directly to G-buffers.
 > 
-> **Implementación GLSL del shader `deferred_gbuffer.frag.glsl`:**
+> **GLSL implementation of `deferred_gbuffer.frag.glsl` shader:**
 ```glsl
 #version 450
 #include "lib/constants.glsl"
@@ -119,7 +119,7 @@ layout(set = 1, binding = 0) uniform PBRObjectData {
 
 layout(set = 1, binding = 1) uniform sampler2D s_Albedo;
 layout(set = 1, binding = 2) uniform sampler2D s_NormalMap;
-// ... más texture samplers
+// ... more texture samplers
 
 layout(location = 0) out vec4 g_Albedo;
 layout(location = 1) out vec4 g_NormalsTS;        // Tangent-space normals
@@ -150,7 +150,7 @@ void main() {
 }
 ```
 
-#### Draw de geometry en G-buffer pass: depth prepass + color pass
+#### Geometry Draw in G-buffer Pass: Depth Prepass + Color Pass
 
 ```cpp
 // === Depth prepass (no colors, only depth) ===
@@ -166,11 +166,11 @@ auto dsFunctionGBuffer = [&](...){
 {
     // Begin rendering with only depth attachment (no color attachments = VK_ATTACHMENT_UNUSED for colors, use DynamicRendering)
     // In Vulkan 1.3 with dynamic rendering: pass vkPhysicalDeviceDynamicRendering::vkCmdBeginRendering with colorAttachmentCount=0
-    // This is exactly what cmdClearImagesAndBeginRendering macro does - look at it's parameters.
+    // This is exactly what cmdClearImagesAndBeginRendering macro does - look at its parameters.
 }
 
 // Actually, we need to be clever here: the existing `cmdClearImagesAndBeginRendering` macro takes a single color image and depth.
-// For G-buffer pass we need 3 color attachments (no clear them to black) + depth.
+// For G-buffer pass we need 3 color attachments (clear them to black) + depth.
 // The macro might not support this, so we either:
 // 1. Modify the macro to accept a vector<VkImageView> colorAttachments
 // 2. Create new macros/helpers for multi-attachment rendering in vulkan/macros/all.hpp or graphics.hpp
@@ -179,13 +179,13 @@ auto dsFunctionGBuffer = [&](...){
 // Let's look at the `cmdClearImagesAndBeginRendering` macro:
 ```
 
-**Veredict:** We need to add a new helper function/macro that supports multi-attachment begin render. In the existing `macros/graphics.hpp`, there is likely a macro for this or we need to create one.
+**Verdict:** We need to add a new helper function/macro that supports multi-attachment begin render. In the existing `macros/graphics.hpp`, there is likely a macro for this or we need to create one.
 
 This requires the `GraphicsPipeline` factory already supports multiple color attachment formats (it does via `setColorAttachmentFormat(vector<VkFormat>)` → VkPipelineRenderingCreateInfo with viewMask and colorAttachmentCount). The key is that the dynamic rendering create info should be constructed via a wrapper.
 
 ---
 
-## Método `build()` — Setup inicial
+## `build()` Method — Initial Setup
 
 ```cpp
 void RendererDeferred::build(Engine* engine, VkExtent2D initialExtent, ...) {
@@ -217,9 +217,9 @@ void RendererDeferred::build(Engine* engine, VkExtent2D initialExtent, ...) {
 }
 ```
 
-### Pipeline para G-buffer: depth prepass vs color pass
+### G-buffer Pipeline: Depth Prepass vs Color Pass
 
-Para evitar tener dos pipelines (uno con depth-write y otro sin), el depth prepass puede reutilizar el mismo pipeline pero usar **different descriptor sets or same?** No, because the fragment shader for both passes is identical — depth prepass just writes nothing to color, only writes depth.
+To avoid having two pipelines (one with depth-write and one without), the depth prepass can reuse the same pipeline but use **different descriptor sets or same?** No, because the fragment shader for both passes is identical — depth prepass just writes nothing to color, only writes depth.
 
 Wait: in the G-buffer fragment shader above (`deferred_gbuffer.frag.glsl`), we are writing to all 3 G-buffer attachments (locations 0, 1, 2). For the depth prepass we're writing **nothing**. This means:
 
@@ -241,7 +241,7 @@ These require **two different pipelines** because they are configured differentl
 
 ---
 
-## Método `initScene()` e `initFrameResources()`
+## `initScene()` and `initFrameResources()` Methods
 
 **Pattern to copy exactly from `RendererBasicForward`:**
 - `initScene()`: calls `_scene->setSceneRoot(sceneRoot)`, creates sky dome texture generator, environment resource build (`_environment.build(...)`), calls `_scene->updateLights()`, updates resize viewport visitor.
@@ -249,7 +249,7 @@ These require **two different pipelines** because they are configured differentl
 
 ---
 
-## Método `update()` — actualización por frame
+## `update()` Method — Per-Frame Update
 
 ```cpp
 void RendererDeferred::update(float delta) {
@@ -271,7 +271,7 @@ void RendererDeferred::update(float delta) {
 
 ---
 
-## Método `resize()` — redimensionar recursos por swapchain resize
+## `resize()` Method — Swapchain Resize Resource Scaling
 
 ```cpp
 void RendererDeferred::resize(VkExtent2D newExtent) {
@@ -287,7 +287,7 @@ void RendererDeferred::resize(VkExtent2D newExtent) {
 
 ---
 
-## Método `cleanup()` — destrucción limpia
+## `cleanup()` Method — Clean Destruction
 
 ```cpp
 void RendererDeferred::cleanup() {
@@ -312,9 +312,9 @@ void RendererDeferred::cleanup() {
 
 ---
 
-## Método `createPipelines()` — creación de pipelines
+## `createPipelines()` Method — Pipeline Creation
 
-El RendererDeferred tiene **5 pipelines**:
+The RendererDeferred has **5 pipelines**:
 1. `gBufferDepthPrepassPipeline` → depth prepass (depth-write, no color attachments)
 2. `gBufferColorPipeline` → G-buffer color pass (no depth-write, 3 color attachments)
 3. `compositorPipeline` → compositing pass (fullscreen quad, no depth testing)
@@ -340,16 +340,16 @@ void RendererDeferred::createTransparentPipelines(Engine* engine, VkPipelineLayo
 
 ---
 
-## Render queue visitor y data bindings en el G-buffer pass
+## Render Queue Visitor and Data Bindings in the G-buffer Pass
 
-### Crear render queue (dentro de draw())
+### Create Render Queue (within draw())
 ```cpp
 // Reset and populate the render queue from scene objects:
 _renderQueueVisitor.enqueue(_scene->rootNode(), &_renderQueue);
 ```
 
-### Función de descriptor sets para G-buffer color pass
-Similar a `RendererBasicForward::dsFunction` lambda in draw():
+### Descriptor Set Function for G-buffer Color Pass
+Similar to `RendererBasicForward::dsFunction` lambda in draw():
 
 ```cpp
 auto dsFunctionForGBuffer = [&](MaterialBase* mat, const glm::mat4& transform) {
@@ -360,7 +360,7 @@ auto dsFunctionForGBuffer = [&](MaterialBase* mat, const glm::mat4& transform) {
 };
 ```
 
-### Render draw del render queue a G-buffers (doble sub-pase, same pipeline):
+### Render Queue Draw to G-buffers (double sub-pass, same pipeline):
 
 ```cpp
 vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, _gBufferColorPipeline);
@@ -375,37 +375,37 @@ _renderQueue.render(
 
 ---
 
-## Checklist de la fase 3
+## Phase 3 Checklist
 
-- [ ] `draw()` implementa los 3 pases (G-buffer → composite → transparent)
-- [ ] Pases G-buffer: depth prepass (sin color attachments) + color pass (3 color attachments, sin write depth)
-- [ ] Pases compositing: fullscreen quad reading G-buffers, calcula iluminación PBR
-- [ ] Pases transparentes: objetos transparent se renderizan directamente al swapchain
-- [ ] `build()` crea 2 G-buffer pipelines (depth prepass + color + compositor)
-- [ ] `createPipelines` crea todos los pipelines correctos (seleccionando RT vs no-RT)
-- [ ] El `draw()` llama a `gBuffer->resolve(cmd)` para hacer blit de MSAA antes del compositing pass
-- [ ] Todas las transiciones de layout Vulkan son correctas
+- [ ] `draw()` implements all 3 passes (G-buffer → composite → transparent)
+- [ ] G-buffer passes: depth prepass (no color attachments) + color pass (3 color attachments, no depth write)
+- [ ] Compositing passes: fullscreen quad reading G-buffers, calculates PBR lighting
+- [ ] Transparent passes: transparent objects rendered directly to swapchain
+- [ ] `build()` creates 2 G-buffer pipelines (depth prepass + color + compositor)
+- [ ] `createPipelines` creates all correct pipelines (selecting RT vs non-RT)
+- [ ] `draw()` calls `gBuffer->resolve(cmd)` for MSAA blit before compositing pass
+- [ ] All Vulkan layout transitions are correct
 
 ---
 
-## Notas importantes sobre integración con el pipeline existente
+## Important Notes on Integration with Existing Pipeline
 
-### Reutilización de shaders vs nuevos shaders
+### Shader Reuse vs New Shaders
 
-| Shader | Uso en renderer forward | Uso en deferred renderer |
-|--------|------------------------|--------------------------|
-| `basic_forward.vert.spv` | OPA: vertex shader for opaque and transparent objects in forward pass | **G-buffer color/depth prepass:** vertex shader para geometría (TBF) |
-| `basic_forward.frag.spv` / `_rt_shadows.` | OPA fragment shader for forward PBR lighting calculation  | No se reutiliza |
-| `deferred_gbuffer.frag.spv` (nuevo) | —  | G-buffer fragment shader, solo escribe los G-buffers albedo, normal, materials; sin iluminación |
-| `deferred_lighting.vert.spv` (nuevo) | — | Compositing: fullscreen quad vertex passthrough |
-| `deferred_lighting.frag.spv` (nuevo) | —  | Compositing: fragment shader, lectura de G-buffers + iluminación PBR (con/sin RT) |
+| Shader | Forward Renderer Use | Deferred Renderer Use |
+|--------|---------------------|----------------------|
+| `basic_forward.vert.spv` | OPA: vertex shader for opaque and transparent objects in forward pass | **G-buffer color/depth prepass:** vertex shader for geometry (TBF) |
+| `basic_forward.frag.spv` / `_rt_shadows.` | OPA fragment shader for forward PBR lighting calculation | Not reused |
+| `deferred_gbuffer.frag.spv` (new) | — | G-buffer fragment shader, only writes albedo, normal, materials to G-buffers; no lighting |
+| `deferred_lighting.vert.spv` (new) | — | Compositing: fullscreen quad vertex passthrough |
+| `deferred_lighting.frag.spv` (new) | — | Compositing: fragment shader, reads G-buffers + PBR lighting (with/without RT) |
 
-### Pipeline layout comparison: forward vs deferred
+### Pipeline Layout Comparison: Forward vs Deferred
 
-| Set | Forward (set=0..4) | Deferred compositor (set=0..3+1 RT) |
+| Set | Forward (set=0..4) | Deferred Compositor (set=0..3+1 RT) |
 |-----|-------------------|-------------------------------------|
 | Set 0 | Scene (FrameData) | G-buffer textures (3 samplers: albedo, normals, materials) |
 | Set 1 | Object data binding (model + material uniforms + 5 text samplers) | Scene Data (view/projection) — same binding as forward-set=0 |
-| Set 2 | Environment data (IBL+samplers) | Env/IBL Data — same binding as forward-set=2
-| Set 3 | Light data (light buffer array) same as forward-set=3
-| Set 4 | RT scene TLAS (if supported) — optional. Same as forward-set=4 if RT
+| Set 2 | Environment data (IBL+samplers) | Env/IBL Data — same binding as forward-set=2 |
+| Set 3 | Light data (light buffer array) | Same as forward-set=3 |
+| Set 4 | RT scene TLAS (if supported) — optional | Same as forward-set=4 if RT |

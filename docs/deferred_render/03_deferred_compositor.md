@@ -1,14 +1,14 @@
-# Fase 2 — DeferredCompositor (Compositing Pass)
+# Phase 2 — DeferredCompositor (Compositing Pass)
 
-## Objetivo
+## Objective
 
-Crear una clase que gestiona el pipeline de composición: lectura de G-buffers y cálculo de iluminación por pixel. Incluirá la gestión del pipeline gráfico, los shaders GLSL para full-screen quads, y el cálculo de luces (con/sin ray tracing).
+Create a class that manages the compositing pipeline: reading G-buffers and calculating per-pixel lighting. It will include graphics pipeline management, GLSL shaders for full-screen quads, and light calculation (with/without ray tracing).
 
-Diseño inspirado en `ColorAttachmentsCanvas` pero con lógica de iluminación PBR completa.
+Design inspired by `ColorAttachmentsCanvas` but with full PBR lighting logic.
 
 ---
 
-## Ficheros nuevos a crear
+## New Files to Create
 
 ### A) `lib/include/bg2e/render/DeferredCompositor.hpp`
 ### B) `lib/src/bg2e/render/DeferredCompositor.cpp`
@@ -17,7 +17,7 @@ Diseño inspirado en `ColorAttachmentsCanvas` pero con lógica de iluminación P
 
 ---
 
-## A) DeferrredCompositor.hpp — Estructura y API
+## A) DeferredCompositor.hpp — Structure and API
 
 ```
 lib/include/bg2e/render/DeferredCompositor.hpp
@@ -63,28 +63,28 @@ lib/include/bg2e/render/DeferredCompositor.hpp
 │       (obtained from GpuAttachmentBuffer resolve targets after blit)
 ```
 
-### Decisión de diseño: descriptor layout (5 sets como forward renderer)
+### Design Decision: Descriptor Layout (5 sets like forward renderer)
 
-El compositor tiene más bindings que el forward renderer porque incluye las texturas G-buffer adicionales. Para mantener compatibilidad con los data-binding existentes, el layout del pipeline será:
+The compositor has more bindings than the forward renderer because it includes additional G-buffer textures. To maintain compatibility with existing data-bindings, the pipeline layout will be:
 
-| Set | Binding(s) | Contenido | Cómo se obtiene |
-|-----|------------|-----------|-----------------|
-| 0 | 0 — 2 | G-buffer texture samplers (albedo + normal + materials) | Se crean dinámicamente en `render()` via descriptor allocator (no usa data binding class porque la G-buffer es específica de deferred) |
-| 1 | 0 | FrameUniforms (view + projection matrices) | Reutiliza `scene::vk::FrameDataBinding::newDescriptorSet()` existente |
-| 2 | 0—3 | IBL samplers + EnvironmentUniforms UBO | Reutiliza `scene::vk::EnvironmentDataBinding` existente |
-| 3 | 0 | Light uniform array (8 lights) | Reutiliza `scene::vk::LightDataBinding` existente |
+| Set | Binding(s) | Content | How Obtained |
+|-----|------------|---------|--------------|
+| 0 | 0 — 2 | G-buffer texture samplers (albedo + normal + materials) | Created dynamically in `render()` via descriptor allocator (does not use data binding class because G-buffer is deferred-specific) |
+| 1 | 0 | FrameUniforms (view + projection matrices) | Reuses existing `scene::vk::FrameDataBinding::newDescriptorSet()` |
+| 2 | 0—3 | IBL samplers + EnvironmentUniforms UBO | Reuses existing `scene::vk::EnvironmentDataBinding` |
+| 3 | 0 | Light uniform array (8 lights) | Reuses existing `scene::vk::LightDataBinding` |
 
-> **Nota: por qué G-buffers no usan `PipelineDataBinding`**
-> Los data-binding existentes (`FrameDataBinding`, `EnvironmentDataBinding`, etc.) crean VBO buffers. Los G-buffers son texturas; su layout es estático pero las texturas cambian por frame (resize de swapchain). Hay dos opciones:
+> **Note: why G-buffers don't use `PipelineDataBinding`**
+> Existing data-bindings (`FrameDataBinding`, `EnvironmentDataBinding`, etc.) create VBO buffers. G-buffers are textures; their layout is static but textures change per frame (swapchain resize). There are two options:
 > 
-> 1. Crear un `GBufferDataBinding`: clase que siga el patrón de clase abstracta (como `PipelineDataBinding`) pero para texturas, manejando VK descriptor image descriptors.
-> 2. Enlazar los G-buffers directamente en el lambda del render() (como `ColorAttachmentsCanvas` lo hace inline).
+> 1. Create a `GBufferDataBinding`: class following the abstract class pattern (like `PipelineDataBinding`) but for textures, handling VK descriptor image descriptors.
+> 2. Bind G-buffers directly in the `render()` lambda (like `ColorAttachmentsCanvas` does inline).
 > 
-> **Decisión: opción 1** (crear `GBufferDataBinding` como clase utilitaria en la fase de compositor). Esto mantiene consistencia con el rest of the codebase y permite reutilizar el descriptor-pool registration pattern (`initFrameResources` → `requirePoolSizeRatio`).
+> **Decision: option 1** (create `GBufferDataBinding` as a utility class in the compositor phase). This maintains consistency with the rest of the codebase and allows reuse of the descriptor-pool registration pattern (`initFrameResources` → `requirePoolSizeRatio`).
 
 ---
 
-## B) DeferredCompositor.cpp — Implementación
+## B) DeferredCompositor.cpp — Implementation
 
 ### Constructor
 ```cpp
@@ -93,16 +93,16 @@ DeferredCompositor::DeferredCompositor(Engine* engine, std::shared_ptr<GpuAttach
 ```
 
 ### build() — pipeline creation (3 shaders: vert + optional RT frag / non-RT frag)
-1. Crear `VkDescriptorSetLayout` para G-buffers: 3 bindings × COMBINED_IMAGE_SAMPLER.
-2. Crear `VkPipelineLayout`: add Ds layout 0 (G-buffers), get layouts from existing data bindings.
+1. Create `VkDescriptorSetLayout` for G-buffers: 3 bindings × COMBINED_IMAGE_SAMPLER.
+2. Create `VkPipelineLayout`: add Ds layout 0 (G-buffers), get layouts from existing data bindings.
 3. Add push constant range: `{VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(CompositePushConstants)}`.
-4. Crear shaders:
+4. Create shaders:
    - Vertex: `deferred_lighting.vert.spv` (fullscreen triangle strip quad).
 5. Add optional fragment shader version:
    - If `engine->rayTracingSupported()` → add `"deferred_lighting_rt_shadows.frag.spv"`.
    - Else → add `"deferred_lighting.frag.spv"` (non-RT fallback).
 
-**NOTA IMPORTANTE:** En realidad el compositing solo necesita un shader — la variante RT vs no-RT se selecciona en el `build()` con condicional on `engine->rayTracingSupported()`.
+**IMPORTANT NOTE:** The compositing only needs one shader — the RT vs non-RT variant is selected in `build()` conditionally on `engine->rayTracingSupported()`.
 
 6. Pipeline config:
    - DepthTest disabled (no depth test in compositing).
@@ -111,10 +111,10 @@ DeferredCompositor::DeferredCompositor(Engine* engine, std::shared_ptr<GpuAttach
    - Multisampling: disabled (single-sample, input G-buffers are already MSAA resolved).
    - Color attachment format: same as output swapchain image format.
 
-See `ColorAttachmentsCanvas::build()` and see `RendererBasicForward.cpp` for exact pattern.
+See `ColorAttachmentsCanvas::build()` and `RendererBasicForward.cpp` for exact patterns.
 
 ### initFrameResources()
-Register required pool sizes: G-buffers textures (3 COMBINED_IMAGE_SAMPLER) + scene/env/light uniform buffers.
+Register required pool sizes: G-buffer textures (3 COMBINED_IMAGE_SAMPLER) + scene/env/light uniform buffers.
 
 ### render() — compositing draw
 1. Transition G-buffer resolve target images to `SHADER_READ_ONLY_OPTIMAL` (done via helper in GpuAttachmentBuffer).
@@ -157,7 +157,7 @@ No transform matrices needed because the compositing pass uses a fullscreen quad
 ## D) `shaders/src/deferred_lighting.frag.glsl`
 ### Fragment shader for deferred lighting
 
-Este shader leerá los G-buffers (albedo, normals tangent-space de view space) y calculará iluminación PBR por pixel.
+This shader will read the G-buffers (albedo, tangent-space normals from view space) and calculate PBR lighting per pixel.
 
 ```glsl
 #version 460  // Required for ray query (GL_EXT_ray_query); fallback to #version 450 if no RT
@@ -231,7 +231,7 @@ void main() {
     // Unproject to get view space position
     vec4 clip = vec4(ndc, 0.0,1.0);   // Position on far plane (approximation)
     clip = inverse(u_Scene.projectionMatrix) * clip;
-    vec4 viewPos = u_Sene.viewMatrix * clip;  // World position (actually: view space → invert
+    vec4 viewPos = u_Scene.viewMatrix * clip;  // World position (actually: view space → invert
     vec3 fragWorld = inverse(u_Scene.viewMatrix) * viewPos; // This is world position approximation
     vec3 viewDir = normalize(fragWorld - cameraPosition); // Camera position from scene data (need to add)
 
@@ -244,16 +244,16 @@ void main() {
 }
 ```
 
-> **CRITICAL:** Para calcular iluminación PBR necesitamos la posición del fragmento en el espacio de vista (view space) o mundo, porque las funciones de iluminación (`calcRadiance`, etc.) necesitan la distancia al punto de luz.
+> **CRITICAL:** To calculate PBR lighting we need the fragment's position in view space or world space, because lighting functions (`calcRadiance`, etc.) need the distance to the light source.
 > 
-> En forward rendering esto se calcula en el vertex shader (`inFragPos`). En deferred, no tenemos acceso a esa información por pixel.
+> In forward rendering this is calculated in the vertex shader (`inFragPos`). In deferred, we don't have access to that information per pixel.
 > 
-> **Opciones:
-**1. **Reconstruct view-space position from depth + UV:** Add a single-sample (or MSAA) depth buffer to the G-buffer set. Then in compositor, reconstruct view-space position via: `viewPos = unproject(texcoord, depthValue)`.
+> **Options:**
+> 1. **Reconstruct view-space position from depth + UV:** Add a single-sample (or MSAA) depth buffer to the G-buffer set. Then in compositor, reconstruct view-space position via: `viewPos = unproject(texcoord, depthValue)`.
 > 2. **Store depth directly in G-buffer:** Use one of the existing color attachments to store view-space Z or position.
 > 3. **Add a dedicated depth texture to the compositor** (read from the single-sample depth prepass buffer). This is the cleanest approach.
 > 
-> **Decision adopted:** Pass a 4th G-buffer texture to compositing that stores depth (or better, view-space position X,Y,Z as `R32G32B32_SFLOAT` or depth texture). 
+> **Adopted decision:** Pass a 4th G-buffer texture to compositing that stores depth (or better, view-space position X,Y,Z as `R32G32B32_SFLOAT` or depth texture).
 >
 > **Simpler alternative:** Store a `VK_FORMAT_R32_SFLOAT` depth texture (single sample from prepass) as `buffer=3, binding=0` sampler in the compositor. This avoids needing a full view-position G-buffer since we can unproject using projection matrix inverse.
 
@@ -342,20 +342,20 @@ void main() {
 
 ---
 
-## Relación con `ColorAttachmentsCanvas`
+## Relationship with `ColorAttachmentsCanvas`
 
-| Aspect | ColorAttachmentsCanvas (existente) | DeferredCompositor (nuevo) |
-|--------|----------------------------------|---------------------------|
-| Quad fullscreen rendering | Sí (`vkCmdDraw(cmd, 6, 1, 0, 0)`) | Sí (misma técnica con atributos `aPos` → full-screen triangle strip, vertex shader passthrough) |
-| Samplers de texturas | Texturas G-buffers como image samplers | Idem (samplers para las 3/4 texturas G-buffer) + scene/env/light binding |
-| Pipeline creation | Se pasa fragment shader path como string en `build()` | Hardcoded `deferred_lighting.frag.spv` (RT or non-RT version depending on engine support) |
-| Blending | Opcional, por defecto disabled | Disabled (write directly al swapchain color image) |
+| Aspect | ColorAttachmentsCanvas (existing) | DeferredCompositor (new) |
+|--------|----------------------------------|--------------------------|
+| Fullscreen quad rendering | Yes (`vkCmdDraw(cmd, 6, 1, 0, 0)`) | Yes (same technique with `aPos` attributes → full-screen triangle strip, vertex shader passthrough) |
+| Texture samplers | G-buffer textures as image samplers | Same (samplers for 3/4 G-buffer textures) + scene/env/light binding |
+| Pipeline creation | Fragment shader path passed as string in `build()` | Hardcoded `deferred_lighting.frag.spv` (RT or non-RT version depending on engine support) |
+| Blending | Optional, disabled by default | Disabled (write directly to swapchain color image) |
 
 ---
 
-## Checklist de la fase 2
-- [ ] `DeferredCompositor::build()` crea pipeline con correctos layout de descriptores (5 sets: G-buffers, scene, env, lights)
-- [ ] `build()` selecciona RT vs no-Rt fragment shader depending on engine ray-tracing support
+## Phase 2 Checklist
+- [ ] `DeferredCompositor::build()` creates pipeline with correct descriptor layouts (5 sets: G-buffers, scene, env, lights)
+- [ ] `build()` selects RT vs non-RT fragment shader depending on engine ray-tracing support
 - [ ] Full-screen vertex outputs correct position and UV (matching ColorAttachmentsCanvas pattern)
 - [ ] Compositor fragment:
   - Reads all G-buffer textures

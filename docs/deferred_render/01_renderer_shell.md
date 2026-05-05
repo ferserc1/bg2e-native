@@ -1,40 +1,40 @@
-# Fase 0 — RendererDeferred (Shell Vacío)
+# Phase 0 — RendererDeferred (Empty Shell)
 
-## Objetivo
+## Objective
 
-Crear la clase `bg2e::render::RendererDeferred` como skeleton que compila e integra correctamente con el sistema de templates del engine, sin modificar comportamiento alguno. Esta fase es prerequisito para verificar que el wiring de los templates (DefaultRenderLoopDelegate, DefaultOffscreenApplicationDelegate) funciona antes de implementar la lógica real.
+Create the class `bg2e::render::RendererDeferred` as a skeleton that compiles and integrates correctly with the engine's template system, without modifying any behavior. This phase is a prerequisite to verify that the template wiring (DefaultRenderLoopDelegate, DefaultOffscreenApplicationDelegate) works before implementing real logic.
 
 ---
 
-## Ficheros a crear
+## Files to Create
 
 ### 1. `lib/include/bg2e/render/RendererDeferred.hpp`
 
-Clase que hereda de `bg2e::render::Renderer`, declarando todos los métodos virtuales con signatura idéntica a la clase base. El cuerpo de cada método se dejará para implementación posterior.
+Class inheriting from `bg2e::render::Renderer`, declaring all virtual methods with identical signatures to the base class. The body of each method will be left for later implementation.
 
 ```
 lib/include/bg2e/render/RendererDeferred.hpp
 ├── Inherits: bg2e::render::Renderer (abstract)
 ├── GlslIncludes: Renderer.hpp, Engine.hpp, Scene/Node.hpp, Vulkan/Image.hpp
 ├── Public methods: build(), initFrameResources(), initScene(), resize(),
-│                   update(), draw(), cleanup(), scene(), setters/generators de tonemapping,
+│                   update(), draw(), cleanup(), scene(), tonemapping setters/getters,
 │                   viewportWidth()/viewportHeight()
-└── Protected members: (vacío — se llenarán en fases posteriores)
+└── Protected members: (empty — to be filled in later phases)
 ```
 
-**Dependencias entre includes:** Ver `lib/include/bg2e/render/Renderer.h*pp` para saber qué imports necesita.
+**Include dependencies:** See `lib/include/bg2e/render/Renderer.h*pp` for required imports.
 
 ### 2. `lib/src/bg2e/render/RendererDeferred.cpp`
 
-Cuerpos vacíos de cada método, siguiendo la convención del proyecto (estructura con license header, namespace `bg2e::render`).
+Empty method bodies, following the project convention (structure with license header, namespace `bg2e::render`).
 
 ---
 
-## Implementación detallada — métodos stub
+## Detailed Implementation — Stub Methods
 
 ### build()
 ```cpp
-void BuilderDeferred::build(Engine* engine, VkExtent2D initialExtent,
+void RendererDeferred::build(Engine* engine, VkExtent2D initialExtent,
                             VkFormat colorImageFormat, VkFormat depthImageFormat,
                             VkSampleCountFlagBits sampleCount, bool isOffscreen) override {
     // TODO: implement G-buffer and compositor setup
@@ -56,7 +56,7 @@ void RendererDeferred::initScene(std::shared_ptr<scene::Node> sceneRoot) overrid
 ```
 
 ### resize()
-Respecta la contract of the base class; redimensionará G-buffers en fases posteriores. En esta fase:
+Respects the base class contract; will resize G-buffers in later phases. In this phase:
 ```cpp
 void RendererDeferred::resize(VkExtent2D newExtent) override {
     // TODO: resize G-buffers and compositor buffers
@@ -70,7 +70,7 @@ void RendererDeferred::update(float delta) override {
 }
 ```
 
-### draw() — el más importante
+### draw() — the most important
 ```cpp
 void RendererDeferred::draw(VkCommandBuffer cmd, uint32_t currentFrame,
                             const vulkan::Image* colorImage,
@@ -88,7 +88,7 @@ void RendererDeferred::cleanup() override {
 }
 ```
 
-### Methods de tonemapping
+### Tonemapping methods
 ```cpp
 void RendererDeferred::setBrightness(float b) override { /* TODO */ }
 float RendererDeferred::brightness() const override { return 0.0f; } /* TODO: store state */
@@ -111,24 +111,24 @@ scene::Scene* RendererDeferred::scene() override { return nullptr; } /* TODO: re
 
 ---
 
-## Checklist de integración
+## Integration Checklist
 
-- [ ] La clase compila sin errores (`cmake --build build` funciona para RendererDeferred.cpp)
-- [ ] La clase es instanciable vía `RendererT` template del DefaultRenderLoopDelegate
-- [ ] No hay cambios en comportamiento existente (clase vacía no ejecuta nada)
-- [ ] Los stubs permiten que el template delegate forward calls sin errores de linker
+- [ ] The class compiles without errors (`cmake --build build` works for RendererDeferred.cpp)
+- [ ] The class is instantiable via the `RendererT` template of DefaultRenderLoopDelegate
+- [ ] No changes to existing behavior (empty class executes nothing)
+- [ ] The stubs allow the template delegate to forward calls without linker errors
 
-## Notas sobre patrones existentes a seguir
+## Notes on Existing Patterns to Follow
 
-- La estructura del fichero `.hpp` debe imitar `lib/include/bg2e/render/RendererBasicForward.h*pp`:
-  - Licenza GPL al inicio.
+- The `.hpp` file structure must imitate `lib/include/bg2e/render/RendererBasicForward.h*pp`:
+  - GPL license at the top.
   - `#pragma once`
-  - Includes de las clases usadas, namespace `bg2e::render::*`.
-  - Macros `BG2E_API` en todos los symbols públicos (macro from `bg2e/common.hpp`).
-  - Public section: constructors, destruktory, property getters/setters, lifecycle methods.
+  - Includes of used classes, namespace `bg2e::render::*`.
+  - `BG2E_API` macros on all public symbols (macro from `bg2e/common.hpp`).
+  - Public section: constructors, destructors, property getters/setters, lifecycle methods.
   - Protected section: members (_engine, _scene, pipeline handles, bindings...).
 
-## Referencias de código existente para copiar la estructura
+## Existing Code References for Structure
 
-- `lib/include/bg2e/render/RendererBasicForward.hpp` — patrones de includes y estructura
-- `lib/src/bg2e/render/RendererBasicForward.cpp` — patrones de implementación (copiar signatures exactas)
+- `lib/include/bg2e/render/RendererBasicForward.hpp` — include patterns and structure
+- `lib/src/bg2e/render/RendererBasicForward.cpp` — implementation patterns (copy exact signatures)

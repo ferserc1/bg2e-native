@@ -1,18 +1,18 @@
-# Fase 1 — GpuAttachmentBuffer (G-Buffer Infrastructure)
+# Phase 1 — GpuAttachmentBuffer (G-Buffer Infrastructure)
 
-## Objetivo
+## Objective
 
-Crear una clase centralizada que gestione:
-- Creación de imágenes Vulkan para los G-buffers (formatos, uso flags, MSAA).
-- El resize de las imágenes cuando el swapchain cambia de tamaño.
-- La gestión del ciclo de vida (destrucción limpia).
-- Helpers para transición de layout y resolución MSAA.
+Create a centralized class that manages:
+- Vulkan image creation for G-buffers (formats, usage flags, MSAA).
+- Image resizing when the swapchain changes size.
+- Lifecycle management (clean destruction).
+- Layout transition and MSAA resolution helpers.
 
-Clase inspirada en `ColorAttachments` pero con soporte completo de MSAA y depth attachment.
+Class inspired by `ColorAttachments` but with full MSAA and depth attachment support.
 
 ---
 
-## Fichero a crear: `lib/include/bg2e/render/GpuAttachmentBuffer.hpp`
+## File to Create: `lib/include/bg2e/render/GpuAttachmentBuffer.hpp`
 
 ```
 GpuAttachmentBuffer.hpp
@@ -40,30 +40,30 @@ GpuAttachmentBuffer.hpp
 │   └── std::vector<VkFormat> _formats (3+1: 3 colors + depth)
 ```
 
-### Decisiones de formato detalladas
+### Detailed Format Decisions
 
-| Attachment | Index | Formato | Bits per pixel | Contenido final |
-|------------|-------|---------|----------------|-----------------|
-| Color 0 (albedo) | 0 | `VK_FORMAT_R8G8B8A8_UNORM` | 32 | Color base (sin SRGB encoding) |
-| Color 1 (normales) | 1 | `VK_FORMAT_R8G8B8A8_SNORM` | 32 | Normales tangenciales (normal.x = (tex.r * 2) - 1) |
-| Color 2 (materiales) | 2 | `VK_FORMAT_R8G8B8A8_UNORM` | 32 | Metalness(R), Roughness(G), AO(B), Emissive(A) |
-| Depth prepass | — | `VK_FORMAT_D32_SFLOAT` | 32 | Profundidad single-sample para oclusión en compositing (opcional, see note below sobre depth) |
+| Attachment | Index | Format | Bits per pixel | Final Content |
+|------------|-------|--------|----------------|---------------|
+| Color 0 (albedo) | 0 | `VK_FORMAT_R8G8B8A8_UNORM` | 32 | Base color (no SRGB encoding) |
+| Color 1 (normals) | 1 | `VK_FORMAT_R8G8B8A8_SNORM` | 32 | Tangent-space normals (normal.x = (tex.r * 2) - 1) |
+| Color 2 (materials) | 2 | `VK_FORMAT_R8G8B8A8_UNORM` | 32 | Metalness(R), Roughness(G), AO(B), Emissive(A) |
+| Depth prepass | — | `VK_FORMAT_D32_SFLOAT` | 32 | Single-sample depth for compositing occlusion (optional, see note below on depth) |
 
-> **Nota: single-sample vs MSAA en depth.**
-> El G-buffer depth attachment debe tener el count de muestras igual que los color attachments (dynamic rendering requiere sample counts iguales entre todos los attachments). Si usamos MSAA 4x en color, también debe ser 4x en depth.
+> **Note: single-sample vs MSAA in depth.**
+> The G-buffer depth attachment must have the same sample count as the color attachments (dynamic rendering requires equal sample counts across all attachments). If we use MSAA 4x in color, depth must also be 4x.
 > 
-> **Para evitar esto**, podemos usar un enfoque híbrido: G-buffer depths en single-sample (depth prepass), y MSAA solo en los color attachments. Esto requiere dos draw calls por objeto: primero single-sample depth prepass, luego color-pass con depth testing (but no writing) contra ese buffer.
+> **To avoid this**, we can use a hybrid approach: G-buffer depths in single-sample (depth prepass), and MSAA only on color attachments. This requires two draw calls per object: first a single-sample depth prepass, then a color pass with depth testing (but no writing) against that buffer.
 > 
-> **Decisión adoptada:** Usar single-sample depth en el G-buffer pass (depth prepass), y MSAA solo en los color attachments. Esto es más eficiente porque:
-> - El depth prepass single-sample es rápido (solo escribe profundidad).
-> - Los G-buffers con MSAA mejoran la calidad en bordes de geometría.
-> - No requiere MSAA resolve del depth buffer (single sample).
+> **Adopted decision:** Use single-sample depth in the G-buffer pass (depth prepass), and MSAA only on color attachments. This is more efficient because:
+> - The single-sample depth prepass is fast (only writes depth).
+> - MSAA G-buffers improve quality at geometry edges.
+> - No MSAA resolve of the depth buffer is needed (single sample).
 > 
-> Para implementar esto, el draw debe tener dos render-passes: uno para depth-only (sin color attachments), otro para los G-buffer colors con depth-test-read (no-write) contra el depth prepass.
+> To implement this, the draw must have two render-passes: one for depth-only (no color attachments), another for G-buffer colors with depth-test-read (no-write) against the depth prepass.
 
 ---
 
-## Fichero a crear: `lib/src/bg2e/render/GpuAttachmentBuffer.cpp`
+## File to Create: `lib/src/bg2e/render/GpuAttachmentBuffer.cpp`
 
 ### Constructor
 ```cpp
@@ -75,7 +75,7 @@ GpuAttachmentBuffer::GpuAttachmentBuffer(Engine* engine, VkExtent2D extent)
 ```
 
 ### build() — create all G-buffer images
-- Call `cleanup()` (idempotent, clear already-deallocated resources).
+- Call `cleanup()` (idempotent, clears already-deallocated resources).
 - For each color attachment:
   - Call `vulkan::Image::createAllocatedImage()` with format, extent, usage flags (`COLOR_ATTACHMENT | SAMPLED | TRANSFER_DST | TRANSFER_SRC`), aspect `VK_IMAGE_ASPECT_COLOR_BIT`, sampleCount = `_msaaSampleCount`.
   - Store in `_gbufferColors`.
@@ -88,7 +88,7 @@ GpuAttachmentBuffer::GpuAttachmentBuffer(Engine* engine, VkExtent2D extent)
 ### imageWithIndex()
 - Return `_gbufferColors[index]` (the MSAA image).
 
-### Helpers para resoluciones
+### Resolution Helpers
 Add public method: `resolve(VkCommandBuffer cmd)` that blits each MSAA color attachment to its corresponding single-sample resolve target.
 
 ```cpp
@@ -122,25 +122,25 @@ void GpuAttachmentBuffer::resolve(VkCommandBuffer cmd) {
 
 ---
 
-## Relación con la clase base `ColorAttachments`
+## Relationship with Existing `ColorAttachments` Class
 
-| Feature | ColorAttachments (existente) | GpuAttachmentBuffer (nuevo) |
-|---------|------------------------------|-----------------------------|
-| Color attachments format vector | Sí (vector<VkFormat>) | Hardcoded en const. array o std::array< format, 3> |
-| MSAA support | No (single-sample) | Sí (4x en color attachments, single-sample en depth) |
-| Depth buffer | No tiene depth | Sí (single-sample depth prepass) |
-| Resolve targets | No → G-buffer resolve en compositing | Sí (single-sample images para read por compositor) |
-| Pipeline layout compatible | Usa solo 1 color attachment | Puede usar hasta 3+1 en dynamic rendering (VkPipelineRenderingCreateInfo ya soporta vector de formats) |
+| Feature | ColorAttachments (existing) | GpuAttachmentBuffer (new) |
+|---------|----------------------------|--------------------------|
+| Color attachments format vector | Yes (vector<VkFormat>) | Hardcoded in const array or std::array<format, 3> |
+| MSAA support | No (single-sample) | Yes (4x on color attachments, single-sample on depth) |
+| Depth buffer | No depth | Yes (single-sample depth prepass) |
+| Resolve targets | No → G-buffer resolve in compositing | Yes (single-sample images for compositor reading) |
+| Pipeline layout compatible | Uses only 1 color attachment | Can use up to 3+1 in dynamic rendering (VkPipelineRenderingCreateInfo already supports format vector) |
 
-No hay que modificar `ColorAttachments` (ya existe y se usa por `ColorAttachmentsCanvas`). Es una clase independiente con responsabilidades distintas.
+No modifications to `ColorAttachments` are needed (it already exists and is used by `ColorAttachmentsCanvas`). It is an independent class with distinct responsibilities.
 
 ---
 
-## Checklist de la fase 1
+## Phase 1 Checklist
 
-- [ ] `GpuAttachmentBuffer::build()` crea todas las imágenes con los formatos correctos
-- [ ] MSAA 4x aplicado a color attachments y resolución correcta a single-sample targets
-- [ ] Depth buffer single sample para depth prepass
-- [ ] `GpuAttachmentBuffer::resolve()` realiza blit de MSAA a resolve targets correctamente
-- [ ] Transiciones de layout correctas: COLOR_ATTACHMENT_OPTIMAL → ... → SHADER_READ_ONLY_OPTIMAL
-- [ ] `GpuAttachmentBuffer::cleanup()` libera todos los recursos Vulkan/VMA correctamente
+- [ ] `GpuAttachmentBuffer::build()` creates all images with correct formats
+- [ ] MSAA 4x applied to color attachments with correct resolution to single-sample targets
+- [ ] Single-sample depth buffer for depth prepass
+- [ ] `GpuAttachmentBuffer::resolve()` performs MSAA blit to resolve targets correctly
+- [ ] Correct layout transitions: COLOR_ATTACHMENT_OPTIMAL → ... → SHADER_READ_ONLY_OPTIMAL
+- [ ] `GpuAttachmentBuffer::cleanup()` releases all Vulkan/VMA resources correctly
