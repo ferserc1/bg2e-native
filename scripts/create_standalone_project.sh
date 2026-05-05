@@ -82,20 +82,29 @@ echo ""
 [ -d "${REPO_ROOT}/shaders" ] || die "Cannot find shaders directory at ${REPO_ROOT}/shaders"
 
 # Check pre-compiled library exists
+LIB_DIR=""
 case "${CURRENT_PLATFORM}" in
     linux)
         LIB_FILE="${REPO_ROOT}/bin/linux/libbg2e.so"
         [ -f "${LIB_FILE}" ] || die "Cannot find pre-compiled library: ${LIB_FILE}\n  Build the project first: cmake --build build"
+        LIB_DIR="${REPO_ROOT}/bin/linux"
         ;;
     macos)
         LIB_FILE="${REPO_ROOT}/bin/macos/libbg2e.dylib"
         [ -f "${LIB_FILE}" ] || die "Cannot find pre-compiled library: ${LIB_FILE}\n  Build the project first: cmake --build build"
+        LIB_DIR="${REPO_ROOT}/bin/macos"
         ;;
     windows)
-        LIB_FILE="${REPO_ROOT}/bin/windows/bg2e.dll"
-        LIB_IMPL="${REPO_ROOT}/bin/windows/bg2e.lib"
-        [ -f "${LIB_FILE}" ] || die "Cannot find pre-compiled library: ${LIB_FILE}\n  Build the project first: cmake --build build"
-        [ -f "${LIB_IMPL}" ] || die "Cannot find import library: ${LIB_IMPL}\n  Build the project first: cmake --build build"
+        if [ -f "${REPO_ROOT}/bin/windows/Release/bg2e.dll" ]; then
+            LIB_DIR="${REPO_ROOT}/bin/windows/Release"
+        elif [ -f "${REPO_ROOT}/bin/windows/Debug/bg2e.dll" ]; then
+            LIB_DIR="${REPO_ROOT}/bin/windows/Debug"
+        elif [ -f "${REPO_ROOT}/bin/windows/bg2e.dll" ]; then
+            LIB_DIR="${REPO_ROOT}/bin/windows"
+        else
+            die "Cannot find pre-compiled library bg2e.dll\n  Searched in:\n    ${REPO_ROOT}/bin/windows/Release/\n    ${REPO_ROOT}/bin/windows/Debug/\n    ${REPO_ROOT}/bin/windows/\n  Build the project first: cmake --build build"
+        fi
+        [ -f "${LIB_DIR}/bg2e.lib" ] || die "Cannot find import library: ${LIB_DIR}/bg2e.lib\n  Build the project first: cmake --build build"
         ;;
 esac
 
@@ -107,6 +116,9 @@ SPV_COUNT=$(find "${SHADER_DIR}" -name "*.spv" 2>/dev/null | wc -l)
 
 # Check if target already exists
 [ -d "${TARGET_PATH}" ] && die "Target directory already exists: ${TARGET_PATH}"
+
+echo "Using libraries from: ${LIB_DIR}"
+echo ""
 
 # ============================================================================
 # Create directory structure
@@ -181,11 +193,11 @@ case "${CURRENT_PLATFORM}" in
         fi
         ;;
     windows)
-        cp "${REPO_ROOT}/bin/windows/bg2e.dll" "${TARGET_PATH}/lib/windows/"
-        cp "${REPO_ROOT}/bin/windows/bg2e.lib" "${TARGET_PATH}/lib/windows/"
+        cp "${LIB_DIR}/bg2e.dll" "${TARGET_PATH}/lib/windows/"
+        cp "${LIB_DIR}/bg2e.lib" "${TARGET_PATH}/lib/windows/"
         # Copy SDL2 library if available
-        if [ -f "${REPO_ROOT}/bin/windows/SDL2.dll" ]; then
-            cp "${REPO_ROOT}/bin/windows/SDL2.dll" "${TARGET_PATH}/lib/windows/"
+        if [ -f "${LIB_DIR}/SDL2.dll" ]; then
+            cp "${LIB_DIR}/SDL2.dll" "${TARGET_PATH}/lib/windows/"
         fi
         ;;
 esac
