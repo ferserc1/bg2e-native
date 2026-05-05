@@ -3,6 +3,11 @@ project(${PROJECT_NAME})
 
 set(CMAKE_CXX_STANDARD 20)
 
+if (MSVC)
+    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreadedDLL")
+    add_compile_options(/MP)
+endif()
+
 # VulkanSDK path
 set(VULKAN_SDK "$ENV{VULKAN_SDK}" CACHE PATH "Path to VulkanSDK")
 
