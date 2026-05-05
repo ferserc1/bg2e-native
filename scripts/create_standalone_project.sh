@@ -28,6 +28,104 @@ info() {
     echo "  $1"
 }
 
+write_linux_todo() {
+    cat > "$1" << 'EOF'
+# Platform Libraries Required
+
+This directory should contain the pre-compiled bg2e library for Linux.
+
+## Required Files
+
+- `libbg2e.so` — the bg2e shared library
+
+## How to Build for This Platform
+
+1. Clone bg2e-native on a Linux machine:
+   ```
+   git clone --recursive <bg2e-native-repo-url>
+   ```
+
+2. Build the engine:
+   ```
+   cmake -S . -B build -G Ninja -DVULKAN_SDK=/path/to/vulkan/sdk
+   cmake --build build
+   ```
+
+3. Copy `bin/linux/libbg2e.so` to this directory.
+
+## Notes
+
+- The library must be compiled with a compatible C++20 compiler
+- GCC 11+ or Clang 13+ is recommended
+EOF
+}
+
+write_macos_todo() {
+    cat > "$1" << 'EOF'
+# Platform Libraries Required
+
+This directory should contain the pre-compiled bg2e library for macOS.
+
+## Required Files
+
+- `libbg2e.dylib` — the bg2e shared library
+
+## How to Build for This Platform
+
+1. Clone bg2e-native on a macOS machine:
+   ```
+   git clone --recursive <bg2e-native-repo-url>
+   ```
+
+2. Build the engine:
+   ```
+   cmake -S . -B build -G Xcode -DVULKAN_SDK=/path/to/vulkan/sdk
+   cmake --build build
+   ```
+
+3. Copy `bin/macos/libbg2e.dylib` to this directory.
+
+## Notes
+
+- Xcode is required for native file dialogs
+- You may also need to copy MoltenVK and Vulkan validation layer dylibs
+- Install the Vulkan SDK from https://vulkan.lunarg.com/sdk/home
+EOF
+}
+
+write_windows_todo() {
+    cat > "$1" << 'EOF'
+# Platform Libraries Required
+
+This directory should contain the pre-compiled bg2e library for Windows.
+
+## Required Files
+
+- `bg2e.dll` — the bg2e dynamic library
+- `bg2e.lib` — the bg2e import library
+
+## How to Build for This Platform
+
+1. Clone bg2e-native on a Windows machine:
+   ```
+   git clone --recursive <bg2e-native-repo-url>
+   ```
+
+2. Build the engine:
+   ```
+   cmake -S . -B build -G "Visual Studio 17 2022" -DVULKAN_SDK=C:\VulkanSDK
+   cmake --build build --config Release
+   ```
+
+3. Copy `bin/windows/bg2e.dll` and `bg2e.lib` to this directory.
+
+## Notes
+
+- Both `.dll` and `.lib` files are required
+- The Vulkan SDK can be downloaded from https://vulkan.lunarg.com/sdk/home
+EOF
+}
+
 # ============================================================================
 # Detect script location and repository root
 # ============================================================================
@@ -54,16 +152,11 @@ PROJECT_NAME="${2:-bg2e_app}"
 # Detect platform
 # ============================================================================
 
-detect_platform() {
-    case "$(uname -s)" in
-        Linux*)     echo "linux";;
-        Darwin*)    echo "macos";;
-        CYGWIN*|MINGW*|MSYS*)    echo "windows";;
-        *)          die "Unknown platform: $(uname -s)";;
-    esac
-}
-
-CURRENT_PLATFORM="$(detect_platform)"
+case "$(uname -s)" in
+    Linux*)     CURRENT_PLATFORM="linux";;
+    Darwin*)    CURRENT_PLATFORM="macos";;
+    *)          die "This script only supports Linux and macOS. For Windows, use create_standalone_project.bat";;
+esac
 
 # ============================================================================
 # Validate repository and binaries
@@ -78,47 +171,25 @@ info "Platform:    ${CURRENT_PLATFORM}"
 echo ""
 
 [ -d "${REPO_ROOT}/lib/include/bg2e" ] || die "Cannot find bg2e headers at ${REPO_ROOT}/lib/include/bg2e"
+[ -f "${REPO_ROOT}/lib/include/bg2e.hpp" ] || die "Cannot find bg2e.hpp at ${REPO_ROOT}/lib/include/bg2e.hpp"
 [ -d "${REPO_ROOT}/assets" ] || die "Cannot find assets directory at ${REPO_ROOT}/assets"
-[ -d "${REPO_ROOT}/shaders" ] || die "Cannot find shaders directory at ${REPO_ROOT}/shaders"
 
 # Check pre-compiled library exists
-LIB_DIR=""
-case "${CURRENT_PLATFORM}" in
-    linux)
-        LIB_FILE="${REPO_ROOT}/bin/linux/libbg2e.so"
-        [ -f "${LIB_FILE}" ] || die "Cannot find pre-compiled library: ${LIB_FILE}\n  Build the project first: cmake --build build"
-        LIB_DIR="${REPO_ROOT}/bin/linux"
-        ;;
-    macos)
-        LIB_FILE="${REPO_ROOT}/bin/macos/libbg2e.dylib"
-        [ -f "${LIB_FILE}" ] || die "Cannot find pre-compiled library: ${LIB_FILE}\n  Build the project first: cmake --build build"
-        LIB_DIR="${REPO_ROOT}/bin/macos"
-        ;;
-    windows)
-        if [ -f "${REPO_ROOT}/bin/windows/Release/bg2e.dll" ]; then
-            LIB_DIR="${REPO_ROOT}/bin/windows/Release"
-        elif [ -f "${REPO_ROOT}/bin/windows/Debug/bg2e.dll" ]; then
-            LIB_DIR="${REPO_ROOT}/bin/windows/Debug"
-        elif [ -f "${REPO_ROOT}/bin/windows/bg2e.dll" ]; then
-            LIB_DIR="${REPO_ROOT}/bin/windows"
-        else
-            die "Cannot find pre-compiled library bg2e.dll\n  Searched in:\n    ${REPO_ROOT}/bin/windows/Release/\n    ${REPO_ROOT}/bin/windows/Debug/\n    ${REPO_ROOT}/bin/windows/\n  Build the project first: cmake --build build"
-        fi
-        [ -f "${LIB_DIR}/bg2e.lib" ] || die "Cannot find import library: ${LIB_DIR}/bg2e.lib\n  Build the project first: cmake --build build"
-        ;;
-esac
-
-# Check compiled shaders exist
 SHADER_DIR="${REPO_ROOT}/bin/${CURRENT_PLATFORM}/shaders"
+
+if [ "${CURRENT_PLATFORM}" = "linux" ]; then
+    LIB_FILE="${REPO_ROOT}/bin/linux/libbg2e.so"
+    [ -f "${LIB_FILE}" ] || die "Cannot find pre-compiled library: ${LIB_FILE}\n  Build the project first: cmake --build build"
+elif [ "${CURRENT_PLATFORM}" = "macos" ]; then
+    LIB_FILE="${REPO_ROOT}/bin/macos/libbg2e.dylib"
+    [ -f "${LIB_FILE}" ] || die "Cannot find pre-compiled library: ${LIB_FILE}\n  Build the project first: cmake --build build"
+fi
+
 [ -d "${SHADER_DIR}" ] || die "Cannot find compiled shaders at ${SHADER_DIR}\n  Build the project first: cmake --build build"
 SPV_COUNT=$(find "${SHADER_DIR}" -name "*.spv" 2>/dev/null | wc -l)
 [ "${SPV_COUNT}" -gt 0 ] || die "No .spv files found in ${SHADER_DIR}\n  Build the project first: cmake --build build"
 
-# Check if target already exists
 [ -d "${TARGET_PATH}" ] && die "Target directory already exists: ${TARGET_PATH}"
-
-echo "Using libraries from: ${LIB_DIR}"
-echo ""
 
 # ============================================================================
 # Create directory structure
@@ -136,7 +207,7 @@ mkdir -p "${TARGET_PATH}/assets"
 mkdir -p "${TARGET_PATH}/app/src"
 
 # ============================================================================
-# Copy files for current platform
+# Copy common files (headers, assets, shaders, cmake modules)
 # ============================================================================
 
 echo "Copying engine headers..."
@@ -154,117 +225,59 @@ cp "${REPO_ROOT}/cmake/FindVulkan.cmake" "${TARGET_PATH}/cmake/"
 cp "${REPO_ROOT}/cmake/FindSDL2.cmake" "${TARGET_PATH}/cmake/"
 cp "${REPO_ROOT}/cmake/standalone_utils.cmake" "${TARGET_PATH}/cmake/"
 
-echo "Copying pre-compiled library (${CURRENT_PLATFORM})..."
-case "${CURRENT_PLATFORM}" in
-    linux)
-        cp "${REPO_ROOT}/bin/linux/libbg2e.so" "${TARGET_PATH}/lib/linux/"
-        # Copy SDL2 library if available
-        if [ -f "${REPO_ROOT}/bin/linux/libSDL2.so" ]; then
-            cp "${REPO_ROOT}/bin/linux/libSDL2.so" "${TARGET_PATH}/lib/linux/"
-        fi
-        ;;
-    macos)
-        cp "${REPO_ROOT}/bin/macos/libbg2e.dylib" "${TARGET_PATH}/lib/macos/"
-        # Copy SDL2 library if available
-        if [ -f "${REPO_ROOT}/bin/macos/libSDL2.dylib" ]; then
-            cp "${REPO_ROOT}/bin/macos/libSDL2.dylib" "${TARGET_PATH}/lib/macos/"
-        fi
-        # Copy Vulkan resources for macOS bundle
-        if [ -n "${VULKAN_SDK}" ] && [ -d "${VULKAN_SDK}" ]; then
-            echo "Copying Vulkan resources..."
-            mkdir -p "${TARGET_PATH}/vulkan/icd.d"
-            mkdir -p "${TARGET_PATH}/vulkan/explicit_layer.d"
-            cp -r "${VULKAN_SDK}/share/vulkan/icd.d/"* "${TARGET_PATH}/vulkan/icd.d/" 2>/dev/null || true
-            cp -r "${VULKAN_SDK}/share/vulkan/explicit_layer.d/"* "${TARGET_PATH}/vulkan/explicit_layer.d/" 2>/dev/null || true
-            # Copy MoltenVK and validation layers
-            for dylib in libMoltenVK.dylib libvulkan.*.dylib; do
-                src="${VULKAN_SDK}/lib/${dylib}"
-                if [ -f "${src}" ]; then
-                    cp "${src}" "${TARGET_PATH}/lib/macos/"
-                fi
-            done
-            # Copy validation layer dylibs
-            for layer in libVkLayer_khronos_validation.dylib libVkLayer_khronos_synchronization2.dylib libVkLayer_khronos_shader_object.dylib; do
-                src="${VULKAN_SDK}/lib/${layer}"
-                if [ -f "${src}" ]; then
-                    cp "${src}" "${TARGET_PATH}/lib/macos/"
-                fi
-            done
-        fi
-        ;;
-    windows)
-        cp "${LIB_DIR}/bg2e.dll" "${TARGET_PATH}/lib/windows/"
-        cp "${LIB_DIR}/bg2e.lib" "${TARGET_PATH}/lib/windows/"
-        # Copy SDL2 library if available
-        if [ -f "${LIB_DIR}/SDL2.dll" ]; then
-            cp "${LIB_DIR}/SDL2.dll" "${TARGET_PATH}/lib/windows/"
-        fi
-        ;;
-esac
-
 # ============================================================================
-# Create TODO.md for other platforms
+# Platform-specific: copy libraries
 # ============================================================================
 
-echo "Creating platform placeholders..."
+if [ "${CURRENT_PLATFORM}" = "linux" ]; then
+    # -----------------------------------------------------------------------
+    # Linux
+    # -----------------------------------------------------------------------
 
-generate_todo() {
-    local platform_dir="$1"
-    local platform_name="$2"
+    echo "Copying pre-compiled library (linux)..."
+    cp "${REPO_ROOT}/bin/linux/libbg2e.so" "${TARGET_PATH}/lib/linux/"
+    if [ -f "${REPO_ROOT}/bin/linux/libSDL2.so" ]; then
+        cp "${REPO_ROOT}/bin/linux/libSDL2.so" "${TARGET_PATH}/lib/linux/"
+    fi
 
-    cat > "${platform_dir}/TODO.md" << 'TODOMD'
-# Platform Libraries Required
+    echo "Creating platform placeholders..."
+    write_macos_todo "${TARGET_PATH}/lib/macos/TODO.md"
+    write_windows_todo "${TARGET_PATH}/lib/windows/TODO.md"
 
-This directory should contain the pre-compiled bg2e library for this platform.
+elif [ "${CURRENT_PLATFORM}" = "macos" ]; then
+    # -----------------------------------------------------------------------
+    # macOS
+    # -----------------------------------------------------------------------
 
-## Required Files
+    echo "Copying pre-compiled library (macos)..."
+    cp "${REPO_ROOT}/bin/macos/libbg2e.dylib" "${TARGET_PATH}/lib/macos/"
+    if [ -f "${REPO_ROOT}/bin/macos/libSDL2.dylib" ]; then
+        cp "${REPO_ROOT}/bin/macos/libSDL2.dylib" "${TARGET_PATH}/lib/macos/"
+    fi
 
-### Linux (`lib/linux/`)
-- `libbg2e.so` — the bg2e shared library
+    if [ -n "${VULKAN_SDK}" ] && [ -d "${VULKAN_SDK}" ]; then
+        echo "Copying Vulkan resources..."
+        mkdir -p "${TARGET_PATH}/vulkan/icd.d"
+        mkdir -p "${TARGET_PATH}/vulkan/explicit_layer.d"
+        cp -r "${VULKAN_SDK}/share/vulkan/icd.d/"* "${TARGET_PATH}/vulkan/icd.d/" 2>/dev/null || true
+        cp -r "${VULKAN_SDK}/share/vulkan/explicit_layer.d/"* "${TARGET_PATH}/vulkan/explicit_layer.d/" 2>/dev/null || true
+        for dylib in libMoltenVK.dylib libvulkan.*.dylib; do
+            src="${VULKAN_SDK}/lib/${dylib}"
+            if [ -f "${src}" ]; then
+                cp "${src}" "${TARGET_PATH}/lib/macos/"
+            fi
+        done
+        for layer in libVkLayer_khronos_validation.dylib libVkLayer_khronos_synchronization2.dylib libVkLayer_khronos_shader_object.dylib; do
+            src="${VULKAN_SDK}/lib/${layer}"
+            if [ -f "${src}" ]; then
+                cp "${src}" "${TARGET_PATH}/lib/macos/"
+            fi
+        done
+    fi
 
-### macOS (`lib/macos/`)
-- `libbg2e.dylib` — the bg2e shared library
-
-### Windows (`lib/windows/`)
-- `bg2e.dll` — the bg2e dynamic library
-- `bg2e.lib` — the bg2e import library
-
-## How to Build for This Platform
-
-1. Clone bg2e-native on the target platform:
-   ```
-   git clone --recursive <bg2e-native-repo-url>
-   ```
-
-2. Build the engine:
-   ```
-   cmake -S . -B build -G <generator> -DVULKAN_SDK=/path/to/vulkan/sdk
-   cmake --build build
-   ```
-
-3. Copy the library files from `bin/<platform>/` to this directory.
-
-## Notes
-
-- The library must be compiled with a compatible C++20 compiler
-- On Windows, both `.dll` and `.lib` files are required
-- On macOS, you may also need to copy MoltenVK and Vulkan validation layer dylibs
-TODOMD
-
-    # Customize the TODO.md for the specific platform
-    sed -i '' "s/This directory should contain the pre-compiled bg2e library for this platform./This directory should contain the pre-compiled bg2e library for ${platform_name}./" "${platform_dir}/TODO.md"
-}
-
-if [ "${CURRENT_PLATFORM}" != "linux" ]; then
-    generate_todo "${TARGET_PATH}/lib/linux" "Linux"
-fi
-
-if [ "${CURRENT_PLATFORM}" != "macos" ]; then
-    generate_todo "${TARGET_PATH}/lib/macos" "macOS"
-fi
-
-if [ "${CURRENT_PLATFORM}" != "windows" ]; then
-    generate_todo "${TARGET_PATH}/lib/windows" "Windows"
+    echo "Creating platform placeholders..."
+    write_linux_todo "${TARGET_PATH}/lib/linux/TODO.md"
+    write_windows_todo "${TARGET_PATH}/lib/windows/TODO.md"
 fi
 
 # ============================================================================
@@ -303,7 +316,9 @@ echo "  ├── cmake/"
 echo "  │   ├── standalone_utils.cmake"
 echo "  │   ├── FindVulkan.cmake"
 echo "  │   └── FindSDL2.cmake"
-echo "  ├── include/bg2e/"
+echo "  ├── include/"
+echo "  │   ├── bg2e.hpp"
+echo "  │   └── bg2e/"
 echo "  ├── lib/"
 echo "  │   ├── linux/"
 echo "  │   ├── macos/"
