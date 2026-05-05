@@ -252,7 +252,7 @@ This directory should contain the pre-compiled bg2e library for this platform.
 TODOMD
 
     # Customize the TODO.md for the specific platform
-    sed -i "s/This directory should contain the pre-compiled bg2e library for this platform./This directory should contain the pre-compiled bg2e library for ${platform_name}./" "${platform_dir}/TODO.md"
+    sed -i '' "s/This directory should contain the pre-compiled bg2e library for this platform./This directory should contain the pre-compiled bg2e library for ${platform_name}./" "${platform_dir}/TODO.md"
 }
 
 if [ "${CURRENT_PLATFORM}" != "linux" ]; then
