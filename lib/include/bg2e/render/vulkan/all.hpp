@@ -26,7 +26,6 @@
 #include <bg2e/render/vulkan/FrameResources.hpp>
 #include <bg2e/render/vulkan/Image.hpp>
 #include <bg2e/render/vulkan/Info.hpp>
-#include <bg2e/render/vulkan/Instance.hpp>
 #include <bg2e/render/vulkan/PhysicalDevice.hpp>
 #include <bg2e/render/vulkan/Surface.hpp>
 #include <bg2e/render/vulkan/Swapchain.hpp>
