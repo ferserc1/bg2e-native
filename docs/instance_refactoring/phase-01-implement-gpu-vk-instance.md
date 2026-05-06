@@ -17,6 +17,8 @@ classes can coexist — no existing code breaks.
 | File | Action |
 |------|--------|
 | `lib/include/bg2e/gpu/Instance.hpp` | Modify — add `create()` headless method |
+| `lib/include/bg2e/gpu/vk/Info.hpp` | New — Vulkan struct factory (migrated from render::vulkan) |
+| `lib/src/bg2e/gpu/vk/Info.cpp` | New — Info implementation |
 | `lib/include/bg2e/gpu/vk/Instance.hpp` | Modify — add full member variables and internal methods |
 | `lib/src/bg2e/gpu/vk/Instance.cpp` | Modify — implement all methods with production logic |
 
@@ -123,7 +125,38 @@ private:
 
 ---
 
-## 1.3 — Implement Vulkan Logic: `gpu::vk::Instance.cpp`
+## 1.3 — Create Vulkan Struct Factory: `gpu::vk::Info`
+
+**File:** `lib/include/bg2e/gpu/vk/Info.hpp`
+**File:** `lib/src/bg2e/gpu/vk/Info.cpp`
+
+Migrate the full `render::vulkan::Info` class to the new `gpu::vk` namespace. This provides
+all Vulkan struct factory methods needed by Instance and future classes in the `gpu` module,
+eliminating any dependency on `render::vulkan`.
+
+```cpp
+class BG2E_API Info {
+public:
+    static VkDebugUtilsMessengerCreateInfoEXT debugMessengerCreateInfo(...);
+    static VkCommandPoolCreateInfo commandPoolCreateInfo(...);
+    // ... (all methods copied from render::vulkan::Info)
+};
+```
+
+**Methods migrated:** `debugMessengerCreateInfo`, `commandPoolCreateInfo`, `commandBufferAllocateInfo`,
+`fenceCreateInfo`, `semaphoreCreateInfo`, `commandBufferBeginInfo`, `semaphoreSubmitInfo`,
+`commandBufferSubmitInfo`, `submitInfo` (2 overloads), `presentInfo`, `imageCreateInfo`,
+`imageViewCreateInfo`, `attachmentInfo`, `depthAttachmentInfo`, `renderingInfo`, `pipelineLayoutInfo`.
+
+### Dependency resolution
+
+`gpu::vk::Instance` now uses `#include <bg2e/gpu/vk/Info.hpp>` instead of
+`#include <bg2e/render/vulkan/Info.hpp>`. The `gpu::vk` module is self-contained
+with respect to Vulkan struct creation — no external rendering engine dependencies.
+
+---
+
+## 1.4 — Implement Vulkan Logic: `gpu::vk::Instance.cpp`
 
 **File:** `lib/src/bg2e/gpu/vk/Instance.cpp`
 
@@ -174,21 +207,22 @@ requiredExtensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 ### `createDebugMessenger()` / `destroyDebugMessenger()` (identical to original)
 
 ### Dependencies required
-- `#include <bg2e/render/vulkan/Info.hpp>` — for `Info::debugMessengerCreateInfo()`
+- `#include <bg2e/gpu/vk/Info.hpp>` — local Vulkan struct factory (self-contained, no external deps)
 - `#include <bg2e/base/Log.hpp>` — for `bg2e_log_*` macros and `base::Log::isDebug()`
 - `#include <SDL2/SDL_vulkan.h>` — for `SDL_Vulkan_GetInstanceExtensions()`
 
-**Note:** The dependency on `render::vulkan::Info` is acceptable for Phase 1. In a future
-refactoring phase, `Info` can be moved to `gpu::vk::Info` or inlined.
+The `gpu::vk` module is fully self-contained — Instance depends only on its own local Info class,
+the logging subsystem, and SDL2. No dependency on `render::vulkan` or any other engine module.
 
 ---
 
-## 1.4 — Verification
+## 1.5 — Verification
 
 After completing this phase:
 
 1. **Compile check:** Build the project. The new `gpu::vk::Instance` compiles alongside the
-   existing `render::vulkan::Instance` with no conflicts.
+   existing `render::vulkan::Instance` with no conflicts. The new `gpu::vk::Info` class is
+   compiled and linked into the engine.
 2. **No runtime changes:** Engine still uses `render::vulkan::Instance`. The new class is not
    called from production code yet.
 3. **Manual smoke test:** Optionally, write a temporary test that creates a `gpu::vk::Instance`,
@@ -202,6 +236,6 @@ After completing this phase:
 |----------|-----------|
 | `getRequiredLayers/Extensions` stay public on `vk::Instance` | Device needs them during creation. These are Vulkan-specific, so they belong in the concrete class. |
 | `s_debugLayerAvailable` remains static | Matches original behavior. Can be refactored to instance member in a future phase. |
-| Dependency on `render::vulkan::Info` kept | Minimizes scope. Info can be migrated later. |
+| `render::vulkan::Info` migrated to `gpu::vk::Info` | Complete migration — `gpu::vk` module is fully self-contained with zero external rendering dependencies. |
 | `enableValidationLayers` renamed to `enableDebugMode` | Aligns with abstract interface naming and future multi-backend semantics. |
 | Bug fix included | The duplicate `VK_EXT_DEBUG_UTILS_EXTENSION_NAME` push is fixed during migration. |

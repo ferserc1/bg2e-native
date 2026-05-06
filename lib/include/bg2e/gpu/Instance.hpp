@@ -37,6 +37,7 @@ public:
     [[nodiscard]] virtual const std::string& applicationName() const = 0;
 
     virtual void create(SDL_Window* window) = 0;
+    virtual void create() = 0;
     virtual void cleanup() = 0;
 };
 

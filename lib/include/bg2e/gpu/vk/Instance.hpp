@@ -21,27 +21,48 @@
 #include <bg2e/gpu/Instance.hpp>
 #include <bg2e/gpu/vk/common.hpp>
 
+#include <vector>
+#include <string>
+
 namespace bg2e {
 namespace gpu {
 namespace vk {
 
 class Instance : public gpu::Instance {
 public:
+    Instance();
+
+    // gpu::Instance interface
     void setApplicationName(const std::string& name) override;
     const std::string& applicationName() const override;
-    void enableDebugMode(bool value) override { _debugMode = value; }
-    [[nodiscard]] bool debugModeEnabled() const override { return _debugMode; }
+    void enableDebugMode(bool value) override;
+    bool debugModeEnabled() const override;
 
     void create(SDL_Window* window) override;
+    void create() override;
     void cleanup() override;
 
+    // Vulkan-specific accessor (not part of abstract interface)
     VkInstance vkInstanceHnd() const { return _instance; }
 
+    // Layer and extension queries — used by Device during creation
+    bool getRequiredLayers(std::vector<const char*>& requiredLayers) const;
+    bool getRequiredExtensions(SDL_Window* window, std::vector<const char*>& requiredExtensions) const;
+    bool getRequiredExtensions(std::vector<const char*>& requiredExtensions) const;
+
 private:
-    VkInstance _instance{VK_NULL_HANDLE};
+    VkInstance _instance = VK_NULL_HANDLE;
+    VkDebugUtilsMessengerEXT _debugMessenger = VK_NULL_HANDLE;
 
     bool _debugMode = false;
-    std::string _applicationName;
+    static bool s_debugLayerAvailable;
+    std::string _applicationName = "bg2 engine Vulkan Application";
+
+    std::vector<std::string> _availableExtensions;
+    std::vector<std::string> _availableLayers;
+
+    VkResult createDebugMessenger();
+    void destroyDebugMessenger();
 };
 
 }
