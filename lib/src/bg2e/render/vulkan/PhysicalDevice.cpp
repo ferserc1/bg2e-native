@@ -17,7 +17,6 @@
  */
 
 #include <bg2e/render/vulkan/PhysicalDevice.hpp>
-#include <bg2e/render/vulkan/Instance.hpp>
 #include <bg2e/base/Log.hpp>
 
 #include <algorithm>
@@ -162,19 +161,19 @@ bool PhysicalDeviceProperties::rayTracingSupported() const
 }
 
 void PhysicalDevice::listSuitableDevices(
-    const Instance& instance,
+    VkInstance instance,
     const Surface& surface,
     std::vector<std::shared_ptr<PhysicalDeviceProperties>>& result
 ) {
     uint32_t deviceCount = 0;
-	vkEnumeratePhysicalDevices(instance.handle(), &deviceCount, nullptr);
+	vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
 	if (deviceCount == 0)
 	{
 		throw std::runtime_error("Failed to find GPUs with Vulkan support");
 	}
 
 	std::vector<VkPhysicalDevice> devices(deviceCount);
-    vkEnumeratePhysicalDevices(instance.handle(), &deviceCount, devices.data());
+    vkEnumeratePhysicalDevices(instance, &deviceCount, devices.data());
     
     for (const auto& device : devices)
     {
@@ -350,17 +349,17 @@ uint32_t PhysicalDevice::SwapChainSupportDetails::imageCount() const
 }
 
 
-void PhysicalDevice::choose(const Instance& instance, const Surface & surface)
+void PhysicalDevice::choose(VkInstance instance, const Surface & surface)
 {
 	uint32_t deviceCount = 0;
-	vkEnumeratePhysicalDevices(instance.handle(), &deviceCount, nullptr);
+	vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
 	if (deviceCount == 0)
 	{
 		throw std::runtime_error("Failed to find GPUs with Vulkan support");
 	}
 
 	std::vector<VkPhysicalDevice> devices(deviceCount);
-    vkEnumeratePhysicalDevices(instance.handle(), &deviceCount, devices.data());
+    vkEnumeratePhysicalDevices(instance, &deviceCount, devices.data());
 
 
     std::vector<std::shared_ptr<PhysicalDeviceProperties>> suitableDevices;
@@ -392,17 +391,17 @@ void PhysicalDevice::choose(const Instance& instance, const Surface & surface)
     _properties = bestDeviceProps;
 }
 
-void PhysicalDevice::choose(const Instance& instance)
+void PhysicalDevice::choose(VkInstance instance)
 {
     uint32_t deviceCount = 0;
-    vkEnumeratePhysicalDevices(instance.handle(), &deviceCount, nullptr);
+    vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
     if (deviceCount == 0)
     {
         throw std::runtime_error("Failed to find GPUs with Vulkan support");
     }
 
     std::vector<VkPhysicalDevice> devices(deviceCount);
-    vkEnumeratePhysicalDevices(instance.handle(), &deviceCount, devices.data());
+    vkEnumeratePhysicalDevices(instance, &deviceCount, devices.data());
 
     std::vector<std::shared_ptr<PhysicalDeviceProperties>> suitableDevices;
     uint32_t highestScore = 0;

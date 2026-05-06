@@ -17,7 +17,6 @@
  */
 
 #include <bg2e/render/vulkan/Device.hpp>
-#include <bg2e/render/vulkan/Instance.hpp>
 #include <bg2e/base/Log.hpp>
 
 #include <set>
@@ -27,7 +26,7 @@ namespace bg2e {
 namespace render {
 namespace vulkan {
 
-void Device::create(const Instance& instance, const PhysicalDevice& physicalDevice, bool offscreen)
+void Device::create(VkInstance instance, const PhysicalDevice& physicalDevice, bool offscreen)
 {
     auto indices = physicalDevice.queueFamilyIndices();
 
@@ -159,13 +158,26 @@ void Device::create(const Instance& instance, const PhysicalDevice& physicalDevi
     createInfo.enabledExtensionCount = uint32_t(allExtensions.size());
     createInfo.ppEnabledExtensionNames = allExtensions.data();
 
+    // Validation layers for device
     std::vector<const char*> requiredLayers;
     if (base::Log::isDebug())
     {
-        requiredLayers.push_back("VK_LAYER_KHRONOS_validation");
+        uint32_t layerCount = 0;
+        vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
+        std::vector<VkLayerProperties> availableLayers(layerCount);
+        vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data());
+
+        for (const auto& layer : availableLayers)
+        {
+            if (std::string(layer.layerName) == "VK_LAYER_KHRONOS_validation")
+            {
+                requiredLayers.push_back("VK_LAYER_KHRONOS_validation");
+                break;
+            }
+        }
     }
-    instance.getRequiredLayers(requiredLayers);
-    if (base::Log::isDebug())
+
+    if (!requiredLayers.empty())
     {
         createInfo.enabledLayerCount = uint32_t(requiredLayers.size());
         createInfo.ppEnabledLayerNames = requiredLayers.data();

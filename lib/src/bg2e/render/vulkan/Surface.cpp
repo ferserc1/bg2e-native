@@ -17,7 +17,6 @@
  */
 
 #include <bg2e/render/vulkan/common.hpp>
-#include <bg2e/render/vulkan/Instance.hpp>
 #include <bg2e/render/vulkan/Surface.hpp>
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_vulkan.h>
@@ -26,11 +25,11 @@ namespace bg2e {
 namespace render {
 namespace vulkan {
 
-void Surface::create(const Instance& instance, SDL_Window* window)
+void Surface::create(VkInstance instance, SDL_Window* window)
 {
     _window = window;
-	_instance = instance.handle();
-    SDL_Vulkan_CreateSurface(window, instance.handle(), &_surface);
+    _instance = instance;
+    SDL_Vulkan_CreateSurface(window, instance, &_surface);
 }
 
 void Surface::cleanup()

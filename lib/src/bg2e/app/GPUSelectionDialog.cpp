@@ -64,10 +64,10 @@ void getAvailableDevices(std::vector<std::shared_ptr<render::vulkan::PhysicalDev
     instance.create(dummyWindow);
     
     render::vulkan::Surface surface;
-    surface.create(instance, dummyWindow);
+    surface.create(instance.handle(), dummyWindow);
 
     // TODO: Get devices
-    render::vulkan::PhysicalDevice::listSuitableDevices(instance, surface, result);
+    render::vulkan::PhysicalDevice::listSuitableDevices(instance.handle(), surface, result);
     surface.cleanup();
     instance.cleanup();
     

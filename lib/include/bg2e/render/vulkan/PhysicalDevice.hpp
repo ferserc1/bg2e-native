@@ -30,8 +30,6 @@ namespace bg2e {
 namespace render {
 namespace vulkan {
 
-class Instance;
-
 struct RayTracingCapabilities {
     bool available = false;
     bool rayTracingPipeline = false;
@@ -82,7 +80,7 @@ public:
     static const std::vector<const char*>& getRequiredDeviceExtensions(bool offscreen);
     
     static void listSuitableDevices(
-        const Instance& instance,
+        VkInstance instance,
         const Surface& surface,
         std::vector<std::shared_ptr<PhysicalDeviceProperties>>& result
     );
@@ -120,10 +118,10 @@ public:
         uint32_t imageCount() const;
     };
 
-    void choose(const Instance& instance, const Surface& surface);
+    void choose(VkInstance instance, const Surface& surface);
 
     // Used for offscreen applications
-    void choose(const Instance& instance);
+    void choose(VkInstance instance);
 
     QueueFamilyIndices queueFamilyIndices() const;
 

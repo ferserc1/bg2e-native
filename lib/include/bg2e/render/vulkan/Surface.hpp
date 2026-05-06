@@ -27,11 +27,9 @@ namespace bg2e {
 namespace render {
 namespace vulkan {
 
-class Instance;
-
 class BG2E_API Surface {
 public:
-    void create(const Instance& instance, SDL_Window* window);
+    void create(VkInstance instance, SDL_Window* window);
     void cleanup();
 
     VkExtent2D getExtent() const;

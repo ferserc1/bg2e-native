@@ -164,21 +164,21 @@ void Engine::createInstance()
 
 void Engine::createSurface()
 {
-    _surface.create(_instance, _windowPtr);
+    _surface.create(_instance.handle(), _windowPtr);
 }
 
 void Engine::createDevicesAndQueues()
 {
     if (isOffscreen())
     {
-        _physicalDevice.choose(_instance);
+        _physicalDevice.choose(_instance.handle());
     }
     else
     {
-        _physicalDevice.choose(_instance, _surface);
+        _physicalDevice.choose(_instance.handle(), _surface);
     }
 
-    _device.create(_instance, _physicalDevice, isOffscreen());
+    _device.create(_instance.handle(), _physicalDevice, isOffscreen());
     _command.init(this);
 }
 
