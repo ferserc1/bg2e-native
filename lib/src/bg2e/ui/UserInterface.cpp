@@ -180,7 +180,7 @@ void UserInterface::initImGui()
     ImGui_ImplSDL2_InitForVulkan(window);
 
     ImGui_ImplVulkan_InitInfo initInfo = {};
-    initInfo.Instance = _engine->instance().handle();
+    initInfo.Instance = static_cast<gpu::vk::Instance*>(_engine->instance())->vkInstanceHnd();
     initInfo.PhysicalDevice = _engine->physicalDevice().handle();
     initInfo.Device = _engine->device().handle();
     initInfo.Queue = _engine->command().graphicsQueue();

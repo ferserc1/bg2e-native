@@ -17,6 +17,7 @@
  */
 
 #include <bg2e/render/Engine.hpp>
+#include <bg2e/gpu/vk/Instance.hpp>
 #include <bg2e/render/vulkan/extensions.hpp>
 #include <stdexcept>
 
@@ -35,6 +36,11 @@
 namespace bg2e {
 namespace render {
 
+VkInstance Engine::vkInstance() const
+{
+    return _gpuInstance->vkInstanceHnd();
+}
+
 void Engine::init(SDL_Window* windowPtr)
 {
     _windowPtr = windowPtr;
@@ -44,7 +50,7 @@ void Engine::init(SDL_Window* windowPtr)
     SDL_GetWindowSize(_windowPtr, &width, &height);
 
     createInstance();
-    vulkan::loadInstanceExtensions(_instance.handle(), false);
+    vulkan::loadInstanceExtensions(vkInstance(), false);
     createSurface();
     createDevicesAndQueues();
     createMemoryAllocator();
@@ -69,7 +75,7 @@ void Engine::init()
 {
 
     createInstance();
-    vulkan::loadInstanceExtensions(_instance.handle(), true);
+    vulkan::loadInstanceExtensions(vkInstance(), true);
     createDevicesAndQueues();
     createMemoryAllocator();
 
@@ -99,7 +105,7 @@ void Engine::cleanup()
 
     _device.cleanup();
     _surface.cleanup();
-    _instance.cleanup();
+    _gpuInstance->cleanup();
 }
 
 const vulkan::Surface& Engine::surface() const
@@ -152,33 +158,34 @@ bool Engine::newFrame()
 
 void Engine::createInstance()
 {
+    _gpuInstance = std::make_unique<gpu::vk::Instance>();
     if (isOffscreen())
     {
-        _instance.create();
+        _gpuInstance->create();
     }
     else
     {
-        _instance.create(_windowPtr);
+        _gpuInstance->create(_windowPtr);
     }
 }
 
 void Engine::createSurface()
 {
-    _surface.create(_instance.handle(), _windowPtr);
+    _surface.create(vkInstance(), _windowPtr);
 }
 
 void Engine::createDevicesAndQueues()
 {
     if (isOffscreen())
     {
-        _physicalDevice.choose(_instance.handle());
+        _physicalDevice.choose(vkInstance());
     }
     else
     {
-        _physicalDevice.choose(_instance.handle(), _surface);
+        _physicalDevice.choose(vkInstance(), _surface);
     }
 
-    _device.create(_instance.handle(), _physicalDevice, isOffscreen());
+    _device.create(vkInstance(), _physicalDevice, isOffscreen());
     _command.init(this);
 }
 
@@ -187,7 +194,7 @@ void Engine::createMemoryAllocator()
     VmaAllocatorCreateInfo allocInfo = {};
     allocInfo.physicalDevice = _physicalDevice.handle();
     allocInfo.device = _device.handle();
-    allocInfo.instance = _instance.handle();
+    allocInfo.instance = vkInstance();
     allocInfo.flags = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
     vmaCreateAllocator(&allocInfo, &_allocator);
 }

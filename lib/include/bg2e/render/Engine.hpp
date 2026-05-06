@@ -19,7 +19,7 @@
 #pragma once
 
 #include <bg2e/common.hpp>
-#include <bg2e/render/vulkan/Instance.hpp>
+#include <bg2e/gpu/Instance.hpp>
 #include <bg2e/render/vulkan/common.hpp>
 #include <bg2e/render/vulkan/Command.hpp>
 #include <bg2e/render/vulkan/Swapchain.hpp>
@@ -30,7 +30,16 @@
 #include <bg2e/render/vulkan/PhysicalDevice.hpp>
 #include <bg2e/render/vulkan/Device.hpp>
 
+#include <bg2e/gpu/vk/Instance.hpp>
+
+#include <memory>
+#include <functional>
+
 namespace bg2e {
+namespace gpu::vk {
+class Instance;
+}
+
 namespace render {
 
 namespace vulkan {
@@ -52,7 +61,8 @@ public:
     inline const void* windowPtr() const { return _windowPtr; }
     inline void* windowPtr() { return _windowPtr; }
 
-    inline const vulkan::Instance& instance() const { return _instance; }
+    inline gpu::Instance* instance() { return _gpuInstance.get(); }
+    inline const gpu::Instance* instance() const { return _gpuInstance.get(); }
     inline const vulkan::PhysicalDevice& physicalDevice() const { return _physicalDevice; }
     const vulkan:: Surface& surface() const;
     inline const vulkan::Device& device() const { return _device; }
@@ -96,7 +106,9 @@ private:
 
     bool _debugLayers = true;
 
-    vulkan::Instance _instance;
+    std::unique_ptr<gpu::vk::Instance> _gpuInstance;
+
+    VkInstance vkInstance() const;
 	vulkan::Surface _surface;
 	vulkan::PhysicalDevice _physicalDevice;
     vulkan::Device _device;
@@ -119,9 +131,10 @@ private:
     void createSurface();
     void createDevicesAndQueues();
     void createMemoryAllocator();
-    void createFrameResources();
 
+    void createFrameResources();
     void cleanupFrameResources();
+
 };
 
 }
