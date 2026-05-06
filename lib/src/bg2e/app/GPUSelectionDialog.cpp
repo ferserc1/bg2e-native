@@ -22,7 +22,7 @@
 #include <bg2e/ui/BasicWidgets.hpp>
 #include <bg2e/ui/SelectableList.hpp>
 
-#include <bg2e/render/vulkan/Instance.hpp>
+#include <bg2e/gpu/vk/Instance.hpp>
 
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_vulkan.h>
@@ -60,14 +60,14 @@ void getAvailableDevices(std::vector<std::shared_ptr<render::vulkan::PhysicalDev
         throw std::runtime_error("GPUSelectorDialog: Error creating dummy SDL Window");
     }
 
-    render::vulkan::Instance instance;
+    gpu::vk::Instance instance;
     instance.create(dummyWindow);
-    
+
     render::vulkan::Surface surface;
-    surface.create(instance.handle(), dummyWindow);
+    surface.create(instance.vkInstanceHnd(), dummyWindow);
 
     // TODO: Get devices
-    render::vulkan::PhysicalDevice::listSuitableDevices(instance.handle(), surface, result);
+    render::vulkan::PhysicalDevice::listSuitableDevices(instance.vkInstanceHnd(), surface, result);
     surface.cleanup();
     instance.cleanup();
     
