@@ -18,6 +18,8 @@
 
 #pragma once
 
+#include <cstdint>
+
 #include <vulkan/vulkan.h>
 #include <vulkan/vk_enum_string_helper.h>
 #include <bg2e/base/PlatformTools.hpp>
@@ -58,3 +60,4 @@
             throw std::runtime_error(errorString);                                           \
         }                                                                                    \
 } while(0)
+

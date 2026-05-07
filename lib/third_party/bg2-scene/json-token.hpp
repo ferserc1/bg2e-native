@@ -21,6 +21,7 @@
 
 #include <string>
 #include <iostream>
+#include <cstdint>
 
 namespace bg2scene {
     namespace json {

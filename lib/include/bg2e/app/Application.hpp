@@ -22,6 +22,8 @@
 #include <bg2e/app/InputDelegate.hpp>
 #include <bg2e/ui/UserInterface.hpp>
 
+#include <cstdint>
+
 namespace bg2e {
 namespace app {
 

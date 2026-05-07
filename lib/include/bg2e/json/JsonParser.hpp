@@ -21,6 +21,7 @@
 #include <iostream>
 #include <sstream>
 #include <memory>
+#include <cstdint>
 
 #include <bg2e/json/JsonNode.hpp>
 #include <bg2e/json/JsonToken.hpp>

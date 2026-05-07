@@ -27,6 +27,7 @@
 #include <bg2e/ui/UserInterface.hpp>
 
 #include <functional>
+#include <cstdint>
 
 namespace bg2e {
 namespace app {

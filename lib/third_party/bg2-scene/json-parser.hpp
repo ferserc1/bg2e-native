@@ -22,6 +22,8 @@
 #include <iostream>
 #include <sstream>
 #include <memory>
+#include <cstdint>
+
 #include "json.hpp"
 #include "json-token.hpp"
 

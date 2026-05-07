@@ -25,6 +25,7 @@
 #include <unordered_map>
 #include <mutex>
 #include <memory>
+#include <cstdint>
 
 namespace bg2e {
 namespace app {

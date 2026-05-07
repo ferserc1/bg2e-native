@@ -23,6 +23,7 @@
 
 #include <string>
 #include <memory>
+#include <cstdint>
 
 namespace bg2e::app {
 

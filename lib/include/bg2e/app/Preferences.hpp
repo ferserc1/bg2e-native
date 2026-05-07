@@ -25,6 +25,7 @@
 
 #include <filesystem>
 #include <memory>
+#include <cstdint>
 
 namespace bg2e {
 namespace app {

@@ -20,6 +20,8 @@
 
 #include <bg2e/app/MessageBox.hpp>
 
+#include <cstdint>
+
 #include "MessageBox.hpp"
 
 namespace bg2e::app::internal

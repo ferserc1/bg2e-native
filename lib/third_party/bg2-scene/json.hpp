@@ -25,6 +25,7 @@
 #include <array>
 #include <exception>
 #include <stdexcept>
+#include <cstdint>
 #include <memory>
 
 namespace bg2scene {

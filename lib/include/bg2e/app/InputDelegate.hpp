@@ -21,6 +21,7 @@
 #include <bg2e/app/KeyEvent.hpp>
 
 #include <filesystem>
+#include <cstdint>
 
 namespace bg2e {
 namespace app {

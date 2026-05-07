@@ -23,6 +23,7 @@
 #include <filesystem>
 #include <map>
 #include <string>
+#include <cstdint>
 
 namespace bg2e {
 namespace app {

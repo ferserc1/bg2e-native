@@ -23,6 +23,7 @@
 
 #include <functional>
 #include <vector>
+#include <cstdint>
 
 namespace bg2e::app
 {

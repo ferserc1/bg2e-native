@@ -29,6 +29,7 @@
 #include <exception>
 #include <stdexcept>
 #include <memory>
+#include <cstdint>
 
 
 namespace bg2e {

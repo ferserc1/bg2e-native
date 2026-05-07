@@ -22,6 +22,7 @@
 
 #include <string>
 #include <vector>
+#include <cstdint>
 
 namespace bg2e {
 namespace app {

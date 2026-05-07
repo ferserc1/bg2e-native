@@ -22,6 +22,7 @@
 
 #include <string>
 #include <iostream>
+#include <cstdint>
 
 namespace bg2e {
 namespace json {

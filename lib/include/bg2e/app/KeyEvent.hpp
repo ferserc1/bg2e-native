@@ -20,6 +20,8 @@
 
 #include <SDL2/SDL.h>
 
+#include <cstdint>
+
 namespace bg2e {
 namespace app {
 

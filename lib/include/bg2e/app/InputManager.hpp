@@ -24,6 +24,7 @@
 #include <bg2e/math/base.hpp>
 
 #include <memory>
+#include <cstdint>
 
 namespace bg2e {
 namespace app {
