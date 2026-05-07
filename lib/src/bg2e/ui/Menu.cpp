@@ -45,6 +45,16 @@ void MenuItem::draw() const
             }
             break;
         }
+    case MenuItemType::CheckableAction:
+        {
+            std::string shortcut = _shortcut.getShortcutString();
+            bool checked = _checkedFn ? _checkedFn() : false;
+            if (Menu::menuItem(label, shortcut, checked))
+            {
+                _shortcut.handler();
+            }
+            break;
+        }
     case MenuItemType::Separator:
         Menu::separator();
         break;
@@ -62,6 +72,13 @@ void MenuItem::initShortcuts() const
         }
         break;
     case MenuItemType::Action:
+        if (_shortcut.key != app::KeyEvent::KeyUnknown)
+        {
+            auto & shortcuts = app::MainLoop::current()->shortcuts();
+            shortcuts.addShortcutMapper(_shortcut);
+        }
+        break;
+    case MenuItemType::CheckableAction:
         if (_shortcut.key != app::KeyEvent::KeyUnknown)
         {
             auto & shortcuts = app::MainLoop::current()->shortcuts();

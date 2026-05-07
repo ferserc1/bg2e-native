@@ -15,24 +15,28 @@
  *    You should have received a copy of the GNU General Public License
  *    along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#pragma once
+#include "UISettingsWindow.hpp"
+#include <bg2e/ui/all.hpp>
+#include <algorithm>
 
-#include <bg2e.hpp>
+void UISettingsWindow::init(AppDelegate * delegate)
+{
+    _appDelegate = delegate;
+    setTitle("UI Settings");
+    setSize(300, 200);
+    close();
 
-#include "EnvironmentSettings.hpp"
-#include "SubmeshWindow.hpp"
+    setDrawFunction([this]() {
+        drawUI();
+    });
+}
 
-class  AppDelegate;
-class UISettingsWindow;
-
-class ToolBar : public bg2e::ui::Toolbar {
-public:
-    virtual ~ToolBar() = default;
-
-    void init(AppDelegate * delegate, UISettingsWindow * uiSettings);
+void UISettingsWindow::drawUI()
+{
+    float scale = bg2e::ui::UserInterface::getScale();
     
-protected:
-
-    AppDelegate * _appDelegate = nullptr;
-    UISettingsWindow * _uiSettingsWindow = nullptr;
-};
+    if (bg2e::ui::Input::sliderFloat("Interface Scale", &scale, 1.0f, 2.0f))
+    {
+        bg2e::ui::UserInterface::setScale(scale);
+    }
+}

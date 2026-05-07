@@ -185,8 +185,8 @@ void UserInterface::initImGui()
     initInfo.Device = _engine->device().handle();
     initInfo.Queue = _engine->command().graphicsQueue();
     initInfo.DescriptorPool = _imguiPool;
-    initInfo.MinImageCount = 3;
-    initInfo.ImageCount = 3;
+    initInfo.MinImageCount = _engine->numImages();
+    initInfo.ImageCount = _engine->numImages();
     initInfo.UseDynamicRendering = true;
     initInfo.PipelineInfoMain.PipelineRenderingCreateInfo = {};
     initInfo.PipelineInfoMain.PipelineRenderingCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO;

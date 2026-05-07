@@ -16,6 +16,7 @@
  *    along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 #include "AppDelegate.hpp"
+#include "UISettingsWindow.hpp"
 
 void AppDelegate::init(bg2e::render::Engine * engine)
 {
@@ -33,6 +34,10 @@ void AppDelegate::swapchainResized(VkExtent2D extent)
 void AppDelegate::drawUI()
 {
     _workspace.draw();
+    if (_uiSettingsWindow.isOpen())
+    {
+        _uiSettingsWindow.draw();
+    }
 }
 
 // InputDelegate
@@ -140,7 +145,8 @@ void AppDelegate::initWorkspace()
 {
     _workspace.leftPanelSize().min = 300;
     _environmentPanel.init(this, renderer(), _stage->environment());
-    _toolBar.init(this);
+    _uiSettingsWindow.init(this);
+    _toolBar.init(this, &_uiSettingsWindow);
     _submeshPanel.init(this);
 
     _fileStatus = std::make_shared<bg2e::ui::StatusItem>();

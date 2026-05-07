@@ -100,7 +100,6 @@ void RenderLoop::acquireAndPresent()
         _renderDelegate->setDelta(this->_delta);
     }
 
-    //auto swapchainImage = swapchainData.colorImage(swapchainImageIndex);
     auto msaaImage = swapchainData.colorImage(swapchainImageIndex);
     auto resolveImage = swapchainData.msaaResolveImage(swapchainImageIndex);
     auto depthImage = swapchainData.depthImage();

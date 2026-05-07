@@ -17,22 +17,16 @@
  */
 #pragma once
 
-#include <bg2e.hpp>
+#include <bg2e/ui/Window.hpp>
 
-#include "EnvironmentSettings.hpp"
-#include "SubmeshWindow.hpp"
+class AppDelegate;
 
-class  AppDelegate;
-class UISettingsWindow;
-
-class ToolBar : public bg2e::ui::Toolbar {
+class UISettingsWindow : public bg2e::ui::Window {
 public:
-    virtual ~ToolBar() = default;
+    void init(AppDelegate * delegate);
 
-    void init(AppDelegate * delegate, UISettingsWindow * uiSettings);
-    
-protected:
+private:
+    void drawUI();
 
     AppDelegate * _appDelegate = nullptr;
-    UISettingsWindow * _uiSettingsWindow = nullptr;
 };

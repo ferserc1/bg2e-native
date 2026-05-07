@@ -189,16 +189,6 @@ void EnvironmentSettings::init(
         }
 
 
-        bg2e::ui::BasicWidgets::separator("User Interface");
-        if (bg2e::ui::BasicWidgets::button("Scale 2x"))
-        {
-            bg2e::ui::UserInterface::setScale(2.0f);
-        }
-        if (bg2e::ui::BasicWidgets::button("Scale 1x"))
-        {
-            bg2e::ui::UserInterface::setScale(1.0f);
-        }
     });
-    
     
 }

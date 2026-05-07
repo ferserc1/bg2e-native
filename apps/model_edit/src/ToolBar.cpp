@@ -20,10 +20,11 @@
 #include <bg2e/app/MainLoop.hpp>
 #include <bg2e/geo/modifiers.hpp>
 
-void ToolBar::init(AppDelegate * delegate)
+void ToolBar::init(AppDelegate * delegate, UISettingsWindow * uiSettings)
 {
     using namespace bg2e::ui;
     _appDelegate = delegate;
+    _uiSettingsWindow = uiSettings;
     
     bg2e::app::MainLoop::current()->setOnExitFunction([]() -> bool {
         return bg2e::app::MessageBox::showWarning("Quit Model Edit", "Any unsaved changes will be lost. Are you sure you want to quit?", {
@@ -147,6 +148,32 @@ void ToolBar::init(AppDelegate * delegate)
         }
     }});
     addMenuItem(view);
+
+    bg2e::ui::MenuItem window("Window");
+    window.addMenuItem({ "Submesh Editor", {
+        .handler = [&]()
+        {
+            _appDelegate->workspace().toggleLeftPanel();
+        }
+    }, [&]() {
+        return _appDelegate->workspace().leftPanelVisible();
+    }});
+    window.addMenuItem({ "Environment", {
+        .handler = [&]()
+        {
+            _appDelegate->workspace().toggleRightPanel();
+        }
+    }, [&]() {
+        return _appDelegate->workspace().rightPanelVisible();
+    }});
+    window.addMenuItem({});   // Separator
+    window.addMenuItem({ "UI Settings", {
+        .handler = [&]()
+        {
+            _uiSettingsWindow->open();
+        }
+    }});
+    addMenuItem(window);
 
     addButton({
         .label = "Y-axis > Z-axis",

@@ -30,6 +30,7 @@ namespace ui {
 
 enum MenuItemType {
     Action,
+    CheckableAction,
     Separator,
     Submenu
 };
@@ -40,6 +41,11 @@ public:
     MenuItem(const std::string& l) :label { l }, _type { MenuItemType::Separator } {}
     MenuItem(const std::string& l, const app::Shortcuts::ShortcutData& sc)
         :label { l }, _type { MenuItemType::Action }, _shortcut {sc} {}
+
+    MenuItem(const std::string& l, const app::Shortcuts::ShortcutData& sc,
+             std::function<bool()> isChecked)
+        :label { l }, _type { MenuItemType::CheckableAction }, _shortcut {sc}, _checkedFn
+            (isChecked) {}
 
     std::string label;
 
@@ -57,6 +63,7 @@ protected:
     std::vector<MenuItem> _children;
     MenuItemType _type = MenuItemType::Separator;
     app::Shortcuts::ShortcutData _shortcut {};
+    std::function<bool()> _checkedFn = nullptr;
 
     bool _shortcutInitialized = false;
 };

@@ -23,6 +23,7 @@
 #include "EnvironmentSettings.hpp"
 #include "SubmeshWindow.hpp"
 #include "StageScene.hpp"
+#include "UISettingsWindow.hpp"
 
 class AppDelegate : public bg2e::render::DefaultRenderLoopDelegate<bg2e::render::RendererBasicForward>,
 	public bg2e::app::InputDelegate,
@@ -58,8 +59,8 @@ public:
 
     inline std::shared_ptr<bg2e::manipulation::SelectionManager> selectionManager() const { return _selectionManager; }
 
-    inline bg2e::ui::StatusItem * fileStatus() const { return _fileStatus.get(); }
-    inline bg2e::ui::StatusItem * saveStatus() const { return _saveStatus.get(); }
+    [[nodiscard]] std::shared_ptr<bg2e::ui::StatusItem> fileStatus() const { return _fileStatus; }
+    [[nodiscard]] std::shared_ptr<bg2e::ui::StatusItem> saveStatus() const { return _saveStatus; }
 
     enum SelectionHighlightMode
     {
@@ -68,7 +69,6 @@ public:
         SelectionSoft,
         SelectionHide
     };
-
     void toggleSelectionHighlight();
     void setSelectionHighlightMode(SelectionHighlightMode mode);
 
@@ -79,6 +79,7 @@ protected:
     ToolBar _toolBar {};
     SubmeshWindow _submeshPanel {};
     EnvironmentSettings _environmentPanel {};
+    UISettingsWindow _uiSettingsWindow {};
 
     std::shared_ptr<bg2e::ui::StatusItem> _fileStatus;
     std::shared_ptr<bg2e::ui::StatusItem> _saveStatus;
