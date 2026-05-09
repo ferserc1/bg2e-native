@@ -22,6 +22,10 @@
 #include <bg2e/scene/Node.hpp>
 #include <bg2e/render/Engine.hpp>
 #include <bg2e/render/Renderer.hpp>
+#include <bg2e/render/EnvironmentResources.hpp>
+#include <bg2e/render/deferred/SkyboxLayer.hpp>
+#include <bg2e/scene/ResizeViewportVisitor.hpp>
+#include <bg2e/scene/UpdateVisitor.hpp>
 
 #include <memory>
 
@@ -80,8 +84,10 @@ public:
     void setExposure(float e) override { _exposure = e; }
     [[nodiscard]] float exposure() const override { return _exposure; }
 
-    uint32_t viewportWidth() { return _viewportExtent.width; }
-    uint32_t viewportHeight() { return _viewportExtent.height; }
+    uint32_t viewportWidth() override { return _viewportExtent.width; }
+    uint32_t viewportHeight() override { return _viewportExtent.height; }
+
+    bool supportsMsaa() override { return false; }
 
 protected:
     bg2e::render::Engine* _engine = nullptr;
@@ -94,6 +100,14 @@ protected:
     bool _isOffscreen;
 
     std::unique_ptr<bg2e::scene::Scene> _scene;
+
+    bg2e::scene::ResizeViewportVisitor _resizeVisitor;
+    bg2e::scene::UpdateVisitor _updateVisitor;
+
+    std::unique_ptr<EnvironmentResources> _environment;
+    size_t _skyImageHash;
+    std::unique_ptr<deferred::SkyboxLayer> _skyboxLayer;
+    std::unique_ptr<vulkan::Image> _intermediateImage;
 
     float _brightness = 0.0f;
     float _contrast = 1.0f;

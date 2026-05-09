@@ -17,6 +17,21 @@
  */
 #include <bg2e.hpp>
 
+class RotateCameraComponent : public bg2e::scene::Component {
+public:
+    BG2E_COMPONENT_TYPE_NAME("RotateCamera")
+
+    void update(float delta) override
+    {
+        auto transform = ownerNode()->transform();
+
+        if (transform)
+        {
+            transform->rotate(0.02f * delta / 10.0f, 0.0f, 1.0f, 0.0f);
+        }
+    }
+};
+
 class DeferredRendererDelegate : public bg2e::render::DefaultRenderLoopDelegate<bg2e::render::RendererDeferred>,
     public bg2e::app::InputDelegate,
     public bg2e::ui::UserInterfaceDelegate
@@ -42,6 +57,17 @@ protected:
 
     std::shared_ptr<bg2e::scene::Node> createScene() override {
         auto sceneRoot = std::make_shared<bg2e::scene::Node>("Scene Root");
+        sceneRoot->addComponent(new bg2e::scene::EnvironmentComponent(bg2e::base::PlatformTools::assetPath(), "country_field_sun.jpg"));
+
+        auto mainCameraNode = std::make_shared<bg2e::scene::Node>("Main Camera");
+        mainCameraNode->addComponent(new bg2e::scene::CameraComponent());
+        auto proj = new bg2e::math::OpticalProjection();
+        mainCameraNode->camera()->setProjection(proj);
+        mainCameraNode->addComponent(new bg2e::scene::TransformComponent());
+        mainCameraNode->addComponent(new RotateCameraComponent());
+        sceneRoot->addChild(mainCameraNode);
+
+
         return sceneRoot;
     }
 };

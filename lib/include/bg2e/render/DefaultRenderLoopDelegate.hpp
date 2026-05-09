@@ -56,6 +56,10 @@ public:
 
 	void cleanup() override;
 
+    bool supportsMsaa() override
+    {
+        return _renderer->supportsMsaa();
+    }
 
     RendererT* renderer();
     

@@ -61,6 +61,8 @@ public:
     inline float delta() const { return _delta; }
     inline void setDelta(float d) { _delta = d; }
 
+    virtual bool supportsMsaa() { return true; }
+
 protected:
 	render::Engine * _engine = nullptr;
     

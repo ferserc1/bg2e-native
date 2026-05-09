@@ -18,6 +18,8 @@
 
 #include <bg2e/render/RendererDeferred.hpp>
 #include <bg2e/render/vulkan/macros/graphics.hpp>
+#include <bg2e/scene/SkyDomeTextureGenerator.hpp>
+#include <bg2e/render/Texture.hpp>
 
 namespace bg2e::render {
 
@@ -26,9 +28,11 @@ void RendererDeferred::build(
     VkExtent2D initialExtent,
     VkFormat colorImageFormat,
     VkFormat depthImageFormat,
-    VkSampleCountFlagBits sampleCount,
+    VkSampleCountFlagBits, // Ignore swap chain sample count
     bool isOffscreen
 ) {
+    VkSampleCountFlagBits sampleCount = VK_SAMPLE_COUNT_1_BIT;
+
     _engine = engine;
     _viewportExtent = initialExtent;
     _colorImageFormat = colorImageFormat;
@@ -37,47 +41,151 @@ void RendererDeferred::build(
     _isOffscreen = isOffscreen;
 
     _scene = std::make_unique<bg2e::scene::Scene>();
+
+    _environment = std::unique_ptr<EnvironmentResources>(
+        new EnvironmentResources(
+            _engine,
+            { colorImageFormat },
+            depthImageFormat,
+            sampleCount
+        )
+    );
+
+    _skyboxLayer = std::make_unique<deferred::SkyboxLayer>(_engine);
+    _skyboxLayer->build(initialExtent, colorImageFormat);
+    _skyboxLayer->setScene(_scene.get());
+    _skyboxLayer->setEnvironment(_environment.get());
+
+    _intermediateImage = std::unique_ptr<vulkan::Image>(
+        vulkan::Image::createAllocatedImage(
+            _engine,
+            colorImageFormat,
+            initialExtent,
+            VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
+            VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
+            VK_IMAGE_USAGE_TRANSFER_DST_BIT |
+            VK_IMAGE_USAGE_SAMPLED_BIT,
+            VK_IMAGE_ASPECT_COLOR_BIT
+        )
+    );
 }
 
 void RendererDeferred::initFrameResources(
-    bg2e::render::vulkan::DescriptorSetAllocator* /*frameAllocator*/
+    bg2e::render::vulkan::DescriptorSetAllocator* frameAllocator
 ) {
+    _environment->initFrameResources(frameAllocator);
 }
 
 void RendererDeferred::initScene(
     std::shared_ptr<bg2e::scene::Node> sceneRoot
 ) {
     _scene->setSceneRoot(sceneRoot);
+
+    auto skyDomeTexture = std::make_shared<bg2e::base::Texture>();
+    auto skyDomeGenerator = new bg2e::scene::SkyDomeTextureGenerator(2048, 1024, 4);
+    skyDomeTexture->setProceduralGenerator(skyDomeGenerator);
+    skyDomeTexture->setUseMipmaps(false);
+    auto envTexture = std::make_shared<bg2e::render::Texture>(_engine);
+    envTexture->load(skyDomeTexture);
+    _environment->build(
+        envTexture,
+        { 2048, 2048 },
+        { 32, 32 },
+        { 1024, 1024 }
+    );
+
+    _scene->updateLights();
 }
 
 void RendererDeferred::resize(
     VkExtent2D newExtent
 ) {
     _viewportExtent = newExtent;
+
+    _skyboxLayer->resize(newExtent);
+
+    _intermediateImage = std::unique_ptr<vulkan::Image>(
+        vulkan::Image::createAllocatedImage(
+            _engine,
+            _colorImageFormat,
+            newExtent,
+            VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
+            VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
+            VK_IMAGE_USAGE_TRANSFER_DST_BIT |
+            VK_IMAGE_USAGE_SAMPLED_BIT,
+            VK_IMAGE_ASPECT_COLOR_BIT
+        )
+    );
+
+    _scene->willResize();
+    _resizeVisitor.resizeViewport(_scene->rootNode(), newExtent);
+    _scene->didResize();
 }
 
 void RendererDeferred::update(
-    float /*delta*/
+    float delta
 ) {
     _scene->willUpdate();
+
+    _updateVisitor.update(_scene->rootNode(), delta);
+    if (_scene->mainEnvironment() && _scene->mainEnvironment()->imgHash() != _skyImageHash)
+    {
+        _environment->swapEnvironmentTexture(_scene->mainEnvironment()->environmentImage());
+        _skyImageHash = _scene->mainEnvironment()->imgHash();
+    }
+
+    // TODO: Update light resources
+
     _scene->didUpdate();
 }
 
 void RendererDeferred::draw(
     VkCommandBuffer cmd,
-    uint32_t /*currentFrame*/,
+    uint32_t currentFrame,
     const bg2e::render::vulkan::Image* colorImage,
     const bg2e::render::vulkan::Image* /*depthImage*/,
     const bg2e::render::vulkan::Image* /*msaaDepthImage*/,
-    bg2e::render::vulkan::FrameResources& /*frameResources*/
+    bg2e::render::vulkan::FrameResources& frameResources
 ) {
-    VkClearColorValue clearValue{ { 0.1f, 0.1f, 0.2f, 1.0f } };
-    vulkan::macros::cmdClearImageAndBeginRendering(cmd, colorImage, clearValue);
-    vulkan::macros::cmdSetDefaultViewportAndScissor(cmd, colorImage->extent2D());
-    vulkan::cmdEndRendering(cmd);
+    _scene->willDraw();
+
+    _environment->update(cmd, currentFrame, frameResources);
+    _environment->setSkyboxColorCorrection(_brightness, _contrast, _exposure);
+
+    _skyboxLayer->render(cmd, currentFrame, nullptr, _intermediateImage.get(), frameResources);
+
+    vulkan::Image::cmdTransitionImage(
+        cmd,
+        _intermediateImage->handle(),
+        VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+        VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
+    );
+    vulkan::Image::cmdTransitionImage(
+        cmd,
+        colorImage->handle(),
+        VK_IMAGE_LAYOUT_UNDEFINED,
+        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
+    );
+    vulkan::Image::cmdCopy(
+        cmd,
+        _intermediateImage->handle(),
+        _intermediateImage->extent2D(),
+        colorImage->handle(),
+        colorImage->extent2D()
+    );
+    vulkan::Image::cmdTransitionImage(
+        cmd,
+        colorImage->handle(),
+        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+        VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
+    );
+
+    _scene->didDraw();
 }
 
 void RendererDeferred::cleanup() {
+    _intermediateImage.reset();
+    _skyboxLayer.reset();
     _scene.reset();
 }
 

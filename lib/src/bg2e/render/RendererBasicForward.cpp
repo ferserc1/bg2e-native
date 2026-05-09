@@ -100,7 +100,6 @@ void RendererBasicForward::initScene(
     _scene->updateLights();
 
     // Call the resizeViewportVisitor to set the initial viewport size in cameras
-    // TODO: get the image size from other source than swapchain
     _resizeVisitor.resizeViewport(_scene->rootNode(), _viewportExtent);
 
     _engine->cleanupManager().push([&](VkDevice) {

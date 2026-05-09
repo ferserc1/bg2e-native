@@ -67,6 +67,8 @@ public:
     
     virtual uint32_t viewportWidth() = 0;
     virtual uint32_t viewportHeight() = 0;
+
+    virtual bool supportsMsaa() = 0;
 };
 
 }

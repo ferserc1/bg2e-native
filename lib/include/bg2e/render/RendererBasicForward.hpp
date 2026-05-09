@@ -121,6 +121,8 @@ public:
     uint32_t viewportWidth() override { return _engine->swapchain().extent().width; }
     uint32_t viewportHeight() override { return _engine->swapchain().extent().height; }
 
+    bool supportsMsaa() override { return true; }
+
 protected:
 
     bg2e::render::Engine* _engine = nullptr;
