@@ -14,60 +14,98 @@ Implement the skybox rendering as the first layer of the deferred pipeline. The 
 
 ## Sub-phases
 
-### 2.1 — Create SkyboxLayer Class
+### 2.1 — Create RenderLayer Base Class
+
+**Files:**
+- `lib/include/bg2e/render/deferred/RenderLayer.hpp`
+- `lib/src/bg2e/render/deferred/RenderLayer.cpp`
+
+`RenderLayer` is the base class for all deferred layers. It holds common members and defines the shared lifecycle interface. All layers inherit from this class.
+
+**Header structure:**
+```
+RenderLayer.hpp
+├── GPL license header
+├── #pragma once
+├── Includes: Engine.hpp, vulkan/Image.hpp, scene/Scene.hpp, render/EnvironmentResources.hpp
+├── Public:
+│   ├── RenderLayer(Engine* engine)
+│   ├── virtual ~RenderLayer()
+│   ├── virtual void build(VkExtent2D extent, VkFormat outputFormat)
+│   ├── virtual void initFrameResources(vulkan::DescriptorSetAllocator* allocator)
+│   ├── virtual void render(VkCommandBuffer cmd, uint32_t currentFrame,
+│   │                       const vulkan::Image* inputImage,
+│   │                       const vulkan::Image* outputImage,
+│   │                       vulkan::FrameResources& frameResources)
+│   ├── virtual void resize(VkExtent2D newExtent)
+│   ├── virtual void cleanup()
+│   ├── void setScene(scene::Scene* scene)
+│   └── void setEnvironment(EnvironmentResources* environment)
+├── Protected:
+│   ├── Engine* _engine
+│   ├── VkExtent2D _extent
+│   ├── VkFormat _outputFormat
+│   ├── scene::Scene* _scene              // non-owning, configured via setter
+│   └── EnvironmentResources* _environment // non-owning, configured via setter
+```
+
+**Implementation:**
+- Constructor: store `_engine`, initialize `_scene` and `_environment` to `nullptr`.
+- `build()`: store `_extent` and `_outputFormat`.
+- `initFrameResources()`: empty default.
+- `render()`: empty default. Subclasses override with their specific rendering logic.
+- `resize()`: update `_extent`.
+- `cleanup()`: empty default.
+- `setScene()` / `setEnvironment()`: store the raw pointer.
+
+### 2.2 — Create SkyboxLayer Class
 
 **Files:**
 - `lib/include/bg2e/render/deferred/SkyboxLayer.hpp`
 - `lib/src/bg2e/render/deferred/SkyboxLayer.cpp`
 
-The `SkyboxLayer` is the simplest deferred layer. It does not use G-buffers. It renders the skybox to an output image.
+The `SkyboxLayer` is the simplest deferred layer. It does not use G-buffers. It renders the skybox to an output image. Inherits from `RenderLayer`.
 
 **Header structure:**
 ```
 SkyboxLayer.hpp
 ├── GPL license header
 ├── #pragma once
-├── Includes: Engine.hpp, render/SkyboxRenderer.hpp, vulkan/Image.hpp, scene/Scene.hpp
+├── Includes: RenderLayer.hpp, render/SkyboxRenderer.hpp
+├── class SkyboxLayer : public RenderLayer
 ├── Public:
 │   ├── SkyboxLayer(Engine* engine)
 │   ├── ~SkyboxLayer()
-│   ├── build(VkExtent2D extent, VkFormat outputFormat, VkSampleCountFlagBits sampleCount)
-│   ├── initFrameResources(vulkan::DescriptorSetAllocator* allocator)
-│   ├── render(VkCommandBuffer cmd, uint32_t currentFrame,
-│   │          const vulkan::Image* inputImage,     // nullptr for skybox
-│   │          const vulkan::Image* outputImage,     // image to render skybox into
-│   │          vulkan::FrameResources& frameResources,
-│   │          scene::Scene* scene,
-│   │          EnvironmentResources* environment)
-│   ├── resize(VkExtent2D newExtent)
-│   └── cleanup()
+│   ├── void build(VkExtent2D extent, VkFormat outputFormat) override
+│   ├── void initFrameResources(vulkan::DescriptorSetAllocator* allocator) override
+│   ├── void render(VkCommandBuffer cmd, uint32_t currentFrame,
+│   │               const vulkan::Image* inputImage,
+│   │               const vulkan::Image* outputImage,
+│   │               vulkan::FrameResources& frameResources) override
+│   ├── void resize(VkExtent2D newExtent) override
+│   └── void cleanup() override
 ├── Protected:
-│   ├── Engine* _engine
-│   ├── VkExtent2D _extent
-│   ├── VkFormat _outputFormat
 │   └── std::unique_ptr<SkyboxRenderer> _skyboxRenderer
 ```
 
-### 2.2 — SkyboxLayer Implementation
+### 2.3 — SkyboxLayer Implementation
 
-**Constructor:** Store engine pointer.
+**Constructor:** Store engine pointer (via `RenderLayer` base).
 
 **`build()`:**
-1. Store extent and output format.
+1. Call `RenderLayer::build(extent, outputFormat)` to store common members.
 2. Create `_skyboxRenderer = std::make_unique<SkyboxRenderer>(_engine)`.
-3. Call `_skyboxRenderer->setSampleCount(sampleCount)`.
-4. Call `_skyboxRenderer->build(skyTexture, {outputFormat}, VK_FORMAT_D32_SFLOAT)`.
-   - Note: The skybox renderer needs a texture. The texture will be set when `render()` is called with an `EnvironmentResources*` that holds the skybox texture.
-   - Alternative: Store the skybox texture reference and pass it during `build()`.
+3. Call `_skyboxRenderer->build(skyTexture, {outputFormat}, VK_FORMAT_D32_SFLOAT)`.
+   - Note: The skybox renderer needs a texture. The texture will be available via `_environment->skyboxTexture()` (set by `setEnvironment()` before `render()` is called).
 
 **`initFrameResources()`:** Delegate to `_skyboxRenderer->initFrameResources(allocator)`.
 
 **`render()`:**
 1. Clear the output image to black using `vulkan::macros::cmdClearImageAndBeginRendering()`.
 2. Set viewport/scissor using `vulkan::macros::cmdSetDefaultViewportAndScissor()`.
-3. Get camera view/projection matrices from `scene->mainCamera()`:
+3. Get camera view/projection matrices from `_scene->mainCamera()`:
    ```cpp
-   auto mainCamera = scene->mainCamera();
+   auto mainCamera = _scene->mainCamera();
    auto viewMatrix = mainCamera->ownerNode()->invertedWorldMatrix();
    auto projMatrix = mainCamera->projectionMatrix();
    ```
@@ -76,17 +114,18 @@ SkyboxLayer.hpp
 6. Draw skybox: `_skyboxRenderer->draw(cmd, currentFrame, frameResources)`.
 7. End rendering: `vulkan::cmdEndRendering(cmd)`.
 
-**`resize()`:** Update `_extent`.
+**`resize()`:** Update `_extent` (via `RenderLayer::resize()`).
 
 **`cleanup()`:** Reset `_skyboxRenderer`.
 
-### 2.3 — Integrate SkyboxLayer into RendererDeferred
+### 2.4 — Integrate SkyboxLayer into RendererDeferred
 
 Update `RendererDeferred` to:
 1. Own an `EnvironmentResources` instance (for IBL and skybox texture)
 2. Own a `SkyboxLayer` instance
 3. Create an intermediate image in `build()`
-4. In `draw()`: render the skybox to the intermediate image, then copy to swapchain output
+4. Configure the layer with scene and environment via setters
+5. In `draw()`: render the skybox to the intermediate image, then copy to swapchain output
 
 **New members in `RendererDeferred`:**
 ```cpp
@@ -103,7 +142,9 @@ _environment = std::make_unique<EnvironmentResources>(_engine);
 _environment->build(/* default sky dome texture */);
 
 _skyboxLayer = std::make_unique<SkyboxLayer>(_engine);
-_skyboxLayer->build(initialExtent, colorImageFormat, VK_SAMPLE_COUNT_1_BIT);
+_skyboxLayer->build(initialExtent, colorImageFormat);
+_skyboxLayer->setScene(_scene.get());
+_skyboxLayer->setEnvironment(_environment.get());
 
 _intermediateImage = vulkan::Image::createAllocatedImage(
     _engine, colorImageFormat, initialExtent,
@@ -127,7 +168,7 @@ void RendererDeferred::draw(VkCommandBuffer cmd, uint32_t currentFrame,
 
     // === Layer 1: Skybox ===
     _skyboxLayer->render(cmd, currentFrame, nullptr, _intermediateImage.get(),
-                         frameResources, _scene.get(), _environment.get());
+                         frameResources);
 
     // === Copy intermediate to swapchain output ===
     vulkan::Image::cmdTransitionImage(cmd, _intermediateImage->handle(),
@@ -159,7 +200,7 @@ _environment->cleanup();
 _intermediateImage.reset();
 ```
 
-### 2.4 — Intermediate Image Management
+### 2.5 — Intermediate Image Management
 
 The intermediate image is created with the same format as the swapchain color image. It serves as the render target for the skybox layer and will be reused in later phases as the input to the opaque layer.
 
@@ -177,13 +218,17 @@ _intermediateImage = vulkan::Image::createAllocatedImage(
 
 **Cleanup registration:** Register cleanup via `_engine->cleanupManager().push()` if needed (check if `vulkan::Image` destructor handles this automatically via VMA).
 
-### 2.5 — Code Review Checklist
+### 2.6 — Code Review Checklist
 
-- [ ] `SkyboxLayer` class follows the project's header/source conventions
+- [ ] `RenderLayer` base class provides common interface and stores `_engine`, `_extent`, `_outputFormat`, `_scene`, `_environment`
+- [ ] `SkyboxLayer` inherits from `RenderLayer` and overrides all virtual methods
 - [ ] `SkyboxRenderer` is reused correctly (no reinventing skybox rendering)
+- [ ] No MSAA — `build()` does not take a `sampleCount` parameter
+- [ ] Camera matrices are extracted from `_scene->mainCamera()` inside `render()`
+- [ ] Scene and environment are configured via `setScene()` / `setEnvironment()` in `build()`
+- [ ] `render()` uses unified 5-parameter signature
 - [ ] Intermediate image is created with correct format and usage flags
 - [ ] Image copy from intermediate to swapchain uses correct layout transitions
-- [ ] Camera matrices are extracted correctly from `scene->mainCamera()`
 - [ ] `resize()` recreates the intermediate image at new extent
 - [ ] `cleanup()` releases all resources in correct order
 
@@ -203,3 +248,4 @@ _intermediateImage = vulkan::Image::createAllocatedImage(
 - `lib/include/bg2e/render/vulkan/Image.hpp` — `createAllocatedImage()`, `cmdCopy()`, `cmdTransitionImage()`
 - `lib/include/bg2e/render/vulkan/macros/graphics.hpp` — `cmdClearImageAndBeginRendering()`, `cmdSetDefaultViewportAndScissor()`
 - `lib/include/bg2e/render/ColorAttachments.cpp` — pattern for image creation with usage flags
+- `lib/include/bg2e/render/Renderer.hpp` — base class pattern for lifecycle methods

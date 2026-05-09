@@ -33,9 +33,7 @@ protected:
     // Environment and scene resources
     std::unique_ptr<EnvironmentResources> _environment;
 
-    // Data bindings (shared across layers)
-    std::unique_ptr<scene::vk::FrameDataBinding> _frameDataBinding;
-    std::unique_ptr<scene::vk::LightDataBinding> _lightDataBinding;
+    // Data bindings (shared across layers, configured on layers via setters)
     std::unique_ptr<vulkan::rt::RayTracingSceneDataBinding> _rtDataBinding;
     scene::vk::LightDataBinding::LightUniforms _lightUniforms;
 
@@ -65,22 +63,28 @@ void RendererDeferred::build(Engine* engine, VkExtent2D initialExtent,
     // Create environment resources (IBL + skybox)
     _environment = std::make_unique<EnvironmentResources>(_engine);
 
-    // Create data bindings
-    _frameDataBinding = std::make_unique<scene::vk::FrameDataBinding>(_engine);
-    _lightDataBinding = std::make_unique<scene::vk::LightDataBinding>(_engine);
+    // Create RT data binding (shared across deferred layers)
     if (_engine->rayTracingSupported()) {
         _rtDataBinding = std::make_unique<vulkan::rt::RayTracingSceneDataBinding>(_engine);
     }
 
     // Create layers
     _skyboxLayer = std::make_unique<SkyboxLayer>(_engine);
-    _skyboxLayer->build(initialExtent, colorImageFormat, VK_SAMPLE_COUNT_1_BIT);
+    _skyboxLayer->build(initialExtent, colorImageFormat);
+    _skyboxLayer->setScene(_scene.get());
+    _skyboxLayer->setEnvironment(_environment.get());
 
     _opaqueLayer = std::make_unique<DeferredLayer>(_engine, LayerType::Opaque);
     _opaqueLayer->build(initialExtent, colorImageFormat);
+    _opaqueLayer->setScene(_scene.get());
+    _opaqueLayer->setEnvironment(_environment.get());
+    _opaqueLayer->setRtDataBinding(_rtDataBinding.get());
 
     _transparentLayer = std::make_unique<DeferredLayer>(_engine, LayerType::Transparent);
     _transparentLayer->build(initialExtent, colorImageFormat);
+    _transparentLayer->setScene(_scene.get());
+    _transparentLayer->setEnvironment(_environment.get());
+    _transparentLayer->setRtDataBinding(_rtDataBinding.get());
 
     // Create intermediate images
     _skyboxImage = vulkan::Image::createAllocatedImage(
@@ -121,13 +125,7 @@ void RendererDeferred::draw(VkCommandBuffer cmd, uint32_t currentFrame,
     // Update environment (IBL, skybox texture if changed)
     _environment->update(cmd, currentFrame, frameResources);
 
-    // Get camera matrices
-    auto mainCamera = _scene->mainCamera();
-    auto viewMatrix = mainCamera->ownerNode()->invertedWorldMatrix();
-    auto projMatrix = mainCamera->projectionMatrix();
-    auto cameraWorldPos = mainCamera->ownerNode()->worldPosition();
-
-    // Update light uniforms
+    // Update light uniforms and configure deferred layers
     auto lightComponents = _scene->lightComponents();
     _lightUniforms.lightCount = 0;
     for (auto& lc : lightComponents) {
@@ -136,34 +134,26 @@ void RendererDeferred::draw(VkCommandBuffer cmd, uint32_t currentFrame,
         // ... fill light data from lc->light()
         _lightUniforms.lightCount++;
     }
-
-    // Create RT TLAS descriptor set (if supported)
-    VkDescriptorSet rtDS = VK_NULL_HANDLE;
-    if (_rtDataBinding && frameResources.rayTracingScene) {
-        auto tlas = frameResources.rayTracingScene->tlas();
-        if (tlas) {
-            rtDS = _rtDataBinding->newDescriptorSet(frameResources, tlas);
-        }
-    }
+    _opaqueLayer->setLightUniforms(_lightUniforms);
+    _transparentLayer->setLightUniforms(_lightUniforms);
 
     // === Layer 1: Skybox ===
     _skyboxLayer->render(cmd, currentFrame, nullptr, _skyboxImage.get(),
-                         frameResources, _scene.get(), _environment.get());
+                         frameResources);
 
     // === Layer 2: Opaque ===
     _opaqueLayer->render(cmd, currentFrame, _skyboxImage.get(), _opaqueImage.get(),
-                         frameResources, _scene.get(), _environment.get(),
-                         viewMatrix, projMatrix, cameraWorldPos, _lightUniforms,
-                         _rtDataBinding.get());
+                         frameResources);
 
     // === Layer 3: Transparent (writes to swapchain output) ===
     _transparentLayer->render(cmd, currentFrame, _opaqueImage.get(), colorImage,
-                              frameResources, _scene.get(), _environment.get(),
-                              viewMatrix, projMatrix, cameraWorldPos, _lightUniforms,
-                              _rtDataBinding.get());
+                              frameResources);
 
     // === Selection highlight (non-offscreen only) ===
     if (!_isOffscreen && _selectionHighlight) {
+        auto mainCamera = _scene->mainCamera();
+        auto viewMatrix = mainCamera->ownerNode()->invertedWorldMatrix();
+        auto projMatrix = mainCamera->projectionMatrix();
         _selectionHighlight->draw(_scene->rootNode(), viewMatrix, projMatrix, cmd);
     }
 
@@ -252,8 +242,6 @@ void RendererDeferred::cleanup() {
     _environment->cleanup();
 
     _rtDataBinding.reset();
-    _lightDataBinding.reset();
-    _frameDataBinding.reset();
 
     _engine->cleanupManager().push([&](VkDevice) {
         _scene.reset();
@@ -268,8 +256,11 @@ void RendererDeferred::cleanup() {
 - [ ] Skybox renders to `_skyboxImage`
 - [ ] Opaque layer receives `_skyboxImage` as input, outputs to `_opaqueImage`
 - [ ] Transparent layer receives `_opaqueImage` as input, outputs to `colorImage` (swapchain)
-- [ ] Light uniforms are updated correctly from scene lights
-- [ ] RT TLAS descriptor set is created when hardware supports it
+- [ ] Light uniforms are computed from scene lights and configured on deferred layers via `setLightUniforms()`
+- [ ] RT data binding is configured on deferred layers via `setRtDataBinding()` in `build()`
+- [ ] All layers have `setScene()` and `setEnvironment()` called in `build()`
+- [ ] Each layer extracts camera matrices from `_scene` inside its own `render()`
+- [ ] `render()` calls use unified 5-parameter signature
 - [ ] Selection highlight renders after all layers (non-offscreen only)
 - [ ] `initScene()` builds environment and sets up visitors
 - [ ] `update()` runs scene visitors and checks for environment changes

@@ -23,22 +23,22 @@ Implement a deferred renderer within the bg2e-native engine using a **layer-base
 ### Layer Chain
 
 ```
-┌─────────────────┐
+┌──────────────────┐
 │ Background Layer │ ← Renders skybox only (no G-buffers needed)
 │  (SkyboxLayer)   │
-└────────┬────────┘
+└────────┬─────────┘
          │ skyboxImage
          ▼
-┌─────────────────┐
+┌──────────────────┐
 │  Opaque Layer    │ ← G-buffers: albedo, normal, material, positions
 │ (DeferredLayer)  │ ← Composites G-buffers with lighting + shadows
-└────────┬────────┘
+└────────┬─────────┘
          │ opaqueImage (skybox + opaque objects combined)
          ▼
-┌─────────────────┐
+┌──────────────────┐
 │ Transparent Layer│ ← G-buffers: albedo, normal, material, positions
 │ (DeferredLayer)  │ ← Composites over opaque layer image
-└────────┬────────┘
+└────────┬─────────┘
          │ finalImage
          ▼
     Swapchain Output
@@ -67,7 +67,7 @@ Shadows are computed during the compositing step of each deferred layer using **
 | Phase | Title | Brief Description | Detail File |
 |-------|-------|-------------------|-------------|
 | 1 | RendererDeferred — Shell + Example | Empty `RendererDeferred` class with stub methods. New example project to verify template wiring. | [01_phase1_renderer_shell.md](./01_phase1_renderer_shell.md) |
-| 2 | Skybox Layer | Render skybox to an intermediate image, copy to swapchain output. First functional layer. | [02_phase2_skybox_layer.md](./02_phase2_skybox_layer.md) |
+| 2 | Skybox Layer + RenderLayer Base | `RenderLayer` base class with common interface. `SkyboxLayer` inherits from it. Render skybox to intermediate image, copy to swapchain output. | [02_phase2_skybox_layer.md](./02_phase2_skybox_layer.md) |
 | 3 | GBuffer Manager | `GBufferManager` class that creates and manages N G-buffer images from a scene. | [03_phase3_gbuffer_manager.md](./03_phase3_gbuffer_manager.md) |
 | 4 | Deferred Layer | `DeferredLayer` class: G-buffer generation + PBR compositing pass. G-buffer shader + compositing shader. | [04_phase4_deferred_layer.md](./04_phase4_deferred_layer.md) |
 | 5 | Layer Composition | Combine all layers in `RendererDeferred`. Chain: skybox → opaque → transparent → output. | [05_phase5_layer_composition.md](./05_phase5_layer_composition.md) |
@@ -86,7 +86,9 @@ Shadows are computed during the compositing step of each deferred layer using **
 | `lib/src/bg2e/render/gbuffer/GBufferManager.cpp` | 3 | G-buffer implementation |
 | `lib/include/bg2e/render/deferred/DeferredLayer.hpp` | 4 | Deferred layer class |
 | `lib/src/bg2e/render/deferred/DeferredLayer.cpp` | 4 | Deferred layer implementation |
-| `lib/include/bg2e/render/deferred/SkyboxLayer.hpp` | 2 | Skybox-only layer |
+| `lib/include/bg2e/render/deferred/RenderLayer.hpp` | 2 | Base class for all deferred layers |
+| `lib/src/bg2e/render/deferred/RenderLayer.cpp` | 2 | RenderLayer base implementation |
+| `lib/include/bg2e/render/deferred/SkyboxLayer.hpp` | 2 | Skybox-only layer (inherits RenderLayer) |
 | `lib/src/bg2e/render/deferred/SkyboxLayer.cpp` | 2 | Skybox layer implementation |
 
 ### Shaders
@@ -115,10 +117,10 @@ Shadows are computed during the compositing step of each deferred layer using **
 ## Key Technical Decisions
 
 ### No MSAA
-The deferred renderer does not use MSAA. The `build()` method receives `sampleCount` but all internal G-buffer images are created with `VK_SAMPLE_COUNT_1_BIT`. The output is written directly to the non-MSAA swapchain image.
+The deferred renderer does not use MSAA. All internal G-buffer images are created with `VK_SAMPLE_COUNT_1_BIT`. The output is written directly to the non-MSAA swapchain image.
 
 ### Layer Abstraction
-The layer system is designed for extensibility. While the initial implementation uses only background + opaque + transparent layers, the architecture supports an arbitrary number of layers by chaining them in sequence. Each layer type implements a common interface.
+The layer system is designed for extensibility. While the initial implementation uses only background + opaque + transparent layers, the architecture supports an arbitrary number of layers by chaining them in sequence. All layers inherit from `RenderLayer`, which provides a common interface for the lifecycle methods (`build`, `initFrameResources`, `resize`, `cleanup`) and a unified `render(cmd, currentFrame, inputImage, outputImage, frameResources)` signature. Per-frame data (scene, environment, light uniforms, RT data binding) is configured on each layer via setters before `render()` is called.
 
 ### G-Buffer Position Storage
 World-space positions are stored in a dedicated `R32G32B32A32_SFLOAT` attachment. This avoids complex depth reconstruction in the compositing shader and simplifies PBR lighting calculations. The tradeoff is higher memory usage (128 bits per pixel for positions).

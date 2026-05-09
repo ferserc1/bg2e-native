@@ -81,6 +81,7 @@ Add includes for new headers at the end of the file:
 // Deferred renderer
 #include <bg2e/render/RendererDeferred.hpp>
 #include <bg2e/render/gbuffer/GBufferManager.hpp>
+#include <bg2e/render/deferred/RenderLayer.hpp>
 #include <bg2e/render/deferred/DeferredLayer.hpp>
 #include <bg2e/render/deferred/SkyboxLayer.hpp>
 ```

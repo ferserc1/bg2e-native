@@ -26,7 +26,7 @@ DeferredLayer.hpp
 ├── GPL license header
 ├── #pragma once
 ├── Includes:
-│   ├── Engine.hpp
+│   ├── RenderLayer.hpp
 │   ├── gbuffer/GBufferManager.hpp
 │   ├── vulkan/factory/GraphicsPipeline.hpp
 │   ├── vulkan/PipelineDataBinding.hpp
@@ -37,33 +37,24 @@ DeferredLayer.hpp
 │   ├── vulkan/rt/RayTracingSceneDataBinding.hpp
 │   ├── scene/RenderQueueVisitor.hpp
 │   ├── render/RenderQueue.hpp
-│   ├── scene/Scene.hpp
-│   ├── render/EnvironmentResources.hpp
 │   └── vulkan/factory/Sampler.hpp
 ├── enum class LayerType { Opaque, Transparent }
+├── class DeferredLayer : public RenderLayer
 ├── Public:
 │   ├── DeferredLayer(Engine* engine, LayerType type)
 │   ├── ~DeferredLayer()
-│   ├── build(VkExtent2D extent, VkFormat outputFormat)
-│   ├── initFrameResources(vulkan::DescriptorSetAllocator* allocator)
-│   ├── render(VkCommandBuffer cmd, uint32_t currentFrame,
-│   │          const vulkan::Image* inputImage,
-│   │          const vulkan::Image* outputImage,
-│   │          vulkan::FrameResources& frameResources,
-│   │          scene::Scene* scene,
-│   │          EnvironmentResources* environment,
-│   │          const glm::mat4& viewMatrix,
-│   │          const glm::mat4& projMatrix,
-│   │          const glm::vec3& cameraWorldPos,
-│   │          scene::vk::LightDataBinding::LightUniforms& lightUniforms,
-│   │          vulkan::rt::RayTracingSceneDataBinding* rtDataBinding = nullptr)
-│   ├── resize(VkExtent2D newExtent)
-│   └── cleanup()
+│   ├── void build(VkExtent2D extent, VkFormat outputFormat) override
+│   ├── void initFrameResources(vulkan::DescriptorSetAllocator* allocator) override
+│   ├── void render(VkCommandBuffer cmd, uint32_t currentFrame,
+│   │               const vulkan::Image* inputImage,
+│   │               const vulkan::Image* outputImage,
+│   │               vulkan::FrameResources& frameResources) override
+│   ├── void resize(VkExtent2D newExtent) override
+│   ├── void cleanup() override
+│   ├── void setLightUniforms(const scene::vk::LightDataBinding::LightUniforms& lu)
+│   └── void setRtDataBinding(vulkan::rt::RayTracingSceneDataBinding* rt)
 ├── Protected:
-│   ├── Engine* _engine
 │   ├── LayerType _layerType
-│   ├── VkExtent2D _extent
-│   ├── VkFormat _outputFormat
 │   ├── std::unique_ptr<GBufferManager> _gbuffer
 │   ├── VkPipeline _gbufferPipeline
 │   ├── VkPipeline _compositePipeline
@@ -74,6 +65,8 @@ DeferredLayer.hpp
 │   ├── std::unique_ptr<scene::vk::ObjectDataBinding> _objectDataBinding
 │   ├── std::unique_ptr<scene::vk::EnvironmentDataBinding> _environmentDataBinding
 │   ├── std::unique_ptr<scene::vk::LightDataBinding> _lightDataBinding
+│   ├── scene::vk::LightDataBinding::LightUniforms _lightUniforms
+│   ├── vulkan::rt::RayTracingSceneDataBinding* _rtDataBinding  // non-owning
 │   ├── scene::RenderQueueVisitor<scene::Drawable> _renderQueueVisitor
 │   ├── render::RenderQueue<scene::Drawable> _renderQueue
 │   ├── VkSampler _gbufferSampler
@@ -86,8 +79,7 @@ Created in `build()` using `vulkan::factory::GraphicsPipeline`:
 
 ```cpp
 void DeferredLayer::build(VkExtent2D extent, VkFormat outputFormat) {
-    _extent = extent;
-    _outputFormat = outputFormat;
+    RenderLayer::build(extent, outputFormat);
 
     // Create G-buffer manager
     _gbuffer = std::make_unique<GBufferManager>(_engine);
@@ -151,6 +143,16 @@ void DeferredLayer::build(VkExtent2D extent, VkFormat outputFormat) {
 The G-buffer pass renders scene geometry into the 4 G-buffer images.
 
 **`render()` sub-step: G-buffer pass**
+
+At the start of `render()`, extract camera data from `_scene`:
+```cpp
+auto mainCamera = _scene->mainCamera();
+auto viewMatrix = mainCamera->ownerNode()->invertedWorldMatrix();
+auto projMatrix = mainCamera->projectionMatrix();
+auto cameraWorldPos = mainCamera->ownerNode()->worldPosition();
+```
+
+Then proceed with the G-buffer pass:
 ```cpp
 // 1. Transition G-buffers to attachment layout
 _gbuffer->transitionToAttachment(cmd);
@@ -160,8 +162,8 @@ _gbuffer->clear(cmd);
 
 // 3. Begin dynamic rendering with 4 color attachments + depth
 vulkan::macros::cmdClearImagesAndBeginRendering(cmd,
-    _gbuffer->images(),  // vector<const Image*>
-    { {0, 0, 0, 0} },   // clear value
+    _gbuffer->images(),
+    { {0, 0, 0, 0} },
     VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
     _gbuffer->depthImage().get(),
     1.0f);
@@ -172,14 +174,14 @@ vulkan::macros::cmdSetDefaultViewportAndScissor(cmd, _extent);
 // 5. Bind G-buffer pipeline
 vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, _gbufferPipeline);
 
-// 6. Create descriptor sets
+// 6. Create descriptor sets (using members: _scene, _environment, _lightUniforms)
 auto sceneDS = _frameDataBinding->newDescriptorSet(frameResources, viewMatrix, projMatrix);
-auto envDS = _environmentDataBinding->newDescriptorSet(frameResources, environment);
-auto lightDS = _lightDataBinding->newDescriptorSet(frameResources, lightUniforms);
+auto envDS = _environmentDataBinding->newDescriptorSet(frameResources, _environment);
+auto lightDS = _lightDataBinding->newDescriptorSet(frameResources, _lightUniforms);
 
 // 7. Build render queue from scene (filter by layer type)
 _renderQueue.beginFrame();
-_renderQueueVisitor.enqueue(scene->rootNode(), &_renderQueue);
+_renderQueueVisitor.enqueue(_scene->rootNode(), &_renderQueue);
 
 // 8. Create descriptor set function
 auto dsFunction = [&](scene::MaterialBase* mat, const glm::mat4& transform) {
@@ -329,10 +331,10 @@ auto gbufferDS = frameResources.newDescriptorSet(_compositeGBufferDSLayout);
 // Update with G-buffer images + input image
 // ... (see descriptor set creation below)
 
-// 5. Create other descriptor sets
+// 5. Create other descriptor sets (using members: _scene, _environment, _lightUniforms)
 auto sceneDS = _frameDataBinding->newDescriptorSet(frameResources, viewMatrix, projMatrix);
-auto envDS = _environmentDataBinding->newDescriptorSet(frameResources, environment);
-auto lightDS = _lightDataBinding->newDescriptorSet(frameResources, lightUniforms);
+auto envDS = _environmentDataBinding->newDescriptorSet(frameResources, _environment);
+auto lightDS = _lightDataBinding->newDescriptorSet(frameResources, _lightUniforms);
 
 // 6. Bind descriptor sets
 vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
@@ -578,7 +580,9 @@ This uses the existing `MaterialAttributes::isTransparent()` and `isSolid()` pro
 
 ### 4.13 — Code Review Checklist
 
-- [ ] `DeferredLayer` class follows project conventions
+- [ ] `DeferredLayer` inherits from `RenderLayer` and overrides all virtual methods
+- [ ] Camera matrices and position are extracted from `_scene->mainCamera()` inside `render()`
+- [ ] `setLightUniforms()` and `setRtDataBinding()` configure per-frame data before `render()`
 - [ ] G-buffer pipeline creates 4 color attachments with correct formats
 - [ ] G-buffer pipeline uses `deferred_gbuffer.vert.spv` and `deferred_gbuffer.frag.spv`
 - [ ] Composite pipeline uses `deferred_composite.vert.spv` and `deferred_composite.frag.spv`
