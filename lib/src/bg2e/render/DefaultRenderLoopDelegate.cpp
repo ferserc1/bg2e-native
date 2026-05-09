@@ -19,6 +19,7 @@
 #include <bg2e/render/DefaultRenderLoopDelegate.hpp>
 #include <bg2e/render/ColorAttachments.hpp>
 #include <bg2e/render/RendererBasicForward.hpp>
+#include <bg2e/render/RendererDeferred.hpp>
 #include <bg2e/utils/TextureCache.hpp>
 
 namespace bg2e::render {
@@ -106,14 +107,7 @@ RendererT* DefaultRenderLoopDelegate<RendererT>::renderer()
     return _renderer.get();
 }
 
-template DefaultRenderLoopDelegate<RendererBasicForward>::~DefaultRenderLoopDelegate();
-template void DefaultRenderLoopDelegate<RendererBasicForward>::init(render::Engine * engine);
-template void DefaultRenderLoopDelegate<RendererBasicForward>::initFrameResources(render::vulkan::DescriptorSetAllocator*);
-template void DefaultRenderLoopDelegate<RendererBasicForward>::initScene();
-template void DefaultRenderLoopDelegate<RendererBasicForward>::swapchainResized(VkExtent2D);
-template void DefaultRenderLoopDelegate<RendererBasicForward>::update(uint32_t currentFrame, render::vulkan::FrameResources&);
-template VkImageLayout DefaultRenderLoopDelegate<RendererBasicForward>::render(VkCommandBuffer cmd, uint32_t currentFrame, const render::vulkan::Image* colorImage, const render::vulkan::Image* depthImage, const render::vulkan::Image* msaaDepthImage, render::vulkan::FrameResources& frameResources);
-template void DefaultRenderLoopDelegate<RendererBasicForward>::cleanup();
-template RendererBasicForward* DefaultRenderLoopDelegate<RendererBasicForward>::renderer();
+template class BG2E_API DefaultRenderLoopDelegate<RendererBasicForward>;
+template class BG2E_API DefaultRenderLoopDelegate<RendererDeferred>;
 
 }

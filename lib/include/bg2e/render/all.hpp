@@ -29,6 +29,7 @@
 #include <bg2e/render/MaterialBase.hpp>
 #include <bg2e/render/Renderer.hpp>
 #include <bg2e/render/RendererBasicForward.hpp>
+#include <bg2e/render/RendererDeferred.hpp>
 #include <bg2e/render/RenderLoop.hpp>
 #include <bg2e/render/RenderLoopDelegate.hpp>
 #include <bg2e/render/RenderQueue.hpp>
