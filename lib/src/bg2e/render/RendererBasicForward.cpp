@@ -121,35 +121,7 @@ void RendererBasicForward::resize(
 void RendererBasicForward::update(
     float delta
 ) {
-    _scene->willUpdate();
-    
-    _updateVisitor.update(_scene->rootNode(), delta);
-
-    if(_scene->mainEnvironment() && _scene->mainEnvironment()->imgHash() != _skyImageHash) {
-        _environment->swapEnvironmentTexture(_scene->mainEnvironment()->environmentImage());
-        _skyImageHash = _scene->mainEnvironment()->imgHash();
-    }
-    
-    
-    // Update light resources
-    auto lightComponents = _scene->lightComponents();
-    auto lights = static_cast<uint32_t>(lightComponents.size() < BG2E_MAX_FORWARD_LIGHTS
-        ? lightComponents.size()
-        : BG2E_MAX_FORWARD_LIGHTS);
-    _lightUniforms.lightCount = lights;
-    for (uint32_t i = 0; i < lights; ++i)
-    {
-        auto comp = lightComponents[i];
-        _lightUniforms.lights[i].type = comp->light().type();
-        _lightUniforms.lights[i].color = comp->light().color();
-        _lightUniforms.lights[i].intensity = comp->light().intensity();
-        _lightUniforms.lights[i].position = comp->position();
-        _lightUniforms.lights[i].direction = comp->direction();
-        _lightUniforms.lights[i].spotAngle = comp->light().spotAngle();
-        _lightUniforms.lights[i].spotCutoff = comp->light().spotCutoff();
-    }
-    
-    _scene->didUpdate();
+    updateScene(delta, BG2E_MAX_FORWARD_LIGHTS);
 }
 
 void RendererBasicForward::draw(
@@ -162,11 +134,13 @@ void RendererBasicForward::draw(
 )
 {
     using namespace bg2e::render::vulkan;
-    _scene->willDraw();
 
-    frameResources.rayTracingScene->update(cmd, _scene->rootNode());
-    
-    _environment->update(cmd, currentFrame, frameResources);
+    prepareSceneRender(cmd, currentFrame, frameResources);
+
+    auto mainCamera = _scene->mainCamera();
+    auto projMatrix = mainCamera->projectionMatrix();
+    auto cameraWorldPos = mainCamera->ownerNode()->worldPosition();
+    auto viewMatrix = mainCamera->ownerNode()->invertedWorldMatrix();
 
     VkClearColorValue clearValue{ { 0.0f, 0.0f, 0.0f, 1.0f } };
     macros::cmdClearImagesAndBeginRendering(
@@ -177,10 +151,7 @@ void RendererBasicForward::draw(
     );
 
     macros::cmdSetDefaultViewportAndScissor(cmd, colorImage->extent2D());
-    auto mainCamera = _scene->mainCamera();
-    auto projMatrix = mainCamera->projectionMatrix();
-    auto cameraWorldPos = mainCamera->ownerNode()->worldPosition();
-    auto viewMatrix = mainCamera->ownerNode()->invertedWorldMatrix();
+
     
     //viewMatrix = glm::lookAt(glm::vec3{ 0.0f, 0.0f, 10.0f }, glm::vec3{ 0.0f, 0.0f, 0.0f }, glm::vec3{ 0.0f, 1.0f, 0.0f });
     auto sceneDS = _frameDataBinding->newDescriptorSet(
@@ -189,13 +160,7 @@ void RendererBasicForward::draw(
         projMatrix
     );
 
-    if (_drawSkybox) {
-        _environment->setSkyboxColorCorrection(
-            _brightness,
-            _contrast,
-            _exposure
-        );
-        _environment->updateSkybox(viewMatrix, projMatrix);
+    if (drawSkybox()) {
         _environment->drawSkybox(cmd, currentFrame, frameResources);
     }
 
@@ -226,11 +191,6 @@ void RendererBasicForward::draw(
         sizeof(PushConstants),
         &pushConstants
     );
-    
-    
-    // Create the render queue from the scene objeb8cts. This will initialize two queues
-    // for opaque and transparent objects
-    _renderQueueVisitor.enqueue(_scene->rootNode(), &_renderQueue);
 
     auto dsFunction = [&](bg2e::render::MaterialBase * mat, const glm::mat4& transform, uint32_t /*submesh*/) {
         auto modelDS = _objectDataBinding->newDescriptorSet(
@@ -297,17 +257,13 @@ void RendererBasicForward::draw(
     }
 
     vulkan::cmdEndRendering(cmd);
-    _scene->didDraw();
+
+    endSceneRender();
 }
 
 void RendererBasicForward::cleanup()
 {
     _renderQueue.cleanup();
-}
-
-bg2e::scene::Scene* RendererBasicForward::scene()
-{
-    return _scene.get();
 }
 
 void RendererBasicForward::createPipelines(bg2e::render::Engine* engine) {

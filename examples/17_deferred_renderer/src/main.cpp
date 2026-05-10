@@ -49,6 +49,18 @@ public:
     void drawUI() override {
         _window.draw([&]() {
             bg2e::ui::BasicWidgets::text("Deferred renderer shell - Phase 1");
+
+            auto drawSkybox = renderer()->drawSkybox();
+            if (bg2e::ui::BasicWidgets::checkBox("Draw skybox", &drawSkybox))
+            {
+                renderer()->setDrawSkybox(drawSkybox);
+            }
+
+            auto blurLevel = renderer()->skyboxBlurLevel();
+            if (bg2e::ui::Input::sliderInt("Skybox blur", &blurLevel, 0, 6))
+            {
+                renderer()->setSkyboxBlurLevel(blurLevel);
+            }
         });
     }
 

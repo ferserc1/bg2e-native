@@ -63,10 +63,8 @@ public:
     inline bg2e::scene::vk::LightDataBinding* lightDataBinding() { return _lightDataBinding.get(); }
     inline bg2e::render::vulkan::rt::RayTracingSceneDataBinding* rtDataBinding() { return _rtDataBinding.get(); }
 
-    [[nodiscard]] bool drawSkybox() const { return _drawSkybox; }
-    inline void setDrawSkybox(bool value) { _drawSkybox = value; }
-    [[nodiscard]] int skyboxBlurLevel() const { return _environment->skyboxBlurLevel(); }
-    inline void setSkyboxBlurLevel(int l) const { _environment->setSkyboxBlurLevel(l); }
+    [[nodiscard]] bool drawSkybox() const override { return _drawSkybox; }
+    inline void setDrawSkybox(bool value) override { _drawSkybox = value; }
 
     [[nodiscard]] manipulation::SelectionHighlight * selectionHighlight() const { return _selectionHighlight.get(); }
 
@@ -104,20 +102,9 @@ public:
     ) override;
 
     void cleanup() override;
-    
-    bg2e::scene::Scene* scene() override;
 
     void createPipelines(bg2e::render::Engine* engine);
-    
-    void setBrightness(float b) override { _brightness = b; }
-    [[nodiscard]] float brightness() const override { return _brightness; }
-    
-    void setContrast(float c) override { _contrast = c; }
-    [[nodiscard]] float contrast() const override { return _contrast; }
 
-    void setExposure(float e) override { _exposure = e; }
-    [[nodiscard]] float exposure() const override { return _exposure; }
-    
     uint32_t viewportWidth() override { return _engine->swapchain().extent().width; }
     uint32_t viewportHeight() override { return _engine->swapchain().extent().height; }
 
@@ -127,32 +114,13 @@ protected:
 
     bg2e::render::Engine* _engine = nullptr;
 
-    VkExtent2D _viewportExtent;
-    VkFormat _colorImageFormat;
-    VkFormat _depthImageFormat;
-    VkSampleCountFlagBits _sampleCount;
-
-    bool _isOffscreen;
-
     std::unique_ptr<bg2e::scene::vk::FrameDataBinding> _frameDataBinding;
     std::unique_ptr<bg2e::scene::vk::ObjectDataBinding> _objectDataBinding;
     std::unique_ptr<bg2e::scene::vk::EnvironmentDataBinding> _environmentDataBinding;
     std::unique_ptr<bg2e::scene::vk::LightDataBinding> _lightDataBinding;
     std::unique_ptr<bg2e::render::vulkan::rt::RayTracingSceneDataBinding> _rtDataBinding;
-    
-    scene::vk::LightDataBinding::LightUniforms _lightUniforms;
 
-    std::unique_ptr<bg2e::render::EnvironmentResources> _environment;
-    size_t _skyImageHash;
-
-    std::unique_ptr<bg2e::scene::Scene> _scene;
-
-    bg2e::scene::ResizeViewportVisitor _resizeVisitor;
-    bg2e::scene::UpdateVisitor _updateVisitor;
     bg2e::scene::DrawVisitor _drawVisitor;
-    bg2e::scene::RenderQueueVisitor<bg2e::scene::Drawable> _renderQueueVisitor;
-    
-    bg2e::render::RenderQueue<bg2e::scene::Drawable> _renderQueue;
 
     std::unique_ptr<bg2e::manipulation::SelectionHighlight> _selectionHighlight;
 
@@ -169,10 +137,6 @@ protected:
         float contrast;
         float exposure;
     };
-    
-    float _brightness = 0.0f;
-    float _contrast = 1.0f;
-    float _exposure = 1.0f;
 
     VkPipeline createOpaquePipeline(bg2e::render::Engine * engine, VkPipelineLayout layout);
     VkPipeline createTransparentPipeline(bg2e::render::Engine * engine, VkPipelineLayout layout);

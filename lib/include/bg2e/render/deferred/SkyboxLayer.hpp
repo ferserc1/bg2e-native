@@ -39,6 +39,12 @@ public:
     ) override;
     void resize(VkExtent2D newExtent) override;
     void cleanup() override;
+
+    [[nodiscard]] bool drawSkybox() const { return _drawSkybox; }
+    void setDrawSkybox(bool drawSkybox) { _drawSkybox = drawSkybox; }
+
+protected:
+    bool _drawSkybox = true;
 };
 
 }

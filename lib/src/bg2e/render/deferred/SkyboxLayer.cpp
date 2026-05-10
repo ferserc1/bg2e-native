@@ -54,13 +54,8 @@ void SkyboxLayer::render(
 
     vulkan::macros::cmdSetDefaultViewportAndScissor(cmd, _extent);
 
-    auto mainCamera = _scene->mainCamera();
-    if (mainCamera)
+    if (_drawSkybox)
     {
-        auto viewMatrix = mainCamera->ownerNode()->invertedWorldMatrix();
-        auto projMatrix = mainCamera->projectionMatrix();
-
-        _environment->updateSkybox(viewMatrix, projMatrix);
         _environment->drawSkybox(cmd, currentFrame, frameResources);
     }
 

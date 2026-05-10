@@ -37,6 +37,9 @@ public:
     RendererDeferred() = default;
     ~RendererDeferred() override = default;
 
+    [[nodiscard]] bool drawSkybox() const override { return _skyboxLayer->drawSkybox(); }
+    inline void setDrawSkybox(bool value) override { _skyboxLayer->setDrawSkybox(value); }
+
     void build(
         bg2e::render::Engine* engine,
         VkExtent2D initialExtent,
@@ -73,17 +76,6 @@ public:
 
     void cleanup() override;
 
-    bg2e::scene::Scene* scene() override;
-
-    void setBrightness(float b) override { _brightness = b; }
-    [[nodiscard]] float brightness() const override { return _brightness; }
-
-    void setContrast(float c) override { _contrast = c; }
-    [[nodiscard]] float contrast() const override { return _contrast; }
-
-    void setExposure(float e) override { _exposure = e; }
-    [[nodiscard]] float exposure() const override { return _exposure; }
-
     uint32_t viewportWidth() override { return _viewportExtent.width; }
     uint32_t viewportHeight() override { return _viewportExtent.height; }
 
@@ -97,21 +89,8 @@ protected:
     VkFormat _depthImageFormat;
     VkSampleCountFlagBits _sampleCount;
 
-    bool _isOffscreen;
-
-    std::unique_ptr<bg2e::scene::Scene> _scene;
-
-    bg2e::scene::ResizeViewportVisitor _resizeVisitor;
-    bg2e::scene::UpdateVisitor _updateVisitor;
-
-    std::unique_ptr<EnvironmentResources> _environment;
-    size_t _skyImageHash;
     std::unique_ptr<deferred::SkyboxLayer> _skyboxLayer;
     std::unique_ptr<vulkan::Image> _intermediateImage;
-
-    float _brightness = 0.0f;
-    float _contrast = 1.0f;
-    float _exposure = 1.0f;
 };
 
 }

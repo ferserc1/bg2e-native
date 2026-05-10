@@ -125,18 +125,7 @@ void RendererDeferred::resize(
 void RendererDeferred::update(
     float delta
 ) {
-    _scene->willUpdate();
-
-    _updateVisitor.update(_scene->rootNode(), delta);
-    if (_scene->mainEnvironment() && _scene->mainEnvironment()->imgHash() != _skyImageHash)
-    {
-        _environment->swapEnvironmentTexture(_scene->mainEnvironment()->environmentImage());
-        _skyImageHash = _scene->mainEnvironment()->imgHash();
-    }
-
-    // TODO: Update light resources
-
-    _scene->didUpdate();
+    updateScene(delta);
 }
 
 void RendererDeferred::draw(
@@ -147,10 +136,7 @@ void RendererDeferred::draw(
     const bg2e::render::vulkan::Image* /*msaaDepthImage*/,
     bg2e::render::vulkan::FrameResources& frameResources
 ) {
-    _scene->willDraw();
-
-    _environment->update(cmd, currentFrame, frameResources);
-    _environment->setSkyboxColorCorrection(_brightness, _contrast, _exposure);
+    prepareSceneRender(cmd, currentFrame, frameResources);
 
     _skyboxLayer->render(cmd, currentFrame, nullptr, _intermediateImage.get(), frameResources);
 
@@ -180,17 +166,13 @@ void RendererDeferred::draw(
         VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
     );
 
-    _scene->didDraw();
+    endSceneRender();
 }
 
 void RendererDeferred::cleanup() {
     _intermediateImage.reset();
     _skyboxLayer.reset();
     _scene.reset();
-}
-
-bg2e::scene::Scene* RendererDeferred::scene() {
-    return _scene.get();
 }
 
 }
