@@ -131,3 +131,29 @@ World-space positions are stored in a dedicated `R32G32B32A32_SFLOAT` attachment
 - **Material system**: Uses `MaterialAttributes::isTransparent()` and `isSolid()` to route objects to the correct layer
 - **Shader libraries**: Reuses `lib/pbr.glsl`, `lib/uniforms.glsl`, `lib/normal_map.glsl`, `lib/color_correction.glsl`
 - **Environment resources**: Reuses `EnvironmentResources` for IBL (irradiance, specular, BRDF LUT)
+
+### Renderer Base Class Refactoring (Completed in Phase 2)
+
+The `Renderer` base class now owns common resources shared between `RendererBasicForward` and `RendererDeferred`:
+
+| Resource | Owner | Description |
+|----------|-------|-------------|
+| `_scene` | `Renderer` | Scene graph (unique_ptr) |
+| `_environment` | `Renderer` | EnvironmentResources for IBL (unique_ptr) |
+| `_lightUniforms` | `Renderer` | Light uniforms struct, populated by `updateScene()` |
+| `_resizeVisitor` | `Renderer` | ResizeViewportVisitor |
+| `_updateVisitor` | `Renderer` | UpdateVisitor |
+| `_renderQueueVisitor` | `Renderer` | RenderQueueVisitor (populates render queue) |
+| `_renderQueue` | `Renderer` | RenderQueue (shared across layers) |
+| `_brightness/_contrast/_exposure` | `Renderer` | Color correction parameters |
+
+Protected update methods in `Renderer`:
+- `updateScene(delta, maxLights)` — calls update visitors, swaps environment texture, populates light uniforms
+- `prepareSceneRender(cmd, currentFrame, frameResources)` — updates RT/TLAS, environment, skybox, populates render queue
+- `endSceneRender()` — calls `_scene->didDraw()`
+
+**Impact on deferred renderer:**
+- `RendererDeferred` does NOT duplicate any of the above resources
+- `DeferredLayer` receives non-owning pointers to shared resources (`_renderQueue`, `_lightDataBinding`)
+- `RendererDeferred::draw()` uses `prepareSceneRender()` / `endSceneRender()` from base
+- `RendererDeferred::update()` delegates to `updateScene()` from base

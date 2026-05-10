@@ -35,7 +35,6 @@ DeferredLayer.hpp
 │   ├── scene/vk/EnvironmentDataBinding.hpp
 │   ├── scene/vk/LightDataBinding.hpp
 │   ├── vulkan/rt/RayTracingSceneDataBinding.hpp
-│   ├── scene/RenderQueueVisitor.hpp
 │   ├── render/RenderQueue.hpp
 │   └── vulkan/factory/Sampler.hpp
 ├── enum class LayerType { Opaque, Transparent }
@@ -51,8 +50,10 @@ DeferredLayer.hpp
 │   │               vulkan::FrameResources& frameResources) override
 │   ├── void resize(VkExtent2D newExtent) override
 │   ├── void cleanup() override
+│   ├── void setLightDataBinding(scene::vk::LightDataBinding* binding)  // non-owning, from RendererDeferred
 │   ├── void setLightUniforms(const scene::vk::LightDataBinding::LightUniforms& lu)
-│   └── void setRtDataBinding(vulkan::rt::RayTracingSceneDataBinding* rt)
+│   ├── void setRtDataBinding(vulkan::rt::RayTracingSceneDataBinding* rt)
+│   └── void setRenderQueue(render::RenderQueue<scene::Drawable>* rq)  // non-owning, from Renderer
 ├── Protected:
 │   ├── LayerType _layerType
 │   ├── std::unique_ptr<GBufferManager> _gbuffer
@@ -64,14 +65,19 @@ DeferredLayer.hpp
 │   ├── std::unique_ptr<scene::vk::FrameDataBinding> _frameDataBinding
 │   ├── std::unique_ptr<scene::vk::ObjectDataBinding> _objectDataBinding
 │   ├── std::unique_ptr<scene::vk::EnvironmentDataBinding> _environmentDataBinding
-│   ├── std::unique_ptr<scene::vk::LightDataBinding> _lightDataBinding
+│   ├── scene::vk::LightDataBinding* _lightDataBinding  // non-owning, from RendererDeferred
 │   ├── scene::vk::LightDataBinding::LightUniforms _lightUniforms
 │   ├── vulkan::rt::RayTracingSceneDataBinding* _rtDataBinding  // non-owning
-│   ├── scene::RenderQueueVisitor<scene::Drawable> _renderQueueVisitor
-│   ├── render::RenderQueue<scene::Drawable> _renderQueue
+│   ├── render::RenderQueue<scene::Drawable>* _renderQueue  // non-owning, from Renderer base
 │   ├── VkSampler _gbufferSampler
 │   └── struct CompositePushConstants { gamma, brightness, contrast, exposure }
 ```
+
+> **NOTE (Refactoring):** The `RenderQueueVisitor` and `RenderQueue` are now owned by the `Renderer` base class.
+> `DeferredLayer` receives a non-owning pointer to the shared render queue via `setRenderQueue()`.
+> The `LightDataBinding` is owned by `RendererDeferred` and shared with layers via `setLightDataBinding()`.
+> The `LightUniforms` struct is owned by `Renderer` base and populated by `updateScene()`.
+> `RendererDeferred` passes the uniforms reference to layers via `setLightUniforms()` before each `render()` call.
 
 ### 4.2 — Pipeline Creation: G-Buffer Pipeline
 
@@ -85,11 +91,11 @@ void DeferredLayer::build(VkExtent2D extent, VkFormat outputFormat) {
     _gbuffer = std::make_unique<GBufferManager>(_engine);
     _gbuffer->build(extent);
 
-    // Create data bindings
+    // Create per-layer data bindings (for descriptor set creation)
+    // Note: _lightDataBinding is NOT created here — it is shared from RendererDeferred
     _frameDataBinding = std::make_unique<scene::vk::FrameDataBinding>(_engine);
     _objectDataBinding = std::make_unique<scene::vk::ObjectDataBinding>(_engine);
     _environmentDataBinding = std::make_unique<scene::vk::EnvironmentDataBinding>(_engine);
-    _lightDataBinding = std::make_unique<scene::vk::LightDataBinding>(_engine);
 
     // Create G-buffer pipeline
     createGBufferPipeline();
@@ -174,35 +180,38 @@ vulkan::macros::cmdSetDefaultViewportAndScissor(cmd, _extent);
 // 5. Bind G-buffer pipeline
 vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, _gbufferPipeline);
 
-// 6. Create descriptor sets (using members: _scene, _environment, _lightUniforms)
+// 6. Create descriptor sets
+// Note: _scene, _environment from RenderLayer base (set via setters)
+// _lightDataBinding is non-owning, set from RendererDeferred
 auto sceneDS = _frameDataBinding->newDescriptorSet(frameResources, viewMatrix, projMatrix);
 auto envDS = _environmentDataBinding->newDescriptorSet(frameResources, _environment);
 auto lightDS = _lightDataBinding->newDescriptorSet(frameResources, _lightUniforms);
 
-// 7. Build render queue from scene (filter by layer type)
-_renderQueue.beginFrame();
-_renderQueueVisitor.enqueue(_scene->rootNode(), &_renderQueue);
-
-// 8. Create descriptor set function
+// 7. Create descriptor set function
+// Note: _renderQueue is already populated by Renderer::prepareSceneRender()
 auto dsFunction = [&](scene::MaterialBase* mat, const glm::mat4& transform) {
     auto objectDS = _objectDataBinding->newDescriptorSet(frameResources, mat, transform);
     return std::vector<VkDescriptorSet>{ sceneDS, objectDS, envDS, lightDS };
 };
 
-// 9. Render queue items based on layer type
+// 8. Render queue items based on layer type (using shared render queue from Renderer)
 if (_layerType == LayerType::Opaque) {
-    _renderQueue.render(RenderQueueType::Opaque, cmd, _gbufferPipelineLayout,
-                        dsFunction, cameraWorldPos);
+    _renderQueue->render(RenderQueueType::Opaque, cmd, _gbufferPipelineLayout,
+                         dsFunction, cameraWorldPos);
 } else {
-    _renderQueue.render(RenderQueueType::Transparent, cmd, _gbufferPipelineLayout,
-                        dsFunction, cameraWorldPos);
-    _renderQueue.render(RenderQueueType::SolidTransparent, cmd, _gbufferPipelineLayout,
-                        dsFunction, cameraWorldPos);
+    _renderQueue->render(RenderQueueType::Transparent, cmd, _gbufferPipelineLayout,
+                         dsFunction, cameraWorldPos);
+    _renderQueue->render(RenderQueueType::SolidTransparent, cmd, _gbufferPipelineLayout,
+                         dsFunction, cameraWorldPos);
 }
 
-// 10. End rendering
+// 9. End rendering
 vulkan::cmdEndRendering(cmd);
 ```
+
+> **NOTE (Refactoring):** The render queue is populated by `Renderer::prepareSceneRender()` which is called
+> by `RendererDeferred::draw()` before any layer renders. `DeferredLayer` does NOT call
+> `_renderQueueVisitor.enqueue()` — it only reads from the already-populated shared queue.
 
 ### 4.5 — G-Buffer Vertex Shader
 
@@ -331,7 +340,8 @@ auto gbufferDS = frameResources.newDescriptorSet(_compositeGBufferDSLayout);
 // Update with G-buffer images + input image
 // ... (see descriptor set creation below)
 
-// 5. Create other descriptor sets (using members: _scene, _environment, _lightUniforms)
+// 5. Create other descriptor sets
+// Note: _lightDataBinding is non-owning (from RendererDeferred), _lightUniforms set via setter
 auto sceneDS = _frameDataBinding->newDescriptorSet(frameResources, viewMatrix, projMatrix);
 auto envDS = _environmentDataBinding->newDescriptorSet(frameResources, _environment);
 auto lightDS = _lightDataBinding->newDescriptorSet(frameResources, _lightUniforms);
@@ -582,7 +592,13 @@ This uses the existing `MaterialAttributes::isTransparent()` and `isSolid()` pro
 
 - [ ] `DeferredLayer` inherits from `RenderLayer` and overrides all virtual methods
 - [ ] Camera matrices and position are extracted from `_scene->mainCamera()` inside `render()`
-- [ ] `setLightUniforms()` and `setRtDataBinding()` configure per-frame data before `render()`
+- [ ] `setLightDataBinding()` receives non-owning pointer from `RendererDeferred`
+- [ ] `setLightUniforms()` receives const ref from `RendererDeferred` (populated by `Renderer::updateScene()`)
+- [ ] `setRtDataBinding()` configures non-owning pointer before `render()`
+- [ ] `setRenderQueue()` receives non-owning pointer to shared queue from `Renderer` base
+- [ ] DeferredLayer does NOT own a `RenderQueueVisitor` or `RenderQueue` — uses shared queue from Renderer
+- [ ] DeferredLayer does NOT own a `LightDataBinding` — uses shared binding from RendererDeferred
+- [ ] DeferredLayer DOES own `FrameDataBinding`, `ObjectDataBinding`, `EnvironmentDataBinding` (per-layer)
 - [ ] G-buffer pipeline creates 4 color attachments with correct formats
 - [ ] G-buffer pipeline uses `deferred_gbuffer.vert.spv` and `deferred_gbuffer.frag.spv`
 - [ ] Composite pipeline uses `deferred_composite.vert.spv` and `deferred_composite.frag.spv`
