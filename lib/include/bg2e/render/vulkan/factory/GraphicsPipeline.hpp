@@ -48,11 +48,11 @@ public:
     
     // Template function to add both input binding and attribute descriptions depending on the type of mesh
     // TODO: Check if this is working on Visual Studio/Windows
-    template <typename MeshT>
+    template <typename DrawableT>
     void setInputState()
     {
-        setInputBindingDescription(MeshT::bindingDescription());
-        setInputAttributeDescriptions(MeshT::attributeDescriptions());
+        setInputBindingDescription(DrawableT::bindingDescription());
+        setInputAttributeDescriptions(DrawableT::attributeDescriptions());
     }
 
     void setInputTopology(VkPrimitiveTopology topology);

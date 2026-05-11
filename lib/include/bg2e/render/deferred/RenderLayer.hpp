@@ -49,12 +49,25 @@ public:
     void setScene(scene::Scene* scene) { _scene = scene; }
     void setEnvironment(EnvironmentResources* environment) { _environment = environment; }
 
+    void setColorCorrection(
+        float brightness,
+        float contrast,
+        float exposure
+    ) {
+        _brightness = brightness;
+        _contrast = contrast;
+        _exposure = exposure;
+    }
+
 protected:
     Engine* _engine;
     VkExtent2D _extent;
     VkFormat _outputFormat;
     scene::Scene* _scene = nullptr;
     EnvironmentResources* _environment = nullptr;
+    float _brightness = 0.0f;
+    float _contrast = 1.0f;
+    float _exposure = 1.0f;
 };
 
 }

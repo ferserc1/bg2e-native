@@ -80,7 +80,7 @@ public:
     inline void addImage(
         uint32_t binding,
         VkDescriptorType type,
-        Image* image,
+        const Image* image,
         VkImageLayout layout,
         VkSampler sampler = VK_NULL_HANDLE
     ) {

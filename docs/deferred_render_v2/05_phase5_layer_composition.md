@@ -140,6 +140,13 @@ void RendererDeferred::draw(VkCommandBuffer cmd, uint32_t currentFrame,
     _opaqueLayer->setLightUniforms(_lightUniforms);
     _transparentLayer->setLightUniforms(_lightUniforms);
 
+    // Configure color correction on all layers
+    // _brightness, _contrast, _exposure are from Renderer base class
+    // Each layer applies color correction in its own compositing pass
+    _skyboxLayer->setColorCorrection(_brightness, _contrast, _exposure);
+    _opaqueLayer->setColorCorrection(_brightness, _contrast, _exposure);
+    _transparentLayer->setColorCorrection(_brightness, _contrast, _exposure);
+
     // === Layer 1: Skybox ===
     _skyboxLayer->render(cmd, currentFrame, nullptr, _skyboxImage.get(),
                          frameResources);
@@ -177,6 +184,11 @@ void RendererDeferred::draw(VkCommandBuffer cmd, uint32_t currentFrame,
 >
 > The `_lightUniforms` are populated by `updateScene()` which is called from `update()`.
 > `RendererDeferred::draw()` only needs to pass them to the deferred layers.
+>
+> **Color Correction:** Each layer applies its own color correction in its compositing pass
+> (using the values set via `setColorCorrection()`). The final output from the last layer
+> already has the correct color correction applied, so no additional correction is needed
+> at the `RendererDeferred` level.
 
 ### 5.4 — Full initScene() Implementation
 
@@ -286,6 +298,7 @@ void RendererDeferred::cleanup() {
 
 - [ ] `draw()` uses `prepareSceneRender()` and `endSceneRender()` from `Renderer` base
 - [ ] `_lightUniforms` (from `Renderer` base) are passed to deferred layers via `setLightUniforms()`
+- [ ] Color correction (`_brightness`, `_contrast`, `_exposure` from `Renderer` base) is passed to all layers via `setColorCorrection()` in `draw()`
 - [ ] `_renderQueue` (from `Renderer` base) is shared with deferred layers via `setRenderQueue()` in `build()`
 - [ ] `_lightDataBinding` is owned by `RendererDeferred` and shared with layers via `setLightDataBinding()`
 - [ ] `_resizeVisitor` (from `Renderer` base) is used in `resize()` and `initScene()`

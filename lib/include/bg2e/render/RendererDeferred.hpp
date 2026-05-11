@@ -24,8 +24,10 @@
 #include <bg2e/render/Renderer.hpp>
 #include <bg2e/render/EnvironmentResources.hpp>
 #include <bg2e/render/deferred/SkyboxLayer.hpp>
-#include <bg2e/scene/ResizeViewportVisitor.hpp>
-#include <bg2e/scene/UpdateVisitor.hpp>
+#include <bg2e/render/deferred/DeferredLayer.hpp>
+#include <bg2e/scene/vk/LightDataBinding.hpp>
+#include <bg2e/render/vulkan/rt/RayTracingSceneDataBinding.hpp>
+#include <bg2e/manipulation/SelectionHighlight.hpp>
 
 #include <memory>
 
@@ -89,8 +91,21 @@ protected:
     VkFormat _depthImageFormat;
     VkSampleCountFlagBits _sampleCount;
 
+    // Layers
     std::unique_ptr<deferred::SkyboxLayer> _skyboxLayer;
-    std::unique_ptr<vulkan::Image> _intermediateImage;
+    std::unique_ptr<deferred::DeferredLayer> _opaqueLayer;
+    std::unique_ptr<deferred::DeferredLayer> _transparentLayer;
+
+    // Intermediate images
+    std::shared_ptr<vulkan::Image> _skyboxImage;
+    std::shared_ptr<vulkan::Image> _opaqueImage;
+
+    // Data bindings (shared across deferred layers)
+    std::unique_ptr<scene::vk::LightDataBinding> _lightDataBinding;
+    std::unique_ptr<vulkan::rt::RayTracingSceneDataBinding> _rtDataBinding;
+
+    // Selection highlight
+    std::unique_ptr<manipulation::SelectionHighlight> _selectionHighlight;
 };
 
 }

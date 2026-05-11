@@ -104,7 +104,18 @@ public:
     DrawableGeneric(const DrawableGeneric&) = delete;
     DrawableGeneric& operator=(const DrawableGeneric&) = delete;
     ~DrawableGeneric() override = default;
-    
+
+
+    static VkVertexInputBindingDescription bindingDescription()
+    {
+        return RenderMeshT::bindingDescription();
+    }
+
+    static const std::vector<VkVertexInputAttributeDescription> attributeDescriptions()
+    {
+        return RenderMeshT::attributeDescriptions();
+    }
+
     struct SubmeshAttributes {
         base::MaterialAttributes material;
         glm::mat4 transform { 1.0f };
@@ -118,35 +129,35 @@ public:
     void setMesh(MeshT* mesh);
     void setMesh(std::shared_ptr<MeshT> mesh);
     const std::shared_ptr<MeshT>& mesh() const;
-    
+
     void setMaterial(const base::MaterialAttributes& mat, uint32_t submeshIndex = 0);
     void setSubmeshTransform(const glm::mat4& mat, uint32_t submeshIndex = 0);
     void setSubmeshName(const std::string & name, uint32_t submeshIndex = 0);
     void setSubmeshGroupName(const std::string& groupName, uint32_t submeshIndex = 0);
     void setSubmeshVisibility(bool visible, uint32_t submeshIndex = 0);
-    
+
     [[nodiscard]] const base::MaterialAttributes& material(uint32_t index = 0) const;
     [[nodiscard]] base::MaterialAttributes& material(uint32_t index = 0);
     [[nodiscard]] glm::mat4 submeshTransform(uint32_t index = 0) const;
     [[nodiscard]] std::string submeshName(uint32_t index = 0) const;
     [[nodiscard]] std::string submeshGroupName(uint32_t index = 0) const;
     [[nodiscard]] bool submeshVisibility(uint32_t index = 0) const;
-    
+
     [[nodiscard]] uint32_t submeshesCount() const;
 
     [[nodiscard]] bg2e::geo::Submesh submeshData(uint32_t index = 0) const;
-    
+
     std::vector<std::shared_ptr<render::MaterialBase>> materials() { return _materials; }
-    
+
     void iterateMaterials(std::function<void(base::MaterialAttributes&)> cb);
 
     void load(render::Engine * engine);
     [[nodiscard]] inline bool isLoaded() const { return _renderMesh.get() != nullptr; }
     void reload();
-    
+
     // Call this function when a material property has changed after calling the load() method
     void updateMaterials();
-    
+
     std::shared_ptr<RenderMeshT> renderMesh();
     [[nodiscard]] const std::shared_ptr<render::MaterialBase>& renderMaterial(uint32_t submeshIndex) const;
     std::shared_ptr<render::MaterialBase>& renderMaterial(uint32_t submeshIndex);
@@ -157,7 +168,7 @@ public:
     inline const std::vector<std::unique_ptr<bg2e::render::vulkan::rt::RayTracingMeshGeneric<MeshT>>>& rayTracingMeshes() const { return _rayTracingMeshes; }
     inline std::unique_ptr<bg2e::render::vulkan::rt::RayTracingMeshGeneric<MeshT>> & rayTracingMesh(uint32_t submesh) { return _rayTracingMeshes[submesh]; }
     inline const std::unique_ptr<bg2e::render::vulkan::rt::RayTracingMeshGeneric<MeshT>> & rayTracingMesh(uint32_t submesh) const { return _rayTracingMeshes[submesh]; }
-    
+
     void drawSubmesh(
         VkCommandBuffer cmd,
         VkPipelineLayout layout,
@@ -165,25 +176,25 @@ public:
         DrawSubmeshFunction cb,
         VkPipelineBindPoint bp
     ) override;
-    
+
     void draw(
         VkCommandBuffer cmd,
         VkPipelineLayout layout,
         DrawFunction cb,
         VkPipelineBindPoint bp
     ) override;
-    
+
 protected:
     std::shared_ptr<MeshT> _mesh;
     std::vector<SubmeshAttributes> _submeshAttributes;
 
-    
+
     // Default material attributes. It is used only to return something if the
     // submesh attributes accessors are called with an out of bound index, because we don't
 	// whant that the access to the attributes to crash the program.
     base::MaterialAttributes _defaultMaterial;
     std::string _defaultString;
-    
+
     // Render resources
     render::Engine * _engine = nullptr;
     std::shared_ptr<RenderMeshT> _renderMesh;

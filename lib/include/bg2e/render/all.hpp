@@ -22,6 +22,7 @@
 #include <bg2e/render/ColorAttachments.hpp>
 #include <bg2e/render/ColorAttachmentsCanvas.hpp>
 #include <bg2e/render/CubemapRenderer.hpp>
+#include <bg2e/render/gbuffer/GBufferManager.hpp>
 #include <bg2e/render/DefaultOffscreenApplicationDelegate.hpp>
 #include <bg2e/render/DefaultRenderLoopDelegate.hpp>
 #include <bg2e/render/EnvironmentResources.hpp>

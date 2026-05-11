@@ -51,12 +51,38 @@ void RendererDeferred::build(
         )
     );
 
+    // Create shared data bindings for deferred layers
+    _lightDataBinding = std::make_unique<scene::vk::LightDataBinding>(_engine);
+    if (_engine->rayTracingSupported()) {
+        _rtDataBinding = std::make_unique<vulkan::rt::RayTracingSceneDataBinding>(_engine);
+    }
+
+    // Create layers
     _skyboxLayer = std::make_unique<deferred::SkyboxLayer>(_engine);
     _skyboxLayer->build(initialExtent, colorImageFormat);
     _skyboxLayer->setScene(_scene.get());
     _skyboxLayer->setEnvironment(_environment.get());
 
-    _intermediateImage = std::unique_ptr<vulkan::Image>(
+    _opaqueLayer = std::make_unique<deferred::DeferredLayer>(_engine, deferred::LayerType::Opaque);
+    _opaqueLayer->setLightDataBinding(_lightDataBinding.get());
+    _opaqueLayer->build(initialExtent, colorImageFormat);
+    _opaqueLayer->setScene(_scene.get());
+    _opaqueLayer->setEnvironment(_environment.get());
+    _opaqueLayer->setLightDataBinding(_lightDataBinding.get());
+    _opaqueLayer->setRenderQueue(&_renderQueue);
+    if (_rtDataBinding) _opaqueLayer->setRtDataBinding(_rtDataBinding.get());
+
+    _transparentLayer = std::make_unique<deferred::DeferredLayer>(_engine, deferred::LayerType::Transparent);
+    _transparentLayer->setLightDataBinding(_lightDataBinding.get());
+    _transparentLayer->build(initialExtent, colorImageFormat);
+    _transparentLayer->setScene(_scene.get());
+    _transparentLayer->setEnvironment(_environment.get());
+    _transparentLayer->setLightDataBinding(_lightDataBinding.get());
+    _transparentLayer->setRenderQueue(&_renderQueue);
+    if (_rtDataBinding) _transparentLayer->setRtDataBinding(_rtDataBinding.get());
+
+    // Create intermediate images
+    _skyboxImage = std::shared_ptr<vulkan::Image>(
         vulkan::Image::createAllocatedImage(
             _engine,
             colorImageFormat,
@@ -68,12 +94,38 @@ void RendererDeferred::build(
             VK_IMAGE_ASPECT_COLOR_BIT
         )
     );
+
+    _opaqueImage = std::shared_ptr<vulkan::Image>(
+        vulkan::Image::createAllocatedImage(
+            _engine,
+            colorImageFormat,
+            initialExtent,
+            VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
+            VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
+            VK_IMAGE_USAGE_TRANSFER_DST_BIT |
+            VK_IMAGE_USAGE_SAMPLED_BIT,
+            VK_IMAGE_ASPECT_COLOR_BIT
+        )
+    );
+
+    // Selection highlight (non-offscreen only)
+    if (!isOffscreen) {
+        _selectionHighlight = std::make_unique<manipulation::SelectionHighlight>();
+        _selectionHighlight->init(engine);
+    }
 }
 
 void RendererDeferred::initFrameResources(
     bg2e::render::vulkan::DescriptorSetAllocator* frameAllocator
 ) {
     _environment->initFrameResources(frameAllocator);
+    _lightDataBinding->initFrameResources(frameAllocator);
+    if (_rtDataBinding) {
+        _rtDataBinding->initFrameResources(frameAllocator);
+    }
+    _skyboxLayer->initFrameResources(frameAllocator);
+    _opaqueLayer->initFrameResources(frameAllocator);
+    _transparentLayer->initFrameResources(frameAllocator);
 }
 
 void RendererDeferred::initScene(
@@ -95,16 +147,39 @@ void RendererDeferred::initScene(
     );
 
     _scene->updateLights();
+
+    _resizeVisitor.resizeViewport(_scene->rootNode(), _viewportExtent);
+
+    _engine->cleanupManager().push([&](VkDevice) {
+        _scene.reset();
+    });
 }
 
 void RendererDeferred::resize(
     VkExtent2D newExtent
 ) {
     _viewportExtent = newExtent;
+    _scene->willResize();
 
+    // Resize layers
     _skyboxLayer->resize(newExtent);
+    _opaqueLayer->resize(newExtent);
+    _transparentLayer->resize(newExtent);
 
-    _intermediateImage = std::unique_ptr<vulkan::Image>(
+    // Recreate intermediate images
+    _skyboxImage = std::shared_ptr<vulkan::Image>(
+        vulkan::Image::createAllocatedImage(
+            _engine,
+            _colorImageFormat,
+            newExtent,
+            VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
+            VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
+            VK_IMAGE_USAGE_TRANSFER_DST_BIT |
+            VK_IMAGE_USAGE_SAMPLED_BIT,
+            VK_IMAGE_ASPECT_COLOR_BIT
+        )
+    );
+    _opaqueImage = std::shared_ptr<vulkan::Image>(
         vulkan::Image::createAllocatedImage(
             _engine,
             _colorImageFormat,
@@ -117,15 +192,15 @@ void RendererDeferred::resize(
         )
     );
 
-    _scene->willResize();
     _resizeVisitor.resizeViewport(_scene->rootNode(), newExtent);
+
     _scene->didResize();
 }
 
 void RendererDeferred::update(
     float delta
 ) {
-    updateScene(delta);
+    updateScene(delta, BG2E_MAX_FORWARD_LIGHTS);
 }
 
 void RendererDeferred::draw(
@@ -136,43 +211,54 @@ void RendererDeferred::draw(
     const bg2e::render::vulkan::Image* /*msaaDepthImage*/,
     bg2e::render::vulkan::FrameResources& frameResources
 ) {
+    // === Scene preparation (from Renderer base) ===
     prepareSceneRender(cmd, currentFrame, frameResources);
 
-    _skyboxLayer->render(cmd, currentFrame, nullptr, _intermediateImage.get(), frameResources);
+    // Configure light uniforms on deferred layers
+    _opaqueLayer->setLightUniforms(_lightUniforms);
+    _transparentLayer->setLightUniforms(_lightUniforms);
 
-    vulkan::Image::cmdTransitionImage(
-        cmd,
-        _intermediateImage->handle(),
-        VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-        VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
-    );
-    vulkan::Image::cmdTransitionImage(
-        cmd,
-        colorImage->handle(),
-        VK_IMAGE_LAYOUT_UNDEFINED,
-        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
-    );
-    vulkan::Image::cmdCopy(
-        cmd,
-        _intermediateImage->handle(),
-        _intermediateImage->extent2D(),
-        colorImage->handle(),
-        colorImage->extent2D()
-    );
-    vulkan::Image::cmdTransitionImage(
-        cmd,
-        colorImage->handle(),
-        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-        VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
-    );
+    // Configure color correction on all layers
+    _skyboxLayer->setColorCorrection(_brightness, _contrast, _exposure);
+    _opaqueLayer->setColorCorrection(_brightness, _contrast, _exposure);
+    _transparentLayer->setColorCorrection(_brightness, _contrast, _exposure);
 
+    // === Layer 1: Skybox ===
+    _skyboxLayer->render(cmd, currentFrame, nullptr, _skyboxImage.get(),
+                         frameResources);
+
+    // === Layer 2: Opaque ===
+    _opaqueLayer->render(cmd, currentFrame, _skyboxImage.get(), _opaqueImage.get(),
+                         frameResources);
+
+    // === Layer 3: Transparent (writes to swapchain output) ===
+    _transparentLayer->render(cmd, currentFrame, _opaqueImage.get(), colorImage,
+                              frameResources);
+
+    // === Selection highlight (non-offscreen only) ===
+    if (!_isOffscreen && _selectionHighlight) {
+        auto mainCamera = _scene->mainCamera();
+        auto viewMatrix = mainCamera->ownerNode()->invertedWorldMatrix();
+        auto projMatrix = mainCamera->projectionMatrix();
+        _selectionHighlight->draw(_scene->rootNode(), viewMatrix, projMatrix, cmd);
+    }
+
+    // === End scene render (from Renderer base) ===
     endSceneRender();
 }
 
 void RendererDeferred::cleanup() {
-    _intermediateImage.reset();
-    _skyboxLayer.reset();
-    _scene.reset();
+    _selectionHighlight.reset();
+
+    _transparentLayer->cleanup();
+    _opaqueLayer->cleanup();
+    _skyboxLayer->cleanup();
+
+    _opaqueImage.reset();
+    _skyboxImage.reset();
+
+    _rtDataBinding.reset();
+    _lightDataBinding.reset();
 }
 
 }
