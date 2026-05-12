@@ -35,13 +35,38 @@ DeferredLayer::~DeferredLayer()
     cleanup();
 }
 
+const vulkan::Image* DeferredLayer::resolveDebugSource(const vulkan::Image* inputImage, GBufferManager* gbuffer) const
+{
+    switch (_debugVisualization)
+    {
+        case DeferredDebugVisualization::GBufferAlbedo:
+            return gbuffer->image(0).get();
+        case DeferredDebugVisualization::GBufferNormal:
+            return gbuffer->image(1).get();
+        case DeferredDebugVisualization::GBufferMaterial:
+            return gbuffer->image(2).get();
+        case DeferredDebugVisualization::GBufferPosition:
+            return gbuffer->image(3).get();
+        case DeferredDebugVisualization::GBufferDepth:
+            return gbuffer->depthImage().get();
+        case DeferredDebugVisualization::InputImage:
+            return inputImage;
+        default:
+            return nullptr;
+    }
+}
+
 void DeferredLayer::build(VkExtent2D extent, VkFormat outputFormat)
 {
     RenderLayer::build(extent, outputFormat);
 
-    // Create G-buffer manager
-    _gbuffer = std::make_unique<GBufferManager>(_engine);
-    _gbuffer->build(extent);
+    // Create per-frame G-buffer managers
+    _gbuffers.resize(_engine->numImages());
+    for (auto& gb : _gbuffers)
+    {
+        gb = std::make_unique<GBufferManager>(_engine);
+        gb->build(extent);
+    }
 
     // Create per-layer data bindings
     _frameDataBinding = std::make_unique<scene::vk::FrameDataBinding>(_engine);
@@ -55,7 +80,11 @@ void DeferredLayer::build(VkExtent2D extent, VkFormat outputFormat)
     createGBufferPipeline();
 
     // Create composite pipeline
-    createCompositePipeline();
+    // TODO: Debug. Create the composite pipeline again after debug g-buffers
+    //createCompositePipeline();
+
+    // Create debug blit pipeline
+    createDebugPipeline();
 
     // Create sampler for G-buffer textures
     vulkan::factory::Sampler samplerFactory(_engine);
@@ -97,23 +126,44 @@ void DeferredLayer::render(
     auto cameraWorldPos = mainCamera->ownerNode()->worldPosition();
 
     renderGBufferPass(cmd, currentFrame, frameResources, viewMatrix, projMatrix, cameraWorldPos);
-    renderCompositePass(cmd, currentFrame, inputImage, outputImage, frameResources, viewMatrix, projMatrix);
+
+    auto frameIndex = _engine->currentFrameResourcesIndex();
+    auto* gbuffer = _gbuffers[frameIndex].get();
+
+    if (_debugVisualization == DeferredDebugVisualization::FullComposition)
+    {
+        renderCompositePass(cmd, currentFrame, inputImage, outputImage, frameResources, viewMatrix, projMatrix);
+    }
+    else
+    {
+        auto* src = resolveDebugSource(inputImage, gbuffer);
+        if (src)
+        {
+            //renderDebugPass(cmd, src, outputImage, frameResources);
+        }
+    }
 }
 
 void DeferredLayer::resize(VkExtent2D newExtent)
 {
     RenderLayer::resize(newExtent);
 
-    _gbuffer->resize(newExtent);
+    for (auto& gb : _gbuffers)
+    {
+        gb->resize(newExtent);
+    }
 
     // Recreate pipelines with new extent
     cleanup();
     createGBufferPipeline();
     createCompositePipeline();
+    createDebugPipeline();
 }
 
 void DeferredLayer::cleanup()
 {
+    _gbuffers.clear();
+
     if (_gbufferPipeline != VK_NULL_HANDLE)
     {
         vkDestroyPipeline(_engine->device().handle(), _gbufferPipeline, nullptr);
@@ -164,6 +214,21 @@ void DeferredLayer::cleanup()
         vkDestroyDescriptorSetLayout(_engine->device().handle(), _compositeGBufferDSLayout, nullptr);
         _compositeGBufferDSLayout = VK_NULL_HANDLE;
     }
+    if (_debugPipeline != VK_NULL_HANDLE)
+    {
+        vkDestroyPipeline(_engine->device().handle(), _debugPipeline, nullptr);
+        _debugPipeline = VK_NULL_HANDLE;
+    }
+    if (_debugPipelineLayout != VK_NULL_HANDLE)
+    {
+        vkDestroyPipelineLayout(_engine->device().handle(), _debugPipelineLayout, nullptr);
+        _debugPipelineLayout = VK_NULL_HANDLE;
+    }
+    if (_debugDSLayout != VK_NULL_HANDLE)
+    {
+        vkDestroyDescriptorSetLayout(_engine->device().handle(), _debugDSLayout, nullptr);
+        _debugDSLayout = VK_NULL_HANDLE;
+    }
 }
 
 void DeferredLayer::createGBufferPipeline()
@@ -201,14 +266,14 @@ void DeferredLayer::createGBufferPipeline()
 
     plFactory.setInputState<scene::Drawable>();
 
-    plFactory.setDepthFormat(_gbuffer->depthFormat());
+    plFactory.setDepthFormat(_gbuffers[0]->depthFormat());
     plFactory.enableDepthtest(true, VK_COMPARE_OP_LESS);
     plFactory.inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
     plFactory.setCullMode(VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_COUNTER_CLOCKWISE);
     plFactory.disableMultisample();
 
     // 4 color attachment formats
-    plFactory.setColorAttachmentFormat(_gbuffer->formats());
+    plFactory.setColorAttachmentFormat(_gbuffers[0]->formats());
 
     _gbufferPipeline = plFactory.build(_gbufferPipelineLayout);
 
@@ -328,6 +393,54 @@ void DeferredLayer::createCompositePipeline()
     });
 }
 
+void DeferredLayer::createDebugPipeline()
+{
+    vulkan::factory::DescriptorSetLayout dsLayoutFactory;
+    dsLayoutFactory.addBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+    _debugDSLayout = dsLayoutFactory.build(
+        _engine->device().handle(),
+        VK_SHADER_STAGE_FRAGMENT_BIT
+    );
+
+    vulkan::factory::PipelineLayout layoutFactory(_engine);
+    layoutFactory.addDescriptorSetLayout(_debugDSLayout);
+    _debugPipelineLayout = layoutFactory.build();
+
+    vulkan::factory::GraphicsPipeline plFactory(_engine);
+
+    plFactory.addShader("deferred_debug_blit.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
+    plFactory.addShader("deferred_debug_blit.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    plFactory.clearInputBindingDescriptions();
+    plFactory.clearInputAttributeDescriptions();
+
+    plFactory.disableDepthtest();
+    plFactory.disableMultisample();
+    plFactory.setCullMode(VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_COUNTER_CLOCKWISE);
+    plFactory.setColorAttachmentFormat(_outputFormat);
+    plFactory.inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+
+    _debugPipeline = plFactory.build(_debugPipelineLayout);
+
+    _engine->cleanupManager().push([&](VkDevice dev) {
+        if (_debugPipeline != VK_NULL_HANDLE)
+        {
+            vkDestroyPipeline(dev, _debugPipeline, nullptr);
+            _debugPipeline = VK_NULL_HANDLE;
+        }
+        if (_debugPipelineLayout != VK_NULL_HANDLE)
+        {
+            vkDestroyPipelineLayout(dev, _debugPipelineLayout, nullptr);
+            _debugPipelineLayout = VK_NULL_HANDLE;
+        }
+        if (_debugDSLayout != VK_NULL_HANDLE)
+        {
+            vkDestroyDescriptorSetLayout(dev, _debugDSLayout, nullptr);
+            _debugDSLayout = VK_NULL_HANDLE;
+        }
+    });
+}
+
 void DeferredLayer::renderGBufferPass(
     VkCommandBuffer cmd,
     uint32_t currentFrame,
@@ -337,21 +450,27 @@ void DeferredLayer::renderGBufferPass(
     const glm::vec3& cameraWorldPos
 )
 {
-    // 1. Transition G-buffers to attachment layout
-    _gbuffer->transitionToAttachment(cmd);
 
-    // 2. Clear G-buffers
-    _gbuffer->clear(cmd);
+    auto* gbuffer = _gbuffers[_engine->currentFrameResourcesIndex()].get();
+
+    /*
+    // 1. Clear G-buffers
+    gbuffer->clear(cmd);
+
+    // 2. Transition G-buffers to attachment layout
+    gbuffer->transitionToAttachment(cmd);
 
     // 3. Begin dynamic rendering with 4 color attachments + depth
     vulkan::macros::cmdClearImagesAndBeginRendering(
         cmd,
-        _gbuffer->images(),
+        gbuffer->images(),
         { {0, 0, 0, 0} },
         VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-        _gbuffer->depthImage().get(),
+        gbuffer->depthImage().get(),
         1.0f
     );
+*/
+    gbuffer->beginRender(cmd);
 
     // 4. Set viewport/scissor
     vulkan::macros::cmdSetDefaultViewportAndScissor(cmd, _extent);
@@ -407,6 +526,8 @@ void DeferredLayer::renderGBufferPass(
 
     // 9. End rendering
     vulkan::cmdEndRendering(cmd);
+
+    gbuffer->transitionToShaderRead(cmd);
 }
 
 void DeferredLayer::renderCompositePass(
@@ -419,8 +540,10 @@ void DeferredLayer::renderCompositePass(
     const glm::mat4& projMatrix
 )
 {
+    auto* gbuffer = _gbuffers[_engine->currentFrameResourcesIndex()].get();
+
     // 1. Transition G-buffers to shader read
-    _gbuffer->transitionToShaderRead(cmd);
+    gbuffer->transitionToShaderRead(cmd);
 
     // 2. Clear output image and begin rendering
     VkClearColorValue clearValue{ { 0.0f, 0.0f, 0.0f, 1.0f } };
@@ -434,13 +557,13 @@ void DeferredLayer::renderCompositePass(
     auto gbufferDS = frameResources.newDescriptorSet(_compositeGBufferDSLayout);
     gbufferDS->beginUpdate();
     gbufferDS->addImage(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-        _gbuffer->image(0).get(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _gbufferSampler);
+        gbuffer->image(0).get(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _gbufferSampler);
     gbufferDS->addImage(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-        _gbuffer->image(1).get(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _gbufferSampler);
+        gbuffer->image(1).get(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _gbufferSampler);
     gbufferDS->addImage(2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-        _gbuffer->image(2).get(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _gbufferSampler);
+        gbuffer->image(2).get(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _gbufferSampler);
     gbufferDS->addImage(3, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-        _gbuffer->image(3).get(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _gbufferSampler);
+        gbuffer->image(3).get(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _gbufferSampler);
     gbufferDS->addImage(4, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
         inputImage, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _gbufferSampler);
     gbufferDS->endUpdate();
@@ -478,6 +601,49 @@ void DeferredLayer::renderCompositePass(
     vkCmdDraw(cmd, 6, 1, 0, 0);
 
     // 9. End rendering
+    vulkan::cmdEndRendering(cmd);
+}
+
+void DeferredLayer::renderDebugPass(
+    VkCommandBuffer cmd,
+    const vulkan::Image* sourceImage,
+    const vulkan::Image* outputImage,
+    vulkan::FrameResources& frameResources
+)
+{
+    auto* gbuffer = _gbuffers[_engine->currentFrameResourcesIndex()].get();
+
+    // 1. Transition G-buffers to shader read (same as composite pass)
+    gbuffer->transitionToShaderRead(cmd);
+
+    // 2. Ensure source image is in shader read layout
+    vulkan::Image::cmdTransitionImage(cmd, sourceImage->handle(),
+        VK_IMAGE_LAYOUT_UNDEFINED,
+        VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+
+    // 3. Clear output image and begin rendering
+    VkClearColorValue clearValue{ { 0.0f, 0.0f, 1.0f, 1.0f } };
+    vulkan::macros::cmdClearImageAndBeginRendering(cmd, outputImage, clearValue, VK_IMAGE_LAYOUT_UNDEFINED);
+    vulkan::macros::cmdSetDefaultViewportAndScissor(cmd, _extent);
+
+    // 4. Bind debug pipeline
+    vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, _debugPipeline);
+
+    // 5. Create and bind descriptor set with source image
+    auto ds = frameResources.newDescriptorSet(_debugDSLayout);
+    ds->beginUpdate();
+    ds->addImage(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+        sourceImage, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _gbufferSampler);
+    ds->endUpdate();
+
+    VkDescriptorSet dsPtr[] = { ds->descriptorSet() };
+    vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
+        _debugPipelineLayout, 0, 1, dsPtr, 0, nullptr);
+
+    // 6. Draw fullscreen quad
+    vkCmdDraw(cmd, 6, 1, 0, 0);
+
+    // 7. End rendering
     vulkan::cmdEndRendering(cmd);
 }
 

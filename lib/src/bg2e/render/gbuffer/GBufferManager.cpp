@@ -17,6 +17,10 @@
  */
 
 #include <bg2e/render/gbuffer/GBufferManager.hpp>
+#include <bg2e/render/vulkan/macros/graphics.hpp>
+#include <bg2e/render/vulkan/Info.hpp>
+
+#include <algorithm>
 
 namespace bg2e::render {
 
@@ -74,6 +78,9 @@ void GBufferManager::build(VkExtent2D extent)
         1, false, 0, VK_SAMPLE_COUNT_1_BIT
     );
     _depthImage = std::shared_ptr<vulkan::Image>(depth);
+
+    _colorLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    _depthLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 }
 
 void GBufferManager::resize(VkExtent2D newExtent)
@@ -123,48 +130,104 @@ VkExtent2D GBufferManager::extent() const
     return _extent;
 }
 
+void GBufferManager::transitionToClear(VkCommandBuffer cmd)
+{
+    transitionTo(
+        cmd,
+        VK_IMAGE_LAYOUT_GENERAL,
+        VK_IMAGE_LAYOUT_GENERAL
+    );
+}
 void GBufferManager::transitionToAttachment(VkCommandBuffer cmd)
 {
-    for (auto &image : _colorImages)
-    {
-        vulkan::Image::cmdTransitionImage(cmd, image->handle(),
-            VK_IMAGE_LAYOUT_UNDEFINED,
-            VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
-    }
-
-    vulkan::Image::cmdTransitionImage(cmd, _depthImage->handle(),
-        VK_IMAGE_LAYOUT_UNDEFINED,
-        VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+    transitionTo(
+        cmd,
+        VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+        VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
+    );
 }
 
 void GBufferManager::transitionToShaderRead(VkCommandBuffer cmd)
 {
-    for (auto &image : _colorImages)
-    {
-        vulkan::Image::cmdTransitionImage(cmd, image->handle(),
-            VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-    }
-
-    vulkan::Image::cmdTransitionImage(cmd, _depthImage->handle(),
-        VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
-        VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    transitionTo(
+        cmd,
+        VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+        VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+    );
 }
 
-void GBufferManager::clear(VkCommandBuffer cmd)
+void GBufferManager::beginRender(VkCommandBuffer cmd)
 {
-    VkClearColorValue black{ { 0.0f, 0.0f, 0.0f, 0.0f } };
-    for (auto &image : _colorImages)
+    VkClearColorValue clearValue{ { 0.0f, 0.0f, 0.0f, 0.0f } };
+    auto clearRange = vulkan::Image::subresourceRange(VK_IMAGE_ASPECT_COLOR_BIT);
+    std::vector<VkRenderingAttachmentInfo> attachments;
+    VkExtent2D imageExtent = _colorImages[0]->extent2D();
+    for (auto image : _colorImages)
     {
-        auto range = vulkan::Image::subresourceRange(VK_IMAGE_ASPECT_COLOR_BIT);
-        vkCmdClearColorImage(cmd, image->handle(),
-            VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, &black, 1, &range);
+        vulkan::Image::cmdTransitionImage(
+            cmd, image->handle(),
+            _colorLayout,
+            VK_IMAGE_LAYOUT_GENERAL
+        );
+
+        vkCmdClearColorImage(
+            cmd,
+            image->handle(),
+            VK_IMAGE_LAYOUT_GENERAL,
+            &clearValue, 1, &clearRange
+        );
+
+        vulkan::Image::cmdTransitionImage(
+            cmd, image->handle(),
+            VK_IMAGE_LAYOUT_GENERAL,
+            VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
+        );
     }
 
-    VkClearDepthStencilValue depthClear{ 1.0f, 0 };
-    auto depthRange = vulkan::Image::subresourceRange(VK_IMAGE_ASPECT_DEPTH_BIT);
-    vkCmdClearDepthStencilImage(cmd, _depthImage->handle(),
-        VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, &depthClear, 1, &depthRange);
+    vulkan::Image::cmdTransitionImage(
+        cmd, _depthImage->handle(),
+        _depthLayout,
+        VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL
+    );
+
+    float depthValue = 1.0f;
+    auto depthAttachment = vulkan::Info::depthAttachmentInfo(_depthImage->imageView(), depthValue);
+    auto renderInfo = vulkan::Info::renderingInfo(
+        imageExtent,
+        attachments.data(),
+        &depthAttachment,
+        static_cast<uint32_t>(attachments.size())
+    );
+    vulkan::cmdBeginRendering(cmd, &renderInfo);
+
+    _colorLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    _depthLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+}
+
+void GBufferManager::transitionTo(VkCommandBuffer cmd, VkImageLayout colorLayout, VkImageLayout depthLayout)
+{
+    if (_colorLayout != colorLayout)
+    {
+        for (auto &image : _colorImages)
+        {
+            vulkan::Image::cmdTransitionImage(cmd, image->handle(),
+                _colorLayout,
+                colorLayout);
+        }
+        _colorLayout = colorLayout;
+    }
+
+    if (_depthLayout != depthLayout)
+    {
+        vulkan::Image::TransitionInfo transitionInfo;
+        transitionInfo.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+        vulkan::Image::cmdTransitionImage(cmd, _depthImage->handle(),
+            _depthLayout,
+            depthLayout,
+            transitionInfo
+        );
+        _depthLayout = depthLayout;
+    }
 }
 
 }

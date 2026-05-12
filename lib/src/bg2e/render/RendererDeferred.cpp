@@ -113,6 +113,9 @@ void RendererDeferred::build(
         _selectionHighlight = std::make_unique<manipulation::SelectionHighlight>();
         _selectionHighlight->init(engine);
     }
+
+    // DEBUG: set render gbuffer layer
+    _opaqueLayer->setDebugVisualization(deferred::DeferredDebugVisualization::GBufferAlbedo);
 }
 
 void RendererDeferred::initFrameResources(
@@ -224,13 +227,27 @@ void RendererDeferred::draw(
     _transparentLayer->setColorCorrection(_brightness, _contrast, _exposure);
 
     // === Layer 1: Skybox ===
-    _skyboxLayer->render(cmd, currentFrame, nullptr, _skyboxImage.get(),
-                         frameResources);
+    _skyboxLayer->render(
+        cmd,
+        currentFrame,
+        nullptr,
+        // DEBUG: generate color image directly
+        //_skyboxImage.get(),
+        colorImage,
+        frameResources
+    );
 
     // === Layer 2: Opaque ===
-    _opaqueLayer->render(cmd, currentFrame, _skyboxImage.get(), _opaqueImage.get(),
-                         frameResources);
+    _opaqueLayer->render(
+        cmd,
+        currentFrame,
+        _skyboxImage.get(),
+        _opaqueImage.get(),
+        frameResources
+    );
 
+    /*
+     TODO: Debugging deferred render layer, remove de comment block after done
     // === Layer 3: Transparent (writes to swapchain output) ===
     _transparentLayer->render(cmd, currentFrame, _opaqueImage.get(), colorImage,
                               frameResources);
@@ -242,6 +259,7 @@ void RendererDeferred::draw(
         auto projMatrix = mainCamera->projectionMatrix();
         _selectionHighlight->draw(_scene->rootNode(), viewMatrix, projMatrix, cmd);
     }
+    */
 
     // === End scene render (from Renderer base) ===
     endSceneRender();

@@ -40,6 +40,19 @@ enum class LayerType {
     Transparent
 };
 
+enum class DeferredDebugVisualization {
+    FullComposition = 0,
+    GBufferAlbedo,
+    GBufferNormal,
+    GBufferMaterial,
+    GBufferPosition,
+    GBufferDepth,
+    InputImage
+
+    // Future extra passes:
+    // ExtraPassRTAO,
+};
+
 class BG2E_API DeferredLayer : public RenderLayer {
 public:
     DeferredLayer(Engine* engine, LayerType type);
@@ -62,10 +75,13 @@ public:
     void setRtDataBinding(vulkan::rt::RayTracingSceneDataBinding* rt) { _rtDataBinding = rt; }
     void setRenderQueue(render::RenderQueue<scene::Drawable>* rq) { _renderQueue = rq; }
 
+    void setDebugVisualization(DeferredDebugVisualization mode) { _debugVisualization = mode; }
+    DeferredDebugVisualization debugVisualization() const { return _debugVisualization; }
+
 protected:
     LayerType _layerType;
 
-    std::unique_ptr<GBufferManager> _gbuffer;
+    std::vector<std::unique_ptr<GBufferManager>> _gbuffers;
 
     VkPipeline _gbufferPipeline = VK_NULL_HANDLE;
     VkPipeline _compositePipeline = VK_NULL_HANDLE;
@@ -90,6 +106,12 @@ protected:
     VkSampler _gbufferSampler = VK_NULL_HANDLE;
     bool _useRtShadows = false;
 
+    DeferredDebugVisualization _debugVisualization = DeferredDebugVisualization::FullComposition;
+
+    VkPipeline _debugPipeline = VK_NULL_HANDLE;
+    VkPipelineLayout _debugPipelineLayout = VK_NULL_HANDLE;
+    VkDescriptorSetLayout _debugDSLayout = VK_NULL_HANDLE;
+
     struct CompositePushConstants {
         float gamma;
         float brightness;
@@ -99,6 +121,7 @@ protected:
 
     void createGBufferPipeline();
     void createCompositePipeline();
+    void createDebugPipeline();
     void renderGBufferPass(
         VkCommandBuffer cmd,
         uint32_t currentFrame,
@@ -116,6 +139,13 @@ protected:
         const glm::mat4& viewMatrix,
         const glm::mat4& projMatrix
     );
+    void renderDebugPass(
+        VkCommandBuffer cmd,
+        const vulkan::Image* sourceImage,
+        const vulkan::Image* outputImage,
+        vulkan::FrameResources& frameResources
+    );
+    const vulkan::Image* resolveDebugSource(const vulkan::Image* inputImage, GBufferManager* gbuffer) const;
 };
 
 }

@@ -44,9 +44,10 @@ public:
     VkFormat depthFormat() const;
     VkExtent2D extent() const;
 
+    void transitionToClear(VkCommandBuffer cmd);
     void transitionToAttachment(VkCommandBuffer cmd);
     void transitionToShaderRead(VkCommandBuffer cmd);
-    void clear(VkCommandBuffer cmd);
+    void beginRender(VkCommandBuffer cmd);
 
 private:
     Engine * _engine;
@@ -59,6 +60,11 @@ private:
     
     std::shared_ptr<vulkan::Image> _depthImage;
     VkFormat _depthFormat = VK_FORMAT_D32_SFLOAT;
+
+    VkImageLayout _colorLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    VkImageLayout _depthLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+    void transitionTo(VkCommandBuffer cmd, VkImageLayout colorLayout, VkImageLayout depthLayout);
 };
 
 }
