@@ -80,7 +80,38 @@ protected:
         sceneRoot->addChild(mainCameraNode);
 
 
+        auto drawable = std::shared_ptr<bg2e::scene::DrawableBase>(loadDrawable());
+        auto drawableComponent = std::make_shared<bg2e::scene::DrawableComponent>(drawable);
+        auto modelNode = std::make_shared<bg2e::scene::Node>("3D Model");
+        modelNode->addComponent(drawableComponent);
+        modelNode->addComponent(bg2e::scene::TransformComponent::makeTranslated(2.0f, 0.0f, 0.0f));
+        sceneRoot->addChild(modelNode);
+
         return sceneRoot;
+    }
+
+    bg2e::scene::DrawableBase * loadDrawable()
+    {
+        std::filesystem::path modelPath = bg2e::base::PlatformTools::assetPath();
+        modelPath.append("two_submeshes.obj");
+
+        auto innerAlbedoTexture = std::make_shared<bg2e::base::Texture>(
+            bg2e::base::PlatformTools::assetPath(),
+            "two_submeshes_inner_albedo.jpg"
+        );
+
+        auto outerAlbedoTexture = std::make_shared<bg2e::base::Texture>(
+            bg2e::base::PlatformTools::assetPath(),
+            "two_submeshes_outer_albedo.jpg"
+        );
+
+        auto drawable = new bg2e::scene::Drawable();
+        drawable->setMesh(bg2e::db::loadMeshObj<bg2e::geo::Mesh>(modelPath));
+        drawable->material(0).setAlbedoTexture(outerAlbedoTexture);
+        drawable->material(1).setAlbedoTexture(innerAlbedoTexture);
+        drawable->load(_engine);
+
+        return drawable;
     }
 };
 

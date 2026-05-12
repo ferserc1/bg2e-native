@@ -182,6 +182,9 @@ void GBufferManager::beginRender(VkCommandBuffer cmd)
             VK_IMAGE_LAYOUT_GENERAL,
             VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
         );
+
+        auto colorAttachment = vulkan::Info::attachmentInfo(image->imageView(), nullptr);
+        attachments.push_back(colorAttachment);
     }
 
     vulkan::Image::cmdTransitionImage(

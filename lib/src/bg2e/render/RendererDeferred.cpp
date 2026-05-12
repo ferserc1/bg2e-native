@@ -65,21 +65,21 @@ void RendererDeferred::build(
 
     _opaqueLayer = std::make_unique<deferred::DeferredLayer>(_engine, deferred::LayerType::Opaque);
     _opaqueLayer->setLightDataBinding(_lightDataBinding.get());
+    if (_rtDataBinding) _opaqueLayer->setRtDataBinding(_rtDataBinding.get());
     _opaqueLayer->build(initialExtent, colorImageFormat);
     _opaqueLayer->setScene(_scene.get());
     _opaqueLayer->setEnvironment(_environment.get());
-    _opaqueLayer->setLightDataBinding(_lightDataBinding.get());
     _opaqueLayer->setRenderQueue(&_renderQueue);
-    if (_rtDataBinding) _opaqueLayer->setRtDataBinding(_rtDataBinding.get());
+
 
     _transparentLayer = std::make_unique<deferred::DeferredLayer>(_engine, deferred::LayerType::Transparent);
     _transparentLayer->setLightDataBinding(_lightDataBinding.get());
+    if (_rtDataBinding) _transparentLayer->setRtDataBinding(_rtDataBinding.get());
     _transparentLayer->build(initialExtent, colorImageFormat);
     _transparentLayer->setScene(_scene.get());
     _transparentLayer->setEnvironment(_environment.get());
-    _transparentLayer->setLightDataBinding(_lightDataBinding.get());
     _transparentLayer->setRenderQueue(&_renderQueue);
-    if (_rtDataBinding) _transparentLayer->setRtDataBinding(_rtDataBinding.get());
+
 
     // Create intermediate images
     _skyboxImage = std::shared_ptr<vulkan::Image>(

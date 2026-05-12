@@ -453,23 +453,6 @@ void DeferredLayer::renderGBufferPass(
 
     auto* gbuffer = _gbuffers[_engine->currentFrameResourcesIndex()].get();
 
-    /*
-    // 1. Clear G-buffers
-    gbuffer->clear(cmd);
-
-    // 2. Transition G-buffers to attachment layout
-    gbuffer->transitionToAttachment(cmd);
-
-    // 3. Begin dynamic rendering with 4 color attachments + depth
-    vulkan::macros::cmdClearImagesAndBeginRendering(
-        cmd,
-        gbuffer->images(),
-        { {0, 0, 0, 0} },
-        VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-        gbuffer->depthImage().get(),
-        1.0f
-    );
-*/
     gbuffer->beginRender(cmd);
 
     // 4. Set viewport/scissor
