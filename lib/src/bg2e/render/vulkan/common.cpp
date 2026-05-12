@@ -39,6 +39,12 @@
 
 
 #define VMA_IMPLEMENTATION
+
+#define VMA_DEBUG_LOG_FORMAT(format, ...) \
+                        do { \
+                            printf(format "\n", __VA_ARGS__); \
+                        } while(false)
+
 #include <vma/vk_mem_alloc.h>
 
 #ifdef BG2E_IS_MAC

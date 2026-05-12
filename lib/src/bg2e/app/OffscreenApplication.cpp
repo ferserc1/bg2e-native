@@ -50,7 +50,10 @@ void OffscreenApplication::init(
                 _engine.get(),
                 _config.colorFormat,
                 { _config.width, _config.height },
-                usage
+                usage,
+                VK_IMAGE_ASPECT_COLOR_BIT,
+                1, false, 20, VK_SAMPLE_COUNT_1_BIT,
+                "OffscreenApplication color image buffer"
         ));
         _engine->cleanupManager().push([this](VkDevice dev)
         {
@@ -66,7 +69,9 @@ void OffscreenApplication::init(
                 VK_FORMAT_D32_SFLOAT,
                 { _config.width, _config.height },
                 VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
-                VK_IMAGE_ASPECT_DEPTH_BIT
+                VK_IMAGE_ASPECT_DEPTH_BIT,
+                1, false, 20, VK_SAMPLE_COUNT_1_BIT,
+                "OffscreenApplication depth image buffer"
         ));
         render::vulkan::Image::transitionImage(
             _engine.get(),

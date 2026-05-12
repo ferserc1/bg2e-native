@@ -59,7 +59,8 @@ Texture * Texture::colorTexture(Engine *engine, const base::Color &color, VkExte
         VK_FORMAT_R8G8B8A8_UNORM,
         VK_IMAGE_USAGE_SAMPLED_BIT,
         VK_IMAGE_ASPECT_COLOR_BIT,
-        false
+        false, 20,
+        "Plain color texture image buffer (color: " + std::to_string(color.r) + ", " + std::to_string(color.g) + ", " + std::to_string(color.b) + ", " + std::to_string(color.a) + ")"
     );
     
     return new Texture(engine, image);
@@ -136,7 +137,9 @@ void Texture::load(std::shared_ptr<base::Texture> texture)
             VK_FORMAT_R32G32B32A32_SFLOAT,
             VK_IMAGE_USAGE_SAMPLED_BIT,
             VK_IMAGE_ASPECT_COLOR_BIT,
-            texture->useMipmaps()
+            texture->useMipmaps(),
+            20,
+            "HDR texture image buffer (file: " + texture->imageFilePath() + ")"
         ));
     }
     else
@@ -149,7 +152,9 @@ void Texture::load(std::shared_ptr<base::Texture> texture)
             VK_FORMAT_R8G8B8A8_UNORM,
             VK_IMAGE_USAGE_SAMPLED_BIT,
             VK_IMAGE_ASPECT_COLOR_BIT,
-            texture->useMipmaps()
+            texture->useMipmaps(),
+            20,
+            "LDR texture image buffer (file: " + texture->imageFilePath() + ")"
         ));
     }
     

@@ -150,7 +150,8 @@ public:
         uint32_t arrayLayers = 1,
         bool useMipmaps = false,
         uint32_t maxMipmapLevels = 20,
-        VkSampleCountFlagBits samples = VK_SAMPLE_COUNT_1_BIT
+        VkSampleCountFlagBits samples = VK_SAMPLE_COUNT_1_BIT,
+        const std::string & imageName = "allocated image"
     );
     
     static Image* createAllocatedImage(
@@ -162,7 +163,8 @@ public:
         VkImageUsageFlags usage,
         VkImageAspectFlags aspectFlags = VK_IMAGE_ASPECT_COLOR_BIT,
         bool useMipmaps = false,
-        uint32_t maxMipmapLevels = 20
+        uint32_t maxMipmapLevels = 20,
+        const std::string & imageName = "allocated image"
     );
 
     static Image* wrapSwapchainImage(

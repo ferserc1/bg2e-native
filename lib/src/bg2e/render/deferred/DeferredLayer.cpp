@@ -156,79 +156,13 @@ void DeferredLayer::resize(VkExtent2D newExtent)
     // Recreate pipelines with new extent
     cleanup();
     createGBufferPipeline();
-    createCompositePipeline();
-    createDebugPipeline();
+    //createCompositePipeline();
+    //createDebugPipeline();
 }
 
 void DeferredLayer::cleanup()
 {
     _gbuffers.clear();
-
-    if (_gbufferPipeline != VK_NULL_HANDLE)
-    {
-        vkDestroyPipeline(_engine->device().handle(), _gbufferPipeline, nullptr);
-        _gbufferPipeline = VK_NULL_HANDLE;
-    }
-    if (_compositePipeline != VK_NULL_HANDLE)
-    {
-        vkDestroyPipeline(_engine->device().handle(), _compositePipeline, nullptr);
-        _compositePipeline = VK_NULL_HANDLE;
-    }
-    if (_gbufferPipelineLayout != VK_NULL_HANDLE)
-    {
-        vkDestroyPipelineLayout(_engine->device().handle(), _gbufferPipelineLayout, nullptr);
-        _gbufferPipelineLayout = VK_NULL_HANDLE;
-    }
-    if (_compositePipelineLayout != VK_NULL_HANDLE)
-    {
-        vkDestroyPipelineLayout(_engine->device().handle(), _compositePipelineLayout, nullptr);
-        _compositePipelineLayout = VK_NULL_HANDLE;
-    }
-    if (_gbufferFrameDSLayout != VK_NULL_HANDLE)
-    {
-        vkDestroyDescriptorSetLayout(_engine->device().handle(), _gbufferFrameDSLayout, nullptr);
-        _gbufferFrameDSLayout = VK_NULL_HANDLE;
-    }
-    if (_gbufferObjectDSLayout != VK_NULL_HANDLE)
-    {
-        vkDestroyDescriptorSetLayout(_engine->device().handle(), _gbufferObjectDSLayout, nullptr);
-        _gbufferObjectDSLayout = VK_NULL_HANDLE;
-    }
-    if (_gbufferEnvDSLayout != VK_NULL_HANDLE)
-    {
-        vkDestroyDescriptorSetLayout(_engine->device().handle(), _gbufferEnvDSLayout, nullptr);
-        _gbufferEnvDSLayout = VK_NULL_HANDLE;
-    }
-    if (_gbufferLightDSLayout != VK_NULL_HANDLE)
-    {
-        vkDestroyDescriptorSetLayout(_engine->device().handle(), _gbufferLightDSLayout, nullptr);
-        _gbufferLightDSLayout = VK_NULL_HANDLE;
-    }
-    if (_gbufferRtDSLayout != VK_NULL_HANDLE)
-    {
-        vkDestroyDescriptorSetLayout(_engine->device().handle(), _gbufferRtDSLayout, nullptr);
-        _gbufferRtDSLayout = VK_NULL_HANDLE;
-    }
-    if (_compositeGBufferDSLayout != VK_NULL_HANDLE)
-    {
-        vkDestroyDescriptorSetLayout(_engine->device().handle(), _compositeGBufferDSLayout, nullptr);
-        _compositeGBufferDSLayout = VK_NULL_HANDLE;
-    }
-    if (_debugPipeline != VK_NULL_HANDLE)
-    {
-        vkDestroyPipeline(_engine->device().handle(), _debugPipeline, nullptr);
-        _debugPipeline = VK_NULL_HANDLE;
-    }
-    if (_debugPipelineLayout != VK_NULL_HANDLE)
-    {
-        vkDestroyPipelineLayout(_engine->device().handle(), _debugPipelineLayout, nullptr);
-        _debugPipelineLayout = VK_NULL_HANDLE;
-    }
-    if (_debugDSLayout != VK_NULL_HANDLE)
-    {
-        vkDestroyDescriptorSetLayout(_engine->device().handle(), _debugDSLayout, nullptr);
-        _debugDSLayout = VK_NULL_HANDLE;
-    }
 }
 
 void DeferredLayer::createGBufferPipeline()
@@ -236,20 +170,10 @@ void DeferredLayer::createGBufferPipeline()
     // Create descriptor set layouts
     _gbufferFrameDSLayout = _frameDataBinding->createLayout();
     _gbufferObjectDSLayout = _objectDataBinding->createLayout();
-    _gbufferEnvDSLayout = _environmentDataBinding->createLayout();
-    _gbufferLightDSLayout = _lightDataBinding->createLayout();
 
     vulkan::factory::PipelineLayout layoutFactory(_engine);
     layoutFactory.addDescriptorSetLayout(_gbufferFrameDSLayout);
     layoutFactory.addDescriptorSetLayout(_gbufferObjectDSLayout);
-    layoutFactory.addDescriptorSetLayout(_gbufferEnvDSLayout);
-    layoutFactory.addDescriptorSetLayout(_gbufferLightDSLayout);
-
-    if (_useRtShadows && _rtDataBinding)
-    {
-        _gbufferRtDSLayout = _rtDataBinding->createLayout();
-        layoutFactory.addDescriptorSetLayout(_gbufferRtDSLayout);
-    }
 
     layoutFactory.addPushConstantRange(
         0,
@@ -278,41 +202,14 @@ void DeferredLayer::createGBufferPipeline()
     _gbufferPipeline = plFactory.build(_gbufferPipelineLayout);
 
     _engine->cleanupManager().push([&](VkDevice dev) {
-        if (_gbufferPipeline != VK_NULL_HANDLE)
-        {
-            vkDestroyPipeline(dev, _gbufferPipeline, nullptr);
-            _gbufferPipeline = VK_NULL_HANDLE;
-        }
-        if (_gbufferPipelineLayout != VK_NULL_HANDLE)
-        {
-            vkDestroyPipelineLayout(dev, _gbufferPipelineLayout, nullptr);
-            _gbufferPipelineLayout = VK_NULL_HANDLE;
-        }
-        if (_gbufferFrameDSLayout != VK_NULL_HANDLE)
-        {
-            vkDestroyDescriptorSetLayout(dev, _gbufferFrameDSLayout, nullptr);
-            _gbufferFrameDSLayout = VK_NULL_HANDLE;
-        }
-        if (_gbufferObjectDSLayout != VK_NULL_HANDLE)
-        {
-            vkDestroyDescriptorSetLayout(dev, _gbufferObjectDSLayout, nullptr);
-            _gbufferObjectDSLayout = VK_NULL_HANDLE;
-        }
-        if (_gbufferEnvDSLayout != VK_NULL_HANDLE)
-        {
-            vkDestroyDescriptorSetLayout(dev, _gbufferEnvDSLayout, nullptr);
-            _gbufferEnvDSLayout = VK_NULL_HANDLE;
-        }
-        if (_gbufferLightDSLayout != VK_NULL_HANDLE)
-        {
-            vkDestroyDescriptorSetLayout(dev, _gbufferLightDSLayout, nullptr);
-            _gbufferLightDSLayout = VK_NULL_HANDLE;
-        }
-        if (_gbufferRtDSLayout != VK_NULL_HANDLE)
-        {
-            vkDestroyDescriptorSetLayout(dev, _gbufferRtDSLayout, nullptr);
-            _gbufferRtDSLayout = VK_NULL_HANDLE;
-        }
+        vkDestroyPipeline(dev, _gbufferPipeline, nullptr);
+        _gbufferPipeline = VK_NULL_HANDLE;
+        vkDestroyPipelineLayout(dev, _gbufferPipelineLayout, nullptr);
+        _gbufferPipelineLayout = VK_NULL_HANDLE;
+        vkDestroyDescriptorSetLayout(dev, _gbufferFrameDSLayout, nullptr);
+        _gbufferFrameDSLayout = VK_NULL_HANDLE;
+        vkDestroyDescriptorSetLayout(dev, _gbufferObjectDSLayout, nullptr);
+        _gbufferObjectDSLayout = VK_NULL_HANDLE;
     });
 }
 
@@ -423,21 +320,11 @@ void DeferredLayer::createDebugPipeline()
     _debugPipeline = plFactory.build(_debugPipelineLayout);
 
     _engine->cleanupManager().push([&](VkDevice dev) {
-        if (_debugPipeline != VK_NULL_HANDLE)
-        {
-            vkDestroyPipeline(dev, _debugPipeline, nullptr);
-            _debugPipeline = VK_NULL_HANDLE;
-        }
-        if (_debugPipelineLayout != VK_NULL_HANDLE)
-        {
-            vkDestroyPipelineLayout(dev, _debugPipelineLayout, nullptr);
-            _debugPipelineLayout = VK_NULL_HANDLE;
-        }
-        if (_debugDSLayout != VK_NULL_HANDLE)
-        {
-            vkDestroyDescriptorSetLayout(dev, _debugDSLayout, nullptr);
-            _debugDSLayout = VK_NULL_HANDLE;
-        }
+        vkDestroyPipeline(dev, _debugPipeline, nullptr);
+        vkDestroyPipelineLayout(dev, _debugPipelineLayout, nullptr);
+        _debugPipelineLayout = VK_NULL_HANDLE;
+        vkDestroyDescriptorSetLayout(dev, _debugDSLayout, nullptr);
+        _debugDSLayout = VK_NULL_HANDLE;
     });
 }
 
@@ -463,19 +350,13 @@ void DeferredLayer::renderGBufferPass(
 
     // 6. Create descriptor sets
     auto sceneDS = _frameDataBinding->newDescriptorSet(frameResources, viewMatrix, projMatrix);
-    auto envDS = _environmentDataBinding->newDescriptorSet(frameResources, _environment);
-    auto lightDS = _lightDataBinding->newDescriptorSet(frameResources, _lightUniforms);
+    //auto envDS = _environmentDataBinding->newDescriptorSet(frameResources, _environment);
+    //auto lightDS = _lightDataBinding->newDescriptorSet(frameResources, _lightUniforms);
 
     // 7. Create descriptor set function
     auto dsFunction = [&](MaterialBase* mat, const glm::mat4& transform, uint32_t /*submesh*/) {
         auto objectDS = _objectDataBinding->newDescriptorSet(frameResources, mat, transform);
-        if (_useRtShadows && _rtDataBinding)
-        {
-            auto tlas = frameResources.rayTracingScene->tlas();
-            auto rtDS = _rtDataBinding->newDescriptorSet(frameResources, tlas);
-            return std::vector<VkDescriptorSet> { sceneDS, objectDS, envDS, lightDS, rtDS };
-        }
-        return std::vector<VkDescriptorSet> { sceneDS, objectDS, envDS, lightDS };
+        return std::vector<VkDescriptorSet> { sceneDS, objectDS };
     };
 
     // 8. Render queue items based on layer type

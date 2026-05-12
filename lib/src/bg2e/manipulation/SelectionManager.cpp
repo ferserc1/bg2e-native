@@ -330,7 +330,11 @@ void SelectionManager::createImage()
             VK_FORMAT_R8G8B8A8_UNORM,
             extent,
             VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
-            VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT)
+            VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
+            VK_IMAGE_ASPECT_COLOR_BIT,
+            1, false, 20, VK_SAMPLE_COUNT_1_BIT,
+            "SelectionManager pick image buffer"
+        )
     );
     
     _engine->cleanupManager().push([&](VkDevice) {

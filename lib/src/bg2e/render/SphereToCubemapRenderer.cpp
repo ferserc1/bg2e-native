@@ -259,7 +259,9 @@ void SphereToCubemapRenderer::initImages(VkExtent2D extent)
         VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
         VK_IMAGE_USAGE_SAMPLED_BIT,
         VK_IMAGE_ASPECT_COLOR_BIT,
-        6
+        6,
+        false, 20, VK_SAMPLE_COUNT_1_BIT,
+        "SphereToCubemapRenderer cube map image buffer"
     ));
     
     auto viewInfo = bg2e::render::vulkan::Info::imageViewCreateInfo(

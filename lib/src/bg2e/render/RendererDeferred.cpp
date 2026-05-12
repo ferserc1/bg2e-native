@@ -91,7 +91,9 @@ void RendererDeferred::build(
             VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
             VK_IMAGE_USAGE_TRANSFER_DST_BIT |
             VK_IMAGE_USAGE_SAMPLED_BIT,
-            VK_IMAGE_ASPECT_COLOR_BIT
+            VK_IMAGE_ASPECT_COLOR_BIT,
+            1, false, 20, VK_SAMPLE_COUNT_1_BIT,
+            "deferred render skybox image"
         )
     );
 
@@ -104,7 +106,9 @@ void RendererDeferred::build(
             VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
             VK_IMAGE_USAGE_TRANSFER_DST_BIT |
             VK_IMAGE_USAGE_SAMPLED_BIT,
-            VK_IMAGE_ASPECT_COLOR_BIT
+            VK_IMAGE_ASPECT_COLOR_BIT,
+            1, false, 20, VK_SAMPLE_COUNT_1_BIT,
+            "Deferred render opaque image"
         )
     );
 
@@ -161,6 +165,7 @@ void RendererDeferred::initScene(
 void RendererDeferred::resize(
     VkExtent2D newExtent
 ) {
+    cleanup();
     _viewportExtent = newExtent;
     _scene->willResize();
 
@@ -179,7 +184,12 @@ void RendererDeferred::resize(
             VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
             VK_IMAGE_USAGE_TRANSFER_DST_BIT |
             VK_IMAGE_USAGE_SAMPLED_BIT,
-            VK_IMAGE_ASPECT_COLOR_BIT
+            VK_IMAGE_ASPECT_COLOR_BIT,
+            1,
+            false,
+            20,
+            VK_SAMPLE_COUNT_1_BIT,
+            "deferred render skybox image"
         )
     );
     _opaqueImage = std::shared_ptr<vulkan::Image>(
@@ -191,7 +201,12 @@ void RendererDeferred::resize(
             VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
             VK_IMAGE_USAGE_TRANSFER_DST_BIT |
             VK_IMAGE_USAGE_SAMPLED_BIT,
-            VK_IMAGE_ASPECT_COLOR_BIT
+            VK_IMAGE_ASPECT_COLOR_BIT,
+            1,
+            false,
+            20,
+            VK_SAMPLE_COUNT_1_BIT,
+            "Deferred render opaque image"
         )
     );
 
@@ -272,11 +287,22 @@ void RendererDeferred::cleanup() {
     _opaqueLayer->cleanup();
     _skyboxLayer->cleanup();
 
+    if (_opaqueImage)
+    {
+        _opaqueImage->cleanup();
+    }
     _opaqueImage.reset();
+
+    if (_skyboxImage)
+    {
+        _skyboxImage->cleanup();
+    }
     _skyboxImage.reset();
 
     _rtDataBinding.reset();
     _lightDataBinding.reset();
+
+    _renderQueue.cleanup();
 }
 
 }

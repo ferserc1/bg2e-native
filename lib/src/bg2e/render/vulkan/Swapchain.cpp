@@ -160,7 +160,8 @@ void Swapchain::create(uint32_t width, uint32_t height)
             VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
             VK_IMAGE_ASPECT_COLOR_BIT,
             1, false, 0,
-            _msaaSampleCount
+            _msaaSampleCount,
+            "Swapchain multisampled image buffer"
         );
         _msaaImages.push_back(std::shared_ptr<Image>(msaaImage));
     }
@@ -171,7 +172,10 @@ void Swapchain::create(uint32_t width, uint32_t height)
         VK_FORMAT_D32_SFLOAT,
         extent,
         VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
-        VK_IMAGE_ASPECT_DEPTH_BIT
+        VK_IMAGE_ASPECT_DEPTH_BIT,
+        1, false, 0,
+        VK_SAMPLE_COUNT_1_BIT,
+        "Swapchain depth image buffer"
     ));
     
     // MSAA Depth image
@@ -182,7 +186,8 @@ void Swapchain::create(uint32_t width, uint32_t height)
         VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
         VK_IMAGE_ASPECT_DEPTH_BIT,
         1, false, 0,
-        _msaaSampleCount
+        _msaaSampleCount,
+        "Swapchain MSAA depth image buffer"
     ));
     
     _colorImages.clear();

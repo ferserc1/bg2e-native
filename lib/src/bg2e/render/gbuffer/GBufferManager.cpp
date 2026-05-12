@@ -51,6 +51,7 @@ void GBufferManager::build(VkExtent2D extent)
         VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
         VK_IMAGE_USAGE_TRANSFER_DST_BIT;
 
+    uint32_t i = 0;
     for (auto format : _colorFormats)
     {
         auto image = vulkan::Image::createAllocatedImage(
@@ -62,7 +63,8 @@ void GBufferManager::build(VkExtent2D extent)
             1,    // arrayLayers
             false, // useMipmaps
             0,    // maxMipmapLevels
-            VK_SAMPLE_COUNT_1_BIT
+            VK_SAMPLE_COUNT_1_BIT,
+            "g-buffer color attachment " + std::to_string(i++)
         );
         _colorImages.push_back(std::shared_ptr<vulkan::Image>(image));
         _colorImagePtrs.push_back(image);
@@ -75,7 +77,8 @@ void GBufferManager::build(VkExtent2D extent)
         VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT |
         VK_IMAGE_USAGE_SAMPLED_BIT,
         VK_IMAGE_ASPECT_DEPTH_BIT,
-        1, false, 0, VK_SAMPLE_COUNT_1_BIT
+        1, false, 0, VK_SAMPLE_COUNT_1_BIT,
+        "g-buffer depth attachment"
     );
     _depthImage = std::shared_ptr<vulkan::Image>(depth);
 
@@ -90,6 +93,16 @@ void GBufferManager::resize(VkExtent2D newExtent)
 
 void GBufferManager::cleanup()
 {
+    for (const auto & img : _colorImages)
+    {
+        img->cleanup();
+    }
+
+    if (_depthImage)
+    {
+        _depthImage->cleanup();
+    }
+
     _colorImages.clear();
     _colorImagePtrs.clear();
     _depthImage.reset();

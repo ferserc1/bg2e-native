@@ -287,7 +287,8 @@ Image* Image::createAllocatedImage(
     uint32_t arrayLayers,
 	bool useMipmaps,
     uint32_t maxMipmapLevels,
-    VkSampleCountFlagBits samples
+    VkSampleCountFlagBits samples,
+    const std::string& imageName
 ) {
     auto result = new Image();
     result->_engine = engine;
@@ -327,6 +328,8 @@ Image* Image::createAllocatedImage(
         &result->_allocation,
         nullptr
     );
+
+    vmaSetAllocationName(alloc, result->_allocation, imageName.c_str());
     
     auto imgViewInfo = Info::imageViewCreateInfo(format, result->_image, aspectFlags);
     if (arrayLayers == 6)
@@ -352,7 +355,8 @@ Image* Image::createAllocatedImage(
     VkImageUsageFlags usage,
     VkImageAspectFlags aspectFlags,
     bool useMipmaps,
-    uint32_t maxMipmapLevels
+    uint32_t maxMipmapLevels,
+    const std::string & imageName
 ) {
     size_t dataSize = extent.width * extent.height * dataBytesPerPixel * getFormatBytesPerComponent(imageFormat);
     auto uploadBuffer = std::unique_ptr<Buffer>(
@@ -382,9 +386,11 @@ Image* Image::createAllocatedImage(
         aspectFlags,
         1,
         useMipmaps,
-        maxMipmapLevels
+        maxMipmapLevels,
+        VK_SAMPLE_COUNT_1_BIT,
+        imageName
     );
- 
+
     engine->command().immediateSubmit([&](VkCommandBuffer cmd) {
         Image::cmdTransitionImage(
             cmd,
