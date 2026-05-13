@@ -23,6 +23,11 @@
 
 namespace bg2e::render {
 
+RendererDeferred::~RendererDeferred()
+{
+    cleanup();
+}
+
 void RendererDeferred::build(
     bg2e::render::Engine* engine,
     VkExtent2D initialExtent,
@@ -114,8 +119,8 @@ void RendererDeferred::build(
 
     // Selection highlight (non-offscreen only)
     if (!isOffscreen) {
-        _selectionHighlight = std::make_unique<manipulation::SelectionHighlight>();
-        _selectionHighlight->init(engine);
+        //_selectionHighlight = std::make_unique<manipulation::SelectionHighlight>();
+        //_selectionHighlight->init(engine);
     }
 
     // DEBUG: set render gbuffer layer

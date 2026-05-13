@@ -64,11 +64,6 @@ public:
         });
     }
 
-    void cleanup() override
-    {
-
-    }
-
 protected:
     bg2e::ui::Window _window;
 

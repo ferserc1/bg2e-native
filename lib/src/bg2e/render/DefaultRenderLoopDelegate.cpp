@@ -27,7 +27,6 @@ namespace bg2e::render {
 template <typename RendererT>
 DefaultRenderLoopDelegate<RendererT>::~DefaultRenderLoopDelegate()
 {
-
 }
 
 template <typename RendererT>

@@ -37,7 +37,7 @@ namespace render {
 class BG2E_API RendererDeferred : public Renderer {
 public:
     RendererDeferred() = default;
-    ~RendererDeferred() override = default;
+    ~RendererDeferred() override;
 
     [[nodiscard]] bool drawSkybox() const override { return _skyboxLayer->drawSkybox(); }
     inline void setDrawSkybox(bool value) override { _skyboxLayer->setDrawSkybox(value); }

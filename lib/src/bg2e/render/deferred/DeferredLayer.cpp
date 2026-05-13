@@ -84,13 +84,14 @@ void DeferredLayer::build(VkExtent2D extent, VkFormat outputFormat)
     //createCompositePipeline();
 
     // Create debug blit pipeline
-    createDebugPipeline();
+    //createDebugPipeline();
 
     // Create sampler for G-buffer textures
     vulkan::factory::Sampler samplerFactory(_engine);
     _gbufferSampler = samplerFactory.build();
 
-    _engine->cleanupManager().push([&](VkDevice) {
+    _engine->cleanupManager().push([&](VkDevice dev) {
+        vkDestroySampler(dev, _gbufferSampler, nullptr);
         _gbufferSampler = VK_NULL_HANDLE;
     });
 }
@@ -162,6 +163,10 @@ void DeferredLayer::resize(VkExtent2D newExtent)
 
 void DeferredLayer::cleanup()
 {
+    for (auto& gb : _gbuffers)
+    {
+        gb->cleanup();
+    }
     _gbuffers.clear();
 }
 
