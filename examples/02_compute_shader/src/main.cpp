@@ -40,11 +40,11 @@ public:
         // Resulting image
         _image = std::shared_ptr<bg2e::render::vulkan::Image>(bg2e::render::vulkan::Image::createAllocatedImage(
             _engine,
+            "ComputeShader image buffer",
             VK_FORMAT_R16G16B16A16_SFLOAT, { 512, 512},
             VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT,
             VK_IMAGE_ASPECT_COLOR_BIT,
-            1, false, 20, VK_SAMPLE_COUNT_1_BIT,
-            "ComputeShader image buffer"
+            1, false, 20, VK_SAMPLE_COUNT_1_BIT
         ));
         _engine->cleanupManager().push([&](VkDevice dev) {
             _image.reset();

@@ -143,6 +143,7 @@ public:
     
     static Image* createAllocatedImage(
         Engine * vulkanData,
+        const std::string & imageName,
         VkFormat format,
         VkExtent2D extent,
         VkImageUsageFlags usage,
@@ -150,12 +151,12 @@ public:
         uint32_t arrayLayers = 1,
         bool useMipmaps = false,
         uint32_t maxMipmapLevels = 20,
-        VkSampleCountFlagBits samples = VK_SAMPLE_COUNT_1_BIT,
-        const std::string & imageName = "allocated image"
+        VkSampleCountFlagBits samples = VK_SAMPLE_COUNT_1_BIT
     );
     
     static Image* createAllocatedImage(
         Engine * vulkanData,
+        const std::string & imageName,
         void* data,
         VkExtent2D extent,
         uint32_t dataBytesPerPixel,  // WARNING: for now, it only works with 4 bpp
@@ -163,8 +164,7 @@ public:
         VkImageUsageFlags usage,
         VkImageAspectFlags aspectFlags = VK_IMAGE_ASPECT_COLOR_BIT,
         bool useMipmaps = false,
-        uint32_t maxMipmapLevels = 20,
-        const std::string & imageName = "allocated image"
+        uint32_t maxMipmapLevels = 20
     );
 
     static Image* wrapSwapchainImage(

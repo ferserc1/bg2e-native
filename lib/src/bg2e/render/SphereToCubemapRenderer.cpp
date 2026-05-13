@@ -253,6 +253,7 @@ void SphereToCubemapRenderer::initImages(VkExtent2D extent)
 {
     _cubeMapImage = std::shared_ptr<bg2e::render::vulkan::Image>(bg2e::render::vulkan::Image::createAllocatedImage(
         _engine,
+        "SphereToCubemapRenderer cube map image buffer",
         VK_FORMAT_R16G16B16A16_SFLOAT,
         extent,
         VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT |
@@ -260,8 +261,7 @@ void SphereToCubemapRenderer::initImages(VkExtent2D extent)
         VK_IMAGE_USAGE_SAMPLED_BIT,
         VK_IMAGE_ASPECT_COLOR_BIT,
         6,
-        false, 20, VK_SAMPLE_COUNT_1_BIT,
-        "SphereToCubemapRenderer cube map image buffer"
+        false, 20, VK_SAMPLE_COUNT_1_BIT
     ));
     
     auto viewInfo = bg2e::render::vulkan::Info::imageViewCreateInfo(

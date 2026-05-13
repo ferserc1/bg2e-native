@@ -155,13 +155,13 @@ void Swapchain::create(uint32_t width, uint32_t height)
     {
         auto msaaImage = Image::createAllocatedImage(
             _engine,
+            "Swapchain multisampled image buffer",
             _imageFormat,
             { width, height },
             VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
             VK_IMAGE_ASPECT_COLOR_BIT,
             1, false, 0,
-            _msaaSampleCount,
-            "Swapchain multisampled image buffer"
+            _msaaSampleCount
         );
         _msaaImages.push_back(std::shared_ptr<Image>(msaaImage));
     }
@@ -169,25 +169,25 @@ void Swapchain::create(uint32_t width, uint32_t height)
     // Depth image
     _depthImage = std::shared_ptr<Image>(Image::createAllocatedImage(
         _engine,
+        "Swapchain depth image buffer",
         VK_FORMAT_D32_SFLOAT,
         extent,
         VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
         VK_IMAGE_ASPECT_DEPTH_BIT,
         1, false, 0,
-        VK_SAMPLE_COUNT_1_BIT,
-        "Swapchain depth image buffer"
+        VK_SAMPLE_COUNT_1_BIT
     ));
     
     // MSAA Depth image
     _msaaDepthImage = std::shared_ptr<Image>(Image::createAllocatedImage(
         _engine,
+        "Swapchain MSAA depth image buffer",
         VK_FORMAT_D32_SFLOAT,
         extent,
         VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
         VK_IMAGE_ASPECT_DEPTH_BIT,
         1, false, 0,
-        _msaaSampleCount,
-        "Swapchain MSAA depth image buffer"
+        _msaaSampleCount
     ));
     
     _colorImages.clear();

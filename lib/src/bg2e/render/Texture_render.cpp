@@ -54,13 +54,13 @@ Texture * Texture::colorTexture(Engine *engine, const base::Color &color, VkExte
     
     auto image = vulkan::Image::createAllocatedImage(
         engine,
+        "Plain color texture image buffer (color: " + std::to_string(color.r) + ", " + std::to_string(color.g) + ", " + std::to_string(color.b) + ", " + std::to_string(color.a) + ")",
         reinterpret_cast<void*>(data.data()),
         size, bytes,
         VK_FORMAT_R8G8B8A8_UNORM,
         VK_IMAGE_USAGE_SAMPLED_BIT,
         VK_IMAGE_ASPECT_COLOR_BIT,
-        false, 20,
-        "Plain color texture image buffer (color: " + std::to_string(color.r) + ", " + std::to_string(color.g) + ", " + std::to_string(color.b) + ", " + std::to_string(color.a) + ")"
+        false, 20
     );
     
     return new Texture(engine, image);
@@ -131,6 +131,7 @@ void Texture::load(std::shared_ptr<base::Texture> texture)
     {
         _image = std::shared_ptr<vulkan::Image>(vulkan::Image::createAllocatedImage(
             _engine,
+            "HDR texture image buffer (file: " + texture->imageFilePath() + ")",
             img->dataf(),
             extent,
             img->channels(),
@@ -138,14 +139,14 @@ void Texture::load(std::shared_ptr<base::Texture> texture)
             VK_IMAGE_USAGE_SAMPLED_BIT,
             VK_IMAGE_ASPECT_COLOR_BIT,
             texture->useMipmaps(),
-            20,
-            "HDR texture image buffer (file: " + texture->imageFilePath() + ")"
+            20
         ));
     }
     else
     {
         _image = std::shared_ptr<vulkan::Image>(vulkan::Image::createAllocatedImage(
             _engine,
+            "LDR texture image buffer (file: " + texture->imageFilePath() + ")",
             img->data(),
             extent,
             img->channels(),
@@ -153,8 +154,7 @@ void Texture::load(std::shared_ptr<base::Texture> texture)
             VK_IMAGE_USAGE_SAMPLED_BIT,
             VK_IMAGE_ASPECT_COLOR_BIT,
             texture->useMipmaps(),
-            20,
-            "LDR texture image buffer (file: " + texture->imageFilePath() + ")"
+            20
         ));
     }
     

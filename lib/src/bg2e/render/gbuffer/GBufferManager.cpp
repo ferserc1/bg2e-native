@@ -56,6 +56,7 @@ void GBufferManager::build(VkExtent2D extent)
     {
         auto image = vulkan::Image::createAllocatedImage(
             _engine,
+            "g-buffer color attachment " + std::to_string(i++),
             format,
             extent,
             colorUsage,
@@ -63,8 +64,7 @@ void GBufferManager::build(VkExtent2D extent)
             1,    // arrayLayers
             false, // useMipmaps
             0,    // maxMipmapLevels
-            VK_SAMPLE_COUNT_1_BIT,
-            "g-buffer color attachment " + std::to_string(i++)
+            VK_SAMPLE_COUNT_1_BIT
         );
         _colorImages.push_back(std::shared_ptr<vulkan::Image>(image));
         _colorImagePtrs.push_back(image);
@@ -72,13 +72,13 @@ void GBufferManager::build(VkExtent2D extent)
 
     auto depth = vulkan::Image::createAllocatedImage(
         _engine,
+        "g-buffer depth attachment",
         _depthFormat,
         extent,
         VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT |
         VK_IMAGE_USAGE_SAMPLED_BIT,
         VK_IMAGE_ASPECT_DEPTH_BIT,
-        1, false, 0, VK_SAMPLE_COUNT_1_BIT,
-        "g-buffer depth attachment"
+        1, false, 0, VK_SAMPLE_COUNT_1_BIT
     );
     _depthImage = std::shared_ptr<vulkan::Image>(depth);
 

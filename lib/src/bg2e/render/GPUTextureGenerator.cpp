@@ -31,6 +31,7 @@ vulkan::Image * GPUTextureGenerator::createImage(VkFormat format, VkExtent2D ext
 {
     return vulkan::Image::createAllocatedImage(
         _engine,
+        "GPUTextureGenerator image",
         format,
         extent,
         usage

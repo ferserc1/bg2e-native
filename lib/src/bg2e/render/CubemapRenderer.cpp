@@ -188,6 +188,7 @@ void CubemapRenderer::initImages(
 ) {
     _cubeMapImage = std::shared_ptr<vulkan::Image>(vulkan::Image::createAllocatedImage(
         _engine,
+        "CubemapRenderer cube map image buffer",
         imageFormat,
         cubeImageSize,
         VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT |
@@ -196,8 +197,7 @@ void CubemapRenderer::initImages(
         6, // 6 layers. When specify this parameter, the image is created as a cube map compatible image with 6 layers
         useMipmaps,
         maxMipmapLevels,
-        VK_SAMPLE_COUNT_1_BIT,
-        "CubemapRenderer cube map image buffer"
+        VK_SAMPLE_COUNT_1_BIT
     ));
     
     // Initialize the image layout for all the mipmap levels

@@ -85,6 +85,7 @@ void RendererDeferred::build(
     _skyboxImage = std::shared_ptr<vulkan::Image>(
         vulkan::Image::createAllocatedImage(
             _engine,
+            "deferred render skybox image",
             colorImageFormat,
             initialExtent,
             VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
@@ -92,14 +93,14 @@ void RendererDeferred::build(
             VK_IMAGE_USAGE_TRANSFER_DST_BIT |
             VK_IMAGE_USAGE_SAMPLED_BIT,
             VK_IMAGE_ASPECT_COLOR_BIT,
-            1, false, 20, VK_SAMPLE_COUNT_1_BIT,
-            "deferred render skybox image"
+            1, false, 20, VK_SAMPLE_COUNT_1_BIT
         )
     );
 
     _opaqueImage = std::shared_ptr<vulkan::Image>(
         vulkan::Image::createAllocatedImage(
             _engine,
+            "Deferred render opaque image",
             colorImageFormat,
             initialExtent,
             VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
@@ -107,8 +108,7 @@ void RendererDeferred::build(
             VK_IMAGE_USAGE_TRANSFER_DST_BIT |
             VK_IMAGE_USAGE_SAMPLED_BIT,
             VK_IMAGE_ASPECT_COLOR_BIT,
-            1, false, 20, VK_SAMPLE_COUNT_1_BIT,
-            "Deferred render opaque image"
+            1, false, 20, VK_SAMPLE_COUNT_1_BIT
         )
     );
 
@@ -178,6 +178,7 @@ void RendererDeferred::resize(
     _skyboxImage = std::shared_ptr<vulkan::Image>(
         vulkan::Image::createAllocatedImage(
             _engine,
+            "deferred render skybox image",
             _colorImageFormat,
             newExtent,
             VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
@@ -188,13 +189,13 @@ void RendererDeferred::resize(
             1,
             false,
             20,
-            VK_SAMPLE_COUNT_1_BIT,
-            "deferred render skybox image"
+            VK_SAMPLE_COUNT_1_BIT
         )
     );
     _opaqueImage = std::shared_ptr<vulkan::Image>(
         vulkan::Image::createAllocatedImage(
             _engine,
+            "Deferred render opaque image",
             _colorImageFormat,
             newExtent,
             VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
@@ -205,8 +206,7 @@ void RendererDeferred::resize(
             1,
             false,
             20,
-            VK_SAMPLE_COUNT_1_BIT,
-            "Deferred render opaque image"
+            VK_SAMPLE_COUNT_1_BIT
         )
     );
 

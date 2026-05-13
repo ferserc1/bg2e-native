@@ -280,6 +280,7 @@ uint32_t Image::getMipLevels(VkExtent2D extent)
 
 Image* Image::createAllocatedImage(
     Engine * engine,
+    const std::string& imageName,
     VkFormat format,
     VkExtent2D extent,
     VkImageUsageFlags usage,
@@ -287,8 +288,7 @@ Image* Image::createAllocatedImage(
     uint32_t arrayLayers,
 	bool useMipmaps,
     uint32_t maxMipmapLevels,
-    VkSampleCountFlagBits samples,
-    const std::string& imageName
+    VkSampleCountFlagBits samples
 ) {
     auto result = new Image();
     result->_engine = engine;
@@ -348,6 +348,7 @@ Image* Image::createAllocatedImage(
 
 Image* Image::createAllocatedImage(
     Engine * engine,
+    const std::string & imageName,
     void* data,
     VkExtent2D extent,
     uint32_t dataBytesPerPixel,  // WARNING: for now, it only works with 4 bpp
@@ -355,8 +356,7 @@ Image* Image::createAllocatedImage(
     VkImageUsageFlags usage,
     VkImageAspectFlags aspectFlags,
     bool useMipmaps,
-    uint32_t maxMipmapLevels,
-    const std::string & imageName
+    uint32_t maxMipmapLevels
 ) {
     size_t dataSize = extent.width * extent.height * dataBytesPerPixel * getFormatBytesPerComponent(imageFormat);
     auto uploadBuffer = std::unique_ptr<Buffer>(
@@ -380,6 +380,7 @@ Image* Image::createAllocatedImage(
 
     auto image = createAllocatedImage(
         engine,
+        imageName,
         imageFormat,
         extent,
         usage | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
@@ -387,8 +388,7 @@ Image* Image::createAllocatedImage(
         1,
         useMipmaps,
         maxMipmapLevels,
-        VK_SAMPLE_COUNT_1_BIT,
-        imageName
+        VK_SAMPLE_COUNT_1_BIT
     );
 
     engine->command().immediateSubmit([&](VkCommandBuffer cmd) {
