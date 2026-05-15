@@ -61,5 +61,17 @@
         "vector": "cpp",
         "algorithm": "cpp"
     },
-    "makefile.configureOnOpen": true
+    "makefile.configureOnOpen": true,
+    "yaml.schemas": {
+        "file:///Users/fernando/.vscode/extensions/continue.continue-1.2.22-darwin-arm64/config-yaml-schema.json": [
+            ".continue/**/*.yaml"
+        ],
+        "file:///home/fernando/.vscode/extensions/continue.continue-1.2.22-linux-x64/config-yaml-schema.json": [
+            ".continue/**/*.yaml"
+        ],
+        "file:///home/fernando/.var/app/com.visualstudio.code/data/vscode/extensions/continue.continue-1.2.22-linux-x64/config-yaml-schema.json": [
+            ".continue/**/*.yaml",
+            "file:///home/fernando/.continue/config.yaml"
+        ]
+    }
 }

@@ -49,6 +49,9 @@
 #pragma GCC diagnostic pop
 #endif
 
+// Set to 1 if you need to debug buffer or image allocations
+#define BG2E_DEBUG_LOG_VMA_ALLOCATIONS 0
+
 namespace bg2e {
 namespace render {
 namespace vulkan {

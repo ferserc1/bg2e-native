@@ -40,10 +40,13 @@
 
 #define VMA_IMPLEMENTATION
 
+
+#if BG2E_DEBUG_LOG_VMA_ALLOCATIONS == 1
 #define VMA_DEBUG_LOG_FORMAT(format, ...) \
                         do { \
                             printf(format "\n", __VA_ARGS__); \
                         } while(false)
+#endif
 
 #include <vma/vk_mem_alloc.h>
 
