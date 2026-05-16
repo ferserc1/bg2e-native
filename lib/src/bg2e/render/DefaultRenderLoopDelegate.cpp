@@ -81,16 +81,21 @@ VkImageLayout DefaultRenderLoopDelegate<RendererT>::render(
     const render::vulkan::Image* msaaDepthImage,
     render::vulkan::FrameResources& frameResources
 ) {
+    VkImageLayout newColorImageLayout;
+    VkImageLayout newDepthImageLayout;
+    VkImageLayout newMsaaDepthImageLayout;
     _renderer->draw(
         cmd,
         currentFrame,
         colorImage,
         depthImage,
         msaaDepthImage,
-        frameResources
+        frameResources,
+        newColorImageLayout,
+        newDepthImageLayout,
+        newMsaaDepthImageLayout
     );
-
-    return VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    return newColorImageLayout;
 }
 
 template <typename RendererT>

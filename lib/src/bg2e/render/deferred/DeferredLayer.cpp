@@ -84,7 +84,7 @@ void DeferredLayer::build(VkExtent2D extent, VkFormat outputFormat)
     //createCompositePipeline();
 
     // Create debug blit pipeline
-    //createDebugPipeline();
+    createDebugPipeline();
 
     // Create sampler for G-buffer textures
     vulkan::factory::Sampler samplerFactory(_engine);
@@ -125,11 +125,10 @@ void DeferredLayer::render(
     auto viewMatrix = mainCamera->ownerNode()->invertedWorldMatrix();
     auto projMatrix = mainCamera->projectionMatrix();
     auto cameraWorldPos = mainCamera->ownerNode()->worldPosition();
+    auto frameResourcesIndex = _engine->currentFrameResourcesIndex();
+    auto* gbuffer = _gbuffers[frameResourcesIndex].get();
 
-    renderGBufferPass(cmd, currentFrame, frameResources, viewMatrix, projMatrix, cameraWorldPos);
-
-    auto frameIndex = _engine->currentFrameResourcesIndex();
-    auto* gbuffer = _gbuffers[frameIndex].get();
+    renderGBufferPass(cmd, currentFrame, gbuffer, frameResources, viewMatrix, projMatrix, cameraWorldPos);
 
     if (_debugVisualization == DeferredDebugVisualization::FullComposition)
     {
@@ -140,7 +139,7 @@ void DeferredLayer::render(
         auto* src = resolveDebugSource(inputImage, gbuffer);
         if (src)
         {
-            //renderDebugPass(cmd, src, outputImage, frameResources);
+            renderDebugPass(cmd, src, outputImage, frameResources);
         }
     }
 }
@@ -153,12 +152,6 @@ void DeferredLayer::resize(VkExtent2D newExtent)
     {
         gb->resize(newExtent);
     }
-
-    // Recreate pipelines with new extent
-    cleanup();
-    createGBufferPipeline();
-    //createCompositePipeline();
-    //createDebugPipeline();
 }
 
 void DeferredLayer::cleanup()
@@ -336,35 +329,28 @@ void DeferredLayer::createDebugPipeline()
 void DeferredLayer::renderGBufferPass(
     VkCommandBuffer cmd,
     uint32_t currentFrame,
+    GBufferManager * gbuffer,
     vulkan::FrameResources& frameResources,
     const glm::mat4& viewMatrix,
     const glm::mat4& projMatrix,
     const glm::vec3& cameraWorldPos
 )
 {
-
-    auto* gbuffer = _gbuffers[_engine->currentFrameResourcesIndex()].get();
-
     gbuffer->beginRender(cmd);
 
-    // 4. Set viewport/scissor
     vulkan::macros::cmdSetDefaultViewportAndScissor(cmd, _extent);
 
-    // 5. Bind G-buffer pipeline
     vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, _gbufferPipeline);
 
-    // 6. Create descriptor sets
     auto sceneDS = _frameDataBinding->newDescriptorSet(frameResources, viewMatrix, projMatrix);
     //auto envDS = _environmentDataBinding->newDescriptorSet(frameResources, _environment);
     //auto lightDS = _lightDataBinding->newDescriptorSet(frameResources, _lightUniforms);
 
-    // 7. Create descriptor set function
     auto dsFunction = [&](MaterialBase* mat, const glm::mat4& transform, uint32_t /*submesh*/) {
         auto objectDS = _objectDataBinding->newDescriptorSet(frameResources, mat, transform);
         return std::vector<VkDescriptorSet> { sceneDS, objectDS };
     };
 
-    // 8. Render queue items based on layer type
     if (_layerType == LayerType::Opaque)
     {
         _renderQueue->render(
@@ -393,7 +379,6 @@ void DeferredLayer::renderGBufferPass(
         );
     }
 
-    // 9. End rendering
     vulkan::cmdEndRendering(cmd);
 
     gbuffer->transitionToShaderRead(cmd);
@@ -480,15 +465,6 @@ void DeferredLayer::renderDebugPass(
     vulkan::FrameResources& frameResources
 )
 {
-    auto* gbuffer = _gbuffers[_engine->currentFrameResourcesIndex()].get();
-
-    // 1. Transition G-buffers to shader read (same as composite pass)
-    gbuffer->transitionToShaderRead(cmd);
-
-    // 2. Ensure source image is in shader read layout
-    vulkan::Image::cmdTransitionImage(cmd, sourceImage->handle(),
-        VK_IMAGE_LAYOUT_UNDEFINED,
-        VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
     // 3. Clear output image and begin rendering
     VkClearColorValue clearValue{ { 0.0f, 0.0f, 1.0f, 1.0f } };

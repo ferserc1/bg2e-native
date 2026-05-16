@@ -98,7 +98,10 @@ public:
         const bg2e::render::vulkan::Image* colorImage,
         const bg2e::render::vulkan::Image* depthImage,
         const bg2e::render::vulkan::Image* msaaDepthImage,
-        bg2e::render::vulkan::FrameResources& frameResources
+        bg2e::render::vulkan::FrameResources& frameResources,
+        VkImageLayout & outColorImageLayout,
+        VkImageLayout & outDepthImageLayout,
+        VkImageLayout & outMsaaDepthImageLayout
     ) override;
 
     void cleanup() override;

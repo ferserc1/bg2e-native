@@ -88,16 +88,21 @@ bool DefaultOffscreenApplicationDelegate<RendererT>::render(
     VkImageLayout colorImageLayout,
     VkImageLayout & finalColorImageLayout
 ) {
+    VkImageLayout newColorImageLayout;
+    VkImageLayout newDepthImageLayout;
+    VkImageLayout newMsaaDepthImageLayout;
     _renderer->draw(
         cmd,
         frameIndex,
         _colorImage.get(),
         _depthImage.get(),
         _depthImage.get(),
-        frameResources
+        frameResources,
+        newColorImageLayout,
+        newDepthImageLayout,
+        newMsaaDepthImageLayout
     );
-    // The renderer->draw() function sets the image layout as color attachment optimal
-    finalColorImageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    finalColorImageLayout = newColorImageLayout;
 
     return continueRendering();
 }

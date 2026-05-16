@@ -170,7 +170,6 @@ void RendererDeferred::initScene(
 void RendererDeferred::resize(
     VkExtent2D newExtent
 ) {
-    cleanup();
     _viewportExtent = newExtent;
     _scene->willResize();
 
@@ -180,6 +179,7 @@ void RendererDeferred::resize(
     _transparentLayer->resize(newExtent);
 
     // Recreate intermediate images
+    _skyboxImage->cleanup();
     _skyboxImage = std::shared_ptr<vulkan::Image>(
         vulkan::Image::createAllocatedImage(
             _engine,
@@ -197,6 +197,7 @@ void RendererDeferred::resize(
             VK_SAMPLE_COUNT_1_BIT
         )
     );
+    _opaqueImage->cleanup();
     _opaqueImage = std::shared_ptr<vulkan::Image>(
         vulkan::Image::createAllocatedImage(
             _engine,
@@ -230,9 +231,12 @@ void RendererDeferred::draw(
     VkCommandBuffer cmd,
     uint32_t currentFrame,
     const bg2e::render::vulkan::Image* colorImage,
-    const bg2e::render::vulkan::Image* /*depthImage*/,
-    const bg2e::render::vulkan::Image* /*msaaDepthImage*/,
-    bg2e::render::vulkan::FrameResources& frameResources
+    [[maybe_unused]] const bg2e::render::vulkan::Image* depthImage,
+    [[maybe_unused]] const bg2e::render::vulkan::Image* msaaDepthImage,
+    bg2e::render::vulkan::FrameResources& frameResources,
+    VkImageLayout & outColorImageLayout,
+    VkImageLayout & outDepthImageLayout,
+    VkImageLayout & outMsaaDepthImageLayout
 ) {
     // === Scene preparation (from Renderer base) ===
     prepareSceneRender(cmd, currentFrame, frameResources);
@@ -251,10 +255,13 @@ void RendererDeferred::draw(
         cmd,
         currentFrame,
         nullptr,
-        // DEBUG: generate color image directly
-        //_skyboxImage.get(),
-        colorImage,
+        _skyboxImage.get(),
         frameResources
+    );
+
+    vulkan::Image::cmdTransitionImage(cmd, _skyboxImage->handle(),
+        VK_IMAGE_LAYOUT_UNDEFINED,
+        VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
     );
 
     // === Layer 2: Opaque ===
@@ -262,7 +269,8 @@ void RendererDeferred::draw(
         cmd,
         currentFrame,
         _skyboxImage.get(),
-        _opaqueImage.get(),
+        //_opaqueImage.get(),
+        colorImage,
         frameResources
     );
 
@@ -283,6 +291,17 @@ void RendererDeferred::draw(
 
     // === End scene render (from Renderer base) ===
     endSceneRender();
+
+    vulkan::Image::cmdTransitionImage(
+        cmd,
+        colorImage->handle(),
+        VK_IMAGE_LAYOUT_UNDEFINED,
+        VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
+    );
+
+    outColorImageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    outDepthImageLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
+    outMsaaDepthImageLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
 }
 
 void RendererDeferred::cleanup() {

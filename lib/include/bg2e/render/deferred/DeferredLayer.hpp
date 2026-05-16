@@ -125,6 +125,7 @@ protected:
     void renderGBufferPass(
         VkCommandBuffer cmd,
         uint32_t currentFrame,
+        GBufferManager * gbuffer,
         vulkan::FrameResources& frameResources,
         const glm::mat4& viewMatrix,
         const glm::mat4& projMatrix,

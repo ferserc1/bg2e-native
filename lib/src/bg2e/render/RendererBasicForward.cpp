@@ -128,9 +128,12 @@ void RendererBasicForward::draw(
     VkCommandBuffer cmd,
     uint32_t currentFrame,
     const bg2e::render::vulkan::Image* colorImage,
-    const bg2e::render::vulkan::Image*, // depthImage,
+    [[maybe_unused]] const bg2e::render::vulkan::Image* depthImage,
     const bg2e::render::vulkan::Image* msaaDepthImage,
-    bg2e::render::vulkan::FrameResources& frameResources
+    bg2e::render::vulkan::FrameResources& frameResources,
+    VkImageLayout & outColorImageLayout,
+    VkImageLayout & outDepthImageLayout,
+    VkImageLayout & outMsaaDepthImageLayout
 )
 {
     using namespace bg2e::render::vulkan;
@@ -259,6 +262,10 @@ void RendererBasicForward::draw(
     vulkan::cmdEndRendering(cmd);
 
     endSceneRender();
+
+    outColorImageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    outDepthImageLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
+    outMsaaDepthImageLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
 }
 
 void RendererBasicForward::cleanup()
