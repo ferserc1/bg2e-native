@@ -122,9 +122,6 @@ void RendererDeferred::build(
         //_selectionHighlight = std::make_unique<manipulation::SelectionHighlight>();
         //_selectionHighlight->init(engine);
     }
-
-    // DEBUG: set render gbuffer layer
-    _opaqueLayer->setDebugVisualization(deferred::DeferredDebugVisualization::GBufferAlbedo);
 }
 
 void RendererDeferred::initFrameResources(
@@ -327,6 +324,18 @@ void RendererDeferred::cleanup() {
     _lightDataBinding.reset();
 
     _renderQueue.cleanup();
+}
+
+deferred::DeferredDebugVisualization RendererDeferred::debugVisualization() const
+{
+    return _debugVisualization;
+}
+
+void RendererDeferred::setDebugVisualization(deferred::DeferredDebugVisualization debugVisualization)
+{
+    _debugVisualization = debugVisualization;
+    _opaqueLayer->setDebugVisualization(debugVisualization);
+    _transparentLayer->setDebugVisualization(debugVisualization);
 }
 
 }

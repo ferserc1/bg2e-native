@@ -47,10 +47,12 @@ enum class DeferredDebugVisualization {
     GBufferMaterial,
     GBufferPosition,
     GBufferDepth,
-    InputImage
+    InputImage,
 
     // Future extra passes:
     // ExtraPassRTAO,
+
+    MaxLayer
 };
 
 class BG2E_API DeferredLayer : public RenderLayer {

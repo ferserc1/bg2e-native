@@ -86,6 +86,9 @@ public:
 
     bool supportsMsaa() override { return false; }
 
+    deferred::DeferredDebugVisualization debugVisualization() const;
+    void setDebugVisualization(deferred::DeferredDebugVisualization debugVisualization);
+
 protected:
     bg2e::render::Engine* _engine = nullptr;
 
@@ -109,6 +112,8 @@ protected:
 
     // Selection highlight
     std::unique_ptr<manipulation::SelectionHighlight> _selectionHighlight;
+
+    deferred::DeferredDebugVisualization _debugVisualization = deferred::DeferredDebugVisualization::FullComposition;
 };
 
 }

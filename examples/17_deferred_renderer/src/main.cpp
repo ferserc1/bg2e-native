@@ -61,6 +61,14 @@ public:
             {
                 renderer()->setSkyboxBlurLevel(blurLevel);
             }
+
+            auto renderLayer = renderer()->debugVisualization();
+            int32_t renderLayerId = static_cast<int32_t>(renderLayer);
+            const int32_t numLayers = static_cast<int32_t>(bg2e::render::deferred::DeferredDebugVisualization::MaxLayer) - 1;
+            if (bg2e::ui::Input::sliderInt("Render Layer", &renderLayerId, 0, numLayers))
+            {
+                renderer()->setDebugVisualization(static_cast<bg2e::render::deferred::DeferredDebugVisualization>(renderLayerId));
+            }
         });
     }
 
@@ -71,21 +79,35 @@ protected:
         auto sceneRoot = std::make_shared<bg2e::scene::Node>("Scene Root");
         sceneRoot->addComponent(new bg2e::scene::EnvironmentComponent(bg2e::base::PlatformTools::assetPath(), "country_field_sun.jpg"));
 
-        auto mainCameraNode = std::make_shared<bg2e::scene::Node>("Main Camera");
-        mainCameraNode->addComponent(new bg2e::scene::CameraComponent());
-        auto proj = new bg2e::math::OpticalProjection();
-        mainCameraNode->camera()->setProjection(proj);
-        mainCameraNode->addComponent(new bg2e::scene::TransformComponent());
-        mainCameraNode->addComponent(new RotateCameraComponent());
-        sceneRoot->addChild(mainCameraNode);
-
+        auto anotherNode = new bg2e::scene::Node("Transform Node");
+        anotherNode->addComponent(bg2e::scene::TransformComponent::makeTranslated(0.0f, 1.0f, 0.0f));
+        sceneRoot->addChild(anotherNode);
 
         auto drawable = std::shared_ptr<bg2e::scene::DrawableBase>(loadDrawable());
         auto drawableComponent = std::make_shared<bg2e::scene::DrawableComponent>(drawable);
         auto modelNode = std::make_shared<bg2e::scene::Node>("3D Model");
         modelNode->addComponent(drawableComponent);
         modelNode->addComponent(bg2e::scene::TransformComponent::makeTranslated(2.0f, 0.0f, 0.0f));
-        sceneRoot->addChild(modelNode);
+        anotherNode->addChild(modelNode);
+
+        auto secondModel = new bg2e::scene::Node("Second 3D model");
+        auto anotherDrawable = new bg2e::scene::DrawableComponent(drawable);
+
+        secondModel->addComponent(anotherDrawable);
+        secondModel->addComponent(bg2e::scene::TransformComponent::makeTranslated(-2.0f, 0.0f, 0.0f ));
+        sceneRoot->addChild(secondModel);
+
+        auto cameraNode = std::shared_ptr<bg2e::scene::Node>(new bg2e::scene::Node("Camera"));
+        cameraNode->addComponent(bg2e::scene::TransformComponent::makeTranslated(0.0f, 0.0f, 10.0f ));
+        cameraNode->addComponent(new bg2e::scene::CameraComponent());
+        auto projection = new bg2e::math::OpticalProjection();
+        cameraNode->camera()->setProjection(projection);
+
+        auto cameraRotation = new bg2e::scene::Node("Camera Rotation");
+        cameraRotation->addComponent(new bg2e::scene::TransformComponent());
+        cameraRotation->addComponent(new RotateCameraComponent());
+        cameraRotation->addChild(cameraNode);
+        sceneRoot->addChild(cameraRotation);
 
         return sceneRoot;
     }

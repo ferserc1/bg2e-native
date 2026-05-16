@@ -52,7 +52,7 @@ const vulkan::Image* DeferredLayer::resolveDebugSource(const vulkan::Image* inpu
         case DeferredDebugVisualization::InputImage:
             return inputImage;
         default:
-            return nullptr;
+            return gbuffer->image(0).get();
     }
 }
 
@@ -130,7 +130,8 @@ void DeferredLayer::render(
 
     renderGBufferPass(cmd, currentFrame, gbuffer, frameResources, viewMatrix, projMatrix, cameraWorldPos);
 
-    if (_debugVisualization == DeferredDebugVisualization::FullComposition)
+    // TODO: Debug - remove && false
+    if (_debugVisualization == DeferredDebugVisualization::FullComposition && false)
     {
         renderCompositePass(cmd, currentFrame, inputImage, outputImage, frameResources, viewMatrix, projMatrix);
     }
