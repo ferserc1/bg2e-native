@@ -81,7 +81,7 @@ void DeferredLayer::build(VkExtent2D extent, VkFormat outputFormat)
 
     // Create composite pipeline
     // TODO: Debug. Create the composite pipeline again after debug g-buffers
-    //createCompositePipeline();
+    createCompositePipeline();
 
     // Create debug blit pipeline
     createDebugPipeline();
@@ -130,8 +130,7 @@ void DeferredLayer::render(
 
     renderGBufferPass(cmd, currentFrame, gbuffer, frameResources, viewMatrix, projMatrix, cameraWorldPos);
 
-    // TODO: Debug - remove && false
-    if (_debugVisualization == DeferredDebugVisualization::FullComposition && false)
+    if (_debugVisualization == DeferredDebugVisualization::FullComposition)
     {
         renderCompositePass(cmd, currentFrame, inputImage, outputImage, frameResources, viewMatrix, projMatrix);
     }
@@ -271,21 +270,9 @@ void DeferredLayer::createCompositePipeline()
     _compositePipeline = plFactory.build(_compositePipelineLayout);
 
     _engine->cleanupManager().push([&](VkDevice dev) {
-        if (_compositePipeline != VK_NULL_HANDLE)
-        {
-            vkDestroyPipeline(dev, _compositePipeline, nullptr);
-            _compositePipeline = VK_NULL_HANDLE;
-        }
-        if (_compositePipelineLayout != VK_NULL_HANDLE)
-        {
-            vkDestroyPipelineLayout(dev, _compositePipelineLayout, nullptr);
-            _compositePipelineLayout = VK_NULL_HANDLE;
-        }
-        if (_compositeGBufferDSLayout != VK_NULL_HANDLE)
-        {
-            vkDestroyDescriptorSetLayout(dev, _compositeGBufferDSLayout, nullptr);
-            _compositeGBufferDSLayout = VK_NULL_HANDLE;
-        }
+        vkDestroyPipeline(dev, _compositePipeline, nullptr);
+        vkDestroyPipelineLayout(dev, _compositePipelineLayout, nullptr);
+        vkDestroyDescriptorSetLayout(dev, _compositeGBufferDSLayout, nullptr);
     });
 }
 
