@@ -81,7 +81,6 @@ void DeferredLayer::build(VkExtent2D extent, VkFormat outputFormat)
     createGBufferPipeline();
 
     // Create composite pipeline
-    // TODO: Debug. Create the composite pipeline again after debug g-buffers
     createCompositePipeline();
 
     // Create debug blit pipeline

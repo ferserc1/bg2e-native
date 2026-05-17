@@ -73,7 +73,7 @@ public:
     inline const vulkan::DescriptorSetAllocator& descriptorSetAllocator() const { return *_descriptorSetAllocator.get(); }
     inline vulkan::DescriptorSetAllocator& descriptorSetAllocator() { return *_descriptorSetAllocator.get(); }
 
-    inline uint32_t numImages() const { return isOffscreen() ? 1 : _swapchain.images().size(); }
+    inline uint32_t numImages() const { return isOffscreen() ? 1 : static_cast<uint32_t>(_swapchain.images().size()); }
     uint32_t currentFrameResourcesIndex() const;
     uint32_t prevFrameResourcesIndex() const;
     vulkan::FrameResources& currentFrameResources();

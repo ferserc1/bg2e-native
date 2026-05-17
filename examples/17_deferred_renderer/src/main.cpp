@@ -16,6 +16,8 @@
  *    along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 #include <bg2e.hpp>
+#include <numbers>
+#include <random>
 
 class RotateCameraComponent : public bg2e::scene::Component {
 public:
@@ -97,6 +99,9 @@ protected:
         secondModel->addComponent(bg2e::scene::TransformComponent::makeTranslated(-2.0f, 0.0f, 0.0f ));
         sceneRoot->addChild(secondModel);
 
+        auto floor = createFloorNode();
+        sceneRoot->addChild(floor);
+
         auto cameraNode = std::shared_ptr<bg2e::scene::Node>(new bg2e::scene::Node("Camera"));
         cameraNode->addComponent(bg2e::scene::TransformComponent::makeTranslated(0.0f, 0.0f, 10.0f ));
         cameraNode->addComponent(new bg2e::scene::CameraComponent());
@@ -108,6 +113,9 @@ protected:
         cameraRotation->addComponent(new RotateCameraComponent());
         cameraRotation->addChild(cameraNode);
         sceneRoot->addChild(cameraRotation);
+
+        auto lights = createLights();
+        sceneRoot->addChild(lights);
 
         return sceneRoot;
     }
@@ -134,6 +142,65 @@ protected:
         drawable->load(_engine);
 
         return drawable;
+    }
+
+    bg2e::scene::Node * createLights()
+    {
+        auto * lightsRoot = new bg2e::scene::Node("Lights");
+        std::random_device rd;
+        std::mt19937 gen(rd());
+        std::uniform_real_distribution<float> colorDist(0.0f, 1.0f);
+
+        constexpr float distance = 5.0f;
+        constexpr int numLights = 16;
+        for (int i = 0; i < numLights; ++i)
+        {
+            float alpha = std::numbers::pi_v<float> * 2.0f * static_cast<float>(i) / static_cast<float>(numLights);
+            float x = std::cos(alpha) * distance;
+            float z = std::sin(alpha) * distance;
+            bg2e_log_debug << "x = " << x << ", z = " << z << bg2e_log_end;
+            lightsRoot->addChild(createLight(
+                glm::vec3{x, 0.0f, z},
+                bg2e::base::Color(
+                    colorDist(gen),
+                    colorDist(gen),
+                    colorDist(gen),
+                    1.0f
+                )
+            ));
+        }
+
+        return lightsRoot;
+    }
+
+    bg2e::scene::Node * createLight(
+        const glm::vec3& position,
+        const bg2e::base::Color& color
+    ) {
+        auto * lightNode = new bg2e::scene::Node("Light");
+
+        lightNode->addComponent(new bg2e::scene::LightComponent());
+        lightNode->light()->light().setType(bg2e::base::Light::TypeOmni);
+        lightNode->light()->light().setColor(color);
+        lightNode->addComponent(new bg2e::scene::TransformComponent());
+        lightNode->transform()->setTranslation(position);
+
+        return lightNode;
+    }
+
+    std::shared_ptr<bg2e::scene::Node> createFloorNode()
+    {
+        auto floorNode = std::make_shared<bg2e::scene::Node>("Floor");
+        floorNode->addComponent(new bg2e::scene::TransformComponent());
+        floorNode->transform()->setTranslation(0.0f, -0.75f, 0.0f);
+
+        auto floorGeo = bg2e::geo::createPlane(100.0f, 100.0f);
+        auto drawable = std::make_shared<bg2e::scene::Drawable>();
+        drawable->setMesh(floorGeo);
+        drawable->load(_engine);
+        floorNode->addComponent(new bg2e::scene::DrawableComponent(drawable));
+
+        return floorNode;
     }
 };
 
