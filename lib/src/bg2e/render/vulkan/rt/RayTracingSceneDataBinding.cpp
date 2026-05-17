@@ -31,7 +31,7 @@ void RayTracingSceneDataBinding::initFrameResources(bg2e::render::vulkan::Descri
     }
 }
 
-VkDescriptorSetLayout RayTracingSceneDataBinding::createLayout()
+VkDescriptorSetLayout RayTracingSceneDataBinding::createLayout(VkShaderStageFlags shaderStages)
 {
     if (_layout == VK_NULL_HANDLE && _engine->rayTracingSupported())
     {
@@ -44,9 +44,7 @@ VkDescriptorSetLayout RayTracingSceneDataBinding::createLayout()
 
         _layout = dsFactory.build(
             _engine->device().handle(),
-            VK_SHADER_STAGE_FRAGMENT_BIT |
-            VK_SHADER_STAGE_RAYGEN_BIT_KHR |
-            VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR
+            shaderStages
         );
     }
     return _layout;

@@ -70,6 +70,7 @@ void DeferredLayer::build(VkExtent2D extent, VkFormat outputFormat)
 
     // Create per-layer data bindings
     _frameDataBinding = std::make_unique<scene::vk::FrameDataBinding>(_engine);
+    _fragmentFrameDataBinding = std::make_unique<scene::vk::FrameDataBinding>(_engine);
     _objectDataBinding = std::make_unique<scene::vk::ObjectDataBinding>(_engine);
     _environmentDataBinding = std::make_unique<scene::vk::EnvironmentDataBinding>(_engine);
 
@@ -99,6 +100,7 @@ void DeferredLayer::build(VkExtent2D extent, VkFormat outputFormat)
 void DeferredLayer::initFrameResources(vulkan::DescriptorSetAllocator* allocator)
 {
     _frameDataBinding->initFrameResources(allocator);
+    _fragmentFrameDataBinding->initFrameResources(allocator);
     _objectDataBinding->initFrameResources(allocator);
     _environmentDataBinding->initFrameResources(allocator);
 }
@@ -161,17 +163,20 @@ void DeferredLayer::cleanup()
         gb->cleanup();
     }
     _gbuffers.clear();
+
+    _frameDataBinding->cleanup();
+    _fragmentFrameDataBinding->cleanup();
+    _objectDataBinding->cleanup();
+    _environmentDataBinding->cleanup();
+
 }
 
 void DeferredLayer::createGBufferPipeline()
 {
     // Create descriptor set layouts
-    _gbufferFrameDSLayout = _frameDataBinding->createLayout();
-    _gbufferObjectDSLayout = _objectDataBinding->createLayout();
-
     vulkan::factory::PipelineLayout layoutFactory(_engine);
-    layoutFactory.addDescriptorSetLayout(_gbufferFrameDSLayout);
-    layoutFactory.addDescriptorSetLayout(_gbufferObjectDSLayout);
+    layoutFactory.addDescriptorSetLayout(_frameDataBinding->createLayout());
+    layoutFactory.addDescriptorSetLayout(_objectDataBinding->createLayout());
 
     layoutFactory.addPushConstantRange(
         0,
@@ -204,10 +209,6 @@ void DeferredLayer::createGBufferPipeline()
         _gbufferPipeline = VK_NULL_HANDLE;
         vkDestroyPipelineLayout(dev, _gbufferPipelineLayout, nullptr);
         _gbufferPipelineLayout = VK_NULL_HANDLE;
-        vkDestroyDescriptorSetLayout(dev, _gbufferFrameDSLayout, nullptr);
-        _gbufferFrameDSLayout = VK_NULL_HANDLE;
-        vkDestroyDescriptorSetLayout(dev, _gbufferObjectDSLayout, nullptr);
-        _gbufferObjectDSLayout = VK_NULL_HANDLE;
     });
 }
 
@@ -228,7 +229,7 @@ void DeferredLayer::createCompositePipeline()
     // Create pipeline layout
     vulkan::factory::PipelineLayout layoutFactory(_engine);
     layoutFactory.addDescriptorSetLayout(_compositeGBufferDSLayout);
-    layoutFactory.addDescriptorSetLayout(_frameDataBinding->createLayout());
+    layoutFactory.addDescriptorSetLayout(_fragmentFrameDataBinding->createLayout(VK_SHADER_STAGE_FRAGMENT_BIT));
     layoutFactory.addDescriptorSetLayout(_environmentDataBinding->createLayout());
     layoutFactory.addDescriptorSetLayout(_lightDataBinding->createLayout());
 
@@ -331,8 +332,6 @@ void DeferredLayer::renderGBufferPass(
     vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, _gbufferPipeline);
 
     auto sceneDS = _frameDataBinding->newDescriptorSet(frameResources, viewMatrix, projMatrix);
-    //auto envDS = _environmentDataBinding->newDescriptorSet(frameResources, _environment);
-    //auto lightDS = _lightDataBinding->newDescriptorSet(frameResources, _lightUniforms);
 
     auto dsFunction = [&](MaterialBase* mat, const glm::mat4& transform, uint32_t /*submesh*/) {
         auto objectDS = _objectDataBinding->newDescriptorSet(frameResources, mat, transform);
@@ -411,7 +410,7 @@ void DeferredLayer::renderCompositePass(
     gbufferDS->endUpdate();
 
     // 5. Create other descriptor sets
-    auto sceneDS = _frameDataBinding->newDescriptorSet(frameResources, viewMatrix, projMatrix);
+    auto sceneDS = _fragmentFrameDataBinding->newDescriptorSet(frameResources, viewMatrix, projMatrix);
     auto envDS = _environmentDataBinding->newDescriptorSet(frameResources, _environment);
     auto lightDS = _lightDataBinding->newDescriptorSet(frameResources, _lightUniforms);
 

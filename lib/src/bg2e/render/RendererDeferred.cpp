@@ -25,7 +25,6 @@ namespace bg2e::render {
 
 RendererDeferred::~RendererDeferred()
 {
-    cleanup();
 }
 
 void RendererDeferred::build(
@@ -320,6 +319,8 @@ void RendererDeferred::cleanup() {
     }
     _skyboxImage.reset();
 
+    _rtDataBinding->cleanup();
+    _lightDataBinding->cleanup();
     _rtDataBinding.reset();
     _lightDataBinding.reset();
 

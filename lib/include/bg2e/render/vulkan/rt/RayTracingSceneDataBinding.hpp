@@ -32,7 +32,11 @@ public:
 
     void initFrameResources(bg2e::render::vulkan::DescriptorSetAllocator * frameAllocator) override;
 
-    VkDescriptorSetLayout createLayout() override;
+    VkDescriptorSetLayout createLayout(
+        VkShaderStageFlags shaderStages = VK_SHADER_STAGE_FRAGMENT_BIT |
+            VK_SHADER_STAGE_RAYGEN_BIT_KHR |
+            VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR
+    ) override;
 
     VkDescriptorSet newDescriptorSet(
         bg2e::render::vulkan::FrameResources & frameResources,

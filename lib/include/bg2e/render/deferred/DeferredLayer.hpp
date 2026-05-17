@@ -90,14 +90,10 @@ protected:
     VkPipelineLayout _gbufferPipelineLayout = VK_NULL_HANDLE;
     VkPipelineLayout _compositePipelineLayout = VK_NULL_HANDLE;
 
-    VkDescriptorSetLayout _gbufferFrameDSLayout = VK_NULL_HANDLE;
-    VkDescriptorSetLayout _gbufferObjectDSLayout = VK_NULL_HANDLE;
-    VkDescriptorSetLayout _gbufferEnvDSLayout = VK_NULL_HANDLE;
-    VkDescriptorSetLayout _gbufferLightDSLayout = VK_NULL_HANDLE;
-    VkDescriptorSetLayout _gbufferRtDSLayout = VK_NULL_HANDLE;
     VkDescriptorSetLayout _compositeGBufferDSLayout = VK_NULL_HANDLE;
 
     std::unique_ptr<scene::vk::FrameDataBinding> _frameDataBinding;
+    std::unique_ptr<scene::vk::FrameDataBinding> _fragmentFrameDataBinding;
     std::unique_ptr<scene::vk::ObjectDataBinding> _objectDataBinding;
     std::unique_ptr<scene::vk::EnvironmentDataBinding> _environmentDataBinding;
     scene::vk::LightDataBinding* _lightDataBinding = nullptr;

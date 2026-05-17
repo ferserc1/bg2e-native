@@ -271,6 +271,14 @@ void RendererBasicForward::draw(
 void RendererBasicForward::cleanup()
 {
     _renderQueue.cleanup();
+    frameDataBinding()->cleanup();
+    objectDataBinding()->cleanup();
+    environmentDataBinding()->cleanup();
+    lightDataBinding()->cleanup();
+    if (rtDataBinding())
+    {
+        rtDataBinding()->cleanup();
+    }
 }
 
 void RendererBasicForward::createPipelines(bg2e::render::Engine* engine) {
@@ -303,14 +311,6 @@ void RendererBasicForward::createPipelines(bg2e::render::Engine* engine) {
 
     engine->cleanupManager().push([&, objectDSLayout, envDSLayout, frameDSLayout, lightDSLayout, rtDSLayout](VkDevice dev) {
         vkDestroyPipelineLayout(dev, _pipelineLayout, nullptr);
-        vkDestroyDescriptorSetLayout(dev, objectDSLayout, nullptr);
-        vkDestroyDescriptorSetLayout(dev, envDSLayout, nullptr);
-        vkDestroyDescriptorSetLayout(dev, frameDSLayout, nullptr);
-        vkDestroyDescriptorSetLayout(dev, lightDSLayout, nullptr);
-        if (rtDSLayout)
-        {
-            vkDestroyDescriptorSetLayout(dev, rtDSLayout, nullptr);
-        }
     });
 }
 

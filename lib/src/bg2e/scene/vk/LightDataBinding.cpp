@@ -29,7 +29,7 @@ void LightDataBinding::initFrameResources(bg2e::render::vulkan::DescriptorSetAll
     });
 }
 
-VkDescriptorSetLayout LightDataBinding::createLayout()
+VkDescriptorSetLayout LightDataBinding::createLayout(VkShaderStageFlags shaderStages)
 {
     if (_layout == VK_NULL_HANDLE)
     {
@@ -37,7 +37,7 @@ VkDescriptorSetLayout LightDataBinding::createLayout()
 
         dsFactory.addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
 
-        _layout = dsFactory.build(_engine->device().handle(), VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_VERTEX_BIT);
+        _layout = dsFactory.build(_engine->device().handle(), shaderStages);
     }
     return _layout;
 }

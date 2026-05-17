@@ -31,7 +31,16 @@ public:
 
     virtual void initFrameResources(bg2e::render::vulkan::DescriptorSetAllocator * frameAllocator) = 0;
 
-    virtual VkDescriptorSetLayout createLayout() = 0;
+    virtual VkDescriptorSetLayout createLayout(VkShaderStageFlags shaderStages) = 0;
+
+    void cleanup()
+    {
+        if (_layout != VK_NULL_HANDLE)
+        {
+            vkDestroyDescriptorSetLayout(_engine->device().handle(), _layout, nullptr);
+            _layout = VK_NULL_HANDLE;
+        }
+    }
     
     inline VkDescriptorSetLayout layout() const { return _layout; }
 
