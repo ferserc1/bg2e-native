@@ -40,23 +40,8 @@ void Renderer::updateScene(float delta, uint32_t maxLights)
         _skyImageHash = _scene->mainEnvironment()->imgHash();
     }
 
-    // Update light resources
     auto lightComponents = _scene->lightComponents();
-    auto lights = static_cast<uint32_t>(lightComponents.size() < maxLights
-        ? lightComponents.size()
-        : maxLights);
-    _lightUniforms.lightCount = lights;
-    for (uint32_t i = 0; i < lights; ++i)
-    {
-        auto comp = lightComponents[i];
-        _lightUniforms.lights[i].type = comp->light().type();
-        _lightUniforms.lights[i].color = comp->light().color();
-        _lightUniforms.lights[i].intensity = comp->light().intensity();
-        _lightUniforms.lights[i].position = comp->position();
-        _lightUniforms.lights[i].direction = comp->direction();
-        _lightUniforms.lights[i].spotAngle = comp->light().spotAngle();
-        _lightUniforms.lights[i].spotCutoff = comp->light().spotCutoff();
-    }
+    updateLights(lightComponents, maxLights);
 
     _scene->didUpdate();
 }

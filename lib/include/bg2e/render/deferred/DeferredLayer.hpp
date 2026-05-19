@@ -27,7 +27,7 @@
 #include <bg2e/scene/vk/FrameDataBinding.hpp>
 #include <bg2e/scene/vk/ObjectDataBinding.hpp>
 #include <bg2e/scene/vk/EnvironmentDataBinding.hpp>
-#include <bg2e/scene/vk/LightDataBinding.hpp>
+#include <bg2e/scene/vk/DeferredLightDataBinding.hpp>
 #include <bg2e/render/vulkan/rt/RayTracingSceneDataBinding.hpp>
 #include <bg2e/render/RenderQueue.hpp>
 
@@ -72,8 +72,8 @@ public:
     void resize(VkExtent2D newExtent) override;
     void cleanup() override;
 
-    void setLightDataBinding(scene::vk::LightDataBinding* binding) { _lightDataBinding = binding; }
-    void setLightUniforms(const scene::vk::LightDataBinding::LightUniforms& lu) { _lightUniforms = lu; }
+    void setLightDataBinding(scene::vk::DeferredLightDataBinding* binding) { _lightDataBinding = binding; }
+    void setLights(const std::vector<base::LightData>& l) { _lights = l; }
     void setRtDataBinding(vulkan::rt::RayTracingSceneDataBinding* rt) { _rtDataBinding = rt; }
     void setRenderQueue(render::RenderQueue<scene::Drawable>* rq) { _renderQueue = rq; }
 
@@ -96,8 +96,8 @@ protected:
     std::unique_ptr<scene::vk::FrameDataBinding> _fragmentFrameDataBinding;
     std::unique_ptr<scene::vk::ObjectDataBinding> _objectDataBinding;
     std::unique_ptr<scene::vk::EnvironmentDataBinding> _environmentDataBinding;
-    scene::vk::LightDataBinding* _lightDataBinding = nullptr;
-    scene::vk::LightDataBinding::LightUniforms _lightUniforms;
+    scene::vk::DeferredLightDataBinding* _lightDataBinding = nullptr;
+    std::vector<base::LightData> _lights;
     vulkan::rt::RayTracingSceneDataBinding* _rtDataBinding = nullptr;
     render::RenderQueue<scene::Drawable>* _renderQueue = nullptr;
 
@@ -115,6 +115,12 @@ protected:
         float brightness;
         float contrast;
         float exposure;
+
+        uint32_t numLights;
+
+        uint32_t padding1;
+        uint32_t padding2;
+        uint32_t padding3;
     };
 
     void createGBufferPipeline();

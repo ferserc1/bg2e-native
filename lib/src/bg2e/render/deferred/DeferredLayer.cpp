@@ -382,18 +382,18 @@ void DeferredLayer::renderCompositePass(
 {
     auto* gbuffer = _gbuffers[_engine->currentFrameResourcesIndex()].get();
 
-    // 1. Transition G-buffers to shader read
+    // Transition G-buffers to shader read
     gbuffer->transitionToShaderRead(cmd);
 
-    // 2. Clear output image and begin rendering
+    // Clear output image and begin rendering
     VkClearColorValue clearValue{ { 0.0f, 0.0f, 0.0f, 1.0f } };
     vulkan::macros::cmdClearImageAndBeginRendering(cmd, outputImage, clearValue, VK_IMAGE_LAYOUT_UNDEFINED);
     vulkan::macros::cmdSetDefaultViewportAndScissor(cmd, _extent);
 
-    // 3. Bind composite pipeline
+    // Bind composite pipeline
     vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, _compositePipeline);
 
-    // 4. Create G-buffer descriptor set
+    // Create G-buffer descriptor set
     auto gbufferDS = frameResources.newDescriptorSet(_compositeGBufferDSLayout);
     gbufferDS->beginUpdate();
     gbufferDS->addImage(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
@@ -408,12 +408,28 @@ void DeferredLayer::renderCompositePass(
         inputImage, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _gbufferSampler);
     gbufferDS->endUpdate();
 
-    // 5. Create other descriptor sets
+    // Create other descriptor sets
     auto sceneDS = _fragmentFrameDataBinding->newDescriptorSet(frameResources, viewMatrix, projMatrix);
     auto envDS = _environmentDataBinding->newDescriptorSet(frameResources, _environment);
-    auto lightDS = _lightDataBinding->newDescriptorSet(frameResources, _lightUniforms);
+    auto lightDS = _lightDataBinding->newDescriptorSet(frameResources, _lights);
 
-    // 6. Bind descriptor sets
+    // Push constants
+    const CompositePushConstants pc{
+        .gamma = 2.2f,
+        .brightness = _brightness,
+        .contrast = _contrast,
+        .exposure = _exposure,
+        .numLights = static_cast<uint32_t>(_lights.size()),
+    };
+    vkCmdPushConstants(
+        cmd, _compositePipelineLayout,
+        VK_SHADER_STAGE_FRAGMENT_BIT,
+        0,
+        sizeof(CompositePushConstants),
+        &pc
+    );
+
+    // Bind descriptor sets
     VkDescriptorSet gbufferDSPtr[] = { gbufferDS->descriptorSet() };
     vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
         _compositePipelineLayout, 0, 1, gbufferDSPtr, 0, nullptr);
@@ -432,15 +448,10 @@ void DeferredLayer::renderCompositePass(
             _compositePipelineLayout, 4, 1, &rtDS, 0, nullptr);
     }
 
-    // 7. Push constants
-    CompositePushConstants pc{ 2.2f, _brightness, _contrast, _exposure };
-    vkCmdPushConstants(cmd, _compositePipelineLayout,
-        VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(CompositePushConstants), &pc);
-
-    // 8. Draw fullscreen quad (6 vertices, 2 triangles)
+    // Draw fullscreen quad (6 vertices, 2 triangles)
     vkCmdDraw(cmd, 6, 1, 0, 0);
 
-    // 9. End rendering
+    // End rendering
     vulkan::cmdEndRendering(cmd);
 }
 

@@ -108,11 +108,12 @@ protected:
     float _contrast = 1.0f;
     float _exposure = 1.0f;
 
-    scene::vk::LightDataBinding::LightUniforms _lightUniforms;
-
     // Call the update callbacks in the scene, update the environment image
     // and generate the light data
     void updateScene(float delta, uint32_t maxLights = std::numeric_limits<uint32_t>::max());
+
+protected:
+    virtual void updateLights(const std::vector<std::shared_ptr<bg2e::scene::LightComponent>>& lightComponents, uint32_t maxLights) = 0;
 
     // Call the begin render scene callbacks, update the skybox image if needed,
     // enqueue the drawable objects in render queue

@@ -134,6 +134,11 @@ protected:
 
     bool _drawSkybox = true;
 
+    scene::vk::LightDataBinding::LightUniforms _lightUniforms;
+
+protected:
+    void updateLights(const std::vector<std::shared_ptr<bg2e::scene::LightComponent>>& lightComponents, uint32_t maxLights) override;
+
     struct PushConstants {
         float gamma;
         float brightness;

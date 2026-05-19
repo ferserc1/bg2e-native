@@ -45,11 +45,9 @@ layout(set = 2, binding = 3) uniform EnvironmentData {
 } environmentData;
 
 // Light data (set=3)
-layout(set = 3, binding = 0) uniform LightData {
-    Light lights[LIGHT_COUNT];
-    int lightCount;
-    vec3 padding;
-} lightData;
+layout(std430, set = 3, binding = 0) readonly buffer LightBuffer {
+    LightData lights[];
+} LightsBuffer;
 
 // Push constants
 layout(push_constant) uniform PushConstant {
@@ -57,6 +55,12 @@ layout(push_constant) uniform PushConstant {
     float brightness;
     float contrast;
     float exposure;
+
+    uint lightCount;
+
+    uint padding1;
+    uint padding2;
+    uint padding3;
 } pushConstant;
 
 layout(location = 0) in vec2 vTexcoord;
@@ -85,9 +89,9 @@ void main() {
 
     // Direct lighting loop
     vec3 Lo = vec3(0.0);
-    for (int i = 0; i < lightData.lightCount; i++) {
-        if (lightData.lights[i].type == LIGHT_TYPE_DISABLED) continue;
-        Lo += calcRadiance(lightData.lights[i], viewDir, worldPos, metallic, roughness,
+    for (int i = 0; i < pushConstant.lightCount; i++) {
+        if (LightsBuffer.lights[i].type == LIGHT_TYPE_DISABLED) continue;
+        Lo += calcRadiance(LightsBuffer.lights[i], viewDir, worldPos, metallic, roughness,
                           F0, normal, albedo.rgb, sheenIntensity, sheenColor, ao);
     }
 

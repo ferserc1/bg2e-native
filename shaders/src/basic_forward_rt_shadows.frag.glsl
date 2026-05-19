@@ -60,11 +60,11 @@ layout(set = 2, binding = 3) uniform EnvironmentData {
     float maxReflectionLOD;
 } environmentData;
 
-layout (set = 3, binding = 0) uniform LightData {
-    Light lights[LIGHT_COUNT];
+layout (set = 3, binding = 0) uniform LightsBuffer {
+    LightData lights[LIGHT_COUNT];
     int lightCount;
     vec3 padding;
-} lightData;
+} lightsBuffer;
 
 layout(set = 4, binding = 0) uniform accelerationStructureEXT u_TLAS;
 
@@ -95,14 +95,14 @@ void main()
     vec3 F0 = calcF0(albedo, mat);
 
     vec3 Lo = vec3(0.0);
-    int lightCount = lightData.lightCount;
+    int lightCount = lightsBuffer.lightCount;
     for(int i = 0; i < lightCount; ++i)
     {
         float tMax = 10000000.0;
-        vec3 dir = normalize(-lightData.lights[i].direction);
-        if (lightData.lights[i].type == LIGHT_TYPE_POINT)
+        vec3 dir = normalize(-lightsBuffer.lights[i].direction);
+        if (lightsBuffer.lights[i].type == LIGHT_TYPE_POINT)
         {
-            vec3 toLight = lightData.lights[i].position - inFragPos.xyz;
+            vec3 toLight = lightsBuffer.lights[i].position - inFragPos.xyz;
             tMax = length(toLight);
             dir = normalize(toLight);
         }
@@ -124,7 +124,7 @@ void main()
 
         if (rayQueryGetIntersectionTypeEXT(rq, true) == gl_RayQueryCommittedIntersectionNoneEXT)
         {
-            Lo += calcRadiance(lightData.lights[i], viewDir, inFragPos, metallic, roughness, F0, normal, albedo, mat.sheenIntensity, mat.sheenColor.rgb, ambientOcclussion);
+            Lo += calcRadiance(lightsBuffer.lights[i], viewDir, inFragPos, metallic, roughness, F0, normal, albedo, mat.sheenIntensity, mat.sheenColor.rgb, ambientOcclussion);
         }
     }
 

@@ -79,7 +79,7 @@ protected:
 
     std::shared_ptr<bg2e::scene::Node> createScene() override {
         auto sceneRoot = std::make_shared<bg2e::scene::Node>("Scene Root");
-        sceneRoot->addComponent(new bg2e::scene::EnvironmentComponent(bg2e::base::PlatformTools::assetPath(), "country_field_sun.jpg"));
+        sceneRoot->addComponent(new bg2e::scene::EnvironmentComponent(bg2e::base::PlatformTools::assetPath(), "black.jpg"));
 
         auto anotherNode = new bg2e::scene::Node("Transform Node");
         anotherNode->addComponent(bg2e::scene::TransformComponent::makeTranslated(0.0f, 1.0f, 0.0f));
@@ -103,7 +103,8 @@ protected:
         sceneRoot->addChild(floor);
 
         auto cameraNode = std::shared_ptr<bg2e::scene::Node>(new bg2e::scene::Node("Camera"));
-        cameraNode->addComponent(bg2e::scene::TransformComponent::makeTranslated(0.0f, 0.0f, 10.0f ));
+        cameraNode->addComponent(bg2e::scene::TransformComponent::makeTranslated(0.0f, 4.0f, 10.0f ));
+        cameraNode->transform()->rotate(0.4f, -1.0f, 0.0f, 0.0f);
         cameraNode->addComponent(new bg2e::scene::CameraComponent());
         auto projection = new bg2e::math::OpticalProjection();
         cameraNode->camera()->setProjection(projection);
@@ -158,9 +159,8 @@ protected:
             float alpha = std::numbers::pi_v<float> * 2.0f * static_cast<float>(i) / static_cast<float>(numLights);
             float x = std::cos(alpha) * distance;
             float z = std::sin(alpha) * distance;
-            bg2e_log_debug << "x = " << x << ", z = " << z << bg2e_log_end;
             lightsRoot->addChild(createLight(
-                glm::vec3{x, 0.0f, z},
+                glm::vec3{x, 1.0f, z},
                 bg2e::base::Color(
                     colorDist(gen),
                     colorDist(gen),

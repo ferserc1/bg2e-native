@@ -50,7 +50,7 @@ struct PBRMaterialData
 
 const uint MATERIAL_FLAG_UNLIT          = 0x1u;
 
-struct Light
+struct LightData
 {
     vec3 position;
     float intensity;

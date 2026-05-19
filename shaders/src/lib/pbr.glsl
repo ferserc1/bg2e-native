@@ -70,7 +70,7 @@ float calcAttenuation(vec3 lightPosition, vec3 fragPosition)
 }
 
 vec3 calcRadiancePoint(
-    Light light,
+    LightData light,
     vec3 viewDir,
     vec3 fragPos,
     float metallic,
@@ -110,7 +110,7 @@ vec3 calcRadiancePoint(
     return base + sheen;
 }
 
-vec3 calcRadianceSpot(Light light, vec3 viewDir, vec3 fragPos, float metallic, float roughness, vec3 F0, vec3 normal, vec3 albedo, float sheenIntensity, vec3 sheenColor, float ambientOcclussion)
+vec3 calcRadianceSpot(LightData light, vec3 viewDir, vec3 fragPos, float metallic, float roughness, vec3 F0, vec3 normal, vec3 albedo, float sheenIntensity, vec3 sheenColor, float ambientOcclussion)
 {
     float spotAngle = light.spotAngle;
     float spotCutoff = light.spotCutoff;
@@ -160,7 +160,7 @@ vec3 calcRadianceSpot(Light light, vec3 viewDir, vec3 fragPos, float metallic, f
     return base + sheen;
 }
 
-vec3 calcRadianceDirectional(Light light, vec3 viewDir, vec3 fragPos, float metallic, float roughness, vec3 F0, vec3 normal, vec3 albedo, float sheenIntensity, vec3 sheenColor, float ambientOcclussion)
+vec3 calcRadianceDirectional(LightData light, vec3 viewDir, vec3 fragPos, float metallic, float roughness, vec3 F0, vec3 normal, vec3 albedo, float sheenIntensity, vec3 sheenColor, float ambientOcclussion)
 {
     vec3 L = normalize(-light.direction);
     vec3 H = normalize(viewDir + L);
@@ -187,7 +187,7 @@ vec3 calcRadianceDirectional(Light light, vec3 viewDir, vec3 fragPos, float meta
 }
 
 vec3 calcRadiance(
-    Light light,
+    LightData light,
     vec3 viewDir,
     vec3 fragPos,
     float metallic,

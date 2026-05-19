@@ -59,11 +59,11 @@ layout(set = 2, binding = 3) uniform EnvironmentData {
     float maxReflectionLOD;
 } environmentData;
 
-layout (set = 3, binding = 0) uniform LightData {
-    Light lights[LIGHT_COUNT];
+layout (set = 3, binding = 0) uniform LightBuffer {
+    LightData lights[LIGHT_COUNT];
     int lightCount;
     vec3 padding;
-} lightData;
+} LightsBuffer;
 
 void main()
 {
@@ -92,10 +92,10 @@ void main()
     vec3 F0 = calcF0(albedo, mat);
 
     vec3 Lo = vec3(0.0);
-    int lightCount = lightData.lightCount;
+    int lightCount = LightsBuffer.lightCount;
     for(int i = 0; i < lightCount; ++i)
     {
-        Lo += calcRadiance(lightData.lights[i], viewDir, inFragPos, metallic, roughness, F0, normal, albedo, mat.sheenIntensity, mat.sheenColor.rgb, ambientOcclussion);
+        Lo += calcRadiance(LightsBuffer.lights[i], viewDir, inFragPos, metallic, roughness, F0, normal, albedo, mat.sheenIntensity, mat.sheenColor.rgb, ambientOcclussion);
     }
   
     vec3 ambient = calcAmbientLight(

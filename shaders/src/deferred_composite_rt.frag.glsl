@@ -46,11 +46,9 @@ layout(set = 2, binding = 3) uniform EnvironmentData {
 } environmentData;
 
 // Light data (set=3)
-layout(set = 3, binding = 0) uniform LightData {
-    Light lights[LIGHT_COUNT];
-    int lightCount;
-    vec3 padding;
-} lightData;
+layout(std430, set = 3, binding = 0) readonly buffer LightBuffer {
+    LightData lights[];
+} LightsBuffer;
 
 // RT TLAS (set=4)
 layout(set = 4, binding = 0) uniform accelerationStructureEXT tlas;
@@ -61,6 +59,12 @@ layout(push_constant) uniform PushConstant {
     float brightness;
     float contrast;
     float exposure;
+
+    uint lightCount;
+
+    uint padding1;
+    uint padding2;
+    uint padding3;
 } pushConstant;
 
 layout(location = 0) in vec2 vTexcoord;
@@ -89,21 +93,21 @@ void main() {
 
     // Direct lighting loop with RT shadows
     vec3 Lo = vec3(0.0);
-    for (int i = 0; i < lightData.lightCount; i++) {
-        if (lightData.lights[i].type == LIGHT_TYPE_DISABLED) continue;
+    for (int i = 0; i < pushConstant.lightCount; i++) {
+        if (LightsBuffer.lights[i].type == LIGHT_TYPE_DISABLED) continue;
 
         // Compute light direction and max distance
         vec3 toLight;
         float tMax;
-        if (lightData.lights[i].type == LIGHT_TYPE_POINT) {
-            toLight = lightData.lights[i].position - worldPos;
+        if (LightsBuffer.lights[i].type == LIGHT_TYPE_POINT) {
+            toLight = LightsBuffer.lights[i].position - worldPos;
             tMax = length(toLight);
             toLight = normalize(toLight);
-        } else if (lightData.lights[i].type == LIGHT_TYPE_DIRECTIONAL) {
-            toLight = -normalize(lightData.lights[i].direction);
+        } else if (LightsBuffer.lights[i].type == LIGHT_TYPE_DIRECTIONAL) {
+            toLight = -normalize(LightsBuffer.lights[i].direction);
             tMax = 1000000.0;
         } else { // SPOT
-            toLight = lightData.lights[i].position - worldPos;
+            toLight = LightsBuffer.lights[i].position - worldPos;
             tMax = length(toLight);
             toLight = normalize(toLight);
         }
@@ -118,7 +122,7 @@ void main() {
         if (rayQueryGetIntersectionTypeEXT(rq, true) ==
             gl_RayQueryCommittedIntersectionNoneEXT) {
             // No shadow — add light contribution
-            Lo += calcRadiance(lightData.lights[i], viewDir, worldPos, metallic, roughness,
+            Lo += calcRadiance(LightsBuffer.lights[i], viewDir, worldPos, metallic, roughness,
                               F0, normal, albedo.rgb, sheenIntensity, sheenColor, ao);
         }
     }

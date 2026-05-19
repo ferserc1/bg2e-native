@@ -56,7 +56,7 @@ void RendererDeferred::build(
     );
 
     // Create shared data bindings for deferred layers
-    _lightDataBinding = std::make_unique<scene::vk::LightDataBinding>(_engine);
+    _lightDataBinding = std::make_unique<scene::vk::DeferredLightDataBinding>(_engine);
     if (_engine->rayTracingSupported()) {
         _rtDataBinding = std::make_unique<vulkan::rt::RayTracingSceneDataBinding>(_engine);
     }
@@ -220,7 +220,7 @@ void RendererDeferred::resize(
 void RendererDeferred::update(
     float delta
 ) {
-    updateScene(delta, BG2E_MAX_FORWARD_LIGHTS);
+    updateScene(delta, BG2E_MAX_DEFERRED_LIGHTS);
 }
 
 void RendererDeferred::draw(
@@ -238,8 +238,8 @@ void RendererDeferred::draw(
     prepareSceneRender(cmd, currentFrame, frameResources);
 
     // Configure light uniforms on deferred layers
-    _opaqueLayer->setLightUniforms(_lightUniforms);
-    _transparentLayer->setLightUniforms(_lightUniforms);
+    _opaqueLayer->setLights(_lights);
+    _transparentLayer->setLights(_lights);
 
     // Configure color correction on all layers
     _skyboxLayer->setColorCorrection(_brightness, _contrast, _exposure);
@@ -337,6 +337,29 @@ void RendererDeferred::setDebugVisualization(deferred::DeferredDebugVisualizatio
     _debugVisualization = debugVisualization;
     _opaqueLayer->setDebugVisualization(debugVisualization);
     _transparentLayer->setDebugVisualization(debugVisualization);
+}
+
+void RendererDeferred::updateLights(
+    const std::vector<std::shared_ptr<bg2e::scene::LightComponent>>& lightComponents,
+    [[maybe_unused]] uint32_t maxLights
+) {
+    _lights.clear();
+    _lights.resize(lightComponents.size());
+
+    // Deferred render: maxLight is ignored
+
+    for (auto & comp : lightComponents)
+    {
+        _lights.push_back({
+            .position = comp->position(),
+            .intensity = comp->light().intensity(),
+            .color = comp->light().color(),
+            .direction = comp->direction(),
+            .type = comp->light().type(),
+            .spotAngle = comp->light().spotAngle(),
+            .spotCutoff = comp->light().spotCutoff()
+        });
+    }
 }
 
 }

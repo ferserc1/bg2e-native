@@ -59,6 +59,48 @@ Buffer* createBuffer(
     return buffer;
 }
 
+template <typename T>
+Buffer* createBuffer(
+    Engine * engine,
+    FrameResources& frameResources,
+    const std::vector<T>& data,
+    VkBufferUsageFlags usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+    VmaMemoryUsage memoryUsage = VMA_MEMORY_USAGE_CPU_ONLY,
+    const std::string & name = ""
+) {
+    const VkDeviceSize bufferSize = sizeof(T) * data.size();
+
+    if (bufferSize == 0)
+    {
+        throw std::runtime_error("createBuffer(vector) - Cannot create a zero-sized buffer");
+    }
+
+    auto buffer = bg2e::render::vulkan::Buffer::createAllocatedBuffer(
+        engine,
+        bufferSize,
+        usage,
+        memoryUsage,
+        name
+    );
+
+    auto vkBuffer = buffer->handle();
+    auto bufferAllocation = buffer->allocation();
+
+    frameResources.cleanupManager.push([&, engine, vkBuffer, bufferAllocation, buffer](VkDevice) {
+        delete buffer;
+    });
+
+    std::memcpy(
+        buffer->allocatedData(),
+        data.data(),
+        static_cast<size_t>(bufferSize)
+    );
+
+    buffer->flushAllocatedData();
+
+    return buffer;
+}
+
 }
 }
 }

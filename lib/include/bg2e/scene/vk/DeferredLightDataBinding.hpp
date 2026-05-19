@@ -24,22 +24,18 @@
 
 #include <vector>
 
-#define BG2E_MAX_FORWARD_LIGHTS 8
+#define BG2E_MAX_DEFERRED_LIGHTS 8
 
 namespace bg2e {
 namespace scene {
 namespace vk {
 
-class BG2E_API LightDataBinding : public bg2e::render::vulkan::PipelineDataBinding {
+class BG2E_API DeferredLightDataBinding : public bg2e::render::vulkan::PipelineDataBinding {
 public:
 
-    struct LightUniforms {
-        base::LightData lights[BG2E_MAX_FORWARD_LIGHTS];
-        uint32_t lightCount = 0;
-        glm::vec3 padding;
-    };
+    std::vector<base::LightData> lights;
 
-    LightDataBinding(bg2e::render::Engine * engine) : PipelineDataBinding(engine) {}
+    DeferredLightDataBinding(bg2e::render::Engine * engine) : PipelineDataBinding(engine) {}
 
     void initFrameResources(bg2e::render::vulkan::DescriptorSetAllocator * frameAllocator) override;
 
@@ -47,7 +43,7 @@ public:
 
     VkDescriptorSet newDescriptorSet(
         bg2e::render::vulkan::FrameResources & frameResources,
-        const LightUniforms& lights
+        const std::vector<base::LightData>& lights
     );
 };
 

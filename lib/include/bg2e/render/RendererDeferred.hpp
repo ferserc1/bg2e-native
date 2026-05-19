@@ -25,7 +25,7 @@
 #include <bg2e/render/EnvironmentResources.hpp>
 #include <bg2e/render/deferred/SkyboxLayer.hpp>
 #include <bg2e/render/deferred/DeferredLayer.hpp>
-#include <bg2e/scene/vk/LightDataBinding.hpp>
+#include <bg2e/scene/vk/DeferredLightDataBinding.hpp>
 #include <bg2e/render/vulkan/rt/RayTracingSceneDataBinding.hpp>
 #include <bg2e/manipulation/SelectionHighlight.hpp>
 
@@ -107,13 +107,18 @@ protected:
     std::shared_ptr<vulkan::Image> _opaqueImage;
 
     // Data bindings (shared across deferred layers)
-    std::unique_ptr<scene::vk::LightDataBinding> _lightDataBinding;
+    std::unique_ptr<scene::vk::DeferredLightDataBinding> _lightDataBinding;
     std::unique_ptr<vulkan::rt::RayTracingSceneDataBinding> _rtDataBinding;
 
     // Selection highlight
     std::unique_ptr<manipulation::SelectionHighlight> _selectionHighlight;
 
     deferred::DeferredDebugVisualization _debugVisualization = deferred::DeferredDebugVisualization::FullComposition;
+
+    std::vector<base::LightData> _lights;
+
+protected:
+    void updateLights(const std::vector<std::shared_ptr<bg2e::scene::LightComponent>>& lightComponents, uint32_t maxLights) override;
 };
 
 }

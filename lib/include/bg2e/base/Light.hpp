@@ -94,5 +94,18 @@ protected:
     float _spotCutoff = 14.0f;
 };
 
+struct LightData
+{
+    glm::vec3 position;
+    float intensity;
+    Color color;
+    glm::vec3 direction;
+    Light::LightType type;
+    float spotAngle;
+    float spotCutoff;
+
+    glm::vec2 padding;
+};
+
 }
 }
