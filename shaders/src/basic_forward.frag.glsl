@@ -95,6 +95,10 @@ void main()
     int lightCount = LightsBuffer.lightCount;
     for(int i = 0; i < lightCount; ++i)
     {
+        if (LightsBuffer.lights[i].castShadows == 0) {
+            Lo += calcRadiance(LightsBuffer.lights[i], viewDir, inFragPos, metallic, roughness, F0, normal, albedo, mat.sheenIntensity, mat.sheenColor.rgb, ambientOcclussion);
+            continue;
+        }
         Lo += calcRadiance(LightsBuffer.lights[i], viewDir, inFragPos, metallic, roughness, F0, normal, albedo, mat.sheenIntensity, mat.sheenColor.rgb, ambientOcclussion);
     }
   

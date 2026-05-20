@@ -53,6 +53,9 @@ public:
 
     virtual void setSpotCutoff(float a) { _spotCutoff = a; }
     virtual float spotCutoff() const { return _spotCutoff; }
+
+    virtual void setCastShadows(bool cast) { _castShadows = cast; }
+    virtual bool castShadows() const { return _castShadows; }
     
     std::string typeString() const
     {
@@ -83,6 +86,7 @@ public:
             { "type", JSON(typeString()) },
             { "spotAngle", JSON(_spotAngle) },
             { "spotCutoff", JSON(_spotCutoff) },
+            { "castShadows", JSON(_castShadows) },
         });
     }
     
@@ -92,19 +96,23 @@ protected:
     LightType _type = TypeOmni;
     float _spotAngle = 22.0f;
     float _spotCutoff = 14.0f;
+    bool _castShadows = true;
 };
 
 struct LightData
 {
     glm::vec3 position;
     float intensity;
-    Color color;
+
+    base::Color color;
+
     glm::vec3 direction;
-    Light::LightType type;
+    base::Light::LightType type;
+
     float spotAngle;
     float spotCutoff;
-
-    glm::vec2 padding;
+    int32_t castShadows;
+    float padding;
 };
 
 }

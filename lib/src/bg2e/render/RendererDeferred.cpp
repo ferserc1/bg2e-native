@@ -357,7 +357,8 @@ void RendererDeferred::updateLights(
             .direction = comp->direction(),
             .type = comp->light().type(),
             .spotAngle = comp->light().spotAngle(),
-            .spotCutoff = comp->light().spotCutoff()
+            .spotCutoff = comp->light().spotCutoff(),
+            .castShadows = comp->light().castShadows() ? 1 : 0
         });
     }
 }

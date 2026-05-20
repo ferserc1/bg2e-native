@@ -229,7 +229,8 @@ protected:
                     colorDist(gen),
                     colorDist(gen),
                     1.0f
-                )
+                ),
+                true
             ));
         }
 
@@ -238,7 +239,8 @@ protected:
 
     bg2e::scene::Node * createLight(
         const glm::vec3& position,
-        const bg2e::base::Color& color
+        const bg2e::base::Color& color,
+        bool castShadows
     ) {
         auto * lightNode = new bg2e::scene::Node("Light");
 
@@ -247,6 +249,7 @@ protected:
         lightNode->light()->light().setColor(color);
         lightNode->addComponent(new bg2e::scene::TransformComponent());
         lightNode->transform()->setTranslation(position);
+        lightNode->light()->light().setCastShadows(castShadows);
 
         return lightNode;
     }

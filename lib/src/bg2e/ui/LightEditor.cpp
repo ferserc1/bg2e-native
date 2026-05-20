@@ -95,6 +95,31 @@ bool LightEditor::draw()
             changed = true;
             if (_onChangedFunction) _onChangedFunction();
         }
+
+        BasicWidgets::separator("Spot");
+        bool castShadows = light.castShadows();
+        if (BasicWidgets::checkBox("Cast Shadows", &castShadows))
+        {
+            light.setCastShadows(castShadows);
+            changed = true;
+            if (_onChangedFunction) _onChangedFunction();
+        }
+
+        float spotAngle = light.spotAngle();
+        if (Input::sliderFloat("Spot Angle", &spotAngle, 1.0f, 90.0f))
+        {
+            light.setSpotAngle(spotAngle);
+            changed = true;
+            if (_onChangedFunction) _onChangedFunction();
+        }
+
+        float spotCutoff = light.spotCutoff();
+        if (Input::sliderFloat("Spot Cutoff", &spotCutoff, 1.0f, 90.0f))
+        {
+            light.setSpotCutoff(spotCutoff);
+            changed = true;
+            if (_onChangedFunction) _onChangedFunction();
+        }
     }
 
     return changed;

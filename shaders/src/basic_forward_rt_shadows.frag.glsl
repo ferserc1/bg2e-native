@@ -106,6 +106,11 @@ void main()
             tMax = length(toLight);
             dir = normalize(toLight);
         }
+        if (lightsBuffer.lights[i].castShadows == 0)
+        {
+            Lo += calcRadiance(lightsBuffer.lights[i], viewDir, inFragPos, metallic, roughness, F0, normal, albedo, mat.sheenIntensity, mat.sheenColor.rgb, ambientOcclussion);
+            continue;
+        }
         vec3 origin = inFragPos.xyz + normal.xyz * 0.01;
         rayQueryEXT rq;
         rayQueryInitializeEXT(

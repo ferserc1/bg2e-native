@@ -64,7 +64,8 @@ VkDescriptorSet DeferredLightDataBinding::newDescriptorSet(
                 .direction = glm::vec3(1.0f, 0.0f, 0.0f),
                 .type = base::Light::LightType::TypeDisabled,
                 .spotAngle = 0.0f,
-                .spotCutoff = 0.0f
+                .spotCutoff = 0.0f,
+                .castShadows = 0
             }
         };
         lightBuffer = bg2e::render::vulkan::macros::createBuffer(

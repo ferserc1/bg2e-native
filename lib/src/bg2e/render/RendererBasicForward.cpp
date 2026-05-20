@@ -437,6 +437,7 @@ void RendererBasicForward::updateLights(const std::vector<std::shared_ptr<bg2e::
         _lightUniforms.lights[i].direction = comp->direction();
         _lightUniforms.lights[i].spotAngle = comp->light().spotAngle();
         _lightUniforms.lights[i].spotCutoff = comp->light().spotCutoff();
+        _lightUniforms.lights[i].castShadows = comp->light().castShadows() ? 1 : 0;
     }
 }
 

@@ -101,6 +101,11 @@ void main() {
     vec3 Lo = vec3(0.0);
     for (int i = 0; i < pushConstant.lightCount; i++) {
         if (LightsBuffer.lights[i].type == LIGHT_TYPE_DISABLED) continue;
+        if (LightsBuffer.lights[i].castShadows == 0) {
+            Lo += calcRadiance(LightsBuffer.lights[i], viewDir, worldPos, metallic, roughness,
+                              F0, normal, albedo.rgb, sheenIntensity, sheenColor, ao);
+            continue;
+        }
         Lo += calcRadiance(LightsBuffer.lights[i], viewDir, worldPos, metallic, roughness,
                           F0, normal, albedo.rgb, sheenIntensity, sheenColor, ao);
     }
