@@ -45,7 +45,6 @@ enum class DeferredDebugVisualization {
     GBufferAlbedo,
     GBufferNormal,
     GBufferMaterial,
-    GBufferPosition,
     GBufferDepth,
     InputImage,
 
@@ -121,6 +120,8 @@ protected:
         uint32_t padding1;
         uint32_t padding2;
         uint32_t padding3;
+
+        glm::mat4 inverseViewProjection;
     };
 
     void createGBufferPipeline();

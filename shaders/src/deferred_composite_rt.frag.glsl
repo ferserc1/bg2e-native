@@ -23,13 +23,14 @@
 #include "lib/uniforms.glsl"
 #include "lib/pbr.glsl"
 #include "lib/color_correction.glsl"
+#include "lib/deferred_utils.glsl"
 
 // G-buffer samplers (set=0)
 layout(set = 0, binding = 0) uniform sampler2D g_Albedo;
 layout(set = 0, binding = 1) uniform sampler2D g_Normal;
 layout(set = 0, binding = 2) uniform sampler2D g_Material;
-layout(set = 0, binding = 3) uniform sampler2D g_Position;
-layout(set = 0, binding = 4) uniform sampler2D g_InputImage;
+layout(set = 0, binding = 3) uniform sampler2D g_InputImage;
+layout(set = 0, binding = 4) uniform sampler2D g_Depth;
 
 // Scene data (set=1)
 layout(set = 1, binding = 0) uniform SceneData {
@@ -65,6 +66,8 @@ layout(push_constant) uniform PushConstant {
     uint padding1;
     uint padding2;
     uint padding3;
+
+    mat4 inverseViewProjection;
 } pushConstant;
 
 layout(location = 0) in vec2 vTexcoord;
@@ -75,8 +78,14 @@ void main() {
     vec4 albedo = texture(g_Albedo, vTexcoord);
     vec3 normal = texture(g_Normal, vTexcoord).xyz * 2.0 - 1.0;  // Map [0,1] to [-1,1]
     vec4 materialData = texture(g_Material, vTexcoord);
-    vec3 worldPos = texture(g_Position, vTexcoord).xyz;
     vec4 inputColor = texture(g_InputImage, vTexcoord);
+
+    float depth = texture(g_Depth, vTexcoord).r;
+    vec3 worldPos = reconstructWorldPosition(
+        vTexcoord,
+        depth,
+        pushConstant.inverseViewProjection
+    );
 
     float metallic = materialData.r;
     float roughness = max(materialData.g, 0.05);

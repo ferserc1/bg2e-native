@@ -19,9 +19,12 @@
 #include <numbers>
 #include <random>
 
-class RotateCameraComponent : public bg2e::scene::Component {
+class RotateComponent : public bg2e::scene::Component {
 public:
     BG2E_COMPONENT_TYPE_NAME("RotateCamera")
+
+    RotateComponent() : _factor(1.0f) {}
+    RotateComponent(float factor) : _factor(factor) {}
 
     void update(float delta) override
     {
@@ -29,9 +32,12 @@ public:
 
         if (transform)
         {
-            transform->rotate(0.02f * delta / 10.0f, 0.0f, 1.0f, 0.0f);
+            transform->rotate(0.0005f * delta * _factor / 10.0f, 0.0f, 1.0f, 0.0f);
         }
     }
+
+protected:
+    float _factor;
 };
 
 class DeferredRendererDelegate : public bg2e::render::DefaultRenderLoopDelegate<bg2e::render::RendererDeferred>,
@@ -40,7 +46,7 @@ class DeferredRendererDelegate : public bg2e::render::DefaultRenderLoopDelegate<
 {
 public:
     void init(bg2e::render::Engine*, bg2e::ui::UserInterface*) override {
-        _window.setTitle("Deferred renderer (shell)");
+        _window.setTitle("Deferred renderer");
         _window.options.noClose = true;
         _window.options.minWidth = 190;
         _window.options.minHeight = 90;
@@ -50,7 +56,18 @@ public:
 
     void drawUI() override {
         _window.draw([&]() {
-            bg2e::ui::BasicWidgets::text("Deferred renderer shell - Phase 1");
+            bg2e::ui::BasicWidgets::text("Deferred renderer shell");
+
+            _fpsAccumulator += delta();
+            _fpsFrameCount++;
+            if (_fpsAccumulator >= 1000.0f)
+            {
+                _fps = static_cast<int>(1000.0f * _fpsFrameCount / _fpsAccumulator);
+                _fpsAccumulator = 0.0f;
+                _fpsFrameCount = 0;
+            }
+            std::string fpsLine = "FPS: " + std::to_string(_fps);
+            bg2e::ui::BasicWidgets::text(fpsLine);
 
             auto drawSkybox = renderer()->drawSkybox();
             if (bg2e::ui::BasicWidgets::checkBox("Draw skybox", &drawSkybox))
@@ -76,6 +93,10 @@ public:
 
 protected:
     bg2e::ui::Window _window;
+
+    int _fps = 0;
+    float _fpsAccumulator = 0.0f;
+    int _fpsFrameCount = 0;
 
     std::shared_ptr<bg2e::scene::Node> createScene() override {
         auto sceneRoot = std::make_shared<bg2e::scene::Node>("Scene Root");
@@ -111,7 +132,7 @@ protected:
 
         auto cameraRotation = new bg2e::scene::Node("Camera Rotation");
         cameraRotation->addComponent(new bg2e::scene::TransformComponent());
-        cameraRotation->addComponent(new RotateCameraComponent());
+        cameraRotation->addComponent(new RotateComponent());
         cameraRotation->addChild(cameraNode);
         sceneRoot->addChild(cameraRotation);
 
@@ -131,15 +152,55 @@ protected:
             "two_submeshes_inner_albedo.jpg"
         );
 
+        auto innerMetallicTexture = std::make_shared<bg2e::base::Texture>(
+            bg2e::base::PlatformTools::assetPath(),
+            "two_submeshes_inner_metallic.jpg"
+        );
+
+        auto innerRoughnessTexture = std::make_shared<bg2e::base::Texture>(
+            bg2e::base::PlatformTools::assetPath(),
+            "two_submeshes_inner_roughness.jpg"
+        );
+
+        auto innerNormalTexture = std::make_shared<bg2e::base::Texture>(
+            bg2e::base::PlatformTools::assetPath(),
+            "two_submeshes_inner_normal.jpg"
+        );
+
         auto outerAlbedoTexture = std::make_shared<bg2e::base::Texture>(
             bg2e::base::PlatformTools::assetPath(),
             "two_submeshes_outer_albedo.jpg"
         );
 
+        auto outerMetallicTexture = std::make_shared<bg2e::base::Texture>(
+            bg2e::base::PlatformTools::assetPath(),
+            "two_submeshes_outer_metallic.jpg"
+        );
+
+        auto outerRoughnessTexture = std::make_shared<bg2e::base::Texture>(
+            bg2e::base::PlatformTools::assetPath(),
+            "two_submeshes_outer_roughness.jpg"
+        );
+
+        auto outerNormalTexture = std::make_shared<bg2e::base::Texture>(
+            bg2e::base::PlatformTools::assetPath(),
+            "two_submeshes_outer_normal.jpg"
+        );
+
         auto drawable = new bg2e::scene::Drawable();
         drawable->setMesh(bg2e::db::loadMeshObj<bg2e::geo::Mesh>(modelPath));
         drawable->material(0).setAlbedoTexture(outerAlbedoTexture);
+        drawable->material(0).setMetalnessTexture(outerMetallicTexture);
+        drawable->material(0).setRoughnessTexture(outerRoughnessTexture);
+        drawable->material(0).setNormalTexture(outerNormalTexture);
+        drawable->material(0).setMetalness(1.0f);
+        drawable->material(0).setRoughness(1.0f);
         drawable->material(1).setAlbedoTexture(innerAlbedoTexture);
+        drawable->material(1).setMetalnessTexture(innerMetallicTexture);
+        drawable->material(1).setRoughnessTexture(innerRoughnessTexture);
+        drawable->material(1).setNormalTexture(innerNormalTexture);
+        drawable->material(1).setMetalness(1.0f);
+        drawable->material(1).setRoughness(1.0f);
         drawable->load(_engine);
 
         return drawable;
@@ -148,12 +209,14 @@ protected:
     bg2e::scene::Node * createLights()
     {
         auto * lightsRoot = new bg2e::scene::Node("Lights");
+        lightsRoot->addComponent(new RotateComponent(-10.0f));
+        lightsRoot->addComponent(new bg2e::scene::TransformComponent());
         std::random_device rd;
         std::mt19937 gen(rd());
         std::uniform_real_distribution<float> colorDist(0.0f, 1.0f);
 
         constexpr float distance = 5.0f;
-        constexpr int numLights = 16;
+        constexpr int numLights = 10;
         for (int i = 0; i < numLights; ++i)
         {
             float alpha = std::numbers::pi_v<float> * 2.0f * static_cast<float>(i) / static_cast<float>(numLights);

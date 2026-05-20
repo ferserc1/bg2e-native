@@ -40,6 +40,7 @@ public:
     void setProjection(math::Projection * proj) { _camera.setProjection(proj); }
     void setProjection(std::shared_ptr<math::Projection> proj) { _camera.setProjection(proj); }
     const glm::mat4& projectionMatrix() const { return _camera.projectionMatrix(); }
+    const glm::mat4& viewMatrix() const;
     
     void resizeViewport(const math::Viewport& vp) override;
     void update(float delta) override;
@@ -49,6 +50,9 @@ public:
     
 protected:
     base::Camera _camera;
+
+    // This matrix is obtained from the node inverse view matrix.
+    mutable glm::mat4 _viewMatrix{ 1.0f };
 };
 
 

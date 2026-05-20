@@ -19,6 +19,8 @@
 #include <bg2e/scene/CameraComponent.hpp>
 #include <bg2e/scene/ComponentFactoryRegistry.hpp>
 
+#include "bg2e/scene/Node.hpp"
+
 namespace bg2e::scene {
 
 CameraComponent::CameraComponent()
@@ -38,6 +40,15 @@ void CameraComponent::resizeViewport(const math::Viewport& vp)
     {
         proj->setViewport(vp);
     }
+}
+
+const glm::mat4& CameraComponent::viewMatrix() const
+{
+    if (ownerNode())
+    {
+        _viewMatrix = ownerNode()->invertedWorldMatrix();
+    }
+    return _viewMatrix;
 }
 
 void CameraComponent::update(float /* delta */)

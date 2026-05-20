@@ -36,7 +36,6 @@ layout(set = 1, binding = 5) uniform sampler2D aoTex;
 layout(location = 0) out vec4 g_Albedo;
 layout(location = 1) out vec4 g_Normal;
 layout(location = 2) out vec4 g_Material;
-layout(location = 3) out vec4 g_Position;
 
 layout(location = 0) in vec3 inWorldPos;
 layout(location = 1) in vec3 inNormal;
@@ -61,7 +60,4 @@ void main() {
     float ao = sampleAmbientOcclussion(aoTex, inUV0, inUV1, mat);
     float sheen = mat.sheenIntensity;
     g_Material = vec4(metallic, roughness, ao, sheen);
-
-    // World position
-    g_Position = vec4(inWorldPos, 1.0);
 }

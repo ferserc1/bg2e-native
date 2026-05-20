@@ -45,8 +45,6 @@ const vulkan::Image* DeferredLayer::resolveDebugSource(const vulkan::Image* inpu
             return gbuffer->image(1).get();
         case DeferredDebugVisualization::GBufferMaterial:
             return gbuffer->image(2).get();
-        case DeferredDebugVisualization::GBufferPosition:
-            return gbuffer->image(3).get();
         case DeferredDebugVisualization::GBufferDepth:
             return gbuffer->depthImage().get();
         case DeferredDebugVisualization::InputImage:
@@ -198,7 +196,7 @@ void DeferredLayer::createGBufferPipeline()
     plFactory.setCullMode(VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_COUNTER_CLOCKWISE);
     plFactory.disableMultisample();
 
-    // 4 color attachment formats
+    // 3 color attachment formats
     plFactory.setColorAttachmentFormat(_gbuffers[0]->formats());
 
     _gbufferPipeline = plFactory.build(_gbufferPipelineLayout);
@@ -213,13 +211,13 @@ void DeferredLayer::createGBufferPipeline()
 
 void DeferredLayer::createCompositePipeline()
 {
-    // Create G-buffer descriptor set layout (5 bindings: 4 G-buffers + 1 input image)
+    // Create G-buffer descriptor set layout (5 bindings: 3 G-buffers + 1 input image + 1 depth)
     vulkan::factory::DescriptorSetLayout dsLayoutFactory;
     dsLayoutFactory.addBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);  // g_Albedo
     dsLayoutFactory.addBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);  // g_Normal
     dsLayoutFactory.addBinding(2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);  // g_Material
-    dsLayoutFactory.addBinding(3, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);  // g_Position
-    dsLayoutFactory.addBinding(4, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);  // g_InputImage
+    dsLayoutFactory.addBinding(3, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);  // g_InputImage
+    dsLayoutFactory.addBinding(4, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);  // g_Depth
     _compositeGBufferDSLayout = dsLayoutFactory.build(
         _engine->device().handle(),
         VK_SHADER_STAGE_FRAGMENT_BIT
@@ -403,9 +401,9 @@ void DeferredLayer::renderCompositePass(
     gbufferDS->addImage(2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
         gbuffer->image(2).get(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _gbufferSampler);
     gbufferDS->addImage(3, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-        gbuffer->image(3).get(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _gbufferSampler);
-    gbufferDS->addImage(4, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
         inputImage, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _gbufferSampler);
+    gbufferDS->addImage(4, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+        gbuffer->depthImage().get(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _gbufferSampler);
     gbufferDS->endUpdate();
 
     // Create other descriptor sets
@@ -413,13 +411,18 @@ void DeferredLayer::renderCompositePass(
     auto envDS = _environmentDataBinding->newDescriptorSet(frameResources, _environment);
     auto lightDS = _lightDataBinding->newDescriptorSet(frameResources, _lights);
 
+
     // Push constants
+    auto projMat = _scene->mainCamera()->projectionMatrix();
+    auto viewMat = _scene->mainCamera()->viewMatrix();
+    auto inverseViewProjection = glm::inverse(projMat * viewMat);
     const CompositePushConstants pc{
         .gamma = 2.2f,
         .brightness = _brightness,
         .contrast = _contrast,
         .exposure = _exposure,
         .numLights = static_cast<uint32_t>(_lights.size()),
+        .inverseViewProjection = inverseViewProjection,
     };
     vkCmdPushConstants(
         cmd, _compositePipelineLayout,
