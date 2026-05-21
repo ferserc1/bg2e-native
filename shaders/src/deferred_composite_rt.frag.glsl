@@ -24,6 +24,7 @@
 #include "lib/pbr.glsl"
 #include "lib/color_correction.glsl"
 #include "lib/deferred_utils.glsl"
+#include "lib/ray_tracing.glsl"
 
 // G-buffer samplers (set=0)
 layout(set = 0, binding = 0) uniform sampler2D g_Albedo;
@@ -74,93 +75,46 @@ layout(location = 0) in vec2 vTexcoord;
 layout(location = 0) out vec4 outColor;
 
 void main() {
-    // Sample G-buffers
-    vec4 albedo = texture(g_Albedo, vTexcoord);
-    vec3 normal = texture(g_Normal, vTexcoord).xyz * 2.0 - 1.0;  // Map [0,1] to [-1,1]
-    vec4 materialData = texture(g_Material, vTexcoord);
-    vec4 inputColor = texture(g_InputImage, vTexcoord);
+    DeferredGBufferData gbuf = setupDeferredGBuffer(
+        g_Albedo, g_Normal, g_Material,
+        g_InputImage, g_Depth,
+        vTexcoord,
+        pushConstant.inverseViewProjection,
+        sceneData.viewMatrix
+    );
 
-    if (albedo.a == 0)
-    {
-        outColor = inputColor;
+    if (gbuf.isEmpty) {
+        outColor = gbuf.inputColor;
         outColor.a = 0.0;
         return;
     }
 
-    float depth = texture(g_Depth, vTexcoord).r;
-    vec3 worldPos = reconstructWorldPosition(
-        vTexcoord,
-        depth,
-        pushConstant.inverseViewProjection
-    );
-
-    float metallic = materialData.r;
-    float roughness = max(materialData.g, 0.05);
-    float ao = materialData.b;
-    float sheenIntensity = materialData.a;
-
-    // Camera position from inverse view matrix
-    vec3 cameraPos = vec3(inverse(sceneData.viewMatrix)[3]);
-    vec3 viewDir = normalize(cameraPos - worldPos);
-
-    // F0 for Fresnel
-    vec3 F0 = mix(vec3(0.04), albedo.rgb, metallic);
-    vec3 sheenColor = albedo.rgb;
-
-    // Direct lighting loop with RT shadows
     vec3 Lo = vec3(0.0);
     for (int i = 0; i < pushConstant.lightCount; i++) {
         if (LightsBuffer.lights[i].type == LIGHT_TYPE_DISABLED) continue;
 
         if (LightsBuffer.lights[i].castShadows == 0) {
-            Lo += calcRadiance(LightsBuffer.lights[i], viewDir, worldPos, metallic, roughness,
-                              F0, normal, albedo.rgb, sheenIntensity, sheenColor, ao);
+            Lo += calcRadiance(LightsBuffer.lights[i], gbuf.viewDir, gbuf.worldPos,
+                              gbuf.metallic, gbuf.roughness,
+                              gbuf.F0, gbuf.normal, gbuf.albedo.rgb,
+                              gbuf.sheenIntensity, gbuf.sheenColor, gbuf.ao);
             continue;
         }
 
-        // Compute light direction and max distance
-        vec3 toLight;
-        float tMax;
-        if (LightsBuffer.lights[i].type == LIGHT_TYPE_POINT) {
-            toLight = LightsBuffer.lights[i].position - worldPos;
-            tMax = length(toLight);
-            toLight = normalize(toLight);
-        } else if (LightsBuffer.lights[i].type == LIGHT_TYPE_DIRECTIONAL) {
-            toLight = -normalize(LightsBuffer.lights[i].direction);
-            tMax = 1000000.0;
-        } else { // SPOT
-            toLight = LightsBuffer.lights[i].position - worldPos;
-            tMax = length(toLight);
-            toLight = normalize(toLight);
-        }
-
-        // Shadow ray query
-        rayQueryEXT rq;
-        rayQueryInitializeEXT(rq, tlas,
-            gl_RayFlagsTerminateOnFirstHitEXT | gl_RayFlagsOpaqueEXT,
-            0xFF, worldPos + normal * 0.01, 0.001, toLight, tMax);
-        while (rayQueryProceedEXT(rq)) {}
-
-        if (rayQueryGetIntersectionTypeEXT(rq, true) ==
-            gl_RayQueryCommittedIntersectionNoneEXT) {
-            // No shadow — add light contribution
-            Lo += calcRadiance(LightsBuffer.lights[i], viewDir, worldPos, metallic, roughness,
-                              F0, normal, albedo.rgb, sheenIntensity, sheenColor, ao);
+        if (queryShadow(tlas, gbuf.worldPos, gbuf.normal, LightsBuffer.lights[i])) {
+            Lo += calcRadiance(LightsBuffer.lights[i], gbuf.viewDir, gbuf.worldPos,
+                              gbuf.metallic, gbuf.roughness,
+                              gbuf.F0, gbuf.normal, gbuf.albedo.rgb,
+                              gbuf.sheenIntensity, gbuf.sheenColor, gbuf.ao);
         }
     }
 
-    // Ambient/IBL lighting
-    vec3 ambient = calcAmbientLight(viewDir, normal, F0, albedo.rgb, metallic, roughness,
+    vec3 ambient = calcAmbientLight(gbuf.viewDir, gbuf.normal, gbuf.F0, gbuf.albedo.rgb,
+                                    gbuf.metallic, gbuf.roughness,
                                     irradianceMap, prefilteredEnvMap, environmentData.maxReflectionLOD,
-                                    brdfLUT, ao, sheenIntensity, sheenColor);
+                                    brdfLUT, gbuf.ao, gbuf.sheenIntensity, gbuf.sheenColor);
 
-    vec3 color = ambient + Lo;
-
-    // Color correction
-    vec3 finalColor = exposure(color, pushConstant.exposure);
-    outColor = lineal2SRGB(vec4(finalColor, 1.0), pushConstant.gamma);
-    outColor = brightnessContrast(outColor, pushConstant.brightness, pushConstant.contrast);
-
-    // Blend with input image (previous layer) using alpha
-    outColor = mix(inputColor, outColor, albedo.a);
+    outColor = compositeFinalColor(ambient, Lo, gbuf.inputColor, gbuf.albedo.a,
+                                   pushConstant.exposure, pushConstant.gamma,
+                                   pushConstant.brightness, pushConstant.contrast);
 }
