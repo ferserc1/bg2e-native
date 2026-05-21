@@ -100,7 +100,7 @@ protected:
 
     std::shared_ptr<bg2e::scene::Node> createScene() override {
         auto sceneRoot = std::make_shared<bg2e::scene::Node>("Scene Root");
-        sceneRoot->addComponent(new bg2e::scene::EnvironmentComponent(bg2e::base::PlatformTools::assetPath(), "black.jpg"));
+        sceneRoot->addComponent(new bg2e::scene::EnvironmentComponent(bg2e::base::PlatformTools::assetPath(), "HDR_multi_nebulae_1.hdr"));
 
         auto anotherNode = new bg2e::scene::Node("Transform Node");
         anotherNode->addComponent(bg2e::scene::TransformComponent::makeTranslated(0.0f, 1.0f, 0.0f));
@@ -114,25 +114,28 @@ protected:
         anotherNode->addChild(modelNode);
 
         auto secondModel = new bg2e::scene::Node("Second 3D model");
-        auto anotherDrawable = new bg2e::scene::DrawableComponent(drawable);
+        auto anotherDrawable = std::shared_ptr<bg2e::scene::DrawableBase>(loadDrawable(true));
+        auto anotherDrawableComponent = new bg2e::scene::DrawableComponent(anotherDrawable);
 
-        secondModel->addComponent(anotherDrawable);
+        secondModel->addComponent(anotherDrawableComponent);
         secondModel->addComponent(bg2e::scene::TransformComponent::makeTranslated(-2.0f, 0.0f, 0.0f ));
         sceneRoot->addChild(secondModel);
+
 
         auto floor = createFloorNode();
         sceneRoot->addChild(floor);
 
         auto cameraNode = std::shared_ptr<bg2e::scene::Node>(new bg2e::scene::Node("Camera"));
-        cameraNode->addComponent(bg2e::scene::TransformComponent::makeTranslated(0.0f, 4.0f, 10.0f ));
-        cameraNode->transform()->rotate(0.4f, -1.0f, 0.0f, 0.0f);
+        cameraNode->addComponent(bg2e::scene::TransformComponent::makeTranslated(0.0f, 3.0f, 10.0f ));
+        cameraNode->transform()->rotate(0.0f, -1.0f, 0.0f, 0.0f);
         cameraNode->addComponent(new bg2e::scene::CameraComponent());
         auto projection = new bg2e::math::OpticalProjection();
+        projection->setFocalLength(35.0f);
         cameraNode->camera()->setProjection(projection);
 
         auto cameraRotation = new bg2e::scene::Node("Camera Rotation");
         cameraRotation->addComponent(new bg2e::scene::TransformComponent());
-        cameraRotation->addComponent(new RotateComponent());
+        cameraRotation->addComponent(new RotateComponent(5.0f));
         cameraRotation->addChild(cameraNode);
         sceneRoot->addChild(cameraRotation);
 
@@ -142,7 +145,7 @@ protected:
         return sceneRoot;
     }
 
-    bg2e::scene::DrawableBase * loadDrawable()
+    bg2e::scene::DrawableBase * loadDrawable(bool transparent = false)
     {
         std::filesystem::path modelPath = bg2e::base::PlatformTools::assetPath();
         modelPath.append("two_submeshes.obj");
@@ -189,6 +192,13 @@ protected:
 
         auto drawable = new bg2e::scene::Drawable();
         drawable->setMesh(bg2e::db::loadMeshObj<bg2e::geo::Mesh>(modelPath));
+        if (transparent)
+        {
+            drawable->material(0).setAlbedo(bg2e::base::Color(1.0f, 1.0f, 1.0f, 0.7f));
+            drawable->material(0).setIsTransparent(true);
+            drawable->material(1).setAlbedo(bg2e::base::Color(1.0f, 1.0f, 1.0f, 0.7f));
+            drawable->material(1).setIsTransparent(true);
+        }
         drawable->material(0).setAlbedoTexture(outerAlbedoTexture);
         drawable->material(0).setMetalnessTexture(outerMetallicTexture);
         drawable->material(0).setRoughnessTexture(outerRoughnessTexture);

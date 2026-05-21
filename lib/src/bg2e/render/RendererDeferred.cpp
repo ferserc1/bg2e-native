@@ -83,6 +83,7 @@ void RendererDeferred::build(
     _transparentLayer->setScene(_scene.get());
     _transparentLayer->setEnvironment(_environment.get());
     _transparentLayer->setRenderQueue(&_renderQueue);
+    _transparentLayer->setIsTransparent(true);
 
 
     // Create intermediate images
@@ -265,14 +266,19 @@ void RendererDeferred::draw(
         cmd,
         currentFrame,
         _skyboxImage.get(),
-        //_opaqueImage.get(),
-        colorImage,
+        _opaqueImage.get(),
         frameResources
     );
 
-    /*
-     TODO: Debugging deferred render layer, remove de comment block after done
+    vulkan::Image::cmdTransitionImage(
+        cmd,
+        _opaqueImage->handle(),
+        VK_IMAGE_LAYOUT_UNDEFINED,
+        VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+    );
+
     // === Layer 3: Transparent (writes to swapchain output) ===
+    _transparentLayer->setOpaqueDepthBuffer(_opaqueLayer->depthBuffer());
     _transparentLayer->render(cmd, currentFrame, _opaqueImage.get(), colorImage,
                               frameResources);
 
@@ -283,7 +289,7 @@ void RendererDeferred::draw(
         auto projMatrix = mainCamera->projectionMatrix();
         _selectionHighlight->draw(_scene->rootNode(), viewMatrix, projMatrix, cmd);
     }
-    */
+
 
     // === End scene render (from Renderer base) ===
     endSceneRender();

@@ -47,7 +47,7 @@ public:
     void transitionToClear(VkCommandBuffer cmd);
     void transitionToAttachment(VkCommandBuffer cmd);
     void transitionToShaderRead(VkCommandBuffer cmd);
-    void beginRender(VkCommandBuffer cmd);
+    void beginRender(VkCommandBuffer cmd, bool isTransparent);
 
 private:
     Engine * _engine;

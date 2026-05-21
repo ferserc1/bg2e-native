@@ -77,6 +77,13 @@ void main() {
     vec4 materialData = texture(g_Material, vTexcoord);
     vec4 inputColor = texture(g_InputImage, vTexcoord);
 
+    if (albedo.a == 0)
+    {
+        outColor = inputColor;
+        outColor.a = 0.0;
+        return;
+    }
+
     float depth = texture(g_Depth, vTexcoord).r;
     vec3 worldPos = reconstructWorldPosition(
         vTexcoord,
@@ -117,11 +124,11 @@ void main() {
 
     vec3 color = ambient + Lo;
 
-    // Blend with input image (previous layer) using alpha
-    vec3 finalColor = mix(inputColor.rgb, color, albedo.a);
-
     // Color correction
-    finalColor = exposure(finalColor, pushConstant.exposure);
+    vec3 finalColor = exposure(color, pushConstant.exposure);
     outColor = lineal2SRGB(vec4(finalColor, 1.0), pushConstant.gamma);
     outColor = brightnessContrast(outColor, pushConstant.brightness, pushConstant.contrast);
+
+    // Blend with input image (previous layer) using alpha
+    outColor = mix(inputColor, outColor, albedo.a);
 }

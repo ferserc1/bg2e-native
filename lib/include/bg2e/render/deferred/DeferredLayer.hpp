@@ -79,10 +79,16 @@ public:
     void setDebugVisualization(DeferredDebugVisualization mode) { _debugVisualization = mode; }
     DeferredDebugVisualization debugVisualization() const { return _debugVisualization; }
 
+    void setIsTransparent(bool isTransparent) { _isTransparent = isTransparent; }
+    [[nodiscard]] bool isTransparent() const { return _isTransparent; }
+    void setOpaqueDepthBuffer(std::shared_ptr<vulkan::Image> image) { _opaqueDepthBuffer = image; }
+    std::shared_ptr<vulkan::Image> depthBuffer();
+
 protected:
     LayerType _layerType;
 
     std::vector<std::unique_ptr<GBufferManager>> _gbuffers;
+    std::shared_ptr<vulkan::Image> _opaqueDepthBuffer;
 
     VkPipeline _gbufferPipeline = VK_NULL_HANDLE;
     VkPipeline _compositePipeline = VK_NULL_HANDLE;
@@ -108,6 +114,8 @@ protected:
     VkPipeline _debugPipeline = VK_NULL_HANDLE;
     VkPipelineLayout _debugPipelineLayout = VK_NULL_HANDLE;
     VkDescriptorSetLayout _debugDSLayout = VK_NULL_HANDLE;
+
+    bool _isTransparent = false;
 
     struct CompositePushConstants {
         float gamma;

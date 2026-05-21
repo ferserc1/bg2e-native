@@ -127,6 +127,68 @@ void DeferredLayer::render(
     auto frameResourcesIndex = _engine->currentFrameResourcesIndex();
     auto* gbuffer = _gbuffers[frameResourcesIndex].get();
 
+    // If this layer is transparent, we need to copy the opaque depth buffer to the transparent depth buffer, because
+    // the transparent layer will not modify the depth buffer to preserve the transparency effects
+    if (_isTransparent && _opaqueDepthBuffer)
+    {
+        auto transparentDepthBufferImage = gbuffer->depthImage();
+        auto opaqueDepthBufferImage = _opaqueDepthBuffer;
+        vulkan::Image::TransitionInfo transitionInfo;
+        transitionInfo.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+        vulkan::Image::cmdTransitionImage(
+            cmd,
+            transparentDepthBufferImage->handle(),
+            VK_IMAGE_LAYOUT_UNDEFINED,
+            VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+            transitionInfo
+        );
+        vulkan::Image::cmdTransitionImage(
+            cmd,
+            opaqueDepthBufferImage->handle(),
+            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+            VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+            transitionInfo
+        );
+
+        VkImageCopy copyRegion = {};
+        copyRegion.srcSubresource.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+        copyRegion.srcSubresource.mipLevel = 0;
+        copyRegion.srcSubresource.baseArrayLayer = 0;
+        copyRegion.srcSubresource.layerCount = 1;
+        copyRegion.srcOffset = {};
+        copyRegion.dstSubresource.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+        copyRegion.dstSubresource.mipLevel = 0;
+        copyRegion.dstSubresource.baseArrayLayer = 0;
+        copyRegion.dstSubresource.layerCount = 1;
+        copyRegion.dstOffset = {};
+        copyRegion.extent = transparentDepthBufferImage->extent();
+
+        vkCmdCopyImage(
+            cmd,
+            opaqueDepthBufferImage->handle(),
+            VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+            transparentDepthBufferImage->handle(),
+            VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+            1,
+            &copyRegion
+        );
+
+        vulkan::Image::cmdTransitionImage(
+            cmd,
+            transparentDepthBufferImage->handle(),
+            VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+            transitionInfo
+        );
+        vulkan::Image::cmdTransitionImage(
+            cmd,
+            opaqueDepthBufferImage->handle(),
+            VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+            transitionInfo
+        );
+    }
+
     renderGBufferPass(cmd, currentFrame, gbuffer, frameResources, viewMatrix, projMatrix, cameraWorldPos);
 
     if (_debugVisualization == DeferredDebugVisualization::FullComposition)
@@ -168,6 +230,12 @@ void DeferredLayer::cleanup()
 
 }
 
+std::shared_ptr<vulkan::Image> DeferredLayer::depthBuffer()
+{
+    auto gbuffers = _gbuffers[_engine->currentFrameResourcesIndex()].get();
+    return gbuffers->depthImage();
+}
+
 void DeferredLayer::createGBufferPipeline()
 {
     // Create descriptor set layouts
@@ -191,7 +259,16 @@ void DeferredLayer::createGBufferPipeline()
     plFactory.setInputState<scene::Drawable>();
 
     plFactory.setDepthFormat(_gbuffers[0]->depthFormat());
-    plFactory.enableDepthtest(true, VK_COMPARE_OP_LESS);
+    if (_isTransparent)
+    {
+        plFactory.enableDepthtest(false, VK_COMPARE_OP_LESS);
+    }
+    else
+    {
+        plFactory.enableDepthtest(true, VK_COMPARE_OP_LESS);
+    }
+
+
     plFactory.inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
     plFactory.setCullMode(VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_COUNTER_CLOCKWISE);
     plFactory.disableMultisample();
@@ -322,7 +399,7 @@ void DeferredLayer::renderGBufferPass(
     const glm::vec3& cameraWorldPos
 )
 {
-    gbuffer->beginRender(cmd);
+    gbuffer->beginRender(cmd, _isTransparent);
 
     vulkan::macros::cmdSetDefaultViewportAndScissor(cmd, _extent);
 

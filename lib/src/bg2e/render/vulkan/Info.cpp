@@ -209,7 +209,8 @@ VkRenderingAttachmentInfo Info::attachmentInfo(
 VkRenderingAttachmentInfo Info::depthAttachmentInfo(
     VkImageView view,
     float depthValue,
-    VkImageLayout layout
+    VkImageLayout layout,
+    VkAttachmentLoadOp depthLoadOp
 ) {
     VkRenderingAttachmentInfo depthAttachment {};
     depthAttachment.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
@@ -217,9 +218,12 @@ VkRenderingAttachmentInfo Info::depthAttachmentInfo(
 
     depthAttachment.imageView = view;
     depthAttachment.imageLayout = layout;
-    depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    depthAttachment.loadOp = depthLoadOp;
     depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-    depthAttachment.clearValue.depthStencil.depth = depthValue;
+    if (depthLoadOp == VK_ATTACHMENT_LOAD_OP_CLEAR)
+    {
+        depthAttachment.clearValue.depthStencil.depth = depthValue;
+    }
 
     return depthAttachment;
 }

@@ -75,7 +75,7 @@ void GBufferManager::build(VkExtent2D extent)
         _depthFormat,
         extent,
         VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT |
-        VK_IMAGE_USAGE_SAMPLED_BIT,
+        VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
         VK_IMAGE_ASPECT_DEPTH_BIT,
         1, false, 0, VK_SAMPLE_COUNT_1_BIT
     );
@@ -168,7 +168,7 @@ void GBufferManager::transitionToShaderRead(VkCommandBuffer cmd)
     );
 }
 
-void GBufferManager::beginRender(VkCommandBuffer cmd)
+void GBufferManager::beginRender(VkCommandBuffer cmd, bool isTransparent)
 {
     VkClearColorValue clearValue{ { 0.0f, 0.0f, 0.0f, 0.0f } };
     auto clearRange = vulkan::Image::subresourceRange(VK_IMAGE_ASPECT_COLOR_BIT);
@@ -206,7 +206,12 @@ void GBufferManager::beginRender(VkCommandBuffer cmd)
     );
 
     float depthValue = 1.0f;
-    auto depthAttachment = vulkan::Info::depthAttachmentInfo(_depthImage->imageView(), depthValue);
+    auto depthAttachment = vulkan::Info::depthAttachmentInfo(
+        _depthImage->imageView(),
+        depthValue,
+        VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL
+        , isTransparent ? VK_ATTACHMENT_LOAD_OP_LOAD : VK_ATTACHMENT_LOAD_OP_CLEAR
+    );
     auto renderInfo = vulkan::Info::renderingInfo(
         imageExtent,
         attachments.data(),
