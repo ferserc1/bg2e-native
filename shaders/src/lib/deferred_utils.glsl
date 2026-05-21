@@ -35,6 +35,7 @@ struct DeferredGBufferData {
     vec3 sheenColor;
     vec4 inputColor;
     bool isEmpty;
+    vec3 fresnelTint;
 };
 
 vec3 reconstructWorldPosition(
@@ -64,7 +65,7 @@ vec3 reconstructWorldPosition(
 }
 
 DeferredGBufferData setupDeferredGBuffer(
-    sampler2D g_Albedo, sampler2D g_Normal, sampler2D g_Material,
+    sampler2D g_Albedo, sampler2D g_Normal, sampler2D g_Material, sampler2D g_FresnelFlags, sampler2D g_SheenColor,
     sampler2D g_InputImage, sampler2D g_Depth,
     vec2 vTexcoord, mat4 inverseViewProjection,
     mat4 viewMatrix
@@ -75,6 +76,7 @@ DeferredGBufferData setupDeferredGBuffer(
     gbuf.normal = texture(g_Normal, vTexcoord).xyz * 2.0 - 1.0;
     vec4 materialData = texture(g_Material, vTexcoord);
     gbuf.inputColor = texture(g_InputImage, vTexcoord);
+    gbuf.fresnelTint = texture(g_FresnelFlags, vTexcoord).rgb;
 
     if (gbuf.albedo.a == 0) {
         gbuf.isEmpty = true;
@@ -99,7 +101,8 @@ DeferredGBufferData setupDeferredGBuffer(
     gbuf.viewDir = normalize(cameraPos - gbuf.worldPos);
 
     gbuf.F0 = mix(vec3(0.04), gbuf.albedo.rgb, gbuf.metallic);
-    gbuf.sheenColor = gbuf.albedo.rgb;
+
+    gbuf.sheenColor = texture(g_SheenColor, vTexcoord).rgb;
 
     return gbuf;
 }

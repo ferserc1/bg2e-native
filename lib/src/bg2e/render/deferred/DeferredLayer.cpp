@@ -45,6 +45,10 @@ const vulkan::Image* DeferredLayer::resolveDebugSource(const vulkan::Image* inpu
             return gbuffer->image(1).get();
         case DeferredDebugVisualization::GBufferMaterial:
             return gbuffer->image(2).get();
+        case DeferredDebugVisualization::GBufferFresnelFlags:
+            return gbuffer->image(3).get();
+        case DeferredDebugVisualization::GBufferSheenColor:
+            return gbuffer->image(4).get();
         case DeferredDebugVisualization::GBufferDepth:
             return gbuffer->depthImage().get();
         case DeferredDebugVisualization::InputImage:
@@ -288,13 +292,15 @@ void DeferredLayer::createGBufferPipeline()
 
 void DeferredLayer::createCompositePipeline()
 {
-    // Create G-buffer descriptor set layout (5 bindings: 3 G-buffers + 1 input image + 1 depth)
+    // Create G-buffer descriptor set layout (6 bindings: 4 G-buffers + 1 input image + 1 depth)
     vulkan::factory::DescriptorSetLayout dsLayoutFactory;
     dsLayoutFactory.addBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);  // g_Albedo
     dsLayoutFactory.addBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);  // g_Normal
     dsLayoutFactory.addBinding(2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);  // g_Material
-    dsLayoutFactory.addBinding(3, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);  // g_InputImage
-    dsLayoutFactory.addBinding(4, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);  // g_Depth
+    dsLayoutFactory.addBinding(3, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);  // g_FresnelFlags
+    dsLayoutFactory.addBinding(4, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);  // g_SheenColor
+    dsLayoutFactory.addBinding(5, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);  // g_InputImage
+    dsLayoutFactory.addBinding(6, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);  // g_Depth
     _compositeGBufferDSLayout = dsLayoutFactory.build(
         _engine->device().handle(),
         VK_SHADER_STAGE_FRAGMENT_BIT
@@ -478,8 +484,12 @@ void DeferredLayer::renderCompositePass(
     gbufferDS->addImage(2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
         gbuffer->image(2).get(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _gbufferSampler);
     gbufferDS->addImage(3, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-        inputImage, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _gbufferSampler);
+        gbuffer->image(3).get(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _gbufferSampler);
     gbufferDS->addImage(4, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+        gbuffer->image(4).get(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _gbufferSampler);
+    gbufferDS->addImage(5, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+        inputImage, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _gbufferSampler);
+    gbufferDS->addImage(6, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
         gbuffer->depthImage().get(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _gbufferSampler);
     gbufferDS->endUpdate();
 

@@ -30,8 +30,10 @@
 layout(set = 0, binding = 0) uniform sampler2D g_Albedo;
 layout(set = 0, binding = 1) uniform sampler2D g_Normal;
 layout(set = 0, binding = 2) uniform sampler2D g_Material;
-layout(set = 0, binding = 3) uniform sampler2D g_InputImage;
-layout(set = 0, binding = 4) uniform sampler2D g_Depth;
+layout(set = 0, binding = 3) uniform sampler2D g_FresnelFlags;
+layout(set = 0, binding = 4) uniform sampler2D g_SheenColor;
+layout(set = 0, binding = 5) uniform sampler2D g_InputImage;
+layout(set = 0, binding = 6) uniform sampler2D g_Depth;
 
 // Scene data (set=1)
 layout(set = 1, binding = 0) uniform SceneData {
@@ -76,7 +78,7 @@ layout(location = 0) out vec4 outColor;
 
 void main() {
     DeferredGBufferData gbuf = setupDeferredGBuffer(
-        g_Albedo, g_Normal, g_Material,
+        g_Albedo, g_Normal, g_Material, g_FresnelFlags, g_SheenColor,
         g_InputImage, g_Depth,
         vTexcoord,
         pushConstant.inverseViewProjection,

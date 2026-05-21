@@ -126,7 +126,7 @@ protected:
         sceneRoot->addChild(floor);
 
         auto cameraNode = std::shared_ptr<bg2e::scene::Node>(new bg2e::scene::Node("Camera"));
-        cameraNode->addComponent(bg2e::scene::TransformComponent::makeTranslated(0.0f, 3.0f, 10.0f ));
+        cameraNode->addComponent(bg2e::scene::TransformComponent::makeTranslated(0.0f, 2.0f, 10.0f ));
         cameraNode->transform()->rotate(0.0f, -1.0f, 0.0f, 0.0f);
         cameraNode->addComponent(new bg2e::scene::CameraComponent());
         auto projection = new bg2e::math::OpticalProjection();
@@ -211,6 +211,9 @@ protected:
         drawable->material(1).setNormalTexture(innerNormalTexture);
         drawable->material(1).setMetalness(1.0f);
         drawable->material(1).setRoughness(1.0f);
+        drawable->material(1).setFresnelTint(bg2e::base::Color(0.8f, 0.2f, 1.0f));
+        drawable->material(1).setSheenColor(bg2e::base::Color::Blue());
+        drawable->material(1).setSheenIntensity(0.5f);
         drawable->load(_engine);
 
         return drawable;

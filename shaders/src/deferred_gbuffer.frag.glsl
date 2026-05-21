@@ -36,6 +36,8 @@ layout(set = 1, binding = 5) uniform sampler2D aoTex;
 layout(location = 0) out vec4 g_Albedo;
 layout(location = 1) out vec4 g_Normal;
 layout(location = 2) out vec4 g_Material;
+layout(location = 3) out vec4 g_FresnelColorFlags;
+layout(location = 4) out vec4 g_SheenColor;
 
 layout(location = 0) in vec3 inWorldPos;
 layout(location = 1) in vec3 inNormal;
@@ -60,4 +62,11 @@ void main() {
     float ao = sampleAmbientOcclussion(aoTex, inUV0, inUV1, mat);
     float sheen = mat.sheenIntensity;
     g_Material = vec4(metallic, roughness, ao, sheen);
+
+    // Fresnel color + flags
+    float unlitFlag = (mat.unlit & MATERIAL_FLAG_UNLIT) != 0u ? 1.0 : 0.0;
+    g_FresnelColorFlags = vec4(mat.fresnelTint.rgb, unlitFlag);
+
+    // Sheen color
+    g_SheenColor = vec4(mat.sheenColor.rgb, 0.0f);
 }

@@ -45,6 +45,8 @@ enum class DeferredDebugVisualization {
     GBufferAlbedo,
     GBufferNormal,
     GBufferMaterial,
+    GBufferFresnelFlags,
+    GBufferSheenColor,
     GBufferDepth,
     InputImage,
 

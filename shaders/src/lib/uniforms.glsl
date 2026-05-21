@@ -48,7 +48,7 @@ struct PBRMaterialData
     uint padding[3];
 };
 
-const uint MATERIAL_FLAG_UNLIT          = 0x1u;
+const uint MATERIAL_FLAG_UNLIT          = 1u << 0;
 
 struct LightData
 {
