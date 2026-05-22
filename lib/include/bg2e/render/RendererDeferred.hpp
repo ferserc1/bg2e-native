@@ -42,6 +42,8 @@ public:
     [[nodiscard]] bool drawSkybox() const override { return _skyboxLayer->drawSkybox(); }
     inline void setDrawSkybox(bool value) override { _skyboxLayer->setDrawSkybox(value); }
 
+    [[nodiscard]] manipulation::SelectionHighlight * selectionHighlight() const { return _selectionHighlight.get(); }
+
     void build(
         bg2e::render::Engine* engine,
         VkExtent2D initialExtent,

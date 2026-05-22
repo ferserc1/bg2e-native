@@ -20,6 +20,7 @@
 #include <bg2e/render/vulkan/macros/graphics.hpp>
 #include <bg2e/scene/SkyDomeTextureGenerator.hpp>
 #include <bg2e/render/Texture.hpp>
+#include <bg2e/render/vulkan/Info.hpp>
 
 namespace bg2e::render {
 
@@ -119,8 +120,8 @@ void RendererDeferred::build(
 
     // Selection highlight (non-offscreen only)
     if (!isOffscreen) {
-        //_selectionHighlight = std::make_unique<manipulation::SelectionHighlight>();
-        //_selectionHighlight->init(engine);
+        _selectionHighlight = std::make_unique<manipulation::SelectionHighlight>();
+        _selectionHighlight->init(engine, VK_SAMPLE_COUNT_1_BIT);
     }
 }
 
@@ -247,7 +248,7 @@ void RendererDeferred::draw(
     _opaqueLayer->setColorCorrection(_brightness, _contrast, _exposure);
     _transparentLayer->setColorCorrection(_brightness, _contrast, _exposure);
 
-    // === Layer 1: Skybox ===
+    // Layer 1: Skybox
     _skyboxLayer->render(
         cmd,
         currentFrame,
@@ -261,7 +262,7 @@ void RendererDeferred::draw(
         VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
     );
 
-    // === Layer 2: Opaque ===
+    // Layer 2: Opaque
     _opaqueLayer->render(
         cmd,
         currentFrame,
@@ -277,17 +278,28 @@ void RendererDeferred::draw(
         VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
     );
 
-    // === Layer 3: Transparent (writes to swapchain output) ===
+    // Layer 3: Transparent (writes to swapchain output)
     _transparentLayer->setOpaqueDepthBuffer(_opaqueLayer->depthBuffer());
     _transparentLayer->render(cmd, currentFrame, _opaqueImage.get(), colorImage,
                               frameResources);
 
-    // === Selection highlight (non-offscreen only) ===
+    // Selection highlight (non-offscreen only)
     if (!_isOffscreen && _selectionHighlight) {
+        // TODO: Prepare selectionHighlight to work with non-msaa images
+        VkClearColorValue clearValue{ { 0.0f, 0.0f, 0.0f, 1.0f } };
+        auto depthAttachment = vulkan::Info::depthAttachmentInfo(depthImage->imageView(), 1.0f);
+        auto colorAttachment = vulkan::Info::attachmentInfo(colorImage->imageView(), nullptr);
+        auto renderInfo = vulkan::Info::renderingInfo(colorImage->extent2D(), &colorAttachment, nullptr);
+        vulkan::cmdBeginRendering(cmd, &renderInfo);
+
+        vulkan::macros::cmdSetDefaultViewportAndScissor(cmd, colorImage->extent2D());
+
         auto mainCamera = _scene->mainCamera();
         auto viewMatrix = mainCamera->ownerNode()->invertedWorldMatrix();
         auto projMatrix = mainCamera->projectionMatrix();
         _selectionHighlight->draw(_scene->rootNode(), viewMatrix, projMatrix, cmd);
+
+        vulkan::cmdEndRendering(cmd);
     }
 
 

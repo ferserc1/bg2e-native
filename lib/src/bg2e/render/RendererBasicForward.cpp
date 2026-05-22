@@ -60,7 +60,7 @@ void RendererBasicForward::build(
     if (!isOffscreen)
     {
         _selectionHighlight = std::make_unique<bg2e::manipulation::SelectionHighlight>();
-        _selectionHighlight->init(engine);
+        _selectionHighlight->init(engine, _sampleCount);
 
     }
 

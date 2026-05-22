@@ -91,6 +91,17 @@ void main() {
         return;
     }
 
+    if (gbuf.unlit) {
+        outColor = fragmentShaderOutput(
+            vec4(gbuf.albedo.rgb, 1.0),
+            pushConstant.exposure,
+            pushConstant.gamma,
+            pushConstant.brightness,
+            pushConstant.contrast
+        );
+        return;
+    }
+
     vec3 Lo = vec3(0.0);
     for (int i = 0; i < pushConstant.lightCount; i++) {
         if ( LightsBuffer.lights[i].type != LIGHT_TYPE_DISABLED &&

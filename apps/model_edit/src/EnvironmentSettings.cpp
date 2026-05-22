@@ -24,7 +24,7 @@
 
 void EnvironmentSettings::init(
     AppDelegate * delegate,
-    bg2e::render::RendererBasicForward * renderer,
+    bg2e::render::RendererDeferred * renderer,
     bg2e::scene::EnvironmentComponent * environment
 ) {
     _appDelegate = delegate;
@@ -62,6 +62,10 @@ void EnvironmentSettings::init(
             if (bg2e::ui::BasicWidgets::button("Gothic Manor"))
             {
                 environment->setEnvironmentImage(assetPath, "gothic_manor_01_4k.hdr");
+            }
+            if (bg2e::ui::BasicWidgets::button("Space"))
+            {
+                environment->setEnvironmentImage(assetPath, "HDR_multi_nebulae_1.hdr");
             }
             if (bg2e::ui::BasicWidgets::button("Black Environment"))
             {

@@ -36,6 +36,7 @@ struct DeferredGBufferData {
     vec4 inputColor;
     bool isEmpty;
     vec3 fresnelTint;
+    bool unlit;
 };
 
 vec3 reconstructWorldPosition(
@@ -76,7 +77,10 @@ DeferredGBufferData setupDeferredGBuffer(
     gbuf.normal = texture(g_Normal, vTexcoord).xyz * 2.0 - 1.0;
     vec4 materialData = texture(g_Material, vTexcoord);
     gbuf.inputColor = texture(g_InputImage, vTexcoord);
-    gbuf.fresnelTint = texture(g_FresnelFlags, vTexcoord).rgb;
+    vec4 fresnelFlags = texture(g_FresnelFlags, vTexcoord);
+    gbuf.fresnelTint = fresnelFlags.rgb;
+    uint materialFlags = uint(round(fresnelFlags.a * 255.0));
+    gbuf.unlit = (materialFlags & MATERIAL_FLAG_UNLIT) != 0u;
 
     if (gbuf.albedo.a == 0) {
         gbuf.isEmpty = true;

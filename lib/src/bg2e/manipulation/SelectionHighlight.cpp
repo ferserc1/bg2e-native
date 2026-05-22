@@ -27,9 +27,11 @@
 namespace bg2e::manipulation {
 
 void SelectionHighlight::init(
-    render::Engine * engine
+    render::Engine * engine,
+    VkSampleCountFlagBits sampleCount
 ) {
     _engine = engine;
+    _sampleCount = sampleCount;
     createPipeline();
 }
 
@@ -134,7 +136,7 @@ void SelectionHighlight::createPipeline()
     plFactory.inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
     plFactory.setCullMode(VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_COUNTER_CLOCKWISE);
     plFactory.enableBlendingAlphablend();
-    plFactory.multisampling.rasterizationSamples = _engine->swapchain().sampleCount();
+    plFactory.multisampling.rasterizationSamples = _sampleCount;
 
     _pipeline = plFactory.build(_pipelineLayout);
 

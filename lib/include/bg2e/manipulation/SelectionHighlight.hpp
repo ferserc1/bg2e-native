@@ -32,7 +32,8 @@ namespace manipulation {
 class BG2E_API SelectionHighlight : public bg2e::scene::NodeVisitor{
 public:
     void init(
-        render::Engine * engine
+        render::Engine * engine,
+        VkSampleCountFlagBits sampleCount
     );
 
     void draw(
@@ -49,6 +50,8 @@ public:
 
 protected:
     render::Engine * _engine = nullptr;
+
+    VkSampleCountFlagBits _sampleCount = VK_SAMPLE_COUNT_1_BIT;
 
     glm::mat4 _viewProjectionMatrix { 1.0f };
     glm::mat4 _currentTransform { 1.0f };

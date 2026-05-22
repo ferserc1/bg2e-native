@@ -20,7 +20,7 @@
 
 void AppDelegate::init(bg2e::render::Engine * engine)
 {
-    bg2e::render::DefaultRenderLoopDelegate<bg2e::render::RendererBasicForward>::init(engine);
+    bg2e::render::DefaultRenderLoopDelegate<bg2e::render::RendererDeferred>::init(engine);
     _selectionManager = std::make_shared<bg2e::manipulation::SelectionManager>(engine);
     _selectionManager->init();
 }
