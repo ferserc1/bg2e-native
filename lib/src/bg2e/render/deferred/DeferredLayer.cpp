@@ -85,6 +85,12 @@ void DeferredLayer::build(VkExtent2D extent, VkFormat outputFormat)
     // Create composite pipeline
     createCompositePipeline();
 
+    // Create composite RT pipeline (only if RT is supported)
+    if (_useRtShadows && _rtDataBinding)
+    {
+        createCompositePipelineRT();
+    }
+
     // Create debug blit pipeline
     createDebugPipeline();
 
@@ -313,11 +319,6 @@ void DeferredLayer::createCompositePipeline()
     layoutFactory.addDescriptorSetLayout(_environmentDataBinding->createLayout());
     layoutFactory.addDescriptorSetLayout(_lightDataBinding->createLayout());
 
-    if (_useRtShadows && _rtDataBinding)
-    {
-        layoutFactory.addDescriptorSetLayout(_rtDataBinding->createLayout());
-    }
-
     layoutFactory.addPushConstantRange(
         0,
         sizeof(CompositePushConstants),
@@ -329,14 +330,7 @@ void DeferredLayer::createCompositePipeline()
     vulkan::factory::GraphicsPipeline plFactory(_engine);
 
     plFactory.addShader("deferred_composite.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
-    if (_useRtShadows)
-    {
-        plFactory.addShader("deferred_composite_rt.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
-    }
-    else
-    {
-        plFactory.addShader("deferred_composite.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
-    }
+    plFactory.addShader("deferred_composite.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
 
     // No vertex input (fullscreen quad generated procedurally)
     plFactory.clearInputBindingDescriptions();
@@ -354,6 +348,54 @@ void DeferredLayer::createCompositePipeline()
         vkDestroyPipeline(dev, _compositePipeline, nullptr);
         vkDestroyPipelineLayout(dev, _compositePipelineLayout, nullptr);
         vkDestroyDescriptorSetLayout(dev, _compositeGBufferDSLayout, nullptr);
+    });
+}
+
+void DeferredLayer::createCompositePipelineRT()
+{
+    if (!_useRtShadows || !_rtDataBinding)
+    {
+        return;
+    }
+
+    // Create pipeline layout with RT data binding
+    vulkan::factory::PipelineLayout layoutFactory(_engine);
+    layoutFactory.addDescriptorSetLayout(_compositeGBufferDSLayout);
+    layoutFactory.addDescriptorSetLayout(_fragmentFrameDataBinding->createLayout(VK_SHADER_STAGE_FRAGMENT_BIT));
+    layoutFactory.addDescriptorSetLayout(_environmentDataBinding->createLayout());
+    layoutFactory.addDescriptorSetLayout(_lightDataBinding->createLayout());
+    layoutFactory.addDescriptorSetLayout(_rtDataBinding->createLayout());
+
+    layoutFactory.addPushConstantRange(
+        0,
+        sizeof(CompositePushConstants),
+        VK_SHADER_STAGE_FRAGMENT_BIT
+    );
+    _compositePipelineRTLayout = layoutFactory.build();
+
+    // Create composite RT pipeline
+    vulkan::factory::GraphicsPipeline plFactory(_engine);
+
+    plFactory.addShader("deferred_composite.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
+    plFactory.addShader("deferred_composite_rt.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    // No vertex input (fullscreen quad generated procedurally)
+    plFactory.clearInputBindingDescriptions();
+    plFactory.clearInputAttributeDescriptions();
+
+    plFactory.disableDepthtest();
+    plFactory.disableMultisample();
+    plFactory.setCullMode(VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_COUNTER_CLOCKWISE);
+    plFactory.setColorAttachmentFormat(_outputFormat);
+    plFactory.inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+
+    _compositePipelineRT = plFactory.build(_compositePipelineRTLayout);
+
+    _engine->cleanupManager().push([&](VkDevice dev) {
+        vkDestroyPipeline(dev, _compositePipelineRT, nullptr);
+        _compositePipelineRT = VK_NULL_HANDLE;
+        vkDestroyPipelineLayout(dev, _compositePipelineRTLayout, nullptr);
+        _compositePipelineRTLayout = VK_NULL_HANDLE;
     });
 }
 
@@ -471,8 +513,15 @@ void DeferredLayer::renderCompositePass(
     vulkan::macros::cmdClearImageAndBeginRendering(cmd, outputImage, clearValue, VK_IMAGE_LAYOUT_UNDEFINED);
     vulkan::macros::cmdSetDefaultViewportAndScissor(cmd, _extent);
 
+    VkAccelerationStructureKHR tlas = frameResources.rayTracingScene->tlas();
+
+    // Select pipeline based on RT support and whether TLAS is available
+    bool useRT = _useRtShadows && tlas != VK_NULL_HANDLE;
+    VkPipeline activePipeline = useRT ? _compositePipelineRT : _compositePipeline;
+    VkPipelineLayout activeLayout = useRT ? _compositePipelineRTLayout : _compositePipelineLayout;
+
     // Bind composite pipeline
-    vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, _compositePipeline);
+    vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, activePipeline);
 
     // Create G-buffer descriptor set
     auto gbufferDS = frameResources.newDescriptorSet(_compositeGBufferDSLayout);
@@ -512,7 +561,7 @@ void DeferredLayer::renderCompositePass(
         .inverseViewProjection = inverseViewProjection,
     };
     vkCmdPushConstants(
-        cmd, _compositePipelineLayout,
+        cmd, activeLayout,
         VK_SHADER_STAGE_FRAGMENT_BIT,
         0,
         sizeof(CompositePushConstants),
@@ -522,20 +571,22 @@ void DeferredLayer::renderCompositePass(
     // Bind descriptor sets
     VkDescriptorSet gbufferDSPtr[] = { gbufferDS->descriptorSet() };
     vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
-        _compositePipelineLayout, 0, 1, gbufferDSPtr, 0, nullptr);
+        activeLayout, 0, 1, gbufferDSPtr, 0, nullptr);
     vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
-        _compositePipelineLayout, 1, 1, &sceneDS, 0, nullptr);
+        activeLayout, 1, 1, &sceneDS, 0, nullptr);
     vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
-        _compositePipelineLayout, 2, 1, &envDS, 0, nullptr);
+        activeLayout, 2, 1, &envDS, 0, nullptr);
     vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
-        _compositePipelineLayout, 3, 1, &lightDS, 0, nullptr);
+        activeLayout, 3, 1, &lightDS, 0, nullptr);
 
-    if (_useRtShadows && _rtDataBinding)
+    if (useRT)
     {
-        auto tlas = frameResources.rayTracingScene->tlas();
         auto rtDS = _rtDataBinding->newDescriptorSet(frameResources, tlas);
-        vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
-            _compositePipelineLayout, 4, 1, &rtDS, 0, nullptr);
+        vkCmdBindDescriptorSets(
+            cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
+            activeLayout, 4, 1, &rtDS,
+            0, nullptr
+        );
     }
 
     // Draw fullscreen quad (6 vertices, 2 triangles)

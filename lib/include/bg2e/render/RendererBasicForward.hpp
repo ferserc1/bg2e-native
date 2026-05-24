@@ -106,7 +106,7 @@ public:
 
     void cleanup() override;
 
-    void createPipelines(bg2e::render::Engine* engine);
+    void createPipelines(bg2e::render::Engine* engine, bool useRT, VkPipelineLayout& outLayout, VkPipeline& outOpaque, VkPipeline& outTransparent, VkPipeline& outSolidTransparent);
 
     uint32_t viewportWidth() override { return _engine->swapchain().extent().width; }
     uint32_t viewportHeight() override { return _engine->swapchain().extent().height; }
@@ -132,6 +132,11 @@ protected:
     VkPipeline _solidTransparentPipeline = VK_NULL_HANDLE;
     VkPipelineLayout _pipelineLayout = VK_NULL_HANDLE;
 
+    VkPipeline _opaquePipelineRT = VK_NULL_HANDLE;
+    VkPipeline _transparentPipelineRT = VK_NULL_HANDLE;
+    VkPipeline _solidTransparentPipelineRT = VK_NULL_HANDLE;
+    VkPipelineLayout _pipelineLayoutRT = VK_NULL_HANDLE;
+
     bool _drawSkybox = true;
 
     scene::vk::LightDataBinding::LightUniforms _lightUniforms;
@@ -146,9 +151,6 @@ protected:
         float exposure;
     };
 
-    VkPipeline createOpaquePipeline(bg2e::render::Engine * engine, VkPipelineLayout layout);
-    VkPipeline createTransparentPipeline(bg2e::render::Engine * engine, VkPipelineLayout layout);
-    VkPipeline createSolidTransparentPipeline(bg2e::render::Engine * engine, VkPipelineLayout layout);
 };
 
 }

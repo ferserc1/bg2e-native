@@ -64,6 +64,11 @@ VkDescriptorSet RayTracingSceneDataBinding::newDescriptorSet(
         throw std::runtime_error("RayTracingSceneDataBinding::newDescriptorSet() - The descriptor set layout is not created");
     }
 
+    if (tlas == VK_NULL_HANDLE)
+    {
+        return VK_NULL_HANDLE;
+    }
+
     auto ds = frameResources.newDescriptorSet(_layout);
     ds->beginUpdate();
         ds->addAccelerationStructure(0, tlas);

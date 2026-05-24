@@ -64,7 +64,11 @@ void RendererBasicForward::build(
 
     }
 
-    createPipelines(engine);
+    createPipelines(engine, false, _pipelineLayout, _opaquePipeline, _transparentPipeline, _solidTransparentPipeline);
+    if (_engine->rayTracingSupported())
+    {
+        createPipelines(engine, true, _pipelineLayoutRT, _opaquePipelineRT, _transparentPipelineRT, _solidTransparentPipelineRT);
+    }
 }
 
 void RendererBasicForward::initFrameResources(
@@ -172,10 +176,13 @@ void RendererBasicForward::draw(
     auto lightDS = _lightDataBinding->newDescriptorSet(frameResources, _lightUniforms);
 
     auto tlas = frameResources.rayTracingScene->tlas();
-    auto rtSceneDS =  tlas != nullptr ? _rtDataBinding->newDescriptorSet(
-        frameResources,
-        tlas
-    ) : VK_NULL_HANDLE;
+    bool useRT = _engine->rayTracingSupported() && tlas != VK_NULL_HANDLE;
+    VkPipelineLayout activeLayout = useRT ? _pipelineLayoutRT : _pipelineLayout;
+    VkPipeline activeOpaque = useRT ? _opaquePipelineRT : _opaquePipeline;
+    VkPipeline activeTransparent = useRT ? _transparentPipelineRT : _transparentPipeline;
+    VkPipeline activeSolidTransparent = useRT ? _solidTransparentPipelineRT : _solidTransparentPipeline;
+
+    auto rtSceneDS = useRT ? _rtDataBinding->newDescriptorSet(frameResources, tlas) : VK_NULL_HANDLE;
 
     static struct PushConstants pushConstants {
         .gamma = 2.2f,
@@ -188,7 +195,7 @@ void RendererBasicForward::draw(
     pushConstants.exposure = _exposure;
     vkCmdPushConstants(
         cmd,
-        _pipelineLayout,
+        activeLayout,
         VK_SHADER_STAGE_FRAGMENT_BIT,
         0,
         sizeof(PushConstants),
@@ -201,7 +208,7 @@ void RendererBasicForward::draw(
             mat,
             transform
         );
-        if (rtSceneDS)
+        if (useRT)
         {
             return std::vector<VkDescriptorSet> {
                 sceneDS,
@@ -222,29 +229,29 @@ void RendererBasicForward::draw(
         }
     };
     
-    vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, _opaquePipeline);
+    vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, activeOpaque);
     _renderQueue.render(
         bg2e::render::RenderQueueType::Opaque,
         cmd,
-        _pipelineLayout,
+        activeLayout,
         dsFunction,
         cameraWorldPos
     );
     
-    vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, _transparentPipeline);
+    vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, activeTransparent);
     _renderQueue.render(
         bg2e::render::RenderQueueType::Transparent,
         cmd,
-        _pipelineLayout,
+        activeLayout,
         dsFunction,
         cameraWorldPos
     );
     
-    vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, _solidTransparentPipeline);
+    vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, activeSolidTransparent);
     _renderQueue.render(
         bg2e::render::RenderQueueType::SolidTransparent,
         cmd,
-        _pipelineLayout,
+        activeLayout,
         dsFunction,
         cameraWorldPos
     );
@@ -281,21 +288,27 @@ void RendererBasicForward::cleanup()
     }
 }
 
-void RendererBasicForward::createPipelines(bg2e::render::Engine* engine) {
+void RendererBasicForward::createPipelines(
+    bg2e::render::Engine* engine,
+    bool useRT,
+    VkPipelineLayout& outLayout,
+    VkPipeline& outOpaque,
+    VkPipeline& outTransparent,
+    VkPipeline& outSolidTransparent
+) {
     auto frameDSLayout = frameDataBinding()->createLayout();
     auto objectDSLayout = objectDataBinding()->createLayout();
     auto envDSLayout = environmentDataBinding()->createLayout();
     auto lightDSLayout = lightDataBinding()->createLayout();
-    auto rtDSLayout = rtDataBinding()->createLayout();
 
     bg2e::render::vulkan::factory::PipelineLayout layoutFactory(engine);
     layoutFactory.addDescriptorSetLayout(frameDSLayout);
     layoutFactory.addDescriptorSetLayout(objectDSLayout);
     layoutFactory.addDescriptorSetLayout(envDSLayout);
     layoutFactory.addDescriptorSetLayout(lightDSLayout);
-    if (rtDSLayout)
+    if (useRT)
     {
-        layoutFactory.addDescriptorSetLayout(rtDSLayout);
+        layoutFactory.addDescriptorSetLayout(rtDataBinding()->createLayout());
     }
 
     layoutFactory.addPushConstantRange(
@@ -303,122 +316,59 @@ void RendererBasicForward::createPipelines(bg2e::render::Engine* engine) {
         sizeof(PushConstants),
         VK_SHADER_STAGE_FRAGMENT_BIT
     );
-    _pipelineLayout = layoutFactory.build();
-    
-    _opaquePipeline = createOpaquePipeline(engine, _pipelineLayout);
-    _transparentPipeline = createTransparentPipeline(engine, _pipelineLayout);
-    _solidTransparentPipeline = createSolidTransparentPipeline(engine, _pipelineLayout);
+    outLayout = layoutFactory.build();
 
-    engine->cleanupManager().push([&, objectDSLayout, envDSLayout, frameDSLayout, lightDSLayout, rtDSLayout](VkDevice dev) {
-        vkDestroyPipelineLayout(dev, _pipelineLayout, nullptr);
+    auto createPipeline = [&](bool isTransparent, bool isSolidTransparent) -> VkPipeline {
+        bg2e::render::vulkan::factory::GraphicsPipeline plFactory(engine);
+
+        plFactory.addShader("basic_forward.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
+        if (useRT)
+        {
+            plFactory.addShader("basic_forward_rt_shadows.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
+        }
+        else
+        {
+            plFactory.addShader("basic_forward.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
+        }
+
+        plFactory.setInputState<bg2e::render::vulkan::geo::Mesh>();
+
+        plFactory.setDepthFormat(_depthImageFormat);
+        plFactory.enableDepthtest(!isTransparent, VK_COMPARE_OP_LESS);
+        plFactory.inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+        if (isSolidTransparent)
+        {
+            plFactory.setCullMode(VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_COUNTER_CLOCKWISE);
+        }
+        else if (isTransparent)
+        {
+            plFactory.setCullMode(VK_CULL_MODE_NONE, VK_FRONT_FACE_COUNTER_CLOCKWISE);
+        }
+        else
+        {
+            plFactory.setCullMode(VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_COUNTER_CLOCKWISE);
+        }
+        _isOffscreen ? plFactory.disableMultisample() : plFactory.enableMultisample();
+        plFactory.setColorAttachmentFormat(_colorImageFormat);
+        if (isTransparent || isSolidTransparent)
+        {
+            plFactory.enableBlendingAlphablend();
+        }
+        auto result = plFactory.build(outLayout);
+
+        engine->cleanupManager().push([&, result](VkDevice dev) {
+            vkDestroyPipeline(dev, result, nullptr);
+        });
+        return result;
+    };
+
+    outOpaque = createPipeline(false, false);
+    outTransparent = createPipeline(true, false);
+    outSolidTransparent = createPipeline(false, true);
+
+    engine->cleanupManager().push([&, frameDSLayout, objectDSLayout, envDSLayout, lightDSLayout](VkDevice dev) {
+        vkDestroyPipelineLayout(dev, outLayout, nullptr);
     });
-}
-
-VkPipeline RendererBasicForward::createOpaquePipeline(
-    bg2e::render::Engine * engine,
-    VkPipelineLayout //layout
-) {
-    bg2e::render::vulkan::factory::GraphicsPipeline plFactory(engine);
-
-    plFactory.addShader("basic_forward.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
-    if (_engine->rayTracingSupported())
-    {
-        plFactory.addShader("basic_forward_rt_shadows.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
-    }
-    else
-    {
-        plFactory.addShader("basic_forward.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
-    }
-
-
-    plFactory.setInputState<bg2e::render::vulkan::geo::Mesh>();
-
-    plFactory.setDepthFormat(_depthImageFormat);
-    plFactory.enableDepthtest(true, VK_COMPARE_OP_LESS);
-    plFactory.inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-    plFactory.setCullMode(VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_COUNTER_CLOCKWISE);
-    _isOffscreen ? plFactory.disableMultisample() : plFactory.enableMultisample();
-    plFactory.setColorAttachmentFormat(_colorImageFormat);
-    auto result = plFactory.build(_pipelineLayout);
-
-    engine->cleanupManager().push([&, result](VkDevice dev) {
-        vkDestroyPipeline(dev, result, nullptr);
-    });
-    return result;
-}
-
-VkPipeline RendererBasicForward::createTransparentPipeline(
-    bg2e::render::Engine * engine,
-    VkPipelineLayout //layout
-) {
-    bg2e::render::vulkan::factory::GraphicsPipeline plFactory(engine);
-
-    plFactory.addShader("basic_forward.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
-    if (_engine->rayTracingSupported())
-    {
-        plFactory.addShader("basic_forward_rt_shadows.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
-    }
-    else
-    {
-        plFactory.addShader("basic_forward.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
-    }
-
-    plFactory.setInputState<bg2e::render::vulkan::geo::Mesh>();
-
-    plFactory.setDepthFormat(_depthImageFormat);
-    plFactory.enableDepthtest(
-        false,  // disable depth write for transparent objects
-        VK_COMPARE_OP_LESS
-    );
-    plFactory.inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-    plFactory.setCullMode(VK_CULL_MODE_NONE, VK_FRONT_FACE_COUNTER_CLOCKWISE);
-    _isOffscreen ? plFactory.disableMultisample() : plFactory.enableMultisample();
-    plFactory.setColorAttachmentFormat(_colorImageFormat);
-    plFactory.enableBlendingAlphablend();
-    auto result = plFactory.build(_pipelineLayout);
-
-    engine->cleanupManager().push([&, result](VkDevice dev) {
-        vkDestroyPipeline(dev, result, nullptr);
-    });
-    return result;
-}
-
-VkPipeline RendererBasicForward::createSolidTransparentPipeline(
-    bg2e::render::Engine * engine,
-    VkPipelineLayout //layout
-) {
-    bg2e::render::vulkan::factory::GraphicsPipeline plFactory(engine);
-
-    plFactory.addShader("basic_forward.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
-    if (_engine->rayTracingSupported())
-    {
-        plFactory.addShader("basic_forward_rt_shadows.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
-    }
-    else
-    {
-        plFactory.addShader("basic_forward.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
-    }
-
-    plFactory.setInputState<bg2e::render::vulkan::geo::Mesh>();
-
-    plFactory.setDepthFormat(_depthImageFormat);
-    plFactory.enableDepthtest(
-        false,  // disable depth write for solid transparent objects
-        VK_COMPARE_OP_LESS
-    );
-    plFactory.inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-    
-    // Back face culling enabled for solid transparent objects
-    plFactory.setCullMode(VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_COUNTER_CLOCKWISE);
-    _isOffscreen ? plFactory.disableMultisample() : plFactory.enableMultisample();
-    plFactory.setColorAttachmentFormat(_colorImageFormat);
-    plFactory.enableBlendingAlphablend();
-    auto result = plFactory.build(_pipelineLayout);
-
-    engine->cleanupManager().push([&, result](VkDevice dev) {
-        vkDestroyPipeline(dev, result, nullptr);
-    });
-    return result;
 }
 
 void RendererBasicForward::updateLights(const std::vector<std::shared_ptr<bg2e::scene::LightComponent>>& lightComponents, uint32_t maxLights)

@@ -94,8 +94,10 @@ protected:
 
     VkPipeline _gbufferPipeline = VK_NULL_HANDLE;
     VkPipeline _compositePipeline = VK_NULL_HANDLE;
+    VkPipeline _compositePipelineRT = VK_NULL_HANDLE;
     VkPipelineLayout _gbufferPipelineLayout = VK_NULL_HANDLE;
     VkPipelineLayout _compositePipelineLayout = VK_NULL_HANDLE;
+    VkPipelineLayout _compositePipelineRTLayout = VK_NULL_HANDLE;
 
     VkDescriptorSetLayout _compositeGBufferDSLayout = VK_NULL_HANDLE;
 
@@ -136,6 +138,7 @@ protected:
 
     void createGBufferPipeline();
     void createCompositePipeline();
+    void createCompositePipelineRT();
     void createDebugPipeline();
     void renderGBufferPass(
         VkCommandBuffer cmd,

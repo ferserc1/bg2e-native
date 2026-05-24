@@ -24,7 +24,7 @@
 
 void EnvironmentSettings::init(
     AppDelegate * delegate,
-    bg2e::render::RendererDeferred * renderer,
+    bg2e::render::Renderer * renderer,
     bg2e::scene::EnvironmentComponent * environment
 ) {
     _appDelegate = delegate;
