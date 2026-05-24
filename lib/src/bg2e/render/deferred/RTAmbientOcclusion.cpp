@@ -84,6 +84,12 @@ void RTAmbientOcclusion::createAOResources(VkExtent2D extent)
 {
     cleanupImages();
 
+    float scale = rtaoResolutionScale(_quality);
+    VkExtent2D scaledExtent = {
+        static_cast<uint32_t>(std::round(extent.width * scale)),
+        static_cast<uint32_t>(std::round(extent.height * scale))
+    };
+
     _aoImages.resize(_engine->numImages());
     for (uint32_t i = 0; i < _aoImages.size(); i++)
     {
@@ -92,7 +98,7 @@ void RTAmbientOcclusion::createAOResources(VkExtent2D extent)
                 _engine,
                 "RT AO image " + std::to_string(i),
                 VK_FORMAT_R8_UNORM,
-                extent,
+                scaledExtent,
                 VK_IMAGE_USAGE_STORAGE_BIT |
                 VK_IMAGE_USAGE_SAMPLED_BIT |
                 VK_IMAGE_USAGE_TRANSFER_DST_BIT,
@@ -189,9 +195,9 @@ void RTAmbientOcclusion::render(
 
     AOPushConstants pc{};
     pc.inverseViewProjection = inverseViewProjection;
-    pc.sampleCount = 4;
+    pc.sampleCount = 6;
     pc.bounceCount = 3;
-    pc.radius = 0.6f;
+    pc.radius = 0.3f;
     pc.bias = 0.01f;
     pc.falloff = 1.0f;
     pc.bounceAttenuation = 0.5f;
@@ -199,12 +205,37 @@ void RTAmbientOcclusion::render(
     vkCmdPushConstants(cmd, _pipelineLayout,
         VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(AOPushConstants), &pc);
 
-    uint32_t groupX = static_cast<uint32_t>(std::ceil(_extent.width / 8.0f));
-    uint32_t groupY = static_cast<uint32_t>(std::ceil(_extent.height / 8.0f));
+    float scale = rtaoResolutionScale(_quality);
+    uint32_t scaledWidth = static_cast<uint32_t>(std::round(_extent.width * scale));
+    uint32_t scaledHeight = static_cast<uint32_t>(std::round(_extent.height * scale));
+    uint32_t groupX = static_cast<uint32_t>(std::ceil(scaledWidth / 8.0f));
+    uint32_t groupY = static_cast<uint32_t>(std::ceil(scaledHeight / 8.0f));
     vkCmdDispatch(cmd, groupX, groupY, 1);
 
     vulkan::Image::cmdTransitionImage(cmd, aoImage->handle(),
         VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+}
+
+void RTAmbientOcclusion::setQuality(RTAOQuality quality)
+{
+    if (quality == _quality)
+    {
+        return;
+    }
+
+    _engine->device().waitIdle();
+
+    _quality = quality;
+
+    if (_rtSupported && !_aoImages.empty())
+    {
+        createAOResources(_extent);
+    }
+}
+
+RTAOQuality RTAmbientOcclusion::quality() const
+{
+    return _quality;
 }
 
 void RTAmbientOcclusion::resize(VkExtent2D newExtent)

@@ -59,14 +59,14 @@ void main() {
 
     vec2 uv = vec2(pixelCoord + 0.5) / vec2(imageSize);
 
-    float depth = texelFetch(g_Depth, pixelCoord, 0).r;
+    float depth = texture(g_Depth, uv).r;
     if (depth >= 1.0) {
         imageStore(aoOutput, pixelCoord, vec4(1.0, 0.0, 0.0, 0.0));
         return;
     }
 
     vec3 worldPos = reconstructWorldPosition(uv, depth, pc.inverseViewProjection);
-    vec3 normal = normalize(texelFetch(g_Normal, pixelCoord, 0).xyz * 2.0 - 1.0);
+    vec3 normal = normalize(texture(g_Normal, uv).xyz * 2.0 - 1.0);
 
     float occlusion = 0.0;
     uint seed =

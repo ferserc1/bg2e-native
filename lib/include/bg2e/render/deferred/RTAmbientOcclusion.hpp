@@ -31,6 +31,27 @@ namespace bg2e {
 namespace render {
 namespace deferred {
 
+enum class RTAOQuality
+{
+    Low,
+    Medium,
+    High,
+    Ultra
+};
+
+inline float rtaoResolutionScale(RTAOQuality quality)
+{
+    switch (quality)
+    {
+        case RTAOQuality::Ultra:  return 1.0f;
+        case RTAOQuality::High:   return 2.0f / 3.0f;
+        case RTAOQuality::Medium: return 0.5f;
+        case RTAOQuality::Low:    return 1.0f / 3.0f;
+    }
+
+    return 1.0f;
+}
+
 class BG2E_API RTAmbientOcclusion {
 public:
     RTAmbientOcclusion(Engine * engine);
@@ -51,10 +72,14 @@ public:
     VkSampler sampler() const;
     bool rtSupported() const;
 
+    void setQuality(RTAOQuality quality);
+    RTAOQuality quality() const;
+
 private:
     Engine * _engine;
     VkExtent2D _extent;
     bool _rtSupported = false;
+    RTAOQuality _quality = RTAOQuality::High;
 
     std::vector<std::shared_ptr<vulkan::Image>> _aoImages;
 
