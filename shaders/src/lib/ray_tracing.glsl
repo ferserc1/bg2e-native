@@ -51,4 +51,41 @@ bool queryShadow(
            gl_RayQueryCommittedIntersectionNoneEXT;
 }
 
+bool queryAO(
+    accelerationStructureEXT tlas,
+    vec3 worldPos,
+    vec3 normal,
+    vec3 rayDir,
+    float radius,
+    float bias,
+    out float hitDistance
+) {
+    rayQueryEXT rq;
+
+    rayQueryInitializeEXT(
+        rq,
+        tlas,
+        gl_RayFlagsTerminateOnFirstHitEXT | gl_RayFlagsOpaqueEXT,
+        0xFF,
+        worldPos + normal * bias,
+        0.001,
+        rayDir,
+        radius
+    );
+
+    while (rayQueryProceedEXT(rq)) {}
+
+    bool hit = rayQueryGetIntersectionTypeEXT(rq, true) != gl_RayQueryCommittedIntersectionNoneEXT;
+
+    if (hit)
+    {
+        hitDistance = rayQueryGetIntersectionTEXT(rq, true);
+    }
+    else
+    {
+        hitDistance = radius;
+    }
+    return hit;
+}
+
 #endif

@@ -53,6 +53,8 @@ const vulkan::Image* DeferredLayer::resolveDebugSource(const vulkan::Image* inpu
             return gbuffer->depthImage().get();
         case DeferredDebugVisualization::InputImage:
             return inputImage;
+        case DeferredDebugVisualization::RTAmbientOcclusion:
+            return _rtAmbientOcclusion->aoImage(_engine->currentFrameResourcesIndex()).get();
         default:
             return gbuffer->image(0).get();
     }
@@ -69,6 +71,10 @@ void DeferredLayer::build(VkExtent2D extent, VkFormat outputFormat)
         gb = std::make_unique<GBufferManager>(_engine);
         gb->build(extent);
     }
+
+    // Create AO pass
+    _rtAmbientOcclusion = std::make_unique<RTAmbientOcclusion>(_engine);
+    _rtAmbientOcclusion->build(extent);
 
     // Create per-layer data bindings
     _frameDataBinding = std::make_unique<scene::vk::FrameDataBinding>(_engine);
@@ -201,6 +207,14 @@ void DeferredLayer::render(
 
     renderGBufferPass(cmd, currentFrame, gbuffer, frameResources, viewMatrix, projMatrix, cameraWorldPos);
 
+    // AO pass: compute ambient occlusion from G-buffers + TLAS
+    {
+        auto projMat = _scene->mainCamera()->projectionMatrix();
+        auto viewMat = _scene->mainCamera()->viewMatrix();
+        auto invVP = glm::inverse(projMat * viewMat);
+        _rtAmbientOcclusion->render(cmd, currentFrame, frameResources, gbuffer, invVP);
+    }
+
     if (_debugVisualization == DeferredDebugVisualization::FullComposition)
     {
         renderCompositePass(cmd, currentFrame, inputImage, outputImage, frameResources, viewMatrix, projMatrix);
@@ -223,6 +237,7 @@ void DeferredLayer::resize(VkExtent2D newExtent)
     {
         gb->resize(newExtent);
     }
+    _rtAmbientOcclusion->resize(newExtent);
 }
 
 void DeferredLayer::cleanup()
@@ -232,6 +247,8 @@ void DeferredLayer::cleanup()
         gb->cleanup();
     }
     _gbuffers.clear();
+
+    if (_rtAmbientOcclusion) _rtAmbientOcclusion->cleanup();
 
     _frameDataBinding->cleanup();
     _fragmentFrameDataBinding->cleanup();
@@ -307,6 +324,7 @@ void DeferredLayer::createCompositePipeline()
     dsLayoutFactory.addBinding(4, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);  // g_SheenColor
     dsLayoutFactory.addBinding(5, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);  // g_InputImage
     dsLayoutFactory.addBinding(6, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);  // g_Depth
+    dsLayoutFactory.addBinding(7, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);  // g_AO
     _compositeGBufferDSLayout = dsLayoutFactory.build(
         _engine->device().handle(),
         VK_SHADER_STAGE_FRAGMENT_BIT
@@ -540,6 +558,9 @@ void DeferredLayer::renderCompositePass(
         inputImage, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _gbufferSampler);
     gbufferDS->addImage(6, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
         gbuffer->depthImage().get(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _gbufferSampler);
+    auto aoImg = _rtAmbientOcclusion->aoImage(_engine->currentFrameResourcesIndex());
+    gbufferDS->addImage(7, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+        aoImg.get(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _gbufferSampler);
     gbufferDS->endUpdate();
 
     // Create other descriptor sets

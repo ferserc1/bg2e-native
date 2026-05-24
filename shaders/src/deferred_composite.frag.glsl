@@ -32,6 +32,7 @@ layout(set = 0, binding = 3) uniform sampler2D g_FresnelFlags;
 layout(set = 0, binding = 4) uniform sampler2D g_SheenColor;
 layout(set = 0, binding = 5) uniform sampler2D g_InputImage;
 layout(set = 0, binding = 6) uniform sampler2D g_Depth;
+layout(set = 0, binding = 7) uniform sampler2D g_AO;
 
 // Scene data (set=1)
 layout(set = 1, binding = 0) uniform SceneData {
@@ -110,7 +111,7 @@ void main() {
     vec3 ambient = calcAmbientLight(gbuf.viewDir, gbuf.normal, gbuf.F0, gbuf.albedo.rgb,
                                     gbuf.metallic, gbuf.roughness,
                                     irradianceMap, prefilteredEnvMap, environmentData.maxReflectionLOD,
-                                    brdfLUT, gbuf.ao, gbuf.sheenIntensity, gbuf.sheenColor);
+                                    brdfLUT, gbuf.ao * texture(g_AO, vTexcoord).r, gbuf.sheenIntensity, gbuf.sheenColor);
 
     outColor = compositeFinalColor(ambient, Lo, gbuf.inputColor, gbuf.albedo.a,
                                    pushConstant.exposure, pushConstant.gamma,

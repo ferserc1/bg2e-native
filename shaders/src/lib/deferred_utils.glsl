@@ -128,4 +128,49 @@ vec4 compositeFinalColor(
     return outColor;
 }
 
+uint hash(uint x)
+{
+    x ^= x >> 16;
+    x *= 0x7feb352du;
+    x ^= x >> 15;
+    x *= 0x846ca68bu;
+    x ^= x >> 16;
+    return x;
+}
+
+float rand(inout uint seed)
+{
+    seed = hash(seed);
+    return float(seed) / float(0xffffffffu);
+}
+
+mat3 buildTBN(vec3 normal)
+{
+    vec3 up = abs(normal.x) < 0.999
+        ? vec3(0.0, 0.0, 1.0)
+        : vec3(1.0, 0.0, 0.0);
+
+    vec3 tangent = normalize(cross(up, normal));
+    vec3 bitangent = cross(normal, tangent);
+
+    return mat3(tangent, bitangent, normal);
+}
+
+vec3 randomHemisphereDirection(vec3 normal, inout uint seed)
+{
+    float u1 = rand(seed);
+    float u2 = rand(seed);
+
+    float r = sqrt(u1);
+    float phi = 6.28318530718 * u2;
+
+    vec3 localDir = vec3(
+        r * cos(phi),
+        r * sin(phi),
+        sqrt(max(0.0, 1.0 - u1))
+    );
+
+    return normalize(buildTBN(normal) * localDir);
+}
+
 #endif

@@ -20,6 +20,7 @@
 
 #include <bg2e/render/deferred/RenderLayer.hpp>
 #include <bg2e/render/gbuffer/GBufferManager.hpp>
+#include <bg2e/render/deferred/RTAmbientOcclusion.hpp>
 #include <bg2e/render/vulkan/factory/GraphicsPipeline.hpp>
 #include <bg2e/render/vulkan/factory/PipelineLayout.hpp>
 #include <bg2e/render/vulkan/factory/DescriptorSetLayout.hpp>
@@ -49,9 +50,7 @@ enum class DeferredDebugVisualization {
     GBufferSheenColor,
     GBufferDepth,
     InputImage,
-
-    // Future extra passes:
-    // ExtraPassRTAO,
+    RTAmbientOcclusion,
 
     MaxLayer
 };
@@ -120,6 +119,8 @@ protected:
     VkDescriptorSetLayout _debugDSLayout = VK_NULL_HANDLE;
 
     bool _isTransparent = false;
+
+    std::unique_ptr<RTAmbientOcclusion> _rtAmbientOcclusion;
 
     struct CompositePushConstants {
         float gamma;
