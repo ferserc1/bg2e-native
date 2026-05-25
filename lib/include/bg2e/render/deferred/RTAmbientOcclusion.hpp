@@ -75,11 +75,36 @@ public:
     void setQuality(RTAOQuality quality);
     RTAOQuality quality() const;
 
+    void setAOSampleCount(int count);
+    int aoSampleCount() const;
+
+    void setAOBounceCount(int count);
+    int aoBounceCount() const;
+
+    void setAORadius(float radius);
+    float aoRadius() const;
+
+    void setAOBias(float bias);
+    float aoBias() const;
+
+    void setAOFalloff(float falloff);
+    float aoFalloff() const;
+
+    void setAOBounceAttenuation(float attenuation);
+    float aoBounceAttenuation() const;
+
 private:
     Engine * _engine;
     VkExtent2D _extent;
     bool _rtSupported = false;
     RTAOQuality _quality = RTAOQuality::High;
+
+    int _sampleCount = 8;
+    int _bounceCount = 2;
+    float _radius = 0.56f;
+    float _bias = 0.017f;
+    float _falloff = 1.0f;
+    float _bounceAttenuation = 0.5f;
 
     std::vector<std::shared_ptr<vulkan::Image>> _aoImages;
 

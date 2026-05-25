@@ -17,24 +17,19 @@
  */
 #pragma once
 
-#include <bg2e.hpp>
+#include <bg2e/ui/Window.hpp>
 
-#include "EnvironmentSettings.hpp"
-#include "SubmeshWindow.hpp"
+class AppDelegate;
 
-class  AppDelegate;
-class UISettingsWindow;
-class UIRenderSettingsWindow;
-
-class ToolBar : public bg2e::ui::Toolbar {
+class UIRenderSettingsWindow : public bg2e::ui::Window {
 public:
-    virtual ~ToolBar() = default;
+    void init(AppDelegate * delegate);
 
-    void init(AppDelegate * delegate, UISettingsWindow * uiSettings, UIRenderSettingsWindow * renderSettings);
-    
-protected:
+private:
+    void drawUI();
+    void drawRTAOSection();
+    void drawTemporalAccumulatorSection();
+    void drawDenoiseFilterSection();
 
     AppDelegate * _appDelegate = nullptr;
-    UISettingsWindow * _uiSettingsWindow = nullptr;
-    UIRenderSettingsWindow * _renderSettingsWindow = nullptr;
 };

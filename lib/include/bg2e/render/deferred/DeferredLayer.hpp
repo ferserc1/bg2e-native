@@ -89,6 +89,54 @@ public:
     void setOpaqueDepthBuffer(std::shared_ptr<vulkan::Image> image) { _opaqueDepthBuffer = image; }
     std::shared_ptr<vulkan::Image> depthBuffer();
 
+    void setAOQuality(RTAOQuality quality);
+    RTAOQuality aoQuality() const;
+
+    void setAOSampleCount(int count);
+    int aoSampleCount() const;
+
+    void setAOBounceCount(int count);
+    int aoBounceCount() const;
+
+    void setAORadius(float radius);
+    float aoRadius() const;
+
+    void setAOBias(float bias);
+    float aoBias() const;
+
+    void setAOFalloff(float falloff);
+    float aoFalloff() const;
+
+    void setAOBounceAttenuation(float attenuation);
+    float aoBounceAttenuation() const;
+
+    void setTemporalHistoryWeight(float weight);
+    float temporalHistoryWeight() const;
+
+    void setTemporalDepthThreshold(float threshold);
+    float temporalDepthThreshold() const;
+
+    void setTemporalNormalThreshold(float threshold);
+    float temporalNormalThreshold() const;
+
+    void setTemporalMode(TemporalAccumulator::AccumulationMode mode);
+    TemporalAccumulator::AccumulationMode temporalMode() const;
+
+    void setDenoiseKernelRadius(int radius);
+    int denoiseKernelRadius() const;
+
+    void setDenoiseDepthThreshold(float threshold);
+    float denoiseDepthThreshold() const;
+
+    void setDenoiseNormalThreshold(float threshold);
+    float denoiseNormalThreshold() const;
+
+    void setDenoiseDepthSigma(float sigma);
+    float denoiseDepthSigma() const;
+
+    void setDenoiseNormalSigma(float sigma);
+    float denoiseNormalSigma() const;
+
 protected:
     LayerType _layerType;
 

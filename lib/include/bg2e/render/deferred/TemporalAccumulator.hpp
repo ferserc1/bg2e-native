@@ -90,7 +90,7 @@ private:
     VkFormat _depthFormat = VK_FORMAT_D32_SFLOAT;
     VkFormat _normalFormat = VK_FORMAT_R16G16B16A16_SFLOAT;
 
-    AccumulationMode _accumulationMode = AccumulationMode::Interactive;
+    AccumulationMode _accumulationMode = AccumulationMode::Progressive;
     float _historyWeight = 0.9f;
     float _depthThreshold = 0.01f;
     float _normalThreshold = 0.8f;

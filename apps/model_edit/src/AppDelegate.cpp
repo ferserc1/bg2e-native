@@ -38,6 +38,10 @@ void AppDelegate::drawUI()
     {
         _uiSettingsWindow.draw();
     }
+    if (_renderSettingsWindow.isOpen())
+    {
+        _renderSettingsWindow.draw();
+    }
 }
 
 // InputDelegate
@@ -146,7 +150,8 @@ void AppDelegate::initWorkspace()
     _workspace.leftPanelSize().min = 300;
     _environmentPanel.init(this, renderer(), _stage->environment());
     _uiSettingsWindow.init(this);
-    _toolBar.init(this, &_uiSettingsWindow);
+    _renderSettingsWindow.init(this);
+    _toolBar.init(this, &_uiSettingsWindow, &_renderSettingsWindow);
     _submeshPanel.init(this);
 
     _fileStatus = std::make_shared<bg2e::ui::StatusItem>();

@@ -73,7 +73,7 @@ private:
     VkDescriptorSetLayout _dsLayout = VK_NULL_HANDLE;
     VkSampler _sampler = VK_NULL_HANDLE;
 
-    int _kernelRadius = 3;
+    int _kernelRadius = 2;
     float _depthThreshold = 0.01f;
     float _normalThreshold = 0.8f;
     float _depthSigma = 0.01f;

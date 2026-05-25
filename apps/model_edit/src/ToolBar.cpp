@@ -20,11 +20,12 @@
 #include <bg2e/app/MainLoop.hpp>
 #include <bg2e/geo/modifiers.hpp>
 
-void ToolBar::init(AppDelegate * delegate, UISettingsWindow * uiSettings)
+void ToolBar::init(AppDelegate * delegate, UISettingsWindow * uiSettings, UIRenderSettingsWindow * renderSettings)
 {
     using namespace bg2e::ui;
     _appDelegate = delegate;
     _uiSettingsWindow = uiSettings;
+    _renderSettingsWindow = renderSettings;
     
     bg2e::app::MainLoop::current()->setOnExitFunction([]() -> bool {
         return bg2e::app::MessageBox::showWarning("Quit Model Edit", "Any unsaved changes will be lost. Are you sure you want to quit?", {
@@ -171,6 +172,12 @@ void ToolBar::init(AppDelegate * delegate, UISettingsWindow * uiSettings)
         .handler = [&]()
         {
             _uiSettingsWindow->open();
+        }
+    }});
+    window.addMenuItem({ "Render Settings", {
+        .handler = [&]()
+        {
+            _renderSettingsWindow->open();
         }
     }});
     addMenuItem(window);

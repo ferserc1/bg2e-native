@@ -309,6 +309,166 @@ std::shared_ptr<vulkan::Image> DeferredLayer::depthBuffer()
     return gbuffers->depthImage();
 }
 
+void DeferredLayer::setAOQuality(RTAOQuality quality)
+{
+    if (_rtAmbientOcclusion) _rtAmbientOcclusion->setQuality(quality);
+}
+
+RTAOQuality DeferredLayer::aoQuality() const
+{
+    return _rtAmbientOcclusion ? _rtAmbientOcclusion->quality() : RTAOQuality::High;
+}
+
+void DeferredLayer::setAOSampleCount(int count)
+{
+    if (_rtAmbientOcclusion) _rtAmbientOcclusion->setAOSampleCount(count);
+}
+
+int DeferredLayer::aoSampleCount() const
+{
+    return _rtAmbientOcclusion ? _rtAmbientOcclusion->aoSampleCount() : 6;
+}
+
+void DeferredLayer::setAOBounceCount(int count)
+{
+    if (_rtAmbientOcclusion) _rtAmbientOcclusion->setAOBounceCount(count);
+}
+
+int DeferredLayer::aoBounceCount() const
+{
+    return _rtAmbientOcclusion ? _rtAmbientOcclusion->aoBounceCount() : 3;
+}
+
+void DeferredLayer::setAORadius(float radius)
+{
+    if (_rtAmbientOcclusion) _rtAmbientOcclusion->setAORadius(radius);
+}
+
+float DeferredLayer::aoRadius() const
+{
+    return _rtAmbientOcclusion ? _rtAmbientOcclusion->aoRadius() : 0.3f;
+}
+
+void DeferredLayer::setAOBias(float bias)
+{
+    if (_rtAmbientOcclusion) _rtAmbientOcclusion->setAOBias(bias);
+}
+
+float DeferredLayer::aoBias() const
+{
+    return _rtAmbientOcclusion ? _rtAmbientOcclusion->aoBias() : 0.01f;
+}
+
+void DeferredLayer::setAOFalloff(float falloff)
+{
+    if (_rtAmbientOcclusion) _rtAmbientOcclusion->setAOFalloff(falloff);
+}
+
+float DeferredLayer::aoFalloff() const
+{
+    return _rtAmbientOcclusion ? _rtAmbientOcclusion->aoFalloff() : 1.0f;
+}
+
+void DeferredLayer::setAOBounceAttenuation(float attenuation)
+{
+    if (_rtAmbientOcclusion) _rtAmbientOcclusion->setAOBounceAttenuation(attenuation);
+}
+
+float DeferredLayer::aoBounceAttenuation() const
+{
+    return _rtAmbientOcclusion ? _rtAmbientOcclusion->aoBounceAttenuation() : 0.5f;
+}
+
+void DeferredLayer::setTemporalHistoryWeight(float weight)
+{
+    if (_temporalAccumulator) _temporalAccumulator->setHistoryWeight(weight);
+}
+
+float DeferredLayer::temporalHistoryWeight() const
+{
+    return _temporalAccumulator ? _temporalAccumulator->historyWeight() : 0.9f;
+}
+
+void DeferredLayer::setTemporalDepthThreshold(float threshold)
+{
+    if (_temporalAccumulator) _temporalAccumulator->setDepthThreshold(threshold);
+}
+
+float DeferredLayer::temporalDepthThreshold() const
+{
+    return _temporalAccumulator ? _temporalAccumulator->depthThreshold() : 0.01f;
+}
+
+void DeferredLayer::setTemporalNormalThreshold(float threshold)
+{
+    if (_temporalAccumulator) _temporalAccumulator->setNormalThreshold(threshold);
+}
+
+float DeferredLayer::temporalNormalThreshold() const
+{
+    return _temporalAccumulator ? _temporalAccumulator->normalThreshold() : 0.8f;
+}
+
+void DeferredLayer::setTemporalMode(TemporalAccumulator::AccumulationMode mode)
+{
+    if (_temporalAccumulator) _temporalAccumulator->setAccumulationMode(mode);
+}
+
+TemporalAccumulator::AccumulationMode DeferredLayer::temporalMode() const
+{
+    return _temporalAccumulator ? _temporalAccumulator->accumulationMode() : TemporalAccumulator::AccumulationMode::Interactive;
+}
+
+void DeferredLayer::setDenoiseKernelRadius(int radius)
+{
+    if (_denoiseFilter) _denoiseFilter->setKernelRadius(radius);
+}
+
+int DeferredLayer::denoiseKernelRadius() const
+{
+    return _denoiseFilter ? _denoiseFilter->kernelRadius() : 3;
+}
+
+void DeferredLayer::setDenoiseDepthThreshold(float threshold)
+{
+    if (_denoiseFilter) _denoiseFilter->setDepthThreshold(threshold);
+}
+
+float DeferredLayer::denoiseDepthThreshold() const
+{
+    return _denoiseFilter ? _denoiseFilter->depthThreshold() : 0.01f;
+}
+
+void DeferredLayer::setDenoiseNormalThreshold(float threshold)
+{
+    if (_denoiseFilter) _denoiseFilter->setNormalThreshold(threshold);
+}
+
+float DeferredLayer::denoiseNormalThreshold() const
+{
+    return _denoiseFilter ? _denoiseFilter->normalThreshold() : 0.8f;
+}
+
+void DeferredLayer::setDenoiseDepthSigma(float sigma)
+{
+    if (_denoiseFilter) _denoiseFilter->setDepthSigma(sigma);
+}
+
+float DeferredLayer::denoiseDepthSigma() const
+{
+    return _denoiseFilter ? _denoiseFilter->depthSigma() : 0.01f;
+}
+
+void DeferredLayer::setDenoiseNormalSigma(float sigma)
+{
+    if (_denoiseFilter) _denoiseFilter->setNormalSigma(sigma);
+}
+
+float DeferredLayer::denoiseNormalSigma() const
+{
+    return _denoiseFilter ? _denoiseFilter->normalSigma() : 0.3f;
+}
+
 void DeferredLayer::createGBufferPipeline()
 {
     // Create descriptor set layouts

@@ -195,12 +195,12 @@ void RTAmbientOcclusion::render(
 
     AOPushConstants pc{};
     pc.inverseViewProjection = inverseViewProjection;
-    pc.sampleCount = 6;
-    pc.bounceCount = 3;
-    pc.radius = 0.3f;
-    pc.bias = 0.01f;
-    pc.falloff = 1.0f;
-    pc.bounceAttenuation = 0.5f;
+    pc.sampleCount = _sampleCount;
+    pc.bounceCount = _bounceCount;
+    pc.radius = _radius;
+    pc.bias = _bias;
+    pc.falloff = _falloff;
+    pc.bounceAttenuation = _bounceAttenuation;
     pc.frameIndex = currentFrame;
     vkCmdPushConstants(cmd, _pipelineLayout,
         VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(AOPushConstants), &pc);
@@ -236,6 +236,66 @@ void RTAmbientOcclusion::setQuality(RTAOQuality quality)
 RTAOQuality RTAmbientOcclusion::quality() const
 {
     return _quality;
+}
+
+void RTAmbientOcclusion::setAOSampleCount(int count)
+{
+    _sampleCount = count;
+}
+
+int RTAmbientOcclusion::aoSampleCount() const
+{
+    return _sampleCount;
+}
+
+void RTAmbientOcclusion::setAOBounceCount(int count)
+{
+    _bounceCount = count;
+}
+
+int RTAmbientOcclusion::aoBounceCount() const
+{
+    return _bounceCount;
+}
+
+void RTAmbientOcclusion::setAORadius(float radius)
+{
+    _radius = radius;
+}
+
+float RTAmbientOcclusion::aoRadius() const
+{
+    return _radius;
+}
+
+void RTAmbientOcclusion::setAOBias(float bias)
+{
+    _bias = bias;
+}
+
+float RTAmbientOcclusion::aoBias() const
+{
+    return _bias;
+}
+
+void RTAmbientOcclusion::setAOFalloff(float falloff)
+{
+    _falloff = falloff;
+}
+
+float RTAmbientOcclusion::aoFalloff() const
+{
+    return _falloff;
+}
+
+void RTAmbientOcclusion::setAOBounceAttenuation(float attenuation)
+{
+    _bounceAttenuation = attenuation;
+}
+
+float RTAmbientOcclusion::aoBounceAttenuation() const
+{
+    return _bounceAttenuation;
 }
 
 void RTAmbientOcclusion::resize(VkExtent2D newExtent)

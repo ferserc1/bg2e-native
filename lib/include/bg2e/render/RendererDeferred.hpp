@@ -91,6 +91,54 @@ public:
     deferred::DeferredDebugVisualization debugVisualization() const;
     void setDebugVisualization(deferred::DeferredDebugVisualization debugVisualization);
 
+    void setAOQuality(deferred::RTAOQuality quality);
+    deferred::RTAOQuality aoQuality() const;
+
+    void setAOSampleCount(int count);
+    int aoSampleCount() const;
+
+    void setAOBounceCount(int count);
+    int aoBounceCount() const;
+
+    void setAORadius(float radius);
+    float aoRadius() const;
+
+    void setAOBias(float bias);
+    float aoBias() const;
+
+    void setAOFalloff(float falloff);
+    float aoFalloff() const;
+
+    void setAOBounceAttenuation(float attenuation);
+    float aoBounceAttenuation() const;
+
+    void setTemporalHistoryWeight(float weight);
+    float temporalHistoryWeight() const;
+
+    void setTemporalDepthThreshold(float threshold);
+    float temporalDepthThreshold() const;
+
+    void setTemporalNormalThreshold(float threshold);
+    float temporalNormalThreshold() const;
+
+    void setTemporalMode(deferred::TemporalAccumulator::AccumulationMode mode);
+    deferred::TemporalAccumulator::AccumulationMode temporalMode() const;
+
+    void setDenoiseKernelRadius(int radius);
+    int denoiseKernelRadius() const;
+
+    void setDenoiseDepthThreshold(float threshold);
+    float denoiseDepthThreshold() const;
+
+    void setDenoiseNormalThreshold(float threshold);
+    float denoiseNormalThreshold() const;
+
+    void setDenoiseDepthSigma(float sigma);
+    float denoiseDepthSigma() const;
+
+    void setDenoiseNormalSigma(float sigma);
+    float denoiseNormalSigma() const;
+
 protected:
     bg2e::render::Engine* _engine = nullptr;
 

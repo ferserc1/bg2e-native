@@ -24,6 +24,7 @@
 #include "SubmeshWindow.hpp"
 #include "StageScene.hpp"
 #include "UISettingsWindow.hpp"
+#include "UIRenderSettingsWindow.hpp"
 
 class AppDelegate : public bg2e::render::DefaultRenderLoopDelegate<bg2e::render::RendererDeferred>,
 	public bg2e::app::InputDelegate,
@@ -80,6 +81,7 @@ protected:
     SubmeshWindow _submeshPanel {};
     EnvironmentSettings _environmentPanel {};
     UISettingsWindow _uiSettingsWindow {};
+    UIRenderSettingsWindow _renderSettingsWindow {};
 
     std::shared_ptr<bg2e::ui::StatusItem> _fileStatus;
     std::shared_ptr<bg2e::ui::StatusItem> _saveStatus;

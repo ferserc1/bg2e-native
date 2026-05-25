@@ -357,6 +357,182 @@ void RendererDeferred::setDebugVisualization(deferred::DeferredDebugVisualizatio
     _transparentLayer->setDebugVisualization(debugVisualization);
 }
 
+void RendererDeferred::setAOQuality(deferred::RTAOQuality quality)
+{
+    _opaqueLayer->setAOQuality(quality);
+    _transparentLayer->setAOQuality(quality);
+}
+
+deferred::RTAOQuality RendererDeferred::aoQuality() const
+{
+    return _opaqueLayer->aoQuality();
+}
+
+void RendererDeferred::setAOSampleCount(int count)
+{
+    _opaqueLayer->setAOSampleCount(count);
+    _transparentLayer->setAOSampleCount(count);
+}
+
+int RendererDeferred::aoSampleCount() const
+{
+    return _opaqueLayer->aoSampleCount();
+}
+
+void RendererDeferred::setAOBounceCount(int count)
+{
+    _opaqueLayer->setAOBounceCount(count);
+    _transparentLayer->setAOBounceCount(count);
+}
+
+int RendererDeferred::aoBounceCount() const
+{
+    return _opaqueLayer->aoBounceCount();
+}
+
+void RendererDeferred::setAORadius(float radius)
+{
+    _opaqueLayer->setAORadius(radius);
+    _transparentLayer->setAORadius(radius);
+}
+
+float RendererDeferred::aoRadius() const
+{
+    return _opaqueLayer->aoRadius();
+}
+
+void RendererDeferred::setAOBias(float bias)
+{
+    _opaqueLayer->setAOBias(bias);
+    _transparentLayer->setAOBias(bias);
+}
+
+float RendererDeferred::aoBias() const
+{
+    return _opaqueLayer->aoBias();
+}
+
+void RendererDeferred::setAOFalloff(float falloff)
+{
+    _opaqueLayer->setAOFalloff(falloff);
+    _transparentLayer->setAOFalloff(falloff);
+}
+
+float RendererDeferred::aoFalloff() const
+{
+    return _opaqueLayer->aoFalloff();
+}
+
+void RendererDeferred::setAOBounceAttenuation(float attenuation)
+{
+    _opaqueLayer->setAOBounceAttenuation(attenuation);
+    _transparentLayer->setAOBounceAttenuation(attenuation);
+}
+
+float RendererDeferred::aoBounceAttenuation() const
+{
+    return _opaqueLayer->aoBounceAttenuation();
+}
+
+void RendererDeferred::setTemporalHistoryWeight(float weight)
+{
+    _opaqueLayer->setTemporalHistoryWeight(weight);
+    _transparentLayer->setTemporalHistoryWeight(weight);
+}
+
+float RendererDeferred::temporalHistoryWeight() const
+{
+    return _opaqueLayer->temporalHistoryWeight();
+}
+
+void RendererDeferred::setTemporalDepthThreshold(float threshold)
+{
+    _opaqueLayer->setTemporalDepthThreshold(threshold);
+    _transparentLayer->setTemporalDepthThreshold(threshold);
+}
+
+float RendererDeferred::temporalDepthThreshold() const
+{
+    return _opaqueLayer->temporalDepthThreshold();
+}
+
+void RendererDeferred::setTemporalNormalThreshold(float threshold)
+{
+    _opaqueLayer->setTemporalNormalThreshold(threshold);
+    _transparentLayer->setTemporalNormalThreshold(threshold);
+}
+
+float RendererDeferred::temporalNormalThreshold() const
+{
+    return _opaqueLayer->temporalNormalThreshold();
+}
+
+void RendererDeferred::setTemporalMode(deferred::TemporalAccumulator::AccumulationMode mode)
+{
+    _opaqueLayer->setTemporalMode(mode);
+    _transparentLayer->setTemporalMode(mode);
+}
+
+deferred::TemporalAccumulator::AccumulationMode RendererDeferred::temporalMode() const
+{
+    return _opaqueLayer->temporalMode();
+}
+
+void RendererDeferred::setDenoiseKernelRadius(int radius)
+{
+    _opaqueLayer->setDenoiseKernelRadius(radius);
+    _transparentLayer->setDenoiseKernelRadius(radius);
+}
+
+int RendererDeferred::denoiseKernelRadius() const
+{
+    return _opaqueLayer->denoiseKernelRadius();
+}
+
+void RendererDeferred::setDenoiseDepthThreshold(float threshold)
+{
+    _opaqueLayer->setDenoiseDepthThreshold(threshold);
+    _transparentLayer->setDenoiseDepthThreshold(threshold);
+}
+
+float RendererDeferred::denoiseDepthThreshold() const
+{
+    return _opaqueLayer->denoiseDepthThreshold();
+}
+
+void RendererDeferred::setDenoiseNormalThreshold(float threshold)
+{
+    _opaqueLayer->setDenoiseNormalThreshold(threshold);
+    _transparentLayer->setDenoiseNormalThreshold(threshold);
+}
+
+float RendererDeferred::denoiseNormalThreshold() const
+{
+    return _opaqueLayer->denoiseNormalThreshold();
+}
+
+void RendererDeferred::setDenoiseDepthSigma(float sigma)
+{
+    _opaqueLayer->setDenoiseDepthSigma(sigma);
+    _transparentLayer->setDenoiseDepthSigma(sigma);
+}
+
+float RendererDeferred::denoiseDepthSigma() const
+{
+    return _opaqueLayer->denoiseDepthSigma();
+}
+
+void RendererDeferred::setDenoiseNormalSigma(float sigma)
+{
+    _opaqueLayer->setDenoiseNormalSigma(sigma);
+    _transparentLayer->setDenoiseNormalSigma(sigma);
+}
+
+float RendererDeferred::denoiseNormalSigma() const
+{
+    return _opaqueLayer->denoiseNormalSigma();
+}
+
 void RendererDeferred::updateLights(
     const std::vector<std::shared_ptr<bg2e::scene::LightComponent>>& lightComponents,
     [[maybe_unused]] uint32_t maxLights
