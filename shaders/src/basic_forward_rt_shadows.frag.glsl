@@ -24,6 +24,7 @@
 #include "lib/uniforms.glsl"
 #include "lib/normal_map.glsl"
 #include "lib/pbr.glsl"
+#include "lib/ray_tracing.glsl"
 
 layout(location = 0) out vec4 outColor;
 
@@ -98,39 +99,14 @@ void main()
     int lightCount = lightsBuffer.lightCount;
     for(int i = 0; i < lightCount; ++i)
     {
-        float tMax = 10000000.0;
-        vec3 dir = normalize(-lightsBuffer.lights[i].direction);
-        if (lightsBuffer.lights[i].type == LIGHT_TYPE_POINT)
-        {
-            vec3 toLight = lightsBuffer.lights[i].position - inFragPos.xyz;
-            tMax = length(toLight);
-            dir = normalize(toLight);
-        }
-        if (lightsBuffer.lights[i].castShadows == 0)
-        {
-            Lo += calcRadiance(lightsBuffer.lights[i], viewDir, inFragPos, metallic, roughness, F0, normal, albedo, mat.sheenIntensity, mat.sheenColor.rgb, ambientOcclussion);
+        if (lightsBuffer.lights[i].type == LIGHT_TYPE_DISABLED) {
             continue;
         }
-        vec3 origin = inFragPos.xyz + normal.xyz * 0.01;
-        rayQueryEXT rq;
-        rayQueryInitializeEXT(
-            rq,
-            u_TLAS,
-            gl_RayFlagsTerminateOnFirstHitEXT | gl_RayFlagsOpaqueEXT,
-            0xFF,
-            origin,
-            0.001,
-            dir,
-            tMax
-        );
-        while (rayQueryProceedEXT(rq))
-        {
+        float shadowFactor = 1.0;
+        if (lightsBuffer.lights[i].castShadows != 0) {
+            shadowFactor = queryShadow(u_TLAS, inFragPos, normal, lightsBuffer.lights[i]);
         }
-
-        if (rayQueryGetIntersectionTypeEXT(rq, true) == gl_RayQueryCommittedIntersectionNoneEXT)
-        {
-            Lo += calcRadiance(lightsBuffer.lights[i], viewDir, inFragPos, metallic, roughness, F0, normal, albedo, mat.sheenIntensity, mat.sheenColor.rgb, ambientOcclussion);
-        }
+        Lo += shadowFactor * calcRadiance(lightsBuffer.lights[i], viewDir, inFragPos, metallic, roughness, F0, normal, albedo, mat.sheenIntensity, mat.sheenColor.rgb, ambientOcclussion);
     }
 
     vec3 ambient = calcAmbientLight(

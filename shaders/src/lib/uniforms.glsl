@@ -60,7 +60,13 @@ struct LightData
     float spotAngle;
     float spotCutoff;
     int castShadows;
-    float padding;
+
+    float sourceSize;
+    int shadowSamples;
+
+    int padding0;
+    int padding1;
+    int padding2;
 };
 
 const int LIGHT_COUNT = 8;

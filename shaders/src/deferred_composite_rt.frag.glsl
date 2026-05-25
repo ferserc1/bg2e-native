@@ -105,11 +105,12 @@ void main() {
 
     vec3 Lo = vec3(0.0);
     for (int i = 0; i < pushConstant.lightCount; i++) {
-        if ( LightsBuffer.lights[i].type != LIGHT_TYPE_DISABLED &&
-            (LightsBuffer.lights[i].castShadows == 0 ||
-            queryShadow(tlas, gbuf.worldPos, gbuf.normal, LightsBuffer.lights[i]))
-        ) {
-            Lo += calcRadiance(LightsBuffer.lights[i], gbuf.viewDir, gbuf.worldPos,
+        if (LightsBuffer.lights[i].type != LIGHT_TYPE_DISABLED) {
+            float shadowFactor = 1.0;
+            if (LightsBuffer.lights[i].castShadows != 0) {
+                shadowFactor = queryShadow(tlas, gbuf.worldPos, gbuf.normal, LightsBuffer.lights[i]);
+            }
+            Lo += shadowFactor * calcRadiance(LightsBuffer.lights[i], gbuf.viewDir, gbuf.worldPos,
                               gbuf.metallic, gbuf.roughness,
                               gbuf.F0, gbuf.normal, gbuf.albedo.rgb,
                               gbuf.sheenIntensity, gbuf.sheenColor, gbuf.ao * texture(g_AO, vTexcoord).r);

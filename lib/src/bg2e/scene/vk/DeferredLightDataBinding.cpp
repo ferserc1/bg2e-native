@@ -65,7 +65,9 @@ VkDescriptorSet DeferredLightDataBinding::newDescriptorSet(
                 .type = base::Light::LightType::TypeDisabled,
                 .spotAngle = 0.0f,
                 .spotCutoff = 0.0f,
-                .castShadows = 0
+                .castShadows = 0,
+                .sourceSize = 0.0f,
+                .shadowSamples = 0
             }
         };
         lightBuffer = bg2e::render::vulkan::macros::createBuffer(

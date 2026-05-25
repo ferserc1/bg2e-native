@@ -105,6 +105,23 @@ bool LightEditor::draw()
             if (_onChangedFunction) _onChangedFunction();
         }
 
+        BasicWidgets::separator("Soft Shadows");
+        float sourceSize = light.sourceSize();
+        if (Input::sliderFloat("Source Size", &sourceSize, 0.01f, 5.0f))
+        {
+            light.setSourceSize(sourceSize);
+            changed = true;
+            if (_onChangedFunction) _onChangedFunction();
+        }
+
+        int shadowSamples = static_cast<int>(light.shadowSamples());
+        if (Input::sliderInt("Shadow Samples", &shadowSamples, 1, 32))
+        {
+            light.setShadowSamples(static_cast<uint32_t>(shadowSamples));
+            changed = true;
+            if (_onChangedFunction) _onChangedFunction();
+        }
+
         float spotAngle = light.spotAngle();
         if (Input::sliderFloat("Spot Angle", &spotAngle, 1.0f, 90.0f))
         {

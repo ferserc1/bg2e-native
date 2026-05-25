@@ -56,7 +56,13 @@ public:
 
     virtual void setCastShadows(bool cast) { _castShadows = cast; }
     virtual bool castShadows() const { return _castShadows; }
-    
+
+    virtual void setSourceSize(float size) { _sourceSize = size; }
+    virtual float sourceSize() const { return _sourceSize; }
+
+    virtual void setShadowSamples(uint32_t samples) { _shadowSamples = samples; }
+    virtual uint32_t shadowSamples() const { return _shadowSamples; }
+
     std::string typeString() const
     {
         switch (_type)
@@ -87,6 +93,8 @@ public:
             { "spotAngle", JSON(_spotAngle) },
             { "spotCutoff", JSON(_spotCutoff) },
             { "castShadows", JSON(_castShadows) },
+            { "sourceSize", JSON(_sourceSize) },
+            { "shadowSamples", JSON(static_cast<int>(_shadowSamples)) },
         });
     }
     
@@ -97,6 +105,8 @@ protected:
     float _spotAngle = 22.0f;
     float _spotCutoff = 14.0f;
     bool _castShadows = true;
+    float _sourceSize = 0.5f;
+    uint32_t _shadowSamples = 8;
 };
 
 struct LightData
@@ -112,7 +122,13 @@ struct LightData
     float spotAngle;
     float spotCutoff;
     int32_t castShadows;
-    float padding;
+
+    float sourceSize;
+    int32_t shadowSamples;
+
+    int32_t padding0;
+    int32_t padding1;
+    int32_t padding2;
 };
 
 }

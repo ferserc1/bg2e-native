@@ -552,7 +552,9 @@ void RendererDeferred::updateLights(
             .type = comp->light().type(),
             .spotAngle = comp->light().spotAngle(),
             .spotCutoff = comp->light().spotCutoff(),
-            .castShadows = comp->light().castShadows() ? 1 : 0
+            .castShadows = comp->light().castShadows() ? 1 : 0,
+            .sourceSize = comp->light().sourceSize(),
+            .shadowSamples = static_cast<int32_t>(comp->light().shadowSamples())
         });
     }
 }
