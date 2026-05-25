@@ -36,7 +36,7 @@ public:
     TemporalAccumulator(Engine* engine);
     ~TemporalAccumulator();
 
-    void build(VkExtent2D extent);
+    void build(const GBufferManager* gbuffer, VkExtent2D extent);
     void resize(VkExtent2D newExtent);
     void render(
         VkCommandBuffer cmd,
@@ -73,6 +73,8 @@ private:
 
     std::vector<std::shared_ptr<vulkan::Image>> _historyImagesA;
     std::vector<std::shared_ptr<vulkan::Image>> _historyImagesB;
+    std::vector<std::shared_ptr<vulkan::Image>> _prevDepthImages;
+    std::vector<std::shared_ptr<vulkan::Image>> _prevNormalImages;
 
     std::vector<uint32_t> _writeIndex;
 
@@ -85,6 +87,8 @@ private:
     VkPipelineLayout _pipelineLayout = VK_NULL_HANDLE;
     VkDescriptorSetLayout _dsLayout = VK_NULL_HANDLE;
     VkSampler _sampler = VK_NULL_HANDLE;
+    VkFormat _depthFormat = VK_FORMAT_D32_SFLOAT;
+    VkFormat _normalFormat = VK_FORMAT_R16G16B16A16_SFLOAT;
 
     AccumulationMode _accumulationMode = AccumulationMode::Interactive;
     float _historyWeight = 0.9f;

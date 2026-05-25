@@ -53,7 +53,7 @@ TemporalAccumulator::~TemporalAccumulator()
     cleanup();
 }
 
-void TemporalAccumulator::build(VkExtent2D extent)
+void TemporalAccumulator::build(const GBufferManager* gbuffer, VkExtent2D extent)
 {
     _extent = extent;
 
@@ -61,6 +61,9 @@ void TemporalAccumulator::build(VkExtent2D extent)
     {
         return;
     }
+
+    _depthFormat = gbuffer->depthFormat();
+    _normalFormat = gbuffer->formats()[1];
 
     vulkan::factory::Sampler samplerFactory(_engine);
     _sampler = samplerFactory.build();
@@ -80,6 +83,8 @@ void TemporalAccumulator::createHistoryImages(VkExtent2D extent)
 
     _historyImagesA.resize(_engine->numImages());
     _historyImagesB.resize(_engine->numImages());
+    _prevDepthImages.resize(_engine->numImages());
+    _prevNormalImages.resize(_engine->numImages());
     _writeIndex.resize(_engine->numImages(), 0);
     _hasHistory.resize(_engine->numImages(), false);
     _accumulatedFrameCount.resize(_engine->numImages(), 0);
@@ -123,6 +128,38 @@ void TemporalAccumulator::createHistoryImages(VkExtent2D extent)
                 VK_IMAGE_LAYOUT_UNDEFINED,
                 VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
             );
+
+            _prevDepthImages[i] = std::shared_ptr<vulkan::Image>(
+                vulkan::Image::createAllocatedImage(
+                    _engine,
+                    "Temporal prev depth " + std::to_string(i),
+                    _depthFormat,
+                    extent,
+                    VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
+                    VK_IMAGE_ASPECT_DEPTH_BIT,
+                    1, false, 0, VK_SAMPLE_COUNT_1_BIT
+                )
+            );
+
+            _prevNormalImages[i] = std::shared_ptr<vulkan::Image>(
+                vulkan::Image::createAllocatedImage(
+                    _engine,
+                    "Temporal prev normal " + std::to_string(i),
+                    _normalFormat,
+                    extent,
+                    VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
+                    VK_IMAGE_ASPECT_COLOR_BIT,
+                    1, false, 0, VK_SAMPLE_COUNT_1_BIT
+                )
+            );
+
+            vulkan::Image::TransitionInfo depthTi;
+            depthTi.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+            vulkan::Image::cmdTransitionImage(cmd, _prevDepthImages[i]->handle(),
+                VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, depthTi);
+
+            vulkan::Image::cmdTransitionImage(cmd, _prevNormalImages[i]->handle(),
+                VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
         }
     });
 }
@@ -135,6 +172,8 @@ void TemporalAccumulator::createPipeline()
     dsLayoutFactory.addBinding(2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
     dsLayoutFactory.addBinding(3, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
     dsLayoutFactory.addBinding(4, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE);
+    dsLayoutFactory.addBinding(5, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+    dsLayoutFactory.addBinding(6, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
     _dsLayout = dsLayoutFactory.build(
         _engine->device().handle(),
         VK_SHADER_STAGE_COMPUTE_BIT
@@ -210,6 +249,10 @@ void TemporalAccumulator::render(
         gbuffer->image(1).get(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _sampler);
     ds->addImage(4, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
         historyWrite.get(), VK_IMAGE_LAYOUT_GENERAL);
+    ds->addImage(5, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+        _prevDepthImages[frameIndex].get(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _sampler);
+    ds->addImage(6, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+        _prevNormalImages[frameIndex].get(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _sampler);
     ds->endUpdate();
 
     vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, _pipeline);
@@ -236,6 +279,73 @@ void TemporalAccumulator::render(
 
     vulkan::Image::cmdTransitionImage(cmd, historyWrite->handle(),
         VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+
+    // Copy current g-buffer depth → prev depth
+    {
+        vulkan::Image::TransitionInfo depthTi;
+        depthTi.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+
+        vulkan::Image::cmdTransitionImage(cmd,
+            gbuffer->depthImage()->handle(),
+            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+            VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, depthTi);
+
+        vulkan::Image::cmdTransitionImage(cmd,
+            _prevDepthImages[frameIndex]->handle(),
+            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+            VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, depthTi);
+
+        VkImageCopy depthRegion{};
+        depthRegion.srcSubresource = { VK_IMAGE_ASPECT_DEPTH_BIT, 0, 0, 1 };
+        depthRegion.dstSubresource = { VK_IMAGE_ASPECT_DEPTH_BIT, 0, 0, 1 };
+        depthRegion.extent = gbuffer->depthImage()->extent();
+        vkCmdCopyImage(cmd,
+            gbuffer->depthImage()->handle(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+            _prevDepthImages[frameIndex]->handle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+            1, &depthRegion);
+
+        vulkan::Image::cmdTransitionImage(cmd,
+            gbuffer->depthImage()->handle(),
+            VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, depthTi);
+
+        vulkan::Image::cmdTransitionImage(cmd,
+            _prevDepthImages[frameIndex]->handle(),
+            VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, depthTi);
+    }
+
+    // Copy current g-buffer normal → prev normal
+    {
+        vulkan::Image::cmdTransitionImage(cmd,
+            gbuffer->image(1)->handle(),
+            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+            VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
+
+        vulkan::Image::cmdTransitionImage(cmd,
+            _prevNormalImages[frameIndex]->handle(),
+            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+            VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+
+        VkImageCopy normalRegion{};
+        normalRegion.srcSubresource = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1 };
+        normalRegion.dstSubresource = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1 };
+        normalRegion.extent = gbuffer->image(1)->extent();
+        vkCmdCopyImage(cmd,
+            gbuffer->image(1)->handle(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+            _prevNormalImages[frameIndex]->handle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+            1, &normalRegion);
+
+        vulkan::Image::cmdTransitionImage(cmd,
+            gbuffer->image(1)->handle(),
+            VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+
+        vulkan::Image::cmdTransitionImage(cmd,
+            _prevNormalImages[frameIndex]->handle(),
+            VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    }
 
     uint32_t newIndex = 1 - _writeIndex[frameIndex];
     _writeIndex[frameIndex] = newIndex;
@@ -293,6 +403,16 @@ void TemporalAccumulator::cleanupImages()
         if (img) img->cleanup();
     }
     _historyImagesB.clear();
+    for (auto& img : _prevDepthImages)
+    {
+        if (img) img->cleanup();
+    }
+    _prevDepthImages.clear();
+    for (auto& img : _prevNormalImages)
+    {
+        if (img) img->cleanup();
+    }
+    _prevNormalImages.clear();
     _writeIndex.clear();
     _hasHistory.clear();
     _accumulatedFrameCount.clear();

@@ -30,6 +30,10 @@ layout(set = 0, binding = 3) uniform sampler2D g_Normal;
 // Output image (set=0)
 layout(set = 0, binding = 4, r16f) uniform image2D outAccumulated;
 
+// Previous frame g-buffer images (set=0)
+layout(set = 0, binding = 5) uniform sampler2D g_HistoryDepth;
+layout(set = 0, binding = 6) uniform sampler2D g_HistoryNormal;
+
 // Push constants
 layout(push_constant) uniform PushConstant {
     mat4  currentInverseViewProjection;
@@ -87,8 +91,8 @@ void main() {
 
     if (validHistory) {
         vec2 historyUV = previousUV;
-        float historyDepth = texture(g_Depth, historyUV).r;
-        vec3 historyNormal = normalize(texture(g_Normal, historyUV).xyz * 2.0 - 1.0);
+        float historyDepth = texture(g_HistoryDepth, historyUV).r;
+        vec3 historyNormal = normalize(texture(g_HistoryNormal, historyUV).xyz * 2.0 - 1.0);
 
         float depthDiff = abs(currentDepth - historyDepth);
         if (depthDiff >= pc.depthThreshold) {

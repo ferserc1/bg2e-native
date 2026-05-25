@@ -86,7 +86,7 @@ void DeferredLayer::build(VkExtent2D extent, VkFormat outputFormat)
     if (_engine->rayTracingSupported())
     {
         _temporalAccumulator = std::make_unique<TemporalAccumulator>(_engine);
-        _temporalAccumulator->build(extent);
+        _temporalAccumulator->build(_gbuffers[0].get(), extent);
     }
 
     // Create denoise filter
