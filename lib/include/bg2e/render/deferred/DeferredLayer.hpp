@@ -21,6 +21,7 @@
 #include <bg2e/render/deferred/RenderLayer.hpp>
 #include <bg2e/render/gbuffer/GBufferManager.hpp>
 #include <bg2e/render/deferred/RTAmbientOcclusion.hpp>
+#include <bg2e/render/deferred/DenoiseFilter.hpp>
 #include <bg2e/render/vulkan/factory/GraphicsPipeline.hpp>
 #include <bg2e/render/vulkan/factory/PipelineLayout.hpp>
 #include <bg2e/render/vulkan/factory/DescriptorSetLayout.hpp>
@@ -51,6 +52,7 @@ enum class DeferredDebugVisualization {
     GBufferDepth,
     InputImage,
     RTAmbientOcclusion,
+    DenoisedAO,
 
     MaxLayer
 };
@@ -121,6 +123,7 @@ protected:
     bool _isTransparent = false;
 
     std::unique_ptr<RTAmbientOcclusion> _rtAmbientOcclusion;
+    std::unique_ptr<DenoiseFilter> _denoiseFilter;
 
     struct CompositePushConstants {
         float gamma;

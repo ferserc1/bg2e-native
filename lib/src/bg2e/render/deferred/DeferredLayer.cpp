@@ -55,6 +55,8 @@ const vulkan::Image* DeferredLayer::resolveDebugSource(const vulkan::Image* inpu
             return inputImage;
         case DeferredDebugVisualization::RTAmbientOcclusion:
             return _rtAmbientOcclusion->aoImage(_engine->currentFrameResourcesIndex()).get();
+        case DeferredDebugVisualization::DenoisedAO:
+            return _denoiseFilter->outputImage(_engine->currentFrameResourcesIndex()).get();
         default:
             return gbuffer->image(0).get();
     }
@@ -75,6 +77,10 @@ void DeferredLayer::build(VkExtent2D extent, VkFormat outputFormat)
     // Create AO pass
     _rtAmbientOcclusion = std::make_unique<RTAmbientOcclusion>(_engine);
     _rtAmbientOcclusion->build(extent);
+
+    // Create denoise filter
+    _denoiseFilter = std::make_unique<DenoiseFilter>(_engine);
+    _denoiseFilter->build(_gbuffers[0].get(), extent);
 
     // Create per-layer data bindings
     _frameDataBinding = std::make_unique<scene::vk::FrameDataBinding>(_engine);
@@ -215,6 +221,12 @@ void DeferredLayer::render(
         _rtAmbientOcclusion->render(cmd, currentFrame, frameResources, gbuffer, invVP);
     }
 
+    // Denoise pass: filter the AO image
+    {
+        auto aoImg = _rtAmbientOcclusion->aoImage(frameResourcesIndex);
+        _denoiseFilter->render(cmd, currentFrame, frameResources, gbuffer, aoImg.get());
+    }
+
     if (_debugVisualization == DeferredDebugVisualization::FullComposition)
     {
         renderCompositePass(cmd, currentFrame, inputImage, outputImage, frameResources, viewMatrix, projMatrix);
@@ -238,6 +250,7 @@ void DeferredLayer::resize(VkExtent2D newExtent)
         gb->resize(newExtent);
     }
     _rtAmbientOcclusion->resize(newExtent);
+    _denoiseFilter->resize(newExtent);
 }
 
 void DeferredLayer::cleanup()
@@ -249,6 +262,7 @@ void DeferredLayer::cleanup()
     _gbuffers.clear();
 
     if (_rtAmbientOcclusion) _rtAmbientOcclusion->cleanup();
+    if (_denoiseFilter) _denoiseFilter->cleanup();
 
     _frameDataBinding->cleanup();
     _fragmentFrameDataBinding->cleanup();
@@ -558,9 +572,9 @@ void DeferredLayer::renderCompositePass(
         inputImage, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _gbufferSampler);
     gbufferDS->addImage(6, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
         gbuffer->depthImage().get(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _gbufferSampler);
-    auto aoImg = _rtAmbientOcclusion->aoImage(_engine->currentFrameResourcesIndex());
+    auto denoisedAoImg = _denoiseFilter->outputImage(_engine->currentFrameResourcesIndex());
     gbufferDS->addImage(7, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-        aoImg.get(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _gbufferSampler);
+        denoisedAoImg.get(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _gbufferSampler);
     gbufferDS->endUpdate();
 
     // Create other descriptor sets
