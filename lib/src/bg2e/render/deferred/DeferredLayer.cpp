@@ -57,6 +57,10 @@ const vulkan::Image* DeferredLayer::resolveDebugSource(const vulkan::Image* inpu
             return _rtAmbientOcclusion->aoImage(_engine->currentFrameResourcesIndex()).get();
         case DeferredDebugVisualization::DenoisedAO:
             return _denoiseFilter->outputImage(_engine->currentFrameResourcesIndex()).get();
+        case DeferredDebugVisualization::TemporalAccumulatedAO:
+            return _temporalAccumulator
+                ? _temporalAccumulator->outputImage(_engine->currentFrameResourcesIndex()).get()
+                : _rtAmbientOcclusion->aoImage(_engine->currentFrameResourcesIndex()).get();
         default:
             return gbuffer->image(0).get();
     }
@@ -77,6 +81,13 @@ void DeferredLayer::build(VkExtent2D extent, VkFormat outputFormat)
     // Create AO pass
     _rtAmbientOcclusion = std::make_unique<RTAmbientOcclusion>(_engine);
     _rtAmbientOcclusion->build(extent);
+
+    // Create temporal accumulator (only if RT is supported)
+    if (_engine->rayTracingSupported())
+    {
+        _temporalAccumulator = std::make_unique<TemporalAccumulator>(_engine);
+        _temporalAccumulator->build(extent);
+    }
 
     // Create denoise filter
     _denoiseFilter = std::make_unique<DenoiseFilter>(_engine);
@@ -221,10 +232,29 @@ void DeferredLayer::render(
         _rtAmbientOcclusion->render(cmd, currentFrame, frameResources, gbuffer, invVP);
     }
 
+    // Temporal accumulation pass (between RTAO and denoise)
+    const vulkan::Image* aoInputForDenoise = nullptr;
+    if (_temporalAccumulator)
+    {
+        auto projMat = _scene->mainCamera()->projectionMatrix();
+        auto viewMat = _scene->mainCamera()->viewMatrix();
+        auto invVP = glm::inverse(projMat * viewMat);
+
+        auto aoImg = _rtAmbientOcclusion->aoImage(frameResourcesIndex);
+        _temporalAccumulator->render(
+            cmd, currentFrame, frameResources, gbuffer,
+            aoImg.get(), invVP, viewMat, projMat
+        );
+        aoInputForDenoise = _temporalAccumulator->outputImage(frameResourcesIndex).get();
+    }
+    else
+    {
+        aoInputForDenoise = _rtAmbientOcclusion->aoImage(frameResourcesIndex).get();
+    }
+
     // Denoise pass: filter the AO image
     {
-        auto aoImg = _rtAmbientOcclusion->aoImage(frameResourcesIndex);
-        _denoiseFilter->render(cmd, currentFrame, frameResources, gbuffer, aoImg.get());
+        _denoiseFilter->render(cmd, currentFrame, frameResources, gbuffer, aoInputForDenoise);
     }
 
     if (_debugVisualization == DeferredDebugVisualization::FullComposition)
@@ -250,6 +280,7 @@ void DeferredLayer::resize(VkExtent2D newExtent)
         gb->resize(newExtent);
     }
     _rtAmbientOcclusion->resize(newExtent);
+    if (_temporalAccumulator) _temporalAccumulator->resize(newExtent);
     _denoiseFilter->resize(newExtent);
 }
 
@@ -262,6 +293,7 @@ void DeferredLayer::cleanup()
     _gbuffers.clear();
 
     if (_rtAmbientOcclusion) _rtAmbientOcclusion->cleanup();
+    if (_temporalAccumulator) _temporalAccumulator->cleanup();
     if (_denoiseFilter) _denoiseFilter->cleanup();
 
     _frameDataBinding->cleanup();

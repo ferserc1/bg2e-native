@@ -21,7 +21,7 @@
 #include <bg2e/render/vulkan/Info.hpp>
 #include <bg2e/render/vulkan/Buffer.hpp>
 #include <bg2e/render/vulkan/Device.hpp>
-
+#include <bg2e/base/Log.hpp>
 #include <bg2e/render/Engine.hpp>
 
 
@@ -330,7 +330,21 @@ Image* Image::createAllocatedImage(
     );
 
     vmaSetAllocationName(alloc, result->_allocation, imageName.c_str());
-    
+
+    if (base::Log::isDebug() && !imageName.empty()  && setDebugUtilsObjectName_OPT != nullptr)
+    {
+        VkDebugUtilsObjectNameInfoEXT nameInfo = {};
+        nameInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
+        nameInfo.objectType = VK_OBJECT_TYPE_IMAGE;
+        nameInfo.objectHandle = reinterpret_cast<uint64_t>(result->_image);
+        nameInfo.pObjectName = imageName.c_str();
+
+        setDebugUtilsObjectName_OPT(
+            engine->device().handle(),
+            &nameInfo
+        );
+    }
+
     auto imgViewInfo = Info::imageViewCreateInfo(format, result->_image, aspectFlags);
     if (arrayLayers == 6)
     {
