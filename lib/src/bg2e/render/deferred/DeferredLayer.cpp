@@ -154,6 +154,7 @@ void DeferredLayer::render(
         return;
     }
 
+    auto useRT = _engine->rayTracingSupported();
     auto viewMatrix = mainCamera->ownerNode()->invertedWorldMatrix();
     auto projMatrix = mainCamera->projectionMatrix();
     auto cameraWorldPos = mainCamera->ownerNode()->worldPosition();
@@ -225,36 +226,37 @@ void DeferredLayer::render(
     renderGBufferPass(cmd, currentFrame, gbuffer, frameResources, viewMatrix, projMatrix, cameraWorldPos);
 
     // AO pass: compute ambient occlusion from G-buffers + TLAS
+    if (useRT)
     {
         auto projMat = _scene->mainCamera()->projectionMatrix();
         auto viewMat = _scene->mainCamera()->viewMatrix();
         auto invVP = glm::inverse(projMat * viewMat);
         _rtAmbientOcclusion->render(cmd, currentFrame, frameResources, gbuffer, invVP);
-    }
 
-    // Temporal accumulation pass (between RTAO and denoise)
-    const vulkan::Image* aoInputForDenoise = nullptr;
-    if (_temporalAccumulator)
-    {
-        auto projMat = _scene->mainCamera()->projectionMatrix();
-        auto viewMat = _scene->mainCamera()->viewMatrix();
-        auto invVP = glm::inverse(projMat * viewMat);
+        // Temporal accumulation pass (between RTAO and denoise)
+        const vulkan::Image* aoInputForDenoise = nullptr;
+        if (_temporalAccumulator)
+        {
+            auto projMat = _scene->mainCamera()->projectionMatrix();
+            auto viewMat = _scene->mainCamera()->viewMatrix();
+            auto invVP = glm::inverse(projMat * viewMat);
 
-        auto aoImg = _rtAmbientOcclusion->aoImage(frameResourcesIndex);
-        _temporalAccumulator->render(
-            cmd, currentFrame, frameResources, gbuffer,
-            aoImg.get(), invVP, viewMat, projMat
-        );
-        aoInputForDenoise = _temporalAccumulator->outputImage(frameResourcesIndex).get();
-    }
-    else
-    {
-        aoInputForDenoise = _rtAmbientOcclusion->aoImage(frameResourcesIndex).get();
-    }
+            auto aoImg = _rtAmbientOcclusion->aoImage(frameResourcesIndex);
+            _temporalAccumulator->render(
+                cmd, currentFrame, frameResources, gbuffer,
+                aoImg.get(), invVP, viewMat, projMat
+            );
+            aoInputForDenoise = _temporalAccumulator->outputImage(frameResourcesIndex).get();
+        }
+        else
+        {
+            aoInputForDenoise = _rtAmbientOcclusion->aoImage(frameResourcesIndex).get();
+        }
 
-    // Denoise pass: filter the AO image
-    {
-        _denoiseFilter->render(cmd, currentFrame, frameResources, gbuffer, aoInputForDenoise);
+        // Denoise pass: filter the AO image
+        {
+            _denoiseFilter->render(cmd, currentFrame, frameResources, gbuffer, aoInputForDenoise);
+        }
     }
 
     if (_debugVisualization == DeferredDebugVisualization::FullComposition)
@@ -530,7 +532,7 @@ void DeferredLayer::createCompositePipeline()
     dsLayoutFactory.addBinding(4, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);  // g_SheenColor
     dsLayoutFactory.addBinding(5, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);  // g_InputImage
     dsLayoutFactory.addBinding(6, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);  // g_Depth
-    dsLayoutFactory.addBinding(7, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);  // g_AO
+//    dsLayoutFactory.addBinding(7, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);  // g_AO
     _compositeGBufferDSLayout = dsLayoutFactory.build(
         _engine->device().handle(),
         VK_SHADER_STAGE_FRAGMENT_BIT
@@ -572,6 +574,7 @@ void DeferredLayer::createCompositePipeline()
         vkDestroyPipeline(dev, _compositePipeline, nullptr);
         vkDestroyPipelineLayout(dev, _compositePipelineLayout, nullptr);
         vkDestroyDescriptorSetLayout(dev, _compositeGBufferDSLayout, nullptr);
+        vkDestroyDescriptorSetLayout(dev, _compositeGBufferRTDSLayout, nullptr);
     });
 }
 
@@ -582,9 +585,23 @@ void DeferredLayer::createCompositePipelineRT()
         return;
     }
 
+    vulkan::factory::DescriptorSetLayout dsLayoutFactory;
+    dsLayoutFactory.addBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);  // g_Albedo
+    dsLayoutFactory.addBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);  // g_Normal
+    dsLayoutFactory.addBinding(2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);  // g_Material
+    dsLayoutFactory.addBinding(3, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);  // g_FresnelFlags
+    dsLayoutFactory.addBinding(4, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);  // g_SheenColor
+    dsLayoutFactory.addBinding(5, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);  // g_InputImage
+    dsLayoutFactory.addBinding(6, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);  // g_Depth
+    dsLayoutFactory.addBinding(7, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);  // g_AO
+    _compositeGBufferRTDSLayout = dsLayoutFactory.build(
+        _engine->device().handle(),
+        VK_SHADER_STAGE_FRAGMENT_BIT
+    );
+
     // Create pipeline layout with RT data binding
     vulkan::factory::PipelineLayout layoutFactory(_engine);
-    layoutFactory.addDescriptorSetLayout(_compositeGBufferDSLayout);
+    layoutFactory.addDescriptorSetLayout(_compositeGBufferRTDSLayout);
     layoutFactory.addDescriptorSetLayout(_fragmentFrameDataBinding->createLayout(VK_SHADER_STAGE_FRAGMENT_BIT));
     layoutFactory.addDescriptorSetLayout(_environmentDataBinding->createLayout());
     layoutFactory.addDescriptorSetLayout(_lightDataBinding->createLayout());
@@ -748,7 +765,8 @@ void DeferredLayer::renderCompositePass(
     vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, activePipeline);
 
     // Create G-buffer descriptor set
-    auto gbufferDS = frameResources.newDescriptorSet(_compositeGBufferDSLayout);
+    auto dsLayout = useRT ? _compositeGBufferRTDSLayout : _compositeGBufferDSLayout;
+    auto gbufferDS = frameResources.newDescriptorSet(dsLayout);
     gbufferDS->beginUpdate();
     gbufferDS->addImage(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
         gbuffer->image(0).get(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _gbufferSampler);
@@ -764,9 +782,12 @@ void DeferredLayer::renderCompositePass(
         inputImage, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _gbufferSampler);
     gbufferDS->addImage(6, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
         gbuffer->depthImage().get(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _gbufferSampler);
-    auto denoisedAoImg = _denoiseFilter->outputImage(_engine->currentFrameResourcesIndex());
-    gbufferDS->addImage(7, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-        denoisedAoImg.get(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _gbufferSampler);
+    if (useRT)
+    {
+        auto denoisedAoImg = _denoiseFilter->outputImage(_engine->currentFrameResourcesIndex());
+        gbufferDS->addImage(7, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+            denoisedAoImg.get(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _gbufferSampler);
+    }
     gbufferDS->endUpdate();
 
     // Create other descriptor sets

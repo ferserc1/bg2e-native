@@ -151,6 +151,7 @@ protected:
     VkPipelineLayout _compositePipelineRTLayout = VK_NULL_HANDLE;
 
     VkDescriptorSetLayout _compositeGBufferDSLayout = VK_NULL_HANDLE;
+    VkDescriptorSetLayout _compositeGBufferRTDSLayout = VK_NULL_HANDLE;
 
     std::unique_ptr<scene::vk::FrameDataBinding> _frameDataBinding;
     std::unique_ptr<scene::vk::FrameDataBinding> _fragmentFrameDataBinding;

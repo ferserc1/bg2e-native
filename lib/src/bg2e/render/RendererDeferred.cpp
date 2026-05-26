@@ -337,7 +337,10 @@ void RendererDeferred::cleanup() {
     }
     _skyboxImage.reset();
 
-    _rtDataBinding->cleanup();
+    if (_rtDataBinding)
+    {
+        _rtDataBinding->cleanup();
+    }
     _lightDataBinding->cleanup();
     _rtDataBinding.reset();
     _lightDataBinding.reset();
