@@ -83,10 +83,21 @@ std::shared_ptr<bg2e::scene::Node> StageScene::init()
 
     auto directionalLight = createLightNode(
         bg2e::base::Light::TypeDirectional,
-        -45.0f, 50.0f, 2.0f,
+        225.0f, 56.27f, 3.33f,
         bg2e::base::Color::White(),
         "Directional Light"
     );
+
+    // Optimize the directional light to allow a quick change to spot light
+    auto polarTrx = directionalLight->getComponent<bg2e::scene::PolarTransformControllerComponent>();
+    if (polarTrx)
+    {
+        polarTrx->setEulerX(58.27f);
+        polarTrx->setEulerY(40.0f);
+    }
+    directionalLight->light()->light().setIntensity(5.25f);
+    directionalLight->light()->light().setSpotAngle(30.2f);
+    directionalLight->light()->light().setSpotCutoff(24.4);
     _lightsNode->addChild(directionalLight);
 
     auto pointLight = createLightNode(

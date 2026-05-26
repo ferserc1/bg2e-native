@@ -63,49 +63,48 @@ bool LightEditor::draw()
 
     bool changed = false;
 
-    if (BasicWidgets::collapsingHeader(light.typeString().c_str()))
+
+    BasicWidgets::separator("Type");
+
+    if (Input::comboBox(
+        "Light Type",
+        s_lightTypeNames,
+        currentTypeIdx, false))
     {
-        BasicWidgets::separator("Type");
+        light.setType(lightTypeByIdx(currentTypeIdx));
+        changed = true;
+        if (_onChangedFunction) _onChangedFunction();
+    }
 
-        if (Input::comboBox(
-            "Light Type",
-            s_lightTypeNames,
-            currentTypeIdx, false))
-        {
-            light.setType(lightTypeByIdx(currentTypeIdx));
-            changed = true;
-            if (_onChangedFunction) _onChangedFunction();
-        }
+    BasicWidgets::separator("Color");
+    base::Color color = light.color();
+    if (Input::colorPicker("Light Color", color))
+    {
+        light.setColor(color);
+        changed = true;
+        if (_onChangedFunction) _onChangedFunction();
+    }
 
-        BasicWidgets::separator("Color");
-        base::Color color = light.color();
-        if (Input::colorPicker("Light Color", color))
-        {
-            light.setColor(color);
-            changed = true;
-            if (_onChangedFunction) _onChangedFunction();
-        }
+    BasicWidgets::separator("Intensity");
+    float intensity = light.intensity();
+    if (Input::sliderFloat(
+        "Light Intensity", &intensity, _intensityMin, _intensityMax))
+    {
+        light.setIntensity(intensity);
+        changed = true;
+        if (_onChangedFunction) _onChangedFunction();
+    }
 
-        BasicWidgets::separator("Intensity");
-        float intensity = light.intensity();
-        if (Input::sliderFloat(
-            "Light Intensity", &intensity, _intensityMin, _intensityMax))
-        {
-            light.setIntensity(intensity);
-            changed = true;
-            if (_onChangedFunction) _onChangedFunction();
-        }
-
-        BasicWidgets::separator("Spot");
-        bool castShadows = light.castShadows();
-        if (BasicWidgets::checkBox("Cast Shadows", &castShadows))
-        {
-            light.setCastShadows(castShadows);
-            changed = true;
-            if (_onChangedFunction) _onChangedFunction();
-        }
-
-        BasicWidgets::separator("Soft Shadows");
+    BasicWidgets::separator("Shadows");
+    bool castShadows = light.castShadows();
+    if (BasicWidgets::checkBox("Cast Shadows", &castShadows))
+    {
+        light.setCastShadows(castShadows);
+        changed = true;
+        if (_onChangedFunction) _onChangedFunction();
+    }
+    if (castShadows)
+    {
         float sourceSize = light.sourceSize();
         if (Input::sliderFloat("Source Size", &sourceSize, 0.01f, 5.0f))
         {
@@ -121,7 +120,11 @@ bool LightEditor::draw()
             changed = true;
             if (_onChangedFunction) _onChangedFunction();
         }
+    }
 
+    if (light.type() == base::Light::TypeSpot)
+    {
+        BasicWidgets::separator("Spot");
         float spotAngle = light.spotAngle();
         if (Input::sliderFloat("Spot Angle", &spotAngle, 1.0f, 90.0f))
         {

@@ -85,90 +85,94 @@ void EnvironmentSettings::init(
 
 
         bg2e::ui::BasicWidgets::separator("Lighting");
-        auto numLights = _appDelegate->stage()->lights().size();
-        std::vector<std::string> lightNames(numLights);
-        size_t i = 0;
-        std::generate(lightNames.begin(), lightNames.end(), [&]()
-        {
-            return "Light " + std::to_string(i++);
-        });
-        if (bg2e::ui::Input::comboBox(
-            "Lights in Scene",
-            lightNames,
-            _selectedLightIndex
-        )) {
-            _selectedLight = _appDelegate->stage()->lights()[_selectedLightIndex];
-        }
 
-        bg2e::base::Light::LightType type = bg2e::base::Light::TypeDisabled;
-        if (_selectedLight.get() != nullptr)
-        {
-            _lightEditor->setLightComponent(_selectedLight);
-            type = _selectedLight->light().type();
-        }
-        if (numLights < _appDelegate->stage()->maxLights() &&
-            bg2e::ui::BasicWidgets::button("Add Light")
-        ) {
+        if (bg2e::ui::BasicWidgets::button("Add Light")) {
             _appDelegate->stage()->addLight();
         }
 
-        if (_lightEditor->draw())
+        auto numLights = _appDelegate->stage()->lights().size();
+        if (numLights > 0)
         {
-            auto lightDrwComp = _selectedLight->ownerNode()->drawable();
-            auto lightDrw = lightDrwComp != nullptr ? lightDrwComp->drawable() : nullptr;
-            if (lightDrw)
+            std::vector<std::string> lightNames(numLights);
+            size_t i = 0;
+            std::generate(lightNames.begin(), lightNames.end(), [&]()
             {
-                lightDrw->material(0).setAlbedo(_selectedLight->light().color());
-                lightDrw->updateMaterials();
+                return "Light " + std::to_string(i++);
+            });
+            if (bg2e::ui::Input::comboBox(
+                "Lights in Scene",
+                lightNames,
+                _selectedLightIndex
+            )) {
+                _selectedLight = _appDelegate->stage()->lights()[_selectedLightIndex];
+            }
+
+            // Ensure that if _selectedLightIndex is valid, the light is visible in the component
+           if (!_selectedLight)
+           {
+               _selectedLight = _appDelegate->stage()->lights()[_selectedLightIndex];
+           }
+
+            if (bg2e::ui::BasicWidgets::collapsingHeader(lightNames[_selectedLightIndex]))
+            {
+                bg2e::base::Light::LightType type = bg2e::base::Light::TypeDisabled;
+                _lightEditor->setLightComponent(_selectedLight);
+                type = _selectedLight->light().type();
+                if (_lightEditor->draw())
+                {
+                    auto lightDrwComp = _selectedLight->ownerNode()->drawable();
+                    auto lightDrw = lightDrwComp != nullptr ? lightDrwComp->drawable() : nullptr;
+                    if (lightDrw)
+                    {
+                        lightDrw->material(0).setAlbedo(_selectedLight->light().color());
+                        lightDrw->updateMaterials();
+                    }
+                }
+
+                bg2e::ui::BasicWidgets::separator("Position and Orientation");
+                auto polarCtrl = _selectedLight->ownerNode()->getComponent<bg2e::scene::PolarTransformControllerComponent>();
+                if (polarCtrl)
+                {
+                    float azimuth = polarCtrl->azimuth();
+                    float elevation = polarCtrl->elevation();
+                    float distance = polarCtrl->distance();
+                    if (bg2e::ui::Input::sliderFloat("Azimuth", &azimuth, 0.0f, 360.0f))
+                    {
+                        polarCtrl->setAzimuth(azimuth);
+                    }
+                    if (bg2e::ui::Input::sliderFloat("Elevation", &elevation, -90.0f, 90.0f))
+                    {
+                        polarCtrl->setElevation(elevation);
+                    }
+                    if (bg2e::ui::Input::sliderFloat("Distance", &distance, 0.0f, 50.0f))
+                    {
+                        polarCtrl->setDistance(distance);
+                    }
+
+                    float eulerX = polarCtrl->eulerX();
+                    float eulerY = polarCtrl->eulerY();
+                    float eulerZ = polarCtrl->eulerZ();
+                    if (bg2e::ui::Input::sliderFloat("Euler X", &eulerX, -360.0f, 360.0f))
+                    {
+                        polarCtrl->setEulerX(eulerX);
+                    }
+                    if (bg2e::ui::Input::sliderFloat("Euler Y", &eulerY, -360.0f, 360.0f))
+                    {
+                        polarCtrl->setEulerY(eulerY);
+                    }
+                    if (bg2e::ui::Input::sliderFloat("Euler Z", &eulerZ, -360.0f, 360.0f))
+                    {
+                        polarCtrl->setEulerZ(eulerZ);
+                    }
+
+                    if (bg2e::ui::BasicWidgets::button("Remove Light"))
+                    {
+                        _appDelegate->stage()->removeLight(_selectedLightIndex);
+                        _selectedLight.reset();
+                    }
+                }
             }
         }
-
-        if (_selectedLight.get() != nullptr)
-        {
-            bg2e::ui::BasicWidgets::separator("Position and Orientation");
-            auto polarCtrl = _selectedLight->ownerNode()->getComponent<bg2e::scene::PolarTransformControllerComponent>();
-            if (polarCtrl)
-            {
-                float azimuth = polarCtrl->azimuth();
-                float elevation = polarCtrl->elevation();
-                float distance = polarCtrl->distance();
-                if (bg2e::ui::Input::sliderFloat("Azimuth", &azimuth, 0.0f, 360.0f))
-                {
-                    polarCtrl->setAzimuth(azimuth);
-                }
-                if (bg2e::ui::Input::sliderFloat("Elevation", &elevation, -90.0f, 90.0f))
-                {
-                    polarCtrl->setElevation(elevation);
-                }
-                if (bg2e::ui::Input::sliderFloat("Distance", &distance, 0.0f, 50.0f))
-                {
-                    polarCtrl->setDistance(distance);
-                }
-
-                float eulerX = polarCtrl->eulerX();
-                float eulerY = polarCtrl->eulerY();
-                float eulerZ = polarCtrl->eulerZ();
-                if (bg2e::ui::Input::sliderFloat("Euler X", &eulerX, -360.0f, 360.0f))
-                {
-                    polarCtrl->setEulerX(eulerX);
-                }
-                if (bg2e::ui::Input::sliderFloat("Euler Y", &eulerY, -360.0f, 360.0f))
-                {
-                    polarCtrl->setEulerY(eulerY);
-                }
-                if (bg2e::ui::Input::sliderFloat("Euler Z", &eulerZ, -360.0f, 360.0f))
-                {
-                    polarCtrl->setEulerZ(eulerZ);
-                }
-
-                if (bg2e::ui::BasicWidgets::button("Remove Light"))
-                {
-                    _appDelegate->stage()->removeLight(_selectedLightIndex);
-                    _selectedLight.reset();
-                }
-            }
-        }
-
 
         bg2e::ui::BasicWidgets::separator("Floor");
         auto floorVisible = _appDelegate->stage()->isFloorVisible();
