@@ -31,6 +31,7 @@ void EnvironmentSettings::init(
     setTitle("Environment Options");
 
     _lightEditor = std::make_shared<bg2e::ui::LightEditor>();
+    _polarEditor = std::make_shared<bg2e::ui::PolarTransformControllerEditor>();
     
     setDrawFunction([&, renderer, environment]() {
         auto drawSkybox = renderer->drawSkybox();
@@ -133,37 +134,8 @@ void EnvironmentSettings::init(
                 auto polarCtrl = _selectedLight->ownerNode()->getComponent<bg2e::scene::PolarTransformControllerComponent>();
                 if (polarCtrl)
                 {
-                    float azimuth = polarCtrl->azimuth();
-                    float elevation = polarCtrl->elevation();
-                    float distance = polarCtrl->distance();
-                    if (bg2e::ui::Input::sliderFloat("Azimuth", &azimuth, 0.0f, 360.0f))
-                    {
-                        polarCtrl->setAzimuth(azimuth);
-                    }
-                    if (bg2e::ui::Input::sliderFloat("Elevation", &elevation, -90.0f, 90.0f))
-                    {
-                        polarCtrl->setElevation(elevation);
-                    }
-                    if (bg2e::ui::Input::sliderFloat("Distance", &distance, 0.0f, 50.0f))
-                    {
-                        polarCtrl->setDistance(distance);
-                    }
-
-                    float eulerX = polarCtrl->eulerX();
-                    float eulerY = polarCtrl->eulerY();
-                    float eulerZ = polarCtrl->eulerZ();
-                    if (bg2e::ui::Input::sliderFloat("Euler X", &eulerX, -360.0f, 360.0f))
-                    {
-                        polarCtrl->setEulerX(eulerX);
-                    }
-                    if (bg2e::ui::Input::sliderFloat("Euler Y", &eulerY, -360.0f, 360.0f))
-                    {
-                        polarCtrl->setEulerY(eulerY);
-                    }
-                    if (bg2e::ui::Input::sliderFloat("Euler Z", &eulerZ, -360.0f, 360.0f))
-                    {
-                        polarCtrl->setEulerZ(eulerZ);
-                    }
+                    _polarEditor->setComponent(polarCtrl);
+                    _polarEditor->draw();
 
                     if (bg2e::ui::BasicWidgets::button("Remove Light"))
                     {

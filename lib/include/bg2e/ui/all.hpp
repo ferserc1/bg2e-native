@@ -25,6 +25,7 @@
 #include <bg2e/ui/DrawableEditor.hpp>
 #include <bg2e/ui/LightEditor.hpp>
 #include <bg2e/ui/MaterialEditor.hpp>
+#include <bg2e/ui/PolarTransformControllerEditor.hpp>
 #include <bg2e/ui/Menu.hpp>
 #include <bg2e/ui/Window.hpp>
 #include <bg2e/ui/Input.hpp>

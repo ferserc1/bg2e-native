@@ -19,37 +19,34 @@
 #pragma once
 
 #include <bg2e/common.hpp>
-#include <bg2e/base/Light.hpp>
-#include <bg2e/manipulation/SelectionManager.hpp>
+#include <bg2e/scene/PolarTransformController.hpp>
 
 #include <memory>
 #include <functional>
 
 namespace bg2e {
 namespace scene {
-    class LightComponent;
+    class PolarTransformControllerComponent;
 }
 namespace ui {
 
-class BG2E_API LightEditor {
+class BG2E_API PolarTransformControllerEditor {
 public:
-    virtual ~LightEditor();
+    virtual ~PolarTransformControllerEditor();
 
-    void setIntensityRange(float min, float max);
-
-    void setLightComponent(scene::LightComponent* light)
+    void setComponent(scene::PolarTransformControllerComponent * comp)
     {
-        setLightComponent(std::dynamic_pointer_cast<scene::LightComponent>(light->shared_from_this()));
+        setComponent(std::dynamic_pointer_cast<scene::PolarTransformControllerComponent>(comp->shared_from_this()));
     }
 
-    void setLightComponent(const std::shared_ptr<scene::LightComponent>& light)
+    void setComponent(const std::shared_ptr<scene::PolarTransformControllerComponent> & component)
     {
-        _lightComponent = light;
+        _component = component;
     }
 
-    [[nodiscard]] std::weak_ptr<scene::LightComponent> getLightComponent() const
+    [[nodiscard]] std::weak_ptr<scene::PolarTransformControllerComponent> getComponent() const
     {
-        return _lightComponent;
+        return _component;
     }
 
     bool draw();
@@ -59,10 +56,7 @@ public:
     inline void onChanged(std::function<void()> cb) { _onChangedFunction = cb; }
 
 protected:
-    std::weak_ptr<scene::LightComponent> _lightComponent;
-
-    float _intensityMin = 0.0f;
-    float _intensityMax = 30.0f;
+    std::weak_ptr<scene::PolarTransformControllerComponent> _component;
 
     std::function<void()> _onChangedFunction;
 };
