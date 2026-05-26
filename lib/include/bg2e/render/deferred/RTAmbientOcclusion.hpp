@@ -104,7 +104,7 @@ private:
     float _radius = 0.56f;
     float _bias = 0.017f;
     float _falloff = 1.0f;
-    float _bounceAttenuation = 0.5f;
+    float _bounceAttenuation = 0.35f;
 
     std::vector<std::shared_ptr<vulkan::Image>> _aoImages;
 

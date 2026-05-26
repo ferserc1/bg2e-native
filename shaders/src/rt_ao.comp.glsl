@@ -87,16 +87,22 @@ void main() {
 
             // Cast a ray from worldPos in the random direction. If hit, add occlusion
             float hitDistance;
-            if (queryAO(tlas, origin, normal, rayDir, pc.radius, pc.bias, hitDistance))
+            if (queryAO(tlas, origin, bounceNormal, rayDir, pc.radius, pc.bias, hitDistance))
             {
+                float distanceFactor = 1.0 - clamp(hitDistance / pc.radius, 0.0, 1.0);
+                float falloffFactor = pow(distanceFactor, pc.falloff);
                 vec3 hitPosition = origin + rayDir * hitDistance;
-                occlusion += contribution;
+                occlusion += contribution * falloffFactor;
                 origin = hitPosition;
+                contribution *= pc.bounceAttenuation;
+
+                // Cheap aproximation for the bounce normal
+                bounceNormal = normalize(-rayDir);
             }
         }
     }
 
-    float ao = 1.0 - (occlusion / float(pc.sampleCount));
+    float ao = 1.0 - clamp((occlusion / float(pc.sampleCount)), 0.0, 1.0);
 
     imageStore(aoOutput, pixelCoord, vec4(ao, 0.0, 0.0, 0.0));
 }

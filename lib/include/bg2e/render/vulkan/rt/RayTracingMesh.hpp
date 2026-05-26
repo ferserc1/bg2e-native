@@ -37,21 +37,21 @@ public:
 
     void cleanup();
 
-    bool isBuilt() const;
+    [[nodiscard]] bool isBuilt() const;
 
-    uint32_t firstIndex() const;
-    uint32_t indexCount() const;
-    uint32_t triangleCount() const;
+    [[nodiscard]] uint32_t firstIndex() const;
+    [[nodiscard]] uint32_t indexCount() const;
+    [[nodiscard]] uint32_t triangleCount() const;
 
-    VkDeviceAddress vertexDeviceAddress() const;
-    VkDeviceAddress indexDeviceAddress() const;
+    [[nodiscard]] VkDeviceAddress vertexDeviceAddress() const;
+    [[nodiscard]] VkDeviceAddress indexDeviceAddress() const;
 
-    VkFormat positionFormat() const;
-    uint32_t vertexStride() const;
-    VkDeviceSize positionOffset() const;
+    [[nodiscard]] VkFormat positionFormat() const;
+    [[nodiscard]] uint32_t vertexStride() const;
+    [[nodiscard]] VkDeviceSize positionOffset() const;
 
-    VkAccelerationStructureKHR handle() const;
-    VkDeviceAddress deviceAddress() const;
+    [[nodiscard]] VkAccelerationStructureKHR handle() const;
+    [[nodiscard]] VkDeviceAddress deviceAddress() const;
 
 protected:
     Engine* _engine = nullptr;

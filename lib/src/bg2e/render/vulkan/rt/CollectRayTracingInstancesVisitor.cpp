@@ -48,23 +48,26 @@ void CollectRayTracingInstancesVisitor::visit(scene::Node * node)
     {
         for (uint32_t i = 0; i < drw->submeshesCount(); ++i)
         {
-            const auto & rtMesh = drw->rayTracingMesh(i);
-            if (!rtMesh)
+            if (drw->submeshVisibility(i))
             {
-                std::cerr << "WARN: invalid rayTracingMesh found in submesh. Check Drawable initialization ("
-                    << node->name() << " - "
-                    << drw->name() << ")" << std::endl;
-                continue;
+                const auto & rtMesh = drw->rayTracingMesh(i);
+                if (!rtMesh)
+                {
+                    std::cerr << "WARN: invalid rayTracingMesh found in submesh. Check Drawable initialization ("
+                        << node->name() << " - "
+                        << drw->name() << ")" << std::endl;
+                    continue;
+                }
+                auto mat = mat4ToVkTransformMatrix(_currentTransform * drw->submeshTransform(i));
+                _instances.push_back({
+                    .transform = mat,
+                    .instanceCustomIndex = 0,
+                    .mask = 0xFF,
+                    .instanceShaderBindingTableRecordOffset = 0,
+                    .flags = VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR,
+                    .accelerationStructureReference = rtMesh->deviceAddress()
+                });
             }
-            auto mat = mat4ToVkTransformMatrix(_currentTransform * drw->submeshTransform(i));
-            _instances.push_back({
-                .transform = mat,
-                .instanceCustomIndex = 0,
-                .mask = 0xFF,
-                .instanceShaderBindingTableRecordOffset = 0,
-                .flags = VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR,
-                .accelerationStructureReference = rtMesh->deviceAddress()
-            });
         }
     }
 }
