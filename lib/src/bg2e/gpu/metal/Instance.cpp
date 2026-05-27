@@ -23,6 +23,8 @@ namespace bg2e {
 namespace gpu {
 namespace metal {
 
+#if BG2E_IS_MAC
+
 Instance::Instance()
 {
 }
@@ -71,6 +73,23 @@ void Instance::assertMetalSupport()
         throw std::runtime_error("No Metal compatible devices available");
     }
 }
+
+#else
+
+Instance::Instance()
+{
+}
+
+void Instance::setApplicationName(const std::string&) { }
+const std::string& Instance::applicationName() const { return _applicationName; }
+void Instance::enableDebugMode(bool) { }
+bool Instance::debugModeEnabled() const { return false; }
+void Instance::create(SDL_Window* window) {}
+void Instance::create() {}
+void Instance::cleanup() { }
+void Instance::assertMetalSupport() {}
+
+#endif
 
 }
 }

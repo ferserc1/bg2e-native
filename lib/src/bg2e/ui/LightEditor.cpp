@@ -64,7 +64,7 @@ bool LightEditor::draw()
     bool changed = false;
 
 
-    BasicWidgets::separator("Type");
+    BasicWidgets::separator("Basic properties");
 
     if (Input::comboBox(
         "Light Type",
@@ -76,7 +76,6 @@ bool LightEditor::draw()
         if (_onChangedFunction) _onChangedFunction();
     }
 
-    BasicWidgets::separator("Color");
     base::Color color = light.color();
     if (Input::colorPicker("Light Color", color))
     {
@@ -85,7 +84,6 @@ bool LightEditor::draw()
         if (_onChangedFunction) _onChangedFunction();
     }
 
-    BasicWidgets::separator("Intensity");
     float intensity = light.intensity();
     if (Input::sliderFloat(
         "Light Intensity", &intensity, _intensityMin, _intensityMax))
