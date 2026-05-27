@@ -17,26 +17,37 @@
  */
 
 #include <bg2e/gpu/Factory.hpp>
+#include <bg2e/base/PlatformTools.hpp>
+#include <bg2e/gpu/vk/Backend.hpp>
+#include <bg2e/gpu/metal/Backend.hpp>
 
 namespace bg2e {
 namespace gpu {
 
-BackendType Factory::_defaultType = BackendType::Vulkan;
+std::unique_ptr<Backend> Factory::_backend;
 
-std::unique_ptr<Backend> Factory::create(BackendType type) {
-    return nullptr;
-}
-
-void Factory::setDefault(BackendType type) {
-    _defaultType = type;
-}
-
-Backend& Factory::defaultBackend() {
-    static Backend* instance = nullptr;
-    if (!instance) {
-        instance = &defaultBackend();
+void Factory::init(BackendType type) {
+    if (type == BackendType::Vulkan)
+    {
+        _backend = std::make_unique<vk::Backend>();
     }
-    return *instance;
+    else if (type == BackendType::Metal && base::PlatformTools::currentPlatform() == base::Platform::macOS)
+    {
+        _backend = std::make_unique<metal::Backend>();
+    }
+    else
+    {
+        throw std::runtime_error("Could not create backend. Maybe the specified backend is not available.");
+    }
+}
+
+Backend* Factory::backend()
+{
+    if (!_backend)
+    {
+        throw std::runtime_error("Backend not initialized");
+    }
+    return _backend.get();
 }
 
 }

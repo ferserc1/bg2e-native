@@ -52,8 +52,11 @@ static const bool is_linux = true;
 namespace bg2e {
 namespace base {
 
+enum class Platform { macOS, Windows, Linux };
+
 class BG2E_API PlatformTools {
 public:
+    static Platform currentPlatform();
     static std::filesystem::path shaderPath();
     static std::filesystem::path assetPath();
     static std::filesystem::path settingsPath();

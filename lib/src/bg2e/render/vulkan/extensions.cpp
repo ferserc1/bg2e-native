@@ -59,7 +59,7 @@ void loadInstanceExtensions(VkInstance instance, bool offscreen)
 
     if (base::Log::isDebug())
     {
-        setDebugUtilsObjectName_OPT = loadExtension<PFN_vkSetDebugUtilsObjectNameEXT>(instance, "vkSetDebugUtilsObjectNameEXT", true);
+        setDebugUtilsObjectName = loadExtension<PFN_vkSetDebugUtilsObjectNameEXT>(instance, "vkSetDebugUtilsObjectNameEXT", true);
     }
 }
 
@@ -209,7 +209,7 @@ PFN_vkGetDeferredOperationResultKHR                    getDeferredOperationResul
 PFN_vkDeferredOperationJoinKHR                         deferredOperationJoin;
 
 // VK_EXT_DEBUG_UTILS_EXTENSION_NAME
-PFN_vkSetDebugUtilsObjectNameEXT                       setDebugUtilsObjectName_OPT;
+PFN_vkSetDebugUtilsObjectNameEXT                       setDebugUtilsObjectName;
 
 }
 }

@@ -376,7 +376,7 @@ protected:
         bg2e::render::vulkan::factory::PipelineLayout layoutFactory(_engine);
         layoutFactory.addDescriptorSetLayout(_sceneDSLayout);
         layoutFactory.addDescriptorSetLayout(_objectDSLayout);
-        _layout = layoutFactory.build();
+        _layout = layoutFactory.build("Example08MultiColorAttachments::PipelineLayout");
         
         plFactory.setDepthFormat(_engine->swapchain().depthImageFormat());
         plFactory.enableDepthtest(true, VK_COMPARE_OP_LESS);
@@ -385,7 +385,7 @@ protected:
         plFactory.disableMultisample();
         
         plFactory.setColorAttachmentFormat(_colorAttachments->attachmentFormats());
-		_pipeline = plFactory.build(_layout);
+		_pipeline = plFactory.build(_layout, "Example08MultiColorAttachments::Pipeline");
   
 		_engine->cleanupManager().push([&](VkDevice dev) {
 			vkDestroyPipeline(dev, _pipeline, nullptr);

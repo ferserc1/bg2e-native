@@ -67,6 +67,17 @@ std::string bg2e_base_platform_tools_macos_resources_path()
 
 #endif
 
+bg2e::base::Platform bg2e::base::PlatformTools::currentPlatform()
+{
+#ifdef BG2E_IS_MAC
+    return Platform::macOS;
+#elif defined BG2E_IS_WINDOWS
+    return Platform::Windows;
+#else
+    return Platform::Linux;
+#endif
+}
+
 std::filesystem::path bg2e::base::PlatformTools::shaderPath()
 {
 #ifdef BG2E_IS_MAC

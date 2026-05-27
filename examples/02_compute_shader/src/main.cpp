@@ -59,10 +59,10 @@ public:
         
         layoutFactory.addDescriptorSetLayout(descriptorSetLayout);
         
-        computeLayout = layoutFactory.build();
+        computeLayout = layoutFactory.build("Example02ComputeShader::ComputePipelineLayout");
         
         plFactory.setShader("compute_shader/test.comp.spv");
-        computePipeline = plFactory.build(computeLayout);
+        computePipeline = plFactory.build(computeLayout, "Example02ComputeShader::ComputePipeline");
         
         
         // To execute a command shader independent of the rendering loop, we cannot
@@ -228,10 +228,10 @@ protected:
         
         layoutFactory.addDescriptorSetLayout(_textureDSLayout);
         
-        _layout = layoutFactory.build();
+        _layout = layoutFactory.build("Example02ComputeShader::TextureDisplayPipelineLayout");
         
         plFactory.setColorAttachmentFormat(_engine->swapchain().imageFormat());
-        _pipeline = plFactory.build(_layout);
+        _pipeline = plFactory.build(_layout, "Example02ComputeShader::TextureDisplayPipeline");
         
         _engine->cleanupManager().push([&](VkDevice dev) {
             vkDestroyPipeline(dev, _pipeline, nullptr);

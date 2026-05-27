@@ -128,11 +128,11 @@ void RTAmbientOcclusion::createPipeline()
         sizeof(AOPushConstants),
         VK_SHADER_STAGE_COMPUTE_BIT
     );
-    _pipelineLayout = layoutFactory.build();
+    _pipelineLayout = layoutFactory.build("RTAmbientOcclusion::PipelineLayout");
 
     vulkan::factory::ComputePipeline plFactory(_engine);
     plFactory.setShader("rt_ao.comp.spv");
-    _pipeline = plFactory.build(_pipelineLayout);
+    _pipeline = plFactory.build(_pipelineLayout, "RTAmbientOcclusion::Pipeline");
 
     _engine->cleanupManager().push([&](VkDevice dev) {
         vkDestroyPipeline(dev, _pipeline, nullptr);

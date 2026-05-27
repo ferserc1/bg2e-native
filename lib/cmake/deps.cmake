@@ -40,6 +40,9 @@ set(TINYOBJ_INCLUDE "${THIRD_PARTY_PATH}/tinyobj")
 # cgltf
 set(CGLTF_INCLUDE "${THIRD_PARTY_PATH}/cgltf")
 
+# metal-cpp (header-only, macOS only)
+set(METALCPP_INCLUDE "${THIRD_PARTY_PATH}/metal-cpp")
+
 # Export final variables
 set(BG2E_THIRD_PARTY_INCLUDE_PATH
     "${BG2IO_INCLUDE}"
@@ -49,6 +52,7 @@ set(BG2E_THIRD_PARTY_INCLUDE_PATH
     "${STBIMAGE_INCLUDE}"
     "${TINYOBJ_INCLUDE}"
     "${CGLTF_INCLUDE}"
+    "${METALCPP_INCLUDE}"
     #"${SIMDJSON_INCLUDE}"
     #"${FASTGLTF_INCLUDE}"
     # Other dependency paths

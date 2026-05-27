@@ -35,7 +35,7 @@ public:
     void setShader(const std::string& fileName, const std::string& entryPoint = "main", const std::string& basePath = "");
     void setShader(VkShaderModule shaderModule, const std::string& entryPoint = "main");
 
-    VkPipeline build(VkPipelineLayout layout);
+    VkPipeline build(VkPipelineLayout layout, const std::string& name);
 
 protected:
     Engine * _engine;

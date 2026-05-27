@@ -62,6 +62,7 @@ elseif(APPLE)
         "-framework Cocoa"
         "-framework AppKit"
         "-framework Metal"
+        "-framework QuartzCore"
         "-framework OpenGL"
         "-framework Foundation"
         "-framework CoreServices"

@@ -309,7 +309,7 @@ protected:
         layoutFactory.addDescriptorSetLayout(objectDSLayout);
         layoutFactory.addDescriptorSetLayout(envDSLayout);
         layoutFactory.addPushConstantRange(0, sizeof(PushConstants), VK_SHADER_STAGE_FRAGMENT_BIT);
-        _layout = layoutFactory.build();
+        _layout = layoutFactory.build("Example09Drawable::PipelineLayout");
         
         plFactory.setDepthFormat(_engine->swapchain().depthImageFormat());
         plFactory.enableDepthtest(true, VK_COMPARE_OP_LESS);
@@ -317,7 +317,7 @@ protected:
         plFactory.setCullMode(VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_COUNTER_CLOCKWISE);
         plFactory.disableMultisample();
         plFactory.setColorAttachmentFormat(_colorAttachments->attachmentFormats());
-		_pipeline = plFactory.build(_layout);
+		_pipeline = plFactory.build(_layout, "Example09Drawable::Pipeline");
   
 		_engine->cleanupManager().push([&, objectDSLayout, envDSLayout, frameDSLayout](VkDevice dev) {
 			vkDestroyPipeline(dev, _pipeline, nullptr);

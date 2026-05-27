@@ -27,13 +27,12 @@ namespace gpu {
 
 class BG2E_API Factory {
 public:
-    static std::unique_ptr<Backend> create(BackendType type);
+    static void init(BackendType type);
 
-    static void setDefault(BackendType type);
-    static Backend& defaultBackend();
+    static Backend* backend();
 
 private:
-    static BackendType _defaultType;
+    static std::unique_ptr<Backend> _backend;
 };
 
 }

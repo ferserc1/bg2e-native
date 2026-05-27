@@ -266,7 +266,7 @@ protected:
         plFactory.inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
         plFactory.setCullMode(VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_COUNTER_CLOCKWISE);
 		plFactory.setColorAttachmentFormat(_colorImage->format());
-		_pipeline = plFactory.build(_layout);
+		_pipeline = plFactory.build(_layout, "Example15OffscreenRender::Pipeline");
 
 		_engine->cleanupManager().push([&](VkDevice dev) {
 			vkDestroyPipeline(dev, _pipeline, nullptr);

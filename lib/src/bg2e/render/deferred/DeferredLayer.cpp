@@ -483,7 +483,7 @@ void DeferredLayer::createGBufferPipeline()
         sizeof(CompositePushConstants),
         VK_SHADER_STAGE_FRAGMENT_BIT
     );
-    _gbufferPipelineLayout = layoutFactory.build();
+    _gbufferPipelineLayout = layoutFactory.build("DeferredLayer::GBufferPipelineLayout");
 
     // Create G-buffer pipeline
     vulkan::factory::GraphicsPipeline plFactory(_engine);
@@ -511,7 +511,7 @@ void DeferredLayer::createGBufferPipeline()
     // 3 color attachment formats
     plFactory.setColorAttachmentFormat(_gbuffers[0]->formats());
 
-    _gbufferPipeline = plFactory.build(_gbufferPipelineLayout);
+    _gbufferPipeline = plFactory.build(_gbufferPipelineLayout, "DeferredLayer::GBufferPipeline");
 
     _engine->cleanupManager().push([&](VkDevice dev) {
         vkDestroyPipeline(dev, _gbufferPipeline, nullptr);
@@ -550,7 +550,7 @@ void DeferredLayer::createCompositePipeline()
         sizeof(CompositePushConstants),
         VK_SHADER_STAGE_FRAGMENT_BIT
     );
-    _compositePipelineLayout = layoutFactory.build();
+    _compositePipelineLayout = layoutFactory.build("DeferredLayer::CompositePipelineLayout");
 
     // Create composite pipeline
     vulkan::factory::GraphicsPipeline plFactory(_engine);
@@ -568,7 +568,7 @@ void DeferredLayer::createCompositePipeline()
     plFactory.setColorAttachmentFormat(_outputFormat);
     plFactory.inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
 
-    _compositePipeline = plFactory.build(_compositePipelineLayout);
+    _compositePipeline = plFactory.build(_compositePipelineLayout, "DeferredLayer::CompositePipeline");
 
     _engine->cleanupManager().push([&](VkDevice dev) {
         vkDestroyPipeline(dev, _compositePipeline, nullptr);
@@ -612,7 +612,7 @@ void DeferredLayer::createCompositePipelineRT()
         sizeof(CompositePushConstants),
         VK_SHADER_STAGE_FRAGMENT_BIT
     );
-    _compositePipelineRTLayout = layoutFactory.build();
+    _compositePipelineRTLayout = layoutFactory.build("DeferredLayer::CompositeRTPipelineLayout");
 
     // Create composite RT pipeline
     vulkan::factory::GraphicsPipeline plFactory(_engine);
@@ -630,7 +630,7 @@ void DeferredLayer::createCompositePipelineRT()
     plFactory.setColorAttachmentFormat(_outputFormat);
     plFactory.inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
 
-    _compositePipelineRT = plFactory.build(_compositePipelineRTLayout);
+    _compositePipelineRT = plFactory.build(_compositePipelineRTLayout, "DeferredLayer::CompositeRTPipeline");
 
     _engine->cleanupManager().push([&](VkDevice dev) {
         vkDestroyPipeline(dev, _compositePipelineRT, nullptr);
@@ -651,7 +651,7 @@ void DeferredLayer::createDebugPipeline()
 
     vulkan::factory::PipelineLayout layoutFactory(_engine);
     layoutFactory.addDescriptorSetLayout(_debugDSLayout);
-    _debugPipelineLayout = layoutFactory.build();
+    _debugPipelineLayout = layoutFactory.build("DeferredLayer::DebugPipelineLayout");
 
     vulkan::factory::GraphicsPipeline plFactory(_engine);
 
@@ -667,7 +667,7 @@ void DeferredLayer::createDebugPipeline()
     plFactory.setColorAttachmentFormat(_outputFormat);
     plFactory.inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
 
-    _debugPipeline = plFactory.build(_debugPipelineLayout);
+    _debugPipeline = plFactory.build(_debugPipelineLayout, "DeferredLayer::DebugPipeline");
 
     _engine->cleanupManager().push([&](VkDevice dev) {
         vkDestroyPipeline(dev, _debugPipeline, nullptr);

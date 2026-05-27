@@ -112,21 +112,10 @@ void SelectionHighlight::createPipeline()
     plFactory.addShader("selection_highlight.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
     plFactory.addShader("selection_highlight.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
 
-    VkPushConstantRange pushConstantRange;
-    pushConstantRange.offset = 0;
-    pushConstantRange.size = sizeof(FrameData);
-    pushConstantRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-
-    auto layoutInfo = Info::pipelineLayoutInfo();
-    layoutInfo.pPushConstantRanges = &pushConstantRange;
-    layoutInfo.pushConstantRangeCount = 1;
-
-    VK_ASSERT(vkCreatePipelineLayout(
-        _engine->device().handle(),
-        &layoutInfo,
-        nullptr,
-        &_pipelineLayout
-    ));
+    render::vulkan::factory::PipelineLayout layoutFactory(_engine);
+    layoutFactory.addPushConstantRange(0, sizeof(FrameData), VK_SHADER_STAGE_VERTEX_BIT);
+    auto pipelineLayout = layoutFactory.build("SelectionHighlight::PipelineLayout");
+    _pipelineLayout = pipelineLayout;
 
     plFactory.setInputState<render::vulkan::geo::Mesh>();
     plFactory.setColorAttachmentFormat(_engine->swapchain().imageFormat());
@@ -138,12 +127,12 @@ void SelectionHighlight::createPipeline()
     plFactory.enableBlendingAlphablend();
     plFactory.multisampling.rasterizationSamples = _sampleCount;
 
-    _pipeline = plFactory.build(_pipelineLayout);
-
-    _engine->cleanupManager().push([&](VkDevice dev)
+    auto pipeline = plFactory.build(_pipelineLayout, "SelectionHighlight::Pipeline");
+    _pipeline = pipeline;
+    _engine->cleanupManager().push([&, pipeline, pipelineLayout](VkDevice dev)
     {
-        vkDestroyPipeline(dev, _pipeline, nullptr);
-        vkDestroyPipelineLayout(dev, _pipelineLayout, nullptr);
+        vkDestroyPipeline(dev, pipeline, nullptr);
+        vkDestroyPipelineLayout(dev, pipelineLayout, nullptr);
     });
 }
 

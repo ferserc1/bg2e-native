@@ -316,7 +316,7 @@ void RendererBasicForward::createPipelines(
         sizeof(PushConstants),
         VK_SHADER_STAGE_FRAGMENT_BIT
     );
-    outLayout = layoutFactory.build();
+    outLayout = layoutFactory.build("RendererBasicForward::PipelineLayout");
 
     auto createPipeline = [&](bool isTransparent, bool isSolidTransparent) -> VkPipeline {
         bg2e::render::vulkan::factory::GraphicsPipeline plFactory(engine);
@@ -354,7 +354,7 @@ void RendererBasicForward::createPipelines(
         {
             plFactory.enableBlendingAlphablend();
         }
-        auto result = plFactory.build(outLayout);
+        auto result = plFactory.build(outLayout, "RendererBasicForward::Pipeline");
 
         engine->cleanupManager().push([&, result](VkDevice dev) {
             vkDestroyPipeline(dev, result, nullptr);

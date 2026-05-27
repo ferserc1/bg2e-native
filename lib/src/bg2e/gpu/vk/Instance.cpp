@@ -101,6 +101,9 @@ void Instance::create(SDL_Window* sdlWindow)
         throw std::runtime_error("Instance::create(): missing required instance extensions");
     }
 
+    _presentationMode = PresentationMode::Windowed;
+    _window = sdlWindow;
+
     VkApplicationInfo appInfo{};
     appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
     appInfo.pApplicationName = _applicationName.c_str();
@@ -147,6 +150,8 @@ void Instance::create()
     {
         throw std::runtime_error("Instance::create(): missing required instance extensions");
     }
+
+    _presentationMode = PresentationMode::Offscreen;
 
     VkApplicationInfo appInfo{};
     appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;

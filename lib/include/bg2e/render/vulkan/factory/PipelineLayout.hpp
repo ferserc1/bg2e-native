@@ -38,7 +38,7 @@ public:
         addPushConstantRange({ .stageFlags = stageFlags, .offset = offset, .size = uint32_t(size) });
     }
     
-    VkPipelineLayout build();
+    VkPipelineLayout build(const std::string& name);
     
     void reset();
     

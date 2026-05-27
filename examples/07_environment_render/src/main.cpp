@@ -468,14 +468,14 @@ protected:
         bg2e::render::vulkan::factory::PipelineLayout layoutFactory(_engine);
         layoutFactory.addDescriptorSetLayout(_sceneDSLayout);
         layoutFactory.addDescriptorSetLayout(_objectDSLayout);
-        _layout = layoutFactory.build();
+        _layout = layoutFactory.build("Example07EnvironmentRender::PipelineLayout");
         
         plFactory.setDepthFormat(_engine->swapchain().depthImageFormat());
         plFactory.enableDepthtest(true, VK_COMPARE_OP_LESS);
         plFactory.inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
         plFactory.setCullMode(VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_COUNTER_CLOCKWISE);
         plFactory.setColorAttachmentFormat(_engine->swapchain().imageFormat());
-        _pipeline = plFactory.build(_layout);
+        _pipeline = plFactory.build(_layout, "Example07EnvironmentRender::Pipeline");
   
         _engine->cleanupManager().push([&](VkDevice dev) {
             vkDestroyPipeline(dev, _pipeline, nullptr);

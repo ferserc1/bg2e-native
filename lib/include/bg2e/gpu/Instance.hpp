@@ -27,6 +27,13 @@
 namespace bg2e {
 namespace gpu {
 
+enum class PresentationMode
+{
+    Undefined,
+    Windowed,
+    Offscreen
+};
+
 class BG2E_API Instance {
 public:
     virtual ~Instance() = default;
@@ -39,6 +46,13 @@ public:
     virtual void create(SDL_Window* window) = 0;
     virtual void create() = 0;
     virtual void cleanup() = 0;
+
+    [[nodiscard]] PresentationMode presentationMode() const { return _presentationMode; }
+    [[nodiscard]] SDL_Window* window() const { return _window; }
+
+protected:
+    PresentationMode _presentationMode = PresentationMode::Undefined;
+    SDL_Window* _window = nullptr;
 };
 
 }

@@ -58,7 +58,7 @@ Buffer* Buffer::createAllocatedBuffer(
         &buffer->_info
     ));
 
-    if (base::Log::isDebug() && !name.empty()  && setDebugUtilsObjectName_OPT != nullptr)
+    if (base::Log::isDebug() && !name.empty()  && setDebugUtilsObjectName != nullptr)
     {
         VkDebugUtilsObjectNameInfoEXT nameInfo = {};
         nameInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
@@ -66,7 +66,7 @@ Buffer* Buffer::createAllocatedBuffer(
         nameInfo.objectHandle = reinterpret_cast<uint64_t>(buffer->handle());
         nameInfo.pObjectName = name.c_str();
 
-        setDebugUtilsObjectName_OPT(
+        setDebugUtilsObjectName(
             engine->device().handle(),
             &nameInfo
         );

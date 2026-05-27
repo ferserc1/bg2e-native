@@ -79,7 +79,7 @@ public:
 
     void addDynamicState(VkDynamicState state) { _dynamicStates.emplace(state); }
     
-    VkPipeline build(VkPipelineLayout layout);
+    VkPipeline build(VkPipelineLayout layout, const std::string & name);
     
     void reset();
     

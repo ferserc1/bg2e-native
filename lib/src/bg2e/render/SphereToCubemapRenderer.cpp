@@ -295,7 +295,7 @@ void SphereToCubemapRenderer::initPipeline(const std::string& vshaderFile, const
         VK_SHADER_STAGE_VERTEX_BIT
     );
     layoutFactory.addDescriptorSetLayout(_dsLayout);
-    _pipelineLayout = layoutFactory.build();
+    _pipelineLayout = layoutFactory.build("SphereToCubemapRenderer::PipelineLayout");
     
     plFactory.setColorAttachmentFormat(VK_FORMAT_R16G16B16A16_SFLOAT);
     plFactory.disableDepthtest();
@@ -303,7 +303,7 @@ void SphereToCubemapRenderer::initPipeline(const std::string& vshaderFile, const
     plFactory.inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
     plFactory.setCullMode(VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_COUNTER_CLOCKWISE);
     
-    _pipeline = plFactory.build(_pipelineLayout);
+    _pipeline = plFactory.build(_pipelineLayout, "SphereToCubemapRenderer::Pipeline");
 }
 
 void SphereToCubemapRenderer::initGeometry()

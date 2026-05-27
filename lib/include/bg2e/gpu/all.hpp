@@ -29,13 +29,5 @@
 #include <bg2e/gpu/Command.hpp>
 #include <bg2e/gpu/Image.hpp>
 #include <bg2e/gpu/Buffer.hpp>
-#include <bg2e/gpu/FrameResources.hpp>
 #include <bg2e/gpu/CleanupManager.hpp>
-#include <bg2e/gpu/DescriptorSetAllocator.hpp>
-#include <bg2e/gpu/DescriptorSet.hpp>
-#include <bg2e/gpu/Sampler.hpp>
-#include <bg2e/gpu/PipelineLayout.hpp>
 #include <bg2e/gpu/ShaderModule.hpp>
-#include <bg2e/gpu/GraphicsPipeline.hpp>
-#include <bg2e/gpu/ComputePipeline.hpp>
-#include <bg2e/gpu/PipelineDataBinding.hpp>

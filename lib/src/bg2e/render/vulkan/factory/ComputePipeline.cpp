@@ -18,6 +18,8 @@
 
 #include <bg2e/render/vulkan/factory/ComputePipeline.hpp>
 #include <bg2e/render/vulkan/factory/ShaderModule.hpp>
+#include <bg2e/base/Log.hpp>
+#include <bg2e/render/vulkan/extensions.hpp>
 
 namespace bg2e {
 namespace render {
@@ -64,7 +66,7 @@ void ComputePipeline::setShader(VkShaderModule shaderModule, const std::string& 
     _shaderStageInfo.pName = _shaderEntryPoint.c_str();
 }
 
-VkPipeline ComputePipeline::build(VkPipelineLayout layout)
+VkPipeline ComputePipeline::build(VkPipelineLayout layout, const std::string& name)
 {
     VkComputePipelineCreateInfo pipelineInfo = {};
     pipelineInfo.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
@@ -80,6 +82,20 @@ VkPipeline ComputePipeline::build(VkPipelineLayout layout)
         nullptr,
         &pipeline
     ));
+
+    if (base::Log::isDebug() || !name.empty() && setDebugUtilsObjectName != nullptr)
+    {
+        VkDebugUtilsObjectNameInfoEXT nameInfo = {};
+        nameInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
+        nameInfo.objectType = VK_OBJECT_TYPE_PIPELINE;
+        nameInfo.objectHandle = reinterpret_cast<uint64_t>(pipeline);
+        nameInfo.pObjectName = name.c_str();
+
+        setDebugUtilsObjectName(
+            _engine->device().handle(),
+            &nameInfo
+        );
+    }
     return pipeline;
 }
 

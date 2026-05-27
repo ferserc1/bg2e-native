@@ -78,7 +78,7 @@ extern BG2E_API PFN_vkGetDeferredOperationResultKHR                    getDeferr
 extern BG2E_API PFN_vkDeferredOperationJoinKHR                         deferredOperationJoin;
 
 // VK_EXT_DEBUG_UTILS_EXTENSION_NAME
-extern BG2E_API PFN_vkSetDebugUtilsObjectNameEXT                       setDebugUtilsObjectName_OPT;
+extern BG2E_API PFN_vkSetDebugUtilsObjectNameEXT                       setDebugUtilsObjectName;
 
 }
 }

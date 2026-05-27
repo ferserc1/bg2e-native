@@ -263,22 +263,10 @@ void CubemapRenderer::createPipelineLayout()
         VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT
     );
     
-    VkPushConstantRange pushConstantRange = {};
-    pushConstantRange.offset = 0;
-    pushConstantRange.size = sizeof(SkyPushConstants);
-    pushConstantRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-    
-    auto layoutInfo = vulkan::Info::pipelineLayoutInfo();
-    layoutInfo.pPushConstantRanges = &pushConstantRange;
-    layoutInfo.pushConstantRangeCount = 1;
-    
-    std::vector<VkDescriptorSetLayout> layouts = {
-        _descriptorSetLayout
-    };
-    layoutInfo.pSetLayouts = layouts.data();
-    layoutInfo.setLayoutCount = uint32_t(layouts.size());
-    
-    VK_ASSERT(vkCreatePipelineLayout(_engine->device().handle(), &layoutInfo, nullptr, &_layout));
+    vulkan::factory::PipelineLayout layoutFactory(_engine);
+    layoutFactory.addDescriptorSetLayout(_descriptorSetLayout);
+    layoutFactory.addPushConstantRange(0, sizeof(SkyPushConstants), VK_SHADER_STAGE_VERTEX_BIT);
+    _layout = layoutFactory.build("CubemapRenderer::PipelineLayout");
     
     _engine->cleanupManager().push([&](VkDevice dev) {
         vkDestroyPipelineLayout(dev, _layout, nullptr);
@@ -304,7 +292,7 @@ void CubemapRenderer::initPipeline(
     plFactory.inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
     plFactory.setCullMode(VK_CULL_MODE_NONE, VK_FRONT_FACE_COUNTER_CLOCKWISE);
     
-    _pipeline = plFactory.build(_layout);
+    _pipeline = plFactory.build(_layout, "CubemapRenderer::Pipeline");
     
     _engine->cleanupManager().push([&](VkDevice dev) {
         vkDestroyPipeline(dev, _pipeline, nullptr);

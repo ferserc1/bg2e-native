@@ -18,6 +18,8 @@
 
 #include <bg2e/render/vulkan/factory/GraphicsPipeline.hpp>
 #include <bg2e/render/vulkan/factory/ShaderModule.hpp>
+#include <bg2e/base/Log.hpp>
+#include <bg2e/render/vulkan/extensions.hpp>
 
 namespace bg2e {
 namespace render {
@@ -242,7 +244,7 @@ void GraphicsPipeline::enableBlendingAlphablend()
     colorBlendAttachment.alphaBlendOp = VK_BLEND_OP_ADD;
 }
 
-VkPipeline GraphicsPipeline::build(VkPipelineLayout layout)
+VkPipeline GraphicsPipeline::build(VkPipelineLayout layout, const std::string & name)
 {
     VkPipelineViewportStateCreateInfo viewportInfo = {};
     viewportInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
@@ -314,6 +316,20 @@ VkPipeline GraphicsPipeline::build(VkPipelineLayout layout)
     
     VkPipeline pipeline;
     VK_ASSERT(vkCreateGraphicsPipelines(_engine->device().handle(), nullptr, 1, &pipelineInfo, nullptr, &pipeline));
+
+    if (base::Log::isDebug() || !name.empty() && setDebugUtilsObjectName != nullptr)
+    {
+        VkDebugUtilsObjectNameInfoEXT nameInfo = {};
+        nameInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
+        nameInfo.objectType = VK_OBJECT_TYPE_PIPELINE;
+        nameInfo.objectHandle = reinterpret_cast<uint64_t>(pipeline);
+        nameInfo.pObjectName = name.c_str();
+
+        setDebugUtilsObjectName(
+            _engine->device().handle(),
+            &nameInfo
+        );
+    }
     return pipeline;
 }
 

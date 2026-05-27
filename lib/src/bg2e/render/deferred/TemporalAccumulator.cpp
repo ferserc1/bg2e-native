@@ -186,11 +186,11 @@ void TemporalAccumulator::createPipeline()
         sizeof(AccumulatorPushConstants),
         VK_SHADER_STAGE_COMPUTE_BIT
     );
-    _pipelineLayout = layoutFactory.build();
+    _pipelineLayout = layoutFactory.build("TemporalAccumulator::PipelineLayout");
 
     vulkan::factory::ComputePipeline plFactory(_engine);
     plFactory.setShader("temporal_accumulation.comp.spv");
-    _pipeline = plFactory.build(_pipelineLayout);
+    _pipeline = plFactory.build(_pipelineLayout, "TemporalAccumulator::Pipeline");
 
     _engine->cleanupManager().push([&](VkDevice dev) {
         vkDestroyPipeline(dev, _pipeline, nullptr);

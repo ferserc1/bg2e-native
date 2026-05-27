@@ -61,14 +61,14 @@ void ColorAttachmentsCanvas::build(
     _attachmentsDSLayout = dsLayoutFactory.build(_engine->device().handle(), VK_SHADER_STAGE_FRAGMENT_BIT);
     
     plLayoutFactory.addDescriptorSetLayout(_attachmentsDSLayout);
-    _pipelineLayout = plLayoutFactory.build();
+    _pipelineLayout = plLayoutFactory.build("ColorAttachmentsCanvas::PipelineLayout");
     
     plFactory.disableDepthtest();
     sampleCount != VK_SAMPLE_COUNT_1_BIT ? plFactory.enableMultisample() : plFactory.disableMultisample();
     plFactory.inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
     plFactory.setCullMode(VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_COUNTER_CLOCKWISE);
     plFactory.setColorAttachmentFormat(targetImageFormat);
-    _pipeline = plFactory.build(_pipelineLayout);
+    _pipeline = plFactory.build(_pipelineLayout, "ColorAttachmentsCanvas::Pipeline");
     
     vulkan::factory::Sampler samplerFactory(_engine);
     _attSampler = samplerFactory.build();

@@ -119,7 +119,7 @@ protected:
         auto layoutInfo = bg2e::render::vulkan::Info::pipelineLayoutInfo();
         VK_ASSERT(vkCreatePipelineLayout(_engine->device().handle(), &layoutInfo, nullptr, &_layout));
         plFactory.setColorAttachmentFormat(_engine->swapchain().imageFormat());
-        _pipeline = plFactory.build(_layout);
+        _pipeline = plFactory.build(_layout, "Example01Setup::Pipeline");
         
         _engine->cleanupManager().push([&](VkDevice dev) {
             vkDestroyPipeline(dev, _pipeline, nullptr);

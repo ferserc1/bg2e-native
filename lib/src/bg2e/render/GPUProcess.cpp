@@ -96,10 +96,10 @@ void GPUProcess::executeShader(const std::string& shaderFile, VkExtent2D imageEx
     auto descriptorSetLayout = dsFactory.build(_engine->device().handle(), VK_SHADER_STAGE_COMPUTE_BIT);
     
     loFactory.addDescriptorSetLayout(descriptorSetLayout);
-    layout = loFactory.build();
+    layout = loFactory.build("GPUProcess::PipelineLayout");
     
     plFactory.setShader(shaderFile);
-    pipeline = plFactory.build(layout);
+    pipeline = plFactory.build(layout, "GPUProcess::Pipeline");
 
     _engine->command().immediateSubmit([&, pipeline, layout, descriptorSetLayout, dsAllocator](VkCommandBuffer cmd) {
         auto descriptorSet = dsAllocator->allocate(descriptorSetLayout);

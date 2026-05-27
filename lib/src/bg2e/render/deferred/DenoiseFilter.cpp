@@ -93,11 +93,11 @@ void DenoiseFilter::createPipeline()
         sizeof(DenoisePushConstants),
         VK_SHADER_STAGE_COMPUTE_BIT
     );
-    _pipelineLayout = layoutFactory.build();
+    _pipelineLayout = layoutFactory.build("DenoiseFilter::PipelineLayout");
 
     vulkan::factory::ComputePipeline plFactory(_engine);
     plFactory.setShader("denoise_bilateral.comp.spv");
-    _pipeline = plFactory.build(_pipelineLayout);
+    _pipeline = plFactory.build(_pipelineLayout, "DenoiseFilter::Pipeline");
 
     _engine->cleanupManager().push([&](VkDevice dev) {
         vkDestroyPipeline(dev, _pipeline, nullptr);

@@ -331,7 +331,7 @@ Image* Image::createAllocatedImage(
 
     vmaSetAllocationName(alloc, result->_allocation, imageName.c_str());
 
-    if (base::Log::isDebug() && !imageName.empty()  && setDebugUtilsObjectName_OPT != nullptr)
+    if (base::Log::isDebug() && !imageName.empty()  && setDebugUtilsObjectName != nullptr)
     {
         VkDebugUtilsObjectNameInfoEXT nameInfo = {};
         nameInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
@@ -339,7 +339,7 @@ Image* Image::createAllocatedImage(
         nameInfo.objectHandle = reinterpret_cast<uint64_t>(result->_image);
         nameInfo.pObjectName = imageName.c_str();
 
-        setDebugUtilsObjectName_OPT(
+        setDebugUtilsObjectName(
             engine->device().handle(),
             &nameInfo
         );

@@ -81,7 +81,7 @@ void SkyboxRenderer::build(
         sizeof(PushConstants),
         VK_SHADER_STAGE_FRAGMENT_BIT
     );
-    _pipelineLayout = layoutFactory.build();
+    _pipelineLayout = layoutFactory.build("SkyboxRenderer::PipelineLayout");
     
     vulkan::factory::GraphicsPipeline plFactory(_engine);
     plFactory.addShader(vshaderFile, VK_SHADER_STAGE_VERTEX_BIT);
@@ -103,7 +103,7 @@ void SkyboxRenderer::build(
     // This is because we are inverting the view matrix on the Z axis, so that the skybox is
     // rendered consistently with the reflections of the environment. See the update() function
     plFactory.setCullMode(VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_COUNTER_CLOCKWISE);
-    _pipeline = plFactory.build(_pipelineLayout);
+    _pipeline = plFactory.build(_pipelineLayout, "SkyboxRenderer::Pipeline");
 }
 
 void SkyboxRenderer::update(const glm::mat4& view, const glm::mat4& proj)

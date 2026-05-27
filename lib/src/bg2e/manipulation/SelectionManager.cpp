@@ -350,16 +350,9 @@ void SelectionManager::createPipeline()
     plFactory.addShader("pick_selection.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
     plFactory.addShader("pick_selection.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
     
-    VkPushConstantRange pushConstantRange = {};
-    pushConstantRange.offset = 0;
-    pushConstantRange.size = sizeof(PushConstantData);
-    pushConstantRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-    
-    auto layoutInfo = Info::pipelineLayoutInfo();
-    layoutInfo.pPushConstantRanges = &pushConstantRange;
-    layoutInfo.pushConstantRangeCount = 1;
-    
-    VK_ASSERT(vkCreatePipelineLayout(_engine->device().handle(), &layoutInfo, nullptr, &_pipelineLayout));
+    render::vulkan::factory::PipelineLayout layoutFactory(_engine);
+    layoutFactory.addPushConstantRange(0, sizeof(PushConstantData), VK_SHADER_STAGE_VERTEX_BIT);
+    _pipelineLayout = layoutFactory.build("SelectionManager::PipelineLayout");
     
     plFactory.setInputState<render::vulkan::geo::Mesh>();
     plFactory.setColorAttachmentFormat(_image->format());
@@ -368,7 +361,7 @@ void SelectionManager::createPipeline()
     plFactory.inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
     plFactory.setCullMode(VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_COUNTER_CLOCKWISE);
     plFactory.multisampling.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
-    _pipeline = plFactory.build(_pipelineLayout);
+    _pipeline = plFactory.build(_pipelineLayout, "SelectionManager::Pipeline");
     
     _engine->cleanupManager().push([&](VkDevice dev) {
         vkDestroyPipeline(dev, _pipeline, nullptr);
