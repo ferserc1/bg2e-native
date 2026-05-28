@@ -60,6 +60,9 @@ public:
     VkPipeline pipeline() const { return _pipeline; }
     uint32_t groupCount() const { return static_cast<uint32_t>(_groups.size()); }
 
+    // Reset the factory to use it again to create another pipeline
+    void reset();
+
 private:
     Engine* _engine = nullptr;
     VkPipeline _pipeline = VK_NULL_HANDLE;
@@ -71,6 +74,10 @@ private:
     uint32_t _raygenGroupIndex = 0;
     uint32_t _missGroupIndex = 0;
     uint32_t _hitGroupIndex = 0;
+
+    bool _hasRaygenShader = false;
+    bool _hasMissShader = false;
+    bool _hasClosestHitShader = false;
 
     uint32_t addShaderStage(
         VkShaderStageFlagBits stage,

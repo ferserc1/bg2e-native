@@ -74,11 +74,17 @@ uint32_t RayTracingPipeline::addShaderStage(
 
 void RayTracingPipeline::setRayGenShader(const std::string& fileName, const std::string& entryPoint)
 {
+    if (_hasRaygenShader)
+    {
+        throw std::runtime_error("Invalid ray tracing pipeline factory configuration: the number of ray gen shader must be exactly 1");
+    }
+    _hasRaygenShader = true;
     _raygenGroupIndex = addShaderStage(VK_SHADER_STAGE_RAYGEN_BIT_KHR, fileName, entryPoint);
 
     VkRayTracingShaderGroupCreateInfoKHR group{};
     group.sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_KHR;
     group.type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR;
+    // This is valid because this factory is limited to 1 stage <=> 1 group
     group.generalShader = _raygenGroupIndex;
     group.closestHitShader = VK_SHADER_UNUSED_KHR;
     group.anyHitShader = VK_SHADER_UNUSED_KHR;
@@ -89,6 +95,11 @@ void RayTracingPipeline::setRayGenShader(const std::string& fileName, const std:
 
 void RayTracingPipeline::setMissShader(const std::string& fileName, const std::string& entryPoint)
 {
+    if (_hasMissShader)
+    {
+        throw std::runtime_error("Invalid ray tracing pipeline factory configuration: the number of ray miss shader must be exactly 1");
+    }
+    _hasMissShader = true;
     _missGroupIndex = addShaderStage(VK_SHADER_STAGE_MISS_BIT_KHR, fileName, entryPoint);
 
     VkRayTracingShaderGroupCreateInfoKHR group{};
@@ -104,6 +115,11 @@ void RayTracingPipeline::setMissShader(const std::string& fileName, const std::s
 
 void RayTracingPipeline::setClosestHitShader(const std::string& fileName, const std::string& entryPoint)
 {
+    if (_hasClosestHitShader)
+    {
+        throw std::runtime_error("Invalid ray tracing pipeline factory configuration: the number of ray closest hit shader must be exactly 1");
+    }
+    _hasClosestHitShader = true;
     _hitGroupIndex = addShaderStage(VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR, fileName, entryPoint);
 
     VkRayTracingShaderGroupCreateInfoKHR group{};
@@ -128,9 +144,9 @@ VkPipeline RayTracingPipeline::build(
     const std::string& name
 )
 {
-    if (_stages.empty() || _groups.empty())
+    if (!_hasRaygenShader || !_hasClosestHitShader || !_hasMissShader)
     {
-        throw std::runtime_error("RayTracingPipeline: No shader stages or groups configured");
+        throw std::runtime_error("RayTracingPipeline: Invalid shader configuration. The pipeline must contain exactly 1 raygen, 1 miss and 1 closest hit shader");
     }
 
     VkRayTracingPipelineCreateInfoKHR createInfo{};
@@ -297,6 +313,31 @@ RayTracingPipeline::SBTData RayTracingPipeline::createSBT(const std::string& nam
     sbtData.buffer.reset(finalBuffer);
 
     return sbtData;
+}
+
+void RayTracingPipeline::reset()
+{
+    for (auto& module : _shaderModules)
+    {
+        if (module != VK_NULL_HANDLE)
+        {
+            vkDestroyShaderModule(_engine->device().handle(), module, nullptr);
+        }
+    }
+
+    _shaderModules.clear();
+    _stages.clear();
+    _groups.clear();
+
+    _pipeline = VK_NULL_HANDLE;
+
+    _raygenGroupIndex = 0;
+    _missGroupIndex = 0;
+    _hitGroupIndex = 0;
+
+    _hasRaygenShader = false;
+    _hasMissShader = false;
+    _hasClosestHitShader = false;
 }
 
 }
