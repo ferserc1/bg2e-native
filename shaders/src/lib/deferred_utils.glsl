@@ -144,6 +144,13 @@ float rand(inout uint seed)
     return float(seed) / float(0xffffffffu);
 }
 
+vec2 rand2(uint seed) {
+    return vec2(
+    float(hash(seed)) / float(0xffffffffu),
+    float(hash(seed + 1u)) / float(0xffffffffu)
+    );
+}
+
 mat3 buildTBN(vec3 normal)
 {
     vec3 up = abs(normal.x) < 0.999
