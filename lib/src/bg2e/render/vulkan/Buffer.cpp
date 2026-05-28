@@ -23,6 +23,17 @@ namespace bg2e {
 namespace render {
 namespace vulkan {
 
+Buffer::Buffer(
+    Engine * engine,
+    VkBuffer buffer,
+    VmaAllocation allocation,
+    VmaAllocationInfo info,
+    const std::string & name
+) :_engine(engine), _buffer(buffer), _allocation(allocation), _info(info), _debugName(name)
+{
+
+}
+
 Buffer::~Buffer()
 {
     cleanup();

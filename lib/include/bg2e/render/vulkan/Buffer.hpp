@@ -30,6 +30,14 @@ class BG2E_API Buffer {
 public:
     virtual ~Buffer();
 
+    Buffer(
+        Engine * engine,
+        VkBuffer buffer,
+        VmaAllocation allocation,
+        VmaAllocationInfo info,
+        const std::string & name = ""
+    );
+
     static Buffer* createAllocatedBuffer(
         Engine * engine,
         size_t allocSize,

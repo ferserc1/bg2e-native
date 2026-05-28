@@ -69,6 +69,7 @@ extern BG2E_API PFN_vkGetAccelerationStructureDeviceAddressKHR         getAccele
 // VK_KHR_ray_tracing_pipeline
 extern BG2E_API PFN_vkCreateRayTracingPipelinesKHR                     createRayTracingPipelines;
 extern BG2E_API PFN_vkCmdTraceRaysKHR                                  cmdTraceRays;
+extern BG2E_API PFN_vkGetRayTracingShaderGroupHandlesKHR               getRayTracingShaderGroupHandles;
 extern BG2E_API PFN_vkGetRayTracingCaptureReplayShaderGroupHandlesKHR  getRayTracingCaptureReplayShaderGroupHandles;
 
 // VK_KHR_deferred_host_operations

@@ -45,13 +45,30 @@ function(compile_shaders
         get_filename_component(NAME "${SH}" NAME)
         string(REPLACE ".glsl" "" BASE "${NAME}")
         set(SPV "${DST_PATH}/${BASE}.spv")
-        add_custom_command(
-            OUTPUT ${SPV}
-            COMMAND "${GLSLANG_PATH}" -V "${SH}" -o "${SPV}"
-            DEPENDS ${SH}
-            COMMENT "Building shader ${SH}"
-            VERBATIM
-        )
+
+        string(FIND "${NAME}" ".rgen." IS_RGEN)
+        string(FIND "${NAME}" ".rmiss." IS_RMISS)
+        string(FIND "${NAME}" ".rchit." IS_RCHIT)
+        string(FIND "${NAME}" ".rahit." IS_RAHIT)
+        string(FIND "${NAME}" ".rint." IS_RINT)
+
+        if(IS_RGEN GREATER -1 OR IS_RMISS GREATER -1 OR IS_RCHIT GREATER -1 OR IS_RAHIT GREATER -1 OR IS_RINT GREATER -1)
+            add_custom_command(
+                OUTPUT ${SPV}
+                COMMAND "${GLSLANG_PATH}" -V --target-env vulkan1.2 "${SH}" -o "${SPV}"
+                DEPENDS ${SH}
+                COMMENT "Building RT shader ${SH}"
+                VERBATIM
+            )
+        else()
+            add_custom_command(
+                OUTPUT ${SPV}
+                COMMAND "${GLSLANG_PATH}" -V "${SH}" -o "${SPV}"
+                DEPENDS ${SH}
+                COMMENT "Building shader ${SH}"
+                VERBATIM
+            )
+        endif()
 
         list(APPEND COMPILED_SHADERS ${SPV})
     endforeach()
