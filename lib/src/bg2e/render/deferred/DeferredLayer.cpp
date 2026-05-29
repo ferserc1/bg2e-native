@@ -61,6 +61,16 @@ const vulkan::Image* DeferredLayer::resolveDebugSource(const vulkan::Image* inpu
             return _temporalAccumulator
                 ? _temporalAccumulator->outputImage(_engine->currentFrameResourcesIndex()).get()
                 : _rtAmbientOcclusion->aoImage(_engine->currentFrameResourcesIndex()).get();
+        case DeferredDebugVisualization::RTReflections:
+            return _rtReflections ? _rtReflections->reflectionImage(_engine->currentFrameResourcesIndex()).get() : nullptr;
+        case DeferredDebugVisualization::TemporalAccumulatedReflections:
+            return _temporalReflectionAccumulator
+                ? _temporalReflectionAccumulator->outputImage(_engine->currentFrameResourcesIndex()).get()
+                : nullptr;
+        case DeferredDebugVisualization::RTReflectionMask:
+            return _temporalReflectionAccumulator
+                ? _temporalReflectionAccumulator->outputImage(_engine->currentFrameResourcesIndex()).get()
+                : nullptr;
         default:
             return gbuffer->image(0).get();
     }
@@ -92,6 +102,18 @@ void DeferredLayer::build(VkExtent2D extent, VkFormat outputFormat)
     // Create denoise filter
     _denoiseFilter = std::make_unique<DenoiseFilter>(_engine);
     _denoiseFilter->build(_gbuffers[0].get(), extent);
+
+    // Create RT reflections subsystem (only if RT is supported)
+    if (_engine->rayTracingSupported())
+    {
+        _rtReflections = std::make_unique<RTReflections>(_engine);
+        _rtReflections->build(_gbuffers[0].get(), extent);
+
+        _temporalReflectionAccumulator = std::make_unique<TemporalAccumulator>(_engine);
+        _temporalReflectionAccumulator->setFormat(VK_FORMAT_R16G16B16A16_SFLOAT);
+        _temporalReflectionAccumulator->setIsHDR(true);
+        _temporalReflectionAccumulator->build(_gbuffers[0].get(), extent);
+    }
 
     // Create per-layer data bindings
     _frameDataBinding = std::make_unique<scene::vk::FrameDataBinding>(_engine);
@@ -225,6 +247,8 @@ void DeferredLayer::render(
 
     renderGBufferPass(cmd, currentFrame, gbuffer, frameResources, viewMatrix, projMatrix, cameraWorldPos);
 
+    const vulkan::Image* reflectionInputForComposite = nullptr;
+
     // AO pass: compute ambient occlusion from G-buffers + TLAS
     if (useRT)
     {
@@ -257,11 +281,36 @@ void DeferredLayer::render(
         {
             _denoiseFilter->render(cmd, currentFrame, frameResources, gbuffer, aoInputForDenoise);
         }
+
+        // RT Reflections pass (after denoise, before composite)
+        if (_rtReflections && _rtReflections->rtSupported())
+        {
+            auto tlas = frameResources.rayTracingScene ?
+                frameResources.rayTracingScene->tlas() : VK_NULL_HANDLE;
+
+            if (tlas != VK_NULL_HANDLE && _rtReflections->settings().enabled)
+            {
+                // RT Reflections pass
+                _rtReflections->render(
+                    cmd, currentFrame, frameResources, gbuffer,
+                    invVP, cameraWorldPos, tlas
+                );
+
+                // Reflection temporal accumulation
+                auto rawReflectionImage = _rtReflections->reflectionImage(frameResourcesIndex);
+                _temporalReflectionAccumulator->render(
+                    cmd, currentFrame, frameResources, gbuffer,
+                    rawReflectionImage.get(), invVP, viewMat, projMat
+                );
+
+                reflectionInputForComposite = _temporalReflectionAccumulator->outputImage(frameResourcesIndex).get();
+            }
+        }
     }
 
     if (_debugVisualization == DeferredDebugVisualization::FullComposition)
     {
-        renderCompositePass(cmd, currentFrame, inputImage, outputImage, frameResources, viewMatrix, projMatrix);
+        renderCompositePass(cmd, currentFrame, inputImage, outputImage, frameResources, viewMatrix, projMatrix, reflectionInputForComposite);
     }
     else
     {
@@ -284,6 +333,8 @@ void DeferredLayer::resize(VkExtent2D newExtent)
     _rtAmbientOcclusion->resize(newExtent);
     if (_temporalAccumulator) _temporalAccumulator->resize(newExtent);
     _denoiseFilter->resize(newExtent);
+    if (_rtReflections) _rtReflections->resize(newExtent);
+    if (_temporalReflectionAccumulator) _temporalReflectionAccumulator->resize(newExtent);
 }
 
 void DeferredLayer::cleanup()
@@ -297,6 +348,8 @@ void DeferredLayer::cleanup()
     if (_rtAmbientOcclusion) _rtAmbientOcclusion->cleanup();
     if (_temporalAccumulator) _temporalAccumulator->cleanup();
     if (_denoiseFilter) _denoiseFilter->cleanup();
+    if (_temporalReflectionAccumulator) _temporalReflectionAccumulator->cleanup();
+    if (_rtReflections) _rtReflections->cleanup();
 
     _frameDataBinding->cleanup();
     _fragmentFrameDataBinding->cleanup();
@@ -469,6 +522,66 @@ void DeferredLayer::setDenoiseNormalSigma(float sigma)
 float DeferredLayer::denoiseNormalSigma() const
 {
     return _denoiseFilter ? _denoiseFilter->normalSigma() : 0.3f;
+}
+
+void DeferredLayer::setRTReflectionsEnabled(bool enabled)
+{
+    if (_rtReflections) _rtReflections->setEnabled(enabled);
+}
+
+bool DeferredLayer::rtReflectionsEnabled() const
+{
+    return _rtReflections ? _rtReflections->settings().enabled : false;
+}
+
+void DeferredLayer::setRTReflectionSampleCount(uint32_t count)
+{
+    if (_rtReflections) _rtReflections->setSampleCount(count);
+}
+
+uint32_t DeferredLayer::rtReflectionSampleCount() const
+{
+    return _rtReflections ? _rtReflections->settings().sampleCount : 4;
+}
+
+void DeferredLayer::setRTReflectionMaxRoughness(float r)
+{
+    if (_rtReflections) _rtReflections->setMaxRoughness(r);
+}
+
+float DeferredLayer::rtReflectionMaxRoughness() const
+{
+    return _rtReflections ? _rtReflections->settings().maxRoughness : 0.35f;
+}
+
+void DeferredLayer::setRTReflectionRayBias(float b)
+{
+    if (_rtReflections) _rtReflections->setRayBias(b);
+}
+
+float DeferredLayer::rtReflectionRayBias() const
+{
+    return _rtReflections ? _rtReflections->settings().rayBias : 0.02f;
+}
+
+void DeferredLayer::setRTReflectionMaxDistance(float d)
+{
+    if (_rtReflections) _rtReflections->setMaxDistance(d);
+}
+
+float DeferredLayer::rtReflectionMaxDistance() const
+{
+    return _rtReflections ? _rtReflections->settings().maxDistance : 50.0f;
+}
+
+void DeferredLayer::setRTReflectionRoughnessSpread(float s)
+{
+    if (_rtReflections) _rtReflections->setRoughnessSpread(s);
+}
+
+float DeferredLayer::rtReflectionRoughnessSpread() const
+{
+    return _rtReflections ? _rtReflections->settings().roughnessSpread : 1.0f;
 }
 
 void DeferredLayer::createGBufferPipeline()
@@ -741,7 +854,8 @@ void DeferredLayer::renderCompositePass(
     const vulkan::Image* outputImage,
     vulkan::FrameResources& frameResources,
     const glm::mat4& viewMatrix,
-    const glm::mat4& projMatrix
+    const glm::mat4& projMatrix,
+    const vulkan::Image* reflectionImage
 )
 {
     auto* gbuffer = _gbuffers[_engine->currentFrameResourcesIndex()].get();

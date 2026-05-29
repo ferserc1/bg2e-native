@@ -63,13 +63,14 @@ void RTReflections::build(const GBufferManager* gbuffer, VkExtent2D extent)
 
 void RTReflections::createFallbackImage()
 {
-    uint8_t whiteData[32];
-    memset(whiteData, 0, sizeof(whiteData));
+    const uint32_t bpp = 4;
+    size_t dataSize = 4 * 4 * bpp * sizeof(uint16_t);
+    std::vector<uint8_t> whiteData(dataSize, 0);
 
     _fallbackImage = std::shared_ptr<vulkan::Image>(
         vulkan::Image::createAllocatedImage(
-            _engine, "RT Reflections fallback", whiteData,
-            VkExtent2D{4, 4}, 1, VK_FORMAT_R16G16B16A16_SFLOAT,
+            _engine, "RT Reflections fallback", whiteData.data(),
+            VkExtent2D{4, 4}, bpp, VK_FORMAT_R16G16B16A16_SFLOAT,
             VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT
         )
     );
@@ -169,9 +170,10 @@ void RTReflections::render(
         return;
     }
 
+    uint32_t frameIndex = _engine->currentFrameResourcesIndex();
     if (tlas == VK_NULL_HANDLE)
     {
-        auto output = _reflectionImages.empty() ? _fallbackImage : _reflectionImages[_engine->currentFrameResourcesIndex()];
+        auto output = _reflectionImages.empty() ? _fallbackImage : _reflectionImages[frameIndex];
 
         vulkan::Image::cmdTransitionImage(cmd, output->handle(),
             VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL);
@@ -185,9 +187,7 @@ void RTReflections::render(
         return;
     }
 
-    uint32_t frameIndex = _engine->currentFrameResourcesIndex();
     auto output = _reflectionImages[frameIndex];
-
     vulkan::Image::cmdTransitionImage(cmd, output->handle(),
         VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL);
 

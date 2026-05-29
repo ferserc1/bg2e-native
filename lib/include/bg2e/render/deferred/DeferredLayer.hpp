@@ -23,6 +23,7 @@
 #include <bg2e/render/deferred/RTAmbientOcclusion.hpp>
 #include <bg2e/render/deferred/TemporalAccumulator.hpp>
 #include <bg2e/render/deferred/DenoiseFilter.hpp>
+#include <bg2e/render/deferred/RTReflections.hpp>
 #include <bg2e/render/vulkan/factory/GraphicsPipeline.hpp>
 #include <bg2e/render/vulkan/factory/PipelineLayout.hpp>
 #include <bg2e/render/vulkan/factory/DescriptorSetLayout.hpp>
@@ -55,6 +56,9 @@ enum class DeferredDebugVisualization {
     RTAmbientOcclusion,
     DenoisedAO,
     TemporalAccumulatedAO,
+    RTReflections,
+    TemporalAccumulatedReflections,
+    RTReflectionMask,
 
     MaxLayer
 };
@@ -137,6 +141,24 @@ public:
     void setDenoiseNormalSigma(float sigma);
     float denoiseNormalSigma() const;
 
+    void setRTReflectionsEnabled(bool enabled);
+    bool rtReflectionsEnabled() const;
+
+    void setRTReflectionSampleCount(uint32_t count);
+    uint32_t rtReflectionSampleCount() const;
+
+    void setRTReflectionMaxRoughness(float r);
+    float rtReflectionMaxRoughness() const;
+
+    void setRTReflectionRayBias(float b);
+    float rtReflectionRayBias() const;
+
+    void setRTReflectionMaxDistance(float d);
+    float rtReflectionMaxDistance() const;
+
+    void setRTReflectionRoughnessSpread(float s);
+    float rtReflectionRoughnessSpread() const;
+
 protected:
     LayerType _layerType;
 
@@ -176,6 +198,8 @@ protected:
     std::unique_ptr<RTAmbientOcclusion> _rtAmbientOcclusion;
     std::unique_ptr<TemporalAccumulator> _temporalAccumulator;
     std::unique_ptr<DenoiseFilter> _denoiseFilter;
+    std::unique_ptr<RTReflections> _rtReflections;
+    std::unique_ptr<TemporalAccumulator> _temporalReflectionAccumulator;
 
     struct CompositePushConstants {
         float gamma;
@@ -212,7 +236,8 @@ protected:
         const vulkan::Image* outputImage,
         vulkan::FrameResources& frameResources,
         const glm::mat4& viewMatrix,
-        const glm::mat4& projMatrix
+        const glm::mat4& projMatrix,
+        const vulkan::Image* reflectionImage = nullptr
     );
     void renderDebugPass(
         VkCommandBuffer cmd,
