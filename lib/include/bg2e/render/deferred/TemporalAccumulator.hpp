@@ -67,6 +67,12 @@ public:
     float depthThreshold() const;
     float normalThreshold() const;
 
+    void setFormat(VkFormat format) { _format = format; }
+    VkFormat format() const { return _format; }
+
+    void setIsHDR(bool value) { _isHDR = value; }
+    bool isHDR() const { return _isHDR; }
+
 private:
     Engine* _engine;
     VkExtent2D _extent;
@@ -89,6 +95,8 @@ private:
     VkSampler _sampler = VK_NULL_HANDLE;
     VkFormat _depthFormat = VK_FORMAT_D32_SFLOAT;
     VkFormat _normalFormat = VK_FORMAT_R16G16B16A16_SFLOAT;
+    VkFormat _format = VK_FORMAT_R16_SFLOAT;
+    bool _isHDR = false;
 
     AccumulationMode _accumulationMode = AccumulationMode::Progressive;
     float _historyWeight = 0.9f;
@@ -105,6 +113,8 @@ private:
         uint32_t hasHistory;
         float depthThreshold;
         float normalThreshold;
+        uint32_t isHDR;
+        uint32_t padding0;
     };
 
     void createHistoryImages(VkExtent2D extent);

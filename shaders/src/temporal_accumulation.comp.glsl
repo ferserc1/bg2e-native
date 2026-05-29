@@ -28,7 +28,7 @@ layout(set = 0, binding = 2) uniform sampler2D g_Depth;
 layout(set = 0, binding = 3) uniform sampler2D g_Normal;
 
 // Output image (set=0)
-layout(set = 0, binding = 4, r16f) uniform image2D outAccumulated;
+layout(set = 0, binding = 4, rgba16f) uniform image2D outAccumulated;
 
 // Previous frame g-buffer images (set=0)
 layout(set = 0, binding = 5) uniform sampler2D g_HistoryDepth;
@@ -45,6 +45,8 @@ layout(push_constant) uniform PushConstant {
     uint  hasHistory;
     float depthThreshold;
     float normalThreshold;
+    uint  isHDR;
+    uint  padding0;
 } pc;
 
 layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
@@ -59,11 +61,15 @@ void main() {
 
     vec2 uv = vec2(pixelCoord + 0.5) / pc.outputSize;
 
-    float currentAO = texture(g_CurrentAO, uv).r;
     float currentDepth = texture(g_Depth, uv).r;
 
     if (currentDepth >= 1.0) {
-        imageStore(outAccumulated, pixelCoord, vec4(currentAO, 0.0, 0.0, 0.0));
+        if (pc.isHDR == 0u) {
+            float currentAO = texture(g_CurrentAO, uv).r;
+            imageStore(outAccumulated, pixelCoord, vec4(currentAO, 0.0, 0.0, 0.0));
+        } else {
+            imageStore(outAccumulated, pixelCoord, vec4(0.0));
+        }
         return;
     }
 
@@ -105,20 +111,57 @@ void main() {
         }
     }
 
-    float result;
+    // Scalar AO mode
+    if (pc.isHDR == 0u) {
+        float currentAO = texture(g_CurrentAO, uv).r;
+        float result;
 
-    if (validHistory) {
-        float previousAO = texture(g_HistoryAO, previousUV).r;
+        if (validHistory) {
+            float previousAO = texture(g_HistoryAO, previousUV).r;
 
-        if (pc.useProgressiveMode == 1u) {
-            float weight = 1.0 / float(pc.accumulatedFrameCount + 1);
-            result = mix(previousAO, currentAO, weight);
+            if (pc.useProgressiveMode == 1u) {
+                float weight = 1.0 / float(pc.accumulatedFrameCount + 1);
+                result = mix(previousAO, currentAO, weight);
+            } else {
+                result = mix(previousAO, currentAO, 1.0 - pc.historyWeight);
+            }
         } else {
-            result = mix(previousAO, currentAO, 1.0 - pc.historyWeight);
+            result = currentAO;
         }
-    } else {
-        result = currentAO;
+
+        imageStore(outAccumulated, pixelCoord, vec4(result, 0.0, 0.0, 0.0));
+        return;
     }
 
-    imageStore(outAccumulated, pixelCoord, vec4(result, 0.0, 0.0, 0.0));
+    // HDR RGBA reflection mode
+    vec4 current = texture(g_CurrentAO, uv);
+
+    // If the current frame has no valid reflection, do not preserve old reflection data.
+    // This avoids ghost reflections when the current pixel should fall back to cubemap.
+    if (current.a < 0.01) {
+        imageStore(outAccumulated, pixelCoord, vec4(0.0));
+        return;
+    }
+
+    if (!validHistory) {
+        imageStore(outAccumulated, pixelCoord, current);
+        return;
+    }
+
+    vec4 history = texture(g_HistoryAO, previousUV);
+
+    if (history.a < 0.01) {
+        imageStore(outAccumulated, pixelCoord, current);
+        return;
+    }
+
+    float blendWeight;
+    if (pc.useProgressiveMode == 1u) {
+        blendWeight = 1.0 / float(pc.accumulatedFrameCount + 1);
+    } else {
+        blendWeight = 1.0 - pc.historyWeight;
+    }
+
+    vec3 resultRGB = mix(history.rgb, current.rgb, blendWeight);
+    imageStore(outAccumulated, pixelCoord, vec4(resultRGB, 1.0));
 }

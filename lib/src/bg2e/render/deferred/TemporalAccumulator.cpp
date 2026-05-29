@@ -98,7 +98,7 @@ void TemporalAccumulator::createHistoryImages(VkExtent2D extent)
                 vulkan::Image::createAllocatedImage(
                     _engine,
                     "Temporal history image A " + std::to_string(i),
-                    VK_FORMAT_R16_SFLOAT,
+                    _format,
                     extent,
                     VK_IMAGE_USAGE_STORAGE_BIT |
                     VK_IMAGE_USAGE_SAMPLED_BIT |
@@ -112,7 +112,7 @@ void TemporalAccumulator::createHistoryImages(VkExtent2D extent)
                 vulkan::Image::createAllocatedImage(
                     _engine,
                     "Temporal history image B " + std::to_string(i),
-                    VK_FORMAT_R16_SFLOAT,
+                    _format,
                     extent,
                     VK_IMAGE_USAGE_STORAGE_BIT |
                     VK_IMAGE_USAGE_SAMPLED_BIT |
@@ -270,6 +270,8 @@ void TemporalAccumulator::render(
     pc.hasHistory = _hasHistory[frameIndex] ? 1u : 0u;
     pc.depthThreshold = _depthThreshold;
     pc.normalThreshold = _normalThreshold;
+    pc.isHDR = _isHDR ? 1u : 0u;
+    pc.padding0 = 0u;
     vkCmdPushConstants(cmd, _pipelineLayout,
         VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(AccumulatorPushConstants), &pc);
 
