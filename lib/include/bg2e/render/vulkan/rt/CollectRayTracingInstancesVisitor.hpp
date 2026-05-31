@@ -22,6 +22,7 @@
 #include <bg2e/render/Engine.hpp>
 #include <bg2e/scene/NodeVisitor.hpp>
 #include <bg2e/math/base.hpp>
+#include <bg2e/render/vulkan/rt/RTMaterialData.h>
 
 #include <stack>
 #include <vector>
@@ -44,10 +45,16 @@ public:
         return _instances;
     }
 
+    [[nodiscard]] const std::vector<RTMaterialInstance>& materialInstances() const
+    {
+        return _materialInstances;
+    }
+
 protected:
     Engine * _engine = nullptr;
 
     std::vector<VkAccelerationStructureInstanceKHR> _instances;
+    std::vector<RTMaterialInstance> _materialInstances;
 
     glm::mat4 _currentTransform{ 1.0f };
     std::stack<glm::mat4> _transformStack;

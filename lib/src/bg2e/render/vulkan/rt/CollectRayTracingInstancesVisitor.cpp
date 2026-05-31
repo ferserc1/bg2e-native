@@ -17,10 +17,10 @@
  */
 
 #include <bg2e/render/vulkan/rt/CollectRayTracingInstancesVisitor.hpp>
+#include <bg2e/render/vulkan/rt/utils.hpp>
 #include <bg2e/scene/TransformComponent.hpp>
 #include <bg2e/scene/Node.hpp>
-#include <bg2e/render/vulkan/rt/utils.hpp>
-#include <bg2e/render/vulkan/rt/RayTracingScene.hpp>
+#include <bg2e/scene/Drawable.hpp>
 
 namespace bg2e {
 namespace render {
@@ -59,9 +59,21 @@ void CollectRayTracingInstancesVisitor::visit(scene::Node * node)
                     continue;
                 }
                 auto mat = mat4ToVkTransformMatrix(_currentTransform * drw->submeshTransform(i));
+                auto renderMat = drw->renderMaterial(i);
+                auto renderMesh = drw->renderMesh();
+
+                RTMaterialInstance matInst {};
+                matInst.data.albedo = renderMat->materialAttributes().albedo();
+                matInst.data.albedoScale = renderMat->materialAttributes().albedoScale();
+                matInst.vertexBuffer = renderMesh->vertexBuffer();
+                matInst.indexBuffer = renderMesh->indexBuffer();
+                matInst.albedoTexture = renderMat->albedoTexture().get();
+                _materialInstances.push_back(matInst);
+
+                uint32_t matIndex = static_cast<uint32_t>(_materialInstances.size() - 1);
                 _instances.push_back({
                     .transform = mat,
-                    .instanceCustomIndex = 0,
+                    .instanceCustomIndex = matIndex,
                     .mask = 0xFF,
                     .instanceShaderBindingTableRecordOffset = 0,
                     .flags = VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR,
