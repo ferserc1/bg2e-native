@@ -329,7 +329,12 @@ void DeferredLayer::render(
         auto* src = resolveDebugSource(inputImage, gbuffer);
         if (src)
         {
-            renderDebugPass(cmd, src, outputImage, frameResources);
+            uint32_t channelMode = 0;
+            if (_debugVisualization == DeferredDebugVisualization::RTReflectionMask)
+            {
+                channelMode = 4;
+            }
+            renderDebugPass(cmd, src, outputImage, frameResources, channelMode);
         }
     }
 }
@@ -777,6 +782,11 @@ void DeferredLayer::createDebugPipeline()
 
     vulkan::factory::PipelineLayout layoutFactory(_engine);
     layoutFactory.addDescriptorSetLayout(_debugDSLayout);
+    layoutFactory.addPushConstantRange(
+        0,
+        sizeof(DebugPushConstants),
+        VK_SHADER_STAGE_FRAGMENT_BIT
+    );
     _debugPipelineLayout = layoutFactory.build("DeferredLayer::DebugPipelineLayout");
 
     vulkan::factory::GraphicsPipeline plFactory(_engine);
@@ -980,7 +990,8 @@ void DeferredLayer::renderDebugPass(
     VkCommandBuffer cmd,
     const vulkan::Image* sourceImage,
     const vulkan::Image* outputImage,
-    vulkan::FrameResources& frameResources
+    vulkan::FrameResources& frameResources,
+    uint32_t channelMode
 )
 {
 
@@ -1002,6 +1013,16 @@ void DeferredLayer::renderDebugPass(
     VkDescriptorSet dsPtr[] = { ds->descriptorSet() };
     vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
         _debugPipelineLayout, 0, 1, dsPtr, 0, nullptr);
+
+    // Push constants for channel mode
+    const DebugPushConstants pc { channelMode };
+    vkCmdPushConstants(
+        cmd, _debugPipelineLayout,
+        VK_SHADER_STAGE_FRAGMENT_BIT,
+        0,
+        sizeof(DebugPushConstants),
+        &pc
+    );
 
     // 6. Draw fullscreen quad
     vkCmdDraw(cmd, 6, 1, 0, 0);

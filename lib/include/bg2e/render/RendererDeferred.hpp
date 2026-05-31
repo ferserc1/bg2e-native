@@ -139,6 +139,25 @@ public:
     void setDenoiseNormalSigma(float sigma);
     float denoiseNormalSigma() const;
 
+    // RT Reflections
+    void setRTReflectionsEnabled(bool enabled);
+    bool rtReflectionsEnabled() const;
+
+    void setRTReflectionSampleCount(uint32_t count);
+    uint32_t rtReflectionSampleCount() const;
+
+    void setRTReflectionMaxRoughness(float roughness);
+    float rtReflectionMaxRoughness() const;
+
+    void setRTReflectionRayBias(float bias);
+    float rtReflectionRayBias() const;
+
+    void setRTReflectionMaxDistance(float distance);
+    float rtReflectionMaxDistance() const;
+
+    void setRTReflectionRoughnessSpread(float spread);
+    float rtReflectionRoughnessSpread() const;
+
 protected:
     bg2e::render::Engine* _engine = nullptr;
 

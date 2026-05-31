@@ -20,9 +20,26 @@
 
 layout(binding = 0) uniform sampler2D srcImage;
 
+layout(push_constant) uniform PC {
+    uint channelMode;
+} pc;
+
 layout(location = 0) in vec2 vTexcoord;
 layout(location = 0) out vec4 outColor;
 
 void main() {
-    outColor = texture(srcImage, vTexcoord);
+    vec4 color = texture(srcImage, vTexcoord);
+    if (pc.channelMode == 1) {
+        outColor = vec4(color.r, color.r, color.r, 1.0);
+    } else if (pc.channelMode == 2) {
+        outColor = vec4(color.g, color.g, color.g, 1.0);
+    } else if (pc.channelMode == 3) {
+        outColor = vec4(color.b, color.b, color.b, 1.0);
+    } else if (pc.channelMode == 4) {
+        outColor = vec4(color.a, color.a, color.a, 1.0);
+    } else if (pc.channelMode == 5) {
+        outColor = vec4(color.rgb * color.a, 1.0);
+    } else {
+        outColor = vec4(color.rgb, 1.0);
+    }
 }

@@ -35,6 +35,8 @@ void UIRenderSettingsWindow::drawUI()
 {
     drawRTAOSection();
     bg2e::ui::BasicWidgets::separator();
+    drawRTReflectionsSection();
+    bg2e::ui::BasicWidgets::separator();
     drawTemporalAccumulatorSection();
     bg2e::ui::BasicWidgets::separator();
     drawDenoiseFilterSection();
@@ -50,45 +52,89 @@ void UIRenderSettingsWindow::drawRTAOSection()
     static const std::vector<std::string> qualityItems = { "Low", "Medium", "High", "Ultra" };
     uint32_t qualityIdx = static_cast<uint32_t>(renderer->aoQuality());
 
-    if (bg2e::ui::Input::comboBox("Quality", qualityItems, qualityIdx))
+    if (bg2e::ui::Input::comboBox("Quality##RTAO", qualityItems, qualityIdx))
     {
         renderer->setAOQuality(static_cast<bg2e::render::deferred::RTAOQuality>(qualityIdx));
     }
 
     int sampleCount = renderer->aoSampleCount();
-    if (bg2e::ui::Input::sliderInt("Sample Count", &sampleCount, 1, 32))
+    if (bg2e::ui::Input::sliderInt("Sample Count##RTAO", &sampleCount, 1, 32))
     {
         renderer->setAOSampleCount(sampleCount);
     }
 
     int bounceCount = renderer->aoBounceCount();
-    if (bg2e::ui::Input::sliderInt("Bounce Count", &bounceCount, 0, 8))
+    if (bg2e::ui::Input::sliderInt("Bounce Count##RTAO", &bounceCount, 0, 8))
     {
         renderer->setAOBounceCount(bounceCount);
     }
 
     float radius = renderer->aoRadius();
-    if (bg2e::ui::Input::sliderFloat("Radius", &radius, 0.01f, 5.0f))
+    if (bg2e::ui::Input::sliderFloat("Radius##RTAO", &radius, 0.01f, 5.0f))
     {
         renderer->setAORadius(radius);
     }
 
     float bias = renderer->aoBias();
-    if (bg2e::ui::Input::sliderFloat("Bias", &bias, 0.0f, 0.1f))
+    if (bg2e::ui::Input::sliderFloat("Bias##RTAO", &bias, 0.0f, 0.1f))
     {
         renderer->setAOBias(bias);
     }
 
     float falloff = renderer->aoFalloff();
-    if (bg2e::ui::Input::sliderFloat("Falloff", &falloff, 0.0f, 5.0f))
+    if (bg2e::ui::Input::sliderFloat("Falloff##RTAO", &falloff, 0.0f, 5.0f))
     {
         renderer->setAOFalloff(falloff);
     }
 
     float bounceAttenuation = renderer->aoBounceAttenuation();
-    if (bg2e::ui::Input::sliderFloat("Bounce Attenuation", &bounceAttenuation, 0.0f, 1.0f))
+    if (bg2e::ui::Input::sliderFloat("Bounce Attenuation##RTAO", &bounceAttenuation, 0.0f, 1.0f))
     {
         renderer->setAOBounceAttenuation(bounceAttenuation);
+    }
+}
+
+void UIRenderSettingsWindow::drawRTReflectionsSection()
+{
+    bg2e::ui::BasicWidgets::text("Ray Traced Reflections", true);
+
+    auto renderer = _appDelegate->renderer();
+    if (!renderer) return;
+
+bool enabled = renderer->rtReflectionsEnabled();
+    if (bg2e::ui::BasicWidgets::checkBox("Enabled##RTReflections", &enabled))
+    {
+        renderer->setRTReflectionsEnabled(enabled);
+    }
+
+    int sampleCount = renderer->rtReflectionSampleCount();
+    if (bg2e::ui::Input::sliderInt("Sample Count##RTReflections", &sampleCount, 1, 16))
+    {
+        renderer->setRTReflectionSampleCount(sampleCount);
+    }
+
+    float maxRoughness = renderer->rtReflectionMaxRoughness();
+    if (bg2e::ui::Input::sliderFloat("Max Roughness##RTReflections", &maxRoughness, 0.0f, 1.0f))
+    {
+        renderer->setRTReflectionMaxRoughness(maxRoughness);
+    }
+
+    float rayBias = renderer->rtReflectionRayBias();
+    if (bg2e::ui::Input::sliderFloat("Ray Bias##RTReflections", &rayBias, 0.0f, 0.1f))
+    {
+        renderer->setRTReflectionRayBias(rayBias);
+    }
+
+    float maxDistance = renderer->rtReflectionMaxDistance();
+    if (bg2e::ui::Input::sliderFloat("Max Distance##RTReflections", &maxDistance, 1.0f, 200.0f))
+    {
+        renderer->setRTReflectionMaxDistance(maxDistance);
+    }
+
+float roughnessSpread = renderer->rtReflectionRoughnessSpread();
+    if (bg2e::ui::Input::sliderFloat("Roughness Spread##RTReflections", &roughnessSpread, 0.0f, 5.0f))
+    {
+        renderer->setRTReflectionRoughnessSpread(roughnessSpread);
     }
 }
 
@@ -102,13 +148,13 @@ void UIRenderSettingsWindow::drawTemporalAccumulatorSection()
     static const std::vector<std::string> modeItems = { "Interactive", "Progressive" };
     uint32_t modeIdx = static_cast<uint32_t>(renderer->temporalMode());
 
-    if (bg2e::ui::Input::comboBox("Mode", modeItems, modeIdx))
+    if (bg2e::ui::Input::comboBox("Mode##Temporal", modeItems, modeIdx))
     {
         renderer->setTemporalMode(static_cast<bg2e::render::deferred::TemporalAccumulator::AccumulationMode>(modeIdx));
     }
 
     float historyWeight = renderer->temporalHistoryWeight();
-    if (bg2e::ui::Input::sliderFloat("History Weight", &historyWeight, 0.0f, 1.0f))
+    if (bg2e::ui::Input::sliderFloat("History Weight##Temporal", &historyWeight, 0.0f, 1.0f))
     {
         renderer->setTemporalHistoryWeight(historyWeight);
     }

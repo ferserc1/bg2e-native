@@ -217,6 +217,10 @@ protected:
         glm::mat4 inverseViewProjection;
     };
 
+    struct DebugPushConstants {
+        uint32_t channelMode;
+    };
+
     void createGBufferPipeline();
     void createCompositePipeline();
     void createCompositePipelineRT();
@@ -244,7 +248,8 @@ protected:
         VkCommandBuffer cmd,
         const vulkan::Image* sourceImage,
         const vulkan::Image* outputImage,
-        vulkan::FrameResources& frameResources
+        vulkan::FrameResources& frameResources,
+        uint32_t channelMode
     );
     const vulkan::Image* resolveDebugSource(const vulkan::Image* inputImage, GBufferManager* gbuffer) const;
 };

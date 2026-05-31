@@ -536,6 +536,74 @@ float RendererDeferred::denoiseNormalSigma() const
     return _opaqueLayer->denoiseNormalSigma();
 }
 
+// RT Reflections
+
+void RendererDeferred::setRTReflectionsEnabled(bool enabled)
+{
+    _opaqueLayer->setRTReflectionsEnabled(enabled);
+    _transparentLayer->setRTReflectionsEnabled(enabled);
+}
+
+bool RendererDeferred::rtReflectionsEnabled() const
+{
+    return _opaqueLayer->rtReflectionsEnabled();
+}
+
+void RendererDeferred::setRTReflectionSampleCount(uint32_t count)
+{
+    _opaqueLayer->setRTReflectionSampleCount(count);
+    _transparentLayer->setRTReflectionSampleCount(count);
+}
+
+uint32_t RendererDeferred::rtReflectionSampleCount() const
+{
+    return _opaqueLayer->rtReflectionSampleCount();
+}
+
+void RendererDeferred::setRTReflectionMaxRoughness(float roughness)
+{
+    _opaqueLayer->setRTReflectionMaxRoughness(roughness);
+    _transparentLayer->setRTReflectionMaxRoughness(roughness);
+}
+
+float RendererDeferred::rtReflectionMaxRoughness() const
+{
+    return _opaqueLayer->rtReflectionMaxRoughness();
+}
+
+void RendererDeferred::setRTReflectionRayBias(float bias)
+{
+    _opaqueLayer->setRTReflectionRayBias(bias);
+    _transparentLayer->setRTReflectionRayBias(bias);
+}
+
+float RendererDeferred::rtReflectionRayBias() const
+{
+    return _opaqueLayer->rtReflectionRayBias();
+}
+
+void RendererDeferred::setRTReflectionMaxDistance(float distance)
+{
+    _opaqueLayer->setRTReflectionMaxDistance(distance);
+    _transparentLayer->setRTReflectionMaxDistance(distance);
+}
+
+float RendererDeferred::rtReflectionMaxDistance() const
+{
+    return _opaqueLayer->rtReflectionMaxDistance();
+}
+
+void RendererDeferred::setRTReflectionRoughnessSpread(float spread)
+{
+    _opaqueLayer->setRTReflectionRoughnessSpread(spread);
+    _transparentLayer->setRTReflectionRoughnessSpread(spread);
+}
+
+float RendererDeferred::rtReflectionRoughnessSpread() const
+{
+    return _opaqueLayer->rtReflectionRoughnessSpread();
+}
+
 void RendererDeferred::updateLights(
     const std::vector<std::shared_ptr<bg2e::scene::LightComponent>>& lightComponents,
     [[maybe_unused]] uint32_t maxLights

@@ -28,6 +28,7 @@ public:
 private:
     void drawUI();
     void drawRTAOSection();
+    void drawRTReflectionsSection();
     void drawTemporalAccumulatorSection();
     void drawDenoiseFilterSection();
 
