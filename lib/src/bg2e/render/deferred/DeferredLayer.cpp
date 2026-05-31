@@ -115,6 +115,18 @@ void DeferredLayer::build(VkExtent2D extent, VkFormat outputFormat)
         _temporalReflectionAccumulator->build(_gbuffers[0].get(), extent);
     }
 
+    // Create fallback image for RT reflections (1x1, alpha=0 → cubemap fallback)
+    {
+        std::vector<uint8_t> blackData(4 * 4 * sizeof(uint16_t), 0);
+        _rtReflectionFallbackImage = std::shared_ptr<vulkan::Image>(
+            vulkan::Image::createAllocatedImage(
+                _engine, "RT Reflections fallback", blackData.data(),
+                VkExtent2D{1, 1}, 4, VK_FORMAT_R16G16B16A16_SFLOAT,
+                VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT
+            )
+        );
+    }
+
     // Create per-layer data bindings
     _frameDataBinding = std::make_unique<scene::vk::FrameDataBinding>(_engine);
     _fragmentFrameDataBinding = std::make_unique<scene::vk::FrameDataBinding>(_engine);
@@ -707,6 +719,7 @@ void DeferredLayer::createCompositePipelineRT()
     dsLayoutFactory.addBinding(5, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);  // g_InputImage
     dsLayoutFactory.addBinding(6, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);  // g_Depth
     dsLayoutFactory.addBinding(7, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);  // g_AO
+    dsLayoutFactory.addBinding(8, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);  // g_RTReflection
     _compositeGBufferRTDSLayout = dsLayoutFactory.build(
         _engine->device().handle(),
         VK_SHADER_STAGE_FRAGMENT_BIT
@@ -870,17 +883,18 @@ void DeferredLayer::renderCompositePass(
 
     VkAccelerationStructureKHR tlas = frameResources.rayTracingScene->tlas();
 
-    // Select pipeline based on RT support and whether TLAS is available
+    // Select pipeline variant
     bool useRT = _useRtShadows && tlas != VK_NULL_HANDLE;
+
     VkPipeline activePipeline = useRT ? _compositePipelineRT : _compositePipeline;
     VkPipelineLayout activeLayout = useRT ? _compositePipelineRTLayout : _compositePipelineLayout;
+    VkDescriptorSetLayout activeGBufferLayout = useRT ? _compositeGBufferRTDSLayout : _compositeGBufferDSLayout;
 
     // Bind composite pipeline
     vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, activePipeline);
 
     // Create G-buffer descriptor set
-    auto dsLayout = useRT ? _compositeGBufferRTDSLayout : _compositeGBufferDSLayout;
-    auto gbufferDS = frameResources.newDescriptorSet(dsLayout);
+    auto gbufferDS = frameResources.newDescriptorSet(activeGBufferLayout);
     gbufferDS->beginUpdate();
     gbufferDS->addImage(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
         gbuffer->image(0).get(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _gbufferSampler);
@@ -901,6 +915,10 @@ void DeferredLayer::renderCompositePass(
         auto denoisedAoImg = _denoiseFilter->outputImage(_engine->currentFrameResourcesIndex());
         gbufferDS->addImage(7, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
             denoisedAoImg.get(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _gbufferSampler);
+
+        const vulkan::Image* reflImg = reflectionImage ? reflectionImage : _rtReflectionFallbackImage.get();
+        gbufferDS->addImage(8, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+            reflImg, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _gbufferSampler);
     }
     gbufferDS->endUpdate();
 

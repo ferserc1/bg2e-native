@@ -9,8 +9,6 @@ layout(set = 0, binding = 1, rgba16f) uniform image2D reflectionOutput;
 layout(set = 0, binding = 2) uniform sampler2D g_Depth;
 layout(set = 0, binding = 3) uniform sampler2D g_Normal;
 layout(set = 0, binding = 4) uniform sampler2D g_Material;
-layout(set = 0, binding = 5) uniform sampler2D g_Albedo;
-layout(set = 0, binding = 6) uniform sampler2D g_FresnelFlags;
 
 layout(push_constant) uniform PushConstant {
     mat4 inverseViewProjection;
@@ -56,7 +54,8 @@ void main() {
     vec2 uv = (vec2(pixel) + 0.5) / pc.outputSize;
 
     float depth = texture(g_Depth, uv).r;
-    vec3 normal = normalize(texture(g_Normal, uv).rgb);
+    vec3 normalEncoded = texture(g_Normal, uv).rgb;
+    vec3 normal = normalize(normalEncoded * 2.0 - 1.0);
     vec4 material = texture(g_Material, uv);
 
     float roughness = material.g;

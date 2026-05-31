@@ -63,7 +63,7 @@ Update the documentation to reflect the new subsystem:
 
 **Section 3 (Pipeline):** Update the per-frame pipeline to include RT reflections step.
 
-**Section 7 (Composite):** Add binding 8 for RT reflections. Document the three composite variants.
+**Section 7 (Composite):** `deferred_composite_rt.frag.glsl` is the single unified RT composite shader with 9 bindings (AO at 7, reflections at 8). Standard and RT are the only two composite variants.
 
 **Section 11 (Debug Visualization):** Add the three new debug modes.
 

@@ -200,6 +200,7 @@ protected:
     std::unique_ptr<DenoiseFilter> _denoiseFilter;
     std::unique_ptr<RTReflections> _rtReflections;
     std::unique_ptr<TemporalAccumulator> _temporalReflectionAccumulator;
+    std::shared_ptr<vulkan::Image> _rtReflectionFallbackImage;
 
     struct CompositePushConstants {
         float gamma;

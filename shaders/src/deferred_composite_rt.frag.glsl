@@ -35,6 +35,7 @@ layout(set = 0, binding = 4) uniform sampler2D g_SheenColor;
 layout(set = 0, binding = 5) uniform sampler2D g_InputImage;
 layout(set = 0, binding = 6) uniform sampler2D g_Depth;
 layout(set = 0, binding = 7) uniform sampler2D g_AO;
+layout(set = 0, binding = 8) uniform sampler2D g_RTReflection;
 
 // Scene data (set=1)
 layout(set = 1, binding = 0) uniform SceneData {
@@ -77,6 +78,52 @@ layout(push_constant) uniform PushConstant {
 layout(location = 0) in vec2 vTexcoord;
 layout(location = 0) out vec4 outColor;
 
+vec3 calcAmbientLightWithReflections(
+    vec3 viewDir,
+    vec3 normal,
+    vec3 F0,
+    vec3 albedo,
+    float metallic,
+    float roughness,
+    samplerCube inIrradianceMap,
+    samplerCube inPrefilteredEnvMap,
+    float maxLOD,
+    sampler2D inBrdfLUT,
+    float ambientOcclussion,
+    float sheenIntensity,
+    vec3 sheenColor,
+    vec4 rtReflection
+) {
+    vec3 R = reflect(-viewDir, normal);
+
+    vec3 F = fresnelSchlickRoughness(max(dot(normal, viewDir), 0.0), F0, roughness);
+
+    vec3 Ks = F;
+    vec3 Kd = 1.0 - Ks;
+    Kd *= 1.0 - metallic;
+
+    vec3 irradiance = texture(inIrradianceMap, normal).rgb;
+    vec3 diffuse = irradiance * albedo;
+
+    float roughnessDelta = 1.0 / maxLOD;
+    float sampleRoughness = roughness * maxLOD;
+    vec3 prefilteredColor1 = textureLod(inPrefilteredEnvMap, R, sampleRoughness).rgb;
+    vec3 prefilteredColor2 = textureLod(inPrefilteredEnvMap, R, max(sampleRoughness - roughnessDelta, 0.0)).rgb;
+    vec3 envReflection = mix(prefilteredColor1, prefilteredColor2, fract(sampleRoughness));
+
+    vec3 finalReflection = mix(envReflection, rtReflection.rgb, rtReflection.a);
+
+    vec2 brdfUV = vec2(clamp(max(dot(normal, viewDir), 0.0), 0.01, 0.99), roughness);
+    vec2 envBRDF = texture(inBrdfLUT, brdfUV).rg;
+
+    vec3 specular = finalReflection * (F * envBRDF.x + envBRDF.y);
+
+    vec3 base = (Kd * diffuse + specular) * ambientOcclussion;
+    vec3 sheen = calcSheen(normal, viewDir, sheenColor, sheenIntensity) * ambientOcclussion;
+
+    return base + sheen;
+}
+
 void main() {
     DeferredGBufferData gbuf = setupDeferredGBuffer(
         g_Albedo, g_Normal, g_Material, g_FresnelFlags, g_SheenColor,
@@ -117,10 +164,13 @@ void main() {
         }
     }
 
-    vec3 ambient = calcAmbientLight(gbuf.viewDir, gbuf.normal, gbuf.F0, gbuf.albedo.rgb,
+    vec4 rtReflection = texture(g_RTReflection, vTexcoord);
+
+    vec3 ambient = calcAmbientLightWithReflections(gbuf.viewDir, gbuf.normal, gbuf.F0, gbuf.albedo.rgb,
                                     gbuf.metallic, gbuf.roughness,
                                     irradianceMap, prefilteredEnvMap, environmentData.maxReflectionLOD,
-                                    brdfLUT, gbuf.ao * texture(g_AO, vTexcoord).r, gbuf.sheenIntensity, gbuf.sheenColor);
+                                    brdfLUT, gbuf.ao * texture(g_AO, vTexcoord).r, gbuf.sheenIntensity, gbuf.sheenColor,
+                                    rtReflection);
 
     outColor = compositeFinalColor(ambient, Lo, gbuf.inputColor, gbuf.albedo.a,
                                    pushConstant.exposure, pushConstant.gamma,

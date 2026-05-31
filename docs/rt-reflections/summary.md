@@ -14,7 +14,7 @@ Incremental implementation plan for adding ray-traced reflections to the bg2e de
 
 4. **TemporalAccumulator is scalar-only.** Hardcodes `VK_FORMAT_R16_SFLOAT`. Reflections need `VK_FORMAT_R16G16B16A16_SFLOAT`.
 
-5. **Composite pass has two variants.** Standard (7 bindings) and RT (8 bindings). Need a third variant with 9 bindings (AO + reflections).
+5. **Composite pass has two variants.** Standard (7 bindings) and RT (9 bindings: AO + reflections). `deferred_composite_rt.frag.glsl` is the single unified RT composite shader — all RT effects (shadows, AO, reflections) are combined here. No separate composite shaders.
 
 ## Implementation Steps
 
@@ -28,7 +28,7 @@ Each step leaves the engine in a compilable state.
 | 4 | RTReflections Class | `deferred/RTReflections.hpp`, `.cpp` | — |
 | 5 | RGBA Temporal Accumulator | — | `TemporalAccumulator.hpp`, `.cpp` |
 | 6 | Render Flow Integration | — | `DeferredLayer.hpp`, `.cpp` |
-| 7 | Composite Integration | — | `DeferredLayer.cpp`, `deferred_composite_rt_reflections.frag.glsl` |
+| 7 | Composite Integration | — | `DeferredLayer.cpp`, `deferred_composite_rt.frag.glsl` |
 | 8 | Debug Visualization | — | `DeferredLayer.hpp`, `.cpp` |
 | 9 | Public API + Docs | — | `RendererDeferred.hpp`, `.cpp` |
 

@@ -1,63 +1,45 @@
-# Step 7: Composite Integration — Revised
+# Step 7: Composite Integration
 
 ## Objective
 
-Modify the deferred composite pass to accept the accumulated RT reflection texture and blend it with the existing cubemap/prefiltered environment reflection.
-
-This revised version uses a real third composite variant instead of mixing two incompatible strategies.
+Modify `deferred_composite_rt.frag.glsl` to accept the accumulated RT reflection texture and blend it with the cubemap/prefiltered environment reflection. This shader is the **single unified RT composite shader** — all ray tracing effects (shadows, AO, reflections) are combined here. No separate composite shaders are created.
 
 ## Composite Variants
 
-The renderer should have three explicit composite variants:
+The renderer has exactly two composite variants:
 
 ```text
 Standard composite:
   Set 0 bindings 0-6
-  No RT AO/reflection texture
+  No RT textures
+  Shader: deferred_composite.frag.spv
 
 RT composite:
-  Set 0 bindings 0-7
-  Includes AO texture at binding 7
-
-RT reflections composite:
   Set 0 bindings 0-8
-  Includes AO texture at binding 7
-  Includes RT reflection texture at binding 8
+  Binding 7: AO texture
+  Binding 8: RT reflection texture (fallback to 1x1 alpha=0 image when unavailable)
+  Shader: deferred_composite_rt.frag.spv
 ```
 
-Do not add `binding = 8` to the existing `deferred_composite_rt.frag.glsl` unless its descriptor set layout is also changed everywhere. The safer approach is a separate shader and pipeline variant.
+## Shader Modification
 
-## Files to Create
+### `shaders/src/deferred_composite_rt.frag.glsl`
 
-### `shaders/src/deferred_composite_rt_reflections.frag.glsl`
-
-Create this by copying:
-
-```text
-shaders/src/deferred_composite_rt.frag.glsl
-```
-
-Then add:
+Add binding 8 for the RT reflection texture:
 
 ```glsl
 layout(set = 0, binding = 8) uniform sampler2D g_RTReflection;
 ```
 
-Find the existing environment reflection computation, where the prefiltered environment map is sampled using reflection vector `R` and roughness-derived LOD.
-
-Replace the direct use of the environment reflection with a final reflection value:
+Inline the `calcAmbientLight()` function as `calcAmbientLightWithReflections()`, adding an `rtReflection` parameter. Replace the direct environment reflection with a blended value:
 
 ```glsl
-vec3 envReflection = textureLod(prefilteredEnvMap, R, lod).rgb;
-vec4 rtReflection = texture(g_RTReflection, vTexcoord);
-
-// First implementation: simple alpha-mask blend.
-// alpha = 1 -> use RT reflection
-// alpha = 0 -> use cubemap reflection
+vec3 envReflection = mix(prefilteredColor1, prefilteredColor2, fract(sampleRoughness));
 vec3 finalReflection = mix(envReflection, rtReflection.rgb, rtReflection.a);
+vec3 specular = finalReflection * (F * envBRDF.x + envBRDF.y);
 ```
 
-Use `finalReflection` everywhere the shader previously used `envReflection` or the direct prefiltered envmap result for specular/environment reflection.
+Use `finalReflection` everywhere the shader previously used the prefiltered envmap result for specular/environment reflection.
 
 This first blend is intentionally simple. Do not add roughness remapping, Fresnel weighting, confidence weighting, spatial denoise or advanced BRDF correction in this step.
 
@@ -65,95 +47,63 @@ This first blend is intentionally simple. Do not add roughness remapping, Fresne
 
 ### `lib/include/bg2e/render/deferred/DeferredLayer.hpp`
 
-Add members:
+Add a fallback image member for when RT reflections are unavailable:
 
 ```cpp
-VkPipeline _compositePipelineRTReflections = VK_NULL_HANDLE;
-VkPipelineLayout _compositePipelineRTReflectionsLayout = VK_NULL_HANDLE;
-VkDescriptorSetLayout _compositeGBufferRTReflectionsDSLayout = VK_NULL_HANDLE;
+std::shared_ptr<vulkan::Image> _rtReflectionFallbackImage;
 ```
 
-Add method declaration:
-
-```cpp
-void createCompositePipelineRTReflections();
-```
-
-If using an internal enum for composite selection, use:
-
-```cpp
-enum class CompositeVariant {
-    Standard,
-    RT,
-    RTReflections
-};
-```
-
-Avoid naming the second variant `RTShadows`; the existing RT composite path represents the RT-enhanced composite path, not necessarily only shadows.
+No new pipeline, layout, or descriptor set members are needed — the existing `_compositePipelineRT` / `_compositeGBufferRTDSLayout` are updated to support 9 bindings.
 
 ### `lib/src/bg2e/render/deferred/DeferredLayer.cpp`
 
-## Descriptor Set Layout
+#### `createCompositePipelineRT()`
 
-Create a new descriptor set layout for the RT reflections composite variant:
+Update the descriptor set layout to include binding 8:
 
 ```cpp
-void DeferredLayer::createCompositePipelineRTReflections() {
-    factory::DescriptorSetLayout dsLayoutFactory;
+dsLayoutFactory.addBinding(7, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);  // g_AO
+dsLayoutFactory.addBinding(8, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);  // g_RTReflection
+```
 
-    dsLayoutFactory.addBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER); // Albedo
-    dsLayoutFactory.addBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER); // Normal
-    dsLayoutFactory.addBinding(2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER); // Material
-    dsLayoutFactory.addBinding(3, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER); // FresnelFlags
-    dsLayoutFactory.addBinding(4, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER); // SheenColor
-    dsLayoutFactory.addBinding(5, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER); // InputImage
-    dsLayoutFactory.addBinding(6, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER); // Depth
-    dsLayoutFactory.addBinding(7, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER); // AO
-    dsLayoutFactory.addBinding(8, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER); // RT Reflections
+#### `build()`
 
-    _compositeGBufferRTReflectionsDSLayout = dsLayoutFactory.build(
-        _engine->device().handle(),
-        VK_SHADER_STAGE_FRAGMENT_BIT
-    );
+Create a 1x1 RGBA16F fallback image with alpha=0 for when no RT reflection is available:
 
-    // Build _compositePipelineRTReflectionsLayout with the same set layout sequence
-    // as the existing RT composite pipeline, but using the 9-binding set 0 layout.
-    // Set 0: G-buffer + AO + RT reflections
-    // Set 1: Fragment frame data
-    // Set 2: Environment data
-    // Set 3: Light data
-    // Set 4: Ray tracing scene data / TLAS
+```cpp
+std::vector<uint8_t> blackData(4 * 4 * sizeof(uint16_t), 0);
+_rtReflectionFallbackImage = std::shared_ptr<vulkan::Image>(
+    vulkan::Image::createAllocatedImage(
+        _engine, "RT Reflections fallback", blackData.data(),
+        VkExtent2D{1, 1}, 4, VK_FORMAT_R16G16B16A16_SFLOAT,
+        VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT
+    )
+);
+```
 
-    // Build _compositePipelineRTReflections using:
-    // vertex shader:   deferred_composite.vert.spv
-    // fragment shader: deferred_composite_rt_reflections.frag.spv
+#### `renderCompositePass()`
+
+Simplify variant selection to two variants:
+
+```cpp
+bool useRT = _useRtShadows && tlas != VK_NULL_HANDLE;
+
+VkPipeline activePipeline = useRT ? _compositePipelineRT : _compositePipeline;
+VkPipelineLayout activeLayout = useRT ? _compositePipelineRTLayout : _compositePipelineLayout;
+VkDescriptorSetLayout activeGBufferLayout = useRT ? _compositeGBufferRTDSLayout : _compositeGBufferDSLayout;
+```
+
+For the RT variant, always write bindings 0-8. When no reflection image is available, use the fallback:
+
+```cpp
+if (useRT) {
+    addImage(7, denoisedAO);
+    const vulkan::Image* reflImg = reflectionImage ? reflectionImage : _rtReflectionFallbackImage.get();
+    addImage(8, reflImg);
 }
 ```
 
-The exact factory calls should follow the existing `createCompositePipeline()` and `createCompositePipelineRT()` style.
-
-## Pipeline Creation
-
-Build the third pipeline with:
-
-```text
-Vertex shader:   deferred_composite.vert.spv
-Fragment shader: deferred_composite_rt_reflections.frag.spv
-```
-
-The pipeline layout must include:
-
-```text
-Set 0: G-buffer + input + depth + AO + RT reflections
-Set 1: Fragment frame data
-Set 2: Environment data
-Set 3: Light data
-Set 4: Ray tracing scene data / TLAS
-```
-
 ## `renderCompositePass()` Signature
-
-Extend the composite pass to accept an optional reflection image:
 
 ```cpp
 void renderCompositePass(
@@ -164,73 +114,9 @@ void renderCompositePass(
     vulkan::FrameResources& frameResources,
     const glm::mat4& viewMatrix,
     const glm::mat4& projMatrix,
-    const vulkan::Image* reflectionImage
+    const vulkan::Image* reflectionImage  // nullable
 );
 ```
-
-`reflectionImage` may be `nullptr`.
-
-## Variant Selection
-
-Use explicit selection:
-
-```cpp
-bool useRT = _useRtShadows && tlas != VK_NULL_HANDLE;
-bool useReflections = useRT && reflectionImage != nullptr;
-
-VkPipeline activePipeline = VK_NULL_HANDLE;
-VkPipelineLayout activeLayout = VK_NULL_HANDLE;
-VkDescriptorSetLayout activeGBufferLayout = VK_NULL_HANDLE;
-
-if (useReflections) {
-    activePipeline = _compositePipelineRTReflections;
-    activeLayout = _compositePipelineRTReflectionsLayout;
-    activeGBufferLayout = _compositeGBufferRTReflectionsDSLayout;
-}
-else if (useRT) {
-    activePipeline = _compositePipelineRT;
-    activeLayout = _compositePipelineRTLayout;
-    activeGBufferLayout = _compositeGBufferRTDSLayout;
-}
-else {
-    activePipeline = _compositePipeline;
-    activeLayout = _compositePipelineLayout;
-    activeGBufferLayout = _compositeGBufferDSLayout;
-}
-```
-
-## Descriptor Set Updates
-
-For the standard variant, write bindings 0-6.
-
-For the RT variant, write bindings 0-7, where binding 7 is AO.
-
-For the RT reflections variant, write bindings 0-8:
-
-```cpp
-// Existing bindings
-addImage(0, albedo);
-addImage(1, normal);
-addImage(2, material);
-addImage(3, fresnelFlags);
-addImage(4, sheenColor);
-addImage(5, inputImage);
-addImage(6, depth);
-
-// RT AO
-addImage(7, denoisedAO);
-
-// RT reflections
-addImage(8, reflectionImage);
-```
-
-The reflection image must be in:
-
-```cpp
-VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
-```
-
-before the composite pass samples it.
 
 ## Render Flow Input
 
@@ -245,41 +131,23 @@ if (_temporalReflectionAccumulator) {
 }
 ```
 
-Then call:
-
-```cpp
-renderCompositePass(
-    cmd,
-    currentFrame,
-    inputImage,
-    outputImage,
-    frameResources,
-    viewMatrix,
-    projMatrix,
-    reflectionInputForComposite
-);
-```
-
 ## Disabled / Unavailable Reflections
 
 If reflections are disabled, unsupported, or TLAS is null:
 
 - `reflectionImage` should be `nullptr`
-- select the existing standard or RT composite path
-- do not bind binding 8
-- do not use the RT reflections shader variant
-
-This preserves existing behavior.
+- The fallback image (alpha=0) is bound to binding 8
+- The shader samples it and `mix()` returns the cubemap reflection unchanged
+- No descriptor layout mismatch occurs
 
 ## Verification
 
 After this step:
 
-- The composite pass has three clean variants.
-- The existing standard composite remains unchanged.
-- The existing RT composite remains unchanged.
-- The new RT reflections composite uses a 9-binding set 0 descriptor layout.
-- `deferred_composite_rt_reflections.frag.glsl` samples `g_RTReflection` at binding 8.
+- `deferred_composite_rt.frag.glsl` is the single unified RT composite shader with 9 bindings.
+- No separate composite shader or pipeline is created for reflections.
+- The standard composite remains unchanged (7 bindings).
+- The RT composite handles both AO and reflections (9 bindings).
 - Low-roughness surfaces can show accumulated RT reflections.
 - Pixels with reflection alpha 0 fall back to cubemap reflection.
 - No descriptor layout mismatch occurs.
