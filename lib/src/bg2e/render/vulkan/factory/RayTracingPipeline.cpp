@@ -256,6 +256,12 @@ RayTracingPipeline::SBTData RayTracingPipeline::createSBT(const std::string& nam
         &sbtInfo
     ));
 
+    vmaSetAllocationName(
+        _engine->allocator(),
+        sbtAllocation,
+        "RayTracingPipeline SBT buffer"
+    );
+
     void* mappedData = getMappedData(sbtAllocation);
     std::memset(mappedData, 0, sbtSize);
 

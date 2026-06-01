@@ -81,6 +81,12 @@ Buffer* Buffer::createAllocatedBuffer(
             engine->device().handle(),
             &nameInfo
         );
+
+        vmaSetAllocationName(
+            engine->allocator(),
+            buffer->_allocation,
+            name.c_str()
+        );
     }
 
     return buffer;

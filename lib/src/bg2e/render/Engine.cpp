@@ -21,6 +21,8 @@
 #include <bg2e/render/vulkan/extensions.hpp>
 #include <stdexcept>
 
+#include "bg2e/base/Log.hpp"
+
 #ifdef BG2E_LINUX
 
 #include <SDL2/SDL.h>
@@ -100,6 +102,24 @@ void Engine::cleanup()
     cleanupFrameResources();
 
     _swapchain.cleanup();
+
+    if (bg2e::base::Log::isDebug())
+    {
+        char* statsString = nullptr;
+
+        vmaBuildStatsString(
+            _allocator,
+            &statsString,
+            VK_TRUE // detailed map
+        );
+
+        std::cout << statsString << std::endl;
+
+        vmaFreeStatsString(
+            _allocator,
+            statsString
+        );
+    }
 
     vmaDestroyAllocator(_allocator);
 

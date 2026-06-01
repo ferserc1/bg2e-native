@@ -48,10 +48,9 @@ void RTReflections::build(const GBufferManager* gbuffer, VkExtent2D extent)
         _sampler = VK_NULL_HANDLE;
     });
 
-    createFallbackImage();
-
     if (!_engine->rayTracingSupported())
     {
+        createFallbackImage();
         _rtSupported = false;
         return;
     }
@@ -69,7 +68,7 @@ void RTReflections::createFallbackImage()
 
     _fallbackImage = std::shared_ptr<vulkan::Image>(
         vulkan::Image::createAllocatedImage(
-            _engine, "RT Reflections fallback", whiteData.data(),
+            _engine, "RTReflections: fallback image", whiteData.data(),
             VkExtent2D{4, 4}, bpp, VK_FORMAT_R16G16B16A16_SFLOAT,
             VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT
         )
@@ -137,15 +136,6 @@ void RTReflections::createPipeline()
     _missRegion = sbt.missRegion;
     _hitRegion = sbt.hitRegion;
     _callableRegion = sbt.callableRegion;
-
-    _engine->cleanupManager().push([&](VkDevice dev) {
-        vkDestroyPipeline(dev, _pipeline, nullptr);
-        _pipeline = VK_NULL_HANDLE;
-        vkDestroyPipelineLayout(dev, _pipelineLayout, nullptr);
-        _pipelineLayout = VK_NULL_HANDLE;
-        vkDestroyDescriptorSetLayout(dev, _dsLayout, nullptr);
-        _dsLayout = VK_NULL_HANDLE;
-    });
 }
 
 void RTReflections::render(
@@ -241,6 +231,7 @@ void RTReflections::cleanup()
 
     if (_sbtBuffer)
     {
+        _sbtBuffer->cleanup();
         _sbtBuffer.reset();
     }
 

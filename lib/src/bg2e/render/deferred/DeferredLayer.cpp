@@ -120,7 +120,7 @@ void DeferredLayer::build(VkExtent2D extent, VkFormat outputFormat)
         std::vector<uint8_t> blackData(4 * 4 * sizeof(uint16_t), 0);
         _rtReflectionFallbackImage = std::shared_ptr<vulkan::Image>(
             vulkan::Image::createAllocatedImage(
-                _engine, "RT Reflections fallback", blackData.data(),
+                _engine, "DeferredLayer: RT Reflections fallback", blackData.data(),
                 VkExtent2D{1, 1}, 4, VK_FORMAT_R16G16B16A16_SFLOAT,
                 VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT
             )
@@ -367,6 +367,7 @@ void DeferredLayer::cleanup()
     if (_denoiseFilter) _denoiseFilter->cleanup();
     if (_temporalReflectionAccumulator) _temporalReflectionAccumulator->cleanup();
     if (_rtReflections) _rtReflections->cleanup();
+    if (_rtReflectionFallbackImage) _rtReflectionFallbackImage->cleanup();
 
     _frameDataBinding->cleanup();
     _fragmentFrameDataBinding->cleanup();
