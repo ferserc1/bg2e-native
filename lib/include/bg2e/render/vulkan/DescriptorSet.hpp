@@ -134,6 +134,22 @@ public:
         VkAccelerationStructureKHR accelerationStructure
     );
 
+    void addBufferArray(
+        uint32_t binding,
+        VkDescriptorType type,
+        const std::vector<VkBuffer>& buffers,
+        const std::vector<size_t>& sizes,
+        const std::vector<size_t>& offsets
+    );
+
+    void addImageArray(
+        uint32_t binding,
+        VkDescriptorType type,
+        const std::vector<VkImageView>& imageViews,
+        const std::vector<VkSampler>& samplers,
+        VkImageLayout layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+    );
+
     void endUpdate();
 
     // Clear all descriptor writes to add images and buffers again
@@ -150,6 +166,8 @@ protected:
     std::deque<VkDescriptorBufferInfo> _bufferInfos;
     std::deque<VkAccelerationStructureKHR> _accelerationStructures;
     std::deque<VkWriteDescriptorSetAccelerationStructureKHR> _asInfo;
+    std::deque<std::vector<VkDescriptorBufferInfo>> _bufferInfoArrays;
+    std::deque<std::vector<VkDescriptorImageInfo>> _imageInfoArrays;
     std::vector<VkWriteDescriptorSet> _writes;
 
     //VkDescriptorImageInfo _imageInfo;

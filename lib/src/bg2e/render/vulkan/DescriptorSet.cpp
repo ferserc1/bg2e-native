@@ -133,6 +133,58 @@ void DescriptorSet::addAccelerationStructure(
     _writes.push_back(write);
 }
 
+void DescriptorSet::addBufferArray(
+    uint32_t binding,
+    VkDescriptorType type,
+    const std::vector<VkBuffer>& buffers,
+    const std::vector<size_t>& sizes,
+    const std::vector<size_t>& offsets
+) {
+    auto& infos = _bufferInfoArrays.emplace_back(buffers.size());
+    for (size_t i = 0; i < buffers.size(); ++i)
+    {
+        infos[i].buffer = buffers[i];
+        infos[i].offset = offsets[i];
+        infos[i].range = sizes[i];
+    }
+
+    VkWriteDescriptorSet write = {};
+    write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    write.dstBinding = binding;
+    write.dstSet = _ds;
+    write.descriptorCount = static_cast<uint32_t>(buffers.size());
+    write.descriptorType = type;
+    write.pBufferInfo = infos.data();
+
+    _writes.push_back(write);
+}
+
+void DescriptorSet::addImageArray(
+    uint32_t binding,
+    VkDescriptorType type,
+    const std::vector<VkImageView>& imageViews,
+    const std::vector<VkSampler>& samplers,
+    VkImageLayout layout
+) {
+    auto& infos = _imageInfoArrays.emplace_back(imageViews.size());
+    for (size_t i = 0; i < imageViews.size(); ++i)
+    {
+        infos[i].sampler = samplers[i];
+        infos[i].imageView = imageViews[i];
+        infos[i].imageLayout = layout;
+    }
+
+    VkWriteDescriptorSet write = {};
+    write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    write.dstBinding = binding;
+    write.dstSet = _ds;
+    write.descriptorCount = static_cast<uint32_t>(imageViews.size());
+    write.descriptorType = type;
+    write.pImageInfo = infos.data();
+
+    _writes.push_back(write);
+}
+
 void DescriptorSet::endUpdate()
 {
     vkUpdateDescriptorSets(_engine->device().handle(), uint32_t(_writes.size()), _writes.data(), 0, nullptr);
@@ -144,6 +196,8 @@ void DescriptorSet::clear()
     _bufferInfos.clear();
     _accelerationStructures.clear();
     _asInfo.clear();
+    _bufferInfoArrays.clear();
+    _imageInfoArrays.clear();
     _writes.clear();
 }
 

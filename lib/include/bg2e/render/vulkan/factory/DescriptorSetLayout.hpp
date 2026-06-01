@@ -30,7 +30,7 @@ namespace factory {
 
 class BG2E_API DescriptorSetLayout {
 public:
-    void addBinding(uint32_t binding, VkDescriptorType type);
+    void addBinding(uint32_t binding, VkDescriptorType type, uint32_t descriptorCount = 1);
     void clear();
     VkDescriptorSetLayout build(
         VkDevice device,

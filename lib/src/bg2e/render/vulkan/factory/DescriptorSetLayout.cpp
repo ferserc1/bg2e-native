@@ -20,11 +20,11 @@
 
 namespace bg2e::render::vulkan::factory {
 
-void DescriptorSetLayout::addBinding(uint32_t binding, VkDescriptorType type)
+void DescriptorSetLayout::addBinding(uint32_t binding, VkDescriptorType type, uint32_t descriptorCount)
 {
     VkDescriptorSetLayoutBinding bindingInfo = {};
     bindingInfo.binding = binding;
-    bindingInfo.descriptorCount = 1;
+    bindingInfo.descriptorCount = descriptorCount;
     bindingInfo.descriptorType = type;
     bindingInfo.pImmutableSamplers = nullptr;
     _bindings.push_back(bindingInfo);
