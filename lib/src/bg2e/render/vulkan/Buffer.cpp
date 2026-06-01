@@ -50,6 +50,7 @@ Buffer* Buffer::createAllocatedBuffer(
 
     buffer->_engine = engine;
     buffer->_debugName = name;
+    buffer->_logicSize = allocSize;
 
     VkBufferCreateInfo bufferInfo = {};
     bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;

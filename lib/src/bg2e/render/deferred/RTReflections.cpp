@@ -116,6 +116,10 @@ void RTReflections::createPipeline()
 
     vulkan::factory::PipelineLayout layoutFactory(_engine);
     layoutFactory.addDescriptorSetLayout(_dsLayout);
+    if (_materialDataBinding)
+    {
+        layoutFactory.addDescriptorSetLayout(_materialDataBinding->createLayout());
+    }
     layoutFactory.addPushConstantRange(
         0,
         sizeof(ReflectionPushConstants),
@@ -145,7 +149,8 @@ void RTReflections::render(
     const GBufferManager* gbuffer,
     const glm::mat4& inverseViewProjection,
     const glm::vec3& cameraPosition,
-    VkAccelerationStructureKHR tlas
+    VkAccelerationStructureKHR tlas,
+    const std::vector<vulkan::rt::RTObjectInstance>& objectInstances
 )
 {
     if (!_settings.enabled)
@@ -196,6 +201,13 @@ void RTReflections::render(
     VkDescriptorSet dsHandle = ds->descriptorSet();
     vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR,
         _pipelineLayout, 0, 1, &dsHandle, 0, nullptr);
+
+    if (_materialDataBinding && !objectInstances.empty())
+    {
+        auto materialDS = _materialDataBinding->newDescriptorSet(frameResources, objectInstances);
+        vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR,
+            _pipelineLayout, 1, 1, &materialDS, 0, nullptr);
+    }
 
     ReflectionPushConstants pc{};
     pc.inverseViewProjection = inverseViewProjection;

@@ -18,36 +18,37 @@
 
 #pragma once
 
-#include <bg2e/base/Color.hpp>
-#include <bg2e/math/base.hpp>
-#include <bg2e/render/vulkan/Buffer.hpp>
-#include <bg2e/render/Texture.hpp>
+#include <bg2e/render/vulkan/PipelineDataBinding.hpp>
+#include <bg2e/render/vulkan/FrameResources.hpp>
+#include <bg2e/render/vulkan/rt/RTMaterialData.h>
 
 namespace bg2e {
 namespace render {
 namespace vulkan {
 namespace rt {
 
-static constexpr uint32_t MAX_OBJECTS = 256;
+class BG2E_API RTMaterialDataBinding : public PipelineDataBinding {
+public:
+    static constexpr uint32_t MAX_OBJECTS = 256;
 
-struct RTMaterialData {
-    base::Color albedo;
-    glm::vec2 albedoScale;
-    uint32_t padding[2];
-};
+    RTMaterialDataBinding(Engine * engine);
 
-struct RTMaterialInstance {
-    RTMaterialData data;
-    const Buffer* vertexBuffer = nullptr;
-    const Buffer* indexBuffer = nullptr;
-    render::Texture* albedoTexture = nullptr;
-};
+    void initFrameResources(DescriptorSetAllocator * frameAllocator) override;
 
-struct RTObjectInstance {
-    RTMaterialData materialData;
-    const Buffer*  vertexBuffer = nullptr;
-    const Buffer*  indexBuffer = nullptr;
-    render::Texture* albedoTexture = nullptr;
+    VkDescriptorSetLayout createLayout(
+        VkShaderStageFlags shaderStages = VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR
+    ) override;
+
+    VkDescriptorSet newDescriptorSet(
+        FrameResources & frameResources,
+        const std::vector<RTObjectInstance> & objectInstances
+    );
+
+    void cleanup();
+
+protected:
+    VkBuffer _dummyBuffer = VK_NULL_HANDLE;
+    Buffer * _dummyBufferObj = nullptr;
 };
 
 }

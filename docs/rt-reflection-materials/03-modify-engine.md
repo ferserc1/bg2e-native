@@ -23,7 +23,6 @@ uint32_t _maxRayTracingObjects = 256;
 Add these methods in the `public:` section:
 
 ```cpp
-inline void setMaxRayTracingObjects(uint32_t max) { _maxRayTracingObjects = max; }
 inline uint32_t maxRayTracingObjects() const { return _maxRayTracingObjects; }
 ```
 
@@ -36,8 +35,7 @@ public:
 
     inline bool rayTracingSupported() const { return _physicalDevice.properties()->rayTracingSupported(); }
 
-    // NEW: Get/set maximum number of objects for ray tracing
-    inline void setMaxRayTracingObjects(uint32_t max) { _maxRayTracingObjects = max; }
+    // NEW: Get maximum number of objects for ray tracing
     inline uint32_t maxRayTracingObjects() const { return _maxRayTracingObjects; }
 
     // ... existing methods ...
@@ -50,7 +48,6 @@ public:
 
 After this change:
 - `engine->maxRayTracingObjects()` returns the global limit (default 256)
-- `engine->setMaxRayTracingObjects(n)` changes the limit
 - `CollectRayTracingInstancesVisitor` checks this limit before collecting more objects
 - `RTMaterialDataBinding::MAX_OBJECTS` is set to 256 to match
 
@@ -58,4 +55,4 @@ After this change:
 
 - The default value is 256, which gives us 4 array bindings with count=256 each
 - This is a reasonable limit for most scenes. If a scene has more than 256 RT-visible objects, only the first 256 (in traversal order) will be included in the TLAS and material data binding
-- The limit should be set early in application initialization, before the first frame renders
+- The limit is defined in build time and the idea is to keep unmodified

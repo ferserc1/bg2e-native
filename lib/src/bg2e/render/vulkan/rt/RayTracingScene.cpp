@@ -49,6 +49,7 @@ bool RayTracingScene::update(VkCommandBuffer cmd, scene::Node* node)
     node->accept(&visitor);
 
     const auto & instances = visitor.rayTracingInstances();
+    _objectInstances = visitor.objectInstances();
 
     if (instances.empty())
     {
@@ -176,6 +177,7 @@ void RayTracingScene::cleanup()
         _scratchBuffer.reset();
     }
 
+    _objectInstances.clear();
     _tlasDeviceAddress = 0;
 }
 

@@ -45,16 +45,16 @@ public:
         return _instances;
     }
 
-    [[nodiscard]] const std::vector<RTMaterialInstance>& materialInstances() const
+    [[nodiscard]] const std::vector<RTObjectInstance>& objectInstances() const
     {
-        return _materialInstances;
+        return _objectInstances;
     }
 
 protected:
     Engine * _engine = nullptr;
 
     std::vector<VkAccelerationStructureInstanceKHR> _instances;
-    std::vector<RTMaterialInstance> _materialInstances;
+    std::vector<RTObjectInstance> _objectInstances;
 
     glm::mat4 _currentTransform{ 1.0f };
     std::stack<glm::mat4> _transformStack;

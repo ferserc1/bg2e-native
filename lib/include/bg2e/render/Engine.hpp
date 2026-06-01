@@ -89,6 +89,8 @@ public:
 
     inline bool rayTracingSupported() const { return _physicalDevice.properties()->rayTracingSupported(); }
 
+    inline uint32_t maxRayTracingObjects() const { return _maxRayTracingObjects; }
+
     inline void updateSwapchainSize() { _resizeRequested = true; }
 
     // This function returns true if the swapchain have been resized
@@ -125,6 +127,8 @@ private:
     VmaAllocator _allocator = VK_NULL_HANDLE;
 
     bool _resizeRequested = false;
+
+    uint32_t _maxRayTracingObjects = 256;
 
 
     void createInstance();

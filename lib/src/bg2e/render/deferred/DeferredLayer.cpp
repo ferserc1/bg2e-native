@@ -106,7 +106,10 @@ void DeferredLayer::build(VkExtent2D extent, VkFormat outputFormat)
     // Create RT reflections subsystem (only if RT is supported)
     if (_engine->rayTracingSupported())
     {
+        _rtMaterialDataBinding = std::make_unique<vulkan::rt::RTMaterialDataBinding>(_engine);
+
         _rtReflections = std::make_unique<RTReflections>(_engine);
+        _rtReflections->setMaterialDataBinding(_rtMaterialDataBinding.get());
         _rtReflections->build(_gbuffers[0].get(), extent);
 
         _temporalReflectionAccumulator = std::make_unique<TemporalAccumulator>(_engine);
@@ -167,6 +170,10 @@ void DeferredLayer::initFrameResources(vulkan::DescriptorSetAllocator* allocator
     _fragmentFrameDataBinding->initFrameResources(allocator);
     _objectDataBinding->initFrameResources(allocator);
     _environmentDataBinding->initFrameResources(allocator);
+    if (_rtMaterialDataBinding)
+    {
+        _rtMaterialDataBinding->initFrameResources(allocator);
+    }
 }
 
 void DeferredLayer::render(
@@ -302,10 +309,11 @@ void DeferredLayer::render(
 
             if (tlas != VK_NULL_HANDLE && _rtReflections->settings().enabled)
             {
-                // RT Reflections pass
+                const auto& objectInstances = frameResources.rayTracingScene->objectInstances();
+
                 _rtReflections->render(
                     cmd, currentFrame, frameResources, gbuffer,
-                    invVP, cameraWorldPos, tlas
+                    invVP, cameraWorldPos, tlas, objectInstances
                 );
 
                 // Reflection temporal accumulation
@@ -367,6 +375,7 @@ void DeferredLayer::cleanup()
     if (_denoiseFilter) _denoiseFilter->cleanup();
     if (_temporalReflectionAccumulator) _temporalReflectionAccumulator->cleanup();
     if (_rtReflections) _rtReflections->cleanup();
+    if (_rtMaterialDataBinding) _rtMaterialDataBinding->cleanup();
     if (_rtReflectionFallbackImage) _rtReflectionFallbackImage->cleanup();
 
     _frameDataBinding->cleanup();

@@ -56,6 +56,7 @@ public:
     [[nodiscard]] VkBuffer handle() const { return _buffer; }
     [[nodiscard]] VmaAllocation allocation() const { return _allocation; }
     [[nodiscard]] VmaAllocationInfo allocationInfo() const { return _info; }
+    [[nodiscard]] size_t logicSize() const { return _logicSize; }
 
     [[nodiscard]] const std::string & debugName() const { return _debugName; }
 protected:
@@ -66,6 +67,7 @@ protected:
     VkBuffer _buffer = VK_NULL_HANDLE;
     VmaAllocation _allocation = VK_NULL_HANDLE;
     VmaAllocationInfo _info = {};
+    size_t _logicSize = 0;
 
     std::string _debugName;
 };

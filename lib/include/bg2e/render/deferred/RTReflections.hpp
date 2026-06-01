@@ -27,6 +27,7 @@
 #include <bg2e/render/vulkan/factory/Sampler.hpp>
 #include <bg2e/render/vulkan/factory/DescriptorSetLayout.hpp>
 #include <bg2e/render/vulkan/factory/PipelineLayout.hpp>
+#include <bg2e/render/vulkan/rt/RTMaterialDataBinding.hpp>
 
 #include <memory>
 #include <vector>
@@ -47,6 +48,8 @@ public:
     explicit RTReflections(Engine* engine);
     ~RTReflections();
 
+    void setMaterialDataBinding(vulkan::rt::RTMaterialDataBinding* binding) { _materialDataBinding = binding; }
+
     void build(const GBufferManager* gbuffer, VkExtent2D extent);
     void resize(VkExtent2D extent);
 
@@ -57,7 +60,8 @@ public:
         const GBufferManager* gbuffer,
         const glm::mat4& inverseViewProjection,
         const glm::vec3& cameraPosition,
-        VkAccelerationStructureKHR tlas
+        VkAccelerationStructureKHR tlas,
+        const std::vector<vulkan::rt::RTObjectInstance>& objectInstances
     );
 
     void cleanup();
@@ -81,6 +85,8 @@ private:
     RTReflectionSettings _settings;
     VkExtent2D _extent{};
     bool _rtSupported = false;
+
+    vulkan::rt::RTMaterialDataBinding* _materialDataBinding = nullptr;
 
     std::vector<std::shared_ptr<vulkan::Image>> _reflectionImages;
     std::shared_ptr<vulkan::Image> _fallbackImage;

@@ -22,6 +22,7 @@
 #include <bg2e/render/vulkan/Buffer.hpp>
 #include <bg2e/render/Engine.hpp>
 #include <bg2e/scene/Node.hpp>
+#include <bg2e/render/vulkan/rt/RTMaterialData.h>
 
 #include <memory>
 #include <vector>
@@ -42,6 +43,7 @@ public:
 
     [[nodiscard]] VkAccelerationStructureKHR tlas() const { return _tlas; }
     [[nodiscard]] uint64_t deviceAddress() const { return _tlasDeviceAddress; }
+    [[nodiscard]] const std::vector<RTObjectInstance>& objectInstances() const { return _objectInstances; }
 
 protected:
     render::Engine* _engine = nullptr;
@@ -55,6 +57,8 @@ protected:
 
     VkAccelerationStructureKHR _tlas = VK_NULL_HANDLE;
     uint64_t _tlasDeviceAddress = 0;
+
+    std::vector<RTObjectInstance> _objectInstances;
 };
 
 }

@@ -24,6 +24,7 @@
 #include <bg2e/render/deferred/TemporalAccumulator.hpp>
 #include <bg2e/render/deferred/DenoiseFilter.hpp>
 #include <bg2e/render/deferred/RTReflections.hpp>
+#include <bg2e/render/vulkan/rt/RTMaterialDataBinding.hpp>
 #include <bg2e/render/vulkan/factory/GraphicsPipeline.hpp>
 #include <bg2e/render/vulkan/factory/PipelineLayout.hpp>
 #include <bg2e/render/vulkan/factory/DescriptorSetLayout.hpp>
@@ -201,6 +202,7 @@ protected:
     std::unique_ptr<RTReflections> _rtReflections;
     std::unique_ptr<TemporalAccumulator> _temporalReflectionAccumulator;
     std::shared_ptr<vulkan::Image> _rtReflectionFallbackImage;
+    std::unique_ptr<vulkan::rt::RTMaterialDataBinding> _rtMaterialDataBinding;
 
     struct CompositePushConstants {
         float gamma;
