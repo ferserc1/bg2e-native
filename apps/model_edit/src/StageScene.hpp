@@ -63,6 +63,9 @@ public:
     inline bg2e::scene::OrbitCameraComponent * orbitCamera() { return _orbitCamera; }
     inline bg2e::scene::OrbitCameraComponent * orbitCamera() const { return _orbitCamera; }
 
+    bg2e::scene::CameraComponent * cameraComponent();
+    bg2e::scene::CameraComponent * cameraComponent() const;
+
     inline bool isModelValid() const { return _targetNode.get() != nullptr; }
     std::shared_ptr<bg2e::scene::Drawable> targetDrawable();
 

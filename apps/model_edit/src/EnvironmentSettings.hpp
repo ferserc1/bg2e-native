@@ -34,6 +34,7 @@ protected:
 
     std::shared_ptr<bg2e::ui::LightEditor> _lightEditor;
     std::shared_ptr<bg2e::ui::PolarTransformControllerEditor> _polarEditor;
+    std::shared_ptr<bg2e::ui::CameraSettings> _cameraSettings;
     uint32_t _selectedLightIndex = 0;
     std::shared_ptr<bg2e::scene::LightComponent> _selectedLight;
 };

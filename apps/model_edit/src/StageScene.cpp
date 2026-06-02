@@ -43,7 +43,8 @@ std::shared_ptr<bg2e::scene::Node> StageScene::init()
     
     cameraNode->addComponent(new bg2e::scene::CameraComponent());
     auto projection = new bg2e::math::OpticalProjection();
-    projection->setFocalLength(50.0f);
+    projection->setFocalLength(35.0f);
+    projection->setFrameSize(35.0f);
     projection->setFar(1000.0f);
     cameraNode->camera()->setProjection(projection);
     
@@ -445,4 +446,24 @@ std::shared_ptr<bg2e::scene::Node> StageScene::createFloorNode()
     _floorNode->addComponent(new bg2e::scene::DrawableComponent(drawable));
 
     return _floorNode;
+}
+
+bg2e::scene::CameraComponent * StageScene::cameraComponent()
+{
+    auto orbitNode = _orbitCamera->ownerNode();
+    for (auto & child : orbitNode->children()) {
+        auto cam = child->getComponent<bg2e::scene::CameraComponent>();
+        if (cam) return cam;
+    }
+    return nullptr;
+}
+
+bg2e::scene::CameraComponent * StageScene::cameraComponent() const
+{
+    auto orbitNode = _orbitCamera->ownerNode();
+    for (auto & child : orbitNode->children()) {
+        auto cam = child->getComponent<bg2e::scene::CameraComponent>();
+        if (cam) return cam;
+    }
+    return nullptr;
 }

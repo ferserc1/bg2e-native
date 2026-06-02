@@ -22,6 +22,7 @@
 #include <bg2e/ui/UserInterfaceDelegate.hpp>
 #include <bg2e/ui/BasicWidgets.hpp>
 #include <bg2e/ui/DemoWindow.hpp>
+#include <bg2e/ui/CameraSettings.hpp>
 #include <bg2e/ui/DrawableEditor.hpp>
 #include <bg2e/ui/LightEditor.hpp>
 #include <bg2e/ui/MaterialEditor.hpp>
