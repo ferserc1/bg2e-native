@@ -434,6 +434,7 @@ std::shared_ptr<bg2e::scene::Node> StageScene::createFloorNode()
 {
     _floorNode = std::make_shared<bg2e::scene::Node>("Floor");
     _floorNode->setEnabled(_showFloor);
+    _floorNode->addComponent(new bg2e::manipulation::SelectableComponent());
     _floorNode->addComponent(new bg2e::scene::TransformComponent());
     _floorNode->transform()->setTranslation(0.0f, _floorHeight, 0.0f);
 

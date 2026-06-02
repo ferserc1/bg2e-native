@@ -202,7 +202,7 @@ void RTReflections::render(
     vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR,
         _pipelineLayout, 0, 1, &dsHandle, 0, nullptr);
 
-    if (_materialDataBinding && !objectInstances.empty())
+    if (_materialDataBinding && objectInstances.size() > 0)
     {
         auto materialDS = _materialDataBinding->newDescriptorSet(frameResources, objectInstances);
         vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR,

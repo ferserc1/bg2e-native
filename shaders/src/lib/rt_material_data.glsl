@@ -16,39 +16,26 @@
  *    along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#ifndef RT_MATERIAL_DATA_GLSL
+#define RT_MATERIAL_DATA_GLSL
 
-#include <bg2e/common.hpp>
-#include <bg2e/render/vulkan/common.hpp>
-#include <vector>
-#include <unordered_set>
+#define MAX_RT_OBJECTS 256
 
-namespace bg2e {
-namespace render {
-namespace vulkan {
-namespace factory {
-
-class BG2E_API DescriptorSetLayout {
-public:
-    void addBinding(
-        uint32_t binding,
-        VkDescriptorType type,
-        uint32_t descriptorCount = 1
-    );
-
-    void clear();
-    VkDescriptorSetLayout build(
-        VkDevice device,
-        VkShaderStageFlags shaderStages,
-        VkDescriptorSetLayoutCreateFlags flags = 0
-    );
-
-protected:
-    std::vector<VkDescriptorSetLayoutBinding> _bindings;
-    std::vector<VkDescriptorBindingFlags> _bindingFlags;
+// Must match C++ RTMaterialData struct layout (32 bytes)
+struct RTMaterialData {
+    vec4 albedo;          // base::Color (rgba)
+    vec2 albedoScale;
+    uint padding0;
+    uint padding1;
 };
 
-}
-}
-}
-}
+// Must match C++ geo::Vertex / VertexPNUUT struct layout (52 bytes)
+struct RTVertex {
+    vec3 position;
+    vec3 normal;
+    vec2 texCoord0;
+    vec2 texCoord1;
+    vec3 tangent;
+};
+
+#endif

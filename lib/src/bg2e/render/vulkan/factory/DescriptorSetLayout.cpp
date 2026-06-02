@@ -20,19 +20,26 @@
 
 namespace bg2e::render::vulkan::factory {
 
-void DescriptorSetLayout::addBinding(uint32_t binding, VkDescriptorType type, uint32_t descriptorCount)
-{
+void DescriptorSetLayout::addBinding(
+    uint32_t binding,
+    VkDescriptorType type,
+    uint32_t descriptorCount
+) {
     VkDescriptorSetLayoutBinding bindingInfo = {};
     bindingInfo.binding = binding;
     bindingInfo.descriptorCount = descriptorCount;
     bindingInfo.descriptorType = type;
     bindingInfo.pImmutableSamplers = nullptr;
     _bindings.push_back(bindingInfo);
+
+    VkDescriptorBindingFlags bindingFlags = descriptorCount > 1 ? VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT : 0;
+    _bindingFlags.push_back(bindingFlags);
 }
 
 void DescriptorSetLayout::clear()
 {
     _bindings.clear();
+    _bindingFlags.clear();
 }
 
 VkDescriptorSetLayout DescriptorSetLayout::build(VkDevice device, VkShaderStageFlags shaderStages, VkDescriptorSetLayoutCreateFlags flags)
@@ -42,11 +49,17 @@ VkDescriptorSetLayout DescriptorSetLayout::build(VkDevice device, VkShaderStageF
         b.stageFlags |= shaderStages;
     }
 
+    VkDescriptorSetLayoutBindingFlagsCreateInfo bindingFlagsInfo {};
+    bindingFlagsInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO;
+    bindingFlagsInfo.bindingCount = static_cast<uint32_t>(_bindingFlags.size());
+    bindingFlagsInfo.pBindingFlags = _bindingFlags.data();
+
     VkDescriptorSetLayoutCreateInfo layoutInfo = {};
     layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
     layoutInfo.bindingCount = static_cast<uint32_t>(_bindings.size());
     layoutInfo.pBindings = _bindings.data();
     layoutInfo.flags = flags;
+    layoutInfo.pNext = &bindingFlagsInfo;
     VkDescriptorSetLayout set;
     VK_ASSERT(vkCreateDescriptorSetLayout(device, &layoutInfo, nullptr, &set));
     return set;

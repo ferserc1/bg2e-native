@@ -73,6 +73,7 @@ void Device::create(VkInstance instance, const PhysicalDevice& physicalDevice, b
     rayTracingPipelineFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_FEATURES_KHR;
     rayTracingPipelineFeatures.pNext = &rayQueryFeatures;
 
+
     VkPhysicalDeviceVulkan12Features vulkan12Features{};
     vulkan12Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
     vulkan12Features.pNext = &rayTracingPipelineFeatures;
@@ -103,6 +104,7 @@ void Device::create(VkInstance instance, const PhysicalDevice& physicalDevice, b
     features2.features.samplerAnisotropy = VK_TRUE;
     vulkan12Features.bufferDeviceAddress = VK_TRUE;
     vulkan12Features.descriptorIndexing = VK_TRUE;
+    vulkan12Features.descriptorBindingPartiallyBound = VK_TRUE;
     vulkan11Features.multiview = VK_TRUE;
 
     // --- RT optional ---
