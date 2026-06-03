@@ -30,6 +30,7 @@ public:
     
     static void text(const std::string & text, bool sameLine = false);
     static void separator(const std::string & title = "", bool sameLine = false);
+    static void spacing(int32_t spacing = 20);
     static void listItem(const std::string & label, bool sameLine = false);
     
     static bool button(const std::string & title, bool sameLine = false, bool disabled = false);

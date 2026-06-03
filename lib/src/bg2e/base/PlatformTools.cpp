@@ -112,7 +112,7 @@ std::filesystem::path bg2e::base::PlatformTools::settingsPath()
         struct passwd * pw = getpwuid(getuid());
         home = pw->pw_dir;
     }
-    basePath = fs::path(home) / ("." + appId);
+    basePath = fs::path(home) / ".config" / appId;
 #else
     // TODO: Implement this
     wchar_t path[MAX_PATH];

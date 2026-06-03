@@ -24,16 +24,16 @@
 namespace bg2e::db {
 
 bg2e::scene::Node * loadScene(
-    const std::filesystem::path& /* filePath */
+    const std::filesystem::path& filePath
 ) {
     return nullptr;
 }
 
 bg2e::scene::Node * loadScene(
-    const std::filesystem::path& /* basePath */,
-    const std::string& /* fileName */
+    const std::filesystem::path& basePath,
+    const std::string& fileName
 ) {
-    return nullptr;
+    return loadScene(basePath / fileName);
 }
 
 void saveScene(

@@ -35,8 +35,6 @@ StageScene::StageScene(bg2e::render::Engine * engine, AppDelegate * appDelegate)
 std::shared_ptr<bg2e::scene::Node> StageScene::init()
 {
     auto sceneRoot = std::make_shared<bg2e::scene::Node>("Scene Root");
-    sceneRoot->addComponent(new bg2e::scene::EnvironmentComponent(bg2e::base::PlatformTools::assetPath(), "mirrored_hall_4k.hdr"));
-    _environment = sceneRoot->environment();
     
     auto cameraNode = std::shared_ptr<bg2e::scene::Node>(new bg2e::scene::Node("Camera"));
     cameraNode->addComponent(bg2e::scene::TransformComponent::makeTranslated(0.0f, 0.0f, 2.0f ));
@@ -78,9 +76,15 @@ std::shared_ptr<bg2e::scene::Node> StageScene::init()
     sphereDrawable->setRayTracingEnabled(false);
     sphereDrawable->updateMaterials();
 
+    auto environmentNode = new bg2e::scene::Node("Environment");
+    sceneRoot->addChild(environmentNode);
+    environmentNode->addComponent(new bg2e::scene::EnvironmentComponent(bg2e::base::PlatformTools::assetPath(), "mirrored_hall_4k.hdr"));
+    _environment = sceneRoot->environment();
+    _environmentNode = environmentNode;
+
     _lightsNode = std::make_shared<bg2e::scene::Node>("Lights");
     _lightsNode->addComponent(new bg2e::scene::TransformComponent());
-    sceneRoot->addChild(_lightsNode);
+    environmentNode->addChild(_lightsNode);
 
     auto directionalLight = createLightNode(
         bg2e::base::Light::TypeDirectional,
@@ -312,6 +316,42 @@ void StageScene::iterateLights(std::function<void(std::shared_ptr<bg2e::scene::L
     }
 }
 
+void StageScene::saveEnvironmentSettings()
+{
+    auto settingsPath = bg2e::base::PlatformTools::settingsPath();
+    auto environmentSettingsPath = settingsPath / "env.json";
+
+    saveEnvironmentSettings(environmentSettingsPath);
+}
+
+void StageScene::saveEnvironmentSettings(const std::filesystem::path& path)
+{
+    bg2e::db::saveScene(_environmentNode, path);
+}
+
+void StageScene::restoreEnvironmentSettings()
+{
+    auto settingsPath = bg2e::base::PlatformTools::settingsPath();
+    auto environmentSettingsPath = settingsPath / "env.json";
+
+    restoreEnvironmentSettings(environmentSettingsPath);
+}
+
+void StageScene::restoreEnvironmentSettings(const std::filesystem::path& path)
+{
+    auto newEnv = std::shared_ptr<bg2e::scene::Node>(bg2e::db::loadScene(path));
+    auto findEnvironment = std::make_shared<bg2e::scene::FindNodeComponentVisitor<bg2e::scene::EnvironmentComponent>>();
+    auto result = findEnvironment->find(newEnv.get());
+
+    if (!result.empty())
+    {
+        _sceneRoot->removeChild(_environmentNode->shared_from_this());
+        _environment = result[0]->environment();
+        _environmentNode = newEnv.get();
+        _sceneRoot->addChild(_environmentNode);
+    }
+}
+
 void StageScene::addLight()
 {
     auto azimuth = std::rand() % 360;
@@ -467,3 +507,4 @@ bg2e::scene::CameraComponent * StageScene::cameraComponent() const
     }
     return nullptr;
 }
+

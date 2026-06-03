@@ -54,6 +54,11 @@ void BasicWidgets::separator(const std::string & title, bool sameLine)
     ImGui::SeparatorText(title.c_str());
 }
 
+void BasicWidgets::spacing(int32_t spacing)
+{
+    ImGui::Dummy(ImVec2(0, static_cast<float>(spacing)));
+}
+
 void BasicWidgets::listItem(const std::string & label, bool sameLine)
 {
     if (sameLine)

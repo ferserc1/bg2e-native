@@ -91,6 +91,10 @@ public:
     void setFlorHeight(float h);
     [[nodiscard]] float floorHeight() const { return _floorHeight; }
 
+    void saveEnvironmentSettings();
+    void saveEnvironmentSettings(const std::filesystem::path& path);
+    void restoreEnvironmentSettings();
+    void restoreEnvironmentSettings(const std::filesystem::path& path);
 
 protected:
     bg2e::render::Engine * _engine;
@@ -129,8 +133,9 @@ protected:
     bool _showFloor = true;
     float _floorHeight = 0.0f;
 
-    bg2e::scene::EnvironmentComponent * _environment;
-    bg2e::scene::OrbitCameraComponent * _orbitCamera;
+    bg2e::scene::EnvironmentComponent * _environment = nullptr;
+    bg2e::scene::OrbitCameraComponent * _orbitCamera = nullptr;
+    bg2e::scene::Node * _environmentNode = nullptr;
 
 // The "name" parameter is mandatory if the scene is not build yet
     std::shared_ptr<bg2e::scene::Node> createLightNode(

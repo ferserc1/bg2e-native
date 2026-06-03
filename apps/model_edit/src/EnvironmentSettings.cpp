@@ -86,14 +86,15 @@ void EnvironmentSettings::init(
                 }
             }
         }
+        bg2e::ui::BasicWidgets::spacing();
 
 
         bg2e::ui::BasicWidgets::separator("Camera");
         _cameraSettings->setCameraComponent(cameraComp);
         _cameraSettings->draw();
 
+        bg2e::ui::BasicWidgets::spacing();
         bg2e::ui::BasicWidgets::separator("Lighting");
-
         if (bg2e::ui::BasicWidgets::button("Add Light")) {
             _appDelegate->stage()->addLight();
         }
@@ -137,7 +138,6 @@ void EnvironmentSettings::init(
                     }
                 }
 
-                bg2e::ui::BasicWidgets::separator("Position and Orientation");
                 auto polarCtrl = _selectedLight->ownerNode()->getComponent<bg2e::scene::PolarTransformControllerComponent>();
                 if (polarCtrl)
                 {
@@ -153,6 +153,7 @@ void EnvironmentSettings::init(
             }
         }
 
+        bg2e::ui::BasicWidgets::spacing();
         bg2e::ui::BasicWidgets::separator("Floor");
         auto floorVisible = _appDelegate->stage()->isFloorVisible();
         if (floorVisible)
@@ -175,6 +176,39 @@ void EnvironmentSettings::init(
             }
         }
 
+        bg2e::ui::BasicWidgets::spacing();
+        if (bg2e::ui::BasicWidgets::button("Save Settings"))
+        {
+            _appDelegate->stage()->saveEnvironmentSettings();
+        }
+
+        if (bg2e::ui::BasicWidgets::button("Save Settings As", true))
+        {
+            bg2e::app::FileDialog fd;
+            fd.setFilters({
+                { "bg2e scene", "json, vitscnj" }
+            });
+            auto filePath = fd.saveFile();
+
+            if (!filePath.empty())
+            {
+                _appDelegate->stage()->saveEnvironmentSettings(filePath);
+            }
+        }
+
+        if (bg2e::ui::BasicWidgets::button("Restore Settings", true))
+        {
+            bg2e::app::FileDialog fd;
+            fd.setFilters({
+                { "bg2e scene", "json, vitscnj" }
+            });
+            auto filePath = fd.openFile();
+
+            if (!filePath.empty())
+            {
+                _appDelegate->stage()->restoreEnvironmentSettings(filePath);
+            }
+        }
 
     });
     
