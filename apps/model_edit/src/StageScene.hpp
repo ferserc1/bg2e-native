@@ -21,6 +21,7 @@
 #include <bg2e/scene/EnvironmentComponent.hpp>
 #include <bg2e/render/Engine.hpp>
 #include <bg2e/scene/OrbitCameraComponent.hpp>
+#include <bg2e/app/MainLoop.hpp>
 
 #include <Document.hpp>
 
@@ -136,6 +137,8 @@ protected:
     std::weak_ptr<bg2e::scene::EnvironmentComponent> _environment;
     bg2e::scene::OrbitCameraComponent * _orbitCamera = nullptr;
     std::shared_ptr<bg2e::scene::Node> _environmentNode;
+    bool _restoringEnvironment = false;
+    std::shared_ptr<bg2e::app::SafeUpdateToken> _restoreToken;
 
 // The "name" parameter is mandatory if the scene is not build yet
     std::shared_ptr<bg2e::scene::Node> createLightNode(

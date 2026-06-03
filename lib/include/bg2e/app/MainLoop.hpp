@@ -28,6 +28,10 @@
 
 #include <functional>
 #include <cstdint>
+#include <memory>
+#include <atomic>
+#include <vector>
+#include <utility>
 
 namespace bg2e {
 namespace app {
@@ -108,6 +112,11 @@ struct WindowConfig {
 };
 
 
+struct SafeUpdateToken {
+    std::shared_ptr<std::atomic<bool>> alive = std::make_shared<std::atomic<bool>>(true);
+    ~SafeUpdateToken() { *alive = false; }
+};
+
 class BG2E_API MainLoop {
 public:
     MainLoop(const std::string& appId);
@@ -129,7 +138,10 @@ public:
     
     inline void setOnExitFunction(std::function<bool()> fn) { _onExitFunction = fn; }
 
-    void safeUpdateScene(std::function<void()> fn) { _safeUpdateScene.push_back(fn); }
+    void safeUpdateScene(std::function<void()> fn, std::shared_ptr<SafeUpdateToken> token = nullptr)
+    {
+        _safeUpdateScene.emplace_back(std::move(fn), std::move(token));
+    }
     
 protected:
     WindowConfig _windowConfig;
@@ -147,7 +159,7 @@ protected:
  
     std::function<bool()> _onExitFunction = nullptr;
 
-    std::vector<std::function<void()>> _safeUpdateScene;
+    std::vector<std::pair<std::function<void()>, std::shared_ptr<SafeUpdateToken>>> _safeUpdateScene;
 
     Shortcuts _shortcuts;
     

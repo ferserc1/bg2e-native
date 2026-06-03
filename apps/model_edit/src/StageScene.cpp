@@ -343,6 +343,9 @@ void StageScene::restoreEnvironmentSettings()
 
 void StageScene::restoreEnvironmentSettings(const std::filesystem::path& path)
 {
+    if (_restoringEnvironment) return;
+    _restoringEnvironment = true;
+
     auto newScene = bg2e::db::loadScene(path);
     auto findEnvironment = std::make_shared<bg2e::scene::FindNodeComponentVisitor<bg2e::scene::EnvironmentComponent>>();
     auto environmentNode = findEnvironment->find(newScene->rootNode());
@@ -353,21 +356,26 @@ void StageScene::restoreEnvironmentSettings(const std::filesystem::path& path)
 
     if (!environmentNode.empty() && lightNodes.size() == 1)
     {
-        // Wait for device idle to prevent remove resources already used
-        bg2e::app::MainLoop::current()->safeUpdateScene([&, environmentNode, newScene, lightNodes]()
-        {
-            auto envNode = environmentNode[0].lock();
-            if (!envNode) return;
-            _sceneRoot->removeChild(_environmentNode);
-            _environment = std::dynamic_pointer_cast<bg2e::scene::EnvironmentComponent>(envNode->environment()->shared_from_this());
-            _environmentNode = std::static_pointer_cast<bg2e::scene::Node>(newScene->rootNode()->shared_from_this());
-            _lightsNode = lightNodes[0];
-            _sceneRoot->addChild(_environmentNode);
-            _sceneRoot->scene()->updateLights();
-        });
+        _restoreToken = std::make_shared<bg2e::app::SafeUpdateToken>();
+        bg2e::app::MainLoop::current()->safeUpdateScene(
+            [this, environmentNode, newScene, lightNodes]()
+            {
+                auto envNode = environmentNode[0].lock();
+                if (!envNode) { _restoringEnvironment = false; return; }
+                _sceneRoot->removeChild(_environmentNode);
+                _environment = std::dynamic_pointer_cast<bg2e::scene::EnvironmentComponent>(envNode->environment()->shared_from_this());
+                _environmentNode = std::static_pointer_cast<bg2e::scene::Node>(newScene->rootNode()->shared_from_this());
+                _lightsNode = lightNodes[0];
+                _sceneRoot->addChild(_environmentNode);
+                _sceneRoot->scene()->updateLights();
+                _restoringEnvironment = false;
+            },
+            _restoreToken
+        );
     }
     else
     {
+        _restoringEnvironment = false;
         bg2e::app::MessageBox msg;
         msg.showError("Invalid environment", "The specified file does not appear to be a valid environment file");
     }
