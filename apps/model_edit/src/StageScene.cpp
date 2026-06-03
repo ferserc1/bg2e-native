@@ -124,6 +124,9 @@ std::shared_ptr<bg2e::scene::Node> StageScene::init()
     
     _sceneRoot = sceneRoot;
 
+    // Restore environment settings
+    restoreEnvironmentSettings();
+
     return _sceneRoot;
 }
 
