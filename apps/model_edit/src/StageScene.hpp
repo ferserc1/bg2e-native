@@ -97,6 +97,8 @@ public:
     void restoreEnvironmentSettings();
     void restoreEnvironmentSettings(const std::filesystem::path& path);
 
+    void updateLightMesh(bg2e::scene::Node* lightNode);
+
 protected:
     bg2e::render::Engine * _engine;
 
@@ -151,10 +153,13 @@ protected:
     );
 
     std::shared_ptr<bg2e::geo::Mesh> _pointLightMesh;
+    std::shared_ptr<bg2e::geo::Mesh> _spotLightMesh;
     std::shared_ptr<bg2e::geo::Mesh> _directionalLightMesh;
 
     std::shared_ptr<bg2e::geo::Mesh> getLightMesh(bg2e::base::Light::LightType type);
 
     std::shared_ptr<bg2e::scene::Node> createFloorNode();
+
+    void instantUpdateLightMesh(bg2e::scene::Node* lightNode);
 };
 

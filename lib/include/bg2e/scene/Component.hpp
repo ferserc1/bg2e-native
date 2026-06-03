@@ -46,6 +46,10 @@ public:
     uint32_t priority() const { return _priority; }
     void setPriority(uint32_t newPriority);
 
+    // Use it to prevent serialization of this component on save scenes
+    void setIgnoreSerialization(bool s) { _ignoreSerialization = s; }
+    [[nodiscard]] bool ignoreSerialization() const { return _ignoreSerialization; }
+
     virtual void resizeViewport(const math::Viewport&) {}
     
     virtual void animate(float /* delta */) {}
@@ -75,6 +79,8 @@ protected:
     Node * _owner = nullptr;
 
     uint32_t _priority = 0;
+
+    bool _ignoreSerialization = false;
 
     virtual void willAddToNode(Node *) {}
     virtual void didAddToNode(Node *) {}

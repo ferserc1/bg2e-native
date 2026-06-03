@@ -350,6 +350,11 @@ void StageScene::restoreEnvironmentSettings(const std::filesystem::path& path)
     _restoringEnvironment = true;
 
     auto newScene = bg2e::db::loadScene(path);
+    if (!newScene)
+    {
+        return;
+    }
+
     auto findEnvironment = std::make_shared<bg2e::scene::FindNodeComponentVisitor<bg2e::scene::EnvironmentComponent>>();
     auto environmentNode = findEnvironment->find(newScene->rootNode());
 
@@ -372,6 +377,11 @@ void StageScene::restoreEnvironmentSettings(const std::filesystem::path& path)
                 _sceneRoot->addChild(_environmentNode);
                 _sceneRoot->scene()->updateAll();
                 _restoringEnvironment = false;
+
+                for (auto l : _sceneRoot->scene()->lightComponents())
+                {
+                    instantUpdateLightMesh(l->ownerNode());
+                }
             },
             _restoreToken
         );
@@ -428,16 +438,6 @@ std::shared_ptr<bg2e::scene::Node> StageScene::createLightNode(
 
     auto node = std::make_shared<bg2e::scene::Node>(lightName);
 
-    auto lightMesh = getLightMesh(type);
-    auto lightDrawable = std::make_shared<bg2e::scene::Drawable>();
-    lightDrawable->setMesh(lightMesh);
-    lightDrawable->load(_engine);
-    lightDrawable->material(0).setIsUnlit(true);
-    lightDrawable->material(0).setAlbedo(color);
-    lightDrawable->setRayTracingEnabled(false);
-    lightDrawable->updateMaterials();
-
-    node->addComponent(new bg2e::scene::DrawableComponent(lightDrawable));
     node->addComponent(new bg2e::scene::LightComponent());
     node->addComponent(new bg2e::scene::TransformComponent());
     auto polarController = new bg2e::scene::PolarTransformControllerComponent();
@@ -457,6 +457,8 @@ std::shared_ptr<bg2e::scene::Node> StageScene::createLightNode(
     node->light()->light().setIntensity(2.0f);
     node->light()->light().setType(type);
 
+    updateLightMesh(node.get());
+
     return node;
 }
 
@@ -472,6 +474,15 @@ std::shared_ptr<bg2e::geo::Mesh> StageScene::getLightMesh(bg2e::base::Light::Lig
             _directionalLightMesh = meshData->mesh;
         }
         result = _directionalLightMesh;
+    }
+    else if (type == bg2e::base::Light::TypeSpot)
+    {
+        if (_spotLightMesh == nullptr)
+        {
+            auto meshData = bg2e::db::loadMeshBg2(assetsPath, "spot-light-gizmo.bg2");
+            _spotLightMesh = meshData->mesh;
+        }
+        result = _spotLightMesh;
     }
     else
     {
@@ -501,6 +512,14 @@ void StageScene::showFloor(bool show)
     {
         _floorNode->setEnabled(_showFloor);
     }
+}
+
+void StageScene::updateLightMesh(bg2e::scene::Node* lightNode)
+{
+    bg2e::app::MainLoop::current()->safeUpdateScene([&, lightNode]()
+    {
+        instantUpdateLightMesh(lightNode);
+    });
 }
 
 std::shared_ptr<bg2e::scene::Node> StageScene::createFloorNode()
@@ -540,3 +559,24 @@ bg2e::scene::CameraComponent * StageScene::cameraComponent() const
     return nullptr;
 }
 
+void StageScene::instantUpdateLightMesh(bg2e::scene::Node* lightNode)
+{
+    auto light = lightNode->light();
+    if (light)
+    {
+        auto type = light->light().type();
+        auto mesh = getLightMesh(type);
+        auto lightDrawable = std::make_shared<bg2e::scene::Drawable>();
+        lightDrawable->setMesh(mesh);
+        lightDrawable->setMesh(mesh);
+        lightDrawable->load(_engine);
+        lightDrawable->material(0).setIsUnlit(true);
+        lightDrawable->material(0).setAlbedo(light->light().color());
+        lightDrawable->setRayTracingEnabled(false);
+        lightDrawable->updateMaterials();
+
+        lightNode->addComponent(new bg2e::scene::DrawableComponent(lightDrawable));
+        // Do not save the gizmo model in environment settings
+        lightNode->drawable()->setIgnoreSerialization(true);
+    }
+}

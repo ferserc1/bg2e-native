@@ -295,6 +295,10 @@ std::shared_ptr<json::JsonNode> Node::serialize(const std::filesystem::path & ba
     auto components = JSON(JsonList());
     for (auto & comp : _components)
     {
+        if (comp.second->ignoreSerialization())
+        {
+            continue;
+        }
         auto compData = comp.second->serialize(basePath);
         components->listValue().push_back(compData);
     }

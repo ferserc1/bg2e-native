@@ -36,8 +36,8 @@ namespace bg2e::render::deferred {
 
 struct RTReflectionSettings {
     bool enabled = true;
-    uint32_t sampleCount = 4;
-    float maxRoughness = 0.35f;
+    uint32_t sampleCount = 6;
+    float maxRoughness = 0.75f;
     float rayBias = 0.02f;
     float maxDistance = 50.0f;
     float roughnessSpread = 1.0f;
