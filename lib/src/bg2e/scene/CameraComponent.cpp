@@ -56,9 +56,16 @@ void CameraComponent::update(float /* delta */)
     _camera.updateProjectionMatrix();
 }
 
-void CameraComponent::deserialize(std::shared_ptr<json::JsonNode> /* jsonData */, const std::filesystem::path& /* basePath */)
+void CameraComponent::deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path& /* basePath */)
 {
+    if (!jsonData || !jsonData->isObject())
+        return;
 
+    auto& obj = jsonData->objectValue();
+    if (obj.count("cameraData"))
+    {
+        _camera.deserialize(obj["cameraData"]);
+    }
 }
 
 std::shared_ptr<json::JsonNode> CameraComponent::serialize(const std::filesystem::path& basePath)

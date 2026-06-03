@@ -39,9 +39,43 @@ public:
     
     const glm::mat4& updateProjectionMatrix();
     
-    void deserialize(std::shared_ptr<json::JsonNode>)
+    void deserialize(std::shared_ptr<json::JsonNode> jsonData)
     {
-    
+        if (!jsonData || !jsonData->isObject())
+            return;
+
+        auto& obj = jsonData->objectValue();
+        if (obj.count("projection"))
+        {
+            auto projData = obj["projection"];
+            if (projData && projData->isObject())
+            {
+                auto& projObj = projData->objectValue();
+                std::string type = projObj.count("type") ?
+                    projObj["type"]->stringValue("") : "";
+
+                if (type == "PerspectiveProjection")
+                {
+                    auto proj = std::make_shared<math::PerspectiveProjection>();
+                    proj->deserialize(projData);
+                    _projection = proj;
+                }
+                else if (type == "OpticalProjection")
+                {
+                    auto proj = std::make_shared<math::OpticalProjection>();
+                    proj->deserialize(projData);
+                    _projection = proj;
+                }
+            }
+        }
+        else if (obj.count("projectionMatrix"))
+        {
+            auto matNode = obj["projectionMatrix"];
+            if (matNode && matNode->isMat4())
+            {
+                _projMatrix = matNode->glmMat4Value();
+            }
+        }
     }
     
     std::shared_ptr<json::JsonNode> serialize()

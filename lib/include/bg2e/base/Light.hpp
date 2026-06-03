@@ -68,19 +68,65 @@ public:
         switch (_type)
         {
             case TypeOmni:
-                return "OMNI";
+                return "kTypePoint";
             case TypeSpot:
-                return "SPOT";
+                return "kTypeSpot";
             case TypeDirectional:
-                return "DIRECTIONAL";
+                return "kTypeDirectional";
             default:
-                return "DISABLED";
+                return "kTypeDisabled";
         }
     }
 
-    void deserialize(std::shared_ptr<json::JsonNode>)
+    void deserialize(std::shared_ptr<json::JsonNode> jsonData)
     {
-    
+        if (!jsonData || !jsonData->isObject())
+            return;
+
+        auto& obj = jsonData->objectValue();
+
+        if (obj.count("color"))
+        {
+            auto colorNode = obj["color"];
+            if (colorNode && colorNode->isVec4())
+            {
+                _color = colorNode->colorValue();
+            }
+        }
+        if (obj.count("intensity"))
+        {
+            _intensity = obj["intensity"]->numberValue(_intensity);
+        }
+        if (obj.count("type"))
+        {
+            std::string typeStr = obj["type"]->stringValue("");
+            if (typeStr == "kTypePoint") _type = TypeOmni;
+            else if (typeStr == "kTypeSpot") _type = TypeSpot;
+            else if (typeStr == "kTypeDirectional") _type = TypeDirectional;
+            else _type = TypeDisabled;
+        }
+        if (obj.count("spotAngle"))
+        {
+            _spotAngle = obj["spotAngle"]->numberValue(_spotAngle);
+        }
+        if (obj.count("spotCutoff"))
+        {
+            _spotCutoff = obj["spotCutoff"]->numberValue(_spotCutoff);
+        }
+        if (obj.count("castShadows"))
+        {
+            _castShadows = obj["castShadows"]->boolValue(_castShadows);
+        }
+        if (obj.count("sourceSize"))
+        {
+            _sourceSize = obj["sourceSize"]->numberValue(_sourceSize);
+        }
+        if (obj.count("shadowSamples"))
+        {
+            _shadowSamples = static_cast<uint32_t>(
+                obj["shadowSamples"]->numberValue(static_cast<int>(_shadowSamples))
+            );
+        }
     }
     
     std::shared_ptr<json::JsonNode> serialize()

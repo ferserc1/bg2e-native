@@ -63,9 +63,20 @@ public:
     inline Viewport viewport() { return _viewport; }
     inline void setViewport(const Viewport& vp) { _viewport = vp; }
     
-    virtual void deserialize(std::shared_ptr<json::JsonNode>)
+    virtual void deserialize(std::shared_ptr<json::JsonNode> jsonData)
     {
-    
+        if (!jsonData || !jsonData->isObject())
+            return;
+
+        auto& obj = jsonData->objectValue();
+        if (obj.count("near"))
+        {
+            _near = obj["near"]->numberValue(_near);
+        }
+        if (obj.count("far"))
+        {
+            _far = obj["far"]->numberValue(_far);
+        }
     }
     
     virtual std::shared_ptr<json::JsonNode> serialize()
@@ -143,8 +154,22 @@ public:
     inline void setFrameSize(float fs) { _frameSize = fs; }
     inline float frameSize() const { return _frameSize; }
     
-    void deserialize(std::shared_ptr<json::JsonNode>) override{
-    
+    void deserialize(std::shared_ptr<json::JsonNode> jsonData) override
+    {
+        if (!jsonData || !jsonData->isObject())
+            return;
+
+        Projection::deserialize(jsonData);
+
+        auto& obj = jsonData->objectValue();
+        if (obj.count("focalLength"))
+        {
+            _focalLength = obj["focalLength"]->numberValue(_focalLength);
+        }
+        if (obj.count("frameSize"))
+        {
+            _frameSize = obj["frameSize"]->numberValue(_frameSize);
+        }
     }
     
     std::shared_ptr<json::JsonNode> serialize() override

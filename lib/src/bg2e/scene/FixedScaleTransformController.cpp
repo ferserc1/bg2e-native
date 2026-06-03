@@ -27,11 +27,22 @@ namespace bg2e::scene {
 
 void FixedScaleTransformControllerComponent::deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path&)
 {
+    if (!jsonData || !jsonData->isObject())
+        return;
+
+    auto& obj = jsonData->objectValue();
+    if (obj.count("scale"))
+    {
+        _scale = obj["scale"]->numberValue(_scale);
+    }
 }
 
 std::shared_ptr<json::JsonNode> FixedScaleTransformControllerComponent::serialize(const std::filesystem::path& basePath)
 {
-    return Component::serialize(basePath);
+    using namespace bg2e::json;
+    auto compData = Component::serialize(basePath);
+    compData->objectValue()["scale"] = JSON(_scale);
+    return compData;
 }
 
 void FixedScaleTransformControllerComponent::update([[maybe_unused]] float delta)
