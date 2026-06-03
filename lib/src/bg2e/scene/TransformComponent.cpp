@@ -22,39 +22,39 @@
 
 namespace bg2e::scene {
 
-TransformComponent * TransformComponent::makeTranslated(float x, float y, float z)
+std::unique_ptr<TransformComponent> TransformComponent::makeTranslated(float x, float y, float z)
 {
-    return new TransformComponent(glm::translate( glm::mat4 { 1.0f }, glm::vec3(x, y, z) ));
+    return std::make_unique<TransformComponent>(glm::translate( glm::mat4 { 1.0f }, glm::vec3(x, y, z) ));
 }
 
-TransformComponent * TransformComponent::makeTranslated(const glm::vec3& t)
+std::unique_ptr<TransformComponent> TransformComponent::makeTranslated(const glm::vec3& t)
 {
-    return new TransformComponent(glm::translate( glm::mat4 { 1.0f }, t ));
+    return std::make_unique<TransformComponent>(glm::translate( glm::mat4 { 1.0f }, t ));
 }
 
-TransformComponent * TransformComponent::makeRotated(float alpha, float x, float y, float z)
+std::unique_ptr<TransformComponent> TransformComponent::makeRotated(float alpha, float x, float y, float z)
 {
-    return new TransformComponent(glm::rotate( glm::mat4 { 1.0f }, alpha, glm::vec3(x, y, z) ));
+    return std::make_unique<TransformComponent>(glm::rotate( glm::mat4 { 1.0f }, alpha, glm::vec3(x, y, z) ));
 }
 
-TransformComponent * TransformComponent::makeRotated(float alpha, const glm::vec3& axis)
+std::unique_ptr<TransformComponent> TransformComponent::makeRotated(float alpha, const glm::vec3& axis)
 {
-    return new TransformComponent(glm::rotate( glm::mat4 { 1.0f }, alpha, axis ));
+    return std::make_unique<TransformComponent>(glm::rotate( glm::mat4 { 1.0f }, alpha, axis ));
 }
 
-TransformComponent * TransformComponent::makeScaled(float xyz)
+std::unique_ptr<TransformComponent> TransformComponent::makeScaled(float xyz)
 {
-    return new TransformComponent(glm::scale( glm::mat4 { 1.0f }, glm::vec3(xyz) ));
+    return std::make_unique<TransformComponent>(glm::scale( glm::mat4 { 1.0f }, glm::vec3(xyz) ));
 }
 
-TransformComponent * TransformComponent::makeScaled(float x, float y, float z)
+std::unique_ptr<TransformComponent> TransformComponent::makeScaled(float x, float y, float z)
 {
-    return new TransformComponent(glm::scale( glm::mat4 { 1.0f }, glm::vec3(x, y, z) ));
+    return std::make_unique<TransformComponent>(glm::scale( glm::mat4 { 1.0f }, glm::vec3(x, y, z) ));
 }
 
-TransformComponent * TransformComponent::makeScaled(const glm::vec3& scale)
+std::unique_ptr<TransformComponent> TransformComponent::makeScaled(const glm::vec3& scale)
 {
-    return new TransformComponent(glm::scale( glm::mat4 { 1.0f }, scale ));
+    return std::make_unique<TransformComponent>(glm::scale( glm::mat4 { 1.0f }, scale ));
 }
 
 TransformComponent * TransformComponent::setTranslation(float x, float y, float z) {

@@ -69,6 +69,13 @@ public:
     
     void addComponent(Component * comp);
     void addComponent(std::shared_ptr<Component> comp);
+
+    template <typename ComponentT>
+    void addComponent(std::unique_ptr<ComponentT> comp)
+    {
+        addComponent(std::shared_ptr<Component>(std::move(comp)));
+    }
+
     void removeComponent(std::shared_ptr<Component> comp);
     const std::unordered_map<std::string, std::shared_ptr<Component>>& components() const;
     const std::vector<std::shared_ptr<Component>>& orderedComponents() const;

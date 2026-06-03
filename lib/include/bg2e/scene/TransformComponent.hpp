@@ -21,6 +21,8 @@
 #include <bg2e/scene/Component.hpp>
 #include <bg2e/math/base.hpp>
 
+#include <memory>
+
 namespace bg2e {
 namespace scene {
 
@@ -28,13 +30,13 @@ class BG2E_API TransformComponent : public Component {
 public:
     BG2E_COMPONENT_TYPE_NAME("Transform");
     
-    static TransformComponent * makeTranslated(float x, float y, float z);
-    static TransformComponent * makeRotated(float alpha, float x, float y, float z);
-    static TransformComponent * makeScaled(float xyz);
-    static TransformComponent * makeScaled(float x, float y, float z);
-    static TransformComponent * makeTranslated(const glm::vec3 &);
-    static TransformComponent * makeRotated(float alpha, const glm::vec3& axis);
-    static TransformComponent * makeScaled(const glm::vec3& scale);
+    static std::unique_ptr<TransformComponent> makeTranslated(float x, float y, float z);
+    static std::unique_ptr<TransformComponent> makeRotated(float alpha, float x, float y, float z);
+    static std::unique_ptr<TransformComponent> makeScaled(float xyz);
+    static std::unique_ptr<TransformComponent> makeScaled(float x, float y, float z);
+    static std::unique_ptr<TransformComponent> makeTranslated(const glm::vec3 &);
+    static std::unique_ptr<TransformComponent> makeRotated(float alpha, const glm::vec3& axis);
+    static std::unique_ptr<TransformComponent> makeScaled(const glm::vec3& scale);
     
     TransformComponent() = default;
     TransformComponent(const glm::mat4& matrix) : _matrix(matrix) {}
