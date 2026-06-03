@@ -23,6 +23,8 @@
 #include <bg2e/render/vulkan/Buffer.hpp>
 #include <bg2e/render/Texture.hpp>
 
+#include <memory>
+
 namespace bg2e {
 namespace render {
 namespace vulkan {
@@ -40,14 +42,14 @@ struct RTMaterialInstance {
     RTMaterialData data;
     const Buffer* vertexBuffer = nullptr;
     const Buffer* indexBuffer = nullptr;
-    render::Texture* albedoTexture = nullptr;
+    std::shared_ptr<render::Texture> albedoTexture;
 };
 
 struct RTObjectInstance {
     RTMaterialData materialData;
     const Buffer*  vertexBuffer = nullptr;
     const Buffer*  indexBuffer = nullptr;
-    render::Texture* albedoTexture = nullptr;
+    std::shared_ptr<render::Texture> albedoTexture;
 };
 
 }

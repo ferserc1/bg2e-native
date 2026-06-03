@@ -36,10 +36,15 @@ namespace bg2e {
 namespace manipulation {
 
 struct SelectionItem {
-    scene::Node * node;
-    scene::DrawableComponent* drawable;
-    scene::Drawable* mesh;
+    std::weak_ptr<scene::Node> node;
+    std::weak_ptr<scene::DrawableComponent> drawable;
+    std::weak_ptr<scene::Drawable> mesh;
     uint32_t submesh;
+
+    [[nodiscard]] scene::Node * nodePtr() const { return node.lock().get(); }
+    [[nodiscard]] scene::DrawableComponent * drawablePtr() const { return drawable.lock().get(); }
+    [[nodiscard]] scene::Drawable * meshPtr() const { return mesh.lock().get(); }
+    [[nodiscard]] bool expired() const { return node.expired() || drawable.expired() || mesh.expired(); }
 };
 
 typedef std::function<void()> OnSelectCallback;
@@ -145,9 +150,9 @@ public:
     // selectedItem returns the first item in the selection array, when multi select is enabled
     [[nodiscard]] inline std::shared_ptr<SelectionItem> selectedItem() const { return _selectedItem; }
 
-    [[nodiscard]] inline scene::Node * selectedNode() const { return selectedItem() ? selectedItem()->node : nullptr; }
-    [[nodiscard]] inline scene::DrawableComponent * selectedDrawable() const { return selectedItem() ? selectedItem()->drawable : nullptr; }
-    [[nodiscard]] inline scene::Drawable * selectedMesh() const { return selectedItem() ? selectedItem()->mesh : nullptr; }
+    [[nodiscard]] inline scene::Node * selectedNode() const { return selectedItem() ? selectedItem()->nodePtr() : nullptr; }
+    [[nodiscard]] inline scene::DrawableComponent * selectedDrawable() const { return selectedItem() ? selectedItem()->drawablePtr() : nullptr; }
+    [[nodiscard]] inline scene::Drawable * selectedMesh() const { return selectedItem() ? selectedItem()->meshPtr() : nullptr; }
     [[nodiscard]] inline uint32_t selectedSubmesh() const { return selectedItem() ? selectedItem()->submesh : 0; }
 
     [[nodiscard]] inline bool multiSelection() const { return _multiSelection; }

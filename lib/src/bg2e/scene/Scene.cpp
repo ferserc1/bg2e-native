@@ -20,8 +20,49 @@
 #include <bg2e/scene/FindNodeVisitor.hpp>
 #include <bg2e/scene/FindCameraVisitor.hpp>
 #include <bg2e/scene/FindNodeComponentVisitor.hpp>
+#include <bg2e/json/JsonParser.hpp>
+#include <bg2e/base/Log.hpp>
 
 namespace bg2e::scene {
+
+std::shared_ptr<Scene> Scene::deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path& basePath)
+{
+    if (!jsonData || !jsonData->isObject())
+    {
+        return nullptr;
+    }
+
+    auto& obj = jsonData->objectValue();
+
+    // Read and log version
+    if (obj.count("version") && obj["version"]->isObject())
+    {
+        auto& version = obj["version"]->objectValue();
+        int major = version.count("major") ? static_cast<int>(version["major"]->numberValue(0)) : 0;
+        int minor = version.count("minor") ? static_cast<int>(version["minor"]->numberValue(0)) : 0;
+        int rev = version.count("rev") ? static_cast<int>(version["rev"]->numberValue(0)) : 0;
+        bg2e_log_debug << "Loading scene file version " << major << "." << minor << "." << rev << bg2e_log_end;
+    }
+
+    // Create root node
+    auto sceneRoot = std::make_shared<Node>("scene root");
+
+    // Deserialize nodes from scene array
+    if (obj.count("scene") && obj["scene"]->isList())
+    {
+        auto& sceneList = obj["scene"]->listValue();
+        for (auto& nodeData : sceneList)
+        {
+            auto node = std::make_shared<Node>();
+            node->deserialize(nodeData, basePath);
+            sceneRoot->addChild(node);
+        }
+    }
+
+    auto scene = std::make_shared<Scene>();
+    scene->setSceneRoot(sceneRoot);
+    return scene;
+}
 
 void Scene::setSceneRoot(std::shared_ptr<Node> sceneRoot)
 {
@@ -60,9 +101,13 @@ CameraComponent * Scene::mainCamera()
     {
         FindCameraVisitor findCamera;
         findCamera.findCameras(_sceneRoot.get());
-        if (findCamera.cameras().size() > 0)
+        auto camList = findCamera.cameras();
+        if (camList.size() > 0)
         {
-            _mainCameraNode = findCamera.cameras()[0]->ownerNode();
+            if (auto cam = camList[0].lock())
+            {
+                _mainCameraNode = cam->ownerNode();
+            }
         }
         
         if (!_mainCameraNode)
@@ -85,7 +130,10 @@ EnvironmentComponent * Scene::mainEnvironment()
         // It should be possible to choose which environment you want to use if there are several in the scene
         if (envs.size() > 0)
         {
-            _mainEnvironment = *envs.begin();
+            if (auto envNode = envs.begin()->lock())
+            {
+                _mainEnvironment = envNode.get();
+            }
         }
     }
     return _mainEnvironment != nullptr ? _mainEnvironment->environment() : nullptr;
@@ -97,13 +145,15 @@ void Scene::updateLights()
     _lights.clear();
     FindNodeComponentVisitor<LightComponent> findLights;
     auto lightNodes = findLights.find(_sceneRoot.get());
-    for (auto l : lightNodes)
+    for (auto& l : lightNodes)
     {
-        auto lc = std::dynamic_pointer_cast<LightComponent>(l->light()->shared_from_this());
+        auto node = l.lock();
+        if (!node) continue;
+        auto lc = std::dynamic_pointer_cast<LightComponent>(node->light()->shared_from_this());
         if (lc.get() != nullptr)
         {
             _lightComponents.push_back(lc);
-            _lights.push_back(&l->light()->light());
+            _lights.push_back(&node->light()->light());
         }
     }
     _lightsChanged = true;

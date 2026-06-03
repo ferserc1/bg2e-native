@@ -28,7 +28,7 @@ namespace scene {
 template <typename ComponentT>
 class FindNodeComponentVisitor : public NodeVisitor {
 public:
-    const std::vector<Node*>& find(Node* sceneRoot)
+    std::vector<std::weak_ptr<Node>> find(Node* sceneRoot)
     {
         _result.clear();
         sceneRoot->accept(this);
@@ -39,12 +39,12 @@ public:
     {
         if (node->getComponent<ComponentT>())
         {
-            _result.push_back(node);
+            _result.push_back(node->weak_from_this());
         }
     }
     
 protected:
-    std::vector<Node*> _result;
+    std::vector<std::weak_ptr<Node>> _result;
 };
 
 }

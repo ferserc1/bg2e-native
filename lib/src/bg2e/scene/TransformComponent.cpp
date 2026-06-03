@@ -156,9 +156,19 @@ glm::mat4 TransformComponent::invertedWorldMatrix()
     return glm::inverse(worldMatrix());
 }
 
-void TransformComponent::deserialize(std::shared_ptr<json::JsonNode> /* jsonData */, const std::filesystem::path& /* basePath */)
+void TransformComponent::deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path& /* basePath */)
 {
+    if (!jsonData || !jsonData->isObject())
+    {
+        return;
+    }
 
+    auto& obj = jsonData->objectValue();
+
+    if (obj.count("transformMatrix") && obj["transformMatrix"]->isMat4())
+    {
+        _matrix = obj["transformMatrix"]->glmMat4Value();
+    }
 }
 
 std::shared_ptr<json::JsonNode> TransformComponent::serialize(const std::filesystem::path& basePath)

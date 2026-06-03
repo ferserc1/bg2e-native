@@ -34,11 +34,11 @@ public:
     
     void cleanup();
     
-    const std::vector<CameraComponent*>& cameras() const { return _cameras; }
+    std::vector<std::weak_ptr<CameraComponent>> cameras() const { return _cameras; }
 
 protected:
     
-    std::vector<CameraComponent*> _cameras;
+    std::vector<std::weak_ptr<CameraComponent>> _cameras;
 };
 
 }

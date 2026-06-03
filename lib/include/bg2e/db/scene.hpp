@@ -18,7 +18,7 @@
 
 #pragma once
 
-#include <bg2e/scene/Node.hpp>
+#include <bg2e/scene/Scene.hpp>
 
 #include <memory>
 #include <string>
@@ -27,11 +27,11 @@
 namespace bg2e {
 namespace db {
 
-extern BG2E_API bg2e::scene::Node * loadScene(
+extern BG2E_API std::shared_ptr<bg2e::scene::Scene> loadScene(
     const std::filesystem::path& filePath
 );
 
-extern BG2E_API bg2e::scene::Node * loadScene(
+extern BG2E_API std::shared_ptr<bg2e::scene::Scene> loadScene(
     const std::filesystem::path& basePath,
     const std::string& fileName
 );

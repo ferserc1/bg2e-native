@@ -1,0 +1,273 @@
+{
+	"fileType": "vwgl::scene",
+	"version": {
+		"major": 2,
+		"minor": 0,
+		"rev": 0
+	},
+	"scene": [
+		{
+			"type": "Node",
+			"name": "SceneRoot",
+			"enabled": true,
+			"steady": false,
+			"children": [
+				{
+					"type": "Node",
+					"name": "Main Camera",
+					"enabled": true,
+					"steady": false,
+					"children": [],
+					"components": [
+						{
+							"type": "Camera",
+							"isMain": true
+						},
+						{
+							"type": "Transform",
+							"transformMatrix": [
+								0.9612616896629333,
+								0,
+								-0.27563735842704773,
+								0,
+								-0.08058855682611465,
+								0.9563047885894775,
+								-0.28104570508003235,
+								0,
+								0.26359331607818604,
+								0.2923716902732849,
+								0.9192591309547424,
+								0,
+								4.202446460723877,
+								3.397721290588379,
+								9.193769454956055,
+								1
+							]
+						},
+						{
+							"type": "OrbitCameraController",
+							"rotateButtons": {
+								"left": true,
+								"middle": false,
+								"right": false
+							},
+							"panButtons": {
+								"left": false,
+								"middle": false,
+								"right": true
+							},
+							"zoomButtons": {
+								"left": false,
+								"middle": true,
+								"right": false
+							},
+							"rotation": [
+								17,
+								16
+							],
+							"distance": 9.630512365703176,
+							"center": [
+								1.6639076635238375,
+								0.5820321563119432,
+								0.3408327784478593
+							],
+							"rotationSpeed": 0.2,
+							"forward": 0,
+							"left": 0,
+							"wheelSpeed": 1,
+							"minFocus": 2,
+							"minPitch": -90,
+							"maxPitch": 90,
+							"minDistance": 0.4,
+							"maxDistance": 1.7976931348623157e+308,
+							"maxX": 1.7976931348623157e+308,
+							"minX": -1.7976931348623157e+308,
+							"minY": -1.7976931348623157e+308,
+							"maxY": 1.7976931348623157e+308,
+							"maxZ": 1.7976931348623157e+308,
+							"minZ": -1.7976931348623157e+308,
+							"displacementSpeed": 0.1,
+							"enabled": true
+						},
+						{
+							"type": "Selectable"
+						}
+					]
+				},
+				{
+					"type": "Node",
+					"name": "Main Light",
+					"enabled": true,
+					"steady": false,
+					"children": [],
+					"components": [
+						{
+							"type": "Light",
+							"lightType": "kTypeDirectional",
+							"ambient": [
+								0.2,
+								0.2,
+								0.2,
+								1
+							],
+							"diffuse": [
+								0.9,
+								0.9,
+								0.9,
+								1
+							],
+							"specular": [
+								1,
+								1,
+								1,
+								1
+							],
+							"intensity": 1,
+							"spotCutoff": 20,
+							"spotExponent": 30,
+							"shadowStrength": 0.3,
+							"cutoffDistance": -1,
+							"projection": [
+								0.05191831663250923,
+								0,
+								0,
+								0,
+								0,
+								0.05191831663250923,
+								0,
+								0,
+								0,
+								0,
+								-0.0006924839108251035,
+								0,
+								0,
+								0,
+								-1.0006924867630005,
+								1
+							],
+							"castShadows": true,
+							"shadowBias": 0.00002,
+							"specularType": "PHONG",
+							"constantAtt": 1,
+							"linearAtt": 0.5,
+							"expAtt": 0.1
+						},
+						{
+							"type": "Transform",
+							"transformMatrix": [
+								0.9659258127212524,
+								0,
+								-0.258819043636322,
+								0,
+								-0.2120121568441391,
+								0.5735764503479004,
+								-0.7912400960922241,
+								0,
+								0.1484525054693222,
+								0.8191520571708679,
+								0.5540323257446289,
+								0,
+								0.14854049682617188,
+								3.260463237762451,
+								5.554360866546631,
+								1
+							]
+						},
+						{
+							"type": "Selectable"
+						}
+					]
+				},
+				{
+					"type": "Node",
+					"name": "Ball",
+					"enabled": true,
+					"steady": false,
+					"children": [],
+					"components": [
+						{
+							"type": "Drawable",
+							"name": "Sphere"
+						},
+						{
+							"type": "Transform",
+							"transformMatrix": [
+								1,
+								0,
+								0,
+								0,
+								0,
+								1,
+								0,
+								0,
+								0,
+								0,
+								1,
+								0,
+								0,
+								1,
+								0,
+								1
+							]
+						},
+						{
+							"type": "Selectable"
+						}
+					]
+				},
+				{
+					"type": "Node",
+					"name": "Floor",
+					"enabled": true,
+					"steady": false,
+					"children": [],
+					"components": [
+						{
+							"type": "Drawable",
+							"name": "Plane"
+						},
+						{
+							"type": "Transform",
+							"transformMatrix": [
+								1,
+								0,
+								0,
+								0,
+								0,
+								1,
+								0,
+								0,
+								0,
+								0,
+								1,
+								0,
+								0,
+								-1,
+								0,
+								1
+							]
+						},
+						{
+							"type": "Selectable"
+						}
+					]
+				}
+			],
+			"components": [
+				{
+					"type": "Environment",
+					"equirectangularTexture": "country_field_sun.jpg",
+					"irradianceIntensity": 1,
+					"showSkybox": true,
+					"cubemapSize": 512,
+					"irradianceMapSize": 32,
+					"specularMapSize": 32,
+					"specularMapL2Size": 32
+				},
+				{
+					"type": "Selectable"
+				}
+			]
+		}
+	]
+}

@@ -384,7 +384,11 @@ std::shared_ptr<bg2e::scene::Node> LoadGltfSceneDelegate::scene1()
         if (drawables.size() > 0)
         {
             // All drawables elements contains a DrawableComponent
-            _targetDrawable = drawables[0]->getComponent<bg2e::scene::DrawableComponent>()->drawable();
+            auto drawableNode = drawables[0].lock();
+            if (drawableNode)
+            {
+                _targetDrawable = drawableNode->getComponent<bg2e::scene::DrawableComponent>()->drawable();
+            }
         }
     }
 

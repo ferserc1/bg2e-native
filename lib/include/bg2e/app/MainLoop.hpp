@@ -128,6 +128,8 @@ public:
     void exit();
     
     inline void setOnExitFunction(std::function<bool()> fn) { _onExitFunction = fn; }
+
+    void safeUpdateScene(std::function<void()> fn) { _safeUpdateScene.push_back(fn); }
     
 protected:
     WindowConfig _windowConfig;
@@ -145,9 +147,13 @@ protected:
  
     std::function<bool()> _onExitFunction = nullptr;
 
+    std::vector<std::function<void()>> _safeUpdateScene;
+
     Shortcuts _shortcuts;
     
     void initMainLoopInstance();
+
+    void executeSafeUpdateScene();
 };
 
 }

@@ -57,8 +57,8 @@ public:
     
     inline std::shared_ptr<bg2e::scene::Node> sceneRoot() const { return _sceneRoot; }
     
-    inline bg2e::scene::EnvironmentComponent * environment() { return _environment; }
-    inline bg2e::scene::EnvironmentComponent * environment() const { return _environment; }
+    inline bg2e::scene::EnvironmentComponent * environment() { return _environment.lock().get(); }
+    inline bg2e::scene::EnvironmentComponent * environment() const { return _environment.lock().get(); }
     
     inline bg2e::scene::OrbitCameraComponent * orbitCamera() { return _orbitCamera; }
     inline bg2e::scene::OrbitCameraComponent * orbitCamera() const { return _orbitCamera; }
@@ -133,9 +133,9 @@ protected:
     bool _showFloor = true;
     float _floorHeight = 0.0f;
 
-    bg2e::scene::EnvironmentComponent * _environment = nullptr;
+    std::weak_ptr<bg2e::scene::EnvironmentComponent> _environment;
     bg2e::scene::OrbitCameraComponent * _orbitCamera = nullptr;
-    bg2e::scene::Node * _environmentNode = nullptr;
+    std::shared_ptr<bg2e::scene::Node> _environmentNode;
 
 // The "name" parameter is mandatory if the scene is not build yet
     std::shared_ptr<bg2e::scene::Node> createLightNode(

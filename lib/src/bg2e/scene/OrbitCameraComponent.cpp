@@ -24,9 +24,149 @@
 
 namespace bg2e::scene {
 
-void OrbitCameraComponent::deserialize(std::shared_ptr<json::JsonNode> /*jsonData*/, const std::filesystem::path& /*basePath*/)
+void OrbitCameraComponent::deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path&)
 {
+    if (!jsonData || !jsonData->isObject())
+    {
+        return;
+    }
 
+    auto& obj = jsonData->objectValue();
+
+    // Deserialize rotate buttons
+    if (obj.count("rotateButtons") && obj["rotateButtons"]->isObject())
+    {
+        auto& btn = obj["rotateButtons"]->objectValue();
+        _rotationButtons.left = btn.count("left") ? btn["left"]->boolValue() : false;
+        _rotationButtons.middle = btn.count("middle") ? btn["middle"]->boolValue() : false;
+        _rotationButtons.right = btn.count("right") ? btn["right"]->boolValue() : false;
+    }
+
+    // Deserialize pan buttons (note: serialized as "panButtonsButtons" in some versions)
+    if (obj.count("panButtons") && obj["panButtons"]->isObject())
+    {
+        auto& btn = obj["panButtons"]->objectValue();
+        _panButtons.left = btn.count("left") ? btn["left"]->boolValue() : false;
+        _panButtons.middle = btn.count("middle") ? btn["middle"]->boolValue() : false;
+        _panButtons.right = btn.count("right") ? btn["right"]->boolValue() : false;
+    }
+    else if (obj.count("panButtonsButtons") && obj["panButtonsButtons"]->isObject())
+    {
+        auto& btn = obj["panButtonsButtons"]->objectValue();
+        _panButtons.left = btn.count("left") ? btn["left"]->boolValue() : false;
+        _panButtons.middle = btn.count("middle") ? btn["middle"]->boolValue() : false;
+        _panButtons.right = btn.count("right") ? btn["right"]->boolValue() : false;
+    }
+
+    // Deserialize zoom buttons
+    if (obj.count("zoomButtons") && obj["zoomButtons"]->isObject())
+    {
+        auto& btn = obj["zoomButtons"]->objectValue();
+        _zoomButtons.left = btn.count("left") ? btn["left"]->boolValue() : false;
+        _zoomButtons.middle = btn.count("middle") ? btn["middle"]->boolValue() : false;
+        _zoomButtons.right = btn.count("right") ? btn["right"]->boolValue() : false;
+    }
+
+    // Deserialize rotation
+    if (obj.count("rotation") && obj["rotation"]->isVec2())
+    {
+        _rotation = obj["rotation"]->glmVec2Value();
+    }
+
+    // Deserialize distance
+    if (obj.count("distance"))
+    {
+        _distance = obj["distance"]->numberValue(_distance);
+    }
+
+    // Deserialize center
+    if (obj.count("center") && obj["center"]->isVec3())
+    {
+        _center = obj["center"]->glmVec3Value();
+    }
+
+    // Deserialize rotation speed
+    if (obj.count("rotationSpeed"))
+    {
+        _rotationSpeed = obj["rotationSpeed"]->numberValue(_rotationSpeed);
+    }
+
+    // Deserialize wheel speed
+    if (obj.count("wheelSpeed"))
+    {
+        _wheelSpeed = obj["wheelSpeed"]->numberValue(_wheelSpeed);
+    }
+
+    // Deserialize min focus
+    if (obj.count("minFocus"))
+    {
+        _minFocus = obj["minFocus"]->numberValue(_minFocus);
+    }
+
+    // Deserialize pitch limits
+    if (obj.count("minPitch"))
+    {
+        _minPitch = obj["minPitch"]->numberValue(_minPitch);
+    }
+
+    if (obj.count("maxPitch"))
+    {
+        _maxPitch = obj["maxPitch"]->numberValue(_maxPitch);
+    }
+
+    // Deserialize distance limits
+    if (obj.count("minDistance"))
+    {
+        _minDistance = obj["minDistance"]->numberValue(_minDistance);
+    }
+
+    if (obj.count("maxDistance"))
+    {
+        _maxDistance = obj["maxDistance"]->numberValue(_maxDistance);
+    }
+
+    // Deserialize bounds
+    if (obj.count("maxX"))
+    {
+        _maxX = obj["maxX"]->numberValue(_maxX);
+    }
+
+    if (obj.count("minX"))
+    {
+        _minX = obj["minX"]->numberValue(_minX);
+    }
+
+    if (obj.count("maxY"))
+    {
+        _maxY = obj["maxY"]->numberValue(_maxY);
+    }
+
+    if (obj.count("minY"))
+    {
+        _minY = obj["minY"]->numberValue(_minY);
+    }
+
+    if (obj.count("maxZ"))
+    {
+        _maxZ = obj["maxZ"]->numberValue(_maxZ);
+    }
+
+    if (obj.count("minZ"))
+    {
+        _minZ = obj["minZ"]->numberValue(_minZ);
+    }
+
+    // Deserialize displacement speed
+    if (obj.count("displacementSpeed"))
+    {
+        _displacementSpeed = obj["displacementSpeed"]->numberValue(_displacementSpeed);
+    }
+
+    // Deserialize enabled
+    if (obj.count("enabled"))
+    {
+        _enabled = obj["enabled"]->boolValue(_enabled);
+    }
 }
 
 std::shared_ptr<json::JsonNode> OrbitCameraComponent::serialize(const std::filesystem::path& basePath)

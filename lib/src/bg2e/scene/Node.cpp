@@ -17,6 +17,7 @@
  */
 
 #include <bg2e/scene/Node.hpp>
+#include <bg2e/scene/ComponentFactoryRegistry.hpp>
 #include <bg2e/utils/utils.hpp>
 #include <bg2e/scene/TransformVisitor.hpp>
 
@@ -148,7 +149,6 @@ const std::unordered_map<std::string, std::shared_ptr<Component>>& Node::compone
 
 const std::vector<std::shared_ptr<Component>>& Node::orderedComponents() const
 {
-    sortComponents();
     return _orderedComponents;
 }
 
@@ -228,9 +228,56 @@ Node * Node::sceneRoot()
     return _parent->sceneRoot();
 }
 
-void Node::deserialize(std::shared_ptr<json::JsonNode>, const std::filesystem::path&)
+void Node::deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path& basePath)
 {
+    if (!jsonData || !jsonData->isObject())
+    {
+        return;
+    }
 
+    auto& obj = jsonData->objectValue();
+
+    // Read basic node properties
+    if (obj.count("name"))
+    {
+        _name = obj["name"]->stringValue();
+    }
+
+    if (obj.count("enabled"))
+    {
+        _disabled = !obj["enabled"]->boolValue();
+    }
+
+    if (obj.count("steady"))
+    {
+        _steady = obj["steady"]->boolValue();
+    }
+
+    // Deserialize components
+    if (obj.count("components") && obj["components"]->isList())
+    {
+        auto& componentsList = obj["components"]->listValue();
+        for (auto& compData : componentsList)
+        {
+            auto* comp = ComponentFactoryRegistry::get().create(compData, basePath);
+            if (comp)
+            {
+                addComponent(comp);
+            }
+        }
+    }
+
+    // Deserialize children recursively
+    if (obj.count("children") && obj["children"]->isList())
+    {
+        auto& childrenList = obj["children"]->listValue();
+        for (auto& childData : childrenList)
+        {
+            auto childNode = std::make_shared<Node>();
+            childNode->deserialize(childData, basePath);
+            addChild(childNode);
+        }
+    }
 }
 
 std::shared_ptr<json::JsonNode> Node::serialize(const std::filesystem::path & basePath)
@@ -270,10 +317,14 @@ void Node::sortComponents() const
     if (_componentsOrderDirty)
     {
         _orderedComponents.clear();
-        _orderedComponents.reserve(_components.size());
         for (auto& [_, comp] : _components)
         {
             _orderedComponents.push_back(comp);
+
+            if (_orderedComponents.size() > 10)
+            {
+                std::cout << "Cuidado" << std::endl;
+            }
         }
         std::stable_sort(
             _orderedComponents.begin(),

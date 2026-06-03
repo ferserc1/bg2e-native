@@ -34,13 +34,13 @@ void SubmeshSelector::init(std::shared_ptr<manipulation::SelectionManager> sm)
     _selectionMgr = sm;
     _selectionMgr->onSelect([&]()
     {
-        _currentSelection.node = nullptr;
-        _currentSelection.drawable = nullptr;
-        _currentSelection.mesh = nullptr;
+        _currentSelection.node.reset();
+        _currentSelection.drawable.reset();
+        _currentSelection.mesh.reset();
         _currentSelection.submesh = -1;
         for (auto item : _selectionMgr->selectedItems())
         {
-            if (item->drawable)
+            if (!item->drawable.expired())
             {
                 _currentSelection.node = item->node;
                 _currentSelection.drawable = item->drawable;
@@ -56,25 +56,27 @@ void SubmeshSelector::init(std::shared_ptr<manipulation::SelectionManager> sm)
 
 std::shared_ptr<scene::Drawable> SubmeshSelector::editDrawable()
 {
-    if (_currentSelection.drawable)
+    auto drawable = _currentSelection.drawable.lock();
+    if (drawable)
     {
-        return _currentSelection.drawable->drawable();
+        return drawable->drawable();
     }
     return std::shared_ptr<scene::Drawable>();
 }
 
 std::shared_ptr<scene::Drawable> SubmeshSelector::editDrawable() const
 {
-    if (_currentSelection.drawable)
+    auto drawable = _currentSelection.drawable.lock();
+    if (drawable)
     {
-        return _currentSelection.drawable->drawable();
+        return drawable->drawable();
     }
     return std::shared_ptr<scene::Drawable>();
 }
 
 int32_t SubmeshSelector::selectedItem() const
 {
-    if (_currentSelection.drawable)
+    if (!_currentSelection.drawable.expired())
     {
         return _currentSelection.submesh;
     }
@@ -90,7 +92,8 @@ std::vector<uint32_t> SubmeshSelector::selectedItems() const
     {
         for (auto & item : _selectionMgr->selectedItems())
         {
-            if (item->mesh == curDrawable.get())
+            auto itemMesh = item->mesh.lock();
+            if (itemMesh.get() == curDrawable.get())
             {
                 selectedItems.push_back(item->submesh);
             }
@@ -102,17 +105,19 @@ std::vector<uint32_t> SubmeshSelector::selectedItems() const
 
 void SubmeshSelector::addSelectedItem(uint32_t index) const
 {
-    if (_currentSelection.node &&
+    auto node = _currentSelection.nodePtr();
+    auto drawable = _currentSelection.drawablePtr();
+    if (node &&
         !_selectionMgr->isSelected(
-            _currentSelection.node,
-            _currentSelection.drawable,
+            node,
+            drawable,
             index
         )
     )
     {
         _selectionMgr->addToSelectedItems(
-            _currentSelection.node,
-            _currentSelection.drawable,
+            node,
+            drawable,
             index
         );
     }
@@ -120,13 +125,14 @@ void SubmeshSelector::addSelectedItem(uint32_t index) const
 
 bool SubmeshSelector::draw()
 {
-    if (!_currentSelection.drawable || !_currentSelection.mesh)
+    auto drawableComp = _currentSelection.drawable.lock();
+    auto drawableMesh = _currentSelection.mesh.lock();
+    if (!drawableComp || !drawableMesh)
     {
         return false;
     }
 
-    auto drawable = _currentSelection.mesh;
-    auto drawableName = drawable->name();
+    auto drawableName = drawableMesh->name();
     if (drawableName.empty())
     {
         drawableName = "Drawable";
@@ -136,19 +142,21 @@ bool SubmeshSelector::draw()
     BasicWidgets::separator("Submeshes");
     SelectableList::beginList(1);
     bool changed = false;
-    for (uint32_t i = 0; i < drawable->submeshesCount(); ++i)
+    auto node = _currentSelection.nodePtr();
+    auto drawable = _currentSelection.drawablePtr();
+    for (uint32_t i = 0; i < drawableMesh->submeshesCount(); ++i)
     {
-        auto submeshName = std::to_string(i) + " - " + drawable->submeshName(i);
-        bool selected = _selectionMgr->isSelected(_currentSelection.node, _currentSelection.drawable, i);
+        auto submeshName = std::to_string(i) + " - " + drawableMesh->submeshName(i);
+        bool selected = _selectionMgr->isSelected(node, drawable, i);
         if (SelectableList::item(submeshName, selected))
         {
-            if (_selectionMgr->isSelected(_currentSelection.node, _currentSelection.drawable, i))
+            if (_selectionMgr->isSelected(node, drawable, i))
             {
-                _selectionMgr->removeFromSelectedItems(_currentSelection.node, i);
+                _selectionMgr->removeFromSelectedItems(node, i);
             }
             else
             {
-                _selectionMgr->addToSelectedItems(_currentSelection.node, _currentSelection.drawable, i);
+                _selectionMgr->addToSelectedItems(node, drawable, i);
             }
             changed = true;
         }

@@ -148,7 +148,7 @@ void AppDelegate::setSelectionHighlightMode(SelectionHighlightMode mode)
 void AppDelegate::initWorkspace()
 {
     _workspace.leftPanelSize().min = 300;
-    _environmentPanel.init(this, renderer(), _stage->environment());
+    _environmentPanel.init(this, renderer());
     _uiSettingsWindow.init(this);
     _renderSettingsWindow.init(this);
     _toolBar.init(this, &_uiSettingsWindow, &_renderSettingsWindow);

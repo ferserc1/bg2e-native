@@ -30,6 +30,8 @@ namespace scene {
 
 class BG2E_API Scene {
 public:
+    static std::shared_ptr<Scene> deserialize(std::shared_ptr<json::JsonNode>, const std::filesystem::path&);
+
     void setSceneRoot(std::shared_ptr<Node> scene);
     void setMainCamera(CameraComponent * camera);
     
@@ -58,8 +60,8 @@ public:
     
 protected:    
     std::shared_ptr<Node> _sceneRoot;
-    Node * _mainCameraNode;
-    Node * _mainEnvironment;
+    Node * _mainCameraNode = nullptr;
+    Node * _mainEnvironment = nullptr;
     std::vector<std::shared_ptr<LightComponent>> _lightComponents;
     std::vector<base::Light*> _lights;
 

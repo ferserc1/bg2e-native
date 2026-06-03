@@ -28,6 +28,8 @@
 #include <bg2e/scene/EnvironmentComponent.hpp>
 #include <bg2e/scene/FindCameraVisitor.hpp>
 #include <bg2e/scene/FindNodeComponentVisitor.hpp>
+#include <bg2e/scene/FindNodeVisitor.hpp>
+#include <bg2e/scene/FindNodeByProperties.hpp>
 #include <bg2e/scene/InputVisitor.hpp>
 #include <bg2e/scene/LightComponent.hpp>
 #include <bg2e/scene/Mesh.hpp>

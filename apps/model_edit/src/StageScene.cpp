@@ -25,6 +25,8 @@
 #include <cctype>
 #include <string>
 
+#include "bg2e/scene/FindNodeVisitor.hpp"
+
 StageScene::StageScene(bg2e::render::Engine * engine, AppDelegate * appDelegate)
     :_engine { engine }
     ,_appDelegate { appDelegate }
@@ -79,8 +81,8 @@ std::shared_ptr<bg2e::scene::Node> StageScene::init()
     auto environmentNode = new bg2e::scene::Node("Environment");
     sceneRoot->addChild(environmentNode);
     environmentNode->addComponent(new bg2e::scene::EnvironmentComponent(bg2e::base::PlatformTools::assetPath(), "mirrored_hall_4k.hdr"));
-    _environment = sceneRoot->environment();
-    _environmentNode = environmentNode;
+    _environment = std::dynamic_pointer_cast<bg2e::scene::EnvironmentComponent>(environmentNode->environment()->shared_from_this());
+    _environmentNode = std::static_pointer_cast<bg2e::scene::Node>(environmentNode->shared_from_this());
 
     _lightsNode = std::make_shared<bg2e::scene::Node>("Lights");
     _lightsNode->addComponent(new bg2e::scene::TransformComponent());
@@ -215,8 +217,10 @@ void StageScene::importGltf(const std::filesystem::path& path)
     {
         bg2e::scene::FindNodeComponentVisitor<bg2e::scene::DrawableComponent> findDrawables;
         auto drawableNodes = findDrawables.find(gltfScene);
-        for (auto drawableNode : drawableNodes)
+        for (auto& drawableNodeWp : drawableNodes)
         {
+            auto drawableNode = drawableNodeWp.lock();
+            if (!drawableNode) continue;
             auto drawable = drawableNode->getComponent<bg2e::scene::DrawableComponent>()->drawable();
             _targetDrawables.push_back(drawable);
             _targetNames.push_back(drawableNode->name());
@@ -326,7 +330,7 @@ void StageScene::saveEnvironmentSettings()
 
 void StageScene::saveEnvironmentSettings(const std::filesystem::path& path)
 {
-    bg2e::db::saveScene(_environmentNode, path);
+    bg2e::db::saveScene(_environmentNode.get(), path);
 }
 
 void StageScene::restoreEnvironmentSettings()
@@ -339,16 +343,33 @@ void StageScene::restoreEnvironmentSettings()
 
 void StageScene::restoreEnvironmentSettings(const std::filesystem::path& path)
 {
-    auto newEnv = std::shared_ptr<bg2e::scene::Node>(bg2e::db::loadScene(path));
+    auto newScene = bg2e::db::loadScene(path);
     auto findEnvironment = std::make_shared<bg2e::scene::FindNodeComponentVisitor<bg2e::scene::EnvironmentComponent>>();
-    auto result = findEnvironment->find(newEnv.get());
+    auto environmentNode = findEnvironment->find(newScene->rootNode());
 
-    if (!result.empty())
+    auto findLights = std::make_shared<bg2e::scene::FindNodeByProperties>();
+    findLights->byName("Lights");
+    auto lightNodes = findLights->find(newScene->rootNode());
+
+    if (!environmentNode.empty() && lightNodes.size() == 1)
     {
-        _sceneRoot->removeChild(_environmentNode->shared_from_this());
-        _environment = result[0]->environment();
-        _environmentNode = newEnv.get();
-        _sceneRoot->addChild(_environmentNode);
+        // Wait for device idle to prevent remove resources already used
+        bg2e::app::MainLoop::current()->safeUpdateScene([&, environmentNode, newScene, lightNodes]()
+        {
+            auto envNode = environmentNode[0].lock();
+            if (!envNode) return;
+            _sceneRoot->removeChild(_environmentNode);
+            _environment = std::dynamic_pointer_cast<bg2e::scene::EnvironmentComponent>(envNode->environment()->shared_from_this());
+            _environmentNode = std::static_pointer_cast<bg2e::scene::Node>(newScene->rootNode()->shared_from_this());
+            _lightsNode = lightNodes[0];
+            _sceneRoot->addChild(_environmentNode);
+            _sceneRoot->scene()->updateLights();
+        });
+    }
+    else
+    {
+        bg2e::app::MessageBox msg;
+        msg.showError("Invalid environment", "The specified file does not appear to be a valid environment file");
     }
 }
 

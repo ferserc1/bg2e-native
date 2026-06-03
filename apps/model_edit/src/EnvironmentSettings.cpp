@@ -24,8 +24,7 @@
 
 void EnvironmentSettings::init(
     AppDelegate * delegate,
-    bg2e::render::Renderer * renderer,
-    bg2e::scene::EnvironmentComponent * environment
+    bg2e::render::Renderer * renderer
 ) {
     _appDelegate = delegate;
     setTitle("Environment Options");
@@ -34,9 +33,9 @@ void EnvironmentSettings::init(
     _polarEditor = std::make_shared<bg2e::ui::PolarTransformControllerEditor>();
     _cameraSettings = std::make_shared<bg2e::ui::CameraSettings>();
     
-    auto cameraComp = delegate->stage()->cameraComponent();
-    
-    setDrawFunction([&, renderer, environment, cameraComp]() {
+    setDrawFunction([&, renderer]() {
+        auto environment = _appDelegate->stage()->environment();
+        auto cameraComp = _appDelegate->stage()->cameraComponent();
         auto drawSkybox = renderer->drawSkybox();
         auto skyboxBlur = renderer->skyboxBlurLevel() > 0;
         if (bg2e::ui::BasicWidgets::checkBox("Draw Skybox", &drawSkybox))

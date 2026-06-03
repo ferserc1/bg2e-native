@@ -60,7 +60,7 @@ void SubmeshWindow::init(AppDelegate * delegate)
 		            auto isSelected = i == stage->selectedTargetNodeIndex();
 		            if (bg2e::ui::SelectableList::item(targetName, isSelected))
 		            {
-		                stage->selectTargetNode(i);
+		                stage->selectTargetNode(static_cast<uint32_t>(i));
 		                _materialEditor.clearMaterial();
 		            }
 		        }

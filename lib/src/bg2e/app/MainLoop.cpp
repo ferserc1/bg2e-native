@@ -299,41 +299,49 @@ int32_t MainLoop::run(app::Application * application) {
             {
                 _inputManager.mouseWheel(event.wheel.x, event.wheel.y);
             }
-            
-            _userInterface.processEvent(&event);
-        }
 
-        if (resizing)
-        {
-            auto now = std::chrono::steady_clock::now();
-            if (now - lastResizeEventTime > std::chrono::milliseconds(minResizeInterval)) {
-                resizing = false;
+            if (!quit)
+            {
+                _userInterface.processEvent(&event);
             }
         }
-        
-        if (stopRendering)
+
+        if (!quit)
         {
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
-            continue;
+            executeSafeUpdateScene();
+
+            if (resizing)
+            {
+                auto now = std::chrono::steady_clock::now();
+                if (now - lastResizeEventTime > std::chrono::milliseconds(minResizeInterval)) {
+                    resizing = false;
+                }
+            }
+
+            if (stopRendering)
+            {
+                std::this_thread::sleep_for(std::chrono::milliseconds(100));
+                continue;
+            }
+
+            if (!resizing && _engine.newFrame())
+            {
+                _renderLoop.swapchainResized();
+            }
+
+            _userInterface.newFrame();
+
+            if (!resizing) {
+                _renderLoop.acquireAndPresent();
+            }
+            auto end = std::chrono::high_resolution_clock::now();
+
+            auto millis = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+
+            _renderLoop.setDelta(static_cast<float>(millis.count()));
+
+            start = std::chrono::high_resolution_clock::now();
         }
-        
-        if (!resizing && _engine.newFrame())
-        {
-            _renderLoop.swapchainResized();
-        }
-        
-        _userInterface.newFrame();
-        
-        if (!resizing) {
-            _renderLoop.acquireAndPresent();
-        }
-        auto end = std::chrono::high_resolution_clock::now();
-    
-        auto millis = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
-    
-        _renderLoop.setDelta(static_cast<float>(millis.count()));
-        
-        start = std::chrono::high_resolution_clock::now();
     }
 
     if (_windowConfig.persistentSize)
@@ -356,6 +364,16 @@ void MainLoop::exit()
     SDL_Event event;
     event.type = SDL_QUIT;
     SDL_PushEvent(&event);
+}
+
+void MainLoop::executeSafeUpdateScene()
+{
+    _engine.device().waitIdle();
+    for (auto fn : _safeUpdateScene)
+    {
+        fn();
+    }
+    _safeUpdateScene.clear();
 }
 
 }

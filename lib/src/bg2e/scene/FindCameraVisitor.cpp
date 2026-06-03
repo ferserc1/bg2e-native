@@ -32,7 +32,7 @@ void FindCameraVisitor::visit(Node * node)
     auto camera = node->camera();
     if (camera)
     {
-        _cameras.push_back(camera);
+        _cameras.push_back(std::dynamic_pointer_cast<CameraComponent>(camera->shared_from_this()));
     }
 }
 

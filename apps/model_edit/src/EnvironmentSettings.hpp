@@ -25,8 +25,7 @@ class EnvironmentSettings : public bg2e::ui::Window {
 public:
     void init(
         AppDelegate * delegate,
-        bg2e::render::Renderer * renderer,
-        bg2e::scene::EnvironmentComponent * environment
+        bg2e::render::Renderer * renderer
     );
     
 protected:

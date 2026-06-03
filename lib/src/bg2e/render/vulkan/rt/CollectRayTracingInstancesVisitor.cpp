@@ -77,7 +77,7 @@ void CollectRayTracingInstancesVisitor::visit(scene::Node * node)
                 objInst.materialData.padding[1] = 0;
                 objInst.vertexBuffer = renderMesh->vertexBuffer();
                 objInst.indexBuffer = renderMesh->indexBuffer();
-                objInst.albedoTexture = renderMat->albedoTexture().get();
+                objInst.albedoTexture = renderMat->albedoTexture();
                 _objectInstances.push_back(objInst);
 
                 uint32_t objIndex = static_cast<uint32_t>(_objectInstances.size() - 1);

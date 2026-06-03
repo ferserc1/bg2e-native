@@ -17,19 +17,54 @@
  */
 
 #include <bg2e/db/scene.hpp>
+#include <bg2e/scene/Node.hpp>
+#include <bg2e/scene/Scene.hpp>
 #include <bg2e/json/JsonNode.hpp>
+#include <bg2e/json/JsonParser.hpp>
+#include <bg2e/base/Log.hpp>
 
 #include <fstream>
 
 namespace bg2e::db {
 
-bg2e::scene::Node * loadScene(
+std::shared_ptr<bg2e::scene::Scene> loadScene(
     const std::filesystem::path& filePath
 ) {
+    std::ifstream inFile(filePath);
+    if (!inFile.is_open())
+    {
+        bg2e_log_error << "Could not open scene file at path \"" << filePath << "\""  << bg2e_log_end;
+    }
+    else {
+        inFile.seekg(0, std::ios::end);
+        std::string content;
+        content.resize(inFile.tellg());
+
+        inFile.seekg(0, std::ios::beg);
+        inFile.read(&content[0], content.size());
+
+
+        auto parser = json::JsonParser(content);
+        auto sceneFile = parser.parse();
+
+        if (!sceneFile) {
+            bg2e_log_error << "Error parsing scene file at path \"" << filePath << "\"" << bg2e_log_end;
+        }
+
+        auto scene = scene::Scene::deserialize(sceneFile, filePath.parent_path());
+        inFile.close();
+
+        if (!scene)
+        {
+            bg2e_log_error << "Error loading scene content from file \"" << filePath << "\". This error is usually caused by issues with the scene configuration or missing resources." << bg2e_log_end;
+        }
+
+        return scene;
+    }
     return nullptr;
 }
 
-bg2e::scene::Node * loadScene(
+std::shared_ptr<bg2e::scene::Scene> loadScene(
     const std::filesystem::path& basePath,
     const std::string& fileName
 ) {

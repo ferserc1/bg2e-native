@@ -44,15 +44,15 @@ Component* ComponentFactoryRegistry::create(std::shared_ptr<json::JsonNode> data
     {
         throw std::runtime_error("ComponentFactoryRegistry::create(): invalid JSON data. Expecting object");
     }
-    
-    std::string componentType = data->stringValue();
+
+    auto objectValue = data->objectValue();
+    std::string componentType = objectValue["type"]->stringValue();
     if (_registry.find(componentType) == _registry.end()) {
         std::cout << "WARN: component type not found: " << componentType << std::endl;
         return nullptr;
     }
     
     auto result = _registry[componentType](data, basePath);
-
     return result;
 }
 

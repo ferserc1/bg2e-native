@@ -46,9 +46,20 @@ EnvironmentComponent::~EnvironmentComponent()
 
 }
 
-void EnvironmentComponent::deserialize(std::shared_ptr<json::JsonNode> /* jsonData */, const std::filesystem::path& /* basePath */)
+void EnvironmentComponent::deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path& basePath)
 {
+    if (!jsonData || !jsonData->isObject())
+    {
+        return;
+    }
 
+    auto& obj = jsonData->objectValue();
+
+    if (obj.count("equirectangularTexture"))
+    {
+        auto textureName = obj["equirectangularTexture"]->stringValue();
+        setEnvironmentImage(basePath, textureName);
+    }
 }
 
 std::shared_ptr<json::JsonNode> EnvironmentComponent::serialize(const std::filesystem::path& basePath)

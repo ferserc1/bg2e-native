@@ -49,13 +49,15 @@ bool SelectionManager::pick(
     SelectionItem result {};
     if (pickObject(rootNode, viewMatrix, projMatrix, vp, x, y, &result))
     {
-        if (isSelected(result.node, result.drawable, result.submesh))
+        auto nodePtr = result.nodePtr();
+        auto drawablePtr = result.drawablePtr();
+        if (isSelected(nodePtr, drawablePtr, result.submesh))
         {
-            removeFromSelectedItems(result.node, result.submesh);
+            removeFromSelectedItems(nodePtr, result.submesh);
         }
         else
         {
-            addToSelectedItems(result.node, result.drawable, result.submesh);
+            addToSelectedItems(nodePtr, drawablePtr, result.submesh);
         }
         return true;
     }
@@ -84,9 +86,10 @@ bool SelectionManager::pickObject(
     auto objectId = pickObjectId(rootNode, viewMatrix, projMatrix, vp, x, y);
     if (auto objectData = _pickVisitor->findObject(objectId))
     {
-        result->node = objectData->node;
-        result->drawable = objectData->node->getComponent<scene::DrawableComponent>();
-        result->mesh = result->drawable->drawable().get();
+        result->node = objectData->node->weak_from_this();
+        auto drawableComp = objectData->node->getComponent<scene::DrawableComponent>();
+        result->drawable = drawableComp ? std::weak_ptr<scene::DrawableComponent>(std::dynamic_pointer_cast<scene::DrawableComponent>(drawableComp->shared_from_this())) : std::weak_ptr<scene::DrawableComponent>{};
+        result->mesh = drawableComp ? drawableComp->drawable() : std::shared_ptr<scene::Drawable>{};
         result->submesh = objectData->submeshIndex;
         return true;
     }
@@ -98,9 +101,12 @@ void SelectionManager::deselect()
 {
     for (const auto & item : _selectedItems)
     {
-        if (const auto& sel = item->node->getComponent<SelectableComponent>())
+        if (auto node = item->node.lock())
         {
-            sel->setSelected(item->submesh, false);
+            if (const auto& sel = node->getComponent<SelectableComponent>())
+            {
+                sel->setSelected(item->submesh, false);
+            }
         }
     }
 
@@ -125,7 +131,9 @@ bool SelectionManager::isSelected(const scene::Node * node, const scene::Drawabl
         _selectedItems.cend(),
         [node, drawable, submesh](const std::shared_ptr<SelectionItem>& curItem)
         {
-            return node == curItem->node && drawable == curItem->mesh && submesh == curItem->submesh;
+            auto curNode = curItem->node.lock();
+            auto curMesh = curItem->mesh.lock();
+            return curNode.get() == node && curMesh.get() == drawable && submesh == curItem->submesh;
         }
     ) != _selectedItems.cend();
 }
@@ -146,7 +154,7 @@ bool SelectionManager::addToSelectedItems(scene::Node * node, scene::DrawableCom
     }
 
     // Is the submesh index valid?
-    auto mesh = drawable->drawable().get();
+    auto mesh = drawable->drawable();
     if (submesh >= mesh->submeshesCount())
     {
         return false;
@@ -166,8 +174,8 @@ bool SelectionManager::addToSelectedItems(scene::Node * node, scene::DrawableCom
 
     // Build the SelectionItem class
     auto selectItem = std::make_shared<SelectionItem>();
-    selectItem->node = node;
-    selectItem->drawable = drawable;
+    selectItem->node = node->weak_from_this();
+    selectItem->drawable = std::weak_ptr<scene::DrawableComponent>(std::dynamic_pointer_cast<scene::DrawableComponent>(drawable->shared_from_this()));
     selectItem->mesh = mesh;
     selectItem->submesh = submesh;
     _selectedItems.push_back(selectItem);
@@ -190,18 +198,19 @@ void SelectionManager::removeFromSelectedItems(scene::Node * node)
         _selectedItems,
         [&, node](const std::shared_ptr<SelectionItem>& curItem)
         {
-            if (curItem->node == node)
+            auto curNode = curItem->node.lock();
+            if (!curNode || curNode.get() != node)
             {
-                auto sel = curItem->node->getComponent<SelectableComponent>();
-                if (!sel)
-                {
-                    return false;
-                }
-                sel->setSelected(curItem->submesh, false);
-                changed = true;
-                return true;
+                return false;
             }
-            return false;
+            auto sel = curNode->getComponent<SelectableComponent>();
+            if (!sel)
+            {
+                return false;
+            }
+            sel->setSelected(curItem->submesh, false);
+            changed = true;
+            return true;
         }
     );
 
@@ -229,12 +238,18 @@ void SelectionManager::removeFromSelectedItems(scene::DrawableComponent* drawabl
         _selectedItems,
         [&, drawable, submesh](const std::shared_ptr<SelectionItem>& curItem)
         {
-            auto sel = curItem->node->getComponent<SelectableComponent>();
+            auto curNode = curItem->node.lock();
+            if (!curNode)
+            {
+                return false;
+            }
+            auto sel = curNode->getComponent<SelectableComponent>();
             if (!sel)
             {
                 return false;
             }
-            if (curItem->drawable == drawable && curItem->submesh == submesh)
+            auto curDrawable = curItem->drawable.lock();
+            if (curDrawable.get() == drawable && curItem->submesh == submesh)
             {
                 sel->setSelected(curItem->submesh, false);
                 changed = true;
