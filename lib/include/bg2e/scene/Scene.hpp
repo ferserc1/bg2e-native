@@ -43,7 +43,17 @@ public:
     // Call this once in the update() function every time a light is added
     // or removed from the scene
     void updateLights();
-    
+
+    // Call this once when the environment is updated, added or removed from the scene
+    void updateEnvironment();
+
+    // Call this when you the camera is updated in the scene
+    void updateCamera();
+
+    // Call this when you want to update all the scene object references (ligths, environment, camera)
+    void updateAll();
+
+
     [[nodiscard]] const std::vector<std::shared_ptr<LightComponent>>& lightComponents() const { return _lightComponents; }
     [[nodiscard]] const std::vector<base::Light*> lights() const { return _lights; }
     
@@ -57,6 +67,7 @@ public:
     void didUpdate();
     void willDraw();
     void didDraw();
+
     
 protected:    
     std::shared_ptr<Node> _sceneRoot;

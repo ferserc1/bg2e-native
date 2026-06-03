@@ -159,6 +159,27 @@ void Scene::updateLights()
     _lightsChanged = true;
 }
 
+void Scene::updateEnvironment()
+{
+    _mainEnvironment = nullptr;
+    // Force update environment
+    mainEnvironment();
+}
+
+void Scene::updateCamera()
+{
+    _mainCameraNode = nullptr;
+    // Force update main camera
+    mainCamera();
+}
+
+void Scene::updateAll()
+{
+    updateLights();
+    updateEnvironment();
+    updateCamera();
+}
+
 void Scene::willResize()
 {
 

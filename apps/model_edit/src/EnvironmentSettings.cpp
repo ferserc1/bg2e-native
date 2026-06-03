@@ -205,6 +205,8 @@ void EnvironmentSettings::init(
 
             if (!filePath.empty())
             {
+                _selectedLight = nullptr;
+                _selectedLightIndex = 0;
                 _appDelegate->stage()->restoreEnvironmentSettings(filePath);
             }
         }

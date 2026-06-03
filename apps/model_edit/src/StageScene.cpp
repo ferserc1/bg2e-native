@@ -367,7 +367,7 @@ void StageScene::restoreEnvironmentSettings(const std::filesystem::path& path)
                 _environmentNode = std::static_pointer_cast<bg2e::scene::Node>(newScene->rootNode()->shared_from_this());
                 _lightsNode = lightNodes[0];
                 _sceneRoot->addChild(_environmentNode);
-                _sceneRoot->scene()->updateLights();
+                _sceneRoot->scene()->updateAll();
                 _restoringEnvironment = false;
             },
             _restoreToken
