@@ -368,6 +368,10 @@ void MainLoop::exit()
 
 void MainLoop::executeSafeUpdateScene()
 {
+    if (_safeUpdateScene.empty())
+    {
+        return;
+    }
     _engine.device().waitIdle();
     for (auto& [fn, token] : _safeUpdateScene)
     {
