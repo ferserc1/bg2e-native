@@ -29,5 +29,64 @@ enum class BackendType
     Metal
 };
 
+struct Size2D {
+    uint32_t width  = 0;
+    uint32_t height = 0;
+
+    Size2D() = default;
+    Size2D(uint32_t w, uint32_t h) : width(w), height(h) {}
+
+    bool operator==(const Size2D& o) const { return width == o.width && height == o.height; }
+    bool operator!=(const Size2D& o) const { return !(*this == o); }
+    bool isZero() const { return width == 0 || height == 0; }
+};
+
+struct Size3D {
+    uint32_t width  = 0;
+    uint32_t height = 0;
+    uint32_t depth  = 1;
+
+    Size3D() = default;
+    Size3D(uint32_t w, uint32_t h, uint32_t d = 1) : width(w), height(h), depth(d) {}
+    explicit Size3D(const Size2D& s, uint32_t d = 1) : width(s.width), height(s.height), depth(d) {}
+
+    Size2D toSize2D() const { return Size2D{ width, height }; }
+
+    bool operator==(const Size3D& o) const { return width == o.width && height == o.height && depth == o.depth; }
+    bool operator!=(const Size3D& o) const { return !(*this == o); }
+};
+
+enum class PixelFormat {
+    Undefined = 0,
+
+    // --- Color ---
+    R8G8B8A8_UNORM,
+    R8G8B8A8_SRGB,
+    B8G8R8A8_UNORM,
+    B8G8R8A8_SRGB,
+    R16G16B16A16_SFLOAT,
+    R32G32B32A32_SFLOAT,
+
+    // --- Depth / stencil ---
+    D16_UNORM,
+    D32_SFLOAT,
+    D24_UNORM_S8_UINT,
+    D32_SFLOAT_S8_UINT
+};
+
+constexpr bool isDepthFormat(PixelFormat f)
+{
+    return f == PixelFormat::D16_UNORM
+        || f == PixelFormat::D32_SFLOAT
+        || f == PixelFormat::D24_UNORM_S8_UINT
+        || f == PixelFormat::D32_SFLOAT_S8_UINT;
+}
+
+constexpr bool hasStencil(PixelFormat f)
+{
+    return f == PixelFormat::D24_UNORM_S8_UINT
+        || f == PixelFormat::D32_SFLOAT_S8_UINT;
+}
+
 }
 }

@@ -19,6 +19,7 @@
 #pragma once
 
 #include <bg2e/base/PlatformTools.hpp>
+#include <bg2e/gpu/Common.hpp>
 
 #ifdef BG2E_IS_MAC
 
@@ -30,6 +31,11 @@ namespace bg2e::gpu::metal {
     using DeviceHandle       = MTL::Device*;
     using CommandQueueHandle = MTL::CommandQueue*;
     using MetalLayerHandle   = CA::MetalLayer*;
+
+#if BG2E_IS_MAC
+    MTL::PixelFormat toMetalPixelFormat(gpu::PixelFormat format);
+    gpu::PixelFormat fromMetalPixelFormat(MTL::PixelFormat format);
+#endif
 }
 
 #else

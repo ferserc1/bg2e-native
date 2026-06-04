@@ -19,6 +19,7 @@
 #pragma once
 
 #include <bg2e/gpu/OffscreenSurface.hpp>
+#include <bg2e/gpu/Common.hpp>
 
 namespace bg2e {
 namespace gpu {
@@ -26,8 +27,8 @@ namespace vk {
 
 class OffscreenSurface : public gpu::OffscreenSurface {
 public:
-    OffscreenSurface(uint32_t width, uint32_t height)
-        : gpu::OffscreenSurface(width, height) {}
+    explicit OffscreenSurface(const Size2D& size)
+        : gpu::OffscreenSurface(size) {}
 };
 
 }

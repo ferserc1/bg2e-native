@@ -23,6 +23,7 @@
 #include <bg2e/gpu/Device.hpp>
 #include <bg2e/gpu/WindowSurface.hpp>
 #include <bg2e/gpu/OffscreenSurface.hpp>
+#include <bg2e/gpu/Common.hpp>
 
 #include <cstdint>
 #include <memory>
@@ -43,11 +44,10 @@ public:
     [[nodiscard]] virtual gpu::Instance* instance() const = 0;
     [[nodiscard]] virtual WindowType windowType() const = 0;
 
-    [[nodiscard]] virtual std::unique_ptr<gpu::PhysicalDevice>  createPhysicalDevice()                             const = 0;
-    [[nodiscard]] virtual std::unique_ptr<gpu::Device>          createDevice()                                     const = 0;
-    [[nodiscard]] virtual std::unique_ptr<gpu::WindowSurface>   createWindowSurface()                              const = 0;
-    [[nodiscard]] virtual std::unique_ptr<gpu::OffscreenSurface> createOffscreenSurface(uint32_t width,
-                                                                                         uint32_t height)          const = 0;
+    [[nodiscard]] virtual std::unique_ptr<gpu::PhysicalDevice>  createPhysicalDevice()                                     const = 0;
+    [[nodiscard]] virtual std::unique_ptr<gpu::Device>          createDevice()                                               const = 0;
+    [[nodiscard]] virtual std::unique_ptr<gpu::WindowSurface>   createWindowSurface()                                        const = 0;
+    [[nodiscard]] virtual std::unique_ptr<gpu::OffscreenSurface> createOffscreenSurface(const Size2D& size)                   const = 0;
 };
 
 }

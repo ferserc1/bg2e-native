@@ -23,6 +23,7 @@
 #include <vulkan/vulkan.h>
 #include <vulkan/vk_enum_string_helper.h>
 #include <bg2e/base/PlatformTools.hpp>
+#include <bg2e/gpu/Common.hpp>
 
 #ifdef BG2E_IS_MAC
 #pragma clang diagnostic push
@@ -43,6 +44,11 @@
 #endif
 
 #include <vma/vk_mem_alloc.h>
+
+namespace bg2e::gpu::vk {
+    VkFormat    toVkFormat(gpu::PixelFormat format);
+    gpu::PixelFormat fromVkFormat(VkFormat format);
+}
 
 #ifdef BG2E_IS_MAC
 #pragma clang diagnostic pop

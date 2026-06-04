@@ -19,7 +19,7 @@
 #pragma once
 
 #include <bg2e/common.hpp>
-#include <cstdint>
+#include <bg2e/gpu/Common.hpp>
 
 namespace bg2e {
 namespace gpu {
@@ -31,15 +31,14 @@ public:
     virtual bool isOffscreen() const = 0;
     virtual bool isValid() const = 0;
 
-    virtual uint32_t width() const = 0;
-    virtual uint32_t height() const = 0;
+    virtual const Size2D& size() const { return _size; }
+    void setSize(const Size2D& s) { _size = s; }
 
-    void setWidth(uint32_t w) { _width = w; }
-    void setHeight(uint32_t h) { _height = h; }
+    virtual uint32_t width() const { return _size.width; }
+    virtual uint32_t height() const { return _size.height; }
 
 protected:
-    uint32_t _width = 0;
-    uint32_t _height = 0;
+    Size2D _size;
 };
 
 }

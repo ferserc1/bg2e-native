@@ -50,8 +50,7 @@ void WindowSurface::create(gpu::Instance* instance)
 
     int w, h;
     SDL_GetWindowSize(window, &w, &h);
-    _width  = static_cast<uint32_t>(w);
-    _height = static_cast<uint32_t>(h);
+    _size = Size2D{ static_cast<uint32_t>(w), static_cast<uint32_t>(h) };
 }
 
 void WindowSurface::cleanup()
@@ -62,12 +61,11 @@ void WindowSurface::cleanup()
         _metalView = nullptr;
     }
     _layer  = nullptr;
-    _width  = 0;
-    _height = 0;
+    _size   = Size2D{};
 }
 
-uint32_t WindowSurface::width()  const { return _width;  }
-uint32_t WindowSurface::height() const { return _height; }
+uint32_t WindowSurface::width()  const { return _size.width;  }
+uint32_t WindowSurface::height() const { return _size.height; }
 
 bool WindowSurface::isValid() const
 {

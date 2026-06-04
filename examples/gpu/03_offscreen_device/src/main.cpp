@@ -55,7 +55,7 @@ int main(int /*argc*/, char** /*argv*/)
     instance->create();
 
     // 4. Create offscreen surface
-    auto surface = backend->createOffscreenSurface(800, 600);
+    auto surface = backend->createOffscreenSurface(gpu::Size2D{ 800, 600 });
 
     // 5. Select physical device
     auto physicalDevice = backend->createPhysicalDevice();

@@ -34,8 +34,7 @@ void WindowSurface::create(gpu::Instance* instance)
 
     int w, h;
     SDL_GetWindowSize(_window, &w, &h);
-    _width = static_cast<uint32_t>(w);
-    _height = static_cast<uint32_t>(h);
+    _size = Size2D{ static_cast<uint32_t>(w), static_cast<uint32_t>(h) };
 }
 
 void WindowSurface::cleanup()

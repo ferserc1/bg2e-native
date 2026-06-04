@@ -20,6 +20,7 @@
 
 #include <bg2e/gpu/Backend.hpp>
 #include <bg2e/gpu/metal/common.hpp>
+#include <bg2e/gpu/Common.hpp>
 
 #include <bg2e/gpu/metal/Instance.hpp>
 
@@ -34,11 +35,10 @@ public:
     gpu::Instance* instance() const override;
     gpu::WindowType windowType() const override;
 
-    std::unique_ptr<gpu::PhysicalDevice>  createPhysicalDevice()                           const override;
-    std::unique_ptr<gpu::Device>          createDevice()                                   const override;
-    std::unique_ptr<gpu::WindowSurface>   createWindowSurface()                            const override;
-    std::unique_ptr<gpu::OffscreenSurface> createOffscreenSurface(uint32_t width,
-                                                                   uint32_t height)        const override;
+    std::unique_ptr<gpu::PhysicalDevice>  createPhysicalDevice()                                const override;
+    std::unique_ptr<gpu::Device>          createDevice()                                          const override;
+    std::unique_ptr<gpu::WindowSurface>   createWindowSurface()                                   const override;
+    std::unique_ptr<gpu::OffscreenSurface> createOffscreenSurface(const Size2D& size)              const override;
 
 private:
     mutable std::unique_ptr<Instance> _instance;
