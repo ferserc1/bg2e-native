@@ -3,7 +3,7 @@
  *    Copyright (C) 2026  Fernando Serrano Carpena
  *
  *    This program is free software: you can redistribute it and/or modify
- *    it under the terms of GNU General Public License as published by
+ *    it under the terms of the GNU General Public License as published by
  *    the Free Software Foundation, either version 3 of the License, or
  *    (at your option) any later version.
  *
@@ -19,24 +19,27 @@
 #pragma once
 
 #include <bg2e/common.hpp>
-#include <SDL2/SDL.h>
+#include <cstdint>
 
 namespace bg2e {
 namespace gpu {
-
-class Instance;
 
 class BG2E_API Surface {
 public:
     virtual ~Surface() = default;
 
-    virtual void create(Instance * instance, SDL_Window* window) = 0;
-    virtual void cleanup() = 0;
+    virtual bool isOffscreen() const = 0;
+    virtual bool isValid() const = 0;
 
     virtual uint32_t width() const = 0;
     virtual uint32_t height() const = 0;
 
-    virtual bool isValid() const = 0;
+    void setWidth(uint32_t w) { _width = w; }
+    void setHeight(uint32_t h) { _height = h; }
+
+protected:
+    uint32_t _width = 0;
+    uint32_t _height = 0;
 };
 
 }

@@ -26,6 +26,7 @@ namespace gpu {
 class Instance;
 class PhysicalDevice;
 class Surface;
+class Queue;
 
 class BG2E_API Device {
 public:
@@ -36,6 +37,10 @@ public:
     virtual void waitIdle() = 0;
 
     virtual bool isValid() const = 0;
+
+    virtual const Queue& graphicsQueue() const = 0;
+    virtual const Queue& presentQueue() const = 0;
+    virtual const Queue& transferQueue() const = 0;
 };
 
 }

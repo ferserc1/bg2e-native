@@ -3,7 +3,7 @@
  *    Copyright (C) 2026  Fernando Serrano Carpena
  *
  *    This program is free software: you can redistribute it and/or modify
- *    it under the terms of GNU General Public License as published by
+ *    it under the terms of the GNU General Public License as published by
  *    the Free Software Foundation, either version 3 of the License, or
  *    (at your option) any later version.
  *
@@ -19,7 +19,6 @@
 #pragma once
 
 #include <bg2e/common.hpp>
-#include <SDL2/SDL.h>
 
 #include <optional>
 #include <vector>
@@ -68,6 +67,8 @@ struct PhysicalDeviceProperties {
 
     uint32_t getScore() const;
     bool rayTracingSupported() const;
+
+    static PhysicalDeviceProperties* create();
 
 protected:
     PhysicalDeviceProperties() = default;

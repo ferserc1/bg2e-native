@@ -17,6 +17,10 @@
  */
 
 #include <bg2e/gpu/metal/Backend.hpp>
+#include <bg2e/gpu/metal/PhysicalDevice.hpp>
+#include <bg2e/gpu/metal/Device.hpp>
+#include <bg2e/gpu/metal/WindowSurface.hpp>
+#include <bg2e/gpu/metal/OffscreenSurface.hpp>
 
 namespace bg2e::gpu::metal {
 
@@ -29,5 +33,29 @@ gpu::Instance* Backend::instance() const
     return _instance.get();
 }
 
+gpu::WindowType Backend::windowType() const
+{
+    return gpu::WindowType::Metal;
+}
+
+std::unique_ptr<gpu::PhysicalDevice> Backend::createPhysicalDevice() const
+{
+    return std::make_unique<metal::PhysicalDevice>();
+}
+
+std::unique_ptr<gpu::Device> Backend::createDevice() const
+{
+    return std::make_unique<metal::Device>();
+}
+
+std::unique_ptr<gpu::WindowSurface> Backend::createWindowSurface() const
+{
+    return std::make_unique<metal::WindowSurface>();
+}
+
+std::unique_ptr<gpu::OffscreenSurface> Backend::createOffscreenSurface(uint32_t width, uint32_t height) const
+{
+    return std::make_unique<metal::OffscreenSurface>(width, height);
+}
 
 }

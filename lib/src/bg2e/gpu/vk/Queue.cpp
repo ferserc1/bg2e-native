@@ -16,36 +16,31 @@
  *    along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#pragma once
-
-#include <bg2e/gpu/Device.hpp>
-#include <bg2e/gpu/vk/common.hpp>
 #include <bg2e/gpu/vk/Queue.hpp>
 
 namespace bg2e {
 namespace gpu {
 namespace vk {
 
-class Device : public gpu::Device {
-public:
-    void create(gpu::Instance* instance, gpu::PhysicalDevice* physicalDevice, gpu::Surface* surface) override;
-    void cleanup() override;
-    void waitIdle() override;
+Queue::Queue(VkQueue queue, uint32_t family)
+    : _queue(queue), _familyIndex(family)
+{
+}
 
-    bool isValid() const override;
+uint32_t Queue::familyIndex() const
+{
+    return _familyIndex;
+}
 
-    const gpu::Queue& graphicsQueue() const override;
-    const gpu::Queue& presentQueue() const override;
-    const gpu::Queue& transferQueue() const override;
+bool Queue::isValid() const
+{
+    return _queue != VK_NULL_HANDLE;
+}
 
-    VkDevice handle() const { return _device; }
-
-private:
-    VkDevice _device{VK_NULL_HANDLE};
-    vk::Queue _graphicsQueue;
-    vk::Queue _presentQueue;
-    vk::Queue _transferQueue;
-};
+VkQueue Queue::handle() const
+{
+    return _queue;
+}
 
 }
 }

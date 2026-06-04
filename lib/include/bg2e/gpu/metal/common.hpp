@@ -27,7 +27,9 @@
 #include "QuartzCore/QuartzCore.hpp"
 
 namespace bg2e::gpu::metal {
-    using DeviceHandle = MTL::Device*;
+    using DeviceHandle       = MTL::Device*;
+    using CommandQueueHandle = MTL::CommandQueue*;
+    using MetalLayerHandle   = CA::MetalLayer*;
 }
 
 #else
@@ -35,6 +37,12 @@ namespace bg2e::gpu::metal {
 namespace bg2e::gpu::metal {
     struct DeviceOpaque;
     using DeviceHandle = DeviceOpaque*;
+
+    struct CommandQueueOpaque;
+    using CommandQueueHandle = CommandQueueOpaque*;
+
+    struct MetalLayerOpaque;
+    using MetalLayerHandle = MetalLayerOpaque*;
 }
 
 #endif

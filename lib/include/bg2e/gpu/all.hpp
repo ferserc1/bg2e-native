@@ -24,10 +24,7 @@
 #include <bg2e/gpu/Instance.hpp>
 #include <bg2e/gpu/PhysicalDevice.hpp>
 #include <bg2e/gpu/Surface.hpp>
+#include <bg2e/gpu/WindowSurface.hpp>
+#include <bg2e/gpu/OffscreenSurface.hpp>
+#include <bg2e/gpu/Queue.hpp>
 #include <bg2e/gpu/Device.hpp>
-#include <bg2e/gpu/Swapchain.hpp>
-#include <bg2e/gpu/Command.hpp>
-#include <bg2e/gpu/Image.hpp>
-#include <bg2e/gpu/Buffer.hpp>
-#include <bg2e/gpu/CleanupManager.hpp>
-#include <bg2e/gpu/ShaderModule.hpp>

@@ -18,35 +18,18 @@
 
 #pragma once
 
-#include <bg2e/gpu/Device.hpp>
-#include <bg2e/gpu/vk/common.hpp>
-#include <bg2e/gpu/vk/Queue.hpp>
+#include <bg2e/common.hpp>
+#include <cstdint>
 
 namespace bg2e {
 namespace gpu {
-namespace vk {
 
-class Device : public gpu::Device {
+class BG2E_API Queue {
 public:
-    void create(gpu::Instance* instance, gpu::PhysicalDevice* physicalDevice, gpu::Surface* surface) override;
-    void cleanup() override;
-    void waitIdle() override;
-
-    bool isValid() const override;
-
-    const gpu::Queue& graphicsQueue() const override;
-    const gpu::Queue& presentQueue() const override;
-    const gpu::Queue& transferQueue() const override;
-
-    VkDevice handle() const { return _device; }
-
-private:
-    VkDevice _device{VK_NULL_HANDLE};
-    vk::Queue _graphicsQueue;
-    vk::Queue _presentQueue;
-    vk::Queue _transferQueue;
+    virtual ~Queue() = default;
+    virtual uint32_t familyIndex() const = 0;
+    virtual bool isValid() const = 0;
 };
 
-}
 }
 }

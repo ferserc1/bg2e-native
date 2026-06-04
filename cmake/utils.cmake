@@ -324,3 +324,83 @@ function(bundle_app)
         )
     endif()
 endfunction()
+
+# Same as bundle_app, but links SDL2 directly (for apps that use SDL2 API)
+function(bundle_app_sdl)
+    set(options)
+    set(oneValueArgs TARGET_NAME SHADERS_SRC)
+    cmake_parse_arguments(BL "${options}" "${oneValueArgs}" "" ${ARGN})
+
+    file(GLOB APP_SOURCE_FILES
+        "${CMAKE_CURRENT_LIST_DIR}/src/*.cpp"
+    )
+    file(GLOB APP_HEADER_FILES
+        "${CMAKE_CURRENT_LIST_DIR}/src/*.hpp"
+    )
+
+    set(APP_HEADER_PATH "${CMAKE_CURRENT_LIST_DIR}/src")
+
+    if(APPLE)
+        add_executable(${APP_TARGET_NAME} MACOSX_BUNDLE ${APP_SOURCE_FILES})
+    else()
+        add_executable(${APP_TARGET_NAME} ${APP_SOURCE_FILES})
+    endif()
+
+    target_include_directories(${APP_TARGET_NAME} PUBLIC
+        ${APP_HEADER_PATH}
+        ${BG2E_INCLUDE_PATH}
+        ${VULKAN_INCLUDE_PATH}
+    )
+    target_link_libraries(${APP_TARGET_NAME} PRIVATE
+        ${BG2E_LIB_TARGET}
+        ${VULKAN_LIB}
+        ${SDL2_LIBRARIES}
+    )
+
+    set_target_properties(${APP_TARGET_NAME} PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY "${PRODUCT_DIR}"
+        LIBRARY_OUTPUT_DIRECTORY "${PRODUCT_DIR}"
+        ARCHIVE_OUTPUT_DIRECTORY "${PRODUCT_DIR}"
+    )
+
+    # Compile the shaders if SHADERS_SRC is set
+    if(BL_SHADERS_SRC)
+        set(APP_SHADERS_DST_PATH "${PRODUCT_DIR}/${APP_TARGET_NAME}_resources/app_shaders")
+        message(STATUS "Building app shaders: ${APP_SHADERS_DST_PATH}")
+        add_custom_command(
+            TARGET ${APP_TARGET_NAME}
+            POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E make_directory "${APP_SHADERS_DST_PATH}"
+        )
+        compile_shaders(${APP_TARGET_NAME} ${VULKAN_SDK} ${BL_SHADERS_SRC} ${APP_SHADERS_DST_PATH})
+        bundle_resources(TARGET_NAME ${APP_TARGET_NAME} SRC_PATH ${APP_SHADERS_DST_PATH} SUBPATH "shaders/${APP_TARGET_NAME}")
+    endif()
+
+
+    bundle_lib(TARGET_NAME ${APP_TARGET_NAME} LIB_PATH ${SDL2_LIBRARY})
+    bundle_lib(TARGET_NAME ${APP_TARGET_NAME} LIB_PATH "$<TARGET_FILE:${BG2E_LIB_TARGET}>")
+
+    # Engine shaders
+    bundle_resources(TARGET_NAME ${BL_TARGET_NAME} SRC_PATH ${BG2E_SHADER_DIR} SUBPATH "shaders")
+
+    # Assets
+    bundle_resources(TARGET_NAME ${BL_TARGET_NAME} SRC_PATH ${ASSETS_PATH} SUBPATH "assets")
+
+    # Vulkan resources
+    copy_vulkan_resources(${BL_TARGET_NAME} ${VULKAN_SDK})
+
+    # Setup rpath in macOS app bundle
+    if (APPLE)
+        target_link_libraries(${BL_TARGET_NAME} PRIVATE
+            "-framework AppKit"
+            "-framework Cocoa"
+            "-framework Foundation"
+            "-framework UniformTypeIdentifiers"
+        )
+
+        set_target_properties(${BL_TARGET_NAME} PROPERTIES
+            INSTALL_RPATH "@executable_path/../lib"
+            BUILD_WITH_INSTALL_RPATH TRUE
+        )
+    endif()
+endfunction()

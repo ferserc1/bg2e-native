@@ -32,6 +32,13 @@ namespace metal {
 class BG2E_API Backend : public gpu::Backend {
 public:
     gpu::Instance* instance() const override;
+    gpu::WindowType windowType() const override;
+
+    std::unique_ptr<gpu::PhysicalDevice>  createPhysicalDevice()                           const override;
+    std::unique_ptr<gpu::Device>          createDevice()                                   const override;
+    std::unique_ptr<gpu::WindowSurface>   createWindowSurface()                            const override;
+    std::unique_ptr<gpu::OffscreenSurface> createOffscreenSurface(uint32_t width,
+                                                                   uint32_t height)        const override;
 
 private:
     mutable std::unique_ptr<Instance> _instance;

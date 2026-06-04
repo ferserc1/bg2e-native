@@ -18,33 +18,30 @@
 
 #pragma once
 
-#include <bg2e/gpu/Device.hpp>
-#include <bg2e/gpu/vk/common.hpp>
-#include <bg2e/gpu/vk/Queue.hpp>
+#include <bg2e/gpu/PhysicalDevice.hpp>
+#include <bg2e/gpu/metal/common.hpp>
+
+#include <memory>
 
 namespace bg2e {
 namespace gpu {
-namespace vk {
+namespace metal {
 
-class Device : public gpu::Device {
+class PhysicalDevice : public gpu::PhysicalDevice {
 public:
-    void create(gpu::Instance* instance, gpu::PhysicalDevice* physicalDevice, gpu::Surface* surface) override;
-    void cleanup() override;
-    void waitIdle() override;
+    ~PhysicalDevice() override;
+
+    void choose(gpu::Instance& instance, gpu::Surface& surface) override;
 
     bool isValid() const override;
 
-    const gpu::Queue& graphicsQueue() const override;
-    const gpu::Queue& presentQueue() const override;
-    const gpu::Queue& transferQueue() const override;
+    const std::shared_ptr<PhysicalDeviceProperties> properties() const override;
 
-    VkDevice handle() const { return _device; }
+    DeviceHandle metalDevice() const { return _device; }
 
 private:
-    VkDevice _device{VK_NULL_HANDLE};
-    vk::Queue _graphicsQueue;
-    vk::Queue _presentQueue;
-    vk::Queue _transferQueue;
+    DeviceHandle _device = nullptr;
+    std::shared_ptr<PhysicalDeviceProperties> _properties;
 };
 
 }

@@ -1,6 +1,8 @@
 add_subdirectory(debug-app)
 add_subdirectory(01_setup)
 add_subdirectory(gpu/01_instance)
+add_subdirectory(gpu/02_device)
+add_subdirectory(gpu/03_offscreen_device)
 add_subdirectory(02_compute_shader)
 add_subdirectory(02_ui)
 add_subdirectory(03_vertex_buffer)

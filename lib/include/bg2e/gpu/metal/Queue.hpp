@@ -18,33 +18,31 @@
 
 #pragma once
 
-#include <bg2e/gpu/Device.hpp>
-#include <bg2e/gpu/vk/common.hpp>
-#include <bg2e/gpu/vk/Queue.hpp>
+#include <bg2e/gpu/Queue.hpp>
+#include <bg2e/gpu/metal/common.hpp>
 
 namespace bg2e {
 namespace gpu {
-namespace vk {
+namespace metal {
 
-class Device : public gpu::Device {
+class Queue : public gpu::Queue {
 public:
-    void create(gpu::Instance* instance, gpu::PhysicalDevice* physicalDevice, gpu::Surface* surface) override;
-    void cleanup() override;
-    void waitIdle() override;
+    Queue() = default;
+    explicit Queue(CommandQueueHandle commandQueue);
+    ~Queue() override;
 
+    Queue(const Queue&) = delete;
+    Queue& operator=(const Queue&) = delete;
+    Queue(Queue&&) noexcept;
+    Queue& operator=(Queue&&) noexcept;
+
+    uint32_t familyIndex() const override;
     bool isValid() const override;
 
-    const gpu::Queue& graphicsQueue() const override;
-    const gpu::Queue& presentQueue() const override;
-    const gpu::Queue& transferQueue() const override;
-
-    VkDevice handle() const { return _device; }
+    CommandQueueHandle handle() const { return _commandQueue; }
 
 private:
-    VkDevice _device{VK_NULL_HANDLE};
-    vk::Queue _graphicsQueue;
-    vk::Queue _presentQueue;
-    vk::Queue _transferQueue;
+    CommandQueueHandle _commandQueue = nullptr;
 };
 
 }

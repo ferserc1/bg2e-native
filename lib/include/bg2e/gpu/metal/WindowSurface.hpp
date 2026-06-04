@@ -18,33 +18,27 @@
 
 #pragma once
 
-#include <bg2e/gpu/Device.hpp>
-#include <bg2e/gpu/vk/common.hpp>
-#include <bg2e/gpu/vk/Queue.hpp>
+#include <bg2e/gpu/WindowSurface.hpp>
+#include <bg2e/gpu/metal/common.hpp>
 
 namespace bg2e {
 namespace gpu {
-namespace vk {
+namespace metal {
 
-class Device : public gpu::Device {
+class WindowSurface : public gpu::WindowSurface {
 public:
-    void create(gpu::Instance* instance, gpu::PhysicalDevice* physicalDevice, gpu::Surface* surface) override;
+    void create(gpu::Instance* instance) override;
     void cleanup() override;
-    void waitIdle() override;
 
+    uint32_t width() const override;
+    uint32_t height() const override;
     bool isValid() const override;
 
-    const gpu::Queue& graphicsQueue() const override;
-    const gpu::Queue& presentQueue() const override;
-    const gpu::Queue& transferQueue() const override;
-
-    VkDevice handle() const { return _device; }
+    MetalLayerHandle metalLayer() const { return _layer; }
 
 private:
-    VkDevice _device{VK_NULL_HANDLE};
-    vk::Queue _graphicsQueue;
-    vk::Queue _presentQueue;
-    vk::Queue _transferQueue;
+    void* _metalView = nullptr;
+    MetalLayerHandle _layer = nullptr;
 };
 
 }

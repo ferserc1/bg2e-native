@@ -18,35 +18,24 @@
 
 #pragma once
 
-#include <bg2e/gpu/Device.hpp>
-#include <bg2e/gpu/vk/common.hpp>
-#include <bg2e/gpu/vk/Queue.hpp>
+#include <bg2e/gpu/Surface.hpp>
 
 namespace bg2e {
 namespace gpu {
-namespace vk {
 
-class Device : public gpu::Device {
+class BG2E_API OffscreenSurface : public Surface {
 public:
-    void create(gpu::Instance* instance, gpu::PhysicalDevice* physicalDevice, gpu::Surface* surface) override;
-    void cleanup() override;
-    void waitIdle() override;
+    OffscreenSurface(uint32_t width, uint32_t height)
+    {
+        _width  = width;
+        _height = height;
+    }
 
-    bool isValid() const override;
-
-    const gpu::Queue& graphicsQueue() const override;
-    const gpu::Queue& presentQueue() const override;
-    const gpu::Queue& transferQueue() const override;
-
-    VkDevice handle() const { return _device; }
-
-private:
-    VkDevice _device{VK_NULL_HANDLE};
-    vk::Queue _graphicsQueue;
-    vk::Queue _presentQueue;
-    vk::Queue _transferQueue;
+    bool isOffscreen() const override { return true; }
+    bool isValid()     const override { return true; }
+    uint32_t width()   const override { return _width;  }
+    uint32_t height()  const override { return _height; }
 };
 
-}
 }
 }

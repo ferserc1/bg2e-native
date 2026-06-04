@@ -17,6 +17,10 @@
  */
 
 #include <bg2e/gpu/vk/Backend.hpp>
+#include <bg2e/gpu/vk/PhysicalDevice.hpp>
+#include <bg2e/gpu/vk/Device.hpp>
+#include <bg2e/gpu/vk/WindowSurface.hpp>
+#include <bg2e/gpu/vk/OffscreenSurface.hpp>
 
 namespace bg2e::gpu::vk {
 
@@ -27,6 +31,31 @@ gpu::Instance* Backend::instance() const
         _instance = std::make_unique<gpu::vk::Instance>();
     }
     return _instance.get();
+}
+
+gpu::WindowType Backend::windowType() const
+{
+    return gpu::WindowType::Vulkan;
+}
+
+std::unique_ptr<gpu::PhysicalDevice> Backend::createPhysicalDevice() const
+{
+    return std::make_unique<vk::PhysicalDevice>();
+}
+
+std::unique_ptr<gpu::Device> Backend::createDevice() const
+{
+    return std::make_unique<vk::Device>();
+}
+
+std::unique_ptr<gpu::WindowSurface> Backend::createWindowSurface() const
+{
+    return std::make_unique<vk::WindowSurface>();
+}
+
+std::unique_ptr<gpu::OffscreenSurface> Backend::createOffscreenSurface(uint32_t width, uint32_t height) const
+{
+    return std::make_unique<vk::OffscreenSurface>(width, height);
 }
 
 }

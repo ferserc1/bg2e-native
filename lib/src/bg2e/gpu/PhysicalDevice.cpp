@@ -3,7 +3,7 @@
  *    Copyright (C) 2026  Fernando Serrano Carpena
  *
  *    This program is free software: you can redistribute it and/or modify
- *    it under the terms of GNU General Public License as published by
+ *    it under the terms of the GNU General Public License as published by
  *    the Free Software Foundation, either version 3 of the License, or
  *    (at your option) any later version.
  *
@@ -21,8 +21,44 @@
 namespace bg2e {
 namespace gpu {
 
-uint32_t PhysicalDeviceProperties::getScore() const { return 0; }
-bool PhysicalDeviceProperties::rayTracingSupported() const { return false; }
+uint32_t PhysicalDeviceProperties::getScore() const
+{
+    size_t score = totalHeapMemoryMB;
+
+    if (deviceType == DiscreteGPU)
+    {
+        score *= 100;
+    }
+    else if (deviceType == IntegratedGPU)
+    {
+        score *= 10;
+    }
+    else if (deviceType == VirtualGPU)
+    {
+        score *= 5;
+    }
+    else if (deviceType == CPU)
+    {
+        score += 1;
+    }
+
+    if (rayTracingSupported())
+    {
+        score *= 100;
+    }
+
+    return static_cast<uint32_t>(score);
+}
+
+bool PhysicalDeviceProperties::rayTracingSupported() const
+{
+    return rayTracing.fullSupported();
+}
+
+PhysicalDeviceProperties* PhysicalDeviceProperties::create()
+{
+    return new PhysicalDeviceProperties();
+}
 
 }
 }
