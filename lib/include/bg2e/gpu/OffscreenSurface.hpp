@@ -29,7 +29,8 @@ public:
     explicit OffscreenSurface(const Size2D& size) { _size = size; }
 
     bool isOffscreen() const override { return true; }
-    bool isValid()     const override { return true; }
+
+    virtual void cleanup() { releaseRenderTarget(); }
 };
 
 }

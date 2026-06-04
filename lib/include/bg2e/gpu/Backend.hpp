@@ -46,8 +46,15 @@ public:
 
     [[nodiscard]] virtual std::unique_ptr<gpu::PhysicalDevice>  createPhysicalDevice()                                     const = 0;
     [[nodiscard]] virtual std::unique_ptr<gpu::Device>          createDevice()                                               const = 0;
-    [[nodiscard]] virtual std::unique_ptr<gpu::WindowSurface>   createWindowSurface()                                        const = 0;
-    [[nodiscard]] virtual std::unique_ptr<gpu::OffscreenSurface> createOffscreenSurface(const Size2D& size)                   const = 0;
+    [[nodiscard]] virtual std::unique_ptr<gpu::WindowSurface>   createWindowSurface(
+        gpu::Instance* instance,
+        PixelFormat colorFormat = PixelFormat::B8G8R8A8_UNORM,
+        PixelFormat depthFormat = PixelFormat::D32_SFLOAT) const = 0;
+    [[nodiscard]] virtual std::unique_ptr<gpu::OffscreenSurface> createOffscreenSurface(
+        gpu::Instance* instance,
+        const Size2D& size,
+        PixelFormat colorFormat = PixelFormat::R8G8B8A8_UNORM,
+        PixelFormat depthFormat = PixelFormat::D32_SFLOAT) const = 0;
 };
 
 }

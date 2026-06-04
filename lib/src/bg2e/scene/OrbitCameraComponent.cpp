@@ -22,6 +22,8 @@
 #include <bg2e/app/InputManager.hpp>
 #include <bg2e/math/tools.hpp>
 
+#include <algorithm>
+
 namespace bg2e::scene {
 
 void OrbitCameraComponent::deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path&)

@@ -55,7 +55,7 @@ int main(int /*argc*/, char** /*argv*/)
     instance->create();
 
     // 4. Create offscreen surface
-    auto surface = backend->createOffscreenSurface(gpu::Size2D{ 800, 600 });
+    auto surface = backend->createOffscreenSurface(instance, gpu::Size2D{ 800, 600 });
 
     // 5. Select physical device
     auto physicalDevice = backend->createPhysicalDevice();
@@ -74,8 +74,12 @@ int main(int /*argc*/, char** /*argv*/)
     std::cout << "  Graphics queue family: " << device->graphicsQueue().familyIndex() << std::endl;
     std::cout << "  Present queue family:  " << device->presentQueue().familyIndex()  << std::endl;
     std::cout << "  Transfer queue family: " << device->transferQueue().familyIndex() << std::endl;
+    std::cout << "  Image count:           " << surface->imageCount() << std::endl;
+    std::cout << "  Surface size:          " << surface->width() << "x" << surface->height() << std::endl;
 
-    // 7. Cleanup (reverse order)
+    // 7. Cleanup (reverse order; surface render target depends on device)
+    device->waitIdle();
+    surface->cleanup();
     device->cleanup();
     instance->cleanup();
 

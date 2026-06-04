@@ -21,13 +21,19 @@
 #include <bg2e/gpu/WindowSurface.hpp>
 #include <bg2e/gpu/metal/common.hpp>
 
+#include <memory>
+
 namespace bg2e {
 namespace gpu {
+
+class Image;
+
 namespace metal {
+
+class Image;
 
 class WindowSurface : public gpu::WindowSurface {
 public:
-    void create(gpu::Instance* instance) override;
     void cleanup() override;
 
     uint32_t width() const override;
@@ -36,9 +42,22 @@ public:
 
     MetalLayerHandle metalLayer() const { return _layer; }
 
+    void resize(const Size2D& size) override;
+    void releaseRenderTarget() override;
+
+    uint32_t    imageCount() const override;
+    gpu::Image* colorImage(uint32_t index) const override;
+    gpu::Image* depthImage() const override;
+
+protected:
+    void create(gpu::Instance* instance) override;
+    void createRenderTarget(gpu::Device* device, gpu::PhysicalDevice* physicalDevice) override;
+
 private:
     void* _metalView = nullptr;
     MetalLayerHandle _layer = nullptr;
+    std::unique_ptr<metal::Image> _depthImage;
+    uint32_t _imageCount = 0;
 };
 
 }

@@ -39,9 +39,11 @@ public:
     const gpu::Queue& transferQueue() const override;
 
     VkDevice handle() const { return _device; }
+    VmaAllocator allocator() const { return _allocator; }
 
 private:
     VkDevice _device{VK_NULL_HANDLE};
+    VmaAllocator _allocator{VK_NULL_HANDLE};
     vk::Queue _graphicsQueue;
     vk::Queue _presentQueue;
     vk::Queue _transferQueue;

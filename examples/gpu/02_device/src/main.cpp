@@ -17,6 +17,7 @@
  */
 #include <bg2e.hpp>
 #include <bg2e/gpu/all.hpp>
+#include <bg2e/app/SDLUtils.hpp>
 #include <iostream>
 
 static const char* deviceTypeString(bg2e::gpu::PhysicalDeviceProperties::DeviceType type)
@@ -50,6 +51,7 @@ int main(int argc, char** argv)
     auto* backend = gpu::Factory::backend();
 
     // 3. SDL init + create window based on backend window type
+    app::initSdlVideoDriver();
     SDL_Init(SDL_INIT_VIDEO);
 
     Uint32 windowFlags = 0;
@@ -77,8 +79,7 @@ int main(int argc, char** argv)
     instance->create(window);
 
     // 5. Create surface
-    auto surface = backend->createWindowSurface();
-    surface->create(instance);
+    auto surface = backend->createWindowSurface(instance);
 
     // 6. Select physical device
     auto physicalDevice = backend->createPhysicalDevice();
@@ -97,6 +98,7 @@ int main(int argc, char** argv)
     std::cout << "  Graphics queue family: " << device->graphicsQueue().familyIndex() << std::endl;
     std::cout << "  Present queue family:  " << device->presentQueue().familyIndex()  << std::endl;
     std::cout << "  Transfer queue family: " << device->transferQueue().familyIndex() << std::endl;
+    std::cout << "  Swapchain images:      " << surface->imageCount() << std::endl;
 
     // 8. Event loop
     bool running = true;
@@ -109,9 +111,10 @@ int main(int argc, char** argv)
         }
     }
 
-    // 9. Cleanup (reverse order)
-    device->cleanup();
+    // 9. Cleanup (reverse order; surface render target depends on device)
+    device->waitIdle();
     surface->cleanup();
+    device->cleanup();
     instance->cleanup();
     SDL_DestroyWindow(window);
     SDL_Quit();

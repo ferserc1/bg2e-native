@@ -19,6 +19,7 @@
 #include <bg2e/gpu/metal/Device.hpp>
 #include <bg2e/gpu/metal/PhysicalDevice.hpp>
 #include <bg2e/gpu/metal/common.hpp>
+#include <bg2e/gpu/Surface.hpp>
 
 #include <stdexcept>
 
@@ -28,7 +29,7 @@ namespace metal {
 
 #if BG2E_IS_MAC
 
-void Device::create(gpu::Instance* /*instance*/, gpu::PhysicalDevice* physicalDevice, gpu::Surface* /*surface*/)
+void Device::create(gpu::Instance* /*instance*/, gpu::PhysicalDevice* physicalDevice, gpu::Surface* surface)
 {
     auto* metalPhysDevice = dynamic_cast<metal::PhysicalDevice*>(physicalDevice);
     if (!metalPhysDevice || !metalPhysDevice->isValid())
@@ -51,6 +52,11 @@ void Device::create(gpu::Instance* /*instance*/, gpu::PhysicalDevice* physicalDe
     _graphicsQueue = metal::Queue(gfxQueue);
     _presentQueue  = metal::Queue(presentQueue);
     _transferQueue = metal::Queue(transferQueue);
+
+    if (surface)
+    {
+        surface->createRenderTarget(this, physicalDevice);
+    }
 }
 
 void Device::cleanup()

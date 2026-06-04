@@ -18,7 +18,10 @@
 
 #include <bg2e/gpu/metal/WindowSurface.hpp>
 #include <bg2e/gpu/metal/common.hpp>
+#include <bg2e/gpu/metal/Device.hpp>
+#include <bg2e/gpu/metal/Image.hpp>
 #include <bg2e/gpu/Instance.hpp>
+#include <bg2e/gpu/Image.hpp>
 
 #include <stdexcept>
 
@@ -55,6 +58,7 @@ void WindowSurface::create(gpu::Instance* instance)
 
 void WindowSurface::cleanup()
 {
+    releaseRenderTarget();
     if (_metalView)
     {
         SDL_Metal_DestroyView(_metalView);
@@ -72,6 +76,43 @@ bool WindowSurface::isValid() const
     return _layer != nullptr;
 }
 
+void WindowSurface::createRenderTarget(gpu::Device* device, gpu::PhysicalDevice* /*physicalDevice*/)
+{
+    _device = device;
+    auto* metalDevice = dynamic_cast<metal::Device*>(device);
+
+    _layer->setDevice(metalDevice->handle());
+    _layer->setPixelFormat(toMetalPixelFormat(_colorFormat));
+    _layer->setDrawableSize(CGSize{ double(_size.width), double(_size.height) });
+    _layer->setMaximumDrawableCount(3);
+    _imageCount = 3;
+
+    if (_depthFormat != PixelFormat::Undefined)
+    {
+        _depthImage = std::make_unique<metal::Image>();
+        _depthImage->buildDepthImage(metalDevice, _size, _depthFormat);
+    }
+}
+
+void WindowSurface::resize(const Size2D& size)
+{
+    _size = size;
+    _layer->setDrawableSize(CGSize{ double(_size.width), double(_size.height) });
+    if (_depthImage)
+    {
+        _depthImage->resize(size);
+    }
+}
+
+void WindowSurface::releaseRenderTarget()
+{
+    _depthImage.reset();
+}
+
+uint32_t WindowSurface::imageCount() const { return _imageCount; }
+gpu::Image* WindowSurface::colorImage(uint32_t /*index*/) const { return nullptr; }
+gpu::Image* WindowSurface::depthImage() const { return _depthImage.get(); }
+
 #else
 
 void WindowSurface::create(gpu::Instance*)
@@ -83,6 +124,22 @@ void WindowSurface::cleanup() {}
 uint32_t WindowSurface::width()  const { return 0; }
 uint32_t WindowSurface::height() const { return 0; }
 bool WindowSurface::isValid()    const { return false; }
+
+void WindowSurface::createRenderTarget(gpu::Device*, gpu::PhysicalDevice*)
+{
+    throw std::runtime_error("Metal backend is not available on this platform");
+}
+
+void WindowSurface::resize(const Size2D&)
+{
+    throw std::runtime_error("Metal backend is not available on this platform");
+}
+
+void WindowSurface::releaseRenderTarget() {}
+
+uint32_t WindowSurface::imageCount() const { return 0; }
+gpu::Image* WindowSurface::colorImage(uint32_t) const { return nullptr; }
+gpu::Image* WindowSurface::depthImage() const { return nullptr; }
 
 #endif
 

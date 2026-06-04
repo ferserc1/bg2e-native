@@ -210,10 +210,31 @@ void Device::create(gpu::Instance* instance, gpu::PhysicalDevice* physicalDevice
     VkQueue transferQueue;
     vkGetDeviceQueue(_device, indices.transfer.value(), 0, &transferQueue);
     _transferQueue = vk::Queue(transferQueue, indices.transfer.value());
+
+    // --- VMA allocator ---
+    auto* vkInst = dynamic_cast<vk::Instance*>(instance);
+
+    VmaAllocatorCreateInfo allocatorInfo{};
+    allocatorInfo.physicalDevice = vkPhysDevice->handle();
+    allocatorInfo.device         = _device;
+    allocatorInfo.instance       = vkInst->vkInstanceHnd();
+    allocatorInfo.flags          = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
+
+    VK_ASSERT(vmaCreateAllocator(&allocatorInfo, &_allocator));
+
+    if (surface)
+    {
+        surface->createRenderTarget(this, physicalDevice);
+    }
 }
 
 void Device::cleanup()
 {
+    if (_allocator != VK_NULL_HANDLE)
+    {
+        vmaDestroyAllocator(_allocator);
+        _allocator = VK_NULL_HANDLE;
+    }
     if (_device != VK_NULL_HANDLE)
     {
         vkDestroyDevice(_device, nullptr);

@@ -17,10 +17,75 @@
  */
 
 #include <bg2e/gpu/vk/OffscreenSurface.hpp>
+#include <bg2e/gpu/vk/Device.hpp>
+#include <bg2e/gpu/vk/Image.hpp>
+#include <bg2e/gpu/Image.hpp>
 
 namespace bg2e {
 namespace gpu {
 namespace vk {
+
+OffscreenSurface::~OffscreenSurface() = default;
+
+void OffscreenSurface::createRenderTarget(gpu::Device* device, gpu::PhysicalDevice* /*physicalDevice*/)
+{
+    _device = device;
+    auto* vkDevice = dynamic_cast<vk::Device*>(device);
+
+    _colorImage = std::make_unique<vk::Image>();
+    _colorImage->buildTargetImage(vkDevice, _size, _colorFormat);
+
+    if (_depthFormat != PixelFormat::Undefined)
+    {
+        _depthImage = std::make_unique<vk::Image>();
+        _depthImage->buildDepthImage(vkDevice, _size, _depthFormat);
+    }
+}
+
+void OffscreenSurface::resize(const Size2D& size)
+{
+    _size = size;
+    if (_colorImage)
+    {
+        _colorImage->resize(size);
+    }
+    if (_depthImage)
+    {
+        _depthImage->resize(size);
+    }
+}
+
+void OffscreenSurface::releaseRenderTarget()
+{
+    _depthImage.reset();
+    _colorImage.reset();
+}
+
+void OffscreenSurface::cleanup()
+{
+    releaseRenderTarget();
+}
+
+bool OffscreenSurface::isValid() const
+{
+    return _colorImage && _colorImage->isValid();
+}
+
+uint32_t OffscreenSurface::imageCount() const
+{
+    return 1;
+}
+
+gpu::Image* OffscreenSurface::colorImage(uint32_t index) const
+{
+    if (index == 0) return _colorImage.get();
+    return nullptr;
+}
+
+gpu::Image* OffscreenSurface::depthImage() const
+{
+    return _depthImage.get();
+}
 
 }
 }

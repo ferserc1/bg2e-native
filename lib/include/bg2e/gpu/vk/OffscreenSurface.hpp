@@ -20,15 +20,39 @@
 
 #include <bg2e/gpu/OffscreenSurface.hpp>
 #include <bg2e/gpu/Common.hpp>
+#include <bg2e/gpu/vk/Image.hpp>
+
+#include <memory>
 
 namespace bg2e {
 namespace gpu {
+
+class Image;
+
 namespace vk {
 
 class OffscreenSurface : public gpu::OffscreenSurface {
 public:
     explicit OffscreenSurface(const Size2D& size)
         : gpu::OffscreenSurface(size) {}
+    ~OffscreenSurface() override;
+
+    void resize(const Size2D& size) override;
+    void releaseRenderTarget() override;
+    void cleanup() override;
+
+    bool isValid() const override;
+
+    uint32_t    imageCount() const override;
+    gpu::Image* colorImage(uint32_t index) const override;
+    gpu::Image* depthImage() const override;
+
+protected:
+    void createRenderTarget(gpu::Device* device, gpu::PhysicalDevice* physicalDevice) override;
+
+private:
+    std::unique_ptr<vk::Image> _colorImage;
+    std::unique_ptr<vk::Image> _depthImage;
 };
 
 }

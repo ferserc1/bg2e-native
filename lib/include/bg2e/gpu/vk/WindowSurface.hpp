@@ -23,13 +23,17 @@
 
 #include <SDL2/SDL.h>
 
+#include <memory>
+#include <vector>
+
 namespace bg2e {
 namespace gpu {
 namespace vk {
 
+class Image;
+
 class WindowSurface : public gpu::WindowSurface {
 public:
-    void create(gpu::Instance* instance) override;
     void cleanup() override;
 
     uint32_t width() const override;
@@ -40,10 +44,27 @@ public:
     VkSurfaceKHR handle() const;
     SDL_Window* sdlWindow() const;
 
+    void resize(const Size2D& size) override;
+    void releaseRenderTarget() override;
+
+    uint32_t    imageCount() const override;
+    gpu::Image* colorImage(uint32_t index) const override;
+    gpu::Image* depthImage() const override;
+
+    VkSwapchainKHR swapchain() const;
+
+protected:
+    void create(gpu::Instance* instance) override;
+    void createRenderTarget(gpu::Device* device, gpu::PhysicalDevice* physicalDevice) override;
+
 private:
     VkSurfaceKHR _surface{VK_NULL_HANDLE};
     VkInstance _vkInstance{VK_NULL_HANDLE};
     SDL_Window* _window{nullptr};
+
+    VkSwapchainKHR _swapchain{VK_NULL_HANDLE};
+    std::vector<std::unique_ptr<vk::Image>> _colorImages;
+    std::unique_ptr<vk::Image> _depthImage;
 };
 
 }

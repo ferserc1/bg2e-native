@@ -18,15 +18,13 @@
 
 #include <bg2e/app/MainLoop.hpp>
 #include <bg2e/app/PreferencesStore.hpp>
+#include <bg2e/app/SDLUtils.hpp>
 
 #ifdef BG2E_LINUX
 
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_vulkan.h>
 #include <SDL2/SDL_syswm.h>
-#include <wayland-client.h>
-#include <cstdlib>
-#include <cstring>
 
 #else
 
@@ -43,45 +41,6 @@ namespace bg2e {
 namespace app {
 
 static const char preferencesContext[] = "app";
-
-#ifdef BG2E_LINUX
-static bool HasSdlWaylandDriver()
-{
-    const int numDrivers = SDL_GetNumVideoDrivers();
-    for (int i = 0; i < numDrivers; ++i)
-    {
-        const char * driver = SDL_GetVideoDriver(i);
-        if (driver && std::strcmp(driver, "wayland") == 0)
-        {
-            return true;
-        }
-    }
-    return false;
-}
-
-static bool CanConnectToWayland()
-{
-    wl_display * display = wl_display_connect(nullptr);
-    if (!display)
-    {
-        return false;
-    }
-    wl_display_disconnect(display);
-    return true;
-}
-
-void InitSdlVideoDriver()
-{
-    if (HasSdlWaylandDriver() && CanConnectToWayland())
-    {
-        setenv("SDL_VIDEODRIVER", "wayland", 1);
-    }
-}
-#else
-
-void InitSdlVideoDriver() {}
-
-#endif
 
 
 SDL_Window* createSDLWindow(const WindowConfig& cfg) {
@@ -168,7 +127,7 @@ int32_t MainLoop::run(app::Application * application) {
     SDL_SetHint(SDL_HINT_MAC_BACKGROUND_APP, "0");
 #endif
 
-    InitSdlVideoDriver();
+    initSdlVideoDriver();
 	SDL_Init(SDL_INIT_VIDEO);
 
     auto window = createSDLWindow(_windowConfig);

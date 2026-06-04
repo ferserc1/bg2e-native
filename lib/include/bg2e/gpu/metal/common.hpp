@@ -31,6 +31,7 @@ namespace bg2e::gpu::metal {
     using DeviceHandle       = MTL::Device*;
     using CommandQueueHandle = MTL::CommandQueue*;
     using MetalLayerHandle   = CA::MetalLayer*;
+    using TextureHandle      = MTL::Texture*;
 
 #if BG2E_IS_MAC
     MTL::PixelFormat toMetalPixelFormat(gpu::PixelFormat format);
@@ -49,6 +50,9 @@ namespace bg2e::gpu::metal {
 
     struct MetalLayerOpaque;
     using MetalLayerHandle = MetalLayerOpaque*;
+
+    struct TextureOpaque;
+    using TextureHandle = TextureOpaque*;
 }
 
 #endif

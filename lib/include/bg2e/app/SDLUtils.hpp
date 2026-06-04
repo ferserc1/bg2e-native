@@ -1,5 +1,5 @@
 /*
- *    business grade graphic engine (bg2e engine)
+ *    business grade graphic engine (bg2 engine)
  *    Copyright (C) 2026  Fernando Serrano Carpena
  *
  *    This program is free software: you can redistribute it and/or modify
@@ -18,14 +18,15 @@
 
 #pragma once
 
-#include <bg2e/gpu/Common.hpp>
-#include <bg2e/gpu/Backend.hpp>
-#include <bg2e/gpu/Factory.hpp>
-#include <bg2e/gpu/Instance.hpp>
-#include <bg2e/gpu/PhysicalDevice.hpp>
-#include <bg2e/gpu/Surface.hpp>
-#include <bg2e/gpu/Image.hpp>
-#include <bg2e/gpu/WindowSurface.hpp>
-#include <bg2e/gpu/OffscreenSurface.hpp>
-#include <bg2e/gpu/Queue.hpp>
-#include <bg2e/gpu/Device.hpp>
+#include <bg2e/common.hpp>
+
+namespace bg2e {
+namespace app {
+
+// Call before SDL_Init() to configure the appropriate video driver on Linux.
+// On Linux, detects Wayland availability and sets SDL_VIDEODRIVER=wayland if possible.
+// On other platforms, this is a no-op.
+BG2E_API void initSdlVideoDriver();
+
+}
+}

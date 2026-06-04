@@ -18,14 +18,28 @@
 
 #pragma once
 
+#include <bg2e/common.hpp>
 #include <bg2e/gpu/Common.hpp>
-#include <bg2e/gpu/Backend.hpp>
-#include <bg2e/gpu/Factory.hpp>
-#include <bg2e/gpu/Instance.hpp>
-#include <bg2e/gpu/PhysicalDevice.hpp>
-#include <bg2e/gpu/Surface.hpp>
-#include <bg2e/gpu/Image.hpp>
-#include <bg2e/gpu/WindowSurface.hpp>
-#include <bg2e/gpu/OffscreenSurface.hpp>
-#include <bg2e/gpu/Queue.hpp>
-#include <bg2e/gpu/Device.hpp>
+
+namespace bg2e {
+namespace gpu {
+
+class BG2E_API Image {
+public:
+    virtual ~Image() = default;
+
+    virtual void cleanup() = 0;
+    virtual bool isValid() const = 0;
+
+    PixelFormat   pixelFormat() const { return _pixelFormat; }
+    const Size2D& size()        const { return _size; }
+    uint32_t      width()       const { return _size.width;  }
+    uint32_t      height()      const { return _size.height; }
+
+protected:
+    PixelFormat _pixelFormat = PixelFormat::Undefined;
+    Size2D      _size;
+};
+
+}
+}

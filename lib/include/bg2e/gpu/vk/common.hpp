@@ -24,6 +24,7 @@
 #include <vulkan/vk_enum_string_helper.h>
 #include <bg2e/base/PlatformTools.hpp>
 #include <bg2e/gpu/Common.hpp>
+#include <iostream>
 
 #ifdef BG2E_IS_MAC
 #pragma clang diagnostic push

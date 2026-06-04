@@ -48,14 +48,24 @@ std::unique_ptr<gpu::Device> Backend::createDevice() const
     return std::make_unique<vk::Device>();
 }
 
-std::unique_ptr<gpu::WindowSurface> Backend::createWindowSurface() const
+std::unique_ptr<gpu::WindowSurface> Backend::createWindowSurface(
+    gpu::Instance* instance, PixelFormat colorFormat, PixelFormat depthFormat) const
 {
-    return std::make_unique<vk::WindowSurface>();
+    std::unique_ptr<gpu::WindowSurface> surface = std::make_unique<vk::WindowSurface>();
+    surface->setColorFormat(colorFormat);
+    surface->setDepthFormat(depthFormat);
+    surface->create(instance);
+    return surface;
 }
 
-std::unique_ptr<gpu::OffscreenSurface> Backend::createOffscreenSurface(const Size2D& size) const
+std::unique_ptr<gpu::OffscreenSurface> Backend::createOffscreenSurface(
+    gpu::Instance* instance, const Size2D& size, PixelFormat colorFormat, PixelFormat depthFormat) const
 {
-    return std::make_unique<vk::OffscreenSurface>(size);
+    std::unique_ptr<gpu::OffscreenSurface> surface = std::make_unique<vk::OffscreenSurface>(size);
+    surface->setColorFormat(colorFormat);
+    surface->setDepthFormat(depthFormat);
+    surface->create(instance);
+    return surface;
 }
 
 }

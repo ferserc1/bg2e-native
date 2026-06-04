@@ -17,10 +17,90 @@
  */
 
 #include <bg2e/gpu/metal/OffscreenSurface.hpp>
+#include <bg2e/gpu/metal/Device.hpp>
+#include <bg2e/gpu/metal/Image.hpp>
+#include <bg2e/gpu/metal/common.hpp>
+#include <bg2e/gpu/Image.hpp>
+
+#include <stdexcept>
 
 namespace bg2e {
 namespace gpu {
 namespace metal {
+
+#if BG2E_IS_MAC
+
+OffscreenSurface::~OffscreenSurface() = default;
+
+void OffscreenSurface::createRenderTarget(gpu::Device* device, gpu::PhysicalDevice* /*physicalDevice*/)
+{
+    _device = device;
+    auto* metalDevice = dynamic_cast<metal::Device*>(device);
+
+    _colorImage = std::make_unique<metal::Image>();
+    _colorImage->buildTargetImage(metalDevice, _size, _colorFormat);
+
+    if (_depthFormat != PixelFormat::Undefined)
+    {
+        _depthImage = std::make_unique<metal::Image>();
+        _depthImage->buildDepthImage(metalDevice, _size, _depthFormat);
+    }
+}
+
+void OffscreenSurface::resize(const Size2D& size)
+{
+    _size = size;
+    if (_colorImage) _colorImage->resize(size);
+    if (_depthImage) _depthImage->resize(size);
+}
+
+void OffscreenSurface::releaseRenderTarget()
+{
+    _depthImage.reset();
+    _colorImage.reset();
+}
+
+void OffscreenSurface::cleanup()
+{
+    releaseRenderTarget();
+}
+
+bool OffscreenSurface::isValid() const
+{
+    return _colorImage && _colorImage->isValid();
+}
+
+uint32_t OffscreenSurface::imageCount() const { return 1; }
+gpu::Image* OffscreenSurface::colorImage(uint32_t index) const
+{
+    if (index == 0) return _colorImage.get();
+    return nullptr;
+}
+gpu::Image* OffscreenSurface::depthImage() const { return _depthImage.get(); }
+
+#else
+
+OffscreenSurface::~OffscreenSurface() = default;
+
+void OffscreenSurface::createRenderTarget(gpu::Device*, gpu::PhysicalDevice*)
+{
+    throw std::runtime_error("Metal backend is not available on this platform");
+}
+
+void OffscreenSurface::resize(const Size2D&)
+{
+    throw std::runtime_error("Metal backend is not available on this platform");
+}
+
+void OffscreenSurface::releaseRenderTarget() {}
+void OffscreenSurface::cleanup() {}
+bool OffscreenSurface::isValid() const { return false; }
+
+uint32_t OffscreenSurface::imageCount() const { return 0; }
+gpu::Image* OffscreenSurface::colorImage(uint32_t) const { return nullptr; }
+gpu::Image* OffscreenSurface::depthImage() const { return nullptr; }
+
+#endif
 
 }
 }

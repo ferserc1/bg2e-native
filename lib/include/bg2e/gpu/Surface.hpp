@@ -24,6 +24,14 @@
 namespace bg2e {
 namespace gpu {
 
+class Device;
+class PhysicalDevice;
+class Image;
+class Instance;
+
+namespace vk    { class Backend; class Device; }
+namespace metal { class Backend; class Device; }
+
 class BG2E_API Surface {
 public:
     virtual ~Surface() = default;
@@ -31,14 +39,45 @@ public:
     virtual bool isOffscreen() const = 0;
     virtual bool isValid() const = 0;
 
-    virtual const Size2D& size() const { return _size; }
+    const Size2D& size() const { return _size; }
     void setSize(const Size2D& s) { _size = s; }
 
     virtual uint32_t width() const { return _size.width; }
     virtual uint32_t height() const { return _size.height; }
 
+    PixelFormat colorFormat() const { return _colorFormat; }
+    PixelFormat depthFormat() const { return _depthFormat; }
+    void setColorFormat(PixelFormat f) { _colorFormat = f; }
+    void setDepthFormat(PixelFormat f) { _depthFormat = f; }
+
+    virtual void resize(const Size2D& size) = 0;
+    virtual void releaseRenderTarget() = 0;
+
+    virtual uint32_t    imageCount() const = 0;
+    virtual gpu::Image* colorImage(uint32_t index) const = 0;
+    virtual gpu::Image* depthImage() const = 0;
+
 protected:
-    Size2D _size;
+    // Surface creation lifecycle. These are not part of the public API:
+    //  - create() is invoked by the Backend factory (createWindowSurface /
+    //    createOffscreenSurface), which owns the Instance.
+    //  - createRenderTarget() is invoked by the Device when it is created.
+    // Both Backend and Device are granted access through the friendship
+    // declarations below. The default create() is a no-op (offscreen
+    // surfaces do not need a window-system surface).
+    virtual void create(Instance* instance) {}
+    virtual void createRenderTarget(Device* device, PhysicalDevice* physicalDevice) = 0;
+
+    Size2D          _size;
+    PixelFormat     _colorFormat = PixelFormat::Undefined;
+    PixelFormat     _depthFormat = PixelFormat::Undefined;
+    Device*         _device         = nullptr;
+    PhysicalDevice* _physicalDevice = nullptr;
+
+    friend class vk::Backend;
+    friend class vk::Device;
+    friend class metal::Backend;
+    friend class metal::Device;
 };
 
 }

@@ -18,14 +18,39 @@
 
 #pragma once
 
-#include <bg2e/gpu/Common.hpp>
-#include <bg2e/gpu/Backend.hpp>
-#include <bg2e/gpu/Factory.hpp>
-#include <bg2e/gpu/Instance.hpp>
-#include <bg2e/gpu/PhysicalDevice.hpp>
-#include <bg2e/gpu/Surface.hpp>
 #include <bg2e/gpu/Image.hpp>
-#include <bg2e/gpu/WindowSurface.hpp>
-#include <bg2e/gpu/OffscreenSurface.hpp>
-#include <bg2e/gpu/Queue.hpp>
-#include <bg2e/gpu/Device.hpp>
+#include <bg2e/gpu/metal/common.hpp>
+
+namespace bg2e {
+namespace gpu {
+namespace metal {
+
+class Device;
+
+class Image : public gpu::Image {
+public:
+    Image() = default;
+    ~Image() override { cleanup(); }
+
+    Image(const Image&) = delete;
+    Image& operator=(const Image&) = delete;
+
+    void buildTargetImage(metal::Device* device, const Size2D& size, PixelFormat format);
+    void buildDepthImage(metal::Device* device, const Size2D& size, PixelFormat format);
+
+    void resize(const Size2D& size);
+
+    void cleanup() override;
+    bool isValid() const override;
+
+    TextureHandle texture() const { return _texture; }
+
+private:
+    metal::Device* _device  = nullptr;
+    TextureHandle  _texture = nullptr;
+    bool           _isDepth = false;
+};
+
+}
+}
+}

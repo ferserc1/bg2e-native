@@ -37,8 +37,15 @@ public:
 
     std::unique_ptr<gpu::PhysicalDevice>  createPhysicalDevice()                                const override;
     std::unique_ptr<gpu::Device>          createDevice()                                          const override;
-    std::unique_ptr<gpu::WindowSurface>   createWindowSurface()                                   const override;
-    std::unique_ptr<gpu::OffscreenSurface> createOffscreenSurface(const Size2D& size)              const override;
+    std::unique_ptr<gpu::WindowSurface>   createWindowSurface(
+        gpu::Instance* instance,
+        PixelFormat colorFormat = PixelFormat::B8G8R8A8_UNORM,
+        PixelFormat depthFormat = PixelFormat::D32_SFLOAT) const override;
+    std::unique_ptr<gpu::OffscreenSurface> createOffscreenSurface(
+        gpu::Instance* instance,
+        const Size2D& size,
+        PixelFormat colorFormat = PixelFormat::R8G8B8A8_UNORM,
+        PixelFormat depthFormat = PixelFormat::D32_SFLOAT) const override;
 
 private:
     mutable std::unique_ptr<Instance> _instance;
