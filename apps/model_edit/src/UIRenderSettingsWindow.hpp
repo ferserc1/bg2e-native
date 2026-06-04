@@ -26,11 +26,11 @@ public:
     void init(AppDelegate * delegate);
 
 private:
-    void drawUI();
-    void drawRTAOSection();
-    void drawRTReflectionsSection();
-    void drawTemporalAccumulatorSection();
-    void drawDenoiseFilterSection();
+    bool drawUI();
+    bool drawRTAOSection();
+    bool drawRTReflectionsSection();
+    bool drawTemporalAccumulatorSection();
+    bool drawDenoiseFilterSection();
 
     AppDelegate * _appDelegate = nullptr;
 };

@@ -98,7 +98,7 @@ private:
     VkFormat _format = VK_FORMAT_R16_SFLOAT;
     bool _isHDR = false;
 
-    AccumulationMode _accumulationMode = AccumulationMode::Progressive;
+    AccumulationMode _accumulationMode = AccumulationMode::Interactive;
     float _historyWeight = 0.9f;
     float _depthThreshold = 0.01f;
     float _normalThreshold = 0.8f;

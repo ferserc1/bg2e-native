@@ -17,6 +17,7 @@
  */
 
 #include <bg2e/app/InputManager.hpp>
+#include <bg2e/base/PlatformTools.hpp>
 
 #include <SDL2/SDL.h>
 
@@ -99,7 +100,14 @@ void InputManager::mouseWheel(int deltaX, int deltaY)
     ImGuiIO& io = ImGui::GetIO();
     if (_delegate.get() && !io.WantCaptureMouse)
     {
-        _delegate->mouseWheel(deltaX, deltaY);
+        auto factor = base::PlatformTools::currentPlatform() == base::Platform::macOS
+            ? 0.7f
+            : 1.0f;
+
+        _delegate->mouseWheel(
+            static_cast<int>(static_cast<float>(deltaX) * factor),
+            static_cast<int>(static_cast<float>(deltaY) * factor)
+        );
     }
 }
 

@@ -73,6 +73,9 @@ public:
     void toggleSelectionHighlight();
     void setSelectionHighlightMode(SelectionHighlightMode mode);
 
+    void saveSettings();
+    void restoreSettings();
+
 protected:
     bg2e::scene::InputVisitor _inputVisitor;
     
