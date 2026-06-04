@@ -100,18 +100,13 @@ int main(int argc, char** argv)
     std::cout << "  Transfer queue family: " << device->transferQueue().familyIndex() << std::endl;
     std::cout << "  Swapchain images:      " << surface->imageCount() << std::endl;
 
-    // 8. Event loop
-    bool running = true;
-    SDL_Event event;
-    while (running)
-    {
-        while (SDL_PollEvent(&event))
-        {
-            if (event.type == SDL_QUIT) running = false;
-        }
-    }
-
-    // 9. Cleanup (reverse order; surface render target depends on device)
+    // 8. Cleanup (reverse order; surface render target depends on device)
+    //
+    // Note: this is a console-only example that just queries and prints device
+    // information. It does not render or present any frame, so under Wayland the
+    // window is never mapped (a Wayland surface stays hidden until its first
+    // buffer is committed). That is expected here; no interactive event loop is
+    // needed.
     device->waitIdle();
     surface->cleanup();
     device->cleanup();

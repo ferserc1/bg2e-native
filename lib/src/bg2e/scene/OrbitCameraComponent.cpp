@@ -346,7 +346,7 @@ void OrbitCameraComponent::mouseMove(int x, int y)
 void OrbitCameraComponent::mouseWheel(int /*deltaX*/, int deltaY)
 {
     if (!_enabled) return;
-    _distance += deltaY * 0.01f * std::clamp(0.1f, 5.0f, _distance) * _wheelSpeed;
+    _distance += deltaY * 0.1f * std::clamp(_distance, 0.1f, 5.0f) * _wheelSpeed;
 }
 
 void OrbitCameraComponent::reset()
