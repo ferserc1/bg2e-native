@@ -45,17 +45,26 @@ std::string componentName(Component * component)
 }
 
 void Component::deserialize(
-    std::shared_ptr<json::JsonNode> /* jsonData */,
-    const std::filesystem::path& /* basePath */
+    std::shared_ptr<json::JsonNode> jsonData,
+    [[maybe_unused]] const std::filesystem::path& basePath,
+    [[maybe_unused]] render::Engine& engine
 ) {
+    if (!jsonData || !jsonData->isObject())
+        return;
 
+    auto& obj = jsonData->objectValue();
+    if (obj.count("priority"))
+    {
+        _priority = static_cast<uint32_t>(obj["priority"]->numberValue(static_cast<double>(_priority)));
+    }
 }
 
 std::shared_ptr<json::JsonNode> Component::serialize(const std::filesystem::path& /* basePath */)
 {
     using namespace bg2e::json;
     return JSON(JsonObject{
-        { "type", JSON(typeName()) }
+        { "type", JSON(typeName()) },
+        { "priority", JSON(static_cast<double>(_priority)) }
     });
 }
 

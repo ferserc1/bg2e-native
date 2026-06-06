@@ -29,7 +29,7 @@ class BG2E_API OrbitCameraComponent : public Component {
 public:
     BG2E_COMPONENT_TYPE_NAME("OrbitCameraController");
     
-    void deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path&) override;
+    void deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path&, render::Engine& engine) override;
     std::shared_ptr<json::JsonNode> serialize(const std::filesystem::path&) override;
 
     // Accessors

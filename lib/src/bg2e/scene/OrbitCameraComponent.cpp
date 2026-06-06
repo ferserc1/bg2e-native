@@ -26,7 +26,7 @@
 
 namespace bg2e::scene {
 
-void OrbitCameraComponent::deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path&)
+void OrbitCameraComponent::deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path&, [[maybe_unused]] render::Engine& engine)
 {
     if (!jsonData || !jsonData->isObject())
     {

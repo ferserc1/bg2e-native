@@ -96,8 +96,10 @@ void PolarTransformControllerComponent::update([[maybe_unused]] float delta)
     }
 }
 
-void PolarTransformControllerComponent::deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path&)
+void PolarTransformControllerComponent::deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path&, [[maybe_unused]] render::Engine& engine)
 {
+    Component::deserialize(jsonData, {}, engine);
+
     if (!jsonData || !jsonData->isObject())
         return;
 

@@ -19,6 +19,7 @@
 #pragma once
 
 #include <bg2e/common.hpp>
+#include <bg2e/app/Preferences.hpp>
 
 #include <filesystem>
 #include <map>
@@ -38,7 +39,6 @@ public:
     
     std::filesystem::path saveFile();
     
-    // TODO: Pass default selected folder
     std::filesystem::path pickFolder();
 
     void setFilters(const FileFilters& filters);

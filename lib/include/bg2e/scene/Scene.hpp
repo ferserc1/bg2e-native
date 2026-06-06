@@ -26,11 +26,16 @@
 #include <vector>
 
 namespace bg2e {
+
+namespace render {
+class Engine;
+}
+
 namespace scene {
 
 class BG2E_API Scene {
 public:
-    static std::shared_ptr<Scene> deserialize(std::shared_ptr<json::JsonNode>, const std::filesystem::path&);
+    static std::shared_ptr<Scene> deserialize(std::shared_ptr<json::JsonNode>, const std::filesystem::path&, render::Engine& engine);
 
     void setSceneRoot(std::shared_ptr<Node> scene);
     void setMainCamera(CameraComponent * camera);

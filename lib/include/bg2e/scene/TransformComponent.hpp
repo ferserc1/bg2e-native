@@ -65,7 +65,7 @@ public:
     glm::mat4 worldMatrix();
     glm::mat4 invertedWorldMatrix();
     
-    void deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path& basePath) override;
+    void deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path& basePath, render::Engine& engine) override;
     std::shared_ptr<json::JsonNode> serialize(const std::filesystem::path& basePath) override;
     
 

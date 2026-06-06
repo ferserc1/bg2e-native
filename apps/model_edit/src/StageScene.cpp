@@ -23,6 +23,7 @@
 
 #include <algorithm>
 #include <cctype>
+#include <iostream>
 #include <string>
 
 #include "bg2e/scene/FindNodeVisitor.hpp"
@@ -120,7 +121,7 @@ std::shared_ptr<bg2e::scene::Node> StageScene::init()
     sceneRoot->addChild(_targetNode);
 
     auto floor = createFloorNode();
-    sceneRoot->addChild(floor);
+    environmentNode->addChild(floor);
     
     _sceneRoot = sceneRoot;
 
@@ -144,7 +145,6 @@ void StageScene::loadModel(const std::filesystem::path& path)
 
     _document->setPath(path);
     _document->setUnsavedChanges(false);
-
 }
 
 void StageScene::saveModel(const std::filesystem::path& path)
@@ -349,7 +349,7 @@ void StageScene::restoreEnvironmentSettings(const std::filesystem::path& path)
     if (_restoringEnvironment) return;
     _restoringEnvironment = true;
 
-    auto newScene = bg2e::db::loadScene(path);
+    auto newScene = bg2e::db::loadScene(path, *_engine);
     if (!newScene)
     {
         return;
@@ -362,11 +362,15 @@ void StageScene::restoreEnvironmentSettings(const std::filesystem::path& path)
     findLights->byName("Lights");
     auto lightNodes = findLights->find(newScene->rootNode());
 
-    if (!environmentNode.empty() && lightNodes.size() == 1)
+    auto findFloor = std::make_shared<bg2e::scene::FindNodeByProperties>();
+    findFloor->byName("Floor");
+    auto floorNodes = findFloor->find(newScene->rootNode());
+
+    if (!environmentNode.empty() && lightNodes.size() == 1 && floorNodes.size() == 1)
     {
         _restoreToken = std::make_shared<bg2e::app::SafeUpdateToken>();
         bg2e::app::MainLoop::current()->safeUpdateScene(
-            [this, environmentNode, newScene, lightNodes]()
+            [this, environmentNode, newScene, lightNodes, floorNodes]()
             {
                 auto envNode = environmentNode[0].lock();
                 if (!envNode) { _restoringEnvironment = false; return; }
@@ -374,7 +378,24 @@ void StageScene::restoreEnvironmentSettings(const std::filesystem::path& path)
                 _environment = std::dynamic_pointer_cast<bg2e::scene::EnvironmentComponent>(envNode->environment()->shared_from_this());
                 _environmentNode = std::static_pointer_cast<bg2e::scene::Node>(newScene->rootNode()->shared_from_this());
                 _lightsNode = lightNodes[0];
+                _floorNode = floorNodes[0];
                 _sceneRoot->addChild(_environmentNode);
+
+                if (_floorNode && !_floorNode->drawable())
+                {
+                    auto floorDrawable = std::make_shared<bg2e::scene::Drawable>();
+                    auto floorGeo = bg2e::geo::createPlane(100.0f, 100.0f);
+                    floorDrawable->setMesh(floorGeo);
+                    floorDrawable->load(_engine);
+                    _floorNode->addComponent(new bg2e::scene::DrawableComponent(floorDrawable));
+                }
+
+                if (_floorNode && _floorNode->transform())
+                {
+                    _floorHeight = _floorNode->transform()->matrix()[3][1];
+                }
+                _showFloor = _floorNode ? _floorNode->enabled() : true;
+
                 _sceneRoot->scene()->updateAll();
                 _restoringEnvironment = false;
 
@@ -389,6 +410,18 @@ void StageScene::restoreEnvironmentSettings(const std::filesystem::path& path)
     else
     {
         _restoringEnvironment = false;
+        if (environmentNode.empty())
+        {
+            std::cerr << "WARN: Could not restore environment: EnvironmentComponent not found" << std::endl;
+        }
+        else if (lightNodes.size() != 1)
+        {
+            std::cerr << "WARN: Could not restore environment: Lights node not found" << std::endl;
+        }
+        else if (floorNodes.size() != 1)
+        {
+            std::cerr << "WARN: Could not restore environment: Floor node not found" << std::endl;
+        }
         bg2e::app::MessageBox msg;
         msg.showError("Invalid environment", "The specified file does not appear to be a valid environment file");
     }
@@ -534,7 +567,8 @@ std::shared_ptr<bg2e::scene::Node> StageScene::createFloorNode()
     auto drawable = std::make_shared<bg2e::scene::Drawable>();
     drawable->setMesh(floorGeo);
     drawable->load(_engine);
-    _floorNode->addComponent(new bg2e::scene::DrawableComponent(drawable));
+    auto dc = new bg2e::scene::DrawableComponent(drawable);
+    _floorNode->addComponent(dc);
 
     return _floorNode;
 }

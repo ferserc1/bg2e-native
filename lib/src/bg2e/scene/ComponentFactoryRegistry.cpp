@@ -17,6 +17,7 @@
  */
 
 #include <bg2e/scene/ComponentFactoryRegistry.hpp>
+#include <bg2e/base/Log.hpp>
 #include <iostream>
 
 namespace bg2e::scene {
@@ -38,7 +39,7 @@ void ComponentFactoryRegistry::registerComponent(const std::string& componentNam
     _registry[componentName] = creator;
 }
 
-Component* ComponentFactoryRegistry::create(std::shared_ptr<json::JsonNode> data, const std::filesystem::path& basePath)
+Component* ComponentFactoryRegistry::create(std::shared_ptr<json::JsonNode> data, const std::filesystem::path& basePath, render::Engine& engine)
 {
     if (!data->isObject())
     {
@@ -47,12 +48,17 @@ Component* ComponentFactoryRegistry::create(std::shared_ptr<json::JsonNode> data
 
     auto objectValue = data->objectValue();
     std::string componentType = objectValue["type"]->stringValue();
-    if (_registry.find(componentType) == _registry.end()) {
-        std::cout << "WARN: component type not found: " << componentType << std::endl;
+    if (_registry.find(componentType) == _registry.end())
+    {
+        bg2e_log_warning << "component type not found: " << componentType << bg2e_log_end;
         return nullptr;
     }
+    else if (bg2e::base::Log::isDebug())
+    {
+        bg2e_log_debug << "Deserialize component: " << componentType << bg2e_log_end;
+    }
     
-    auto result = _registry[componentType](data, basePath);
+    auto result = _registry[componentType](data, basePath, engine);
     return result;
 }
 

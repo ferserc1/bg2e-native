@@ -28,7 +28,8 @@
 namespace bg2e::db {
 
 std::shared_ptr<bg2e::scene::Scene> loadScene(
-    const std::filesystem::path& filePath
+    const std::filesystem::path& filePath,
+    bg2e::render::Engine& engine
 ) {
     std::ifstream inFile(filePath);
     if (!inFile.is_open())
@@ -51,7 +52,7 @@ std::shared_ptr<bg2e::scene::Scene> loadScene(
             bg2e_log_error << "Error parsing scene file at path \"" << filePath << "\"" << bg2e_log_end;
         }
 
-        auto scene = scene::Scene::deserialize(sceneFile, filePath.parent_path());
+        auto scene = scene::Scene::deserialize(sceneFile, filePath.parent_path(), engine);
         inFile.close();
 
         if (!scene)
@@ -66,9 +67,10 @@ std::shared_ptr<bg2e::scene::Scene> loadScene(
 
 std::shared_ptr<bg2e::scene::Scene> loadScene(
     const std::filesystem::path& basePath,
-    const std::string& fileName
+    const std::string& fileName,
+    bg2e::render::Engine& engine
 ) {
-    return loadScene(basePath / fileName);
+    return loadScene(basePath / fileName, engine);
 }
 
 void saveScene(

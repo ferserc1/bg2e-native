@@ -25,7 +25,7 @@
 
 namespace bg2e::scene {
 
-std::shared_ptr<Scene> Scene::deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path& basePath)
+std::shared_ptr<Scene> Scene::deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path& basePath, render::Engine& engine)
 {
     if (!jsonData || !jsonData->isObject())
     {
@@ -54,7 +54,7 @@ std::shared_ptr<Scene> Scene::deserialize(std::shared_ptr<json::JsonNode> jsonDa
         for (auto& nodeData : sceneList)
         {
             auto node = std::make_shared<Node>();
-            node->deserialize(nodeData, basePath);
+            node->deserialize(nodeData, basePath, engine);
             sceneRoot->addChild(node);
         }
     }

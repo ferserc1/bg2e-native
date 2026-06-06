@@ -46,7 +46,7 @@ EnvironmentComponent::~EnvironmentComponent()
 
 }
 
-void EnvironmentComponent::deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path& basePath)
+void EnvironmentComponent::deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path& basePath, [[maybe_unused]] render::Engine& engine)
 {
     if (!jsonData || !jsonData->isObject())
     {
@@ -71,7 +71,10 @@ std::shared_ptr<json::JsonNode> EnvironmentComponent::serialize(const std::files
     std::filesystem::path srcFilePath = _environmentImage;
     auto fileName = srcFilePath.filename();
     dstFilePath += fileName;
-    std::filesystem::copy(srcFilePath, dstFilePath, std::filesystem::copy_options::overwrite_existing);
+    if (srcFilePath != dstFilePath)
+    {
+        std::filesystem::copy(srcFilePath, dstFilePath, std::filesystem::copy_options::overwrite_existing);
+    }
     obj["equirectangularTexture"] = JSON(fileName.string());
     
     // The following properties are deprecated and are not serialized:

@@ -28,7 +28,7 @@ class BG2E_API FixedScaleTransformControllerComponent : public Component {
 public:
     BG2E_COMPONENT_TYPE_NAME("FixedScaleTransform");
 
-    void deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path&) override;
+    void deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path&, render::Engine& engine) override;
     std::shared_ptr<json::JsonNode> serialize(const std::filesystem::path&) override;
 
     float scale() const { return _scale; }

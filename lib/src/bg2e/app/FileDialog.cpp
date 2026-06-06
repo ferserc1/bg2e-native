@@ -17,6 +17,7 @@
  */
 
 #include <bg2e/app/FileDialog.hpp>
+#include <bg2e/app/Preferences.hpp>
 #include <bg2e/base/PlatformTools.hpp>
 
 #include <iostream>
@@ -68,6 +69,9 @@ std::filesystem::path FileDialog::openFile()
         throw std::runtime_error("FileDialog::openFile(): No filters specified");
     }
     
+    Preferences prefs;
+    auto lastPath = prefs.get<std::string>("fileDialog.lastOpenPath", "");
+    
     NFD::Guard();
     
     NFD::UniquePath outPath;
@@ -82,11 +86,13 @@ std::filesystem::path FileDialog::openFile()
         ++i;
     }
     std::filesystem::path result;
-    nfdresult_t nfdResult= NFD::OpenDialog(outPath, filters, static_cast<nfdfiltersize_t>(_filters.size()));
+    const char* defaultPath = lastPath.empty() ? nullptr : lastPath.c_str();
+    nfdresult_t nfdResult= NFD::OpenDialog(outPath, filters, static_cast<nfdfiltersize_t>(_filters.size()), defaultPath);
     
     if (nfdResult == NFD_OKAY)
     {
         result = outPath.get();
+        prefs.set("fileDialog.lastOpenPath", result.parent_path().string());
     }
     else if (nfdResult != NFD_CANCEL)
     {
@@ -104,6 +110,9 @@ std::filesystem::path FileDialog::saveFile()
         throw std::runtime_error("FileDialog::openFile(): No filters specified");
     }
     
+    Preferences prefs;
+    auto lastPath = prefs.get<std::string>("fileDialog.lastSavePath", "");
+    
     NFD::Guard();
     
     NFD::UniquePath outPath;
@@ -118,11 +127,13 @@ std::filesystem::path FileDialog::saveFile()
         ++i;
     }
     std::filesystem::path result;
-    nfdresult_t nfdResult= NFD::SaveDialog(outPath, filters, static_cast<nfdfiltersize_t>(_filters.size()));
+    const char* defaultPath = lastPath.empty() ? nullptr : lastPath.c_str();
+    nfdresult_t nfdResult= NFD::SaveDialog(outPath, filters, static_cast<nfdfiltersize_t>(_filters.size()), defaultPath);
     
     if (nfdResult == NFD_OKAY)
     {
         result = outPath.get();
+        prefs.set("fileDialog.lastSavePath", result.parent_path().string());
     }
     else if (nfdResult != NFD_CANCEL)
     {
@@ -135,15 +146,20 @@ std::filesystem::path FileDialog::saveFile()
 
 std::filesystem::path FileDialog::pickFolder()
 {
+    Preferences prefs;
+    auto lastPath = prefs.get<std::string>("fileDialog.lastFolderPath", "");
+    
     NFD::Guard nfdGuard;
     
     NFD::UniquePath outPath;
     std::filesystem::path result;
     
-    nfdresult_t nfdResult = NFD::PickFolder(outPath);
+    const char* defaultPath = lastPath.empty() ? nullptr : lastPath.c_str();
+    nfdresult_t nfdResult = NFD::PickFolder(outPath, defaultPath);
     if (nfdResult == NFD_OKAY)
     {
         result = outPath.get();
+        prefs.set("fileDialog.lastFolderPath", result.string());
     }
     else if (nfdResult != NFD_CANCEL)
     {

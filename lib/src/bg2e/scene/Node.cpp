@@ -228,7 +228,7 @@ Node * Node::sceneRoot()
     return _parent->sceneRoot();
 }
 
-void Node::deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path& basePath)
+void Node::deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path& basePath, render::Engine& engine)
 {
     if (!jsonData || !jsonData->isObject())
     {
@@ -259,7 +259,7 @@ void Node::deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::file
         auto& componentsList = obj["components"]->listValue();
         for (auto& compData : componentsList)
         {
-            auto* comp = ComponentFactoryRegistry::get().create(compData, basePath);
+            auto* comp = ComponentFactoryRegistry::get().create(compData, basePath, engine);
             if (comp)
             {
                 addComponent(comp);
@@ -274,7 +274,7 @@ void Node::deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::file
         for (auto& childData : childrenList)
         {
             auto childNode = std::make_shared<Node>();
-            childNode->deserialize(childData, basePath);
+            childNode->deserialize(childData, basePath, engine);
             addChild(childNode);
         }
     }

@@ -56,7 +56,7 @@ void CameraComponent::update(float /* delta */)
     _camera.updateProjectionMatrix();
 }
 
-void CameraComponent::deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path& /* basePath */)
+void CameraComponent::deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path& /* basePath */, [[maybe_unused]] render::Engine& engine)
 {
     if (!jsonData || !jsonData->isObject())
         return;

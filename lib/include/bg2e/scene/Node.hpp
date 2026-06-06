@@ -37,6 +37,11 @@
 #include <bg2e/scene/LightComponent.hpp>
 
 namespace bg2e {
+
+namespace render {
+class Engine;
+}
+
 namespace scene {
 
 class Scene;
@@ -113,7 +118,7 @@ public:
    
     inline Scene * scene() { return sceneRoot()->_scene; }
     
-    void deserialize(std::shared_ptr<json::JsonNode>, const std::filesystem::path&);
+    void deserialize(std::shared_ptr<json::JsonNode>, const std::filesystem::path&, render::Engine& engine);
     std::shared_ptr<json::JsonNode> serialize(const std::filesystem::path&);
 
 protected:

@@ -25,15 +25,22 @@
 #include <filesystem>
 
 namespace bg2e {
+
+namespace render {
+class Engine;
+}
+
 namespace db {
 
 extern BG2E_API std::shared_ptr<bg2e::scene::Scene> loadScene(
-    const std::filesystem::path& filePath
+    const std::filesystem::path& filePath,
+    bg2e::render::Engine& engine
 );
 
 extern BG2E_API std::shared_ptr<bg2e::scene::Scene> loadScene(
     const std::filesystem::path& basePath,
-    const std::string& fileName
+    const std::string& fileName,
+    bg2e::render::Engine& engine
 );
 
 extern BG2E_API void saveScene(

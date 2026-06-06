@@ -29,6 +29,11 @@
 #define BG2E_SCENE_COMP_CLASS_NAME(c) typeid(*c).name()
 
 namespace bg2e {
+
+namespace render {
+class Engine;
+}
+
 namespace scene {
 
 class Node;
@@ -70,7 +75,7 @@ public:
     
     virtual std::string typeName() const = 0;
     
-    virtual void deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path& basePath);
+    virtual void deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path& basePath, render::Engine& engine);
     virtual std::shared_ptr<json::JsonNode> serialize(const std::filesystem::path& basePath);
 
 protected:

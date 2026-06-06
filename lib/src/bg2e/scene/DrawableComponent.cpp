@@ -66,10 +66,27 @@ void DrawableComponent::draw(
 }
 
 void DrawableComponent::deserialize(
-    std::shared_ptr<json::JsonNode> /* jsonData */,
-    const std::filesystem::path& /* basePath */
+    std::shared_ptr<json::JsonNode> jsonData,
+    const std::filesystem::path& basePath,
+    render::Engine& engine
 ) {
+    if (!jsonData || !jsonData->isObject())
+    {
+        return;
+    }
 
+    auto& obj = jsonData->objectValue();
+
+    if (obj.count("name"))
+    {
+        auto name = obj["name"]->stringValue();
+
+        auto filePath = basePath;
+        filePath.append(name);
+        filePath.replace_extension(".bg2");
+
+        _drawable = db::loadDrawableBg2(filePath, &engine);
+    }
 }
 
 std::shared_ptr<json::JsonNode> DrawableComponent::serialize(const std::filesystem::path& basePath)
