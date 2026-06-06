@@ -131,7 +131,12 @@ void main() {
 
     if (validHits > 0u) {
         vec3 avgColor = accumulatedColor / float(validHits);
-        imageStore(reflectionOutput, pixel, vec4(avgColor, 1.0));
+        // Alpha encodes the per-pixel reflection certainty: the fraction of
+        // samples that found geometry. Using a continuous value instead of a
+        // binary 1.0 prevents flickering isolated pixels at grazing angles or
+        // partially-occluded reflections, where only some samples hit.
+        float certainty = float(validHits) / float(samples);
+        imageStore(reflectionOutput, pixel, vec4(avgColor, certainty));
     } else {
         imageStore(reflectionOutput, pixel, vec4(0.0));
     }

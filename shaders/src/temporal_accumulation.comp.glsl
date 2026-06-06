@@ -133,15 +133,12 @@ void main() {
         return;
     }
 
-    // HDR RGBA reflection mode
+    // HDR RGBA reflection mode.
+    // The alpha channel carries the per-pixel reflection certainty (the fraction
+    // of ray-traced samples that found geometry). It is accumulated temporally
+    // alongside RGB so that intermittently-hit pixels converge to a stable
+    // certainty instead of flickering between cubemap and reflection.
     vec4 current = texture(g_CurrentAO, uv);
-
-    // If the current frame has no valid reflection, do not preserve old reflection data.
-    // This avoids ghost reflections when the current pixel should fall back to cubemap.
-    if (current.a < 0.01) {
-        imageStore(outAccumulated, pixelCoord, vec4(0.0));
-        return;
-    }
 
     if (!validHistory) {
         imageStore(outAccumulated, pixelCoord, current);
@@ -149,11 +146,6 @@ void main() {
     }
 
     vec4 history = texture(g_HistoryAO, previousUV);
-
-    if (history.a < 0.01) {
-        imageStore(outAccumulated, pixelCoord, current);
-        return;
-    }
 
     float blendWeight;
     if (pc.useProgressiveMode == 1u) {
@@ -163,5 +155,6 @@ void main() {
     }
 
     vec3 resultRGB = mix(history.rgb, current.rgb, blendWeight);
-    imageStore(outAccumulated, pixelCoord, vec4(resultRGB, 1.0));
+    float resultA = mix(history.a, current.a, blendWeight);
+    imageStore(outAccumulated, pixelCoord, vec4(resultRGB, resultA));
 }
