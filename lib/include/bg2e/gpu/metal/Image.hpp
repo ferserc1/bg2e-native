@@ -43,12 +43,20 @@ public:
     void cleanup() override;
     bool isValid() const override;
 
+    // Backend dependent functions
+    void initFromDrawableTexture(
+        metal::Device* device,
+        TextureHandle texture,
+        PixelFormat format,
+        const Size2D& size
+    );
     TextureHandle texture() const { return _texture; }
 
 private:
-    metal::Device* _device  = nullptr;
-    TextureHandle  _texture = nullptr;
-    bool           _isDepth = false;
+    metal::Device* _device      = nullptr;
+    TextureHandle  _texture     = nullptr;
+    bool           _isDepth     = false;
+    bool           _ownsTexture = true;
 };
 
 }

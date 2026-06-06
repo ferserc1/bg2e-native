@@ -19,6 +19,7 @@
 #include <bg2e/gpu/vk/Device.hpp>
 #include <bg2e/gpu/vk/PhysicalDevice.hpp>
 #include <bg2e/gpu/vk/Instance.hpp>
+#include <bg2e/gpu/vk/extensions.hpp>
 #include <bg2e/gpu/Surface.hpp>
 #include <bg2e/base/Log.hpp>
 
@@ -195,6 +196,9 @@ void Device::create(gpu::Instance* instance, gpu::PhysicalDevice* physicalDevice
 
     VK_ASSERT(vkCreateDevice(vkPhysDevice->handle(), &createInfo, nullptr, &_device));
 
+    // Load device-level extension function pointers
+    loadDeviceExtensions(*vkPhysDevice, _device, offscreen);
+
     // Retrieve queues
     VkQueue gfxQueue;
     vkGetDeviceQueue(_device, indices.graphics.value(), 0, &gfxQueue);
@@ -210,6 +214,11 @@ void Device::create(gpu::Instance* instance, gpu::PhysicalDevice* physicalDevice
     VkQueue transferQueue;
     vkGetDeviceQueue(_device, indices.transfer.value(), 0, &transferQueue);
     _transferQueue = vk::Queue(transferQueue, indices.transfer.value());
+
+    // Initialize command pools for each queue
+    _graphicsQueue.initCommandPool(_device, this);
+    if (!offscreen) _presentQueue.initCommandPool(_device, this);
+    _transferQueue.initCommandPool(_device, this);
 
     // --- VMA allocator ---
     auto* vkInst = dynamic_cast<vk::Instance*>(instance);
@@ -230,6 +239,10 @@ void Device::create(gpu::Instance* instance, gpu::PhysicalDevice* physicalDevice
 
 void Device::cleanup()
 {
+    _graphicsQueue.destroyCommandPool();
+    _presentQueue.destroyCommandPool();
+    _transferQueue.destroyCommandPool();
+
     if (_allocator != VK_NULL_HANDLE)
     {
         vmaDestroyAllocator(_allocator);

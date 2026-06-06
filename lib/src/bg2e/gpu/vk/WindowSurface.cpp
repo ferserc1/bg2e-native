@@ -21,6 +21,9 @@
 #include <bg2e/gpu/vk/Device.hpp>
 #include <bg2e/gpu/vk/PhysicalDevice.hpp>
 #include <bg2e/gpu/vk/Image.hpp>
+#include <bg2e/gpu/vk/CommandBuffer.hpp>
+#include <bg2e/gpu/vk/Info.hpp>
+#include <bg2e/gpu/vk/extensions.hpp>
 #include <bg2e/gpu/Image.hpp>
 
 #include <SDL2/SDL_vulkan.h>
@@ -178,6 +181,40 @@ void WindowSurface::createRenderTarget(gpu::Device* device, gpu::PhysicalDevice*
         _depthImage = std::make_unique<vk::Image>();
         _depthImage->buildDepthImage(vkDevice, _size, _depthFormat);
     }
+
+    // Per-frame / per-image sync objects.
+    //
+    // The number of frames in flight is driven by the actual number of swapchain
+    // images (it is platform/driver dependent: e.g. 3 on an Apple M-series GPU).
+    // Using a fixed count smaller than the image count makes the CPU recycle
+    // per-frame resources while the GPU is still using them, which the validation
+    // layers report as a synchronization hazard.
+    _vkDevice = vkDevice->handle();
+    _framesInFlight = static_cast<uint32_t>(_colorImages.size());
+    _currentFrame = 0;
+
+    auto semInfo = Info::semaphoreCreateInfo();
+    auto fenceInfo = Info::fenceCreateInfo(VK_FENCE_CREATE_SIGNALED_BIT);
+
+    _imageAvailable.resize(_framesInFlight, VK_NULL_HANDLE);
+    _inFlight.resize(_framesInFlight, VK_NULL_HANDLE);
+    _frames.resize(_framesInFlight);
+    for (uint32_t i = 0; i < _framesInFlight; ++i)
+    {
+        vkCreateSemaphore(_vkDevice, &semInfo, nullptr, &_imageAvailable[i]);
+        vkCreateFence(_vkDevice, &fenceInfo, nullptr, &_inFlight[i]);
+        _frames[i] = std::make_shared<vk::SurfaceFrame>();
+    }
+
+    // renderFinished is one-per-swapchain-image (waited on by present).
+    _renderFinished.resize(_colorImages.size(), VK_NULL_HANDLE);
+    for (auto& sem : _renderFinished)
+    {
+        vkCreateSemaphore(_vkDevice, &semInfo, nullptr, &sem);
+    }
+
+    // No image is in flight yet.
+    _imagesInFlight.assign(_colorImages.size(), VK_NULL_HANDLE);
 }
 
 void WindowSurface::resize(const Size2D& size)
@@ -189,6 +226,39 @@ void WindowSurface::resize(const Size2D& size)
 
 void WindowSurface::releaseRenderTarget()
 {
+    if (_vkDevice != VK_NULL_HANDLE)
+    {
+        for (auto& fence : _inFlight)
+        {
+            if (fence != VK_NULL_HANDLE)
+            {
+                vkDestroyFence(_vkDevice, fence, nullptr);
+            }
+        }
+        for (auto& sem : _renderFinished)
+        {
+            if (sem != VK_NULL_HANDLE)
+            {
+                vkDestroySemaphore(_vkDevice, sem, nullptr);
+            }
+        }
+        for (auto& sem : _imageAvailable)
+        {
+            if (sem != VK_NULL_HANDLE)
+            {
+                vkDestroySemaphore(_vkDevice, sem, nullptr);
+            }
+        }
+    }
+
+    _inFlight.clear();
+    _renderFinished.clear();
+    _imageAvailable.clear();
+    _imagesInFlight.clear();
+    _frames.clear();
+    _framesInFlight = 0;
+    _currentFrame = 0;
+
     _depthImage.reset();
     _colorImages.clear();
 
@@ -220,6 +290,52 @@ gpu::Image* WindowSurface::colorImage(uint32_t index) const
 gpu::Image* WindowSurface::depthImage() const
 {
     return _depthImage.get();
+}
+
+std::shared_ptr<gpu::SurfaceFrame> WindowSurface::beginFrame()
+{
+    vkWaitForFences(_vkDevice, 1, &_inFlight[_currentFrame], VK_TRUE, UINT64_MAX);
+
+    uint32_t imageIndex = 0;
+    VkResult r = acquireNextImage(_vkDevice, _swapchain, UINT64_MAX,
+        _imageAvailable[_currentFrame], VK_NULL_HANDLE, &imageIndex);
+
+    if (r == VK_ERROR_OUT_OF_DATE_KHR)
+    {
+        resize(_size);
+        return beginFrame();
+    }
+
+    // If a previous frame is still rendering into this image, wait for it before
+    // reusing the image.
+    if (_imagesInFlight[imageIndex] != VK_NULL_HANDLE)
+    {
+        vkWaitForFences(_vkDevice, 1, &_imagesInFlight[imageIndex], VK_TRUE, UINT64_MAX);
+    }
+    _imagesInFlight[imageIndex] = _inFlight[_currentFrame];
+
+    vkResetFences(_vkDevice, 1, &_inFlight[_currentFrame]);
+
+    auto frame = _frames[_currentFrame];
+    frame->setColorImage(_colorImages[imageIndex].get());
+    frame->setDepthImage(_depthImage.get());
+    frame->setImageIndex(imageIndex);
+    frame->setSwapchain(_swapchain);
+    frame->setImageAvailable(_imageAvailable[_currentFrame]);
+    frame->setRenderFinished(_renderFinished[imageIndex]);
+    frame->setInFlightFence(_inFlight[_currentFrame]);
+    return frame;
+}
+
+void WindowSurface::present(gpu::CommandBuffer* cmd)
+{
+    auto* vkCmd = dynamic_cast<vk::CommandBuffer*>(cmd);
+    vkCmd->setPresentFrame(_frames[_currentFrame].get());
+}
+
+void WindowSurface::endFrame(gpu::SurfaceFrame*)
+{
+    _currentFrame = (_currentFrame + 1) % _framesInFlight;
 }
 
 VkSwapchainKHR WindowSurface::swapchain() const

@@ -21,6 +21,8 @@
 #include <bg2e/common.hpp>
 #include <bg2e/gpu/Common.hpp>
 
+#include <memory>
+
 namespace bg2e {
 namespace gpu {
 
@@ -28,6 +30,8 @@ class Device;
 class PhysicalDevice;
 class Image;
 class Instance;
+class SurfaceFrame;
+class CommandBuffer;
 
 namespace vk    { class Backend; class Device; }
 namespace metal { class Backend; class Device; }
@@ -56,6 +60,13 @@ public:
     virtual uint32_t    imageCount() const = 0;
     virtual gpu::Image* colorImage(uint32_t index) const = 0;
     virtual gpu::Image* depthImage() const = 0;
+
+    // Frame lifecycle
+    virtual std::shared_ptr<SurfaceFrame> beginFrame() = 0;
+    virtual void present(gpu::CommandBuffer* cmd) = 0;
+    virtual void endFrame(SurfaceFrame* frame) = 0;
+
+    virtual void cleanup() = 0;
 
 protected:
     // Surface creation lifecycle. These are not part of the public API:

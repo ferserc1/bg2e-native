@@ -42,6 +42,7 @@ void Image::buildTargetImage(vk::Device* device, const Size2D& size, PixelFormat
            | VK_IMAGE_USAGE_TRANSFER_SRC_BIT
            | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     _ownsImage = true;
+    setCurrentLayout(ImageLayout::Undefined);
 
     VkExtent3D extent{};
     extent.width = size.width;
@@ -80,6 +81,7 @@ void Image::buildDepthImage(vk::Device* device, const Size2D& size, PixelFormat 
     _usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT
            | VK_IMAGE_USAGE_SAMPLED_BIT;
     _ownsImage = true;
+    setCurrentLayout(ImageLayout::Undefined);
 
     VkExtent3D extent{};
     extent.width = size.width;
@@ -114,6 +116,7 @@ void Image::initFromSwapchainImage(vk::Device* device, VkImage image, PixelForma
     _aspect = VK_IMAGE_ASPECT_COLOR_BIT;
     _allocation = VK_NULL_HANDLE;
     _ownsImage = false;
+    setCurrentLayout(ImageLayout::Undefined);
 
     createView();
 }

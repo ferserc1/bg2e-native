@@ -20,6 +20,7 @@
 
 #include <bg2e/gpu/WindowSurface.hpp>
 #include <bg2e/gpu/vk/common.hpp>
+#include <bg2e/gpu/vk/SurfaceFrame.hpp>
 
 #include <SDL2/SDL.h>
 
@@ -51,6 +52,10 @@ public:
     gpu::Image* colorImage(uint32_t index) const override;
     gpu::Image* depthImage() const override;
 
+    std::shared_ptr<gpu::SurfaceFrame> beginFrame() override;
+    void present(gpu::CommandBuffer* cmd) override;
+    void endFrame(gpu::SurfaceFrame* frame) override;
+
     VkSwapchainKHR swapchain() const;
 
 protected:
@@ -65,6 +70,29 @@ private:
     VkSwapchainKHR _swapchain{VK_NULL_HANDLE};
     std::vector<std::unique_ptr<vk::Image>> _colorImages;
     std::unique_ptr<vk::Image> _depthImage;
+
+    // Number of frames that can be processed concurrently. Determined at
+    // render-target creation time from the actual swapchain image count, so the
+    // CPU never reuses per-frame resources while the GPU is still consuming them.
+    uint32_t _framesInFlight = 0;
+    uint32_t _currentFrame   = 0;
+
+    // Per frame-in-flight (indexed by _currentFrame).
+    std::vector<VkSemaphore> _imageAvailable;
+    std::vector<VkFence>     _inFlight;
+    std::vector<std::shared_ptr<vk::SurfaceFrame>> _frames;
+
+    // Per swapchain image (indexed by the acquired image index). renderFinished
+    // must be per-image because vkQueuePresentKHR waits on it: a semaphore cannot
+    // be reused until its presentation has completed.
+    std::vector<VkSemaphore> _renderFinished;
+
+    // Tracks which in-flight fence (if any) is currently rendering into each
+    // swapchain image, so an image acquired out of order is not reused while a
+    // previous frame is still writing to it. Non-owning aliases of _inFlight.
+    std::vector<VkFence> _imagesInFlight;
+
+    VkDevice _vkDevice{VK_NULL_HANDLE};
 };
 
 }

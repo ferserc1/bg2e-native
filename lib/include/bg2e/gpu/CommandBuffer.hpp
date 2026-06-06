@@ -19,22 +19,30 @@
 #pragma once
 
 #include <bg2e/common.hpp>
-#include <cstdint>
-#include <memory>
+#include <bg2e/gpu/Common.hpp>
 
 namespace bg2e {
 namespace gpu {
 
-class CommandBuffer;
+class Image;
+class SurfaceFrame;
 
-class BG2E_API Queue {
+class BG2E_API CommandBuffer {
 public:
-    virtual ~Queue() = default;
-    virtual uint32_t familyIndex() const = 0;
-    virtual bool isValid() const = 0;
+    virtual ~CommandBuffer() = default;
 
-    virtual std::shared_ptr<gpu::CommandBuffer> createCommandBuffer() const = 0;
-    virtual void submit(gpu::CommandBuffer* cmd) const = 0;
+    virtual void begin() = 0;
+    virtual void end()   = 0;
+
+    virtual void transition(gpu::Image* image, ImageLayout newLayout) = 0;
+
+    virtual void beginRendering(gpu::SurfaceFrame* frame) = 0;
+    virtual void endRendering() = 0;
+
+    virtual void clearColor(uint32_t attachmentIndex, const gpu::Color& color) = 0;
+    virtual void clearDepth(float depth) = 0;
+
+    virtual bool isValid() const = 0;
 };
 
 }

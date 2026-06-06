@@ -18,6 +18,7 @@
 
 #include <bg2e/gpu/vk/Instance.hpp>
 #include <bg2e/gpu/vk/Info.hpp>
+#include <bg2e/gpu/vk/extensions.hpp>
 #include <bg2e/base/Log.hpp>
 
 #include <SDL2/SDL.h>
@@ -136,6 +137,8 @@ void Instance::create(SDL_Window* sdlWindow)
     {
         VK_ASSERT(createDebugMessenger());
     }
+
+    loadInstanceExtensions(_instance, false);
 }
 
 void Instance::create()
@@ -185,6 +188,8 @@ void Instance::create()
     {
         VK_ASSERT(createDebugMessenger());
     }
+
+    loadInstanceExtensions(_instance, true);
 }
 
 void Instance::cleanup()

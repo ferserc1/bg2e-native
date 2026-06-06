@@ -53,6 +53,10 @@ void Device::create(gpu::Instance* /*instance*/, gpu::PhysicalDevice* physicalDe
     _presentQueue  = metal::Queue(presentQueue);
     _transferQueue = metal::Queue(transferQueue);
 
+    _graphicsQueue.setDevice(this);
+    _presentQueue.setDevice(this);
+    _transferQueue.setDevice(this);
+
     if (surface)
     {
         surface->createRenderTarget(this, physicalDevice);

@@ -36,6 +36,7 @@ void Image::buildTargetImage(metal::Device* device, const Size2D& size, PixelFor
     _size = size;
     _pixelFormat = format;
     _isDepth = false;
+    setCurrentLayout(ImageLayout::Undefined);
 
     auto* desc = MTL::TextureDescriptor::alloc()->init();
     desc->setTextureType(MTL::TextureType2D);
@@ -46,6 +47,7 @@ void Image::buildTargetImage(metal::Device* device, const Size2D& size, PixelFor
     desc->setUsage(MTL::TextureUsageRenderTarget | MTL::TextureUsageShaderRead);
 
     _texture = device->handle()->newTexture(desc);
+    _ownsTexture = true;
     desc->release();
 
     if (!_texture)
@@ -62,6 +64,8 @@ void Image::buildDepthImage(metal::Device* device, const Size2D& size, PixelForm
     _size = size;
     _pixelFormat = format;
     _isDepth = true;
+    _ownsTexture = true;
+    setCurrentLayout(ImageLayout::Undefined);
 
     auto* desc = MTL::TextureDescriptor::alloc()->init();
     desc->setTextureType(MTL::TextureType2D);
@@ -72,12 +76,26 @@ void Image::buildDepthImage(metal::Device* device, const Size2D& size, PixelForm
     desc->setUsage(MTL::TextureUsageRenderTarget | MTL::TextureUsageShaderRead);
 
     _texture = device->handle()->newTexture(desc);
+    _ownsTexture = true;
     desc->release();
 
     if (!_texture)
     {
         throw std::runtime_error("metal::Image::buildDepthImage: newTexture failed");
     }
+}
+
+void Image::initFromDrawableTexture(metal::Device* device, TextureHandle texture,
+                                    PixelFormat format, const Size2D& size)
+{
+    cleanup();
+    _device        = device;
+    _texture       = texture;
+    _size          = size;
+    _pixelFormat   = format;
+    _isDepth       = false;
+    _ownsTexture   = false;
+    _currentLayout = ImageLayout::Undefined;
 }
 
 void Image::resize(const Size2D& size)
@@ -102,7 +120,7 @@ void Image::resize(const Size2D& size)
 
 void Image::cleanup()
 {
-    if (_texture)
+    if (_texture && _ownsTexture)
     {
         _texture->release();
         _texture = nullptr;
@@ -127,6 +145,11 @@ void Image::buildDepthImage(metal::Device*, const Size2D&, PixelFormat)
 }
 
 void Image::resize(const Size2D&)
+{
+    throw std::runtime_error("Metal backend is not available on this platform");
+}
+
+void Image::initFromDrawableTexture(metal::Device*, TextureHandle, PixelFormat, const Size2D&)
 {
     throw std::runtime_error("Metal backend is not available on this platform");
 }

@@ -2,7 +2,7 @@
 
 **Goal:** wire `beginFrame()` / `present(cmd)` / `endFrame(frame)` / `cleanup()` into `Surface`,
 add the Vulkan per-frame synchronization, and upgrade `vk::Queue::submit()` to wait/signal the
-frame sync objects and run `vkQueuePresentKHR`. After this step the full loop from the design
+frame sync objects and run `queuePresent`. After this step the full loop from the design
 sketch works end-to-end.
 
 Adding the pure virtuals to `gpu::Surface` forces **all four** concrete surfaces (vk/metal ×
@@ -54,55 +54,93 @@ public:
 
 ## Vulkan window surface
 
+> **Extension functions:** all Vulkan calls that come from extensions (`VK_KHR_swapchain`,
+> `VK_KHR_synchronization2`, etc.) must use the function pointers loaded at runtime in
+> `bg2e::gpu::vk::extensions.hpp` — never the direct `vk*` symbols. The affected calls in this
+> step are: `acquireNextImage`, `queueSubmit2` and `queuePresent`. Core Vulkan 1.0 calls
+> (`vkCreateSemaphore`, `vkCreateFence`, `vkWaitForFences`, `vkResetFences`, `vkDestroySemaphore`,
+> `vkDestroyFence`) remain as direct calls.
+
 ### Per-frame sync objects
 
-Introduce `MAX_FRAMES_IN_FLIGHT = 2`. In `createRenderTarget`, after building swapchain images and
-depth, create the sync objects (one set per in-flight frame) and a pool of `vk::SurfaceFrame`s.
-Destroy them in `releaseRenderTarget`.
+**The number of frames in flight is *not* a fixed constant.** It is derived from the actual number
+of swapchain images, which is platform/driver dependent (e.g. an Apple M-series GPU creates 3
+images). Hard-coding e.g. `2` while the swapchain has `3` images makes the CPU recycle per-frame
+sync objects while the GPU is still using them — the validation layers flag this as a
+synchronization hazard. So the storage is `std::vector`, sized at `createRenderTarget` time.
+
+There are two distinct index spaces:
+
+- **Per frame-in-flight** (indexed by `_currentFrame`, the CPU pacing counter):
+  `imageAvailable` semaphores, `inFlight` fences and the `vk::SurfaceFrame` pool. Count =
+  `_framesInFlight = swapchain image count`.
+- **Per swapchain image** (indexed by the acquired `imageIndex`): the `renderFinished` semaphores
+  (because `vkQueuePresentKHR` waits on them — a semaphore cannot be reused until its present has
+  completed) and an `imagesInFlight` fence-alias table (to avoid reusing an image still being
+  rendered by another in-flight frame).
 
 `vk/WindowSurface.hpp` new members:
 
 ```cpp
-static constexpr uint32_t MAX_FRAMES_IN_FLIGHT = 2;
+uint32_t _framesInFlight = 0;
+uint32_t _currentFrame   = 0;
 
-uint32_t                              _currentFrame = 0;
-std::array<VkSemaphore, MAX_FRAMES_IN_FLIGHT> _imageAvailable{};
-std::array<VkSemaphore, MAX_FRAMES_IN_FLIGHT> _renderFinished{};
-std::array<VkFence,     MAX_FRAMES_IN_FLIGHT> _inFlight{};
-std::array<std::shared_ptr<vk::SurfaceFrame>, MAX_FRAMES_IN_FLIGHT> _frames{};
+// per frame-in-flight
+std::vector<VkSemaphore> _imageAvailable;
+std::vector<VkFence>     _inFlight;
+std::vector<std::shared_ptr<vk::SurfaceFrame>> _frames;
+
+// per swapchain image
+std::vector<VkSemaphore> _renderFinished;
+std::vector<VkFence>     _imagesInFlight; // non-owning aliases of _inFlight
 ```
 
-Creation (in `createRenderTarget`, using `Info::semaphoreCreateInfo()` /
-`Info::fenceCreateInfo(VK_FENCE_CREATE_SIGNALED_BIT)` — both exist):
+Creation (in `createRenderTarget`, after `_colorImages` is filled, using `Info::semaphoreCreateInfo()`
+/ `Info::fenceCreateInfo(VK_FENCE_CREATE_SIGNALED_BIT)` — both exist):
 
 ```cpp
-for (uint32_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i) {
+_framesInFlight = static_cast<uint32_t>(_colorImages.size());
+_currentFrame   = 0;
+
+_imageAvailable.resize(_framesInFlight, VK_NULL_HANDLE);
+_inFlight.resize(_framesInFlight, VK_NULL_HANDLE);
+_frames.resize(_framesInFlight);
+for (uint32_t i = 0; i < _framesInFlight; ++i) {
     vkCreateSemaphore(dev, &semInfo, nullptr, &_imageAvailable[i]);
-    vkCreateSemaphore(dev, &semInfo, nullptr, &_renderFinished[i]);
     vkCreateFence(dev, &fenceInfo /*signaled*/, nullptr, &_inFlight[i]);
     _frames[i] = std::make_shared<vk::SurfaceFrame>();
 }
+
+_renderFinished.resize(_colorImages.size(), VK_NULL_HANDLE);
+for (auto& sem : _renderFinished)
+    vkCreateSemaphore(dev, &semInfo, nullptr, &sem);
+
+_imagesInFlight.assign(_colorImages.size(), VK_NULL_HANDLE);
 ```
 
-Destruction (in `releaseRenderTarget`, before destroying the swapchain): `vkDestroySemaphore` ×2,
-`vkDestroyFence`, reset the `_frames` entries. Guard with `_device != nullptr`.
+Destruction (in `releaseRenderTarget`, before destroying the swapchain): destroy every
+`_inFlight` fence and every `_imageAvailable` / `_renderFinished` semaphore (range-for over the
+vectors), then `clear()` all vectors (including `_imagesInFlight`, which owns nothing) and reset
+`_framesInFlight = _currentFrame = 0`. Guard with `_vkDevice != VK_NULL_HANDLE`.
 
 ### `beginFrame()`
 
 ```cpp
 std::shared_ptr<SurfaceFrame> WindowSurface::beginFrame()
 {
-    auto dev = vkDevice->handle();
-    vkWaitForFences(dev, 1, &_inFlight[_currentFrame], VK_TRUE, UINT64_MAX);
+    vkWaitForFences(_vkDevice, 1, &_inFlight[_currentFrame], VK_TRUE, UINT64_MAX);
 
     uint32_t imageIndex = 0;
-    VkResult r = vkAcquireNextImageKHR(dev, _swapchain, UINT64_MAX,
+    VkResult r = acquireNextImage(_vkDevice, _swapchain, UINT64_MAX,
         _imageAvailable[_currentFrame], VK_NULL_HANDLE, &imageIndex);
-    // On VK_ERROR_OUT_OF_DATE_KHR / VK_SUBOPTIMAL_KHR: resize() and re-acquire,
-    // or mark dirty and return an invalid frame (handled by endFrame). Minimal path:
-    // recreate the render target and acquire again.
+    if (r == VK_ERROR_OUT_OF_DATE_KHR) { resize(_size); return beginFrame(); }
 
-    vkResetFences(dev, 1, &_inFlight[_currentFrame]);
+    // Do not reuse an image that a previous frame is still rendering into.
+    if (_imagesInFlight[imageIndex] != VK_NULL_HANDLE)
+        vkWaitForFences(_vkDevice, 1, &_imagesInFlight[imageIndex], VK_TRUE, UINT64_MAX);
+    _imagesInFlight[imageIndex] = _inFlight[_currentFrame];
+
+    vkResetFences(_vkDevice, 1, &_inFlight[_currentFrame]);
 
     auto frame = _frames[_currentFrame];
     frame->setColorImage(_colorImages[imageIndex].get());
@@ -110,7 +148,7 @@ std::shared_ptr<SurfaceFrame> WindowSurface::beginFrame()
     frame->setImageIndex(imageIndex);
     frame->setSwapchain(_swapchain);
     frame->setImageAvailable(_imageAvailable[_currentFrame]);
-    frame->setRenderFinished(_renderFinished[_currentFrame]);
+    frame->setRenderFinished(_renderFinished[imageIndex]);   // per image, not per frame
     frame->setInFlightFence(_inFlight[_currentFrame]);
     return frame;
 }
@@ -118,7 +156,7 @@ std::shared_ptr<SurfaceFrame> WindowSurface::beginFrame()
 
 ### `present(cmd)`
 
-Vulkan defers the actual `vkQueuePresentKHR` to `submit()`. `present` just attaches the current
+Vulkan defers the actual `queuePresent` to `submit()`. `present` just attaches the current
 frame to the command buffer so `submit` can find the sync objects and swapchain:
 
 ```cpp
@@ -134,7 +172,7 @@ void WindowSurface::present(gpu::CommandBuffer* cmd)
 ```cpp
 void WindowSurface::endFrame(SurfaceFrame*)
 {
-    _currentFrame = (_currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
+    _currentFrame = (_currentFrame + 1) % _framesInFlight;
 }
 ```
 
@@ -156,16 +194,16 @@ void Queue::submit(gpu::CommandBuffer* cmd) const
         VkSemaphoreSubmitInfo signal = Info::semaphoreSubmitInfo(
             VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT, frame->renderFinished());
         VkSubmitInfo2 submit = Info::submitInfo(&cmdInfo, &signal, &wait);
-        vkQueueSubmit2(_queue, 1, &submit, frame->inFlightFence());
+        queueSubmit2(_queue, 1, &submit, frame->inFlightFence());
 
         VkSemaphore    waitSem = frame->renderFinished();
         VkSwapchainKHR sc      = frame->swapchain();
         uint32_t       idx     = frame->imageIndex();
         VkPresentInfoKHR present = Info::presentInfo(sc, waitSem, idx);
-        vkQueuePresentKHR(_queue, &present);   // present queue == graphics queue here
+        queuePresent(_queue, &present);   // present queue == graphics queue here
     } else {
         VkSubmitInfo2 submit = Info::submitInfo(&cmdInfo, nullptr, nullptr);
-        vkQueueSubmit2(_queue, 1, &submit, VK_NULL_HANDLE);
+        queueSubmit2(_queue, 1, &submit, VK_NULL_HANDLE);
     }
 }
 ```

@@ -21,6 +21,7 @@
 #include <bg2e/gpu/OffscreenSurface.hpp>
 #include <bg2e/gpu/Common.hpp>
 #include <bg2e/gpu/vk/Image.hpp>
+#include <bg2e/gpu/vk/SurfaceFrame.hpp>
 
 #include <memory>
 
@@ -47,12 +48,17 @@ public:
     gpu::Image* colorImage(uint32_t index) const override;
     gpu::Image* depthImage() const override;
 
+    std::shared_ptr<gpu::SurfaceFrame> beginFrame() override;
+    void present(gpu::CommandBuffer* cmd) override;
+    void endFrame(gpu::SurfaceFrame* frame) override;
+
 protected:
     void createRenderTarget(gpu::Device* device, gpu::PhysicalDevice* physicalDevice) override;
 
 private:
     std::unique_ptr<vk::Image> _colorImage;
     std::unique_ptr<vk::Image> _depthImage;
+    std::shared_ptr<vk::SurfaceFrame> _frame;
 };
 
 }

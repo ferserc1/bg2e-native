@@ -17,6 +17,10 @@
  */
 
 #include <bg2e/gpu/metal/Queue.hpp>
+#include <bg2e/gpu/metal/CommandBuffer.hpp>
+#include <bg2e/gpu/metal/Device.hpp>
+
+#include <stdexcept>
 
 namespace bg2e {
 namespace gpu {
@@ -39,9 +43,10 @@ Queue::~Queue()
 }
 
 Queue::Queue(Queue&& other) noexcept
-    : _commandQueue(other._commandQueue)
+    : _commandQueue(other._commandQueue), _device(other._device)
 {
     other._commandQueue = nullptr;
+    other._device = nullptr;
 }
 
 Queue& Queue::operator=(Queue&& other) noexcept
@@ -53,7 +58,9 @@ Queue& Queue::operator=(Queue&& other) noexcept
             _commandQueue->release();
         }
         _commandQueue = other._commandQueue;
+        _device = other._device;
         other._commandQueue = nullptr;
+        other._device = nullptr;
     }
     return *this;
 }
@@ -68,6 +75,33 @@ bool Queue::isValid() const
     return _commandQueue != nullptr;
 }
 
+std::shared_ptr<gpu::CommandBuffer> Queue::createCommandBuffer() const
+{
+    if (!_commandQueue)
+    {
+        throw std::runtime_error("metal::Queue::createCommandBuffer: queue not initialized");
+    }
+
+    MTL::CommandBuffer* mtlCmd = _commandQueue->commandBuffer();
+    if (!mtlCmd)
+    {
+        throw std::runtime_error("metal::Queue::createCommandBuffer: failed to create command buffer");
+    }
+
+    return std::make_shared<metal::CommandBuffer>(_device, mtlCmd);
+}
+
+void Queue::submit(gpu::CommandBuffer* cmd) const
+{
+    auto* mtlCmd = dynamic_cast<metal::CommandBuffer*>(cmd);
+    if (!mtlCmd)
+    {
+        throw std::runtime_error("metal::Queue::submit: not a metal::CommandBuffer");
+    }
+
+    mtlCmd->handle()->commit();
+}
+
 #else
 
 Queue::Queue(CommandQueueHandle) {}
@@ -76,6 +110,16 @@ Queue::Queue(Queue&&) noexcept {}
 Queue& Queue::operator=(Queue&&) noexcept { return *this; }
 uint32_t Queue::familyIndex() const { return 0; }
 bool Queue::isValid() const { return false; }
+
+std::shared_ptr<gpu::CommandBuffer> Queue::createCommandBuffer() const
+{
+    throw std::runtime_error("Metal backend is not available on this platform");
+}
+
+void Queue::submit(gpu::CommandBuffer*) const
+{
+    throw std::runtime_error("Metal backend is not available on this platform");
+}
 
 #endif
 

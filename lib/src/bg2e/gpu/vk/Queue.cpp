@@ -17,6 +17,13 @@
  */
 
 #include <bg2e/gpu/vk/Queue.hpp>
+#include <bg2e/gpu/vk/CommandBuffer.hpp>
+#include <bg2e/gpu/vk/Device.hpp>
+#include <bg2e/gpu/vk/SurfaceFrame.hpp>
+#include <bg2e/gpu/vk/Info.hpp>
+#include <bg2e/gpu/vk/extensions.hpp>
+
+#include <stdexcept>
 
 namespace bg2e {
 namespace gpu {
@@ -40,6 +47,76 @@ bool Queue::isValid() const
 VkQueue Queue::handle() const
 {
     return _queue;
+}
+
+void Queue::initCommandPool(VkDevice device, vk::Device* gpuDevice)
+{
+    _device = device;
+    _gpuDevice = gpuDevice;
+
+    auto poolInfo = Info::commandPoolCreateInfo(
+        _familyIndex,
+        VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT
+    );
+    VK_ASSERT(vkCreateCommandPool(_device, &poolInfo, nullptr, &_commandPool));
+}
+
+void Queue::destroyCommandPool()
+{
+    if (_commandPool != VK_NULL_HANDLE)
+    {
+        vkDestroyCommandPool(_device, _commandPool, nullptr);
+        _commandPool = VK_NULL_HANDLE;
+    }
+    _device = VK_NULL_HANDLE;
+    _gpuDevice = nullptr;
+}
+
+std::shared_ptr<gpu::CommandBuffer> Queue::createCommandBuffer() const
+{
+    if (_commandPool == VK_NULL_HANDLE)
+    {
+        throw std::runtime_error("vk::Queue::createCommandBuffer: command pool not initialized");
+    }
+
+    auto allocInfo = Info::commandBufferAllocateInfo(_commandPool, 1);
+    VkCommandBuffer cmd = VK_NULL_HANDLE;
+    VK_ASSERT(vkAllocateCommandBuffers(_device, &allocInfo, &cmd));
+
+    return std::make_shared<vk::CommandBuffer>(_gpuDevice, cmd, _commandPool);
+}
+
+void Queue::submit(gpu::CommandBuffer* cmd) const
+{
+    auto* vkCmd = dynamic_cast<vk::CommandBuffer*>(cmd);
+    if (!vkCmd)
+    {
+        throw std::runtime_error("vk::Queue::submit: not a vk::CommandBuffer");
+    }
+
+    auto* frame = vkCmd->presentFrame();
+    auto cmdInfo = Info::commandBufferSubmitInfo(vkCmd->handle());
+
+    if (frame)
+    {
+        VkSemaphoreSubmitInfo wait = Info::semaphoreSubmitInfo(
+            VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT, frame->imageAvailable());
+        VkSemaphoreSubmitInfo signal = Info::semaphoreSubmitInfo(
+            VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT, frame->renderFinished());
+        auto submit = Info::submitInfo(&cmdInfo, &signal, &wait);
+        VK_ASSERT(queueSubmit2(_queue, 1, &submit, frame->inFlightFence()));
+
+        VkSemaphore    waitSem = frame->renderFinished();
+        VkSwapchainKHR sc      = frame->swapchain();
+        uint32_t       idx     = frame->imageIndex();
+        VkPresentInfoKHR present = Info::presentInfo(sc, waitSem, idx);
+        queuePresent(_queue, &present);
+    }
+    else
+    {
+        auto submit = Info::submitInfo(&cmdInfo, nullptr, nullptr);
+        VK_ASSERT(queueSubmit2(_queue, 1, &submit, VK_NULL_HANDLE));
+    }
 }
 
 }

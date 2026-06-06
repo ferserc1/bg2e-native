@@ -18,7 +18,7 @@
 
 #pragma once
 
-#include <bg2e/gpu/Queue.hpp>
+#include <bg2e/gpu/SurfaceFrame.hpp>
 #include <bg2e/gpu/metal/common.hpp>
 
 #include <memory>
@@ -27,32 +27,30 @@ namespace bg2e {
 namespace gpu {
 namespace metal {
 
-class Device;
+class Image;
 
-class Queue : public gpu::Queue {
+class SurfaceFrame : public gpu::SurfaceFrame {
 public:
-    Queue() = default;
-    explicit Queue(CommandQueueHandle commandQueue);
-    ~Queue() override;
+    gpu::Image* colorImage() const override;
+    gpu::Image* depthImage() const override { return _depthImage; }
+    bool        isValid()    const override;
 
-    Queue(const Queue&) = delete;
-    Queue& operator=(const Queue&) = delete;
-    Queue(Queue&&) noexcept;
-    Queue& operator=(Queue&&) noexcept;
+#if BG2E_IS_MAC
+    void setDrawable(CA::MetalDrawable* d)            { _drawable = d; }
+    CA::MetalDrawable* drawable() const               { return _drawable; }
+#endif
 
-    uint32_t familyIndex() const override;
-    bool isValid() const override;
-
-    CommandQueueHandle handle() const { return _commandQueue; }
-
-    void setDevice(metal::Device* device) { _device = device; }
-
-    std::shared_ptr<gpu::CommandBuffer> createCommandBuffer() const override;
-    void submit(gpu::CommandBuffer* cmd) const override;
+    void setColorImage(std::unique_ptr<metal::Image> img);
+    void setColorImageRef(metal::Image* img)     { _colorImageRaw = img; }
+    void setDepthImage(gpu::Image* img) { _depthImage = img; }
 
 private:
-    CommandQueueHandle _commandQueue = nullptr;
-    metal::Device*     _device = nullptr;
+    std::unique_ptr<metal::Image> _colorImage;
+    metal::Image*                 _colorImageRaw = nullptr;
+    gpu::Image*                   _depthImage = nullptr;
+#if BG2E_IS_MAC
+    CA::MetalDrawable*            _drawable   = nullptr;
+#endif
 };
 
 }

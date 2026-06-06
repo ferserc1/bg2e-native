@@ -21,9 +21,13 @@
 #include <bg2e/gpu/Queue.hpp>
 #include <bg2e/gpu/vk/common.hpp>
 
+#include <memory>
+
 namespace bg2e {
 namespace gpu {
 namespace vk {
+
+class Device;
 
 class Queue : public gpu::Queue {
 public:
@@ -35,9 +39,18 @@ public:
 
     VkQueue handle() const;
 
+    void initCommandPool(VkDevice device, vk::Device* gpuDevice);
+    void destroyCommandPool();
+
+    std::shared_ptr<gpu::CommandBuffer> createCommandBuffer() const override;
+    void submit(gpu::CommandBuffer* cmd) const override;
+
 private:
-    VkQueue _queue{VK_NULL_HANDLE};
-    uint32_t _familyIndex{UINT32_MAX};
+    VkQueue       _queue{VK_NULL_HANDLE};
+    uint32_t      _familyIndex{UINT32_MAX};
+    VkDevice      _device{VK_NULL_HANDLE};
+    vk::Device*   _gpuDevice{nullptr};
+    VkCommandPool _commandPool{VK_NULL_HANDLE};
 };
 
 }

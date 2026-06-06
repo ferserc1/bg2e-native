@@ -29,7 +29,7 @@ public:
 
     // cleanup() must call releaseRenderTarget() before destroying surface resources,
     // because the render target depends on the device (swapchain/VMA images).
-    virtual void cleanup() = 0;
+    virtual void cleanup() override = 0;
 };
 
 }

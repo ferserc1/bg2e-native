@@ -31,6 +31,7 @@ class Image;
 namespace metal {
 
 class Image;
+class SurfaceFrame;
 
 class WindowSurface : public gpu::WindowSurface {
 public:
@@ -49,6 +50,10 @@ public:
     gpu::Image* colorImage(uint32_t index) const override;
     gpu::Image* depthImage() const override;
 
+    std::shared_ptr<gpu::SurfaceFrame> beginFrame() override;
+    void present(gpu::CommandBuffer* cmd) override;
+    void endFrame(gpu::SurfaceFrame* frame) override;
+
 protected:
     void create(gpu::Instance* instance) override;
     void createRenderTarget(gpu::Device* device, gpu::PhysicalDevice* physicalDevice) override;
@@ -58,6 +63,8 @@ private:
     MetalLayerHandle _layer = nullptr;
     std::unique_ptr<metal::Image> _depthImage;
     uint32_t _imageCount = 0;
+    metal::SurfaceFrame* _currentFrame = nullptr;
+    metal::Device* _metalDevice = nullptr;
 };
 
 }

@@ -30,7 +30,7 @@ public:
 
     bool isOffscreen() const override { return true; }
 
-    virtual void cleanup() { releaseRenderTarget(); }
+    virtual void cleanup() override { releaseRenderTarget(); }
 };
 
 }

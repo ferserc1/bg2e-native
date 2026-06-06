@@ -45,6 +45,10 @@ void OffscreenSurface::createRenderTarget(gpu::Device* device, gpu::PhysicalDevi
         _depthImage = std::make_unique<metal::Image>();
         _depthImage->buildDepthImage(metalDevice, _size, _depthFormat);
     }
+
+    _frame = std::make_shared<metal::SurfaceFrame>();
+    _frame->setColorImageRef(_colorImage.get());
+    _frame->setDepthImage(_depthImage.get());
 }
 
 void OffscreenSurface::resize(const Size2D& size)
@@ -56,6 +60,7 @@ void OffscreenSurface::resize(const Size2D& size)
 
 void OffscreenSurface::releaseRenderTarget()
 {
+    _frame.reset();
     _depthImage.reset();
     _colorImage.reset();
 }
@@ -78,6 +83,23 @@ gpu::Image* OffscreenSurface::colorImage(uint32_t index) const
 }
 gpu::Image* OffscreenSurface::depthImage() const { return _depthImage.get(); }
 
+std::shared_ptr<gpu::SurfaceFrame> OffscreenSurface::beginFrame()
+{
+    // Update the frame's color image reference (it may have been resized)
+    _frame->setColorImageRef(_colorImage.get());
+    return _frame;
+}
+
+void OffscreenSurface::present(gpu::CommandBuffer*)
+{
+    // No-op for offscreen
+}
+
+void OffscreenSurface::endFrame(gpu::SurfaceFrame*)
+{
+    // No-op for offscreen
+}
+
 #else
 
 OffscreenSurface::~OffscreenSurface() = default;
@@ -99,6 +121,10 @@ bool OffscreenSurface::isValid() const { return false; }
 uint32_t OffscreenSurface::imageCount() const { return 0; }
 gpu::Image* OffscreenSurface::colorImage(uint32_t) const { return nullptr; }
 gpu::Image* OffscreenSurface::depthImage() const { return nullptr; }
+
+std::shared_ptr<gpu::SurfaceFrame> OffscreenSurface::beginFrame() { return nullptr; }
+void OffscreenSurface::present(gpu::CommandBuffer*) {}
+void OffscreenSurface::endFrame(gpu::SurfaceFrame*) {}
 
 #endif
 

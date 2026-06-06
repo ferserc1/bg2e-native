@@ -25,7 +25,9 @@
 #include <bg2e/gpu/PhysicalDevice.hpp>
 #include <bg2e/gpu/Surface.hpp>
 #include <bg2e/gpu/Image.hpp>
+#include <bg2e/gpu/SurfaceFrame.hpp>
 #include <bg2e/gpu/WindowSurface.hpp>
 #include <bg2e/gpu/OffscreenSurface.hpp>
 #include <bg2e/gpu/Queue.hpp>
+#include <bg2e/gpu/CommandBuffer.hpp>
 #include <bg2e/gpu/Device.hpp>

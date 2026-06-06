@@ -16,26 +16,49 @@
  *    along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#pragma once
-
-#include <bg2e/common.hpp>
-#include <cstdint>
-#include <memory>
+#include <bg2e/gpu/metal/SurfaceFrame.hpp>
+#include <bg2e/gpu/metal/Image.hpp>
 
 namespace bg2e {
 namespace gpu {
+namespace metal {
 
-class CommandBuffer;
+#if BG2E_IS_MAC
 
-class BG2E_API Queue {
-public:
-    virtual ~Queue() = default;
-    virtual uint32_t familyIndex() const = 0;
-    virtual bool isValid() const = 0;
+gpu::Image* SurfaceFrame::colorImage() const
+{
+    if (_colorImage) return _colorImage.get();
+    return _colorImageRaw;
+}
 
-    virtual std::shared_ptr<gpu::CommandBuffer> createCommandBuffer() const = 0;
-    virtual void submit(gpu::CommandBuffer* cmd) const = 0;
-};
+bool SurfaceFrame::isValid() const
+{
+    return _colorImage != nullptr || _colorImageRaw != nullptr;
+}
 
+void SurfaceFrame::setColorImage(std::unique_ptr<metal::Image> img)
+{
+    _colorImage = std::move(img);
+}
+
+#else
+
+gpu::Image* SurfaceFrame::colorImage() const
+{
+    return nullptr;
+}
+
+bool SurfaceFrame::isValid() const
+{
+    return false;
+}
+
+void SurfaceFrame::setColorImage(std::unique_ptr<metal::Image>)
+{
+}
+
+#endif
+
+}
 }
 }

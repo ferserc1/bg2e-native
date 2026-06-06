@@ -20,6 +20,8 @@
 #include <bg2e/gpu/metal/common.hpp>
 #include <bg2e/gpu/metal/Device.hpp>
 #include <bg2e/gpu/metal/Image.hpp>
+#include <bg2e/gpu/metal/SurfaceFrame.hpp>
+#include <bg2e/gpu/metal/CommandBuffer.hpp>
 #include <bg2e/gpu/Instance.hpp>
 #include <bg2e/gpu/Image.hpp>
 
@@ -79,9 +81,9 @@ bool WindowSurface::isValid() const
 void WindowSurface::createRenderTarget(gpu::Device* device, gpu::PhysicalDevice* /*physicalDevice*/)
 {
     _device = device;
-    auto* metalDevice = dynamic_cast<metal::Device*>(device);
+    _metalDevice = dynamic_cast<metal::Device*>(device);
 
-    _layer->setDevice(metalDevice->handle());
+    _layer->setDevice(_metalDevice->handle());
     _layer->setPixelFormat(toMetalPixelFormat(_colorFormat));
     _layer->setDrawableSize(CGSize{ double(_size.width), double(_size.height) });
     _layer->setMaximumDrawableCount(3);
@@ -90,7 +92,7 @@ void WindowSurface::createRenderTarget(gpu::Device* device, gpu::PhysicalDevice*
     if (_depthFormat != PixelFormat::Undefined)
     {
         _depthImage = std::make_unique<metal::Image>();
-        _depthImage->buildDepthImage(metalDevice, _size, _depthFormat);
+        _depthImage->buildDepthImage(_metalDevice, _size, _depthFormat);
     }
 }
 
@@ -112,6 +114,35 @@ void WindowSurface::releaseRenderTarget()
 uint32_t WindowSurface::imageCount() const { return _imageCount; }
 gpu::Image* WindowSurface::colorImage(uint32_t /*index*/) const { return nullptr; }
 gpu::Image* WindowSurface::depthImage() const { return _depthImage.get(); }
+
+std::shared_ptr<gpu::SurfaceFrame> WindowSurface::beginFrame()
+{
+    auto* drawable = _layer->nextDrawable();
+    auto frame = std::make_shared<metal::SurfaceFrame>();
+    frame->setDrawable(drawable);
+
+    auto colorImg = std::make_unique<metal::Image>();
+    colorImg->initFromDrawableTexture(_metalDevice, drawable->texture(),
+                                      _colorFormat, _size);
+    frame->setColorImage(std::move(colorImg));
+    frame->setDepthImage(_depthImage.get());
+    _currentFrame = frame.get();
+    return frame;
+}
+
+void WindowSurface::present(gpu::CommandBuffer* cmd)
+{
+    if (_currentFrame && _currentFrame->drawable())
+    {
+        auto* mtlCmd = dynamic_cast<metal::CommandBuffer*>(cmd);
+        mtlCmd->handle()->presentDrawable(_currentFrame->drawable());
+    }
+}
+
+void WindowSurface::endFrame(gpu::SurfaceFrame*)
+{
+    _currentFrame = nullptr;
+}
 
 #else
 
@@ -140,6 +171,10 @@ void WindowSurface::releaseRenderTarget() {}
 uint32_t WindowSurface::imageCount() const { return 0; }
 gpu::Image* WindowSurface::colorImage(uint32_t) const { return nullptr; }
 gpu::Image* WindowSurface::depthImage() const { return nullptr; }
+
+std::shared_ptr<gpu::SurfaceFrame> WindowSurface::beginFrame() { return nullptr; }
+void WindowSurface::present(gpu::CommandBuffer*) {}
+void WindowSurface::endFrame(gpu::SurfaceFrame*) {}
 
 #endif
 

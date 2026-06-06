@@ -24,6 +24,9 @@
 namespace bg2e {
 namespace gpu {
 
+namespace vk    { class CommandBuffer; }
+namespace metal { class CommandBuffer; }
+
 class BG2E_API Image {
 public:
     virtual ~Image() = default;
@@ -36,9 +39,17 @@ public:
     uint32_t      width()       const { return _size.width;  }
     uint32_t      height()      const { return _size.height; }
 
+    ImageLayout   currentLayout() const { return _currentLayout; }
+
 protected:
-    PixelFormat _pixelFormat = PixelFormat::Undefined;
-    Size2D      _size;
+    void setCurrentLayout(ImageLayout layout) { _currentLayout = layout; }
+
+    PixelFormat   _pixelFormat   = PixelFormat::Undefined;
+    Size2D        _size;
+    ImageLayout   _currentLayout = ImageLayout::Undefined;
+
+    friend class vk::CommandBuffer;
+    friend class metal::CommandBuffer;
 };
 
 }

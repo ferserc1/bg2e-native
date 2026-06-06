@@ -37,11 +37,13 @@ public:
 
     void buildTargetImage(vk::Device* device, const Size2D& size, PixelFormat format);
     void buildDepthImage(vk::Device* device, const Size2D& size, PixelFormat format);
-    void initFromSwapchainImage(vk::Device* device, VkImage image, PixelFormat format, const Size2D& size);
     void resize(const Size2D& size);
 
     void cleanup() override;
     bool isValid() const override { return _image != VK_NULL_HANDLE; }
+
+    // Backend dependent functions
+    void initFromSwapchainImage(vk::Device* device, VkImage image, PixelFormat format, const Size2D& size);
 
     VkImage          handle()    const { return _image; }
     VkImageView      imageView() const { return _imageView; }

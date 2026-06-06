@@ -40,6 +40,10 @@ void OffscreenSurface::createRenderTarget(gpu::Device* device, gpu::PhysicalDevi
         _depthImage = std::make_unique<vk::Image>();
         _depthImage->buildDepthImage(vkDevice, _size, _depthFormat);
     }
+
+    _frame = std::make_shared<vk::SurfaceFrame>();
+    _frame->setColorImage(_colorImage.get());
+    _frame->setDepthImage(_depthImage.get());
 }
 
 void OffscreenSurface::resize(const Size2D& size)
@@ -57,6 +61,7 @@ void OffscreenSurface::resize(const Size2D& size)
 
 void OffscreenSurface::releaseRenderTarget()
 {
+    _frame.reset();
     _depthImage.reset();
     _colorImage.reset();
 }
@@ -85,6 +90,21 @@ gpu::Image* OffscreenSurface::colorImage(uint32_t index) const
 gpu::Image* OffscreenSurface::depthImage() const
 {
     return _depthImage.get();
+}
+
+std::shared_ptr<gpu::SurfaceFrame> OffscreenSurface::beginFrame()
+{
+    return _frame;
+}
+
+void OffscreenSurface::present(gpu::CommandBuffer*)
+{
+    // No-op for offscreen
+}
+
+void OffscreenSurface::endFrame(gpu::SurfaceFrame*)
+{
+    // No-op for offscreen
 }
 
 }
