@@ -24,7 +24,7 @@
 
 namespace bg2e::gpu::metal {
 
-gpu::Instance* Backend::instance() const
+gpu::Instance* Backend::sharedInstance() const
 {
     if (_instance == nullptr)
     {

@@ -41,7 +41,7 @@ class BG2E_API Backend {
 public:
     virtual ~Backend() = default;
 
-    [[nodiscard]] virtual gpu::Instance* instance() const = 0;
+    [[nodiscard]] virtual gpu::Instance* sharedInstance() const = 0;
     [[nodiscard]] virtual WindowType windowType() const = 0;
 
     [[nodiscard]] virtual std::unique_ptr<gpu::PhysicalDevice>  createPhysicalDevice()                                     const = 0;

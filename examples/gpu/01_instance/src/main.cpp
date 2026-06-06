@@ -29,7 +29,7 @@ int main(int argc, char ** argv) {
     }
 
     gpu::Factory::init(backendType);
-    auto instance = gpu::Factory::backend()->instance();
+    auto instance = gpu::Factory::backend()->sharedInstance();
 
     std::cout << "Hello instance" << std::endl;
 }

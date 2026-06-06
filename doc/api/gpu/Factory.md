@@ -54,7 +54,7 @@ gpu::Factory::init(gpu::BackendType::Vulkan);
 auto* backend = gpu::Factory::backend();
 
 // Create GPU objects through the backend
-auto* instance = backend->instance();
+auto* instance = backend->sharedInstance();
 auto surface = backend->createWindowSurface();
 auto physicalDevice = backend->createPhysicalDevice();
 auto device = backend->createDevice();

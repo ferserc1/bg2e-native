@@ -24,7 +24,7 @@
 
 namespace bg2e::gpu::vk {
 
-gpu::Instance* Backend::instance() const
+gpu::Instance* Backend::sharedInstance() const
 {
     if (_instance == nullptr)
     {

@@ -52,7 +52,7 @@ All objects are created through the `Backend`:
 ```
 Factory::init(BackendType)
     -> Backend* backend = Factory::backend()
-        -> backend->instance()                  // singleton Instance
+        -> backend->sharedInstance()                  // singleton Instance
         -> backend->createWindowSurface()       // or createOffscreenSurface()
         -> backend->createPhysicalDevice()
         -> backend->createDevice()
@@ -91,7 +91,7 @@ SDL_Window* window = SDL_CreateWindow("My App",
     800, 600, flags);
 
 // 3. Create GPU instance and attach to window
-auto* instance = backend->instance();
+auto* instance = backend->sharedInstance();
 instance->enableDebugMode(true);
 instance->create(window);
 
@@ -121,7 +121,7 @@ gpu::Factory::init(gpu::BackendType::Vulkan);
 auto* backend = gpu::Factory::backend();
 
 // 2. Create GPU instance (no window)
-auto* instance = backend->instance();
+auto* instance = backend->sharedInstance();
 instance->enableDebugMode(true);
 instance->create();  // headless overload
 
@@ -198,7 +198,7 @@ int main(int argc, char** argv)
         800, 600, windowFlags);
 
     // Create GPU instance and attach to window
-    auto* instance = backend->instance();
+    auto* instance = backend->sharedInstance();
     instance->enableDebugMode(true);
     instance->create(window);
 
@@ -298,7 +298,7 @@ int main(int /*argc*/, char** /*argv*/)
     auto* backend = gpu::Factory::backend();
 
     // Create GPU instance (no window)
-    auto* instance = backend->instance();
+    auto* instance = backend->sharedInstance();
     instance->enableDebugMode(true);
     instance->create();
 

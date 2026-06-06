@@ -74,7 +74,7 @@ int main(int argc, char** argv)
     }
 
     // 4. Create GPU instance
-    auto* instance = backend->instance();
+    auto* instance = backend->sharedInstance();
     instance->enableDebugMode(true);
     instance->create(window);
 

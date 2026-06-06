@@ -30,7 +30,7 @@ namespace vk {
 
 class Backend : public gpu::Backend {
 public:
-    gpu::Instance* instance() const override;
+    gpu::Instance* sharedInstance() const override;
     gpu::WindowType windowType() const override;
 
     std::unique_ptr<gpu::PhysicalDevice>  createPhysicalDevice()                                const override;

@@ -88,7 +88,7 @@ Uint32 flags = (backend->windowType() == gpu::WindowType::Vulkan)
     ? SDL_WINDOW_VULKAN : SDL_WINDOW_METAL;
 
 // Create all subsystem objects
-auto* instance = backend->instance();
+auto* instance = backend->sharedInstance();
 auto surface = backend->createWindowSurface();
 auto physicalDevice = backend->createPhysicalDevice();
 auto device = backend->createDevice();

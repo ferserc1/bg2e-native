@@ -50,7 +50,7 @@ int main(int /*argc*/, char** /*argv*/)
     auto* backend = gpu::Factory::backend();
 
     // 3. Create GPU instance (offscreen — no window)
-    auto* instance = backend->instance();
+    auto* instance = backend->sharedInstance();
     instance->enableDebugMode(true);
     instance->create();
 
