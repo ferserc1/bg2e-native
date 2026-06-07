@@ -67,6 +67,8 @@ private:
     Engine* _engine = nullptr;
     VkPipeline _pipeline = VK_NULL_HANDLE;
 
+    std::vector<std::string> _stageEntryPoints;
+    std::vector<VkPipelineShaderStageCreateInfo> _stageInfos;
     std::vector<VkPipelineShaderStageCreateInfo> _stages;
     std::vector<VkRayTracingShaderGroupCreateInfoKHR> _groups;
     std::vector<VkShaderModule> _shaderModules;

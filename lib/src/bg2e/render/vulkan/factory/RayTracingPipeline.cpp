@@ -56,6 +56,7 @@ uint32_t RayTracingPipeline::addShaderStage(
     const std::string& entryPoint
 )
 {
+    _stageEntryPoints.push_back(entryPoint);
     VkShaderModule shaderModule = factory::ShaderModule::loadFromSPV(
         fileName, _engine->device().handle()
     );
@@ -65,7 +66,6 @@ uint32_t RayTracingPipeline::addShaderStage(
     stageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
     stageInfo.stage = stage;
     stageInfo.module = shaderModule;
-    stageInfo.pName = entryPoint.c_str();
 
     _stages.push_back(stageInfo);
 
@@ -147,6 +147,13 @@ VkPipeline RayTracingPipeline::build(
     if (!_hasRaygenShader || !_hasClosestHitShader || !_hasMissShader)
     {
         throw std::runtime_error("RayTracingPipeline: Invalid shader configuration. The pipeline must contain exactly 1 raygen, 1 miss and 1 closest hit shader");
+    }
+
+    size_t i = 0;
+    for (auto & entryPoint : _stageEntryPoints)
+    {
+        _stages[i].pName = entryPoint.c_str();
+        ++i;
     }
 
     VkRayTracingPipelineCreateInfoKHR createInfo{};
@@ -331,6 +338,7 @@ void RayTracingPipeline::reset()
         }
     }
 
+    _stageEntryPoints.clear();
     _shaderModules.clear();
     _stages.clear();
     _groups.clear();
