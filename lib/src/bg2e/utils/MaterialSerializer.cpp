@@ -74,6 +74,10 @@ bool parseMaterial(
     {
         result.setIsTransparent(mat["isTransparent"]->boolValue(false));
     }
+    if (mat["refractionFactor"] && mat["refractionFactor"]->isNumber())
+    {
+        result.setRefractionFactor(mat["refractionFactor"]->numberValue(0.5f));
+    }
     if (mat["isSolid"])
     {
         result.setIsSolid(mat["isSolid"]->boolValue(false));
@@ -217,6 +221,7 @@ std::string MaterialSerializer::serializeMaterial(
         { "type", JSON("pbr") },
         { "class", JSON("PBRMaterial") },
         { "isTransparent", JSON(mat.isTransparent()) },
+        { "refractionFactor", JSON(mat.refractionFactor()) },
         { "isSolid", JSON(mat.isSolid() )},
         { "visible", JSON(mat.visible() )},
         { "unlit", JSON(mat.isUnlit() )},

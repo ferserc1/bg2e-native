@@ -54,7 +54,8 @@ struct PBRMaterialData
     bg2e::base::Color sheenColor;
 
     uint32_t flags;
-    uint32_t padding[3] = {};
+    float refractionFactor;
+    uint32_t padding[2] = {};
     
     void operator=(const base::MaterialAttributes& att)
     {
@@ -73,6 +74,7 @@ struct PBRMaterialData
         aoUVSet = att.aoUVSet();
         sheenIntensity = att.sheenIntensity();
         sheenColor = att.sheenColor();
+        refractionFactor = att.refractionFactor();
 
         flags = 0;
         flags |= att.isUnlit() ? 0x1 : 0x0;

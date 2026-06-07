@@ -172,7 +172,13 @@ void main() {
                                     brdfLUT, gbuf.ao * texture(g_AO, vTexcoord).r, gbuf.sheenIntensity, gbuf.sheenColor,
                                     rtReflection);
 
-    outColor = compositeFinalColor(ambient, Lo, gbuf.inputColor, gbuf.albedo.a,
+    // Refraction on translucent fragments (per-material factor from the G-buffer).
+    vec4 background = applyRefraction(
+        sceneData.viewMatrix, gbuf.normal, vTexcoord,
+        gbuf.refractionFactor, gbuf.albedo, g_InputImage
+    );
+
+    outColor = compositeFinalColor(ambient, Lo, background, gbuf.albedo.a,
                                    pushConstant.exposure, pushConstant.gamma,
                                    pushConstant.brightness, pushConstant.contrast);
 }

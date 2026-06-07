@@ -46,6 +46,10 @@ public:
     inline bool isUnlit() const { return _unlit; }
     inline void setIsUnlit(bool t) { _unlit = t; }
 
+    // Screen-space refraction strength, only applied to transparent materials.
+    inline float refractionFactor() const { return _refractionFactor; }
+    inline void setRefractionFactor(float f) { _refractionFactor = f; }
+
     inline const Color & albedo() const { return _albedo; }
     inline void setAlbedo(const Color & c) { _albedo = c; }
     inline void setAlbedo(const std::array<float, 3>& s) { _albedo = base::Color{ s.at(0), s.at(1), s.at(2), 1.0f }; }
@@ -163,6 +167,7 @@ protected:
     bool _isTransparent = false;
     bool _isSolid = true;
     bool _unlit = false;
+    float _refractionFactor = 0.017f;
     
     Color _albedo = Color::White();
     std::shared_ptr<Texture> _albedoTexture;

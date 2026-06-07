@@ -37,6 +37,7 @@ struct DeferredGBufferData {
     bool isEmpty;
     vec3 fresnelTint;
     bool unlit;
+    float refractionFactor;
 };
 
 vec3 reconstructWorldPosition(
@@ -106,7 +107,9 @@ DeferredGBufferData setupDeferredGBuffer(
 
     gbuf.F0 = mix(vec3(0.04), gbuf.albedo.rgb, gbuf.metallic);
 
-    gbuf.sheenColor = texture(g_SheenColor, vTexcoord).rgb;
+    vec4 sheenSample = texture(g_SheenColor, vTexcoord);
+    gbuf.sheenColor = sheenSample.rgb;
+    gbuf.refractionFactor = sheenSample.a;
 
     return gbuf;
 }
@@ -126,6 +129,26 @@ vec4 compositeFinalColor(
     outColor = mix(inputColor, outColor, albedoAlpha);
 
     return outColor;
+}
+
+// Refraction: on translucent fragments (albedo.a < 1), distort the background
+// image using the screen-space (view) normal to fake light refraction.
+// Returns the (possibly distorted) background color sampled from inputImage.
+vec4 applyRefraction(
+    mat4 viewMatrix,
+    vec3 normal,
+    vec2 texCoord,
+    float refractionFactor,
+    vec4 albedo,
+    sampler2D inputImage
+) {
+    if (albedo.a >= 1.0) {
+        return texture(inputImage, texCoord);
+    }
+
+    vec3 viewNormal = normalize(mat3(viewMatrix) * normal);
+    vec2 refractedUV = clamp(texCoord + viewNormal.xy * refractionFactor, 0.0, 1.0);
+    return texture(inputImage, refractedUV);
 }
 
 uint hash(uint x)

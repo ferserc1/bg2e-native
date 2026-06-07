@@ -159,6 +159,26 @@ bool MaterialEditor::draw()
             notifyOnChange();
         }
         
+        auto isTransparent = _material->materialAttributes().isTransparent();
+        if (BasicWidgets::checkBox("Is Transparent", &isTransparent))
+        {
+            for (auto & mat : _editMaterialList)
+            {
+                mat->materialAttributes().setIsTransparent(isTransparent);
+            }
+            notifyOnChange();
+        }
+
+        auto refractionFactor = _material->materialAttributes().refractionFactor();
+        if (Input::sliderFloat("Refraction##refractionFactor", &refractionFactor, 0.0f, 1.0f))
+        {
+            for (auto & mat : _editMaterialList)
+            {
+                mat->materialAttributes().setRefractionFactor(refractionFactor);
+            }
+            notifyOnChange();
+        }
+
         BasicWidgets::separator("Normal");
         auto normalScale = _material->materialAttributes().normalScale();
         auto normalUVSet = _material->materialAttributes().normalUVSet();
@@ -299,17 +319,6 @@ bool MaterialEditor::draw()
         }
         
         
-        BasicWidgets::separator("Transparency");
-        auto isTransparent = _material->materialAttributes().isTransparent();
-        if (BasicWidgets::checkBox("Is Transparent", &isTransparent))
-        {
-            for (auto & mat : _editMaterialList)
-            {
-                mat->materialAttributes().setIsTransparent(isTransparent);
-            }
-            notifyOnChange();
-        }
-
         BasicWidgets::separator("Ambient Occlussion");
         auto aoScale = _material->materialAttributes().aoScale();
         auto aoUVSet = _material->materialAttributes().aoUVSet();

@@ -76,41 +76,55 @@ public:
     {}
         
     void apply() override
-    {        
+    {
+        // Reset tangents before accumulating per-face contributions
+        for (auto& v : this->_mesh->vertices)
+        {
+            v.tangent = glm::vec3(0.0f);
+        }
+
         for (size_t i = 0; i < this->_mesh->indices.size(); i+=3)
         {
             auto i1 = this->_mesh->indices[i];
             auto i2 = this->_mesh->indices[i + 1];
             auto i3 = this->_mesh->indices[i + 2];
-            
+
             auto& v0 = this->_mesh->vertices[i1];
             auto& v1 = this->_mesh->vertices[i2];
             auto& v2 = this->_mesh->vertices[i3];
-            
+
             auto pos1 = v0.position;
             auto pos2 = v1.position;
             auto pos3 = v2.position;
-            
+
             auto uv1 = v0.texCoord0;
             auto uv2 = v1.texCoord0;
             auto uv3 = v2.texCoord0;
-            
+
+            // Both edges and UV deltas must share the same origin (vertex 0)
             auto edge1 = pos2 - pos1;
-            auto edge2 = pos3 - pos2;
+            auto edge2 = pos3 - pos1;
             auto deltaUV1 = uv2 - uv1;
             auto deltaUV2 = uv3 - uv1;
-            
-            float f = 1.0f / (deltaUV1.x * deltaUV2.y - deltaUV2.x * deltaUV1.y);
-            
-            glm::vec3 t = glm::normalize(glm::vec3{
-                f * (deltaUV2.y * edge1.x - deltaUV1.y * edge2.x),
-                f * (deltaUV2.y * edge1.y - deltaUV1.y * edge2.y),
-                f * (deltaUV2.y * edge1.z - deltaUV1.y * edge2.z)
-            });
 
-            v0.tangent = t;
-            v1.tangent = t;
-            v2.tangent = t;
+            float denom = deltaUV1.x * deltaUV2.y - deltaUV2.x * deltaUV1.y;
+            float f = (glm::abs(denom) < 1e-8f) ? 0.0f : 1.0f / denom;
+
+            glm::vec3 t = f * (deltaUV2.y * edge1 - deltaUV1.y * edge2);
+
+            // Accumulate so shared vertices are smoothed across neighbour faces
+            v0.tangent += t;
+            v1.tangent += t;
+            v2.tangent += t;
+        }
+
+        // Gram-Schmidt orthogonalize against the normal and normalize
+        for (auto& v : this->_mesh->vertices)
+        {
+            glm::vec3 t = v.tangent - v.normal * glm::dot(v.normal, v.tangent);
+            v.tangent = (glm::length(t) > 1e-8f)
+                ? glm::normalize(t)
+                : glm::vec3(1.0f, 0.0f, 0.0f);
         }
     }
 };

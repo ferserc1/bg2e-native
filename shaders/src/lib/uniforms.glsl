@@ -44,8 +44,9 @@ struct PBRMaterialData
     vec4 sheenColor;
 
     uint unlit;
+    float refractionFactor;
 
-    uint padding[3];
+    uint padding[2];
 };
 
 const uint MATERIAL_FLAG_UNLIT          = 1u << 0;

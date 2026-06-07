@@ -112,7 +112,13 @@ void main() {
                                     irradianceMap, prefilteredEnvMap, environmentData.maxReflectionLOD,
                                     brdfLUT, gbuf.ao, gbuf.sheenIntensity, gbuf.sheenColor);
 
-    outColor = compositeFinalColor(ambient, Lo, gbuf.inputColor, gbuf.albedo.a,
+    // Refraction on translucent fragments (per-material factor from the G-buffer).
+    vec4 background = applyRefraction(
+        sceneData.viewMatrix, gbuf.normal, vTexcoord,
+        gbuf.refractionFactor, gbuf.albedo, g_InputImage
+    );
+
+    outColor = compositeFinalColor(ambient, Lo, background, gbuf.albedo.a,
                                    pushConstant.exposure, pushConstant.gamma,
                                    pushConstant.brightness, pushConstant.contrast);
 }

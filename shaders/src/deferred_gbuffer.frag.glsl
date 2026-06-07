@@ -67,6 +67,6 @@ void main() {
     float unlitFlag = (mat.unlit & MATERIAL_FLAG_UNLIT) != 0u ? 1.0 : 0.0;
     g_FresnelColorFlags = vec4(mat.fresnelTint.rgb, unlitFlag);
 
-    // Sheen color
-    g_SheenColor = vec4(mat.sheenColor.rgb, 0.0f);
+    // Sheen color (RGB), refraction factor packed in the reserved alpha channel
+    g_SheenColor = vec4(mat.sheenColor.rgb, mat.refractionFactor);
 }
