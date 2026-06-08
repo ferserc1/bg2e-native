@@ -18,7 +18,6 @@
 #pragma once
 
 #include <bg2e/scene/Node.hpp>
-#include <bg2e/scene/EnvironmentComponent.hpp>
 #include <bg2e/render/Engine.hpp>
 #include <bg2e/scene/OrbitCameraComponent.hpp>
 #include <bg2e/app/MainLoop.hpp>
@@ -27,6 +26,7 @@
 
 #include <memory>
 #include <filesystem>
+#include <functional>
 
 #include "bg2e/scene/Scene.hpp"
 
@@ -34,132 +34,60 @@ class AppDelegate;
 
 class StageScene {
 public:
+    using OnSceneSwapCallback = std::function<void()>;
+
     StageScene(bg2e::render::Engine * engine, AppDelegate * appDelegate);
-    
+
+    // Builds containerRoot + default editable scene; returns containerRoot
     std::shared_ptr<bg2e::scene::Node> init();
-    
-    void loadModel(const std::filesystem::path& path);
-    
-    void saveModel(const std::filesystem::path& path);
 
+    // Replace the whole editable scene with one loaded from disk
+    void openScene(const std::filesystem::path& path);
+
+    // Save the editable scene to disk
+    void saveScene(const std::filesystem::path& path);
+
+    // Import a .bg2 model created with model_edit as a new node in the scene
+    void importModelBg2(const std::filesystem::path& path);
+
+    // Empty the editable scene (deselect first)
     void close();
-
-    // Throws exception if model is invalid or format unsupported
-    void importModel(const std::filesystem::path& path);
-
-    void importObj(const std::filesystem::path& path);
-
-    void importGltf(const std::filesystem::path& path);
-
-    inline bool multiMeshScene() const { return _targetNames.size() > 0; }
-    inline const std::vector<std::string>& targetNames() const { return _targetNames; }
-    void selectTargetNode(uint32_t index);
-    inline uint32_t selectedTargetNodeIndex() const { return _selectedTargetNode; }
-    
-    inline std::shared_ptr<bg2e::scene::Node> sceneRoot() const { return _sceneRoot; }
-    
-    inline bg2e::scene::EnvironmentComponent * environment() { return _environment.lock().get(); }
-    inline bg2e::scene::EnvironmentComponent * environment() const { return _environment.lock().get(); }
-    
-    inline bg2e::scene::OrbitCameraComponent * orbitCamera() { return _orbitCamera; }
-    inline bg2e::scene::OrbitCameraComponent * orbitCamera() const { return _orbitCamera; }
-
-    bg2e::scene::CameraComponent * cameraComponent();
-    bg2e::scene::CameraComponent * cameraComponent() const;
-
-    inline bool isModelValid() const { return _targetNode.get() != nullptr; }
-    std::shared_ptr<bg2e::scene::Drawable> targetDrawable();
 
     void cleanup();
 
     bool checkUnsavedChanges();
 
+    inline bool isSceneValid() const { return _editableRoot != nullptr; }
+
+    inline std::shared_ptr<bg2e::scene::Node> sceneRoot() const { return _containerRoot; }
+    // The editable subtree shown in the scene tree
+    inline std::shared_ptr<bg2e::scene::Node> editableRoot() const { return _editableRoot; }
+
+    // Resolved from the current scene content (not stored)
+    bg2e::scene::OrbitCameraComponent * orbitCamera();
+    bg2e::scene::CameraComponent * cameraComponent();
+
     inline Document * document() { return _document.get(); }
+    inline bg2e::render::Engine * engine() const { return _engine; }
 
-    const std::vector<std::shared_ptr<bg2e::scene::LightComponent>>& lights() const
-    {
-        return _sceneRoot->scene()->lightComponents();
-    }
-    void iterateLights(std::function<void(std::shared_ptr<bg2e::scene::LightComponent>)> cb);
-    [[nodiscard]] uint32_t maxLights() const { return 5; }
-
-    void addLight();
-    void removeLight(uint32_t index);
-
-    void showFloor(bool show);
-    [[nodiscard]] bool isFloorVisible() const { return _showFloor; }
-
-    void setFlorHeight(float h);
-    [[nodiscard]] float floorHeight() const { return _floorHeight; }
-
-    void saveEnvironmentSettings();
-    void saveEnvironmentSettings(const std::filesystem::path& path);
-    void restoreEnvironmentSettings();
-    void restoreEnvironmentSettings(const std::filesystem::path& path);
-
-    void updateLightMesh(bg2e::scene::Node* lightNode);
+    inline void onSceneSwap(OnSceneSwapCallback cb) { _onSceneSwap = std::move(cb); }
 
 protected:
     bg2e::render::Engine * _engine;
-
     AppDelegate * _appDelegate;
-
     std::unique_ptr<Document> _document;
 
-    std::shared_ptr<bg2e::scene::Node> _sceneRoot;
-    
-    // This is the node where the loaded model is placed
-    std::shared_ptr<bg2e::scene::Node> _targetNode = nullptr;
+    std::shared_ptr<bg2e::scene::Node> _containerRoot;
+    std::shared_ptr<bg2e::scene::Node> _editableRoot;
 
-    std::shared_ptr<bg2e::scene::Drawable> _targetDrawable = nullptr;
+    std::shared_ptr<bg2e::app::SafeUpdateToken> _swapToken;
 
-    // Some file formats stores a scene (for example, GLTF). If you open a scene file, this
-    // vector will contain all the nodes that contains a DrawableComponent. You can use the
-    // targetDrawable utility functions to set the _targetDrawable from this list. When you open
-    // a model file (for example, .bg2) this array will be empty
-    std::vector<std::shared_ptr<bg2e::scene::Drawable>> _targetDrawables;
-    uint32_t _selectedTargetNode = 0;
+    OnSceneSwapCallback _onSceneSwap;
 
-    // This contains the loaded scene when the file is a scene file (for example, GLTF).
-    // This scene is not visible, is stored only for debugging purposes
-    std::shared_ptr<bg2e::scene::Node> _targetScene = nullptr;
+    std::shared_ptr<bg2e::scene::Node> buildDefaultScene();
+    void setEditableRoot(std::shared_ptr<bg2e::scene::Node> newEditableRoot);
 
-    // This vector stores the drawable nodes names when the loaded file is a model file.
-    // Otherwise is empty
-    std::vector<std::string> _targetNames;
-
-    // Lighting setup
-    std::shared_ptr<bg2e::scene::Node> _lightsNode;
-
-    // Floor node
-    std::shared_ptr<bg2e::scene::Node> _floorNode;
-    bool _showFloor = true;
-    float _floorHeight = 0.0f;
-
-    std::weak_ptr<bg2e::scene::EnvironmentComponent> _environment;
-    bg2e::scene::OrbitCameraComponent * _orbitCamera = nullptr;
-    std::shared_ptr<bg2e::scene::Node> _environmentNode;
-    bool _restoringEnvironment = false;
-    std::shared_ptr<bg2e::app::SafeUpdateToken> _restoreToken;
-
-// The "name" parameter is mandatory if the scene is not build yet
-    std::shared_ptr<bg2e::scene::Node> createLightNode(
-        bg2e::base::Light::LightType type,
-        float azimuth,
-        float elevation,
-        float distance = 2.0f,
-        const bg2e::base::Color& color = bg2e::base::Color::White(),
-        const std::string & name = ""
-    );
-
-    std::shared_ptr<bg2e::geo::Mesh> _pointLightMesh;
-    std::shared_ptr<bg2e::geo::Mesh> _spotLightMesh;
-    std::shared_ptr<bg2e::geo::Mesh> _directionalLightMesh;
-
-    std::shared_ptr<bg2e::geo::Mesh> getLightMesh(bg2e::base::Light::LightType type);
-
-    std::shared_ptr<bg2e::scene::Node> createFloorNode();
-
-    void instantUpdateLightMesh(bg2e::scene::Node* lightNode);
+    // If the scene's main camera has no projection, assign an optical projection
+    // (50 mm film size, 55 mm lens) so the aspect ratio renders correctly
+    void ensureMainCameraProjection(bg2e::scene::Scene * scene);
 };
-

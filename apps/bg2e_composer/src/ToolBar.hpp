@@ -19,7 +19,6 @@
 
 #include <bg2e.hpp>
 
-#include "EnvironmentSettings.hpp"
 #include "SubmeshWindow.hpp"
 
 class  AppDelegate;

@@ -49,7 +49,11 @@ public:
     static uint32_t getItemVerticalSpacing();
 
     static void padding(uint32_t width, uint32_t height);
-    
+
+    static float getContentRegionAvailWidth();
+    static float getContentRegionAvailHeight();
+    static void beginChild(const std::string & id, float width = 0.0f, float height = 0.0f, bool border = true);
+    static void endChild();
 };
 
 }

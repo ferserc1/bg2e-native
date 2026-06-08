@@ -18,23 +18,21 @@
 #pragma once
 
 #include <bg2e.hpp>
+#include <bg2e/ui/SceneTree.hpp>
+#include <bg2e/ui/NodeEditor.hpp>
 
 class AppDelegate;
 
-class EnvironmentSettings : public bg2e::ui::Window {
+class SceneEditor : public bg2e::ui::Window {
 public:
-    void init(
-        AppDelegate * delegate,
-        bg2e::render::Renderer * renderer
-    );
-    
+    void init(AppDelegate * delegate);
+    void cleanup();
+
+    bg2e::ui::SceneTree & sceneTree() { return _sceneTree; }
+    bg2e::ui::NodeEditor & nodeEditor() { return _nodeEditor; }
+
 protected:
-    AppDelegate * _appDelegate;
-
-    std::shared_ptr<bg2e::ui::LightEditor> _lightEditor;
-    std::shared_ptr<bg2e::ui::PolarTransformControllerEditor> _polarEditor;
-    std::shared_ptr<bg2e::ui::CameraSettings> _cameraSettings;
-    uint32_t _selectedLightIndex = 0;
-    std::shared_ptr<bg2e::scene::LightComponent> _selectedLight;
+    AppDelegate * _appDelegate = nullptr;
+    bg2e::ui::SceneTree _sceneTree;
+    bg2e::ui::NodeEditor _nodeEditor;
 };
-

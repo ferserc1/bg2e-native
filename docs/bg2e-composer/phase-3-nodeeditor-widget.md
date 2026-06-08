@@ -143,6 +143,23 @@ The renderer picks up the new image via `imgHash()` on the next update; if a
 manual refresh is needed, the app may call `scene->updateEnvironment()` in its
 `onChanged` handler (Phase 4/5 wiring).
 
+### Camera editor
+
+Reuse the existing `bg2e::ui::CameraSettings` widget (as `model_edit` does in its
+`EnvironmentSettings` panel) to edit the camera's optical projection (focal
+length + sensor/frame size; offers "Configure Projection" when the camera has
+none):
+
+```cpp
+BasicWidgets::separator("Camera");
+_cameraSettings.setCameraComponent(c);   // c = node's CameraComponent
+if (_cameraSettings.draw()) notifyChanged();
+```
+
+`CameraSettings` re-reads the focal/frame values from the camera's
+`OpticalProjection` on each `setCameraComponent`, so calling it every frame keeps
+the controls in sync.
+
 ### Light editor
 
 Reuse the existing widgets exactly as `EnvironmentSettings` did:

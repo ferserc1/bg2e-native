@@ -81,6 +81,7 @@ protected:
 
     std::shared_ptr<bg2e::scene::Node> buildDefaultScene();
     void setEditableRoot(std::shared_ptr<bg2e::scene::Node> newEditableRoot);
+    void ensureMainCameraProjection(bg2e::scene::Scene * scene);
 };
 ```
 
@@ -132,10 +133,32 @@ and all the related member variables (`_targetNode`, `_targetDrawable(s)`,
           scene->updateAll();
           // Re-resolve the main camera from the new content
           if (auto cam = cameraComponent()) scene->setMainCamera(cam);
+          ensureMainCameraProjection(scene);   // see below
       },
       _swapToken
   );
   ```
+
+- **`ensureMainCameraProjection(scene)`**: a loaded scene may contain a camera
+  without a projection, which makes the aspect ratio render wrong. After the
+  swap, get the **main camera from the `Scene` instance** and, if it has no
+  projection, assign an `OpticalProjection` configured with a **50 mm film
+  size** and a **55 mm lens**:
+  ```cpp
+  void StageScene::ensureMainCameraProjection(bg2e::scene::Scene * scene) {
+      if (!scene) return;
+      auto cam = scene->mainCamera();          // use the Scene instance
+      if (!cam || cam->projection()) return;   // keep an existing projection
+      auto projection = new bg2e::math::OpticalProjection();
+      projection->setFrameSize(50.0f);         // film size: 50 mm
+      projection->setFocalLength(55.0f);       // lens: 55 mm
+      projection->setFar(1000.0f);             // keep a sane near/far (match default camera)
+      cam->setProjection(projection);
+  }
+  ```
+  Declare `ensureMainCameraProjection(bg2e::scene::Scene*)` in the header. The
+  resize visitor sets the viewport on the projection, so the aspect ratio is
+  correct on the next frame.
 
 - **`openScene(path)`**:
   ```cpp
@@ -241,6 +264,8 @@ exist. Adapt to the selection:
 - App launches and renders the default scene.
 - File ▸ Open Scene loads a scene file and replaces the current one without
   crashing (resources safely swapped); selection is cleared on load.
+- After opening a scene whose camera has no projection, the aspect ratio is
+  correct (an `OpticalProjection` with 50 mm film / 55 mm lens is assigned).
 - File ▸ Import bg2 Model adds a model node.
 - Right panel shows the empty "Scene" window; no environment editor anywhere.
 - Clicking a mesh still shows its material in the left "Model Properties" panel.

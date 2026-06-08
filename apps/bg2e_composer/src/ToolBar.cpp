@@ -18,7 +18,6 @@
 #include "ToolBar.hpp"
 #include "AppDelegate.hpp"
 #include <bg2e/app/MainLoop.hpp>
-#include <bg2e/geo/modifiers.hpp>
 
 void ToolBar::init(AppDelegate * delegate, UISettingsWindow * uiSettings, UIRenderSettingsWindow * renderSettings)
 {
@@ -35,10 +34,27 @@ void ToolBar::init(AppDelegate * delegate, UISettingsWindow * uiSettings, UIRend
     });
 
     bg2e::ui::MenuItem file("File");
-    file.addMenuItem({ "Open", {
+    file.addMenuItem({ "Open Scene", {
         .ctrlModifier = true,
         .key = bg2e::app::KeyEvent::KeyO,
         .handler = [&]() {
+            if (!_appDelegate->stage()->checkUnsavedChanges()) return;
+
+            bg2e::app::FileDialog fd;
+            fd.setFilters({
+                { "bg2e scene", "json,vitscnj" }
+            });
+            auto filePath = fd.openFile();
+
+            if (!filePath.empty())
+            {
+                _appDelegate->stage()->openScene(filePath);
+            }
+        }
+    }});
+    file.addMenuItem({ "Import bg2 Model", {
+        .handler = [&]()
+        {
             bg2e::app::FileDialog fd;
             fd.setFilters({
                 { "bg2e 3D model", "bg2,vwglb" }
@@ -47,38 +63,8 @@ void ToolBar::init(AppDelegate * delegate, UISettingsWindow * uiSettings, UIRend
 
             if (!filePath.empty())
             {
-                _appDelegate->stage()->loadModel(filePath);
+                _appDelegate->stage()->importModelBg2(filePath);
             }
-        }
-    }});
-    file.addMenuItem({ "Import GLTF", {
-        .handler = [&]()
-        {
-            bg2e::app::FileDialog fd;
-            fd.setFilters({
-                { "gltf file", "glb,gltf" }
-            });
-            auto filePath = fd.openFile();
-
-            if (!filePath.empty())
-            {
-                _appDelegate->stage()->importGltf(filePath);
-            }
-        }
-    }});
-    file.addMenuItem({ "Import OBJ", {
-        .handler = [&]()
-        {
-            bg2e::app::FileDialog fd;
-                fd.setFilters({
-                    { "OBJ file", "obj" }
-                });
-                auto filePath = fd.openFile();
-
-                if (!filePath.empty())
-                {
-                    _appDelegate->stage()->importObj(filePath);
-                }
         }
     }});
     file.addMenuItem({ "Save", {
@@ -91,14 +77,14 @@ void ToolBar::init(AppDelegate * delegate, UISettingsWindow * uiSettings, UIRend
             {
                 bg2e::app::FileDialog fd;
                 fd.setFilters({
-                    { "bg2e 3D model", "bg2,vwglb" }
+                    { "bg2e scene", "json,vitscnj" }
                 });
                 filePath = fd.saveFile();
             }
 
             if (!filePath.empty())
             {
-                _appDelegate->stage()->saveModel(filePath);
+                _appDelegate->stage()->saveScene(filePath);
             }
         }
     }});
@@ -110,13 +96,13 @@ void ToolBar::init(AppDelegate * delegate, UISettingsWindow * uiSettings, UIRend
         {
             bg2e::app::FileDialog fd;
             fd.setFilters({
-                { "bg2e 3D model", "bg2,vwglb" }
+                { "bg2e scene", "json,vitscnj" }
             });
             auto filePath = fd.saveFile();
 
             if (!filePath.empty())
             {
-                _appDelegate->stage()->saveModel(filePath);
+                _appDelegate->stage()->saveScene(filePath);
             }
         }
     }});
@@ -159,7 +145,7 @@ void ToolBar::init(AppDelegate * delegate, UISettingsWindow * uiSettings, UIRend
     }, [&]() {
         return _appDelegate->workspace().leftPanelVisible();
     }});
-    window.addMenuItem({ "Environment", {
+    window.addMenuItem({ "Scene", {
         .handler = [&]()
         {
             _appDelegate->workspace().toggleRightPanel();
@@ -183,52 +169,6 @@ void ToolBar::init(AppDelegate * delegate, UISettingsWindow * uiSettings, UIRend
     addMenuItem(window);
 
     addButton({
-        .label = "Y-axis > Z-axis",
-        .action = [&]()
-        {
-            using namespace bg2e::geo;
-            _appDelegate->stage()->document()->setUnsavedChanges(true);
-            auto drw = _appDelegate->stage()->targetDrawable();
-            if (drw.get())
-            {
-                drw->applyModifier(new ConvertAxisModifier<Mesh>(ConvertAxisModifier<Mesh>::Mode::ZtoY));
-            }
-        }
-    });
-
-    addButton({
-        .label = "Center Geometry",
-        .action = [&]()
-        {
-            using namespace bg2e::geo;
-            _appDelegate->stage()->document()->setUnsavedChanges(true);
-            auto drw = _appDelegate->stage()->targetDrawable();
-            if (drw.get())
-            {
-                drw->applyModifier(new CenterGeometryModifier<Mesh>());
-            }
-        }
-    });
-
-    addButton({
-        .label = "cm to m",
-        .action = [&]()
-        {
-            using namespace bg2e::geo;
-            _appDelegate->stage()->document()->setUnsavedChanges(true);
-            auto drw = _appDelegate->stage()->targetDrawable();
-            if (drw.get())
-            {
-                auto trx = glm::scale(
-                    glm::mat4 { 1.0f },
-                    glm::vec3(0.01f, 0.01f, 0.01f)
-                );
-                drw->applyModifier(new ApplyTransformModifier<Mesh>(trx));
-            }
-        }
-    });
-    
-    addButton({
         .label = "Submesh Editor",
         .action = [&]() {
             _appDelegate->workspace().toggleLeftPanel();
@@ -236,7 +176,7 @@ void ToolBar::init(AppDelegate * delegate, UISettingsWindow * uiSettings, UIRend
     }, AlignRight);
     
     addButton({
-        .label = "Environment",
+        .label = "Scene",
         .action = [&]() {
             _appDelegate->workspace().toggleRightPanel();
         }

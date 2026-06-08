@@ -20,7 +20,7 @@
 #include <bg2e.hpp>
 
 #include "ToolBar.hpp"
-#include "EnvironmentSettings.hpp"
+#include "SceneEditor.hpp"
 #include "SubmeshWindow.hpp"
 #include "StageScene.hpp"
 #include "UISettingsWindow.hpp"
@@ -59,6 +59,7 @@ public:
     inline const bg2e::ui::Workspace& workspace() const { return _workspace; }
 
     inline std::shared_ptr<bg2e::manipulation::SelectionManager> selectionManager() const { return _selectionManager; }
+    inline SubmeshWindow& submeshWindow() { return _submeshPanel; }
 
     [[nodiscard]] std::shared_ptr<bg2e::ui::StatusItem> fileStatus() const { return _fileStatus; }
     [[nodiscard]] std::shared_ptr<bg2e::ui::StatusItem> saveStatus() const { return _saveStatus; }
@@ -82,7 +83,7 @@ protected:
     bg2e::ui::Workspace _workspace;
     ToolBar _toolBar {};
     SubmeshWindow _submeshPanel {};
-    EnvironmentSettings _environmentPanel {};
+    SceneEditor _sceneEditor {};
     UISettingsWindow _uiSettingsWindow {};
     UIRenderSettingsWindow _renderSettingsWindow {};
 
@@ -95,6 +96,7 @@ protected:
     std::shared_ptr<bg2e::scene::Node> createScene() override;
 
     std::shared_ptr<bg2e::manipulation::SelectionManager> _selectionManager;
+    bool _syncingSelection = false;
     uint32_t _mouseDownX = 0;
     uint32_t _mouseDownY = 0;
 

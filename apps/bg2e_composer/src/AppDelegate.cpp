@@ -64,8 +64,23 @@ void AppDelegate::mouseButtonUp(int button, int x, int y)
         // Pick selection
         if (_selectionManager->pick(renderer()->scene(), x, y))
         {
-            auto selection = _selectionManager->selectedSubmesh();
-            _submeshPanel.setEditMaterial(selection);
+            _submeshPanel.setEditMaterial(_selectionManager->selectedSubmesh());
+
+            // Reflect into the scene tree without bouncing back
+            if (auto * node = _selectionManager->selectedNode())
+            {
+                _syncingSelection = true;
+                _sceneEditor.sceneTree().setSelectedNodes({ node });
+                _sceneEditor.nodeEditor().setNode(node);
+                _syncingSelection = false;
+            }
+        }
+        else if (_selectionManager->clearSelectionOnEmptyPick())
+        {
+            _syncingSelection = true;
+            _sceneEditor.sceneTree().clearSelection();
+            _sceneEditor.nodeEditor().setNode(nullptr);
+            _syncingSelection = false;
         }
     }
     _inputVisitor.mouseButtonUp(renderer()->scene()->rootNode(), button, x, y);
@@ -87,15 +102,11 @@ void AppDelegate::fileDropped(const std::filesystem::path& path)
 
     if (ext == ".bg2" || ext == ".vwglb")
     {
-        stage()->loadModel(path);
+        stage()->importModelBg2(path);
     }
-    else if (ext == ".obj")
+    else if (ext == ".json" || ext == ".vitscnj")
     {
-        stage()->importObj(path);
-    }
-    else if (ext == ".glb" || ext == ".gltf")
-    {
-        stage()->importGltf(path);
+        stage()->openScene(path);
     }
 }
 
@@ -118,6 +129,7 @@ void AppDelegate::cleanup()
     DefaultRenderLoopDelegate::cleanup();
     _stage.reset();
     _submeshPanel.cleanup();
+    _sceneEditor.cleanup();
 }
 
 void AppDelegate::toggleSelectionHighlight()
@@ -272,7 +284,44 @@ void AppDelegate::initWorkspace()
     restoreSettings();
 
     _workspace.leftPanelSize().min = 300;
-    _environmentPanel.init(this, renderer());
+    _sceneEditor.init(this);
+
+    // Selection bridge: Tree → SelectionManager + material panel
+    _sceneEditor.sceneTree().onSelectionChanged([&]() {
+        if (_syncingSelection) return;
+        _syncingSelection = true;
+
+        auto nodes = _sceneEditor.sceneTree().selectedNodes();
+
+        // Node editor
+        if (nodes.size() == 1) _sceneEditor.nodeEditor().setNode(nodes.front());
+        else                   _sceneEditor.nodeEditor().setNodes(nodes);
+
+        // Bridge to SelectionManager (mesh highlight) + material panel
+        _selectionManager->deselect();
+        _submeshPanel.clearMaterialSelection();
+
+        // Re-add drawable nodes to the SelectionManager so they highlight
+        for (auto * node : nodes)
+        {
+            if (auto * dc = node->getComponent<bg2e::scene::DrawableComponent>())
+            {
+                _selectionManager->addToSelectedItems(node, dc, 0);
+            }
+        }
+
+        _syncingSelection = false;
+    });
+
+    // Edge case: clear tree selection + node editor on scene swap
+    _stage->onSceneSwap([&]() {
+        _syncingSelection = true;
+        _sceneEditor.sceneTree().clearSelection();
+        _sceneEditor.nodeEditor().setNode(nullptr);
+        _submeshPanel.clearMaterialSelection();
+        _syncingSelection = false;
+    });
+
     _uiSettingsWindow.init(this);
     _renderSettingsWindow.init(this);
     _toolBar.init(this, &_uiSettingsWindow, &_renderSettingsWindow);
@@ -291,7 +340,7 @@ void AppDelegate::initWorkspace()
         uiWidth(), uiHeight(),
         &_toolBar,
         &_submeshPanel,
-        &_environmentPanel,
+        &_sceneEditor,
         nullptr,  // Use nullptr if you dont't want to use this panel
         &_statusBar
     );

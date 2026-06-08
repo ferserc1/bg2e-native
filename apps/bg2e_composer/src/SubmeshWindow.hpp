@@ -28,6 +28,8 @@ public:
 
     void setEditMaterial(uint32_t submeshIndex);
 
+    void clearMaterialSelection();
+
 private:
     AppDelegate * _appDelegate;
     

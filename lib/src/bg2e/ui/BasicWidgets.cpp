@@ -180,5 +180,25 @@ void BasicWidgets::padding(uint32_t width, uint32_t height)
     ImGui::Dummy(ImVec2(static_cast<float>(width), static_cast<float>(height)));
 }
 
+float BasicWidgets::getContentRegionAvailWidth()
+{
+    return ImGui::GetContentRegionAvail().x;
+}
+
+float BasicWidgets::getContentRegionAvailHeight()
+{
+    return ImGui::GetContentRegionAvail().y;
+}
+
+void BasicWidgets::beginChild(const std::string & id, float width, float height, bool border)
+{
+    ImGui::BeginChild(id.c_str(), ImVec2(width, height), border);
+}
+
+void BasicWidgets::endChild()
+{
+    ImGui::EndChild();
+}
+
 }
 }

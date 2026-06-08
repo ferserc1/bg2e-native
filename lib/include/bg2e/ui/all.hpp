@@ -36,3 +36,5 @@
 #include <bg2e/ui/TextureWidgets.hpp>
 #include <bg2e/ui/Toolbar.hpp>
 #include <bg2e/ui/Workspace.hpp>
+#include <bg2e/ui/SceneTree.hpp>
+#include <bg2e/ui/NodeEditor.hpp>

@@ -39,35 +39,23 @@ void SubmeshWindow::init(AppDelegate * delegate)
     _materialEditor.setSelectionManager(delegate->selectionManager());
 
     setDrawFunction([&]() {
+        auto sm = _appDelegate->selectionManager();
+        auto count = sm->selectedItems().size();
 
-        auto stage = _appDelegate->stage();
-        auto targetNames = stage->targetNames();
-        auto drawable = stage->isModelValid() ?
-            _appDelegate->stage()->targetDrawable() :
-            std::shared_ptr<bg2e::scene::Drawable>();
+        if (count == 0)
+        {
+            bg2e::ui::BasicWidgets::text("No selection");
+            return;
+        }
+        if (count > 1)
+        {
+            bg2e::ui::BasicWidgets::text("<multiple_selection>");
+            return;
+        }
 
-		if (drawable.get() != nullptr)
-		{
-		    if (targetNames.size() > 0)
-		    {
-		        bg2e::ui::BasicWidgets::separator("Mesh");
-		        bg2e::ui::SelectableList::beginList(1);
-
-
-		        for (size_t i = 0; i < targetNames.size(); i++)
-		        {
-                    auto targetName = targetNames[i];
-		            auto isSelected = i == stage->selectedTargetNodeIndex();
-		            if (bg2e::ui::SelectableList::item(targetName, isSelected))
-		            {
-		                stage->selectTargetNode(static_cast<uint32_t>(i));
-		                _materialEditor.clearMaterial();
-		            }
-		        }
-
-		        bg2e::ui::SelectableList::endList();
-		    }
-           
+        auto drawable = sm->selectedMesh();
+        if (drawable != nullptr)
+        {
             if (_drawableEditor.draw())
             {
                 _materialEditor.clearMaterial();
@@ -79,22 +67,23 @@ void SubmeshWindow::init(AppDelegate * delegate)
             }
 
             _materialEditor.draw();
-		}
+        }
     });
 }
 
 void SubmeshWindow::setEditMaterial(uint32_t submeshIndex)
 {
-    auto stage = _appDelegate->stage();
-    auto targetNames = stage->targetNames();
-    auto drawable = stage->isModelValid() ?
-        _appDelegate->stage()->targetDrawable() :
-        std::shared_ptr<bg2e::scene::Drawable>();
+    auto drawable = _appDelegate->selectionManager()->selectedMesh();
     if (drawable && drawable->submeshesCount() > submeshIndex)
     {
         _materialEditor.clearMaterial();
         _materialEditor.addEditMaterial(drawable->renderMaterial(submeshIndex));
     }
+}
+
+void SubmeshWindow::clearMaterialSelection()
+{
+    _materialEditor.clearMaterial();
 }
 
 void SubmeshWindow::cleanup()
