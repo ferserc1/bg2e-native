@@ -20,6 +20,7 @@
 
 #include <bg2e/common.hpp>
 #include <bg2e/gpu/Common.hpp>
+#include <stdexcept>
 
 namespace bg2e {
 namespace gpu {

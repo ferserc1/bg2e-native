@@ -22,6 +22,7 @@
 #include <bg2e/base/Log.hpp>
 
 #include <stdexcept>
+#include <array>
 
 namespace bg2e {
 namespace gpu {

@@ -13,5 +13,7 @@ bundle_app_sdl(
     SHADERS_SRC ${APP_SHADERS}
 )
 
-compile_metal_shaders(${APP_TARGET_NAME} "${METAL_SHADERS_SRC}" "${METAL_SHADERS_DST}")
-bundle_resources(TARGET_NAME ${APP_TARGET_NAME} SRC_PATH ${METAL_SHADERS_DST} SUBPATH "shaders/${APP_TARGET_NAME}/metal")
+if(APPLE)
+    compile_metal_shaders(${APP_TARGET_NAME} "${METAL_SHADERS_SRC}" "${METAL_SHADERS_DST}")
+    bundle_resources(TARGET_NAME ${APP_TARGET_NAME} SRC_PATH ${METAL_SHADERS_DST} SUBPATH "shaders/${APP_TARGET_NAME}/metal")
+endif()
