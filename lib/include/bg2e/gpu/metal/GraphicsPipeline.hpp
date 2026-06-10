@@ -25,6 +25,8 @@ namespace bg2e {
 namespace gpu {
 namespace metal {
 
+class PipelineLayout;
+
 class BG2E_API GraphicsPipeline : public gpu::GraphicsPipeline {
 public:
 #if BG2E_IS_MAC
@@ -41,9 +43,11 @@ public:
     MTL::RenderPipelineState* renderPipelineState() const { return _renderPipelineState; }
 #endif
     gpu::PrimitiveTopology topology() const { return _topology; }
+    metal::PipelineLayout* layout() const { return _layout; }
 
 private:
     gpu::PrimitiveTopology _topology;
+    metal::PipelineLayout* _layout = nullptr;
 
 #if BG2E_IS_MAC
     MTL::RenderPipelineState* _renderPipelineState = nullptr;

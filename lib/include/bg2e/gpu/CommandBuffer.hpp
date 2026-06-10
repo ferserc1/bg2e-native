@@ -28,6 +28,7 @@ namespace gpu {
 class Image;
 class SurfaceFrame;
 class GraphicsPipeline;
+class ComputePipeline;
 
 class BG2E_API CommandBuffer {
 public:
@@ -41,6 +42,9 @@ public:
     virtual void beginRendering(gpu::SurfaceFrame* frame) = 0;
     virtual void endRendering() = 0;
 
+    virtual void beginCompute() = 0;
+    virtual void endCompute() = 0;
+
     virtual void clearColor(uint32_t attachmentIndex, const gpu::Color& color) = 0;
     virtual void clearDepth(float depth) = 0;
 
@@ -52,6 +56,21 @@ public:
     virtual void draw(uint32_t vertexCount, uint32_t instanceCount = 1, uint32_t firstVertex = 0, uint32_t firstInstance = 0)
     {
         throw std::runtime_error("draw not implemented");
+    }
+
+    virtual void bindPipeline(gpu::ComputePipeline* pipeline)
+    {
+        throw std::runtime_error("bindPipeline(ComputePipeline) not implemented");
+    }
+
+    virtual void dispatch(uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ)
+    {
+        throw std::runtime_error("dispatch not implemented");
+    }
+
+    virtual void pushConstants(ShaderStage stage, uint32_t offset, uint32_t size, const void* data)
+    {
+        throw std::runtime_error("pushConstants not implemented");
     }
 
     virtual bool isValid() const = 0;

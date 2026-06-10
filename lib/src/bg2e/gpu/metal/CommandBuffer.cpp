@@ -18,6 +18,8 @@
 
 #include <bg2e/gpu/metal/CommandBuffer.hpp>
 #include <bg2e/gpu/metal/GraphicsPipeline.hpp>
+#include <bg2e/gpu/metal/ComputePipeline.hpp>
+#include <bg2e/gpu/metal/PipelineLayout.hpp>
 #include <bg2e/gpu/metal/Image.hpp>
 #include <bg2e/gpu/metal/SurfaceFrame.hpp>
 #include <bg2e/gpu/Image.hpp>
@@ -42,6 +44,11 @@ CommandBuffer::CommandBuffer(metal::Device* device, MTL::CommandBuffer* cmd)
 
 CommandBuffer::~CommandBuffer()
 {
+    if (_computeEncoder)
+    {
+        _computeEncoder->release();
+        _computeEncoder = nullptr;
+    }
     if (_encoder)
     {
         _encoder->release();
@@ -66,6 +73,13 @@ void CommandBuffer::begin()
 
 void CommandBuffer::end()
 {
+    if (_computeEncoder)
+    {
+        _computeEncoder->endEncoding();
+        _computeEncoder->release();
+        _computeEncoder = nullptr;
+    }
+    _boundComputePipeline = nullptr;
     _recording = false;
 }
 
@@ -78,6 +92,11 @@ void CommandBuffer::transition(gpu::Image* image, ImageLayout newLayout)
 
 void CommandBuffer::beginRendering(gpu::SurfaceFrame* frame)
 {
+    if (_computeEncoder)
+    {
+        throw std::runtime_error("metal::CommandBuffer::beginRendering: a compute scope is still active; call endCompute() before beginRendering()");
+    }
+
     _renderFrame = dynamic_cast<metal::SurfaceFrame*>(frame);
     if (!_renderFrame)
     {
@@ -144,6 +163,7 @@ void CommandBuffer::endRendering()
         _passDesc = nullptr;
     }
     _boundPipeline = nullptr;
+    _boundLayout = nullptr;
     _renderFrame = nullptr;
 }
 
@@ -152,6 +172,10 @@ void CommandBuffer::ensureRenderEncoder()
     if (_encoder)
     {
         return;
+    }
+    if (_computeEncoder)
+    {
+        throw std::runtime_error("metal::CommandBuffer::ensureRenderEncoder: a compute scope is still active; call endCompute() before rendering");
     }
     if (!_passDesc || !_cmd)
     {
@@ -175,6 +199,7 @@ void CommandBuffer::bindPipeline(gpu::GraphicsPipeline* pipeline)
     ensureRenderEncoder();
     _encoder->setRenderPipelineState(metalPipeline->renderPipelineState());
     _boundPipeline = metalPipeline;
+    _boundLayout = metalPipeline->layout();
 }
 
 void CommandBuffer::draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance)
@@ -196,6 +221,105 @@ void CommandBuffer::draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t 
     _encoder->drawPrimitives(primType, firstVertex, vertexCount, instanceCount, firstInstance);
 }
 
+void CommandBuffer::beginCompute()
+{
+    if (_computeEncoder)
+    {
+        throw std::runtime_error("metal::CommandBuffer::beginCompute: a compute scope is already active");
+    }
+    if (_encoder)
+    {
+        throw std::runtime_error("metal::CommandBuffer::beginCompute: cannot begin a compute scope while a rendering scope is active");
+    }
+    if (!_cmd)
+    {
+        throw std::runtime_error("metal::CommandBuffer::beginCompute: no command buffer");
+    }
+    _computeEncoder = _cmd->computeCommandEncoder();
+    if (!_computeEncoder)
+    {
+        throw std::runtime_error("metal::CommandBuffer::beginCompute: failed to create compute encoder");
+    }
+}
+
+void CommandBuffer::endCompute()
+{
+    if (!_computeEncoder)
+    {
+        throw std::runtime_error("metal::CommandBuffer::endCompute: no active compute scope; call beginCompute() first");
+    }
+    _computeEncoder->endEncoding();
+    _computeEncoder->release();
+    _computeEncoder = nullptr;
+    _boundComputePipeline = nullptr;
+}
+
+void CommandBuffer::bindPipeline(gpu::ComputePipeline* pipeline)
+{
+    if (!_computeEncoder)
+    {
+        throw std::runtime_error("metal::CommandBuffer::bindPipeline(ComputePipeline): no active compute scope; call beginCompute() first");
+    }
+
+    auto* metalPipeline = dynamic_cast<metal::ComputePipeline*>(pipeline);
+    if (!metalPipeline)
+    {
+        throw std::runtime_error("metal::CommandBuffer::bindPipeline(ComputePipeline): not a metal::ComputePipeline");
+    }
+
+    _computeEncoder->setComputePipelineState(metalPipeline->computePipelineState());
+    _boundComputePipeline = metalPipeline;
+}
+
+void CommandBuffer::dispatch(uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ)
+{
+    if (!_computeEncoder)
+    {
+        throw std::runtime_error("metal::CommandBuffer::dispatch: no active compute scope; call beginCompute() first");
+    }
+
+    NS::UInteger threadWidth = 1;
+    if (_boundComputePipeline && _boundComputePipeline->threadExecutionWidth() > 0)
+    {
+        threadWidth = _boundComputePipeline->threadExecutionWidth();
+    }
+
+    MTL::Size threadsPerGroup = MTL::Size::Make(threadWidth, 1, 1);
+    MTL::Size threadGroups = MTL::Size::Make(groupCountX, groupCountY, groupCountZ);
+    _computeEncoder->dispatchThreadgroups(threadGroups, threadsPerGroup);
+}
+
+void CommandBuffer::pushConstants(ShaderStage stage, uint32_t offset, uint32_t size, const void* data)
+{
+    (void)offset;
+
+    if (!_boundLayout)
+    {
+        throw std::runtime_error("metal::CommandBuffer::pushConstants: no pipeline bound");
+    }
+
+    uint32_t bufferIndex = _boundLayout->pushConstantBufferIndex(stage);
+
+    switch (stage)
+    {
+        case ShaderStage::Vertex:
+            ensureRenderEncoder();
+            _encoder->setVertexBytes(data, size, bufferIndex);
+            break;
+        case ShaderStage::Fragment:
+            ensureRenderEncoder();
+            _encoder->setFragmentBytes(data, size, bufferIndex);
+            break;
+        case ShaderStage::Compute:
+            if (!_computeEncoder)
+            {
+                throw std::runtime_error("metal::CommandBuffer::pushConstants: no active compute scope; call beginCompute() first");
+            }
+            _computeEncoder->setBytes(data, size, bufferIndex);
+            break;
+    }
+}
+
 bool CommandBuffer::isValid() const
 {
     return _cmd != nullptr;
@@ -209,10 +333,15 @@ void CommandBuffer::end() {}
 void CommandBuffer::transition(gpu::Image*, ImageLayout) {}
 void CommandBuffer::beginRendering(gpu::SurfaceFrame*) {}
 void CommandBuffer::endRendering() {}
+void CommandBuffer::beginCompute() {}
+void CommandBuffer::endCompute() {}
 void CommandBuffer::clearColor(uint32_t, const gpu::Color&) {}
 void CommandBuffer::clearDepth(float) {}
 void CommandBuffer::bindPipeline(gpu::GraphicsPipeline*) {}
 void CommandBuffer::draw(uint32_t, uint32_t, uint32_t, uint32_t) {}
+void CommandBuffer::bindPipeline(gpu::ComputePipeline*) {}
+void CommandBuffer::dispatch(uint32_t, uint32_t, uint32_t) {}
+void CommandBuffer::pushConstants(ShaderStage, uint32_t, uint32_t, const void*) {}
 bool CommandBuffer::isValid() const { return false; }
 
 #endif

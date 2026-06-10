@@ -21,6 +21,8 @@
 #include <bg2e/gpu/vk/Image.hpp>
 #include <bg2e/gpu/vk/SurfaceFrame.hpp>
 #include <bg2e/gpu/vk/GraphicsPipeline.hpp>
+#include <bg2e/gpu/vk/ComputePipeline.hpp>
+#include <bg2e/gpu/vk/PipelineLayout.hpp>
 #include <bg2e/gpu/vk/Info.hpp>
 #include <bg2e/gpu/vk/extensions.hpp>
 #include <bg2e/gpu/vk/common.hpp>
@@ -188,6 +190,30 @@ void CommandBuffer::endRendering()
     _renderingActive = false;
 }
 
+void CommandBuffer::beginCompute()
+{
+    // Vulkan does not require a dedicated compute encoder, but the scope is
+    // tracked for API consistency with the Metal backend.
+    if (_renderingActive)
+    {
+        throw std::runtime_error("vk::CommandBuffer::beginCompute: cannot begin a compute scope inside a rendering scope");
+    }
+    if (_computeActive)
+    {
+        throw std::runtime_error("vk::CommandBuffer::beginCompute: a compute scope is already active");
+    }
+    _computeActive = true;
+}
+
+void CommandBuffer::endCompute()
+{
+    if (!_computeActive)
+    {
+        throw std::runtime_error("vk::CommandBuffer::endCompute: no active compute scope; call beginCompute() first");
+    }
+    _computeActive = false;
+}
+
 void CommandBuffer::bindPipeline(gpu::GraphicsPipeline* pipeline)
 {
     flushPendingRendering();
@@ -219,12 +245,49 @@ void CommandBuffer::bindPipeline(gpu::GraphicsPipeline* pipeline)
     }
 
     vkCmdBindPipeline(_cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, vkPipe->handle());
+    _boundLayoutHandle = vkPipe->layoutHandle();
 }
 
 void CommandBuffer::draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance)
 {
     flushPendingRendering();
     vkCmdDraw(_cmd, vertexCount, instanceCount, firstVertex, firstInstance);
+}
+
+void CommandBuffer::bindPipeline(gpu::ComputePipeline* pipeline)
+{
+    if (!_computeActive)
+    {
+        throw std::runtime_error("vk::CommandBuffer::bindPipeline(ComputePipeline): no active compute scope; call beginCompute() first");
+    }
+
+    auto* vkPipe = dynamic_cast<vk::ComputePipeline*>(pipeline);
+    if (!vkPipe)
+    {
+        throw std::runtime_error("vk::CommandBuffer::bindPipeline(ComputePipeline): not a vk::ComputePipeline");
+    }
+
+    vkCmdBindPipeline(_cmd, VK_PIPELINE_BIND_POINT_COMPUTE, vkPipe->handle());
+}
+
+void CommandBuffer::dispatch(uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ)
+{
+    if (!_computeActive)
+    {
+        throw std::runtime_error("vk::CommandBuffer::dispatch: no active compute scope; call beginCompute() first");
+    }
+
+    vkCmdDispatch(_cmd, groupCountX, groupCountY, groupCountZ);
+}
+
+void CommandBuffer::pushConstants(ShaderStage stage, uint32_t offset, uint32_t size, const void* data)
+{
+    if (_boundLayoutHandle == VK_NULL_HANDLE)
+    {
+        throw std::runtime_error("vk::CommandBuffer::pushConstants: no pipeline bound");
+    }
+
+    vkCmdPushConstants(_cmd, _boundLayoutHandle, shaderStageToVkFlags(stage), offset, size, data);
 }
 
 }

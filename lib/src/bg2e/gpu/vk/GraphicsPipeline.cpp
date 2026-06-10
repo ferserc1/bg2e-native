@@ -43,7 +43,6 @@ VkPrimitiveTopology primitiveTopologyToVk(gpu::PrimitiveTopology topology)
 GraphicsPipeline::GraphicsPipeline(VkDevice device, const gpu::GraphicsPipelineDescription& description)
     : _device(device)
 {
-    // Validate and cast backend types
     auto* vkVsModule = dynamic_cast<vk::ShaderModule*>(description.vertexShader);
     auto* vkFsModule = dynamic_cast<vk::ShaderModule*>(description.fragmentShader);
     auto* vkLayout   = dynamic_cast<vk::PipelineLayout*>(description.layout);
@@ -52,6 +51,8 @@ GraphicsPipeline::GraphicsPipeline(VkDevice device, const gpu::GraphicsPipelineD
     {
         throw std::runtime_error("vk::GraphicsPipeline: description contains non-Vulkan objects");
     }
+
+    _layoutHandle = vkLayout->handle();
 
     // Shader stages
     VkPipelineShaderStageCreateInfo vsStage{};

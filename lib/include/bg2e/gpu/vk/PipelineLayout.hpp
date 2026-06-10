@@ -25,6 +25,8 @@ namespace bg2e {
 namespace gpu {
 namespace vk {
 
+VkShaderStageFlags shaderStageToVkFlags(ShaderStage stage);
+
 class BG2E_API PipelineLayout : public gpu::PipelineLayout {
 public:
     PipelineLayout(VkDevice device, const gpu::PipelineLayoutDescription& description);

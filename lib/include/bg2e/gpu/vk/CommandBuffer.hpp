@@ -38,10 +38,15 @@ public:
     void transition(gpu::Image* image, ImageLayout newLayout) override;
     void beginRendering(gpu::SurfaceFrame* frame) override;
     void endRendering() override;
+    void beginCompute() override;
+    void endCompute() override;
     void clearColor(uint32_t attachmentIndex, const gpu::Color& color) override;
     void clearDepth(float depth) override;
     void bindPipeline(gpu::GraphicsPipeline* pipeline) override;
     void draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance) override;
+    void bindPipeline(gpu::ComputePipeline* pipeline) override;
+    void dispatch(uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ) override;
+    void pushConstants(ShaderStage stage, uint32_t offset, uint32_t size, const void* data) override;
     bool isValid() const override { return _cmd != VK_NULL_HANDLE; }
 
     VkCommandBuffer handle() const { return _cmd; }
@@ -58,11 +63,13 @@ private:
 
     vk::SurfaceFrame* _renderFrame  = nullptr;
     bool              _renderingActive = false;
+    bool              _computeActive = false;
     bool              _renderingEmitted = false;
     VkClearColorValue _clearColor = {{ 0, 0, 0, 1 }};
     float             _clearDepth = 1.0f;
     bool              _hasColorClear = false;
     bool              _hasDepthClear = false;
+    VkPipelineLayout  _boundLayoutHandle = VK_NULL_HANDLE;
 
     vk::SurfaceFrame* _presentFrame = nullptr;
 };

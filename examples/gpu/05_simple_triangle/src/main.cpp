@@ -21,6 +21,10 @@
 #include <cmath>
 #include <iostream>
 
+struct PushConstants {
+    float color[4];
+};
+
 int main(int argc, char** argv)
 {
     using namespace bg2e;
@@ -84,22 +88,32 @@ int main(int argc, char** argv)
 
     std::unique_ptr<gpu::ShaderModule> vs;
     std::unique_ptr<gpu::ShaderModule> fs;
+    std::unique_ptr<gpu::ShaderModule> cs;
 
     if (backendType == gpu::BackendType::Vulkan)
     {
         auto vsPath = (shaderBasePath / targetName / "triangle.vert.spv").string();
         auto fsPath = (shaderBasePath / targetName / "triangle.frag.spv").string();
+        auto csPath = (shaderBasePath / targetName / "noop.comp.spv").string();
         vs = device->createShaderModule({ vsPath, "main", gpu::ShaderStage::Vertex });
         fs = device->createShaderModule({ fsPath, "main", gpu::ShaderStage::Fragment });
+        cs = device->createShaderModule({ csPath, "main", gpu::ShaderStage::Compute });
     }
     else
     {
         auto libPath = (shaderBasePath / targetName / "metal" / "triangle.metallib").string();
         vs = device->createShaderModule({ libPath, "triangle_vertex", gpu::ShaderStage::Vertex });
         fs = device->createShaderModule({ libPath, "triangle_fragment", gpu::ShaderStage::Fragment });
+        cs = device->createShaderModule({ libPath, "noop_compute", gpu::ShaderStage::Compute });
     }
 
-    auto layout = device->createPipelineLayout({});
+    // Graphics layout with push constant range for fragment stage
+    gpu::PipelineLayoutDescription graphicsLayoutDesc{};
+    graphicsLayoutDesc.pushConstants.push_back({ 0, sizeof(PushConstants), gpu::ShaderStage::Fragment });
+    auto graphicsLayout = device->createPipelineLayout(graphicsLayoutDesc);
+
+    // Compute layout (empty, no push constants or bindings)
+    auto computeLayout = device->createPipelineLayout({});
 
     // Get attachment formats from the first frame
     auto colorFormat = surface->colorFormat();
@@ -108,12 +122,18 @@ int main(int argc, char** argv)
     gpu::GraphicsPipelineDescription pipelineDesc{};
     pipelineDesc.vertexShader = vs.get();
     pipelineDesc.fragmentShader = fs.get();
-    pipelineDesc.layout = layout.get();
+    pipelineDesc.layout = graphicsLayout.get();
     pipelineDesc.topology = gpu::PrimitiveTopology::TriangleList;
     pipelineDesc.colorFormat = colorFormat;
     pipelineDesc.depthFormat = depthFormat;
 
     auto pipeline = device->createGraphicsPipeline(pipelineDesc);
+
+    // Compute pipeline
+    gpu::ComputePipelineDescription computePipelineDesc{};
+    computePipelineDesc.computeShader = cs.get();
+    computePipelineDesc.layout = computeLayout.get();
+    auto computePipeline = device->createComputePipeline(computePipelineDesc);
 
     // 9. Render loop
     auto& graphicsQueue = device->graphicsQueue();
@@ -143,16 +163,31 @@ int main(int argc, char** argv)
             1.0f
         };
 
+        PushConstants push{};
+        push.color[0] = 0.5f + 0.5f * std::sin(t * 1.3f);
+        push.color[1] = 0.5f + 0.5f * std::sin(t * 1.7f + 1.0f);
+        push.color[2] = 0.5f + 0.5f * std::sin(t * 2.1f + 2.0f);
+        push.color[3] = 1.0f;
+
         auto frame = surface->beginFrame();
         auto cmd   = graphicsQueue.createCommandBuffer();
 
         cmd->begin();
+
+        // Compute dispatch (its own scope, separate from rendering)
+        cmd->beginCompute();
+        cmd->bindPipeline(computePipeline.get());
+        cmd->dispatch(1, 1, 1);
+        cmd->endCompute();
+
+        // Graphics rendering
         cmd->transition(frame->colorImage(), gpu::ImageLayout::ColorAttachment);
         cmd->transition(frame->depthImage(), gpu::ImageLayout::DepthAttachment);
         cmd->beginRendering(frame.get());
         cmd->clearColor(0, clearColor);
         cmd->clearDepth(1.0f);
         cmd->bindPipeline(pipeline.get());
+        cmd->pushConstants(gpu::ShaderStage::Fragment, 0, sizeof(PushConstants), &push);
         cmd->draw(3);
         cmd->endRendering();
         cmd->transition(frame->colorImage(), gpu::ImageLayout::Present);
@@ -165,8 +200,11 @@ int main(int argc, char** argv)
 
     // 10. Cleanup
     device->waitIdle();
+    computePipeline->cleanup();
     pipeline->cleanup();
-    layout->cleanup();
+    computeLayout->cleanup();
+    graphicsLayout->cleanup();
+    cs->cleanup();
     vs->cleanup();
     fs->cleanup();
     surface->cleanup();

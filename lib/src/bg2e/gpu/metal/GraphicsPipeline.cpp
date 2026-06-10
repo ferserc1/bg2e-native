@@ -18,6 +18,7 @@
 
 #include <bg2e/gpu/metal/GraphicsPipeline.hpp>
 #include <bg2e/gpu/metal/ShaderModule.hpp>
+#include <bg2e/gpu/metal/PipelineLayout.hpp>
 
 #include <stdexcept>
 
@@ -41,8 +42,8 @@ MTL::PrimitiveType primitiveTopologyToMetal(gpu::PrimitiveTopology topology)
 
 GraphicsPipeline::GraphicsPipeline(MTL::Device* device, const gpu::GraphicsPipelineDescription& description)
     : _topology(description.topology)
+    , _layout(dynamic_cast<metal::PipelineLayout*>(description.layout))
 {
-    // Validate and cast backend types
     auto* metalVsModule = dynamic_cast<metal::ShaderModule*>(description.vertexShader);
     auto* metalFsModule = dynamic_cast<metal::ShaderModule*>(description.fragmentShader);
 
@@ -102,6 +103,7 @@ void GraphicsPipeline::cleanup()
 
 GraphicsPipeline::GraphicsPipeline(void* /*device*/, const gpu::GraphicsPipelineDescription& description)
     : _topology(description.topology)
+    , _layout(dynamic_cast<metal::PipelineLayout*>(description.layout))
 {
 }
 
