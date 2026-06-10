@@ -21,6 +21,7 @@
 #include <bg2e/gpu/metal/ShaderModule.hpp>
 #include <bg2e/gpu/metal/PipelineLayout.hpp>
 #include <bg2e/gpu/metal/GraphicsPipeline.hpp>
+#include <bg2e/gpu/metal/ComputePipeline.hpp>
 #include <bg2e/gpu/metal/common.hpp>
 #include <bg2e/gpu/Surface.hpp>
 
@@ -109,6 +110,11 @@ std::unique_ptr<gpu::GraphicsPipeline> Device::createGraphicsPipeline(const gpu:
     return std::make_unique<metal::GraphicsPipeline>(_device, description);
 }
 
+std::unique_ptr<gpu::ComputePipeline> Device::createComputePipeline(const gpu::ComputePipelineDescription& description)
+{
+    return std::make_unique<metal::ComputePipeline>(_device, description);
+}
+
 #else
 
 void Device::create(gpu::Instance*, gpu::PhysicalDevice*, gpu::Surface*)
@@ -137,6 +143,11 @@ std::unique_ptr<gpu::PipelineLayout> Device::createPipelineLayout(const gpu::Pip
 std::unique_ptr<gpu::GraphicsPipeline> Device::createGraphicsPipeline(const gpu::GraphicsPipelineDescription& description)
 {
     return std::make_unique<metal::GraphicsPipeline>(nullptr, description);
+}
+
+std::unique_ptr<gpu::ComputePipeline> Device::createComputePipeline(const gpu::ComputePipelineDescription& description)
+{
+    return std::make_unique<metal::ComputePipeline>(nullptr, description);
 }
 
 #endif
