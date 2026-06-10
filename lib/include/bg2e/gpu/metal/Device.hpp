@@ -22,6 +22,8 @@
 #include <bg2e/gpu/metal/common.hpp>
 #include <bg2e/gpu/metal/Queue.hpp>
 
+#include <functional>
+
 namespace bg2e {
 namespace gpu {
 namespace metal {
@@ -42,6 +44,8 @@ public:
     std::unique_ptr<gpu::PipelineLayout> createPipelineLayout(const gpu::PipelineLayoutDescription& description) override;
     std::unique_ptr<gpu::GraphicsPipeline> createGraphicsPipeline(const gpu::GraphicsPipelineDescription& description) override;
     std::unique_ptr<gpu::ComputePipeline> createComputePipeline(const gpu::ComputePipelineDescription& description) override;
+
+    void immediateSubmit(std::function<void(gpu::CommandBuffer* cmd)>&& function) override;
 
     DeviceHandle handle() const { return _device; }
 

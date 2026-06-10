@@ -20,6 +20,7 @@
 
 #include <bg2e/gpu/OffscreenSurface.hpp>
 #include <bg2e/gpu/Common.hpp>
+#include <bg2e/gpu/metal/Surface.hpp>
 #include <bg2e/gpu/metal/Image.hpp>
 #include <bg2e/gpu/metal/SurfaceFrame.hpp>
 
@@ -30,7 +31,7 @@ namespace gpu {
 namespace metal {
 
 
-class OffscreenSurface : public gpu::OffscreenSurface {
+class OffscreenSurface : public gpu::OffscreenSurface, public Surface {
 public:
     explicit OffscreenSurface(const Size2D& size)
         : gpu::OffscreenSurface(size) {}
@@ -55,7 +56,6 @@ protected:
 
 private:
     std::unique_ptr<metal::Image> _colorImage;
-    std::unique_ptr<metal::Image> _depthImage;
     std::shared_ptr<metal::SurfaceFrame> _frame;
 };
 

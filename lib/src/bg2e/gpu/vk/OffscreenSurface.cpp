@@ -30,16 +30,12 @@ OffscreenSurface::~OffscreenSurface() = default;
 void OffscreenSurface::createRenderTarget(gpu::Device* device, gpu::PhysicalDevice* /*physicalDevice*/)
 {
     _device = device;
-    auto* vkDevice = dynamic_cast<vk::Device*>(device);
+    _vkDevice = dynamic_cast<vk::Device*>(device);
 
     _colorImage = std::make_unique<vk::Image>();
-    _colorImage->buildTargetImage(vkDevice, _size, _colorFormat);
+    _colorImage->buildTargetImage(_vkDevice, _size, _colorFormat);
 
-    if (_depthFormat != PixelFormat::Undefined)
-    {
-        _depthImage = std::make_unique<vk::Image>();
-        _depthImage->buildDepthImage(vkDevice, _size, _depthFormat);
-    }
+    createDepthTarget(_size, _depthFormat);
 
     _frame = std::make_shared<vk::SurfaceFrame>();
     _frame->setColorImage(_colorImage.get());
@@ -53,16 +49,13 @@ void OffscreenSurface::resize(const Size2D& size)
     {
         _colorImage->resize(size);
     }
-    if (_depthImage)
-    {
-        _depthImage->resize(size);
-    }
+    resizeDepthTarget(size);
 }
 
 void OffscreenSurface::releaseRenderTarget()
 {
     _frame.reset();
-    _depthImage.reset();
+    releaseDepthTarget();
     _colorImage.reset();
 }
 

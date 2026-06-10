@@ -18,8 +18,10 @@
 
 #include <bg2e/gpu/metal/Image.hpp>
 #include <bg2e/gpu/metal/Device.hpp>
+#include <bg2e/gpu/metal/CommandBuffer.hpp>
 #include <bg2e/gpu/metal/common.hpp>
 
+#include <cstring>
 #include <stdexcept>
 
 namespace bg2e {
@@ -132,6 +134,54 @@ bool Image::isValid() const
     return _texture != nullptr;
 }
 
+void Image::readPixelsRGBA8(std::vector<uint8_t>& outData, ImageLayout /*currentLayout*/)
+{
+    if (_pixelFormat != PixelFormat::R8G8B8A8_UNORM) {
+        throw std::runtime_error("metal::Image::readPixelsRGBA8: only R8G8B8A8_UNORM is supported");
+    }
+
+    const uint32_t w = _size.width;
+    const uint32_t h = _size.height;
+
+    const uint32_t unpaddedBytesPerRow = w * 4;
+    const uint32_t alignment = 256;
+    const uint32_t paddedBytesPerRow =
+        ((unpaddedBytesPerRow + alignment - 1) / alignment) * alignment;
+    const size_t bufferSize = size_t(paddedBytesPerRow) * h;
+
+    MTL::Buffer* staging = _device->handle()->newBuffer(
+        bufferSize, MTL::ResourceStorageModeShared);
+    if (!staging) {
+        throw std::runtime_error("metal::Image::readPixelsRGBA8: newBuffer failed");
+    }
+
+    _device->immediateSubmit([&](gpu::CommandBuffer* cmd) {
+        MTL::CommandBuffer* mtlCmd = dynamic_cast<metal::CommandBuffer*>(cmd)->handle();
+        MTL::BlitCommandEncoder* blit = mtlCmd->blitCommandEncoder();
+        blit->copyFromTexture(
+            _texture,
+            0,
+            0,
+            MTL::Origin{ 0, 0, 0 },
+            MTL::Size{ w, h, 1 },
+            staging,
+            0,
+            paddedBytesPerRow,
+            paddedBytesPerRow * h);
+        blit->endEncoding();
+    });
+
+    outData.resize(size_t(unpaddedBytesPerRow) * h);
+    const uint8_t* src = static_cast<const uint8_t*>(staging->contents());
+    for (uint32_t y = 0; y < h; ++y) {
+        std::memcpy(outData.data() + size_t(y) * unpaddedBytesPerRow,
+                    src + size_t(y) * paddedBytesPerRow,
+                    unpaddedBytesPerRow);
+    }
+
+    staging->release();
+}
+
 #else
 
 void Image::buildTargetImage(metal::Device*, const Size2D&, PixelFormat)
@@ -157,6 +207,11 @@ void Image::initFromDrawableTexture(metal::Device*, TextureHandle, PixelFormat, 
 void Image::cleanup() {}
 
 bool Image::isValid() const { return false; }
+
+void Image::readPixelsRGBA8(std::vector<uint8_t>&, ImageLayout)
+{
+    throw std::runtime_error("Metal backend is not available on this platform");
+}
 
 #endif
 

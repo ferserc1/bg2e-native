@@ -93,6 +93,9 @@ void WindowSurface::createRenderTarget(gpu::Device* device, gpu::PhysicalDevice*
 
     auto* vkDevice = dynamic_cast<vk::Device*>(device);
     auto* vkPhys = dynamic_cast<vk::PhysicalDevice*>(physicalDevice);
+    _vkDevice = vkDevice;
+
+    VkDevice vkDev = vkDevice->handle();
 
     VkSurfaceCapabilitiesKHR caps{};
     vkGetPhysicalDeviceSurfaceCapabilitiesKHR(vkPhys->handle(), _surface, &caps);
@@ -154,17 +157,17 @@ void WindowSurface::createRenderTarget(gpu::Device* device, gpu::PhysicalDevice*
     createInfo.oldSwapchain = _swapchain;
 
     VkSwapchainKHR oldSwapchain = _swapchain;
-    VK_ASSERT(vkCreateSwapchainKHR(vkDevice->handle(), &createInfo, nullptr, &_swapchain));
+    VK_ASSERT(vkCreateSwapchainKHR(vkDev, &createInfo, nullptr, &_swapchain));
     if (oldSwapchain != VK_NULL_HANDLE)
     {
-        vkDestroySwapchainKHR(vkDevice->handle(), oldSwapchain, nullptr);
+        vkDestroySwapchainKHR(vkDev, oldSwapchain, nullptr);
     }
 
     // Get swapchain images
     uint32_t swapchainImageCount = 0;
-    vkGetSwapchainImagesKHR(vkDevice->handle(), _swapchain, &swapchainImageCount, nullptr);
+    vkGetSwapchainImagesKHR(vkDev, _swapchain, &swapchainImageCount, nullptr);
     std::vector<VkImage> swapchainImages(swapchainImageCount);
-    vkGetSwapchainImagesKHR(vkDevice->handle(), _swapchain, &swapchainImageCount, swapchainImages.data());
+    vkGetSwapchainImagesKHR(vkDev, _swapchain, &swapchainImageCount, swapchainImages.data());
 
     _colorImages.clear();
     for (auto& vkImage : swapchainImages)
@@ -175,12 +178,7 @@ void WindowSurface::createRenderTarget(gpu::Device* device, gpu::PhysicalDevice*
     }
 
     // Depth image
-    _depthImage.reset();
-    if (_depthFormat != PixelFormat::Undefined)
-    {
-        _depthImage = std::make_unique<vk::Image>();
-        _depthImage->buildDepthImage(vkDevice, _size, _depthFormat);
-    }
+    createDepthTarget(_size, _depthFormat);
 
     // Per-frame / per-image sync objects.
     //
@@ -189,7 +187,6 @@ void WindowSurface::createRenderTarget(gpu::Device* device, gpu::PhysicalDevice*
     // Using a fixed count smaller than the image count makes the CPU recycle
     // per-frame resources while the GPU is still using them, which the validation
     // layers report as a synchronization hazard.
-    _vkDevice = vkDevice->handle();
     _framesInFlight = static_cast<uint32_t>(_colorImages.size());
     _currentFrame = 0;
 
@@ -201,8 +198,8 @@ void WindowSurface::createRenderTarget(gpu::Device* device, gpu::PhysicalDevice*
     _frames.resize(_framesInFlight);
     for (uint32_t i = 0; i < _framesInFlight; ++i)
     {
-        vkCreateSemaphore(_vkDevice, &semInfo, nullptr, &_imageAvailable[i]);
-        vkCreateFence(_vkDevice, &fenceInfo, nullptr, &_inFlight[i]);
+        vkCreateSemaphore(vkDev, &semInfo, nullptr, &_imageAvailable[i]);
+        vkCreateFence(vkDev, &fenceInfo, nullptr, &_inFlight[i]);
         _frames[i] = std::make_shared<vk::SurfaceFrame>();
     }
 
@@ -210,7 +207,7 @@ void WindowSurface::createRenderTarget(gpu::Device* device, gpu::PhysicalDevice*
     _renderFinished.resize(_colorImages.size(), VK_NULL_HANDLE);
     for (auto& sem : _renderFinished)
     {
-        vkCreateSemaphore(_vkDevice, &semInfo, nullptr, &sem);
+        vkCreateSemaphore(vkDev, &semInfo, nullptr, &sem);
     }
 
     // No image is in flight yet.
@@ -226,27 +223,28 @@ void WindowSurface::resize(const Size2D& size)
 
 void WindowSurface::releaseRenderTarget()
 {
-    if (_vkDevice != VK_NULL_HANDLE)
+    if (vkDevice() != nullptr)
     {
+        VkDevice vkDev = vkDevice()->handle();
         for (auto& fence : _inFlight)
         {
             if (fence != VK_NULL_HANDLE)
             {
-                vkDestroyFence(_vkDevice, fence, nullptr);
+                vkDestroyFence(vkDev, fence, nullptr);
             }
         }
         for (auto& sem : _renderFinished)
         {
             if (sem != VK_NULL_HANDLE)
             {
-                vkDestroySemaphore(_vkDevice, sem, nullptr);
+                vkDestroySemaphore(vkDev, sem, nullptr);
             }
         }
         for (auto& sem : _imageAvailable)
         {
             if (sem != VK_NULL_HANDLE)
             {
-                vkDestroySemaphore(_vkDevice, sem, nullptr);
+                vkDestroySemaphore(vkDev, sem, nullptr);
             }
         }
     }
@@ -259,15 +257,15 @@ void WindowSurface::releaseRenderTarget()
     _framesInFlight = 0;
     _currentFrame = 0;
 
-    _depthImage.reset();
+    releaseDepthTarget();
     _colorImages.clear();
 
     if (_device != nullptr)
     {
-        auto* vkDevice = dynamic_cast<vk::Device*>(_device);
+        auto* vkDev = dynamic_cast<vk::Device*>(_device);
         if (_swapchain != VK_NULL_HANDLE)
         {
-            vkDestroySwapchainKHR(vkDevice->handle(), _swapchain, nullptr);
+            vkDestroySwapchainKHR(vkDev->handle(), _swapchain, nullptr);
             _swapchain = VK_NULL_HANDLE;
         }
     }
@@ -294,10 +292,11 @@ gpu::Image* WindowSurface::depthImage() const
 
 std::shared_ptr<gpu::SurfaceFrame> WindowSurface::beginFrame()
 {
-    vkWaitForFences(_vkDevice, 1, &_inFlight[_currentFrame], VK_TRUE, UINT64_MAX);
+    VkDevice vkDev = vkDevice()->handle();
+    vkWaitForFences(vkDev, 1, &_inFlight[_currentFrame], VK_TRUE, UINT64_MAX);
 
     uint32_t imageIndex = 0;
-    VkResult r = acquireNextImage(_vkDevice, _swapchain, UINT64_MAX,
+    VkResult r = acquireNextImage(vkDev, _swapchain, UINT64_MAX,
         _imageAvailable[_currentFrame], VK_NULL_HANDLE, &imageIndex);
 
     if (r == VK_ERROR_OUT_OF_DATE_KHR)
@@ -310,7 +309,7 @@ std::shared_ptr<gpu::SurfaceFrame> WindowSurface::beginFrame()
     // reusing the image.
     if (_imagesInFlight[imageIndex] != VK_NULL_HANDLE)
     {
-        vkWaitForFences(_vkDevice, 1, &_imagesInFlight[imageIndex], VK_TRUE, UINT64_MAX);
+        vkWaitForFences(vkDev, 1, &_imagesInFlight[imageIndex], VK_TRUE, UINT64_MAX);
     }
     _imagesInFlight[imageIndex] = _inFlight[_currentFrame];
 

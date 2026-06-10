@@ -16,21 +16,46 @@
  *    along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#pragma once
-
-#include <bg2e/gpu/Surface.hpp>
+#include <bg2e/gpu/metal/Surface.hpp>
+#include <bg2e/gpu/metal/Image.hpp>
 
 namespace bg2e {
 namespace gpu {
+namespace metal {
 
-class BG2E_API WindowSurface : public virtual Surface {
-public:
-    bool isOffscreen() const override { return false; }
+#if BG2E_IS_MAC
 
-    // cleanup() must call releaseRenderTarget() before destroying surface resources,
-    // because the render target depends on the device (swapchain/VMA images).
-    virtual void cleanup() override = 0;
-};
+void Surface::createDepthTarget(const Size2D& size, PixelFormat format)
+{
+    _depthImage.reset();
+    if (format != PixelFormat::Undefined)
+    {
+        _depthImage = std::make_unique<metal::Image>();
+        _depthImage->buildDepthImage(_metalDevice, size, format);
+    }
+}
 
+void Surface::resizeDepthTarget(const Size2D& size)
+{
+    if (_depthImage)
+    {
+        _depthImage->resize(size);
+    }
+}
+
+void Surface::releaseDepthTarget()
+{
+    _depthImage.reset();
+}
+
+#else
+
+void Surface::createDepthTarget(const Size2D&, PixelFormat) {}
+void Surface::resizeDepthTarget(const Size2D&) {}
+void Surface::releaseDepthTarget() {}
+
+#endif
+
+}
 }
 }

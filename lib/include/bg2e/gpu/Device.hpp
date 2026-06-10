@@ -22,6 +22,7 @@
 #include <bg2e/gpu/Common.hpp>
 #include <bg2e/gpu/GraphicsPipeline.hpp>
 #include <bg2e/gpu/ComputePipeline.hpp>
+#include <functional>
 #include <memory>
 #include <stdexcept>
 #include <string>
@@ -29,6 +30,7 @@
 namespace bg2e {
 namespace gpu {
 
+class CommandBuffer;
 class Instance;
 class PhysicalDevice;
 class Surface;
@@ -70,6 +72,11 @@ public:
     virtual std::unique_ptr<ComputePipeline> createComputePipeline(const ComputePipelineDescription& description)
     {
         throw std::runtime_error("createComputePipeline not implemented");
+    }
+
+    virtual void immediateSubmit(std::function<void(CommandBuffer* cmd)>&& function)
+    {
+        throw std::runtime_error("immediateSubmit not implemented");
     }
 };
 

@@ -33,8 +33,8 @@ class Instance;
 class SurfaceFrame;
 class CommandBuffer;
 
-namespace vk    { class Backend; class Device; }
-namespace metal { class Backend; class Device; }
+namespace vk    { class Backend; class Device; class Surface; }
+namespace metal { class Backend; class Device; class Surface; }
 
 class BG2E_API Surface {
 public:
@@ -87,8 +87,10 @@ protected:
 
     friend class vk::Backend;
     friend class vk::Device;
+    friend class vk::Surface;
     friend class metal::Backend;
     friend class metal::Device;
+    friend class metal::Surface;
 };
 
 }

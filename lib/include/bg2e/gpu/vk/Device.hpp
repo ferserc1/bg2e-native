@@ -22,6 +22,8 @@
 #include <bg2e/gpu/vk/common.hpp>
 #include <bg2e/gpu/vk/Queue.hpp>
 
+#include <functional>
+
 namespace bg2e {
 namespace gpu {
 namespace vk {
@@ -43,6 +45,8 @@ public:
     std::unique_ptr<gpu::GraphicsPipeline> createGraphicsPipeline(const gpu::GraphicsPipelineDescription& description) override;
     std::unique_ptr<gpu::ComputePipeline> createComputePipeline(const gpu::ComputePipelineDescription& description) override;
 
+    void immediateSubmit(std::function<void(gpu::CommandBuffer* cmd)>&& function) override;
+
     VkDevice handle() const { return _device; }
     VmaAllocator allocator() const { return _allocator; }
 
@@ -52,6 +56,10 @@ private:
     vk::Queue _graphicsQueue;
     vk::Queue _presentQueue;
     vk::Queue _transferQueue;
+
+    VkCommandPool   _immediateCmdPool   = VK_NULL_HANDLE;
+    VkCommandBuffer _immediateCmdBuffer = VK_NULL_HANDLE;
+    VkFence         _immediateCmdFence  = VK_NULL_HANDLE;
 };
 
 }

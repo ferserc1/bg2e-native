@@ -20,6 +20,7 @@
 
 #include <bg2e/gpu/Image.hpp>
 #include <bg2e/gpu/vk/common.hpp>
+#include <vector>
 
 namespace bg2e {
 namespace gpu {
@@ -49,6 +50,8 @@ public:
     VkImageView      imageView() const { return _imageView; }
     VkFormat         vkFormat()  const { return _vkFormat; }
     VkImageAspectFlags aspect()  const { return _aspect; }
+
+    void readPixelsRGBA8(std::vector<uint8_t>& outData, ImageLayout currentLayout = ImageLayout::ColorAttachment) override;
 
 private:
     void createView();

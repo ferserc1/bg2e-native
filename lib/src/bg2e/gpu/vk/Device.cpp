@@ -23,6 +23,8 @@
 #include <bg2e/gpu/vk/PipelineLayout.hpp>
 #include <bg2e/gpu/vk/GraphicsPipeline.hpp>
 #include <bg2e/gpu/vk/ComputePipeline.hpp>
+#include <bg2e/gpu/vk/CommandBuffer.hpp>
+#include <bg2e/gpu/vk/Info.hpp>
 #include <bg2e/gpu/vk/extensions.hpp>
 #include <bg2e/gpu/Surface.hpp>
 #include <bg2e/base/Log.hpp>
@@ -225,6 +227,20 @@ void Device::create(gpu::Instance* instance, gpu::PhysicalDevice* physicalDevice
     if (!offscreen) _presentQueue.initCommandPool(_device, this);
     _transferQueue.initCommandPool(_device, this);
 
+    // Immediate submit resources
+    {
+        auto poolInfo = Info::commandPoolCreateInfo(
+            indices.graphics.value(),
+            VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+        VK_ASSERT(vkCreateCommandPool(_device, &poolInfo, nullptr, &_immediateCmdPool));
+
+        auto allocInfo = Info::commandBufferAllocateInfo(_immediateCmdPool, 1);
+        VK_ASSERT(vkAllocateCommandBuffers(_device, &allocInfo, &_immediateCmdBuffer));
+
+        auto fenceInfo = Info::fenceCreateInfo(0);
+        VK_ASSERT(vkCreateFence(_device, &fenceInfo, nullptr, &_immediateCmdFence));
+    }
+
     // --- VMA allocator ---
     auto* vkInst = dynamic_cast<vk::Instance*>(instance);
 
@@ -247,6 +263,18 @@ void Device::cleanup()
     _graphicsQueue.destroyCommandPool();
     _presentQueue.destroyCommandPool();
     _transferQueue.destroyCommandPool();
+
+    if (_immediateCmdFence != VK_NULL_HANDLE)
+    {
+        vkDestroyFence(_device, _immediateCmdFence, nullptr);
+        _immediateCmdFence = VK_NULL_HANDLE;
+    }
+    if (_immediateCmdPool != VK_NULL_HANDLE)
+    {
+        vkDestroyCommandPool(_device, _immediateCmdPool, nullptr);
+        _immediateCmdPool = VK_NULL_HANDLE;
+        _immediateCmdBuffer = VK_NULL_HANDLE;
+    }
 
     if (_allocator != VK_NULL_HANDLE)
     {
@@ -303,6 +331,24 @@ std::unique_ptr<gpu::GraphicsPipeline> Device::createGraphicsPipeline(const gpu:
 std::unique_ptr<gpu::ComputePipeline> Device::createComputePipeline(const gpu::ComputePipelineDescription& description)
 {
     return std::make_unique<vk::ComputePipeline>(_device, description);
+}
+
+void Device::immediateSubmit(std::function<void(gpu::CommandBuffer*)>&& function)
+{
+    VK_ASSERT(vkResetFences(_device, 1, &_immediateCmdFence));
+    VK_ASSERT(vkResetCommandBuffer(_immediateCmdBuffer, 0));
+
+    vk::CommandBuffer wrapper(this, _immediateCmdBuffer, _immediateCmdPool);
+
+    wrapper.begin();
+    function(&wrapper);
+    wrapper.end();
+
+    auto cmdInfo = Info::commandBufferSubmitInfo(_immediateCmdBuffer);
+    auto submit = Info::submitInfo(&cmdInfo, nullptr, nullptr);
+    VK_ASSERT(queueSubmit2(_graphicsQueue.handle(), 1, &submit, _immediateCmdFence));
+
+    VK_ASSERT(vkWaitForFences(_device, 1, &_immediateCmdFence, VK_TRUE, UINT64_MAX));
 }
 
 }

@@ -22,6 +22,7 @@
 #include <bg2e/gpu/metal/PipelineLayout.hpp>
 #include <bg2e/gpu/metal/GraphicsPipeline.hpp>
 #include <bg2e/gpu/metal/ComputePipeline.hpp>
+#include <bg2e/gpu/metal/CommandBuffer.hpp>
 #include <bg2e/gpu/metal/common.hpp>
 #include <bg2e/gpu/Surface.hpp>
 
@@ -115,6 +116,23 @@ std::unique_ptr<gpu::ComputePipeline> Device::createComputePipeline(const gpu::C
     return std::make_unique<metal::ComputePipeline>(_device, description);
 }
 
+void Device::immediateSubmit(std::function<void(gpu::CommandBuffer*)>&& function)
+{
+    auto cmdSP = _graphicsQueue.createCommandBuffer();
+    auto* mtlCmd = dynamic_cast<metal::CommandBuffer*>(cmdSP.get());
+    if (!mtlCmd)
+    {
+        throw std::runtime_error("metal::Device::immediateSubmit: unexpected command buffer type");
+    }
+
+    cmdSP->begin();
+    function(cmdSP.get());
+    cmdSP->end();
+
+    mtlCmd->handle()->commit();
+    mtlCmd->handle()->waitUntilCompleted();
+}
+
 #else
 
 void Device::create(gpu::Instance*, gpu::PhysicalDevice*, gpu::Surface*)
@@ -148,6 +166,11 @@ std::unique_ptr<gpu::GraphicsPipeline> Device::createGraphicsPipeline(const gpu:
 std::unique_ptr<gpu::ComputePipeline> Device::createComputePipeline(const gpu::ComputePipelineDescription& description)
 {
     return std::make_unique<metal::ComputePipeline>(nullptr, description);
+}
+
+void Device::immediateSubmit(std::function<void(gpu::CommandBuffer*)>&&)
+{
+    throw std::runtime_error("Metal backend is not available on this platform");
 }
 
 #endif

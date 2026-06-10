@@ -19,6 +19,7 @@
 #pragma once
 
 #include <bg2e/gpu/WindowSurface.hpp>
+#include <bg2e/gpu/vk/Surface.hpp>
 #include <bg2e/gpu/vk/common.hpp>
 #include <bg2e/gpu/vk/SurfaceFrame.hpp>
 
@@ -33,7 +34,7 @@ namespace vk {
 
 class Image;
 
-class WindowSurface : public gpu::WindowSurface {
+class WindowSurface : public gpu::WindowSurface, public Surface {
 public:
     void cleanup() override;
 
@@ -69,7 +70,6 @@ private:
 
     VkSwapchainKHR _swapchain{VK_NULL_HANDLE};
     std::vector<std::unique_ptr<vk::Image>> _colorImages;
-    std::unique_ptr<vk::Image> _depthImage;
 
     // Number of frames that can be processed concurrently. Determined at
     // render-target creation time from the actual swapchain image count, so the
@@ -91,8 +91,6 @@ private:
     // swapchain image, so an image acquired out of order is not reused while a
     // previous frame is still writing to it. Non-owning aliases of _inFlight.
     std::vector<VkFence> _imagesInFlight;
-
-    VkDevice _vkDevice{VK_NULL_HANDLE};
 };
 
 }

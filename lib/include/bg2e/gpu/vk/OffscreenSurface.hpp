@@ -20,6 +20,7 @@
 
 #include <bg2e/gpu/OffscreenSurface.hpp>
 #include <bg2e/gpu/Common.hpp>
+#include <bg2e/gpu/vk/Surface.hpp>
 #include <bg2e/gpu/vk/Image.hpp>
 #include <bg2e/gpu/vk/SurfaceFrame.hpp>
 
@@ -32,7 +33,7 @@ class Image;
 
 namespace vk {
 
-class OffscreenSurface : public gpu::OffscreenSurface {
+class OffscreenSurface : public gpu::OffscreenSurface, public Surface {
 public:
     explicit OffscreenSurface(const Size2D& size)
         : gpu::OffscreenSurface(size) {}
@@ -57,7 +58,6 @@ protected:
 
 private:
     std::unique_ptr<vk::Image> _colorImage;
-    std::unique_ptr<vk::Image> _depthImage;
     std::shared_ptr<vk::SurfaceFrame> _frame;
 };
 

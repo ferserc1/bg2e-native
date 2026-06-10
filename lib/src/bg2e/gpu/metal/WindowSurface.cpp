@@ -89,26 +89,19 @@ void WindowSurface::createRenderTarget(gpu::Device* device, gpu::PhysicalDevice*
     _layer->setMaximumDrawableCount(3);
     _imageCount = 3;
 
-    if (_depthFormat != PixelFormat::Undefined)
-    {
-        _depthImage = std::make_unique<metal::Image>();
-        _depthImage->buildDepthImage(_metalDevice, _size, _depthFormat);
-    }
+    createDepthTarget(_size, _depthFormat);
 }
 
 void WindowSurface::resize(const Size2D& size)
 {
     _size = size;
     _layer->setDrawableSize(CGSize{ double(_size.width), double(_size.height) });
-    if (_depthImage)
-    {
-        _depthImage->resize(size);
-    }
+    resizeDepthTarget(size);
 }
 
 void WindowSurface::releaseRenderTarget()
 {
-    _depthImage.reset();
+    releaseDepthTarget();
 }
 
 uint32_t WindowSurface::imageCount() const { return _imageCount; }

@@ -20,6 +20,8 @@
 
 #include <bg2e/common.hpp>
 #include <bg2e/gpu/Common.hpp>
+#include <stdexcept>
+#include <vector>
 
 namespace bg2e {
 namespace gpu {
@@ -40,6 +42,13 @@ public:
     uint32_t      height()      const { return _size.height; }
 
     ImageLayout   currentLayout() const { return _currentLayout; }
+
+    virtual void readPixelsRGBA8(
+        std::vector<uint8_t>& outData,
+        ImageLayout currentLayout = ImageLayout::ColorAttachment)
+    {
+        throw std::runtime_error("Image::readPixelsRGBA8 not implemented");
+    }
 
 protected:
     void setCurrentLayout(ImageLayout layout) { _currentLayout = layout; }

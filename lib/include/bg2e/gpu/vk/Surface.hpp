@@ -19,18 +19,29 @@
 #pragma once
 
 #include <bg2e/gpu/Surface.hpp>
+#include <bg2e/gpu/vk/common.hpp>
+
+#include <memory>
 
 namespace bg2e {
 namespace gpu {
+namespace vk {
 
-class BG2E_API WindowSurface : public virtual Surface {
-public:
-    bool isOffscreen() const override { return false; }
+class Device;
+class Image;
 
-    // cleanup() must call releaseRenderTarget() before destroying surface resources,
-    // because the render target depends on the device (swapchain/VMA images).
-    virtual void cleanup() override = 0;
+class Surface : public virtual gpu::Surface {
+protected:
+    vk::Device* vkDevice() const { return _vkDevice; }
+
+    void createDepthTarget(const Size2D& size, PixelFormat format);
+    void resizeDepthTarget(const Size2D& size);
+    void releaseDepthTarget();
+
+    vk::Device*                _vkDevice = nullptr;
+    std::unique_ptr<vk::Image> _depthImage;
 };
 
+}
 }
 }

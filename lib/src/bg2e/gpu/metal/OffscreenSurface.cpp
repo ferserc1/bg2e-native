@@ -35,16 +35,12 @@ OffscreenSurface::~OffscreenSurface() = default;
 void OffscreenSurface::createRenderTarget(gpu::Device* device, gpu::PhysicalDevice* /*physicalDevice*/)
 {
     _device = device;
-    auto* metalDevice = dynamic_cast<metal::Device*>(device);
+    _metalDevice = dynamic_cast<metal::Device*>(device);
 
     _colorImage = std::make_unique<metal::Image>();
-    _colorImage->buildTargetImage(metalDevice, _size, _colorFormat);
+    _colorImage->buildTargetImage(_metalDevice, _size, _colorFormat);
 
-    if (_depthFormat != PixelFormat::Undefined)
-    {
-        _depthImage = std::make_unique<metal::Image>();
-        _depthImage->buildDepthImage(metalDevice, _size, _depthFormat);
-    }
+    createDepthTarget(_size, _depthFormat);
 
     _frame = std::make_shared<metal::SurfaceFrame>();
     _frame->setColorImageRef(_colorImage.get());
@@ -55,13 +51,13 @@ void OffscreenSurface::resize(const Size2D& size)
 {
     _size = size;
     if (_colorImage) _colorImage->resize(size);
-    if (_depthImage) _depthImage->resize(size);
+    resizeDepthTarget(size);
 }
 
 void OffscreenSurface::releaseRenderTarget()
 {
     _frame.reset();
-    _depthImage.reset();
+    releaseDepthTarget();
     _colorImage.reset();
 }
 

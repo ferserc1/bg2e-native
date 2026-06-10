@@ -24,7 +24,7 @@
 namespace bg2e {
 namespace gpu {
 
-class BG2E_API OffscreenSurface : public Surface {
+class BG2E_API OffscreenSurface : public virtual Surface {
 public:
     explicit OffscreenSurface(const Size2D& size) { _size = size; }
 

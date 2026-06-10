@@ -19,6 +19,7 @@
 #pragma once
 
 #include <bg2e/gpu/WindowSurface.hpp>
+#include <bg2e/gpu/metal/Surface.hpp>
 #include <bg2e/gpu/metal/common.hpp>
 
 #include <memory>
@@ -33,7 +34,7 @@ namespace metal {
 class Image;
 class SurfaceFrame;
 
-class WindowSurface : public gpu::WindowSurface {
+class WindowSurface : public gpu::WindowSurface, public Surface {
 public:
     void cleanup() override;
 
@@ -61,10 +62,8 @@ protected:
 private:
     void* _metalView = nullptr;
     MetalLayerHandle _layer = nullptr;
-    std::unique_ptr<metal::Image> _depthImage;
     uint32_t _imageCount = 0;
     metal::SurfaceFrame* _currentFrame = nullptr;
-    metal::Device* _metalDevice = nullptr;
 };
 
 }

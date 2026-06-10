@@ -20,8 +20,10 @@
 #include <bg2e/gpu/vk/Device.hpp>
 #include <bg2e/gpu/vk/Info.hpp>
 #include <bg2e/gpu/vk/common.hpp>
+#include <bg2e/gpu/vk/CommandBuffer.hpp>
 #include <bg2e/gpu/Common.hpp>
 
+#include <cstring>
 #include <stdexcept>
 
 namespace bg2e {
@@ -169,6 +171,59 @@ void Image::cleanup()
         _image = VK_NULL_HANDLE;
     }
     _allocation = VK_NULL_HANDLE;
+}
+
+void Image::readPixelsRGBA8(std::vector<uint8_t>& outData, ImageLayout currentLayout)
+{
+    if (_pixelFormat != PixelFormat::R8G8B8A8_UNORM) {
+        throw std::runtime_error("vk::Image::readPixelsRGBA8: only R8G8B8A8_UNORM is supported");
+    }
+
+    const uint32_t w = _size.width;
+    const uint32_t h = _size.height;
+    const VkDeviceSize imageSize = VkDeviceSize(w) * h * 4;
+
+    VkBuffer staging = VK_NULL_HANDLE;
+    VmaAllocation stagingAlloc = VK_NULL_HANDLE;
+    VkBufferCreateInfo bufInfo{};
+    bufInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    bufInfo.size  = imageSize;
+    bufInfo.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+    VmaAllocationCreateInfo allocCI{};
+    allocCI.usage = VMA_MEMORY_USAGE_GPU_TO_CPU;
+    allocCI.flags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
+    VmaAllocationInfo allocOut{};
+    VK_ASSERT(vmaCreateBuffer(_device->allocator(), &bufInfo, &allocCI,
+                              &staging, &stagingAlloc, &allocOut));
+
+    setCurrentLayout(currentLayout);
+
+    _device->immediateSubmit([&](gpu::CommandBuffer* cmd) {
+        cmd->transition(this, ImageLayout::TransferSrc);
+
+        VkCommandBuffer raw = dynamic_cast<vk::CommandBuffer*>(cmd)->handle();
+
+        VkBufferImageCopy region{};
+        region.bufferOffset = 0;
+        region.bufferRowLength = 0;
+        region.bufferImageHeight = 0;
+        region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        region.imageSubresource.mipLevel = 0;
+        region.imageSubresource.baseArrayLayer = 0;
+        region.imageSubresource.layerCount = 1;
+        region.imageOffset = { 0, 0, 0 };
+        region.imageExtent = { w, h, 1 };
+
+        vkCmdCopyImageToBuffer(raw, _image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                               staging, 1, &region);
+
+        cmd->transition(this, currentLayout);
+    });
+
+    outData.resize(imageSize);
+    std::memcpy(outData.data(), allocOut.pMappedData, imageSize);
+
+    vmaDestroyBuffer(_device->allocator(), staging, stagingAlloc);
 }
 
 }
