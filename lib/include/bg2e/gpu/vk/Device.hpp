@@ -41,6 +41,7 @@ public:
     std::unique_ptr<gpu::ShaderModule> createShaderModule(const gpu::ShaderModuleDescription& description) override;
     std::unique_ptr<gpu::PipelineLayout> createPipelineLayout(const gpu::PipelineLayoutDescription& description) override;
     std::unique_ptr<gpu::GraphicsPipeline> createGraphicsPipeline(const gpu::GraphicsPipelineDescription& description) override;
+    std::unique_ptr<gpu::ComputePipeline> createComputePipeline(const gpu::ComputePipelineDescription& description) override;
 
     VkDevice handle() const { return _device; }
     VmaAllocator allocator() const { return _allocator; }

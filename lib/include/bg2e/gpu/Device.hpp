@@ -21,6 +21,7 @@
 #include <bg2e/common.hpp>
 #include <bg2e/gpu/Common.hpp>
 #include <bg2e/gpu/GraphicsPipeline.hpp>
+#include <bg2e/gpu/ComputePipeline.hpp>
 #include <memory>
 #include <stdexcept>
 #include <string>
@@ -35,6 +36,7 @@ class Queue;
 class ShaderModule;
 class PipelineLayout;
 class GraphicsPipeline;
+class ComputePipeline;
 
 class BG2E_API Device {
 public:
@@ -63,6 +65,11 @@ public:
     virtual std::unique_ptr<GraphicsPipeline> createGraphicsPipeline(const GraphicsPipelineDescription& description)
     {
         throw std::runtime_error("createGraphicsPipeline not implemented");
+    }
+
+    virtual std::unique_ptr<ComputePipeline> createComputePipeline(const ComputePipelineDescription& description)
+    {
+        throw std::runtime_error("createComputePipeline not implemented");
     }
 };
 

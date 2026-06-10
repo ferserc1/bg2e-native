@@ -18,20 +18,25 @@
 
 #pragma once
 
+#include <bg2e/common.hpp>
 #include <bg2e/gpu/Common.hpp>
-#include <bg2e/gpu/Backend.hpp>
-#include <bg2e/gpu/Factory.hpp>
-#include <bg2e/gpu/Instance.hpp>
-#include <bg2e/gpu/PhysicalDevice.hpp>
-#include <bg2e/gpu/Surface.hpp>
-#include <bg2e/gpu/Image.hpp>
-#include <bg2e/gpu/SurfaceFrame.hpp>
-#include <bg2e/gpu/WindowSurface.hpp>
-#include <bg2e/gpu/OffscreenSurface.hpp>
-#include <bg2e/gpu/Queue.hpp>
-#include <bg2e/gpu/CommandBuffer.hpp>
-#include <bg2e/gpu/Device.hpp>
 #include <bg2e/gpu/ShaderModule.hpp>
 #include <bg2e/gpu/PipelineLayout.hpp>
-#include <bg2e/gpu/GraphicsPipeline.hpp>
-#include <bg2e/gpu/ComputePipeline.hpp>
+
+namespace bg2e {
+namespace gpu {
+
+struct ComputePipelineDescription {
+    gpu::ShaderModule*   computeShader = nullptr; // non-owning; stage must be Compute
+    gpu::PipelineLayout* layout        = nullptr; // non-owning; caller must keep alive
+};
+
+class BG2E_API ComputePipeline {
+public:
+    virtual ~ComputePipeline() = default;
+    virtual bool isValid() const = 0;
+    virtual void cleanup() = 0;
+};
+
+}
+}

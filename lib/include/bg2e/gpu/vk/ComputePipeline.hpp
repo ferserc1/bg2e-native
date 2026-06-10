@@ -18,20 +18,30 @@
 
 #pragma once
 
-#include <bg2e/gpu/Common.hpp>
-#include <bg2e/gpu/Backend.hpp>
-#include <bg2e/gpu/Factory.hpp>
-#include <bg2e/gpu/Instance.hpp>
-#include <bg2e/gpu/PhysicalDevice.hpp>
-#include <bg2e/gpu/Surface.hpp>
-#include <bg2e/gpu/Image.hpp>
-#include <bg2e/gpu/SurfaceFrame.hpp>
-#include <bg2e/gpu/WindowSurface.hpp>
-#include <bg2e/gpu/OffscreenSurface.hpp>
-#include <bg2e/gpu/Queue.hpp>
-#include <bg2e/gpu/CommandBuffer.hpp>
-#include <bg2e/gpu/Device.hpp>
-#include <bg2e/gpu/ShaderModule.hpp>
-#include <bg2e/gpu/PipelineLayout.hpp>
-#include <bg2e/gpu/GraphicsPipeline.hpp>
 #include <bg2e/gpu/ComputePipeline.hpp>
+#include <bg2e/gpu/vk/common.hpp>
+
+namespace bg2e {
+namespace gpu {
+namespace vk {
+
+class BG2E_API ComputePipeline : public gpu::ComputePipeline {
+public:
+    ComputePipeline(VkDevice device, const gpu::ComputePipelineDescription& description);
+    ~ComputePipeline() override;
+
+    bool isValid() const override;
+    void cleanup() override;
+
+    VkPipeline handle() const { return _pipeline; }
+    VkPipelineBindPoint bindPoint() const { return _bindPoint; }
+
+private:
+    VkDevice _device{VK_NULL_HANDLE};
+    VkPipeline _pipeline{VK_NULL_HANDLE};
+    VkPipelineBindPoint _bindPoint{VK_PIPELINE_BIND_POINT_COMPUTE};
+};
+
+}
+}
+}

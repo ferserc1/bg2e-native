@@ -22,6 +22,7 @@
 #include <bg2e/gpu/vk/ShaderModule.hpp>
 #include <bg2e/gpu/vk/PipelineLayout.hpp>
 #include <bg2e/gpu/vk/GraphicsPipeline.hpp>
+#include <bg2e/gpu/vk/ComputePipeline.hpp>
 #include <bg2e/gpu/vk/extensions.hpp>
 #include <bg2e/gpu/Surface.hpp>
 #include <bg2e/base/Log.hpp>
@@ -297,6 +298,11 @@ std::unique_ptr<gpu::PipelineLayout> Device::createPipelineLayout(const gpu::Pip
 std::unique_ptr<gpu::GraphicsPipeline> Device::createGraphicsPipeline(const gpu::GraphicsPipelineDescription& description)
 {
     return std::make_unique<vk::GraphicsPipeline>(_device, description);
+}
+
+std::unique_ptr<gpu::ComputePipeline> Device::createComputePipeline(const gpu::ComputePipelineDescription& description)
+{
+    return std::make_unique<vk::ComputePipeline>(_device, description);
 }
 
 }
