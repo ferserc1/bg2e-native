@@ -15,26 +15,18 @@
  *    You should have received a copy of the GNU General Public License
  *    along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-
 #pragma once
 
-#include <bg2e/ui/UserInterface.hpp>
-#include <bg2e/ui/UserInterfaceDelegate.hpp>
-#include <bg2e/ui/BasicWidgets.hpp>
-#include <bg2e/ui/DemoWindow.hpp>
-#include <bg2e/ui/CameraSettings.hpp>
-#include <bg2e/ui/DrawableEditor.hpp>
-#include <bg2e/ui/LightEditor.hpp>
-#include <bg2e/ui/MaterialEditor.hpp>
-#include <bg2e/ui/PolarTransformControllerEditor.hpp>
-#include <bg2e/ui/Menu.hpp>
 #include <bg2e/ui/Window.hpp>
-#include <bg2e/ui/Input.hpp>
-#include <bg2e/ui/SelectableList.hpp>
-#include <bg2e/ui/StatusBar.hpp>
-#include <bg2e/ui/SubmeshSelector.hpp>
-#include <bg2e/ui/TextureWidgets.hpp>
-#include <bg2e/ui/Toolbar.hpp>
-#include <bg2e/ui/Workspace.hpp>
-#include <bg2e/ui/SceneTree.hpp>
-#include <bg2e/ui/NodeEditor.hpp>
+
+class AppDelegate;
+
+class UISettingsWindow : public bg2e::ui::Window {
+public:
+    void init(AppDelegate * delegate);
+
+private:
+    void drawUI();
+
+    AppDelegate * _appDelegate = nullptr;
+};
