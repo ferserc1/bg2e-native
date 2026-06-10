@@ -19,6 +19,11 @@
 #pragma once
 
 #include <bg2e/common.hpp>
+#include <bg2e/gpu/Common.hpp>
+#include <bg2e/gpu/GraphicsPipeline.hpp>
+#include <memory>
+#include <stdexcept>
+#include <string>
 
 namespace bg2e {
 namespace gpu {
@@ -27,6 +32,9 @@ class Instance;
 class PhysicalDevice;
 class Surface;
 class Queue;
+class ShaderModule;
+class PipelineLayout;
+class GraphicsPipeline;
 
 class BG2E_API Device {
 public:
@@ -41,6 +49,21 @@ public:
     virtual const Queue& graphicsQueue() const = 0;
     virtual const Queue& presentQueue() const = 0;
     virtual const Queue& transferQueue() const = 0;
+
+    virtual std::unique_ptr<ShaderModule> createShaderModule(const ShaderModuleDescription& description)
+    {
+        throw std::runtime_error("createShaderModule not implemented");
+    }
+
+    virtual std::unique_ptr<PipelineLayout> createPipelineLayout(const PipelineLayoutDescription& description)
+    {
+        throw std::runtime_error("createPipelineLayout not implemented");
+    }
+
+    virtual std::unique_ptr<GraphicsPipeline> createGraphicsPipeline(const GraphicsPipelineDescription& description)
+    {
+        throw std::runtime_error("createGraphicsPipeline not implemented");
+    }
 };
 
 }

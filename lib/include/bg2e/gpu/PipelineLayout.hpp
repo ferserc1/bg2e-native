@@ -20,40 +20,17 @@
 
 #include <bg2e/common.hpp>
 #include <bg2e/gpu/Common.hpp>
+#include <cstdint>
+#include <vector>
 
 namespace bg2e {
 namespace gpu {
 
-class Image;
-class SurfaceFrame;
-class GraphicsPipeline;
-
-class BG2E_API CommandBuffer {
+class BG2E_API PipelineLayout {
 public:
-    virtual ~CommandBuffer() = default;
-
-    virtual void begin() = 0;
-    virtual void end()   = 0;
-
-    virtual void transition(gpu::Image* image, ImageLayout newLayout) = 0;
-
-    virtual void beginRendering(gpu::SurfaceFrame* frame) = 0;
-    virtual void endRendering() = 0;
-
-    virtual void clearColor(uint32_t attachmentIndex, const gpu::Color& color) = 0;
-    virtual void clearDepth(float depth) = 0;
-
-    virtual void bindPipeline(gpu::GraphicsPipeline* pipeline)
-    {
-        throw std::runtime_error("bindPipeline not implemented");
-    }
-
-    virtual void draw(uint32_t vertexCount, uint32_t instanceCount = 1, uint32_t firstVertex = 0, uint32_t firstInstance = 0)
-    {
-        throw std::runtime_error("draw not implemented");
-    }
-
+    virtual ~PipelineLayout() = default;
     virtual bool isValid() const = 0;
+    virtual void cleanup() = 0;
 };
 
 }

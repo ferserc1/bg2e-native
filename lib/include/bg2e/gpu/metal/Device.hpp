@@ -38,6 +38,10 @@ public:
     const gpu::Queue& presentQueue() const override;
     const gpu::Queue& transferQueue() const override;
 
+    std::unique_ptr<gpu::ShaderModule> createShaderModule(const gpu::ShaderModuleDescription& description) override;
+    std::unique_ptr<gpu::PipelineLayout> createPipelineLayout(const gpu::PipelineLayoutDescription& description) override;
+    std::unique_ptr<gpu::GraphicsPipeline> createGraphicsPipeline(const gpu::GraphicsPipelineDescription& description) override;
+
     DeviceHandle handle() const { return _device; }
 
 private:

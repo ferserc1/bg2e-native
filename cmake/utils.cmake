@@ -1,4 +1,3 @@
-
 # Build all shaders in the folder SRC_PATH to the folder DST_PATH
 function(build_shaders
     TARGET_NAME
@@ -76,6 +75,56 @@ function(compile_shaders
     add_custom_target(${TARGET_NAME}_shaders ALL DEPENDS ${COMPILED_SHADERS})
 
     add_dependencies(${TARGET_NAME} ${TARGET_NAME}_shaders)
+endfunction()
+
+# Compile Metal shaders from SRC_PATH (*.metal) to DST_PATH (*.metallib)
+# MACOSX Build tools must be installed (Command Line Tools or Xcode)
+# Uses POST_BUILD commands so that the compiled shaders are available before
+# any subsequent POST_BUILD steps (e.g. bundle_resources).
+# No-op on non-Apple platforms.
+function(compile_metal_shaders
+    TARGET_NAME
+    SRC_PATH
+    DST_PATH
+)
+    if(NOT APPLE)
+        return()
+    endif()
+
+    file(GLOB MSL_SRC "${SRC_PATH}/*.metal")
+
+    if(NOT MSL_SRC)
+        return()
+    endif()
+
+    add_custom_command(
+        TARGET ${TARGET_NAME}
+        POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E make_directory "${DST_PATH}"
+    )
+
+    foreach(MSH ${MSL_SRC})
+        get_filename_component(NAME "${MSH}" NAME)
+        string(REPLACE ".metal" "" BASE "${NAME}")
+        set(AIR "${DST_PATH}/${BASE}.air")
+        set(MTLIB "${DST_PATH}/${BASE}.metallib")
+
+        add_custom_command(
+            TARGET ${TARGET_NAME}
+            POST_BUILD
+            COMMAND xcrun -sdk macosx metal -c -o "${AIR}" "${MSH}"
+            COMMENT "Compiling metal shader ${MSH}"
+            VERBATIM
+        )
+
+        add_custom_command(
+            TARGET ${TARGET_NAME}
+            POST_BUILD
+            COMMAND xcrun -sdk macosx metallib -o "${MTLIB}" "${AIR}"
+            COMMENT "Building metal library ${MTLIB}"
+            VERBATIM
+        )
+    endforeach()
 endfunction()
 
 # Copy a library to the macOS application bundle
@@ -221,7 +270,6 @@ function(copy_vulkan_resources
         bundle_libs(${TARGET_NAME} "lib"
             "${VULKAN_SDK_PATH}/lib/libMoltenVK.dylib"
             "${VULKAN_SDK_PATH}/lib/libVkLayer_khronos_validation.dylib"
-            "${VULKAN_SDK_PATH}/lib/libVkLayer_khronos_synchronization2.dylib"
             "${VULKAN_SDK_PATH}/lib/libVkLayer_khronos_shader_object.dylib"
             "${VULKAN_SDK_PATH}/lib/libVkLayer_khronos_profiles.dylib"
             "${VULKAN_SDK_PATH}/lib/libVkLayer_gfxreconstruct.dylib"

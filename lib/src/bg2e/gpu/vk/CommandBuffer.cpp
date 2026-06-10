@@ -20,6 +20,7 @@
 #include <bg2e/gpu/vk/Device.hpp>
 #include <bg2e/gpu/vk/Image.hpp>
 #include <bg2e/gpu/vk/SurfaceFrame.hpp>
+#include <bg2e/gpu/vk/GraphicsPipeline.hpp>
 #include <bg2e/gpu/vk/Info.hpp>
 #include <bg2e/gpu/vk/extensions.hpp>
 #include <bg2e/gpu/vk/common.hpp>
@@ -185,6 +186,45 @@ void CommandBuffer::endRendering()
         cmdEndRendering(_cmd);
     }
     _renderingActive = false;
+}
+
+void CommandBuffer::bindPipeline(gpu::GraphicsPipeline* pipeline)
+{
+    flushPendingRendering();
+
+    auto* vkPipe = dynamic_cast<vk::GraphicsPipeline*>(pipeline);
+    if (!vkPipe)
+    {
+        throw std::runtime_error("vk::CommandBuffer::bindPipeline: not a vk::GraphicsPipeline");
+    }
+
+    if (_renderFrame)
+    {
+        uint32_t w = static_cast<uint32_t>(_renderFrame->colorImage()->width());
+        uint32_t h = static_cast<uint32_t>(_renderFrame->colorImage()->height());
+
+        VkViewport viewport{};
+        viewport.x = 0.0f;
+        viewport.y = 0.0f;
+        viewport.width = static_cast<float>(w);
+        viewport.height = static_cast<float>(h);
+        viewport.minDepth = 0.0f;
+        viewport.maxDepth = 1.0f;
+        vkCmdSetViewport(_cmd, 0, 1, &viewport);
+
+        VkRect2D scissor{};
+        scissor.offset = {0, 0};
+        scissor.extent = {w, h};
+        vkCmdSetScissor(_cmd, 0, 1, &scissor);
+    }
+
+    vkCmdBindPipeline(_cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, vkPipe->handle());
+}
+
+void CommandBuffer::draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance)
+{
+    flushPendingRendering();
+    vkCmdDraw(_cmd, vertexCount, instanceCount, firstVertex, firstInstance);
 }
 
 }

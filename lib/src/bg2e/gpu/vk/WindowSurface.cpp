@@ -314,8 +314,6 @@ std::shared_ptr<gpu::SurfaceFrame> WindowSurface::beginFrame()
     }
     _imagesInFlight[imageIndex] = _inFlight[_currentFrame];
 
-    vkResetFences(_vkDevice, 1, &_inFlight[_currentFrame]);
-
     auto frame = _frames[_currentFrame];
     frame->setColorImage(_colorImages[imageIndex].get());
     frame->setDepthImage(_depthImage.get());

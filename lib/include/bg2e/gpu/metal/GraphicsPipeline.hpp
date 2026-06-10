@@ -18,19 +18,38 @@
 
 #pragma once
 
-#include <bg2e/gpu/Common.hpp>
-#include <bg2e/gpu/Backend.hpp>
-#include <bg2e/gpu/Factory.hpp>
-#include <bg2e/gpu/Instance.hpp>
-#include <bg2e/gpu/PhysicalDevice.hpp>
-#include <bg2e/gpu/Surface.hpp>
-#include <bg2e/gpu/Image.hpp>
-#include <bg2e/gpu/SurfaceFrame.hpp>
-#include <bg2e/gpu/WindowSurface.hpp>
-#include <bg2e/gpu/OffscreenSurface.hpp>
-#include <bg2e/gpu/Queue.hpp>
-#include <bg2e/gpu/CommandBuffer.hpp>
-#include <bg2e/gpu/Device.hpp>
-#include <bg2e/gpu/ShaderModule.hpp>
-#include <bg2e/gpu/PipelineLayout.hpp>
 #include <bg2e/gpu/GraphicsPipeline.hpp>
+#include <bg2e/gpu/metal/common.hpp>
+
+namespace bg2e {
+namespace gpu {
+namespace metal {
+
+class BG2E_API GraphicsPipeline : public gpu::GraphicsPipeline {
+public:
+#if BG2E_IS_MAC
+    GraphicsPipeline(MTL::Device* device, const gpu::GraphicsPipelineDescription& description);
+#else
+    GraphicsPipeline(void* /*device*/, const gpu::GraphicsPipelineDescription& description);
+#endif
+    ~GraphicsPipeline() override;
+
+    bool isValid() const override;
+    void cleanup() override;
+
+#if BG2E_IS_MAC
+    MTL::RenderPipelineState* renderPipelineState() const { return _renderPipelineState; }
+#endif
+    gpu::PrimitiveTopology topology() const { return _topology; }
+
+private:
+    gpu::PrimitiveTopology _topology;
+
+#if BG2E_IS_MAC
+    MTL::RenderPipelineState* _renderPipelineState = nullptr;
+#endif
+};
+
+}
+}
+}

@@ -18,43 +18,39 @@
 
 #pragma once
 
-#include <bg2e/common.hpp>
+#include <bg2e/gpu/PipelineLayout.hpp>
 #include <bg2e/gpu/Common.hpp>
+
+#include <cstdint>
 
 namespace bg2e {
 namespace gpu {
+namespace metal {
 
-class Image;
-class SurfaceFrame;
-class GraphicsPipeline;
-
-class BG2E_API CommandBuffer {
+class BG2E_API PipelineLayout : public gpu::PipelineLayout {
 public:
-    virtual ~CommandBuffer() = default;
+    PipelineLayout(const gpu::PipelineLayoutDescription& description);
+    ~PipelineLayout() override;
 
-    virtual void begin() = 0;
-    virtual void end()   = 0;
+    bool isValid() const override;
+    void cleanup() override;
 
-    virtual void transition(gpu::Image* image, ImageLayout newLayout) = 0;
+    const gpu::PipelineLayoutDescription& description() const { return _description; }
 
-    virtual void beginRendering(gpu::SurfaceFrame* frame) = 0;
-    virtual void endRendering() = 0;
+    // Buffer index reserved for push-constant data on Metal.
+    // Index 0 is used here because the first pipeline (triangle) has no vertex buffers.
+    // Revisit when vertex/uniform buffers are added to avoid index collisions.
+    static constexpr uint32_t PushConstantBufferIndex = 0;
 
-    virtual void clearColor(uint32_t attachmentIndex, const gpu::Color& color) = 0;
-    virtual void clearDepth(float depth) = 0;
-
-    virtual void bindPipeline(gpu::GraphicsPipeline* pipeline)
+    uint32_t pushConstantBufferIndex(ShaderStage /*stage*/) const
     {
-        throw std::runtime_error("bindPipeline not implemented");
+        return PushConstantBufferIndex;
     }
 
-    virtual void draw(uint32_t vertexCount, uint32_t instanceCount = 1, uint32_t firstVertex = 0, uint32_t firstInstance = 0)
-    {
-        throw std::runtime_error("draw not implemented");
-    }
-
-    virtual bool isValid() const = 0;
+private:
+    gpu::PipelineLayoutDescription _description;
 };
 
+}
 }
 }

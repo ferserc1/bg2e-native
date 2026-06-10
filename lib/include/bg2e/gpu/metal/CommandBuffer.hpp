@@ -27,6 +27,7 @@ namespace metal {
 
 class Device;
 class SurfaceFrame;
+class GraphicsPipeline;
 
 class CommandBuffer : public gpu::CommandBuffer {
 public:
@@ -46,6 +47,8 @@ public:
     void endRendering() override;
     void clearColor(uint32_t attachmentIndex, const gpu::Color& color) override;
     void clearDepth(float depth) override;
+    void bindPipeline(gpu::GraphicsPipeline* pipeline) override;
+    void draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance) override;
     bool isValid() const override;
 
 #if BG2E_IS_MAC
@@ -54,12 +57,15 @@ public:
 
 private:
 #if BG2E_IS_MAC
+    void ensureRenderEncoder();
+
     metal::Device*              _device      = nullptr;
     MTL::CommandBuffer*         _cmd         = nullptr;
     MTL::RenderPassDescriptor*  _passDesc    = nullptr;
     MTL::RenderCommandEncoder*  _encoder     = nullptr;
     metal::SurfaceFrame*        _renderFrame = nullptr;
     bool                        _recording   = false;
+    metal::GraphicsPipeline*    _boundPipeline = nullptr;
 #endif
 };
 

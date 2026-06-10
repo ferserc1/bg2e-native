@@ -19,12 +19,16 @@
 #include <bg2e/gpu/vk/Device.hpp>
 #include <bg2e/gpu/vk/PhysicalDevice.hpp>
 #include <bg2e/gpu/vk/Instance.hpp>
+#include <bg2e/gpu/vk/ShaderModule.hpp>
+#include <bg2e/gpu/vk/PipelineLayout.hpp>
+#include <bg2e/gpu/vk/GraphicsPipeline.hpp>
 #include <bg2e/gpu/vk/extensions.hpp>
 #include <bg2e/gpu/Surface.hpp>
 #include <bg2e/base/Log.hpp>
 
 #include <set>
 #include <vector>
+#include <memory>
 
 namespace bg2e {
 namespace gpu {
@@ -278,6 +282,21 @@ const gpu::Queue& Device::presentQueue() const
 const gpu::Queue& Device::transferQueue() const
 {
     return _transferQueue;
+}
+
+std::unique_ptr<gpu::ShaderModule> Device::createShaderModule(const gpu::ShaderModuleDescription& description)
+{
+    return std::make_unique<vk::ShaderModule>(_device, description);
+}
+
+std::unique_ptr<gpu::PipelineLayout> Device::createPipelineLayout(const gpu::PipelineLayoutDescription& description)
+{
+    return std::make_unique<vk::PipelineLayout>(_device, description);
+}
+
+std::unique_ptr<gpu::GraphicsPipeline> Device::createGraphicsPipeline(const gpu::GraphicsPipelineDescription& description)
+{
+    return std::make_unique<vk::GraphicsPipeline>(_device, description);
 }
 
 }

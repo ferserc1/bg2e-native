@@ -104,7 +104,9 @@ void Queue::submit(gpu::CommandBuffer* cmd) const
         VkSemaphoreSubmitInfo signal = Info::semaphoreSubmitInfo(
             VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT, frame->renderFinished());
         auto submit = Info::submitInfo(&cmdInfo, &signal, &wait);
-        VK_ASSERT(queueSubmit2(_queue, 1, &submit, frame->inFlightFence()));
+        auto fence = frame->inFlightFence();
+        vkResetFences(_device, 1, &fence);
+        VK_ASSERT(queueSubmit2(_queue, 1, &submit, fence));
 
         VkSemaphore    waitSem = frame->renderFinished();
         VkSwapchainKHR sc      = frame->swapchain();

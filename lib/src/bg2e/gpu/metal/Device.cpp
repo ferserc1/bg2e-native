@@ -18,10 +18,14 @@
 
 #include <bg2e/gpu/metal/Device.hpp>
 #include <bg2e/gpu/metal/PhysicalDevice.hpp>
+#include <bg2e/gpu/metal/ShaderModule.hpp>
+#include <bg2e/gpu/metal/PipelineLayout.hpp>
+#include <bg2e/gpu/metal/GraphicsPipeline.hpp>
 #include <bg2e/gpu/metal/common.hpp>
 #include <bg2e/gpu/Surface.hpp>
 
 #include <stdexcept>
+#include <memory>
 
 namespace bg2e {
 namespace gpu {
@@ -90,6 +94,21 @@ const gpu::Queue& Device::graphicsQueue() const { return _graphicsQueue; }
 const gpu::Queue& Device::presentQueue()  const { return _presentQueue;  }
 const gpu::Queue& Device::transferQueue() const { return _transferQueue; }
 
+std::unique_ptr<gpu::ShaderModule> Device::createShaderModule(const gpu::ShaderModuleDescription& description)
+{
+    return std::make_unique<metal::ShaderModule>(_device, description);
+}
+
+std::unique_ptr<gpu::PipelineLayout> Device::createPipelineLayout(const gpu::PipelineLayoutDescription& description)
+{
+    return std::make_unique<metal::PipelineLayout>(description);
+}
+
+std::unique_ptr<gpu::GraphicsPipeline> Device::createGraphicsPipeline(const gpu::GraphicsPipelineDescription& description)
+{
+    return std::make_unique<metal::GraphicsPipeline>(_device, description);
+}
+
 #else
 
 void Device::create(gpu::Instance*, gpu::PhysicalDevice*, gpu::Surface*)
@@ -104,6 +123,21 @@ bool Device::isValid() const { return false; }
 const gpu::Queue& Device::graphicsQueue() const { return _graphicsQueue; }
 const gpu::Queue& Device::presentQueue()  const { return _presentQueue;  }
 const gpu::Queue& Device::transferQueue() const { return _transferQueue; }
+
+std::unique_ptr<gpu::ShaderModule> Device::createShaderModule(const gpu::ShaderModuleDescription& description)
+{
+    return std::make_unique<metal::ShaderModule>(nullptr, description);
+}
+
+std::unique_ptr<gpu::PipelineLayout> Device::createPipelineLayout(const gpu::PipelineLayoutDescription& description)
+{
+    return std::make_unique<metal::PipelineLayout>(description);
+}
+
+std::unique_ptr<gpu::GraphicsPipeline> Device::createGraphicsPipeline(const gpu::GraphicsPipelineDescription& description)
+{
+    return std::make_unique<metal::GraphicsPipeline>(nullptr, description);
+}
 
 #endif
 

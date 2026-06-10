@@ -76,6 +76,6 @@ framework and vendors `metal-cpp`.
 
 ## What must NOT be done in this step
 
-- Do **not** add any `.metal` source (engine or example).
+- Do **not** add any definitive `.metal` source (engine or example). Add a simple `.metal` source in the engine code (shaders/src/metal/compile_test.metal) with the unique purpose to test the metal build system.
 - Do **not** wire the example yet (step 014).
-- Do **not** compile engine Metal shaders (none exist).
+- Compile **only** the `compile_test.metal` Metal shader.

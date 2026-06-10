@@ -20,6 +20,8 @@
 
 #include <bg2e/common.hpp>
 
+#include <vector>
+
 namespace bg2e {
 namespace gpu {
 
@@ -107,6 +109,73 @@ enum class ImageLayout {
     TransferSrc,
     TransferDst,
     Present
+};
+
+enum class ShaderStage {
+    Vertex,
+    Fragment,
+    Compute
+};
+
+enum class PipelineBarrierFlags : uint32_t {
+    None                 = 0,
+    AllCommands          = 1 << 0,
+    VertexInput          = 1 << 1,
+    VertexShader         = 1 << 2,
+    FragmentShader       = 1 << 3,
+    ComputeShader        = 1 << 4,
+    Transfer             = 1 << 5,
+    ColorAttachmentOutput = 1 << 6,
+    EarlyFragment        = 1 << 7,
+    LateFragment         = 1 << 8,
+    BottomOfPipe         = 1 << 9,
+    TopOfPipe            = 1 << 10,
+    MemoryRead           = 1 << 11,
+    MemoryWrite          = 1 << 12
+};
+
+inline PipelineBarrierFlags operator|(PipelineBarrierFlags a, PipelineBarrierFlags b)
+{
+    return static_cast<PipelineBarrierFlags>(
+        static_cast<uint32_t>(a) | static_cast<uint32_t>(b)
+    );
+}
+
+inline PipelineBarrierFlags operator&(PipelineBarrierFlags a, PipelineBarrierFlags b)
+{
+    return static_cast<PipelineBarrierFlags>(
+        static_cast<uint32_t>(a) & static_cast<uint32_t>(b)
+    );
+}
+
+inline PipelineBarrierFlags& operator|=(PipelineBarrierFlags& a, PipelineBarrierFlags b)
+{
+    return a = a | b;
+}
+
+inline bool hasFlag(PipelineBarrierFlags flags, PipelineBarrierFlags flag)
+{
+    return (static_cast<uint32_t>(flags) & static_cast<uint32_t>(flag)) != 0;
+}
+
+struct ShaderModuleDescription {
+    std::string filePath;            // Vulkan: .spv ; Metal: .metallib
+    std::string entryPoint = "main"; // Vulkan: SPIR-V entry ; Metal: MTL function name
+    ShaderStage stage = ShaderStage::Vertex;
+};
+
+struct PushConstantRange {
+    uint32_t    offset = 0;
+    uint32_t    size   = 0;     // Vulkan minimum guaranteed: 128 bytes; Metal limit: ~4 KB
+    ShaderStage stage  = ShaderStage::Vertex; // single shader stage mapping (upgrade to bitmask later)
+};
+
+struct PipelineLayoutDescription {
+    std::vector<PushConstantRange> pushConstants; // empty for the first triangle pipeline
+
+    // future additions:
+    // - descriptor set / binding descriptions (set=0, set=1, ...)
+    // - argument buffer descriptors for Metal
 };
 
 }

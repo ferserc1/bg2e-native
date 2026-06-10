@@ -16,21 +16,31 @@
  *    along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include <bg2e/gpu/metal/PipelineLayout.hpp>
 
-#include <bg2e/gpu/Common.hpp>
-#include <bg2e/gpu/Backend.hpp>
-#include <bg2e/gpu/Factory.hpp>
-#include <bg2e/gpu/Instance.hpp>
-#include <bg2e/gpu/PhysicalDevice.hpp>
-#include <bg2e/gpu/Surface.hpp>
-#include <bg2e/gpu/Image.hpp>
-#include <bg2e/gpu/SurfaceFrame.hpp>
-#include <bg2e/gpu/WindowSurface.hpp>
-#include <bg2e/gpu/OffscreenSurface.hpp>
-#include <bg2e/gpu/Queue.hpp>
-#include <bg2e/gpu/CommandBuffer.hpp>
-#include <bg2e/gpu/Device.hpp>
-#include <bg2e/gpu/ShaderModule.hpp>
-#include <bg2e/gpu/PipelineLayout.hpp>
-#include <bg2e/gpu/GraphicsPipeline.hpp>
+namespace bg2e {
+namespace gpu {
+namespace metal {
+
+PipelineLayout::PipelineLayout(const gpu::PipelineLayoutDescription& description)
+    : _description(description)
+{
+}
+
+PipelineLayout::~PipelineLayout()
+{
+    cleanup();
+}
+
+bool PipelineLayout::isValid() const
+{
+    return true;
+}
+
+void PipelineLayout::cleanup()
+{
+}
+
+}
+}
+}

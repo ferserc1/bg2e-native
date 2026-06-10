@@ -40,6 +40,8 @@ public:
     void endRendering() override;
     void clearColor(uint32_t attachmentIndex, const gpu::Color& color) override;
     void clearDepth(float depth) override;
+    void bindPipeline(gpu::GraphicsPipeline* pipeline) override;
+    void draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance) override;
     bool isValid() const override { return _cmd != VK_NULL_HANDLE; }
 
     VkCommandBuffer handle() const { return _cmd; }

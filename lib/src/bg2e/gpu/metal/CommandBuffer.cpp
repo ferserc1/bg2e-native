@@ -17,6 +17,7 @@
  */
 
 #include <bg2e/gpu/metal/CommandBuffer.hpp>
+#include <bg2e/gpu/metal/GraphicsPipeline.hpp>
 #include <bg2e/gpu/metal/Image.hpp>
 #include <bg2e/gpu/metal/SurfaceFrame.hpp>
 #include <bg2e/gpu/Image.hpp>
@@ -125,19 +126,74 @@ void CommandBuffer::clearDepth(float depth)
 
 void CommandBuffer::endRendering()
 {
-    if (_passDesc && _cmd)
+    // If the encoder was never created (clear-only frame, e.g. example 04),
+    // create it now so the clear LoadAction still resolves, then end it.
+    if (!_encoder && _passDesc && _cmd)
     {
         _encoder = _cmd->renderCommandEncoder(_passDesc);
-        if (_encoder)
-        {
-            _encoder->endEncoding();
-            _encoder->release();
-            _encoder = nullptr;
-        }
+    }
+    if (_encoder)
+    {
+        _encoder->endEncoding();
+        _encoder->release();
+        _encoder = nullptr;
+    }
+    if (_passDesc)
+    {
         _passDesc->release();
         _passDesc = nullptr;
     }
+    _boundPipeline = nullptr;
     _renderFrame = nullptr;
+}
+
+void CommandBuffer::ensureRenderEncoder()
+{
+    if (_encoder)
+    {
+        return;
+    }
+    if (!_passDesc || !_cmd)
+    {
+        throw std::runtime_error("metal::CommandBuffer::ensureRenderEncoder: no active render pass");
+    }
+    _encoder = _cmd->renderCommandEncoder(_passDesc);
+    if (!_encoder)
+    {
+        throw std::runtime_error("metal::CommandBuffer::ensureRenderEncoder: failed to create render encoder");
+    }
+}
+
+void CommandBuffer::bindPipeline(gpu::GraphicsPipeline* pipeline)
+{
+    auto* metalPipeline = dynamic_cast<metal::GraphicsPipeline*>(pipeline);
+    if (!metalPipeline)
+    {
+        throw std::runtime_error("metal::CommandBuffer::bindPipeline: not a metal::GraphicsPipeline");
+    }
+
+    ensureRenderEncoder();
+    _encoder->setRenderPipelineState(metalPipeline->renderPipelineState());
+    _boundPipeline = metalPipeline;
+}
+
+void CommandBuffer::draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance)
+{
+    ensureRenderEncoder();
+
+    MTL::PrimitiveType primType = MTL::PrimitiveTypeTriangle;
+    if (_boundPipeline)
+    {
+        switch (_boundPipeline->topology())
+        {
+            case gpu::PrimitiveTopology::TriangleList:  primType = MTL::PrimitiveTypeTriangle; break;
+            case gpu::PrimitiveTopology::TriangleStrip: primType = MTL::PrimitiveTypeTriangleStrip; break;
+            case gpu::PrimitiveTopology::LineList:      primType = MTL::PrimitiveTypeLine; break;
+            case gpu::PrimitiveTopology::PointList:     primType = MTL::PrimitiveTypePoint; break;
+        }
+    }
+
+    _encoder->drawPrimitives(primType, firstVertex, vertexCount, instanceCount, firstInstance);
 }
 
 bool CommandBuffer::isValid() const
@@ -155,6 +211,8 @@ void CommandBuffer::beginRendering(gpu::SurfaceFrame*) {}
 void CommandBuffer::endRendering() {}
 void CommandBuffer::clearColor(uint32_t, const gpu::Color&) {}
 void CommandBuffer::clearDepth(float) {}
+void CommandBuffer::bindPipeline(gpu::GraphicsPipeline*) {}
+void CommandBuffer::draw(uint32_t, uint32_t, uint32_t, uint32_t) {}
 bool CommandBuffer::isValid() const { return false; }
 
 #endif

@@ -18,19 +18,34 @@
 
 #pragma once
 
-#include <bg2e/gpu/Common.hpp>
-#include <bg2e/gpu/Backend.hpp>
-#include <bg2e/gpu/Factory.hpp>
-#include <bg2e/gpu/Instance.hpp>
-#include <bg2e/gpu/PhysicalDevice.hpp>
-#include <bg2e/gpu/Surface.hpp>
-#include <bg2e/gpu/Image.hpp>
-#include <bg2e/gpu/SurfaceFrame.hpp>
-#include <bg2e/gpu/WindowSurface.hpp>
-#include <bg2e/gpu/OffscreenSurface.hpp>
-#include <bg2e/gpu/Queue.hpp>
-#include <bg2e/gpu/CommandBuffer.hpp>
-#include <bg2e/gpu/Device.hpp>
 #include <bg2e/gpu/ShaderModule.hpp>
-#include <bg2e/gpu/PipelineLayout.hpp>
-#include <bg2e/gpu/GraphicsPipeline.hpp>
+#include <bg2e/gpu/vk/common.hpp>
+
+#include <string>
+
+namespace bg2e {
+namespace gpu {
+namespace vk {
+
+class BG2E_API ShaderModule : public gpu::ShaderModule {
+public:
+    ShaderModule(VkDevice device, const gpu::ShaderModuleDescription& description);
+    ~ShaderModule() override;
+
+    ShaderStage stage() const override;
+    bool isValid() const override;
+    void cleanup() override;
+
+    VkShaderModule handle() const { return _shaderModule; }
+    const std::string& entryPoint() const { return _entryPoint; }
+
+private:
+    VkDevice _device{VK_NULL_HANDLE};
+    VkShaderModule _shaderModule{VK_NULL_HANDLE};
+    ShaderStage _stage;
+    std::string _entryPoint;
+};
+
+}
+}
+}
