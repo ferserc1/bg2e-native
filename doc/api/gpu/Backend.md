@@ -8,7 +8,7 @@ class BG2E_API Backend {
 public:
     virtual ~Backend() = default;
 
-    [[nodiscard]] virtual gpu::Instance* instance() const = 0;
+    [[nodiscard]] virtual gpu::Instance* sharedInstance() const = 0;
     [[nodiscard]] virtual WindowType windowType() const = 0;
 
     [[nodiscard]] virtual std::unique_ptr<gpu::PhysicalDevice>
@@ -18,10 +18,17 @@ public:
         createDevice() const = 0;
 
     [[nodiscard]] virtual std::unique_ptr<gpu::WindowSurface>
-        createWindowSurface() const = 0;
+        createWindowSurface(
+            gpu::Instance* instance,
+            PixelFormat colorFormat = PixelFormat::B8G8R8A8_UNORM,
+            PixelFormat depthFormat = PixelFormat::D32_SFLOAT) const = 0;
 
     [[nodiscard]] virtual std::unique_ptr<gpu::OffscreenSurface>
-        createOffscreenSurface(uint32_t width, uint32_t height) const = 0;
+        createOffscreenSurface(
+            gpu::Instance* instance,
+            const Size2D& size,
+            PixelFormat colorFormat = PixelFormat::R8G8B8A8_UNORM,
+            PixelFormat depthFormat = PixelFormat::D32_SFLOAT) const = 0;
 };
 ```
 
@@ -34,7 +41,7 @@ to create all rendering objects.
 
 ## Methods
 
-### `virtual gpu::Instance* instance() const = 0`
+### `virtual gpu::Instance* sharedInstance() const = 0`
 
 Returns the backend's singleton `Instance`. The instance is created lazily on
 first call and owned by the backend. Do not delete the returned pointer.
@@ -59,22 +66,27 @@ After creation, call `choose()` to select a GPU.
 Creates a new `Device` object. The caller owns the returned pointer. After
 creation, call `create()` to initialize the logical device.
 
-### `virtual std::unique_ptr<gpu::WindowSurface> createWindowSurface() const = 0`
+### `virtual std::unique_ptr<gpu::WindowSurface> createWindowSurface(gpu::Instance* instance, PixelFormat colorFormat, PixelFormat depthFormat) const = 0`
 
-Creates a new `WindowSurface` for rendering into an OS window. The caller owns
-the returned pointer. After creation, call `create(instance)`.
+Creates a new `WindowSurface` for rendering into an OS window. The surface is
+initialized internally (no separate `create()` call needed).
 
-### `virtual std::unique_ptr<gpu::OffscreenSurface> createOffscreenSurface(uint32_t width, uint32_t height) const = 0`
+| Parameter     | Type          | Default                  | Description                     |
+|---------------|---------------|--------------------------|---------------------------------|
+| `instance`    | `Instance*`   | --                       | The GPU instance (required).    |
+| `colorFormat` | `PixelFormat` | `B8G8R8A8_UNORM`        | Color attachment pixel format.  |
+| `depthFormat` | `PixelFormat` | `D32_SFLOAT`            | Depth attachment pixel format.  |
+
+### `virtual std::unique_ptr<gpu::OffscreenSurface> createOffscreenSurface(gpu::Instance* instance, const Size2D& size, PixelFormat colorFormat, PixelFormat depthFormat) const = 0`
 
 Creates a new `OffscreenSurface` for headless rendering.
 
-| Parameter | Type       | Description                             |
-|-----------|------------|-----------------------------------------|
-| `width`   | `uint32_t` | Width of the offscreen surface in pixels. |
-| `height`  | `uint32_t` | Height of the offscreen surface in pixels.|
-
-The caller owns the returned pointer. No `create()` call is needed; the
-surface is valid immediately after construction.
+| Parameter     | Type          | Default                  | Description                              |
+|---------------|---------------|--------------------------|------------------------------------------|
+| `instance`    | `Instance*`   | --                       | The GPU instance (required).             |
+| `size`        | `Size2D`      | --                       | Width and height of the offscreen target.|
+| `colorFormat` | `PixelFormat` | `R8G8B8A8_UNORM`        | Color attachment pixel format.           |
+| `depthFormat` | `PixelFormat` | `D32_SFLOAT`            | Depth attachment pixel format.           |
 
 ---
 
@@ -89,7 +101,7 @@ Uint32 flags = (backend->windowType() == gpu::WindowType::Vulkan)
 
 // Create all subsystem objects
 auto* instance = backend->sharedInstance();
-auto surface = backend->createWindowSurface();
+auto surface = backend->createWindowSurface(instance);
 auto physicalDevice = backend->createPhysicalDevice();
 auto device = backend->createDevice();
 ```

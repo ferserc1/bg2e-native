@@ -7,13 +7,14 @@
 class BG2E_API WindowSurface : public Surface {
 public:
     bool isOffscreen() const override { return false; }
-
-    virtual void create(Instance* instance) = 0;
-    virtual void cleanup() = 0;
 };
 ```
 
 Abstract surface backed by an OS window. Inherits from `Surface`.
+
+The `create(Instance*)` method is **protected** and called automatically by
+`Backend::createWindowSurface()`. Application code does not call `create()`
+directly.
 
 ---
 
@@ -22,19 +23,6 @@ Abstract surface backed by an OS window. Inherits from `Surface`.
 ### `bool isOffscreen() const override`
 
 Always returns `false`.
-
-### `virtual void create(Instance* instance) = 0`
-
-Initializes the surface using the given instance. The instance must already be
-created in windowed mode.
-
-| Parameter  | Type        | Description                          |
-|------------|-------------|--------------------------------------|
-| `instance` | `Instance*` | The GPU instance (must be windowed). |
-
-### `virtual void cleanup() = 0`
-
-Destroys the surface and releases associated resources.
 
 ---
 
@@ -47,12 +35,8 @@ Destroys the surface and releases associated resources.
 ```cpp
 class WindowSurface : public gpu::WindowSurface {
 public:
-    void create(gpu::Instance* instance) override;
-    void cleanup() override;
-
     uint32_t width() const override;
     uint32_t height() const override;
-
     bool isValid() const override;
 
     VkSurfaceKHR handle() const;
@@ -83,9 +67,6 @@ Returns the SDL window associated with this surface.
 ```cpp
 class WindowSurface : public gpu::WindowSurface {
 public:
-    void create(gpu::Instance* instance) override;
-    void cleanup() override;
-
     uint32_t width() const override;
     uint32_t height() const override;
     bool isValid() const override;

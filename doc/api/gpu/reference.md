@@ -12,12 +12,24 @@ backend-specific sub-namespaces (`bg2e::gpu::vk`, `bg2e::gpu::metal`).
 | [BackendType](BackendType.md) | `gpu/Common.hpp` | Selects Vulkan or Metal backend. |
 | [WindowType](WindowType.md) | `gpu/Backend.hpp` | SDL window flag type for a backend. |
 | [PresentationMode](PresentationMode.md) | `gpu/Instance.hpp` | Windowed vs offscreen creation mode. |
+| [ShaderStage](Common.md#shaderstage) | `gpu/Common.hpp` | Pipeline stage: Vertex, Fragment, Compute. |
+| [ImageLayout](Common.md#imagelayout) | `gpu/Common.hpp` | Image layout states for transitions. |
+| [PixelFormat](Common.md#pixelformat) | `gpu/Common.hpp` | Pixel format for images and attachments. |
+| [PrimitiveTopology](GraphicsPipeline.md#primitivetopology) | `gpu/GraphicsPipeline.hpp` | Primitive assembly topology. |
 
 ## Structs
 
 | Struct | Header | Description |
 |--------|--------|-------------|
 | [PhysicalDeviceProperties](PhysicalDeviceProperties.md) | `gpu/PhysicalDevice.hpp` | GPU properties, scoring, and ray tracing caps. Includes `DeviceType` enum and `RayTracingCapabilities` struct. |
+| [Color](Common.md#color) | `gpu/Common.hpp` | RGBA float color value. |
+| [Size2D](Common.md#size2d) | `gpu/Common.hpp` | 2D dimensions (width, height). |
+| [Size3D](Common.md#size3d) | `gpu/Common.hpp` | 3D dimensions (width, height, depth). |
+| [ShaderModuleDescription](ShaderModule.md#shadermoduledescription) | `gpu/Common.hpp` | Shader file path, entry point, and stage. |
+| [PushConstantRange](Common.md#pushconstantrange) | `gpu/Common.hpp` | Push constant offset, size, and stage. |
+| [PipelineLayoutDescription](Common.md#pipelinelayoutdescription) | `gpu/Common.hpp` | Push constant ranges for a pipeline layout. |
+| [GraphicsPipelineDescription](GraphicsPipeline.md#graphicspipelinedescription) | `gpu/GraphicsPipeline.hpp` | Shaders, layout, topology, and formats. |
+| [ComputePipelineDescription](ComputePipeline.md#computepipelinedescription) | `gpu/ComputePipeline.hpp` | Compute shader and layout. |
 
 ## Classes
 
@@ -30,8 +42,15 @@ backend-specific sub-namespaces (`bg2e::gpu::vk`, `bg2e::gpu::metal`).
 | [WindowSurface](WindowSurface.md) | `gpu/WindowSurface.hpp` | Surface backed by an OS window. |
 | [OffscreenSurface](OffscreenSurface.md) | `gpu/OffscreenSurface.hpp` | Surface for headless rendering. |
 | [PhysicalDevice](PhysicalDevice.md) | `gpu/PhysicalDevice.hpp` | Physical GPU device selection and properties. |
-| [Device](Device.md) | `gpu/Device.hpp` | Logical device and command queue access. |
-| [Queue](Queue.md) | `gpu/Queue.hpp` | Abstract command queue. |
+| [Device](Device.md) | `gpu/Device.hpp` | Logical device, queue access, and resource factories. |
+| [Queue](Queue.md) | `gpu/Queue.hpp` | Abstract command queue; creates and submits command buffers. |
+| [ShaderModule](ShaderModule.md) | `gpu/ShaderModule.hpp` | Compiled shader module (SPIR-V or metallib). |
+| [PipelineLayout](PipelineLayout.md) | `gpu/PipelineLayout.hpp` | Push constant and descriptor set layout. |
+| [GraphicsPipeline](GraphicsPipeline.md) | `gpu/GraphicsPipeline.hpp` | Graphics pipeline state object. |
+| [ComputePipeline](ComputePipeline.md) | `gpu/ComputePipeline.hpp` | Compute pipeline state object. |
+| [CommandBuffer](CommandBuffer.md) | `gpu/CommandBuffer.hpp` | Records GPU commands for queue submission. |
+| [SurfaceFrame](SurfaceFrame.md) | `gpu/SurfaceFrame.hpp` | Frame from a surface swapchain. |
+| [Image](Image.md) | `gpu/Image.hpp` | GPU image (texture or render target). |
 
 ## Vulkan utilities
 
@@ -44,7 +63,7 @@ backend-specific sub-namespaces (`bg2e::gpu::vk`, `bg2e::gpu::metal`).
 
 | Item | Header | Description |
 |------|--------|-------------|
-| [Metal handle types](MetalHandleTypes.md) | `gpu/metal/common.hpp` | Type aliases for `MTL::Device*`, `MTL::CommandQueue*`, `CA::MetalLayer*`. |
+| [Metal handle types](MetalHandleTypes.md) | `gpu/metal/common.hpp` | Type aliases for `MTL::Device*`, `MTL::CommandQueue*`, `CA::MetalLayer*. |
 
 ---
 
@@ -74,4 +93,25 @@ gpu::Device                   (abstract)
 gpu::Queue                    (abstract)
   +-- gpu::vk::Queue
   +-- gpu::metal::Queue
+gpu::ShaderModule             (abstract)
+  +-- gpu::vk::ShaderModule
+  +-- gpu::metal::ShaderModule
+gpu::PipelineLayout           (abstract)
+  +-- gpu::vk::PipelineLayout
+  +-- gpu::metal::PipelineLayout
+gpu::GraphicsPipeline         (abstract)
+  +-- gpu::vk::GraphicsPipeline
+  +-- gpu::metal::GraphicsPipeline
+gpu::ComputePipeline          (abstract)
+  +-- gpu::vk::ComputePipeline
+  +-- gpu::metal::ComputePipeline
+gpu::CommandBuffer            (abstract)
+  +-- gpu::vk::CommandBuffer
+  +-- gpu::metal::CommandBuffer
+gpu::SurfaceFrame             (abstract)
+  +-- gpu::vk::SurfaceFrame
+  +-- gpu::metal::SurfaceFrame
+gpu::Image                    (abstract)
+  +-- gpu::vk::Image
+  +-- gpu::metal::Image
 ```

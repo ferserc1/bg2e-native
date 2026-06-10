@@ -18,11 +18,21 @@ public:
     virtual const Queue& graphicsQueue() const = 0;
     virtual const Queue& presentQueue() const = 0;
     virtual const Queue& transferQueue() const = 0;
+
+    virtual std::unique_ptr<ShaderModule> createShaderModule(
+        const ShaderModuleDescription& description);
+    virtual std::unique_ptr<PipelineLayout> createPipelineLayout(
+        const PipelineLayoutDescription& description);
+    virtual std::unique_ptr<GraphicsPipeline> createGraphicsPipeline(
+        const GraphicsPipelineDescription& description);
+    virtual std::unique_ptr<ComputePipeline> createComputePipeline(
+        const ComputePipelineDescription& description);
 };
 ```
 
 Represents a logical device created from a physical device. Provides access
-to command queues.
+to command queues and factory methods for creating shader modules, pipeline
+layouts, and pipelines.
 
 ---
 
@@ -63,6 +73,42 @@ Returns the presentation command queue. Valid only after `create()`.
 
 Returns the transfer command queue. Valid only after `create()`.
 
+### `virtual std::unique_ptr<ShaderModule> createShaderModule(const ShaderModuleDescription& description)`
+
+Creates a shader module from the given description. The default implementation
+throws `std::runtime_error`; backends override this with platform-specific
+logic.
+
+| Parameter     | Type                        | Description             |
+|---------------|-----------------------------|-------------------------|
+| `description` | `ShaderModuleDescription`   | Shader path, entry point, and stage. |
+
+### `virtual std::unique_ptr<PipelineLayout> createPipelineLayout(const PipelineLayoutDescription& description)`
+
+Creates a pipeline layout defining push constant ranges and (future) descriptor
+set layouts.
+
+| Parameter     | Type                          | Description             |
+|---------------|-------------------------------|-------------------------|
+| `description` | `PipelineLayoutDescription`   | Push constant ranges.   |
+
+### `virtual std::unique_ptr<GraphicsPipeline> createGraphicsPipeline(const GraphicsPipelineDescription& description)`
+
+Creates a graphics pipeline with the specified shaders, topology, and
+attachment formats.
+
+| Parameter     | Type                            | Description             |
+|---------------|---------------------------------|-------------------------|
+| `description` | `GraphicsPipelineDescription`   | Pipeline configuration. |
+
+### `virtual std::unique_ptr<ComputePipeline> createComputePipeline(const ComputePipelineDescription& description)`
+
+Creates a compute pipeline with the specified compute shader and layout.
+
+| Parameter     | Type                           | Description             |
+|---------------|--------------------------------|-------------------------|
+| `description` | `ComputePipelineDescription`   | Pipeline configuration. |
+
 ---
 
 ## vk::Device
@@ -85,12 +131,21 @@ public:
     const gpu::Queue& presentQueue() const override;
     const gpu::Queue& transferQueue() const override;
 
+    std::unique_ptr<gpu::ShaderModule> createShaderModule(
+        const gpu::ShaderModuleDescription& description) override;
+    std::unique_ptr<gpu::PipelineLayout> createPipelineLayout(
+        const gpu::PipelineLayoutDescription& description) override;
+    std::unique_ptr<gpu::GraphicsPipeline> createGraphicsPipeline(
+        const gpu::GraphicsPipelineDescription& description) override;
+    std::unique_ptr<gpu::ComputePipeline> createComputePipeline(
+        const gpu::ComputePipelineDescription& description) override;
+
     VkDevice handle() const;
 };
 ```
 
 Vulkan logical device wrapper. Creates `VkDevice` with the required queue
-families and exposes the three queue types.
+families and exposes factory methods for Vulkan resources.
 
 ### Vulkan-specific methods
 
@@ -119,6 +174,15 @@ public:
     const gpu::Queue& graphicsQueue() const override;
     const gpu::Queue& presentQueue() const override;
     const gpu::Queue& transferQueue() const override;
+
+    std::unique_ptr<gpu::ShaderModule> createShaderModule(
+        const gpu::ShaderModuleDescription& description) override;
+    std::unique_ptr<gpu::PipelineLayout> createPipelineLayout(
+        const gpu::PipelineLayoutDescription& description) override;
+    std::unique_ptr<gpu::GraphicsPipeline> createGraphicsPipeline(
+        const gpu::GraphicsPipelineDescription& description) override;
+    std::unique_ptr<gpu::ComputePipeline> createComputePipeline(
+        const gpu::ComputePipelineDescription& description) override;
 
     DeviceHandle handle() const;
 };

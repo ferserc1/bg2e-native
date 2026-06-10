@@ -55,7 +55,7 @@ auto* backend = gpu::Factory::backend();
 
 // Create GPU objects through the backend
 auto* instance = backend->sharedInstance();
-auto surface = backend->createWindowSurface();
+auto surface = backend->createWindowSurface(instance);
 auto physicalDevice = backend->createPhysicalDevice();
 auto device = backend->createDevice();
 ```

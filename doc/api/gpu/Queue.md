@@ -9,6 +9,9 @@ public:
     virtual ~Queue() = default;
     virtual uint32_t familyIndex() const = 0;
     virtual bool isValid() const = 0;
+
+    virtual std::shared_ptr<gpu::CommandBuffer> createCommandBuffer() const = 0;
+    virtual void submit(gpu::CommandBuffer* cmd) const = 0;
 };
 ```
 
@@ -29,6 +32,22 @@ queue family concept).
 Returns `true` if the queue has been successfully created and is ready to
 accept commands.
 
+### `virtual std::shared_ptr<gpu::CommandBuffer> createCommandBuffer() const = 0`
+
+Allocates and returns a new command buffer from this queue's command pool.
+The returned command buffer must be recorded and submitted through the same
+queue.
+
+### `virtual void submit(gpu::CommandBuffer* cmd) const = 0`
+
+Submits a recorded command buffer to the queue for execution. The command
+buffer must have been created by this queue and fully recorded (i.e., `end()`
+must have been called).
+
+| Parameter | Type               | Description                    |
+|-----------|--------------------|--------------------------------|
+| `cmd`     | `gpu::CommandBuffer*` | The command buffer to submit.|
+
 ---
 
 ## vk::Queue
@@ -46,12 +65,15 @@ public:
     uint32_t familyIndex() const override;
     bool isValid() const override;
 
+    std::shared_ptr<gpu::CommandBuffer> createCommandBuffer() const override;
+    void submit(gpu::CommandBuffer* cmd) const override;
+
     VkQueue handle() const;
 };
 ```
 
 Vulkan command queue wrapper. Stores the `VkQueue` handle and its family
-index.
+index. Allocates command buffers from an internal `VkCommandPool`.
 
 ### Constructor
 
@@ -90,6 +112,9 @@ public:
 
     uint32_t familyIndex() const override;
     bool isValid() const override;
+
+    std::shared_ptr<gpu::CommandBuffer> createCommandBuffer() const override;
+    void submit(gpu::CommandBuffer* cmd) const override;
 
     CommandQueueHandle handle() const;
 };
