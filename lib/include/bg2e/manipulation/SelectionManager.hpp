@@ -148,7 +148,9 @@ public:
     void deselect();
 
     // selectedItem returns the first item in the selection array, when multi select is enabled
-    [[nodiscard]] inline std::shared_ptr<SelectionItem> selectedItem() const { return _selectedItem; }
+    [[nodiscard]] inline std::shared_ptr<SelectionItem> selectedItem() const {
+        return _selectedItems.empty() ? nullptr : _selectedItems.front();
+    }
 
     [[nodiscard]] inline scene::Node * selectedNode() const { return selectedItem() ? selectedItem()->nodePtr() : nullptr; }
     [[nodiscard]] inline scene::DrawableComponent * selectedDrawable() const { return selectedItem() ? selectedItem()->drawablePtr() : nullptr; }
@@ -158,6 +160,7 @@ public:
     [[nodiscard]] inline bool multiSelection() const { return _multiSelection; }
     inline void setMultiSelectionEnabled(bool e) { _multiSelection = e; }
     [[nodiscard]] inline const std::vector<std::shared_ptr<SelectionItem>>& selectedItems() const { return _selectedItems; }
+    [[nodiscard]] inline const std::vector<std::weak_ptr<scene::Node>>& selectedNodes() const { return _selectedNodes; }
 
     bool isSelected(const scene::Node * node, const scene::DrawableComponent * drawable, uint32_t submesh);
     bool isSelected(const scene::Node * node, const scene::Drawable * drawable, uint32_t submesh);
@@ -182,11 +185,10 @@ protected:
     std::shared_ptr<render::vulkan::Image> _image;
     std::shared_ptr<PickSelectionVisitor> _pickVisitor;
 
-    std::shared_ptr<SelectionItem> _selectedItem;
-
     bool _multiSelection = true;
     bool _clearSelectionOnEmptyPick = true;
     std::vector<std::shared_ptr<SelectionItem>> _selectedItems;
+    std::vector<std::weak_ptr<scene::Node>> _selectedNodes;
 
     uint32_t pickObjectId(
         scene::Node * rootNode,
@@ -201,7 +203,7 @@ protected:
     void cleanupImage();
 
     std::vector<OnSelectCallback> _onSelectCallbacks;
-    void callOnChange() const;
+    void callOnChange();
 };
 
 }

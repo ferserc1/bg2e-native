@@ -200,9 +200,10 @@ int32_t MainLoop::run(app::Application * application) {
             {
                 stopRendering = false;
             }
-            else if (event.type == SDL_WINDOWEVENT &&
-                event.window.event == SDL_WINDOWEVENT_RESIZED)
-            {
+            else if ((event.type == SDL_WINDOWEVENT &&
+                event.window.event == SDL_WINDOWEVENT_RESIZED) ||
+                _resizeRequested
+            ) {
                 int w, h;
                 SDL_GetWindowSize(window, &w, &h);
                 storeWidth = w;
@@ -215,6 +216,7 @@ int32_t MainLoop::run(app::Application * application) {
                     _engine.updateSwapchainSize();
                     resizing = true;
                 }
+                _resizeRequested = false;
             }
 			else if (event.type == SDL_KEYUP || event.type == SDL_KEYDOWN)
 			{
@@ -323,6 +325,11 @@ void MainLoop::exit()
     SDL_Event event;
     event.type = SDL_QUIT;
     SDL_PushEvent(&event);
+}
+
+void MainLoop::requestResizeEvent()
+{
+    _resizeRequested = true;
 }
 
 void MainLoop::executeSafeUpdateScene()

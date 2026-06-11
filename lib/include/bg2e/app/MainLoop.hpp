@@ -142,6 +142,8 @@ public:
     {
         _safeUpdateScene.emplace_back(std::move(fn), std::move(token));
     }
+
+    void requestResizeEvent();
     
 protected:
     WindowConfig _windowConfig;
@@ -162,6 +164,8 @@ protected:
     std::vector<std::pair<std::function<void()>, std::shared_ptr<SafeUpdateToken>>> _safeUpdateScene;
 
     Shortcuts _shortcuts;
+
+    bool _resizeRequested = false;
     
     void initMainLoopInstance();
 

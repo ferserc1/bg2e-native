@@ -141,6 +141,9 @@ void StageScene::openScene(const std::filesystem::path& path)
     setEditableRoot(newRoot);
     _document->setPath(path);
     _document->setUnsavedChanges(false);
+
+    // Request resize event to send the first resize to the scene
+    bg2e::app::MainLoop::current()->requestResizeEvent();
 }
 
 void StageScene::importModelBg2(const std::filesystem::path& path)

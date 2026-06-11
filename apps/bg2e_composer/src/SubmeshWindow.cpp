@@ -47,9 +47,11 @@ void SubmeshWindow::init(AppDelegate * delegate)
             bg2e::ui::BasicWidgets::text("No selection");
             return;
         }
-        if (count > 1)
+
+        // Count the number of different nodes
+        if (sm->selectedNodes().size() > 1)
         {
-            bg2e::ui::BasicWidgets::text("<multiple_selection>");
+            bg2e::ui::BasicWidgets::text("<multiple nodes>");
             return;
         }
 

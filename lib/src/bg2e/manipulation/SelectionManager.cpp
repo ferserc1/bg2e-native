@@ -282,8 +282,6 @@ uint32_t SelectionManager::pickObjectId(
         createImage();
     }
 
-    _selectedItem.reset();
-
     _engine->command().immediateSubmit([&](VkCommandBuffer cmd) {
         Image::cmdTransitionImage(
             cmd,
@@ -389,8 +387,19 @@ void SelectionManager::cleanupImage()
     _image.reset();
 }
 
-void SelectionManager::callOnChange() const
+void SelectionManager::callOnChange()
 {
+    _selectedNodes.clear();
+    for (const auto& item : _selectedItems)
+    {
+        auto nodePtr = item->node.lock().get();
+        if (nodePtr && std::none_of(_selectedNodes.begin(), _selectedNodes.end(),
+            [nodePtr](const std::weak_ptr<scene::Node>& n) { return n.lock().get() == nodePtr; }))
+        {
+            _selectedNodes.push_back(item->node);
+        }
+    }
+
     for (auto & cb : _onSelectCallbacks)
     {
         cb();
