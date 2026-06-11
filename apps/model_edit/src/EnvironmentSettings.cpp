@@ -126,10 +126,6 @@ void EnvironmentSettings::init(
                 bg2e::base::Light::LightType type = bg2e::base::Light::TypeDisabled;
                 _lightEditor->setLightComponent(_selectedLight);
                 type = _selectedLight->light().type();
-                if (_lightEditor->draw() && _selectedLight)
-                {
-                    _appDelegate->stage()->updateLightMesh(_selectedLight->ownerNode());
-                }
 
                 auto polarCtrl = _selectedLight->ownerNode()->getComponent<bg2e::scene::PolarTransformControllerComponent>();
                 if (polarCtrl)

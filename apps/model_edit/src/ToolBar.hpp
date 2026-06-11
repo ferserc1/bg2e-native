@@ -23,18 +23,19 @@
 #include "SubmeshWindow.hpp"
 
 class  AppDelegate;
-class UISettingsWindow;
 class UIRenderSettingsWindow;
+
+namespace bg2e::ui { class UISettingsWindow; }
 
 class ToolBar : public bg2e::ui::Toolbar {
 public:
     virtual ~ToolBar() = default;
 
-    void init(AppDelegate * delegate, UISettingsWindow * uiSettings, UIRenderSettingsWindow * renderSettings);
-    
+    void init(AppDelegate * delegate, bg2e::ui::UISettingsWindow * uiSettings, UIRenderSettingsWindow * renderSettings);
+
 protected:
 
     AppDelegate * _appDelegate = nullptr;
-    UISettingsWindow * _uiSettingsWindow = nullptr;
+    bg2e::ui::UISettingsWindow * _uiSettingsWindow = nullptr;
     UIRenderSettingsWindow * _renderSettingsWindow = nullptr;
 };

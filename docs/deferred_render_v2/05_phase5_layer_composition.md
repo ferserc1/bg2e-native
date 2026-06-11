@@ -34,8 +34,8 @@ protected:
     std::unique_ptr<scene::vk::LightDataBinding> _lightDataBinding;
     std::unique_ptr<vulkan::rt::RayTracingSceneDataBinding> _rtDataBinding;
 
-    // Selection highlight
-    std::unique_ptr<manipulation::SelectionHighlight> _selectionHighlight;
+    // Gizmo and selection highlight
+    std::unique_ptr<manipulation::GizmoAndSelectionRenderer> _gizmoAndSelectionRenderer;
 ```
 
 > **NOTE (Refactoring):** The following members are now inherited from `Renderer` base class
@@ -114,10 +114,10 @@ void RendererDeferred::build(Engine* engine, VkExtent2D initialExtent,
         VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
         VK_IMAGE_ASPECT_COLOR_BIT);
 
-    // Selection highlight (non-offscreen only)
+    // Gizmo and selection highlight (non-offscreen only)
     if (!isOffscreen) {
-        _selectionHighlight = std::make_unique<manipulation::SelectionHighlight>();
-        _selectionHighlight->init(engine);
+        _gizmoAndSelectionRenderer = std::make_unique<manipulation::GizmoAndSelectionRenderer>();
+        _gizmoAndSelectionRenderer->init(engine);
     }
 }
 ```
@@ -159,12 +159,12 @@ void RendererDeferred::draw(VkCommandBuffer cmd, uint32_t currentFrame,
     _transparentLayer->render(cmd, currentFrame, _opaqueImage.get(), colorImage,
                               frameResources);
 
-    // === Selection highlight (non-offscreen only) ===
-    if (!_isOffscreen && _selectionHighlight) {
+    // === Gizmo and selection highlight (non-offscreen only) ===
+    if (!_isOffscreen && _gizmoAndSelectionRenderer) {
         auto mainCamera = _scene->mainCamera();
         auto viewMatrix = mainCamera->ownerNode()->invertedWorldMatrix();
         auto projMatrix = mainCamera->projectionMatrix();
-        _selectionHighlight->draw(_scene->rootNode(), viewMatrix, projMatrix, cmd);
+        _gizmoAndSelectionRenderer->draw(_scene->rootNode(), viewMatrix, projMatrix, cmd);
     }
 
     // === End scene render (from Renderer base) ===
@@ -277,7 +277,7 @@ void RendererDeferred::resize(VkExtent2D newExtent) {
 ```cpp
 void RendererDeferred::cleanup() {
     // Cleanup in reverse order of creation
-    _selectionHighlight.reset();
+    _gizmoAndSelectionRenderer.reset();
 
     _transparentLayer->cleanup();
     _opaqueLayer->cleanup();
@@ -332,4 +332,4 @@ void RendererDeferred::cleanup() {
 - `lib/include/bg2e/render/RendererBasicForward.hpp` — member variables and structure
 - `lib/include/bg2e/scene/Scene.hpp` — scene lifecycle methods (`willDraw`, `didDraw`, etc.)
 - `lib/include/bg2e/render/EnvironmentResources.hpp` — environment build/update/draw
-- `lib/include/bg2e/manipulation/SelectionHighlight.hpp` — selection highlight rendering
+- `lib/include/bg2e/manipulation/GizmoAndSelectionRenderer.hpp` — gizmo and selection highlight rendering

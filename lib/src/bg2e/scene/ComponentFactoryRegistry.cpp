@@ -41,9 +41,14 @@ void ComponentFactoryRegistry::registerComponent(const std::string& componentNam
 
 Component* ComponentFactoryRegistry::create(std::shared_ptr<json::JsonNode> data, const std::filesystem::path& basePath, render::Engine& engine)
 {
-    if (!data->isObject())
+    if (!data->isObject() && !data->isNull())
     {
         throw std::runtime_error("ComponentFactoryRegistry::create(): invalid JSON data. Expecting object");
+    }
+
+    if (data->isNull())
+    {
+        return nullptr;
     }
 
     auto objectValue = data->objectValue();

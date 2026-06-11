@@ -15,18 +15,20 @@
  *    You should have received a copy of the GNU General Public License
  *    along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#pragma once
 
-#include <bg2e/ui/Window.hpp>
+#version 450
 
-class AppDelegate;
+layout (location = 0) in vec3 inPosition;
 
-class UISettingsWindow : public bg2e::ui::Window {
-public:
-    void init(AppDelegate * delegate);
+layout (location = 0) out vec4 outColor;
 
-private:
-    void drawUI();
+layout (push_constant) uniform FrameData {
+    mat4 mvp;
+    vec4 color;
+} frameData;
 
-    AppDelegate * _appDelegate = nullptr;
-};
+void main()
+{
+    gl_Position = frameData.mvp * vec4(inPosition, 1.0);
+    outColor = frameData.color;
+}

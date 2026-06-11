@@ -36,8 +36,21 @@ public:
         _deleters.push_back(fn);
     }
 
+    // Static resources (e.g. shared caches) that must be released before
+    // per-object deleters run. Called in insertion order, before _deleters.
+    void pushStatic(std::function<void(VkDevice)>&& fn)
+    {
+        _staticDeleters.push_back(fn);
+    }
+
     void flush(const Device& device)
     {
+        for (auto& fn : _staticDeleters)
+        {
+            fn(device.handle());
+        }
+        _staticDeleters.clear();
+
         for (auto it = _deleters.rbegin(); it != _deleters.rend(); ++it)
         {
             (*it)(device.handle());
@@ -46,6 +59,7 @@ public:
     }
 
 protected:
+    std::deque<std::function<void(VkDevice)>> _staticDeleters;
     std::deque<std::function<void(VkDevice)>> _deleters;
 
 };

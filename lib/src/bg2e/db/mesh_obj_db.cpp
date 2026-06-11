@@ -265,6 +265,7 @@ std::shared_ptr<bg2e::scene::Drawable> loadDrawableObj(
 ) {
     auto mesh = loadMeshObj<bg2e::geo::Mesh>(filePath);
     auto drawable = std::make_shared<bg2e::scene::Drawable>();
+    drawable->setName(filePath.stem().string());
     drawable->setMesh(mesh);
     drawable->load(engine);
     for (uint32_t i = 0; i < mesh->submeshes.size(); i++)

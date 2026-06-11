@@ -27,7 +27,7 @@
 #include <bg2e/render/deferred/DeferredLayer.hpp>
 #include <bg2e/scene/vk/DeferredLightDataBinding.hpp>
 #include <bg2e/render/vulkan/rt/RayTracingSceneDataBinding.hpp>
-#include <bg2e/manipulation/SelectionHighlight.hpp>
+#include <bg2e/manipulation/GizmoAndSelectionRenderer.hpp>
 
 #include <memory>
 
@@ -42,7 +42,7 @@ public:
     [[nodiscard]] bool drawSkybox() const override { return _skyboxLayer->drawSkybox(); }
     inline void setDrawSkybox(bool value) override { _skyboxLayer->setDrawSkybox(value); }
 
-    [[nodiscard]] manipulation::SelectionHighlight * selectionHighlight() const { return _selectionHighlight.get(); }
+    [[nodiscard]] manipulation::GizmoAndSelectionRenderer * gizmoAndSelectionRenderer() const { return _gizmoAndSelectionRenderer.get(); }
 
     void build(
         bg2e::render::Engine* engine,
@@ -179,8 +179,7 @@ protected:
     std::unique_ptr<scene::vk::DeferredLightDataBinding> _lightDataBinding;
     std::unique_ptr<vulkan::rt::RayTracingSceneDataBinding> _rtDataBinding;
 
-    // Selection highlight
-    std::unique_ptr<manipulation::SelectionHighlight> _selectionHighlight;
+    std::unique_ptr<manipulation::GizmoAndSelectionRenderer> _gizmoAndSelectionRenderer;
 
     deferred::DeferredDebugVisualization _debugVisualization = deferred::DeferredDebugVisualization::FullComposition;
 

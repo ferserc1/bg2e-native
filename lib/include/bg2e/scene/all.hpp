@@ -24,6 +24,7 @@
 #include <bg2e/scene/ComponentFactoryRegistry.hpp>
 #include <bg2e/scene/Drawable.hpp>
 #include <bg2e/scene/DrawableComponent.hpp>
+#include <bg2e/scene/DrawableRegistry.hpp>
 #include <bg2e/scene/DrawVisitor.hpp>
 #include <bg2e/scene/EnvironmentComponent.hpp>
 #include <bg2e/scene/FindCameraVisitor.hpp>

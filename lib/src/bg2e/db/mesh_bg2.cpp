@@ -509,6 +509,7 @@ std::shared_ptr<bg2e::scene::Drawable> loadDrawableBg2(
 ) {
     auto bg2Model = std::unique_ptr<Bg2Mesh>(bg2e::db::loadMeshBg2(filePath));
     auto result = std::make_shared<bg2e::scene::Drawable>();
+    result->setName(filePath.stem().string());
     result->setMesh(bg2Model->mesh);
     uint32_t i = 0;
     for (auto m : bg2Model->materials)

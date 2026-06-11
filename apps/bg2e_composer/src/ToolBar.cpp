@@ -19,7 +19,7 @@
 #include "AppDelegate.hpp"
 #include <bg2e/app/MainLoop.hpp>
 
-void ToolBar::init(AppDelegate * delegate, UISettingsWindow * uiSettings, UIRenderSettingsWindow * renderSettings)
+void ToolBar::init(AppDelegate * delegate, bg2e::ui::UISettingsWindow * uiSettings, UIRenderSettingsWindow * renderSettings)
 {
     using namespace bg2e::ui;
     _appDelegate = delegate;

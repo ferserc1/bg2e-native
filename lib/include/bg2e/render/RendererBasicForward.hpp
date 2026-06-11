@@ -33,7 +33,7 @@
 #include <bg2e/scene/RenderQueueVisitor.hpp>
 #include <bg2e/render/Engine.hpp>
 #include <bg2e/render/Renderer.hpp>
-#include <bg2e/manipulation/SelectionHighlight.hpp>
+#include <bg2e/manipulation/GizmoAndSelectionRenderer.hpp>
 #include <bg2e/render/vulkan/rt/RayTracingSceneDataBinding.hpp>
 
 #include <memory>
@@ -66,7 +66,7 @@ public:
     [[nodiscard]] bool drawSkybox() const override { return _drawSkybox; }
     inline void setDrawSkybox(bool value) override { _drawSkybox = value; }
 
-    [[nodiscard]] manipulation::SelectionHighlight * selectionHighlight() const { return _selectionHighlight.get(); }
+    [[nodiscard]] manipulation::GizmoAndSelectionRenderer * gizmoAndSelectionRenderer() const { return _gizmoAndSelectionRenderer.get(); }
 
     // This renderer is a prototype for a simple forward renderer. In the future, it will be possible to implement other rendering techniques by inheriting from this class and overriding the necessary methods.
     void build(
@@ -125,7 +125,7 @@ protected:
 
     bg2e::scene::DrawVisitor _drawVisitor;
 
-    std::unique_ptr<bg2e::manipulation::SelectionHighlight> _selectionHighlight;
+    std::unique_ptr<bg2e::manipulation::GizmoAndSelectionRenderer> _gizmoAndSelectionRenderer;
 
     VkPipeline _opaquePipeline = VK_NULL_HANDLE;
     VkPipeline _transparentPipeline = VK_NULL_HANDLE;

@@ -27,13 +27,46 @@
 #include <bg2e/base/PlatformTools.hpp>
 #include <bg2e/app/MainLoop.hpp>
 
+#include <cmath>
+
 namespace bg2e::manipulation {
 
 std::unordered_map<GizmoType, std::shared_ptr<scene::Drawable>> GizmoComponent::_gizmoCache;
+bool GizmoComponent::_cleanupRegistered = false;
+
+std::unordered_map<GizmoType, float> GizmoComponent::_gizmoScales = {
+    { GizmoType::Camera,           0.08f },
+    { GizmoType::PointLight,       0.08f },
+    { GizmoType::SpotLight,        0.08f },
+    { GizmoType::DirectionalLight, 0.08f },
+    { GizmoType::Environment,      0.08f },
+};
+
+std::unordered_map<GizmoType, float> GizmoComponent::_gizmoOpacities = {
+    { GizmoType::Camera,           0.8f },
+    { GizmoType::PointLight,       0.8f },
+    { GizmoType::SpotLight,        0.8f },
+    { GizmoType::DirectionalLight, 0.8f },
+    { GizmoType::Environment,      0.8f },
+};
+
+std::unordered_map<GizmoType, bool> GizmoComponent::_gizmoVisible = {
+    { GizmoType::Camera,           true },
+    { GizmoType::PointLight,       true },
+    { GizmoType::SpotLight,        true },
+    { GizmoType::DirectionalLight, true },
+    { GizmoType::Environment,      true },
+};
 
 GizmoComponent::GizmoComponent(render::Engine* engine)
     : _engine { engine }
 {
+    if (!_cleanupRegistered) {
+        _cleanupRegistered = true;
+        engine->cleanupManager().pushStatic([](VkDevice) {
+            GizmoComponent::cleanupStatic();
+        });
+    }
 }
 
 GizmoType GizmoComponent::resolveGizmoType() const
@@ -139,9 +172,78 @@ void GizmoComponent::update(float)
     });
 }
 
+base::Color GizmoComponent::gizmoColor() const
+{
+    auto node = ownerNode();
+    if (node)
+    {
+        auto lightComp = node->light();
+        if (lightComp)
+        {
+            return lightComp->light().color();
+        }
+    }
+    return base::Color::White();
+}
+
+glm::mat4 GizmoComponent::renderTransform(
+    const glm::mat4& worldTransform,
+    const glm::mat4& viewMatrix,
+    const glm::mat4& projMatrix
+) const {
+    glm::vec3 worldPosition = glm::vec3(worldTransform[3]);
+    glm::vec4 viewPos = viewMatrix * glm::vec4(worldPosition, 1.0f);
+    float viewDepth = std::abs(viewPos.z);
+    float scale = gizmoScale(_currentGizmoType) * viewDepth / projMatrix[1][1];
+
+    glm::mat4 result = worldTransform;
+    result[0] = glm::normalize(glm::vec4(glm::vec3(worldTransform[0]), 0.0f)) * scale;
+    result[1] = glm::normalize(glm::vec4(glm::vec3(worldTransform[1]), 0.0f)) * scale;
+    result[2] = glm::normalize(glm::vec4(glm::vec3(worldTransform[2]), 0.0f)) * scale;
+    result[3] = worldTransform[3];
+    return result;
+}
+
+float GizmoComponent::gizmoScale(GizmoType type)
+{
+    auto it = _gizmoScales.find(type);
+    if (it != _gizmoScales.end()) return it->second;
+    return 0.08f;
+}
+
+void GizmoComponent::setGizmoScale(GizmoType type, float scale)
+{
+    _gizmoScales[type] = scale;
+}
+
+float GizmoComponent::gizmoOpacity(GizmoType type)
+{
+    auto it = _gizmoOpacities.find(type);
+    if (it != _gizmoOpacities.end()) return it->second;
+    return 0.8f;
+}
+
+void GizmoComponent::setGizmoOpacity(GizmoType type, float opacity)
+{
+    _gizmoOpacities[type] = opacity;
+}
+
+bool GizmoComponent::isGizmoVisible(GizmoType type)
+{
+    auto it = _gizmoVisible.find(type);
+    if (it != _gizmoVisible.end()) return it->second;
+    return true;
+}
+
+void GizmoComponent::setGizmoVisible(GizmoType type, bool visible)
+{
+    _gizmoVisible[type] = visible;
+}
+
 void GizmoComponent::cleanupStatic()
 {
     _gizmoCache.clear();
+    _cleanupRegistered = false;
 }
 
 }

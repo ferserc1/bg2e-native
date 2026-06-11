@@ -192,7 +192,14 @@ std::string JsonNode::toString(int indentationLevel) {
                 outputString += "\n";
             }
             emptyList = false;
-            outputString += innerIndentation + node->toString(indentationLevel + 1);
+            if (!node)
+            {
+                outputString += innerIndentation + "null";
+            }
+            else
+            {
+                outputString += innerIndentation + node->toString(indentationLevel + 1);
+            }
             if (index < (_listValue).size() - 1) {
                 outputString += ",";
             }

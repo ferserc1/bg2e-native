@@ -15,18 +15,21 @@
  *    You should have received a copy of the GNU General Public License
  *    along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
+
 #pragma once
 
 #include <bg2e/ui/Window.hpp>
 
-class AppDelegate;
+namespace bg2e {
+namespace ui {
 
-class UISettingsWindow : public bg2e::ui::Window {
+class BG2E_API UISettingsWindow : public Window {
 public:
-    void init(AppDelegate * delegate);
+    void init();
 
 private:
     void drawUI();
-
-    AppDelegate * _appDelegate = nullptr;
 };
+
+}
+}

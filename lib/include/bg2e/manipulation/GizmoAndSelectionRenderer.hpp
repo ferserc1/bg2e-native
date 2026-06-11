@@ -29,7 +29,7 @@
 namespace bg2e {
 namespace manipulation {
 
-class BG2E_API SelectionHighlight : public bg2e::scene::NodeVisitor{
+class BG2E_API GizmoAndSelectionRenderer : public bg2e::scene::NodeVisitor {
 public:
     void init(
         render::Engine * engine,
@@ -65,11 +65,20 @@ protected:
         glm::vec4 color;
     };
 
-    VkCommandBuffer _cmdBuffer = VK_NULL_HANDLE;
-    VkPipeline _pipeline = VK_NULL_HANDLE;
-    VkPipelineLayout _pipelineLayout = VK_NULL_HANDLE;
+    glm::mat4 _viewMatrix { 1.0f };
+    glm::mat4 _projMatrix { 1.0f };
 
-    void createPipeline();
+    VkCommandBuffer _cmdBuffer = VK_NULL_HANDLE;
+    VkPipeline _currentBoundPipeline = VK_NULL_HANDLE;
+
+    VkPipeline _selectionPipeline = VK_NULL_HANDLE;
+    VkPipelineLayout _selectionPipelineLayout = VK_NULL_HANDLE;
+
+    VkPipeline _gizmoPipeline = VK_NULL_HANDLE;
+    VkPipelineLayout _gizmoPipelineLayout = VK_NULL_HANDLE;
+
+    void createSelectionPipeline();
+    void createGizmoPipeline();
 };
 
 }

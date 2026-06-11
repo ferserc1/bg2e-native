@@ -118,10 +118,10 @@ void RendererDeferred::build(
         )
     );
 
-    // Selection highlight (non-offscreen only)
+    // GizmoAndSelectionRenderer (non-offscreen only)
     if (!isOffscreen) {
-        _selectionHighlight = std::make_unique<manipulation::SelectionHighlight>();
-        _selectionHighlight->init(engine, VK_SAMPLE_COUNT_1_BIT);
+        _gizmoAndSelectionRenderer = std::make_unique<manipulation::GizmoAndSelectionRenderer>();
+        _gizmoAndSelectionRenderer->init(engine, VK_SAMPLE_COUNT_1_BIT);
     }
 }
 
@@ -283,10 +283,7 @@ void RendererDeferred::draw(
     _transparentLayer->render(cmd, currentFrame, _opaqueImage.get(), colorImage,
                               frameResources);
 
-    // Selection highlight (non-offscreen only)
-    if (!_isOffscreen && _selectionHighlight) {
-        // TODO: Prepare selectionHighlight to work with non-msaa images
-        VkClearColorValue clearValue{ { 0.0f, 0.0f, 0.0f, 1.0f } };
+    if (!_isOffscreen && _gizmoAndSelectionRenderer) {
         auto depthAttachment = vulkan::Info::depthAttachmentInfo(depthImage->imageView(), 1.0f);
         auto colorAttachment = vulkan::Info::attachmentInfo(colorImage->imageView(), nullptr);
         auto renderInfo = vulkan::Info::renderingInfo(colorImage->extent2D(), &colorAttachment, nullptr);
@@ -297,7 +294,7 @@ void RendererDeferred::draw(
         auto mainCamera = _scene->mainCamera();
         auto viewMatrix = mainCamera->ownerNode()->invertedWorldMatrix();
         auto projMatrix = mainCamera->projectionMatrix();
-        _selectionHighlight->draw(_scene->rootNode(), viewMatrix, projMatrix, cmd);
+        _gizmoAndSelectionRenderer->draw(_scene->rootNode(), viewMatrix, projMatrix, cmd);
 
         vulkan::cmdEndRendering(cmd);
     }
@@ -319,7 +316,7 @@ void RendererDeferred::draw(
 }
 
 void RendererDeferred::cleanup() {
-    _selectionHighlight.reset();
+    _gizmoAndSelectionRenderer.reset();
 
     _transparentLayer->cleanup();
     _opaqueLayer->cleanup();

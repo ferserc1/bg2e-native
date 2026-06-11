@@ -15,28 +15,14 @@
  *    You should have received a copy of the GNU General Public License
  *    along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#include "UISettingsWindow.hpp"
-#include <bg2e/ui/all.hpp>
-#include <algorithm>
 
-void UISettingsWindow::init(AppDelegate * delegate)
+#version 450
+
+layout (location = 0) out vec4 outColor;
+
+layout (location = 0) in vec4 inColor;
+
+void main()
 {
-    _appDelegate = delegate;
-    setTitle("UI Settings");
-    setSize(300, 200);
-    close();
-
-    setDrawFunction([this]() {
-        drawUI();
-    });
-}
-
-void UISettingsWindow::drawUI()
-{
-    float scale = bg2e::ui::UserInterface::getScale();
-    
-    if (bg2e::ui::Input::sliderFloat("Interface Scale", &scale, 1.0f, 2.0f))
-    {
-        bg2e::ui::UserInterface::setScale(scale);
-    }
+    outColor = inColor;
 }

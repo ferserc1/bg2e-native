@@ -59,8 +59,8 @@ void RendererBasicForward::build(
 
     if (!isOffscreen)
     {
-        _selectionHighlight = std::make_unique<bg2e::manipulation::SelectionHighlight>();
-        _selectionHighlight->init(engine, _sampleCount);
+        _gizmoAndSelectionRenderer = std::make_unique<bg2e::manipulation::GizmoAndSelectionRenderer>();
+        _gizmoAndSelectionRenderer->init(engine, _sampleCount);
 
     }
 
@@ -258,7 +258,7 @@ void RendererBasicForward::draw(
 
     if (!_isOffscreen)
     {
-        _selectionHighlight->draw(
+        _gizmoAndSelectionRenderer->draw(
             _scene->rootNode(),
             viewMatrix,
             projMatrix,

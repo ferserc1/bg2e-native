@@ -90,4 +90,8 @@ protected:
     // If the scene's main camera has no projection, assign an optical projection
     // (50 mm film size, 55 mm lens) so the aspect ratio renders correctly
     void ensureMainCameraProjection(bg2e::scene::Scene * scene);
+
+    // Adds GizmoComponent to every camera, light and environment node in root
+    // that does not already have one
+    void addGizmoComponents(bg2e::scene::Node * root);
 };

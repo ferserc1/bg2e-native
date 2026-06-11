@@ -279,9 +279,19 @@ extern BG2E_API bg2e::scene::Node * loadGltf(
     std::vector<std::shared_ptr<bg2e::scene::Drawable>> drawables;
 
     size_t meshNameIndex = 0;
+    size_t meshIdx = 0;
     for (auto & mesh : meshes)
     {
         auto drw = std::make_shared<bg2e::scene::Drawable>();
+
+        if (data->meshes[meshIdx].name)
+        {
+            drw->setName(std::string(filePath.stem()) + "_" + data->meshes[meshIdx].name);
+        }
+        else
+        {
+            drw->setName(std::string(filePath.stem()) + "_mesh_" + std::to_string(meshIdx));
+        }
 
         // Check if the tangents must be generated procedurally
         if (mesh->vertices.size() > 0 &&
@@ -301,6 +311,7 @@ extern BG2E_API bg2e::scene::Node * loadGltf(
             ++meshNameIndex;
         }
         drawables.push_back(drw);
+        ++meshIdx;
     }
 
     // Load scene nodes

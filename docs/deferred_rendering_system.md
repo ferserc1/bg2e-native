@@ -92,7 +92,7 @@ El `RendererDeferred::draw()` ejecuta esta secuencia:
     [3b] G-buffer pass (transparent + solid transparent, depth test disabled)
     [3c] Composite pass (usa AO del opaque layer) → swapchain
 
-[4] SelectionHighlight overlay (si no offscreen)
+[4] GizmoAndSelectionRenderer overlay (si no offscreen)
 ```
 
 ### Detalle del Composite Pass

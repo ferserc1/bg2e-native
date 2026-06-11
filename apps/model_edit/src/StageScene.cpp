@@ -70,18 +70,12 @@ std::shared_ptr<bg2e::scene::Node> StageScene::init()
     cameraRotation->addChild(cameraNode);
     sceneRoot->addChild(cameraRotation);
 
-    auto sphereRadius = 0.05f;
-    auto sphereMesh = std::shared_ptr<bg2e::geo::Mesh>(bg2e::geo::createSphere(sphereRadius, 10, 10));
-    auto sphereDrawable = std::make_shared<bg2e::scene::Drawable>();
-    sphereDrawable->setMesh(sphereMesh);
-    sphereDrawable->load(_engine);
-    sphereDrawable->material(0).setIsUnlit(true);
-    sphereDrawable->setRayTracingEnabled(false);
-    sphereDrawable->updateMaterials();
+    cameraNode->addComponent(new bg2e::manipulation::GizmoComponent(_engine));
 
     auto environmentNode = new bg2e::scene::Node("Environment");
     sceneRoot->addChild(environmentNode);
     environmentNode->addComponent(new bg2e::scene::EnvironmentComponent(bg2e::base::PlatformTools::assetPath(), "mirrored_hall_4k.hdr"));
+    environmentNode->addComponent(new bg2e::manipulation::GizmoComponent(_engine));
     _environment = std::dynamic_pointer_cast<bg2e::scene::EnvironmentComponent>(environmentNode->environment()->shared_from_this());
     _environmentNode = std::static_pointer_cast<bg2e::scene::Node>(environmentNode->shared_from_this());
 
@@ -401,7 +395,11 @@ void StageScene::restoreEnvironmentSettings(const std::filesystem::path& path)
 
                 for (auto l : _sceneRoot->scene()->lightComponents())
                 {
-                    instantUpdateLightMesh(l->ownerNode());
+                    auto lightNode = l->ownerNode();
+                    if (!lightNode->getComponent<bg2e::manipulation::GizmoComponent>())
+                    {
+                        lightNode->addComponent(new bg2e::manipulation::GizmoComponent(_engine));
+                    }
                 }
             },
             _restoreToken
@@ -482,51 +480,12 @@ std::shared_ptr<bg2e::scene::Node> StageScene::createLightNode(
     polarController->setPriority(2);
     node->addComponent(polarController);
 
-    auto fixedScale = new bg2e::scene::FixedScaleTransformControllerComponent();
-    fixedScale->setScale(0.08f);
-    fixedScale->setPriority(1);
-    node->addComponent(fixedScale);
+    node->addComponent(new bg2e::manipulation::GizmoComponent(_engine));
 
     node->light()->light().setIntensity(2.0f);
     node->light()->light().setType(type);
 
-    updateLightMesh(node.get());
-
     return node;
-}
-
-std::shared_ptr<bg2e::geo::Mesh> StageScene::getLightMesh(bg2e::base::Light::LightType type)
-{
-    std::shared_ptr<bg2e::geo::Mesh> result;
-    auto assetsPath = bg2e::base::PlatformTools::assetPath();
-    if (type == bg2e::base::Light::TypeDirectional)
-    {
-        if (_directionalLightMesh == nullptr)
-        {
-            auto meshData = bg2e::db::loadMeshBg2(assetsPath, "dir-light-gizmo.bg2");
-            _directionalLightMesh = meshData->mesh;
-        }
-        result = _directionalLightMesh;
-    }
-    else if (type == bg2e::base::Light::TypeSpot)
-    {
-        if (_spotLightMesh == nullptr)
-        {
-            auto meshData = bg2e::db::loadMeshBg2(assetsPath, "spot-light-gizmo.bg2");
-            _spotLightMesh = meshData->mesh;
-        }
-        result = _spotLightMesh;
-    }
-    else
-    {
-        if (_pointLightMesh == nullptr)
-        {
-            auto sphereRadius = 0.5f;
-            _pointLightMesh = std::shared_ptr<bg2e::geo::Mesh>(bg2e::geo::createSphere(sphereRadius, 10, 10));
-        }
-        result = _pointLightMesh;
-    }
-    return result;
 }
 
 void StageScene::setFlorHeight(float h)
@@ -545,14 +504,6 @@ void StageScene::showFloor(bool show)
     {
         _floorNode->setEnabled(_showFloor);
     }
-}
-
-void StageScene::updateLightMesh(bg2e::scene::Node* lightNode)
-{
-    bg2e::app::MainLoop::current()->safeUpdateScene([&, lightNode]()
-    {
-        instantUpdateLightMesh(lightNode);
-    });
 }
 
 std::shared_ptr<bg2e::scene::Node> StageScene::createFloorNode()
@@ -593,24 +544,3 @@ bg2e::scene::CameraComponent * StageScene::cameraComponent() const
     return nullptr;
 }
 
-void StageScene::instantUpdateLightMesh(bg2e::scene::Node* lightNode)
-{
-    auto light = lightNode->light();
-    if (light)
-    {
-        auto type = light->light().type();
-        auto mesh = getLightMesh(type);
-        auto lightDrawable = std::make_shared<bg2e::scene::Drawable>();
-        lightDrawable->setMesh(mesh);
-        lightDrawable->setMesh(mesh);
-        lightDrawable->load(_engine);
-        lightDrawable->material(0).setIsUnlit(true);
-        lightDrawable->material(0).setAlbedo(light->light().color());
-        lightDrawable->setRayTracingEnabled(false);
-        lightDrawable->updateMaterials();
-
-        lightNode->addComponent(new bg2e::scene::DrawableComponent(lightDrawable));
-        // Do not save the gizmo model in environment settings
-        lightNode->drawable()->setIgnoreSerialization(true);
-    }
-}

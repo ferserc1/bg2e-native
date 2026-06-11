@@ -19,6 +19,9 @@
 #include <bg2e/db/scene.hpp>
 #include <bg2e/scene/Node.hpp>
 #include <bg2e/scene/Scene.hpp>
+#include <bg2e/scene/DrawableRegistry.hpp>
+#include <bg2e/scene/FindNodeComponentVisitor.hpp>
+#include <bg2e/scene/DrawableComponent.hpp>
 #include <bg2e/json/JsonNode.hpp>
 #include <bg2e/json/JsonParser.hpp>
 #include <bg2e/base/Log.hpp>
@@ -79,6 +82,22 @@ void saveScene(
 ) {
     auto rootPath = filePath;
     rootPath.remove_filename();
+
+    bg2e::scene::DrawableRegistry registry;
+    bg2e::scene::FindNodeComponentVisitor<bg2e::scene::DrawableComponent> findDrawables;
+    auto drawableNodes = findDrawables.find(sceneRoot);
+    for (auto& weakNode : drawableNodes)
+    {
+        if (auto node = weakNode.lock())
+        {
+            auto comp = node->getComponent<bg2e::scene::DrawableComponent>();
+            if (comp && comp->drawableBase())
+            {
+                registry.registerDrawable(comp->drawableBase());
+            }
+        }
+    }
+
     auto sceneData = sceneRoot->serialize(rootPath);
     
     std::ofstream file;
@@ -98,6 +117,8 @@ void saveScene(
         file << sceneRoot->toString();
         file.close();
     }
+
+    registry.cleanup();
 }
 
 void saveScene(

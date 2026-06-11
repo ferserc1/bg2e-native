@@ -16,7 +16,6 @@
  *    along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 #include "AppDelegate.hpp"
-#include "UISettingsWindow.hpp"
 
 void AppDelegate::init(bg2e::render::Engine * engine)
 {
@@ -273,7 +272,7 @@ void AppDelegate::initWorkspace()
 
     _workspace.leftPanelSize().min = 300;
     _environmentPanel.init(this, renderer());
-    _uiSettingsWindow.init(this);
+    _uiSettingsWindow.init();
     _renderSettingsWindow.init(this);
     _toolBar.init(this, &_uiSettingsWindow, &_renderSettingsWindow);
     _submeshPanel.init(this);
@@ -302,16 +301,16 @@ void AppDelegate::updateSelectionHighlight()
     switch (_selectionHighlightMode)
     {
     case SelectionFull:
-        renderer()->selectionHighlight()->setLineIntensity(0.5f);
+        renderer()->gizmoAndSelectionRenderer()->setLineIntensity(0.5f);
         break;
     case SelectionHard:
-        renderer()->selectionHighlight()->setLineIntensity(0.3f);
+        renderer()->gizmoAndSelectionRenderer()->setLineIntensity(0.3f);
         break;
     case SelectionSoft:
-        renderer()->selectionHighlight()->setLineIntensity(0.1f);
+        renderer()->gizmoAndSelectionRenderer()->setLineIntensity(0.1f);
         break;
     case SelectionHide:
-        renderer()->selectionHighlight()->setLineIntensity(0.0f);
+        renderer()->gizmoAndSelectionRenderer()->setLineIntensity(0.0f);
         break;
     }
 }

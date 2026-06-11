@@ -27,6 +27,7 @@
 #include "bg2e/scene/FindNodeVisitor.hpp"
 #include "bg2e/scene/FindCameraVisitor.hpp"
 #include "bg2e/scene/FindNodeComponentVisitor.hpp"
+#include <bg2e/manipulation/GizmoComponent.hpp>
 
 StageScene::StageScene(bg2e::render::Engine * engine, AppDelegate * appDelegate)
     :_engine { engine }
@@ -101,6 +102,8 @@ std::shared_ptr<bg2e::scene::Node> StageScene::buildDefaultScene()
 
     scene->addChild(environmentNode);
 
+    addGizmoComponents(scene.get());
+
     return scene;
 }
 
@@ -117,6 +120,7 @@ void StageScene::setEditableRoot(std::shared_ptr<bg2e::scene::Node> newEditableR
             scene->updateAll();
             if (auto cam = cameraComponent()) scene->setMainCamera(cam);
             ensureMainCameraProjection(scene);
+            addGizmoComponents(_editableRoot.get());
             if (_onSceneSwap) _onSceneSwap();
         },
         _swapToken
@@ -246,6 +250,42 @@ void StageScene::ensureMainCameraProjection(bg2e::scene::Scene * scene)
     projection->setFocalLength(55.0f);  // lens: 55 mm
     projection->setFar(1000.0f);
     cam->setProjection(projection);
+}
+
+void StageScene::addGizmoComponents(bg2e::scene::Node * root)
+{
+    using namespace bg2e::manipulation;
+    using namespace bg2e::scene;
+
+    bg2e::scene::FindNodeComponentVisitor<CameraComponent> cameraFinder;
+    for (auto& wp : cameraFinder.find(root))
+    {
+        if (auto node = wp.lock())
+        {
+            if (!node->getComponent<GizmoComponent>())
+                node->addComponent(new GizmoComponent(_engine));
+        }
+    }
+
+    bg2e::scene::FindNodeComponentVisitor<LightComponent> lightFinder;
+    for (auto& wp : lightFinder.find(root))
+    {
+        if (auto node = wp.lock())
+        {
+            if (!node->getComponent<GizmoComponent>())
+                node->addComponent(new GizmoComponent(_engine));
+        }
+    }
+
+    bg2e::scene::FindNodeComponentVisitor<EnvironmentComponent> envFinder;
+    for (auto& wp : envFinder.find(root))
+    {
+        if (auto node = wp.lock())
+        {
+            if (!node->getComponent<GizmoComponent>())
+                node->addComponent(new GizmoComponent(_engine));
+        }
+    }
 }
 
 bg2e::scene::CameraComponent * StageScene::cameraComponent()
