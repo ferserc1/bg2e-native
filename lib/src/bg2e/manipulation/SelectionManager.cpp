@@ -111,7 +111,22 @@ void SelectionManager::deselect()
     }
 
     _selectedItems.clear();
+    _selectedNodes.clear();
     callOnChange();
+}
+
+bool SelectionManager::isSelected(const scene::Node * node)
+{
+    if (!node)
+    {
+        return false;
+    }
+
+    return std::any_of(
+        _selectedNodes.cbegin(),
+        _selectedNodes.cend(),
+        [node](const std::weak_ptr<scene::Node>& n) { return n.lock().get() == node; }
+    );
 }
 
 bool SelectionManager::isSelected(const scene::Node * node, const scene::DrawableComponent * drawable, uint32_t submesh)
@@ -182,6 +197,41 @@ bool SelectionManager::addToSelectedItems(scene::Node * node, scene::DrawableCom
 
     // Mark the submesh as selected
     selComponent->setSelected(submesh, true);
+
+    // Keep the unique node list in sync
+    addUniqueSelectedNode(node);
+    callOnChange();
+
+    return true;
+}
+
+bool SelectionManager::addToSelectedItems(scene::Node * node)
+{
+    if (!node)
+    {
+        return false;
+    }
+
+    // If the node owns a drawable, select it at submesh level (submesh 0) so it
+    // also highlights in the 3D view, reusing all the validation above.
+    if (auto * drawable = node->drawable())
+    {
+        return addToSelectedItems(node, drawable, 0);
+    }
+
+    // Node-only selection (groups, lights, cameras...). Only reachable from the
+    // SceneTree for now.
+    if (isSelected(node))
+    {
+        return true;
+    }
+
+    if (!multiSelection())
+    {
+        deselect();
+    }
+
+    addUniqueSelectedNode(node);
     callOnChange();
 
     return true;
@@ -193,7 +243,7 @@ void SelectionManager::removeFromSelectedItems(scene::Node * node)
     {
         throw std::runtime_error("SelectionManager: invalid node pointer supplied calling removeFromSelectedItems()");
     }
-    bool changed = false;
+    bool changed = isSelected(node);
     std::erase_if(
         _selectedItems,
         [&, node](const std::shared_ptr<SelectionItem>& curItem)
@@ -213,6 +263,8 @@ void SelectionManager::removeFromSelectedItems(scene::Node * node)
             return true;
         }
     );
+
+    removeSelectedNode(node);
 
     if (changed)
     {
@@ -258,6 +310,12 @@ void SelectionManager::removeFromSelectedItems(scene::DrawableComponent* drawabl
             return false;
         }
     );
+
+    // If the node has no remaining selected submeshes, drop it from the node list
+    if (changed && !nodeHasSelectedItems(node))
+    {
+        removeSelectedNode(node);
+    }
 
     if (changed)
     {
@@ -389,20 +447,78 @@ void SelectionManager::cleanupImage()
 
 void SelectionManager::callOnChange()
 {
-    _selectedNodes.clear();
-    for (const auto& item : _selectedItems)
-    {
-        auto nodePtr = item->node.lock().get();
-        if (nodePtr && std::none_of(_selectedNodes.begin(), _selectedNodes.end(),
-            [nodePtr](const std::weak_ptr<scene::Node>& n) { return n.lock().get() == nodePtr; }))
-        {
-            _selectedNodes.push_back(item->node);
-        }
-    }
+    prioritizeDrawableNode();
 
     for (auto & cb : _onSelectCallbacks)
     {
         cb();
+    }
+}
+
+void SelectionManager::addUniqueSelectedNode(scene::Node * node)
+{
+    if (!node)
+    {
+        return;
+    }
+
+    const bool exists = std::any_of(
+        _selectedNodes.begin(), _selectedNodes.end(),
+        [node](const std::weak_ptr<scene::Node>& n) { return n.lock().get() == node; }
+    );
+
+    if (!exists)
+    {
+        _selectedNodes.push_back(node->weak_from_this());
+    }
+}
+
+void SelectionManager::removeSelectedNode(scene::Node * node)
+{
+    std::erase_if(
+        _selectedNodes,
+        [node](const std::weak_ptr<scene::Node>& n)
+        {
+            auto locked = n.lock();
+            return !locked || locked.get() == node;
+        }
+    );
+}
+
+bool SelectionManager::nodeHasSelectedItems(const scene::Node * node) const
+{
+    return std::any_of(
+        _selectedItems.cbegin(), _selectedItems.cend(),
+        [node](const std::shared_ptr<SelectionItem>& item) { return item->node.lock().get() == node; }
+    );
+}
+
+void SelectionManager::prioritizeDrawableNode()
+{
+    if (_selectedNodes.size() < 2)
+    {
+        return;
+    }
+
+    // If index 0 already owns a drawable, nothing to do
+    if (auto front = _selectedNodes.front().lock())
+    {
+        if (front->drawable())
+        {
+            return;
+        }
+    }
+
+    for (std::size_t i = 1; i < _selectedNodes.size(); ++i)
+    {
+        auto candidate = _selectedNodes[i].lock();
+        if (candidate && candidate->drawable())
+        {
+            auto wp = _selectedNodes[i];
+            _selectedNodes.erase(_selectedNodes.begin() + i);
+            _selectedNodes.insert(_selectedNodes.begin(), wp);
+            return;
+        }
     }
 }
 

@@ -60,26 +60,12 @@ void AppDelegate::mouseButtonUp(int button, int x, int y)
 {
     if (_mouseDownX == x && _mouseDownY == y && button == 0)
     {
-        // Pick selection
+        // Pick selection. The SelectionManager is the single source of truth:
+        // the scene tree highlights and the node editor update through its
+        // onSelect callback, so there is no manual sync here.
         if (_selectionManager->pick(renderer()->scene(), x, y))
         {
             _submeshPanel.setEditMaterial(_selectionManager->selectedSubmesh());
-
-            // Reflect into the scene tree without bouncing back
-            if (auto * node = _selectionManager->selectedNode())
-            {
-                _syncingSelection = true;
-                _sceneEditor.sceneTree().setSelectedNodes({ node });
-                _sceneEditor.nodeEditor().setNode(node);
-                _syncingSelection = false;
-            }
-        }
-        else if (_selectionManager->clearSelectionOnEmptyPick())
-        {
-            _syncingSelection = true;
-            _sceneEditor.sceneTree().clearSelection();
-            _sceneEditor.nodeEditor().setNode(nullptr);
-            _syncingSelection = false;
         }
     }
     _inputVisitor.mouseButtonUp(renderer()->scene()->rootNode(), button, x, y);
@@ -285,40 +271,33 @@ void AppDelegate::initWorkspace()
     _workspace.leftPanelSize().min = 300;
     _sceneEditor.init(this);
 
-    // Selection bridge: Tree → SelectionManager + material panel
-    _sceneEditor.sceneTree().onSelectionChanged([&]() {
-        if (_syncingSelection) return;
-        _syncingSelection = true;
+    // The SelectionManager is the single source of truth for selection. The
+    // scene tree both reads from it (to highlight rows) and writes to it (on
+    // click), so no bidirectional bridge or re-entrancy guard is needed.
+    _sceneEditor.sceneTree().setSelectionManager(_selectionManager.get());
 
-        auto nodes = _sceneEditor.sceneTree().selectedNodes();
-
-        // Node editor
-        if (nodes.size() == 1) _sceneEditor.nodeEditor().setNode(nodes.front());
-        else                   _sceneEditor.nodeEditor().setNodes(nodes);
-
-        // Bridge to SelectionManager (mesh highlight) + material panel
-        _selectionManager->deselect();
-        _submeshPanel.clearMaterialSelection();
-
-        // Re-add drawable nodes to the SelectionManager so they highlight
-        for (auto * node : nodes)
+    // Keep the node editor in sync with whatever changes the selection (tree
+    // clicks, 3D picking or programmatic changes). The material panel reacts on
+    // its own through MaterialEditor's onSelect callback.
+    _selectionManager->onSelect([&]() {
+        std::vector<bg2e::scene::Node*> nodes;
+        for (const auto& weakNode : _selectionManager->selectedNodes())
         {
-            if (auto * dc = node->getComponent<bg2e::scene::DrawableComponent>())
+            if (auto node = weakNode.lock())
             {
-                _selectionManager->addToSelectedItems(node, dc, 0);
+                nodes.push_back(node.get());
             }
         }
 
-        _syncingSelection = false;
+        if (nodes.empty())          _sceneEditor.nodeEditor().setNode(nullptr);
+        else if (nodes.size() == 1) _sceneEditor.nodeEditor().setNode(nodes.front());
+        else                        _sceneEditor.nodeEditor().setNodes(nodes);
     });
 
-    // Edge case: clear tree selection + node editor on scene swap
+    // Edge case: clear the selection on scene swap. The onSelect callback above
+    // takes care of clearing the node editor.
     _stage->onSceneSwap([&]() {
-        _syncingSelection = true;
-        _sceneEditor.sceneTree().clearSelection();
-        _sceneEditor.nodeEditor().setNode(nullptr);
-        _submeshPanel.clearMaterialSelection();
-        _syncingSelection = false;
+        _selectionManager->deselect();
     });
 
     _uiSettingsWindow.init();

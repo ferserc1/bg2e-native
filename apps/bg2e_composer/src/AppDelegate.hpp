@@ -96,7 +96,6 @@ protected:
     std::shared_ptr<bg2e::scene::Node> createScene() override;
 
     std::shared_ptr<bg2e::manipulation::SelectionManager> _selectionManager;
-    bool _syncingSelection = false;
     uint32_t _mouseDownX = 0;
     uint32_t _mouseDownY = 0;
 

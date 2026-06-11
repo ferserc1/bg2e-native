@@ -18,17 +18,10 @@
 
 #include <bg2e/ui/SceneTree.hpp>
 #include <bg2e/scene/Node.hpp>
+#include <bg2e/manipulation/SelectionManager.hpp>
 #include "imgui.h"
-#include <algorithm>
 
 namespace bg2e::ui {
-
-void SceneTree::setRootNode(scene::Node * root)
-{
-    _root = root;
-    _selected.clear();
-    _primary.reset();
-}
 
 void SceneTree::draw()
 {
@@ -52,7 +45,7 @@ void SceneTree::drawNode(scene::Node * node)
 
     ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth;
 
-    if (isSelected(node))
+    if (_selectionManager && _selectionManager->isSelected(node))
     {
         flags |= ImGuiTreeNodeFlags_Selected;
     }
@@ -91,151 +84,31 @@ void SceneTree::drawNode(scene::Node * node)
 
 void SceneTree::handleClick(scene::Node * node)
 {
-    if (!node)
+    if (!node || !_selectionManager)
     {
         return;
     }
 
-    try {
-        auto sp = node->shared_from_this();
+    const bool additive = _selectionManager->multiSelection() && ImGui::GetIO().KeyCtrl;
 
-        if (_multiSelection && ImGui::GetIO().KeyCtrl)
+    if (additive)
+    {
+        // Toggle the clicked node, keeping the rest of the selection
+        if (_selectionManager->isSelected(node))
         {
-            auto it = std::find_if(_selected.begin(), _selected.end(),
-                [&sp](const std::weak_ptr<scene::Node> & wp) {
-                    auto locked = wp.lock();
-                    return locked && locked.get() == sp.get();
-                });
-
-            if (it != _selected.end())
-            {
-                _selected.erase(it);
-            }
-            else
-            {
-                _selected.push_back(sp);
-            }
+            _selectionManager->removeFromSelectedItems(node);
         }
         else
         {
-            _selected.clear();
-            _selected.push_back(sp);
+            _selectionManager->addToSelectedItems(node);
         }
-
-        _primary = sp;
-    }
-    catch (const std::bad_weak_ptr &) {
-        // Node is not managed by a shared_ptr; ignore
-        return;
-    }
-
-    notifyChanged();
-}
-
-void SceneTree::notifyChanged() const
-{
-    if (_onSelectionChanged)
-    {
-        _onSelectionChanged();
-    }
-}
-
-std::vector<scene::Node*> SceneTree::selectedNodes() const
-{
-    std::vector<scene::Node*> result;
-    for (auto & wp : _selected)
-    {
-        auto sp = wp.lock();
-        if (sp)
-        {
-            result.push_back(sp.get());
-        }
-    }
-    return result;
-}
-
-scene::Node * SceneTree::primarySelectedNode() const
-{
-    auto sp = _primary.lock();
-    return sp ? sp.get() : nullptr;
-}
-
-void SceneTree::setSelectedNodes(const std::vector<scene::Node*>& nodes)
-{
-    _selected.clear();
-    for (auto * node : nodes)
-    {
-        if (node)
-        {
-            try {
-                _selected.push_back(node->shared_from_this());
-            }
-            catch (const std::bad_weak_ptr &) {
-                // Skip nodes not managed by shared_ptr
-            }
-        }
-    }
-
-    if (_selected.empty())
-    {
-        _primary.reset();
     }
     else
     {
-        _primary = _selected.back();
+        // Replace the whole selection with the clicked node
+        _selectionManager->deselect();
+        _selectionManager->addToSelectedItems(node);
     }
-}
-
-void SceneTree::selectNode(scene::Node * node, bool additive)
-{
-    if (!node)
-    {
-        return;
-    }
-
-    try {
-        auto sp = node->shared_from_this();
-
-        if (!additive)
-        {
-            _selected.clear();
-        }
-
-        auto it = std::find_if(_selected.begin(), _selected.end(),
-            [&sp](const std::weak_ptr<scene::Node> & wp) {
-                auto locked = wp.lock();
-                return locked && locked.get() == sp.get();
-            });
-
-        if (it == _selected.end())
-        {
-            _selected.push_back(sp);
-        }
-
-        _primary = sp;
-    }
-    catch (const std::bad_weak_ptr &) {
-        return;
-    }
-}
-
-void SceneTree::clearSelection()
-{
-    _selected.clear();
-    _primary.reset();
-}
-
-bool SceneTree::isSelected(const scene::Node * node) const
-{
-    for (auto & wp : _selected)
-    {
-        auto sp = wp.lock();
-        if (sp && sp.get() == node)
-        {
-            return true;
-        }
-    }
-    return false;
 }
 
 }

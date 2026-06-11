@@ -162,9 +162,19 @@ public:
     [[nodiscard]] inline const std::vector<std::shared_ptr<SelectionItem>>& selectedItems() const { return _selectedItems; }
     [[nodiscard]] inline const std::vector<std::weak_ptr<scene::Node>>& selectedNodes() const { return _selectedNodes; }
 
+    // Node-level selection. Returns true if the node appears in the unique
+    // selected-nodes list (regardless of which/how many submeshes are selected).
+    bool isSelected(const scene::Node * node);
     bool isSelected(const scene::Node * node, const scene::DrawableComponent * drawable, uint32_t submesh);
     bool isSelected(const scene::Node * node, const scene::Drawable * drawable, uint32_t submesh);
+
     bool addToSelectedItems(scene::Node * node, scene::DrawableComponent * drawable, uint32_t submesh);
+    // Node-level selection overload. If the node owns a DrawableComponent it is
+    // selected at submesh level (submesh 0) so it also highlights in the 3D view.
+    // Otherwise the node is registered as a node-only selection. Node-only objects
+    // (groups, lights, cameras...) can currently only be selected through the
+    // SceneTree; a future refactor will allow picking them through their gizmo.
+    bool addToSelectedItems(scene::Node * node);
     void removeFromSelectedItems(scene::Node * node);
     void removeFromSelectedItems(scene::Node * node, uint32_t submesh);
     void removeFromSelectedItems(scene::DrawableComponent* drawable, uint32_t submesh);
@@ -204,6 +214,14 @@ protected:
 
     std::vector<OnSelectCallback> _onSelectCallbacks;
     void callOnChange();
+
+    // _selectedNodes maintenance helpers. _selectedNodes always holds the unique
+    // set of currently selected nodes and is kept in sync by every mutation.
+    void addUniqueSelectedNode(scene::Node * node);
+    void removeSelectedNode(scene::Node * node);
+    bool nodeHasSelectedItems(const scene::Node * node) const;
+    // If a node owning a drawable is selected but is not at index 0, move it there.
+    void prioritizeDrawableNode();
 };
 
 }

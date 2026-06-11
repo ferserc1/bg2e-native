@@ -19,49 +19,36 @@
 #pragma once
 
 #include <bg2e/common.hpp>
-#include <functional>
-#include <vector>
-#include <memory>
-#include <string>
 
 namespace bg2e {
 namespace scene {
     class Node;
 }
+namespace manipulation {
+    class SelectionManager;
+}
 namespace ui {
 
+// SceneTree renders the node hierarchy. Selection is fully delegated to a
+// SelectionManager (the single source of truth). When no SelectionManager is
+// set, the tree is read-only: it displays the hierarchy but clicks do not
+// change any selection and no row is highlighted.
 class BG2E_API SceneTree {
 public:
-    using SelectionChangedCallback = std::function<void()>;
-
-    void setRootNode(scene::Node * root);
+    void setRootNode(scene::Node * root) { _root = root; }
     scene::Node * rootNode() const { return _root; }
 
-    void setMultiSelection(bool enabled) { _multiSelection = enabled; }
-    bool multiSelection() const { return _multiSelection; }
+    void setSelectionManager(manipulation::SelectionManager * selectionManager) { _selectionManager = selectionManager; }
+    manipulation::SelectionManager * selectionManager() const { return _selectionManager; }
 
     void draw();
 
-    std::vector<scene::Node*> selectedNodes() const;
-    scene::Node * primarySelectedNode() const;
-
-    void setSelectedNodes(const std::vector<scene::Node*>& nodes);
-    void selectNode(scene::Node * node, bool additive = false);
-    void clearSelection();
-    bool isSelected(const scene::Node * node) const;
-
-    void onSelectionChanged(SelectionChangedCallback cb) { _onSelectionChanged = cb; }
-
 protected:
     scene::Node * _root = nullptr;
-    bool _multiSelection = true;
-    std::vector<std::weak_ptr<scene::Node>> _selected;
-    std::weak_ptr<scene::Node> _primary;
-    SelectionChangedCallback _onSelectionChanged;
+    manipulation::SelectionManager * _selectionManager = nullptr;
 
     void drawNode(scene::Node * node);
     void handleClick(scene::Node * node);
-    void notifyChanged() const;
 };
 
 }
