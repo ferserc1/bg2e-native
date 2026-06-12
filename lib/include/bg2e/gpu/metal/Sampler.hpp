@@ -18,41 +18,26 @@
 
 #pragma once
 
-#include <bg2e/gpu/ComputePipeline.hpp>
+#include <bg2e/gpu/Sampler.hpp>
 #include <bg2e/gpu/metal/common.hpp>
 
 namespace bg2e {
 namespace gpu {
 namespace metal {
 
-class PipelineLayout;
-
-class BG2E_API ComputePipeline : public gpu::ComputePipeline {
+class BG2E_API Sampler : public gpu::Sampler {
 public:
-#if BG2E_IS_MAC
-    ComputePipeline(MTL::Device* device, const gpu::ComputePipelineDescription& description);
-#else
-    ComputePipeline(void* /*device*/, const gpu::ComputePipelineDescription& description);
-#endif
-    ~ComputePipeline() override;
+    Sampler(DeviceHandle device, const gpu::SamplerDescription& description);
+    ~Sampler() override;
 
     bool isValid() const override;
     void cleanup() override;
 
-#if BG2E_IS_MAC
-    MTL::ComputePipelineState* computePipelineState() const { return _computePipelineState; }
-    NS::UInteger maxTotalThreadsPerThreadgroup() const { return _maxTotalThreadsPerThreadgroup; }
-    NS::UInteger threadExecutionWidth() const { return _threadExecutionWidth; }
-#endif
-    metal::PipelineLayout* layout() const { return _layout; }
+    MTL::SamplerState* handle() const { return _samplerState; }
 
 private:
-    metal::PipelineLayout* _layout = nullptr;
-#if BG2E_IS_MAC
-    MTL::ComputePipelineState* _computePipelineState = nullptr;
-    NS::UInteger _maxTotalThreadsPerThreadgroup = 0;
-    NS::UInteger _threadExecutionWidth = 0;
-#endif
+    DeviceHandle        _device = nullptr;
+    MTL::SamplerState*  _samplerState = nullptr;
 };
 
 }

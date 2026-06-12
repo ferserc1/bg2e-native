@@ -38,7 +38,7 @@ void Image::buildTargetImage(metal::Device* device, const Size2D& size, PixelFor
     _size = size;
     _pixelFormat = format;
     _isDepth = false;
-    setCurrentLayout(ImageLayout::Undefined);
+    _currentLayout = ImageLayout::Undefined;
 
     auto* desc = MTL::TextureDescriptor::alloc()->init();
     desc->setTextureType(MTL::TextureType2D);
@@ -67,7 +67,7 @@ void Image::buildDepthImage(metal::Device* device, const Size2D& size, PixelForm
     _pixelFormat = format;
     _isDepth = true;
     _ownsTexture = true;
-    setCurrentLayout(ImageLayout::Undefined);
+    _currentLayout = ImageLayout::Undefined;
 
     auto* desc = MTL::TextureDescriptor::alloc()->init();
     desc->setTextureType(MTL::TextureType2D);
@@ -84,6 +84,34 @@ void Image::buildDepthImage(metal::Device* device, const Size2D& size, PixelForm
     if (!_texture)
     {
         throw std::runtime_error("metal::Image::buildDepthImage: newTexture failed");
+    }
+}
+
+void Image::buildSampledImage(metal::Device* device, const Size2D& size, PixelFormat format)
+{
+    cleanup();
+
+    _device = device;
+    _size = size;
+    _pixelFormat = format;
+    _isDepth = false;
+    _ownsTexture = true;
+    _currentLayout = ImageLayout::Undefined;
+
+    auto* desc = MTL::TextureDescriptor::alloc()->init();
+    desc->setTextureType(MTL::TextureType2D);
+    desc->setPixelFormat(toMetalPixelFormat(format));
+    desc->setWidth(size.width);
+    desc->setHeight(size.height);
+    desc->setStorageMode(MTL::StorageModePrivate);
+    desc->setUsage(MTL::TextureUsageShaderRead);
+
+    _texture = device->handle()->newTexture(desc);
+    desc->release();
+
+    if (!_texture)
+    {
+        throw std::runtime_error("metal::Image::buildSampledImage: newTexture failed");
     }
 }
 
@@ -182,6 +210,47 @@ void Image::readPixelsRGBA8(std::vector<uint8_t>& outData, ImageLayout /*current
     staging->release();
 }
 
+void Image::uploadRGBA8(const void* pixels, const Size2D& size)
+{
+    if (_pixelFormat != PixelFormat::R8G8B8A8_UNORM) {
+        throw std::runtime_error("metal::Image::uploadRGBA8: only R8G8B8A8_UNORM is supported");
+    }
+
+    if (size.width != _size.width || size.height != _size.height) {
+        throw std::runtime_error("metal::Image::uploadRGBA8: size mismatch");
+    }
+
+    const uint32_t w = _size.width;
+    const uint32_t h = _size.height;
+    const uint32_t bytesPerRow = w * 4;
+    const size_t bufferSize = size_t(bytesPerRow) * h;
+
+    MTL::Buffer* staging = _device->handle()->newBuffer(bufferSize, MTL::ResourceStorageModeShared);
+    if (!staging) {
+        throw std::runtime_error("metal::Image::uploadRGBA8: newBuffer failed");
+    }
+
+    std::memcpy(staging->contents(), pixels, bufferSize);
+
+    _device->immediateSubmit([&](gpu::CommandBuffer* cmd) {
+        MTL::CommandBuffer* mtlCmd = dynamic_cast<metal::CommandBuffer*>(cmd)->handle();
+        MTL::BlitCommandEncoder* blit = mtlCmd->blitCommandEncoder();
+        blit->copyFromBuffer(
+            staging,
+            0,
+            bytesPerRow,
+            bufferSize,
+            MTL::Size{ w, h, 1 },
+            _texture,
+            0,
+            0,
+            MTL::Origin{ 0, 0, 0 });
+        blit->endEncoding();
+    });
+
+    staging->release();
+}
+
 #else
 
 void Image::buildTargetImage(metal::Device*, const Size2D&, PixelFormat)
@@ -204,11 +273,21 @@ void Image::initFromDrawableTexture(metal::Device*, TextureHandle, PixelFormat, 
     throw std::runtime_error("Metal backend is not available on this platform");
 }
 
+void Image::buildSampledImage(metal::Device*, const Size2D&, PixelFormat)
+{
+    throw std::runtime_error("Metal backend is not available on this platform");
+}
+
 void Image::cleanup() {}
 
 bool Image::isValid() const { return false; }
 
 void Image::readPixelsRGBA8(std::vector<uint8_t>&, ImageLayout)
+{
+    throw std::runtime_error("Metal backend is not available on this platform");
+}
+
+void Image::uploadRGBA8(const void*, const Size2D&)
 {
     throw std::runtime_error("Metal backend is not available on this platform");
 }

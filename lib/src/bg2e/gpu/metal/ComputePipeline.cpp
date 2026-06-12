@@ -18,6 +18,7 @@
 
 #include <bg2e/gpu/metal/ComputePipeline.hpp>
 #include <bg2e/gpu/metal/ShaderModule.hpp>
+#include <bg2e/gpu/metal/PipelineLayout.hpp>
 
 #include <stdexcept>
 
@@ -30,11 +31,14 @@ namespace metal {
 ComputePipeline::ComputePipeline(MTL::Device* device, const gpu::ComputePipelineDescription& description)
 {
     auto* metalComputeModule = dynamic_cast<metal::ShaderModule*>(description.computeShader);
+    auto* metalLayout = dynamic_cast<metal::PipelineLayout*>(description.layout);
 
     if (!metalComputeModule)
     {
         throw std::runtime_error("metal::ComputePipeline: description contains non-Metal shader module");
     }
+
+    _layout = metalLayout;
 
     if (!metalComputeModule->isValid())
     {

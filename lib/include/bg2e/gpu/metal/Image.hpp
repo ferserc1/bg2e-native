@@ -38,6 +38,7 @@ public:
 
     void buildTargetImage(metal::Device* device, const Size2D& size, PixelFormat format);
     void buildDepthImage(metal::Device* device, const Size2D& size, PixelFormat format);
+    void buildSampledImage(metal::Device* device, const Size2D& size, PixelFormat format);
 
     void resize(const Size2D& size);
 
@@ -54,6 +55,7 @@ public:
     TextureHandle texture() const { return _texture; }
 
     void readPixelsRGBA8(std::vector<uint8_t>& outData, ImageLayout currentLayout = ImageLayout::ColorAttachment) override;
+    void uploadRGBA8(const void* pixels, const Size2D& size) override;
 
 private:
     metal::Device* _device      = nullptr;

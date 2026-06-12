@@ -26,6 +26,7 @@ namespace bg2e {
 namespace gpu {
 
 class Image;
+class ResourceSet;
 class SurfaceFrame;
 class GraphicsPipeline;
 class ComputePipeline;
@@ -71,6 +72,16 @@ public:
     virtual void pushConstants(ShaderStage stage, uint32_t offset, uint32_t size, const void* data)
     {
         throw std::runtime_error("pushConstants not implemented");
+    }
+
+    virtual void bindResourceSet(gpu::GraphicsPipeline* pipeline, uint32_t setIndex, gpu::ResourceSet* set)
+    {
+        throw std::runtime_error("bindResourceSet(GraphicsPipeline) not implemented");
+    }
+
+    virtual void bindResourceSet(gpu::ComputePipeline* pipeline, uint32_t setIndex, gpu::ResourceSet* set)
+    {
+        throw std::runtime_error("bindResourceSet(ComputePipeline) not implemented");
     }
 
     virtual bool isValid() const = 0;

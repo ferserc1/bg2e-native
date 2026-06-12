@@ -38,6 +38,7 @@ public:
 
     void buildTargetImage(vk::Device* device, const Size2D& size, PixelFormat format);
     void buildDepthImage(vk::Device* device, const Size2D& size, PixelFormat format);
+    void buildSampledImage(vk::Device* device, const Size2D& size, PixelFormat format, VkImageUsageFlags usage);
     void resize(const Size2D& size);
 
     void cleanup() override;
@@ -52,6 +53,7 @@ public:
     VkImageAspectFlags aspect()  const { return _aspect; }
 
     void readPixelsRGBA8(std::vector<uint8_t>& outData, ImageLayout currentLayout = ImageLayout::ColorAttachment) override;
+    void uploadRGBA8(const void* pixels, const Size2D& size) override;
 
 private:
     void createView();

@@ -17,11 +17,14 @@
  */
 
 #include <bg2e/gpu/metal/Device.hpp>
+#include <bg2e/gpu/metal/Image.hpp>
 #include <bg2e/gpu/metal/PhysicalDevice.hpp>
 #include <bg2e/gpu/metal/ShaderModule.hpp>
 #include <bg2e/gpu/metal/PipelineLayout.hpp>
 #include <bg2e/gpu/metal/GraphicsPipeline.hpp>
 #include <bg2e/gpu/metal/ComputePipeline.hpp>
+#include <bg2e/gpu/metal/Sampler.hpp>
+#include <bg2e/gpu/metal/ResourceSet.hpp>
 #include <bg2e/gpu/metal/CommandBuffer.hpp>
 #include <bg2e/gpu/metal/common.hpp>
 #include <bg2e/gpu/Surface.hpp>
@@ -116,6 +119,28 @@ std::unique_ptr<gpu::ComputePipeline> Device::createComputePipeline(const gpu::C
     return std::make_unique<metal::ComputePipeline>(_device, description);
 }
 
+std::shared_ptr<gpu::Sampler> Device::createSampler(const gpu::SamplerDescription& description)
+{
+    return std::make_shared<metal::Sampler>(_device, description);
+}
+
+std::unique_ptr<gpu::ResourceSet> Device::createResourceSet(gpu::PipelineLayout* layout, uint32_t setIndex)
+{
+    auto* metalLayout = dynamic_cast<metal::PipelineLayout*>(layout);
+    if (!metalLayout)
+    {
+        throw std::runtime_error("metal::Device::createResourceSet: invalid PipelineLayout");
+    }
+    return std::make_unique<metal::ResourceSet>(metalLayout, setIndex);
+}
+
+std::shared_ptr<gpu::Image> Device::createImage(const ImageDescription& description)
+{
+    auto img = std::make_shared<metal::Image>();
+    img->buildSampledImage(this, description.size, description.format);
+    return img;
+}
+
 void Device::immediateSubmit(std::function<void(gpu::CommandBuffer*)>&& function)
 {
     auto cmdSP = _graphicsQueue.createCommandBuffer();
@@ -166,6 +191,26 @@ std::unique_ptr<gpu::GraphicsPipeline> Device::createGraphicsPipeline(const gpu:
 std::unique_ptr<gpu::ComputePipeline> Device::createComputePipeline(const gpu::ComputePipelineDescription& description)
 {
     return std::make_unique<metal::ComputePipeline>(nullptr, description);
+}
+
+std::shared_ptr<gpu::Sampler> Device::createSampler(const gpu::SamplerDescription& description)
+{
+    return std::make_shared<metal::Sampler>(nullptr, description);
+}
+
+std::unique_ptr<gpu::ResourceSet> Device::createResourceSet(gpu::PipelineLayout* layout, uint32_t setIndex)
+{
+    auto* metalLayout = dynamic_cast<metal::PipelineLayout*>(layout);
+    if (!metalLayout)
+    {
+        throw std::runtime_error("metal::Device::createResourceSet: invalid PipelineLayout");
+    }
+    return std::make_unique<metal::ResourceSet>(metalLayout, setIndex);
+}
+
+std::shared_ptr<gpu::Image> Device::createImage(const ImageDescription&)
+{
+    throw std::runtime_error("Metal backend is not available on this platform");
 }
 
 void Device::immediateSubmit(std::function<void(gpu::CommandBuffer*)>&&)

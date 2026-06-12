@@ -23,6 +23,7 @@
 #include <bg2e/gpu/vk/GraphicsPipeline.hpp>
 #include <bg2e/gpu/vk/ComputePipeline.hpp>
 #include <bg2e/gpu/vk/PipelineLayout.hpp>
+#include <bg2e/gpu/vk/ResourceSet.hpp>
 #include <bg2e/gpu/vk/Info.hpp>
 #include <bg2e/gpu/vk/extensions.hpp>
 #include <bg2e/gpu/vk/common.hpp>
@@ -110,7 +111,7 @@ void CommandBuffer::transition(gpu::Image* image, ImageLayout newLayout)
     depInfo.imageMemoryBarrierCount = 1;
 
     cmdPipelineBarrier2(_cmd, &depInfo);
-    image->setCurrentLayout(newLayout);
+    image->_currentLayout = newLayout;
 }
 
 void CommandBuffer::beginRendering(gpu::SurfaceFrame* frame)
@@ -288,6 +289,63 @@ void CommandBuffer::pushConstants(ShaderStage stage, uint32_t offset, uint32_t s
     }
 
     vkCmdPushConstants(_cmd, _boundLayoutHandle, shaderStageToVkFlags(stage), offset, size, data);
+}
+
+void CommandBuffer::bindResourceSet(gpu::GraphicsPipeline* pipeline, uint32_t setIndex, gpu::ResourceSet* set)
+{
+    flushPendingRendering();
+
+    auto* vkPipe = dynamic_cast<vk::GraphicsPipeline*>(pipeline);
+    if (!vkPipe)
+    {
+        throw std::runtime_error("vk::CommandBuffer::bindResourceSet(GraphicsPipeline): not a vk::GraphicsPipeline");
+    }
+
+    auto* vkSet = dynamic_cast<vk::ResourceSet*>(set);
+    if (!vkSet)
+    {
+        throw std::runtime_error("vk::CommandBuffer::bindResourceSet(GraphicsPipeline): not a vk::ResourceSet");
+    }
+
+    VkDescriptorSet ds = vkSet->handle();
+    vkCmdBindDescriptorSets(
+        _cmd,
+        VK_PIPELINE_BIND_POINT_GRAPHICS,
+        vkPipe->layoutHandle(),
+        setIndex,
+        1, &ds,
+        0, nullptr
+    );
+}
+
+void CommandBuffer::bindResourceSet(gpu::ComputePipeline* pipeline, uint32_t setIndex, gpu::ResourceSet* set)
+{
+    if (!_computeActive)
+    {
+        throw std::runtime_error("vk::CommandBuffer::bindResourceSet(ComputePipeline): no active compute scope; call beginCompute() first");
+    }
+
+    auto* vkPipe = dynamic_cast<vk::ComputePipeline*>(pipeline);
+    if (!vkPipe)
+    {
+        throw std::runtime_error("vk::CommandBuffer::bindResourceSet(ComputePipeline): not a vk::ComputePipeline");
+    }
+
+    auto* vkSet = dynamic_cast<vk::ResourceSet*>(set);
+    if (!vkSet)
+    {
+        throw std::runtime_error("vk::CommandBuffer::bindResourceSet(ComputePipeline): not a vk::ResourceSet");
+    }
+
+    VkDescriptorSet ds = vkSet->handle();
+    vkCmdBindDescriptorSets(
+        _cmd,
+        VK_PIPELINE_BIND_POINT_COMPUTE,
+        vkPipe->layoutHandle(),
+        setIndex,
+        1, &ds,
+        0, nullptr
+    );
 }
 
 }

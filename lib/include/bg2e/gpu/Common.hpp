@@ -170,12 +170,87 @@ struct PushConstantRange {
     ShaderStage stage  = ShaderStage::Vertex; // single shader stage mapping (upgrade to bitmask later)
 };
 
+// --- Resource binding types ---------------------------------------------------
+
+enum class ResourceType {
+    UniformBuffer,   // reserved, not implemented this iteration
+    StorageBuffer,   // reserved, not implemented this iteration
+    SampledImage,    // VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE / MTL texture binding
+    StorageImage,    // VK_DESCRIPTOR_TYPE_STORAGE_IMAGE / MTL texture binding (read-write)
+    Sampler          // VK_DESCRIPTOR_TYPE_SAMPLER / MTL sampler binding
+};
+
+struct ResourceBinding {
+    uint32_t     set     = 0;
+    uint32_t     binding = 0;
+    ResourceType type    = ResourceType::SampledImage;
+    ShaderStage  stage   = ShaderStage::Fragment;
+    uint32_t     count   = 1;   // array size; 1 for this iteration
+};
+
 struct PipelineLayoutDescription {
     std::vector<PushConstantRange> pushConstants; // empty for the first triangle pipeline
+    std::vector<ResourceBinding>   resourceBindings; // empty == no sets
+};
 
-    // future additions:
-    // - descriptor set / binding descriptions (set=0, set=1, ...)
-    // - argument buffer descriptors for Metal
+// --- Sampler description vocabulary ------------------------------------------
+
+enum class Filter       { Nearest, Linear };
+enum class MipmapFilter { Nearest, Linear };
+enum class AddressMode  { Repeat, ClampToEdge, MirroredRepeat };
+
+struct SamplerDescription {
+    Filter       minFilter    = Filter::Linear;
+    Filter       magFilter    = Filter::Linear;
+    MipmapFilter mipFilter    = MipmapFilter::Nearest;
+    AddressMode  addressModeU = AddressMode::Repeat;
+    AddressMode  addressModeV = AddressMode::Repeat;
+    AddressMode  addressModeW = AddressMode::Repeat;
+};
+
+// --- Image usage flags -------------------------------------------------------
+
+enum class ImageUsage : uint32_t {
+    None            = 0,
+    ColorAttachment = 1 << 0,
+    DepthStencil    = 1 << 1,
+    Sampled         = 1 << 2,
+    Storage         = 1 << 3,
+    TransferSrc     = 1 << 4,
+    TransferDst     = 1 << 5,
+    Present         = 1 << 6
+};
+
+inline ImageUsage operator|(ImageUsage a, ImageUsage b)
+{
+    return static_cast<ImageUsage>(
+        static_cast<uint32_t>(a) | static_cast<uint32_t>(b)
+    );
+}
+
+inline ImageUsage operator&(ImageUsage a, ImageUsage b)
+{
+    return static_cast<ImageUsage>(
+        static_cast<uint32_t>(a) & static_cast<uint32_t>(b)
+    );
+}
+
+inline ImageUsage& operator|=(ImageUsage& a, ImageUsage b)
+{
+    return a = a | b;
+}
+
+inline bool hasFlag(ImageUsage flags, ImageUsage flag)
+{
+    return (static_cast<uint32_t>(flags) & static_cast<uint32_t>(flag)) != 0;
+}
+
+// --- Image description for standalone image creation -------------------------
+
+struct ImageDescription {
+    Size2D      size;
+    PixelFormat format = PixelFormat::R8G8B8A8_UNORM;
+    ImageUsage  usage  = ImageUsage::Sampled | ImageUsage::TransferDst;
 };
 
 }

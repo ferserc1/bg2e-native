@@ -87,6 +87,7 @@ void WindowSurface::createRenderTarget(gpu::Device* device, gpu::PhysicalDevice*
     _layer->setPixelFormat(toMetalPixelFormat(_colorFormat));
     _layer->setDrawableSize(CGSize{ double(_size.width), double(_size.height) });
     _layer->setMaximumDrawableCount(3);
+    _layer->setFramebufferOnly(false);
     _imageCount = 3;
 
     createDepthTarget(_size, _depthFormat);

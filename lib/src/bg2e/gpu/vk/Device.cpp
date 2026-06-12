@@ -17,12 +17,15 @@
  */
 
 #include <bg2e/gpu/vk/Device.hpp>
+#include <bg2e/gpu/vk/Image.hpp>
 #include <bg2e/gpu/vk/PhysicalDevice.hpp>
 #include <bg2e/gpu/vk/Instance.hpp>
 #include <bg2e/gpu/vk/ShaderModule.hpp>
 #include <bg2e/gpu/vk/PipelineLayout.hpp>
 #include <bg2e/gpu/vk/GraphicsPipeline.hpp>
 #include <bg2e/gpu/vk/ComputePipeline.hpp>
+#include <bg2e/gpu/vk/Sampler.hpp>
+#include <bg2e/gpu/vk/ResourceSet.hpp>
 #include <bg2e/gpu/vk/CommandBuffer.hpp>
 #include <bg2e/gpu/vk/Info.hpp>
 #include <bg2e/gpu/vk/extensions.hpp>
@@ -331,6 +334,35 @@ std::unique_ptr<gpu::GraphicsPipeline> Device::createGraphicsPipeline(const gpu:
 std::unique_ptr<gpu::ComputePipeline> Device::createComputePipeline(const gpu::ComputePipelineDescription& description)
 {
     return std::make_unique<vk::ComputePipeline>(_device, description);
+}
+
+std::shared_ptr<gpu::Sampler> Device::createSampler(const gpu::SamplerDescription& description)
+{
+    return std::make_shared<vk::Sampler>(_device, description);
+}
+
+std::unique_ptr<gpu::ResourceSet> Device::createResourceSet(gpu::PipelineLayout* layout, uint32_t setIndex)
+{
+    auto* vkLayout = dynamic_cast<vk::PipelineLayout*>(layout);
+    if (!vkLayout)
+    {
+        throw std::runtime_error("vk::Device::createResourceSet: invalid PipelineLayout");
+    }
+    return std::make_unique<vk::ResourceSet>(_device, vkLayout, setIndex);
+}
+
+std::shared_ptr<gpu::Image> Device::createImage(const ImageDescription& description)
+{
+    auto img = std::make_shared<vk::Image>();
+
+    VkImageUsageFlags usage = 0;
+    if (hasFlag(description.usage, ImageUsage::Sampled))     { usage |= VK_IMAGE_USAGE_SAMPLED_BIT; }
+    if (hasFlag(description.usage, ImageUsage::Storage))     { usage |= VK_IMAGE_USAGE_STORAGE_BIT; }
+    if (hasFlag(description.usage, ImageUsage::TransferSrc)) { usage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT; }
+    if (hasFlag(description.usage, ImageUsage::TransferDst)) { usage |= VK_IMAGE_USAGE_TRANSFER_DST_BIT; }
+
+    img->buildSampledImage(this, description.size, description.format, usage);
+    return img;
 }
 
 void Device::immediateSubmit(std::function<void(gpu::CommandBuffer*)>&& function)

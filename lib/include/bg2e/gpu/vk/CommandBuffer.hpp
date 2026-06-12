@@ -47,6 +47,8 @@ public:
     void bindPipeline(gpu::ComputePipeline* pipeline) override;
     void dispatch(uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ) override;
     void pushConstants(ShaderStage stage, uint32_t offset, uint32_t size, const void* data) override;
+    void bindResourceSet(gpu::GraphicsPipeline* pipeline, uint32_t setIndex, gpu::ResourceSet* set) override;
+    void bindResourceSet(gpu::ComputePipeline* pipeline, uint32_t setIndex, gpu::ResourceSet* set) override;
     bool isValid() const override { return _cmd != VK_NULL_HANDLE; }
 
     VkCommandBuffer handle() const { return _cmd; }

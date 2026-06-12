@@ -31,10 +31,13 @@ namespace bg2e {
 namespace gpu {
 
 class CommandBuffer;
+class Image;
 class Instance;
 class PhysicalDevice;
+class ResourceSet;
 class Surface;
 class Queue;
+class Sampler;
 class ShaderModule;
 class PipelineLayout;
 class GraphicsPipeline;
@@ -53,6 +56,21 @@ public:
     virtual const Queue& graphicsQueue() const = 0;
     virtual const Queue& presentQueue() const = 0;
     virtual const Queue& transferQueue() const = 0;
+
+    virtual std::shared_ptr<Sampler> createSampler(const SamplerDescription& description)
+    {
+        throw std::runtime_error("createSampler not implemented");
+    }
+
+    virtual std::unique_ptr<ResourceSet> createResourceSet(PipelineLayout* layout, uint32_t setIndex)
+    {
+        throw std::runtime_error("createResourceSet not implemented");
+    }
+
+    virtual std::shared_ptr<Image> createImage(const ImageDescription& description)
+    {
+        throw std::runtime_error("createImage not implemented");
+    }
 
     virtual std::unique_ptr<ShaderModule> createShaderModule(const ShaderModuleDescription& description)
     {

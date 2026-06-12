@@ -20,6 +20,7 @@
 #include <bg2e/gpu/metal/GraphicsPipeline.hpp>
 #include <bg2e/gpu/metal/ComputePipeline.hpp>
 #include <bg2e/gpu/metal/PipelineLayout.hpp>
+#include <bg2e/gpu/metal/ResourceSet.hpp>
 #include <bg2e/gpu/metal/Image.hpp>
 #include <bg2e/gpu/metal/SurfaceFrame.hpp>
 #include <bg2e/gpu/Image.hpp>
@@ -87,7 +88,7 @@ void CommandBuffer::transition(gpu::Image* image, ImageLayout newLayout)
 {
     // Metal manages hazards automatically for render targets.
     // This is bookkeeping only for validation/debug.
-    image->setCurrentLayout(newLayout);
+    image->_currentLayout = newLayout;
 }
 
 void CommandBuffer::beginRendering(gpu::SurfaceFrame* frame)
@@ -109,7 +110,7 @@ void CommandBuffer::beginRendering(gpu::SurfaceFrame* frame)
     if (colorImg && colorImg->texture())
     {
         _passDesc->colorAttachments()->object(0)->setTexture(colorImg->texture());
-        _passDesc->colorAttachments()->object(0)->setLoadAction(MTL::LoadActionDontCare);
+        _passDesc->colorAttachments()->object(0)->setLoadAction(MTL::LoadActionLoad);
         _passDesc->colorAttachments()->object(0)->setStoreAction(MTL::StoreActionStore);
     }
 
@@ -278,13 +279,15 @@ void CommandBuffer::dispatch(uint32_t groupCountX, uint32_t groupCountY, uint32_
         throw std::runtime_error("metal::CommandBuffer::dispatch: no active compute scope; call beginCompute() first");
     }
 
-    NS::UInteger threadWidth = 1;
-    if (_boundComputePipeline && _boundComputePipeline->threadExecutionWidth() > 0)
-    {
-        threadWidth = _boundComputePipeline->threadExecutionWidth();
-    }
+    // Use 16x16 threads-per-group to match the GLSL local_size_x/y convention.
+    // The groupCountX/Y/Z parameters are treated as threadgroup counts (matching
+    // Vulkan's dispatch model). Compute kernels that need a different threadgroup
+    // size can be added later; for now 16x16 covers the gradient and typical
+    // image-processing dispatches.
+    constexpr NS::UInteger kThreadGroupWidth  = 16;
+    constexpr NS::UInteger kThreadGroupHeight = 16;
 
-    MTL::Size threadsPerGroup = MTL::Size::Make(threadWidth, 1, 1);
+    MTL::Size threadsPerGroup = MTL::Size::Make(kThreadGroupWidth, kThreadGroupHeight, 1);
     MTL::Size threadGroups = MTL::Size::Make(groupCountX, groupCountY, groupCountZ);
     _computeEncoder->dispatchThreadgroups(threadGroups, threadsPerGroup);
 }
@@ -320,6 +323,75 @@ void CommandBuffer::pushConstants(ShaderStage stage, uint32_t offset, uint32_t s
     }
 }
 
+void CommandBuffer::bindResourceSet(gpu::GraphicsPipeline* /*pipeline*/, uint32_t /*setIndex*/, gpu::ResourceSet* set)
+{
+    auto* metalSet = dynamic_cast<metal::ResourceSet*>(set);
+    if (!metalSet)
+    {
+        throw std::runtime_error("metal::CommandBuffer::bindResourceSet(GraphicsPipeline): not a metal::ResourceSet");
+    }
+
+    ensureRenderEncoder();
+
+    for (const auto& entry : metalSet->entries())
+    {
+        if (entry.texture)
+        {
+            switch (entry.stage)
+            {
+                case ShaderStage::Vertex:
+                    _encoder->setVertexTexture(entry.texture, entry.index);
+                    break;
+                case ShaderStage::Fragment:
+                    _encoder->setFragmentTexture(entry.texture, entry.index);
+                    break;
+                default:
+                    break;
+            }
+        }
+        if (entry.sampler)
+        {
+            switch (entry.stage)
+            {
+                case ShaderStage::Vertex:
+                    _encoder->setVertexSamplerState(entry.sampler, entry.index);
+                    break;
+                case ShaderStage::Fragment:
+                    _encoder->setFragmentSamplerState(entry.sampler, entry.index);
+                    break;
+                default:
+                    break;
+            }
+        }
+    }
+}
+
+void CommandBuffer::bindResourceSet(gpu::ComputePipeline* /*pipeline*/, uint32_t /*setIndex*/, gpu::ResourceSet* set)
+{
+    if (!_computeEncoder)
+    {
+        throw std::runtime_error("metal::CommandBuffer::bindResourceSet(ComputePipeline): no active compute scope; call beginCompute() first");
+    }
+
+    auto* metalSet = dynamic_cast<metal::ResourceSet*>(set);
+    if (!metalSet)
+    {
+        throw std::runtime_error("metal::CommandBuffer::bindResourceSet(ComputePipeline): not a metal::ResourceSet");
+    }
+
+    for (const auto& entry : metalSet->entries())
+    {
+        if (entry.texture)
+        {
+            _computeEncoder->setTexture(entry.texture, entry.index);
+        }
+        if (entry.sampler)
+        {
+            _computeEncoder->setSamplerState(entry.sampler, entry.index);
+        }
+    }
+}
+
 bool CommandBuffer::isValid() const
 {
     return _cmd != nullptr;
@@ -342,6 +414,8 @@ void CommandBuffer::draw(uint32_t, uint32_t, uint32_t, uint32_t) {}
 void CommandBuffer::bindPipeline(gpu::ComputePipeline*) {}
 void CommandBuffer::dispatch(uint32_t, uint32_t, uint32_t) {}
 void CommandBuffer::pushConstants(ShaderStage, uint32_t, uint32_t, const void*) {}
+void CommandBuffer::bindResourceSet(gpu::GraphicsPipeline*, uint32_t, gpu::ResourceSet*) {}
+void CommandBuffer::bindResourceSet(gpu::ComputePipeline*, uint32_t, gpu::ResourceSet*) {}
 bool CommandBuffer::isValid() const { return false; }
 
 #endif

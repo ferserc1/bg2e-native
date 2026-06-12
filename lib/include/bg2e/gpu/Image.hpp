@@ -50,9 +50,15 @@ public:
         throw std::runtime_error("Image::readPixelsRGBA8 not implemented");
     }
 
-protected:
-    void setCurrentLayout(ImageLayout layout) { _currentLayout = layout; }
+    virtual void uploadRGBA8(const void* pixels, const Size2D& size)
+    {
+        throw std::runtime_error("Image::uploadRGBA8 not implemented");
+    }
 
+protected:
+    // _currentLayout must always mirror the real backend layout of the image.
+    // Assign it directly only right after the API call that actually changes the
+    // layout (e.g. a pipeline barrier), so the tracked value stays in sync.
     PixelFormat   _pixelFormat   = PixelFormat::Undefined;
     Size2D        _size;
     ImageLayout   _currentLayout = ImageLayout::Undefined;

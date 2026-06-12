@@ -37,9 +37,14 @@ public:
 
     VkPipelineLayout handle() const { return _pipelineLayout; }
 
+    VkDescriptorSetLayout descriptorSetLayout(uint32_t set) const;
+    const gpu::PipelineLayoutDescription& description() const { return _description; }
+
 private:
     VkDevice _device{VK_NULL_HANDLE};
     VkPipelineLayout _pipelineLayout{VK_NULL_HANDLE};
+    gpu::PipelineLayoutDescription _description;
+    std::vector<VkDescriptorSetLayout> _descriptorSetLayouts;
 };
 
 }

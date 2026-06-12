@@ -100,20 +100,32 @@ void WindowSurface::createRenderTarget(gpu::Device* device, gpu::PhysicalDevice*
     VkSurfaceCapabilitiesKHR caps{};
     vkGetPhysicalDeviceSurfaceCapabilitiesKHR(vkPhys->handle(), _surface, &caps);
 
-    // Pick surface format
+    // Pick surface format — prefer non-sRGB UNORM for storage-image compatibility
     uint32_t formatCount = 0;
     vkGetPhysicalDeviceSurfaceFormatsKHR(vkPhys->handle(), _surface, &formatCount, nullptr);
     std::vector<VkSurfaceFormatKHR> formats(formatCount);
     vkGetPhysicalDeviceSurfaceFormatsKHR(vkPhys->handle(), _surface, &formatCount, formats.data());
 
     VkSurfaceFormatKHR chosenFormat = formats[0];
-    VkFormat preferredFormat = toVkFormat(_colorFormat);
     for (const auto& f : formats)
     {
-        if (f.format == preferredFormat && f.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
+        if (f.format == VK_FORMAT_B8G8R8A8_UNORM && f.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
         {
             chosenFormat = f;
             break;
+        }
+    }
+    // Fallback: prefer any UNORM format with SRGB color space
+    if (chosenFormat.format != VK_FORMAT_B8G8R8A8_UNORM)
+    {
+        for (const auto& f : formats)
+        {
+            if (f.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR &&
+                (f.format == VK_FORMAT_R8G8B8A8_UNORM || f.format == VK_FORMAT_B8G8R8A8_UNORM))
+            {
+                chosenFormat = f;
+                break;
+            }
         }
     }
     _colorFormat = fromVkFormat(chosenFormat.format);
@@ -149,6 +161,13 @@ void WindowSurface::createRenderTarget(gpu::Device* device, gpu::PhysicalDevice*
     createInfo.imageExtent = VkExtent2D{ _size.width, _size.height };
     createInfo.imageArrayLayers = 1;
     createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+
+    // Add STORAGE usage if supported (enables compute write to swapchain image)
+    if (caps.supportedUsageFlags & VK_IMAGE_USAGE_STORAGE_BIT)
+    {
+        createInfo.imageUsage |= VK_IMAGE_USAGE_STORAGE_BIT;
+    }
+
     createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
     createInfo.preTransform = caps.currentTransform;
     createInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;

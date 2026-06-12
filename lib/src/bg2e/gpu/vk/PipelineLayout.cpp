@@ -36,9 +36,74 @@ VkShaderStageFlags shaderStageToVkFlags(ShaderStage stage)
     return VK_SHADER_STAGE_VERTEX_BIT;
 }
 
+static VkDescriptorType toVkDescriptorType(ResourceType type)
+{
+    switch (type)
+    {
+        case ResourceType::UniformBuffer: return VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        case ResourceType::StorageBuffer: return VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+        case ResourceType::SampledImage:  return VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+        case ResourceType::StorageImage:  return VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+        case ResourceType::Sampler:       return VK_DESCRIPTOR_TYPE_SAMPLER;
+    }
+    return VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+}
+
 PipelineLayout::PipelineLayout(VkDevice device, const gpu::PipelineLayoutDescription& description)
     : _device(device)
+    , _description(description)
 {
+    // Group resource bindings by set index and create descriptor set layouts
+    if (!description.resourceBindings.empty())
+    {
+        struct BindingWithSet
+        {
+            uint32_t set;
+            VkDescriptorSetLayoutBinding binding;
+        };
+
+        std::vector<BindingWithSet> bindingsBySet;
+        uint32_t maxSet = 0;
+
+        for (const auto& rb : description.resourceBindings)
+        {
+            VkDescriptorSetLayoutBinding vkBinding{};
+            vkBinding.binding = rb.binding;
+            vkBinding.descriptorType = toVkDescriptorType(rb.type);
+            vkBinding.descriptorCount = rb.count;
+            vkBinding.stageFlags = shaderStageToVkFlags(rb.stage);
+
+            bindingsBySet.push_back({ rb.set, vkBinding });
+            if (rb.set > maxSet) maxSet = rb.set;
+        }
+
+        _descriptorSetLayouts.resize(maxSet + 1, VK_NULL_HANDLE);
+
+        std::vector<std::vector<VkDescriptorSetLayoutBinding>> layoutsBySet(maxSet + 1);
+        for (const auto& bws : bindingsBySet)
+        {
+            layoutsBySet[bws.set].push_back(bws.binding);
+        }
+
+        for (uint32_t i = 0; i < layoutsBySet.size(); ++i)
+        {
+            if (layoutsBySet[i].empty()) continue;
+
+            VkDescriptorSetLayoutCreateInfo layoutInfo{};
+            layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+            layoutInfo.bindingCount = static_cast<uint32_t>(layoutsBySet[i].size());
+            layoutInfo.pBindings = layoutsBySet[i].data();
+
+            VkResult result = vkCreateDescriptorSetLayout(_device, &layoutInfo, nullptr, &_descriptorSetLayouts[i]);
+            if (result != VK_SUCCESS)
+            {
+                bg2e_log_error << "vk::PipelineLayout: vkCreateDescriptorSetLayout failed with result " << result << bg2e_log_end;
+                throw std::runtime_error("Failed to create Vulkan descriptor set layout");
+            }
+        }
+    }
+
+    // Push constant ranges
     std::vector<VkPushConstantRange> vkRanges;
     for (const auto& range : description.pushConstants)
     {
@@ -51,6 +116,8 @@ PipelineLayout::PipelineLayout(VkDevice device, const gpu::PipelineLayoutDescrip
 
     VkPipelineLayoutCreateInfo createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+    createInfo.setLayoutCount = static_cast<uint32_t>(_descriptorSetLayouts.size());
+    createInfo.pSetLayouts = _descriptorSetLayouts.data();
     createInfo.pushConstantRangeCount = static_cast<uint32_t>(vkRanges.size());
     createInfo.pPushConstantRanges = vkRanges.data();
 
@@ -74,11 +141,26 @@ bool PipelineLayout::isValid() const
 
 void PipelineLayout::cleanup()
 {
+    for (auto layout : _descriptorSetLayouts)
+    {
+        if (layout != VK_NULL_HANDLE)
+        {
+            vkDestroyDescriptorSetLayout(_device, layout, nullptr);
+        }
+    }
+    _descriptorSetLayouts.clear();
+
     if (_pipelineLayout != VK_NULL_HANDLE)
     {
         vkDestroyPipelineLayout(_device, _pipelineLayout, nullptr);
         _pipelineLayout = VK_NULL_HANDLE;
     }
+}
+
+VkDescriptorSetLayout PipelineLayout::descriptorSetLayout(uint32_t set) const
+{
+    if (set >= _descriptorSetLayouts.size()) return VK_NULL_HANDLE;
+    return _descriptorSetLayouts[set];
 }
 
 }

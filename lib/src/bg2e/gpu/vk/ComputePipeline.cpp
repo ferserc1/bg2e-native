@@ -48,6 +48,7 @@ ComputePipeline::ComputePipeline(VkDevice device, const gpu::ComputePipelineDesc
     pipelineInfo.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
     pipelineInfo.stage = csStage;
     pipelineInfo.layout = vkLayout->handle();
+    _layoutHandle = vkLayout->handle();
 
     VkResult result = vkCreateComputePipelines(_device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &_pipeline);
     if (result != VK_SUCCESS)

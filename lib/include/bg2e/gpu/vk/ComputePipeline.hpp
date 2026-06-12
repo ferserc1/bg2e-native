@@ -35,11 +35,13 @@ public:
 
     VkPipeline handle() const { return _pipeline; }
     VkPipelineBindPoint bindPoint() const { return _bindPoint; }
+    VkPipelineLayout layoutHandle() const { return _layoutHandle; }
 
 private:
     VkDevice _device{VK_NULL_HANDLE};
     VkPipeline _pipeline{VK_NULL_HANDLE};
     VkPipelineBindPoint _bindPoint{VK_PIPELINE_BIND_POINT_COMPUTE};
+    VkPipelineLayout _layoutHandle{VK_NULL_HANDLE};
 };
 
 }

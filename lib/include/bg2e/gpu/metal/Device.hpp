@@ -44,6 +44,9 @@ public:
     std::unique_ptr<gpu::PipelineLayout> createPipelineLayout(const gpu::PipelineLayoutDescription& description) override;
     std::unique_ptr<gpu::GraphicsPipeline> createGraphicsPipeline(const gpu::GraphicsPipelineDescription& description) override;
     std::unique_ptr<gpu::ComputePipeline> createComputePipeline(const gpu::ComputePipelineDescription& description) override;
+    std::shared_ptr<gpu::Sampler> createSampler(const gpu::SamplerDescription& description) override;
+    std::unique_ptr<gpu::ResourceSet> createResourceSet(gpu::PipelineLayout* layout, uint32_t setIndex) override;
+    std::shared_ptr<gpu::Image> createImage(const ImageDescription& description) override;
 
     void immediateSubmit(std::function<void(gpu::CommandBuffer* cmd)>&& function) override;
 

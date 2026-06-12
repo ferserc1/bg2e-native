@@ -18,8 +18,11 @@
 #include <bg2e.hpp>
 #include <bg2e/gpu/all.hpp>
 #include <bg2e/app/SDLUtils.hpp>
+#include <array>
 #include <cmath>
 #include <iostream>
+#include <memory>
+#include <vector>
 
 struct PushConstants {
     float color[4];
@@ -94,7 +97,7 @@ int main(int argc, char** argv)
     {
         auto vsPath = (shaderBasePath / targetName / "triangle.vert.spv").string();
         auto fsPath = (shaderBasePath / targetName / "triangle.frag.spv").string();
-        auto csPath = (shaderBasePath / targetName / "noop.comp.spv").string();
+        auto csPath = (shaderBasePath / targetName / "gradient.comp.spv").string();
         vs = device->createShaderModule({ vsPath, "main", gpu::ShaderStage::Vertex });
         fs = device->createShaderModule({ fsPath, "main", gpu::ShaderStage::Fragment });
         cs = device->createShaderModule({ csPath, "main", gpu::ShaderStage::Compute });
@@ -104,16 +107,49 @@ int main(int argc, char** argv)
         auto libPath = (shaderBasePath / targetName / "metal" / "triangle.metallib").string();
         vs = device->createShaderModule({ libPath, "triangle_vertex", gpu::ShaderStage::Vertex });
         fs = device->createShaderModule({ libPath, "triangle_fragment", gpu::ShaderStage::Fragment });
-        cs = device->createShaderModule({ libPath, "noop_compute", gpu::ShaderStage::Compute });
+        cs = device->createShaderModule({ libPath, "gradient_compute", gpu::ShaderStage::Compute });
     }
 
-    // Graphics layout with push constant range for fragment stage
+    // Graphics layout with push constant range and SampledImage + Sampler bindings
     gpu::PipelineLayoutDescription graphicsLayoutDesc{};
     graphicsLayoutDesc.pushConstants.push_back({ 0, sizeof(PushConstants), gpu::ShaderStage::Fragment });
+    graphicsLayoutDesc.resourceBindings.push_back({ 0, 0, gpu::ResourceType::SampledImage, gpu::ShaderStage::Fragment, 1 });
+    graphicsLayoutDesc.resourceBindings.push_back({ 0, 1, gpu::ResourceType::Sampler,      gpu::ShaderStage::Fragment, 1 });
     auto graphicsLayout = device->createPipelineLayout(graphicsLayoutDesc);
 
-    // Compute layout (empty, no push constants or bindings)
-    auto computeLayout = device->createPipelineLayout({});
+    // Procedural 2×2 texture
+    const std::array<std::array<uint8_t,4>, 4> texels = {{
+        {{255,   0,   0, 255}}, {{  0, 255,   0, 255}},
+        {{  0,   0, 255, 255}}, {{255, 255,   0, 255}}
+    }};
+    auto texture = device->createImage({ {2, 2}, gpu::PixelFormat::R8G8B8A8_UNORM,
+                                         gpu::ImageUsage::Sampled | gpu::ImageUsage::TransferDst });
+    texture->uploadRGBA8(texels.data(), { 2, 2 });
+    device->immediateSubmit([texture](gpu::CommandBuffer* cmd)
+    {
+        cmd->transition(texture.get(), gpu::ImageLayout::ShaderReadOnly);
+    });
+
+    // Sampler with default settings (linear/linear, repeat)
+    auto sampler = device->createSampler({});
+
+    // Static graphics resource set (texture + sampler, bound every frame)
+    auto textureSet = device->createResourceSet(graphicsLayout.get(), 0);
+    textureSet->setSampledImage(0, texture.get());
+    textureSet->setSampler(1, sampler.get());
+    textureSet->update();
+
+    bg2e::base::Log::isDebug();
+    // Compute layout with StorageImage binding at set=0, binding=0
+    gpu::PipelineLayoutDescription computeLayoutDesc{};
+    computeLayoutDesc.resourceBindings.push_back({
+        0,                                  // set
+        0,                                  // binding
+        gpu::ResourceType::StorageImage,
+        gpu::ShaderStage::Compute,
+        1                                   // count
+    });
+    auto computeLayout = device->createPipelineLayout(computeLayoutDesc);
 
     // Get attachment formats from the first frame
     auto colorFormat = surface->colorFormat();
@@ -134,6 +170,16 @@ int main(int argc, char** argv)
     computePipelineDesc.computeShader = cs.get();
     computePipelineDesc.layout = computeLayout.get();
     auto computePipeline = device->createComputePipeline(computePipelineDesc);
+
+    // Resource set ring: one set per swapchain image
+    auto imageCount = surface->imageCount();
+    std::vector<std::unique_ptr<gpu::ResourceSet>> resourceSets;
+    resourceSets.reserve(imageCount);
+    for (uint32_t i = 0; i < imageCount; ++i)
+    {
+        resourceSets.push_back(device->createResourceSet(computeLayout.get(), 0));
+    }
+    uint32_t ringIndex = 0;
 
     // 9. Render loop
     auto& graphicsQueue = device->graphicsQueue();
@@ -156,12 +202,6 @@ int main(int argc, char** argv)
         }
 
         const float t = static_cast<float>(SDL_GetTicks64()) / 1000.0f;
-        gpu::Color clearColor {
-            0.5f + 0.5f * std::sin(t),
-            0.5f + 0.5f * std::sin(t + 2.0f),
-            0.5f + 0.5f * std::sin(t + 4.0f),
-            1.0f
-        };
 
         PushConstants push{};
         push.color[0] = 0.5f + 0.5f * std::sin(t * 1.3f);
@@ -174,19 +214,33 @@ int main(int argc, char** argv)
 
         cmd->begin();
 
-        // Compute dispatch (its own scope, separate from rendering)
+        // Transition color image to General for compute write
+        cmd->transition(frame->colorImage(), gpu::ImageLayout::General);
+
+        // Compute dispatch: write gradient into the color image
         cmd->beginCompute();
         cmd->bindPipeline(computePipeline.get());
-        cmd->dispatch(1, 1, 1);
+
+        auto* rs = resourceSets[ringIndex].get();
+        rs->setStorageImage(0, frame->colorImage());
+        rs->update();
+        cmd->bindResourceSet(computePipeline.get(), 0, rs);
+
+        // Both backends now use 16x16 threads-per-group, so the same
+        // group-count calculation works for Vulkan and Metal.
+        uint32_t gx = (frame->colorImage()->width()  + 15) / 16;
+        uint32_t gy = (frame->colorImage()->height() + 15) / 16;
+        cmd->dispatch(gx, gy, 1);
+
         cmd->endCompute();
 
-        // Graphics rendering
+        // Graphics rendering (gradient is the background, no clearColor)
         cmd->transition(frame->colorImage(), gpu::ImageLayout::ColorAttachment);
         cmd->transition(frame->depthImage(), gpu::ImageLayout::DepthAttachment);
         cmd->beginRendering(frame.get());
-        cmd->clearColor(0, clearColor);
         cmd->clearDepth(1.0f);
         cmd->bindPipeline(pipeline.get());
+        cmd->bindResourceSet(pipeline.get(), 0, textureSet.get());
         cmd->pushConstants(gpu::ShaderStage::Fragment, 0, sizeof(PushConstants), &push);
         cmd->draw(3);
         cmd->endRendering();
@@ -196,12 +250,21 @@ int main(int argc, char** argv)
         cmd->end();
         graphicsQueue.submit(cmd.get());
         surface->endFrame(frame.get());
+
+        ringIndex = (ringIndex + 1) % imageCount;
     }
 
     // 10. Cleanup
     device->waitIdle();
+    for (auto& rs : resourceSets)
+    {
+        rs->cleanup();
+    }
     computePipeline->cleanup();
     pipeline->cleanup();
+    textureSet->cleanup();
+    sampler.reset();
+    texture.reset();
     computeLayout->cleanup();
     graphicsLayout->cleanup();
     cs->cleanup();

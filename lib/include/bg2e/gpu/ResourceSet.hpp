@@ -18,22 +18,34 @@
 
 #pragma once
 
+#include <bg2e/common.hpp>
 #include <bg2e/gpu/Common.hpp>
-#include <bg2e/gpu/Backend.hpp>
-#include <bg2e/gpu/Factory.hpp>
-#include <bg2e/gpu/Instance.hpp>
-#include <bg2e/gpu/PhysicalDevice.hpp>
-#include <bg2e/gpu/Surface.hpp>
-#include <bg2e/gpu/Image.hpp>
-#include <bg2e/gpu/SurfaceFrame.hpp>
-#include <bg2e/gpu/WindowSurface.hpp>
-#include <bg2e/gpu/OffscreenSurface.hpp>
-#include <bg2e/gpu/Queue.hpp>
-#include <bg2e/gpu/CommandBuffer.hpp>
-#include <bg2e/gpu/Device.hpp>
-#include <bg2e/gpu/Sampler.hpp>
-#include <bg2e/gpu/ResourceSet.hpp>
-#include <bg2e/gpu/ShaderModule.hpp>
-#include <bg2e/gpu/PipelineLayout.hpp>
-#include <bg2e/gpu/GraphicsPipeline.hpp>
-#include <bg2e/gpu/ComputePipeline.hpp>
+
+#include <cstdint>
+
+namespace bg2e {
+namespace gpu {
+
+class Image;
+class Sampler;
+
+class BG2E_API ResourceSet {
+public:
+    virtual ~ResourceSet() = default;
+
+    virtual void setStorageImage(uint32_t binding, gpu::Image* image) = 0;
+    virtual void setSampledImage(uint32_t binding, gpu::Image* image) = 0;
+    virtual void setSampler(uint32_t binding, gpu::Sampler* sampler)  = 0;
+    // Reserved for future iterations (declare but may be left unimplemented
+    // / throwing in the backends until needed):
+    // virtual void setUniformBuffer(uint32_t binding, gpu::Buffer* buffer) = 0;
+
+    virtual void update() = 0;   // flush assignments to the backend
+
+    virtual uint32_t setIndex() const = 0;
+    virtual bool isValid() const = 0;
+    virtual void cleanup() = 0;
+};
+
+}
+}

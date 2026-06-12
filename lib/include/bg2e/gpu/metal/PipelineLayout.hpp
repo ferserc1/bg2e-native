@@ -37,6 +37,14 @@ public:
 
     const gpu::PipelineLayoutDescription& description() const { return _description; }
 
+    const std::vector<ResourceBinding>& resourceBindings() const { return _description.resourceBindings; }
+
+    // Resolves a ResourceBinding to a Metal argument index.
+    // For this iteration, index = binding (texture/sampler/buffer are independent
+    // index namespaces in Metal). PushConstantBufferIndex (0) lives in the buffer
+    // namespace, so texture/sampler bindings at any index do not collide.
+    uint32_t metalIndex(const ResourceBinding& b) const { return b.binding; }
+
     // Buffer index reserved for push-constant data on Metal.
     // Index 0 is used here because the first pipeline (triangle) has no vertex buffers.
     // Revisit when vertex/uniform buffers are added to avoid index collisions.
