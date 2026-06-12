@@ -341,14 +341,14 @@ std::shared_ptr<gpu::Sampler> Device::createSampler(const gpu::SamplerDescriptio
     return std::make_shared<vk::Sampler>(_device, description);
 }
 
-std::unique_ptr<gpu::ResourceSet> Device::createResourceSet(gpu::PipelineLayout* layout, uint32_t setIndex)
+std::unique_ptr<gpu::ResourceSet> Device::createResourceSet(gpu::PipelineLayout* layout, uint32_t setIndex, const std::string& debugName)
 {
     auto* vkLayout = dynamic_cast<vk::PipelineLayout*>(layout);
     if (!vkLayout)
     {
         throw std::runtime_error("vk::Device::createResourceSet: invalid PipelineLayout");
     }
-    return std::make_unique<vk::ResourceSet>(_device, vkLayout, setIndex);
+    return std::make_unique<vk::ResourceSet>(_device, vkLayout, setIndex, debugName);
 }
 
 std::shared_ptr<gpu::Image> Device::createImage(const ImageDescription& description)
@@ -361,7 +361,7 @@ std::shared_ptr<gpu::Image> Device::createImage(const ImageDescription& descript
     if (hasFlag(description.usage, ImageUsage::TransferSrc)) { usage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT; }
     if (hasFlag(description.usage, ImageUsage::TransferDst)) { usage |= VK_IMAGE_USAGE_TRANSFER_DST_BIT; }
 
-    img->buildSampledImage(this, description.size, description.format, usage);
+    img->buildSampledImage(this, description.size, description.format, usage, description.debugName);
     return img;
 }
 

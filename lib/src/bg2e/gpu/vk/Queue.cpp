@@ -22,6 +22,7 @@
 #include <bg2e/gpu/vk/SurfaceFrame.hpp>
 #include <bg2e/gpu/vk/Info.hpp>
 #include <bg2e/gpu/vk/extensions.hpp>
+#include <bg2e/base/Log.hpp>
 
 #include <stdexcept>
 
@@ -72,7 +73,7 @@ void Queue::destroyCommandPool()
     _gpuDevice = nullptr;
 }
 
-std::shared_ptr<gpu::CommandBuffer> Queue::createCommandBuffer() const
+std::shared_ptr<gpu::CommandBuffer> Queue::createCommandBuffer(const std::string& debugName) const
 {
     if (_commandPool == VK_NULL_HANDLE)
     {
@@ -82,6 +83,16 @@ std::shared_ptr<gpu::CommandBuffer> Queue::createCommandBuffer() const
     auto allocInfo = Info::commandBufferAllocateInfo(_commandPool, 1);
     VkCommandBuffer cmd = VK_NULL_HANDLE;
     VK_ASSERT(vkAllocateCommandBuffers(_device, &allocInfo, &cmd));
+
+    if (base::Log::isDebug() && !debugName.empty() && setDebugUtilsObjectName != nullptr)
+    {
+        VkDebugUtilsObjectNameInfoEXT nameInfo{};
+        nameInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
+        nameInfo.objectType = VK_OBJECT_TYPE_COMMAND_BUFFER;
+        nameInfo.objectHandle = reinterpret_cast<uint64_t>(cmd);
+        nameInfo.pObjectName = debugName.c_str();
+        setDebugUtilsObjectName(_device, &nameInfo);
+    }
 
     return std::make_shared<vk::CommandBuffer>(_gpuDevice, cmd, _commandPool);
 }

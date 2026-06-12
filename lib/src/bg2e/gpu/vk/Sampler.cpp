@@ -17,6 +17,7 @@
  */
 
 #include <bg2e/gpu/vk/Sampler.hpp>
+#include <bg2e/gpu/vk/extensions.hpp>
 #include <bg2e/base/Log.hpp>
 
 #include <stdexcept>
@@ -83,6 +84,16 @@ Sampler::Sampler(VkDevice device, const gpu::SamplerDescription& description)
     {
         bg2e_log_error << "vk::Sampler: vkCreateSampler failed with result " << result << bg2e_log_end;
         throw std::runtime_error("Failed to create Vulkan sampler");
+    }
+
+    if (base::Log::isDebug() && !description.debugName.empty() && setDebugUtilsObjectName != nullptr)
+    {
+        VkDebugUtilsObjectNameInfoEXT nameInfo{};
+        nameInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
+        nameInfo.objectType = VK_OBJECT_TYPE_SAMPLER;
+        nameInfo.objectHandle = reinterpret_cast<uint64_t>(_sampler);
+        nameInfo.pObjectName = description.debugName.c_str();
+        setDebugUtilsObjectName(_device, &nameInfo);
     }
 }
 

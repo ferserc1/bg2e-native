@@ -74,25 +74,26 @@ int main(int argc, char** argv)
         auto vsPath = (shaderBasePath / targetName / "triangle.vert.spv").string();
         auto fsPath = (shaderBasePath / targetName / "triangle.frag.spv").string();
         auto csPath = (shaderBasePath / targetName / "noop.comp.spv").string();
-        vs = device->createShaderModule({ vsPath, "main", gpu::ShaderStage::Vertex });
-        fs = device->createShaderModule({ fsPath, "main", gpu::ShaderStage::Fragment });
-        cs = device->createShaderModule({ csPath, "main", gpu::ShaderStage::Compute });
+        vs = device->createShaderModule({ vsPath, "main", gpu::ShaderStage::Vertex, "Triangle vertex shader" });
+        fs = device->createShaderModule({ fsPath, "main", gpu::ShaderStage::Fragment, "Triangle fragment shader" });
+        cs = device->createShaderModule({ csPath, "main", gpu::ShaderStage::Compute, "Noop compute shader" });
     }
     else
     {
         auto libPath = (shaderBasePath / targetName / "metal" / "triangle.metallib").string();
-        vs = device->createShaderModule({ libPath, "triangle_vertex", gpu::ShaderStage::Vertex });
-        fs = device->createShaderModule({ libPath, "triangle_fragment", gpu::ShaderStage::Fragment });
-        cs = device->createShaderModule({ libPath, "noop_compute", gpu::ShaderStage::Compute });
+        vs = device->createShaderModule({ libPath, "triangle_vertex", gpu::ShaderStage::Vertex, "Triangle vertex shader" });
+        fs = device->createShaderModule({ libPath, "triangle_fragment", gpu::ShaderStage::Fragment, "Triangle fragment shader" });
+        cs = device->createShaderModule({ libPath, "noop_compute", gpu::ShaderStage::Compute, "Noop compute shader" });
     }
 
     // Graphics layout with push constant range for fragment stage
     gpu::PipelineLayoutDescription graphicsLayoutDesc{};
     graphicsLayoutDesc.pushConstants.push_back({ 0, sizeof(PushConstants), gpu::ShaderStage::Fragment });
+    graphicsLayoutDesc.debugName = "Graphics pipeline layout";
     auto graphicsLayout = device->createPipelineLayout(graphicsLayoutDesc);
 
     // Compute layout (empty, no push constants or bindings)
-    auto computeLayout = device->createPipelineLayout({});
+    auto computeLayout = device->createPipelineLayout({ .debugName = "Compute pipeline layout" });
 
     // Get attachment formats from surface
     auto colorFormat = surface->colorFormat();
@@ -105,6 +106,7 @@ int main(int argc, char** argv)
     pipelineDesc.topology = gpu::PrimitiveTopology::TriangleList;
     pipelineDesc.colorFormat = colorFormat;
     pipelineDesc.depthFormat = depthFormat;
+    pipelineDesc.debugName = "Main graphics pipeline";
 
     auto pipeline = device->createGraphicsPipeline(pipelineDesc);
 
@@ -112,6 +114,7 @@ int main(int argc, char** argv)
     gpu::ComputePipelineDescription computePipelineDesc{};
     computePipelineDesc.computeShader = cs.get();
     computePipelineDesc.layout = computeLayout.get();
+    computePipelineDesc.debugName = "Noop compute pipeline";
     auto computePipeline = device->createComputePipeline(computePipelineDesc);
 
     // 8. Single render iteration (no loop — headless offscreen)
@@ -122,7 +125,7 @@ int main(int argc, char** argv)
     gpu::Color clearColor{ 0.1f, 0.1f, 0.15f, 1.0f };
 
     auto frame = surface->beginFrame();
-    auto cmd   = graphicsQueue.createCommandBuffer();
+    auto cmd   = graphicsQueue.createCommandBuffer("Frame command buffer");
 
     cmd->begin();
 

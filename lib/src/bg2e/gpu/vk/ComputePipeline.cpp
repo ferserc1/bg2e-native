@@ -19,6 +19,7 @@
 #include <bg2e/gpu/vk/ComputePipeline.hpp>
 #include <bg2e/gpu/vk/ShaderModule.hpp>
 #include <bg2e/gpu/vk/PipelineLayout.hpp>
+#include <bg2e/gpu/vk/extensions.hpp>
 #include <bg2e/base/Log.hpp>
 
 #include <stdexcept>
@@ -55,6 +56,16 @@ ComputePipeline::ComputePipeline(VkDevice device, const gpu::ComputePipelineDesc
     {
         bg2e_log_debug << "vk::ComputePipeline: vkCreateComputePipelines failed with result " << result << bg2e_log_end;
         throw std::runtime_error("Failed to create Vulkan compute pipeline");
+    }
+
+    if (base::Log::isDebug() && !description.debugName.empty() && setDebugUtilsObjectName != nullptr)
+    {
+        VkDebugUtilsObjectNameInfoEXT nameInfo{};
+        nameInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
+        nameInfo.objectType = VK_OBJECT_TYPE_PIPELINE;
+        nameInfo.objectHandle = reinterpret_cast<uint64_t>(_pipeline);
+        nameInfo.pObjectName = description.debugName.c_str();
+        setDebugUtilsObjectName(_device, &nameInfo);
     }
 }
 

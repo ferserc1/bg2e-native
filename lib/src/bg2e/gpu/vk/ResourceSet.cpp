@@ -20,6 +20,7 @@
 #include <bg2e/gpu/vk/PipelineLayout.hpp>
 #include <bg2e/gpu/vk/Image.hpp>
 #include <bg2e/gpu/vk/Sampler.hpp>
+#include <bg2e/gpu/vk/extensions.hpp>
 #include <bg2e/base/Log.hpp>
 
 #include <stdexcept>
@@ -28,7 +29,7 @@ namespace bg2e {
 namespace gpu {
 namespace vk {
 
-ResourceSet::ResourceSet(VkDevice device, const vk::PipelineLayout* layout, uint32_t setIndex)
+ResourceSet::ResourceSet(VkDevice device, const vk::PipelineLayout* layout, uint32_t setIndex, const std::string& debugName)
     : _device(device)
     , _setIndex(setIndex)
 {
@@ -78,6 +79,16 @@ ResourceSet::ResourceSet(VkDevice device, const vk::PipelineLayout* layout, uint
         throw std::runtime_error("Failed to create Vulkan descriptor pool");
     }
 
+    if (base::Log::isDebug() && !debugName.empty() && setDebugUtilsObjectName != nullptr)
+    {
+        VkDebugUtilsObjectNameInfoEXT nameInfo{};
+        nameInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
+        nameInfo.objectType = VK_OBJECT_TYPE_DESCRIPTOR_POOL;
+        nameInfo.objectHandle = reinterpret_cast<uint64_t>(_descriptorPool);
+        nameInfo.pObjectName = debugName.c_str();
+        setDebugUtilsObjectName(_device, &nameInfo);
+    }
+
     VkDescriptorSetAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
     allocInfo.descriptorPool = _descriptorPool;
@@ -89,6 +100,16 @@ ResourceSet::ResourceSet(VkDevice device, const vk::PipelineLayout* layout, uint
     {
         bg2e_log_error << "vk::ResourceSet: vkAllocateDescriptorSets failed with result " << result << bg2e_log_end;
         throw std::runtime_error("Failed to allocate Vulkan descriptor set");
+    }
+
+    if (base::Log::isDebug() && !debugName.empty() && setDebugUtilsObjectName != nullptr)
+    {
+        VkDebugUtilsObjectNameInfoEXT nameInfo{};
+        nameInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
+        nameInfo.objectType = VK_OBJECT_TYPE_DESCRIPTOR_SET;
+        nameInfo.objectHandle = reinterpret_cast<uint64_t>(_descriptorSet);
+        nameInfo.pObjectName = debugName.c_str();
+        setDebugUtilsObjectName(_device, &nameInfo);
     }
 }
 

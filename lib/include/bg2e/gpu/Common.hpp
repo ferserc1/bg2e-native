@@ -20,6 +20,7 @@
 
 #include <bg2e/common.hpp>
 
+#include <string>
 #include <vector>
 
 namespace bg2e {
@@ -162,6 +163,7 @@ struct ShaderModuleDescription {
     std::string filePath;            // Vulkan: .spv ; Metal: .metallib
     std::string entryPoint = "main"; // Vulkan: SPIR-V entry ; Metal: MTL function name
     ShaderStage stage = ShaderStage::Vertex;
+    std::string debugName;           // Debug label for validation layers / Xcode GPU Capture
 };
 
 struct PushConstantRange {
@@ -191,6 +193,7 @@ struct ResourceBinding {
 struct PipelineLayoutDescription {
     std::vector<PushConstantRange> pushConstants; // empty for the first triangle pipeline
     std::vector<ResourceBinding>   resourceBindings; // empty == no sets
+    std::string debugName;           // Debug label for validation layers / Xcode GPU Capture
 };
 
 // --- Sampler description vocabulary ------------------------------------------
@@ -206,6 +209,7 @@ struct SamplerDescription {
     AddressMode  addressModeU = AddressMode::Repeat;
     AddressMode  addressModeV = AddressMode::Repeat;
     AddressMode  addressModeW = AddressMode::Repeat;
+    std::string  debugName;          // Debug label for validation layers / Xcode GPU Capture
 };
 
 // --- Image usage flags -------------------------------------------------------
@@ -251,6 +255,7 @@ struct ImageDescription {
     Size2D      size;
     PixelFormat format = PixelFormat::R8G8B8A8_UNORM;
     ImageUsage  usage  = ImageUsage::Sampled | ImageUsage::TransferDst;
+    std::string debugName;          // Debug label for validation layers / Xcode GPU Capture
 };
 
 }

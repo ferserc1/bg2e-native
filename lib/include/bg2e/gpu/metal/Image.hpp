@@ -36,9 +36,9 @@ public:
     Image(const Image&) = delete;
     Image& operator=(const Image&) = delete;
 
-    void buildTargetImage(metal::Device* device, const Size2D& size, PixelFormat format);
-    void buildDepthImage(metal::Device* device, const Size2D& size, PixelFormat format);
-    void buildSampledImage(metal::Device* device, const Size2D& size, PixelFormat format);
+    void buildTargetImage(metal::Device* device, const Size2D& size, PixelFormat format, const std::string& debugName = {});
+    void buildDepthImage(metal::Device* device, const Size2D& size, PixelFormat format, const std::string& debugName = {});
+    void buildSampledImage(metal::Device* device, const Size2D& size, PixelFormat format, const std::string& debugName = {});
 
     void resize(const Size2D& size);
 
@@ -62,6 +62,7 @@ private:
     TextureHandle  _texture     = nullptr;
     bool           _isDepth     = false;
     bool           _ownsTexture = true;
+    std::string    _debugName;
 };
 
 }

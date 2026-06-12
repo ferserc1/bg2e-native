@@ -47,7 +47,7 @@ public:
 
     void setDevice(metal::Device* device) { _device = device; }
 
-    std::shared_ptr<gpu::CommandBuffer> createCommandBuffer() const override;
+    std::shared_ptr<gpu::CommandBuffer> createCommandBuffer(const std::string& debugName = {}) const override;
     void submit(gpu::CommandBuffer* cmd) const override;
 
 private:

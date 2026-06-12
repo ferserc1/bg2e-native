@@ -19,6 +19,7 @@
 #include <bg2e/gpu/metal/GraphicsPipeline.hpp>
 #include <bg2e/gpu/metal/ShaderModule.hpp>
 #include <bg2e/gpu/metal/PipelineLayout.hpp>
+#include <bg2e/base/Log.hpp>
 
 #include <stdexcept>
 
@@ -57,6 +58,7 @@ GraphicsPipeline::GraphicsPipeline(MTL::Device* device, const gpu::GraphicsPipel
 
     descriptor->setVertexFunction(metalVsModule->function());
     descriptor->setFragmentFunction(metalFsModule->function());
+    descriptor->setLabel(NS::String::string(description.debugName.c_str(), NS::UTF8StringEncoding));
 
     descriptor->colorAttachments()->object(0)->setPixelFormat(toMetalPixelFormat(description.colorFormat));
 

@@ -36,9 +36,9 @@ public:
     Image(const Image&) = delete;
     Image& operator=(const Image&) = delete;
 
-    void buildTargetImage(vk::Device* device, const Size2D& size, PixelFormat format);
-    void buildDepthImage(vk::Device* device, const Size2D& size, PixelFormat format);
-    void buildSampledImage(vk::Device* device, const Size2D& size, PixelFormat format, VkImageUsageFlags usage);
+    void buildTargetImage(vk::Device* device, const Size2D& size, PixelFormat format, const std::string& debugName = {});
+    void buildDepthImage(vk::Device* device, const Size2D& size, PixelFormat format, const std::string& debugName = {});
+    void buildSampledImage(vk::Device* device, const Size2D& size, PixelFormat format, VkImageUsageFlags usage, const std::string& debugName = {});
     void resize(const Size2D& size);
 
     void cleanup() override;
@@ -66,6 +66,7 @@ private:
     VkImageAspectFlags _aspect = VK_IMAGE_ASPECT_COLOR_BIT;
     bool          _ownsImage  = false;
     VkImageUsageFlags _usage  = 0;
+    std::string   _debugName;
 };
 
 }

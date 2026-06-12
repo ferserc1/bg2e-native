@@ -19,6 +19,7 @@
 #include <bg2e/gpu/metal/Queue.hpp>
 #include <bg2e/gpu/metal/CommandBuffer.hpp>
 #include <bg2e/gpu/metal/Device.hpp>
+#include <bg2e/base/Log.hpp>
 
 #include <stdexcept>
 
@@ -75,7 +76,7 @@ bool Queue::isValid() const
     return _commandQueue != nullptr;
 }
 
-std::shared_ptr<gpu::CommandBuffer> Queue::createCommandBuffer() const
+std::shared_ptr<gpu::CommandBuffer> Queue::createCommandBuffer(const std::string& debugName) const
 {
     if (!_commandQueue)
     {
@@ -86,6 +87,11 @@ std::shared_ptr<gpu::CommandBuffer> Queue::createCommandBuffer() const
     if (!mtlCmd)
     {
         throw std::runtime_error("metal::Queue::createCommandBuffer: failed to create command buffer");
+    }
+
+    if (base::Log::isDebug() && !debugName.empty())
+    {
+        mtlCmd->setLabel(NS::String::string(debugName.c_str(), NS::UTF8StringEncoding));
     }
 
     return std::make_shared<metal::CommandBuffer>(_device, mtlCmd);
@@ -111,7 +117,7 @@ Queue& Queue::operator=(Queue&&) noexcept { return *this; }
 uint32_t Queue::familyIndex() const { return 0; }
 bool Queue::isValid() const { return false; }
 
-std::shared_ptr<gpu::CommandBuffer> Queue::createCommandBuffer() const
+std::shared_ptr<gpu::CommandBuffer> Queue::createCommandBuffer(const std::string& /*debugName*/) const
 {
     throw std::runtime_error("Metal backend is not available on this platform");
 }

@@ -17,6 +17,8 @@
  */
 
 #include <bg2e/gpu/vk/ShaderModule.hpp>
+#include <bg2e/gpu/vk/extensions.hpp>
+#include <bg2e/base/Log.hpp>
 #include <fstream>
 #include <vector>
 #include <stdexcept>
@@ -51,6 +53,16 @@ ShaderModule::ShaderModule(VkDevice device, const gpu::ShaderModuleDescription& 
     createInfo.pCode = code.data();
 
     VK_ASSERT(vkCreateShaderModule(_device, &createInfo, nullptr, &_shaderModule));
+
+    if (base::Log::isDebug() && !description.debugName.empty() && setDebugUtilsObjectName != nullptr)
+    {
+        VkDebugUtilsObjectNameInfoEXT nameInfo{};
+        nameInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
+        nameInfo.objectType = VK_OBJECT_TYPE_SHADER_MODULE;
+        nameInfo.objectHandle = reinterpret_cast<uint64_t>(_shaderModule);
+        nameInfo.pObjectName = description.debugName.c_str();
+        setDebugUtilsObjectName(_device, &nameInfo);
+    }
 }
 
 ShaderModule::~ShaderModule()

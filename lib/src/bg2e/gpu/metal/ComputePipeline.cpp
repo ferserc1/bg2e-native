@@ -19,6 +19,7 @@
 #include <bg2e/gpu/metal/ComputePipeline.hpp>
 #include <bg2e/gpu/metal/ShaderModule.hpp>
 #include <bg2e/gpu/metal/PipelineLayout.hpp>
+#include <bg2e/base/Log.hpp>
 
 #include <stdexcept>
 

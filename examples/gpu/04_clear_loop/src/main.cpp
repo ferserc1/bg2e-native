@@ -107,7 +107,7 @@ int main(int argc, char** argv)
         };
 
         auto frame = surface->beginFrame();
-        auto cmd   = graphicsQueue.createCommandBuffer();
+        auto cmd   = graphicsQueue.createCommandBuffer("Frame command buffer");
 
         cmd->begin();
         cmd->transition(frame->colorImage(), gpu::ImageLayout::ColorAttachment);

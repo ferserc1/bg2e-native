@@ -35,6 +35,7 @@ struct GraphicsPipelineDescription {
     PrimitiveTopology    topology       = PrimitiveTopology::TriangleList;
     PixelFormat          colorFormat    = PixelFormat::Undefined; // from surface frame
     PixelFormat          depthFormat    = PixelFormat::Undefined; // Undefined => no depth
+    std::string          debugName;    // Debug label for validation layers / Xcode GPU Capture
     // no vertex input layout in this first iteration (vertex_id only)
     // future: cull mode, blend state, depth test/write
 };

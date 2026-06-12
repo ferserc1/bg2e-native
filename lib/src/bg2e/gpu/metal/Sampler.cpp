@@ -17,6 +17,7 @@
  */
 
 #include <bg2e/gpu/metal/Sampler.hpp>
+#include <bg2e/base/Log.hpp>
 
 #include <stdexcept>
 
@@ -62,6 +63,7 @@ Sampler::Sampler(DeviceHandle device, const gpu::SamplerDescription& description
     desc->setSAddressMode(toMtlAddressMode(description.addressModeU));
     desc->setTAddressMode(toMtlAddressMode(description.addressModeV));
     desc->setRAddressMode(toMtlAddressMode(description.addressModeW));
+    desc->setLabel(NS::String::string(description.debugName.c_str(), NS::UTF8StringEncoding));
 
     _samplerState = _device->newSamplerState(desc);
     desc->release();

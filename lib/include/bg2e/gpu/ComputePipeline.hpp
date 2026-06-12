@@ -29,6 +29,7 @@ namespace gpu {
 struct ComputePipelineDescription {
     gpu::ShaderModule*   computeShader = nullptr; // non-owning; stage must be Compute
     gpu::PipelineLayout* layout        = nullptr; // non-owning; caller must keep alive
+    std::string          debugName;    // Debug label for validation layers / Xcode GPU Capture
 };
 
 class BG2E_API ComputePipeline {

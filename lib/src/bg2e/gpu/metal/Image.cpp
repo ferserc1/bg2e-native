@@ -20,6 +20,7 @@
 #include <bg2e/gpu/metal/Device.hpp>
 #include <bg2e/gpu/metal/CommandBuffer.hpp>
 #include <bg2e/gpu/metal/common.hpp>
+#include <bg2e/base/Log.hpp>
 
 #include <cstring>
 #include <stdexcept>
@@ -30,7 +31,7 @@ namespace metal {
 
 #if BG2E_IS_MAC
 
-void Image::buildTargetImage(metal::Device* device, const Size2D& size, PixelFormat format)
+void Image::buildTargetImage(metal::Device* device, const Size2D& size, PixelFormat format, const std::string& debugName)
 {
     cleanup();
 
@@ -39,6 +40,7 @@ void Image::buildTargetImage(metal::Device* device, const Size2D& size, PixelFor
     _pixelFormat = format;
     _isDepth = false;
     _currentLayout = ImageLayout::Undefined;
+    _debugName = debugName;
 
     auto* desc = MTL::TextureDescriptor::alloc()->init();
     desc->setTextureType(MTL::TextureType2D);
@@ -56,9 +58,14 @@ void Image::buildTargetImage(metal::Device* device, const Size2D& size, PixelFor
     {
         throw std::runtime_error("metal::Image::buildTargetImage: newTexture failed");
     }
+
+    if (base::Log::isDebug() && !debugName.empty())
+    {
+        _texture->setLabel(NS::String::string(debugName.c_str(), NS::UTF8StringEncoding));
+    }
 }
 
-void Image::buildDepthImage(metal::Device* device, const Size2D& size, PixelFormat format)
+void Image::buildDepthImage(metal::Device* device, const Size2D& size, PixelFormat format, const std::string& debugName)
 {
     cleanup();
 
@@ -68,6 +75,7 @@ void Image::buildDepthImage(metal::Device* device, const Size2D& size, PixelForm
     _isDepth = true;
     _ownsTexture = true;
     _currentLayout = ImageLayout::Undefined;
+    _debugName = debugName;
 
     auto* desc = MTL::TextureDescriptor::alloc()->init();
     desc->setTextureType(MTL::TextureType2D);
@@ -85,9 +93,14 @@ void Image::buildDepthImage(metal::Device* device, const Size2D& size, PixelForm
     {
         throw std::runtime_error("metal::Image::buildDepthImage: newTexture failed");
     }
+
+    if (base::Log::isDebug() && !debugName.empty())
+    {
+        _texture->setLabel(NS::String::string(debugName.c_str(), NS::UTF8StringEncoding));
+    }
 }
 
-void Image::buildSampledImage(metal::Device* device, const Size2D& size, PixelFormat format)
+void Image::buildSampledImage(metal::Device* device, const Size2D& size, PixelFormat format, const std::string& debugName)
 {
     cleanup();
 
@@ -97,6 +110,7 @@ void Image::buildSampledImage(metal::Device* device, const Size2D& size, PixelFo
     _isDepth = false;
     _ownsTexture = true;
     _currentLayout = ImageLayout::Undefined;
+    _debugName = debugName;
 
     auto* desc = MTL::TextureDescriptor::alloc()->init();
     desc->setTextureType(MTL::TextureType2D);
@@ -112,6 +126,11 @@ void Image::buildSampledImage(metal::Device* device, const Size2D& size, PixelFo
     if (!_texture)
     {
         throw std::runtime_error("metal::Image::buildSampledImage: newTexture failed");
+    }
+
+    if (base::Log::isDebug() && !debugName.empty())
+    {
+        _texture->setLabel(NS::String::string(debugName.c_str(), NS::UTF8StringEncoding));
     }
 }
 
@@ -133,6 +152,7 @@ void Image::resize(const Size2D& size)
     metal::Device* storedDevice = _device;
     PixelFormat storedFormat = _pixelFormat;
     bool wasDepth = _isDepth;
+    std::string storedDebugName = _debugName;
 
     cleanup();
 
@@ -140,11 +160,11 @@ void Image::resize(const Size2D& size)
 
     if (wasDepth)
     {
-        buildDepthImage(storedDevice, size, storedFormat);
+        buildDepthImage(storedDevice, size, storedFormat, storedDebugName);
     }
     else
     {
-        buildTargetImage(storedDevice, size, storedFormat);
+        buildTargetImage(storedDevice, size, storedFormat, storedDebugName);
     }
 }
 
@@ -253,12 +273,12 @@ void Image::uploadRGBA8(const void* pixels, const Size2D& size)
 
 #else
 
-void Image::buildTargetImage(metal::Device*, const Size2D&, PixelFormat)
+void Image::buildTargetImage(metal::Device*, const Size2D&, PixelFormat, const std::string&)
 {
     throw std::runtime_error("Metal backend is not available on this platform");
 }
 
-void Image::buildDepthImage(metal::Device*, const Size2D&, PixelFormat)
+void Image::buildDepthImage(metal::Device*, const Size2D&, PixelFormat, const std::string&)
 {
     throw std::runtime_error("Metal backend is not available on this platform");
 }
@@ -273,7 +293,7 @@ void Image::initFromDrawableTexture(metal::Device*, TextureHandle, PixelFormat, 
     throw std::runtime_error("Metal backend is not available on this platform");
 }
 
-void Image::buildSampledImage(metal::Device*, const Size2D&, PixelFormat)
+void Image::buildSampledImage(metal::Device*, const Size2D&, PixelFormat, const std::string&)
 {
     throw std::runtime_error("Metal backend is not available on this platform");
 }

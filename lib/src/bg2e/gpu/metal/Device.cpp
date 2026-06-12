@@ -28,6 +28,7 @@
 #include <bg2e/gpu/metal/CommandBuffer.hpp>
 #include <bg2e/gpu/metal/common.hpp>
 #include <bg2e/gpu/Surface.hpp>
+#include <bg2e/base/Log.hpp>
 
 #include <stdexcept>
 #include <memory>
@@ -56,6 +57,13 @@ void Device::create(gpu::Instance* /*instance*/, gpu::PhysicalDevice* physicalDe
     if (!gfxQueue || !presentQueue || !transferQueue)
     {
         throw std::runtime_error("metal::Device::create: failed to create command queues");
+    }
+
+    if (base::Log::isDebug())
+    {
+        gfxQueue->setLabel(NS::String::string("Graphics Queue", NS::UTF8StringEncoding));
+        presentQueue->setLabel(NS::String::string("Present Queue", NS::UTF8StringEncoding));
+        transferQueue->setLabel(NS::String::string("Transfer Queue", NS::UTF8StringEncoding));
     }
 
     _graphicsQueue = metal::Queue(gfxQueue);
@@ -124,7 +132,7 @@ std::shared_ptr<gpu::Sampler> Device::createSampler(const gpu::SamplerDescriptio
     return std::make_shared<metal::Sampler>(_device, description);
 }
 
-std::unique_ptr<gpu::ResourceSet> Device::createResourceSet(gpu::PipelineLayout* layout, uint32_t setIndex)
+std::unique_ptr<gpu::ResourceSet> Device::createResourceSet(gpu::PipelineLayout* layout, uint32_t setIndex, const std::string& /*debugName*/)
 {
     auto* metalLayout = dynamic_cast<metal::PipelineLayout*>(layout);
     if (!metalLayout)
@@ -137,7 +145,7 @@ std::unique_ptr<gpu::ResourceSet> Device::createResourceSet(gpu::PipelineLayout*
 std::shared_ptr<gpu::Image> Device::createImage(const ImageDescription& description)
 {
     auto img = std::make_shared<metal::Image>();
-    img->buildSampledImage(this, description.size, description.format);
+    img->buildSampledImage(this, description.size, description.format, description.debugName);
     return img;
 }
 
@@ -198,7 +206,7 @@ std::shared_ptr<gpu::Sampler> Device::createSampler(const gpu::SamplerDescriptio
     return std::make_shared<metal::Sampler>(nullptr, description);
 }
 
-std::unique_ptr<gpu::ResourceSet> Device::createResourceSet(gpu::PipelineLayout* layout, uint32_t setIndex)
+std::unique_ptr<gpu::ResourceSet> Device::createResourceSet(gpu::PipelineLayout* layout, uint32_t setIndex, const std::string& /*debugName*/)
 {
     auto* metalLayout = dynamic_cast<metal::PipelineLayout*>(layout);
     if (!metalLayout)

@@ -62,7 +62,7 @@ public:
         throw std::runtime_error("createSampler not implemented");
     }
 
-    virtual std::unique_ptr<ResourceSet> createResourceSet(PipelineLayout* layout, uint32_t setIndex)
+    virtual std::unique_ptr<ResourceSet> createResourceSet(PipelineLayout* layout, uint32_t setIndex, const std::string& debugName = {})
     {
         throw std::runtime_error("createResourceSet not implemented");
     }

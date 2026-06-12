@@ -17,6 +17,7 @@
  */
 
 #include <bg2e/gpu/vk/PipelineLayout.hpp>
+#include <bg2e/gpu/vk/extensions.hpp>
 #include <bg2e/base/Log.hpp>
 
 #include <stdexcept>
@@ -53,6 +54,8 @@ PipelineLayout::PipelineLayout(VkDevice device, const gpu::PipelineLayoutDescrip
     : _device(device)
     , _description(description)
 {
+    const auto& debugName = description.debugName;
+
     // Group resource bindings by set index and create descriptor set layouts
     if (!description.resourceBindings.empty())
     {
@@ -100,6 +103,17 @@ PipelineLayout::PipelineLayout(VkDevice device, const gpu::PipelineLayoutDescrip
                 bg2e_log_error << "vk::PipelineLayout: vkCreateDescriptorSetLayout failed with result " << result << bg2e_log_end;
                 throw std::runtime_error("Failed to create Vulkan descriptor set layout");
             }
+
+            if (base::Log::isDebug() && !debugName.empty() && setDebugUtilsObjectName != nullptr)
+            {
+                std::string setName = debugName + "_set" + std::to_string(i);
+                VkDebugUtilsObjectNameInfoEXT nameInfo{};
+                nameInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
+                nameInfo.objectType = VK_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT;
+                nameInfo.objectHandle = reinterpret_cast<uint64_t>(_descriptorSetLayouts[i]);
+                nameInfo.pObjectName = setName.c_str();
+                setDebugUtilsObjectName(_device, &nameInfo);
+            }
         }
     }
 
@@ -126,6 +140,16 @@ PipelineLayout::PipelineLayout(VkDevice device, const gpu::PipelineLayoutDescrip
     {
         bg2e_log_error << "vk::PipelineLayout: vkCreatePipelineLayout failed with result " << result << bg2e_log_end;
         throw std::runtime_error("Failed to create Vulkan pipeline layout");
+    }
+
+    if (base::Log::isDebug() && !debugName.empty() && setDebugUtilsObjectName != nullptr)
+    {
+        VkDebugUtilsObjectNameInfoEXT nameInfo{};
+        nameInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
+        nameInfo.objectType = VK_OBJECT_TYPE_PIPELINE_LAYOUT;
+        nameInfo.objectHandle = reinterpret_cast<uint64_t>(_pipelineLayout);
+        nameInfo.pObjectName = debugName.c_str();
+        setDebugUtilsObjectName(_device, &nameInfo);
     }
 }
 

@@ -21,7 +21,9 @@
 #include <bg2e/gpu/vk/Info.hpp>
 #include <bg2e/gpu/vk/common.hpp>
 #include <bg2e/gpu/vk/CommandBuffer.hpp>
+#include <bg2e/gpu/vk/extensions.hpp>
 #include <bg2e/gpu/Common.hpp>
+#include <bg2e/base/Log.hpp>
 
 #include <cstring>
 #include <stdexcept>
@@ -30,7 +32,20 @@ namespace bg2e {
 namespace gpu {
 namespace vk {
 
-void Image::buildTargetImage(vk::Device* device, const Size2D& size, PixelFormat format)
+static void setObjectName(VkDevice device, VkObjectType objectType, uint64_t objectHandle, const std::string& name)
+{
+    if (!base::Log::isDebug() || name.empty() || setDebugUtilsObjectName == nullptr)
+        return;
+
+    VkDebugUtilsObjectNameInfoEXT nameInfo{};
+    nameInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
+    nameInfo.objectType = objectType;
+    nameInfo.objectHandle = objectHandle;
+    nameInfo.pObjectName = name.c_str();
+    setDebugUtilsObjectName(device, &nameInfo);
+}
+
+void Image::buildTargetImage(vk::Device* device, const Size2D& size, PixelFormat format, const std::string& debugName)
 {
     cleanup();
 
@@ -45,6 +60,7 @@ void Image::buildTargetImage(vk::Device* device, const Size2D& size, PixelFormat
            | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     _ownsImage = true;
     _currentLayout = ImageLayout::Undefined;
+    _debugName = debugName;
 
     VkExtent3D extent{};
     extent.width = size.width;
@@ -64,10 +80,21 @@ void Image::buildTargetImage(vk::Device* device, const Size2D& size, PixelFormat
         device->allocator(), &imgInfo, &allocInfo, &_image, &_allocation, nullptr
     ));
 
+    if (!debugName.empty())
+    {
+        vmaSetAllocationName(device->allocator(), _allocation, debugName.c_str());
+        setObjectName(device->handle(), VK_OBJECT_TYPE_IMAGE, reinterpret_cast<uint64_t>(_image), debugName);
+    }
+
     createView();
+
+    if (!debugName.empty())
+    {
+        setObjectName(device->handle(), VK_OBJECT_TYPE_IMAGE_VIEW, reinterpret_cast<uint64_t>(_imageView), debugName + "_view");
+    }
 }
 
-void Image::buildDepthImage(vk::Device* device, const Size2D& size, PixelFormat format)
+void Image::buildDepthImage(vk::Device* device, const Size2D& size, PixelFormat format, const std::string& debugName)
 {
     cleanup();
 
@@ -84,6 +111,7 @@ void Image::buildDepthImage(vk::Device* device, const Size2D& size, PixelFormat 
            | VK_IMAGE_USAGE_SAMPLED_BIT;
     _ownsImage = true;
     _currentLayout = ImageLayout::Undefined;
+    _debugName = debugName;
 
     VkExtent3D extent{};
     extent.width = size.width;
@@ -103,10 +131,21 @@ void Image::buildDepthImage(vk::Device* device, const Size2D& size, PixelFormat 
         device->allocator(), &imgInfo, &allocInfo, &_image, &_allocation, nullptr
     ));
 
+    if (!debugName.empty())
+    {
+        vmaSetAllocationName(device->allocator(), _allocation, debugName.c_str());
+        setObjectName(device->handle(), VK_OBJECT_TYPE_IMAGE, reinterpret_cast<uint64_t>(_image), debugName);
+    }
+
     createView();
+
+    if (!debugName.empty())
+    {
+        setObjectName(device->handle(), VK_OBJECT_TYPE_IMAGE_VIEW, reinterpret_cast<uint64_t>(_imageView), debugName + "_view");
+    }
 }
 
-void Image::buildSampledImage(vk::Device* device, const Size2D& size, PixelFormat format, VkImageUsageFlags usage)
+void Image::buildSampledImage(vk::Device* device, const Size2D& size, PixelFormat format, VkImageUsageFlags usage, const std::string& debugName)
 {
     cleanup();
 
@@ -117,6 +156,7 @@ void Image::buildSampledImage(vk::Device* device, const Size2D& size, PixelForma
     _aspect = VK_IMAGE_ASPECT_COLOR_BIT;
     _ownsImage = true;
     _currentLayout = ImageLayout::Undefined;
+    _debugName = debugName;
 
     VkExtent3D extent{};
     extent.width = size.width;
@@ -136,7 +176,18 @@ void Image::buildSampledImage(vk::Device* device, const Size2D& size, PixelForma
         device->allocator(), &imgInfo, &allocInfo, &_image, &_allocation, nullptr
     ));
 
+    if (!debugName.empty())
+    {
+        vmaSetAllocationName(device->allocator(), _allocation, debugName.c_str());
+        setObjectName(device->handle(), VK_OBJECT_TYPE_IMAGE, reinterpret_cast<uint64_t>(_image), debugName);
+    }
+
     createView();
+
+    if (!debugName.empty())
+    {
+        setObjectName(device->handle(), VK_OBJECT_TYPE_IMAGE_VIEW, reinterpret_cast<uint64_t>(_imageView), debugName + "_view");
+    }
 }
 
 void Image::initFromSwapchainImage(vk::Device* device, VkImage image, PixelFormat format, const Size2D& size)
@@ -183,11 +234,11 @@ void Image::resize(const Size2D& size)
 
     if (wasDepth)
     {
-        buildDepthImage(_device, size, storedFormat);
+        buildDepthImage(_device, size, storedFormat, _debugName);
     }
     else
     {
-        buildTargetImage(_device, size, storedFormat);
+        buildTargetImage(_device, size, storedFormat, _debugName);
     }
 }
 

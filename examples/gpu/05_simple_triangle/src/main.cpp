@@ -98,16 +98,16 @@ int main(int argc, char** argv)
         auto vsPath = (shaderBasePath / targetName / "triangle.vert.spv").string();
         auto fsPath = (shaderBasePath / targetName / "triangle.frag.spv").string();
         auto csPath = (shaderBasePath / targetName / "gradient.comp.spv").string();
-        vs = device->createShaderModule({ vsPath, "main", gpu::ShaderStage::Vertex });
-        fs = device->createShaderModule({ fsPath, "main", gpu::ShaderStage::Fragment });
-        cs = device->createShaderModule({ csPath, "main", gpu::ShaderStage::Compute });
+        vs = device->createShaderModule({ vsPath, "main", gpu::ShaderStage::Vertex, "Triangle vertex shader" });
+        fs = device->createShaderModule({ fsPath, "main", gpu::ShaderStage::Fragment, "Triangle fragment shader" });
+        cs = device->createShaderModule({ csPath, "main", gpu::ShaderStage::Compute, "Gradient compute shader" });
     }
     else
     {
         auto libPath = (shaderBasePath / targetName / "metal" / "triangle.metallib").string();
-        vs = device->createShaderModule({ libPath, "triangle_vertex", gpu::ShaderStage::Vertex });
-        fs = device->createShaderModule({ libPath, "triangle_fragment", gpu::ShaderStage::Fragment });
-        cs = device->createShaderModule({ libPath, "gradient_compute", gpu::ShaderStage::Compute });
+        vs = device->createShaderModule({ libPath, "triangle_vertex", gpu::ShaderStage::Vertex, "Triangle vertex shader" });
+        fs = device->createShaderModule({ libPath, "triangle_fragment", gpu::ShaderStage::Fragment, "Triangle fragment shader" });
+        cs = device->createShaderModule({ libPath, "gradient_compute", gpu::ShaderStage::Compute, "Gradient compute shader" });
     }
 
     // Graphics layout with push constant range and SampledImage + Sampler bindings
@@ -115,6 +115,7 @@ int main(int argc, char** argv)
     graphicsLayoutDesc.pushConstants.push_back({ 0, sizeof(PushConstants), gpu::ShaderStage::Fragment });
     graphicsLayoutDesc.resourceBindings.push_back({ 0, 0, gpu::ResourceType::SampledImage, gpu::ShaderStage::Fragment, 1 });
     graphicsLayoutDesc.resourceBindings.push_back({ 0, 1, gpu::ResourceType::Sampler,      gpu::ShaderStage::Fragment, 1 });
+    graphicsLayoutDesc.debugName = "Graphics pipeline layout";
     auto graphicsLayout = device->createPipelineLayout(graphicsLayoutDesc);
 
     // Procedural 2×2 texture
@@ -123,7 +124,8 @@ int main(int argc, char** argv)
         {{  0,   0, 255, 255}}, {{255, 255,   0, 255}}
     }};
     auto texture = device->createImage({ {2, 2}, gpu::PixelFormat::R8G8B8A8_UNORM,
-                                         gpu::ImageUsage::Sampled | gpu::ImageUsage::TransferDst });
+                                          gpu::ImageUsage::Sampled | gpu::ImageUsage::TransferDst,
+                                          "Procedural 2x2 texture" });
     texture->uploadRGBA8(texels.data(), { 2, 2 });
     device->immediateSubmit([texture](gpu::CommandBuffer* cmd)
     {
@@ -131,10 +133,10 @@ int main(int argc, char** argv)
     });
 
     // Sampler with default settings (linear/linear, repeat)
-    auto sampler = device->createSampler({});
+    auto sampler = device->createSampler({ .debugName = "Default linear sampler" });
 
     // Static graphics resource set (texture + sampler, bound every frame)
-    auto textureSet = device->createResourceSet(graphicsLayout.get(), 0);
+    auto textureSet = device->createResourceSet(graphicsLayout.get(), 0, "Static texture set");
     textureSet->setSampledImage(0, texture.get());
     textureSet->setSampler(1, sampler.get());
     textureSet->update();
@@ -149,6 +151,7 @@ int main(int argc, char** argv)
         gpu::ShaderStage::Compute,
         1                                   // count
     });
+    computeLayoutDesc.debugName = "Compute pipeline layout";
     auto computeLayout = device->createPipelineLayout(computeLayoutDesc);
 
     // Get attachment formats from the first frame
@@ -162,6 +165,7 @@ int main(int argc, char** argv)
     pipelineDesc.topology = gpu::PrimitiveTopology::TriangleList;
     pipelineDesc.colorFormat = colorFormat;
     pipelineDesc.depthFormat = depthFormat;
+    pipelineDesc.debugName = "Main graphics pipeline";
 
     auto pipeline = device->createGraphicsPipeline(pipelineDesc);
 
@@ -169,6 +173,7 @@ int main(int argc, char** argv)
     gpu::ComputePipelineDescription computePipelineDesc{};
     computePipelineDesc.computeShader = cs.get();
     computePipelineDesc.layout = computeLayout.get();
+    computePipelineDesc.debugName = "Gradient compute pipeline";
     auto computePipeline = device->createComputePipeline(computePipelineDesc);
 
     // Resource set ring: one set per swapchain image
@@ -177,7 +182,8 @@ int main(int argc, char** argv)
     resourceSets.reserve(imageCount);
     for (uint32_t i = 0; i < imageCount; ++i)
     {
-        resourceSets.push_back(device->createResourceSet(computeLayout.get(), 0));
+        resourceSets.push_back(device->createResourceSet(computeLayout.get(), 0,
+            "Compute resource set ring[" + std::to_string(i) + "]"));
     }
     uint32_t ringIndex = 0;
 
@@ -210,7 +216,7 @@ int main(int argc, char** argv)
         push.color[3] = 1.0f;
 
         auto frame = surface->beginFrame();
-        auto cmd   = graphicsQueue.createCommandBuffer();
+        auto cmd   = graphicsQueue.createCommandBuffer("Frame command buffer");
 
         cmd->begin();
 

@@ -17,6 +17,7 @@
  */
 
 #include <bg2e/gpu/metal/ShaderModule.hpp>
+#include <bg2e/base/Log.hpp>
 #include <stdexcept>
 
 namespace bg2e {
@@ -58,6 +59,13 @@ ShaderModule::ShaderModule(MTL::Device* device, const gpu::ShaderModuleDescripti
         _library->release();
         _library = nullptr;
         throw std::runtime_error("metal::ShaderModule: failed to find function '" + description.entryPoint + "' in " + description.filePath);
+    }
+
+    if (base::Log::isDebug() && !description.debugName.empty())
+    {
+        _library->setLabel(NS::String::string(description.debugName.c_str(), NS::UTF8StringEncoding));
+        std::string funcLabel = description.debugName + "::" + description.entryPoint;
+        _function->setLabel(NS::String::string(funcLabel.c_str(), NS::UTF8StringEncoding));
     }
 }
 
