@@ -31,6 +31,10 @@ public:
     virtual void bindPipeline(gpu::GraphicsPipeline* pipeline);
     virtual void bindPipeline(gpu::ComputePipeline* pipeline);
 
+    // Resource set binding
+    virtual void bindResourceSet(gpu::GraphicsPipeline* pipeline, uint32_t setIndex, gpu::ResourceSet* set);
+    virtual void bindResourceSet(gpu::ComputePipeline* pipeline,  uint32_t setIndex, gpu::ResourceSet* set);
+
     // Vertex / index buffer binding
     virtual void bindVertexBuffer(uint32_t binding, gpu::Buffer* buffer,
                                   uint64_t offset = 0);
@@ -160,6 +164,33 @@ Binds a compute pipeline for subsequent dispatch calls.
 | Parameter  | Type                   | Description           |
 |------------|------------------------|-----------------------|
 | `pipeline` | `gpu::ComputePipeline*`| The pipeline to bind. |
+
+---
+
+## Resource set binding
+
+### `virtual void bindResourceSet(gpu::GraphicsPipeline* pipeline, uint32_t setIndex, gpu::ResourceSet* set)`
+
+Binds a resource set to the given descriptor set slot for graphics commands.
+Must be called after `bindPipeline()` and before the draw call that uses the
+resources. The `pipeline` argument is required to resolve the pipeline layout.
+
+| Parameter  | Type                     | Description                              |
+|------------|--------------------------|------------------------------------------|
+| `pipeline` | `gpu::GraphicsPipeline*` | The currently bound graphics pipeline.   |
+| `setIndex` | `uint32_t`               | Descriptor set index (matches `set=N` in GLSL). |
+| `set`      | `gpu::ResourceSet*`      | The resource set to bind.                |
+
+### `virtual void bindResourceSet(gpu::ComputePipeline* pipeline, uint32_t setIndex, gpu::ResourceSet* set)`
+
+Binds a resource set for compute commands. Must be called after
+`bindPipeline(ComputePipeline*)` and before `dispatch()`.
+
+| Parameter  | Type                    | Description                              |
+|------------|-------------------------|------------------------------------------|
+| `pipeline` | `gpu::ComputePipeline*` | The currently bound compute pipeline.    |
+| `setIndex` | `uint32_t`              | Descriptor set index.                    |
+| `set`      | `gpu::ResourceSet*`     | The resource set to bind.                |
 
 ---
 

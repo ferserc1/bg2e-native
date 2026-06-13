@@ -159,4 +159,32 @@ Returns the `VkPipelineLayout` handle used by this pipeline.
 **Namespace:** `bg2e::gpu::metal`
 **Inherits:** `gpu::GraphicsPipeline`
 
-Metal graphics pipeline state object.
+```cpp
+class GraphicsPipeline : public gpu::GraphicsPipeline {
+public:
+    bool isValid() const override;
+    void cleanup() override;
+
+    MTL::RenderPipelineState* renderPipelineState() const; // macOS only
+    MTL::DepthStencilState*   depthStencilState()   const; // macOS only; null when depthFormat == Undefined
+    gpu::PrimitiveTopology topology() const;
+    metal::PipelineLayout* layout() const;
+};
+```
+
+### Depth testing
+
+When `GraphicsPipelineDescription::depthFormat` is not `Undefined`, the
+constructor creates a `MTL::DepthStencilState` with `CompareFunctionLess` and
+depth writes enabled. `CommandBuffer::bindPipeline(GraphicsPipeline*)` calls
+`setDepthStencilState()` on the current render encoder automatically, so
+depth testing is active for all draw calls that follow.
+
+When `depthFormat` is `Undefined`, `depthStencilState()` returns `nullptr`
+and no depth state is set.
+
+### `MTL::DepthStencilState* depthStencilState() const`
+
+Returns the Metal depth-stencil state object, or `nullptr` if no depth
+attachment was specified in `GraphicsPipelineDescription`. Available on
+macOS only.

@@ -4,27 +4,40 @@
 **Namespace:** `bg2e::gpu`
 
 ```cpp
-class BG2E_API Buffer {
+class BG2E_API Buffer : public DeviceResource {
 public:
-    virtual ~Buffer() = default;
-
-    virtual void cleanup() = 0;
-    virtual bool isValid() const = 0;
-
     uint64_t    byteSize() const;
     BufferUsage usage()    const;
 
+    // Device-local buffers (staging upload path)
     virtual void createVertexBuffer(const void* data, uint64_t byteSize);
     virtual void createIndexBuffer(const std::vector<uint32_t>& indices);
-
     template <typename VertexT>
     void createVertexBuffer(const std::vector<VertexT>& vertices);
+
+    // Host-visible buffers (direct CPU-write path)
+    virtual void createUniformBuffer(const void* data, uint64_t byteSize);
+    virtual void createStorageBuffer(const void* data, uint64_t byteSize);
+    virtual void updateUniformBuffer(const void* data, uint64_t byteSize);
+    virtual void updateStorageBuffer(const void* data, uint64_t byteSize);
+    template <typename T> void createUniformBuffer(const T& data);
+    template <typename T> void createStorageBuffer(const std::vector<T>& data);
+    template <typename T> void updateUniformBuffer(const T& data);
+    template <typename T> void updateStorageBuffer(const std::vector<T>& data);
 };
 ```
 
-Abstract GPU buffer. Manages a device-local allocation and an internal staging
-buffer — the caller never creates a staging buffer manually. Created via
-`Device::createBuffer()`.
+Abstract GPU buffer. `Buffer` exposes two allocation strategies determined by
+the create method called:
+
+- **Device-local** (`createVertexBuffer`, `createIndexBuffer`): data is uploaded
+  via an internal staging buffer into device-local GPU memory. Optimal for
+  static geometry that is read many times.
+- **Host-visible** (`createUniformBuffer`, `createStorageBuffer`): the backend
+  allocates memory that is directly writable by the CPU (no staging). Used for
+  small, frequently updated data such as per-frame transformation matrices.
+
+Created via `Device::createBuffer()`.
 
 ---
 
@@ -75,6 +88,69 @@ Uploads 32-bit index data to a device-local GPU buffer. Indices are always
 
 ---
 
+## Uniform and storage buffer methods
+
+These methods create a **host-visible, CPU-writable** buffer. The backend
+picks the appropriate memory strategy automatically (persistently mapped on
+Vulkan, shared storage on Metal). They are intended for data that changes
+every frame, such as transformation matrices.
+
+### `virtual void createUniformBuffer(const void* data, uint64_t byteSize)`
+
+Allocates a host-visible buffer suitable for use as a uniform buffer (UBO).
+The initial contents are copied from `data` if non-null.
+
+| Parameter  | Type          | Description                          |
+|------------|---------------|--------------------------------------|
+| `data`     | `const void*` | Optional initial data (may be null). |
+| `byteSize` | `uint64_t`    | Buffer size in bytes.                |
+
+### `template <typename T> void createUniformBuffer(const T& data)`
+
+Convenience overload. Equivalent to `createUniformBuffer(&data, sizeof(T))`.
+
+### `virtual void createStorageBuffer(const void* data, uint64_t byteSize)`
+
+Allocates a host-visible buffer suitable for use as a storage buffer (SSBO).
+
+| Parameter  | Type          | Description                          |
+|------------|---------------|--------------------------------------|
+| `data`     | `const void*` | Optional initial data (may be null). |
+| `byteSize` | `uint64_t`    | Buffer size in bytes.                |
+
+### `template <typename T> void createStorageBuffer(const std::vector<T>& data)`
+
+Convenience overload. Equivalent to
+`createStorageBuffer(data.data(), data.size() * sizeof(T))`.
+
+### `virtual void updateUniformBuffer(const void* data, uint64_t byteSize)`
+
+Overwrites the contents of a buffer previously created with
+`createUniformBuffer`. The new data must not exceed the original byte size.
+Intended for per-frame updates — typically called once per frame on a buffer
+that is part of a `FrameResourceRing<gpu::Buffer>`.
+
+| Parameter  | Type          | Description                          |
+|------------|---------------|--------------------------------------|
+| `data`     | `const void*` | New data to write.                   |
+| `byteSize` | `uint64_t`    | Must be ≤ the original buffer size.  |
+
+### `template <typename T> void updateUniformBuffer(const T& data)`
+
+Convenience overload. Equivalent to `updateUniformBuffer(&data, sizeof(T))`.
+
+### `virtual void updateStorageBuffer(const void* data, uint64_t byteSize)`
+
+Overwrites the contents of a buffer previously created with
+`createStorageBuffer`.
+
+### `template <typename T> void updateStorageBuffer(const std::vector<T>& data)`
+
+Convenience overload. Equivalent to
+`updateStorageBuffer(data.data(), data.size() * sizeof(T))`.
+
+---
+
 ## Usage pattern
 
 ```cpp
@@ -97,8 +173,29 @@ vertexBuf->cleanup();
 indexBuf->cleanup();
 ```
 
-In practice, `gpu::MeshGeneric<T>` encapsulates these buffers and exposes
-`build()`, `draw()`, and `cleanup()` at a higher level.
+In practice, `gpu::MeshGeneric<T>` encapsulates vertex and index buffers and
+exposes `build()`, `draw()`, and `cleanup()` at a higher level.
+
+### Uniform buffer with per-frame ring
+
+```cpp
+struct ModelUBO { glm::mat4 model; };
+
+// Create one buffer per swapchain frame
+gpu::FrameResourceRing<gpu::Buffer> modelUboRing;
+modelUboRing.create(surface.get(), [&](uint32_t i) {
+    auto buf = device->createBuffer("Model UBO[" + std::to_string(i) + "]");
+    buf->createUniformBuffer(ModelUBO{});
+    return buf;
+});
+
+// Per-frame update (no staging, no GPU sync required)
+auto* ubo = modelUboRing.current();
+ubo->updateUniformBuffer(ModelUBO{ glm::rotate(glm::mat4(1.f), t, glm::vec3(0,1,0)) });
+
+// Cleanup
+modelUboRing.cleanup();
+```
 
 ---
 
@@ -111,23 +208,31 @@ In practice, `gpu::MeshGeneric<T>` encapsulates these buffers and exposes
 ```cpp
 class Buffer : public gpu::Buffer {
 public:
-    Buffer(vk::Device* device, const std::string& debugName = {});
-    ~Buffer() override;
-
     void cleanup()  override;
     bool isValid()  const override;
 
     void createVertexBuffer(const void* data, uint64_t byteSize) override;
     void createIndexBuffer(const std::vector<uint32_t>& indices)  override;
+    void createUniformBuffer(const void* data, uint64_t byteSize) override;
+    void createStorageBuffer(const void* data, uint64_t byteSize) override;
+    void updateUniformBuffer(const void* data, uint64_t byteSize) override;
+    void updateStorageBuffer(const void* data, uint64_t byteSize) override;
 
     VkBuffer handle() const;
+    uint64_t byteSize() const;
 };
 ```
 
-Vulkan buffer backed by a VMA allocation. Both `createVertexBuffer` and
-`createIndexBuffer` create a `VMA_MEMORY_USAGE_CPU_TO_GPU` staging buffer,
-copy the data into it, then perform a `vkCmdCopyBuffer` into a
-`VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT` buffer via `Device::immediateSubmit`.
+Vulkan buffer backed by a VMA allocation.
+
+- **Vertex / index buffers** use a `VMA_MEMORY_USAGE_CPU_TO_GPU` staging
+  buffer, copy the data into it, then `vkCmdCopyBuffer` to a device-local
+  buffer via `Device::immediateSubmit`.
+- **Uniform / storage buffers** use
+  `VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |`
+  `VMA_ALLOCATION_CREATE_MAPPED_BIT` so that `updateUniformBuffer` /
+  `updateStorageBuffer` can `memcpy` directly into the persistently-mapped
+  pointer without staging or synchronization overhead.
 
 ### `VkBuffer handle() const`
 
@@ -144,23 +249,29 @@ Returns the raw `VkBuffer` handle of the device-local buffer.
 ```cpp
 class Buffer : public gpu::Buffer {
 public:
-    Buffer(metal::Device* device, const std::string& debugName = {});
-    ~Buffer() override;
-
     void cleanup()  override;
     bool isValid()  const override;
 
     void createVertexBuffer(const void* data, uint64_t byteSize) override;
     void createIndexBuffer(const std::vector<uint32_t>& indices)  override;
+    void createUniformBuffer(const void* data, uint64_t byteSize) override;
+    void createStorageBuffer(const void* data, uint64_t byteSize) override;
+    void updateUniformBuffer(const void* data, uint64_t byteSize) override;
+    void updateStorageBuffer(const void* data, uint64_t byteSize) override;
 
     MTL::Buffer* handle() const;  // macOS only
 };
 ```
 
-Metal buffer backed by a `MTL::ResourceStorageModePrivate` (device-local)
-allocation. Data is uploaded via a `MTL::ResourceStorageModeShared` staging
-buffer and a blit encoder submitted through `Device::immediateSubmit`.
+- **Vertex / index buffers** use `MTL::ResourceStorageModePrivate`
+  (device-local). Data is uploaded via a `MTL::ResourceStorageModeShared`
+  staging buffer and a blit encoder submitted through `Device::immediateSubmit`.
+- **Uniform / storage buffers** use `MTL::ResourceStorageModeShared` so that
+  `updateUniformBuffer` / `updateStorageBuffer` can `memcpy` into
+  `MTL::Buffer::contents()` directly.
 
 ### `MTL::Buffer* handle() const`
 
-Returns the raw `MTL::Buffer*` handle (macOS only).
+Returns the raw `MTL::Buffer*` handle (macOS only). Used by
+`metal::ResourceSet` and `metal::CommandBuffer` to bind the buffer at the
+correct `[[buffer(n)]]` index.

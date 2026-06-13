@@ -187,17 +187,70 @@ struct PushConstantRange {
 | `size`   | `uint32_t`    | Size in bytes (Vulkan min: 128; Metal: ~4 KB).   |
 | `stage`  | `ShaderStage` | Which shader stage receives this range.          |
 
+### `ResourceType`
+
+The type of resource bound at a descriptor slot.
+
+```cpp
+enum class ResourceType {
+    UniformBuffer,  // VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER / Metal [[buffer(n)]]
+    StorageBuffer,  // VK_DESCRIPTOR_TYPE_STORAGE_BUFFER / Metal [[buffer(n)]]
+    SampledImage,   // VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE  / Metal [[texture(n)]]
+    StorageImage,   // VK_DESCRIPTOR_TYPE_STORAGE_IMAGE  / Metal [[texture(n)]] (read-write)
+    Sampler         // VK_DESCRIPTOR_TYPE_SAMPLER        / Metal [[sampler(n)]]
+};
+```
+
+### `ResourceBinding`
+
+Describes a single slot in a pipeline layout. A collection of these forms the
+layout's descriptor-set schema, consumed by `ResourceSet` at creation time.
+
+```cpp
+struct ResourceBinding {
+    uint32_t     set     = 0;
+    uint32_t     binding = 0;
+    ResourceType type    = ResourceType::SampledImage;
+    ShaderStage  stage   = ShaderStage::Fragment;
+    uint32_t     count   = 1;
+};
+```
+
+| Field     | Type           | Description                                         |
+|-----------|----------------|-----------------------------------------------------|
+| `set`     | `uint32_t`     | Descriptor set index (matches GLSL `layout(set=N)`). |
+| `binding` | `uint32_t`     | Binding slot within the set.                        |
+| `type`    | `ResourceType` | Kind of resource bound at this slot.                |
+| `stage`   | `ShaderStage`  | Shader stage that reads this binding.               |
+| `count`   | `uint32_t`     | Array size; always 1 in the current implementation. |
+
 ### `PipelineLayoutDescription`
 
 ```cpp
 struct PipelineLayoutDescription {
     std::vector<PushConstantRange> pushConstants;
+    std::vector<ResourceBinding>   resourceBindings;
+    std::string                    debugName;
 };
 ```
 
-| Field           | Type                         | Description             |
-|-----------------|------------------------------|-------------------------|
-| `pushConstants` | `std::vector<PushConstantRange>` | Push constant ranges.|
+| Field              | Type                           | Description                                     |
+|--------------------|--------------------------------|-------------------------------------------------|
+| `pushConstants`    | `std::vector<PushConstantRange>` | Push constant ranges (may be empty).          |
+| `resourceBindings` | `std::vector<ResourceBinding>` | All descriptor bindings across all sets.        |
+| `debugName`        | `std::string`                  | Optional label shown in GPU debug tools.        |
+
+**Example — layout with three sets:**
+
+```cpp
+gpu::PipelineLayoutDescription desc{};
+desc.resourceBindings.push_back({ 0, 0, gpu::ResourceType::UniformBuffer, gpu::ShaderStage::Vertex,   1 });
+desc.resourceBindings.push_back({ 1, 0, gpu::ResourceType::UniformBuffer, gpu::ShaderStage::Vertex,   1 });
+desc.resourceBindings.push_back({ 2, 0, gpu::ResourceType::SampledImage,  gpu::ShaderStage::Fragment, 1 });
+desc.resourceBindings.push_back({ 2, 1, gpu::ResourceType::Sampler,       gpu::ShaderStage::Fragment, 1 });
+desc.debugName = "Cube pipeline layout";
+auto layout = device->createPipelineLayout(desc);
+```
 
 ### `ShaderModuleDescription`
 

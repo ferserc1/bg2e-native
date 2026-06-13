@@ -67,6 +67,9 @@ gpu::Image                    (abstract)
 gpu::Buffer                   (abstract)
   +-- gpu::vk::Buffer
   +-- gpu::metal::Buffer
+gpu::ResourceSet              (abstract)
+  +-- gpu::vk::ResourceSet
+  +-- gpu::metal::ResourceSet
 gpu::MeshGeneric<MeshT>       (template, not polymorphic)
   -- gpu::MeshP  / MeshPN  / MeshPC  / MeshPU
   -- gpu::MeshPNU / MeshPNC / MeshPNUC / MeshPNUT / MeshPNUUT
@@ -383,6 +386,9 @@ int main(int /*argc*/, char** /*argv*/)
 This example shows a complete render loop with vertex/index buffers, a compute
 background, textures, resource sets, push constants, and frame presentation.
 Source: `examples/gpu/05_simple_triangle/src/main.cpp`.
+
+For a uniform-buffer example (rotating cube, per-frame `FrameResourceRing<gpu::Buffer>`,
+no compute shader) see `examples/gpu/07_uniform_buffers/src/main.cpp`.
 
 ```cpp
 // Build a pentagon mesh (position + texCoord0)

@@ -15,6 +15,7 @@ backend-specific sub-namespaces (`bg2e::gpu::vk`, `bg2e::gpu::metal`).
 | [ShaderStage](Common.md#shaderstage) | `gpu/Common.hpp` | Pipeline stage: Vertex, Fragment, Compute. |
 | [ImageLayout](Common.md#imagelayout) | `gpu/Common.hpp` | Image layout states for transitions. |
 | [PixelFormat](Common.md#pixelformat) | `gpu/Common.hpp` | Pixel format for images and attachments. |
+| [ResourceType](Common.md#resourcetype) | `gpu/Common.hpp` | Kind of resource at a descriptor binding: UBO, SSBO, image, sampler. |
 | [PrimitiveTopology](GraphicsPipeline.md#primitivetopology) | `gpu/GraphicsPipeline.hpp` | Primitive assembly topology. |
 
 ## Structs
@@ -27,7 +28,8 @@ backend-specific sub-namespaces (`bg2e::gpu::vk`, `bg2e::gpu::metal`).
 | [Size3D](Common.md#size3d) | `gpu/Common.hpp` | 3D dimensions (width, height, depth). |
 | [ShaderModuleDescription](ShaderModule.md#shadermoduledescription) | `gpu/Common.hpp` | Shader file path, entry point, and stage. |
 | [PushConstantRange](Common.md#pushconstantrange) | `gpu/Common.hpp` | Push constant offset, size, and stage. |
-| [PipelineLayoutDescription](Common.md#pipelinelayoutdescription) | `gpu/Common.hpp` | Push constant ranges for a pipeline layout. |
+| [ResourceBinding](Common.md#resourcebinding) | `gpu/Common.hpp` | Single descriptor binding: set, binding, type, stage, and array count. |
+| [PipelineLayoutDescription](Common.md#pipelinelayoutdescription) | `gpu/Common.hpp` | Push constants + resource bindings for a pipeline layout. |
 | [GraphicsPipelineDescription](GraphicsPipeline.md#graphicspipelinedescription) | `gpu/GraphicsPipeline.hpp` | Shaders, layout, topology, and formats. |
 | [ComputePipelineDescription](ComputePipeline.md#computepipelinedescription) | `gpu/ComputePipeline.hpp` | Compute shader and layout. |
 
@@ -51,6 +53,7 @@ backend-specific sub-namespaces (`bg2e::gpu::vk`, `bg2e::gpu::metal`).
 | [CommandBuffer](CommandBuffer.md) | `gpu/CommandBuffer.hpp` | Records GPU commands for queue submission. |
 | [SurfaceFrame](SurfaceFrame.md) | `gpu/SurfaceFrame.hpp` | Frame from a surface swapchain. |
 | [Image](Image.md) | `gpu/Image.hpp` | GPU image (texture or render target). |
+| [ResourceSet](ResourceSet.md) | `gpu/ResourceSet.hpp` | Groups resources (UBOs, SSBOs, images, samplers) bound to one descriptor set. |
 
 ## Vulkan utilities
 
@@ -114,4 +117,7 @@ gpu::SurfaceFrame             (abstract)
 gpu::Image                    (abstract)
   +-- gpu::vk::Image
   +-- gpu::metal::Image
+gpu::ResourceSet              (abstract)
+  +-- gpu::vk::ResourceSet
+  +-- gpu::metal::ResourceSet
 ```
