@@ -33,8 +33,8 @@ struct ResourceEntry {
     uint32_t             index = 0;    // Metal arg index (from PipelineLayout)
     ResourceType         type = ResourceType::SampledImage;
     ShaderStage          stage = ShaderStage::Fragment;
-    MTL::Texture*        texture = nullptr;    // for Sampled/Storage image
-    MTL::SamplerState*   sampler = nullptr;    // for Sampler
+    TextureHandle        texture = nullptr;    // for Sampled/Storage image
+    SampleStateHandle    sampler = nullptr;    // for Sampler
 };
 
 class BG2E_API ResourceSet : public gpu::ResourceSet {

@@ -30,14 +30,14 @@ public:
     Sampler(DeviceHandle device, const gpu::SamplerDescription& description);
     ~Sampler() override;
 
-    bool isValid() const override;
+    [[nodiscard]] bool isValid() const override;
     void cleanup() override;
 
-    MTL::SamplerState* handle() const { return _samplerState; }
+    [[nodiscard]] SampleStateHandle handle() const { return _samplerState; }
 
 private:
     DeviceHandle        _device = nullptr;
-    MTL::SamplerState*  _samplerState = nullptr;
+    SampleStateHandle  _samplerState = nullptr;
 };
 
 }
