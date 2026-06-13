@@ -27,8 +27,8 @@ namespace bg2e {
 namespace gpu {
 namespace vk {
 
-ShaderModule::ShaderModule(VkDevice device, const gpu::ShaderModuleDescription& description)
-    : _device(device), _stage(description.stage), _entryPoint(description.entryPoint)
+ShaderModule::ShaderModule(gpu::Device* gpuDevice, VkDevice device, const gpu::ShaderModuleDescription& description)
+    : gpu::ShaderModule(gpuDevice), _device(device), _stage(description.stage), _entryPoint(description.entryPoint)
 {
     std::ifstream file(description.filePath, std::ios::ate | std::ios::binary);
     if (!file.is_open())

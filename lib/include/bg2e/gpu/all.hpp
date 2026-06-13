@@ -19,6 +19,9 @@
 #pragma once
 
 #include <bg2e/gpu/Common.hpp>
+#include <bg2e/gpu/DeviceResource.hpp>
+#include <bg2e/gpu/CleanupManager.hpp>
+#include <bg2e/gpu/FrameResourceRing.hpp>
 #include <bg2e/gpu/Backend.hpp>
 #include <bg2e/gpu/Factory.hpp>
 #include <bg2e/gpu/Instance.hpp>
@@ -29,6 +32,7 @@
 #include <bg2e/gpu/WindowSurface.hpp>
 #include <bg2e/gpu/OffscreenSurface.hpp>
 #include <bg2e/gpu/Queue.hpp>
+#include <bg2e/gpu/Buffer.hpp>
 #include <bg2e/gpu/CommandBuffer.hpp>
 #include <bg2e/gpu/Device.hpp>
 #include <bg2e/gpu/Sampler.hpp>
@@ -37,3 +41,4 @@
 #include <bg2e/gpu/PipelineLayout.hpp>
 #include <bg2e/gpu/GraphicsPipeline.hpp>
 #include <bg2e/gpu/ComputePipeline.hpp>
+#include <bg2e/gpu/Mesh.hpp>

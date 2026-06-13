@@ -20,15 +20,15 @@
 
 #include <bg2e/common.hpp>
 #include <bg2e/gpu/Common.hpp>
+#include <bg2e/gpu/DeviceResource.hpp>
 
 namespace bg2e {
 namespace gpu {
 
-class BG2E_API Sampler {
+class BG2E_API Sampler : public DeviceResource {
 public:
+    explicit Sampler(Device* device) : DeviceResource(device) {}
     virtual ~Sampler() = default;
-    virtual bool isValid() const = 0;
-    virtual void cleanup() = 0;
 };
 
 }

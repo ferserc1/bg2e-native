@@ -64,11 +64,18 @@ gpu::SurfaceFrame             (abstract)
 gpu::Image                    (abstract)
   +-- gpu::vk::Image
   +-- gpu::metal::Image
+gpu::Buffer                   (abstract)
+  +-- gpu::vk::Buffer
+  +-- gpu::metal::Buffer
+gpu::MeshGeneric<MeshT>       (template, not polymorphic)
+  -- gpu::MeshP  / MeshPN  / MeshPC  / MeshPU
+  -- gpu::MeshPNU / MeshPNC / MeshPNUC / MeshPNUT / MeshPNUUT
+  -- gpu::Mesh   (alias for MeshPNUUT)
 ```
 
 ### Object creation flow
 
-All objects are created through the `Backend`:
+All objects are created through the `Backend` or `Device`:
 
 ```
 Factory::init(BackendType)
@@ -81,6 +88,11 @@ Factory::init(BackendType)
             -> device->createPipelineLayout(description)
             -> device->createGraphicsPipeline(description)
             -> device->createComputePipeline(description)
+            -> device->createImage(description)
+            -> device->createSampler(description)
+            -> device->createResourceSet(layout, setIndex)
+            -> device->createBuffer(debugName)
+            -> device->immediateSubmit(lambda)
 ```
 
 Command buffers are created from queues:
@@ -368,201 +380,61 @@ int main(int /*argc*/, char** /*argv*/)
 
 ## Render loop example
 
-This example shows a complete render loop with shader modules, pipelines,
-command buffers, and frame presentation. Source:
-`examples/gpu/05_simple_triangle/src/main.cpp`.
+This example shows a complete render loop with vertex/index buffers, a compute
+background, textures, resource sets, push constants, and frame presentation.
+Source: `examples/gpu/05_simple_triangle/src/main.cpp`.
 
 ```cpp
-#include <bg2e.hpp>
-#include <bg2e/gpu/all.hpp>
-#include <bg2e/app/SDLUtils.hpp>
-#include <cmath>
-#include <iostream>
+// Build a pentagon mesh (position + texCoord0)
+bg2e::geo::MeshPU meshData;
+meshData.vertices = { /* 5 perimeter + 1 centre vertex */ };
+meshData.indices  = { /* 15 indices, triangle fan */ };
+meshData.submeshes = { { 0, 15 } };
 
-struct PushConstants {
-    float color[4];
-};
+gpu::MeshPU mesh;
+mesh.setMeshData(meshData);
+mesh.build(device.get());   // uploads vertex + index buffers to the GPU
 
-int main(int argc, char** argv)
-{
-    using namespace bg2e;
+// Add vertex layout to the pipeline description
+gpu::GraphicsPipelineDescription pipelineDesc{};
+pipelineDesc.vertexShader   = vs.get();
+pipelineDesc.fragmentShader = fs.get();
+pipelineDesc.layout         = graphicsLayout.get();
+pipelineDesc.topology       = gpu::PrimitiveTopology::TriangleList;
+pipelineDesc.colorFormat    = colorFormat;
+pipelineDesc.depthFormat    = depthFormat;
+pipelineDesc.addVertexBufferDescription(gpu::MeshPU::vertexBufferDescription());
+auto pipeline = device->createGraphicsPipeline(pipelineDesc);
 
-    // 1. Init backend
-    auto backendType = gpu::BackendType::Vulkan;
-    if (base::PlatformTools::currentPlatform() == base::Platform::macOS)
-    {
-        std::cout << "Select backend [1=Metal, 2=Vulkan]: ";
-        int choice = 0;
-        std::cin >> choice;
-        backendType = (choice == 2) ? gpu::BackendType::Vulkan : gpu::BackendType::Metal;
-    }
+// --- per-frame ---
+auto frame = surface->beginFrame();
+auto cmd   = graphicsQueue.createCommandBuffer("Frame");
+cmd->begin();
 
-    gpu::Factory::init(backendType);
-    auto* backend = gpu::Factory::backend();
+// Compute pass: write gradient to the colour image
+cmd->transition(frame->colorImage(), gpu::ImageLayout::General);
+cmd->beginCompute();
+cmd->bindPipeline(computePipeline.get());
+cmd->bindResourceSet(computePipeline.get(), 0, computeSet.get());
+cmd->dispatch(groupsX, groupsY, 1);
+cmd->endCompute();
 
-    // 2. Create SDL window
-    app::initSdlVideoDriver();
-    SDL_Init(SDL_INIT_VIDEO);
+// Graphics pass
+cmd->transition(frame->colorImage(), gpu::ImageLayout::ColorAttachment);
+cmd->transition(frame->depthImage(), gpu::ImageLayout::DepthAttachment);
+cmd->beginRendering(frame.get());
+cmd->clearDepth(1.0f);
+cmd->bindPipeline(pipeline.get());
+cmd->bindResourceSet(pipeline.get(), 0, textureSet.get());
+cmd->pushConstants(gpu::ShaderStage::Fragment, 0, sizeof(PushConstants), &push);
+mesh.draw(cmd.get());   // binds buffers and calls drawIndexed per submesh
+cmd->endRendering();
+cmd->transition(frame->colorImage(), gpu::ImageLayout::Present);
 
-    Uint32 windowFlags = 0;
-    switch (backend->windowType())
-    {
-        case gpu::WindowType::Vulkan: windowFlags = SDL_WINDOW_VULKAN; break;
-        case gpu::WindowType::Metal:  windowFlags = SDL_WINDOW_METAL;  break;
-    }
-
-    SDL_Window* window = SDL_CreateWindow(
-        "GPU Simple Triangle Example",
-        SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-        800, 600, windowFlags);
-
-    // 3. Create GPU instance and surface
-    auto* instance = backend->sharedInstance();
-    instance->enableDebugMode(true);
-    instance->create(window);
-
-    std::shared_ptr<gpu::Surface> surface = backend->createWindowSurface(instance);
-
-    // 4. Select physical device and create logical device
-    auto physicalDevice = backend->createPhysicalDevice();
-    physicalDevice->choose(*instance, *surface);
-
-    auto device = backend->createDevice();
-    device->create(instance, physicalDevice.get(), surface.get());
-
-    // 5. Create shader modules
-    auto shaderBasePath = base::PlatformTools::shaderPath();
-    std::unique_ptr<gpu::ShaderModule> vs;
-    std::unique_ptr<gpu::ShaderModule> fs;
-    std::unique_ptr<gpu::ShaderModule> cs;
-
-    if (backendType == gpu::BackendType::Vulkan)
-    {
-        vs = device->createShaderModule({
-            (shaderBasePath / "gpu_simple_triangle/triangle.vert.spv").string(),
-            "main", gpu::ShaderStage::Vertex });
-        fs = device->createShaderModule({
-            (shaderBasePath / "gpu_simple_triangle/triangle.frag.spv").string(),
-            "main", gpu::ShaderStage::Fragment });
-        cs = device->createShaderModule({
-            (shaderBasePath / "gpu_simple_triangle/noop.comp.spv").string(),
-            "main", gpu::ShaderStage::Compute });
-    }
-    else
-    {
-        auto libPath = (shaderBasePath / "gpu_simple_triangle/metal/triangle.metallib").string();
-        vs = device->createShaderModule({ libPath, "triangle_vertex", gpu::ShaderStage::Vertex });
-        fs = device->createShaderModule({ libPath, "triangle_fragment", gpu::ShaderStage::Fragment });
-        cs = device->createShaderModule({ libPath, "noop_compute", gpu::ShaderStage::Compute });
-    }
-
-    // 6. Create pipeline layouts
-    gpu::PipelineLayoutDescription graphicsLayoutDesc{};
-    graphicsLayoutDesc.pushConstants.push_back(
-        { 0, sizeof(PushConstants), gpu::ShaderStage::Fragment });
-    auto graphicsLayout = device->createPipelineLayout(graphicsLayoutDesc);
-    auto computeLayout = device->createPipelineLayout({});
-
-    // 7. Create pipelines
-    auto colorFormat = surface->colorFormat();
-    auto depthFormat = surface->depthFormat();
-
-    gpu::GraphicsPipelineDescription pipelineDesc{};
-    pipelineDesc.vertexShader = vs.get();
-    pipelineDesc.fragmentShader = fs.get();
-    pipelineDesc.layout = graphicsLayout.get();
-    pipelineDesc.topology = gpu::PrimitiveTopology::TriangleList;
-    pipelineDesc.colorFormat = colorFormat;
-    pipelineDesc.depthFormat = depthFormat;
-    auto pipeline = device->createGraphicsPipeline(pipelineDesc);
-
-    gpu::ComputePipelineDescription computePipelineDesc{};
-    computePipelineDesc.computeShader = cs.get();
-    computePipelineDesc.layout = computeLayout.get();
-    auto computePipeline = device->createComputePipeline(computePipelineDesc);
-
-    // 8. Render loop
-    auto& graphicsQueue = device->graphicsQueue();
-
-    bool running = true;
-    while (running)
-    {
-        SDL_Event event;
-        while (SDL_PollEvent(&event))
-        {
-            if (event.type == SDL_QUIT) running = false;
-            if (event.type == SDL_WINDOWEVENT &&
-                event.window.event == SDL_WINDOWEVENT_CLOSE) running = false;
-            if (event.type == SDL_WINDOWEVENT &&
-                event.window.event == SDL_WINDOWEVENT_RESIZED)
-            {
-                surface->resize({ static_cast<uint32_t>(event.window.data1),
-                                  static_cast<uint32_t>(event.window.data2) });
-            }
-        }
-
-        const float t = static_cast<float>(SDL_GetTicks64()) / 1000.0f;
-        gpu::Color clearColor {
-            0.5f + 0.5f * std::sin(t),
-            0.5f + 0.5f * std::sin(t + 2.0f),
-            0.5f + 0.5f * std::sin(t + 4.0f),
-            1.0f
-        };
-
-        PushConstants push{};
-        push.color[0] = 0.5f + 0.5f * std::sin(t * 1.3f);
-        push.color[1] = 0.5f + 0.5f * std::sin(t * 1.7f + 1.0f);
-        push.color[2] = 0.5f + 0.5f * std::sin(t * 2.1f + 2.0f);
-        push.color[3] = 1.0f;
-
-        // Acquire frame
-        auto frame = surface->beginFrame();
-        auto cmd   = graphicsQueue.createCommandBuffer();
-
-        cmd->begin();
-
-        // Compute pass
-        cmd->beginCompute();
-        cmd->bindPipeline(computePipeline.get());
-        cmd->dispatch(1, 1, 1);
-        cmd->endCompute();
-
-        // Graphics pass
-        cmd->transition(frame->colorImage(), gpu::ImageLayout::ColorAttachment);
-        cmd->transition(frame->depthImage(), gpu::ImageLayout::DepthAttachment);
-        cmd->beginRendering(frame.get());
-        cmd->clearColor(0, clearColor);
-        cmd->clearDepth(1.0f);
-        cmd->bindPipeline(pipeline.get());
-        cmd->pushConstants(gpu::ShaderStage::Fragment, 0, sizeof(PushConstants), &push);
-        cmd->draw(3);
-        cmd->endRendering();
-        cmd->transition(frame->colorImage(), gpu::ImageLayout::Present);
-
-        // Present
-        surface->present(cmd.get());
-        cmd->end();
-        graphicsQueue.submit(cmd.get());
-        surface->endFrame(frame.get());
-    }
-
-    // 9. Cleanup (reverse order)
-    device->waitIdle();
-    computePipeline->cleanup();
-    pipeline->cleanup();
-    computeLayout->cleanup();
-    graphicsLayout->cleanup();
-    cs->cleanup();
-    vs->cleanup();
-    fs->cleanup();
-    surface->cleanup();
-    device->cleanup();
-    instance->cleanup();
-    SDL_DestroyWindow(window);
-    SDL_Quit();
-
-    return 0;
-}
+surface->present(cmd.get());
+cmd->end();
+graphicsQueue.submit(cmd.get());
+surface->endFrame(frame.get());
 ```
 
 ### Render loop structure
@@ -571,27 +443,29 @@ The render loop follows this pattern each frame:
 
 ```
 1. Poll SDL events
-2. surface->beginFrame()           -- acquire next swapchain image
+2. surface->beginFrame()                -- acquire next swapchain image
 3. cmd = graphicsQueue.createCommandBuffer()
 4. cmd->begin()
-5. cmd->beginCompute()             -- optional compute pass
+5. cmd->transition(color, General)      -- for compute write
+   cmd->beginCompute()
    cmd->bindPipeline(compute)
+   cmd->bindResourceSet(...)
    cmd->dispatch(...)
    cmd->endCompute()
 6. cmd->transition(color, ColorAttachment)
    cmd->transition(depth, DepthAttachment)
 7. cmd->beginRendering(frame)
-   cmd->clearColor(0, clearColor)
    cmd->clearDepth(1.0f)
    cmd->bindPipeline(graphics)
+   cmd->bindResourceSet(...)
    cmd->pushConstants(...)
-   cmd->draw(...)
+   mesh.draw(cmd)                        -- bindVertexBuffer + bindIndexBuffer + drawIndexed
    cmd->endRendering()
 8. cmd->transition(color, Present)
-9. surface->present(cmd)           -- record present
+9. surface->present(cmd)                -- record present
 10. cmd->end()
-11. graphicsQueue.submit(cmd)      -- submit to GPU
-12. surface->endFrame(frame)       -- present to screen
+11. graphicsQueue.submit(cmd)           -- submit to GPU
+12. surface->endFrame(frame)            -- present to screen
 ```
 
 ## Cleanup order
@@ -600,13 +474,16 @@ Resources must be released in reverse creation order to avoid dangling
 references:
 
 1. `device->waitIdle()`
-2. Pipeline objects (`pipeline->cleanup()`, `computePipeline->cleanup()`)
-3. Pipeline layouts (`graphicsLayout->cleanup()`, `computeLayout->cleanup()`)
-4. Shader modules (`vs->cleanup()`, `fs->cleanup()`, `cs->cleanup()`)
-5. `surface->cleanup()`
-6. `device->cleanup()`
-7. `instance->cleanup()`
-8. `SDL_DestroyWindow()` / `SDL_Quit()` (if applicable)
+2. Mesh buffers (`mesh.cleanup()`)
+3. Resource sets (`set->cleanup()`)
+4. Pipeline objects (`pipeline->cleanup()`, `computePipeline->cleanup()`)
+5. Pipeline layouts (`graphicsLayout->cleanup()`, `computeLayout->cleanup()`)
+6. Samplers and images (reset `shared_ptr`)
+7. Shader modules (`vs->cleanup()`, `fs->cleanup()`, `cs->cleanup()`)
+8. `surface->cleanup()`
+9. `device->cleanup()`
+10. `instance->cleanup()`
+11. `SDL_DestroyWindow()` / `SDL_Quit()` (if applicable)
 
 ## Physical device selection
 
@@ -660,12 +537,14 @@ advanced usage), each backend class exposes non-virtual accessors:
 | `vk::CommandBuffer` | `handle()`              | --                      |
 | `vk::SurfaceFrame`  | `imageIndex()`, `imageAvailable()`, `renderFinished()`| --|
 | `vk::Image`         | `handle()`, `imageView()`| --                     |
+| `vk::Buffer`        | `handle()`              | --                      |
 | `metal::PhysicalDevice`| --                    | `metalDevice()`         |
 | `metal::Device`     | --                      | `handle()`              |
 | `metal::WindowSurface`| --                     | `metalLayer()`          |
 | `metal::Queue`      | --                      | `handle()`              |
 | `metal::CommandBuffer`| --                     | `handle()`              |
 | `metal::Image`      | --                      | `handle()`              |
+| `metal::Buffer`     | --                      | `handle()`              |
 
 To use these, cast the abstract pointer to the concrete type:
 

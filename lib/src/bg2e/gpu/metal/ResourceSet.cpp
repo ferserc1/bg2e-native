@@ -29,8 +29,9 @@ namespace metal {
 
 #if BG2E_IS_MAC
 
-ResourceSet::ResourceSet(const metal::PipelineLayout* layout, uint32_t setIndex)
-    : _setIndex(setIndex)
+ResourceSet::ResourceSet(gpu::Device* gpuDevice, const metal::PipelineLayout* layout, uint32_t setIndex)
+    : gpu::ResourceSet(gpuDevice)
+    , _setIndex(setIndex)
     , _layout(layout)
 {
 }
@@ -164,7 +165,8 @@ void ResourceSet::cleanup()
 
 #else
 
-ResourceSet::ResourceSet(const metal::PipelineLayout*, uint32_t)
+ResourceSet::ResourceSet(gpu::Device* gpuDevice, const metal::PipelineLayout*, uint32_t)
+    : gpu::ResourceSet(gpuDevice)
 {
     throw std::runtime_error("Metal backend is not available on this platform");
 }

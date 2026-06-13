@@ -19,6 +19,7 @@
 #include <bg2e/gpu/metal/GraphicsPipeline.hpp>
 #include <bg2e/gpu/metal/ShaderModule.hpp>
 #include <bg2e/gpu/metal/PipelineLayout.hpp>
+#include <bg2e/gpu/metal/VertexDescriptor.hpp>
 #include <bg2e/base/Log.hpp>
 
 #include <stdexcept>
@@ -41,8 +42,9 @@ MTL::PrimitiveType primitiveTopologyToMetal(gpu::PrimitiveTopology topology)
     return MTL::PrimitiveTypeTriangle;
 }
 
-GraphicsPipeline::GraphicsPipeline(MTL::Device* device, const gpu::GraphicsPipelineDescription& description)
-    : _topology(description.topology)
+GraphicsPipeline::GraphicsPipeline(gpu::Device* gpuDevice, MTL::Device* device, const gpu::GraphicsPipelineDescription& description)
+    : gpu::GraphicsPipeline(gpuDevice)
+    , _topology(description.topology)
     , _layout(dynamic_cast<metal::PipelineLayout*>(description.layout))
 {
     auto* metalVsModule = dynamic_cast<metal::ShaderModule*>(description.vertexShader);
@@ -65,6 +67,14 @@ GraphicsPipeline::GraphicsPipeline(MTL::Device* device, const gpu::GraphicsPipel
     if (description.depthFormat != PixelFormat::Undefined)
     {
         descriptor->setDepthAttachmentPixelFormat(toMetalPixelFormat(description.depthFormat));
+    }
+
+    if (!description.vertexBufferDescriptions.empty())
+    {
+        MTL::VertexDescriptor* vtxDesc = metal::VertexDescriptor::buildMetalVertexDescriptor(
+            description.vertexBufferDescriptions);
+        descriptor->setVertexDescriptor(vtxDesc);
+        vtxDesc->release();
     }
 
     NS::Error* error = nullptr;
@@ -103,8 +113,9 @@ void GraphicsPipeline::cleanup()
 
 #else
 
-GraphicsPipeline::GraphicsPipeline(void* /*device*/, const gpu::GraphicsPipelineDescription& description)
-    : _topology(description.topology)
+GraphicsPipeline::GraphicsPipeline(gpu::Device* gpuDevice, void* /*device*/, const gpu::GraphicsPipelineDescription& description)
+    : gpu::GraphicsPipeline(gpuDevice)
+    , _topology(description.topology)
     , _layout(dynamic_cast<metal::PipelineLayout*>(description.layout))
 {
 }

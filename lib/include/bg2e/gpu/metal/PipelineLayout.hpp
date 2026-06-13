@@ -29,7 +29,7 @@ namespace metal {
 
 class BG2E_API PipelineLayout : public gpu::PipelineLayout {
 public:
-    PipelineLayout(const gpu::PipelineLayoutDescription& description);
+    PipelineLayout(gpu::Device* gpuDevice, const gpu::PipelineLayoutDescription& description);
     ~PipelineLayout() override;
 
     bool isValid() const override;

@@ -20,6 +20,7 @@
 
 #include <bg2e/common.hpp>
 #include <bg2e/gpu/Common.hpp>
+#include <bg2e/gpu/DeviceResource.hpp>
 
 #include <cstdint>
 
@@ -29,8 +30,9 @@ namespace gpu {
 class Image;
 class Sampler;
 
-class BG2E_API ResourceSet {
+class BG2E_API ResourceSet : public DeviceResource {
 public:
+    explicit ResourceSet(Device* device) : DeviceResource(device) {}
     virtual ~ResourceSet() = default;
 
     virtual void setStorageImage(uint32_t binding, gpu::Image* image) = 0;

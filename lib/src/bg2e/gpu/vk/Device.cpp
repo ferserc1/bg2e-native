@@ -17,6 +17,7 @@
  */
 
 #include <bg2e/gpu/vk/Device.hpp>
+#include <bg2e/gpu/vk/Buffer.hpp>
 #include <bg2e/gpu/vk/Image.hpp>
 #include <bg2e/gpu/vk/PhysicalDevice.hpp>
 #include <bg2e/gpu/vk/Instance.hpp>
@@ -316,44 +317,44 @@ const gpu::Queue& Device::transferQueue() const
     return _transferQueue;
 }
 
-std::unique_ptr<gpu::ShaderModule> Device::createShaderModule(const gpu::ShaderModuleDescription& description)
+std::shared_ptr<gpu::ShaderModule> Device::createShaderModule(const gpu::ShaderModuleDescription& description)
 {
-    return std::make_unique<vk::ShaderModule>(_device, description);
+    return std::make_shared<vk::ShaderModule>(this, _device, description);
 }
 
-std::unique_ptr<gpu::PipelineLayout> Device::createPipelineLayout(const gpu::PipelineLayoutDescription& description)
+std::shared_ptr<gpu::PipelineLayout> Device::createPipelineLayout(const gpu::PipelineLayoutDescription& description)
 {
-    return std::make_unique<vk::PipelineLayout>(_device, description);
+    return std::make_shared<vk::PipelineLayout>(this, _device, description);
 }
 
-std::unique_ptr<gpu::GraphicsPipeline> Device::createGraphicsPipeline(const gpu::GraphicsPipelineDescription& description)
+std::shared_ptr<gpu::GraphicsPipeline> Device::createGraphicsPipeline(const gpu::GraphicsPipelineDescription& description)
 {
-    return std::make_unique<vk::GraphicsPipeline>(_device, description);
+    return std::make_shared<vk::GraphicsPipeline>(this, _device, description);
 }
 
-std::unique_ptr<gpu::ComputePipeline> Device::createComputePipeline(const gpu::ComputePipelineDescription& description)
+std::shared_ptr<gpu::ComputePipeline> Device::createComputePipeline(const gpu::ComputePipelineDescription& description)
 {
-    return std::make_unique<vk::ComputePipeline>(_device, description);
+    return std::make_shared<vk::ComputePipeline>(this, _device, description);
 }
 
 std::shared_ptr<gpu::Sampler> Device::createSampler(const gpu::SamplerDescription& description)
 {
-    return std::make_shared<vk::Sampler>(_device, description);
+    return std::make_shared<vk::Sampler>(this, _device, description);
 }
 
-std::unique_ptr<gpu::ResourceSet> Device::createResourceSet(gpu::PipelineLayout* layout, uint32_t setIndex, const std::string& debugName)
+std::shared_ptr<gpu::ResourceSet> Device::createResourceSet(gpu::PipelineLayout* layout, uint32_t setIndex, const std::string& debugName)
 {
     auto* vkLayout = dynamic_cast<vk::PipelineLayout*>(layout);
     if (!vkLayout)
     {
         throw std::runtime_error("vk::Device::createResourceSet: invalid PipelineLayout");
     }
-    return std::make_unique<vk::ResourceSet>(_device, vkLayout, setIndex, debugName);
+    return std::make_shared<vk::ResourceSet>(this, _device, vkLayout, setIndex, debugName);
 }
 
 std::shared_ptr<gpu::Image> Device::createImage(const ImageDescription& description)
 {
-    auto img = std::make_shared<vk::Image>();
+    auto img = std::make_shared<vk::Image>(this);
 
     VkImageUsageFlags usage = 0;
     if (hasFlag(description.usage, ImageUsage::Sampled))     { usage |= VK_IMAGE_USAGE_SAMPLED_BIT; }
@@ -363,6 +364,11 @@ std::shared_ptr<gpu::Image> Device::createImage(const ImageDescription& descript
 
     img->buildSampledImage(this, description.size, description.format, usage, description.debugName);
     return img;
+}
+
+std::shared_ptr<gpu::Buffer> Device::createBuffer(const std::string& debugName)
+{
+    return std::make_shared<vk::Buffer>(this, debugName);
 }
 
 void Device::immediateSubmit(std::function<void(gpu::CommandBuffer*)>&& function)

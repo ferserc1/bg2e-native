@@ -20,17 +20,17 @@
 
 #include <bg2e/common.hpp>
 #include <bg2e/gpu/Common.hpp>
+#include <bg2e/gpu/DeviceResource.hpp>
 #include <cstdint>
 #include <vector>
 
 namespace bg2e {
 namespace gpu {
 
-class BG2E_API PipelineLayout {
+class BG2E_API PipelineLayout : public DeviceResource {
 public:
+    explicit PipelineLayout(Device* device) : DeviceResource(device) {}
     virtual ~PipelineLayout() = default;
-    virtual bool isValid() const = 0;
-    virtual void cleanup() = 0;
 };
 
 }

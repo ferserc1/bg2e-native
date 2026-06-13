@@ -31,7 +31,7 @@ class PipelineLayout;
 
 class BG2E_API ResourceSet : public gpu::ResourceSet {
 public:
-    ResourceSet(VkDevice device, const vk::PipelineLayout* layout, uint32_t setIndex, const std::string& debugName = {});
+    ResourceSet(gpu::Device* gpuDevice, VkDevice device, const vk::PipelineLayout* layout, uint32_t setIndex, const std::string& debugName = {});
     ~ResourceSet() override;
 
     void setStorageImage(uint32_t binding, gpu::Image* image) override;

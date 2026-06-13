@@ -58,6 +58,7 @@ public:
     virtual void releaseRenderTarget() = 0;
 
     virtual uint32_t    imageCount() const = 0;
+    virtual uint32_t    currentFrameIndex() const = 0;
     virtual gpu::Image* colorImage(uint32_t index) const = 0;
     virtual gpu::Image* depthImage() const = 0;
 

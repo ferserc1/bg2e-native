@@ -20,6 +20,7 @@
 
 #include <bg2e/common.hpp>
 #include <bg2e/gpu/Common.hpp>
+#include <bg2e/gpu/Buffer.hpp>
 #include <bg2e/gpu/GraphicsPipeline.hpp>
 #include <bg2e/gpu/ComputePipeline.hpp>
 #include <functional>
@@ -30,6 +31,7 @@
 namespace bg2e {
 namespace gpu {
 
+class Buffer;
 class CommandBuffer;
 class Image;
 class Instance;
@@ -62,7 +64,7 @@ public:
         throw std::runtime_error("createSampler not implemented");
     }
 
-    virtual std::unique_ptr<ResourceSet> createResourceSet(PipelineLayout* layout, uint32_t setIndex, const std::string& debugName = {})
+    virtual std::shared_ptr<ResourceSet> createResourceSet(PipelineLayout* layout, uint32_t setIndex, const std::string& debugName = {})
     {
         throw std::runtime_error("createResourceSet not implemented");
     }
@@ -72,24 +74,29 @@ public:
         throw std::runtime_error("createImage not implemented");
     }
 
-    virtual std::unique_ptr<ShaderModule> createShaderModule(const ShaderModuleDescription& description)
+    virtual std::shared_ptr<ShaderModule> createShaderModule(const ShaderModuleDescription& description)
     {
         throw std::runtime_error("createShaderModule not implemented");
     }
 
-    virtual std::unique_ptr<PipelineLayout> createPipelineLayout(const PipelineLayoutDescription& description)
+    virtual std::shared_ptr<PipelineLayout> createPipelineLayout(const PipelineLayoutDescription& description)
     {
         throw std::runtime_error("createPipelineLayout not implemented");
     }
 
-    virtual std::unique_ptr<GraphicsPipeline> createGraphicsPipeline(const GraphicsPipelineDescription& description)
+    virtual std::shared_ptr<GraphicsPipeline> createGraphicsPipeline(const GraphicsPipelineDescription& description)
     {
         throw std::runtime_error("createGraphicsPipeline not implemented");
     }
 
-    virtual std::unique_ptr<ComputePipeline> createComputePipeline(const ComputePipelineDescription& description)
+    virtual std::shared_ptr<ComputePipeline> createComputePipeline(const ComputePipelineDescription& description)
     {
         throw std::runtime_error("createComputePipeline not implemented");
+    }
+
+    virtual std::shared_ptr<Buffer> createBuffer(const std::string& debugName = {})
+    {
+        throw std::runtime_error("createBuffer not implemented");
     }
 
     virtual void immediateSubmit(std::function<void(CommandBuffer* cmd)>&& function)

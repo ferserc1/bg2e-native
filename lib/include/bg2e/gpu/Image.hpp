@@ -20,6 +20,7 @@
 
 #include <bg2e/common.hpp>
 #include <bg2e/gpu/Common.hpp>
+#include <bg2e/gpu/DeviceResource.hpp>
 #include <stdexcept>
 #include <vector>
 
@@ -29,12 +30,10 @@ namespace gpu {
 namespace vk    { class CommandBuffer; }
 namespace metal { class CommandBuffer; }
 
-class BG2E_API Image {
+class BG2E_API Image : public DeviceResource {
 public:
+    explicit Image(Device* device) : DeviceResource(device) {}
     virtual ~Image() = default;
-
-    virtual void cleanup() = 0;
-    virtual bool isValid() const = 0;
 
     PixelFormat   pixelFormat() const { return _pixelFormat; }
     const Size2D& size()        const { return _size; }

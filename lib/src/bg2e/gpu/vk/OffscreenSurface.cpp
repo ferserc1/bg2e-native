@@ -74,6 +74,11 @@ uint32_t OffscreenSurface::imageCount() const
     return 1;
 }
 
+uint32_t OffscreenSurface::currentFrameIndex() const
+{
+    return 0;
+}
+
 gpu::Image* OffscreenSurface::colorImage(uint32_t index) const
 {
     if (index == 0) return _colorImage.get();

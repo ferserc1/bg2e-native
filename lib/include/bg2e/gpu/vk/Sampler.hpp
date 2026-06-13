@@ -27,7 +27,7 @@ namespace vk {
 
 class BG2E_API Sampler : public gpu::Sampler {
 public:
-    Sampler(VkDevice device, const gpu::SamplerDescription& description);
+    Sampler(gpu::Device* gpuDevice, VkDevice device, const gpu::SamplerDescription& description);
     ~Sampler() override;
 
     bool isValid() const override;

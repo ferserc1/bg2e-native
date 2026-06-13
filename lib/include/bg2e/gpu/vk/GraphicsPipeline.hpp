@@ -27,7 +27,7 @@ namespace vk {
 
 class BG2E_API GraphicsPipeline : public gpu::GraphicsPipeline {
 public:
-    GraphicsPipeline(VkDevice device, const gpu::GraphicsPipelineDescription& description);
+    GraphicsPipeline(gpu::Device* gpuDevice, VkDevice device, const gpu::GraphicsPipelineDescription& description);
     ~GraphicsPipeline() override;
 
     bool isValid() const override;

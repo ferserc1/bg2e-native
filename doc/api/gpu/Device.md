@@ -19,6 +19,11 @@ public:
     virtual const Queue& presentQueue() const = 0;
     virtual const Queue& transferQueue() const = 0;
 
+    virtual std::shared_ptr<Image>  createImage(const ImageDescription& description);
+    virtual std::shared_ptr<Sampler> createSampler(const SamplerDescription& description);
+    virtual std::unique_ptr<ResourceSet> createResourceSet(PipelineLayout* layout,
+        uint32_t setIndex, const std::string& debugName = {});
+
     virtual std::unique_ptr<ShaderModule> createShaderModule(
         const ShaderModuleDescription& description);
     virtual std::unique_ptr<PipelineLayout> createPipelineLayout(
@@ -27,6 +32,9 @@ public:
         const GraphicsPipelineDescription& description);
     virtual std::unique_ptr<ComputePipeline> createComputePipeline(
         const ComputePipelineDescription& description);
+    virtual std::unique_ptr<Buffer> createBuffer(const std::string& debugName = {});
+
+    virtual void immediateSubmit(std::function<void(CommandBuffer* cmd)>&& function);
 };
 ```
 
@@ -109,6 +117,60 @@ Creates a compute pipeline with the specified compute shader and layout.
 |---------------|--------------------------------|-------------------------|
 | `description` | `ComputePipelineDescription`   | Pipeline configuration. |
 
+### `virtual std::unique_ptr<Buffer> createBuffer(const std::string& debugName = {})`
+
+Allocates a new GPU buffer. The buffer is empty until one of its
+`create*` methods is called:
+
+```cpp
+auto buf = device->createBuffer("My vertex buffer");
+buf->createVertexBuffer(mesh.vertices);     // upload vertex data
+buf->createIndexBuffer(mesh.indices);       // upload index data
+```
+
+The returned `Buffer` handles both the device-local allocation and the
+internal staging upload transparently.
+
+| Parameter   | Type          | Default | Description                          |
+|-------------|---------------|---------|--------------------------------------|
+| `debugName` | `std::string` | `""`    | Optional label for GPU debug tools.  |
+
+See [Buffer](Buffer.md) for the full API.
+
+### `virtual std::shared_ptr<Image> createImage(const ImageDescription& description)`
+
+Allocates a GPU image (texture). See [Image](Image.md).
+
+### `virtual std::shared_ptr<Sampler> createSampler(const SamplerDescription& description)`
+
+Creates a texture sampler. See the sampler description in [Image](Image.md).
+
+### `virtual std::unique_ptr<ResourceSet> createResourceSet(PipelineLayout* layout, uint32_t setIndex, const std::string& debugName = {})`
+
+Allocates a descriptor set (resource set) bound to `setIndex` of the given
+pipeline layout.
+
+| Parameter   | Type             | Description                              |
+|-------------|------------------|------------------------------------------|
+| `layout`    | `PipelineLayout*`| Layout that declares the set bindings.  |
+| `setIndex`  | `uint32_t`       | Descriptor set slot index.              |
+| `debugName` | `std::string`    | Optional debug label.                   |
+
+### `virtual void immediateSubmit(std::function<void(CommandBuffer* cmd)>&& function)`
+
+Records and submits a one-shot command buffer synchronously. The lambda
+receives a `CommandBuffer*`, records commands (e.g. layout transitions,
+buffer/image uploads), and the method blocks until the GPU finishes.
+
+```cpp
+device->immediateSubmit([&texture](gpu::CommandBuffer* cmd) {
+    cmd->transition(texture.get(), gpu::ImageLayout::ShaderReadOnly);
+});
+```
+
+Used internally by `Buffer::createVertexBuffer`, `Buffer::createIndexBuffer`,
+and `Image::uploadRGBA8` to perform staging uploads.
+
 ---
 
 ## vk::Device
@@ -131,14 +193,14 @@ public:
     const gpu::Queue& presentQueue() const override;
     const gpu::Queue& transferQueue() const override;
 
-    std::unique_ptr<gpu::ShaderModule> createShaderModule(
-        const gpu::ShaderModuleDescription& description) override;
-    std::unique_ptr<gpu::PipelineLayout> createPipelineLayout(
-        const gpu::PipelineLayoutDescription& description) override;
-    std::unique_ptr<gpu::GraphicsPipeline> createGraphicsPipeline(
-        const gpu::GraphicsPipelineDescription& description) override;
-    std::unique_ptr<gpu::ComputePipeline> createComputePipeline(
-        const gpu::ComputePipelineDescription& description) override;
+    std::shared_ptr<gpu::Image>       createImage(const gpu::ImageDescription&) override;
+    std::shared_ptr<gpu::Sampler>     createSampler(const gpu::SamplerDescription&) override;
+    std::unique_ptr<gpu::ResourceSet> createResourceSet(gpu::PipelineLayout*, uint32_t, const std::string&) override;
+    std::unique_ptr<gpu::ShaderModule>    createShaderModule(const gpu::ShaderModuleDescription&) override;
+    std::unique_ptr<gpu::PipelineLayout>  createPipelineLayout(const gpu::PipelineLayoutDescription&) override;
+    std::unique_ptr<gpu::GraphicsPipeline> createGraphicsPipeline(const gpu::GraphicsPipelineDescription&) override;
+    std::unique_ptr<gpu::ComputePipeline>  createComputePipeline(const gpu::ComputePipelineDescription&) override;
+    std::unique_ptr<gpu::Buffer>           createBuffer(const std::string& debugName = {}) override;
 
     VkDevice handle() const;
 };
@@ -175,14 +237,14 @@ public:
     const gpu::Queue& presentQueue() const override;
     const gpu::Queue& transferQueue() const override;
 
-    std::unique_ptr<gpu::ShaderModule> createShaderModule(
-        const gpu::ShaderModuleDescription& description) override;
-    std::unique_ptr<gpu::PipelineLayout> createPipelineLayout(
-        const gpu::PipelineLayoutDescription& description) override;
-    std::unique_ptr<gpu::GraphicsPipeline> createGraphicsPipeline(
-        const gpu::GraphicsPipelineDescription& description) override;
-    std::unique_ptr<gpu::ComputePipeline> createComputePipeline(
-        const gpu::ComputePipelineDescription& description) override;
+    std::shared_ptr<gpu::Image>       createImage(const gpu::ImageDescription&) override;
+    std::shared_ptr<gpu::Sampler>     createSampler(const gpu::SamplerDescription&) override;
+    std::unique_ptr<gpu::ResourceSet> createResourceSet(gpu::PipelineLayout*, uint32_t, const std::string&) override;
+    std::unique_ptr<gpu::ShaderModule>    createShaderModule(const gpu::ShaderModuleDescription&) override;
+    std::unique_ptr<gpu::PipelineLayout>  createPipelineLayout(const gpu::PipelineLayoutDescription&) override;
+    std::unique_ptr<gpu::GraphicsPipeline> createGraphicsPipeline(const gpu::GraphicsPipelineDescription&) override;
+    std::unique_ptr<gpu::ComputePipeline>  createComputePipeline(const gpu::ComputePipelineDescription&) override;
+    std::unique_ptr<gpu::Buffer>           createBuffer(const std::string& debugName = {}) override;
 
     DeviceHandle handle() const;
 };

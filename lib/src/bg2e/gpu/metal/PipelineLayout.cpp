@@ -22,8 +22,8 @@ namespace bg2e {
 namespace gpu {
 namespace metal {
 
-PipelineLayout::PipelineLayout(const gpu::PipelineLayoutDescription& description)
-    : _description(description)
+PipelineLayout::PipelineLayout(gpu::Device* gpuDevice, const gpu::PipelineLayoutDescription& description)
+    : gpu::PipelineLayout(gpuDevice), _description(description)
 {
 }
 

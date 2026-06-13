@@ -27,8 +27,8 @@ namespace metal {
 
 #if BG2E_IS_MAC
 
-Sampler::Sampler(DeviceHandle device, const gpu::SamplerDescription& description)
-    : _device(device)
+Sampler::Sampler(gpu::Device* gpuDevice, DeviceHandle device, const gpu::SamplerDescription& description)
+    : gpu::Sampler(gpuDevice), _device(device)
 {
     auto* desc = MTL::SamplerDescriptor::alloc()->init();
 
@@ -95,7 +95,8 @@ void Sampler::cleanup()
 
 #else
 
-Sampler::Sampler(DeviceHandle, const gpu::SamplerDescription&)
+Sampler::Sampler(gpu::Device* gpuDevice, DeviceHandle, const gpu::SamplerDescription&)
+    : gpu::Sampler(gpuDevice)
 {
     throw std::runtime_error("Metal backend is not available on this platform");
 }

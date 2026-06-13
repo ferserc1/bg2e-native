@@ -89,25 +89,25 @@ int main(int argc, char** argv)
     auto shaderBasePath = base::PlatformTools::shaderPath();
     std::string targetName = "gpu_simple_triangle";
 
-    std::unique_ptr<gpu::ShaderModule> vs;
-    std::unique_ptr<gpu::ShaderModule> fs;
-    std::unique_ptr<gpu::ShaderModule> cs;
+    std::shared_ptr<gpu::ShaderModule> vs;
+    std::shared_ptr<gpu::ShaderModule> fs;
+    std::shared_ptr<gpu::ShaderModule> cs;
 
     if (backendType == gpu::BackendType::Vulkan)
     {
         auto vsPath = (shaderBasePath / targetName / "triangle.vert.spv").string();
         auto fsPath = (shaderBasePath / targetName / "triangle.frag.spv").string();
         auto csPath = (shaderBasePath / targetName / "gradient.comp.spv").string();
-        vs = device->createShaderModule({ vsPath, "main", gpu::ShaderStage::Vertex, "Triangle vertex shader" });
+        vs = device->createShaderModule({ vsPath, "main", gpu::ShaderStage::Vertex,   "Triangle vertex shader" });
         fs = device->createShaderModule({ fsPath, "main", gpu::ShaderStage::Fragment, "Triangle fragment shader" });
-        cs = device->createShaderModule({ csPath, "main", gpu::ShaderStage::Compute, "Gradient compute shader" });
+        cs = device->createShaderModule({ csPath, "main", gpu::ShaderStage::Compute,  "Gradient compute shader" });
     }
     else
     {
         auto libPath = (shaderBasePath / targetName / "metal" / "triangle.metallib").string();
-        vs = device->createShaderModule({ libPath, "triangle_vertex", gpu::ShaderStage::Vertex, "Triangle vertex shader" });
+        vs = device->createShaderModule({ libPath, "triangle_vertex",   gpu::ShaderStage::Vertex,   "Triangle vertex shader" });
         fs = device->createShaderModule({ libPath, "triangle_fragment", gpu::ShaderStage::Fragment, "Triangle fragment shader" });
-        cs = device->createShaderModule({ libPath, "gradient_compute", gpu::ShaderStage::Compute, "Gradient compute shader" });
+        cs = device->createShaderModule({ libPath, "gradient_compute",  gpu::ShaderStage::Compute,  "Gradient compute shader" });
     }
 
     // Graphics layout with push constant range and SampledImage + Sampler bindings
@@ -141,44 +141,68 @@ int main(int argc, char** argv)
     textureSet->setSampler(1, sampler.get());
     textureSet->update();
 
-    bg2e::base::Log::isDebug();
     // Compute layout with StorageImage binding at set=0, binding=0
     gpu::PipelineLayoutDescription computeLayoutDesc{};
     computeLayoutDesc.resourceBindings.push_back({
-        0,                                  // set
-        0,                                  // binding
-        gpu::ResourceType::StorageImage,
-        gpu::ShaderStage::Compute,
-        1                                   // count
+        0, 0, gpu::ResourceType::StorageImage, gpu::ShaderStage::Compute, 1
     });
     computeLayoutDesc.debugName = "Compute pipeline layout";
     auto computeLayout = device->createPipelineLayout(computeLayoutDesc);
 
-    // Get attachment formats from the first frame
+    // Get attachment formats from the surface
     auto colorFormat = surface->colorFormat();
     auto depthFormat = surface->depthFormat();
 
+    // Build a regular pentagon mesh (position + texCoord0).
+    // 5 perimeter vertices (radius 0.5, top vertex first) + 1 centre vertex.
+    // Decomposed into a triangle fan: 5 triangles, 15 indices.
+    bg2e::geo::MeshPU meshData;
+    meshData.vertices = {
+        // perimeter (angle = -90° + i*72°)
+        { { 0.0000f, -0.5000f, 0.0f }, { 0.500f, 0.000f } },   // 0 – top
+        { { 0.4755f, -0.1545f, 0.0f }, { 0.976f, 0.345f } },   // 1 – upper-right
+        { { 0.2939f,  0.4045f, 0.0f }, { 0.794f, 0.905f } },   // 2 – lower-right
+        { {-0.2939f,  0.4045f, 0.0f }, { 0.206f, 0.905f } },   // 3 – lower-left
+        { {-0.4755f, -0.1545f, 0.0f }, { 0.024f, 0.345f } },   // 4 – upper-left
+        // centre
+        { { 0.0000f,  0.0000f, 0.0f }, { 0.500f, 0.500f } },   // 5
+    };
+    meshData.indices = {
+        5, 0, 1,
+        5, 1, 2,
+        5, 2, 3,
+        5, 3, 4,
+        5, 4, 0,
+    };
+    meshData.submeshes = { { 0, 15 } };
+
+    gpu::MeshPU mesh;
+    mesh.setMeshData(meshData);
+    mesh.build(device.get());
+
+    // Graphics pipeline (with vertex buffer description)
     gpu::GraphicsPipelineDescription pipelineDesc{};
-    pipelineDesc.vertexShader = vs.get();
+    pipelineDesc.vertexShader   = vs.get();
     pipelineDesc.fragmentShader = fs.get();
-    pipelineDesc.layout = graphicsLayout.get();
-    pipelineDesc.topology = gpu::PrimitiveTopology::TriangleList;
-    pipelineDesc.colorFormat = colorFormat;
-    pipelineDesc.depthFormat = depthFormat;
-    pipelineDesc.debugName = "Main graphics pipeline";
+    pipelineDesc.layout         = graphicsLayout.get();
+    pipelineDesc.topology       = gpu::PrimitiveTopology::TriangleList;
+    pipelineDesc.colorFormat    = colorFormat;
+    pipelineDesc.depthFormat    = depthFormat;
+    pipelineDesc.debugName      = "Main graphics pipeline";
+    pipelineDesc.addVertexBufferDescription(gpu::MeshPU::vertexBufferDescription());
 
     auto pipeline = device->createGraphicsPipeline(pipelineDesc);
 
     // Compute pipeline
     gpu::ComputePipelineDescription computePipelineDesc{};
     computePipelineDesc.computeShader = cs.get();
-    computePipelineDesc.layout = computeLayout.get();
-    computePipelineDesc.debugName = "Gradient compute pipeline";
+    computePipelineDesc.layout        = computeLayout.get();
+    computePipelineDesc.debugName     = "Gradient compute pipeline";
     auto computePipeline = device->createComputePipeline(computePipelineDesc);
 
     // Resource set ring: one set per swapchain image
     auto imageCount = surface->imageCount();
-    std::vector<std::unique_ptr<gpu::ResourceSet>> resourceSets;
+    std::vector<std::shared_ptr<gpu::ResourceSet>> resourceSets;
     resourceSets.reserve(imageCount);
     for (uint32_t i = 0; i < imageCount; ++i)
     {
@@ -232,8 +256,6 @@ int main(int argc, char** argv)
         rs->update();
         cmd->bindResourceSet(computePipeline.get(), 0, rs);
 
-        // Both backends now use 16x16 threads-per-group, so the same
-        // group-count calculation works for Vulkan and Metal.
         uint32_t gx = (frame->colorImage()->width()  + 15) / 16;
         uint32_t gy = (frame->colorImage()->height() + 15) / 16;
         cmd->dispatch(gx, gy, 1);
@@ -248,7 +270,7 @@ int main(int argc, char** argv)
         cmd->bindPipeline(pipeline.get());
         cmd->bindResourceSet(pipeline.get(), 0, textureSet.get());
         cmd->pushConstants(gpu::ShaderStage::Fragment, 0, sizeof(PushConstants), &push);
-        cmd->draw(3);
+        mesh.draw(cmd.get());
         cmd->endRendering();
         cmd->transition(frame->colorImage(), gpu::ImageLayout::Present);
 
@@ -262,6 +284,7 @@ int main(int argc, char** argv)
 
     // 10. Cleanup
     device->waitIdle();
+    mesh.cleanup();
     for (auto& rs : resourceSets)
     {
         rs->cleanup();

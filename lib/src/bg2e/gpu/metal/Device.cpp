@@ -17,6 +17,7 @@
  */
 
 #include <bg2e/gpu/metal/Device.hpp>
+#include <bg2e/gpu/metal/Buffer.hpp>
 #include <bg2e/gpu/metal/Image.hpp>
 #include <bg2e/gpu/metal/PhysicalDevice.hpp>
 #include <bg2e/gpu/metal/ShaderModule.hpp>
@@ -107,46 +108,51 @@ const gpu::Queue& Device::graphicsQueue() const { return _graphicsQueue; }
 const gpu::Queue& Device::presentQueue()  const { return _presentQueue;  }
 const gpu::Queue& Device::transferQueue() const { return _transferQueue; }
 
-std::unique_ptr<gpu::ShaderModule> Device::createShaderModule(const gpu::ShaderModuleDescription& description)
+std::shared_ptr<gpu::ShaderModule> Device::createShaderModule(const gpu::ShaderModuleDescription& description)
 {
-    return std::make_unique<metal::ShaderModule>(_device, description);
+    return std::make_shared<metal::ShaderModule>(this, _device, description);
 }
 
-std::unique_ptr<gpu::PipelineLayout> Device::createPipelineLayout(const gpu::PipelineLayoutDescription& description)
+std::shared_ptr<gpu::PipelineLayout> Device::createPipelineLayout(const gpu::PipelineLayoutDescription& description)
 {
-    return std::make_unique<metal::PipelineLayout>(description);
+    return std::make_shared<metal::PipelineLayout>(this, description);
 }
 
-std::unique_ptr<gpu::GraphicsPipeline> Device::createGraphicsPipeline(const gpu::GraphicsPipelineDescription& description)
+std::shared_ptr<gpu::GraphicsPipeline> Device::createGraphicsPipeline(const gpu::GraphicsPipelineDescription& description)
 {
-    return std::make_unique<metal::GraphicsPipeline>(_device, description);
+    return std::make_shared<metal::GraphicsPipeline>(this, _device, description);
 }
 
-std::unique_ptr<gpu::ComputePipeline> Device::createComputePipeline(const gpu::ComputePipelineDescription& description)
+std::shared_ptr<gpu::ComputePipeline> Device::createComputePipeline(const gpu::ComputePipelineDescription& description)
 {
-    return std::make_unique<metal::ComputePipeline>(_device, description);
+    return std::make_shared<metal::ComputePipeline>(this, _device, description);
 }
 
 std::shared_ptr<gpu::Sampler> Device::createSampler(const gpu::SamplerDescription& description)
 {
-    return std::make_shared<metal::Sampler>(_device, description);
+    return std::make_shared<metal::Sampler>(this, _device, description);
 }
 
-std::unique_ptr<gpu::ResourceSet> Device::createResourceSet(gpu::PipelineLayout* layout, uint32_t setIndex, const std::string& /*debugName*/)
+std::shared_ptr<gpu::ResourceSet> Device::createResourceSet(gpu::PipelineLayout* layout, uint32_t setIndex, const std::string& /*debugName*/)
 {
     auto* metalLayout = dynamic_cast<metal::PipelineLayout*>(layout);
     if (!metalLayout)
     {
         throw std::runtime_error("metal::Device::createResourceSet: invalid PipelineLayout");
     }
-    return std::make_unique<metal::ResourceSet>(metalLayout, setIndex);
+    return std::make_shared<metal::ResourceSet>(this, metalLayout, setIndex);
 }
 
 std::shared_ptr<gpu::Image> Device::createImage(const ImageDescription& description)
 {
-    auto img = std::make_shared<metal::Image>();
+    auto img = std::make_shared<metal::Image>(this);
     img->buildSampledImage(this, description.size, description.format, description.debugName);
     return img;
+}
+
+std::shared_ptr<gpu::Buffer> Device::createBuffer(const std::string& debugName)
+{
+    return std::make_shared<metal::Buffer>(this, debugName);
 }
 
 void Device::immediateSubmit(std::function<void(gpu::CommandBuffer*)>&& function)
@@ -181,42 +187,47 @@ const gpu::Queue& Device::graphicsQueue() const { return _graphicsQueue; }
 const gpu::Queue& Device::presentQueue()  const { return _presentQueue;  }
 const gpu::Queue& Device::transferQueue() const { return _transferQueue; }
 
-std::unique_ptr<gpu::ShaderModule> Device::createShaderModule(const gpu::ShaderModuleDescription& description)
+std::shared_ptr<gpu::ShaderModule> Device::createShaderModule(const gpu::ShaderModuleDescription& description)
 {
-    return std::make_unique<metal::ShaderModule>(nullptr, description);
+    return std::make_shared<metal::ShaderModule>(this, nullptr, description);
 }
 
-std::unique_ptr<gpu::PipelineLayout> Device::createPipelineLayout(const gpu::PipelineLayoutDescription& description)
+std::shared_ptr<gpu::PipelineLayout> Device::createPipelineLayout(const gpu::PipelineLayoutDescription& description)
 {
-    return std::make_unique<metal::PipelineLayout>(description);
+    return std::make_shared<metal::PipelineLayout>(this, description);
 }
 
-std::unique_ptr<gpu::GraphicsPipeline> Device::createGraphicsPipeline(const gpu::GraphicsPipelineDescription& description)
+std::shared_ptr<gpu::GraphicsPipeline> Device::createGraphicsPipeline(const gpu::GraphicsPipelineDescription& description)
 {
-    return std::make_unique<metal::GraphicsPipeline>(nullptr, description);
+    return std::make_shared<metal::GraphicsPipeline>(this, nullptr, description);
 }
 
-std::unique_ptr<gpu::ComputePipeline> Device::createComputePipeline(const gpu::ComputePipelineDescription& description)
+std::shared_ptr<gpu::ComputePipeline> Device::createComputePipeline(const gpu::ComputePipelineDescription& description)
 {
-    return std::make_unique<metal::ComputePipeline>(nullptr, description);
+    return std::make_shared<metal::ComputePipeline>(this, nullptr, description);
 }
 
 std::shared_ptr<gpu::Sampler> Device::createSampler(const gpu::SamplerDescription& description)
 {
-    return std::make_shared<metal::Sampler>(nullptr, description);
+    return std::make_shared<metal::Sampler>(this, nullptr, description);
 }
 
-std::unique_ptr<gpu::ResourceSet> Device::createResourceSet(gpu::PipelineLayout* layout, uint32_t setIndex, const std::string& /*debugName*/)
+std::shared_ptr<gpu::ResourceSet> Device::createResourceSet(gpu::PipelineLayout* layout, uint32_t setIndex, const std::string& /*debugName*/)
 {
     auto* metalLayout = dynamic_cast<metal::PipelineLayout*>(layout);
     if (!metalLayout)
     {
         throw std::runtime_error("metal::Device::createResourceSet: invalid PipelineLayout");
     }
-    return std::make_unique<metal::ResourceSet>(metalLayout, setIndex);
+    return std::make_shared<metal::ResourceSet>(this, metalLayout, setIndex);
 }
 
 std::shared_ptr<gpu::Image> Device::createImage(const ImageDescription&)
+{
+    throw std::runtime_error("Metal backend is not available on this platform");
+}
+
+std::shared_ptr<gpu::Buffer> Device::createBuffer(const std::string&)
 {
     throw std::runtime_error("Metal backend is not available on this platform");
 }

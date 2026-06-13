@@ -32,12 +32,10 @@ namespace bg2e::gpu::metal {
     using CommandQueueHandle = MTL::CommandQueue*;
     using MetalLayerHandle   = CA::MetalLayer*;
     using TextureHandle      = MTL::Texture*;
-    using SampleStateHandle  = MTL::SampleState*
+    using SampleStateHandle  = MTL::SamplerState*;
 
-#if BG2E_IS_MAC
     MTL::PixelFormat toMetalPixelFormat(gpu::PixelFormat format);
     gpu::PixelFormat fromMetalPixelFormat(MTL::PixelFormat format);
-#endif
 }
 
 #else

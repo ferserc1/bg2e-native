@@ -19,6 +19,7 @@
 #include <bg2e/gpu/vk/GraphicsPipeline.hpp>
 #include <bg2e/gpu/vk/ShaderModule.hpp>
 #include <bg2e/gpu/vk/PipelineLayout.hpp>
+#include <bg2e/gpu/vk/VertexDescriptor.hpp>
 #include <bg2e/gpu/vk/extensions.hpp>
 #include <bg2e/base/Log.hpp>
 
@@ -41,8 +42,8 @@ VkPrimitiveTopology primitiveTopologyToVk(gpu::PrimitiveTopology topology)
     return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
 }
 
-GraphicsPipeline::GraphicsPipeline(VkDevice device, const gpu::GraphicsPipelineDescription& description)
-    : _device(device)
+GraphicsPipeline::GraphicsPipeline(gpu::Device* gpuDevice, VkDevice device, const gpu::GraphicsPipelineDescription& description)
+    : gpu::GraphicsPipeline(gpuDevice), _device(device)
 {
     auto* vkVsModule = dynamic_cast<vk::ShaderModule*>(description.vertexShader);
     auto* vkFsModule = dynamic_cast<vk::ShaderModule*>(description.fragmentShader);
@@ -70,9 +71,22 @@ GraphicsPipeline::GraphicsPipeline(VkDevice device, const gpu::GraphicsPipelineD
 
     VkPipelineShaderStageCreateInfo stages[] = { vsStage, fsStage };
 
-    // Vertex input: empty (vertex_id only)
+    // Vertex input: built from descriptions (empty = vertex_id only)
+    std::vector<VkVertexInputBindingDescription>   bindings;
+    std::vector<VkVertexInputAttributeDescription> attributes;
+
+    if (!description.vertexBufferDescriptions.empty())
+    {
+        vk::VertexDescriptor::buildVkVertexInput(
+            description.vertexBufferDescriptions, bindings, attributes);
+    }
+
     VkPipelineVertexInputStateCreateInfo vertexInput{};
-    vertexInput.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+    vertexInput.sType                           = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+    vertexInput.vertexBindingDescriptionCount   = static_cast<uint32_t>(bindings.size());
+    vertexInput.pVertexBindingDescriptions      = bindings.empty()    ? nullptr : bindings.data();
+    vertexInput.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributes.size());
+    vertexInput.pVertexAttributeDescriptions    = attributes.empty()  ? nullptr : attributes.data();
 
     // Input assembly
     VkPipelineInputAssemblyStateCreateInfo inputAssembly{};

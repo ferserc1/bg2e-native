@@ -29,7 +29,8 @@ namespace metal {
 
 #if BG2E_IS_MAC
 
-ComputePipeline::ComputePipeline(MTL::Device* device, const gpu::ComputePipelineDescription& description)
+ComputePipeline::ComputePipeline(gpu::Device* gpuDevice, MTL::Device* device, const gpu::ComputePipelineDescription& description)
+    : gpu::ComputePipeline(gpuDevice)
 {
     auto* metalComputeModule = dynamic_cast<metal::ShaderModule*>(description.computeShader);
     auto* metalLayout = dynamic_cast<metal::PipelineLayout*>(description.layout);
@@ -86,7 +87,8 @@ void ComputePipeline::cleanup()
 
 #else
 
-ComputePipeline::ComputePipeline(void* /*device*/, const gpu::ComputePipelineDescription& /*description*/)
+ComputePipeline::ComputePipeline(gpu::Device* gpuDevice, void* /*device*/, const gpu::ComputePipelineDescription& /*description*/)
+    : gpu::ComputePipeline(gpuDevice)
 {
 }
 

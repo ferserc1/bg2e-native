@@ -58,6 +58,10 @@ public:
     void pushConstants(ShaderStage stage, uint32_t offset, uint32_t size, const void* data) override;
     void bindResourceSet(gpu::GraphicsPipeline* pipeline, uint32_t setIndex, gpu::ResourceSet* set) override;
     void bindResourceSet(gpu::ComputePipeline* pipeline, uint32_t setIndex, gpu::ResourceSet* set) override;
+    void bindVertexBuffer(uint32_t binding, gpu::Buffer* buffer, uint64_t offset) override;
+    void bindIndexBuffer(gpu::Buffer* buffer, uint64_t offset) override;
+    void drawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex,
+                     int32_t vertexOffset, uint32_t firstInstance) override;
     bool isValid() const override;
 
 #if BG2E_IS_MAC
@@ -78,6 +82,9 @@ private:
     metal::GraphicsPipeline*    _boundPipeline = nullptr;
     metal::ComputePipeline*     _boundComputePipeline = nullptr;
     metal::PipelineLayout*      _boundLayout = nullptr;
+
+    MTL::Buffer*                _boundIndexBuffer       = nullptr;
+    NS::UInteger                _boundIndexBufferOffset = 0;
 #endif
 };
 

@@ -17,6 +17,7 @@
  */
 
 #include <bg2e/gpu/metal/CommandBuffer.hpp>
+#include <bg2e/gpu/metal/Buffer.hpp>
 #include <bg2e/gpu/metal/GraphicsPipeline.hpp>
 #include <bg2e/gpu/metal/ComputePipeline.hpp>
 #include <bg2e/gpu/metal/PipelineLayout.hpp>
@@ -163,9 +164,11 @@ void CommandBuffer::endRendering()
         _passDesc->release();
         _passDesc = nullptr;
     }
-    _boundPipeline = nullptr;
-    _boundLayout = nullptr;
-    _renderFrame = nullptr;
+    _boundPipeline        = nullptr;
+    _boundLayout          = nullptr;
+    _renderFrame          = nullptr;
+    _boundIndexBuffer     = nullptr;
+    _boundIndexBufferOffset = 0;
 }
 
 void CommandBuffer::ensureRenderEncoder()
@@ -392,6 +395,68 @@ void CommandBuffer::bindResourceSet(gpu::ComputePipeline* /*pipeline*/, uint32_t
     }
 }
 
+void CommandBuffer::bindVertexBuffer(uint32_t binding, gpu::Buffer* buffer, uint64_t offset)
+{
+    auto* metalBuf = dynamic_cast<metal::Buffer*>(buffer);
+    if (!metalBuf)
+    {
+        throw std::runtime_error("metal::CommandBuffer::bindVertexBuffer: not a metal::Buffer");
+    }
+
+    ensureRenderEncoder();
+    _encoder->setVertexBuffer(metalBuf->handle(), static_cast<NS::UInteger>(offset), binding);
+}
+
+void CommandBuffer::bindIndexBuffer(gpu::Buffer* buffer, uint64_t offset)
+{
+    auto* metalBuf = dynamic_cast<metal::Buffer*>(buffer);
+    if (!metalBuf)
+    {
+        throw std::runtime_error("metal::CommandBuffer::bindIndexBuffer: not a metal::Buffer");
+    }
+
+    _boundIndexBuffer       = metalBuf->handle();
+    _boundIndexBufferOffset = static_cast<NS::UInteger>(offset);
+}
+
+void CommandBuffer::drawIndexed(uint32_t indexCount, uint32_t instanceCount,
+                                uint32_t firstIndex, int32_t vertexOffset,
+                                uint32_t firstInstance)
+{
+    ensureRenderEncoder();
+
+    if (!_boundIndexBuffer)
+    {
+        throw std::runtime_error("metal::CommandBuffer::drawIndexed: no index buffer bound");
+    }
+
+    MTL::PrimitiveType primType = MTL::PrimitiveTypeTriangle;
+    if (_boundPipeline)
+    {
+        switch (_boundPipeline->topology())
+        {
+            case gpu::PrimitiveTopology::TriangleList:  primType = MTL::PrimitiveTypeTriangle;     break;
+            case gpu::PrimitiveTopology::TriangleStrip: primType = MTL::PrimitiveTypeTriangleStrip; break;
+            case gpu::PrimitiveTopology::LineList:      primType = MTL::PrimitiveTypeLine;          break;
+            case gpu::PrimitiveTopology::PointList:     primType = MTL::PrimitiveTypePoint;         break;
+        }
+    }
+
+    NS::UInteger byteOffset = _boundIndexBufferOffset
+                            + static_cast<NS::UInteger>(firstIndex) * sizeof(uint32_t);
+
+    _encoder->drawIndexedPrimitives(
+        primType,
+        static_cast<NS::UInteger>(indexCount),
+        MTL::IndexTypeUInt32,
+        _boundIndexBuffer,
+        byteOffset,
+        static_cast<NS::UInteger>(instanceCount),
+        static_cast<NS::Integer>(vertexOffset),
+        static_cast<NS::UInteger>(firstInstance)
+    );
+}
+
 bool CommandBuffer::isValid() const
 {
     return _cmd != nullptr;
@@ -416,6 +481,9 @@ void CommandBuffer::dispatch(uint32_t, uint32_t, uint32_t) {}
 void CommandBuffer::pushConstants(ShaderStage, uint32_t, uint32_t, const void*) {}
 void CommandBuffer::bindResourceSet(gpu::GraphicsPipeline*, uint32_t, gpu::ResourceSet*) {}
 void CommandBuffer::bindResourceSet(gpu::ComputePipeline*, uint32_t, gpu::ResourceSet*) {}
+void CommandBuffer::bindVertexBuffer(uint32_t, gpu::Buffer*, uint64_t) {}
+void CommandBuffer::bindIndexBuffer(gpu::Buffer*, uint64_t) {}
+void CommandBuffer::drawIndexed(uint32_t, uint32_t, uint32_t, int32_t, uint32_t) {}
 bool CommandBuffer::isValid() const { return false; }
 
 #endif

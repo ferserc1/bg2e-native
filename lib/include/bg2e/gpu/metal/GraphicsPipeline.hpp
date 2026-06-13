@@ -30,9 +30,9 @@ class PipelineLayout;
 class BG2E_API GraphicsPipeline : public gpu::GraphicsPipeline {
 public:
 #if BG2E_IS_MAC
-    GraphicsPipeline(MTL::Device* device, const gpu::GraphicsPipelineDescription& description);
+    GraphicsPipeline(gpu::Device* gpuDevice, MTL::Device* device, const gpu::GraphicsPipelineDescription& description);
 #else
-    GraphicsPipeline(void* /*device*/, const gpu::GraphicsPipelineDescription& description);
+    GraphicsPipeline(gpu::Device* gpuDevice, void* /*device*/, const gpu::GraphicsPipelineDescription& description);
 #endif
     ~GraphicsPipeline() override;
 

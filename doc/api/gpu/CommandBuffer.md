@@ -31,9 +31,17 @@ public:
     virtual void bindPipeline(gpu::GraphicsPipeline* pipeline);
     virtual void bindPipeline(gpu::ComputePipeline* pipeline);
 
+    // Vertex / index buffer binding
+    virtual void bindVertexBuffer(uint32_t binding, gpu::Buffer* buffer,
+                                  uint64_t offset = 0);
+    virtual void bindIndexBuffer(gpu::Buffer* buffer, uint64_t offset = 0);
+
     // Draw calls
     virtual void draw(uint32_t vertexCount, uint32_t instanceCount = 1,
                       uint32_t firstVertex = 0, uint32_t firstInstance = 0);
+    virtual void drawIndexed(uint32_t indexCount, uint32_t instanceCount = 1,
+                             uint32_t firstIndex = 0, int32_t vertexOffset = 0,
+                             uint32_t firstInstance = 0);
 
     // Compute dispatch
     virtual void dispatch(uint32_t groupCountX, uint32_t groupCountY,
@@ -155,11 +163,39 @@ Binds a compute pipeline for subsequent dispatch calls.
 
 ---
 
+## Vertex and index buffer binding
+
+### `virtual void bindVertexBuffer(uint32_t binding, gpu::Buffer* buffer, uint64_t offset = 0)`
+
+Binds a vertex buffer to the given binding slot. Must be called inside a
+rendering pass (after `beginRendering()`), and requires a graphics pipeline to
+have been created with a matching `VertexBufferDescription` at the same
+`binding` index.
+
+| Parameter | Type          | Default | Description                              |
+|-----------|---------------|---------|------------------------------------------|
+| `binding` | `uint32_t`    | --      | Vertex buffer binding slot.              |
+| `buffer`  | `gpu::Buffer*`| --      | Buffer created with `BufferUsage::Vertex`.|
+| `offset`  | `uint64_t`    | 0       | Byte offset into the buffer.             |
+
+### `virtual void bindIndexBuffer(gpu::Buffer* buffer, uint64_t offset = 0)`
+
+Binds an index buffer for use with `drawIndexed()`. Indices are always
+`uint32_t` (32-bit unsigned).
+
+| Parameter | Type          | Default | Description                             |
+|-----------|---------------|---------|------------------------------------------|
+| `buffer`  | `gpu::Buffer*`| --      | Buffer created with `BufferUsage::Index`.|
+| `offset`  | `uint64_t`    | 0       | Byte offset into the buffer.             |
+
+---
+
 ## Draw calls
 
 ### `virtual void draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance)`
 
 Issues a non-indexed draw call. A graphics pipeline must be bound first.
+Vertex data is generated procedurally in the shader (no vertex buffer needed).
 
 | Parameter       | Type       | Default | Description              |
 |-----------------|------------|---------|--------------------------|
@@ -167,6 +203,22 @@ Issues a non-indexed draw call. A graphics pipeline must be bound first.
 | `instanceCount` | `uint32_t` | 1       | Number of instances.     |
 | `firstVertex`   | `uint32_t` | 0       | Index of first vertex.   |
 | `firstInstance` | `uint32_t` | 0       | Index of first instance. |
+
+### `virtual void drawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance)`
+
+Issues an indexed draw call. A graphics pipeline, a vertex buffer, and an
+index buffer must be bound before calling this. Indices are always `uint32_t`.
+
+| Parameter      | Type       | Default | Description                                        |
+|----------------|------------|---------|----------------------------------------------------|
+| `indexCount`   | `uint32_t` | --      | Number of indices to read.                         |
+| `instanceCount`| `uint32_t` | 1       | Number of instances.                               |
+| `firstIndex`   | `uint32_t` | 0       | Offset (in indices) into the index buffer.         |
+| `vertexOffset` | `int32_t`  | 0       | Value added to each index before fetching a vertex.|
+| `firstInstance`| `uint32_t` | 0       | Index of first instance.                           |
+
+In practice, `gpu::MeshGeneric<T>::draw()` and `drawSubmesh()` call this for
+you.
 
 ---
 
@@ -211,14 +263,14 @@ cmd->transition(frame->colorImage(), gpu::ImageLayout::ColorAttachment);
 cmd->transition(frame->depthImage(), gpu::ImageLayout::DepthAttachment);
 
 // Set clear values and begin rendering
-cmd->clearColor(0, { 0.1f, 0.1f, 0.1f, 1.0f });
 cmd->clearDepth(1.0f);
 cmd->beginRendering(frame.get());
 
-// Bind pipeline, push constants, and draw
+// Bind pipeline, resources, and draw using vertex/index buffers
 cmd->bindPipeline(pipeline.get());
+cmd->bindResourceSet(pipeline.get(), 0, textureSet.get());
 cmd->pushConstants(gpu::ShaderStage::Fragment, 0, sizeof(push), &push);
-cmd->draw(3);
+mesh.draw(cmd.get());   // calls bindVertexBuffer + bindIndexBuffer + drawIndexed
 
 cmd->endRendering();
 cmd->transition(frame->colorImage(), gpu::ImageLayout::Present);
@@ -226,6 +278,14 @@ cmd->transition(frame->colorImage(), gpu::ImageLayout::Present);
 surface->present(cmd.get());
 cmd->end();
 graphicsQueue.submit(cmd.get());
+```
+
+For manual (non-mesh) use:
+
+```cpp
+cmd->bindVertexBuffer(0, vertexBuffer.get());
+cmd->bindIndexBuffer(indexBuffer.get());
+cmd->drawIndexed(indexCount);
 ```
 
 ---

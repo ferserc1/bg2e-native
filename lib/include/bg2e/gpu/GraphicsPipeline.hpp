@@ -20,6 +20,7 @@
 
 #include <bg2e/common.hpp>
 #include <bg2e/gpu/Common.hpp>
+#include <bg2e/gpu/DeviceResource.hpp>
 #include <bg2e/gpu/ShaderModule.hpp>
 #include <bg2e/gpu/PipelineLayout.hpp>
 
@@ -36,15 +37,19 @@ struct GraphicsPipelineDescription {
     PixelFormat          colorFormat    = PixelFormat::Undefined; // from surface frame
     PixelFormat          depthFormat    = PixelFormat::Undefined; // Undefined => no depth
     std::string          debugName;    // Debug label for validation layers / Xcode GPU Capture
-    // no vertex input layout in this first iteration (vertex_id only)
-    // future: cull mode, blend state, depth test/write
+
+    std::vector<VertexBufferDescription> vertexBufferDescriptions;
+
+    void addVertexBufferDescription(const VertexBufferDescription& desc)
+    {
+        vertexBufferDescriptions.push_back(desc);
+    }
 };
 
-class BG2E_API GraphicsPipeline {
+class BG2E_API GraphicsPipeline : public DeviceResource {
 public:
+    explicit GraphicsPipeline(Device* device) : DeviceResource(device) {}
     virtual ~GraphicsPipeline() = default;
-    virtual bool isValid() const = 0;
-    virtual void cleanup() = 0;
 };
 
 }

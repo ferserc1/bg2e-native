@@ -20,16 +20,16 @@
 
 #include <bg2e/common.hpp>
 #include <bg2e/gpu/Common.hpp>
+#include <bg2e/gpu/DeviceResource.hpp>
 
 namespace bg2e {
 namespace gpu {
 
-class BG2E_API ShaderModule {
+class BG2E_API ShaderModule : public DeviceResource {
 public:
+    explicit ShaderModule(Device* device) : DeviceResource(device) {}
     virtual ~ShaderModule() = default;
     virtual ShaderStage stage() const = 0;
-    virtual bool isValid() const = 0;
-    virtual void cleanup() = 0;
 };
 
 }

@@ -29,8 +29,9 @@ namespace bg2e {
 namespace gpu {
 namespace vk {
 
-ResourceSet::ResourceSet(VkDevice device, const vk::PipelineLayout* layout, uint32_t setIndex, const std::string& debugName)
-    : _device(device)
+ResourceSet::ResourceSet(gpu::Device* gpuDevice, VkDevice device, const vk::PipelineLayout* layout, uint32_t setIndex, const std::string& debugName)
+    : gpu::ResourceSet(gpuDevice)
+    , _device(device)
     , _setIndex(setIndex)
 {
     VkDescriptorSetLayout dsLayout = layout->descriptorSetLayout(setIndex);

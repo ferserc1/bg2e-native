@@ -29,7 +29,7 @@ namespace vk {
 
 class BG2E_API ShaderModule : public gpu::ShaderModule {
 public:
-    ShaderModule(VkDevice device, const gpu::ShaderModuleDescription& description);
+    ShaderModule(gpu::Device* gpuDevice, VkDevice device, const gpu::ShaderModuleDescription& description);
     ~ShaderModule() override;
 
     ShaderStage stage() const override;

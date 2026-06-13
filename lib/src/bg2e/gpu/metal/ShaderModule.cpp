@@ -26,8 +26,8 @@ namespace metal {
 
 #if BG2E_IS_MAC
 
-ShaderModule::ShaderModule(MTL::Device* device, const gpu::ShaderModuleDescription& description)
-    : _device(device), _stage(description.stage), _entryPoint(description.entryPoint)
+ShaderModule::ShaderModule(gpu::Device* gpuDevice, MTL::Device* device, const gpu::ShaderModuleDescription& description)
+    : gpu::ShaderModule(gpuDevice), _device(device), _stage(description.stage), _entryPoint(description.entryPoint)
 {
     if (!_device)
     {
@@ -100,8 +100,8 @@ void ShaderModule::cleanup()
 
 #else
 
-ShaderModule::ShaderModule(void* /*device*/, const gpu::ShaderModuleDescription& description)
-    : _stage(description.stage), _entryPoint(description.entryPoint)
+ShaderModule::ShaderModule(gpu::Device* gpuDevice, void* /*device*/, const gpu::ShaderModuleDescription& description)
+    : gpu::ShaderModule(gpuDevice), _stage(description.stage), _entryPoint(description.entryPoint)
 {
 }
 

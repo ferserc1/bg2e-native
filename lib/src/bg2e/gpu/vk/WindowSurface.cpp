@@ -295,6 +295,11 @@ uint32_t WindowSurface::imageCount() const
     return static_cast<uint32_t>(_colorImages.size());
 }
 
+uint32_t WindowSurface::currentFrameIndex() const
+{
+    return _currentFrame;
+}
+
 gpu::Image* WindowSurface::colorImage(uint32_t index) const
 {
     if (index < _colorImages.size())

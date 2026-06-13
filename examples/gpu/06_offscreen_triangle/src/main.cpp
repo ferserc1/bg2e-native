@@ -65,9 +65,9 @@ int main(int argc, char** argv)
     auto shaderBasePath = base::PlatformTools::shaderPath();
     std::string targetName = "gpu_offscreen_triangle";
 
-    std::unique_ptr<gpu::ShaderModule> vs;
-    std::unique_ptr<gpu::ShaderModule> fs;
-    std::unique_ptr<gpu::ShaderModule> cs;
+    std::shared_ptr<gpu::ShaderModule> vs;
+    std::shared_ptr<gpu::ShaderModule> fs;
+    std::shared_ptr<gpu::ShaderModule> cs;
 
     if (backendType == gpu::BackendType::Vulkan)
     {

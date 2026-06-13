@@ -30,9 +30,9 @@ namespace metal {
 class BG2E_API ShaderModule : public gpu::ShaderModule {
 public:
 #if BG2E_IS_MAC
-    ShaderModule(MTL::Device* device, const gpu::ShaderModuleDescription& description);
+    ShaderModule(gpu::Device* gpuDevice, MTL::Device* device, const gpu::ShaderModuleDescription& description);
 #else
-    ShaderModule(void* device, const gpu::ShaderModuleDescription& description);
+    ShaderModule(gpu::Device* gpuDevice, void* device, const gpu::ShaderModuleDescription& description);
 #endif
     ~ShaderModule() override;
 

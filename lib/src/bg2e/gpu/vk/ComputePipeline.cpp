@@ -28,8 +28,8 @@ namespace bg2e {
 namespace gpu {
 namespace vk {
 
-ComputePipeline::ComputePipeline(VkDevice device, const gpu::ComputePipelineDescription& description)
-    : _device(device)
+ComputePipeline::ComputePipeline(gpu::Device* gpuDevice, VkDevice device, const gpu::ComputePipelineDescription& description)
+    : gpu::ComputePipeline(gpuDevice), _device(device)
 {
     auto* vkCsModule = dynamic_cast<vk::ShaderModule*>(description.computeShader);
     auto* vkLayout   = dynamic_cast<vk::PipelineLayout*>(description.layout);

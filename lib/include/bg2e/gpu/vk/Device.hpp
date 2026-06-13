@@ -40,13 +40,14 @@ public:
     const gpu::Queue& presentQueue() const override;
     const gpu::Queue& transferQueue() const override;
 
-    std::unique_ptr<gpu::ShaderModule> createShaderModule(const gpu::ShaderModuleDescription& description) override;
-    std::unique_ptr<gpu::PipelineLayout> createPipelineLayout(const gpu::PipelineLayoutDescription& description) override;
-    std::unique_ptr<gpu::GraphicsPipeline> createGraphicsPipeline(const gpu::GraphicsPipelineDescription& description) override;
-    std::unique_ptr<gpu::ComputePipeline> createComputePipeline(const gpu::ComputePipelineDescription& description) override;
+    std::shared_ptr<gpu::ShaderModule> createShaderModule(const gpu::ShaderModuleDescription& description) override;
+    std::shared_ptr<gpu::PipelineLayout> createPipelineLayout(const gpu::PipelineLayoutDescription& description) override;
+    std::shared_ptr<gpu::GraphicsPipeline> createGraphicsPipeline(const gpu::GraphicsPipelineDescription& description) override;
+    std::shared_ptr<gpu::ComputePipeline> createComputePipeline(const gpu::ComputePipelineDescription& description) override;
     std::shared_ptr<gpu::Sampler> createSampler(const gpu::SamplerDescription& description) override;
-    std::unique_ptr<gpu::ResourceSet> createResourceSet(gpu::PipelineLayout* layout, uint32_t setIndex, const std::string& debugName = {}) override;
+    std::shared_ptr<gpu::ResourceSet> createResourceSet(gpu::PipelineLayout* layout, uint32_t setIndex, const std::string& debugName = {}) override;
     std::shared_ptr<gpu::Image> createImage(const ImageDescription& description) override;
+    std::shared_ptr<gpu::Buffer> createBuffer(const std::string& debugName = {}) override;
 
     void immediateSubmit(std::function<void(gpu::CommandBuffer* cmd)>&& function) override;
 

@@ -258,5 +258,77 @@ struct ImageDescription {
     std::string debugName;          // Debug label for validation layers / Xcode GPU Capture
 };
 
+// --- Vertex attribute format --------------------------------------------------
+
+enum class Format {
+    Undefined = 0,
+    R32_SFLOAT,
+    R32G32_SFLOAT,
+    R32G32B32_SFLOAT,
+    R32G32B32A32_SFLOAT
+};
+
+// --- Buffer usage flags -------------------------------------------------------
+
+enum class BufferUsage : uint32_t {
+    None                            = 0,
+    Vertex                          = 1 << 0,
+    Index                           = 1 << 1,
+    Uniform                         = 1 << 2,
+    Storage                         = 1 << 3,
+    TransferSrc                     = 1 << 4,
+    TransferDst                     = 1 << 5,
+    AccelerationStructureBuildInput = 1 << 6,
+    ShaderDeviceAddress             = 1 << 7
+};
+
+inline BufferUsage operator|(BufferUsage a, BufferUsage b)
+{
+    return static_cast<BufferUsage>(static_cast<uint32_t>(a) | static_cast<uint32_t>(b));
+}
+
+inline BufferUsage operator&(BufferUsage a, BufferUsage b)
+{
+    return static_cast<BufferUsage>(static_cast<uint32_t>(a) & static_cast<uint32_t>(b));
+}
+
+inline BufferUsage& operator|=(BufferUsage& a, BufferUsage b) { return a = a | b; }
+
+inline bool hasFlag(BufferUsage flags, BufferUsage flag)
+{
+    return (static_cast<uint32_t>(flags) & static_cast<uint32_t>(flag)) != 0;
+}
+
+// --- Vertex description -------------------------------------------------------
+
+enum class VertexSemantic {
+    Position,
+    Normal,
+    Color,
+    TexCoord0,
+    TexCoord1,
+    Tangent
+};
+
+enum class VertexInputRate {
+    Vertex,
+    Instance
+};
+
+struct VertexAttributeDescription {
+    uint32_t       location = 0;
+    uint32_t       binding  = 0;
+    VertexSemantic semantic = VertexSemantic::Position;
+    Format         format   = Format::R32G32B32_SFLOAT;
+    uint32_t       offset   = 0;
+};
+
+struct VertexBufferDescription {
+    uint32_t                              binding   = 0;
+    uint32_t                              stride    = 0;
+    VertexInputRate                       inputRate = VertexInputRate::Vertex;
+    std::vector<VertexAttributeDescription> attributes;
+};
+
 }
 }

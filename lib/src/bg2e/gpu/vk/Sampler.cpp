@@ -57,8 +57,8 @@ static VkSamplerAddressMode toVkAddressMode(gpu::AddressMode m)
     return VK_SAMPLER_ADDRESS_MODE_REPEAT;
 }
 
-Sampler::Sampler(VkDevice device, const gpu::SamplerDescription& description)
-    : _device(device)
+Sampler::Sampler(gpu::Device* gpuDevice, VkDevice device, const gpu::SamplerDescription& description)
+    : gpu::Sampler(gpuDevice), _device(device)
 {
     VkSamplerCreateInfo createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;

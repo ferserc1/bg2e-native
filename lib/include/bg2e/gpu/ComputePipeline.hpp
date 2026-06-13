@@ -20,6 +20,7 @@
 
 #include <bg2e/common.hpp>
 #include <bg2e/gpu/Common.hpp>
+#include <bg2e/gpu/DeviceResource.hpp>
 #include <bg2e/gpu/ShaderModule.hpp>
 #include <bg2e/gpu/PipelineLayout.hpp>
 
@@ -32,11 +33,10 @@ struct ComputePipelineDescription {
     std::string          debugName;    // Debug label for validation layers / Xcode GPU Capture
 };
 
-class BG2E_API ComputePipeline {
+class BG2E_API ComputePipeline : public DeviceResource {
 public:
+    explicit ComputePipeline(Device* device) : DeviceResource(device) {}
     virtual ~ComputePipeline() = default;
-    virtual bool isValid() const = 0;
-    virtual void cleanup() = 0;
 };
 
 }

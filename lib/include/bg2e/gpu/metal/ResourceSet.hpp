@@ -39,7 +39,7 @@ struct ResourceEntry {
 
 class BG2E_API ResourceSet : public gpu::ResourceSet {
 public:
-    ResourceSet(const metal::PipelineLayout* layout, uint32_t setIndex);
+    ResourceSet(gpu::Device* gpuDevice, const metal::PipelineLayout* layout, uint32_t setIndex);
     ~ResourceSet() override;
 
     void setStorageImage(uint32_t binding, gpu::Image* image) override;

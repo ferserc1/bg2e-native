@@ -25,6 +25,7 @@
 namespace bg2e {
 namespace gpu {
 
+class Buffer;
 class Image;
 class ResourceSet;
 class SurfaceFrame;
@@ -82,6 +83,23 @@ public:
     virtual void bindResourceSet(gpu::ComputePipeline* pipeline, uint32_t setIndex, gpu::ResourceSet* set)
     {
         throw std::runtime_error("bindResourceSet(ComputePipeline) not implemented");
+    }
+
+    virtual void bindVertexBuffer(uint32_t binding, gpu::Buffer* buffer, uint64_t offset = 0)
+    {
+        throw std::runtime_error("bindVertexBuffer not implemented");
+    }
+
+    virtual void bindIndexBuffer(gpu::Buffer* buffer, uint64_t offset = 0)
+    {
+        throw std::runtime_error("bindIndexBuffer not implemented");
+    }
+
+    virtual void drawIndexed(uint32_t indexCount, uint32_t instanceCount = 1,
+                             uint32_t firstIndex = 0, int32_t vertexOffset = 0,
+                             uint32_t firstInstance = 0)
+    {
+        throw std::runtime_error("drawIndexed not implemented");
     }
 
     virtual bool isValid() const = 0;

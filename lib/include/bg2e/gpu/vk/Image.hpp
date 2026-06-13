@@ -30,7 +30,7 @@ class Device;
 
 class Image : public gpu::Image {
 public:
-    Image() = default;
+    explicit Image(gpu::Device* device = nullptr) : gpu::Image(device) {}
     ~Image() override { cleanup(); }
 
     Image(const Image&) = delete;

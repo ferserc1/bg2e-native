@@ -29,7 +29,7 @@ VkShaderStageFlags shaderStageToVkFlags(ShaderStage stage);
 
 class BG2E_API PipelineLayout : public gpu::PipelineLayout {
 public:
-    PipelineLayout(VkDevice device, const gpu::PipelineLayoutDescription& description);
+    PipelineLayout(gpu::Device* gpuDevice, VkDevice device, const gpu::PipelineLayoutDescription& description);
     ~PipelineLayout() override;
 
     bool isValid() const override;

@@ -48,6 +48,7 @@ public:
     void releaseRenderTarget() override;
 
     uint32_t    imageCount() const override;
+    uint32_t    currentFrameIndex() const override;
     gpu::Image* colorImage(uint32_t index) const override;
     gpu::Image* depthImage() const override;
 

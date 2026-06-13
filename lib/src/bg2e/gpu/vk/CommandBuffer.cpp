@@ -17,6 +17,7 @@
  */
 
 #include <bg2e/gpu/vk/CommandBuffer.hpp>
+#include <bg2e/gpu/vk/Buffer.hpp>
 #include <bg2e/gpu/vk/Device.hpp>
 #include <bg2e/gpu/vk/Image.hpp>
 #include <bg2e/gpu/vk/SurfaceFrame.hpp>
@@ -346,6 +347,40 @@ void CommandBuffer::bindResourceSet(gpu::ComputePipeline* pipeline, uint32_t set
         1, &ds,
         0, nullptr
     );
+}
+
+void CommandBuffer::bindVertexBuffer(uint32_t binding, gpu::Buffer* buffer, uint64_t offset)
+{
+    auto* vkBuf = dynamic_cast<vk::Buffer*>(buffer);
+    if (!vkBuf)
+    {
+        throw std::runtime_error("vk::CommandBuffer::bindVertexBuffer: not a vk::Buffer");
+    }
+
+    VkBuffer      b   = vkBuf->handle();
+    VkDeviceSize  off = static_cast<VkDeviceSize>(offset);
+    vkCmdBindVertexBuffers(_cmd, binding, 1, &b, &off);
+}
+
+void CommandBuffer::bindIndexBuffer(gpu::Buffer* buffer, uint64_t offset)
+{
+    auto* vkBuf = dynamic_cast<vk::Buffer*>(buffer);
+    if (!vkBuf)
+    {
+        throw std::runtime_error("vk::CommandBuffer::bindIndexBuffer: not a vk::Buffer");
+    }
+
+    vkCmdBindIndexBuffer(_cmd, vkBuf->handle(),
+                         static_cast<VkDeviceSize>(offset),
+                         VK_INDEX_TYPE_UINT32);
+}
+
+void CommandBuffer::drawIndexed(uint32_t indexCount, uint32_t instanceCount,
+                                uint32_t firstIndex, int32_t vertexOffset,
+                                uint32_t firstInstance)
+{
+    flushPendingRendering();
+    vkCmdDrawIndexed(_cmd, indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
 }
 
 }

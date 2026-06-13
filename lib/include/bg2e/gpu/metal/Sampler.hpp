@@ -27,7 +27,7 @@ namespace metal {
 
 class BG2E_API Sampler : public gpu::Sampler {
 public:
-    Sampler(DeviceHandle device, const gpu::SamplerDescription& description);
+    Sampler(gpu::Device* gpuDevice, DeviceHandle device, const gpu::SamplerDescription& description);
     ~Sampler() override;
 
     [[nodiscard]] bool isValid() const override;

@@ -50,8 +50,9 @@ static VkDescriptorType toVkDescriptorType(ResourceType type)
     return VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
 }
 
-PipelineLayout::PipelineLayout(VkDevice device, const gpu::PipelineLayoutDescription& description)
-    : _device(device)
+PipelineLayout::PipelineLayout(gpu::Device* gpuDevice, VkDevice device, const gpu::PipelineLayoutDescription& description)
+    : gpu::PipelineLayout(gpuDevice)
+    , _device(device)
     , _description(description)
 {
     const auto& debugName = description.debugName;

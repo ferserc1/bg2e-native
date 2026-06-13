@@ -202,3 +202,125 @@ struct PipelineLayoutDescription {
 ### `ShaderModuleDescription`
 
 See [ShaderModule](ShaderModule.md#shadermoduledescription).
+
+---
+
+## Vertex input types
+
+The following types describe how vertex data is laid out in GPU buffers. They
+are consumed by `GraphicsPipelineDescription::addVertexBufferDescription()` and
+produced by `gpu::MeshGeneric<T>::vertexBufferDescription()`.
+
+### `Format`
+
+Vertex attribute format.
+
+```cpp
+enum class Format {
+    Undefined = 0,
+    R32_SFLOAT,
+    R32G32_SFLOAT,
+    R32G32B32_SFLOAT,
+    R32G32B32A32_SFLOAT
+};
+```
+
+| Value                 | Components | Size     | Typical use               |
+|-----------------------|------------|----------|---------------------------|
+| `Undefined`           | –          | –        | Unset / default.          |
+| `R32_SFLOAT`          | 1 × float  | 4 bytes  | Scalar attributes.        |
+| `R32G32_SFLOAT`       | 2 × float  | 8 bytes  | UV coordinates, 2D pos.   |
+| `R32G32B32_SFLOAT`    | 3 × float  | 12 bytes | 3D position, normal.      |
+| `R32G32B32A32_SFLOAT` | 4 × float  | 16 bytes | Color, tangent+handedness.|
+
+### `BufferUsage`
+
+Bitmask describing how a `Buffer` will be used. Supports bitwise `|`, `&`,
+and `|=` operators.
+
+```cpp
+enum class BufferUsage : uint32_t {
+    None                            = 0,
+    Vertex                          = 1 << 0,
+    Index                           = 1 << 1,
+    Uniform                         = 1 << 2,
+    Storage                         = 1 << 3,
+    TransferSrc                     = 1 << 4,
+    TransferDst                     = 1 << 5,
+    AccelerationStructureBuildInput = 1 << 6,
+    ShaderDeviceAddress             = 1 << 7
+};
+```
+
+### `VertexSemantic`
+
+Semantic meaning of a vertex attribute, used for documentation and
+cross-API mapping.
+
+```cpp
+enum class VertexSemantic {
+    Position,
+    Normal,
+    Tangent,
+    TexCoord0,
+    TexCoord1,
+    Color
+};
+```
+
+### `VertexInputRate`
+
+Controls whether an attribute advances per vertex or per instance.
+
+```cpp
+enum class VertexInputRate {
+    Vertex,
+    Instance
+};
+```
+
+### `VertexAttributeDescription`
+
+Describes a single vertex attribute within a vertex buffer binding.
+
+```cpp
+struct VertexAttributeDescription {
+    uint32_t       location = 0;
+    uint32_t       binding  = 0;
+    VertexSemantic semantic;
+    Format         format;
+    uint32_t       offset   = 0;
+};
+```
+
+| Field      | Type             | Description                                         |
+|------------|------------------|-----------------------------------------------------|
+| `location` | `uint32_t`       | Shader input location (`layout(location = N) in`). |
+| `binding`  | `uint32_t`       | Vertex buffer binding slot.                         |
+| `semantic` | `VertexSemantic` | Semantic hint (position, normal, UV, …).           |
+| `format`   | `Format`         | Data type and component count.                      |
+| `offset`   | `uint32_t`       | Byte offset from the start of a vertex struct.     |
+
+### `VertexBufferDescription`
+
+Describes a complete vertex buffer binding: stride, input rate, and all
+attributes it contains.
+
+```cpp
+struct VertexBufferDescription {
+    uint32_t                                binding   = 0;
+    uint32_t                                stride    = 0;
+    VertexInputRate                         inputRate = VertexInputRate::Vertex;
+    std::vector<VertexAttributeDescription> attributes;
+};
+```
+
+| Field        | Type                                      | Description                                  |
+|--------------|-------------------------------------------|----------------------------------------------|
+| `binding`    | `uint32_t`                                | Buffer binding slot index.                   |
+| `stride`     | `uint32_t`                                | Byte stride between successive vertex entries.|
+| `inputRate`  | `VertexInputRate`                         | Per-vertex or per-instance stepping.         |
+| `attributes` | `std::vector<VertexAttributeDescription>` | All attributes carried by this buffer.       |
+
+Prefer constructing this via `gpu::MeshGeneric<T>::vertexBufferDescription()`
+rather than filling it by hand.
