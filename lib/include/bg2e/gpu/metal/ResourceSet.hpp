@@ -35,6 +35,7 @@ struct ResourceEntry {
     ShaderStage          stage = ShaderStage::Fragment;
     TextureHandle        texture = nullptr;    // for Sampled/Storage image
     SampleStateHandle    sampler = nullptr;    // for Sampler
+    BufferHandle         buffer  = nullptr;    // for Uniform/Storage buffer
 };
 
 class BG2E_API ResourceSet : public gpu::ResourceSet {
@@ -45,6 +46,8 @@ public:
     void setStorageImage(uint32_t binding, gpu::Image* image) override;
     void setSampledImage(uint32_t binding, gpu::Image* image) override;
     void setSampler(uint32_t binding, gpu::Sampler* sampler) override;
+    void setUniformBuffer(uint32_t binding, gpu::Buffer* buffer) override;
+    void setStorageBuffer(uint32_t binding, gpu::Buffer* buffer) override;
 
     void update() override;
 
@@ -55,6 +58,9 @@ public:
     const std::vector<ResourceEntry>& entries() const { return _entries; }
 
 private:
+    void setBufferBinding(uint32_t binding, gpu::Buffer* buffer,
+                          ResourceType type, const char* debugTag);
+
     uint32_t    _setIndex{0};
     const metal::PipelineLayout* _layout = nullptr;
     std::vector<ResourceEntry>   _entries;

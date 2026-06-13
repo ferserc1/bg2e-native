@@ -90,6 +90,18 @@ GraphicsPipeline::GraphicsPipeline(gpu::Device* gpuDevice, MTL::Device* device, 
         }
         throw std::runtime_error(errorMsg);
     }
+
+    // When a depth attachment is present, build a depth-stencil state so depth
+    // testing/writing is actually applied (the render pipeline state only stores
+    // the attachment format). Mirrors the Vulkan default (test+write, Less).
+    if (description.depthFormat != PixelFormat::Undefined)
+    {
+        auto* depthDesc = MTL::DepthStencilDescriptor::alloc()->init();
+        depthDesc->setDepthCompareFunction(MTL::CompareFunctionLess);
+        depthDesc->setDepthWriteEnabled(true);
+        _depthStencilState = device->newDepthStencilState(depthDesc);
+        depthDesc->release();
+    }
 }
 
 GraphicsPipeline::~GraphicsPipeline()
@@ -104,6 +116,11 @@ bool GraphicsPipeline::isValid() const
 
 void GraphicsPipeline::cleanup()
 {
+    if (_depthStencilState)
+    {
+        _depthStencilState->release();
+        _depthStencilState = nullptr;
+    }
     if (_renderPipelineState)
     {
         _renderPipelineState->release();

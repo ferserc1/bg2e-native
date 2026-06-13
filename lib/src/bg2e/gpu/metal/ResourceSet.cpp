@@ -20,6 +20,7 @@
 #include <bg2e/gpu/metal/PipelineLayout.hpp>
 #include <bg2e/gpu/metal/Image.hpp>
 #include <bg2e/gpu/metal/Sampler.hpp>
+#include <bg2e/gpu/metal/Buffer.hpp>
 
 #include <stdexcept>
 
@@ -148,6 +149,52 @@ void ResourceSet::setSampler(uint32_t binding, gpu::Sampler* sampler)
     throw std::runtime_error("metal::ResourceSet::setSampler: no matching binding in layout");
 }
 
+void ResourceSet::setUniformBuffer(uint32_t binding, gpu::Buffer* buffer)
+{
+    setBufferBinding(binding, buffer, ResourceType::UniformBuffer, "setUniformBuffer");
+}
+
+void ResourceSet::setStorageBuffer(uint32_t binding, gpu::Buffer* buffer)
+{
+    setBufferBinding(binding, buffer, ResourceType::StorageBuffer, "setStorageBuffer");
+}
+
+void ResourceSet::setBufferBinding(uint32_t binding, gpu::Buffer* buffer,
+                                   ResourceType type, const char* debugTag)
+{
+    auto* metalBuffer = dynamic_cast<metal::Buffer*>(buffer);
+    if (!metalBuffer)
+    {
+        throw std::runtime_error(std::string("metal::ResourceSet::") + debugTag + ": invalid buffer");
+    }
+
+    const auto& bindings = _layout->resourceBindings();
+    for (const auto& rb : bindings)
+    {
+        if (rb.set == _setIndex && rb.binding == binding && rb.type == type)
+        {
+            ResourceEntry entry;
+            entry.index = _layout->metalBufferIndex(rb);
+            entry.type = rb.type;
+            entry.stage = rb.stage;
+            entry.buffer = metalBuffer->handle();
+
+            for (auto& e : _entries)
+            {
+                if (e.index == entry.index && e.type == type)
+                {
+                    e = entry;
+                    return;
+                }
+            }
+            _entries.push_back(entry);
+            return;
+        }
+    }
+
+    throw std::runtime_error(std::string("metal::ResourceSet::") + debugTag + ": no matching binding in layout");
+}
+
 void ResourceSet::update()
 {
     // Metal binding happens at encode time in bindResourceSet; nothing to flush here.
@@ -176,6 +223,9 @@ ResourceSet::~ResourceSet() {}
 void ResourceSet::setStorageImage(uint32_t, gpu::Image*) {}
 void ResourceSet::setSampledImage(uint32_t, gpu::Image*) {}
 void ResourceSet::setSampler(uint32_t, gpu::Sampler*) {}
+void ResourceSet::setUniformBuffer(uint32_t, gpu::Buffer*) {}
+void ResourceSet::setStorageBuffer(uint32_t, gpu::Buffer*) {}
+void ResourceSet::setBufferBinding(uint32_t, gpu::Buffer*, ResourceType, const char*) {}
 void ResourceSet::update() {}
 bool ResourceSet::isValid() const { return false; }
 void ResourceSet::cleanup() {}

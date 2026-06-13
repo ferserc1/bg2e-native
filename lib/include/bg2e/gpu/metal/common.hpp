@@ -33,6 +33,7 @@ namespace bg2e::gpu::metal {
     using MetalLayerHandle   = CA::MetalLayer*;
     using TextureHandle      = MTL::Texture*;
     using SampleStateHandle  = MTL::SamplerState*;
+    using BufferHandle       = MTL::Buffer*;
 
     MTL::PixelFormat toMetalPixelFormat(gpu::PixelFormat format);
     gpu::PixelFormat fromMetalPixelFormat(MTL::PixelFormat format);
@@ -55,6 +56,9 @@ namespace bg2e::gpu::metal {
 
     struct SampleStateOpaque;
     using SampleStateHandle = SampleStateOpaque*;
+
+    struct BufferOpaque;
+    using BufferHandle = BufferOpaque*;
 }
 
 #endif

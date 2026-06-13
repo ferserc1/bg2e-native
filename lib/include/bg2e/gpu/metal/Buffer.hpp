@@ -43,6 +43,11 @@ public:
     void createVertexBuffer(const void* data, uint64_t byteSize) override;
     void createIndexBuffer(const std::vector<uint32_t>& indices) override;
 
+    void createUniformBuffer(const void* data, uint64_t byteSize) override;
+    void createStorageBuffer(const void* data, uint64_t byteSize) override;
+    void updateUniformBuffer(const void* data, uint64_t byteSize) override;
+    void updateStorageBuffer(const void* data, uint64_t byteSize) override;
+
 #if BG2E_IS_MAC
     MTL::Buffer* handle() const { return _buffer; }
 #endif

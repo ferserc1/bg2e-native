@@ -202,6 +202,10 @@ void CommandBuffer::bindPipeline(gpu::GraphicsPipeline* pipeline)
 
     ensureRenderEncoder();
     _encoder->setRenderPipelineState(metalPipeline->renderPipelineState());
+    if (metalPipeline->depthStencilState())
+    {
+        _encoder->setDepthStencilState(metalPipeline->depthStencilState());
+    }
     _boundPipeline = metalPipeline;
     _boundLayout = metalPipeline->layout();
 }
@@ -366,6 +370,20 @@ void CommandBuffer::bindResourceSet(gpu::GraphicsPipeline* /*pipeline*/, uint32_
                     break;
             }
         }
+        if (entry.buffer)
+        {
+            switch (entry.stage)
+            {
+                case ShaderStage::Vertex:
+                    _encoder->setVertexBuffer(entry.buffer, 0, entry.index);
+                    break;
+                case ShaderStage::Fragment:
+                    _encoder->setFragmentBuffer(entry.buffer, 0, entry.index);
+                    break;
+                default:
+                    break;
+            }
+        }
     }
 }
 
@@ -391,6 +409,10 @@ void CommandBuffer::bindResourceSet(gpu::ComputePipeline* /*pipeline*/, uint32_t
         if (entry.sampler)
         {
             _computeEncoder->setSamplerState(entry.sampler, entry.index);
+        }
+        if (entry.buffer)
+        {
+            _computeEncoder->setBuffer(entry.buffer, 0, entry.index);
         }
     }
 }

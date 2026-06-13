@@ -20,6 +20,7 @@
 #include <bg2e/gpu/vk/PipelineLayout.hpp>
 #include <bg2e/gpu/vk/Image.hpp>
 #include <bg2e/gpu/vk/Sampler.hpp>
+#include <bg2e/gpu/vk/Buffer.hpp>
 #include <bg2e/gpu/vk/extensions.hpp>
 #include <bg2e/base/Log.hpp>
 
@@ -45,6 +46,8 @@ ResourceSet::ResourceSet(gpu::Device* gpuDevice, VkDevice device, const vk::Pipe
     uint32_t sampledImageCount = 0;
     uint32_t storageImageCount = 0;
     uint32_t samplerCount = 0;
+    uint32_t uniformBufferCount = 0;
+    uint32_t storageBufferCount = 0;
 
     for (const auto& rb : desc.resourceBindings)
     {
@@ -54,6 +57,8 @@ ResourceSet::ResourceSet(gpu::Device* gpuDevice, VkDevice device, const vk::Pipe
             case ResourceType::SampledImage:  sampledImageCount += rb.count; break;
             case ResourceType::StorageImage:  storageImageCount += rb.count; break;
             case ResourceType::Sampler:       samplerCount += rb.count; break;
+            case ResourceType::UniformBuffer: uniformBufferCount += rb.count; break;
+            case ResourceType::StorageBuffer: storageBufferCount += rb.count; break;
             default: break;
         }
     }
@@ -65,6 +70,10 @@ ResourceSet::ResourceSet(gpu::Device* gpuDevice, VkDevice device, const vk::Pipe
         poolSizes.push_back({ VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, storageImageCount });
     if (samplerCount > 0)
         poolSizes.push_back({ VK_DESCRIPTOR_TYPE_SAMPLER, samplerCount });
+    if (uniformBufferCount > 0)
+        poolSizes.push_back({ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, uniformBufferCount });
+    if (storageBufferCount > 0)
+        poolSizes.push_back({ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, storageBufferCount });
 
     VkDescriptorPoolCreateInfo poolInfo{};
     poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
@@ -146,7 +155,8 @@ void ResourceSet::setStorageImage(uint32_t binding, gpu::Image* image)
     write.pImageInfo = nullptr;
 
     _pendingWrites.push_back(write);
-    _writeImageInfoIndices.push_back(infoIndex);
+    _writeInfoKinds.push_back(WriteInfoKind::Image);
+    _writeInfoIndices.push_back(infoIndex);
 }
 
 void ResourceSet::setSampledImage(uint32_t binding, gpu::Image* image)
@@ -176,7 +186,8 @@ void ResourceSet::setSampledImage(uint32_t binding, gpu::Image* image)
     write.pImageInfo = nullptr;
 
     _pendingWrites.push_back(write);
-    _writeImageInfoIndices.push_back(infoIndex);
+    _writeInfoKinds.push_back(WriteInfoKind::Image);
+    _writeInfoIndices.push_back(infoIndex);
 }
 
 void ResourceSet::setSampler(uint32_t binding, gpu::Sampler* sampler)
@@ -205,7 +216,72 @@ void ResourceSet::setSampler(uint32_t binding, gpu::Sampler* sampler)
     write.pImageInfo = nullptr;
 
     _pendingWrites.push_back(write);
-    _writeImageInfoIndices.push_back(infoIndex);
+    _writeInfoKinds.push_back(WriteInfoKind::Image);
+    _writeInfoIndices.push_back(infoIndex);
+}
+
+void ResourceSet::setUniformBuffer(uint32_t binding, gpu::Buffer* buffer)
+{
+    auto* vkBuffer = dynamic_cast<vk::Buffer*>(buffer);
+    if (!vkBuffer)
+    {
+        throw std::runtime_error("vk::ResourceSet::setUniformBuffer: invalid buffer");
+    }
+
+    const size_t infoIndex = _bufferInfos.size();
+
+    VkDescriptorBufferInfo bufferInfo{};
+    bufferInfo.buffer = vkBuffer->handle();
+    bufferInfo.offset = 0;
+    bufferInfo.range  = vkBuffer->byteSize();
+
+    _bufferInfos.push_back(bufferInfo);
+
+    VkWriteDescriptorSet write{};
+    write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    write.dstSet = _descriptorSet;
+    write.dstBinding = binding;
+    write.dstArrayElement = 0;
+    write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    write.descriptorCount = 1;
+    // pBufferInfo is resolved in update() to avoid dangling pointers.
+    write.pBufferInfo = nullptr;
+
+    _pendingWrites.push_back(write);
+    _writeInfoKinds.push_back(WriteInfoKind::Buffer);
+    _writeInfoIndices.push_back(infoIndex);
+}
+
+void ResourceSet::setStorageBuffer(uint32_t binding, gpu::Buffer* buffer)
+{
+    auto* vkBuffer = dynamic_cast<vk::Buffer*>(buffer);
+    if (!vkBuffer)
+    {
+        throw std::runtime_error("vk::ResourceSet::setStorageBuffer: invalid buffer");
+    }
+
+    const size_t infoIndex = _bufferInfos.size();
+
+    VkDescriptorBufferInfo bufferInfo{};
+    bufferInfo.buffer = vkBuffer->handle();
+    bufferInfo.offset = 0;
+    bufferInfo.range  = vkBuffer->byteSize();
+
+    _bufferInfos.push_back(bufferInfo);
+
+    VkWriteDescriptorSet write{};
+    write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    write.dstSet = _descriptorSet;
+    write.dstBinding = binding;
+    write.dstArrayElement = 0;
+    write.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    write.descriptorCount = 1;
+    // pBufferInfo is resolved in update() to avoid dangling pointers.
+    write.pBufferInfo = nullptr;
+
+    _pendingWrites.push_back(write);
+    _writeInfoKinds.push_back(WriteInfoKind::Buffer);
+    _writeInfoIndices.push_back(infoIndex);
 }
 
 void ResourceSet::update()
@@ -215,13 +291,20 @@ void ResourceSet::update()
         return;
     }
 
-    // Now that _imageInfos has stopped growing its address is stable, so bind
-    // each write to its descriptor info. Resolving the pointers here (instead of
-    // in the set* methods) avoids dangling pointers caused by vector
+    // Now that the info vectors have stopped growing their addresses are stable,
+    // so bind each write to its descriptor info. Resolving the pointers here
+    // (instead of in the set* methods) avoids dangling pointers caused by vector
     // reallocation while bindings were being added.
     for (size_t i = 0; i < _pendingWrites.size(); ++i)
     {
-        _pendingWrites[i].pImageInfo = &_imageInfos[_writeImageInfoIndices[i]];
+        if (_writeInfoKinds[i] == WriteInfoKind::Image)
+        {
+            _pendingWrites[i].pImageInfo = &_imageInfos[_writeInfoIndices[i]];
+        }
+        else
+        {
+            _pendingWrites[i].pBufferInfo = &_bufferInfos[_writeInfoIndices[i]];
+        }
     }
 
     vkUpdateDescriptorSets(_device, static_cast<uint32_t>(_pendingWrites.size()),
@@ -229,7 +312,9 @@ void ResourceSet::update()
 
     _pendingWrites.clear();
     _imageInfos.clear();
-    _writeImageInfoIndices.clear();
+    _bufferInfos.clear();
+    _writeInfoKinds.clear();
+    _writeInfoIndices.clear();
 }
 
 bool ResourceSet::isValid() const
@@ -241,7 +326,9 @@ void ResourceSet::cleanup()
 {
     _pendingWrites.clear();
     _imageInfos.clear();
-    _writeImageInfoIndices.clear();
+    _bufferInfos.clear();
+    _writeInfoKinds.clear();
+    _writeInfoIndices.clear();
 
     if (_descriptorPool != VK_NULL_HANDLE)
     {

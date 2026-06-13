@@ -39,15 +39,29 @@ public:
 
     const std::vector<ResourceBinding>& resourceBindings() const { return _description.resourceBindings; }
 
-    // Resolves a ResourceBinding to a Metal argument index.
-    // For this iteration, index = binding (texture/sampler/buffer are independent
-    // index namespaces in Metal). PushConstantBufferIndex (0) lives in the buffer
-    // namespace, so texture/sampler bindings at any index do not collide.
+    // Resolves a ResourceBinding to a Metal argument index in the texture/sampler
+    // namespaces. Textures and samplers are independent index namespaces in Metal,
+    // so index = binding is sufficient for them.
     uint32_t metalIndex(const ResourceBinding& b) const { return b.binding; }
 
-    // Buffer index reserved for push-constant data on Metal.
-    // Index 0 is used here because the first pipeline (triangle) has no vertex buffers.
-    // Revisit when vertex/uniform buffers are added to avoid index collisions.
+    // Metal buffer-namespace index allocation.
+    //
+    // The Metal [[buffer(n)]] namespace is shared (per stage) by vertex attribute
+    // buffers, push-constant data and uniform/storage buffers. To avoid
+    // collisions the indices are partitioned as:
+    //   [0 .. MaxVertexBuffers-1]   -> vertex attribute buffers (stage_in)
+    //   uniform / storage buffers   -> MaxVertexBuffers + set*MaxBindingsPerSet + binding
+    // The example shaders must declare the matching [[buffer(n)]] indices.
+    static constexpr uint32_t MaxVertexBuffers  = 8;
+    static constexpr uint32_t MaxBindingsPerSet = 8;
+
+    uint32_t metalBufferIndex(const ResourceBinding& b) const
+    {
+        return MaxVertexBuffers + b.set * MaxBindingsPerSet + b.binding;
+    }
+
+    // Buffer index reserved for push-constant data on Metal. Kept in the
+    // vertex-buffer region so it does not collide with uniform/storage buffers.
     static constexpr uint32_t PushConstantBufferIndex = 0;
 
     uint32_t pushConstantBufferIndex(ShaderStage /*stage*/) const

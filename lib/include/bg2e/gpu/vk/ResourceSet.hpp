@@ -37,6 +37,8 @@ public:
     void setStorageImage(uint32_t binding, gpu::Image* image) override;
     void setSampledImage(uint32_t binding, gpu::Image* image) override;
     void setSampler(uint32_t binding, gpu::Sampler* sampler) override;
+    void setUniformBuffer(uint32_t binding, gpu::Buffer* buffer) override;
+    void setStorageBuffer(uint32_t binding, gpu::Buffer* buffer) override;
 
     void update() override;
 
@@ -52,14 +54,18 @@ private:
     VkDescriptorPool _descriptorPool{VK_NULL_HANDLE};
     VkDescriptorSet  _descriptorSet{VK_NULL_HANDLE};
 
-    // Intermediate storage kept alive until update() is called. pImageInfo is
-    // not bound in the set* methods because pushing into _imageInfos may
-    // reallocate and invalidate pointers to earlier elements; instead each
-    // write stores the index of its descriptor info and the pointers are
-    // resolved in update(), once the vector has stopped growing.
-    std::vector<VkDescriptorImageInfo> _imageInfos;
-    std::vector<VkWriteDescriptorSet>  _pendingWrites;
-    std::vector<size_t>                _writeImageInfoIndices;
+    // Intermediate storage kept alive until update() is called. pImageInfo /
+    // pBufferInfo are not bound in the set* methods because pushing into the
+    // info vectors may reallocate and invalidate pointers to earlier elements;
+    // instead each write records which info vector it targets and the index, and
+    // the pointers are resolved in update() once the vectors stop growing.
+    enum class WriteInfoKind { Image, Buffer };
+
+    std::vector<VkDescriptorImageInfo>  _imageInfos;
+    std::vector<VkDescriptorBufferInfo> _bufferInfos;
+    std::vector<VkWriteDescriptorSet>   _pendingWrites;
+    std::vector<WriteInfoKind>          _writeInfoKinds;
+    std::vector<size_t>                 _writeInfoIndices;
 };
 
 }

@@ -23,12 +23,14 @@
 #include <bg2e/gpu/DeviceResource.hpp>
 
 #include <cstdint>
+#include <memory>
 
 namespace bg2e {
 namespace gpu {
 
 class Image;
 class Sampler;
+class Buffer;
 
 class BG2E_API ResourceSet : public DeviceResource {
 public:
@@ -38,9 +40,18 @@ public:
     virtual void setStorageImage(uint32_t binding, gpu::Image* image) = 0;
     virtual void setSampledImage(uint32_t binding, gpu::Image* image) = 0;
     virtual void setSampler(uint32_t binding, gpu::Sampler* sampler)  = 0;
-    // Reserved for future iterations (declare but may be left unimplemented
-    // / throwing in the backends until needed):
-    // virtual void setUniformBuffer(uint32_t binding, gpu::Buffer* buffer) = 0;
+    virtual void setUniformBuffer(uint32_t binding, gpu::Buffer* buffer) = 0;
+    virtual void setStorageBuffer(uint32_t binding, gpu::Buffer* buffer) = 0;
+
+    // Convenience overloads for shared_ptr-owned buffers (e.g. FrameResourceRing).
+    void setUniformBuffer(uint32_t binding, const std::shared_ptr<gpu::Buffer>& buffer)
+    {
+        setUniformBuffer(binding, buffer.get());
+    }
+    void setStorageBuffer(uint32_t binding, const std::shared_ptr<gpu::Buffer>& buffer)
+    {
+        setStorageBuffer(binding, buffer.get());
+    }
 
     virtual void update() = 0;   // flush assignments to the backend
 

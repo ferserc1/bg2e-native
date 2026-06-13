@@ -112,6 +112,78 @@ void Buffer::createIndexBuffer(const std::vector<uint32_t>& indices)
     }
 }
 
+// Uniform/storage buffers use a CPU-visible (shared) allocation so that the
+// contents can be updated directly each frame without a staging copy.
+static void createSharedBuffer(metal::Device* device, MTL::Buffer*& outBuffer,
+                               const void* data, uint64_t byteSize)
+{
+    if (outBuffer)
+    {
+        outBuffer->release();
+        outBuffer = nullptr;
+    }
+
+    outBuffer = device->handle()->newBuffer(byteSize, MTL::ResourceStorageModeShared);
+    if (!outBuffer)
+    {
+        throw std::runtime_error("metal::Buffer: failed to allocate shared buffer");
+    }
+    if (data)
+    {
+        std::memcpy(outBuffer->contents(), data, byteSize);
+    }
+}
+
+void Buffer::createUniformBuffer(const void* data, uint64_t byteSize)
+{
+    createSharedBuffer(_device, _buffer, data, byteSize);
+    _usage    = BufferUsage::Uniform;
+    _byteSize = byteSize;
+
+    if (!_debugName.empty())
+    {
+        _buffer->setLabel(NS::String::string(_debugName.c_str(), NS::UTF8StringEncoding));
+    }
+}
+
+void Buffer::createStorageBuffer(const void* data, uint64_t byteSize)
+{
+    createSharedBuffer(_device, _buffer, data, byteSize);
+    _usage    = BufferUsage::Storage;
+    _byteSize = byteSize;
+
+    if (!_debugName.empty())
+    {
+        _buffer->setLabel(NS::String::string(_debugName.c_str(), NS::UTF8StringEncoding));
+    }
+}
+
+void Buffer::updateUniformBuffer(const void* data, uint64_t byteSize)
+{
+    if (!_buffer)
+    {
+        throw std::runtime_error("metal::Buffer::updateUniformBuffer: buffer not created");
+    }
+    if (byteSize > _byteSize)
+    {
+        throw std::runtime_error("metal::Buffer::updateUniformBuffer: update size exceeds the buffer capacity");
+    }
+    std::memcpy(_buffer->contents(), data, byteSize);
+}
+
+void Buffer::updateStorageBuffer(const void* data, uint64_t byteSize)
+{
+    if (!_buffer)
+    {
+        throw std::runtime_error("metal::Buffer::updateStorageBuffer: buffer not created");
+    }
+    if (byteSize > _byteSize)
+    {
+        throw std::runtime_error("metal::Buffer::updateStorageBuffer: update size exceeds the buffer capacity");
+    }
+    std::memcpy(_buffer->contents(), data, byteSize);
+}
+
 #else
 
 void Buffer::cleanup() {}
@@ -124,6 +196,26 @@ void Buffer::createVertexBuffer(const void*, uint64_t)
 }
 
 void Buffer::createIndexBuffer(const std::vector<uint32_t>&)
+{
+    throw std::runtime_error("Metal backend is not available on this platform");
+}
+
+void Buffer::createUniformBuffer(const void*, uint64_t)
+{
+    throw std::runtime_error("Metal backend is not available on this platform");
+}
+
+void Buffer::createStorageBuffer(const void*, uint64_t)
+{
+    throw std::runtime_error("Metal backend is not available on this platform");
+}
+
+void Buffer::updateUniformBuffer(const void*, uint64_t)
+{
+    throw std::runtime_error("Metal backend is not available on this platform");
+}
+
+void Buffer::updateStorageBuffer(const void*, uint64_t)
 {
     throw std::runtime_error("Metal backend is not available on this platform");
 }

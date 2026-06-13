@@ -41,6 +41,9 @@ public:
 
 #if BG2E_IS_MAC
     MTL::RenderPipelineState* renderPipelineState() const { return _renderPipelineState; }
+    // Non-null when the pipeline was created with a depth attachment format;
+    // bound on the render encoder so depth testing/writing is actually applied.
+    MTL::DepthStencilState* depthStencilState() const { return _depthStencilState; }
 #endif
     gpu::PrimitiveTopology topology() const { return _topology; }
     metal::PipelineLayout* layout() const { return _layout; }
@@ -51,6 +54,7 @@ private:
 
 #if BG2E_IS_MAC
     MTL::RenderPipelineState* _renderPipelineState = nullptr;
+    MTL::DepthStencilState*   _depthStencilState   = nullptr;
 #endif
 };
 
