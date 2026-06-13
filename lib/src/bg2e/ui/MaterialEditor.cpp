@@ -119,6 +119,7 @@ bool MaterialEditor::draw()
     if (_material.get() && BasicWidgets::collapsingHeader(_material->materialAttributes().name() + "'s Material Attributes"))
     {
         std::vector<std::string> uvOptions = { "Set 0", "Set 1" };
+        std::vector<std::string> channelOptions = { "Red", "Green", "Blue", "Alpha" };
         BasicWidgets::separator("Albedo");
         auto albedoColor = _material->materialAttributes().albedo();
         auto albedoScale = _material->materialAttributes().albedoScale();
@@ -212,7 +213,8 @@ bool MaterialEditor::draw()
         BasicWidgets::separator("Metallic");
         auto metallic = _material->materialAttributes().metalness();
         auto metallicScale = _material->materialAttributes().metalnessScale();
-        auto metallicUVSet = _material->materialAttributes().metalnessChannel();
+        auto metallicChannel = _material->materialAttributes().metalnessChannel();
+        auto metallicUVSet = _material->materialAttributes().metalnessUVSet();
         if (Input::sliderFloat("Value##metallic", &metallic))
         {
             for (auto & mat : _editMaterialList)
@@ -231,6 +233,14 @@ bool MaterialEditor::draw()
             notifyOnChange();
             return _material->metalnessTexture();
         });
+        if (Input::comboBox("Channel##metallic", channelOptions, metallicChannel))
+        {
+            for (auto & mat : _editMaterialList)
+            {
+                mat->materialAttributes().setMetalnessChannel(metallicChannel);
+            }
+            notifyOnChange();
+        }
         if (Input::vec2("Scale##metallic", metallicScale))
         {
             for (auto & mat : _editMaterialList)
@@ -251,7 +261,8 @@ bool MaterialEditor::draw()
         BasicWidgets::separator("Roughness");
         auto roughness = _material->materialAttributes().roughness();
         auto roughnessScale = _material->materialAttributes().roughnessScale();
-        auto roughnessUVSet = _material->materialAttributes().roughnessChannel();
+        auto roughnessChannel = _material->materialAttributes().roughnessChannel();
+        auto roughnessUVSet = _material->materialAttributes().roughnessUVSet();
         if (Input::sliderFloat("Value##roughness", &roughness))
         {
             for (auto & mat : _editMaterialList)
@@ -270,6 +281,14 @@ bool MaterialEditor::draw()
             notifyOnChange();
             return _material->roughnessTexture();
         });
+        if (Input::comboBox("Channel##roughness", channelOptions, roughnessChannel))
+        {
+            for (auto & mat : _editMaterialList)
+            {
+                mat->materialAttributes().setRoughnessChannel(roughnessChannel);
+            }
+            notifyOnChange();
+        }
         if (Input::vec2("Scale##roughness", roughnessScale))
         {
             for (auto & mat : _editMaterialList)
@@ -321,6 +340,7 @@ bool MaterialEditor::draw()
         
         BasicWidgets::separator("Ambient Occlussion");
         auto aoScale = _material->materialAttributes().aoScale();
+        auto aoChannel = _material->materialAttributes().aoChannel();
         auto aoUVSet = _material->materialAttributes().aoUVSet();
         _aoWidget.selectTexture("##ao", [&](base::Texture* tex) {
             auto ptrTex = std::shared_ptr<base::Texture>(tex);
@@ -332,6 +352,14 @@ bool MaterialEditor::draw()
             notifyOnChange();
             return _material->aoTexture();
         });
+        if (Input::comboBox("Channel##ao", channelOptions, aoChannel))
+        {
+            for (auto & mat : _editMaterialList)
+            {
+                mat->materialAttributes().setAoChannel(aoChannel);
+            }
+            notifyOnChange();
+        }
         if (Input::vec2("Scale##ao", aoScale))
         {
             for (auto & mat : _editMaterialList)
