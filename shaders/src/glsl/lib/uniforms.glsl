@@ -46,7 +46,16 @@ struct PBRMaterialData
     uint unlit;
     float refractionFactor;
 
-    uint padding[2];
+    // Channel selection for single-channel textures
+    int metalnessChannel;
+    int roughnessChannel;
+    int aoChannel;
+
+    // Channel value inversion (reuses the former 2-uint padding)
+    int metalnessInvert;
+    int roughnessInvert;
+
+    uint padding;
 };
 
 const uint MATERIAL_FLAG_UNLIT          = 1u << 0;
@@ -85,14 +94,24 @@ vec4 sampleAlbedo(sampler2D tex, vec2 uv0, vec2 uv1, PBRMaterialData mat, float 
 float sampleMetallic(sampler2D tex, vec2 uv0, vec2 uv1, PBRMaterialData mat)
 {
     vec2 uv[2] = { uv0, uv1 };
-    return texture(tex, uv[mat.metalnessUVSet] * mat.metalnessScale).r * mat.metalness;
+    float value = texture(tex, uv[mat.metalnessUVSet] * mat.metalnessScale)[mat.metalnessChannel];
+    if (mat.metalnessInvert != 0)
+    {
+        value = 1.0 - value;
+    }
+    return value * mat.metalness;
 }
 
 float sampleRoughness(sampler2D tex, vec2 uv0, vec2 uv1, PBRMaterialData mat)
 {
     const float minRoughness = 0.05; // Minimum roughness value: even a mirror have some roughness
     vec2 uv[2] = { uv0, uv1 };
-    return max(texture(tex, uv[mat.roughnessUVSet] * mat.roughnessScale).r  * mat.roughness, minRoughness);
+    float value = texture(tex, uv[mat.roughnessUVSet] * mat.roughnessScale)[mat.roughnessChannel];
+    if (mat.roughnessInvert != 0)
+    {
+        value = 1.0 - value;
+    }
+    return max(value * mat.roughness, minRoughness);
 }
 
 vec3 sampleNormal(sampler2D tex, vec2 uv0, vec2 uv1, PBRMaterialData mat, mat3 TBN)
@@ -105,7 +124,7 @@ vec3 sampleNormal(sampler2D tex, vec2 uv0, vec2 uv1, PBRMaterialData mat, mat3 T
 float sampleAmbientOcclussion(sampler2D tex, vec2 uv0, vec2 uv1, PBRMaterialData mat)
 {
     vec2 uv[2] = { uv0, uv1 };
-    return texture(tex, uv[mat.aoUVSet]).r;
+    return texture(tex, uv[mat.aoUVSet])[mat.aoChannel];
 }
 
 vec3 calcF0(vec3 albedo, PBRMaterialData mat)

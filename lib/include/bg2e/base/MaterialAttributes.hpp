@@ -82,6 +82,9 @@ public:
     inline uint32_t metalnessChannel() const { return _metalnessChannel; }
     inline void setMetalnessChannel(uint32_t c) { _metalnessChannel = c; }
 
+    inline bool metalnessInvert() const { return _metalnessInvert; }
+    inline void setMetalnessInvert(bool i) { _metalnessInvert = i; }
+
     inline uint32_t metalnessUVSet() const { return _metalnessUVSet; }
     inline void setMetalnessUVSet(uint32_t uvSet) { _metalnessUVSet = uvSet; }
     
@@ -99,6 +102,9 @@ public:
 
     inline uint32_t roughnessChannel() const { return _roughnessChannel; }
     inline void setRoughnessChannel(uint32_t c) { _roughnessChannel = c; }
+
+    inline bool roughnessInvert() const { return _roughnessInvert; }
+    inline void setRoughnessInvert(bool i) { _roughnessInvert = i; }
 
     inline uint32_t roughnessUVSet() const { return _roughnessUVSet; }
     inline void setRoughnessUVSet(uint32_t uvSet) { _roughnessUVSet = uvSet; }
@@ -179,6 +185,7 @@ protected:
     std::shared_ptr<Texture> _metalnessTexture;
     glm::vec2 _metalnessScale{ 1.0f, 1.0f };
     uint32_t _metalnessChannel = 0;
+    bool _metalnessInvert = false;
     uint32_t _metalnessUVSet = 0;
     bool _metalnessTextureUpdated = true;
 
@@ -186,6 +193,7 @@ protected:
     std::shared_ptr<Texture> _roughnessTexture;
     glm::vec2 _roughnessScale{ 1.0f, 1.0f };
     uint32_t _roughnessChannel = 0;
+    bool _roughnessInvert = false;
     uint32_t _roughnessUVSet = 0;
     bool _roughnessTextureUpdated = true;
 

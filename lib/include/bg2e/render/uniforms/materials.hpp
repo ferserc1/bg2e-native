@@ -55,8 +55,18 @@ struct PBRMaterialData
 
     uint32_t flags;
     float refractionFactor;
-    uint32_t padding[2] = {};
-    
+
+    // Channel selection for single-channel textures
+    uint32_t metalnessChannel;
+    uint32_t roughnessChannel;
+    uint32_t aoChannel;
+
+    // Channel value inversion (reuses the former 2-uint padding)
+    uint32_t metalnessInvert;
+    uint32_t roughnessInvert;
+
+    uint32_t padding = 0;
+
     void operator=(const base::MaterialAttributes& att)
     {
         albedo = att.albedo();
@@ -75,6 +85,12 @@ struct PBRMaterialData
         sheenIntensity = att.sheenIntensity();
         sheenColor = att.sheenColor();
         refractionFactor = att.refractionFactor();
+
+        metalnessChannel = att.metalnessChannel();
+        roughnessChannel = att.roughnessChannel();
+        aoChannel = att.aoChannel();
+        metalnessInvert = att.metalnessInvert() ? 1u : 0u;
+        roughnessInvert = att.roughnessInvert() ? 1u : 0u;
 
         flags = 0;
         flags |= att.isUnlit() ? 0x1 : 0x0;

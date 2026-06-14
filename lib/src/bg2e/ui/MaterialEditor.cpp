@@ -214,6 +214,7 @@ bool MaterialEditor::draw()
         auto metallic = _material->materialAttributes().metalness();
         auto metallicScale = _material->materialAttributes().metalnessScale();
         auto metallicChannel = _material->materialAttributes().metalnessChannel();
+        auto metallicInvert = _material->materialAttributes().metalnessInvert();
         auto metallicUVSet = _material->materialAttributes().metalnessUVSet();
         if (Input::sliderFloat("Value##metallic", &metallic))
         {
@@ -241,6 +242,14 @@ bool MaterialEditor::draw()
             }
             notifyOnChange();
         }
+        if (BasicWidgets::checkBox("Invert##metallic", &metallicInvert))
+        {
+            for (auto & mat : _editMaterialList)
+            {
+                mat->materialAttributes().setMetalnessInvert(metallicInvert);
+            }
+            notifyOnChange();
+        }
         if (Input::vec2("Scale##metallic", metallicScale))
         {
             for (auto & mat : _editMaterialList)
@@ -262,6 +271,7 @@ bool MaterialEditor::draw()
         auto roughness = _material->materialAttributes().roughness();
         auto roughnessScale = _material->materialAttributes().roughnessScale();
         auto roughnessChannel = _material->materialAttributes().roughnessChannel();
+        auto roughnessInvert = _material->materialAttributes().roughnessInvert();
         auto roughnessUVSet = _material->materialAttributes().roughnessUVSet();
         if (Input::sliderFloat("Value##roughness", &roughness))
         {
@@ -286,6 +296,14 @@ bool MaterialEditor::draw()
             for (auto & mat : _editMaterialList)
             {
                 mat->materialAttributes().setRoughnessChannel(roughnessChannel);
+            }
+            notifyOnChange();
+        }
+        if (BasicWidgets::checkBox("Invert##roughness", &roughnessInvert))
+        {
+            for (auto & mat : _editMaterialList)
+            {
+                mat->materialAttributes().setRoughnessInvert(roughnessInvert);
             }
             notifyOnChange();
         }
