@@ -43,6 +43,9 @@ set(CGLTF_INCLUDE "${THIRD_PARTY_PATH}/cgltf")
 # metal-cpp (header-only, macOS only)
 set(METALCPP_INCLUDE "${THIRD_PARTY_PATH}/metal-cpp")
 
+# iryku_smaa (header-only, precomputed SMAA AreaTex/SearchTex data)
+set(IRYKU_SMAA_INCLUDE "${THIRD_PARTY_PATH}/iryku_smaa")
+
 # Export final variables
 set(BG2E_THIRD_PARTY_INCLUDE_PATH
     "${BG2IO_INCLUDE}"
@@ -53,6 +56,7 @@ set(BG2E_THIRD_PARTY_INCLUDE_PATH
     "${TINYOBJ_INCLUDE}"
     "${CGLTF_INCLUDE}"
     "${METALCPP_INCLUDE}"
+    "${IRYKU_SMAA_INCLUDE}"
     #"${SIMDJSON_INCLUDE}"
     #"${FASTGLTF_INCLUDE}"
     # Other dependency paths

@@ -118,11 +118,34 @@ void RendererDeferred::build(
         )
     );
 
+    // Intermediate image for the transparent layer output. SMAA reads from this
+    // image and writes the anti-aliased result into the final colorImage, so the
+    // transparent layer must not render directly into colorImage (which may be a
+    // swapchain image and is also the SMAA copy destination).
+    _transparentImage = std::shared_ptr<vulkan::Image>(
+        vulkan::Image::createAllocatedImage(
+            _engine,
+            "Deferred render transparent image",
+            colorImageFormat,
+            initialExtent,
+            VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
+            VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
+            VK_IMAGE_USAGE_TRANSFER_DST_BIT |
+            VK_IMAGE_USAGE_SAMPLED_BIT,
+            VK_IMAGE_ASPECT_COLOR_BIT,
+            1, false, 20, VK_SAMPLE_COUNT_1_BIT
+        )
+    );
+
     // GizmoAndSelectionRenderer (non-offscreen only)
     if (!isOffscreen) {
         _gizmoAndSelectionRenderer = std::make_unique<manipulation::GizmoAndSelectionRenderer>();
         _gizmoAndSelectionRenderer->init(engine, VK_SAMPLE_COUNT_1_BIT);
     }
+
+    // SMAA post-processing
+    _smaaProcessor = std::make_unique<deferred::SMAAProcessor>(_engine);
+    _smaaProcessor->build(initialExtent, colorImageFormat);
 }
 
 void RendererDeferred::initFrameResources(
@@ -213,6 +236,28 @@ void RendererDeferred::resize(
             VK_SAMPLE_COUNT_1_BIT
         )
     );
+    _transparentImage->cleanup();
+    _transparentImage = std::shared_ptr<vulkan::Image>(
+        vulkan::Image::createAllocatedImage(
+            _engine,
+            "Deferred render transparent image",
+            _colorImageFormat,
+            newExtent,
+            VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
+            VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
+            VK_IMAGE_USAGE_TRANSFER_DST_BIT |
+            VK_IMAGE_USAGE_SAMPLED_BIT,
+            VK_IMAGE_ASPECT_COLOR_BIT,
+            1,
+            false,
+            20,
+            VK_SAMPLE_COUNT_1_BIT
+        )
+    );
+
+    if (_smaaProcessor) {
+        _smaaProcessor->resize(newExtent);
+    }
 
     _resizeVisitor.resizeViewport(_scene->rootNode(), newExtent);
 
@@ -278,18 +323,19 @@ void RendererDeferred::draw(
         VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
     );
 
-    // Layer 3: Transparent (writes to swapchain output)
+    // Layer 3: Transparent (writes to the intermediate transparent image, not
+    // to the final colorImage, so SMAA can sample it as input)
     _transparentLayer->setOpaqueDepthBuffer(_opaqueLayer->depthBuffer());
-    _transparentLayer->render(cmd, currentFrame, _opaqueImage.get(), colorImage,
+    _transparentLayer->render(cmd, currentFrame, _opaqueImage.get(), _transparentImage.get(),
                               frameResources);
 
     if (!_isOffscreen && _gizmoAndSelectionRenderer) {
         auto depthAttachment = vulkan::Info::depthAttachmentInfo(depthImage->imageView(), 1.0f);
-        auto colorAttachment = vulkan::Info::attachmentInfo(colorImage->imageView(), nullptr);
-        auto renderInfo = vulkan::Info::renderingInfo(colorImage->extent2D(), &colorAttachment, nullptr);
+        auto colorAttachment = vulkan::Info::attachmentInfo(_transparentImage->imageView(), nullptr);
+        auto renderInfo = vulkan::Info::renderingInfo(_transparentImage->extent2D(), &colorAttachment, nullptr);
         vulkan::cmdBeginRendering(cmd, &renderInfo);
 
-        vulkan::macros::cmdSetDefaultViewportAndScissor(cmd, colorImage->extent2D());
+        vulkan::macros::cmdSetDefaultViewportAndScissor(cmd, _transparentImage->extent2D());
 
         auto mainCamera = _scene->mainCamera();
         auto viewMatrix = mainCamera->ownerNode()->invertedWorldMatrix();
@@ -299,6 +345,31 @@ void RendererDeferred::draw(
         vulkan::cmdEndRendering(cmd);
     }
 
+    // === SMAA Anti-Aliasing ===
+    // Input: the intermediate transparent image. Output: copied into colorImage.
+    if (_smaaProcessor) {
+        vulkan::Image::cmdTransitionImage(
+            cmd,
+            _transparentImage->handle(),
+            VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+        );
+
+        const vulkan::Image* smaaOutput = _smaaProcessor->process(
+            cmd, currentFrame, _transparentImage.get()
+        );
+
+        vulkan::Image::cmdCopy(
+            cmd,
+            smaaOutput->handle(),
+            smaaOutput->extent2D(),
+            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+            colorImage->handle(),
+            colorImage->extent2D(),
+            VK_IMAGE_LAYOUT_UNDEFINED,
+            VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
+        );
+    }
 
     // === End scene render (from Renderer base) ===
     endSceneRender();
@@ -316,11 +387,22 @@ void RendererDeferred::draw(
 }
 
 void RendererDeferred::cleanup() {
+    if (_smaaProcessor) {
+        _smaaProcessor->cleanup();
+        _smaaProcessor.reset();
+    }
+
     _gizmoAndSelectionRenderer.reset();
 
     _transparentLayer->cleanup();
     _opaqueLayer->cleanup();
     _skyboxLayer->cleanup();
+
+    if (_transparentImage)
+    {
+        _transparentImage->cleanup();
+    }
+    _transparentImage.reset();
 
     if (_opaqueImage)
     {

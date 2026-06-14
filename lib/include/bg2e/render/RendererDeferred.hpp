@@ -28,6 +28,7 @@
 #include <bg2e/scene/vk/DeferredLightDataBinding.hpp>
 #include <bg2e/render/vulkan/rt/RayTracingSceneDataBinding.hpp>
 #include <bg2e/manipulation/GizmoAndSelectionRenderer.hpp>
+#include <bg2e/render/deferred/SMAAProcessor.hpp>
 
 #include <memory>
 
@@ -43,6 +44,7 @@ public:
     inline void setDrawSkybox(bool value) override { _skyboxLayer->setDrawSkybox(value); }
 
     [[nodiscard]] manipulation::GizmoAndSelectionRenderer * gizmoAndSelectionRenderer() const { return _gizmoAndSelectionRenderer.get(); }
+    [[nodiscard]] deferred::SMAAProcessor* smaaProcessor() const { return _smaaProcessor.get(); }
 
     void build(
         bg2e::render::Engine* engine,
@@ -174,12 +176,14 @@ protected:
     // Intermediate images
     std::shared_ptr<vulkan::Image> _skyboxImage;
     std::shared_ptr<vulkan::Image> _opaqueImage;
+    std::shared_ptr<vulkan::Image> _transparentImage;
 
     // Data bindings (shared across deferred layers)
     std::unique_ptr<scene::vk::DeferredLightDataBinding> _lightDataBinding;
     std::unique_ptr<vulkan::rt::RayTracingSceneDataBinding> _rtDataBinding;
 
     std::unique_ptr<manipulation::GizmoAndSelectionRenderer> _gizmoAndSelectionRenderer;
+    std::unique_ptr<deferred::SMAAProcessor> _smaaProcessor;
 
     deferred::DeferredDebugVisualization _debugVisualization = deferred::DeferredDebugVisualization::FullComposition;
 
