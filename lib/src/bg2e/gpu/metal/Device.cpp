@@ -146,7 +146,18 @@ std::shared_ptr<gpu::ResourceSet> Device::createResourceSet(gpu::PipelineLayout*
 std::shared_ptr<gpu::Image> Device::createImage(const ImageDescription& description)
 {
     auto img = std::make_shared<metal::Image>(this);
-    img->buildSampledImage(this, description.size, description.format, description.debugName);
+    if (isDepthFormat(description.format))
+    {
+        img->buildDepthImage(this, description.size, description.format, description.debugName);
+    }
+    else if (hasFlag(description.usage, ImageUsage::Storage))
+    {
+        img->buildStorageImage(this, description.size, description.format, description.debugName);
+    }
+    else
+    {
+        img->buildSampledImage(this, description.size, description.format, description.debugName);
+    }
     return img;
 }
 

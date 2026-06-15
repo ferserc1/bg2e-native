@@ -118,6 +118,30 @@ void CommandBuffer::transition(gpu::Image* image, ImageLayout newLayout)
 void CommandBuffer::beginRendering(gpu::SurfaceFrame* frame)
 {
     _renderFrame = dynamic_cast<vk::SurfaceFrame*>(frame);
+    _renderColorImage = nullptr;
+    _renderDepthImage = nullptr;
+    _renderingActive = true;
+    _renderingEmitted = false;
+    _hasColorClear = false;
+    _hasDepthClear = false;
+}
+
+void CommandBuffer::beginRendering(gpu::Image* colorImage, uint32_t /*mipLevel*/)
+{
+    _renderFrame = nullptr;
+    _renderColorImage = colorImage;
+    _renderDepthImage = nullptr;
+    _renderingActive = true;
+    _renderingEmitted = false;
+    _hasColorClear = false;
+    _hasDepthClear = false;
+}
+
+void CommandBuffer::beginRendering(gpu::Image* colorImage, gpu::Image* depthImage, uint32_t /*mipLevel*/)
+{
+    _renderFrame = nullptr;
+    _renderColorImage = colorImage;
+    _renderDepthImage = depthImage;
     _renderingActive = true;
     _renderingEmitted = false;
     _hasColorClear = false;
@@ -139,15 +163,25 @@ void CommandBuffer::clearDepth(float depth)
 
 void CommandBuffer::flushPendingRendering()
 {
-    if (!_renderingActive || _renderingEmitted || !_renderFrame)
+    if (!_renderingActive || _renderingEmitted)
     {
         return;
     }
 
-    auto* colorImg = dynamic_cast<vk::Image*>(_renderFrame->colorImage());
+    // Determine color image source
+    vk::Image* colorImg = nullptr;
+    if (_renderFrame)
+    {
+        colorImg = dynamic_cast<vk::Image*>(_renderFrame->colorImage());
+    }
+    else if (_renderColorImage)
+    {
+        colorImg = dynamic_cast<vk::Image*>(_renderColorImage);
+    }
+
     if (!colorImg)
     {
-        throw std::runtime_error("vk::CommandBuffer::flushPendingRendering: invalid color image");
+        throw std::runtime_error("vk::CommandBuffer::flushPendingRendering: no color image");
     }
 
     VkClearValue clearColor{};
@@ -158,22 +192,27 @@ void CommandBuffer::flushPendingRendering()
         _hasColorClear ? &clearColor : nullptr
     );
 
+    // Determine depth image source
+    vk::Image* depthImg = nullptr;
+    if (_renderFrame)
+    {
+        depthImg = dynamic_cast<vk::Image*>(_renderFrame->depthImage());
+    }
+    else if (_renderDepthImage)
+    {
+        depthImg = dynamic_cast<vk::Image*>(_renderDepthImage);
+    }
+
     VkRenderingAttachmentInfo* depthAttachment = nullptr;
-    auto* depthImg = dynamic_cast<vk::Image*>(_renderFrame->depthImage());
+    VkRenderingAttachmentInfo depthAtt{};
     if (depthImg && depthImg->isValid())
     {
-        VkClearValue depthClear{};
-        depthClear.depthStencil.depth = _clearDepth;
-
-        VkRenderingAttachmentInfo depthAtt = Info::depthAttachmentInfo(
-            depthImg->imageView(), _clearDepth
-        );
+        depthAtt = Info::depthAttachmentInfo(depthImg->imageView(), _clearDepth);
         depthAttachment = &depthAtt;
     }
 
     VkRenderingInfo renderInfo = Info::renderingInfo(
-        { static_cast<uint32_t>(_renderFrame->colorImage()->width()),
-          static_cast<uint32_t>(_renderFrame->colorImage()->height()) },
+        { colorImg->width(), colorImg->height() },
         &colorAttachment,
         depthAttachment
     );
@@ -190,6 +229,8 @@ void CommandBuffer::endRendering()
         cmdEndRendering(_cmd);
     }
     _renderingActive = false;
+    _renderColorImage = nullptr;
+    _renderDepthImage = nullptr;
 }
 
 void CommandBuffer::beginCompute()
@@ -226,10 +267,19 @@ void CommandBuffer::bindPipeline(gpu::GraphicsPipeline* pipeline)
         throw std::runtime_error("vk::CommandBuffer::bindPipeline: not a vk::GraphicsPipeline");
     }
 
-    if (_renderFrame)
+    if (_renderFrame || _renderColorImage)
     {
-        uint32_t w = static_cast<uint32_t>(_renderFrame->colorImage()->width());
-        uint32_t h = static_cast<uint32_t>(_renderFrame->colorImage()->height());
+        uint32_t w = 0, h = 0;
+        if (_renderFrame)
+        {
+            w = static_cast<uint32_t>(_renderFrame->colorImage()->width());
+            h = static_cast<uint32_t>(_renderFrame->colorImage()->height());
+        }
+        else
+        {
+            w = _renderColorImage->width();
+            h = _renderColorImage->height();
+        }
 
         VkViewport viewport{};
         viewport.x = 0.0f;
@@ -381,6 +431,75 @@ void CommandBuffer::drawIndexed(uint32_t indexCount, uint32_t instanceCount,
 {
     flushPendingRendering();
     vkCmdDrawIndexed(_cmd, indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
+}
+
+void CommandBuffer::copyImage(gpu::Image* src, gpu::Image* dst)
+{
+    auto* vkSrc = dynamic_cast<vk::Image*>(src);
+    auto* vkDst = dynamic_cast<vk::Image*>(dst);
+    if (!vkSrc || !vkDst)
+    {
+        throw std::runtime_error("vk::CommandBuffer::copyImage: not a vk::Image");
+    }
+
+    VkImageCopy region{};
+    region.srcSubresource.aspectMask = vkSrc->aspect();
+    region.srcSubresource.mipLevel = 0;
+    region.srcSubresource.baseArrayLayer = 0;
+    region.srcSubresource.layerCount = 1;
+    region.dstSubresource.aspectMask = vkDst->aspect();
+    region.dstSubresource.mipLevel = 0;
+    region.dstSubresource.baseArrayLayer = 0;
+    region.dstSubresource.layerCount = 1;
+    region.srcOffset = {0, 0, 0};
+    region.dstOffset = {0, 0, 0};
+    region.extent = {src->width(), src->height(), 1};
+
+    vkCmdCopyImage(
+        _cmd,
+        vkSrc->handle(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+        vkDst->handle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+        1, &region
+    );
+}
+
+// TODO: function not fully tested
+void CommandBuffer::blitImage(gpu::Image* src, gpu::Image* dst)
+{
+    auto* vkSrc = dynamic_cast<vk::Image*>(src);
+    auto* vkDst = dynamic_cast<vk::Image*>(dst);
+    if (!vkSrc || !vkDst)
+    {
+        throw std::runtime_error("vk::CommandBuffer::blitImage: not a vk::Image");
+    }
+
+    VkImageBlit region{};
+    region.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    region.srcSubresource.mipLevel = 0;
+    region.srcSubresource.baseArrayLayer = 0;
+    region.srcSubresource.layerCount = 1;
+    region.srcOffsets[0] = {0, 0, 0};
+    region.srcOffsets[1] = {
+        static_cast<int32_t>(src->width()),
+        static_cast<int32_t>(src->height()), 1
+    };
+    region.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    region.dstSubresource.mipLevel = 0;
+    region.dstSubresource.baseArrayLayer = 0;
+    region.dstSubresource.layerCount = 1;
+    region.dstOffsets[0] = {0, 0, 0};
+    region.dstOffsets[1] = {
+        static_cast<int32_t>(dst->width()),
+        static_cast<int32_t>(dst->height()), 1
+    };
+
+    vkCmdBlitImage(
+        _cmd,
+        vkSrc->handle(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+        vkDst->handle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+        1, &region,
+        VK_FILTER_LINEAR
+    );
 }
 
 }

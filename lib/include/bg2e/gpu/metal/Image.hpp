@@ -39,6 +39,7 @@ public:
     void buildTargetImage(metal::Device* device, const Size2D& size, PixelFormat format, const std::string& debugName = {});
     void buildDepthImage(metal::Device* device, const Size2D& size, PixelFormat format, const std::string& debugName = {});
     void buildSampledImage(metal::Device* device, const Size2D& size, PixelFormat format, const std::string& debugName = {});
+    void buildStorageImage(metal::Device* device, const Size2D& size, PixelFormat format, const std::string& debugName = {});
 
     void resize(const Size2D& size);
 

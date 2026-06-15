@@ -42,6 +42,14 @@ public:
     virtual void transition(gpu::Image* image, ImageLayout newLayout) = 0;
 
     virtual void beginRendering(gpu::SurfaceFrame* frame) = 0;
+    virtual void beginRendering(gpu::Image* colorImage, uint32_t mipLevel = 0)
+    {
+        throw std::runtime_error("beginRendering(Image*) not implemented");
+    }
+    virtual void beginRendering(gpu::Image* colorImage, gpu::Image* depthImage, uint32_t mipLevel = 0)
+    {
+        throw std::runtime_error("beginRendering(Image*, Image*) not implemented");
+    }
     virtual void endRendering() = 0;
 
     virtual void beginCompute() = 0;
@@ -100,6 +108,17 @@ public:
                              uint32_t firstInstance = 0)
     {
         throw std::runtime_error("drawIndexed not implemented");
+    }
+
+    virtual void copyImage(gpu::Image* src, gpu::Image* dst)
+    {
+        throw std::runtime_error("copyImage not implemented");
+    }
+
+    // TODO: function not fully tested
+    virtual void blitImage(gpu::Image* src, gpu::Image* dst)
+    {
+        throw std::runtime_error("blitImage not implemented");
     }
 
     virtual bool isValid() const = 0;

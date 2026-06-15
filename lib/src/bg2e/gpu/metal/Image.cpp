@@ -134,6 +134,41 @@ void Image::buildSampledImage(metal::Device* device, const Size2D& size, PixelFo
     }
 }
 
+void Image::buildStorageImage(metal::Device* device, const Size2D& size, PixelFormat format, const std::string& debugName)
+{
+    cleanup();
+
+    _device = device;
+    _size = size;
+    _pixelFormat = format;
+    _isDepth = false;
+    _ownsTexture = true;
+    _currentLayout = ImageLayout::Undefined;
+    _debugName = debugName;
+
+    auto* desc = MTL::TextureDescriptor::alloc()->init();
+    desc->setTextureType(MTL::TextureType2D);
+    desc->setPixelFormat(toMetalPixelFormat(format));
+    desc->setWidth(size.width);
+    desc->setHeight(size.height);
+    desc->setStorageMode(MTL::StorageModePrivate);
+    desc->setUsage(MTL::TextureUsageShaderRead | MTL::TextureUsageShaderWrite);
+
+    _texture = device->handle()->newTexture(desc);
+    _ownsTexture = true;
+    desc->release();
+
+    if (!_texture)
+    {
+        throw std::runtime_error("metal::Image::buildStorageImage: newTexture failed");
+    }
+
+    if (base::Log::isDebug() && !debugName.empty())
+    {
+        _texture->setLabel(NS::String::string(debugName.c_str(), NS::UTF8StringEncoding));
+    }
+}
+
 void Image::initFromDrawableTexture(metal::Device* device, TextureHandle texture,
                                     PixelFormat format, const Size2D& size)
 {
@@ -294,6 +329,11 @@ void Image::initFromDrawableTexture(metal::Device*, TextureHandle, PixelFormat, 
 }
 
 void Image::buildSampledImage(metal::Device*, const Size2D&, PixelFormat, const std::string&)
+{
+    throw std::runtime_error("Metal backend is not available on this platform");
+}
+
+void Image::buildStorageImage(metal::Device*, const Size2D&, PixelFormat, const std::string&)
 {
     throw std::runtime_error("Metal backend is not available on this platform");
 }

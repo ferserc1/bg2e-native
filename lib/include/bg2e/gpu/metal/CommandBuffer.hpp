@@ -46,6 +46,8 @@ public:
     void end() override;
     void transition(gpu::Image* image, ImageLayout newLayout) override;
     void beginRendering(gpu::SurfaceFrame* frame) override;
+    void beginRendering(gpu::Image* colorImage, uint32_t mipLevel = 0) override;
+    void beginRendering(gpu::Image* colorImage, gpu::Image* depthImage, uint32_t mipLevel = 0) override;
     void endRendering() override;
     void beginCompute() override;
     void endCompute() override;
@@ -62,6 +64,9 @@ public:
     void bindIndexBuffer(gpu::Buffer* buffer, uint64_t offset) override;
     void drawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex,
                      int32_t vertexOffset, uint32_t firstInstance) override;
+    void copyImage(gpu::Image* src, gpu::Image* dst) override;
+    // TODO: function not fully tested
+    void blitImage(gpu::Image* src, gpu::Image* dst) override;
     bool isValid() const override;
 
 #if BG2E_IS_MAC
@@ -85,6 +90,9 @@ private:
 
     MTL::Buffer*                _boundIndexBuffer       = nullptr;
     NS::UInteger                _boundIndexBufferOffset = 0;
+
+    gpu::Image* _renderColorImage = nullptr;
+    gpu::Image* _renderDepthImage = nullptr;
 #endif
 };
 

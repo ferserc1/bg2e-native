@@ -16,16 +16,17 @@
  *    along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-// Example 07 — Uniform buffers
+// Example 08 — Render to texture
 //
-// Renders a rotating, textured cube. It demonstrates the gpu:: uniform-buffer
-// support added on top of example 05:
-//   - A persistent camera UBO + resource set (lives for the whole application).
-//   - A per-frame model UBO duplicated with FrameResourceRing<gpu::Buffer> and a
-//     matching FrameResourceRing<gpu::ResourceSet>.
-//   - Separate descriptor sets: set 0 = camera, set 1 = model, set 2 = material.
-//   - Depth testing for correct cube occlusion.
-//   - gpu::CleanupManager for ordered teardown of DeviceResource objects.
+// Renders a rotating, textured cube into an offscreen color image, runs a
+// compute Sobel edge-detection pass into a second image, then copies the
+// processed result into the current surface image for presentation.
+//
+// Demonstrates:
+//   - Rendering into a regular 2D gpu::Image (offscreen color + depth).
+//   - Compute shader reading from one storage image and writing to another.
+//   - Image copy between gpu::Image objects.
+//   - Explicit layout transitions through the full render → compute → present pipeline.
 
 #include <bg2e.hpp>
 #include <bg2e/gpu/all.hpp>
@@ -42,6 +43,59 @@ struct CameraUBO {
 struct ModelUBO {
     glm::mat4 model;
 };
+
+// ---------------------------------------------------------------------------
+// Helper: create the three offscreen images used by the example.
+// ---------------------------------------------------------------------------
+static void createOffscreenImages(
+    bg2e::gpu::Device* device,
+    const bg2e::gpu::Size2D& size,
+    std::shared_ptr<bg2e::gpu::Image>& offscreenColor,
+    std::shared_ptr<bg2e::gpu::Image>& offscreenDepth,
+    std::shared_ptr<bg2e::gpu::Image>& computeOutput,
+    const std::string& tag)
+{
+    using namespace bg2e;
+    // Offscreen color: render target + sampled + transfer source
+    offscreenColor = device->createImage({
+        size,
+        gpu::PixelFormat::R8G8B8A8_UNORM,
+        gpu::ImageUsage::ColorAttachment | gpu::ImageUsage::Sampled | gpu::ImageUsage::TransferSrc | gpu::ImageUsage::Storage,
+        "Offscreen color " + tag
+    });
+
+    // Offscreen depth: depth/stencil + sampled
+    offscreenDepth = device->createImage({
+        size,
+        gpu::PixelFormat::D32_SFLOAT,
+        gpu::ImageUsage::DepthStencil | gpu::ImageUsage::Sampled,
+        "Offscreen depth " + tag
+    });
+
+    // Compute output: storage + transfer source + transfer destination
+    computeOutput = device->createImage({
+        size,
+        gpu::PixelFormat::R8G8B8A8_UNORM,
+        gpu::ImageUsage::Storage | gpu::ImageUsage::TransferSrc | gpu::ImageUsage::TransferDst | gpu::ImageUsage::Storage,
+        "Compute output " + tag
+    });
+}
+
+// ---------------------------------------------------------------------------
+// Helper: recreate compute resource set after images change.
+// ---------------------------------------------------------------------------
+static std::shared_ptr<bg2e::gpu::ResourceSet> createComputeResourceSet(
+    bg2e::gpu::Device* device,
+    bg2e::gpu::PipelineLayout* layout,
+    bg2e::gpu::Image* inputImage,
+    bg2e::gpu::Image* outputImage)
+{
+    auto set = device->createResourceSet(layout, 0, "Compute resource set");
+    set->setStorageImage(0, inputImage);
+    set->setStorageImage(1, outputImage);
+    set->update();
+    return set;
+}
 
 int main(int argc, char** argv)
 {
@@ -61,7 +115,7 @@ int main(int argc, char** argv)
     gpu::Factory::init(backendType);
     auto* backend = gpu::Factory::backend();
 
-    // 3. SDL init + create window based on backend window type
+    // 3. SDL init + create window
     app::initSdlVideoDriver();
     SDL_Init(SDL_INIT_VIDEO);
 
@@ -73,7 +127,7 @@ int main(int argc, char** argv)
     }
 
     SDL_Window* window = SDL_CreateWindow(
-        "GPU Uniform Buffers Example",
+        "GPU Render to Texture Example",
         SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
         800, 600,
         windowFlags | SDL_WINDOW_RESIZABLE
@@ -89,7 +143,7 @@ int main(int argc, char** argv)
     instance->enableDebugMode(true);
     instance->create(window);
 
-    // 5. Create surface (shared_ptr for the frame lifecycle API)
+    // 5. Create surface
     std::shared_ptr<gpu::Surface> surface = backend->createWindowSurface(instance);
 
     // 6. Select physical device
@@ -106,13 +160,15 @@ int main(int argc, char** argv)
     // 8. Create shader modules via ShaderLib
     auto shaderBasePath = base::PlatformTools::shaderPath();
 
-    auto shaderLib = backend->createShaderLib(shaderBasePath / "gpu_uniform_buffers");
+    auto shaderLib = backend->createShaderLib(shaderBasePath / "gpu_render_to_texture");
     auto vs = shaderLib->vertex("cube", device.get());
     auto fs = shaderLib->fragment("cube", device.get());
+    auto cs = shaderLib->compute("edge_filter", device.get());
     cleanup.push(vs);
     cleanup.push(fs);
+    cleanup.push(cs);
 
-    // 9. Pipeline layout with separate sets:
+    // 9. Graphics pipeline layout (same as 07):
     //   set 0 binding 0 -> camera UBO  (vertex)
     //   set 1 binding 0 -> model UBO   (vertex)
     //   set 2 binding 0 -> sampled image (fragment)
@@ -126,7 +182,17 @@ int main(int argc, char** argv)
     auto graphicsLayout = device->createPipelineLayout(graphicsLayoutDesc);
     cleanup.push(graphicsLayout);
 
-    // 10. Procedural 2×2 texture + sampler
+    // 10. Compute pipeline layout:
+    //   set 0 binding 0 -> storage image (input,  read-only in practice)
+    //   set 0 binding 1 -> storage image (output, writable)
+    gpu::PipelineLayoutDescription computeLayoutDesc{};
+    computeLayoutDesc.resourceBindings.push_back({ 0, 0, gpu::ResourceType::StorageImage, gpu::ShaderStage::Compute, 1 });
+    computeLayoutDesc.resourceBindings.push_back({ 0, 1, gpu::ResourceType::StorageImage, gpu::ShaderStage::Compute, 1 });
+    computeLayoutDesc.debugName = "Edge filter pipeline layout";
+    auto computeLayout = device->createPipelineLayout(computeLayoutDesc);
+    cleanup.push(computeLayout);
+
+    // 11. Procedural 2x2 texture + sampler (same as 07)
     const std::array<std::array<uint8_t, 4>, 4> texels = {{
         {{255,   0,   0, 255}}, {{  0, 255,   0, 255}},
         {{  0,   0, 255, 255}}, {{255, 255,   0, 255}}
@@ -144,14 +210,14 @@ int main(int argc, char** argv)
     auto sampler = device->createSampler({ .debugName = "Default linear sampler" });
     cleanup.push(sampler);
 
-    // Material resource set (set 2): texture + sampler, persistent.
+    // Material resource set (set 2)
     auto textureSet = device->createResourceSet(graphicsLayout.get(), 2, "Material resource set");
     textureSet->setSampledImage(0, texture.get());
     textureSet->setSampler(1, sampler.get());
     textureSet->update();
     cleanup.push(textureSet);
 
-    // 11. Camera UBO (set 0): persistent for the whole application.
+    // 12. Camera UBO (set 0): persistent for the whole application.
     const float aspect = 800.0f / 600.0f;
     auto projection = glm::perspective(glm::radians(60.0f), aspect, 0.1f, 100.0f);
     auto view = glm::lookAt(
@@ -171,7 +237,7 @@ int main(int argc, char** argv)
     cameraSet->update();
     cleanup.push(cameraSet);
 
-    // 12. Per-frame model UBO + resource set, duplicated through the swapchain.
+    // 13. Per-frame model UBO ring (same as 07)
     gpu::FrameResourceRing<gpu::Buffer> modelUboRing;
     modelUboRing.create(surface.get(), [&](uint32_t i)
     {
@@ -184,36 +250,61 @@ int main(int argc, char** argv)
     modelSetRing.create(surface.get(), [&](uint32_t i)
     {
         auto set = device->createResourceSet(graphicsLayout.get(), 1,
-            "Model resource set ring[" + std::to_string(i) + "]");
+            "Model resource set ring[" + std::to_string(i) + "]"
+        );
         set->setUniformBuffer(0, modelUboRing.sharedAt(i));
         set->update();
         return set;
     });
 
-    // 13. Cube mesh (position + texCoord0) built from the procedural geometry API.
+    // 14. Cube mesh (same as 07)
     std::unique_ptr<bg2e::geo::MeshPU> cubeData(bg2e::geo::createCubePU(1.0f, 1.0f, 1.0f));
 
     gpu::MeshPU cube;
     cube.setMeshData(*cubeData);
     cube.build(device.get());
 
-    // 14. Graphics pipeline (depth enabled because depthFormat is set).
-    auto colorFormat = surface->colorFormat();
-    auto depthFormat = surface->depthFormat();
+    // 15. Graphics pipeline — render into offscreen color format
+    auto offscreenColorFormat = gpu::PixelFormat::R8G8B8A8_UNORM;
+    auto offscreenDepthFormat = gpu::PixelFormat::D32_SFLOAT;
 
     gpu::GraphicsPipelineDescription pipelineDesc{};
     pipelineDesc.vertexShader   = vs.get();
     pipelineDesc.fragmentShader = fs.get();
     pipelineDesc.layout         = graphicsLayout.get();
     pipelineDesc.topology       = gpu::PrimitiveTopology::TriangleList;
-    pipelineDesc.colorFormat    = colorFormat;
-    pipelineDesc.depthFormat    = depthFormat;
+    pipelineDesc.colorFormat    = offscreenColorFormat;
+    pipelineDesc.depthFormat    = offscreenDepthFormat;
     pipelineDesc.debugName      = "Cube graphics pipeline";
     pipelineDesc.addVertexBufferDescription(gpu::MeshPU::vertexBufferDescription());
     auto pipeline = device->createGraphicsPipeline(pipelineDesc);
     cleanup.push(pipeline);
 
-    // 15. Render loop
+    // 16. Compute pipeline (edge filter)
+    gpu::ComputePipelineDescription computePipelineDesc{};
+    computePipelineDesc.computeShader = cs.get();
+    computePipelineDesc.layout        = computeLayout.get();
+    computePipelineDesc.debugName     = "Edge filter compute pipeline";
+    auto computePipeline = device->createComputePipeline(computePipelineDesc);
+    cleanup.push(computePipeline);
+
+    // 17. Create offscreen images matching the surface size
+    // NOTE: these are NOT pushed to CleanupManager because they are recreated on resize.
+    // They are cleaned up manually in the cleanup section below.
+    auto surfaceSize = surface->size();
+    std::shared_ptr<gpu::Image> offscreenColor;
+    std::shared_ptr<gpu::Image> offscreenDepth;
+    std::shared_ptr<gpu::Image> computeOutput;
+    createOffscreenImages(device.get(), surfaceSize, offscreenColor, offscreenDepth, computeOutput, "init");
+
+    // 18. Compute resource set (input: offscreenColor, output: computeOutput)
+    // Also not pushed to CleanupManager — recreated on resize.
+    auto computeSet = createComputeResourceSet(
+        device.get(), computeLayout.get(),
+        offscreenColor.get(), computeOutput.get()
+    );
+
+    // 19. Render loop
     auto& graphicsQueue = device->graphicsQueue();
 
     bool running = true;
@@ -229,10 +320,39 @@ int main(int argc, char** argv)
                 event.window.event == SDL_WINDOWEVENT_RESIZED)
             {
                 device->waitIdle();
-                surface->resize({
-                    static_cast<uint32_t>(event.window.data1),
-                    static_cast<uint32_t>(event.window.data2)
+                uint32_t w = event.window.data1;
+                uint32_t h = event.window.data2;
+                if (w == 0 || h == 0) continue;
+                surface->resize({w, h});
+
+                // Recreate offscreen images to match new surface size
+                offscreenColor->cleanup();
+                offscreenColor = device->createImage({
+                    {w, h}, gpu::PixelFormat::R8G8B8A8_UNORM,
+                    gpu::ImageUsage::ColorAttachment | gpu::ImageUsage::Sampled | gpu::ImageUsage::TransferSrc | gpu::ImageUsage::Storage,
+                    "Offscreen color"
                 });
+
+                offscreenDepth->cleanup();
+                offscreenDepth = device->createImage({
+                    {w, h}, gpu::PixelFormat::D32_SFLOAT,
+                    gpu::ImageUsage::DepthStencil | gpu::ImageUsage::Sampled,
+                    "Offscreen depth"
+                });
+
+                computeOutput->cleanup();
+                computeOutput = device->createImage({
+                    {w, h}, gpu::PixelFormat::R8G8B8A8_UNORM,
+                    gpu::ImageUsage::Storage | gpu::ImageUsage::TransferSrc | gpu::ImageUsage::TransferDst | gpu::ImageUsage::Storage,
+                    "Compute output"
+                });
+
+                // Recreate compute resource set with new images
+                computeSet->cleanup();
+                computeSet = createComputeResourceSet(
+                    device.get(), computeLayout.get(),
+                    offscreenColor.get(), computeOutput.get()
+                );
             }
         }
 
@@ -252,9 +372,10 @@ int main(int argc, char** argv)
 
         cmd->begin();
 
-        cmd->transition(frame->colorImage(), gpu::ImageLayout::ColorAttachment);
-        cmd->transition(frame->depthImage(), gpu::ImageLayout::DepthAttachment);
-        cmd->beginRendering(frame.get());
+        // --- Pass 1: Render cube into offscreen color/depth ---
+        cmd->transition(offscreenColor.get(), gpu::ImageLayout::ColorAttachment);
+        cmd->transition(offscreenDepth.get(), gpu::ImageLayout::DepthAttachment);
+        cmd->beginRendering(offscreenColor.get(), offscreenDepth.get());
         cmd->clearColor(0, gpu::Color(0.05f, 0.05f, 0.08f, 1.0f));
         cmd->clearDepth(1.0f);
 
@@ -265,6 +386,22 @@ int main(int argc, char** argv)
         cube.draw(cmd.get());
 
         cmd->endRendering();
+
+        // --- Pass 2: Compute edge detection ---
+        cmd->transition(offscreenColor.get(), gpu::ImageLayout::General);
+        cmd->transition(computeOutput.get(), gpu::ImageLayout::General);
+        cmd->beginCompute();
+        cmd->bindPipeline(computePipeline.get());
+        cmd->bindResourceSet(computePipeline.get(), 0, computeSet.get());
+        uint32_t w = surface->size().width;
+        uint32_t h = surface->size().height;
+        cmd->dispatch((w + 15) / 16, (h + 15) / 16, 1);
+        cmd->endCompute();
+
+        // --- Pass 3: Copy postprocessed image to surface ---
+        cmd->transition(computeOutput.get(), gpu::ImageLayout::TransferSrc);
+        cmd->transition(frame->colorImage(), gpu::ImageLayout::TransferDst);
+        cmd->copyImage(computeOutput.get(), frame->colorImage());
         cmd->transition(frame->colorImage(), gpu::ImageLayout::Present);
 
         surface->present(cmd.get());
@@ -273,13 +410,21 @@ int main(int argc, char** argv)
         surface->endFrame(frame.get());
     }
 
-    // 16. Cleanup
+    // 20. Cleanup
     device->waitIdle();
 
     modelSetRing.cleanup();
     modelUboRing.cleanup();
-    cube.cleanup();           // gpu::MeshPU is not a DeviceResource
-    cleanup.flush();          // DeviceResource objects, in reverse push order
+    cube.cleanup();
+
+    // Clean up offscreen images and compute set manually (not in CleanupManager
+    // because they are recreated on resize).
+    computeSet->cleanup();
+    computeOutput->cleanup();
+    offscreenDepth->cleanup();
+    offscreenColor->cleanup();
+
+    cleanup.flush();
 
     surface->cleanup();
     device->cleanup();

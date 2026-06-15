@@ -105,6 +105,9 @@ void CommandBuffer::beginRendering(gpu::SurfaceFrame* frame)
         throw std::runtime_error("metal::CommandBuffer::beginRendering: not a metal::SurfaceFrame");
     }
 
+    _renderColorImage = nullptr;
+    _renderDepthImage = nullptr;
+
     _passDesc = MTL::RenderPassDescriptor::alloc()->init();
 
     auto* colorImg = dynamic_cast<metal::Image*>(_renderFrame->colorImage());
@@ -116,6 +119,58 @@ void CommandBuffer::beginRendering(gpu::SurfaceFrame* frame)
     }
 
     auto* depthImg = dynamic_cast<metal::Image*>(_renderFrame->depthImage());
+    if (depthImg && depthImg->isValid() && depthImg->texture())
+    {
+        _passDesc->depthAttachment()->setTexture(depthImg->texture());
+        _passDesc->depthAttachment()->setLoadAction(MTL::LoadActionDontCare);
+        _passDesc->depthAttachment()->setStoreAction(MTL::StoreActionDontCare);
+    }
+}
+
+void CommandBuffer::beginRendering(gpu::Image* colorImage, uint32_t /*mipLevel*/)
+{
+    if (_computeEncoder)
+    {
+        throw std::runtime_error("metal::CommandBuffer::beginRendering: a compute scope is still active; call endCompute() before beginRendering()");
+    }
+
+    _renderFrame = nullptr;
+    _renderColorImage = colorImage;
+    _renderDepthImage = nullptr;
+
+    _passDesc = MTL::RenderPassDescriptor::alloc()->init();
+
+    auto* colorImg = dynamic_cast<metal::Image*>(colorImage);
+    if (colorImg && colorImg->texture())
+    {
+        _passDesc->colorAttachments()->object(0)->setTexture(colorImg->texture());
+        _passDesc->colorAttachments()->object(0)->setLoadAction(MTL::LoadActionLoad);
+        _passDesc->colorAttachments()->object(0)->setStoreAction(MTL::StoreActionStore);
+    }
+}
+
+void CommandBuffer::beginRendering(gpu::Image* colorImage, gpu::Image* depthImage, uint32_t /*mipLevel*/)
+{
+    if (_computeEncoder)
+    {
+        throw std::runtime_error("metal::CommandBuffer::beginRendering: a compute scope is still active; call endCompute() before beginRendering()");
+    }
+
+    _renderFrame = nullptr;
+    _renderColorImage = colorImage;
+    _renderDepthImage = depthImage;
+
+    _passDesc = MTL::RenderPassDescriptor::alloc()->init();
+
+    auto* colorImg = dynamic_cast<metal::Image*>(colorImage);
+    if (colorImg && colorImg->texture())
+    {
+        _passDesc->colorAttachments()->object(0)->setTexture(colorImg->texture());
+        _passDesc->colorAttachments()->object(0)->setLoadAction(MTL::LoadActionLoad);
+        _passDesc->colorAttachments()->object(0)->setStoreAction(MTL::StoreActionStore);
+    }
+
+    auto* depthImg = dynamic_cast<metal::Image*>(depthImage);
     if (depthImg && depthImg->isValid() && depthImg->texture())
     {
         _passDesc->depthAttachment()->setTexture(depthImg->texture());
@@ -167,6 +222,8 @@ void CommandBuffer::endRendering()
     _boundPipeline        = nullptr;
     _boundLayout          = nullptr;
     _renderFrame          = nullptr;
+    _renderColorImage     = nullptr;
+    _renderDepthImage     = nullptr;
     _boundIndexBuffer     = nullptr;
     _boundIndexBufferOffset = 0;
 }
@@ -479,6 +536,74 @@ void CommandBuffer::drawIndexed(uint32_t indexCount, uint32_t instanceCount,
     );
 }
 
+void CommandBuffer::copyImage(gpu::Image* src, gpu::Image* dst)
+{
+    auto* metalSrc = dynamic_cast<metal::Image*>(src);
+    auto* metalDst = dynamic_cast<metal::Image*>(dst);
+    if (!metalSrc || !metalDst)
+    {
+        throw std::runtime_error("metal::CommandBuffer::copyImage: not a metal::Image");
+    }
+
+    // End any active encoder before starting blit
+    if (_encoder)
+    {
+        _encoder->endEncoding();
+        _encoder->release();
+        _encoder = nullptr;
+    }
+    if (_computeEncoder)
+    {
+        _computeEncoder->endEncoding();
+        _computeEncoder->release();
+        _computeEncoder = nullptr;
+    }
+
+    auto* blitEncoder = _cmd->blitCommandEncoder();
+    blitEncoder->copyFromTexture(metalSrc->texture(), metalDst->texture());
+    blitEncoder->endEncoding();
+    blitEncoder->release();
+}
+
+// TODO: function not fully tested
+void CommandBuffer::blitImage(gpu::Image* src, gpu::Image* dst)
+{
+    auto* metalSrc = dynamic_cast<metal::Image*>(src);
+    auto* metalDst = dynamic_cast<metal::Image*>(dst);
+    if (!metalSrc || !metalDst)
+    {
+        throw std::runtime_error("metal::CommandBuffer::blitImage: not a metal::Image");
+    }
+
+    // End any active encoder before starting blit
+    if (_encoder)
+    {
+        _encoder->endEncoding();
+        _encoder->release();
+        _encoder = nullptr;
+    }
+    if (_computeEncoder)
+    {
+        _computeEncoder->endEncoding();
+        _computeEncoder->release();
+        _computeEncoder = nullptr;
+    }
+
+    auto* blitEncoder = _cmd->blitCommandEncoder();
+
+    MTL::Origin srcOrigin(0, 0, 0);
+    MTL::Size srcSize(src->width(), src->height(), 1);
+    MTL::Origin dstOrigin(0, 0, 0);
+    MTL::Size dstSize(dst->width(), dst->height(), 1);
+
+    blitEncoder->copyFromTexture(
+        metalSrc->texture(), 0, 0, srcOrigin, srcSize,
+        metalDst->texture(), 0, 0, dstOrigin
+    );
+    blitEncoder->endEncoding();
+    blitEncoder->release();
+}
+
 bool CommandBuffer::isValid() const
 {
     return _cmd != nullptr;
@@ -491,6 +616,8 @@ void CommandBuffer::begin() {}
 void CommandBuffer::end() {}
 void CommandBuffer::transition(gpu::Image*, ImageLayout) {}
 void CommandBuffer::beginRendering(gpu::SurfaceFrame*) {}
+void CommandBuffer::beginRendering(gpu::Image*, uint32_t) {}
+void CommandBuffer::beginRendering(gpu::Image*, gpu::Image*, uint32_t) {}
 void CommandBuffer::endRendering() {}
 void CommandBuffer::beginCompute() {}
 void CommandBuffer::endCompute() {}
@@ -506,6 +633,8 @@ void CommandBuffer::bindResourceSet(gpu::ComputePipeline*, uint32_t, gpu::Resour
 void CommandBuffer::bindVertexBuffer(uint32_t, gpu::Buffer*, uint64_t) {}
 void CommandBuffer::bindIndexBuffer(gpu::Buffer*, uint64_t) {}
 void CommandBuffer::drawIndexed(uint32_t, uint32_t, uint32_t, int32_t, uint32_t) {}
+void CommandBuffer::copyImage(gpu::Image*, gpu::Image*) {}
+void CommandBuffer::blitImage(gpu::Image*, gpu::Image*) {}
 bool CommandBuffer::isValid() const { return false; }
 
 #endif

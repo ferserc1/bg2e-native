@@ -282,6 +282,24 @@ void Device::cleanup()
 
     if (_allocator != VK_NULL_HANDLE)
     {
+        if (bg2e::base::Log::isDebug())
+        {
+            char* statsString = nullptr;
+
+            vmaBuildStatsString(
+                _allocator,
+                &statsString,
+                VK_TRUE // detailed map
+            );
+
+            std::cout << statsString << std::endl;
+
+            vmaFreeStatsString(
+                _allocator,
+                statsString
+            );
+        }
+
         vmaDestroyAllocator(_allocator);
         _allocator = VK_NULL_HANDLE;
     }
@@ -356,13 +374,23 @@ std::shared_ptr<gpu::Image> Device::createImage(const ImageDescription& descript
 {
     auto img = std::make_shared<vk::Image>(this);
 
-    VkImageUsageFlags usage = 0;
-    if (hasFlag(description.usage, ImageUsage::Sampled))     { usage |= VK_IMAGE_USAGE_SAMPLED_BIT; }
-    if (hasFlag(description.usage, ImageUsage::Storage))     { usage |= VK_IMAGE_USAGE_STORAGE_BIT; }
-    if (hasFlag(description.usage, ImageUsage::TransferSrc)) { usage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT; }
-    if (hasFlag(description.usage, ImageUsage::TransferDst)) { usage |= VK_IMAGE_USAGE_TRANSFER_DST_BIT; }
+    // Depth images need buildDepthImage to set the correct aspect mask.
+    if (isDepthFormat(description.format))
+    {
+        img->buildDepthImage(this, description.size, description.format, description.debugName);
+    }
+    else
+    {
+        VkImageUsageFlags usage = 0;
+        if (hasFlag(description.usage, ImageUsage::Sampled))         { usage |= VK_IMAGE_USAGE_SAMPLED_BIT; }
+        if (hasFlag(description.usage, ImageUsage::Storage))         { usage |= VK_IMAGE_USAGE_STORAGE_BIT; }
+        if (hasFlag(description.usage, ImageUsage::TransferSrc))     { usage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT; }
+        if (hasFlag(description.usage, ImageUsage::TransferDst))     { usage |= VK_IMAGE_USAGE_TRANSFER_DST_BIT; }
+        if (hasFlag(description.usage, ImageUsage::ColorAttachment)) { usage |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT; }
+        if (hasFlag(description.usage, ImageUsage::DepthStencil))    { usage |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT; }
 
-    img->buildSampledImage(this, description.size, description.format, usage, description.debugName);
+        img->buildSampledImage(this, description.size, description.format, usage, description.debugName);
+    }
     return img;
 }
 
