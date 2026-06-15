@@ -25,7 +25,7 @@
 struct RTMaterialData {
     vec4 albedo;          // base::Color (rgba)
     vec2 albedoScale;
-    uint padding0;
+    uint indexOffset;     // firstIndex of the submesh in the shared index buffer
     uint padding1;
 };
 

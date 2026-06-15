@@ -73,8 +73,8 @@ void CollectRayTracingInstancesVisitor::visit(scene::Node * node)
                 RTObjectInstance objInst {};
                 objInst.materialData.albedo = renderMat->materialAttributes().albedo();
                 objInst.materialData.albedoScale = renderMat->materialAttributes().albedoScale();
-                objInst.materialData.padding[0] = 0;
-                objInst.materialData.padding[1] = 0;
+                objInst.materialData.indexOffset = drw->submeshData(i).firstIndex;
+                objInst.materialData.padding = 0;
                 objInst.vertexBuffer = renderMesh->vertexBuffer();
                 objInst.indexBuffer = renderMesh->indexBuffer();
                 objInst.albedoTexture = renderMat->albedoTexture();

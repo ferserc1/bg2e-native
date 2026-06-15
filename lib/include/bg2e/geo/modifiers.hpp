@@ -160,7 +160,6 @@ protected:
     glm::mat4 _transform;
 };
 
-// TODO: Code not tested
 template <class MeshT>
 class CenterGeometryModifier : public Modifier<MeshT> {
 public:
@@ -183,6 +182,30 @@ public:
         // Apply translation
         for (auto &v : _mesh->vertices) {
             v.position -= center;
+        }
+    }
+};
+
+template <class MeshT>
+class PutOnFloorGeometryModifier : public Modifier<MeshT> {
+public:
+    using Modifier<MeshT>::_mesh;
+
+    void apply() override {
+        if (!_mesh || _mesh->vertices.empty()) return;
+
+        glm::vec3 min = _mesh->vertices[0].position;
+        glm::vec3 max = min;
+
+        // Compute bounding box
+        for (auto &v : _mesh->vertices) {
+            min = glm::min(min, v.position);
+            max = glm::max(max, v.position);
+        }
+
+        // Apply translation
+        for (auto &v : _mesh->vertices) {
+            v.position.y -= min.y;
         }
     }
 };

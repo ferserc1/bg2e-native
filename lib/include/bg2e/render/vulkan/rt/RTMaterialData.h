@@ -35,7 +35,8 @@ static constexpr uint32_t MAX_OBJECTS = 256;
 struct RTMaterialData {
     base::Color albedo;
     glm::vec2 albedoScale;
-    uint32_t padding[2];
+    uint32_t indexOffset;   // firstIndex of the submesh in the shared index buffer
+    uint32_t padding;
 };
 
 struct RTMaterialInstance {

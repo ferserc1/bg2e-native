@@ -38,11 +38,18 @@ void main() {
         attribs.y
     );
 
-    uint triIdx = gl_PrimitiveID;
+    RTMaterialData mat = materials[matIdx];
 
-    uint idx0 = ib[nmatIdx].indices[triIdx * 3 + 0];
-    uint idx1 = ib[nmatIdx].indices[triIdx * 3 + 1];
-    uint idx2 = ib[nmatIdx].indices[triIdx * 3 + 2];
+    // gl_PrimitiveID is relative to the BLAS geometry (0..triangleCount-1) and
+    // does NOT include the primitiveOffset used to build the BLAS. Since every
+    // submesh shares the full-mesh index buffer, we must add the submesh's
+    // firstIndex to read the right triangle (otherwise UVs/vertices come from
+    // another submesh, typically submesh 0).
+    uint base = mat.indexOffset + gl_PrimitiveID * 3u;
+
+    uint idx0 = ib[nmatIdx].indices[base + 0u];
+    uint idx1 = ib[nmatIdx].indices[base + 1u];
+    uint idx2 = ib[nmatIdx].indices[base + 2u];
 
     RTVertex vert0 = vb[nmatIdx].vertices[idx0];
     RTVertex vert1 = vb[nmatIdx].vertices[idx1];
@@ -52,7 +59,6 @@ void main() {
             + vert1.texCoord0 * bary.y
             + vert2.texCoord0 * bary.z;
 
-    RTMaterialData mat = materials[matIdx];
     vec2 scaledUV = uv * mat.albedoScale;
 
     vec3 texColor = texture(albedoTex[nmatIdx], scaledUV).rgb;

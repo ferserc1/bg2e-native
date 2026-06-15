@@ -211,6 +211,20 @@ void ToolBar::init(AppDelegate * delegate, bg2e::ui::UISettingsWindow * uiSettin
     });
 
     addButton({
+        .label = "Put on Floor",
+        .action = [&]()
+        {
+            using namespace bg2e::geo;
+            _appDelegate->stage()->document()->setUnsavedChanges(true);
+            auto drw = _appDelegate->stage()->targetDrawable();
+            if (drw.get())
+            {
+                drw->applyModifier(new PutOnFloorGeometryModifier<Mesh>());
+            }
+        }
+    });
+
+    addButton({
         .label = "cm to m",
         .action = [&]()
         {
