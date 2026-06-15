@@ -74,9 +74,9 @@ int main(int argc, char** argv)
         auto vsPath = (shaderBasePath / targetName / "triangle.vert.spv").string();
         auto fsPath = (shaderBasePath / targetName / "triangle.frag.spv").string();
         auto csPath = (shaderBasePath / targetName / "noop.comp.spv").string();
-        vs = device->createShaderModule({ vsPath, "vertMain", gpu::ShaderStage::Vertex,   "Triangle vertex shader" });
-        fs = device->createShaderModule({ fsPath, "fragMain", gpu::ShaderStage::Fragment, "Triangle fragment shader" });
-        cs = device->createShaderModule({ csPath, "compMain", gpu::ShaderStage::Compute,  "Noop compute shader" });
+        vs = device->createShaderModule({ vsPath, "main", gpu::ShaderStage::Vertex,   "Triangle vertex shader" });
+        fs = device->createShaderModule({ fsPath, "main", gpu::ShaderStage::Fragment, "Triangle fragment shader" });
+        cs = device->createShaderModule({ csPath, "main", gpu::ShaderStage::Compute,  "Noop compute shader" });
     }
     else
     {

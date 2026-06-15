@@ -98,33 +98,37 @@ distinguished only by extension:
 The stage portion of a filename determines both the shader type and the entry
 point name:
 
-| Stage extension | `ShaderStage`            | Entry point  |
-|-----------------|--------------------------|--------------|
-| `.vert`         | `ShaderStage::Vertex`    | `vertMain`   |
-| `.frag`         | `ShaderStage::Fragment`  | `fragMain`   |
-| `.comp`         | `ShaderStage::Compute`   | `compMain`   |
-| `.rgen`         | *(ray generation)*       | `rgenMain`   |
-| `.rmiss`        | *(ray miss)*             | `rmissMain`  |
-| `.rchit`        | *(ray closest-hit)*      | `rchitMain`  |
-| `.rahit`        | *(ray any-hit)*          | `rahitMain`  |
-| `.rint`         | *(ray intersection)*     | `rintMain`   |
+| Stage extension | `ShaderStage`            | Entry point (Metal)  |
+|-----------------|--------------------------|----------------------|
+| `.vert`         | `ShaderStage::Vertex`    | `vertMain`           |
+| `.frag`         | `ShaderStage::Fragment`  | `fragMain`           |
+| `.comp`         | `ShaderStage::Compute`   | `compMain`           |
+| `.rgen`         | *(ray generation)*       | `rgenMain`           |
+| `.rmiss`        | *(ray miss)*             | `rmissMain`          |
+| `.rchit`        | *(ray closest-hit)*      | `rchitMain`          |
+| `.rahit`        | *(ray any-hit)*          | `rahitMain`          |
+| `.rint`         | *(ray intersection)*     | `rintMain`           |
 
 ---
 
 ## Entry point conventions
 
-All shader entry points are named `<stage>Main` regardless of backend:
+Entry points are backend-specific: GLSL uses `main`, Metal uses `<stage>Main`.
 
-| Backend | Language | Source function      | Compiled entry point |
-|---------|----------|----------------------|----------------------|
-| Vulkan  | GLSL     | `void main()`        | `vertMain` / `fragMain` / `compMain` |
-| Metal   | MSL      | `vertex T vertMain(...)` | `vertMain`       |
+| Backend | Language | Entry point name   |
+|---------|----------|--------------------|
+| Vulkan  | GLSL     | `main`             |
+| Metal   | MSL      | `<stage>Main` (e.g. `vertMain`, `fragMain`) |
 
-**GLSL note:** GLSL requires the source function to be named `main`. The
-`compile_shaders_shaderlib()` CMake function passes `-e <stage>Main` to
-`glslang`, which renames the SPIR-V entry point in the compiled binary while the
-source stays valid GLSL. The production `compile_shaders()` function is not
-affected and continues to use `main` for the existing `bg2e::render` shaders.
+The `<stage>Main` naming convention is specific to Metal shaders. GLSL requires
+the entry point to be named `main` in both source and compiled SPIR-V output.
+
+**GLSL note:** GLSL requires the entry point to be named `main`. The
+`compile_shaders_shaderlib()` CMake function no longer passes `-e <stage>Main`
+for GLSL — the compiled SPIR-V retains `main` as the entry point. ShaderLib
+maps the `<stage>Main` API call to `main` for Vulkan/SPIR-V. The production
+`compile_shaders()` function is not affected and continues to use `main` for the
+existing `bg2e::render` shaders.
 
 **Metal note:** MSL does not allow `main` as a function name (it conflicts with
 the C/C++ program entry point). The source function is named `vertMain`,
@@ -133,7 +137,7 @@ the C/C++ program entry point). The source function is named `vertMain`,
 ### GLSL example
 
 ```glsl
-// cube.vert.glsl  — source must use void main()
+// cube.vert.glsl — entry point is main (GLSL standard)
 #version 450
 
 layout(location = 0) in vec3 inPosition;
@@ -146,7 +150,7 @@ void main()
 {
     gl_Position = camera.projectionView * object.model * vec4(inPosition, 1.0);
 }
-// Compiled SPIR-V entry point: "vertMain"  (set by glslang -e vertMain)
+// Compiled SPIR-V entry point: "main" (unchanged from source)
 ```
 
 ### MSL example
@@ -253,8 +257,10 @@ std::unique_ptr<ShaderLib> Backend::createShaderLib(
 ## Build system integration
 
 ShaderLibs for `gpu::` examples are compiled with `compile_shaders_shaderlib()`
-instead of the standard `compile_shaders()`. The difference is the addition of
-`-e <stage>Main` on each `glslang` invocation.
+instead of the standard `compile_shaders()`. For Metal, shaders are compiled with
+`xcrun -sdk iphoneos metallib` (or `macosx`). For Vulkan, GLSL shaders are
+compiled with `glslang` as usual, using `main` as the entry point (no `-e` flag
+needed — matches production shader compilation).
 
 ### CMakeLists.txt pattern for a ShaderLib example
 
@@ -267,7 +273,7 @@ set(METAL_SHADERS_DST "${PRODUCT_DIR}/${APP_TARGET_NAME}_resources/app_shaders/m
 # Register the target (no SHADERS_SRC — handled explicitly below)
 bundle_app_sdl(TARGET_NAME ${APP_TARGET_NAME})
 
-# Compile GLSL with ShaderLib entry-point convention (-e <stage>Main)
+# Compile GLSL shaders for the gpu:: API (entry point: main, same as production)
 compile_shaders_shaderlib(${APP_TARGET_NAME} ${VULKAN_SDK}
     "${APP_SHADERS_SRC}" "${APP_SHADERS_DST}")
 bundle_resources(TARGET_NAME ${APP_TARGET_NAME}
@@ -432,10 +438,10 @@ The corresponding ShaderLib directory at runtime looks like:
 
 ```
 bin/<platform>/shaders/gpu_uniform_buffers/
-  cube.vert.spv          <-- Vulkan (entry point: vertMain)
-  cube.frag.spv          <-- Vulkan (entry point: fragMain)
-  cube.vert.metallib     <-- Metal  (entry point: vertMain)
-  cube.frag.metallib     <-- Metal  (entry point: fragMain)
+   cube.vert.spv          <-- Vulkan (entry point: main)
+   cube.frag.spv          <-- Vulkan (entry point: main)
+   cube.vert.metallib     <-- Metal  (entry point: vertMain)
+   cube.frag.metallib     <-- Metal  (entry point: fragMain)
 ```
 
 ---
@@ -453,11 +459,11 @@ Backend::createShaderLib(basePath)
     -> ShaderLib(basePath, backendType)
         -> ShaderLib::vertex("cube", device)
             -> device->createShaderModule({
-                   basePath / "cube.vert.spv",  // or .metallib
-                   "vertMain",
-                   ShaderStage::Vertex,
-                   "cube vertex shader"
-               })
+                    basePath / "cube.vert.spv",  // or .metallib
+                    "main" (Vulkan) / "vertMain" (Metal),
+                    ShaderStage::Vertex,
+                    "cube vertex shader"
+                })
             -> shared_ptr<ShaderModule>        <-- same type as always
 ```
 

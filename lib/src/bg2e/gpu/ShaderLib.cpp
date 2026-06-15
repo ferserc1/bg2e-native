@@ -75,7 +75,7 @@ std::shared_ptr<ShaderModule> ShaderLib::_load(
     Device*            device)
 {
     std::string ext        = (_backendType == BackendType::Vulkan) ? ".spv" : ".metallib";
-    std::string entryPoint = stageExt + "Main";   // e.g. "vert" -> "vertMain"
+    std::string entryPoint = (_backendType == BackendType::Vulkan) ? "main" : stageExt + "Main";
     auto filePath = (_basePath / (shaderName + "." + stageExt + ext)).string();
     return device->createShaderModule({ filePath, entryPoint, stage, debugName });
 }
