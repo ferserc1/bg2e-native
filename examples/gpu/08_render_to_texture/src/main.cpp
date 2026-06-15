@@ -218,7 +218,7 @@ int main(int argc, char** argv)
     cleanup.push(textureSet);
 
     // 12. Camera UBO (set 0): persistent for the whole application.
-    const float aspect = 800.0f / 600.0f;
+    float aspect = 800.0f / 600.0f;
     auto projection = glm::perspective(glm::radians(60.0f), aspect, 0.1f, 100.0f);
     auto view = glm::lookAt(
         glm::vec3(0.0f, 0.0f, 3.0f),
@@ -353,6 +353,17 @@ int main(int argc, char** argv)
                     device.get(), computeLayout.get(),
                     offscreenColor.get(), computeOutput.get()
                 );
+
+                // Recreate the projection matrix with the new aspect ratio
+                aspect = static_cast<float>(w) / static_cast<float>(h);
+                projection = glm::perspective(glm::radians(60.0f), aspect, 0.1f, 100.0f);
+                view = glm::lookAt(
+                    glm::vec3(0.0f, 0.0f, 3.0f),
+                    glm::vec3(0.0f, 0.0f, 0.0f),
+                    glm::vec3(0.0f, 1.0f, 0.0f)
+                );
+                cameraData.projectionView = projection * view;
+                cameraUbo->updateUniformBuffer(cameraData);
             }
         }
 
