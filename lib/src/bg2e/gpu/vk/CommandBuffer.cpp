@@ -233,9 +233,9 @@ void CommandBuffer::bindPipeline(gpu::GraphicsPipeline* pipeline)
 
         VkViewport viewport{};
         viewport.x = 0.0f;
-        viewport.y = 0.0f;
+        viewport.y = static_cast<float>(h);
         viewport.width = static_cast<float>(w);
-        viewport.height = static_cast<float>(h);
+        viewport.height = -1.0f * static_cast<float>(h);
         viewport.minDepth = 0.0f;
         viewport.maxDepth = 1.0f;
         vkCmdSetViewport(_cmd, 0, 1, &viewport);

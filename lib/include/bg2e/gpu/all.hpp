@@ -38,6 +38,7 @@
 #include <bg2e/gpu/Sampler.hpp>
 #include <bg2e/gpu/ResourceSet.hpp>
 #include <bg2e/gpu/ShaderModule.hpp>
+#include <bg2e/gpu/ShaderLib.hpp>
 #include <bg2e/gpu/PipelineLayout.hpp>
 #include <bg2e/gpu/GraphicsPipeline.hpp>
 #include <bg2e/gpu/ComputePipeline.hpp>

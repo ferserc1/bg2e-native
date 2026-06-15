@@ -23,9 +23,11 @@
 #include <bg2e/gpu/Device.hpp>
 #include <bg2e/gpu/WindowSurface.hpp>
 #include <bg2e/gpu/OffscreenSurface.hpp>
+#include <bg2e/gpu/ShaderLib.hpp>
 #include <bg2e/gpu/Common.hpp>
 
 #include <cstdint>
+#include <filesystem>
 #include <memory>
 
 namespace bg2e {
@@ -43,6 +45,7 @@ public:
 
     [[nodiscard]] virtual gpu::Instance* sharedInstance() const = 0;
     [[nodiscard]] virtual WindowType windowType() const = 0;
+    [[nodiscard]] virtual BackendType backendType() const = 0;
 
     [[nodiscard]] virtual std::unique_ptr<gpu::PhysicalDevice>  createPhysicalDevice()                                     const = 0;
     [[nodiscard]] virtual std::unique_ptr<gpu::Device>          createDevice()                                               const = 0;
@@ -55,6 +58,12 @@ public:
         const Size2D& size,
         PixelFormat colorFormat = PixelFormat::R8G8B8A8_UNORM,
         PixelFormat depthFormat = PixelFormat::D32_SFLOAT) const = 0;
+
+    [[nodiscard]] std::unique_ptr<ShaderLib> createShaderLib(
+        const std::filesystem::path& basePath) const
+    {
+        return std::make_unique<ShaderLib>(basePath, backendType());
+    }
 };
 
 }

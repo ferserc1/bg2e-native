@@ -74,16 +74,18 @@ int main(int argc, char** argv)
         auto vsPath = (shaderBasePath / targetName / "triangle.vert.spv").string();
         auto fsPath = (shaderBasePath / targetName / "triangle.frag.spv").string();
         auto csPath = (shaderBasePath / targetName / "noop.comp.spv").string();
-        vs = device->createShaderModule({ vsPath, "main", gpu::ShaderStage::Vertex, "Triangle vertex shader" });
-        fs = device->createShaderModule({ fsPath, "main", gpu::ShaderStage::Fragment, "Triangle fragment shader" });
-        cs = device->createShaderModule({ csPath, "main", gpu::ShaderStage::Compute, "Noop compute shader" });
+        vs = device->createShaderModule({ vsPath, "vertMain", gpu::ShaderStage::Vertex,   "Triangle vertex shader" });
+        fs = device->createShaderModule({ fsPath, "fragMain", gpu::ShaderStage::Fragment, "Triangle fragment shader" });
+        cs = device->createShaderModule({ csPath, "compMain", gpu::ShaderStage::Compute,  "Noop compute shader" });
     }
     else
     {
-        auto libPath = (shaderBasePath / targetName / "metal" / "triangle.metallib").string();
-        vs = device->createShaderModule({ libPath, "triangle_vertex", gpu::ShaderStage::Vertex, "Triangle vertex shader" });
-        fs = device->createShaderModule({ libPath, "triangle_fragment", gpu::ShaderStage::Fragment, "Triangle fragment shader" });
-        cs = device->createShaderModule({ libPath, "noop_compute", gpu::ShaderStage::Compute, "Noop compute shader" });
+        auto vsPath = (shaderBasePath / targetName / "triangle.vert.metallib").string();
+        auto fsPath = (shaderBasePath / targetName / "triangle.frag.metallib").string();
+        auto csPath = (shaderBasePath / targetName / "noop.comp.metallib").string();
+        vs = device->createShaderModule({ vsPath, "vertMain", gpu::ShaderStage::Vertex,   "Triangle vertex shader" });
+        fs = device->createShaderModule({ fsPath, "fragMain", gpu::ShaderStage::Fragment, "Triangle fragment shader" });
+        cs = device->createShaderModule({ csPath, "compMain", gpu::ShaderStage::Compute,  "Noop compute shader" });
     }
 
     // Graphics layout with push constant range for fragment stage

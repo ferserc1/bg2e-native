@@ -38,6 +38,11 @@ gpu::WindowType Backend::windowType() const
     return gpu::WindowType::Vulkan;
 }
 
+gpu::BackendType Backend::backendType() const
+{
+    return gpu::BackendType::Vulkan;
+}
+
 std::unique_ptr<gpu::PhysicalDevice> Backend::createPhysicalDevice() const
 {
     return std::make_unique<vk::PhysicalDevice>();

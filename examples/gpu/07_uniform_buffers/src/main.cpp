@@ -103,26 +103,12 @@ int main(int argc, char** argv)
     // CleanupManager owns the ordered teardown of every DeviceResource below.
     gpu::CleanupManager cleanup;
 
-    // 8. Create shader modules
+    // 8. Create shader modules via ShaderLib
     auto shaderBasePath = base::PlatformTools::shaderPath();
-    std::string targetName = "gpu_uniform_buffers";
 
-    std::shared_ptr<gpu::ShaderModule> vs;
-    std::shared_ptr<gpu::ShaderModule> fs;
-
-    if (backendType == gpu::BackendType::Vulkan)
-    {
-        auto vsPath = (shaderBasePath / targetName / "cube.vert.spv").string();
-        auto fsPath = (shaderBasePath / targetName / "cube.frag.spv").string();
-        vs = device->createShaderModule({ vsPath, "main", gpu::ShaderStage::Vertex,   "Cube vertex shader" });
-        fs = device->createShaderModule({ fsPath, "main", gpu::ShaderStage::Fragment, "Cube fragment shader" });
-    }
-    else
-    {
-        auto libPath = (shaderBasePath / targetName / "metal" / "cube.metallib").string();
-        vs = device->createShaderModule({ libPath, "cube_vertex",   gpu::ShaderStage::Vertex,   "Cube vertex shader" });
-        fs = device->createShaderModule({ libPath, "cube_fragment", gpu::ShaderStage::Fragment, "Cube fragment shader" });
-    }
+    auto shaderLib = backend->createShaderLib(shaderBasePath / "gpu_uniform_buffers");
+    auto vs = shaderLib->vertex("cube", device.get());
+    auto fs = shaderLib->fragment("cube", device.get());
     cleanup.push(vs);
     cleanup.push(fs);
 

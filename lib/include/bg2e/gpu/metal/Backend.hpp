@@ -34,6 +34,7 @@ class BG2E_API Backend : public gpu::Backend {
 public:
     gpu::Instance* sharedInstance() const override;
     gpu::WindowType windowType() const override;
+    gpu::BackendType backendType() const override;
 
     std::unique_ptr<gpu::PhysicalDevice>  createPhysicalDevice()                                const override;
     std::unique_ptr<gpu::Device>          createDevice()                                          const override;

@@ -47,6 +47,7 @@ backend-specific sub-namespaces (`bg2e::gpu::vk`, `bg2e::gpu::metal`).
 | [Device](Device.md) | `gpu/Device.hpp` | Logical device, queue access, and resource factories. |
 | [Queue](Queue.md) | `gpu/Queue.hpp` | Abstract command queue; creates and submits command buffers. |
 | [ShaderModule](ShaderModule.md) | `gpu/ShaderModule.hpp` | Compiled shader module (SPIR-V or metallib). |
+| [ShaderLib](ShaderLibraries.md) | `gpu/ShaderLib.hpp` | Backend-agnostic shader library loader; wraps a directory of compiled shaders. |
 | [PipelineLayout](PipelineLayout.md) | `gpu/PipelineLayout.hpp` | Push constant and descriptor set layout. |
 | [GraphicsPipeline](GraphicsPipeline.md) | `gpu/GraphicsPipeline.hpp` | Graphics pipeline state object. |
 | [ComputePipeline](ComputePipeline.md) | `gpu/ComputePipeline.hpp` | Compute pipeline state object. |

@@ -77,6 +77,80 @@ function(compile_shaders
     add_dependencies(${TARGET_NAME} ${TARGET_NAME}_shaders)
 endfunction()
 
+# Like compile_shaders() but for ShaderLib-style builds: the SPIR-V entry-point
+# is renamed to <stage>Main (e.g. vertMain, fragMain, compMain) using glslang -e,
+# so the naming convention matches Metal (.metallib) ShaderLibs.
+# The GLSL source still uses void main() as required by the GLSL spec.
+function(compile_shaders_shaderlib
+    TARGET_NAME
+    VULKAN_SDK_PATH
+    SRC_PATH
+    DST_PATH
+)
+    set(COMPILED_SHADERS "")
+
+    set(GLSLANG_PATH "${VULKAN_SDK_PATH}/bin/glslang")
+    file(GLOB SHADERS_SRC "${SRC_PATH}/*.glsl")
+
+    file(MAKE_DIRECTORY "${DST_PATH}")
+
+    foreach(SH ${SHADERS_SRC})
+        get_filename_component(NAME "${SH}" NAME)
+        string(REPLACE ".glsl" "" BASE "${NAME}")
+        set(SPV "${DST_PATH}/${BASE}.spv")
+
+        if("${NAME}" MATCHES "\\.vert\\.glsl$")
+            set(ENTRY_POINT "vertMain")
+        elseif("${NAME}" MATCHES "\\.frag\\.glsl$")
+            set(ENTRY_POINT "fragMain")
+        elseif("${NAME}" MATCHES "\\.comp\\.glsl$")
+            set(ENTRY_POINT "compMain")
+        elseif("${NAME}" MATCHES "\\.rgen\\.glsl$")
+            set(ENTRY_POINT "rgenMain")
+        elseif("${NAME}" MATCHES "\\.rmiss\\.glsl$")
+            set(ENTRY_POINT "rmissMain")
+        elseif("${NAME}" MATCHES "\\.rchit\\.glsl$")
+            set(ENTRY_POINT "rchitMain")
+        elseif("${NAME}" MATCHES "\\.rahit\\.glsl$")
+            set(ENTRY_POINT "rahitMain")
+        elseif("${NAME}" MATCHES "\\.rint\\.glsl$")
+            set(ENTRY_POINT "rintMain")
+        else()
+            set(ENTRY_POINT "main")
+        endif()
+
+        string(FIND "${NAME}" ".rgen." IS_RGEN)
+        string(FIND "${NAME}" ".rmiss." IS_RMISS)
+        string(FIND "${NAME}" ".rchit." IS_RCHIT)
+        string(FIND "${NAME}" ".rahit." IS_RAHIT)
+        string(FIND "${NAME}" ".rint." IS_RINT)
+
+        if(IS_RGEN GREATER -1 OR IS_RMISS GREATER -1 OR IS_RCHIT GREATER -1 OR IS_RAHIT GREATER -1 OR IS_RINT GREATER -1)
+            add_custom_command(
+                OUTPUT ${SPV}
+                COMMAND "${GLSLANG_PATH}" -V --target-env vulkan1.2 -e "${ENTRY_POINT}" "${SH}" -o "${SPV}"
+                DEPENDS ${SH}
+                COMMENT "Building RT ShaderLib shader ${SH} (entry: ${ENTRY_POINT})"
+                VERBATIM
+            )
+        else()
+            add_custom_command(
+                OUTPUT ${SPV}
+                COMMAND "${GLSLANG_PATH}" -V -e "${ENTRY_POINT}" "${SH}" -o "${SPV}"
+                DEPENDS ${SH}
+                COMMENT "Building ShaderLib shader ${SH} (entry: ${ENTRY_POINT})"
+                VERBATIM
+            )
+        endif()
+
+        list(APPEND COMPILED_SHADERS ${SPV})
+    endforeach()
+
+    add_custom_target(${TARGET_NAME}_shaders ALL DEPENDS ${COMPILED_SHADERS})
+
+    add_dependencies(${TARGET_NAME} ${TARGET_NAME}_shaders)
+endfunction()
+
 # Compile Metal shaders from SRC_PATH (*.metal) to DST_PATH (*.metallib)
 # MACOSX Build tools must be installed (Command Line Tools or Xcode)
 # Uses POST_BUILD commands so that the compiled shaders are available before

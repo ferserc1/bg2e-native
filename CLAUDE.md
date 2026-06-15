@@ -59,6 +59,17 @@ The engine is a C++20 shared library (`libbg2e`) built in layered modules:
 
 Headers are in `lib/include/bg2e/`, implementations in `lib/src/bg2e/`.
 
+## Rendering API direction and `bg2e::gpu` rules
+
+- `bg2e::render` is the current production rendering API. It is implemented directly with Vulkan.
+- `bg2e::gpu` is a new, in-progress API and is not currently in production.
+- The medium-term goal is to implement a future render API, name not yet decided, that replaces the current `bg2e::render` API and is implemented on top of `bg2e::gpu`.
+- Until the user explicitly asks for migration work, keep `bg2e::render` and `bg2e::gpu` separate.
+- When the user asks for work specifically in `bg2e::gpu`, never modify other namespaces unless the user explicitly requests it.
+- Code inside `bg2e::gpu` must not depend on higher-level engine namespaces.
+- The only `bg2e` namespaces allowed as dependencies from `bg2e::gpu` are `bg2e::base`, `bg2e::app`, `bg2e::geo`, and `bg2e::math`.
+- Do not introduce dependencies from `bg2e::gpu` to `bg2e::render`, `bg2e::scene`, `bg2e::db`, `bg2e::manipulation`, `bg2e::utils`, or `bg2e::ui`.
+
 ### Render pipeline
 
 Uses **Vulkan dynamic rendering** — no `VkRenderPass`; requires `VK_KHR_dynamic_rendering`.
@@ -83,7 +94,7 @@ RenderLoop::run() → RenderLoopDelegate::render(cmd)
 
 ### New `gpu` abstraction layer (in progress)
 
-A backend-agnostic GPU abstraction is being developed under `lib/include/bg2e/gpu/`. It provides pure abstract interfaces (`gpu::Backend`, `gpu::Device`, `gpu::Instance`, `gpu::PhysicalDevice`, `gpu::Surface`, `gpu::Queue`) with concrete implementations in `gpu/vk/` (Vulkan) and `gpu/metal/` (Metal). New low-level GPU examples live under `examples/gpu/`. This layer is separate from the existing `render/` layer.
+A backend-agnostic GPU abstraction is being developed under `lib/include/bg2e/gpu/`. It provides pure abstract interfaces (`gpu::Backend`, `gpu::Device`, `gpu::Instance`, `gpu::PhysicalDevice`, `gpu::Surface`, `gpu::Queue`) with concrete implementations in `gpu/vk/` (Vulkan) and `gpu/metal/` (Metal). New low-level GPU examples live under `examples/gpu/`. This layer is separate from the existing production `render/` layer and must not depend on higher-level engine namespaces.
 
 ### Scene graph
 

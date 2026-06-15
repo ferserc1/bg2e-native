@@ -6,11 +6,7 @@ struct VertexOut {
     float3 color;
 };
 
-struct PushConstants {
-    float4 color;
-};
-
-vertex VertexOut triangle_vertex(uint vertexID [[vertex_id]])
+vertex VertexOut vertMain(uint vertexID [[vertex_id]])
 {
     const float2 positions[3] = {
         float2( 0.0, -0.5),
@@ -28,14 +24,4 @@ vertex VertexOut triangle_vertex(uint vertexID [[vertex_id]])
     out.position = float4(positions[vertexID], 0.0, 1.0);
     out.color = colors[vertexID];
     return out;
-}
-
-fragment float4 triangle_fragment(VertexOut in [[stage_in]],
-                                 constant PushConstants& pc [[buffer(0)]])
-{
-    return float4(in.color * pc.color.rgb, pc.color.a);
-}
-
-kernel void noop_compute(uint gid [[thread_position_in_grid]])
-{
 }

@@ -38,6 +38,11 @@ gpu::WindowType Backend::windowType() const
     return gpu::WindowType::Metal;
 }
 
+gpu::BackendType Backend::backendType() const
+{
+    return gpu::BackendType::Metal;
+}
+
 std::unique_ptr<gpu::PhysicalDevice> Backend::createPhysicalDevice() const
 {
     return std::make_unique<metal::PhysicalDevice>();
