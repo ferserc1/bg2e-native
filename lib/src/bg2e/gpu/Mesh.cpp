@@ -193,5 +193,16 @@ VertexBufferDescription MeshGeneric<bg2e::geo::MeshPNUUT>::vertexBufferDescripti
     return desc;
 }
 
+template class BG2E_API MeshGeneric<bg2e::geo::MeshP>;
+template class BG2E_API MeshGeneric<bg2e::geo::MeshPN>;
+template class BG2E_API MeshGeneric<bg2e::geo::MeshPC>;
+template class BG2E_API MeshGeneric<bg2e::geo::MeshPU>;
+template class BG2E_API MeshGeneric<bg2e::geo::MeshPNU>;
+template class BG2E_API MeshGeneric<bg2e::geo::MeshPNC>;
+template class BG2E_API MeshGeneric<bg2e::geo::MeshPNUC>;
+template class BG2E_API MeshGeneric<bg2e::geo::MeshPNUT>;
+template class BG2E_API MeshGeneric<bg2e::geo::MeshPNUUT>;
+
+
 }
 }

@@ -286,11 +286,11 @@ extern BG2E_API bg2e::scene::Node * loadGltf(
 
         if (data->meshes[meshIdx].name)
         {
-            drw->setName(std::string(filePath.stem()) + "_" + data->meshes[meshIdx].name);
+            drw->setName(std::string(filePath.stem().string()) + "_" + data->meshes[meshIdx].name);
         }
         else
         {
-            drw->setName(std::string(filePath.stem()) + "_mesh_" + std::to_string(meshIdx));
+            drw->setName(std::string(filePath.stem().string()) + "_mesh_" + std::to_string(meshIdx));
         }
 
         // Check if the tangents must be generated procedurally

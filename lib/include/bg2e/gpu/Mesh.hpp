@@ -31,7 +31,7 @@ namespace bg2e {
 namespace gpu {
 
 template <typename MeshT>
-class MeshGeneric {
+class BG2E_API MeshGeneric {
 public:
     using geo_type = MeshT;
 
@@ -97,16 +97,17 @@ private:
     std::shared_ptr<gpu::Buffer> _indexBuffer;
 };
 
-using MeshP     = MeshGeneric<bg2e::geo::MeshP>;
-using MeshPN    = MeshGeneric<bg2e::geo::MeshPN>;
-using MeshPC    = MeshGeneric<bg2e::geo::MeshPC>;
-using MeshPU    = MeshGeneric<bg2e::geo::MeshPU>;
-using MeshPNU   = MeshGeneric<bg2e::geo::MeshPNU>;
-using MeshPNC   = MeshGeneric<bg2e::geo::MeshPNC>;
-using MeshPNUC  = MeshGeneric<bg2e::geo::MeshPNUC>;
-using MeshPNUT  = MeshGeneric<bg2e::geo::MeshPNUT>;
-using MeshPNUUT = MeshGeneric<bg2e::geo::MeshPNUUT>;
-using Mesh      = MeshGeneric<bg2e::geo::Mesh>;
+typedef BG2E_API  MeshGeneric<bg2e::geo::MeshP> MeshP;
+typedef BG2E_API  MeshGeneric<bg2e::geo::MeshPN> MeshPN;
+typedef BG2E_API  MeshGeneric<bg2e::geo::MeshPC> MeshPC;
+typedef BG2E_API  MeshGeneric<bg2e::geo::MeshPU> MeshPU;
+typedef BG2E_API  MeshGeneric<bg2e::geo::MeshPNU> MeshPNU;
+typedef BG2E_API  MeshGeneric<bg2e::geo::MeshPNC> MeshPNC;
+typedef BG2E_API  MeshGeneric<bg2e::geo::MeshPNUC> MeshPNUC;
+typedef BG2E_API  MeshGeneric<bg2e::geo::MeshPNUT> MeshPNUT;
+typedef BG2E_API  MeshGeneric<bg2e::geo::MeshPNUUT> MeshPNUUT;
+
+typedef BG2E_API  MeshGeneric<bg2e::geo::Mesh> Mesh;
 
 }
 }
