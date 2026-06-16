@@ -26,6 +26,7 @@ namespace bg2e {
 namespace gpu {
 
 class Buffer;
+class CubeMap;
 class Image;
 class ResourceSet;
 class SurfaceFrame;
@@ -49,6 +50,10 @@ public:
     virtual void beginRendering(gpu::Image* colorImage, gpu::Image* depthImage, uint32_t mipLevel = 0)
     {
         throw std::runtime_error("beginRendering(Image*, Image*) not implemented");
+    }
+    virtual void beginRendering(gpu::CubeMap* cubemap, CubemapFace face, uint32_t mipLevel = 0)
+    {
+        throw std::runtime_error("beginRendering(CubeMap*) not implemented");
     }
     virtual void endRendering() = 0;
 

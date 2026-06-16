@@ -16,33 +16,22 @@
  *    along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <bg2e/gpu/metal/PipelineLayout.hpp>
+#include <bg2e/gpu/ResourceSet.hpp>
+#include <bg2e/gpu/CubeMap.hpp>
+
+#include <stdexcept>
 
 namespace bg2e {
 namespace gpu {
-namespace metal {
 
-PipelineLayout::PipelineLayout(gpu::Device* gpuDevice, const gpu::PipelineLayoutDescription& description)
-    : gpu::PipelineLayout(gpuDevice), _description(description)
+void ResourceSet::setSampledCubeMap(ShaderBinding binding, gpu::CubeMap* cubeMap)
 {
-    validatePushConstantRanges(description.pushConstants);
-    validateMetalBufferBindings(description.resourceBindings);
+    if (!cubeMap || !cubeMap->image())
+    {
+        throw std::runtime_error("gpu::ResourceSet::setSampledCubeMap: cubeMap or its image is null");
+    }
+    setSampledImage(binding, cubeMap->image());
 }
 
-PipelineLayout::~PipelineLayout()
-{
-    cleanup();
-}
-
-bool PipelineLayout::isValid() const
-{
-    return true;
-}
-
-void PipelineLayout::cleanup()
-{
-}
-
-}
 }
 }

@@ -27,6 +27,14 @@ namespace bg2e {
 namespace gpu {
 namespace metal {
 
+// Metal pipeline layout — metadata container for push constant ranges and
+// resource bindings. Validates the PipelineLayoutDescription at construction:
+//
+//   1. At most one PushConstantRange per ShaderStage.
+//   2. UniformBuffer/StorageBuffer bindings use buffer indices that do not
+//      collide with reserved slots (vertex >= 2, fragment/compute >= 1).
+//
+// Throws std::runtime_error on validation failure.
 class BG2E_API PipelineLayout : public gpu::PipelineLayout {
 public:
     PipelineLayout(gpu::Device* gpuDevice, const gpu::PipelineLayoutDescription& description);
@@ -39,34 +47,33 @@ public:
 
     const std::vector<ResourceBinding>& resourceBindings() const { return _description.resourceBindings; }
 
-    // Resolves a ResourceBinding to a Metal argument index in the texture/sampler
-    // namespaces. Textures and samplers are independent index namespaces in Metal,
-    // so index = binding is sufficient for them.
-    uint32_t metalIndex(const ResourceBinding& b) const { return b.binding; }
+    // Metal texture/sampler argument index: uses the metal field of ShaderBinding.
+    uint32_t metalIndex(const ResourceBinding& b) const { return b.binding.metal; }
 
-    // Metal buffer-namespace index allocation.
-    //
-    // The Metal [[buffer(n)]] namespace is shared (per stage) by vertex attribute
-    // buffers, push-constant data and uniform/storage buffers. To avoid
-    // collisions the indices are partitioned as:
-    //   [0 .. MaxVertexBuffers-1]   -> vertex attribute buffers (stage_in)
-    //   uniform / storage buffers   -> MaxVertexBuffers + set*MaxBindingsPerSet + binding
-    // The example shaders must declare the matching [[buffer(n)]] indices.
-    static constexpr uint32_t MaxVertexBuffers  = 8;
-    static constexpr uint32_t MaxBindingsPerSet = 8;
-
+    // Metal buffer argument index: uses the metal field of ShaderBinding directly.
     uint32_t metalBufferIndex(const ResourceBinding& b) const
     {
-        return MaxVertexBuffers + b.set * MaxBindingsPerSet + b.binding;
+        return b.binding.metal;
     }
 
-    // Buffer index reserved for push-constant data on Metal. Kept in the
-    // vertex-buffer region so it does not collide with uniform/storage buffers.
-    static constexpr uint32_t PushConstantBufferIndex = 0;
-
-    uint32_t pushConstantBufferIndex(ShaderStage /*stage*/) const
+    // Buffer index reserved for push-constant data on Metal.
+    //
+    // Metal push constant buffer indices are fixed by bg2e::gpu convention:
+    //   Vertex   -> buffer(1)
+    //   Fragment -> buffer(0)
+    //   Compute  -> buffer(0)
+    //
+    // In Metal vertex shaders, buffer(0) is reserved for the geometric vertex
+    // buffer because bg2e::gpu always binds vertex data as a single vertex buffer.
+    uint32_t pushConstantBufferIndex(ShaderStage stage) const
     {
-        return PushConstantBufferIndex;
+        switch (stage)
+        {
+            case ShaderStage::Vertex:   return 1;
+            case ShaderStage::Fragment: return 0;
+            case ShaderStage::Compute:  return 0;
+        }
+        return 0;
     }
 
 private:

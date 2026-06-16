@@ -5,26 +5,35 @@ function(build_shaders
     SRC_PATH
     DST_PATH
 )
+    set(COMPILED_SHADERS "")
+
     set(GLSLANG_PATH "${VULKAN_SDK_PATH}/bin/glslang")
     message(STATUS "glslang command: ${GLSLANG_PATH}")
-    file(GLOB SHADERS_SRC "${SRC_PATH}/*.glsl")
+    file(GLOB SHADERS_SRC CONFIGURE_DEPENDS "${SRC_PATH}/*.glsl")
 
     message(STATUS "build shaders from ${SRC_PATH} into ${DST_PATH}")
 
-    add_custom_command(
-        TARGET ${TARGET_NAME}
-        POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E make_directory "${DST_PATH}"
-    )
+    file(MAKE_DIRECTORY "${DST_PATH}")
+
     foreach(SH ${SHADERS_SRC})
         get_filename_component(NAME "${SH}" NAME)
         string(REPLACE ".glsl" "" BASE "${NAME}")
+        set(SPV "${DST_PATH}/${BASE}.spv")
+
         add_custom_command(
-            TARGET ${TARGET_NAME}
-            POST_BUILD
-            COMMAND "${GLSLANG_PATH}" -V "${SH}" -o "${DST_PATH}/${BASE}.spv"
+            OUTPUT ${SPV}
+            COMMAND "${GLSLANG_PATH}" -V "${SH}" -o "${SPV}"
+            DEPENDS ${SH}
+            COMMENT "Building shader ${SH}"
+            VERBATIM
         )
+
+        list(APPEND COMPILED_SHADERS ${SPV})
     endforeach()
+
+    add_custom_target(${TARGET_NAME}_shaders ALL DEPENDS ${COMPILED_SHADERS})
+
+    add_dependencies(${TARGET_NAME} ${TARGET_NAME}_shaders)
 endfunction()
 
 function(compile_shaders
@@ -36,7 +45,7 @@ function(compile_shaders
     set(COMPILED_SHADERS "")
 
     set(GLSLANG_PATH "${VULKAN_SDK_PATH}/bin/glslang")
-    file(GLOB SHADERS_SRC "${SRC_PATH}/*.glsl")
+    file(GLOB SHADERS_SRC CONFIGURE_DEPENDS "${SRC_PATH}/*.glsl")
 
     file(MAKE_DIRECTORY "${DST_PATH}")
 
@@ -90,7 +99,7 @@ function(compile_shaders_shaderlib
     set(COMPILED_SHADERS "")
 
     set(GLSLANG_PATH "${VULKAN_SDK_PATH}/bin/glslang")
-    file(GLOB SHADERS_SRC "${SRC_PATH}/*.glsl")
+    file(GLOB SHADERS_SRC CONFIGURE_DEPENDS "${SRC_PATH}/*.glsl")
 
     file(MAKE_DIRECTORY "${DST_PATH}")
 
@@ -153,8 +162,6 @@ endfunction()
 
 # Compile Metal shaders from SRC_PATH (*.metal) to DST_PATH (*.metallib)
 # MACOSX Build tools must be installed (Command Line Tools or Xcode)
-# Uses POST_BUILD commands so that the compiled shaders are available before
-# any subsequent POST_BUILD steps (e.g. bundle_resources).
 # No-op on non-Apple platforms.
 function(compile_metal_shaders
     TARGET_NAME
@@ -165,17 +172,15 @@ function(compile_metal_shaders
         return()
     endif()
 
-    file(GLOB MSL_SRC "${SRC_PATH}/*.metal")
+    file(GLOB MSL_SRC CONFIGURE_DEPENDS "${SRC_PATH}/*.metal")
 
     if(NOT MSL_SRC)
         return()
     endif()
 
-    add_custom_command(
-        TARGET ${TARGET_NAME}
-        POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E make_directory "${DST_PATH}"
-    )
+    set(COMPILED_METAL_LIBS "")
+
+    file(MAKE_DIRECTORY "${DST_PATH}")
 
     foreach(MSH ${MSL_SRC})
         get_filename_component(NAME "${MSH}" NAME)
@@ -184,21 +189,27 @@ function(compile_metal_shaders
         set(MTLIB "${DST_PATH}/${BASE}.metallib")
 
         add_custom_command(
-            TARGET ${TARGET_NAME}
-            POST_BUILD
+            OUTPUT ${AIR}
             COMMAND xcrun -sdk macosx metal -c -o "${AIR}" "${MSH}"
+            DEPENDS ${MSH}
             COMMENT "Compiling metal shader ${MSH}"
             VERBATIM
         )
 
         add_custom_command(
-            TARGET ${TARGET_NAME}
-            POST_BUILD
+            OUTPUT ${MTLIB}
             COMMAND xcrun -sdk macosx metallib -o "${MTLIB}" "${AIR}"
+            DEPENDS ${AIR}
             COMMENT "Building metal library ${MTLIB}"
             VERBATIM
         )
+
+        list(APPEND COMPILED_METAL_LIBS ${MTLIB})
     endforeach()
+
+    add_custom_target(${TARGET_NAME}_metal_shaders ALL DEPENDS ${COMPILED_METAL_LIBS})
+
+    add_dependencies(${TARGET_NAME} ${TARGET_NAME}_metal_shaders)
 endfunction()
 
 # Copy a library to the macOS application bundle

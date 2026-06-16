@@ -30,6 +30,7 @@
 #include <bg2e/gpu/vk/CommandBuffer.hpp>
 #include <bg2e/gpu/vk/Info.hpp>
 #include <bg2e/gpu/vk/extensions.hpp>
+#include <bg2e/gpu/CubeMap.hpp>
 #include <bg2e/gpu/Surface.hpp>
 #include <bg2e/base/Log.hpp>
 
@@ -374,8 +375,21 @@ std::shared_ptr<gpu::Image> Device::createImage(const ImageDescription& descript
 {
     auto img = std::make_shared<vk::Image>(this);
 
+    if (description.type == ImageType::Cubemap)
+    {
+        VkImageUsageFlags usage = 0;
+        if (hasFlag(description.usage, ImageUsage::Sampled))         { usage |= VK_IMAGE_USAGE_SAMPLED_BIT; }
+        if (hasFlag(description.usage, ImageUsage::Storage))         { usage |= VK_IMAGE_USAGE_STORAGE_BIT; }
+        if (hasFlag(description.usage, ImageUsage::TransferSrc))     { usage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT; }
+        if (hasFlag(description.usage, ImageUsage::TransferDst))     { usage |= VK_IMAGE_USAGE_TRANSFER_DST_BIT; }
+        if (hasFlag(description.usage, ImageUsage::ColorAttachment)) { usage |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT; }
+        img->buildCubemapImage(
+            this, description.size, description.format,
+            usage, description.mipLevels, description.debugName
+        );
+    }
     // Depth images need buildDepthImage to set the correct aspect mask.
-    if (isDepthFormat(description.format))
+    else if (isDepthFormat(description.format))
     {
         img->buildDepthImage(this, description.size, description.format, description.debugName);
     }
@@ -392,6 +406,13 @@ std::shared_ptr<gpu::Image> Device::createImage(const ImageDescription& descript
         img->buildSampledImage(this, description.size, description.format, usage, description.debugName);
     }
     return img;
+}
+
+std::shared_ptr<gpu::CubeMap> Device::createCubeMap(const gpu::CubeMapDescription& description)
+{
+    auto cubeMap = std::make_shared<gpu::CubeMap>(this);
+    cubeMap->create(description);
+    return cubeMap;
 }
 
 std::shared_ptr<gpu::Buffer> Device::createBuffer(const std::string& debugName)

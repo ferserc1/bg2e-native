@@ -43,11 +43,11 @@ public:
     ResourceSet(gpu::Device* gpuDevice, const metal::PipelineLayout* layout, uint32_t setIndex);
     ~ResourceSet() override;
 
-    void setStorageImage(uint32_t binding, gpu::Image* image) override;
-    void setSampledImage(uint32_t binding, gpu::Image* image) override;
-    void setSampler(uint32_t binding, gpu::Sampler* sampler) override;
-    void setUniformBuffer(uint32_t binding, gpu::Buffer* buffer) override;
-    void setStorageBuffer(uint32_t binding, gpu::Buffer* buffer) override;
+    void setStorageImage(ShaderBinding binding, gpu::Image* image) override;
+    void setSampledImage(ShaderBinding binding, gpu::Image* image) override;
+    void setSampler(ShaderBinding binding, gpu::Sampler* sampler) override;
+    void setUniformBuffer(ShaderBinding binding, gpu::Buffer* buffer) override;
+    void setStorageBuffer(ShaderBinding binding, gpu::Buffer* buffer) override;
 
     void update() override;
 
@@ -58,7 +58,7 @@ public:
     const std::vector<ResourceEntry>& entries() const { return _entries; }
 
 private:
-    void setBufferBinding(uint32_t binding, gpu::Buffer* buffer,
+    void setBufferBinding(ShaderBinding binding, gpu::Buffer* buffer,
                           ResourceType type, const char* debugTag);
 
     uint32_t    _setIndex{0};

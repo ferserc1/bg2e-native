@@ -19,12 +19,12 @@ struct ModelUBO {
     float4x4 model;
 };
 
-// Buffer indices match metal::PipelineLayout::metalBufferIndex():
-//   set 0, binding 0 (camera) -> 8
-//   set 1, binding 0 (model)  -> 16
+// Buffer indices match ShaderBinding.metal:
+//   set 0, binding 0 (camera) -> metal 8
+//   set 1, binding 0 (model)  -> metal 16
 vertex VertexOut vertMain(VertexIn in [[stage_in]],
-                      constant CameraUBO& camera [[buffer(8)]],
-                      constant ModelUBO&  model  [[buffer(16)]])
+                      constant CameraUBO& camera [[buffer(2)]],
+                      constant ModelUBO&  model  [[buffer(3)]])
 {
     VertexOut out;
     out.position = camera.projectionView * model.model * float4(in.position, 1.0);

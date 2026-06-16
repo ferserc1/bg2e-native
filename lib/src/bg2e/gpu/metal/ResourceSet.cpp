@@ -42,7 +42,7 @@ ResourceSet::~ResourceSet()
     cleanup();
 }
 
-void ResourceSet::setStorageImage(uint32_t binding, gpu::Image* image)
+void ResourceSet::setStorageImage(ShaderBinding binding, gpu::Image* image)
 {
     auto* metalImage = dynamic_cast<metal::Image*>(image);
     if (!metalImage)
@@ -54,7 +54,7 @@ void ResourceSet::setStorageImage(uint32_t binding, gpu::Image* image)
     const auto& bindings = _layout->resourceBindings();
     for (const auto& rb : bindings)
     {
-        if (rb.set == _setIndex && rb.binding == binding && rb.type == ResourceType::StorageImage)
+        if (rb.set == _setIndex && rb.binding.metal == binding.metal && rb.type == ResourceType::StorageImage)
         {
             ResourceEntry entry;
             entry.index = _layout->metalIndex(rb);
@@ -79,7 +79,7 @@ void ResourceSet::setStorageImage(uint32_t binding, gpu::Image* image)
     throw std::runtime_error("metal::ResourceSet::setStorageImage: no matching binding in layout");
 }
 
-void ResourceSet::setSampledImage(uint32_t binding, gpu::Image* image)
+void ResourceSet::setSampledImage(ShaderBinding binding, gpu::Image* image)
 {
     auto* metalImage = dynamic_cast<metal::Image*>(image);
     if (!metalImage)
@@ -90,7 +90,7 @@ void ResourceSet::setSampledImage(uint32_t binding, gpu::Image* image)
     const auto& bindings = _layout->resourceBindings();
     for (const auto& rb : bindings)
     {
-        if (rb.set == _setIndex && rb.binding == binding && rb.type == ResourceType::SampledImage)
+        if (rb.set == _setIndex && rb.binding.metal == binding.metal && rb.type == ResourceType::SampledImage)
         {
             ResourceEntry entry;
             entry.index = _layout->metalIndex(rb);
@@ -114,7 +114,7 @@ void ResourceSet::setSampledImage(uint32_t binding, gpu::Image* image)
     throw std::runtime_error("metal::ResourceSet::setSampledImage: no matching binding in layout");
 }
 
-void ResourceSet::setSampler(uint32_t binding, gpu::Sampler* sampler)
+void ResourceSet::setSampler(ShaderBinding binding, gpu::Sampler* sampler)
 {
     auto* metalSampler = dynamic_cast<metal::Sampler*>(sampler);
     if (!metalSampler)
@@ -125,7 +125,7 @@ void ResourceSet::setSampler(uint32_t binding, gpu::Sampler* sampler)
     const auto& bindings = _layout->resourceBindings();
     for (const auto& rb : bindings)
     {
-        if (rb.set == _setIndex && rb.binding == binding && rb.type == ResourceType::Sampler)
+        if (rb.set == _setIndex && rb.binding.metal == binding.metal && rb.type == ResourceType::Sampler)
         {
             ResourceEntry entry;
             entry.index = _layout->metalIndex(rb);
@@ -149,17 +149,17 @@ void ResourceSet::setSampler(uint32_t binding, gpu::Sampler* sampler)
     throw std::runtime_error("metal::ResourceSet::setSampler: no matching binding in layout");
 }
 
-void ResourceSet::setUniformBuffer(uint32_t binding, gpu::Buffer* buffer)
+void ResourceSet::setUniformBuffer(ShaderBinding binding, gpu::Buffer* buffer)
 {
     setBufferBinding(binding, buffer, ResourceType::UniformBuffer, "setUniformBuffer");
 }
 
-void ResourceSet::setStorageBuffer(uint32_t binding, gpu::Buffer* buffer)
+void ResourceSet::setStorageBuffer(ShaderBinding binding, gpu::Buffer* buffer)
 {
     setBufferBinding(binding, buffer, ResourceType::StorageBuffer, "setStorageBuffer");
 }
 
-void ResourceSet::setBufferBinding(uint32_t binding, gpu::Buffer* buffer,
+void ResourceSet::setBufferBinding(ShaderBinding binding, gpu::Buffer* buffer,
                                    ResourceType type, const char* debugTag)
 {
     auto* metalBuffer = dynamic_cast<metal::Buffer*>(buffer);
@@ -171,7 +171,7 @@ void ResourceSet::setBufferBinding(uint32_t binding, gpu::Buffer* buffer,
     const auto& bindings = _layout->resourceBindings();
     for (const auto& rb : bindings)
     {
-        if (rb.set == _setIndex && rb.binding == binding && rb.type == type)
+        if (rb.set == _setIndex && rb.binding.metal == binding.metal && rb.type == type)
         {
             ResourceEntry entry;
             entry.index = _layout->metalBufferIndex(rb);
@@ -220,12 +220,12 @@ ResourceSet::ResourceSet(gpu::Device* gpuDevice, const metal::PipelineLayout*, u
 
 ResourceSet::~ResourceSet() {}
 
-void ResourceSet::setStorageImage(uint32_t, gpu::Image*) {}
-void ResourceSet::setSampledImage(uint32_t, gpu::Image*) {}
-void ResourceSet::setSampler(uint32_t, gpu::Sampler*) {}
-void ResourceSet::setUniformBuffer(uint32_t, gpu::Buffer*) {}
-void ResourceSet::setStorageBuffer(uint32_t, gpu::Buffer*) {}
-void ResourceSet::setBufferBinding(uint32_t, gpu::Buffer*, ResourceType, const char*) {}
+void ResourceSet::setStorageImage(ShaderBinding, gpu::Image*) {}
+void ResourceSet::setSampledImage(ShaderBinding, gpu::Image*) {}
+void ResourceSet::setSampler(ShaderBinding, gpu::Sampler*) {}
+void ResourceSet::setUniformBuffer(ShaderBinding, gpu::Buffer*) {}
+void ResourceSet::setStorageBuffer(ShaderBinding, gpu::Buffer*) {}
+void ResourceSet::setBufferBinding(ShaderBinding, gpu::Buffer*, ResourceType, const char*) {}
 void ResourceSet::update() {}
 bool ResourceSet::isValid() const { return false; }
 void ResourceSet::cleanup() {}

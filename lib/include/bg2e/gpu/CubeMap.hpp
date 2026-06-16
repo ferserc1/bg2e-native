@@ -21,28 +21,38 @@
 #include <bg2e/common.hpp>
 #include <bg2e/gpu/Common.hpp>
 #include <bg2e/gpu/DeviceResource.hpp>
-#include <cstdint>
-#include <vector>
+#include <bg2e/gpu/Image.hpp>
+
+#include <memory>
+#include <string>
 
 namespace bg2e {
 namespace gpu {
 
-// Abstract base class for pipeline layouts.
-//
-// Concrete implementations (vk::PipelineLayout, metal::PipelineLayout) validate
-// the PipelineLayoutDescription at construction time and throw std::runtime_error
-// if the description violates any of the following rules:
-//
-//   1. At most one PushConstantRange per ShaderStage.
-//   2. (Metal only) UniformBuffer/StorageBuffer bindings must use buffer indices
-//      that do not collide with reserved slots:
-//        Vertex stage:   metal index >= 2
-//        Fragment stage: metal index >= 1
-//        Compute stage:  metal index >= 1
-class BG2E_API PipelineLayout : public DeviceResource {
+class Device;
+
+class BG2E_API CubeMap : public DeviceResource {
 public:
-    explicit PipelineLayout(Device* device) : DeviceResource(device) {}
-    virtual ~PipelineLayout() = default;
+    explicit CubeMap(Device* device);
+    virtual ~CubeMap() = default;
+
+    void create(const CubeMapDescription& description);
+
+    Image*       image()       { return _image.get(); }
+    const Image* image() const { return _image.get(); }
+
+    uint32_t    size()       const { return _size; }
+    uint32_t    mipLevels()  const { return _mipLevels; }
+    PixelFormat pixelFormat() const { return _format; }
+
+    bool isValid() const override;
+    void cleanup() override;
+
+protected:
+    std::shared_ptr<gpu::Image> _image;
+    uint32_t    _size      = 0;
+    uint32_t    _mipLevels = 1;
+    PixelFormat _format    = PixelFormat::Undefined;
 };
 
 }

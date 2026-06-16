@@ -128,7 +128,7 @@ ResourceSet::~ResourceSet()
     cleanup();
 }
 
-void ResourceSet::setStorageImage(uint32_t binding, gpu::Image* image)
+void ResourceSet::setStorageImage(ShaderBinding binding, gpu::Image* image)
 {
     auto* vkImage = dynamic_cast<vk::Image*>(image);
     if (!vkImage)
@@ -147,7 +147,7 @@ void ResourceSet::setStorageImage(uint32_t binding, gpu::Image* image)
     VkWriteDescriptorSet write{};
     write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
     write.dstSet = _descriptorSet;
-    write.dstBinding = binding;
+    write.dstBinding = binding.vulkan;
     write.dstArrayElement = 0;
     write.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
     write.descriptorCount = 1;
@@ -159,7 +159,7 @@ void ResourceSet::setStorageImage(uint32_t binding, gpu::Image* image)
     _writeInfoIndices.push_back(infoIndex);
 }
 
-void ResourceSet::setSampledImage(uint32_t binding, gpu::Image* image)
+void ResourceSet::setSampledImage(ShaderBinding binding, gpu::Image* image)
 {
     auto* vkImage = dynamic_cast<vk::Image*>(image);
     if (!vkImage)
@@ -178,7 +178,7 @@ void ResourceSet::setSampledImage(uint32_t binding, gpu::Image* image)
     VkWriteDescriptorSet write{};
     write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
     write.dstSet = _descriptorSet;
-    write.dstBinding = binding;
+    write.dstBinding = binding.vulkan;
     write.dstArrayElement = 0;
     write.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
     write.descriptorCount = 1;
@@ -190,7 +190,7 @@ void ResourceSet::setSampledImage(uint32_t binding, gpu::Image* image)
     _writeInfoIndices.push_back(infoIndex);
 }
 
-void ResourceSet::setSampler(uint32_t binding, gpu::Sampler* sampler)
+void ResourceSet::setSampler(ShaderBinding binding, gpu::Sampler* sampler)
 {
     auto* vkSampler = dynamic_cast<vk::Sampler*>(sampler);
     if (!vkSampler)
@@ -208,7 +208,7 @@ void ResourceSet::setSampler(uint32_t binding, gpu::Sampler* sampler)
     VkWriteDescriptorSet write{};
     write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
     write.dstSet = _descriptorSet;
-    write.dstBinding = binding;
+    write.dstBinding = binding.vulkan;
     write.dstArrayElement = 0;
     write.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
     write.descriptorCount = 1;
@@ -220,7 +220,7 @@ void ResourceSet::setSampler(uint32_t binding, gpu::Sampler* sampler)
     _writeInfoIndices.push_back(infoIndex);
 }
 
-void ResourceSet::setUniformBuffer(uint32_t binding, gpu::Buffer* buffer)
+void ResourceSet::setUniformBuffer(ShaderBinding binding, gpu::Buffer* buffer)
 {
     auto* vkBuffer = dynamic_cast<vk::Buffer*>(buffer);
     if (!vkBuffer)
@@ -240,7 +240,7 @@ void ResourceSet::setUniformBuffer(uint32_t binding, gpu::Buffer* buffer)
     VkWriteDescriptorSet write{};
     write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
     write.dstSet = _descriptorSet;
-    write.dstBinding = binding;
+    write.dstBinding = binding.vulkan;
     write.dstArrayElement = 0;
     write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     write.descriptorCount = 1;
@@ -252,7 +252,7 @@ void ResourceSet::setUniformBuffer(uint32_t binding, gpu::Buffer* buffer)
     _writeInfoIndices.push_back(infoIndex);
 }
 
-void ResourceSet::setStorageBuffer(uint32_t binding, gpu::Buffer* buffer)
+void ResourceSet::setStorageBuffer(ShaderBinding binding, gpu::Buffer* buffer)
 {
     auto* vkBuffer = dynamic_cast<vk::Buffer*>(buffer);
     if (!vkBuffer)
@@ -272,7 +272,7 @@ void ResourceSet::setStorageBuffer(uint32_t binding, gpu::Buffer* buffer)
     VkWriteDescriptorSet write{};
     write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
     write.dstSet = _descriptorSet;
-    write.dstBinding = binding;
+    write.dstBinding = binding.vulkan;
     write.dstArrayElement = 0;
     write.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
     write.descriptorCount = 1;

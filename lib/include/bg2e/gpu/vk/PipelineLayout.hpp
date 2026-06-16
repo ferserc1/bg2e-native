@@ -27,6 +27,9 @@ namespace vk {
 
 VkShaderStageFlags shaderStageToVkFlags(ShaderStage stage);
 
+// Vulkan pipeline layout — creates VkPipelineLayout and VkDescriptorSetLayouts.
+// Validates the PipelineLayoutDescription at construction: at most one
+// PushConstantRange per ShaderStage. Throws std::runtime_error on failure.
 class BG2E_API PipelineLayout : public gpu::PipelineLayout {
 public:
     PipelineLayout(gpu::Device* gpuDevice, VkDevice device, const gpu::PipelineLayoutDescription& description);

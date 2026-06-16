@@ -23,6 +23,9 @@
 
 namespace bg2e {
 namespace gpu {
+
+class CubeMap;
+
 namespace metal {
 
 class Device;
@@ -48,6 +51,7 @@ public:
     void beginRendering(gpu::SurfaceFrame* frame) override;
     void beginRendering(gpu::Image* colorImage, uint32_t mipLevel = 0) override;
     void beginRendering(gpu::Image* colorImage, gpu::Image* depthImage, uint32_t mipLevel = 0) override;
+    void beginRendering(gpu::CubeMap* cubemap, CubemapFace face, uint32_t mipLevel = 0) override;
     void endRendering() override;
     void beginCompute() override;
     void endCompute() override;
@@ -93,6 +97,11 @@ private:
 
     gpu::Image* _renderColorImage = nullptr;
     gpu::Image* _renderDepthImage = nullptr;
+
+    gpu::CubeMap*  _renderCubeMap     = nullptr;
+    uint32_t       _renderCubeFace    = 0;
+    uint32_t       _renderCubeMipLevel = 0;
+    bool           _renderingCubeMap  = false;
 #endif
 };
 

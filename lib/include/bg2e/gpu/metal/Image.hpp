@@ -57,6 +57,25 @@ public:
 
     void readPixelsRGBA8(std::vector<uint8_t>& outData, ImageLayout currentLayout = ImageLayout::ColorAttachment) override;
     void uploadRGBA8(const void* pixels, const Size2D& size) override;
+    void uploadImage(const base::Image* image) override;
+
+    struct CubemapFaceMipTarget {
+        MTL::Texture* texture = nullptr;
+        uint32_t face     = 0;
+        uint32_t mipLevel = 0;
+    };
+
+    bool         isValidCubemapFaceMip(uint32_t face, uint32_t mipLevel) const;
+    CubemapFaceMipTarget cubemapFaceMipTarget(uint32_t face, uint32_t mipLevel) const;
+
+    void buildCubemapImage(
+        metal::Device* device,
+        const Size2D& size,
+        PixelFormat format,
+        MTL::TextureUsage usage,
+        uint32_t mipLevels,
+        const std::string& debugName = {}
+    );
 
 private:
     metal::Device* _device      = nullptr;

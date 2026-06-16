@@ -36,6 +36,8 @@ struct GraphicsPipelineDescription {
     PrimitiveTopology    topology       = PrimitiveTopology::TriangleList;
     PixelFormat          colorFormat    = PixelFormat::Undefined; // from surface frame
     PixelFormat          depthFormat    = PixelFormat::Undefined; // Undefined => no depth
+    CullMode             cullMode       = CullMode::Back;
+    FrontFace            frontFace      = FrontFace::CounterClockwise;
     std::string          debugName;    // Debug label for validation layers / Xcode GPU Capture
 
     std::vector<VertexBufferDescription> vertexBufferDescriptions;

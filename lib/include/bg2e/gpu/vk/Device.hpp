@@ -47,6 +47,7 @@ public:
     std::shared_ptr<gpu::Sampler> createSampler(const gpu::SamplerDescription& description) override;
     std::shared_ptr<gpu::ResourceSet> createResourceSet(gpu::PipelineLayout* layout, uint32_t setIndex, const std::string& debugName = {}) override;
     std::shared_ptr<gpu::Image> createImage(const ImageDescription& description) override;
+    std::shared_ptr<gpu::CubeMap> createCubeMap(const gpu::CubeMapDescription& description) override;
     std::shared_ptr<gpu::Buffer> createBuffer(const std::string& debugName = {}) override;
 
     void immediateSubmit(std::function<void(gpu::CommandBuffer* cmd)>&& function) override;

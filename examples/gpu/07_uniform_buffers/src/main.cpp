@@ -118,10 +118,34 @@ int main(int argc, char** argv)
     //   set 2 binding 0 -> sampled image (fragment)
     //   set 2 binding 1 -> sampler       (fragment)
     gpu::PipelineLayoutDescription graphicsLayoutDesc{};
-    graphicsLayoutDesc.resourceBindings.push_back({ 0, 0, gpu::ResourceType::UniformBuffer, gpu::ShaderStage::Vertex,   1 });
-    graphicsLayoutDesc.resourceBindings.push_back({ 1, 0, gpu::ResourceType::UniformBuffer, gpu::ShaderStage::Vertex,   1 });
-    graphicsLayoutDesc.resourceBindings.push_back({ 2, 0, gpu::ResourceType::SampledImage,  gpu::ShaderStage::Fragment, 1 });
-    graphicsLayoutDesc.resourceBindings.push_back({ 2, 1, gpu::ResourceType::Sampler,       gpu::ShaderStage::Fragment, 1 });
+    graphicsLayoutDesc.resourceBindings.push_back({
+        0,
+        {.vulkan = 0, .metal = 2},
+        gpu::ResourceType::UniformBuffer,
+        gpu::ShaderStage::Vertex,
+        1
+    });
+    graphicsLayoutDesc.resourceBindings.push_back({
+        1,
+        {.vulkan = 0, .metal = 3},
+        gpu::ResourceType::UniformBuffer,
+        gpu::ShaderStage::Vertex,
+        1
+    });
+    graphicsLayoutDesc.resourceBindings.push_back({
+        2,
+        {.vulkan = 0, .metal = 0},
+        gpu::ResourceType::SampledImage,
+        gpu::ShaderStage::Fragment,
+        1
+    });
+    graphicsLayoutDesc.resourceBindings.push_back({
+        2,
+        {.vulkan = 1, .metal = 1},
+        gpu::ResourceType::Sampler,
+        gpu::ShaderStage::Fragment,
+        1
+    });
     graphicsLayoutDesc.debugName = "Cube pipeline layout";
     auto graphicsLayout = device->createPipelineLayout(graphicsLayoutDesc);
     cleanup.push(graphicsLayout);
@@ -131,9 +155,12 @@ int main(int argc, char** argv)
         {{255,   0,   0, 255}}, {{  0, 255,   0, 255}},
         {{  0,   0, 255, 255}}, {{255, 255,   0, 255}}
     }};
-    auto texture = device->createImage({ {2, 2}, gpu::PixelFormat::R8G8B8A8_UNORM,
-                                         gpu::ImageUsage::Sampled | gpu::ImageUsage::TransferDst,
-                                         "Procedural 2x2 texture" });
+    auto texture = device->createImage({
+        .size = {2, 2},
+        .format = gpu::PixelFormat::R8G8B8A8_UNORM,
+        .usage = gpu::ImageUsage::Sampled | gpu::ImageUsage::TransferDst,
+        .debugName = "Procedural 2x2 texture"
+    });
     texture->uploadRGBA8(texels.data(), { 2, 2 });
     device->immediateSubmit([texture](gpu::CommandBuffer* cmd)
     {
@@ -146,8 +173,8 @@ int main(int argc, char** argv)
 
     // Material resource set (set 2): texture + sampler, persistent.
     auto textureSet = device->createResourceSet(graphicsLayout.get(), 2, "Material resource set");
-    textureSet->setSampledImage(0, texture.get());
-    textureSet->setSampler(1, sampler.get());
+    textureSet->setSampledImage({.vulkan = 0, .metal = 0}, texture.get());
+    textureSet->setSampler({.vulkan = 1, .metal = 1}, sampler.get());
     textureSet->update();
     cleanup.push(textureSet);
 
@@ -167,7 +194,7 @@ int main(int argc, char** argv)
     cleanup.push(cameraUbo);
 
     auto cameraSet = device->createResourceSet(graphicsLayout.get(), 0, "Camera resource set");
-    cameraSet->setUniformBuffer(0, cameraUbo);
+    cameraSet->setUniformBuffer({.vulkan = 0, .metal = 2}, cameraUbo);
     cameraSet->update();
     cleanup.push(cameraSet);
 
@@ -185,7 +212,7 @@ int main(int argc, char** argv)
     {
         auto set = device->createResourceSet(graphicsLayout.get(), 1,
             "Model resource set ring[" + std::to_string(i) + "]");
-        set->setUniformBuffer(0, modelUboRing.sharedAt(i));
+        set->setUniformBuffer({.vulkan = 0, .metal = 3}, modelUboRing.sharedAt(i));
         set->update();
         return set;
     });

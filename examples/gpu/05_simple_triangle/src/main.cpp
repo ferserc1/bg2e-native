@@ -115,8 +115,8 @@ int main(int argc, char** argv)
     // Graphics layout with push constant range and SampledImage + Sampler bindings
     gpu::PipelineLayoutDescription graphicsLayoutDesc{};
     graphicsLayoutDesc.pushConstants.push_back({ 0, sizeof(PushConstants), gpu::ShaderStage::Fragment });
-    graphicsLayoutDesc.resourceBindings.push_back({ 0, 0, gpu::ResourceType::SampledImage, gpu::ShaderStage::Fragment, 1 });
-    graphicsLayoutDesc.resourceBindings.push_back({ 0, 1, gpu::ResourceType::Sampler,      gpu::ShaderStage::Fragment, 1 });
+    graphicsLayoutDesc.resourceBindings.push_back({ 0, {.vulkan = 0, .metal = 0}, gpu::ResourceType::SampledImage, gpu::ShaderStage::Fragment, 1 });
+    graphicsLayoutDesc.resourceBindings.push_back({ 0, {.vulkan = 1, .metal = 1}, gpu::ResourceType::Sampler,      gpu::ShaderStage::Fragment, 1 });
     graphicsLayoutDesc.debugName = "Graphics pipeline layout";
     auto graphicsLayout = device->createPipelineLayout(graphicsLayoutDesc);
 
@@ -125,9 +125,12 @@ int main(int argc, char** argv)
         {{255,   0,   0, 255}}, {{  0, 255,   0, 255}},
         {{  0,   0, 255, 255}}, {{255, 255,   0, 255}}
     }};
-    auto texture = device->createImage({ {2, 2}, gpu::PixelFormat::R8G8B8A8_UNORM,
-                                          gpu::ImageUsage::Sampled | gpu::ImageUsage::TransferDst,
-                                          "Procedural 2x2 texture" });
+    auto texture = device->createImage({
+        .size = {2, 2},
+        .format = gpu::PixelFormat::R8G8B8A8_UNORM,
+        .usage = gpu::ImageUsage::Sampled | gpu::ImageUsage::TransferDst,
+        .debugName = "Procedural 2x2 texture"
+    });
     texture->uploadRGBA8(texels.data(), { 2, 2 });
     device->immediateSubmit([texture](gpu::CommandBuffer* cmd)
     {
@@ -139,14 +142,14 @@ int main(int argc, char** argv)
 
     // Static graphics resource set (texture + sampler, bound every frame)
     auto textureSet = device->createResourceSet(graphicsLayout.get(), 0, "Static texture set");
-    textureSet->setSampledImage(0, texture.get());
-    textureSet->setSampler(1, sampler.get());
+    textureSet->setSampledImage({.vulkan = 0, .metal = 0}, texture.get());
+    textureSet->setSampler({.vulkan = 1, .metal = 1}, sampler.get());
     textureSet->update();
 
     // Compute layout with StorageImage binding at set=0, binding=0
     gpu::PipelineLayoutDescription computeLayoutDesc{};
     computeLayoutDesc.resourceBindings.push_back({
-        0, 0, gpu::ResourceType::StorageImage, gpu::ShaderStage::Compute, 1
+        0, {.vulkan = 0, .metal = 0}, gpu::ResourceType::StorageImage, gpu::ShaderStage::Compute, 1
     });
     computeLayoutDesc.debugName = "Compute pipeline layout";
     auto computeLayout = device->createPipelineLayout(computeLayoutDesc);
@@ -254,7 +257,7 @@ int main(int argc, char** argv)
         cmd->bindPipeline(computePipeline.get());
 
         auto* rs = resourceSets[ringIndex].get();
-        rs->setStorageImage(0, frame->colorImage());
+        rs->setStorageImage({.vulkan = 0, .metal = 0}, frame->colorImage());
         rs->update();
         cmd->bindResourceSet(computePipeline.get(), 0, rs);
 

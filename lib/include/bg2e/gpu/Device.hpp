@@ -21,6 +21,7 @@
 #include <bg2e/common.hpp>
 #include <bg2e/gpu/Common.hpp>
 #include <bg2e/gpu/Buffer.hpp>
+#include <bg2e/gpu/CubeMap.hpp>
 #include <bg2e/gpu/GraphicsPipeline.hpp>
 #include <bg2e/gpu/ComputePipeline.hpp>
 #include <functional>
@@ -33,6 +34,7 @@ namespace gpu {
 
 class Buffer;
 class CommandBuffer;
+class CubeMap;
 class Image;
 class Instance;
 class PhysicalDevice;
@@ -72,6 +74,11 @@ public:
     virtual std::shared_ptr<Image> createImage(const ImageDescription& description)
     {
         throw std::runtime_error("createImage not implemented");
+    }
+
+    virtual std::shared_ptr<CubeMap> createCubeMap(const CubeMapDescription& description)
+    {
+        throw std::runtime_error("createCubeMap not implemented");
     }
 
     virtual std::shared_ptr<ShaderModule> createShaderModule(const ShaderModuleDescription& description)

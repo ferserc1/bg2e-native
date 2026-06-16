@@ -28,6 +28,7 @@
 #include <bg2e/gpu/PhysicalDevice.hpp>
 #include <bg2e/gpu/Surface.hpp>
 #include <bg2e/gpu/Image.hpp>
+#include <bg2e/gpu/CubeMap.hpp>
 #include <bg2e/gpu/SurfaceFrame.hpp>
 #include <bg2e/gpu/WindowSurface.hpp>
 #include <bg2e/gpu/OffscreenSurface.hpp>

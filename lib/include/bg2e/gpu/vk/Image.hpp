@@ -47,26 +47,40 @@ public:
     // Backend dependent functions
     void initFromSwapchainImage(vk::Device* device, VkImage image, PixelFormat format, const Size2D& size);
 
-    VkImage          handle()    const { return _image; }
-    VkImageView      imageView() const { return _imageView; }
-    VkFormat         vkFormat()  const { return _vkFormat; }
-    VkImageAspectFlags aspect()  const { return _aspect; }
+    VkImage          handle()                     const { return _image; }
+    VkImageView      imageView()                  const { return _imageView; }
+    VkFormat         vkFormat()                   const { return _vkFormat; }
+    VkImageAspectFlags aspect()                   const { return _aspect; }
+
+    VkImageView      cubemapFaceMipView(uint32_t face, uint32_t mipLevel) const;
 
     void readPixelsRGBA8(std::vector<uint8_t>& outData, ImageLayout currentLayout = ImageLayout::ColorAttachment) override;
     void uploadRGBA8(const void* pixels, const Size2D& size) override;
+    void uploadImage(const base::Image* image) override;
+
+    void buildCubemapImage(
+        vk::Device* device,
+        const Size2D& size,
+        PixelFormat format,
+        VkImageUsageFlags usage,
+        uint32_t mipLevels,
+        const std::string& debugName = {}
+    );
 
 private:
     void createView();
+    void createCubemapView();
 
-    vk::Device*   _device     = nullptr;
+    vk::Device*   _device              = nullptr;
     VkImage       _image      = VK_NULL_HANDLE;
     VkImageView   _imageView  = VK_NULL_HANDLE;
     VmaAllocation _allocation = VK_NULL_HANDLE;
     VkFormat      _vkFormat   = VK_FORMAT_UNDEFINED;
     VkImageAspectFlags _aspect = VK_IMAGE_ASPECT_COLOR_BIT;
     bool          _ownsImage  = false;
-    VkImageUsageFlags _usage  = 0;
-    std::string   _debugName;
+    VkImageUsageFlags _usage            = 0;
+    std::string       _debugName;
+    std::vector<VkImageView> _cubemapFaceMipViews;
 };
 
 }

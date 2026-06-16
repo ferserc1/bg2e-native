@@ -46,6 +46,8 @@ GraphicsPipeline::GraphicsPipeline(gpu::Device* gpuDevice, MTL::Device* device, 
     : gpu::GraphicsPipeline(gpuDevice)
     , _topology(description.topology)
     , _layout(dynamic_cast<metal::PipelineLayout*>(description.layout))
+    , _cullMode(description.cullMode)
+    , _frontFace(description.frontFace)
 {
     auto* metalVsModule = dynamic_cast<metal::ShaderModule*>(description.vertexShader);
     auto* metalFsModule = dynamic_cast<metal::ShaderModule*>(description.fragmentShader);
@@ -134,6 +136,8 @@ GraphicsPipeline::GraphicsPipeline(gpu::Device* gpuDevice, void* /*device*/, con
     : gpu::GraphicsPipeline(gpuDevice)
     , _topology(description.topology)
     , _layout(dynamic_cast<metal::PipelineLayout*>(description.layout))
+    , _cullMode(description.cullMode)
+    , _frontFace(description.frontFace)
 {
 }
 

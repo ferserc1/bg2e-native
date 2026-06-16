@@ -24,9 +24,11 @@
 #include <bg2e/gpu/metal/ResourceSet.hpp>
 #include <bg2e/gpu/metal/Image.hpp>
 #include <bg2e/gpu/metal/SurfaceFrame.hpp>
+#include <bg2e/gpu/CubeMap.hpp>
 #include <bg2e/gpu/Image.hpp>
 #include <bg2e/gpu/SurfaceFrame.hpp>
 
+#include <algorithm>
 #include <stdexcept>
 
 namespace bg2e {
@@ -34,6 +36,27 @@ namespace gpu {
 namespace metal {
 
 #if BG2E_IS_MAC
+
+MTL::CullMode metalCullMode(gpu::CullMode cullMode)
+{
+    switch (cullMode)
+    {
+        case gpu::CullMode::None:   return MTL::CullModeNone;
+        case gpu::CullMode::Front:  return MTL::CullModeFront;
+        case gpu::CullMode::Back:   return MTL::CullModeBack;
+    }
+    return MTL::CullModeNone;
+}
+
+MTL::Winding metalFrontFaceWinding(gpu::FrontFace frontFace)
+{
+    switch (frontFace)
+    {
+        case gpu::FrontFace::Clockwise:            return MTL::WindingClockwise;
+        case gpu::FrontFace::CounterClockwise:     return MTL::WindingCounterClockwise;
+    }
+    return MTL::WindingCounterClockwise;
+}
 
 CommandBuffer::CommandBuffer(metal::Device* device, MTL::CommandBuffer* cmd)
     : _device(device), _cmd(cmd)
@@ -107,6 +130,8 @@ void CommandBuffer::beginRendering(gpu::SurfaceFrame* frame)
 
     _renderColorImage = nullptr;
     _renderDepthImage = nullptr;
+    _renderingCubeMap = false;
+    _renderCubeMap = nullptr;
 
     _passDesc = MTL::RenderPassDescriptor::alloc()->init();
 
@@ -137,6 +162,8 @@ void CommandBuffer::beginRendering(gpu::Image* colorImage, uint32_t /*mipLevel*/
     _renderFrame = nullptr;
     _renderColorImage = colorImage;
     _renderDepthImage = nullptr;
+    _renderingCubeMap = false;
+    _renderCubeMap = nullptr;
 
     _passDesc = MTL::RenderPassDescriptor::alloc()->init();
 
@@ -159,6 +186,8 @@ void CommandBuffer::beginRendering(gpu::Image* colorImage, gpu::Image* depthImag
     _renderFrame = nullptr;
     _renderColorImage = colorImage;
     _renderDepthImage = depthImage;
+    _renderingCubeMap = false;
+    _renderCubeMap = nullptr;
 
     _passDesc = MTL::RenderPassDescriptor::alloc()->init();
 
@@ -177,6 +206,61 @@ void CommandBuffer::beginRendering(gpu::Image* colorImage, gpu::Image* depthImag
         _passDesc->depthAttachment()->setLoadAction(MTL::LoadActionDontCare);
         _passDesc->depthAttachment()->setStoreAction(MTL::StoreActionDontCare);
     }
+}
+
+void CommandBuffer::beginRendering(gpu::CubeMap* cubemap, CubemapFace face, uint32_t mipLevel)
+{
+    if (_computeEncoder)
+    {
+        throw std::runtime_error("metal::CommandBuffer::beginRendering(CubeMap): a compute scope is still active; call endCompute() before beginRendering()");
+    }
+    if (!cubemap)
+    {
+        throw std::runtime_error("metal::CommandBuffer::beginRendering(CubeMap): cubemap is null");
+    }
+    if (!cubemap->isValid())
+    {
+        throw std::runtime_error("metal::CommandBuffer::beginRendering(CubeMap): cubemap is not valid");
+    }
+    if (!cubemap->image())
+    {
+        throw std::runtime_error("metal::CommandBuffer::beginRendering(CubeMap): cubemap image is null");
+    }
+    if (!cubemap->image()->isCubemap())
+    {
+        throw std::runtime_error("metal::CommandBuffer::beginRendering(CubeMap): image is not a cubemap");
+    }
+    if (static_cast<uint32_t>(face) > 5)
+    {
+        throw std::runtime_error("metal::CommandBuffer::beginRendering(CubeMap): face must be in [0, 5]");
+    }
+    if (mipLevel >= cubemap->mipLevels())
+    {
+        throw std::runtime_error("metal::CommandBuffer::beginRendering(CubeMap): mipLevel out of range");
+    }
+
+    auto* metalImage = dynamic_cast<metal::Image*>(cubemap->image());
+    if (!metalImage || !metalImage->isValidCubemapFaceMip(static_cast<uint32_t>(face), mipLevel))
+    {
+        throw std::runtime_error("metal::CommandBuffer::beginRendering(CubeMap): invalid cubemap face/mip");
+    }
+
+    _renderFrame = nullptr;
+    _renderColorImage = nullptr;
+    _renderDepthImage = nullptr;
+    _renderCubeMap = cubemap;
+    _renderCubeFace = static_cast<uint32_t>(face);
+    _renderCubeMipLevel = mipLevel;
+    _renderingCubeMap = true;
+
+    _passDesc = MTL::RenderPassDescriptor::alloc()->init();
+
+    auto target = metalImage->cubemapFaceMipTarget(static_cast<uint32_t>(face), mipLevel);
+    _passDesc->colorAttachments()->object(0)->setTexture(target.texture);
+    _passDesc->colorAttachments()->object(0)->setSlice(target.face);
+    _passDesc->colorAttachments()->object(0)->setLevel(target.mipLevel);
+    _passDesc->colorAttachments()->object(0)->setLoadAction(MTL::LoadActionLoad);
+    _passDesc->colorAttachments()->object(0)->setStoreAction(MTL::StoreActionStore);
 }
 
 void CommandBuffer::clearColor(uint32_t attachmentIndex, const gpu::Color& color)
@@ -224,6 +308,8 @@ void CommandBuffer::endRendering()
     _renderFrame          = nullptr;
     _renderColorImage     = nullptr;
     _renderDepthImage     = nullptr;
+    _renderingCubeMap     = false;
+    _renderCubeMap        = nullptr;
     _boundIndexBuffer     = nullptr;
     _boundIndexBufferOffset = 0;
 }
@@ -259,10 +345,33 @@ void CommandBuffer::bindPipeline(gpu::GraphicsPipeline* pipeline)
 
     ensureRenderEncoder();
     _encoder->setRenderPipelineState(metalPipeline->renderPipelineState());
+    _encoder->setCullMode(metalCullMode(metalPipeline->cullMode()));
+    _encoder->setFrontFacingWinding(metalFrontFaceWinding(metalPipeline->frontFace()));
     if (metalPipeline->depthStencilState())
     {
         _encoder->setDepthStencilState(metalPipeline->depthStencilState());
     }
+
+    if (_renderingCubeMap && _renderCubeMap)
+    {
+        uint32_t mipSize = std::max(1u, _renderCubeMap->size() >> _renderCubeMipLevel);
+        MTL::Viewport viewport;
+        viewport.originX = 0.0;
+        viewport.originY = 0.0;
+        viewport.width = static_cast<double>(mipSize);
+        viewport.height = static_cast<double>(mipSize);
+        viewport.znear = 0.0;
+        viewport.zfar = 1.0;
+        _encoder->setViewport(viewport);
+
+        MTL::ScissorRect scissor;
+        scissor.x = 0;
+        scissor.y = 0;
+        scissor.width = mipSize;
+        scissor.height = mipSize;
+        _encoder->setScissorRect(scissor);
+    }
+
     _boundPipeline = metalPipeline;
     _boundLayout = metalPipeline->layout();
 }
@@ -334,6 +443,7 @@ void CommandBuffer::bindPipeline(gpu::ComputePipeline* pipeline)
 
     _computeEncoder->setComputePipelineState(metalPipeline->computePipelineState());
     _boundComputePipeline = metalPipeline;
+    _boundLayout = metalPipeline->layout();
 }
 
 void CommandBuffer::dispatch(uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ)
@@ -365,24 +475,23 @@ void CommandBuffer::pushConstants(ShaderStage stage, uint32_t offset, uint32_t s
         throw std::runtime_error("metal::CommandBuffer::pushConstants: no pipeline bound");
     }
 
-    uint32_t bufferIndex = _boundLayout->pushConstantBufferIndex(stage);
-
+    auto binding = _boundLayout->pushConstantBufferIndex(stage);
     switch (stage)
     {
         case ShaderStage::Vertex:
             ensureRenderEncoder();
-            _encoder->setVertexBytes(data, size, bufferIndex);
+            _encoder->setVertexBytes(data, size, binding);
             break;
         case ShaderStage::Fragment:
             ensureRenderEncoder();
-            _encoder->setFragmentBytes(data, size, bufferIndex);
+            _encoder->setFragmentBytes(data, size, binding);
             break;
         case ShaderStage::Compute:
             if (!_computeEncoder)
             {
                 throw std::runtime_error("metal::CommandBuffer::pushConstants: no active compute scope; call beginCompute() first");
             }
-            _computeEncoder->setBytes(data, size, bufferIndex);
+            _computeEncoder->setBytes(data, size, binding);
             break;
     }
 }
@@ -618,6 +727,7 @@ void CommandBuffer::transition(gpu::Image*, ImageLayout) {}
 void CommandBuffer::beginRendering(gpu::SurfaceFrame*) {}
 void CommandBuffer::beginRendering(gpu::Image*, uint32_t) {}
 void CommandBuffer::beginRendering(gpu::Image*, gpu::Image*, uint32_t) {}
+void CommandBuffer::beginRendering(gpu::CubeMap*, CubemapFace, uint32_t) {}
 void CommandBuffer::endRendering() {}
 void CommandBuffer::beginCompute() {}
 void CommandBuffer::endCompute() {}

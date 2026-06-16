@@ -28,6 +28,7 @@
 #include <bg2e/gpu/metal/ResourceSet.hpp>
 #include <bg2e/gpu/metal/CommandBuffer.hpp>
 #include <bg2e/gpu/metal/common.hpp>
+#include <bg2e/gpu/CubeMap.hpp>
 #include <bg2e/gpu/Surface.hpp>
 #include <bg2e/base/Log.hpp>
 
@@ -146,7 +147,17 @@ std::shared_ptr<gpu::ResourceSet> Device::createResourceSet(gpu::PipelineLayout*
 std::shared_ptr<gpu::Image> Device::createImage(const ImageDescription& description)
 {
     auto img = std::make_shared<metal::Image>(this);
-    if (isDepthFormat(description.format))
+    if (description.type == ImageType::Cubemap)
+    {
+        MTL::TextureUsage usage = MTL::TextureUsageShaderRead;
+        if (hasFlag(description.usage, ImageUsage::ColorAttachment))
+            usage |= MTL::TextureUsageRenderTarget;
+        img->buildCubemapImage(
+            this, description.size, description.format,
+            usage, description.mipLevels, description.debugName
+        );
+    }
+    else if (isDepthFormat(description.format))
     {
         img->buildDepthImage(this, description.size, description.format, description.debugName);
     }
@@ -159,6 +170,13 @@ std::shared_ptr<gpu::Image> Device::createImage(const ImageDescription& descript
         img->buildSampledImage(this, description.size, description.format, description.debugName);
     }
     return img;
+}
+
+std::shared_ptr<gpu::CubeMap> Device::createCubeMap(const gpu::CubeMapDescription& description)
+{
+    auto cubeMap = std::make_shared<gpu::CubeMap>(this);
+    cubeMap->create(description);
+    return cubeMap;
 }
 
 std::shared_ptr<gpu::Buffer> Device::createBuffer(const std::string& debugName)
@@ -234,6 +252,11 @@ std::shared_ptr<gpu::ResourceSet> Device::createResourceSet(gpu::PipelineLayout*
 }
 
 std::shared_ptr<gpu::Image> Device::createImage(const ImageDescription&)
+{
+    throw std::runtime_error("Metal backend is not available on this platform");
+}
+
+std::shared_ptr<gpu::CubeMap> Device::createCubeMap(const gpu::CubeMapDescription&)
 {
     throw std::runtime_error("Metal backend is not available on this platform");
 }

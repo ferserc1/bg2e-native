@@ -42,6 +42,27 @@ VkPrimitiveTopology primitiveTopologyToVk(gpu::PrimitiveTopology topology)
     return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
 }
 
+VkCullModeFlags cullModeToVk(gpu::CullMode cullMode)
+{
+    switch (cullMode)
+    {
+        case gpu::CullMode::None:   return VK_CULL_MODE_NONE;
+        case gpu::CullMode::Front:  return VK_CULL_MODE_FRONT_BIT;
+        case gpu::CullMode::Back:   return VK_CULL_MODE_BACK_BIT;
+    }
+    return VK_CULL_MODE_NONE;
+}
+
+VkFrontFace frontFaceToVk(gpu::FrontFace frontFace)
+{
+    switch (frontFace)
+    {
+        case gpu::FrontFace::Clockwise:            return VK_FRONT_FACE_CLOCKWISE;
+        case gpu::FrontFace::CounterClockwise:     return VK_FRONT_FACE_COUNTER_CLOCKWISE;
+    }
+    return VK_FRONT_FACE_COUNTER_CLOCKWISE;
+}
+
 GraphicsPipeline::GraphicsPipeline(gpu::Device* gpuDevice, VkDevice device, const gpu::GraphicsPipelineDescription& description)
     : gpu::GraphicsPipeline(gpuDevice), _device(device)
 {
@@ -104,13 +125,13 @@ GraphicsPipeline::GraphicsPipeline(gpu::Device* gpuDevice, VkDevice device, cons
     dynamicState.dynamicStateCount = static_cast<uint32_t>(dynamicStates.size());
     dynamicState.pDynamicStates = dynamicStates.data();
 
-    // Rasterization: fill, cull none, CCW
+    // Rasterization: fill, cull mode + front face from description
     VkPipelineRasterizationStateCreateInfo rasterization{};
     rasterization.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
     rasterization.polygonMode = VK_POLYGON_MODE_FILL;
     rasterization.lineWidth = 1.0f;
-    rasterization.cullMode = VK_CULL_MODE_NONE;
-    rasterization.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+    rasterization.cullMode = cullModeToVk(description.cullMode);
+    rasterization.frontFace = frontFaceToVk(description.frontFace);
     rasterization.depthBiasEnable = VK_FALSE;
 
     // Viewport state: required if the rasterization is enabled

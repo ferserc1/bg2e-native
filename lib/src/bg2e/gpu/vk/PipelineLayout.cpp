@@ -55,6 +55,8 @@ PipelineLayout::PipelineLayout(gpu::Device* gpuDevice, VkDevice device, const gp
     , _device(device)
     , _description(description)
 {
+    validatePushConstantRanges(description.pushConstants);
+
     const auto& debugName = description.debugName;
 
     // Group resource bindings by set index and create descriptor set layouts
@@ -72,7 +74,7 @@ PipelineLayout::PipelineLayout(gpu::Device* gpuDevice, VkDevice device, const gp
         for (const auto& rb : description.resourceBindings)
         {
             VkDescriptorSetLayoutBinding vkBinding{};
-            vkBinding.binding = rb.binding;
+            vkBinding.binding = rb.binding.vulkan;
             vkBinding.descriptorType = toVkDescriptorType(rb.type);
             vkBinding.descriptorCount = rb.count;
             vkBinding.stageFlags = shaderStageToVkFlags(rb.stage);

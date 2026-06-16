@@ -25,6 +25,7 @@
 #include <vector>
 
 namespace bg2e {
+namespace base { class Image; }
 namespace gpu {
 
 namespace vk    { class CommandBuffer; }
@@ -40,6 +41,10 @@ public:
     uint32_t      width()       const { return _size.width;  }
     uint32_t      height()      const { return _size.height; }
 
+    ImageType     imageType()   const { return _imageType; }
+    uint32_t      mipLevels()   const { return _mipLevels; }
+    bool          isCubemap()   const { return _imageType == ImageType::Cubemap; }
+
     ImageLayout   currentLayout() const { return _currentLayout; }
 
     virtual void readPixelsRGBA8(
@@ -54,6 +59,11 @@ public:
         throw std::runtime_error("Image::uploadRGBA8 not implemented");
     }
 
+    virtual void uploadImage(const base::Image* image)
+    {
+        throw std::runtime_error("Image::uploadImage not implemented");
+    }
+
 protected:
     // _currentLayout must always mirror the real backend layout of the image.
     // Assign it directly only right after the API call that actually changes the
@@ -61,6 +71,8 @@ protected:
     PixelFormat   _pixelFormat   = PixelFormat::Undefined;
     Size2D        _size;
     ImageLayout   _currentLayout = ImageLayout::Undefined;
+    ImageType     _imageType     = ImageType::Image2D;
+    uint32_t      _mipLevels     = 1;
 
     friend class vk::CommandBuffer;
     friend class metal::CommandBuffer;

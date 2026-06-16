@@ -47,10 +47,14 @@ public:
 #endif
     gpu::PrimitiveTopology topology() const { return _topology; }
     metal::PipelineLayout* layout() const { return _layout; }
+    gpu::CullMode          cullMode() const { return _cullMode; }
+    gpu::FrontFace         frontFace() const { return _frontFace; }
 
 private:
     gpu::PrimitiveTopology _topology;
     metal::PipelineLayout* _layout = nullptr;
+    gpu::CullMode  _cullMode;
+    gpu::FrontFace _frontFace;
 
 #if BG2E_IS_MAC
     MTL::RenderPipelineState* _renderPipelineState = nullptr;

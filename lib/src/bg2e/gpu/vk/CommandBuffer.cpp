@@ -28,9 +28,11 @@
 #include <bg2e/gpu/vk/Info.hpp>
 #include <bg2e/gpu/vk/extensions.hpp>
 #include <bg2e/gpu/vk/common.hpp>
+#include <bg2e/gpu/CubeMap.hpp>
 #include <bg2e/gpu/Image.hpp>
 #include <bg2e/gpu/SurfaceFrame.hpp>
 
+#include <algorithm>
 #include <stdexcept>
 
 namespace bg2e {
@@ -124,6 +126,8 @@ void CommandBuffer::beginRendering(gpu::SurfaceFrame* frame)
     _renderingEmitted = false;
     _hasColorClear = false;
     _hasDepthClear = false;
+    _renderingCubeMap = false;
+    _renderCubeMap = nullptr;
 }
 
 void CommandBuffer::beginRendering(gpu::Image* colorImage, uint32_t /*mipLevel*/)
@@ -135,6 +139,8 @@ void CommandBuffer::beginRendering(gpu::Image* colorImage, uint32_t /*mipLevel*/
     _renderingEmitted = false;
     _hasColorClear = false;
     _hasDepthClear = false;
+    _renderingCubeMap = false;
+    _renderCubeMap = nullptr;
 }
 
 void CommandBuffer::beginRendering(gpu::Image* colorImage, gpu::Image* depthImage, uint32_t /*mipLevel*/)
@@ -142,6 +148,48 @@ void CommandBuffer::beginRendering(gpu::Image* colorImage, gpu::Image* depthImag
     _renderFrame = nullptr;
     _renderColorImage = colorImage;
     _renderDepthImage = depthImage;
+    _renderingActive = true;
+    _renderingEmitted = false;
+    _hasColorClear = false;
+    _hasDepthClear = false;
+    _renderingCubeMap = false;
+    _renderCubeMap = nullptr;
+}
+
+void CommandBuffer::beginRendering(gpu::CubeMap* cubemap, CubemapFace face, uint32_t mipLevel)
+{
+    if (!cubemap)
+    {
+        throw std::runtime_error("vk::CommandBuffer::beginRendering(CubeMap): cubemap is null");
+    }
+    if (!cubemap->isValid())
+    {
+        throw std::runtime_error("vk::CommandBuffer::beginRendering(CubeMap): cubemap is not valid");
+    }
+    if (!cubemap->image())
+    {
+        throw std::runtime_error("vk::CommandBuffer::beginRendering(CubeMap): cubemap image is null");
+    }
+    if (!cubemap->image()->isCubemap())
+    {
+        throw std::runtime_error("vk::CommandBuffer::beginRendering(CubeMap): image is not a cubemap");
+    }
+    if (static_cast<uint32_t>(face) > 5)
+    {
+        throw std::runtime_error("vk::CommandBuffer::beginRendering(CubeMap): face must be in [0, 5]");
+    }
+    if (mipLevel >= cubemap->mipLevels())
+    {
+        throw std::runtime_error("vk::CommandBuffer::beginRendering(CubeMap): mipLevel out of range");
+    }
+
+    _renderFrame = nullptr;
+    _renderColorImage = nullptr;
+    _renderDepthImage = nullptr;
+    _renderCubeMap = cubemap;
+    _renderCubeFace = static_cast<uint32_t>(face);
+    _renderCubeMipLevel = mipLevel;
+    _renderingCubeMap = true;
     _renderingActive = true;
     _renderingEmitted = false;
     _hasColorClear = false;
@@ -165,6 +213,42 @@ void CommandBuffer::flushPendingRendering()
 {
     if (!_renderingActive || _renderingEmitted)
     {
+        return;
+    }
+
+    // Cubemap face rendering path
+    if (_renderingCubeMap && _renderCubeMap)
+    {
+        auto* vkImg = dynamic_cast<vk::Image*>(_renderCubeMap->image());
+        if (!vkImg)
+        {
+            throw std::runtime_error("vk::CommandBuffer::flushPendingRendering: cubemap image is not a vk::Image");
+        }
+
+        VkImageView faceView = vkImg->cubemapFaceMipView(_renderCubeFace, _renderCubeMipLevel);
+        if (faceView == VK_NULL_HANDLE)
+        {
+            throw std::runtime_error("vk::CommandBuffer::flushPendingRendering: invalid cubemap face/mip view");
+        }
+
+        VkClearValue clearColor{};
+        clearColor.color = _clearColor;
+
+        VkRenderingAttachmentInfo colorAttachment = Info::attachmentInfo(
+            faceView,
+            _hasColorClear ? &clearColor : nullptr
+        );
+
+        uint32_t mipSize = std::max(1u, _renderCubeMap->size() >> _renderCubeMipLevel);
+
+        VkRenderingInfo renderInfo = Info::renderingInfo(
+            { mipSize, mipSize },
+            &colorAttachment,
+            nullptr
+        );
+
+        cmdBeginRendering(_cmd, &renderInfo);
+        _renderingEmitted = true;
         return;
     }
 
@@ -231,6 +315,8 @@ void CommandBuffer::endRendering()
     _renderingActive = false;
     _renderColorImage = nullptr;
     _renderDepthImage = nullptr;
+    _renderingCubeMap = false;
+    _renderCubeMap = nullptr;
 }
 
 void CommandBuffer::beginCompute()
@@ -267,10 +353,16 @@ void CommandBuffer::bindPipeline(gpu::GraphicsPipeline* pipeline)
         throw std::runtime_error("vk::CommandBuffer::bindPipeline: not a vk::GraphicsPipeline");
     }
 
-    if (_renderFrame || _renderColorImage)
+    if (_renderFrame || _renderColorImage || _renderingCubeMap)
     {
         uint32_t w = 0, h = 0;
-        if (_renderFrame)
+        if (_renderingCubeMap && _renderCubeMap)
+        {
+            uint32_t mipSize = std::max(1u, _renderCubeMap->size() >> _renderCubeMipLevel);
+            w = mipSize;
+            h = mipSize;
+        }
+        else if (_renderFrame)
         {
             w = static_cast<uint32_t>(_renderFrame->colorImage()->width());
             h = static_cast<uint32_t>(_renderFrame->colorImage()->height());
@@ -320,6 +412,7 @@ void CommandBuffer::bindPipeline(gpu::ComputePipeline* pipeline)
     }
 
     vkCmdBindPipeline(_cmd, VK_PIPELINE_BIND_POINT_COMPUTE, vkPipe->handle());
+    _boundLayoutHandle = vkPipe->layoutHandle();
 }
 
 void CommandBuffer::dispatch(uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ)

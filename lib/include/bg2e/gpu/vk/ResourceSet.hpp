@@ -34,11 +34,11 @@ public:
     ResourceSet(gpu::Device* gpuDevice, VkDevice device, const vk::PipelineLayout* layout, uint32_t setIndex, const std::string& debugName = {});
     ~ResourceSet() override;
 
-    void setStorageImage(uint32_t binding, gpu::Image* image) override;
-    void setSampledImage(uint32_t binding, gpu::Image* image) override;
-    void setSampler(uint32_t binding, gpu::Sampler* sampler) override;
-    void setUniformBuffer(uint32_t binding, gpu::Buffer* buffer) override;
-    void setStorageBuffer(uint32_t binding, gpu::Buffer* buffer) override;
+    void setStorageImage(ShaderBinding binding, gpu::Image* image) override;
+    void setSampledImage(ShaderBinding binding, gpu::Image* image) override;
+    void setSampler(ShaderBinding binding, gpu::Sampler* sampler) override;
+    void setUniformBuffer(ShaderBinding binding, gpu::Buffer* buffer) override;
+    void setStorageBuffer(ShaderBinding binding, gpu::Buffer* buffer) override;
 
     void update() override;
 
