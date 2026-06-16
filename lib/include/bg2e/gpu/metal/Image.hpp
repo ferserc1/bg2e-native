@@ -60,7 +60,7 @@ public:
     void uploadImage(const base::Image* image) override;
 
     struct CubemapFaceMipTarget {
-        MTL::Texture* texture = nullptr;
+        TextureHandle texture = nullptr;
         uint32_t face     = 0;
         uint32_t mipLevel = 0;
     };
@@ -72,7 +72,7 @@ public:
         metal::Device* device,
         const Size2D& size,
         PixelFormat format,
-        MTL::TextureUsage usage,
+        TextureUsageEnum usage,
         uint32_t mipLevels,
         const std::string& debugName = {}
     );

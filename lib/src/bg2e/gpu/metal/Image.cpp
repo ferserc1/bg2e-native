@@ -504,7 +504,7 @@ void Image::buildStorageImage(metal::Device*, const Size2D&, PixelFormat, const 
     throw std::runtime_error("Metal backend is not available on this platform");
 }
 
-void Image::buildCubemapImage(metal::Device*, const Size2D&, PixelFormat, MTL::TextureUsage, uint32_t, const std::string&)
+void Image::buildCubemapImage(metal::Device*, const Size2D&, PixelFormat, TextureUsageEnum, uint32_t, const std::string&)
 {
     throw std::runtime_error("Metal backend is not available on this platform");
 }

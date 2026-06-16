@@ -34,6 +34,7 @@ namespace bg2e::gpu::metal {
     using TextureHandle      = MTL::Texture*;
     using SampleStateHandle  = MTL::SamplerState*;
     using BufferHandle       = MTL::Buffer*;
+    using TextureUsageEnum   = MTL::TextureUsage;
 
     MTL::PixelFormat toMetalPixelFormat(gpu::PixelFormat format);
     gpu::PixelFormat fromMetalPixelFormat(MTL::PixelFormat format);
@@ -59,6 +60,8 @@ namespace bg2e::gpu::metal {
 
     struct BufferOpaque;
     using BufferHandle = BufferOpaque*;
+
+    enum class TextureUsageEnum : uint8_t {};
 }
 
 #endif
