@@ -50,6 +50,8 @@ set(CMAKE_XCODE_ATTRIBUTE_CODE_SIGN_STYLE "Manual")
 # Enable multi processor build in Windows
 if (MSVC)
     add_compile_options(/MP)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /MP")
 endif()
 
 add_subdirectory(lib)
