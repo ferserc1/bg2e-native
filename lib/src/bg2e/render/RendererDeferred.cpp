@@ -60,6 +60,7 @@ void RendererDeferred::build(
     _lightDataBinding = std::make_unique<scene::vk::DeferredLightDataBinding>(_engine);
     if (_engine->rayTracingSupported()) {
         _rtDataBinding = std::make_unique<vulkan::rt::RayTracingSceneDataBinding>(_engine);
+        _reflectionLightDataBinding = std::make_unique<vulkan::rt::ReflectionLightDataBinding>(_engine);
     }
 
     // Create layers
@@ -71,6 +72,7 @@ void RendererDeferred::build(
     _opaqueLayer = std::make_unique<deferred::DeferredLayer>(_engine, deferred::LayerType::Opaque);
     _opaqueLayer->setLightDataBinding(_lightDataBinding.get());
     if (_rtDataBinding) _opaqueLayer->setRtDataBinding(_rtDataBinding.get());
+    if (_reflectionLightDataBinding) _opaqueLayer->setReflectionLightDataBinding(_reflectionLightDataBinding.get());
     _opaqueLayer->build(initialExtent, colorImageFormat);
     _opaqueLayer->setScene(_scene.get());
     _opaqueLayer->setEnvironment(_environment.get());
@@ -80,6 +82,7 @@ void RendererDeferred::build(
     _transparentLayer = std::make_unique<deferred::DeferredLayer>(_engine, deferred::LayerType::Transparent);
     _transparentLayer->setLightDataBinding(_lightDataBinding.get());
     if (_rtDataBinding) _transparentLayer->setRtDataBinding(_rtDataBinding.get());
+    if (_reflectionLightDataBinding) _transparentLayer->setReflectionLightDataBinding(_reflectionLightDataBinding.get());
     _transparentLayer->build(initialExtent, colorImageFormat);
     _transparentLayer->setScene(_scene.get());
     _transparentLayer->setEnvironment(_environment.get());
@@ -155,6 +158,9 @@ void RendererDeferred::initFrameResources(
     _lightDataBinding->initFrameResources(frameAllocator);
     if (_rtDataBinding) {
         _rtDataBinding->initFrameResources(frameAllocator);
+    }
+    if (_reflectionLightDataBinding) {
+        _reflectionLightDataBinding->initFrameResources(frameAllocator);
     }
     _skyboxLayer->initFrameResources(frameAllocator);
     _opaqueLayer->initFrameResources(frameAllocator);
@@ -288,6 +294,22 @@ void RendererDeferred::draw(
     _opaqueLayer->setLights(_lights);
     _transparentLayer->setLights(_lights);
 
+    // Build the reduced light set that affects ray traced reflections, so the
+    // reflection shader only iterates over the lights flagged for it.
+    if (_reflectionLightDataBinding)
+    {
+        _reflectionLights.clear();
+        for (const auto& light : _lights)
+        {
+            if (light.affectsReflections != 0)
+            {
+                _reflectionLights.push_back(light);
+            }
+        }
+        _opaqueLayer->setReflectionLights(_reflectionLights);
+        _transparentLayer->setReflectionLights(_reflectionLights);
+    }
+
     // Configure color correction on all layers
     _skyboxLayer->setColorCorrection(_brightness, _contrast, _exposure);
     _opaqueLayer->setColorCorrection(_brightness, _contrast, _exposure);
@@ -420,8 +442,13 @@ void RendererDeferred::cleanup() {
     {
         _rtDataBinding->cleanup();
     }
+    if (_reflectionLightDataBinding)
+    {
+        _reflectionLightDataBinding->cleanup();
+    }
     _lightDataBinding->cleanup();
     _rtDataBinding.reset();
+    _reflectionLightDataBinding.reset();
     _lightDataBinding.reset();
 
     _renderQueue.cleanup();
@@ -704,7 +731,8 @@ void RendererDeferred::updateLights(
             .spotCutoff = comp->light().spotCutoff(),
             .castShadows = comp->light().castShadows() ? 1 : 0,
             .sourceSize = comp->light().sourceSize(),
-            .shadowSamples = static_cast<int32_t>(comp->light().shadowSamples())
+            .shadowSamples = static_cast<int32_t>(comp->light().shadowSamples()),
+            .affectsReflections = comp->light().affectsReflections() ? 1 : 0
         });
     }
 }

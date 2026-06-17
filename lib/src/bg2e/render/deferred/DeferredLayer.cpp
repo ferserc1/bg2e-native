@@ -110,6 +110,7 @@ void DeferredLayer::build(VkExtent2D extent, VkFormat outputFormat)
 
         _rtReflections = std::make_unique<RTReflections>(_engine);
         _rtReflections->setMaterialDataBinding(_rtMaterialDataBinding.get());
+        _rtReflections->setReflectionLightDataBinding(_reflectionLightDataBinding);
         _rtReflections->build(_gbuffers[0].get(), extent);
 
         _temporalReflectionAccumulator = std::make_unique<TemporalAccumulator>(_engine);
@@ -313,7 +314,10 @@ void DeferredLayer::render(
 
                 _rtReflections->render(
                     cmd, currentFrame, frameResources, gbuffer,
-                    invVP, cameraWorldPos, tlas, objectInstances
+                    invVP, cameraWorldPos, tlas, objectInstances,
+                    _environment->irradianceMapImage().get(),
+                    _environment->irradianceMapSampler(),
+                    _reflectionLights
                 );
 
                 // Reflection temporal accumulation

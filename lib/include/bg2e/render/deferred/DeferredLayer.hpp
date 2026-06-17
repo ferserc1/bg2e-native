@@ -83,6 +83,8 @@ public:
 
     void setLightDataBinding(scene::vk::DeferredLightDataBinding* binding) { _lightDataBinding = binding; }
     void setLights(const std::vector<base::LightData>& l) { _lights = l; }
+    void setReflectionLightDataBinding(vulkan::rt::ReflectionLightDataBinding* binding) { _reflectionLightDataBinding = binding; }
+    void setReflectionLights(const std::vector<base::LightData>& l) { _reflectionLights = l; }
     void setRtDataBinding(vulkan::rt::RayTracingSceneDataBinding* rt) { _rtDataBinding = rt; }
     void setRenderQueue(render::RenderQueue<scene::Drawable>* rq) { _renderQueue = rq; }
 
@@ -182,6 +184,8 @@ protected:
     std::unique_ptr<scene::vk::EnvironmentDataBinding> _environmentDataBinding;
     scene::vk::DeferredLightDataBinding* _lightDataBinding = nullptr;
     std::vector<base::LightData> _lights;
+    vulkan::rt::ReflectionLightDataBinding* _reflectionLightDataBinding = nullptr;
+    std::vector<base::LightData> _reflectionLights;
     vulkan::rt::RayTracingSceneDataBinding* _rtDataBinding = nullptr;
     render::RenderQueue<scene::Drawable>* _renderQueue = nullptr;
 

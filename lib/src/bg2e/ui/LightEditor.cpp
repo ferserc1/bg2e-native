@@ -101,6 +101,14 @@ bool LightEditor::draw()
         changed = true;
         if (_onChangedFunction) _onChangedFunction();
     }
+
+    bool affectReflections = light.affectsReflections();
+    if (BasicWidgets::checkBox("Affect Reflections", &affectReflections))
+    {
+        light.setAffectsReflections(affectReflections);
+        changed = true;
+        if (_onChangedFunction) _onChangedFunction();
+    }
     if (castShadows)
     {
         float sourceSize = light.sourceSize();

@@ -74,7 +74,7 @@ struct LightData
     float sourceSize;
     int shadowSamples;
 
-    int padding0;
+    int affectsReflections;
     int padding1;
     int padding2;
 };

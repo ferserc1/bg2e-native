@@ -107,6 +107,7 @@ void RTReflections::createPipeline()
     dsLayoutFactory.addBinding(2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
     dsLayoutFactory.addBinding(3, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
     dsLayoutFactory.addBinding(4, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+    dsLayoutFactory.addBinding(5, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
     _dsLayout = dsLayoutFactory.build(
         _engine->device().handle(),
         VK_SHADER_STAGE_RAYGEN_BIT_KHR |
@@ -120,10 +121,16 @@ void RTReflections::createPipeline()
     {
         layoutFactory.addDescriptorSetLayout(_materialDataBinding->createLayout());
     }
+    if (_reflectionLightDataBinding)
+    {
+        layoutFactory.addDescriptorSetLayout(
+            _reflectionLightDataBinding->createLayout(VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR)
+        );
+    }
     layoutFactory.addPushConstantRange(
         0,
         sizeof(ReflectionPushConstants),
-        VK_SHADER_STAGE_RAYGEN_BIT_KHR
+        VK_SHADER_STAGE_RAYGEN_BIT_KHR | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR
     );
     _pipelineLayout = layoutFactory.build("RTReflections::PipelineLayout");
 
@@ -150,7 +157,10 @@ void RTReflections::render(
     const glm::mat4& inverseViewProjection,
     const glm::vec3& cameraPosition,
     VkAccelerationStructureKHR tlas,
-    const std::vector<vulkan::rt::RTObjectInstance>& objectInstances
+    const std::vector<vulkan::rt::RTObjectInstance>& objectInstances,
+    vulkan::Image* irradianceMap,
+    VkSampler irradianceSampler,
+    const std::vector<base::LightData>& reflectionLights
 )
 {
     if (!_settings.enabled)
@@ -195,6 +205,8 @@ void RTReflections::render(
         gbuffer->image(1).get(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _sampler);
     ds->addImage(4, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
         gbuffer->image(2).get(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _sampler);
+    ds->addImage(5, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+        irradianceMap, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, irradianceSampler);
     ds->endUpdate();
 
     vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, _pipeline);
@@ -209,6 +221,13 @@ void RTReflections::render(
             _pipelineLayout, 1, 1, &materialDS, 0, nullptr);
     }
 
+    if (_reflectionLightDataBinding)
+    {
+        auto lightDS = _reflectionLightDataBinding->newDescriptorSet(frameResources, reflectionLights);
+        vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR,
+            _pipelineLayout, 2, 1, &lightDS, 0, nullptr);
+    }
+
     ReflectionPushConstants pc{};
     pc.inverseViewProjection = inverseViewProjection;
     pc.cameraPosition = cameraPosition;
@@ -219,8 +238,10 @@ void RTReflections::render(
     pc.rayBias = _settings.rayBias;
     pc.maxDistance = _settings.maxDistance;
     pc.roughnessSpread = _settings.roughnessSpread;
+    pc.reflectionLightCount = static_cast<uint32_t>(reflectionLights.size());
     vkCmdPushConstants(cmd, _pipelineLayout,
-        VK_SHADER_STAGE_RAYGEN_BIT_KHR, 0, sizeof(ReflectionPushConstants), &pc);
+        VK_SHADER_STAGE_RAYGEN_BIT_KHR | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR,
+        0, sizeof(ReflectionPushConstants), &pc);
 
     vulkan::cmdTraceRays(
         cmd,

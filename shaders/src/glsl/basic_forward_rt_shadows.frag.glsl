@@ -104,7 +104,7 @@ void main()
         }
         float shadowFactor = 1.0;
         if (lightsBuffer.lights[i].castShadows != 0) {
-            shadowFactor = queryShadow(u_TLAS, inFragPos, normal, lightsBuffer.lights[i]);
+            shadowFactor = queryShadow(u_TLAS, inFragPos, normal, lightsBuffer.lights[i], 32);
         }
         Lo += shadowFactor * calcRadiance(lightsBuffer.lights[i], viewDir, inFragPos, metallic, roughness, F0, normal, albedo, mat.sheenIntensity, mat.sheenColor.rgb, ambientOcclussion);
     }

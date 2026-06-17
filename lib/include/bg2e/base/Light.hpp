@@ -63,6 +63,9 @@ public:
     virtual void setShadowSamples(uint32_t samples) { _shadowSamples = samples; }
     virtual uint32_t shadowSamples() const { return _shadowSamples; }
 
+    virtual void setAffectsReflections(bool affects) { _affectsReflections = affects; }
+    virtual bool affectsReflections() const { return _affectsReflections; }
+
     std::string typeString() const
     {
         switch (_type)
@@ -127,6 +130,10 @@ public:
                 obj["shadowSamples"]->numberValue(static_cast<int>(_shadowSamples))
             );
         }
+        if (obj.count("affectsReflections"))
+        {
+            _affectsReflections = obj["affectsReflections"]->boolValue(_affectsReflections);
+        }
     }
     
     std::shared_ptr<json::JsonNode> serialize()
@@ -141,9 +148,10 @@ public:
             { "castShadows", JSON(_castShadows) },
             { "sourceSize", JSON(_sourceSize) },
             { "shadowSamples", JSON(static_cast<int>(_shadowSamples)) },
+            { "affectsReflections", JSON(_affectsReflections) },
         });
     }
-    
+
 protected:
     Color _color { 1.0f, 1.0f, 1.0f, 1.0f };
     float _intensity = 1.0f;
@@ -153,6 +161,7 @@ protected:
     bool _castShadows = true;
     float _sourceSize = 0.5f;
     uint32_t _shadowSamples = 8;
+    bool _affectsReflections = true;
 };
 
 struct LightData
@@ -172,7 +181,7 @@ struct LightData
     float sourceSize;
     int32_t shadowSamples;
 
-    int32_t padding0;
+    int32_t affectsReflections;
     int32_t padding1;
     int32_t padding2;
 };
