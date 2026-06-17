@@ -160,7 +160,7 @@ void main() {
             Lo += shadowFactor * calcRadiance(LightsBuffer.lights[i], gbuf.viewDir, gbuf.worldPos,
                               gbuf.metallic, gbuf.roughness,
                               gbuf.F0, gbuf.normal, gbuf.albedo.rgb,
-                              gbuf.sheenIntensity, gbuf.sheenColor, gbuf.ao * texture(g_AO, vTexcoord).r);
+                              gbuf.sheenIntensity, gbuf.sheenColor, texture(g_AO, vTexcoord).r);
         }
     }
 
