@@ -225,14 +225,16 @@ void SMAAProcessor::createDescriptorAllocators()
 
         alloc->requirePoolSizeRatio(1, {
             { VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 0.5f },
-            { VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 0.5f }
+            { VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 0.5f },
+            { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 0.5f }
         });
 
         // Need: edge (1 storage + 1 sampled), blend (1 sampled + 1 storage), nblend (1 sampled + 1 storage)
         // Per pass: need storage for output + sampled for inputs (area + search textures shared)
         alloc->requirePoolSizeRatio(_engine->numImages(), {
             { VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 0.5f },
-            { VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 0.5f }
+            { VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 0.5f },
+            { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 0.5f }
         });
 
         alloc->initPool();
