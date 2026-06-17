@@ -201,6 +201,34 @@ enum class ResourceType {
 };
 ```
 
+### `ShaderBinding`
+
+Backend-specific binding indices. Vulkan uses descriptor set + binding; Metal
+uses direct argument indices (`[[buffer(N)]]`, `[[texture(N)]]`, `[[sampler(N)]]`).
+
+```cpp
+struct ShaderBinding {
+    uint32_t vulkan = 0;  // Vulkan descriptor binding index (within a set)
+    uint32_t metal  = 0;  // Metal argument index
+};
+```
+
+| Field    | Type       | Description                                                        |
+|----------|------------|--------------------------------------------------------------------|
+| `vulkan` | `uint32_t` | Vulkan descriptor binding index (combined with `ResourceBinding::set`). |
+| `metal`  | `uint32_t` | Metal `[[buffer(N)]]`, `[[texture(N)]]`, or `[[sampler(N)]]` index. |
+
+For UniformBuffer and StorageBuffer bindings, the Metal index must respect
+reserved slots in the `[[buffer(N)]]` namespace:
+
+- **Vertex stage:** `metal >= 2` (0 = vertex buffer, 1 = push constants)
+- **Fragment stage:** `metal >= 1` (0 = push constants)
+- **Compute stage:** `metal >= 1` (0 = push constants)
+
+These restrictions do **not** apply to SampledImage, StorageImage, or Sampler
+bindings, because Metal `[[texture(N)]]` and `[[sampler(N)]]` are independent
+namespaces — indices can start at 0.
+
 ### `ResourceBinding`
 
 Describes a single slot in a pipeline layout. A collection of these forms the
@@ -208,21 +236,21 @@ layout's descriptor-set schema, consumed by `ResourceSet` at creation time.
 
 ```cpp
 struct ResourceBinding {
-    uint32_t     set     = 0;
-    uint32_t     binding = 0;
-    ResourceType type    = ResourceType::SampledImage;
-    ShaderStage  stage   = ShaderStage::Fragment;
-    uint32_t     count   = 1;
+    uint32_t      set     = 0;
+    ShaderBinding binding = {};
+    ResourceType  type    = ResourceType::SampledImage;
+    ShaderStage   stage   = ShaderStage::Fragment;
+    uint32_t      count   = 1;
 };
 ```
 
-| Field     | Type           | Description                                         |
-|-----------|----------------|-----------------------------------------------------|
-| `set`     | `uint32_t`     | Descriptor set index (matches GLSL `layout(set=N)`). |
-| `binding` | `uint32_t`     | Binding slot within the set.                        |
-| `type`    | `ResourceType` | Kind of resource bound at this slot.                |
-| `stage`   | `ShaderStage`  | Shader stage that reads this binding.               |
-| `count`   | `uint32_t`     | Array size; always 1 in the current implementation. |
+| Field     | Type            | Description                                                  |
+|-----------|-----------------|--------------------------------------------------------------|
+| `set`     | `uint32_t`      | Descriptor set index (matches GLSL `layout(set=N)`). Ignored in Metal. |
+| `binding` | `ShaderBinding` | Backend-specific binding indices (Vulkan + Metal).           |
+| `type`    | `ResourceType`  | Kind of resource bound at this slot.                         |
+| `stage`   | `ShaderStage`   | Shader stage that reads this binding.                        |
+| `count`   | `uint32_t`      | Array size; always 1 in the current implementation.          |
 
 ### `PipelineLayoutDescription`
 
@@ -244,10 +272,18 @@ struct PipelineLayoutDescription {
 
 ```cpp
 gpu::PipelineLayoutDescription desc{};
-desc.resourceBindings.push_back({ 0, 0, gpu::ResourceType::UniformBuffer, gpu::ShaderStage::Vertex,   1 });
-desc.resourceBindings.push_back({ 1, 0, gpu::ResourceType::UniformBuffer, gpu::ShaderStage::Vertex,   1 });
-desc.resourceBindings.push_back({ 2, 0, gpu::ResourceType::SampledImage,  gpu::ShaderStage::Fragment, 1 });
-desc.resourceBindings.push_back({ 2, 1, gpu::ResourceType::Sampler,       gpu::ShaderStage::Fragment, 1 });
+// set 0, binding 0 (Vulkan) / buffer(2) (Metal): vertex UBO
+desc.resourceBindings.push_back(
+    { 0, {.vulkan = 0, .metal = 2}, gpu::ResourceType::UniformBuffer, gpu::ShaderStage::Vertex, 1 });
+// set 1, binding 0 (Vulkan) / buffer(3) (Metal): vertex UBO
+desc.resourceBindings.push_back(
+    { 1, {.vulkan = 0, .metal = 3}, gpu::ResourceType::UniformBuffer, gpu::ShaderStage::Vertex, 1 });
+// set 2, binding 0 (Vulkan) / texture(0) (Metal): fragment sampled image
+desc.resourceBindings.push_back(
+    { 2, {.vulkan = 0, .metal = 0}, gpu::ResourceType::SampledImage,  gpu::ShaderStage::Fragment, 1 });
+// set 2, binding 1 (Vulkan) / sampler(0) (Metal): fragment sampler
+desc.resourceBindings.push_back(
+    { 2, {.vulkan = 1, .metal = 0}, gpu::ResourceType::Sampler,       gpu::ShaderStage::Fragment, 1 });
 desc.debugName = "Cube pipeline layout";
 auto layout = device->createPipelineLayout(desc);
 ```

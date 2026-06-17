@@ -277,9 +277,14 @@ a push constant range covering the specified stage, offset, and size.
 | Parameter | Type          | Description                    |
 |-----------|---------------|--------------------------------|
 | `stage`   | `ShaderStage` | Target shader stage.           |
-| `offset`  | `uint32_t`    | Byte offset into push data.    |
+| `offset`  | `uint32_t`    | Byte offset into push data (Vulkan only; ignored by Metal). |
 | `size`    | `uint32_t`    | Size in bytes.                 |
 | `data`    | `const void*` | Pointer to the data.           |
+
+In Metal, the `offset` is ignored. The push constant buffer index is
+determined by the stage: `buffer(1)` for vertex shaders, `buffer(0)` for
+fragment and compute shaders. In Vulkan, at most one push constant range per
+shader stage is allowed.
 
 ---
 

@@ -28,7 +28,8 @@ backend-specific sub-namespaces (`bg2e::gpu::vk`, `bg2e::gpu::metal`).
 | [Size3D](Common.md#size3d) | `gpu/Common.hpp` | 3D dimensions (width, height, depth). |
 | [ShaderModuleDescription](ShaderModule.md#shadermoduledescription) | `gpu/Common.hpp` | Shader file path, entry point, and stage. |
 | [PushConstantRange](Common.md#pushconstantrange) | `gpu/Common.hpp` | Push constant offset, size, and stage. |
-| [ResourceBinding](Common.md#resourcebinding) | `gpu/Common.hpp` | Single descriptor binding: set, binding, type, stage, and array count. |
+| [ShaderBinding](Common.md#shaderbinding) | `gpu/Common.hpp` | Backend-specific binding indices: Vulkan descriptor binding + Metal argument index. |
+| [ResourceBinding](Common.md#resourcebinding) | `gpu/Common.hpp` | Single descriptor binding: set, ShaderBinding (Vulkan + Metal indices), type, stage, and array count. |
 | [PipelineLayoutDescription](Common.md#pipelinelayoutdescription) | `gpu/Common.hpp` | Push constants + resource bindings for a pipeline layout. |
 | [GraphicsPipelineDescription](GraphicsPipeline.md#graphicspipelinedescription) | `gpu/GraphicsPipeline.hpp` | Shaders, layout, topology, and formats. |
 | [ComputePipelineDescription](ComputePipeline.md#computepipelinedescription) | `gpu/ComputePipeline.hpp` | Compute shader and layout. |
