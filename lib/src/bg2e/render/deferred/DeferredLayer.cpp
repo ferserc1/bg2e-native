@@ -313,7 +313,9 @@ void DeferredLayer::render(
 
                 _rtReflections->render(
                     cmd, currentFrame, frameResources, gbuffer,
-                    invVP, cameraWorldPos, tlas, objectInstances
+                    invVP, cameraWorldPos, tlas, objectInstances,
+                    _environment->irradianceMapImage().get(),
+                    _environment->irradianceMapSampler()
                 );
 
                 // Reflection temporal accumulation

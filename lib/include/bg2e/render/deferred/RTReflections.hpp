@@ -61,7 +61,9 @@ public:
         const glm::mat4& inverseViewProjection,
         const glm::vec3& cameraPosition,
         VkAccelerationStructureKHR tlas,
-        const std::vector<vulkan::rt::RTObjectInstance>& objectInstances
+        const std::vector<vulkan::rt::RTObjectInstance>& objectInstances,
+        vulkan::Image* irradianceMap,
+        VkSampler irradianceSampler
     );
 
     void cleanup();

@@ -12,6 +12,8 @@ layout(location = 0) rayPayloadInEXT ReflectionPayload {
     uint didHit;
 } payload;
 
+layout(set = 0, binding = 5) uniform samplerCube irradianceMap;
+
 layout(set = 1, binding = 0) readonly buffer MaterialDataBuffer {
     RTMaterialData materials[];
 };
@@ -59,11 +61,21 @@ void main() {
             + vert1.texCoord0 * bary.y
             + vert2.texCoord0 * bary.z;
 
+    // Interpolate object-space normal and transform to world space.
+    // gl_ObjectToWorldEXT 3x3 is correct for rigid/uniform-scale transforms.
+    vec3 objectNormal = normalize(
+        vert0.normal * bary.x +
+        vert1.normal * bary.y +
+        vert2.normal * bary.z
+    );
+    vec3 worldNormal = normalize(mat3(gl_ObjectToWorldEXT) * objectNormal);
+
     vec2 scaledUV = uv * mat.albedoScale;
 
     vec3 texColor = texture(albedoTex[nmatIdx], scaledUV).rgb;
+    vec3 irradiance = texture(irradianceMap, worldNormal).rgb;
 
-    payload.hitColor = mat.albedo.rgb * texColor;
+    payload.hitColor = mat.albedo.rgb * texColor * irradiance;
     payload.hitDistance = gl_HitTEXT;
     payload.didHit = 1;
 }
