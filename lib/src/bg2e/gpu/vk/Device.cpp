@@ -375,6 +375,10 @@ std::shared_ptr<gpu::Image> Device::createImage(const ImageDescription& descript
 {
     auto img = std::make_shared<vk::Image>(this);
 
+    // Resolve the effective mip level count: derived from minMipSize when set,
+    // otherwise the explicit mipLevels value.
+    const uint32_t mipLevels = effectiveMipLevels(description);
+
     if (description.type == ImageType::Cubemap)
     {
         VkImageUsageFlags usage = 0;
@@ -385,7 +389,7 @@ std::shared_ptr<gpu::Image> Device::createImage(const ImageDescription& descript
         if (hasFlag(description.usage, ImageUsage::ColorAttachment)) { usage |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT; }
         img->buildCubemapImage(
             this, description.size, description.format,
-            usage, description.mipLevels, description.debugName
+            usage, mipLevels, description.debugName
         );
     }
     // Depth images need buildDepthImage to set the correct aspect mask.

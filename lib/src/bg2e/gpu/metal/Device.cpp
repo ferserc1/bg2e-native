@@ -147,6 +147,11 @@ std::shared_ptr<gpu::ResourceSet> Device::createResourceSet(gpu::PipelineLayout*
 std::shared_ptr<gpu::Image> Device::createImage(const ImageDescription& description)
 {
     auto img = std::make_shared<metal::Image>(this);
+
+    // Resolve the effective mip level count: derived from minMipSize when set,
+    // otherwise the explicit mipLevels value.
+    const uint32_t mipLevels = effectiveMipLevels(description);
+
     if (description.type == ImageType::Cubemap)
     {
         MTL::TextureUsage usage = MTL::TextureUsageShaderRead;
@@ -154,7 +159,7 @@ std::shared_ptr<gpu::Image> Device::createImage(const ImageDescription& descript
             usage |= MTL::TextureUsageRenderTarget;
         img->buildCubemapImage(
             this, description.size, description.format,
-            usage, description.mipLevels, description.debugName
+            usage, mipLevels, description.debugName
         );
     }
     else if (isDepthFormat(description.format))
