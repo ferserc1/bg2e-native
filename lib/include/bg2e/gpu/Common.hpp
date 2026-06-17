@@ -428,6 +428,28 @@ enum class ImageType {
     Cubemap
 };
 
+// Compute the number of mip levels for an image whose largest dimension is
+// `size`, such that the smallest mip level is at least `minMipSize` pixels on
+// its largest side.
+//
+//   size = 1024, minMipSize = 8  -> 8 mip levels (1024, 512, ..., 16, 8)
+//   size = 32,   minMipSize = 32 -> 1 mip level
+//
+// `minMipSize` of 0 is treated as 1 (full mip chain down to 1x1).
+inline uint32_t mipLevelsForMinSize(uint32_t size, uint32_t minMipSize)
+{
+    if (size == 0) return 1;
+    if (minMipSize == 0) minMipSize = 1;
+    uint32_t levels = 1;
+    uint32_t current = size;
+    while ((current >> 1) >= minMipSize)
+    {
+        current >>= 1;
+        ++levels;
+    }
+    return levels;
+}
+
 // --- Image description for standalone image creation -------------------------
 
 struct ImageDescription {
@@ -436,8 +458,26 @@ struct ImageDescription {
     ImageUsage  usage  = ImageUsage::Sampled | ImageUsage::TransferDst;
     ImageType   type   = ImageType::Image2D;
     uint32_t    mipLevels = 1;
+    // Minimum mip level size, in pixels, on the largest image dimension.
+    // When > 0, the number of mip levels is derived from `size` and this value
+    // (see mipLevelsForMinSize) and overrides `mipLevels`. When 0, `mipLevels`
+    // is used as-is.
+    uint32_t    minMipSize = 0;
     std::string debugName;          // Debug label for validation layers / Xcode GPU Capture
 };
+
+// Resolve the effective mip level count for an image description: derived from
+// `minMipSize` when it is set, otherwise the explicit `mipLevels` value.
+inline uint32_t effectiveMipLevels(const ImageDescription& description)
+{
+    if (description.minMipSize > 0)
+    {
+        uint32_t maxDim = description.size.width > description.size.height
+            ? description.size.width : description.size.height;
+        return mipLevelsForMinSize(maxDim, description.minMipSize);
+    }
+    return description.mipLevels;
+}
 
 // --- Vertex attribute format --------------------------------------------------
 
@@ -533,6 +573,10 @@ struct CubeMapDescription {
                        | ImageUsage::TransferSrc
                        | ImageUsage::TransferDst;
     uint32_t    mipLevels = 1;
+    // Minimum mip level size, in pixels. When > 0, the number of mip levels is
+    // derived from `size` and this value (see mipLevelsForMinSize) and
+    // overrides `mipLevels`. When 0, `mipLevels` is used as-is.
+    uint32_t    minMipSize = 0;
     std::string debugName;
 };
 

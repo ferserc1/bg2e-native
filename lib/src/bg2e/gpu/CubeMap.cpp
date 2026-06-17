@@ -48,8 +48,17 @@ void CubeMap::create(const CubeMapDescription& description)
         throw std::runtime_error("gpu::CubeMap::create: usage must include ImageUsage::ColorAttachment");
     }
 
+    // When minMipSize is set, derive the mip level count from the cubemap size
+    // so the smallest mip is at least minMipSize pixels; otherwise honor the
+    // explicit mipLevels value.
+    uint32_t mipLevels = description.mipLevels;
+    if (description.minMipSize > 0)
+    {
+        mipLevels = mipLevelsForMinSize(description.size, description.minMipSize);
+    }
+
     _size      = description.size;
-    _mipLevels = description.mipLevels;
+    _mipLevels = mipLevels;
     _format    = description.format;
 
     _image = device()->createImage(ImageDescription{
@@ -57,7 +66,7 @@ void CubeMap::create(const CubeMapDescription& description)
         .format    = description.format,
         .usage     = description.usage,
         .type      = ImageType::Cubemap,
-        .mipLevels = description.mipLevels,
+        .mipLevels = mipLevels,
         .debugName = description.debugName
     });
 }
