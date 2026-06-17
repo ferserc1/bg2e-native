@@ -1,10 +1,13 @@
 #version 460
 #extension GL_ARB_shading_language_include : require
 #extension GL_EXT_ray_tracing : require
+#extension GL_EXT_ray_query : require
 #extension GL_EXT_nonuniform_qualifier : require
 #extension GL_EXT_scalar_block_layout : require
 
 #include "lib/rt_material_data.glsl"
+#include "lib/basic_lighting.glsl"
+#include "lib/ray_tracing.glsl"
 
 layout(location = 0) rayPayloadInEXT ReflectionPayload {
     vec3 hitColor;
@@ -12,7 +15,25 @@ layout(location = 0) rayPayloadInEXT ReflectionPayload {
     uint didHit;
 } payload;
 
+layout(push_constant) uniform PushConstant {
+    mat4 inverseViewProjection;
+    vec3 cameraPosition;
+    float maxRoughness;
+    vec2 outputSize;
+    uint sampleCount;
+    uint frameIndex;
+    float rayBias;
+    float maxDistance;
+    float roughnessSpread;
+    uint reflectionLightCount;
+} pc;
+
+layout(set = 0, binding = 0) uniform accelerationStructureEXT tlas;
 layout(set = 0, binding = 5) uniform samplerCube irradianceMap;
+
+layout(std430, set = 2, binding = 0) readonly buffer ReflectionLightBuffer {
+    LightData reflectionLights[];
+};
 
 layout(set = 1, binding = 0) readonly buffer MaterialDataBuffer {
     RTMaterialData materials[];
@@ -70,12 +91,31 @@ void main() {
     );
     vec3 worldNormal = normalize(mat3(gl_ObjectToWorldEXT) * objectNormal);
 
+    // World-space position of the reflection ray hit point.
+    vec3 worldPos = gl_WorldRayOriginEXT + gl_WorldRayDirectionEXT * gl_HitTEXT;
+
     vec2 scaledUV = uv * mat.albedoScale;
 
     vec3 texColor = texture(albedoTex[nmatIdx], scaledUV).rgb;
-    vec3 irradiance = texture(irradianceMap, worldNormal).rgb;
+    vec3 surfaceAlbedo = mat.albedo.rgb * texColor;
 
-    payload.hitColor = mat.albedo.rgb * texColor * irradiance;
+    // Ambient contribution from the irradiance map.
+    vec3 irradiance = texture(irradianceMap, worldNormal).rgb;
+    vec3 lighting = surfaceAlbedo * irradiance;
+
+    // Basic Lambert contribution from the lights flagged as affects-reflections.
+    for (uint i = 0u; i < pc.reflectionLightCount; ++i)
+    {
+        LightData light = reflectionLights[i];
+        float shadowFactor = 0.0;
+        if (light.castShadows != 0)
+        {
+            shadowFactor = queryShadow(tlas, worldPos, worldNormal, light, 8);
+        }
+        lighting += shadowFactor * computeBasicLighting(light, worldPos, worldNormal, surfaceAlbedo);
+    }
+
+    payload.hitColor = lighting;
     payload.hitDistance = gl_HitTEXT;
     payload.didHit = 1;
 }

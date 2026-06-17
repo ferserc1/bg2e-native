@@ -28,6 +28,8 @@
 #include <bg2e/render/vulkan/factory/DescriptorSetLayout.hpp>
 #include <bg2e/render/vulkan/factory/PipelineLayout.hpp>
 #include <bg2e/render/vulkan/rt/RTMaterialDataBinding.hpp>
+#include <bg2e/render/vulkan/rt/ReflectionLightDataBinding.hpp>
+#include <bg2e/base/Light.hpp>
 
 #include <memory>
 #include <vector>
@@ -49,6 +51,7 @@ public:
     ~RTReflections();
 
     void setMaterialDataBinding(vulkan::rt::RTMaterialDataBinding* binding) { _materialDataBinding = binding; }
+    void setReflectionLightDataBinding(vulkan::rt::ReflectionLightDataBinding* binding) { _reflectionLightDataBinding = binding; }
 
     void build(const GBufferManager* gbuffer, VkExtent2D extent);
     void resize(VkExtent2D extent);
@@ -63,7 +66,8 @@ public:
         VkAccelerationStructureKHR tlas,
         const std::vector<vulkan::rt::RTObjectInstance>& objectInstances,
         vulkan::Image* irradianceMap,
-        VkSampler irradianceSampler
+        VkSampler irradianceSampler,
+        const std::vector<base::LightData>& reflectionLights
     );
 
     void cleanup();
@@ -89,6 +93,7 @@ private:
     bool _rtSupported = false;
 
     vulkan::rt::RTMaterialDataBinding* _materialDataBinding = nullptr;
+    vulkan::rt::ReflectionLightDataBinding* _reflectionLightDataBinding = nullptr;
 
     std::vector<std::shared_ptr<vulkan::Image>> _reflectionImages;
     std::shared_ptr<vulkan::Image> _fallbackImage;
@@ -114,7 +119,7 @@ private:
         float rayBias;
         float maxDistance;
         float roughnessSpread;
-        uint32_t padding0;
+        uint32_t reflectionLightCount;
     };
 
     void createFallbackImage();

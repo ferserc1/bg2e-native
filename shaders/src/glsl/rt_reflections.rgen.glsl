@@ -20,7 +20,7 @@ layout(push_constant) uniform PushConstant {
     float rayBias;
     float maxDistance;
     float roughnessSpread;
-    uint padding0;
+    uint reflectionLightCount;
 } pc;
 
 layout(location = 0) rayPayloadEXT ReflectionPayload {

@@ -63,7 +63,8 @@ bool _shadowRayTest(
 float queryShadow(
     accelerationStructureEXT tlas,
     vec3 worldPos, vec3 normal,
-    LightData light
+    LightData light,
+    int maxSamples
 ) {
     vec3 toLight;
     float tMax;
@@ -82,7 +83,7 @@ float queryShadow(
 
     vec3 origin = worldPos + normal * 0.01;
 
-    int samples = light.shadowSamples;
+    int samples = light.shadowSamples > maxSamples ? maxSamples : light.shadowSamples;
     if (samples <= 1)
     {
         return _shadowRayTest(tlas, origin, toLight, tMax) ? 1.0 : 0.0;
@@ -107,6 +108,35 @@ float queryShadow(
     }
 
     return 1.0 - float(occluded) / float(samples);
+}
+
+//float queryShadows(
+//    accelerationStructureEXT tlas,
+//    vec3 worldPos, vec3 normal,
+//    LightData light
+//) {
+//    return queryShadows(tlas, worldPos, normal, light, 32);
+//}
+
+// Single hard-shadow ray: 1.0 = lit, 0.0 = occluded.
+// Ignores shadowSamples / sourceSize — use queryShadow() for soft shadows.
+float hardShadow(
+    accelerationStructureEXT tlas,
+    vec3 worldPos, vec3 normal,
+    LightData light
+) {
+    vec3 toLight;
+    float tMax;
+    if (light.type == LIGHT_TYPE_DIRECTIONAL) {
+        toLight = -normalize(light.direction);
+        tMax = 1000000.0;
+    } else {
+        toLight = light.position - worldPos;
+        tMax = length(toLight);
+        toLight = normalize(toLight);
+    }
+    vec3 origin = worldPos + normal * 0.01;
+    return _shadowRayTest(tlas, origin, toLight, tMax) ? 1.0 : 0.0;
 }
 
 bool queryAO(

@@ -155,7 +155,7 @@ void main() {
         if (LightsBuffer.lights[i].type != LIGHT_TYPE_DISABLED) {
             float shadowFactor = 1.0;
             if (LightsBuffer.lights[i].castShadows != 0) {
-                shadowFactor = queryShadow(tlas, gbuf.worldPos, gbuf.normal, LightsBuffer.lights[i]);
+                shadowFactor = queryShadow(tlas, gbuf.worldPos, gbuf.normal, LightsBuffer.lights[i], 32);
             }
             Lo += shadowFactor * calcRadiance(LightsBuffer.lights[i], gbuf.viewDir, gbuf.worldPos,
                               gbuf.metallic, gbuf.roughness,
