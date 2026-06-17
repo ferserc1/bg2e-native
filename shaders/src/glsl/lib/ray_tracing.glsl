@@ -110,14 +110,6 @@ float queryShadow(
     return 1.0 - float(occluded) / float(samples);
 }
 
-//float queryShadows(
-//    accelerationStructureEXT tlas,
-//    vec3 worldPos, vec3 normal,
-//    LightData light
-//) {
-//    return queryShadows(tlas, worldPos, normal, light, 32);
-//}
-
 // Single hard-shadow ray: 1.0 = lit, 0.0 = occluded.
 // Ignores shadowSamples / sourceSize — use queryShadow() for soft shadows.
 float hardShadow(
