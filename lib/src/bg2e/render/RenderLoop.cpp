@@ -74,6 +74,7 @@ void RenderLoop::acquireAndPresent()
     }
 
     frameResources.flushFrameData();
+    _engine->flushDeferredExec();
 
     uint32_t swapchainImageIndex;
 	auto acquireResult = vulkan::acquireNextImage(dev, swapchain, 10000000000, swapchainSemaphore, nullptr, &swapchainImageIndex);
@@ -114,93 +115,151 @@ void RenderLoop::acquireAndPresent()
     {
         vulkan::Image::cmdTransitionImage(
             cmd,
-            msaaImage->handle(),
-            VK_IMAGE_LAYOUT_UNDEFINED,
-            VK_IMAGE_LAYOUT_GENERAL
-        );
-
-        vulkan::Image::cmdTransitionImage(
-            cmd,
             resolveImage->handle(),
             VK_IMAGE_LAYOUT_UNDEFINED,
             VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
         );
 
-        auto lastSwapchainLayout = render(
-            cmd,
-            msaaImage,
-            depthImage,
-            msaaDepthImage,
-            frameResources
-        );
-
-        if (lastSwapchainLayout != VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL) {
+        if (_scenePaused)
+        {
             vulkan::Image::cmdTransitionImage(
                 cmd,
                 msaaImage->handle(),
-                lastSwapchainLayout,
-                VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
+                VK_IMAGE_LAYOUT_UNDEFINED,
+                VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
             );
-        }
 
+            cmdClearColorImage(cmd, msaaImage, _sceneClearColor);
 
-        vulkan::Image::cmdTransitionImage(
-            cmd,
-            resolveImage->handle(),
-            VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
-            VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
-        );
+            vulkan::Image::cmdTransitionImage(
+                cmd,
+                msaaImage->handle(),
+                VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
+            );
 
-
-        // Resolve the MSAA image to the swapchain image
-        VkImageResolve region = {};
-        region.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        region.srcSubresource.mipLevel = 0;
-        region.srcSubresource.baseArrayLayer = 0;
-        region.srcSubresource.layerCount = 1;
-        region.srcOffset = { 0, 0, 0 };
-        region.dstSubresource = region.srcSubresource;
-        region.dstOffset = { 0, 0, 0 };
-        region.extent = { msaaImage->extent() };
-        vkCmdResolveImage(
-            cmd,
-            msaaImage->handle(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-            resolveImage->handle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-            1, &region
-        );
-
-        vulkan::Image::cmdTransitionImage(
-            cmd,
-            resolveImage->handle(),
-            VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-            VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
-        );
-    }
-    else
-    {
-
-        vulkan::Image::cmdTransitionImage(
-            cmd,
-            resolveImage->handle(),
-            VK_IMAGE_LAYOUT_UNDEFINED,
-            VK_IMAGE_LAYOUT_GENERAL
-        );
-
-        auto lastSwapchainLayout = render(
-            cmd,
-            resolveImage,
-            depthImage,
-            depthImage,
-            frameResources
-        );
-
-        if (lastSwapchainLayout != VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL) {
             vulkan::Image::cmdTransitionImage(
                 cmd,
                 resolveImage->handle(),
-                lastSwapchainLayout,
+                VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+                VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
+            );
+
+            cmdClearColorImage(cmd, resolveImage, _sceneClearColor);
+
+            vulkan::Image::cmdTransitionImage(
+                cmd,
+                resolveImage->handle(),
+                VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                 VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
             );
+        }
+        else
+        {
+            vulkan::Image::cmdTransitionImage(
+                cmd,
+                msaaImage->handle(),
+                VK_IMAGE_LAYOUT_UNDEFINED,
+                VK_IMAGE_LAYOUT_GENERAL
+            );
+
+            auto lastSwapchainLayout = render(
+                cmd,
+                msaaImage,
+                depthImage,
+                msaaDepthImage,
+                frameResources
+            );
+
+            if (lastSwapchainLayout != VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL) {
+                vulkan::Image::cmdTransitionImage(
+                    cmd,
+                    msaaImage->handle(),
+                    lastSwapchainLayout,
+                    VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
+                );
+            }
+
+
+            vulkan::Image::cmdTransitionImage(
+                cmd,
+                resolveImage->handle(),
+                VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+                VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
+            );
+
+
+            // Resolve the MSAA image to the swapchain image
+            VkImageResolve region = {};
+            region.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+            region.srcSubresource.mipLevel = 0;
+            region.srcSubresource.baseArrayLayer = 0;
+            region.srcSubresource.layerCount = 1;
+            region.srcOffset = { 0, 0, 0 };
+            region.dstSubresource = region.srcSubresource;
+            region.dstOffset = { 0, 0, 0 };
+            region.extent = { msaaImage->extent() };
+            vkCmdResolveImage(
+                cmd,
+                msaaImage->handle(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                resolveImage->handle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                1, &region
+            );
+
+            vulkan::Image::cmdTransitionImage(
+                cmd,
+                resolveImage->handle(),
+                VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
+            );
+        }
+    }
+    else
+    {
+        if (_scenePaused)
+        {
+            vulkan::Image::cmdTransitionImage(
+                cmd,
+                resolveImage->handle(),
+                VK_IMAGE_LAYOUT_UNDEFINED,
+                VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
+            );
+
+            cmdClearColorImage(cmd, resolveImage, _sceneClearColor);
+
+            vulkan::Image::cmdTransitionImage(
+                cmd,
+                resolveImage->handle(),
+                VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
+            );
+        }
+        else
+        {
+
+            vulkan::Image::cmdTransitionImage(
+                cmd,
+                resolveImage->handle(),
+                VK_IMAGE_LAYOUT_UNDEFINED,
+                VK_IMAGE_LAYOUT_GENERAL
+            );
+
+            auto lastSwapchainLayout = render(
+                cmd,
+                resolveImage,
+                depthImage,
+                depthImage,
+                frameResources
+            );
+
+            if (lastSwapchainLayout != VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL) {
+                vulkan::Image::cmdTransitionImage(
+                    cmd,
+                    resolveImage->handle(),
+                    lastSwapchainLayout,
+                    VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
+                );
+            }
         }
     }
 
@@ -296,6 +355,49 @@ void RenderLoop::cleanup()
     {
         _renderDelegate->cleanup();
     }
+}
+
+void RenderLoop::pauseScene(glm::vec4 clearColor)
+{
+    if (_engine)
+        _engine->device().waitIdle();
+    _sceneClearColor = clearColor;
+    _scenePaused = true;
+}
+
+void RenderLoop::resumeScene()
+{
+    if (_engine)
+        _engine->device().waitIdle();
+    _scenePaused = false;
+}
+
+void RenderLoop::cmdClearColorImage(
+    VkCommandBuffer cmd,
+    const vulkan::Image* targetImage,
+    const glm::vec4& clearColor
+)
+{
+    VkClearColorValue clearValue{};
+    clearValue.float32[0] = clearColor.r;
+    clearValue.float32[1] = clearColor.g;
+    clearValue.float32[2] = clearColor.b;
+    clearValue.float32[3] = clearColor.a;
+
+    VkImageSubresourceRange range{};
+    range.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
+    range.baseMipLevel   = 0;
+    range.levelCount     = 1;
+    range.baseArrayLayer = 0;
+    range.layerCount     = 1;
+
+    vkCmdClearColorImage(
+        cmd,
+        targetImage->handle(),
+        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+        &clearValue,
+        1, &range
+    );
 }
 
 }

@@ -42,7 +42,7 @@ public:
     std::shared_ptr<bg2e::scene::Node> init();
 
     // Replace the whole editable scene with one loaded from disk
-    void openScene(const std::filesystem::path& path);
+    void openScene(const std::filesystem::path& path, bg2e::scene::SceneProgressCallback progressCallback);
 
     // Save the editable scene to disk
     void saveScene(const std::filesystem::path& path);

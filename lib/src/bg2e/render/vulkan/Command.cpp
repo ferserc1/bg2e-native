@@ -32,6 +32,7 @@ void Command::init(Engine *engine)
     
     _graphicsQueue = engine->device().graphicsQueue();
     _graphicsQueueFamily = engine->device().graphicsFamily();
+    _immediateQueue = engine->device().immediateQueue();
 
     auto cmdPoolInfo = Info::commandPoolCreateInfo(_graphicsQueueFamily, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
     VK_ASSERT(vkCreateCommandPool(_engine->device().handle(), &cmdPoolInfo, nullptr, &_immediateCmdPool));
@@ -92,7 +93,7 @@ void Command::immediateSubmit(std::function<void(VkCommandBuffer cmd)>&& functio
 	auto cmdInfo = Info::commandBufferSubmitInfo(_immediateCmdBuffer);
     auto submit = Info::submitInfo(&cmdInfo, nullptr, nullptr);
 
-    queueSubmit2(_graphicsQueue, 1, &submit, _immediateCmdFence);
+    queueSubmit2(_immediateQueue, 1, &submit, _immediateCmdFence);
 
 	VK_ASSERT(vkWaitForFences(_engine->device().handle(), 1, &_immediateCmdFence, true, 9999999999));
 }

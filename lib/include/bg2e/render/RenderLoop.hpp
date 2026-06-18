@@ -23,6 +23,7 @@
 #include <bg2e/render/vulkan/DescriptorSetAllocator.hpp>
 #include <bg2e/render/RenderLoopDelegate.hpp>
 
+#include <glm/glm.hpp>
 #include <memory>
 #include <functional>
 
@@ -55,6 +56,10 @@ public:
 
     void cleanup();
 
+    void pauseScene(glm::vec4 clearColor = {0.f, 0.f, 0.f, 1.f});
+    void resumeScene();
+    inline bool isScenePaused() const { return _scenePaused; }
+
     inline void setDelegate(std::shared_ptr<RenderLoopDelegate> delegate) { _renderDelegate = delegate; }
 
 	inline void renderUICallback(std::function<void(VkCommandBuffer, VkImageView)> callback) { _renderUICallback = callback; }
@@ -68,8 +73,17 @@ protected:
     std::shared_ptr<RenderLoopDelegate> _renderDelegate;
 
     std::function<void(VkCommandBuffer, VkImageView)> _renderUICallback;
-    
+
     float _delta;
+
+    bool _scenePaused = false;
+    glm::vec4 _sceneClearColor { 0.f, 0.f, 0.f, 1.f };
+
+    void cmdClearColorImage(
+        VkCommandBuffer cmd,
+        const vulkan::Image* targetImage,
+        const glm::vec4& clearColor
+    );
 };
 
 }

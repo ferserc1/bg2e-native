@@ -47,7 +47,8 @@ void Device::create(VkInstance instance, const PhysicalDevice& physicalDevice, b
         VkDeviceQueueCreateInfo queueCreateInfo{};
         queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
         queueCreateInfo.queueFamilyIndex = queueFamily;
-        queueCreateInfo.queueCount = 1;
+        uint32_t queueCount = (queueFamily == indices.graphics.value()) ? 2 : 1;
+        queueCreateInfo.queueCount = queueCount;
         queueCreateInfo.pQueuePriorities = &queuePriority;
         queueCreateInfos.push_back(queueCreateInfo);
     }
@@ -189,6 +190,7 @@ void Device::create(VkInstance instance, const PhysicalDevice& physicalDevice, b
 
     _graphicsFamily = indices.graphics.value();
     vkGetDeviceQueue(_device, _graphicsFamily, 0, &_graphicsQueue);
+    vkGetDeviceQueue(_device, _graphicsFamily, 1, &_immediateQueue);
 
     if (!offscreen)
     {

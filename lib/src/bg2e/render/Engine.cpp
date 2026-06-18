@@ -20,6 +20,7 @@
 #include <bg2e/gpu/vk/Instance.hpp>
 #include <bg2e/render/vulkan/extensions.hpp>
 #include <stdexcept>
+#include <algorithm>
 
 #include "bg2e/base/Log.hpp"
 
@@ -95,6 +96,7 @@ void Engine::init()
 void Engine::cleanup()
 {
     _device.waitIdle();
+    flushAllDeferredExec();
 
     _cleanupManager.flush(_device);
 
@@ -266,6 +268,38 @@ void Engine::iterateFrameResources(std::function<void(vulkan::FrameResources&)> 
 void Engine::destroyBuffer(VkBuffer buffer, VmaAllocation allocation)
 {
     vmaDestroyBuffer(_allocator, buffer, allocation);
+}
+
+void Engine::deferredExec(std::function<void()>&& closure)
+{
+    _deferredExecs.push_back({
+        currentFrame() + numImages(),
+        std::move(closure)
+    });
+}
+
+void Engine::flushDeferredExec()
+{
+    auto frame = currentFrame();
+    _deferredExecs.erase(
+        std::remove_if(_deferredExecs.begin(), _deferredExecs.end(),
+            [frame](const DeferredExec& d) {
+                if (d.targetFrame <= frame) {
+                    d.closure();
+                    return true;
+                }
+                return false;
+            }),
+        _deferredExecs.end()
+    );
+}
+
+void Engine::flushAllDeferredExec()
+{
+    for (auto& d : _deferredExecs) {
+        d.closure();
+    }
+    _deferredExecs.clear();
 }
 
 }

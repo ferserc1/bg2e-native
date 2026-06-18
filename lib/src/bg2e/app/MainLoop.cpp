@@ -267,11 +267,13 @@ int32_t MainLoop::run(app::Application * application) {
             }
         }
 
-        if (!quit)
-        {
-            executeSafeUpdateScene();
+            if (!quit)
+            {
+                executeSafeUpdateScene();
 
-            if (resizing)
+                drainMainThreadQueue();
+
+                if (resizing)
             {
                 auto now = std::chrono::steady_clock::now();
                 if (now - lastResizeEventTime > std::chrono::milliseconds(minResizeInterval)) {
@@ -347,6 +349,45 @@ void MainLoop::executeSafeUpdateScene()
         }
     }
     _safeUpdateScene.clear();
+}
+
+void MainLoop::drainMainThreadQueue()
+{
+    if (_mainThreadQueue.empty()) return;
+
+    std::queue<std::function<void()>> local;
+    {
+        std::lock_guard lock(_mainThreadQueueMutex);
+        std::swap(local, _mainThreadQueue);
+    }
+    while (!local.empty())
+    {
+        local.front()();
+        local.pop();
+    }
+}
+
+void MainLoop::asyncLoad(
+    std::function<void(ui::Loader*)> loadFn,
+    glm::vec4 clearColor)
+{
+    _renderLoop.pauseScene(clearColor);
+
+    _userInterface.setFrameOverride([this]{ _loader.draw(); });
+
+    std::thread([this, fn = std::move(loadFn)]() mutable
+    {
+        fn(&_loader);
+
+        {
+            std::lock_guard lock(_mainThreadQueueMutex);
+            _mainThreadQueue.push([this]()
+            {
+                _userInterface.clearFrameOverride();
+                _renderLoop.resumeScene();
+            });
+        }
+    }).detach();
 }
 
 }

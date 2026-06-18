@@ -49,6 +49,7 @@ public:
 
 protected:
     VkQueue _graphicsQueue = VK_NULL_HANDLE;
+    VkQueue _immediateQueue = VK_NULL_HANDLE;
     uint32_t _graphicsQueueFamily = 0;
 
     VkCommandPool _immediateCmdPool = VK_NULL_HANDLE;

@@ -26,8 +26,7 @@
 #include <bg2e/ui/UISettingsWindow.hpp>
 #include "UIRenderSettingsWindow.hpp"
 
-//class AppDelegate : public bg2e::render::DefaultRenderLoopDelegate<bg2e::render::RendererDeferred>,
-class AppDelegate : public bg2e::render::DefaultRenderLoopDelegate<bg2e::render::RendererBasicForward>,
+class AppDelegate : public bg2e::render::DefaultRenderLoopDelegate<bg2e::render::RendererDeferred>,
 	public bg2e::app::InputDelegate,
 	public bg2e::ui::UserInterfaceDelegate
 {

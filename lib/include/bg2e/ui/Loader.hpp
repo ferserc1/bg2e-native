@@ -18,25 +18,31 @@
 
 #pragma once
 
-#include <bg2e/ui/UserInterface.hpp>
-#include <bg2e/ui/UserInterfaceDelegate.hpp>
-#include <bg2e/ui/BasicWidgets.hpp>
-#include <bg2e/ui/DemoWindow.hpp>
-#include <bg2e/ui/CameraSettings.hpp>
-#include <bg2e/ui/DrawableEditor.hpp>
-#include <bg2e/ui/LightEditor.hpp>
-#include <bg2e/ui/MaterialEditor.hpp>
-#include <bg2e/ui/PolarTransformControllerEditor.hpp>
-#include <bg2e/ui/Menu.hpp>
-#include <bg2e/ui/Window.hpp>
-#include <bg2e/ui/Input.hpp>
-#include <bg2e/ui/SelectableList.hpp>
-#include <bg2e/ui/StatusBar.hpp>
-#include <bg2e/ui/SubmeshSelector.hpp>
-#include <bg2e/ui/TextureWidgets.hpp>
-#include <bg2e/ui/Toolbar.hpp>
-#include <bg2e/ui/Workspace.hpp>
-#include <bg2e/ui/SceneTree.hpp>
-#include <bg2e/ui/NodeEditor.hpp>
-#include <bg2e/ui/UISettingsWindow.hpp>
-#include <bg2e/ui/Loader.hpp>
+#include <bg2e/common.hpp>
+
+#include <string>
+#include <mutex>
+
+namespace bg2e {
+namespace ui {
+
+class BG2E_API Loader {
+public:
+    void setMessage(const std::string& msg);
+    std::string getMessage() const;
+
+    void setProgress(float progress);   // clamped to [0, 1]
+    float getProgress() const;
+
+    // Call once per ImGui frame while the loader is active.
+    // Draws a centered non-closeable window with message + progress bar.
+    void draw();
+
+private:
+    mutable std::recursive_mutex _mutex;
+    std::string _message  = "Loading...";
+    float       _progress = 0.f;
+};
+
+} // ui
+} // bg2e

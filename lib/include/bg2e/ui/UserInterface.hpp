@@ -23,6 +23,8 @@
 #include <bg2e/ui/UserInterfaceDelegate.hpp>
 #include <SDL2/SDL.h>
 
+#include <functional>
+
 
 namespace bg2e {
 namespace ui {
@@ -39,6 +41,9 @@ public:
 
     void cleanup();
 
+    void setFrameOverride(std::function<void()> fn);
+    void clearFrameOverride();
+
     inline void setDelegate(std::shared_ptr<UserInterfaceDelegate> delegate) { _delegate = delegate; }
 
     static float getScale() { return s_uiScale; }
@@ -53,7 +58,9 @@ protected:
     VkDescriptorPool _imguiPool;
 
     std::shared_ptr<UserInterfaceDelegate> _delegate;
-    
+
+    std::function<void()> _frameOverride;
+
     void initCommands();
     void initImGui();
 

@@ -30,55 +30,98 @@
 
 namespace bg2e::db {
 
+static int countJsonNodes(std::shared_ptr<bg2e::json::JsonNode> jsonNode)
+{
+    if (!jsonNode || !jsonNode->isObject()) { return 0; }
+    auto& obj = jsonNode->objectValue();
+    int count = 1;
+    if (obj.count("children") && obj["children"]->isList())
+    {
+        for (auto& child : obj["children"]->listValue())
+        {
+            count += countJsonNodes(child);
+        }
+    }
+    return count;
+}
+
+static int countSceneNodes(bg2e::scene::Node* node)
+{
+    if (!node) { return 0; }
+    int count = 1;
+    for (auto& child : node->children())
+    {
+        count += countSceneNodes(child.get());
+    }
+    return count;
+}
+
 std::shared_ptr<bg2e::scene::Scene> loadScene(
     const std::filesystem::path& filePath,
-    bg2e::render::Engine& engine
+    bg2e::render::Engine& engine,
+    bg2e::scene::SceneProgressCallback onProgress
 ) {
     std::ifstream inFile(filePath);
     if (!inFile.is_open())
     {
         bg2e_log_error << "Could not open scene file at path \"" << filePath << "\""  << bg2e_log_end;
+        return nullptr;
     }
-    else {
-        inFile.seekg(0, std::ios::end);
-        std::string content;
-        content.resize(inFile.tellg());
 
-        inFile.seekg(0, std::ios::beg);
-        inFile.read(&content[0], content.size());
+    inFile.seekg(0, std::ios::end);
+    std::string content;
+    content.resize(inFile.tellg());
 
+    inFile.seekg(0, std::ios::beg);
+    inFile.read(&content[0], content.size());
 
-        auto parser = json::JsonParser(content);
-        auto sceneFile = parser.parse();
+    auto parser = json::JsonParser(content);
+    auto sceneFile = parser.parse();
 
-        if (!sceneFile) {
-            bg2e_log_error << "Error parsing scene file at path \"" << filePath << "\"" << bg2e_log_end;
-        }
+    if (!sceneFile) {
+        bg2e_log_error << "Error parsing scene file at path \"" << filePath << "\"" << bg2e_log_end;
+        return nullptr;
+    }
 
-        auto scene = scene::Scene::deserialize(sceneFile, filePath.parent_path(), engine);
-        inFile.close();
-
-        if (!scene)
+    // Build progress context and pre-count nodes
+    scene::SceneLoadProgress progress;
+    if (onProgress)
+    {
+        progress.callback = onProgress;
+        auto& obj = sceneFile->objectValue();
+        if (obj.count("scene") && obj["scene"]->isList())
         {
-            bg2e_log_error << "Error loading scene content from file \"" << filePath << "\". This error is usually caused by issues with the scene configuration or missing resources." << bg2e_log_end;
+            for (auto& nodeData : obj["scene"]->listValue())
+            {
+                progress.total += countJsonNodes(nodeData);
+            }
         }
-
-        return scene;
     }
-    return nullptr;
+
+    auto scene = scene::Scene::deserialize(sceneFile, filePath.parent_path(), engine, onProgress ? &progress : nullptr);
+    inFile.close();
+
+    if (!scene)
+    {
+        bg2e_log_error << "Error loading scene content from file \"" << filePath << "\". This error is usually caused by issues with the scene configuration or missing resources." << bg2e_log_end;
+    }
+
+    return scene;
 }
 
 std::shared_ptr<bg2e::scene::Scene> loadScene(
     const std::filesystem::path& basePath,
     const std::string& fileName,
-    bg2e::render::Engine& engine
+    bg2e::render::Engine& engine,
+    bg2e::scene::SceneProgressCallback onProgress
 ) {
-    return loadScene(basePath / fileName, engine);
+    return loadScene(basePath / fileName, engine, onProgress);
 }
 
 void saveScene(
-    bg2e::scene::Node * sceneRoot,
-    const std::filesystem::path& filePath
+    bg2e::scene::Node* sceneRoot,
+    const std::filesystem::path& filePath,
+    bg2e::scene::SceneProgressCallback onProgress
 ) {
     auto rootPath = filePath;
     rootPath.remove_filename();
@@ -98,14 +141,22 @@ void saveScene(
         }
     }
 
-    auto sceneData = sceneRoot->serialize(rootPath);
-    
+    // Build progress context and pre-count nodes
+    scene::SceneSaveProgress progress;
+    if (onProgress)
+    {
+        progress.callback = onProgress;
+        progress.total = countSceneNodes(sceneRoot);
+    }
+
+    auto sceneData = sceneRoot->serialize(rootPath, onProgress ? &progress : nullptr);
+
     std::ofstream file;
     file.open(filePath);
     if (file.is_open())
     {
         using namespace bg2e::json;
-        auto sceneRoot = JSON(JsonObject{
+        auto sceneJson = JSON(JsonObject{
             { "fileType", JSON("bg2e::scene") },
             { "version", JSON(JsonObject{
                 { "major", JSON(1) },
@@ -114,7 +165,7 @@ void saveScene(
             })},
             { "scene", JSON(JsonList{sceneData})}
         });
-        file << sceneRoot->toString();
+        file << sceneJson->toString();
         file.close();
     }
 
@@ -122,13 +173,12 @@ void saveScene(
 }
 
 void saveScene(
-    bg2e::scene::Node * sceneRoot,
+    bg2e::scene::Node* sceneRoot,
     const std::filesystem::path& basePath,
-    const std::string& fileName
+    const std::string& fileName,
+    bg2e::scene::SceneProgressCallback onProgress
 ) {
-    auto fullPath = basePath;
-    fullPath += fileName;
-    saveScene(sceneRoot, fullPath);
+    saveScene(sceneRoot, basePath / fileName, onProgress);
 }
 
 }

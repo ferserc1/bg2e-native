@@ -165,9 +165,9 @@ public:
     inline void setRayTracingEnabled(bool enabled) { _rayTracingEnabled = enabled; }
     [[nodiscard]] inline bool rayTracingEnabled() const { return _rayTracingEnabled && _engine && _engine->rayTracingSupported(); }
 
-    inline const std::vector<std::unique_ptr<bg2e::render::vulkan::rt::RayTracingMeshGeneric<MeshT>>>& rayTracingMeshes() const { return _rayTracingMeshes; }
-    inline std::unique_ptr<bg2e::render::vulkan::rt::RayTracingMeshGeneric<MeshT>> & rayTracingMesh(uint32_t submesh) { return _rayTracingMeshes[submesh]; }
-    inline const std::unique_ptr<bg2e::render::vulkan::rt::RayTracingMeshGeneric<MeshT>> & rayTracingMesh(uint32_t submesh) const { return _rayTracingMeshes[submesh]; }
+    inline const std::vector<std::shared_ptr<bg2e::render::vulkan::rt::RayTracingMeshGeneric<MeshT>>>& rayTracingMeshes() const { return _rayTracingMeshes; }
+    inline std::shared_ptr<bg2e::render::vulkan::rt::RayTracingMeshGeneric<MeshT>> & rayTracingMesh(uint32_t submesh) { return _rayTracingMeshes[submesh]; }
+    inline const std::shared_ptr<bg2e::render::vulkan::rt::RayTracingMeshGeneric<MeshT>> & rayTracingMesh(uint32_t submesh) const { return _rayTracingMeshes[submesh]; }
 
     void drawSubmesh(
         VkCommandBuffer cmd,
@@ -201,7 +201,7 @@ protected:
     std::vector<std::shared_ptr<render::MaterialBase>> _materials;
 
     // Ray tracing resources
-    std::vector<std::unique_ptr<render::vulkan::rt::RayTracingMeshGeneric<MeshT>>> _rayTracingMeshes;
+    std::vector<std::shared_ptr<render::vulkan::rt::RayTracingMeshGeneric<MeshT>>> _rayTracingMeshes;
     bool _rayTracingEnabled = true;
 
     void buildRenderMesh();

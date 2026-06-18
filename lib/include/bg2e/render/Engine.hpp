@@ -102,6 +102,11 @@ public:
 
     bool isOffscreen() const { return _windowPtr == nullptr; }
 
+    // Deferred execution: schedule a closure to run after numImages() frames
+    void deferredExec(std::function<void()>&& closure);
+    void flushDeferredExec();
+    void flushAllDeferredExec();
+
 protected:
     SDL_Window* _windowPtr = nullptr;
 
@@ -131,6 +136,11 @@ private:
 
     uint32_t _maxRayTracingObjects = 256;
 
+    struct DeferredExec {
+        uint32_t targetFrame;
+        std::function<void()> closure;
+    };
+    std::vector<DeferredExec> _deferredExecs;
 
     void createInstance();
     void createSurface();

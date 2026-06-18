@@ -127,9 +127,10 @@ void StageScene::setEditableRoot(std::shared_ptr<bg2e::scene::Node> newEditableR
     );
 }
 
-void StageScene::openScene(const std::filesystem::path& path)
+void StageScene::openScene(const std::filesystem::path& path, bg2e::scene::SceneProgressCallback progressCallback)
 {
-    auto newScene = bg2e::db::loadScene(path, *_engine);
+    auto newScene = bg2e::db::loadScene(path, *_engine, progressCallback);
+
     if (!newScene || !newScene->rootNode())
     {
         bg2e::app::MessageBox msg;

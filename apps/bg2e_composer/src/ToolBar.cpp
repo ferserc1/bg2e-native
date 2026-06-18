@@ -48,7 +48,13 @@ void ToolBar::init(AppDelegate * delegate, bg2e::ui::UISettingsWindow * uiSettin
 
             if (!filePath.empty())
             {
-                _appDelegate->stage()->openScene(filePath);
+                bg2e::app::MainLoop::current()->asyncLoad([&, filePath](bg2e::ui::Loader* loader)
+                {
+                    _appDelegate->stage()->openScene(filePath, [&](const std::string& modelName, uint32_t processed, uint32_t total) {
+                        loader->setMessage("Loading model " + modelName + "...");
+                        loader->setProgress(static_cast<float>(processed) / static_cast<float>(total));
+                    });
+                }, glm::vec4{ 0.2, 0.2, 0.31, 1.0f });
             }
         }
     }});

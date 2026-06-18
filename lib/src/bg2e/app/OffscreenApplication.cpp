@@ -180,6 +180,7 @@ int OffscreenApplication::run()
         elapsedMs = std::chrono::duration<double, std::milli>(endTime - startTime).count();
 
         frameResources.flushFrameData();
+        _engine->flushDeferredExec();
         _delegate->didRenderFrame(
             frameIndex,
             elapsedMs,

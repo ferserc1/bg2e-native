@@ -320,15 +320,20 @@ void DrawableGeneric<MeshT, RenderMeshT>::buildMaterials()
 template <typename MeshT, typename RenderMeshT>
 void DrawableGeneric<MeshT, RenderMeshT>::buildRayTracingMeshes()
 {
-    _engine->device().waitIdle();
-
-    // Clear existing BLAS. Here there is no need to check if ray tracing is supported,
-    // since if it isn't, the _rayTracingMeshes vector will be empty
-    for  (auto & rtMesh : _rayTracingMeshes)
+    // Defer destruction of existing BLAS objects instead of using waitIdle().
+    // The shared_ptrs are captured by value in the closure; they will be
+    // destroyed when the closure runs after numImages() frames.
+    if (!_rayTracingMeshes.empty())
     {
-        rtMesh->cleanup();
+        auto meshesToDestroy = std::move(_rayTracingMeshes);
+        _engine->deferredExec([meshesToDestroy]() mutable {
+            for (auto mesh : meshesToDestroy)
+            {
+                mesh->cleanup();
+            }
+            meshesToDestroy.clear();
+        });
     }
-    _rayTracingMeshes.clear();
 
     if (rayTracingEnabled())
     {
@@ -337,7 +342,7 @@ void DrawableGeneric<MeshT, RenderMeshT>::buildRayTracingMeshes()
         for (uint32_t i = 0; i < submeshesCount(); ++i)
         {
             const auto&  sm = submeshData(i);
-            auto rtMesh = std::make_unique<RayTracingMeshGeneric<MeshT>>(
+            auto rtMesh = std::make_shared<RayTracingMeshGeneric<MeshT>>(
                 _engine,
                 _renderMesh.get(),
                 sm.firstIndex,

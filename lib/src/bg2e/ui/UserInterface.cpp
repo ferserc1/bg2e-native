@@ -92,6 +92,16 @@ void UserInterface::processEvent(SDL_Event* event)
     ImGui_ImplSDL2_ProcessEvent(event);
 }
 
+void UserInterface::setFrameOverride(std::function<void()> fn)
+{
+    _frameOverride = std::move(fn);
+}
+
+void UserInterface::clearFrameOverride()
+{
+    _frameOverride = nullptr;
+}
+
 void UserInterface::newFrame()
 {
     if (s_uiScaleChanged)
@@ -103,7 +113,11 @@ void UserInterface::newFrame()
     ImGui_ImplSDL2_NewFrame();
     ImGui::NewFrame();
 
-    if (_delegate) {
+    if (_frameOverride)
+    {
+        _frameOverride();
+    }
+    else if (_delegate) {
         _delegate->drawUI();
     }
 

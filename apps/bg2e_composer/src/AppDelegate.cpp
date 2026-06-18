@@ -19,8 +19,7 @@
 
 void AppDelegate::init(bg2e::render::Engine * engine)
 {
-    //bg2e::render::DefaultRenderLoopDelegate<bg2e::render::RendererDeferred>::init(engine);
-    bg2e::render::DefaultRenderLoopDelegate<bg2e::render::RendererBasicForward>::init(engine);
+    bg2e::render::DefaultRenderLoopDelegate<bg2e::render::RendererDeferred>::init(engine);
     _selectionManager = std::make_shared<bg2e::manipulation::SelectionManager>(engine);
     _selectionManager->init();
 }
@@ -92,7 +91,13 @@ void AppDelegate::fileDropped(const std::filesystem::path& path)
     }
     else if (ext == ".json" || ext == ".vitscnj")
     {
-        stage()->openScene(path);
+        bg2e::app::MainLoop::current()->asyncLoad([&, path](bg2e::ui::Loader* loader)
+        {
+            stage()->openScene(path, [&](const std::string& modelName, uint32_t processed, uint32_t total) {
+                loader->setMessage("Loading model " + modelName + "...");
+                loader->setProgress(static_cast<float>(processed) / static_cast<float>(total));
+            });
+        }, glm::vec4{ 0.2, 0.2, 0.31, 1.0f });
     }
 }
 

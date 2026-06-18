@@ -228,7 +228,7 @@ Node * Node::sceneRoot()
     return _parent->sceneRoot();
 }
 
-void Node::deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path& basePath, render::Engine& engine)
+void Node::deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path& basePath, render::Engine& engine, SceneLoadProgress* progress)
 {
     if (!jsonData || !jsonData->isObject())
     {
@@ -242,6 +242,13 @@ void Node::deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::file
     {
         _name = obj["name"]->stringValue();
     }
+
+    // Fire callback before the heavy component/child work
+    if (progress && progress->callback)
+    {
+        progress->callback(_name, progress->loaded, progress->total);
+    }
+    if (progress) { ++progress->loaded; }
 
     if (obj.count("enabled"))
     {
@@ -274,45 +281,47 @@ void Node::deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::file
         for (auto& childData : childrenList)
         {
             auto childNode = std::make_shared<Node>();
-            childNode->deserialize(childData, basePath, engine);
+            childNode->deserialize(childData, basePath, engine, progress);
             addChild(childNode);
         }
     }
 }
 
-std::shared_ptr<json::JsonNode> Node::serialize(const std::filesystem::path & basePath)
+std::shared_ptr<json::JsonNode> Node::serialize(const std::filesystem::path & basePath,
+                                                SceneSaveProgress* progress)
 {
+    // Fire callback before serializing this node
+    if (progress && progress->callback) {
+        progress->callback(_name, progress->saved, progress->total);
+    }
+    if (progress) { ++progress->saved; }
+
     using namespace bg2e::json;
     auto result = JSON(JsonObject{});
     auto & obj = result->objectValue();
-    
-    obj["type"] = JSON("Node");
-    obj["name"] = JSON(name());
+
+    obj["type"]    = JSON("Node");
+    obj["name"]    = JSON(name());
     obj["enabled"] = JSON(enabled());
-    obj["steady"] = JSON(steady());
-    
-    // Serialize components
+    obj["steady"]  = JSON(steady());
+
+    // Serialize components (unchanged)
     auto components = JSON(JsonList());
-    for (auto & comp : _components)
-    {
-        if (comp.second->ignoreSerialization())
-        {
-            continue;
-        }
+    for (auto& comp : _components) {
+        if (comp.second->ignoreSerialization()) { continue; }
         auto compData = comp.second->serialize(basePath);
         components->listValue().push_back(compData);
     }
     obj["components"] = components;
-    
-    // Serialize children
+
+    // Serialize children — forward the same progress pointer
     auto children = JSON(JsonList());
-    for (auto & child : _children)
-    {
-        auto childData = child->serialize(basePath);
+    for (auto& child : _children) {
+        auto childData = child->serialize(basePath, progress);
         children->listValue().push_back(childData);
     }
     obj["children"] = children;
-    
+
     return result;
 }
 

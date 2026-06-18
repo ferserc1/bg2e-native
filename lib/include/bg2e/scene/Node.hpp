@@ -27,6 +27,7 @@
 #include <vector>
 #include <memory>
 #include <string>
+#include <functional>
 #include <unordered_map>
 #include <filesystem>
 
@@ -45,6 +46,20 @@ class Engine;
 namespace scene {
 
 class Scene;
+
+using SceneProgressCallback = std::function<void(const std::string& nodeName, int processed, int total)>;
+
+struct SceneLoadProgress {
+    SceneProgressCallback callback;
+    int loaded = 0;
+    int total  = 0;
+};
+
+struct SceneSaveProgress {
+    SceneProgressCallback callback;
+    int saved = 0;
+    int total = 0;
+};
 
 class BG2E_API Node : public std::enable_shared_from_this<Node> {
     friend class Scene;
@@ -118,8 +133,10 @@ public:
    
     inline Scene * scene() { return sceneRoot()->_scene; }
     
-    void deserialize(std::shared_ptr<json::JsonNode>, const std::filesystem::path&, render::Engine& engine);
-    std::shared_ptr<json::JsonNode> serialize(const std::filesystem::path&);
+    void deserialize(std::shared_ptr<json::JsonNode>, const std::filesystem::path&,
+                     render::Engine& engine, SceneLoadProgress* progress = nullptr);
+    std::shared_ptr<json::JsonNode> serialize(const std::filesystem::path&,
+                                             SceneSaveProgress* progress = nullptr);
 
 protected:
     std::vector<std::shared_ptr<Node>> _children;

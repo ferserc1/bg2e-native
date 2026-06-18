@@ -25,6 +25,7 @@
 #include <bg2e/app/InputManager.hpp>
 #include <bg2e/app/Shortcuts.hpp>
 #include <bg2e/ui/UserInterface.hpp>
+#include <bg2e/ui/Loader.hpp>
 
 #include <functional>
 #include <cstdint>
@@ -32,6 +33,11 @@
 #include <atomic>
 #include <vector>
 #include <utility>
+#include <thread>
+#include <mutex>
+#include <queue>
+
+#include <glm/glm.hpp>
 
 namespace bg2e {
 namespace app {
@@ -144,7 +150,12 @@ public:
     }
 
     void requestResizeEvent();
-    
+
+    void asyncLoad(
+        std::function<void(ui::Loader*)> loadFn,
+        glm::vec4 clearColor = {0.f, 0.f, 0.f, 1.f}
+    );
+
 protected:
     WindowConfig _windowConfig;
 
@@ -162,6 +173,13 @@ protected:
     std::function<bool()> _onExitFunction = nullptr;
 
     std::vector<std::pair<std::function<void()>, std::shared_ptr<SafeUpdateToken>>> _safeUpdateScene;
+
+    ui::Loader _loader;
+
+    std::mutex                         _mainThreadQueueMutex;
+    std::queue<std::function<void()>>  _mainThreadQueue;
+
+    void drainMainThreadQueue();
 
     Shortcuts _shortcuts;
 
