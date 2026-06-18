@@ -24,7 +24,6 @@
 #include "bg2e/base/Log.hpp"
 
 #ifdef BG2E_LINUX
-
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_vulkan.h>
 

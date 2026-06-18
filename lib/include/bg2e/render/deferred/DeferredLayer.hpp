@@ -21,6 +21,7 @@
 #include <bg2e/render/deferred/RenderLayer.hpp>
 #include <bg2e/render/gbuffer/GBufferManager.hpp>
 #include <bg2e/render/deferred/RTAmbientOcclusion.hpp>
+#include <bg2e/render/deferred/RTGlobalIllumination.hpp>
 #include <bg2e/render/deferred/TemporalAccumulator.hpp>
 #include <bg2e/render/deferred/DenoiseFilter.hpp>
 #include <bg2e/render/deferred/RTReflections.hpp>
@@ -60,8 +61,15 @@ enum class DeferredDebugVisualization {
     RTReflections,
     TemporalAccumulatedReflections,
     RTReflectionMask,
+    RTGlobalIllumination,
+    DenoisedGI,
 
     MaxLayer
+};
+
+enum class IndirectLightingMode {
+    RTAO,
+    RTGI
 };
 
 class BG2E_API DeferredLayer : public RenderLayer {
@@ -162,6 +170,33 @@ public:
     void setRTReflectionRoughnessSpread(float s);
     float rtReflectionRoughnessSpread() const;
 
+    // Indirect lighting mode: choose between RTAO (cheap) and RTGI (higher quality).
+    // If ray tracing is not supported the mode is always effectively RTAO.
+    void setIndirectLightingMode(IndirectLightingMode mode);
+    IndirectLightingMode indirectLightingMode() const { return _indirectLightingMode; }
+
+    // When enabled, the transparent layer skips RTAO/RTGI passes to save GPU time.
+    void setSkipIndirectLightingForTransparent(bool skip) { _skipIndirectLightingForTransparent = skip; }
+    bool skipIndirectLightingForTransparent() const { return _skipIndirectLightingForTransparent; }
+
+    void setRTGIEnabled(bool enabled);
+    bool rtGIEnabled() const;
+
+    void setRTGISampleCount(uint32_t count);
+    uint32_t rtGISampleCount() const;
+
+    void setRTGIBounceCount(uint32_t count);
+    uint32_t rtGIBounceCount() const;
+
+    void setRTGIRayBias(float bias);
+    float rtGIRayBias() const;
+
+    void setRTGIMaxDistance(float distance);
+    float rtGIMaxDistance() const;
+
+    void setRTGIQuality(RTGIQuality quality);
+    RTGIQuality rtGIQuality() const;
+
 protected:
     LayerType _layerType;
 
@@ -208,6 +243,18 @@ protected:
     std::shared_ptr<vulkan::Image> _rtReflectionFallbackImage;
     std::unique_ptr<vulkan::rt::RTMaterialDataBinding> _rtMaterialDataBinding;
 
+    // RTGI subsystem
+    std::unique_ptr<RTGlobalIllumination> _rtGlobalIllumination;
+    std::unique_ptr<TemporalAccumulator> _temporalGIAccumulator;
+    std::unique_ptr<DenoiseFilter> _denoiseGIFilter;
+    std::shared_ptr<vulkan::Image> _rtGIFallbackImage;
+
+    // Neutral white AO image used when indirect passes are skipped for the transparent layer
+    std::shared_ptr<vulkan::Image> _neutralAOImage;
+
+    IndirectLightingMode _indirectLightingMode = IndirectLightingMode::RTGI;
+    bool _skipIndirectLightingForTransparent = false;
+
     struct CompositePushConstants {
         float gamma;
         float brightness;
@@ -215,8 +262,7 @@ protected:
         float exposure;
 
         uint32_t numLights;
-
-        uint32_t padding1;
+        uint32_t indirectMode;  // 0 = RTAO, 1 = RTGI
         uint32_t padding2;
         uint32_t padding3;
 

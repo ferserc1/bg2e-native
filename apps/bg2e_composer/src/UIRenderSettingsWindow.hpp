@@ -27,7 +27,10 @@ public:
 
 private:
     bool drawUI();
+    bool drawRenderScaleSection();
+    bool drawIndirectLightingModeSection();
     bool drawRTAOSection();
+    bool drawRTGISection();
     bool drawRTReflectionsSection();
     bool drawTemporalAccumulatorSection();
     bool drawDenoiseFilterSection();

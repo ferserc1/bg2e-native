@@ -62,6 +62,10 @@ public:
     float depthSigma() const;
     float normalSigma() const;
 
+    // Must be set before build(). When true, uses RGBA16F output and the HDR bilateral shader.
+    void setIsHDR(bool hdr) { _isHDR = hdr; }
+    bool isHDR() const { return _isHDR; }
+
 private:
     Engine * _engine;
     VkExtent2D _extent;
@@ -78,6 +82,7 @@ private:
     float _normalThreshold = 0.8f;
     float _depthSigma = 0.01f;
     float _normalSigma = 0.3f;
+    bool _isHDR = false;
 
     struct DenoisePushConstants {
         glm::vec2 outputSize;

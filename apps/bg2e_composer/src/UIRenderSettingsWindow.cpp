@@ -34,7 +34,9 @@ void UIRenderSettingsWindow::init(AppDelegate * delegate)
 bool UIRenderSettingsWindow::drawUI()
 {
     bool changed = false;
-    changed |= drawRTAOSection();
+    changed |= drawRenderScaleSection();
+    bg2e::ui::BasicWidgets::separator();
+    changed |= drawIndirectLightingModeSection();
     bg2e::ui::BasicWidgets::separator();
     changed |= drawRTReflectionsSection();
     bg2e::ui::BasicWidgets::separator();
@@ -45,6 +47,67 @@ bool UIRenderSettingsWindow::drawUI()
     if (changed && _appDelegate)
     {
         _appDelegate->saveSettings();
+    }
+
+    return changed;
+}
+
+bool UIRenderSettingsWindow::drawRenderScaleSection()
+{
+    bg2e::ui::BasicWidgets::text("Render Scale", true);
+
+    auto renderer = _appDelegate->renderer();
+    if (!renderer) return false;
+
+    static const std::vector<std::string> scaleItems = { "Performance (50%)", "Balanced (75%)", "Quality (100%)" };
+    static const std::vector<float> scaleValues = { 50.0f, 75.0f, 100.0f };
+
+    float currentScale = renderer->renderScalePercent();
+    uint32_t scaleIdx = 2;
+    for (uint32_t i = 0; i < scaleValues.size(); i++)
+    {
+        if (scaleValues[i] == currentScale)
+        {
+            scaleIdx = i;
+            break;
+        }
+    }
+
+    if (bg2e::ui::Input::comboBox("Render Scale##RenderScale", scaleItems, scaleIdx))
+    {
+        renderer->setRenderScalePercent(scaleValues[scaleIdx]);
+        return true;
+    }
+
+    return false;
+}
+
+bool UIRenderSettingsWindow::drawIndirectLightingModeSection()
+{
+    bg2e::ui::BasicWidgets::text("Indirect Lighting", true);
+
+    auto renderer = _appDelegate->renderer();
+    if (!renderer) return false;
+
+    static const std::vector<std::string> modeItems = { "Ambient Occlusion (RTAO)", "Global Illumination (RTGI)" };
+    uint32_t modeIdx = static_cast<uint32_t>(renderer->indirectLightingMode());
+
+    bool changed = false;
+    if (bg2e::ui::Input::comboBox("Mode##IndirectLighting", modeItems, modeIdx))
+    {
+        renderer->setIndirectLightingMode(static_cast<bg2e::render::deferred::IndirectLightingMode>(modeIdx));
+        changed = true;
+    }
+
+    bg2e::ui::BasicWidgets::separator();
+
+    if (renderer->indirectLightingMode() == bg2e::render::deferred::IndirectLightingMode::RTGI)
+    {
+        changed |= drawRTGISection();
+    }
+    else
+    {
+        changed |= drawRTAOSection();
     }
 
     return changed;
@@ -105,6 +168,60 @@ bool UIRenderSettingsWindow::drawRTAOSection()
     if (bg2e::ui::Input::sliderFloat("Bounce Attenuation##RTAO", &bounceAttenuation, 0.0f, 1.0f))
     {
         renderer->setAOBounceAttenuation(bounceAttenuation);
+        return true;
+    }
+
+    return false;
+}
+
+bool UIRenderSettingsWindow::drawRTGISection()
+{
+    bg2e::ui::BasicWidgets::text("Global Illumination", true);
+
+    auto renderer = _appDelegate->renderer();
+    if (!renderer) return false;
+
+    bool enabled = renderer->rtGIEnabled();
+    if (bg2e::ui::BasicWidgets::checkBox("Enabled##RTGI", &enabled))
+    {
+        renderer->setRTGIEnabled(enabled);
+        return true;
+    }
+
+    static const std::vector<std::string> qualityItems = { "Low", "Medium", "High", "Ultra" };
+    uint32_t qualityIdx = static_cast<uint32_t>(renderer->rtGIQuality());
+
+    if (bg2e::ui::Input::comboBox("Quality##RTGI", qualityItems, qualityIdx))
+    {
+        renderer->setRTGIQuality(static_cast<bg2e::render::deferred::RTGIQuality>(qualityIdx));
+        return true;
+    }
+
+    int sampleCount = static_cast<int>(renderer->rtGISampleCount());
+    if (bg2e::ui::Input::sliderInt("Sample Count##RTGI", &sampleCount, 1, 16))
+    {
+        renderer->setRTGISampleCount(static_cast<uint32_t>(sampleCount));
+        return true;
+    }
+
+    int bounceCount = static_cast<int>(renderer->rtGIBounceCount());
+    if (bg2e::ui::Input::sliderInt("Bounce Count##RTGI", &bounceCount, 1, 3))
+    {
+        renderer->setRTGIBounceCount(static_cast<uint32_t>(bounceCount));
+        return true;
+    }
+
+    float rayBias = renderer->rtGIRayBias();
+    if (bg2e::ui::Input::sliderFloat("Ray Bias##RTGI", &rayBias, 0.001f, 0.1f))
+    {
+        renderer->setRTGIRayBias(rayBias);
+        return true;
+    }
+
+    float maxDistance = renderer->rtGIMaxDistance();
+    if (bg2e::ui::Input::sliderFloat("Max Distance##RTGI", &maxDistance, 1.0f, 200.0f))
+    {
+        renderer->setRTGIMaxDistance(maxDistance);
         return true;
     }
 

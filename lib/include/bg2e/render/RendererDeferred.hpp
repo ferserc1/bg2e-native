@@ -32,6 +32,7 @@
 #include <bg2e/render/deferred/SMAAProcessor.hpp>
 
 #include <memory>
+#include <cmath>
 
 namespace bg2e {
 namespace render {
@@ -91,6 +92,16 @@ public:
 
     bool supportsMsaa() override { return false; }
 
+    // Render scale: percentage of viewport size used for deferred rendering.
+    // 100% = native resolution, <100% = lower internal resolution (for upscaling),
+    // >100% = supersampling. Range is clamped to [25, 150].
+    void setRenderScalePercent(float percent);
+    float renderScalePercent() const { return _renderScalePercent; }
+
+    // Internal deferred render size (computed from viewport + render scale)
+    uint32_t renderWidth() const { return _renderExtent.width; }
+    uint32_t renderHeight() const { return _renderExtent.height; }
+
     deferred::DeferredDebugVisualization debugVisualization() const;
     void setDebugVisualization(deferred::DeferredDebugVisualization debugVisualization);
 
@@ -142,6 +153,28 @@ public:
     void setDenoiseNormalSigma(float sigma);
     float denoiseNormalSigma() const;
 
+    // Indirect lighting mode (RTAO vs RTGI)
+    void setIndirectLightingMode(deferred::IndirectLightingMode mode);
+    deferred::IndirectLightingMode indirectLightingMode() const;
+
+    void setRTGIEnabled(bool enabled);
+    bool rtGIEnabled() const;
+
+    void setRTGISampleCount(uint32_t count);
+    uint32_t rtGISampleCount() const;
+
+    void setRTGIBounceCount(uint32_t count);
+    uint32_t rtGIBounceCount() const;
+
+    void setRTGIRayBias(float bias);
+    float rtGIRayBias() const;
+
+    void setRTGIMaxDistance(float distance);
+    float rtGIMaxDistance() const;
+
+    void setRTGIQuality(deferred::RTGIQuality quality);
+    deferred::RTGIQuality rtGIQuality() const;
+
     // RT Reflections
     void setRTReflectionsEnabled(bool enabled);
     bool rtReflectionsEnabled() const;
@@ -164,10 +197,13 @@ public:
 protected:
     bg2e::render::Engine* _engine = nullptr;
 
-    VkExtent2D _viewportExtent;
+    VkExtent2D _viewportExtent;   // Final display/swapchain size
+    VkExtent2D _renderExtent;     // Internal deferred render size (may differ from viewport)
     VkFormat _colorImageFormat;
     VkFormat _depthImageFormat;
     VkSampleCountFlagBits _sampleCount;
+
+    float _renderScalePercent = 50.0f;
 
     // Layers
     std::unique_ptr<deferred::SkyboxLayer> _skyboxLayer;
@@ -194,6 +230,8 @@ protected:
 
 protected:
     void updateLights(const std::vector<std::shared_ptr<bg2e::scene::LightComponent>>& lightComponents, uint32_t maxLights) override;
+
+    VkExtent2D computeRenderExtent(VkExtent2D viewportExtent, float scalePercent) const;
 };
 
 }

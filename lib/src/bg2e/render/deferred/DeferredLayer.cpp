@@ -21,6 +21,7 @@
 #include <bg2e/render/vulkan/extensions.hpp>
 #include <bg2e/scene/Drawable.hpp>
 #include <bg2e/render/vulkan/rt/RayTracingScene.hpp>
+#include <cstring>
 
 namespace bg2e::render::deferred {
 
@@ -71,6 +72,14 @@ const vulkan::Image* DeferredLayer::resolveDebugSource(const vulkan::Image* inpu
             return _temporalReflectionAccumulator
                 ? _temporalReflectionAccumulator->outputImage(_engine->currentFrameResourcesIndex()).get()
                 : nullptr;
+        case DeferredDebugVisualization::RTGlobalIllumination:
+            return _rtGlobalIllumination
+                ? _rtGlobalIllumination->giImage(_engine->currentFrameResourcesIndex()).get()
+                : nullptr;
+        case DeferredDebugVisualization::DenoisedGI:
+            return _denoiseGIFilter
+                ? _denoiseGIFilter->outputImage(_engine->currentFrameResourcesIndex()).get()
+                : nullptr;
         default:
             return gbuffer->image(0).get();
     }
@@ -117,6 +126,49 @@ void DeferredLayer::build(VkExtent2D extent, VkFormat outputFormat)
         _temporalReflectionAccumulator->setFormat(VK_FORMAT_R16G16B16A16_SFLOAT);
         _temporalReflectionAccumulator->setIsHDR(true);
         _temporalReflectionAccumulator->build(_gbuffers[0].get(), extent);
+    }
+
+    // Create RTGI subsystem (only if RT is supported)
+    if (_engine->rayTracingSupported())
+    {
+        _rtGlobalIllumination = std::make_unique<RTGlobalIllumination>(_engine);
+        _rtGlobalIllumination->setMaterialDataBinding(_rtMaterialDataBinding.get());
+        _rtGlobalIllumination->setReflectionLightDataBinding(_reflectionLightDataBinding);
+        _rtGlobalIllumination->build(_gbuffers[0].get(), extent);
+
+        _temporalGIAccumulator = std::make_unique<TemporalAccumulator>(_engine);
+        _temporalGIAccumulator->setFormat(VK_FORMAT_R16G16B16A16_SFLOAT);
+        _temporalGIAccumulator->setIsHDR(true);
+        _temporalGIAccumulator->build(_gbuffers[0].get(), extent);
+
+        _denoiseGIFilter = std::make_unique<DenoiseFilter>(_engine);
+        _denoiseGIFilter->setIsHDR(true);
+        _denoiseGIFilter->build(_gbuffers[0].get(), extent);
+    }
+
+    // Black RGBA16F fallback for GI (used when RTGI is not available)
+    {
+        std::vector<uint8_t> blackData(4 * sizeof(uint16_t), 0);
+        _rtGIFallbackImage = std::shared_ptr<vulkan::Image>(
+            vulkan::Image::createAllocatedImage(
+                _engine, "DeferredLayer: RTGI fallback", blackData.data(),
+                VkExtent2D{1, 1}, 4, VK_FORMAT_R16G16B16A16_SFLOAT,
+                VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT
+            )
+        );
+    }
+
+    // White R8_UNORM fallback used as AO=1 when indirect passes are skipped
+    {
+        uint8_t whiteData[16];
+        memset(whiteData, 0xFF, sizeof(whiteData));
+        _neutralAOImage = std::shared_ptr<vulkan::Image>(
+            vulkan::Image::createAllocatedImage(
+                _engine, "DeferredLayer: neutral AO", whiteData,
+                VkExtent2D{4, 4}, 1, VK_FORMAT_R8_UNORM,
+                VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT
+            )
+        );
     }
 
     // Create fallback image for RT reflections (1x1, alpha=0 → cubemap fallback)
@@ -269,40 +321,81 @@ void DeferredLayer::render(
 
     const vulkan::Image* reflectionInputForComposite = nullptr;
 
-    // AO pass: compute ambient occlusion from G-buffers + TLAS
+    // Determine whether to skip indirect lighting passes for this transparent layer
+    bool skipIndirectPasses = _isTransparent && _skipIndirectLightingForTransparent;
+
     if (useRT)
     {
         auto projMat = _scene->mainCamera()->projectionMatrix();
         auto viewMat = _scene->mainCamera()->viewMatrix();
         auto invVP = glm::inverse(projMat * viewMat);
-        _rtAmbientOcclusion->render(cmd, currentFrame, frameResources, gbuffer, invVP);
 
-        // Temporal accumulation pass (between RTAO and denoise)
-        const vulkan::Image* aoInputForDenoise = nullptr;
-        if (_temporalAccumulator)
+        if (!skipIndirectPasses)
         {
-            auto projMat = _scene->mainCamera()->projectionMatrix();
-            auto viewMat = _scene->mainCamera()->viewMatrix();
-            auto invVP = glm::inverse(projMat * viewMat);
+            if (_indirectLightingMode == IndirectLightingMode::RTAO)
+            {
+                // RTAO path (existing)
+                _rtAmbientOcclusion->render(cmd, currentFrame, frameResources, gbuffer, invVP);
 
-            auto aoImg = _rtAmbientOcclusion->aoImage(frameResourcesIndex);
-            _temporalAccumulator->render(
-                cmd, currentFrame, frameResources, gbuffer,
-                aoImg.get(), invVP, viewMat, projMat
-            );
-            aoInputForDenoise = _temporalAccumulator->outputImage(frameResourcesIndex).get();
-        }
-        else
-        {
-            aoInputForDenoise = _rtAmbientOcclusion->aoImage(frameResourcesIndex).get();
+                const vulkan::Image* aoInputForDenoise = nullptr;
+                if (_temporalAccumulator)
+                {
+                    auto projMat2 = _scene->mainCamera()->projectionMatrix();
+                    auto viewMat2 = _scene->mainCamera()->viewMatrix();
+                    auto invVP2 = glm::inverse(projMat2 * viewMat2);
+                    auto aoImg = _rtAmbientOcclusion->aoImage(frameResourcesIndex);
+                    _temporalAccumulator->render(
+                        cmd, currentFrame, frameResources, gbuffer,
+                        aoImg.get(), invVP2, viewMat2, projMat2
+                    );
+                    aoInputForDenoise = _temporalAccumulator->outputImage(frameResourcesIndex).get();
+                }
+                else
+                {
+                    aoInputForDenoise = _rtAmbientOcclusion->aoImage(frameResourcesIndex).get();
+                }
+                _denoiseFilter->render(cmd, currentFrame, frameResources, gbuffer, aoInputForDenoise);
+            }
+            else if (_indirectLightingMode == IndirectLightingMode::RTGI &&
+                     _rtGlobalIllumination && _rtGlobalIllumination->rtSupported())
+            {
+                // RTGI path
+                auto tlas = frameResources.rayTracingScene ?
+                    frameResources.rayTracingScene->tlas() : VK_NULL_HANDLE;
+                const auto& objectInstances = (tlas != VK_NULL_HANDLE && frameResources.rayTracingScene) ?
+                    frameResources.rayTracingScene->objectInstances() :
+                    std::vector<vulkan::rt::RTObjectInstance>{};
+
+                _rtGlobalIllumination->render(
+                    cmd, currentFrame, frameResources, gbuffer,
+                    invVP, cameraWorldPos, tlas, objectInstances,
+                    _environment->irradianceMapImage().get(),
+                    _environment->irradianceMapSampler(),
+                    _reflectionLights
+                );
+
+                auto rawGIImage = _rtGlobalIllumination->giImage(frameResourcesIndex);
+                if (_temporalGIAccumulator)
+                {
+                    auto projMat2 = _scene->mainCamera()->projectionMatrix();
+                    auto viewMat2 = _scene->mainCamera()->viewMatrix();
+                    auto invVP2 = glm::inverse(projMat2 * viewMat2);
+                    _temporalGIAccumulator->render(
+                        cmd, currentFrame, frameResources, gbuffer,
+                        rawGIImage.get(), invVP2, viewMat2, projMat2
+                    );
+                    const vulkan::Image* temporalGIImage =
+                        _temporalGIAccumulator->outputImage(frameResourcesIndex).get();
+                    if (_denoiseGIFilter)
+                    {
+                        _denoiseGIFilter->render(cmd, currentFrame, frameResources,
+                            gbuffer, temporalGIImage);
+                    }
+                }
+            }
         }
 
-        // Denoise pass: filter the AO image
-        {
-            _denoiseFilter->render(cmd, currentFrame, frameResources, gbuffer, aoInputForDenoise);
-        }
-
-        // RT Reflections pass (after denoise, before composite)
+        // RT Reflections pass (after indirect, before composite)
         if (_rtReflections && _rtReflections->rtSupported())
         {
             auto tlas = frameResources.rayTracingScene ?
@@ -320,7 +413,6 @@ void DeferredLayer::render(
                     _reflectionLights
                 );
 
-                // Reflection temporal accumulation
                 auto rawReflectionImage = _rtReflections->reflectionImage(frameResourcesIndex);
                 _temporalReflectionAccumulator->render(
                     cmd, currentFrame, frameResources, gbuffer,
@@ -364,6 +456,9 @@ void DeferredLayer::resize(VkExtent2D newExtent)
     _denoiseFilter->resize(newExtent);
     if (_rtReflections) _rtReflections->resize(newExtent);
     if (_temporalReflectionAccumulator) _temporalReflectionAccumulator->resize(newExtent);
+    if (_rtGlobalIllumination) _rtGlobalIllumination->resize(newExtent);
+    if (_temporalGIAccumulator) _temporalGIAccumulator->resize(newExtent);
+    if (_denoiseGIFilter) _denoiseGIFilter->resize(newExtent);
 }
 
 void DeferredLayer::cleanup()
@@ -381,6 +476,11 @@ void DeferredLayer::cleanup()
     if (_rtReflections) _rtReflections->cleanup();
     if (_rtMaterialDataBinding) _rtMaterialDataBinding->cleanup();
     if (_rtReflectionFallbackImage) _rtReflectionFallbackImage->cleanup();
+    if (_rtGlobalIllumination) _rtGlobalIllumination->cleanup();
+    if (_temporalGIAccumulator) _temporalGIAccumulator->cleanup();
+    if (_denoiseGIFilter) _denoiseGIFilter->cleanup();
+    if (_rtGIFallbackImage) _rtGIFallbackImage->cleanup();
+    if (_neutralAOImage) _neutralAOImage->cleanup();
 
     _frameDataBinding->cleanup();
     _fragmentFrameDataBinding->cleanup();
@@ -613,6 +713,76 @@ void DeferredLayer::setRTReflectionRoughnessSpread(float s)
 float DeferredLayer::rtReflectionRoughnessSpread() const
 {
     return _rtReflections ? _rtReflections->settings().roughnessSpread : 1.0f;
+}
+
+void DeferredLayer::setIndirectLightingMode(IndirectLightingMode mode)
+{
+    if (!_engine->rayTracingSupported())
+    {
+        _indirectLightingMode = IndirectLightingMode::RTAO;
+        return;
+    }
+    _indirectLightingMode = mode;
+}
+
+void DeferredLayer::setRTGIEnabled(bool enabled)
+{
+    if (_rtGlobalIllumination) _rtGlobalIllumination->setEnabled(enabled);
+}
+
+bool DeferredLayer::rtGIEnabled() const
+{
+    return _rtGlobalIllumination ? _rtGlobalIllumination->settings().enabled : false;
+}
+
+void DeferredLayer::setRTGISampleCount(uint32_t count)
+{
+    if (_rtGlobalIllumination) _rtGlobalIllumination->setSampleCount(count);
+}
+
+uint32_t DeferredLayer::rtGISampleCount() const
+{
+    return _rtGlobalIllumination ? _rtGlobalIllumination->settings().sampleCount : 4;
+}
+
+void DeferredLayer::setRTGIBounceCount(uint32_t count)
+{
+    if (_rtGlobalIllumination) _rtGlobalIllumination->setBounceCount(count);
+}
+
+uint32_t DeferredLayer::rtGIBounceCount() const
+{
+    return _rtGlobalIllumination ? _rtGlobalIllumination->settings().bounceCount : 2;
+}
+
+void DeferredLayer::setRTGIRayBias(float bias)
+{
+    if (_rtGlobalIllumination) _rtGlobalIllumination->setRayBias(bias);
+}
+
+float DeferredLayer::rtGIRayBias() const
+{
+    return _rtGlobalIllumination ? _rtGlobalIllumination->settings().rayBias : 0.02f;
+}
+
+void DeferredLayer::setRTGIMaxDistance(float distance)
+{
+    if (_rtGlobalIllumination) _rtGlobalIllumination->setMaxDistance(distance);
+}
+
+float DeferredLayer::rtGIMaxDistance() const
+{
+    return _rtGlobalIllumination ? _rtGlobalIllumination->settings().maxDistance : 50.0f;
+}
+
+void DeferredLayer::setRTGIQuality(RTGIQuality quality)
+{
+    if (_rtGlobalIllumination) _rtGlobalIllumination->setQuality(quality);
+}
+
+RTGIQuality DeferredLayer::rtGIQuality() const
+{
+    return _rtGlobalIllumination ? _rtGlobalIllumination->settings().quality : RTGIQuality::High;
 }
 
 void DeferredLayer::createGBufferPipeline()
@@ -934,11 +1104,34 @@ void DeferredLayer::renderCompositePass(
         inputImage, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _gbufferSampler);
     gbufferDS->addImage(6, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
         gbuffer->depthImage().get(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _gbufferSampler);
+    bool skipIndirectPasses = _isTransparent && _skipIndirectLightingForTransparent;
+
+    // Determine whether GI mode is actually active this frame
+    bool rtgiActive = !skipIndirectPasses &&
+                      _indirectLightingMode == IndirectLightingMode::RTGI &&
+                      _rtGlobalIllumination &&
+                      _rtGlobalIllumination->rtSupported() &&
+                      _denoiseGIFilter;
+
     if (useRT)
     {
-        auto denoisedAoImg = _denoiseFilter->outputImage(_engine->currentFrameResourcesIndex());
+        const vulkan::Image* indirectImg = nullptr;
+        if (skipIndirectPasses)
+        {
+            // Transparent layer with skip: use white AO fallback (AO=1, no occlusion)
+            indirectImg = _neutralAOImage.get();
+        }
+        else if (rtgiActive)
+        {
+            indirectImg = _denoiseGIFilter->outputImage(_engine->currentFrameResourcesIndex()).get();
+        }
+        else
+        {
+            indirectImg = _denoiseFilter->outputImage(_engine->currentFrameResourcesIndex()).get();
+        }
+
         gbufferDS->addImage(7, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-            denoisedAoImg.get(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _gbufferSampler);
+            indirectImg, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _gbufferSampler);
 
         const vulkan::Image* reflImg = reflectionImage ? reflectionImage : _rtReflectionFallbackImage.get();
         gbufferDS->addImage(8, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
@@ -956,12 +1149,15 @@ void DeferredLayer::renderCompositePass(
     auto projMat = _scene->mainCamera()->projectionMatrix();
     auto viewMat = _scene->mainCamera()->viewMatrix();
     auto inverseViewProjection = glm::inverse(projMat * viewMat);
+
+    // rtgiActive computed above (after the gbufferDS block)
     const CompositePushConstants pc{
         .gamma = 2.2f,
         .brightness = _brightness,
         .contrast = _contrast,
         .exposure = _exposure,
         .numLights = static_cast<uint32_t>(_lights.size()),
+        .indirectMode = rtgiActive ? 1u : 0u,
         .inverseViewProjection = inverseViewProjection,
     };
     vkCmdPushConstants(

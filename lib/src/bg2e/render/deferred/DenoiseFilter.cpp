@@ -55,6 +55,8 @@ void DenoiseFilter::createOutputImages(VkExtent2D extent)
 {
     cleanupImages();
 
+    VkFormat fmt = _isHDR ? VK_FORMAT_R16G16B16A16_SFLOAT : VK_FORMAT_R8_UNORM;
+
     _outputImages.resize(_engine->numImages());
     for (uint32_t i = 0; i < _outputImages.size(); i++)
     {
@@ -62,7 +64,7 @@ void DenoiseFilter::createOutputImages(VkExtent2D extent)
             vulkan::Image::createAllocatedImage(
                 _engine,
                 "Denoise output image " + std::to_string(i),
-                VK_FORMAT_R8_UNORM,
+                fmt,
                 extent,
                 VK_IMAGE_USAGE_STORAGE_BIT |
                 VK_IMAGE_USAGE_SAMPLED_BIT |
@@ -96,7 +98,7 @@ void DenoiseFilter::createPipeline()
     _pipelineLayout = layoutFactory.build("DenoiseFilter::PipelineLayout");
 
     vulkan::factory::ComputePipeline plFactory(_engine);
-    plFactory.setShader("denoise_bilateral.comp.spv");
+    plFactory.setShader(_isHDR ? "denoise_bilateral_hdr.comp.spv" : "denoise_bilateral.comp.spv");
     _pipeline = plFactory.build(_pipelineLayout, "DenoiseFilter::Pipeline");
 
     _engine->cleanupManager().push([&](VkDevice dev) {

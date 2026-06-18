@@ -34,7 +34,8 @@ layout(set = 0, binding = 3) uniform sampler2D g_FresnelFlags;
 layout(set = 0, binding = 4) uniform sampler2D g_SheenColor;
 layout(set = 0, binding = 5) uniform sampler2D g_InputImage;
 layout(set = 0, binding = 6) uniform sampler2D g_Depth;
-layout(set = 0, binding = 7) uniform sampler2D g_AO;
+// binding 7: scalar AO (RTAO mode) or HDR GI irradiance (RTGI mode), selected by indirectMode
+layout(set = 0, binding = 7) uniform sampler2D g_Indirect;
 layout(set = 0, binding = 8) uniform sampler2D g_RTReflection;
 
 // Scene data (set=1)
@@ -67,8 +68,7 @@ layout(push_constant) uniform PushConstant {
     float exposure;
 
     uint lightCount;
-
-    uint padding1;
+    uint indirectMode;   // 0 = RTAO (scalar AO), 1 = RTGI (HDR irradiance)
     uint padding2;
     uint padding3;
 
@@ -78,6 +78,7 @@ layout(push_constant) uniform PushConstant {
 layout(location = 0) in vec2 vTexcoord;
 layout(location = 0) out vec4 outColor;
 
+// Ambient lighting with RT reflections and AO scalar factor.
 vec3 calcAmbientLightWithReflections(
     vec3 viewDir,
     vec3 normal,
@@ -124,6 +125,56 @@ vec3 calcAmbientLightWithReflections(
     return base + sheen;
 }
 
+// Ambient lighting with RTGI irradiance.
+// giIrradiance is the pre-computed indirect irradiance arriving at the surface
+// (without the primary surface albedo applied — that is done here).
+vec3 calcAmbientLightWithGI(
+    vec3 viewDir,
+    vec3 normal,
+    vec3 F0,
+    vec3 albedo,
+    float metallic,
+    float roughness,
+    samplerCube inPrefilteredEnvMap,
+    float maxLOD,
+    sampler2D inBrdfLUT,
+    float sheenIntensity,
+    vec3 sheenColor,
+    vec3 giIrradiance,
+    vec4 rtReflection
+) {
+    vec3 R = reflect(-viewDir, normal);
+
+    vec3 F = fresnelSchlickRoughness(max(dot(normal, viewDir), 0.0), F0, roughness);
+
+    vec3 Ks = F;
+    vec3 Kd = 1.0 - Ks;
+    Kd *= 1.0 - metallic;
+
+    // GI irradiance already encodes occlusion (dark areas = blocked paths).
+    // Apply albedo here so that color bleeding from bounced surfaces shows through.
+    vec3 diffuse = Kd * giIrradiance * albedo;
+
+    // Specular from the environment map + RT reflections (unchanged from RTAO path).
+    float roughnessDelta = 1.0 / maxLOD;
+    float sampleRoughness = roughness * maxLOD;
+    vec3 prefilteredColor1 = textureLod(inPrefilteredEnvMap, R, sampleRoughness).rgb;
+    vec3 prefilteredColor2 = textureLod(inPrefilteredEnvMap, R, max(sampleRoughness - roughnessDelta, 0.0)).rgb;
+    vec3 envReflection = mix(prefilteredColor1, prefilteredColor2, fract(sampleRoughness));
+
+    vec3 finalReflection = mix(envReflection, rtReflection.rgb, rtReflection.a);
+
+    vec2 brdfUV = vec2(clamp(max(dot(normal, viewDir), 0.0), 0.01, 0.99), roughness);
+    vec2 envBRDF = texture(inBrdfLUT, brdfUV).rg;
+
+    vec3 specular = finalReflection * (F * envBRDF.x + envBRDF.y);
+
+    vec3 base = diffuse + specular;
+    vec3 sheen = calcSheen(normal, viewDir, sheenColor, sheenIntensity);
+
+    return base + sheen;
+}
+
 void main() {
     DeferredGBufferData gbuf = setupDeferredGBuffer(
         g_Albedo, g_Normal, g_Material, g_FresnelFlags, g_SheenColor,
@@ -150,6 +201,13 @@ void main() {
         return;
     }
 
+    // Select AO value for the direct-lighting sheen term.
+    // In RTAO mode: combine material AO with the RT AO texture.
+    // In RTGI mode: use only baked material AO (g_Indirect contains GI irradiance, not AO).
+    float aoForDirectLight = (pushConstant.indirectMode == 0u)
+        ? gbuf.ao * texture(g_Indirect, vTexcoord).r
+        : gbuf.ao;
+
     vec3 Lo = vec3(0.0);
     for (int i = 0; i < pushConstant.lightCount; i++) {
         if (LightsBuffer.lights[i].type != LIGHT_TYPE_DISABLED) {
@@ -160,17 +218,30 @@ void main() {
             Lo += shadowFactor * calcRadiance(LightsBuffer.lights[i], gbuf.viewDir, gbuf.worldPos,
                               gbuf.metallic, gbuf.roughness,
                               gbuf.F0, gbuf.normal, gbuf.albedo.rgb,
-                              gbuf.sheenIntensity, gbuf.sheenColor, texture(g_AO, vTexcoord).r);
+                              gbuf.sheenIntensity, gbuf.sheenColor, aoForDirectLight);
         }
     }
 
     vec4 rtReflection = texture(g_RTReflection, vTexcoord);
 
-    vec3 ambient = calcAmbientLightWithReflections(gbuf.viewDir, gbuf.normal, gbuf.F0, gbuf.albedo.rgb,
-                                    gbuf.metallic, gbuf.roughness,
-                                    irradianceMap, prefilteredEnvMap, environmentData.maxReflectionLOD,
-                                    brdfLUT, gbuf.ao * texture(g_AO, vTexcoord).r, gbuf.sheenIntensity, gbuf.sheenColor,
-                                    rtReflection);
+    vec3 ambient;
+    if (pushConstant.indirectMode == 0u) {
+        // RTAO: g_Indirect is a scalar AO texture (R channel)
+        float ao = gbuf.ao * texture(g_Indirect, vTexcoord).r;
+        ambient = calcAmbientLightWithReflections(gbuf.viewDir, gbuf.normal, gbuf.F0, gbuf.albedo.rgb,
+                                        gbuf.metallic, gbuf.roughness,
+                                        irradianceMap, prefilteredEnvMap, environmentData.maxReflectionLOD,
+                                        brdfLUT, ao, gbuf.sheenIntensity, gbuf.sheenColor,
+                                        rtReflection);
+    } else {
+        // RTGI: g_Indirect is HDR irradiance (RGB channels), albedo is applied inside calcAmbientLightWithGI
+        vec3 giIrradiance = texture(g_Indirect, vTexcoord).rgb;
+        ambient = calcAmbientLightWithGI(gbuf.viewDir, gbuf.normal, gbuf.F0, gbuf.albedo.rgb,
+                                        gbuf.metallic, gbuf.roughness,
+                                        prefilteredEnvMap, environmentData.maxReflectionLOD,
+                                        brdfLUT, gbuf.sheenIntensity, gbuf.sheenColor,
+                                        giIrradiance, rtReflection);
+    }
 
     // Refraction on translucent fragments (per-material factor from the G-buffer).
     vec4 background = applyRefraction(

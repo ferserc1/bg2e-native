@@ -28,6 +28,95 @@ RendererDeferred::~RendererDeferred()
 {
 }
 
+VkExtent2D RendererDeferred::computeRenderExtent(VkExtent2D viewportExtent, float scalePercent) const
+{
+    uint32_t w = static_cast<uint32_t>(std::round(viewportExtent.width * scalePercent / 100.0f));
+    uint32_t h = static_cast<uint32_t>(std::round(viewportExtent.height * scalePercent / 100.0f));
+    if (w < 1) w = 1;
+    if (h < 1) h = 1;
+    return { w, h };
+}
+
+void RendererDeferred::setRenderScalePercent(float percent)
+{
+    _engine->device().waitIdle();
+    if (percent < 25.0f) percent = 25.0f;
+    if (percent > 150.0f) percent = 150.0f;
+    if (percent == _renderScalePercent) return;
+
+    _renderScalePercent = percent;
+
+    if (!_engine) return;
+
+    auto newRenderExtent = computeRenderExtent(_viewportExtent, _renderScalePercent);
+    if (newRenderExtent.width == _renderExtent.width && newRenderExtent.height == _renderExtent.height)
+    {
+        return;
+    }
+
+    _renderExtent = newRenderExtent;
+    _scene->willResize();
+
+    _skyboxLayer->resize(_renderExtent);
+    _opaqueLayer->resize(_renderExtent);
+    _transparentLayer->resize(_renderExtent);
+
+    _skyboxImage->cleanup();
+    _skyboxImage = std::shared_ptr<vulkan::Image>(
+        vulkan::Image::createAllocatedImage(
+            _engine,
+            "deferred render skybox image",
+            _colorImageFormat,
+            _renderExtent,
+            VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
+            VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
+            VK_IMAGE_USAGE_TRANSFER_DST_BIT |
+            VK_IMAGE_USAGE_SAMPLED_BIT,
+            VK_IMAGE_ASPECT_COLOR_BIT,
+            1, false, 20, VK_SAMPLE_COUNT_1_BIT
+        )
+    );
+
+    _opaqueImage->cleanup();
+    _opaqueImage = std::shared_ptr<vulkan::Image>(
+        vulkan::Image::createAllocatedImage(
+            _engine,
+            "Deferred render opaque image",
+            _colorImageFormat,
+            _renderExtent,
+            VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
+            VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
+            VK_IMAGE_USAGE_TRANSFER_DST_BIT |
+            VK_IMAGE_USAGE_SAMPLED_BIT,
+            VK_IMAGE_ASPECT_COLOR_BIT,
+            1, false, 20, VK_SAMPLE_COUNT_1_BIT
+        )
+    );
+
+    _transparentImage->cleanup();
+    _transparentImage = std::shared_ptr<vulkan::Image>(
+        vulkan::Image::createAllocatedImage(
+            _engine,
+            "Deferred render transparent image",
+            _colorImageFormat,
+            _renderExtent,
+            VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
+            VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
+            VK_IMAGE_USAGE_TRANSFER_DST_BIT |
+            VK_IMAGE_USAGE_SAMPLED_BIT,
+            VK_IMAGE_ASPECT_COLOR_BIT,
+            1, false, 20, VK_SAMPLE_COUNT_1_BIT
+        )
+    );
+
+    // SMAA at render resolution
+    if (_smaaProcessor) {
+        _smaaProcessor->resize(_renderExtent);
+    }
+
+    _scene->didResize();
+}
+
 void RendererDeferred::build(
     bg2e::render::Engine* engine,
     VkExtent2D initialExtent,
@@ -40,6 +129,8 @@ void RendererDeferred::build(
 
     _engine = engine;
     _viewportExtent = initialExtent;
+    _renderScalePercent = 50.0f;
+    _renderExtent = computeRenderExtent(initialExtent, _renderScalePercent);
     _colorImageFormat = colorImageFormat;
     _depthImageFormat = depthImageFormat;
     _sampleCount = sampleCount;
@@ -65,7 +156,7 @@ void RendererDeferred::build(
 
     // Create layers
     _skyboxLayer = std::make_unique<deferred::SkyboxLayer>(_engine);
-    _skyboxLayer->build(initialExtent, colorImageFormat);
+    _skyboxLayer->build(_renderExtent, colorImageFormat);
     _skyboxLayer->setScene(_scene.get());
     _skyboxLayer->setEnvironment(_environment.get());
 
@@ -73,7 +164,7 @@ void RendererDeferred::build(
     _opaqueLayer->setLightDataBinding(_lightDataBinding.get());
     if (_rtDataBinding) _opaqueLayer->setRtDataBinding(_rtDataBinding.get());
     if (_reflectionLightDataBinding) _opaqueLayer->setReflectionLightDataBinding(_reflectionLightDataBinding.get());
-    _opaqueLayer->build(initialExtent, colorImageFormat);
+    _opaqueLayer->build(_renderExtent, colorImageFormat);
     _opaqueLayer->setScene(_scene.get());
     _opaqueLayer->setEnvironment(_environment.get());
     _opaqueLayer->setRenderQueue(&_renderQueue);
@@ -83,7 +174,7 @@ void RendererDeferred::build(
     _transparentLayer->setLightDataBinding(_lightDataBinding.get());
     if (_rtDataBinding) _transparentLayer->setRtDataBinding(_rtDataBinding.get());
     if (_reflectionLightDataBinding) _transparentLayer->setReflectionLightDataBinding(_reflectionLightDataBinding.get());
-    _transparentLayer->build(initialExtent, colorImageFormat);
+    _transparentLayer->build(_renderExtent, colorImageFormat);
     _transparentLayer->setScene(_scene.get());
     _transparentLayer->setEnvironment(_environment.get());
     _transparentLayer->setRenderQueue(&_renderQueue);
@@ -96,7 +187,7 @@ void RendererDeferred::build(
             _engine,
             "deferred render skybox image",
             colorImageFormat,
-            initialExtent,
+            _renderExtent,
             VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
             VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
             VK_IMAGE_USAGE_TRANSFER_DST_BIT |
@@ -111,7 +202,7 @@ void RendererDeferred::build(
             _engine,
             "Deferred render opaque image",
             colorImageFormat,
-            initialExtent,
+            _renderExtent,
             VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
             VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
             VK_IMAGE_USAGE_TRANSFER_DST_BIT |
@@ -130,7 +221,7 @@ void RendererDeferred::build(
             _engine,
             "Deferred render transparent image",
             colorImageFormat,
-            initialExtent,
+            _renderExtent,
             VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
             VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
             VK_IMAGE_USAGE_TRANSFER_DST_BIT |
@@ -146,9 +237,9 @@ void RendererDeferred::build(
         _gizmoAndSelectionRenderer->init(engine, VK_SAMPLE_COUNT_1_BIT);
     }
 
-    // SMAA post-processing
+    // SMAA post-processing (at render resolution; output blitted to display later)
     _smaaProcessor = std::make_unique<deferred::SMAAProcessor>(_engine);
-    _smaaProcessor->build(initialExtent, colorImageFormat);
+    _smaaProcessor->build(_renderExtent, colorImageFormat);
 }
 
 void RendererDeferred::initFrameResources(
@@ -198,21 +289,30 @@ void RendererDeferred::resize(
     VkExtent2D newExtent
 ) {
     _viewportExtent = newExtent;
+
+    auto newRenderExtent = computeRenderExtent(_viewportExtent, _renderScalePercent);
+    if (newRenderExtent.width == _renderExtent.width && newRenderExtent.height == _renderExtent.height)
+    {
+        _resizeVisitor.resizeViewport(_scene->rootNode(), _viewportExtent);
+        return;
+    }
+
+    _renderExtent = newRenderExtent;
     _scene->willResize();
 
-    // Resize layers
-    _skyboxLayer->resize(newExtent);
-    _opaqueLayer->resize(newExtent);
-    _transparentLayer->resize(newExtent);
+    // Resize layers at render resolution
+    _skyboxLayer->resize(_renderExtent);
+    _opaqueLayer->resize(_renderExtent);
+    _transparentLayer->resize(_renderExtent);
 
-    // Recreate intermediate images
+    // Recreate intermediate images at render resolution
     _skyboxImage->cleanup();
     _skyboxImage = std::shared_ptr<vulkan::Image>(
         vulkan::Image::createAllocatedImage(
             _engine,
             "deferred render skybox image",
             _colorImageFormat,
-            newExtent,
+            _renderExtent,
             VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
             VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
             VK_IMAGE_USAGE_TRANSFER_DST_BIT |
@@ -230,7 +330,7 @@ void RendererDeferred::resize(
             _engine,
             "Deferred render opaque image",
             _colorImageFormat,
-            newExtent,
+            _renderExtent,
             VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
             VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
             VK_IMAGE_USAGE_TRANSFER_DST_BIT |
@@ -248,7 +348,7 @@ void RendererDeferred::resize(
             _engine,
             "Deferred render transparent image",
             _colorImageFormat,
-            newExtent,
+            _renderExtent,
             VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
             VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
             VK_IMAGE_USAGE_TRANSFER_DST_BIT |
@@ -261,11 +361,12 @@ void RendererDeferred::resize(
         )
     );
 
+    // SMAA at render resolution
     if (_smaaProcessor) {
-        _smaaProcessor->resize(newExtent);
+        _smaaProcessor->resize(_renderExtent);
     }
 
-    _resizeVisitor.resizeViewport(_scene->rootNode(), newExtent);
+    _resizeVisitor.resizeViewport(_scene->rootNode(), _viewportExtent);
 
     _scene->didResize();
 }
@@ -352,7 +453,6 @@ void RendererDeferred::draw(
                               frameResources);
 
     if (!_isOffscreen && _gizmoAndSelectionRenderer) {
-        auto depthAttachment = vulkan::Info::depthAttachmentInfo(depthImage->imageView(), 1.0f);
         auto colorAttachment = vulkan::Info::attachmentInfo(_transparentImage->imageView(), nullptr);
         auto renderInfo = vulkan::Info::renderingInfo(_transparentImage->extent2D(), &colorAttachment, nullptr);
         vulkan::cmdBeginRendering(cmd, &renderInfo);
@@ -381,16 +481,76 @@ void RendererDeferred::draw(
             cmd, currentFrame, _transparentImage.get()
         );
 
-        vulkan::Image::cmdCopy(
-            cmd,
-            smaaOutput->handle(),
-            smaaOutput->extent2D(),
-            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-            colorImage->handle(),
-            colorImage->extent2D(),
-            VK_IMAGE_LAYOUT_UNDEFINED,
-            VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
-        );
+        bool needsBlit = _renderExtent.width != _viewportExtent.width ||
+                         _renderExtent.height != _viewportExtent.height;
+
+        if (needsBlit) {
+            // Render size differs from display size: blit SMAA output to colorImage
+            vulkan::Image::cmdTransitionImage(
+                cmd,
+                smaaOutput->handle(),
+                VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
+            );
+            vulkan::Image::cmdTransitionImage(
+                cmd,
+                colorImage->handle(),
+                VK_IMAGE_LAYOUT_UNDEFINED,
+                VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
+            );
+
+            VkImageBlit blitRegion = {};
+            blitRegion.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+            blitRegion.srcSubresource.mipLevel = 0;
+            blitRegion.srcSubresource.baseArrayLayer = 0;
+            blitRegion.srcSubresource.layerCount = 1;
+            blitRegion.srcOffsets[0] = { 0, 0, 0 };
+            blitRegion.srcOffsets[1] = {
+                static_cast<int32_t>(smaaOutput->extent2D().width),
+                static_cast<int32_t>(smaaOutput->extent2D().height),
+                1
+            };
+            blitRegion.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+            blitRegion.dstSubresource.mipLevel = 0;
+            blitRegion.dstSubresource.baseArrayLayer = 0;
+            blitRegion.dstSubresource.layerCount = 1;
+            blitRegion.dstOffsets[0] = { 0, 0, 0 };
+            blitRegion.dstOffsets[1] = {
+                static_cast<int32_t>(colorImage->extent2D().width),
+                static_cast<int32_t>(colorImage->extent2D().height),
+                1
+            };
+
+            vkCmdBlitImage(
+                cmd,
+                smaaOutput->handle(),
+                VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                colorImage->handle(),
+                VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                1,
+                &blitRegion,
+                VK_FILTER_LINEAR
+            );
+
+            vulkan::Image::cmdTransitionImage(
+                cmd,
+                smaaOutput->handle(),
+                VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+            );
+        } else {
+            // Same size: direct copy (existing behavior)
+            vulkan::Image::cmdCopy(
+                cmd,
+                smaaOutput->handle(),
+                smaaOutput->extent2D(),
+                VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                colorImage->handle(),
+                colorImage->extent2D(),
+                VK_IMAGE_LAYOUT_UNDEFINED,
+                VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
+            );
+        }
     }
 
     // === End scene render (from Renderer base) ===
@@ -643,6 +803,83 @@ float RendererDeferred::denoiseNormalSigma() const
 }
 
 // RT Reflections
+
+void RendererDeferred::setIndirectLightingMode(deferred::IndirectLightingMode mode)
+{
+    _opaqueLayer->setIndirectLightingMode(mode);
+    _transparentLayer->setIndirectLightingMode(mode);
+}
+
+deferred::IndirectLightingMode RendererDeferred::indirectLightingMode() const
+{
+    return _opaqueLayer->indirectLightingMode();
+}
+
+void RendererDeferred::setRTGIEnabled(bool enabled)
+{
+    _opaqueLayer->setRTGIEnabled(enabled);
+    _transparentLayer->setRTGIEnabled(enabled);
+}
+
+bool RendererDeferred::rtGIEnabled() const
+{
+    return _opaqueLayer->rtGIEnabled();
+}
+
+void RendererDeferred::setRTGISampleCount(uint32_t count)
+{
+    _opaqueLayer->setRTGISampleCount(count);
+    _transparentLayer->setRTGISampleCount(count);
+}
+
+uint32_t RendererDeferred::rtGISampleCount() const
+{
+    return _opaqueLayer->rtGISampleCount();
+}
+
+void RendererDeferred::setRTGIBounceCount(uint32_t count)
+{
+    _opaqueLayer->setRTGIBounceCount(count);
+    _transparentLayer->setRTGIBounceCount(count);
+}
+
+uint32_t RendererDeferred::rtGIBounceCount() const
+{
+    return _opaqueLayer->rtGIBounceCount();
+}
+
+void RendererDeferred::setRTGIRayBias(float bias)
+{
+    _opaqueLayer->setRTGIRayBias(bias);
+    _transparentLayer->setRTGIRayBias(bias);
+}
+
+float RendererDeferred::rtGIRayBias() const
+{
+    return _opaqueLayer->rtGIRayBias();
+}
+
+void RendererDeferred::setRTGIMaxDistance(float distance)
+{
+    _opaqueLayer->setRTGIMaxDistance(distance);
+    _transparentLayer->setRTGIMaxDistance(distance);
+}
+
+float RendererDeferred::rtGIMaxDistance() const
+{
+    return _opaqueLayer->rtGIMaxDistance();
+}
+
+void RendererDeferred::setRTGIQuality(deferred::RTGIQuality quality)
+{
+    _opaqueLayer->setRTGIQuality(quality);
+    _transparentLayer->setRTGIQuality(quality);
+}
+
+deferred::RTGIQuality RendererDeferred::rtGIQuality() const
+{
+    return _opaqueLayer->rtGIQuality();
+}
 
 void RendererDeferred::setRTReflectionsEnabled(bool enabled)
 {
