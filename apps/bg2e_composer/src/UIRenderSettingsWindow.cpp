@@ -56,7 +56,7 @@ bool UIRenderSettingsWindow::drawRenderScaleSection()
 {
     bg2e::ui::BasicWidgets::text("Render Scale", true);
 
-    auto renderer = _appDelegate->renderer();
+    auto renderer = dynamic_cast<bg2e::render::RendererDeferred*>(_appDelegate->rendererBase());
     if (!renderer) return false;
 
     static const std::vector<std::string> scaleItems = { "Performance (50%)", "Balanced (75%)", "Quality (100%)" };
@@ -86,7 +86,7 @@ bool UIRenderSettingsWindow::drawIndirectLightingModeSection()
 {
     bg2e::ui::BasicWidgets::text("Indirect Lighting", true);
 
-    auto renderer = _appDelegate->renderer();
+    auto renderer = dynamic_cast<bg2e::render::RendererDeferred*>(_appDelegate->rendererBase());
     if (!renderer) return false;
 
     static const std::vector<std::string> modeItems = { "Ambient Occlusion (RTAO)", "Global Illumination (RTGI)" };
@@ -117,7 +117,7 @@ bool UIRenderSettingsWindow::drawRTAOSection()
 {
     bg2e::ui::BasicWidgets::text("Ambient Occlusion", true);
 
-    auto renderer = _appDelegate->renderer();
+    auto renderer = dynamic_cast<bg2e::render::RendererDeferred*>(_appDelegate->rendererBase());
     if (!renderer) return false;
 
     static const std::vector<std::string> qualityItems = { "Low", "Medium", "High", "Ultra" };
@@ -178,7 +178,7 @@ bool UIRenderSettingsWindow::drawRTGISection()
 {
     bg2e::ui::BasicWidgets::text("Global Illumination", true);
 
-    auto renderer = _appDelegate->renderer();
+    auto renderer = dynamic_cast<bg2e::render::RendererDeferred*>(_appDelegate->rendererBase());
     if (!renderer) return false;
 
     bool enabled = renderer->rtGIEnabled();
@@ -232,7 +232,7 @@ bool UIRenderSettingsWindow::drawRTReflectionsSection()
 {
     bg2e::ui::BasicWidgets::text("Ray Traced Reflections", true);
 
-    auto renderer = _appDelegate->renderer();
+    auto renderer = dynamic_cast<bg2e::render::RendererDeferred*>(_appDelegate->rendererBase());
     if (!renderer) return false;
 
     bool enabled = renderer->rtReflectionsEnabled();
@@ -284,7 +284,7 @@ bool UIRenderSettingsWindow::drawTemporalAccumulatorSection()
 {
     bg2e::ui::BasicWidgets::text("Temporal Accumulator", true);
 
-    auto renderer = _appDelegate->renderer();
+    auto renderer = dynamic_cast<bg2e::render::RendererDeferred*>(_appDelegate->rendererBase());
     if (!renderer) return false;
 
     static const std::vector<std::string> modeItems = { "Interactive", "Progressive" };
@@ -324,7 +324,7 @@ bool UIRenderSettingsWindow::drawDenoiseFilterSection()
 {
     bg2e::ui::BasicWidgets::text("Denoise Filter", true);
 
-    auto renderer = _appDelegate->renderer();
+    auto renderer = dynamic_cast<bg2e::render::RendererDeferred*>(_appDelegate->rendererBase());
     if (!renderer) return false;
 
     int kernelRadius = renderer->denoiseKernelRadius();
