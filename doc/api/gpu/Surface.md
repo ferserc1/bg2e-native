@@ -26,6 +26,9 @@ public:
     virtual void releaseRenderTarget() = 0;
 
     virtual uint32_t    imageCount() const = 0;
+    virtual uint32_t    inFlightFrames() const = 0;
+    uint64_t            frameCounter() const { return _frameCounter; }
+    virtual uint32_t    currentFrameIndex() const = 0;
     virtual gpu::Image* colorImage(uint32_t index) const = 0;
     virtual gpu::Image* depthImage() const = 0;
 
@@ -108,7 +111,33 @@ itself. Useful before resizing or when temporarily detaching from a device.
 ### `virtual uint32_t imageCount() const = 0`
 
 Returns the number of images in the swapchain (window surfaces) or 1 for
-offscreen surfaces.
+offscreen surfaces. This represents the total number of swapchain images, which
+may be greater than the number of frames in flight.
+
+### `virtual uint32_t inFlightFrames() const = 0`
+
+Returns the number of frames that can be in flight concurrently. Window surfaces
+return 2; offscreen surfaces return 1. This is distinct from `imageCount()` — the
+swapchain may have more images than frames in flight (e.g., on Apple M-series
+hardware the swapchain may have 3 images while only 2 frames are in flight).
+
+Used by `FrameResourceRing` to size the ring and by `CleanupManager` to compute
+deferred cleanup timing.
+
+### `uint64_t frameCounter() const`
+
+Returns the monotonically increasing frame counter. Incremented automatically by
+`endFrame()` in concrete surfaces. Used by `CleanupManager` to index deferred
+cleanup closures.
+
+### `virtual uint32_t currentFrameIndex() const = 0`
+
+Returns the index of the current in-flight frame within the ring of concurrent
+frames. For Vulkan window surfaces this cycles through `0..inFlightFrames()-1`;
+for offscreen surfaces it always returns `0`.
+
+Used by `FrameResourceRing::current()` to access the resource slot for the
+current frame.
 
 ### `virtual gpu::Image* colorImage(uint32_t index) const = 0`
 

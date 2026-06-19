@@ -127,7 +127,7 @@ int main(int argc, char** argv)
     auto device = backend->createDevice();
     device->create(instance, physicalDevice.get(), surface.get());
 
-    gpu::CleanupManager cleanup;
+    gpu::CleanupManager cleanup(surface.get());
 
     // 8. Shader modules
     auto shaderBasePath = base::PlatformTools::shaderPath();

@@ -61,6 +61,8 @@ backend-specific sub-namespaces (`bg2e::gpu::vk`, `bg2e::gpu::metal`).
 | [RayTracingMesh](RayTracingMesh.md) | `gpu/RayTracingMesh.hpp` | Bottom-level acceleration structure (BLAS) for one submesh, from existing GPU buffers. |
 | [RayTracingScene](RayTracingScene.md) | `gpu/RayTracingScene.hpp` | Top-level acceleration structure (TLAS) holding instances of RayTracingMesh. |
 | [`MeshGeneric<T>`](Mesh.md) | `gpu/Mesh.hpp` | Template pairing CPU mesh data with GPU vertex/index buffers. |
+| [`CleanupManager`](CleanupManager.md) | `gpu/CleanupManager.hpp` | Ordered and deferred cleanup for device resources. |
+| [`FrameResourceRing<T>`](FrameResourceRing.md) | `gpu/FrameResourceRing.hpp` | Template ring of per-frame device resources. |
 
 ## Vulkan utilities
 
@@ -133,4 +135,6 @@ gpu::RayTracingMesh           (abstract)
 gpu::RayTracingScene          (abstract)
   +-- gpu::vk::RayTracingScene
   +-- gpu::metal::RayTracingScene
+gpu::CleanupManager           (concrete, not polymorphic)
+gpu::FrameResourceRing<T>     (template, not polymorphic)
 ```

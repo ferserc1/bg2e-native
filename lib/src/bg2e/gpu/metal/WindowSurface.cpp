@@ -106,7 +106,8 @@ void WindowSurface::releaseRenderTarget()
 }
 
 uint32_t WindowSurface::imageCount() const { return _imageCount; }
-uint32_t WindowSurface::currentFrameIndex() const { return 0; }
+uint32_t WindowSurface::inFlightFrames() const { return 2; }
+uint32_t WindowSurface::currentFrameIndex() const { return _currentFrameIndex; }
 gpu::Image* WindowSurface::colorImage(uint32_t /*index*/) const { return nullptr; }
 gpu::Image* WindowSurface::depthImage() const { return _depthImage.get(); }
 
@@ -137,6 +138,8 @@ void WindowSurface::present(gpu::CommandBuffer* cmd)
 void WindowSurface::endFrame(gpu::SurfaceFrame*)
 {
     _currentFrame = nullptr;
+    _currentFrameIndex = (_currentFrameIndex + 1) % 2;
+    ++_frameCounter;
 }
 
 #else
@@ -164,6 +167,7 @@ void WindowSurface::resize(const Size2D&)
 void WindowSurface::releaseRenderTarget() {}
 
 uint32_t WindowSurface::imageCount() const { return 0; }
+uint32_t WindowSurface::inFlightFrames() const { return 0; }
 uint32_t WindowSurface::currentFrameIndex() const { return 0; }
 gpu::Image* WindowSurface::colorImage(uint32_t) const { return nullptr; }
 gpu::Image* WindowSurface::depthImage() const { return nullptr; }

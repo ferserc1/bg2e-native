@@ -21,6 +21,11 @@
 namespace bg2e {
 namespace gpu {
 
+CleanupManager::CleanupManager(gpu::Surface* surface)
+    : _surface(surface)
+{
+}
+
 void CleanupManager::push(const std::shared_ptr<DeviceResource>& resource)
 {
     _resources.push_back(resource);
@@ -73,6 +78,39 @@ void CleanupManager::clear()
 bool CleanupManager::empty() const
 {
     return _staticResources.empty() && _resources.empty();
+}
+
+void CleanupManager::defer(std::function<void()>&& cleanup)
+{
+    _deferredCleanups.push_back({
+        _surface->frameCounter() + _surface->inFlightFrames(),
+        std::move(cleanup)
+    });
+}
+
+void CleanupManager::flushDeferred()
+{
+    auto counter = _surface->frameCounter();
+    _deferredCleanups.erase(
+        std::remove_if(_deferredCleanups.begin(), _deferredCleanups.end(),
+            [counter](const DeferredCleanup& d) {
+                if (d.targetFrame <= counter) {
+                    d.cleanup();
+                    return true;
+                }
+                return false;
+            }),
+        _deferredCleanups.end()
+    );
+}
+
+void CleanupManager::flushAllDeferred()
+{
+    for (auto& d : _deferredCleanups)
+    {
+        d.cleanup();
+    }
+    _deferredCleanups.clear();
 }
 
 }

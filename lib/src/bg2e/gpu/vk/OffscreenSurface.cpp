@@ -74,6 +74,11 @@ uint32_t OffscreenSurface::imageCount() const
     return 1;
 }
 
+uint32_t OffscreenSurface::inFlightFrames() const
+{
+    return 1;
+}
+
 uint32_t OffscreenSurface::currentFrameIndex() const
 {
     return 0;
@@ -102,7 +107,7 @@ void OffscreenSurface::present(gpu::CommandBuffer*)
 
 void OffscreenSurface::endFrame(gpu::SurfaceFrame*)
 {
-    // No-op for offscreen
+    ++_frameCounter;
 }
 
 }

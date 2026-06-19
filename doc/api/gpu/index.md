@@ -80,6 +80,8 @@ gpu::MeshGeneric<MeshT>       (template, not polymorphic)
   -- gpu::MeshP  / MeshPN  / MeshPC  / MeshPU
   -- gpu::MeshPNU / MeshPNC / MeshPNUC / MeshPNUT / MeshPNUUT
   -- gpu::Mesh   (alias for MeshPNUUT)
+gpu::CleanupManager           (concrete, not polymorphic)
+gpu::FrameResourceRing<T>     (template, not polymorphic)
 ```
 
 ### Object creation flow
@@ -479,13 +481,37 @@ The render loop follows this pattern each frame:
 9. surface->present(cmd)                -- record present
 10. cmd->end()
 11. graphicsQueue.submit(cmd)           -- submit to GPU
-12. surface->endFrame(frame)            -- present to screen
+12. surface->endFrame(frame)            -- present to screen, increment frame counter
+13. cleanup.flushDeferred()             -- run expired deferred cleanup closures
 ```
+
+When using `CleanupManager`, step 13 executes deferred closures whose
+`targetFrame <= surface->frameCounter()`. This is safe because `endFrame()` has
+already waited on the fence for the current frame.
 
 ## Cleanup order
 
 Resources must be released in reverse creation order to avoid dangling
-references:
+references. `CleanupManager` automates this with ordered cleanup and deferred
+cleanup for resources still in use by the GPU:
+
+```cpp
+// Render loop — flush deferred closures after endFrame()
+surface->endFrame(frame.get());
+cleanup.flushDeferred();
+
+// Application exit — drain everything
+device->waitIdle();
+cleanup.flushAllDeferred();   // run all pending deferred closures
+cleanup.flush();               // ordered device resource cleanup
+surface->cleanup();
+device->cleanup();
+instance->cleanup();
+SDL_DestroyWindow();
+SDL_Quit();
+```
+
+The manual cleanup order (without `CleanupManager`) is:
 
 1. `device->waitIdle()`
 2. Mesh buffers (`mesh.cleanup()`)

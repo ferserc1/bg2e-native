@@ -72,6 +72,7 @@ bool OffscreenSurface::isValid() const
 }
 
 uint32_t OffscreenSurface::imageCount() const { return 1; }
+uint32_t OffscreenSurface::inFlightFrames() const { return 1; }
 uint32_t OffscreenSurface::currentFrameIndex() const { return 0; }
 gpu::Image* OffscreenSurface::colorImage(uint32_t index) const
 {
@@ -94,7 +95,7 @@ void OffscreenSurface::present(gpu::CommandBuffer*)
 
 void OffscreenSurface::endFrame(gpu::SurfaceFrame*)
 {
-    // No-op for offscreen
+    ++_frameCounter;
 }
 
 #else
@@ -116,13 +117,14 @@ void OffscreenSurface::cleanup() {}
 bool OffscreenSurface::isValid() const { return false; }
 
 uint32_t OffscreenSurface::imageCount() const { return 0; }
+uint32_t OffscreenSurface::inFlightFrames() const { return 0; }
 uint32_t OffscreenSurface::currentFrameIndex() const { return 0; }
 gpu::Image* OffscreenSurface::colorImage(uint32_t) const { return nullptr; }
 gpu::Image* OffscreenSurface::depthImage() const { return nullptr; }
 
 std::shared_ptr<gpu::SurfaceFrame> OffscreenSurface::beginFrame() { return nullptr; }
 void OffscreenSurface::present(gpu::CommandBuffer*) {}
-void OffscreenSurface::endFrame(gpu::SurfaceFrame*) {}
+void OffscreenSurface::endFrame(gpu::SurfaceFrame*) { ++_frameCounter; }
 
 #endif
 

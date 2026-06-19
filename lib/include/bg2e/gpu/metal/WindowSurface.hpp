@@ -48,6 +48,7 @@ public:
     void releaseRenderTarget() override;
 
     uint32_t    imageCount() const override;
+    uint32_t    inFlightFrames() const override;
     uint32_t    currentFrameIndex() const override;
     gpu::Image* colorImage(uint32_t index) const override;
     gpu::Image* depthImage() const override;
@@ -64,6 +65,7 @@ private:
     void* _metalView = nullptr;
     MetalLayerHandle _layer = nullptr;
     uint32_t _imageCount = 0;
+    uint32_t _currentFrameIndex = 0;
     metal::SurfaceFrame* _currentFrame = nullptr;
 };
 

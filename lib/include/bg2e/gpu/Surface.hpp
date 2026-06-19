@@ -58,6 +58,8 @@ public:
     virtual void releaseRenderTarget() = 0;
 
     virtual uint32_t    imageCount() const = 0;
+    virtual uint32_t    inFlightFrames() const = 0;
+    uint64_t            frameCounter() const { return _frameCounter; }
     virtual uint32_t    currentFrameIndex() const = 0;
     virtual gpu::Image* colorImage(uint32_t index) const = 0;
     virtual gpu::Image* depthImage() const = 0;
@@ -85,6 +87,8 @@ protected:
     PixelFormat     _depthFormat = PixelFormat::Undefined;
     Device*         _device         = nullptr;
     PhysicalDevice* _physicalDevice = nullptr;
+
+    uint64_t        _frameCounter   = 0;
 
     friend class vk::Backend;
     friend class vk::Device;

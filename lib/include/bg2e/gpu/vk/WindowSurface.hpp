@@ -50,6 +50,7 @@ public:
     void releaseRenderTarget() override;
 
     uint32_t    imageCount() const override;
+    uint32_t    inFlightFrames() const override;
     uint32_t    currentFrameIndex() const override;
     gpu::Image* colorImage(uint32_t index) const override;
     gpu::Image* depthImage() const override;
@@ -72,9 +73,8 @@ private:
     VkSwapchainKHR _swapchain{VK_NULL_HANDLE};
     std::vector<std::unique_ptr<vk::Image>> _colorImages;
 
-    // Number of frames that can be processed concurrently. Determined at
-    // render-target creation time from the actual swapchain image count, so the
-    // CPU never reuses per-frame resources while the GPU is still consuming them.
+    // Number of frames that can be processed concurrently (always 2).
+    // This is independent of the swapchain image count.
     uint32_t _framesInFlight = 0;
     uint32_t _currentFrame   = 0;
 

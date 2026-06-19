@@ -118,7 +118,7 @@ int main(int argc, char** argv)
     device->create(instance, physicalDevice.get(), surface.get());
 
     // CleanupManager owns the ordered teardown of every DeviceResource below.
-    gpu::CleanupManager cleanup;
+    gpu::CleanupManager cleanup(surface.get());
 
     // 8. Create shader modules via ShaderLib
     auto shaderBasePath = base::PlatformTools::shaderPath();

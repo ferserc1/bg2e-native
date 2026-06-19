@@ -1,5 +1,5 @@
 /*
- *    business grade graphic engine (bg2 engine)
+ *    business grade graphic engine (bg2e engine)
  *    Copyright (C) 2026  Fernando Serrano Carpena
  *
  *    This program is free software: you can redistribute it and/or modify
@@ -16,21 +16,21 @@
  *    along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-// Example 07 — Uniform buffers
+// Example 12 — Deferred Cleanup Validation
 //
-// Renders a rotating, textured cube. It demonstrates the gpu:: uniform-buffer
-// support added on top of example 05:
-//   - A persistent camera UBO + resource set (lives for the whole application).
-//   - A per-frame model UBO duplicated with FrameResourceRing<gpu::Buffer> and a
-//     matching FrameResourceRing<gpu::ResourceSet>.
-//   - Separate descriptor sets: set 0 = camera, set 1 = model, set 2 = material.
-//   - Depth testing for correct cube occlusion.
-//   - gpu::CleanupManager for ordered teardown of DeviceResource objects.
+// Demonstrates deferred resource cleanup by switching between cube and sphere
+// geometry every 5 seconds. When switching, the old GPU buffers are scheduled
+// for deferred destruction via CleanupManager::defer() rather than immediate
+// deletion.
+//
+//   - gpu::CleanupManager with defer()/flushDeferred() for deferred execution
+//     tied to the surface's frame counter.
 
 #include <bg2e.hpp>
 #include <bg2e/gpu/all.hpp>
 #include <bg2e/app/SDLUtils.hpp>
 #include <bg2e/math/base.hpp>
+
 #include <array>
 #include <iostream>
 #include <memory>
@@ -73,7 +73,7 @@ int main(int argc, char** argv)
     }
 
     SDL_Window* window = SDL_CreateWindow(
-        "GPU Uniform Buffers Example",
+        "GPU Deferred Cleanup Example",
         SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
         800, 600,
         windowFlags | SDL_WINDOW_RESIZABLE
@@ -100,13 +100,12 @@ int main(int argc, char** argv)
     auto device = backend->createDevice();
     device->create(instance, physicalDevice.get(), surface.get());
 
-    // CleanupManager owns the ordered teardown of every DeviceResource below.
     gpu::CleanupManager cleanup(surface.get());
 
     // 8. Create shader modules via ShaderLib
     auto shaderBasePath = base::PlatformTools::shaderPath();
 
-    auto shaderLib = backend->createShaderLib(shaderBasePath / "gpu_uniform_buffers");
+    auto shaderLib = backend->createShaderLib(shaderBasePath / "gpu_deferred_cleanup");
     auto vs = shaderLib->vertex("cube", device.get());
     auto fs = shaderLib->fragment("cube", device.get());
     cleanup.push(vs);
@@ -217,12 +216,21 @@ int main(int argc, char** argv)
         return set;
     });
 
-    // 13. Cube mesh (position + texCoord0) built from the procedural geometry API.
-    std::unique_ptr<bg2e::geo::MeshPU> cubeData(bg2e::geo::createCubePU(1.0f, 1.0f, 1.0f));
+    // 13. GPU mesh and cleanup manager for deferred destruction
+    gpu::MeshPU gpuMesh;
 
-    gpu::MeshPU cube;
-    cube.setMeshData(*cubeData);
-    cube.build(device.get());
+    std::unique_ptr<geo::MeshPU> meshData;
+    auto createGeometry = [&](bool sphere) {
+        if (sphere) {
+            meshData.reset(bg2e::geo::createSpherePU(0.8f, 24, 24));
+        } else {
+            meshData.reset(bg2e::geo::createCubePU(1.0f, 1.0f, 1.0f));
+        }
+        gpuMesh.setMeshData(*meshData);
+        gpuMesh.build(device.get());
+    };
+
+    createGeometry(false);
 
     // 14. Graphics pipeline (depth enabled because depthFormat is set).
     auto colorFormat = surface->colorFormat();
@@ -240,12 +248,17 @@ int main(int argc, char** argv)
     auto pipeline = device->createGraphicsPipeline(pipelineDesc);
     cleanup.push(pipeline);
 
-    // 15. Render loop
+    // 15. Render loop with deferred geometry switching
     auto& graphicsQueue = device->graphicsQueue();
 
     bool running = true;
+    bool useSphere = false;
+    uint32_t lastSwitchTime = SDL_GetTicks();
+    bool firstFrame = true;
+
     while (running)
     {
+        // SDL event handling
         SDL_Event event;
         while (SDL_PollEvent(&event))
         {
@@ -256,6 +269,7 @@ int main(int argc, char** argv)
                 event.window.event == SDL_WINDOWEVENT_RESIZED)
             {
                 device->waitIdle();
+                cleanup.flushAllDeferred();
                 surface->resize({
                     static_cast<uint32_t>(event.window.data1),
                     static_cast<uint32_t>(event.window.data2)
@@ -264,15 +278,36 @@ int main(int argc, char** argv)
         }
 
         const float t = static_cast<float>(SDL_GetTicks64()) / 1000.0f;
+        uint32_t currentTime = SDL_GetTicks();
 
-        // Rotate the cube around a tilted axis.
+        // Switch geometry every 5 seconds
+        if (firstFrame || currentTime - lastSwitchTime >= 5000)
+        {
+            if (!firstFrame)
+            {
+                // Schedule deferred destruction of current GPU mesh buffers.
+                auto oldMesh = std::move(gpuMesh);
+
+                cleanup.defer([oldMesh = std::move(oldMesh)]() mutable {
+                    oldMesh.cleanup();
+                });
+
+                useSphere = !useSphere;
+            }
+
+            createGeometry(useSphere);
+            lastSwitchTime = currentTime;
+            firstFrame = false;
+        }
+
+        // Update model UBO (rotation)
         ModelUBO modelData{};
-        modelData.model = glm::rotate(glm::mat4(1.0f), t, glm::normalize(glm::vec3(0.4f, 1.0f, 0.2f)));
+        modelData.model = glm::rotate(glm::mat4(1.0f), t,
+            glm::normalize(glm::vec3(0.4f, 1.0f, 0.2f)));
 
         auto frame = surface->beginFrame();
-        auto cmd   = graphicsQueue.createCommandBuffer("Frame command buffer");
+        auto cmd = graphicsQueue.createCommandBuffer("Frame command buffer");
 
-        // Update + bind the per-frame model resources.
         auto* modelUbo = modelUboRing.current();
         modelUbo->updateUniformBuffer(modelData);
         auto* modelSet = modelSetRing.current();
@@ -289,7 +324,7 @@ int main(int argc, char** argv)
         cmd->bindResourceSet(pipeline.get(), 0, cameraSet.get());
         cmd->bindResourceSet(pipeline.get(), 1, modelSet);
         cmd->bindResourceSet(pipeline.get(), 2, textureSet.get());
-        cube.draw(cmd.get());
+        gpuMesh.draw(cmd.get());
 
         cmd->endRendering();
         cmd->transition(frame->colorImage(), gpu::ImageLayout::Present);
@@ -298,15 +333,19 @@ int main(int argc, char** argv)
         cmd->end();
         graphicsQueue.submit(cmd.get());
         surface->endFrame(frame.get());
+
+        // Flush deferred cleanups AFTER endFrame() (fence has been waited)
+        cleanup.flushDeferred();
     }
 
     // 16. Cleanup
     device->waitIdle();
+    cleanup.flushAllDeferred();
 
     modelSetRing.cleanup();
     modelUboRing.cleanup();
-    cube.cleanup();           // gpu::MeshPU is not a DeviceResource
-    cleanup.flush();          // DeviceResource objects, in reverse push order
+    gpuMesh.cleanup();
+    cleanup.flush();
 
     surface->cleanup();
     device->cleanup();

@@ -201,12 +201,9 @@ void WindowSurface::createRenderTarget(gpu::Device* device, gpu::PhysicalDevice*
 
     // Per-frame / per-image sync objects.
     //
-    // The number of frames in flight is driven by the actual number of swapchain
-    // images (it is platform/driver dependent: e.g. 3 on an Apple M-series GPU).
-    // Using a fixed count smaller than the image count makes the CPU recycle
-    // per-frame resources while the GPU is still using them, which the validation
-    // layers report as a synchronization hazard.
-    _framesInFlight = static_cast<uint32_t>(_colorImages.size());
+    // 2 frames in flight is better than using the number of swap chain images, because
+    // more than 2 frames can affect negatively to the temporal accumulation effects
+    _framesInFlight = 2;
     _currentFrame = 0;
 
     auto semInfo = Info::semaphoreCreateInfo();
@@ -295,6 +292,11 @@ uint32_t WindowSurface::imageCount() const
     return static_cast<uint32_t>(_colorImages.size());
 }
 
+uint32_t WindowSurface::inFlightFrames() const
+{
+    return _framesInFlight;
+}
+
 uint32_t WindowSurface::currentFrameIndex() const
 {
     return _currentFrame;
@@ -357,6 +359,7 @@ void WindowSurface::present(gpu::CommandBuffer* cmd)
 void WindowSurface::endFrame(gpu::SurfaceFrame*)
 {
     _currentFrame = (_currentFrame + 1) % _framesInFlight;
+    ++_frameCounter;
 }
 
 VkSwapchainKHR WindowSurface::swapchain() const

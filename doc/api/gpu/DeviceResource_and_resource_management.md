@@ -171,14 +171,16 @@ This separation allows the engine to keep C++ objects alive for bookkeeping whil
 
 ## CleanupManager
 
-`gpu::CleanupManager` provides ordered cleanup for groups of `DeviceResource` objects.
+`gpu::CleanupManager` provides ordered cleanup for groups of `DeviceResource` objects and deferred cleanup closures whose execution is tied to the surface frame counter.
 
 It stores `std::shared_ptr<DeviceResource>`, not raw pointers and not lambdas. This guarantees that every registered object remains alive until the manager is flushed.
+
+The constructor requires a `Surface*` pointer for deferred cleanup timing. The surface is **not owned** — the caller must ensure it outlives the manager.
 
 Typical usage:
 
 ```cpp
-gpu::CleanupManager cleanup;
+gpu::CleanupManager cleanup(surface.get());
 
 auto layout = device->createPipelineLayout(layoutDesc);
 cleanup.push(layout);
@@ -276,6 +278,91 @@ cleanup.pushStatic(editorGizmoCache);
 When `flush()` is called, these resources are cleaned first.
 
 This allows global caches to release backend resources before the rest of the device-level resources are destroyed.
+
+## Deferred cleanup
+
+In addition to ordered cleanup, `CleanupManager` supports **deferred cleanup** — scheduling GPU resource destruction closures that execute only after a specified number of frames have elapsed. This is essential for safely destroying GPU resources that may still be in use by the GPU.
+
+### The problem
+
+When a GPU resource (e.g., a vertex buffer) is replaced at runtime, the old resource cannot be destroyed immediately — the GPU may still be referencing it in a previously submitted command buffer. Destroying it too early produces validation errors or undefined behavior.
+
+### The solution
+
+`CleanupManager::defer()` schedules a closure for execution after `inFlightFrames()` frames have elapsed. By that time, the GPU is guaranteed to have finished using the resource:
+
+```cpp
+// Replace geometry at runtime
+auto oldMesh = std::move(gpuMesh);
+
+// Schedule deferred destruction — closure captures oldMesh by move
+cleanup.defer([oldMesh = std::move(oldMesh)]() mutable {
+    oldMesh.cleanup();
+});
+
+// Create new geometry
+gpuMesh.setMeshData(newMeshData);
+gpuMesh.build(device.get());
+```
+
+The closure captures the old `MeshPU` by move. Since `MeshPU` owns the GPU buffers as `shared_ptr<DeviceResource>`, the buffers stay alive until the closure executes.
+
+### Frame counter and timing
+
+`CleanupManager` requires a `Surface*` at construction. The surface provides:
+
+- `frameCounter()` — monotonically increasing `uint64_t`, incremented by `endFrame()`.
+- `inFlightFrames()` — number of concurrent frames in flight (2 for window surfaces, 1 for offscreen).
+
+When `defer()` is called, it computes:
+
+```
+targetFrame = surface->frameCounter() + surface->inFlightFrames()
+```
+
+The closure executes when `flushDeferred()` is called and `surface->frameCounter() >= targetFrame`.
+
+### Render loop integration
+
+Deferred closures are flushed **after** `endFrame()`, once the fence has been waited:
+
+```cpp
+auto frame = surface->beginFrame();
+// ... record and submit commands ...
+surface->endFrame(frame.get());
+
+// Safe to run expired deferred closures
+cleanup.flushDeferred();
+```
+
+On application exit, all pending closures are flushed unconditionally:
+
+```cpp
+device->waitIdle();
+cleanup.flushAllDeferred();   // execute all pending deferred closures
+cleanup.flush();               // ordered device resource cleanup
+surface->cleanup();
+device->cleanup();
+instance->cleanup();
+```
+
+On window resize, drain all pending closures before recreating the swapchain:
+
+```cpp
+device->waitIdle();
+cleanup.flushAllDeferred();
+surface->resize(newSize);
+```
+
+### API summary
+
+| Method | Description |
+|--------|-------------|
+| `defer(closure)` | Schedule a closure for deferred execution after `inFlightFrames()` frames |
+| `flushDeferred()` | Execute all closures whose `targetFrame <= frameCounter()` |
+| `flushAllDeferred()` | Execute all pending closures immediately (for shutdown) |
+
+See [CleanupManager](CleanupManager.md) for the full API reference.
 
 ## Resource validity
 

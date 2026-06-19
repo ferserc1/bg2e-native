@@ -20,20 +20,27 @@
 
 #include <bg2e/common.hpp>
 #include <bg2e/gpu/DeviceResource.hpp>
+#include <bg2e/gpu/Surface.hpp>
 
 #include <deque>
+#include <functional>
 #include <memory>
+#include <vector>
 
 namespace bg2e {
 namespace gpu {
 
 class BG2E_API CleanupManager {
 public:
-    CleanupManager() = default;
+    // Constructor now requires a Surface pointer for deferred cleanup timing.
+    // The surface is NOT owned — the caller must ensure it outlives the manager.
+    explicit CleanupManager(gpu::Surface* surface);
     ~CleanupManager() = default;
 
     CleanupManager(const CleanupManager&) = delete;
     CleanupManager& operator=(const CleanupManager&) = delete;
+
+    // --- Existing API (unchanged) ---
 
     void push(const std::shared_ptr<DeviceResource>& resource);
     void push(std::shared_ptr<DeviceResource>&& resource);
@@ -45,9 +52,32 @@ public:
     void clear();
     bool empty() const;
 
+    // --- Deferred cleanup API (new) ---
+
+    // Schedule a cleanup closure to run after inFlightFrames() frames have elapsed.
+    // The closure will be executed when flushDeferred() is called and
+    // surface->frameCounter() >= targetFrame.
+    void defer(std::function<void()>&& cleanup);
+
+    // Execute all deferred closures whose targetFrame <= surface->frameCounter().
+    // Call this AFTER endFrame() in the render loop (i.e., after the fence).
+    void flushDeferred();
+
+    // Execute ALL pending deferred closures immediately, regardless of frame counter.
+    // Call this after device->waitIdle() at application shutdown.
+    void flushAllDeferred();
+
 private:
+    gpu::Surface* _surface;
+
     std::deque<std::shared_ptr<DeviceResource>> _staticResources;
     std::deque<std::shared_ptr<DeviceResource>> _resources;
+
+    struct DeferredCleanup {
+        uint64_t targetFrame;
+        std::function<void()> cleanup;
+    };
+    std::vector<DeferredCleanup> _deferredCleanups;
 };
 
 }

@@ -47,7 +47,7 @@ public:
         std::function<std::shared_ptr<T>(uint32_t)> factory)
     {
         _surface = surface;
-        uint32_t count = surface->imageCount();
+        uint32_t count = surface->inFlightFrames();
         _resources.resize(count);
         for (uint32_t i = 0; i < count; ++i)
         {
