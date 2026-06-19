@@ -41,8 +41,9 @@ public:
 
     template <typename T>
     Log& operator << (const T & value) {
+        auto & out_fn = (_level == Level::Error || _level == Level::Warning) ? std::cerr : std::cout;
         if ((_level == Level::Debug && isDebug()) || _level != Level::Debug) {
-            std::cout << value;
+            out_fn << value;
         }
         return *this;
     }

@@ -119,9 +119,16 @@ int main(int argc, char** argv)
     // 2. Detect hardware ray tracing / ray query support.
     if (!physicalDevice->properties()->rayTracingSupported())
     {
-        std::cerr << "This example requires hardware accelerated ray queries, "
+        bg2e_log_error << "This example requires hardware accelerated ray queries, "
                   << "which are not supported by the selected device:\n  "
-                  << physicalDevice->properties()->name << std::endl;
+                  << physicalDevice->properties()->name << bg2e_log_end;
+
+        if (bg2e::base::PlatformTools::currentPlatform() == base::Platform::macOS &&
+            backendType == gpu::BackendType::Vulkan)
+        {
+            bg2e_log_error << "Note that Vulkan in macOS is not compatible with ray tracing. "
+                  << "Please, try using Metal instead of Vulkan" << bg2e_log_end;
+        }
         SDL_DestroyWindow(window);
         SDL_Quit();
         return 1;
