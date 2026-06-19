@@ -34,6 +34,9 @@ public:
         const ComputePipelineDescription& description);
     virtual std::unique_ptr<Buffer> createBuffer(const std::string& debugName = {});
 
+    virtual std::shared_ptr<RayTracingMesh>  createRayTracingMesh(const RayTracingMeshDescription& description);
+    virtual std::shared_ptr<RayTracingScene> createRayTracingScene(const std::string& debugName = {});
+
     virtual void immediateSubmit(std::function<void(CommandBuffer* cmd)>&& function);
 };
 ```
@@ -137,6 +140,27 @@ internal staging upload transparently.
 
 See [Buffer](Buffer.md) for the full API.
 
+### `virtual std::shared_ptr<RayTracingMesh> createRayTracingMesh(const RayTracingMeshDescription& description)`
+
+Creates a bottom-level ray tracing acceleration structure for one submesh, from
+existing GPU vertex/index buffers. Requires a ray-tracing-capable device
+(`PhysicalDeviceProperties::rayTracingSupported()`); throws otherwise. See
+[RayTracingMesh](RayTracingMesh.md).
+
+| Parameter     | Type                          | Description                          |
+|---------------|-------------------------------|--------------------------------------|
+| `description` | `RayTracingMeshDescription`   | Shared vertex/index buffers + submesh range. |
+
+### `virtual std::shared_ptr<RayTracingScene> createRayTracingScene(const std::string& debugName = {})`
+
+Creates a top-level ray tracing acceleration structure (scene) that holds
+instances of `RayTracingMesh` objects. Requires a ray-tracing-capable device;
+throws otherwise. See [RayTracingScene](RayTracingScene.md).
+
+| Parameter   | Type          | Default | Description                          |
+|-------------|---------------|---------|--------------------------------------|
+| `debugName` | `std::string` | `""`    | Optional label for GPU debug tools.  |
+
 ### `virtual std::shared_ptr<Image> createImage(const ImageDescription& description)`
 
 Allocates a GPU image (texture). See [Image](Image.md).
@@ -201,8 +225,13 @@ public:
     std::unique_ptr<gpu::GraphicsPipeline> createGraphicsPipeline(const gpu::GraphicsPipelineDescription&) override;
     std::unique_ptr<gpu::ComputePipeline>  createComputePipeline(const gpu::ComputePipelineDescription&) override;
     std::unique_ptr<gpu::Buffer>           createBuffer(const std::string& debugName = {}) override;
+    std::shared_ptr<gpu::RayTracingMesh>   createRayTracingMesh(const gpu::RayTracingMeshDescription&) override;
+    std::shared_ptr<gpu::RayTracingScene>  createRayTracingScene(const std::string& debugName = {}) override;
 
     VkDevice handle() const;
+
+    bool     rayTracingEnabled() const;
+    uint32_t accelerationStructureScratchAlignment() const;
 };
 ```
 
@@ -214,6 +243,20 @@ families and exposes factory methods for Vulkan resources.
 #### `VkDevice handle() const`
 
 Returns the raw `VkDevice` handle.
+
+#### `bool rayTracingEnabled() const`
+
+Returns `true` when the device was created with the ray tracing extensions
+enabled (`VK_KHR_acceleration_structure`, `VK_KHR_ray_query`,
+`VK_KHR_buffer_device_address`, …). When `true`, vertex/index buffers are
+created with the acceleration-structure build-input usage so they can back a
+`RayTracingMesh`.
+
+#### `uint32_t accelerationStructureScratchAlignment() const`
+
+Returns the minimum scratch buffer device-address alignment
+(`minAccelerationStructureScratchOffsetAlignment`) used when sizing acceleration
+structure build scratch buffers.
 
 ---
 
@@ -245,6 +288,8 @@ public:
     std::unique_ptr<gpu::GraphicsPipeline> createGraphicsPipeline(const gpu::GraphicsPipelineDescription&) override;
     std::unique_ptr<gpu::ComputePipeline>  createComputePipeline(const gpu::ComputePipelineDescription&) override;
     std::unique_ptr<gpu::Buffer>           createBuffer(const std::string& debugName = {}) override;
+    std::shared_ptr<gpu::RayTracingMesh>   createRayTracingMesh(const gpu::RayTracingMeshDescription&) override;
+    std::shared_ptr<gpu::RayTracingScene>  createRayTracingScene(const std::string& debugName = {}) override;
 
     DeviceHandle handle() const;
 };

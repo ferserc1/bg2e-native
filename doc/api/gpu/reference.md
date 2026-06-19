@@ -15,7 +15,7 @@ backend-specific sub-namespaces (`bg2e::gpu::vk`, `bg2e::gpu::metal`).
 | [ShaderStage](Common.md#shaderstage) | `gpu/Common.hpp` | Pipeline stage: Vertex, Fragment, Compute. |
 | [ImageLayout](Common.md#imagelayout) | `gpu/Common.hpp` | Image layout states for transitions. |
 | [PixelFormat](Common.md#pixelformat) | `gpu/Common.hpp` | Pixel format for images and attachments. |
-| [ResourceType](Common.md#resourcetype) | `gpu/Common.hpp` | Kind of resource at a descriptor binding: UBO, SSBO, image, sampler. |
+| [ResourceType](Common.md#resourcetype) | `gpu/Common.hpp` | Kind of resource at a descriptor binding: UBO, SSBO, image, sampler, acceleration structure. |
 | [PrimitiveTopology](GraphicsPipeline.md#primitivetopology) | `gpu/GraphicsPipeline.hpp` | Primitive assembly topology. |
 
 ## Structs
@@ -33,6 +33,8 @@ backend-specific sub-namespaces (`bg2e::gpu::vk`, `bg2e::gpu::metal`).
 | [PipelineLayoutDescription](Common.md#pipelinelayoutdescription) | `gpu/Common.hpp` | Push constants + resource bindings for a pipeline layout. |
 | [GraphicsPipelineDescription](GraphicsPipeline.md#graphicspipelinedescription) | `gpu/GraphicsPipeline.hpp` | Shaders, layout, topology, and formats. |
 | [ComputePipelineDescription](ComputePipeline.md#computepipelinedescription) | `gpu/ComputePipeline.hpp` | Compute shader and layout. |
+| [RayTracingMeshDescription](RayTracingMesh.md#raytracingmeshdescription) | `gpu/RayTracingMesh.hpp` | Shared vertex/index buffers + submesh range for a bottom-level acceleration structure. |
+| [RayTracingInstance](RayTracingScene.md#raytracinginstance) | `gpu/RayTracingScene.hpp` | One instance of a RayTracingMesh in a scene: mesh, transform, id, mask. |
 
 ## Classes
 
@@ -55,7 +57,10 @@ backend-specific sub-namespaces (`bg2e::gpu::vk`, `bg2e::gpu::metal`).
 | [CommandBuffer](CommandBuffer.md) | `gpu/CommandBuffer.hpp` | Records GPU commands for queue submission. |
 | [SurfaceFrame](SurfaceFrame.md) | `gpu/SurfaceFrame.hpp` | Frame from a surface swapchain. |
 | [Image](Image.md) | `gpu/Image.hpp` | GPU image (texture or render target). |
-| [ResourceSet](ResourceSet.md) | `gpu/ResourceSet.hpp` | Groups resources (UBOs, SSBOs, images, samplers) bound to one descriptor set. |
+| [ResourceSet](ResourceSet.md) | `gpu/ResourceSet.hpp` | Groups resources (UBOs, SSBOs, images, samplers, acceleration structures) bound to one descriptor set. |
+| [RayTracingMesh](RayTracingMesh.md) | `gpu/RayTracingMesh.hpp` | Bottom-level acceleration structure (BLAS) for one submesh, from existing GPU buffers. |
+| [RayTracingScene](RayTracingScene.md) | `gpu/RayTracingScene.hpp` | Top-level acceleration structure (TLAS) holding instances of RayTracingMesh. |
+| [`MeshGeneric<T>`](Mesh.md) | `gpu/Mesh.hpp` | Template pairing CPU mesh data with GPU vertex/index buffers. |
 
 ## Vulkan utilities
 
@@ -122,4 +127,10 @@ gpu::Image                    (abstract)
 gpu::ResourceSet              (abstract)
   +-- gpu::vk::ResourceSet
   +-- gpu::metal::ResourceSet
+gpu::RayTracingMesh           (abstract)
+  +-- gpu::vk::RayTracingMesh
+  +-- gpu::metal::RayTracingMesh
+gpu::RayTracingScene          (abstract)
+  +-- gpu::vk::RayTracingScene
+  +-- gpu::metal::RayTracingScene
 ```

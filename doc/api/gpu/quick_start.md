@@ -87,9 +87,9 @@ Brief descriptions of every class and type in `bg2e::gpu`:
 | **`Backend`** | `Backend.hpp` | Abstract factory for all GPU objects. Creates `Instance`, `PhysicalDevice`, `Device`, `WindowSurface`, `OffscreenSurface`, and `ShaderLib`. |
 | **`Instance`** | `Instance.hpp` | Abstract GPU instance. Manages debug mode, application name, and SDL window attachment. Created lazily as a singleton by `Backend`. |
 | **`PhysicalDevice`** | `PhysicalDevice.hpp` | Abstract physical GPU device. Enumerates and selects the best GPU via a scoring algorithm. Exposes `PhysicalDeviceProperties` (name, type, memory, ray tracing capabilities). |
-| **`Device`** | `Device.hpp` | Abstract logical device. Factory for all GPU resources (`Buffer`, `Image`, `CubeMap`, `ShaderModule`, `PipelineLayout`, `GraphicsPipeline`, `ComputePipeline`, `Sampler`, `ResourceSet`). Provides `graphicsQueue()`, `presentQueue()`, `transferQueue()`, and `immediateSubmit()`. |
+| **`Device`** | `Device.hpp` | Abstract logical device. Factory for all GPU resources (`Buffer`, `Image`, `CubeMap`, `ShaderModule`, `PipelineLayout`, `GraphicsPipeline`, `ComputePipeline`, `Sampler`, `ResourceSet`, `RayTracingMesh`, `RayTracingScene`). Provides `graphicsQueue()`, `presentQueue()`, `transferQueue()`, and `immediateSubmit()`. |
 | **`Queue`** | `Queue.hpp` | Abstract command queue. Creates `CommandBuffer` objects and submits them for execution. |
-| **`CommandBuffer`** | `CommandBuffer.hpp` | Abstract command buffer. Records GPU commands: transitions, rendering passes, compute passes, draws, dispatches, push constants, and resource set bindings. |
+| **`CommandBuffer`** | `CommandBuffer.hpp` | Abstract command buffer. Records GPU commands: transitions, rendering passes, compute passes, draws, dispatches, push constants, resource set bindings, and ray tracing acceleration structure builds (`buildRayTracingMesh()`, `buildRayTracingScene()`). |
 
 ### Surfaces and presentation
 
@@ -108,7 +108,7 @@ Brief descriptions of every class and type in `bg2e::gpu`:
 | **`CubeMap`** | `CubeMap.hpp` | Abstract cubemap resource. Wraps an `Image` with 6 faces. Created via `Device::createCubeMap()`. Provides `image()` accessor for the underlying cubemap image. |
 | **`Buffer`** | `Buffer.hpp` | Abstract GPU buffer. Two allocation strategies: device-local (vertex/index via staging) and host-visible (uniform/storage via direct CPU write). Methods: `createVertexBuffer()`, `createIndexBuffer()`, `createUniformBuffer()`, `updateUniformBuffer()`, etc. |
 | **`Sampler`** | `Sampler.hpp` | Abstract texture sampler. Created via `Device::createSampler()` with a `SamplerDescription` (filter modes, address modes). |
-| **`ResourceSet`** | `ResourceSet.hpp` | Abstract descriptor/resource set. Binds images, samplers, and buffers to shader bindings. Methods: `setSampledImage()`, `setSampler()`, `setUniformBuffer()`, `setStorageBuffer()`, `setStorageImage()`, `setSampledCubeMap()`, `update()`. |
+| **`ResourceSet`** | `ResourceSet.hpp` | Abstract descriptor/resource set. Binds images, samplers, buffers, and ray tracing scenes to shader bindings. Methods: `setSampledImage()`, `setSampler()`, `setUniformBuffer()`, `setStorageBuffer()`, `setStorageImage()`, `setSampledCubeMap()`, `setRayTracingScene()`, `update()`. |
 
 ### Shaders and pipelines
 
@@ -124,8 +124,18 @@ Brief descriptions of every class and type in `bg2e::gpu`:
 
 | Class | Header | Description |
 |-------|--------|-------------|
-| **`MeshGeneric<MeshT>`** | `Mesh.hpp` | Template class that wraps a `bg2e::geo` mesh with GPU vertex/index buffers. Methods: `setMeshData()`, `build()`, `draw()`, `drawSubmesh()`, `cleanup()`. Provides a static `vertexBufferDescription()` for pipeline creation. |
+| **`MeshGeneric<MeshT>`** | `Mesh.hpp` | Template class that wraps a `bg2e::geo` mesh with GPU vertex/index buffers. Methods: `setMeshData()`, `build()`, `draw()`, `drawSubmesh()`, `cleanup()`. Provides a static `vertexBufferDescription()` for pipeline creation and `rayTracingMeshDescription(submeshIndex)` to build a `RayTracingMesh` from the existing buffers. |
 | **`MeshP`**, **`MeshPN`**, **`MeshPC`**, **`MeshPU`**, **`MeshPNU`**, **`MeshPNC`**, **`MeshPNUC`**, **`MeshPNUT`**, **`MeshPNUUT`**, **`Mesh`** | `Mesh.hpp` | Type aliases for common vertex layouts (P=position, N=normal, C=color, U=texcoord, T=tangent). `Mesh` is an alias for `MeshPNUUT`. |
+
+### Ray tracing
+
+Acceleration structures and ray queries only — no ray tracing pipeline or shader
+binding table. Requires `PhysicalDeviceProperties::rayTracingSupported()`.
+
+| Class | Header | Description |
+|-------|--------|-------------|
+| **`RayTracingMesh`** | `RayTracingMesh.hpp` | Abstract bottom-level acceleration structure (BLAS) for one submesh, built from existing GPU vertex/index buffers. Created via `Device::createRayTracingMesh()`; built with `CommandBuffer::buildRayTracingMesh()`. |
+| **`RayTracingScene`** | `RayTracingScene.hpp` | Abstract top-level acceleration structure (TLAS) holding instances of `RayTracingMesh`. Methods: `clearInstances()`, `addInstance()`, `buildOrUpdate()`. Bound through `ResourceSet::setRayTracingScene()`. |
 
 ### Management utilities
 
@@ -144,7 +154,7 @@ Brief descriptions of every class and type in `bg2e::gpu`:
 | `PixelFormat` | Enum: color formats (`R8G8B8A8_UNORM`, `B8G8R8A8_UNORM`, `R16G16B16A16_SFLOAT`, etc.) and depth formats (`D32_SFLOAT`, `D24_UNORM_S8_UINT`, etc.). |
 | `ImageLayout` | Enum: `Undefined`, `General`, `ColorAttachment`, `DepthAttachment`, `ShaderReadOnly`, `TransferSrc`, `TransferDst`, `Present`. |
 | `ShaderStage` | Enum: `Vertex`, `Fragment`, `Compute`. |
-| `ResourceType` | Enum: `UniformBuffer`, `StorageBuffer`, `SampledImage`, `StorageImage`, `Sampler`. |
+| `ResourceType` | Enum: `UniformBuffer`, `StorageBuffer`, `SampledImage`, `StorageImage`, `Sampler`, `AccelerationStructure`. |
 | `ShaderBinding` | Struct with `vulkan` and `metal` binding indices. |
 | `ResourceBinding` | Struct: set index, `ShaderBinding`, type, stage, count. |
 | `PipelineLayoutDescription` | Struct: vector of `PushConstantRange` + vector of `ResourceBinding`. |
@@ -152,7 +162,9 @@ Brief descriptions of every class and type in `bg2e::gpu`:
 | `SamplerDescription` | Struct: filter modes, address modes, debug name. |
 | `ImageDescription` | Struct: size, format, usage, type, mip levels. |
 | `ImageUsage` | Bitmask: `ColorAttachment`, `DepthStencil`, `Sampled`, `Storage`, `TransferSrc`, `TransferDst`, `Present`. |
-| `BufferUsage` | Bitmask: `Vertex`, `Index`, `Uniform`, `Storage`, `TransferSrc`, `TransferDst`, etc. |
+| `BufferUsage` | Bitmask: `Vertex`, `Index`, `Uniform`, `Storage`, `TransferSrc`, `TransferDst`, `AccelerationStructureBuildInput`, `ShaderDeviceAddress`. |
+| `RayTracingMeshDescription` | Struct: shared vertex/index buffers, stride, position offset, vertex format, submesh index range. |
+| `RayTracingInstance` | Struct: `RayTracingMesh*`, world transform, instance id, mask. |
 | `GraphicsPipelineDescription` | Struct: shaders, layout, topology, color/depth formats, cull mode, front face, vertex buffer descriptions. |
 | `ComputePipelineDescription` | Struct: compute shader, layout. |
 | `VertexAttributeDescription` | Struct: location, binding, semantic, format, offset. |

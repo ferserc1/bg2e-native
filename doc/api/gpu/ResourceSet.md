@@ -15,6 +15,7 @@ public:
     virtual void setSampler      (ShaderBinding binding, gpu::Sampler* sampler) = 0;
     virtual void setUniformBuffer(ShaderBinding binding, gpu::Buffer*  buffer)  = 0;
     virtual void setStorageBuffer(ShaderBinding binding, gpu::Buffer*  buffer)  = 0;
+    virtual void setRayTracingScene(ShaderBinding binding, gpu::RayTracingScene* scene) = 0;
 
     void setSampledCubeMap(ShaderBinding binding, gpu::CubeMap* cubeMap);
 
@@ -133,6 +134,24 @@ given binding slot.
 ### `void setStorageBuffer(ShaderBinding binding, const std::shared_ptr<gpu::Buffer>& buffer)`
 
 Convenience overload that calls `setStorageBuffer(binding, buffer.get())`.
+
+### `virtual void setRayTracingScene(ShaderBinding binding, gpu::RayTracingScene* scene) = 0`
+
+Assigns a [`RayTracingScene`](RayTracingScene.md) (top-level acceleration
+structure) to the given binding slot, declared as
+`ResourceType::AccelerationStructure` in the layout. The scene must have been
+built at least once (`buildOrUpdate`) before the set is used in a draw call.
+
+```cpp
+lightSet->setRayTracingScene({.vulkan = 1, .metal = 2}, rayTracingScene.get());
+lightSet->update();
+```
+
+- **Vulkan:** written as a `VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR`
+  descriptor at `binding.vulkan` (GLSL `accelerationStructureEXT`).
+- **Metal:** bound as an `instance_acceleration_structure` at the
+  `binding.metal` buffer index; the scene's primitive acceleration structures
+  are made resident automatically at bind time.
 
 ### `void setSampledCubeMap(ShaderBinding binding, gpu::CubeMap* cubeMap)`
 
@@ -293,6 +312,12 @@ the `ResourceBinding` entries in the layout:
 - `SampledImage` bindings  → `VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE`
 - `StorageImage` bindings  → `VK_DESCRIPTOR_TYPE_STORAGE_IMAGE`
 - `Sampler` bindings       → `VK_DESCRIPTOR_TYPE_SAMPLER`
+- `AccelerationStructure` bindings → `VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR`
+
+`setRayTracingScene()` writes the descriptor through a
+`VkWriteDescriptorSetAccelerationStructureKHR` chained into the
+`VkWriteDescriptorSet` via `pNext`. As with image/buffer writes, the chained
+struct is resolved in `update()` to keep its pointer stable.
 
 `update()` calls `vkUpdateDescriptorSets` with the pending `VkWriteDescriptorSet`
 entries. Pointer resolution (from `pImageInfo` vs `pBufferInfo`) is deferred
@@ -317,7 +342,10 @@ the entries are replayed via `setVertexBuffer` / `setFragmentBuffer` (or
 
 For UniformBuffer and StorageBuffer, the `metal` field maps to `[[buffer(N)]]`.
 For SampledImage and StorageImage, it maps to `[[texture(N)]]`. For Sampler,
-it maps to `[[sampler(N)]]`.
+it maps to `[[sampler(N)]]`. For AccelerationStructure, it maps to an
+`instance_acceleration_structure` argument in the `[[buffer(N)]]` namespace;
+when bound, the scene's primitive acceleration structures are marked resident
+via `useResource`.
 
 The `set` field of `ResourceBinding` is ignored in Metal — all resources are
 bound by their Metal argument index directly.

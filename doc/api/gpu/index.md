@@ -70,6 +70,12 @@ gpu::Buffer                   (abstract)
 gpu::ResourceSet              (abstract)
   +-- gpu::vk::ResourceSet
   +-- gpu::metal::ResourceSet
+gpu::RayTracingMesh           (abstract)
+  +-- gpu::vk::RayTracingMesh
+  +-- gpu::metal::RayTracingMesh
+gpu::RayTracingScene          (abstract)
+  +-- gpu::vk::RayTracingScene
+  +-- gpu::metal::RayTracingScene
 gpu::MeshGeneric<MeshT>       (template, not polymorphic)
   -- gpu::MeshP  / MeshPN  / MeshPC  / MeshPU
   -- gpu::MeshPNU / MeshPNC / MeshPNUC / MeshPNUT / MeshPNUUT
@@ -95,6 +101,8 @@ Factory::init(BackendType)
             -> device->createSampler(description)
             -> device->createResourceSet(layout, setIndex)
             -> device->createBuffer(debugName)
+            -> device->createRayTracingMesh(description)   // ray tracing (optional)
+            -> device->createRayTracingScene(debugName)    // ray tracing (optional)
             -> device->immediateSubmit(lambda)
 ```
 
@@ -523,6 +531,60 @@ selected device:
 | `bufferDeviceAddress`   | Buffer device address support            |
 
 The `fullSupported()` method returns `true` only when all flags are `true`.
+Use `props->rayTracingSupported()` to gate any acceleration structure code.
+
+## Ray tracing acceleration structures
+
+The layer provides a backend-agnostic block for hardware ray queries (Vulkan
+`VK_KHR_ray_query` / Metal ray tracing intersectors). It covers acceleration
+structures and queries only — there is no ray tracing pipeline or shader binding
+table. Ray queries are issued from raster shaders (validated from the fragment
+shader).
+
+Two resources model the standard two-level hierarchy:
+
+- [`RayTracingMesh`](RayTracingMesh.md) — bottom-level acceleration structure
+  (BLAS) for one submesh, built **from the existing GPU vertex/index buffers**
+  (no duplication). Build a description with
+  [`MeshGeneric<T>::rayTracingMeshDescription(submeshIndex)`](Mesh.md).
+- [`RayTracingScene`](RayTracingScene.md) — top-level acceleration structure
+  (TLAS) holding instances of `RayTracingMesh`, each with a world transform,
+  instance id and mask. Owns reusable instance/scratch/structure buffers
+  (capacity-based reuse).
+
+Typical data flow per renderable submesh:
+
+```cpp
+// 1. Create the BLAS from buffers already uploaded by mesh.build().
+auto rtMesh = device->createRayTracingMesh(mesh.rayTracingMeshDescription(0));
+
+// 2. Build BLASes on the GPU.
+device->immediateSubmit([&](gpu::CommandBuffer* cmd) {
+    cmd->buildRayTracingMesh(rtMesh.get());
+});
+
+// 3. Add instances to the scene and build the TLAS before rendering.
+auto scene = device->createRayTracingScene("scene");
+scene->clearInstances();
+scene->addInstance(rtMesh.get(), worldMatrix, /*instanceId*/ 0, /*mask*/ 0xFF);
+
+cmd->begin();
+scene->buildOrUpdate(cmd.get());   // outside the rendering scope
+
+// 4. Bind the scene into the fragment shader and cast visibility rays.
+set->setRayTracingScene({.vulkan = 1, .metal = 2}, scene.get());
+set->update();
+```
+
+Bind the scene through a `ResourceSet` as a `ResourceType::AccelerationStructure`
+binding (GLSL `accelerationStructureEXT` / Metal
+`instance_acceleration_structure`). See `examples/gpu/11_ray_query_shadows` for a
+complete Lambert-lit scene with a moving point light and ray-traced hard
+shadows.
+
+> **Shaders:** ray-query fragment shaders need SPIR-V 1.4 / Vulkan 1.2. Compile
+> the GLSL with `glslang --target-env vulkan1.2`; the example does this in its
+> own `CMakeLists.txt`.
 
 ## Backend-specific accessors
 
@@ -543,7 +605,9 @@ advanced usage), each backend class exposes non-virtual accessors:
 | `vk::CommandBuffer` | `handle()`              | --                      |
 | `vk::SurfaceFrame`  | `imageIndex()`, `imageAvailable()`, `renderFinished()`| --|
 | `vk::Image`         | `handle()`, `imageView()`| --                     |
-| `vk::Buffer`        | `handle()`              | --                      |
+| `vk::Buffer`        | `handle()`, `deviceAddress()`| --                  |
+| `vk::RayTracingMesh`| `handle()`, `deviceAddress()`| --                  |
+| `vk::RayTracingScene`| `handle()`             | --                      |
 | `metal::PhysicalDevice`| --                    | `metalDevice()`         |
 | `metal::Device`     | --                      | `handle()`              |
 | `metal::WindowSurface`| --                     | `metalLayer()`          |
@@ -551,6 +615,8 @@ advanced usage), each backend class exposes non-virtual accessors:
 | `metal::CommandBuffer`| --                     | `handle()`              |
 | `metal::Image`      | --                      | `handle()`              |
 | `metal::Buffer`     | --                      | `handle()`              |
+| `metal::RayTracingMesh` | --                  | `handle()`              |
+| `metal::RayTracingScene`| --                  | `handle()`, `referencedPrimitives()` |
 
 To use these, cast the abstract pointer to the concrete type:
 

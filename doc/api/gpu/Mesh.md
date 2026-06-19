@@ -22,6 +22,8 @@ public:
 
     static gpu::VertexBufferDescription vertexBufferDescription();
 
+    gpu::RayTracingMeshDescription rayTracingMeshDescription(uint32_t submeshIndex) const;
+
     gpu::Buffer*       vertexBuffer();
     const gpu::Buffer* vertexBuffer() const;
     gpu::Buffer*       indexBuffer();
@@ -102,6 +104,22 @@ when creating a pipeline that will render this mesh type.
 
 ```cpp
 pipelineDesc.addVertexBufferDescription(gpu::MeshPU::vertexBufferDescription());
+```
+
+### `gpu::RayTracingMeshDescription rayTracingMeshDescription(uint32_t submeshIndex) const`
+
+Builds a [`RayTracingMeshDescription`](RayTracingMesh.md) for one submesh,
+**reusing** the vertex and index buffers already created by `build()`. The
+vertex stride and position offset are resolved from this mesh type's vertex
+layout. Throws `std::runtime_error` if `submeshIndex` is out of range.
+
+Use it to create a [`RayTracingMesh`](RayTracingMesh.md) per submesh without
+duplicating any GPU buffer:
+
+```cpp
+for (uint32_t s = 0; s < mesh.submeshCount(); ++s) {
+    auto rtMesh = device->createRayTracingMesh(mesh.rayTracingMeshDescription(s));
+}
 ```
 
 ### `gpu::Buffer* vertexBuffer()` / `gpu::Buffer* indexBuffer()`

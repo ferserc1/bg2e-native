@@ -218,8 +218,9 @@ public:
     void updateUniformBuffer(const void* data, uint64_t byteSize) override;
     void updateStorageBuffer(const void* data, uint64_t byteSize) override;
 
-    VkBuffer handle() const;
-    uint64_t byteSize() const;
+    VkBuffer        handle() const;
+    VkDeviceAddress deviceAddress() const;
+    uint64_t        byteSize() const;
 };
 ```
 
@@ -227,7 +228,11 @@ Vulkan buffer backed by a VMA allocation.
 
 - **Vertex / index buffers** use a `VMA_MEMORY_USAGE_CPU_TO_GPU` staging
   buffer, copy the data into it, then `vkCmdCopyBuffer` to a device-local
-  buffer via `Device::immediateSubmit`.
+  buffer via `Device::immediateSubmit`. They are always created with
+  `VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT`; on a ray-tracing-enabled device
+  they additionally receive
+  `VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR`, so the
+  same buffers can be reused as [`RayTracingMesh`](RayTracingMesh.md) geometry.
 - **Uniform / storage buffers** use
   `VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |`
   `VMA_ALLOCATION_CREATE_MAPPED_BIT` so that `updateUniformBuffer` /
@@ -237,6 +242,12 @@ Vulkan buffer backed by a VMA allocation.
 ### `VkBuffer handle() const`
 
 Returns the raw `VkBuffer` handle of the device-local buffer.
+
+### `VkDeviceAddress deviceAddress() const`
+
+Returns the buffer's GPU device address (via `vkGetBufferDeviceAddress`), or `0`
+if the buffer is not allocated. Used as acceleration structure build input for
+[`RayTracingMesh`](RayTracingMesh.md).
 
 ---
 

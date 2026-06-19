@@ -55,6 +55,10 @@ public:
     virtual void pushConstants(ShaderStage stage, uint32_t offset,
                                uint32_t size, const void* data);
 
+    // Ray tracing acceleration structure builds
+    virtual void buildRayTracingMesh(gpu::RayTracingMesh* mesh);
+    virtual void buildRayTracingScene(gpu::RayTracingScene* scene);
+
     virtual bool isValid() const = 0;
 };
 ```
@@ -285,6 +289,47 @@ In Metal, the `offset` is ignored. The push constant buffer index is
 determined by the stage: `buffer(1)` for vertex shaders, `buffer(0)` for
 fragment and compute shaders. In Vulkan, at most one push constant range per
 shader stage is allowed.
+
+---
+
+## Ray tracing acceleration structure builds
+
+Both Vulkan and Metal build acceleration structures through GPU commands, so the
+builds are recorded into a command buffer. They must be called **outside** an
+active rendering scope (before `beginRendering()`).
+
+### `virtual void buildRayTracingMesh(gpu::RayTracingMesh* mesh)`
+
+Records the build of a bottom-level acceleration structure
+([`RayTracingMesh`](RayTracingMesh.md)). Typically recorded once per mesh inside
+a `Device::immediateSubmit`.
+
+| Parameter | Type                   | Description                          |
+|-----------|------------------------|--------------------------------------|
+| `mesh`    | `gpu::RayTracingMesh*` | The bottom-level structure to build. |
+
+### `virtual void buildRayTracingScene(gpu::RayTracingScene* scene)`
+
+Records the build/update of a top-level acceleration structure
+([`RayTracingScene`](RayTracingScene.md)) from its current instance list. This
+is what `RayTracingScene::buildOrUpdate(cmd)` calls internally.
+
+| Parameter | Type                    | Description                          |
+|-----------|-------------------------|--------------------------------------|
+| `scene`   | `gpu::RayTracingScene*` | The top-level structure to build.    |
+
+```cpp
+// Build BLASes once.
+device->immediateSubmit([&](gpu::CommandBuffer* cmd) {
+    for (auto& rtMesh : rtMeshes) cmd->buildRayTracingMesh(rtMesh.get());
+});
+
+// Build/update the TLAS each frame, before rendering.
+cmd->begin();
+cmd->buildRayTracingScene(scene.get());   // or scene->buildOrUpdate(cmd)
+cmd->beginRendering(frame.get());
+// ...
+```
 
 ---
 

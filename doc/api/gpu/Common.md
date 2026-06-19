@@ -193,13 +193,19 @@ The type of resource bound at a descriptor slot.
 
 ```cpp
 enum class ResourceType {
-    UniformBuffer,  // VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER / Metal [[buffer(n)]]
-    StorageBuffer,  // VK_DESCRIPTOR_TYPE_STORAGE_BUFFER / Metal [[buffer(n)]]
-    SampledImage,   // VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE  / Metal [[texture(n)]]
-    StorageImage,   // VK_DESCRIPTOR_TYPE_STORAGE_IMAGE  / Metal [[texture(n)]] (read-write)
-    Sampler         // VK_DESCRIPTOR_TYPE_SAMPLER        / Metal [[sampler(n)]]
+    UniformBuffer,         // VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER / Metal [[buffer(n)]]
+    StorageBuffer,         // VK_DESCRIPTOR_TYPE_STORAGE_BUFFER / Metal [[buffer(n)]]
+    SampledImage,          // VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE  / Metal [[texture(n)]]
+    StorageImage,          // VK_DESCRIPTOR_TYPE_STORAGE_IMAGE  / Metal [[texture(n)]] (read-write)
+    Sampler,               // VK_DESCRIPTOR_TYPE_SAMPLER        / Metal [[sampler(n)]]
+    AccelerationStructure  // VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR / Metal instance_acceleration_structure [[buffer(n)]]
 };
 ```
+
+`AccelerationStructure` binds a [`RayTracingScene`](RayTracingScene.md) for ray
+queries (see `ResourceSet::setRayTracingScene`). On Metal it occupies the
+`[[buffer(N)]]` namespace, so it follows the same reserved-slot rules as
+UniformBuffer/StorageBuffer (`metal >= 1` in fragment/compute stages).
 
 ### `ShaderBinding`
 
@@ -340,6 +346,12 @@ enum class BufferUsage : uint32_t {
     ShaderDeviceAddress             = 1 << 7
 };
 ```
+
+`AccelerationStructureBuildInput` and `ShaderDeviceAddress` mark buffers that can
+feed a ray tracing acceleration structure build. On a ray-tracing-enabled
+device, vertex and index buffers automatically receive these usages so they can
+be reused directly as [`RayTracingMesh`](RayTracingMesh.md) geometry — no
+duplicate buffers are needed. See [Buffer](Buffer.md).
 
 ### `VertexSemantic`
 
