@@ -17,6 +17,7 @@
  */
 
 #include <bg2e/gpu/CleanupManager.hpp>
+#include <algorithm>
 
 namespace bg2e {
 namespace gpu {

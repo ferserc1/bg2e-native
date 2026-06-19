@@ -288,13 +288,15 @@ int main(int argc, char** argv)
                 // Schedule deferred destruction of current GPU mesh buffers.
                 auto oldMesh = std::move(gpuMesh);
 
-                cleanup.defer([oldMesh = std::move(oldMesh)]() mutable {
+                cleanup.defer([oldMesh = std::move(oldMesh), useSphere]() mutable {
+                    bg2e_log_debug << "Removing mesh " << (useSphere ? "sphere" : "cube") << bg2e_log_end;
                     oldMesh.cleanup();
                 });
 
                 useSphere = !useSphere;
             }
 
+            bg2e_log_debug << "Creating new mesh " << (useSphere ? "sphere" : "cube") << bg2e_log_end;
             createGeometry(useSphere);
             lastSwitchTime = currentTime;
             firstFrame = false;
