@@ -79,6 +79,44 @@ public:
 
     static gpu::VertexBufferDescription vertexBufferDescription();
 
+    // Build a RayTracingMeshDescription for one submesh, reusing the vertex and
+    // index buffers already created by build(). The vertex stride and position
+    // offset are resolved from the vertex layout of this mesh type.
+    gpu::RayTracingMeshDescription rayTracingMeshDescription(uint32_t submeshIndex) const
+    {
+        if (submeshIndex >= submeshCount())
+        {
+            throw std::runtime_error("gpu::MeshGeneric::rayTracingMeshDescription: submesh index out of range");
+        }
+
+        const auto vbDesc = vertexBufferDescription();
+
+        uint32_t positionOffset = 0;
+        gpu::Format positionFormat = gpu::Format::R32G32B32_SFLOAT;
+        for (const auto& attr : vbDesc.attributes)
+        {
+            if (attr.semantic == gpu::VertexSemantic::Position)
+            {
+                positionOffset = attr.offset;
+                positionFormat = attr.format;
+                break;
+            }
+        }
+
+        const auto& submesh = _meshData.submeshes[submeshIndex];
+
+        gpu::RayTracingMeshDescription desc;
+        desc.vertexBuffer   = _vertexBuffer.get();
+        desc.indexBuffer    = _indexBuffer.get();
+        desc.vertexCount    = static_cast<uint32_t>(_meshData.vertices.size());
+        desc.vertexStride   = vbDesc.stride;
+        desc.positionOffset = positionOffset;
+        desc.vertexFormat   = positionFormat;
+        desc.firstIndex     = submesh.firstIndex;
+        desc.indexCount     = submesh.indexCount;
+        return desc;
+    }
+
     gpu::Buffer*       vertexBuffer()       { return _vertexBuffer.get(); }
     const gpu::Buffer* vertexBuffer() const { return _vertexBuffer.get(); }
 

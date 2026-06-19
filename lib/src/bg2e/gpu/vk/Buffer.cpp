@@ -55,6 +55,13 @@ void Buffer::createVertexBuffer(const void* data, uint64_t byteSize)
         VK_BUFFER_USAGE_STORAGE_BUFFER_BIT    |
         VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
 
+    // When ray tracing is available, also allow this buffer to be used as
+    // acceleration structure build geometry input (RayTracingMesh).
+    if (_device->rayTracingEnabled())
+    {
+        vkUsage |= VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
+    }
+
     uploadWithStaging(data, byteSize, vkUsage, BufferUsage::Vertex);
 }
 
@@ -68,7 +75,24 @@ void Buffer::createIndexBuffer(const std::vector<uint32_t>& indices)
         VK_BUFFER_USAGE_STORAGE_BUFFER_BIT    |
         VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
 
+    if (_device->rayTracingEnabled())
+    {
+        vkUsage |= VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
+    }
+
     uploadWithStaging(indices.data(), byteSize, vkUsage, BufferUsage::Index);
+}
+
+VkDeviceAddress Buffer::deviceAddress() const
+{
+    if (_buffer == VK_NULL_HANDLE)
+    {
+        return 0;
+    }
+    VkBufferDeviceAddressInfo info{};
+    info.sType  = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;
+    info.buffer = _buffer;
+    return vkGetBufferDeviceAddress(_device->handle(), &info);
 }
 
 void Buffer::createUniformBuffer(const void* data, uint64_t byteSize)

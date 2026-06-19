@@ -46,6 +46,7 @@ static VkDescriptorType toVkDescriptorType(ResourceType type)
         case ResourceType::SampledImage:  return VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
         case ResourceType::StorageImage:  return VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
         case ResourceType::Sampler:       return VK_DESCRIPTOR_TYPE_SAMPLER;
+        case ResourceType::AccelerationStructure: return VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
     }
     return VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
 }

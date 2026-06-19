@@ -45,3 +45,5 @@
 #include <bg2e/gpu/GraphicsPipeline.hpp>
 #include <bg2e/gpu/ComputePipeline.hpp>
 #include <bg2e/gpu/Mesh.hpp>
+#include <bg2e/gpu/RayTracingMesh.hpp>
+#include <bg2e/gpu/RayTracingScene.hpp>

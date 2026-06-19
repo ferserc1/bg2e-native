@@ -25,6 +25,8 @@
 #include <bg2e/gpu/vk/ComputePipeline.hpp>
 #include <bg2e/gpu/vk/PipelineLayout.hpp>
 #include <bg2e/gpu/vk/ResourceSet.hpp>
+#include <bg2e/gpu/vk/RayTracingMesh.hpp>
+#include <bg2e/gpu/vk/RayTracingScene.hpp>
 #include <bg2e/gpu/vk/Info.hpp>
 #include <bg2e/gpu/vk/extensions.hpp>
 #include <bg2e/gpu/vk/common.hpp>
@@ -593,6 +595,26 @@ void CommandBuffer::blitImage(gpu::Image* src, gpu::Image* dst)
         1, &region,
         VK_FILTER_LINEAR
     );
+}
+
+void CommandBuffer::buildRayTracingMesh(gpu::RayTracingMesh* mesh)
+{
+    auto* vkMesh = dynamic_cast<vk::RayTracingMesh*>(mesh);
+    if (!vkMesh)
+    {
+        throw std::runtime_error("vk::CommandBuffer::buildRayTracingMesh: not a vk::RayTracingMesh");
+    }
+    vkMesh->build(_cmd);
+}
+
+void CommandBuffer::buildRayTracingScene(gpu::RayTracingScene* scene)
+{
+    auto* vkScene = dynamic_cast<vk::RayTracingScene*>(scene);
+    if (!vkScene)
+    {
+        throw std::runtime_error("vk::CommandBuffer::buildRayTracingScene: not a vk::RayTracingScene");
+    }
+    vkScene->build(_cmd);
 }
 
 }

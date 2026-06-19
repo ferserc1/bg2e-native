@@ -190,11 +190,13 @@ struct PushConstantRange {
 // --- Resource binding types ---------------------------------------------------
 
 enum class ResourceType {
-    UniformBuffer,   // VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER / Metal [[buffer(N)]]
-    StorageBuffer,   // VK_DESCRIPTOR_TYPE_STORAGE_BUFFER / Metal [[buffer(N)]]
-    SampledImage,    // VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE  / Metal [[texture(N)]]
-    StorageImage,    // VK_DESCRIPTOR_TYPE_STORAGE_IMAGE  / Metal [[texture(N)]] (read-write)
-    Sampler          // VK_DESCRIPTOR_TYPE_SAMPLER        / Metal [[sampler(N)]]
+    UniformBuffer,         // VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER / Metal [[buffer(N)]]
+    StorageBuffer,         // VK_DESCRIPTOR_TYPE_STORAGE_BUFFER / Metal [[buffer(N)]]
+    SampledImage,          // VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE  / Metal [[texture(N)]]
+    StorageImage,          // VK_DESCRIPTOR_TYPE_STORAGE_IMAGE  / Metal [[texture(N)]] (read-write)
+    Sampler,               // VK_DESCRIPTOR_TYPE_SAMPLER        / Metal [[sampler(N)]]
+    AccelerationStructure  // VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR / Metal [[buffer(N)]]
+                           // (instance_acceleration_structure argument)
 };
 
 // Backend-specific binding indices.
@@ -330,7 +332,8 @@ inline void validateMetalBufferBindings(const std::vector<ResourceBinding>& bind
     for (const auto& rb : bindings)
     {
         bool isBufferType = (rb.type == ResourceType::UniformBuffer ||
-                             rb.type == ResourceType::StorageBuffer);
+                             rb.type == ResourceType::StorageBuffer ||
+                             rb.type == ResourceType::AccelerationStructure);
         if (!isBufferType) continue;
 
         switch (rb.stage)

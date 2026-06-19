@@ -24,6 +24,7 @@
 #include <bg2e/gpu/CubeMap.hpp>
 #include <bg2e/gpu/GraphicsPipeline.hpp>
 #include <bg2e/gpu/ComputePipeline.hpp>
+#include <bg2e/gpu/RayTracingMesh.hpp>
 #include <functional>
 #include <memory>
 #include <stdexcept>
@@ -46,6 +47,8 @@ class ShaderModule;
 class PipelineLayout;
 class GraphicsPipeline;
 class ComputePipeline;
+class RayTracingMesh;
+class RayTracingScene;
 
 class BG2E_API Device {
 public:
@@ -109,6 +112,21 @@ public:
     virtual void immediateSubmit(std::function<void(CommandBuffer* cmd)>&& function)
     {
         throw std::runtime_error("immediateSubmit not implemented");
+    }
+
+    // --- Ray tracing acceleration structures ---------------------------------
+    // RayTracingMesh is created from existing GPU vertex/index buffers (see
+    // RayTracingMeshDescription). RayTracingScene owns the scene-level
+    // acceleration structure and the reusable instance/scratch buffers.
+
+    virtual std::shared_ptr<RayTracingMesh> createRayTracingMesh(const RayTracingMeshDescription& description)
+    {
+        throw std::runtime_error("createRayTracingMesh not implemented");
+    }
+
+    virtual std::shared_ptr<RayTracingScene> createRayTracingScene(const std::string& debugName = {})
+    {
+        throw std::runtime_error("createRayTracingScene not implemented");
     }
 };
 

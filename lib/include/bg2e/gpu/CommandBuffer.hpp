@@ -32,6 +32,8 @@ class ResourceSet;
 class SurfaceFrame;
 class GraphicsPipeline;
 class ComputePipeline;
+class RayTracingMesh;
+class RayTracingScene;
 
 class BG2E_API CommandBuffer {
 public:
@@ -124,6 +126,21 @@ public:
     virtual void blitImage(gpu::Image* src, gpu::Image* dst)
     {
         throw std::runtime_error("blitImage not implemented");
+    }
+
+    // --- Ray tracing acceleration structure builds ---------------------------
+    // Both Vulkan and Metal build acceleration structures through GPU commands,
+    // so these are recorded into a command buffer. They must be called outside
+    // an active rendering scope.
+
+    virtual void buildRayTracingMesh(gpu::RayTracingMesh* mesh)
+    {
+        throw std::runtime_error("buildRayTracingMesh not implemented");
+    }
+
+    virtual void buildRayTracingScene(gpu::RayTracingScene* scene)
+    {
+        throw std::runtime_error("buildRayTracingScene not implemented");
     }
 
     virtual bool isValid() const = 0;

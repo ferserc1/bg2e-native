@@ -62,6 +62,8 @@ public:
     void copyImage(gpu::Image* src, gpu::Image* dst) override;
     // TODO: function not fully tested
     void blitImage(gpu::Image* src, gpu::Image* dst) override;
+    void buildRayTracingMesh(gpu::RayTracingMesh* mesh) override;
+    void buildRayTracingScene(gpu::RayTracingScene* scene) override;
     bool isValid() const override { return _cmd != VK_NULL_HANDLE; }
 
     VkCommandBuffer handle() const { return _cmd; }

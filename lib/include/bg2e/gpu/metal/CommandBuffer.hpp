@@ -71,6 +71,8 @@ public:
     void copyImage(gpu::Image* src, gpu::Image* dst) override;
     // TODO: function not fully tested
     void blitImage(gpu::Image* src, gpu::Image* dst) override;
+    void buildRayTracingMesh(gpu::RayTracingMesh* mesh) override;
+    void buildRayTracingScene(gpu::RayTracingScene* scene) override;
     bool isValid() const override;
 
 #if BG2E_IS_MAC

@@ -28,6 +28,7 @@ namespace gpu {
 namespace metal {
 
 class PipelineLayout;
+class RayTracingScene;
 
 struct ResourceEntry {
     uint32_t             index = 0;    // Metal arg index (from PipelineLayout)
@@ -36,6 +37,7 @@ struct ResourceEntry {
     TextureHandle        texture = nullptr;    // for Sampled/Storage image
     SampleStateHandle    sampler = nullptr;    // for Sampler
     BufferHandle         buffer  = nullptr;    // for Uniform/Storage buffer
+    RayTracingScene*     rtScene = nullptr;    // for AccelerationStructure
 };
 
 class BG2E_API ResourceSet : public gpu::ResourceSet {
@@ -48,6 +50,7 @@ public:
     void setSampler(ShaderBinding binding, gpu::Sampler* sampler) override;
     void setUniformBuffer(ShaderBinding binding, gpu::Buffer* buffer) override;
     void setStorageBuffer(ShaderBinding binding, gpu::Buffer* buffer) override;
+    void setRayTracingScene(ShaderBinding binding, gpu::RayTracingScene* scene) override;
 
     void update() override;
 

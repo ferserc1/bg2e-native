@@ -21,6 +21,7 @@
 #include <bg2e/gpu/metal/Image.hpp>
 #include <bg2e/gpu/metal/Sampler.hpp>
 #include <bg2e/gpu/metal/Buffer.hpp>
+#include <bg2e/gpu/metal/RayTracingScene.hpp>
 
 #include <stdexcept>
 
@@ -159,6 +160,42 @@ void ResourceSet::setStorageBuffer(ShaderBinding binding, gpu::Buffer* buffer)
     setBufferBinding(binding, buffer, ResourceType::StorageBuffer, "setStorageBuffer");
 }
 
+void ResourceSet::setRayTracingScene(ShaderBinding binding, gpu::RayTracingScene* scene)
+{
+    auto* metalScene = dynamic_cast<metal::RayTracingScene*>(scene);
+    if (!metalScene)
+    {
+        throw std::runtime_error("metal::ResourceSet::setRayTracingScene: invalid ray tracing scene");
+    }
+
+    const auto& bindings = _layout->resourceBindings();
+    for (const auto& rb : bindings)
+    {
+        if (rb.set == _setIndex && rb.binding.metal == binding.metal &&
+            rb.type == ResourceType::AccelerationStructure)
+        {
+            ResourceEntry entry;
+            entry.index   = _layout->metalBufferIndex(rb);
+            entry.type    = rb.type;
+            entry.stage   = rb.stage;
+            entry.rtScene = metalScene;
+
+            for (auto& e : _entries)
+            {
+                if (e.index == entry.index && e.type == ResourceType::AccelerationStructure)
+                {
+                    e = entry;
+                    return;
+                }
+            }
+            _entries.push_back(entry);
+            return;
+        }
+    }
+
+    throw std::runtime_error("metal::ResourceSet::setRayTracingScene: no matching binding in layout");
+}
+
 void ResourceSet::setBufferBinding(ShaderBinding binding, gpu::Buffer* buffer,
                                    ResourceType type, const char* debugTag)
 {
@@ -225,6 +262,7 @@ void ResourceSet::setSampledImage(ShaderBinding, gpu::Image*) {}
 void ResourceSet::setSampler(ShaderBinding, gpu::Sampler*) {}
 void ResourceSet::setUniformBuffer(ShaderBinding, gpu::Buffer*) {}
 void ResourceSet::setStorageBuffer(ShaderBinding, gpu::Buffer*) {}
+void ResourceSet::setRayTracingScene(ShaderBinding, gpu::RayTracingScene*) {}
 void ResourceSet::setBufferBinding(ShaderBinding, gpu::Buffer*, ResourceType, const char*) {}
 void ResourceSet::update() {}
 bool ResourceSet::isValid() const { return false; }

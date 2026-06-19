@@ -28,6 +28,8 @@
 #include <bg2e/gpu/vk/Sampler.hpp>
 #include <bg2e/gpu/vk/ResourceSet.hpp>
 #include <bg2e/gpu/vk/CommandBuffer.hpp>
+#include <bg2e/gpu/vk/RayTracingMesh.hpp>
+#include <bg2e/gpu/vk/RayTracingScene.hpp>
 #include <bg2e/gpu/vk/Info.hpp>
 #include <bg2e/gpu/vk/extensions.hpp>
 #include <bg2e/gpu/CubeMap.hpp>
@@ -137,8 +139,21 @@ void Device::create(gpu::Instance* instance, gpu::PhysicalDevice* physicalDevice
         rayQueryFeatures.rayQuery &&
         rayTracingPipelineFeatures.rayTracingPipeline;
 
+    _rayTracingEnabled = enableRT;
     if (enableRT)
     {
+        // Query the scratch buffer offset alignment for acceleration builds.
+        VkPhysicalDeviceAccelerationStructurePropertiesKHR asProps{};
+        asProps.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_PROPERTIES_KHR;
+        VkPhysicalDeviceProperties2 props2{};
+        props2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+        props2.pNext = &asProps;
+        vkGetPhysicalDeviceProperties2(vkPhysDevice->handle(), &props2);
+        if (asProps.minAccelerationStructureScratchOffsetAlignment > 0)
+        {
+            _asScratchAlignment = asProps.minAccelerationStructureScratchOffsetAlignment;
+        }
+
         const std::vector<const char*> optionalRTExtensions = {
             VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME,
             VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME,
@@ -422,6 +437,24 @@ std::shared_ptr<gpu::CubeMap> Device::createCubeMap(const gpu::CubeMapDescriptio
 std::shared_ptr<gpu::Buffer> Device::createBuffer(const std::string& debugName)
 {
     return std::make_shared<vk::Buffer>(this, debugName);
+}
+
+std::shared_ptr<gpu::RayTracingMesh> Device::createRayTracingMesh(const RayTracingMeshDescription& description)
+{
+    if (!_rayTracingEnabled)
+    {
+        throw std::runtime_error("vk::Device::createRayTracingMesh: ray tracing is not supported by this device");
+    }
+    return std::make_shared<vk::RayTracingMesh>(this, description);
+}
+
+std::shared_ptr<gpu::RayTracingScene> Device::createRayTracingScene(const std::string& debugName)
+{
+    if (!_rayTracingEnabled)
+    {
+        throw std::runtime_error("vk::Device::createRayTracingScene: ray tracing is not supported by this device");
+    }
+    return std::make_shared<vk::RayTracingScene>(this, debugName);
 }
 
 void Device::immediateSubmit(std::function<void(gpu::CommandBuffer*)>&& function)

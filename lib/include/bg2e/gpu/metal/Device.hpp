@@ -50,6 +50,9 @@ public:
     std::shared_ptr<gpu::CubeMap> createCubeMap(const gpu::CubeMapDescription& description) override;
     std::shared_ptr<gpu::Buffer> createBuffer(const std::string& debugName = {}) override;
 
+    std::shared_ptr<gpu::RayTracingMesh> createRayTracingMesh(const RayTracingMeshDescription& description) override;
+    std::shared_ptr<gpu::RayTracingScene> createRayTracingScene(const std::string& debugName = {}) override;
+
     void immediateSubmit(std::function<void(gpu::CommandBuffer* cmd)>&& function) override;
 
     DeviceHandle handle() const { return _device; }

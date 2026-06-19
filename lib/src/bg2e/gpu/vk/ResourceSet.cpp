@@ -21,6 +21,7 @@
 #include <bg2e/gpu/vk/Image.hpp>
 #include <bg2e/gpu/vk/Sampler.hpp>
 #include <bg2e/gpu/vk/Buffer.hpp>
+#include <bg2e/gpu/vk/RayTracingScene.hpp>
 #include <bg2e/gpu/vk/extensions.hpp>
 #include <bg2e/base/Log.hpp>
 
@@ -48,6 +49,7 @@ ResourceSet::ResourceSet(gpu::Device* gpuDevice, VkDevice device, const vk::Pipe
     uint32_t samplerCount = 0;
     uint32_t uniformBufferCount = 0;
     uint32_t storageBufferCount = 0;
+    uint32_t accelerationStructureCount = 0;
 
     for (const auto& rb : desc.resourceBindings)
     {
@@ -59,6 +61,7 @@ ResourceSet::ResourceSet(gpu::Device* gpuDevice, VkDevice device, const vk::Pipe
             case ResourceType::Sampler:       samplerCount += rb.count; break;
             case ResourceType::UniformBuffer: uniformBufferCount += rb.count; break;
             case ResourceType::StorageBuffer: storageBufferCount += rb.count; break;
+            case ResourceType::AccelerationStructure: accelerationStructureCount += rb.count; break;
             default: break;
         }
     }
@@ -74,6 +77,8 @@ ResourceSet::ResourceSet(gpu::Device* gpuDevice, VkDevice device, const vk::Pipe
         poolSizes.push_back({ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, uniformBufferCount });
     if (storageBufferCount > 0)
         poolSizes.push_back({ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, storageBufferCount });
+    if (accelerationStructureCount > 0)
+        poolSizes.push_back({ VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, accelerationStructureCount });
 
     VkDescriptorPoolCreateInfo poolInfo{};
     poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
@@ -284,6 +289,33 @@ void ResourceSet::setStorageBuffer(ShaderBinding binding, gpu::Buffer* buffer)
     _writeInfoIndices.push_back(infoIndex);
 }
 
+void ResourceSet::setRayTracingScene(ShaderBinding binding, gpu::RayTracingScene* scene)
+{
+    auto* vkScene = dynamic_cast<vk::RayTracingScene*>(scene);
+    if (!vkScene)
+    {
+        throw std::runtime_error("vk::ResourceSet::setRayTracingScene: invalid ray tracing scene");
+    }
+
+    const size_t infoIndex = _asHandles.size();
+    _asHandles.push_back(vkScene->handle());
+
+    VkWriteDescriptorSet write{};
+    write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    write.dstSet = _descriptorSet;
+    write.dstBinding = binding.vulkan;
+    write.dstArrayElement = 0;
+    write.descriptorType = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
+    write.descriptorCount = 1;
+    // pNext (acceleration structure write) is resolved in update() to avoid
+    // dangling pointers caused by vector reallocation.
+    write.pNext = nullptr;
+
+    _pendingWrites.push_back(write);
+    _writeInfoKinds.push_back(WriteInfoKind::AccelerationStructure);
+    _writeInfoIndices.push_back(infoIndex);
+}
+
 void ResourceSet::update()
 {
     if (_pendingWrites.empty())
@@ -295,15 +327,32 @@ void ResourceSet::update()
     // so bind each write to its descriptor info. Resolving the pointers here
     // (instead of in the set* methods) avoids dangling pointers caused by vector
     // reallocation while bindings were being added.
+    //
+    // One VkWriteDescriptorSetAccelerationStructureKHR is needed per
+    // acceleration structure write; allocate them up front so their addresses
+    // remain stable for the vkUpdateDescriptorSets call below.
+    _asInfos.assign(_asHandles.size(), VkWriteDescriptorSetAccelerationStructureKHR{});
+
     for (size_t i = 0; i < _pendingWrites.size(); ++i)
     {
-        if (_writeInfoKinds[i] == WriteInfoKind::Image)
+        switch (_writeInfoKinds[i])
         {
-            _pendingWrites[i].pImageInfo = &_imageInfos[_writeInfoIndices[i]];
-        }
-        else
-        {
-            _pendingWrites[i].pBufferInfo = &_bufferInfos[_writeInfoIndices[i]];
+            case WriteInfoKind::Image:
+                _pendingWrites[i].pImageInfo = &_imageInfos[_writeInfoIndices[i]];
+                break;
+            case WriteInfoKind::Buffer:
+                _pendingWrites[i].pBufferInfo = &_bufferInfos[_writeInfoIndices[i]];
+                break;
+            case WriteInfoKind::AccelerationStructure:
+            {
+                const size_t idx = _writeInfoIndices[i];
+                VkWriteDescriptorSetAccelerationStructureKHR& asInfo = _asInfos[idx];
+                asInfo.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR;
+                asInfo.accelerationStructureCount = 1;
+                asInfo.pAccelerationStructures    = &_asHandles[idx];
+                _pendingWrites[i].pNext = &asInfo;
+                break;
+            }
         }
     }
 
@@ -313,6 +362,8 @@ void ResourceSet::update()
     _pendingWrites.clear();
     _imageInfos.clear();
     _bufferInfos.clear();
+    _asHandles.clear();
+    _asInfos.clear();
     _writeInfoKinds.clear();
     _writeInfoIndices.clear();
 }
@@ -327,6 +378,8 @@ void ResourceSet::cleanup()
     _pendingWrites.clear();
     _imageInfos.clear();
     _bufferInfos.clear();
+    _asHandles.clear();
+    _asInfos.clear();
     _writeInfoKinds.clear();
     _writeInfoIndices.clear();
 

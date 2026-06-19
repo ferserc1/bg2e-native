@@ -32,6 +32,7 @@ class Image;
 class CubeMap;
 class Sampler;
 class Buffer;
+class RayTracingScene;
 
 /**
  * @brief ResourceSet binds shader resources (textures, samplers, uniform/storage
@@ -163,6 +164,7 @@ public:
     virtual void setSampler(ShaderBinding binding, gpu::Sampler* sampler)  = 0;
     virtual void setUniformBuffer(ShaderBinding binding, gpu::Buffer* buffer) = 0;
     virtual void setStorageBuffer(ShaderBinding binding, gpu::Buffer* buffer) = 0;
+    virtual void setRayTracingScene(ShaderBinding binding, gpu::RayTracingScene* scene) = 0;
 
     void setSampledCubeMap(ShaderBinding binding, gpu::CubeMap* cubeMap);
 

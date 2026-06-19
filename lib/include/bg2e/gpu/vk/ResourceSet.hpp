@@ -39,6 +39,7 @@ public:
     void setSampler(ShaderBinding binding, gpu::Sampler* sampler) override;
     void setUniformBuffer(ShaderBinding binding, gpu::Buffer* buffer) override;
     void setStorageBuffer(ShaderBinding binding, gpu::Buffer* buffer) override;
+    void setRayTracingScene(ShaderBinding binding, gpu::RayTracingScene* scene) override;
 
     void update() override;
 
@@ -59,10 +60,12 @@ private:
     // info vectors may reallocate and invalidate pointers to earlier elements;
     // instead each write records which info vector it targets and the index, and
     // the pointers are resolved in update() once the vectors stop growing.
-    enum class WriteInfoKind { Image, Buffer };
+    enum class WriteInfoKind { Image, Buffer, AccelerationStructure };
 
     std::vector<VkDescriptorImageInfo>  _imageInfos;
     std::vector<VkDescriptorBufferInfo> _bufferInfos;
+    std::vector<VkAccelerationStructureKHR> _asHandles;
+    std::vector<VkWriteDescriptorSetAccelerationStructureKHR> _asInfos;
     std::vector<VkWriteDescriptorSet>   _pendingWrites;
     std::vector<WriteInfoKind>          _writeInfoKinds;
     std::vector<size_t>                 _writeInfoIndices;

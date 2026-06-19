@@ -22,6 +22,8 @@
 #include <bg2e/gpu/metal/ComputePipeline.hpp>
 #include <bg2e/gpu/metal/PipelineLayout.hpp>
 #include <bg2e/gpu/metal/ResourceSet.hpp>
+#include <bg2e/gpu/metal/RayTracingMesh.hpp>
+#include <bg2e/gpu/metal/RayTracingScene.hpp>
 #include <bg2e/gpu/metal/Image.hpp>
 #include <bg2e/gpu/metal/SurfaceFrame.hpp>
 #include <bg2e/gpu/CubeMap.hpp>
@@ -550,6 +552,26 @@ void CommandBuffer::bindResourceSet(gpu::GraphicsPipeline* /*pipeline*/, uint32_
                     break;
             }
         }
+        if (entry.rtScene)
+        {
+            // The primitive acceleration structures referenced by the instance
+            // acceleration structure must be made resident before use.
+            for (auto* prim : entry.rtScene->referencedPrimitives())
+            {
+                _encoder->useResource(prim, MTL::ResourceUsageRead);
+            }
+            switch (entry.stage)
+            {
+                case ShaderStage::Vertex:
+                    _encoder->setVertexAccelerationStructure(entry.rtScene->handle(), entry.index);
+                    break;
+                case ShaderStage::Fragment:
+                    _encoder->setFragmentAccelerationStructure(entry.rtScene->handle(), entry.index);
+                    break;
+                default:
+                    break;
+            }
+        }
     }
 }
 
@@ -579,6 +601,14 @@ void CommandBuffer::bindResourceSet(gpu::ComputePipeline* /*pipeline*/, uint32_t
         if (entry.buffer)
         {
             _computeEncoder->setBuffer(entry.buffer, 0, entry.index);
+        }
+        if (entry.rtScene)
+        {
+            for (auto* prim : entry.rtScene->referencedPrimitives())
+            {
+                _computeEncoder->useResource(prim, MTL::ResourceUsageRead);
+            }
+            _computeEncoder->setAccelerationStructure(entry.rtScene->handle(), entry.index);
         }
     }
 }
@@ -713,6 +743,34 @@ void CommandBuffer::blitImage(gpu::Image* src, gpu::Image* dst)
     blitEncoder->release();
 }
 
+void CommandBuffer::buildRayTracingMesh(gpu::RayTracingMesh* mesh)
+{
+    auto* metalMesh = dynamic_cast<metal::RayTracingMesh*>(mesh);
+    if (!metalMesh)
+    {
+        throw std::runtime_error("metal::CommandBuffer::buildRayTracingMesh: not a metal::RayTracingMesh");
+    }
+    if (_encoder || _computeEncoder)
+    {
+        throw std::runtime_error("metal::CommandBuffer::buildRayTracingMesh: an encoding scope is still active");
+    }
+    metalMesh->build(_cmd);
+}
+
+void CommandBuffer::buildRayTracingScene(gpu::RayTracingScene* scene)
+{
+    auto* metalScene = dynamic_cast<metal::RayTracingScene*>(scene);
+    if (!metalScene)
+    {
+        throw std::runtime_error("metal::CommandBuffer::buildRayTracingScene: not a metal::RayTracingScene");
+    }
+    if (_encoder || _computeEncoder)
+    {
+        throw std::runtime_error("metal::CommandBuffer::buildRayTracingScene: an encoding scope is still active");
+    }
+    metalScene->build(_cmd);
+}
+
 bool CommandBuffer::isValid() const
 {
     return _cmd != nullptr;
@@ -745,6 +803,8 @@ void CommandBuffer::bindIndexBuffer(gpu::Buffer*, uint64_t) {}
 void CommandBuffer::drawIndexed(uint32_t, uint32_t, uint32_t, int32_t, uint32_t) {}
 void CommandBuffer::copyImage(gpu::Image*, gpu::Image*) {}
 void CommandBuffer::blitImage(gpu::Image*, gpu::Image*) {}
+void CommandBuffer::buildRayTracingMesh(gpu::RayTracingMesh*) {}
+void CommandBuffer::buildRayTracingScene(gpu::RayTracingScene*) {}
 bool CommandBuffer::isValid() const { return false; }
 
 #endif

@@ -50,10 +50,18 @@ public:
     std::shared_ptr<gpu::CubeMap> createCubeMap(const gpu::CubeMapDescription& description) override;
     std::shared_ptr<gpu::Buffer> createBuffer(const std::string& debugName = {}) override;
 
+    std::shared_ptr<gpu::RayTracingMesh> createRayTracingMesh(const RayTracingMeshDescription& description) override;
+    std::shared_ptr<gpu::RayTracingScene> createRayTracingScene(const std::string& debugName = {}) override;
+
     void immediateSubmit(std::function<void(gpu::CommandBuffer* cmd)>&& function) override;
 
     VkDevice handle() const { return _device; }
     VmaAllocator allocator() const { return _allocator; }
+
+    // True when the device was created with the ray tracing extensions enabled.
+    bool     rayTracingEnabled() const { return _rayTracingEnabled; }
+    // Minimum scratch buffer device-address alignment for acceleration builds.
+    uint32_t accelerationStructureScratchAlignment() const { return _asScratchAlignment; }
 
 private:
     VkDevice _device{VK_NULL_HANDLE};
@@ -65,6 +73,9 @@ private:
     VkCommandPool   _immediateCmdPool   = VK_NULL_HANDLE;
     VkCommandBuffer _immediateCmdBuffer = VK_NULL_HANDLE;
     VkFence         _immediateCmdFence  = VK_NULL_HANDLE;
+
+    bool     _rayTracingEnabled  = false;
+    uint32_t _asScratchAlignment = 256;
 };
 
 }

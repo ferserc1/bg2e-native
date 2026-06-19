@@ -50,6 +50,11 @@ public:
 
     VkBuffer handle() const { return _buffer; }
 
+    // GPU device address of this buffer. Requires the buffer to have been
+    // created with VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT (vertex/index
+    // buffers are; used as acceleration structure build input).
+    VkDeviceAddress deviceAddress() const;
+
 private:
     void uploadWithStaging(const void* data, uint64_t byteSize, VkBufferUsageFlags vkUsage, BufferUsage gpuUsage);
     void createMappedBuffer(const void* data, uint64_t byteSize, VkBufferUsageFlags vkUsage, BufferUsage gpuUsage, const char* debugTag);
