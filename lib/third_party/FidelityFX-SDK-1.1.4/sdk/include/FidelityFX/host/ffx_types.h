@@ -24,6 +24,49 @@
 
 #include <stdint.h>
 
+#ifndef _WIN32
+#include <wchar.h>
+#include <string.h>
+
+// _countof is MSVC-only; provide a portable equivalent
+#ifndef _countof
+#   ifdef __cplusplus
+        template <typename T, size_t N>
+        char (*_ffx_countof_helper(T (&)[N]))[N];
+#       define _countof(arr) (sizeof(*_ffx_countof_helper(arr)))
+#   else
+#       define _countof(arr) (sizeof(arr) / sizeof((arr)[0]))
+#   endif
+#endif
+
+// wcscpy_s is MSVC-only; provide a template that deduces the destination size
+#ifdef __cplusplus
+template <size_t N>
+inline int wcscpy_s(wchar_t (&dest)[N], const wchar_t* src)
+{
+    wcsncpy(dest, src, N - 1);
+    dest[N - 1] = L'\0';
+    return 0;
+}
+
+// strcpy_s is MSVC-only; provide a template that deduces the destination size
+template <size_t N>
+inline int strcpy_s(char (&dest)[N], const char* src)
+{
+    strncpy(dest, src, N - 1);
+    dest[N - 1] = '\0';
+    return 0;
+}
+#endif // __cplusplus
+
+// sprintf_s is MSVC-only; snprintf has identical semantics on POSIX
+#include <stdio.h>
+#ifndef sprintf_s
+#define sprintf_s(buf, size, ...) snprintf((buf), (size), __VA_ARGS__)
+#endif
+
+#endif // !_WIN32
+
 ///
 /// @defgroup ffxSDK SDK
 /// The SDK module provides detailed descriptions of the various class, structs, and function which comprise the FidelityFX SDK. It is divided into several sub-modules.
@@ -77,7 +120,13 @@
 #define FFX_API __declspec(dllexport)
 #endif // #if defined (FFX_GCC)
 
+// On Linux wchar_t is 4 bytes (vs 2 on Windows), so private structs that
+// embed wchar_t name arrays are larger.  Double the allocation to compensate.
+#ifdef _WIN32
 #define FFX_SDK_DEFAULT_CONTEXT_SIZE (1024 * 128)
+#else
+#define FFX_SDK_DEFAULT_CONTEXT_SIZE (1024 * 256)
+#endif
 
 /// Maximum supported number of simultaneously bound SRVs.
 ///
@@ -150,7 +199,9 @@
 #define UPLOAD_JOB_COUNT               (16)
 
 // Off by default warnings
+#ifdef _WIN32
 #pragma warning(disable : 4365 4710 4820 5039)
+#endif
 
 #ifdef __cplusplus
 extern "C" {

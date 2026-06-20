@@ -24,12 +24,15 @@
 // - Replaced wstring/wmain/Windows path APIs with std::string/main/std::filesystem
 // - Removed HLSL/DXC/FXC compiler branches (GLSL/glslang only)
 // - Replaced _wfopen_s with std::fopen
+// - Handles shell splitting "-D FOO={0,1}" into two args on Linux
 
 #include "glsl_compiler.h"
 
+#include <cmath>
 #include <string_view>
 #include <locale>
 #include <stdexcept>
+#include <map>
 
 static const char* const APP_NAME    = "FidelityFX-SC";
 static const char* const EXE_NAME    = "FidelityFX_SC";
@@ -76,7 +79,7 @@ inline bool IsNumeric(std::string_view s)
 struct PermutationOption
 {
     std::string              definition;
-    std::string              definitionUtf8;   // Same as definition on Linux (UTF-8 native)
+    std::string              definitionUtf8;
     std::vector<std::string> values;
     uint32_t                 numBits;
     bool                     isNumeric;
@@ -194,8 +197,10 @@ void LaunchParameters::ParseCommandLine(int argCount, const char* const* args)
     std::string debugOutput = "FidelityFX_SC Output:\n";
     for (int count = 0; count < argCount; ++count)
     {
+        // If we want to debug cmd line, don't include the debug cmd in what is spit out (since it's not needed)
         if (!strcmp(args[count], "-debugcmdline"))
             continue;
+
         debugOutput += args[count];
         debugOutput += " ";
     }
@@ -206,17 +211,30 @@ void LaunchParameters::ParseCommandLine(int argCount, const char* const* args)
     {
         if (StartsWith(args[i], "-D"))
         {
-            if (Contains(args[i], "{"))
+            // On Linux, the shell may split "-DFOO={0,1}" into "-D" and "FOO={0,1}".
+            // Normalize: if we have a bare "-D", combine it with the next argument.
+            std::string dArg = args[i];
+            if (dArg == "-D" && (i + 1) < argCount)
             {
-                std::string allPermutationOptionValues;
+                i++;
+                dArg = "-D" + std::string(args[i]);
+            }
 
-                // Keep appending until we hit the closing brace.
-                for (; i < argCount; i++)
+            if (Contains(dArg, "{"))
+            {
+                std::string allPermutationOptionValues = dArg;
+
+                // Keep appending the next few arguments which should be the macro values until we hit the closing brace.
+                // This handles cases where braces are in separate args (unlikely on Linux but kept for robustness).
+                if (!Contains(dArg, "}"))
                 {
-                    allPermutationOptionValues += args[i];
+                    for (i++; i < argCount; i++)
+                    {
+                        allPermutationOptionValues += args[i];
 
-                    if (Contains(args[i], "}"))
-                        break;
+                        if (Contains(args[i], "}"))
+                            break;
+                    }
                 }
 
                 PermutationOption permutationOption;
@@ -226,7 +244,7 @@ void LaunchParameters::ParseCommandLine(int argCount, const char* const* args)
             else
             {
                 compilerArgs.push_back("-D");
-                std::string arg = std::string(args[i]);
+                std::string arg = dArg;
                 compilerArgs.push_back(arg.substr(2, arg.size() - 2));
             }
         }
@@ -258,7 +276,7 @@ void LaunchParameters::ParseCommandLine(int argCount, const char* const* args)
         {
             compilerArgs.push_back(args[i++]);
 
-            // Attempt to parse the next arguments in case they are parameters for the compiler arg.
+            // Attempt to parse the next arguments in case there are some parameters for the compiler args.
             for (; i < argCount; i++)
             {
                 if (args[i][0] == '-' || i == (argCount - 1))
@@ -273,6 +291,60 @@ void LaunchParameters::ParseCommandLine(int argCount, const char* const* args)
         else
             inputFile = args[i];
     }
+
+    // Detect bash brace-expansion of permutation options.
+    // When /bin/sh (bash on Linux) is the shell used by Ninja, it expands
+    // -DNAME={0,1} into two separate args: -DNAME=0 and -DNAME=1.  Both
+    // lack braces so ParseCommandLine routes them to compilerArgs instead of
+    // permutationOptions, making glslangValidator receive the same macro
+    // twice with different values ("Macro redefined; different substitutions").
+    // Fix: scan compilerArgs for duplicate macro names and promote them to
+    // permutationOptions, which is exactly what the {0,1} syntax would do.
+    {
+        std::map<std::string, std::vector<std::pair<size_t, std::string>>> seen;
+        for (size_t ci = 0; ci + 1 < compilerArgs.size(); ++ci)
+        {
+            if (compilerArgs[ci] == "-D")
+            {
+                const std::string& def = compilerArgs[ci + 1];
+                auto eq = def.find('=');
+                if (eq != std::string::npos)
+                    seen[def.substr(0, eq)].push_back({ci, def.substr(eq + 1)});
+            }
+        }
+
+        std::vector<size_t> toRemove;
+        for (auto& [name, entries] : seen)
+        {
+            if (entries.size() > 1)
+            {
+                PermutationOption opt;
+                opt.definition     = name;
+                opt.definitionUtf8 = name;
+                opt.isNumeric      = true;
+                opt.numBits        = 0;
+                opt.foundInShader  = false;
+                for (auto& [pos, val] : entries)
+                {
+                    opt.values.push_back(val);
+                    opt.isNumeric &= IsNumeric(val);
+                    toRemove.push_back(pos);
+                }
+                opt.numBits = static_cast<uint32_t>(ceilf(log2f(static_cast<float>(opt.values.size()))));
+                if (opt.numBits == 0) opt.numBits = 1;
+                permutationOptions.push_back(opt);
+            }
+        }
+
+        // Erase in reverse order so earlier indices remain valid
+        std::sort(toRemove.rbegin(), toRemove.rend());
+        for (size_t pos : toRemove)
+        {
+            compilerArgs.erase(compilerArgs.begin() + pos + 1); // value ("NAME=VAL")
+            compilerArgs.erase(compilerArgs.begin() + pos);     // "-D"
+        }
+    }
+
     EnsureOutputPathExistsAndMakeCanonical(ouputPath);
 }
 
@@ -368,6 +440,7 @@ void Application::Process()
 
     WriteShaderPermutationsHeader();
 
+    // dump dependencies file if needed
     if (m_Params.deps == "gcc")
         DumpDepfileGCC();
 
@@ -391,7 +464,7 @@ void Application::GenerateMacroPermutations(std::deque<Permutation>& permutation
 {
     Permutation temp;
     temp.sourcePath = m_Params.inputFile;
-    // Put the permutation options that appear in shaders first.
+    // put the permutation options that appear in shaders first.
     std::stable_partition(m_Params.permutationOptions.begin(), m_Params.permutationOptions.end(), [](const PermutationOption& opt) { return opt.foundInShader; });
     GenerateMacroPermutations(temp, permutations, 0, 0);
 }
@@ -414,7 +487,7 @@ void Application::GenerateMacroPermutations(Permutation current, std::deque<Perm
 
         if (!currentOption.foundInShader && !temp.identicalTo.has_value() && i != 0)
         {
-            // This and all remaining permutations have identical output to the last real one processed.
+            // this and all remaining permutations (in this recursion) have identical output to the last real one processed.
             temp.identicalTo = temp.key;
         }
 
@@ -533,7 +606,8 @@ void Application::OpenSourceFile()
         }
     }
 
-    // Early filter for duplicate permutations: find which permutation options are mentioned in the file (+includes).
+    // early filter for duplicate permutations
+    // find out which of the permutation options are mentioned in the file (+includes).
     if (m_Params.permutationOptions.size() > 0)
     {
         std::vector<std::string> searchFiles{shaderPath};
@@ -544,7 +618,10 @@ void Application::OpenSourceFile()
             auto sourceFilename = searchFiles.back();
             searchFiles.pop_back();
             if (!searchedFiles.emplace(sourceFilename).second)
+            {
+                // already searched this file.
                 continue;
+            }
 
             std::ifstream source{sourceFilename};
             std::string line;
@@ -560,7 +637,9 @@ void Application::OpenSourceFile()
 
                     fs::path includeFilePath;
                     if (FindIncludeFilePath(std::string(filename), includeSearchPaths, includeFilePath))
+                    {
                         searchFiles.push_back(includeFilePath.string());
+                    }
                 }
 
                 for (auto& option : m_Params.permutationOptions)
@@ -583,19 +662,21 @@ void Application::OpenSourceFile()
 
 void Application::ProcessPermutations()
 {
+    bool running = true;
+
     // Look over the permutations and compile each one
     while (true)
     {
         m_ReadMutex.lock();
 
         Permutation permutation;
-        bool running = false;
 
-        if (!m_MacroPermutations.empty())
+        if (m_MacroPermutations.empty())
+            running = false;
+        else
         {
             permutation = m_MacroPermutations.back();
             m_MacroPermutations.pop_back();
-            running = true;
         }
 
         m_ReadMutex.unlock();
@@ -622,7 +703,7 @@ void Application::CompilePermutation(Permutation& permutation)
         else
         {
             guard.unlock();
-            // Add the permutation back to the end of the queue.
+            // add the permutation back to the end of the queue.
             std::lock_guard<std::mutex> readGuard(m_ReadMutex);
             m_MacroPermutations.push_front(permutation);
             return;

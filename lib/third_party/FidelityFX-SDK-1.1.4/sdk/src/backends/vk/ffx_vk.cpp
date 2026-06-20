@@ -27,10 +27,13 @@
 #include <ffx_shader_blobs.h>
 #include <ffx_breadcrumbs_list.h>
 
+#ifndef _WIN32
+#include <cstdlib>
+#include <cmath>
+#endif  // !_WIN32
+
 #ifdef _WIN32
 #include <windows.h>
-#else
-#include <codecvt>  // this is deprecated so it's just a fallback solution
 #endif  // _WIN32
 
 #include <vulkan/vulkan.h>
@@ -1120,14 +1123,12 @@ void ConvertUTF16ToUTF8(const wchar_t* inputName, char* outputBuffer, size_t out
 void ConvertUTF8ToUTF16(const char* inputName, wchar_t* outputBuffer, size_t outputLen)
 {
     memset(outputBuffer, 0, outputLen * sizeof(wchar_t));
-    std::wstring_convert<std::codecvt_utf8<wchar_t>, wchar_t> converter;
-    wcscpy_s(outputBuffer, outputLen, converter.from_bytes(inputName).c_str());
+    mbstowcs(outputBuffer, inputName, outputLen - 1);
 }
 void ConvertUTF16ToUTF8(const wchar_t* inputName, char* outputBuffer, size_t outputLen)
 {
     memset(outputBuffer, 0, outputLen * sizeof(char));
-    std::wstring_convert<std::codecvt_utf8<wchar_t>, wchar_t> converter;
-    strcpy_s(outputBuffer, outputLen, converter.to_bytes(inputName).c_str());
+    wcstombs(outputBuffer, inputName, outputLen - 1);
 }
 #endif  // _WIN32
 

@@ -107,13 +107,13 @@ static FfxErrorCode patchResourceBindings(FfxPipelineState* inoutPipeline)
     for (uint32_t srvIndex = 0; srvIndex < inoutPipeline->srvTextureCount; ++srvIndex)
     {
         int32_t mapIndex = 0;
-        for (mapIndex = 0; mapIndex < _countof(srvBindingNames); ++mapIndex)
+        for (mapIndex = 0; mapIndex < static_cast<int32_t>(_countof(srvBindingNames)); ++mapIndex)
         {
             if (0 == wcscmp(srvBindingNames[mapIndex].name, inoutPipeline->srvTextureBindings[srvIndex].name))
                 break;
         }
-        FFX_ASSERT(mapIndex < _countof(srvBindingNames));
-        if (mapIndex == _countof(srvBindingNames))
+        FFX_ASSERT(mapIndex < static_cast<int32_t>(_countof(srvBindingNames)));
+        if (mapIndex == static_cast<int32_t>(_countof(srvBindingNames)))
             return FFX_ERROR_INVALID_ARGUMENT;
 
         inoutPipeline->srvTextureBindings[srvIndex].resourceIdentifier = srvBindingNames[mapIndex].index;
@@ -122,13 +122,13 @@ static FfxErrorCode patchResourceBindings(FfxPipelineState* inoutPipeline)
     for (uint32_t uavIndex = 0; uavIndex < inoutPipeline->uavTextureCount; ++uavIndex)
     {
         int32_t mapIndex = 0;
-        for (mapIndex = 0; mapIndex < _countof(uavBindingNames); ++mapIndex)
+        for (mapIndex = 0; mapIndex < static_cast<int32_t>(_countof(uavBindingNames)); ++mapIndex)
         {
             if (0 == wcscmp(uavBindingNames[mapIndex].name, inoutPipeline->uavTextureBindings[uavIndex].name))
                 break;
         }
-        FFX_ASSERT(mapIndex < _countof(uavBindingNames));
-        if (mapIndex == _countof(uavBindingNames))
+        FFX_ASSERT(mapIndex < static_cast<int32_t>(_countof(uavBindingNames)));
+        if (mapIndex == static_cast<int32_t>(_countof(uavBindingNames)))
             return FFX_ERROR_INVALID_ARGUMENT;
 
         inoutPipeline->uavTextureBindings[uavIndex].resourceIdentifier = uavBindingNames[mapIndex].index;
@@ -137,13 +137,13 @@ static FfxErrorCode patchResourceBindings(FfxPipelineState* inoutPipeline)
     for (uint32_t cbIndex = 0; cbIndex < inoutPipeline->constCount; ++cbIndex)
     {
         int32_t mapIndex = 0;
-        for (mapIndex = 0; mapIndex < _countof(cbBindingNames); ++mapIndex)
+        for (mapIndex = 0; mapIndex < static_cast<int32_t>(_countof(cbBindingNames)); ++mapIndex)
         {
             if (0 == wcscmp(cbBindingNames[mapIndex].name, inoutPipeline->constantBufferBindings[cbIndex].name))
                 break;
         }
-        FFX_ASSERT(mapIndex < _countof(cbBindingNames));
-        if (mapIndex == _countof(cbBindingNames))
+        FFX_ASSERT(mapIndex < static_cast<int32_t>(_countof(cbBindingNames)));
+        if (mapIndex == static_cast<int32_t>(_countof(cbBindingNames)))
             return FFX_ERROR_INVALID_ARGUMENT;
 
         inoutPipeline->constantBufferBindings[cbIndex].resourceIdentifier = cbBindingNames[mapIndex].index;
@@ -712,7 +712,7 @@ static FfxErrorCode dispatch(FfxOpticalflowContext_Private* context, const FfxOp
 
             FfxDimensions2D opticalFlowTextureSizes[OpticalFlowMaxPyramidLevels];
             const int pyramidMaxIterations = advancedAlgorithmIterations;
-            FFX_ASSERT(pyramidMaxIterations <= OpticalFlowMaxPyramidLevels);
+            FFX_ASSERT(pyramidMaxIterations <= static_cast<int>(OpticalFlowMaxPyramidLevels));
 
             opticalFlowTextureSizes[0] = GetOpticalFlowTextureSize(context->contextDescription.resolution, opticalFlowBlockSize);
             for (int i = 1; i < pyramidMaxIterations; i++)

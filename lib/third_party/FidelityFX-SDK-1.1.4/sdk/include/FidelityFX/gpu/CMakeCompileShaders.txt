@@ -74,6 +74,7 @@ function(compile_shaders_with_depfile
 		set(FFX_GDK_OPTION )
 	endif()
 
+	set(_ffx_permutation_outputs_list)
 	foreach(PASS_SHADER ${SHADER_FILES})
 		get_filename_component(PASS_SHADER_FILENAME ${PASS_SHADER} NAME_WE)
 		get_filename_component(PASS_SHADER_TARGET ${PASS_SHADER} NAME_WLE)
@@ -94,7 +95,7 @@ function(compile_shaders_with_depfile
 			DEPENDS ${PASS_SHADER}
 			DEPFILE ${WAVE32_PERMUTATION_HEADER}.d
 		)
-		list(APPEND PERMUTATION_OUTPUTS ${WAVE32_PERMUTATION_HEADER})
+		list(APPEND _ffx_permutation_outputs_list ${WAVE32_PERMUTATION_HEADER})
 
 		# Wave64
 		add_custom_command(
@@ -104,7 +105,7 @@ function(compile_shaders_with_depfile
 			DEPENDS ${PASS_SHADER}
 			DEPFILE ${WAVE64_PERMUTATION_HEADER}.d
 		)
-		list(APPEND PERMUTATION_OUTPUTS ${WAVE64_PERMUTATION_HEADER})
+		list(APPEND _ffx_permutation_outputs_list ${WAVE64_PERMUTATION_HEADER})
 
 		# Wave32 16-bit
 		add_custom_command(
@@ -114,7 +115,7 @@ function(compile_shaders_with_depfile
 			DEPENDS ${PASS_SHADER}
 			DEPFILE ${WAVE32_16BIT_PERMUTATION_HEADER}.d
 		)
-		list(APPEND PERMUTATION_OUTPUTS ${WAVE32_16BIT_PERMUTATION_HEADER})
+		list(APPEND _ffx_permutation_outputs_list ${WAVE32_16BIT_PERMUTATION_HEADER})
 
 		# Wave64 16-bit
 		add_custom_command(
@@ -124,10 +125,10 @@ function(compile_shaders_with_depfile
 			DEPENDS ${PASS_SHADER}
 			DEPFILE ${WAVE64_16BIT_PERMUTATION_HEADER}.d
 		)
-		list(APPEND PERMUTATION_OUTPUTS ${WAVE64_16BIT_PERMUTATION_HEADER})
+		list(APPEND _ffx_permutation_outputs_list ${WAVE64_16BIT_PERMUTATION_HEADER})
 	endforeach(PASS_SHADER)
 
-	set(${PERMUTATION_OUTPUTS} ${PERMUTATION_OUTPUTS} PARENT_SCOPE)
+	set(${PERMUTATION_OUTPUTS} ${_ffx_permutation_outputs_list} PARENT_SCOPE)
 endfunction()
 
 # macro to add shader output files to a list for dependencies

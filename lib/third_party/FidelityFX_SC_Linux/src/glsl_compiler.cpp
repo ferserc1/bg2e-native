@@ -172,31 +172,36 @@ bool GLSLCompiler::GLSLCompiler::Compile(Permutation& permutation, const std::ve
     std::vector<ErrorData> errors;
 
     // ------------------------------------------------------------------------------------------------
-    // Assemble command line arguments
+    // Assemble argument vector (bypasses shell – uses execv directly via TinyProcessLib)
     // ------------------------------------------------------------------------------------------------
 
-    std::string cmdLine = m_GlslangExe + " ";
+    std::vector<std::string> cmdArgs;
+    cmdArgs.push_back(m_GlslangExe);
 
     if (m_DebugCompile)
     {
-        cmdLine += "-g -gVS -Od ";
+        cmdArgs.push_back("-g");
+        cmdArgs.push_back("-gVS");
+        cmdArgs.push_back("-Od");
     }
 
     std::vector<fs::path> includeSearchPaths;
-    for (int i = 0; i < arguments.size(); i++)
+    for (int i = 0; i < (int)arguments.size(); i++)
     {
-        if (arguments[i][0] == '-' && arguments[i][1] == 'I')
+        if (arguments[i] == "-D" && i + 1 < (int)arguments.size())
         {
-            cmdLine += "\"" + arguments[i] + "\"";
+            // Combine "-D" and the macro name+value into a single argument: -DMACRO=VALUE
+            cmdArgs.push_back("-D" + arguments[++i]);
+        }
+        else if (arguments[i].size() >= 2 && arguments[i][0] == '-' && arguments[i][1] == 'I')
+        {
+            cmdArgs.push_back(arguments[i]);
             includeSearchPaths.push_back(&(arguments[i][2]));
         }
         else
         {
-            cmdLine += arguments[i];
+            cmdArgs.push_back(arguments[i]);
         }
-
-        if (!(arguments[i][0] == '-' && arguments[i][1] == 'D'))
-            cmdLine += " ";
     }
 
     // Our code for collecting shader dependencies is not smart enough to deal with the possibility that each permutation
@@ -215,7 +220,9 @@ bool GLSLCompiler::GLSLCompiler::Compile(Permutation& permutation, const std::ve
 
     std::string tempFilePath = m_OutputPath + "/" + m_ShaderName + "_temp/" + std::to_string(permutation.key) + ".spv";
 
-    cmdLine += "-o \"" + tempFilePath + "\" \"" + m_ShaderPath + "\"";
+    cmdArgs.push_back("-o");
+    cmdArgs.push_back(tempFilePath);
+    cmdArgs.push_back(m_ShaderPath);
 
     // ------------------------------------------------------------------------------------------------
     // Launch process and compile SPIRV using glslangValidator
@@ -250,13 +257,14 @@ bool GLSLCompiler::GLSLCompiler::Compile(Permutation& permutation, const std::ve
                         token.erase(0, end + 2);
                     }
                 }
-                token.pop_back();
+                if (!token.empty() && token.back() == '\r')
+                    token.pop_back();
                 errors.push_back(ErrorData{token, lineNumber});
             }
         }
     };
 
-    tpl::Process process(cmdLine, "", func, func);
+    tpl::Process process(cmdArgs, "", func, func);
 
     bool succeeded = process.get_exit_status() == 0;
 
