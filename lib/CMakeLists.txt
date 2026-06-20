@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.18)
+cmake_minimum_required(VERSION 3.23)  # 3.23 required by FidelityFX SDK
 
 include("${CMAKE_SOURCE_DIR}/cmake/utils.cmake")
 
@@ -73,6 +73,11 @@ endif()
 
 target_link_libraries(${BG2E_TARGET_NAME} PRIVATE ${SDL2_LIBRARIES})
 target_link_libraries(${BG2E_TARGET_NAME} PRIVATE ${VULKAN_LIB})
+
+if(NOT APPLE)
+    target_include_directories(${BG2E_TARGET_NAME} PRIVATE ${BG2E_FFX_INCLUDE_PATH})
+    target_link_libraries(${BG2E_TARGET_NAME} PRIVATE ${BG2E_FFX_LINK_LIBRARIES})
+endif()
 
 
 set_target_properties(${BG2E_TARGET_NAME} PROPERTIES

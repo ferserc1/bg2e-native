@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.18)
+cmake_minimum_required(VERSION 3.23)  # 3.23 required by FidelityFX SDK
 project(bg2e_native)
 
 set(CMAKE_CXX_STANDARD 20)

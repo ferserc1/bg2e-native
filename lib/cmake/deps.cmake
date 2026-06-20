@@ -71,3 +71,32 @@ set(BG2E_THIRD_PARTY_SRC
     #${FASTGLTF_SRC}
     # other dependency paths
 )
+
+# FidelityFX SDK (Linux and Windows only, not macOS)
+if(NOT APPLE)
+    if(UNIX AND NOT APPLE)
+        # Build the Linux port of FidelityFX_SC before the SDK, so FFX_SC_EXECUTABLE resolves
+        add_subdirectory("${THIRD_PARTY_PATH}/FidelityFX_SC_Linux" ffx_sc_linux_build)
+        set(FFX_SC_EXECUTABLE "$<TARGET_FILE:ffx_sc_linux>" CACHE STRING "" FORCE)
+    endif()
+
+    set(FFX_API_BACKEND   "VK_X64")
+    set(FFX_API_VK        ON)  # Required: not set by the SDK itself, checked on first line of vk/CMakeLists.txt
+    set(FFX_FSR3          ON)  # Enables FSR3Upscaler, FrameInterpolation, OpticalFlow automatically
+    set(FFX_BUILD_AS_DLL  OFF)
+    set(FFX_AUTO_COMPILE_SHADERS ON CACHE BOOL "" FORCE)
+
+    add_subdirectory("${THIRD_PARTY_PATH}/FidelityFX-SDK-1.1.4/sdk" ffx_sdk)
+
+    if(UNIX AND NOT APPLE)
+        # Ensure ffx_sc_linux is built before the shader permutation step runs
+        add_dependencies(ffx_shader_permutations_vk ffx_sc_linux)
+    endif()
+
+    # FFX_PLATFORM_NAME is "x64" when FFX_API_BACKEND=VK_X64 (set by toolchain.cmake inside the SDK)
+    set(BG2E_FFX_INCLUDE_PATH "${THIRD_PARTY_PATH}/FidelityFX-SDK-1.1.4/sdk/include")
+    set(BG2E_FFX_LINK_LIBRARIES
+        ffx_fsr3_x64
+        ffx_backend_vk_x64
+    )
+endif()
