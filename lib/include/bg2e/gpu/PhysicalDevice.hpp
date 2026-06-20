@@ -48,7 +48,7 @@ struct RayTracingCapabilities {
     }
 };
 
-struct PhysicalDeviceProperties {
+struct BG2E_API PhysicalDeviceProperties {
     enum DeviceType {
         IntegratedGPU,
         DiscreteGPU,
