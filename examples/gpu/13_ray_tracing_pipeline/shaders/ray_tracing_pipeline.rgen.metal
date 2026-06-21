@@ -61,7 +61,7 @@ kernel void rgenMain(
     float2 d = inUV * 2.0 - 1.0;
 
     float4 origin = cam.viewInverse * float4(0, 0, 0, 1);
-    float4 target = cam.projInverse * float4(d.x, d.y, 1, 1);
+    float4 target = cam.projInverse * float4(d.x, -d.y, 1, 1);
     float4 direction = cam.viewInverse * float4(normalize(target.xyz), 0);
 
     float3 rayO = origin.xyz;
