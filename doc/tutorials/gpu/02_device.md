@@ -44,7 +44,6 @@ See [doc/api/gpu/index.md](../../api/gpu/index.md) for the full class hierarchy 
 
 ```cpp
 #include <bg2e.hpp>
-#include <bg2e/gpu/all.hpp>
 #include <bg2e/app/SDLUtils.hpp>
 #include <iostream>
 ```
@@ -54,7 +53,6 @@ Three headers are needed:
 | Header | Purpose |
 |--------|---------|
 | `<bg2e.hpp>` | The engine's umbrella header -- includes all namespaces |
-| `<bg2e/gpu/all.hpp>` | The GPU abstraction layer (Factory, Backend, Device, etc.) |
 | `<bg2e/app/SDLUtils.hpp>` | SDL helper utilities (`app::initSdlVideoDriver()`) |
 
 The `<bg2e.hpp>` header already includes `<bg2e/gpu/all.hpp>`, so the second include is technically redundant. However, explicitly including `<bg2e/gpu/all.hpp>` makes the GPU dependency clear and is the recommended practice for GPU-focused programs.
@@ -79,7 +77,7 @@ The engine supports two backends:
 | Vulkan | `gpu::BackendType::Vulkan` | All platforms |
 | Metal | `gpu::BackendType::Metal` | macOS only |
 
-On Linux and Windows, Vulkan is the only option. On macOS, both Vulkan (via MoltenVK) and Metal are available, so this example lets the user choose at runtime. The `base::PlatformTools::currentPlatform()` utility detects the OS at compile time.
+On Linux and Windows, Vulkan is the only option. On macOS, both Vulkan (via MoltenVK) and Metal are available, so this example lets the user choose at runtime. The `base::PlatformTools::currentPlatform()` utility detects the OS at compile time. Please note that, at present, Vulkan on macOS does not support ray tracing, neither with MoltenVK nor with the latest driver, KosmicKrisp.
 
 ### 3. Initializing the backend factory
 
