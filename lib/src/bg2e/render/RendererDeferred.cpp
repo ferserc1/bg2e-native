@@ -21,6 +21,15 @@
 #include <bg2e/scene/SkyDomeTextureGenerator.hpp>
 #include <bg2e/render/Texture.hpp>
 #include <bg2e/render/vulkan/Info.hpp>
+#include <bg2e/render/deferred/SMAAPostProcessor.hpp>
+#if !defined(__APPLE__)
+#include <bg2e/render/deferred/FSRPostProcessor.hpp>
+#endif
+
+#include <bg2e/math/projections.hpp>
+#include <glm/gtc/matrix_inverse.hpp>
+#include <glm/gtc/constants.hpp>
+#include <cmath>
 
 namespace bg2e::render {
 
@@ -109,10 +118,8 @@ void RendererDeferred::setRenderScalePercent(float percent)
         )
     );
 
-    // SMAA at render resolution
-    if (_smaaProcessor) {
-        _smaaProcessor->resize(_renderExtent);
-    }
+    if (_motionVectorGenerator) _motionVectorGenerator->resize(_renderExtent);
+    if (_finalPostProcessor)    _finalPostProcessor->resize(_renderExtent, _viewportExtent);
 
     _scene->didResize();
 }
@@ -237,9 +244,19 @@ void RendererDeferred::build(
         _gizmoAndSelectionRenderer->init(engine, VK_SAMPLE_COUNT_1_BIT);
     }
 
-    // SMAA post-processing (at render resolution; output blitted to display later)
-    _smaaProcessor = std::make_unique<deferred::SMAAProcessor>(_engine);
-    _smaaProcessor->build(_renderExtent, colorImageFormat);
+    // Motion vector generator (needed by FSR for temporal upscaling)
+    _motionVectorGenerator = std::make_unique<deferred::MotionVectorGenerator>(_engine);
+    _motionVectorGenerator->build(_renderExtent);
+
+    // Final post-processor: FSR on Windows/Linux, SMAA everywhere else
+#if !defined(__APPLE__)
+    auto* fsrProc = new deferred::FSRPostProcessor();
+    _finalPostProcessor = std::unique_ptr<deferred::FinalPostProcessor>(fsrProc);
+#else
+    auto* smaaProc = new deferred::SMAAPostProcessor();
+    _finalPostProcessor = std::unique_ptr<deferred::FinalPostProcessor>(smaaProc);
+#endif
+    _finalPostProcessor->build(_engine, _renderExtent, _viewportExtent, colorImageFormat);
 }
 
 void RendererDeferred::initFrameResources(
@@ -361,10 +378,8 @@ void RendererDeferred::resize(
         )
     );
 
-    // SMAA at render resolution
-    if (_smaaProcessor) {
-        _smaaProcessor->resize(_renderExtent);
-    }
+    if (_motionVectorGenerator) _motionVectorGenerator->resize(_renderExtent);
+    if (_finalPostProcessor)    _finalPostProcessor->resize(_renderExtent, _viewportExtent);
 
     _resizeVisitor.resizeViewport(_scene->rootNode(), _viewportExtent);
 
@@ -374,6 +389,7 @@ void RendererDeferred::resize(
 void RendererDeferred::update(
     float delta
 ) {
+    _deltaTimeMs = delta * 1000.0f;
     updateScene(delta, BG2E_MAX_DEFERRED_LIGHTS);
 }
 
@@ -388,15 +404,33 @@ void RendererDeferred::draw(
     VkImageLayout & outDepthImageLayout,
     VkImageLayout & outMsaaDepthImageLayout
 ) {
+    // --- Gather camera matrices before prepareSceneRender modifies the skybox ---
+    auto mainCamera = _scene->mainCamera();
+    auto viewMatrix = mainCamera->ownerNode()->invertedWorldMatrix();
+    auto origProj   = mainCamera->projectionMatrix();
+
+    // Let the post-processor compute jitter and return the modified projection matrix.
+    // SMAAPostProcessor returns origProj unchanged; FSRPostProcessor applies Halton jitter.
+    auto jitteredProj = _finalPostProcessor->prepare(origProj, _frameCounter, _renderExtent);
+
     // === Scene preparation (from Renderer base) ===
+    // prepareSceneRender calls _environment->updateSkybox(view, origProj).
+    // We override it immediately after with the jittered version.
     prepareSceneRender(cmd, currentFrame, frameResources);
+    if (drawSkybox())
+    {
+        _environment->updateSkybox(viewMatrix, jitteredProj);
+    }
+
+    // Apply jitter override to deferred layers (GBuffer vertex pass)
+    _opaqueLayer->setProjectionOverride(&jitteredProj);
+    _transparentLayer->setProjectionOverride(&jitteredProj);
 
     // Configure light uniforms on deferred layers
     _opaqueLayer->setLights(_lights);
     _transparentLayer->setLights(_lights);
 
-    // Build the reduced light set that affects ray traced reflections, so the
-    // reflection shader only iterates over the lights flagged for it.
+    // Build the reduced light set that affects ray traced reflections
     if (_reflectionLightDataBinding)
     {
         _reflectionLights.clear();
@@ -417,13 +451,7 @@ void RendererDeferred::draw(
     _transparentLayer->setColorCorrection(_brightness, _contrast, _exposure);
 
     // Layer 1: Skybox
-    _skyboxLayer->render(
-        cmd,
-        currentFrame,
-        nullptr,
-        _skyboxImage.get(),
-        frameResources
-    );
+    _skyboxLayer->render(cmd, currentFrame, nullptr, _skyboxImage.get(), frameResources);
 
     vulkan::Image::cmdTransitionImage(cmd, _skyboxImage->handle(),
         VK_IMAGE_LAYOUT_UNDEFINED,
@@ -431,147 +459,97 @@ void RendererDeferred::draw(
     );
 
     // Layer 2: Opaque
-    _opaqueLayer->render(
-        cmd,
-        currentFrame,
-        _skyboxImage.get(),
-        _opaqueImage.get(),
-        frameResources
-    );
+    _opaqueLayer->render(cmd, currentFrame, _skyboxImage.get(), _opaqueImage.get(), frameResources);
 
-    vulkan::Image::cmdTransitionImage(
-        cmd,
-        _opaqueImage->handle(),
+    vulkan::Image::cmdTransitionImage(cmd, _opaqueImage->handle(),
         VK_IMAGE_LAYOUT_UNDEFINED,
         VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
     );
 
-    // Layer 3: Transparent (writes to the intermediate transparent image, not
-    // to the final colorImage, so SMAA can sample it as input)
+    // Layer 3: Transparent
     _transparentLayer->setOpaqueDepthBuffer(_opaqueLayer->depthBuffer());
     _transparentLayer->render(cmd, currentFrame, _opaqueImage.get(), _transparentImage.get(),
                               frameResources);
 
-    if (!_isOffscreen && _gizmoAndSelectionRenderer) {
+    // Clear projection overrides after all deferred layers have rendered
+    _opaqueLayer->setProjectionOverride(nullptr);
+    _transparentLayer->setProjectionOverride(nullptr);
+
+    // Gizmos (editor-only, non-offscreen)
+    if (!_isOffscreen && _gizmoAndSelectionRenderer)
+    {
         auto colorAttachment = vulkan::Info::attachmentInfo(_transparentImage->imageView(), nullptr);
         auto renderInfo = vulkan::Info::renderingInfo(_transparentImage->extent2D(), &colorAttachment, nullptr);
         vulkan::cmdBeginRendering(cmd, &renderInfo);
-
         vulkan::macros::cmdSetDefaultViewportAndScissor(cmd, _transparentImage->extent2D());
 
-        auto mainCamera = _scene->mainCamera();
-        auto viewMatrix = mainCamera->ownerNode()->invertedWorldMatrix();
-        auto projMatrix = mainCamera->projectionMatrix();
-        _gizmoAndSelectionRenderer->draw(_scene->rootNode(), viewMatrix, projMatrix, cmd);
+        // Use original (non-jittered) matrices for gizmos so they stay sharp
+        _gizmoAndSelectionRenderer->draw(_scene->rootNode(), viewMatrix, origProj, cmd);
 
         vulkan::cmdEndRendering(cmd);
     }
 
-    // === SMAA Anti-Aliasing ===
-    // Input: the intermediate transparent image. Output: copied into colorImage.
-    if (_smaaProcessor) {
-        vulkan::Image::cmdTransitionImage(
-            cmd,
-            _transparentImage->handle(),
-            VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
-        );
+    // === Motion vectors (needed by FSR; harmless with SMAA) ===
+    const vulkan::Image* motionVectors = _motionVectorGenerator->generate(
+        cmd, currentFrame,
+        _transparentLayer->depthBuffer().get(),
+        glm::inverse(origProj * viewMatrix),
+        _prevProjMatrix * _prevViewMatrix
+    );
 
-        const vulkan::Image* smaaOutput = _smaaProcessor->process(
-            cmd, currentFrame, _transparentImage.get()
-        );
+    // === Final post-processing (SMAA or FSR) ===
+    vulkan::Image::cmdTransitionImage(
+        cmd, _transparentImage->handle(),
+        VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+        VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+    );
 
-        bool needsBlit = _renderExtent.width != _viewportExtent.width ||
-                         _renderExtent.height != _viewportExtent.height;
-
-        if (needsBlit) {
-            // Render size differs from display size: blit SMAA output to colorImage
-            vulkan::Image::cmdTransitionImage(
-                cmd,
-                smaaOutput->handle(),
-                VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
-            );
-            vulkan::Image::cmdTransitionImage(
-                cmd,
-                colorImage->handle(),
-                VK_IMAGE_LAYOUT_UNDEFINED,
-                VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
-            );
-
-            VkImageBlit blitRegion = {};
-            blitRegion.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-            blitRegion.srcSubresource.mipLevel = 0;
-            blitRegion.srcSubresource.baseArrayLayer = 0;
-            blitRegion.srcSubresource.layerCount = 1;
-            blitRegion.srcOffsets[0] = { 0, 0, 0 };
-            blitRegion.srcOffsets[1] = {
-                static_cast<int32_t>(smaaOutput->extent2D().width),
-                static_cast<int32_t>(smaaOutput->extent2D().height),
-                1
-            };
-            blitRegion.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-            blitRegion.dstSubresource.mipLevel = 0;
-            blitRegion.dstSubresource.baseArrayLayer = 0;
-            blitRegion.dstSubresource.layerCount = 1;
-            blitRegion.dstOffsets[0] = { 0, 0, 0 };
-            blitRegion.dstOffsets[1] = {
-                static_cast<int32_t>(colorImage->extent2D().width),
-                static_cast<int32_t>(colorImage->extent2D().height),
-                1
-            };
-
-            vkCmdBlitImage(
-                cmd,
-                smaaOutput->handle(),
-                VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                colorImage->handle(),
-                VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                1,
-                &blitRegion,
-                VK_FILTER_LINEAR
-            );
-
-            vulkan::Image::cmdTransitionImage(
-                cmd,
-                smaaOutput->handle(),
-                VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
-            );
-        } else {
-            // Same size: direct copy (existing behavior)
-            vulkan::Image::cmdCopy(
-                cmd,
-                smaaOutput->handle(),
-                smaaOutput->extent2D(),
-                VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                colorImage->handle(),
-                colorImage->extent2D(),
-                VK_IMAGE_LAYOUT_UNDEFINED,
-                VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
-            );
-        }
+    float cameraNear = 0.1f, cameraFar = 1000.0f, cameraFovV = glm::radians(60.0f);
+    if (auto* proj = mainCamera->projection())
+    {
+        cameraNear = proj->near();
+        cameraFar  = proj->far();
+        if (auto* persp = dynamic_cast<bg2e::math::PerspectiveProjection*>(proj))
+            cameraFovV = glm::radians(persp->fov());
+        else if (auto* optical = dynamic_cast<bg2e::math::OpticalProjection*>(proj))
+            cameraFovV = 2.0f * std::atan(optical->frameSize() / (optical->focalLength() * 2.0f));
     }
+
+    _finalPostProcessor->process(
+        cmd, currentFrame,
+        _transparentImage.get(),
+        _transparentLayer->depthBuffer().get(),
+        motionVectors,
+        colorImage,
+        _deltaTimeMs,
+        cameraNear,
+        cameraFar,
+        cameraFovV
+    );
+
+    // process() guarantees colorImage is in COLOR_ATTACHMENT_OPTIMAL on exit
 
     // === End scene render (from Renderer base) ===
     endSceneRender();
 
-    vulkan::Image::cmdTransitionImage(
-        cmd,
-        colorImage->handle(),
-        VK_IMAGE_LAYOUT_UNDEFINED,
-        VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
-    );
+    // Store camera state for next frame's motion vector generation
+    _prevViewMatrix = viewMatrix;
+    _prevProjMatrix = origProj;
+    _frameCounter++;
 
-    outColorImageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-    outDepthImageLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
+    outColorImageLayout     = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    outDepthImageLayout     = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
     outMsaaDepthImageLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
 }
 
 void RendererDeferred::cleanup() {
-    if (_smaaProcessor) {
-        _smaaProcessor->cleanup();
-        _smaaProcessor.reset();
+    if (_finalPostProcessor) {
+        _finalPostProcessor->cleanup();
+        _finalPostProcessor.reset();
+    }
+    if (_motionVectorGenerator) {
+        _motionVectorGenerator->cleanup();
+        _motionVectorGenerator.reset();
     }
 
     _gizmoAndSelectionRenderer.reset();
@@ -945,6 +923,31 @@ void RendererDeferred::setRTReflectionRoughnessSpread(float spread)
 float RendererDeferred::rtReflectionRoughnessSpread() const
 {
     return _opaqueLayer->rtReflectionRoughnessSpread();
+}
+
+// --- Scale UI API ---
+
+std::string RendererDeferred::scaleProcessorName() const
+{
+    return _finalPostProcessor ? _finalPostProcessor->processorName() : "Render Scale";
+}
+
+std::vector<std::string> RendererDeferred::scaleOptions() const
+{
+    if (_finalPostProcessor) return _finalPostProcessor->scaleOptions();
+    return {};
+}
+
+void RendererDeferred::setScaleOption(uint32_t index)
+{
+    if (!_finalPostProcessor) return;
+    _finalPostProcessor->setScaleOption(index);
+    setRenderScalePercent(_finalPostProcessor->renderScalePercent());
+}
+
+uint32_t RendererDeferred::scaleOption() const
+{
+    return _finalPostProcessor ? _finalPostProcessor->scaleOption() : 0;
 }
 
 void RendererDeferred::updateLights(

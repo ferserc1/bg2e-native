@@ -250,7 +250,7 @@ void DeferredLayer::render(
 
     auto useRT = _engine->rayTracingSupported();
     auto viewMatrix = mainCamera->ownerNode()->invertedWorldMatrix();
-    auto projMatrix = mainCamera->projectionMatrix();
+    auto projMatrix = _projectionOverride ? *_projectionOverride : mainCamera->projectionMatrix();
     auto cameraWorldPos = mainCamera->ownerNode()->worldPosition();
     auto frameResourcesIndex = _engine->currentFrameResourcesIndex();
     auto* gbuffer = _gbuffers[frameResourcesIndex].get();

@@ -86,6 +86,9 @@ if(NOT APPLE)
     set(FFX_BUILD_AS_DLL  OFF)
     set(FFX_AUTO_COMPILE_SHADERS ON CACHE BOOL "" FORCE)
 
+    # The FFX static libraries are linked into libbg2e.so (a shared object),
+    # so they must be compiled as position-independent code.
+    set(CMAKE_POSITION_INDEPENDENT_CODE ON)
     add_subdirectory("${THIRD_PARTY_PATH}/FidelityFX-SDK-1.1.4/sdk" ffx_sdk)
 
     if(UNIX AND NOT APPLE)

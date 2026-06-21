@@ -29,10 +29,14 @@
 #include <bg2e/render/vulkan/rt/RayTracingSceneDataBinding.hpp>
 #include <bg2e/render/vulkan/rt/ReflectionLightDataBinding.hpp>
 #include <bg2e/manipulation/GizmoAndSelectionRenderer.hpp>
-#include <bg2e/render/deferred/SMAAProcessor.hpp>
+#include <bg2e/render/deferred/FinalPostProcessor.hpp>
+#include <bg2e/render/deferred/MotionVectorGenerator.hpp>
 
+#include <glm/glm.hpp>
 #include <memory>
 #include <cmath>
+#include <string>
+#include <vector>
 
 namespace bg2e {
 namespace render {
@@ -46,7 +50,6 @@ public:
     inline void setDrawSkybox(bool value) override { _skyboxLayer->setDrawSkybox(value); }
 
     [[nodiscard]] manipulation::GizmoAndSelectionRenderer * gizmoAndSelectionRenderer() const { return _gizmoAndSelectionRenderer.get(); }
-    [[nodiscard]] deferred::SMAAProcessor* smaaProcessor() const { return _smaaProcessor.get(); }
 
     void build(
         bg2e::render::Engine* engine,
@@ -101,6 +104,16 @@ public:
     // Internal deferred render size (computed from viewport + render scale)
     uint32_t renderWidth() const { return _renderExtent.width; }
     uint32_t renderHeight() const { return _renderExtent.height; }
+
+    // --- Scale UI API (delegates to the active FinalPostProcessor) ---
+    // Human-readable label for the scale control (e.g. "Render Scale" or "FSR3 Scale").
+    std::string scaleProcessorName() const;
+    // Available scale options in display order.
+    std::vector<std::string> scaleOptions() const;
+    // Select an option by index. Triggers a resize when the scale changes.
+    void setScaleOption(uint32_t index);
+    // Currently selected index.
+    uint32_t scaleOption() const;
 
     deferred::DeferredDebugVisualization debugVisualization() const;
     void setDebugVisualization(deferred::DeferredDebugVisualization debugVisualization);
@@ -221,7 +234,14 @@ protected:
     std::unique_ptr<vulkan::rt::ReflectionLightDataBinding> _reflectionLightDataBinding;
 
     std::unique_ptr<manipulation::GizmoAndSelectionRenderer> _gizmoAndSelectionRenderer;
-    std::unique_ptr<deferred::SMAAProcessor> _smaaProcessor;
+    std::unique_ptr<deferred::FinalPostProcessor>            _finalPostProcessor;
+    std::unique_ptr<deferred::MotionVectorGenerator>         _motionVectorGenerator;
+
+    // Previous-frame camera matrices for motion vector generation
+    glm::mat4 _prevViewMatrix   = glm::mat4(1.0f);
+    glm::mat4 _prevProjMatrix   = glm::mat4(1.0f);
+    uint32_t  _frameCounter     = 0;
+    float     _deltaTimeMs      = 0.0f;
 
     deferred::DeferredDebugVisualization _debugVisualization = deferred::DeferredDebugVisualization::FullComposition;
 
