@@ -25,6 +25,8 @@
 #include <bg2e/render/EnvironmentResources.hpp>
 #include <bg2e/scene/Scene.hpp>
 
+#include <glm/glm.hpp>
+
 namespace bg2e {
 namespace render {
 namespace deferred {
@@ -49,6 +51,11 @@ public:
     void setScene(scene::Scene* scene) { _scene = scene; }
     void setEnvironment(EnvironmentResources* environment) { _environment = environment; }
 
+    // Pass a non-null pointer to override the camera projection matrix used
+    // during rendering (e.g. with FSR jitter applied).  nullptr restores the
+    // default behaviour of reading from the scene camera.
+    void setProjectionOverride(const glm::mat4* proj) { _projectionOverride = proj; }
+
     void setColorCorrection(
         float brightness,
         float contrast,
@@ -68,6 +75,8 @@ protected:
     float _brightness = 0.0f;
     float _contrast = 1.0f;
     float _exposure = 1.0f;
+
+    const glm::mat4* _projectionOverride = nullptr;
 };
 
 }
