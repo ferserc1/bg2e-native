@@ -29,22 +29,34 @@ CleanupManager::CleanupManager(gpu::Surface* surface)
 
 void CleanupManager::push(const std::shared_ptr<DeviceResource>& resource)
 {
-    _resources.push_back(resource);
+    if (resource != nullptr)
+    {
+        _resources.push_back(resource);
+    }
 }
 
 void CleanupManager::push(std::shared_ptr<DeviceResource>&& resource)
 {
-    _resources.push_back(std::move(resource));
+    if (resource != nullptr)
+    {
+        _resources.push_back(std::move(resource));
+    }
 }
 
 void CleanupManager::pushStatic(const std::shared_ptr<DeviceResource>& resource)
 {
-    _staticResources.push_back(resource);
+    if (resource != nullptr)
+    {
+        _staticResources.push_back(resource);
+    }
 }
 
 void CleanupManager::pushStatic(std::shared_ptr<DeviceResource>&& resource)
 {
-    _staticResources.push_back(std::move(resource));
+    if (resource != nullptr)
+    {
+        _staticResources.push_back(std::move(resource));
+    }
 }
 
 void CleanupManager::flush()

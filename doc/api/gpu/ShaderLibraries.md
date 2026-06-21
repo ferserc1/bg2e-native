@@ -197,6 +197,21 @@ public:
         const std::string& shaderName,
         Device*            device,
         const std::string& debugName = "");
+
+    std::shared_ptr<ShaderModule> rayGeneration(
+        const std::string& shaderName,
+        Device*            device,
+        const std::string& debugName = "");
+
+    std::shared_ptr<ShaderModule> miss(
+        const std::string& shaderName,
+        Device*            device,
+        const std::string& debugName = "");
+
+    std::shared_ptr<ShaderModule> closestHit(
+        const std::string& shaderName,
+        Device*            device,
+        const std::string& debugName = "");
 };
 ```
 
@@ -225,7 +240,8 @@ std::shared_ptr<ShaderModule> vertex(
 Resolves the full file path and entry point from `shaderName` and the stage,
 then calls `device->createShaderModule()`. The returned `ShaderModule` is owned
 by the caller and must be cleaned up with `ShaderModule::cleanup()` (or via
-`CleanupManager::push()`).
+`CleanupManager::push()`, which silently accepts `nullptr` for stages that are
+not applicable on a given backend).
 
 | Parameter    | Description |
 |--------------|-------------|
@@ -251,6 +267,42 @@ std::unique_ptr<ShaderLib> Backend::createShaderLib(
     return std::make_unique<ShaderLib>(basePath, backendType());
 }
 ```
+
+#### `rayGeneration / miss / closestHit`
+
+```cpp
+std::shared_ptr<ShaderModule> rayGeneration(
+    const std::string& shaderName,
+    Device*            device,
+    const std::string& debugName = "");
+
+std::shared_ptr<ShaderModule> miss(
+    const std::string& shaderName,
+    Device*            device,
+    const std::string& debugName = "");
+
+std::shared_ptr<ShaderModule> closestHit(
+    const std::string& shaderName,
+    Device*            device,
+    const std::string& debugName = "");
+```
+
+Load ray tracing shader modules. The file resolution follows the same pattern
+as `vertex()` / `fragment()` / `compute()`:
+
+| Method | Stage extension | Vulkan file | Metal file | Vulkan entry | Metal entry |
+|--------|----------------|-------------|------------|--------------|-------------|
+| `rayGeneration()` | `.rgen` | `.rgen.spv` | `.rgen.metallib` | `main` | `rgenMain` |
+| `miss()` | `.rmiss` | `.rmiss.spv` | `.rmiss.metallib` | `main` | `rmissMain` |
+| `closestHit()` | `.rchit` | `.rchit.spv` | `.rchit.metallib` | `main` | `rchitMain` |
+
+**Metal note:** On Metal, `miss()` and `closestHit()` return `nullptr` when the
+`.rmiss.metallib` or `.rchit.metallib` file does not exist. This is expected
+because Metal handles miss/hit behavior internally in the compute kernel. The
+`RayTracingPipeline` accepts null pointers for these shaders without error.
+
+`rayGeneration()` always throws if the file is missing (the rgen shader is
+required on both backends).
 
 ---
 

@@ -175,6 +175,8 @@ This separation allows the engine to keep C++ objects alive for bookkeeping whil
 
 It stores `std::shared_ptr<DeviceResource>`, not raw pointers and not lambdas. This guarantees that every registered object remains alive until the manager is flushed.
 
+`push()` and `pushStatic()` silently ignore `nullptr` shared pointers. This allows backend-specific factories to return `nullptr` for unsupported shader stages without requiring callers to guard each registration.
+
 The constructor requires a `Surface*` pointer for deferred cleanup timing. The surface is **not owned** — the caller must ensure it outlives the manager.
 
 Typical usage:

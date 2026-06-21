@@ -76,6 +76,9 @@ gpu::RayTracingMesh           (abstract)
 gpu::RayTracingScene          (abstract)
   +-- gpu::vk::RayTracingScene
   +-- gpu::metal::RayTracingScene
+gpu::RayTracingPipeline       (abstract)
+  +-- gpu::vk::RayTracingPipeline
+  +-- gpu::metal::RayTracingPipeline
 gpu::MeshGeneric<MeshT>       (template, not polymorphic)
   -- gpu::MeshP  / MeshPN  / MeshPC  / MeshPU
   -- gpu::MeshPNU / MeshPNC / MeshPNUC / MeshPNUT / MeshPNUUT
@@ -103,8 +106,10 @@ Factory::init(BackendType)
             -> device->createSampler(description)
             -> device->createResourceSet(layout, setIndex)
             -> device->createBuffer(debugName)
-            -> device->createRayTracingMesh(description)   // ray tracing (optional)
-            -> device->createRayTracingScene(debugName)    // ray tracing (optional)
+        -> device->createRayTracingMesh(description)   // ray tracing (optional)
+        -> device->createRayTracingScene(debugName)    // ray tracing (optional)
+        -> device->createRayTracingPipeline(description)  // ray tracing pipeline (optional)
+            -> device->createRayTracingPipeline(description)  // ray tracing pipeline (optional)
             -> device->immediateSubmit(lambda)
 ```
 
@@ -563,9 +568,10 @@ Use `props->rayTracingSupported()` to gate any acceleration structure code.
 
 The layer provides a backend-agnostic block for hardware ray queries (Vulkan
 `VK_KHR_ray_query` / Metal ray tracing intersectors). It covers acceleration
-structures and queries only — there is no ray tracing pipeline or shader binding
-table. Ray queries are issued from raster shaders (validated from the fragment
-shader).
+structures, query-capable raster shaders, and the new `RayTracingPipeline` for
+dispatching ray tracing shader stages.
+
+### Acceleration structures and ray queries
 
 Two resources model the standard two-level hierarchy:
 
@@ -608,6 +614,53 @@ binding (GLSL `accelerationStructureEXT` / Metal
 complete Lambert-lit scene with a moving point light and ray-traced hard
 shadows.
 
+### Ray tracing pipelines
+
+The `RayTracingPipeline` provides a backend-agnostic abstraction for dispatching
+ray tracing shader stages (ray generation, miss, closest hit) against an
+acceleration structure. It follows the same resource creation model as
+`GraphicsPipeline` and `ComputePipeline`.
+
+Typical data flow:
+
+```cpp
+// 1. Load RT shaders from ShaderLib.
+auto rgen = shaderLib->rayGeneration("path_tracer", device.get());
+auto rmiss = shaderLib->miss("path_tracer", device.get());     // may be nullptr on Metal
+auto rchit = shaderLib->closestHit("path_tracer", device.get()); // may be nullptr on Metal
+
+// 2. Create a pipeline layout with descriptor bindings for output, camera UBO, TLAS, etc.
+auto layout = device->createPipelineLayout(layoutDesc);
+
+// 3. Create the RT pipeline.
+gpu::RayTracingPipelineDescription rtDesc{};
+rtDesc.raygenShader = rgen.get();
+rtDesc.missShader = rmiss.get();
+rtDesc.closestHitShader = rchit.get();
+rtDesc.layout = layout.get();
+auto rtPipeline = device->createRayTracingPipeline(rtDesc);
+
+// 4. Bind resources and dispatch.
+auto cmd = graphicsQueue.createCommandBuffer("RT Frame");
+cmd->begin();
+
+scene->buildOrUpdate(cmd.get());   // update TLAS if needed
+
+rtPipeline->bindPipeline(rtPipeline.get());
+cmd->bindResourceSet(rtPipeline.get(), 0, resourceSet.get());
+cmd->traceRays(width, height);
+
+cmd->end();
+graphicsQueue.submit(cmd.get());
+```
+
+See [`RayTracingPipeline`](RayTracingPipeline.md) for the full API reference,
+and `examples/gpu/13_ray_tracing_pipeline` for a complete Cornell box example.
+
+> **Shaders:** RT shader stages use special file extensions (`.rgen`, `.rmiss`,
+> `.rchit`) compiled to platform-specific binaries. GLSL variants use `main` as
+> the entry point; Metal uses `<stage>Main`. See [ShaderLibraries](ShaderLibraries.md).
+
 > **Shaders:** ray-query fragment shaders need SPIR-V 1.4 / Vulkan 1.2. Compile
 > the GLSL with `glslang --target-env vulkan1.2`; the example does this in its
 > own `CMakeLists.txt`.
@@ -633,7 +686,8 @@ advanced usage), each backend class exposes non-virtual accessors:
 | `vk::Image`         | `handle()`, `imageView()`| --                     |
 | `vk::Buffer`        | `handle()`, `deviceAddress()`| --                  |
 | `vk::RayTracingMesh`| `handle()`, `deviceAddress()`| --                  |
-| `vk::RayTracingScene`| `handle()`             | --                      |
+| `vk::RayTracingScene`| `handle()`             | --                  |
+| `vk::RayTracingPipeline`| `pipeline()`, `sbtBuffer()` | --           |
 | `metal::PhysicalDevice`| --                    | `metalDevice()`         |
 | `metal::Device`     | --                      | `handle()`              |
 | `metal::WindowSurface`| --                     | `metalLayer()`          |
@@ -643,6 +697,7 @@ advanced usage), each backend class exposes non-virtual accessors:
 | `metal::Buffer`     | --                      | `handle()`              |
 | `metal::RayTracingMesh` | --                  | `handle()`              |
 | `metal::RayTracingScene`| --                  | `handle()`, `referencedPrimitives()` |
+| `metal::RayTracingPipeline`| --              | `pipelineState()`      |
 
 To use these, cast the abstract pointer to the concrete type:
 

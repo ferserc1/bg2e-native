@@ -20,7 +20,8 @@ rendering techniques.
 9. [Recipe 7: Uniform Buffers and Multi-Set Rendering](#recipe-7-uniform-buffers-and-multi-set-rendering)
 10. [Recipe 8: Render to Texture](#recipe-8-render-to-texture)
 11. [Recipe 9: Cubemap Rendering](#recipe-9-cubemap-rendering)
-12. [Cleanup Order](#cleanup-order)
+12. [Recipe 10: Ray Tracing Pipeline](#recipe-10-ray-tracing-pipeline)
+13. [Cleanup Order](#cleanup-order)
 
 ---
 
@@ -115,7 +116,7 @@ Brief descriptions of every class and type in `bg2e::gpu`:
 | Class | Header | Description |
 |-------|--------|-------------|
 | **`ShaderModule`** | `ShaderModule.hpp` | Abstract compiled shader module. Created via `Device::createShaderModule()` with a `ShaderModuleDescription` (file path, entry point, stage). |
-| **`ShaderLib`** | `ShaderLib.hpp` | Convenience loader for shader libraries. Given a base path and backend type, loads `.spv` (Vulkan) or `.metallib` (Metal) files by name. Methods: `vertex()`, `fragment()`, `compute()`. |
+| **`ShaderLib`** | `ShaderLib.hpp` | Convenience loader for shader libraries. Given a base path and backend type, loads `.spv` (Vulkan) or `.metallib` (Metal) files by name. Methods: `vertex()`, `fragment()`, `compute()`, `rayGeneration()`, `miss()`, `closestHit()`. |
 | **`PipelineLayout`** | `PipelineLayout.hpp` | Abstract pipeline layout. Defines push constant ranges and resource bindings. Created via `Device::createPipelineLayout()` with a `PipelineLayoutDescription`. |
 | **`GraphicsPipeline`** | `GraphicsPipeline.hpp` | Abstract graphics pipeline. Created via `Device::createGraphicsPipeline()` with a `GraphicsPipelineDescription` (shaders, layout, topology, formats, cull mode, vertex buffer descriptions). |
 | **`ComputePipeline`** | `ComputePipeline.hpp` | Abstract compute pipeline. Created via `Device::createComputePipeline()` with a `ComputePipelineDescription` (compute shader, layout). |
@@ -136,6 +137,7 @@ binding table. Requires `PhysicalDeviceProperties::rayTracingSupported()`.
 |-------|--------|-------------|
 | **`RayTracingMesh`** | `RayTracingMesh.hpp` | Abstract bottom-level acceleration structure (BLAS) for one submesh, built from existing GPU vertex/index buffers. Created via `Device::createRayTracingMesh()`; built with `CommandBuffer::buildRayTracingMesh()`. |
 | **`RayTracingScene`** | `RayTracingScene.hpp` | Abstract top-level acceleration structure (TLAS) holding instances of `RayTracingMesh`. Methods: `clearInstances()`, `addInstance()`, `buildOrUpdate()`. Bound through `ResourceSet::setRayTracingScene()`. |
+| **`RayTracingPipeline`** | `RayTracingPipeline.hpp` | Abstract ray tracing pipeline. Dispatches raygen/miss/closest-hit shaders against an acceleration structure. Created via `Device::createRayTracingPipeline()`; dispatched with `CommandBuffer::traceRays()`. |
 
 ### Management utilities
 
@@ -153,7 +155,7 @@ binding table. Requires `PhysicalDeviceProperties::rayTracingSupported()`.
 | `WindowType` | Enum: `Vulkan`, `Metal`. Determines SDL window flags. |
 | `PixelFormat` | Enum: color formats (`R8G8B8A8_UNORM`, `B8G8R8A8_UNORM`, `R16G16B16A16_SFLOAT`, etc.) and depth formats (`D32_SFLOAT`, `D24_UNORM_S8_UINT`, etc.). |
 | `ImageLayout` | Enum: `Undefined`, `General`, `ColorAttachment`, `DepthAttachment`, `ShaderReadOnly`, `TransferSrc`, `TransferDst`, `Present`. |
-| `ShaderStage` | Enum: `Vertex`, `Fragment`, `Compute`. |
+| `ShaderStage` | Enum: `Vertex`, `Fragment`, `Compute`, `RayGeneration`, `Miss`, `ClosestHit`. |
 | `ResourceType` | Enum: `UniformBuffer`, `StorageBuffer`, `SampledImage`, `StorageImage`, `Sampler`, `AccelerationStructure`. |
 | `ShaderBinding` | Struct with `vulkan` and `metal` binding indices. |
 | `ResourceBinding` | Struct: set index, `ShaderBinding`, type, stage, count. |
@@ -162,9 +164,10 @@ binding table. Requires `PhysicalDeviceProperties::rayTracingSupported()`.
 | `SamplerDescription` | Struct: filter modes, address modes, debug name. |
 | `ImageDescription` | Struct: size, format, usage, type, mip levels. |
 | `ImageUsage` | Bitmask: `ColorAttachment`, `DepthStencil`, `Sampled`, `Storage`, `TransferSrc`, `TransferDst`, `Present`. |
-| `BufferUsage` | Bitmask: `Vertex`, `Index`, `Uniform`, `Storage`, `TransferSrc`, `TransferDst`, `AccelerationStructureBuildInput`, `ShaderDeviceAddress`. |
+| `BufferUsage` | Bitmask: `Vertex`, `Index`, `Uniform`, `Storage`, `TransferSrc`, `TransferDst`, `AccelerationStructureBuildInput`, `ShaderDeviceAddress`, `ShaderBindingTable`. |
 | `RayTracingMeshDescription` | Struct: shared vertex/index buffers, stride, position offset, vertex format, submesh index range. |
 | `RayTracingInstance` | Struct: `RayTracingMesh*`, world transform, instance id, mask. |
+| `RayTracingPipelineDescription` | Struct: raygen/miss/closestHit shader modules, layout, recursion depth, debug name. |
 | `GraphicsPipelineDescription` | Struct: shaders, layout, topology, color/depth formats, cull mode, front face, vertex buffer descriptions. |
 | `ComputePipelineDescription` | Struct: compute shader, layout. |
 | `VertexAttributeDescription` | Struct: location, binding, semantic, format, offset. |
@@ -1117,6 +1120,148 @@ void main() {
   match the cubemap's pixel format.
 - Set `cullMode = CullMode::None` for the cubemap renderer since you're
   rendering from inside the sphere.
+
+---
+
+## Recipe 10: Ray Tracing Pipeline
+
+Dispatch ray tracing shaders (ray generation, miss, closest hit) against an
+acceleration structure. Demonstrates loading RT shaders via `ShaderLib`, building
+BLAS/TLAS, and dispatching with `traceRays()`.
+
+### Load RT shaders
+
+```cpp
+auto shaderLib = backend->createShaderLib(
+    base::PlatformTools::shaderPath() / "ray_tracing_pipeline");
+
+// Load the three RT shader stages
+auto rgen = shaderLib->rayGeneration("path_tracer", device.get());
+auto rmiss = shaderLib->miss("path_tracer", device.get());     // may be nullptr on Metal
+auto rchit = shaderLib->closestHit("path_tracer", device.get()); // may be nullptr on Metal
+
+cleanup.push(rgen);
+if (rmiss) cleanup.push(rmiss);
+if (rchit) cleanup.push(rchit);
+```
+
+### Pipeline layout with acceleration structure binding
+
+```cpp
+gpu::PipelineLayoutDescription desc{};
+// set 0, binding 0: storage image (output)
+desc.resourceBindings.push_back({
+    0, {.vulkan = 0, .metal = 0}, gpu::ResourceType::StorageImage,
+    gpu::ShaderStage::RayGeneration, 1
+});
+// set 0, binding 1: sampled image (input for accumulation)
+desc.resourceBindings.push_back({
+    0, {.vulkan = 1, .metal = 1}, gpu::ResourceType::SampledImage,
+    gpu::ShaderStage::RayGeneration, 1
+});
+// set 0, binding 2: camera UBO
+desc.resourceBindings.push_back({
+    0, {.vulkan = 2, .metal = 2}, gpu::ResourceType::UniformBuffer,
+    gpu::ShaderStage::RayGeneration, 1
+});
+// set 0, binding 3: TLAS (acceleration structure)
+desc.resourceBindings.push_back({
+    0, {.vulkan = 3, .metal = 3}, gpu::ResourceType::AccelerationStructure,
+    gpu::ShaderStage::RayGeneration, 1
+});
+auto layout = device->createPipelineLayout(desc);
+cleanup.push(layout);
+```
+
+### Create RT pipeline
+
+```cpp
+gpu::RayTracingPipelineDescription rtDesc{};
+rtDesc.raygenShader = rgen.get();
+rtDesc.missShader = rmiss.get();      // null on Metal (acceptable)
+rtDesc.closestHitShader = rchit.get(); // null on Metal (acceptable)
+rtDesc.layout = layout.get();
+auto rtPipeline = device->createRayTracingPipeline(rtDesc);
+
+cleanup.push(rtPipeline);
+```
+
+### Build acceleration structures (once, via immediate submit)
+
+```cpp
+// BLAS: bottom-level structure from mesh buffers
+auto rtMesh = device->createRayTracingMesh(
+    mesh.rayTracingMeshDescription(0));
+
+device->immediateSubmit([&](gpu::CommandBuffer* cmd) {
+    cmd->buildRayTracingMesh(rtMesh.get());
+});
+
+// TLAS: top-level scene with instances
+auto scene = device->createRayTracingScene("scene");
+scene->addInstance(rtMesh.get(), glm::mat4(1.0f), 0, 0xFF);
+
+auto sceneSet = device->createResourceSet(layout.get(), 0);
+sceneSet->setRayTracingScene({.vulkan = 3, .metal = 3}, scene.get());
+sceneSet->update();
+
+cleanup.push(scene);
+```
+
+### Render loop with traceRays
+
+```cpp
+// Create storage image and input/output resource sets
+auto outputImage = device->createImage({
+    .size = {surfaceWidth, surfaceHeight},
+    .format = gpu::PixelFormat::R16G16B16A16_SFLOAT,
+    .usage = gpu::ImageUsage::Storage | gpu::ImageUsage::ColorAttachment
+});
+
+device->immediateSubmit([outputImage](gpu::CommandBuffer* cmd) {
+    cmd->transition(outputImage.get(), gpu::ImageLayout::General);
+});
+
+auto outputSet = device->createResourceSet(layout.get(), 0);
+outputSet->setStorageImage({.vulkan = 0, .metal = 0}, outputImage.get());
+outputSet->setSampledImage({.vulkan = 1, .metal = 1}, clearImage.get());
+outputSet->update();
+
+// Per-frame: build TLAS, dispatch RT, copy output to surface
+auto frame = surface->beginFrame();
+auto cmd = graphicsQueue.createCommandBuffer("RT Frame");
+cmd->begin();
+
+// Update TLAS if any transforms changed
+scene->buildOrUpdate(cmd.get());  // outside rendering scope
+
+// Dispatch ray tracing
+cmd->bindPipeline(rtPipeline.get());
+cmd->bindResourceSet(rtPipeline.get(), 0, outputSet.get());
+cmd->traceRays(surfaceWidth, surfaceHeight);
+
+// Copy RT output to swapchain (or blend with previous frame)
+cmd->transition(outputImage.get(), gpu::ImageLayout::TransferSrc);
+cmd->transition(frame->colorImage(), gpu::ImageLayout::TransferDst);
+// ... copyImage(...) or blit
+
+cmd->transition(frame->colorImage(), gpu::ImageLayout::Present);
+surface->present(cmd.get());
+cmd->end();
+graphicsQueue.submit(cmd.get());
+surface->endFrame(frame.get());
+```
+
+**Key points:**
+- `ShaderLib::rayGeneration()` is required on both backends; `miss()` and `closestHit()`
+  may return `nullptr` on Metal. Always check for null before using the shaders.
+- The ray tracing pipeline must be bound via `bindPipeline(RayTracingPipeline*)` before
+  calling `traceRays()`.
+- Resource sets are bound with `bindResourceSet(RayTracingPipeline*, setIndex, ...)`.
+- On Metal, ray tracing is implemented via a compute kernel — `traceRays()` dispatches
+  threadgroups of size 8x8 (e.g., `ceil(width/8) x ceil(height/8)`).
+- The TLAS (`RayTracingScene`) should be built or updated every frame if instance
+  transforms change.
 
 ---
 

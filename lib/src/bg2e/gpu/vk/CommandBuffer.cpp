@@ -27,6 +27,7 @@
 #include <bg2e/gpu/vk/ResourceSet.hpp>
 #include <bg2e/gpu/vk/RayTracingMesh.hpp>
 #include <bg2e/gpu/vk/RayTracingScene.hpp>
+#include <bg2e/gpu/vk/RayTracingPipeline.hpp>
 #include <bg2e/gpu/vk/Info.hpp>
 #include <bg2e/gpu/vk/extensions.hpp>
 #include <bg2e/gpu/vk/common.hpp>
@@ -75,6 +76,7 @@ void CommandBuffer::begin()
 void CommandBuffer::end()
 {
     flushPendingRendering();
+    _boundRTPipeline = nullptr;
     VK_ASSERT(vkEndCommandBuffer(_cmd));
 }
 
@@ -615,6 +617,61 @@ void CommandBuffer::buildRayTracingScene(gpu::RayTracingScene* scene)
         throw std::runtime_error("vk::CommandBuffer::buildRayTracingScene: not a vk::RayTracingScene");
     }
     vkScene->build(_cmd);
+}
+
+void CommandBuffer::bindPipeline(gpu::RayTracingPipeline* pipeline)
+{
+    auto* vkPipe = dynamic_cast<vk::RayTracingPipeline*>(pipeline);
+    if (!vkPipe)
+    {
+        throw std::runtime_error("vk::CommandBuffer::bindPipeline(RayTracingPipeline): not a vk::RayTracingPipeline");
+    }
+
+    vkCmdBindPipeline(_cmd, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, vkPipe->handle());
+    _boundLayoutHandle = vkPipe->layoutHandle();
+    _boundRTPipeline = vkPipe;
+}
+
+void CommandBuffer::bindResourceSet(gpu::RayTracingPipeline* pipeline, uint32_t setIndex, gpu::ResourceSet* set)
+{
+    auto* vkPipe = dynamic_cast<vk::RayTracingPipeline*>(pipeline);
+    if (!vkPipe)
+    {
+        throw std::runtime_error("vk::CommandBuffer::bindResourceSet(RayTracingPipeline): not a vk::RayTracingPipeline");
+    }
+
+    auto* vkSet = dynamic_cast<vk::ResourceSet*>(set);
+    if (!vkSet)
+    {
+        throw std::runtime_error("vk::CommandBuffer::bindResourceSet(RayTracingPipeline): not a vk::ResourceSet");
+    }
+
+    VkDescriptorSet ds = vkSet->handle();
+    vkCmdBindDescriptorSets(
+        _cmd,
+        VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR,
+        vkPipe->layoutHandle(),
+        setIndex,
+        1, &ds,
+        0, nullptr
+    );
+}
+
+void CommandBuffer::traceRays(uint32_t width, uint32_t height, uint32_t depth)
+{
+    if (_boundRTPipeline == nullptr)
+    {
+        throw std::runtime_error("vk::CommandBuffer::traceRays: no ray tracing pipeline bound");
+    }
+
+    cmdTraceRays(
+        _cmd,
+        &_boundRTPipeline->raygenSBT(),
+        &_boundRTPipeline->missSBT(),
+        &_boundRTPipeline->hitSBT(),
+        &_boundRTPipeline->callableSBT(),
+        width, height, depth
+    );
 }
 
 }

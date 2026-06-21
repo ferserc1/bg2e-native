@@ -52,11 +52,13 @@ public:
 
     std::shared_ptr<gpu::RayTracingMesh> createRayTracingMesh(const RayTracingMeshDescription& description) override;
     std::shared_ptr<gpu::RayTracingScene> createRayTracingScene(const std::string& debugName = {}) override;
+    std::shared_ptr<gpu::RayTracingPipeline> createRayTracingPipeline(const gpu::RayTracingPipelineDescription& description) override;
 
     void immediateSubmit(std::function<void(gpu::CommandBuffer* cmd)>&& function) override;
 
     VkDevice handle() const { return _device; }
     VmaAllocator allocator() const { return _allocator; }
+    VkPhysicalDevice physicalDeviceHandle() const { return _physicalDevice; }
 
     // True when the device was created with the ray tracing extensions enabled.
     bool     rayTracingEnabled() const { return _rayTracingEnabled; }
@@ -65,6 +67,7 @@ public:
 
 private:
     VkDevice _device{VK_NULL_HANDLE};
+    VkPhysicalDevice _physicalDevice{VK_NULL_HANDLE};
     VmaAllocator _allocator{VK_NULL_HANDLE};
     vk::Queue _graphicsQueue;
     vk::Queue _presentQueue;

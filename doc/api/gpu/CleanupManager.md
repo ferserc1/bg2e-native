@@ -53,6 +53,12 @@ deferred cleanup API.
 Registers a device resource for cleanup. Normal resources are cleaned in
 **reverse** insertion order when `flush()` is called.
 
+**Null-safe:** Both overloads silently ignore `nullptr` resources (no-op).
+This allows backend-specific factory methods such as `ShaderLib::miss()` or
+`ShaderLib::closestHit()` to return `nullptr` on platforms where a shader
+stage is not applicable, without requiring callers to add null-checks before
+registration.
+
 ### `void pushStatic(const std::shared_ptr<DeviceResource>& resource)`
 ### `void pushStatic(std::shared_ptr<DeviceResource>&& resource)`
 
@@ -62,6 +68,8 @@ are cleaned **first**, in **insertion** order when `flush()` is called.
 Use this for engine-level shared resources such as texture caches, geometry
 caches, or global material resources that should be released before ordinary
 per-object resources.
+
+**Null-safe:** Both overloads silently ignore `nullptr` resources (no-op).
 
 ### `void flush()`
 

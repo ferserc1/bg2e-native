@@ -73,6 +73,9 @@ public:
     void blitImage(gpu::Image* src, gpu::Image* dst) override;
     void buildRayTracingMesh(gpu::RayTracingMesh* mesh) override;
     void buildRayTracingScene(gpu::RayTracingScene* scene) override;
+    void bindPipeline(gpu::RayTracingPipeline* pipeline) override;
+    void bindResourceSet(gpu::RayTracingPipeline* pipeline, uint32_t setIndex, gpu::ResourceSet* set) override;
+    void traceRays(uint32_t width, uint32_t height, uint32_t depth) override;
     bool isValid() const override;
 
 #if BG2E_IS_MAC
@@ -92,6 +95,7 @@ private:
     bool                        _recording   = false;
     metal::GraphicsPipeline*    _boundPipeline = nullptr;
     metal::ComputePipeline*     _boundComputePipeline = nullptr;
+    gpu::RayTracingPipeline*    _boundRayTracingPipeline = nullptr;
     metal::PipelineLayout*      _boundLayout = nullptr;
 
     MTL::Buffer*                _boundIndexBuffer       = nullptr;

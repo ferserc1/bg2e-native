@@ -30,6 +30,7 @@ namespace vk {
 
 class Device;
 class SurfaceFrame;
+class RayTracingPipeline;
 
 class CommandBuffer : public gpu::CommandBuffer {
 public:
@@ -64,6 +65,9 @@ public:
     void blitImage(gpu::Image* src, gpu::Image* dst) override;
     void buildRayTracingMesh(gpu::RayTracingMesh* mesh) override;
     void buildRayTracingScene(gpu::RayTracingScene* scene) override;
+    void bindPipeline(gpu::RayTracingPipeline* pipeline) override;
+    void bindResourceSet(gpu::RayTracingPipeline* pipeline, uint32_t setIndex, gpu::ResourceSet* set) override;
+    void traceRays(uint32_t width, uint32_t height, uint32_t depth) override;
     bool isValid() const override { return _cmd != VK_NULL_HANDLE; }
 
     VkCommandBuffer handle() const { return _cmd; }
@@ -87,6 +91,8 @@ private:
     bool              _hasColorClear = false;
     bool              _hasDepthClear = false;
     VkPipelineLayout  _boundLayoutHandle = VK_NULL_HANDLE;
+
+    vk::RayTracingPipeline* _boundRTPipeline = nullptr;
 
     vk::SurfaceFrame* _presentFrame = nullptr;
 

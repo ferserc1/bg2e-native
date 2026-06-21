@@ -55,11 +55,36 @@ public:
         const std::string& debugName = ""
     );
 
+    std::shared_ptr<ShaderModule> rayGeneration(
+        const std::string& shaderName,
+        Device* device,
+        const std::string& debugName = ""
+    );
+
+    std::shared_ptr<ShaderModule> miss(
+        const std::string& shaderName,
+        Device* device,
+        const std::string& debugName = ""
+    );
+
+    std::shared_ptr<ShaderModule> closestHit(
+        const std::string& shaderName,
+        Device* device,
+        const std::string& debugName = ""
+    );
+
 private:
     std::filesystem::path _basePath;
     BackendType           _backendType;
 
     std::shared_ptr<ShaderModule> _load(
+        const std::string& shaderName,
+        const std::string& stageExt,
+        ShaderStage        stage,
+        const std::string& debugName,
+        Device*            device);
+
+    std::shared_ptr<ShaderModule> _loadOrNull(
         const std::string& shaderName,
         const std::string& stageExt,
         ShaderStage        stage,

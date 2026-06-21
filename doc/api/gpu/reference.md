@@ -35,6 +35,7 @@ backend-specific sub-namespaces (`bg2e::gpu::vk`, `bg2e::gpu::metal`).
 | [ComputePipelineDescription](ComputePipeline.md#computepipelinedescription) | `gpu/ComputePipeline.hpp` | Compute shader and layout. |
 | [RayTracingMeshDescription](RayTracingMesh.md#raytracingmeshdescription) | `gpu/RayTracingMesh.hpp` | Shared vertex/index buffers + submesh range for a bottom-level acceleration structure. |
 | [RayTracingInstance](RayTracingScene.md#raytracinginstance) | `gpu/RayTracingScene.hpp` | One instance of a RayTracingMesh in a scene: mesh, transform, id, mask. |
+| [RayTracingPipelineDescription](RayTracingPipeline.md#raytracingpipelinedescription) | `gpu/RayTracingPipeline.hpp` | Configuration for creating a ray tracing pipeline: shaders, layout, and recursion depth. |
 
 ## Classes
 
@@ -60,6 +61,7 @@ backend-specific sub-namespaces (`bg2e::gpu::vk`, `bg2e::gpu::metal`).
 | [ResourceSet](ResourceSet.md) | `gpu/ResourceSet.hpp` | Groups resources (UBOs, SSBOs, images, samplers, acceleration structures) bound to one descriptor set. |
 | [RayTracingMesh](RayTracingMesh.md) | `gpu/RayTracingMesh.hpp` | Bottom-level acceleration structure (BLAS) for one submesh, from existing GPU buffers. |
 | [RayTracingScene](RayTracingScene.md) | `gpu/RayTracingScene.hpp` | Top-level acceleration structure (TLAS) holding instances of RayTracingMesh. |
+| [RayTracingPipeline](RayTracingPipeline.md) | `gpu/RayTracingPipeline.hpp` | Ray tracing pipeline dispatch (raygen, miss, closest hit shaders). |
 | [`MeshGeneric<T>`](Mesh.md) | `gpu/Mesh.hpp` | Template pairing CPU mesh data with GPU vertex/index buffers. |
 | [`CleanupManager`](CleanupManager.md) | `gpu/CleanupManager.hpp` | Ordered and deferred cleanup for device resources. |
 | [`FrameResourceRing<T>`](FrameResourceRing.md) | `gpu/FrameResourceRing.hpp` | Template ring of per-frame device resources. |
@@ -135,6 +137,9 @@ gpu::RayTracingMesh           (abstract)
 gpu::RayTracingScene          (abstract)
   +-- gpu::vk::RayTracingScene
   +-- gpu::metal::RayTracingScene
+gpu::RayTracingPipeline       (abstract)
+  +-- gpu::vk::RayTracingPipeline
+  +-- gpu::metal::RayTracingPipeline
 gpu::CleanupManager           (concrete, not polymorphic)
 gpu::FrameResourceRing<T>     (template, not polymorphic)
 ```

@@ -21,6 +21,7 @@
 #include <bg2e/gpu/metal/GraphicsPipeline.hpp>
 #include <bg2e/gpu/metal/ComputePipeline.hpp>
 #include <bg2e/gpu/metal/PipelineLayout.hpp>
+#include <bg2e/gpu/metal/RayTracingPipeline.hpp>
 #include <bg2e/gpu/metal/ResourceSet.hpp>
 #include <bg2e/gpu/metal/RayTracingMesh.hpp>
 #include <bg2e/gpu/metal/RayTracingScene.hpp>
@@ -489,11 +490,16 @@ void CommandBuffer::pushConstants(ShaderStage stage, uint32_t offset, uint32_t s
             _encoder->setFragmentBytes(data, size, binding);
             break;
         case ShaderStage::Compute:
+        case ShaderStage::RayGeneration:
+        case ShaderStage::Miss:
+        case ShaderStage::ClosestHit:
             if (!_computeEncoder)
             {
                 throw std::runtime_error("metal::CommandBuffer::pushConstants: no active compute scope; call beginCompute() first");
             }
             _computeEncoder->setBytes(data, size, binding);
+            break;
+        default:
             break;
     }
 }
@@ -771,6 +777,93 @@ void CommandBuffer::buildRayTracingScene(gpu::RayTracingScene* scene)
     metalScene->build(_cmd);
 }
 
+void CommandBuffer::bindPipeline(gpu::RayTracingPipeline* pipeline)
+{
+    auto* metalPipeline = dynamic_cast<metal::RayTracingPipeline*>(pipeline);
+    if (!metalPipeline)
+    {
+        throw std::runtime_error("metal::CommandBuffer::bindPipeline(RayTracingPipeline): not a metal::RayTracingPipeline");
+    }
+
+    // Create compute encoder if not already active
+    if (!_computeEncoder)
+    {
+        if (!_cmd)
+        {
+            throw std::runtime_error("metal::CommandBuffer::bindPipeline(RayTracingPipeline): no command buffer");
+        }
+        _computeEncoder = _cmd->computeCommandEncoder();
+        if (!_computeEncoder)
+        {
+            throw std::runtime_error("metal::CommandBuffer::bindPipeline(RayTracingPipeline): failed to create compute encoder");
+        }
+    }
+
+    _computeEncoder->setComputePipelineState(metalPipeline->computePipelineState());
+    _boundComputePipeline = nullptr;
+    _boundRayTracingPipeline = metalPipeline;
+    _boundLayout = metalPipeline->layout();
+}
+
+void CommandBuffer::bindResourceSet(gpu::RayTracingPipeline* /*pipeline*/, uint32_t /*setIndex*/, gpu::ResourceSet* set)
+{
+    if (!_computeEncoder)
+    {
+        throw std::runtime_error("metal::CommandBuffer::bindResourceSet(RayTracingPipeline): no active compute scope");
+    }
+
+    auto* metalSet = dynamic_cast<metal::ResourceSet*>(set);
+    if (!metalSet)
+    {
+        throw std::runtime_error("metal::CommandBuffer::bindResourceSet(RayTracingPipeline): not a metal::ResourceSet");
+    }
+
+    // Reuse the same resource binding logic as compute pipelines
+    for (const auto& entry : metalSet->entries())
+    {
+        if (entry.texture)
+        {
+            _computeEncoder->setTexture(entry.texture, entry.index);
+        }
+        if (entry.sampler)
+        {
+            _computeEncoder->setSamplerState(entry.sampler, entry.index);
+        }
+        if (entry.buffer)
+        {
+            _computeEncoder->setBuffer(entry.buffer, 0, entry.index);
+        }
+        if (entry.rtScene)
+        {
+            for (auto* prim : entry.rtScene->referencedPrimitives())
+            {
+                _computeEncoder->useResource(prim, MTL::ResourceUsageRead);
+            }
+            _computeEncoder->setAccelerationStructure(entry.rtScene->handle(), entry.index);
+        }
+    }
+}
+
+void CommandBuffer::traceRays(uint32_t width, uint32_t height, uint32_t depth)
+{
+    if (!_computeEncoder)
+    {
+        throw std::runtime_error("metal::CommandBuffer::traceRays: no active compute scope; call bindPipeline(RayTracingPipeline) first");
+    }
+
+    // Use 8x8 threadgroups to match the Metal shader threadgroup_size
+    constexpr NS::UInteger kThreadGroupWidth  = 8;
+    constexpr NS::UInteger kThreadGroupHeight = 8;
+
+    MTL::Size threadsPerGroup = MTL::Size::Make(kThreadGroupWidth, kThreadGroupHeight, 1);
+    MTL::Size threadGroups = MTL::Size::Make(
+        (width + kThreadGroupWidth - 1) / kThreadGroupWidth,
+        (height + kThreadGroupHeight - 1) / kThreadGroupHeight,
+        depth
+    );
+    _computeEncoder->dispatchThreadgroups(threadGroups, threadsPerGroup);
+}
+
 bool CommandBuffer::isValid() const
 {
     return _cmd != nullptr;
@@ -805,6 +898,9 @@ void CommandBuffer::copyImage(gpu::Image*, gpu::Image*) {}
 void CommandBuffer::blitImage(gpu::Image*, gpu::Image*) {}
 void CommandBuffer::buildRayTracingMesh(gpu::RayTracingMesh*) {}
 void CommandBuffer::buildRayTracingScene(gpu::RayTracingScene*) {}
+void CommandBuffer::bindPipeline(gpu::RayTracingPipeline*) {}
+void CommandBuffer::bindResourceSet(gpu::RayTracingPipeline*, uint32_t, gpu::ResourceSet*) {}
+void CommandBuffer::traceRays(uint32_t, uint32_t, uint32_t) {}
 bool CommandBuffer::isValid() const { return false; }
 
 #endif

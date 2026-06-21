@@ -71,7 +71,10 @@ public:
         {
             case ShaderStage::Vertex:   return 1;
             case ShaderStage::Fragment: return 0;
-            case ShaderStage::Compute:  return 0;
+            case ShaderStage::Compute:          return 0;
+            case ShaderStage::RayGeneration:    return 0;
+            case ShaderStage::Miss:             return 0;
+            case ShaderStage::ClosestHit:       return 0;
         }
         return 0;
     }

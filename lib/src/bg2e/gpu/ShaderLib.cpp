@@ -67,6 +67,45 @@ std::shared_ptr<ShaderModule> ShaderLib::compute(const std::string& shaderName, 
     );
 }
 
+std::shared_ptr<ShaderModule> ShaderLib::rayGeneration(const std::string& shaderName, Device* device, const std::string& debugName)
+{
+    return _load(
+        shaderName,
+        "rgen",
+        ShaderStage::RayGeneration,
+        debugName.empty() ?
+            shaderName + " ray generation shader" :
+            debugName,
+        device
+    );
+}
+
+std::shared_ptr<ShaderModule> ShaderLib::miss(const std::string& shaderName, Device* device, const std::string& debugName)
+{
+    return _loadOrNull(
+        shaderName,
+        "rmiss",
+        ShaderStage::Miss,
+        debugName.empty() ?
+            shaderName + " miss shader" :
+            debugName,
+        device
+    );
+}
+
+std::shared_ptr<ShaderModule> ShaderLib::closestHit(const std::string& shaderName, Device* device, const std::string& debugName)
+{
+    return _loadOrNull(
+        shaderName,
+        "rchit",
+        ShaderStage::ClosestHit,
+        debugName.empty() ?
+            shaderName + " closest hit shader" :
+            debugName,
+        device
+    );
+}
+
 std::shared_ptr<ShaderModule> ShaderLib::_load(
     const std::string& shaderName,
     const std::string& stageExt,
@@ -78,6 +117,32 @@ std::shared_ptr<ShaderModule> ShaderLib::_load(
     std::string entryPoint = (_backendType == BackendType::Vulkan) ? "main" : stageExt + "Main";
     auto filePath = (_basePath / (shaderName + "." + stageExt + ext)).string();
     return device->createShaderModule({ filePath, entryPoint, stage, debugName });
+}
+
+std::shared_ptr<ShaderModule> ShaderLib::_loadOrNull(
+    const std::string& shaderName,
+    const std::string& stageExt,
+    ShaderStage        stage,
+    const std::string& debugName,
+    Device*            device)
+{
+    std::string ext = (_backendType == BackendType::Vulkan) ? ".spv" : ".metallib";
+    auto filePath = _basePath / (shaderName + "." + stageExt + ext);
+
+    if (_backendType == BackendType::Metal)
+    {
+        if (!std::filesystem::exists(filePath))
+        {
+            return nullptr;
+        }
+    }
+
+    std::string entryPoint = (_backendType == BackendType::Vulkan)
+        ? "main"
+        : stageExt + "Main";
+    return device->createShaderModule({
+        filePath.string(), entryPoint, stage, debugName
+    });
 }
 
 }

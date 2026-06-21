@@ -52,6 +52,7 @@ public:
 
     std::shared_ptr<gpu::RayTracingMesh> createRayTracingMesh(const RayTracingMeshDescription& description) override;
     std::shared_ptr<gpu::RayTracingScene> createRayTracingScene(const std::string& debugName = {}) override;
+    std::shared_ptr<gpu::RayTracingPipeline> createRayTracingPipeline(const gpu::RayTracingPipelineDescription& description) override;
 
     void immediateSubmit(std::function<void(gpu::CommandBuffer* cmd)>&& function) override;
 

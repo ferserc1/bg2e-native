@@ -36,6 +36,7 @@ public:
 
     virtual std::shared_ptr<RayTracingMesh>  createRayTracingMesh(const RayTracingMeshDescription& description);
     virtual std::shared_ptr<RayTracingScene> createRayTracingScene(const std::string& debugName = {});
+    virtual std::shared_ptr<RayTracingPipeline> createRayTracingPipeline(const RayTracingPipelineDescription& description);
 
     virtual void immediateSubmit(std::function<void(CommandBuffer* cmd)>&& function);
 };
@@ -161,6 +162,18 @@ throws otherwise. See [RayTracingScene](RayTracingScene.md).
 |-------------|---------------|---------|--------------------------------------|
 | `debugName` | `std::string` | `""`    | Optional label for GPU debug tools.  |
 
+### `virtual std::shared_ptr<RayTracingPipeline> createRayTracingPipeline(const RayTracingPipelineDescription& description)`
+
+Creates a ray tracing pipeline from the description. The pipeline owns the
+internal shader binding table (Vulkan) or compute pipeline state (Metal).
+
+Throws `std::runtime_error` if ray tracing is not supported by the device.
+See [RayTracingPipeline](RayTracingPipeline.md).
+
+| Parameter     | Type                            | Description              |
+|---------------|---------------------------------|--------------------------|
+| `description` | `RayTracingPipelineDescription` | Pipeline configuration.  |
+
 ### `virtual std::shared_ptr<Image> createImage(const ImageDescription& description)`
 
 Allocates a GPU image (texture). See [Image](Image.md).
@@ -227,6 +240,7 @@ public:
     std::unique_ptr<gpu::Buffer>           createBuffer(const std::string& debugName = {}) override;
     std::shared_ptr<gpu::RayTracingMesh>   createRayTracingMesh(const gpu::RayTracingMeshDescription&) override;
     std::shared_ptr<gpu::RayTracingScene>  createRayTracingScene(const std::string& debugName = {}) override;
+    std::shared_ptr<gpu::RayTracingPipeline> createRayTracingPipeline(const gpu::RayTracingPipelineDescription&) override;
 
     VkDevice handle() const;
 
@@ -290,6 +304,7 @@ public:
     std::unique_ptr<gpu::Buffer>           createBuffer(const std::string& debugName = {}) override;
     std::shared_ptr<gpu::RayTracingMesh>   createRayTracingMesh(const gpu::RayTracingMeshDescription&) override;
     std::shared_ptr<gpu::RayTracingScene>  createRayTracingScene(const std::string& debugName = {}) override;
+    std::shared_ptr<gpu::RayTracingPipeline> createRayTracingPipeline(const gpu::RayTracingPipelineDescription&) override;
 
     DeviceHandle handle() const;
 };

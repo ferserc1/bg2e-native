@@ -30,6 +30,7 @@
 #include <bg2e/gpu/vk/CommandBuffer.hpp>
 #include <bg2e/gpu/vk/RayTracingMesh.hpp>
 #include <bg2e/gpu/vk/RayTracingScene.hpp>
+#include <bg2e/gpu/vk/RayTracingPipeline.hpp>
 #include <bg2e/gpu/vk/Info.hpp>
 #include <bg2e/gpu/vk/extensions.hpp>
 #include <bg2e/gpu/CubeMap.hpp>
@@ -47,6 +48,7 @@ namespace vk {
 void Device::create(gpu::Instance* instance, gpu::PhysicalDevice* physicalDevice, gpu::Surface* surface)
 {
     auto* vkPhysDevice = dynamic_cast<vk::PhysicalDevice*>(physicalDevice);
+    _physicalDevice = vkPhysDevice->handle();
     bool offscreen = surface->isOffscreen();
     auto indices = vkPhysDevice->queueFamilyIndices();
 
@@ -455,6 +457,16 @@ std::shared_ptr<gpu::RayTracingScene> Device::createRayTracingScene(const std::s
         throw std::runtime_error("vk::Device::createRayTracingScene: ray tracing is not supported by this device");
     }
     return std::make_shared<vk::RayTracingScene>(this, debugName);
+}
+
+std::shared_ptr<gpu::RayTracingPipeline> Device::createRayTracingPipeline(
+    const gpu::RayTracingPipelineDescription& description)
+{
+    if (!_rayTracingEnabled)
+    {
+        throw std::runtime_error("vk::Device::createRayTracingPipeline: ray tracing is not supported");
+    }
+    return std::make_shared<vk::RayTracingPipeline>(this, _device, _allocator, description);
 }
 
 void Device::immediateSubmit(std::function<void(gpu::CommandBuffer*)>&& function)

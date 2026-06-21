@@ -30,9 +30,12 @@ VkShaderStageFlags shaderStageToVkFlags(ShaderStage stage)
 {
     switch (stage)
     {
-        case ShaderStage::Vertex:   return VK_SHADER_STAGE_VERTEX_BIT;
-        case ShaderStage::Fragment: return VK_SHADER_STAGE_FRAGMENT_BIT;
-        case ShaderStage::Compute:  return VK_SHADER_STAGE_COMPUTE_BIT;
+        case ShaderStage::Vertex:          return VK_SHADER_STAGE_VERTEX_BIT;
+        case ShaderStage::Fragment:        return VK_SHADER_STAGE_FRAGMENT_BIT;
+        case ShaderStage::Compute:         return VK_SHADER_STAGE_COMPUTE_BIT;
+        case ShaderStage::RayGeneration:   return VK_SHADER_STAGE_RAYGEN_BIT_KHR;
+        case ShaderStage::Miss:            return VK_SHADER_STAGE_MISS_BIT_KHR;
+        case ShaderStage::ClosestHit:      return VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR;
     }
     return VK_SHADER_STAGE_VERTEX_BIT;
 }

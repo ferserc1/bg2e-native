@@ -25,6 +25,7 @@
 #include <bg2e/gpu/GraphicsPipeline.hpp>
 #include <bg2e/gpu/ComputePipeline.hpp>
 #include <bg2e/gpu/RayTracingMesh.hpp>
+#include <bg2e/gpu/RayTracingPipeline.hpp>
 #include <functional>
 #include <memory>
 #include <stdexcept>
@@ -49,6 +50,7 @@ class GraphicsPipeline;
 class ComputePipeline;
 class RayTracingMesh;
 class RayTracingScene;
+class RayTracingPipeline;
 
 class BG2E_API Device {
 public:
@@ -127,6 +129,12 @@ public:
     virtual std::shared_ptr<RayTracingScene> createRayTracingScene(const std::string& debugName = {})
     {
         throw std::runtime_error("createRayTracingScene not implemented");
+    }
+
+    virtual std::shared_ptr<RayTracingPipeline> createRayTracingPipeline(
+        const RayTracingPipelineDescription& description)
+    {
+        throw std::runtime_error("createRayTracingPipeline not implemented");
     }
 };
 

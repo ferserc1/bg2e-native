@@ -116,7 +116,10 @@ enum class ImageLayout {
 enum class ShaderStage {
     Vertex,
     Fragment,
-    Compute
+    Compute,
+    RayGeneration,
+    Miss,
+    ClosestHit
 };
 
 enum class PipelineBarrierFlags : uint32_t {
@@ -281,6 +284,9 @@ inline void validatePushConstantRanges(const std::vector<PushConstantRange>& ran
     bool hasVertex = false;
     bool hasFragment = false;
     bool hasCompute = false;
+    bool hasRayGeneration = false;
+    bool hasMiss = false;
+    bool hasClosestHit = false;
     for (const auto& r : ranges)
     {
         switch (r.stage)
@@ -311,6 +317,33 @@ inline void validatePushConstantRanges(const std::vector<PushConstantRange>& ran
                         "declared for Compute stage.");
                 }
                 hasCompute = true;
+                break;
+            case ShaderStage::RayGeneration:
+                if (hasRayGeneration)
+                {
+                    throw std::runtime_error(
+                        "PipelineLayout validation failed: more than one push constant range "
+                        "declared for RayGeneration stage.");
+                }
+                hasRayGeneration = true;
+                break;
+            case ShaderStage::Miss:
+                if (hasMiss)
+                {
+                    throw std::runtime_error(
+                        "PipelineLayout validation failed: more than one push constant range "
+                        "declared for Miss stage.");
+                }
+                hasMiss = true;
+                break;
+            case ShaderStage::ClosestHit:
+                if (hasClosestHit)
+                {
+                    throw std::runtime_error(
+                        "PipelineLayout validation failed: more than one push constant range "
+                        "declared for ClosestHit stage.");
+                }
+                hasClosestHit = true;
                 break;
         }
     }
@@ -367,6 +400,18 @@ inline void validateMetalBufferBindings(const std::vector<ResourceBinding>& bind
                         "uses index " + std::to_string(rb.binding.metal) + ", but compute-stage "
                         "UniformBuffer/StorageBuffer bindings must use index >= 1. buffer(0) is "
                         "reserved for compute push constants.");
+                }
+                break;
+            case ShaderStage::RayGeneration:
+            case ShaderStage::Miss:
+            case ShaderStage::ClosestHit:
+                if (rb.binding.metal < 1)
+                {
+                    throw std::runtime_error(
+                        "PipelineLayout validation failed: Metal ray tracing buffer resource binding "
+                        "uses index " + std::to_string(rb.binding.metal) + ", but ray-tracing-stage "
+                        "UniformBuffer/StorageBuffer bindings must use index >= 1. buffer(0) is "
+                        "reserved for push constants.");
                 }
                 break;
         }
@@ -503,7 +548,8 @@ enum class BufferUsage : uint32_t {
     TransferSrc                     = 1 << 4,
     TransferDst                     = 1 << 5,
     AccelerationStructureBuildInput = 1 << 6,
-    ShaderDeviceAddress             = 1 << 7
+    ShaderDeviceAddress             = 1 << 7,
+    ShaderBindingTable              = 1 << 8
 };
 
 inline BufferUsage operator|(BufferUsage a, BufferUsage b)

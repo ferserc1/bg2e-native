@@ -27,6 +27,54 @@ namespace bg2e {
 namespace gpu {
 namespace vk {
 
+namespace {
+
+VkBufferUsageFlags toVkBufferUsage(BufferUsage usage, bool rayTracingEnabled)
+{
+    VkBufferUsageFlags vkUsage = 0;
+
+    if (hasFlag(usage, BufferUsage::Vertex))
+    {
+        vkUsage |= VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+    }
+    if (hasFlag(usage, BufferUsage::Index))
+    {
+        vkUsage |= VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
+    }
+    if (hasFlag(usage, BufferUsage::Uniform))
+    {
+        vkUsage |= VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+    }
+    if (hasFlag(usage, BufferUsage::Storage))
+    {
+        vkUsage |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+    }
+    if (hasFlag(usage, BufferUsage::TransferSrc))
+    {
+        vkUsage |= VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+    }
+    if (hasFlag(usage, BufferUsage::TransferDst))
+    {
+        vkUsage |= VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+    }
+    if (hasFlag(usage, BufferUsage::AccelerationStructureBuildInput) && rayTracingEnabled)
+    {
+        vkUsage |= VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
+    }
+    if (hasFlag(usage, BufferUsage::ShaderDeviceAddress))
+    {
+        vkUsage |= VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
+    }
+    if (hasFlag(usage, BufferUsage::ShaderBindingTable))
+    {
+        vkUsage |= VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR;
+    }
+
+    return vkUsage;
+}
+
+} // anonymous namespace
+
 Buffer::Buffer(vk::Device* device, const std::string& debugName)
     : gpu::Buffer(device), _device(device), _debugName(debugName)
 {}

@@ -30,10 +30,12 @@ public:
     // Pipeline binding
     virtual void bindPipeline(gpu::GraphicsPipeline* pipeline);
     virtual void bindPipeline(gpu::ComputePipeline* pipeline);
+    virtual void bindPipeline(gpu::RayTracingPipeline* pipeline);
 
     // Resource set binding
     virtual void bindResourceSet(gpu::GraphicsPipeline* pipeline, uint32_t setIndex, gpu::ResourceSet* set);
     virtual void bindResourceSet(gpu::ComputePipeline* pipeline,  uint32_t setIndex, gpu::ResourceSet* set);
+    virtual void bindResourceSet(gpu::RayTracingPipeline* pipeline, uint32_t setIndex, gpu::ResourceSet* set);
 
     // Vertex / index buffer binding
     virtual void bindVertexBuffer(uint32_t binding, gpu::Buffer* buffer,
@@ -50,6 +52,9 @@ public:
     // Compute dispatch
     virtual void dispatch(uint32_t groupCountX, uint32_t groupCountY,
                           uint32_t groupCountZ);
+
+    // Ray tracing dispatch
+    virtual void traceRays(uint32_t width, uint32_t height, uint32_t depth = 1);
 
     // Push constants
     virtual void pushConstants(ShaderStage stage, uint32_t offset,
@@ -169,6 +174,16 @@ Binds a compute pipeline for subsequent dispatch calls.
 |------------|------------------------|-----------------------|
 | `pipeline` | `gpu::ComputePipeline*`| The pipeline to bind. |
 
+### `virtual void bindPipeline(gpu::RayTracingPipeline* pipeline)`
+
+Binds a ray tracing pipeline for subsequent `traceRays()` calls. On Vulkan, binds
+at `VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR`. On Metal, creates/reuses a compute
+encoder.
+
+| Parameter  | Type                      | Description           |
+|------------|---------------------------|-----------------------|
+| `pipeline` | `gpu::RayTracingPipeline*`| The pipeline to bind. |
+
 ---
 
 ## Resource set binding
@@ -195,6 +210,17 @@ Binds a resource set for compute commands. Must be called after
 | `pipeline` | `gpu::ComputePipeline*` | The currently bound compute pipeline.    |
 | `setIndex` | `uint32_t`              | Descriptor set index.                    |
 | `set`      | `gpu::ResourceSet*`     | The resource set to bind.                |
+
+### `virtual void bindResourceSet(gpu::RayTracingPipeline* pipeline, uint32_t setIndex, gpu::ResourceSet* set)`
+
+Binds a resource set to the bound ray tracing pipeline. Same binding model as
+compute/graphics pipelines.
+
+| Parameter  | Type                      | Description                              |
+|------------|---------------------------|------------------------------------------|
+| `pipeline` | `gpu::RayTracingPipeline*`| The currently bound ray tracing pipeline.|
+| `setIndex` | `uint32_t`                | Descriptor set index.                    |
+| `set`      | `gpu::ResourceSet*`       | The resource set to bind.                |
 
 ---
 
@@ -268,6 +294,25 @@ Dispatches a compute workload. A compute pipeline must be bound first.
 | `groupCountX`  | `uint32_t` | Number of workgroups in X.     |
 | `groupCountY`  | `uint32_t` | Number of workgroups in Y.     |
 | `groupCountZ`  | `uint32_t` | Number of workgroups in Z.     |
+
+---
+
+## Ray tracing dispatch
+
+### `virtual void traceRays(uint32_t width, uint32_t height, uint32_t depth = 1)`
+
+Dispatches ray tracing across the specified dimensions. On Vulkan, calls
+`vkCmdTraceRaysKHR` with the pipeline's internal SBT. On Metal, dispatches
+the rgen compute kernel as `ceil(width/8) x ceil(height/8) x depth` threadgroups.
+
+A ray tracing pipeline must be bound first via `bindPipeline(RayTracingPipeline*)`.
+Resource sets are bound with `bindResourceSet(RayTracingPipeline*, ...)`.
+
+| Parameter  | Type       | Default | Description                    |
+|------------|------------|---------|--------------------------------|
+| `width`    | `uint32_t` | --      | Number of rays in X (usually framebuffer width). |
+| `height`   | `uint32_t` | --      | Number of rays in Y (usually framebuffer height). |
+| `depth`    | `uint32_t` | 1       | Number of rays in Z (for volumetric). |
 
 ---
 

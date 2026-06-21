@@ -29,6 +29,7 @@
 #include <bg2e/gpu/metal/CommandBuffer.hpp>
 #include <bg2e/gpu/metal/RayTracingMesh.hpp>
 #include <bg2e/gpu/metal/RayTracingScene.hpp>
+#include <bg2e/gpu/metal/RayTracingPipeline.hpp>
 #include <bg2e/gpu/metal/common.hpp>
 #include <bg2e/gpu/CubeMap.hpp>
 #include <bg2e/gpu/Surface.hpp>
@@ -201,6 +202,12 @@ std::shared_ptr<gpu::RayTracingScene> Device::createRayTracingScene(const std::s
     return std::make_shared<metal::RayTracingScene>(this, debugName);
 }
 
+std::shared_ptr<gpu::RayTracingPipeline> Device::createRayTracingPipeline(
+    const gpu::RayTracingPipelineDescription& description)
+{
+    return std::make_shared<metal::RayTracingPipeline>(this, _device, description);
+}
+
 void Device::immediateSubmit(std::function<void(gpu::CommandBuffer*)>&& function)
 {
     auto cmdSP = _graphicsQueue.createCommandBuffer();
@@ -289,6 +296,11 @@ std::shared_ptr<gpu::RayTracingMesh> Device::createRayTracingMesh(const RayTraci
 }
 
 std::shared_ptr<gpu::RayTracingScene> Device::createRayTracingScene(const std::string&)
+{
+    throw std::runtime_error("Metal backend is not available on this platform");
+}
+
+std::shared_ptr<gpu::RayTracingPipeline> Device::createRayTracingPipeline(const gpu::RayTracingPipelineDescription&)
 {
     throw std::runtime_error("Metal backend is not available on this platform");
 }

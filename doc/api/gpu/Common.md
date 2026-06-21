@@ -29,9 +29,17 @@ Pipeline stage a shader module targets.
 enum class ShaderStage {
     Vertex,
     Fragment,
-    Compute
+    Compute,
+    RayGeneration,  // ray generation shader (RT pipeline)
+    Miss,           // miss shader (RT pipeline)
+    ClosestHit      // closest hit shader (RT pipeline)
 };
 ```
+
+The ray tracing stages (`RayGeneration`, `Miss`, `ClosestHit`) are used with
+`RayTracingPipeline`. On Metal, only `RayGeneration` is used — `Miss` and
+`ClosestHit` are null/ignored because Metal handles those stages internally in
+the compute kernel.
 
 ### `ImageLayout`
 
@@ -343,15 +351,17 @@ enum class BufferUsage : uint32_t {
     TransferSrc                     = 1 << 4,
     TransferDst                     = 1 << 5,
     AccelerationStructureBuildInput = 1 << 6,
-    ShaderDeviceAddress             = 1 << 7
+    ShaderDeviceAddress             = 1 << 7,
+    ShaderBindingTable              = 1 << 8
 };
 ```
 
-`AccelerationStructureBuildInput` and `ShaderDeviceAddress` mark buffers that can
-feed a ray tracing acceleration structure build. On a ray-tracing-enabled
-device, vertex and index buffers automatically receive these usages so they can
-be reused directly as [`RayTracingMesh`](RayTracingMesh.md) geometry — no
-duplicate buffers are needed. See [Buffer](Buffer.md).
+`AccelerationStructureBuildInput`, `ShaderDeviceAddress`, and `ShaderBindingTable` mark buffers for
+ray tracing usage. The first two feed acceleration structure builds; the third
+is used for ray tracing pipeline shader binding tables. On a ray-tracing-enabled
+device, vertex and index buffers automatically receive the acceleration-structure
+build-input usage so they can be reused directly as [`RayTracingMesh`](RayTracingMesh.md)
+geometry — no duplicate buffers are needed. See [Buffer](Buffer.md).
 
 ### `VertexSemantic`
 

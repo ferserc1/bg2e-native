@@ -34,6 +34,7 @@ class GraphicsPipeline;
 class ComputePipeline;
 class RayTracingMesh;
 class RayTracingScene;
+class RayTracingPipeline;
 
 class BG2E_API CommandBuffer {
 public:
@@ -141,6 +142,21 @@ public:
     virtual void buildRayTracingScene(gpu::RayTracingScene* scene)
     {
         throw std::runtime_error("buildRayTracingScene not implemented");
+    }
+
+    virtual void bindPipeline(gpu::RayTracingPipeline* pipeline)
+    {
+        throw std::runtime_error("bindPipeline(RayTracingPipeline) not implemented");
+    }
+
+    virtual void bindResourceSet(gpu::RayTracingPipeline* pipeline, uint32_t setIndex, gpu::ResourceSet* set)
+    {
+        throw std::runtime_error("bindResourceSet(RayTracingPipeline) not implemented");
+    }
+
+    virtual void traceRays(uint32_t width, uint32_t height, uint32_t depth = 1)
+    {
+        throw std::runtime_error("traceRays not implemented");
     }
 
     virtual bool isValid() const = 0;

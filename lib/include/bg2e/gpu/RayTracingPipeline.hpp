@@ -18,33 +18,31 @@
 
 #pragma once
 
+#include <bg2e/common.hpp>
 #include <bg2e/gpu/Common.hpp>
 #include <bg2e/gpu/DeviceResource.hpp>
-#include <bg2e/gpu/CleanupManager.hpp>
-#include <bg2e/gpu/FrameResourceRing.hpp>
-#include <bg2e/gpu/Backend.hpp>
-#include <bg2e/gpu/Factory.hpp>
-#include <bg2e/gpu/Instance.hpp>
-#include <bg2e/gpu/PhysicalDevice.hpp>
-#include <bg2e/gpu/Surface.hpp>
-#include <bg2e/gpu/Image.hpp>
-#include <bg2e/gpu/CubeMap.hpp>
-#include <bg2e/gpu/CubemapRenderPass.hpp>
-#include <bg2e/gpu/SurfaceFrame.hpp>
-#include <bg2e/gpu/WindowSurface.hpp>
-#include <bg2e/gpu/OffscreenSurface.hpp>
-#include <bg2e/gpu/Queue.hpp>
-#include <bg2e/gpu/Buffer.hpp>
-#include <bg2e/gpu/CommandBuffer.hpp>
-#include <bg2e/gpu/Device.hpp>
-#include <bg2e/gpu/Sampler.hpp>
-#include <bg2e/gpu/ResourceSet.hpp>
 #include <bg2e/gpu/ShaderModule.hpp>
-#include <bg2e/gpu/ShaderLib.hpp>
 #include <bg2e/gpu/PipelineLayout.hpp>
-#include <bg2e/gpu/GraphicsPipeline.hpp>
-#include <bg2e/gpu/ComputePipeline.hpp>
-#include <bg2e/gpu/RayTracingPipeline.hpp>
-#include <bg2e/gpu/Mesh.hpp>
-#include <bg2e/gpu/RayTracingMesh.hpp>
-#include <bg2e/gpu/RayTracingScene.hpp>
+
+#include <string>
+
+namespace bg2e {
+namespace gpu {
+
+struct RayTracingPipelineDescription {
+    gpu::ShaderModule*   raygenShader     = nullptr; // non-owning; stage must be RayGeneration
+    gpu::ShaderModule*   missShader       = nullptr; // non-owning; stage must be Miss (nullable on Metal)
+    gpu::ShaderModule*   closestHitShader = nullptr; // non-owning; stage must be ClosestHit (nullable on Metal)
+    gpu::PipelineLayout* layout           = nullptr; // non-owning; caller must keep alive
+    uint32_t             maxRecursionDepth = 1;      // Vulkan max ray recursion depth
+    std::string          debugName;
+};
+
+class BG2E_API RayTracingPipeline : public DeviceResource {
+public:
+    explicit RayTracingPipeline(Device* device) : DeviceResource(device) {}
+    virtual ~RayTracingPipeline() = default;
+};
+
+}
+}
