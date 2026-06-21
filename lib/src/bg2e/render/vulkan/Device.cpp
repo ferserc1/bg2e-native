@@ -29,10 +29,24 @@ namespace vulkan {
 void Device::create(VkInstance instance, const PhysicalDevice& physicalDevice, bool offscreen)
 {
     auto indices = physicalDevice.queueFamilyIndices();
+    const uint32_t graphicsFamily = indices.graphics.value();
+
+    // Query how many queues the graphics family actually exposes. We would like
+    // a dedicated queue (index 1) for immediate submits, but some drivers
+    // (notably MoltenVK on macOS) only expose a single queue per family, in
+    // which case the immediate queue must share queue index 0 with the graphics
+    // queue.
+    uint32_t queueFamilyCount = 0;
+    vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice.handle(), &queueFamilyCount, nullptr);
+    std::vector<VkQueueFamilyProperties> queueFamilyProps(queueFamilyCount);
+    vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice.handle(), &queueFamilyCount, queueFamilyProps.data());
+
+    _dedicatedImmediateQueue = queueFamilyProps[graphicsFamily].queueCount >= 2;
+    const uint32_t graphicsQueueCount = _dedicatedImmediateQueue ? 2u : 1u;
 
     std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
     std::set<uint32_t> uniqueQueueFamilies = {
-        indices.graphics.value()
+        graphicsFamily
     };
 
     if (!offscreen)
@@ -40,16 +54,15 @@ void Device::create(VkInstance instance, const PhysicalDevice& physicalDevice, b
         uniqueQueueFamilies.insert(indices.present.value());
     }
 
-
-    float queuePriority = 1.0f;
+    // pQueuePriorities must reference at least queueCount entries.
+    const std::vector<float> queuePriorities(graphicsQueueCount, 1.0f);
     for (auto queueFamily : uniqueQueueFamilies)
     {
         VkDeviceQueueCreateInfo queueCreateInfo{};
         queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
         queueCreateInfo.queueFamilyIndex = queueFamily;
-        uint32_t queueCount = (queueFamily == indices.graphics.value()) ? 2 : 1;
-        queueCreateInfo.queueCount = queueCount;
-        queueCreateInfo.pQueuePriorities = &queuePriority;
+        queueCreateInfo.queueCount = (queueFamily == graphicsFamily) ? graphicsQueueCount : 1u;
+        queueCreateInfo.pQueuePriorities = queuePriorities.data();
         queueCreateInfos.push_back(queueCreateInfo);
     }
 
@@ -190,7 +203,10 @@ void Device::create(VkInstance instance, const PhysicalDevice& physicalDevice, b
 
     _graphicsFamily = indices.graphics.value();
     vkGetDeviceQueue(_device, _graphicsFamily, 0, &_graphicsQueue);
-    vkGetDeviceQueue(_device, _graphicsFamily, 1, &_immediateQueue);
+    // Use a dedicated queue (index 1) for immediate submits when available;
+    // otherwise fall back to sharing the graphics queue (index 0).
+    const uint32_t immediateQueueIndex = _dedicatedImmediateQueue ? 1u : 0u;
+    vkGetDeviceQueue(_device, _graphicsFamily, immediateQueueIndex, &_immediateQueue);
 
     if (!offscreen)
     {

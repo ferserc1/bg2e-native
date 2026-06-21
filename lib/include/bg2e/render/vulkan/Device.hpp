@@ -52,6 +52,7 @@ protected:
     VkQueue _immediateQueue = VK_NULL_HANDLE;
     uint32_t _graphicsFamily = 0;
     uint32_t _presentFamily = 0;
+    bool _dedicatedImmediateQueue = false;
 };
 
 }
