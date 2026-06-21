@@ -52,7 +52,10 @@ void loadInstanceExtensions(VkInstance instance, bool offscreen)
     acquireNextImage = loadExtension<PFN_vkAcquireNextImageKHR>(instance, "vkAcquireNextImageKHR");
     queuePresent = loadExtension<PFN_vkQueuePresentKHR>(instance, "vkQueuePresentKHR");
     destroySwapchain = loadExtension<PFN_vkDestroySwapchainKHR>(instance, "vkDestroySwapchainKHR");
-    destroySurface = loadExtension<PFN_vkDestroySurfaceKHR>(instance, "vkDestroySurfaceKHR", offscreen);
+    if (!offscreen)
+    {
+        destroySurface = loadExtension<PFN_vkDestroySurfaceKHR>(instance, "vkDestroySurfaceKHR", offscreen);
+    }
     queueSubmit2 = loadExtension<PFN_vkQueueSubmit2KHR>(instance, "vkQueueSubmit2KHR");
     cmdPipelineBarrier2 = loadExtension<PFN_vkCmdPipelineBarrier2KHR>(instance, "vkCmdPipelineBarrier2KHR");
     cmdBlitImage2 = loadExtension<PFN_vkCmdBlitImage2KHR>(instance, "vkCmdBlitImage2KHR");
