@@ -111,9 +111,9 @@ void Queue::submit(gpu::CommandBuffer* cmd) const
     if (frame)
     {
         VkSemaphoreSubmitInfo wait = Info::semaphoreSubmitInfo(
-            VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT, frame->imageAvailable());
+            VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT, frame->imageAvailable());
         VkSemaphoreSubmitInfo signal = Info::semaphoreSubmitInfo(
-            VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT, frame->renderFinished());
+            VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT, frame->renderFinished());
         auto submit = Info::submitInfo(&cmdInfo, &signal, &wait);
         auto fence = frame->inFlightFence();
         vkResetFences(_device, 1, &fence);

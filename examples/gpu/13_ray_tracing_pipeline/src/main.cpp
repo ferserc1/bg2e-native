@@ -476,6 +476,7 @@ int main(int argc, char** argv)
         cmd->transition(outputImage.get(), gpu::ImageLayout::TransferSrc);
         cmd->transition(frame->colorImage(), gpu::ImageLayout::TransferDst);
         cmd->copyImage(outputImage.get(), frame->colorImage());
+        cmd->transition(frame->colorImage(), gpu::ImageLayout::Present);
 
         surface->present(cmd.get());
 

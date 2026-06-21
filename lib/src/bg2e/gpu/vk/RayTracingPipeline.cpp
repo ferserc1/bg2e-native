@@ -25,6 +25,7 @@
 
 #include <stdexcept>
 #include <vector>
+#include <cstring>
 
 namespace bg2e {
 namespace gpu {
@@ -165,10 +166,12 @@ RayTracingPipeline::RayTracingPipeline(
     uint32_t groupCount = static_cast<uint32_t>(groups.size());
     uint32_t sbtSize = alignedHandleSize * groupCount;
 
-    // Get shader group handles
-    std::vector<uint8_t> shaderHandleStorage(sbtSize);
+    // getRayTracingShaderGroupHandles writes handles tightly packed (handleSize each).
+    // The SBT buffer needs them at alignedHandleSize intervals, so we copy with stride.
+    uint32_t packedHandlesSize = handleSize * groupCount;
+    std::vector<uint8_t> shaderHandleStorage(packedHandlesSize);
     result = getRayTracingShaderGroupHandles(
-        _device, _pipeline, 0, groupCount, sbtSize, shaderHandleStorage.data());
+        _device, _pipeline, 0, groupCount, packedHandlesSize, shaderHandleStorage.data());
 
     if (result != VK_SUCCESS)
     {
@@ -189,10 +192,18 @@ RayTracingPipeline::RayTracingPipeline(
 
     VK_ASSERT(vmaCreateBuffer(_allocator, &bufferInfo, &allocInfo, &_sbtBuffer, &_sbtAllocation, nullptr));
 
-    // Copy handles to SBT buffer
+    // Copy each handle to its aligned slot in the SBT buffer
     void* mapped = nullptr;
     VK_ASSERT(vmaMapMemory(_allocator, _sbtAllocation, &mapped));
-    memcpy(mapped, shaderHandleStorage.data(), sbtSize);
+    std::memset(mapped, 0, sbtSize);
+    auto* dst = static_cast<uint8_t*>(mapped);
+    const auto* src = shaderHandleStorage.data();
+    for (uint32_t i = 0; i < groupCount; ++i)
+    {
+        std::memcpy(dst + static_cast<size_t>(i) * alignedHandleSize,
+                    src + static_cast<size_t>(i) * handleSize,
+                    handleSize);
+    }
     vmaUnmapMemory(_allocator, _sbtAllocation);
 
     // Get buffer device address
