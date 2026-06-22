@@ -18,6 +18,8 @@
 
 #include <bg2e/manipulation/GizmoComponent.hpp>
 #include <bg2e/scene/Node.hpp>
+#include <bg2e/scene/Scene.hpp>
+#include <bg2e/scene/TransformComponent.hpp>
 #include <bg2e/scene/CameraComponent.hpp>
 #include <bg2e/scene/LightComponent.hpp>
 #include <bg2e/scene/EnvironmentComponent.hpp>
@@ -65,6 +67,10 @@ std::unordered_map<GizmoType, bool> GizmoComponent::_gizmoVisible = {
     { GizmoType::DirectionalLight, true },
     { GizmoType::Environment,      true },
     { GizmoType::Transform,        true },
+};
+
+std::unordered_map<GizmoType, float> GizmoComponent::_gizmoScaleSensitivity = {
+    { GizmoType::Transform, 100.0f },
 };
 
 GizmoComponent::GizmoComponent(render::Engine* engine)
@@ -315,14 +321,253 @@ uint32_t GizmoComponent::transformSubmeshIdentifier(uint32_t submeshIndex)
     return _transformSubmeshIds[submeshIndex];
 }
 
-void GizmoComponent::beginTransform(TransformHandle handle)
+void GizmoComponent::beginTransform(TransformHandle handle, int mouseX, int mouseY)
 {
     _activeHandle = handle;
+    _mouseDownX = mouseX;
+    _mouseDownY = mouseY;
+
+    auto node = ownerNode();
+    if (!node || !node->transform()) return;
+
+    auto transform = node->transform();
+    _initialLocalMatrix = transform->matrix();
+    _localRotation = scene::TransformComponent::extractRotation(_initialLocalMatrix);
+    _initialScale = scene::TransformComponent::extractScale(_initialLocalMatrix);
+    _initialWorldPos = glm::vec3(node->worldMatrix()[3]);
+
+    int axis = handleAxisIndex(handle);
+    if (axis >= 0) {
+        _localAxis = glm::normalize(glm::vec3(_localRotation[axis]));
+
+        auto parent = node->parent();
+        if (parent) {
+            auto parentWM = parent->worldMatrix();
+            _parentRotation = scene::TransformComponent::extractRotation(parentWM);
+            auto parentScale = scene::TransformComponent::extractScale(parentWM);
+            _parentScaleAxis = parentScale[axis];
+        } else {
+            _parentRotation = glm::mat3(1.0f);
+            _parentScaleAxis = 1.0f;
+        }
+        _worldAxis = glm::normalize(_parentRotation * _localAxis);
+    }
+
+    // For translation: capture the initial click point projected onto the axis
+    // so we can compute deltas relative to it (avoiding the origin jump)
+    if (handle >= TransformHandle::TranslateX && handle <= TransformHandle::TranslateZ) {
+        auto node = ownerNode();
+        auto scene = node->scene();
+        auto ray = rayFromCursor(scene, mouseX, mouseY);
+        _initialAxisPoint = closestPointOnAxis(
+            _initialWorldPos, _worldAxis, ray.origin, ray.dir
+        );
+    }
+
+    // For rotation: compute initial intersection with the perpendicular plane
+    if (handle >= TransformHandle::RotateX && handle <= TransformHandle::RotateZ) {
+        auto node = ownerNode();
+        auto scene = node->scene();
+        _initialIntersection = intersectPlane(scene, _worldAxis, _initialWorldPos, mouseX, mouseY);
+    }
+
+    // Highlight active handle: store original color, set yellow
+    auto drw = transformDrawable();
+    int submeshIdx = activeSubmeshIndex();
+    if (drw && submeshIdx >= 0) {
+        _originalHandleColor = drw->renderMaterial(submeshIdx)->materialAttributes().albedo();
+        drw->material(submeshIdx).setAlbedo(base::Color::Yellow());
+        drw->updateMaterials();
+    }
+}
+
+void GizmoComponent::updateTransform(scene::Scene* scene, int mouseX, int mouseY)
+{
+    if (_activeHandle == TransformHandle::None) return;
+
+    auto node = ownerNode();
+    if (!node || !node->transform()) return;
+
+    switch (_activeHandle) {
+        case TransformHandle::TranslateX:
+        case TransformHandle::TranslateY:
+        case TransformHandle::TranslateZ: {
+            auto ray = rayFromCursor(scene, mouseX, mouseY);
+            auto closest = closestPointOnAxis(
+                _initialWorldPos, _worldAxis, ray.origin, ray.dir
+            );
+            float dist = glm::dot(closest - _initialAxisPoint, _worldAxis);
+            glm::vec3 deltaLocal = (_localAxis * dist) / _parentScaleAxis;
+            glm::vec3 t = scene::TransformComponent::extractTranslation(_initialLocalMatrix) + deltaLocal;
+            node->transform()->setMatrix(
+                scene::TransformComponent::recompose(_localRotation, _initialScale, t)
+            );
+            break;
+        }
+
+        case TransformHandle::RotateX:
+        case TransformHandle::RotateY:
+        case TransformHandle::RotateZ: {
+            auto currentIntersection = intersectPlane(scene, _worldAxis, _initialWorldPos, mouseX, mouseY);
+            glm::vec3 v0 = _initialIntersection - _initialWorldPos;
+            glm::vec3 v1 = currentIntersection - _initialWorldPos;
+            float len0 = glm::length(v0);
+            float len1 = glm::length(v1);
+            if (len0 < 1e-6f || len1 < 1e-6f) break;
+            v0 /= len0;
+            v1 /= len1;
+            float angle = std::atan2(
+                glm::dot(_worldAxis, glm::cross(v0, v1)),
+                glm::dot(v0, v1)
+            );
+            glm::mat3 R_delta = glm::mat3(glm::rotate(glm::mat4(1.0f), angle, _localAxis));
+            auto t = scene::TransformComponent::extractTranslation(_initialLocalMatrix);
+            auto newRotation = R_delta * _localRotation;
+            node->transform()->setMatrix(
+                scene::TransformComponent::recompose(newRotation, _initialScale, t)
+            );
+            break;
+        }
+
+        case TransformHandle::ScaleX:
+        case TransformHandle::ScaleY:
+        case TransformHandle::ScaleZ: {
+            float delta = ((mouseX - _mouseDownX) + (mouseY - _mouseDownY)) / 2.0f;
+            float factor = std::exp(delta / gizmoScaleSensitivity(GizmoType::Transform));
+            glm::vec3 sf = _initialScale;
+            sf[handleAxisIndex(_activeHandle)] *= factor;
+            auto t = scene::TransformComponent::extractTranslation(_initialLocalMatrix);
+            node->transform()->setMatrix(
+                scene::TransformComponent::recompose(_localRotation, sf, t)
+            );
+            break;
+        }
+
+        case TransformHandle::ScaleUniform: {
+            float delta = ((mouseX - _mouseDownX) + (mouseY - _mouseDownY)) / 2.0f;
+            float factor = std::exp(delta / gizmoScaleSensitivity(GizmoType::Transform));
+            glm::vec3 sf = _initialScale * factor;
+            auto t = scene::TransformComponent::extractTranslation(_initialLocalMatrix);
+            node->transform()->setMatrix(
+                scene::TransformComponent::recompose(_localRotation, sf, t)
+            );
+            break;
+        }
+
+        default:
+            break;
+    }
 }
 
 void GizmoComponent::endTransform()
 {
+    // Restore original handle color
+    auto drw = transformDrawable();
+    int submeshIdx = activeSubmeshIndex();
+    if (drw && submeshIdx >= 0) {
+        drw->material(submeshIdx).setAlbedo(_originalHandleColor);
+        drw->updateMaterials();
+    }
     _activeHandle = TransformHandle::None;
+}
+
+int GizmoComponent::handleAxisIndex(TransformHandle h)
+{
+    switch (h) {
+        case TransformHandle::TranslateX:
+        case TransformHandle::RotateX:
+        case TransformHandle::ScaleX:
+            return 0;
+        case TransformHandle::TranslateY:
+        case TransformHandle::RotateY:
+        case TransformHandle::ScaleY:
+            return 1;
+        case TransformHandle::TranslateZ:
+        case TransformHandle::RotateZ:
+        case TransformHandle::ScaleZ:
+            return 2;
+        default:
+            return -1;
+    }
+}
+
+int GizmoComponent::activeSubmeshIndex() const
+{
+    if (_activeHandle == TransformHandle::None) return -1;
+    auto drw = transformDrawable();
+    if (!drw) return -1;
+    auto count = drw->submeshesCount();
+    for (uint32_t i = 0; i < count; ++i) {
+        if (handleForSubmesh(drw->submeshName(i), drw->submeshGroupName(i)) == _activeHandle) {
+            return static_cast<int>(i);
+        }
+    }
+    return -1;
+}
+
+GizmoComponent::Ray GizmoComponent::rayFromCursor(scene::Scene* scene, int x, int y) const
+{
+    auto camera = scene->mainCamera();
+    auto vp = camera->projection()->viewport();
+    auto projMatrix = camera->projectionMatrix();
+    auto viewMatrix = camera->ownerNode()->invertedWorldMatrix();
+
+    float ndcX = (2.0f * static_cast<float>(x) / vp.width) - 1.0f;
+    float ndcY = 1.0f - (2.0f * static_cast<float>(y) / vp.height);
+
+    auto invVP = glm::inverse(projMatrix * viewMatrix);
+    glm::vec4 nearPoint = invVP * glm::vec4(ndcX, ndcY, 0.0f, 1.0f);
+    glm::vec4 farPoint  = invVP * glm::vec4(ndcX, ndcY, 1.0f, 1.0f);
+    nearPoint /= nearPoint.w;
+    farPoint  /= farPoint.w;
+
+    Ray ray;
+    ray.origin = glm::vec3(nearPoint);
+    ray.dir = glm::normalize(glm::vec3(farPoint) - glm::vec3(nearPoint));
+    return ray;
+}
+
+glm::vec3 GizmoComponent::closestPointOnAxis(
+    glm::vec3 axisOrigin, glm::vec3 axisDir,
+    glm::vec3 rayOrigin, glm::vec3 rayDir
+) const {
+    glm::vec3 w = axisOrigin - rayOrigin;
+    float a = glm::dot(axisDir, axisDir);
+    float b = glm::dot(axisDir, rayDir);
+    float c = glm::dot(rayDir, rayDir);
+    float d = glm::dot(axisDir, w);
+    float e = glm::dot(rayDir, w);
+    float denom = a * c - b * b;
+    if (std::abs(denom) < 1e-6f) {
+        return axisOrigin;
+    }
+    float t = (b * e - c * d) / denom;
+    return axisOrigin + t * axisDir;
+}
+
+glm::vec3 GizmoComponent::intersectPlane(
+    scene::Scene* scene, glm::vec3 planeNormal, glm::vec3 planePoint,
+    int x, int y
+) const {
+    auto ray = rayFromCursor(scene, x, y);
+    float denom = glm::dot(planeNormal, ray.dir);
+    if (std::abs(denom) < 1e-6f) {
+        return planePoint;
+    }
+    float t = glm::dot(planeNormal, planePoint - ray.origin) / denom;
+    return ray.origin + t * ray.dir;
+}
+
+float GizmoComponent::gizmoScaleSensitivity(GizmoType type)
+{
+    auto it = _gizmoScaleSensitivity.find(type);
+    if (it != _gizmoScaleSensitivity.end()) return it->second;
+    return 100.0f;
+}
+
+void GizmoComponent::setGizmoScaleSensitivity(GizmoType type, float sensitivity)
+{
+    _gizmoScaleSensitivity[type] = sensitivity;
 }
 
 void GizmoComponent::update(float)

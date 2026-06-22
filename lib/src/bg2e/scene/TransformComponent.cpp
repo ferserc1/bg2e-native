@@ -20,6 +20,8 @@
 #include <bg2e/scene/TransformVisitor.hpp>
 #include <bg2e/scene/ComponentFactoryRegistry.hpp>
 
+#include <cmath>
+
 namespace bg2e::scene {
 
 std::unique_ptr<TransformComponent> TransformComponent::makeTranslated(float x, float y, float z)
@@ -138,6 +140,42 @@ TransformComponent * TransformComponent::scale(const glm::vec3& scale)
 {
     _matrix = glm::scale(_matrix, scale);
     return this;
+}
+
+glm::vec3 TransformComponent::extractTranslation(const glm::mat4& m)
+{
+    return glm::vec3(m[3]);
+}
+
+glm::mat3 TransformComponent::extractRotation(const glm::mat4& m)
+{
+    float sx = glm::length(glm::vec3(m[0]));
+    float sy = glm::length(glm::vec3(m[1]));
+    float sz = glm::length(glm::vec3(m[2]));
+    glm::mat3 r;
+    r[0] = glm::vec3(m[0]) / sx;
+    r[1] = glm::vec3(m[1]) / sy;
+    r[2] = glm::vec3(m[2]) / sz;
+    return r;
+}
+
+glm::vec3 TransformComponent::extractScale(const glm::mat4& m)
+{
+    return glm::vec3(
+        glm::length(glm::vec3(m[0])),
+        glm::length(glm::vec3(m[1])),
+        glm::length(glm::vec3(m[2]))
+    );
+}
+
+glm::mat4 TransformComponent::recompose(const glm::mat3& rotation, const glm::vec3& scale, const glm::vec3& translation)
+{
+    glm::mat4 result(1.0f);
+    result[0] = glm::vec4(rotation[0] * scale.x, 0.0f);
+    result[1] = glm::vec4(rotation[1] * scale.y, 0.0f);
+    result[2] = glm::vec4(rotation[2] * scale.z, 0.0f);
+    result[3] = glm::vec4(translation, 1.0f);
+    return result;
 }
 
 glm::mat4 TransformComponent::worldMatrix()

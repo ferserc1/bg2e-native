@@ -33,6 +33,7 @@
 namespace bg2e {
 namespace scene {
 class Node;
+class Scene;
 }
 
 namespace manipulation {
@@ -133,10 +134,11 @@ public:
     // returns 0 otherwise.
     uint32_t transformSubmeshIdentifier(uint32_t submeshIndex);
 
-    // Transform interaction. The actual transformation math is implemented in a
-    // later step; for now this only tracks which handle is active so the input
-    // layer can capture the mouse and block scene-graph events while dragging.
-    void beginTransform(TransformHandle handle);
+    // Transform interaction. Captures the initial state at beginTransform and
+    // recomputes the node's local matrix on every updateTransform call while
+    // dragging. endTransform restores the active-handle highlight color.
+    void beginTransform(TransformHandle handle, int mouseX, int mouseY);
+    void updateTransform(scene::Scene* scene, int mouseX, int mouseY);
     void endTransform();
     [[nodiscard]] TransformHandle activeHandle() const { return _activeHandle; }
     [[nodiscard]] bool isTransforming() const { return _activeHandle != TransformHandle::None; }
@@ -150,6 +152,11 @@ public:
     static bool  isGizmoVisible(GizmoType type);
     static void  setGizmoVisible(GizmoType type, bool visible);
 
+    // Scale sensitivity: controls how many pixels of mouse movement correspond
+    // to a meaningful scale change. Higher values = slower scaling.
+    static float gizmoScaleSensitivity(GizmoType type);
+    static void  setGizmoScaleSensitivity(GizmoType type, float sensitivity);
+
     static void cleanupStatic();
 
 private:
@@ -162,6 +169,33 @@ private:
 
     // Currently active transform handle (None when not manipulating).
     TransformHandle _activeHandle = TransformHandle::None;
+
+    // Drag-start state captured at beginTransform
+    glm::mat4 _initialLocalMatrix { 1.0f };
+    glm::mat3 _parentRotation { 1.0f };
+    glm::mat3 _localRotation { 1.0f };
+    glm::vec3 _localAxis { 0.0f };
+    glm::vec3 _worldAxis { 0.0f };
+    glm::vec3 _initialWorldPos { 0.0f };
+    glm::vec3 _initialScale { 1.0f };
+    glm::vec3 _initialIntersection { 0.0f };
+    glm::vec3 _initialAxisPoint { 0.0f };
+    float _parentScaleAxis = 1.0f;
+    int _mouseDownX = 0;
+    int _mouseDownY = 0;
+    base::Color _originalHandleColor;
+
+    // Maps a TransformHandle to its local-axis index (0=X, 1=Y, 2=Z).
+    static int handleAxisIndex(TransformHandle h);
+    // Returns the submesh index of the currently active handle, or -1.
+    int activeSubmeshIndex() const;
+
+    struct Ray { glm::vec3 origin; glm::vec3 dir; };
+    Ray rayFromCursor(scene::Scene* scene, int x, int y) const;
+    glm::vec3 closestPointOnAxis(glm::vec3 axisOrigin, glm::vec3 axisDir,
+                                  glm::vec3 rayOrigin, glm::vec3 rayDir) const;
+    glm::vec3 intersectPlane(scene::Scene* scene, glm::vec3 planeNormal,
+                              glm::vec3 planePoint, int x, int y) const;
 
     GizmoType resolveGizmoType() const;
     void loadGizmo(GizmoType type);
@@ -179,6 +213,7 @@ private:
     static std::unordered_map<GizmoType, float> _gizmoScales;
     static std::unordered_map<GizmoType, float> _gizmoOpacities;
     static std::unordered_map<GizmoType, bool>  _gizmoVisible;
+    static std::unordered_map<GizmoType, float> _gizmoScaleSensitivity;
 
     // Tracks the single node whose transform gizmo is currently visible.
     static std::weak_ptr<GizmoComponent> _currentTransform;

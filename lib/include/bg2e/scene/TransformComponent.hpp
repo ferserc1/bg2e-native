@@ -61,7 +61,13 @@ public:
     TransformComponent * translate(const glm::vec3& t);
     TransformComponent * rotate(float alpha, const glm::vec3& axis);
     TransformComponent * scale(const glm::vec3& scale);
-    
+
+    // Decomposition helpers. These assume the matrix is TRS (no shear).
+    static glm::vec3 extractTranslation(const glm::mat4& m);
+    static glm::mat3 extractRotation(const glm::mat4& m);
+    static glm::vec3 extractScale(const glm::mat4& m);
+    static glm::mat4 recompose(const glm::mat3& rotation, const glm::vec3& scale, const glm::vec3& translation);
+
     glm::mat4 worldMatrix();
     glm::mat4 invertedWorldMatrix();
     

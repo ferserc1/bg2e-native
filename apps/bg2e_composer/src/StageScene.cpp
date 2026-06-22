@@ -84,13 +84,6 @@ std::shared_ptr<bg2e::scene::Node> StageScene::buildDefaultScene()
     lightComp->light().setColor(bg2e::base::Color::White());
     lightComp->light().setIntensity(5.0f);
     lightNode->addComponent(lightComp);
-    auto polarCtrl = new bg2e::scene::PolarTransformControllerComponent();
-    polarCtrl->setAzimuth(225.0f);
-    polarCtrl->setElevation(56.27f);
-    polarCtrl->setDistance(3.33f);
-    polarCtrl->setEulerX(58.27f);
-    polarCtrl->setEulerY(40.0f);
-    lightNode->addComponent(polarCtrl);
 
     scene->addChild(lightNode);
 

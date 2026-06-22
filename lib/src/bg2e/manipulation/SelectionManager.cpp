@@ -116,7 +116,7 @@ bool SelectionManager::mouseButtonDown(scene::Scene * scene, int button, int x, 
                             drw->submeshName(result.submesh),
                             drw->submeshGroupName(result.submesh)
                         );
-                        gizmo->beginTransform(handle);
+                        gizmo->beginTransform(handle, x, y);
                         _capturing = true;
                         return false; // captured: do not propagate to the scene graph
                     }
@@ -128,11 +128,20 @@ bool SelectionManager::mouseButtonDown(scene::Scene * scene, int button, int x, 
     return true; // not captured: propagate (camera controllers, etc.)
 }
 
-bool SelectionManager::mouseMove(scene::Scene *, int, int)
+bool SelectionManager::mouseMove(scene::Scene* scene, int x, int y)
 {
-    // While capturing, the drag-to-transform logic will be handled here in a
-    // later step. For now we only block scene-graph propagation.
-    return !_capturing;
+    if (_capturing)
+    {
+        if (auto node = GizmoComponent::currentTransformNode())
+        {
+            if (auto gizmo = node->getComponent<GizmoComponent>())
+            {
+                gizmo->updateTransform(scene, x, y);
+            }
+        }
+        return false;
+    }
+    return true;
 }
 
 bool SelectionManager::mouseButtonUp(scene::Scene * scene, int button, int x, int y)
