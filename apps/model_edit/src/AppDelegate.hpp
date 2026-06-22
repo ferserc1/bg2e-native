@@ -31,6 +31,7 @@ class AppDelegate : public bg2e::render::DefaultRenderLoopDelegate<bg2e::render:
 	public bg2e::ui::UserInterfaceDelegate
 {
 public:
+    bg2e::render::Renderer * rendererBase() { return this->renderer(); }
 
     void init(bg2e::render::Engine * engine) override;
      

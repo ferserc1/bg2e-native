@@ -54,28 +54,17 @@ bool UIRenderSettingsWindow::drawUI()
 
 bool UIRenderSettingsWindow::drawRenderScaleSection()
 {
-    bg2e::ui::BasicWidgets::text("Render Scale", true);
-
     auto renderer = dynamic_cast<bg2e::render::RendererDeferred*>(_appDelegate->rendererBase());
     if (!renderer) return false;
 
-    static const std::vector<std::string> scaleItems = { "Performance (50%)", "Balanced (75%)", "Quality (100%)" };
-    static const std::vector<float> scaleValues = { 50.0f, 75.0f, 100.0f };
+    auto scaleProcessorName = renderer->scaleProcessorName();
+    bg2e::ui::BasicWidgets::text(scaleProcessorName, true);
 
-    float currentScale = renderer->renderScalePercent();
-    uint32_t scaleIdx = 2;
-    for (uint32_t i = 0; i < scaleValues.size(); i++)
+    auto scaleItems = renderer->scaleOptions();
+    auto scaleIdx = renderer->scaleOption();
+    if (bg2e::ui::Input::comboBox(scaleProcessorName + "##RenderScale", scaleItems, scaleIdx))
     {
-        if (scaleValues[i] == currentScale)
-        {
-            scaleIdx = i;
-            break;
-        }
-    }
-
-    if (bg2e::ui::Input::comboBox("Render Scale##RenderScale", scaleItems, scaleIdx))
-    {
-        renderer->setRenderScalePercent(scaleValues[scaleIdx]);
+        renderer->setScaleOption(scaleIdx);
         return true;
     }
 

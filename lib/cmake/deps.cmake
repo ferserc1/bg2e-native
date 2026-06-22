@@ -89,7 +89,15 @@ if(NOT APPLE)
     # The FFX static libraries are linked into libbg2e.so (a shared object),
     # so they must be compiled as position-independent code.
     set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+    # Suppress all warnings from the vendored FidelityFX SDK (third-party code).
+    set(_saved_cxx_flags "${CMAKE_CXX_FLAGS}")
+    if(MSVC)
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /w")
+    else()
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -w")
+    endif()
     add_subdirectory("${THIRD_PARTY_PATH}/FidelityFX-SDK-1.1.4/sdk" ffx_sdk)
+    set(CMAKE_CXX_FLAGS "${_saved_cxx_flags}")
 
     if(UNIX AND NOT APPLE)
         # Ensure ffx_sc_linux is built before the shader permutation step runs
