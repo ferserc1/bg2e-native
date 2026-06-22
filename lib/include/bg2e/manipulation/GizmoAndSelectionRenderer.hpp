@@ -29,6 +29,8 @@
 namespace bg2e {
 namespace manipulation {
 
+class GizmoComponent;
+
 class BG2E_API GizmoAndSelectionRenderer : public bg2e::scene::NodeVisitor {
 public:
     void init(
@@ -36,11 +38,16 @@ public:
         VkSampleCountFlagBits sampleCount
     );
 
+    // renderExtent must be the extent of the actual render target (color/depth
+    // image), not the swapchain extent: the deferred renderer rescales, so they
+    // differ. It is used to clamp the transform gizmo depth clear to the render
+    // area.
     void draw(
         bg2e::scene::Node * sceneRoot,
         const glm::mat4 & viewMatrix,
         const glm::mat4 & projMatrix,
-        VkCommandBuffer cmd
+        VkCommandBuffer cmd,
+        const VkExtent2D & renderExtent
     );
     void visit(bg2e::scene::Node * node) override;
     void didVisit(bg2e::scene::Node * node) override;
@@ -68,6 +75,9 @@ protected:
     glm::mat4 _viewMatrix { 1.0f };
     glm::mat4 _projMatrix { 1.0f };
 
+    // Extent of the current render target (not the swapchain). Set in draw().
+    VkExtent2D _renderExtent { 0, 0 };
+
     VkCommandBuffer _cmdBuffer = VK_NULL_HANDLE;
     VkPipeline _currentBoundPipeline = VK_NULL_HANDLE;
 
@@ -77,8 +87,22 @@ protected:
     VkPipeline _gizmoPipeline = VK_NULL_HANDLE;
     VkPipelineLayout _gizmoPipelineLayout = VK_NULL_HANDLE;
 
+    // Opaque, depth-tested gizmo pipeline. Used by the transform gizmo so its
+    // 3D handles self-occlude correctly. Reuses _gizmoPipelineLayout (same push
+    // constant layout as _gizmoPipeline).
+    VkPipeline _opaqueGizmoPipeline = VK_NULL_HANDLE;
+
+    // The transform gizmo is drawn after the whole traversal so it is always
+    // the last thing rendered (on top of every other gizmo) and self-occludes
+    // via the opaque depth-tested pipeline. It is recorded during visit() and
+    // flushed at the end of draw().
+    GizmoComponent * _pendingTransformGizmo = nullptr;
+    glm::mat4 _pendingTransformWorld { 1.0f };
+
     void createSelectionPipeline();
     void createGizmoPipeline();
+    void createOpaqueGizmoPipeline();
+    void flushTransformGizmo();
 };
 
 }

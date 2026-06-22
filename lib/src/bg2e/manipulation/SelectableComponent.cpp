@@ -45,7 +45,23 @@ void SelectableComponent::update(float)
             _identifier[i] = generateIdentifier();
             _submeshSelected[i] = false;
         }
-    } 
+    }
+
+    // The gizmo identifier is generated regardless of whether the node owns a
+    // regular drawable, so light/environment/camera nodes are pickable too.
+    if (_gizmoIdentifier == 0)
+    {
+        _gizmoIdentifier = generateIdentifier();
+    }
+}
+
+uint32_t SelectableComponent::gizmoIdentifier()
+{
+    if (_gizmoIdentifier == 0)
+    {
+        _gizmoIdentifier = generateIdentifier();
+    }
+    return _gizmoIdentifier;
 }
 
 uint32_t SelectableComponent::_lastIdentifier = 0;

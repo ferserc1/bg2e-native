@@ -28,6 +28,7 @@
 #include "bg2e/scene/FindCameraVisitor.hpp"
 #include "bg2e/scene/FindNodeComponentVisitor.hpp"
 #include <bg2e/manipulation/GizmoComponent.hpp>
+#include <bg2e/manipulation/SelectableComponent.hpp>
 
 StageScene::StageScene(bg2e::render::Engine * engine, AppDelegate * appDelegate)
     :_engine { engine }
@@ -154,6 +155,7 @@ void StageScene::importModelBg2(const std::filesystem::path& path)
     node->addComponent(new bg2e::scene::TransformComponent());
     node->addComponent(new bg2e::scene::DrawableComponent(drawable));
     node->addComponent(new bg2e::manipulation::SelectableComponent());
+    node->addComponent(new bg2e::manipulation::GizmoComponent(_engine));
     bg2e::app::MainLoop::current()->safeUpdateScene([this, node]() {
         _editableRoot->addChild(node);
         _containerRoot->scene()->updateAll();
@@ -259,36 +261,32 @@ void StageScene::ensureMainCameraProjection(bg2e::scene::Scene * scene)
 void StageScene::addGizmoComponents(bg2e::scene::Node * root)
 {
     using namespace bg2e::manipulation;
-    using namespace bg2e::scene;
 
-    bg2e::scene::FindNodeComponentVisitor<CameraComponent> cameraFinder;
-    for (auto& wp : cameraFinder.find(root))
+    if (!root)
     {
-        if (auto node = wp.lock())
-        {
-            if (!node->getComponent<GizmoComponent>())
-                node->addComponent(new GizmoComponent(_engine));
-        }
+        return;
     }
 
-    bg2e::scene::FindNodeComponentVisitor<LightComponent> lightFinder;
-    for (auto& wp : lightFinder.find(root))
+    // Every node gets a GizmoComponent: it drives the type gizmo (camera, light,
+    // environment) when applicable and, independently, the transform gizmo for
+    // any node that owns a TransformComponent. Adding it to every node also lets
+    // a transform gizmo appear if a TransformComponent is added later.
+    if (!root->getComponent<GizmoComponent>())
     {
-        if (auto node = wp.lock())
-        {
-            if (!node->getComponent<GizmoComponent>())
-                node->addComponent(new GizmoComponent(_engine));
-        }
+        root->addComponent(new GizmoComponent(_engine));
     }
 
-    bg2e::scene::FindNodeComponentVisitor<EnvironmentComponent> envFinder;
-    for (auto& wp : envFinder.find(root))
+    // Light/environment/camera nodes have no regular drawable, so they need a
+    // SelectableComponent to be pickable through their gizmo in the viewport.
+    if ((root->light() || root->environment() || root->camera()) &&
+        !root->getComponent<SelectableComponent>())
     {
-        if (auto node = wp.lock())
-        {
-            if (!node->getComponent<GizmoComponent>())
-                node->addComponent(new GizmoComponent(_engine));
-        }
+        root->addComponent(new SelectableComponent());
+    }
+
+    for (const auto& child : root->children())
+    {
+        addGizmoComponents(child.get());
     }
 }
 

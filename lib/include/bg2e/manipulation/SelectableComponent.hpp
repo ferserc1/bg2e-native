@@ -39,6 +39,16 @@ public:
 
     inline uint32_t identifier(uint32_t submeshIndex) { return _identifier[submeshIndex]; }
     inline uint32_t submeshCount() const { return _submeshCount; }
+
+    // Persistent identifier used to pick this node through its gizmo (light,
+    // environment, camera...). Unlike the per-submesh identifiers above it is
+    // generated even when the node owns no regular drawable. Lazily allocated.
+    uint32_t gizmoIdentifier();
+
+    // Identifiers are allocated from a single global counter so that drawables,
+    // gizmos and transform-gizmo parts never collide. Exposed so GizmoComponent
+    // can allocate identifiers for the transform gizmo parts.
+    static uint32_t generateIdentifier();
     
     static inline uint32_t decodeObjectId(const uint8_t data[4])
     {
@@ -64,9 +74,9 @@ protected:
     std::unordered_map<uint32_t, uint32_t> _identifier;
     std::vector<bool> _submeshSelected;
     uint32_t _submeshCount = 0;
-    
+    uint32_t _gizmoIdentifier = 0;
+
     static uint32_t _lastIdentifier;
-    static uint32_t generateIdentifier();
 };
 
 }

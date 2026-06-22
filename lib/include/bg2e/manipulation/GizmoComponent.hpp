@@ -26,9 +26,15 @@
 #include <bg2e/math/base.hpp>
 
 #include <memory>
+#include <string>
 #include <unordered_map>
+#include <vector>
 
 namespace bg2e {
+namespace scene {
+class Node;
+}
+
 namespace manipulation {
 
 enum class GizmoType {
@@ -37,7 +43,18 @@ enum class GizmoType {
     PointLight,
     SpotLight,
     DirectionalLight,
-    Environment
+    Environment,
+    Transform
+};
+
+// Identifies which part of the transform gizmo is being interacted with. The
+// transformation math is applied in a later step; this only carries intent.
+enum class TransformHandle {
+    None,
+    TranslateX, TranslateY, TranslateZ,
+    RotateX, RotateY, RotateZ,
+    ScaleX, ScaleY, ScaleZ,
+    ScaleUniform
 };
 
 class BG2E_API GizmoComponent : public scene::DrawableComponent {
@@ -65,6 +82,65 @@ public:
         const glm::mat4& projMatrix
     ) const;
 
+    // Same as above but using the scale configured for an explicit gizmo type.
+    // Used to render the transform gizmo facet (GizmoType::Transform), whose
+    // scale is independent from the node's type gizmo.
+    glm::mat4 renderTransform(
+        const glm::mat4& worldTransform,
+        const glm::mat4& viewMatrix,
+        const glm::mat4& projMatrix,
+        GizmoType type
+    ) const;
+
+    // --- Transform gizmo facet ---------------------------------------------
+    // The transform gizmo is an independent facet that can coexist with the
+    // type gizmo above (a light node shows both its light gizmo and, when it is
+    // the current transform node, the transform gizmo). It is only visible when
+    // this node is the current transform node AND owns a TransformComponent.
+    [[nodiscard]] bool transformVisible() const { return _transformVisible; }
+    void setTransformVisible(bool visible) { _transformVisible = visible; }
+
+    // Lazily-loaded shared transform gizmo drawable. Returns nullptr until the
+    // asset has been loaded (see ensureTransformGizmoLoaded()).
+    [[nodiscard]] std::shared_ptr<scene::Drawable> transformDrawable() const;
+
+    // Current transform node management. setCurrentTransform hides the previous
+    // transform gizmo, resets the tracked component and, if the given node owns
+    // a GizmoComponent, marks it as the current transform and makes its gizmo
+    // visible. Only one transform gizmo can be visible at a time.
+    static void setCurrentTransform(scene::Node* node);
+    static scene::Node* currentTransformNode();
+
+    // Scale sub-control visibility. Uniform (global) and per-axis (component)
+    // scale handles can be hidden independently. Rotation and translation
+    // controls are always visible. Mirrors the per-type visibility API below.
+    static bool isScaleUniformVisible();
+    static void setScaleUniformVisible(bool visible);
+    static bool isScaleAxisVisible();
+    static void setScaleAxisVisible(bool visible);
+
+    // Returns whether a transform-gizmo submesh must be drawn, honoring the
+    // scale-control visibility flags. name/groupName come from the submesh.
+    static bool isTransformSubmeshVisible(const std::string& name, const std::string& groupName);
+
+    // Maps a transform-gizmo submesh name to the handle it represents, using the
+    // asset naming convention (A=X, B=Z, C=Y).
+    static TransformHandle handleForSubmesh(const std::string& name, const std::string& groupName);
+
+    // Persistent pick identifier for a transform-gizmo submesh. Allocated lazily
+    // from the shared SelectableComponent identifier counter so it never collides
+    // with drawable/gizmo identifiers. Requires the transform gizmo to be loaded;
+    // returns 0 otherwise.
+    uint32_t transformSubmeshIdentifier(uint32_t submeshIndex);
+
+    // Transform interaction. The actual transformation math is implemented in a
+    // later step; for now this only tracks which handle is active so the input
+    // layer can capture the mouse and block scene-graph events while dragging.
+    void beginTransform(TransformHandle handle);
+    void endTransform();
+    [[nodiscard]] TransformHandle activeHandle() const { return _activeHandle; }
+    [[nodiscard]] bool isTransforming() const { return _activeHandle != TransformHandle::None; }
+
     static float gizmoScale(GizmoType type);
     static void  setGizmoScale(GizmoType type, float scale);
 
@@ -79,10 +155,22 @@ public:
 private:
     render::Engine* _engine;
     GizmoType _currentGizmoType = GizmoType::None;
+    bool _transformVisible = false;
+
+    // Pick identifiers per transform-gizmo submesh (lazily allocated).
+    std::vector<uint32_t> _transformSubmeshIds;
+
+    // Currently active transform handle (None when not manipulating).
+    TransformHandle _activeHandle = TransformHandle::None;
 
     GizmoType resolveGizmoType() const;
     void loadGizmo(GizmoType type);
     void unloadGizmo();
+
+    // Ensures the shared transform gizmo asset is loaded. The actual load is
+    // deferred to a safe scene-update point to avoid creating GPU buffers
+    // mid-render. Loading failures are unrecoverable (see implementation).
+    void ensureTransformGizmoLoaded();
 
     // Static mesh cache: shared across all GizmoComponent instances
     static std::unordered_map<GizmoType, std::shared_ptr<scene::Drawable>> _gizmoCache;
@@ -91,6 +179,13 @@ private:
     static std::unordered_map<GizmoType, float> _gizmoScales;
     static std::unordered_map<GizmoType, float> _gizmoOpacities;
     static std::unordered_map<GizmoType, bool>  _gizmoVisible;
+
+    // Tracks the single node whose transform gizmo is currently visible.
+    static std::weak_ptr<GizmoComponent> _currentTransform;
+
+    // Scale sub-control visibility flags (shared across all instances).
+    static bool _scaleUniformVisible;
+    static bool _scaleAxisVisible;
 
     static bool _cleanupRegistered;
 };

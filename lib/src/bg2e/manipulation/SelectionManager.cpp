@@ -21,6 +21,7 @@
 #include <bg2e/render/all.hpp>
 
 #include "bg2e/manipulation/SelectableComponent.hpp"
+#include "bg2e/manipulation/GizmoComponent.hpp"
 
 namespace bg2e::manipulation {
 
@@ -50,6 +51,30 @@ bool SelectionManager::pick(
     if (pickObject(rootNode, viewMatrix, projMatrix, vp, x, y, &result))
     {
         auto nodePtr = result.nodePtr();
+
+        // Transform gizmo parts are not selectable: manipulation is started on
+        // mouse down (see mouseButtonDown), so ignore them here.
+        if (result.kind == PickKind::TransformGizmo)
+        {
+            return true;
+        }
+
+        // Light/environment/camera gizmo: node-level selection (additive /
+        // subtractive), same as selecting from the scene tree.
+        if (result.kind == PickKind::Gizmo)
+        {
+            if (isSelected(nodePtr))
+            {
+                removeFromSelectedItems(nodePtr);
+            }
+            else
+            {
+                addToSelectedItems(nodePtr);
+            }
+            return true;
+        }
+
+        // Regular drawable submesh.
         auto drawablePtr = result.drawablePtr();
         if (isSelected(nodePtr, drawablePtr, result.submesh))
         {
@@ -67,6 +92,72 @@ bool SelectionManager::pick(
     }
 
     return false;
+}
+
+bool SelectionManager::mouseButtonDown(scene::Scene * scene, int button, int x, int y)
+{
+    _mouseDownX = x;
+    _mouseDownY = y;
+
+    // Only attempt a transform-handle interaction with the left button, when
+    // manipulation is enabled and a transform gizmo is currently visible.
+    if (button == 0 && _transformManipulationEnabled && GizmoComponent::currentTransformNode())
+    {
+        SelectionItem result {};
+        if (pickObject(scene, x, y, &result) && result.kind == PickKind::TransformGizmo)
+        {
+            if (auto node = result.nodePtr())
+            {
+                if (auto gizmo = node->getComponent<GizmoComponent>())
+                {
+                    if (auto drw = gizmo->transformDrawable())
+                    {
+                        auto handle = GizmoComponent::handleForSubmesh(
+                            drw->submeshName(result.submesh),
+                            drw->submeshGroupName(result.submesh)
+                        );
+                        gizmo->beginTransform(handle);
+                        _capturing = true;
+                        return false; // captured: do not propagate to the scene graph
+                    }
+                }
+            }
+        }
+    }
+
+    return true; // not captured: propagate (camera controllers, etc.)
+}
+
+bool SelectionManager::mouseMove(scene::Scene *, int, int)
+{
+    // While capturing, the drag-to-transform logic will be handled here in a
+    // later step. For now we only block scene-graph propagation.
+    return !_capturing;
+}
+
+bool SelectionManager::mouseButtonUp(scene::Scene * scene, int button, int x, int y)
+{
+    if (_capturing)
+    {
+        if (auto node = GizmoComponent::currentTransformNode())
+        {
+            if (auto gizmo = node->getComponent<GizmoComponent>())
+            {
+                gizmo->endTransform();
+            }
+        }
+        _capturing = false;
+        return false; // the press was captured; do not propagate the release
+    }
+
+    // Click selection only if the press did not move, so dragging the camera
+    // does not select.
+    if (button == 0 && x == _mouseDownX && y == _mouseDownY)
+    {
+        pick(scene, x, y);
+    }
+
+    return true; // propagate the release to the scene graph
 }
 
 bool SelectionManager::pickObject(
@@ -87,10 +178,22 @@ bool SelectionManager::pickObject(
     if (auto objectData = _pickVisitor->findObject(objectId))
     {
         result->node = objectData->node->weak_from_this();
-        auto drawableComp = objectData->node->getComponent<scene::DrawableComponent>();
-        result->drawable = drawableComp ? std::weak_ptr<scene::DrawableComponent>(std::dynamic_pointer_cast<scene::DrawableComponent>(drawableComp->shared_from_this())) : std::weak_ptr<scene::DrawableComponent>{};
-        result->mesh = drawableComp ? drawableComp->drawable() : std::shared_ptr<scene::Drawable>{};
         result->submesh = objectData->submeshIndex;
+        result->kind = objectData->kind;
+
+        // Only regular drawable picks carry drawable/mesh. Gizmo picks select
+        // the node, and transform-gizmo picks are handled as interactions.
+        if (objectData->kind == PickKind::Drawable)
+        {
+            auto drawableComp = objectData->node->getComponent<scene::DrawableComponent>();
+            result->drawable = drawableComp ? std::weak_ptr<scene::DrawableComponent>(std::dynamic_pointer_cast<scene::DrawableComponent>(drawableComp->shared_from_this())) : std::weak_ptr<scene::DrawableComponent>{};
+            result->mesh = drawableComp ? drawableComp->drawable() : std::shared_ptr<scene::Drawable>{};
+        }
+        else
+        {
+            result->drawable = std::weak_ptr<scene::DrawableComponent>{};
+            result->mesh = std::weak_ptr<scene::Drawable>{};
+        }
         return true;
     }
 
@@ -370,9 +473,13 @@ uint32_t SelectionManager::pickObjectId(
 
         macros::cmdSetDefaultViewportAndScissor(cmd, _image->extent2D());
 
-        vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, _pipeline);
-
-        _pickVisitor->pick(rootNode, viewMatrix, projMatrix, cmd, _pipelineLayout);
+        // The visitor binds the pipelines itself: depth-tested for drawables and
+        // the transform gizmo, depth-disabled for the type gizmos.
+        _pickVisitor->pick(
+            rootNode, viewMatrix, projMatrix, cmd, _pipelineLayout,
+            _pipeline, _pipelineNoDepth, _image->extent2D(),
+            _transformManipulationEnabled
+        );
 
         cmdEndRendering(cmd);
     });
@@ -433,9 +540,15 @@ void SelectionManager::createPipeline()
     plFactory.setCullMode(VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_COUNTER_CLOCKWISE);
     plFactory.multisampling.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
     _pipeline = plFactory.build(_pipelineLayout, "SelectionManager::Pipeline");
-    
+
+    // Depth-disabled variant for type gizmos, so they pick on top of the scene
+    // (matching the visual gizmo renderer). Same layout and shaders.
+    plFactory.disableDepthtest();
+    _pipelineNoDepth = plFactory.build(_pipelineLayout, "SelectionManager::PipelineNoDepth");
+
     _engine->cleanupManager().push([&](VkDevice dev) {
         vkDestroyPipeline(dev, _pipeline, nullptr);
+        vkDestroyPipeline(dev, _pipelineNoDepth, nullptr);
         vkDestroyPipelineLayout(dev, _pipelineLayout, nullptr);
     });
 }
@@ -448,6 +561,11 @@ void SelectionManager::cleanupImage()
 void SelectionManager::callOnChange()
 {
     prioritizeDrawableNode();
+
+    // Point the transform gizmo at the primary selected node before notifying
+    // listeners, so onSelect callbacks already observe the current transform.
+    scene::Node * primary = _selectedNodes.empty() ? nullptr : _selectedNodes.front().lock().get();
+    GizmoComponent::setCurrentTransform(primary);
 
     for (auto & cb : _onSelectCallbacks)
     {

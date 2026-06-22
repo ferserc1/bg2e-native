@@ -262,7 +262,8 @@ void RendererBasicForward::draw(
             _scene->rootNode(),
             viewMatrix,
             projMatrix,
-            cmd
+            cmd,
+            colorImage->extent2D()
         );
     }
 

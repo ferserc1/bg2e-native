@@ -85,6 +85,38 @@ void UISettingsWindow::drawUI()
             }
         }
     }
+
+    // Transform gizmo. Unlike the type gizmos above it is an independent facet,
+    // with extra toggles to hide the scale handles (uniform / per-axis).
+    if (BasicWidgets::collapsingHeader("Transform"))
+    {
+        bool visible = GizmoComponent::isGizmoVisible(GizmoType::Transform);
+        if (BasicWidgets::checkBox("Visible##Transform", &visible))
+        {
+            GizmoComponent::setGizmoVisible(GizmoType::Transform, visible);
+        }
+
+        // No opacity control: the transform gizmo uses the opaque, depth-tested
+        // pipeline (no blending), so opacity would have no visual effect.
+
+        float gizmoScale = GizmoComponent::gizmoScale(GizmoType::Transform);
+        if (Input::sliderFloat("Scale##Transform", &gizmoScale, 0.01f, 0.5f))
+        {
+            GizmoComponent::setGizmoScale(GizmoType::Transform, gizmoScale);
+        }
+
+        bool uniformScale = GizmoComponent::isScaleUniformVisible();
+        if (BasicWidgets::checkBox("Uniform scale control##Transform", &uniformScale))
+        {
+            GizmoComponent::setScaleUniformVisible(uniformScale);
+        }
+
+        bool axisScale = GizmoComponent::isScaleAxisVisible();
+        if (BasicWidgets::checkBox("Axis scale controls##Transform", &axisScale))
+        {
+            GizmoComponent::setScaleAxisVisible(axisScale);
+        }
+    }
 }
 
 }

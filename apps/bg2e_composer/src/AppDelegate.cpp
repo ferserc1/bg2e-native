@@ -44,31 +44,32 @@ void AppDelegate::drawUI()
 }
 
 // InputDelegate
+// The SelectionManager sees every mouse event first. It returns false when it
+// captures the event (transform gizmo manipulation), in which case we must not
+// forward it to the scene graph (so the camera does not move). It also performs
+// the click selection internally (on mouse up, only if the press did not move).
 void AppDelegate::mouseMove(int x, int y)
 {
-    _inputVisitor.mouseMove(renderer()->scene()->rootNode(), x, y);
+    if (_selectionManager->mouseMove(renderer()->scene(), x, y))
+    {
+        _inputVisitor.mouseMove(renderer()->scene()->rootNode(), x, y);
+    }
 }
 
 void AppDelegate::mouseButtonDown(int button, int x, int y)
 {
-    _mouseDownX = x;
-    _mouseDownY = y;
-    _inputVisitor.mouseButtonDown(renderer()->scene()->rootNode(), button, x, y);
+    if (_selectionManager->mouseButtonDown(renderer()->scene(), button, x, y))
+    {
+        _inputVisitor.mouseButtonDown(renderer()->scene()->rootNode(), button, x, y);
+    }
 }
 
 void AppDelegate::mouseButtonUp(int button, int x, int y)
 {
-    if (_mouseDownX == x && _mouseDownY == y && button == 0)
+    if (_selectionManager->mouseButtonUp(renderer()->scene(), button, x, y))
     {
-        // Pick selection. The SelectionManager is the single source of truth:
-        // the scene tree highlights and the node editor update through its
-        // onSelect callback, so there is no manual sync here.
-        if (_selectionManager->pick(renderer()->scene(), x, y))
-        {
-            _submeshPanel.setEditMaterial(_selectionManager->selectedSubmesh());
-        }
+        _inputVisitor.mouseButtonUp(renderer()->scene()->rootNode(), button, x, y);
     }
-    _inputVisitor.mouseButtonUp(renderer()->scene()->rootNode(), button, x, y);
 }
 
 void AppDelegate::mouseWheel(int deltaX, int deltaY)
@@ -307,6 +308,12 @@ void AppDelegate::initWorkspace()
         if (nodes.empty())          _sceneEditor.nodeEditor().setNode(nullptr);
         else if (nodes.size() == 1) _sceneEditor.nodeEditor().setNode(nodes.front());
         else                        _sceneEditor.nodeEditor().setNodes(nodes);
+
+        // Keep the submesh/material panel in sync with the primary selection.
+        if (!nodes.empty())
+        {
+            _submeshPanel.setEditMaterial(_selectionManager->selectedSubmesh());
+        }
     });
 
     // Edge case: clear the selection on scene swap. The onSelect callback above

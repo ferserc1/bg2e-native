@@ -40,6 +40,7 @@ struct SelectionItem {
     std::weak_ptr<scene::DrawableComponent> drawable;
     std::weak_ptr<scene::Drawable> mesh;
     uint32_t submesh;
+    PickKind kind = PickKind::Drawable;
 
     [[nodiscard]] scene::Node * nodePtr() const { return node.lock().get(); }
     [[nodiscard]] scene::DrawableComponent * drawablePtr() const { return drawable.lock().get(); }
@@ -144,6 +145,26 @@ public:
         return pickObject(rootNode, camera, x, y, result);
     }
 
+    // --- Input handling ----------------------------------------------------
+    // The app routes raw mouse events through these. The return value is true if
+    // the event should still be propagated to the scene graph (camera
+    // controllers), false if the SelectionManager captured it (transform gizmo
+    // manipulation in progress). mouseButtonUp performs the click selection, but
+    // only when the press did not move, so dragging the camera does not select.
+    bool mouseButtonDown(scene::Scene * scene, int button, int x, int y);
+    bool mouseMove(scene::Scene * scene, int x, int y);
+    bool mouseButtonUp(scene::Scene * scene, int button, int x, int y);
+
+    // True while a transform gizmo handle is being manipulated; the app must not
+    // forward input to the scene graph while this is true.
+    [[nodiscard]] inline bool sceneInputBlocked() const { return _capturing; }
+
+    // Enables/disables manipulation of the transform gizmo through the viewport.
+    // When disabled the transform gizmo is purely visual and clicks pass through
+    // to the objects behind it.
+    [[nodiscard]] inline bool transformManipulationEnabled() const { return _transformManipulationEnabled; }
+    inline void setTransformManipulationEnabled(bool e) { _transformManipulationEnabled = e; }
+
     // IMPORTANT: Be sure to deselect the elements you want to remove from the scene before deleting them.
     void deselect();
 
@@ -190,13 +211,20 @@ public:
 protected:
     render::Engine * _engine;
     
-    VkPipeline _pipeline = VK_NULL_HANDLE;
+    VkPipeline _pipeline = VK_NULL_HANDLE;        // depth-tested (drawables, transform gizmo)
+    VkPipeline _pipelineNoDepth = VK_NULL_HANDLE; // depth-disabled (type gizmos, on top)
     VkPipelineLayout _pipelineLayout = VK_NULL_HANDLE;
     std::shared_ptr<render::vulkan::Image> _image;
     std::shared_ptr<PickSelectionVisitor> _pickVisitor;
 
     bool _multiSelection = true;
     bool _clearSelectionOnEmptyPick = true;
+
+    // Transform gizmo manipulation / input capture state.
+    bool _transformManipulationEnabled = true;
+    bool _capturing = false;
+    int _mouseDownX = 0;
+    int _mouseDownY = 0;
     std::vector<std::shared_ptr<SelectionItem>> _selectedItems;
     std::vector<std::weak_ptr<scene::Node>> _selectedNodes;
 

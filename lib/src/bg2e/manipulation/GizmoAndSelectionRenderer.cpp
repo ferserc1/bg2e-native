@@ -34,20 +34,27 @@ void GizmoAndSelectionRenderer::init(
     _sampleCount = sampleCount;
     createSelectionPipeline();
     createGizmoPipeline();
+    createOpaqueGizmoPipeline();
 }
 
 void GizmoAndSelectionRenderer::draw(
     bg2e::scene::Node * sceneRoot,
     const glm::mat4 & viewMatrix,
     const glm::mat4 & projMatrix,
-    VkCommandBuffer cmd
+    VkCommandBuffer cmd,
+    const VkExtent2D & renderExtent
 ) {
     _viewMatrix = viewMatrix;
     _projMatrix = projMatrix;
     _viewProjectionMatrix = projMatrix * viewMatrix;
     _cmdBuffer = cmd;
+    _renderExtent = renderExtent;
     _currentBoundPipeline = VK_NULL_HANDLE;
+    _pendingTransformGizmo = nullptr;
     sceneRoot->accept(this);
+
+    // Draw the transform gizmo last, so it sits on top of every other gizmo.
+    flushTransformGizmo();
 }
 
 void GizmoAndSelectionRenderer::visit(bg2e::scene::Node * node)
@@ -99,6 +106,18 @@ void GizmoAndSelectionRenderer::visit(bg2e::scene::Node * node)
         }
     }
 
+    // Transform gizmo facet. Independent from the type gizmo below: it is drawn
+    // when this node is the current transform node, owns a TransformComponent
+    // and the transform gizmo is globally visible. It is recorded here and drawn
+    // last (see flushTransformGizmo) so it always sits on top of every other
+    // gizmo and self-occludes via the opaque depth-tested pipeline.
+    if (gizmo && gizmo->transformVisible() && trx &&
+        GizmoComponent::isGizmoVisible(GizmoType::Transform))
+    {
+        _pendingTransformGizmo = gizmo;
+        _pendingTransformWorld = _currentTransform;
+    }
+
     if (gizmo && gizmo->currentGizmoType() != GizmoType::None)
     {
         auto type = gizmo->currentGizmoType();
@@ -147,6 +166,69 @@ void GizmoAndSelectionRenderer::didVisit(bg2e::scene::Node * node)
     {
         _currentTransform = _transformStack.top();
         _transformStack.pop();
+    }
+}
+
+void GizmoAndSelectionRenderer::flushTransformGizmo()
+{
+    if (!_pendingTransformGizmo)
+    {
+        return;
+    }
+
+    auto drw = _pendingTransformGizmo->transformDrawable();
+    if (!drw)
+    {
+        return;
+    }
+
+    auto mesh = drw->renderMesh();
+    auto submeshes = drw->submeshesCount();
+    auto gizmoTransform = _pendingTransformGizmo->renderTransform(
+        _pendingTransformWorld, _viewMatrix, _projMatrix, GizmoType::Transform
+    );
+    float opacity = GizmoComponent::gizmoOpacity(GizmoType::Transform);
+
+    // Clear the depth buffer so the transform gizmo always draws on top of the
+    // scene while still self-occluding via the opaque pipeline. Safe because
+    // nothing samples depth after the gizmo pass (the depth buffer is only used
+    // as an attachment within the scene render).
+    VkClearAttachment depthClear {};
+    depthClear.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+    depthClear.clearValue.depthStencil = { 1.0f, 0 };
+    VkClearRect clearRect {};
+    clearRect.rect.offset = { 0, 0 };
+    clearRect.rect.extent = _renderExtent;
+    clearRect.baseArrayLayer = 0;
+    clearRect.layerCount = 1;
+    vkCmdClearAttachments(_cmdBuffer, 1, &depthClear, 1, &clearRect);
+
+    vkCmdBindPipeline(_cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, _opaqueGizmoPipeline);
+    _currentBoundPipeline = _opaqueGizmoPipeline;
+
+    for (uint32_t i = 0; i < submeshes; ++i)
+    {
+        if (!GizmoComponent::isTransformSubmeshVisible(drw->submeshName(i), drw->submeshGroupName(i)))
+        {
+            continue;
+        }
+
+        auto albedo = drw->renderMaterial(i)->materialAttributes().albedo();
+        FrameData frameData = {
+            .mvp = _viewProjectionMatrix * gizmoTransform * drw->submeshTransform(i),
+            .color = glm::vec4{ albedo.r, albedo.g, albedo.b, opacity }
+        };
+
+        vkCmdPushConstants(
+            _cmdBuffer,
+            _gizmoPipelineLayout,
+            VK_SHADER_STAGE_VERTEX_BIT,
+            0,
+            sizeof(FrameData),
+            &frameData
+        );
+
+        mesh->drawSubmesh(_cmdBuffer, i);
     }
 }
 
@@ -211,6 +293,35 @@ void GizmoAndSelectionRenderer::createGizmoPipeline()
     {
         vkDestroyPipeline(dev, pipeline, nullptr);
         vkDestroyPipelineLayout(dev, pipelineLayout, nullptr);
+    });
+}
+
+void GizmoAndSelectionRenderer::createOpaqueGizmoPipeline()
+{
+    using namespace bg2e::render::vulkan;
+    factory::GraphicsPipeline plFactory(_engine);
+
+    plFactory.addShader("gizmo.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
+    plFactory.addShader("gizmo.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    // Reuse the gizmo pipeline layout: same FrameData push constant range.
+    plFactory.setInputState<render::vulkan::geo::Mesh>();
+    plFactory.setColorAttachmentFormat(_engine->swapchain().imageFormat());
+    plFactory.setDepthFormat(_engine->swapchain().depthImageFormat());
+    // Opaque, depth-tested and depth-writing so the transform gizmo handles
+    // occlude each other correctly. No blending (unlike the translucent gizmo
+    // pipeline, which disables depth test).
+    plFactory.enableDepthtest(true, VK_COMPARE_OP_LESS);
+    plFactory.setPolygonMode(VK_POLYGON_MODE_FILL);
+    plFactory.inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+    plFactory.setCullMode(VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_COUNTER_CLOCKWISE);
+    plFactory.multisampling.rasterizationSamples = _sampleCount;
+
+    auto pipeline = plFactory.build(_gizmoPipelineLayout, "GizmoAndSelectionRenderer::OpaqueGizmoPipeline");
+    _opaqueGizmoPipeline = pipeline;
+    _engine->cleanupManager().push([&, pipeline](VkDevice dev)
+    {
+        vkDestroyPipeline(dev, pipeline, nullptr);
     });
 }
 

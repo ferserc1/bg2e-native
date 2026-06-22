@@ -228,6 +228,14 @@ protected:
     std::shared_ptr<vulkan::Image> _opaqueImage;
     std::shared_ptr<vulkan::Image> _transparentImage;
 
+    // Dedicated depth buffer for the gizmo pass. The gizmo pass renders into
+    // _transparentImage but must not reuse the scene depth (FSR consumes it for
+    // motion vectors after gizmos). This is cleared every frame so the transform
+    // gizmo always draws on top while still self-occluding. Only allocated when
+    // not offscreen (gizmos are editor-only).
+    std::shared_ptr<vulkan::Image> _gizmoDepthImage;
+    void createGizmoDepthImage();
+
     // Data bindings (shared across deferred layers)
     std::unique_ptr<scene::vk::DeferredLightDataBinding> _lightDataBinding;
     std::unique_ptr<vulkan::rt::RayTracingSceneDataBinding> _rtDataBinding;
