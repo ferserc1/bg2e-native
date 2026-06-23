@@ -145,135 +145,24 @@ void AppDelegate::setSelectionHighlightMode(SelectionHighlightMode mode)
     updateSelectionHighlight();
 }
 
-void AppDelegate::saveSettings()
-{
-    bg2e::app::Preferences appPrefs;
 
-    // Render settings
-    // RTAO
-    uint32_t qualityIdx = static_cast<uint32_t>(renderer()->aoQuality());
-    int aoSampleCount = renderer()->aoSampleCount();
-    int bounceCount = renderer()->aoBounceCount();
-    float radius = renderer()->aoRadius();
-    float bias = renderer()->aoBias();
-    float falloff = renderer()->aoFalloff();
-    float bounceAttenuation = renderer()->aoBounceAttenuation();
-    appPrefs.set("render_ao_qualityIndex", qualityIdx);
-    appPrefs.set("render_ao_sampleCount", aoSampleCount);
-    appPrefs.set("render_ao_bounceCount", bounceCount);
-    appPrefs.set("render_ao_radius", radius);
-    appPrefs.set("render_ao_bias", bias);
-    appPrefs.set("render_ao_falloff", falloff);
-    appPrefs.set("render_ao_bounceAttenuation", bounceAttenuation);
-
-    // Reflection
-    bool enabled = renderer()->rtReflectionsEnabled();
-    int reflectSampleCount = renderer()->rtReflectionSampleCount();
-    float maxRoughness = renderer()->rtReflectionMaxRoughness();
-    float rayBias = renderer()->rtReflectionRayBias();
-    float maxDistance = renderer()->rtReflectionMaxDistance();
-    float roughnessSpread = renderer()->rtReflectionRoughnessSpread();
-    appPrefs.set("render_reflect_enabled", enabled);
-    appPrefs.set("render_reflect_maxRoughness", maxRoughness);
-    appPrefs.set("render_reflect_sampleCount", reflectSampleCount);
-    appPrefs.set("render_reflect_rayBias", rayBias);
-    appPrefs.set("render_reflect_maxDistance", maxDistance);
-    appPrefs.set("render_reflect_roughnessSpread", roughnessSpread);
-
-    // Temporal Accumulation
-    static const std::vector<std::string> modeItems = { "Interactive", "Progressive" };
-    uint32_t modeIdx = static_cast<uint32_t>(renderer()->temporalMode());
-    float historyWeight = renderer()->temporalHistoryWeight();
-    float taDepthThreshold = renderer()->temporalDepthThreshold();
-    float taNormalThreshold = renderer()->temporalNormalThreshold();
-    appPrefs.set("render_ta_mode", modeIdx);
-    appPrefs.set("render_ta_historyWeight", historyWeight);
-    appPrefs.set("render_ta_depthThreshold", taDepthThreshold);
-    appPrefs.set("render_ta_normalThreshold", taNormalThreshold);
-
-    // Denoise
-    int kernelRadius = renderer()->denoiseKernelRadius();
-    float depthThreshold = renderer()->denoiseDepthThreshold();
-    float denoiseNormalThreshold = renderer()->denoiseNormalThreshold();
-    float depthSigma = renderer()->denoiseDepthSigma();
-    float normalSigma = renderer()->denoiseNormalSigma();
-    appPrefs.set("render_denoise_kernRadius", kernelRadius);
-    appPrefs.set("render_denoise_depthThreshold", depthThreshold);
-    appPrefs.set("render_denoise_normalThreshold", denoiseNormalThreshold);
-    appPrefs.set("render_denoise_depthSigma", depthSigma);
-    appPrefs.set("render_denoise_normalSigma", normalSigma);
-
-    appPrefs.save();
-}
-
-void AppDelegate::restoreSettings()
-{
-    bg2e::app::Preferences appPrefs;
-    appPrefs.load();
-
-    // Render settings
-    // RTAO
-    uint32_t qualityIdx = appPrefs.get("render_ao_qualityIndex", static_cast<uint32_t>(renderer()->aoQuality()));
-    renderer()->setAOQuality(static_cast<bg2e::render::deferred::RTAOQuality>(qualityIdx));
-    int aoSampleCount = appPrefs.get("render_ao_sampleCount", renderer()->aoSampleCount());
-    renderer()->setAOSampleCount(aoSampleCount);
-    int bounceCount = appPrefs.get("render_ao_bounceCount", renderer()->aoBounceCount());
-    renderer()->setAOBounceCount(bounceCount);
-    float radius = appPrefs.get("render_ao_radius", renderer()->aoRadius());
-    renderer()->setAORadius(radius);
-    float bias = appPrefs.get("render_ao_bias", renderer()->aoBias());
-    renderer()->setAOBias(bias);
-    float falloff = appPrefs.get("render_ao_falloff", renderer()->aoFalloff());
-    renderer()->setAOFalloff(falloff);
-    float bounceAttenuation = appPrefs.get("render_ao_bounceAttenuation", renderer()->aoBounceAttenuation());
-    renderer()->setAOBounceAttenuation(bounceAttenuation);
-
-    // Reflection
-    bool enabled = appPrefs.get("render_reflect_enabled", renderer()->rtReflectionsEnabled());
-    renderer()->setRTReflectionsEnabled(enabled);
-    int reflectSampleCount = appPrefs.get("render_reflect_sampleCount", renderer()->rtReflectionSampleCount());
-    renderer()->setRTReflectionSampleCount(reflectSampleCount);
-    float maxRoughness = appPrefs.get("render_reflect_maxRoughness", renderer()->rtReflectionMaxRoughness());
-    renderer()->setRTReflectionMaxRoughness(maxRoughness);
-    float rayBias = appPrefs.get("render_reflect_rayBias", renderer()->rtReflectionRayBias());
-    renderer()->setRTReflectionRayBias(rayBias);
-    float maxDistance = appPrefs.get("render_reflect_maxDistance", renderer()->rtReflectionMaxDistance());
-    renderer()->setRTReflectionMaxDistance(maxDistance);
-    float roughnessSpread = appPrefs.get("render_reflect_roughnessSpread", renderer()->rtReflectionRoughnessSpread());
-    renderer()->setRTReflectionRoughnessSpread(roughnessSpread);
-
-    // Temporal Accumulation
-    static const std::vector<std::string> modeItems = { "Interactive", "Progressive" };
-    uint32_t modeIdx = appPrefs.get("render_ta_mode", static_cast<uint32_t>(renderer()->temporalMode()));
-    renderer()->setTemporalMode(static_cast<bg2e::render::deferred::TemporalAccumulator::AccumulationMode>(modeIdx));
-    float historyWeight = appPrefs.get("render_ta_historyWeight", renderer()->temporalHistoryWeight());
-    renderer()->setTemporalHistoryWeight(historyWeight);
-    float taDepthThreshold = appPrefs.get("render_ta_depthThreshold", renderer()->temporalDepthThreshold());
-    renderer()->setTemporalDepthThreshold(taDepthThreshold);
-    float taNormalThreshold = appPrefs.get("render_ta_normalThreshold", renderer()->temporalNormalThreshold());
-    renderer()->setTemporalNormalThreshold(taNormalThreshold);
-
-    // Denoise
-    int kernelRadius = appPrefs.get("render_denoise_kernRadius", renderer()->denoiseKernelRadius());
-    renderer()->setDenoiseKernelRadius(kernelRadius);
-    float depthThreshold = appPrefs.get("render_denoise_depthThreshold", renderer()->denoiseDepthThreshold());
-    renderer()->setDenoiseDepthThreshold(depthThreshold);
-    float denoiseNormalThreshold = appPrefs.get("render_denoise_normalThreshold", renderer()->denoiseNormalThreshold());
-    renderer()->setDenoiseNormalThreshold(denoiseNormalThreshold);
-    float depthSigma = appPrefs.get("render_denoise_depthSigma", renderer()->denoiseDepthSigma());
-    renderer()->setDenoiseDepthSigma(depthSigma);
-    float normalSigma = appPrefs.get("render_denoise_normalSigma", renderer()->denoiseNormalSigma());
-    renderer()->setDenoiseNormalSigma(normalSigma);
-}
 
 void AppDelegate::initWorkspace()
 {
-    restoreSettings();
+    // Initialize preferences and load saved settings
+    _renderPrefs = std::make_unique<bg2e::render::RenderSettingsPreferences>(renderer());
+    _renderPrefs->load();
+
+    // Register timer: persist every 60 seconds, also persist on exit
+    bg2e::app::MainLoop::current()->timeout().add([this]() -> bool {
+        _renderPrefs->persist();
+        return true;
+    }, 60000, true);  // executeOnExit = true
 
     _workspace.leftPanelSize().min = 300;
     _environmentPanel.init(this, renderer());
     _uiSettingsWindow.init();
-    _renderSettingsWindow.init(this);
+    _renderSettingsWindow.init(renderer(), _renderPrefs.get());
     _toolBar.init(this, &_uiSettingsWindow, &_renderSettingsWindow);
     _submeshPanel.init(this);
 

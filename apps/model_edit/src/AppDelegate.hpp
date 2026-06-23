@@ -24,7 +24,8 @@
 #include "SubmeshWindow.hpp"
 #include "StageScene.hpp"
 #include <bg2e/ui/UISettingsWindow.hpp>
-#include "UIRenderSettingsWindow.hpp"
+#include <bg2e/render/RenderSettingsPreferences.hpp>
+#include <bg2e/ui/RenderSettingsWindow.hpp>
 
 class AppDelegate : public bg2e::render::DefaultRenderLoopDelegate<bg2e::render::RendererDeferred>,
 	public bg2e::app::InputDelegate,
@@ -74,8 +75,7 @@ public:
     void toggleSelectionHighlight();
     void setSelectionHighlightMode(SelectionHighlightMode mode);
 
-    void saveSettings();
-    void restoreSettings();
+
 
 protected:
     bg2e::scene::InputVisitor _inputVisitor;
@@ -85,7 +85,8 @@ protected:
     SubmeshWindow _submeshPanel {};
     EnvironmentSettings _environmentPanel {};
     bg2e::ui::UISettingsWindow _uiSettingsWindow {};
-    UIRenderSettingsWindow _renderSettingsWindow {};
+    bg2e::ui::RenderSettingsWindow _renderSettingsWindow {};
+    std::unique_ptr<bg2e::render::RenderSettingsPreferences> _renderPrefs;
 
     std::shared_ptr<bg2e::ui::StatusItem> _fileStatus;
     std::shared_ptr<bg2e::ui::StatusItem> _saveStatus;

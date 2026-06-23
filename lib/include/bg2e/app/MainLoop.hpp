@@ -26,6 +26,7 @@
 #include <bg2e/app/Shortcuts.hpp>
 #include <bg2e/ui/UserInterface.hpp>
 #include <bg2e/ui/Loader.hpp>
+#include <bg2e/base/Timeout.hpp>
 
 #include <functional>
 #include <cstdint>
@@ -144,6 +145,8 @@ public:
     
     inline void setOnExitFunction(std::function<bool()> fn) { _onExitFunction = fn; }
 
+    bg2e::base::Timeout& timeout() { return _timeout; }
+
     void safeUpdateScene(std::function<void()> fn, std::shared_ptr<SafeUpdateToken> token = nullptr)
     {
         _safeUpdateScene.emplace_back(std::move(fn), std::move(token));
@@ -185,6 +188,8 @@ protected:
 
     bool _resizeRequested = false;
     
+    bg2e::base::Timeout _timeout;
+
     void initMainLoopInstance();
 
     void executeSafeUpdateScene();

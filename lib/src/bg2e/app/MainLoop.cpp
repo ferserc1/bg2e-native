@@ -273,6 +273,8 @@ int32_t MainLoop::run(app::Application * application) {
 
                 drainMainThreadQueue();
 
+                _timeout.executeTimers();
+
                 if (resizing)
             {
                 auto now = std::chrono::steady_clock::now();
@@ -306,6 +308,8 @@ int32_t MainLoop::run(app::Application * application) {
             start = std::chrono::high_resolution_clock::now();
         }
     }
+
+    _timeout.executeExitTimers();
 
     if (_windowConfig.persistentSize)
     {

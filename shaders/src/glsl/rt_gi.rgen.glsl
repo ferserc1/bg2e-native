@@ -48,10 +48,10 @@ void main() {
 
     vec3 normalEncoded = texture(g_Normal, uv).rgb;
     vec3 normal = normalize(normalEncoded * 2.0 - 1.0);
-    if (length(normalEncoded) < 0.5) {
-        imageStore(giOutput, pixel, vec4(0.0));
-        return;
-    }
+    // The depth >= 1.0 test above already discards background/sky pixels, so any
+    // pixel reaching this point has a valid surface. A previous magnitude-based
+    // guard (length(normalEncoded) < 0.5) wrongly rejected valid normals pointing
+    // into the negative octant (Nx+Ny+Nz < -1.5), producing black GI patches.
 
     vec3 worldPos = reconstructWorldPosition(uv, depth, pc.inverseViewProjection);
 

@@ -19,8 +19,9 @@
 #include "AppDelegate.hpp"
 #include <bg2e/app/MainLoop.hpp>
 #include <bg2e/geo/modifiers.hpp>
+#include <bg2e/ui/RenderSettingsWindow.hpp>
 
-void ToolBar::init(AppDelegate * delegate, bg2e::ui::UISettingsWindow * uiSettings, UIRenderSettingsWindow * renderSettings)
+void ToolBar::init(AppDelegate * delegate, bg2e::ui::UISettingsWindow * uiSettings, bg2e::ui::RenderSettingsWindow * renderSettings)
 {
     using namespace bg2e::ui;
     _appDelegate = delegate;

@@ -19,11 +19,16 @@
 
 #include <bg2e/ui/Window.hpp>
 
-class AppDelegate;
+namespace bg2e {
+namespace render {
+class RendererDeferred;
+class RenderSettingsPreferences;
+}
+namespace ui {
 
-class UIRenderSettingsWindow : public bg2e::ui::Window {
+class BG2E_API RenderSettingsWindow : public Window {
 public:
-    void init(AppDelegate * delegate);
+    void init(render::RendererDeferred* renderer, render::RenderSettingsPreferences* prefs);
 
 private:
     bool drawUI();
@@ -35,5 +40,9 @@ private:
     bool drawTemporalAccumulatorSection();
     bool drawDenoiseFilterSection();
 
-    AppDelegate * _appDelegate = nullptr;
+    render::RendererDeferred* _renderer = nullptr;
+    render::RenderSettingsPreferences* _prefs = nullptr;
 };
+
+}
+}

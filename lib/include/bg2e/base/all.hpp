@@ -26,3 +26,4 @@
 #include <bg2e/base/MaterialAttributes.hpp>
 #include <bg2e/base/PlatformTools.hpp>
 #include <bg2e/base/Texture.hpp>
+#include <bg2e/base/Timeout.hpp>
