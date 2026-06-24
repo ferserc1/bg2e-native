@@ -18,6 +18,7 @@
 
 #pragma once
 
+#include <bg2e/geo/AABoundingBox.hpp>
 #include <bg2e/geo/cone.hpp>
 #include <bg2e/geo/cube.hpp>
 #include <bg2e/geo/cylinder.hpp>

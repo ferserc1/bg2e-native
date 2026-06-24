@@ -18,6 +18,7 @@
 
 #pragma once
 
+#include <bg2e/geo/AABoundingBox.hpp>
 #include <bg2e/geo/Mesh.hpp>
 
 namespace bg2e {
@@ -166,18 +167,12 @@ public:
     using Modifier<MeshT>::_mesh;
 
     void apply() override {
-        if (!_mesh || _mesh->vertices.empty()) return;
+        if (!_mesh) return;
 
-        glm::vec3 min = _mesh->vertices[0].position;
-        glm::vec3 max = min;
+        AABoundingBox<MeshT> bb(*_mesh);
+        if (!bb.isValid()) return;
 
-        // Compute bounding box
-        for (auto &v : _mesh->vertices) {
-            min = glm::min(min, v.position);
-            max = glm::max(max, v.position);
-        }
-
-        glm::vec3 center = 0.5f * (min + max);
+        glm::vec3 center = bb.center();
 
         // Apply translation
         for (auto &v : _mesh->vertices) {
@@ -192,20 +187,14 @@ public:
     using Modifier<MeshT>::_mesh;
 
     void apply() override {
-        if (!_mesh || _mesh->vertices.empty()) return;
+        if (!_mesh) return;
 
-        glm::vec3 min = _mesh->vertices[0].position;
-        glm::vec3 max = min;
-
-        // Compute bounding box
-        for (auto &v : _mesh->vertices) {
-            min = glm::min(min, v.position);
-            max = glm::max(max, v.position);
-        }
+        AABoundingBox<MeshT> bb(*_mesh);
+        if (!bb.isValid()) return;
 
         // Apply translation
         for (auto &v : _mesh->vertices) {
-            v.position.y -= min.y;
+            v.position.y -= bb.min().y;
         }
     }
 };
@@ -220,17 +209,12 @@ public:
     NormalizeScaleModifier(float target = 1.0f) : _target(target) {}
 
     void apply() override {
-        if (!_mesh || _mesh->vertices.empty()) return;
+        if (!_mesh) return;
 
-        glm::vec3 min = _mesh->vertices[0].position;
-        glm::vec3 max = min;
+        AABoundingBox<MeshT> bb(*_mesh);
+        if (!bb.isValid()) return;
 
-        for (auto &v : _mesh->vertices) {
-            min = glm::min(min, v.position);
-            max = glm::max(max, v.position);
-        }
-
-        glm::vec3 size = max - min;
+        glm::vec3 size = bb.size();
         float scale = _target / glm::compMax(glm::abs(size));
 
         for (auto &v : _mesh->vertices) {

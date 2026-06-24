@@ -49,6 +49,10 @@ public:
     
     void mouseWheel(int deltaX, int deltaY) override;
 
+    void keyDown(const bg2e::app::KeyEvent& event) override;
+
+    void keyUp(const bg2e::app::KeyEvent& event) override;
+
     void fileDropped(const std::filesystem::path&) override;
     
     void cleanup() override;

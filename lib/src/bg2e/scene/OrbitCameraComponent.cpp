@@ -21,7 +21,7 @@
 #include <bg2e/scene/Node.hpp>
 #include <bg2e/app/Mouse.hpp>
 #include <bg2e/math/tools.hpp>
-
+#include <bg2e/geo/AABoundingBox.hpp>
 #include <algorithm>
 
 namespace bg2e::scene {
@@ -244,23 +244,22 @@ void OrbitCameraComponent::update(float /* delta */)
 
         if (_mouseButtonPressed)
         {
-            // TODO: displacement using keyboard arrows
-            //            let displacement = new Vec([0,0,0]);
-//            if (this._keys[SpecialKey.UP_ARROW]) {
-//                displacement = Vec.Add(displacement, this.transform.matrix.backwardVector);
-//            }
-//            if (this._keys[SpecialKey.DOWN_ARROW]) {
-//                displacement = Vec.Add(displacement, this.transform.matrix.forwardVector);
-//            }
-//            if (this._keys[SpecialKey.LEFT_ARROW]) {
-//                displacement = Vec.Add(displacement, this.transform.matrix.leftVector);
-//            }
-//            if (this._keys[SpecialKey.RIGHT_ARROW]) {
-//                displacement = Vec.Add(displacement, this.transform.matrix.rightVector);
-//            }
-//            displacement.scale(this._displacementSpeed);
-//            this._center = Vec.Add(this._center, displacement);
-            
+            math::BasisVectors basis(transform->matrix(), true);
+
+            glm::vec3 displacement(0.0f);
+
+            if (_keys.w) displacement += basis.forward;
+            if (_keys.s) displacement -= basis.forward;
+            if (_keys.a) displacement -= basis.right;
+            if (_keys.d) displacement += basis.right;
+            if (_keys.e) displacement += glm::vec3(0.0f, 1.0f, 0.0f);
+            if (_keys.q) displacement -= glm::vec3(0.0f, 1.0f, 0.0f);
+
+            if (glm::length(displacement) > 0.0f)
+            {
+                displacement = glm::normalize(displacement) * _displacementSpeed;
+                _center += displacement;
+            }
         }
 
         if (_center.x < _minX) _center.x = _minX;
@@ -349,6 +348,68 @@ void OrbitCameraComponent::mouseWheel(int /*deltaX*/, int deltaY)
     _distance += deltaY * 0.1f * std::clamp(_distance, 0.1f, 5.0f) * _wheelSpeed;
 }
 
+void OrbitCameraComponent::keyDown(const app::KeyEvent& event)
+{
+    if (!_enabled) return;
+    
+Qu    bool wasAnyKeyPressed = _keys.w || _keys.a || _keys.s || _keys.d || _keys.q || _keys.e || _keys.space;
+    
+    switch (event.key()) {
+        case app::KeyEvent::KeyW: _keys.w = true; break;
+        case app::KeyEvent::KeyA: _keys.a = true; break;
+        case app::KeyEvent::KeyS: _keys.s = true; break;
+        case app::KeyEvent::KeyD: _keys.d = true; break;
+        case app::KeyEvent::KeyQ: _keys.q = true; break;
+        case app::KeyEvent::KeyE: _keys.e = true; break;
+        case app::KeyEvent::KeySpace: _keys.space = true; break;
+        default: break;
+    }
+    
+    if (!wasAnyKeyPressed && !_isFlying)
+    {
+        _isFlying = true;
+        _savedDistance = _distance;
+
+        auto rotMatrix = glm::rotate(glm::mat4{1.0f}, glm::radians(_rotation.y), glm::vec3(0.0f, 1.0f, 0.0f));
+        rotMatrix = glm::rotate(rotMatrix, glm::radians(_rotation.x), glm::vec3(-1.0f, 0.0f, 0.0f));
+        auto forward = glm::vec3(rotMatrix * glm::vec4(0.0f, 0.0f, 1.0f, 0.0f));
+
+        _center += forward * (_distance - _flightDistance);
+        _distance = _flightDistance;
+    }
+}
+
+void OrbitCameraComponent::keyUp(const app::KeyEvent& event)
+{
+    switch (event.key()) {
+        case app::KeyEvent::KeyW: _keys.w = false; break;
+        case app::KeyEvent::KeyA: _keys.a = false; break;
+        case app::KeyEvent::KeyS: _keys.s = false; break;
+        case app::KeyEvent::KeyD: _keys.d = false; break;
+        case app::KeyEvent::KeyQ: _keys.q = false; break;
+        case app::KeyEvent::KeyE: _keys.e = false; break;
+        case app::KeyEvent::KeySpace: _keys.space = false; break;
+        default: break;
+    }
+    
+    bool anyKeyPressed = _keys.w || _keys.a || _keys.s || _keys.d || _keys.q || _keys.e || _keys.space;
+    
+    if (!anyKeyPressed && _isFlying)
+    {
+        _isFlying = false;
+        
+        if (_savedDistance != _distance)
+        {
+            auto rotMatrix = glm::rotate(glm::mat4{1.0f}, glm::radians(_rotation.y), glm::vec3(0.0f, 1.0f, 0.0f));
+            rotMatrix = glm::rotate(rotMatrix, glm::radians(_rotation.x), glm::vec3(-1.0f, 0.0f, 0.0f));
+            auto forward = glm::vec3(rotMatrix * glm::vec4(0.0f, 0.0f, 1.0f, 0.0f));
+            
+            _center += forward * (_flightDistance - _savedDistance);
+            _distance = _savedDistance;
+        }
+    }
+}
+
 void OrbitCameraComponent::reset()
 {
     _rotation = _initialRotation;
@@ -356,6 +417,31 @@ void OrbitCameraComponent::reset()
     _center = _initialCenter;
 }
 
+void OrbitCameraComponent::centerOnTarget(bg2e::scene::Node *target)
+{
+    if (!target)
+    {
+        reset();
+    }
+    else
+    {
+        _distance = _initialDistance;
+        bg2e::scene::Drawable * drawable;
+        if (target->drawable() &&
+            ((drawable = target->drawable()->drawable().get()))
+        ) {
+            geo::AABoundingBox bbox(drawable->mesh());
+            if (bbox.isValid())
+            {
+                _distance = std::max({ bbox.max().x, bbox.max().y, bbox.max().z }) * 2.0f;
+            }
+        }
+
+        _rotation.x = 45.0f;
+        _rotation.y = 45.0f;
+        _center = target->worldPosition();
+    }
+}
 
 OrbitCameraComponent::OrbitAction OrbitCameraComponent::getOrbitAction()
 {

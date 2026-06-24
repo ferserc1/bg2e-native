@@ -135,8 +135,12 @@ public:
     void mouseButtonUp(int button, int x, int y) override;
     void mouseMove(int x, int y) override;
     void mouseWheel(int deltaX, int deltaY) override;
+
+    void keyDown(const app::KeyEvent& keyEvent) override;
+    void keyUp(const app::KeyEvent& keyEvent) override;
     
     void reset();
+    void centerOnTarget(bg2e::scene::Node *target);
     
 protected:
     struct MouseButtons
@@ -175,11 +179,27 @@ protected:
     
     float _displacementSpeed = 0.1f;
     
+    static constexpr float _flightDistance = 0.02f;
+    float _savedDistance = 0.0f;
+    bool _isFlying = false;
+    
     bool _enabled = true;
     
     float _panSpeed = 1.0f;
     
     bool _mouseButtonPressed = false;
+
+    struct KeyState {
+        bool w = false;
+        bool a = false;
+        bool s = false;
+        bool d = false;
+        bool q = false;
+        bool e = false;
+        bool space = false;
+    };
+    KeyState _keys;
+
     glm::vec2 _lastPos;
     uint32_t _viewportWidth;
     uint32_t _viewportHeight;

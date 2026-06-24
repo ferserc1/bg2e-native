@@ -44,6 +44,16 @@ void AppDelegate::drawUI()
 }
 
 // InputDelegate
+void AppDelegate::keyDown(const bg2e::app::KeyEvent& event)
+{
+    _inputVisitor.keyDown(renderer()->scene()->rootNode(), event);
+}
+
+void AppDelegate::keyUp(const bg2e::app::KeyEvent& event)
+{
+    _inputVisitor.keyUp(renderer()->scene()->rootNode(), event);
+}
+
 // The SelectionManager sees every mouse event first. It returns false when it
 // captures the event (transform gizmo manipulation), in which case we must not
 // forward it to the scene graph (so the camera does not move). It also performs
