@@ -39,6 +39,9 @@ public:
     explicit MotionVectorGenerator(Engine* engine);
     ~MotionVectorGenerator();
 
+    MotionVectorGenerator(const MotionVectorGenerator&) = delete;
+    MotionVectorGenerator& operator=(const MotionVectorGenerator&) = delete;
+
     void build(VkExtent2D renderExtent);
     void resize(VkExtent2D newExtent);
 
