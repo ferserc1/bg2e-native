@@ -131,8 +131,27 @@ void StageScene::openScene(const std::filesystem::path& path, bg2e::scene::Scene
         msg.showError("Error opening scene", "Could not load the specified scene file.");
         return;
     }
-    auto newRoot = std::static_pointer_cast<bg2e::scene::Node>(
+
+    // saveScene() writes _editableRoot as the single top-level node of the file,
+    // but loadScene() always wraps the file's top-level nodes inside a freshly
+    // created synthetic "scene root". Adopting that wrapper as the editable root
+    // would nest the real root one level deeper on every save/load cycle. Since
+    // saveScene() always produces exactly one top-level node, the wrapper has a
+    // single child which is the real editable root: unwrap exactly one level here.
+    auto wrapper = std::static_pointer_cast<bg2e::scene::Node>(
         newScene->rootNode()->shared_from_this());
+    std::shared_ptr<bg2e::scene::Node> newRoot;
+    if (wrapper->children().size() == 1)
+    {
+        newRoot = wrapper->children()[0];
+        wrapper->removeChild(newRoot);
+    }
+    else
+    {
+        // Empty or multi-root files are not produced by this app, but keep the
+        // wrapper as-is so no content is lost if such a file is ever opened.
+        newRoot = wrapper;
+    }
     setEditableRoot(newRoot);
     _document->setPath(path);
     _document->setUnsavedChanges(false);
@@ -158,6 +177,9 @@ void StageScene::importModelBg2(const std::filesystem::path& path)
 
 void StageScene::saveScene(const std::filesystem::path& path)
 {
+    // Writes _editableRoot as the single top-level node of the scene file. This
+    // is the invariant openScene() relies on to unwrap loadScene()'s synthetic
+    // root and avoid accumulating wrapper nodes across save/load cycles.
     bg2e::db::saveScene(_editableRoot.get(), path);
     _document->setPath(path);
     _document->setUnsavedChanges(false);
