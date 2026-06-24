@@ -16,14 +16,38 @@
  *    along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include <bg2e/app/Mouse.hpp>
+#include <SDL2/SDL.h>
 
-#include <bg2e/geo/AABoundingBox.hpp>
-#include <bg2e/geo/cone.hpp>
-#include <bg2e/geo/cube.hpp>
-#include <bg2e/geo/cylinder.hpp>
-#include <bg2e/geo/Mesh.hpp>
-#include <bg2e/geo/modifiers.hpp>
-#include <bg2e/geo/plane.hpp>
-#include <bg2e/geo/sphere.hpp>
-#include <bg2e/geo/Vertex.hpp>
+namespace bg2e {
+namespace app {
+
+bool Mouse::leftButtonPressed() {
+    int x, y;
+    return (SDL_GetMouseState(&x, &y) & SDL_BUTTON_LMASK) != 0;
+}
+
+bool Mouse::middleButtonPressed() {
+    int x, y;
+    return (SDL_GetMouseState(&x, &y) & SDL_BUTTON_MMASK) != 0;
+}
+
+bool Mouse::rightButtonPressed() {
+    int x, y;
+    return (SDL_GetMouseState(&x, &y) & SDL_BUTTON_RMASK) != 0;
+}
+
+int Mouse::x() {
+    int x, y;
+    SDL_GetMouseState(&x, &y);
+    return x;
+}
+
+int Mouse::y() {
+    int x, y;
+    SDL_GetMouseState(&x, &y);
+    return y;
+}
+
+}
+}

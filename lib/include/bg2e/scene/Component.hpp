@@ -38,6 +38,7 @@ namespace scene {
 
 class Node;
 class Scene;
+struct SceneLoadProgress;
 
 class BG2E_API Component : public std::enable_shared_from_this<Component> {
     friend class Node;
@@ -76,6 +77,7 @@ public:
     virtual std::string typeName() const = 0;
     
     virtual void deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path& basePath, render::Engine& engine);
+    virtual void deserializeWithProgress(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path& basePath, render::Engine& engine, SceneLoadProgress* progress);
     virtual std::shared_ptr<json::JsonNode> serialize(const std::filesystem::path& basePath);
 
 protected:

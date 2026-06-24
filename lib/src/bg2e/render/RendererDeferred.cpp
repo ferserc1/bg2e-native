@@ -118,8 +118,6 @@ void RendererDeferred::setRenderScalePercent(float percent)
         )
     );
 
-    createGizmoDepthImage();
-
     if (_motionVectorGenerator) _motionVectorGenerator->resize(_renderExtent);
     if (_finalPostProcessor)    _finalPostProcessor->resize(_renderExtent, _viewportExtent);
 
@@ -244,7 +242,6 @@ void RendererDeferred::build(
     if (!isOffscreen) {
         _gizmoAndSelectionRenderer = std::make_unique<manipulation::GizmoAndSelectionRenderer>();
         _gizmoAndSelectionRenderer->init(engine, VK_SAMPLE_COUNT_1_BIT);
-        createGizmoDepthImage();
     }
 
     // Motion vector generator (needed by FSR for temporal upscaling)
@@ -381,8 +378,6 @@ void RendererDeferred::resize(
         )
     );
 
-    createGizmoDepthImage();
-
     if (_motionVectorGenerator) _motionVectorGenerator->resize(_renderExtent);
     if (_finalPostProcessor)    _finalPostProcessor->resize(_renderExtent, _viewportExtent);
 
@@ -396,32 +391,6 @@ void RendererDeferred::update(
 ) {
     _deltaTimeMs = delta * 1000.0f;
     updateScene(delta, BG2E_MAX_DEFERRED_LIGHTS);
-}
-
-void RendererDeferred::createGizmoDepthImage()
-{
-    // Editor-only: gizmos are not drawn offscreen.
-    if (_isOffscreen)
-    {
-        return;
-    }
-
-    if (_gizmoDepthImage)
-    {
-        _gizmoDepthImage->cleanup();
-    }
-
-    _gizmoDepthImage = std::shared_ptr<vulkan::Image>(
-        vulkan::Image::createAllocatedImage(
-            _engine,
-            "Deferred gizmo depth image",
-            _depthImageFormat,
-            _renderExtent,
-            VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
-            VK_IMAGE_ASPECT_DEPTH_BIT,
-            1, false, 20, VK_SAMPLE_COUNT_1_BIT
-        )
-    );
 }
 
 void RendererDeferred::draw(
@@ -506,31 +475,6 @@ void RendererDeferred::draw(
     _opaqueLayer->setProjectionOverride(nullptr);
     _transparentLayer->setProjectionOverride(nullptr);
 
-    // Gizmos (editor-only, non-offscreen)
-    if (!_isOffscreen && _gizmoAndSelectionRenderer)
-    {
-        // Attach a dedicated depth buffer (cleared on load) so the transform
-        // gizmo self-occludes and stays on top, without disturbing the scene
-        // depth that FSR still needs for motion vectors below.
-        vulkan::Image::cmdTransitionImage(
-            cmd,
-            _gizmoDepthImage->handle(),
-            VK_IMAGE_LAYOUT_UNDEFINED,
-            VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL
-        );
-
-        auto colorAttachment = vulkan::Info::attachmentInfo(_transparentImage->imageView(), nullptr);
-        auto depthAttachment = vulkan::Info::depthAttachmentInfo(_gizmoDepthImage->imageView());
-        auto renderInfo = vulkan::Info::renderingInfo(_transparentImage->extent2D(), &colorAttachment, &depthAttachment);
-        vulkan::cmdBeginRendering(cmd, &renderInfo);
-        vulkan::macros::cmdSetDefaultViewportAndScissor(cmd, _transparentImage->extent2D());
-
-        // Use original (non-jittered) matrices for gizmos so they stay sharp
-        _gizmoAndSelectionRenderer->draw(_scene->rootNode(), viewMatrix, origProj, cmd, _transparentImage->extent2D());
-
-        vulkan::cmdEndRendering(cmd);
-    }
-
     // === Motion vectors (needed by FSR; harmless with SMAA) ===
     const vulkan::Image* motionVectors = _motionVectorGenerator->generate(
         cmd, currentFrame,
@@ -570,6 +514,31 @@ void RendererDeferred::draw(
     );
 
     // process() guarantees colorImage is in COLOR_ATTACHMENT_OPTIMAL on exit
+    // Gizmos (editor-only, non-offscreen)
+    if (!_isOffscreen && _gizmoAndSelectionRenderer)
+    {
+        // Attach a dedicated depth buffer (cleared on load) so the transform
+        // gizmo self-occludes and stays on top, without disturbing the scene
+        // depth that FSR still needs for motion vectors below.
+        vulkan::Image::cmdTransitionImage(
+            cmd,
+            depthImage->handle(),
+            VK_IMAGE_LAYOUT_UNDEFINED,
+            VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL
+        );
+
+        auto colorAttachment = vulkan::Info::attachmentInfo(colorImage->imageView(), nullptr);
+        auto depthAttachment = vulkan::Info::depthAttachmentInfo(depthImage->imageView());
+        auto renderInfo = vulkan::Info::renderingInfo(colorImage->extent2D(), &colorAttachment, &depthAttachment);
+        vulkan::cmdBeginRendering(cmd, &renderInfo);
+        vulkan::macros::cmdSetDefaultViewportAndScissor(cmd, colorImage->extent2D());
+
+        // Use original (non-jittered) matrices for gizmos so they stay sharp
+        _gizmoAndSelectionRenderer->draw(_scene->rootNode(), viewMatrix, origProj, cmd, colorImage->extent2D());
+
+        vulkan::cmdEndRendering(cmd);
+    }
+
 
     // === End scene render (from Renderer base) ===
     endSceneRender();
@@ -595,12 +564,6 @@ void RendererDeferred::cleanup() {
     }
 
     _gizmoAndSelectionRenderer.reset();
-
-    if (_gizmoDepthImage)
-    {
-        _gizmoDepthImage->cleanup();
-    }
-    _gizmoDepthImage.reset();
 
     _transparentLayer->cleanup();
     _opaqueLayer->cleanup();

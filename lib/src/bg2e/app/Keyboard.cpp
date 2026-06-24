@@ -16,14 +16,27 @@
  *    along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include <bg2e/app/Keyboard.hpp>
+#include <SDL2/SDL.h>
 
-#include <bg2e/geo/AABoundingBox.hpp>
-#include <bg2e/geo/cone.hpp>
-#include <bg2e/geo/cube.hpp>
-#include <bg2e/geo/cylinder.hpp>
-#include <bg2e/geo/Mesh.hpp>
-#include <bg2e/geo/modifiers.hpp>
-#include <bg2e/geo/plane.hpp>
-#include <bg2e/geo/sphere.hpp>
-#include <bg2e/geo/Vertex.hpp>
+namespace bg2e {
+namespace app {
+
+bool Keyboard::shiftPressed() {
+    return (SDL_GetModState() & KMOD_SHIFT) != 0;
+}
+
+bool Keyboard::controlPressed() {
+    return (SDL_GetModState() & KMOD_CTRL) != 0;
+}
+
+bool Keyboard::altPressed() {
+    return (SDL_GetModState() & KMOD_ALT) != 0;
+}
+
+bool Keyboard::superPressed() {
+    return (SDL_GetModState() & KMOD_GUI) != 0;
+}
+
+}
+}

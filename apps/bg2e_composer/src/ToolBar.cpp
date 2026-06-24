@@ -133,12 +133,22 @@ void ToolBar::init(AppDelegate * delegate, bg2e::ui::UISettingsWindow * uiSettin
             _appDelegate->toggleSelectionHighlight();
         }
     }});
-    view.addMenuItem({ "Center Camera", {
+    view.addMenuItem({ "Reset Camera", {
         .ctrlModifier = true,
         .key = bg2e::app::KeyEvent::KeyA,
         .handler = [&]()
         {
             _appDelegate->stage()->orbitCamera()->reset();
+
+        }
+    }});
+    view.addMenuItem({ "Center Camera", {
+        .shiftModifier = true,
+        .key = bg2e::app::KeyEvent::KeyF,
+        .handler = [&]()
+        {
+            auto selection = _appDelegate->selectionManager()->selectedNode();
+            _appDelegate->stage()->orbitCamera()->centerOnTarget(selection);
         }
     }});
     addMenuItem(view);

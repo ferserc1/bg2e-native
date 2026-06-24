@@ -266,7 +266,7 @@ void Node::deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::file
         auto& componentsList = obj["components"]->listValue();
         for (auto& compData : componentsList)
         {
-            auto* comp = ComponentFactoryRegistry::get().create(compData, basePath, engine);
+            auto* comp = ComponentFactoryRegistry::get().create(compData, basePath, engine, progress);
             if (comp)
             {
                 addComponent(comp);

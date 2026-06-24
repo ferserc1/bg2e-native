@@ -21,6 +21,8 @@
 #include <bg2e/base/MaterialAttributes.hpp>
 #include <bg2e/render/Texture.hpp>
 
+#include <functional>
+
 namespace bg2e {
 namespace render {
 
@@ -30,6 +32,7 @@ public:
     virtual ~MaterialBase();
 
     void updateTextures();
+    void updateTextures(std::function<void()> onTextureLoaded);
 
     inline void setMaterialAttributes(const base::MaterialAttributes& att) { _materialAttributes = att; }
     inline base::MaterialAttributes& materialAttributes() { return _materialAttributes; }

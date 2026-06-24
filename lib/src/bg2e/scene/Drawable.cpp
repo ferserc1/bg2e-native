@@ -187,6 +187,48 @@ void DrawableGeneric<MeshT, RenderMeshT>::load(render::Engine * engine)
 }
 
 template <typename MeshT, typename RenderMeshT>
+void DrawableGeneric<MeshT, RenderMeshT>::load(render::Engine * engine, std::function<void()> onTextureLoaded)
+{
+    if (_mesh.get() == nullptr)
+    {
+        throw std::runtime_error("DrawableGeneric::load(): Error loading render data. Invalid mesh data set.");
+    }
+
+    if (isLoaded())
+    {
+        bg2e_log_warning << "DrawableGeneric::load(): this drawable is already loaded" << bg2e_log_end;
+        return;
+    }
+
+    _engine = engine;
+
+    buildRenderMesh();
+    buildMaterials(onTextureLoaded);
+    buildRayTracingMeshes();
+}
+
+template <typename MeshT, typename RenderMeshT>
+void DrawableGeneric<MeshT, RenderMeshT>::loadRenderMesh()
+{
+    buildRenderMesh();
+}
+
+template <typename MeshT, typename RenderMeshT>
+void DrawableGeneric<MeshT, RenderMeshT>::buildMaterials(std::function<void()> onTextureLoaded)
+{
+    _materials.clear();
+
+    for (auto & submesh : _submeshAttributes)
+    {
+        auto renderMat = new render::MaterialBase(_engine);
+        renderMat->setUseTextureCache(true);
+        renderMat->setMaterialAttributes(submesh.material);
+        renderMat->updateTextures(onTextureLoaded);
+        _materials.push_back(std::shared_ptr<render::MaterialBase>(renderMat));
+    }
+}
+
+template <typename MeshT, typename RenderMeshT>
 void DrawableGeneric<MeshT, RenderMeshT>::reload()
 {
     if (!_engine || !_renderMesh.get() || _mesh.get() == nullptr)

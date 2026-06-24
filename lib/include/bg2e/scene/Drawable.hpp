@@ -33,6 +33,7 @@
 
 namespace bg2e {
 namespace scene {
+
         
 class BG2E_API DrawableBase {
 public:
@@ -152,8 +153,12 @@ public:
     void iterateMaterials(std::function<void(base::MaterialAttributes&)> cb);
 
     void load(render::Engine * engine);
+    void load(render::Engine * engine, std::function<void()> onTextureLoaded);
     [[nodiscard]] inline bool isLoaded() const { return _renderMesh.get() != nullptr; }
     void reload();
+
+    void loadRenderMesh();
+    void buildMaterials(std::function<void()> onTextureLoaded);
 
     // Call this function when a material property has changed after calling the load() method
     void updateMaterials();

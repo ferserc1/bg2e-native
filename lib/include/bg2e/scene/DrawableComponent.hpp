@@ -48,6 +48,7 @@ public:
     );
 
     void deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path& basePath, render::Engine& engine) override;
+    void deserializeWithProgress(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path& basePath, render::Engine& engine, SceneLoadProgress* progress) override;
     std::shared_ptr<json::JsonNode> serialize(const std::filesystem::path& basePath) override;
 
 protected:

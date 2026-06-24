@@ -18,12 +18,19 @@
 
 #pragma once
 
-#include <bg2e/geo/AABoundingBox.hpp>
-#include <bg2e/geo/cone.hpp>
-#include <bg2e/geo/cube.hpp>
-#include <bg2e/geo/cylinder.hpp>
-#include <bg2e/geo/Mesh.hpp>
-#include <bg2e/geo/modifiers.hpp>
-#include <bg2e/geo/plane.hpp>
-#include <bg2e/geo/sphere.hpp>
-#include <bg2e/geo/Vertex.hpp>
+#include <bg2e/common.hpp>
+
+namespace bg2e {
+namespace app {
+
+class BG2E_API Mouse {
+public:
+    static bool leftButtonPressed();
+    static bool middleButtonPressed();
+    static bool rightButtonPressed();
+    static int x();
+    static int y();
+};
+
+}
+}

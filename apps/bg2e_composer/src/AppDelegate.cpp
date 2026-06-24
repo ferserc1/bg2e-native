@@ -44,6 +44,16 @@ void AppDelegate::drawUI()
 }
 
 // InputDelegate
+void AppDelegate::keyDown(const bg2e::app::KeyEvent& event)
+{
+    _inputVisitor.keyDown(renderer()->scene()->rootNode(), event);
+}
+
+void AppDelegate::keyUp(const bg2e::app::KeyEvent& event)
+{
+    _inputVisitor.keyUp(renderer()->scene()->rootNode(), event);
+}
+
 // The SelectionManager sees every mouse event first. It returns false when it
 // captures the event (transform gizmo manipulation), in which case we must not
 // forward it to the scene graph (so the camera does not move). It also performs
@@ -66,7 +76,8 @@ void AppDelegate::mouseButtonDown(int button, int x, int y)
 
 void AppDelegate::mouseButtonUp(int button, int x, int y)
 {
-    if (_selectionManager->mouseButtonUp(renderer()->scene(), button, x, y))
+    bool additive = bg2e::app::Keyboard::shiftPressed();
+    if (_selectionManager->mouseButtonUp(renderer()->scene(), button, x, y, additive))
     {
         _inputVisitor.mouseButtonUp(renderer()->scene()->rootNode(), button, x, y);
     }

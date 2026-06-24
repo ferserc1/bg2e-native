@@ -18,12 +18,25 @@
 
 #pragma once
 
-#include <bg2e/geo/AABoundingBox.hpp>
-#include <bg2e/geo/cone.hpp>
-#include <bg2e/geo/cube.hpp>
-#include <bg2e/geo/cylinder.hpp>
-#include <bg2e/geo/Mesh.hpp>
-#include <bg2e/geo/modifiers.hpp>
-#include <bg2e/geo/plane.hpp>
-#include <bg2e/geo/sphere.hpp>
-#include <bg2e/geo/Vertex.hpp>
+#include <bg2e/common.hpp>
+
+namespace bg2e {
+namespace app {
+
+class BG2E_API Keyboard {
+public:
+    // Any shift key held (left or right)
+    static bool shiftPressed();
+
+    // Any control key held (left or right)
+    static bool controlPressed();
+
+    // Any alt key held (left or right)
+    static bool altPressed();
+
+    // Any super key held (left or right)
+    static bool superPressed();
+};
+
+}
+}

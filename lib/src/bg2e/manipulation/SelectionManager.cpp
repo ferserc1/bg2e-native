@@ -20,6 +20,7 @@
 
 #include <bg2e/render/all.hpp>
 
+#include "bg2e/base/Log.hpp"
 #include "bg2e/manipulation/SelectableComponent.hpp"
 #include "bg2e/manipulation/GizmoComponent.hpp"
 
@@ -45,8 +46,14 @@ bool SelectionManager::pick(
     const glm::mat4 & projMatrix,
     const math::Viewport & vp,
     uint32_t x,
-    uint32_t y
+    uint32_t y,
+    bool additive
 ) {
+    if (!additive)
+    {
+        deselect();
+    }
+
     SelectionItem result {};
     if (pickObject(rootNode, viewMatrix, projMatrix, vp, x, y, &result))
     {
@@ -144,7 +151,7 @@ bool SelectionManager::mouseMove(scene::Scene* scene, int x, int y)
     return true;
 }
 
-bool SelectionManager::mouseButtonUp(scene::Scene * scene, int button, int x, int y)
+bool SelectionManager::mouseButtonUp(scene::Scene * scene, int button, int x, int y, bool additive)
 {
     if (_capturing)
     {
@@ -163,7 +170,8 @@ bool SelectionManager::mouseButtonUp(scene::Scene * scene, int button, int x, in
     // does not select.
     if (button == 0 && x == _mouseDownX && y == _mouseDownY)
     {
-        pick(scene, x, y);
+        bg2e_log_debug << "Additive: " << additive << bg2e_log_end;
+        pick(scene, x, y, additive);
     }
 
     return true; // propagate the release to the scene graph

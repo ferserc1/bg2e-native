@@ -18,7 +18,9 @@
 
 #include <bg2e/scene/EnvironmentComponent.hpp>
 #include <bg2e/scene/ComponentFactoryRegistry.hpp>
+#include <bg2e/scene/Node.hpp>
 #include <bg2e/scene/Scene.hpp>
+#include <bg2e/utils/TextureCache.hpp>
 
 namespace bg2e::scene {
 
@@ -59,6 +61,25 @@ void EnvironmentComponent::deserialize(std::shared_ptr<json::JsonNode> jsonData,
     {
         auto textureName = obj["equirectangularTexture"]->stringValue();
         setEnvironmentImage(basePath, textureName);
+    }
+}
+
+void EnvironmentComponent::deserializeWithProgress(
+    std::shared_ptr<json::JsonNode> jsonData,
+    const std::filesystem::path& basePath,
+    render::Engine& engine,
+    SceneLoadProgress* progress
+) {
+    deserialize(jsonData, basePath, engine);
+
+    if (!_environmentImage.empty())
+    {
+        utils::TextureCache::get().load(&engine, _environmentImage);
+        if (progress && progress->callback)
+        {
+            progress->callback(_environmentImage, progress->loaded, progress->total);
+        }
+        if (progress) { ++progress->loaded; }
     }
 }
 
