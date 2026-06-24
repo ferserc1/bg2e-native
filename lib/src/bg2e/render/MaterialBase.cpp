@@ -71,6 +71,11 @@ void updateTexture(
 
 void MaterialBase::updateTextures()
 {
+    updateTextures(nullptr);
+}
+
+void MaterialBase::updateTextures(std::function<void()> onTextureLoaded)
+{
     if (_materialAttributes.isUpdated())
     {
         return;
@@ -79,26 +84,31 @@ void MaterialBase::updateTextures()
     if (!_materialAttributes.albedoTextureUpdated())
     {
         updateTexture(_engine, _materialAttributes.albedoTexture(), _albedoTexture, useTextureCache(), Texture::whiteTexture(_engine));
+        if (onTextureLoaded && _materialAttributes.albedoTexture()) { onTextureLoaded(); }
     }
     
     if (!_materialAttributes.metalnessTextureUpdated())
     {
         updateTexture(_engine, _materialAttributes.metalnessTexture(), _metalnessTexture, useTextureCache(), Texture::whiteTexture(_engine));
+        if (onTextureLoaded && _materialAttributes.metalnessTexture()) { onTextureLoaded(); }
     }
     
     if (!_materialAttributes.roughnessTextureUpdated())
     {
         updateTexture(_engine, _materialAttributes.roughnessTexture(), _roughnessTexture, useTextureCache(), Texture::whiteTexture(_engine));
+        if (onTextureLoaded && _materialAttributes.roughnessTexture()) { onTextureLoaded(); }
     }
     
     if (!_materialAttributes.normalTextureUpdated())
     {
         updateTexture(_engine, _materialAttributes.normalTexture(), _normalTexture, useTextureCache(), Texture::normalTexture(_engine));
+        if (onTextureLoaded && _materialAttributes.normalTexture()) { onTextureLoaded(); }
     }
     
     if (!_materialAttributes.aoTextureUpdated())
     {
         updateTexture(_engine, _materialAttributes.aoTexture(), _aoTexture, useTextureCache(), Texture::whiteTexture(_engine));
+        if (onTextureLoaded && _materialAttributes.aoTexture()) { onTextureLoaded(); }
     }
     
     _materialAttributes.setUpdated();

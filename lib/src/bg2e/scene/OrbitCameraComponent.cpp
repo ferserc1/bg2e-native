@@ -352,7 +352,7 @@ void OrbitCameraComponent::keyDown(const app::KeyEvent& event)
 {
     if (!_enabled) return;
     
-Qu    bool wasAnyKeyPressed = _keys.w || _keys.a || _keys.s || _keys.d || _keys.q || _keys.e || _keys.space;
+    bool wasAnyKeyPressed = _keys.w || _keys.a || _keys.s || _keys.d || _keys.q || _keys.e || _keys.space;
     
     switch (event.key()) {
         case app::KeyEvent::KeyW: _keys.w = true; break;

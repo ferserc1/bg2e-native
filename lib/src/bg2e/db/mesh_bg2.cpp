@@ -535,6 +535,84 @@ std::shared_ptr<bg2e::scene::Drawable> loadDrawableBg2(
     return loadDrawableBg2(fullPath, engine);
 }
 
+std::shared_ptr<bg2e::scene::Drawable> loadDrawableBg2(
+    const std::filesystem::path& filePath,
+    bg2e::render::Engine * engine,
+    std::function<void()> onTextureLoaded
+) {
+    auto bg2Model = std::unique_ptr<Bg2Mesh>(bg2e::db::loadMeshBg2(filePath));
+    auto result = std::make_shared<bg2e::scene::Drawable>();
+    result->setName(filePath.stem().string());
+    result->setMesh(bg2Model->mesh);
+    uint32_t i = 0;
+    for (auto m : bg2Model->materials)
+    {
+        result->setMaterial(m, i);
+        result->setSubmeshName(m.name(), i);
+        result->setSubmeshGroupName(m.groupName(), i);
+        result->setSubmeshVisibility(m.visible(), i);
+        ++i;
+    }
+    result->load(engine, onTextureLoaded);
+
+    return result;
+}
+
+static uint32_t countMaterialTextures(const base::MaterialAttributes& mat)
+{
+    uint32_t count = 0;
+    if (mat.albedoTexture() && !mat.albedoTexture()->imageFilePath().empty()) { ++count; }
+    if (mat.metalnessTexture() && !mat.metalnessTexture()->imageFilePath().empty()) { ++count; }
+    if (mat.roughnessTexture() && !mat.roughnessTexture()->imageFilePath().empty()) { ++count; }
+    if (mat.normalTexture() && !mat.normalTexture()->imageFilePath().empty()) { ++count; }
+    if (mat.aoTexture() && !mat.aoTexture()->imageFilePath().empty()) { ++count; }
+    return count;
+}
+
+uint32_t countMeshTextures(const std::filesystem::path& filePath)
+{
+    Bg2ioBuffer buffer = BG2IO_BUFFER_INIT;
+    try
+    {
+        std::ifstream fileStream;
+        fileStream.open(filePath, std::ios::binary | std::ios::ate);
+        if (!fileStream.is_open())
+        {
+            return 0;
+        }
+
+        auto fileSize = fileStream.tellg();
+        fileStream.seekg(0, std::ios::beg);
+
+        if (bg2io_createBuffer(&buffer, static_cast<Bg2ioSize>(fileSize)) < 0)
+        {
+            fileStream.close();
+            return 0;
+        }
+
+        fileStream.read(reinterpret_cast<char*>(buffer.mem), buffer.length);
+        fileStream.close();
+
+        Bg2ioBufferIterator it = BG2IO_ITERATOR(&buffer);
+        auto numberOfPlist = readHeader(it);
+        auto materials = readMaterials(it, std::filesystem::path(filePath).remove_filename());
+
+        uint32_t total = 0;
+        for (auto& mat : materials)
+        {
+            total += countMaterialTextures(mat);
+        }
+
+        bg2io_freeBuffer(&buffer);
+        return total;
+    }
+    catch (...)
+    {
+        bg2io_freeBuffer(&buffer);
+        return 0;
+    }
+}
+
 void storeDrawableBg2(
     const std::filesystem::path& filePath,
     bg2e::scene::Drawable* drawable

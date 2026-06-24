@@ -59,6 +59,15 @@ void Component::deserialize(
     }
 }
 
+void Component::deserializeWithProgress(
+    std::shared_ptr<json::JsonNode> jsonData,
+    const std::filesystem::path& basePath,
+    render::Engine& engine,
+    [[maybe_unused]] SceneLoadProgress* progress
+) {
+    deserialize(jsonData, basePath, engine);
+}
+
 std::shared_ptr<json::JsonNode> Component::serialize(const std::filesystem::path& /* basePath */)
 {
     using namespace bg2e::json;

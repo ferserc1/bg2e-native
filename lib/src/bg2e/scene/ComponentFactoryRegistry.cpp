@@ -41,6 +41,11 @@ void ComponentFactoryRegistry::registerComponent(const std::string& componentNam
 
 Component* ComponentFactoryRegistry::create(std::shared_ptr<json::JsonNode> data, const std::filesystem::path& basePath, render::Engine& engine)
 {
+    return create(data, basePath, engine, nullptr);
+}
+
+Component* ComponentFactoryRegistry::create(std::shared_ptr<json::JsonNode> data, const std::filesystem::path& basePath, render::Engine& engine, SceneLoadProgress* progress)
+{
     if (!data->isObject() && !data->isNull())
     {
         throw std::runtime_error("ComponentFactoryRegistry::create(): invalid JSON data. Expecting object");
@@ -62,8 +67,8 @@ Component* ComponentFactoryRegistry::create(std::shared_ptr<json::JsonNode> data
     {
         bg2e_log_debug << "Deserialize component: " << componentType << bg2e_log_end;
     }
-    
-    auto result = _registry[componentType](data, basePath, engine);
+
+    auto result = _registry[componentType](data, basePath, engine, progress);
     return result;
 }
 

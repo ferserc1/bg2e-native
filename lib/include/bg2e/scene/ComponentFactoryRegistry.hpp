@@ -35,13 +35,14 @@ namespace scene {
 
 class BG2E_API ComponentFactoryRegistry {
 public:
-    using Creator = std::function<Component*(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path&, render::Engine&)>;
+    using Creator = std::function<Component*(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path&, render::Engine&, SceneLoadProgress*)>;
 
     static ComponentFactoryRegistry& get();
 
     void registerComponent(const std::string& componentName, Creator creator);
 
     Component* create(std::shared_ptr<json::JsonNode> data, const std::filesystem::path&, render::Engine& engine);
+    Component* create(std::shared_ptr<json::JsonNode> data, const std::filesystem::path&, render::Engine& engine, SceneLoadProgress* progress);
 
 private:
     std::unordered_map<std::string, Creator> _registry;
@@ -52,9 +53,9 @@ template <typename ComponentT>
 class RegisterComponent {
 public:
     RegisterComponent() {
-        ComponentFactoryRegistry::get().registerComponent(ComponentT::staticTypeName(), [](std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path& path, render::Engine& engine) {
+        ComponentFactoryRegistry::get().registerComponent(ComponentT::staticTypeName(), [](std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path& path, render::Engine& engine, SceneLoadProgress* progress) {
             auto result = new ComponentT();
-            result->deserialize(jsonData, path, engine);
+            result->deserializeWithProgress(jsonData, path, engine, progress);
             return result;
         });
     }

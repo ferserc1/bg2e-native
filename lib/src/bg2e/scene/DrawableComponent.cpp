@@ -18,6 +18,7 @@
 
 #include <bg2e/scene/DrawableComponent.hpp>
 #include <bg2e/scene/ComponentFactoryRegistry.hpp>
+#include <bg2e/scene/Node.hpp>
 #include <bg2e/utils/utils.hpp>
 #include <bg2e/db/mesh_bg2.hpp>
 
@@ -86,6 +87,37 @@ void DrawableComponent::deserialize(
         filePath.replace_extension(".bg2");
 
         _drawable = db::loadDrawableBg2(filePath, &engine);
+    }
+}
+
+void DrawableComponent::deserializeWithProgress(
+    std::shared_ptr<json::JsonNode> jsonData,
+    const std::filesystem::path& basePath,
+    render::Engine& engine,
+    SceneLoadProgress* progress
+) {
+    if (!jsonData || !jsonData->isObject())
+    {
+        return;
+    }
+
+    auto& obj = jsonData->objectValue();
+
+    if (obj.count("name"))
+    {
+        auto name = obj["name"]->stringValue();
+
+        auto filePath = basePath;
+        filePath.append(name);
+        filePath.replace_extension(".bg2");
+
+        _drawable = db::loadDrawableBg2(filePath, &engine, [progress]() {
+            if (progress && progress->callback)
+            {
+                progress->callback("texture", progress->loaded, progress->total);
+            }
+            if (progress) { ++progress->loaded; }
+        });
     }
 }
 

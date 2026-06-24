@@ -30,6 +30,7 @@
 #include <fstream>
 #include <vector>
 #include <memory>
+#include <functional>
 
 namespace bg2e {
 namespace db {
@@ -63,10 +64,17 @@ extern BG2E_API std::shared_ptr<bg2e::scene::Drawable> loadDrawableBg2(
     bg2e::render::Engine * engine
 );
 extern BG2E_API std::shared_ptr<bg2e::scene::Drawable> loadDrawableBg2(
+    const std::filesystem::path& filePath,
+    bg2e::render::Engine * engine,
+    std::function<void()> onTextureLoaded
+);
+extern BG2E_API std::shared_ptr<bg2e::scene::Drawable> loadDrawableBg2(
     const std::filesystem::path& basePath,
     const std::string& fileName,
     bg2e::render::Engine * engine
 );
+
+extern BG2E_API uint32_t countMeshTextures(const std::filesystem::path& filePath);
 
 extern BG2E_API void storeDrawableBg2(
     const std::filesystem::path& filePath,
