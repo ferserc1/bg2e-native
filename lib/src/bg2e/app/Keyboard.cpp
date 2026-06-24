@@ -16,21 +16,27 @@
  *    along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#pragma once
-#include <bg2e/app/Application.hpp>
-#include <bg2e/app/OffscreenApplication.hpp>
-
-#include <bg2e/app/GPUSelectionDialog.hpp>
-#include <bg2e/app/InputDelegate.hpp>
-#include <bg2e/app/InputManager.hpp>
 #include <bg2e/app/Keyboard.hpp>
-#include <bg2e/app/KeyEvent.hpp>
-#include <bg2e/app/Mouse.hpp>
-#include <bg2e/app/MainLoop.hpp>
-#include <bg2e/app/MessageBox.hpp>
-#include <bg2e/app/FileDialog.hpp>
-#include <bg2e/app/Preferences.hpp>
-#include <bg2e/app/PreferencesStore.hpp>
-#include <bg2e/app/Shortcuts.hpp>
+#include <SDL2/SDL.h>
 
+namespace bg2e {
+namespace app {
 
+bool Keyboard::shiftPressed() {
+    return (SDL_GetModState() & KMOD_SHIFT) != 0;
+}
+
+bool Keyboard::controlPressed() {
+    return (SDL_GetModState() & KMOD_CTRL) != 0;
+}
+
+bool Keyboard::altPressed() {
+    return (SDL_GetModState() & KMOD_ALT) != 0;
+}
+
+bool Keyboard::superPressed() {
+    return (SDL_GetModState() & KMOD_GUI) != 0;
+}
+
+}
+}

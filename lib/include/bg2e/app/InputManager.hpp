@@ -31,16 +31,7 @@ namespace app {
 
 class BG2E_API InputManager {
 public:
-    struct MouseButtonsStatus {
-        bool left;
-        bool middle;
-        bool rigth;
-        
-        uint32_t x;
-        uint32_t y;
-    };
-    static MouseButtonsStatus getMouseStatus();
-    
+
     static glm::vec2 normalizedCursorPosition(uint32_t viewportWidth, uint32_t viewportHeight);
     
     void keyDown(const KeyEvent& event);

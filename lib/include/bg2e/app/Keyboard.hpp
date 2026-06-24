@@ -17,20 +17,26 @@
  */
 
 #pragma once
-#include <bg2e/app/Application.hpp>
-#include <bg2e/app/OffscreenApplication.hpp>
 
-#include <bg2e/app/GPUSelectionDialog.hpp>
-#include <bg2e/app/InputDelegate.hpp>
-#include <bg2e/app/InputManager.hpp>
-#include <bg2e/app/Keyboard.hpp>
-#include <bg2e/app/KeyEvent.hpp>
-#include <bg2e/app/Mouse.hpp>
-#include <bg2e/app/MainLoop.hpp>
-#include <bg2e/app/MessageBox.hpp>
-#include <bg2e/app/FileDialog.hpp>
-#include <bg2e/app/Preferences.hpp>
-#include <bg2e/app/PreferencesStore.hpp>
-#include <bg2e/app/Shortcuts.hpp>
+#include <bg2e/common.hpp>
 
+namespace bg2e {
+namespace app {
 
+class BG2E_API Keyboard {
+public:
+    // Any shift key held (left or right)
+    static bool shiftPressed();
+
+    // Any control key held (left or right)
+    static bool controlPressed();
+
+    // Any alt key held (left or right)
+    static bool altPressed();
+
+    // Any super key held (left or right)
+    static bool superPressed();
+};
+
+}
+}

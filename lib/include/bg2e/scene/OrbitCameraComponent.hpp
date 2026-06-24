@@ -20,7 +20,7 @@
 
 #include <bg2e/scene/Component.hpp>
 #include <bg2e/math/all.hpp>
-#include <bg2e/app/InputManager.hpp>
+#include <bg2e/app/Mouse.hpp>
 
 namespace bg2e {
 namespace scene {
@@ -191,13 +191,10 @@ protected:
         Zoom
     };
     
-    inline bool matchMouseState(
-        const app::InputManager::MouseButtonsStatus & status,
-        const MouseButtons & buttons
-    ) {
-        return  status.left == buttons.left &&
-                status.middle == buttons.middle &&
-                status.rigth == buttons.right;
+    inline bool matchMouseState(const MouseButtons & buttons) {
+        return  app::Mouse::leftButtonPressed() == buttons.left &&
+                app::Mouse::middleButtonPressed() == buttons.middle &&
+                app::Mouse::rightButtonPressed() == buttons.right;
     }
 
     OrbitAction getOrbitAction();

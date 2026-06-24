@@ -26,19 +26,6 @@
 namespace bg2e {
 namespace app {
 
-InputManager::MouseButtonsStatus InputManager::getMouseStatus()
-{
-    MouseButtonsStatus status;
-    int x, y;
-    Uint32 buttons { SDL_GetMouseState(&x, &y) };
-    
-    status.left = buttons & SDL_BUTTON_LMASK;
-    status.middle = buttons & SDL_BUTTON_MMASK;
-    status.rigth = buttons & SDL_BUTTON_RMASK;
-    
-    return status;
-}
-
 glm::vec2 InputManager::normalizedCursorPosition(uint32_t viewportWidth, uint32_t viewportHeight)
 {
     int x, y;

@@ -86,6 +86,7 @@ void Shortcuts::keyUp(const KeyEvent& evt)
         case KeyEvent::KeyLeftShift:
         case KeyEvent::KeyRightShift:
             _shiftModifier = false;
+            break;
         case KeyEvent::KeyRightAlt:
         case KeyEvent::KeyLeftAlt:
             _altModifier = false;

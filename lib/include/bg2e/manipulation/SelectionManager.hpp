@@ -69,14 +69,16 @@ public:
         const glm::mat4 & projMatrix,
         const math::Viewport & vp,
         uint32_t x,
-        uint32_t y
+        uint32_t y,
+        bool additive = false
     );
 
     inline bool pick(
         scene::Node * rootNode,
         scene::CameraComponent * camera,
         uint32_t x,
-        uint32_t y
+        uint32_t y,
+        bool additive = false
     ) {
         if (!camera->projection())
         {
@@ -85,13 +87,14 @@ public:
         auto viewport = camera->projection()->viewport();
         auto projection = camera->projectionMatrix();
         auto viewMatrix = camera->ownerNode()->invertedWorldMatrix();
-        return pick(rootNode, viewMatrix, projection, viewport, x, y);
+        return pick(rootNode, viewMatrix, projection, viewport, x, y, additive);
     }
 
     inline bool pick(
         scene::Scene * scene,
         uint32_t x,
-        uint32_t y
+        uint32_t y,
+        bool additive = false
     ) {
         if (!scene->rootNode() || !scene->mainCamera())
         {
@@ -99,7 +102,7 @@ public:
         }
         auto rootNode = scene->rootNode();
         auto camera = scene->mainCamera();
-        return pick(rootNode, camera, x, y);
+        return pick(rootNode, camera, x, y, additive);
     }
 
     // This functions does not modify the selection
@@ -153,7 +156,7 @@ public:
     // only when the press did not move, so dragging the camera does not select.
     bool mouseButtonDown(scene::Scene * scene, int button, int x, int y);
     bool mouseMove(scene::Scene * scene, int x, int y);
-    bool mouseButtonUp(scene::Scene * scene, int button, int x, int y);
+    bool mouseButtonUp(scene::Scene * scene, int button, int x, int y, bool additive = false);
 
     // True while a transform gizmo handle is being manipulated; the app must not
     // forward input to the scene graph while this is true.

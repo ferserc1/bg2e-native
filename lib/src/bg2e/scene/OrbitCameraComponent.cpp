@@ -19,7 +19,7 @@
 #include <bg2e/scene/OrbitCameraComponent.hpp>
 #include <bg2e/scene/ComponentFactoryRegistry.hpp>
 #include <bg2e/scene/Node.hpp>
-#include <bg2e/app/InputManager.hpp>
+#include <bg2e/app/Mouse.hpp>
 #include <bg2e/math/tools.hpp>
 
 #include <algorithm>
@@ -359,17 +359,15 @@ void OrbitCameraComponent::reset()
 
 OrbitCameraComponent::OrbitAction OrbitCameraComponent::getOrbitAction()
 {
-    auto mouseState = app::InputManager::getMouseStatus();
-    
-    if (matchMouseState(mouseState, _rotationButtons))
+    if (matchMouseState(_rotationButtons))
     {
         return OrbitAction::Rotate;
     }
-    else if (matchMouseState(mouseState, _panButtons))
+    else if (matchMouseState(_panButtons))
     {
         return OrbitAction::Pan;
     }
-    else if (matchMouseState(mouseState, _zoomButtons))
+    else if (matchMouseState(_zoomButtons))
     {
         return OrbitAction::Zoom;
     }

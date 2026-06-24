@@ -66,7 +66,8 @@ void AppDelegate::mouseButtonDown(int button, int x, int y)
 
 void AppDelegate::mouseButtonUp(int button, int x, int y)
 {
-    if (_selectionManager->mouseButtonUp(renderer()->scene(), button, x, y))
+    bool additive = bg2e::app::Keyboard::shiftPressed();
+    if (_selectionManager->mouseButtonUp(renderer()->scene(), button, x, y, additive))
     {
         _inputVisitor.mouseButtonUp(renderer()->scene()->rootNode(), button, x, y);
     }
