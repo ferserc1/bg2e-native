@@ -94,9 +94,15 @@ void main() {
     vec3 texColor = texture(albedoTex[nmatIdx], scaledUV).rgb;
     vec3 surfaceAlbedo = mat.albedo.rgb * texColor;
 
-    // Indirect ambient at the hit point from the irradiance map.
-    vec3 irradiance = texture(irradianceMap, worldNormal).rgb;
-    vec3 directLight = surfaceAlbedo * irradiance;
+    // A bounce hit returns ONLY direct lighting. The indirect/ambient
+    // contribution is NOT injected here: it is gathered by the continuation rays
+    // in the ray generation shader (a ray that escapes samples the irradiance
+    // map, and the final bounce takes a single terminal ambient sample).
+    // The irradiance map already encodes the fully converged environment ambient,
+    // so re-adding surfaceAlbedo * irradiance at every hit double-counts it. Because
+    // that term accumulates with the number of bounces, it over-brightened concave
+    // regions (inverted ambient occlusion) — the white glow around the cushions.
+    vec3 directLight = vec3(0.0);
 
     // Direct contribution from lights configured to affect ray tracing.
     for (uint i = 0u; i < pc.giLightCount; ++i) {

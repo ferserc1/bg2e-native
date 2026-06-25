@@ -91,9 +91,9 @@ void main() {
             );
 
             if (payload.didHit != 0u) {
-                // Accumulate direct light from this bounce, attenuated by accumulated throughput.
-                // hitDirectLight = surfaceAlbedo * (irradiance + direct_lights), already includes
-                // the bounce surface albedo for color bleeding.
+                // Direct light reflected by this bounce surface (color bleeding),
+                // attenuated by the path throughput accumulated so far. hitDirectLight
+                // now carries ONLY the direct lighting; the ambient is handled below.
                 sampleRadiance += throughput * payload.hitDirectLight;
 
                 // Propagate albedo of the hit surface to the next bounce for color bleeding.
@@ -102,8 +102,19 @@ void main() {
                 throughput *= payload.hitAlbedo;
                 origin = payload.hitPosition + payload.hitNormal * pc.rayBias;
                 currentNormal = payload.hitNormal;
+
+                // Terminal ambient: on the last allowed bounce we are still on a
+                // surface, so close the path with the converged environment ambient
+                // at this surface (the irradiance map already bakes in every further
+                // bounce). Added exactly once per path, so it can never accumulate
+                // into a glow, yet it keeps deep concavities from going black.
+                if (b + 1u == pc.bounceCount) {
+                    sampleRadiance += throughput * texture(irradianceMap, currentNormal).rgb;
+                }
             } else {
-                // Ray missed all geometry: sample IBL to capture sky/environment contribution.
+                // Ray escaped all geometry: sample the precomputed irradiance map as
+                // the incoming ambient along this direction. This is what makes a
+                // fully sky-exposed surface match the rasterized IBL path.
                 vec3 envLight = texture(irradianceMap, dir).rgb;
                 sampleRadiance += throughput * envLight;
                 break;
