@@ -165,7 +165,7 @@ std::shared_ptr<bg2e::scene::Scene> loadScene(
             {
                 progress.total += countJsonNodes(nodeData);
                 progress.total += countEnvironmentImages(nodeData);
-                //progress.total += countDrawableTextures(nodeData, basePath);
+                progress.total += countDrawableTextures(nodeData, basePath);
             }
         }
     }
