@@ -39,6 +39,8 @@ public:
     [[nodiscard]] const std::shared_ptr<Drawable> drawable() const;
     void setDrawable(std::shared_ptr<DrawableBase> drw);
 
+    std::shared_ptr<Component> clone() const override;
+
     void draw(
         const glm::mat4& nodeTransform,
         VkCommandBuffer cmd,

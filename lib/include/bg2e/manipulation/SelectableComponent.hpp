@@ -34,7 +34,11 @@ public:
     
     SelectableComponent();
     virtual ~SelectableComponent() = default;
-    
+
+    // Selection/pick identifiers are per-instance and allocated lazily in
+    // update(); a clone starts fresh so it never shares ids with the source.
+    std::shared_ptr<scene::Component> clone() const override;
+
     void update(float) override;
 
     inline uint32_t identifier(uint32_t submeshIndex) { return _identifier[submeshIndex]; }

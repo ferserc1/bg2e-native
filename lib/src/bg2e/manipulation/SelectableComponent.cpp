@@ -27,6 +27,14 @@ SelectableComponent::SelectableComponent()
 {
 }
 
+std::shared_ptr<scene::Component> SelectableComponent::clone() const
+{
+    // Pick identifiers are allocated lazily from a global counter in update(), so
+    // a clone must start empty to receive its own identifiers instead of copying
+    // the source's, which would make two nodes share the same pick ids.
+    return std::make_shared<SelectableComponent>();
+}
+
 void SelectableComponent::update(float)
 {
     if (!ownerNode())

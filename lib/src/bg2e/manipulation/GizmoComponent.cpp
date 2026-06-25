@@ -84,6 +84,15 @@ GizmoComponent::GizmoComponent(render::Engine* engine)
     }
 }
 
+std::shared_ptr<scene::Component> GizmoComponent::clone() const
+{
+    // A gizmo's state is entirely transient (current gizmo type, active transform
+    // handle, drag-start data) and is rebuilt from the owner node on update(). The
+    // clone is therefore a brand new gizmo bound to the same engine, not a copy of
+    // the source's interaction state.
+    return std::make_shared<GizmoComponent>(_engine);
+}
+
 GizmoType GizmoComponent::resolveGizmoType() const
 {
     auto node = ownerNode();

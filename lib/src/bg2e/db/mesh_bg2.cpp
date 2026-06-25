@@ -167,7 +167,17 @@ std::vector<Bg2Plist> readPolyList(Bg2ioBufferIterator& it, uint32_t numberOfPli
         while (done == 0)
         {
             // Read single poly list
-            bg2io_readInteger(&it, &block);
+            Bg2ioSize readResult = bg2io_readInteger(&it, &block);
+            if (readResult < 0)
+            {
+                // End of buffer reached without an explicit End block. This
+                // happens with truncated or malformed bg2 files. On error
+                // bg2io_readInteger leaves both the iterator and 'block'
+                // untouched, so without this guard the loop would spin
+                // forever. Treat it as an End block to finalize the current
+                // poly list and exit cleanly.
+                block = bg2io_End;
+            }
             switch (block) {
             case bg2io_PlistName:
                 bg2io_readString(&it, &plistName);
@@ -462,8 +472,13 @@ void storeMeshBg2(const std::filesystem::path& filePath, Bg2Mesh * mesh)
     utils::MaterialSerializer matSerializer;
     std::vector<std::shared_ptr<base::Texture>> textures;
     auto matData = matSerializer.serializeMaterialArray(mesh->materials, textures, true);
-    file->materialData = new char[matData.size()];
+    // Allocate one extra byte and null-terminate: the bg2-io writer measures
+    // this string with strlen (getStringSize / STR_SIZE). Without the trailing
+    // '\0' it would read past the buffer and store extra garbage bytes after
+    // the JSON, producing a corrupt, non-parseable material string on load.
+    file->materialData = new char[matData.size() + 1];
     std::strncpy(file->materialData, matData.c_str(), matData.size());
+    file->materialData[matData.size()] = '\0';
     
     for (auto t : textures)
     {

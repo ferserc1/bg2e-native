@@ -26,6 +26,13 @@
 
 namespace bg2e::scene {
 
+std::shared_ptr<Component> PolarTransformControllerComponent::clone() const
+{
+    auto copy = std::make_shared<PolarTransformControllerComponent>(*this);
+    copy->_owner = nullptr;
+    return copy;
+}
+
 void PolarTransformControllerComponent::setAzimuth(float value)
 {
     _azimuth = std::fmod(value, 360.0f);

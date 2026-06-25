@@ -89,10 +89,15 @@ JsonToken JsonTokenizer::getToken()
     {
         token.type = JsonTokenType::String;
         token.value = "";
-        stream->get(c);
-        while (c != '"') {
+        while (stream->get(c) && c != '"') {
             token.value += c;
-            stream->get(c);
+        }
+        if (c != '"') {
+            // Reached the end of the stream without a closing quote. Without
+            // this guard the loop would spin forever (a failed get() leaves
+            // 'c' unchanged), which is exactly what happens when a corrupt or
+            // over-read buffer feeds an unterminated string to the tokenizer.
+            throw std::logic_error("Unterminated string while reading JSON token");
         }
     }
     else if (c == '{')

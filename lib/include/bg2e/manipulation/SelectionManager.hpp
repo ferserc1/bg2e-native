@@ -176,7 +176,12 @@ public:
         return _selectedItems.empty() ? nullptr : _selectedItems.front();
     }
 
-    [[nodiscard]] inline scene::Node * selectedNode() const { return selectedItem() ? selectedItem()->nodePtr() : nullptr; }
+    [[nodiscard]] inline scene::Node * selectedNode() const
+    {
+        return selectedItem()
+            ? selectedItem()->nodePtr()
+            : (_selectedNodes.empty() ? nullptr : _selectedNodes.front().lock().get());
+    }
     [[nodiscard]] inline scene::DrawableComponent * selectedDrawable() const { return selectedItem() ? selectedItem()->drawablePtr() : nullptr; }
     [[nodiscard]] inline scene::Drawable * selectedMesh() const { return selectedItem() ? selectedItem()->meshPtr() : nullptr; }
     [[nodiscard]] inline uint32_t selectedSubmesh() const { return selectedItem() ? selectedItem()->submesh : 0; }

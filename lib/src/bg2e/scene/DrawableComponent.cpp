@@ -51,6 +51,23 @@ void DrawableComponent::setDrawable(std::shared_ptr<DrawableBase> drw)
     _drawable = drw;
 }
 
+std::shared_ptr<Component> DrawableComponent::clone() const
+{
+    auto copy = std::make_shared<DrawableComponent>();
+
+    // Deep copy the drawable so the duplicated component owns an independent mesh,
+    // materials and GPU resources. This is the whole point of cloning by copy: the
+    // two DrawableComponents must never share the same DrawableBase instance.
+    if (_drawable)
+    {
+        copy->_drawable = _drawable->clone();
+    }
+
+    copy->_priority = _priority;
+    copy->_ignoreSerialization = _ignoreSerialization;
+    return copy;
+}
+
 void DrawableComponent::draw(
     const glm::mat4& nodeTransform,
     VkCommandBuffer cmd,

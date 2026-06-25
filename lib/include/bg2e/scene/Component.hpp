@@ -75,7 +75,16 @@ public:
     virtual void keyUp(const app::KeyEvent&  /* keyEvent */) {}
     
     virtual std::string typeName() const = 0;
-    
+
+    // Returns a deep, independent copy of this component, detached from any node
+    // (the returned component has no owner). Every subclass must implement it so a
+    // node can be fully duplicated by copy, never by sharing state. Components that
+    // own GPU/CPU resources (e.g. DrawableComponent) must duplicate those resources
+    // rather than share them. Runtime-only components whose state is per-instance
+    // (selection ids, gizmo handles) return a fresh equivalent instead of a literal
+    // copy. Implementations must leave _owner null; Node::addComponent adopts it.
+    virtual std::shared_ptr<Component> clone() const = 0;
+
     virtual void deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path& basePath, render::Engine& engine);
     virtual void deserializeWithProgress(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path& basePath, render::Engine& engine, SceneLoadProgress* progress);
     virtual std::shared_ptr<json::JsonNode> serialize(const std::filesystem::path& basePath);

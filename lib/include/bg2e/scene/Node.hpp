@@ -130,7 +130,15 @@ public:
     glm::vec3 upVector();
 
     Node * sceneRoot();
-   
+
+    // Returns a deep, independent copy of this node: a fresh node (with its own
+    // unique identifier) carrying a deep copy of every component (see
+    // Component::clone()) and a recursively cloned copy of the whole child
+    // subtree. The returned node is detached: it has no parent and belongs to no
+    // scene until it is added to one. The node name is copied verbatim; rename the
+    // result afterwards if a distinct name is required.
+    [[nodiscard]] std::shared_ptr<Node> clone() const;
+
     inline Scene * scene() { return sceneRoot()->_scene; }
     
     void deserialize(std::shared_ptr<json::JsonNode>, const std::filesystem::path&,

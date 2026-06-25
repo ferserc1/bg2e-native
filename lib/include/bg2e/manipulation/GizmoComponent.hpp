@@ -65,6 +65,10 @@ public:
     GizmoComponent(render::Engine* engine);
     virtual ~GizmoComponent() = default;
 
+    // Gizmos are runtime-only helpers: a clone is a fresh gizmo for the same
+    // engine, not a literal copy of the source's transient interaction state.
+    std::shared_ptr<scene::Component> clone() const override;
+
     // No serialization — gizmos are runtime-only
     void deserialize(std::shared_ptr<json::JsonNode>, const std::filesystem::path&, render::Engine&) override {}
     std::shared_ptr<json::JsonNode> serialize(const std::filesystem::path&) override { return nullptr; }

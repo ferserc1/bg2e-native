@@ -80,6 +80,17 @@ void NodeEditor::draw()
         return;
     }
 
+    auto name = _node->name();
+    auto enabled = _node->enabled();
+    if (Input::text("Node name", name))
+    {
+        _node->setName(name);
+    }
+    if (BasicWidgets::checkBox("Enabled", &enabled))
+    {
+        _node->setEnabled(enabled);
+    }
+
     drawComponentList();
 
     if (auto t = _node->getComponent<scene::TransformComponent>())

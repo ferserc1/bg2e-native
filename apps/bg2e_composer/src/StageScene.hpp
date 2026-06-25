@@ -50,6 +50,27 @@ public:
     // Import a .bg2 model created with model_edit as a new node in the scene
     void importModelBg2(const std::filesystem::path& path);
 
+    // Scene menu actions. New nodes hang from the primary selected node (or from
+    // the editable root if there is no selection) and are placed in front of the
+    // camera, at _createNodeDistance units along the camera view direction.
+    void addLightNode();
+    void addCubeNode();
+    void addSphereNode();
+    void addEmptyNode();
+
+    // Duplicates the primary selected node as a sibling (same parent). The copy is
+    // a full deep copy: every component is cloned by value (drawables duplicate
+    // their mesh, materials and GPU resources, never sharing them with the source)
+    // and the whole child subtree is cloned recursively. The new node is named
+    // "<source name> Copy" and every cloned drawable is renamed so saving never
+    // overwrites the source's mesh asset. Does nothing if there is no selection or
+    // the selection is the editable root.
+    void duplicateSelectedNode();
+
+    // Removes the primary selected node from the scene. Asks for confirmation
+    // because the action cannot be undone. Does nothing if there is no selection.
+    void removeSelectedNode();
+
     // Empty the editable scene (deselect first)
     void close();
 
@@ -84,8 +105,25 @@ protected:
 
     OnSceneSwapCallback _onSceneSwap;
 
+    // Distance (in world units) from the camera at which newly created nodes are
+    // placed, measured along the camera view direction.
+    const float _createNodeDistance = 5.0f;
+
     std::shared_ptr<bg2e::scene::Node> buildDefaultScene();
     void setEditableRoot(std::shared_ptr<bg2e::scene::Node> newEditableRoot);
+
+    // Node that newly created nodes hang from: the primary selected node, or the
+    // editable root if nothing is selected.
+    std::shared_ptr<bg2e::scene::Node> newNodeParent();
+
+    // Local-space translation that places a node, child of parent, in front of
+    // the camera at _createNodeDistance. Accounts for parent's world transform so
+    // the node lands at the desired world position regardless of where parent is.
+    glm::vec3 placementLocalPosition(bg2e::scene::Node* parent);
+
+    // Adds the gizmo/selection components, inserts node under parent and refreshes
+    // the scene inside a safe update, then marks the document as modified.
+    void insertNewNode(std::shared_ptr<bg2e::scene::Node> node, std::shared_ptr<bg2e::scene::Node> parent);
 
     // If the scene's main camera has no projection, assign an optical projection
     // (50 mm film size, 55 mm lens) so the aspect ratio renders correctly

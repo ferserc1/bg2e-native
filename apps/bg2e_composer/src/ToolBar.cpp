@@ -153,6 +153,48 @@ void ToolBar::init(AppDelegate * delegate, bg2e::ui::UISettingsWindow * uiSettin
     }});
     addMenuItem(view);
 
+    bg2e::ui::MenuItem scene("Scene");
+    scene.addMenuItem({ "Add light", {
+        .handler = [&]()
+        {
+            _appDelegate->stage()->addLightNode();
+        }
+    }});
+    scene.addMenuItem({ "Cube", {
+        .handler = [&]()
+        {
+            _appDelegate->stage()->addCubeNode();
+        }
+    }});
+    scene.addMenuItem({ "Sphere", {
+        .handler = [&]()
+        {
+            _appDelegate->stage()->addSphereNode();
+        }
+    }});
+    scene.addMenuItem({});
+    scene.addMenuItem({ "Empty Node", {
+        .handler = [&]()
+        {
+            _appDelegate->stage()->addEmptyNode();
+        }
+    }});
+    scene.addMenuItem({});   // Separator
+    scene.addMenuItem({ "Duplicate Selection", {
+        .handler = [&]()
+        {
+            _appDelegate->stage()->duplicateSelectedNode();
+        }
+    }});
+    scene.addMenuItem({});   // Separator
+    scene.addMenuItem({ "Remove Selection", {
+        .handler = [&]()
+        {
+            _appDelegate->stage()->removeSelectedNode();
+        }
+    }});
+    addMenuItem(scene);
+
     bg2e::ui::MenuItem window("Window");
     window.addMenuItem({ "Submesh Editor", {
         .handler = [&]()

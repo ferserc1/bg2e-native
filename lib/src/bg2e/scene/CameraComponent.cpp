@@ -33,6 +33,13 @@ CameraComponent::~CameraComponent()
 
 }
 
+std::shared_ptr<Component> CameraComponent::clone() const
+{
+    auto copy = std::make_shared<CameraComponent>(*this);
+    copy->_owner = nullptr;
+    return copy;
+}
+
 void CameraComponent::resizeViewport(const math::Viewport& vp)
 {
     auto proj = _camera.projection();

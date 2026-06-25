@@ -38,6 +38,8 @@ public:
     const glm::vec3 position() const;
     const glm::vec3 direction() const;
 
+    std::shared_ptr<Component> clone() const override;
+
     void deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path& basePath, render::Engine& engine) override;
     std::shared_ptr<json::JsonNode> serialize(const std::filesystem::path& basePath) override;
 

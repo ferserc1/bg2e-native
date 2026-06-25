@@ -51,6 +51,12 @@ public:
     DrawableBase() = default;
     virtual ~DrawableBase() = default;
 
+    // Returns a deep, independent copy of this drawable: the CPU mesh and the
+    // per-submesh attributes (materials, transforms, names, visibility) are
+    // duplicated, never shared. If the source has been loaded onto an engine the
+    // copy rebuilds its own GPU render mesh and materials, so the two drawables
+    // share no Vulkan resources.
+    [[nodiscard]] virtual std::shared_ptr<DrawableBase> clone() const = 0;
 
     virtual void drawSubmesh(
         VkCommandBuffer cmd,
@@ -124,6 +130,8 @@ public:
         std::string groupName;
         bool visible = true;
     };
+
+    [[nodiscard]] std::shared_ptr<DrawableBase> clone() const override;
 
     void applyModifier(geo::Modifier<MeshT> * mod);
 

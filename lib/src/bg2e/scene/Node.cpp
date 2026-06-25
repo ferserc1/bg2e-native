@@ -83,6 +83,30 @@ const std::vector<std::shared_ptr<Node>>& Node::children() const
     return _children;
 }
 
+std::shared_ptr<Node> Node::clone() const
+{
+    // A freshly constructed node already gets its own unique identifier; only the
+    // user-visible state (name, enabled/steady flags) is carried over.
+    auto copy = std::make_shared<Node>(_name);
+    copy->_disabled = _disabled;
+    copy->_steady = _steady;
+
+    // Deep copy every component. Component::clone() returns an unowned, independent
+    // copy, so the new node shares no component state with this one.
+    for (const auto& comp : orderedComponents())
+    {
+        copy->addComponent(comp->clone());
+    }
+
+    // Recursively deep copy the child subtree.
+    for (const auto& child : _children)
+    {
+        copy->addChild(child->clone());
+    }
+
+    return copy;
+}
+
 void Node::clearChildren()
 {
     _children.clear();

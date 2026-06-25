@@ -33,6 +33,38 @@
 namespace bg2e::scene {
 
 template <typename MeshT, typename RenderMeshT>
+std::shared_ptr<DrawableBase> DrawableGeneric<MeshT, RenderMeshT>::clone() const
+{
+    auto copy = std::make_shared<DrawableGeneric<MeshT, RenderMeshT>>();
+
+    // Copy the DrawableBase state (whole-mesh transform and name).
+    copy->_transform = _transform;
+    copy->_name = _name;
+
+    // Deep copy the per-submesh attributes (material, transform, name, group,
+    // visibility). MaterialAttributes is a value type, so this duplicates the
+    // material definition rather than sharing it.
+    copy->_submeshAttributes = _submeshAttributes;
+    copy->_rayTracingEnabled = _rayTracingEnabled;
+
+    // Deep copy the CPU mesh data. MeshGeneric is a plain struct of vectors, so a
+    // copy duplicates the vertex/index buffers instead of sharing them.
+    if (_mesh)
+    {
+        copy->_mesh = std::make_shared<MeshT>(*_mesh);
+    }
+
+    // If the source owns GPU resources, build independent ones for the copy so the
+    // two drawables never share a render mesh or materials.
+    if (isLoaded() && _engine && copy->_mesh)
+    {
+        copy->load(_engine);
+    }
+
+    return copy;
+}
+
+template <typename MeshT, typename RenderMeshT>
 void DrawableGeneric<MeshT, RenderMeshT>::applyModifier(geo::Modifier<MeshT> * mod)
 {
     if (!isLoaded())

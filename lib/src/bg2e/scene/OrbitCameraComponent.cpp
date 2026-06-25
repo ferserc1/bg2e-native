@@ -26,6 +26,13 @@
 
 namespace bg2e::scene {
 
+std::shared_ptr<Component> OrbitCameraComponent::clone() const
+{
+    auto copy = std::make_shared<OrbitCameraComponent>(*this);
+    copy->_owner = nullptr;
+    return copy;
+}
+
 void OrbitCameraComponent::deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path&, [[maybe_unused]] render::Engine& engine)
 {
     if (!jsonData || !jsonData->isObject())

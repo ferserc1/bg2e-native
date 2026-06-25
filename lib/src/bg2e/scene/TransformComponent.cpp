@@ -24,6 +24,13 @@
 
 namespace bg2e::scene {
 
+std::shared_ptr<Component> TransformComponent::clone() const
+{
+    auto copy = std::make_shared<TransformComponent>(*this);
+    copy->_owner = nullptr;
+    return copy;
+}
+
 std::unique_ptr<TransformComponent> TransformComponent::makeTranslated(float x, float y, float z)
 {
     return std::make_unique<TransformComponent>(glm::translate( glm::mat4 { 1.0f }, glm::vec3(x, y, z) ));

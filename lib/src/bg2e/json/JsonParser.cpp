@@ -27,61 +27,53 @@ namespace bg2e::json {
 
 std::shared_ptr<JsonNode> & JsonParser::parse()
 {
-    std::string key = "";
-    while (tokenizer.hasMoreTokens())
+    try
     {
-        JsonToken token;
-        try
+        // A JSON document contains exactly one root value. Parse it from the
+        // first token instead of looping over every token in the stream.
+        if (tokenizer.hasMoreTokens())
         {
-            token = tokenizer.getToken();
+            JsonToken token = tokenizer.getToken();
             switch (token.type) {
-            case JsonTokenType::CurlyOpen: {
-                std::shared_ptr<JsonNode> parsedObject = parseObject();
-                if (!root) {
-                    root = parsedObject;
-                }
+            case JsonTokenType::CurlyOpen:
+                root = parseObject();
                 break;
-            }
-            case JsonTokenType::ListOpen: {
-                std::shared_ptr<JsonNode> parsedList = parseList();
-                if (!root) {
-                    root = parsedList;
-                }
+            case JsonTokenType::ListOpen:
+                root = parseList();
                 break;
-            }
-            case JsonTokenType::String: {
+            case JsonTokenType::String:
                 tokenizer.rollBackToken();
-                std::shared_ptr<JsonNode> parsedString = parseString();
-                if (!root) {
-                    root = parsedString;
-                }
+                root = parseString();
                 break;
-            }
-            case JsonTokenType::Number: {
+            case JsonTokenType::Number:
                 tokenizer.rollBackToken();
-                std::shared_ptr<JsonNode> parsedNumber = parseNumber();
-                if (!root) {
-                    root = parsedNumber;
-                }
+                root = parseNumber();
                 break;
-            }
-            case JsonTokenType::Boolean: {
+            case JsonTokenType::Boolean:
                 tokenizer.rollBackToken();
-                std::shared_ptr<JsonNode> parsedBoolean = parseBoolean();
-                if (!root) {
-                    root = parsedBoolean;
-                }
+                root = parseBoolean();
                 break;
-            }
+            case JsonTokenType::NullType:
+                root = parseNull();
+                break;
             default:
-                break;
+                throw std::logic_error("Unexpected token at the start of the JSON document");
             }
         }
-        catch(std::logic_error &e)
+
+        // Once the root value has been parsed, the end of the file must have
+        // been reached. Any remaining token means the input is malformed (for
+        // example, extra bytes after the closing bracket caused by an over-read
+        // of the source buffer). Detect it here and fail, instead of looping
+        // over the trailing tokens indefinitely.
+        if (tokenizer.hasMoreTokens())
         {
-            std::cout << "Warning:" << e.what() << std::endl;
-            break;
+            throw std::logic_error("Expected end of file but found additional tokens after the root JSON value");
         }
+    }
+    catch(std::logic_error &e)
+    {
+        std::cout << "Warning:" << e.what() << std::endl;
     }
     return root;
 }

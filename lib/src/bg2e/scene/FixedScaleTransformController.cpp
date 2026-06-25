@@ -25,6 +25,13 @@
 
 namespace bg2e::scene {
 
+std::shared_ptr<Component> FixedScaleTransformControllerComponent::clone() const
+{
+    auto copy = std::make_shared<FixedScaleTransformControllerComponent>(*this);
+    copy->_owner = nullptr;
+    return copy;
+}
+
 void FixedScaleTransformControllerComponent::deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path&, [[maybe_unused]] render::Engine& engine)
 {
     Component::deserialize(jsonData, {}, engine);

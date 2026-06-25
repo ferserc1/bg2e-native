@@ -43,6 +43,13 @@ EnvironmentComponent::EnvironmentComponent(const std::filesystem::path& resource
     _imgHash = std::hash<std::string>{}(_environmentImage);
 }
 
+std::shared_ptr<Component> EnvironmentComponent::clone() const
+{
+    auto copy = std::make_shared<EnvironmentComponent>(*this);
+    copy->_owner = nullptr;
+    return copy;
+}
+
 EnvironmentComponent::~EnvironmentComponent()
 {
 

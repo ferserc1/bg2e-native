@@ -24,6 +24,13 @@
 
 namespace bg2e::scene {
 
+std::shared_ptr<Component> LightComponent::clone() const
+{
+    auto copy = std::make_shared<LightComponent>(*this);
+    copy->_owner = nullptr;
+    return copy;
+}
+
 const glm::vec3 LightComponent::position() const
 {
     glm::vec3 pos { 0.0f, 0.0f, 0.0f };

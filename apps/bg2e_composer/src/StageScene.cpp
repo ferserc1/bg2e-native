@@ -29,6 +29,43 @@
 #include "bg2e/scene/FindNodeComponentVisitor.hpp"
 #include <bg2e/manipulation/GizmoComponent.hpp>
 #include <bg2e/manipulation/SelectableComponent.hpp>
+#include <bg2e/scene/LightComponent.hpp>
+#include <bg2e/scene/DrawableComponent.hpp>
+#include <bg2e/geo/cube.hpp>
+#include <bg2e/geo/sphere.hpp>
+#include <bg2e/geo/modifiers.hpp>
+
+namespace {
+
+// Drawable names double as the .bg2 asset filename written by
+// DrawableComponent::serialize(). After a node is duplicated, every cloned
+// drawable still carries the source's name; appending " Copy" keeps the copy's
+// asset distinct so saving the scene never overwrites the source's mesh file.
+// Empty names are left untouched: serialize() assigns each unnamed drawable its
+// own fresh unique id, so they cannot collide.
+void renameClonedDrawables(bg2e::scene::Node* node)
+{
+    if (!node)
+    {
+        return;
+    }
+
+    if (auto drawableComp = node->drawable())
+    {
+        auto drawable = drawableComp->drawableBase();
+        if (drawable && !drawable->name().empty())
+        {
+            drawable->setName(drawable->name() + " Copy");
+        }
+    }
+
+    for (const auto& child : node->children())
+    {
+        renameClonedDrawables(child.get());
+    }
+}
+
+}
 
 StageScene::StageScene(bg2e::render::Engine * engine, AppDelegate * appDelegate)
     :_engine { engine }
@@ -168,11 +205,232 @@ void StageScene::importModelBg2(const std::filesystem::path& path)
     node->addComponent(new bg2e::scene::DrawableComponent(drawable));
     node->addComponent(new bg2e::manipulation::SelectableComponent());
     node->addComponent(new bg2e::manipulation::GizmoComponent(_engine));
-    bg2e::app::MainLoop::current()->safeUpdateScene([this, node]() {
-        _editableRoot->addChild(node);
+    auto parent = newNodeParent();
+    bg2e::app::MainLoop::current()->safeUpdateScene([this, node, parent]() {
+        parent->addChild(node);
         _containerRoot->scene()->updateAll();
     });
     _document->setUnsavedChanges(true);
+}
+
+std::shared_ptr<bg2e::scene::Node> StageScene::newNodeParent()
+{
+    // New nodes hang from the primary selected node, or from the editable root if
+    // nothing is selected. selectedNode() returns the primary node when more than
+    // one node is selected.
+    auto selected = _appDelegate->selectionManager()->selectedNode();
+    if (selected)
+    {
+        return std::static_pointer_cast<bg2e::scene::Node>(selected->shared_from_this());
+    }
+    return _editableRoot;
+}
+
+glm::vec3 StageScene::placementLocalPosition(bg2e::scene::Node* parent)
+{
+    auto cam = cameraComponent();
+    if (!cam || !cam->ownerNode())
+    {
+        return glm::vec3{ 0.0f };
+    }
+
+    auto cameraNode = cam->ownerNode();
+    auto cameraPos = cameraNode->worldPosition();
+
+    // Node::forwardVector() returns the node's local +Z axis in world space. The
+    // orbit camera places the eye at +Z relative to its target, so its view
+    // direction is -Z; negate the forward vector to look towards the scene.
+    auto viewDir = -cameraNode->forwardVector();
+    auto targetWorldPos = cameraPos + viewDir * _createNodeDistance;
+
+    // The new node may hang from a parent with its own world transform. Express
+    // the target world position in the parent's local space so the node lands at
+    // the right place regardless of the parent's transform.
+    glm::mat4 parentWorld = parent ? parent->worldMatrix() : glm::mat4{ 1.0f };
+    return glm::vec3(glm::inverse(parentWorld) * glm::vec4(targetWorldPos, 1.0f));
+}
+
+void StageScene::insertNewNode(std::shared_ptr<bg2e::scene::Node> node, std::shared_ptr<bg2e::scene::Node> parent)
+{
+    // Every editable node needs a SelectableComponent to be pickable in the
+    // viewport and a GizmoComponent to draw its transform/type gizmo.
+    if (!node->getComponent<bg2e::manipulation::SelectableComponent>())
+    {
+        node->addComponent(new bg2e::manipulation::SelectableComponent());
+    }
+    if (!node->getComponent<bg2e::manipulation::GizmoComponent>())
+    {
+        node->addComponent(new bg2e::manipulation::GizmoComponent(_engine));
+    }
+
+    bg2e::app::MainLoop::current()->safeUpdateScene([this, node, parent]() {
+        parent->addChild(node);
+        _containerRoot->scene()->updateAll();
+    });
+    _document->setUnsavedChanges(true);
+}
+
+void StageScene::addLightNode()
+{
+    if (!_editableRoot) return;
+
+    auto parent = newNodeParent();
+
+    auto node = std::make_shared<bg2e::scene::Node>("Light");
+    auto transform = new bg2e::scene::TransformComponent();
+    transform->setTranslation(placementLocalPosition(parent.get()));
+    node->addComponent(transform);
+
+    auto lightComp = new bg2e::scene::LightComponent();
+    lightComp->light().setType(bg2e::base::Light::TypeOmni);
+    lightComp->light().setColor(bg2e::base::Color::White());
+    lightComp->light().setIntensity(5.0f);
+    node->addComponent(lightComp);
+
+    insertNewNode(node, parent);
+}
+
+void StageScene::addCubeNode()
+{
+    if (!_editableRoot) return;
+
+    auto parent = newNodeParent();
+
+    auto mesh = std::shared_ptr<bg2e::scene::Mesh>(bg2e::geo::createCube(1.0f, 1.0f, 1.0f));
+    bg2e::geo::GenTangentsModifier<bg2e::scene::Mesh> genTangents(mesh.get());
+    genTangents.apply();
+
+    auto drawable = std::make_shared<bg2e::scene::Drawable>();
+    drawable->setMesh(mesh);
+    drawable->load(_engine);
+
+    auto node = std::make_shared<bg2e::scene::Node>("Cube");
+    auto transform = new bg2e::scene::TransformComponent();
+    transform->setTranslation(placementLocalPosition(parent.get()));
+    node->addComponent(transform);
+    node->addComponent(new bg2e::scene::DrawableComponent(drawable));
+
+    insertNewNode(node, parent);
+}
+
+void StageScene::addSphereNode()
+{
+    if (!_editableRoot) return;
+
+    auto parent = newNodeParent();
+
+    auto mesh = std::shared_ptr<bg2e::scene::Mesh>(bg2e::geo::createSphere(1.0f, 32, 24));
+    bg2e::geo::GenTangentsModifier<bg2e::scene::Mesh> genTangents(mesh.get());
+    genTangents.apply();
+
+    auto drawable = std::make_shared<bg2e::scene::Drawable>();
+    drawable->setMesh(mesh);
+    drawable->load(_engine);
+
+    auto node = std::make_shared<bg2e::scene::Node>("Sphere");
+    auto transform = new bg2e::scene::TransformComponent();
+    transform->setTranslation(placementLocalPosition(parent.get()));
+    node->addComponent(transform);
+    node->addComponent(new bg2e::scene::DrawableComponent(drawable));
+
+    insertNewNode(node, parent);
+}
+
+void StageScene::duplicateSelectedNode()
+{
+    if (!_editableRoot)
+    {
+        return;
+    }
+
+    auto selected = _appDelegate->selectionManager()->selectedNode();
+    if (!selected)
+    {
+        return;
+    }
+
+    auto source = std::static_pointer_cast<bg2e::scene::Node>(selected->shared_from_this());
+
+    // The duplicate is inserted as a sibling of the source, so the source must
+    // have a parent. The editable root is shown at the top of the tree and has no
+    // parent inside the editable subtree: it cannot be duplicated this way.
+    auto parentRaw = source->parent();
+    if (!parentRaw)
+    {
+        return;
+    }
+    auto parent = std::static_pointer_cast<bg2e::scene::Node>(parentRaw->shared_from_this());
+
+    // Deep copy the whole node: components are cloned by value (drawables build
+    // their own mesh, materials and GPU resources) and the child subtree is cloned
+    // recursively. Nothing is shared with the source.
+    auto copy = source->clone();
+    copy->setName(source->name() + " Copy");
+
+    // Keep cloned drawable asset names distinct from the source's (see helper).
+    renameClonedDrawables(copy.get());
+
+    // The clone already carries copies of the source's Selectable/Gizmo
+    // components; this also covers any node in the subtree that happened to lack
+    // them so the whole duplicate stays pickable and shows its gizmos.
+    addGizmoComponents(copy.get());
+
+    insertNewNode(copy, parent);
+}
+
+void StageScene::removeSelectedNode()
+{
+    auto selected = _appDelegate->selectionManager()->selectedNode();
+    if (!selected)
+    {
+        return;
+    }
+
+    auto response = bg2e::app::MessageBox::showWarning(
+        "Remove selection",
+        "The selected node and all its children will be removed. This action cannot be undone. Do you want to continue?",
+        {
+            { .code = 0, .label = "Cancel", .key = bg2e::app::MessageBox::Esc },
+            { .code = 1, .label = "Remove" }
+        }
+    );
+
+    if (response != 1)
+    {
+        return;
+    }
+
+    auto node = std::static_pointer_cast<bg2e::scene::Node>(selected->shared_from_this());
+    auto parent = node->parent();
+    if (!parent)
+    {
+        return;
+    }
+
+    // Deselect before removing: the SelectionManager keeps weak references to the
+    // node and its drawable, and removing a still-selected node would leave the
+    // selection highlight pointing at a destroyed object.
+    _appDelegate->selectionManager()->deselect();
+
+    bg2e::app::MainLoop::current()->safeUpdateScene([this, node, parent]() {
+        parent->removeChild(node);
+        _containerRoot->scene()->updateAll();
+    });
+    _document->setUnsavedChanges(true);
+}
+
+void StageScene::addEmptyNode()
+{
+    if (!_editableRoot) return;
+
+    auto parent = newNodeParent();
+
+    auto node = std::make_shared<bg2e::scene::Node>("Node");
+    auto transform = new bg2e::scene::TransformComponent();
+    transform->setTranslation(placementLocalPosition(parent.get()));
+    node->addComponent(transform);
+
+    insertNewNode(node, parent);
 }
 
 void StageScene::saveScene(const std::filesystem::path& path)
