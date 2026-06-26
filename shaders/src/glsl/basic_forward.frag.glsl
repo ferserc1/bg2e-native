@@ -43,6 +43,7 @@ layout(set = 1, binding = 2) uniform sampler2D normalTex;
 layout(set = 1, binding = 3) uniform sampler2D metallicTex;
 layout(set = 1, binding = 4) uniform sampler2D roughnessTex;
 layout(set = 1, binding = 5) uniform sampler2D aoTex;
+layout(set = 1, binding = 6) uniform sampler2D lightEmissionTex;
 
 layout(push_constant) uniform PushConstant
 {
@@ -112,6 +113,10 @@ void main()
     );
 
     vec3 color = ambient + Lo;
+
+    // Light emission: albedo-colored glow, added before tonemapping
+    float emission = sampleLightEmission(lightEmissionTex, inUV0, inUV1, mat);
+    color += albedo * emission;
 
     color = exposure(color, pushConstant.exposure);
     outColor = lineal2SRGB(vec4(color, 1.0), pushConstant.gamma);

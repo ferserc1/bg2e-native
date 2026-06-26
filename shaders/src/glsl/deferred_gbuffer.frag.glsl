@@ -32,6 +32,7 @@ layout(set = 1, binding = 2) uniform sampler2D normalTex;
 layout(set = 1, binding = 3) uniform sampler2D metallicTex;
 layout(set = 1, binding = 4) uniform sampler2D roughnessTex;
 layout(set = 1, binding = 5) uniform sampler2D aoTex;
+layout(set = 1, binding = 6) uniform sampler2D lightEmissionTex;
 
 layout(location = 0) out vec4 g_Albedo;
 layout(location = 1) out vec4 g_Normal;
@@ -54,7 +55,8 @@ void main() {
 
     // Normal (world space, mapped to 0-1)
     vec3 normal = sampleNormal(normalTex, inUV0, inUV1, mat, inTBN);
-    g_Normal = vec4(normal * 0.5 + 0.5, 1.0);
+    float emission = sampleLightEmission(lightEmissionTex, inUV0, inUV1, mat);
+    g_Normal = vec4(normal * 0.5 + 0.5, emission);
 
     // Material properties
     float metallic = sampleMetallic(metallicTex, inUV0, inUV1, mat);

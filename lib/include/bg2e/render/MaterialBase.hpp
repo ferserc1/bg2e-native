@@ -43,6 +43,7 @@ public:
     inline std::shared_ptr<Texture> roughnessTexture() { return _roughnessTexture; }
     inline std::shared_ptr<Texture> normalTexture() { return _normalTexture; }
     inline std::shared_ptr<Texture> aoTexture() { return _aoTexture; }
+    inline std::shared_ptr<Texture> lightEmissionTexture() { return _lightEmissionTexture; }
     
     inline bool useTextureCache() const { return _useTextureCache; }
     inline void setUseTextureCache(bool tc) { _useTextureCache = tc; }
@@ -57,6 +58,7 @@ protected:
     std::shared_ptr<Texture> _roughnessTexture;
     std::shared_ptr<Texture> _normalTexture;
     std::shared_ptr<Texture> _aoTexture;
+    std::shared_ptr<Texture> _lightEmissionTexture;
     
     bool _useTextureCache = false;
     

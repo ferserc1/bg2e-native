@@ -30,6 +30,7 @@ MaterialBase::MaterialBase(Engine * engine)
     _roughnessTexture = Texture::whiteTexture(engine);
     _normalTexture = Texture::normalTexture(engine);
     _aoTexture = Texture::whiteTexture(engine);
+    _lightEmissionTexture = Texture::whiteTexture(engine);
 }
 
 MaterialBase::~MaterialBase()
@@ -110,6 +111,12 @@ void MaterialBase::updateTextures(std::function<void()> onTextureLoaded)
         updateTexture(_engine, _materialAttributes.aoTexture(), _aoTexture, useTextureCache(), Texture::whiteTexture(_engine));
         if (onTextureLoaded && _materialAttributes.aoTexture()) { onTextureLoaded(); }
     }
+
+    if (!_materialAttributes.lightEmissionTextureUpdated())
+    {
+        updateTexture(_engine, _materialAttributes.lightEmissionTexture(), _lightEmissionTexture, useTextureCache(), Texture::whiteTexture(_engine));
+        if (onTextureLoaded && _materialAttributes.lightEmissionTexture()) { onTextureLoaded(); }
+    }
     
     _materialAttributes.setUpdated();
 }
@@ -121,6 +128,7 @@ void MaterialBase::cleanup()
     _roughnessTexture.reset();
     _normalTexture.reset();
     _aoTexture.reset();
+    _lightEmissionTexture.reset();
 }
 
 }

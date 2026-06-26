@@ -55,6 +55,13 @@ struct PBRMaterialData
     int metalnessInvert;
     int roughnessInvert;
 
+    // Light emission
+    float lightEmission;
+    vec2 lightEmissionScale;
+    int lightEmissionChannel;
+    int lightEmissionInvert;
+    int lightEmissionUVSet;
+
     uint padding;
 };
 
@@ -125,6 +132,17 @@ float sampleAmbientOcclussion(sampler2D tex, vec2 uv0, vec2 uv1, PBRMaterialData
 {
     vec2 uv[2] = { uv0, uv1 };
     return texture(tex, uv[mat.aoUVSet])[mat.aoChannel];
+}
+
+float sampleLightEmission(sampler2D tex, vec2 uv0, vec2 uv1, PBRMaterialData mat)
+{
+    vec2 uv[2] = { uv0, uv1 };
+    float value = texture(tex, uv[mat.lightEmissionUVSet] * mat.lightEmissionScale)[mat.lightEmissionChannel];
+    if (mat.lightEmissionInvert != 0)
+    {
+        value = 1.0 - value;
+    }
+    return value * mat.lightEmission;
 }
 
 vec3 calcF0(vec3 albedo, PBRMaterialData mat)

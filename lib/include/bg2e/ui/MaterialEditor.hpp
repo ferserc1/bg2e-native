@@ -64,6 +64,7 @@ protected:
     TextureWidgets _metallicWidget;
     TextureWidgets _roughnessWidget;
     TextureWidgets _aoWidget;
+    TextureWidgets _lightEmissionWidget;
 
     std::function<void()> _onChangedFunction;
     

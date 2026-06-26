@@ -50,6 +50,7 @@ layout(scalar, set = 1, binding = 2) readonly buffer IndexBuffer {
 } ib[MAX_RT_OBJECTS];
 
 layout(set = 1, binding = 3) uniform sampler2D albedoTex[MAX_RT_OBJECTS];
+layout(set = 1, binding = 4) uniform sampler2D lightEmissionTex[MAX_RT_OBJECTS];
 
 hitAttributeEXT vec2 attribs;
 
@@ -113,6 +114,10 @@ void main() {
         }
         directLight += shadowFactor * computeBasicLighting(light, worldPos, worldNormal, surfaceAlbedo);
     }
+
+    // Light emission: albedo-colored glow from emissive surfaces
+    float emission = sampleRTLightEmission(lightEmissionTex[nmatIdx], scaledUV, mat);
+    directLight += surfaceAlbedo * emission;
 
     payload.hitDirectLight = directLight;
     payload.hitAlbedo = surfaceAlbedo;

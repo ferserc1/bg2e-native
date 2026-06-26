@@ -36,6 +36,11 @@ struct RTMaterialData {
     base::Color albedo;
     glm::vec2 albedoScale;
     uint32_t indexOffset;   // firstIndex of the submesh in the shared index buffer
+    float lightEmission;
+    uint32_t lightEmissionChannel;
+    uint32_t lightEmissionInvert;
+    glm::vec2 lightEmissionScale;
+    uint32_t lightEmissionUVSet;
     uint32_t padding;
 };
 
@@ -44,6 +49,7 @@ struct RTMaterialInstance {
     const Buffer* vertexBuffer = nullptr;
     const Buffer* indexBuffer = nullptr;
     std::shared_ptr<render::Texture> albedoTexture;
+    std::shared_ptr<render::Texture> lightEmissionTexture;
 };
 
 struct RTObjectInstance {
@@ -51,6 +57,7 @@ struct RTObjectInstance {
     const Buffer*  vertexBuffer = nullptr;
     const Buffer*  indexBuffer = nullptr;
     std::shared_ptr<render::Texture> albedoTexture;
+    std::shared_ptr<render::Texture> lightEmissionTexture;
 };
 
 }

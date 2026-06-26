@@ -38,6 +38,7 @@ struct DeferredGBufferData {
     vec3 fresnelTint;
     bool unlit;
     float refractionFactor;
+    float lightEmission;
 };
 
 vec3 reconstructWorldPosition(
@@ -76,6 +77,7 @@ DeferredGBufferData setupDeferredGBuffer(
 
     gbuf.albedo = texture(g_Albedo, vTexcoord);
     gbuf.normal = texture(g_Normal, vTexcoord).xyz * 2.0 - 1.0;
+    gbuf.lightEmission = texture(g_Normal, vTexcoord).a;
     vec4 materialData = texture(g_Material, vTexcoord);
     gbuf.inputColor = texture(g_InputImage, vTexcoord);
     vec4 fresnelFlags = texture(g_FresnelFlags, vTexcoord);

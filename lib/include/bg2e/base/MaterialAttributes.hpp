@@ -144,7 +144,28 @@ public:
 
     inline uint32_t aoUVSet() const { return _aoUVSet; }
     inline void setAoUVSet(uint32_t uvSet) { _aoUVSet = uvSet; }
-    
+
+    inline float lightEmission() const { return _lightEmission; }
+    inline void setLightEmission(float e) { _lightEmission = e; }
+
+    inline std::shared_ptr<Texture> lightEmissionTexture() const { return _lightEmissionTexture; }
+    inline void setLightEmissionTexture(Texture * t) { setLightEmissionTexture(std::shared_ptr<Texture>(t)); }
+    inline void setLightEmissionTexture(std::shared_ptr<Texture> t) { _lightEmissionTextureUpdated = false; _lightEmissionTexture = t; }
+    inline bool lightEmissionTextureUpdated() const { return _lightEmissionTextureUpdated; }
+
+    inline const glm::vec2 & lightEmissionScale() const { return _lightEmissionScale; }
+    inline void setLightEmissionScale(const glm::vec2& s) { _lightEmissionScale = s; }
+    inline void setLightEmissionScale(const std::array<float, 2>& s) { _lightEmissionScale = {s[0], s[1]}; }
+
+    inline uint32_t lightEmissionChannel() const { return _lightEmissionChannel; }
+    inline void setLightEmissionChannel(uint32_t c) { _lightEmissionChannel = c; }
+
+    inline bool lightEmissionInvert() const { return _lightEmissionInvert; }
+    inline void setLightEmissionInvert(bool i) { _lightEmissionInvert = i; }
+
+    inline uint32_t lightEmissionUVSet() const { return _lightEmissionUVSet; }
+    inline void setLightEmissionUVSet(uint32_t uvSet) { _lightEmissionUVSet = uvSet; }
+
     void setUpdated();
     
     inline bool isUpdated() const
@@ -153,7 +174,8 @@ public:
                 _metalnessTextureUpdated &&
                 _roughnessTextureUpdated &&
                 _normalTextureUpdated &&
-                _aoTextureUpdated;
+                _aoTextureUpdated &&
+                _lightEmissionTextureUpdated;
     }
     
     // Metadata: in a bg2 file, Materials store some data from their associated submesh.
@@ -212,7 +234,15 @@ protected:
     uint32_t _aoChannel = 0;
     uint32_t _aoUVSet = 0;
     bool _aoTextureUpdated = true;
-    
+
+    float _lightEmission = 0.0f;
+    std::shared_ptr<Texture> _lightEmissionTexture;
+    glm::vec2 _lightEmissionScale{ 1.0f, 1.0f };
+    uint32_t _lightEmissionChannel = 0;
+    bool _lightEmissionInvert = false;
+    uint32_t _lightEmissionUVSet = 0;
+    bool _lightEmissionTextureUpdated = true;
+
     // Material metadata
     std::string _name = "";
     std::string _groupName = "";

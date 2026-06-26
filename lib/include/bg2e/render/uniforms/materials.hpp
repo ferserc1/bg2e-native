@@ -65,6 +65,13 @@ struct PBRMaterialData
     uint32_t metalnessInvert;
     uint32_t roughnessInvert;
 
+    // Light emission fields
+    float lightEmission;
+    glm::vec2 lightEmissionScale;
+    uint32_t lightEmissionChannel;
+    uint32_t lightEmissionInvert;
+    uint32_t lightEmissionUVSet;
+
     uint32_t padding = 0;
 
     void operator=(const base::MaterialAttributes& att)
@@ -91,6 +98,12 @@ struct PBRMaterialData
         aoChannel = att.aoChannel();
         metalnessInvert = att.metalnessInvert() ? 1u : 0u;
         roughnessInvert = att.roughnessInvert() ? 1u : 0u;
+
+        lightEmission = att.lightEmission();
+        lightEmissionScale = att.lightEmissionScale();
+        lightEmissionChannel = att.lightEmissionChannel();
+        lightEmissionInvert = att.lightEmissionInvert() ? 1u : 0u;
+        lightEmissionUVSet = att.lightEmissionUVSet();
 
         flags = 0;
         flags |= att.isUnlit() ? 0x1 : 0x0;

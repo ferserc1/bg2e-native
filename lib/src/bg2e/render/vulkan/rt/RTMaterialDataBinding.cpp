@@ -35,7 +35,7 @@ void RTMaterialDataBinding::initFrameResources(DescriptorSetAllocator * frameAll
 {
     frameAllocator->requirePoolSizeRatio(1, {
         { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1 + 2 * MAX_OBJECTS },
-        { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, MAX_OBJECTS }
+        { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2 * MAX_OBJECTS }
     });
 }
 
@@ -48,6 +48,7 @@ VkDescriptorSetLayout RTMaterialDataBinding::createLayout(VkShaderStageFlags sha
         dsLayoutFactory.addBinding(1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, MAX_OBJECTS);
         dsLayoutFactory.addBinding(2, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, MAX_OBJECTS);
         dsLayoutFactory.addBinding(3, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, MAX_OBJECTS);
+        dsLayoutFactory.addBinding(4, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, MAX_OBJECTS);
         _layout = dsLayoutFactory.build(_engine->device().handle(), shaderStages);
     }
     return _layout;
@@ -176,6 +177,27 @@ VkDescriptorSet RTMaterialDataBinding::newDescriptorSet(
         }
 
         ds->addImageArray(3, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, imageViews, samplers);
+    }
+
+    {
+        std::vector<VkImageView> imageViews(instanceCount);
+        std::vector<VkSampler> samplers(instanceCount);
+
+        for (uint32_t i = 0; i < instanceCount; ++i)
+        {
+            if (i < objectInstances.size() && objectInstances[i].lightEmissionTexture)
+            {
+                imageViews[i] = objectInstances[i].lightEmissionTexture->image()->imageView();
+                samplers[i] = objectInstances[i].lightEmissionTexture->sampler();
+            }
+            else
+            {
+                imageViews[i] = whiteTex->image()->imageView();
+                samplers[i] = whiteTex->sampler();
+            }
+        }
+
+        ds->addImageArray(4, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, imageViews, samplers);
     }
 
     ds->endUpdate();

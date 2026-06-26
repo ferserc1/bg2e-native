@@ -27,7 +27,7 @@ void ObjectDataBinding::initFrameResources(bg2e::render::vulkan::DescriptorSetAl
 {
     frameAllocator->requirePoolSizeRatio(1, {
         { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1 },
-        { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 5 }
+        { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 6 }
     });
 }
 
@@ -43,6 +43,7 @@ VkDescriptorSetLayout ObjectDataBinding::createLayout(VkShaderStageFlags shaderS
         dsFactory.addBinding(3, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
         dsFactory.addBinding(4, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
         dsFactory.addBinding(5, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+        dsFactory.addBinding(6, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
         
         _layout = dsFactory.build(_engine->device().handle(), shaderStages);
     }
@@ -97,6 +98,11 @@ VkDescriptorSet ObjectDataBinding::newDescriptorSet(
             5, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
             VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
             material->aoTexture()
+        );
+        ds->addImage(
+            6, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+            material->lightEmissionTexture()
         );
     ds->endUpdate();
     return ds->descriptorSet();

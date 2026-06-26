@@ -394,6 +394,63 @@ bool MaterialEditor::draw()
             }
             notifyOnChange();
         }
+
+        BasicWidgets::separator("Light Emission");
+        auto lightEmission = _material->materialAttributes().lightEmission();
+        auto lightEmissionScale = _material->materialAttributes().lightEmissionScale();
+        auto lightEmissionChannel = _material->materialAttributes().lightEmissionChannel();
+        auto lightEmissionInvert = _material->materialAttributes().lightEmissionInvert();
+        auto lightEmissionUVSet = _material->materialAttributes().lightEmissionUVSet();
+        if (Input::sliderFloat("Value##lightEmission", &lightEmission, 0.0f, 100.0f))
+        {
+            for (auto & mat : _editMaterialList)
+            {
+                mat->materialAttributes().setLightEmission(lightEmission);
+            }
+            notifyOnChange();
+        }
+        _lightEmissionWidget.selectTexture("##lightEmission", [&](base::Texture* tex) {
+            auto ptrTex = std::shared_ptr<base::Texture>(tex);
+            for (auto & mat : _editMaterialList)
+            {
+                mat->materialAttributes().setLightEmissionTexture(ptrTex);
+                mat->updateTextures();
+            }
+            notifyOnChange();
+            return _material->lightEmissionTexture();
+        });
+        if (Input::comboBox("Channel##lightEmission", channelOptions, lightEmissionChannel))
+        {
+            for (auto & mat : _editMaterialList)
+            {
+                mat->materialAttributes().setLightEmissionChannel(lightEmissionChannel);
+            }
+            notifyOnChange();
+        }
+        if (BasicWidgets::checkBox("Invert##lightEmission", &lightEmissionInvert))
+        {
+            for (auto & mat : _editMaterialList)
+            {
+                mat->materialAttributes().setLightEmissionInvert(lightEmissionInvert);
+            }
+            notifyOnChange();
+        }
+        if (Input::vec2("Scale##lightEmission", lightEmissionScale))
+        {
+            for (auto & mat : _editMaterialList)
+            {
+                mat->materialAttributes().setLightEmissionScale(lightEmissionScale);
+            }
+            notifyOnChange();
+        }
+        if (Input::comboBox("UV Set##lightEmission", uvOptions, lightEmissionUVSet))
+        {
+            for (auto & mat : _editMaterialList)
+            {
+                mat->materialAttributes().setLightEmissionUVSet(lightEmissionUVSet);
+            }
+            notifyOnChange();
+        }
     }
     return false;
 }
@@ -419,6 +476,7 @@ void MaterialEditor::initWidgets()
         _metallicWidget.setEditTexture(_material->metalnessTexture());
         _roughnessWidget.setEditTexture(_material->roughnessTexture());
         _aoWidget.setEditTexture(_material->aoTexture());
+        _lightEmissionWidget.setEditTexture(_material->lightEmissionTexture());
     }
     
 }
@@ -430,6 +488,7 @@ void MaterialEditor::clearWidgets()
     _metallicWidget.cleanup();
     _roughnessWidget.cleanup();
     _aoWidget.cleanup();
+    _lightEmissionWidget.cleanup();
 }
 
 }

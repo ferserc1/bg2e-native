@@ -21,13 +21,28 @@
 
 #define MAX_RT_OBJECTS 256
 
-// Must match C++ RTMaterialData struct layout (32 bytes)
+// Must match C++ RTMaterialData struct layout (56 bytes)
 struct RTMaterialData {
     vec4 albedo;          // base::Color (rgba)
     vec2 albedoScale;
     uint indexOffset;     // firstIndex of the submesh in the shared index buffer
+    float lightEmission;
+    uint lightEmissionChannel;
+    uint lightEmissionInvert;
+    vec2 lightEmissionScale;
+    uint lightEmissionUVSet;
     uint padding1;
 };
+
+float sampleRTLightEmission(sampler2D tex, vec2 uv, RTMaterialData mat)
+{
+    float value = texture(tex, uv * mat.lightEmissionScale)[mat.lightEmissionChannel];
+    if (mat.lightEmissionInvert != 0)
+    {
+        value = 1.0 - value;
+    }
+    return value * mat.lightEmission;
+}
 
 // Must match C++ geo::Vertex / VertexPNUUT struct layout (52 bytes)
 struct RTVertex {
