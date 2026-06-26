@@ -35,7 +35,10 @@ layout(std430, set = 2, binding = 0) readonly buffer ReflectionLightBuffer {
     LightData reflectionLights[];
 };
 
-layout(set = 1, binding = 0) readonly buffer MaterialDataBuffer {
+// scalar layout: packs RTMaterialData to 56 bytes, matching the C++ struct stride.
+// std430 (the default) would round the array stride up to 64 bytes and misread
+// every material with index >= 1.
+layout(scalar, set = 1, binding = 0) readonly buffer MaterialDataBuffer {
     RTMaterialData materials[];
 };
 
