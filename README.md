@@ -34,9 +34,17 @@ You will also need:
 
 On Linux, install the required packages using your distro package manager:
 
+Debian:
+
 ```sh
 $ sudo apt update
 $ sudo apt install build-essential cmake libsdl2-dev libgtk-3-dev libglm-dev ninja-build
+```
+
+Fedora:
+
+```shell
+sudo dnf install --refresh gcc gcc-c++ clang lldb make cmake SDL2-devel gtk3-devel glm-devel ninja-build vulkan-validation-layers vulkan-tools
 ```
 
 To install VulkanSDK in Linux, [download it from the website](https://vulkan.lunarg.com/sdk/home) and extract it. Yoy can place the VulkanSDK directory in any place, for example, in your home directory:
