@@ -33,7 +33,7 @@ public:
     SMAAPostProcessor() = default;
     ~SMAAPostProcessor() override = default;
 
-    void build(
+    bool build(
         Engine* engine,
         VkExtent2D renderExtent,
         VkExtent2D displayExtent,

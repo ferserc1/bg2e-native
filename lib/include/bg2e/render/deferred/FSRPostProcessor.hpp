@@ -38,7 +38,7 @@ public:
     FSRPostProcessor() = default;
     ~FSRPostProcessor() override;
 
-    void build(
+    bool build(
         Engine* engine,
         VkExtent2D renderExtent,
         VkExtent2D displayExtent,
@@ -102,7 +102,7 @@ private:
         FFX_FSR3UPSCALER_QUALITY_MODE_ULTRA_PERFORMANCE,  // 3: Ultra     (33%)
     };
 
-    void createContext();
+    bool createContext();
     void destroyContext();
     void createSharedResources();
     void destroySharedResources();

@@ -37,7 +37,7 @@ FSRPostProcessor::~FSRPostProcessor()
 // build / resize
 // ---------------------------------------------------------------------------
 
-void FSRPostProcessor::build(
+bool FSRPostProcessor::build(
     Engine* engine,
     VkExtent2D renderExtent,
     VkExtent2D displayExtent,
@@ -49,7 +49,7 @@ void FSRPostProcessor::build(
     _displayExtent = displayExtent;
     _colorFormat   = colorFormat;
 
-    createContext();
+    return createContext();
 }
 
 void FSRPostProcessor::resize(VkExtent2D renderExtent, VkExtent2D displayExtent)
@@ -67,7 +67,7 @@ void FSRPostProcessor::resize(VkExtent2D renderExtent, VkExtent2D displayExtent)
 // Internal context management
 // ---------------------------------------------------------------------------
 
-void FSRPostProcessor::createContext()
+bool FSRPostProcessor::createContext()
 {
     auto vkDevice   = _engine->device().handle();
     auto vkPhysical = _engine->physicalDevice().handle();
@@ -88,7 +88,7 @@ void FSRPostProcessor::createContext()
     if (err != FFX_OK)
     {
         bg2e_log_error << "FSRPostProcessor: ffxGetInterfaceVK failed (" << err << ")" << bg2e_log_end;
-        return;
+        return false;
     }
 
     FfxFsr3UpscalerContextDescription desc{};
@@ -102,12 +102,13 @@ void FSRPostProcessor::createContext()
     if (err != FFX_OK)
     {
         bg2e_log_error << "FSRPostProcessor: ffxFsr3UpscalerContextCreate failed (" << err << ")" << bg2e_log_end;
-        return;
+        return false;
     }
 
     _contextValid = true;
 
     createSharedResources();
+    return true;
 }
 
 void FSRPostProcessor::destroyContext()

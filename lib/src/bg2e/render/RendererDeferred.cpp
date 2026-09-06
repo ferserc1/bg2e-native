@@ -16,6 +16,7 @@
  *    along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include <bg2e/base/Log.hpp>
 #include <bg2e/render/RendererDeferred.hpp>
 #include <bg2e/render/vulkan/macros/graphics.hpp>
 #include <bg2e/scene/SkyDomeTextureGenerator.hpp>
@@ -248,15 +249,26 @@ void RendererDeferred::build(
     _motionVectorGenerator = std::make_unique<deferred::MotionVectorGenerator>(_engine);
     _motionVectorGenerator->build(_renderExtent);
 
-    // Final post-processor: FSR on Windows/Linux, SMAA everywhere else
+    // Prefer FSR on Windows/Linux. If it cannot initialize, use the same
+    // SMAA-based scaling path used on macOS.
 #if !defined(__APPLE__)
-    auto* fsrProc = new deferred::FSRPostProcessor();
-    _finalPostProcessor = std::unique_ptr<deferred::FinalPostProcessor>(fsrProc);
-#else
-    auto* smaaProc = new deferred::SMAAPostProcessor();
-    _finalPostProcessor = std::unique_ptr<deferred::FinalPostProcessor>(smaaProc);
+    auto fsrProc = std::make_unique<deferred::FSRPostProcessor>();
+    if (fsrProc->build(_engine, _renderExtent, _viewportExtent, colorImageFormat))
+    {
+        _finalPostProcessor = std::move(fsrProc);
+    }
 #endif
-    _finalPostProcessor->build(_engine, _renderExtent, _viewportExtent, colorImageFormat);
+
+    if (!_finalPostProcessor)
+    {
+#if !defined(__APPLE__)
+        bg2e_log_warning << "RendererDeferred: FSR3 initialization failed; falling back to SMAA"
+                         << bg2e_log_end;
+#endif
+        auto smaaProc = std::make_unique<deferred::SMAAPostProcessor>();
+        smaaProc->build(_engine, _renderExtent, _viewportExtent, colorImageFormat);
+        _finalPostProcessor = std::move(smaaProc);
+    }
 }
 
 void RendererDeferred::initFrameResources(

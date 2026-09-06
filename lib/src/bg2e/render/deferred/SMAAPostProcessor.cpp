@@ -22,7 +22,7 @@ namespace bg2e::render::deferred {
 
 constexpr float SMAAPostProcessor::kScaleValues[];
 
-void SMAAPostProcessor::build(
+bool SMAAPostProcessor::build(
     Engine* engine,
     VkExtent2D renderExtent,
     VkExtent2D displayExtent,
@@ -35,6 +35,8 @@ void SMAAPostProcessor::build(
 
     _smaa = std::make_unique<SMAAProcessor>(engine);
     _smaa->build(renderExtent, colorFormat);
+
+    return true;
 }
 
 void SMAAPostProcessor::resize(VkExtent2D renderExtent, VkExtent2D displayExtent)

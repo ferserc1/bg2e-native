@@ -41,7 +41,9 @@ class BG2E_API FinalPostProcessor {
 public:
     virtual ~FinalPostProcessor() = default;
 
-    virtual void build(
+    // Returns true when the processor is ready for use. A false result allows
+    // the renderer to select a compatible fallback implementation.
+    virtual bool build(
         Engine* engine,
         VkExtent2D renderExtent,
         VkExtent2D displayExtent,
