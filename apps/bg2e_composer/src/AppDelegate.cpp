@@ -17,6 +17,9 @@
  */
 #include "AppDelegate.hpp"
 
+#include <iomanip>
+#include <sstream>
+
 void AppDelegate::init(bg2e::render::Engine * engine)
 {
     bg2e::render::DefaultRenderLoopDelegate<bg2e::render::RendererDeferred>::init(engine);
@@ -106,7 +109,7 @@ void AppDelegate::fileDropped(const std::filesystem::path& path)
         bg2e::app::MainLoop::current()->asyncLoad([&, path](bg2e::ui::Loader* loader)
         {
             stage()->openScene(path, [&](const std::string& modelName, uint32_t processed, uint32_t total) {
-                loader->setMessage("Loading model " + modelName + "...");
+                loader->setMessage("_statusBarLoading model " + modelName + "...");
                 loader->setProgress(static_cast<float>(processed) / static_cast<float>(total));
             });
         }, glm::vec4{ 0.2, 0.2, 0.31, 1.0f });
@@ -220,8 +223,30 @@ void AppDelegate::initWorkspace()
 
     _fileStatus = std::make_shared<bg2e::ui::StatusItem>();
     _saveStatus = std::make_shared<bg2e::ui::StatusItem>();
+    _selectionStatus = std::make_shared<bg2e::ui::StatusItem>();
+    _selectionStatus->setText("Selection size: 0.00 x 0.00 x 0.00");
     _statusBar.addItem(_fileStatus, bg2e::ui::StatusBar::AlignLeft);
+    _statusBar.addItem(_selectionStatus, bg2e::ui::StatusBar::AlignRight);
     _statusBar.addItem(_saveStatus, bg2e::ui::StatusBar::AlignRight);
+
+
+    _selectionManager->onSelect([&]() {
+        auto selectedNode = _selectionManager->selectedNode();
+        auto selectionSize = glm::vec3{ 0.0f };
+        if (selectedNode)
+        {
+            bg2e::scene::BoundingBox boundingBox(selectedNode);
+            selectionSize = boundingBox.size();
+        }
+
+        std::ostringstream status;
+        status << "Selection size: "
+               << std::fixed << std::setprecision(2)
+               << selectionSize.x << " x "
+               << selectionSize.y << " x "
+               << selectionSize.z;
+        _selectionStatus->setText(status.str());
+    });
 
     // Force update status to setup the initial state of
     // fileStatus and saveStatus

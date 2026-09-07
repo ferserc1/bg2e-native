@@ -147,6 +147,7 @@ public:
 
     [[nodiscard]] const base::MaterialAttributes& material(uint32_t index = 0) const;
     [[nodiscard]] base::MaterialAttributes& material(uint32_t index = 0);
+    [[nodiscard]] glm::mat4 localSubmeshTransform(uint32_t index = 0) const;
     [[nodiscard]] glm::mat4 submeshTransform(uint32_t index = 0) const;
     [[nodiscard]] std::string submeshName(uint32_t index = 0) const;
     [[nodiscard]] std::string submeshGroupName(uint32_t index = 0) const;

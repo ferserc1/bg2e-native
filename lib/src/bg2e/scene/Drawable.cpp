@@ -191,6 +191,16 @@ void DrawableGeneric<MeshT, RenderMeshT>::iterateMaterials(std::function<void(ba
 }
 
 template <typename MeshT, typename RenderMeshT>
+glm::mat4 DrawableGeneric<MeshT, RenderMeshT>::localSubmeshTransform(uint32_t index) const
+{
+    if (index >= _submeshAttributes.size())
+    {
+        return glm::mat4{ 1.0f };
+    }
+    return _submeshAttributes[index].transform;
+}
+
+template <typename MeshT, typename RenderMeshT>
 glm::mat4 DrawableGeneric<MeshT, RenderMeshT>::submeshTransform(uint32_t index) const
 {
     assert_submesh_r(index, _transform);

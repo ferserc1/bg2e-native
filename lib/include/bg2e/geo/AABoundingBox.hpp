@@ -20,6 +20,7 @@
 
 #include <bg2e/geo/Mesh.hpp>
 #include <glm/geometric.hpp>
+#include <memory>
 
 namespace bg2e {
 namespace geo {

@@ -69,6 +69,7 @@ public:
 
     [[nodiscard]] std::shared_ptr<bg2e::ui::StatusItem> fileStatus() const { return _fileStatus; }
     [[nodiscard]] std::shared_ptr<bg2e::ui::StatusItem> saveStatus() const { return _saveStatus; }
+    [[nodiscard]] std::shared_ptr<bg2e::ui::StatusItem> selectionStatus() const { return _selectionStatus; }
 
     enum SelectionHighlightMode
     {
@@ -93,6 +94,7 @@ protected:
 
     std::shared_ptr<bg2e::ui::StatusItem> _fileStatus;
     std::shared_ptr<bg2e::ui::StatusItem> _saveStatus;
+    std::shared_ptr<bg2e::ui::StatusItem> _selectionStatus;
     bg2e::ui::StatusBar _statusBar;
     
     std::shared_ptr<StageScene> _stage;
