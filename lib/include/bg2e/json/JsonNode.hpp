@@ -796,40 +796,40 @@ public:
         type = Type::Null;
     }
 
-    bool isObject() {
+    bool isObject() const {
         return type == Type::Object;
     }
 
-    bool isList() {
+    bool isList() const {
         return type == Type::List;
     }
 
-    bool isString() {
+    bool isString() const {
         return type == Type::String;
     }
 
-    bool isNumber() {
+    bool isNumber() const {
         return type == Type::Number;
     }
 
-    bool isBool() {
+    bool isBool() const {
         return type == Type::Bool;
     }
     
-    bool isVec2() {
+    bool isVec2() const {
         return type == Type::List && listValue().size() == 2 &&
             listValue()[0]->isNumber() &&
             listValue()[1]->isNumber();
     }
     
-    bool isVec3() {
+    bool isVec3() const {
         return type == Type::List && listValue().size() == 3 &&
             listValue()[0]->isNumber() &&
             listValue()[1]->isNumber() &&
             listValue()[2]->isNumber();
     }
     
-    bool isVec4() {
+    bool isVec4() const {
         return type == Type::List && listValue().size() == 4 &&
             listValue()[0]->isNumber() &&
             listValue()[1]->isNumber() &&
@@ -837,11 +837,11 @@ public:
             listValue()[3]->isNumber();
     }
     
-    inline bool isColor() {
+    inline bool isColor() const {
         return isVec4();
     }
     
-    bool isMat4() {
+    bool isMat4() const {
         return type == Type::List && listValue().size() == 16 &&
             listValue()[0]->isNumber() &&
             listValue()[1]->isNumber() &&
@@ -864,7 +864,7 @@ public:
             listValue()[15]->isNumber();
     }
 
-    bool isNull() {
+    bool isNull() const {
         return type == Type::Null;
     }
 

@@ -20,6 +20,7 @@
 #include <bg2e/app/OffscreenApplication.hpp>
 #include <bg2e/utils/TextureCache.hpp>
 #include <bg2e/render/RendererBasicForward.hpp>
+#include <bg2e/render/RendererDeferred.hpp>
 
 namespace bg2e::render
 {
@@ -124,5 +125,6 @@ void DefaultOffscreenApplicationDelegate<RendererT>::cleanup()
 }
 
 template class BG2E_API DefaultOffscreenApplicationDelegate<RendererBasicForward>;
+template class BG2E_API DefaultOffscreenApplicationDelegate<RendererDeferred>;
 
 }
