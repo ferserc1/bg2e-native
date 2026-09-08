@@ -19,6 +19,7 @@
 
 #include <bg2e/scene/Node.hpp>
 #include <bg2e/render/Engine.hpp>
+#include <bg2e/render/ViewpointAnalyzer.hpp>
 #include <bg2e/scene/OrbitCameraComponent.hpp>
 #include <bg2e/app/MainLoop.hpp>
 
@@ -88,6 +89,10 @@ public:
     bg2e::scene::OrbitCameraComponent * orbitCamera();
     bg2e::scene::CameraComponent * cameraComponent();
 
+    // Selects an analyzed view of target and applies it to the orbit camera
+    // without modifying OrbitCameraComponent::centerOnTarget.
+    void centerCameraOnTarget(bg2e::scene::Node * target);
+
     inline Document * document() { return _document.get(); }
     inline bg2e::render::Engine * engine() const { return _engine; }
 
@@ -102,6 +107,7 @@ protected:
     std::shared_ptr<bg2e::scene::Node> _editableRoot;
 
     std::shared_ptr<bg2e::app::SafeUpdateToken> _swapToken;
+    std::unique_ptr<bg2e::render::ViewpointAnalyzer> _viewpointAnalyzer;
 
     OnSceneSwapCallback _onSceneSwap;
 

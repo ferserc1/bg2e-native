@@ -146,7 +146,7 @@ void ToolBar::init(AppDelegate * delegate, bg2e::ui::UISettingsWindow * uiSettin
         .key = bg2e::app::KeyEvent::KeyA,
         .handler = [&]()
         {
-            _appDelegate->stage()->orbitCamera()->reset();
+            _appDelegate->stage()->centerCameraOnTarget();
         }
     }});
     addMenuItem(view);

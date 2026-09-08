@@ -257,6 +257,7 @@ std::shared_ptr<bg2e::scene::Drawable> StageScene::targetDrawable()
 
 void StageScene::cleanup()
 {
+    _viewpointAnalyzer.reset();
     _targetDrawable.reset();
     _targetDrawables.clear();
     _targetScene.reset();
@@ -544,3 +545,37 @@ bg2e::scene::CameraComponent * StageScene::cameraComponent() const
     return nullptr;
 }
 
+void StageScene::centerCameraOnTarget()
+{
+    if (!_orbitCamera)
+    {
+        return;
+    }
+
+    if (!_targetNode)
+    {
+        _orbitCamera->reset();
+        return;
+    }
+
+    if (!_viewpointAnalyzer)
+    {
+        _viewpointAnalyzer = std::make_unique<bg2e::render::ViewpointAnalyzer>(_engine);
+    }
+
+    auto config = _viewpointAnalyzer->config();
+    const float fieldOfView = bg2e::utils::cameraVerticalFieldOfView(cameraComponent());
+    config.fieldOfView = { fieldOfView, fieldOfView, 1, false };
+    _viewpointAnalyzer->setConfig(config);
+
+    const auto samples = _viewpointAnalyzer->analyze(_targetNode.get());
+    const auto best = bg2e::render::ViewpointAnalyzer::bestSample(samples);
+    if (!best)
+    {
+        _orbitCamera->reset();
+        _orbitCamera->setCenter(_targetNode->worldPosition());
+        return;
+    }
+
+    bg2e::utils::applyViewpointToOrbitCamera(best->camera, _orbitCamera, cameraComponent());
+}

@@ -20,6 +20,7 @@
 #include <bg2e/scene/Node.hpp>
 #include <bg2e/scene/EnvironmentComponent.hpp>
 #include <bg2e/render/Engine.hpp>
+#include <bg2e/render/ViewpointAnalyzer.hpp>
 #include <bg2e/scene/OrbitCameraComponent.hpp>
 #include <bg2e/app/MainLoop.hpp>
 
@@ -66,6 +67,10 @@ public:
 
     bg2e::scene::CameraComponent * cameraComponent();
     bg2e::scene::CameraComponent * cameraComponent() const;
+
+    // Selects an analyzed view of the currently loaded model and applies it to
+    // the orbit camera without modifying OrbitCameraComponent::centerOnTarget.
+    void centerCameraOnTarget();
 
     inline bool isModelValid() const { return _targetNode.get() != nullptr; }
     std::shared_ptr<bg2e::scene::Drawable> targetDrawable();
@@ -137,6 +142,7 @@ protected:
 
     std::weak_ptr<bg2e::scene::EnvironmentComponent> _environment;
     bg2e::scene::OrbitCameraComponent * _orbitCamera = nullptr;
+    std::unique_ptr<bg2e::render::ViewpointAnalyzer> _viewpointAnalyzer;
     std::shared_ptr<bg2e::scene::Node> _environmentNode;
     bool _restoringEnvironment = false;
     std::shared_ptr<bg2e::app::SafeUpdateToken> _restoreToken;
@@ -153,4 +159,3 @@ protected:
 
     std::shared_ptr<bg2e::scene::Node> createFloorNode();
 };
-

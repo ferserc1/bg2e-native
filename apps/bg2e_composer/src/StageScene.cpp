@@ -451,6 +451,7 @@ void StageScene::close()
 
 void StageScene::cleanup()
 {
+    _viewpointAnalyzer.reset();
     _editableRoot.reset();
     _containerRoot.reset();
     _document->setStatus("", false);
@@ -574,4 +575,40 @@ bg2e::scene::CameraComponent * StageScene::cameraComponent()
         return cameras[0].lock().get();
     }
     return nullptr;
+}
+
+void StageScene::centerCameraOnTarget(bg2e::scene::Node * target)
+{
+    auto orbit = orbitCamera();
+    if (!orbit)
+    {
+        return;
+    }
+
+    if (!target)
+    {
+        orbit->reset();
+        return;
+    }
+
+    if (!_viewpointAnalyzer)
+    {
+        _viewpointAnalyzer = std::make_unique<bg2e::render::ViewpointAnalyzer>(_engine);
+    }
+
+    auto config = _viewpointAnalyzer->config();
+    const float fieldOfView = bg2e::utils::cameraVerticalFieldOfView(cameraComponent());
+    config.fieldOfView = { fieldOfView, fieldOfView, 1, false };
+    _viewpointAnalyzer->setConfig(config);
+
+    const auto samples = _viewpointAnalyzer->analyze(target);
+    const auto best = bg2e::render::ViewpointAnalyzer::bestSample(samples);
+    if (!best)
+    {
+        orbit->reset();
+        orbit->setCenter(target->worldPosition());
+        return;
+    }
+
+    bg2e::utils::applyViewpointToOrbitCamera(best->camera, orbit, cameraComponent());
 }

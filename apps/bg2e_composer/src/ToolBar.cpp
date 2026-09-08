@@ -148,7 +148,7 @@ void ToolBar::init(AppDelegate * delegate, bg2e::ui::UISettingsWindow * uiSettin
         .handler = [&]()
         {
             auto selection = _appDelegate->selectionManager()->selectedNode();
-            _appDelegate->stage()->orbitCamera()->centerOnTarget(selection);
+            _appDelegate->stage()->centerCameraOnTarget(selection);
         }
     }});
     addMenuItem(view);

@@ -18,5 +18,33 @@
 
 #pragma once
 
-#include <bg2e/utils/SceneCameraUtils.hpp>
-#include <bg2e/utils/TextureCache.hpp>
+#include <bg2e/common.hpp>
+
+namespace bg2e::scene {
+class CameraComponent;
+class OrbitCameraComponent;
+}
+
+namespace bg2e::render {
+struct CameraCandidate;
+}
+
+namespace bg2e::utils {
+
+/** Returns the camera's vertical FOV in degrees, or fallback if unavailable. */
+BG2E_API float cameraVerticalFieldOfView(
+    scene::CameraComponent * camera,
+    float fallback = 35.0f
+);
+
+/**
+ * Applies an analyzed camera candidate to an orbit controller. The distance is
+ * adjusted when the CameraComponent is on a translated child of the orbit node.
+ */
+BG2E_API void applyViewpointToOrbitCamera(
+    const render::CameraCandidate& candidate,
+    scene::OrbitCameraComponent * orbitCamera,
+    scene::CameraComponent * camera
+);
+
+}
