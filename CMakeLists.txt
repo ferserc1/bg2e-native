@@ -31,7 +31,7 @@ find_package(SDL2 REQUIRED)
 find_package(Vulkan REQUIRED)
 
 # Output directory
-set(PRODUCT_DIR "${CMAKE_SOURCE_DIR}/bin/${PLATFORM_NAME}")
+set(PRODUCT_DIR "${CMAKE_SOURCE_DIR}/bin/${PLATFORM_NAME}" CACHE PATH "Runtime output directory")
 file(MAKE_DIRECTORY "${PRODUCT_DIR}")
 set(ASSETS_PATH "${CMAKE_SOURCE_DIR}/assets")
 
@@ -56,7 +56,17 @@ endif()
 
 add_subdirectory(lib)
 add_subdirectory(apps)
-add_subdirectory(examples)
-add_subdirectory(tests)
+option(BG2E_BUILD_EXAMPLES "Build example applications" ON)
+option(BG2E_BUILD_TESTS "Build test applications" ON)
+option(BG2E_PACKAGE_APPS "Enable application distribution install rules" OFF)
+if(BG2E_BUILD_EXAMPLES)
+    add_subdirectory(examples)
+endif()
+if(BG2E_BUILD_TESTS)
+    add_subdirectory(tests)
+endif()
+if(BG2E_PACKAGE_APPS)
+    include(cmake/package_apps.cmake)
+endif()
 
 
