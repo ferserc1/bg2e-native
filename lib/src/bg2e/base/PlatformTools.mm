@@ -11,8 +11,26 @@
 #import <Foundation/Foundation.h>
 
 #include <iostream>
+#include <stdexcept>
 
 namespace bg2e::base {
+
+std::filesystem::path PlatformTools::applicationPath()
+{
+    @autoreleasepool {
+        NSString * bundlePath = [[NSBundle mainBundle] bundlePath];
+        if (bundlePath == nil)
+        {
+            throw std::runtime_error("Unable to resolve the application bundle path");
+        }
+        auto path = std::filesystem::path([bundlePath fileSystemRepresentation]);
+        if (!path.is_absolute())
+        {
+            throw std::runtime_error("The resolved application bundle path is not absolute");
+        }
+        return path.lexically_normal();
+    }
+}
 
 std::filesystem::path PlatformTools::settingsPath()
 {

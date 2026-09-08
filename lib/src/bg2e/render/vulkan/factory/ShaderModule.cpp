@@ -20,6 +20,7 @@
 
 #include <bg2e/base/PlatformTools.hpp>
 
+#include <filesystem>
 #include <fstream>
 
 namespace bg2e {
@@ -29,12 +30,14 @@ namespace factory {
 
 VkShaderModule ShaderModule::loadFromSPV(const std::string& fileName, VkDevice device, const std::string& basePath)
 {
-    std::string shaderPath = (basePath.size() == 0 ? base::PlatformTools::shaderPath().string() : basePath) + fileName;
+    auto shaderPath = basePath.empty()
+        ? base::PlatformTools::shaderPath() / fileName
+        : std::filesystem::path(basePath) / fileName;
     std::ifstream file(shaderPath, std::ios::ate | std::ios::binary);
     
     if (!file.is_open())
     {
-        throw new std::runtime_error("Shader file not found at path " + shaderPath);
+        throw new std::runtime_error("Shader file not found at path " + shaderPath.string());
     }
     
     size_t fileSize = size_t(file.tellg());
@@ -52,7 +55,7 @@ VkShaderModule ShaderModule::loadFromSPV(const std::string& fileName, VkDevice d
     VkShaderModule shaderModule;
     if (vkCreateShaderModule(device, &info, nullptr, &shaderModule) != VK_SUCCESS)
     {
-        throw new std::runtime_error("Error creating shader at path " + shaderPath);
+        throw new std::runtime_error("Error creating shader at path " + shaderPath.string());
     }
     return shaderModule;
 }

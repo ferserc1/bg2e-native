@@ -57,6 +57,12 @@ enum class Platform { macOS, Windows, Linux };
 class BG2E_API PlatformTools {
 public:
     static Platform currentPlatform();
+
+    // Returns the absolute directory that anchors application resources. This
+    // is the executable directory on Linux and Windows, and the application
+    // bundle directory on macOS.
+    static std::filesystem::path applicationPath();
+
     static std::filesystem::path shaderPath();
     static std::filesystem::path assetPath();
     static std::filesystem::path settingsPath();

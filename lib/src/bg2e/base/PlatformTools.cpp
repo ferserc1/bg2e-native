@@ -22,6 +22,9 @@
 #include <string>
 #include <filesystem>
 #include <iostream>
+#include <stdexcept>
+#include <system_error>
+#include <vector>
 
 #ifdef BG2E_IS_LINUX
 #include <pwd.h>
@@ -32,38 +35,6 @@
 
 #include <Windows.h>
 #include <ShlObj_core.h>
-
-#endif
-
-#ifdef BG2E_IS_MAC
-
-#include <CoreFoundation/CoreFoundation.h>
-
-std::string bg2e_base_platform_tools_macos_bundle_path()
-{
-    auto appBundle = CFBundleGetMainBundle();
-    CFURLRef appUrlRef = CFBundleCopyBundleURL(appBundle);
-    char c_path[2048] = { '\0' };
-
-    CFURLGetFileSystemRepresentation(appUrlRef, true, reinterpret_cast<UInt8*>(c_path), 2048);
-
-    CFRelease(appUrlRef);
-
-    return std::string(c_path) + "/";
-}
-
-std::string bg2e_base_platform_tools_macos_resources_path()
-{
-    auto appBundle = CFBundleGetMainBundle();
-    auto resourcesUrl = CFBundleCopyResourcesDirectoryURL(appBundle);
-    char c_path[2048] = { '\0' };
-
-    CFURLGetFileSystemRepresentation(resourcesUrl, true, reinterpret_cast<UInt8*>(c_path), 2048);
-
-    CFRelease(resourcesUrl);
-
-    return std::string(c_path) + "/";
-}
 
 #endif
 
@@ -78,22 +49,79 @@ bg2e::base::Platform bg2e::base::PlatformTools::currentPlatform()
 #endif
 }
 
+#ifndef BG2E_IS_MAC
+
+std::filesystem::path bg2e::base::PlatformTools::applicationPath()
+{
+    namespace fs = std::filesystem;
+
+#ifdef BG2E_IS_LINUX
+    std::error_code error;
+    auto executable = fs::read_symlink("/proc/self/exe", error);
+    if (error)
+    {
+        throw std::system_error(error, "Unable to resolve /proc/self/exe");
+    }
+    if (!executable.is_absolute() || executable.parent_path().empty())
+    {
+        throw std::runtime_error("The resolved executable path is not absolute");
+    }
+    return executable.parent_path().lexically_normal();
+#else
+    std::vector<wchar_t> buffer(1024);
+
+    while (true)
+    {
+        SetLastError(ERROR_SUCCESS);
+        auto length = GetModuleFileNameW(
+            nullptr,
+            buffer.data(),
+            static_cast<DWORD>(buffer.size())
+        );
+
+        if (length == 0)
+        {
+            throw std::system_error(
+                static_cast<int>(GetLastError()),
+                std::system_category(),
+                "Unable to resolve the executable path"
+            );
+        }
+        if (length < buffer.size())
+        {
+            auto executable = fs::path(std::wstring(buffer.data(), length));
+            if (!executable.is_absolute() || executable.parent_path().empty())
+            {
+                throw std::runtime_error("The resolved executable path is not absolute");
+            }
+            return executable.parent_path().lexically_normal();
+        }
+
+        buffer.resize(buffer.size() * 2);
+    }
+#endif
+}
+
+#endif
+
 std::filesystem::path bg2e::base::PlatformTools::shaderPath()
 {
+    auto basePath = applicationPath();
 #ifdef BG2E_IS_MAC
-    return bg2e_base_platform_tools_macos_resources_path() + "shaders/";
-#else
-    return "shaders/";
+    basePath /= "Contents";
+    basePath /= "Resources";
 #endif
+    return basePath / "shaders";
 }
 
 std::filesystem::path bg2e::base::PlatformTools::assetPath()
 {
+    auto basePath = applicationPath();
 #ifdef BG2E_IS_MAC
-    return bg2e_base_platform_tools_macos_resources_path() + "assets/";
-#else
-    return "assets/";
+    basePath /= "Contents";
+    basePath /= "Resources";
 #endif
+    return basePath / "assets";
 }
 
 // macOS version of settingsPath is defined in PlatformTools.mm
@@ -163,4 +191,3 @@ std::filesystem::path bg2e::base::PlatformTools::homePath()
 }
 
 #endif
-
