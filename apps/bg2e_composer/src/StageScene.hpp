@@ -45,8 +45,9 @@ public:
     // Replace the whole editable scene with one loaded from disk
     void openScene(const std::filesystem::path& path, bg2e::scene::SceneProgressCallback progressCallback);
 
-    // Save the editable scene to disk
-    void saveScene(const std::filesystem::path& path);
+    // Save to a resolved scene destination; an empty path opens the native dialog.
+    // Returns false on cancellation or failure.
+    bool saveScene(const std::filesystem::path& path = {});
 
     // Import a .bg2 model created with model_edit as a new node in the scene
     void importModelBg2(const std::filesystem::path& path);

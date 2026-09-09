@@ -24,3 +24,6 @@
 #include <bg2e/db/scene.hpp>
 #include <bg2e/db/scene_gltf.hpp>
 
+
+#include <bg2e/db/scene_path.hpp>
+#include <bg2e/db/scene_save_dialog.hpp>

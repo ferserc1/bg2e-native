@@ -28,6 +28,7 @@
 #include <bg2e/base/Log.hpp>
 
 #include <fstream>
+#include <stdexcept>
 
 namespace bg2e::db {
 
@@ -223,10 +224,13 @@ void saveScene(
 
     auto sceneData = sceneRoot->serialize(rootPath, onProgress ? &progress : nullptr);
 
-    std::ofstream file;
-    file.open(filePath);
-    if (file.is_open())
+    // Enable stream exceptions so callers cannot mistake a failed write for a
+    // successful save. Registry-owned shared pointers are released on unwind.
+    try
     {
+        std::ofstream file;
+        file.exceptions(std::ios::failbit | std::ios::badbit);
+        file.open(filePath);
         using namespace bg2e::json;
         auto sceneJson = JSON(JsonObject{
             { "fileType", JSON("bg2e::scene") },
@@ -239,6 +243,10 @@ void saveScene(
         });
         file << sceneJson->toString();
         file.close();
+    }
+    catch (const std::ios_base::failure& error)
+    {
+        throw std::runtime_error("Could not save scene to '" + filePath.string() + "': " + error.what());
     }
 
     registry.cleanup();

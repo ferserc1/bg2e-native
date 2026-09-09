@@ -79,20 +79,7 @@ void ToolBar::init(AppDelegate * delegate, bg2e::ui::UISettingsWindow * uiSettin
         .key = bg2e::app::KeyEvent::KeyS,
         .handler = [&]()
         {
-            auto filePath = _appDelegate->stage()->document()->path();
-            if (filePath.empty())
-            {
-                bg2e::app::FileDialog fd;
-                fd.setFilters({
-                    { "bg2e scene", "json,vitscnj" }
-                });
-                filePath = fd.saveFile();
-            }
-
-            if (!filePath.empty())
-            {
-                _appDelegate->stage()->saveScene(filePath);
-            }
+            _appDelegate->stage()->saveScene(_appDelegate->stage()->document()->path());
         }
     }});
     file.addMenuItem({ "Save As...", {
@@ -101,16 +88,7 @@ void ToolBar::init(AppDelegate * delegate, bg2e::ui::UISettingsWindow * uiSettin
         .key = bg2e::app::KeyEvent::KeyS,
         .handler = [&]()
         {
-            bg2e::app::FileDialog fd;
-            fd.setFilters({
-                { "bg2e scene", "json,vitscnj" }
-            });
-            auto filePath = fd.saveFile();
-
-            if (!filePath.empty())
-            {
-                _appDelegate->stage()->saveScene(filePath);
-            }
+            _appDelegate->stage()->saveScene();
         }
     }});
     file.addMenuItem({});   // Separator

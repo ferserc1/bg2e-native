@@ -32,6 +32,7 @@ void MaterialAttributes::setUpdated()
     _roughnessTextureUpdated = true;
     _normalTextureUpdated = true;
     _aoTextureUpdated = true;
+    _lightEmissionTextureUpdated = true;
 }
 
 }

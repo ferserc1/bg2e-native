@@ -20,6 +20,7 @@
 #include <AppDelegate.hpp>
 
 #include <bg2e.hpp>
+#include <bg2e/db/scene_save_dialog.hpp>
 
 #include <iostream>
 #include <string>
@@ -433,14 +434,44 @@ void StageScene::addEmptyNode()
     insertNewNode(node, parent);
 }
 
-void StageScene::saveScene(const std::filesystem::path& path)
+bool StageScene::saveScene(const std::filesystem::path& path)
 {
-    // Writes _editableRoot as the single top-level node of the scene file. This
-    // is the invariant openScene() relies on to unwrap loadScene()'s synthetic
-    // root and avoid accumulating wrapper nodes across save/load cycles.
-    bg2e::db::saveScene(_editableRoot.get(), path);
-    _document->setPath(path);
-    _document->setUnsavedChanges(false);
+    try
+    {
+        std::filesystem::path finalPath;
+        if (path.empty())
+        {
+            finalPath = bg2e::db::getSceneSavePath();
+        }
+        else
+        {
+            const auto target = bg2e::db::inspectSceneSaveTarget(path);
+            // Ordinary Save may overwrite the current document without asking.
+            // A redirected legacy path or a different destination may belong to
+            // another scene, so those saves must retain overwrite confirmation.
+            const bool savingCurrentDocument = !target.pathChanged && !_document->path().empty() &&
+                target.path == std::filesystem::absolute(_document->path());
+            finalPath = bg2e::db::confirmSceneSavePath(path,
+                bg2e::db::SceneSavePathSource::Direct,
+                bg2e::db::SceneArtifactType::Scene,
+                savingCurrentDocument ? bg2e::db::SceneOverwritePolicy::Allow
+                                      : bg2e::db::SceneOverwritePolicy::Confirm);
+        }
+        if (finalPath.empty()) return false;
+
+        std::filesystem::create_directories(finalPath.parent_path());
+        // Writes _editableRoot as the single top-level node of the scene file.
+        // openScene() relies on this to avoid accumulating wrapper nodes.
+        bg2e::db::saveScene(_editableRoot.get(), finalPath);
+        _document->setPath(finalPath);
+        _document->setUnsavedChanges(false);
+        return true;
+    }
+    catch (const std::exception& error)
+    {
+        bg2e::app::MessageBox::showError("Save scene", error.what());
+        return false;
+    }
 }
 
 void StageScene::close()
@@ -478,27 +509,13 @@ bool StageScene::checkUnsavedChanges()
         }
         else if (response == 1)
         {
-            if (_document->path().empty())
-            {
-                bg2e::app::FileDialog fd;
-                fd.setFilters({
-                    { "bg2e scene", "json,vitscnj" }
-                });
-                auto filePath = fd.saveFile();
-                if (filePath.empty())
-                {
-                    return false;
-                }
-
-                _document->setPath(filePath);
-            }
-            saveScene(_document->path());
-            return true;
+            return saveScene(_document->path());
         }
         else if (response == 2)
         {
             return true;
         }
+        return false; // Closing the prompt or a dialog error must not discard changes.
     }
     return true;
 }

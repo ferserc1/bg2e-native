@@ -169,6 +169,32 @@ bool parseMaterial(
         result.setAoUVSet(mat["ambientOcclussionUV"] ? mat["ambientOcclussionUV"]->numberValue(1) : 1);
     }
     
+    // Light emission
+    if (mat["lightEmission"] && mat["lightEmission"]->isNumber())
+    {
+        result.setLightEmission(mat["lightEmission"]->numberValue(0.0f));
+    }
+    if (mat["lightEmissionTexture"] && mat["lightEmissionTexture"]->isString())
+    {
+        result.setLightEmissionTexture(getTexture(basePath, mat["lightEmissionTexture"]->stringValue()));
+    }
+    if (mat["lightEmissionScale"] && mat["lightEmissionScale"]->isVec2())
+    {
+        result.setLightEmissionScale(mat["lightEmissionScale"]->vec2Value({ 1, 1 }));
+    }
+    if (mat["lightEmissionChannel"] && mat["lightEmissionChannel"]->isNumber())
+    {
+        result.setLightEmissionChannel(mat["lightEmissionChannel"]->numberValue(0));
+    }
+    if (mat["lightEmissionInvert"])
+    {
+        result.setLightEmissionInvert(mat["lightEmissionInvert"]->boolValue(false));
+    }
+    if (mat["lightEmissionUV"] && mat["lightEmissionUV"]->isNumber())
+    {
+        result.setLightEmissionUVSet(mat["lightEmissionUV"]->numberValue(0));
+    }
+
     return true;
 }
 
@@ -310,6 +336,23 @@ std::string MaterialSerializer::serializeMaterial(
         obj["ambientOcclussionUV"] = JSON(mat.aoUVSet());
     }
     
+    obj["lightEmission"] = JSON(mat.lightEmission());
+    obj["lightEmissionScale"] = JSON(mat.lightEmissionScale());
+    obj["lightEmissionChannel"] = JSON(mat.lightEmissionChannel());
+    obj["lightEmissionInvert"] = JSON(mat.lightEmissionInvert());
+    obj["lightEmissionUV"] = JSON(mat.lightEmissionUVSet());
+
+    if (mat.lightEmissionTexture().get())
+    {
+        std::filesystem::path fileName = mat.lightEmissionTexture()->imageFilePath();
+        if (relativePaths)
+        {
+            fileName = fileName.filename();
+        }
+        obj["lightEmissionTexture"] = JSON(fileName.string());
+        addUniqueTexture(mat.lightEmissionTexture(), uniqueTextures);
+    }
+
     return matJson->serialize();
 }
 
