@@ -32,6 +32,11 @@ public:
         }
     }
 
+	std::shared_ptr<Component> clone() const override
+    {
+	    return std::make_shared<RotateCameraComponent>();
+    }
+
     std::string typeName() const override { return "RotateComponent"; }
 };
 

@@ -545,8 +545,7 @@ std::shared_ptr<bg2e::scene::Drawable> loadDrawableBg2(
     const std::string& fileName,
     bg2e::render::Engine * engine
 ) {
-    auto fullPath = basePath;
-    fullPath += fileName;
+    auto fullPath = basePath / fileName;
     return loadDrawableBg2(fullPath, engine);
 }
 
@@ -654,8 +653,7 @@ void storeDrawableBg2(
     const std::string& fileName,
     bg2e::scene::Drawable* drawable
 ) {
-    auto filePath = basePath;
-    filePath += fileName;
+    auto filePath = basePath / fileName;
     storeDrawableBg2(
         filePath,
         drawable
@@ -688,8 +686,7 @@ void storeDrawableBg2(
     const std::string& fileName,
     std::shared_ptr<bg2e::scene::Drawable> drawable
 ) {
-    auto fullPath = basePath;
-    fullPath += fileName;
+    auto fullPath = basePath / fileName;
     storeDrawableBg2(fullPath, drawable);
 }
 

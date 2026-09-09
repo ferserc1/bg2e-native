@@ -599,6 +599,7 @@ void StageScene::centerCameraOnTarget(bg2e::scene::Node * target)
     auto config = _viewpointAnalyzer->config();
     const float fieldOfView = bg2e::utils::cameraVerticalFieldOfView(cameraComponent());
     config.fieldOfView = { fieldOfView, fieldOfView, 1, false };
+    config.targetHeight = { .min = 0.6f, .max = 0.8f, .samples = 1, .cyclic = false };
     _viewpointAnalyzer->setConfig(config);
 
     const auto samples = _viewpointAnalyzer->analyze(target);

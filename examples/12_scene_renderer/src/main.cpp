@@ -30,6 +30,11 @@ public:
             transform->rotate(0.02f * delta / 10.0f, 0.0f, 1.0f, 0.0f);
         }
     }
+
+	std::shared_ptr<Component> clone() const override
+    {
+	    return std::make_shared<RotateCameraComponent>();
+    }
 };
 
 class BasicSceneDelegate : public bg2e::render::DefaultRenderLoopDelegate<bg2e::render::RendererBasicForward>,

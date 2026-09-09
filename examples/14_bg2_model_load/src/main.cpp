@@ -23,7 +23,12 @@ public:
     BG2E_COMPONENT_TYPE_NAME("CameraMouse")
     
     CameraMouse(bg2e::scene::Node * cameraNode) :_cameraNode(cameraNode) {}
-    
+
+    std::shared_ptr<Component> clone() const override
+    {
+        return std::make_shared<CameraMouse>(_cameraNode);
+    }
+
     void update(float delta) override
     {
         auto transform = ownerNode()->transform();

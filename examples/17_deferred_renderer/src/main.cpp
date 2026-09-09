@@ -36,6 +36,11 @@ public:
         }
     }
 
+    std::shared_ptr<Component> clone() const override
+    {
+        return std::make_shared<RotateComponent>(_factor);
+    }
+
 protected:
     float _factor;
 };
