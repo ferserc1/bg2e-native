@@ -99,19 +99,6 @@ void Preferences::save() const
 }
 
 
-template int8_t Preferences::get<int8_t>(const std::string&, const int8_t&) const;
-template int16_t Preferences::get<int16_t>(const std::string&, const int16_t&) const;
-template int32_t Preferences::get<int32_t>(const std::string&, const int32_t&) const;
-template int64_t Preferences::get<int64_t>(const std::string&, const int64_t&) const;
-
-template uint8_t Preferences::get<uint8_t>(const std::string&, const uint8_t&) const;
-template uint16_t Preferences::get<uint16_t>(const std::string&, const uint16_t&) const;
-template uint32_t Preferences::get<uint32_t>(const std::string&, const uint32_t&) const;
-template uint64_t Preferences::get<uint64_t>(const std::string&, const uint64_t&) const;
-
-template float Preferences::get<float>(const std::string&, const float&) const;
-template double Preferences::get<double>(const std::string&, const double&) const;
-
 template <typename T>
 T Preferences::get(const std::string & key, const T& defaultValue) const
 {
@@ -272,38 +259,6 @@ glm::mat4 Preferences::get<glm::mat4>(const std::string & key, const glm::mat4 &
 
     
 // Setters
-template void Preferences::set<bool>(const std::string&, const bool&);
-
-template void Preferences::set<int8_t>(const std::string&, const int8_t&);
-template void Preferences::set<int16_t>(const std::string&, const int16_t&);
-template void Preferences::set<int32_t>(const std::string&, const int32_t&);
-template void Preferences::set<int64_t>(const std::string&, const int64_t&);
-
-template void Preferences::set<uint8_t>(const std::string&, const uint8_t&);
-template void Preferences::set<uint16_t>(const std::string&, const uint16_t&);
-template void Preferences::set<uint32_t>(const std::string&, const uint32_t&);
-template void Preferences::set<uint64_t>(const std::string&, const uint64_t&);
-
-template void Preferences::set<float>(const std::string&, const float&);
-template void Preferences::set<double>(const std::string&, const double&);
-
-template void Preferences::set<std::array<float, 2>>(const std::string&, const std::array<float, 2>&);
-template void Preferences::set<std::array<float, 3>>(const std::string&, const std::array<float, 3>&);
-template void Preferences::set<std::array<float, 4>>(const std::string&, const std::array<float, 4>&);
-
-template void Preferences::set<glm::vec2>(const std::string&, const glm::vec2&);
-template void Preferences::set<glm::vec3>(const std::string&, const glm::vec3&);
-template void Preferences::set<glm::vec4>(const std::string&, const glm::vec4&);
-
-template void Preferences::set<base::Color>(const std::string&, const base::Color&);
-
-template void Preferences::set<std::array<float, 16>>(const std::string&, const std::array<float, 16>&);
-
-template void Preferences::set<glm::mat3>(const std::string&, const glm::mat3&);
-template void Preferences::set<glm::mat4>(const std::string&, const glm::mat4&);
-
-template void Preferences::set<std::string>(const std::string&, const std::string&);
-
 template <typename T>
 void Preferences::set(const std::string& key, const T& value)
 {
@@ -326,6 +281,52 @@ void Preferences::set(const std::string& key, std::string&& value)
     prefs[key] = json::JSON(value);
     _dirty = true;
 }
+
+// Instantiate and export the supported types after their template definitions.
+template BG2E_API int8_t Preferences::get<int8_t>(const std::string&, const int8_t&) const;
+template BG2E_API int16_t Preferences::get<int16_t>(const std::string&, const int16_t&) const;
+template BG2E_API int32_t Preferences::get<int32_t>(const std::string&, const int32_t&) const;
+template BG2E_API int64_t Preferences::get<int64_t>(const std::string&, const int64_t&) const;
+
+template BG2E_API uint8_t Preferences::get<uint8_t>(const std::string&, const uint8_t&) const;
+template BG2E_API uint16_t Preferences::get<uint16_t>(const std::string&, const uint16_t&) const;
+template BG2E_API uint32_t Preferences::get<uint32_t>(const std::string&, const uint32_t&) const;
+template BG2E_API uint64_t Preferences::get<uint64_t>(const std::string&, const uint64_t&) const;
+
+template BG2E_API float Preferences::get<float>(const std::string&, const float&) const;
+template BG2E_API double Preferences::get<double>(const std::string&, const double&) const;
+
+template BG2E_API void Preferences::set<bool>(const std::string&, const bool&);
+
+template BG2E_API void Preferences::set<int8_t>(const std::string&, const int8_t&);
+template BG2E_API void Preferences::set<int16_t>(const std::string&, const int16_t&);
+template BG2E_API void Preferences::set<int32_t>(const std::string&, const int32_t&);
+template BG2E_API void Preferences::set<int64_t>(const std::string&, const int64_t&);
+
+template BG2E_API void Preferences::set<uint8_t>(const std::string&, const uint8_t&);
+template BG2E_API void Preferences::set<uint16_t>(const std::string&, const uint16_t&);
+template BG2E_API void Preferences::set<uint32_t>(const std::string&, const uint32_t&);
+template BG2E_API void Preferences::set<uint64_t>(const std::string&, const uint64_t&);
+
+template BG2E_API void Preferences::set<float>(const std::string&, const float&);
+template BG2E_API void Preferences::set<double>(const std::string&, const double&);
+
+template BG2E_API void Preferences::set<std::array<float, 2>>(const std::string&, const std::array<float, 2>&);
+template BG2E_API void Preferences::set<std::array<float, 3>>(const std::string&, const std::array<float, 3>&);
+template BG2E_API void Preferences::set<std::array<float, 4>>(const std::string&, const std::array<float, 4>&);
+
+template BG2E_API void Preferences::set<glm::vec2>(const std::string&, const glm::vec2&);
+template BG2E_API void Preferences::set<glm::vec3>(const std::string&, const glm::vec3&);
+template BG2E_API void Preferences::set<glm::vec4>(const std::string&, const glm::vec4&);
+
+template BG2E_API void Preferences::set<base::Color>(const std::string&, const base::Color&);
+
+template BG2E_API void Preferences::set<std::array<float, 16>>(const std::string&, const std::array<float, 16>&);
+
+template BG2E_API void Preferences::set<glm::mat3>(const std::string&, const glm::mat3&);
+template BG2E_API void Preferences::set<glm::mat4>(const std::string&, const glm::mat4&);
+
+template BG2E_API void Preferences::set<std::string>(const std::string&, const std::string&);
 
 void Preferences::initFilePath(const std::string & fileName)
 {
