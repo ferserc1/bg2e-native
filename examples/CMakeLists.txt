@@ -17,6 +17,7 @@ add_subdirectory(14_bg2_model_load)
 add_subdirectory(15_offscreen_render_cli)
 add_subdirectory(16_offscreen_scene_render_cli)
 add_subdirectory(17_deferred_renderer)
+add_subdirectory(18_material_modifier)
 
 # bg2e::gpu examples
 add_subdirectory(gpu/01_instance)

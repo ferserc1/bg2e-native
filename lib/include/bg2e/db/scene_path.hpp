@@ -25,6 +25,11 @@ namespace bg2e::db {
 
 enum class SceneArtifactType { Scene, Prefab };
 
+// Resolve an existing directory as Name/Name.json, or use a JSON file directly.
+// Returns an absolute path. Throws for missing/non-file targets or invalid extensions.
+// Does not parse JSON or modify the filesystem.
+BG2E_API std::filesystem::path resolveSceneLoadPath(const std::filesystem::path& selectedPath);
+
 struct SceneSaveTarget {
     std::filesystem::path path;
     bool pathChanged = false;

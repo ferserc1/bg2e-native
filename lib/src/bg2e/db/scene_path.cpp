@@ -58,6 +58,28 @@ fs::file_status linkStatus(const fs::path& path)
 }
 }
 
+fs::path resolveSceneLoadPath(const fs::path& selectedPath)
+{
+    if (selectedPath.empty())
+        throw std::invalid_argument("A scene path is required.");
+
+    auto result = absoluteSelection(selectedPath);
+    if (fs::is_directory(result))
+    {
+        // Canonicalize directories to handle trailing separators, '.' and '..'.
+        result = fs::canonical(result);
+        const auto name = result.filename();
+        if (!validName(name))
+            throw std::invalid_argument("A named scene directory is required.");
+        result /= name.string() + ".json";
+    }
+    if (result.extension() != ".json")
+        throw std::invalid_argument("The scene file must have a .json extension: " + result.string());
+    if (!fs::is_regular_file(result))
+        throw std::runtime_error("Scene file not found or not a regular file: " + result.string());
+    return result;
+}
+
 bool isValidScenePath(const fs::path& jsonPath, SceneArtifactType type)
 {
     if (!validName(jsonPath) || jsonPath.extension() != ".json" ||
