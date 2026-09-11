@@ -18,13 +18,19 @@
 
 #pragma once
 
-#include <bg2e/base/Camera.hpp>
-#include <bg2e/base/Color.hpp>
-#include <bg2e/base/Image.hpp>
-#include <bg2e/base/Joint.hpp>
-#include <bg2e/base/Light.hpp>
-#include <bg2e/base/Log.hpp>
-#include <bg2e/base/MaterialAttributes.hpp>
-#include <bg2e/base/PlatformTools.hpp>
-#include <bg2e/base/Texture.hpp>
-#include <bg2e/base/Timeout.hpp>
+#include <bg2e/scene/Component.hpp>
+
+namespace bg2e::scene {
+
+class BG2E_API ChainComponent final : public Component {
+public:
+    BG2E_COMPONENT_TYPE_NAME("Chain");
+
+    std::shared_ptr<Component> clone() const override;
+
+    void animate(float delta) override;
+    void deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path& basePath, render::Engine& engine) override;
+    std::shared_ptr<json::JsonNode> serialize(const std::filesystem::path& basePath) override;
+};
+
+}

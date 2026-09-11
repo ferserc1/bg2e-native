@@ -35,4 +35,7 @@ protected:
     AppDelegate * _appDelegate = nullptr;
     bg2e::ui::SceneTree _sceneTree;
     bg2e::ui::NodeEditor _nodeEditor;
+
+    // Temporary controls used to exercise chain joints from Composer.
+    void drawChainComponentControls();
 };

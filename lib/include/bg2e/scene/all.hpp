@@ -20,6 +20,8 @@
 
 #include <bg2e/scene/vk/all.hpp>
 #include <bg2e/scene/CameraComponent.hpp>
+#include <bg2e/scene/Chain.hpp>
+#include <bg2e/scene/ChainJoint.hpp>
 #include <bg2e/scene/Component.hpp>
 #include <bg2e/scene/ComponentFactoryRegistry.hpp>
 #include <bg2e/scene/Drawable.hpp>

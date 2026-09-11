@@ -52,6 +52,11 @@ public:
     // Import a .bg2 model created with model_edit as a new node in the scene
     void importModelBg2(const std::filesystem::path& path);
 
+    // Export only the explicitly selected nodes that own a DrawableComponent.
+    // Child nodes are never traversed. A single selection uses a file dialog;
+    // multiple selections use a folder containing one subfolder per model.
+    void exportSelectedModels();
+
     // Scene menu actions. New nodes hang from the primary selected node (or from
     // the editable root if there is no selection) and are placed in front of the
     // camera, at _createNodeDistance units along the camera view direction.

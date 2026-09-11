@@ -18,13 +18,34 @@
 
 #pragma once
 
-#include <bg2e/base/Camera.hpp>
-#include <bg2e/base/Color.hpp>
-#include <bg2e/base/Image.hpp>
-#include <bg2e/base/Joint.hpp>
-#include <bg2e/base/Light.hpp>
-#include <bg2e/base/Log.hpp>
-#include <bg2e/base/MaterialAttributes.hpp>
-#include <bg2e/base/PlatformTools.hpp>
-#include <bg2e/base/Texture.hpp>
-#include <bg2e/base/Timeout.hpp>
+#include <bg2e/common.hpp>
+
+#include <filesystem>
+#include <memory>
+#include <string>
+
+namespace bg2e {
+
+namespace render {
+class Engine;
+}
+
+namespace scene {
+class Node;
+}
+
+namespace db {
+
+extern BG2E_API std::shared_ptr<scene::Node> loadSceneBg2(
+    const std::filesystem::path& filePath,
+    render::Engine* engine
+);
+
+extern BG2E_API std::shared_ptr<scene::Node> loadSceneBg2(
+    const std::filesystem::path& basePath,
+    const std::string& fileName,
+    render::Engine* engine
+);
+
+}
+}

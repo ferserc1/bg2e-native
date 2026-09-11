@@ -19,6 +19,8 @@
 #include "AppDelegate.hpp"
 #include "StageScene.hpp"
 
+#include <bg2e/scene/Chain.hpp>
+
 void SceneEditor::init(AppDelegate * delegate)
 {
     _appDelegate = delegate;
@@ -43,8 +45,41 @@ void SceneEditor::init(AppDelegate * delegate)
 
         bg2e::ui::BasicWidgets::beginChild("node_editor");
         _nodeEditor.draw();
+        drawChainComponentControls();
         bg2e::ui::BasicWidgets::endChild();
     });
+}
+
+void SceneEditor::drawChainComponentControls()
+{
+    auto* node = _nodeEditor.node();
+    if (!node)
+    {
+        return;
+    }
+
+    auto* chain = node->getComponent<bg2e::scene::ChainComponent>();
+    if (!chain)
+    {
+        if (bg2e::ui::BasicWidgets::button("Add Chain Component"))
+        {
+            node->addComponent(new bg2e::scene::ChainComponent());
+            _appDelegate->stage()->document()->setUnsavedChanges(true);
+            if (auto* scene = _appDelegate->stage()->sceneRoot()->scene())
+            {
+                scene->updateAll();
+            }
+        }
+    }
+    else if (bg2e::ui::BasicWidgets::button("Remove Chain Component"))
+    {
+        node->removeComponent(chain->shared_from_this());
+        _appDelegate->stage()->document()->setUnsavedChanges(true);
+        if (auto* scene = _appDelegate->stage()->sceneRoot()->scene())
+        {
+            scene->updateAll();
+        }
+    }
 }
 
 void SceneEditor::cleanup()

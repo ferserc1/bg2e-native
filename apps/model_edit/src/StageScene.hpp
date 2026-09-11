@@ -115,6 +115,10 @@ protected:
     // This is the node where the loaded model is placed
     std::shared_ptr<bg2e::scene::Node> _targetNode = nullptr;
 
+    // The visible model node used as the BG2 export source. Keeping the node,
+    // instead of only its Drawable, preserves any joint components on save.
+    std::shared_ptr<bg2e::scene::Node> _targetModelNode = nullptr;
+
     std::shared_ptr<bg2e::scene::Drawable> _targetDrawable = nullptr;
 
     // Some file formats stores a scene (for example, GLTF). If you open a scene file, this

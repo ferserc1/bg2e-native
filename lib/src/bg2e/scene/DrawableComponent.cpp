@@ -158,7 +158,7 @@ std::shared_ptr<json::JsonNode> DrawableComponent::serialize(const std::filesyst
         filePath.append(_drawable->name());
         filePath.replace_extension(".bg2");
         
-        db::storeDrawableBg2(filePath, drawable);
+        db::storeDrawableBg2(filePath, this);
     }
 
     return compData;

@@ -22,11 +22,19 @@
 #include <bg2e/utils/MaterialSerializer.hpp>
 #include <bg2e/base/Texture.hpp>
 #include <bg2e/utils/utils.hpp>
+#include <bg2e/json/JsonParser.hpp>
+#include <bg2e/scene/ChainJoint.hpp>
+#include <bg2e/scene/DrawableComponent.hpp>
+#include <bg2e/scene/Node.hpp>
 
 #include <bg2-io.h>
 
+#include <cstdlib>
 #include <fstream>
 #include <cstring>
+#include <new>
+#include <stdexcept>
+#include <utility>
 
 namespace bg2e::db {
 
@@ -135,6 +143,53 @@ struct Bg2Plist {
     std::vector<uint32_t> index;
     base::MaterialAttributes material;
 };
+
+struct Bg2FileData {
+    std::vector<Bg2Plist> polyLists;
+    std::optional<base::LinkJoint> inputJoint;
+    std::optional<base::LinkJoint> outputJoint;
+};
+
+std::optional<base::LinkJoint> parseLinkJoint(std::shared_ptr<json::JsonNode> jsonData)
+{
+    auto joint = base::Joint::factory(jsonData);
+    auto linkJoint = std::dynamic_pointer_cast<base::LinkJoint>(joint);
+    if (!linkJoint)
+    {
+        return std::nullopt;
+    }
+    return *linkJoint;
+}
+
+void parseJoints(const std::string& jointString, Bg2FileData& fileData)
+{
+    if (jointString.empty())
+    {
+        return;
+    }
+
+    json::JsonParser parser(jointString);
+    auto jointData = parser.parse();
+    if (!jointData || !jointData->isObject())
+    {
+        return;
+    }
+
+    auto& object = jointData->objectValue();
+    if (object.count("input"))
+    {
+        fileData.inputJoint = parseLinkJoint(object["input"]);
+    }
+
+    if (object.count("output") && object["output"]->isList())
+    {
+        auto& outputs = object["output"]->listValue();
+        if (!outputs.empty())
+        {
+            fileData.outputJoint = parseLinkJoint(outputs.front());
+        }
+    }
+}
 
 std::vector<Bg2Plist> readPolyList(Bg2ioBufferIterator& it, uint32_t numberOfPlist)
 {
@@ -290,7 +345,7 @@ std::vector<Bg2Plist> readPolyList(Bg2ioBufferIterator& it, uint32_t numberOfPli
 }
 
 
-std::vector<Bg2Plist> readBg2File(Bg2ioBuffer * buffer, const std::filesystem::path& filePath)
+Bg2FileData readBg2File(Bg2ioBuffer * buffer, const std::filesystem::path& filePath)
 {
     std::ifstream fileStream;
     fileStream.open(filePath, std::ios::binary | std::ios::ate);
@@ -317,8 +372,10 @@ std::vector<Bg2Plist> readBg2File(Bg2ioBuffer * buffer, const std::filesystem::p
     skipShadowProjectors(it);
     auto joints = readJoints(it);
     
-    auto result = readPolyList(it, numberOfPlist);
-    for (auto & plist : result)
+    Bg2FileData result;
+    parseJoints(joints, result);
+    result.polyLists = readPolyList(it, numberOfPlist);
+    for (auto & plist : result.polyLists)
     {
         for (auto & mat : materials)
         {
@@ -337,14 +394,16 @@ std::vector<Bg2Plist> readBg2File(Bg2ioBuffer * buffer, const std::filesystem::p
 Bg2Mesh * loadMeshBg2(const std::filesystem::path& filePath)
 {
     Bg2ioBuffer buffer = BG2IO_BUFFER_INIT;
-    auto plists = readBg2File(&buffer, filePath);
+    auto fileData = readBg2File(&buffer, filePath);
     auto result = new Bg2Mesh();
     result->mesh = std::make_shared<bg2e::geo::Mesh>();
+    result->inputJoint = std::move(fileData.inputJoint);
+    result->outputJoint = std::move(fileData.outputJoint);
     
     uint32_t currentIndex = 0;
     uint32_t submeshOffset = 0;
     uint32_t submeshCount = 0;
-    for (auto plist : plists)
+    for (auto plist : fileData.polyLists)
     {
         for (auto index : plist.index)
         {
@@ -393,6 +452,32 @@ void storeMeshBg2(const std::filesystem::path& filePath, Bg2Mesh * mesh)
     
     file->componentData = nullptr;
     file->jointData = nullptr;
+
+    if (mesh->inputJoint || mesh->outputJoint)
+    {
+        using namespace bg2e::json;
+        auto jointData = JSON(JsonObject{});
+        auto& jointObject = jointData->objectValue();
+        if (mesh->inputJoint)
+        {
+            jointObject["input"] = mesh->inputJoint->serialize();
+        }
+        if (mesh->outputJoint)
+        {
+            auto outputs = JSON(JsonList{});
+            outputs->listValue().push_back(mesh->outputJoint->serialize());
+            jointObject["output"] = outputs;
+        }
+
+        auto serializedJoints = jointData->serialize();
+        file->jointData = static_cast<char*>(std::malloc(serializedJoints.size() + 1));
+        if (!file->jointData)
+        {
+            bg2io_freeBg2File(file);
+            throw std::bad_alloc();
+        }
+        std::memcpy(file->jointData, serializedJoints.c_str(), serializedJoints.size() + 1);
+    }
     
     file->plists = bg2io_createPolyListArray(file->header.numberOfPolyList);
     auto & vertices = mesh->mesh->vertices;
@@ -627,25 +712,52 @@ uint32_t countMeshTextures(const std::filesystem::path& filePath)
     }
 }
 
+static Bg2Mesh makeBg2MeshData(bg2e::scene::Drawable* drawable)
+{
+    if (!drawable)
+    {
+        throw std::invalid_argument("storeDrawableBg2(): invalid drawable");
+    }
+
+    Bg2Mesh result;
+    result.mesh = drawable->mesh();
+    uint32_t submeshIndex = 0;
+    for (auto& material : drawable->materials())
+    {
+        // Keep the material block metadata synchronized with the drawable's
+        // per-submesh attributes.
+        material->materialAttributes().setName(drawable->submeshName(submeshIndex));
+        material->materialAttributes().setGroupName(drawable->submeshGroupName(submeshIndex));
+        material->materialAttributes().setVisible(drawable->submeshVisibility(submeshIndex));
+        result.materials.push_back(material->materialAttributes());
+        ++submeshIndex;
+    }
+    return result;
+}
+
+static void copyNodeJoints(Bg2Mesh& meshData, bg2e::scene::Node* node)
+{
+    if (!node)
+    {
+        return;
+    }
+
+    if (auto* input = node->getComponent<bg2e::scene::InputChainJointComponent>())
+    {
+        meshData.inputJoint = input->joint();
+    }
+    if (auto* output = node->getComponent<bg2e::scene::OutputChainJointComponent>())
+    {
+        meshData.outputJoint = output->joint();
+    }
+}
+
 void storeDrawableBg2(
     const std::filesystem::path& filePath,
     bg2e::scene::Drawable* drawable
 ) {
-    db::Bg2Mesh meshData;
-    meshData.mesh = drawable->mesh();
-    uint32_t idx = 0;
-    for (auto & mat : drawable->materials())
-    {
-        // Update material metadata from submesh attributes
-        mat->materialAttributes().setName(drawable->submeshName(idx));
-        mat->materialAttributes().setGroupName(drawable->submeshGroupName(idx));
-        mat->materialAttributes().setVisible(drawable->submeshVisibility(idx));
-        
-        meshData.materials.push_back(mat->materialAttributes());
-        
-        ++idx;
-    }
-    db::storeMeshBg2(filePath, &meshData);
+    auto meshData = makeBg2MeshData(drawable);
+    storeMeshBg2(filePath, &meshData);
 }
 
 void storeDrawableBg2(
@@ -664,21 +776,7 @@ void storeDrawableBg2(
     const std::filesystem::path& filePath,
     std::shared_ptr<bg2e::scene::Drawable> drawable
 ) {
-    db::Bg2Mesh meshData;
-    meshData.mesh = drawable->mesh();
-    uint32_t submeshIdx = 0;
-    for (auto & mat : drawable->materials())
-    {
-        auto name = drawable->submeshName(submeshIdx);
-        auto groupName = drawable->submeshGroupName(submeshIdx);
-        auto visible = drawable->submeshVisibility(submeshIdx);
-        mat->materialAttributes().setName(name);
-        mat->materialAttributes().setGroupName(groupName);
-        mat->materialAttributes().setVisible(visible);
-        meshData.materials.push_back(mat->materialAttributes());
-        ++submeshIdx;
-    }
-    db::storeMeshBg2(filePath, &meshData);
+    storeDrawableBg2(filePath, drawable.get());
 }
 
 void storeDrawableBg2(
@@ -688,6 +786,54 @@ void storeDrawableBg2(
 ) {
     auto fullPath = basePath / fileName;
     storeDrawableBg2(fullPath, drawable);
+}
+
+void storeDrawableBg2(
+    const std::filesystem::path& filePath,
+    bg2e::scene::DrawableComponent* drawableComponent
+) {
+    if (!drawableComponent)
+    {
+        throw std::invalid_argument("storeDrawableBg2(): invalid drawable component");
+    }
+
+    auto drawable = drawableComponent->drawable();
+    auto meshData = makeBg2MeshData(drawable.get());
+    copyNodeJoints(meshData, drawableComponent->ownerNode());
+    storeMeshBg2(filePath, &meshData);
+}
+
+void storeDrawableBg2(
+    const std::filesystem::path& basePath,
+    const std::string& fileName,
+    bg2e::scene::DrawableComponent* drawableComponent
+) {
+    storeDrawableBg2(basePath / fileName, drawableComponent);
+}
+
+void storeDrawableBg2(
+    const std::filesystem::path& filePath,
+    bg2e::scene::Node* node
+) {
+    if (!node)
+    {
+        throw std::invalid_argument("storeDrawableBg2(): invalid node");
+    }
+
+    auto* drawableComponent = node->drawable();
+    if (!drawableComponent)
+    {
+        throw std::invalid_argument("storeDrawableBg2(): node does not contain a drawable component");
+    }
+    storeDrawableBg2(filePath, drawableComponent);
+}
+
+void storeDrawableBg2(
+    const std::filesystem::path& basePath,
+    const std::string& fileName,
+    bg2e::scene::Node* node
+) {
+    storeDrawableBg2(basePath / fileName, node);
 }
 
 }

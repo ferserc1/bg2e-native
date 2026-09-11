@@ -23,7 +23,10 @@
 #include <bg2e/db/scene_save_dialog.hpp>
 
 #include <iostream>
+#include <set>
+#include <stdexcept>
 #include <string>
+#include <vector>
 
 #include "bg2e/scene/FindNodeVisitor.hpp"
 #include "bg2e/scene/FindCameraVisitor.hpp"
@@ -64,6 +67,19 @@ void renameClonedDrawables(bg2e::scene::Node* node)
     {
         renameClonedDrawables(child.get());
     }
+}
+
+bool isValidExportNodeName(const std::string& name)
+{
+    if (name.empty() || name == "." || name == "..")
+    {
+        return false;
+    }
+
+    // A node name becomes one directory component during batch export. Reject
+    // path separators and the characters that are invalid in Windows filenames
+    // so the same scene exports safely on every supported platform.
+    return name.find_first_of("/\\<>:\"|?*") == std::string::npos;
 }
 
 }
@@ -200,10 +216,7 @@ void StageScene::openScene(const std::filesystem::path& path, bg2e::scene::Scene
 
 void StageScene::importModelBg2(const std::filesystem::path& path)
 {
-    auto drawable = bg2e::db::loadDrawableBg2(path, _engine);
-    auto node = std::make_shared<bg2e::scene::Node>(path.stem().string());
-    node->addComponent(new bg2e::scene::TransformComponent());
-    node->addComponent(new bg2e::scene::DrawableComponent(drawable));
+    auto node = bg2e::db::loadSceneBg2(path, _engine);
     node->addComponent(new bg2e::manipulation::SelectableComponent());
     node->addComponent(new bg2e::manipulation::GizmoComponent(_engine));
     auto parent = newNodeParent();
@@ -212,6 +225,115 @@ void StageScene::importModelBg2(const std::filesystem::path& path)
         _containerRoot->scene()->updateAll();
     });
     _document->setUnsavedChanges(true);
+}
+
+void StageScene::exportSelectedModels()
+{
+    try
+    {
+        std::vector<std::shared_ptr<bg2e::scene::Node>> selectedNodes;
+        for (const auto& weakNode : _appDelegate->selectionManager()->selectedNodes())
+        {
+            if (auto node = weakNode.lock())
+            {
+                selectedNodes.push_back(std::move(node));
+            }
+        }
+
+        if (selectedNodes.empty())
+        {
+            bg2e::app::MessageBox::showError(
+                "Export selected models",
+                "Select at least one node to export."
+            );
+            return;
+        }
+
+        if (selectedNodes.size() == 1)
+        {
+            auto& node = selectedNodes.front();
+            if (!node->drawable())
+            {
+                bg2e::app::MessageBox::showError(
+                    "Export selected model",
+                    "The selected node does not contain a drawable."
+                );
+                return;
+            }
+
+            auto filePath = bg2e::app::FileDialog::getSaveFilePath({
+                { "bg2e 3D model", "bg2" }
+            });
+            if (filePath.empty())
+            {
+                return;
+            }
+            if (!filePath.has_extension())
+            {
+                filePath += ".bg2";
+            }
+
+            bg2e::db::storeDrawableBg2(filePath, node.get());
+            return;
+        }
+
+        // Batch mode is selected from the number of selected nodes, not from the
+        // number of drawables. Nodes without a drawable are intentionally skipped.
+        std::vector<std::shared_ptr<bg2e::scene::Node>> exportNodes;
+        std::set<std::string> nodeNames;
+        for (const auto& node : selectedNodes)
+        {
+            if (!node->drawable())
+            {
+                continue;
+            }
+
+            if (!isValidExportNodeName(node->name()))
+            {
+                throw std::runtime_error(
+                    "Node name '" + node->name() + "' cannot be used as an export directory name."
+                );
+            }
+            if (!nodeNames.insert(node->name()).second)
+            {
+                throw std::runtime_error(
+                    "More than one selected drawable node is named '" + node->name() + "'."
+                );
+            }
+            exportNodes.push_back(node);
+        }
+
+        if (exportNodes.empty())
+        {
+            bg2e::app::MessageBox::showError(
+                "Export selected models",
+                "None of the selected nodes contains a drawable."
+            );
+            return;
+        }
+
+        // All validation above is deliberately completed before the directory
+        // picker and before creating any output on disk.
+        auto directory = bg2e::app::FileDialog::getPickFolderPath();
+        if (directory.empty())
+        {
+            return;
+        }
+
+        for (const auto& node : exportNodes)
+        {
+            const auto modelDirectory = directory / node->name();
+            std::filesystem::create_directories(modelDirectory);
+            bg2e::db::storeDrawableBg2(
+                modelDirectory / (node->name() + ".bg2"),
+                node.get()
+            );
+        }
+    }
+    catch (const std::exception& error)
+    {
+        bg2e::app::MessageBox::showError("Export selected models", error.what());
+    }
 }
 
 std::shared_ptr<bg2e::scene::Node> StageScene::newNodeParent()

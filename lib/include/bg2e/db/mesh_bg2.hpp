@@ -20,6 +20,7 @@
 
 #include <bg2e/common.hpp>
 
+#include <bg2e/base/Joint.hpp>
 #include <bg2e/base/MaterialAttributes.hpp>
 #include <bg2e/geo/Mesh.hpp>
 #include <bg2e/scene/Drawable.hpp>
@@ -31,6 +32,12 @@
 #include <vector>
 #include <memory>
 #include <functional>
+#include <optional>
+
+namespace bg2e::scene {
+class DrawableComponent;
+class Node;
+}
 
 namespace bg2e {
 namespace db {
@@ -39,6 +46,8 @@ struct Bg2Mesh
 {
     std::shared_ptr<bg2e::geo::MeshPNUUT> mesh;
     std::vector<bg2e::base::MaterialAttributes> materials;
+    std::optional<bg2e::base::LinkJoint> inputJoint;
+    std::optional<bg2e::base::LinkJoint> outputJoint;
 };
 
 extern BG2E_API Bg2Mesh * loadMeshBg2(
@@ -93,6 +102,24 @@ extern BG2E_API void storeDrawableBg2(
     const std::filesystem::path& basePath,
     const std::string& fileName,
     std::shared_ptr<bg2e::scene::Drawable> drawable
+);
+extern BG2E_API void storeDrawableBg2(
+    const std::filesystem::path& filePath,
+    bg2e::scene::DrawableComponent* drawable
+);
+extern BG2E_API void storeDrawableBg2(
+    const std::filesystem::path& basePath,
+    const std::string& fileName,
+    bg2e::scene::DrawableComponent* drawable
+);
+extern BG2E_API void storeDrawableBg2(
+    const std::filesystem::path& filePath,
+    bg2e::scene::Node* node
+);
+extern BG2E_API void storeDrawableBg2(
+    const std::filesystem::path& basePath,
+    const std::string& fileName,
+    bg2e::scene::Node* node
 );
 
 }

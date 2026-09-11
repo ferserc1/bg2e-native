@@ -129,13 +129,11 @@ void StageScene::loadModel(const std::filesystem::path& path)
 {
     close();
 
-    auto modelDrawable = bg2e::db::loadDrawableBg2(path, _engine);
-    _targetDrawable = std::shared_ptr<bg2e::scene::Drawable>(modelDrawable);
-    auto modelNode = new bg2e::scene::Node("Target model");
-    modelNode->addComponent(new bg2e::scene::DrawableComponent(modelDrawable));
-    modelNode->addComponent(new bg2e::manipulation::SelectableComponent());
+    _targetModelNode = bg2e::db::loadSceneBg2(path, _engine);
+    _targetModelNode->addComponent(new bg2e::manipulation::SelectableComponent());
+    _targetDrawable = _targetModelNode->drawable()->drawable();
 
-    _targetNode->addChild(modelNode);
+    _targetNode->addChild(_targetModelNode);
 
     _document->setPath(path);
     _document->setUnsavedChanges(false);
@@ -143,10 +141,9 @@ void StageScene::loadModel(const std::filesystem::path& path)
 
 void StageScene::saveModel(const std::filesystem::path& path)
 {
-    auto drw = targetDrawable();
-    if (drw)
+    if (_targetModelNode && _targetModelNode->drawable())
     {
-        bg2e::db::storeDrawableBg2(path, drw);
+        bg2e::db::storeDrawableBg2(path, _targetModelNode.get());
         _document->setPath(path);
     }
     _document->setUnsavedChanges(false);
@@ -157,6 +154,7 @@ void StageScene::close()
     _appDelegate->selectionManager()->deselect();
     _targetDrawables.clear();
     _targetDrawable.reset();
+    _targetModelNode.reset();
     _targetNode->clearChildren();
     _targetScene.reset();
     _targetNames.clear();
@@ -195,11 +193,11 @@ void StageScene::importObj(const std::filesystem::path& path)
 
     auto objDrawable = bg2e::db::loadDrawableObj(path, _engine);
     _targetDrawable = std::shared_ptr<bg2e::scene::Drawable>(objDrawable);
-    auto modelNode = new bg2e::scene::Node("Target model");
-    modelNode->addComponent(new bg2e::scene::DrawableComponent(objDrawable));
-    modelNode->addComponent(new bg2e::manipulation::SelectableComponent());
+    _targetModelNode = std::make_shared<bg2e::scene::Node>("Target model");
+    _targetModelNode->addComponent(new bg2e::scene::DrawableComponent(objDrawable));
+    _targetModelNode->addComponent(new bg2e::manipulation::SelectableComponent());
 
-    _targetNode->addChild(modelNode);
+    _targetNode->addChild(_targetModelNode);
 
     _document->setStatus("", true);
 }
@@ -239,10 +237,10 @@ void StageScene::selectTargetNode(uint32_t index)
 
         // Get the DrawableComponent from the selected node and add it to a new empty node
         auto drawable = _targetDrawables[index];
-        auto node = std::make_shared<bg2e::scene::Node>("Target Node");
-        node->addComponent(new bg2e::scene::DrawableComponent(drawable));
-        node->addComponent(new bg2e::manipulation::SelectableComponent());
-        _targetNode->addChild(node);
+        _targetModelNode = std::make_shared<bg2e::scene::Node>("Target Node");
+        _targetModelNode->addComponent(new bg2e::scene::DrawableComponent(drawable));
+        _targetModelNode->addComponent(new bg2e::manipulation::SelectableComponent());
+        _targetNode->addChild(_targetModelNode);
         _targetDrawable = drawable;
     }
 
@@ -258,6 +256,7 @@ std::shared_ptr<bg2e::scene::Drawable> StageScene::targetDrawable()
 void StageScene::cleanup()
 {
     _viewpointAnalyzer.reset();
+    _targetModelNode.reset();
     _targetDrawable.reset();
     _targetDrawables.clear();
     _targetScene.reset();

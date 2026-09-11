@@ -74,6 +74,12 @@ void ToolBar::init(AppDelegate * delegate, bg2e::ui::UISettingsWindow * uiSettin
             }
         }
     }});
+    file.addMenuItem({ "Export Selected Model(s)...", {
+        .handler = [&]()
+        {
+            _appDelegate->stage()->exportSelectedModels();
+        }
+    }});
     file.addMenuItem({ "Save", {
         .ctrlModifier = true,
         .key = bg2e::app::KeyEvent::KeyS,
