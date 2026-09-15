@@ -35,8 +35,11 @@ public:
     base::Camera& camera() { return _camera; }
     
     math::Projection * projection() { return _camera.projection(); }
+    const math::Projection * projection() const { return _camera.projection(); }
     template <class T>
     T* projection() { return _camera.projection<T>(); }
+    template <class T>
+    const T* projection() const { return _camera.projection<T>(); }
     void setProjection(math::Projection * proj) { _camera.setProjection(proj); }
     void setProjection(std::shared_ptr<math::Projection> proj) { _camera.setProjection(proj); }
     const glm::mat4& projectionMatrix() const { return _camera.projectionMatrix(); }
