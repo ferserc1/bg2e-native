@@ -57,8 +57,8 @@ struct GetterTraits<Class, R (Class::*)()> {
 template<typename Class, typename MemberFn>
 struct SetterTraits;
 
-template<typename Class, typename V>
-struct SetterTraits<Class, void (Class::*)(V)> {
+template<typename Class, typename R, typename V>
+struct SetterTraits<Class, R (Class::*)(V)> {
     using ValueType = ValueT<V>;
 };
 

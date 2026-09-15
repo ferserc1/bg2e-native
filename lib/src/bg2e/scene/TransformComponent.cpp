@@ -21,6 +21,8 @@
 #include <bg2e/scene/ComponentFactoryRegistry.hpp>
 
 #include <cmath>
+#include <limits>
+#include <glm/gtx/euler_angles.hpp>
 
 namespace bg2e::scene {
 
@@ -67,22 +69,23 @@ std::unique_ptr<TransformComponent> TransformComponent::makeScaled(const glm::ve
 }
 
 TransformComponent * TransformComponent::setTranslation(float x, float y, float z) {
-    _matrix = glm::translate(glm::mat4{1.0f}, glm::vec3(x, y, z) );
+    _matrix = recompose(extractRotation(_matrix), extractScale(_matrix), {x, y, z});
     return this;
 }
 
 TransformComponent * TransformComponent::setRotation(float alpha, float x, float y, float z) {
-    _matrix = glm::rotate(glm::mat4{1.0f}, alpha, glm::vec3(x, y, z));
+    const auto rotation = glm::mat3(glm::rotate(glm::mat4{1.0f}, alpha, glm::vec3(x, y, z)));
+    _matrix = recompose(rotation, extractScale(_matrix), extractTranslation(_matrix));
     return this;
 }
 
 TransformComponent * TransformComponent::setScale(float xyz) {
-    _matrix = glm::scale(glm::mat4{1.0f}, glm::vec3(xyz));
+    _matrix = recompose(extractRotation(_matrix), {xyz, xyz, xyz}, extractTranslation(_matrix));
     return this;
 }
 
 TransformComponent * TransformComponent::setScale(float x, float y, float z) {
-    _matrix = glm::scale(glm::mat4{1.0f}, glm::vec3(x, y, z));
+    _matrix = recompose(extractRotation(_matrix), {x, y, z}, extractTranslation(_matrix));
     return this;
 }
 
@@ -117,17 +120,18 @@ TransformComponent * TransformComponent::setIdentity()
 }
 
 TransformComponent * TransformComponent::setTranslation(const glm::vec3& t) {
-    _matrix = glm::translate(glm::mat4{1.0f}, t );
+    _matrix = recompose(extractRotation(_matrix), extractScale(_matrix), t);
     return this;
 }
 
 TransformComponent * TransformComponent::setRotation(float alpha, const glm::vec3& axis) {
-    _matrix = glm::rotate(glm::mat4{1.0f}, alpha, axis);
+    const auto rotation = glm::mat3(glm::rotate(glm::mat4{1.0f}, alpha, axis));
+    _matrix = recompose(rotation, extractScale(_matrix), extractTranslation(_matrix));
     return this;
 }
 
 TransformComponent * TransformComponent::setScale(const glm::vec3& scale) {
-    _matrix = glm::scale(glm::mat4{1.0f}, scale);
+    _matrix = recompose(extractRotation(_matrix), scale, extractTranslation(_matrix));
     return this;
 }
 
@@ -154,15 +158,47 @@ glm::vec3 TransformComponent::extractTranslation(const glm::mat4& m)
     return glm::vec3(m[3]);
 }
 
+glm::vec3 TransformComponent::translation() const
+{
+    return extractTranslation(_matrix);
+}
+
+glm::vec3 TransformComponent::eulerRotation() const
+{
+    float x = 0.0f;
+    float y = 0.0f;
+    float z = 0.0f;
+    glm::extractEulerAngleXYZ(glm::mat4(extractRotation(_matrix)), x, y, z);
+    return glm::degrees(glm::vec3{x, y, z});
+}
+
+glm::vec3 TransformComponent::scaleValue() const
+{
+    return extractScale(_matrix);
+}
+
+TransformComponent * TransformComponent::setEulerRotation(const glm::vec3& degrees)
+{
+    const auto radians = glm::radians(degrees);
+    const auto rotation = glm::mat3(glm::eulerAngleXYZ(radians.x, radians.y, radians.z));
+    _matrix = recompose(rotation, extractScale(_matrix), extractTranslation(_matrix));
+    return this;
+}
+
 glm::mat3 TransformComponent::extractRotation(const glm::mat4& m)
 {
-    float sx = glm::length(glm::vec3(m[0]));
-    float sy = glm::length(glm::vec3(m[1]));
-    float sz = glm::length(glm::vec3(m[2]));
+    const glm::vec3 scale = extractScale(m);
     glm::mat3 r;
-    r[0] = glm::vec3(m[0]) / sx;
-    r[1] = glm::vec3(m[1]) / sy;
-    r[2] = glm::vec3(m[2]) / sz;
+    constexpr float epsilon = std::numeric_limits<float>::epsilon();
+    r[0] = scale.x > epsilon
+        ? glm::vec3(m[0]) / scale.x
+        : glm::vec3(1.0f, 0.0f, 0.0f);
+    r[1] = scale.y > epsilon
+        ? glm::vec3(m[1]) / scale.y
+        : glm::vec3(0.0f, 1.0f, 0.0f);
+    r[2] = scale.z > epsilon
+        ? glm::vec3(m[2]) / scale.z
+        : glm::vec3(0.0f, 0.0f, 1.0f);
     return r;
 }
 

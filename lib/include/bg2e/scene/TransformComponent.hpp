@@ -45,6 +45,12 @@ public:
     const glm::mat4& matrix() const { return _matrix; }
     void setMatrix(const glm::mat4& matrix) { _matrix = matrix; }
 
+    glm::vec3 translation() const;
+    glm::vec3 eulerRotation() const;
+    glm::vec3 scaleValue() const;
+
+    TransformComponent * setEulerRotation(const glm::vec3& degrees);
+
     TransformComponent * setIdentity();
     TransformComponent * setTranslation(float x, float y, float z);
     TransformComponent * setRotation(float alpha, float x, float y, float z);
@@ -63,6 +69,7 @@ public:
     TransformComponent * scale(const glm::vec3& scale);
 
     // Decomposition helpers. These assume the matrix is TRS (no shear).
+    // Euler angles exposed to editors are expressed in degrees.
     static glm::vec3 extractTranslation(const glm::mat4& m);
     static glm::mat3 extractRotation(const glm::mat4& m);
     static glm::vec3 extractScale(const glm::mat4& m);

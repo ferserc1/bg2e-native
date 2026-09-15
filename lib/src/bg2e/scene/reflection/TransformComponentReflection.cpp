@@ -27,10 +27,28 @@ reflection::TypeRegistration<scene::TransformComponent> _transformReflection(
     [](reflection::TypeInfoBuilder<scene::TransformComponent>& t) {
         t.displayName("Transform");
 
-        t.property("matrix", &scene::TransformComponent::matrix,
-                             &scene::TransformComponent::setMatrix)
-            .displayName("Matrix")
+        t.property("translation", &scene::TransformComponent::translation,
+                                  static_cast<scene::TransformComponent*(scene::TransformComponent::*)(const glm::vec3&)>(
+                                      &scene::TransformComponent::setTranslation))
+            .displayName("Translation")
             .category("Transform");
+
+        t.property("rotation", &scene::TransformComponent::eulerRotation,
+                               &scene::TransformComponent::setEulerRotation)
+            .displayName("Rotation")
+            .category("Transform")
+            .tooltip("Euler rotation in degrees");
+
+        t.property("scale", &scene::TransformComponent::scaleValue,
+                            static_cast<scene::TransformComponent*(scene::TransformComponent::*)(const glm::vec3&)>(
+                                &scene::TransformComponent::setScale))
+            .displayName("Scale")
+            .category("Transform");
+
+        t.property("matrix", &scene::TransformComponent::matrix)
+            .displayName("Matrix")
+            .category("Advanced")
+            .tooltip("Read-only raw transformation matrix");
 
         t.action("setIdentity", &scene::TransformComponent::setIdentity)
             .displayName("Set Identity")
