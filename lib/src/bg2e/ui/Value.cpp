@@ -127,5 +127,15 @@ bool Value::comboBox(
     return changed;
 }
 
+bool Value::comboBox(
+    const std::vector<std::string>& items,
+    uint32_t &selected,
+    const std::string& id,
+    bool sameLine,
+    bool fitPreview
+) {
+    return Value::comboBox("##" + id, items, selected, sameLine, fitPreview);
+}
+
 }
 }

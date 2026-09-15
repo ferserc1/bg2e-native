@@ -35,7 +35,7 @@ reflection::TypeRegistration<base::Light> _lightReflection("bg2e::base::Light",
         t.property("intensity", &base::Light::intensity, &base::Light::setIntensity)
             .displayName("Intensity")
             .category("Common Properties")
-            .range(0.0, 100.0)
+            .range(0.0, 50.0)
             .slider()
             .step(0.1);
 

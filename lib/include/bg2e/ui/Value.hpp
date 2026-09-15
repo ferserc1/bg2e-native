@@ -60,6 +60,14 @@ public:
         bool fitPreview = false
     );
 
+    static bool comboBox(
+        const std::vector<std::string>& items,
+        uint32_t &selected,
+        const std::string& id,
+        bool sameLine = false,
+        bool fitPreview = false
+    );
+
     typedef std::function<void(std::vector<std::string>&)> ItemListCallback;
 
     static bool comboBox(
@@ -72,6 +80,18 @@ public:
         std::vector<std::string> items;
         itemsCb(items);
         return Value::comboBox(label, items, selected, sameLine, fitPreview);
+    }
+
+    static bool comboBox(
+        ItemListCallback itemsCb,
+        uint32_t &selected,
+        const std::string& id,
+        bool sameLine = false,
+        bool fitPreview = false
+    ) {
+        std::vector<std::string> items;
+        itemsCb(items);
+        return Value::comboBox(items, selected, id, sameLine, fitPreview);
     }
 };
 

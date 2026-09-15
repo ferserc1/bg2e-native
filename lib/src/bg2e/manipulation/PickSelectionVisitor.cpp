@@ -88,9 +88,9 @@ void PickSelectionVisitor::visit(bg2e::scene::Node * node)
     }
 
     // Regular drawable submeshes (depth tested).
-    if (selectableComponent && drawable)
+    scene::Drawable* drw;
+    if (selectableComponent && drawable && (drw = dynamic_cast<bg2e::scene::Drawable*>(drawable->drawableBase().get())) != nullptr)
     {
-        auto drw = dynamic_cast<bg2e::scene::Drawable*>(drawable->drawableBase().get());
         auto mesh = drw->renderMesh();
         bindPipeline(_depthPipeline);
         for (uint32_t submesh = 0; submesh < mesh->submeshCount(); ++submesh)

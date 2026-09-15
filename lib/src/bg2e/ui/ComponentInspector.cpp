@@ -140,8 +140,8 @@ void ComponentInspector::draw()
         {
             _selectedComponentIndex = 0;
         }
-        Value::comboBox("Component", componentNames, _selectedComponentIndex, false, true);
-        if (Button::button("Add", true))
+
+        if (Button::button("Add Component", false))
         {
             auto* component = scene::ComponentFactoryRegistry::get().createDefault(
                 componentOptions[_selectedComponentIndex].typeName
@@ -152,6 +152,7 @@ void ComponentInspector::draw()
                 changed = true;
             }
         }
+        Value::comboBox(componentNames, _selectedComponentIndex, "componentType", true, true);
     }
     else
     {

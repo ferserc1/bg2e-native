@@ -70,9 +70,9 @@ void GizmoAndSelectionRenderer::visit(bg2e::scene::Node * node)
         _currentTransform = _currentTransform * trx->matrix();
     }
 
-    if (selectable && drawable)
+    std::shared_ptr<scene::Drawable> drw;
+    if (selectable && drawable && (drw = drawable->drawable()) != nullptr)
     {
-        auto drw = drawable->drawable();
         auto mesh = drw->renderMesh();
         auto submeshes = drawable->drawable()->submeshesCount();
         for (uint32_t i = 0; i < submeshes; ++i)
