@@ -28,6 +28,8 @@
 #include <bg2e/ui/Button.hpp>
 #include <bg2e/ui/Value.hpp>
 
+#include <bg2e/app/MainLoop.hpp>
+
 #include <algorithm>
 #include <memory>
 #include <any>
@@ -177,7 +179,9 @@ void ComponentInspector::draw()
             ? typeInfo->displayName
             : comp->typeName();
 
-        if (Group::collapsingHeader(headerTitle))
+        // allowOverlap: the Remove button is drawn on top of the header row
+        // (sameLine), so the header must not steal its mouse clicks.
+        if (Group::collapsingHeader(headerTitle, true, true))
         {
             // Right-aligned remove button on the header row
             auto removeWidth = static_cast<int32_t>(
@@ -234,7 +238,15 @@ void ComponentInspector::draw()
 
     if (pendingRemove)
     {
-        _node->removeComponent(pendingRemove);
+        // Removing a component may release resources (GPU buffers, textures)
+        // that are still in use by the current frame. Defer the removal
+        // through safeUpdateScene so it runs at the start of the next frame,
+        // after the device is idle. The node and the component are captured
+        // as shared_ptr so they stay alive until the lambda executes.
+        auto node = _node->shared_from_this();
+        app::MainLoop::current()->safeUpdateScene([node, pendingRemove]() {
+            node->removeComponent(pendingRemove);
+        });
         changed = true;
     }
 

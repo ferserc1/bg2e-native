@@ -33,9 +33,14 @@ void Group::endTree()
     ImGui::TreePop();
 }
 
-bool Group::collapsingHeader(const std::string & title, bool visible)
+bool Group::collapsingHeader(const std::string & title, bool visible, bool allowOverlap)
 {
-    return ImGui::CollapsingHeader(title.c_str(), visible ? ImGuiTreeNodeFlags_DefaultOpen : 0);
+    ImGuiTreeNodeFlags flags = visible ? ImGuiTreeNodeFlags_DefaultOpen : 0;
+    if (allowOverlap)
+    {
+        flags |= ImGuiTreeNodeFlags_AllowOverlap;
+    }
+    return ImGui::CollapsingHeader(title.c_str(), flags);
 }
 
 void Group::beginDisabled(bool disabled)

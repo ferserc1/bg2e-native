@@ -321,7 +321,7 @@ Static-only scoped helpers (begin/end or push/pop pairs).
 |--------|-------------|
 | `static bool beginTree(const std::string& label)` | Collapsible tree node (default open); pair with `endTree()` when it returns true. |
 | `static void endTree()` | Closes a tree. |
-| `static bool collapsingHeader(const std::string& title, bool visible = true)` | One-line header; `visible == true` starts it open. No pairing needed. |
+| `static bool collapsingHeader(const std::string& title, bool visible = true, bool allowOverlap = false)` | One-line header; `visible == true` starts it open. `allowOverlap` lets widgets drawn over the header row receive clicks. No pairing needed. |
 | `static void beginDisabled(bool disabled = true)` / `static void endDisabled()` | Disable a group of controls. |
 | `static void pushId(int id)` / `static void popId()` | ImGui ID stack (repeated labels). |
 

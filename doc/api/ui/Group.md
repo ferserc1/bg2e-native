@@ -13,7 +13,7 @@ public:
     // Collapsible scopes
     static bool beginTree(const std::string& label);
     static void endTree();
-    static bool collapsingHeader(const std::string& title, bool visible = true);
+    static bool collapsingHeader(const std::string& title, bool visible = true, bool allowOverlap = false);
 
     // Group enable/disable
     static void beginDisabled(bool disabled = true);
@@ -29,9 +29,11 @@ public:
 
 ## Collapsible scopes
 
-- `collapsingHeader(title, visible)` is a self-closing section: it returns
+- `collapsingHeader(title, visible, allowOverlap)` is a self-closing section: it returns
   `true` while expanded, and you do **not** pair it with an end call. When
-  `visible` is `true` it starts open.
+  `visible` is `true` it starts open. Set `allowOverlap` to `true` when you draw
+  widgets on top of the header row (via `Layout::sameLine`), so those widgets
+  receive mouse clicks instead of the header.
 - `beginTree(label)` / `endTree()` are the paired form: if `beginTree` returns
   `true` you **must** call `endTree()` after drawing the children (and skip it
   entirely if it returned `false`).

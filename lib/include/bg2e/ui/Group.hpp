@@ -31,7 +31,9 @@ class BG2E_API Group {
 public:
     static bool beginTree(const std::string & label);
     static void endTree();
-    static bool collapsingHeader(const std::string & title, bool visible = true);
+    // allowOverlap lets widgets drawn on top of the header row (via
+    // Layout::sameLine) receive mouse clicks instead of the header.
+    static bool collapsingHeader(const std::string & title, bool visible = true, bool allowOverlap = false);
 
     // Renders the widgets between beginDisabled()/endDisabled() as disabled.
     // endDisabled() must always be called after beginDisabled().
