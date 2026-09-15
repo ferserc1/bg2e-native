@@ -25,23 +25,23 @@ namespace {
 
 reflection::TypeRegistration<base::Light> _lightReflection("bg2e::base::Light",
     [](reflection::TypeInfoBuilder<base::Light>& t) {
-        t.displayName("Light");
+        t.displayName("Light Data");
 
         t.property("color", &base::Light::color, &base::Light::setColor)
             .displayName("Color")
-            .category("Light")
+            .category("Common Properties")
             .colorEditor();
 
         t.property("intensity", &base::Light::intensity, &base::Light::setIntensity)
             .displayName("Intensity")
-            .category("Light")
+            .category("Common Properties")
             .range(0.0, 100.0)
             .slider()
             .step(0.1);
 
         t.property("type", &base::Light::type, &base::Light::setType)
             .displayName("Type")
-            .category("Light")
+            .category("Common Properties")
             .combo()
             .enumValue("Omni", base::Light::TypeOmni)
             .enumValue("Spot", base::Light::TypeSpot)
@@ -73,7 +73,7 @@ reflection::TypeRegistration<base::Light> _lightReflection("bg2e::base::Light",
 
         t.property("sourceSize", &base::Light::sourceSize, &base::Light::setSourceSize)
             .displayName("Source Size")
-            .category("Light")
+            .category("Ray Tracing")
             .range(0.0, 10.0)
             .drag()
             .step(0.01);
@@ -81,13 +81,8 @@ reflection::TypeRegistration<base::Light> _lightReflection("bg2e::base::Light",
         t.property("affectsReflections", &base::Light::affectsReflections,
                                          &base::Light::setAffectsReflections)
             .displayName("Affects Reflections")
-            .category("Light")
+            .category("Ray Tracing")
             .checkbox();
-
-        // Getter-only => read-only (no setter registered).
-        t.property("typeString", &base::Light::typeString)
-            .displayName("Type (string)")
-            .category("Light");
     });
 
 }

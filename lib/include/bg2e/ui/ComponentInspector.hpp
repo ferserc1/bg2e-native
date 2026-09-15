@@ -21,6 +21,7 @@
 #include <bg2e/common.hpp>
 
 #include <functional>
+#include <cstdint>
 #include <filesystem>
 #include <string>
 #include <utility>
@@ -32,10 +33,9 @@ namespace scene {
 }
 namespace ui {
 
-// Inspector widget for the components of a scene node. Every component
-// builds its user interface from its bg2e::reflection metadata (see
-// ReflectionWidget). Components without reflection data are still listed
-// and can be removed.
+// Inspector widget for the reflected components of a scene node. Components
+// with reflection metadata remain visible even when they expose no editable
+// properties, because they may provide essential scene behavior.
 class BG2E_API ComponentInspector {
 public:
     using ResourceChangedCallback = std::function<bool(
@@ -45,7 +45,14 @@ public:
         const std::filesystem::path& selectedPath
     )>;
 
-    void setNode(scene::Node * node) { _node = node; }
+    void setNode(scene::Node * node)
+    {
+        if (_node != node)
+        {
+            _node = node;
+            _selectedComponentIndex = 0;
+        }
+    }
     scene::Node * node() const { return _node; }
 
     void draw();
@@ -56,6 +63,7 @@ public:
 
 protected:
     scene::Node * _node = nullptr;
+    uint32_t _selectedComponentIndex = 0;
     std::function<void()> _onChanged;
     ResourceChangedCallback _onResourceChanged;
 

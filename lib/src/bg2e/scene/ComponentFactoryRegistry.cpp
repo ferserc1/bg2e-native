@@ -34,9 +34,29 @@ ComponentFactoryRegistry& ComponentFactoryRegistry::get()
     return *_registrySingleton;
 }
     
-void ComponentFactoryRegistry::registerComponent(const std::string& componentName, Creator creator)
+void ComponentFactoryRegistry::registerComponent(
+    const std::string& componentName,
+    Creator creator,
+    DefaultCreator defaultCreator
+)
 {
-    _registry[componentName] = creator;
+    _registry[componentName] = { std::move(creator), std::move(defaultCreator) };
+}
+
+bool ComponentFactoryRegistry::contains(const std::string& componentName) const
+{
+    return _registry.find(componentName) != _registry.end();
+}
+
+Component* ComponentFactoryRegistry::createDefault(const std::string& componentName) const
+{
+    auto it = _registry.find(componentName);
+    if (it == _registry.end())
+    {
+        bg2e_log_warning << "component type not found: " << componentName << bg2e_log_end;
+        return nullptr;
+    }
+    return it->second.createDefault();
 }
 
 Component* ComponentFactoryRegistry::create(std::shared_ptr<json::JsonNode> data, const std::filesystem::path& basePath, render::Engine& engine)
@@ -68,7 +88,7 @@ Component* ComponentFactoryRegistry::create(std::shared_ptr<json::JsonNode> data
         bg2e_log_debug << "Deserialize component: " << componentType << bg2e_log_end;
     }
 
-    auto result = _registry[componentType](data, basePath, engine, progress);
+    auto result = _registry[componentType].deserialize(data, basePath, engine, progress);
     return result;
 }
 

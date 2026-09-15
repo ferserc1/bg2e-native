@@ -21,11 +21,14 @@
 #include <bg2e/reflection/Registry.hpp>
 #include <bg2e/scene/Node.hpp>
 #include <bg2e/scene/Component.hpp>
+#include <bg2e/scene/ComponentFactoryRegistry.hpp>
 #include <bg2e/ui/Layout.hpp>
 #include <bg2e/ui/Text.hpp>
 #include <bg2e/ui/Group.hpp>
 #include <bg2e/ui/Button.hpp>
+#include <bg2e/ui/Value.hpp>
 
+#include <algorithm>
 #include <memory>
 #include <any>
 #include <filesystem>
@@ -40,6 +43,50 @@ struct ResourceSnapshot {
     const reflection::PropertyInfo * property = nullptr;
     std::filesystem::path value;
 };
+
+struct ComponentOption {
+    std::string typeName;
+    std::string displayName;
+};
+
+std::vector<ComponentOption> availableComponents(const scene::Node& node)
+{
+    const auto& reflectionRegistry = reflection::TypeRegistry::get();
+    const auto& factoryRegistry = scene::ComponentFactoryRegistry::get();
+    const auto& nodeComponents = node.orderedComponents();
+    std::vector<ComponentOption> result;
+
+    for (const auto& typeName : reflectionRegistry.typeNames())
+    {
+        if (!factoryRegistry.contains(typeName))
+        {
+            continue;
+        }
+
+        const bool alreadyAdded = std::any_of(
+            nodeComponents.begin(),
+            nodeComponents.end(),
+            [&typeName](const std::shared_ptr<scene::Component>& component) {
+                return component->typeName() == typeName;
+            }
+        );
+        if (alreadyAdded)
+        {
+            continue;
+        }
+
+        const auto* typeInfo = reflectionRegistry.type(typeName);
+        result.push_back({
+            typeName,
+            typeInfo && !typeInfo->displayName.empty() ? typeInfo->displayName : typeName
+        });
+    }
+
+    std::sort(result.begin(), result.end(), [](const ComponentOption& lhs, const ComponentOption& rhs) {
+        return lhs.displayName < rhs.displayName;
+    });
+    return result;
+}
 
 std::filesystem::path resourceValue(
     const reflection::PropertyInfo& property,
@@ -75,20 +122,50 @@ void ComponentInspector::draw()
         return;
     }
 
-    // Header: node name + "Add Component" stub (extension point, no
-    // implementation yet)
+    bool changed = false;
+
     Text::text(_node->name());
-    Button::button("Add Component");
+
+    const auto componentOptions = availableComponents(*_node);
+    if (!componentOptions.empty())
+    {
+        std::vector<std::string> componentNames;
+        componentNames.reserve(componentOptions.size());
+        for (const auto& option : componentOptions)
+        {
+            componentNames.push_back(option.displayName);
+        }
+
+        if (_selectedComponentIndex >= componentOptions.size())
+        {
+            _selectedComponentIndex = 0;
+        }
+        Value::comboBox("Component", componentNames, _selectedComponentIndex, false, true);
+        if (Button::button("Add", true))
+        {
+            auto* component = scene::ComponentFactoryRegistry::get().createDefault(
+                componentOptions[_selectedComponentIndex].typeName
+            );
+            if (component)
+            {
+                _node->addComponent(component);
+                changed = true;
+            }
+        }
+    }
+    else
+    {
+        Text::text("No components available");
+    }
     Text::separator("Components");
 
     std::shared_ptr<scene::Component> pendingRemove;
-    bool changed = false;
     int id = 0;
 
     for (auto & comp : _node->orderedComponents())
     {
         const auto * typeInfo = reflection::TypeRegistry::get().type(comp->typeName());
-        if (!typeInfo || typeInfo->properties.empty())
+        if (!typeInfo)
         {
             continue;
         }

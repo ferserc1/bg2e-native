@@ -33,18 +33,9 @@ reflection::TypeRegistration<scene::LightComponent> _lightComponentReflection(
         t.object("light", "bg2e::base::Light",
                  static_cast<const base::Light&(scene::LightComponent::*)() const>(&scene::LightComponent::light),
                  static_cast<base::Light&(scene::LightComponent::*)()>(&scene::LightComponent::light))
-            .displayName("Light")
+            .displayName("Properties")
             .category("Light")
             .tooltip("Light parameters, edited in place");
-
-        // Getter-only => read-only (world-space values derived from the node).
-        t.property("position", &scene::LightComponent::position)
-            .displayName("Position")
-            .category("Light");
-
-        t.property("direction", &scene::LightComponent::direction)
-            .displayName("Direction")
-            .category("Light");
     });
 
 }

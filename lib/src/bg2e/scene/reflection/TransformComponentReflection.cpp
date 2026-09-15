@@ -45,11 +45,6 @@ reflection::TypeRegistration<scene::TransformComponent> _transformReflection(
             .displayName("Scale")
             .category("Transform");
 
-        t.property("matrix", &scene::TransformComponent::matrix)
-            .displayName("Matrix")
-            .category("Advanced")
-            .tooltip("Read-only raw transformation matrix");
-
         t.action("setIdentity", &scene::TransformComponent::setIdentity)
             .displayName("Set Identity")
             .category("Transform")
