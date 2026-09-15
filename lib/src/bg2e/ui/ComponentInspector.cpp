@@ -87,10 +87,15 @@ void ComponentInspector::draw()
 
     for (auto & comp : _node->orderedComponents())
     {
+        const auto * typeInfo = reflection::TypeRegistry::get().type(comp->typeName());
+        if (!typeInfo || typeInfo->properties.empty())
+        {
+            continue;
+        }
+
         Group::pushId(id++);
 
-        const auto * typeInfo = reflection::TypeRegistry::get().type(comp->typeName());
-        const auto headerTitle = typeInfo && !typeInfo->displayName.empty()
+        const auto headerTitle = !typeInfo->displayName.empty()
             ? typeInfo->displayName
             : comp->typeName();
 
@@ -107,50 +112,43 @@ void ComponentInspector::draw()
                 pendingRemove = comp;
             }
 
-            if (typeInfo)
+            std::vector<ResourceSnapshot> resources;
+            for (const auto & property : typeInfo->properties)
             {
-                std::vector<ResourceSnapshot> resources;
-                for (const auto & property : typeInfo->properties)
+                if (property.type == reflection::PropertyType::Resource && property.getter)
                 {
-                    if (property.type == reflection::PropertyType::Resource && property.getter)
-                    {
-                        resources.push_back({ &property, resourceValue(property, comp.get()) });
-                    }
+                    resources.push_back({ &property, resourceValue(property, comp.get()) });
                 }
-
-                bool componentChanged = ReflectionWidget::drawProperties(comp.get(), *typeInfo);
-                size_t changedResources = 0;
-                size_t rejectedResources = 0;
-                for (const auto & resource : resources)
-                {
-                    const auto selected = resourceValue(*resource.property, comp.get());
-                    if (selected == resource.value) continue;
-                    ++changedResources;
-
-                    if (_onResourceChanged && !_onResourceChanged(
-                            comp.get(), resource.property->name, resource.value, selected))
-                    {
-                        restoreResource(resource, comp.get());
-                        ++rejectedResources;
-                    }
-                }
-
-                // A component containing only rejected Resource changes did
-                // not change. Preserve notification for any simultaneous
-                // non-resource edit.
-                if (componentChanged &&
-                    !(changedResources > 0 &&
-                      rejectedResources == changedResources &&
-                      resources.size() == typeInfo->properties.size()))
-                {
-                    changed = true;
-                }
-                ReflectionWidget::drawActions(comp.get(), *typeInfo);
             }
-            else
+
+            bool componentChanged = ReflectionWidget::drawProperties(comp.get(), *typeInfo);
+            size_t changedResources = 0;
+            size_t rejectedResources = 0;
+            for (const auto & resource : resources)
             {
-                Text::text("No reflection data for '" + comp->typeName() + "'");
+                const auto selected = resourceValue(*resource.property, comp.get());
+                if (selected == resource.value) continue;
+                ++changedResources;
+
+                if (_onResourceChanged && !_onResourceChanged(
+                        comp.get(), resource.property->name, resource.value, selected))
+                {
+                    restoreResource(resource, comp.get());
+                    ++rejectedResources;
+                }
             }
+
+            // A component containing only rejected Resource changes did
+            // not change. Preserve notification for any simultaneous
+            // non-resource edit.
+            if (componentChanged &&
+                !(changedResources > 0 &&
+                  rejectedResources == changedResources &&
+                  resources.size() == typeInfo->properties.size()))
+            {
+                changed = true;
+            }
+            ReflectionWidget::drawActions(comp.get(), *typeInfo);
         }
 
         Group::popId();
