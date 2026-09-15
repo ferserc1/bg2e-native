@@ -65,6 +65,12 @@ protected:
         const reflection::PropertyInfo & prop,
         uint32_t depth
     );
+
+    static bool drawPolymorphicObjectProperty(
+        void * instance,
+        const reflection::PropertyInfo & prop,
+        uint32_t depth
+    );
 };
 
 }

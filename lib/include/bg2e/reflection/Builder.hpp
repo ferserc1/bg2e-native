@@ -26,10 +26,14 @@
 #include <cstdint>
 #include <cstddef>
 #include <filesystem>
+#include <functional>
+#include <memory>
 #include <optional>
+#include <stdexcept>
 #include <string>
 #include <type_traits>
 #include <utility>
+#include <vector>
 
 namespace bg2e {
 namespace reflection {
@@ -128,6 +132,26 @@ public:
         return *this;
     }
 
+    PropertyBuilder& resource(
+        std::string kind,
+        std::vector<std::string> extensions = {},
+        bool projectRelative = false
+    ) {
+        auto & property = info();
+        if (property.type != PropertyType::String && property.type != PropertyType::Path)
+        {
+            throw std::logic_error(
+                "bg2e::reflection: resource() requires a string or filesystem path property"
+            );
+        }
+        property.metadata.resourceValueType = property.type;
+        property.type = PropertyType::Resource;
+        property.metadata.resourceKind = std::move(kind);
+        property.metadata.resourceExtensions = std::move(extensions);
+        property.metadata.resourcePathIsProjectRelative = projectRelative;
+        return *this;
+    }
+
     template<typename EnumT>
     PropertyBuilder& enumValue(std::string label, EnumT value)
     {
@@ -154,6 +178,28 @@ public:
     // No editor(), slider(), drag(), range(), min(), max(), step(),
     // enumValue(), ... : they are meaningless for object properties and
     // must fail to compile instead of being silently ignored.
+
+private:
+    PropertyInfo& info() { return _builder.propertyAt(_index); }
+
+    TypeInfoBuilder<T>& _builder;
+    size_t _index;
+};
+
+template<typename T>
+class PolymorphicObjectBuilder {
+public:
+    PolymorphicObjectBuilder(TypeInfoBuilder<T>& builder, size_t index)
+        : _builder(builder), _index(index) {}
+
+    PolymorphicObjectBuilder& displayName(std::string v) { info().metadata.displayName = std::move(v); return *this; }
+    PolymorphicObjectBuilder& category(std::string v)    { info().metadata.category = std::move(v); return *this; }
+    PolymorphicObjectBuilder& tooltip(std::string v)     { info().metadata.tooltip = std::move(v); return *this; }
+    PolymorphicObjectBuilder& subtype(std::string key)
+    {
+        info().polymorphicSubtypeKeys.push_back(std::move(key));
+        return *this;
+    }
 
 private:
     PropertyInfo& info() { return _builder.propertyAt(_index); }
@@ -206,10 +252,26 @@ public:
         p.type = propertyTypeOf<GetterValue>();
         p.getter = [getter](const void * instance) -> std::any {
             auto object = const_cast<T*>(static_cast<const T*>(instance));
-            return std::any((object->*getter)());
+            if constexpr (std::is_enum_v<GetterValue>)
+            {
+                return std::any(static_cast<int64_t>((object->*getter)()));
+            }
+            else
+            {
+                return std::any((object->*getter)());
+            }
         };
         p.setter = [setter](void * instance, const std::any& value) {
-            (static_cast<T*>(instance)->*setter)(std::any_cast<GetterValue>(value));
+            if constexpr (std::is_enum_v<GetterValue>)
+            {
+                (static_cast<T*>(instance)->*setter)(
+                    static_cast<GetterValue>(std::any_cast<int64_t>(value))
+                );
+            }
+            else
+            {
+                (static_cast<T*>(instance)->*setter)(std::any_cast<GetterValue>(value));
+            }
         };
         _info.properties.push_back(std::move(p));
         return PropertyBuilder<T>(*this, _info.properties.size() - 1);
@@ -225,7 +287,14 @@ public:
         p.type = propertyTypeOf<GetterValue>();
         p.getter = [getter](const void * instance) -> std::any {
             auto object = const_cast<T*>(static_cast<const T*>(instance));
-            return std::any((object->*getter)());
+            if constexpr (std::is_enum_v<GetterValue>)
+            {
+                return std::any(static_cast<int64_t>((object->*getter)()));
+            }
+            else
+            {
+                return std::any((object->*getter)());
+            }
         };
         _info.properties.push_back(std::move(p));
         return PropertyBuilder<T>(*this, _info.properties.size() - 1);
@@ -279,6 +348,77 @@ public:
         };
         _info.properties.push_back(std::move(p));
         return ObjectBuilder<T>(*this, _info.properties.size() - 1);
+    }
+
+    // Editable owned polymorphic property. Accessors return pointers to the
+    // current Base object; the replacer accepts a newly-created shared owner.
+    template<typename Base, typename ConstGetter, typename MutableGetter, typename Replacer>
+    PolymorphicObjectBuilder<T> polymorphicObject(
+        std::string name,
+        std::string baseTypeName,
+        ConstGetter constGetter,
+        MutableGetter mutableGetter,
+        Replacer replacer
+    ) {
+        PropertyInfo p;
+        p.name = std::move(name);
+        p.type = PropertyType::PolymorphicObject;
+        p.polymorphicBaseTypeName = std::move(baseTypeName);
+        p.polymorphicObjectGetter = [constGetter](const void * instance) -> const void * {
+            const auto * object = static_cast<const T*>(instance);
+            return static_cast<const Base*>(std::invoke(constGetter, *object));
+        };
+        p.polymorphicObjectMutableGetter = [mutableGetter](void * instance) -> void * {
+            auto * object = static_cast<T*>(instance);
+            return static_cast<Base*>(std::invoke(mutableGetter, *object));
+        };
+        const auto hierarchy = p.polymorphicBaseTypeName;
+        p.polymorphicTypeKey = [constGetter, hierarchy](const void * instance) -> std::string {
+            const auto * object = static_cast<const T*>(instance);
+            const auto * current = static_cast<const Base*>(std::invoke(constGetter, *object));
+            return current
+                ? TypeRegistry::get().subtypeKey(hierarchy, typeid(*current))
+                : std::string{};
+        };
+        p.polymorphicObjectReplacer = [replacer, hierarchy](
+            void * instance,
+            const std::string& subtypeKey
+        ) -> bool {
+            auto replacement = TypeRegistry::get().createSubtype<Base>(hierarchy, subtypeKey);
+            if (!replacement) return false;
+            std::invoke(replacer, *static_cast<T*>(instance), std::move(replacement));
+            return true;
+        };
+        _info.properties.push_back(std::move(p));
+        return PolymorphicObjectBuilder<T>(*this, _info.properties.size() - 1);
+    }
+
+    // Read-only polymorphic property: its subtype and reflected values can be
+    // inspected, but it cannot be edited or replaced.
+    template<typename Base, typename ConstGetter>
+    PolymorphicObjectBuilder<T> polymorphicObject(
+        std::string name,
+        std::string baseTypeName,
+        ConstGetter constGetter
+    ) {
+        PropertyInfo p;
+        p.name = std::move(name);
+        p.type = PropertyType::PolymorphicObject;
+        p.polymorphicBaseTypeName = std::move(baseTypeName);
+        p.polymorphicObjectGetter = [constGetter](const void * instance) -> const void * {
+            const auto * object = static_cast<const T*>(instance);
+            return static_cast<const Base*>(std::invoke(constGetter, *object));
+        };
+        const auto hierarchy = p.polymorphicBaseTypeName;
+        p.polymorphicTypeKey = [constGetter, hierarchy](const void * instance) -> std::string {
+            const auto * object = static_cast<const T*>(instance);
+            const auto * current = static_cast<const Base*>(std::invoke(constGetter, *object));
+            return current
+                ? TypeRegistry::get().subtypeKey(hierarchy, typeid(*current))
+                : std::string{};
+        };
+        _info.properties.push_back(std::move(p));
+        return PolymorphicObjectBuilder<T>(*this, _info.properties.size() - 1);
     }
 
     template<typename Method>

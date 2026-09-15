@@ -27,6 +27,13 @@
 namespace bg2e {
 namespace reflection {
 
+struct SubtypeInfo {
+    std::string baseTypeName;
+    std::string key;
+    std::string typeName;
+    std::string displayName;
+};
+
 struct TypeInfo {
     std::string typeName;
     std::string displayName;

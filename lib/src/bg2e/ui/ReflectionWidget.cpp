@@ -26,6 +26,7 @@
 #include <bg2e/ui/Numeric.hpp>
 #include <bg2e/ui/Vector.hpp>
 #include <bg2e/ui/Value.hpp>
+#include <bg2e/ui/ResourcePicker.hpp>
 
 #include <any>
 #include <cstdint>
@@ -201,6 +202,10 @@ bool ReflectionWidget::drawProperty(
     {
         return drawObjectProperty(instance, prop, depth);
     }
+    if (prop.type == PropertyType::PolymorphicObject)
+    {
+        return drawPolymorphicObjectProperty(instance, prop, depth);
+    }
     return drawScalarProperty(instance, prop);
 }
 
@@ -295,18 +300,69 @@ bool ReflectionWidget::drawScalarProperty(
         if (changed) prop.setter(instance, v);
         break;
     }
-    case PropertyType::Enum:
-        // v1 limitation: the concrete enum type is erased inside std::any,
-        // so the current value can neither be read nor written generically
-        // (std::any_cast requires the exact enum type). Show a fallback.
-        Text::text(nameFor(prop) + ": <enum not supported>");
+    case PropertyType::Enum: {
+        const auto currentValue = std::any_cast<int64_t>(prop.getter(instance));
+        if (prop.metadata.enumOptions.empty())
+        {
+            Group::beginDisabled();
+            Text::text(nameFor(prop) + ": <no enum options>");
+            Group::endDisabled();
+            break;
+        }
+
+        std::vector<std::string> labels;
+        std::vector<int64_t> values;
+        uint32_t selected = 0;
+        bool currentFound = false;
+        for (const auto & [optionLabel, optionValue] : prop.metadata.enumOptions)
+        {
+            if (optionValue == currentValue)
+            {
+                selected = static_cast<uint32_t>(labels.size());
+                currentFound = true;
+            }
+            labels.push_back(optionLabel);
+            values.push_back(optionValue);
+        }
+        if (!currentFound)
+        {
+            selected = static_cast<uint32_t>(labels.size());
+            labels.push_back("Unknown (" + std::to_string(currentValue) + ")");
+            values.push_back(currentValue);
+        }
+        changed = Value::comboBox(label, labels, selected);
+        if (changed) prop.setter(instance, values[selected]);
         break;
+    }
     case PropertyType::Path: {
         auto v = std::any_cast<std::filesystem::path>(prop.getter(instance));
         Text::text(nameFor(prop) + ": " + v.string());
         break;
     }
-    case PropertyType::Resource:
+    case PropertyType::Resource: {
+        std::filesystem::path v;
+        if (prop.metadata.resourceValueType == PropertyType::String)
+        {
+            v = std::any_cast<std::string>(prop.getter(instance));
+        }
+        else
+        {
+            v = std::any_cast<std::filesystem::path>(prop.getter(instance));
+        }
+        changed = ResourcePicker::draw(label, v, prop.metadata, readOnly);
+        if (changed)
+        {
+            if (prop.metadata.resourceValueType == PropertyType::String)
+            {
+                prop.setter(instance, v.string());
+            }
+            else
+            {
+                prop.setter(instance, v);
+            }
+        }
+        break;
+    }
     default:
         Text::text(nameFor(prop) + ": <not supported>");
         break;
@@ -370,6 +426,180 @@ bool ReflectionWidget::drawObjectProperty(
         {
             Group::endDisabled();
         }
+        Group::endTree();
+    }
+    Text::tooltip(prop.metadata.tooltip);
+    return changed;
+}
+
+bool ReflectionWidget::drawPolymorphicObjectProperty(
+    void * instance,
+    const reflection::PropertyInfo & prop,
+    uint32_t depth
+) {
+    const auto label = nameFor(prop);
+    auto & registry = reflection::TypeRegistry::get();
+    std::vector<reflection::SubtypeInfo> options;
+    if (prop.polymorphicSubtypeKeys.empty())
+    {
+        options = registry.subtypes(prop.polymorphicBaseTypeName);
+    }
+    else
+    {
+        options.reserve(prop.polymorphicSubtypeKeys.size());
+        for (const auto & key : prop.polymorphicSubtypeKeys)
+        {
+            if (const auto * option = registry.subtype(prop.polymorphicBaseTypeName, key))
+            {
+                options.push_back(*option);
+            }
+        }
+    }
+    const void * currentObject = prop.polymorphicObjectGetter
+        ? prop.polymorphicObjectGetter(instance)
+        : nullptr;
+    std::string currentKey = currentObject && prop.polymorphicTypeKey
+        ? prop.polymorphicTypeKey(instance)
+        : std::string{};
+
+    if (currentObject && currentKey.empty())
+    {
+        Group::beginDisabled();
+        Text::text(label + ": <unknown subtype>");
+        Group::endDisabled();
+        Text::tooltip(prop.metadata.tooltip);
+        return false;
+    }
+
+    const reflection::SubtypeInfo * activeSubtype = currentKey.empty()
+        ? nullptr
+        : registry.subtype(prop.polymorphicBaseTypeName, currentKey);
+    if (currentObject && !activeSubtype)
+    {
+        Group::beginDisabled();
+        Text::text(label + ": <subtype not registered>");
+        Group::endDisabled();
+        Text::tooltip(prop.metadata.tooltip);
+        return false;
+    }
+
+    bool changed = false;
+    if (Group::beginTree(label + "##" + prop.name))
+    {
+        std::vector<std::string> subtypeLabels;
+        std::vector<std::string> subtypeKeys;
+        uint32_t selected = 0;
+        for (const auto & option : options)
+        {
+            if (option.key == currentKey) selected = static_cast<uint32_t>(subtypeLabels.size());
+            subtypeLabels.push_back(option.displayName);
+            subtypeKeys.push_back(option.key);
+        }
+
+        if (!currentObject)
+        {
+            selected = static_cast<uint32_t>(subtypeLabels.size());
+            subtypeLabels.push_back("None");
+            subtypeKeys.emplace_back();
+        }
+
+        const bool canReplace = static_cast<bool>(prop.polymorphicObjectReplacer);
+        if (options.empty() || (!currentObject && !canReplace))
+        {
+            Group::beginDisabled();
+            Text::text("Type: <none available>");
+            Group::endDisabled();
+        }
+        else
+        {
+            if (!canReplace) Group::beginDisabled();
+            const bool selectionChanged = Value::comboBox(
+                "Type##" + prop.name,
+                subtypeLabels,
+                selected
+            );
+            if (!canReplace) Group::endDisabled();
+
+            if (selectionChanged && canReplace && !subtypeKeys[selected].empty())
+            {
+                changed = prop.polymorphicObjectReplacer(instance, subtypeKeys[selected]);
+
+                // Replacement invalidates every pointer obtained above.
+                currentObject = prop.polymorphicObjectGetter
+                    ? prop.polymorphicObjectGetter(instance)
+                    : nullptr;
+                currentKey = currentObject && prop.polymorphicTypeKey
+                    ? prop.polymorphicTypeKey(instance)
+                    : std::string{};
+                activeSubtype = currentKey.empty()
+                    ? nullptr
+                    : registry.subtype(prop.polymorphicBaseTypeName, currentKey);
+            }
+        }
+
+        if (currentObject && activeSubtype)
+        {
+            const auto * baseInfo = registry.type(prop.polymorphicBaseTypeName);
+            const auto * subtypeInfo = registry.type(activeSubtype->typeName);
+            if (!subtypeInfo)
+            {
+                Group::beginDisabled();
+                Text::text("<subtype reflection not registered>");
+                Group::endDisabled();
+            }
+            else if (depth >= reflection::maxObjectDepth)
+            {
+                Text::text("<max depth reached>");
+            }
+            else
+            {
+                void * mutableBaseObject = prop.polymorphicObjectMutableGetter
+                    ? prop.polymorphicObjectMutableGetter(instance)
+                    : nullptr;
+                void * mutableSubtypeObject = registry.subtypeObject(
+                    prop.polymorphicBaseTypeName,
+                    currentKey,
+                    mutableBaseObject
+                );
+                const void * subtypeObject = registry.subtypeObject(
+                    prop.polymorphicBaseTypeName,
+                    currentKey,
+                    currentObject
+                );
+                const bool readOnly = mutableBaseObject == nullptr;
+                if (readOnly) Group::beginDisabled();
+
+                auto * editBaseObject = mutableBaseObject
+                    ? mutableBaseObject
+                    : const_cast<void*>(currentObject);
+                if (baseInfo && activeSubtype->typeName != prop.polymorphicBaseTypeName)
+                {
+                    changed = drawProperties(editBaseObject, *baseInfo, depth + 1) || changed;
+                    drawActions(editBaseObject, *baseInfo);
+                }
+
+                auto * editSubtypeObject = mutableSubtypeObject
+                    ? mutableSubtypeObject
+                    : const_cast<void*>(subtypeObject);
+                if (editSubtypeObject)
+                {
+                    changed = drawProperties(editSubtypeObject, *subtypeInfo, depth + 1) || changed;
+                    drawActions(editSubtypeObject, *subtypeInfo);
+                }
+                else
+                {
+                    Text::text("<invalid subtype object>");
+                }
+                if (readOnly) Group::endDisabled();
+            }
+        }
+        else if (!currentObject)
+        {
+            Group::beginDisabled();
+            Text::text("<no object>");
+            Group::endDisabled();
+        }
+
         Group::endTree();
     }
     Text::tooltip(prop.metadata.tooltip);

@@ -44,6 +44,7 @@
 #include <bg2e/ui/SceneTree.hpp>
 #include <bg2e/ui/NodeEditor.hpp>
 #include <bg2e/ui/ReflectionWidget.hpp>
+#include <bg2e/ui/ResourcePicker.hpp>
 #include <bg2e/ui/ComponentInspector.hpp>
 #include <bg2e/ui/UISettingsWindow.hpp>
 #include <bg2e/ui/RenderSettingsWindow.hpp>
