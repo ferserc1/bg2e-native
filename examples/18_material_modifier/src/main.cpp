@@ -17,7 +17,6 @@ class MaterialModifierDelegate :
     public bg2e::ui::UserInterfaceDelegate
 {
     using Base = bg2e::render::DefaultRenderLoopDelegate<bg2e::render::RendererDeferred>;
-    using Widgets = bg2e::ui::BasicWidgets;
     static constexpr uint32_t Side = 6;
     bg2e::ui::Window _window;
     bg2e::scene::InputVisitor _input;
@@ -111,44 +110,44 @@ public:
     void drawUI() override
     {
         _window.draw([&] {
-            Widgets::text("Left drag: orbit | Right drag: pan | Wheel: zoom");
-            Widgets::text("Grid: roughness left to right; metalness bottom to top.");
-            Widgets::text("Large spheres, left to right:");
-            Widgets::text("CPU rust | runtime rust | sheen / emission | glass");
-            Widgets::text("Bottom two blue rows reuse one JSON-node snapshot.");
-            if (Widgets::button("Reset camera")) _orbit->reset();
-            if (Widgets::button("Reset grid")) { resetGrid(); report("Restored grid gradient."); }
-            Widgets::separator("Submesh selection (color only)");
-            if (Widgets::button("Single submesh: cyan"))
+            bg2e::ui::Text::text("Left drag: orbit | Right drag: pan | Wheel: zoom");
+            bg2e::ui::Text::text("Grid: roughness left to right; metalness bottom to top.");
+            bg2e::ui::Text::text("Large spheres, left to right:");
+            bg2e::ui::Text::text("CPU rust | runtime rust | sheen / emission | glass");
+            bg2e::ui::Text::text("Bottom two blue rows reuse one JSON-node snapshot.");
+            if (bg2e::ui::Button::button("Reset camera")) _orbit->reset();
+            if (bg2e::ui::Button::button("Reset grid")) { resetGrid(); report("Restored grid gradient."); }
+            bg2e::ui::Text::separator("Submesh selection (color only)");
+            if (bg2e::ui::Button::button("Single submesh: cyan"))
             {
                 MaterialModifier(std::string(R"({"albedo":[0,0.8,1,1]})")).apply(*_grid, uint32_t{14});
                 report("Only submesh 14 recolored; its gradient values remain.");
             }
-            if (Widgets::button("Exact group row-2: green"))
+            if (bg2e::ui::Button::button("Exact group row-2: green"))
             {
                 auto n = MaterialModifier(std::string(R"({"albedo":[0.1,1,0.2,1]})"))
                     .applyAll(*_grid, std::string("row-2"));
                 report("Exact group: " + std::to_string(n) + " submeshes (expected 6).");
             }
-            if (Widgets::button("Regex row-[35]: gold"))
+            if (bg2e::ui::Button::button("Regex row-[35]: gold"))
             {
                 auto n = MaterialModifier(std::string(R"({"albedo":[1,0.65,0.08,1]})"))
                     .applyAll(*_grid, std::regex("row-[35]"));
                 report("Regex: " + std::to_string(n) + " submeshes (expected 12).");
             }
-            if (Widgets::button("All submeshes: blue"))
+            if (bg2e::ui::Button::button("All submeshes: blue"))
             {
                 auto n = MaterialModifier(std::string(R"({"albedo":[0.08,0.3,1,1]})")).applyAll(*_grid);
                 report("All: " + std::to_string(n) + " submeshes (expected 36).");
             }
-            Widgets::separator("Runtime material / texture changes");
-            if (Widgets::button("Apply rust to second large sphere"))
+            bg2e::ui::Text::separator("Runtime material / texture changes");
+            if (bg2e::ui::Button::button("Apply rust to second large sphere"))
             {
                 _textureLoads = 0;
                 rust().apply(*_large[1], uint32_t{0}, [&] { ++_textureLoads; });
                 report("Runtime rust: " + std::to_string(_textureLoads) + " texture callbacks (expected 6).");
             }
-            if (Widgets::button("Scale / UV / channels only"))
+            if (bg2e::ui::Button::button("Scale / UV / channels only"))
             {
                 MaterialModifier(std::string(R"({
                     "albedoScale":[3,2], "normalScale":[3,2],
@@ -157,7 +156,7 @@ public:
                 })")).apply(*_large[1], uint32_t{0});
                 report("Companion fields changed without supplying any texture.");
             }
-            if (Widgets::button("Serializer JSON / absolute texture paths"))
+            if (bg2e::ui::Button::button("Serializer JSON / absolute texture paths"))
             {
                 bg2e::utils::MaterialSerializer serializer;
                 std::vector<std::shared_ptr<bg2e::base::Texture>> textures;
@@ -168,7 +167,7 @@ public:
                 MaterialModifier(json, _assets / "unused-base").applyAll(*_large[1]);
                 report("Second sphere restored from native serializer JSON.");
             }
-            if (Widgets::button("MaterialBase reference: sheen"))
+            if (bg2e::ui::Button::button("MaterialBase reference: sheen"))
             {
                 MaterialModifier(std::string(R"({
                     "sheenIntensity":0.9, "sheenColor":[0.1,0.4,1,1],
@@ -176,13 +175,13 @@ public:
                 })")).apply(*_large[2]->renderMaterial(0));
                 report("Third large sphere: direct MaterialBase reference.");
             }
-            if (Widgets::button("Shared MaterialBase: unlit emission"))
+            if (bg2e::ui::Button::button("Shared MaterialBase: unlit emission"))
             {
                 MaterialModifier(std::string(R"({"unlit":true,"lightEmission":0.5})"))
                     .apply(_large[2]->renderMaterial(0));
                 report("Third large sphere: shared MaterialBase, unlit + emission.");
             }
-            if (Widgets::button("Explicit zero / false"))
+            if (bg2e::ui::Button::button("Explicit zero / false"))
             {
                 MaterialModifier(std::string(R"({
                     "unlit":false,"lightEmission":0,"sheenIntensity":0,
@@ -190,13 +189,13 @@ public:
                 })")).apply(*_large[2], uint32_t{0});
                 report("Zero and false are applied, not treated as missing.");
             }
-            if (Widgets::button("Update materials + reload grid"))
+            if (bg2e::ui::Button::button("Update materials + reload grid"))
             {
                 _grid->updateMaterials();
                 _grid->reload();
                 report("Grid colors survive updateMaterials() and reload().");
             }
-            if (Widgets::button("Preserve unrelated runtime edits"))
+            if (bg2e::ui::Button::button("Preserve unrelated runtime edits"))
             {
                 auto live = _grid->renderMaterial(0);
                 live->materialAttributes().setRoughness(0.77f);
@@ -205,9 +204,9 @@ public:
                     ? "Runtime roughness 0.77 preserved; only albedo patched."
                     : "Unexpected change to runtime roughness.");
             }
-            if (Widgets::button("Invalid input / unmatched groups")) invalidInputs();
-            Widgets::separator("Last operation");
-            Widgets::text(_status);
+            if (bg2e::ui::Button::button("Invalid input / unmatched groups")) invalidInputs();
+            bg2e::ui::Text::separator("Last operation");
+            bg2e::ui::Text::text(_status);
         });
     }
 

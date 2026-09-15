@@ -17,7 +17,8 @@
  */
 
 #include <bg2e/ui/SubmeshSelector.hpp>
-#include <bg2e/ui/BasicWidgets.hpp>
+#include <bg2e/ui/Text.hpp>
+#include <bg2e/ui/Button.hpp>
 
 #include <algorithm>
 
@@ -139,7 +140,7 @@ bool SubmeshSelector::draw()
     }
 
 
-    BasicWidgets::separator("Submeshes");
+    Text::separator("Submeshes");
     SelectableList::beginList(1);
     bool changed = false;
     auto node = _currentSelection.nodePtr();
@@ -162,7 +163,7 @@ bool SubmeshSelector::draw()
         }
     }
     SelectableList::endList();
-    if (BasicWidgets::button("Clear Selection"))
+    if (Button::button("Clear Selection"))
     {
         _selectionMgr->deselect();
         changed = true;

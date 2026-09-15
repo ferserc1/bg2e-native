@@ -308,46 +308,46 @@ public:
     {
         using namespace bg2e::ui;
         _window.draw([&]() {
-            BasicWidgets::text("Hello, world!");
+            Text::text("Hello, world!");
    
-            BasicWidgets::checkBox("Draw Skybox", &_drawSkybox);
+            Button::checkBox("Draw Skybox", &_drawSkybox);
             
-            if (BasicWidgets::button("Environment 1"))
+            if (Button::button("Environment 1"))
             {
                 loadEnvironment1();
             }
             
-            if (BasicWidgets::button("Environment 2"))
+            if (Button::button("Environment 2"))
             {
                 loadEnvironment2();
             }
             
-            if (BasicWidgets::button("Environment 3"))
+            if (Button::button("Environment 3"))
             {
                 loadEnvironment3();
             }
             
-            if (BasicWidgets::button("Environment 4"))
+            if (Button::button("Environment 4"))
             {
                 loadEnvironment4();
             }
             
-            if (BasicWidgets::button("Environment 5"))
+            if (Button::button("Environment 5"))
             {
                 loadEnvironment5();
             }
             
-            if (BasicWidgets::button("Environment 6"))
+            if (Button::button("Environment 6"))
             {
                 loadEnvironment6();
             }
             
-            if (BasicWidgets::button("Environment 7"))
+            if (Button::button("Environment 7"))
             {
                 loadEnvironment7();
             }
             
-            if (BasicWidgets::button("Environment 8"))
+            if (Button::button("Environment 8"))
             {
                 loadEnvironment8();
             }

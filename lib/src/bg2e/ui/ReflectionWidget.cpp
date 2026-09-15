@@ -17,11 +17,15 @@
  */
 
 #include <bg2e/ui/ReflectionWidget.hpp>
-#include <bg2e/ui/BasicWidgets.hpp>
-#include <bg2e/ui/Input.hpp>
 #include <bg2e/reflection/Registry.hpp>
 #include <bg2e/base/Color.hpp>
 #include <bg2e/math/base.hpp>
+#include <bg2e/ui/Text.hpp>
+#include <bg2e/ui/Group.hpp>
+#include <bg2e/ui/Button.hpp>
+#include <bg2e/ui/Numeric.hpp>
+#include <bg2e/ui/Vector.hpp>
+#include <bg2e/ui/Value.hpp>
 
 #include <any>
 #include <cstdint>
@@ -75,11 +79,11 @@ bool drawIntEditor(const std::string & label, int & v, const reflection::Propert
     switch (prop.editor)
     {
     case PropertyEditor::Slider:
-        return Input::sliderInt(label, &v, min, max);
+        return Numeric::sliderInt(label, &v, min, max);
     case PropertyEditor::Drag:
-        return Input::drag(label, &v, stepOr(md, 1.0f), min, max);
+        return Numeric::drag(label, &v, stepOr(md, 1.0f), min, max);
     default:
-        return Input::number(label, &v);
+        return Numeric::number(label, &v);
     }
 }
 
@@ -91,10 +95,10 @@ bool drawFloatEditor(const std::string & label, float & v, const reflection::Pro
     switch (prop.editor)
     {
     case PropertyEditor::Slider:
-        return Input::sliderFloat(label, &v, min, max);
+        return Numeric::sliderFloat(label, &v, min, max);
     case PropertyEditor::Drag:
         // Drag without an explicit range is left unclamped (0, 0)
-        return Input::drag(
+        return Numeric::drag(
             label, &v, stepOr(md, 0.1f),
             md.min ? min : 0.0f, md.max ? max : 0.0f
         );
@@ -102,11 +106,11 @@ bool drawFloatEditor(const std::string & label, float & v, const reflection::Pro
         // Angles are edited in degrees; use the metadata range if present
         if (md.min && md.max)
         {
-            return Input::sliderFloat(label, &v, min, max);
+            return Numeric::sliderFloat(label, &v, min, max);
         }
-        return Input::drag(label, &v, stepOr(md, 0.5f));
+        return Numeric::drag(label, &v, stepOr(md, 0.5f));
     default:
-        return Input::number(label, &v);
+        return Numeric::number(label, &v);
     }
 }
 
@@ -146,7 +150,7 @@ bool ReflectionWidget::drawProperties(
         bool open = true;
         if (useTree)
         {
-            open = BasicWidgets::beginTree(
+            open = Group::beginTree(
                 categories[g] + "##" + info.typeName + std::to_string(depth) + "_" + std::to_string(g)
             );
         }
@@ -154,17 +158,17 @@ bool ReflectionWidget::drawProperties(
         {
             for (auto * prop : groups[g])
             {
-                BasicWidgets::pushId(id++);
+                Group::pushId(id++);
                 if (drawProperty(instance, *prop, depth))
                 {
                     changed = true;
                 }
-                BasicWidgets::popId();
+                Group::popId();
             }
         }
         if (useTree && open)
         {
-            BasicWidgets::endTree();
+            Group::endTree();
         }
     }
     return changed;
@@ -177,14 +181,14 @@ void ReflectionWidget::drawActions(
     int id = 0;
     for (const auto & action : info.actions)
     {
-        BasicWidgets::pushId(id++);
+        Group::pushId(id++);
         const auto & label = action.displayName.empty() ? action.name : action.displayName;
-        if (BasicWidgets::button(label + "##" + action.name))
+        if (Button::button(label + "##" + action.name))
         {
             action.invoke(instance);
         }
-        BasicWidgets::tooltip(action.tooltip);
-        BasicWidgets::popId();
+        Text::tooltip(action.tooltip);
+        Group::popId();
     }
 }
 
@@ -210,14 +214,14 @@ bool ReflectionWidget::drawScalarProperty(
 
     if (readOnly)
     {
-        BasicWidgets::beginDisabled();
+        Group::beginDisabled();
     }
 
     switch (prop.type)
     {
     case PropertyType::Bool: {
         auto v = std::any_cast<bool>(prop.getter(instance));
-        changed = BasicWidgets::checkBox(label, &v);
+        changed = Button::checkBox(label, &v);
         if (changed) prop.setter(instance, v);
         break;
     }
@@ -243,7 +247,7 @@ bool ReflectionWidget::drawScalarProperty(
         auto v = std::any_cast<double>(prop.getter(instance));
         if (prop.editor == PropertyEditor::Default || prop.editor == PropertyEditor::Input)
         {
-            changed = Input::number(label, &v);
+            changed = Numeric::number(label, &v);
         }
         else
         {
@@ -257,37 +261,37 @@ bool ReflectionWidget::drawScalarProperty(
     }
     case PropertyType::String: {
         auto v = std::any_cast<std::string>(prop.getter(instance));
-        changed = Input::text(label, v);
+        changed = Value::text(label, v);
         if (changed) prop.setter(instance, v);
         break;
     }
     case PropertyType::Vec2: {
         auto v = std::any_cast<glm::vec2>(prop.getter(instance));
-        changed = Input::vec2(label, v);
+        changed = Vector::vec2(label, v);
         if (changed) prop.setter(instance, v);
         break;
     }
     case PropertyType::Vec3: {
         auto v = std::any_cast<glm::vec3>(prop.getter(instance));
-        changed = Input::vec3(label, v);
+        changed = Vector::vec3(label, v);
         if (changed) prop.setter(instance, v);
         break;
     }
     case PropertyType::Vec4: {
         auto v = std::any_cast<glm::vec4>(prop.getter(instance));
-        changed = Input::vec4(label, v);
+        changed = Vector::vec4(label, v);
         if (changed) prop.setter(instance, v);
         break;
     }
     case PropertyType::Mat4: {
         auto v = std::any_cast<glm::mat4>(prop.getter(instance));
-        changed = Input::mat4(label, v);
+        changed = Vector::mat4(label, v);
         if (changed) prop.setter(instance, v);
         break;
     }
     case PropertyType::Color: {
         auto v = std::any_cast<base::Color>(prop.getter(instance));
-        changed = Input::colorPicker(label, v);
+        changed = Value::colorPicker(label, v);
         if (changed) prop.setter(instance, v);
         break;
     }
@@ -295,25 +299,25 @@ bool ReflectionWidget::drawScalarProperty(
         // v1 limitation: the concrete enum type is erased inside std::any,
         // so the current value can neither be read nor written generically
         // (std::any_cast requires the exact enum type). Show a fallback.
-        BasicWidgets::text(nameFor(prop) + ": <enum not supported>");
+        Text::text(nameFor(prop) + ": <enum not supported>");
         break;
     case PropertyType::Path: {
         auto v = std::any_cast<std::filesystem::path>(prop.getter(instance));
-        BasicWidgets::text(nameFor(prop) + ": " + v.string());
+        Text::text(nameFor(prop) + ": " + v.string());
         break;
     }
     case PropertyType::Resource:
     default:
-        BasicWidgets::text(nameFor(prop) + ": <not supported>");
+        Text::text(nameFor(prop) + ": <not supported>");
         break;
     }
 
     if (readOnly)
     {
-        BasicWidgets::endDisabled();
+        Group::endDisabled();
     }
 
-    BasicWidgets::tooltip(prop.metadata.tooltip);
+    Text::tooltip(prop.metadata.tooltip);
     return changed;
 }
 
@@ -331,27 +335,27 @@ bool ReflectionWidget::drawObjectProperty(
     if (!objectInfo || !subObject)
     {
         // Sub-object type not registered, or no instance: fallback label
-        BasicWidgets::beginDisabled();
-        BasicWidgets::text(label + ": <not registered>");
-        BasicWidgets::endDisabled();
-        BasicWidgets::tooltip(prop.metadata.tooltip);
+        Group::beginDisabled();
+        Text::text(label + ": <not registered>");
+        Group::endDisabled();
+        Text::tooltip(prop.metadata.tooltip);
         return false;
     }
 
     if (depth >= reflection::maxObjectDepth)
     {
-        BasicWidgets::text(label + ": <max depth reached>");
-        BasicWidgets::tooltip(prop.metadata.tooltip);
+        Text::text(label + ": <max depth reached>");
+        Text::tooltip(prop.metadata.tooltip);
         return false;
     }
 
     bool changed = false;
-    if (BasicWidgets::beginTree(label + "##" + prop.name))
+    if (Group::beginTree(label + "##" + prop.name))
     {
         const bool readOnly = prop.isReadOnly();
         if (readOnly)
         {
-            BasicWidgets::beginDisabled();
+            Group::beginDisabled();
         }
 
         void * mutableSubObject = readOnly ? nullptr : prop.objectMutableGetter(instance);
@@ -364,11 +368,11 @@ bool ReflectionWidget::drawObjectProperty(
 
         if (readOnly)
         {
-            BasicWidgets::endDisabled();
+            Group::endDisabled();
         }
-        BasicWidgets::endTree();
+        Group::endTree();
     }
-    BasicWidgets::tooltip(prop.metadata.tooltip);
+    Text::tooltip(prop.metadata.tooltip);
     return changed;
 }
 

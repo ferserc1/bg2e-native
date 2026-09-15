@@ -19,10 +19,10 @@
 #include <bg2e/app/GPUSelectionDialog.hpp>
 #include <bg2e/base/PlatformTools.hpp>
 
-#include <bg2e/ui/BasicWidgets.hpp>
 #include <bg2e/ui/SelectableList.hpp>
 
 #include <bg2e/gpu/vk/Instance.hpp>
+#include <bg2e/ui/Text.hpp>
 
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_vulkan.h>
@@ -163,7 +163,7 @@ std::shared_ptr<render::vulkan::PhysicalDeviceProperties> showDeviceSelectorUI(
         ImGui::SetNextWindowSize(ImVec2((float)windowWidth, (float)windowHeight));
         ImGui::Begin("GPU Devices", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoMove);
 
-        ui::BasicWidgets::text("Select the GPU device to use:");
+        ui::Text::text("Select the GPU device to use:");
 
         ui::SelectableList::beginList(1);
         

@@ -20,7 +20,13 @@
 
 #include <bg2e/ui/UserInterface.hpp>
 #include <bg2e/ui/UserInterfaceDelegate.hpp>
-#include <bg2e/ui/BasicWidgets.hpp>
+#include <bg2e/ui/Layout.hpp>
+#include <bg2e/ui/Text.hpp>
+#include <bg2e/ui/Group.hpp>
+#include <bg2e/ui/Button.hpp>
+#include <bg2e/ui/Numeric.hpp>
+#include <bg2e/ui/Vector.hpp>
+#include <bg2e/ui/Value.hpp>
 #include <bg2e/ui/DemoWindow.hpp>
 #include <bg2e/ui/CameraSettings.hpp>
 #include <bg2e/ui/DrawableEditor.hpp>
@@ -29,7 +35,6 @@
 #include <bg2e/ui/PolarTransformControllerEditor.hpp>
 #include <bg2e/ui/Menu.hpp>
 #include <bg2e/ui/Window.hpp>
-#include <bg2e/ui/Input.hpp>
 #include <bg2e/ui/SelectableList.hpp>
 #include <bg2e/ui/StatusBar.hpp>
 #include <bg2e/ui/SubmeshSelector.hpp>

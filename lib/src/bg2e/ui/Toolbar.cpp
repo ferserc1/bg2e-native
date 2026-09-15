@@ -17,7 +17,9 @@
  */
 
 #include <bg2e/ui/Toolbar.hpp>
-#include <bg2e/ui/BasicWidgets.hpp>
+#include <bg2e/ui/Layout.hpp>
+#include <bg2e/ui/Text.hpp>
+#include <bg2e/ui/Button.hpp>
 
 #include <iostream>
 #include <algorithm>
@@ -55,12 +57,12 @@ void Toolbar::draw()
     draw([&]() {
         for (auto & btn : _leftButtons)
         {
-            if (btn.action != nullptr && BasicWidgets::button(btn.label, true, btn.disabled))
+            if (btn.action != nullptr && Button::button(btn.label, true, btn.disabled))
             {
                 btn.action();
             }
             else if (btn.action == nullptr) {
-                BasicWidgets::text(btn.label, true);
+                Text::text(btn.label, true);
             }
         }
         
@@ -69,26 +71,26 @@ void Toolbar::draw()
         {
             if (btn.action != nullptr)
             {
-                rightButtonsSize += BasicWidgets::calcButtonWidth(btn.label) +
-                    BasicWidgets::getItemHorizontalSpacing();
+                rightButtonsSize += Layout::calcButtonWidth(btn.label) +
+                    Layout::getItemHorizontalSpacing();
             }
             else
             {
-                rightButtonsSize += BasicWidgets::calcTextWidth(btn.label) +
-                    BasicWidgets::getItemHorizontalSpacing();
+                rightButtonsSize += Layout::calcTextWidth(btn.label) +
+                    Layout::getItemHorizontalSpacing();
             }
         }
         auto btnIndex = 0;
         for (auto & btn : _rightButtons)
         {
-            btnIndex == 0 ? BasicWidgets::sameLine(-rightButtonsSize) : BasicWidgets::sameLine();
-            if (btn.action != nullptr && BasicWidgets::button(btn.label, false, btn.disabled))
+            btnIndex == 0 ? Layout::sameLine(-rightButtonsSize) : Layout::sameLine();
+            if (btn.action != nullptr && Button::button(btn.label, false, btn.disabled))
             {
                 btn.action();
             }
             else if (btn.action == nullptr)
             {
-                BasicWidgets::text(btn.label);
+                Text::text(btn.label);
             }
             ++btnIndex;
         }

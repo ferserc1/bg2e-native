@@ -24,8 +24,13 @@ exported with `BG2E_API`.
    - [Toolbar / ToolbarButton](#toolbar--toolbarbutton)
    - [StatusBar / StatusItem](#statusbar--statusitem)
 3. [Primitive widgets](#primitive-widgets)
-   - [BasicWidgets](#basicwidgets)
-   - [Input](#input)
+   - [Layout](#layout)
+   - [Text](#text)
+   - [Group](#group)
+   - [Button](#button)
+   - [Numeric](#numeric)
+   - [Vector](#vector)
+   - [Value](#value)
    - [SelectableList](#selectablelist)
    - [TextureWidgets](#texturewidgets)
 4. [Scene editors](#scene-editors)
@@ -276,56 +281,105 @@ automatically on the first draw.
 
 ## Primitive widgets
 
-### `BasicWidgets`
+### `Layout`
 
-**Header:** `<bg2e/ui/BasicWidgets.hpp>` · **Guide:** [BasicWidgets](BasicWidgets.md)
+**Header:** `<bg2e/ui/Layout.hpp>` · **Guide:** [Layout](Layout.md)
 
-Static-only layout + simple controls.
+Static-only placement, child regions and size metrics.
 
 | Method | Description |
 |--------|-------------|
 | `static void sameLine(int32_t xPos = 0)` | In-line placement. `xPos > 0`: absolute offset from left; `xPos < 0`: offset **from the right window edge**; `0`: natural next-item position. |
-| `static void text(const std::string&, bool sameLine = false)` | Non-editable label. |
-| `static void separator(const std::string& title = "", bool sameLine = false)` | Section separator with optional inline title. |
 | `static void spacing(int32_t spacing = 20)` | Vertical gap (dummy item). |
-| `static void listItem(const std::string&, bool sameLine = false)` | Bulleted line. |
-| `static bool button(const std::string& title, bool sameLine = false, bool disabled = false)` | Returns true on click. |
-| `static bool checkBox(const std::string& title, bool* value = nullptr, bool sameLine = false, bool disabled = false)` | Returns true on change; writes through `value`. |
-| `static bool radioButton(const std::string& label, int* value = nullptr, int id = 0, bool sameLine = false, bool disabled = false)` | Writes `id` into `*value` when clicked. |
-| `static bool beginTree(const std::string& label)` | Collapsible tree node (default open); pair with `endTree()` when it returns true. |
-| `static void endTree()` | Closes a tree. |
-| `static bool collapsingHeader(const std::string& title, bool visible = true)` | One-line header; `visible == true` starts it open. No pairing needed. |
-| `static void tooltip(const std::string& text)` | Hover tooltip for the last item (no-op on empty text). |
-| `static void beginDisabled(bool disabled = true)` / `static void endDisabled()` | Disable a group of controls. |
-| `static void pushId(int id)` / `static void popId()` | ImGui ID stack (repeated labels). |
-| `static uint32_t calcTextWidth / calcTextHeight(const std::string&)` | Text measurement. |
-| `static uint32_t calcButtonWidth / calcButtonHeight(const std::string&)` | Button frame measurement (text + frame padding). |
-| `static uint32_t getItemHorizontalSpacing() / getItemVerticalSpacing()` | Style `ItemSpacing`. |
 | `static void padding(uint32_t width, uint32_t height)` | Empty rectangle placeholder. |
 | `static float getContentRegionAvailWidth() / getContentRegionAvailHeight()` | Remaining space in the current window/child. |
 | `static void beginChild(const std::string& id, float width = 0, float height = 0, bool border = true)` / `static void endChild()` | Child region (0 = fill; independent scroll). |
+| `static uint32_t calcTextWidth / calcTextHeight(const std::string&)` | Text measurement. |
+| `static uint32_t calcButtonWidth / calcButtonHeight(const std::string&)` | Button frame measurement (text + frame padding). |
+| `static uint32_t getItemHorizontalSpacing() / getItemVerticalSpacing()` | Style `ItemSpacing`. |
 
-### `Input`
+### `Text`
 
-**Header:** `<bg2e/ui/Input.hpp>` · **Guide:** [Input](Input.md)
+**Header:** `<bg2e/ui/Text.hpp>` · **Guide:** [Text](Text.md)
 
-Static-only value editors. All return `true` on the frame the value changes
-and modify the passed value in place. All accept a trailing `sameLine`.
+Static-only non-interactive display widgets.
+
+| Method | Description |
+|--------|-------------|
+| `static void text(const std::string&, bool sameLine = false)` | Non-editable label. |
+| `static void separator(const std::string& title = "", bool sameLine = false)` | Section separator with optional inline title. |
+| `static void listItem(const std::string&, bool sameLine = false)` | Bulleted line. |
+| `static void tooltip(const std::string& text)` | Hover tooltip for the last item (no-op on empty text). |
+
+### `Group`
+
+**Header:** `<bg2e/ui/Group.hpp>` · **Guide:** [Group](Group.md)
+
+Static-only scoped helpers (begin/end or push/pop pairs).
+
+| Method | Description |
+|--------|-------------|
+| `static bool beginTree(const std::string& label)` | Collapsible tree node (default open); pair with `endTree()` when it returns true. |
+| `static void endTree()` | Closes a tree. |
+| `static bool collapsingHeader(const std::string& title, bool visible = true)` | One-line header; `visible == true` starts it open. No pairing needed. |
+| `static void beginDisabled(bool disabled = true)` / `static void endDisabled()` | Disable a group of controls. |
+| `static void pushId(int id)` / `static void popId()` | ImGui ID stack (repeated labels). |
+
+### `Button`
+
+**Header:** `<bg2e/ui/Button.hpp>` · **Guide:** [Button](Button.md)
+
+Static-only button family.
+
+| Method | Description |
+|--------|-------------|
+| `static bool button(const std::string& title, bool sameLine = false, bool disabled = false)` | Returns true on click. |
+| `static bool checkBox(const std::string& title, bool* value = nullptr, bool sameLine = false, bool disabled = false)` | Returns true on change; writes through `value`. |
+| `static bool radioButton(const std::string& label, int* value = nullptr, int id = 0, bool sameLine = false, bool disabled = false)` | Writes `id` into `*value` when clicked. |
+
+### `Numeric`
+
+**Header:** `<bg2e/ui/Numeric.hpp>` · **Guide:** [Numeric](Numeric.md)
+
+Static-only scalar value editors. All return `true` on the frame the value
+changes and modify the passed value in place. All accept a trailing
+`sameLine`.
+
+| Method | Notes |
+|--------|-------|
+| `bool number(label, int*/float*/double* value, ...)` | Stepped numeric input. |
+| `bool slider(label, int* value, min = 0, max = 100, ...)`, `bool slider(label, float* value, min = 0, max = 1, ...)` | Range slider. |
+| `bool sliderInt / sliderFloat / sliderDouble(label, value, min, max, ...)` | Typed aliases; `sliderDouble` slides as float. |
+| `bool drag(label, float* value, speed = 0.1f, min = 0, max = 0, ...)`, `bool drag(label, int* value, speed = 1.0f, min = 0, max = 0, ...)` | Drag-to-adjust; `min == max == 0` ⇒ unclamped. |
+
+### `Vector`
+
+**Header:** `<bg2e/ui/Vector.hpp>` · **Guide:** [Vector](Vector.md)
+
+Static-only vector and matrix editors. All return `true` on the frame the
+value changes and modify the passed value in place.
+
+| Method | Notes |
+|--------|-------|
+| `bool vec2/vec3/vec4(label, int*/float* value, ...)` | Raw-array components. |
+| `bool vec2/vec3/vec4(label, glm::vec2&/vec3&/vec4& value, ...)` | GLM overloads (copy in / copy out on change). |
+| `bool mat4(const std::string& label, glm::mat4& value, ...)` | Position / Rotation(deg) / Scale editor; internal **per-label** euler cache (see [Vector](Vector.md)). |
+
+### `Value`
+
+**Header:** `<bg2e/ui/Value.hpp>` · **Guide:** [Value](Value.md)
+
+Static-only non-numeric value editors. All return `true` on the frame the
+value changes and modify the passed value in place. All accept a trailing
+`sameLine`.
 
 | Method | Notes |
 |--------|-------|
 | `bool text(const std::string& label, std::string& value, int maxLength = 200, ...)` | Editable text field. |
 | `bool textWithHint(label, hint, std::string& value, maxLength = 200, ...)` | Placeholder when empty. |
-| `bool number(label, int*/float*/double* value, ...)` | Stepped numeric input. |
-| `bool vec2/vec3/vec4(label, int*/float* value, ...)` | Raw-array components. |
-| `bool vec2/vec3/vec4(label, glm::vec2&/vec3&/vec4& value, ...)` | GLM overloads (copy in / copy out on change). |
-| `bool slider(label, int* value, min = 0, max = 100, ...)`, `bool slider(label, float* value, min = 0, max = 1, ...)` | Range slider. |
-| `bool sliderInt / sliderFloat / sliderDouble(label, value, min, max, ...)` | Typed aliases; `sliderDouble` drags as float. |
-| `bool drag(label, float* value, speed = 0.1f, min = 0, max = 0, ...)`, `bool drag(label, int* value, speed = 1.0f, min = 0, max = 0, ...)` | Drag-to-adjust; `min == max == 0` ⇒ unclamped. |
 | `bool colorPicker(label, base::Color& color, ...)` | RGBA color edit (`ColorEdit4`). |
 | `bool comboBox(label, const std::vector<std::string>& items, uint32_t& selected, ..., bool fitPreview = false)` | Dropdown; entries displayed as `"idx: label"`; `selected` clamped into range. |
 | `bool comboBox(label, ItemListCallback, uint32_t& selected, ...)` | Callback form: `void(std::vector<std::string>&)` refills the items each frame (dynamic lists). |
-| `bool mat4(const std::string& label, glm::mat4& value, ...)` | Position / Rotation(deg) / Scale editor; internal **per-label** euler cache (see [Input](Input.md)). |
 
 ### `SelectableList`
 
@@ -492,9 +546,9 @@ Static-only generic form generated from `bg2e::reflection` metadata.
 
 Widget selection per property type/editor: `Bool`→checkbox, numeric→input /
 slider / drag (honoring `min`/`max`/`step`), `Angle` editor→slider (with
-range) or drag, `String`→text, `VecN`/`Mat4`/`Color`→matching `Input`
-editors, read-only→disabled group + tooltip. `Enum`, `Path` and `Resource`
-fall back to labels (see the guide for details).
+range) or drag, `String`→text, `VecN`/`Mat4`→matching `Vector`
+editors, `Color`→`Value::colorPicker`, read-only→disabled group + tooltip.
+`Enum`, `Path` and `Resource` fall back to labels (see the guide for details).
 
 ### `ComponentInspector`
 

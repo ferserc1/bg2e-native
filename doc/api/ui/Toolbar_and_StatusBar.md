@@ -44,9 +44,9 @@ public:
 
 Left-aligned buttons are drawn in insertion order; right-aligned buttons are
 drawn after, packed against the right edge (the total right-side width is
-measured each frame with `BasicWidgets::calcButtonWidth` / `calcTextWidth`,
-then placed with `sameLine(-total)`). Because alignment is computed from live
-text metrics, `updateButtonLabel()` re-flows automatically.
+measured each frame with `Layout::calcButtonWidth` / `calcTextWidth`,
+then placed with `Layout::sameLine(-total)`). Because alignment is computed
+from live text metrics, `updateButtonLabel()` re-flows automatically.
 
 ### IDs
 
@@ -110,7 +110,7 @@ public:
 `StatusItem` is a tiny observable string. The bar renders the left group
 (first item on a new line, the rest inline) and right-aligns the right group
 by measuring the total text width and using the negative-`sameLine` trick.
-Vertical centering inside the bar height is done with `BasicWidgets::padding`.
+Vertical centering inside the bar height is done with `Layout::padding`.
 
 ### Update pattern
 

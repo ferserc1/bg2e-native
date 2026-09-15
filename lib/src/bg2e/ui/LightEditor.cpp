@@ -17,8 +17,10 @@
  */
 
 #include <bg2e/ui/LightEditor.hpp>
-#include <bg2e/ui/BasicWidgets.hpp>
-#include <bg2e/ui/Input.hpp>
+#include <bg2e/ui/Text.hpp>
+#include <bg2e/ui/Button.hpp>
+#include <bg2e/ui/Numeric.hpp>
+#include <bg2e/ui/Value.hpp>
 
 namespace bg2e::ui {
 
@@ -64,9 +66,9 @@ bool LightEditor::draw()
     bool changed = false;
 
 
-    BasicWidgets::separator("Basic properties");
+    Text::separator("Basic properties");
 
-    if (Input::comboBox(
+    if (Value::comboBox(
         "Light Type",
         s_lightTypeNames,
         currentTypeIdx, false))
@@ -77,7 +79,7 @@ bool LightEditor::draw()
     }
 
     base::Color color = light.color();
-    if (Input::colorPicker("Light Color", color))
+    if (Value::colorPicker("Light Color", color))
     {
         light.setColor(color);
         changed = true;
@@ -85,7 +87,7 @@ bool LightEditor::draw()
     }
 
     float intensity = light.intensity();
-    if (Input::sliderFloat(
+    if (Numeric::sliderFloat(
         "Light Intensity", &intensity, _intensityMin, _intensityMax))
     {
         light.setIntensity(intensity);
@@ -93,9 +95,9 @@ bool LightEditor::draw()
         if (_onChangedFunction) _onChangedFunction();
     }
 
-    BasicWidgets::separator("Shadows");
+    Text::separator("Shadows");
     bool castShadows = light.castShadows();
-    if (BasicWidgets::checkBox("Cast Shadows", &castShadows))
+    if (Button::checkBox("Cast Shadows", &castShadows))
     {
         light.setCastShadows(castShadows);
         changed = true;
@@ -103,7 +105,7 @@ bool LightEditor::draw()
     }
 
     bool affectReflections = light.affectsReflections();
-    if (BasicWidgets::checkBox("Affect Reflections", &affectReflections))
+    if (Button::checkBox("Affect Reflections", &affectReflections))
     {
         light.setAffectsReflections(affectReflections);
         changed = true;
@@ -112,7 +114,7 @@ bool LightEditor::draw()
     if (castShadows)
     {
         float sourceSize = light.sourceSize();
-        if (Input::sliderFloat("Source Size", &sourceSize, 0.01f, 5.0f))
+        if (Numeric::sliderFloat("Source Size", &sourceSize, 0.01f, 5.0f))
         {
             light.setSourceSize(sourceSize);
             changed = true;
@@ -120,7 +122,7 @@ bool LightEditor::draw()
         }
 
         int shadowSamples = static_cast<int>(light.shadowSamples());
-        if (Input::sliderInt("Shadow Samples", &shadowSamples, 1, 32))
+        if (Numeric::sliderInt("Shadow Samples", &shadowSamples, 1, 32))
         {
             light.setShadowSamples(static_cast<uint32_t>(shadowSamples));
             changed = true;
@@ -130,9 +132,9 @@ bool LightEditor::draw()
 
     if (light.type() == base::Light::TypeSpot)
     {
-        BasicWidgets::separator("Spot");
+        Text::separator("Spot");
         float spotAngle = light.spotAngle();
-        if (Input::sliderFloat("Spot Angle", &spotAngle, 1.0f, 90.0f))
+        if (Numeric::sliderFloat("Spot Angle", &spotAngle, 1.0f, 90.0f))
         {
             light.setSpotAngle(spotAngle);
             changed = true;
@@ -140,7 +142,7 @@ bool LightEditor::draw()
         }
 
         float spotCutoff = light.spotCutoff();
-        if (Input::sliderFloat("Spot Cutoff", &spotCutoff, 1.0f, 90.0f))
+        if (Numeric::sliderFloat("Spot Cutoff", &spotCutoff, 1.0f, 90.0f))
         {
             light.setSpotCutoff(spotCutoff);
             changed = true;

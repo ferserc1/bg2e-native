@@ -17,8 +17,10 @@
  */
 
 #include <bg2e/ui/DrawableEditor.hpp>
-#include <bg2e/ui/BasicWidgets.hpp>
-#include <bg2e/ui/Input.hpp>
+#include <bg2e/ui/Text.hpp>
+#include <bg2e/ui/Group.hpp>
+#include <bg2e/ui/Button.hpp>
+#include <bg2e/ui/Value.hpp>
 
 namespace bg2e::ui {
 
@@ -39,7 +41,7 @@ bool DrawableEditor::draw()
         drawable->name() : "Drawable";
     auto changed = false;
         
-    if (drawable.get() && BasicWidgets::collapsingHeader(drawableName)) {
+    if (drawable.get() && Group::collapsingHeader(drawableName)) {
         if (_submeshSelector.draw())
         {
             changed = true;
@@ -59,19 +61,19 @@ bool DrawableEditor::draw()
             {
                 separatorLabel += " (" + std::to_string(_submeshSelector.selectedItems().size()) + " items selected)";
             }
-            BasicWidgets::separator(separatorLabel);
+            Text::separator(separatorLabel);
             
             
-            if (Input::text(nameLabel, plName))
+            if (Value::text(nameLabel, plName))
             {
                 drawable->setSubmeshName(plName, selectedPlist);
                 notifyOnChange();
             }
             if (_submeshSelector.selectedItems().size() > 1)
             {
-                BasicWidgets::text("(" + plName + ")", true);
+                Text::text("(" + plName + ")", true);
             }
-            if (Input::text("Group Name", grpName))
+            if (Value::text("Group Name", grpName))
             {
                 for (auto item : _submeshSelector.selectedItems())
                 {
@@ -79,7 +81,7 @@ bool DrawableEditor::draw()
                 }
                 notifyOnChange();
             }
-            if (BasicWidgets::checkBox("Visibility", &visible))
+            if (Button::checkBox("Visibility", &visible))
             {
                 for (auto item : _submeshSelector.selectedItems())
                 {

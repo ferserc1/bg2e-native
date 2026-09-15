@@ -184,7 +184,7 @@ public:
 
 		//bg2e::ui::DemoWindow::draw();
 		_window.draw([]() {
-			BasicWidgets::text("Texture generated in compute shader");
+			Text::text("Texture generated in compute shader");
 		});
 	}
 

@@ -19,23 +19,13 @@
 #pragma once
 
 #include <bg2e/common.hpp>
-#include <bg2e/ui/LightEditor.hpp>
-#include <bg2e/ui/PolarTransformControllerEditor.hpp>
-#include <bg2e/ui/CameraSettings.hpp>
+#include <bg2e/ui/ComponentInspector.hpp>
 #include <functional>
 #include <vector>
 
 namespace bg2e {
-namespace render {
-    class Engine;
-}
 namespace scene {
     class Node;
-    class TransformComponent;
-    class DrawableComponent;
-    class EnvironmentComponent;
-    class LightComponent;
-    class CameraComponent;
 }
 namespace ui {
 
@@ -43,38 +33,26 @@ class BG2E_API NodeEditor {
 public:
     using ChangedCallback = std::function<void()>;
 
-    void init(render::Engine * engine);
-
     void setNode(scene::Node * node);
     void setNodes(const std::vector<scene::Node*>& nodes);
     scene::Node * node() const { return _node; }
 
     void draw();
 
-    void onChanged(ChangedCallback cb) { _onChanged = cb; }
+    void onChanged(ChangedCallback cb)
+    {
+        _onChanged = cb;
+        _componentInspector.onChanged([this]() { notifyChanged(); });
+    }
 
 protected:
-    render::Engine * _engine = nullptr;
     scene::Node * _node = nullptr;
     size_t _selectionCount = 0;
 
-    LightEditor _lightEditor;
-    PolarTransformControllerEditor _polarEditor;
-    CameraSettings _cameraSettings;
+    ComponentInspector _componentInspector;
 
     ChangedCallback _onChanged;
     void notifyChanged() const;
-
-    void drawComponentList();
-    void drawTransformEditor(scene::TransformComponent * t);
-    void drawDrawableEditor(scene::DrawableComponent * d);
-    void drawEnvironmentEditor(scene::EnvironmentComponent * e);
-    void drawLightEditor(scene::LightComponent * l);
-    void drawCameraEditor(scene::CameraComponent * c);
-
-    // Cached euler angles for stable editing (keyed by node pointer)
-    scene::Node * _eulerCacheNode = nullptr;
-    glm::vec3 _cachedEuler = {0.0f, 0.0f, 0.0f};
 };
 
 }

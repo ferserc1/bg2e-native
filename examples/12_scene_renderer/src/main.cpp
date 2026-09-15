@@ -57,7 +57,7 @@ public:
 	{
         auto drawSkybox = renderer()->drawSkybox();
         _window.draw([&]() {
-            bg2e::ui::BasicWidgets::checkBox("Draw Skybox", &drawSkybox);
+            bg2e::ui::Button::checkBox("Draw Skybox", &drawSkybox);
         });
         renderer()->setDrawSkybox(drawSkybox);
 	}

@@ -17,8 +17,9 @@
  */
 
 #include <bg2e/ui/PolarTransformControllerEditor.hpp>
-#include <bg2e/ui/BasicWidgets.hpp>
-#include <bg2e/ui/Input.hpp>
+#include <bg2e/ui/Text.hpp>
+#include <bg2e/ui/Numeric.hpp>
+#include <bg2e/ui/Vector.hpp>
 
 namespace bg2e::ui {
 
@@ -34,10 +35,10 @@ bool PolarTransformControllerEditor::draw()
 
     bool changed = false;
 
-    BasicWidgets::separator("Position");
+    Text::separator("Position");
 
     float azimuth = comp->azimuth();
-    if (Input::sliderFloat("Azimuth", &azimuth, 0.0f, 360.0f))
+    if (Numeric::sliderFloat("Azimuth", &azimuth, 0.0f, 360.0f))
     {
         comp->setAzimuth(azimuth);
         changed = true;
@@ -45,7 +46,7 @@ bool PolarTransformControllerEditor::draw()
     }
 
     float elevation = comp->elevation();
-    if (Input::sliderFloat("Elevation", &elevation, -90.0f, 90.0f))
+    if (Numeric::sliderFloat("Elevation", &elevation, -90.0f, 90.0f))
     {
         comp->setElevation(elevation);
         changed = true;
@@ -53,17 +54,17 @@ bool PolarTransformControllerEditor::draw()
     }
 
     float distance = comp->distance();
-    if (Input::sliderFloat("Distance", &distance, 0.0f, 50.0f))
+    if (Numeric::sliderFloat("Distance", &distance, 0.0f, 50.0f))
     {
         comp->setDistance(distance);
         changed = true;
         if (_onChangedFunction) _onChangedFunction();
     }
 
-    BasicWidgets::separator("Orientation");
+    Text::separator("Orientation");
 
     float eulerX = comp->eulerX();
-    if (Input::sliderFloat("Euler X", &eulerX, -360.0f, 360.0f))
+    if (Numeric::sliderFloat("Euler X", &eulerX, -360.0f, 360.0f))
     {
         comp->setEulerX(eulerX);
         changed = true;
@@ -71,7 +72,7 @@ bool PolarTransformControllerEditor::draw()
     }
 
     float eulerY = comp->eulerY();
-    if (Input::sliderFloat("Euler Y", &eulerY, -360.0f, 360.0f))
+    if (Numeric::sliderFloat("Euler Y", &eulerY, -360.0f, 360.0f))
     {
         comp->setEulerY(eulerY);
         changed = true;
@@ -79,17 +80,17 @@ bool PolarTransformControllerEditor::draw()
     }
 
     float eulerZ = comp->eulerZ();
-    if (Input::sliderFloat("Euler Z", &eulerZ, -360.0f, 360.0f))
+    if (Numeric::sliderFloat("Euler Z", &eulerZ, -360.0f, 360.0f))
     {
         comp->setEulerZ(eulerZ);
         changed = true;
         if (_onChangedFunction) _onChangedFunction();
     }
 
-    BasicWidgets::separator("Target");
+    Text::separator("Target");
 
     glm::vec3 target = comp->target();
-    if (Input::vec3("Target", target))
+    if (Vector::vec3("Target", target))
     {
         comp->setTarget(target);
         changed = true;

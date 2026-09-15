@@ -131,16 +131,16 @@ public:
         auto drawSkybox = renderer()->drawSkybox();
     
         _window.draw([&]() {
-            bg2e::ui::BasicWidgets::checkBox("Draw Skybox", &drawSkybox);
+            bg2e::ui::Button::checkBox("Draw Skybox", &drawSkybox);
         
             auto &material = _sphere->material(0);
             float metalness = material.metalness();
             float roughness = material.roughness();
             bg2e::base::Color albedo = material.albedo();
-            bg2e::ui::BasicWidgets::separator();
-            bg2e::ui::Input::slider("Metalness", &metalness, 0.0f, 1.0f);
-            bg2e::ui::Input::slider("Roughness", &roughness, 0.0f, 1.0f);
-            bg2e::ui::Input::colorPicker("Albedo", albedo);
+            bg2e::ui::Text::separator();
+            bg2e::ui::Numeric::slider("Metalness", &metalness, 0.0f, 1.0f);
+            bg2e::ui::Numeric::slider("Roughness", &roughness, 0.0f, 1.0f);
+            bg2e::ui::Value::colorPicker("Albedo", albedo);
             material.setMetalness(metalness);
             material.setRoughness(roughness);
             material.setAlbedo(albedo);
@@ -149,19 +149,19 @@ public:
             if (_environment)
             {
                 auto assetPath = bg2e::base::PlatformTools::assetPath();
-                if (bg2e::ui::BasicWidgets::button("Mirrored Hall"))
+                if (bg2e::ui::Button::button("Mirrored Hall"))
                 {
                     _environment->setEnvironmentImage(assetPath, "mirrored_hall_4k.hdr");
                 }
-                if (bg2e::ui::BasicWidgets::button("Theater"))
+                if (bg2e::ui::Button::button("Theater"))
                 {
                     _environment->setEnvironmentImage(assetPath, "theater_01_4k.hdr");
                 }
-                if (bg2e::ui::BasicWidgets::button("Autum Field"))
+                if (bg2e::ui::Button::button("Autum Field"))
                 {
                     _environment->setEnvironmentImage(assetPath, "autumn_field_4k.hdr");
                 }
-                if (bg2e::ui::BasicWidgets::button("Gothic Manor"))
+                if (bg2e::ui::Button::button("Gothic Manor"))
                 {
                     _environment->setEnvironmentImage(assetPath, "gothic_manor_01_4k.hdr");
                 }

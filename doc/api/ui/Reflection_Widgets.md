@@ -38,12 +38,13 @@ it to the type-erased accessors:
 
 | `PropertyType` | Widget(s) |
 |----------------|-----------|
-| `Bool` | `BasicWidgets::checkBox` |
-| `Int` / `UInt` | number input; `Slider` → `sliderInt(min,max)`; `Drag` → `drag(speed=step)` |
-| `Float` | number input; `Slider` → `sliderFloat(min,max)`; `Drag` → `drag(step, clamped only when metadata gives a range)`; `Angle` → slider when a range exists, else drag (speed default `0.5`) |
+| `Bool` | `Button::checkBox` |
+| `Int` / `UInt` | number input; `Slider` → `Numeric::sliderInt(min,max)`; `Drag` → `Numeric::drag(speed=step)` |
+| `Float` | number input; `Slider` → `Numeric::sliderFloat(min,max)`; `Drag` → `Numeric::drag(step, clamped only when metadata gives a range)`; `Angle` → slider when a range exists, else drag (speed default `0.5`) |
 | `Double` | number input; other editors go through a `float` temporary |
-| `String` | `Input::text` |
-| `Vec2/3/4`, `Mat4`, `Color` | matching `Input` widget |
+| `String` | `Value::text` |
+| `Vec2/3/4`, `Mat4` | matching `Vector` widget |
+| `Color` | `Value::colorPicker` |
 | `Enum` | **fallback label** `"<name>: <enum not supported>"` (see limitation below) |
 | `Path` | **read-only label** `"<name>: <path>"` |
 | `Resource` / unknown | label `"<name>: <not supported>"` |
@@ -86,12 +87,12 @@ The concrete enum type is erased inside `std::any` by the reflection getters,
 and `std::any_cast` requires the exact type — so the widget cannot read a
 generic enum value back. It therefore falls back to a label instead of a
 combo. Until this is resolved, edit enums with a hand-written
-`Input::comboBox()` (as `LightEditor` does) rather than relying on the
+`Value::comboBox()` (as `LightEditor` does) rather than relying on the
 generic form. `Path` is likewise label-only for now.
 
 ### `drawActions`
 
-One `BasicWidgets::button` per `ActionInfo` (`displayName` or `name`, ID from
+One `Button::button` per `ActionInfo` (`displayName` or `name`, ID from
 `name`), calling `action.invoke(instance)` on click, with tooltip.
 
 ---

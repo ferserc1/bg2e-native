@@ -11,7 +11,7 @@ The module sits at Layer 8 (the top of the engine stack): it may depend on
 `geo`, but little inside the engine depends on `ui` in return. The two
 exceptions are in `app`: `app::MainLoop`, which owns a `UserInterface`
 instance and drives it once per frame, and the GPU picker
-(`app::GPUSelectionDialog`, which draws `BasicWidgets`/`SelectableList`
+(`app::GPUSelectionDialog`, which draws `Text`/`SelectableList`
 directly over its own ImGui context).
 
 > **Status:** `bg2e::ui` is the production UI layer used by `apps/model_edit`.
@@ -41,7 +41,8 @@ The layer is organized into three tiers:
 1. **Infrastructure** (`UserInterface`, `UserInterfaceDelegate`) — owns the
    ImGui context, the Vulkan command buffer/pool/fence and descriptor pool,
    translates SDL events, and exposes the per-frame hooks used by `app::MainLoop`.
-2. **Primitive wrappers** (`BasicWidgets`, `Input`, `Menu`, `SelectableList`,
+2. **Primitive wrappers** (`Layout`, `Text`, `Group`, `Button`, `Numeric`,
+   `Vector`, `Value`, `Menu`, `SelectableList`,
    `TextureWidgets`, `Window`, `Workspace`, `Toolbar`, `StatusBar`, `Loader`) —
    thin, allocation-free static or window classes that cover the common ImGui
    patterns used by the engine's applications.
@@ -161,8 +162,13 @@ ui::Window                        (concrete base for all floating/docked windows
   +-- ui::RenderSettingsWindow    (built-in deferred-render settings)
 ui::Workspace                     (concrete, not polymorphic)
 ui::Menu / ui::MenuItem           (concrete, not polymorphic)
-ui::BasicWidgets                  (static-only helper class)
-ui::Input                         (static-only helper class)
+ui::Layout                        (static-only helper class)
+ui::Text                          (static-only helper class)
+ui::Group                         (static-only helper class)
+ui::Button                        (static-only helper class)
+ui::Numeric                       (static-only helper class)
+ui::Vector                        (static-only helper class)
+ui::Value                         (static-only helper class)
 ui::SelectableList                (static-only helper class)
 ui::TextureWidgets                (concrete, per-texture slot widget)
 ui::MaterialEditor                (concrete editor)
@@ -207,9 +213,14 @@ ui::DemoWindow                    (static-only, wraps ImGui::ShowDemoWindow)
 
 | Class | Header | Description |
 |-------|--------|-------------|
-| **[`BasicWidgets`](BasicWidgets.md)** | `BasicWidgets.hpp` | Text, buttons, checkboxes, radio buttons, trees, collapsing headers, tooltips, disabled groups, ID stack, size queries, child regions, `sameLine` with negative = right-aligned positioning. |
-| **[`Input`](Input.md)** | `Input.hpp` | Value editors: text, numbers, vec2/3/4, colors, sliders, drags, combos, and a decomposed `mat4` (position/rotation/scale) editor with an internal euler cache. |
-| **[`SelectableList`](BasicWidgets.md#selectablelist)** | `SelectableList.hpp` | Multi-column table of selectable rows with optional per-row buttons. |
+| **[`Layout`](Layout.md)** | `Layout.hpp` | Placement and metrics: `sameLine` with negative = right-aligned positioning, spacing, padding, child regions, text/button size queries, item spacing. |
+| **[`Text`](Text.md)** | `Text.hpp` | Non-interactive display: labels, section separators, bulleted items, hover tooltips. |
+| **[`Group`](Group.md)** | `Group.hpp` | Scoped helpers: trees, collapsing headers, disabled groups, ID stack. |
+| **[`Button`](Button.md)** | `Button.hpp` | Button family: command buttons, checkboxes, radio buttons. |
+| **[`Numeric`](Numeric.md)** | `Numeric.hpp` | Scalar value editors: number inputs, sliders and drags for `int`/`float`/`double`. |
+| **[`Vector`](Vector.md)** | `Vector.hpp` | Vector/matrix editors: `vec2/3/4` (raw arrays or GLM) and a decomposed `mat4` (position/rotation/scale) editor with an internal euler cache. |
+| **[`Value`](Value.md)** | `Value.hpp` | Non-numeric value editors: text fields, RGBA color picker and combo boxes (with a dynamic-list overload). |
+| **[`SelectableList`](SelectableList.md)** | `SelectableList.hpp` | Multi-column table of selectable rows with optional per-row buttons. |
 | **[`TextureWidgets`](TextureWidgets.md)** | `TextureWidgets.hpp` | Renders a `render::Texture` as an ImGui image/image-button; adds/removes ImGui Vulkan descriptor sets, with deferred texture swapping. |
 
 ### Scene editors
@@ -255,8 +266,8 @@ surprises when coming from retained-mode UIs:
    callback registered through `onChanged(...)`.
 3. **Unique IDs.** ImGui identifies widgets by label. Use the `##suffix`
    convention to keep visible labels short while IDs stay unique (see
-   [BasicWidgets](BasicWidgets.md#identifier-management)), or wrap repeated
-   items with `pushId()`/`popId()`.
+   [Group](Group.md#identifier-management)), or wrap repeated
+   items with `Group::pushId()`/`popId()`.
 4. **Do not block inside `drawUI()`.** Long work belongs in
    `MainLoop::asyncLoad()`; scene-graph mutations issued from a UI callback
    while it runs should go through `app::MainLoop::safeUpdateScene()` so they
@@ -287,8 +298,10 @@ The whole layer is DPI-scale aware:
   MaterialEditor, SceneTree, reflection widgets, Loader).
 - **[reference.md](reference.md)** — full class, struct and enum reference.
 - Per-class docs: [UserInterface](UserInterface.md), [Window](Window.md),
-  [Workspace](Workspace.md), [BasicWidgets & SelectableList](BasicWidgets.md),
-  [Input](Input.md), [Menu](Menu.md), [Toolbar & StatusBar](Toolbar_and_StatusBar.md),
+  [Workspace](Workspace.md), [Layout](Layout.md), [Text](Text.md),
+  [Group](Group.md), [Button](Button.md), [Numeric](Numeric.md),
+  [Vector](Vector.md), [Value](Value.md), [SelectableList](SelectableList.md),
+  [Menu](Menu.md), [Toolbar & StatusBar](Toolbar_and_StatusBar.md),
   [TextureWidgets](TextureWidgets.md),
   [Material & Drawable editors](Material_Editors.md),
   [Scene editors](SceneEditors.md), [Reflection widgets](Reflection_Widgets.md),

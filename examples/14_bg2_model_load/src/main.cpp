@@ -136,24 +136,24 @@ public:
         auto drawSkybox = renderer()->drawSkybox();
     
         _window.draw([&]() {
-            bg2e::ui::BasicWidgets::checkBox("Draw Skybox", &drawSkybox);
+            bg2e::ui::Button::checkBox("Draw Skybox", &drawSkybox);
                     
             if (_environment)
             {
                 auto assetPath = bg2e::base::PlatformTools::assetPath();
-                if (bg2e::ui::BasicWidgets::button("Mirrored Hall"))
+                if (bg2e::ui::Button::button("Mirrored Hall"))
                 {
                     _environment->setEnvironmentImage(assetPath, "mirrored_hall_4k.hdr");
                 }
-                if (bg2e::ui::BasicWidgets::button("Theater"))
+                if (bg2e::ui::Button::button("Theater"))
                 {
                     _environment->setEnvironmentImage(assetPath, "theater_01_4k.hdr");
                 }
-                if (bg2e::ui::BasicWidgets::button("Autum Field"))
+                if (bg2e::ui::Button::button("Autum Field"))
                 {
                     _environment->setEnvironmentImage(assetPath, "autumn_field_4k.hdr");
                 }
-                if (bg2e::ui::BasicWidgets::button("Gothic Manor"))
+                if (bg2e::ui::Button::button("Gothic Manor"))
                 {
                     _environment->setEnvironmentImage(assetPath, "gothic_manor_01_4k.hdr");
                 }

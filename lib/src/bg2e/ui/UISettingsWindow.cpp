@@ -18,9 +18,11 @@
 
 #include <bg2e/ui/UISettingsWindow.hpp>
 #include <bg2e/ui/UserInterface.hpp>
-#include <bg2e/ui/BasicWidgets.hpp>
-#include <bg2e/ui/Input.hpp>
 #include <bg2e/manipulation/GizmoComponent.hpp>
+#include <bg2e/ui/Text.hpp>
+#include <bg2e/ui/Group.hpp>
+#include <bg2e/ui/Button.hpp>
+#include <bg2e/ui/Numeric.hpp>
 
 #include <string>
 
@@ -40,12 +42,12 @@ void UISettingsWindow::init()
 void UISettingsWindow::drawUI()
 {
     float scale = UserInterface::getScale();
-    if (Input::sliderFloat("Interface Scale", &scale, 1.0f, 2.0f))
+    if (Numeric::sliderFloat("Interface Scale", &scale, 1.0f, 2.0f))
     {
         UserInterface::setScale(scale);
     }
 
-    BasicWidgets::separator("Gizmos");
+    Text::separator("Gizmos");
 
     using GizmoType = bg2e::manipulation::GizmoType;
     using GizmoComponent = bg2e::manipulation::GizmoComponent;
@@ -64,22 +66,22 @@ void UISettingsWindow::drawUI()
 
     for (auto& entry : types)
     {
-        if (BasicWidgets::collapsingHeader(entry.label))
+        if (Group::collapsingHeader(entry.label))
         {
             bool visible = GizmoComponent::isGizmoVisible(entry.type);
-            if (BasicWidgets::checkBox(std::string("Visible##") + entry.label, &visible))
+            if (Button::checkBox(std::string("Visible##") + entry.label, &visible))
             {
                 GizmoComponent::setGizmoVisible(entry.type, visible);
             }
 
             float opacity = GizmoComponent::gizmoOpacity(entry.type);
-            if (Input::sliderFloat(std::string("Opacity##") + entry.label, &opacity, 0.0f, 1.0f))
+            if (Numeric::sliderFloat(std::string("Opacity##") + entry.label, &opacity, 0.0f, 1.0f))
             {
                 GizmoComponent::setGizmoOpacity(entry.type, opacity);
             }
 
             float gizmoScale = GizmoComponent::gizmoScale(entry.type);
-            if (Input::sliderFloat(std::string("Scale##") + entry.label, &gizmoScale, 0.01f, 0.5f))
+            if (Numeric::sliderFloat(std::string("Scale##") + entry.label, &gizmoScale, 0.01f, 0.5f))
             {
                 GizmoComponent::setGizmoScale(entry.type, gizmoScale);
             }
@@ -88,10 +90,10 @@ void UISettingsWindow::drawUI()
 
     // Transform gizmo. Unlike the type gizmos above it is an independent facet,
     // with extra toggles to hide the scale handles (uniform / per-axis).
-    if (BasicWidgets::collapsingHeader("Transform"))
+    if (Group::collapsingHeader("Transform"))
     {
         bool visible = GizmoComponent::isGizmoVisible(GizmoType::Transform);
-        if (BasicWidgets::checkBox("Visible##Transform", &visible))
+        if (Button::checkBox("Visible##Transform", &visible))
         {
             GizmoComponent::setGizmoVisible(GizmoType::Transform, visible);
         }
@@ -100,19 +102,19 @@ void UISettingsWindow::drawUI()
         // pipeline (no blending), so opacity would have no visual effect.
 
         float gizmoScale = GizmoComponent::gizmoScale(GizmoType::Transform);
-        if (Input::sliderFloat("Scale##Transform", &gizmoScale, 0.01f, 0.5f))
+        if (Numeric::sliderFloat("Scale##Transform", &gizmoScale, 0.01f, 0.5f))
         {
             GizmoComponent::setGizmoScale(GizmoType::Transform, gizmoScale);
         }
 
         bool uniformScale = GizmoComponent::isScaleUniformVisible();
-        if (BasicWidgets::checkBox("Uniform scale control##Transform", &uniformScale))
+        if (Button::checkBox("Uniform scale control##Transform", &uniformScale))
         {
             GizmoComponent::setScaleUniformVisible(uniformScale);
         }
 
         bool axisScale = GizmoComponent::isScaleAxisVisible();
-        if (BasicWidgets::checkBox("Axis scale controls##Transform", &axisScale))
+        if (Button::checkBox("Axis scale controls##Transform", &axisScale))
         {
             GizmoComponent::setScaleAxisVisible(axisScale);
         }

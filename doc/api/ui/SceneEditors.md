@@ -82,7 +82,7 @@ Gotchas worth knowing:
   `<multiple_selection>` and nothing else — no bulk edit support (yet).
 - **Euler cache**: the transform rows use a rotation cache keyed by the *node
   pointer*; switching selection re-extracts angles, editing the same node is
-  stable (same mechanism as [`Input::mat4`](Input.md#matrix-editor-mat4-and-the-euler-cache)).
+  stable (same mechanism as [`Vector::mat4`](Vector.md#matrix-editor-mat4-and-the-euler-cache)).
 - **`"Replace Model..."` is a GPU-thread affair**: the loaded drawable is
   applied through `app::MainLoop::safeUpdateScene()` so the scene graph is
   never mutated while a visitor is traversing it. When you build similar

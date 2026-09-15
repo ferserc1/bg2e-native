@@ -17,9 +17,9 @@
  */
 
 #include "bg2e/ui/CameraSettings.hpp"
-
-#include "bg2e/ui/Input.hpp"
-#include "bg2e/ui/BasicWidgets.hpp"
+#include <bg2e/ui/Button.hpp>
+#include <bg2e/ui/Numeric.hpp>
+#include <bg2e/ui/Value.hpp>
 
 namespace bg2e {
 namespace ui {
@@ -42,7 +42,7 @@ bool CameraSettings::draw()
     auto optical = opt->camera().projection<math::OpticalProjection>();
 
     if (!optical) {
-        if (BasicWidgets::button("Configure Projection")) {
+        if (Button::button("Configure Projection")) {
             auto proj = new math::OpticalProjection();
             proj->setFocalLength(_focalLength);
             proj->setFrameSize(_frameSize);
@@ -56,13 +56,13 @@ bool CameraSettings::draw()
         return changed;
     }
 
-    if (Input::sliderFloat("Focal Length", &_focalLength, 18.0f, 200.0f)) {
+    if (Numeric::sliderFloat("Focal Length", &_focalLength, 18.0f, 200.0f)) {
         optical->setFocalLength(_focalLength);
         changed = true;
     }
 
     auto names = sensorNames();
-    if (Input::comboBox("Sensor Size", names, _selectedSensorSize)) {
+    if (Value::comboBox("Sensor Size", names, _selectedSensorSize)) {
         _frameSize = sensorSize(_selectedSensorSize);
         optical->setFrameSize(_frameSize);
         changed = true;

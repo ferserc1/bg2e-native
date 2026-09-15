@@ -125,10 +125,10 @@ void LoadGltfSceneDelegate::init(bg2e::render::Engine*, bg2e::ui::UserInterface*
 //            float metalness = material.metalness();
 //            float roughness = material.roughness();
 //            bg2e::base::Color albedo = material.albedo();
-//            bg2e::ui::BasicWidgets::separator();
-//            bg2e::ui::Input::slider("Metalness", &metalness, 0.0f, 1.0f);
-//            bg2e::ui::Input::slider("Roughness", &roughness, 0.0f, 1.0f);
-//            bg2e::ui::Input::colorPicker("Albedo", albedo);
+//            bg2e::ui::Text::separator();
+//            bg2e::ui::Numeric::slider("Metalness", &metalness, 0.0f, 1.0f);
+//            bg2e::ui::Numeric::slider("Roughness", &roughness, 0.0f, 1.0f);
+//            bg2e::ui::Value::colorPicker("Albedo", albedo);
 //            material.setMetalness(metalness);
 //            material.setRoughness(roughness);
 //            material.setAlbedo(albedo);
@@ -145,7 +145,7 @@ void LoadGltfSceneDelegate::init(bg2e::render::Engine*, bg2e::ui::UserInterface*
 //            _sphere->updateMaterials();
 
         auto name = _targetDrawable->name();
-        if (bg2e::ui::Input::text("Drawable Name", name))
+        if (bg2e::ui::Value::text("Drawable Name", name))
         {
             _targetDrawable->setName(name);
         }
@@ -171,31 +171,31 @@ void LoadGltfSceneDelegate::init(bg2e::render::Engine*, bg2e::ui::UserInterface*
     _bottomPanel.setDrawFunction([&]() {
         auto drawSkybox = renderer()->drawSkybox();
         auto blurLevel = renderer()->skyboxBlurLevel();
-        bg2e::ui::BasicWidgets::checkBox("Draw Skybox", &drawSkybox);
+        bg2e::ui::Button::checkBox("Draw Skybox", &drawSkybox);
         if (_environment)
         {
             auto assetPath = bg2e::base::PlatformTools::assetPath();
-            if (bg2e::ui::BasicWidgets::button("Mirrored Hall"))
+            if (bg2e::ui::Button::button("Mirrored Hall"))
             {
                 _environment->setEnvironmentImage(assetPath, "mirrored_hall_4k.hdr");
             }
-            if (bg2e::ui::BasicWidgets::button("Theater", true))
+            if (bg2e::ui::Button::button("Theater", true))
             {
                 _environment->setEnvironmentImage(assetPath, "theater_01_4k.hdr");
             }
-            if (bg2e::ui::BasicWidgets::button("Autum Field", true))
+            if (bg2e::ui::Button::button("Autum Field", true))
             {
                 _environment->setEnvironmentImage(assetPath, "autumn_field_4k.hdr");
             }
-            if (bg2e::ui::BasicWidgets::button("Gothic Manor", true))
+            if (bg2e::ui::Button::button("Gothic Manor", true))
             {
                 _environment->setEnvironmentImage(assetPath, "gothic_manor_01_4k.hdr");
             }
-            if (bg2e::ui::BasicWidgets::button("Black Environment", true))
+            if (bg2e::ui::Button::button("Black Environment", true))
             {
                 _environment->setEnvironmentImage(assetPath, "black.jpg");
             }
-            if (bg2e::ui::Input::slider("Skbox Blur Level", &blurLevel, 0, 5)) {
+            if (bg2e::ui::Numeric::slider("Skbox Blur Level", &blurLevel, 0, 5)) {
                 renderer()->setSkyboxBlurLevel(blurLevel);
             }
         }
@@ -206,8 +206,8 @@ void LoadGltfSceneDelegate::init(bg2e::render::Engine*, bg2e::ui::UserInterface*
     _rightPanel.setDrawFunction([&]() {
         float brightness = renderer()->brightness();
         float contrast = renderer()->contrast();
-        bg2e::ui::Input::slider("Brightness", &brightness, 0.0f, 1.0f);
-        bg2e::ui::Input::slider("Contrast", &contrast, 0.0f, 2.0f);
+        bg2e::ui::Numeric::slider("Brightness", &brightness, 0.0f, 1.0f);
+        bg2e::ui::Numeric::slider("Contrast", &contrast, 0.0f, 2.0f);
         renderer()->setBrightness(brightness);
         renderer()->setContrast(contrast);
     });
@@ -279,11 +279,11 @@ void LoadGltfSceneDelegate::init(bg2e::render::Engine*, bg2e::ui::UserInterface*
 //        _toolbar.setDrawFunction([&]() {
 //            using namespace bg2e::ui;
 //            static uint32_t clicks = 0;
-//            if (BasicWidgets::button("Test button"))
+//            if (Button::button("Test button"))
 //            {
 //                ++clicks;
 //            }
-//            BasicWidgets::text("Button clicked " + std::to_string(clicks) + " times", true);
+//            Text::text("Button clicked " + std::to_string(clicks) + " times", true);
 //
 //            auto leftPanel = _workspace.leftPanelVisible();
 //            auto rightPanel = _workspace.rightPanelVisible();
@@ -292,22 +292,22 @@ void LoadGltfSceneDelegate::init(bg2e::render::Engine*, bg2e::ui::UserInterface*
 //            auto leftText = leftPanel ? "Hide Model Panel" : "Show Model Panel";
 //            auto rightText = rightPanel ? "Hide File Panel" : "Show File Panel";
 //            auto bottomText = bottomPanel ? "Hide Environment Panel" : "Show Environment Panel";
-//            auto buttonsSize = BasicWidgets::calcButtonWidth(leftText) +
-//                BasicWidgets::calcButtonWidth(rightText) +
-//                BasicWidgets::calcButtonWidth(bottomText) +
-//                BasicWidgets::getItemHorizontalSpacing() * 3;
-//            BasicWidgets::sameLine(-buttonsSize);
-//            if (BasicWidgets::button(leftText))
+//            auto buttonsSize = Layout::calcButtonWidth(leftText) +
+//                Layout::calcButtonWidth(rightText) +
+//                Layout::calcButtonWidth(bottomText) +
+//                Layout::getItemHorizontalSpacing() * 3;
+//            Layout::sameLine(-buttonsSize);
+//            if (Button::button(leftText))
 //            {
 //                _workspace.toggleLeftPanel();
 //            }
 //
-//            if (BasicWidgets::button(rightText, true))
+//            if (Button::button(rightText, true))
 //            {
 //                _workspace.toggleRightPanel();
 //            }
 //
-//            if (BasicWidgets::button(bottomText, true))
+//            if (Button::button(bottomText, true))
 //            {
 //                _workspace.toggleBottomPanel();
 //            }

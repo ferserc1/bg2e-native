@@ -78,10 +78,10 @@ void PickSelectionDelegate::init(bg2e::render::Engine*, bg2e::ui::UserInterface*
         float metalness = material.metalness();
         float roughness = material.roughness();
         bg2e::base::Color albedo = material.albedo();
-        bg2e::ui::BasicWidgets::separator();
-        bg2e::ui::Input::slider("Metalness", &metalness, 0.0f, 1.0f);
-        bg2e::ui::Input::slider("Roughness", &roughness, 0.0f, 1.0f);
-        bg2e::ui::Input::colorPicker("Albedo", albedo);
+        bg2e::ui::Text::separator();
+        bg2e::ui::Numeric::slider("Metalness", &metalness, 0.0f, 1.0f);
+        bg2e::ui::Numeric::slider("Roughness", &roughness, 0.0f, 1.0f);
+        bg2e::ui::Value::colorPicker("Albedo", albedo);
         material.setMetalness(metalness);
         material.setRoughness(roughness);
         material.setAlbedo(albedo);
@@ -92,31 +92,31 @@ void PickSelectionDelegate::init(bg2e::render::Engine*, bg2e::ui::UserInterface*
     _bottomPanel.setDrawFunction([&]() {
         auto drawSkybox = renderer()->drawSkybox();
         auto blurLevel = renderer()->skyboxBlurLevel();
-        bg2e::ui::BasicWidgets::checkBox("Draw Skybox", &drawSkybox);
+        bg2e::ui::Button::checkBox("Draw Skybox", &drawSkybox);
         if (_environment)
         {
             auto assetPath = bg2e::base::PlatformTools::assetPath();
-            if (bg2e::ui::BasicWidgets::button("Mirrored Hall"))
+            if (bg2e::ui::Button::button("Mirrored Hall"))
             {
                 _environment->setEnvironmentImage(assetPath, "mirrored_hall_4k.hdr");
             }
-            if (bg2e::ui::BasicWidgets::button("Theater", true))
+            if (bg2e::ui::Button::button("Theater", true))
             {
                 _environment->setEnvironmentImage(assetPath, "theater_01_4k.hdr");
             }
-            if (bg2e::ui::BasicWidgets::button("Autum Field", true))
+            if (bg2e::ui::Button::button("Autum Field", true))
             {
                 _environment->setEnvironmentImage(assetPath, "autumn_field_4k.hdr");
             }
-            if (bg2e::ui::BasicWidgets::button("Gothic Manor", true))
+            if (bg2e::ui::Button::button("Gothic Manor", true))
             {
                 _environment->setEnvironmentImage(assetPath, "gothic_manor_01_4k.hdr");
             }
-            if (bg2e::ui::BasicWidgets::button("Black Environment", true))
+            if (bg2e::ui::Button::button("Black Environment", true))
             {
                 _environment->setEnvironmentImage(assetPath, "black.jpg");
             }
-            if (bg2e::ui::Input::slider("Skbox Blur Level", &blurLevel, 0, 5)) {
+            if (bg2e::ui::Numeric::slider("Skbox Blur Level", &blurLevel, 0, 5)) {
                 renderer()->setSkyboxBlurLevel(blurLevel);
             }
         }
@@ -128,9 +128,9 @@ void PickSelectionDelegate::init(bg2e::render::Engine*, bg2e::ui::UserInterface*
         float brightness = renderer()->brightness();
         float contrast = renderer()->contrast();
         float exposure = renderer()->exposure();
-        bg2e::ui::Input::slider("Brightness", &brightness, 0.0f, 1.0f);
-        bg2e::ui::Input::slider("Contrast", &contrast, 0.0f, 2.0f);
-        bg2e::ui::Input::slider("Exposure", &exposure, 0.0f, 5.0f);
+        bg2e::ui::Numeric::slider("Brightness", &brightness, 0.0f, 1.0f);
+        bg2e::ui::Numeric::slider("Contrast", &contrast, 0.0f, 2.0f);
+        bg2e::ui::Numeric::slider("Exposure", &exposure, 0.0f, 5.0f);
         renderer()->setBrightness(brightness);
         renderer()->setContrast(contrast);
         renderer()->setExposure(exposure);

@@ -91,35 +91,35 @@ public:
 		using namespace bg2e::app;
 
 		_window.draw([]() {
-			BasicWidgets::text("== Keyboard Modifiers ==");
-			BasicWidgets::text(
+			Text::text("== Keyboard Modifiers ==");
+			Text::text(
 				std::string("Shift:   ") + (Keyboard::shiftPressed() ? "ON" : "OFF")
 			);
-			BasicWidgets::text(
+			Text::text(
 				std::string("Control: ") + (Keyboard::controlPressed() ? "ON" : "OFF")
 			);
-			BasicWidgets::text(
+			Text::text(
 				std::string("Alt:     ") + (Keyboard::altPressed() ? "ON" : "OFF")
 			);
-			BasicWidgets::text(
+			Text::text(
 				std::string("Super:   ") + (Keyboard::superPressed() ? "ON" : "OFF")
 			);
 
-			BasicWidgets::text("");
-			BasicWidgets::text("== Mouse State ==");
-			BasicWidgets::text(
+			Text::text("");
+			Text::text("== Mouse State ==");
+			Text::text(
 				std::string("Left:    ") + (Mouse::leftButtonPressed() ? "ON" : "OFF")
 			);
-			BasicWidgets::text(
+			Text::text(
 				std::string("Middle:  ") + (Mouse::middleButtonPressed() ? "ON" : "OFF")
 			);
-			BasicWidgets::text(
+			Text::text(
 				std::string("Right:   ") + (Mouse::rightButtonPressed() ? "ON" : "OFF")
 			);
-			BasicWidgets::text(
+			Text::text(
 				"Pos X:   " + std::to_string(Mouse::x())
 			);
-			BasicWidgets::text(
+			Text::text(
 				"Pos Y:   " + std::to_string(Mouse::y())
 			);
 		});

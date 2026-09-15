@@ -28,7 +28,7 @@ namespace ui {
 
 // Generic ImGui drawer for bg2e::reflection metadata. It builds a user
 // interface for any reflected type, addressing instances as void*, using
-// only the bg2e::ui wrapper classes (BasicWidgets, Input).
+// only the bg2e::ui wrapper classes (Text, Group, Button, Numeric, Vector, Value).
 class BG2E_API ReflectionWidget {
 public:
     // Draws an editor for every property described by 'info', grouped by

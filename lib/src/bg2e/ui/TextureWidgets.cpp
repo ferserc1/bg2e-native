@@ -17,9 +17,10 @@
  */
 
 #include <bg2e/ui/TextureWidgets.hpp>
-#include <bg2e/ui/BasicWidgets.hpp>
 #include <bg2e/app/FileDialog.hpp>
 #include <bg2e/render/Engine.hpp>
+#include <bg2e/ui/Text.hpp>
+#include <bg2e/ui/Button.hpp>
 
 #include "imgui.h"
 #include "imgui_impl_vulkan.h"
@@ -83,14 +84,14 @@ bool TextureWidgets::selectTexture(const std::string& label, std::function<std::
             setDeferredTexture(tex);
         }
     }
-    if (BasicWidgets::button(label.starts_with("##") ? "Clear" + label : "Clear##" + label, true)) {
+    if (Button::button(label.starts_with("##") ? "Clear" + label : "Clear##" + label, true)) {
         auto tex = textureCallback(nullptr);
         setDeferredTexture(tex);
     }
     
     if (!label.starts_with("##"))
     {
-        BasicWidgets::text(label, true);
+        Text::text(label, true);
     }
     
     

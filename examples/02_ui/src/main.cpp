@@ -145,82 +145,82 @@ public:
 
 		//bg2e::ui::DemoWindow::draw();
 		_window.draw([]() {
-			BasicWidgets::text("Hello, world!");
-            BasicWidgets::separator();
-            BasicWidgets::text("This is a list:");
-            BasicWidgets::listItem("First item");
-            BasicWidgets::listItem("Second item");
-            BasicWidgets::listItem("Third item");
-            BasicWidgets::listItem("Fourth item");
-            BasicWidgets::separator();
-            BasicWidgets::text("Text - ");
-            BasicWidgets::text("inline", true);
-            BasicWidgets::separator();
-            BasicWidgets::checkBox("Test", &checkBoxTest);
+			Text::text("Hello, world!");
+            Text::separator();
+            Text::text("This is a list:");
+            Text::listItem("First item");
+            Text::listItem("Second item");
+            Text::listItem("Third item");
+            Text::listItem("Fourth item");
+            Text::separator();
+            Text::text("Text - ");
+            Text::text("inline", true);
+            Text::separator();
+            Button::checkBox("Test", &checkBoxTest);
             
-            if (BasicWidgets::button("Click Me"))
+            if (Button::button("Click Me"))
             {
                 ++buttonTest;
             }
             if (buttonTest & 1)
             {
-                BasicWidgets::text("Clicked", true);
+                Text::text("Clicked", true);
             }
             
-            BasicWidgets::separator("Radio button group 1");
-            BasicWidgets::radioButton("Value 1", &radioButtonTest1, 0);
-            BasicWidgets::radioButton("Value 2", &radioButtonTest1, 1);
-            BasicWidgets::radioButton("Value 3", &radioButtonTest1, 2);
-            BasicWidgets::text("Value");
-            BasicWidgets::text(std::to_string(radioButtonTest1 + 1), true);
+            Text::separator("Radio button group 1");
+            Button::radioButton("Value 1", &radioButtonTest1, 0);
+            Button::radioButton("Value 2", &radioButtonTest1, 1);
+            Button::radioButton("Value 3", &radioButtonTest1, 2);
+            Text::text("Value");
+            Text::text(std::to_string(radioButtonTest1 + 1), true);
             
-            BasicWidgets::separator("Radio button group 2");
-            BasicWidgets::radioButton("Value A", &radioButtonTest2, 0);
-            BasicWidgets::radioButton("Value B", &radioButtonTest2, 1);
-            BasicWidgets::radioButton("Value C", &radioButtonTest2, 2);
+            Text::separator("Radio button group 2");
+            Button::radioButton("Value A", &radioButtonTest2, 0);
+            Button::radioButton("Value B", &radioButtonTest2, 1);
+            Button::radioButton("Value C", &radioButtonTest2, 2);
             switch (radioButtonTest2)
             {
-                case 0: BasicWidgets::text("Value A"); break;
-                case 1: BasicWidgets::text("Value B"); break;
-                case 2: BasicWidgets::text("Value C"); break;
+                case 0: Text::text("Value A"); break;
+                case 1: Text::text("Value B"); break;
+                case 2: Text::text("Value C"); break;
             }
             
-            BasicWidgets::separator("Inputs");
+            Text::separator("Inputs");
             static std::string testStringValue = "Hola";
-            Input::text("Test string", testStringValue);
-            BasicWidgets::text(testStringValue.c_str());
+            Value::text("Test string", testStringValue);
+            Text::text(testStringValue.c_str());
             
             static std::string testStringValue2;
-            Input::textWithHint("Test string 2", "Enter test here", testStringValue2);
-            BasicWidgets::text(testStringValue2.c_str());
+            Value::textWithHint("Test string 2", "Enter test here", testStringValue2);
+            Text::text(testStringValue2.c_str());
             
             static int testIntValue = 0;
-            Input::number("Int value", &testIntValue);
-            BasicWidgets::text(std::to_string(testIntValue));
+            Numeric::number("Int value", &testIntValue);
+            Text::text(std::to_string(testIntValue));
             
             static float testFloatValue = 0.0f;
-            Input::number("Float value", &testFloatValue);
-            BasicWidgets::text(std::to_string(testFloatValue));
+            Numeric::number("Float value", &testFloatValue);
+            Text::text(std::to_string(testFloatValue));
             
             static double testDoubleValue = 0.0;
-            Input::number("Double value", &testDoubleValue);
-            BasicWidgets::text(std::to_string(testDoubleValue));
+            Numeric::number("Double value", &testDoubleValue);
+            Text::text(std::to_string(testDoubleValue));
             
             static int testInt2[2] = { 10, 20 };
-            Input::vec2("Vec 2", testInt2);
-            BasicWidgets::text(std::to_string(testInt2[0]) + " " + std::to_string(testInt2[1]));
+            Vector::vec2("Vec 2", testInt2);
+            Text::text(std::to_string(testInt2[0]) + " " + std::to_string(testInt2[1]));
             
             static int testInt3[3] = { 1, 2, 3 };
-            Input::vec3("Vec 3", testInt3);
-            BasicWidgets::text(
+            Vector::vec3("Vec 3", testInt3);
+            Text::text(
                 std::to_string(testInt3[0]) + " " +
                 std::to_string(testInt3[1]) + " " +
                 std::to_string(testInt3[2])
             );
                 
             static float testFloat4[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
-            Input::vec4("Vec 4", testFloat4);
-            BasicWidgets::text(
+            Vector::vec4("Vec 4", testFloat4);
+            Text::text(
                 std::to_string(testFloat4[0]) + " " +
                 std::to_string(testFloat4[1]) + " " +
                 std::to_string(testFloat4[2]) + " " +

@@ -17,7 +17,8 @@
  */
 
 #include <bg2e/ui/StatusBar.hpp>
-#include <bg2e/ui/BasicWidgets.hpp>
+#include <bg2e/ui/Layout.hpp>
+#include <bg2e/ui/Text.hpp>
 
 namespace bg2e::ui {
 
@@ -25,28 +26,28 @@ void StatusBar::draw()
 {
     draw([&]()
     {
-        auto textSize = BasicWidgets::calcTextHeight("text") + BasicWidgets::getItemVerticalSpacing();
-        BasicWidgets::padding(0, height() / 2 - textSize);
+        auto textSize = Layout::calcTextHeight("text") + Layout::getItemVerticalSpacing();
+        Layout::padding(0, height() / 2 - textSize);
 
         auto sameLine = false;
         for (auto & item : _leftItems)
         {
-            BasicWidgets::text(item->getText(), sameLine);
+            Text::text(item->getText(), sameLine);
             sameLine = true;
         }
 
         auto rightButtonsSize = 0;
         for (auto & item : _rightItems)
         {
-            rightButtonsSize += BasicWidgets::calcTextWidth(item->getText()) +
-                BasicWidgets::getItemHorizontalSpacing();
+            rightButtonsSize += Layout::calcTextWidth(item->getText()) +
+                Layout::getItemHorizontalSpacing();
         }
 
         auto txtIndex = 0;
         for (auto & item : _rightItems)
         {
-            txtIndex == 0 ? BasicWidgets::sameLine(-rightButtonsSize) : BasicWidgets::sameLine();
-            BasicWidgets::text(item->getText(), false);
+            txtIndex == 0 ? Layout::sameLine(-rightButtonsSize) : Layout::sameLine();
+            Text::text(item->getText(), false);
             ++txtIndex;
         }
     });

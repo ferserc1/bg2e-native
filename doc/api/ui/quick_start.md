@@ -23,7 +23,7 @@ Working code ships in:
 6. [Recipe 5: Toolbar buttons with live state](#recipe-5-toolbar-buttons-with-live-state)
 7. [Recipe 6: Status bar with live-updating items](#recipe-6-status-bar-with-live-updating-items)
 8. [Recipe 7: Selectable lists](#recipe-7-selectable-lists)
-9. [Recipe 8: Input widgets and the mat4 trap](#recipe-8-input-widgets-and-the-mat4-trap)
+9. [Recipe 8: Value editors and the mat4 trap](#recipe-8-value-editors-and-the-mat4-trap)
 10. [Recipe 9: Texture widgets (and deferred texture swaps)](#recipe-9-texture-widgets-and-deferred-texture-swaps)
 11. [Recipe 10: Material editor driven by a SelectionManager](#recipe-10-material-editor-driven-by-a-selectionmanager)
 12. [Recipe 11: Drawable / submesh editing](#recipe-11-drawable--submesh-editing)
@@ -44,13 +44,18 @@ Individual headers:
 
 ```cpp
 #include <bg2e/ui/UserInterface.hpp>   // UserInterface + delegate
-#include <bg2e/ui/BasicWidgets.hpp>    // labels, buttons, layout
+#include <bg2e/ui/Layout.hpp>          // placement, child regions, metrics
+#include <bg2e/ui/Text.hpp>            // labels, separators, tooltips
+#include <bg2e/ui/Group.hpp>           // trees, headers, disabled groups, IDs
+#include <bg2e/ui/Button.hpp>          // buttons, checkboxes, radio buttons
 #include <bg2e/ui/Window.hpp>          // floating windows
 #include <bg2e/ui/Workspace.hpp>       // editor layout
 #include <bg2e/ui/Menu.hpp>            // menu bar + shortcut items
 #include <bg2e/ui/Toolbar.hpp>         // toolbar window
 #include <bg2e/ui/StatusBar.hpp>       // status bar window
-#include <bg2e/ui/Input.hpp>           // value editors
+#include <bg2e/ui/Numeric.hpp>         // number inputs, sliders, drags
+#include <bg2e/ui/Vector.hpp>          // vec2/3/4 and mat4 editors
+#include <bg2e/ui/Value.hpp>           // text fields, color picker, combos
 #include <bg2e/ui/SelectableList.hpp>  // selectable tables
 #include <bg2e/ui/TextureWidgets.hpp>  // texture previews / pickers
 #include <bg2e/ui/MaterialEditor.hpp>  // material inspector
@@ -141,8 +146,8 @@ no arguments:
 void drawUI() override
 {
     _window.draw([this]() {
-        ui::BasicWidgets::text("Hello, world!");
-        if (ui::BasicWidgets::button("Click Me")) {
+        ui::Text::text("Hello, world!");
+        if (ui::Button::button("Click Me")) {
             ++_clicks;
         }
     });
@@ -155,7 +160,7 @@ void init(bg2e::render::Engine*, ui::UserInterface*) override
     _panel.options.minWidth = 250;
     _panel.options.noCollapse = true;
     _panel.setDrawFunction([this]() {
-        ui::BasicWidgets::text(_document->name());
+        ui::Text::text(_document->name());
     });
 }
 
@@ -389,7 +394,7 @@ void Document::updateStatus()
 
 **Key points:**
 - Items are right-aligned in the order they were added, measured with
-  `BasicWidgets::calcTextWidth()` — update text freely without layout work.
+  `Layout::calcTextWidth()` — update text freely without layout work.
 - The status text is the *only* content type; for rich items compose them as
   `"Label: value"` strings.
 - Like `Toolbar`, `StatusBar` overrides `setDrawFunction()` (it is a no-op):
@@ -426,54 +431,54 @@ ui::SelectableList::endList();
   `item()` once and then `itemButton()` up to `n - 1` times per row (each
   `itemButton` advances one column).
 - The list draws inside the *current* window/child — put it inside a
-  `BasicWidgets::beginChild()` if you need it to scroll independently.
+  `Layout::beginChild()` if you need it to scroll independently.
 - Real-world usage: `SubmeshSelector` builds its submesh table exactly this
   way (see [Recipe 11](#recipe-11-drawable--submesh-editing)).
 
 ---
 
-## Recipe 8: Input widgets and the mat4 trap
+## Recipe 8: Value editors and the mat4 trap
 
-`Input` covers text, numbers, vectors, colors, sliders, drags and combos. The
-non-obvious members:
+`Numeric`, `Vector` and `Value` cover numbers, vectors, text, colors, sliders,
+drags and combos. The non-obvious members:
 
 ```cpp
 // Combo with a live item list (callback form):
 uint32_t selected = 0;
-Input::comboBox("Material", [](std::vector<std::string>& out) {
+Value::comboBox("Material", [](std::vector<std::string>& out) {
     out = currentMaterialNames();         // rebuilt every frame
 }, selected);
 
 // Drag: (0,0) range means unclamped, ImGui convention
-Input::drag("Exposure", &exposure, 0.01f);
-Input::drag("Sample", &sample, 1.0f, 0, 64);   // clamped int drag
+Numeric::drag("Exposure", &exposure, 0.01f);
+Numeric::drag("Sample", &sample, 1.0f, 0, 64);   // clamped int drag
 
 // Matrix editor: decomposes into Position / Rotation(deg) / Scale rows
-Input::mat4("ModelMatrix", modelMatrix);
+Vector::mat4("ModelMatrix", modelMatrix);
 ```
 
 **Key points:**
-- Every `Input::*` returns `true` on the frame the value changed, and modifies
-  the argument **in place** — pass pointers to persistent storage, not
-  temporaries you discard (the edit is lost).
-- `sliderDouble()` reinterprets the `double*` as `float*` internally (ImGui
-  has no double slider): fine for range-limited values, do not rely on full
-  double precision while dragging.
-- `comboBox()` clamps `selected` into `[0, items.size()-1]` and shows entries
-  prefixed with their index (`"1: Metal"`). Set `fitPreview = true` to size
-  the combo to its preview text.
-- **`mat4` keeps an internal cache keyed by `label`.** The euler angles live
-  in a `static` map inside `Input::mat4()`, so:
+- Every editor in `Numeric`, `Vector` and `Value` returns `true` on the frame
+  the value changed, and modifies the argument **in place** — pass pointers to
+  persistent storage, not temporaries you discard (the edit is lost).
+- `Numeric::sliderDouble()` reinterprets the `double*` as `float*` internally
+  (ImGui has no double slider): fine for range-limited values, do not rely on
+  full double precision while dragging.
+- `Value::comboBox()` clamps `selected` into `[0, items.size()-1]` and shows
+  entries prefixed with their index (`"1: Metal"`). Set `fitPreview = true` to
+  size the combo to its preview text.
+- **`Vector::mat4` keeps an internal cache keyed by `label`.** The euler
+  angles live in a `static` map inside `Vector::mat4()`, so:
   - two different matrices must use **different labels**, or they share state;
   - if the matrix is modified externally, the angles are re-extracted on the
     next draw (cheap and automatic);
   - the cache is never purged — do not generate unique labels per frame
     (`mat4("m" + std::to_string(i++))` will leak entries).
-- `textWithHint()` requires the `value` string to be writable; the call
+- `Value::textWithHint()` requires the `value` string to be writable; the call
   reserves `maxLength` internally but the visible text is still bounded by the
   input width — keep default 200 for normal fields.
-- `Input::vec2/3/4` have `int*`, `float*` and `glm::vecN&` overloads; with the
-  GLM overloads the component order in the widget is X,Y,(Z,(W)).
+- `Vector::vec2/3/4` have `int*`, `float*` and `glm::vecN&` overloads; with
+  the GLM overloads the component order in the widget is X,Y,(Z,(W)).
 
 ---
 
@@ -742,14 +747,14 @@ MainLoop::current()->asyncLoad([](ui::Loader* loader) {
 | "Dear ImGui Demo" window appears unexpectedly | Base `UserInterfaceDelegate::drawUI()` draws `DemoWindow` | Override `drawUI()` in your delegate |
 | Panel/toolbar never appears in a Workspace | `Window` has no draw function (Mode 2) | Call `setDrawFunction()` (or use Toolbar/StatusBar with their own widgets) |
 | Workspace panel sizes ignored | `Window::options`/position set manually | Workspace overwrites them — configure `leftPanelSize()` etc. instead |
-| Two widgets in the same group interfere (wrong state, tooltips on the wrong item) | Duplicate ImGui IDs | Use `##unique` suffixes or `BasicWidgets::pushId()/popId()` |
+| Two widgets in the same group interfere (wrong state, tooltips on the wrong item) | Duplicate ImGui IDs | Use `##unique` suffixes or `Group::pushId()/popId()` |
 | Window position "snaps back" | `noMove`/`noResize` set | With those flags the engine re-applies position/size every frame; that is the lock mechanism |
 | `setEditMaterial()` does nothing | A `SelectionManager` is installed on the editor | Selection mode wins: `clear` the manager or use a second editor |
 | Texture preview shows the wrong image after a pick inside `draw()` | `setEditTexture()` called mid-frame | Use `setDeferredTexture()` inside draw code paths |
 | UI freezes a frame when switching textures outside draw | `clearDS()` → `waitIdle()` | Normal; batch texture swaps to non-render times |
 | Menu shortcut never fires | Item added after the first `Menu::draw()` | Build the full `MenuItem` tree before the first draw |
 | Scene input reacts while dragging sliders | Input delegate is not filtered by ImGui | Ignore scene input while UI has capture (check your input delegate state; see `doc/input_delegate.md`) |
-| Reflection widget shows `<enum not supported>` | v1 type-erasure limitation | Edit that property with a hand-written `Input::comboBox()` or register enum metadata (see reflection docs) |
+| Reflection widget shows `<enum not supported>` | v1 type-erasure limitation | Edit that property with a hand-written `Value::comboBox()` or register enum metadata (see reflection docs) |
 | Transform rotation jitters/resets while editing | Matrix rewritten by code outside the widget between draws | The euler caches re-sync on external change (by design); avoid fighting the gizmo and the panel simultaneously |
 | Loader progress never updates | Worker thread never calls `setProgress` | Update it; also check you passed a non-empty callable |
 | Crash in `~MainLoop` / shutdown | Widgets cleaned up after `ImGui_ImplVulkan_Shutdown` | Call editors' `cleanup()` from the delegate `cleanup()` (before engine teardown) |

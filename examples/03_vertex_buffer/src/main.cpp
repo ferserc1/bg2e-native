@@ -243,7 +243,7 @@ public:
 	{
 		using namespace bg2e::ui;
 		_window.draw([]() {
-			BasicWidgets::text("Hello, world!");
+			Text::text("Hello, world!");
 		});
 	}
 

@@ -248,11 +248,11 @@ public:
 	{
 		using namespace bg2e::ui;
 		_window.draw([&]() {
-            BasicWidgets::checkBox("Draw Skybox", &_drawSkybox);
+            Button::checkBox("Draw Skybox", &_drawSkybox);
             
-            BasicWidgets::text("Show Attachment:");
-            BasicWidgets::radioButton("Attachment 1", &_showRenderTargetIndex, 0);
-            BasicWidgets::radioButton("Attachment 2", &_showRenderTargetIndex, 1);
+            Text::text("Show Attachment:");
+            Button::radioButton("Attachment 1", &_showRenderTargetIndex, 0);
+            Button::radioButton("Attachment 2", &_showRenderTargetIndex, 1);
 		});
 	}
     

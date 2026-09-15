@@ -61,7 +61,7 @@ public:
 
     void drawUI() override {
         _window.draw([&]() {
-            bg2e::ui::BasicWidgets::text("Deferred renderer shell");
+            bg2e::ui::Text::text("Deferred renderer shell");
 
             _fpsAccumulator += delta();
             _fpsFrameCount++;
@@ -72,16 +72,16 @@ public:
                 _fpsFrameCount = 0;
             }
             std::string fpsLine = "FPS: " + std::to_string(_fps);
-            bg2e::ui::BasicWidgets::text(fpsLine);
+            bg2e::ui::Text::text(fpsLine);
 
             auto drawSkybox = renderer()->drawSkybox();
-            if (bg2e::ui::BasicWidgets::checkBox("Draw skybox", &drawSkybox))
+            if (bg2e::ui::Button::checkBox("Draw skybox", &drawSkybox))
             {
                 renderer()->setDrawSkybox(drawSkybox);
             }
 
             auto blurLevel = renderer()->skyboxBlurLevel();
-            if (bg2e::ui::Input::sliderInt("Skybox blur", &blurLevel, 0, 6))
+            if (bg2e::ui::Numeric::sliderInt("Skybox blur", &blurLevel, 0, 6))
             {
                 renderer()->setSkyboxBlurLevel(blurLevel);
             }
@@ -89,7 +89,7 @@ public:
             auto renderLayer = renderer()->debugVisualization();
             int32_t renderLayerId = static_cast<int32_t>(renderLayer);
             const int32_t numLayers = static_cast<int32_t>(bg2e::render::deferred::DeferredDebugVisualization::MaxLayer) - 1;
-            if (bg2e::ui::Input::sliderInt("Render Layer", &renderLayerId, 0, numLayers))
+            if (bg2e::ui::Numeric::sliderInt("Render Layer", &renderLayerId, 0, numLayers))
             {
                 renderer()->setDebugVisualization(static_cast<bg2e::render::deferred::DeferredDebugVisualization>(renderLayerId));
             }

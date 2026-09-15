@@ -26,7 +26,6 @@ void SceneEditor::init(AppDelegate * delegate)
     _appDelegate = delegate;
     setTitle("Scene");
 
-    _nodeEditor.init(delegate->engine());
     _nodeEditor.onChanged([&]() {
         _appDelegate->stage()->document()->setUnsavedChanges(true);
         auto scene = _appDelegate->stage()->sceneRoot()->scene();
@@ -36,17 +35,16 @@ void SceneEditor::init(AppDelegate * delegate)
     setDrawFunction([&]() {
         _sceneTree.setRootNode(_appDelegate->stage()->editableRoot().get());
 
-        const float avail = bg2e::ui::BasicWidgets::getContentRegionAvailHeight();
+        const float avail = bg2e::ui::Layout::getContentRegionAvailHeight();
         const float treeHeight = avail * 0.5f;
 
-        bg2e::ui::BasicWidgets::beginChild("scene_tree", 0.0f, treeHeight);
+        bg2e::ui::Layout::beginChild("scene_tree", 0.0f, treeHeight);
         _sceneTree.draw();
-        bg2e::ui::BasicWidgets::endChild();
+        bg2e::ui::Layout::endChild();
 
-        bg2e::ui::BasicWidgets::beginChild("node_editor");
+        bg2e::ui::Layout::beginChild("node_editor");
         _nodeEditor.draw();
-        drawChainComponentControls();
-        bg2e::ui::BasicWidgets::endChild();
+        bg2e::ui::Layout::endChild();
     });
 }
 
@@ -61,7 +59,7 @@ void SceneEditor::drawChainComponentControls()
     auto* chain = node->getComponent<bg2e::scene::ChainComponent>();
     if (!chain)
     {
-        if (bg2e::ui::BasicWidgets::button("Add Chain Component"))
+        if (bg2e::ui::Button::button("Add Chain Component"))
         {
             node->addComponent(new bg2e::scene::ChainComponent());
             _appDelegate->stage()->document()->setUnsavedChanges(true);
@@ -71,7 +69,7 @@ void SceneEditor::drawChainComponentControls()
             }
         }
     }
-    else if (bg2e::ui::BasicWidgets::button("Remove Chain Component"))
+    else if (bg2e::ui::Button::button("Remove Chain Component"))
     {
         node->removeComponent(chain->shared_from_this());
         _appDelegate->stage()->document()->setUnsavedChanges(true);

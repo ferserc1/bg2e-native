@@ -17,11 +17,15 @@
  */
 
 #include <bg2e/ui/MaterialEditor.hpp>
-#include <bg2e/ui/BasicWidgets.hpp>
-#include <bg2e/ui/Input.hpp>
 #include <bg2e/render/vulkan/common.hpp>
 #include <bg2e/render/vulkan/Image.hpp>
 #include <bg2e/app/FileDialog.hpp>
+#include <bg2e/ui/Text.hpp>
+#include <bg2e/ui/Group.hpp>
+#include <bg2e/ui/Button.hpp>
+#include <bg2e/ui/Numeric.hpp>
+#include <bg2e/ui/Vector.hpp>
+#include <bg2e/ui/Value.hpp>
 
 #include "imgui.h"
 #include "imgui_impl_vulkan.h"
@@ -116,15 +120,15 @@ void MaterialEditor::setSelectionManager(const std::shared_ptr<manipulation::Sel
 
 bool MaterialEditor::draw()
 {
-    if (_material.get() && BasicWidgets::collapsingHeader(_material->materialAttributes().name() + "'s Material Attributes"))
+    if (_material.get() && Group::collapsingHeader(_material->materialAttributes().name() + "'s Material Attributes"))
     {
         std::vector<std::string> uvOptions = { "Set 0", "Set 1" };
         std::vector<std::string> channelOptions = { "Red", "Green", "Blue", "Alpha" };
-        BasicWidgets::separator("Albedo");
+        Text::separator("Albedo");
         auto albedoColor = _material->materialAttributes().albedo();
         auto albedoScale = _material->materialAttributes().albedoScale();
         auto albedoUVSet = _material->materialAttributes().albedoUVSet();
-        if (Input::colorPicker("Color##albedo", albedoColor))
+        if (Value::colorPicker("Color##albedo", albedoColor))
         {
             for (auto mat : _editMaterialList)
             {
@@ -143,7 +147,7 @@ bool MaterialEditor::draw()
             
             return _material->albedoTexture();
         });
-        if (Input::vec2("Scale", albedoScale))
+        if (Vector::vec2("Scale", albedoScale))
         {
             for (auto & mat : _editMaterialList)
             {
@@ -151,7 +155,7 @@ bool MaterialEditor::draw()
             }
             notifyOnChange();
         }
-        if (Input::comboBox("UV Set", uvOptions, albedoUVSet))
+        if (Value::comboBox("UV Set", uvOptions, albedoUVSet))
         {
             for (auto & mat : _editMaterialList)
             {
@@ -161,7 +165,7 @@ bool MaterialEditor::draw()
         }
         
         auto isTransparent = _material->materialAttributes().isTransparent();
-        if (BasicWidgets::checkBox("Is Transparent", &isTransparent))
+        if (Button::checkBox("Is Transparent", &isTransparent))
         {
             for (auto & mat : _editMaterialList)
             {
@@ -171,7 +175,7 @@ bool MaterialEditor::draw()
         }
 
         auto refractionFactor = _material->materialAttributes().refractionFactor();
-        if (Input::sliderFloat("Refraction##refractionFactor", &refractionFactor, 0.0f, 1.0f))
+        if (Numeric::sliderFloat("Refraction##refractionFactor", &refractionFactor, 0.0f, 1.0f))
         {
             for (auto & mat : _editMaterialList)
             {
@@ -180,7 +184,7 @@ bool MaterialEditor::draw()
             notifyOnChange();
         }
 
-        BasicWidgets::separator("Normal");
+        Text::separator("Normal");
         auto normalScale = _material->materialAttributes().normalScale();
         auto normalUVSet = _material->materialAttributes().normalUVSet();
         _normalWidget.selectTexture("##normal", [&](base::Texture* tex) {
@@ -193,7 +197,7 @@ bool MaterialEditor::draw()
             notifyOnChange();
             return _material->normalTexture();
         });
-        if (Input::vec2("Scale##normal", normalScale))
+        if (Vector::vec2("Scale##normal", normalScale))
         {
             for (auto & mat : _editMaterialList)
             {
@@ -201,7 +205,7 @@ bool MaterialEditor::draw()
             }
             notifyOnChange();
         }
-        if (Input::comboBox("UV Set##normal", uvOptions, normalUVSet))
+        if (Value::comboBox("UV Set##normal", uvOptions, normalUVSet))
         {
             for (auto & mat : _editMaterialList)
             {
@@ -210,13 +214,13 @@ bool MaterialEditor::draw()
             notifyOnChange();
         }
         
-        BasicWidgets::separator("Metallic");
+        Text::separator("Metallic");
         auto metallic = _material->materialAttributes().metalness();
         auto metallicScale = _material->materialAttributes().metalnessScale();
         auto metallicChannel = _material->materialAttributes().metalnessChannel();
         auto metallicInvert = _material->materialAttributes().metalnessInvert();
         auto metallicUVSet = _material->materialAttributes().metalnessUVSet();
-        if (Input::sliderFloat("Value##metallic", &metallic))
+        if (Numeric::sliderFloat("Value##metallic", &metallic))
         {
             for (auto & mat : _editMaterialList)
             {
@@ -234,7 +238,7 @@ bool MaterialEditor::draw()
             notifyOnChange();
             return _material->metalnessTexture();
         });
-        if (Input::comboBox("Channel##metallic", channelOptions, metallicChannel))
+        if (Value::comboBox("Channel##metallic", channelOptions, metallicChannel))
         {
             for (auto & mat : _editMaterialList)
             {
@@ -242,7 +246,7 @@ bool MaterialEditor::draw()
             }
             notifyOnChange();
         }
-        if (BasicWidgets::checkBox("Invert##metallic", &metallicInvert))
+        if (Button::checkBox("Invert##metallic", &metallicInvert))
         {
             for (auto & mat : _editMaterialList)
             {
@@ -250,7 +254,7 @@ bool MaterialEditor::draw()
             }
             notifyOnChange();
         }
-        if (Input::vec2("Scale##metallic", metallicScale))
+        if (Vector::vec2("Scale##metallic", metallicScale))
         {
             for (auto & mat : _editMaterialList)
             {
@@ -258,7 +262,7 @@ bool MaterialEditor::draw()
             }
             notifyOnChange();
         }
-        if (Input::comboBox("UV Set##metallic", uvOptions, metallicUVSet))
+        if (Value::comboBox("UV Set##metallic", uvOptions, metallicUVSet))
         {
             for (auto & mat : _editMaterialList)
             {
@@ -267,13 +271,13 @@ bool MaterialEditor::draw()
             notifyOnChange();
         }
 
-        BasicWidgets::separator("Roughness");
+        Text::separator("Roughness");
         auto roughness = _material->materialAttributes().roughness();
         auto roughnessScale = _material->materialAttributes().roughnessScale();
         auto roughnessChannel = _material->materialAttributes().roughnessChannel();
         auto roughnessInvert = _material->materialAttributes().roughnessInvert();
         auto roughnessUVSet = _material->materialAttributes().roughnessUVSet();
-        if (Input::sliderFloat("Value##roughness", &roughness))
+        if (Numeric::sliderFloat("Value##roughness", &roughness))
         {
             for (auto & mat : _editMaterialList)
             {
@@ -291,7 +295,7 @@ bool MaterialEditor::draw()
             notifyOnChange();
             return _material->roughnessTexture();
         });
-        if (Input::comboBox("Channel##roughness", channelOptions, roughnessChannel))
+        if (Value::comboBox("Channel##roughness", channelOptions, roughnessChannel))
         {
             for (auto & mat : _editMaterialList)
             {
@@ -299,7 +303,7 @@ bool MaterialEditor::draw()
             }
             notifyOnChange();
         }
-        if (BasicWidgets::checkBox("Invert##roughness", &roughnessInvert))
+        if (Button::checkBox("Invert##roughness", &roughnessInvert))
         {
             for (auto & mat : _editMaterialList)
             {
@@ -307,7 +311,7 @@ bool MaterialEditor::draw()
             }
             notifyOnChange();
         }
-        if (Input::vec2("Scale##roughness", roughnessScale))
+        if (Vector::vec2("Scale##roughness", roughnessScale))
         {
             for (auto & mat : _editMaterialList)
             {
@@ -315,7 +319,7 @@ bool MaterialEditor::draw()
             }
             notifyOnChange();
         }
-        if (Input::comboBox("UV Set##roughness", uvOptions, roughnessUVSet))
+        if (Value::comboBox("UV Set##roughness", uvOptions, roughnessUVSet))
         {
             for (auto & mat : _editMaterialList)
             {
@@ -324,9 +328,9 @@ bool MaterialEditor::draw()
             notifyOnChange();
         }
         
-        BasicWidgets::separator("Fresnel Tint");
+        Text::separator("Fresnel Tint");
         auto fresnel = _material->materialAttributes().fresnelTint();
-        if (Input::colorPicker("Color##fresnel", fresnel))
+        if (Value::colorPicker("Color##fresnel", fresnel))
         {
             for (auto & mat : _editMaterialList)
             {
@@ -335,10 +339,10 @@ bool MaterialEditor::draw()
             notifyOnChange();
         }
         
-        BasicWidgets::separator("Sheen");
+        Text::separator("Sheen");
         auto sheenIntensity = _material->materialAttributes().sheenIntensity();
         auto sheenColor = _material->materialAttributes().sheenColor();
-        if (Input::sliderFloat("Intensity##sheenIntensity", &sheenIntensity, 0.0f, 2.0f))
+        if (Numeric::sliderFloat("Intensity##sheenIntensity", &sheenIntensity, 0.0f, 2.0f))
         {
             for (auto & mat : _editMaterialList)
             {
@@ -346,7 +350,7 @@ bool MaterialEditor::draw()
             }
             notifyOnChange();
         }
-        if (Input::colorPicker("Color##sheenColor", sheenColor))
+        if (Value::colorPicker("Color##sheenColor", sheenColor))
         {
             for (auto & mat : _editMaterialList)
             {
@@ -356,7 +360,7 @@ bool MaterialEditor::draw()
         }
         
         
-        BasicWidgets::separator("Ambient Occlussion");
+        Text::separator("Ambient Occlussion");
         auto aoScale = _material->materialAttributes().aoScale();
         auto aoChannel = _material->materialAttributes().aoChannel();
         auto aoUVSet = _material->materialAttributes().aoUVSet();
@@ -370,7 +374,7 @@ bool MaterialEditor::draw()
             notifyOnChange();
             return _material->aoTexture();
         });
-        if (Input::comboBox("Channel##ao", channelOptions, aoChannel))
+        if (Value::comboBox("Channel##ao", channelOptions, aoChannel))
         {
             for (auto & mat : _editMaterialList)
             {
@@ -378,7 +382,7 @@ bool MaterialEditor::draw()
             }
             notifyOnChange();
         }
-        if (Input::vec2("Scale##ao", aoScale))
+        if (Vector::vec2("Scale##ao", aoScale))
         {
             for (auto & mat : _editMaterialList)
             {
@@ -386,7 +390,7 @@ bool MaterialEditor::draw()
             }
             notifyOnChange();
         }
-        if (Input::comboBox("UV Set##ao", uvOptions, aoUVSet))
+        if (Value::comboBox("UV Set##ao", uvOptions, aoUVSet))
         {
             for (auto & mat : _editMaterialList)
             {
@@ -395,13 +399,13 @@ bool MaterialEditor::draw()
             notifyOnChange();
         }
 
-        BasicWidgets::separator("Light Emission");
+        Text::separator("Light Emission");
         auto lightEmission = _material->materialAttributes().lightEmission();
         auto lightEmissionScale = _material->materialAttributes().lightEmissionScale();
         auto lightEmissionChannel = _material->materialAttributes().lightEmissionChannel();
         auto lightEmissionInvert = _material->materialAttributes().lightEmissionInvert();
         auto lightEmissionUVSet = _material->materialAttributes().lightEmissionUVSet();
-        if (Input::sliderFloat("Value##lightEmission", &lightEmission, 0.0f, 100.0f))
+        if (Numeric::sliderFloat("Value##lightEmission", &lightEmission, 0.0f, 100.0f))
         {
             for (auto & mat : _editMaterialList)
             {
@@ -419,7 +423,7 @@ bool MaterialEditor::draw()
             notifyOnChange();
             return _material->lightEmissionTexture();
         });
-        if (Input::comboBox("Channel##lightEmission", channelOptions, lightEmissionChannel))
+        if (Value::comboBox("Channel##lightEmission", channelOptions, lightEmissionChannel))
         {
             for (auto & mat : _editMaterialList)
             {
@@ -427,7 +431,7 @@ bool MaterialEditor::draw()
             }
             notifyOnChange();
         }
-        if (BasicWidgets::checkBox("Invert##lightEmission", &lightEmissionInvert))
+        if (Button::checkBox("Invert##lightEmission", &lightEmissionInvert))
         {
             for (auto & mat : _editMaterialList)
             {
@@ -435,7 +439,7 @@ bool MaterialEditor::draw()
             }
             notifyOnChange();
         }
-        if (Input::vec2("Scale##lightEmission", lightEmissionScale))
+        if (Vector::vec2("Scale##lightEmission", lightEmissionScale))
         {
             for (auto & mat : _editMaterialList)
             {
@@ -443,7 +447,7 @@ bool MaterialEditor::draw()
             }
             notifyOnChange();
         }
-        if (Input::comboBox("UV Set##lightEmission", uvOptions, lightEmissionUVSet))
+        if (Value::comboBox("UV Set##lightEmission", uvOptions, lightEmissionUVSet))
         {
             for (auto & mat : _editMaterialList)
             {

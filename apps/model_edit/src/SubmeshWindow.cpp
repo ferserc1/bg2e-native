@@ -50,7 +50,7 @@ void SubmeshWindow::init(AppDelegate * delegate)
 		{
 		    if (targetNames.size() > 0)
 		    {
-		        bg2e::ui::BasicWidgets::separator("Mesh");
+		        bg2e::ui::Text::separator("Mesh");
 		        bg2e::ui::SelectableList::beginList(1);
 
 

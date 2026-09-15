@@ -38,11 +38,11 @@ void EnvironmentSettings::init(
         auto cameraComp = _appDelegate->stage()->cameraComponent();
         auto drawSkybox = renderer->drawSkybox();
         auto skyboxBlur = renderer->skyboxBlurLevel() > 0;
-        if (bg2e::ui::BasicWidgets::checkBox("Draw Skybox", &drawSkybox))
+        if (bg2e::ui::Button::checkBox("Draw Skybox", &drawSkybox))
         {
             renderer->setDrawSkybox(drawSkybox);
         }
-        if (bg2e::ui::BasicWidgets::checkBox("Blur", &skyboxBlur))
+        if (bg2e::ui::Button::checkBox("Blur", &skyboxBlur))
         {
             renderer->setSkyboxBlurLevel(skyboxBlur ? 2 : 0);
         }
@@ -50,31 +50,31 @@ void EnvironmentSettings::init(
         if (environment)
         {
             auto assetPath = bg2e::base::PlatformTools::assetPath();
-            if (bg2e::ui::BasicWidgets::button("Mirrored Hall"))
+            if (bg2e::ui::Button::button("Mirrored Hall"))
             {
                 environment->setEnvironmentImage(assetPath, "mirrored_hall_4k.hdr");
             }
-            if (bg2e::ui::BasicWidgets::button("Theater"))
+            if (bg2e::ui::Button::button("Theater"))
             {
                 environment->setEnvironmentImage(assetPath, "theater_01_4k.hdr");
             }
-            if (bg2e::ui::BasicWidgets::button("Autum Field"))
+            if (bg2e::ui::Button::button("Autum Field"))
             {
                 environment->setEnvironmentImage(assetPath, "autumn_field_4k.hdr");
             }
-            if (bg2e::ui::BasicWidgets::button("Gothic Manor"))
+            if (bg2e::ui::Button::button("Gothic Manor"))
             {
                 environment->setEnvironmentImage(assetPath, "gothic_manor_01_4k.hdr");
             }
-            if (bg2e::ui::BasicWidgets::button("Space"))
+            if (bg2e::ui::Button::button("Space"))
             {
                 environment->setEnvironmentImage(assetPath, "HDR_multi_nebulae_1.hdr");
             }
-            if (bg2e::ui::BasicWidgets::button("Black Environment"))
+            if (bg2e::ui::Button::button("Black Environment"))
             {
                 environment->setEnvironmentImage(assetPath, "black.jpg");
             }
-            if (bg2e::ui::BasicWidgets::button("Custom Environment"))
+            if (bg2e::ui::Button::button("Custom Environment"))
             {
                 auto path = bg2e::app::FileDialog::getOpenFilePath({
                     { "HDR Environments", "hdr" }
@@ -85,16 +85,16 @@ void EnvironmentSettings::init(
                 }
             }
         }
-        bg2e::ui::BasicWidgets::spacing();
+        bg2e::ui::Layout::spacing();
 
 
-        bg2e::ui::BasicWidgets::separator("Camera");
+        bg2e::ui::Text::separator("Camera");
         _cameraSettings->setCameraComponent(cameraComp);
         _cameraSettings->draw();
 
-        bg2e::ui::BasicWidgets::spacing();
-        bg2e::ui::BasicWidgets::separator("Lighting");
-        if (bg2e::ui::BasicWidgets::button("Add Light")) {
+        bg2e::ui::Layout::spacing();
+        bg2e::ui::Text::separator("Lighting");
+        if (bg2e::ui::Button::button("Add Light")) {
             _appDelegate->stage()->addLight();
         }
 
@@ -107,7 +107,7 @@ void EnvironmentSettings::init(
             {
                 return "Light " + std::to_string(i++);
             });
-            if (bg2e::ui::Input::comboBox(
+            if (bg2e::ui::Value::comboBox(
                 "Lights in Scene",
                 lightNames,
                 _selectedLightIndex
@@ -121,7 +121,7 @@ void EnvironmentSettings::init(
                _selectedLight = _appDelegate->stage()->lights()[_selectedLightIndex];
            }
 
-            if (bg2e::ui::BasicWidgets::collapsingHeader(lightNames[_selectedLightIndex]))
+            if (bg2e::ui::Group::collapsingHeader(lightNames[_selectedLightIndex]))
             {
                 bg2e::base::Light::LightType type = bg2e::base::Light::TypeDisabled;
                 _lightEditor->setLightComponent(_selectedLight);
@@ -134,7 +134,7 @@ void EnvironmentSettings::init(
                     _polarEditor->setComponent(polarCtrl);
                     _polarEditor->draw();
 
-                    if (bg2e::ui::BasicWidgets::button("Remove Light"))
+                    if (bg2e::ui::Button::button("Remove Light"))
                     {
                         _appDelegate->stage()->removeLight(_selectedLightIndex);
                         _selectedLight.reset();
@@ -143,36 +143,36 @@ void EnvironmentSettings::init(
             }
         }
 
-        bg2e::ui::BasicWidgets::spacing();
-        bg2e::ui::BasicWidgets::separator("Floor");
+        bg2e::ui::Layout::spacing();
+        bg2e::ui::Text::separator("Floor");
         auto floorVisible = _appDelegate->stage()->isFloorVisible();
         if (floorVisible)
         {
-            if (bg2e::ui::BasicWidgets::button("Hide floor"))
+            if (bg2e::ui::Button::button("Hide floor"))
             {
                 _appDelegate->stage()->showFloor(false);
             }
             auto floorHeight = _appDelegate->stage()->floorHeight();
-            if (bg2e::ui::Input::number("Floor Height", &floorHeight))
+            if (bg2e::ui::Numeric::number("Floor Height", &floorHeight))
             {
                 _appDelegate->stage()->setFlorHeight(floorHeight);
             }
         }
         else
         {
-            if (bg2e::ui::BasicWidgets::button("Show floor"))
+            if (bg2e::ui::Button::button("Show floor"))
             {
                 _appDelegate->stage()->showFloor(true);
             }
         }
 
-        bg2e::ui::BasicWidgets::spacing();
-        if (bg2e::ui::BasicWidgets::button("Save Settings"))
+        bg2e::ui::Layout::spacing();
+        if (bg2e::ui::Button::button("Save Settings"))
         {
             _appDelegate->stage()->saveEnvironmentSettings();
         }
 
-        if (bg2e::ui::BasicWidgets::button("Save Settings As", true))
+        if (bg2e::ui::Button::button("Save Settings As", true))
         {
             bg2e::app::FileDialog fd;
             fd.setFilters({
@@ -186,7 +186,7 @@ void EnvironmentSettings::init(
             }
         }
 
-        if (bg2e::ui::BasicWidgets::button("Restore Settings", true))
+        if (bg2e::ui::Button::button("Restore Settings", true))
         {
             bg2e::app::FileDialog fd;
             fd.setFilters({

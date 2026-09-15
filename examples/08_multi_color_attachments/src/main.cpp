@@ -268,17 +268,17 @@ public:
 	{
 		using namespace bg2e::ui;
 		_window.draw([&]() {
-			BasicWidgets::text("Hello, world!");
+			Text::text("Hello, world!");
    
-            BasicWidgets::checkBox("Draw Skybox", &_drawSkybox);
+            Button::checkBox("Draw Skybox", &_drawSkybox);
             
-            BasicWidgets::text("Show Attachment:");
-            BasicWidgets::radioButton("Attachment 1", &_showRenderTargetIndex, 0);
-            BasicWidgets::radioButton("Attachment 2", &_showRenderTargetIndex, 1);
+            Text::text("Show Attachment:");
+            Button::radioButton("Attachment 1", &_showRenderTargetIndex, 0);
+            Button::radioButton("Attachment 2", &_showRenderTargetIndex, 1);
             
             for (auto pair : _environments)
             {
-                if (BasicWidgets::button(pair.first))
+                if (Button::button(pair.first))
                 {
                     loadEnvironment(pair.second);
                 }
