@@ -40,6 +40,19 @@ public:
     static bool beginTree(const std::string & label);
     static void endTree();
     static bool collapsingHeader(const std::string & title, bool visible = true);
+
+    // Shows a tooltip when the last drawn item is hovered. No-op on empty text.
+    static void tooltip(const std::string & text);
+
+    // Renders the widgets between beginDisabled()/endDisabled() as disabled.
+    // endDisabled() must always be called after beginDisabled().
+    static void beginDisabled(bool disabled = true);
+    static void endDisabled();
+
+    // Pushes/pops an identifier into the ImGui ID stack to disambiguate
+    // repeated labels. popId() must always be called after pushId().
+    static void pushId(int id);
+    static void popId();
     
     static uint32_t calcTextWidth(const std::string & title);
     static uint32_t calcTextHeight(const std::string & title);

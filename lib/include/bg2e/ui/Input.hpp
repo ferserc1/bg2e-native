@@ -184,6 +184,36 @@ public:
         double max = 1.0,
         bool sameLine = false
     );
+
+    // min == max == 0 means unclamped range (standard ImGui convention)
+    static bool drag(
+        const std::string& label,
+        float * value,
+        float speed = 0.1f,
+        float min = 0.0f,
+        float max = 0.0f,
+        bool sameLine = false
+    );
+
+    // min == max == 0 means unclamped range (standard ImGui convention)
+    static bool drag(
+        const std::string& label,
+        int * value,
+        float speed = 1.0f,
+        int min = 0,
+        int max = 0,
+        bool sameLine = false
+    );
+
+    // Edits a 4x4 transform matrix decomposed as position / rotation (degrees)
+    // / scale rows. Rotation is cached internally (keyed by label) to keep the
+    // editor stable; if the matrix changes externally, the euler angles are
+    // re-extracted.
+    static bool mat4(
+        const std::string& label,
+        glm::mat4& value,
+        bool sameLine = false
+    );
 };
 
 }

@@ -137,6 +137,34 @@ bool BasicWidgets::collapsingHeader(const std::string & title, bool visible)
     return ImGui::CollapsingHeader(title.c_str(), visible ? ImGuiTreeNodeFlags_DefaultOpen : 0);
 }
 
+void BasicWidgets::tooltip(const std::string & text)
+{
+    if (!text.empty() && ImGui::IsItemHovered())
+    {
+        ImGui::SetTooltip("%s", text.c_str());
+    }
+}
+
+void BasicWidgets::beginDisabled(bool disabled)
+{
+    ImGui::BeginDisabled(disabled);
+}
+
+void BasicWidgets::endDisabled()
+{
+    ImGui::EndDisabled();
+}
+
+void BasicWidgets::pushId(int id)
+{
+    ImGui::PushID(id);
+}
+
+void BasicWidgets::popId()
+{
+    ImGui::PopID();
+}
+
 uint32_t BasicWidgets::calcTextWidth(const std::string & title)
 {
     ImVec2 textSize = ImGui::CalcTextSize(title.c_str());

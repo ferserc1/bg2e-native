@@ -1,0 +1,47 @@
+/*
+ *    business grade graphic engine (bg2 engine)
+ *    Copyright (C) 2026  Fernando Serrano Carpena
+ *
+ *    This program is free software: you can redistribute it and/or modify
+ *    it under the terms of the GNU General Public License as published by
+ *    the Free Software Foundation, either version 3 of the License, or
+ *    (at your option) any later version.
+ *
+ *    This program is distributed in the hope that it will be useful,
+ *    but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *    GNU General Public License for more details.
+ *
+ *    You should have received a copy of the GNU General Public License
+ *    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
+#include <bg2e/reflection/TypeInfo.hpp>
+
+namespace bg2e::reflection {
+
+const PropertyInfo * TypeInfo::property(const std::string& name) const
+{
+    for (const auto& p : properties)
+    {
+        if (p.name == name)
+        {
+            return &p;
+        }
+    }
+    return nullptr;
+}
+
+const ActionInfo * TypeInfo::action(const std::string& name) const
+{
+    for (const auto& a : actions)
+    {
+        if (a.name == name)
+        {
+            return &a;
+        }
+    }
+    return nullptr;
+}
+
+}
