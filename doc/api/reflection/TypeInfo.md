@@ -3,7 +3,19 @@
 **Header:** `<bg2e/reflection/TypeInfo.hpp>`
 **Namespace:** `bg2e::reflection`
 
-The complete reflection record for one type: its registry key, display name, and
+This header also defines `SubtypeInfo`, the public description of a registered
+polymorphic subtype:
+
+```cpp
+struct SubtypeInfo {
+    std::string baseTypeName;
+    std::string key;
+    std::string typeName;
+    std::string displayName;
+};
+```
+
+The complete reflection record for one type contains its registry key, display name, and
 the ordered lists of its [`PropertyInfo`](Property.md#propertyinfo) and
 [`ActionInfo`](Action.md) entries. Plain data with two name-based lookups.
 

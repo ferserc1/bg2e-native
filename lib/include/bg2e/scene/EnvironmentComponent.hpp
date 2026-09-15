@@ -36,11 +36,7 @@ public:
     EnvironmentComponent(const std::filesystem::path& resourcePath, const std::string& file);
     virtual ~EnvironmentComponent();
     
-    inline void setEnvironmentImage(const std::string& img)
-    {
-        _environmentImage = img;
-        _imgHash = std::hash<std::string>{}(img);
-    }
+    void setEnvironmentImage(const std::string& img);
     
     inline void setEnvironmentImage(const std::filesystem::path& resourcePath, const std::string& img)
     {

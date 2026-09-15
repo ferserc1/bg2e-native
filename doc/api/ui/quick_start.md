@@ -690,12 +690,12 @@ if (auto* info = reflection::TypeRegistry::get().type("bg2e::base::Light"))
   [reflection docs](../reflection/index.md)).
 - Read-only properties (getter-only, or object without mutable getter) render
   **disabled**, not hidden — the value stays visible.
-- Current editor limits to know about:
-  - `Enum` properties draw a `<enum not supported>` placeholder (the concrete
-    enum type is erased in `std::any`; planned to be revived with the
-    registry-keyed enum metadata).
-  - `Path` properties are **read-only labels** (no file dialog).
-  - `Resource` / unknown types draw `<not supported>`.
+- Enum properties use their registered options in a combo. Unknown current
+  values remain intact until the user chooses a known option.
+- `Path` properties are visible labels; properties promoted with `resource()`
+  use `ResourcePicker` with an editable path and filtered native file dialog.
+- Polymorphic objects expose an optional subtype selector and draw both their
+  base and active-derived reflected fields.
 - Object properties recurse as nested trees, capped at
   `reflection::maxObjectDepth`; beyond it (or for unregistered sub-types) a
   fallback label is shown.
@@ -754,7 +754,7 @@ MainLoop::current()->asyncLoad([](ui::Loader* loader) {
 | UI freezes a frame when switching textures outside draw | `clearDS()` → `waitIdle()` | Normal; batch texture swaps to non-render times |
 | Menu shortcut never fires | Item added after the first `Menu::draw()` | Build the full `MenuItem` tree before the first draw |
 | Scene input reacts while dragging sliders | Input delegate is not filtered by ImGui | Ignore scene input while UI has capture (check your input delegate state; see `doc/input_delegate.md`) |
-| Reflection widget shows `<enum not supported>` | v1 type-erasure limitation | Edit that property with a hand-written `Value::comboBox()` or register enum metadata (see reflection docs) |
+| Enum combo shows `<no enum options>` | No `enumValue()` metadata was registered | Add the allowed label/value pairs to the property definition |
 | Transform rotation jitters/resets while editing | Matrix rewritten by code outside the widget between draws | The euler caches re-sync on external change (by design); avoid fighting the gizmo and the panel simultaneously |
 | Loader progress never updates | Worker thread never calls `setProgress` | Update it; also check you passed a non-empty callable |
 | Crash in `~MainLoop` / shutdown | Widgets cleaned up after `ImGui_ImplVulkan_Shutdown` | Call editors' `cleanup()` from the delegate `cleanup()` (before engine teardown) |

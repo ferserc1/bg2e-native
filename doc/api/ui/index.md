@@ -49,6 +49,7 @@ The layer is organized into three tiers:
 3. **Composite editors** (`MaterialEditor`, `DrawableEditor`, `SubmeshSelector`,
    `NodeEditor`, `SceneTree`, `LightEditor`, `CameraSettings`,
    `PolarTransformControllerEditor`, `ReflectionWidget`, `ComponentInspector`,
+   `ResourcePicker`,
    `UISettingsWindow`, `RenderSettingsWindow`) — scene-aware widgets that bind
    engine data (`scene::Node`, `render::MaterialBase`, `base::Light`,
    `manipulation::SelectionManager`, `reflection::TypeInfo`) to UI controls.
@@ -177,10 +178,11 @@ ui::SubmeshSelector               (concrete editor)
 ui::LightEditor                   (concrete editor)
 ui::CameraSettings                (concrete editor)
 ui::PolarTransformControllerEditor(concrete editor)
-ui::NodeEditor                    (concrete editor, composes the editors above)
+ui::NodeEditor                    (generic node + reflected-component editor)
 ui::SceneTree                     (concrete widget)
 ui::ReflectionWidget              (static-only generic metadata drawer)
 ui::ComponentInspector            (concrete widget)
+ui::ResourcePicker                (static resource path + file dialog widget)
 ui::Loader                        (concrete, thread-safe progress widget)
 ui::StatusItem                    (concrete value widget held by StatusBar)
 ui::DemoWindow                    (static-only, wraps ImGui::ShowDemoWindow)
@@ -228,7 +230,7 @@ ui::DemoWindow                    (static-only, wraps ImGui::ShowDemoWindow)
 | Class | Header | Description |
 |-------|--------|-------------|
 | **[`SceneTree`](SceneEditors.md#scenetree)** | `SceneTree.hpp` | Node-hierarchy tree; selection delegated to a `manipulation::SelectionManager` (read-only without one). |
-| **[`NodeEditor`](SceneEditors.md#nodeeditor)** | `NodeEditor.hpp` | Per-node inspector: name, enabled flag, component list, transform (P/R/S), drawable, environment, light and camera sections. |
+| **[`NodeEditor`](SceneEditors.md#nodeeditor)** | `NodeEditor.hpp` | Per-node inspector: name/enabled plus a reflection-driven `ComponentInspector`. |
 | **[`MaterialEditor`](Material_Editors.md#materialeditor)** | `MaterialEditor.hpp` | Full PBR material editor (albedo/normal/metallic/roughness/AO/emissive/sheen/fresnel) with multi-material editing and selection-driven mode. |
 | **[`DrawableEditor` / `SubmeshSelector`](Material_Editors.md)** | `DrawableEditor.hpp`, `SubmeshSelector.hpp` | Submesh list + name/group/visibility editing for the selected drawable. |
 | **[`LightEditor`](SceneEditors.md#lighteditor)** | `LightEditor.hpp` | Edits a `scene::LightComponent`'s `base::Light` (type, color, intensity, shadows, spot cone). |
@@ -241,6 +243,7 @@ ui::DemoWindow                    (static-only, wraps ImGui::ShowDemoWindow)
 |-------|--------|-------------|
 | **[`ReflectionWidget`](Reflection_Widgets.md)** | `ReflectionWidget.hpp` | Generic ImGui form generated from `bg2e::reflection` metadata (`drawProperties` / `drawActions`). |
 | **[`ComponentInspector`](Reflection_Widgets.md)** | `ComponentInspector.hpp` | Lists a node's components as collapsing headers, each expanded through `ReflectionWidget`, with remove buttons. |
+| **[`ResourcePicker`](ResourcePicker.md)** | `ResourcePicker.hpp` | Editable path plus filtered native file chooser for reflected Resource properties. |
 
 ### Settings windows
 

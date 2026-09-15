@@ -422,12 +422,32 @@ public:
     }
 
     template<typename Method>
+        requires std::is_member_function_pointer_v<Method>
     ActionBuilder<T> action(std::string name, Method method)
     {
         ActionInfo a;
         a.name = std::move(name);
         a.invoke = [method](void * instance) {
             (static_cast<T*>(instance)->*method)();
+        };
+        _info.actions.push_back(std::move(a));
+        return ActionBuilder<T>(*this, _info.actions.size() - 1);
+    }
+
+    // Callable overload: any lambda or functor invocable with T*.
+    // Lets reflection registration code implement actions that do not
+    // belong in the component itself (e.g. opening a file dialog).
+    // The is_member_pointer_v exclusion is required because member
+    // pointers are invocable with T* via std::invoke and would make
+    // this overload ambiguous with the member-function one.
+    template<typename F>
+        requires (std::is_invocable_v<F, T*> && !std::is_member_pointer_v<F>)
+    ActionBuilder<T> action(std::string name, F fn)
+    {
+        ActionInfo a;
+        a.name = std::move(name);
+        a.invoke = [fn = std::move(fn)](void * instance) {
+            std::invoke(fn, static_cast<T*>(instance));
         };
         _info.actions.push_back(std::move(a));
         return ActionBuilder<T>(*this, _info.actions.size() - 1);

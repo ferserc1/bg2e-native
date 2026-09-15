@@ -55,6 +55,12 @@ EnvironmentComponent::~EnvironmentComponent()
 
 }
 
+void EnvironmentComponent::setEnvironmentImage(const std::string& img)
+{
+    _environmentImage = img;
+    _imgHash = std::hash<std::string>{}(img);
+}
+
 void EnvironmentComponent::deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path& basePath, [[maybe_unused]] render::Engine& engine)
 {
     if (!jsonData || !jsonData->isObject())

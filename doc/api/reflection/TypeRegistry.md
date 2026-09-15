@@ -20,6 +20,25 @@ public:
     bool contains(const std::string& typeName) const;
     std::vector<std::string> typeNames() const;
 
+    template<typename Base, typename Derived>
+    void registerSubtype(std::string baseTypeName, std::string key,
+                         std::string displayName, std::string typeName = {});
+
+    const SubtypeInfo* subtype(const std::string& baseTypeName,
+                               const std::string& key) const;
+    std::vector<SubtypeInfo> subtypes(const std::string& baseTypeName) const;
+    std::string subtypeKey(const std::string& baseTypeName,
+                           const std::type_info& dynamicType) const;
+    const void* subtypeObject(const std::string& baseTypeName,
+                              const std::string& key,
+                              const void* baseObject) const;
+    void* subtypeObject(const std::string& baseTypeName,
+                        const std::string& key,
+                        void* baseObject) const;
+    template<typename Base>
+    std::shared_ptr<Base> createSubtype(const std::string& baseTypeName,
+                                        const std::string& key) const;
+
     uint32_t objectChainDepth(const std::string& typeName) const;
     bool validateObjectDepth(std::vector<std::string>* offenders = nullptr) const;
 
@@ -49,12 +68,15 @@ reflection::TypeRegistry& reg = reflection::TypeRegistry::get();
 **Key points:**
 - The singleton is created on first use — safe to call during static init.
 - Never delete or copy the instance; go through `get()`.
-- Storage is an `std::unordered_map<std::string, TypeInfo>` keyed by
-  `TypeInfo::typeName`.
+- Type metadata is keyed by `TypeInfo::typeName`; subtype metadata is stored
+  per base-hierarchy key in registration order.
 
 ---
 
 ## Methods
+
+Type metadata and polymorphic subtype metadata are independent and may be
+registered in either order.
 
 ### `void registerType(TypeInfo info)`
 
@@ -103,6 +125,8 @@ Depth of the deepest `Object`-property chain reachable from `typeName`, using
 the [depth semantics](Property.md#maxobjectdepth) where a root instance is
 depth 0: a type with one object property whose target has none has chain depth
 `1`. `0` means the type has no object properties (or is not registered).
+Only by-value `Object` edges contribute; polymorphic selections are handled
+separately and do not change this validation depth.
 
 The check is a DFS over object-property edges following `objectTypeName` keys.
 A visited-path set guards against reference cycles (which by-value nesting
@@ -144,6 +168,23 @@ if (!reflection::TypeRegistry::get().validateObjectDepth(&offenders)) {
 
 The registry treats both identically — a plain string. Prefer a namespaced key
 for non-components to avoid clashing with component names.
+
+---
+
+## Polymorphic subtype registries
+
+`registerSubtype<Base, Derived>()` associates a stable key and display name
+with a concrete type in a named base hierarchy. The default overload requires
+`Derived` to be default constructible; the factory overload supports custom
+construction and must return `std::shared_ptr<Derived>`. `Derived` must inherit
+from a polymorphic `Base`.
+
+`subtypes(base)` preserves registration order. Re-registering the same key
+replaces its entry in place. `subtype()` looks up metadata, `subtypeKey()` maps
+an object's dynamic RTTI type back to its key, and `createSubtype<Base>()`
+invokes the type-safe factory. The const and mutable `subtypeObject()` overloads
+perform the registered checked downcast for derived-type reflection. Unknown
+keys, factory mismatches, and failed casts return null/empty values.
 
 ---
 

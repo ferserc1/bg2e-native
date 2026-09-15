@@ -3,10 +3,11 @@
 **Header:** `<bg2e/reflection/Action.hpp>`
 **Namespace:** `bg2e::reflection`
 
-Describes a parameterless action exposed by a reflected type — a method with no
-arguments, suitable for a future UI button. Only member function pointers are
-supported; the wrapped method's return value is discarded, so fluent methods
-(e.g. `TransformComponent* setIdentity()`) work directly.
+Describes a parameterless action exposed by a reflected type, rendered as buttons
+by `ui::ReflectionWidget`. Two kinds of callables are supported: member function
+pointers (the wrapped method's return value is discarded, so fluent methods like
+`TransformComponent* setIdentity()` work directly) and lambdas/functors invocable
+with `T*`, which receive the component instance.
 
 ```cpp
 struct ActionInfo {
@@ -49,9 +50,24 @@ t.action("setIdentity", &scene::TransformComponent::setIdentity)
     .tooltip("Reset the transform to the identity matrix");
 ```
 
-Accepted signatures: `R (T::*)()` and `R (T::*)() const` for **any** return type
-`R` (including `T*`, `void`, `bool`, …). The `std::function<void(void*)>` wrapper
-drops the result.
+Accepted signatures:
+
+- **Member function pointers**: `R (T::*)()` and `R (T::*)() const` for **any**
+  return type `R` (including `T*`, `void`, `bool`, …). The
+  `std::function<void(void*)>` wrapper drops the result.
+- **Callables**: any lambda or functor invocable with `T*`
+  (`std::is_invocable_v<F, T*>`). The closure receives the component instance,
+  which allows complex actions to live in the reflection registration code
+  instead of the component:
+
+```cpp
+t.action("resetTwice", [](scene::TransformComponent* comp) {
+        comp->setIdentity();
+        comp->setIdentity();
+    })
+    .displayName("Reset Twice")
+    .category("Transform");
+```
 
 ---
 
@@ -83,4 +99,4 @@ if (const reflection::ActionInfo* a = info->action("setIdentity"))
 ## See also
 
 - [Builder](Builder.md#typeinfobuildert) — declaring actions.
-- [quick_start](quick_start.md#recipe-7-actions-parameterless-methods) — example.
+- [quick_start](quick_start.md#recipe-7-actions-parameterless-methods-and-lambdas) — example.

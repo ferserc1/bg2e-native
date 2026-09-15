@@ -27,9 +27,45 @@
 #include <bg2e/ui/Button.hpp>
 
 #include <memory>
+#include <any>
+#include <filesystem>
+#include <vector>
 
 namespace bg2e {
 namespace ui {
+
+namespace {
+
+struct ResourceSnapshot {
+    const reflection::PropertyInfo * property = nullptr;
+    std::filesystem::path value;
+};
+
+std::filesystem::path resourceValue(
+    const reflection::PropertyInfo& property,
+    const void * instance
+) {
+    const auto value = property.getter(instance);
+    return property.metadata.resourceValueType == reflection::PropertyType::String
+        ? std::filesystem::path(std::any_cast<std::string>(value))
+        : std::any_cast<std::filesystem::path>(value);
+}
+
+void restoreResource(
+    const ResourceSnapshot& snapshot,
+    void * instance
+) {
+    if (snapshot.property->metadata.resourceValueType == reflection::PropertyType::String)
+    {
+        snapshot.property->setter(instance, snapshot.value.string());
+    }
+    else
+    {
+        snapshot.property->setter(instance, snapshot.value);
+    }
+}
+
+} // anonymous namespace
 
 void ComponentInspector::draw()
 {
@@ -73,7 +109,39 @@ void ComponentInspector::draw()
 
             if (typeInfo)
             {
-                if (ReflectionWidget::drawProperties(comp.get(), *typeInfo))
+                std::vector<ResourceSnapshot> resources;
+                for (const auto & property : typeInfo->properties)
+                {
+                    if (property.type == reflection::PropertyType::Resource && property.getter)
+                    {
+                        resources.push_back({ &property, resourceValue(property, comp.get()) });
+                    }
+                }
+
+                bool componentChanged = ReflectionWidget::drawProperties(comp.get(), *typeInfo);
+                size_t changedResources = 0;
+                size_t rejectedResources = 0;
+                for (const auto & resource : resources)
+                {
+                    const auto selected = resourceValue(*resource.property, comp.get());
+                    if (selected == resource.value) continue;
+                    ++changedResources;
+
+                    if (_onResourceChanged && !_onResourceChanged(
+                            comp.get(), resource.property->name, resource.value, selected))
+                    {
+                        restoreResource(resource, comp.get());
+                        ++rejectedResources;
+                    }
+                }
+
+                // A component containing only rejected Resource changes did
+                // not change. Preserve notification for any simultaneous
+                // non-resource edit.
+                if (componentChanged &&
+                    !(changedResources > 0 &&
+                      rejectedResources == changedResources &&
+                      resources.size() == typeInfo->properties.size()))
                 {
                     changed = true;
                 }

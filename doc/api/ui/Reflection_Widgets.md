@@ -1,158 +1,97 @@
 # Reflection Widgets
 
 **Headers:** `<bg2e/ui/ReflectionWidget.hpp>`, `<bg2e/ui/ComponentInspector.hpp>`
+
 **Namespace:** `bg2e::ui`
 
-Generic UI generated at runtime from `bg2e::reflection` metadata. They turn a
-[`TypeInfo`](../reflection/TypeInfo.md) description into an ImGui form without
-any per-type UI code. See the
-[reflection API docs](../reflection/index.md) for the metadata model these
-widgets consume.
+Runtime-generated ImGui forms backed by `bg2e::reflection` metadata.
 
 ```cpp
 class BG2E_API ReflectionWidget {
 public:
-    static bool drawProperties(void* instance,
-                               const reflection::TypeInfo& info,
-                               uint32_t depth = 0);   // true if any property changed
-    static void drawActions(void* instance,
-                            const reflection::TypeInfo& info);
-    // protected: drawProperty / drawScalarProperty / drawObjectProperty
+    static bool drawProperties(void* instance, const reflection::TypeInfo& info,
+                               uint32_t depth = 0);
+    static void drawActions(void* instance, const reflection::TypeInfo& info);
 };
 
 class BG2E_API ComponentInspector {
 public:
-    void setNode(scene::Node* node);        scene::Node* node() const;
+    using ResourceChangedCallback = std::function<bool(
+        scene::Component*, const std::string& propertyName,
+        const std::filesystem::path& previousPath,
+        const std::filesystem::path& selectedPath)>;
+    void setNode(scene::Node* node);
+    scene::Node* node() const;
     void draw();
-    void onChanged(std::function<void()> cb);
+    void onChanged(std::function<void()> callback);
+    void onResourceChanged(ResourceChangedCallback callback);
 };
 ```
 
----
+## `ReflectionWidget`
 
-## `ReflectionWidget::drawProperties`
+`drawProperties()` groups properties by category in first-appearance order,
+uses `metadata.displayName` as the visible label, attaches tooltips, and returns
+`true` if any setter accepted a changed value. Read-only properties remain
+visible inside a disabled group.
 
-For every `PropertyInfo` in `info.properties` it picks a widget from the
-combination `(PropertyType, PropertyEditor, metadata.min/max/step)` and wires
-it to the type-erased accessors:
+| Property type | Generic editor |
+|---------------|----------------|
+| `Bool` | Checkbox |
+| `Int`, `UInt`, `Float`, `Double` | Input, slider, drag, or angle editor according to metadata |
+| `String` | Text field |
+| `Vec2`, `Vec3`, `Vec4`, `Mat4` | Matching vector/matrix editor |
+| `Color` | Color picker |
+| `Enum` | Combo box populated by `enumOptions` |
+| `Path` | Visible path label |
+| `Resource` | [`ResourcePicker`](ResourcePicker.md), preserving String/Path storage |
+| `Object` | Nested reflected tree |
+| `PolymorphicObject` | Subtype selector plus base and derived reflected fields |
 
-| `PropertyType` | Widget(s) |
-|----------------|-----------|
-| `Bool` | `Button::checkBox` |
-| `Int` / `UInt` | number input; `Slider` → `Numeric::sliderInt(min,max)`; `Drag` → `Numeric::drag(speed=step)` |
-| `Float` | number input; `Slider` → `Numeric::sliderFloat(min,max)`; `Drag` → `Numeric::drag(step, clamped only when metadata gives a range)`; `Angle` → slider when a range exists, else drag (speed default `0.5`) |
-| `Double` | number input; other editors go through a `float` temporary |
-| `String` | `Value::text` |
-| `Vec2/3/4`, `Mat4` | matching `Vector` widget |
-| `Color` | `Value::colorPicker` |
-| `Enum` | **fallback label** `"<name>: <enum not supported>"` (see limitation below) |
-| `Path` | **read-only label** `"<name>: <path>"` |
-| `Resource` / unknown | label `"<name>: <not supported>"` |
-| `Object` | nested tree (see below) |
+Enum access is uniformly erased as `int64_t`. An empty option list produces a
+disabled `<no enum options>` item. If the current value is not registered, the
+combo adds `Unknown (<value>)` without changing the object; selecting a known
+option replaces it. Enum properties use a combo regardless of an explicit
+non-combo editor hint.
 
-Mechanics:
+### Object properties
 
-- **Grouping**: properties are grouped by `metadata.category` preserving
-  first-appearance order; each non-empty category becomes a collapsed tree
-  (`beginTree`), so registration order controls layout.
-- **Labels**: the visible name is `metadata.displayName` (fallback `name`),
-  and the ImGui id is forced unique with `"##name"` — safe to draw the same
-  `TypeInfo` for several instances side by side.
-- **Read-only**: `isReadOnly()` properties are wrapped in
-  `beginDisabled()/endDisabled()` — visible, not editable (for `Object`
-  properties: no `objectMutableGetter`).
-- **Tooltips**: `metadata.tooltip` is attached to the last drawn widget.
-- **Write-back**: the getter's `std::any` is `any_cast` to the concrete type,
-  edited through the widget, and only pushed back through the setter when the
-  widget reports a change (matching the
-  [reflection conventions](../reflection/index.md)).
+An `Object` is edited in place through its object accessors. Missing reflection
+data, null objects, and depth beyond `reflection::maxObjectDepth` produce safe
+diagnostic labels. A read-only parent disables the complete nested form. Nested
+actions are drawn after its fields.
 
-### Object properties (`PropertyType::Object`)
+### Polymorphic object properties
 
-Rendered as a collapsible tree. Consumption mirrors the reflection rules:
+The selector is built from `TypeRegistry::subtypes(base)`, optionally filtered
+and ordered by `polymorphicSubtypeKeys`. A property with a replacer can construct
+and install a registered subtype; otherwise the selector is disabled. Null
+values can still be configured when a replacer and factory are available.
 
-- Sub-object resolved via `objectGetter`; if its `objectTypeName` is **not
-  registered** (or the instance pointer is null) a disabled
-  `"<name>: <not registered>"` label appears instead of a tree.
-- Recurses via `drawProperties(sub, objectInfo, depth + 1)` — capped at
-  `reflection::maxObjectDepth`; deeper levels draw `"<name>: <max depth
-  reached>"`.
-- Read-only sub-objects draw their whole form inside `beginDisabled()` and
-  changes are swallowed (so a read-only parent never mutates a mutable
-  child by accident). Actions of the sub-object are drawn too.
+After selection, the widget reacquires the pointers and draws both base and
+active-derived reflection metadata. Registered checked casts are used before
+derived fields are exposed. Null values, unknown dynamic types, missing subtype
+reflection, unavailable allowlist entries, and failed replacement are reported
+without unsafe casts. The normal depth limit and read-only behavior also apply.
 
-### `Enum` limitation (v1)
-
-The concrete enum type is erased inside `std::any` by the reflection getters,
-and `std::any_cast` requires the exact type — so the widget cannot read a
-generic enum value back. It therefore falls back to a label instead of a
-combo. Until this is resolved, edit enums with a hand-written
-`Value::comboBox()` (as `LightEditor` does) rather than relying on the
-generic form. `Path` is likewise label-only for now.
-
-### `drawActions`
-
-One `Button::button` per `ActionInfo` (`displayName` or `name`, ID from
-`name`), calling `action.invoke(instance)` on click, with tooltip.
-
----
+`drawActions()` renders one button per `ActionInfo` and invokes it on click.
 
 ## `ComponentInspector`
 
-The node-component front-end for `ReflectionWidget`:
+The inspector iterates `node->orderedComponents()`, resolves each component's
+`TypeInfo`, and delegates fields and actions to `ReflectionWidget`. Components
+without reflection metadata are still listed and removable. Removal is deferred
+until iteration has finished. `setNode(nullptr)` draws `No selection`.
 
-```
-<Node name>
-[ Add Component ]            <- stub (no implementation yet)
---- Components ---
-> [Transform]              (collapsingHeader, display name from TypeInfo)
-    ... reflected properties/actions via ReflectionWidget ...
-> [Drawable]
-    No reflection data for 'Drawable'
-    [Remove]
-```
-
-- Iterates `node->orderedComponents()`; per component it looks up
-  `TypeRegistry::get().type(comp->typeName())`.
-- Components **without** reflection data are still listed (with the
-  "No reflection data" note) and can still be removed.
-- The **Remove** button is right-aligned on the header row
-  (`sameLine(-calcButtonWidth("Remove") - spacing)`).
-- Removal is *deferred* until after the iteration finishes (a `pendingRemove`
-  shared_ptr) so the component vector is never mutated mid-loop — you can
-  click Remove on any component safely.
-- `onChanged()` fires on any property change **or** component removal —
-  hook your dirty flags to it.
-- `setNode(nullptr)` → draws `"No selection"`.
-
-Because both widgets read the registry at draw time, registering a type after
-startup shows up in the next frame with no invalidation.
-
----
-
-## Wiring a full inspector panel
-
-```cpp
-// left panel: hierarchy            right panel: properties
-_sceneTree.setRootNode(scene->rootNode());
-_sceneTree.setSelectionManager(_selectionMgr.get());
-
-// react to selection (3D pick or tree click) by pointing the inspector
-_selectionMgr->onSelect([this]() {
-    std::vector<scene::Node*> nodes;
-    for (const auto& item : _selectionMgr->selectedItems()) {
-        if (auto* n = item->nodePtr()) nodes.push_back(n);
-    }
-    _nodeEditor.setNodes(nodes);
-    _inspector.setNode(nodes.size() == 1 ? nodes.front() : nullptr);
-});
-```
-
----
+`onChanged()` fires once for an accepted property change or component removal.
+For top-level Resource properties, the inspector snapshots the previous path
+and calls `onResourceChanged(component, propertyName, previous, selected)`.
+Returning `false` rejects the change and restores the previous reflected value;
+returning `true` accepts it and then triggers `onChanged()` once. Applications
+use this hook to validate and load selected resources.
 
 ## See also
 
-- [quick_start — Recipe 13](quick_start.md#recipe-13-reflection-driven-inspectors)
-- [reflection API](../reflection/index.md) — `PropertyInfo`, `TypeInfo`,
-  `PropertyEditor`, object properties, `maxObjectDepth`.
-- [NodeEditor](SceneEditors.md#nodeeditor) — the hand-written alternative.
+- [ResourcePicker](ResourcePicker.md)
+- [Reflection API](../reflection/index.md)
+- [NodeEditor](SceneEditors.md#nodeeditor)

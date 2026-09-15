@@ -57,10 +57,10 @@ Consequences to respect:
    the next `mat4()` call because they change `value`.
 3. `mat4` ignores `sameLine` (it always starts a new block of three rows).
 
-`NodeEditor` uses the same decomposition for the per-node transform, but keeps
-the euler cache **keyed by node pointer** (`_eulerCacheNode` / `_cachedEuler`)
-instead of by label, so switching selection re-extracts while staying stable
-while editing the same node.
+The generic `NodeEditor` now delegates transform editing to reflected
+translation, rotation, and scale properties through `ComponentInspector`; it
+does not use this matrix widget. `Vector::mat4` remains available to specialized
+editors that need decomposed matrix editing.
 
 ---
 

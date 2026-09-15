@@ -11,7 +11,7 @@ Every symbol lives under `bg2e::reflection`. The umbrella header
 
 | Enum | Header | Description |
 |------|--------|-------------|
-| [PropertyType](Property.md#propertytype) | `reflection/Property.hpp` | Kind of a reflected value: `Bool`, `Int`, `UInt`, `Float`, `Double`, `String`, `Vec2`, `Vec3`, `Vec4`, `Mat4`, `Color`, `Enum`, `Resource`, `Path`, `Object`. |
+| [PropertyType](Property.md#propertytype) | `reflection/Property.hpp` | Kind of a reflected value, including `Enum`, `Resource`, `Object`, and `PolymorphicObject`. |
 | [PropertyEditor](Property.md#propertyeditor) | `reflection/Property.hpp` | UI editor hint (orthogonal to constraints): `Default`, `Input`, `Slider`, `Drag`, `Checkbox`, `Combo`, `Color`, `Angle`. Not extended for `Object` properties. |
 
 ## Constants
@@ -24,8 +24,9 @@ Every symbol lives under `bg2e::reflection`. The umbrella header
 
 | Struct | Header | Description |
 |--------|--------|-------------|
-| [PropertyMetadata](Property.md#propertymetadata) | `reflection/Property.hpp` | UI metadata for a property: `displayName`, `category`, `tooltip`, `min`/`max`/`step`, and `enumOptions`. |
-| [PropertyInfo](Property.md#propertyinfo) | `reflection/Property.hpp` | A single reflected property: name, type, editor, metadata, and type-erased accessors: `getter`/`setter` for scalars; `objectTypeName`/`objectGetter`/`objectMutableGetter` for `Object` properties. `isReadOnly()` is `!setter` for scalars, `!objectMutableGetter` for objects. |
+| [PropertyMetadata](Property.md#propertymetadata) | `reflection/Property.hpp` | UI metadata including constraints, enum options, and Resource file-filter/storage settings. |
+| [SubtypeInfo](TypeInfo.md) | `reflection/TypeInfo.hpp` | Base hierarchy, key, reflected type key, and display name for a polymorphic subtype. |
+| [PropertyInfo](Property.md#propertyinfo) | `reflection/Property.hpp` | A reflected scalar, object, or polymorphic object with its corresponding erased accessors. `isReadOnly()` derives from the available write paths. |
 | [ActionInfo](Action.md) | `reflection/Action.hpp` | A single reflected action: `name`, `displayName`, `category`, `tooltip`, and a parameterless `invoke` (`void(void*)`). |
 | [TypeInfo](TypeInfo.md) | `reflection/TypeInfo.hpp` | Reflected description of a type: `typeName`, `displayName`, and vectors of `PropertyInfo` / `ActionInfo`, with `property(name)` and `action(name)` lookups. |
 
@@ -33,10 +34,11 @@ Every symbol lives under `bg2e::reflection`. The umbrella header
 
 | Class | Header | Description |
 |-------|--------|-------------|
-| [TypeRegistry](TypeRegistry.md) | `reflection/Registry.hpp` | Leaky-singleton registry keyed by type-name string. `BG2E_API`. `registerType`, `type`, `contains`, `typeNames`, `objectChainDepth`, `validateObjectDepth`. |
+| [TypeRegistry](TypeRegistry.md) | `reflection/Registry.hpp` | Type metadata plus ordered polymorphic subtype metadata, checked casts, and factories. |
 | [TypeInfoBuilder\<T\>](Builder.md#typeinfobuildert) | `reflection/Builder.hpp` | Header-only chained builder that assembles a `TypeInfo` from member-fn-pointer accessors. `property()`, `object()`, `action()`. |
 | [PropertyBuilder\<T\>](Builder.md#propertybuildert) | `reflection/Builder.hpp` | Chained metadata builder returned by `TypeInfoBuilder<T>::property`. Sets display/category/tooltip, range/step, editor, enum options. |
 | [ObjectBuilder\<T\>](Builder.md#objectbuildert) | `reflection/Builder.hpp` | Chained metadata builder returned by `TypeInfoBuilder<T>::object`. Sets display/category/tooltip **only** — editor/constraint/enum operations do not exist on this type (compile error by design). |
+| [PolymorphicObjectBuilder\<T\>](Builder.md#polymorphicobjectbuildert) | `reflection/Builder.hpp` | Metadata builder for owned polymorphic objects and their ordered subtype allowlist. |
 | [ActionBuilder\<T\>](Builder.md#actionbuildert) | `reflection/Builder.hpp` | Chained metadata builder returned by `TypeInfoBuilder<T>::action`. Sets display/category/tooltip. |
 | [TypeRegistration\<T\>](Registration.md) | `reflection/Registration.hpp` | Header-only static-init helper. Builds a `TypeInfoBuilder<T>` and registers it. Two constructors: `staticTypeName()` key or explicit key. |
 
@@ -66,6 +68,9 @@ struct PropertyInfo {
     std::string objectTypeName;                             // TypeRegistry key of the sub-object type
     std::function<const void*(const void*)> objectGetter;   // address of the sub-object (always set)
     std::function<void*(void*)> objectMutableGetter;        // empty => sub-object is read-only
+
+    // PolymorphicObject adds a base hierarchy key, subtype allowlist,
+    // active-key and base-pointer accessors, and an optional replacer.
 };
 
 struct ActionInfo {
@@ -75,15 +80,16 @@ struct ActionInfo {
 
 ## Accessor signatures accepted by the builders
 
-The template `property(...)` / `object(...)` / `action(...)` overloads accept
-only member function pointers with these shapes:
+The template `property(...)` / `object(...)` overloads accept
+only member function pointers with these shapes. `action(...)` also accepts
+lambdas/functors invocable with `T*`:
 
 | Kind | Accepted signatures | Notes |
 |------|--------------------|-------|
 | Getter | `R (T::*)() const`, `R (T::*)()` with `R ∈ {V, const V&}` | Virtual getters work unchanged. |
-| Setter | `void (T::*)(V)` with `V ∈ {U, const U&}` | Must resolve to the same `ValueT` as the getter. |
+| Setter | `R (T::*)(V)` with `V ∈ {U, const U&}` | Any return type; value must match the getter. |
 | Object getter | `const U& (T::*)() const` (read-only) and `U& (T::*)()` (editable) | `U` must be a non-scalar class. Overloaded getters need `static_cast` disambiguation. |
-| Action | `R (T::*)()`, `R (T::*)() const` (any `R`) | Result is discarded; fluent `T*` methods are valid. |
+| Action | `R (T::*)()`, `R (T::*)() const` (any `R`), or any callable `F` with `std::is_invocable_v<F, T*>` | Result is discarded; fluent `T*` methods are valid. Callable overload receives the component instance. |
 
 ## `PropertyType` ↔ C++ type map
 
@@ -102,8 +108,9 @@ only member function pointers with these shapes:
 | `Color` | `base::Color` |
 | `Path` | `std::filesystem::path` |
 | `Enum` | any enumeration type (`std::is_enum_v`) |
-| `Resource` | reserved (engine resource references) |
+| `Resource` | promoted from String/Path by `PropertyBuilder::resource()` |
 | `Object` | not deduced from a C++ type; registered explicitly via `object()` |
+| `PolymorphicObject` | registered explicitly via `polymorphicObject<Base>()` |
 
 Any other type triggers a compile-time error
 (`bg2e::reflection: unsupported property type`).
@@ -116,8 +123,8 @@ Any other type triggers a compile-time error
 |--------|----------|
 | `bg2e/reflection/Property.hpp` | `PropertyType`, `PropertyEditor`, `PropertyMetadata`, `PropertyInfo`, `maxObjectDepth` |
 | `bg2e/reflection/Action.hpp` | `ActionInfo` |
-| `bg2e/reflection/TypeInfo.hpp` | `TypeInfo` |
+| `bg2e/reflection/TypeInfo.hpp` | `SubtypeInfo`, `TypeInfo` |
 | `bg2e/reflection/Registry.hpp` | `TypeRegistry` |
-| `bg2e/reflection/Builder.hpp` | accessor traits, `propertyTypeOf`, `isScalarPropertyType`, `PropertyBuilder`, `ObjectBuilder`, `ActionBuilder`, `TypeInfoBuilder` |
+| `bg2e/reflection/Builder.hpp` | accessor traits, type deduction, and all five builders (`Property`, `Object`, `PolymorphicObject`, `Action`, `TypeInfo`) |
 | `bg2e/reflection/Registration.hpp` | `TypeRegistration` |
 | `bg2e/reflection/all.hpp` | umbrella (includes all of the above) |

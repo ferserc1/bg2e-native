@@ -20,6 +20,12 @@
 #include "StageScene.hpp"
 
 #include <bg2e/scene/Chain.hpp>
+#include <bg2e/scene/EnvironmentComponent.hpp>
+#include <bg2e/utils/TextureCache.hpp>
+#include <bg2e/base/Log.hpp>
+
+#include <filesystem>
+#include <exception>
 
 void SceneEditor::init(AppDelegate * delegate)
 {
@@ -30,6 +36,43 @@ void SceneEditor::init(AppDelegate * delegate)
         _appDelegate->stage()->document()->setUnsavedChanges(true);
         auto scene = _appDelegate->stage()->sceneRoot()->scene();
         if (scene) scene->updateAll();
+    });
+
+    _nodeEditor.onResourceChanged([&](
+        bg2e::scene::Component * component,
+        const std::string& propertyName,
+        const std::filesystem::path& /* previousPath */,
+        const std::filesystem::path& selectedPath
+    ) -> bool {
+        auto * environment = dynamic_cast<bg2e::scene::EnvironmentComponent*>(component);
+        if (!environment || propertyName != "environmentImage")
+        {
+            return true;
+        }
+
+        std::error_code error;
+        if (selectedPath.empty() ||
+            !std::filesystem::is_regular_file(selectedPath, error) || error)
+        {
+            bg2e_log_warning << "Environment image does not exist: "
+                             << selectedPath.string() << bg2e_log_end;
+            return false;
+        }
+
+        try
+        {
+            bg2e::utils::TextureCache::get().load(
+                _appDelegate->stage()->engine(),
+                selectedPath
+            );
+            return true;
+        }
+        catch (const std::exception& exception)
+        {
+            bg2e_log_warning << "Could not load environment image: "
+                             << exception.what() << bg2e_log_end;
+            return false;
+        }
     });
 
     setDrawFunction([&]() {
@@ -82,5 +125,6 @@ void SceneEditor::drawChainComponentControls()
 
 void SceneEditor::cleanup()
 {
+    _nodeEditor.onResourceChanged(nullptr);
     _nodeEditor.onChanged(nullptr);
 }

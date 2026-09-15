@@ -3,7 +3,8 @@
 The `bg2e::reflection` namespace provides a minimal, **accessor-based**
 reflection system for the engine. Logical *properties* are described through
 public getters/setters (never raw fields), and *actions* expose parameterless
-methods suitable for future UI buttons. UI-oriented metadata (display name,
+methods or lambdas receiving the component instance, suitable for generated UI
+buttons. UI-oriented metadata (display name,
 category, tooltip, ranges, steps, editor choice) is kept conceptually separate
 from the data type itself.
 
@@ -36,23 +37,26 @@ serializable without carrying any reflection metadata. A generic
 **In scope**
 
 - Describing *logical properties* defined by public accessors.
-- Exposing *parameterless actions* (methods that take no arguments; their return
-  value — including fluent `T*` returns — is discarded).
+- Exposing *parameterless actions*: methods that take no arguments (their return
+  value — including fluent `T*` returns — is discarded) or lambdas/functors
+  invocable with `T*` that receive the component instance.
 - Attaching UI metadata: display name, category, tooltip, `min`/``max`/`step`,
-  editor kind, and enum option pairs.
+  editor kind, enum option pairs, and resource file filters.
 - Describing **object properties**: sub-objects of another reflected type,
   edited in place, with a fixed nesting depth limit (`maxObjectDepth = 3`).
+- Describing owned **polymorphic objects**, including subtype discovery,
+  factories, replacement, allowlists, and derived-type reflection.
 - A generic registry that any type can opt into.
 
 **Out of scope (this phase)**
 
-- No UI, ImGui, or widget generation. The system only produces *metadata*; a
-  future generic UI consumes it.
+- No UI dependency. The system produces metadata; `bg2e::ui` consumes it via
+  `ReflectionWidget` and `ComponentInspector`.
 - No serialization changes. `Component::serialize/deserialize` is untouched and
   independent.
 - No arbitrary method reflection (only parameterless actions).
-- No pointer / smart-pointer sub-objects (`std::shared_ptr<T>`, polymorphic
-  object references) — only by-value members accessed by reference getters.
+- Arbitrary pointer properties are not inferred. Owned polymorphic objects are
+  supported explicitly through `polymorphicObject()` and registered factories.
 - No replace-the-sub-object setter on the parent: object properties are edited
   **in place** through the sub-object's own reflection metadata.
 - No macros. Registration uses the template helper [`TypeRegistration<T>`](Registration.md).
@@ -63,7 +67,8 @@ serializable without carrying any reflection metadata. A generic
 
 1. **Read-only = no write path.** There is no `readOnly` flag. For scalar
    properties, `PropertyInfo::isReadOnly()` is `!setter`; for object properties
-   it is `!objectMutableGetter` (see
+   it is `!objectMutableGetter`; polymorphic objects are read-only when neither
+   mutation nor replacement is available (see
    [Object properties](#object-properties)).
 2. **Editor choice is orthogonal to constraints.** `range(min, max)` only sets
    `metadata.min`/`max`; `slider()`, `drag()`, `input()`… only set the editor. A
@@ -95,6 +100,7 @@ reflection::TypeRegistry                            (BG2E_API singleton)
 reflection::TypeInfoBuilder<T>                      (template, header-only)
   +-- reflection::PropertyBuilder<T>                (chained metadata)
   +-- reflection::ObjectBuilder<T>                  (chained metadata, objects)
+  +-- reflection::PolymorphicObjectBuilder<T>       (metadata + subtype allowlist)
   +-- reflection::ActionBuilder<T>                  (chained metadata)
 reflection::TypeRegistration<T>                     (template, static-init)
 reflection::{Getter,Setter}Traits, propertyTypeOf   (accessor meta-programming)
@@ -102,8 +108,8 @@ reflection::{Getter,Setter}Traits, propertyTypeOf   (accessor meta-programming)
 
 `PropertyInfo` carries both the scalar accessors (`getter`/`setter`, value via
 `std::any`) and the object accessors (`objectGetter`/`objectMutableGetter`,
-address via `void*`) — exactly one pair is used, depending on
-`PropertyInfo::type`.
+address via `void*`). Polymorphic objects use base-object pointer accessors, an
+active subtype-key callback, and an optional replacement callback.
 
 ### Definition vs. consumption
 
@@ -239,6 +245,8 @@ if (info) {
 > Casting to the wrong type throws `std::bad_any_cast`. Match the `PropertyType`
 > enum to the concrete type (see [Builder](Builder.md#propertytype-of-c-type--propertytype)).
 
+Enums are the exception: their erased value is always `int64_t`.
+
 ---
 
 ## Object properties
@@ -277,6 +285,24 @@ if (prop.type == reflection::PropertyType::Object) {
 `objectTypeName` is resolved at consumption time, so the static-init order of
 the defining translation units does not matter. Tools and debug builds can
 verify the limit with [`TypeRegistry::validateObjectDepth`](TypeRegistry.md).
+
+Polymorphic object properties use a named base hierarchy. The registry maps
+stable subtype keys to factories, RTTI, checked casts, display names, and
+derived `TypeInfo` keys. See [TypeRegistry](TypeRegistry.md#polymorphic-subtype-registries).
+
+---
+
+## Engine registrations
+
+The shipped metadata covers `base::Light`, `base::LinkJoint`, projection base
+and concrete types, and the following scene components: Transform, Light,
+Camera, Drawable, Environment, Orbit Camera, Polar Transform Controller, Fixed
+Scale Transform Controller, Chain, Input Chain Joint, and Output Chain Joint.
+
+Notable compositions are the nested `Light` and `LinkJoint` objects, Camera's
+polymorphic projection, Environment's filtered image Resource, and Transform's
+editable translation/rotation/scale plus read-only matrix and identity action.
+Drawable and Chain currently expose display-level metadata only.
 
 ---
 

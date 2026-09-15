@@ -51,46 +51,39 @@ Notes:
 ```cpp
 class BG2E_API NodeEditor {
 public:
-    void init(render::Engine* engine);          // needed by "Replace Model..."
-
     void setNode(scene::Node* node);
     void setNodes(const std::vector<scene::Node*>& nodes);   // >1 -> placeholder
     scene::Node* node() const;
 
     void draw();
     void onChanged(std::function<void()> cb);
+    void onResourceChanged(ComponentInspector::ResourceChangedCallback cb);
 };
 ```
 
-A per-node property panel. Sections appear automatically based on which
-components the node owns:
+A generic per-node property panel. It edits the node name and enabled flag,
+then delegates every component to `ComponentInspector`; component sections are
+therefore defined by reflection metadata rather than a hard-coded component list.
 
 ```
 <name text field>      Node::name()
 [ ] Enabled            Node::enabled()
---- Components ---     list of comp->typeName() (informational)
---- Transform ---      Position / Rotation(deg) / Scale  (Polar decomposition of TransformComponent)
---- Drawable ---       "Replace Model..." button (file dialog -> db::loadDrawableBg2)
---- Environment ---    current HDR file + "Select Image..." button
---- Light ---          embedded LightEditor (+ PolarTransformControllerEditor when present)
---- Camera ---         embedded CameraSettings
+> Transform             reflected properties and actions
+> Environment           reflected resource picker
+> Camera                reflected polymorphic projection
+> ...                   every registered component
 ```
 
 Gotchas worth knowing:
 
 - **Multi-selection**: `setNodes({a, b, ...})` with more than one node draws
   `<multiple_selection>` and nothing else — no bulk edit support (yet).
-- **Euler cache**: the transform rows use a rotation cache keyed by the *node
-  pointer*; switching selection re-extracts angles, editing the same node is
-  stable (same mechanism as [`Vector::mat4`](Vector.md#matrix-editor-mat4-and-the-euler-cache)).
-- **`"Replace Model..."` is a GPU-thread affair**: the loaded drawable is
-  applied through `app::MainLoop::safeUpdateScene()` so the scene graph is
-  never mutated while a visitor is traversing it. When you build similar
-  buttons, do the same (see `doc/safe_update_scene.md`).
-- `init(engine)` is required only for the drawable section (model loading);
-  the editor works without it for everything else.
-- Changes in the embedded editors propagate through the single `onChanged`
-  callback.
+- `onChanged` receives node edits and accepted component edits/removals.
+- `onResourceChanged` forwards the inspector's validation hook. Returning
+  `false` restores the old resource path.
+- Specialized `LightEditor`, `CameraSettings`, and drawable/material editors
+  remain available for callers that need their custom workflows, but are not
+  owned by `NodeEditor`.
 
 ---
 

@@ -21,9 +21,13 @@
 #include <bg2e/common.hpp>
 
 #include <functional>
+#include <filesystem>
+#include <string>
+#include <utility>
 
 namespace bg2e {
 namespace scene {
+    class Component;
     class Node;
 }
 namespace ui {
@@ -34,6 +38,13 @@ namespace ui {
 // and can be removed.
 class BG2E_API ComponentInspector {
 public:
+    using ResourceChangedCallback = std::function<bool(
+        scene::Component * component,
+        const std::string& propertyName,
+        const std::filesystem::path& previousPath,
+        const std::filesystem::path& selectedPath
+    )>;
+
     void setNode(scene::Node * node) { _node = node; }
     scene::Node * node() const { return _node; }
 
@@ -41,10 +52,12 @@ public:
 
     // Fired when any property changes or a component is removed
     void onChanged(std::function<void()> cb) { _onChanged = cb; }
+    void onResourceChanged(ResourceChangedCallback cb) { _onResourceChanged = std::move(cb); }
 
 protected:
     scene::Node * _node = nullptr;
     std::function<void()> _onChanged;
+    ResourceChangedCallback _onResourceChanged;
 
     void notifyChanged() const;
 };

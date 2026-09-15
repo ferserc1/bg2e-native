@@ -13,7 +13,7 @@ enum class PropertyType {
     Bool, Int, UInt, Float, Double, String,
     Vec2, Vec3, Vec4, Mat4,
     Color, Enum, Resource, Path,
-    Object
+    Object, PolymorphicObject
 };
 
 enum class PropertyEditor {
@@ -29,6 +29,10 @@ struct PropertyMetadata {
     std::optional<double> max;
     std::optional<double> step;
     std::vector<std::pair<std::string, int64_t>> enumOptions;
+    std::string resourceKind;
+    std::vector<std::string> resourceExtensions;
+    bool resourcePathIsProjectRelative = false;
+    PropertyType resourceValueType = PropertyType::Path;
 };
 
 // Maximum depth of Object-property chains a consumer may recurse into.
@@ -50,12 +54,22 @@ struct PropertyInfo {
     std::function<const void*(const void*)> objectGetter;   // address of the sub-object (always set)
     std::function<void*(void*)> objectMutableGetter;        // empty => sub-object is read-only
 
+    // PolymorphicObject properties:
+    std::string polymorphicBaseTypeName;
+    std::vector<std::string> polymorphicSubtypeKeys;
+    std::function<std::string(const void*)> polymorphicTypeKey;
+    std::function<const void*(const void*)> polymorphicObjectGetter;
+    std::function<void*(void*)> polymorphicObjectMutableGetter;
+    std::function<bool(void*, const std::string&)> polymorphicObjectReplacer;
+
     bool isReadOnly() const
     {
         if (type == PropertyType::Object)
         {
             return !static_cast<bool>(objectMutableGetter);
         }
+        if (type == PropertyType::PolymorphicObject)
+            return !polymorphicObjectMutableGetter && !polymorphicObjectReplacer;
         return !static_cast<bool>(setter);
     }
 };
@@ -81,16 +95,17 @@ you never set it by hand.
 | `Mat4` | 4×4 matrix | `glm::mat4` |
 | `Color` | RGBA color | `base::Color` |
 | `Enum` | Enumeration | any `enum` / `enum class` |
-| `Resource` | Reserved for engine resource references | — |
+| `Resource` | File-backed resource, stored as text or a path | `std::string` or `std::filesystem::path` |
 | `Path` | Filesystem path | `std::filesystem::path` |
 | `Object` | Reflected sub-object, edited in place | any non-scalar class with its own `TypeInfo` |
+| `PolymorphicObject` | Owned base-class object whose concrete subtype can be inspected or replaced | typically `std::shared_ptr<Base>` behind owner accessors |
 
 `Quat` is intentionally absent (no quaternion accessors in current types). It is
 trivial to add by extending `propertyTypeOf<T>()`.
 
-`Object` is **not** deduced by `propertyTypeOf<T>()` — it is never produced from
-a C++ accessor type. Object properties are registered exclusively through
-[`TypeInfoBuilder<T>::object`](Builder.md#objectname-objecttypename-getters).
+`Resource`, `Object`, and `PolymorphicObject` are not deduced directly.
+`resource()` promotes a String/Path property while preserving its storage type;
+`object()` and `polymorphicObject()` register their dedicated pointer accessors.
 
 ### `maxObjectDepth`
 
@@ -152,6 +167,10 @@ chained `PropertyBuilder` methods.
 | `max` | `std::optional<double>` | Upper bound. |
 | `step` | `std::optional<double>` | Increment for drag/slider/input. |
 | `enumOptions` | `vector<pair<string,int64_t>>` | `(label, value)` pairs for `Enum` properties. |
+| `resourceKind` | `std::string` | Human-readable file-filter name, such as `"Images"`. |
+| `resourceExtensions` | `vector<string>` | Allowed extensions; leading `.` and `*` are optional. |
+| `resourcePathIsProjectRelative` | `bool` | Convert a selected file to a path relative to the current project directory when possible. |
+| `resourceValueType` | `PropertyType` | Original `String` or `Path` storage contract of a promoted Resource property. |
 
 `min`/`max`/`step` are constraints only; they do not affect `editor`.
 
@@ -176,8 +195,13 @@ through [`TypeInfo::property`](TypeInfo.md).
 | `objectTypeName` | `std::string` | Object properties only: `TypeRegistry` key of the sub-object type, resolved by consumers at runtime. |
 | `objectGetter` | `std::function<const void*(const void*)>` | Object properties only: address of the sub-object; always set. |
 | `objectMutableGetter` | `std::function<void*(void*)>` | Object properties only: mutable address of the sub-object; empty => the sub-object is read-only. |
+| `polymorphicBaseTypeName` | `std::string` | Polymorphic hierarchy key used by `TypeRegistry`. |
+| `polymorphicSubtypeKeys` | `vector<string>` | Ordered property-specific subtype allowlist; empty exposes all registered subtypes. |
+| `polymorphicTypeKey` | `std::function<string(const void*)>` | Returns the active registered subtype key, or empty for null/unknown values. |
+| `polymorphicObjectGetter` / `polymorphicObjectMutableGetter` | pointer callbacks | Address the active base object; the mutable callback is absent for read-only properties. |
+| `polymorphicObjectReplacer` | `std::function<bool(void*, const string&)>` | Creates the requested registered subtype and installs it through the owner. |
 
-For object properties the only meaningful metadata fields are `displayName`,
+For by-value object properties the only meaningful metadata fields are `displayName`,
 `category` and `tooltip`: `min`/`max`/`step`, `enumOptions` and `editor` are
 unused (and un-settable at compile time through `ObjectBuilder`), and
 `getter`/`setter` stay empty — the pointer accessors are the only access path,
@@ -191,6 +215,7 @@ read-only — there is no separate flag:
 
 - Scalar properties: read-only without a `setter`.
 - Object properties: read-only without an `objectMutableGetter`.
+- Polymorphic objects: read-only only when they have neither a mutable getter nor a replacer.
 
 ```cpp
 const reflection::PropertyInfo* p = info->property("typeString");
@@ -230,7 +255,8 @@ intensity->setter(obj, std::any(cur + 1.0f));                  // write
   type (`glm::mat4`, not `const glm::mat4&`).
 - A wrong cast throws `std::bad_any_cast`; use the pointer overload
   `std::any_cast<T>(&any)` to test safely.
-- For enum properties, cast back to the original enum type, not `int64_t`.
+- Enum getters and setters deliberately use `int64_t` in `std::any`; the builder
+  casts to and from the concrete enum at the accessor boundary.
 - Object properties (`PropertyType::Object`) do not use `getter`/`setter` at
   all: address the sub-object with `objectGetter` / `objectMutableGetter` and
   edit it in place through its own reflected setters (see

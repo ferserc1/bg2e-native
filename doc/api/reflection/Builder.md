@@ -5,10 +5,11 @@
 
 The ergonomic, macro-free definition API. Header-only templates that turn
 member-function-pointer accessors into a [`TypeInfo`](TypeInfo.md). Includes the
-accessor traits, the `propertyTypeOf<T>()` deduction, and the four builder
+accessor traits, the `propertyTypeOf<T>()` deduction, and the five builder
 classes: [`TypeInfoBuilder<T>`](#typeinfobuildert),
 [`PropertyBuilder<T>`](#propertybuildert),
-[`ObjectBuilder<T>`](#objectbuildert), and
+[`ObjectBuilder<T>`](#objectbuildert),
+[`PolymorphicObjectBuilder<T>`](#polymorphicobjectbuildert), and
 [`ActionBuilder<T>`](#actionbuildert).
 
 ---
@@ -39,13 +40,13 @@ template<typename Class, typename MemberFn> struct SetterTraits;
 //   R (Class::*)()         -> ValueType = ValueT<R>
 
 // SetterTraits specialization:
-//   void (Class::*)(V)     -> ValueType = ValueT<V>
+//   R (Class::*)(V)        -> ValueType = ValueT<V>
 ```
 
 | Kind | Accepted signatures | Example |
 |------|--------------------|---------|
 | Getter | `R (T::*)() const`, `R (T::*)()` with `R ∈ {V, const V&}` | `const glm::mat4& matrix() const` |
-| Setter | `void (T::*)(V)` with `V ∈ {U, const U&}` | `void setMatrix(const glm::mat4&)` |
+| Setter | `R (T::*)(V)` with `V ∈ {U, const U&}`; any return type | `void setMatrix(const glm::mat4&)` |
 
 Virtual accessors work unchanged (member pointers to virtuals dispatch
 dynamically). Free functions and lambdas are intentionally excluded in v1.
@@ -122,8 +123,21 @@ public:
     ObjectBuilder<T> object(std::string name, std::string objectTypeName,
                             ConstGetter constGetter, MutableGetter mutableGetter);
 
+    template<typename Base, typename ConstGetter, typename MutableGetter, typename Replacer>
+    PolymorphicObjectBuilder<T> polymorphicObject(std::string name,
+        std::string baseTypeName, ConstGetter, MutableGetter, Replacer);
+
+    template<typename Base, typename ConstGetter>
+    PolymorphicObjectBuilder<T> polymorphicObject(std::string name,
+        std::string baseTypeName, ConstGetter);
+
     template<typename Method>
+        requires std::is_member_function_pointer_v<Method>
     ActionBuilder<T> action(std::string name, Method method);
+
+    template<typename F>
+        requires (std::is_invocable_v<F, T*> && !std::is_member_pointer_v<F>)
+    ActionBuilder<T> action(std::string name, F fn);
 
     const TypeInfo& build() const;
 
@@ -153,6 +167,10 @@ type-erased `getter`/`setter` closures that cast the `void*` to `T*` and call
 the member pointer. The value is stored in the returned `std::any` by value
 (even for `const&` accessors). Returns a [`PropertyBuilder<T>`](#propertybuildert)
 positioned at the new element.
+
+For enum properties, the erased getter returns `int64_t` and the setter accepts
+`int64_t`; conversion to the concrete enum happens inside these closures. This
+makes enum values editable without knowing their C++ type at runtime.
 
 ### `property(name, getter)`
 
@@ -206,11 +224,40 @@ t.object("light", "bg2e::base::Light",
 
 Returns an [`ObjectBuilder<T>`](#objectbuildert) positioned at the new element.
 
-### `action(name, method)`
+### `polymorphicObject<Base>(...)`
 
-Declares a parameterless [`ActionInfo`](Action.md). Wraps the member pointer in a
-`std::function<void(void*)>` that discards the return value, so fluent methods
-(`T*`-returning) work. Returns an [`ActionBuilder<T>`](#actionbuildert).
+Declares an owned polymorphic object. The editable overload accepts const and
+mutable getters returning `const Base*` / `Base*` (or compatible callables),
+plus a replacer callable that accepts the owner and `std::shared_ptr<Base>`.
+The getter-only overload is read-only. The active concrete type and replacement
+instances are resolved through the hierarchy registered in `TypeRegistry`.
+The returned builder can restrict the selector to an ordered set of subtype keys.
+
+### `action(name, method)` / `action(name, fn)`
+
+Declares a parameterless [`ActionInfo`](Action.md). Two constrained overloads:
+
+- **Member function pointer** (`requires std::is_member_function_pointer_v<Method>`):
+  wraps the member pointer in a `std::function<void(void*)>` that discards the
+  return value, so fluent methods (`T*`-returning) work.
+- **Callable** (`requires std::is_invocable_v<F, T*> && !std::is_member_pointer_v<F>`):
+  wraps any lambda or functor invocable with `T*`. The closure receives the
+  component instance, so complex actions that do not belong in the component
+  itself (e.g. opening a file dialog) can live in the reflection registration
+  code. The `is_member_pointer_v` exclusion is required because member pointers
+  are also invocable with `T*` via `std::invoke` and would otherwise be
+  ambiguous.
+
+```cpp
+t.action("setIdentity", &scene::TransformComponent::setIdentity);
+
+t.action("resetAndNotify", [](scene::TransformComponent* comp) {
+    comp->setIdentity();
+    // ... arbitrary logic outside the component ...
+});
+```
+
+Both return an [`ActionBuilder<T>`](#actionbuildert).
 
 ### `const TypeInfo& build() const`
 
@@ -250,6 +297,8 @@ public:
     PropertyBuilder& angle();
 
     PropertyBuilder& enumValue(std::string label, int64_t value);
+    PropertyBuilder& resource(std::string kind,
+        std::vector<std::string> extensions = {}, bool projectRelative = false);
     template<typename EnumT>
     PropertyBuilder& enumValue(std::string label, EnumT value);
 };
@@ -271,6 +320,11 @@ method name to avoid clashing with the `Color` type.
 `enumValue(label, value)` appends to `metadata.enumOptions`. The templated
 overload `static_cast`s any enum to `int64_t`, so both plain and scoped enums
 work.
+
+**Resources:** `resource()` promotes a `std::string` or
+`std::filesystem::path` property to `PropertyType::Resource`, records its
+original storage type and file-picker metadata, and throws `std::logic_error`
+if used on any other property type.
 
 ```cpp
 t.property("type", &base::Light::type, &base::Light::setType)
@@ -314,6 +368,23 @@ t.object("light", "bg2e::base::Light", ...)
 
 ---
 
+## `PolymorphicObjectBuilder<T>`
+
+```cpp
+template<typename T>
+class PolymorphicObjectBuilder {
+public:
+    PolymorphicObjectBuilder& displayName(std::string v);
+    PolymorphicObjectBuilder& category(std::string v);
+    PolymorphicObjectBuilder& tooltip(std::string v);
+    PolymorphicObjectBuilder& subtype(std::string key);
+};
+```
+
+Returned by `TypeInfoBuilder<T>::polymorphicObject`. `subtype(key)` appends to
+the ordered allowlist for that property. If no keys are appended, consumers
+expose every subtype registered for the base hierarchy.
+
 ## `ActionBuilder<T>`
 
 ```cpp
@@ -340,7 +411,8 @@ t.action("setIdentity", &scene::TransformComponent::setIdentity)
 
 ## Memory-safety detail
 
-`PropertyBuilder`, `ObjectBuilder` and `ActionBuilder` hold a **reference to the
+`PropertyBuilder`, `ObjectBuilder`, `PolymorphicObjectBuilder` and
+`ActionBuilder` hold a **reference to the
 owning `TypeInfoBuilder` plus an element index**, not a reference to the
 `PropertyInfo` / `ActionInfo` inside the vector. This avoids a dangling
 reference if the next `.property()` / `.object()` / `.action()` call grows the

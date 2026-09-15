@@ -21,6 +21,7 @@
 #include <bg2e/common.hpp>
 #include <bg2e/ui/ComponentInspector.hpp>
 #include <functional>
+#include <utility>
 #include <vector>
 
 namespace bg2e {
@@ -43,6 +44,11 @@ public:
     {
         _onChanged = cb;
         _componentInspector.onChanged([this]() { notifyChanged(); });
+    }
+
+    void onResourceChanged(ComponentInspector::ResourceChangedCallback cb)
+    {
+        _componentInspector.onResourceChanged(std::move(cb));
     }
 
 protected:

@@ -435,15 +435,13 @@ All scene editors share the same shape: `setXxxComponent(...)` /
 
 | Method | Description |
 |--------|-------------|
-| `void init(render::Engine*)` | Engine used by the drawable "Replace Model" action. |
 | `void setNode(scene::Node*)` / `void setNodes(const std::vector<scene::Node*>&)` | Single or multi selection; > 1 node draws a placeholder. |
 | `scene::Node* node() const` | Current node. |
 | `void draw()` | Name, enabled flag, component list, and per-component editors. |
 | `void onChanged(ChangedCallback)` | Invoked when any section edits the node. |
+| `void onResourceChanged(ComponentInspector::ResourceChangedCallback)` | Validates/loads a selected component resource; `false` restores its old path. |
 
-Owns (and reuses) a `LightEditor`, `PolarTransformControllerEditor` and
-`CameraSettings`; the transform section keeps a cached euler set keyed by the
-current node.
+Owns a `ComponentInspector`; component sections are generated from reflection.
 
 ### `MaterialEditor`
 
@@ -541,14 +539,15 @@ Static-only generic form generated from `bg2e::reflection` metadata.
 
 | Method | Description |
 |--------|-------------|
-| `static bool drawProperties(void* instance, const reflection::TypeInfo& info, uint32_t depth = 0)` | Draws all properties grouped by category; returns true when any value changed. Object properties recurse as trees up to `reflection::maxObjectDepth`. |
+| `static bool drawProperties(void* instance, const reflection::TypeInfo& info, uint32_t depth = 0)` | Draws all properties grouped by category; supports enums, resources, nested objects, and polymorphic objects. |
 | `static void drawActions(void* instance, const reflection::TypeInfo& info)` | One button per reflected action. |
 
 Widget selection per property type/editor: `Bool`→checkbox, numeric→input /
 slider / drag (honoring `min`/`max`/`step`), `Angle` editor→slider (with
 range) or drag, `String`→text, `VecN`/`Mat4`→matching `Vector`
 editors, `Color`→`Value::colorPicker`, read-only→disabled group + tooltip.
-`Enum`, `Path` and `Resource` fall back to labels (see the guide for details).
+Enums use registered combo options; Resources use `ResourcePicker`; Path remains
+a visible label. Object and polymorphic object properties recurse safely.
 
 ### `ComponentInspector`
 
@@ -559,6 +558,14 @@ editors, `Color`→`Value::colorPicker`, read-only→disabled group + tooltip.
 | `void setNode(scene::Node*)` / `scene::Node* node() const` | Node to inspect (`nullptr` ⇒ "No selection"). |
 | `void draw()` | Collapsing header per component (display name from `TypeInfo`, fallback `typeName()`), reflected properties + actions, and a right-aligned **Remove** button per component (deferred until after iteration). |
 | `void onChanged(std::function<void()>)` | Fired on property change or component removal. |
+| `void onResourceChanged(ResourceChangedCallback)` | Called for a changed top-level Resource; accepts (`true`) or rolls back (`false`) before `onChanged`. |
+
+### `ResourcePicker`
+
+**Header:** `<bg2e/ui/ResourcePicker.hpp>` · **Guide:** [Resource picker](ResourcePicker.md)
+
+`static bool draw(label, path, metadata, readOnly)` draws an editable path and
+native file chooser using reflected resource filters and relative-path policy.
 
 ---
 

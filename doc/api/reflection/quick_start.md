@@ -16,7 +16,7 @@ self-contained task: how to *define* reflection for a type, and how a consumer
 5. [Recipe 4: Scalar with a slider (editor vs. constraint)](#recipe-4-scalar-with-a-slider-editor-vs-constraint)
 6. [Recipe 5: Enum with combo options](#recipe-5-enum-with-combo-options)
 7. [Recipe 6: Colors and paths](#recipe-6-colors-and-paths)
-8. [Recipe 7: Actions (parameterless methods)](#recipe-7-actions-parameterless-methods)
+8. [Recipe 7: Actions (parameterless methods and lambdas)](#recipe-7-actions-parameterless-methods-and-lambdas)
 9. [Recipe 8: Consume the registry (generic UI loop)](#recipe-8-consume-the-registry-generic-ui-loop)
 10. [Recipe 9: Type-erased read / write](#recipe-9-type-erased-read--write)
 11. [Recipe 10: Register a type manually (no static init)](#recipe-10-register-a-type-manually-no-static-init)
@@ -169,7 +169,7 @@ t.property("shadowSamples", &base::Light::shadowSamples, &base::Light::setShadow
 ## Recipe 5: Enum with combo options
 
 Enum properties are deduced as `PropertyType::Enum`. Attach `(label, value)`
-pairs for a future combo widget; both the `int64_t` overload and the
+pairs for the generic combo widget; both the `int64_t` overload and the
 templated `EnumT` overload are accepted, so plain and scoped enums both work.
 
 ```cpp
@@ -187,8 +187,7 @@ t.property("type", &base::Light::type, &base::Light::setType)
 - The stored value is an `int64_t` — the underlying enum is `static_cast` for
   you.
 - `combo()` only sets the editor; the enum values are independent metadata.
-- To read the selected enum back, `std::any_cast` the getter result to the
-  concrete enum type (e.g. `base::Light::LightType`).
+- Enum getters and setters use `int64_t` in their erased `std::any` contract.
 
 ---
 
@@ -217,7 +216,7 @@ t.property("texture", &MyType::texturePath, &MyType::setTexturePath)
 
 ---
 
-## Recipe 7: Actions (parameterless methods)
+## Recipe 7: Actions (parameterless methods and lambdas)
 
 `action(name, memberFn)` wraps any parameterless member function. The return
 value is discarded, so fluent methods (returning `T*`) are usable directly as
@@ -230,6 +229,19 @@ t.action("setIdentity", &scene::TransformComponent::setIdentity)
     .tooltip("Reset the transform to the identity matrix");
 ```
 
+An overload accepts any lambda or functor invocable with `T*`; the closure
+receives the component instance, so complex actions (e.g. workflows, dialogs)
+can live in the reflection registration instead of the component:
+
+```cpp
+t.action("resetAndLog", [](scene::TransformComponent* comp) {
+        comp->setIdentity();
+        // ... arbitrary logic outside the component ...
+    })
+    .displayName("Reset and Log")
+    .category("Transform");
+```
+
 Invoke it:
 
 ```cpp
@@ -239,7 +251,8 @@ if (a) a->invoke(&transformComponent);
 
 **Key points:**
 - `ActionInfo::invoke` is `std::function<void(void*)>`.
-- Works with `R (T::*)()` and `R (T::*)() const` for any `R` (including `T*`).
+- Works with `R (T::*)()` and `R (T::*)() const` for any `R` (including `T*`),
+  and with any callable `F` such that `std::is_invocable_v<F, T*>`.
 - Actions have display metadata (`displayName`, `category`, `tooltip`) but no
   editor or constraints.
 
@@ -247,8 +260,8 @@ if (a) a->invoke(&transformComponent);
 
 ## Recipe 8: Consume the registry (generic UI loop)
 
-A future generic inspector walks `TypeInfo` and renders each property grouped by
-category. The system only produces metadata — no widgets are generated here.
+The generic UI inspector walks `TypeInfo` and renders each property grouped by
+category; reflection itself remains independent from the UI module.
 
 ```cpp
 using namespace bg2e;
@@ -311,9 +324,9 @@ f->setter(obj, std::any(cur * 2.0f));
 const reflection::PropertyInfo* s = info->property("typeString");  // std::string
 std::string ts = std::any_cast<std::string>(s->getter(obj));
 
-// Enum value (cast back to the concrete enum)
+// Enum values use the uniform erased int64_t representation
 const reflection::PropertyInfo* tp = info->property("type");
-base::Light::LightType type = std::any_cast<base::Light::LightType>(tp->getter(obj));
+int64_t type = std::any_cast<int64_t>(tp->getter(obj));
 ```
 
 **Key points:**
