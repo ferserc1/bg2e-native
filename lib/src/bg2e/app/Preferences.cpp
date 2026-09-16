@@ -49,7 +49,8 @@ void Preferences::load()
 {
     if (std::filesystem::exists(_filePath))
     {
-        std::ifstream inFile(_filePath);
+        // Preserve bytes so the file size matches the number of characters read.
+        std::ifstream inFile(_filePath, std::ios::binary);
         if (!inFile.is_open())
         {
             std::cerr << "WARN: Could not open preferences file at path \"" << _filePath << "\""  << std::endl;
@@ -61,6 +62,7 @@ void Preferences::load()
             
             inFile.seekg(0, std::ios::beg);
             inFile.read(&content[0], content.size());
+            content.resize(static_cast<size_t>(inFile.gcount()));
             json::JsonParser parser(content);
             _root = parser.parse();
             inFile.close();

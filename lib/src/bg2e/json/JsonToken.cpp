@@ -58,17 +58,11 @@ JsonTokenizer::JsonTokenizer(std::istream * s)
 char JsonTokenizer::getWithoutWhiteSpace()
 {
     char c = ' ';
-    while (c == ' ' || c == '\t' || c == '\n')
+    while (c == ' ' || c == '\t' || c == '\n' || c == '\r')
     {
-        stream->get(c);
-
-        if ((c == ' ' || c == '\n' || c == '\t') && !stream->good())
+        if (!stream->get(c))
         {
             throw std::logic_error("Ran out of tokens");
-        }
-        else if (!stream->good())
-        {
-            return c;
         }
     }
     return c;
@@ -76,13 +70,12 @@ char JsonTokenizer::getWithoutWhiteSpace()
 
 JsonToken JsonTokenizer::getToken()
 {
-    char c;
-    if (stream->eof())
+    if (replayToken)
     {
-        throw std::logic_error("Exhaused tokens");
+        replayToken = false;
+        return lastToken;
     }
-    prevPos = stream->tellg();
-    c = getWithoutWhiteSpace();
+    char c = getWithoutWhiteSpace();
 
     struct JsonToken token;
     if (c == '"')
@@ -113,45 +106,39 @@ JsonToken JsonTokenizer::getToken()
         token.type = JsonTokenType::Number;
         token.value = "";
         token.value += c;
-        std::streampos prevCharPos = stream->tellg();
-        while (c == '-' || (c >= '0' && c <= '9') || c == '.' || c == 'e' || c == '+')
+        // Leave the delimiter (including either newline character) unread.
+        // Text-mode file positions are not portable byte offsets.
+        while (stream->good())
         {
-            prevCharPos = stream->tellg();
-            stream->get(c);
-
-            if (stream->eof())
+            auto next = stream->peek();
+            if (!(next == '-' || (next >= '0' && next <= '9') ||
+                  next == '.' || next == 'e' || next == '+'))
             {
                 break;
             }
-            else
+            if (!stream->get(c))
             {
-                if (c == '-' || (c >= '0' && c <= '9') || c == '.' || c == 'e' || c == '+')
-                {
-                    token.value += c;
-                }
-                else
-                {
-                    stream->seekg(prevCharPos);
-                }
+                throw std::logic_error("Ran out of tokens");
             }
+            token.value += c;
         }
     }
     else if (c == 'f')
     {
         token.type = JsonTokenType::Boolean;
         token.value = "false";
-        stream->seekg(4, std::ios_base::cur);
+        stream->ignore(4);
     }
     else if (c == 't')
     {
         token.type = JsonTokenType::Boolean;
         token.value = "true";
-        stream->seekg(3, std::ios_base::cur);
+        stream->ignore(3);
     }
     else if (c == 'n')
     {
         token.type = JsonTokenType::NullType;
-        stream->seekg(3, std::ios_base::cur);
+        stream->ignore(3);
     }
     else if (c == '[')
     {
@@ -169,32 +156,28 @@ JsonToken JsonTokenizer::getToken()
     {
         token.type = JsonTokenType::Comma;
     }
+    lastToken = token;
+    hasLastToken = true;
     return token;
 }
 
 bool JsonTokenizer::hasMoreTokens()
 {
-    size_t prevPos = stream->tellg();
-    bool result = true;
     try
     {
         getToken();
+        rollBackToken();
+        return true;
     }
     catch(std::exception &)
     {
-        result = false;
+        return false;
     }
-    stream->seekg(prevPos);
-    return result;
 }
 
 void JsonTokenizer::rollBackToken()
 {
-    if (stream->eof())
-    {
-        stream->clear();
-    }
-    stream->seekg(prevPos);
+    replayToken = hasLastToken;
 }
 
 

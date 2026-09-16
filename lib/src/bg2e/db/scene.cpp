@@ -131,7 +131,8 @@ std::shared_ptr<bg2e::scene::Scene> loadScene(
     bg2e::render::Engine& engine,
     bg2e::scene::SceneProgressCallback onProgress
 ) {
-    std::ifstream inFile(filePath);
+    // Preserve bytes so the file size matches the number of characters read.
+    std::ifstream inFile(filePath, std::ios::binary);
     if (!inFile.is_open())
     {
         bg2e_log_error << "Could not open scene file at path \"" << filePath << "\""  << bg2e_log_end;
@@ -144,6 +145,7 @@ std::shared_ptr<bg2e::scene::Scene> loadScene(
 
     inFile.seekg(0, std::ios::beg);
     inFile.read(&content[0], content.size());
+    content.resize(static_cast<size_t>(inFile.gcount()));
 
     auto parser = json::JsonParser(content);
     auto sceneFile = parser.parse();

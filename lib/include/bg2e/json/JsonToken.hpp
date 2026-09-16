@@ -58,7 +58,10 @@ public:
 
 protected:
     std::istream * stream;
-    std::fpos<std::mbstate_t> prevPos;
+    // Replay the last token without seeking in a translated text stream.
+    JsonToken lastToken;
+    bool hasLastToken = false;
+    bool replayToken = false;
 };
 
 }
