@@ -42,6 +42,26 @@ bool Value::text(const std::string& label, std::string& value, int maxLength, bo
     return false;
 }
 
+bool Value::text(const std::string& id, std::string& value, bool readOnly, int maxLength, bool sameLine)
+{
+    char * stringValue = new char[maxLength];
+    strcpy(stringValue, value.c_str());
+    if (sameLine)
+    {
+        ImGui::SameLine();
+    }
+    const ImGuiInputTextFlags flags = readOnly ? ImGuiInputTextFlags_ReadOnly : 0;
+    const auto imguiId = "##" + id;
+    if (ImGui::InputText(imguiId.c_str(), stringValue, maxLength, flags))
+    {
+        value = stringValue;
+        delete [] stringValue;
+        return true;
+    }
+    delete [] stringValue;
+    return false;
+}
+
 bool Value::textWithHint(
     const std::string& label,
     const std::string& hint,

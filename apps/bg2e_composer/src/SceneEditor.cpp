@@ -38,6 +38,12 @@ void SceneEditor::init(AppDelegate * delegate)
         if (scene) scene->updateAll();
     });
 
+    _sceneTree.onChanged([&]() {
+        _appDelegate->stage()->document()->setUnsavedChanges(true);
+        auto scene = _appDelegate->stage()->sceneRoot()->scene();
+        if (scene) scene->updateAll();
+    });
+
     _nodeEditor.onResourceChanged([&](
         bg2e::scene::Component * component,
         const std::string& propertyName,
@@ -127,4 +133,5 @@ void SceneEditor::cleanup()
 {
     _nodeEditor.onResourceChanged(nullptr);
     _nodeEditor.onChanged(nullptr);
+    _sceneTree.onChanged(nullptr);
 }

@@ -17,11 +17,14 @@
  */
 
 #include <bg2e/ui/SceneTree.hpp>
+#include <bg2e/ui/DragDrop.hpp>
 #include <bg2e/scene/Node.hpp>
 #include <bg2e/manipulation/SelectionManager.hpp>
 #include "imgui.h"
 
 namespace bg2e::ui {
+
+static const std::string kNodePayloadType = "BG2E_SCENE_NODE";
 
 void SceneTree::draw()
 {
@@ -30,10 +33,7 @@ void SceneTree::draw()
         return;
     }
 
-    for (auto & child : _root->children())
-    {
-        drawNode(child.get());
-    }
+    drawNode(_root);
 }
 
 void SceneTree::drawNode(scene::Node * node)
@@ -44,6 +44,11 @@ void SceneTree::drawNode(scene::Node * node)
     }
 
     ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth;
+
+    if (node == _root)
+    {
+        flags |= ImGuiTreeNodeFlags_DefaultOpen;
+    }
 
     if (_selectionManager && _selectionManager->isSelected(node))
     {
@@ -66,6 +71,9 @@ void SceneTree::drawNode(scene::Node * node)
     {
         handleClick(node);
     }
+
+    handleDragSource(node);
+    handleDropTarget(node);
 
     if (open)
     {
@@ -108,6 +116,99 @@ void SceneTree::handleClick(scene::Node * node)
         // Replace the whole selection with the clicked node
         _selectionManager->deselect();
         _selectionManager->addToSelectedItems(node);
+    }
+}
+
+void SceneTree::handleDragSource(scene::Node * node)
+{
+    // The root node can never be the source of a drag & drop operation
+    if (node == _root)
+    {
+        return;
+    }
+
+    if (DragDrop::beginSource(kNodePayloadType, &node, sizeof(node)))
+    {
+        const auto & nodeName = node->name();
+        DragDrop::setPreviewText(nodeName.empty() ? "(unnamed)" : nodeName);
+        DragDrop::endSource();
+    }
+}
+
+void SceneTree::handleDropTarget(scene::Node * target)
+{
+    scene::Node * dragged = nullptr;
+    if (!DragDrop::acceptPayload(kNodePayloadType, &dragged, sizeof(dragged)))
+    {
+        return;
+    }
+
+    if (!dragged ||
+        dragged == target ||                    // drop on itself
+        dragged->parent() == target ||          // already a child of the target
+        isAncestor(dragged, target))            // would create a cycle
+    {
+        return;
+    }
+
+    reparentNode(dragged, target);
+}
+
+void SceneTree::reparentNode(scene::Node * node, scene::Node * newParent)
+{
+    auto * oldParent = node->parent();
+    if (!oldParent || !newParent)
+    {
+        return;
+    }
+
+    // Keep the shared_ptr alive across the remove/add pair
+    std::shared_ptr<scene::Node> nodeShared;
+    for (auto & child : oldParent->children())
+    {
+        if (child.get() == node)
+        {
+            nodeShared = child;
+            break;
+        }
+    }
+
+    if (!nodeShared)
+    {
+        return;
+    }
+
+    oldParent->removeChild(nodeShared);
+    newParent->addChild(nodeShared);
+
+    // The reparent operation ignores the current selection: only the dropped
+    // node is moved, and it becomes the new selection
+    if (_selectionManager)
+    {
+        _selectionManager->deselect();
+        _selectionManager->addToSelectedItems(node);
+    }
+
+    notifyChanged();
+}
+
+bool SceneTree::isAncestor(scene::Node * ancestor, scene::Node * node)
+{
+    for (auto * p = node->parent(); p; p = p->parent())
+    {
+        if (p == ancestor)
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
+void SceneTree::notifyChanged() const
+{
+    if (_onChanged)
+    {
+        _onChanged();
     }
 }
 

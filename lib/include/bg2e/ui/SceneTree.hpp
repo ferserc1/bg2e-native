@@ -20,6 +20,9 @@
 
 #include <bg2e/common.hpp>
 
+#include <functional>
+#include <utility>
+
 namespace bg2e {
 namespace scene {
     class Node;
@@ -43,12 +46,24 @@ public:
 
     void draw();
 
+    // Called after a drag & drop reparent operation modifies the hierarchy.
+    using ChangedCallback = std::function<void()>;
+    void onChanged(ChangedCallback cb) { _onChanged = std::move(cb); }
+
 protected:
     scene::Node * _root = nullptr;
     manipulation::SelectionManager * _selectionManager = nullptr;
 
+    ChangedCallback _onChanged;
+
     void drawNode(scene::Node * node);
     void handleClick(scene::Node * node);
+    void handleDragSource(scene::Node * node);
+    void handleDropTarget(scene::Node * target);
+    void reparentNode(scene::Node * node, scene::Node * newParent);
+    void notifyChanged() const;
+
+    static bool isAncestor(scene::Node * ancestor, scene::Node * node);
 };
 
 }

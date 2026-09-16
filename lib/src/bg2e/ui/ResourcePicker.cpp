@@ -12,7 +12,11 @@
 #include <bg2e/app/FileDialog.hpp>
 #include <bg2e/ui/Button.hpp>
 #include <bg2e/ui/Group.hpp>
+#include <bg2e/ui/Layout.hpp>
+#include <bg2e/ui/Text.hpp>
 #include <bg2e/ui/Value.hpp>
+
+#include "imgui.h"
 
 #include <algorithm>
 #include <system_error>
@@ -47,13 +51,23 @@ bool ResourcePicker::draw(
 ) {
     if (readOnly) Group::beginDisabled();
 
-    std::string textValue = value.string();
-    const auto textCapacity = std::max(1024, static_cast<int>(textValue.size()) + 256);
-    bool changed = Value::text(label, textValue, textCapacity);
-    if (changed)
-    {
-        value = textValue;
-    }
+    // The label goes in the header instead of on the left of the input.
+    // The label parameter may carry a "##id" suffix: only the visible
+    // part is drawn.
+    const auto visibleLabel = label.substr(0, label.find("##"));
+    Text::text(visibleLabel);
+
+    bool changed = false;
+
+    // Non-editable field showing only the file name (last path component),
+    // followed by the browse button on the same line
+    auto fileName = value.filename().string();
+    const auto textCapacity = std::max(1024, static_cast<int>(fileName.size()) + 256);
+    const auto browseWidth = static_cast<float>(
+        Layout::calcButtonWidth("Browse") + Layout::getItemHorizontalSpacing()
+    );
+    ImGui::SetNextItemWidth(Layout::getContentRegionAvailWidth() - browseWidth);
+    Value::text(label, fileName, true, textCapacity);
 
     if (Button::button("Browse##" + label, true))
     {

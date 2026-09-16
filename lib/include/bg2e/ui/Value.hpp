@@ -38,6 +38,17 @@ public:
         bool sameLine = false
     );
 
+    // ID-only text input: no visible label on the left, the id parameter
+    // is only used as ImGui identifier. Pass readOnly = true to render a
+    // non-editable field.
+    static bool text(
+        const std::string& id,
+        std::string& value,
+        bool readOnly,
+        int maxLength = 200,
+        bool sameLine = false
+    );
+
     static bool textWithHint(
         const std::string& label,
         const std::string& hint,
