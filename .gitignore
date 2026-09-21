@@ -1,6 +1,10 @@
 # Default cmake build directory
 build
 bin
+
+# Dedicated build directory used by scripts/update_libraries.sh and
+# scripts/update_libraries.ps1
+build-update-libraries
 .derived_data
 
 # Vulkan libraries

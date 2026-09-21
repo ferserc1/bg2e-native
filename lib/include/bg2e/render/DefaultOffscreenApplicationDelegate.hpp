@@ -74,6 +74,8 @@ protected:
 
     virtual std::shared_ptr<scene::Node> createScene() = 0;
     virtual bool continueRendering() { return false; }
+
+    virtual void onInitSceneDone(std::shared_ptr<scene::Node>) {}
 };
 
 }

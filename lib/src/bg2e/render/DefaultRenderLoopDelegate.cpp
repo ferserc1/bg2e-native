@@ -55,7 +55,9 @@ void DefaultRenderLoopDelegate<RendererT>::initFrameResources(render::vulkan::De
 template <typename RendererT>
 void DefaultRenderLoopDelegate<RendererT>::initScene()
 {
-    _renderer->initScene(createScene());
+    auto sceneRoot = createScene();
+    _renderer->initScene(sceneRoot);
+    onInitSceneDone(sceneRoot);
 }
 
 template <typename RendererT>

@@ -63,7 +63,9 @@ void DefaultOffscreenApplicationDelegate<RendererT>::initFrameResources(vulkan::
 template <typename RendererT>
 void DefaultOffscreenApplicationDelegate<RendererT>::initScene()
 {
-    _renderer->initScene(createScene());
+    auto sceneRoot = createScene();
+    _renderer->initScene(sceneRoot);
+    onInitSceneDone(sceneRoot);
 }
 
 template <typename RendererT>
@@ -122,6 +124,12 @@ void DefaultOffscreenApplicationDelegate<RendererT>::cleanup()
 {
     _renderer->cleanup();
     bg2e::utils::TextureCache::destroy();
+}
+
+template <typename RendererT>
+RendererT* DefaultOffscreenApplicationDelegate<RendererT>::renderer()
+{
+    return _renderer.get();
 }
 
 template class BG2E_API DefaultOffscreenApplicationDelegate<RendererBasicForward>;

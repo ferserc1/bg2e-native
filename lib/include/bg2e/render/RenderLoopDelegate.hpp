@@ -20,6 +20,7 @@
 
 #include <bg2e/render/Engine.hpp>
 #include <bg2e/render/vulkan/Image.hpp>
+#include <bg2e/scene/Node.hpp>
 #include <bg2e/render/vulkan/DescriptorSetAllocator.hpp>
 
 namespace bg2e {
@@ -67,6 +68,8 @@ protected:
 	render::Engine * _engine = nullptr;
     
     float _delta = 0.0f;
+
+    virtual void onInitSceneDone(std::shared_ptr<scene::Node> sceneRoot) {}
 };
 
 }

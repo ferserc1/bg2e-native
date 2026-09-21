@@ -1,14 +1,23 @@
-# update_libraryes.ps1
+# update_libraries.ps1
 #
-# Updates the bg2e headers and Windows libraries in a standalone project
-# previously created with create_standalone_project.ps1.
+# Builds the bg2e library with CMake and updates the bg2e headers and Windows
+# libraries in a standalone project previously created with
+# create_standalone_project.ps1.
+#
+# The build uses a dedicated directory (build-update-libraries/) so it does
+# not interfere with the CLion build directory nor with the temporary build
+# trees used by the package_*.ps1 scripts.
 #
 # Usage:
-#   scripts\update_libraryes.ps1 <standalone_project_path>
+#   scripts\update_libraries.ps1 <standalone_project_path> -Configuration Debug|Release [-VulkanSdk <path>]
 
 param(
     [Parameter(Mandatory=$true, Position=0)]
-    [string]$TargetPath
+    [string]$TargetPath,
+    [Parameter(Mandatory=$true)]
+    [ValidateSet('Debug', 'Release')]
+    [string]$Configuration,
+    [string]$VulkanSdk = $env:VULKAN_SDK
 )
 
 $ErrorActionPreference = "Stop"
@@ -19,8 +28,20 @@ function Stop-WithError {
     exit 1
 }
 
+function Invoke-Checked {
+    param([string]$Command, [string[]]$Arguments)
+    & $Command @Arguments
+    if ($LASTEXITCODE -ne 0) { Stop-WithError "$Command failed with exit code $LASTEXITCODE" }
+}
+
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $RepoRoot = Split-Path -Parent $ScriptDir
+
+if (-not $VulkanSdk -or -not (Test-Path -LiteralPath $VulkanSdk -PathType Container)) {
+    Stop-WithError "Specify -VulkanSdk or set the VULKAN_SDK environment variable to a valid Vulkan SDK directory."
+}
+
+$null = Get-Command cmake -ErrorAction Stop
 
 if (-not (Test-Path -Path $TargetPath -PathType Container)) {
     Stop-WithError "Standalone project directory does not exist: $TargetPath"
@@ -33,14 +54,10 @@ if ($ResolvedTargetPath -eq $ResolvedRepoRoot) {
     Stop-WithError "Refusing to use the bg2e-native repository as the target"
 }
 
-$LibDir = $null
-if (Test-Path "$ResolvedRepoRoot\bin\windows\Release\bg2e.dll") {
-    $LibDir = "$ResolvedRepoRoot\bin\windows\Release"
-} elseif (Test-Path "$ResolvedRepoRoot\bin\windows\Debug\bg2e.dll") {
-    $LibDir = "$ResolvedRepoRoot\bin\windows\Debug"
-} elseif (Test-Path "$ResolvedRepoRoot\bin\windows\bg2e.dll") {
-    $LibDir = "$ResolvedRepoRoot\bin\windows"
-}
+$BuildDir = "$ResolvedRepoRoot\build-update-libraries"
+$Products = "$BuildDir\bin\windows"
+# Visual Studio is a multi-config generator: binaries land in a per-configuration subdirectory.
+$LibDir = "$Products\$Configuration"
 
 $SourceIncludeDir = "$ResolvedRepoRoot\lib\include"
 $TargetIncludeDir = "$ResolvedTargetPath\include"
@@ -51,12 +68,6 @@ if (-not (Test-Path "$SourceIncludeDir\bg2e.hpp" -PathType Leaf)) {
 }
 if (-not (Test-Path "$SourceIncludeDir\bg2e" -PathType Container)) {
     Stop-WithError "Cannot find bg2e headers at $SourceIncludeDir\bg2e"
-}
-if (-not $LibDir) {
-    Stop-WithError "Cannot find a compiled bg2e.dll. Build bg2e-native first."
-}
-if (-not (Test-Path "$LibDir\bg2e.lib" -PathType Leaf)) {
-    Stop-WithError "Cannot find the import library at $LibDir\bg2e.lib"
 }
 
 if (-not (Test-Path "$ResolvedTargetPath\CMakeLists.txt" -PathType Leaf)) {
@@ -74,11 +85,25 @@ if (-not (Test-Path $TargetLibraryDir -PathType Container)) {
 
 Write-Host "bg2e Standalone Library Updater"
 Write-Host "================================"
-Write-Host "  Repository:  $ResolvedRepoRoot"
-Write-Host "  Target:      $ResolvedTargetPath"
-Write-Host "  Platform:    windows"
-Write-Host "  Libraries:   $LibDir"
+Write-Host "  Repository:    $ResolvedRepoRoot"
+Write-Host "  Target:        $ResolvedTargetPath"
+Write-Host "  Platform:      windows"
+Write-Host "  Configuration: $Configuration"
+Write-Host "  Build dir:     $BuildDir"
 Write-Host ""
+
+Write-Host "Configuring and building bg2e ($Configuration)..."
+Invoke-Checked cmake @('-S', $ResolvedRepoRoot, '-B', $BuildDir, '-G', 'Visual Studio 17 2022', '-A', 'x64',
+    "-DVULKAN_SDK=$VulkanSdk", "-DPRODUCT_DIR=$Products", "-DCMAKE_BUILD_TYPE=$Configuration",
+    '-DBG2E_BUILD_EXAMPLES=OFF', '-DBG2E_BUILD_TESTS=OFF')
+Invoke-Checked cmake @('--build', $BuildDir, '--config', $Configuration, '--target', 'bg2e', '--parallel')
+
+if (-not (Test-Path "$LibDir\bg2e.dll" -PathType Leaf)) {
+    Stop-WithError "Build finished but the library was not found at $LibDir\bg2e.dll"
+}
+if (-not (Test-Path "$LibDir\bg2e.lib" -PathType Leaf)) {
+    Stop-WithError "Cannot find the import library at $LibDir\bg2e.lib"
+}
 
 Write-Host "Updating engine headers..."
 $TargetHeaderTree = "$TargetIncludeDir\bg2e"
