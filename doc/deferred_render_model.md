@@ -647,18 +647,33 @@ Three instances exist per deferred layer: **AO** (scalar, default format
 All run at **full layer extent** — lower-resolution AO/GI inputs are
 bilinearly upsampled through the sampler.
 
-**Buffers** (per frame-in-flight, `TemporalAccumulator.cpp:80-165`):
+**Buffers** (`TemporalAccumulator.cpp:80-160`):
 
-- Two ping-pong history images (`_historyImagesA/B`).
-- Previous-frame depth and normal copies (formats taken from the G-buffer),
-  updated each frame with `vkCmdCopyImage` after the accumulation dispatch
-  (`:285-350`).
+- A **single shared ping-pong history chain** per accumulator instance
+  (`_historyImageA/B`), independent of the number of frames in flight —
+  temporal history is global renderer state, not a per-swapchain-image
+  resource. Frame N accumulates against the history written by frame N-1.
+  This relies on all rendering work being submitted to a single queue, which
+  executes command buffers in submission order; the per-frame layout
+  transitions (`SHADER_READ_ONLY_OPTIMAL → GENERAL` before the write
+  dispatch, back to `SHADER_READ_ONLY_OPTIMAL` after it) act as the barriers
+  between the write of frame N and the read of frame N+1. Both history
+  images are pre-transitioned to `SHADER_READ_ONLY_OPTIMAL` at creation.
+- A single previous-frame depth and normal copy (formats taken from the
+  G-buffer), updated each frame with `vkCmdCopyImage` after the accumulation
+  dispatch (`:285-350`).
+- Descriptor sets referencing the shared images are still allocated per
+  frame from `frameResources`, since they are recorded into each frame's
+  command buffer while the previous frame may still be executing.
+
+> Moving the accumulation dispatch to a separate async compute queue would
+> require explicit cross-queue semaphores for the shared history chain.
 
 **Host-side logic** (`render()`, `:205-362`):
 
 - **Camera motion invalidation**: if the view-projection matrix changed by
-  more than ε = 0.001 since the previous frame, history is dropped and the
-  accumulation counter resets (`:220-232`).
+  more than ε = 0.001 since the **immediately previous frame**, history is
+  dropped and the accumulation counter resets (`:220-232`).
 - `invalidateHistory()` is public API for explicit resets.
 
 **Descriptor set 0**: current input, history read image, current G-buffer

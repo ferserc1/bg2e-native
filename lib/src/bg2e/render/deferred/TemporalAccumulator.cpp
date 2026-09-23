@@ -81,87 +81,87 @@ void TemporalAccumulator::createHistoryImages(VkExtent2D extent)
 {
     cleanupImages();
 
-    _historyImagesA.resize(_engine->numImages());
-    _historyImagesB.resize(_engine->numImages());
-    _prevDepthImages.resize(_engine->numImages());
-    _prevNormalImages.resize(_engine->numImages());
-    _writeIndex.resize(_engine->numImages(), 0);
-    _hasHistory.resize(_engine->numImages(), false);
-    _accumulatedFrameCount.resize(_engine->numImages(), 0);
-    _previousViewProjection.resize(_engine->numImages(), glm::mat4(1.0f));
-
     _engine->command().immediateSubmit([&](VkCommandBuffer cmd)
     {
-        for (uint32_t i = 0; i < _engine->numImages(); i++)
-        {
-            _historyImagesA[i] = std::shared_ptr<vulkan::Image>(
-                vulkan::Image::createAllocatedImage(
-                    _engine,
-                    "Temporal history image A " + std::to_string(i),
-                    _format,
-                    extent,
-                    VK_IMAGE_USAGE_STORAGE_BIT |
-                    VK_IMAGE_USAGE_SAMPLED_BIT |
-                    VK_IMAGE_USAGE_TRANSFER_DST_BIT,
-                    VK_IMAGE_ASPECT_COLOR_BIT,
-                    1, false, 0, VK_SAMPLE_COUNT_1_BIT
-                )
-            );
+        _historyImageA = std::shared_ptr<vulkan::Image>(
+            vulkan::Image::createAllocatedImage(
+                _engine,
+                "Temporal history image A",
+                _format,
+                extent,
+                VK_IMAGE_USAGE_STORAGE_BIT |
+                VK_IMAGE_USAGE_SAMPLED_BIT |
+                VK_IMAGE_USAGE_TRANSFER_DST_BIT,
+                VK_IMAGE_ASPECT_COLOR_BIT,
+                1, false, 0, VK_SAMPLE_COUNT_1_BIT
+            )
+        );
 
-            _historyImagesB[i] = std::shared_ptr<vulkan::Image>(
-                vulkan::Image::createAllocatedImage(
-                    _engine,
-                    "Temporal history image B " + std::to_string(i),
-                    _format,
-                    extent,
-                    VK_IMAGE_USAGE_STORAGE_BIT |
-                    VK_IMAGE_USAGE_SAMPLED_BIT |
-                    VK_IMAGE_USAGE_TRANSFER_DST_BIT,
-                    VK_IMAGE_ASPECT_COLOR_BIT,
-                    1, false, 0, VK_SAMPLE_COUNT_1_BIT
-                )
-            );
+        _historyImageB = std::shared_ptr<vulkan::Image>(
+            vulkan::Image::createAllocatedImage(
+                _engine,
+                "Temporal history image B",
+                _format,
+                extent,
+                VK_IMAGE_USAGE_STORAGE_BIT |
+                VK_IMAGE_USAGE_SAMPLED_BIT |
+                VK_IMAGE_USAGE_TRANSFER_DST_BIT,
+                VK_IMAGE_ASPECT_COLOR_BIT,
+                1, false, 0, VK_SAMPLE_COUNT_1_BIT
+            )
+        );
 
-            vulkan::Image::cmdTransitionImage(
-                cmd,
-                _historyImagesB[i]->handle(),
-                VK_IMAGE_LAYOUT_UNDEFINED,
-                VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
-            );
+        vulkan::Image::cmdTransitionImage(
+            cmd,
+            _historyImageA->handle(),
+            VK_IMAGE_LAYOUT_UNDEFINED,
+            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+        );
 
-            _prevDepthImages[i] = std::shared_ptr<vulkan::Image>(
-                vulkan::Image::createAllocatedImage(
-                    _engine,
-                    "Temporal prev depth " + std::to_string(i),
-                    _depthFormat,
-                    extent,
-                    VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
-                    VK_IMAGE_ASPECT_DEPTH_BIT,
-                    1, false, 0, VK_SAMPLE_COUNT_1_BIT
-                )
-            );
+        vulkan::Image::cmdTransitionImage(
+            cmd,
+            _historyImageB->handle(),
+            VK_IMAGE_LAYOUT_UNDEFINED,
+            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+        );
 
-            _prevNormalImages[i] = std::shared_ptr<vulkan::Image>(
-                vulkan::Image::createAllocatedImage(
-                    _engine,
-                    "Temporal prev normal " + std::to_string(i),
-                    _normalFormat,
-                    extent,
-                    VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
-                    VK_IMAGE_ASPECT_COLOR_BIT,
-                    1, false, 0, VK_SAMPLE_COUNT_1_BIT
-                )
-            );
+        _prevDepthImage = std::shared_ptr<vulkan::Image>(
+            vulkan::Image::createAllocatedImage(
+                _engine,
+                "Temporal prev depth",
+                _depthFormat,
+                extent,
+                VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
+                VK_IMAGE_ASPECT_DEPTH_BIT,
+                1, false, 0, VK_SAMPLE_COUNT_1_BIT
+            )
+        );
 
-            vulkan::Image::TransitionInfo depthTi;
-            depthTi.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-            vulkan::Image::cmdTransitionImage(cmd, _prevDepthImages[i]->handle(),
-                VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, depthTi);
+        _prevNormalImage = std::shared_ptr<vulkan::Image>(
+            vulkan::Image::createAllocatedImage(
+                _engine,
+                "Temporal prev normal",
+                _normalFormat,
+                extent,
+                VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
+                VK_IMAGE_ASPECT_COLOR_BIT,
+                1, false, 0, VK_SAMPLE_COUNT_1_BIT
+            )
+        );
 
-            vulkan::Image::cmdTransitionImage(cmd, _prevNormalImages[i]->handle(),
-                VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-        }
+        vulkan::Image::TransitionInfo depthTi;
+        depthTi.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+        vulkan::Image::cmdTransitionImage(cmd, _prevDepthImage->handle(),
+            VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, depthTi);
+
+        vulkan::Image::cmdTransitionImage(cmd, _prevNormalImage->handle(),
+            VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
     });
+
+    _writeIndex = 0;
+    _hasHistory = false;
+    _accumulatedFrameCount = 0;
+    _previousViewProjection = glm::mat4(1.0f);
 }
 
 void TemporalAccumulator::createPipeline()
@@ -215,27 +215,28 @@ void TemporalAccumulator::render(
 {
     if (!_pipeline) return;
 
-    uint32_t frameIndex = _engine->currentFrameResourcesIndex();
-
     auto frameViewProj = currentProjection * currentView;
-    bool cameraChanged = _hasHistory[frameIndex] &&
+    bool cameraChanged = _hasHistory &&
             matrixChanged(
-                _previousViewProjection[frameIndex],
+                _previousViewProjection,
                 frameViewProj,
                 0.001f
                 );
 
     if (cameraChanged)
     {
-        _hasHistory[frameIndex] = false;
-        _accumulatedFrameCount[frameIndex] = 0;
+        _hasHistory = false;
+        _accumulatedFrameCount = 0;
     }
 
-    auto historyRead = historyReadImage(frameIndex);
-    auto historyWrite = historyWriteImage(frameIndex);
+    auto historyRead = historyReadImage();
+    auto historyWrite = historyWriteImage();
 
+    // The history write image is always in SHADER_READ_ONLY_OPTIMAL at frame
+    // boundaries (see class comment). This transition also provides the
+    // acquire-side dependency on the previous frame's read of this image.
     vulkan::Image::cmdTransitionImage(cmd, historyWrite->handle(),
-        VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL);
+        VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_GENERAL);
 
     auto ds = frameResources.newDescriptorSet(_dsLayout);
     ds->beginUpdate();
@@ -250,9 +251,9 @@ void TemporalAccumulator::render(
     ds->addImage(4, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
         historyWrite.get(), VK_IMAGE_LAYOUT_GENERAL);
     ds->addImage(5, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-        _prevDepthImages[frameIndex].get(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _sampler);
+        _prevDepthImage.get(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _sampler);
     ds->addImage(6, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-        _prevNormalImages[frameIndex].get(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _sampler);
+        _prevNormalImage.get(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _sampler);
     ds->endUpdate();
 
     vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, _pipeline);
@@ -262,12 +263,12 @@ void TemporalAccumulator::render(
 
     AccumulatorPushConstants pc{};
     pc.currentInverseViewProjection = currentInverseViewProjection;
-    pc.previousViewProjection = _previousViewProjection[frameIndex];
+    pc.previousViewProjection = _previousViewProjection;
     pc.outputSize = glm::vec2(static_cast<float>(_extent.width), static_cast<float>(_extent.height));
     pc.historyWeight = _historyWeight;
-    pc.accumulatedFrameCount = _accumulatedFrameCount[frameIndex];
+    pc.accumulatedFrameCount = _accumulatedFrameCount;
     pc.useProgressiveMode = _accumulationMode == AccumulationMode::Progressive ? 1u : 0u;
-    pc.hasHistory = _hasHistory[frameIndex] ? 1u : 0u;
+    pc.hasHistory = _hasHistory ? 1u : 0u;
     pc.depthThreshold = _depthThreshold;
     pc.normalThreshold = _normalThreshold;
     pc.isHDR = _isHDR ? 1u : 0u;
@@ -293,7 +294,7 @@ void TemporalAccumulator::render(
             VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, depthTi);
 
         vulkan::Image::cmdTransitionImage(cmd,
-            _prevDepthImages[frameIndex]->handle(),
+            _prevDepthImage->handle(),
             VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
             VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, depthTi);
 
@@ -303,7 +304,7 @@ void TemporalAccumulator::render(
         depthRegion.extent = gbuffer->depthImage()->extent();
         vkCmdCopyImage(cmd,
             gbuffer->depthImage()->handle(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-            _prevDepthImages[frameIndex]->handle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+            _prevDepthImage->handle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
             1, &depthRegion);
 
         vulkan::Image::cmdTransitionImage(cmd,
@@ -312,7 +313,7 @@ void TemporalAccumulator::render(
             VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, depthTi);
 
         vulkan::Image::cmdTransitionImage(cmd,
-            _prevDepthImages[frameIndex]->handle(),
+            _prevDepthImage->handle(),
             VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
             VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, depthTi);
     }
@@ -325,7 +326,7 @@ void TemporalAccumulator::render(
             VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
 
         vulkan::Image::cmdTransitionImage(cmd,
-            _prevNormalImages[frameIndex]->handle(),
+            _prevNormalImage->handle(),
             VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
             VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
@@ -335,7 +336,7 @@ void TemporalAccumulator::render(
         normalRegion.extent = gbuffer->image(1)->extent();
         vkCmdCopyImage(cmd,
             gbuffer->image(1)->handle(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-            _prevNormalImages[frameIndex]->handle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+            _prevNormalImage->handle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
             1, &normalRegion);
 
         vulkan::Image::cmdTransitionImage(cmd,
@@ -344,21 +345,20 @@ void TemporalAccumulator::render(
             VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
         vulkan::Image::cmdTransitionImage(cmd,
-            _prevNormalImages[frameIndex]->handle(),
+            _prevNormalImage->handle(),
             VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
             VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
     }
 
-    uint32_t newIndex = 1 - _writeIndex[frameIndex];
-    _writeIndex[frameIndex] = newIndex;
+    _writeIndex = 1 - _writeIndex;
 
-    if (!_hasHistory[frameIndex])
+    if (!_hasHistory)
     {
-        _hasHistory[frameIndex] = true;
+        _hasHistory = true;
     }
-    _accumulatedFrameCount[frameIndex]++;
+    _accumulatedFrameCount++;
 
-    _previousViewProjection[frameIndex] = frameViewProj;
+    _previousViewProjection = frameViewProj;
 }
 
 void TemporalAccumulator::resize(VkExtent2D newExtent)
@@ -395,35 +395,24 @@ void TemporalAccumulator::cleanup()
 
 void TemporalAccumulator::cleanupImages()
 {
-    for (auto& img : _historyImagesA)
-    {
-        if (img) img->cleanup();
-    }
-    _historyImagesA.clear();
-    for (auto& img : _historyImagesB)
-    {
-        if (img) img->cleanup();
-    }
-    _historyImagesB.clear();
-    for (auto& img : _prevDepthImages)
-    {
-        if (img) img->cleanup();
-    }
-    _prevDepthImages.clear();
-    for (auto& img : _prevNormalImages)
-    {
-        if (img) img->cleanup();
-    }
-    _prevNormalImages.clear();
-    _writeIndex.clear();
-    _hasHistory.clear();
-    _accumulatedFrameCount.clear();
-    _previousViewProjection.clear();
+    if (_historyImageA) _historyImageA->cleanup();
+    _historyImageA.reset();
+    if (_historyImageB) _historyImageB->cleanup();
+    _historyImageB.reset();
+    if (_prevDepthImage) _prevDepthImage->cleanup();
+    _prevDepthImage.reset();
+    if (_prevNormalImage) _prevNormalImage->cleanup();
+    _prevNormalImage.reset();
+
+    _writeIndex = 0;
+    _hasHistory = false;
+    _accumulatedFrameCount = 0;
+    _previousViewProjection = glm::mat4(1.0f);
 }
 
-std::shared_ptr<vulkan::Image> TemporalAccumulator::outputImage(uint32_t frameIndex) const
+std::shared_ptr<vulkan::Image> TemporalAccumulator::outputImage(uint32_t /*frameIndex*/) const
 {
-    return historyReadImage(frameIndex);
+    return historyReadImage();
 }
 
 VkSampler TemporalAccumulator::sampler() const
@@ -433,11 +422,8 @@ VkSampler TemporalAccumulator::sampler() const
 
 void TemporalAccumulator::invalidateHistory()
 {
-    for (uint32_t i = 0; i < _hasHistory.size(); i++)
-    {
-        _hasHistory[i] = false;
-        _accumulatedFrameCount[i] = 0;
-    }
+    _hasHistory = false;
+    _accumulatedFrameCount = 0;
 }
 
 void TemporalAccumulator::setAccumulationMode(AccumulationMode mode)
@@ -480,23 +466,23 @@ float TemporalAccumulator::normalThreshold() const
     return _normalThreshold;
 }
 
-std::shared_ptr<vulkan::Image> TemporalAccumulator::historyReadImage(uint32_t frameIndex) const
+std::shared_ptr<vulkan::Image> TemporalAccumulator::historyReadImage() const
 {
-    uint32_t readIndex = 1 - _writeIndex[frameIndex];
+    uint32_t readIndex = 1 - _writeIndex;
     if (readIndex == 0)
     {
-        return _historyImagesA[frameIndex];
+        return _historyImageA;
     }
-    return _historyImagesB[frameIndex];
+    return _historyImageB;
 }
 
-std::shared_ptr<vulkan::Image> TemporalAccumulator::historyWriteImage(uint32_t frameIndex) const
+std::shared_ptr<vulkan::Image> TemporalAccumulator::historyWriteImage() const
 {
-    if (_writeIndex[frameIndex] == 0)
+    if (_writeIndex == 0)
     {
-        return _historyImagesA[frameIndex];
+        return _historyImageA;
     }
-    return _historyImagesB[frameIndex];
+    return _historyImageB;
 }
 
 }

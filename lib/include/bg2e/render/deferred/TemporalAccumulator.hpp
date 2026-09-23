@@ -31,6 +31,16 @@ namespace bg2e {
 namespace render {
 namespace deferred {
 
+// TemporalAccumulator keeps a SINGLE shared history chain (one ping-pong A/B
+// pair, one prev-depth and one prev-normal image), independent of the number
+// of frames in flight. Temporal history is global renderer state, not a
+// per-swapchain-image resource. This relies on all rendering work being
+// submitted to a single queue, which executes command buffers in submission
+// order: frame N+1 does not start on the GPU until frame N has finished, so
+// the layout transitions recorded each frame act as the barriers between the
+// history write of frame N and the history read of frame N+1.
+// If the accumulation dispatch is ever moved to a separate async compute
+// queue, explicit cross-queue semaphores will be required.
 class BG2E_API TemporalAccumulator {
 public:
     TemporalAccumulator(Engine* engine);
@@ -50,6 +60,9 @@ public:
     );
     void cleanup();
 
+    // The frameIndex parameter is ignored: the accumulator keeps a single
+    // shared history chain. It is kept for source compatibility with
+    // existing call sites.
     std::shared_ptr<vulkan::Image> outputImage(uint32_t frameIndex) const;
     VkSampler sampler() const;
 
@@ -77,17 +90,17 @@ private:
     Engine* _engine;
     VkExtent2D _extent;
 
-    std::vector<std::shared_ptr<vulkan::Image>> _historyImagesA;
-    std::vector<std::shared_ptr<vulkan::Image>> _historyImagesB;
-    std::vector<std::shared_ptr<vulkan::Image>> _prevDepthImages;
-    std::vector<std::shared_ptr<vulkan::Image>> _prevNormalImages;
+    std::shared_ptr<vulkan::Image> _historyImageA;
+    std::shared_ptr<vulkan::Image> _historyImageB;
+    std::shared_ptr<vulkan::Image> _prevDepthImage;
+    std::shared_ptr<vulkan::Image> _prevNormalImage;
 
-    std::vector<uint32_t> _writeIndex;
+    uint32_t _writeIndex = 0;
 
-    std::vector<bool> _hasHistory;
-    std::vector<uint32_t> _accumulatedFrameCount;
+    bool _hasHistory = false;
+    uint32_t _accumulatedFrameCount = 0;
 
-    std::vector<glm::mat4> _previousViewProjection;
+    glm::mat4 _previousViewProjection = glm::mat4(1.0f);
 
     VkPipeline _pipeline = VK_NULL_HANDLE;
     VkPipelineLayout _pipelineLayout = VK_NULL_HANDLE;
@@ -121,8 +134,8 @@ private:
     void createPipeline();
     void cleanupImages();
 
-    std::shared_ptr<vulkan::Image> historyReadImage(uint32_t frameIndex) const;
-    std::shared_ptr<vulkan::Image> historyWriteImage(uint32_t frameIndex) const;
+    std::shared_ptr<vulkan::Image> historyReadImage() const;
+    std::shared_ptr<vulkan::Image> historyWriteImage() const;
 };
 
 }
