@@ -51,25 +51,31 @@ void SubmeshWindow::init(AppDelegate * delegate)
         // Count the number of different nodes
         if (sm->selectedNodes().size() > 1)
         {
-            bg2e::ui::Text::text("<multiple nodes>");
-            return;
-        }
-
-        auto drawable = sm->selectedMesh();
-        if (drawable != nullptr)
-        {
-            if (_drawableEditor.draw())
-            {
-                _materialEditor.clearMaterial();
-
-                for (auto sel : _drawableEditor.selectedItems())
-                {
-                    _materialEditor.addEditMaterial(drawable->renderMaterial(sel));
-                }
-            }
-
+            // Multi-node selection only supports material editing.  The material
+            // editor receives every selected submesh material from the selection
+            // manager, so changes are applied to all of them at once.
             _materialEditor.draw();
+
         }
+        else
+        {
+            auto drawable = sm->selectedMesh();
+            if (drawable != nullptr)
+            {
+                if (_drawableEditor.draw())
+                {
+                    _materialEditor.clearMaterial();
+
+                    for (auto sel : _drawableEditor.selectedItems())
+                    {
+                        _materialEditor.addEditMaterial(drawable->renderMaterial(sel));
+                    }
+                }
+
+                _materialEditor.draw();
+            }
+        }
+
     });
 }
 
@@ -93,4 +99,3 @@ void SubmeshWindow::cleanup()
     _materialEditor.cleanup();
     _drawableEditor.cleanup();
 }
-

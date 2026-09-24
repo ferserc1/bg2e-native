@@ -97,19 +97,15 @@ void MaterialEditor::setSelectionManager(const std::shared_ptr<manipulation::Sel
         _material.reset();
         _editMaterialList.clear();
 
-        scene::DrawableComponent * drw = nullptr;
         for (const auto& item : _selectionManager->selectedItems())
         {
-            auto itemDrawable = item->drawable.lock();
             auto itemMesh = item->mesh.lock();
-            if (!drw && itemDrawable)
+            if (itemMesh)
             {
-                drw = itemDrawable.get();
-                _material = itemMesh->renderMaterial(item->submesh);
-            }
-
-            if (itemDrawable.get() == drw)
-            {
+                if (!_material)
+                {
+                    _material = itemMesh->renderMaterial(item->submesh);
+                }
                 _editMaterialList.push_back(itemMesh->renderMaterial(item->submesh));
             }
         }
