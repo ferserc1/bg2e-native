@@ -17,6 +17,7 @@
  */
 
 #include <bg2e/render/deferred/RTGlobalIllumination.hpp>
+#include <bg2e/render/BlueNoise.hpp>
 #include <bg2e/render/vulkan/DescriptorSet.hpp>
 #include <bg2e/render/vulkan/extensions.hpp>
 #include <glm/glm.hpp>
@@ -114,6 +115,7 @@ void RTGlobalIllumination::createPipeline()
     dsLayoutFactory.addBinding(2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
     dsLayoutFactory.addBinding(3, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
     dsLayoutFactory.addBinding(4, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+    dsLayoutFactory.addBinding(5, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);   // blue noise
     _dsLayout = dsLayoutFactory.build(
         _engine->device().handle(),
         VK_SHADER_STAGE_RAYGEN_BIT_KHR |
@@ -210,6 +212,11 @@ void RTGlobalIllumination::render(
         gbuffer->image(1).get(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _sampler);
     ds->addImage(4, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
         irradianceMap, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, irradianceSampler);
+    if (_blueNoise)
+    {
+        ds->addImage(5, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+            _blueNoise->imageView(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _blueNoise->sampler());
+    }
     ds->endUpdate();
 
     vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, _pipeline);
@@ -247,6 +254,8 @@ void RTGlobalIllumination::render(
     pc.frameIndex = currentFrame;
     pc.maxDistance = _settings.maxDistance;
     pc.giLightCount = static_cast<uint32_t>(giLights.size());
+    pc.shadowSamples = _settings.shadowSamples;
+    pc.useBlueNoise = (_settings.useBlueNoise && _blueNoise) ? 1u : 0u;
     vkCmdPushConstants(cmd, _pipelineLayout,
         VK_SHADER_STAGE_RAYGEN_BIT_KHR | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR,
         0, sizeof(GIPushConstants), &pc);

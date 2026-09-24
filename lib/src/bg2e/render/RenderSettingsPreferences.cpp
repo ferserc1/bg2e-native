@@ -56,6 +56,8 @@ void RenderSettingsPreferences::load()
         _prefs.get("render_ao_falloff", _renderer->aoFalloff()));
     _renderer->setAOBounceAttenuation(
         _prefs.get("render_ao_bounceAttenuation", _renderer->aoBounceAttenuation()));
+    _renderer->setAOUseBlueNoise(
+        _prefs.get("render_ao_useBlueNoise", _renderer->aoUseBlueNoise()));
 
     // RTGI
     _renderer->setRTGIEnabled(
@@ -71,6 +73,10 @@ void RenderSettingsPreferences::load()
         _prefs.get("render_gi_rayBias", _renderer->rtGIRayBias()));
     _renderer->setRTGIMaxDistance(
         _prefs.get("render_gi_maxDistance", _renderer->rtGIMaxDistance()));
+    _renderer->setRTGIShadowSamples(
+        _prefs.get("render_gi_shadowSamples", static_cast<int>(_renderer->rtGIShadowSamples())));
+    _renderer->setRTGIUseBlueNoise(
+        _prefs.get("render_gi_useBlueNoise", _renderer->rtGIUseBlueNoise()));
 
     // RT Reflections
     _renderer->setRTReflectionsEnabled(
@@ -85,6 +91,13 @@ void RenderSettingsPreferences::load()
         _prefs.get("render_reflect_maxDistance", _renderer->rtReflectionMaxDistance()));
     _renderer->setRTReflectionRoughnessSpread(
         _prefs.get("render_reflect_roughnessSpread", _renderer->rtReflectionRoughnessSpread()));
+    _renderer->setRTReflectionShadowSamples(
+        _prefs.get("render_reflect_shadowSamples", static_cast<int>(_renderer->rtReflectionShadowSamples())));
+    _renderer->setRTReflectionQuality(static_cast<deferred::RTReflectionQuality>(
+        _prefs.get("render_reflect_qualityIndex",
+            static_cast<uint32_t>(_renderer->rtReflectionQuality()))));
+    _renderer->setRTReflectionUseBlueNoise(
+        _prefs.get("render_reflect_useBlueNoise", _renderer->rtReflectionUseBlueNoise()));
 
     // Temporal
     _renderer->setTemporalMode(static_cast<deferred::TemporalAccumulator::AccumulationMode>(
@@ -126,6 +139,7 @@ void RenderSettingsPreferences::persist()
     _prefs.set("render_ao_bias", _renderer->aoBias());
     _prefs.set("render_ao_falloff", _renderer->aoFalloff());
     _prefs.set("render_ao_bounceAttenuation", _renderer->aoBounceAttenuation());
+    _prefs.set("render_ao_useBlueNoise", _renderer->aoUseBlueNoise());
 
     _prefs.set("render_gi_enabled", _renderer->rtGIEnabled());
     _prefs.set("render_gi_qualityIndex", static_cast<uint32_t>(_renderer->rtGIQuality()));
@@ -133,6 +147,8 @@ void RenderSettingsPreferences::persist()
     _prefs.set("render_gi_bounceCount", _renderer->rtGIBounceCount());
     _prefs.set("render_gi_rayBias", _renderer->rtGIRayBias());
     _prefs.set("render_gi_maxDistance", _renderer->rtGIMaxDistance());
+    _prefs.set("render_gi_shadowSamples", static_cast<int>(_renderer->rtGIShadowSamples()));
+    _prefs.set("render_gi_useBlueNoise", _renderer->rtGIUseBlueNoise());
 
     _prefs.set("render_reflect_enabled", _renderer->rtReflectionsEnabled());
     _prefs.set("render_reflect_sampleCount", _renderer->rtReflectionSampleCount());
@@ -140,6 +156,9 @@ void RenderSettingsPreferences::persist()
     _prefs.set("render_reflect_rayBias", _renderer->rtReflectionRayBias());
     _prefs.set("render_reflect_maxDistance", _renderer->rtReflectionMaxDistance());
     _prefs.set("render_reflect_roughnessSpread", _renderer->rtReflectionRoughnessSpread());
+    _prefs.set("render_reflect_shadowSamples", static_cast<int>(_renderer->rtReflectionShadowSamples()));
+    _prefs.set("render_reflect_qualityIndex", static_cast<uint32_t>(_renderer->rtReflectionQuality()));
+    _prefs.set("render_reflect_useBlueNoise", _renderer->rtReflectionUseBlueNoise());
 
     _prefs.set("render_ta_mode", static_cast<uint32_t>(_renderer->temporalMode()));
     _prefs.set("render_ta_historyWeight", _renderer->temporalHistoryWeight());
@@ -166,18 +185,24 @@ float RenderSettingsPreferences::aoRadius() const { return _renderer->aoRadius()
 float RenderSettingsPreferences::aoBias() const { return _renderer->aoBias(); }
 float RenderSettingsPreferences::aoFalloff() const { return _renderer->aoFalloff(); }
 float RenderSettingsPreferences::aoBounceAttenuation() const { return _renderer->aoBounceAttenuation(); }
+bool RenderSettingsPreferences::aoUseBlueNoise() const { return _renderer->aoUseBlueNoise(); }
 bool RenderSettingsPreferences::rtGIEnabled() const { return _renderer->rtGIEnabled(); }
 uint32_t RenderSettingsPreferences::rtGIQualityIndex() const { return static_cast<uint32_t>(_renderer->rtGIQuality()); }
 int RenderSettingsPreferences::rtGISampleCount() const { return static_cast<int>(_renderer->rtGISampleCount()); }
 int RenderSettingsPreferences::rtGIBounceCount() const { return static_cast<int>(_renderer->rtGIBounceCount()); }
 float RenderSettingsPreferences::rtGIRayBias() const { return _renderer->rtGIRayBias(); }
 float RenderSettingsPreferences::rtGIMaxDistance() const { return _renderer->rtGIMaxDistance(); }
+int RenderSettingsPreferences::rtGIShadowSamples() const { return static_cast<int>(_renderer->rtGIShadowSamples()); }
+bool RenderSettingsPreferences::rtGIUseBlueNoise() const { return _renderer->rtGIUseBlueNoise(); }
 bool RenderSettingsPreferences::rtReflectionsEnabled() const { return _renderer->rtReflectionsEnabled(); }
 int RenderSettingsPreferences::rtReflectionSampleCount() const { return _renderer->rtReflectionSampleCount(); }
 float RenderSettingsPreferences::rtReflectionMaxRoughness() const { return _renderer->rtReflectionMaxRoughness(); }
 float RenderSettingsPreferences::rtReflectionRayBias() const { return _renderer->rtReflectionRayBias(); }
 float RenderSettingsPreferences::rtReflectionMaxDistance() const { return _renderer->rtReflectionMaxDistance(); }
 float RenderSettingsPreferences::rtReflectionRoughnessSpread() const { return _renderer->rtReflectionRoughnessSpread(); }
+int RenderSettingsPreferences::rtReflectionShadowSamples() const { return static_cast<int>(_renderer->rtReflectionShadowSamples()); }
+uint32_t RenderSettingsPreferences::rtReflectionQualityIndex() const { return static_cast<uint32_t>(_renderer->rtReflectionQuality()); }
+bool RenderSettingsPreferences::rtReflectionUseBlueNoise() const { return _renderer->rtReflectionUseBlueNoise(); }
 uint32_t RenderSettingsPreferences::temporalMode() const { return static_cast<uint32_t>(_renderer->temporalMode()); }
 float RenderSettingsPreferences::temporalHistoryWeight() const { return _renderer->temporalHistoryWeight(); }
 float RenderSettingsPreferences::temporalDepthThreshold() const { return _renderer->temporalDepthThreshold(); }
@@ -243,6 +268,12 @@ void RenderSettingsPreferences::setAOBounceAttenuation(float v)
     _dirty = true;
 }
 
+void RenderSettingsPreferences::setAOUseBlueNoise(bool v)
+{
+    _renderer->setAOUseBlueNoise(v);
+    _dirty = true;
+}
+
 void RenderSettingsPreferences::setRTGIEnabled(bool v)
 {
     _renderer->setRTGIEnabled(v);
@@ -279,6 +310,18 @@ void RenderSettingsPreferences::setRTGIMaxDistance(float v)
     _dirty = true;
 }
 
+void RenderSettingsPreferences::setRTGIShadowSamples(int v)
+{
+    _renderer->setRTGIShadowSamples(static_cast<uint32_t>(v));
+    _dirty = true;
+}
+
+void RenderSettingsPreferences::setRTGIUseBlueNoise(bool v)
+{
+    _renderer->setRTGIUseBlueNoise(v);
+    _dirty = true;
+}
+
 void RenderSettingsPreferences::setRTReflectionsEnabled(bool v)
 {
     _renderer->setRTReflectionsEnabled(v);
@@ -312,6 +355,24 @@ void RenderSettingsPreferences::setRTReflectionMaxDistance(float v)
 void RenderSettingsPreferences::setRTReflectionRoughnessSpread(float v)
 {
     _renderer->setRTReflectionRoughnessSpread(v);
+    _dirty = true;
+}
+
+void RenderSettingsPreferences::setRTReflectionShadowSamples(int v)
+{
+    _renderer->setRTReflectionShadowSamples(static_cast<uint32_t>(v));
+    _dirty = true;
+}
+
+void RenderSettingsPreferences::setRTReflectionQualityIndex(uint32_t v)
+{
+    _renderer->setRTReflectionQuality(static_cast<deferred::RTReflectionQuality>(v));
+    _dirty = true;
+}
+
+void RenderSettingsPreferences::setRTReflectionUseBlueNoise(bool v)
+{
+    _renderer->setRTReflectionUseBlueNoise(v);
     _dirty = true;
 }
 

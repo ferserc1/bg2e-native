@@ -3,12 +3,14 @@
 #extension GL_EXT_ray_tracing : enable
 
 #include "lib/deferred_utils.glsl"
+#include "lib/blue_noise.glsl"
 
 layout(set = 0, binding = 0) uniform accelerationStructureEXT tlas;
 layout(set = 0, binding = 1, rgba16f) uniform image2D reflectionOutput;
 layout(set = 0, binding = 2) uniform sampler2D g_Depth;
 layout(set = 0, binding = 3) uniform sampler2D g_Normal;
 layout(set = 0, binding = 4) uniform sampler2D g_Material;
+layout(set = 0, binding = 6) uniform sampler2DArray blueNoiseTex;
 
 layout(push_constant) uniform PushConstant {
     mat4 inverseViewProjection;
@@ -21,6 +23,8 @@ layout(push_constant) uniform PushConstant {
     float maxDistance;
     float roughnessSpread;
     uint reflectionLightCount;
+    uint shadowSamples;
+    uint useBlueNoise;
 } pc;
 
 layout(location = 0) rayPayloadEXT ReflectionPayload {
@@ -89,12 +93,17 @@ void main() {
     samples = max(1u, uint(ceil(float(pc.sampleCount) * r * r)));
 
     for (uint i = 0u; i < samples; ++i) {
-        uint seed = uint(pixel.x) * 1973u
-                  ^ uint(pixel.y) * 9277u
-                  ^ (pc.frameIndex + 1u) * 26699u
-                  ^ i * 104729u;
+        vec2 xi;
+        if (pc.useBlueNoise != 0u) {
+            xi = bnRand2(blueNoiseTex, pixel, pc.frameIndex, i);
+        } else {
+            uint seed = uint(pixel.x) * 1973u
+                      ^ uint(pixel.y) * 9277u
+                      ^ (pc.frameIndex + 1u) * 26699u
+                      ^ i * 104729u;
 
-        vec2 xi = rand2(seed);
+            xi = rand2(seed);
+        }
 
         vec3 rayDir = reflectionDir;
         if (roughness > 0.01) {

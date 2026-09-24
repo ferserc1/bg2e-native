@@ -144,6 +144,12 @@ bool RenderSettingsWindow::drawRTAOSection()
         _prefs->setAOBounceAttenuation(bounceAttenuation);
     }
 
+    bool useBlueNoise = _prefs->aoUseBlueNoise();
+    if (bg2e::ui::Button::checkBox("Blue Noise##RTAO", &useBlueNoise))
+    {
+        _prefs->setAOUseBlueNoise(useBlueNoise);
+    }
+
     return false;
 }
 
@@ -188,6 +194,18 @@ bool RenderSettingsWindow::drawRTGISection()
         _prefs->setRTGIMaxDistance(maxDistance);
     }
 
+    int shadowSamples = _prefs->rtGIShadowSamples();
+    if (bg2e::ui::Numeric::sliderInt("Shadow Samples##RTGI", &shadowSamples, 1, 8))
+    {
+        _prefs->setRTGIShadowSamples(shadowSamples);
+    }
+
+    bool useBlueNoise = _prefs->rtGIUseBlueNoise();
+    if (bg2e::ui::Button::checkBox("Blue Noise##RTGI", &useBlueNoise))
+    {
+        _prefs->setRTGIUseBlueNoise(useBlueNoise);
+    }
+
     return false;
 }
 
@@ -199,6 +217,13 @@ bool RenderSettingsWindow::drawRTReflectionsSection()
     if (bg2e::ui::Button::checkBox("Enabled##RTReflections", &enabled))
     {
         _prefs->setRTReflectionsEnabled(enabled);
+    }
+
+    static const std::vector<std::string> qualityItems = { "Low", "Medium", "High", "Ultra" };
+    uint32_t qualityIdx = _prefs->rtReflectionQualityIndex();
+    if (bg2e::ui::Value::comboBox("Quality##RTReflections", qualityItems, qualityIdx))
+    {
+        _prefs->setRTReflectionQualityIndex(qualityIdx);
     }
 
     int sampleCount = _prefs->rtReflectionSampleCount();
@@ -229,6 +254,18 @@ bool RenderSettingsWindow::drawRTReflectionsSection()
     if (bg2e::ui::Numeric::sliderFloat("Roughness Spread##RTReflections", &roughnessSpread, 0.0f, 5.0f))
     {
         _prefs->setRTReflectionRoughnessSpread(roughnessSpread);
+    }
+
+    int shadowSamples = _prefs->rtReflectionShadowSamples();
+    if (bg2e::ui::Numeric::sliderInt("Shadow Samples##RTReflections", &shadowSamples, 1, 8))
+    {
+        _prefs->setRTReflectionShadowSamples(shadowSamples);
+    }
+
+    bool useBlueNoise = _prefs->rtReflectionUseBlueNoise();
+    if (bg2e::ui::Button::checkBox("Blue Noise##RTReflections", &useBlueNoise))
+    {
+        _prefs->setRTReflectionUseBlueNoise(useBlueNoise);
     }
 
     return false;

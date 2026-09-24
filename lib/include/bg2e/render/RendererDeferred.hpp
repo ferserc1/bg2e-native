@@ -31,6 +31,7 @@
 #include <bg2e/manipulation/GizmoAndSelectionRenderer.hpp>
 #include <bg2e/render/deferred/FinalPostProcessor.hpp>
 #include <bg2e/render/deferred/MotionVectorGenerator.hpp>
+#include <bg2e/render/BlueNoise.hpp>
 
 #include <glm/glm.hpp>
 #include <memory>
@@ -139,6 +140,9 @@ public:
     void setAOBounceAttenuation(float attenuation);
     float aoBounceAttenuation() const;
 
+    void setAOUseBlueNoise(bool use);
+    bool aoUseBlueNoise() const;
+
     void setTemporalHistoryWeight(float weight);
     float temporalHistoryWeight() const;
 
@@ -188,6 +192,12 @@ public:
     void setRTGIQuality(deferred::RTGIQuality quality);
     deferred::RTGIQuality rtGIQuality() const;
 
+    void setRTGIShadowSamples(uint32_t samples);
+    uint32_t rtGIShadowSamples() const;
+
+    void setRTGIUseBlueNoise(bool use);
+    bool rtGIUseBlueNoise() const;
+
     // RT Reflections
     void setRTReflectionsEnabled(bool enabled);
     bool rtReflectionsEnabled() const;
@@ -206,6 +216,15 @@ public:
 
     void setRTReflectionRoughnessSpread(float spread);
     float rtReflectionRoughnessSpread() const;
+
+    void setRTReflectionShadowSamples(uint32_t samples);
+    uint32_t rtReflectionShadowSamples() const;
+
+    void setRTReflectionQuality(deferred::RTReflectionQuality quality);
+    deferred::RTReflectionQuality rtReflectionQuality() const;
+
+    void setRTReflectionUseBlueNoise(bool use);
+    bool rtReflectionUseBlueNoise() const;
 
 protected:
     bg2e::render::Engine* _engine = nullptr;
@@ -236,6 +255,9 @@ protected:
     std::unique_ptr<manipulation::GizmoAndSelectionRenderer> _gizmoAndSelectionRenderer;
     std::unique_ptr<deferred::FinalPostProcessor>            _finalPostProcessor;
     std::unique_ptr<deferred::MotionVectorGenerator>         _motionVectorGenerator;
+
+    // Shared blue-noise texture used by the RT passes (AO/GI/reflections)
+    std::unique_ptr<BlueNoise> _blueNoise;
 
     // Previous-frame camera matrices for motion vector generation
     glm::mat4 _prevViewMatrix   = glm::mat4(1.0f);

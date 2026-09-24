@@ -34,7 +34,30 @@
 #include <memory>
 #include <vector>
 
-namespace bg2e::render::deferred {
+namespace bg2e::render {
+
+class BlueNoise;
+
+namespace deferred {
+
+enum class RTReflectionQuality {
+    Low,
+    Medium,
+    High,
+    Ultra
+};
+
+inline float rtReflectionResolutionScale(RTReflectionQuality quality)
+{
+    switch (quality)
+    {
+        case RTReflectionQuality::Ultra:  return 1.0f;
+        case RTReflectionQuality::High:   return 2.0f / 3.0f;
+        case RTReflectionQuality::Medium: return 0.5f;
+        case RTReflectionQuality::Low:    return 1.0f / 3.0f;
+    }
+    return 1.0f;
+}
 
 struct RTReflectionSettings {
     bool enabled = true;
@@ -43,6 +66,17 @@ struct RTReflectionSettings {
     float rayBias = 0.02f;
     float maxDistance = 50.0f;
     float roughnessSpread = 1.0f;
+    // Max soft-shadow rays per light inside the reflection hit shader.
+    // Independent of base::Light::shadowSamples, which still controls the
+    // primary composite shadows.
+    uint32_t shadowSamples = 1;
+    // Resolution scale for the reflection pass. The composite pass bilinearly
+    // upsamples the result, and the envmap certainty blend hides the loss on
+    // glossy surfaces.
+    RTReflectionQuality quality = RTReflectionQuality::High;
+    // Sample the GGX lobe with the shared blue-noise texture (better
+    // convergence) instead of per-pixel white noise hashing.
+    bool useBlueNoise = true;
 };
 
 class BG2E_API RTReflections {
@@ -85,6 +119,10 @@ public:
     void setRayBias(float bias) { _settings.rayBias = bias; }
     void setMaxDistance(float distance) { _settings.maxDistance = distance; }
     void setRoughnessSpread(float spread) { _settings.roughnessSpread = spread; }
+    void setShadowSamples(uint32_t samples) { _settings.shadowSamples = samples; }
+    void setUseBlueNoise(bool use) { _settings.useBlueNoise = use; }
+    void setBlueNoise(const BlueNoise* blueNoise) { _blueNoise = blueNoise; }
+    void setQuality(RTReflectionQuality quality);
 
 private:
     Engine* _engine = nullptr;
@@ -94,6 +132,7 @@ private:
 
     vulkan::rt::RTMaterialDataBinding* _materialDataBinding = nullptr;
     vulkan::rt::ReflectionLightDataBinding* _reflectionLightDataBinding = nullptr;
+    const BlueNoise* _blueNoise = nullptr;
 
     std::vector<std::shared_ptr<vulkan::Image>> _reflectionImages;
     std::shared_ptr<vulkan::Image> _fallbackImage;
@@ -120,6 +159,8 @@ private:
         float maxDistance;
         float roughnessSpread;
         uint32_t reflectionLightCount;
+        uint32_t shadowSamples;
+        uint32_t useBlueNoise;
     };
 
     void createFallbackImage();
@@ -128,4 +169,5 @@ private:
     void cleanupImages();
 };
 
+}
 }

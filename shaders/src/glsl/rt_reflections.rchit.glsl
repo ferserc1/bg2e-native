@@ -26,6 +26,8 @@ layout(push_constant) uniform PushConstant {
     float maxDistance;
     float roughnessSpread;
     uint reflectionLightCount;
+    uint shadowSamples;
+    uint useBlueNoise;
 } pc;
 
 layout(set = 0, binding = 0) uniform accelerationStructureEXT tlas;
@@ -114,7 +116,7 @@ void main() {
         float shadowFactor = 0.0;
         if (light.castShadows != 0)
         {
-            shadowFactor = queryShadow(tlas, worldPos, worldNormal, light, 8);
+            shadowFactor = queryShadow(tlas, worldPos, worldNormal, light, int(pc.shadowSamples));
         }
         lighting += shadowFactor * computeBasicLighting(light, worldPos, worldNormal, surfaceAlbedo);
     }

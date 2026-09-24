@@ -87,6 +87,17 @@ Key characteristics:
 - **Optional ray tracing** — RT shadows, RTAO/RTGI and RT reflections are
   compiled in only when `_engine->rayTracingSupported()` is true
   (`RendererDeferred.cpp:160-163`, `DeferredLayer.cpp:105-147`).
+- **Shared blue-noise texture** — `RendererDeferred::build()` creates a single
+  `bg2e::render::BlueNoise` instance (`lib/include/bg2e/render/BlueNoise.hpp`)
+  and injects it into both deferred layers via `setBlueNoise()`, which forward
+  it to the RTAO, RTGI and RT reflections passes. The texture holds
+  precomputed blue-noise data embedded in
+  `lib/src/bg2e/render/blue_noise_data.h` (a self-descriptive pure-C header
+  defining width, height, channel count and layer count — replacing that file
+  is enough to swap the data). It is created as a 2D **array** image (one
+  precomputed tile per layer) with a LINEAR/REPEAT sampler, and is regenerated
+  offline with `scripts/generate_blue_noise.c` (spectral shaping via FFT
+  high-pass + uniform histogram ranking, producing a seamless tile).
 - **Final upscaling / AA** — an abstract `deferred::FinalPostProcessor`
   (`lib/include/bg2e/render/deferred/FinalPostProcessor.hpp:40`) converts the
   render-resolution image into the display-resolution image. Two
@@ -463,9 +474,16 @@ light, 32)` multiplies the full PBR radiance.
   `worldPos.xz`. Result: `1 - occluded/samples`, giving a visibility
   fraction (penumbra).
 
-The same `queryShadow()` (with `maxSamples = 8`) shadows the direct lighting
-computed inside the GI and reflection closest-hit shaders
-(`rt_gi.rchit.glsl:112-119`, `rt_reflections.rchit.glsl:111-120`).
+The same `queryShadow()` shadows the direct lighting computed inside the GI
+and reflection closest-hit shaders
+(`rt_gi.rchit.glsl:112-119`, `rt_reflections.rchit.glsl:111-120`), but the
+`maxSamples` cap there is **not** hardcoded: it comes from the per-pass
+settings (`RTGISettings::shadowSamples` and
+`RTReflectionSettings::shadowSamples`, both default **1** = hard shadow),
+independent of the per-light `base::Light::shadowSamples` used by the
+composite. Indirect lighting rarely benefits from soft penumbras, so the
+default saves up to 8× shadow rays per light per bounce; both values are
+exposed in the Render Settings UI ("Shadow Samples" sliders).
 
 ---
 
@@ -495,6 +513,7 @@ Implementation: `lib/include/bg2e/render/deferred/RTAmbientOcclusion.hpp`,
 | `bias` | 0.0017 | Origin offset along the normal |
 | `falloff` | 1.0 | Exponent of the distance falloff |
 | `bounceAttenuation` | 0.35 | Occlusion contribution decay per bounce |
+| `useBlueNoise` | true | Sample directions from the shared blue-noise texture instead of white-noise hashes |
 
 **Shader algorithm** (`rt_ao.comp.glsl`):
 
@@ -502,11 +521,14 @@ Implementation: `lib/include/bg2e/render/deferred/RTAmbientOcclusion.hpp`,
 2. World position reconstructed from depth via `reconstructWorldPosition()`
    with the push-constant `inverseViewProjection`; normal decoded from
    [0,1].
-3. Noise seed = `x*1973 ^ y*9277 ^ frameIndex*26699` — hash-based **white
-   noise** (no blue noise anywhere in the pipeline).
+3. Direction sampling: when `useBlueNoise` is set, `bnRand2()`
+   (`lib/blue_noise.glsl`) fetches two values per sample/bounce from the
+   shared blue-noise texture (set 0, binding 4, `sampler2DArray`), tiled
+   spatially and rotated per frame with a Cranley-Patterson R2 offset;
+   otherwise the fallback hash seed `x*1973 ^ y*9277 ^ frameIndex*26699`
+   feeds `randomHemisphereDirection()` (white noise).
 4. For each sample, for each bounce: a cosine-weighted hemisphere direction
-   is generated (`randomHemisphereDirection()`,
-   `lib/deferred_utils.glsl:191-206`), and visibility is tested with
+   is generated, and visibility is tested with
    `queryAO()` (`lib/ray_tracing.glsl:134-169`) — terminate-on-first-hit ray
    query with tMax = `radius`.
 5. On hit: occlusion accumulates `pow(1 - hitDistance/radius, falloff) *
@@ -536,12 +558,14 @@ Implementation: `lib/include/bg2e/render/deferred/RTGlobalIllumination.hpp`,
 - **Fallbacks**: RT unsupported → 4×4 black RGBA16F; null TLAS → output
   cleared to black.
 
-**Settings** (`RTGISettings`, `RTGlobalIllumination.hpp:58-65`):
+**Settings** (`RTGISettings`, `RTGlobalIllumination.hpp:58-71`):
 `enabled = true`, `sampleCount = 4`, `bounceCount = 2`, `rayBias = 0.02`,
-`maxDistance = 50.0`, `quality = Ultra`.
+`maxDistance = 50.0`, `quality = Ultra`, `shadowSamples = 1` (soft-shadow
+cap inside the hit shader, see §7), `useBlueNoise = true`.
 
 **Descriptor sets**: set 0 = { TLAS, output image, G-buffer depth, G-buffer
-normal, irradiance cubemap }; set 1 = `RTMaterialDataBinding` (material /
+normal, irradiance cubemap, blue-noise texture (binding 5,
+`sampler2DArray`) }; set 1 = `RTMaterialDataBinding` (material /
 geometry / texture arrays, §16); set 2 = `ReflectionLightDataBinding` — note
 the GI pass uses the *reflection lights* list (lights flagged
 `affectsReflections`).
@@ -550,9 +574,12 @@ the GI pass uses the *reflection lights* list (lights flagged
 
 1. Sky pixels write black.
 2. Path tracing loop: per sample, throughput starts at 1; per bounce, a
-   cosine-weighted hemisphere direction is sampled with seed
-   `x*1973 ^ y*9277 ^ (frame+1)*26699 ^ s*104729 ^ b*48611`; the ray is
-   traced with origin `worldPos + normal*rayBias`, tMax = `maxDistance`.
+   cosine-weighted hemisphere direction is sampled either from the shared
+   blue-noise texture (`bnRand2()` + `bnHemisphereDirection()`,
+   `lib/blue_noise.glsl`) when `useBlueNoise` is set, or from the fallback
+   hash seed `x*1973 ^ y*9277 ^ (frame+1)*26699 ^ s*104729 ^ b*48611`; the
+   ray is traced with origin `worldPos + normal*rayBias`, tMax =
+   `maxDistance`.
 3. On hit: accumulate `throughput * hitDirectLight` (direct lighting from
    the closest-hit shader — the color-bleeding term), then
    `throughput *= hitAlbedo` (with cosine sampling the π of the Lambert
@@ -570,7 +597,8 @@ the GI pass uses the *reflection lights* list (lights flagged
 `gl_InstanceCustomIndexEXT` into the `RTMaterialDataBinding` arrays,
 interpolates UVs and geometry normals barycentrically (**normal maps are
 ignored for GI bounces**), and returns **direct lighting only**: per light,
-`queryShadow()` (8 samples) × `computeBasicLighting()` (pure Lambert with
+`queryShadow()` (capped by `shadowSamples`, default 1) ×
+`computeBasicLighting()` (pure Lambert with
 inverse-square attenuation and spot cone,
 `shaders/src/glsl/lib/basic_lighting.glsl:82-97`), plus albedo-tinted
 emission. Ambient/irradiance is deliberately *not* added here — it would
@@ -592,17 +620,24 @@ Implementation: `lib/include/bg2e/render/deferred/RTReflections.hpp`,
 `shaders/src/glsl/rt_reflections.{rgen,rchit,rmiss}.glsl`.
 
 - **Pass type**: `VK_KHR_ray_tracing` pipeline (raygen/miss/closest-hit,
-  max recursion 1, `RTReflections.cpp:137-142`), traced over the **full
-  render extent** — reflections have no resolution-scaling option.
+  max recursion 1, `RTReflections.cpp:137-142`). Resolution scaled by
+  quality — Ultra 1.0, High 2/3, Medium 0.5, Low 1/3
+  (`rtReflectionResolutionScale()`, `RTReflections.hpp`); default **High**.
+  Changing quality waits idle and recreates the output images
+  (`RTReflections::setQuality()`). The composite pass bilinearly upsamples
+  the result through the G-buffer sampler.
 - **Output**: per-frame-in-flight `R16G16B16A16_SFLOAT` storage images;
   alpha carries the hit-confidence mask.
 
-**Settings** (`RTReflections.hpp:39-46`): `enabled = true`,
+**Settings** (`RTReflections.hpp`): `enabled = true`,
 `sampleCount = 6`, `maxRoughness = 0.75`, `rayBias = 0.02`,
-`maxDistance = 50.0`, `roughnessSpread = 1.0`.
+`maxDistance = 50.0`, `roughnessSpread = 1.0`, `shadowSamples = 1`
+(soft-shadow cap inside the hit shader, see §7), `quality = High`,
+`useBlueNoise = true`.
 
 **Descriptor sets**: set 0 = { TLAS, output, G-buffer depth, G-buffer
-normal, G-buffer material (roughness from `.g`), irradiance cubemap };
+normal, G-buffer material (roughness from `.g`), irradiance cubemap,
+blue-noise texture (binding 6, `sampler2DArray`) };
 set 1 = `RTMaterialDataBinding`; set 2 = `ReflectionLightDataBinding`.
 
 **Raygen shader** (`rt_reflections.rgen.glsl`):
@@ -614,7 +649,9 @@ set 1 = `RTMaterialDataBinding`; set 2 = `ReflectionLightDataBinding`.
    (`a = max(roughness², 0.001)`, roughness scaled by `roughnessSpread`)
    around the reflection direction; sampled directions with
    `dot(dir, N) <= 0.01` are clamped back toward the mirror direction.
-   Roughness ≤ 0.01 traces the exact mirror ray.
+   Roughness ≤ 0.01 traces the exact mirror ray. The GGX random numbers
+   come from the shared blue-noise texture when `useBlueNoise` is set
+   (default), with the white-noise hash as fallback.
 3. **Adaptive sample count**: `samples = max(1, ceil(sampleCount *
    (roughness/maxRoughness)²))` — mirror-like pixels trace 1 ray.
 4. Rays: origin `worldPos + normal*rayBias`, tMin 0.001, tMax
@@ -929,13 +966,17 @@ Located under `lib/include/bg2e/render/vulkan/rt/` (implementations in
 
 ## 17. Known limitations and implementation notes
 
-- **No blue noise** — all stochastic sampling uses integer-hash white noise
-  seeded per pixel + frame + sample/bounce index; convergence relies on
-  temporal accumulation.
-- **Resolution strategy** — AO and GI render at quality-scaled resolution
-  (1.0 / 0.667 / 0.5 / 0.333); reflections always full-res; temporal
-  accumulation and denoise always run at full extent, bilinearly upsampling
-  scaled inputs.
+- **Blue noise sampling** — RTAO, RTGI and RT reflections sample directions
+  from a shared precomputed blue-noise texture (`bg2e::render::BlueNoise`,
+  see §1) when `useBlueNoise` is enabled (default), which converges faster
+  than the fallback integer-hash white noise. Temporal decorrelation uses
+  Cranley-Patterson rotation with an R2 sequence, so the blue-noise spectrum
+  is preserved spatially but frames are decorrelated for the temporal
+  accumulator.
+- **Resolution strategy** — AO, GI and reflections all render at
+  quality-scaled resolution (1.0 / 0.667 / 0.5 / 0.333); defaults are High
+  (AO, reflections) and Ultra (GI). Temporal accumulation and denoise always
+  run at full extent, bilinearly upsampling scaled inputs.
 - **Transparent layer has no depth testing** — ordering comes from
   render-queue sorting; the copied opaque depth serves only downstream
   passes (motion vectors, debug views).
@@ -986,6 +1027,9 @@ Located under `lib/include/bg2e/render/vulkan/rt/` (implementations in
 | `lib/.../deferred/RTReflections.{hpp,cpp}` | RT reflections pass |
 | `lib/.../deferred/TemporalAccumulator.{hpp,cpp}` | Temporal reprojection/accumulation |
 | `lib/.../deferred/DenoiseFilter.{hpp,cpp}` | Bilateral denoise (LDR/HDR) |
+| `lib/include/bg2e/render/BlueNoise.hpp` / `lib/src/bg2e/render/BlueNoise.cpp` | Shared blue-noise texture (image + sampler) |
+| `lib/src/bg2e/render/blue_noise_data.h` | Precomputed blue-noise data (self-descriptive: size/channels/layers) |
+| `scripts/generate_blue_noise.c` | Offline generator for `blue_noise_data.h` |
 | `lib/include/bg2e/render/vulkan/rt/RayTracingSceneDataBinding.hpp` | TLAS descriptor binding |
 | `lib/include/bg2e/render/vulkan/rt/ReflectionLightDataBinding.hpp` | RT light SSBO binding |
 | `lib/include/bg2e/render/vulkan/rt/RTMaterialDataBinding.hpp` | RT material/geometry/texture arrays |
@@ -1034,4 +1078,5 @@ Located under `lib/include/bg2e/render/vulkan/rt/` (implementations in
 | `ray_tracing.glsl` | `queryShadow()` (hard/soft RT shadows), `queryAO()` |
 | `basic_lighting.glsl` | Lambert direct lighting for RT hit shaders |
 | `rt_material_data.glsl` | RT material/vertex structures and sampling |
+| `blue_noise.glsl` | Blue-noise sampling (`bnRand2`, `bnHemisphereDirection`) |
 | `smaa.glsl` | SMAA constants and LUT metrics |

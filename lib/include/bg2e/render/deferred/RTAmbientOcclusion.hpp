@@ -29,6 +29,9 @@
 
 namespace bg2e {
 namespace render {
+
+class BlueNoise;
+
 namespace deferred {
 
 enum class RTAOQuality
@@ -93,6 +96,10 @@ public:
     void setAOBounceAttenuation(float attenuation);
     float aoBounceAttenuation() const;
 
+    void setBlueNoise(const BlueNoise* blueNoise) { _blueNoise = blueNoise; }
+    void setUseBlueNoise(bool use) { _useBlueNoise = use; }
+    bool useBlueNoise() const { return _useBlueNoise; }
+
 private:
     Engine * _engine;
     VkExtent2D _extent;
@@ -105,6 +112,8 @@ private:
     float _bias = 0.0017f;
     float _falloff = 1.0f;
     float _bounceAttenuation = 0.35f;
+    bool _useBlueNoise = true;
+    const BlueNoise* _blueNoise = nullptr;
 
     std::vector<std::shared_ptr<vulkan::Image>> _aoImages;
 
@@ -123,7 +132,7 @@ private:
         float bounceAttenuation;
         uint32_t frameIndex;
 
-        int padding0;
+        uint32_t useBlueNoise;
     };
 
     void createWhiteFallback();

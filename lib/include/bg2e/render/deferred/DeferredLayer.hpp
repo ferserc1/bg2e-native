@@ -39,6 +39,9 @@
 
 namespace bg2e {
 namespace render {
+
+class BlueNoise;
+
 namespace deferred {
 
 enum class LayerType {
@@ -96,6 +99,9 @@ public:
     void setRtDataBinding(vulkan::rt::RayTracingSceneDataBinding* rt) { _rtDataBinding = rt; }
     void setRenderQueue(render::RenderQueue<scene::Drawable>* rq) { _renderQueue = rq; }
 
+    // Shared blue-noise texture, forwarded to the AO/GI/reflection passes
+    void setBlueNoise(const BlueNoise* blueNoise);
+
     void setDebugVisualization(DeferredDebugVisualization mode) { _debugVisualization = mode; }
     DeferredDebugVisualization debugVisualization() const { return _debugVisualization; }
 
@@ -124,6 +130,9 @@ public:
 
     void setAOBounceAttenuation(float attenuation);
     float aoBounceAttenuation() const;
+
+    void setAOUseBlueNoise(bool use);
+    bool aoUseBlueNoise() const;
 
     void setTemporalHistoryWeight(float weight);
     float temporalHistoryWeight() const;
@@ -170,6 +179,15 @@ public:
     void setRTReflectionRoughnessSpread(float s);
     float rtReflectionRoughnessSpread() const;
 
+    void setRTReflectionShadowSamples(uint32_t samples);
+    uint32_t rtReflectionShadowSamples() const;
+
+    void setRTReflectionQuality(RTReflectionQuality quality);
+    RTReflectionQuality rtReflectionQuality() const;
+
+    void setRTReflectionUseBlueNoise(bool use);
+    bool rtReflectionUseBlueNoise() const;
+
     // Indirect lighting mode: choose between RTAO (cheap) and RTGI (higher quality).
     // If ray tracing is not supported the mode is always effectively RTAO.
     void setIndirectLightingMode(IndirectLightingMode mode);
@@ -196,6 +214,12 @@ public:
 
     void setRTGIQuality(RTGIQuality quality);
     RTGIQuality rtGIQuality() const;
+
+    void setRTGIShadowSamples(uint32_t samples);
+    uint32_t rtGIShadowSamples() const;
+
+    void setRTGIUseBlueNoise(bool use);
+    bool rtGIUseBlueNoise() const;
 
 protected:
     LayerType _layerType;

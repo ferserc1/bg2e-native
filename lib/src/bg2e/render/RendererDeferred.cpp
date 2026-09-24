@@ -162,6 +162,10 @@ void RendererDeferred::build(
         _reflectionLightDataBinding = std::make_unique<vulkan::rt::ReflectionLightDataBinding>(_engine);
     }
 
+    // Shared blue-noise texture for the RT passes
+    _blueNoise = std::make_unique<BlueNoise>(_engine);
+    _blueNoise->build();
+
     // Create layers
     _skyboxLayer = std::make_unique<deferred::SkyboxLayer>(_engine);
     _skyboxLayer->build(_renderExtent, colorImageFormat);
@@ -176,6 +180,7 @@ void RendererDeferred::build(
     _opaqueLayer->setScene(_scene.get());
     _opaqueLayer->setEnvironment(_environment.get());
     _opaqueLayer->setRenderQueue(&_renderQueue);
+    _opaqueLayer->setBlueNoise(_blueNoise.get());
 
 
     _transparentLayer = std::make_unique<deferred::DeferredLayer>(_engine, deferred::LayerType::Transparent);
@@ -187,6 +192,7 @@ void RendererDeferred::build(
     _transparentLayer->setEnvironment(_environment.get());
     _transparentLayer->setRenderQueue(&_renderQueue);
     _transparentLayer->setIsTransparent(true);
+    _transparentLayer->setBlueNoise(_blueNoise.get());
 
 
     // Create intermediate images
@@ -577,6 +583,12 @@ void RendererDeferred::cleanup() {
 
     _gizmoAndSelectionRenderer.reset();
 
+    if (_blueNoise)
+    {
+        _blueNoise->cleanup();
+        _blueNoise.reset();
+    }
+
     _transparentLayer->cleanup();
     _opaqueLayer->cleanup();
     _skyboxLayer->cleanup();
@@ -702,6 +714,17 @@ void RendererDeferred::setAOBounceAttenuation(float attenuation)
 float RendererDeferred::aoBounceAttenuation() const
 {
     return _opaqueLayer->aoBounceAttenuation();
+}
+
+void RendererDeferred::setAOUseBlueNoise(bool use)
+{
+    _opaqueLayer->setAOUseBlueNoise(use);
+    _transparentLayer->setAOUseBlueNoise(use);
+}
+
+bool RendererDeferred::aoUseBlueNoise() const
+{
+    return _opaqueLayer->aoUseBlueNoise();
 }
 
 void RendererDeferred::setTemporalHistoryWeight(float weight)
@@ -882,6 +905,28 @@ deferred::RTGIQuality RendererDeferred::rtGIQuality() const
     return _opaqueLayer->rtGIQuality();
 }
 
+void RendererDeferred::setRTGIShadowSamples(uint32_t samples)
+{
+    _opaqueLayer->setRTGIShadowSamples(samples);
+    _transparentLayer->setRTGIShadowSamples(samples);
+}
+
+uint32_t RendererDeferred::rtGIShadowSamples() const
+{
+    return _opaqueLayer->rtGIShadowSamples();
+}
+
+void RendererDeferred::setRTGIUseBlueNoise(bool use)
+{
+    _opaqueLayer->setRTGIUseBlueNoise(use);
+    _transparentLayer->setRTGIUseBlueNoise(use);
+}
+
+bool RendererDeferred::rtGIUseBlueNoise() const
+{
+    return _opaqueLayer->rtGIUseBlueNoise();
+}
+
 void RendererDeferred::setRTReflectionsEnabled(bool enabled)
 {
     _opaqueLayer->setRTReflectionsEnabled(enabled);
@@ -946,6 +991,39 @@ void RendererDeferred::setRTReflectionRoughnessSpread(float spread)
 float RendererDeferred::rtReflectionRoughnessSpread() const
 {
     return _opaqueLayer->rtReflectionRoughnessSpread();
+}
+
+void RendererDeferred::setRTReflectionShadowSamples(uint32_t samples)
+{
+    _opaqueLayer->setRTReflectionShadowSamples(samples);
+    _transparentLayer->setRTReflectionShadowSamples(samples);
+}
+
+uint32_t RendererDeferred::rtReflectionShadowSamples() const
+{
+    return _opaqueLayer->rtReflectionShadowSamples();
+}
+
+void RendererDeferred::setRTReflectionQuality(deferred::RTReflectionQuality quality)
+{
+    _opaqueLayer->setRTReflectionQuality(quality);
+    _transparentLayer->setRTReflectionQuality(quality);
+}
+
+deferred::RTReflectionQuality RendererDeferred::rtReflectionQuality() const
+{
+    return _opaqueLayer->rtReflectionQuality();
+}
+
+void RendererDeferred::setRTReflectionUseBlueNoise(bool use)
+{
+    _opaqueLayer->setRTReflectionUseBlueNoise(use);
+    _transparentLayer->setRTReflectionUseBlueNoise(use);
+}
+
+bool RendererDeferred::rtReflectionUseBlueNoise() const
+{
+    return _opaqueLayer->rtReflectionUseBlueNoise();
 }
 
 // --- Scale UI API ---

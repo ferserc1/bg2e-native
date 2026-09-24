@@ -17,10 +17,12 @@
  */
 
 #include <bg2e/render/deferred/RTReflections.hpp>
+#include <bg2e/render/BlueNoise.hpp>
 #include <bg2e/render/vulkan/DescriptorSet.hpp>
 #include <bg2e/render/vulkan/extensions.hpp>
 #include <glm/glm.hpp>
 #include <cstring>
+#include <cmath>
 
 namespace bg2e::render::deferred {
 
@@ -79,6 +81,12 @@ void RTReflections::createReflectionResources(VkExtent2D extent)
 {
     cleanupImages();
 
+    float scale = rtReflectionResolutionScale(_settings.quality);
+    VkExtent2D scaledExtent = {
+        static_cast<uint32_t>(std::round(extent.width * scale)),
+        static_cast<uint32_t>(std::round(extent.height * scale))
+    };
+
     _reflectionImages.resize(_engine->numImages());
 
     for (uint32_t i = 0; i < _reflectionImages.size(); ++i)
@@ -88,7 +96,7 @@ void RTReflections::createReflectionResources(VkExtent2D extent)
                 _engine,
                 "RT Reflections output " + std::to_string(i),
                 VK_FORMAT_R16G16B16A16_SFLOAT,
-                extent,
+                scaledExtent,
                 VK_IMAGE_USAGE_STORAGE_BIT |
                 VK_IMAGE_USAGE_SAMPLED_BIT |
                 VK_IMAGE_USAGE_TRANSFER_DST_BIT,
@@ -108,6 +116,7 @@ void RTReflections::createPipeline()
     dsLayoutFactory.addBinding(3, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
     dsLayoutFactory.addBinding(4, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
     dsLayoutFactory.addBinding(5, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+    dsLayoutFactory.addBinding(6, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);   // blue noise
     _dsLayout = dsLayoutFactory.build(
         _engine->device().handle(),
         VK_SHADER_STAGE_RAYGEN_BIT_KHR |
@@ -207,6 +216,11 @@ void RTReflections::render(
         gbuffer->image(2).get(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _sampler);
     ds->addImage(5, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
         irradianceMap, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, irradianceSampler);
+    if (_blueNoise)
+    {
+        ds->addImage(6, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+            _blueNoise->imageView(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _blueNoise->sampler());
+    }
     ds->endUpdate();
 
     vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, _pipeline);
@@ -228,17 +242,25 @@ void RTReflections::render(
             _pipelineLayout, 2, 1, &lightDS, 0, nullptr);
     }
 
+    float scale = rtReflectionResolutionScale(_settings.quality);
+    VkExtent2D scaledExtent = {
+        static_cast<uint32_t>(std::round(_extent.width * scale)),
+        static_cast<uint32_t>(std::round(_extent.height * scale))
+    };
+
     ReflectionPushConstants pc{};
     pc.inverseViewProjection = inverseViewProjection;
     pc.cameraPosition = cameraPosition;
     pc.maxRoughness = _settings.maxRoughness;
-    pc.outputSize = glm::vec2(static_cast<float>(_extent.width), static_cast<float>(_extent.height));
+    pc.outputSize = glm::vec2(static_cast<float>(scaledExtent.width), static_cast<float>(scaledExtent.height));
     pc.sampleCount = _settings.sampleCount;
     pc.frameIndex = currentFrame;
     pc.rayBias = _settings.rayBias;
     pc.maxDistance = _settings.maxDistance;
     pc.roughnessSpread = _settings.roughnessSpread;
     pc.reflectionLightCount = static_cast<uint32_t>(reflectionLights.size());
+    pc.shadowSamples = _settings.shadowSamples;
+    pc.useBlueNoise = (_settings.useBlueNoise && _blueNoise) ? 1u : 0u;
     vkCmdPushConstants(cmd, _pipelineLayout,
         VK_SHADER_STAGE_RAYGEN_BIT_KHR | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR,
         0, sizeof(ReflectionPushConstants), &pc);
@@ -249,8 +271,8 @@ void RTReflections::render(
         &_missRegion,
         &_hitRegion,
         &_callableRegion,
-        _extent.width,
-        _extent.height,
+        scaledExtent.width,
+        scaledExtent.height,
         1
     );
 
@@ -292,6 +314,22 @@ std::shared_ptr<vulkan::Image> RTReflections::reflectionImage(uint32_t frameInde
         return _fallbackImage;
     }
     return _reflectionImages[frameIndex];
+}
+
+void RTReflections::setQuality(RTReflectionQuality quality)
+{
+    if (quality == _settings.quality)
+    {
+        return;
+    }
+
+    _engine->device().waitIdle();
+    _settings.quality = quality;
+
+    if (_rtSupported && !_reflectionImages.empty())
+    {
+        createReflectionResources(_extent);
+    }
 }
 
 void RTReflections::resize(VkExtent2D extent)

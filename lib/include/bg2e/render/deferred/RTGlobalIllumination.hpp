@@ -34,7 +34,11 @@
 #include <memory>
 #include <vector>
 
-namespace bg2e::render::deferred {
+namespace bg2e::render {
+
+class BlueNoise;
+
+namespace deferred {
 
 enum class RTGIQuality {
     Low,
@@ -62,6 +66,13 @@ struct RTGISettings {
     float rayBias = 0.02f;
     float maxDistance = 50.0f;
     RTGIQuality quality = RTGIQuality::Ultra;
+    // Max soft-shadow rays per light inside the GI hit shader (indirect
+    // shadows). Independent of base::Light::shadowSamples, which still
+    // controls the primary composite shadows.
+    uint32_t shadowSamples = 1;
+    // Sample hemisphere directions with the shared blue-noise texture
+    // (better convergence) instead of per-pixel white noise hashing.
+    bool useBlueNoise = true;
 };
 
 class BG2E_API RTGlobalIllumination {
@@ -103,6 +114,9 @@ public:
     void setBounceCount(uint32_t count) { _settings.bounceCount = count; }
     void setRayBias(float bias) { _settings.rayBias = bias; }
     void setMaxDistance(float distance) { _settings.maxDistance = distance; }
+    void setShadowSamples(uint32_t samples) { _settings.shadowSamples = samples; }
+    void setUseBlueNoise(bool use) { _settings.useBlueNoise = use; }
+    void setBlueNoise(const BlueNoise* blueNoise) { _blueNoise = blueNoise; }
     void setQuality(RTGIQuality quality);
 
 private:
@@ -113,6 +127,7 @@ private:
 
     vulkan::rt::RTMaterialDataBinding* _materialDataBinding = nullptr;
     vulkan::rt::ReflectionLightDataBinding* _reflectionLightDataBinding = nullptr;
+    const BlueNoise* _blueNoise = nullptr;
 
     std::vector<std::shared_ptr<vulkan::Image>> _giImages;
     std::shared_ptr<vulkan::Image> _fallbackImage;
@@ -138,7 +153,8 @@ private:
         uint32_t frameIndex;
         float maxDistance;
         uint32_t giLightCount;
-        uint32_t padding0;
+        uint32_t shadowSamples;
+        uint32_t useBlueNoise;
     };
 
     void createFallbackImage();
@@ -147,4 +163,5 @@ private:
     void cleanupImages();
 };
 
+}
 }

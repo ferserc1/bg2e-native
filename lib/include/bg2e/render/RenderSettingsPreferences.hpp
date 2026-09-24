@@ -58,6 +58,8 @@ public:
     void setAOFalloff(float value);
     float aoBounceAttenuation() const;
     void setAOBounceAttenuation(float value);
+    bool aoUseBlueNoise() const;
+    void setAOUseBlueNoise(bool value);
 
     // --- RTGI ---
     bool rtGIEnabled() const;
@@ -72,6 +74,10 @@ public:
     void setRTGIRayBias(float value);
     float rtGIMaxDistance() const;
     void setRTGIMaxDistance(float value);
+    int rtGIShadowSamples() const;
+    void setRTGIShadowSamples(int value);
+    bool rtGIUseBlueNoise() const;
+    void setRTGIUseBlueNoise(bool value);
 
     // --- RT Reflections ---
     bool rtReflectionsEnabled() const;
@@ -86,6 +92,12 @@ public:
     void setRTReflectionMaxDistance(float value);
     float rtReflectionRoughnessSpread() const;
     void setRTReflectionRoughnessSpread(float value);
+    int rtReflectionShadowSamples() const;
+    void setRTReflectionShadowSamples(int value);
+    uint32_t rtReflectionQualityIndex() const;
+    void setRTReflectionQualityIndex(uint32_t value);
+    bool rtReflectionUseBlueNoise() const;
+    void setRTReflectionUseBlueNoise(bool value);
 
     // --- Temporal Accumulator ---
     uint32_t temporalMode() const;

@@ -17,6 +17,7 @@
  */
 
 #include <bg2e/render/deferred/RTAmbientOcclusion.hpp>
+#include <bg2e/render/BlueNoise.hpp>
 #include <bg2e/render/vulkan/factory/ComputePipeline.hpp>
 #include <bg2e/render/vulkan/factory/DescriptorSetLayout.hpp>
 #include <bg2e/render/vulkan/factory/PipelineLayout.hpp>
@@ -116,6 +117,7 @@ void RTAmbientOcclusion::createPipeline()
     dsLayoutFactory.addBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
     dsLayoutFactory.addBinding(2, VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR);
     dsLayoutFactory.addBinding(3, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE);
+    dsLayoutFactory.addBinding(4, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
     _dsLayout = dsLayoutFactory.build(
         _engine->device().handle(),
         VK_SHADER_STAGE_COMPUTE_BIT
@@ -186,6 +188,11 @@ void RTAmbientOcclusion::render(
     ds->addAccelerationStructure(2, tlas);
     ds->addImage(3, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
         aoImage.get(), VK_IMAGE_LAYOUT_GENERAL);
+    if (_blueNoise)
+    {
+        ds->addImage(4, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+            _blueNoise->imageView(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _blueNoise->sampler());
+    }
     ds->endUpdate();
 
     vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, _pipeline);
@@ -202,6 +209,7 @@ void RTAmbientOcclusion::render(
     pc.falloff = _falloff;
     pc.bounceAttenuation = _bounceAttenuation;
     pc.frameIndex = currentFrame;
+    pc.useBlueNoise = (_useBlueNoise && _blueNoise) ? 1u : 0u;
     vkCmdPushConstants(cmd, _pipelineLayout,
         VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(AOPushConstants), &pc);
 

@@ -3,12 +3,14 @@
 #extension GL_EXT_ray_tracing : enable
 
 #include "lib/deferred_utils.glsl"
+#include "lib/blue_noise.glsl"
 
 layout(set = 0, binding = 0) uniform accelerationStructureEXT tlas;
 layout(set = 0, binding = 1, rgba16f) uniform image2D giOutput;
 layout(set = 0, binding = 2) uniform sampler2D g_Depth;
 layout(set = 0, binding = 3) uniform sampler2D g_Normal;
 layout(set = 0, binding = 4) uniform samplerCube irradianceMap;
+layout(set = 0, binding = 5) uniform sampler2DArray blueNoiseTex;
 
 layout(push_constant) uniform PushConstant {
     mat4 inverseViewProjection;
@@ -20,7 +22,8 @@ layout(push_constant) uniform PushConstant {
     uint frameIndex;
     float maxDistance;
     uint giLightCount;
-    uint padding0;
+    uint shadowSamples;
+    uint useBlueNoise;
 } pc;
 
 layout(location = 0) rayPayloadEXT GIPayload {
@@ -64,13 +67,19 @@ void main() {
         vec3 currentNormal = normal;
 
         for (uint b = 0u; b < pc.bounceCount; ++b) {
-            uint seed = uint(pixel.x) * 1973u
-                      ^ uint(pixel.y) * 9277u
-                      ^ (pc.frameIndex + 1u) * 26699u
-                      ^ s * 104729u
-                      ^ b * 48611u;
+            vec3 dir;
+            if (pc.useBlueNoise != 0u) {
+                vec2 xi = bnRand2(blueNoiseTex, pixel, pc.frameIndex, s * pc.bounceCount + b);
+                dir = bnHemisphereDirection(currentNormal, xi);
+            } else {
+                uint seed = uint(pixel.x) * 1973u
+                          ^ uint(pixel.y) * 9277u
+                          ^ (pc.frameIndex + 1u) * 26699u
+                          ^ s * 104729u
+                          ^ b * 48611u;
 
-            vec3 dir = randomHemisphereDirection(currentNormal, seed);
+                dir = randomHemisphereDirection(currentNormal, seed);
+            }
 
             payload.didHit = 0u;
             payload.hitDirectLight = vec3(0.0);

@@ -21,6 +21,7 @@
 #include <bg2e/render/vulkan/extensions.hpp>
 #include <bg2e/scene/Drawable.hpp>
 #include <bg2e/render/vulkan/rt/RayTracingScene.hpp>
+#include <bg2e/render/vulkan/macros/all.hpp>
 #include <cstring>
 
 namespace bg2e::render::deferred {
@@ -495,6 +496,13 @@ std::shared_ptr<vulkan::Image> DeferredLayer::depthBuffer()
     return gbuffers->depthImage();
 }
 
+void DeferredLayer::setBlueNoise(const BlueNoise* blueNoise)
+{
+    if (_rtAmbientOcclusion) _rtAmbientOcclusion->setBlueNoise(blueNoise);
+    if (_rtGlobalIllumination) _rtGlobalIllumination->setBlueNoise(blueNoise);
+    if (_rtReflections) _rtReflections->setBlueNoise(blueNoise);
+}
+
 void DeferredLayer::setAOQuality(RTAOQuality quality)
 {
     if (_rtAmbientOcclusion) _rtAmbientOcclusion->setQuality(quality);
@@ -563,6 +571,16 @@ void DeferredLayer::setAOBounceAttenuation(float attenuation)
 float DeferredLayer::aoBounceAttenuation() const
 {
     return _rtAmbientOcclusion ? _rtAmbientOcclusion->aoBounceAttenuation() : 0.5f;
+}
+
+void DeferredLayer::setAOUseBlueNoise(bool use)
+{
+    if (_rtAmbientOcclusion) _rtAmbientOcclusion->setUseBlueNoise(use);
+}
+
+bool DeferredLayer::aoUseBlueNoise() const
+{
+    return _rtAmbientOcclusion ? _rtAmbientOcclusion->useBlueNoise() : false;
 }
 
 void DeferredLayer::setTemporalHistoryWeight(float weight)
@@ -715,6 +733,36 @@ float DeferredLayer::rtReflectionRoughnessSpread() const
     return _rtReflections ? _rtReflections->settings().roughnessSpread : 1.0f;
 }
 
+void DeferredLayer::setRTReflectionShadowSamples(uint32_t samples)
+{
+    if (_rtReflections) _rtReflections->setShadowSamples(samples);
+}
+
+uint32_t DeferredLayer::rtReflectionShadowSamples() const
+{
+    return _rtReflections ? _rtReflections->settings().shadowSamples : 1;
+}
+
+void DeferredLayer::setRTReflectionQuality(RTReflectionQuality quality)
+{
+    if (_rtReflections) _rtReflections->setQuality(quality);
+}
+
+RTReflectionQuality DeferredLayer::rtReflectionQuality() const
+{
+    return _rtReflections ? _rtReflections->settings().quality : RTReflectionQuality::High;
+}
+
+void DeferredLayer::setRTReflectionUseBlueNoise(bool use)
+{
+    if (_rtReflections) _rtReflections->setUseBlueNoise(use);
+}
+
+bool DeferredLayer::rtReflectionUseBlueNoise() const
+{
+    return _rtReflections ? _rtReflections->settings().useBlueNoise : false;
+}
+
 void DeferredLayer::setIndirectLightingMode(IndirectLightingMode mode)
 {
     if (!_engine->rayTracingSupported())
@@ -783,6 +831,26 @@ void DeferredLayer::setRTGIQuality(RTGIQuality quality)
 RTGIQuality DeferredLayer::rtGIQuality() const
 {
     return _rtGlobalIllumination ? _rtGlobalIllumination->settings().quality : RTGIQuality::High;
+}
+
+void DeferredLayer::setRTGIShadowSamples(uint32_t samples)
+{
+    if (_rtGlobalIllumination) _rtGlobalIllumination->setShadowSamples(samples);
+}
+
+uint32_t DeferredLayer::rtGIShadowSamples() const
+{
+    return _rtGlobalIllumination ? _rtGlobalIllumination->settings().shadowSamples : 1;
+}
+
+void DeferredLayer::setRTGIUseBlueNoise(bool use)
+{
+    if (_rtGlobalIllumination) _rtGlobalIllumination->setUseBlueNoise(use);
+}
+
+bool DeferredLayer::rtGIUseBlueNoise() const
+{
+    return _rtGlobalIllumination ? _rtGlobalIllumination->settings().useBlueNoise : false;
 }
 
 void DeferredLayer::createGBufferPipeline()
