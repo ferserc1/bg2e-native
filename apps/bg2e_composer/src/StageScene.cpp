@@ -186,6 +186,18 @@ void StageScene::openScene(const std::filesystem::path& path, bg2e::scene::Scene
         return;
     }
 
+    // Validate before adopting the loaded tree: a file without a camera would
+    // otherwise crash later in Scene::mainCamera() when setEditableRoot runs
+    // updateAll(). Validating the synthetic wrapper covers every top-level node.
+    if (!bg2e::scene::Scene::validateScene(newScene->rootNode()))
+    {
+        bg2e::app::MessageBox::showError(
+            "Error opening scene",
+            "The selected file does not appear to be a valid scene."
+        );
+        return;
+    }
+
     // saveScene() writes _editableRoot as the single top-level node of the file,
     // but loadScene() always wraps the file's top-level nodes inside a freshly
     // created synthetic "scene root". Adopting that wrapper as the editable root

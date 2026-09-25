@@ -64,6 +64,24 @@ std::shared_ptr<Scene> Scene::deserialize(std::shared_ptr<json::JsonNode> jsonDa
     return scene;
 }
 
+bool Scene::sceneHasCamera(Node * rootNode)
+{
+    if (!rootNode)
+    {
+        return false;
+    }
+    FindCameraVisitor findCamera;
+    findCamera.findCameras(rootNode);
+    return !findCamera.cameras().empty();
+}
+
+bool Scene::validateScene(Node * rootNode)
+{
+    // Add future checks here as additional independent calls, for example:
+    //   return sceneHasCamera(rootNode) && sceneHasEnvironment(rootNode);
+    return sceneHasCamera(rootNode);
+}
+
 void Scene::setSceneRoot(std::shared_ptr<Node> sceneRoot)
 {
     if (sceneRoot->_scene != nullptr)
