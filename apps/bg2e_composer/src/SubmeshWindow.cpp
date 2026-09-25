@@ -37,6 +37,7 @@ void SubmeshWindow::init(AppDelegate * delegate)
     });
 
     _materialEditor.setSelectionManager(delegate->selectionManager());
+    _materialEditor.init(delegate->engine());
 
     setDrawFunction([&]() {
         auto sm = _appDelegate->selectionManager();

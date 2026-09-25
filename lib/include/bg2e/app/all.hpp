@@ -29,8 +29,8 @@
 #include <bg2e/app/MainLoop.hpp>
 #include <bg2e/app/MessageBox.hpp>
 #include <bg2e/app/FileDialog.hpp>
+#include <bg2e/app/FileHistory.hpp>
 #include <bg2e/app/Preferences.hpp>
 #include <bg2e/app/PreferencesStore.hpp>
 #include <bg2e/app/Shortcuts.hpp>
-
 

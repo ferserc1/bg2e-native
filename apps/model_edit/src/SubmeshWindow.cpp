@@ -37,6 +37,7 @@ void SubmeshWindow::init(AppDelegate * delegate)
     });
 
     _materialEditor.setSelectionManager(delegate->selectionManager());
+    _materialEditor.init(delegate->engine());
 
     setDrawFunction([&]() {
 
@@ -102,4 +103,3 @@ void SubmeshWindow::cleanup()
     _materialEditor.cleanup();
     _drawableEditor.cleanup();
 }
-

@@ -19,7 +19,6 @@
 #include <bg2e/ui/MaterialEditor.hpp>
 #include <bg2e/render/vulkan/common.hpp>
 #include <bg2e/render/vulkan/Image.hpp>
-#include <bg2e/app/FileDialog.hpp>
 #include <bg2e/ui/Text.hpp>
 #include <bg2e/ui/Group.hpp>
 #include <bg2e/ui/Button.hpp>
@@ -35,6 +34,17 @@ namespace bg2e::ui {
 MaterialEditor::~MaterialEditor()
 {
 
+}
+
+void MaterialEditor::init(render::Engine* engine)
+{
+    _engine = engine;
+    _albedoWidget.init(engine);
+    _normalWidget.init(engine);
+    _metallicWidget.init(engine);
+    _roughnessWidget.init(engine);
+    _aoWidget.init(engine);
+    _lightEmissionWidget.init(engine);
 }
 
 void MaterialEditor::setEditMaterial(std::shared_ptr<render::MaterialBase>& mat)

@@ -21,15 +21,22 @@
 #include <bg2e/common.hpp>
 #include <bg2e/render/Texture.hpp>
 #include <bg2e/render/MaterialBase.hpp>
+#include <bg2e/ui/FileHistoryWidget.hpp>
 
+#include <filesystem>
 #include <memory>
 #include <functional>
+#include <unordered_map>
 
 namespace bg2e {
 namespace ui {
 
 class BG2E_API TextureWidgets {
 public:
+    TextureWidgets();
+
+    // Stack-resident widgets receive their engine through initialization.
+    void init(render::Engine* engine);
     
     inline void setEditTexture(std::shared_ptr<render::Texture> tex)
     {
@@ -65,6 +72,13 @@ protected:
     std::shared_ptr<render::Texture> _deferredTexture;
     
     VkDescriptorSet _textureDS = VK_NULL_HANDLE;
+
+    render::Engine* _engine = nullptr;
+    FileHistoryWidget _filePicker;
+    std::unordered_map<std::string, VkDescriptorSet> _thumbnailDS;
+
+    FileHistoryWidget::TextureID thumbnailForPath(const std::filesystem::path& path);
+    void clearThumbnails();
     
     void initDS();
     void clearDS();

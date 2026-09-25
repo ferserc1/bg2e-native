@@ -28,11 +28,15 @@
 #include <functional>
 
 namespace bg2e {
+namespace render { class Engine; }
 namespace ui {
 
 class BG2E_API MaterialEditor {
 public:
     virtual ~MaterialEditor();
+
+    // Stack-resident editors receive their engine through initialization.
+    void init(render::Engine* engine);
 
     // These functions allow you to manage the editing of materials manually, setting direct pointers to the materials to be edited.
     void setEditMaterial(std::shared_ptr<render::MaterialBase>& mat);
@@ -54,6 +58,7 @@ public:
     inline void onChanged(std::function<void()> cb) { _onChangedFunction = cb; }
 
 protected:
+    render::Engine* _engine = nullptr;
     std::shared_ptr<manipulation::SelectionManager> _selectionManager;
 
     std::shared_ptr<render::MaterialBase> _material;
