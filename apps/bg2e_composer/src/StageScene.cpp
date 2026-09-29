@@ -258,6 +258,8 @@ void StageScene::importGltfScene(const std::filesystem::path& path)
             node->setName(path.stem().string());
         }
 
+        addGizmoComponents(node.get());
+
         insertNewNode(node, newNodeParent());
     }
     catch (const std::exception& error)
@@ -281,6 +283,8 @@ std::shared_ptr<bg2e::scene::Node> StageScene::importGltfScene(
             errorOut = "Could not load the specified glTF file.";
             return nullptr;
         }
+
+        addGizmoComponents(loaded.get());
 
         auto wrapper = std::make_shared<bg2e::scene::Node>(path.stem().string());
         auto transform = new bg2e::scene::TransformComponent();
@@ -831,7 +835,7 @@ void StageScene::addGizmoComponents(bg2e::scene::Node * root)
 
     // Light/environment/camera nodes have no regular drawable, so they need a
     // SelectableComponent to be pickable through their gizmo in the viewport.
-    if ((root->light() || root->environment() || root->camera()) &&
+    if ((root->light() || root->environment() || root->camera() || root->drawable()) &&
         !root->getComponent<SelectableComponent>())
     {
         root->addComponent(new SelectableComponent());
