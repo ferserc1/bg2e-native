@@ -52,6 +52,10 @@ public:
     // Import a .bg2 model created with model_edit as a new node in the scene
     void importModelBg2(const std::filesystem::path& path);
 
+    // Import a glTF file as a sub scene. The loaded node tree hangs from the
+    // primary selected node, or from the editable root if nothing is selected.
+    void importGltfScene(const std::filesystem::path& path);
+
     // Export only the explicitly selected nodes that own a DrawableComponent.
     // Child nodes are never traversed. A single selection uses a file dialog;
     // multiple selections use a folder containing one subfolder per model.

@@ -239,6 +239,33 @@ void StageScene::importModelBg2(const std::filesystem::path& path)
     _document->setUnsavedChanges(true);
 }
 
+void StageScene::importGltfScene(const std::filesystem::path& path)
+{
+    try
+    {
+        std::shared_ptr<bg2e::scene::Node> node(bg2e::db::loadGltf(path, _engine));
+        if (!node)
+        {
+            bg2e::app::MessageBox::showError(
+                "Import glTF scene",
+                "Could not load the specified glTF file."
+            );
+            return;
+        }
+
+        if (node->name().empty())
+        {
+            node->setName(path.stem().string());
+        }
+
+        insertNewNode(node, newNodeParent());
+    }
+    catch (const std::exception& error)
+    {
+        bg2e::app::MessageBox::showError("Import glTF scene", error.what());
+    }
+}
+
 void StageScene::exportSelectedModels()
 {
     try

@@ -74,6 +74,21 @@ void ToolBar::init(AppDelegate * delegate, bg2e::ui::UISettingsWindow * uiSettin
             }
         }
     }});
+    file.addMenuItem({ "Import GLTF Scene", {
+        .handler = [&]()
+        {
+            bg2e::app::FileDialog fd;
+            fd.setFilters({
+                { "glTF scene", "gltf,glb" }
+            });
+            auto filePath = fd.openFile();
+
+            if (!filePath.empty())
+            {
+                _appDelegate->stage()->importGltfScene(filePath);
+            }
+        }
+    }});
     file.addMenuItem({ "Export Selected Model(s)...", {
         .handler = [&]()
         {
