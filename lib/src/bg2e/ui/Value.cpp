@@ -25,7 +25,7 @@
 namespace bg2e {
 namespace ui {
 
-bool Value::text(const std::string& label, std::string& value, int maxLength, bool sameLine)
+bool Value::text(const std::string& label, std::string& value, int maxLength, bool sameLine, bool disabled)
 {
     char * stringValue = new char[maxLength];
     strcpy(stringValue, value.c_str());
@@ -33,9 +33,19 @@ bool Value::text(const std::string& label, std::string& value, int maxLength, bo
     {
         ImGui::SameLine();
     }
-    if (ImGui::InputText(label.c_str(), stringValue, maxLength))
+    if (disabled)
+    {
+        ImGui::BeginDisabled();
+    }
+    bool changed = ImGui::InputText(label.c_str(), stringValue, maxLength);
+    if (disabled)
+    {
+        ImGui::EndDisabled();
+    }
+    if (changed)
     {
         value = stringValue;
+        delete [] stringValue;
         return true;
     }
     delete [] stringValue;

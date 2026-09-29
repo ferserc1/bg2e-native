@@ -11,7 +11,7 @@ value argument **in place** and returns `true` on the frame the value changed
 ```cpp
 class BG2E_API Value {
 public:
-    static bool text(const std::string& label, std::string& value, int maxLength = 200, bool sameLine = false);
+    static bool text(const std::string& label, std::string& value, int maxLength = 200, bool sameLine = false, bool disabled = false);
     static bool textWithHint(const std::string& label, const std::string& hint, std::string& value, int maxLength = 200, bool sameLine = false);
 
     static bool colorPicker(const std::string& label, base::Color& color, bool sameLine = false);
@@ -30,6 +30,9 @@ public:
 - `text()` copies the `std::string` into a fixed `char` buffer of `maxLength`;
   typing past `maxLength` is truncated. Only writes back to the string when
   the field actually changed.
+- `text()` accepts `disabled = true` to render the field greyed out and
+  non-editable (ImGui `BeginDisabled/EndDisabled`), e.g. a setting that can
+  only be changed while a service is stopped.
 - `textWithHint()` shows a placeholder `hint` while the value is empty (the
   standard ImGui "InputTextWithHint"). It requires the `value` string to be
   writable; the call reserves `maxLength` internally but the visible text is

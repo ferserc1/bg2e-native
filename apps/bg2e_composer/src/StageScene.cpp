@@ -266,6 +266,107 @@ void StageScene::importGltfScene(const std::filesystem::path& path)
     }
 }
 
+std::shared_ptr<bg2e::scene::Node> StageScene::importGltfScene(
+    const std::filesystem::path& path,
+    float unitsScale,
+    bool sourceIsZUp,
+    std::string& errorOut
+)
+{
+    try
+    {
+        std::shared_ptr<bg2e::scene::Node> loaded(bg2e::db::loadGltf(path, _engine));
+        if (!loaded)
+        {
+            errorOut = "Could not load the specified glTF file.";
+            return nullptr;
+        }
+
+        auto wrapper = std::make_shared<bg2e::scene::Node>(path.stem().string());
+        auto transform = new bg2e::scene::TransformComponent();
+        glm::mat4 matrix{ 1.0f };
+        if (sourceIsZUp)
+        {
+            matrix = glm::rotate(
+                matrix,
+                glm::radians(-90.0f),
+                glm::vec3{ 1.0f, 0.0f, 0.0f }
+            );
+        }
+        if (unitsScale != 1.0f)
+        {
+            matrix = glm::scale(matrix, glm::vec3{ unitsScale });
+        }
+        transform->setMatrix(matrix);
+        wrapper->addComponent(transform);
+        wrapper->addChild(loaded);
+
+        auto parent = newNodeParent();
+        if (!parent)
+        {
+            errorOut = "The editable scene is not available.";
+            return nullptr;
+        }
+        insertNewNode(wrapper, parent);
+        return wrapper;
+    }
+    catch (const std::exception& error)
+    {
+        errorOut = error.what();
+        return nullptr;
+    }
+}
+
+void StageScene::removeImportedNode(std::shared_ptr<bg2e::scene::Node> node)
+{
+    if (!node)
+    {
+        return;
+    }
+
+    auto parent = node->parent();
+    if (!parent)
+    {
+        return;
+    }
+
+    auto isInSubtree = [&node](bg2e::scene::Node * candidate) {
+        while (candidate)
+        {
+            if (candidate == node.get())
+            {
+                return true;
+            }
+            candidate = candidate->parent();
+        }
+        return false;
+    };
+
+    auto selectionManager = _appDelegate->selectionManager();
+    bool selected = isInSubtree(selectionManager->selectedNode());
+    if (!selected)
+    {
+        for (const auto& weakNode : selectionManager->selectedNodes())
+        {
+            if (auto selectedNode = weakNode.lock(); isInSubtree(selectedNode.get()))
+            {
+                selected = true;
+                break;
+            }
+        }
+    }
+    if (selected)
+    {
+        selectionManager->deselect();
+    }
+
+    bg2e::app::MainLoop::current()->safeUpdateScene([this, node, parent]() {
+        parent->removeChild(node);
+        _containerRoot->scene()->updateAll();
+    });
+    _document->setUnsavedChanges(true);
+}
+
 void StageScene::exportSelectedModels()
 {
     try

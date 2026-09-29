@@ -56,6 +56,18 @@ public:
     // primary selected node, or from the editable root if nothing is selected.
     void importGltfScene(const std::filesystem::path& path);
 
+    // Programmatic import used by the HTTP scene import service. The returned
+    // wrapper node is the instance tracked by the importer table.
+    std::shared_ptr<bg2e::scene::Node> importGltfScene(
+        const std::filesystem::path& path,
+        float unitsScale,
+        bool sourceIsZUp,
+        std::string& errorOut
+    );
+
+    // Removes an imported node without showing a confirmation dialog.
+    void removeImportedNode(std::shared_ptr<bg2e::scene::Node> node);
+
     // Export only the explicitly selected nodes that own a DrawableComponent.
     // Child nodes are never traversed. A single selection uses a file dialog;
     // multiple selections use a folder containing one subfolder per model.

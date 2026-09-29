@@ -33,6 +33,37 @@ void AppDelegate::swapchainResized(VkExtent2D extent)
     _workspace.resize(uiWidth(), uiHeight());
 }
 
+void AppDelegate::update(
+    uint32_t currentFrame,
+    bg2e::render::vulkan::FrameResources& frameResources
+)
+{
+    bg2e::render::DefaultRenderLoopDelegate<bg2e::render::RendererDeferred>::update(
+        currentFrame,
+        frameResources
+    );
+
+    if (_asyncLoadsInProgress.load() == 0 && _sceneImporter)
+    {
+        _sceneImporter->processQueue(_importServer);
+    }
+}
+
+void AppDelegate::asyncLoadGuarded(
+    std::function<void(bg2e::ui::Loader*)> loadFn,
+    glm::vec4 clearColor
+)
+{
+    _asyncLoadsInProgress.fetch_add(1);
+    bg2e::app::MainLoop::current()->asyncLoad(
+        [this, fn = std::move(loadFn)](bg2e::ui::Loader* loader) {
+            fn(loader);
+            _asyncLoadsInProgress.fetch_sub(1);
+        },
+        clearColor
+    );
+}
+
 void AppDelegate::drawUI()
 {
     _workspace.draw();
@@ -43,6 +74,10 @@ void AppDelegate::drawUI()
     if (_renderSettingsWindow.isOpen())
     {
         _renderSettingsWindow.draw();
+    }
+    if (_importSettingsWindow.isOpen())
+    {
+        _importSettingsWindow.draw();
     }
 }
 
@@ -106,7 +141,7 @@ void AppDelegate::fileDropped(const std::filesystem::path& path)
     }
     else if (ext == ".json" || ext == ".vitscnj")
     {
-        bg2e::app::MainLoop::current()->asyncLoad([&, path](bg2e::ui::Loader* loader)
+        asyncLoadGuarded([&, path](bg2e::ui::Loader* loader)
         {
             stage()->openScene(path, [&](const std::string& modelName, uint32_t processed, uint32_t total) {
                 loader->setMessage("_statusBarLoading model " + modelName + "...");
@@ -132,6 +167,11 @@ std::shared_ptr<bg2e::scene::Node> AppDelegate::createScene()
 
 void AppDelegate::cleanup()
 {
+    _importServer.stop();
+    if (_sceneImporter)
+    {
+        _sceneImporter->clear();
+    }
     DefaultRenderLoopDelegate::cleanup();
     _stage.reset();
     _submeshPanel.cleanup();
@@ -214,11 +254,14 @@ void AppDelegate::initWorkspace()
     // takes care of clearing the node editor.
     _stage->onSceneSwap([&]() {
         _selectionManager->deselect();
+        if (_sceneImporter)
+        {
+            _sceneImporter->clear();
+        }
     });
 
     _uiSettingsWindow.init();
     _renderSettingsWindow.init(deferredRenderer, _renderPrefs.get());
-    _toolBar.init(this, &_uiSettingsWindow, &_renderSettingsWindow);
     _submeshPanel.init(this);
 
     _fileStatus = std::make_shared<bg2e::ui::StatusItem>();
@@ -228,6 +271,20 @@ void AppDelegate::initWorkspace()
     _statusBar.addItem(_fileStatus, bg2e::ui::StatusBar::AlignLeft);
     _statusBar.addItem(_selectionStatus, bg2e::ui::StatusBar::AlignRight);
     _statusBar.addItem(_saveStatus, bg2e::ui::StatusBar::AlignRight);
+
+    _importSettings.load();
+    _sceneImporter = std::make_unique<SceneImporter>(_stage.get());
+    _importSettingsWindow.init(&_importServer, &_importSettings);
+    _toolBar.init(this, &_uiSettingsWindow, &_renderSettingsWindow, &_importSettingsWindow);
+
+    if (_importSettings.serviceEnabled())
+    {
+        auto error = _importServer.start(_importSettings.port());
+        if (!error.empty())
+        {
+            _fileStatus->setText("Import service failed: " + error);
+        }
+    }
 
 
     _selectionManager->onSelect([&]() {

@@ -23,9 +23,16 @@
 #include "SceneEditor.hpp"
 #include "SubmeshWindow.hpp"
 #include "StageScene.hpp"
+#include "ImportServer.hpp"
+#include "ImportSettings.hpp"
+#include "SceneImporter.hpp"
+#include "ImportSettingsWindow.hpp"
 #include <bg2e/ui/UISettingsWindow.hpp>
 #include <bg2e/ui/RenderSettingsWindow.hpp>
 #include <bg2e/render/RenderSettingsPreferences.hpp>
+
+#include <atomic>
+#include <functional>
 
 class AppDelegate : public bg2e::render::DefaultRenderLoopDelegate<bg2e::render::RendererDeferred>,
 	public bg2e::app::InputDelegate,
@@ -37,6 +44,12 @@ public:
     void init(bg2e::render::Engine * engine) override;
      
     void swapchainResized(VkExtent2D extent) override;
+
+    void update(uint32_t currentFrame,
+                bg2e::render::vulkan::FrameResources& frameResources) override;
+
+    void asyncLoadGuarded(std::function<void(bg2e::ui::Loader*)> loadFn,
+                          glm::vec4 clearColor);
 
 	void drawUI() override;
  
@@ -90,7 +103,12 @@ protected:
     SceneEditor _sceneEditor {};
     bg2e::ui::UISettingsWindow _uiSettingsWindow {};
     bg2e::ui::RenderSettingsWindow _renderSettingsWindow {};
+    ImportSettingsWindow _importSettingsWindow {};
     std::unique_ptr<bg2e::render::RenderSettingsPreferences> _renderPrefs;
+    ImportServer _importServer;
+    ImportSettings _importSettings;
+    std::unique_ptr<SceneImporter> _sceneImporter;
+    std::atomic<int> _asyncLoadsInProgress { 0 };
 
     std::shared_ptr<bg2e::ui::StatusItem> _fileStatus;
     std::shared_ptr<bg2e::ui::StatusItem> _saveStatus;

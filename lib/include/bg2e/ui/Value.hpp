@@ -35,7 +35,8 @@ public:
         const std::string& label,
         std::string& value,
         int maxLength = 200,
-        bool sameLine = false
+        bool sameLine = false,
+        bool disabled = false
     );
 
     // ID-only text input: no visible label on the left, the id parameter

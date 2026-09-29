@@ -17,30 +17,21 @@
  */
 #pragma once
 
-#include <bg2e.hpp>
+#include <bg2e/ui/Window.hpp>
 
-#include "SubmeshWindow.hpp"
+#include <string>
 
-class  AppDelegate;
+class ImportServer;
+class ImportSettings;
 
-namespace bg2e::ui { class UISettingsWindow; }
-class ImportSettingsWindow;
-
-class ToolBar : public bg2e::ui::Toolbar {
+class ImportSettingsWindow : public bg2e::ui::Window {
 public:
-    virtual ~ToolBar() = default;
+    void init(ImportServer * server, ImportSettings * settings);
 
-    void init(
-        AppDelegate * delegate,
-        bg2e::ui::UISettingsWindow * uiSettings,
-        bg2e::ui::RenderSettingsWindow * renderSettings,
-        ImportSettingsWindow * importSettings
-    );
+private:
+    void drawUI();
 
-protected:
-
-    AppDelegate * _appDelegate = nullptr;
-    bg2e::ui::UISettingsWindow * _uiSettingsWindow = nullptr;
-    bg2e::ui::RenderSettingsWindow * _renderSettingsWindow = nullptr;
-    ImportSettingsWindow * _importSettingsWindow = nullptr;
+    ImportServer * _server = nullptr;
+    ImportSettings * _settings = nullptr;
+    std::string _portText;
 };

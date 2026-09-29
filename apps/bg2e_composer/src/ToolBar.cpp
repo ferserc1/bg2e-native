@@ -17,15 +17,22 @@
  */
 #include "ToolBar.hpp"
 #include "AppDelegate.hpp"
+#include "ImportSettingsWindow.hpp"
 #include <bg2e/app/MainLoop.hpp>
 #include <bg2e/ui/RenderSettingsWindow.hpp>
 
-void ToolBar::init(AppDelegate * delegate, bg2e::ui::UISettingsWindow * uiSettings, bg2e::ui::RenderSettingsWindow * renderSettings)
+void ToolBar::init(
+    AppDelegate * delegate,
+    bg2e::ui::UISettingsWindow * uiSettings,
+    bg2e::ui::RenderSettingsWindow * renderSettings,
+    ImportSettingsWindow * importSettings
+)
 {
     using namespace bg2e::ui;
     _appDelegate = delegate;
     _uiSettingsWindow = uiSettings;
     _renderSettingsWindow = renderSettings;
+    _importSettingsWindow = importSettings;
     
     bg2e::app::MainLoop::current()->setOnExitFunction([]() -> bool {
         return bg2e::app::MessageBox::showWarning("Quit Composer", "Any unsaved changes will be lost. Are you sure you want to quit?", {
@@ -49,7 +56,7 @@ void ToolBar::init(AppDelegate * delegate, bg2e::ui::UISettingsWindow * uiSettin
 
             if (!filePath.empty())
             {
-                bg2e::app::MainLoop::current()->asyncLoad([&, filePath](bg2e::ui::Loader* loader)
+                _appDelegate->asyncLoadGuarded([&, filePath](bg2e::ui::Loader* loader)
                 {
                     _appDelegate->stage()->openScene(filePath, [&](const std::string& modelName, uint32_t processed, uint32_t total) {
                         loader->setMessage("Loading model " + modelName + "...");
@@ -110,6 +117,13 @@ void ToolBar::init(AppDelegate * delegate, bg2e::ui::UISettingsWindow * uiSettin
         .handler = [&]()
         {
             _appDelegate->stage()->saveScene();
+        }
+    }});
+    file.addMenuItem({});   // Separator
+    file.addMenuItem({ "Import Settings...", {
+        .handler = [&]()
+        {
+            _importSettingsWindow->open();
         }
     }});
     file.addMenuItem({});   // Separator
