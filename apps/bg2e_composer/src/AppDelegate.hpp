@@ -33,6 +33,7 @@
 
 #include <atomic>
 #include <functional>
+#include <exception>
 
 class AppDelegate : public bg2e::render::DefaultRenderLoopDelegate<bg2e::render::RendererDeferred>,
 	public bg2e::app::InputDelegate,
@@ -49,7 +50,8 @@ public:
                 bg2e::render::vulkan::FrameResources& frameResources) override;
 
     void asyncLoadGuarded(std::function<void(bg2e::ui::Loader*)> loadFn,
-                          glm::vec4 clearColor);
+                          glm::vec4 clearColor,
+                          std::function<void(std::exception_ptr)> onComplete = nullptr);
 
 	void drawUI() override;
  

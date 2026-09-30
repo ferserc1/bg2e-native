@@ -51,16 +51,20 @@ void AppDelegate::update(
 
 void AppDelegate::asyncLoadGuarded(
     std::function<void(bg2e::ui::Loader*)> loadFn,
-    glm::vec4 clearColor
+    glm::vec4 clearColor,
+    std::function<void(std::exception_ptr)> onComplete
 )
 {
     _asyncLoadsInProgress.fetch_add(1);
     bg2e::app::MainLoop::current()->asyncLoad(
-        [this, fn = std::move(loadFn)](bg2e::ui::Loader* loader) {
+        [fn = std::move(loadFn)](bg2e::ui::Loader* loader) {
             fn(loader);
-            _asyncLoadsInProgress.fetch_sub(1);
         },
-        clearColor
+        clearColor,
+        [this, complete = std::move(onComplete)](std::exception_ptr error) {
+            _asyncLoadsInProgress.fetch_sub(1);
+            if (complete) complete(error);
+        }
     );
 }
 
@@ -128,6 +132,7 @@ void AppDelegate::mouseWheel(int deltaX, int deltaY)
 
 void AppDelegate::fileDropped(const std::filesystem::path& path)
 {
+    if (_asyncLoadsInProgress.load() > 0) return;
     auto ext = path.extension();
 
     if (!stage()->checkUnsavedChanges())
@@ -273,7 +278,7 @@ void AppDelegate::initWorkspace()
     _statusBar.addItem(_saveStatus, bg2e::ui::StatusBar::AlignRight);
 
     _importSettings.load();
-    _sceneImporter = std::make_unique<SceneImporter>(_stage.get());
+    _sceneImporter = std::make_unique<SceneImporter>(_stage.get(), this);
     _importSettingsWindow.init(&_importServer, &_importSettings);
     _toolBar.init(this, &_uiSettingsWindow, &_renderSettingsWindow, &_importSettingsWindow);
 

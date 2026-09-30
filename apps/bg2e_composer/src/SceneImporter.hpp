@@ -28,10 +28,11 @@
 
 class StageScene;
 class ImportServer;
+class AppDelegate;
 
 class SceneImporter {
 public:
-    explicit SceneImporter(StageScene * stage);
+    SceneImporter(StageScene * stage, AppDelegate * appDelegate);
 
     // Called once per frame from AppDelegate::update() on the main thread.
     void processQueue(ImportServer& server);
@@ -46,6 +47,7 @@ private:
     };
 
     StageScene * _stage;
+    AppDelegate * _appDelegate;
     std::unordered_map<std::string, ImportEntry> _table;
 
     static std::string tableKey(const std::filesystem::path& path);

@@ -23,15 +23,10 @@
 
 #include <algorithm>
 #include <cctype>
-#include <chrono>
-#include <condition_variable>
 #include <filesystem>
 #include <stdexcept>
 #include <thread>
 #include <utility>
-
-using namespace std::chrono_literals;
-static constexpr auto kRequestTimeout = 60s;
 
 struct ImportServer::Impl {
     // Recreated on every start(): httplib::Server owns atomics/threads and
@@ -39,9 +34,6 @@ struct ImportServer::Impl {
     std::unique_ptr<httplib::Server> server;
     std::thread listenThread;
     uint32_t boundPort = 0;
-    std::condition_variable cv;           // signaled by fulfil() / stop()
-    std::mutex cvMutex;                   // paired with cv only; slot state
-                                          // is guarded by ImportServer::_mutex
 };
 
 namespace {
@@ -133,13 +125,13 @@ std::string ImportServer::start(uint32_t port)
     #endif
     });
 
-    // Serialize all request handling on one worker thread
-    svr.new_task_queue = [] { return new httplib::ThreadPool(1, 1); };
+    // One handler may wait for import completion; others answer busy/status.
+    svr.new_task_queue = [] { return new httplib::ThreadPool(4, 32); };
 
     svr.Get("/status", [this](const httplib::Request&, httplib::Response& res) {
         std::string body = std::string("{\"running\":true,\"port\":") +
             std::to_string(_impl->boundPort) +
-            ",\"queued\":" + std::to_string(pendingCount()) + "}";
+            ",\"busy\":" + (busy() ? "true" : "false") + "}";
         res.set_content(body, "application/json");
     });
 
@@ -153,6 +145,10 @@ std::string ImportServer::start(uint32_t port)
         return "Port " + std::to_string(port) + " is already in use";
     }
     _impl->boundPort = port;
+    {
+        std::lock_guard lock(_mutex);
+        _accepting = true;
+    }
 
     _impl->listenThread = std::thread([&svr]() {
         svr.listen_after_bind();           // blocks until stop()
@@ -163,6 +159,18 @@ std::string ImportServer::start(uint32_t port)
 
 void ImportServer::stop()
 {
+    {
+        std::lock_guard lock(_mutex);
+        _accepting = false;
+        if (_slot)
+        {
+            _slot->done = true;
+            _slot->ok = false;
+            _slot->message = "Service stopped";
+            _slot.reset();
+        }
+    }
+    _cv.notify_all();
     if (_impl->listenThread.joinable())
     {
         _impl->server->stop();             // noexcept, wakes the accept loop
@@ -171,16 +179,6 @@ void ImportServer::stop()
     _impl->server.reset();                 // fresh instance for the next start()
     _impl->boundPort = 0;
 
-    // Fail every request still waiting so no handler outlives the server
-    std::lock_guard lock(_mutex);
-    for (auto& [id, slot] : _results)
-    {
-        slot->done = true;
-        slot->ok = false;
-        slot->message = "Service stopped";
-    }
-    _queue.clear();
-    _impl->cv.notify_all();
 }
 
 bool ImportServer::isRunning() const
@@ -193,39 +191,41 @@ uint32_t ImportServer::port() const
     return _impl->boundPort;
 }
 
-std::vector<ImportRequest> ImportServer::popPending()
+bool ImportServer::takePending(ImportRequest& request)
 {
-    std::vector<ImportRequest> out;
     std::lock_guard lock(_mutex);
-    while (!_queue.empty())
-    {
-        out.push_back(std::move(_queue.front()));
-        _queue.pop_front();
-    }
-    return out;
+    if (!_slot || _slot->taken || _slot->done) return false;
+    _slot->taken = true;
+    request = _slot->request;
+    return true;
 }
 
 void ImportServer::fulfil(uint64_t id, bool ok, const std::string& message)
 {
     {
         std::lock_guard lock(_mutex);
-        auto it = _results.find(id);
-        if (it == _results.end()) return;   // timed out already
-        it->second->done = true;
-        it->second->ok = ok;
-        it->second->message = message;
+        if (!_slot || _slot->request.id != id || _slot->done) return;
+        _slot->done = true;
+        _slot->ok = ok;
+        _slot->message = message;
+        _slot.reset();
     }
-    _impl->cv.notify_all();
+    _cv.notify_all();
 }
 
-size_t ImportServer::pendingCount() const
+bool ImportServer::busy() const
 {
     std::lock_guard lock(_mutex);
-    return _queue.size();
+    return static_cast<bool>(_slot);
 }
 
 void ImportServer::handleImport(const httplib::Request& req, httplib::Response& res)
 {
+    if (busy())
+    {
+        fail(res, 503, "Import service busy");
+        return;
+    }
     if (lowerCase(req.get_header_value("Content-Type")).find("application/json") ==
         std::string::npos)
     {
@@ -299,43 +299,29 @@ void ImportServer::handleImport(const httplib::Request& req, httplib::Response& 
         return;
     }
 
-    auto slot = std::make_shared<Slot>();
-    uint64_t id;
+    std::shared_ptr<Slot> slot;
     {
         std::lock_guard lock(_mutex);
-        id = _nextId++;
-        r.id = id;
-        _results[id] = slot;
-        _queue.push_back(std::move(r));
-    }
-
-    // Block the HTTP worker until the main thread processes the request.
-    // The predicate re-reads the slot under _mutex (written by fulfil/stop),
-    // while cvMutex only pairs with the condition_variable itself.
-    bool completed = false;
-    {
-        std::unique_lock lk(_impl->cvMutex);
-        completed = _impl->cv.wait_for(lk, kRequestTimeout, [this, &slot] {
-            std::lock_guard lock(_mutex);
-            return slot->done;
-        });
+        if (!_accepting || _slot)
+        {
+            fail(res, 503, "Import service busy");
+            return;
+        }
+        slot = std::make_shared<Slot>();
+        r.id = _nextId++;
+        slot->request = std::move(r);
+        _slot = slot;
     }
 
     bool ok = false;
     std::string message;
     {
-        std::lock_guard lock(_mutex);
-        _results.erase(id);                 // cleanup either way
-        completed = completed && slot->done;
+        std::unique_lock lock(_mutex);
+        _cv.wait(lock, [&slot] { return slot->done; });
         ok = slot->ok;
         message = slot->message;
     }
 
-    if (!completed)
-    {
-        fail(res, 504, "Import timed out waiting for the main thread");
-        return;
-    }
     if (!ok)
     {
         fail(res, 500, message);

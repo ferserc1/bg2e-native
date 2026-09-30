@@ -37,6 +37,7 @@
 #include <thread>
 #include <mutex>
 #include <queue>
+#include <exception>
 
 #include <glm/glm.hpp>
 
@@ -149,6 +150,7 @@ public:
 
     void safeUpdateScene(std::function<void()> fn, std::shared_ptr<SafeUpdateToken> token = nullptr)
     {
+        std::lock_guard lock(_safeUpdateSceneMutex);
         _safeUpdateScene.emplace_back(std::move(fn), std::move(token));
     }
 
@@ -156,7 +158,8 @@ public:
 
     void asyncLoad(
         std::function<void(ui::Loader*)> loadFn,
-        glm::vec4 clearColor = {0.f, 0.f, 0.f, 1.f}
+        glm::vec4 clearColor = {0.f, 0.f, 0.f, 1.f},
+        std::function<void(std::exception_ptr)> onComplete = nullptr
     );
 
 protected:
@@ -176,6 +179,7 @@ protected:
     std::function<bool()> _onExitFunction = nullptr;
 
     std::vector<std::pair<std::function<void()>, std::shared_ptr<SafeUpdateToken>>> _safeUpdateScene;
+    std::mutex _safeUpdateSceneMutex;
 
     ui::Loader _loader;
 

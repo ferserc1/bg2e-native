@@ -340,28 +340,28 @@ void MainLoop::requestResizeEvent()
 
 void MainLoop::executeSafeUpdateScene()
 {
-    if (_safeUpdateScene.empty())
+    std::vector<std::pair<std::function<void()>, std::shared_ptr<SafeUpdateToken>>> local;
     {
-        return;
+        std::lock_guard lock(_safeUpdateSceneMutex);
+        if (_safeUpdateScene.empty()) return;
+        std::swap(local, _safeUpdateScene);
     }
     _engine.device().waitIdle();
-    for (auto& [fn, token] : _safeUpdateScene)
+    for (auto& [fn, token] : local)
     {
         if (!token || token->alive->load())
         {
             fn();
         }
     }
-    _safeUpdateScene.clear();
 }
 
 void MainLoop::drainMainThreadQueue()
 {
-    if (_mainThreadQueue.empty()) return;
-
     std::queue<std::function<void()>> local;
     {
         std::lock_guard lock(_mainThreadQueueMutex);
+        if (_mainThreadQueue.empty()) return;
         std::swap(local, _mainThreadQueue);
     }
     while (!local.empty())
@@ -373,24 +373,24 @@ void MainLoop::drainMainThreadQueue()
 
 void MainLoop::asyncLoad(
     std::function<void(ui::Loader*)> loadFn,
-    glm::vec4 clearColor)
+    glm::vec4 clearColor,
+    std::function<void(std::exception_ptr)> onComplete)
 {
     _renderLoop.pauseScene(clearColor);
 
     _userInterface.setFrameOverride([this]{ _loader.draw(); });
 
-    std::thread([this, fn = std::move(loadFn)]() mutable
+    std::thread([this, fn = std::move(loadFn), complete = std::move(onComplete)]() mutable
     {
-        fn(&_loader);
+        std::exception_ptr error;
+        try { fn(&_loader); }
+        catch (...) { error = std::current_exception(); }
 
-        {
-            std::lock_guard lock(_mainThreadQueueMutex);
-            _mainThreadQueue.push([this]()
-            {
-                _userInterface.clearFrameOverride();
-                _renderLoop.resumeScene();
-            });
-        }
+        safeUpdateScene([this, complete = std::move(complete), error]() {
+            _userInterface.clearFrameOverride();
+            _renderLoop.resumeScene();
+            if (complete) complete(error);
+        });
     }).detach();
 }
 

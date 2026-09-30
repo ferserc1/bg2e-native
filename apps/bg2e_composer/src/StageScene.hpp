@@ -54,18 +54,19 @@ public:
 
     // Import a glTF file as a sub scene. The loaded node tree hangs from the
     // primary selected node, or from the editable root if nothing is selected.
-    void importGltfScene(const std::filesystem::path& path);
+    void importGltfScene(const std::filesystem::path& path,
+                         bg2e::scene::SceneProgressCallback progressCallback = nullptr);
 
     // Programmatic import used by the HTTP scene import service. The returned
-    // wrapper node is the instance tracked by the importer table. Clears the
-    // current selection before inserting. When parentOverride is provided
+    // wrapper node is the instance tracked by the importer table. When parentOverride is provided
     // (reimport), the wrapper hangs from it instead of the default parent.
     std::shared_ptr<bg2e::scene::Node> importGltfScene(
         const std::filesystem::path& path,
         float unitsScale,
         bool sourceIsZUp,
         std::string& errorOut,
-        std::shared_ptr<bg2e::scene::Node> parentOverride = nullptr
+        std::shared_ptr<bg2e::scene::Node> parentOverride = nullptr,
+        bg2e::scene::SceneProgressCallback progressCallback = nullptr
     );
 
     // Removes an imported node without showing a confirmation dialog.

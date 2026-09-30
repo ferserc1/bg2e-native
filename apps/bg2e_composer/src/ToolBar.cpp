@@ -92,7 +92,14 @@ void ToolBar::init(
 
             if (!filePath.empty())
             {
-                _appDelegate->stage()->importGltfScene(filePath);
+                _appDelegate->selectionManager()->deselect();
+                _appDelegate->asyncLoadGuarded([this, filePath](bg2e::ui::Loader* loader) {
+                    _appDelegate->stage()->importGltfScene(filePath,
+                        [loader](const std::string& name, int processed, int total) {
+                            loader->setMessage("Importing " + name + "...");
+                            loader->setProgress(total > 0 ? static_cast<float>(processed) / total : 0.0f);
+                        });
+                }, glm::vec4{ 0.2, 0.2, 0.31, 1.0f });
             }
         }
     }});

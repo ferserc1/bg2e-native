@@ -239,12 +239,12 @@ void StageScene::importModelBg2(const std::filesystem::path& path)
     _document->setUnsavedChanges(true);
 }
 
-void StageScene::importGltfScene(const std::filesystem::path& path)
+void StageScene::importGltfScene(const std::filesystem::path& path,
+                                bg2e::scene::SceneProgressCallback progressCallback)
 {
-    _appDelegate->selectionManager()->deselect();
     try
     {
-        std::shared_ptr<bg2e::scene::Node> node(bg2e::db::loadGltf(path, _engine));
+        std::shared_ptr<bg2e::scene::Node> node(bg2e::db::loadGltf(path, _engine, progressCallback));
         if (!node)
         {
             bg2e::app::MessageBox::showError(
@@ -261,7 +261,7 @@ void StageScene::importGltfScene(const std::filesystem::path& path)
 
         addGizmoComponents(node.get());
 
-        insertNewNode(node, newNodeParent());
+        insertNewNode(node, _editableRoot);
     }
     catch (const std::exception& error)
     {
@@ -274,13 +274,13 @@ std::shared_ptr<bg2e::scene::Node> StageScene::importGltfScene(
     float unitsScale,
     bool sourceIsZUp,
     std::string& errorOut,
-    std::shared_ptr<bg2e::scene::Node> parentOverride
+    std::shared_ptr<bg2e::scene::Node> parentOverride,
+    bg2e::scene::SceneProgressCallback progressCallback
 )
 {
-    _appDelegate->selectionManager()->deselect();
     try
     {
-        std::shared_ptr<bg2e::scene::Node> loaded(bg2e::db::loadGltf(path, _engine));
+        std::shared_ptr<bg2e::scene::Node> loaded(bg2e::db::loadGltf(path, _engine, progressCallback));
         if (!loaded)
         {
             errorOut = "Could not load the specified glTF file.";
@@ -308,7 +308,7 @@ std::shared_ptr<bg2e::scene::Node> StageScene::importGltfScene(
         wrapper->addComponent(transform);
         wrapper->addChild(loaded);
 
-        auto parent = parentOverride ? parentOverride : newNodeParent();
+        auto parent = parentOverride ? parentOverride : _editableRoot;
         if (!parent)
         {
             errorOut = "The editable scene is not available.";
@@ -337,7 +337,7 @@ void StageScene::removeImportedNode(std::shared_ptr<bg2e::scene::Node> node)
         return;
     }
 
-    auto isInSubtree = [&node](bg2e::scene::Node * candidate) {
+    auto isInSubtree = [node](bg2e::scene::Node * candidate) {
         while (candidate)
         {
             if (candidate == node.get())
@@ -349,25 +349,21 @@ void StageScene::removeImportedNode(std::shared_ptr<bg2e::scene::Node> node)
         return false;
     };
 
-    auto selectionManager = _appDelegate->selectionManager();
-    bool selected = isInSubtree(selectionManager->selectedNode());
-    if (!selected)
-    {
-        for (const auto& weakNode : selectionManager->selectedNodes())
+    bg2e::app::MainLoop::current()->safeUpdateScene([this, node, parent, isInSubtree]() {
+        auto selectionManager = _appDelegate->selectionManager();
+        bool selected = isInSubtree(selectionManager->selectedNode());
+        if (!selected)
         {
-            if (auto selectedNode = weakNode.lock(); isInSubtree(selectedNode.get()))
+            for (const auto& weakNode : selectionManager->selectedNodes())
             {
-                selected = true;
-                break;
+                if (auto selectedNode = weakNode.lock(); isInSubtree(selectedNode.get()))
+                {
+                    selected = true;
+                    break;
+                }
             }
         }
-    }
-    if (selected)
-    {
-        selectionManager->deselect();
-    }
-
-    bg2e::app::MainLoop::current()->safeUpdateScene([this, node, parent]() {
+        if (selected) selectionManager->deselect();
         parent->removeChild(node);
         _containerRoot->scene()->updateAll();
     });

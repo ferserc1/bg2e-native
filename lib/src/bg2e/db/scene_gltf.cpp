@@ -34,6 +34,7 @@
 #include <limits>
 #include <random>
 #include <unordered_map>
+#include <unordered_set>
 
 #define CGLTF_IMPLEMENTATION
 #include <cgltf.h>
@@ -514,30 +515,40 @@ namespace gltf {
 
 extern BG2E_API bg2e::scene::Node * loadGltf(
     const std::filesystem::path& filePath,
-    render::Engine* engine
+    render::Engine* engine,
+    scene::SceneProgressCallback onProgress
 ) {
     std::unique_ptr<cgltf_data, decltype(&cgltf_free)> data(gltf::loadGltfFile(filePath), &cgltf_free);
     gltf::TemporaryImages temporaryImages(filePath, data.get());
 
+    std::unordered_set<const cgltf_image*> referencedImages;
     for (cgltf_size m = 0; m < data->meshes_count; ++m)
     {
-        const auto& mesh = data->meshes[m];
-        for (cgltf_size p = 0; p < mesh.primitives_count; ++p)
+        for (cgltf_size p = 0; p < data->meshes[m].primitives_count; ++p)
         {
-            const auto* material = mesh.primitives[p].material;
+            const auto* material = data->meshes[m].primitives[p].material;
             if (!material) continue;
+            auto collect = [&referencedImages](const cgltf_texture_view& view) {
+                if (view.texture && view.texture->image)
+                    referencedImages.insert(view.texture->image);
+            };
             if (material->has_pbr_metallic_roughness)
             {
-                const auto& pbr = material->pbr_metallic_roughness;
-                if (pbr.base_color_texture.texture && pbr.base_color_texture.texture->image)
-                    temporaryImages.resolve(pbr.base_color_texture.texture->image);
-                if (pbr.metallic_roughness_texture.texture && pbr.metallic_roughness_texture.texture->image)
-                    temporaryImages.resolve(pbr.metallic_roughness_texture.texture->image);
+                collect(material->pbr_metallic_roughness.base_color_texture);
+                collect(material->pbr_metallic_roughness.metallic_roughness_texture);
             }
-            if (material->normal_texture.texture && material->normal_texture.texture->image)
-                temporaryImages.resolve(material->normal_texture.texture->image);
+            collect(material->normal_texture);
         }
     }
+    const int total = static_cast<int>(referencedImages.size() + data->meshes_count);
+    int processed = 0;
+    cgltf_size imageIndex = 0;
+    for (const auto* image : referencedImages)
+    {
+        temporaryImages.resolve(image);
+        if (onProgress) onProgress("image " + std::to_string(++imageIndex), ++processed, total);
+    }
+
 
     std::vector<std::string> submeshNames;
     std::vector<std::shared_ptr<geo::Mesh>> meshes;
@@ -601,6 +612,7 @@ extern BG2E_API bg2e::scene::Node * loadGltf(
             ++meshNameIndex;
         }
         drw->load(engine);
+        if (onProgress) onProgress(drw->name(), ++processed, total);
         drawables.push_back(drw);
         ++meshIdx;
     }
@@ -623,10 +635,11 @@ extern BG2E_API bg2e::scene::Node * loadGltf(
 extern BG2E_API bg2e::scene::Node * loadGltf(
     const std::filesystem::path& basePath,
     const std::string& fileName,
-    render::Engine* engine
+    render::Engine* engine,
+    scene::SceneProgressCallback onProgress
 ) {
     auto fullPath = basePath / fileName;
-    return loadGltf(fullPath, engine);
+    return loadGltf(fullPath, engine, std::move(onProgress));
 }
 
 }

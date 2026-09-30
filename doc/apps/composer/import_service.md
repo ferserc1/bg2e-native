@@ -44,11 +44,10 @@ Base URL: `http://127.0.0.1:<port>` (default `http://127.0.0.1:8643`).
 
 #### `GET /status`
 
-Health check. Returns the running state, bound port, and the number of import
-requests currently queued waiting for the main thread:
+Health check. Returns the running state, bound port, and whether an import is active:
 
 ```json
-{ "running": true, "port": 8643, "queued": 0 }
+{ "running": true, "port": 8643, "busy": false }
 ```
 
 #### `POST /import`
@@ -74,7 +73,9 @@ curl -X POST http://127.0.0.1:8643/import \
 ```
 
 The request is **synchronous**: the HTTP response is not sent until the scene
-has actually been modified on the main thread (or the import fails).
+has been updated, the modal loader has closed, and Composer has resumed
+interaction (or the import fails). The service imposes no import timeout; an
+HTTP client or intermediary may impose its own.
 
 Responses:
 
@@ -84,8 +85,8 @@ Responses:
 | `400` | Malformed JSON, missing `filePath`, unknown `units`/`coordinateSystem`, or unsupported extension (only `.gltf`/`.glb`) |
 | `404` | `filePath` does not exist on disk |
 | `415` | `Content-Type` is not `application/json` |
-| `500` | The import failed on the main thread (message contains the reason) |
-| `504` | The main thread did not process the request within 60 seconds |
+| `500` | The import failed (message contains the reason) |
+| `503` | The service is busy with another import; retry after it completes |
 
 ### Import semantics
 
@@ -112,265 +113,21 @@ Responses:
 
 ## Part 2 — Implementation
 
-All classes live in `apps/bg2e_composer/src`. The design follows one strict
-rule: **the HTTP worker thread never touches the scene graph, Vulkan, or
-imgui**. It only validates requests, enqueues them, and blocks until the main
-thread fulfils them.
+The HTTP service admits one validated import at a time. Its mutex-protected
+slot remains occupied until the result is published; another import receives
+`503` immediately. Multiple HTTP handler threads keep `/status` responsive
+while the accepted handler waits. `stop()` fails and wakes the active request
+before joining those handlers.
 
-### Architecture overview
+`AppDelegate::update()` takes the pending request on the main thread and starts
+`asyncLoadGuarded()`. The worker loads the glTF, reports image and mesh progress
+to the modal loader, and queues insertion and any replacement removal through
+`MainLoop::safeUpdateScene()`. Selection changes and the import table remain on
+the main thread. `MainLoop` applies the queued scene changes, closes the loader,
+and resumes the scene in order. Its completion callback then updates the table
+and calls `ImportServer::fulfil()`, releasing the HTTP waiter. Failed imports
+leave any previous imported node intact.
 
-```
-Postman / DCC tool
-       │  POST /import  {fileName, filePath, units, coordinateSystem}
-       ▼
-┌──────────────── HTTP worker thread (cpp-httplib) ───────────────┐
-│ ImportServer::handleImport                                       │
-│   validate JSON → enqueue ImportRequest → wait condition_variable│
-└──────────────────────────────────────────┬───────────────────────┘
-                                           │ mutex + deque + result map
-                                           ▼
-┌──────────────── Main / render thread ───────────────────────────┐
-│ AppDelegate::update()  (once per frame)                          │
-│   └─ if (no async load in progress)                              │
-│        SceneImporter::processQueue(ImportServer&)                │
-│          ├─ sweep stale table entries                            │
-│          ├─ lookup path → alive? remove old node : first import  │
-│          ├─ StageScene::importGltfScene(path, scale, zUp, err)   │
-│          └─ register path → node, ImportServer::fulfil(id, ...)  │
-│ HTTP worker wakes → 200 / 4xx / 500 / 504                        │
-└──────────────────────────────────────────────────────────────────┘
-```
-
-### `ImportRequest` (ImportRequest.hpp)
-
-A plain POD (no dependency on httplib or scene types) describing one pending
-import, plus the `ImportCoordinateSystem` enum (`YUp`, `ZUp`):
-
-- `id` — assigned by `ImportServer`, used to match the result slot.
-- `fileName` — informational / fallback node name.
-- `filePath` — validated absolute path.
-- `unitsScale` — meters per source unit (already converted from the `units`
-  string by the server).
-- `coordinateSystem` — source axis convention.
-
-### `ImportServer` (ImportServer.hpp/.cpp)
-
-Facade over a vendored, header-only **cpp-httplib 0.58.0**
-(`apps/third_party/cpp-httplib`, added to the target include dirs in
-`apps/bg2e_composer/CMakeLists.txt`). `httplib.h` is included **only** in
-`ImportServer.cpp`; the header uses a pImpl and forward-declared
-`httplib::Request`/`Response` so no other translation unit sees httplib.
-
-State:
-
-- `Impl` — holds the `httplib::Server` (in a `unique_ptr`, recreated on every
-  `start()` because a stopped `httplib::Server` owns atomics/threads and
-  cannot be reused), the listen thread, the bound port, and a
-  `condition_variable` + paired mutex used to wake blocked handlers.
-- `_mutex`, `_queue` (`std::deque<ImportRequest>`), `_results`
-  (`id → shared_ptr<Slot>`), `_nextId` — the producer/consumer queue shared
-  with the main thread. Each `Slot { done, ok, message }` is the per-request
-  completion cell.
-
-Public API:
-
-- `start(port)` — validates the range (1024–49151), installs socket options,
-  registers routes, and binds **synchronously** with
-  `bind_to_port("127.0.0.1", port)` so a busy port is reported before the
-  function returns (`"Port N is already in use"`). The listen loop runs on a
-  dedicated `std::thread` via `listen_after_bind()`. Socket options are
-  overridden (`SO_REUSEADDR` on POSIX, `SO_EXCLUSIVEADDRUSE` on Windows)
-  because httplib's default `SO_REUSEPORT` would silently share the port
-  between two processes. `new_task_queue` is forced to a
-  `ThreadPool(1, 1)` so **all requests are serialized on a single worker
-  thread**.
-- `stop()` — stops the server, joins the thread, destroys the `Server`
-  instance, then marks every pending slot as failed (`"Service stopped"`),
-  clears the queue and notifies all waiters so no handler outlives the server.
-  Safe to call when already stopped; also called from the destructor.
-- `popPending()` — main-thread side: drains the whole queue into a vector.
-- `fulfil(id, ok, message)` — main-thread side: writes the outcome into the
-  slot and notifies the condition variable, waking the blocked HTTP handler.
-- `isRunning()`, `port()`, `pendingCount()` — status accessors used by the UI
-  and by `GET /status`.
-
-`handleImport()` (the only route handler with logic) runs on the worker thread
-and performs, in order:
-
-1. `Content-Type` check (case-insensitive) → `415`.
-2. JSON parse with `bg2e::json::JsonParser` → `400` on malformed/non-object
-   bodies.
-3. Field extraction: `filePath` (required → `400`), `fileName` (defaults to
-   the path's filename), `units` via `unitsToScale()` (`m/cm/mm/in/ft`,
-   case-insensitive → `400` if unknown), `coordinateSystem`
-   (`y_up`/`z_up`, default `y_up` → `400` if unknown).
-4. Filesystem validation: file must exist (`404`) and have a `.gltf`/`.glb`
-   extension, case-insensitive (`400`).
-5. Enqueue: creates the `Slot`, assigns the id, pushes the request.
-6. **Block** on the condition variable with a 60-second timeout
-   (`kRequestTimeout`). The predicate re-reads the slot under `_mutex` (which
-   guards the slot state written by `fulfil()`/`stop()`), while the paired
-   `cvMutex` only protects the wait itself.
-7. Build the response: `504` on timeout, `500` on failed fulfil, `200`
-   otherwise. Response bodies are hand-built JSON; a local `jsonEscape()`
-   helper escapes the message field, and a `fail()` helper produces the
-   `{"status":"error","message":...}` shape.
-
-`GET /status` simply serializes `{running, port, queued}`.
-
-### `ImportSettings` (ImportSettings.hpp/.cpp)
-
-Typed wrapper over `bg2e::app::Preferences("import")` (persisted to
-`preferences_import.json`), following the `RenderSettingsPreferences` style:
-
-- Constants: `DefaultPort = 8643`, `MinPort = 1024` (below: privileged),
-  `MaxPort = 49151` (above: ephemeral/dynamic range).
-- Keys: `port` (uint32, default 8643) and `serviceEnabled` (bool, default
-  true), with `load()`/`save()` pass-throughs.
-- `parsePort(text, out)` — static validator for the UI text field: rejects
-  empty or non-numeric input, catches `std::stoul` `out_of_range`, and enforces
-  the `[MinPort, MaxPort]` range.
-
-### `SceneImporter` (SceneImporter.hpp/.cpp)
-
-Main-thread consumer that owns the **import table**
-(`_table: canonical path string → ImportEntry { weak_ptr<Node>, identifier }`).
-
-- `tableKey(path)` — `std::filesystem::weakly_canonical(path).string()`, so
-  equivalent paths map to the same entry.
-- `sweep()` — runs every frame before processing: erases entries whose node
-  expired (`weak_ptr`), whose node was detached from the scene
-  (`parent() == nullptr`, e.g. the user deleted it), or whose `identifier()`
-  no longer matches (the slot now holds a different node). This guarantees the
-  table never holds dangling entries.
-- `processQueue(server)` — called once per frame: `sweep()`, then for each
-  drained request, `processOne()`.
-- `processOne(server, request)`:
-  1. Looks up the canonical key; if a previous node exists and is still
-     attached, it is kept aside for replacement together with its **parent**
-     (a detached weak node is discarded).
-  2. Calls `StageScene::importGltfScene(path, unitsScale, sourceIsZUp, error,
-     parentOverride)`, passing the old node's parent as `parentOverride` on a
-     reimport so the new wrapper hangs from the same place as the old one,
-     regardless of the current selection. On failure, fulfils the request
-     with `ok=false` and the error string.
-  3. On success, removes the old node (`StageScene::removeImportedNode`),
-     registers `key → { newNode, newNode->identifier() }`, and fulfils with
-     `"Imported <fileName>"`.
-- `clear()` — drops the whole table (scene swap, shutdown).
-
-Tracking by instance (weak pointer + node identifier) rather than by name
-means renaming an imported node in the editor never breaks replacement.
-
-### `StageScene` import support (StageScene.hpp/.cpp)
-
-Two members were added to the existing stage manager:
-
-- `importGltfScene(path, unitsScale, sourceIsZUp, errorOut, parentOverride)` —
-  the **programmatic** overload used by the service (the existing
-  single-argument interactive overload that shows dialogs is untouched apart
-  from the selection clearing described below).
-  It:
-  0. **Clears the current selection** (`SelectionManager::deselect()`) as its
-     first action — both `importGltfScene` overloads do this, including the
-     interactive one used by `File > Import GLTF Scene` — so an import never
-     inserts content under a node that is about to be replaced or removed.
-  1. Loads the glTF file with `bg2e::db::loadGltf` (returns `nullptr` + error
-     string on failure; exceptions are caught and reported through
-     `errorOut`).
-  2. Calls `addGizmoComponents()` on the loaded root, which recursively adds a
-     `GizmoComponent` to every node and a `SelectableComponent` to every
-     light/environment/camera/drawable node that lacks one, so the imported
-     subtree is pickable through gizmos in the viewport.
-  3. Builds the **wrapper node** named after the file stem, with a
-     `TransformComponent` whose matrix combines the optional −90° X rotation
-     (`sourceIsZUp`) and the uniform `unitsScale` factor (skipped when 1.0).
-     The loaded tree becomes the wrapper's only child.
-  4. Inserts the wrapper under `parentOverride` when provided (reimport: the
-     previous node's parent), otherwise under `newNodeParent()` (primary
-     selected node, or the editable root), via `insertNewNode()`, and returns
-     the wrapper.
-
-- `insertNewNode(node, parent)` — shared insertion helper. Before inserting it
-  ensures the node has a **`SelectableComponent`** (viewport picking) and a
-  **`GizmoComponent`** (transform/type gizmo) — this is what makes the
-  imported wrapper node itself selectable even though it has no drawable.
-  The actual tree mutation runs inside
-  `MainLoop::current()->safeUpdateScene()` (which performs the change at a
-  point where the device is idle), refreshes the scene with
-  `scene()->updateAll()`, and marks the document as modified.
-
-- `removeImportedNode(node)` — dialog-free removal used for replacement.
-  It first checks whether the node (or any node in its subtree, walking up
-  parents) is part of the current selection — both the primary selected node
-  and the multi-selection list — and calls `SelectionManager::deselect()` if
-  so, avoiding dangling selection pointers. Then it detaches the node from its
-  parent inside `safeUpdateScene()` and refreshes the scene.
-
-### `ImportSettingsWindow` (ImportSettingsWindow.hpp/.cpp)
-
-A `bg2e::ui::Window` subclass holding raw pointers to the `ImportServer` and
-`ImportSettings` plus the editable `_portText` string. `init()` seeds the text
-from the saved port, sets title/size, and installs the draw function. The
-window starts closed.
-
-`drawUI()` renders:
-
-- `bg2e::ui::Value::text("Port", _portText, 6, false, running)` — the port
-  field, **disabled while the server is running** (this uses the `disabled`
-  parameter added to the engine's `Value::text()` wrapper, the only engine
-  change required by the feature; it wraps the `InputText` call in
-  `ImGui::BeginDisabled()/EndDisabled()`).
-- A `Button::checkBox("Service enabled", ...)` that mirrors the running state:
-  - Enabling validates the port with `ImportSettings::parsePort()` and calls
-    `ImportServer::start()`; failures surface through
-    `bg2e::app::MessageBox::showError()`. On success it persists
-    port + enabled flag.
-  - Disabling calls `stop()` and persists the flag.
-- A separator and a status line (`Listening on 127.0.0.1:<port>` /
-  `Service stopped`).
-
-### `AppDelegate` integration (AppDelegate.hpp/.cpp)
-
-`AppDelegate` owns all four components by value/`unique_ptr`:
-`_importServer`, `_importSettings`, `_sceneImporter`, `_importSettingsWindow`,
-plus the `std::atomic<int> _asyncLoadsInProgress` guard counter.
-
-- **Initialization** (in `initWorkspace()`, once the stage exists): loads the
-  preferences, constructs `SceneImporter` with the stage pointer, initializes
-  the settings window and toolbar, and — if `serviceEnabled()` — auto-starts
-  the server, reporting a bind failure in the status bar.
-- **Per-frame pump** (`update()`): after the base delegate update, if no async
-  load is in progress, calls `_sceneImporter->processQueue(_importServer)`.
-  The async guard matters because `MainLoop::asyncLoad` creates GPU resources
-  on a worker thread, which would race with import-time scene mutation.
-- **`asyncLoadGuarded(loadFn, clearColor)`** — wraps `MainLoop::asyncLoad`,
-  incrementing the counter before and decrementing it inside the completion
-  lambda. Both the File > Open Scene menu path and the drag-and-drop `.json`/
-  `.vitscnj` path route through it.
-- **Scene swap** — the `StageScene::onSceneSwap` callback deselects everything
-  and calls `_sceneImporter->clear()`, so opening/closing scenes invalidates
-  the import table.
-- **Shutdown** (`cleanup()`) — stops the server (failing any pending requests)
-  and clears the importer before the stage is destroyed.
-- **UI** — `drawUI()` draws the settings window when open.
-
-### `ToolBar` menu entry (ToolBar.hpp/.cpp)
-
-`ToolBar::init()` takes an extra `ImportSettingsWindow*` parameter and adds
-`File > Import Settings...` between separators just before Quit; its handler
-simply calls `_importSettingsWindow->open()`.
-
-### Thread safety summary
-
-- One HTTP worker thread total (`ThreadPool(1, 1)`); it only enqueues and
-  waits.
-- Queue and result slots are guarded by `ImportServer::_mutex`; the condition
-  variable has its own paired mutex, and the wait predicate re-locks `_mutex`
-  to read slot state, avoiding data races between `fulfil()`, `stop()`, and
-  the handler.
-- All scene mutation happens on the main thread inside
-  `MainLoop::safeUpdateScene()`, skipped entirely while an async scene load is
-  in progress.
-- `stop()` fails every outstanding slot so no worker thread can outlive the
-  server instance.
+`GET /status` reports `busy` while the slot is occupied. There is no queue of
+waiting imports and no application-level timeout. The service's request ID
+prevents a late completion from answering a request after stop and restart.
