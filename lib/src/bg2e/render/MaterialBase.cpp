@@ -63,7 +63,7 @@ void updateTexture(
         {
             throw std::runtime_error("TextureCache: could not load cached texture because the source texture data does not contains a file path");
         }
-        outTexture = utils::TextureCache::get().load(engine, texData->imageFilePath());
+        outTexture = utils::TextureCache::get().load(engine, *texData);
     }
     else {
         outTexture = fallbackTexture;

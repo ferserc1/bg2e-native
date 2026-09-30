@@ -70,7 +70,18 @@ std::shared_ptr<render::Texture> TextureCache::load(render::Engine * engine, con
         throw std::runtime_error("TextureCache: could not load texture because the texture data does not contains an image file path");
     }
     
-    if (_textures.find(filePath) == _textures.end())
+    // A single image file can be used by views with different sampler settings.
+    const auto key = filePath + "|" +
+        std::to_string(settings.magFilter()) + "|" +
+        std::to_string(settings.minFilter()) + "|" +
+        std::to_string(settings.useMipmaps()) + "|" +
+        std::to_string(settings.addressModeU()) + "|" +
+        std::to_string(settings.addressModeV()) + "|" +
+        std::to_string(settings.addressModeW()) + "|" +
+        std::to_string(settings.maxLod()) + "|" +
+        std::to_string(settings.minLod()) + "|" +
+        std::to_string(settings.colorType());
+    if (_textures.find(key) == _textures.end())
     {
         std::cout << "Texture not found in cache: " << filePath << std::endl;
         auto texture = std::make_shared<base::Texture>(filePath);
@@ -78,15 +89,17 @@ std::shared_ptr<render::Texture> TextureCache::load(render::Engine * engine, con
         texture->setMinFilter(settings.minFilter());
         texture->setMaxLod(settings.maxLod());
         texture->setMinLod(settings.minLod());
+        texture->setMinLod(settings.minLod());
         texture->setImageFilePath(filePath);
         texture->setMagFilter(settings.magFilter());
         texture->setMinFilter(settings.minFilter());
         texture->setUseMipmaps(settings.useMipmaps());
         texture->setAddressMode(settings.addressModeU(), settings.addressModeV(), settings.addressModeW());
+        texture->setColorType(settings.colorType());
         auto result = std::make_shared<render::Texture>(engine, texture);
-        _textures[filePath] = result;
+        _textures[key] = result;
     }
-    return _textures.find(filePath)->second;
+    return _textures.find(key)->second;
 }
 
 void TextureCache::emptyCache()

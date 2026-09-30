@@ -23,6 +23,9 @@
 #include <bg2e/base/Texture.hpp>
 
 #include <filesystem>
+#include <cstddef>
+#include <cstdint>
+#include <vector>
 
 namespace bg2e {
 namespace db {
@@ -30,6 +33,14 @@ namespace db {
 extern BG2E_API bg2e::base::Image * loadImage(const std::filesystem::path& filePath);
 
 extern BG2E_API bg2e::base::Image * loadImage(const std::filesystem::path& basePath, const std::string& fileName);
+
+// Decode an encoded PNG/JPEG image in memory to four-channel 8-bit pixels.
+extern BG2E_API std::vector<uint8_t> decodeImageRGBA8(
+    const uint8_t* encodedData,
+    size_t encodedSize,
+    uint32_t& width,
+    uint32_t& height
+);
 
 extern BG2E_API void saveImage(
     const std::filesystem::path& filePath,

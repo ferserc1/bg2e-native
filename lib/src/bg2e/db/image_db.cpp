@@ -18,6 +18,9 @@
 
 #include <bg2e/db/image.hpp>
 
+#include <limits>
+#include <stdexcept>
+
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
@@ -87,6 +90,52 @@ bg2e::base::Image * loadImage(const std::filesystem::path& basePath, const std::
     fullPath.append(fileName);
     
     return loadImage(fullPath);
+}
+
+std::vector<uint8_t> decodeImageRGBA8(
+    const uint8_t* encodedData,
+    size_t encodedSize,
+    uint32_t& width,
+    uint32_t& height
+) {
+    if (!encodedData || encodedSize == 0 || encodedSize > static_cast<size_t>(std::numeric_limits<int>::max()))
+    {
+        throw std::runtime_error("Invalid encoded image data");
+    }
+
+    int decodedWidth = 0;
+    int decodedHeight = 0;
+    int channels = 0;
+    auto* pixels = stbi_load_from_memory(encodedData, static_cast<int>(encodedSize),
+                                          &decodedWidth, &decodedHeight, &channels, 4);
+    if (!pixels || decodedWidth <= 0 || decodedHeight <= 0)
+    {
+        stbi_image_free(pixels);
+        throw std::runtime_error("Could not decode image data");
+    }
+
+    const size_t w = static_cast<size_t>(decodedWidth);
+    const size_t h = static_cast<size_t>(decodedHeight);
+    if (w > std::numeric_limits<size_t>::max() / 4 / h)
+    {
+        stbi_image_free(pixels);
+        throw std::runtime_error("Decoded image dimensions overflow");
+    }
+
+    std::vector<uint8_t> result;
+    try
+    {
+        result.assign(pixels, pixels + w * h * 4);
+    }
+    catch (...)
+    {
+        stbi_image_free(pixels);
+        throw;
+    }
+    stbi_image_free(pixels);
+    width = static_cast<uint32_t>(decodedWidth);
+    height = static_cast<uint32_t>(decodedHeight);
+    return result;
 }
 
 void saveImage(

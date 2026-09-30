@@ -19,6 +19,7 @@
 #include <bg2e/db/scene_gltf.hpp>
 #include <bg2e/geo/Mesh.hpp>
 #include <bg2e/geo/modifiers.hpp>
+#include <bg2e/db/image.hpp>
 #include <bg2e/math/base.hpp>
 #include <bg2e/scene/TransformComponent.hpp>
 #include <bg2e/scene/Drawable.hpp>
@@ -27,6 +28,12 @@
 #include <stdexcept>
 #include <vector>
 #include <memory>
+#include <fstream>
+#include <iostream>
+#include <iterator>
+#include <limits>
+#include <random>
+#include <unordered_map>
 
 #define CGLTF_IMPLEMENTATION
 #include <cgltf.h>
@@ -34,6 +41,266 @@
 namespace bg2e::db {
 
 namespace gltf {
+
+    static std::vector<uint8_t> decodeBase64(const std::string& encoded)
+    {
+        auto digit = [](char c) -> int {
+            if (c >= 'A' && c <= 'Z') return c - 'A';
+            if (c >= 'a' && c <= 'z') return c - 'a' + 26;
+            if (c >= '0' && c <= '9') return c - '0' + 52;
+            if (c == '+') return 62;
+            if (c == '/') return 63;
+            return -1;
+        };
+
+        if (encoded.empty() || encoded.size() % 4 != 0)
+        {
+            throw std::runtime_error("Invalid base64 image data");
+        }
+
+        std::vector<uint8_t> bytes;
+        bytes.reserve(encoded.size() / 4 * 3);
+        for (size_t i = 0; i < encoded.size(); i += 4)
+        {
+            const int a = digit(encoded[i]);
+            const int b = digit(encoded[i + 1]);
+            const bool last = i + 4 == encoded.size();
+            const bool pad2 = encoded[i + 2] == '=';
+            const bool pad3 = encoded[i + 3] == '=';
+            const int c = pad2 ? 0 : digit(encoded[i + 2]);
+            const int d = pad3 ? 0 : digit(encoded[i + 3]);
+            if (a < 0 || b < 0 || c < 0 || d < 0 || (pad2 && !pad3) ||
+                ((pad2 || pad3) && !last))
+            {
+                throw std::runtime_error("Invalid base64 image data");
+            }
+            bytes.push_back(static_cast<uint8_t>((a << 2) | (b >> 4)));
+            if (!pad2) bytes.push_back(static_cast<uint8_t>((b << 4) | (c >> 2)));
+            if (!pad3) bytes.push_back(static_cast<uint8_t>((c << 6) | d));
+        }
+        return bytes;
+    }
+
+    class TemporaryImages {
+    public:
+        TemporaryImages(const std::filesystem::path& gltfPath, const cgltf_data* data)
+            : _gltfPath(gltfPath), _data(data) {}
+
+        ~TemporaryImages()
+        {
+            if (!_committed && !_directory.empty())
+            {
+                std::error_code error;
+                std::filesystem::remove_all(_directory, error);
+            }
+        }
+
+        std::filesystem::path resolve(const cgltf_image* image)
+        {
+            if (!image || image < _data->images || image >= _data->images + _data->images_count)
+            {
+                throw std::runtime_error("Invalid glTF image reference");
+            }
+            const size_t index = static_cast<size_t>(image - _data->images);
+            if (auto found = _paths.find(index); found != _paths.end()) return found->second;
+
+            try
+            {
+                auto encoded = readEncoded(image);
+                uint32_t width = 0;
+                uint32_t height = 0;
+                auto pixels = db::decodeImageRGBA8(encoded.data(), encoded.size(), width, height);
+                ensureDirectory();
+                const auto path = _directory /
+                    (_directory.filename().string() + "_image_" + std::to_string(index) + ".png");
+                db::saveImage(path, pixels.data(), width, height, 4);
+                return _paths.emplace(index, path).first->second;
+            }
+            catch (const std::exception& error)
+            {
+                throw std::runtime_error("glTF image " + std::to_string(index) + " in '" +
+                                         _gltfPath.string() + "': " + error.what());
+            }
+        }
+
+        void commit() { _committed = true; }
+
+    private:
+        std::vector<uint8_t> readEncoded(const cgltf_image* image) const
+        {
+            if (image->buffer_view)
+            {
+                const auto* bytes = cgltf_buffer_view_data(image->buffer_view);
+                const size_t size = image->buffer_view->size;
+                if (!bytes || size == 0) throw std::runtime_error("Empty image buffer view");
+                return { bytes, bytes + size };
+            }
+            if (!image->uri) throw std::runtime_error("Image has no URI or buffer view");
+
+            const std::string uri(image->uri);
+            if (uri.rfind("data:", 0) == 0)
+            {
+                const auto comma = uri.find(',');
+                if (comma == std::string::npos || comma < 7 ||
+                    uri.substr(comma - 7, 7) != ";base64")
+                {
+                    throw std::runtime_error("Unsupported image data URI");
+                }
+                return decodeBase64(uri.substr(comma + 1));
+            }
+
+            if (uri.find("://") != std::string::npos)
+                throw std::runtime_error("Remote image URI is unsupported");
+
+            std::string decodedUri = uri;
+            decodedUri.resize(cgltf_decode_uri(decodedUri.data()));
+            const auto path = _gltfPath.parent_path() / decodedUri;
+            std::ifstream input(path, std::ios::binary);
+            if (!input) throw std::runtime_error("Could not open image '" + path.string() + "'");
+            return { std::istreambuf_iterator<char>(input), std::istreambuf_iterator<char>() };
+        }
+
+        void ensureDirectory()
+        {
+            if (!_directory.empty()) return;
+            const auto root = std::filesystem::temp_directory_path();
+            std::random_device random;
+            for (int attempt = 0; attempt < 32; ++attempt)
+            {
+                auto candidate = root / ("bg2e-gltf-" + std::to_string(random()) + "-" +
+                                         std::to_string(random()));
+                if (std::filesystem::create_directory(candidate))
+                {
+                    _directory = std::filesystem::absolute(candidate);
+                    return;
+                }
+            }
+            throw std::runtime_error("Could not create temporary glTF image directory");
+        }
+
+        std::filesystem::path _gltfPath;
+        const cgltf_data* _data;
+        std::filesystem::path _directory;
+        std::unordered_map<size_t, std::filesystem::path> _paths;
+        bool _committed = false;
+    };
+
+    static cgltf_accessor* findAccessor(
+        const cgltf_primitive* primitive, cgltf_attribute_type type, int index);
+
+    static uint32_t textureUVSet(const cgltf_texture_view& view, const cgltf_primitive* primitive)
+    {
+        const int uvSet = view.has_transform && view.transform.has_texcoord
+            ? view.transform.texcoord : view.texcoord;
+        if (uvSet < 0 || uvSet > 1 ||
+            !findAccessor(primitive, cgltf_attribute_type_texcoord, uvSet))
+        {
+            throw std::runtime_error("glTF texture refers to a missing or unsupported UV set");
+        }
+        return static_cast<uint32_t>(uvSet);
+    }
+
+    static glm::vec2 textureUVScale(const cgltf_texture_view& view)
+    {
+        if (!view.has_transform) return { 1.0f, 1.0f };
+        if (view.transform.offset[0] != 0.0f || view.transform.offset[1] != 0.0f ||
+            view.transform.rotation != 0.0f)
+        {
+            std::clog << "WARNING: glTF texture offset and rotation are unsupported; "
+                         "only UV scale is imported" << std::endl;
+        }
+        return { view.transform.scale[0], view.transform.scale[1] };
+    }
+
+    static base::Texture::AddressMode addressMode(cgltf_wrap_mode mode)
+    {
+        if (mode == cgltf_wrap_mode_clamp_to_edge) return base::Texture::AddressModeClampToEdge;
+        if (mode == cgltf_wrap_mode_mirrored_repeat) return base::Texture::AddressModeMirroredRepeat;
+        return base::Texture::AddressModeRepeat;
+    }
+
+    static std::shared_ptr<base::Texture> textureFromView(
+        const cgltf_texture_view& view, TemporaryImages& images, base::Color::Type colorType)
+    {
+        if (!view.texture || !view.texture->image) return nullptr;
+        auto texture = std::make_shared<base::Texture>(images.resolve(view.texture->image));
+        texture->setColorType(colorType);
+        texture->setUseMipmaps(true);
+        texture->setMagFilter(base::Texture::FilterLinear);
+        texture->setMinFilter(base::Texture::FilterLinear);
+
+        if (const auto* sampler = view.texture->sampler)
+        {
+            if (sampler->mag_filter == cgltf_filter_type_nearest)
+                texture->setMagFilter(base::Texture::FilterNearest);
+            if (sampler->min_filter == cgltf_filter_type_nearest ||
+                sampler->min_filter == cgltf_filter_type_nearest_mipmap_nearest ||
+                sampler->min_filter == cgltf_filter_type_nearest_mipmap_linear)
+                texture->setMinFilter(base::Texture::FilterNearest);
+            if (sampler->min_filter == cgltf_filter_type_nearest ||
+                sampler->min_filter == cgltf_filter_type_linear)
+                texture->setUseMipmaps(false);
+            texture->setAddressMode(addressMode(sampler->wrap_s), addressMode(sampler->wrap_t));
+        }
+        return texture;
+    }
+
+    static base::MaterialAttributes materialAttributes(
+        const cgltf_primitive* primitive, TemporaryImages& images)
+    {
+        base::MaterialAttributes result;
+        // glTF defaults differ from MaterialAttributes defaults.
+        result.setMetalness(1.0f);
+        result.setRoughness(1.0f);
+
+        const auto* material = primitive->material;
+        if (material && material->has_pbr_metallic_roughness)
+        {
+            const auto& pbr = material->pbr_metallic_roughness;
+            result.setAlbedo(base::Color{
+                pbr.base_color_factor[0], pbr.base_color_factor[1],
+                pbr.base_color_factor[2], pbr.base_color_factor[3]
+            });
+            result.setMetalness(pbr.metallic_factor);
+            result.setRoughness(pbr.roughness_factor);
+
+            if (auto texture = textureFromView(pbr.base_color_texture, images, base::Color::TypeSRGB))
+            {
+                result.setAlbedoTexture(texture);
+                result.setAlbedoUVSet(textureUVSet(pbr.base_color_texture, primitive));
+                result.setAlbedoScale(textureUVScale(pbr.base_color_texture));
+            }
+            if (auto texture = textureFromView(pbr.metallic_roughness_texture, images, base::Color::TypeLinear))
+            {
+                result.setMetalnessTexture(texture);
+                result.setRoughnessTexture(texture);
+                result.setMetalnessChannel(2);
+                result.setRoughnessChannel(1);
+                const auto uvSet = textureUVSet(pbr.metallic_roughness_texture, primitive);
+                result.setMetalnessUVSet(uvSet);
+                result.setRoughnessUVSet(uvSet);
+                const auto scale = textureUVScale(pbr.metallic_roughness_texture);
+                result.setMetalnessScale(scale);
+                result.setRoughnessScale(scale);
+            }
+        }
+
+        if (material)
+        {
+            if (auto texture = textureFromView(material->normal_texture, images, base::Color::TypeLinear))
+            {
+                result.setNormalTexture(texture);
+                result.setNormalUVSet(textureUVSet(material->normal_texture, primitive));
+                result.setNormalScale(textureUVScale(material->normal_texture));
+                if (material->normal_texture.scale != 1.0f)
+                {
+                    std::clog << "WARNING: glTF normal texture strength is unsupported" << std::endl;
+                }
+            }
+        }
+
+        return result;
+    }
 
     static cgltf_data* loadGltfFile(const std::filesystem::path& filePath)
     {
@@ -249,7 +516,28 @@ extern BG2E_API bg2e::scene::Node * loadGltf(
     const std::filesystem::path& filePath,
     render::Engine* engine
 ) {
-    auto data = gltf::loadGltfFile(filePath);
+    std::unique_ptr<cgltf_data, decltype(&cgltf_free)> data(gltf::loadGltfFile(filePath), &cgltf_free);
+    gltf::TemporaryImages temporaryImages(filePath, data.get());
+
+    for (cgltf_size m = 0; m < data->meshes_count; ++m)
+    {
+        const auto& mesh = data->meshes[m];
+        for (cgltf_size p = 0; p < mesh.primitives_count; ++p)
+        {
+            const auto* material = mesh.primitives[p].material;
+            if (!material) continue;
+            if (material->has_pbr_metallic_roughness)
+            {
+                const auto& pbr = material->pbr_metallic_roughness;
+                if (pbr.base_color_texture.texture && pbr.base_color_texture.texture->image)
+                    temporaryImages.resolve(pbr.base_color_texture.texture->image);
+                if (pbr.metallic_roughness_texture.texture && pbr.metallic_roughness_texture.texture->image)
+                    temporaryImages.resolve(pbr.metallic_roughness_texture.texture->image);
+            }
+            if (material->normal_texture.texture && material->normal_texture.texture->image)
+                temporaryImages.resolve(material->normal_texture.texture->image);
+        }
+    }
 
     std::vector<std::string> submeshNames;
     std::vector<std::shared_ptr<geo::Mesh>> meshes;
@@ -270,7 +558,7 @@ extern BG2E_API bg2e::scene::Node * loadGltf(
             {
                 submeshNames.push_back((gltfMesh.name ? gltfMesh.name : "submesh_") + std::to_string(p));
             }
-            gltf::appendPrimitive(data, &primitive, mesh);
+            gltf::appendPrimitive(data.get(), &primitive, mesh);
         }
         meshes.push_back(mesh);
     }
@@ -304,12 +592,15 @@ extern BG2E_API bg2e::scene::Node * loadGltf(
         }
 
         drw->setMesh(mesh);
-        drw->load(engine);
+        const auto& gltfMesh = data->meshes[meshIdx];
         for (uint32_t submeshIndex = 0; submeshIndex < drw->submeshesCount(); ++submeshIndex)
         {
+            const auto& primitive = gltfMesh.primitives[submeshIndex];
+            drw->setMaterial(gltf::materialAttributes(&primitive, temporaryImages), submeshIndex);
             drw->setSubmeshName(submeshNames[meshNameIndex], submeshIndex);
             ++meshNameIndex;
         }
+        drw->load(engine);
         drawables.push_back(drw);
         ++meshIdx;
     }
@@ -321,10 +612,10 @@ extern BG2E_API bg2e::scene::Node * loadGltf(
     for (cgltf_size i = 0; i < scene->nodes_count; ++i)
     {
         const cgltf_node* gltfRootNode = scene->nodes[i];
-        result->addChild(gltf::createSceneTree(data, gltfRootNode, drawables));
+        result->addChild(gltf::createSceneTree(data.get(), gltfRootNode, drawables));
     }
 
-    cgltf_free(data);
+    temporaryImages.commit();
 
     return result;
 }
