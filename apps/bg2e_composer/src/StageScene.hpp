@@ -57,12 +57,15 @@ public:
     void importGltfScene(const std::filesystem::path& path);
 
     // Programmatic import used by the HTTP scene import service. The returned
-    // wrapper node is the instance tracked by the importer table.
+    // wrapper node is the instance tracked by the importer table. Clears the
+    // current selection before inserting. When parentOverride is provided
+    // (reimport), the wrapper hangs from it instead of the default parent.
     std::shared_ptr<bg2e::scene::Node> importGltfScene(
         const std::filesystem::path& path,
         float unitsScale,
         bool sourceIsZUp,
-        std::string& errorOut
+        std::string& errorOut,
+        std::shared_ptr<bg2e::scene::Node> parentOverride = nullptr
     );
 
     // Removes an imported node without showing a confirmation dialog.

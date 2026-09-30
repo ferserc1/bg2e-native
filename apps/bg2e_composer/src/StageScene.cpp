@@ -241,6 +241,7 @@ void StageScene::importModelBg2(const std::filesystem::path& path)
 
 void StageScene::importGltfScene(const std::filesystem::path& path)
 {
+    _appDelegate->selectionManager()->deselect();
     try
     {
         std::shared_ptr<bg2e::scene::Node> node(bg2e::db::loadGltf(path, _engine));
@@ -272,9 +273,11 @@ std::shared_ptr<bg2e::scene::Node> StageScene::importGltfScene(
     const std::filesystem::path& path,
     float unitsScale,
     bool sourceIsZUp,
-    std::string& errorOut
+    std::string& errorOut,
+    std::shared_ptr<bg2e::scene::Node> parentOverride
 )
 {
+    _appDelegate->selectionManager()->deselect();
     try
     {
         std::shared_ptr<bg2e::scene::Node> loaded(bg2e::db::loadGltf(path, _engine));
@@ -305,7 +308,7 @@ std::shared_ptr<bg2e::scene::Node> StageScene::importGltfScene(
         wrapper->addComponent(transform);
         wrapper->addChild(loaded);
 
-        auto parent = newNodeParent();
+        auto parent = parentOverride ? parentOverride : newNodeParent();
         if (!parent)
         {
             errorOut = "The editable scene is not available.";

@@ -62,12 +62,17 @@ void SceneImporter::processOne(ImportServer& server, const ImportRequest& reques
 
     auto it = _table.find(key);
     std::shared_ptr<bg2e::scene::Node> oldNode;
+    std::shared_ptr<bg2e::scene::Node> oldParent;
     if (it != _table.end())
     {
         oldNode = it->second.node.lock();
-        if (oldNode && oldNode->parent() == nullptr)
+        if (oldNode)
         {
-            oldNode.reset();
+            oldParent = oldNode->parent()->shared_from_this();
+            if (!oldParent)
+            {
+                oldNode.reset();
+            }
         }
     }
 
@@ -76,7 +81,8 @@ void SceneImporter::processOne(ImportServer& server, const ImportRequest& reques
         request.filePath,
         request.unitsScale,
         request.coordinateSystem == ImportCoordinateSystem::ZUp,
-        error
+        error,
+        oldParent
     );
 
     if (!newNode)
