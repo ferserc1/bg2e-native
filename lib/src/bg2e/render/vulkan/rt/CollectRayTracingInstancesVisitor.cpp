@@ -50,7 +50,7 @@ void CollectRayTracingInstancesVisitor::visit(scene::Node * node)
 
         for (uint32_t i = 0; i < drw->submeshesCount() && _objectInstances.size() < maxObjects; ++i)
         {
-            if (drw->submeshVisibility(i))
+            if (drw->submeshVisibility(i) && !drw->renderMaterial(i)->materialAttributes().isTransparent())
             {
                 const auto & rtMesh = drw->rayTracingMesh(i);
                 if (!rtMesh)
