@@ -226,6 +226,12 @@ public:
                 std::to_string(testFloat4[2]) + " " +
                 std::to_string(testFloat4[3])
             );
+
+            static float testRotation[3] = { 0.0f, 0.0f, 0.0f };
+            Vector::sliderVec3("Rotation slider", testRotation, -180.0f, 180.0f);
+
+            static float testDragVector[3] = { 0.0f, 0.0f, 0.0f };
+            Vector::dragVec3("Drag vector", testDragVector, 0.5f, -180.0f, 180.0f);
 		});
 	}
 

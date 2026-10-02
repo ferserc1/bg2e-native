@@ -363,6 +363,8 @@ value changes and modify the passed value in place.
 |--------|-------|
 | `bool vec2/vec3/vec4(label, int*/float* value, ...)` | Raw-array components. |
 | `bool vec2/vec3/vec4(label, glm::vec2&/vec3&/vec4& value, ...)` | GLM overloads (copy in / copy out on change). |
+| `bool sliderVec2/sliderVec3/sliderVec4(label, float* or glm::vecN& value, min, max, ...)` | Per-component float sliders; Ctrl-click enables keyboard entry. |
+| `bool dragVec2/dragVec3/dragVec4(label, float* or glm::vecN& value, speed, min, max, ...)` | Per-component float drag editors; `min == max == 0` means unclamped. |
 | `bool mat4(const std::string& label, glm::mat4& value, ...)` | Position / Rotation(deg) / Scale editor; internal **per-label** euler cache (see [Vector](Vector.md)). |
 
 ### `Value`
@@ -593,6 +595,6 @@ preferences context.
 |--------|-------------|
 | `void init(render::RendererDeferred*, render::RenderSettingsPreferences*)` | Binds the deferred renderer and its preferences store; every change is written back to `_prefs` (persisted by the application). |
 
-Sections: render scale (combo of `RendererDeferred::scaleOptions`), indirect
+Sections: final rendering mode (FSR Native AA/upscaling or Direct), indirect
 lighting mode (RTAO / RTGI), RT reflections, temporal accumulator, denoise
 filter.

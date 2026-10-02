@@ -3,10 +3,10 @@
 **Header:** `<bg2e/ui/Vector.hpp>`
 **Namespace:** `bg2e::ui`
 
-Static-only compound math editors: `vec2`/`vec3`/`vec4` component rows (raw
-arrays or GLM vectors) and a decomposed 4×4 transform editor. Every method
-modifies its value argument **in place** and returns `true` on the frame the
-value changed (see the
+Static-only compound math editors: `vec2`/`vec3`/`vec4` input, slider and drag
+component rows (raw arrays or GLM vectors), plus a decomposed 4×4 transform
+editor. Every method modifies its value argument **in place** and returns
+`true` on the frame the value changed (see the
 [change-return contract](Numeric.md#the-change-return-contract)).
 
 ```cpp
@@ -15,6 +15,12 @@ public:
     static bool vec2/3/4(const std::string& label, int*   value, bool sameLine = false);
     static bool vec2/3/4(const std::string& label, float* value, bool sameLine = false);
     static bool vec2/3/4(const std::string& label, glm::vec2/3/4& value, bool sameLine = false);
+
+    static bool sliderVec2/3/4(label, float* or glm::vecN& value,
+                               float min, float max, bool sameLine = false);
+    static bool dragVec2/3/4(label, float* or glm::vecN& value,
+                             float speed = 0.1f, float min = 0.0f,
+                             float max = 0.0f, bool sameLine = false);
 
     static bool mat4(const std::string& label, glm::mat4& value, bool sameLine = false);
 };
@@ -26,6 +32,10 @@ public:
 
 - `vecN` accepts raw `int*`/`float*` arrays **or** `glm::vecN&`. The GLM
   overloads stage through a fixed C array and copy back only on change.
+- `sliderVecN` and `dragVecN` accept raw `float*` arrays or `glm::vecN&` and
+  apply the same range and drag speed to every component.
+- Slider and drag components support Ctrl-click keyboard entry. The wrapper
+  does not force clamping of values entered this way.
 - With the GLM overloads the component order in the widget is X,Y,(Z,(W)).
 
 ---

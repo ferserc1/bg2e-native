@@ -36,11 +36,21 @@
 #include <glm/glm.hpp>
 #include <memory>
 #include <cmath>
+#include <cstdint>
 #include <string>
 #include <vector>
 
 namespace bg2e {
 namespace render {
+
+enum class FinalRenderMode : uint32_t {
+    FSRQuality = 0,
+    FSRBalanced = 1,
+    FSRPerformance = 2,
+    FSRUltraPerformance = 3,
+    FSRNativeAA = 4,
+    Direct = 5
+};
 
 class BG2E_API RendererDeferred : public Renderer {
 public:
@@ -106,8 +116,8 @@ public:
     uint32_t renderWidth() const { return _renderExtent.width; }
     uint32_t renderHeight() const { return _renderExtent.height; }
 
-    // --- Scale UI API (delegates to the active FinalPostProcessor) ---
-    // Human-readable label for the scale control (e.g. "Render Scale" or "FSR3 Scale").
+    // --- Final rendering UI API ---
+    // Presents the available FSR modes plus native direct rendering.
     std::string scaleProcessorName() const;
     // Available scale options in display order.
     std::vector<std::string> scaleOptions() const;
@@ -115,6 +125,9 @@ public:
     void setScaleOption(uint32_t index);
     // Currently selected index.
     uint32_t scaleOption() const;
+    void setFinalRenderMode(FinalRenderMode mode);
+    FinalRenderMode finalRenderMode() const { return _finalRenderMode; }
+    bool fsrSupported() const { return _fsrAvailable; }
 
     deferred::DeferredDebugVisualization debugVisualization() const;
     void setDebugVisualization(deferred::DeferredDebugVisualization debugVisualization);
@@ -236,6 +249,11 @@ protected:
     VkSampleCountFlagBits _sampleCount;
 
     float _renderScalePercent = 50.0f;
+    FinalRenderMode _finalRenderMode = FinalRenderMode::FSRPerformance;
+    // Capability established during renderer construction. It must not be
+    // cleared by a failed runtime mode switch, otherwise the settings UI
+    // permanently removes every FSR option and clamps the selection to Direct.
+    bool _fsrAvailable = false;
 
     // Layers
     std::unique_ptr<deferred::SkyboxLayer> _skyboxLayer;
@@ -254,6 +272,10 @@ protected:
 
     std::unique_ptr<manipulation::GizmoAndSelectionRenderer> _gizmoAndSelectionRenderer;
     std::unique_ptr<deferred::FinalPostProcessor>            _finalPostProcessor;
+    // Keep the initialized FSR backend alive while Direct is selected. This
+    // avoids repeatedly constructing FidelityFX backend interfaces and makes
+    // returning from Direct deterministic.
+    std::unique_ptr<deferred::FinalPostProcessor>            _standbyFSRPostProcessor;
     std::unique_ptr<deferred::MotionVectorGenerator>         _motionVectorGenerator;
 
     // Shared blue-noise texture used by the RT passes (AO/GI/reflections)
@@ -274,6 +296,7 @@ protected:
     void updateLights(const std::vector<std::shared_ptr<bg2e::scene::LightComponent>>& lightComponents, uint32_t maxLights) override;
 
     VkExtent2D computeRenderExtent(VkExtent2D viewportExtent, float scalePercent) const;
+    void createFinalPostProcessor(FinalRenderMode mode);
 };
 
 }

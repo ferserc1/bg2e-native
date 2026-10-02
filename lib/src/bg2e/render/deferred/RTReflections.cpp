@@ -21,6 +21,7 @@
 #include <bg2e/render/vulkan/DescriptorSet.hpp>
 #include <bg2e/render/vulkan/extensions.hpp>
 #include <glm/glm.hpp>
+#include <algorithm>
 #include <cstring>
 #include <cmath>
 
@@ -36,9 +37,14 @@ RTReflections::~RTReflections()
     cleanup();
 }
 
-void RTReflections::build(const GBufferManager* gbuffer, VkExtent2D extent)
+void RTReflections::build(
+    const GBufferManager* gbuffer,
+    VkExtent2D renderExtent,
+    VkExtent2D viewportExtent
+)
 {
-    _extent = extent;
+    _renderExtent = renderExtent;
+    _viewportExtent = viewportExtent;
 
     vulkan::factory::Sampler samplerFactory(_engine);
     _sampler = samplerFactory.build(VK_FILTER_LINEAR, VK_FILTER_LINEAR,
@@ -58,7 +64,7 @@ void RTReflections::build(const GBufferManager* gbuffer, VkExtent2D extent)
     }
 
     _rtSupported = true;
-    createReflectionResources(extent);
+    createReflectionResources();
     createPipeline();
 }
 
@@ -77,15 +83,19 @@ void RTReflections::createFallbackImage()
     );
 }
 
-void RTReflections::createReflectionResources(VkExtent2D extent)
+VkExtent2D RTReflections::computeReflectionExtent() const
+{
+    float scale = rtReflectionResolutionScale(_settings.quality);
+    return {
+        std::max(1u, static_cast<uint32_t>(std::round(_viewportExtent.width * scale))),
+        std::max(1u, static_cast<uint32_t>(std::round(_viewportExtent.height * scale)))
+    };
+}
+
+void RTReflections::createReflectionResources()
 {
     cleanupImages();
-
-    float scale = rtReflectionResolutionScale(_settings.quality);
-    VkExtent2D scaledExtent = {
-        static_cast<uint32_t>(std::round(extent.width * scale)),
-        static_cast<uint32_t>(std::round(extent.height * scale))
-    };
+    _reflectionExtent = computeReflectionExtent();
 
     _reflectionImages.resize(_engine->numImages());
 
@@ -96,7 +106,7 @@ void RTReflections::createReflectionResources(VkExtent2D extent)
                 _engine,
                 "RT Reflections output " + std::to_string(i),
                 VK_FORMAT_R16G16B16A16_SFLOAT,
-                scaledExtent,
+                _reflectionExtent,
                 VK_IMAGE_USAGE_STORAGE_BIT |
                 VK_IMAGE_USAGE_SAMPLED_BIT |
                 VK_IMAGE_USAGE_TRANSFER_DST_BIT,
@@ -242,17 +252,14 @@ void RTReflections::render(
             _pipelineLayout, 2, 1, &lightDS, 0, nullptr);
     }
 
-    float scale = rtReflectionResolutionScale(_settings.quality);
-    VkExtent2D scaledExtent = {
-        static_cast<uint32_t>(std::round(_extent.width * scale)),
-        static_cast<uint32_t>(std::round(_extent.height * scale))
-    };
-
     ReflectionPushConstants pc{};
     pc.inverseViewProjection = inverseViewProjection;
     pc.cameraPosition = cameraPosition;
     pc.maxRoughness = _settings.maxRoughness;
-    pc.outputSize = glm::vec2(static_cast<float>(scaledExtent.width), static_cast<float>(scaledExtent.height));
+    pc.outputSize = glm::vec2(
+        static_cast<float>(_reflectionExtent.width),
+        static_cast<float>(_reflectionExtent.height)
+    );
     pc.sampleCount = _settings.sampleCount;
     pc.frameIndex = currentFrame;
     pc.rayBias = _settings.rayBias;
@@ -271,8 +278,8 @@ void RTReflections::render(
         &_missRegion,
         &_hitRegion,
         &_callableRegion,
-        scaledExtent.width,
-        scaledExtent.height,
+        _reflectionExtent.width,
+        _reflectionExtent.height,
         1
     );
 
@@ -328,19 +335,26 @@ void RTReflections::setQuality(RTReflectionQuality quality)
 
     if (_rtSupported && !_reflectionImages.empty())
     {
-        createReflectionResources(_extent);
+        createReflectionResources();
     }
 }
 
-void RTReflections::resize(VkExtent2D extent)
+void RTReflections::resize(VkExtent2D renderExtent, VkExtent2D viewportExtent)
 {
     if (!_rtSupported)
     {
         return;
     }
 
-    _extent = extent;
-    createReflectionResources(extent);
+    _renderExtent = renderExtent;
+    _viewportExtent = viewportExtent;
+
+    VkExtent2D newReflectionExtent = computeReflectionExtent();
+    if (newReflectionExtent.width != _reflectionExtent.width ||
+        newReflectionExtent.height != _reflectionExtent.height)
+    {
+        createReflectionResources();
+    }
 }
 
 void RTReflections::cleanupImages()

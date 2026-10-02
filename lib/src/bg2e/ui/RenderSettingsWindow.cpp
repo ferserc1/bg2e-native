@@ -62,7 +62,7 @@ bool RenderSettingsWindow::drawRenderScaleSection()
     auto scaleIdx = _renderer->scaleOption();
     if (bg2e::ui::Value::comboBox(scaleProcessorName + "##RenderScale", scaleItems, scaleIdx))
     {
-        _prefs->setRenderScaleIndex(scaleIdx);
+        _prefs->setFinalRenderingIndex(scaleIdx);
         return true;
     }
     return false;

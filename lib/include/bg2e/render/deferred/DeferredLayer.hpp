@@ -92,6 +92,11 @@ public:
     void resize(VkExtent2D newExtent) override;
     void cleanup() override;
 
+    // Final display extent. RT reflection quality is defined relative to this
+    // extent rather than to the potentially FSR-scaled deferred extent.
+    void setViewportExtent(VkExtent2D extent) { _viewportExtent = extent; }
+    void refreshRTReflectionExtent();
+
     void setLightDataBinding(scene::vk::DeferredLightDataBinding* binding) { _lightDataBinding = binding; }
     void setLights(const std::vector<base::LightData>& l) { _lights = l; }
     void setReflectionLightDataBinding(vulkan::rt::ReflectionLightDataBinding* binding) { _reflectionLightDataBinding = binding; }
@@ -258,6 +263,7 @@ protected:
     VkDescriptorSetLayout _debugDSLayout = VK_NULL_HANDLE;
 
     bool _isTransparent = false;
+    VkExtent2D _viewportExtent{};
 
     std::unique_ptr<RTAmbientOcclusion> _rtAmbientOcclusion;
     std::unique_ptr<TemporalAccumulator> _temporalAccumulator;

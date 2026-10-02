@@ -71,7 +71,7 @@ Sections (all changes go to `_prefs`, which applies them to the renderer):
 
 | Section | Controls |
 |---------|----------|
-| Render scale | combo over `RendererDeferred::scaleOptions()` (`setRenderScaleIndex`) |
+| Final Rendering | FSR Native AA/upscaling modes or Direct 100% without AA |
 | Indirect Lighting | mode combo: `Ambient Occlusion (RTAO)` / `Global Illumination (RTGI)` |
 | RTAO / RTGI | per-mode quality/bias controls |
 | RT Reflections | enable + quality controls |

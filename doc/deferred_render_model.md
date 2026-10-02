@@ -4,8 +4,7 @@ This document describes the deferred rendering pipeline implemented by
 `bg2e::render::RendererDeferred` and its subsystems: render layers, G-buffer
 layout, lighting composition, ray-traced effects (shadows, ambient occlusion,
 global illumination, reflections), temporal accumulation, denoising, motion
-vector generation and the final post-processing / upscaling stage (SMAA or
-FSR 3.1).
+vector generation and the final output stage (FSR 3.1 or native Direct).
 
 All paths are relative to the repository root. Line references use the
 `file:line` convention.
@@ -39,7 +38,7 @@ All paths are relative to the repository root. Line references use the
 12. [Denoising (bilateral filter)](#12-denoising-bilateral-filter)
 13. [Motion vector generation](#13-motion-vector-generation)
 14. [Final post-processing](#14-final-post-processing)
-    - 14.1 [SMAA path](#141-smaa-path)
+    - 14.1 [Legacy SMAA implementation](#141-legacy-smaa-implementation)
     - 14.2 [FSR 3.1 path](#142-fsr-31-path)
     - 14.3 [Path selection and scale options](#143-path-selection-and-scale-options)
 15. [Debug visualization](#15-debug-visualization)
@@ -63,8 +62,8 @@ Key characteristics:
   `vkCmdBeginRendering`/`vkCmdEndRendering`.
 - **No MSAA** — `supportsMsaa()` returns `false`
   (`RendererDeferred.hpp:96`) and the swapchain sample count is ignored
-  (`RendererDeferred.cpp:133-136`). Anti-aliasing is deferred to the final
-  post-processor (SMAA or FSR 3.1).
+  (`RendererDeferred.cpp:133-136`). Anti-aliasing is provided by FSR 3.1;
+  Direct mode intentionally performs no anti-aliasing.
 - **Layered composition** — the frame is produced by three stacked layers
   (`RendererDeferred.hpp:222-224`):
 
@@ -98,10 +97,10 @@ Key characteristics:
   precomputed tile per layer) with a LINEAR/REPEAT sampler, and is regenerated
   offline with `scripts/generate_blue_noise.c` (spectral shaping via FFT
   high-pass + uniform histogram ranking, producing a seamless tile).
-- **Final upscaling / AA** — an abstract `deferred::FinalPostProcessor`
+- **Final output / AA** — an abstract `deferred::FinalPostProcessor`
   (`lib/include/bg2e/render/deferred/FinalPostProcessor.hpp:40`) converts the
-  render-resolution image into the display-resolution image. Two
-  implementations exist: `SMAAPostProcessor` (all platforms) and
+  render-resolution image into the display-resolution image. Active
+  implementations are `DirectPostProcessor` (all platforms) and
   `FSRPostProcessor` (Windows/Linux only).
 
 ---
@@ -123,9 +122,8 @@ the **render extent** (internal deferred rendering resolution):
   computed render extent is unchanged it only updates camera viewports
   through `_resizeVisitor` (`RendererDeferred.cpp:317-399`).
 
-The active post-processor drives the scale options exposed to the UI:
-`RendererDeferred::setScaleOption()` forwards to the post-processor and then
-applies `renderScalePercent()` (`RendererDeferred.cpp:964-969`). See
+The final-rendering mode drives the options exposed to the UI. FSR modes use
+their SDK-defined scale; Direct forces 100%. See
 [§14.3](#143-path-selection-and-scale-options).
 
 ---
@@ -139,7 +137,7 @@ following steps every frame:
    matrix; original (unjittered) projection matrix (`:420-422`).
 2. **Jitter computation** —
    `jitteredProj = _finalPostProcessor->prepare(origProj, _frameCounter, _renderExtent)`
-   (`:426`). SMAA returns the matrix unchanged; FSR applies Halton-sequence
+   (`:426`). Direct returns the matrix unchanged; FSR applies Halton-sequence
    sub-pixel jitter.
 3. **Scene preparation** — `prepareSceneRender()` updates scene uniforms,
    environment and the ray tracing scene (`:431`). The skybox projection is
@@ -620,12 +618,13 @@ Implementation: `lib/include/bg2e/render/deferred/RTReflections.hpp`,
 `shaders/src/glsl/rt_reflections.{rgen,rchit,rmiss}.glsl`.
 
 - **Pass type**: `VK_KHR_ray_tracing` pipeline (raygen/miss/closest-hit,
-  max recursion 1, `RTReflections.cpp:137-142`). Resolution scaled by
-  quality — Ultra 1.0, High 2/3, Medium 0.5, Low 1/3
+  max recursion 1, `RTReflections.cpp:137-142`). Resolution is scaled from
+  the final viewport by quality — Ultra 1.0, High 2/3, Medium 0.5, Low 1/3
   (`rtReflectionResolutionScale()`, `RTReflections.hpp`); default **High**.
-  Changing quality waits idle and recreates the output images
-  (`RTReflections::setQuality()`). The composite pass bilinearly upsamples
-  the result through the G-buffer sampler.
+  It is therefore independent of the FSR render scale. Changing quality waits
+  idle, recreates the output images (`RTReflections::setQuality()`), and
+  invalidates reflection temporal history. The temporal/composite passes
+  sample the result through linear samplers.
 - **Output**: per-frame-in-flight `R16G16B16A16_SFLOAT` storage images;
   alpha carries the hit-confidence mask.
 
@@ -778,8 +777,8 @@ Implementation: `lib/include/bg2e/render/deferred/MotionVectorGenerator.hpp`,
 `lib/src/bg2e/render/deferred/MotionVectorGenerator.cpp`, shader
 `shaders/src/glsl/motion_vectors.comp.glsl`.
 
-- **Purpose**: produce camera-motion vectors for FSR 3 (also harmless when
-  the SMAA path is active).
+- **Purpose**: produce camera-motion vectors for FSR 3. Generation is skipped
+  entirely while Direct mode is active.
 - **Output**: per-frame-in-flight `VK_FORMAT_R16G16_SFLOAT` image at render
   resolution, storage + sampled (`MotionVectorGenerator.cpp:96-107`).
 - **Inputs** (push constants): current inverse view-projection, previous
@@ -815,7 +814,10 @@ The `deferred::FinalPostProcessor` interface
 - Scale UI API: `processorName()`, `scaleOptions()`, `setScaleOption()`,
   `scaleOption()`, `renderScalePercent()`.
 
-### 14.1 SMAA path
+### 14.1 Legacy SMAA implementation
+
+The SMAA classes remain in the source tree but are no longer selected by
+`RendererDeferred`, exposed in render settings, or used as an FSR fallback.
 
 Files: `SMAAPostProcessor.{hpp,cpp}`, `SMAAProcessor.{hpp,cpp}`
 (`lib/src/bg2e/render/deferred/`), shaders
@@ -888,7 +890,8 @@ Windows/Linux only (`#if !defined(__APPLE__)`).
 - **Dispatch** (`process()`, `:314-433`): color, depth and motion vectors
   as compute-read inputs; per-frame output as UAV; shared resources as UAV;
   `jitterOffset` from `prepare()`; `motionVectorScale = {1,1}`; **RCAS
-  sharpening enabled with sharpness 0.5**; `frameTimeDelta`, near/far and
+  sharpening enabled with sharpness 0.5 for upscaling modes and disabled for
+  Native AA**; `frameTimeDelta`, near/far and
   vertical FOV forwarded from the renderer. **`exposure`, `reactive` and
   `transparencyAndComposition` masks are not provided** (empty resources),
   and `reset` is never set — there is no history reset on camera cuts.
@@ -897,23 +900,23 @@ Windows/Linux only (`#if !defined(__APPLE__)`).
 
 ### 14.3 Path selection and scale options
 
-Selection in `RendererDeferred::build()` (`RendererDeferred.cpp:248-271`):
-the motion vector generator is always built; on non-Apple platforms FSR is
+Selection in `RendererDeferred::build()`: on non-Apple platforms FSR is
 attempted first, and any initialization failure (or macOS) falls back to
-SMAA with a logged warning.
+native Direct rendering. Direct forces 100% render scale, applies no jitter,
+skips motion-vector generation, and copies the deferred result to the output.
 
-| Aspect | SMAA path | FSR path |
+| Aspect | Direct path | FSR path |
 |---|---|---|
-| Technique | SMAA 1x, luma edges, orthogonal only, threshold 0.05, 16 search steps | FSR 3.1 upscaler, HDR, RCAS 0.5 |
+| Technique | Native image copy, no AA | FSR 3.1 temporal AA/upscaler, HDR; RCAS 0.5 except Native AA |
 | Jitter | None | Halton(2,3) via SDK |
-| Depth / motion | Unused | Depth + RG16F camera-only motion vectors |
+| Depth / motion | Not generated or used | Depth + RG16F camera-only motion vectors |
 | Reactive / T&C masks | N/A | Not provided |
-| Upscale | Linear blit after SMAA at render res | FSR dispatch → per-frame display-res intermediate → NEAREST blit |
-| Scale options | 25 / 50 / 75 / 100 / 150 % (default 50 %) | Quality 67 % / Balanced 59 % / Performance 50 % / Ultra 33 % (default Performance), derived from `ffxFsr3UpscalerGetUpscaleRatioFromQualityMode` (`FSRPostProcessor.cpp:444-467`) |
+| Output | Exact-size copy at 100% | FSR dispatch → per-frame display-res intermediate → NEAREST blit |
+| Scale options | 100% only | Native AA 100% / Quality 67% / Balanced 59% / Performance 50% / Ultra 33% |
 | Platforms | All | Windows / Linux |
 
-Changing the FSR quality mode is heavyweight (full context recreation with
-`waitIdle`); the SMAA path only recreates its per-frame images.
+Changing the final mode is heavyweight: it replaces the processor and, when
+the scale changes, recreates render-size resources with `waitIdle`.
 
 ---
 

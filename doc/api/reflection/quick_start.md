@@ -155,12 +155,22 @@ t.property("intensity", &base::Light::intensity, &base::Light::setIntensity)
 t.property("shadowSamples", &base::Light::shadowSamples, &base::Light::setShadowSamples)
     .range(1.0, 64.0)
     .step(1.0);          // editor stays Default
+
+// A vector angle slider; the range applies to all three components:
+t.property("rotation", &scene::TransformComponent::eulerRotation,
+                       &scene::TransformComponent::setEulerRotation)
+    .range(-180.0, 180.0)
+    .angle();
 ```
 
 **Key points:**
 - `range(min, max)` sets `metadata.min` and `metadata.max` only.
 - `slider()` sets `editor = Slider` only.
 - Order doesn't matter; each call touches a different field.
+- `Vec2`, `Vec3`, and `Vec4` use the same editor metadata as numeric scalars;
+  bounds and step apply uniformly to each component.
+- Slider and drag components support Ctrl-click keyboard entry. Values entered
+  this way are not forcibly clamped to the displayed range.
 - Available editor shortcuts: `input()`, `slider()`, `drag()`, `checkbox()`,
   `combo()`, `colorEditor()`, `angle()`, or `editor(PropertyEditor)` directly.
 

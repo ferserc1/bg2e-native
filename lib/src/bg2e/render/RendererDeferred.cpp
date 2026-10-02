@@ -22,7 +22,7 @@
 #include <bg2e/scene/SkyDomeTextureGenerator.hpp>
 #include <bg2e/render/Texture.hpp>
 #include <bg2e/render/vulkan/Info.hpp>
-#include <bg2e/render/deferred/SMAAPostProcessor.hpp>
+#include <bg2e/render/deferred/DirectPostProcessor.hpp>
 #if !defined(__APPLE__)
 #include <bg2e/render/deferred/FSRPostProcessor.hpp>
 #endif
@@ -68,6 +68,8 @@ void RendererDeferred::setRenderScalePercent(float percent)
     _scene->willResize();
 
     _skyboxLayer->resize(_renderExtent);
+    _opaqueLayer->setViewportExtent(_viewportExtent);
+    _transparentLayer->setViewportExtent(_viewportExtent);
     _opaqueLayer->resize(_renderExtent);
     _transparentLayer->resize(_renderExtent);
 
@@ -173,6 +175,7 @@ void RendererDeferred::build(
     _skyboxLayer->setEnvironment(_environment.get());
 
     _opaqueLayer = std::make_unique<deferred::DeferredLayer>(_engine, deferred::LayerType::Opaque);
+    _opaqueLayer->setViewportExtent(_viewportExtent);
     _opaqueLayer->setLightDataBinding(_lightDataBinding.get());
     if (_rtDataBinding) _opaqueLayer->setRtDataBinding(_rtDataBinding.get());
     if (_reflectionLightDataBinding) _opaqueLayer->setReflectionLightDataBinding(_reflectionLightDataBinding.get());
@@ -184,6 +187,7 @@ void RendererDeferred::build(
 
 
     _transparentLayer = std::make_unique<deferred::DeferredLayer>(_engine, deferred::LayerType::Transparent);
+    _transparentLayer->setViewportExtent(_viewportExtent);
     _transparentLayer->setLightDataBinding(_lightDataBinding.get());
     if (_rtDataBinding) _transparentLayer->setRtDataBinding(_rtDataBinding.get());
     if (_reflectionLightDataBinding) _transparentLayer->setReflectionLightDataBinding(_reflectionLightDataBinding.get());
@@ -226,10 +230,9 @@ void RendererDeferred::build(
         )
     );
 
-    // Intermediate image for the transparent layer output. SMAA reads from this
-    // image and writes the anti-aliased result into the final colorImage, so the
-    // transparent layer must not render directly into colorImage (which may be a
-    // swapchain image and is also the SMAA copy destination).
+    // Intermediate image for the transparent layer output. The selected final
+    // path reads this image and writes to colorImage, which may be a swapchain
+    // image and is also the editor-gizmo destination.
     _transparentImage = std::shared_ptr<vulkan::Image>(
         vulkan::Image::createAllocatedImage(
             _engine,
@@ -251,16 +254,14 @@ void RendererDeferred::build(
         _gizmoAndSelectionRenderer->init(engine, VK_SAMPLE_COUNT_1_BIT);
     }
 
-    // Motion vector generator (needed by FSR for temporal upscaling)
-    _motionVectorGenerator = std::make_unique<deferred::MotionVectorGenerator>(_engine);
-    _motionVectorGenerator->build(_renderExtent);
-
-    // Prefer FSR on Windows/Linux. If it cannot initialize, use the same
-    // SMAA-based scaling path used on macOS.
+    // Prefer FSR on Windows/Linux. If it cannot initialize, use native direct
+    // rendering without scaling or anti-aliasing.
 #if !defined(__APPLE__)
     auto fsrProc = std::make_unique<deferred::FSRPostProcessor>();
     if (fsrProc->build(_engine, _renderExtent, _viewportExtent, colorImageFormat))
     {
+        _fsrAvailable = true;
+        _finalRenderMode = FinalRenderMode::FSRPerformance;
         _finalPostProcessor = std::move(fsrProc);
     }
 #endif
@@ -268,12 +269,21 @@ void RendererDeferred::build(
     if (!_finalPostProcessor)
     {
 #if !defined(__APPLE__)
-        bg2e_log_warning << "RendererDeferred: FSR3 initialization failed; falling back to SMAA"
+        bg2e_log_warning << "RendererDeferred: FSR3 initialization failed; falling back to direct rendering"
                          << bg2e_log_end;
 #endif
-        auto smaaProc = std::make_unique<deferred::SMAAPostProcessor>();
-        smaaProc->build(_engine, _renderExtent, _viewportExtent, colorImageFormat);
-        _finalPostProcessor = std::move(smaaProc);
+        _fsrAvailable = false;
+        _finalRenderMode = FinalRenderMode::Direct;
+        setRenderScalePercent(100.0f);
+        auto directProc = std::make_unique<deferred::DirectPostProcessor>();
+        directProc->build(_engine, _renderExtent, _viewportExtent, colorImageFormat);
+        _finalPostProcessor = std::move(directProc);
+    }
+
+    if (_fsrAvailable)
+    {
+        _motionVectorGenerator = std::make_unique<deferred::MotionVectorGenerator>(_engine);
+        _motionVectorGenerator->build(_renderExtent);
     }
 }
 
@@ -325,9 +335,14 @@ void RendererDeferred::resize(
 ) {
     _viewportExtent = newExtent;
 
+    _opaqueLayer->setViewportExtent(_viewportExtent);
+    _transparentLayer->setViewportExtent(_viewportExtent);
+
     auto newRenderExtent = computeRenderExtent(_viewportExtent, _renderScalePercent);
     if (newRenderExtent.width == _renderExtent.width && newRenderExtent.height == _renderExtent.height)
     {
+        _opaqueLayer->refreshRTReflectionExtent();
+        _transparentLayer->refreshRTReflectionExtent();
         _resizeVisitor.resizeViewport(_scene->rootNode(), _viewportExtent);
         return;
     }
@@ -427,8 +442,7 @@ void RendererDeferred::draw(
     auto viewMatrix = mainCamera->ownerNode()->invertedWorldMatrix();
     auto origProj   = mainCamera->projectionMatrix();
 
-    // Let the post-processor compute jitter and return the modified projection matrix.
-    // SMAAPostProcessor returns origProj unchanged; FSRPostProcessor applies Halton jitter.
+    // FSR applies Halton jitter; Direct returns the projection unchanged.
     auto jitteredProj = _finalPostProcessor->prepare(origProj, _frameCounter, _renderExtent);
 
     // === Scene preparation (from Renderer base) ===
@@ -493,15 +507,19 @@ void RendererDeferred::draw(
     _opaqueLayer->setProjectionOverride(nullptr);
     _transparentLayer->setProjectionOverride(nullptr);
 
-    // === Motion vectors (needed by FSR; harmless with SMAA) ===
-    const vulkan::Image* motionVectors = _motionVectorGenerator->generate(
-        cmd, currentFrame,
-        _transparentLayer->depthBuffer().get(),
-        glm::inverse(origProj * viewMatrix),
-        _prevProjMatrix * _prevViewMatrix
-    );
+    // === Motion vectors (FSR only) ===
+    const vulkan::Image* motionVectors = nullptr;
+    if (_finalRenderMode != FinalRenderMode::Direct)
+    {
+        motionVectors = _motionVectorGenerator->generate(
+            cmd, currentFrame,
+            _transparentLayer->depthBuffer().get(),
+            glm::inverse(origProj * viewMatrix),
+            _prevProjMatrix * _prevViewMatrix
+        );
+    }
 
-    // === Final post-processing (SMAA or FSR) ===
+    // === Final output (FSR or native direct copy) ===
     vulkan::Image::cmdTransitionImage(
         cmd, _transparentImage->handle(),
         VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
@@ -575,6 +593,10 @@ void RendererDeferred::cleanup() {
     if (_finalPostProcessor) {
         _finalPostProcessor->cleanup();
         _finalPostProcessor.reset();
+    }
+    if (_standbyFSRPostProcessor) {
+        _standbyFSRPostProcessor->cleanup();
+        _standbyFSRPostProcessor.reset();
     }
     if (_motionVectorGenerator) {
         _motionVectorGenerator->cleanup();
@@ -1030,25 +1052,185 @@ bool RendererDeferred::rtReflectionUseBlueNoise() const
 
 std::string RendererDeferred::scaleProcessorName() const
 {
-    return _finalPostProcessor ? _finalPostProcessor->processorName() : "Render Scale";
+    return "Final Rendering";
 }
 
 std::vector<std::string> RendererDeferred::scaleOptions() const
 {
-    if (_finalPostProcessor) return _finalPostProcessor->scaleOptions();
-    return {};
+    if (!_fsrAvailable) return { "Direct (100%, No AA)" };
+    return {
+        "FSR Native AA (100%)",
+        "FSR Quality (67%)",
+        "FSR Balanced (59%)",
+        "FSR Performance (50%)",
+        "FSR Ultra Performance (33%)",
+        "Direct (100%, No AA)"
+    };
 }
 
 void RendererDeferred::setScaleOption(uint32_t index)
 {
-    if (!_finalPostProcessor) return;
-    _finalPostProcessor->setScaleOption(index);
-    setRenderScalePercent(_finalPostProcessor->renderScalePercent());
+    if (!_fsrAvailable)
+    {
+        setFinalRenderMode(FinalRenderMode::Direct);
+        return;
+    }
+
+    static constexpr FinalRenderMode modes[] = {
+        FinalRenderMode::FSRNativeAA,
+        FinalRenderMode::FSRQuality,
+        FinalRenderMode::FSRBalanced,
+        FinalRenderMode::FSRPerformance,
+        FinalRenderMode::FSRUltraPerformance,
+        FinalRenderMode::Direct
+    };
+    constexpr uint32_t modeCount = sizeof(modes) / sizeof(modes[0]);
+    if (index < modeCount) setFinalRenderMode(modes[index]);
 }
 
 uint32_t RendererDeferred::scaleOption() const
 {
-    return _finalPostProcessor ? _finalPostProcessor->scaleOption() : 0;
+    if (!_fsrAvailable) return 0;
+    switch (_finalRenderMode)
+    {
+        case FinalRenderMode::FSRNativeAA:          return 0;
+        case FinalRenderMode::FSRQuality:           return 1;
+        case FinalRenderMode::FSRBalanced:          return 2;
+        case FinalRenderMode::FSRPerformance:       return 3;
+        case FinalRenderMode::FSRUltraPerformance:  return 4;
+        case FinalRenderMode::Direct:               return 5;
+    }
+    return 3;
+}
+
+void RendererDeferred::setFinalRenderMode(FinalRenderMode mode)
+{
+    if (!_fsrAvailable && mode != FinalRenderMode::Direct)
+    {
+        mode = FinalRenderMode::Direct;
+    }
+    if (_finalPostProcessor && mode == _finalRenderMode) return;
+
+#if !defined(__APPLE__)
+    // Quality changes within FSR reuse the active processor. The normal render
+    // scale path calls FSRPostProcessor::resize(), which resets the context and
+    // history without rebuilding the FidelityFX backend interface from scratch.
+    if (_finalPostProcessor &&
+        _finalRenderMode != FinalRenderMode::Direct &&
+        mode != FinalRenderMode::Direct)
+    {
+        auto* fsrProc = dynamic_cast<deferred::FSRPostProcessor*>(_finalPostProcessor.get());
+        if (fsrProc)
+        {
+            uint32_t fsrIndex = 2;
+            switch (mode)
+            {
+                case FinalRenderMode::FSRQuality:          fsrIndex = 0; break;
+                case FinalRenderMode::FSRBalanced:         fsrIndex = 1; break;
+                case FinalRenderMode::FSRPerformance:      fsrIndex = 2; break;
+                case FinalRenderMode::FSRUltraPerformance: fsrIndex = 3; break;
+                case FinalRenderMode::FSRNativeAA:         fsrIndex = 4; break;
+                case FinalRenderMode::Direct: break;
+            }
+            fsrProc->setScaleOption(fsrIndex);
+            _finalRenderMode = mode;
+            setRenderScalePercent(fsrProc->renderScalePercent());
+            return;
+        }
+    }
+#endif
+
+    createFinalPostProcessor(mode);
+}
+
+void RendererDeferred::createFinalPostProcessor(FinalRenderMode mode)
+{
+    _engine->device().waitIdle();
+
+    if (mode == FinalRenderMode::Direct)
+    {
+        if (_finalPostProcessor)
+        {
+            if (_finalRenderMode != FinalRenderMode::Direct && _fsrAvailable)
+            {
+                if (_standbyFSRPostProcessor)
+                {
+                    _standbyFSRPostProcessor->cleanup();
+                }
+                _standbyFSRPostProcessor = std::move(_finalPostProcessor);
+            }
+            else
+            {
+                _finalPostProcessor->cleanup();
+                _finalPostProcessor.reset();
+            }
+        }
+        _finalRenderMode = FinalRenderMode::Direct;
+        setRenderScalePercent(100.0f);
+        auto directProc = std::make_unique<deferred::DirectPostProcessor>();
+        directProc->build(_engine, _renderExtent, _viewportExtent, _colorImageFormat);
+        _finalPostProcessor = std::move(directProc);
+        return;
+    }
+
+#if !defined(__APPLE__)
+    uint32_t fsrIndex = 2;
+    switch (mode)
+    {
+        case FinalRenderMode::FSRQuality:          fsrIndex = 0; break;
+        case FinalRenderMode::FSRBalanced:         fsrIndex = 1; break;
+        case FinalRenderMode::FSRPerformance:      fsrIndex = 2; break;
+        case FinalRenderMode::FSRUltraPerformance: fsrIndex = 3; break;
+        case FinalRenderMode::FSRNativeAA:         fsrIndex = 4; break;
+        case FinalRenderMode::Direct: break;
+    }
+
+    if (_finalPostProcessor)
+    {
+        _finalPostProcessor->cleanup();
+        _finalPostProcessor.reset();
+    }
+
+    if (_standbyFSRPostProcessor)
+    {
+        auto* fsrProc = dynamic_cast<deferred::FSRPostProcessor*>(_standbyFSRPostProcessor.get());
+        if (fsrProc)
+        {
+            fsrProc->setScaleOption(fsrIndex);
+            setRenderScalePercent(fsrProc->renderScalePercent());
+            fsrProc->resize(_renderExtent, _viewportExtent);
+            _finalRenderMode = mode;
+            _finalPostProcessor = std::move(_standbyFSRPostProcessor);
+            return;
+        }
+        _standbyFSRPostProcessor->cleanup();
+        _standbyFSRPostProcessor.reset();
+    }
+
+    auto fsrProc = std::make_unique<deferred::FSRPostProcessor>();
+    fsrProc->setScaleOption(fsrIndex);
+    setRenderScalePercent(fsrProc->renderScalePercent());
+    if (fsrProc->build(_engine, _renderExtent, _viewportExtent, _colorImageFormat))
+    {
+        if (!_motionVectorGenerator)
+        {
+            _motionVectorGenerator = std::make_unique<deferred::MotionVectorGenerator>(_engine);
+            _motionVectorGenerator->build(_renderExtent);
+        }
+        _finalRenderMode = mode;
+        _finalPostProcessor = std::move(fsrProc);
+        return;
+    }
+
+    bg2e_log_warning << "RendererDeferred: FSR3 mode initialization failed; using direct rendering (FSR remains available for retry)"
+                     << bg2e_log_end;
+#endif
+
+    _finalRenderMode = FinalRenderMode::Direct;
+    setRenderScalePercent(100.0f);
+    auto directProc = std::make_unique<deferred::DirectPostProcessor>();
+    directProc->build(_engine, _renderExtent, _viewportExtent, _colorImageFormat);
+    _finalPostProcessor = std::move(directProc);
 }
 
 void RendererDeferred::updateLights(

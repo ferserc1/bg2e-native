@@ -35,7 +35,13 @@ public:
     void load();
     void persist();
 
-    // --- Render Scale ---
+    // --- Final Rendering ---
+    // These values are indices into RendererDeferred::scaleOptions(), not
+    // serialized FinalRenderMode enum values.
+    uint32_t finalRenderingIndex() const;
+    void setFinalRenderingIndex(uint32_t value);
+
+    // Compatibility aliases for existing callers.
     uint32_t renderScaleIndex() const;
     void setRenderScaleIndex(uint32_t value);
 

@@ -87,10 +87,27 @@ void main() {
     uint validHits = 0u;
     uint samples = max(pc.sampleCount, 1u);
 
-    // Optimization. adjust the sample count in function of the roughness, to
-    // minimize the number of samples in mirror-like surfaces
-    float r = clamp(roughness / pc.maxRoughness, 0.0, 1.0);
-    samples = max(1u, uint(ceil(float(pc.sampleCount) * r * r)));
+    // Perfect mirrors only need one deterministic ray. Glossy surfaces keep
+    // at least two samples and ramp smoothly to the configured maximum; the
+    // previous quadratic policy reduced too much of the glossy range to one
+    // ray and produced unstable, visibly under-sampled reflections.
+    const float mirrorThreshold = 0.01;
+    if (roughness <= mirrorThreshold) {
+        samples = 1u;
+    } else {
+        uint minimumGlossySamples = min(samples, 2u);
+        float roughnessRange = max(pc.maxRoughness - mirrorThreshold, 0.0001);
+        float sampleFactor = smoothstep(
+            0.0,
+            1.0,
+            clamp((roughness - mirrorThreshold) / roughnessRange, 0.0, 1.0)
+        );
+        samples = uint(ceil(mix(
+            float(minimumGlossySamples),
+            float(samples),
+            sampleFactor
+        )));
+    }
 
     for (uint i = 0u; i < samples; ++i) {
         vec2 xi;

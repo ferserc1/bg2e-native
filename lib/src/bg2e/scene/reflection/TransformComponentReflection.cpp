@@ -37,6 +37,8 @@ reflection::TypeRegistration<scene::TransformComponent> _transformReflection(
                                &scene::TransformComponent::setEulerRotation)
             .displayName("Rotation")
             .category("Transform")
+            .range(-180.0, 180.0)
+            .angle()
             .tooltip("Euler rotation in degrees");
 
         t.property("scale", &scene::TransformComponent::scaleValue,

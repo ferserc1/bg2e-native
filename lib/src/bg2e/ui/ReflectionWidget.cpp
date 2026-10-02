@@ -115,6 +115,81 @@ bool drawFloatEditor(const std::string & label, float & v, const reflection::Pro
     }
 }
 
+bool drawVec2Editor(const std::string & label, glm::vec2 & v, const reflection::PropertyInfo & prop)
+{
+    const auto & md = prop.metadata;
+    const float min = minOr(md, 0.0f);
+    const float max = maxOr(md, 1.0f);
+    switch (prop.editor)
+    {
+    case PropertyEditor::Slider:
+        return Vector::sliderVec2(label, v, min, max);
+    case PropertyEditor::Drag:
+        return Vector::dragVec2(
+            label, v, stepOr(md, 0.1f),
+            md.min ? min : 0.0f, md.max ? max : 0.0f
+        );
+    case PropertyEditor::Angle:
+        if (md.min && md.max)
+        {
+            return Vector::sliderVec2(label, v, min, max);
+        }
+        return Vector::dragVec2(label, v, stepOr(md, 0.5f));
+    default:
+        return Vector::vec2(label, v);
+    }
+}
+
+bool drawVec3Editor(const std::string & label, glm::vec3 & v, const reflection::PropertyInfo & prop)
+{
+    const auto & md = prop.metadata;
+    const float min = minOr(md, 0.0f);
+    const float max = maxOr(md, 1.0f);
+    switch (prop.editor)
+    {
+    case PropertyEditor::Slider:
+        return Vector::sliderVec3(label, v, min, max);
+    case PropertyEditor::Drag:
+        return Vector::dragVec3(
+            label, v, stepOr(md, 0.1f),
+            md.min ? min : 0.0f, md.max ? max : 0.0f
+        );
+    case PropertyEditor::Angle:
+        if (md.min && md.max)
+        {
+            return Vector::sliderVec3(label, v, min, max);
+        }
+        return Vector::dragVec3(label, v, stepOr(md, 0.5f));
+    default:
+        return Vector::vec3(label, v);
+    }
+}
+
+bool drawVec4Editor(const std::string & label, glm::vec4 & v, const reflection::PropertyInfo & prop)
+{
+    const auto & md = prop.metadata;
+    const float min = minOr(md, 0.0f);
+    const float max = maxOr(md, 1.0f);
+    switch (prop.editor)
+    {
+    case PropertyEditor::Slider:
+        return Vector::sliderVec4(label, v, min, max);
+    case PropertyEditor::Drag:
+        return Vector::dragVec4(
+            label, v, stepOr(md, 0.1f),
+            md.min ? min : 0.0f, md.max ? max : 0.0f
+        );
+    case PropertyEditor::Angle:
+        if (md.min && md.max)
+        {
+            return Vector::sliderVec4(label, v, min, max);
+        }
+        return Vector::dragVec4(label, v, stepOr(md, 0.5f));
+    default:
+        return Vector::vec4(label, v);
+    }
+}
+
 } // anonymous namespace
 
 bool ReflectionWidget::drawProperties(
@@ -272,19 +347,19 @@ bool ReflectionWidget::drawScalarProperty(
     }
     case PropertyType::Vec2: {
         auto v = std::any_cast<glm::vec2>(prop.getter(instance));
-        changed = Vector::vec2(label, v);
+        changed = drawVec2Editor(label, v, prop);
         if (changed) prop.setter(instance, v);
         break;
     }
     case PropertyType::Vec3: {
         auto v = std::any_cast<glm::vec3>(prop.getter(instance));
-        changed = Vector::vec3(label, v);
+        changed = drawVec3Editor(label, v, prop);
         if (changed) prop.setter(instance, v);
         break;
     }
     case PropertyType::Vec4: {
         auto v = std::any_cast<glm::vec4>(prop.getter(instance));
-        changed = Vector::vec4(label, v);
+        changed = drawVec4Editor(label, v, prop);
         if (changed) prop.setter(instance, v);
         break;
     }

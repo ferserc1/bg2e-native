@@ -457,6 +457,10 @@ Value::comboBox("Material", [](std::vector<std::string>& out) {
 Numeric::drag("Exposure", &exposure, 0.01f);
 Numeric::drag("Sample", &sample, 1.0f, 0, 64);   // clamped int drag
 
+// Vector sliders and drags use one range for every component
+Vector::sliderVec3("Rotation", rotation, -180.0f, 180.0f);
+Vector::dragVec3("Offset", offset, 0.1f, -10.0f, 10.0f);
+
 // Matrix editor: decomposes into Position / Rotation(deg) / Scale rows
 Vector::mat4("ModelMatrix", modelMatrix);
 ```
@@ -483,6 +487,9 @@ Vector::mat4("ModelMatrix", modelMatrix);
   input width — keep default 200 for normal fields.
 - `Vector::vec2/3/4` have `int*`, `float*` and `glm::vecN&` overloads; with
   the GLM overloads the component order in the widget is X,Y,(Z,(W)).
+- `Vector::sliderVec2/3/4` and `dragVec2/3/4` have `float*` and `glm::vecN&`
+  overloads. Ctrl-clicking a component switches it to keyboard entry without
+  forcing the typed value into the displayed range.
 
 ---
 

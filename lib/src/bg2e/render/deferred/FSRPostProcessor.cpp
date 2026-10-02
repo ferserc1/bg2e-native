@@ -390,8 +390,9 @@ void FSRPostProcessor::process(
     dispatch.motionVectorScale       = { 1.0f, 1.0f };
     dispatch.renderSize              = { _renderExtent.width,  _renderExtent.height };
     dispatch.upscaleSize             = { _displayExtent.width, _displayExtent.height };
-    dispatch.enableSharpening        = true;
-    dispatch.sharpness               = 0.5f;
+    const bool nativeAA = _scaleOptionIndex == 4;
+    dispatch.enableSharpening        = !nativeAA;
+    dispatch.sharpness               = nativeAA ? 0.0f : 0.5f;
     dispatch.frameTimeDelta          = deltaMs;
     dispatch.preExposure             = 1.0f;
     dispatch.reset                   = false;
@@ -447,7 +448,8 @@ std::vector<std::string> FSRPostProcessor::scaleOptions() const
         "Quality (67%)",
         "Balanced (59%)",
         "Performance (50%)",
-        "Ultra Performance (33%)"
+        "Ultra Performance (33%)",
+        "Native AA (100%)"
     };
 }
 

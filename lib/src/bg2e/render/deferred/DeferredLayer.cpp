@@ -90,6 +90,11 @@ void DeferredLayer::build(VkExtent2D extent, VkFormat outputFormat)
 {
     RenderLayer::build(extent, outputFormat);
 
+    if (_viewportExtent.width == 0 || _viewportExtent.height == 0)
+    {
+        _viewportExtent = extent;
+    }
+
     // Create per-frame G-buffer managers
     _gbuffers.resize(_engine->numImages());
     for (auto& gb : _gbuffers)
@@ -121,7 +126,7 @@ void DeferredLayer::build(VkExtent2D extent, VkFormat outputFormat)
         _rtReflections = std::make_unique<RTReflections>(_engine);
         _rtReflections->setMaterialDataBinding(_rtMaterialDataBinding.get());
         _rtReflections->setReflectionLightDataBinding(_reflectionLightDataBinding);
-        _rtReflections->build(_gbuffers[0].get(), extent);
+        _rtReflections->build(_gbuffers[0].get(), extent, _viewportExtent);
 
         _temporalReflectionAccumulator = std::make_unique<TemporalAccumulator>(_engine);
         _temporalReflectionAccumulator->setFormat(VK_FORMAT_R16G16B16A16_SFLOAT);
@@ -455,11 +460,23 @@ void DeferredLayer::resize(VkExtent2D newExtent)
     _rtAmbientOcclusion->resize(newExtent);
     if (_temporalAccumulator) _temporalAccumulator->resize(newExtent);
     _denoiseFilter->resize(newExtent);
-    if (_rtReflections) _rtReflections->resize(newExtent);
+    if (_rtReflections) _rtReflections->resize(newExtent, _viewportExtent);
     if (_temporalReflectionAccumulator) _temporalReflectionAccumulator->resize(newExtent);
     if (_rtGlobalIllumination) _rtGlobalIllumination->resize(newExtent);
     if (_temporalGIAccumulator) _temporalGIAccumulator->resize(newExtent);
     if (_denoiseGIFilter) _denoiseGIFilter->resize(newExtent);
+}
+
+void DeferredLayer::refreshRTReflectionExtent()
+{
+    if (_rtReflections)
+    {
+        _rtReflections->resize(_extent, _viewportExtent);
+    }
+    if (_temporalReflectionAccumulator)
+    {
+        _temporalReflectionAccumulator->invalidateHistory();
+    }
 }
 
 void DeferredLayer::cleanup()
@@ -675,7 +692,9 @@ float DeferredLayer::denoiseNormalSigma() const
 
 void DeferredLayer::setRTReflectionsEnabled(bool enabled)
 {
-    if (_rtReflections) _rtReflections->setEnabled(enabled);
+    if (!_rtReflections || _rtReflections->settings().enabled == enabled) return;
+    _rtReflections->setEnabled(enabled);
+    if (_temporalReflectionAccumulator) _temporalReflectionAccumulator->invalidateHistory();
 }
 
 bool DeferredLayer::rtReflectionsEnabled() const
@@ -685,7 +704,9 @@ bool DeferredLayer::rtReflectionsEnabled() const
 
 void DeferredLayer::setRTReflectionSampleCount(uint32_t count)
 {
-    if (_rtReflections) _rtReflections->setSampleCount(count);
+    if (!_rtReflections || _rtReflections->settings().sampleCount == count) return;
+    _rtReflections->setSampleCount(count);
+    if (_temporalReflectionAccumulator) _temporalReflectionAccumulator->invalidateHistory();
 }
 
 uint32_t DeferredLayer::rtReflectionSampleCount() const
@@ -695,7 +716,9 @@ uint32_t DeferredLayer::rtReflectionSampleCount() const
 
 void DeferredLayer::setRTReflectionMaxRoughness(float r)
 {
-    if (_rtReflections) _rtReflections->setMaxRoughness(r);
+    if (!_rtReflections || _rtReflections->settings().maxRoughness == r) return;
+    _rtReflections->setMaxRoughness(r);
+    if (_temporalReflectionAccumulator) _temporalReflectionAccumulator->invalidateHistory();
 }
 
 float DeferredLayer::rtReflectionMaxRoughness() const
@@ -705,7 +728,9 @@ float DeferredLayer::rtReflectionMaxRoughness() const
 
 void DeferredLayer::setRTReflectionRayBias(float b)
 {
-    if (_rtReflections) _rtReflections->setRayBias(b);
+    if (!_rtReflections || _rtReflections->settings().rayBias == b) return;
+    _rtReflections->setRayBias(b);
+    if (_temporalReflectionAccumulator) _temporalReflectionAccumulator->invalidateHistory();
 }
 
 float DeferredLayer::rtReflectionRayBias() const
@@ -715,7 +740,9 @@ float DeferredLayer::rtReflectionRayBias() const
 
 void DeferredLayer::setRTReflectionMaxDistance(float d)
 {
-    if (_rtReflections) _rtReflections->setMaxDistance(d);
+    if (!_rtReflections || _rtReflections->settings().maxDistance == d) return;
+    _rtReflections->setMaxDistance(d);
+    if (_temporalReflectionAccumulator) _temporalReflectionAccumulator->invalidateHistory();
 }
 
 float DeferredLayer::rtReflectionMaxDistance() const
@@ -725,7 +752,9 @@ float DeferredLayer::rtReflectionMaxDistance() const
 
 void DeferredLayer::setRTReflectionRoughnessSpread(float s)
 {
-    if (_rtReflections) _rtReflections->setRoughnessSpread(s);
+    if (!_rtReflections || _rtReflections->settings().roughnessSpread == s) return;
+    _rtReflections->setRoughnessSpread(s);
+    if (_temporalReflectionAccumulator) _temporalReflectionAccumulator->invalidateHistory();
 }
 
 float DeferredLayer::rtReflectionRoughnessSpread() const
@@ -735,7 +764,9 @@ float DeferredLayer::rtReflectionRoughnessSpread() const
 
 void DeferredLayer::setRTReflectionShadowSamples(uint32_t samples)
 {
-    if (_rtReflections) _rtReflections->setShadowSamples(samples);
+    if (!_rtReflections || _rtReflections->settings().shadowSamples == samples) return;
+    _rtReflections->setShadowSamples(samples);
+    if (_temporalReflectionAccumulator) _temporalReflectionAccumulator->invalidateHistory();
 }
 
 uint32_t DeferredLayer::rtReflectionShadowSamples() const
@@ -745,7 +776,9 @@ uint32_t DeferredLayer::rtReflectionShadowSamples() const
 
 void DeferredLayer::setRTReflectionQuality(RTReflectionQuality quality)
 {
-    if (_rtReflections) _rtReflections->setQuality(quality);
+    if (!_rtReflections || _rtReflections->settings().quality == quality) return;
+    _rtReflections->setQuality(quality);
+    if (_temporalReflectionAccumulator) _temporalReflectionAccumulator->invalidateHistory();
 }
 
 RTReflectionQuality DeferredLayer::rtReflectionQuality() const
@@ -755,7 +788,9 @@ RTReflectionQuality DeferredLayer::rtReflectionQuality() const
 
 void DeferredLayer::setRTReflectionUseBlueNoise(bool use)
 {
-    if (_rtReflections) _rtReflections->setUseBlueNoise(use);
+    if (!_rtReflections || _rtReflections->settings().useBlueNoise == use) return;
+    _rtReflections->setUseBlueNoise(use);
+    if (_temporalReflectionAccumulator) _temporalReflectionAccumulator->invalidateHistory();
 }
 
 bool DeferredLayer::rtReflectionUseBlueNoise() const

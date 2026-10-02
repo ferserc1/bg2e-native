@@ -288,6 +288,18 @@ namespace gltf {
 
         if (material)
         {
+            result.setRefractionFactor(0.001f);
+
+            // glTF defines transparency through alphaMode, not from the RGB
+            // base color or its alpha factor alone. BLEND requires ordinary
+            // alpha compositing; OPAQUE ignores alpha and MASK needs a cutoff
+            // discard path that this importer does not yet provide.
+            if (material->alpha_mode == cgltf_alpha_mode_blend)
+            {
+                result.setIsTransparent(true);
+                result.setIsSolid(false);
+            }
+
             if (auto texture = textureFromView(material->normal_texture, images, base::Color::TypeLinear))
             {
                 result.setNormalTexture(texture);

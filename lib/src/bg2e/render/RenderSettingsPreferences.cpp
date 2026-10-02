@@ -18,6 +18,7 @@
 
 #include <bg2e/render/RenderSettingsPreferences.hpp>
 #include <bg2e/render/RendererDeferred.hpp>
+#include <limits>
 
 namespace bg2e {
 namespace render {
@@ -30,9 +31,21 @@ RenderSettingsPreferences::RenderSettingsPreferences(RendererDeferred* renderer)
 
 void RenderSettingsPreferences::load()
 {
-    // Render Scale
-    _renderer->setScaleOption(
-        _prefs.get("render_scale_optionIndex", _renderer->scaleOption()));
+    // Final rendering mode. Migrate the old FSR option index when the new key
+    // has not been written yet (old indices match the first four enum values).
+    uint32_t finalMode = _prefs.get(
+        "render_final_mode", std::numeric_limits<uint32_t>::max());
+    if (finalMode == std::numeric_limits<uint32_t>::max())
+    {
+        finalMode = _prefs.get(
+            "render_scale_optionIndex",
+            static_cast<uint32_t>(FinalRenderMode::FSRPerformance));
+    }
+    if (finalMode > static_cast<uint32_t>(FinalRenderMode::Direct))
+    {
+        finalMode = static_cast<uint32_t>(FinalRenderMode::FSRPerformance);
+    }
+    _renderer->setFinalRenderMode(static_cast<FinalRenderMode>(finalMode));
 
     // Indirect Lighting Mode
     _renderer->setIndirectLightingMode(
@@ -129,7 +142,7 @@ void RenderSettingsPreferences::persist()
 {
     if (!_dirty) return;
 
-    _prefs.set("render_scale_optionIndex", _renderer->scaleOption());
+    _prefs.set("render_final_mode", static_cast<uint32_t>(_renderer->finalRenderMode()));
     _prefs.set("render_il_mode", static_cast<uint32_t>(_renderer->indirectLightingMode()));
 
     _prefs.set("render_ao_qualityIndex", static_cast<uint32_t>(_renderer->aoQuality()));
@@ -176,7 +189,8 @@ void RenderSettingsPreferences::persist()
 }
 
 // --- Getters (read directly from renderer) ---
-uint32_t RenderSettingsPreferences::renderScaleIndex() const { return _renderer->scaleOption(); }
+uint32_t RenderSettingsPreferences::finalRenderingIndex() const { return _renderer->scaleOption(); }
+uint32_t RenderSettingsPreferences::renderScaleIndex() const { return finalRenderingIndex(); }
 uint32_t RenderSettingsPreferences::indirectLightingMode() const { return static_cast<uint32_t>(_renderer->indirectLightingMode()); }
 uint32_t RenderSettingsPreferences::aoQualityIndex() const { return static_cast<uint32_t>(_renderer->aoQuality()); }
 int RenderSettingsPreferences::aoSampleCount() const { return _renderer->aoSampleCount(); }
@@ -215,6 +229,11 @@ float RenderSettingsPreferences::denoiseNormalSigma() const { return _renderer->
 
 // --- Setters (write to renderer + mark dirty) ---
 void RenderSettingsPreferences::setRenderScaleIndex(uint32_t v)
+{
+    setFinalRenderingIndex(v);
+}
+
+void RenderSettingsPreferences::setFinalRenderingIndex(uint32_t v)
 {
     _renderer->setScaleOption(v);
     _dirty = true;

@@ -137,8 +137,8 @@ a range, and setting a range does not force a slider.
 |-------|-----------------|
 | `Default` | A sensible widget chosen by `PropertyType`. |
 | `Input` | Plain numeric / text input. |
-| `Slider` | Range slider. |
-| `Drag` | Drag-to-adjust scalar. |
+| `Slider` | Range slider for numeric scalars and vectors. |
+| `Drag` | Drag-to-adjust numeric scalar or vector. |
 | `Checkbox` | Boolean toggle. |
 | `Combo` | Dropdown, populated from `metadata.enumOptions`. |
 | `Color` | Color picker. |
@@ -173,6 +173,9 @@ chained `PropertyBuilder` methods.
 | `resourceValueType` | `PropertyType` | Original `String` or `Path` storage contract of a promoted Resource property. |
 
 `min`/`max`/`step` are constraints only; they do not affect `editor`.
+For `Vec2`, `Vec3`, and `Vec4`, the same `min`, `max`, and `step` values apply
+to every component. Slider and drag components retain Dear ImGui's Ctrl-click
+keyboard-entry mode; manually entered values are not forcibly clamped.
 
 ---
 

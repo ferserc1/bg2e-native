@@ -149,6 +149,156 @@ bool Vector::vec4(
     return false;
 }
 
+bool Vector::sliderVec2(
+    const std::string& label,
+    float * value,
+    float min,
+    float max,
+    bool sameLine
+) {
+    if (sameLine)
+    {
+        ImGui::SameLine();
+    }
+    return ImGui::SliderFloat2(label.c_str(), value, min, max);
+}
+
+bool Vector::sliderVec3(
+    const std::string& label,
+    float * value,
+    float min,
+    float max,
+    bool sameLine
+) {
+    if (sameLine)
+    {
+        ImGui::SameLine();
+    }
+    return ImGui::SliderFloat3(label.c_str(), value, min, max);
+}
+
+bool Vector::sliderVec4(
+    const std::string& label,
+    float * value,
+    float min,
+    float max,
+    bool sameLine
+) {
+    if (sameLine)
+    {
+        ImGui::SameLine();
+    }
+    return ImGui::SliderFloat4(label.c_str(), value, min, max);
+}
+
+bool Vector::sliderVec2(
+    const std::string& label,
+    glm::vec2& value,
+    float min,
+    float max,
+    bool sameLine
+) {
+    return sliderVec2(label, &value.x, min, max, sameLine);
+}
+
+bool Vector::sliderVec3(
+    const std::string& label,
+    glm::vec3& value,
+    float min,
+    float max,
+    bool sameLine
+) {
+    return sliderVec3(label, &value.x, min, max, sameLine);
+}
+
+bool Vector::sliderVec4(
+    const std::string& label,
+    glm::vec4& value,
+    float min,
+    float max,
+    bool sameLine
+) {
+    return sliderVec4(label, &value.x, min, max, sameLine);
+}
+
+bool Vector::dragVec2(
+    const std::string& label,
+    float * value,
+    float speed,
+    float min,
+    float max,
+    bool sameLine
+) {
+    if (sameLine)
+    {
+        ImGui::SameLine();
+    }
+    return ImGui::DragFloat2(label.c_str(), value, speed, min, max);
+}
+
+bool Vector::dragVec3(
+    const std::string& label,
+    float * value,
+    float speed,
+    float min,
+    float max,
+    bool sameLine
+) {
+    if (sameLine)
+    {
+        ImGui::SameLine();
+    }
+    return ImGui::DragFloat3(label.c_str(), value, speed, min, max);
+}
+
+bool Vector::dragVec4(
+    const std::string& label,
+    float * value,
+    float speed,
+    float min,
+    float max,
+    bool sameLine
+) {
+    if (sameLine)
+    {
+        ImGui::SameLine();
+    }
+    return ImGui::DragFloat4(label.c_str(), value, speed, min, max);
+}
+
+bool Vector::dragVec2(
+    const std::string& label,
+    glm::vec2& value,
+    float speed,
+    float min,
+    float max,
+    bool sameLine
+) {
+    return dragVec2(label, &value.x, speed, min, max, sameLine);
+}
+
+bool Vector::dragVec3(
+    const std::string& label,
+    glm::vec3& value,
+    float speed,
+    float min,
+    float max,
+    bool sameLine
+) {
+    return dragVec3(label, &value.x, speed, min, max, sameLine);
+}
+
+bool Vector::dragVec4(
+    const std::string& label,
+    glm::vec4& value,
+    float speed,
+    float min,
+    float max,
+    bool sameLine
+) {
+    return dragVec4(label, &value.x, speed, min, max, sameLine);
+}
+
 bool Vector::mat4(
     const std::string& label,
     glm::mat4& value,

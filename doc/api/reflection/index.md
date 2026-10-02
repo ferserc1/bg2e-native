@@ -73,6 +73,8 @@ serializable without carrying any reflection metadata. A generic
 2. **Editor choice is orthogonal to constraints.** `range(min, max)` only sets
    `metadata.min`/`max`; `slider()`, `drag()`, `input()`… only set the editor. A
    property can have a range *and* a plain input, or a range *and* a slider.
+   Numeric vector properties (`Vec2`, `Vec3`, and `Vec4`) use the same editor
+   and apply the range and step uniformly to every component.
 3. **Type erasure with `std::any` + `std::function`.** Instances are addressed as
    `void*`; there is no inheritance or virtual accessor hierarchy.
 4. **Registry key is a plain `std::string`.** Component-like types reuse the
@@ -302,6 +304,8 @@ Scale Transform Controller, Chain, Input Chain Joint, and Output Chain Joint.
 Notable compositions are the nested `Light` and `LinkJoint` objects, Camera's
 polymorphic projection, Environment's filtered image Resource, and Transform's
 editable translation/rotation/scale plus read-only matrix and identity action.
+Transform rotation is a three-component angle slider with a `-180..180` degree
+range. Slider components can also be Ctrl-clicked for direct keyboard entry.
 Drawable and Chain currently expose display-level metadata only.
 
 ---

@@ -34,9 +34,9 @@ namespace deferred {
 // rendered scene at render-resolution and outputs it at display-resolution,
 // performing anti-aliasing and/or upscaling.
 //
-// Concrete implementations:
-//   SMAAPostProcessor  — available on all platforms
-//   FSRPostProcessor   — Windows and Linux only
+// Active deferred-renderer implementations:
+//   DirectPostProcessor — native output without AA or scaling
+//   FSRPostProcessor    — Windows and Linux only
 class BG2E_API FinalPostProcessor {
 public:
     virtual ~FinalPostProcessor() = default;
@@ -55,7 +55,7 @@ public:
 
     // Compute and store the jitter for this frame.  Returns the projection
     // matrix with sub-pixel jitter applied, ready to be used by all render
-    // layers.  Implementations that do not need jitter (SMAA) return projMatrix
+    // layers. Implementations that do not need jitter (Direct) return projMatrix
     // unmodified.
     virtual glm::mat4 prepare(
         const glm::mat4& projMatrix,
@@ -87,7 +87,7 @@ public:
 
     // --- Scale UI API ---
 
-    // Human-readable label for the scale control, e.g. "Render Scale" or "FSR3 Scale".
+    // Human-readable label for the final-rendering control.
     virtual std::string processorName() const = 0;
 
     // Available scale options in display order.

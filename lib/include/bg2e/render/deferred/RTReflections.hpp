@@ -70,9 +70,8 @@ struct RTReflectionSettings {
     // Independent of base::Light::shadowSamples, which still controls the
     // primary composite shadows.
     uint32_t shadowSamples = 1;
-    // Resolution scale for the reflection pass. The composite pass bilinearly
-    // upsamples the result, and the envmap certainty blend hides the loss on
-    // glossy surfaces.
+    // Resolution scale for the reflection pass, relative to the final viewport
+    // rather than the potentially FSR-scaled deferred render extent.
     RTReflectionQuality quality = RTReflectionQuality::High;
     // Sample the GGX lobe with the shared blue-noise texture (better
     // convergence) instead of per-pixel white noise hashing.
@@ -87,8 +86,8 @@ public:
     void setMaterialDataBinding(vulkan::rt::RTMaterialDataBinding* binding) { _materialDataBinding = binding; }
     void setReflectionLightDataBinding(vulkan::rt::ReflectionLightDataBinding* binding) { _reflectionLightDataBinding = binding; }
 
-    void build(const GBufferManager* gbuffer, VkExtent2D extent);
-    void resize(VkExtent2D extent);
+    void build(const GBufferManager* gbuffer, VkExtent2D renderExtent, VkExtent2D viewportExtent);
+    void resize(VkExtent2D renderExtent, VkExtent2D viewportExtent);
 
     void render(
         VkCommandBuffer cmd,
@@ -127,7 +126,9 @@ public:
 private:
     Engine* _engine = nullptr;
     RTReflectionSettings _settings;
-    VkExtent2D _extent{};
+    VkExtent2D _renderExtent{};
+    VkExtent2D _viewportExtent{};
+    VkExtent2D _reflectionExtent{};
     bool _rtSupported = false;
 
     vulkan::rt::RTMaterialDataBinding* _materialDataBinding = nullptr;
@@ -164,7 +165,8 @@ private:
     };
 
     void createFallbackImage();
-    void createReflectionResources(VkExtent2D extent);
+    VkExtent2D computeReflectionExtent() const;
+    void createReflectionResources();
     void createPipeline();
     void cleanupImages();
 };

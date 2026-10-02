@@ -100,6 +100,7 @@ private:
         FFX_FSR3UPSCALER_QUALITY_MODE_BALANCED,           // 1: Balanced  (59%)
         FFX_FSR3UPSCALER_QUALITY_MODE_PERFORMANCE,        // 2: Perf.     (50%)
         FFX_FSR3UPSCALER_QUALITY_MODE_ULTRA_PERFORMANCE,  // 3: Ultra     (33%)
+        FFX_FSR3UPSCALER_QUALITY_MODE_NATIVEAA,           // 4: Native AA (100%)
     };
 
     bool createContext();
