@@ -27,8 +27,10 @@
 #include <bg2e/scene/Component.hpp>
 #include <bg2e/render/vulkan/rt/RayTracingMesh.hpp>
 
+#include <algorithm>
 #include <memory>
 #include <functional>
+#include <string>
 #include <vector>
 
 namespace bg2e {
@@ -96,6 +98,7 @@ public:
     inline void setName(const std::string& name)
     {
         _name = name;
+        std::replace(_name.begin(), _name.end(), '.', '_');
     }
     
 protected:

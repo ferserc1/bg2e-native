@@ -39,7 +39,7 @@ std::shared_ptr<DrawableBase> DrawableGeneric<MeshT, RenderMeshT>::clone() const
 
     // Copy the DrawableBase state (whole-mesh transform and name).
     copy->_transform = _transform;
-    copy->_name = _name;
+    copy->setName(_name);
 
     // Deep copy the per-submesh attributes (material, transform, name, group,
     // visibility). MaterialAttributes is a value type, so this duplicates the

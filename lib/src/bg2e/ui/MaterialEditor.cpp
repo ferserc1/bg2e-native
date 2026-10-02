@@ -181,7 +181,7 @@ bool MaterialEditor::draw()
         }
 
         auto refractionFactor = _material->materialAttributes().refractionFactor();
-        if (Numeric::sliderFloat("Refraction##refractionFactor", &refractionFactor, 0.0f, 1.0f))
+        if (Numeric::sliderFloat("Refraction##refractionFactor", &refractionFactor, 0.0f, 0.1f))
         {
             for (auto & mat : _editMaterialList)
             {
