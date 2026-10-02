@@ -575,10 +575,13 @@ native file chooser using reflected resource filters and relative-path policy.
 
 **Header:** `<bg2e/ui/UISettingsWindow.hpp>` · **Guide:** [Settings windows](Settings_Windows.md)
 
-`Window` subclass, initially closed. `init()` sets title/size and the draw
-body: interface-scale slider (1.0–2.0) + per-`GizmoType` visibility /
-opacity / scale controls (camera, point/spot/directional light, environment,
-transform + uniform/axis scale handles).
+`Window` subclass, initially closed. `init(bool
+showBackgroundFrameRateSettings = false)` sets title/size and the draw body:
+interface-scale slider (1.0–2.0) + per-`GizmoType` visibility / opacity / scale
+controls (camera, point/spot/directional light, environment, transform +
+uniform/axis scale handles). Passing `true` adds controls for the active
+`app::MainLoop` background-frame-rate limiter and persists them in the `"app"`
+preferences context.
 
 ### `RenderSettingsWindow`
 

@@ -81,6 +81,13 @@ run(application)
   ui->cleanup()                // writes uiScale back to preferences
 ```
 
+This is the lifecycle of a rendered frame, not an unconditional iteration
+rate. If `app::MainLoop` background limiting is active while the window is
+unfocused, entire UI frames are skipped together with scene update, rendering,
+and presentation. SDL events continue to be processed between deadlines, and
+the next UI frame reflects the accumulated application state. Code that needs
+a prompt background frame can call `app::MainLoop::requestFrame()`.
+
 `draw()` opens its own dynamic-rendering pass on the provided image view
 (single color attachment), so it must be called **after** the scene has been
 rendered into that view and while the command buffer is recording — which is
@@ -119,7 +126,9 @@ between frames (never inside `drawUI()`).
 - `getScale()` is read by every layout-aware widget (`Workspace`, toolbar
   heights, etc.).
 - Persistence is automatic (`"ui"` preferences context, key `uiScale`);
-  `UISettingsWindow` provides the user-facing slider.
+  `UISettingsWindow` provides the user-facing slider. Its optional application
+  settings section can also expose `MainLoop` background scheduling; initialize
+  it with `init(true)` to enable that section.
 - Note for layout math: `Workspace` multiplies logical sizes by the scale
   itself; when placing your own windows using `uiWidth()/uiHeight()` keep the
   same convention in mind.

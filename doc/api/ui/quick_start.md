@@ -132,6 +132,10 @@ int main(int argc, char** argv)
   inside lambdas that live in the delegate.
 - `UserInterface::processEvent()` runs **after** the input manager, so scene
   input handlers must ignore events that the UI has already consumed.
+- If `MainLoop` background frame-rate limiting is enabled, `drawUI()` is called
+  only for rendered background frames. Events and safe queued work continue
+  between those frames; call `MainLoop::requestFrame()` when asynchronous work
+  must become visible promptly.
 
 ---
 

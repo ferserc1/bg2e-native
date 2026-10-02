@@ -10,11 +10,12 @@ The module sits at Layer 8 (the top of the engine stack): it may depend on
 `render`, `scene`, `manipulation`, `reflection`, `app`, `base`, `math` and
 `geo`, but little inside the engine depends on `ui` in return. The two
 exceptions are in `app`: `app::MainLoop`, which owns a `UserInterface`
-instance and drives it once per frame, and the GPU picker
+instance and drives it for every rendered frame, and the GPU picker
 (`app::GPUSelectionDialog`, which draws `Text`/`SelectableList`
 directly over its own ImGui context).
 
-> **Status:** `bg2e::ui` is the production UI layer used by `apps/model_edit`.
+> **Status:** `bg2e::ui` is the production UI layer used by `apps/model_edit`
+> and `apps/bg2e_composer`.
 > It targets the production `bg2e::render::Engine` (Vulkan) and renders on top
 > of the swapchain image through a dynamic-rendering pass. It does **not** use
 > the experimental `bg2e::gpu` abstraction directly (except through
@@ -96,6 +97,13 @@ MainLoop::run(application)
     |
     -> _userInterface.cleanup()                    // persists "uiScale" preference
 ```
+
+When `app::MainLoop` background frame-rate limiting is enabled and the window
+is unfocused, it can skip the complete frame until the next deadline. A skipped
+frame does not call `UserInterface::newFrame()` or `UserInterface::draw()`;
+SDL events and lightweight main-loop maintenance continue to run. UI changes
+become visible on the next scheduled or explicitly requested frame. See the
+[`bg2e::app` MainLoop documentation](../app/MainLoop.md#background-frame-rate-limiting).
 
 The application plugs in through `app::Application::setUiDelegate()`. A single
 class typically implements all three delegates (`RenderLoopDelegate`,
@@ -249,7 +257,7 @@ ui::DemoWindow                    (static-only, wraps ImGui::ShowDemoWindow)
 
 | Class | Header | Description |
 |-------|--------|-------------|
-| **[`UISettingsWindow`](Settings_Windows.md)** | `UISettingsWindow.hpp` | Interface-scale slider + per-gizmo visibility/opacity/scale controls. |
+| **[`UISettingsWindow`](Settings_Windows.md)** | `UISettingsWindow.hpp` | Interface scale and per-gizmo controls, with an optional application background-frame-rate section. |
 | **[`RenderSettingsWindow`](Settings_Windows.md)** | `RenderSettingsWindow.hpp` | Render-scale, indirect-lighting mode, RT reflections, temporal accumulator and denoiser settings for `RendererDeferred`. |
 
 ---
