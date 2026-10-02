@@ -97,8 +97,8 @@ void RenderLoop::acquireAndPresent()
 
     if (_renderDelegate.get())
     {
-        _renderDelegate->update(_engine->currentFrame(), frameResources);
         _renderDelegate->setDelta(this->_delta);
+        _renderDelegate->update(_engine->currentFrame(), frameResources);
     }
 
     auto useMsaa = _renderDelegate->supportsMsaa();

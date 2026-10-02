@@ -20,6 +20,7 @@
 #include <httplib.h>                      // sole includer of httplib.h
 #include <bg2e/json/JsonParser.hpp>       // engine JSON parser
 #include <bg2e/json/JsonNode.hpp>
+#include <bg2e/app/MainLoop.hpp>
 
 #include <algorithm>
 #include <cctype>
@@ -311,6 +312,13 @@ void ImportServer::handleImport(const httplib::Request& req, httplib::Response& 
         r.id = _nextId++;
         slot->request = std::move(r);
         _slot = slot;
+    }
+
+    // Import dispatch currently runs from AppDelegate::update(). Ensure a
+    // throttled background loop executes one frame promptly.
+    if (auto* mainLoop = bg2e::app::MainLoop::current())
+    {
+        mainLoop->requestFrame();
     }
 
     bool ok = false;

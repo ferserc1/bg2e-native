@@ -33,6 +33,8 @@ public:
 
 int main(int argc, char** argv) {
 	bg2e::app::MainLoop mainLoop("org.bg2engine.bg2e-composer");
+    mainLoop.setBackgroundMaxFrameRate(1.0);
+    mainLoop.setBackgroundFrameRateLimitEnabled(true);
     mainLoop.initWindowConfig(bg2e::app::WindowConfig::maximized(
         "bg2e Composer",
             true
@@ -41,7 +43,6 @@ int main(int argc, char** argv) {
 	app.init(argc, argv);
 	return mainLoop.run(&app);
 }
-
 
 
 

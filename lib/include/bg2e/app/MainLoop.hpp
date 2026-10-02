@@ -148,10 +148,23 @@ public:
 
     bg2e::base::Timeout& timeout() { return _timeout; }
 
+    void setBackgroundFrameRateLimitEnabled(bool enabled);
+    inline bool backgroundFrameRateLimitEnabled() const { return _backgroundFrameRateLimitEnabled.load(); }
+
+    void setBackgroundMaxFrameRate(double fps);
+    inline double backgroundMaxFrameRate() const { return _backgroundMaxFrameRate.load(); }
+
+    // Thread-safe. The next background polling iteration will render a frame
+    // even if the configured frame deadline has not been reached yet.
+    void requestFrame();
+
     void safeUpdateScene(std::function<void()> fn, std::shared_ptr<SafeUpdateToken> token = nullptr)
     {
-        std::lock_guard lock(_safeUpdateSceneMutex);
-        _safeUpdateScene.emplace_back(std::move(fn), std::move(token));
+        {
+            std::lock_guard lock(_safeUpdateSceneMutex);
+            _safeUpdateScene.emplace_back(std::move(fn), std::move(token));
+        }
+        requestFrame();
     }
 
     void requestResizeEvent();
@@ -191,6 +204,10 @@ protected:
     Shortcuts _shortcuts;
 
     bool _resizeRequested = false;
+
+    std::atomic<bool> _backgroundFrameRateLimitEnabled { false };
+    std::atomic<double> _backgroundMaxFrameRate { 1.0 };
+    std::atomic<bool> _frameRequested { false };
     
     bg2e::base::Timeout _timeout;
 

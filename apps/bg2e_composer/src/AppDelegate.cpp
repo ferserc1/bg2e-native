@@ -265,7 +265,7 @@ void AppDelegate::initWorkspace()
         }
     });
 
-    _uiSettingsWindow.init();
+    _uiSettingsWindow.init(true);
     _renderSettingsWindow.init(deferredRenderer, _renderPrefs.get());
     _submeshPanel.init(this);
 

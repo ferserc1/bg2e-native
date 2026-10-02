@@ -17,6 +17,8 @@
  */
 
 #include <bg2e/ui/UISettingsWindow.hpp>
+#include <bg2e/app/MainLoop.hpp>
+#include <bg2e/app/PreferencesStore.hpp>
 #include <bg2e/ui/UserInterface.hpp>
 #include <bg2e/manipulation/GizmoComponent.hpp>
 #include <bg2e/ui/Text.hpp>
@@ -24,15 +26,43 @@
 #include <bg2e/ui/Button.hpp>
 #include <bg2e/ui/Numeric.hpp>
 
+#include <cmath>
 #include <string>
 
 namespace bg2e::ui {
 
-void UISettingsWindow::init()
+namespace {
+constexpr char preferencesContext[] = "app";
+constexpr char backgroundLimitEnabledKey[] = "backgroundFrameRateLimitEnabled";
+constexpr char backgroundMaxFrameRateKey[] = "backgroundMaxFrameRate";
+}
+
+void UISettingsWindow::init(bool showBackgroundFrameRateSettings)
 {
+    _showBackgroundFrameRateSettings = showBackgroundFrameRateSettings;
     setTitle("UI Settings");
-    setSize(320, 350);
+    setSize(320, _showBackgroundFrameRateSettings ? 430 : 350);
     close();
+
+    if (_showBackgroundFrameRateSettings)
+    {
+        if (auto* mainLoop = app::MainLoop::current())
+        {
+            auto& preferences = app::PreferencesStore::instance().preferences(preferencesContext);
+            const auto storedFrameRate = preferences.get(
+                backgroundMaxFrameRateKey,
+                mainLoop->backgroundMaxFrameRate()
+            );
+            if (std::isfinite(storedFrameRate) && storedFrameRate > 0.0)
+            {
+                mainLoop->setBackgroundMaxFrameRate(storedFrameRate);
+            }
+            mainLoop->setBackgroundFrameRateLimitEnabled(preferences.get(
+                backgroundLimitEnabledKey,
+                mainLoop->backgroundFrameRateLimitEnabled()
+            ));
+        }
+    }
 
     setDrawFunction([this]() {
         drawUI();
@@ -45,6 +75,11 @@ void UISettingsWindow::drawUI()
     if (Numeric::sliderFloat("Interface Scale", &scale, 1.0f, 2.0f))
     {
         UserInterface::setScale(scale);
+    }
+
+    if (_showBackgroundFrameRateSettings)
+    {
+        drawBackgroundFrameRateSection();
     }
 
     Text::separator("Gizmos");
@@ -118,6 +153,30 @@ void UISettingsWindow::drawUI()
         {
             GizmoComponent::setScaleAxisVisible(axisScale);
         }
+    }
+}
+
+void UISettingsWindow::drawBackgroundFrameRateSection()
+{
+    auto* mainLoop = app::MainLoop::current();
+    if (!mainLoop) return;
+
+    Text::separator("Background Performance");
+
+    auto& preferences = app::PreferencesStore::instance().preferences(preferencesContext);
+
+    bool enabled = mainLoop->backgroundFrameRateLimitEnabled();
+    if (Button::checkBox("Limit frame rate when unfocused", &enabled))
+    {
+        mainLoop->setBackgroundFrameRateLimitEnabled(enabled);
+        preferences.set(backgroundLimitEnabledKey, enabled);
+    }
+
+    float maxFrameRate = static_cast<float>(mainLoop->backgroundMaxFrameRate());
+    if (Numeric::drag("Maximum background FPS", &maxFrameRate, 0.1f, 0.1f, 240.0f))
+    {
+        mainLoop->setBackgroundMaxFrameRate(static_cast<double>(maxFrameRate));
+        preferences.set(backgroundMaxFrameRateKey, static_cast<double>(maxFrameRate));
     }
 }
 

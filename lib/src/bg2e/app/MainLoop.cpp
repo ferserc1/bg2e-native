@@ -35,6 +35,8 @@
 
 #include <iostream>
 
+#include <algorithm>
+#include <cmath>
 #include <thread>
 
 namespace bg2e {
@@ -157,14 +159,17 @@ int32_t MainLoop::run(app::Application * application) {
     bool quit = false;
     bool stopRendering = false;
     bool resizing = false;
+    bool isForeground = (SDL_GetWindowFlags(window) & SDL_WINDOW_INPUT_FOCUS) != 0;
     auto minResizeInterval = 500;
+    constexpr auto backgroundPollInterval = std::chrono::milliseconds(50);
     std::chrono::steady_clock::time_point lastResizeEventTime;
     
     
     // Initialize the main descriptor set allocator before executing the first frame
     _engine.descriptorSetAllocator().initPool();
     _renderLoop.initScene();
-    auto start = std::chrono::high_resolution_clock::now();
+    auto lastRenderedFrameTime = std::chrono::steady_clock::now();
+    auto nextBackgroundFrame = lastRenderedFrameTime;
     int storeWidth = _windowConfig.width;
     int storeHeight = _windowConfig.height;
     
@@ -199,6 +204,22 @@ int32_t MainLoop::run(app::Application * application) {
                 event.window.event == SDL_WINDOWEVENT_RESTORED)
             {
                 stopRendering = false;
+                nextBackgroundFrame = std::chrono::steady_clock::now();
+                requestFrame();
+            }
+            else if (event.type == SDL_WINDOWEVENT &&
+                event.window.event == SDL_WINDOWEVENT_FOCUS_GAINED)
+            {
+                isForeground = true;
+                lastRenderedFrameTime = std::chrono::steady_clock::now();
+                requestFrame();
+            }
+            else if (event.type == SDL_WINDOWEVENT &&
+                event.window.event == SDL_WINDOWEVENT_FOCUS_LOST)
+            {
+                isForeground = false;
+                nextBackgroundFrame = std::chrono::steady_clock::now();
+                requestFrame();
             }
             else if ((event.type == SDL_WINDOWEVENT &&
                 event.window.event == SDL_WINDOWEVENT_RESIZED) ||
@@ -285,7 +306,20 @@ int32_t MainLoop::run(app::Application * application) {
 
             if (stopRendering)
             {
-                std::this_thread::sleep_for(std::chrono::milliseconds(100));
+                std::this_thread::sleep_for(backgroundPollInterval);
+                continue;
+            }
+
+            const auto frameTime = std::chrono::steady_clock::now();
+            const bool limitBackgroundFrameRate =
+                !isForeground && _backgroundFrameRateLimitEnabled.load();
+            const bool frameRequested = _frameRequested.exchange(false);
+
+            if (limitBackgroundFrameRate && !frameRequested && frameTime < nextBackgroundFrame)
+            {
+                const auto remaining = nextBackgroundFrame - frameTime;
+                std::this_thread::sleep_for(std::min(remaining,
+                    std::chrono::duration_cast<std::chrono::steady_clock::duration>(backgroundPollInterval)));
                 continue;
             }
 
@@ -294,18 +328,23 @@ int32_t MainLoop::run(app::Application * application) {
                 _renderLoop.swapchainResized();
             }
 
+            const auto delta = std::chrono::duration<float, std::milli>(
+                frameTime - lastRenderedFrameTime);
+            _renderLoop.setDelta(delta.count());
+            lastRenderedFrameTime = frameTime;
+
             _userInterface.newFrame();
 
             if (!resizing) {
                 _renderLoop.acquireAndPresent();
             }
-            auto end = std::chrono::high_resolution_clock::now();
-
-            auto millis = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
-
-            _renderLoop.setDelta(static_cast<float>(millis.count()));
-
-            start = std::chrono::high_resolution_clock::now();
+            if (limitBackgroundFrameRate)
+            {
+                const auto fps = _backgroundMaxFrameRate.load();
+                const auto period = std::chrono::duration<double>(1.0 / fps);
+                nextBackgroundFrame = std::chrono::steady_clock::now() +
+                    std::chrono::duration_cast<std::chrono::steady_clock::duration>(period);
+            }
         }
     }
 
@@ -333,9 +372,31 @@ void MainLoop::exit()
     SDL_PushEvent(&event);
 }
 
+void MainLoop::setBackgroundFrameRateLimitEnabled(bool enabled)
+{
+    _backgroundFrameRateLimitEnabled.store(enabled);
+    requestFrame();
+}
+
+void MainLoop::setBackgroundMaxFrameRate(double fps)
+{
+    if (!std::isfinite(fps) || fps <= 0.0)
+    {
+        throw std::invalid_argument("Background maximum frame rate must be finite and greater than zero.");
+    }
+    _backgroundMaxFrameRate.store(fps);
+    requestFrame();
+}
+
+void MainLoop::requestFrame()
+{
+    _frameRequested.store(true);
+}
+
 void MainLoop::requestResizeEvent()
 {
     _resizeRequested = true;
+    requestFrame();
 }
 
 void MainLoop::executeSafeUpdateScene()
