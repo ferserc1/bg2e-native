@@ -29,10 +29,10 @@ GBufferManager::GBufferManager(Engine * engine)
 {
     _colorFormats = {
         VK_FORMAT_R8G8B8A8_UNORM,        // albedo
-        VK_FORMAT_R16G16B16A16_SFLOAT,        // normals (world space)
+        VK_FORMAT_R16G16B16A16_SFLOAT,        // normals (world space), A = light emission
         VK_FORMAT_R8G8B8A8_UNORM,        // materials (metalness/R, roughness/G, AO/B, sheen/A)
         VK_FORMAT_R8G8B8A8_UNORM,        // fresnel color + flags (RGB = fresnelTint, A = material flags)
-        VK_FORMAT_R8G8B8A8_UNORM         // sheen color (RGB = sheenColor, A = reserved)
+        VK_FORMAT_R8G8B8A8_UNORM         // sheen color (RGB = sheenColor, A = refractionFactor)
     };
 }
 
