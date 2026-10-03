@@ -49,9 +49,15 @@ layout(location = 4) in mat3 inTBN;
 void main() {
     PBRMaterialData mat = objectData.material;
 
-    // Albedo (sRGB to linear)
+    // Albedo (sRGB to linear; alpha remains linear)
     vec4 albedo = sampleAlbedo(albedoTex, inUV0, inUV1, mat, 2.2);
-    g_Albedo = albedo;
+    bool alphaTest = (mat.unlit & MATERIAL_FLAG_ALPHA_TEST) != 0u;
+    bool transparent = (mat.unlit & MATERIAL_FLAG_TRANSPARENT) != 0u;
+    if (alphaTest && albedo.a < mat.alphaCutoff)
+    {
+        discard;
+    }
+    g_Albedo = vec4(albedo.rgb, (alphaTest && !transparent) ? 1.0 : albedo.a);
 
     // Normal (world space, mapped to 0-1)
     vec3 normal = sampleNormal(normalTex, inUV0, inUV1, mat, inTBN);
@@ -65,9 +71,11 @@ void main() {
     float sheen = mat.sheenIntensity;
     g_Material = vec4(metallic, roughness, ao, sheen);
 
-    // Fresnel color + flags
-    float unlitFlag = (mat.unlit & MATERIAL_FLAG_UNLIT) != 0u ? 1.0 : 0.0;
-    g_FresnelColorFlags = vec4(mat.fresnelTint.rgb, unlitFlag);
+    // Fresnel color + material flags, packed into an R8 UNORM channel.
+    uint flags = mat.unlit & (MATERIAL_FLAG_UNLIT |
+                              MATERIAL_FLAG_ALPHA_TEST |
+                              MATERIAL_FLAG_TRANSPARENT);
+    g_FresnelColorFlags = vec4(mat.fresnelTint.rgb, float(flags) / 255.0);
 
     // Sheen color (RGB), refraction factor packed in the reserved alpha channel
     g_SheenColor = vec4(mat.sheenColor.rgb, mat.refractionFactor);

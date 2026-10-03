@@ -50,6 +50,11 @@ public:
     inline float refractionFactor() const { return _refractionFactor; }
     inline void setRefractionFactor(float f) { _refractionFactor = f; }
 
+    // Alpha test threshold. Fragments with final albedo alpha below this
+    // value are discarded. Applies to opaque and transparent materials.
+    inline float alphaCutoff() const { return _alphaCutoff; }
+    inline void setAlphaCutoff(float c) { _alphaCutoff = c; }
+
     inline const Color & albedo() const { return _albedo; }
     inline void setAlbedo(const Color & c) { _albedo = c; }
     inline void setAlbedo(const std::array<float, 3>& s) { _albedo = base::Color{ s.at(0), s.at(1), s.at(2), 1.0f }; }
@@ -196,6 +201,7 @@ protected:
     bool _isSolid = true;
     bool _unlit = false;
     float _refractionFactor = 0.017f;
+    float _alphaCutoff = 0.5f;
     
     Color _albedo = Color::White();
     std::shared_ptr<Texture> _albedoTexture;

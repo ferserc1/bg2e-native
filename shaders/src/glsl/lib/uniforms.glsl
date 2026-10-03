@@ -62,10 +62,12 @@ struct PBRMaterialData
     int lightEmissionInvert;
     int lightEmissionUVSet;
 
-    uint padding;
+    float alphaCutoff;
 };
 
 const uint MATERIAL_FLAG_UNLIT          = 1u << 0;
+const uint MATERIAL_FLAG_ALPHA_TEST     = 1u << 1;
+const uint MATERIAL_FLAG_TRANSPARENT    = 1u << 2;
 
 struct LightData
 {

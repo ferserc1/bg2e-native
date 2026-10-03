@@ -103,8 +103,20 @@ void DeferredLayer::build(VkExtent2D extent, VkFormat outputFormat)
         gb->build(extent);
     }
 
-    // Create AO pass
+    if (_engine->rayTracingSupported())
+    {
+        _rtMaterialDataBinding = std::make_unique<vulkan::rt::RTMaterialDataBinding>(_engine);
+        _rtMaterialDataBinding->createLayout(
+            VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR |
+            VK_SHADER_STAGE_ANY_HIT_BIT_KHR |
+            VK_SHADER_STAGE_FRAGMENT_BIT |
+            VK_SHADER_STAGE_COMPUTE_BIT
+        );
+    }
+
+    // Create AO pass after its shared material binding is ready.
     _rtAmbientOcclusion = std::make_unique<RTAmbientOcclusion>(_engine);
+    _rtAmbientOcclusion->setMaterialDataBinding(_rtMaterialDataBinding.get());
     _rtAmbientOcclusion->build(extent);
 
     // Create temporal accumulator (only if RT is supported)
@@ -121,8 +133,6 @@ void DeferredLayer::build(VkExtent2D extent, VkFormat outputFormat)
     // Create RT reflections subsystem (only if RT is supported)
     if (_engine->rayTracingSupported())
     {
-        _rtMaterialDataBinding = std::make_unique<vulkan::rt::RTMaterialDataBinding>(_engine);
-
         _rtReflections = std::make_unique<RTReflections>(_engine);
         _rtReflections->setMaterialDataBinding(_rtMaterialDataBinding.get());
         _rtReflections->setReflectionLightDataBinding(_reflectionLightDataBinding);
@@ -1024,6 +1034,7 @@ void DeferredLayer::createCompositePipelineRT()
     layoutFactory.addDescriptorSetLayout(_environmentDataBinding->createLayout());
     layoutFactory.addDescriptorSetLayout(_lightDataBinding->createLayout());
     layoutFactory.addDescriptorSetLayout(_rtDataBinding->createLayout());
+    layoutFactory.addDescriptorSetLayout(_rtMaterialDataBinding->createLayout());
 
     layoutFactory.addPushConstantRange(
         0,
@@ -1288,6 +1299,14 @@ void DeferredLayer::renderCompositePass(
         vkCmdBindDescriptorSets(
             cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
             activeLayout, 4, 1, &rtDS,
+            0, nullptr
+        );
+
+        const auto& objectInstances = frameResources.rayTracingScene->objectInstances();
+        auto matDS = _rtMaterialDataBinding->newDescriptorSet(frameResources, objectInstances);
+        vkCmdBindDescriptorSets(
+            cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
+            activeLayout, 5, 1, &matDS,
             0, nullptr
         );
     }

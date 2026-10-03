@@ -280,7 +280,7 @@ attachments + 1 depth**:
 | 0 | Albedo | `VK_FORMAT_R8G8B8A8_UNORM` | RGB = linear albedo (sRGB→linear, γ 2.2, multiplied by material albedo). **A = albedo alpha; alpha 0 marks empty pixels** |
 | 1 | Normal | `VK_FORMAT_R16G16B16A16_SFLOAT` | RGB = world-space normal mapped to [0,1] (`n*0.5+0.5`). **A = light emission factor** |
 | 2 | Material | `VK_FORMAT_R8G8B8A8_UNORM` | R = metallic, G = roughness (min 0.05), B = baked AO, A = sheen intensity |
-| 3 | Fresnel + flags | `VK_FORMAT_R8G8B8A8_UNORM` | RGB = fresnel tint. A = material flags (bit 0 = unlit) |
+| 3 | Fresnel + flags | `VK_FORMAT_R8G8B8A8_UNORM` | RGB = fresnel tint. A = material flags bitfield (bit 0 = unlit, bit 1 = alpha test, bit 2 = transparent) |
 | 4 | Sheen / refraction | `VK_FORMAT_R8G8B8A8_UNORM` | RGB = sheen color. **A = refraction factor** |
 | — | Depth | `VK_FORMAT_D32_SFLOAT` | Scene depth |
 
@@ -340,6 +340,13 @@ textures with per-texture UV-set selection, scale, channel selection and
 inversion (`lib/uniforms.glsl:95-146`) and packs the five attachments as
 described in §5.1. Normal mapping is applied in world space via the TBN.
 
+The fragment shader also resolves the material's **alpha test**: fragments
+whose final albedo alpha (`baseColorFactor.a * texture.a`) is below
+`material.alphaCutoff` are discarded, writing neither color nor depth. The
+test applies to both deferred layers. Opaque cutout materials write albedo
+alpha 1.0 after passing, while transparent cutout materials preserve sampled
+alpha for blending. An `alphaCutoff` of 0 disables the test.
+
 ### 5.4 Transparent layer depth handling
 
 The transparent layer never writes depth, to preserve blending. Before its
@@ -398,6 +405,7 @@ otherwise (`:1116-1134`).
    from depth with `reconstructWorldPosition()` (handles the Vulkan NDC
    Y-flip, `deferred_utils.glsl:44-68`). `F0 = mix(vec3(0.04), albedo,
    metallic)`; roughness clamped ≥ 0.05.
+   The decoded data also exposes the `alphaTest` and `transparent` flags.
 2. Empty pixel → pass through the input image (previous layer) with alpha 0.
 3. Unlit material → albedo through `fragmentShaderOutput()` (exposure
    tonemap → linear→sRGB → brightness/contrast,
@@ -423,6 +431,9 @@ otherwise (`:1116-1134`).
 
 `shaders/src/glsl/deferred_composite_rt.frag.glsl` (requires
 `GL_EXT_ray_query`) extends the non-RT shader with:
+
+`DeferredGBufferData` exposes the decoded `alphaTest` and `transparent`
+material flags; cutout fragments have already been removed by the G-buffer.
 
 - **Inline RT shadows** in the light loop (`:211-223`) — see §7.
 - **RTAO mode** (`indirectMode == 0`): `calcAmbientLightWithReflections()`
@@ -455,16 +466,22 @@ pass the background through unchanged.
 There is **no dedicated shadow pass**; shadows are computed inline with
 `rayQueryEXT` in the RT composite fragment shader
 (`deferred_composite_rt.frag.glsl:211-223`): for each non-disabled light
-with `castShadows != 0`, `shadowFactor = queryShadow(tlas, worldPos, normal,
-light, 32)` multiplies the full PBR radiance.
+with `castShadows != 0`, `queryShadowCutout(tlas, worldPos, normal, light,
+32)` multiplies the full PBR radiance.
 
-`queryShadow()` (`shaders/src/glsl/lib/ray_tracing.glsl:63-111`):
+BLAS geometry is built without `VK_GEOMETRY_OPAQUE_BIT_KHR`. Deferred shadow
+queries use `queryShadowCutout()` and manually confirm a candidate triangle
+only when `rtAlphaTestCandidate()` passes. The test interpolates UVs and
+checks `texture(albedoTex, uv).a * albedo.a >= alphaCutoff`. The RT composite
+binds `RTMaterialDataBinding` as descriptor set 5.
+
+The shadow helpers preserve the existing light direction and sampling rules:
 
 - Ray direction: `-normalize(light.direction)` for directional lights
   (tMax = 1e6); vector to the light for point/spot (tMax = distance).
 - Origin offset along the normal by 0.01 to avoid self-intersection.
-- **Hard shadows**: when `shadowSamples <= 1`, a single ray with
-  `gl_RayFlagsTerminateOnFirstHitEXT | gl_RayFlagsOpaqueEXT`.
+- **Hard shadows**: when `shadowSamples <= 1`, a single terminate-on-first-
+  confirmed-hit ray without `gl_RayFlagsOpaqueEXT`.
 - **Soft shadows**: up to 32 rays distributed in a cone around the light
   direction; the cone angle derives from `sourceSize` (converted
   degrees→radians for directionals, `atan(sourceSize, distance)` for
@@ -472,7 +489,7 @@ light, 32)` multiplies the full PBR radiance.
   `worldPos.xz`. Result: `1 - occluded/samples`, giving a visibility
   fraction (penumbra).
 
-The same `queryShadow()` shadows the direct lighting computed inside the GI
+The same alpha-tested query shadows direct lighting computed inside the GI
 and reflection closest-hit shaders
 (`rt_gi.rchit.glsl:112-119`, `rt_reflections.rchit.glsl:111-120`), but the
 `maxSamples` cap there is **not** hardcoded: it comes from the per-pass
@@ -500,6 +517,8 @@ Implementation: `lib/include/bg2e/render/deferred/RTAmbientOcclusion.hpp`,
   waits idle and recreates the images.
 - **Fallbacks**: RT unsupported → shared 4×4 white image; null TLAS →
   output cleared to white (`:63-81`, `:163-175`).
+- **Cutout traversal**: set 1 is `RTMaterialDataBinding`; `queryAOCutout()`
+  confirms only candidates whose material alpha test passes.
 
 **Parameters** (defaults, `RTAmbientOcclusion.hpp:100-107`):
 
@@ -527,7 +546,7 @@ Implementation: `lib/include/bg2e/render/deferred/RTAmbientOcclusion.hpp`,
    feeds `randomHemisphereDirection()` (white noise).
 4. For each sample, for each bounce: a cosine-weighted hemisphere direction
    is generated, and visibility is tested with
-   `queryAO()` (`lib/ray_tracing.glsl:134-169`) — terminate-on-first-hit ray
+   `queryAOCutout()` (`lib/rt_material_data.glsl`) — terminate-on-first-hit ray
    query with tMax = `radius`.
 5. On hit: occlusion accumulates `pow(1 - hitDistance/radius, falloff) *
    contribution`; the origin moves to the hit point, `contribution *=
@@ -547,7 +566,7 @@ Implementation: `lib/include/bg2e/render/deferred/RTGlobalIllumination.hpp`,
 `shaders/src/glsl/rt_gi.{rgen,rchit,rmiss}.glsl`.
 
 - **Pass type**: full `VK_KHR_ray_tracing` pipeline with raygen / miss /
-  closest-hit groups, **max recursion depth 1**
+  closest-hit + any-hit groups, **max recursion depth 1**
   (`RTGlobalIllumination.cpp:143-149`). Multiple bounces are an iterative
   loop inside the raygen shader, not recursive `traceRayEXT` calls.
 - **Output**: per-frame-in-flight `VK_FORMAT_R16G16B16A16_SFLOAT` storage
@@ -569,6 +588,10 @@ the GI pass uses the *reflection lights* list (lights flagged
 `affectsReflections`).
 
 **Raygen shader** (`rt_gi.rgen.glsl`):
+
+Primary rays use `gl_RayFlagsNoneEXT`; the shared
+`rt_alpha_test.rahit.glsl` any-hit shader ignores intersections that fail the
+material alpha test.
 
 1. Sky pixels write black.
 2. Path tracing loop: per sample, throughput starts at 1; per bounce, a
@@ -595,7 +618,7 @@ the GI pass uses the *reflection lights* list (lights flagged
 `gl_InstanceCustomIndexEXT` into the `RTMaterialDataBinding` arrays,
 interpolates UVs and geometry normals barycentrically (**normal maps are
 ignored for GI bounces**), and returns **direct lighting only**: per light,
-`queryShadow()` (capped by `shadowSamples`, default 1) ×
+`queryShadowCutout()` (capped by `shadowSamples`, default 1) ×
 `computeBasicLighting()` (pure Lambert with
 inverse-square attenuation and spot cone,
 `shaders/src/glsl/lib/basic_lighting.glsl:82-97`), plus albedo-tinted
@@ -617,7 +640,7 @@ Implementation: `lib/include/bg2e/render/deferred/RTReflections.hpp`,
 `lib/src/bg2e/render/deferred/RTReflections.cpp`, shaders
 `shaders/src/glsl/rt_reflections.{rgen,rchit,rmiss}.glsl`.
 
-- **Pass type**: `VK_KHR_ray_tracing` pipeline (raygen/miss/closest-hit,
+- **Pass type**: `VK_KHR_ray_tracing` pipeline (raygen/miss/closest-hit + any-hit,
   max recursion 1, `RTReflections.cpp:137-142`). Resolution is scaled from
   the final viewport by quality — Ultra 1.0, High 2/3, Medium 0.5, Low 1/3
   (`rtReflectionResolutionScale()`, `RTReflections.hpp`); default **High**.
@@ -641,6 +664,10 @@ set 1 = `RTMaterialDataBinding`; set 2 = `ReflectionLightDataBinding`.
 
 **Raygen shader** (`rt_reflections.rgen.glsl`):
 
+Primary rays use `gl_RayFlagsNoneEXT`; the shared
+`rt_alpha_test.rahit.glsl` any-hit shader ignores intersections that fail the
+material alpha test.
+
 1. Early-outs (write black, alpha 0): sky pixels, `roughness >
    maxRoughness`, degenerate normals.
 2. Perfect mirror direction `reflect(viewDir, normal)`. **GGX importance
@@ -654,7 +681,7 @@ set 1 = `RTMaterialDataBinding`; set 2 = `ReflectionLightDataBinding`.
 3. **Adaptive sample count**: `samples = max(1, ceil(sampleCount *
    (roughness/maxRoughness)²))` — mirror-like pixels trace 1 ray.
 4. Rays: origin `worldPos + normal*rayBias`, tMin 0.001, tMax
-   `maxDistance`, `gl_RayFlagsOpaqueEXT`.
+   `maxDistance`, `gl_RayFlagsNoneEXT`.
 5. Output: average color over **valid hits only**; **alpha = validHits /
    samples** — a continuous "reflection certainty" used by the composite to
    blend against the prefiltered envmap (`mix(envReflection,
@@ -956,7 +983,7 @@ Located under `lib/include/bg2e/render/vulkan/rt/` (implementations in
 - **`RTMaterialDataBinding`** — `MAX_OBJECTS = 256`:
   - binding 0: `RTMaterialData[]` SSBO (56 bytes: albedo color/scale,
     `indexOffset` for submesh indexing, light emission
-    factor/channel/invert/scale/UV set).
+    factor/channel/invert/scale/UV set, and `alphaCutoff`).
   - bindings 1/2: arrays of 256 vertex-buffer and index-buffer SSBOs
     (`RTVertex` = position, normal, uv0, uv1, tangent).
   - bindings 3/4: arrays of 256 albedo and light-emission `sampler2D`.
@@ -964,6 +991,9 @@ Located under `lib/include/bg2e/render/vulkan/rt/` (implementations in
   index these arrays with `gl_InstanceCustomIndexEXT`, and
   `gl_PrimitiveID` is corrected with `mat.indexOffset` because it excludes
   the BLAS primitive offset.
+  Its layout is created once with `CLOSEST_HIT | ANY_HIT | FRAGMENT |
+  COMPUTE`, then shared by GI/reflections (set 1), the RT composite (set 5),
+  and RTAO (set 1).
 
 ---
 
@@ -994,6 +1024,14 @@ Located under `lib/include/bg2e/render/vulkan/rt/` (implementations in
   loop in the raygen shader.
 - **Normal maps are ignored in RT hit shaders** — GI and reflection bounces
   use interpolated geometry normals only.
+- **glTF alpha modes** — `MASK` maps to `alphaCutoff`, remains in the opaque
+  queue, and participates in ray tracing. The alpha test also applies to
+  `BLEND` materials (default cutoff 0.5), clipping gradients below it.
+- **Transparent RT scope** — transparent materials remain excluded from the
+  TLAS, so ray-traced alpha testing covers opaque cutout materials only.
+- **RT traversal cost** — BLAS hits are candidates and primary rays no longer
+  use the opaque flag, so opaque-only scenes still pay an any-hit invocation
+  or candidate confirmation per hit.
 - **The transparent layer can skip indirect passes**
   (`setSkipIndirectLightingForTransparent`, `DeferredLayer.hpp:179-180`),
   binding a neutral white AO instead.
@@ -1078,8 +1116,8 @@ Located under `lib/include/bg2e/render/vulkan/rt/` (implementations in
 | `color_correction.glsl` | Exposure tonemap, gamma, brightness/contrast |
 | `deferred_utils.glsl` | G-buffer decode, world-position reconstruction, composite/refraction, hash/rand/hemisphere helpers |
 | `normal_map.glsl` | TBN construction |
-| `ray_tracing.glsl` | `queryShadow()` (hard/soft RT shadows), `queryAO()` |
+| `ray_tracing.glsl` | Opaque forward-renderer variants `queryShadow()` and `queryAO()` |
 | `basic_lighting.glsl` | Lambert direct lighting for RT hit shaders |
-| `rt_material_data.glsl` | RT material/vertex structures and sampling |
+| `rt_material_data.glsl` | RT material/vertex bindings, alpha testing, cutout shadow/AO queries |
 | `blue_noise.glsl` | Blue-noise sampling (`bnRand2`, `bnHemisphereDirection`) |
 | `smaa.glsl` | SMAA constants and LUT metrics |

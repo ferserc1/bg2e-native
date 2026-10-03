@@ -37,6 +37,8 @@ struct DeferredGBufferData {
     bool isEmpty;
     vec3 fresnelTint;
     bool unlit;
+    bool alphaTest;
+    bool transparent;
     float refractionFactor;
     float lightEmission;
 };
@@ -84,6 +86,8 @@ DeferredGBufferData setupDeferredGBuffer(
     gbuf.fresnelTint = fresnelFlags.rgb;
     uint materialFlags = uint(round(fresnelFlags.a * 255.0));
     gbuf.unlit = (materialFlags & MATERIAL_FLAG_UNLIT) != 0u;
+    gbuf.alphaTest = (materialFlags & MATERIAL_FLAG_ALPHA_TEST) != 0u;
+    gbuf.transparent = (materialFlags & MATERIAL_FLAG_TRANSPARENT) != 0u;
 
     if (gbuf.albedo.a == 0) {
         gbuf.isEmpty = true;

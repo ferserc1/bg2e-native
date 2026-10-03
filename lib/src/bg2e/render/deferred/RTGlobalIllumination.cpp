@@ -120,7 +120,8 @@ void RTGlobalIllumination::createPipeline()
         _engine->device().handle(),
         VK_SHADER_STAGE_RAYGEN_BIT_KHR |
         VK_SHADER_STAGE_MISS_BIT_KHR |
-        VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR
+        VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR |
+        VK_SHADER_STAGE_ANY_HIT_BIT_KHR
     );
 
     vulkan::factory::PipelineLayout layoutFactory(_engine);
@@ -146,6 +147,7 @@ void RTGlobalIllumination::createPipeline()
     rtPipelineFactory.setRayGenShader("rt_gi.rgen.spv");
     rtPipelineFactory.setMissShader("rt_gi.rmiss.spv");
     rtPipelineFactory.setClosestHitShader("rt_gi.rchit.spv");
+    rtPipelineFactory.setAnyHitShader("rt_alpha_test.rahit.spv");
 
     _pipeline = rtPipelineFactory.build(_pipelineLayout, 1, "RTGlobalIllumination::Pipeline");
     auto sbt = rtPipelineFactory.createSBT("RTGlobalIllumination::SBT");

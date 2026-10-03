@@ -19,12 +19,16 @@
 #version 460
 #extension GL_ARB_shading_language_include : require
 #extension GL_EXT_ray_query : require
+#extension GL_EXT_nonuniform_qualifier : require
+#extension GL_EXT_scalar_block_layout : require
 
 #include "lib/uniforms.glsl"
 #include "lib/pbr.glsl"
 #include "lib/color_correction.glsl"
 #include "lib/deferred_utils.glsl"
 #include "lib/ray_tracing.glsl"
+#define RT_MATERIAL_SET 5
+#include "lib/rt_material_data.glsl"
 
 // G-buffer samplers (set=0)
 layout(set = 0, binding = 0) uniform sampler2D g_Albedo;
@@ -213,7 +217,7 @@ void main() {
         if (LightsBuffer.lights[i].type != LIGHT_TYPE_DISABLED) {
             float shadowFactor = 1.0;
             if (LightsBuffer.lights[i].castShadows != 0) {
-                shadowFactor = queryShadow(tlas, gbuf.worldPos, gbuf.normal, LightsBuffer.lights[i], 32);
+                shadowFactor = queryShadowCutout(tlas, gbuf.worldPos, gbuf.normal, LightsBuffer.lights[i], 32);
             }
             Lo += shadowFactor * calcRadiance(LightsBuffer.lights[i], gbuf.viewDir, gbuf.worldPos,
                               gbuf.metallic, gbuf.roughness,

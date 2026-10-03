@@ -125,6 +125,10 @@ void RTAmbientOcclusion::createPipeline()
 
     vulkan::factory::PipelineLayout layoutFactory(_engine);
     layoutFactory.addDescriptorSetLayout(_dsLayout);
+    if (_materialDataBinding)
+    {
+        layoutFactory.addDescriptorSetLayout(_materialDataBinding->createLayout());
+    }
     layoutFactory.addPushConstantRange(
         0,
         sizeof(AOPushConstants),
@@ -199,6 +203,14 @@ void RTAmbientOcclusion::render(
     VkDescriptorSet dsHandle = ds->descriptorSet();
     vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_COMPUTE,
         _pipelineLayout, 0, 1, &dsHandle, 0, nullptr);
+
+    if (_materialDataBinding)
+    {
+        const auto& objectInstances = frameResources.rayTracingScene->objectInstances();
+        auto matDS = _materialDataBinding->newDescriptorSet(frameResources, objectInstances);
+        vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_COMPUTE,
+            _pipelineLayout, 1, 1, &matDS, 0, nullptr);
+    }
 
     AOPushConstants pc{};
     pc.inverseViewProjection = inverseViewProjection;

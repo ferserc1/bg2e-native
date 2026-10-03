@@ -5,9 +5,9 @@
 #extension GL_EXT_nonuniform_qualifier : require
 #extension GL_EXT_scalar_block_layout : require
 
-#include "lib/rt_material_data.glsl"
 #include "lib/basic_lighting.glsl"
 #include "lib/ray_tracing.glsl"
+#include "lib/rt_material_data.glsl"
 
 layout(location = 0) rayPayloadInEXT ReflectionPayload {
     vec3 hitColor;
@@ -36,24 +36,6 @@ layout(set = 0, binding = 5) uniform samplerCube irradianceMap;
 layout(std430, set = 2, binding = 0) readonly buffer ReflectionLightBuffer {
     LightData reflectionLights[];
 };
-
-// scalar layout: packs RTMaterialData to 56 bytes, matching the C++ struct stride.
-// std430 (the default) would round the array stride up to 64 bytes and misread
-// every material with index >= 1.
-layout(scalar, set = 1, binding = 0) readonly buffer MaterialDataBuffer {
-    RTMaterialData materials[];
-};
-
-layout(scalar, set = 1, binding = 1) readonly buffer VertexBuffer {
-    RTVertex vertices[];
-} vb[MAX_RT_OBJECTS];
-
-layout(scalar, set = 1, binding = 2) readonly buffer IndexBuffer {
-    uint indices[];
-} ib[MAX_RT_OBJECTS];
-
-layout(set = 1, binding = 3) uniform sampler2D albedoTex[MAX_RT_OBJECTS];
-layout(set = 1, binding = 4) uniform sampler2D lightEmissionTex[MAX_RT_OBJECTS];
 
 hitAttributeEXT vec2 attribs;
 
@@ -116,7 +98,7 @@ void main() {
         float shadowFactor = 0.0;
         if (light.castShadows != 0)
         {
-            shadowFactor = queryShadow(tlas, worldPos, worldNormal, light, int(pc.shadowSamples));
+            shadowFactor = queryShadowCutout(tlas, worldPos, worldNormal, light, int(pc.shadowSamples));
         }
         lighting += shadowFactor * computeBasicLighting(light, worldPos, worldNormal, surfaceAlbedo);
     }

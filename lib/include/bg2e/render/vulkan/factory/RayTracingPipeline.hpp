@@ -40,6 +40,7 @@ public:
     void setRayGenShader(const std::string& fileName, const std::string& entryPoint = "main");
     void setMissShader(const std::string& fileName, const std::string& entryPoint = "main");
     void setClosestHitShader(const std::string& fileName, const std::string& entryPoint = "main");
+    void setAnyHitShader(const std::string& fileName, const std::string& entryPoint = "main");
 
     VkPipeline build(
         VkPipelineLayout layout,
@@ -80,6 +81,7 @@ private:
     bool _hasRaygenShader = false;
     bool _hasMissShader = false;
     bool _hasClosestHitShader = false;
+    bool _hasAnyHitShader = false;
 
     uint32_t addShaderStage(
         VkShaderStageFlagBits stage,

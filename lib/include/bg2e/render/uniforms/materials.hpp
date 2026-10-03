@@ -31,6 +31,8 @@ struct PBRMaterialData
     {
         NONE = 0x0,
         UNLIT = 0x1u << 0,
+        ALPHA_TEST = 0x1u << 1,
+        TRANSPARENT = 0x1u << 2,
     };
 
     bg2e::base::Color albedo;  // Base color of the material
@@ -72,7 +74,7 @@ struct PBRMaterialData
     uint32_t lightEmissionInvert;
     uint32_t lightEmissionUVSet;
 
-    uint32_t padding = 0;
+    float alphaCutoff = 0.5f;
 
     void operator=(const base::MaterialAttributes& att)
     {
@@ -105,8 +107,12 @@ struct PBRMaterialData
         lightEmissionInvert = att.lightEmissionInvert() ? 1u : 0u;
         lightEmissionUVSet = att.lightEmissionUVSet();
 
+        alphaCutoff = att.alphaCutoff();
+
         flags = 0;
-        flags |= att.isUnlit() ? 0x1 : 0x0;
+        flags |= att.isUnlit() ? UNLIT : 0u;
+        flags |= att.alphaCutoff() > 0.0f ? ALPHA_TEST : 0u;
+        flags |= att.isTransparent() ? TRANSPARENT : 0u;
     }
 };
 

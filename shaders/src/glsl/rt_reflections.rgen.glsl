@@ -137,7 +137,7 @@ void main() {
 
         traceRayEXT(
             tlas,
-            gl_RayFlagsOpaqueEXT,
+            gl_RayFlagsNoneEXT,
             0xff,
             0,
             0,

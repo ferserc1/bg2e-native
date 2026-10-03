@@ -23,6 +23,7 @@
 #include <bg2e/render/vulkan/Image.hpp>
 #include <bg2e/render/vulkan/FrameResources.hpp>
 #include <bg2e/render/gbuffer/GBufferManager.hpp>
+#include <bg2e/render/vulkan/rt/RTMaterialDataBinding.hpp>
 
 #include <vector>
 #include <memory>
@@ -97,6 +98,7 @@ public:
     float aoBounceAttenuation() const;
 
     void setBlueNoise(const BlueNoise* blueNoise) { _blueNoise = blueNoise; }
+    void setMaterialDataBinding(vulkan::rt::RTMaterialDataBinding* binding) { _materialDataBinding = binding; }
     void setUseBlueNoise(bool use) { _useBlueNoise = use; }
     bool useBlueNoise() const { return _useBlueNoise; }
 
@@ -114,6 +116,7 @@ private:
     float _bounceAttenuation = 0.35f;
     bool _useBlueNoise = true;
     const BlueNoise* _blueNoise = nullptr;
+    vulkan::rt::RTMaterialDataBinding* _materialDataBinding = nullptr;
 
     std::vector<std::shared_ptr<vulkan::Image>> _aoImages;
 

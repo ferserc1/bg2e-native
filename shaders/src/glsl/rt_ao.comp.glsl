@@ -19,10 +19,14 @@
 #version 460
 #extension GL_ARB_shading_language_include : require
 #extension GL_EXT_ray_query : require
+#extension GL_EXT_nonuniform_qualifier : require
+#extension GL_EXT_scalar_block_layout : require
 
 #include "lib/deferred_utils.glsl"
 #include "lib/ray_tracing.glsl"
 #include "lib/blue_noise.glsl"
+#define RT_MATERIAL_SET 1
+#include "lib/rt_material_data.glsl"
 
 // G-buffer samplers (set=0)
 layout(set = 0, binding = 0) uniform sampler2D g_Normal;
@@ -100,7 +104,7 @@ void main() {
 
             // Cast a ray from worldPos in the random direction. If hit, add occlusion
             float hitDistance;
-            if (queryAO(tlas, origin, bounceNormal, rayDir, pc.radius, pc.bias, hitDistance))
+            if (queryAOCutout(tlas, origin, bounceNormal, rayDir, pc.radius, pc.bias, hitDistance))
             {
                 float distanceFactor = 1.0 - clamp(hitDistance / pc.radius, 0.0, 1.0);
                 float falloffFactor = pow(distanceFactor, pc.falloff);

@@ -41,8 +41,10 @@ struct RTMaterialData {
     uint32_t lightEmissionInvert;
     glm::vec2 lightEmissionScale;
     uint32_t lightEmissionUVSet;
-    uint32_t padding;
+    float alphaCutoff;
 };
+
+static_assert(sizeof(RTMaterialData) == 56, "RTMaterialData must match the GLSL scalar layout");
 
 struct RTMaterialInstance {
     RTMaterialData data;

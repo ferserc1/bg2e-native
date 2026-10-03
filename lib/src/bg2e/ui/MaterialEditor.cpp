@@ -190,6 +190,16 @@ bool MaterialEditor::draw()
             notifyOnChange();
         }
 
+        auto alphaCutoff = _material->materialAttributes().alphaCutoff();
+        if (Numeric::sliderFloat("Alpha Cutoff##alphaCutoff", &alphaCutoff, 0.0f, 1.0f))
+        {
+            for (auto & mat : _editMaterialList)
+            {
+                mat->materialAttributes().setAlphaCutoff(alphaCutoff);
+            }
+            notifyOnChange();
+        }
+
         Text::separator("Normal");
         auto normalScale = _material->materialAttributes().normalScale();
         auto normalUVSet = _material->materialAttributes().normalUVSet();

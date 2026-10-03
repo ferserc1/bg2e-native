@@ -77,7 +77,9 @@ VkAccelerationStructureBuildSizesInfoKHR RTAccelerationStructureSize::getBLASSiz
     _geometry = {};
     _geometry.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;
     _geometry.geometryType = VK_GEOMETRY_TYPE_TRIANGLES_KHR;
-    _geometry.flags = VK_GEOMETRY_OPAQUE_BIT_KHR;
+    // BLAS are shared between materials, so all triangle hits must remain
+    // available to alpha-test any-hit shaders and ray-query candidate loops.
+    _geometry.flags = 0;
     _geometry.geometry.triangles = _trianglesData;
 
     _buildInfo = {};

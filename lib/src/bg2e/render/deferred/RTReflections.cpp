@@ -131,7 +131,8 @@ void RTReflections::createPipeline()
         _engine->device().handle(),
         VK_SHADER_STAGE_RAYGEN_BIT_KHR |
         VK_SHADER_STAGE_MISS_BIT_KHR |
-        VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR
+        VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR |
+        VK_SHADER_STAGE_ANY_HIT_BIT_KHR
     );
 
     vulkan::factory::PipelineLayout layoutFactory(_engine);
@@ -157,6 +158,7 @@ void RTReflections::createPipeline()
     rtPipelineFactory.setRayGenShader("rt_reflections.rgen.spv");
     rtPipelineFactory.setMissShader("rt_reflections.rmiss.spv");
     rtPipelineFactory.setClosestHitShader("rt_reflections.rchit.spv");
+    rtPipelineFactory.setAnyHitShader("rt_alpha_test.rahit.spv");
 
     _pipeline = rtPipelineFactory.build(_pipelineLayout, 1, "RTReflections::Pipeline");
     auto sbt = rtPipelineFactory.createSBT("RTReflections::SBT");

@@ -133,6 +133,23 @@ void RayTracingPipeline::setClosestHitShader(const std::string& fileName, const 
     _groups.push_back(group);
 }
 
+void RayTracingPipeline::setAnyHitShader(const std::string& fileName, const std::string& entryPoint)
+{
+    if (!_hasClosestHitShader)
+    {
+        throw std::runtime_error("Invalid ray tracing pipeline factory configuration: setAnyHitShader() must be called after setClosestHitShader()");
+    }
+    if (_hasAnyHitShader)
+    {
+        throw std::runtime_error("Invalid ray tracing pipeline factory configuration: the number of any hit shaders must be at most 1");
+    }
+    _hasAnyHitShader = true;
+    const uint32_t stageIndex = addShaderStage(
+        VK_SHADER_STAGE_ANY_HIT_BIT_KHR, fileName, entryPoint
+    );
+    _groups.back().anyHitShader = stageIndex;
+}
+
 VkDeviceSize RayTracingPipeline::alignUp(VkDeviceSize value, VkDeviceSize alignment)
 {
     return (value + alignment - 1) & ~(alignment - 1);
@@ -352,6 +369,7 @@ void RayTracingPipeline::reset()
     _hasRaygenShader = false;
     _hasMissShader = false;
     _hasClosestHitShader = false;
+    _hasAnyHitShader = false;
 }
 
 }
