@@ -16,3 +16,11 @@ Update doc/api/render and doc/api/app with standalone context lifecycle, CLI usa
 ## Next-step acceptance gate
 
 CLI help, documentation and implemented behavior agree. Compile the project at the end of this step when implementation is authorized. Do not weaken an existing public API. Review changed files and describe any remaining runtime risk.
+
+## Contract and next-step deliverables
+
+Read [API_CONTRACT.md](../API_CONTRACT.md) before implementation. The following details are the reviewable scope of the next step:
+
+- Add `doc/api/render/StandaloneBakerContext.md` with explicit `initialize -> updateScene -> createBaker -> update -> readPixels -> cleanup` flow and no-window example. Update the render API index/reference.
+- Document `ImageFormat` and helper functions in `doc/api/db/`, creating the namespace index if absent. Document CLI model/prefab flags, defaults, exit conditions, file output matrix and lack of regenerated UV2 until phase 3 under `doc/api/app/`.
+- Add a technical note in `doc/lightmap_baking.md` (or extend the integrated note) explaining full-scene assembly, shared TLAS, optional scene updates and component lifecycle. Confirm examples match actual compiled signatures and relative links resolve.

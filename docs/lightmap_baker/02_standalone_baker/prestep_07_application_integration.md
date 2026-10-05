@@ -16,3 +16,12 @@ Create the command-line executable with model and prefab modes, required JSON co
 ## Next-step acceptance gate
 
 The executable builds and performs model/prefab batches with existing UV2; invalid input returns a nonzero code and useful diagnostics. Compile the project at the end of this step when implementation is authorized. Do not weaken an existing public API. Review changed files and describe any remaining runtime risk.
+
+## Contract and next-step deliverables
+
+Read [API_CONTRACT.md](../API_CONTRACT.md) before implementation. The following details are the reviewable scope of the next step:
+
+- Create `apps/lightmap_generator` with a thin `main.cpp`: parse the exact flags in [API_CONTRACT.md](../API_CONTRACT.md), initialize `render::Engine` headlessly, assemble inputs, call the standalone batch and write outputs. Keep loading/baking/output logic in reusable classes rather than a monolithic main function.
+- Required options: subcommand `model` or `prefab`, `--context`, `--model` or `--prefab`, `--output`. Common options: `--format`, `--resolution`, `--frames`, `--mode`, `--rt-shadows`, `--generate-uv2`, `--samples-per-pixel`, `--gi-bounces`, `--max-distance`. Include `--help`. Defaults are those in `LightmapSettings`; default image format PNG.
+- Reject missing, duplicate, contradictory or irrelevant options before initializing Vulkan. In phase 2, accept `--generate-uv2=true` syntactically but exit with a clear not-yet-available error. Model and prefab runs with existing valid UV2 must complete. Log per-target warnings and final summary to stdout/stderr with nonzero exit on fatal error.
+- Add the new app target to `apps/CMakeLists.txt` and its own CMake file during the future implementation request. Preserve Linux Ninja, macOS Xcode and Windows Visual Studio build rules; no packaging change is needed unless separately requested.

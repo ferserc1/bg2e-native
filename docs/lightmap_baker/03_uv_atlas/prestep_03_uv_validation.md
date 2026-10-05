@@ -16,3 +16,11 @@ Add reusable geo validation for missing/degenerate/overlapping UV2 and an engine
 ## Next-step acceptance gate
 
 Both UV channels can be rendered and inspected without altering the mesh. Compile the project at the end of this step when implementation is authorized. Do not weaken an existing public API. Review changed files and describe any remaining runtime risk.
+
+## Contract and next-step deliverables
+
+Read [API_CONTRACT.md](../API_CONTRACT.md) before implementation. The following details are the reviewable scope of the next step:
+
+- Promote the private usable-UV2 check from integrated step 02 into `geo::UvAtlasValidator::validate(const geo::Mesh&, uint32_t uvSet)`, returning a diagnostic result with `valid`, error category, submesh/triangle IDs and coverage statistics. Check finite coordinates, [0,1] range, nonzero mapped area, valid triangle indices and submesh ranges, and positive-area overlap between different triangles. Shared edges/vertices are allowed. Update baker target validation and CLI skip behavior to use the public validator; delete the private duplicate.
+- Add `render::UvMapPreviewRenderer` that creates a sampled/color-attachment Vulkan image from either UV1 or UV2 and draws wireframe triangles plus atlas boundaries in UV space. It must not mutate the mesh or depend on `bg2e::ui`. Recreate its target safely on resolution changes and expose a `render::Texture`-compatible image handle.
+- A copied UV1 fallback that overlaps must fail the usable-UV2 test; a copied UV1 that is already a valid unique atlas may pass. Do not invent source-UV2 provenance based on coordinate equality. Compare validation with xatlas output and known bad fixtures.

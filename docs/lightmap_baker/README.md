@@ -2,6 +2,8 @@
 
 This plan is written in English as required by AGENTS.md. Work proceeds in order: [integrated baker](01_integrated_baker/overview.md), [standalone baker](02_standalone_baker/overview.md), then [UV atlas](03_uv_atlas/overview.md). Each step is intended as a separate reviewable change that leaves the project compilable. A step may initially be incomplete at runtime, but each phase aims to restore useful behavior as early as possible.
 
+**Read the [API and behavioral contract](API_CONTRACT.md) before reviewing or implementing any step.** It fixes class names, ownership, example calls, pixel meaning, CLI options, UI behavior, and validation rules. Each step below links back to this contract and identifies its own concrete deliverables.
+
 ## Fixed decisions
 
 - Use only the production `bg2e::render` ray tracing path, specifically `render::vulkan::rt::RayTracingScene`; `bg2e::gpu` migration is outside this plan.

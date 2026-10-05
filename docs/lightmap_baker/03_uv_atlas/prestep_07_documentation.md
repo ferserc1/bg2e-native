@@ -16,3 +16,12 @@ Update doc/api/geo, doc/api/render, doc/api/ui and relevant doc/api/app/db pages
 ## Next-step acceptance gate
 
 Documentation matches the completed behavior and links between namespaces. Compile the project at the end of this step when implementation is authorized. Do not weaken an existing public API. Review changed files and describe any remaining runtime risk.
+
+## Contract and next-step deliverables
+
+Read [API_CONTRACT.md](../API_CONTRACT.md) before implementation. The following details are the reviewable scope of the next step:
+
+- Add `doc/api/geo/GenerateUv2AtlasModifier.md` and `UvAtlasValidator.md` with CPU-only behavior, xatlas MIT attribution, transactional failure, UV1 preservation and one-atlas/multiple-submesh semantics. Update geo index/reference.
+- Add `doc/api/render/UvMapPreviewRenderer.md` and `doc/api/ui/UvMapPreview.md`; show both UV channels, image lifetime and the rule forbidding ImGui headers outside the engine UI implementation. Update namespace indexes.
+- Update `doc/api/app/` CLI usage and `doc/api/render/LightmapBaker.md` to remove the phase-2 UV2 flag limitation, and expand `doc/lightmap_baking.md` with the full flow. Include the safe `MainLoop::safeUpdateScene` reload example.
+- Check every code example against actual signatures, all Markdown links, and the four CLI output cases (model/prefab × generate-uv2 true/false).

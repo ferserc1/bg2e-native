@@ -16,3 +16,11 @@ Provide an input assembly path for a JSON lighting context plus either one .bg2 
 ## Next-step acceptance gate
 
 Both modes assemble a single scene and enumerate the intended target Drawables. Compile the project at the end of this step when implementation is authorized. Do not weaken an existing public API. Review changed files and describe any remaining runtime risk.
+
+## Contract and next-step deliverables
+
+Read [API_CONTRACT.md](../API_CONTRACT.md) before implementation. The following details are the reviewable scope of the next step:
+
+- Add `render::StandaloneBakeSceneAssembler` in the engine, using existing `bg2e::db` loaders. Load the context JSON as a `scene::Scene`, then import either a .bg2 model node or a prefab JSON subtree and attach it **before** calling `updateScene`. Model mode applies identity transform at the world origin. Prefab mode preserves the prefab hierarchy and local transforms. The CLI itself is not created until the penultimate step.
+- Traverse the attached target subtree in deterministic preorder. The target list contains only nodes directly owning standard Drawables; context-only nodes are occluders/lighting sources, never export targets. All context and prefab/model geometry enters the same TLAS. Detect duplicate node identities and invalid source files early.
+- Retain input source paths and output target identities separately; never mutate or save input JSON/.bg2 while assembling. Reject a prefab that cannot be attached cleanly; surface path and node in diagnostics.
