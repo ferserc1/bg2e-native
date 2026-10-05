@@ -232,7 +232,8 @@ The system uses CMake. The project is configured to automatically include all co
 
 ## Note about token generation
 
-ALWAYS use English as text generation language, even when the user ask questions in other languate.
+Always use English for the content of generated documents and files, regardless of the language used in the request. For conversational responses in chat, reply in the same language as the user.
+
 
 
 ## VERY IMPORTANT
