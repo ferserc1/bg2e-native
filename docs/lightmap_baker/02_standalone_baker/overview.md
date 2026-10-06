@@ -1,6 +1,6 @@
 # Standalone lightmap baker
 
-Extend the shared baking core for command-line execution without an active application loop. A standalone context owns frame resources and the production TLAS, drives the required scene/component lifecycle, then bakes multiple targets. Add apps/lightmap_generator with model and prefab modes.
+Extend the shared baking core for command-line execution without an active application loop. A standalone context owns its headless frame resources and its own production `RayTracingScene`, drives the required scene/component lifecycle, then bakes multiple targets. This RT scene is distinct from the integrated context's per-slot owned instances; neither mode borrows the ordinary renderer's frame TLAS. Add apps/lightmap_generator with model and prefab modes.
 
 The public lifecycle and exact CLI examples are in [API_CONTRACT.md](../API_CONTRACT.md). One `StandaloneBakerContext` assembles one context scene plus all targets, calls `updateScene` once, and creates a separate `StandaloneLightmapBaker` per target. No window, camera or active application loop is required.
 

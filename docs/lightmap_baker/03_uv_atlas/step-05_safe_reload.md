@@ -16,7 +16,7 @@ Loaded meshes can receive UV2 updates without modifying GPU resources in flight.
 
 ## Safety fixture
 
-Queue UV regeneration while the previous frame uses the mesh; verify the callback runs only after waitIdle and the new BLAS participates in the next TLAS update.
+Queue UV regeneration while the previous frame uses the mesh; verify the callback runs only after waitIdle and the new BLAS participates in the next context-owned bake TLAS build (and in the ordinary renderer's next TLAS build where applicable).
 
 ## Handoff
 

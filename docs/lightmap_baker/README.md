@@ -7,7 +7,8 @@ This plan is written in English as required by AGENTS.md. Work proceeds in order
 ## Fixed decisions
 
 - Use only the production `bg2e::render` ray tracing path, specifically `render::vulkan::rt::RayTracingScene`; `bg2e::gpu` migration is outside this plan.
-- A scene-wide context shares TLAS and scene resources; a per-Drawable baker owns its target, intermediate images, accumulation history and RGB CPU result. Integrated and standalone context types expose different lifecycles.
+- A scene-wide context owns and shares its own production TLAS resources across target bakers. In integrated mode the context owns one `RayTracingScene` per in-flight frame slot; these are independent of `FrameResources::rayTracingScene` and survive its `flushFrameData()`. In standalone mode the context owns its headless `RayTracingScene`. A per-Drawable baker owns its target, intermediate images, accumulation history and RGB CPU result. The two context types expose different scene lifecycles.
+- The UV-space surface pass reuses `GBufferManager` for attachment ownership through an additive depthless, configurable-format profile. It keeps separate per-target/per-slot attachments; the existing camera G-buffer profile and deferred-renderer APIs remain intact.
 - Validate target Drawable membership against the supplied scene root. The same lightmap texture is assigned to the existing AO property of every submesh material, using UV2. Do not add a material property or use emission.
 - RTAO and RTGI are exclusive. RT shadows are an independent option. All bake layers use full target resolution. RGB8 is the normal output; configurable RGB32F CPU output is available. HDR file export is deferred.
 - A command-line context scene and model/prefab targets are assembled into one scene and one TLAS. Standalone context alone drives component lifecycle. Integrated context uses an already running windowed or offscreen lifecycle.

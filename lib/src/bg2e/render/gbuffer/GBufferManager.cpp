@@ -21,6 +21,8 @@
 #include <bg2e/render/vulkan/Info.hpp>
 
 #include <algorithm>
+#include <string>
+#include <stdexcept>
 
 namespace bg2e::render {
 
@@ -36,6 +38,21 @@ GBufferManager::GBufferManager(Engine * engine)
     };
 }
 
+GBufferManager::GBufferManager(Engine* engine, const Configuration& configuration)
+    : _engine(engine),
+      _colorFormats(configuration.colorFormats),
+      _depthFormat(configuration.depthFormat)
+{
+    if (!_engine)
+    {
+        throw std::invalid_argument("GBufferManager: engine must not be null");
+    }
+    if (_colorFormats.empty())
+    {
+        throw std::invalid_argument("GBufferManager: at least one color format is required");
+    }
+}
+
 GBufferManager::~GBufferManager()
 {
     cleanup();
@@ -43,6 +60,50 @@ GBufferManager::~GBufferManager()
 
 void GBufferManager::build(VkExtent2D extent)
 {
+    if (!_engine)
+    {
+        throw std::invalid_argument("GBufferManager::build: engine must not be null");
+    }
+    if (extent.width == 0 || extent.height == 0)
+    {
+        throw std::invalid_argument("GBufferManager::build: extent must be non-zero");
+    }
+
+    VkPhysicalDeviceProperties deviceProperties{};
+    vkGetPhysicalDeviceProperties(_engine->physicalDevice().handle(), &deviceProperties);
+    if (extent.width > deviceProperties.limits.maxImageDimension2D ||
+        extent.height > deviceProperties.limits.maxImageDimension2D)
+    {
+        throw std::invalid_argument("GBufferManager::build: extent exceeds maxImageDimension2D");
+    }
+    if (_colorFormats.size() > deviceProperties.limits.maxColorAttachments)
+    {
+        throw std::runtime_error("GBufferManager::build: device has too few color attachment slots");
+    }
+
+    for (VkFormat format : _colorFormats)
+    {
+        VkFormatProperties formatProperties{};
+        vkGetPhysicalDeviceFormatProperties(_engine->physicalDevice().handle(), format, &formatProperties);
+        const VkFormatFeatureFlags required = VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT |
+            VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT;
+        if ((formatProperties.optimalTilingFeatures & required) != required)
+        {
+            throw std::runtime_error("GBufferManager::build: color format " +
+                std::to_string(static_cast<int>(format)) +
+                " does not support optimal color attachment and sampled-image usage");
+        }
+    }
+    if (_depthFormat != VK_FORMAT_UNDEFINED)
+    {
+        VkFormatProperties formatProperties{};
+        vkGetPhysicalDeviceFormatProperties(_engine->physicalDevice().handle(), _depthFormat, &formatProperties);
+        if ((formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT) == 0)
+        {
+            throw std::runtime_error("GBufferManager::build: configured depth format does not support depth attachments");
+        }
+    }
+
     cleanup();
     _extent = extent;
 
@@ -71,17 +132,20 @@ void GBufferManager::build(VkExtent2D extent)
         _colorImagePtrs.push_back(image);
     }
 
-    auto depth = vulkan::Image::createAllocatedImage(
-        _engine,
-        "g-buffer depth attachment",
-        _depthFormat,
-        extent,
-        VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT |
-        VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
-        VK_IMAGE_ASPECT_DEPTH_BIT,
-        1, false, 0, VK_SAMPLE_COUNT_1_BIT
-    );
-    _depthImage = std::shared_ptr<vulkan::Image>(depth);
+    if (_depthFormat != VK_FORMAT_UNDEFINED)
+    {
+        auto depth = vulkan::Image::createAllocatedImage(
+            _engine,
+            "g-buffer depth attachment",
+            _depthFormat,
+            extent,
+            VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT |
+            VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
+            VK_IMAGE_ASPECT_DEPTH_BIT,
+            1, false, 0, VK_SAMPLE_COUNT_1_BIT
+        );
+        _depthImage = std::shared_ptr<vulkan::Image>(depth);
+    }
 
     _colorLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     _depthLayout = VK_IMAGE_LAYOUT_UNDEFINED;
@@ -107,6 +171,8 @@ void GBufferManager::cleanup()
     _colorImages.clear();
     _colorImagePtrs.clear();
     _depthImage.reset();
+    _colorLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    _depthLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 }
 
 uint32_t GBufferManager::imageCount() const
@@ -163,19 +229,37 @@ void GBufferManager::transitionToAttachment(VkCommandBuffer cmd)
 
 void GBufferManager::transitionToShaderRead(VkCommandBuffer cmd)
 {
-    transitionTo(
-        cmd,
-        VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-        VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
-    );
+    // ALL_COMMANDS keeps the legacy camera G-buffer usable on devices without
+    // ray-tracing support while also covering the UV pass's later compute/RT reads.
+    transitionTo(cmd, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+        VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 }
 
 void GBufferManager::beginRender(VkCommandBuffer cmd, bool isTransparent)
 {
+    beginRenderImpl(cmd, isTransparent, true);
+}
+
+void GBufferManager::beginRender(VkCommandBuffer cmd)
+{
+    if (_depthFormat != VK_FORMAT_UNDEFINED)
+    {
+        throw std::logic_error("GBufferManager::beginRender(cmd): this overload requires a depthless configuration");
+    }
+    beginRenderImpl(cmd, false, false);
+}
+
+void GBufferManager::beginRenderImpl(VkCommandBuffer cmd, bool isTransparent, bool includeDepth)
+{
+    if (_colorImages.empty())
+    {
+        throw std::logic_error("GBufferManager::beginRender: attachments have not been built");
+    }
+
     VkClearColorValue clearValue{ { 0.0f, 0.0f, 0.0f, 0.0f } };
     auto clearRange = vulkan::Image::subresourceRange(VK_IMAGE_ASPECT_COLOR_BIT);
     std::vector<VkRenderingAttachmentInfo> attachments;
-    VkExtent2D imageExtent = _colorImages[0]->extent2D();
+    VkExtent2D imageExtent = _extent;
     for (auto image : _colorImages)
     {
         vulkan::Image::cmdTransitionImage(
@@ -201,29 +285,39 @@ void GBufferManager::beginRender(VkCommandBuffer cmd, bool isTransparent)
         attachments.push_back(colorAttachment);
     }
 
-    vulkan::Image::cmdTransitionImage(
-        cmd, _depthImage->handle(),
-        _depthLayout,
-        VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL
-    );
+    VkRenderingAttachmentInfo depthAttachment{};
+    VkRenderingAttachmentInfo* depthAttachmentPtr = nullptr;
+    if (includeDepth && _depthImage)
+    {
+        vulkan::Image::cmdTransitionImage(
+            cmd, _depthImage->handle(),
+            _depthLayout,
+            VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL,
+            vulkan::Image::TransitionInfo(VK_IMAGE_ASPECT_DEPTH_BIT)
+        );
 
-    float depthValue = 1.0f;
-    auto depthAttachment = vulkan::Info::depthAttachmentInfo(
-        _depthImage->imageView(),
-        depthValue,
-        VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL
-        , isTransparent ? VK_ATTACHMENT_LOAD_OP_LOAD : VK_ATTACHMENT_LOAD_OP_CLEAR
-    );
+        float depthValue = 1.0f;
+        depthAttachment = vulkan::Info::depthAttachmentInfo(
+            _depthImage->imageView(),
+            depthValue,
+            VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL,
+            isTransparent ? VK_ATTACHMENT_LOAD_OP_LOAD : VK_ATTACHMENT_LOAD_OP_CLEAR
+        );
+        depthAttachmentPtr = &depthAttachment;
+    }
     auto renderInfo = vulkan::Info::renderingInfo(
         imageExtent,
         attachments.data(),
-        &depthAttachment,
+        depthAttachmentPtr,
         static_cast<uint32_t>(attachments.size())
     );
     vulkan::cmdBeginRendering(cmd, &renderInfo);
 
     _colorLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-    _depthLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+    if (depthAttachmentPtr)
+    {
+        _depthLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+    }
 }
 
 void GBufferManager::transitionTo(VkCommandBuffer cmd, VkImageLayout colorLayout, VkImageLayout depthLayout)
@@ -239,7 +333,7 @@ void GBufferManager::transitionTo(VkCommandBuffer cmd, VkImageLayout colorLayout
         _colorLayout = colorLayout;
     }
 
-    if (_depthLayout != depthLayout)
+    if (_depthImage && _depthLayout != depthLayout)
     {
         vulkan::Image::TransitionInfo transitionInfo;
         transitionInfo.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;

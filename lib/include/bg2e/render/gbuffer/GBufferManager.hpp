@@ -29,7 +29,13 @@ namespace render {
 
 class BG2E_API GBufferManager {
 public:
+    struct Configuration {
+        std::vector<VkFormat> colorFormats;
+        VkFormat depthFormat = VK_FORMAT_UNDEFINED;
+    };
+
     GBufferManager(Engine * engine);
+    GBufferManager(Engine * engine, const Configuration& configuration);
     ~GBufferManager();
 
     void build(VkExtent2D extent);
@@ -48,6 +54,7 @@ public:
     void transitionToAttachment(VkCommandBuffer cmd);
     void transitionToShaderRead(VkCommandBuffer cmd);
     void beginRender(VkCommandBuffer cmd, bool isTransparent);
+    void beginRender(VkCommandBuffer cmd);
 
 private:
     Engine * _engine;
@@ -64,6 +71,7 @@ private:
     VkImageLayout _colorLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     VkImageLayout _depthLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
+    void beginRenderImpl(VkCommandBuffer cmd, bool isTransparent, bool includeDepth);
     void transitionTo(VkCommandBuffer cmd, VkImageLayout colorLayout, VkImageLayout depthLayout);
 };
 

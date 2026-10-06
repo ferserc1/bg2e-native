@@ -82,14 +82,14 @@ void Image::cmdTransitionImage(
     VkPipelineStageFlags2 srcStageMask = transitionInfo.srcStageMask;
     VkAccessFlags2        srcAccessMask = transitionInfo.srcAccessMask;
     VkPipelineStageFlags2 dstStageMask = transitionInfo.dstStageMask;
-    //VkAccessFlags2        dstAccessMask = transitionInfo.dstAccessMask;
+    VkAccessFlags2        dstAccessMask = transitionInfo.dstAccessMask;
 
     VkImageMemoryBarrier2 imageBarrier = {};
     imageBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2;
     imageBarrier.srcStageMask = srcStageMask;
     imageBarrier.srcAccessMask = srcAccessMask;
     imageBarrier.dstStageMask = dstStageMask;
-    imageBarrier.dstAccessMask = dstStageMask; 
+    imageBarrier.dstAccessMask = dstAccessMask;
     imageBarrier.oldLayout = oldLayout;
     imageBarrier.newLayout = newLayout;
 
@@ -616,4 +616,3 @@ void Image::cleanup()
 }
 }
 }
-

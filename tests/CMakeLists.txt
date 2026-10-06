@@ -1,1 +1,2 @@
 add_subdirectory(test_01_key_and_mouse)
+add_subdirectory(test_02_uv_surface)

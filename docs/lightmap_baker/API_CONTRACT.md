@@ -32,21 +32,67 @@ struct LightmapPixels {
 
 class BakerContext;             // shared scene resources; non-constructible base
 class LightmapBaker;            // per-target resources and common result access
-class IntegratedBakerContext;   // borrows the current frame's TLAS
+class IntegratedBakerContext;   // owns bake RT scenes, one per in-flight frame slot
 class IntegratedLightmapBaker;
 class StandaloneBakerContext;   // owns a production RayTracingScene
 class StandaloneLightmapBaker;
 class StandaloneBakeSceneAssembler;
 ```
 
-`BakerContext` owns the engine pointer, scene root reference, shared pipelines,
+`BakerContext` retains the engine pointer, scene root reference, shared pipelines,
 blue noise, scene lighting/material bindings and other reusable GPU state.
 `LightmapBaker` owns the target node reference, final image, per-target
-G-buffer, history/denoise images, sample count and CPU result. Contexts are
+UV-space G-buffer, history/denoise images, sample count and CPU result. Contexts are
 created as `shared_ptr`; a baker holds a `shared_ptr` to its context, so
 destroying the caller's context reference cannot leave a dangling baker.
 The `Engine` and target scene must still outlive all contexts and bakers.
 The baker does not own or destroy the target Drawable or its materials.
+`IntegratedBakerContext` owns its bake `RayTracingScene` instances and shares
+the currently prepared instance among all target bakers. It never uses
+`FrameResources::rayTracingScene` as the bake TLAS. One instance per in-flight
+frame slot keeps submitted builds and traces alive until that slot's fence has
+completed. `FrameResources` supplies only transient command/descriptor state.
+
+### UV-space G-buffer reuse
+
+The baker's private `UvSurfacePass` **uses `render::GBufferManager` to own its
+UV-space attachments**. It does not use a `DeferredLayer` G-buffer instance or
+its camera-space formats/shaders. Add a `GBufferManager::Configuration` with
+`std::vector<VkFormat> colorFormats` and `VkFormat depthFormat` (where
+`VK_FORMAT_UNDEFINED` means no depth attachment), plus an additive
+`GBufferManager(Engine*, Configuration)` constructor and depthless
+`beginRender(VkCommandBuffer)` overload. Keep the existing constructor,
+`build/resize/cleanup/accessors/transitions`, and
+`beginRender(VkCommandBuffer, bool)` behavior and signatures for deferred
+rendering. In the depthless configuration, `depthImage()` returns null and
+`depthFormat()` returns `VK_FORMAT_UNDEFINED`; all allocation, transition,
+render-begin and cleanup paths must guard the absent depth image.
+
+`UvSurfacePass` creates one manager per target and in-flight frame slot using
+four color attachments at the bake resolution: world position
+`VK_FORMAT_R32G32B32A32_SFLOAT`, signed world normal
+`VK_FORMAT_R16G16B16A16_SFLOAT`, zero-based submesh/material identity
+`VK_FORMAT_R32_UINT`, and valid-texel mask `VK_FORMAT_R32_UINT` (0 empty,
+1 covered). Material identity resolves through the submesh index. The UV
+pipeline writes these attachments without depth testing; the CPU atlas
+validator rejects overlapping positive-area UV triangles. Clear every
+attachment to zero, then transition color writes to shader reads before
+RTAO/RTGI. Read integer attachments with integer samplers and nearest
+filtering. The camera G-buffer's five fixed attachment indices and depth
+behavior remain unchanged. Reusing a slot or resizing its attachments
+requires completion of that slot's previous GPU submission. The UV pass
+retains no images from a manager after its rebuild or destruction. Standalone
+baking uses slot 0 of the same private pass. Check that the selected Vulkan
+formats support color attachments and sampled images before allocation; report
+an explicit error if the device lacks a required format feature.
+
+The existing `Image::cmdTransitionImage` implementation assigns
+`dstStageMask` to `imageBarrier.dstAccessMask`; step 02 corrects it to use
+`TransitionInfo::dstAccessMask` and verifies attachment-write to compute/ray
+read synchronization. This is an internal fix with no API signature change.
+The UV-specific RTAO/RTGI entry points consume the selected UV manager's
+images and the context-owned TLAS directly. They do not pass that manager to
+legacy camera-space methods that reconstruct position from a depth image.
 
 `createBaker(node, settings)` validates: RT support, non-null and attached
 node, `node->sceneRoot() == context.rootNode()`, standard
@@ -66,26 +112,43 @@ auto context = std::make_shared<render::IntegratedBakerContext>(
     engine, sceneRoot);
 auto baker = context->createBaker(targetNode, settings);
 
-// In the render delegate, after the normal scene/TLAS preparation:
-baker->update(cmd, frameResources);  // records one full-resolution sample
+// In the render delegate, after the application's scene/component update:
+context->prepareFrame(cmd, frameResources); // once for all bakers in this frame
+baker->update(cmd, frameResources);          // one full-resolution sample
 
 // Outside command recording, after the frame has been submitted:
 auto pixels = baker->readPixels();    // waits for its last submitted update
 auto image = baker->image();          // optional sampled/renderable image
 ```
 
+`IntegratedBakerContext::prepareFrame(VkCommandBuffer,
+vulkan::FrameResources&)` is called once per active bake frame, after the
+application's scene/component update and before any baker update. It verifies
+that the supplied frame is the engine's current frame slot, selects the
+context-owned RT scene for that slot, collects scene bindings, and records
+`RayTracingScene::update(cmd, context.rootNode())` and the required build-to-ray
+barrier in the same ordered command stream. The normal renderer's TLAS build
+is neither a prerequisite nor a source of bake resources. The context does
+**not** call `Scene::willUpdate`, `UpdateVisitor`, `Scene::didUpdate` or resize
+hooks. It may rebuild the selected slot only after the application loop has
+waited for that slot's previous fence; it must release the old TLAS before
+`RayTracingScene::update` overwrites its handles. A slot prepared for a frame
+is shared by all target bakers in that frame; do not rebuild per target.
+
 `IntegratedLightmapBaker::update(VkCommandBuffer,
-FrameResources&)` must be called only after that frame's
-`RayTracingScene::update` has recorded its TLAS build, on the same ordered
-graphics queue/command stream. It **does not** call `Scene::willUpdate`,
-`UpdateVisitor`, `Scene::didUpdate`, resize hooks, or TLAS update. It must
-validate that the borrowed TLAS represents the same root; add an additive
-`RayTracingScene::lastRootNode()` accessor if needed. It never stores
-`FrameResources*` or the borrowed TLAS past the call. Recording an update
-increments the scheduled-sample count; CPU readback is legal only after GPU
-submission, and must wait for completion. Frame-buffer cleanup may destroy the
-borrowed TLAS on the next frame, so no delayed command may reference it.
-All calls for one baker are serialized; concurrent updates are unsupported.
+vulkan::FrameResources&)` retains the step-01 signature. It requires a
+successful `prepareFrame` with the same `Engine::currentFrame()` number,
+frame-resource slot and command buffer, rejects a
+detached/mismatched target root or missing TLAS/descriptor allocator, and
+consumes the selected context-owned TLAS. Only transient frame descriptors
+may come from `FrameResources`; neither the context nor the baker retains
+`FrameResources*` or frame-owned descriptors past the recording call.
+Recording an update increments the scheduled-sample count; CPU readback is
+legal only after GPU submission and waits for completion. Context destruction
+or scene-root replacement waits for all submitted slots (or uses the engine's
+deferred cleanup). Rebuilding the same unchanged scene each frame does not by
+itself reset accumulation; actual scene/target changes do. All calls for one
+baker are serialized; concurrent updates are unsupported.
 
 ### Standalone use
 
@@ -111,6 +174,10 @@ scene resize hooks at the configured extent; on each call, run
 `willUpdate -> UpdateVisitor::update -> updateAll (or narrower cache refresh)
 -> didUpdate`, collect lights/environment/materials, then build an owned
 `render::vulkan::rt::RayTracingScene` from the complete assembled root.
+This is the standalone context's own instance, distinct from both the
+integrated context's per-slot instances and `FrameResources::rayTracingScene`.
+Before a later `updateScene` replaces its TLAS, the context waits for prior
+bake submissions and cleans the old acceleration structure and buffers.
 Any draw hooks needed by a reused engine resource must be balanced; avoid
 calling camera-dependent rendering hooks without a camera. A rebuild increments
 a scene generation number and invalidates affected bake histories. Subsequent
@@ -263,9 +330,11 @@ GI bounces and max distance, plus preview. One integrated context handles
 the selection; each target has its own baker/image. Outputs go to temporary
 paths and are assigned as AO on all target submesh materials.
 
-Both windows schedule GPU bake work through their render delegates **after**
-the renderer has updated the TLAS; the UI callback does not record GPU
-commands. Scene swaps cancel pending work and release bakers after GPU
+Both windows schedule GPU bake work through their render delegates after the
+application scene/component update. The delegate calls the shared integrated
+context's `prepareFrame` once, then updates each selected baker using that
+context-owned TLAS; it does not depend on the renderer's TLAS. The UI callback
+does not record GPU commands. Scene swaps cancel pending work and release bakers after GPU
 completion. A progress/blocking UI is deferred. In phase 3, the windows add
 Generate UV2 and a UV1/UV2 preview. `bg2e::ui::UvMapPreview` uses the
 existing `TextureWidgets` path and a `render::UvMapPreviewRenderer`
