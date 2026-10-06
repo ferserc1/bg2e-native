@@ -25,6 +25,7 @@
 #include <bg2e/scene/DrawableComponent.hpp>
 #include <bg2e/json/JsonNode.hpp>
 #include <bg2e/json/JsonParser.hpp>
+#include <bg2e/json/NodeReader.hpp>
 #include <bg2e/base/Log.hpp>
 
 #include <fstream>
@@ -34,14 +35,14 @@ namespace bg2e::db {
 
 static int countJsonNodes(std::shared_ptr<bg2e::json::JsonNode> jsonNode)
 {
-    if (!jsonNode || !jsonNode->isObject()) { return 0; }
-    auto& obj = jsonNode->objectValue();
+    json::ObjectReader reader(jsonNode);
+    if (!reader.isValid()) return 0;
     int count = 1;
-    if (obj.count("children") && obj["children"]->isList())
+    if (auto children = reader.getArray("children"))
     {
-        for (auto& child : obj["children"]->listValue())
+        for (std::size_t i = 0; i < children->size(); ++i)
         {
-            count += countJsonNodes(child);
+            if (auto child = children->getObject(i)) count += countJsonNodes(child->node());
         }
     }
     return count;
@@ -49,19 +50,18 @@ static int countJsonNodes(std::shared_ptr<bg2e::json::JsonNode> jsonNode)
 
 static int countEnvironmentImages(std::shared_ptr<bg2e::json::JsonNode> jsonNode)
 {
-    if (!jsonNode || !jsonNode->isObject()) { return 0; }
-    auto& obj = jsonNode->objectValue();
+    json::ObjectReader reader(jsonNode);
+    if (!reader.isValid()) return 0;
     int count = 0;
 
-    if (obj.count("components") && obj["components"]->isList())
+    if (auto components = reader.getArray("components"))
     {
-        for (auto& comp : obj["components"]->listValue())
+        for (std::size_t i = 0; i < components->size(); ++i)
         {
-            if (!comp || !comp->isObject()) continue;
-            auto& compObj = comp->objectValue();
-            if (compObj.count("type") && compObj["type"]->stringValue() == "Environment")
+            auto comp = components->getObject(i);
+            if (comp && comp->getString("type").value_or("") == "Environment")
             {
-                if (compObj.count("equirectangularTexture") && compObj["equirectangularTexture"]->isString())
+                if (comp->isString("equirectangularTexture"))
                 {
                     ++count;
                 }
@@ -69,11 +69,11 @@ static int countEnvironmentImages(std::shared_ptr<bg2e::json::JsonNode> jsonNode
         }
     }
 
-    if (obj.count("children") && obj["children"]->isList())
+    if (auto children = reader.getArray("children"))
     {
-        for (auto& child : obj["children"]->listValue())
+        for (std::size_t i = 0; i < children->size(); ++i)
         {
-            count += countEnvironmentImages(child);
+            if (auto child = children->getObject(i)) count += countEnvironmentImages(child->node());
         }
     }
     return count;
@@ -81,23 +81,21 @@ static int countEnvironmentImages(std::shared_ptr<bg2e::json::JsonNode> jsonNode
 
 static int countDrawableTextures(std::shared_ptr<bg2e::json::JsonNode> jsonNode, const std::filesystem::path& basePath)
 {
-    if (!jsonNode || !jsonNode->isObject()) { return 0; }
-    auto& obj = jsonNode->objectValue();
+    json::ObjectReader reader(jsonNode);
+    if (!reader.isValid()) return 0;
     int count = 0;
 
-    if (obj.count("components") && obj["components"]->isList())
+    if (auto components = reader.getArray("components"))
     {
-        for (auto& comp : obj["components"]->listValue())
+        for (std::size_t i = 0; i < components->size(); ++i)
         {
-            if (!comp || !comp->isObject()) continue;
-            auto& compObj = comp->objectValue();
-            if (compObj.count("type") && compObj["type"]->stringValue() == "Drawable")
+            auto comp = components->getObject(i);
+            if (comp && comp->getString("type").value_or("") == "Drawable")
             {
-                if (compObj.count("name") && compObj["name"]->isString())
+                if (auto name = comp->getString("name"))
                 {
-                    auto name = compObj["name"]->stringValue();
                     auto filePath = basePath;
-                    filePath.append(name);
+                    filePath.append(*name);
                     filePath.replace_extension(".bg2");
                     count += bg2e::db::countMeshTextures(filePath);
                 }
@@ -105,11 +103,11 @@ static int countDrawableTextures(std::shared_ptr<bg2e::json::JsonNode> jsonNode,
         }
     }
 
-    if (obj.count("children") && obj["children"]->isList())
+    if (auto children = reader.getArray("children"))
     {
-        for (auto& child : obj["children"]->listValue())
+        for (std::size_t i = 0; i < children->size(); ++i)
         {
-            count += countDrawableTextures(child, basePath);
+            if (auto child = children->getObject(i)) count += countDrawableTextures(child->node(), basePath);
         }
     }
     return count;
@@ -161,14 +159,16 @@ std::shared_ptr<bg2e::scene::Scene> loadScene(
     {
         progress.callback = onProgress;
         auto basePath = filePath.parent_path();
-        auto& obj = sceneFile->objectValue();
-        if (obj.count("scene") && obj["scene"]->isList())
+        json::ObjectReader reader(sceneFile);
+        if (auto sceneList = reader.getArray("scene"))
         {
-            for (auto& nodeData : obj["scene"]->listValue())
+            for (std::size_t i = 0; i < sceneList->size(); ++i)
             {
-                progress.total += countJsonNodes(nodeData);
-                progress.total += countEnvironmentImages(nodeData);
-                progress.total += countDrawableTextures(nodeData, basePath);
+                auto nodeData = sceneList->getObject(i);
+                if (!nodeData) continue;
+                progress.total += countJsonNodes(nodeData->node());
+                progress.total += countEnvironmentImages(nodeData->node());
+                progress.total += countDrawableTextures(nodeData->node(), basePath);
             }
         }
     }

@@ -56,7 +56,8 @@ public:
         const vulkan::Image* aoImage,
         const glm::mat4& currentInverseViewProjection,
         const glm::mat4& currentView,
-        const glm::mat4& currentProjection
+        const glm::mat4& currentProjection,
+        const glm::mat4& currentCameraProjection
     );
     void cleanup();
 
@@ -101,6 +102,7 @@ private:
     uint32_t _accumulatedFrameCount = 0;
 
     glm::mat4 _previousViewProjection = glm::mat4(1.0f);
+    glm::mat4 _previousCameraViewProjection = glm::mat4(1.0f);
 
     VkPipeline _pipeline = VK_NULL_HANDLE;
     VkPipelineLayout _pipelineLayout = VK_NULL_HANDLE;

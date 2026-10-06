@@ -21,6 +21,7 @@
 #include <bg2e/common.hpp>
 #include <bg2e/math/base.hpp>
 #include <bg2e/json/JsonNode.hpp>
+#include <bg2e/json/NodeReader.hpp>
 
 #include <memory>
 
@@ -65,18 +66,10 @@ public:
     
     virtual void deserialize(std::shared_ptr<json::JsonNode> jsonData)
     {
-        if (!jsonData || !jsonData->isObject())
-            return;
-
-        auto& obj = jsonData->objectValue();
-        if (obj.count("near"))
-        {
-            _near = obj["near"]->numberValue(_near);
-        }
-        if (obj.count("far"))
-        {
-            _far = obj["far"]->numberValue(_far);
-        }
+        json::ObjectReader reader(jsonData);
+        if (!reader.isValid()) return;
+        if (auto value = reader.getNumber("near")) _near = *value;
+        if (auto value = reader.getNumber("far")) _far = *value;
     }
     
     virtual std::shared_ptr<json::JsonNode> serialize()
@@ -156,20 +149,12 @@ public:
     
     void deserialize(std::shared_ptr<json::JsonNode> jsonData) override
     {
-        if (!jsonData || !jsonData->isObject())
-            return;
+        json::ObjectReader reader(jsonData);
+        if (!reader.isValid()) return;
 
         Projection::deserialize(jsonData);
-
-        auto& obj = jsonData->objectValue();
-        if (obj.count("focalLength"))
-        {
-            _focalLength = obj["focalLength"]->numberValue(_focalLength);
-        }
-        if (obj.count("frameSize"))
-        {
-            _frameSize = obj["frameSize"]->numberValue(_frameSize);
-        }
+        if (auto value = reader.getNumber("focalLength")) _focalLength = *value;
+        if (auto value = reader.getNumber("frameSize")) _frameSize = *value;
     }
     
     std::shared_ptr<json::JsonNode> serialize() override

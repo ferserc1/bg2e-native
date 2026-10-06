@@ -17,6 +17,7 @@
  */
 
 #include <bg2e/scene/LightComponent.hpp>
+#include <bg2e/json/NodeReader.hpp>
 #include <bg2e/scene/ComponentFactoryRegistry.hpp>
 #include <bg2e/scene/TransformVisitor.hpp>
 
@@ -58,14 +59,8 @@ const glm::vec3 LightComponent::direction() const
 
 void LightComponent::deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path& /* basePath */, [[maybe_unused]] render::Engine& engine)
 {
-    if (!jsonData || !jsonData->isObject())
-        return;
-
-    auto& obj = jsonData->objectValue();
-    if (obj.count("lightData"))
-    {
-        _light.deserialize(obj["lightData"]);
-    }
+    json::ObjectReader reader(jsonData);
+    if (auto light = reader.getObject("lightData")) _light.deserialize(light->node());
 }
 
 std::shared_ptr<json::JsonNode> LightComponent::serialize(const std::filesystem::path& basePath)

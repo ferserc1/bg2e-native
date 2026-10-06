@@ -17,18 +17,14 @@
  */
 
 #include <bg2e/base/Joint.hpp>
+#include <bg2e/json/NodeReader.hpp>
 
 namespace bg2e::base {
 
 std::shared_ptr<Joint> Joint::factory(std::shared_ptr<json::JsonNode> jsonData)
 {
-    if (!jsonData || !jsonData->isObject())
-    {
-        return nullptr;
-    }
-
-    auto& object = jsonData->objectValue();
-    if (!object.count("type") || object["type"]->stringValue() != "LinkJoint")
+    json::ObjectReader reader(jsonData);
+    if (reader.getString("type").value_or("") != "LinkJoint")
     {
         return nullptr;
     }
@@ -86,37 +82,27 @@ std::shared_ptr<Joint> LinkJoint::clone() const
 
 void LinkJoint::deserialize(std::shared_ptr<json::JsonNode> jsonData)
 {
-    if (!jsonData || !jsonData->isObject())
-    {
-        return;
-    }
+    json::ObjectReader reader(jsonData);
+    if (!reader.isValid()) return;
 
-    auto& object = jsonData->objectValue();
-    if (object.count("offset") && object["offset"]->isVec3())
-    {
-        _offset = object["offset"]->glmVec3Value();
-    }
+    if (auto offset = reader.getGlmVec3("offset")) _offset = *offset;
 
     // Keep the TypeScript behaviour: each deserialization rebuilds Euler angles
     // from the three independent fields, defaulting absent values to zero.
     _eulerRotation = glm::vec3(
-        object.count("yaw") ? object["yaw"]->numberValue(0.0f) : 0.0f,
-        object.count("pitch") ? object["pitch"]->numberValue(0.0f) : 0.0f,
-        object.count("roll") ? object["roll"]->numberValue(0.0f) : 0.0f
+        reader.getNumber("yaw").value_or(0.0f),
+        reader.getNumber("pitch").value_or(0.0f),
+        reader.getNumber("roll").value_or(0.0f)
     );
 
     // `order` was used by bg2e 1.4. Prefer the current key when both exist.
-    if (object.count("transformOrder"))
+    if (auto order = reader.getInteger<uint32_t>("transformOrder"); order && *order <= 1)
     {
-        _transformOrder = static_cast<LinkTransformOrder>(
-            object["transformOrder"]->numberValue(static_cast<uint32_t>(LinkTransformOrder::TranslateRotate))
-        );
+        _transformOrder = static_cast<LinkTransformOrder>(*order);
     }
-    else if (object.count("order"))
+    else if (auto order = reader.getInteger<uint32_t>("order"); order && *order <= 1)
     {
-        _transformOrder = static_cast<LinkTransformOrder>(
-            object["order"]->numberValue(static_cast<uint32_t>(LinkTransformOrder::TranslateRotate))
-        );
+        _transformOrder = static_cast<LinkTransformOrder>(*order);
     }
     else
     {

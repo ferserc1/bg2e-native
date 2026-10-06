@@ -17,6 +17,7 @@
  */
 
 #include <bg2e/scene/TransformComponent.hpp>
+#include <bg2e/json/NodeReader.hpp>
 #include <bg2e/scene/TransformVisitor.hpp>
 #include <bg2e/scene/ComponentFactoryRegistry.hpp>
 
@@ -239,17 +240,8 @@ glm::mat4 TransformComponent::invertedWorldMatrix()
 
 void TransformComponent::deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path& /* basePath */, [[maybe_unused]] render::Engine& engine)
 {
-    if (!jsonData || !jsonData->isObject())
-    {
-        return;
-    }
-
-    auto& obj = jsonData->objectValue();
-
-    if (obj.count("transformMatrix") && obj["transformMatrix"]->isMat4())
-    {
-        _matrix = obj["transformMatrix"]->glmMat4Value();
-    }
+    json::ObjectReader reader(jsonData);
+    if (auto matrix = reader.getGlmMat4("transformMatrix")) _matrix = *matrix;
 }
 
 std::shared_ptr<json::JsonNode> TransformComponent::serialize(const std::filesystem::path& basePath)

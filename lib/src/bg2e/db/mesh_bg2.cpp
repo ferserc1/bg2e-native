@@ -23,6 +23,7 @@
 #include <bg2e/base/Texture.hpp>
 #include <bg2e/utils/utils.hpp>
 #include <bg2e/json/JsonParser.hpp>
+#include <bg2e/json/NodeReader.hpp>
 #include <bg2e/scene/ChainJoint.hpp>
 #include <bg2e/scene/DrawableComponent.hpp>
 #include <bg2e/scene/Node.hpp>
@@ -170,23 +171,18 @@ void parseJoints(const std::string& jointString, Bg2FileData& fileData)
 
     json::JsonParser parser(jointString);
     auto jointData = parser.parse();
-    if (!jointData || !jointData->isObject())
+    json::ObjectReader reader(jointData);
+    if (!reader.isValid()) return;
+    if (auto input = reader.getObject("input"))
     {
-        return;
+        fileData.inputJoint = parseLinkJoint(input->node());
     }
 
-    auto& object = jointData->objectValue();
-    if (object.count("input"))
+    if (auto outputs = reader.getArray("output"))
     {
-        fileData.inputJoint = parseLinkJoint(object["input"]);
-    }
-
-    if (object.count("output") && object["output"]->isList())
-    {
-        auto& outputs = object["output"]->listValue();
-        if (!outputs.empty())
+        if (auto output = outputs->getObject(0))
         {
-            fileData.outputJoint = parseLinkJoint(outputs.front());
+            fileData.outputJoint = parseLinkJoint(output->node());
         }
     }
 }

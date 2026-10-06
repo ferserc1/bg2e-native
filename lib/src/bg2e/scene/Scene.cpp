@@ -21,26 +21,22 @@
 #include <bg2e/scene/FindCameraVisitor.hpp>
 #include <bg2e/scene/FindNodeComponentVisitor.hpp>
 #include <bg2e/json/JsonParser.hpp>
+#include <bg2e/json/NodeReader.hpp>
 #include <bg2e/base/Log.hpp>
 
 namespace bg2e::scene {
 
 std::shared_ptr<Scene> Scene::deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path& basePath, render::Engine& engine, SceneLoadProgress* progress)
 {
-    if (!jsonData || !jsonData->isObject())
-    {
-        return nullptr;
-    }
-
-    auto& obj = jsonData->objectValue();
+    json::ObjectReader reader(jsonData);
+    if (!reader.isValid()) return nullptr;
 
     // Read and log version
-    if (obj.count("version") && obj["version"]->isObject())
+    if (auto version = reader.getObject("version"))
     {
-        auto& version = obj["version"]->objectValue();
-        int major = version.count("major") ? static_cast<int>(version["major"]->numberValue(0)) : 0;
-        int minor = version.count("minor") ? static_cast<int>(version["minor"]->numberValue(0)) : 0;
-        int rev = version.count("rev") ? static_cast<int>(version["rev"]->numberValue(0)) : 0;
+        int major = version->getInteger<int>("major").value_or(0);
+        int minor = version->getInteger<int>("minor").value_or(0);
+        int rev = version->getInteger<int>("rev").value_or(0);
         bg2e_log_debug << "Loading scene file version " << major << "." << minor << "." << rev << bg2e_log_end;
     }
 
@@ -48,13 +44,18 @@ std::shared_ptr<Scene> Scene::deserialize(std::shared_ptr<json::JsonNode> jsonDa
     auto sceneRoot = std::make_shared<Node>("scene root");
 
     // Deserialize nodes from scene array
-    if (obj.count("scene") && obj["scene"]->isList())
+    if (auto sceneList = reader.getArray("scene"))
     {
-        auto& sceneList = obj["scene"]->listValue();
-        for (auto& nodeData : sceneList)
+        for (std::size_t i = 0; i < sceneList->size(); ++i)
         {
+            auto nodeData = sceneList->getObject(i);
+            if (!nodeData)
+            {
+                bg2e_log_warning << "Skipping invalid scene node at index " << i << bg2e_log_end;
+                continue;
+            }
             auto node = std::make_shared<Node>();
-            node->deserialize(nodeData, basePath, engine, progress);
+            node->deserialize(nodeData->node(), basePath, engine, progress);
             sceneRoot->addChild(node);
         }
     }

@@ -17,6 +17,7 @@
  */
 
 #include <bg2e/scene/EnvironmentComponent.hpp>
+#include <bg2e/json/NodeReader.hpp>
 #include <bg2e/scene/ComponentFactoryRegistry.hpp>
 #include <bg2e/scene/Node.hpp>
 #include <bg2e/scene/Scene.hpp>
@@ -63,17 +64,10 @@ void EnvironmentComponent::setEnvironmentImage(const std::string& img)
 
 void EnvironmentComponent::deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path& basePath, [[maybe_unused]] render::Engine& engine)
 {
-    if (!jsonData || !jsonData->isObject())
+    json::ObjectReader reader(jsonData);
+    if (auto textureName = reader.getString("equirectangularTexture"))
     {
-        return;
-    }
-
-    auto& obj = jsonData->objectValue();
-
-    if (obj.count("equirectangularTexture"))
-    {
-        auto textureName = obj["equirectangularTexture"]->stringValue();
-        setEnvironmentImage(basePath, textureName);
+        setEnvironmentImage(basePath, *textureName);
     }
 }
 

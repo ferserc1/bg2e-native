@@ -17,8 +17,8 @@
  */
 
 #include <bg2e/scene/ComponentFactoryRegistry.hpp>
+#include <bg2e/json/NodeReader.hpp>
 #include <bg2e/base/Log.hpp>
-#include <iostream>
 
 namespace bg2e::scene {
 
@@ -66,30 +66,40 @@ Component* ComponentFactoryRegistry::create(std::shared_ptr<json::JsonNode> data
 
 Component* ComponentFactoryRegistry::create(std::shared_ptr<json::JsonNode> data, const std::filesystem::path& basePath, render::Engine& engine, SceneLoadProgress* progress)
 {
-    if (!data->isObject() && !data->isNull())
+    json::ObjectReader reader(data);
+    if (!reader.isValid())
     {
-        throw std::runtime_error("ComponentFactoryRegistry::create(): invalid JSON data. Expecting object");
-    }
-
-    if (data->isNull())
-    {
+        bg2e_log_warning << "Skipping component: expected a JSON object" << bg2e_log_end;
         return nullptr;
     }
 
-    auto objectValue = data->objectValue();
-    std::string componentType = objectValue["type"]->stringValue();
-    if (_registry.find(componentType) == _registry.end())
+    auto componentType = reader.getString("type");
+    if (!componentType || componentType->empty())
     {
-        bg2e_log_warning << "component type not found: " << componentType << bg2e_log_end;
+        bg2e_log_warning << "Skipping component: missing or invalid type" << bg2e_log_end;
+        return nullptr;
+    }
+
+    auto it = _registry.find(*componentType);
+    if (it == _registry.end())
+    {
+        bg2e_log_warning << "component type not found: " << *componentType << bg2e_log_end;
         return nullptr;
     }
     else if (bg2e::base::Log::isDebug())
     {
-        bg2e_log_debug << "Deserialize component: " << componentType << bg2e_log_end;
+        bg2e_log_debug << "Deserialize component: " << *componentType << bg2e_log_end;
     }
 
-    auto result = _registry[componentType].deserialize(data, basePath, engine, progress);
-    return result;
+    try
+    {
+        return it->second.deserialize(data, basePath, engine, progress);
+    }
+    catch (const std::exception& error)
+    {
+        bg2e_log_warning << "Skipping component " << *componentType << ": " << error.what() << bg2e_log_end;
+        return nullptr;
+    }
 }
 
 }

@@ -1,4 +1,5 @@
 #include <bg2e/utils/MaterialModifier.hpp>
+#include <bg2e/json/NodeReader.hpp>
 #include "MaterialModifierJson.hpp"
 
 #include <cmath>
@@ -9,66 +10,32 @@ namespace bg2e::utils {
 namespace {
 
 template <typename T>
-std::optional<T> read(json::JsonNode& node);
-
-template <> std::optional<float> read(json::JsonNode& node)
+std::optional<T> field(const json::ObjectReader& reader, const char* key)
 {
-    if (node.isNumber() && std::isfinite(node.numberValue())) return node.numberValue();
-    return {};
-}
-
-template <> std::optional<bool> read(json::JsonNode& node)
-{
-    if (node.isBool()) return node.boolValue();
-    return {};
-}
-
-template <> std::optional<uint32_t> read(json::JsonNode& node)
-{
-    const auto value = read<float>(node);
-    if (value && *value >= 0 && std::floor(*value) == *value &&
-        static_cast<double>(*value) <= std::numeric_limits<uint32_t>::max())
-        return static_cast<uint32_t>(*value);
-    return {};
-}
-
-bool numericArray(json::JsonNode& node, std::size_t size)
-{
-    if (!node.isList() || node.listValue().size() != size) return false;
-    for (const auto& element : node.listValue())
-        if (!element || !read<float>(*element)) return false;
-    return true;
-}
-
-template <> std::optional<glm::vec2> read(json::JsonNode& node)
-{
-    if (numericArray(node, 2)) return node.glmVec2Value();
-    return {};
-}
-
-template <> std::optional<base::Color> read(json::JsonNode& node)
-{
-    if (numericArray(node, 4)) return node.colorValue();
-    if (numericArray(node, 3))
+    if constexpr (std::is_same_v<T, float>)
     {
-        auto v = node.vec3Value();
-        return base::Color(v[0], v[1], v[2], 1.0f);
+        auto value = reader.getNumber(key);
+        return value && std::isfinite(*value) ? value : std::nullopt;
     }
-    return {};
-}
-
-template <> std::optional<std::string> read(json::JsonNode& node)
-{
-    // Empty paths are not a texture removal request.
-    if (node.isString() && !node.stringValue().empty()) return node.stringValue();
-    return {};
-}
-
-template <typename T>
-std::optional<T> field(const json::JsonObject& object, const char* key)
-{
-    auto it = object.find(key);
-    return it != object.end() && it->second ? read<T>(*it->second) : std::nullopt;
+    else if constexpr (std::is_same_v<T, bool>) return reader.getBool(key);
+    else if constexpr (std::is_same_v<T, uint32_t>) return reader.getInteger<uint32_t>(key);
+    else if constexpr (std::is_same_v<T, glm::vec2>)
+    {
+        auto value = reader.getGlmVec2(key);
+        return value && std::isfinite(value->x) && std::isfinite(value->y) ? value : std::nullopt;
+    }
+    else if constexpr (std::is_same_v<T, base::Color>)
+    {
+        if (auto value = reader.getColor(key)) return value;
+        if (auto value = reader.getVec3(key))
+            return base::Color((*value)[0], (*value)[1], (*value)[2], 1.0f);
+        return std::nullopt;
+    }
+    else if constexpr (std::is_same_v<T, std::string>)
+    {
+        auto value = reader.getString(key);
+        return value && !value->empty() ? value : std::nullopt;
+    }
 }
 
 std::shared_ptr<base::Texture> texture(const std::filesystem::path& basePath,
@@ -137,50 +104,48 @@ MaterialModifier::MaterialModifier(const std::string& text, const std::filesyste
 MaterialModifier::MaterialModifier(const std::shared_ptr<json::JsonNode>& node,
     const std::filesystem::path& path)
 {
-    if (!node || !node->isObject()) return;
-    const auto& object = node->objectValue();
-    auto cls = object.find("class");
-    if (cls != object.end() && (!cls->second || !cls->second->isString() ||
-        cls->second->stringValue() != "PBRMaterial")) return;
+    json::ObjectReader reader(node);
+    if (!reader.isValid()) return;
+    if (!reader.isUndefined("class") && reader.getString("class").value_or("") != "PBRMaterial") return;
 
     auto data = std::make_shared<Data>();
     data->basePath = path;
-    data->refractionFactor = field<float>(object, "refractionFactor");
-    data->metalness = field<float>(object, "metalness");
-    data->roughness = field<float>(object, "roughness");
-    data->sheenIntensity = field<float>(object, "sheenIntensity");
-    data->lightEmission = field<float>(object, "lightEmission");
-    data->isTransparent = field<bool>(object, "isTransparent");
-    data->isSolid = field<bool>(object, "isSolid");
-    data->unlit = field<bool>(object, "unlit");
-    data->metalnessInvert = field<bool>(object, "metalnessInvert");
-    data->roughnessInvert = field<bool>(object, "roughnessInvert");
-    data->lightEmissionInvert = field<bool>(object, "lightEmissionInvert");
-    data->albedoUV = field<uint32_t>(object, "albedoUV");
-    data->metalnessChannel = field<uint32_t>(object, "metalnessChannel");
-    data->metalnessUV = field<uint32_t>(object, "metalnessUV");
-    data->roughnessChannel = field<uint32_t>(object, "roughnessChannel");
-    data->roughnessUV = field<uint32_t>(object, "roughnessUV");
-    data->normalUV = field<uint32_t>(object, "normalUV");
-    data->ambientOcclussionChannel = field<uint32_t>(object, "ambientOcclussionChannel");
-    data->ambientOcclussionUV = field<uint32_t>(object, "ambientOcclussionUV");
-    data->lightEmissionChannel = field<uint32_t>(object, "lightEmissionChannel");
-    data->lightEmissionUV = field<uint32_t>(object, "lightEmissionUV");
-    data->albedoScale = field<glm::vec2>(object, "albedoScale");
-    data->normalScale = field<glm::vec2>(object, "normalScale");
-    data->metalnessScale = field<glm::vec2>(object, "metalnessScale");
-    data->roughnessScale = field<glm::vec2>(object, "roughnessScale");
-    data->ambientOcclussionScale = field<glm::vec2>(object, "ambientOcclussionScale");
-    data->lightEmissionScale = field<glm::vec2>(object, "lightEmissionScale");
-    data->albedo = field<base::Color>(object, "albedo");
-    data->fresnelTint = field<base::Color>(object, "fresnelTint");
-    data->sheenColor = field<base::Color>(object, "sheenColor");
-    data->albedoTexture = field<std::string>(object, "albedoTexture");
-    data->normalTexture = field<std::string>(object, "normalTexture");
-    data->metalnessTexture = field<std::string>(object, "metalnessTexture");
-    data->roughnessTexture = field<std::string>(object, "roughnessTexture");
-    data->ambientOcclussion = field<std::string>(object, "ambientOcclussion");
-    data->lightEmissionTexture = field<std::string>(object, "lightEmissionTexture");
+    data->refractionFactor = field<float>(reader, "refractionFactor");
+    data->metalness = field<float>(reader, "metalness");
+    data->roughness = field<float>(reader, "roughness");
+    data->sheenIntensity = field<float>(reader, "sheenIntensity");
+    data->lightEmission = field<float>(reader, "lightEmission");
+    data->isTransparent = field<bool>(reader, "isTransparent");
+    data->isSolid = field<bool>(reader, "isSolid");
+    data->unlit = field<bool>(reader, "unlit");
+    data->metalnessInvert = field<bool>(reader, "metalnessInvert");
+    data->roughnessInvert = field<bool>(reader, "roughnessInvert");
+    data->lightEmissionInvert = field<bool>(reader, "lightEmissionInvert");
+    data->albedoUV = field<uint32_t>(reader, "albedoUV");
+    data->metalnessChannel = field<uint32_t>(reader, "metalnessChannel");
+    data->metalnessUV = field<uint32_t>(reader, "metalnessUV");
+    data->roughnessChannel = field<uint32_t>(reader, "roughnessChannel");
+    data->roughnessUV = field<uint32_t>(reader, "roughnessUV");
+    data->normalUV = field<uint32_t>(reader, "normalUV");
+    data->ambientOcclussionChannel = field<uint32_t>(reader, "ambientOcclussionChannel");
+    data->ambientOcclussionUV = field<uint32_t>(reader, "ambientOcclussionUV");
+    data->lightEmissionChannel = field<uint32_t>(reader, "lightEmissionChannel");
+    data->lightEmissionUV = field<uint32_t>(reader, "lightEmissionUV");
+    data->albedoScale = field<glm::vec2>(reader, "albedoScale");
+    data->normalScale = field<glm::vec2>(reader, "normalScale");
+    data->metalnessScale = field<glm::vec2>(reader, "metalnessScale");
+    data->roughnessScale = field<glm::vec2>(reader, "roughnessScale");
+    data->ambientOcclussionScale = field<glm::vec2>(reader, "ambientOcclussionScale");
+    data->lightEmissionScale = field<glm::vec2>(reader, "lightEmissionScale");
+    data->albedo = field<base::Color>(reader, "albedo");
+    data->fresnelTint = field<base::Color>(reader, "fresnelTint");
+    data->sheenColor = field<base::Color>(reader, "sheenColor");
+    data->albedoTexture = field<std::string>(reader, "albedoTexture");
+    data->normalTexture = field<std::string>(reader, "normalTexture");
+    data->metalnessTexture = field<std::string>(reader, "metalnessTexture");
+    data->roughnessTexture = field<std::string>(reader, "roughnessTexture");
+    data->ambientOcclussion = field<std::string>(reader, "ambientOcclussion");
+    data->lightEmissionTexture = field<std::string>(reader, "lightEmissionTexture");
     // Shader channel indices and UV sets must remain in their supported range.
     if (data->albedoUV && *data->albedoUV > 1) data->albedoUV.reset();
     if (data->metalnessChannel && *data->metalnessChannel > 3) data->metalnessChannel.reset();

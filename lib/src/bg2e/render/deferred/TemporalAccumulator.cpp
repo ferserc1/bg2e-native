@@ -162,6 +162,7 @@ void TemporalAccumulator::createHistoryImages(VkExtent2D extent)
     _hasHistory = false;
     _accumulatedFrameCount = 0;
     _previousViewProjection = glm::mat4(1.0f);
+    _previousCameraViewProjection = glm::mat4(1.0f);
 }
 
 void TemporalAccumulator::createPipeline()
@@ -210,16 +211,18 @@ void TemporalAccumulator::render(
     const vulkan::Image* aoImage,
     const glm::mat4& currentInverseViewProjection,
     const glm::mat4& currentView,
-    const glm::mat4& currentProjection
+    const glm::mat4& currentProjection,
+    const glm::mat4& currentCameraProjection
 )
 {
     if (!_pipeline) return;
 
     auto frameViewProj = currentProjection * currentView;
+    auto cameraViewProj = currentCameraProjection * currentView;
     bool cameraChanged = _hasHistory &&
             matrixChanged(
-                _previousViewProjection,
-                frameViewProj,
+                _previousCameraViewProjection,
+                cameraViewProj,
                 0.001f
                 );
 
@@ -359,6 +362,7 @@ void TemporalAccumulator::render(
     _accumulatedFrameCount++;
 
     _previousViewProjection = frameViewProj;
+    _previousCameraViewProjection = cameraViewProj;
 }
 
 void TemporalAccumulator::resize(VkExtent2D newExtent)
@@ -408,6 +412,7 @@ void TemporalAccumulator::cleanupImages()
     _hasHistory = false;
     _accumulatedFrameCount = 0;
     _previousViewProjection = glm::mat4(1.0f);
+    _previousCameraViewProjection = glm::mat4(1.0f);
 }
 
 std::shared_ptr<vulkan::Image> TemporalAccumulator::outputImage(uint32_t /*frameIndex*/) const

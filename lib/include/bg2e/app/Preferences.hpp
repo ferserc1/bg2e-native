@@ -44,7 +44,7 @@ public:
     // Getters
     template <typename T>
     T get(const std::string & key, const T& defaultValue) const;
-    const std::string& get(const std::string& key, std::string&& defaultValue) const;
+    std::string get(const std::string& key, std::string&& defaultValue) const;
         
     // Setters
     template <typename T>
