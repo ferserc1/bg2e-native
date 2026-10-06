@@ -1,13 +1,13 @@
 # Handoff for Implement RTAO baking
 
-Next implementation step: [step-04_rtao.md](step-04_rtao.md). Complete this file **after** finishing step 03; this template records no implementation results.
+Next implementation step: [step-04_rtao.md](step-04_rtao.md). Step 03 is complete; implementation findings and the required allocator handoff are recorded below.
 
-- Changed files and relevant API decisions: TODO
-- Build command, platform and result: TODO
-- Runtime/fixture evidence: TODO
-- Remaining limitations or regressions: TODO
-- Resources, ownership and synchronization cautions for the next agent: TODO
-- Exact next action: Implement the scope in step-04_rtao.md.
+- Changed files and relevant API decisions: `IntegratedBakerContext` now owns one production `RayTracingScene` and one dedicated `DescriptorSetAllocator` per engine frame slot, plus one shared `RTMaterialDataBinding`. Project-lead decisions (2026-10-06): bake descriptor allocators belong to the context and must not rely on the render loop's frame descriptor allocator; scene lights and environment are captured as a CPU snapshot, with no baker-owned `EnvironmentResources` because the application locks the scene during baking. `RTMaterialDataBinding::newDescriptorSet` has an overload that allocates from a supplied dedicated allocator. `prepareFrame` validates current frame resources/command buffer, records the context-root TLAS once per engine frame, captures light uniforms plus the environment image path/hash, rejects empty scenes, and baker updates require matching frame number/slot/command buffer and current target membership. TLAS visibility now includes fragment, compute and ray-tracing shader stages. Added `test_03_integrated_baker_context` and registered it in `tests/CMakeLists.txt`.
+- Build command, platform and result: `cmake --build build --target test_03_integrated_baker_context` passed on Linux/Ninja. The full `cmake --build build` compiled `libbg2e.so` and the fixture source but stopped in unrelated example post-build resource copying because the repository has no root `assets/` directory.
+- Runtime/fixture evidence: `bin/linux/test_03_integrated_baker_context` passed on an NVIDIA GeForce RTX 5080 Laptop GPU. Its scene includes a light and environment component; it exercises snapshot capture plus preparation before/after ordinary frame-TLAS work, a null ordinary frame TLAS, two in-flight slots and slot reuse, stale preparation rejection with a recycled command buffer, moved-target rejection, and duplicate-update rejection.
+- Remaining limitations or regressions: The full all-target build remains blocked by the missing root assets directory. UV RTAO tracing remains for step 04; RTGI consumes the captured light/environment snapshot in step 05. Per the project-lead decision, no baker-owned IBL resources are created.
+- Resources, ownership and synchronization cautions for the next agent: The context owns each slot's allocator and clears only the current slot during `prepareFrame`; the render loop must already have waited for that slot's fence. Allocator pools are initialized lazily via `initializeBakeDescriptorAllocator(slot)`, so register the RTAO descriptor requirements for each slot before the first pool initialization. Use the context-owned prepared `RayTracingScene` and its `objectInstances()`, never `FrameResources::rayTracingScene`; the RT material binding overload allocates descriptor sets from the dedicated allocator while its transient material buffer is tied to the current frame cleanup manager. The context and all slot resources require the `Engine` to outlive them.
+- Exact next action: Implement the UV-space RTAO entry point from `step-04_rtao.md`, consuming the selected context-owned TLAS, its object/material instances and the current slot's dedicated bake allocator while preserving the legacy camera-space RTAO API. Keep the environment snapshot as path/hash metadata; do not create baker-owned `EnvironmentResources` when adding later RTGI consumption.
 
 ## Next-step instructions
 

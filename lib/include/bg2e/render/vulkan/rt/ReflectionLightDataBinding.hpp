@@ -50,6 +50,19 @@ public:
         bg2e::render::vulkan::FrameResources & frameResources,
         const std::vector<base::LightData> & lights
     );
+
+    VkDescriptorSet newDescriptorSet(
+        bg2e::render::vulkan::FrameResources & frameResources,
+        DescriptorSetAllocator& descriptorAllocator,
+        const std::vector<base::LightData> & lights
+    );
+
+protected:
+    VkDescriptorSet writeDescriptorSet(
+        bg2e::render::vulkan::FrameResources& frameResources,
+        DescriptorSet* descriptorSet,
+        const std::vector<base::LightData>& lights
+    );
 };
 
 }

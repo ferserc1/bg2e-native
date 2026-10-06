@@ -41,6 +41,7 @@ layout(set = 0, binding = 6) uniform sampler2D g_Depth;
 // binding 7: scalar AO (RTAO mode) or HDR GI irradiance (RTGI mode), selected by indirectMode
 layout(set = 0, binding = 7) uniform sampler2D g_Indirect;
 layout(set = 0, binding = 8) uniform sampler2D g_RTReflection;
+layout(set = 0, binding = 9) uniform sampler2D g_BakedLightmap;
 
 // Scene data (set=1)
 layout(set = 1, binding = 0) uniform SceneData {
@@ -208,15 +209,15 @@ void main() {
     // Select AO value for the direct-lighting sheen term.
     // In RTAO mode: combine material AO with the RT AO texture.
     // In RTGI mode: use only baked material AO (g_Indirect contains GI irradiance, not AO).
-    float aoForDirectLight = (pushConstant.indirectMode == 0u)
+    float aoForDirectLight = gbuf.hasBakedLightmap ? 1.0 : ((pushConstant.indirectMode == 0u)
         ? gbuf.ao * texture(g_Indirect, vTexcoord).r
-        : gbuf.ao;
+        : gbuf.ao);
 
     vec3 Lo = vec3(0.0);
     for (int i = 0; i < pushConstant.lightCount; i++) {
         if (LightsBuffer.lights[i].type != LIGHT_TYPE_DISABLED) {
             float shadowFactor = 1.0;
-            if (LightsBuffer.lights[i].castShadows != 0) {
+            if (!gbuf.hasBakedLightmap && LightsBuffer.lights[i].castShadows != 0) {
                 shadowFactor = queryShadowCutout(tlas, gbuf.worldPos, gbuf.normal, LightsBuffer.lights[i], 32);
             }
             Lo += shadowFactor * calcRadiance(LightsBuffer.lights[i], gbuf.viewDir, gbuf.worldPos,
@@ -229,12 +230,12 @@ void main() {
     vec4 rtReflection = texture(g_RTReflection, vTexcoord);
 
     vec3 ambient;
-    if (pushConstant.indirectMode == 0u) {
+    if (gbuf.hasBakedLightmap || pushConstant.indirectMode == 0u) {
         // RTAO: g_Indirect is a scalar AO texture (R channel)
-        float ao = gbuf.ao * texture(g_Indirect, vTexcoord).r;
+        float ao = gbuf.hasBakedLightmap ? 1.0 : gbuf.ao * texture(g_Indirect, vTexcoord).r;
         ambient = calcAmbientLightWithReflections(gbuf.viewDir, gbuf.normal, gbuf.F0, gbuf.albedo.rgb,
-                                        gbuf.metallic, gbuf.roughness,
-                                        irradianceMap, prefilteredEnvMap, environmentData.maxReflectionLOD,
+                                         gbuf.metallic, gbuf.roughness,
+                                         irradianceMap, prefilteredEnvMap, environmentData.maxReflectionLOD,
                                         brdfLUT, ao, gbuf.sheenIntensity, gbuf.sheenColor,
                                         rtReflection);
     } else {
@@ -256,7 +257,18 @@ void main() {
         gbuf.refractionFactor, gbuf.albedo, g_InputImage
     );
 
-    outColor = compositeFinalColor(ambient + emissionColor, Lo, background, gbuf.albedo.a,
-                                   pushConstant.exposure, pushConstant.gamma,
-                                   pushConstant.brightness, pushConstant.contrast);
+    if (gbuf.hasBakedLightmap)
+    {
+        vec3 bakedMultiplier = texture(g_BakedLightmap, vTexcoord).rgb;
+        outColor = compositeFinalColor((ambient + Lo) * bakedMultiplier + emissionColor,
+            vec3(0.0), background, gbuf.albedo.a,
+            pushConstant.exposure, pushConstant.gamma,
+            pushConstant.brightness, pushConstant.contrast);
+    }
+    else
+    {
+        outColor = compositeFinalColor(ambient + emissionColor, Lo, background, gbuf.albedo.a,
+                                       pushConstant.exposure, pushConstant.gamma,
+                                       pushConstant.brightness, pushConstant.contrast);
+    }
 }

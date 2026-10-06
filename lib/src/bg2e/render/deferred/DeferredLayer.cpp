@@ -239,6 +239,9 @@ void DeferredLayer::initFrameResources(vulkan::DescriptorSetAllocator* allocator
     _fragmentFrameDataBinding->initFrameResources(allocator);
     _objectDataBinding->initFrameResources(allocator);
     _environmentDataBinding->initFrameResources(allocator);
+    allocator->requirePoolSizeRatio(1, {
+        { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 10 }
+    });
     if (_rtMaterialDataBinding)
     {
         _rtMaterialDataBinding->initFrameResources(allocator);
@@ -935,7 +938,8 @@ void DeferredLayer::createGBufferPipeline()
     plFactory.setCullMode(VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_COUNTER_CLOCKWISE);
     plFactory.disableMultisample();
 
-    // 3 color attachment formats
+    // The camera G-buffer retains the original attachment indices and appends
+    // the baked RGB multiplier at index 5.
     plFactory.setColorAttachmentFormat(_gbuffers[0]->formats());
 
     _gbufferPipeline = plFactory.build(_gbufferPipelineLayout, "DeferredLayer::GBufferPipeline");
@@ -950,7 +954,7 @@ void DeferredLayer::createGBufferPipeline()
 
 void DeferredLayer::createCompositePipeline()
 {
-    // Create G-buffer descriptor set layout (6 bindings: 4 G-buffers + 1 input image + 1 depth)
+    // G-buffer inputs retain their original indices; binding 7 is the baked RGB multiplier.
     vulkan::factory::DescriptorSetLayout dsLayoutFactory;
     dsLayoutFactory.addBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);  // g_Albedo
     dsLayoutFactory.addBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);  // g_Normal
@@ -959,7 +963,7 @@ void DeferredLayer::createCompositePipeline()
     dsLayoutFactory.addBinding(4, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);  // g_SheenColor
     dsLayoutFactory.addBinding(5, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);  // g_InputImage
     dsLayoutFactory.addBinding(6, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);  // g_Depth
-//    dsLayoutFactory.addBinding(7, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);  // g_AO
+    dsLayoutFactory.addBinding(7, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);  // g_BakedLightmap
     _compositeGBufferDSLayout = dsLayoutFactory.build(
         _engine->device().handle(),
         VK_SHADER_STAGE_FRAGMENT_BIT
@@ -1022,6 +1026,7 @@ void DeferredLayer::createCompositePipelineRT()
     dsLayoutFactory.addBinding(6, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);  // g_Depth
     dsLayoutFactory.addBinding(7, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);  // g_AO
     dsLayoutFactory.addBinding(8, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);  // g_RTReflection
+    dsLayoutFactory.addBinding(9, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);  // g_BakedLightmap
     _compositeGBufferRTDSLayout = dsLayoutFactory.build(
         _engine->device().handle(),
         VK_SHADER_STAGE_FRAGMENT_BIT
@@ -1218,6 +1223,11 @@ void DeferredLayer::renderCompositePass(
         inputImage, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _gbufferSampler);
     gbufferDS->addImage(6, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
         gbuffer->depthImage().get(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _gbufferSampler);
+    if (!useRT)
+    {
+        gbufferDS->addImage(7, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+            gbuffer->image(5).get(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _gbufferSampler);
+    }
     bool skipIndirectPasses = _isTransparent && _skipIndirectLightingForTransparent;
 
     // Determine whether GI mode is actually active this frame
@@ -1250,6 +1260,8 @@ void DeferredLayer::renderCompositePass(
         const vulkan::Image* reflImg = reflectionImage ? reflectionImage : _rtReflectionFallbackImage.get();
         gbufferDS->addImage(8, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
             reflImg, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _gbufferSampler);
+        gbufferDS->addImage(9, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+            gbuffer->image(5).get(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _gbufferSampler);
     }
     gbufferDS->endUpdate();
 

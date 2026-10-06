@@ -30,11 +30,16 @@
 #include <bg2e/render/vulkan/rt/RTMaterialDataBinding.hpp>
 #include <bg2e/render/vulkan/rt/ReflectionLightDataBinding.hpp>
 #include <bg2e/base/Light.hpp>
+#include <bg2e/render/LightmapSettings.hpp>
 
 #include <memory>
 #include <vector>
 
 namespace bg2e::render {
+
+namespace vulkan::rt {
+class RayTracingScene;
+}
 
 class BlueNoise;
 
@@ -84,6 +89,7 @@ public:
     void setReflectionLightDataBinding(vulkan::rt::ReflectionLightDataBinding* binding) { _reflectionLightDataBinding = binding; }
 
     void build(const GBufferManager* gbuffer, VkExtent2D extent);
+    void buildUv();
     void resize(VkExtent2D extent);
 
     void render(
@@ -99,6 +105,21 @@ public:
         VkSampler irradianceSampler,
         const std::vector<base::LightData>& giLights
     );
+    void renderUv(
+        VkCommandBuffer cmd,
+        uint32_t currentFrame,
+        vulkan::FrameResources& frameResources,
+        vulkan::DescriptorSetAllocator& descriptorAllocator,
+        const GBufferManager& uvSurface,
+        const vulkan::rt::RayTracingScene& rayTracingScene,
+        vulkan::Image& giOutput,
+        vulkan::Image* irradianceMap,
+        VkSampler irradianceSampler,
+        const std::vector<base::LightData>& giLights,
+        const LightmapSettings& settings
+    );
+    void clearUv(VkCommandBuffer cmd, vulkan::Image& giOutput);
+    void cleanupUv();
 
     void cleanup();
 
@@ -137,6 +158,17 @@ private:
     VkDescriptorSetLayout _dsLayout = VK_NULL_HANDLE;
     VkSampler _sampler = VK_NULL_HANDLE;
 
+    VkPipeline _uvPipeline = VK_NULL_HANDLE;
+    VkPipelineLayout _uvPipelineLayout = VK_NULL_HANDLE;
+    VkDescriptorSetLayout _uvDsLayout = VK_NULL_HANDLE;
+    std::unique_ptr<vulkan::Buffer> _uvSbtBuffer;
+    VkStridedDeviceAddressRegionKHR _uvRaygenRegion = {};
+    VkStridedDeviceAddressRegionKHR _uvMissRegion = {};
+    VkStridedDeviceAddressRegionKHR _uvHitRegion = {};
+    VkStridedDeviceAddressRegionKHR _uvCallableRegion = {};
+    VkSampler _uvSampler = VK_NULL_HANDLE;
+    VkSampler _uvMaskSampler = VK_NULL_HANDLE;
+
     std::unique_ptr<vulkan::Buffer> _sbtBuffer;
     VkStridedDeviceAddressRegionKHR _raygenRegion = {};
     VkStridedDeviceAddressRegionKHR _missRegion = {};
@@ -155,11 +187,13 @@ private:
         uint32_t giLightCount;
         uint32_t shadowSamples;
         uint32_t useBlueNoise;
+        uint32_t useShadows;
     };
 
     void createFallbackImage();
     void createGIResources(VkExtent2D extent);
     void createPipeline();
+    void createUvPipeline();
     void cleanupImages();
 };
 

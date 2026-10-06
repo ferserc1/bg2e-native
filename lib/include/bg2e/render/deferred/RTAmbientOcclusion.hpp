@@ -70,6 +70,20 @@ public:
         const GBufferManager * gbuffer,
         const glm::mat4 & inverseViewProjection
     );
+    void buildUv();
+    void renderUv(
+        VkCommandBuffer cmd,
+        uint32_t currentFrame,
+        vulkan::FrameResources& frameResources,
+        vulkan::DescriptorSetAllocator& descriptorAllocator,
+        const GBufferManager& uvSurface,
+        const vulkan::rt::RayTracingScene& rayTracingScene,
+        vulkan::Image& aoOutput,
+        uint32_t samplesPerPixel,
+        float maxRayDistance
+    );
+    void clearUvNeutral(VkCommandBuffer cmd, vulkan::Image& aoOutput);
+    void cleanupUv();
     void cleanup();
 
     std::shared_ptr<vulkan::Image> aoImage(uint32_t frameIndex) const;
@@ -125,6 +139,12 @@ private:
     VkDescriptorSetLayout _dsLayout = VK_NULL_HANDLE;
     VkSampler _sampler = VK_NULL_HANDLE;
 
+    VkPipeline _uvPipeline = VK_NULL_HANDLE;
+    VkPipelineLayout _uvPipelineLayout = VK_NULL_HANDLE;
+    VkDescriptorSetLayout _uvDsLayout = VK_NULL_HANDLE;
+    VkSampler _uvSampler = VK_NULL_HANDLE;
+    VkSampler _uvMaskSampler = VK_NULL_HANDLE;
+
     struct AOPushConstants {
         glm::mat4 inverseViewProjection;
         int sampleCount;
@@ -138,9 +158,18 @@ private:
         uint32_t useBlueNoise;
     };
 
+    struct UvAOPushConstants {
+        int sampleCount;
+        float maxRayDistance;
+        float bias;
+        float falloff;
+        uint32_t frameIndex;
+    };
+
     void createWhiteFallback();
     void createAOResources(VkExtent2D extent);
     void createPipeline();
+    void createUvPipeline();
     void cleanupImages();
 };
 

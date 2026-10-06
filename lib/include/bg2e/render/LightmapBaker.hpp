@@ -61,12 +61,23 @@ protected:
                   LightmapSettings settings);
     void validateTarget() const;
     void recordUvSurface(VkCommandBuffer cmd, uint32_t frameSlot);
+    [[nodiscard]] vulkan::Image& aoImage(uint32_t frameSlot);
+    [[nodiscard]] vulkan::Image& giImage(uint32_t frameSlot);
+    [[nodiscard]] vulkan::Image& shadowImage(uint32_t frameSlot);
+    [[nodiscard]] vulkan::Image& resultImage(uint32_t frameSlot);
+    void markResultImage(uint32_t frameSlot);
 
     std::shared_ptr<BakerContext> _context;
     std::shared_ptr<scene::Node> _targetNode;
     LightmapSettings _settings;
     uint32_t _completedFrames = 0;
     std::shared_ptr<UvSurfacePass> _uvSurfacePass;
+    std::vector<std::shared_ptr<vulkan::Image>> _aoImages;
+    std::vector<std::shared_ptr<vulkan::Image>> _giImages;
+    std::vector<std::shared_ptr<vulkan::Image>> _shadowImages;
+    std::vector<std::shared_ptr<vulkan::Image>> _resultImages;
+    uint32_t _resultFrameSlot = 0;
+    bool _hasResultImage = false;
 };
 
 }

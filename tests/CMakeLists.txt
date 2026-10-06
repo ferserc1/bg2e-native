@@ -1,2 +1,3 @@
 add_subdirectory(test_01_key_and_mouse)
 add_subdirectory(test_02_uv_surface)
+add_subdirectory(test_03_integrated_baker_context)

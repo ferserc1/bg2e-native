@@ -39,6 +39,7 @@ struct DeferredGBufferData {
     bool unlit;
     bool alphaTest;
     bool transparent;
+    bool hasBakedLightmap;
     float refractionFactor;
     float lightEmission;
 };
@@ -88,6 +89,7 @@ DeferredGBufferData setupDeferredGBuffer(
     gbuf.unlit = (materialFlags & MATERIAL_FLAG_UNLIT) != 0u;
     gbuf.alphaTest = (materialFlags & MATERIAL_FLAG_ALPHA_TEST) != 0u;
     gbuf.transparent = (materialFlags & MATERIAL_FLAG_TRANSPARENT) != 0u;
+    gbuf.hasBakedLightmap = (materialFlags & MATERIAL_FLAG_HAS_BAKED_LIGHTMAP) != 0u;
 
     if (gbuf.albedo.a == 0) {
         gbuf.isEmpty = true;

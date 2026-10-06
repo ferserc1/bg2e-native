@@ -29,6 +29,7 @@ layout(push_constant) uniform PushConstant {
     uint giLightCount;
     uint shadowSamples;
     uint useBlueNoise;
+    uint useShadows;
 } pc;
 
 layout(set = 0, binding = 0) uniform accelerationStructureEXT tlas;
@@ -95,7 +96,7 @@ void main() {
     for (uint i = 0u; i < pc.giLightCount; ++i) {
         LightData light = giLights[i];
         float shadowFactor = 1.0;
-        if (light.castShadows != 0) {
+        if (pc.useShadows != 0u && light.castShadows != 0) {
             shadowFactor = queryShadowCutout(tlas, worldPos, worldNormal, light, int(pc.shadowSamples));
         }
         directLight += shadowFactor * computeBasicLighting(light, worldPos, worldNormal, surfaceAlbedo);

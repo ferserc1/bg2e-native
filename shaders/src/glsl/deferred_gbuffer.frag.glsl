@@ -39,6 +39,7 @@ layout(location = 1) out vec4 g_Normal;
 layout(location = 2) out vec4 g_Material;
 layout(location = 3) out vec4 g_FresnelColorFlags;
 layout(location = 4) out vec4 g_SheenColor;
+layout(location = 5) out vec4 g_BakedLightmap;
 
 layout(location = 0) in vec3 inWorldPos;
 layout(location = 1) in vec3 inNormal;
@@ -74,8 +75,23 @@ void main() {
     // Fresnel color + material flags, packed into an R8 UNORM channel.
     uint flags = mat.unlit & (MATERIAL_FLAG_UNLIT |
                               MATERIAL_FLAG_ALPHA_TEST |
-                              MATERIAL_FLAG_TRANSPARENT);
+                              MATERIAL_FLAG_TRANSPARENT |
+                              MATERIAL_FLAG_HAS_BAKED_LIGHTMAP);
     g_FresnelColorFlags = vec4(mat.fresnelTint.rgb, float(flags) / 255.0);
+
+    // AO textures are the only serialized carrier for baked light multipliers.
+    // The explicit-presence flag is an internal GPU material flag, not a new
+    // material property. LDR grayscale images are uploaded with their intensity
+    // replicated to RGB; RGB bakes therefore remain channel-preserving.
+    if ((flags & MATERIAL_FLAG_HAS_BAKED_LIGHTMAP) != 0u)
+    {
+        vec2 uv[2] = { inUV0, inUV1 };
+        g_BakedLightmap = vec4(texture(aoTex, uv[mat.aoUVSet]).rgb, 1.0);
+    }
+    else
+    {
+        g_BakedLightmap = vec4(1.0);
+    }
 
     // Sheen color (RGB), refraction factor packed in the reserved alpha channel
     g_SheenColor = vec4(mat.sheenColor.rgb, mat.refractionFactor);

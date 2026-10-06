@@ -2,6 +2,7 @@
 
 #include <bg2e/render/BakerContext.hpp>
 #include <bg2e/render/Engine.hpp>
+#include <bg2e/render/vulkan/Image.hpp>
 #include <bg2e/scene/Drawable.hpp>
 #include <bg2e/scene/DrawableComponent.hpp>
 #include <bg2e/scene/Mesh.hpp>
@@ -12,6 +13,8 @@
 #include <stdexcept>
 #include <string>
 #include <utility>
+#include <limits>
+#include <cmath>
 
 namespace bg2e {
 namespace render {
@@ -26,6 +29,62 @@ LightmapBaker::LightmapBaker(std::shared_ptr<BakerContext> context,
     validateTarget();
     _uvSurfacePass = std::make_shared<UvSurfacePass>(
         _context->engine(), VkExtent2D{ _settings.resolution, _settings.resolution });
+    const uint32_t frameSlots = _context->engine()->numImages();
+    _aoImages.resize(frameSlots);
+    _giImages.resize(frameSlots);
+    _shadowImages.resize(frameSlots);
+    _resultImages.resize(frameSlots);
+    for (uint32_t frameSlot = 0; frameSlot < frameSlots; ++frameSlot)
+    {
+        _aoImages[frameSlot] = std::shared_ptr<vulkan::Image>(
+            vulkan::Image::createAllocatedImage(
+                _context->engine(),
+                "LightmapBaker RTAO result " + std::to_string(frameSlot),
+                VK_FORMAT_R8_UNORM,
+                VkExtent2D{ _settings.resolution, _settings.resolution },
+                VK_IMAGE_USAGE_STORAGE_BIT |
+                VK_IMAGE_USAGE_SAMPLED_BIT |
+                VK_IMAGE_USAGE_TRANSFER_DST_BIT |
+                VK_IMAGE_USAGE_TRANSFER_SRC_BIT
+            )
+        );
+        _giImages[frameSlot] = std::shared_ptr<vulkan::Image>(
+            vulkan::Image::createAllocatedImage(
+                _context->engine(),
+                "LightmapBaker RTGI result " + std::to_string(frameSlot),
+                VK_FORMAT_R16G16B16A16_SFLOAT,
+                VkExtent2D{ _settings.resolution, _settings.resolution },
+                VK_IMAGE_USAGE_STORAGE_BIT |
+                VK_IMAGE_USAGE_SAMPLED_BIT |
+                VK_IMAGE_USAGE_TRANSFER_DST_BIT |
+                VK_IMAGE_USAGE_TRANSFER_SRC_BIT
+            )
+        );
+        _shadowImages[frameSlot] = std::shared_ptr<vulkan::Image>(
+            vulkan::Image::createAllocatedImage(
+                _context->engine(),
+                "LightmapBaker direct shadow result " + std::to_string(frameSlot),
+                VK_FORMAT_R8_UNORM,
+                VkExtent2D{ _settings.resolution, _settings.resolution },
+                VK_IMAGE_USAGE_STORAGE_BIT |
+                VK_IMAGE_USAGE_SAMPLED_BIT |
+                VK_IMAGE_USAGE_TRANSFER_DST_BIT |
+                VK_IMAGE_USAGE_TRANSFER_SRC_BIT
+            )
+        );
+        _resultImages[frameSlot] = std::shared_ptr<vulkan::Image>(
+            vulkan::Image::createAllocatedImage(
+                _context->engine(),
+                "LightmapBaker composed RGB multiplier " + std::to_string(frameSlot),
+                VK_FORMAT_R16G16B16A16_SFLOAT,
+                VkExtent2D{ _settings.resolution, _settings.resolution },
+                VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
+                VK_IMAGE_USAGE_STORAGE_BIT |
+                VK_IMAGE_USAGE_SAMPLED_BIT |
+                VK_IMAGE_USAGE_TRANSFER_SRC_BIT
+            )
+        );
+    }
 }
 
 LightmapBaker::~LightmapBaker()
@@ -35,8 +94,21 @@ LightmapBaker::~LightmapBaker()
         return;
     }
     auto pass = std::move(_uvSurfacePass);
-    _context->engine()->deferredExec([pass = std::move(pass)]() mutable {
+    auto aoImages = std::move(_aoImages);
+    auto giImages = std::move(_giImages);
+    auto shadowImages = std::move(_shadowImages);
+    auto resultImages = std::move(_resultImages);
+    _context->engine()->deferredExec([
+        pass = std::move(pass),
+        aoImages = std::move(aoImages),
+        giImages = std::move(giImages),
+        shadowImages = std::move(shadowImages),
+        resultImages = std::move(resultImages)]() mutable {
         pass.reset();
+        aoImages.clear();
+        giImages.clear();
+        shadowImages.clear();
+        resultImages.clear();
     });
 }
 
@@ -90,6 +162,12 @@ void LightmapBaker::validateTarget() const
     if (_settings.samplesPerPixel == 0) {
         throw std::invalid_argument("LightmapBaker: samplesPerPixel must be positive");
     }
+    if (_settings.samplesPerPixel > static_cast<uint32_t>(std::numeric_limits<int>::max())) {
+        throw std::invalid_argument("LightmapBaker: samplesPerPixel exceeds the RTAO shader limit");
+    }
+    if (!std::isfinite(_settings.maxRayDistance) || _settings.maxRayDistance <= 0.0f) {
+        throw std::invalid_argument("LightmapBaker: maxRayDistance must be finite and positive");
+    }
     if (_settings.mode != LightmapMode::RTAO && _settings.mode != LightmapMode::RTGI) {
         throw std::invalid_argument("LightmapBaker: mode has an unsupported value");
     }
@@ -124,6 +202,52 @@ void LightmapBaker::recordUvSurface(VkCommandBuffer cmd, uint32_t frameSlot)
     _uvSurfacePass->record(cmd, *drawable, _targetNode->worldMatrix(), frameSlot);
 }
 
+vulkan::Image& LightmapBaker::aoImage(uint32_t frameSlot)
+{
+    if (frameSlot >= _aoImages.size() || !_aoImages[frameSlot])
+    {
+        throw std::out_of_range("LightmapBaker: AO image frame slot is out of range");
+    }
+    return *_aoImages[frameSlot];
+}
+
+vulkan::Image& LightmapBaker::giImage(uint32_t frameSlot)
+{
+    if (frameSlot >= _giImages.size() || !_giImages[frameSlot])
+    {
+        throw std::out_of_range("LightmapBaker: GI image frame slot is out of range");
+    }
+    return *_giImages[frameSlot];
+}
+
+vulkan::Image& LightmapBaker::shadowImage(uint32_t frameSlot)
+{
+    if (frameSlot >= _shadowImages.size() || !_shadowImages[frameSlot])
+    {
+        throw std::out_of_range("LightmapBaker: shadow image frame slot is out of range");
+    }
+    return *_shadowImages[frameSlot];
+}
+
+vulkan::Image& LightmapBaker::resultImage(uint32_t frameSlot)
+{
+    if (frameSlot >= _resultImages.size() || !_resultImages[frameSlot])
+    {
+        throw std::out_of_range("LightmapBaker: result image frame slot is out of range");
+    }
+    return *_resultImages[frameSlot];
+}
+
+void LightmapBaker::markResultImage(uint32_t frameSlot)
+{
+    if (frameSlot >= _resultImages.size())
+    {
+        throw std::out_of_range("LightmapBaker: result image frame slot is out of range");
+    }
+    _resultFrameSlot = frameSlot;
+    _hasResultImage = true;
+}
+
 void LightmapBaker::resetAccumulation()
 {
     _completedFrames = 0;
@@ -136,7 +260,11 @@ LightmapPixels LightmapBaker::readPixels() const
 
 std::shared_ptr<vulkan::Image> LightmapBaker::image() const
 {
-    throw std::runtime_error("LightmapBaker: pass not implemented (GPU image)");
+    if (!_hasResultImage || _resultFrameSlot >= _resultImages.size())
+    {
+        throw std::logic_error("LightmapBaker: no bake result image is available yet");
+    }
+    return _resultImages[_resultFrameSlot];
 }
 
 }

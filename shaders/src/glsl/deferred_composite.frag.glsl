@@ -32,6 +32,7 @@ layout(set = 0, binding = 3) uniform sampler2D g_FresnelFlags;
 layout(set = 0, binding = 4) uniform sampler2D g_SheenColor;
 layout(set = 0, binding = 5) uniform sampler2D g_InputImage;
 layout(set = 0, binding = 6) uniform sampler2D g_Depth;
+layout(set = 0, binding = 7) uniform sampler2D g_BakedLightmap;
 
 // Scene data (set=1)
 layout(set = 1, binding = 0) uniform SceneData {
@@ -98,22 +99,34 @@ void main() {
         return;
     }
 
+    float liveAO = gbuf.hasBakedLightmap ? 1.0 : gbuf.ao;
     vec3 Lo = vec3(0.0);
     for (int i = 0; i < pushConstant.lightCount; i++) {
         if (LightsBuffer.lights[i].type == LIGHT_TYPE_DISABLED) continue;
         Lo += calcRadiance(LightsBuffer.lights[i], gbuf.viewDir, gbuf.worldPos,
                           gbuf.metallic, gbuf.roughness,
                           gbuf.F0, gbuf.normal, gbuf.albedo.rgb,
-                          gbuf.sheenIntensity, gbuf.sheenColor, gbuf.ao);
+                          gbuf.sheenIntensity, gbuf.sheenColor, liveAO);
     }
 
     vec3 ambient = calcAmbientLight(gbuf.viewDir, gbuf.normal, gbuf.F0, gbuf.albedo.rgb,
                                     gbuf.metallic, gbuf.roughness,
                                     irradianceMap, prefilteredEnvMap, environmentData.maxReflectionLOD,
-                                    brdfLUT, gbuf.ao, gbuf.sheenIntensity, gbuf.sheenColor);
+                                    brdfLUT, liveAO, gbuf.sheenIntensity, gbuf.sheenColor);
 
     // Light emission: albedo-colored glow from G-buffer
     vec3 emissionColor = gbuf.albedo.rgb * gbuf.lightEmission;
+    if (gbuf.hasBakedLightmap)
+    {
+        // Baked RGB is a single light multiplier for all non-emissive lighting.
+        // Emission remains independent and is not darkened by the bake.
+        vec3 bakedMultiplier = texture(g_BakedLightmap, vTexcoord).rgb;
+        outColor = compositeFinalColor((ambient + Lo) * bakedMultiplier + emissionColor,
+            vec3(0.0), gbuf.inputColor, gbuf.albedo.a,
+            pushConstant.exposure, pushConstant.gamma,
+            pushConstant.brightness, pushConstant.contrast);
+        return;
+    }
 
     // Refraction on translucent fragments (per-material factor from the G-buffer).
     vec4 background = applyRefraction(

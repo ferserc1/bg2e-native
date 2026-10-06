@@ -22,8 +22,13 @@
 #include <bg2e/render/vulkan/factory/DescriptorSetLayout.hpp>
 #include <bg2e/render/vulkan/factory/PipelineLayout.hpp>
 #include <bg2e/render/vulkan/factory/Sampler.hpp>
+#include <bg2e/render/vulkan/DescriptorSetAllocator.hpp>
+#include <bg2e/render/vulkan/DescriptorSet.hpp>
 #include <bg2e/render/vulkan/rt/RayTracingScene.hpp>
 #include <cmath>
+#include <limits>
+#include <memory>
+#include <stdexcept>
 
 namespace bg2e::render::deferred {
 
@@ -148,6 +153,178 @@ void RTAmbientOcclusion::createPipeline()
         vkDestroyDescriptorSetLayout(dev, _dsLayout, nullptr);
         _dsLayout = VK_NULL_HANDLE;
     });
+}
+
+void RTAmbientOcclusion::buildUv()
+{
+    if (!_engine->rayTracingSupported())
+    {
+        throw std::runtime_error("RTAmbientOcclusion::buildUv requires ray tracing support");
+    }
+    _rtSupported = true;
+    createUvPipeline();
+}
+
+void RTAmbientOcclusion::createUvPipeline()
+{
+    if (_uvPipeline != VK_NULL_HANDLE)
+    {
+        return;
+    }
+    if (!_materialDataBinding)
+    {
+        throw std::logic_error("RTAmbientOcclusion::buildUv requires an RT material data binding");
+    }
+
+    vulkan::factory::Sampler samplerFactory(_engine);
+    _uvSampler = samplerFactory.build();
+    samplerFactory.createInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
+    _uvMaskSampler = samplerFactory.build(VK_FILTER_NEAREST, VK_FILTER_NEAREST);
+
+    vulkan::factory::DescriptorSetLayout descriptorLayoutFactory;
+    descriptorLayoutFactory.addBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+    descriptorLayoutFactory.addBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+    descriptorLayoutFactory.addBinding(2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+    descriptorLayoutFactory.addBinding(3, VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR);
+    descriptorLayoutFactory.addBinding(4, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE);
+    _uvDsLayout = descriptorLayoutFactory.build(
+        _engine->device().handle(), VK_SHADER_STAGE_COMPUTE_BIT);
+
+    vulkan::factory::PipelineLayout layoutFactory(_engine);
+    layoutFactory.addDescriptorSetLayout(_uvDsLayout);
+    layoutFactory.addDescriptorSetLayout(_materialDataBinding->createLayout(VK_SHADER_STAGE_COMPUTE_BIT));
+    layoutFactory.addPushConstantRange(
+        0, sizeof(UvAOPushConstants), VK_SHADER_STAGE_COMPUTE_BIT);
+    _uvPipelineLayout = layoutFactory.build("RTAmbientOcclusion::UvPipelineLayout");
+
+    vulkan::factory::ComputePipeline pipelineFactory(_engine);
+    pipelineFactory.setShader("rt_ao_uv.comp.spv");
+    _uvPipeline = pipelineFactory.build(_uvPipelineLayout, "RTAmbientOcclusion::UvPipeline");
+}
+
+void RTAmbientOcclusion::renderUv(
+    VkCommandBuffer cmd,
+    uint32_t currentFrame,
+    vulkan::FrameResources& frameResources,
+    vulkan::DescriptorSetAllocator& descriptorAllocator,
+    const GBufferManager& uvSurface,
+    const vulkan::rt::RayTracingScene& rayTracingScene,
+    vulkan::Image& aoOutput,
+    uint32_t samplesPerPixel,
+    float maxRayDistance)
+{
+    if (!_rtSupported || _uvPipeline == VK_NULL_HANDLE || _uvPipelineLayout == VK_NULL_HANDLE)
+    {
+        throw std::logic_error("RTAmbientOcclusion::renderUv called before buildUv");
+    }
+    if (uvSurface.imageCount() < 4 || uvSurface.depthImage())
+    {
+        throw std::invalid_argument("RTAmbientOcclusion::renderUv requires the four-attachment depthless UV surface profile");
+    }
+    if (uvSurface.image(0)->format() != VK_FORMAT_R32G32B32A32_SFLOAT ||
+        uvSurface.image(1)->format() != VK_FORMAT_R16G16B16A16_SFLOAT ||
+        uvSurface.image(3)->format() != VK_FORMAT_R32_UINT ||
+        aoOutput.format() != VK_FORMAT_R8_UNORM)
+    {
+        throw std::invalid_argument("RTAmbientOcclusion::renderUv received incompatible surface or output formats");
+    }
+    if (uvSurface.extent().width != aoOutput.extent2D().width ||
+        uvSurface.extent().height != aoOutput.extent2D().height)
+    {
+        throw std::invalid_argument("RTAmbientOcclusion::renderUv requires matching UV surface and AO extents");
+    }
+    if (samplesPerPixel == 0 || samplesPerPixel > static_cast<uint32_t>(std::numeric_limits<int>::max()))
+    {
+        throw std::invalid_argument("RTAmbientOcclusion::renderUv samplesPerPixel is out of range");
+    }
+    if (!std::isfinite(maxRayDistance) || maxRayDistance <= 0.0f)
+    {
+        throw std::invalid_argument("RTAmbientOcclusion::renderUv maxRayDistance must be finite and positive");
+    }
+    if (rayTracingScene.tlas() == VK_NULL_HANDLE || rayTracingScene.objectInstances().empty())
+    {
+        throw std::invalid_argument("RTAmbientOcclusion::renderUv requires a non-empty context-owned TLAS");
+    }
+    vulkan::Image::cmdTransitionImage(cmd, aoOutput.handle(),
+        VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL);
+
+    std::unique_ptr<vulkan::DescriptorSet> inputSet(descriptorAllocator.allocate(_uvDsLayout));
+    inputSet->beginUpdate();
+    inputSet->addImage(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+        uvSurface.image(0).get(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _uvSampler);
+    inputSet->addImage(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+        uvSurface.image(1).get(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _uvSampler);
+    inputSet->addImage(2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+        uvSurface.image(3).get(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _uvMaskSampler);
+    inputSet->addAccelerationStructure(3, rayTracingScene.tlas());
+    inputSet->addImage(4, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+        &aoOutput, VK_IMAGE_LAYOUT_GENERAL);
+    inputSet->endUpdate();
+
+    const VkDescriptorSet inputSetHandle = inputSet->descriptorSet();
+    const VkDescriptorSet materialSetHandle = _materialDataBinding->newDescriptorSet(
+        frameResources, descriptorAllocator, rayTracingScene.objectInstances());
+
+    vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, _uvPipeline);
+    vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_COMPUTE,
+        _uvPipelineLayout, 0, 1, &inputSetHandle, 0, nullptr);
+    vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_COMPUTE,
+        _uvPipelineLayout, 1, 1, &materialSetHandle, 0, nullptr);
+
+    UvAOPushConstants pushConstants{};
+    pushConstants.sampleCount = static_cast<int>(samplesPerPixel);
+    pushConstants.maxRayDistance = maxRayDistance;
+    pushConstants.bias = _bias;
+    pushConstants.falloff = _falloff;
+    pushConstants.frameIndex = currentFrame;
+    vkCmdPushConstants(cmd, _uvPipelineLayout, VK_SHADER_STAGE_COMPUTE_BIT,
+        0, sizeof(UvAOPushConstants), &pushConstants);
+
+    const VkExtent2D extent = aoOutput.extent2D();
+    vkCmdDispatch(cmd, (extent.width + 7) / 8, (extent.height + 7) / 8, 1);
+
+    vulkan::Image::cmdTransitionImage(cmd, aoOutput.handle(),
+        VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+}
+
+void RTAmbientOcclusion::cleanupUv()
+{
+    if (_uvPipeline != VK_NULL_HANDLE)
+    {
+        vkDestroyPipeline(_engine->device().handle(), _uvPipeline, nullptr);
+        _uvPipeline = VK_NULL_HANDLE;
+    }
+    if (_uvPipelineLayout != VK_NULL_HANDLE)
+    {
+        vkDestroyPipelineLayout(_engine->device().handle(), _uvPipelineLayout, nullptr);
+        _uvPipelineLayout = VK_NULL_HANDLE;
+    }
+    if (_uvDsLayout != VK_NULL_HANDLE)
+    {
+        vkDestroyDescriptorSetLayout(_engine->device().handle(), _uvDsLayout, nullptr);
+        _uvDsLayout = VK_NULL_HANDLE;
+    }
+    if (_uvSampler != VK_NULL_HANDLE)
+    {
+        vkDestroySampler(_engine->device().handle(), _uvSampler, nullptr);
+        _uvSampler = VK_NULL_HANDLE;
+    }
+    if (_uvMaskSampler != VK_NULL_HANDLE)
+    {
+        vkDestroySampler(_engine->device().handle(), _uvMaskSampler, nullptr);
+        _uvMaskSampler = VK_NULL_HANDLE;
+    }
+}
+
+void RTAmbientOcclusion::clearUvNeutral(VkCommandBuffer cmd, vulkan::Image& aoOutput)
+{
+    vulkan::Image::cmdTransitionImage(cmd, aoOutput.handle(),
+        VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL);
+    VkClearColorValue clearWhite{{1.0f, 0.0f, 0.0f, 0.0f}};
+    const VkImageSubresourceRange range = vulkan::Image::subresourceRange(VK_IMAGE_ASPECT_COLOR_BIT);
+    vkCmdClearColorImage(cmd, aoOutput.handle(), VK_IMAGE_LAYOUT_GENERAL, &clearWhite, 1, &range);
+    vulkan::Image::cmdTransitionImage(cmd, aoOutput.handle(),
+        VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 }
 
 void RTAmbientOcclusion::render(
@@ -350,6 +527,7 @@ void RTAmbientOcclusion::cleanupImages()
 void RTAmbientOcclusion::cleanup()
 {
     cleanupImages();
+    cleanupUv();
 }
 
 std::shared_ptr<vulkan::Image> RTAmbientOcclusion::aoImage(uint32_t frameIndex) const

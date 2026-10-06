@@ -68,6 +68,7 @@ struct PBRMaterialData
 const uint MATERIAL_FLAG_UNLIT          = 1u << 0;
 const uint MATERIAL_FLAG_ALPHA_TEST     = 1u << 1;
 const uint MATERIAL_FLAG_TRANSPARENT    = 1u << 2;
+const uint MATERIAL_FLAG_HAS_BAKED_LIGHTMAP = 1u << 3;
 
 struct LightData
 {

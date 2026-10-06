@@ -65,6 +65,10 @@ public:
     virtual void cleanup() = 0;
 
     bg2e::scene::Scene* scene() const { return _scene.get(); };
+    // Non-owning access to the renderer's scene IBL resources. Applications may
+    // share this handle with integrated baking contexts while the scene is locked.
+    EnvironmentResources* environmentResources() { return _environment.get(); }
+    const EnvironmentResources* environmentResources() const { return _environment.get(); }
 
     virtual void setDrawSkybox(bool drawSkybox) = 0;
     virtual bool drawSkybox() const = 0;

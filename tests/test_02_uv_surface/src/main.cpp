@@ -81,7 +81,7 @@ int main()
         {
             bg2e::render::GBufferManager cameraProfile(&engine);
             cameraProfile.build({ 4, 4 });
-            require(cameraProfile.imageCount() == 5, "default camera G-buffer changed its five-color profile");
+            require(cameraProfile.imageCount() == 6, "default camera G-buffer did not add the baked RGB attachment");
             require(cameraProfile.depthImage() != nullptr, "default camera G-buffer lost its depth image");
             require(cameraProfile.depthFormat() == VK_FORMAT_D32_SFLOAT,
                 "default camera G-buffer changed its D32 depth format");

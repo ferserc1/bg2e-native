@@ -1,13 +1,13 @@
 # Handoff for Add accumulation and CPU/GPU results
 
-Next implementation step: [step-06_accumulation_output.md](step-06_accumulation_output.md). Complete this file **after** finishing step 05; this template records no implementation results.
+Next implementation step: [step-06_accumulation_output.md](step-06_accumulation_output.md). Step 05 is complete; the project lead manually verified the fixture as passing. Step 06 is ready to begin.
 
-- Changed files and relevant API decisions: TODO
-- Build command, platform and result: TODO
-- Runtime/fixture evidence: TODO
-- Remaining limitations or regressions: TODO
-- Resources, ownership and synchronization cautions for the next agent: TODO
-- Exact next action: Implement the scope in step-06_accumulation_output.md.
+- Changed files and relevant API decisions: Added UV-space RTGI, an independent optional RT shadow visibility pass, and RGB composition for RTAO/RTGI with or without shadows. Preserved screen-space APIs. `Renderer::environmentResources()` exposes renderer-owned IBL resources through non-owning injection into `IntegratedBakerContext`; the renderer must outlive the context and its bakers. Baked AO textures are sampled as RGB, with emission kept outside the multiplier. The lightmap settings comments document RGB RTAO visibility, RTGI irradiance/reference normalization, and optional shadow multiplication.
+- Build command, platform and result: `cmake --build build --target test_03_integrated_baker_context` succeeded on Linux/Ninja.
+- Runtime/fixture evidence: The project lead manually ran and verified the integrated baker fixture as passing, covering the four RTAO/RTGI and shadow combinations and the RGB lightmap output.
+- Remaining limitations or regressions: Step 06 remains unimplemented. Follow the existing API contract and native-resolution requirements below.
+- Resources, ownership and synchronization cautions for the next agent: Environment resources are renderer-owned and injected non-owningly; keep the renderer alive until all contexts and bakers are destroyed. Do not explicitly reset or delete `EnvironmentResources` before `Engine::cleanup()`; leave its owning pointer alive through engine cleanup and allow automatic destruction afterward. Vulkan resources are ordered by the engine's cleanup manager, so early explicit destruction can reverse the intended teardown order and trigger callbacks that invoke methods on already-destroyed objects. Apply this generally to objects whose Vulkan resources are managed through the engine cleanup manager. Continue using the context-owned TLAS and its per-frame-slot descriptor allocators. Register descriptor pool requirements before initializing each pool, and do not clear slot resources before its fence completes.
+- Exact next action: Begin implementing the scope in `step-06_accumulation_output.md`. Have the project lead run the tests manually and wait for their verification before marking step 06 complete.
 
 ## Next-step instructions
 
@@ -15,7 +15,7 @@ Add per-baker progressive accumulation over configurable frames; reset history a
 
 ## Next-step acceptance gate
 
-A baker can update repeatedly, read an RGB result, expose its image, and release resources safely. Compile the project at the end of this step when implementation is authorized. Do not weaken an existing public API. Review changed files and describe any remaining runtime risk.
+A baker can update repeatedly, read an RGB result, expose its image, and release resources safely. Compile the project at the end of this step when implementation is authorized. Do not weaken an existing public API. Review changed files and describe any remaining runtime risk. The project lead runs tests manually; wait for verification before marking the step complete.
 
 ## Contract and next-step deliverables
 

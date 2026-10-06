@@ -17,8 +17,13 @@
  */
 
 #include <bg2e/render/vulkan/rt/ReflectionLightDataBinding.hpp>
+#include <bg2e/render/vulkan/DescriptorSetAllocator.hpp>
+#include <bg2e/render/vulkan/DescriptorSet.hpp>
 #include <bg2e/render/vulkan/macros/frame_resources.hpp>
 #include <bg2e/render/vulkan/factory/DescriptorSetLayout.hpp>
+
+#include <memory>
+#include <stdexcept>
 
 namespace bg2e {
 namespace render {
@@ -50,6 +55,35 @@ VkDescriptorSet ReflectionLightDataBinding::newDescriptorSet(
     if (_layout == VK_NULL_HANDLE)
     {
         throw std::runtime_error("ReflectionLightDataBinding::newDescriptorSet() - The descriptor set layout is not created");
+    }
+
+    auto* descriptorSet = frameResources.newDescriptorSet(_layout);
+    return writeDescriptorSet(frameResources, descriptorSet, lights);
+}
+
+VkDescriptorSet ReflectionLightDataBinding::newDescriptorSet(
+    FrameResources& frameResources,
+    DescriptorSetAllocator& descriptorAllocator,
+    const std::vector<base::LightData>& lights
+)
+{
+    if (_layout == VK_NULL_HANDLE)
+    {
+        throw std::runtime_error("ReflectionLightDataBinding::newDescriptorSet() - The descriptor set layout is not created");
+    }
+    std::unique_ptr<DescriptorSet> descriptorSet(descriptorAllocator.allocate(_layout));
+    return writeDescriptorSet(frameResources, descriptorSet.get(), lights);
+}
+
+VkDescriptorSet ReflectionLightDataBinding::writeDescriptorSet(
+    FrameResources& frameResources,
+    DescriptorSet* ds,
+    const std::vector<base::LightData>& lights
+)
+{
+    if (!ds)
+    {
+        throw std::invalid_argument("ReflectionLightDataBinding::newDescriptorSet() received a null descriptor set");
     }
 
     // A storage buffer cannot be empty. When there are no reflection lights we
@@ -92,7 +126,6 @@ VkDescriptorSet ReflectionLightDataBinding::newDescriptorSet(
         );
     }
 
-    auto ds = frameResources.newDescriptorSet(_layout);
     ds->beginUpdate();
         ds->addBuffer(
             0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,

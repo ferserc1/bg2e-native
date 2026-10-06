@@ -44,11 +44,23 @@ public:
         const std::vector<RTObjectInstance> & objectInstances
     );
 
+    VkDescriptorSet newDescriptorSet(
+        FrameResources & frameResources,
+        DescriptorSetAllocator & descriptorAllocator,
+        const std::vector<RTObjectInstance> & objectInstances
+    );
+
     void cleanup();
 
 protected:
     VkBuffer _dummyBuffer = VK_NULL_HANDLE;
     Buffer * _dummyBufferObj = nullptr;
+
+    VkDescriptorSet writeDescriptorSet(
+        FrameResources & frameResources,
+        DescriptorSet * descriptorSet,
+        const std::vector<RTObjectInstance> & objectInstances
+    );
 };
 
 }

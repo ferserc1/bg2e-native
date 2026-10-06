@@ -24,6 +24,7 @@ layout(push_constant) uniform PushConstant {
     uint giLightCount;
     uint shadowSamples;
     uint useBlueNoise;
+    uint useShadows;
 } pc;
 
 layout(location = 0) rayPayloadEXT GIPayload {

@@ -25,12 +25,17 @@
 namespace bg2e {
 namespace render {
 
+// The composed lightmap is an RGB light multiplier: RTAO is vec3(AO visibility);
+// RTGI is componentwise GI irradiance / unoccluded environment irradiance
+// (zero reference channels produce zero). Optional RT shadows multiply either
+// factor by energy-weighted direct-light visibility. Material emission remains
+// outside this multiplier.
 enum class LightmapMode { RTAO, RTGI };
 enum class LightmapPixelFormat { RGB8, RGB32F };
 
 struct BG2E_API LightmapSettings {
     uint32_t resolution = 512;
-    LightmapMode mode = LightmapMode::RTGI;
+    LightmapMode mode = LightmapMode::RTAO;
     bool rtShadows = false;
     uint32_t accumulationFrames = 16;
     uint32_t samplesPerPixel = 8;

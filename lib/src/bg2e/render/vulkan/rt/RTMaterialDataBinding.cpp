@@ -17,9 +17,13 @@
  */
 
 #include <bg2e/render/vulkan/rt/RTMaterialDataBinding.hpp>
+#include <bg2e/render/vulkan/DescriptorSetAllocator.hpp>
 #include <bg2e/render/vulkan/factory/DescriptorSetLayout.hpp>
 #include <bg2e/render/vulkan/macros/frame_resources.hpp>
 #include <bg2e/render/Texture.hpp>
+
+#include <memory>
+#include <stdexcept>
 
 namespace bg2e {
 namespace render {
@@ -58,10 +62,37 @@ VkDescriptorSet RTMaterialDataBinding::newDescriptorSet(
     FrameResources & frameResources,
     const std::vector<RTObjectInstance> & objectInstances
 ) {
-    size_t instanceCount = std::min<size_t>(objectInstances.size(), MAX_OBJECTS);
     if (_layout == VK_NULL_HANDLE)
     {
         throw std::runtime_error("RTMaterialDataBinding::newDescriptorSet() - Layout not created");
+    }
+    auto* descriptorSet = frameResources.newDescriptorSet(_layout);
+    return writeDescriptorSet(frameResources, descriptorSet, objectInstances);
+}
+
+VkDescriptorSet RTMaterialDataBinding::newDescriptorSet(
+    FrameResources & frameResources,
+    DescriptorSetAllocator & descriptorAllocator,
+    const std::vector<RTObjectInstance> & objectInstances
+) {
+    if (_layout == VK_NULL_HANDLE)
+    {
+        throw std::runtime_error("RTMaterialDataBinding::newDescriptorSet() - Layout not created");
+    }
+
+    std::unique_ptr<DescriptorSet> descriptorSet(descriptorAllocator.allocate(_layout));
+    return writeDescriptorSet(frameResources, descriptorSet.get(), objectInstances);
+}
+
+VkDescriptorSet RTMaterialDataBinding::writeDescriptorSet(
+    FrameResources & frameResources,
+    DescriptorSet * ds,
+    const std::vector<RTObjectInstance> & objectInstances
+) {
+    size_t instanceCount = std::min<size_t>(objectInstances.size(), MAX_OBJECTS);
+    if (_layout == VK_NULL_HANDLE || !ds)
+    {
+        throw std::runtime_error("RTMaterialDataBinding::newDescriptorSet() - Layout or descriptor set is unavailable");
     }
 
     std::vector<RTMaterialData> materialData;
@@ -82,8 +113,6 @@ VkDescriptorSet RTMaterialDataBinding::newDescriptorSet(
         VMA_MEMORY_USAGE_CPU_ONLY,
         "RTMaterialDataBinding: material data SSBO"
     );
-
-    auto ds = frameResources.newDescriptorSet(_layout);
 
     ds->beginUpdate();
 

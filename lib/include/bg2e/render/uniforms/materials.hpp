@@ -33,6 +33,7 @@ struct PBRMaterialData
         UNLIT = 0x1u << 0,
         ALPHA_TEST = 0x1u << 1,
         TRANSPARENT = 0x1u << 2,
+        HAS_BAKED_LIGHTMAP = 0x1u << 3,
     };
 
     bg2e::base::Color albedo;  // Base color of the material
@@ -113,6 +114,7 @@ struct PBRMaterialData
         flags |= att.isUnlit() ? UNLIT : 0u;
         flags |= att.alphaCutoff() > 0.0f ? ALPHA_TEST : 0u;
         flags |= att.isTransparent() ? TRANSPARENT : 0u;
+        flags |= att.aoTexture() ? HAS_BAKED_LIGHTMAP : 0u;
     }
 };
 

@@ -126,13 +126,15 @@ bool RayTracingScene::update(VkCommandBuffer cmd, scene::Node* node)
         cmd, 1, &buildInfo, buildRangeInfos
     );
 
-    // Memory barrier: the fragment shader must wait until the acceleration structure is built
-    // before read the TLAS
+    // Make the TLAS visible to every shader stage that may trace it, including
+    // the compute-based lightmap passes and the existing fragment RT path.
     VkMemoryBarrier2 memoryBarrier = {};
     memoryBarrier.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER_2;
     memoryBarrier.srcStageMask = VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR;
     memoryBarrier.srcAccessMask = VK_ACCESS_2_ACCELERATION_STRUCTURE_WRITE_BIT_KHR;
-    memoryBarrier.dstStageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT_KHR;
+    memoryBarrier.dstStageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT |
+                                VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT |
+                                VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR;
     memoryBarrier.dstAccessMask = VK_ACCESS_2_ACCELERATION_STRUCTURE_READ_BIT_KHR;
 
     VkDependencyInfo dependencyInfo = {};

@@ -336,7 +336,7 @@ void CubemapRenderer::initGeometry()
     _cube->build();
     
     _engine->cleanupManager().push([&](VkDevice) {
-        _projectionDataBuffer->cleanup();
+         _projectionDataBuffer->cleanup();
         _cube.reset();
     });
 }

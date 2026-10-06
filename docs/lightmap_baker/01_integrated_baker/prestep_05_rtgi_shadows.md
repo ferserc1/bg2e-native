@@ -1,13 +1,13 @@
 # Handoff for Implement RTGI and optional RT shadows
 
-Next implementation step: [step-05_rtgi_shadows.md](step-05_rtgi_shadows.md). Complete this file **after** finishing step 04; this template records no implementation results.
+Next implementation step: [step-05_rtgi_shadows.md](step-05_rtgi_shadows.md). Step 04 is complete; implementation findings and allocator/snapshot constraints are recorded below.
 
-- Changed files and relevant API decisions: TODO
-- Build command, platform and result: TODO
-- Runtime/fixture evidence: TODO
-- Remaining limitations or regressions: TODO
-- Resources, ownership and synchronization cautions for the next agent: TODO
-- Exact next action: Implement the scope in step-05_rtgi_shadows.md.
+- Changed files and relevant API decisions: Added `RTAmbientOcclusion::buildUv/renderUv` and a separate `rt_ao_uv.comp.glsl` pipeline. It samples world position/normal and the integer valid mask directly from the depthless UV `GBufferManager`, uses nearest sampling for the `R32_UINT` mask, traces against the prepared context-owned TLAS with alpha-tested `queryAOCutout`, and writes neutral 1 to uncovered texels. The AO output is an R8 full-resolution image per target/frame slot. The old camera-space `render(...)` API and shader path are unchanged. `LightmapSettings` now defaults to RTAO per the API contract; integrated bakers reject RTGI until this next step.
+- Build command, platform and result: `cmake --build build --target test_03_integrated_baker_context` passed on Linux/Ninja and compiled the new UV AO shader.
+- Runtime/fixture evidence: `bin/linux/test_03_integrated_baker_context` passed on an NVIDIA GeForce RTX 5080 Laptop GPU. It verified an isolated plane remains neutral, an overhang selectively darkens mapped texels, uncovered atlas texels remain neutral, and retained the previous two-slot/context validation coverage.
+- Remaining limitations or regressions: AO output is currently single-channel R8; shared RGB composition, RTGI, optional RT shadows, accumulation and readback remain for later steps. The complete integrated phase is not finished.
+- Resources, ownership and synchronization cautions for the next agent: The UV RTAO pass is context-shared; each target/frame slot owns a separate AO output. `prepareFrame` clears only the current context-owned descriptor allocator after the render loop has waited for that slot's fence. The first RTAO update initializes that slot's descriptor pool, so any additional RTGI and shadow descriptor requirements must be accounted for before pool initialization (or handled by a safe allocator extension); `DescriptorSetAllocator::requirePoolSizeRatio` cannot be called once initialized. The UV AO shader uses a robust tangent basis because `deferred_utils.glsl::buildTBN` degenerates for normals near +Z; avoid reusing `randomHemisphereDirection` unchanged for the new UV RTGI path. Continue using the context's CPU light/environment snapshot per the project-lead decision; do not create baker-owned `EnvironmentResources`. The baker image currently exposes the latest R8 AO result and step 05 should compose it into the planned RGB light multiplier.
+- Exact next action: Implement the UV-space RTGI and optional RT shadow paths in `step-05_rtgi_shadows.md`, preserving screen-space APIs, consuming the context-owned TLAS and scene snapshot, and composing AO/GI plus shadows into one native-resolution RGB result.
 
 ## Next-step instructions
 
