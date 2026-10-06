@@ -342,9 +342,10 @@ void DeferredLayer::render(
 
     if (useRT)
     {
-        auto projMat = _scene->mainCamera()->projectionMatrix();
-        auto viewMat = _scene->mainCamera()->viewMatrix();
-        auto invVP = glm::inverse(projMat * viewMat);
+        // The G-buffer depth was written with the projection override (FSR jitter).
+        // All passes reconstructing world positions must use that same matrix.
+        auto invVP = glm::inverse(projMatrix * viewMatrix);
+        const auto& cameraProjection = mainCamera->projectionMatrix();
 
         if (!skipIndirectPasses)
         {
@@ -356,13 +357,10 @@ void DeferredLayer::render(
                 const vulkan::Image* aoInputForDenoise = nullptr;
                 if (_temporalAccumulator)
                 {
-                    auto projMat2 = _scene->mainCamera()->projectionMatrix();
-                    auto viewMat2 = _scene->mainCamera()->viewMatrix();
-                    auto invVP2 = glm::inverse(projMat2 * viewMat2);
                     auto aoImg = _rtAmbientOcclusion->aoImage(frameResourcesIndex);
                     _temporalAccumulator->render(
                         cmd, currentFrame, frameResources, gbuffer,
-                        aoImg.get(), invVP2, viewMat2, projMat2
+                        aoImg.get(), invVP, viewMatrix, projMatrix, cameraProjection
                     );
                     aoInputForDenoise = _temporalAccumulator->outputImage(frameResourcesIndex).get();
                 }
@@ -393,12 +391,9 @@ void DeferredLayer::render(
                 auto rawGIImage = _rtGlobalIllumination->giImage(frameResourcesIndex);
                 if (_temporalGIAccumulator)
                 {
-                    auto projMat2 = _scene->mainCamera()->projectionMatrix();
-                    auto viewMat2 = _scene->mainCamera()->viewMatrix();
-                    auto invVP2 = glm::inverse(projMat2 * viewMat2);
                     _temporalGIAccumulator->render(
                         cmd, currentFrame, frameResources, gbuffer,
-                        rawGIImage.get(), invVP2, viewMat2, projMat2
+                        rawGIImage.get(), invVP, viewMatrix, projMatrix, cameraProjection
                     );
                     const vulkan::Image* temporalGIImage =
                         _temporalGIAccumulator->outputImage(frameResourcesIndex).get();
@@ -432,7 +427,7 @@ void DeferredLayer::render(
                 auto rawReflectionImage = _rtReflections->reflectionImage(frameResourcesIndex);
                 _temporalReflectionAccumulator->render(
                     cmd, currentFrame, frameResources, gbuffer,
-                    rawReflectionImage.get(), invVP, viewMat, projMat
+                    rawReflectionImage.get(), invVP, viewMatrix, projMatrix, cameraProjection
                 );
 
                 reflectionInputForComposite = _temporalReflectionAccumulator->outputImage(frameResourcesIndex).get();
@@ -1260,9 +1255,7 @@ void DeferredLayer::renderCompositePass(
 
 
     // Push constants
-    auto projMat = _scene->mainCamera()->projectionMatrix();
-    auto viewMat = _scene->mainCamera()->viewMatrix();
-    auto inverseViewProjection = glm::inverse(projMat * viewMat);
+    auto inverseViewProjection = glm::inverse(projMatrix * viewMatrix);
 
     // rtgiActive computed above (after the gbufferDS block)
     const CompositePushConstants pc{
