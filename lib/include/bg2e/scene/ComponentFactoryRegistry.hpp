@@ -23,6 +23,7 @@
 #include <unordered_map>
 #include <string>
 #include <functional>
+#include <memory>
 #include <filesystem>
 #include <utility>
 
@@ -71,9 +72,9 @@ public:
             ComponentT::staticTypeName(),
             [](std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path& path,
                render::Engine& engine, SceneLoadProgress* progress) {
-                auto result = new ComponentT();
+                auto result = std::make_unique<ComponentT>();
                 result->deserializeWithProgress(jsonData, path, engine, progress);
-                return result;
+                return result.release();
             },
             [] { return new ComponentT(); }
         );

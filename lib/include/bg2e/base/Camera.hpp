@@ -21,6 +21,7 @@
 #include <bg2e/common.hpp>
 #include <bg2e/math/projections.hpp>
 #include <bg2e/json/JsonNode.hpp>
+#include <bg2e/json/NodeReader.hpp>
 
 #include <memory>
 
@@ -44,40 +45,29 @@ public:
     
     void deserialize(std::shared_ptr<json::JsonNode> jsonData)
     {
-        if (!jsonData || !jsonData->isObject())
-            return;
+        json::ObjectReader reader(jsonData);
+        if (!reader.isValid()) return;
 
-        auto& obj = jsonData->objectValue();
-        if (obj.count("projection"))
+        if (auto projection = reader.getObject("projection"))
         {
-            auto projData = obj["projection"];
-            if (projData && projData->isObject())
-            {
-                auto& projObj = projData->objectValue();
-                std::string type = projObj.count("type") ?
-                    projObj["type"]->stringValue("") : "";
+                auto type = projection->getString("type").value_or("");
 
                 if (type == "PerspectiveProjection")
                 {
                     auto proj = std::make_shared<math::PerspectiveProjection>();
-                    proj->deserialize(projData);
+                    proj->deserialize(projection->node());
                     _projection = proj;
                 }
                 else if (type == "OpticalProjection")
                 {
                     auto proj = std::make_shared<math::OpticalProjection>();
-                    proj->deserialize(projData);
+                    proj->deserialize(projection->node());
                     _projection = proj;
                 }
-            }
         }
-        else if (obj.count("projectionMatrix"))
+        else if (auto matrix = reader.getGlmMat4("projectionMatrix"))
         {
-            auto matNode = obj["projectionMatrix"];
-            if (matNode && matNode->isMat4())
-            {
-                _projMatrix = matNode->glmMat4Value();
-            }
+            _projMatrix = *matrix;
         }
     }
     

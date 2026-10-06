@@ -17,6 +17,7 @@
  */
 
 #include <bg2e/scene/ChainJoint.hpp>
+#include <bg2e/json/NodeReader.hpp>
 #include <bg2e/scene/ComponentFactoryRegistry.hpp>
 
 namespace bg2e::scene {
@@ -28,18 +29,10 @@ void ChainJointComponent::deserialize(
 {
     Component::deserialize(jsonData, basePath, engine);
 
-    if (!jsonData || !jsonData->isObject())
-    {
-        return;
-    }
-
-    auto& object = jsonData->objectValue();
-    if (!object.count("joint"))
-    {
-        return;
-    }
-
-    auto joint = base::Joint::factory(object["joint"]);
+    json::ObjectReader reader(jsonData);
+    auto jointData = reader.getObject("joint");
+    if (!jointData) return;
+    auto joint = base::Joint::factory(jointData->node());
     auto linkJoint = std::dynamic_pointer_cast<base::LinkJoint>(joint);
     if (linkJoint)
     {

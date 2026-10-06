@@ -17,6 +17,7 @@
  */
 
 #include <bg2e/scene/DrawableComponent.hpp>
+#include <bg2e/json/NodeReader.hpp>
 #include <bg2e/scene/ComponentFactoryRegistry.hpp>
 #include <bg2e/scene/Node.hpp>
 #include <bg2e/utils/utils.hpp>
@@ -88,19 +89,11 @@ void DrawableComponent::deserialize(
     const std::filesystem::path& basePath,
     render::Engine& engine
 ) {
-    if (!jsonData || !jsonData->isObject())
+    json::ObjectReader reader(jsonData);
+    if (auto name = reader.getString("name"))
     {
-        return;
-    }
-
-    auto& obj = jsonData->objectValue();
-
-    if (obj.count("name"))
-    {
-        auto name = obj["name"]->stringValue();
-
         auto filePath = basePath;
-        filePath.append(name);
+        filePath.append(*name);
         filePath.replace_extension(".bg2");
 
         _drawable = db::loadDrawableBg2(filePath, &engine);
@@ -113,19 +106,11 @@ void DrawableComponent::deserializeWithProgress(
     render::Engine& engine,
     SceneLoadProgress* progress
 ) {
-    if (!jsonData || !jsonData->isObject())
+    json::ObjectReader reader(jsonData);
+    if (auto name = reader.getString("name"))
     {
-        return;
-    }
-
-    auto& obj = jsonData->objectValue();
-
-    if (obj.count("name"))
-    {
-        auto name = obj["name"]->stringValue();
-
         auto filePath = basePath;
-        filePath.append(name);
+        filePath.append(*name);
         filePath.replace_extension(".bg2");
 
         _drawable = db::loadDrawableBg2(filePath, &engine, [progress]() {

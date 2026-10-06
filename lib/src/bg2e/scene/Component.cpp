@@ -17,6 +17,7 @@
  */
 
 #include <bg2e/scene/Component.hpp>
+#include <bg2e/json/NodeReader.hpp>
 #include <bg2e/scene/Node.hpp>
 #include <bg2e/scene/Scene.hpp>
 
@@ -49,14 +50,8 @@ void Component::deserialize(
     [[maybe_unused]] const std::filesystem::path& basePath,
     [[maybe_unused]] render::Engine& engine
 ) {
-    if (!jsonData || !jsonData->isObject())
-        return;
-
-    auto& obj = jsonData->objectValue();
-    if (obj.count("priority"))
-    {
-        _priority = static_cast<uint32_t>(obj["priority"]->numberValue(static_cast<double>(_priority)));
-    }
+    json::ObjectReader reader(jsonData);
+    if (auto priority = reader.getInteger<uint32_t>("priority")) _priority = *priority;
 }
 
 void Component::deserializeWithProgress(

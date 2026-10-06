@@ -17,6 +17,7 @@
  */
 
 #include <bg2e/scene/FixedScaleTransformController.hpp>
+#include <bg2e/json/NodeReader.hpp>
 #include <bg2e/scene/ComponentFactoryRegistry.hpp>
 #include <bg2e/json/JsonNode.hpp>
 #include <bg2e/scene/Node.hpp>
@@ -36,14 +37,8 @@ void FixedScaleTransformControllerComponent::deserialize(std::shared_ptr<json::J
 {
     Component::deserialize(jsonData, {}, engine);
 
-    if (!jsonData || !jsonData->isObject())
-        return;
-
-    auto& obj = jsonData->objectValue();
-    if (obj.count("scale"))
-    {
-        _scale = obj["scale"]->numberValue(_scale);
-    }
+    json::ObjectReader reader(jsonData);
+    if (auto scale = reader.getNumber("scale")) _scale = *scale;
 }
 
 std::shared_ptr<json::JsonNode> FixedScaleTransformControllerComponent::serialize(const std::filesystem::path& basePath)

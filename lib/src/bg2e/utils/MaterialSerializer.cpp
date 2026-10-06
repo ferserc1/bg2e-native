@@ -18,6 +18,7 @@
 
 #include <bg2e/utils/MaterialSerializer.hpp>
 #include <bg2e/json/JsonParser.hpp>
+#include <bg2e/json/NodeReader.hpp>
 
 namespace bg2e::utils {
 
@@ -33,172 +34,82 @@ base::Texture * getTexture(const std::filesystem::path& basePath, const std::str
 }
 
 bool parseMaterial(
-    json::JsonNode * node,
+    json::JsonNode* node,
     const std::filesystem::path& basePath,
-    base::MaterialAttributes & result
+    base::MaterialAttributes& result
 )
 {
-    // TODO: Parse V2.0 textures:
-    // dataType
-    // wrapModeX
-    // wrapModeY
-    // magFilter
-    // minFilter
-    // target > deprecated
-    // size
-    // fileName
-    // proceduralFunction
-    // proceduralParameters
-    // name
-    // componentFormat
-    // See Texture.js file in bg2e-js
-    
-    
-    if (!node->isObject())
-    {
-        return false;
-    }
-    
-    auto mat = node->objectValue();
-    
-    if (mat["name"])
-    {
-        result.setName(mat["name"]->stringValue(""));
-    }
-    if (mat["groupName"])
-    {
-        result.setGroupName(mat["groupName"]->stringValue(""));
-    }
-    
-    if (mat["isTransparent"])
-    {
-        result.setIsTransparent(mat["isTransparent"]->boolValue(false));
-    }
-    if (mat["refractionFactor"] && mat["refractionFactor"]->isNumber())
-    {
-        result.setRefractionFactor(mat["refractionFactor"]->numberValue(0.5f));
-    }
-    if (mat["alphaCutoff"] && mat["alphaCutoff"]->isNumber())
-    {
-        result.setAlphaCutoff(mat["alphaCutoff"]->numberValue(0.5f));
-    }
-    if (mat["isSolid"])
-    {
-        result.setIsSolid(mat["isSolid"]->boolValue(false));
-    }
-    if (mat["visible"])
-    {
-        result.setVisible(mat["visible"]->boolValue(true));
-    }
-    if (mat["isUnlit"])
-    {
-        result.setIsUnlit(mat["unlit"]->boolValue(false));
-    }
-    
-    // Albedo
-    if (mat["albedo"] && mat["albedo"]->isVec4())
-    {
-        result.setAlbedo(mat["albedo"]->vec4Value());
-    }
-    else if (mat["albedo"] && mat["albedo"]->isVec3())
-    {
-        result.setAlbedo(mat["albedo"]->vec3Value());
-    }
-    
-    if (mat["albedoTexture"] && mat["albedoTexture"]->isString())
-    {
-        result.setAlbedoTexture(getTexture(basePath, mat["albedoTexture"]->stringValue()));
-        result.setAlbedoScale(mat["albedoScale"] ? mat["albedoScale"]->vec2Value({ 1, 1 }) : std::array<float, 2>{ 1.0f, 1.0f });
-        result.setAlbedoUVSet(mat["albedoUV"] ? mat["albedoUV"]->numberValue(0) : 0);
-    }
-    
-    // Metalness
-    if (mat["metalness"] && mat["metalness"]->isNumber())
-    {
-        result.setMetalness(mat["metalness"]->numberValue(0.0f));
-    }
-    
-    if (mat["metalnessTexture"] && mat["metalnessTexture"]->isString())
-    {
-        result.setMetalnessTexture(getTexture(basePath, mat["metalnessTexture"]->stringValue()));
-        result.setMetalnessChannel(mat["metalnessChannel"] ? mat["metalnessChannel"]->numberValue(0) : 0);
-        result.setMetalnessScale(mat["metalnessScale"] ? mat["metalnessScale"]->vec2Value({ 1, 1 }) : std::array<float, 2>{ 1.0f, 1.0f });
-        result.setMetalnessUVSet(mat["metalnessUV"] ? mat["metalnessUV"]->numberValue(0) : 0);
-    }
-    
-    // Roughness
-    if (mat["roughness"] && mat["roughness"]->isNumber())
-    {
-        result.setRoughness(mat["roughness"]->numberValue(1.0f));
-    }
-    
-    if (mat["roughnessTexture"] && mat["roughnessTexture"]->isString())
-    {
-        result.setRoughnessTexture(getTexture(basePath, mat["roughnessTexture"]->stringValue()));
-        result.setRoughnessChannel(mat["roughnessChannel"] ? mat["roughnessChannel"]->numberValue(0) : 0);
-        result.setRoughnessScale(mat["roughnessScale"] ? mat["roughnessScale"]->vec2Value({ 1, 1 }) : std::array<float, 2>{ 1.0f, 1.0f });
-        result.setRoughnessUVSet(mat["roughnessUV"] ? mat["roughnessUV"]->numberValue(0) : 0);
-    }
-    
-    // Normal
-    if (mat["normalTexture"] && mat["normalTexture"]->isString())
-    {
-        result.setNormalTexture(getTexture(basePath, mat["normalTexture"]->stringValue()));
-        result.setNormalScale(mat["normalScale"] ? mat["normalScale"]->vec2Value({ 1, 1 }) : std::array<float, 2>{ 1.0f, 1.0f });
-        result.setNormalUVSet(mat["normalUV"] ? mat["normalUV"]->numberValue(0) : 0);
-    }
-    
-    // Fresnel tint
-    if (mat["fresnelTint"] && mat["fresnelTint"]->isColor())
-    {
-        result.setFresnelTint(mat["fresnelTint"]->colorValue());
-    }
-    
-    // Sheen
-    if (mat["sheenIntensity"] && mat["sheenIntensity"]->isNumber())
-    {
-        result.setSheenIntensity(mat["sheenIntensity"]->numberValue());
-    }
-    if (mat["sheenColor"] && mat["sheenColor"]->isColor())
-    {
-        result.setSheenColor(mat["sheenColor"]->colorValue());
-    }
-    
-    // Ambient Occlussion
-    if (mat["ambientOcclussion"] && mat["ambientOcclussion"]->isString())
-    {
-        result.setAoTexture(getTexture(basePath, mat["ambientOcclussion"]->stringValue()));
-        result.setAoScale(mat["ambientOcclussionScale"] ? mat["ambientOcclussionScale"]->vec2Value({ 1, 1 }) : std::array<float, 2>{ 1.0f, 1.0f });
-        result.setAoChannel(mat["ambientOcclussionChannel"] ? mat["ambientOcclussionChannel"]->numberValue(0) : 0);
-        result.setAoUVSet(mat["ambientOcclussionUV"] ? mat["ambientOcclussionUV"]->numberValue(1) : 1);
-    }
-    
-    // Light emission
-    if (mat["lightEmission"] && mat["lightEmission"]->isNumber())
-    {
-        result.setLightEmission(mat["lightEmission"]->numberValue(0.0f));
-    }
-    if (mat["lightEmissionTexture"] && mat["lightEmissionTexture"]->isString())
-    {
-        result.setLightEmissionTexture(getTexture(basePath, mat["lightEmissionTexture"]->stringValue()));
-    }
-    if (mat["lightEmissionScale"] && mat["lightEmissionScale"]->isVec2())
-    {
-        result.setLightEmissionScale(mat["lightEmissionScale"]->vec2Value({ 1, 1 }));
-    }
-    if (mat["lightEmissionChannel"] && mat["lightEmissionChannel"]->isNumber())
-    {
-        result.setLightEmissionChannel(mat["lightEmissionChannel"]->numberValue(0));
-    }
-    if (mat["lightEmissionInvert"])
-    {
-        result.setLightEmissionInvert(mat["lightEmissionInvert"]->boolValue(false));
-    }
-    if (mat["lightEmissionUV"] && mat["lightEmissionUV"]->isNumber())
-    {
-        result.setLightEmissionUVSet(mat["lightEmissionUV"]->numberValue(0));
-    }
+    if (!node) return false;
+    json::ObjectReader reader(*node);
+    if (!reader.isValid()) return false;
 
+    if (auto value = reader.getString("name")) result.setName(*value);
+    if (auto value = reader.getString("groupName")) result.setGroupName(*value);
+    if (auto value = reader.getBool("isTransparent")) result.setIsTransparent(*value);
+    if (auto value = reader.getNumber("refractionFactor")) result.setRefractionFactor(*value);
+    if (auto value = reader.getNumber("alphaCutoff")) result.setAlphaCutoff(*value);
+    if (auto value = reader.getBool("isSolid")) result.setIsSolid(*value);
+    if (auto value = reader.getBool("visible")) result.setVisible(*value);
+    if (auto value = reader.getBool("isUnlit")) result.setIsUnlit(*value);
+
+    if (auto value = reader.getVec4("albedo")) result.setAlbedo(*value);
+    else if (auto value = reader.getVec3("albedo")) result.setAlbedo(*value);
+
+    const auto texture = [&](const char* key) -> base::Texture* {
+        auto file = reader.getString(key);
+        return file ? getTexture(basePath, *file) : nullptr;
+    };
+    const auto scale = [&](const char* key) {
+        return reader.getVec2(key).value_or(std::array<float, 2>{1.0f, 1.0f});
+    };
+    const auto index = [&](const char* key, uint32_t fallback = 0) {
+        return reader.getInteger<uint32_t>(key).value_or(fallback);
+    };
+
+    if (auto value = texture("albedoTexture"))
+    {
+        result.setAlbedoTexture(value);
+        result.setAlbedoScale(scale("albedoScale"));
+        result.setAlbedoUVSet(index("albedoUV"));
+    }
+    if (auto value = reader.getNumber("metalness")) result.setMetalness(*value);
+    if (auto value = texture("metalnessTexture"))
+    {
+        result.setMetalnessTexture(value);
+        result.setMetalnessChannel(index("metalnessChannel"));
+        result.setMetalnessScale(scale("metalnessScale"));
+        result.setMetalnessUVSet(index("metalnessUV"));
+    }
+    if (auto value = reader.getNumber("roughness")) result.setRoughness(*value);
+    if (auto value = texture("roughnessTexture"))
+    {
+        result.setRoughnessTexture(value);
+        result.setRoughnessChannel(index("roughnessChannel"));
+        result.setRoughnessScale(scale("roughnessScale"));
+        result.setRoughnessUVSet(index("roughnessUV"));
+    }
+    if (auto value = texture("normalTexture"))
+    {
+        result.setNormalTexture(value);
+        result.setNormalScale(scale("normalScale"));
+        result.setNormalUVSet(index("normalUV"));
+    }
+    if (auto value = reader.getColor("fresnelTint")) result.setFresnelTint(*value);
+    if (auto value = reader.getNumber("sheenIntensity")) result.setSheenIntensity(*value);
+    if (auto value = reader.getColor("sheenColor")) result.setSheenColor(*value);
+    if (auto value = texture("ambientOcclussion"))
+    {
+        result.setAoTexture(value);
+        result.setAoScale(scale("ambientOcclussionScale"));
+        result.setAoChannel(index("ambientOcclussionChannel"));
+        result.setAoUVSet(index("ambientOcclussionUV", 1));
+    }
+    if (auto value = reader.getNumber("lightEmission")) result.setLightEmission(*value);
+    if (auto value = texture("lightEmissionTexture")) result.setLightEmissionTexture(value);
+    if (auto value = reader.getVec2("lightEmissionScale")) result.setLightEmissionScale(*value);
+    if (auto value = reader.getInteger<uint32_t>("lightEmissionChannel")) result.setLightEmissionChannel(*value);
+    if (auto value = reader.getBool("lightEmissionInvert")) result.setLightEmissionInvert(*value);
+    if (auto value = reader.getInteger<uint32_t>("lightEmissionUV")) result.setLightEmissionUVSet(*value);
     return true;
 }
 
@@ -221,21 +132,24 @@ bool MaterialSerializer::deserializeMaterialArray(
     // TODO: Maybe this can be set in other place
     json::JsonParser parser(jsonString);
     auto jsonData = parser.parse();
-    if (!jsonData->isList())
+    json::ArrayReader reader(jsonData);
+    if (!reader.isValid())
     {
         return false;
     }
     
-    for (auto matItem : jsonData->listValue())
+    bool complete = true;
+    for (std::size_t i = 0; i < reader.size(); ++i)
     {
+        auto matItem = reader.getObject(i);
         base::MaterialAttributes mat;
-        if (!parseMaterial(matItem.get(), basePath, mat))
+        if (!matItem || !parseMaterial(matItem->node().get(), basePath, mat))
         {
-            return false;
+            complete = false;
         }
         result.push_back(mat);
     }
-    return true;
+    return complete;
 }
 
 std::string MaterialSerializer::serializeMaterial(

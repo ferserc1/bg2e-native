@@ -17,6 +17,7 @@
  */
 
 #include <bg2e/scene/PolarTransformController.hpp>
+#include <bg2e/json/NodeReader.hpp>
 #include <bg2e/scene/ComponentFactoryRegistry.hpp>
 #include <bg2e/scene/Node.hpp>
 #include <bg2e/json/JsonNode.hpp>
@@ -107,49 +108,14 @@ void PolarTransformControllerComponent::deserialize(std::shared_ptr<json::JsonNo
 {
     Component::deserialize(jsonData, {}, engine);
 
-    if (!jsonData || !jsonData->isObject())
-        return;
-
-    json::JsonObject& obj = jsonData->objectValue();
-
-    if (obj.count("azimuth"))
-    {
-        setAzimuth(obj["azimuth"]->numberValue(_azimuth));
-    }
-
-    if (obj.count("elevation"))
-    {
-        setElevation(obj["elevation"]->numberValue(_elevation));
-    }
-
-    if (obj.count("distance"))
-    {
-        setDistance(obj["distance"]->numberValue(_distance));
-    }
-
-    if (obj.count("target"))
-    {
-        auto targetNode = obj["target"];
-        if (targetNode && targetNode->isVec3())
-        {
-            _target = targetNode->glmVec3Value();
-        }
-    }
-
-    if (obj.count("eulerX"))
-    {
-        _eulerX = obj["eulerX"]->numberValue(_eulerX);
-    }
-
-    if (obj.count("eulerY"))
-    {
-        _eulerY = obj["eulerY"]->numberValue(_eulerY);
-    }
-
-    if (obj.count("eulerZ"))
-    {
-        _eulerZ = obj["eulerZ"]->numberValue(_eulerZ);
-    }
+    json::ObjectReader reader(jsonData);
+    if (auto value = reader.getNumber("azimuth")) setAzimuth(*value);
+    if (auto value = reader.getNumber("elevation")) setElevation(*value);
+    if (auto value = reader.getNumber("distance")) setDistance(*value);
+    if (auto value = reader.getGlmVec3("target")) _target = *value;
+    if (auto value = reader.getNumber("eulerX")) _eulerX = *value;
+    if (auto value = reader.getNumber("eulerY")) _eulerY = *value;
+    if (auto value = reader.getNumber("eulerZ")) _eulerZ = *value;
 }
 
 std::shared_ptr<json::JsonNode> PolarTransformControllerComponent::serialize(const std::filesystem::path& basePath)

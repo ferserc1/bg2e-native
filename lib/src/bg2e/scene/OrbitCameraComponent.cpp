@@ -17,6 +17,7 @@
  */
 
 #include <bg2e/scene/OrbitCameraComponent.hpp>
+#include <bg2e/json/NodeReader.hpp>
 #include <bg2e/scene/ComponentFactoryRegistry.hpp>
 #include <bg2e/scene/Node.hpp>
 #include <bg2e/app/Mouse.hpp>
@@ -35,147 +36,38 @@ std::shared_ptr<Component> OrbitCameraComponent::clone() const
 
 void OrbitCameraComponent::deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path&, [[maybe_unused]] render::Engine& engine)
 {
-    if (!jsonData || !jsonData->isObject())
-    {
-        return;
-    }
+    json::ObjectReader reader(jsonData);
+    if (!reader.isValid()) return;
 
-    auto& obj = jsonData->objectValue();
+    auto readButtons = [](const json::ObjectReader& source, auto& buttons) {
+        buttons.left = source.getBool("left").value_or(false);
+        buttons.middle = source.getBool("middle").value_or(false);
+        buttons.right = source.getBool("right").value_or(false);
+    };
 
-    // Deserialize rotate buttons
-    if (obj.count("rotateButtons") && obj["rotateButtons"]->isObject())
-    {
-        auto& btn = obj["rotateButtons"]->objectValue();
-        _rotationButtons.left = btn.count("left") ? btn["left"]->boolValue() : false;
-        _rotationButtons.middle = btn.count("middle") ? btn["middle"]->boolValue() : false;
-        _rotationButtons.right = btn.count("right") ? btn["right"]->boolValue() : false;
-    }
+    if (auto buttons = reader.getObject("rotateButtons")) readButtons(*buttons, _rotationButtons);
+    if (auto buttons = reader.getObject("panButtons")) readButtons(*buttons, _panButtons);
+    else if (auto legacy = reader.getObject("panButtonsButtons")) readButtons(*legacy, _panButtons);
+    if (auto buttons = reader.getObject("zoomButtons")) readButtons(*buttons, _zoomButtons);
 
-    // Deserialize pan buttons (note: serialized as "panButtonsButtons" in some versions)
-    if (obj.count("panButtons") && obj["panButtons"]->isObject())
-    {
-        auto& btn = obj["panButtons"]->objectValue();
-        _panButtons.left = btn.count("left") ? btn["left"]->boolValue() : false;
-        _panButtons.middle = btn.count("middle") ? btn["middle"]->boolValue() : false;
-        _panButtons.right = btn.count("right") ? btn["right"]->boolValue() : false;
-    }
-    else if (obj.count("panButtonsButtons") && obj["panButtonsButtons"]->isObject())
-    {
-        auto& btn = obj["panButtonsButtons"]->objectValue();
-        _panButtons.left = btn.count("left") ? btn["left"]->boolValue() : false;
-        _panButtons.middle = btn.count("middle") ? btn["middle"]->boolValue() : false;
-        _panButtons.right = btn.count("right") ? btn["right"]->boolValue() : false;
-    }
-
-    // Deserialize zoom buttons
-    if (obj.count("zoomButtons") && obj["zoomButtons"]->isObject())
-    {
-        auto& btn = obj["zoomButtons"]->objectValue();
-        _zoomButtons.left = btn.count("left") ? btn["left"]->boolValue() : false;
-        _zoomButtons.middle = btn.count("middle") ? btn["middle"]->boolValue() : false;
-        _zoomButtons.right = btn.count("right") ? btn["right"]->boolValue() : false;
-    }
-
-    // Deserialize rotation
-    if (obj.count("rotation") && obj["rotation"]->isVec2())
-    {
-        _rotation = obj["rotation"]->glmVec2Value();
-    }
-
-    // Deserialize distance
-    if (obj.count("distance"))
-    {
-        _distance = obj["distance"]->numberValue(_distance);
-    }
-
-    // Deserialize center
-    if (obj.count("center") && obj["center"]->isVec3())
-    {
-        _center = obj["center"]->glmVec3Value();
-    }
-
-    // Deserialize rotation speed
-    if (obj.count("rotationSpeed"))
-    {
-        _rotationSpeed = obj["rotationSpeed"]->numberValue(_rotationSpeed);
-    }
-
-    // Deserialize wheel speed
-    if (obj.count("wheelSpeed"))
-    {
-        _wheelSpeed = obj["wheelSpeed"]->numberValue(_wheelSpeed);
-    }
-
-    // Deserialize min focus
-    if (obj.count("minFocus"))
-    {
-        _minFocus = obj["minFocus"]->numberValue(_minFocus);
-    }
-
-    // Deserialize pitch limits
-    if (obj.count("minPitch"))
-    {
-        _minPitch = obj["minPitch"]->numberValue(_minPitch);
-    }
-
-    if (obj.count("maxPitch"))
-    {
-        _maxPitch = obj["maxPitch"]->numberValue(_maxPitch);
-    }
-
-    // Deserialize distance limits
-    if (obj.count("minDistance"))
-    {
-        _minDistance = obj["minDistance"]->numberValue(_minDistance);
-    }
-
-    if (obj.count("maxDistance"))
-    {
-        _maxDistance = obj["maxDistance"]->numberValue(_maxDistance);
-    }
-
-    // Deserialize bounds
-    if (obj.count("maxX"))
-    {
-        _maxX = obj["maxX"]->numberValue(_maxX);
-    }
-
-    if (obj.count("minX"))
-    {
-        _minX = obj["minX"]->numberValue(_minX);
-    }
-
-    if (obj.count("maxY"))
-    {
-        _maxY = obj["maxY"]->numberValue(_maxY);
-    }
-
-    if (obj.count("minY"))
-    {
-        _minY = obj["minY"]->numberValue(_minY);
-    }
-
-    if (obj.count("maxZ"))
-    {
-        _maxZ = obj["maxZ"]->numberValue(_maxZ);
-    }
-
-    if (obj.count("minZ"))
-    {
-        _minZ = obj["minZ"]->numberValue(_minZ);
-    }
-
-    // Deserialize displacement speed
-    if (obj.count("displacementSpeed"))
-    {
-        _displacementSpeed = obj["displacementSpeed"]->numberValue(_displacementSpeed);
-    }
-
-    // Deserialize enabled
-    if (obj.count("enabled"))
-    {
-        _enabled = obj["enabled"]->boolValue(_enabled);
-    }
+    if (auto value = reader.getGlmVec2("rotation")) _rotation = *value;
+    if (auto value = reader.getGlmVec3("center")) _center = *value;
+    if (auto value = reader.getNumber("distance")) _distance = *value;
+    if (auto value = reader.getNumber("rotationSpeed")) _rotationSpeed = *value;
+    if (auto value = reader.getNumber("wheelSpeed")) _wheelSpeed = *value;
+    if (auto value = reader.getNumber("minFocus")) _minFocus = *value;
+    if (auto value = reader.getNumber("minPitch")) _minPitch = *value;
+    if (auto value = reader.getNumber("maxPitch")) _maxPitch = *value;
+    if (auto value = reader.getNumber("minDistance")) _minDistance = *value;
+    if (auto value = reader.getNumber("maxDistance")) _maxDistance = *value;
+    if (auto value = reader.getNumber("maxX")) _maxX = *value;
+    if (auto value = reader.getNumber("minX")) _minX = *value;
+    if (auto value = reader.getNumber("maxY")) _maxY = *value;
+    if (auto value = reader.getNumber("minY")) _minY = *value;
+    if (auto value = reader.getNumber("maxZ")) _maxZ = *value;
+    if (auto value = reader.getNumber("minZ")) _minZ = *value;
+    if (auto value = reader.getNumber("displacementSpeed")) _displacementSpeed = *value;
+    if (auto value = reader.getBool("enabled")) _enabled = *value;
 }
 
 std::shared_ptr<json::JsonNode> OrbitCameraComponent::serialize(const std::filesystem::path& basePath)

@@ -17,6 +17,7 @@
  */
 
 #include <bg2e/scene/Node.hpp>
+#include <bg2e/json/NodeReader.hpp>
 #include <bg2e/scene/ComponentFactoryRegistry.hpp>
 #include <bg2e/utils/utils.hpp>
 #include <bg2e/scene/TransformVisitor.hpp>
@@ -254,18 +255,11 @@ Node * Node::sceneRoot()
 
 void Node::deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path& basePath, render::Engine& engine, SceneLoadProgress* progress)
 {
-    if (!jsonData || !jsonData->isObject())
-    {
-        return;
-    }
-
-    auto& obj = jsonData->objectValue();
+    json::ObjectReader reader(jsonData);
+    if (!reader.isValid()) return;
 
     // Read basic node properties
-    if (obj.count("name"))
-    {
-        _name = obj["name"]->stringValue();
-    }
+    if (auto name = reader.getString("name")) _name = *name;
 
     // Fire callback before the heavy component/child work
     if (progress && progress->callback)
@@ -274,23 +268,21 @@ void Node::deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::file
     }
     if (progress) { ++progress->loaded; }
 
-    if (obj.count("enabled"))
-    {
-        _disabled = !obj["enabled"]->boolValue();
-    }
-
-    if (obj.count("steady"))
-    {
-        _steady = obj["steady"]->boolValue();
-    }
+    if (auto enabled = reader.getBool("enabled")) _disabled = !*enabled;
+    if (auto steady = reader.getBool("steady")) _steady = *steady;
 
     // Deserialize components
-    if (obj.count("components") && obj["components"]->isList())
+    if (auto components = reader.getArray("components"))
     {
-        auto& componentsList = obj["components"]->listValue();
-        for (auto& compData : componentsList)
+        for (std::size_t i = 0; i < components->size(); ++i)
         {
-            auto* comp = ComponentFactoryRegistry::get().create(compData, basePath, engine, progress);
+            auto compData = components->getObject(i);
+            if (!compData)
+            {
+                bg2e_log_warning << "Skipping invalid component at index " << i << " in node " << _name << bg2e_log_end;
+                continue;
+            }
+            auto* comp = ComponentFactoryRegistry::get().create(compData->node(), basePath, engine, progress);
             if (comp)
             {
                 addComponent(comp);
@@ -299,13 +291,18 @@ void Node::deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::file
     }
 
     // Deserialize children recursively
-    if (obj.count("children") && obj["children"]->isList())
+    if (auto children = reader.getArray("children"))
     {
-        auto& childrenList = obj["children"]->listValue();
-        for (auto& childData : childrenList)
+        for (std::size_t i = 0; i < children->size(); ++i)
         {
+            auto childData = children->getObject(i);
+            if (!childData)
+            {
+                bg2e_log_warning << "Skipping invalid child at index " << i << " in node " << _name << bg2e_log_end;
+                continue;
+            }
             auto childNode = std::make_shared<Node>();
-            childNode->deserialize(childData, basePath, engine, progress);
+            childNode->deserialize(childData->node(), basePath, engine, progress);
             addChild(childNode);
         }
     }

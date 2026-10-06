@@ -20,6 +20,7 @@
 
 #include <bg2e/base/Color.hpp>
 #include <bg2e/json/JsonNode.hpp>
+#include <bg2e/json/NodeReader.hpp>
 
 #include <memory>
 
@@ -83,57 +84,24 @@ public:
 
     void deserialize(std::shared_ptr<json::JsonNode> jsonData)
     {
-        if (!jsonData || !jsonData->isObject())
-            return;
+        json::ObjectReader reader(jsonData);
+        if (!reader.isValid()) return;
 
-        auto& obj = jsonData->objectValue();
-
-        if (obj.count("color"))
+        if (auto color = reader.getColor("color")) _color = *color;
+        if (auto intensity = reader.getNumber("intensity")) _intensity = *intensity;
+        if (auto type = reader.getString("type"))
         {
-            auto colorNode = obj["color"];
-            if (colorNode && colorNode->isVec4())
-            {
-                _color = colorNode->colorValue();
-            }
-        }
-        if (obj.count("intensity"))
-        {
-            _intensity = obj["intensity"]->numberValue(_intensity);
-        }
-        if (obj.count("type"))
-        {
-            std::string typeStr = obj["type"]->stringValue("");
-            if (typeStr == "kTypePoint") _type = TypeOmni;
-            else if (typeStr == "kTypeSpot") _type = TypeSpot;
-            else if (typeStr == "kTypeDirectional") _type = TypeDirectional;
+            if (*type == "kTypePoint") _type = TypeOmni;
+            else if (*type == "kTypeSpot") _type = TypeSpot;
+            else if (*type == "kTypeDirectional") _type = TypeDirectional;
             else _type = TypeDisabled;
         }
-        if (obj.count("spotAngle"))
-        {
-            _spotAngle = obj["spotAngle"]->numberValue(_spotAngle);
-        }
-        if (obj.count("spotCutoff"))
-        {
-            _spotCutoff = obj["spotCutoff"]->numberValue(_spotCutoff);
-        }
-        if (obj.count("castShadows"))
-        {
-            _castShadows = obj["castShadows"]->boolValue(_castShadows);
-        }
-        if (obj.count("sourceSize"))
-        {
-            _sourceSize = obj["sourceSize"]->numberValue(_sourceSize);
-        }
-        if (obj.count("shadowSamples"))
-        {
-            _shadowSamples = static_cast<uint32_t>(
-                obj["shadowSamples"]->numberValue(static_cast<int>(_shadowSamples))
-            );
-        }
-        if (obj.count("affectsReflections"))
-        {
-            _affectsReflections = obj["affectsReflections"]->boolValue(_affectsReflections);
-        }
+        if (auto value = reader.getNumber("spotAngle")) _spotAngle = *value;
+        if (auto value = reader.getNumber("spotCutoff")) _spotCutoff = *value;
+        if (auto value = reader.getBool("castShadows")) _castShadows = *value;
+        if (auto value = reader.getNumber("sourceSize")) _sourceSize = *value;
+        if (auto value = reader.getInteger<uint32_t>("shadowSamples")) _shadowSamples = *value;
+        if (auto value = reader.getBool("affectsReflections")) _affectsReflections = *value;
     }
     
     std::shared_ptr<json::JsonNode> serialize()

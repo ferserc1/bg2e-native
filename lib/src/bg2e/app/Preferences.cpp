@@ -20,6 +20,7 @@
 #include <bg2e/app/MainLoop.hpp>
 #include <bg2e/base/PlatformTools.hpp>
 #include <bg2e/json/JsonParser.hpp>
+#include <bg2e/json/NodeReader.hpp>
 
 #include <fstream>
 
@@ -73,7 +74,7 @@ void Preferences::load()
         }
     }
     
-    if (!_root.get())
+    if (!json::ObjectReader(_root).isValid())
     {
         _root = json::JSON(json::JsonObject{});
     }
@@ -102,164 +103,90 @@ void Preferences::save() const
 
 
 template <typename T>
-T Preferences::get(const std::string & key, const T& defaultValue) const
+T Preferences::get(const std::string& key, const T& defaultValue) const
 {
-    auto & prefs = _root->objectValue();
-    if (prefs[key].get() && prefs[key]->isNumber())
+    json::ObjectReader reader(_root);
+    if constexpr (std::is_integral_v<T>)
+        return reader.getInteger<T>(key).value_or(defaultValue);
+    else
     {
-        return prefs[key]->numberValue(static_cast<T>(defaultValue));
+        auto value = reader.getNumber(key);
+        return value ? static_cast<T>(*value) : defaultValue;
     }
-    prefs.erase(key);
-    return defaultValue;
 }
 
-const std::string& Preferences::get(const std::string& key, std::string&& defaultValue) const
+std::string Preferences::get(const std::string& key, std::string&& defaultValue) const
 {
-    auto & prefs = _root->objectValue();
-    if (prefs[key].get() && prefs[key]->isString())
-    {
-        return prefs[key]->stringValue(defaultValue);
-    }
-    prefs.erase(key);
-    return defaultValue;
+    return json::ObjectReader(_root).getString(key).value_or(std::move(defaultValue));
 }
 
 template <>
-std::string Preferences::get<std::string>(const std::string & key, const std::string & defaultValue) const
+std::string Preferences::get<std::string>(const std::string& key, const std::string& defaultValue) const
 {
-    auto & prefs = _root->objectValue();
-    if (prefs[key].get() && prefs[key]->isString())
-    {
-        return prefs[key]->stringValue(defaultValue);
-    }
-    prefs.erase(key);
-    return defaultValue;
+    return json::ObjectReader(_root).getString(key).value_or(defaultValue);
 }
 
 template <>
-bool Preferences::get<bool>(const std::string & key, const bool& defaultValue) const
+bool Preferences::get<bool>(const std::string& key, const bool& defaultValue) const
 {
-    auto & prefs = _root->objectValue();
-    if (prefs[key].get() && prefs[key]->isBool())
-    {
-        return prefs[key]->boolValue(defaultValue);
-    }
-    prefs.erase(key);
-    return defaultValue;
+    return json::ObjectReader(_root).getBool(key).value_or(defaultValue);
 }
 
 template <>
-std::array<float, 2> Preferences::get<std::array<float, 2>>(const std::string & key, const std::array<float, 2>& defaultValue) const
+std::array<float, 2> Preferences::get<std::array<float, 2>>(const std::string& key, const std::array<float, 2>& defaultValue) const
 {
-    auto & prefs = _root->objectValue();
-    if (prefs[key].get() && prefs[key]->isVec2())
-    {
-        return prefs[key]->vec2Value(defaultValue);
-    }
-    prefs.erase(key);
-    return defaultValue;
+    return json::ObjectReader(_root).getVec2(key).value_or(defaultValue);
 }
 
 template <>
-std::array<float, 3> Preferences::get<std::array<float, 3>>(const std::string & key, const std::array<float, 3> & defaultValue) const
+std::array<float, 3> Preferences::get<std::array<float, 3>>(const std::string& key, const std::array<float, 3>& defaultValue) const
 {
-    auto & prefs = _root->objectValue();
-    if (prefs[key].get() && prefs[key]->isVec3())
-    {
-        return prefs[key]->vec3Value(defaultValue);
-    }
-    prefs.erase(key);
-    return defaultValue;
+    return json::ObjectReader(_root).getVec3(key).value_or(defaultValue);
 }
 
 template <>
-std::array<float, 4> Preferences::get<std::array<float, 4>>(const std::string & key, const std::array<float, 4> & defaultValue) const
+std::array<float, 4> Preferences::get<std::array<float, 4>>(const std::string& key, const std::array<float, 4>& defaultValue) const
 {
-    auto & prefs = _root->objectValue();
-    if (prefs[key].get() && prefs[key]->isVec4())
-    {
-        return prefs[key]->vec4Value(defaultValue);
-    }
-    prefs.erase(key);
-    return defaultValue;
+    return json::ObjectReader(_root).getVec4(key).value_or(defaultValue);
 }
 
 template <>
-base::Color Preferences::get<base::Color>(const std::string & key, const base::Color& defaultValue) const
+base::Color Preferences::get<base::Color>(const std::string& key, const base::Color& defaultValue) const
 {
-    auto & prefs = _root->objectValue();
-    if (prefs[key].get() && prefs[key]->isColor())
-    {
-        return prefs[key]->colorValue(defaultValue);
-    }
-    prefs.erase(key);
-    return defaultValue;
+    return json::ObjectReader(_root).getColor(key).value_or(defaultValue);
 }
 
 template <>
-std::array<float, 16> Preferences::get<std::array<float, 16>>(const std::string & key, const std::array<float, 16>& defaultValue) const
+std::array<float, 16> Preferences::get<std::array<float, 16>>(const std::string& key, const std::array<float, 16>& defaultValue) const
 {
-    auto & prefs = _root->objectValue();
-    if (prefs[key].get() && prefs[key]->isMat4())
-    {
-        return prefs[key]->mat4Value(defaultValue);
-    }
-    prefs.erase(key);
-    return defaultValue;
+    return json::ObjectReader(_root).getMat4(key).value_or(defaultValue);
 }
 
 template <>
-glm::vec2 Preferences::get<glm::vec2>(const std::string & key, const glm::vec2& defaultValue) const
+glm::vec2 Preferences::get<glm::vec2>(const std::string& key, const glm::vec2& defaultValue) const
 {
-    auto & prefs = _root->objectValue();
-    if (prefs[key].get() && prefs[key]->isVec2())
-    {
-        return prefs[key]->glmVec2Value(defaultValue);
-    }
-    prefs.erase(key);
-    return defaultValue;
+    return json::ObjectReader(_root).getGlmVec2(key).value_or(defaultValue);
 }
 
 template <>
-glm::vec3 Preferences::get<glm::vec3>(const std::string & key, const glm::vec3 & defaultValue) const
+glm::vec3 Preferences::get<glm::vec3>(const std::string& key, const glm::vec3& defaultValue) const
 {
-    auto & prefs = _root->objectValue();
-    if (prefs[key].get() && prefs[key]->isVec3())
-    {
-        return prefs[key]->glmVec3Value(defaultValue);
-    }
-    prefs.erase(key);
-    return defaultValue;
+    return json::ObjectReader(_root).getGlmVec3(key).value_or(defaultValue);
 }
 
 template <>
-glm::vec4 Preferences::get<glm::vec4>(const std::string & key, const glm::vec4 & defaultValue) const
+glm::vec4 Preferences::get<glm::vec4>(const std::string& key, const glm::vec4& defaultValue) const
 {
-    auto & prefs = _root->objectValue();
-    if (prefs[key].get() && prefs[key]->isVec4())
-    {
-        return prefs[key]->glmVec4Value(defaultValue);
-    }
-    prefs.erase(key);
-    return defaultValue;
+    return json::ObjectReader(_root).getGlmVec4(key).value_or(defaultValue);
 }
 
 template <>
-glm::mat4 Preferences::get<glm::mat4>(const std::string & key, const glm::mat4 & defaultValue) const
+glm::mat4 Preferences::get<glm::mat4>(const std::string& key, const glm::mat4& defaultValue) const
 {
-    auto & prefs = _root->objectValue();
-    if (prefs[key].get() && prefs[key]->isMat4())
-    {
-        return prefs[key]->glmMat4Value(defaultValue);
-    }
-    prefs.erase(key);
-    return defaultValue;
+    return json::ObjectReader(_root).getGlmMat4(key).value_or(defaultValue);
 }
 
 
-
-
-    
 // Setters
 template <typename T>
 void Preferences::set(const std::string& key, const T& value)
