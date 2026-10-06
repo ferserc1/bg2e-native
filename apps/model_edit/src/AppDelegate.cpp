@@ -17,6 +17,8 @@
  */
 #include "AppDelegate.hpp"
 
+#include <bg2e/db/image.hpp>
+
 void AppDelegate::init(bg2e::render::Engine * engine)
 {
     bg2e::render::DefaultRenderLoopDelegate<bg2e::render::RendererDeferred>::init(engine);
@@ -30,6 +32,142 @@ void AppDelegate::swapchainResized(VkExtent2D extent)
     _workspace.resize(uiWidth(), uiHeight());
 }
 
+void AppDelegate::update(
+    uint32_t currentFrame,
+    bg2e::render::vulkan::FrameResources& frameResources
+)
+{
+    DefaultRenderLoopDelegate::update(currentFrame, frameResources);
+
+    if (_bakeState == LightmapBakeState::Readback && _bakeBaker)
+    {
+        try
+        {
+            finishLightmapBake();
+        }
+        catch (const std::logic_error&)
+        {
+            // The recorded frame has not advanced yet; retry on the next update.
+        }
+        catch (const std::exception& error)
+        {
+            _bakeError = error.what();
+            cancelLightmapBake();
+        }
+    }
+}
+
+VkImageLayout AppDelegate::render(
+    VkCommandBuffer cmd,
+    uint32_t currentFrame,
+    const bg2e::render::vulkan::Image* colorImage,
+    const bg2e::render::vulkan::Image* depthImage,
+    const bg2e::render::vulkan::Image* msaaDepthImage,
+    bg2e::render::vulkan::FrameResources& frameResources
+)
+{
+    auto layout = DefaultRenderLoopDelegate::render(
+        cmd, currentFrame, colorImage, depthImage, msaaDepthImage, frameResources);
+
+    if (_bakeState == LightmapBakeState::Baking && _bakeBaker)
+    {
+        try
+        {
+            _bakeContext->prepareFrame(cmd, frameResources);
+            _bakeBaker->update(cmd, frameResources);
+            if (_bakeBaker->completedFrames() >= _bakeBaker->settings().accumulationFrames)
+            {
+                _bakeState = LightmapBakeState::Readback;
+            }
+        }
+        catch (const std::exception& error)
+        {
+            _bakeError = error.what();
+            cancelLightmapBake();
+        }
+    }
+    return layout;
+}
+
+void AppDelegate::requestLightmapBake(const bg2e::render::LightmapSettings& settings)
+{
+    if (lightmapBakeActive())
+    {
+        throw std::runtime_error("A lightmap bake is already in progress");
+    }
+    auto target = _stage->targetModelNode();
+    if (!target)
+    {
+        throw std::runtime_error("No active model to bake");
+    }
+
+    auto* root = renderer()->scene()->rootNode();
+    if (!_bakeContext || _bakeContext->rootNode() != root)
+    {
+        _bakeContext = std::make_shared<bg2e::render::IntegratedBakerContext>(_engine, root);
+        _bakeContext->setEnvironmentResources(renderer()->environmentResources());
+    }
+
+    bg2e::render::LightmapSettings bakeSettings = settings;
+    bakeSettings.mode = bg2e::render::LightmapMode::RTAO;
+    bakeSettings.rtShadows = false;
+    bakeSettings.cpuFormat = bg2e::render::LightmapPixelFormat::RGB8;
+    _bakeBaker = _bakeContext->createBaker(target, bakeSettings);
+    _bakeTarget = target;
+    _bakeError.clear();
+    _bakeTempPath = std::filesystem::temp_directory_path() /
+        ("bg2e_model_edit_lightmap_" + std::to_string(++_bakeCounter) + ".png");
+    _bakeState = LightmapBakeState::Baking;
+}
+
+void AppDelegate::cancelLightmapBake()
+{
+    _bakeState = LightmapBakeState::Idle;
+    // Baker and context release their GPU resources through the engine's
+    // deferred cleanup, so submitted frames never lose them in flight.
+    _bakeBaker.reset();
+    _bakeContext.reset();
+    _bakeTarget.reset();
+}
+
+uint32_t AppDelegate::lightmapBakeCompletedFrames() const
+{
+    return _bakeBaker ? _bakeBaker->completedFrames() : 0;
+}
+
+uint32_t AppDelegate::lightmapBakeTotalFrames() const
+{
+    return _bakeBaker ? _bakeBaker->settings().accumulationFrames : 0;
+}
+
+void AppDelegate::finishLightmapBake()
+{
+    auto pixels = _bakeBaker->readPixels();
+    const auto& rgb = std::get<std::vector<uint8_t>>(pixels.rgb);
+    bg2e::db::saveImage(_bakeTempPath, rgb.data(), pixels.width, pixels.height, 3);
+
+    auto drawable = _stage->targetDrawable();
+    if (drawable)
+    {
+        auto texture = std::make_shared<bg2e::base::Texture>(_bakeTempPath);
+        for (uint32_t submesh = 0; submesh < drawable->submeshesCount(); ++submesh)
+        {
+            drawable->material(submesh).setAoTexture(texture);
+            drawable->material(submesh).setAoUVSet(1);
+            drawable->material(submesh).setAoScale(glm::vec2{ 1.0f, 1.0f });
+            auto renderMaterial = drawable->renderMaterial(submesh);
+            renderMaterial->setMaterialAttributes(drawable->material(submesh));
+            renderMaterial->updateTextures();
+        }
+        _stage->document()->setUnsavedChanges(true);
+    }
+
+    _lastLightmapPath = _bakeTempPath;
+    _bakeState = LightmapBakeState::Idle;
+    _bakeBaker.reset();
+    _bakeTarget.reset();
+}
+
 void AppDelegate::drawUI()
 {
     _workspace.draw();
@@ -40,6 +178,10 @@ void AppDelegate::drawUI()
     if (_renderSettingsWindow.isOpen())
     {
         _renderSettingsWindow.draw();
+    }
+    if (_lightmapWindow.isOpen())
+    {
+        _lightmapWindow.draw();
     }
 }
 
@@ -114,9 +256,11 @@ std::shared_ptr<bg2e::scene::Node> AppDelegate::createScene()
 
 void AppDelegate::cleanup()
 {
+    cancelLightmapBake();
     DefaultRenderLoopDelegate::cleanup();
     _stage.reset();
     _submeshPanel.cleanup();
+    _lightmapWindow.cleanup();
 }
 
 void AppDelegate::toggleSelectionHighlight()
@@ -165,6 +309,7 @@ void AppDelegate::initWorkspace()
     _renderSettingsWindow.init(renderer(), _renderPrefs.get());
     _toolBar.init(this, &_uiSettingsWindow, &_renderSettingsWindow);
     _submeshPanel.init(this);
+    _lightmapWindow.init(this);
 
     _fileStatus = std::make_shared<bg2e::ui::StatusItem>();
     _saveStatus = std::make_shared<bg2e::ui::StatusItem>();

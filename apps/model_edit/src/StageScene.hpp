@@ -74,6 +74,9 @@ public:
 
     inline bool isModelValid() const { return _targetNode.get() != nullptr; }
     std::shared_ptr<bg2e::scene::Drawable> targetDrawable();
+    // Node that directly owns the active model's DrawableComponent. It is the
+    // lightmap bake target; nullptr when no model is loaded.
+    std::shared_ptr<bg2e::scene::Node> targetModelNode() { return _targetModelNode; }
 
     void cleanup();
 

@@ -151,6 +151,7 @@ void StageScene::saveModel(const std::filesystem::path& path)
 
 void StageScene::close()
 {
+    _appDelegate->cancelLightmapBake();
     _appDelegate->selectionManager()->deselect();
     _targetDrawables.clear();
     _targetDrawable.reset();
@@ -381,7 +382,15 @@ void StageScene::restoreEnvironmentSettings(const std::filesystem::path& path)
                     auto floorGeo = bg2e::geo::createPlane(100.0f, 100.0f);
                     floorDrawable->setMesh(floorGeo);
                     floorDrawable->load(_engine);
+                    // Editor-only preview fixture: keep it out of bake TLASes.
+                    floorDrawable->setRayTracingEnabled(false);
                     _floorNode->addComponent(new bg2e::scene::DrawableComponent(floorDrawable));
+                }
+                else if (_floorNode && _floorNode->drawable())
+                {
+                    // A floor restored from an environment file is also an
+                    // editor-only fixture and must stay out of bake TLASes.
+                    _floorNode->drawable()->drawable()->setRayTracingEnabled(false);
                 }
 
                 if (_floorNode && _floorNode->transform())
@@ -518,6 +527,9 @@ std::shared_ptr<bg2e::scene::Node> StageScene::createFloorNode()
     auto drawable = std::make_shared<bg2e::scene::Drawable>();
     drawable->setMesh(floorGeo);
     drawable->load(_engine);
+    // The floor is an editor-only preview fixture: exclude it from every
+    // ray tracing scene so isolated model AO bakes never see it.
+    drawable->setRayTracingEnabled(false);
     auto dc = new bg2e::scene::DrawableComponent(drawable);
     _floorNode->addComponent(dc);
 

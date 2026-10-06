@@ -245,7 +245,20 @@ void ToolBar::init(
             _renderSettingsWindow->open();
         }
     }});
+    window.addMenuItem({ "Lightmap Baker", {
+        .handler = [&]()
+        {
+            _appDelegate->sceneLightmapWindow().open();
+        }
+    }});
     addMenuItem(window);
+
+    addButton({
+        .label = "Lightmaps",
+        .action = [&]() {
+            _appDelegate->sceneLightmapWindow().open();
+        }
+    });
 
     addButton({
         .label = "Submesh Editor",

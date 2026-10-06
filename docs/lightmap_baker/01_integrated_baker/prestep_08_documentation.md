@@ -1,13 +1,13 @@
 # Handoff for Document integrated baking
 
-Next implementation step: [step-08_documentation.md](step-08_documentation.md). Complete this file **after** finishing step 07; this template records no implementation results.
+Next implementation step: [step-08_documentation.md](step-08_documentation.md). Step 07 implementation is present, pending the project lead's build and runtime verification.
 
-- Changed files and relevant API decisions: TODO
-- Build command, platform and result: TODO
-- Runtime/fixture evidence: TODO
-- Remaining limitations or regressions: TODO
-- Resources, ownership and synchronization cautions for the next agent: TODO
-- Exact next action: Implement the scope in step-08_documentation.md.
+- Changed files and relevant API decisions: Added `apps/model_edit/src/ModelLightmapWindow.{hpp,cpp}` (RTAO-only, shadows off; resolution/frames/samples/max-distance; progress text; PNG result preview through `ui::TextureWidgets`) and `apps/bg2e_composer/src/SceneLightmapWindow.{hpp,cpp}` (multi-selectable Drawable-node list under the editable root, RTAO/RTGI combo, RT shadows, GI bounces disabled for RTAO). Both AppDelegates gained `requestLightmapBake`/`cancelLightmapBake`, a shared `IntegratedBakerContext` (created lazily, `setEnvironmentResources(renderer()->environmentResources())`), per-target `IntegratedLightmapBaker` jobs, and overridden `render()` (records `prepareFrame` once plus one `baker->update` per target after the normal scene draw) and `update()` (outside command recording, performs `readPixels()` once the engine frame has advanced, writes a unique PNG under `std::filesystem::temp_directory_path()`, then assigns one filesystem `base::Texture` as AO with `aoUVSet=1`, `aoScale={1,1}` on every submesh via `drawable->material(i)` + `renderMaterial(i)->setMaterialAttributes()` + `updateTextures()`, and marks the document dirty). model_edit: floor Drawable is `setRayTracingEnabled(false)` at stage setup and environment restore, `StageScene::close()` cancels the bake, new `StageScene::targetModelNode()` getter. Composer: the existing `onSceneSwap` callback also cancels the bake. Both ToolBars gained a "Lightmaps" button and a Window menu entry. No public engine API changed; no CMake edit was needed (apps glob their sources).
+- Build command, platform and result: Not run. AGENTS.md prohibits compilation unless the user explicitly requests it; step-07's compile gate needs the project lead's explicit authorization. `git diff --check` passed.
+- Runtime/fixture evidence: None for this step. The step-06 fixture verification confirmed by the project lead remains the last runtime evidence.
+- Remaining limitations or regressions: `readPixels()` blocks on device idle, so the readback update stalls one frame (synchronous pattern, no progress UI, per plan). A bake started and then invalidated by a target edit (modifier buttons) is not auto-reset; cancel and re-bake. The composer context is kept across bakes while the scene root is unchanged; it is released on scene swap and app cleanup.
+- Resources, ownership and synchronization cautions for the next agent: Baker updates are recorded in the render delegate after the renderer's own draw, never from UI callbacks. Readback only happens in `update()` and retries while the engine frame has not advanced (`std::logic_error`). Preview textures load from unique per-bake temp PNG paths to avoid TextureCache staleness. Bakers/context release GPU resources via the engine's deferred cleanup, so cancellation never frees in-flight resources.
+- Exact next action: Ask the project lead to compile both applications and exercise a bake in each, then implement the scope in step-08_documentation.md.
 
 ## Next-step instructions
 

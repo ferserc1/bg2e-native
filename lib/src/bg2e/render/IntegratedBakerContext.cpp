@@ -55,6 +55,10 @@ void IntegratedLightmapBaker::update(VkCommandBuffer cmd, vulkan::FrameResources
     {
         throw std::logic_error("IntegratedLightmapBaker::update: baker already updated for this frame");
     }
+    if (_completedFrames >= _settings.accumulationFrames)
+    {
+        throw std::logic_error("IntegratedLightmapBaker::update: accumulation is complete; reset before another update");
+    }
 
     if (!_targetNode || _targetNode->sceneRoot() != context->rootNode())
     {
@@ -132,6 +136,7 @@ void IntegratedLightmapBaker::update(VkCommandBuffer cmd, vulkan::FrameResources
         cmd, descriptorAllocator, uvSurface,
         aoImage(frameSlot), giImage(frameSlot), shadowImage(frameSlot),
         resultImage(frameSlot), _settings.mode, _settings.rtShadows);
+    recordAccumulation(cmd, descriptorAllocator, frameSlot);
     markResultImage(frameSlot);
     _lastUpdatedFrame = frameNumber;
     _hasUpdatedFrame = true;
@@ -190,6 +195,10 @@ IntegratedBakerContext::IntegratedBakerContext(Engine* engine, scene::Node* root
         });
         _bakeDescriptorAllocators[slot]->requirePoolSizeRatio(1, {
             { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 4 },
+            { VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1 }
+        });
+        _bakeDescriptorAllocators[slot]->requirePoolSizeRatio(1, {
+            { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 3 },
             { VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1 }
         });
     }

@@ -10,7 +10,7 @@ A batch can process multiple targets without rebuilding the TLAS per target, and
 
 ## Concrete deliverables
 
-- Add `StandaloneBakeBatch` to coordinate one assembled scene, one `StandaloneBakerContext::updateScene`, one baker per target and exactly N synchronous update calls per baker. The batch does not call `updateScene` inside its target loop.
+- Add `StandaloneBakeBatch` to coordinate one assembled scene, one `StandaloneBakerContext::updateScene`, one baker per target and exactly N synchronous update calls per baker. Each successful standalone submission advances the engine frame counter before CPU readback. The batch does not call `updateScene` inside its target loop.
 - Reuse the private usable-UV2 validator from integrated step 02. Phase 3 promotes it to `geo::UvAtlasValidator`; do not create a second validator. Do not use `texCoord1` field existence as a test because importers copy UV1 when UV2 is absent. Skip invalid targets with one warning each and continue; report the number baked and skipped.
 - Pass square resolution, mode, shadow switch, samples per pixel, GI bounces and maximum distance to `LightmapSettings`. Progress callback reports `targetIndex`, `targetCount`, `completedFrames`, `accumulationFrames`; callback cancellation stops before the next submit and cleans owned resources.
 - Validate scene inputs before the first TLAS update. A batch error must not leave half-written final files; defer writer commit to completed targets according to the output policy.

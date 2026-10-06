@@ -42,7 +42,7 @@ class StandaloneBakeSceneAssembler;
 `BakerContext` retains the engine pointer, scene root reference, shared pipelines,
 blue noise, scene lighting/material bindings and other reusable GPU state.
 `LightmapBaker` owns the target node reference, final image, per-target
-UV-space G-buffer, history/denoise images, sample count and CPU result. Contexts are
+UV-space G-buffer, history images, sample count and CPU result. Contexts are
 created as `shared_ptr`; a baker holds a `shared_ptr` to its context, so
 destroying the caller's context reference cannot leave a dangling baker.
 The `Engine` and target scene must still outlive all contexts and bakers.
@@ -116,7 +116,7 @@ auto baker = context->createBaker(targetNode, settings);
 context->prepareFrame(cmd, frameResources); // once for all bakers in this frame
 baker->update(cmd, frameResources);          // one full-resolution sample
 
-// Outside command recording, after the frame has been submitted:
+// Outside command recording, after the frame has been submitted and advanced:
 auto pixels = baker->readPixels();    // waits for its last submitted update
 auto image = baker->image();          // optional sampled/renderable image
 ```
@@ -182,34 +182,43 @@ Any draw hooks needed by a reused engine resource must be balanced; avoid
 calling camera-dependent rendering hooks without a camera. A rebuild increments
 a scene generation number and invalidates affected bake histories. Subsequent
 `StandaloneLightmapBaker::update()` calls submit work synchronously using the
-prepared generation; they do not update the scene or rebuild the TLAS.
+prepared generation; they do not update the scene or rebuild the TLAS. Each
+successful synchronous submission advances the engine frame counter so the
+shared `LightmapBaker::readPixels()` submission guard accepts the result.
 Changes to scene inputs require an explicit `updateScene` before further
 baking. The standalone context must work with `Engine::init()`, without a
 window or an application render loop.
 
 ### Sample count and result
 
-Each `update` records/submits exactly one accumulation iteration. A baker
+Each integrated `update` records one accumulation iteration for the application
+to submit; each standalone `update` submits one iteration. A baker
 starts at zero and becomes complete after exactly
 `settings.accumulationFrames` updates. Extra updates are rejected until
 `resetAccumulation()` is called. `readPixels()` returns the current
 accumulated result after GPU completion; `completedFrames()` reports progress.
-Changes to settings, target geometry, or scene generation reset history before
-the next sample. No temporal reprojection using a screen camera is allowed:
-history is indexed by stable UV2 texels and masked by valid surface identity.
+Settings are immutable for an existing baker. Callers reset history after
+target geometry or scene changes before starting a new sequence. No temporal
+reprojection using a screen camera is allowed:
+history is indexed by stable UV2 texels and masked by UV coverage. No island
+identifier, spatial denoising or padding fill is required by this plan;
+uncovered texels remain neutral white.
 All intermediate images use `resolution x resolution`. The implementation
 must attempt to use FSR NativeAA at that native resolution when the required
 UV-space depth/motion inputs can be supplied correctly. If they cannot, FSR
 NativeAA is unavailable to this baker and the fallback is native-resolution
-filtering. Record the capability decision and reason; no upscaling is
+per-texel accumulation. Record the capability decision and reason; no upscaling is
 permitted.
 
 GPU working values remain linear float. `RGB32F` CPU output preserves them;
 `RGB8` maps the final display lightmap to [0,1], clamps and rounds once at
 readback. No HDR file format is added here. The image returned by `image()`
 must have `COLOR_ATTACHMENT`, `STORAGE`, `SAMPLED` and
-`TRANSFER_SRC` usage where supported by the chosen format, with documented
-current layout and synchronization. A baker destructor releases its own
+`TRANSFER_SRC` usage where supported by the chosen format. After an update it
+is in `VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL`; consumers must wait for that
+frame's submission before using it. Integrated CPU readback is allowed after
+the engine advances beyond the recorded frame and waits for GPU completion.
+A baker destructor releases its own
 images/buffers/descriptors only after in-flight GPU use has finished or via
 the engine's deferred cleanup mechanism.
 

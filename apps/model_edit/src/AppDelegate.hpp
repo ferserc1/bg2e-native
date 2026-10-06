@@ -22,6 +22,7 @@
 #include "ToolBar.hpp"
 #include "EnvironmentSettings.hpp"
 #include "SubmeshWindow.hpp"
+#include "ModelLightmapWindow.hpp"
 #include "StageScene.hpp"
 #include <bg2e/ui/UISettingsWindow.hpp>
 #include <bg2e/render/RenderSettingsPreferences.hpp>
@@ -37,6 +38,18 @@ public:
     void init(bg2e::render::Engine * engine) override;
      
     void swapchainResized(VkExtent2D extent) override;
+
+    void update(uint32_t currentFrame,
+                bg2e::render::vulkan::FrameResources& frameResources) override;
+
+    VkImageLayout render(
+        VkCommandBuffer cmd,
+        uint32_t currentFrame,
+        const bg2e::render::vulkan::Image* colorImage,
+        const bg2e::render::vulkan::Image* depthImage,
+        const bg2e::render::vulkan::Image* msaaDepthImage,
+        bg2e::render::vulkan::FrameResources& frameResources
+    ) override;
 
 	void drawUI() override;
  
@@ -75,7 +88,16 @@ public:
     void toggleSelectionHighlight();
     void setSelectionHighlightMode(SelectionHighlightMode mode);
 
-
+    // Integrated lightmap baking (RTAO, no RT shadows) for the active model.
+    // Throws std::exception on validation errors (for example, invalid UV2).
+    void requestLightmapBake(const bg2e::render::LightmapSettings& settings);
+    void cancelLightmapBake();
+    [[nodiscard]] bool lightmapBakeActive() const { return _bakeState != LightmapBakeState::Idle; }
+    [[nodiscard]] uint32_t lightmapBakeCompletedFrames() const;
+    [[nodiscard]] uint32_t lightmapBakeTotalFrames() const;
+    [[nodiscard]] const std::filesystem::path& lastLightmapPath() const { return _lastLightmapPath; }
+    [[nodiscard]] const std::string& lightmapBakeError() const { return _bakeError; }
+    inline ModelLightmapWindow& lightmapWindow() { return _lightmapWindow; }
 
 protected:
     bg2e::scene::InputVisitor _inputVisitor;
@@ -86,6 +108,7 @@ protected:
     EnvironmentSettings _environmentPanel {};
     bg2e::ui::UISettingsWindow _uiSettingsWindow {};
     bg2e::ui::RenderSettingsWindow _renderSettingsWindow {};
+    ModelLightmapWindow _lightmapWindow {};
     std::unique_ptr<bg2e::render::RenderSettingsPreferences> _renderPrefs;
 
     std::shared_ptr<bg2e::ui::StatusItem> _fileStatus;
@@ -101,6 +124,18 @@ protected:
     uint32_t _mouseDownY = 0;
 
     SelectionHighlightMode _selectionHighlightMode = SelectionHard;
+
+    enum class LightmapBakeState { Idle, Baking, Readback };
+    LightmapBakeState _bakeState = LightmapBakeState::Idle;
+    std::shared_ptr<bg2e::render::IntegratedBakerContext> _bakeContext;
+    std::unique_ptr<bg2e::render::IntegratedLightmapBaker> _bakeBaker;
+    std::shared_ptr<bg2e::scene::Node> _bakeTarget;
+    std::filesystem::path _bakeTempPath;
+    std::filesystem::path _lastLightmapPath;
+    std::string _bakeError;
+    uint32_t _bakeCounter = 0;
+
+    void finishLightmapBake();
     
     void initWorkspace();
 

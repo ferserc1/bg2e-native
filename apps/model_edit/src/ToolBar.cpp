@@ -181,6 +181,12 @@ void ToolBar::init(AppDelegate * delegate, bg2e::ui::UISettingsWindow * uiSettin
             _renderSettingsWindow->open();
         }
     }});
+    window.addMenuItem({ "Lightmap Baker", {
+        .handler = [&]()
+        {
+            _appDelegate->lightmapWindow().open();
+        }
+    }});
     addMenuItem(window);
 
     addButton({
@@ -243,6 +249,13 @@ void ToolBar::init(AppDelegate * delegate, bg2e::ui::UISettingsWindow * uiSettin
         }
     });
     
+    addButton({
+        .label = "Lightmaps",
+        .action = [&]() {
+            _appDelegate->lightmapWindow().open();
+        }
+    });
+
     addButton({
         .label = "Submesh Editor",
         .action = [&]() {

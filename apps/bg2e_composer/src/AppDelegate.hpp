@@ -22,6 +22,7 @@
 #include "ToolBar.hpp"
 #include "SceneEditor.hpp"
 #include "SubmeshWindow.hpp"
+#include "SceneLightmapWindow.hpp"
 #include "StageScene.hpp"
 #include "ImportServer.hpp"
 #include "ImportSettings.hpp"
@@ -48,6 +49,15 @@ public:
 
     void update(uint32_t currentFrame,
                 bg2e::render::vulkan::FrameResources& frameResources) override;
+
+    VkImageLayout render(
+        VkCommandBuffer cmd,
+        uint32_t currentFrame,
+        const bg2e::render::vulkan::Image* colorImage,
+        const bg2e::render::vulkan::Image* depthImage,
+        const bg2e::render::vulkan::Image* msaaDepthImage,
+        bg2e::render::vulkan::FrameResources& frameResources
+    ) override;
 
     void asyncLoadGuarded(std::function<void(bg2e::ui::Loader*)> loadFn,
                           glm::vec4 clearColor,
@@ -96,6 +106,20 @@ public:
     void toggleSelectionHighlight();
     void setSelectionHighlightMode(SelectionHighlightMode mode);
 
+    // Integrated lightmap baking over a multi-target selection. All targets
+    // share one context; each gets its own baker and output image. Throws
+    // std::exception if no target is valid (for example, invalid UV2).
+    void requestLightmapBake(
+        const std::vector<std::shared_ptr<bg2e::scene::Node>>& targets,
+        const bg2e::render::LightmapSettings& settings);
+    void cancelLightmapBake();
+    [[nodiscard]] bool lightmapBakeActive() const { return !_bakeJobs.empty() || _bakeReadbackPending; }
+    // Recorded frames and total frames across all active targets.
+    [[nodiscard]] std::pair<uint32_t, uint32_t> lightmapBakeProgress() const;
+    [[nodiscard]] const std::filesystem::path& lastLightmapPath() const { return _lastLightmapPath; }
+    [[nodiscard]] const std::string& lightmapBakeError() const { return _bakeError; }
+    inline SceneLightmapWindow& sceneLightmapWindow() { return _sceneLightmapWindow; }
+
 protected:
     bg2e::scene::InputVisitor _inputVisitor;
     
@@ -106,6 +130,7 @@ protected:
     bg2e::ui::UISettingsWindow _uiSettingsWindow {};
     bg2e::ui::RenderSettingsWindow _renderSettingsWindow {};
     ImportSettingsWindow _importSettingsWindow {};
+    SceneLightmapWindow _sceneLightmapWindow {};
     std::unique_ptr<bg2e::render::RenderSettingsPreferences> _renderPrefs;
     ImportServer _importServer;
     ImportSettings _importSettings;
@@ -126,6 +151,21 @@ protected:
     uint32_t _mouseDownY = 0;
 
     SelectionHighlightMode _selectionHighlightMode = SelectionHard;
+
+    struct LightmapBakeJob {
+        std::shared_ptr<bg2e::scene::Node> node;
+        std::unique_ptr<bg2e::render::IntegratedLightmapBaker> baker;
+        std::filesystem::path tempPath;
+        bool recordingDone = false;
+    };
+    std::shared_ptr<bg2e::render::IntegratedBakerContext> _bakeContext;
+    std::vector<LightmapBakeJob> _bakeJobs;
+    bool _bakeReadbackPending = false;
+    std::filesystem::path _lastLightmapPath;
+    std::string _bakeError;
+    uint32_t _bakeCounter = 0;
+
+    void finishLightmapBakes();
     
     void initWorkspace();
 

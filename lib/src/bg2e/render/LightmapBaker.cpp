@@ -8,6 +8,7 @@
 #include <bg2e/scene/Mesh.hpp>
 #include <bg2e/scene/Node.hpp>
 #include "UvSurfacePass.hpp"
+#include "UvTemporalAccumulator.hpp"
 #include "UvAtlasValidation.hpp"
 
 #include <stdexcept>
@@ -28,6 +29,8 @@ LightmapBaker::LightmapBaker(std::shared_ptr<BakerContext> context,
 {
     validateTarget();
     _uvSurfacePass = std::make_shared<UvSurfacePass>(
+        _context->engine(), VkExtent2D{ _settings.resolution, _settings.resolution });
+    _accumulator = std::make_shared<UvTemporalAccumulator>(
         _context->engine(), VkExtent2D{ _settings.resolution, _settings.resolution });
     const uint32_t frameSlots = _context->engine()->numImages();
     _aoImages.resize(frameSlots);
@@ -94,17 +97,20 @@ LightmapBaker::~LightmapBaker()
         return;
     }
     auto pass = std::move(_uvSurfacePass);
+    auto accumulator = std::move(_accumulator);
     auto aoImages = std::move(_aoImages);
     auto giImages = std::move(_giImages);
     auto shadowImages = std::move(_shadowImages);
     auto resultImages = std::move(_resultImages);
     _context->engine()->deferredExec([
         pass = std::move(pass),
+        accumulator = std::move(accumulator),
         aoImages = std::move(aoImages),
         giImages = std::move(giImages),
         shadowImages = std::move(shadowImages),
         resultImages = std::move(resultImages)]() mutable {
         pass.reset();
+        accumulator.reset();
         aoImages.clear();
         giImages.clear();
         shadowImages.clear();
@@ -244,27 +250,50 @@ void LightmapBaker::markResultImage(uint32_t frameSlot)
     {
         throw std::out_of_range("LightmapBaker: result image frame slot is out of range");
     }
-    _resultFrameSlot = frameSlot;
+    _resultFrameNumber = _context->engine()->currentFrame();
     _hasResultImage = true;
+    ++_completedFrames;
+}
+
+void LightmapBaker::recordAccumulation(VkCommandBuffer cmd,
+                                       vulkan::DescriptorSetAllocator& descriptors,
+                                       uint32_t frameSlot)
+{
+    _accumulator->record(cmd, descriptors, resultImage(frameSlot),
+                         _uvSurfacePass->manager(frameSlot), _completedFrames);
 }
 
 void LightmapBaker::resetAccumulation()
 {
     _completedFrames = 0;
+    _hasResultImage = false;
+    _accumulator->reset();
 }
 
 LightmapPixels LightmapBaker::readPixels() const
 {
-    throw std::runtime_error("LightmapBaker: pass not implemented (CPU readback)");
+    if (!_hasResultImage)
+    {
+        throw std::logic_error("LightmapBaker: no bake result is available");
+    }
+    if (_context->engine()->currentFrame() == _resultFrameNumber)
+    {
+        throw std::logic_error("LightmapBaker: submit the last update before reading pixels");
+    }
+    // The result may have been written by any in-flight slot. Waiting for the
+    // device is conservative, but avoids assuming a particular frame fence or
+    // queuing a transfer ahead of the application's pending submission.
+    _context->engine()->device().waitIdle();
+    return _accumulator->readPixels(_settings.cpuFormat);
 }
 
 std::shared_ptr<vulkan::Image> LightmapBaker::image() const
 {
-    if (!_hasResultImage || _resultFrameSlot >= _resultImages.size())
+    if (!_hasResultImage)
     {
         throw std::logic_error("LightmapBaker: no bake result image is available yet");
     }
-    return _resultImages[_resultFrameSlot];
+    return _accumulator->image();
 }
 
 }

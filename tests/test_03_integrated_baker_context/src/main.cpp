@@ -271,7 +271,11 @@ std::vector<glm::vec4> readLightmapImage(
 {
     const VkExtent2D extent = image.extent2D();
     const VkDeviceSize pixelCount = static_cast<VkDeviceSize>(extent.width) * extent.height;
-    const VkDeviceSize byteCount = pixelCount * sizeof(uint16_t) * 4;
+    require(image.format() == VK_FORMAT_R16G16B16A16_SFLOAT ||
+            image.format() == VK_FORMAT_R32G32B32A32_SFLOAT,
+        "lightmap fixture received an unsupported float image format");
+    const bool fullFloat = image.format() == VK_FORMAT_R32G32B32A32_SFLOAT;
+    const VkDeviceSize byteCount = pixelCount * (fullFloat ? sizeof(float) : sizeof(uint16_t)) * 4;
     std::unique_ptr<bg2e::render::vulkan::Buffer> staging(
         bg2e::render::vulkan::Buffer::createAllocatedBuffer(
             &engine,
@@ -318,15 +322,27 @@ std::vector<glm::vec4> readLightmapImage(
     });
 
     VK_ASSERT(vmaInvalidateAllocation(engine.allocator(), staging->allocation(), 0, VK_WHOLE_SIZE));
-    const auto* halfPixels = static_cast<const uint16_t*>(staging->allocatedData());
     std::vector<glm::vec4> pixels(static_cast<size_t>(pixelCount));
-    for (size_t i = 0; i < pixels.size(); ++i)
+    if (fullFloat)
     {
-        pixels[i] = glm::vec4(
-            halfToFloat(halfPixels[i * 4 + 0]),
-            halfToFloat(halfPixels[i * 4 + 1]),
-            halfToFloat(halfPixels[i * 4 + 2]),
-            halfToFloat(halfPixels[i * 4 + 3]));
+        const auto* floatPixels = static_cast<const float*>(staging->allocatedData());
+        for (size_t i = 0; i < pixels.size(); ++i)
+        {
+            pixels[i] = glm::vec4(floatPixels[i * 4 + 0], floatPixels[i * 4 + 1],
+                                  floatPixels[i * 4 + 2], floatPixels[i * 4 + 3]);
+        }
+    }
+    else
+    {
+        const auto* halfPixels = static_cast<const uint16_t*>(staging->allocatedData());
+        for (size_t i = 0; i < pixels.size(); ++i)
+        {
+            pixels[i] = glm::vec4(
+                halfToFloat(halfPixels[i * 4 + 0]),
+                halfToFloat(halfPixels[i * 4 + 1]),
+                halfToFloat(halfPixels[i * 4 + 2]),
+                halfToFloat(halfPixels[i * 4 + 3]));
+        }
     }
     return pixels;
 }
@@ -580,6 +596,16 @@ int main()
             fixture.recordFrame(false);
             auto& firstFrame = engine.currentFrameResources();
             auto isolatedImage = baker->image();
+            require(baker->completedFrames() == 1, "first sample was not counted");
+            requireThrows([&]() { (void)baker->readPixels(); },
+                "CPU readback was accepted before the frame advanced");
+            VK_ASSERT(vkWaitForFences(engine.device().handle(), 1, &firstFrame.frameFence, VK_TRUE, UINT64_MAX));
+            const auto isolatedPixels = readLightmapImage(engine, *isolatedImage);
+            require(std::all_of(isolatedPixels.begin(), isolatedPixels.end(),
+                [](const glm::vec4& value) {
+                    return value.r > 0.995f && value.g > 0.995f && value.b > 0.995f;
+                }),
+                "isolated plane produced non-neutral RTAO values");
 
             auto overhangNode = std::make_shared<bg2e::scene::Node>("overhanging occluder");
             auto overhangDrawable = std::make_shared<bg2e::scene::Drawable>();
@@ -588,6 +614,7 @@ int main()
             overhangDrawable->renderMaterial(0)->materialAttributes().setAlbedo(bg2e::base::Color::Red());
             overhangNode->addComponent(std::make_shared<bg2e::scene::DrawableComponent>(overhangDrawable));
             root->addChild(overhangNode);
+            baker->resetAccumulation(); // Scene geometry changed between samples.
 
             bg2e::render::LightmapSettings rtaoWithShadows = settings;
             rtaoWithShadows.rtShadows = true;
@@ -596,6 +623,7 @@ int main()
             rtgi.mode = bg2e::render::LightmapMode::RTGI;
             rtgi.giBounces = 2;
             rtgi.samplesPerPixel = 8;
+            rtgi.cpuFormat = bg2e::render::LightmapPixelFormat::RGB32F;
             auto bakerRtgi = context->createBaker(target, rtgi);
             bg2e::render::LightmapSettings rtgiWithShadows = rtgi;
             rtgiWithShadows.rtShadows = true;
@@ -614,12 +642,6 @@ int main()
             auto rtgiShadowImage = bakerRtgiWithShadows->image();
             VK_ASSERT(vkWaitForFences(engine.device().handle(), 1, &firstFrame.frameFence, VK_TRUE, UINT64_MAX));
             VK_ASSERT(vkWaitForFences(engine.device().handle(), 1, &secondFrame.frameFence, VK_TRUE, UINT64_MAX));
-            const auto isolatedPixels = readLightmapImage(engine, *isolatedImage);
-            require(std::all_of(isolatedPixels.begin(), isolatedPixels.end(),
-                [](const glm::vec4& value) {
-                    return value.r > 0.995f && value.g > 0.995f && value.b > 0.995f;
-                }),
-                "isolated plane produced non-neutral RTAO values");
             const auto rtaoPixels = readLightmapImage(engine, *overhangImage);
             const glm::vec4 underOverhang = sampleAtUv(rtaoPixels, settings.resolution, 0.36f, 0.36f);
             const glm::vec4 awayFromOverhang = sampleAtUv(rtaoPixels, settings.resolution, 0.15f, 0.15f);
@@ -649,6 +671,18 @@ int main()
             // handle is recycled, so frame-number validation must reject stale
             // preparation before the new prepare call.
             engine.nextFrame();
+            const auto rtaoCpu = baker->readPixels();
+            require(rtaoCpu.width == settings.resolution && rtaoCpu.height == settings.resolution &&
+                    rtaoCpu.format == bg2e::render::LightmapPixelFormat::RGB8 &&
+                    std::get<std::vector<uint8_t>>(rtaoCpu.rgb).size() ==
+                        static_cast<size_t>(settings.resolution) * settings.resolution * 3,
+                "RGB8 CPU readback has the wrong dimensions or packing");
+            const auto rtgiCpu = bakerRtgi->readPixels();
+            require(rtgiCpu.format == bg2e::render::LightmapPixelFormat::RGB32F &&
+                    std::get<std::vector<float>>(rtgiCpu.rgb).size() ==
+                        static_cast<size_t>(settings.resolution) * settings.resolution * 3,
+                "RGB32F CPU readback has the wrong packing");
+            auto transientBaker = context->createBaker(target, settings);
             auto& recycledFrame = engine.currentFrameResources();
             VK_ASSERT(vkWaitForFences(engine.device().handle(), 1, &recycledFrame.frameFence, VK_TRUE, UINT64_MAX));
             VK_ASSERT(vkResetFences(engine.device().handle(), 1, &recycledFrame.frameFence));
@@ -661,6 +695,7 @@ int main()
                 "recycled command buffer accepted stale frame preparation");
             context->prepareFrame(recycledFrame.commandBuffer, recycledFrame);
             baker->update(recycledFrame.commandBuffer, recycledFrame);
+            transientBaker->update(recycledFrame.commandBuffer, recycledFrame);
             VK_ASSERT(vkEndCommandBuffer(recycledFrame.commandBuffer));
             VkCommandBufferSubmitInfo commandInfo{};
             commandInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO;
@@ -672,7 +707,10 @@ int main()
             VK_ASSERT(bg2e::render::vulkan::queueSubmit2(
                 engine.device().graphicsQueue(), 1, &submitInfo, recycledFrame.frameFence));
 
+            transientBaker.reset(); // Submitted resources must survive this destruction.
             VK_ASSERT(vkWaitForFences(engine.device().handle(), 1, &recycledFrame.frameFence, VK_TRUE, UINT64_MAX));
+            require(baker->completedFrames() == 2,
+                "UV accumulation did not count the second sample after reset");
         }
 
         environmentTexture.reset();

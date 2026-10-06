@@ -17,6 +17,10 @@
  */
 #include "AppDelegate.hpp"
 
+#include <bg2e/db/image.hpp>
+
+#include <algorithm>
+#include <cctype>
 #include <iomanip>
 #include <sstream>
 
@@ -47,6 +51,172 @@ void AppDelegate::update(
     {
         _sceneImporter->processQueue(_importServer);
     }
+
+    if (_bakeReadbackPending)
+    {
+        try
+        {
+            finishLightmapBakes();
+        }
+        catch (const std::logic_error&)
+        {
+            // The recorded frame has not advanced yet; retry on the next update.
+        }
+        catch (const std::exception& error)
+        {
+            _bakeError = error.what();
+            cancelLightmapBake();
+        }
+    }
+}
+
+VkImageLayout AppDelegate::render(
+    VkCommandBuffer cmd,
+    uint32_t currentFrame,
+    const bg2e::render::vulkan::Image* colorImage,
+    const bg2e::render::vulkan::Image* depthImage,
+    const bg2e::render::vulkan::Image* msaaDepthImage,
+    bg2e::render::vulkan::FrameResources& frameResources
+)
+{
+    auto layout = DefaultRenderLoopDelegate::render(
+        cmd, currentFrame, colorImage, depthImage, msaaDepthImage, frameResources);
+
+    if (!_bakeJobs.empty() && !_bakeReadbackPending)
+    {
+        try
+        {
+            _bakeContext->prepareFrame(cmd, frameResources);
+            bool allDone = true;
+            for (auto& job : _bakeJobs)
+            {
+                if (!job.recordingDone)
+                {
+                    job.baker->update(cmd, frameResources);
+                    job.recordingDone =
+                        job.baker->completedFrames() >= job.baker->settings().accumulationFrames;
+                }
+                allDone = allDone && job.recordingDone;
+            }
+            if (allDone)
+            {
+                _bakeReadbackPending = true;
+            }
+        }
+        catch (const std::exception& error)
+        {
+            _bakeError = error.what();
+            cancelLightmapBake();
+        }
+    }
+    return layout;
+}
+
+void AppDelegate::requestLightmapBake(
+    const std::vector<std::shared_ptr<bg2e::scene::Node>>& targets,
+    const bg2e::render::LightmapSettings& settings
+)
+{
+    if (lightmapBakeActive())
+    {
+        throw std::runtime_error("A lightmap bake is already in progress");
+    }
+    if (targets.empty())
+    {
+        throw std::runtime_error("No bake targets selected");
+    }
+
+    auto* root = renderer()->scene()->rootNode();
+    if (!_bakeContext || _bakeContext->rootNode() != root)
+    {
+        _bakeContext = std::make_shared<bg2e::render::IntegratedBakerContext>(_engine, root);
+        _bakeContext->setEnvironmentResources(renderer()->environmentResources());
+    }
+
+    std::ostringstream skipped;
+    std::vector<LightmapBakeJob> jobs;
+    for (const auto& target : targets)
+    {
+        try
+        {
+            LightmapBakeJob job;
+            job.node = target;
+            job.baker = _bakeContext->createBaker(target, settings);
+            auto name = target->name();
+            std::replace_if(name.begin(), name.end(),
+                [](char c) { return !std::isalnum(static_cast<unsigned char>(c)); }, '_');
+            job.tempPath = std::filesystem::temp_directory_path() /
+                ("bg2e_composer_lightmap_" + name + "_" + std::to_string(++_bakeCounter) + ".png");
+            jobs.push_back(std::move(job));
+        }
+        catch (const std::exception& error)
+        {
+            skipped << target->name() << ": " << error.what() << "\n";
+        }
+    }
+
+    if (jobs.empty())
+    {
+        throw std::runtime_error(
+            "No valid bake target. " + (skipped.str().empty() ? std::string() : skipped.str()));
+    }
+    _bakeError = skipped.str();
+    _bakeJobs = std::move(jobs);
+    _bakeReadbackPending = false;
+}
+
+void AppDelegate::cancelLightmapBake()
+{
+    _bakeReadbackPending = false;
+    // Baker and context release their GPU resources through the engine's
+    // deferred cleanup, so submitted frames never lose them in flight.
+    _bakeJobs.clear();
+    _bakeContext.reset();
+}
+
+std::pair<uint32_t, uint32_t> AppDelegate::lightmapBakeProgress() const
+{
+    uint32_t completed = 0;
+    uint32_t total = 0;
+    for (const auto& job : _bakeJobs)
+    {
+        completed += job.baker->completedFrames();
+        total += job.baker->settings().accumulationFrames;
+    }
+    return { completed, total };
+}
+
+void AppDelegate::finishLightmapBakes()
+{
+    for (auto& job : _bakeJobs)
+    {
+        auto pixels = job.baker->readPixels();
+        const auto& rgb = std::get<std::vector<uint8_t>>(pixels.rgb);
+        bg2e::db::saveImage(job.tempPath, rgb.data(), pixels.width, pixels.height, 3);
+
+        auto* drawableComponent = job.node->drawable();
+        auto drawable = drawableComponent
+            ? std::dynamic_pointer_cast<bg2e::scene::Drawable>(drawableComponent->drawable())
+            : nullptr;
+        if (drawable)
+        {
+            auto texture = std::make_shared<bg2e::base::Texture>(job.tempPath);
+            for (uint32_t submesh = 0; submesh < drawable->submeshesCount(); ++submesh)
+            {
+                drawable->material(submesh).setAoTexture(texture);
+                drawable->material(submesh).setAoUVSet(1);
+                drawable->material(submesh).setAoScale(glm::vec2{ 1.0f, 1.0f });
+                auto renderMaterial = drawable->renderMaterial(submesh);
+                renderMaterial->setMaterialAttributes(drawable->material(submesh));
+                renderMaterial->updateTextures();
+            }
+        }
+        _lastLightmapPath = job.tempPath;
+    }
+    _stage->document()->setUnsavedChanges(true);
+
+    _bakeReadbackPending = false;
+    _bakeJobs.clear();
 }
 
 void AppDelegate::asyncLoadGuarded(
@@ -82,6 +252,10 @@ void AppDelegate::drawUI()
     if (_importSettingsWindow.isOpen())
     {
         _importSettingsWindow.draw();
+    }
+    if (_sceneLightmapWindow.isOpen())
+    {
+        _sceneLightmapWindow.draw();
     }
 }
 
@@ -172,6 +346,7 @@ std::shared_ptr<bg2e::scene::Node> AppDelegate::createScene()
 
 void AppDelegate::cleanup()
 {
+    cancelLightmapBake();
     _importServer.stop();
     if (_sceneImporter)
     {
@@ -181,6 +356,7 @@ void AppDelegate::cleanup()
     _stage.reset();
     _submeshPanel.cleanup();
     _sceneEditor.cleanup();
+    _sceneLightmapWindow.cleanup();
 }
 
 void AppDelegate::toggleSelectionHighlight()
@@ -259,6 +435,7 @@ void AppDelegate::initWorkspace()
     // takes care of clearing the node editor.
     _stage->onSceneSwap([&]() {
         _selectionManager->deselect();
+        cancelLightmapBake();
         if (_sceneImporter)
         {
             _sceneImporter->clear();
@@ -268,6 +445,7 @@ void AppDelegate::initWorkspace()
     _uiSettingsWindow.init(true);
     _renderSettingsWindow.init(deferredRenderer, _renderPrefs.get());
     _submeshPanel.init(this);
+    _sceneLightmapWindow.init(this);
 
     _fileStatus = std::make_shared<bg2e::ui::StatusItem>();
     _saveStatus = std::make_shared<bg2e::ui::StatusItem>();
