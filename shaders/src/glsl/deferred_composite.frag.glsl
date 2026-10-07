@@ -118,11 +118,10 @@ void main() {
     vec3 emissionColor = gbuf.albedo.rgb * gbuf.lightEmission;
     if (gbuf.hasBakedLightmap)
     {
-        // Baked RGB is a single light multiplier for all non-emissive lighting.
-        // Emission remains independent and is not darkened by the bake.
+        // The baked lightmap modulates indirect lighting only.
         vec3 bakedMultiplier = texture(g_BakedLightmap, vTexcoord).rgb;
-        outColor = compositeFinalColor((ambient + Lo) * bakedMultiplier + emissionColor,
-            vec3(0.0), gbuf.inputColor, gbuf.albedo.a,
+        outColor = compositeFinalColor(ambient * bakedMultiplier + emissionColor,
+            Lo, gbuf.inputColor, gbuf.albedo.a,
             pushConstant.exposure, pushConstant.gamma,
             pushConstant.brightness, pushConstant.contrast);
         return;

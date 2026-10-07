@@ -40,10 +40,8 @@ public:
         const GBufferManager& uvSurface,
         const vulkan::Image& aoImage,
         const vulkan::Image& giImage,
-        const vulkan::Image& shadowImage,
         vulkan::Image& output,
-        LightmapMode mode,
-        bool useShadows);
+        LightmapMode mode);
 
     void cleanup();
 
@@ -57,7 +55,6 @@ private:
 
     struct PushConstants {
         uint32_t mode;
-        uint32_t useShadows;
     };
 
     void createPipeline();

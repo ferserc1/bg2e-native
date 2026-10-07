@@ -329,7 +329,8 @@ void RTGlobalIllumination::renderUv(
     pushConstants.giLightCount = static_cast<uint32_t>(giLights.size());
     pushConstants.shadowSamples = 32;
     pushConstants.useBlueNoise = 0;
-    pushConstants.useShadows = settings.rtShadows ? 1u : 0u;
+    // Visibility at GI bounce surfaces is part of indirect illumination.
+    pushConstants.useShadows = 1u;
     vkCmdPushConstants(cmd, _uvPipelineLayout,
         VK_SHADER_STAGE_RAYGEN_BIT_KHR | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR,
         0, sizeof(GIPushConstants), &pushConstants);

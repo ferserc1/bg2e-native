@@ -217,7 +217,7 @@ void main() {
     for (int i = 0; i < pushConstant.lightCount; i++) {
         if (LightsBuffer.lights[i].type != LIGHT_TYPE_DISABLED) {
             float shadowFactor = 1.0;
-            if (!gbuf.hasBakedLightmap && LightsBuffer.lights[i].castShadows != 0) {
+            if (LightsBuffer.lights[i].castShadows != 0) {
                 shadowFactor = queryShadowCutout(tlas, gbuf.worldPos, gbuf.normal, LightsBuffer.lights[i], 32);
             }
             Lo += shadowFactor * calcRadiance(LightsBuffer.lights[i], gbuf.viewDir, gbuf.worldPos,
@@ -260,8 +260,8 @@ void main() {
     if (gbuf.hasBakedLightmap)
     {
         vec3 bakedMultiplier = texture(g_BakedLightmap, vTexcoord).rgb;
-        outColor = compositeFinalColor((ambient + Lo) * bakedMultiplier + emissionColor,
-            vec3(0.0), background, gbuf.albedo.a,
+        outColor = compositeFinalColor(ambient * bakedMultiplier + emissionColor,
+            Lo, background, gbuf.albedo.a,
             pushConstant.exposure, pushConstant.gamma,
             pushConstant.brightness, pushConstant.contrast);
     }

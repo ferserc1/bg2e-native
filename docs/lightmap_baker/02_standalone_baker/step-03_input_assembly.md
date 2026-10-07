@@ -16,7 +16,7 @@ Both modes assemble a single scene and enumerate the intended target Drawables. 
 
 ## Fixture
 
-A two-module sofa prefab must let module A occlude module B while both receive shadows from context geometry.
+A two-module sofa prefab must let module A occlude module B during GI evaluation within the complete context scene.
 
 ## Handoff
 

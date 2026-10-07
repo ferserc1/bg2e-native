@@ -8,7 +8,6 @@
 #include <bg2e/render/vulkan/rt/ReflectionLightDataBinding.hpp>
 #include <bg2e/render/vulkan/rt/RTMaterialDataBinding.hpp>
 #include "UvSurfacePass.hpp"
-#include "deferred/RTShadowVisibilityPass.hpp"
 #include "LightmapCompositionPass.hpp"
 #include <bg2e/scene/EnvironmentComponent.hpp>
 #include <bg2e/scene/LightComponent.hpp>
@@ -89,14 +88,11 @@ void IntegratedLightmapBaker::update(VkCommandBuffer cmd, vulkan::FrameResources
     const auto& uvSurface = _uvSurfacePass->manager(frameSlot);
     const auto& sceneBindings = context->sceneBindingSnapshot();
 
-    std::vector<base::LightData> sceneLights;
     std::vector<base::LightData> giLights;
-    sceneLights.reserve(sceneBindings.lights.lightCount);
     giLights.reserve(sceneBindings.lights.lightCount);
     for (uint32_t lightIndex = 0; lightIndex < sceneBindings.lights.lightCount; ++lightIndex)
     {
         const auto& light = sceneBindings.lights.lights[lightIndex];
-        sceneLights.push_back(light);
         if (light.affectsReflections != 0)
         {
             giLights.push_back(light);
@@ -108,7 +104,7 @@ void IntegratedLightmapBaker::update(VkCommandBuffer cmd, vulkan::FrameResources
         context->rtaoPass().renderUv(
             cmd, frameNumber, frameResources, descriptorAllocator,
             uvSurface, rayTracingScene, aoImage(frameSlot),
-            _settings.samplesPerPixel, _settings.maxRayDistance);
+            _settings.samplesPerPixel, 0.1f);
         context->rtgiPass().clearUv(cmd, giImage(frameSlot));
     }
     else
@@ -121,21 +117,10 @@ void IntegratedLightmapBaker::update(VkCommandBuffer cmd, vulkan::FrameResources
             giLights, _settings);
     }
 
-    if (_settings.rtShadows)
-    {
-        context->shadowPass().renderUv(
-            cmd, frameNumber, frameResources, descriptorAllocator,
-            uvSurface, rayTracingScene, sceneLights, shadowImage(frameSlot));
-    }
-    else
-    {
-        context->shadowPass().clearNeutral(cmd, shadowImage(frameSlot));
-    }
-
     context->compositionPass().render(
         cmd, descriptorAllocator, uvSurface,
-        aoImage(frameSlot), giImage(frameSlot), shadowImage(frameSlot),
-        resultImage(frameSlot), _settings.mode, _settings.rtShadows);
+        aoImage(frameSlot), giImage(frameSlot),
+        resultImage(frameSlot), _settings.mode);
     recordAccumulation(cmd, descriptorAllocator, frameSlot);
     markResultImage(frameSlot);
     _lastUpdatedFrame = frameNumber;
@@ -164,8 +149,6 @@ IntegratedBakerContext::IntegratedBakerContext(Engine* engine, scene::Node* root
     _rtgiPass->setMaterialDataBinding(_rtMaterialDataBinding.get());
     _rtgiPass->setReflectionLightDataBinding(_giLightDataBinding.get());
     _rtgiPass->buildUv();
-    _shadowPass = std::make_unique<deferred::RTShadowVisibilityPass>(
-        engine, _rtMaterialDataBinding.get(), _giLightDataBinding.get());
     _compositionPass = std::make_unique<LightmapCompositionPass>(engine);
 
     const uint32_t frameSlotCount = engine->numImages();
@@ -190,11 +173,6 @@ IntegratedBakerContext::IntegratedBakerContext(Engine* engine, scene::Node* root
         });
         _bakeDescriptorAllocators[slot]->requirePoolSizeRatio(1, {
             { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 3 },
-            { VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 1 },
-            { VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1 }
-        });
-        _bakeDescriptorAllocators[slot]->requirePoolSizeRatio(1, {
-            { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 4 },
             { VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1 }
         });
         _bakeDescriptorAllocators[slot]->requirePoolSizeRatio(1, {
@@ -219,7 +197,6 @@ IntegratedBakerContext::~IntegratedBakerContext()
         std::unique_ptr<vulkan::rt::ReflectionLightDataBinding> giLightDataBinding;
         std::unique_ptr<deferred::RTAmbientOcclusion> rtaoPass;
         std::unique_ptr<deferred::RTGlobalIllumination> rtgiPass;
-        std::unique_ptr<deferred::RTShadowVisibilityPass> shadowPass;
         std::unique_ptr<LightmapCompositionPass> compositionPass;
     };
 
@@ -233,7 +210,6 @@ IntegratedBakerContext::~IntegratedBakerContext()
     retained->giLightDataBinding = std::move(_giLightDataBinding);
     retained->rtaoPass = std::move(_rtaoPass);
     retained->rtgiPass = std::move(_rtgiPass);
-    retained->shadowPass = std::move(_shadowPass);
     retained->compositionPass = std::move(_compositionPass);
     engine()->deferredExec([retained = std::move(retained)]() {
         retained->scenes.clear();
@@ -242,11 +218,6 @@ IntegratedBakerContext::~IntegratedBakerContext()
         {
             retained->rtgiPass->cleanupUv();
             retained->rtgiPass.reset();
-        }
-        if (retained->shadowPass)
-        {
-            retained->shadowPass->cleanup();
-            retained->shadowPass.reset();
         }
         if (retained->compositionPass)
         {
@@ -434,15 +405,6 @@ deferred::RTGlobalIllumination& IntegratedBakerContext::rtgiPass()
         throw std::logic_error("IntegratedBakerContext: UV RTGI pass is unavailable");
     }
     return *_rtgiPass;
-}
-
-deferred::RTShadowVisibilityPass& IntegratedBakerContext::shadowPass()
-{
-    if (!_shadowPass)
-    {
-        throw std::logic_error("IntegratedBakerContext: UV shadow pass is unavailable");
-    }
-    return *_shadowPass;
 }
 
 LightmapCompositionPass& IntegratedBakerContext::compositionPass()

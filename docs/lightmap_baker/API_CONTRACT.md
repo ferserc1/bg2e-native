@@ -14,11 +14,10 @@ enum class LightmapPixelFormat { RGB8, RGB32F };
 struct LightmapSettings {
     uint32_t resolution = 512;          // square atlas: resolution x resolution
     LightmapMode mode = LightmapMode::RTAO;
-    bool rtShadows = false;
     uint32_t accumulationFrames = 16;  // exactly this many update calls
     uint32_t samplesPerPixel = 8;
     uint32_t giBounces = 2;             // RTGI only
-    float maxRayDistance = 50.0f;
+    float maxRayDistance = 50.0f;       // RTGI only; RTAO uses a fixed 0.1 m radius
     LightmapPixelFormat cpuFormat = LightmapPixelFormat::RGB8;
 };
 
@@ -228,13 +227,12 @@ The baker produces **one RGB light multiplier texture**. White is neutral.
 RTAO yields a grayscale visibility factor replicated across RGB. RTGI yields
 a colored indirect-light factor normalized against the scene's unoccluded
 reference environment; a zero reference is handled explicitly rather than
-dividing by zero. RT shadows, when enabled, multiply the result by direct
-visibility from the scene lights. Thus all four mode/shadow combinations fit
-the same RGB8 material texture. This deliberately treats the output as a
-light multiplier, not HDR irradiance; HDR irradiance export is future work.
-The exact normalization and direct-visibility combination must be implemented
-once in a shared composition pass and verified with neutral/occluded/colored
-fixtures, rather than independently in the UI and CLI.
+dividing by zero. Both modes fit the same RGB8 material texture and modulate
+indirect lighting only. This deliberately treats the output as a light
+multiplier, not HDR irradiance; HDR irradiance export is future work.
+The exact normalization must be implemented once in a shared composition
+pass and verified with neutral/occluded/colored fixtures, rather than
+independently in the UI and CLI.
 
 The existing `MaterialAttributes::aoTexture` is the only material property
 used. Every submesh material of the target receives **the same**
@@ -244,19 +242,18 @@ is permitted. The material/shader path must consume the AO texture as RGB for
 the baked light multiplier while still accepting existing grayscale AO images
 by replicating their scalar value. Avoid sampling only
 `MaterialAttributes::aoChannel` for baked RGB output. Do not apply a
-second dynamic shadow term to the baked direct-shadow factor for the same
-surface. Treat the presence of an explicit AO texture as the internal
+direct-light multiplier to the baked indirect factor. Treat the presence of
+an explicit AO texture as the internal
 `HAS_BAKED_LIGHTMAP` condition (a render-uniform/GBUFFER flag, **not** a new
 serialized material property). Keep the existing five G-buffer attachments
 and their indices stable; add a sixth RGB attachment for the sampled baked
 multiplier. The G-buffer fragment pass writes neutral white for materials
 without an AO texture, and the RGB AO sample for those with one. The
-composite pass uses the flag to bypass live RTGI/RTAO and live RT shadows
-for that material, then multiplies its non-emissive lit result by the baked
-RGB factor once. Leave emission outside this multiplication. The non-RT
+composite pass uses the flag to bypass live RTGI/RTAO for that material,
+then multiplies only its ambient/indirect result by the baked RGB factor.
+Direct lighting and emission remain outside this multiplication. The non-RT
 composite needs the same RGB multiplier behavior. Existing grayscale AO
-textures still produce equal RGB factors; their effect on direct light may
-change because AO is explicitly being treated as a lightmap. The serialized
+textures still produce equal RGB factors. The serialized
 AO property names remain unchanged.
 
 ## UV2 validity and atlas generation
@@ -290,8 +287,8 @@ leave the input mesh untouched. `apply()` remains CPU-only. Editors must use
 ```text
 lightmap_generator model  --context scene.json --model chair.bg2 --output out/
     --format png --resolution 512 --frames 32 --mode rtao
-    --rt-shadows=false --generate-uv2=false
-    --samples-per-pixel 8 --gi-bounces 2 --max-distance 50
+    --generate-uv2=false
+    --samples-per-pixel 8
 lightmap_generator prefab --context scene.json --prefab sofa.json --output out/
     [the same common options]
 ```
@@ -299,7 +296,8 @@ lightmap_generator prefab --context scene.json --prefab sofa.json --output out/
 Mode and file paths are required. `--format` accepts `png`, `jpg`/`jpeg`,
 `bmp`, `tga`, using `bg2e::db::ImageFormat` and extension helpers.
 `--resolution`, `--frames` and `--samples-per-pixel` are positive integers.
-GI bounces and max distance are validated against their selected pass;
+GI bounces and max distance are validated for RTGI; RTAO uses a fixed
+0.1 m occlusion radius. These mode-specific flags are omitted for RTAO;
 irrelevant mode-specific flags are rejected rather than silently ignored.
 No FSR scale option is exposed. Default output is RGB8. The CLI reports
 one warning per skipped target, returns nonzero for invalid arguments or
@@ -309,7 +307,7 @@ Load the context JSON and attach model/prefab nodes **before** calling
 `updateScene`. For `model`, attach one .bg2 target at the world origin.
 For `prefab`, attach its complete subtree, then bake every eligible
 Drawable node in a deterministic traversal. The TLAS contains context and
-all target geometry, so modules shadow one another. One standalone context
+all target geometry, so modules can occlude one another during GI. One standalone context
 and one scene update serve the entire batch. Without `--generate-uv2`,
 write only images; skip invalid UV2 targets. With that flag, generate UV2
 before GPU load, write an image and a new .bg2 copy for each target, and
@@ -328,14 +326,14 @@ algorithms.
 ## UI contract
 
 `model_edit`: one `ModelLightmapWindow` for the active target. It offers
-resolution, accumulation frames, samples per pixel, max distance and RGB
-preview. Mode is fixed to RTAO, RT shadows fixed off. Its generated image is
+resolution, accumulation frames, samples per pixel and RGB
+preview. Mode is fixed to RTAO. Its generated image is
 written to a temporary path and assigned to AO on all submeshes, UV set 1.
 
 `bg2e_composer`: one `SceneLightmapWindow` enumerates nodes that directly
 contain a standard Drawable. The user selects one or more targets. The
-window offers resolution, frames, RTAO/RTGI, shadows, samples per pixel,
-GI bounces and max distance, plus preview. One integrated context handles
+window offers resolution, frames, RTAO/RTGI, samples per pixel,
+GI bounces and RTGI max distance, plus preview. One integrated context handles
 the selection; each target has its own baker/image. Outputs go to temporary
 paths and are assigned as AO on all target submesh materials.
 

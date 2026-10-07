@@ -36,7 +36,6 @@ class EnvironmentResources;
 namespace deferred {
 class RTAmbientOcclusion;
 class RTGlobalIllumination;
-class RTShadowVisibilityPass;
 }
 
 class LightmapCompositionPass;
@@ -98,7 +97,6 @@ private:
     [[nodiscard]] vulkan::rt::RTMaterialDataBinding& rtMaterialDataBinding();
     [[nodiscard]] deferred::RTAmbientOcclusion& rtaoPass();
     [[nodiscard]] deferred::RTGlobalIllumination& rtgiPass();
-    [[nodiscard]] deferred::RTShadowVisibilityPass& shadowPass();
     [[nodiscard]] LightmapCompositionPass& compositionPass();
     [[nodiscard]] vulkan::rt::ReflectionLightDataBinding& giLightDataBinding();
     void captureSceneBindings();
@@ -111,7 +109,6 @@ private:
     std::unique_ptr<vulkan::rt::ReflectionLightDataBinding> _giLightDataBinding;
     std::unique_ptr<deferred::RTAmbientOcclusion> _rtaoPass;
     std::unique_ptr<deferred::RTGlobalIllumination> _rtgiPass;
-    std::unique_ptr<deferred::RTShadowVisibilityPass> _shadowPass;
     std::unique_ptr<LightmapCompositionPass> _compositionPass;
     std::unique_ptr<SceneBindingSnapshot> _sceneBindingSnapshot;
     EnvironmentResources* _environmentResources = nullptr;

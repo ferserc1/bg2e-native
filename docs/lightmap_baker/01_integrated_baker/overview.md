@@ -14,7 +14,7 @@ The per-target `UvSurfacePass` uses a configured, depthless `GBufferManager` for
 2. [Build the UV-space surface pass](step-02_uv_surface.md)
 3. [Build the context-owned bake RT scene](step-03_scene_bindings.md)
 4. [Implement RTAO baking](step-04_rtao.md)
-5. [Implement RTGI and optional RT shadows](step-05_rtgi_shadows.md)
+5. [Implement RTGI and indirect-light composition](step-05_rtgi.md)
 6. [Add accumulation and CPU/GPU results](step-06_accumulation_output.md)
 7. [Integrate into model_edit and bg2e_composer](step-07_application_integration.md)
 8. [Document integrated baking](step-08_documentation.md)

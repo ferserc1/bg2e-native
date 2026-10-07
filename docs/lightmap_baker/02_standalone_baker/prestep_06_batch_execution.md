@@ -11,7 +11,7 @@ Next implementation step: [step-06_batch_execution.md](step-06_batch_execution.m
 
 ## Next-step instructions
 
-Implement full-resolution bake orchestration for all selected targets using one standalone context and one updateScene after complete input assembly. Support square resolution, RTAO/RTGI, shadows, samples per pixel, GI bounces, maximum distance and exact accumulation-frame count. Skip and warn for targets lacking usable UV2 when regeneration is disabled. Provide a cancellable progress callback for CLI logging, separate from the deferred GUI progress feature.
+Implement full-resolution bake orchestration for all selected targets using one standalone context and one updateScene after complete input assembly. Support square resolution, RTAO/RTGI, samples per pixel, GI bounces, RTGI maximum distance and exact accumulation-frame count. Skip and warn for targets lacking usable UV2 when regeneration is disabled. Provide a cancellable progress callback for CLI logging, separate from the deferred GUI progress feature.
 
 ## Next-step acceptance gate
 
@@ -23,5 +23,5 @@ Read [API_CONTRACT.md](../API_CONTRACT.md) before implementation. The following 
 
 - Add `StandaloneBakeBatch` to coordinate one assembled scene, one `StandaloneBakerContext::updateScene`, one baker per target and exactly N synchronous update calls per baker. Each successful standalone submission advances the engine frame counter before CPU readback. The batch does not call `updateScene` inside its target loop.
 - Reuse the private usable-UV2 validator from integrated step 02. Phase 3 promotes it to `geo::UvAtlasValidator`; do not create a second validator. Do not use `texCoord1` field existence as a test because importers copy UV1 when UV2 is absent. Skip invalid targets with one warning each and continue; report the number baked and skipped.
-- Pass square resolution, mode, shadow switch, samples per pixel, GI bounces and maximum distance to `LightmapSettings`. Progress callback reports `targetIndex`, `targetCount`, `completedFrames`, `accumulationFrames`; callback cancellation stops before the next submit and cleans owned resources.
+- Pass square resolution, mode, samples per pixel, GI bounces and RTGI maximum distance to `LightmapSettings`. Progress callback reports `targetIndex`, `targetCount`, `completedFrames`, `accumulationFrames`; callback cancellation stops before the next submit and cleans owned resources.
 - Validate scene inputs before the first TLAS update. A batch error must not leave half-written final files; defer writer commit to completed targets according to the output policy.

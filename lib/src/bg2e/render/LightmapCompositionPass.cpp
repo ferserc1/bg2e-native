@@ -54,9 +54,8 @@ void LightmapCompositionPass::createPipeline()
     vulkan::factory::DescriptorSetLayout descriptorLayoutFactory;
     descriptorLayoutFactory.addBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER); // RTAO
     descriptorLayoutFactory.addBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER); // normalized RTGI
-    descriptorLayoutFactory.addBinding(2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER); // RT shadows
-    descriptorLayoutFactory.addBinding(3, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER); // valid mask
-    descriptorLayoutFactory.addBinding(4, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE);          // RGB factor output
+    descriptorLayoutFactory.addBinding(2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER); // valid mask
+    descriptorLayoutFactory.addBinding(3, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE);          // RGB factor output
     _descriptorSetLayout = descriptorLayoutFactory.build(
         _engine->device().handle(), VK_SHADER_STAGE_COMPUTE_BIT);
 
@@ -76,10 +75,8 @@ void LightmapCompositionPass::render(
     const GBufferManager& uvSurface,
     const vulkan::Image& aoImage,
     const vulkan::Image& giImage,
-    const vulkan::Image& shadowImage,
     vulkan::Image& output,
-    LightmapMode mode,
-    bool useShadows)
+    LightmapMode mode)
 {
     if (_pipeline == VK_NULL_HANDLE)
     {
@@ -93,7 +90,6 @@ void LightmapCompositionPass::render(
     if (uvSurface.extent().width != extent.width || uvSurface.extent().height != extent.height ||
         aoImage.extent2D().width != extent.width || aoImage.extent2D().height != extent.height ||
         giImage.extent2D().width != extent.width || giImage.extent2D().height != extent.height ||
-        shadowImage.extent2D().width != extent.width || shadowImage.extent2D().height != extent.height ||
         output.format() != VK_FORMAT_R16G16B16A16_SFLOAT)
     {
         throw std::invalid_argument("LightmapCompositionPass requires native-resolution bake layers");
@@ -113,10 +109,8 @@ void LightmapCompositionPass::render(
     descriptorSet->addImage(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
         &giImage, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _colorSampler);
     descriptorSet->addImage(2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-        &shadowImage, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _colorSampler);
-    descriptorSet->addImage(3, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
         uvSurface.image(3).get(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _maskSampler);
-    descriptorSet->addImage(4, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+    descriptorSet->addImage(3, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
         &output, VK_IMAGE_LAYOUT_GENERAL);
     descriptorSet->endUpdate();
 
@@ -125,10 +119,7 @@ void LightmapCompositionPass::render(
     vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_COMPUTE,
         _pipelineLayout, 0, 1, &descriptorSetHandle, 0, nullptr);
 
-    const PushConstants pushConstants{
-        mode == LightmapMode::RTGI ? 1u : 0u,
-        useShadows ? 1u : 0u
-    };
+    const PushConstants pushConstants{ mode == LightmapMode::RTGI ? 1u : 0u };
     vkCmdPushConstants(cmd, _pipelineLayout, VK_SHADER_STAGE_COMPUTE_BIT,
         0, sizeof(PushConstants), &pushConstants);
     vkCmdDispatch(cmd, (extent.width + 7) / 8, (extent.height + 7) / 8, 1);

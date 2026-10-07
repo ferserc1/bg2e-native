@@ -88,7 +88,7 @@ public:
     void toggleSelectionHighlight();
     void setSelectionHighlightMode(SelectionHighlightMode mode);
 
-    // Integrated lightmap baking (RTAO, no RT shadows) for the active model.
+    // Integrated RTAO baking for the active model.
     // Throws std::exception on validation errors (for example, invalid UV2).
     void requestLightmapBake(const bg2e::render::LightmapSettings& settings);
     void cancelLightmapBake();

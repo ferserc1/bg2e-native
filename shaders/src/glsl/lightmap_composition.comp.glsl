@@ -20,13 +20,11 @@
 
 layout(set = 0, binding = 0) uniform sampler2D rtaoVisibility;
 layout(set = 0, binding = 1) uniform sampler2D normalizedRTGI;
-layout(set = 0, binding = 2) uniform sampler2D directShadowVisibility;
-layout(set = 0, binding = 3) uniform usampler2D validTexelMask;
-layout(set = 0, binding = 4, rgba16f) uniform image2D lightmapOutput;
+layout(set = 0, binding = 2) uniform usampler2D validTexelMask;
+layout(set = 0, binding = 3, rgba16f) uniform image2D lightmapOutput;
 
 layout(push_constant) uniform PushConstant {
     uint mode;       // 0 = RTAO, 1 = RTGI
-    uint useShadows;
 } pc;
 
 layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
@@ -49,13 +47,6 @@ void main()
     vec3 lightMultiplier = pc.mode == 0u
         ? vec3(texelFetch(rtaoVisibility, pixel, 0).r)
         : texelFetch(normalizedRTGI, pixel, 0).rgb;
-
-    // The direct shadow factor is an independent term and is applied once to
-    // either indirect mode. The result remains a linear RGB light multiplier.
-    if (pc.useShadows != 0u)
-    {
-        lightMultiplier *= texelFetch(directShadowVisibility, pixel, 0).r;
-    }
 
     imageStore(lightmapOutput, pixel, vec4(lightMultiplier, 1.0));
 }

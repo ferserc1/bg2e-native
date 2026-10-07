@@ -110,7 +110,6 @@ void AppDelegate::requestLightmapBake(const bg2e::render::LightmapSettings& sett
 
     bg2e::render::LightmapSettings bakeSettings = settings;
     bakeSettings.mode = bg2e::render::LightmapMode::RTAO;
-    bakeSettings.rtShadows = false;
     bakeSettings.cpuFormat = bg2e::render::LightmapPixelFormat::RGB8;
     _bakeBaker = _bakeContext->createBaker(target, bakeSettings);
     _bakeTarget = target;

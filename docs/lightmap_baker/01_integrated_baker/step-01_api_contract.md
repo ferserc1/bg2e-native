@@ -21,7 +21,7 @@ Public headers and inert implementations compile; existing render API signatures
 ```cpp
 auto ctx = std::make_shared<render::IntegratedBakerContext>(engine, root);
 auto baker = ctx->createBaker(target, {.resolution = 512,
-    .mode = render::LightmapMode::RTAO, .rtShadows = false});
+    .mode = render::LightmapMode::RTAO});
 ```
 
 A detached node or node from another root must fail before allocating GPU targets. See the full frame-order example in [API_CONTRACT.md](../API_CONTRACT.md).

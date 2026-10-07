@@ -38,7 +38,6 @@ private:
     std::vector<std::weak_ptr<bg2e::scene::Node>> _selectedTargets;
 
     int _mode = 0; // 0 = RTAO, 1 = RTGI
-    bool _rtShadows = false;
     int _resolution = 512;
     int _frames = 16;
     int _samples = 8;

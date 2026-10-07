@@ -37,11 +37,10 @@ void ModelLightmapWindow::init(AppDelegate * delegate)
         }
 
         Text::separator("Bake Settings");
-        Text::text("Mode: RTAO (RT shadows disabled)");
+        Text::text("Mode: RTAO");
         Numeric::sliderInt("Resolution", &_resolution, 64, 2048);
         Numeric::sliderInt("Accumulation Frames", &_frames, 1, 512);
         Numeric::sliderInt("Samples per Pixel", &_samples, 1, 256);
-        Numeric::drag("Max Ray Distance", &_maxDistance, 0.5f, 0.01f, 10000.0f);
 
         const bool baking = _appDelegate->lightmapBakeActive();
         if (Button::button("Generate", false, baking))
@@ -50,9 +49,7 @@ void ModelLightmapWindow::init(AppDelegate * delegate)
             settings.resolution = static_cast<uint32_t>(std::max(_resolution, 1));
             settings.accumulationFrames = static_cast<uint32_t>(std::max(_frames, 1));
             settings.samplesPerPixel = static_cast<uint32_t>(std::max(_samples, 1));
-            settings.maxRayDistance = std::max(_maxDistance, 0.01f);
             settings.mode = bg2e::render::LightmapMode::RTAO;
-            settings.rtShadows = false;
             settings.cpuFormat = bg2e::render::LightmapPixelFormat::RGB8;
             try
             {

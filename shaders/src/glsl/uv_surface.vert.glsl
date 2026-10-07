@@ -25,5 +25,6 @@ void main()
 
     // Direct UV2-to-clip mapping; the engine's negative-height Vulkan viewport
     // places v=1 at the top row, preserving the conventional image orientation.
-    gl_Position = vec4(inUv2 * 2.0 - 1.0, 0.0, 1.0);
+    vec2 uv2Inv = vec2(inUv2.x, 1.0 - inUv2.y);
+    gl_Position = vec4(uv2Inv * 2.0 - 1.0, 0.0, 1.0);
 }

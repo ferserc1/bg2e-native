@@ -54,14 +54,15 @@ void SceneLightmapWindow::init(AppDelegate * delegate)
         {
             _mode = static_cast<int>(mode);
         }
-        Button::checkBox("RT Shadows", &_rtShadows);
         Numeric::sliderInt("Resolution", &_resolution, 64, 2048);
         Numeric::sliderInt("Accumulation Frames", &_frames, 1, 512);
         Numeric::sliderInt("Samples per Pixel", &_samples, 1, 256);
         Group::beginDisabled(_mode == 0);
         Numeric::sliderInt("GI Bounces", &_giBounces, 1, 8);
         Group::endDisabled();
-        Numeric::drag("Max Ray Distance", &_maxDistance, 0.5f, 0.01f, 10000.0f);
+        Group::beginDisabled(_mode == 0);
+        Numeric::drag("GI Max Ray Distance", &_maxDistance, 0.5f, 0.01f, 10000.0f);
+        Group::endDisabled();
 
         const bool baking = _appDelegate->lightmapBakeActive();
         if (Button::button("Generate Selected", false, baking))
@@ -89,7 +90,6 @@ void SceneLightmapWindow::init(AppDelegate * delegate)
                 settings.mode = _mode == 1
                     ? bg2e::render::LightmapMode::RTGI
                     : bg2e::render::LightmapMode::RTAO;
-                settings.rtShadows = _rtShadows;
                 settings.cpuFormat = bg2e::render::LightmapPixelFormat::RGB8;
                 try
                 {

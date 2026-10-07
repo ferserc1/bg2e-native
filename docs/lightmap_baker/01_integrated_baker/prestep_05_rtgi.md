@@ -1,0 +1,27 @@
+# Handoff for Implement RTGI and indirect-light composition
+
+Next implementation step: [step-05_rtgi.md](step-05_rtgi.md). Step 04 is complete; implementation findings and allocator/snapshot constraints are recorded below.
+
+- Changed files and relevant API decisions: Added `RTAmbientOcclusion::buildUv/renderUv` and a separate `rt_ao_uv.comp.glsl` pipeline. It samples world position/normal and the integer valid mask directly from the depthless UV `GBufferManager`, uses nearest sampling for the `R32_UINT` mask, traces against the prepared context-owned TLAS with alpha-tested `queryAOCutout`, and writes neutral 1 to uncovered texels. The AO output is an R8 full-resolution image per target/frame slot. The old camera-space `render(...)` API and shader path are unchanged. `LightmapSettings` now defaults to RTAO per the API contract; integrated bakers reject RTGI until this next step.
+- Build command, platform and result: `cmake --build build --target test_03_integrated_baker_context` passed on Linux/Ninja and compiled the new UV AO shader.
+- Runtime/fixture evidence: `bin/linux/test_03_integrated_baker_context` passed on an NVIDIA GeForce RTX 5080 Laptop GPU. It verified an isolated plane remains neutral, an overhang selectively darkens mapped texels, uncovered atlas texels remain neutral, and retained the previous two-slot/context validation coverage.
+- Remaining limitations or regressions: AO output is currently single-channel R8; shared RGB composition, RTGI, accumulation and readback remain for later steps. The complete integrated phase is not finished.
+- Resources, ownership and synchronization cautions for the next agent: The UV RTAO pass is context-shared; each target/frame slot owns a separate AO output. `prepareFrame` clears only the current context-owned descriptor allocator after the render loop has waited for that slot's fence. The first RTAO update initializes that slot's descriptor pool, so any additional RTGI descriptor requirements must be accounted for before pool initialization (or handled by a safe allocator extension); `DescriptorSetAllocator::requirePoolSizeRatio` cannot be called once initialized. The UV AO shader uses a robust tangent basis because `deferred_utils.glsl::buildTBN` degenerates for normals near +Z; avoid reusing `randomHemisphereDirection` unchanged for the new UV RTGI path. Continue using the context's CPU light/environment snapshot per the project-lead decision; do not create baker-owned `EnvironmentResources`. The baker image currently exposes the latest R8 AO result and step 05 should compose it into the planned RGB light multiplier.
+- Exact next action: Implement the UV-space RTGI path in `step-05_rtgi.md`, preserving screen-space APIs, consuming the context-owned TLAS and scene snapshot, and composing AO/GI into one native-resolution RGB result.
+
+## Next-step instructions
+
+Adapt GI evaluation to UV-space texels and the context-owned scene TLAS prepared from the root. Select exactly one of RTAO or RTGI and compose its indirect-light factor into the single lightmap result. Define one RGB meaning for the composed AO texture and document the formula in code-level API comments. Keep all passes at native map resolution.
+
+## Next-step acceptance gate
+
+Both indirect-light modes execute and compile without changing the current renderer API. Compile the project at the end of this step when implementation is authorized. Do not weaken an existing public API. Review changed files and describe any remaining runtime risk.
+
+## Contract and next-step deliverables
+
+Read [API_CONTRACT.md](../API_CONTRACT.md) before implementation. The following details are the reviewable scope of the next step:
+
+- Add a UV-space RTGI path taking the selected `UvSurfacePass` manager's position/normal/mask images, the context-owned TLAS, material/instance bindings, environment and light list. Do not pass this depthless manager to the existing screen-space path, which expects camera depth and inverse view-projection; preserve the existing `RTGlobalIllumination::render` signature. GI bounce count, samples and max distance come from `LightmapSettings`; dispatch at atlas resolution.
+- Add one composition pass that converts RTAO or RTGI into the RGB indirect-light multiplier defined in [API_CONTRACT.md](../API_CONTRACT.md) and writes the same target image for either mode. Neutral white, fully occluded black and colored indirect lighting are required fixture cases.
+- Update the material/render shader path so AO textures are sampled as RGB, not only `aoChannel`: derive an internal baked flag from explicit AO texture presence, add a sixth attachment to `GBufferManager`'s default camera profile without shifting existing indices or changing the UV profile's four attachments, and apply the RGB multiplier once to ambient/indirect lighting. For baked objects, bypass live RTGI/RTAO in composition; direct lighting and emission remain separate. Apply the same rule to the non-RT composite. Do not add a serialized material property or touch emission settings.
+- Validate existing grayscale AO textures still load; RGB channels must remain distinguishable in a rendered colored test map. Keep current `RendererDeferred` public API intact.

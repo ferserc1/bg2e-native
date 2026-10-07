@@ -65,7 +65,6 @@ protected:
     void recordUvSurface(VkCommandBuffer cmd, uint32_t frameSlot);
     [[nodiscard]] vulkan::Image& aoImage(uint32_t frameSlot);
     [[nodiscard]] vulkan::Image& giImage(uint32_t frameSlot);
-    [[nodiscard]] vulkan::Image& shadowImage(uint32_t frameSlot);
     [[nodiscard]] vulkan::Image& resultImage(uint32_t frameSlot);
     void recordAccumulation(VkCommandBuffer cmd,
                             vulkan::DescriptorSetAllocator& descriptors,
@@ -80,7 +79,6 @@ protected:
     std::shared_ptr<UvTemporalAccumulator> _accumulator;
     std::vector<std::shared_ptr<vulkan::Image>> _aoImages;
     std::vector<std::shared_ptr<vulkan::Image>> _giImages;
-    std::vector<std::shared_ptr<vulkan::Image>> _shadowImages;
     std::vector<std::shared_ptr<vulkan::Image>> _resultImages;
     uint32_t _resultFrameNumber = 0;
     bool _hasResultImage = false;

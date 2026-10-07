@@ -35,7 +35,6 @@ LightmapBaker::LightmapBaker(std::shared_ptr<BakerContext> context,
     const uint32_t frameSlots = _context->engine()->numImages();
     _aoImages.resize(frameSlots);
     _giImages.resize(frameSlots);
-    _shadowImages.resize(frameSlots);
     _resultImages.resize(frameSlots);
     for (uint32_t frameSlot = 0; frameSlot < frameSlots; ++frameSlot)
     {
@@ -56,18 +55,6 @@ LightmapBaker::LightmapBaker(std::shared_ptr<BakerContext> context,
                 _context->engine(),
                 "LightmapBaker RTGI result " + std::to_string(frameSlot),
                 VK_FORMAT_R16G16B16A16_SFLOAT,
-                VkExtent2D{ _settings.resolution, _settings.resolution },
-                VK_IMAGE_USAGE_STORAGE_BIT |
-                VK_IMAGE_USAGE_SAMPLED_BIT |
-                VK_IMAGE_USAGE_TRANSFER_DST_BIT |
-                VK_IMAGE_USAGE_TRANSFER_SRC_BIT
-            )
-        );
-        _shadowImages[frameSlot] = std::shared_ptr<vulkan::Image>(
-            vulkan::Image::createAllocatedImage(
-                _context->engine(),
-                "LightmapBaker direct shadow result " + std::to_string(frameSlot),
-                VK_FORMAT_R8_UNORM,
                 VkExtent2D{ _settings.resolution, _settings.resolution },
                 VK_IMAGE_USAGE_STORAGE_BIT |
                 VK_IMAGE_USAGE_SAMPLED_BIT |
@@ -100,20 +87,17 @@ LightmapBaker::~LightmapBaker()
     auto accumulator = std::move(_accumulator);
     auto aoImages = std::move(_aoImages);
     auto giImages = std::move(_giImages);
-    auto shadowImages = std::move(_shadowImages);
     auto resultImages = std::move(_resultImages);
     _context->engine()->deferredExec([
         pass = std::move(pass),
         accumulator = std::move(accumulator),
         aoImages = std::move(aoImages),
         giImages = std::move(giImages),
-        shadowImages = std::move(shadowImages),
         resultImages = std::move(resultImages)]() mutable {
         pass.reset();
         accumulator.reset();
         aoImages.clear();
         giImages.clear();
-        shadowImages.clear();
         resultImages.clear();
     });
 }
@@ -171,7 +155,8 @@ void LightmapBaker::validateTarget() const
     if (_settings.samplesPerPixel > static_cast<uint32_t>(std::numeric_limits<int>::max())) {
         throw std::invalid_argument("LightmapBaker: samplesPerPixel exceeds the RTAO shader limit");
     }
-    if (!std::isfinite(_settings.maxRayDistance) || _settings.maxRayDistance <= 0.0f) {
+    if (_settings.mode == LightmapMode::RTGI &&
+        (!std::isfinite(_settings.maxRayDistance) || _settings.maxRayDistance <= 0.0f)) {
         throw std::invalid_argument("LightmapBaker: maxRayDistance must be finite and positive");
     }
     if (_settings.mode != LightmapMode::RTAO && _settings.mode != LightmapMode::RTGI) {
@@ -224,15 +209,6 @@ vulkan::Image& LightmapBaker::giImage(uint32_t frameSlot)
         throw std::out_of_range("LightmapBaker: GI image frame slot is out of range");
     }
     return *_giImages[frameSlot];
-}
-
-vulkan::Image& LightmapBaker::shadowImage(uint32_t frameSlot)
-{
-    if (frameSlot >= _shadowImages.size() || !_shadowImages[frameSlot])
-    {
-        throw std::out_of_range("LightmapBaker: shadow image frame slot is out of range");
-    }
-    return *_shadowImages[frameSlot];
 }
 
 vulkan::Image& LightmapBaker::resultImage(uint32_t frameSlot)
