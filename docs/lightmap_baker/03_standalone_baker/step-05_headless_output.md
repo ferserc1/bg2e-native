@@ -12,7 +12,7 @@ A dry-run or fixture validates paths and preserves input files; all generated fi
 
 - Add `db::LightmapOutputWriter` taking `LightmapPixels`, `db::ImageFormat`, output directory and a stable target identity. Convert float CPU values to RGB8 with one clamp/round if a float result was requested; call the existing `db::saveImage` writer for PNG/JPEG/BMP/TGA. The CLI itself is not created until the penultimate step.
 - Preflight all output paths for the entire batch. Use a stable sanitized node path plus a deterministic suffix for duplicate display names; fail if two final paths still collide, if an output path aliases any input resource, or if an output file already exists. Write via temporary sibling files that retain the real image extension (for example `sofa.pending.png`, because stb dispatches on extension), then rename only after success so a failed bake leaves no partial final image. Never write a context/prefab JSON.
-- When UV2 regeneration is enabled in phase 3, write a fresh .bg2 copy for each target and set its AO material path to the generated image. Without that flag, write only images and do not save a model. Reserve this branch now with a clear unsupported result until the modifier exists.
+- Plan and implement both output branches using the phase-2 modifier: with UV2 regeneration, write a fresh .bg2 copy for each target and set its AO material path to the generated image; without it, write only images and do not save a model. The CLI wires these branches to its flag in step 07.
 - Reuse the same path planning for model (one target) and prefab (all eligible target nodes). Do not modify loaded input file paths in-place.
 
 ## Output example

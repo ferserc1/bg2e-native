@@ -11,7 +11,7 @@ Next implementation step: [step-08_documentation.md](step-08_documentation.md). 
 
 ## Next-step instructions
 
-Update doc/api/render and doc/api/app with standalone context lifecycle, CLI usage and output behavior. Add db image-format API docs and a technical note in doc/ if useful. State the initial UV2-regeneration flag limitation until phase 3 completes.
+Update doc/api/render and doc/api/app with standalone context lifecycle, CLI usage and both UV2 output branches. Add db image-format API docs and a technical note in doc/ if useful.
 
 ## Next-step acceptance gate
 
@@ -22,5 +22,5 @@ CLI help, documentation and implemented behavior agree. Compile the project at t
 Read [API_CONTRACT.md](../API_CONTRACT.md) before implementation. The following details are the reviewable scope of the next step:
 
 - Add `doc/api/render/StandaloneBakerContext.md` with explicit `initialize -> updateScene -> createBaker -> update -> readPixels -> cleanup` flow and no-window example. Update the render API index/reference.
-- Document `ImageFormat` and helper functions in `doc/api/db/`, creating the namespace index if absent. Document CLI model/prefab flags, defaults, exit conditions, file output matrix and lack of regenerated UV2 until phase 3 under `doc/api/app/`.
+- Document `ImageFormat` and helper functions in `doc/api/db/`, creating the namespace index if absent. Document CLI model/prefab flags, defaults, exit conditions and all four file output cases under `doc/api/app/`.
 - Add a technical note in `doc/lightmap_baking.md` (or extend the integrated note) explaining full-scene assembly, shared TLAS, optional scene updates and component lifecycle. Confirm examples match actual compiled signatures and relative links resolve.

@@ -20,4 +20,4 @@ Every documented method and link must resolve to implemented source; remove stal
 
 ## Handoff
 
-After this step, complete [prestep_01_lifecycle_contract.md](prestep_01_lifecycle_contract.md) for the next step (Define standalone lifecycle).
+After this step, complete [prestep_01_xatlas_dependency.md](prestep_01_xatlas_dependency.md) for the next step (Connect the existing xatlas dependency).

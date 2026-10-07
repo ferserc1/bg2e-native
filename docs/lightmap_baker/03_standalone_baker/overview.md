@@ -4,7 +4,7 @@ Extend the shared baking core for command-line execution without an active appli
 
 The public lifecycle and exact CLI examples are in [API_CONTRACT.md](../API_CONTRACT.md). One `StandaloneBakerContext` assembles one context scene plus all targets, calls `updateScene` once, and creates a separate `StandaloneLightmapBaker` per target. No window, camera or active application loop is required.
 
-**Phase completion:** the CLI runs model and prefab batches with usable pre-existing UV2 and writes images only. It accepts the UV2-generation flag but reports that the true branch becomes available in phase 3. The `false` branch is fully functional.
+**Phase completion:** the CLI runs model and prefab batches. With `--generate-uv2=false`, it writes images for targets with usable UV2 and warns when a target is skipped. With `--generate-uv2=true`, it uses the phase-2 atlas modifier before GPU load and writes both a new .bg2 copy and a lightmap image per target. Input resources are never overwritten.
 
 ## Ordered steps
 

@@ -1,6 +1,6 @@
 # Lightmap baker implementation plan
 
-This plan is written in English as required by AGENTS.md. Work proceeds in order: [integrated baker](01_integrated_baker/overview.md), [standalone baker](02_standalone_baker/overview.md), then [UV atlas](03_uv_atlas/overview.md). Each step is intended as a separate reviewable change that leaves the project compilable. A step may initially be incomplete at runtime, but each phase aims to restore useful behavior as early as possible.
+This plan is written in English as required by AGENTS.md. Work proceeds in order: [integrated baker](01_integrated_baker/overview.md), [UV atlas](02_uv_atlas/overview.md), then [standalone baker](03_standalone_baker/overview.md). Phase 2 supplies usable UV2 atlases for GI tests before the headless CLI is built in phase 3. Each step is intended as a separate reviewable change that leaves the project compilable. A step may initially be incomplete at runtime, but each phase aims to restore useful behavior as early as possible.
 
 **Read the [API and behavioral contract](API_CONTRACT.md) before reviewing or implementing any step.** It fixes class names, ownership, example calls, pixel meaning, CLI options, UI behavior, and validation rules. Each step below links back to this contract and identifies its own concrete deliverables.
 
@@ -13,7 +13,7 @@ This plan is written in English as required by AGENTS.md. Work proceeds in order
 - RTAO and RTGI are exclusive. The bake contains indirect lighting only. All bake layers use full target resolution. RGB8 is the normal output; configurable RGB32F CPU output is available. HDR file export is deferred.
 - A command-line context scene and model/prefab targets are assembled into one scene and one TLAS. Standalone context alone drives component lifecycle. Integrated context uses an already running windowed or offscreen lifecycle.
 - The CLI exports images in stb-supported PNG/JPEG/BMP/TGA formats. It writes .bg2 copies only when UV2 generation is requested, and never overwrites input resources. No new JSON prefab is emitted.
-- xatlas is MIT licensed and generates UV2 on the CPU after the bake paths are available. UV1 remains unchanged. Editor reload is explicit and GPU-safe.
+- The MIT-licensed xatlas source and `LICENSE.txt` are already present in `lib/third_party/xatlas/`. Phase 2 connects its source and private include path to the engine through `lib/cmake/deps.cmake`; it does not download or vendor a second copy. xatlas generates UV2 on the CPU after integrated baking is available. UV1 remains unchanged. Editor reload is explicit and GPU-safe.
 
 ## Review and handoff convention
 
@@ -23,7 +23,7 @@ After implementing and reviewing a step, the agent **must review the prestep fil
 
 **Test ownership:** When the current step in the implementation plan contains tests, the project lead alone compiles and runs tests. The agent must NEVER compile or execute tests. After handing off an implementation, the agent waits for the project lead's test feedback. If the lead reports a failure, the agent must not investigate or attempt a fix unless the lead explicitly requests it. If the plan step does not contains any test, then the step can be completed without project lead supervision.
 
-The implementation change that introduces apps/lightmap_generator or vendors xatlas requires CMake edits. AGENTS.md permits those edits only on an explicit implementation request; this planning task does not edit CMake. Implementers must receive that authorization before executing those steps. AGENTS.md also prohibits compiling without an explicit request; test compilation and execution remain exclusively the project lead's responsibility, and the agent must wait for the lead's verification before marking a step complete.
+Phase 2 step 01 must edit `lib/cmake/deps.cmake` to compile the existing xatlas source into bg2e; phase 3 step 07 adds the `apps/lightmap_generator` CMake target. These are explicit deliverables for their future implementation steps. This planning change does not edit CMake. AGENTS.md prohibits compiling without an explicit request; test compilation and execution remain exclusively the project lead's responsibility, and the agent must wait for the lead's verification before marking a step complete.
 
 ## Out of scope
 

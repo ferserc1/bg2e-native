@@ -1,13 +1,13 @@
 # Handoff for Define standalone lifecycle
 
-Next implementation step: [../02_standalone_baker/step-01_lifecycle_contract.md](../02_standalone_baker/step-01_lifecycle_contract.md). Complete this file **after** finishing step 08; this template records no implementation results.
+Next implementation step: [../03_standalone_baker/step-01_lifecycle_contract.md](../03_standalone_baker/step-01_lifecycle_contract.md). Complete this file **after** finishing UV-atlas step 07; this template records no implementation results.
 
 - Changed files and relevant API decisions: TODO
 - Build command, platform and result: TODO
 - Runtime/fixture evidence: TODO
 - Remaining limitations or regressions: TODO
 - Resources, ownership and synchronization cautions for the next agent: TODO
-- Exact next action: Implement the scope in ../02_standalone_baker/step-01_lifecycle_contract.md.
+- Exact next action: Implement the scope in ../03_standalone_baker/step-01_lifecycle_contract.md.
 
 ## Next-step instructions
 

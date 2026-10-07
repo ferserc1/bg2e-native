@@ -13,11 +13,13 @@ enum class LightmapPixelFormat { RGB8, RGB32F };
 
 struct LightmapSettings {
     uint32_t resolution = 512;          // square atlas: resolution x resolution
-    LightmapMode mode = LightmapMode::RTAO;
+    LightmapMode mode = LightmapMode::RTGI;
     uint32_t accumulationFrames = 16;  // exactly this many update calls
     uint32_t samplesPerPixel = 8;
     uint32_t giBounces = 2;             // RTGI only
     float maxRayDistance = 50.0f;       // RTGI only; RTAO uses a fixed 0.1 m radius
+    float giRayBias = 0.0005f;         // RTGI UV-ray origin offset in metres
+    float exposureEV = 0.0f;          // RTGI RGB8 export only; multiply by 2^EV
     LightmapPixelFormat cpuFormat = LightmapPixelFormat::RGB8;
 };
 
@@ -314,8 +316,8 @@ before GPU load, write an image and a new .bg2 copy for each target, and
 associate its AO path in that copy. Never overwrite input model/prefab
 resources, even when the output directory equals an input directory.
 Output-name collisions are fatal before any output file is committed.
-The executable accepts the flag in phase 2 but reports it as unavailable
-until phase 3 completes the modifier.
+The modifier and validator are available from phase 2. Phase 3 creates the
+executable with both `--generate-uv2` branches fully functional.
 
 The engine-side `render::StandaloneBakeSceneAssembler` loads/attaches the
 context and target subtree; `render::StandaloneBakeBatch` coordinates target
@@ -333,7 +335,10 @@ written to a temporary path and assigned to AO on all submeshes, UV set 1.
 `bg2e_composer`: one `SceneLightmapWindow` enumerates nodes that directly
 contain a standard Drawable. The user selects one or more targets. The
 window offers resolution, frames, RTAO/RTGI, samples per pixel,
-GI bounces and RTGI max distance, plus preview. One integrated context handles
+GI bounces, RTGI max distance, GI ray bias and RGB8 export exposure, plus preview.
+RTGI is selected by default; the displayed mode names are the full Ray Traced
+Ambient Occlusion and Ray Traced Global Illumination labels. Both editors
+offer power-of-two resolutions from 128 to 4096. One integrated context handles
 the selection; each target has its own baker/image. Outputs go to temporary
 paths and are assigned as AO on all target submesh materials.
 
@@ -342,7 +347,7 @@ application scene/component update. The delegate calls the shared integrated
 context's `prepareFrame` once, then updates each selected baker using that
 context-owned TLAS; it does not depend on the renderer's TLAS. The UI callback
 does not record GPU commands. Scene swaps cancel pending work and release bakers after GPU
-completion. A progress/blocking UI is deferred. In phase 3, the windows add
+completion. A progress/blocking UI is deferred. In phase 2, the windows add
 Generate UV2 and a UV1/UV2 preview. `bg2e::ui::UvMapPreview` uses the
 existing `TextureWidgets` path and a `render::UvMapPreviewRenderer`
 to produce a renderable/sampled Vulkan image; only UI implementation files
