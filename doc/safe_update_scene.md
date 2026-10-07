@@ -34,11 +34,12 @@ The main loop in `MainLoop::run()` executes the following sequence each frame:
 void MainLoop::executeSafeUpdateScene()
 {
     _engine.device().waitIdle();           // wait for GPU
-    for (auto& [fn, token] : _safeUpdateScene)
+    for (auto& entry : _safeUpdateScene)
     {
-        if (!token || token->alive->load())
+        auto token = entry.token.lock();
+        if (!entry.hasToken || (token && token->alive->load()))
         {
-            fn();                          // execute deferred lambda
+            entry.function();              // execute deferred lambda
         }
     }
     _safeUpdateScene.clear();              // flush the queue
@@ -105,9 +106,11 @@ struct SafeUpdateToken {
 };
 ```
 
-When the token is destroyed (e.g., when the owner object is destroyed), `alive`
-becomes `false`. `executeSafeUpdateScene()` checks this flag before running each
-lambda and silently discards invalidated lambdas.
+The queue stores a weak reference to the token rather than extending its
+lifetime. When the caller releases the last token reference (e.g., when the
+owner object is destroyed), the token destructor sets `alive` to `false` and
+the weak reference expires. `executeSafeUpdateScene()` skips that queued lambda.
+An entry queued without a token remains unconditional.
 
 ### API
 
@@ -218,8 +221,9 @@ void StageScene::restoreEnvironmentSettings(const std::filesystem::path& path)
 
 3. **SafeUpdateToken** (`_restoreToken`): If `StageScene` is destroyed before the
    lambda executes (e.g., the user closes the application right after clicking
-   "Restore"), the token is destroyed → `alive` becomes `false` → the lambda is
-   discarded. Without this, the lambda would access a destroyed `this` pointer.
+   "Restore"), the token is destroyed and the queued weak reference expires, so
+   the lambda is discarded. Without this, the lambda would access a destroyed
+   `this` pointer.
 
 4. **`newScene` captured by value**: The loaded scene is captured by `shared_ptr`
    value in the lambda, ensuring the scene graph stays alive until the lambda

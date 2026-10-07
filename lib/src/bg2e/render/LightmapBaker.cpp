@@ -9,7 +9,8 @@
 #include <bg2e/scene/Node.hpp>
 #include "UvSurfacePass.hpp"
 #include "UvTemporalAccumulator.hpp"
-#include "UvAtlasValidation.hpp"
+
+#include <bg2e/geo/UvAtlasValidator.hpp>
 
 #include <stdexcept>
 #include <string>
@@ -176,10 +177,10 @@ void LightmapBaker::validateTarget() const
         throw std::invalid_argument("LightmapBaker: cpuFormat has an unsupported value");
     }
 
-    std::string uvError;
-    if (!detail::validateUsableUv2(*drawable, uvError))
+    const auto uvCheck = geo::UvAtlasValidator::validate(*mesh, 1);
+    if (!uvCheck.valid)
     {
-        throw std::invalid_argument("LightmapBaker: " + uvError);
+        throw std::invalid_argument("LightmapBaker: UV2 atlas is not usable: " + uvCheck.message);
     }
 }
 

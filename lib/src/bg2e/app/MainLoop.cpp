@@ -401,18 +401,25 @@ void MainLoop::requestResizeEvent()
 
 void MainLoop::executeSafeUpdateScene()
 {
-    std::vector<std::pair<std::function<void()>, std::shared_ptr<SafeUpdateToken>>> local;
+    std::vector<SafeUpdateSceneEntry> local;
     {
         std::lock_guard lock(_safeUpdateSceneMutex);
         if (_safeUpdateScene.empty()) return;
         std::swap(local, _safeUpdateScene);
     }
     _engine.device().waitIdle();
-    for (auto& [fn, token] : local)
+    for (auto& entry : local)
     {
-        if (!token || token->alive->load())
+        if (!entry.hasToken)
         {
-            fn();
+            entry.function();
+            continue;
+        }
+
+        auto token = entry.token.lock();
+        if (token && token->alive->load())
+        {
+            entry.function();
         }
     }
 }

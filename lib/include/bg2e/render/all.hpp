@@ -43,6 +43,7 @@
 #include <bg2e/render/SpecularReflectionCubemapRenderer.hpp>
 #include <bg2e/render/SphereToCubemapRenderer.hpp>
 #include <bg2e/render/Texture.hpp>
+#include <bg2e/render/UvMapPreviewRenderer.hpp>
 #include <bg2e/render/ViewpointAnalyzer.hpp>
 
 #include <bg2e/render/vulkan/all.hpp>

@@ -126,6 +126,12 @@ struct SafeUpdateToken {
 };
 
 class BG2E_API MainLoop {
+    struct SafeUpdateSceneEntry {
+        std::function<void()> function;
+        std::weak_ptr<SafeUpdateToken> token;
+        bool hasToken = false;
+    };
+
 public:
     MainLoop(const std::string& appId);
     MainLoop(std::string && appId);
@@ -158,11 +164,13 @@ public:
     // even if the configured frame deadline has not been reached yet.
     void requestFrame();
 
+    // A non-null token is observed weakly; the caller must retain it until the
+    // queued function should run. Releasing the last reference cancels the work.
     void safeUpdateScene(std::function<void()> fn, std::shared_ptr<SafeUpdateToken> token = nullptr)
     {
         {
             std::lock_guard lock(_safeUpdateSceneMutex);
-            _safeUpdateScene.emplace_back(std::move(fn), std::move(token));
+            _safeUpdateScene.push_back({ std::move(fn), token, token != nullptr });
         }
         requestFrame();
     }
@@ -191,7 +199,7 @@ protected:
  
     std::function<bool()> _onExitFunction = nullptr;
 
-    std::vector<std::pair<std::function<void()>, std::shared_ptr<SafeUpdateToken>>> _safeUpdateScene;
+    std::vector<SafeUpdateSceneEntry> _safeUpdateScene;
     std::mutex _safeUpdateSceneMutex;
 
     ui::Loader _loader;

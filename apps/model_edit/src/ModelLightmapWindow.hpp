@@ -19,6 +19,7 @@
 
 #include <bg2e.hpp>
 #include <bg2e/ui/TextureWidgets.hpp>
+#include <bg2e/ui/UvMapPreview.hpp>
 
 class AppDelegate;
 
@@ -37,8 +38,15 @@ private:
     uint32_t _resolutionIndex = 2; // 512
     int _frames = 16;
     int _samples = 8;
+    int _uv2Padding = 4;
+    bool _uv2Generating = false;
 
     std::string _message;
     bg2e::ui::TextureWidgets _preview;
     std::filesystem::path _previewPath;
+
+    bg2e::ui::UvMapPreview _uvPreview;
+    std::shared_ptr<bg2e::app::SafeUpdateToken> _uv2Token;
+
+    void generateUv2();
 };

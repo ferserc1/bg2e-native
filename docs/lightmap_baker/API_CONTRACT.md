@@ -270,10 +270,10 @@ with a warning when this validator fails. This is a **usable-atlas** test:
 a source with UV1 copied into UV2 but already satisfying all atlas rules can
 be baked. Do not infer provenance from coordinate equality.
 
-The planned `geo::GenerateUv2AtlasModifier` adds one xatlas input mesh per
-submesh to a **single xatlas Atlas**, using fixed output resolution and
-padding. The inputs may share the original vertex array but retain separate
-index ranges. `PackCharts` must produce exactly one atlas image.
+The planned `geo::GenerateUv2AtlasModifier` adds the complete object as one
+xatlas input mesh to a **single xatlas Atlas**, using fixed output resolution
+and padding. Previous UV2 values are ignored. `PackCharts` must produce
+exactly one atlas image.
 Reconstruct vertex and index arrays transactionally using xatlas `xref`: copy every
 original attribute, including UV1 bit-for-bit, and replace only UV2.
 Preserve submesh order and triangle-to-submesh mapping. If xatlas yields

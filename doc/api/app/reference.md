@@ -26,6 +26,12 @@ Class and function catalog for `bg2e::app`. The umbrella header is
 | `requestResizeEvent()` | Requests resize handling and a frame. |
 | `asyncLoad(fn, clearColor, completion)` | Runs loading work off-thread and completes safely on the main thread. |
 
+## Scene and mesh updates
+
+| Symbol | Header | Description |
+|--------|--------|-------------|
+| `Uv2RegenerationResult`, `Uv2SafeReload` | `Uv2SafeReload.hpp` | Queues CPU UV2 generation and a loaded Drawable GPU reload through `MainLoop::safeUpdateScene`; see [Uv2SafeReload](Uv2SafeReload.md). |
+
 ## Input
 
 | Symbol | Header | Description |
@@ -84,5 +90,6 @@ Access the active registry through `MainLoop::shortcuts()`.
 | `bg2e/app/MessageBox.hpp` | `MessageBox` |
 | `bg2e/app/GPUSelectionDialog.hpp` | `GPUSelectionDialog` |
 | `bg2e/app/OffscreenApplication.hpp` | Offscreen application types |
+| `bg2e/app/Uv2SafeReload.hpp` | `Uv2SafeReload`, `Uv2RegenerationResult` |
 | `bg2e/app/SDLUtils.hpp` | `initSdlVideoDriver()` |
 | `bg2e/app/all.hpp` | Umbrella header |

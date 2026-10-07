@@ -40,6 +40,10 @@ set(TINYOBJ_INCLUDE "${THIRD_PARTY_PATH}/tinyobj")
 # cgltf
 set(CGLTF_INCLUDE "${THIRD_PARTY_PATH}/cgltf")
 
+# xatlas
+set(XATLAS_INCLUDE "${THIRD_PARTY_PATH}/xatlas/src")
+set(XATLAS_SRC "${THIRD_PARTY_PATH}/xatlas/src/xatlas.cpp")
+
 # metal-cpp (header-only, macOS only)
 set(METALCPP_INCLUDE "${THIRD_PARTY_PATH}/metal-cpp")
 
@@ -55,6 +59,7 @@ set(BG2E_THIRD_PARTY_INCLUDE_PATH
     "${STBIMAGE_INCLUDE}"
     "${TINYOBJ_INCLUDE}"
     "${CGLTF_INCLUDE}"
+    "${XATLAS_INCLUDE}"
     "${METALCPP_INCLUDE}"
     "${IRYKU_SMAA_INCLUDE}"
     #"${SIMDJSON_INCLUDE}"
@@ -67,6 +72,7 @@ set(BG2E_THIRD_PARTY_SRC
     ${BG2SCENE_SRC}
     ${IMGUI_SRC}
     ${NFD_SRC}
+    ${XATLAS_SRC}
     #${SIMDJSON_SRC}
     #${FASTGLTF_SRC}
     # other dependency paths

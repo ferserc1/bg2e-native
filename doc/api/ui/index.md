@@ -232,6 +232,7 @@ ui::DemoWindow                    (static-only, wraps ImGui::ShowDemoWindow)
 | **[`Value`](Value.md)** | `Value.hpp` | Non-numeric value editors: text fields, RGBA color picker and combo boxes (with a dynamic-list overload). |
 | **[`SelectableList`](SelectableList.md)** | `SelectableList.hpp` | Multi-column table of selectable rows with optional per-row buttons. |
 | **[`TextureWidgets`](TextureWidgets.md)** | `TextureWidgets.hpp` | Renders a `render::Texture` as an ImGui image/image-button; adds/removes ImGui Vulkan descriptor sets, with deferred texture swapping. |
+| **[`UvMapPreview`](UvMapPreview.md)** | `UvMapPreview.hpp` | Embeddable UV1/UV2 preview with atlas validation feedback; uses the render preview and `TextureWidgets`. |
 
 ### Scene editors
 
@@ -313,7 +314,7 @@ The whole layer is DPI-scale aware:
   [Group](Group.md), [Button](Button.md), [Numeric](Numeric.md),
   [Vector](Vector.md), [Value](Value.md), [SelectableList](SelectableList.md),
   [Menu](Menu.md), [Toolbar & StatusBar](Toolbar_and_StatusBar.md),
-  [TextureWidgets](TextureWidgets.md),
+  [TextureWidgets](TextureWidgets.md), [UvMapPreview](UvMapPreview.md),
   [Material & Drawable editors](Material_Editors.md),
   [Scene editors](SceneEditors.md), [Reflection widgets](Reflection_Widgets.md),
   [Settings windows](Settings_Windows.md), [Loader](Loader.md).

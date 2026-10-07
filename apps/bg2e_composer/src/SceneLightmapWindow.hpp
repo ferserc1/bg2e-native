@@ -19,6 +19,7 @@
 
 #include <bg2e.hpp>
 #include <bg2e/ui/TextureWidgets.hpp>
+#include <bg2e/ui/UvMapPreview.hpp>
 
 class AppDelegate;
 
@@ -45,12 +46,20 @@ private:
     float _maxDistance = 50.0f;
     float _giRayBias = 0.0005f;
     float _exposureEV = 0.0f;
+    int _uv2Padding = 4;
+    uint32_t _uv2Pending = 0;
+    uint32_t _uv2Failed = 0;
 
     std::string _message;
     bg2e::ui::TextureWidgets _preview;
     std::filesystem::path _previewPath;
 
+    bg2e::ui::UvMapPreview _uvPreview;
+    std::vector<std::shared_ptr<bg2e::app::SafeUpdateToken>> _uv2Tokens;
+
     [[nodiscard]] std::vector<std::shared_ptr<bg2e::scene::Node>> collectTargets() const;
+    [[nodiscard]] std::vector<std::shared_ptr<bg2e::scene::Node>> lockedSelection() const;
     [[nodiscard]] bool isSelected(const std::shared_ptr<bg2e::scene::Node>& node) const;
     void setSelected(const std::shared_ptr<bg2e::scene::Node>& node, bool selected);
+    void generateUv2(const std::vector<std::shared_ptr<bg2e::scene::Node>>& nodes);
 };

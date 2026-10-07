@@ -72,6 +72,7 @@ for scheduling details and the asynchronous-work contract.
 | Persistence | [`Preferences`, `PreferencesStore`](Preferences.md), [`FileHistory`](Platform_services.md#filehistory) |
 | Native services | [`FileDialog`, `MessageBox`](Platform_services.md), `GPUSelectionDialog` |
 | Headless rendering | [`OffscreenApplication`](OffscreenApplication.md), `OffscreenApplicationDelegate`, `OffscreenApplicationConfig` |
+| Safe UV2 editor reload | [`Uv2SafeReload`](Uv2SafeReload.md) |
 
 ## Where to go next
 
@@ -82,4 +83,4 @@ for scheduling details and the asynchronous-work contract.
 - [Application and input](Application_and_input.md) — delegate setup and event routing.
 - [Preferences](Preferences.md) — global and scoped persistent settings.
 - [Platform services](Platform_services.md) — files, history, and message boxes.
-
+- [Uv2SafeReload](Uv2SafeReload.md) — schedule UV2 generation and loaded Drawable reload safely.

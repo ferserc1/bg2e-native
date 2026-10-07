@@ -2,11 +2,11 @@
 
 Next implementation step: [step-05_safe_reload.md](step-05_safe_reload.md). Complete this file **after** finishing step 04; this template records no implementation results.
 
-- Changed files and relevant API decisions: TODO
-- Build command, platform and result: TODO
-- Runtime/fixture evidence: TODO
-- Remaining limitations or regressions: TODO
-- Resources, ownership and synchronization cautions for the next agent: TODO
+- Changed files and relevant API decisions: added `lib/include/bg2e/ui/UvMapPreview.hpp` + `lib/src/bg2e/ui/UvMapPreview.cpp` (embeddable widget, exported through `bg2e/ui/all.hpp`). `init(engine, resolution=256)`, `setMesh(std::shared_ptr<geo::Mesh>)`, `setUvSet(0|1, clamped)`, `setResolution`, `setDisplaySize`, `refresh()`, `draw()`, `cleanup()`. It owns a `render::UvMapPreviewRenderer` and shows validity via `geo::UvAtlasValidator`; the sampled image goes through `TextureWidgets::setDeferredTexture`/`drawImage` using a non-owning `shared_ptr<render::Texture>` wrapper (the renderer outlives the widget texture reference; `cleanup()` clears the widget before destroying the renderer). The widget retains only the CPU mesh shared_ptr, never a Drawable.
+- Build command, platform and result: Not run by the agent; repository instructions prohibit compiling unless explicitly requested. Project-lead compile verification of step 04 remains outstanding.
+- Runtime/fixture evidence: none; no tests in step 04.
+- Remaining limitations or regressions: `draw()` triggers a synchronous blocking `UvMapPreviewRenderer::render()` only when dirty (mesh/uvSet/resolution change or explicit `refresh()`), not per frame. Validation also runs only on refresh.
+- Resources, ownership and synchronization cautions for the next agent: after an in-place CPU UV2 regeneration through `GenerateUv2AtlasModifier::apply()`, the preview's retained `shared_ptr<geo::Mesh>` still points at the same (modified) mesh, so call `UvMapPreview::refresh()` (not `setMesh`) to re-render; use `setMesh` only for model/scene swaps. `setResolution()` and `refresh()` internally call `TextureWidgets::clearTexture()`, which waits on `device().waitIdle()` before releasing the ImGui descriptor, so they are safe during safe-reload flows. Applications must call `UvMapPreview::cleanup()` before the engine is destroyed. After `Drawable::reload()`, call `refresh()` so the preview never displays a stale UV layout.
 - Exact next action: Implement the scope in step-05_safe_reload.md.
 
 ## Next-step instructions

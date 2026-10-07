@@ -98,6 +98,10 @@ The callable is queued and executed on the main thread at a safe point before
 the next rendered frame. Enqueuing automatically requests a frame, so completion
 work from a worker thread is not held until a low background deadline.
 
+When a `SafeUpdateToken` is supplied, the queue keeps only a weak reference to
+it. Destroying the caller's last token reference before execution cancels the
+callable. Omitting the token queues unconditional work.
+
 ## Asynchronous loading
 
 ```cpp

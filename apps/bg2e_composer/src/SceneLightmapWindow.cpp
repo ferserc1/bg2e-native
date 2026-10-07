@@ -27,6 +27,7 @@ void SceneLightmapWindow::init(AppDelegate * delegate)
     setTitle("Scene Lightmap Baker");
     close();
     _preview.init(delegate->engine());
+    _uvPreview.init(delegate->engine());
 
     setDrawFunction([this]() {
         using namespace bg2e::ui;
@@ -49,6 +50,41 @@ void SceneLightmapWindow::init(AppDelegate * delegate)
             }
         }
 
+        auto selection = lockedSelection();
+
+        Text::separator("UV Atlas");
+        Numeric::sliderInt("UV2 Padding", &_uv2Padding, 0, 32);
+        if (Button::button("Generate UV2", false, _uv2Pending > 0))
+        {
+            if (selection.empty())
+            {
+                _message = "Select at least one target.";
+            }
+            else
+            {
+                generateUv2(selection);
+            }
+        }
+        if (_uv2Pending > 0)
+        {
+            Text::text("Generating UV2 atlases: " + std::to_string(_uv2Pending) + " pending...");
+        }
+
+        // Preview the first selected target's UV layout
+        std::shared_ptr<bg2e::geo::Mesh> previewMesh;
+        if (!selection.empty())
+        {
+            if (auto* component = selection.front()->drawable())
+            {
+                if (auto drawable = component->drawable())
+                {
+                    previewMesh = drawable->mesh();
+                }
+            }
+        }
+        _uvPreview.setMesh(previewMesh);
+        _uvPreview.draw();
+
         Text::separator("Bake Settings");
         uint32_t mode = static_cast<uint32_t>(_mode);
         if (Value::comboBox("Mode", { "Ray Traced Ambient Occlusion", "Ray Traced Global Illumination" }, mode))
@@ -70,14 +106,7 @@ void SceneLightmapWindow::init(AppDelegate * delegate)
         const bool baking = _appDelegate->lightmapBakeActive();
         if (Button::button("Generate Selected", false, baking))
         {
-            std::vector<std::shared_ptr<bg2e::scene::Node>> nodes;
-            for (const auto& weakNode : _selectedTargets)
-            {
-                if (auto node = weakNode.lock())
-                {
-                    nodes.push_back(node);
-                }
-            }
+            auto nodes = lockedSelection();
             if (nodes.empty())
             {
                 _message = "Select at least one target.";
@@ -140,9 +169,72 @@ void SceneLightmapWindow::init(AppDelegate * delegate)
 
 void SceneLightmapWindow::cleanup()
 {
+    // Destroying the tokens cancels pending UV2 regenerations
+    _uv2Tokens.clear();
+    _uv2Pending = 0;
+    _uv2Failed = 0;
+    _uvPreview.cleanup();
     _preview.cleanup();
     _previewPath.clear();
     _selectedTargets.clear();
+}
+
+std::vector<std::shared_ptr<bg2e::scene::Node>> SceneLightmapWindow::lockedSelection() const
+{
+    std::vector<std::shared_ptr<bg2e::scene::Node>> nodes;
+    for (const auto& weakNode : _selectedTargets)
+    {
+        if (auto node = weakNode.lock())
+        {
+            nodes.push_back(node);
+        }
+    }
+    return nodes;
+}
+
+void SceneLightmapWindow::generateUv2(const std::vector<std::shared_ptr<bg2e::scene::Node>>& nodes)
+{
+    // A new UV layout invalidates any in-flight bake accumulation
+    if (_appDelegate->lightmapBakeActive())
+    {
+        _appDelegate->cancelLightmapBake();
+    }
+
+    bg2e::geo::Uv2AtlasOptions options;
+    options.resolution = 128u << _resolutionIndex;
+    options.paddingPixels = static_cast<uint32_t>(std::max(_uv2Padding, 0));
+
+    _message.clear();
+    _uv2Tokens.clear();
+    _uv2Pending = static_cast<uint32_t>(nodes.size());
+    _uv2Failed = 0;
+
+    // One independent atlas per selected Drawable, covering all its submeshes
+    for (const auto& node : nodes)
+    {
+        _uv2Tokens.push_back(bg2e::app::Uv2SafeReload::regenerate(
+            node, options,
+            [this](const bg2e::app::Uv2RegenerationResult& result) {
+                if (_uv2Pending > 0)
+                {
+                    --_uv2Pending;
+                }
+                if (result.success)
+                {
+                    _appDelegate->stage()->document()->setUnsavedChanges(true);
+                    _uvPreview.refresh();
+                }
+                else
+                {
+                    ++_uv2Failed;
+                    _message += result.message + "\n";
+                }
+                if (_uv2Pending == 0 && _uv2Failed == 0)
+                {
+                    _message = "UV2 atlases generated.";
+                }
+            }));
+    }
 }
 
 std::vector<std::shared_ptr<bg2e::scene::Node>> SceneLightmapWindow::collectTargets() const

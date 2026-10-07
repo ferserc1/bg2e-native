@@ -33,6 +33,7 @@ exported with `BG2E_API`.
    - [Value](#value)
    - [SelectableList](#selectablelist)
    - [TextureWidgets](#texturewidgets)
+   - [UvMapPreview](#uvmappreview)
 4. [Scene editors](#scene-editors)
    - [SceneTree](#scenetree)
    - [NodeEditor](#nodeeditor)
@@ -412,6 +413,28 @@ Displays one `render::Texture` slot as ImGui image. Holds a
 | `bool imageButton(const std::string& id, uint32_t w, uint32_t h, bool sameLine = false)` | Clickable image; returns true on click. No-op (false) while no texture is bound. |
 | `bool selectTexture(const std::string& label, std::function<std::shared_ptr<render::Texture>(base::Texture*)> cb)` | Image-button + file dialog + Clear button row. The callback receives the loaded `base::Texture*` (**takes ownership**, `nullptr` on Clear) and returns the `render::Texture` to display. Returns true when a file was picked. |
 | `void cleanup()` | Releases descriptor + texture references. |
+
+### `UvMapPreview`
+
+**Header:** `<bg2e/ui/UvMapPreview.hpp>` · **Guide:** [UvMapPreview](UvMapPreview.md)
+
+Embeddable UV1/UV2 mesh preview with a `UvAtlasValidator` result. It retains a
+shared CPU mesh and owns a `render::UvMapPreviewRenderer` plus its displayed
+texture widget.
+
+| Method | Description |
+|--------|-------------|
+| `void init(render::Engine*, uint32_t resolution = 256)` | Creates preview resources; required before `draw()`. |
+| `void setMesh(std::shared_ptr<geo::Mesh>)` / `mesh() const` | Selects and returns the CPU mesh. |
+| `void setUvSet(uint32_t)` / `uvSet() const` | Selects UV1 (`0`) or UV2 (`1`); values above 1 clamp to UV2. |
+| `void setResolution(uint32_t)` / `uint32_t resolution() const` | Sets/reads the render target size. |
+| `void setDisplaySize(uint32_t)` / `displaySize() const` | Sets/reads the square on-screen side length in pixels. |
+| `void refresh()` | Marks the preview and validation report dirty for the next draw. |
+| `void draw()` | Draws the controls, validation result, and image once per UI frame. |
+| `void cleanup()` | Releases UI descriptor and renderer resources before engine destruction. |
+
+The public API does not expose ImGui types; direct ImGui headers and calls stay
+inside engine UI implementation files.
 
 ---
 

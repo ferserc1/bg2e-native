@@ -1,12 +1,12 @@
 # Handoff for Add UI texture preview without exposing ImGui
 
-Next implementation step: [step-04_ui_preview.md](step-04_ui_preview.md). Complete this file **after** finishing step 03; this template records no implementation results.
+Next implementation step: [step-04_ui_preview.md](step-04_ui_preview.md). Updated after completing step 03.
 
-- Changed files and relevant API decisions: TODO
-- Build command, platform and result: TODO
-- Runtime/fixture evidence: TODO
-- Remaining limitations or regressions: TODO
-- Resources, ownership and synchronization cautions for the next agent: TODO
+- Changed files and relevant API decisions: added `lib/include/bg2e/geo/UvAtlasValidator.hpp` + `lib/src/bg2e/geo/UvAtlasValidator.cpp` (public, promoted from the deleted private `lib/src/bg2e/render/UvAtlasValidation.{hpp,cpp}`); `LightmapBaker::validateTarget` now calls `geo::UvAtlasValidator::validate(*mesh, 1)`. Added `lib/include/bg2e/render/UvMapPreviewRenderer.hpp` + `lib/src/bg2e/render/UvMapPreviewRenderer.cpp` and shaders `shaders/src/glsl/uv_map_preview.{vert,frag}.glsl`; exported through `bg2e/render/all.hpp` and `bg2e/geo/all.hpp`. `UvAtlasValidator::validate(const geo::Mesh&, uint32_t uvSet)` returns `UvAtlasValidation { valid, error (UvAtlasError), message, submeshIndex, triangleIndex, vertexIndex, triangleCount, mappedArea, coverage }`. Note: the validator requires in-bounds, non-overlapping submesh ranges covering the whole index buffer, but (unlike the modifier) does not require them ordered. `UvMapPreviewRenderer(engine, resolution)` renders UV1/UV2 wireframes (barycentric in-shader edges — `fillModeNonSolid` is NOT enabled by the engine) plus a dim per-submesh coverage fill and a white [0,1] boundary; `render(mesh, uvSet)` is synchronous and leaves the image in `SHADER_READ_ONLY`; `texture()` exposes a `render::Texture*` usable with the existing TextureWidgets path.
+- Build command, platform and result: Not run by the agent; repository instructions prohibit compiling unless explicitly requested. Project-lead compile and test verification of step 03 remains outstanding (`test_04_uv2_atlas` gained validator fixtures; `test_02_uv_surface` gained a preview smoke test).
+- Runtime/fixture evidence: fixtures written but not executed by the agent. `test_04` covers valid/overlapping/degenerate/out-of-range/non-finite/bad-submesh/unsupported-uvSet cases and validates xatlas modifier output; `test_02` renders both UV channels, checks covered/uncovered texels and the atlas boundary via readback, and exercises `setResolution`.
+- Remaining limitations or regressions: the promoted validator is stricter than the deleted private one (full submesh coverage and no overlapping ranges); targets with gaps in the index buffer are now rejected. Barycentric wireframe width is uniform in barycentric space, not screen space. `render()` blocks on `immediateSubmit`.
+- Resources, ownership and synchronization cautions for the next agent: `texture()` is invalidated by `setResolution()` (target recreated after `waitIdle`); the UI must re-fetch the texture and must not retain it or any Drawable across mesh regeneration or scene swaps. `render()` reads only the CPU `geo::Mesh` (works with `scene::Mesh`, which is a typedef of `geo::MeshPNUUT`); call `Drawable::reload()` separately after regeneration — the preview does not do it. Target format is `VK_FORMAT_R8G8B8A8_UNORM` with a linear sampler and `COLOR_ATTACHMENT|SAMPLED|TRANSFER_SRC` usage. No ImGui types appear in the new public headers.
 - Exact next action: Implement the scope in step-04_ui_preview.md.
 
 ## Next-step instructions

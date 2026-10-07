@@ -33,4 +33,5 @@
 #include <bg2e/app/Preferences.hpp>
 #include <bg2e/app/PreferencesStore.hpp>
 #include <bg2e/app/Shortcuts.hpp>
+#include <bg2e/app/Uv2SafeReload.hpp>
 

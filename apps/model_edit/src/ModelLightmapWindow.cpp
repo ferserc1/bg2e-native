@@ -27,15 +27,32 @@ void ModelLightmapWindow::init(AppDelegate * delegate)
     setTitle("Lightmap Baker");
     close();
     _preview.init(delegate->engine());
+    _uvPreview.init(delegate->engine());
 
     setDrawFunction([this]() {
         using namespace bg2e::ui;
 
-        if (!_appDelegate->stage()->targetModelNode())
+        auto targetNode = _appDelegate->stage()->targetModelNode();
+        if (!targetNode)
         {
             Text::text("No model loaded.");
             return;
         }
+
+        auto drawable = _appDelegate->stage()->targetDrawable();
+        _uvPreview.setMesh(drawable ? drawable->mesh() : nullptr);
+
+        Text::separator("UV Atlas");
+        Numeric::sliderInt("UV2 Padding", &_uv2Padding, 0, 32);
+        if (Button::button("Generate UV2", false, _uv2Generating))
+        {
+            generateUv2();
+        }
+        if (_uv2Generating)
+        {
+            Text::text("Generating UV2 atlas...");
+        }
+        _uvPreview.draw();
 
         Text::separator("Bake Settings");
         Text::text("Mode: Ray Traced Ambient Occlusion");
@@ -96,6 +113,51 @@ void ModelLightmapWindow::init(AppDelegate * delegate)
 
 void ModelLightmapWindow::cleanup()
 {
+    // Destroying the token cancels a pending UV2 regeneration
+    _uv2Token.reset();
+    _uv2Generating = false;
+    _uvPreview.cleanup();
     _preview.cleanup();
     _previewPath.clear();
+}
+
+void ModelLightmapWindow::generateUv2()
+{
+    auto targetNode = _appDelegate->stage()->targetModelNode();
+    if (!targetNode)
+    {
+        return;
+    }
+
+    // A new UV layout invalidates any in-flight bake accumulation
+    if (_appDelegate->lightmapBakeActive())
+    {
+        _appDelegate->cancelLightmapBake();
+    }
+
+    bg2e::geo::Uv2AtlasOptions options;
+    options.resolution = 128u << _resolutionIndex;
+    options.paddingPixels = static_cast<uint32_t>(std::max(_uv2Padding, 0));
+
+    _message.clear();
+    _uv2Generating = true;
+    _uv2Token = bg2e::app::Uv2SafeReload::regenerate(
+        targetNode, options,
+        [this](const bg2e::app::Uv2RegenerationResult& result) {
+            _uv2Generating = false;
+            if (result.success)
+            {
+                _message =
+                    "UV2 atlas generated: " + std::to_string(result.chartCount) +
+                    " charts, " + std::to_string(result.atlasWidth) + "x" +
+                    std::to_string(result.atlasHeight);
+                _uvPreview.refresh();
+                _appDelegate->stage()->document()->setUnsavedChanges(true);
+            }
+            else
+            {
+                _message = result.message;
+                bg2e::app::MessageBox::showError("Generate UV2", result.message);
+            }
+        });
 }
