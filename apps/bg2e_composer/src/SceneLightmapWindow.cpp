@@ -25,6 +25,7 @@ void SceneLightmapWindow::init(AppDelegate * delegate)
 {
     _appDelegate = delegate;
     setTitle("Scene Lightmap Baker");
+    close();
     _preview.init(delegate->engine());
 
     setDrawFunction([this]() {
@@ -50,11 +51,11 @@ void SceneLightmapWindow::init(AppDelegate * delegate)
 
         Text::separator("Bake Settings");
         uint32_t mode = static_cast<uint32_t>(_mode);
-        if (Value::comboBox("Mode", { "RTAO", "RTGI" }, mode))
+        if (Value::comboBox("Mode", { "Ray Traced Ambient Occlusion", "Ray Traced Global Illumination" }, mode))
         {
             _mode = static_cast<int>(mode);
         }
-        Numeric::sliderInt("Resolution", &_resolution, 64, 2048);
+        Value::comboBox("Resolution", { "128", "256", "512", "1024", "2048", "4096" }, _resolutionIndex);
         Numeric::sliderInt("Accumulation Frames", &_frames, 1, 512);
         Numeric::sliderInt("Samples per Pixel", &_samples, 1, 256);
         Group::beginDisabled(_mode == 0);
@@ -62,6 +63,8 @@ void SceneLightmapWindow::init(AppDelegate * delegate)
         Group::endDisabled();
         Group::beginDisabled(_mode == 0);
         Numeric::drag("GI Max Ray Distance", &_maxDistance, 0.5f, 0.01f, 10000.0f);
+        Numeric::drag("GI Ray Bias (m)", &_giRayBias, 0.0001f, 0.0f, 0.05f);
+        Numeric::drag("GI Export Exposure (EV)", &_exposureEV, 0.1f, -16.0f, 16.0f);
         Group::endDisabled();
 
         const bool baking = _appDelegate->lightmapBakeActive();
@@ -82,11 +85,13 @@ void SceneLightmapWindow::init(AppDelegate * delegate)
             else
             {
                 bg2e::render::LightmapSettings settings;
-                settings.resolution = static_cast<uint32_t>(std::max(_resolution, 1));
+                settings.resolution = 128u << _resolutionIndex;
                 settings.accumulationFrames = static_cast<uint32_t>(std::max(_frames, 1));
                 settings.samplesPerPixel = static_cast<uint32_t>(std::max(_samples, 1));
                 settings.giBounces = static_cast<uint32_t>(std::max(_giBounces, 1));
                 settings.maxRayDistance = std::max(_maxDistance, 0.01f);
+                settings.giRayBias = _giRayBias;
+                settings.exposureEV = _exposureEV;
                 settings.mode = _mode == 1
                     ? bg2e::render::LightmapMode::RTGI
                     : bg2e::render::LightmapMode::RTAO;

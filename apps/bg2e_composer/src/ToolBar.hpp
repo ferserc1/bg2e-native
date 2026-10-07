@@ -24,6 +24,7 @@
 class  AppDelegate;
 
 namespace bg2e::ui { class UISettingsWindow; }
+namespace bg2e::render { class RenderSettingsPreferences; }
 class ImportSettingsWindow;
 
 class ToolBar : public bg2e::ui::Toolbar {
@@ -34,13 +35,18 @@ public:
         AppDelegate * delegate,
         bg2e::ui::UISettingsWindow * uiSettings,
         bg2e::ui::RenderSettingsWindow * renderSettings,
+        bg2e::render::RenderSettingsPreferences * renderPrefs,
         ImportSettingsWindow * importSettings
     );
+    void draw() override;
 
 protected:
 
     AppDelegate * _appDelegate = nullptr;
     bg2e::ui::UISettingsWindow * _uiSettingsWindow = nullptr;
     bg2e::ui::RenderSettingsWindow * _renderSettingsWindow = nullptr;
+    bg2e::render::RenderSettingsPreferences * _renderPrefs = nullptr;
+    int32_t _indirectButtonId = -1;
+    int32_t _reflectionsButtonId = -1;
     ImportSettingsWindow * _importSettingsWindow = nullptr;
 };

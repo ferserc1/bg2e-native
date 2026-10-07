@@ -36,6 +36,7 @@
 #include <bg2e/scene/LightComponent.hpp>
 #include <bg2e/scene/DrawableComponent.hpp>
 #include <bg2e/geo/cube.hpp>
+#include <bg2e/geo/plane.hpp>
 #include <bg2e/geo/sphere.hpp>
 #include <bg2e/geo/modifiers.hpp>
 
@@ -571,6 +572,29 @@ void StageScene::addCubeNode()
     drawable->load(_engine);
 
     auto node = std::make_shared<bg2e::scene::Node>("Cube");
+    auto transform = new bg2e::scene::TransformComponent();
+    transform->setTranslation(placementLocalPosition(parent.get()));
+    node->addComponent(transform);
+    node->addComponent(new bg2e::scene::DrawableComponent(drawable));
+
+    insertNewNode(node, parent);
+}
+
+void StageScene::addPlaneNode()
+{
+    if (!_editableRoot) return;
+
+    auto parent = newNodeParent();
+
+    auto mesh = std::shared_ptr<bg2e::scene::Mesh>(bg2e::geo::createPlane(1.0f, 1.0f));
+    bg2e::geo::GenTangentsModifier<bg2e::scene::Mesh> genTangents(mesh.get());
+    genTangents.apply();
+
+    auto drawable = std::make_shared<bg2e::scene::Drawable>();
+    drawable->setMesh(mesh);
+    drawable->load(_engine);
+
+    auto node = std::make_shared<bg2e::scene::Node>("Plane");
     auto transform = new bg2e::scene::TransformComponent();
     transform->setTranslation(placementLocalPosition(parent.get()));
     node->addComponent(transform);

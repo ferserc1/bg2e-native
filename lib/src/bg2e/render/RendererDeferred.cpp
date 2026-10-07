@@ -861,6 +861,17 @@ deferred::IndirectLightingMode RendererDeferred::indirectLightingMode() const
     return _opaqueLayer->indirectLightingMode();
 }
 
+void RendererDeferred::setIndirectLightingEnabled(bool enabled)
+{
+    _opaqueLayer->setIndirectLightingEnabled(enabled);
+    _transparentLayer->setIndirectLightingEnabled(enabled);
+}
+
+bool RendererDeferred::indirectLightingEnabled() const
+{
+    return _opaqueLayer->indirectLightingEnabled();
+}
+
 void RendererDeferred::setRTGIEnabled(bool enabled)
 {
     _opaqueLayer->setRTGIEnabled(enabled);

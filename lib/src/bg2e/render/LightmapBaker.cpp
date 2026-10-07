@@ -159,6 +159,15 @@ void LightmapBaker::validateTarget() const
         (!std::isfinite(_settings.maxRayDistance) || _settings.maxRayDistance <= 0.0f)) {
         throw std::invalid_argument("LightmapBaker: maxRayDistance must be finite and positive");
     }
+    if (_settings.mode == LightmapMode::RTGI &&
+        (!std::isfinite(_settings.giRayBias) || _settings.giRayBias < 0.0f ||
+         _settings.giRayBias >= _settings.maxRayDistance)) {
+        throw std::invalid_argument("LightmapBaker: giRayBias must be finite, non-negative and smaller than maxRayDistance");
+    }
+    if (!std::isfinite(_settings.exposureEV) ||
+        _settings.exposureEV < -16.0f || _settings.exposureEV > 16.0f) {
+        throw std::invalid_argument("LightmapBaker: exposureEV must be finite and within [-16, 16]");
+    }
     if (_settings.mode != LightmapMode::RTAO && _settings.mode != LightmapMode::RTGI) {
         throw std::invalid_argument("LightmapBaker: mode has an unsupported value");
     }
@@ -260,7 +269,8 @@ LightmapPixels LightmapBaker::readPixels() const
     // device is conservative, but avoids assuming a particular frame fence or
     // queuing a transfer ahead of the application's pending submission.
     _context->engine()->device().waitIdle();
-    return _accumulator->readPixels(_settings.cpuFormat);
+    return _accumulator->readPixels(_settings.cpuFormat,
+        _settings.mode == LightmapMode::RTGI ? _settings.exposureEV : 0.0f);
 }
 
 std::shared_ptr<vulkan::Image> LightmapBaker::image() const

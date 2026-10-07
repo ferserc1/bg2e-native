@@ -72,11 +72,17 @@ Sections (all changes go to `_prefs`, which applies them to the renderer):
 | Section | Controls |
 |---------|----------|
 | Final Rendering | FSR Native AA/upscaling modes or Direct 100% without AA |
-| Indirect Lighting | mode combo: `Ambient Occlusion (RTAO)` / `Global Illumination (RTGI)` |
+| Indirect Lighting | independent live RTAO/RTGI switch and mode combo: `Ambient Occlusion (RTAO)` / `Global Illumination (RTGI)` |
 | RTAO / RTGI | per-mode quality/bias controls |
-| RT Reflections | enable + quality controls |
+| RT Reflections | enable + quality controls; disabling this pass retains environment-map reflections |
 | Temporal Accumulator | samples / blending controls |
 | Denoise Filter | filter selection + strength |
+
+The indirect switch skips live ray-traced AO/GI on both deferred layers.
+Environment irradiance, baked lightmaps, direct lighting and direct shadows
+remain active. Both switches can also be changed from the toolbars in
+`model_edit` and `bg2e_composer`; the toolbar and window share the same
+persisted preferences.
 
 > **Dependency:** requires `render::RendererDeferred` — the deferred
 > renderer. Applications using `RendererBasicForward` do not use this window

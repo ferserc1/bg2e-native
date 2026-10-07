@@ -458,7 +458,8 @@ void AppDelegate::initWorkspace()
     _importSettings.load();
     _sceneImporter = std::make_unique<SceneImporter>(_stage.get(), this);
     _importSettingsWindow.init(&_importServer, &_importSettings);
-    _toolBar.init(this, &_uiSettingsWindow, &_renderSettingsWindow, &_importSettingsWindow);
+    _toolBar.init(this, &_uiSettingsWindow, &_renderSettingsWindow,
+                  _renderPrefs.get(), &_importSettingsWindow);
 
     if (_importSettings.serviceEnabled())
     {

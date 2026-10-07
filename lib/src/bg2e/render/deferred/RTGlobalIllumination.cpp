@@ -320,7 +320,7 @@ void RTGlobalIllumination::renderUv(
     GIPushConstants pushConstants{};
     pushConstants.inverseViewProjection = glm::mat4(1.0f);
     pushConstants.cameraPosition = glm::vec3(0.0f);
-    pushConstants.rayBias = 0.0017f;
+    pushConstants.rayBias = settings.giRayBias;
     pushConstants.outputSize = glm::vec2(static_cast<float>(extent.width), static_cast<float>(extent.height));
     pushConstants.sampleCount = settings.samplesPerPixel;
     pushConstants.bounceCount = settings.giBounces;

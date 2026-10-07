@@ -110,7 +110,7 @@ void main()
             payload.hitNormal = vec3(0.0, 1.0, 0.0);
             payload.hitPosition = vec3(0.0);
             traceRayEXT(tlas, gl_RayFlagsNoneEXT, 0xff, 0, 0, 0,
-                origin, 0.001, rayDirection, pc.maxDistance, 0);
+                origin, 0.0001, rayDirection, pc.maxDistance, 0);
 
             if (payload.didHit == 0u)
             {

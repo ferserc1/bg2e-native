@@ -34,12 +34,18 @@ enum class LightmapPixelFormat { RGB8, RGB32F };
 
 struct BG2E_API LightmapSettings {
     uint32_t resolution = 512;
-    LightmapMode mode = LightmapMode::RTAO;
+    LightmapMode mode = LightmapMode::RTGI;
     uint32_t accumulationFrames = 16;
     uint32_t samplesPerPixel = 8;
     uint32_t giBounces = 2;
     // RTGI ray range. RTAO lightmaps use a fixed 0.1 m occlusion radius.
     float maxRayDistance = 50.0f;
+    // RTGI ray origin offset in metres. Smaller values reduce detached contact
+    // illumination; values that are too small can cause self-intersections.
+    float giRayBias = 0.0005f;
+    // RGB8 RTGI export only: multiply the floating-point result by 2^exposureEV
+    // before clamping to [0, 1]. RGB32F and the GPU image remain unchanged.
+    float exposureEV = 0.0f;
     LightmapPixelFormat cpuFormat = LightmapPixelFormat::RGB8;
 };
 

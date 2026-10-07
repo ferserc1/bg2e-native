@@ -37,12 +37,14 @@ private:
 
     std::vector<std::weak_ptr<bg2e::scene::Node>> _selectedTargets;
 
-    int _mode = 0; // 0 = RTAO, 1 = RTGI
-    int _resolution = 512;
+    int _mode = 1; // 0 = RTAO, 1 = RTGI
+    uint32_t _resolutionIndex = 2; // 512
     int _frames = 16;
     int _samples = 8;
     int _giBounces = 2;
     float _maxDistance = 50.0f;
+    float _giRayBias = 0.0005f;
+    float _exposureEV = 0.0f;
 
     std::string _message;
     bg2e::ui::TextureWidgets _preview;

@@ -52,6 +52,8 @@ void RenderSettingsPreferences::load()
         static_cast<deferred::IndirectLightingMode>(
             _prefs.get("render_il_mode",
                 static_cast<uint32_t>(_renderer->indirectLightingMode()))));
+    _renderer->setIndirectLightingEnabled(
+        _prefs.get("render_il_enabled", _renderer->indirectLightingEnabled()));
 
     // RTAO
     _renderer->setAOQuality(static_cast<deferred::RTAOQuality>(
@@ -144,6 +146,7 @@ void RenderSettingsPreferences::persist()
 
     _prefs.set("render_final_mode", static_cast<uint32_t>(_renderer->finalRenderMode()));
     _prefs.set("render_il_mode", static_cast<uint32_t>(_renderer->indirectLightingMode()));
+    _prefs.set("render_il_enabled", _renderer->indirectLightingEnabled());
 
     _prefs.set("render_ao_qualityIndex", static_cast<uint32_t>(_renderer->aoQuality()));
     _prefs.set("render_ao_sampleCount", _renderer->aoSampleCount());
@@ -192,6 +195,7 @@ void RenderSettingsPreferences::persist()
 uint32_t RenderSettingsPreferences::finalRenderingIndex() const { return _renderer->scaleOption(); }
 uint32_t RenderSettingsPreferences::renderScaleIndex() const { return finalRenderingIndex(); }
 uint32_t RenderSettingsPreferences::indirectLightingMode() const { return static_cast<uint32_t>(_renderer->indirectLightingMode()); }
+bool RenderSettingsPreferences::indirectLightingEnabled() const { return _renderer->indirectLightingEnabled(); }
 uint32_t RenderSettingsPreferences::aoQualityIndex() const { return static_cast<uint32_t>(_renderer->aoQuality()); }
 int RenderSettingsPreferences::aoSampleCount() const { return _renderer->aoSampleCount(); }
 int RenderSettingsPreferences::aoBounceCount() const { return _renderer->aoBounceCount(); }
@@ -242,6 +246,12 @@ void RenderSettingsPreferences::setFinalRenderingIndex(uint32_t v)
 void RenderSettingsPreferences::setIndirectLightingMode(uint32_t v)
 {
     _renderer->setIndirectLightingMode(static_cast<deferred::IndirectLightingMode>(v));
+    _dirty = true;
+}
+
+void RenderSettingsPreferences::setIndirectLightingEnabled(bool v)
+{
+    _renderer->setIndirectLightingEnabled(v);
     _dirty = true;
 }
 

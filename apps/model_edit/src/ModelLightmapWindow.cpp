@@ -25,6 +25,7 @@ void ModelLightmapWindow::init(AppDelegate * delegate)
 {
     _appDelegate = delegate;
     setTitle("Lightmap Baker");
+    close();
     _preview.init(delegate->engine());
 
     setDrawFunction([this]() {
@@ -37,8 +38,8 @@ void ModelLightmapWindow::init(AppDelegate * delegate)
         }
 
         Text::separator("Bake Settings");
-        Text::text("Mode: RTAO");
-        Numeric::sliderInt("Resolution", &_resolution, 64, 2048);
+        Text::text("Mode: Ray Traced Ambient Occlusion");
+        Value::comboBox("Resolution", { "128", "256", "512", "1024", "2048", "4096" }, _resolutionIndex);
         Numeric::sliderInt("Accumulation Frames", &_frames, 1, 512);
         Numeric::sliderInt("Samples per Pixel", &_samples, 1, 256);
 
@@ -46,7 +47,7 @@ void ModelLightmapWindow::init(AppDelegate * delegate)
         if (Button::button("Generate", false, baking))
         {
             bg2e::render::LightmapSettings settings;
-            settings.resolution = static_cast<uint32_t>(std::max(_resolution, 1));
+            settings.resolution = 128u << _resolutionIndex;
             settings.accumulationFrames = static_cast<uint32_t>(std::max(_frames, 1));
             settings.samplesPerPixel = static_cast<uint32_t>(std::max(_samples, 1));
             settings.mode = bg2e::render::LightmapMode::RTAO;

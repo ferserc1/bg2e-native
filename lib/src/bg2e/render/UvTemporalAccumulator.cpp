@@ -125,8 +125,12 @@ std::shared_ptr<vulkan::Image> UvTemporalAccumulator::image() const
     return _history[_active];
 }
 
-LightmapPixels UvTemporalAccumulator::readPixels(LightmapPixelFormat format) const
+LightmapPixels UvTemporalAccumulator::readPixels(LightmapPixelFormat format, float exposureEV) const
 {
+    if (!std::isfinite(exposureEV) || exposureEV < -16.0f || exposureEV > 16.0f)
+    {
+        throw std::invalid_argument("UvTemporalAccumulator: exposureEV must be finite and within [-16, 16]");
+    }
     auto resultImage = image();
     const size_t pixelCount = static_cast<size_t>(_extent.width) * _extent.height;
     if (pixelCount > std::numeric_limits<size_t>::max() / (sizeof(float) * 4))
@@ -167,14 +171,16 @@ LightmapPixels UvTemporalAccumulator::readPixels(LightmapPixelFormat format) con
     }
     else if (format == LightmapPixelFormat::RGB8)
     {
+        const float exposure = std::exp2(exposureEV);
         auto& rgb = pixels.rgb.emplace<std::vector<uint8_t>>(pixelCount * 3);
         for (size_t i = 0; i < pixelCount; ++i)
         {
             for (size_t channel = 0; channel < 3; ++channel)
             {
-                const float value = rgba[i * 4 + channel];
+                const float source = rgba[i * 4 + channel];
+                const float value = std::isfinite(source) ? source * exposure : 0.0f;
                 rgb[i * 3 + channel] = static_cast<uint8_t>(
-                    std::lround(std::clamp(std::isfinite(value) ? value : 0.0f, 0.0f, 1.0f) * 255.0f));
+                    std::lround(std::clamp(value, 0.0f, 1.0f) * 255.0f));
             }
         }
     }

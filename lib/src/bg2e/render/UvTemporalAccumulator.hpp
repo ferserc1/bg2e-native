@@ -30,7 +30,7 @@ public:
                 uint32_t previousSamples);
     void reset();
     [[nodiscard]] std::shared_ptr<vulkan::Image> image() const;
-    [[nodiscard]] LightmapPixels readPixels(LightmapPixelFormat format) const;
+    [[nodiscard]] LightmapPixels readPixels(LightmapPixelFormat format, float exposureEV = 0.0f) const;
 
 private:
     Engine* _engine;

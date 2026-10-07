@@ -56,28 +56,36 @@ const vulkan::Image* DeferredLayer::resolveDebugSource(const vulkan::Image* inpu
         case DeferredDebugVisualization::InputImage:
             return inputImage;
         case DeferredDebugVisualization::RTAmbientOcclusion:
+            if (!_indirectLightingEnabled) return _neutralAOImage.get();
             return _rtAmbientOcclusion->aoImage(_engine->currentFrameResourcesIndex()).get();
         case DeferredDebugVisualization::DenoisedAO:
+            if (!_indirectLightingEnabled) return _neutralAOImage.get();
             return _denoiseFilter->outputImage(_engine->currentFrameResourcesIndex()).get();
         case DeferredDebugVisualization::TemporalAccumulatedAO:
+            if (!_indirectLightingEnabled) return _neutralAOImage.get();
             return _temporalAccumulator
                 ? _temporalAccumulator->outputImage(_engine->currentFrameResourcesIndex()).get()
                 : _rtAmbientOcclusion->aoImage(_engine->currentFrameResourcesIndex()).get();
         case DeferredDebugVisualization::RTReflections:
+            if (!rtReflectionsEnabled()) return _rtReflectionFallbackImage.get();
             return _rtReflections ? _rtReflections->reflectionImage(_engine->currentFrameResourcesIndex()).get() : nullptr;
         case DeferredDebugVisualization::TemporalAccumulatedReflections:
+            if (!rtReflectionsEnabled()) return _rtReflectionFallbackImage.get();
             return _temporalReflectionAccumulator
                 ? _temporalReflectionAccumulator->outputImage(_engine->currentFrameResourcesIndex()).get()
                 : nullptr;
         case DeferredDebugVisualization::RTReflectionMask:
+            if (!rtReflectionsEnabled()) return _rtReflectionFallbackImage.get();
             return _temporalReflectionAccumulator
                 ? _temporalReflectionAccumulator->outputImage(_engine->currentFrameResourcesIndex()).get()
                 : nullptr;
         case DeferredDebugVisualization::RTGlobalIllumination:
+            if (!_indirectLightingEnabled || !rtGIEnabled()) return _rtGIFallbackImage.get();
             return _rtGlobalIllumination
                 ? _rtGlobalIllumination->giImage(_engine->currentFrameResourcesIndex()).get()
                 : nullptr;
         case DeferredDebugVisualization::DenoisedGI:
+            if (!_indirectLightingEnabled || !rtGIEnabled()) return _rtGIFallbackImage.get();
             return _denoiseGIFilter
                 ? _denoiseGIFilter->outputImage(_engine->currentFrameResourcesIndex()).get()
                 : nullptr;
@@ -340,8 +348,11 @@ void DeferredLayer::render(
 
     const vulkan::Image* reflectionInputForComposite = nullptr;
 
-    // Determine whether to skip indirect lighting passes for this transparent layer
-    bool skipIndirectPasses = _isTransparent && _skipIndirectLightingForTransparent;
+    // Skip only live RT indirect work; IBL and baked maps remain in composition.
+    bool skipIndirectPasses = !_indirectLightingEnabled ||
+        (_isTransparent && _skipIndirectLightingForTransparent) ||
+        (_indirectLightingMode == IndirectLightingMode::RTGI &&
+            (!_rtGlobalIllumination || !_rtGlobalIllumination->rtSupported() || !rtGIEnabled()));
 
     if (useRT)
     {
@@ -813,12 +824,25 @@ void DeferredLayer::setIndirectLightingMode(IndirectLightingMode mode)
         _indirectLightingMode = IndirectLightingMode::RTAO;
         return;
     }
+    if (_indirectLightingMode == mode) return;
     _indirectLightingMode = mode;
+    if (_temporalAccumulator) _temporalAccumulator->invalidateHistory();
+    if (_temporalGIAccumulator) _temporalGIAccumulator->invalidateHistory();
+}
+
+void DeferredLayer::setIndirectLightingEnabled(bool enabled)
+{
+    if (_indirectLightingEnabled == enabled) return;
+    _indirectLightingEnabled = enabled;
+    if (_temporalAccumulator) _temporalAccumulator->invalidateHistory();
+    if (_temporalGIAccumulator) _temporalGIAccumulator->invalidateHistory();
 }
 
 void DeferredLayer::setRTGIEnabled(bool enabled)
 {
-    if (_rtGlobalIllumination) _rtGlobalIllumination->setEnabled(enabled);
+    if (!_rtGlobalIllumination || _rtGlobalIllumination->settings().enabled == enabled) return;
+    _rtGlobalIllumination->setEnabled(enabled);
+    if (_temporalGIAccumulator) _temporalGIAccumulator->invalidateHistory();
 }
 
 bool DeferredLayer::rtGIEnabled() const
@@ -1223,7 +1247,10 @@ void DeferredLayer::renderCompositePass(
         gbufferDS->addImage(7, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
             gbuffer->image(5).get(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _gbufferSampler);
     }
-    bool skipIndirectPasses = _isTransparent && _skipIndirectLightingForTransparent;
+    bool skipIndirectPasses = !_indirectLightingEnabled ||
+        (_isTransparent && _skipIndirectLightingForTransparent) ||
+        (_indirectLightingMode == IndirectLightingMode::RTGI &&
+            (!_rtGlobalIllumination || !_rtGlobalIllumination->rtSupported() || !rtGIEnabled()));
 
     // Determine whether GI mode is actually active this frame
     bool rtgiActive = !skipIndirectPasses &&
@@ -1237,7 +1264,7 @@ void DeferredLayer::renderCompositePass(
         const vulkan::Image* indirectImg = nullptr;
         if (skipIndirectPasses)
         {
-            // Transparent layer with skip: use white AO fallback (AO=1, no occlusion)
+            // Live indirect pass skipped: use white AO (AO=1, no occlusion).
             indirectImg = _neutralAOImage.get();
         }
         else if (rtgiActive)

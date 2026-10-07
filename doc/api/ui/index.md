@@ -258,7 +258,7 @@ ui::DemoWindow                    (static-only, wraps ImGui::ShowDemoWindow)
 | Class | Header | Description |
 |-------|--------|-------------|
 | **[`UISettingsWindow`](Settings_Windows.md)** | `UISettingsWindow.hpp` | Interface scale and per-gizmo controls, with an optional application background-frame-rate section. |
-| **[`RenderSettingsWindow`](Settings_Windows.md)** | `RenderSettingsWindow.hpp` | Render-scale, indirect-lighting mode, RT reflections, temporal accumulator and denoiser settings for `RendererDeferred`. |
+| **[`RenderSettingsWindow`](Settings_Windows.md)** | `RenderSettingsWindow.hpp` | Render-scale, live RT indirect-lighting and RT-reflection switches, temporal accumulator and denoiser settings for `RendererDeferred`. |
 
 ---
 

@@ -595,6 +595,8 @@ preferences context.
 |--------|-------------|
 | `void init(render::RendererDeferred*, render::RenderSettingsPreferences*)` | Binds the deferred renderer and its preferences store; every change is written back to `_prefs` (persisted by the application). |
 
-Sections: final rendering mode (FSR Native AA/upscaling or Direct), indirect
-lighting mode (RTAO / RTGI), RT reflections, temporal accumulator, denoise
-filter.
+Sections: final rendering mode (FSR Native AA/upscaling or Direct), live
+indirect-lighting switch and mode (RTAO / RTGI), RT-reflection switch, temporal
+accumulator and denoise filter. Disabling live indirect lighting retains IBL,
+baked lightmaps, direct lighting and direct shadows; disabling RT reflections
+retains environment-map reflections.

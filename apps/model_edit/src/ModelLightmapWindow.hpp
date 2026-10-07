@@ -34,7 +34,7 @@ public:
 private:
     AppDelegate * _appDelegate = nullptr;
 
-    int _resolution = 512;
+    uint32_t _resolutionIndex = 2; // 512
     int _frames = 16;
     int _samples = 8;
 

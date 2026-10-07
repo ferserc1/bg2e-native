@@ -20,11 +20,13 @@
 #include "ImportSettingsWindow.hpp"
 #include <bg2e/app/MainLoop.hpp>
 #include <bg2e/ui/RenderSettingsWindow.hpp>
+#include <bg2e/render/RenderSettingsPreferences.hpp>
 
 void ToolBar::init(
     AppDelegate * delegate,
     bg2e::ui::UISettingsWindow * uiSettings,
     bg2e::ui::RenderSettingsWindow * renderSettings,
+    bg2e::render::RenderSettingsPreferences * renderPrefs,
     ImportSettingsWindow * importSettings
 )
 {
@@ -32,6 +34,7 @@ void ToolBar::init(
     _appDelegate = delegate;
     _uiSettingsWindow = uiSettings;
     _renderSettingsWindow = renderSettings;
+    _renderPrefs = renderPrefs;
     _importSettingsWindow = importSettings;
     
     bg2e::app::MainLoop::current()->setOnExitFunction([]() -> bool {
@@ -186,6 +189,12 @@ void ToolBar::init(
             _appDelegate->stage()->addCubeNode();
         }
     }});
+    scene.addMenuItem({ "Plane", {
+        .handler = [&]()
+        {
+            _appDelegate->stage()->addPlaneNode();
+        }
+    }});
     scene.addMenuItem({ "Sphere", {
         .handler = [&]()
         {
@@ -260,6 +269,19 @@ void ToolBar::init(
         }
     });
 
+    _indirectButtonId = addButton({
+        .label = "RT AO/GI: On##rt_indirect",
+        .action = [this]() {
+            _renderPrefs->setIndirectLightingEnabled(!_renderPrefs->indirectLightingEnabled());
+        }
+    });
+    _reflectionsButtonId = addButton({
+        .label = "RT Reflections: On##rt_reflections",
+        .action = [this]() {
+            _renderPrefs->setRTReflectionsEnabled(!_renderPrefs->rtReflectionsEnabled());
+        }
+    });
+
     addButton({
         .label = "Submesh Editor",
         .action = [&]() {
@@ -273,4 +295,17 @@ void ToolBar::init(
             _appDelegate->workspace().toggleRightPanel();
         }
     }, AlignRight);
+}
+
+void ToolBar::draw()
+{
+    updateButtonLabel(_indirectButtonId,
+        _renderPrefs->indirectLightingEnabled()
+            ? "RT AO/GI: On##rt_indirect"
+            : "RT AO/GI: Off##rt_indirect");
+    updateButtonLabel(_reflectionsButtonId,
+        _renderPrefs->rtReflectionsEnabled()
+            ? "RT Reflections: On##rt_reflections"
+            : "RT Reflections: Off##rt_reflections");
+    bg2e::ui::Toolbar::draw();
 }

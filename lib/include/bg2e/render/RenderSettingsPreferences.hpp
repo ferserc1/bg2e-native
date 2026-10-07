@@ -48,6 +48,8 @@ public:
     // --- Indirect Lighting Mode ---
     uint32_t indirectLightingMode() const;
     void setIndirectLightingMode(uint32_t value);
+    bool indirectLightingEnabled() const;
+    void setIndirectLightingEnabled(bool value);
 
     // --- RTAO ---
     uint32_t aoQualityIndex() const;

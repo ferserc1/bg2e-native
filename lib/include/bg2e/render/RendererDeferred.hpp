@@ -187,6 +187,10 @@ public:
     void setIndirectLightingMode(deferred::IndirectLightingMode mode);
     deferred::IndirectLightingMode indirectLightingMode() const;
 
+    // Controls live RTAO/RTGI on both deferred layers; baked maps and IBL stay active.
+    void setIndirectLightingEnabled(bool enabled);
+    bool indirectLightingEnabled() const;
+
     void setRTGIEnabled(bool enabled);
     bool rtGIEnabled() const;
 

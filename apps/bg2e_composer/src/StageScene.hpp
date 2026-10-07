@@ -82,6 +82,7 @@ public:
     // camera, at _createNodeDistance units along the camera view direction.
     void addLightNode();
     void addCubeNode();
+    void addPlaneNode();
     void addSphereNode();
     void addEmptyNode();
 

@@ -306,7 +306,7 @@ void AppDelegate::initWorkspace()
     _environmentPanel.init(this, renderer());
     _uiSettingsWindow.init();
     _renderSettingsWindow.init(renderer(), _renderPrefs.get());
-    _toolBar.init(this, &_uiSettingsWindow, &_renderSettingsWindow);
+    _toolBar.init(this, &_uiSettingsWindow, &_renderSettingsWindow, _renderPrefs.get());
     _submeshPanel.init(this);
     _lightmapWindow.init(this);
 

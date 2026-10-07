@@ -70,14 +70,23 @@ bool RenderSettingsWindow::drawRenderScaleSection()
 
 bool RenderSettingsWindow::drawIndirectLightingModeSection()
 {
-    bg2e::ui::Text::text("Indirect Lighting", true);
+    bg2e::ui::Text::text("Ray Traced Indirect Lighting", true);
+
+    bool enabled = _prefs->indirectLightingEnabled();
+    bool changed = false;
+    if (bg2e::ui::Button::checkBox("Enable RTAO / RTGI", &enabled))
+    {
+        _prefs->setIndirectLightingEnabled(enabled);
+        changed = true;
+    }
+
+    bg2e::ui::Group::beginDisabled(!enabled);
 
     static const std::vector<std::string> modeItems = {
         "Ambient Occlusion (RTAO)", "Global Illumination (RTGI)"
     };
     uint32_t modeIdx = _prefs->indirectLightingMode();
 
-    bool changed = false;
     if (bg2e::ui::Value::comboBox("Mode##IndirectLighting", modeItems, modeIdx))
     {
         _prefs->setIndirectLightingMode(modeIdx);
@@ -94,6 +103,7 @@ bool RenderSettingsWindow::drawIndirectLightingModeSection()
     {
         changed |= drawRTAOSection();
     }
+    bg2e::ui::Group::endDisabled();
     return changed;
 }
 
@@ -214,7 +224,7 @@ bool RenderSettingsWindow::drawRTReflectionsSection()
     bg2e::ui::Text::text("Ray Traced Reflections", true);
 
     bool enabled = _prefs->rtReflectionsEnabled();
-    if (bg2e::ui::Button::checkBox("Enabled##RTReflections", &enabled))
+    if (bg2e::ui::Button::checkBox("Enable RT Reflections##RTReflections", &enabled))
     {
         _prefs->setRTReflectionsEnabled(enabled);
     }

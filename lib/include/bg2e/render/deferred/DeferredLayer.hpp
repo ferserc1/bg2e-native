@@ -198,6 +198,10 @@ public:
     void setIndirectLightingMode(IndirectLightingMode mode);
     IndirectLightingMode indirectLightingMode() const { return _indirectLightingMode; }
 
+    // Skip live RTAO/RTGI while retaining environment irradiance and baked lightmaps.
+    void setIndirectLightingEnabled(bool enabled);
+    bool indirectLightingEnabled() const { return _indirectLightingEnabled; }
+
     // When enabled, the transparent layer skips RTAO/RTGI passes to save GPU time.
     void setSkipIndirectLightingForTransparent(bool skip) { _skipIndirectLightingForTransparent = skip; }
     bool skipIndirectLightingForTransparent() const { return _skipIndirectLightingForTransparent; }
@@ -279,10 +283,11 @@ protected:
     std::unique_ptr<DenoiseFilter> _denoiseGIFilter;
     std::shared_ptr<vulkan::Image> _rtGIFallbackImage;
 
-    // Neutral white AO image used when indirect passes are skipped for the transparent layer
+    // Neutral white AO image used whenever live indirect passes are skipped.
     std::shared_ptr<vulkan::Image> _neutralAOImage;
 
     IndirectLightingMode _indirectLightingMode = IndirectLightingMode::RTGI;
+    bool _indirectLightingEnabled = true;
     bool _skipIndirectLightingForTransparent = false;
 
     struct CompositePushConstants {
