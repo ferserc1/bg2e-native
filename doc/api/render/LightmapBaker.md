@@ -53,6 +53,7 @@ command stream and submitted by the running loop.
 | `giRayBias` | `0.0005f` | RTGI ray-origin offset in metres. |
 | `exposureEV` | `0.0f` | RGB8 RTGI export exposure (`2^EV`) before clamp; does not change RGB32F or the GPU image. |
 | `cpuFormat` | `RGB8` | Format returned by `readPixels()`. |
+| `dilationPixels` | `4` | GPU dilation radius in pixels; valid range is 1–32. |
 
 Each `update()` records one full-resolution accumulation iteration. Use
 `completedFrames()` to observe progress. Once the configured frame count is
@@ -63,6 +64,11 @@ sampled Vulkan result image. The result is an indirect-light multiplier:
 RTAO is grayscale visibility replicated across RGB, while RTGI is colored
 indirect light normalized against the unoccluded environment. Direct lighting
 and material emission are not multiplied by the result.
+
+After every accumulation update, a compute shader extends valid edge colors
+into empty atlas texels. `image()` returns this dilated GPU image, and
+`readPixels()` exports pixels from the same image. Accumulation history,
+baked texels and UV coordinates remain unchanged.
 
 ## Public result access
 

@@ -19,7 +19,7 @@ void main()
 
     if (texelFetch(validTexelMask, pixel, 0).r == 0u)
     {
-        imageStore(nextHistory, pixel, vec4(1.0));
+        imageStore(nextHistory, pixel, vec4(1.0, 1.0, 1.0, 0.0));
         return;
     }
 

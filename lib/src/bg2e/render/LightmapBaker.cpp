@@ -176,6 +176,9 @@ void LightmapBaker::validateTarget() const
         _settings.cpuFormat != LightmapPixelFormat::RGB32F) {
         throw std::invalid_argument("LightmapBaker: cpuFormat has an unsupported value");
     }
+    if (_settings.dilationPixels == 0 || _settings.dilationPixels > 32) {
+        throw std::invalid_argument("LightmapBaker: dilationPixels must be in [1, 32]");
+    }
 
     const auto uvCheck = geo::UvAtlasValidator::validate(*mesh, 1);
     if (!uvCheck.valid)
@@ -246,7 +249,8 @@ void LightmapBaker::recordAccumulation(VkCommandBuffer cmd,
                                        uint32_t frameSlot)
 {
     _accumulator->record(cmd, descriptors, resultImage(frameSlot),
-                         _uvSurfacePass->manager(frameSlot), _completedFrames);
+                         _uvSurfacePass->manager(frameSlot), _completedFrames,
+                         _settings.dilationPixels);
 }
 
 void LightmapBaker::resetAccumulation()

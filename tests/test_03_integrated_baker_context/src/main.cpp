@@ -606,6 +606,10 @@ int main()
                     return value.r > 0.995f && value.g > 0.995f && value.b > 0.995f;
                 }),
                 "isolated plane produced non-neutral RTAO values");
+            require(sampleAtUv(isolatedPixels, settings.resolution, 0.53f, 0.5f).a > 0.5f,
+                "GPU lightmap dilation did not fill the texel beside the UV island");
+            require(sampleAtUv(isolatedPixels, settings.resolution, 0.75f, 0.75f).a < 0.5f,
+                "GPU lightmap dilation reached beyond its configured radius");
 
             auto overhangNode = std::make_shared<bg2e::scene::Node>("overhanging occluder");
             auto overhangDrawable = std::make_shared<bg2e::scene::Drawable>();

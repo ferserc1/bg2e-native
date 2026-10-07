@@ -128,6 +128,12 @@ accepted if it already passes the usable-atlas rules. Use
 [`geo::UvAtlasValidator`](api/geo/UvAtlasValidator.md) to check finite
 in-range coordinates, triangle area, overlaps, indices, and submesh ranges.
 
+The baker dilates each island into its empty UV gutter on the GPU after every
+accumulation update. Both `image()` and `readPixels()` use the dilated result.
+`LightmapSettings::dilationPixels` controls the radius (default 4); both editor bake windows expose it as
+**Lightmap Dilation**. This color fill is separate from **UV2 Padding**, which
+only controls the spacing between generated UV islands.
+
 ## Integrated API
 
 The engine API is documented in

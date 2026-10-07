@@ -94,6 +94,7 @@ void SceneLightmapWindow::init(AppDelegate * delegate)
         Value::comboBox("Resolution", { "128", "256", "512", "1024", "2048", "4096" }, _resolutionIndex);
         Numeric::sliderInt("Accumulation Frames", &_frames, 1, 512);
         Numeric::sliderInt("Samples per Pixel", &_samples, 1, 256);
+        Numeric::sliderInt("Lightmap Dilation", &_lightmapDilation, 1, 32);
         Group::beginDisabled(_mode == 0);
         Numeric::sliderInt("GI Bounces", &_giBounces, 1, 8);
         Group::endDisabled();
@@ -125,6 +126,7 @@ void SceneLightmapWindow::init(AppDelegate * delegate)
                     ? bg2e::render::LightmapMode::RTGI
                     : bg2e::render::LightmapMode::RTAO;
                 settings.cpuFormat = bg2e::render::LightmapPixelFormat::RGB8;
+                settings.dilationPixels = static_cast<uint32_t>(std::max(_lightmapDilation, 1));
                 try
                 {
                     _message.clear();

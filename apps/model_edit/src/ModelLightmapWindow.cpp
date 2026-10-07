@@ -59,6 +59,7 @@ void ModelLightmapWindow::init(AppDelegate * delegate)
         Value::comboBox("Resolution", { "128", "256", "512", "1024", "2048", "4096" }, _resolutionIndex);
         Numeric::sliderInt("Accumulation Frames", &_frames, 1, 512);
         Numeric::sliderInt("Samples per Pixel", &_samples, 1, 256);
+        Numeric::sliderInt("Lightmap Dilation", &_lightmapDilation, 1, 32);
 
         const bool baking = _appDelegate->lightmapBakeActive();
         if (Button::button("Generate", false, baking))
@@ -69,6 +70,7 @@ void ModelLightmapWindow::init(AppDelegate * delegate)
             settings.samplesPerPixel = static_cast<uint32_t>(std::max(_samples, 1));
             settings.mode = bg2e::render::LightmapMode::RTAO;
             settings.cpuFormat = bg2e::render::LightmapPixelFormat::RGB8;
+            settings.dilationPixels = static_cast<uint32_t>(std::max(_lightmapDilation, 1));
             try
             {
                 _message.clear();

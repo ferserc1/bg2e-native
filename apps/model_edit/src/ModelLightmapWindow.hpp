@@ -39,6 +39,7 @@ private:
     int _frames = 16;
     int _samples = 8;
     int _uv2Padding = 4;
+    int _lightmapDilation = 4;
     bool _uv2Generating = false;
 
     std::string _message;

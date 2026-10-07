@@ -21,6 +21,7 @@ struct LightmapSettings {
     float giRayBias = 0.0005f;         // RTGI UV-ray origin offset in metres
     float exposureEV = 0.0f;          // RTGI RGB8 export only; multiply by 2^EV
     LightmapPixelFormat cpuFormat = LightmapPixelFormat::RGB8;
+    uint32_t dilationPixels = 4;       // GPU result gutter fill, valid range [1, 32]
 };
 
 struct LightmapPixels {
@@ -202,8 +203,10 @@ Settings are immutable for an existing baker. Callers reset history after
 target geometry or scene changes before starting a new sequence. No temporal
 reprojection using a screen camera is allowed:
 history is indexed by stable UV2 texels and masked by UV coverage. No island
-identifier, spatial denoising or padding fill is required by this plan;
-uncovered texels remain neutral white.
+identifier or spatial denoising is required by this plan. GPU accumulation
+keeps uncovered texels neutral white in the history image. A final compute
+pass extends covered edge colors into empty texels up to `dilationPixels`;
+`image()` and `readPixels()` both use that dilated result.
 All intermediate images use `resolution x resolution`. The implementation
 must attempt to use FSR NativeAA at that native resolution when the required
 UV-space depth/motion inputs can be supplied correctly. If they cannot, FSR

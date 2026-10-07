@@ -47,6 +47,7 @@ private:
     float _giRayBias = 0.0005f;
     float _exposureEV = 0.0f;
     int _uv2Padding = 4;
+    int _lightmapDilation = 4;
     uint32_t _uv2Pending = 0;
     uint32_t _uv2Failed = 0;
 

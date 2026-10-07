@@ -33,6 +33,11 @@ UvTemporalAccumulator::UvTemporalAccumulator(Engine* engine, VkExtent2D extent)
             VK_FORMAT_R32G32B32A32_SFLOAT, extent,
             VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT |
             VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT));
+        _dilated[i].reset(vulkan::Image::createAllocatedImage(
+            engine, "UV bake dilated result " + std::to_string(i),
+            VK_FORMAT_R32G32B32A32_SFLOAT, extent,
+            VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT |
+            VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT));
     }
 
     vulkan::factory::Sampler samplerFactory(engine);
@@ -54,6 +59,22 @@ UvTemporalAccumulator::UvTemporalAccumulator(Engine* engine, VkExtent2D extent)
     vulkan::factory::ComputePipeline pipelineFactory(engine);
     pipelineFactory.setShader("lightmap_accumulation.comp.spv");
     _pipeline = pipelineFactory.build(_pipelineLayout, "UvTemporalAccumulator::Pipeline");
+
+    vulkan::factory::DescriptorSetLayout dilationLayoutFactory;
+    dilationLayoutFactory.addBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+    dilationLayoutFactory.addBinding(1, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE);
+    _dilationDescriptorSetLayout = dilationLayoutFactory.build(
+        engine->device().handle(), VK_SHADER_STAGE_COMPUTE_BIT);
+
+    vulkan::factory::PipelineLayout dilationPipelineLayoutFactory(engine);
+    dilationPipelineLayoutFactory.addDescriptorSetLayout(_dilationDescriptorSetLayout);
+    _dilationPipelineLayout = dilationPipelineLayoutFactory.build(
+        "UvTemporalAccumulator::DilationPipelineLayout");
+
+    vulkan::factory::ComputePipeline dilationPipelineFactory(engine);
+    dilationPipelineFactory.setShader("lightmap_dilation.comp.spv");
+    _dilationPipeline = dilationPipelineFactory.build(
+        _dilationPipelineLayout, "UvTemporalAccumulator::DilationPipeline");
 }
 
 UvTemporalAccumulator::~UvTemporalAccumulator()
@@ -62,6 +83,9 @@ UvTemporalAccumulator::~UvTemporalAccumulator()
     if (_pipeline) vkDestroyPipeline(device, _pipeline, nullptr);
     if (_pipelineLayout) vkDestroyPipelineLayout(device, _pipelineLayout, nullptr);
     if (_descriptorSetLayout) vkDestroyDescriptorSetLayout(device, _descriptorSetLayout, nullptr);
+    if (_dilationPipeline) vkDestroyPipeline(device, _dilationPipeline, nullptr);
+    if (_dilationPipelineLayout) vkDestroyPipelineLayout(device, _dilationPipelineLayout, nullptr);
+    if (_dilationDescriptorSetLayout) vkDestroyDescriptorSetLayout(device, _dilationDescriptorSetLayout, nullptr);
     if (_sampler) vkDestroySampler(device, _sampler, nullptr);
 }
 
@@ -69,13 +93,18 @@ void UvTemporalAccumulator::record(VkCommandBuffer cmd,
                                    vulkan::DescriptorSetAllocator& descriptors,
                                    const vulkan::Image& sample,
                                    const GBufferManager& uvSurface,
-                                   uint32_t previousSamples)
+                                   uint32_t previousSamples,
+                                   uint32_t dilationPixels)
 {
     if (sample.extent2D().width != _extent.width || sample.extent2D().height != _extent.height ||
         uvSurface.extent().width != _extent.width || uvSurface.extent().height != _extent.height ||
         uvSurface.imageCount() < 4)
     {
         throw std::invalid_argument("UvTemporalAccumulator: sample and mask must match the atlas extent");
+    }
+    if (dilationPixels == 0 || dilationPixels > 32)
+    {
+        throw std::invalid_argument("UvTemporalAccumulator: dilationPixels must be in [1, 32]");
     }
     const uint32_t next = _hasResult ? 1u - _active : 0u;
     auto& output = *_history[next];
@@ -109,20 +138,56 @@ void UvTemporalAccumulator::record(VkCommandBuffer cmd,
         VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
     _initialized[next] = true;
+
+    // Keep the accumulation history untouched for the next frame. Repeated
+    // one-pixel shader passes expand valid colors into the UV gutter.
+    const vulkan::Image* dilationSource = &output;
+    for (uint32_t pass = 0; pass < dilationPixels; ++pass)
+    {
+        const uint32_t targetIndex = pass % 2;
+        auto& dilationTarget = *_dilated[targetIndex];
+        vulkan::Image::cmdTransitionImage(cmd, dilationTarget.handle(),
+            _dilatedInitialized[targetIndex] ? VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+                                              : VK_IMAGE_LAYOUT_UNDEFINED,
+            VK_IMAGE_LAYOUT_GENERAL);
+
+        std::unique_ptr<vulkan::DescriptorSet> dilationSet(
+            descriptors.allocate(_dilationDescriptorSetLayout));
+        dilationSet->beginUpdate();
+        dilationSet->addImage(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+            dilationSource, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _sampler);
+        dilationSet->addImage(1, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+            &dilationTarget, VK_IMAGE_LAYOUT_GENERAL);
+        dilationSet->endUpdate();
+
+        const VkDescriptorSet rawDilationSet = dilationSet->descriptorSet();
+        vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, _dilationPipeline);
+        vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_COMPUTE,
+            _dilationPipelineLayout, 0, 1, &rawDilationSet, 0, nullptr);
+        vkCmdDispatch(cmd, (_extent.width + 7) / 8, (_extent.height + 7) / 8, 1);
+        vulkan::Image::cmdTransitionImage(cmd, dilationTarget.handle(),
+            VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+
+        _dilatedInitialized[targetIndex] = true;
+        dilationSource = &dilationTarget;
+        _dilatedActive = targetIndex;
+    }
     _active = next;
     _hasResult = true;
+    _hasDilatedResult = true;
 }
 
 void UvTemporalAccumulator::reset()
 {
     // The next dispatch does not read old history; no GPU clear is needed.
     _hasResult = false;
+    _hasDilatedResult = false;
 }
 
 std::shared_ptr<vulkan::Image> UvTemporalAccumulator::image() const
 {
-    if (!_hasResult) throw std::logic_error("UvTemporalAccumulator: no result is available");
-    return _history[_active];
+    if (!_hasDilatedResult) throw std::logic_error("UvTemporalAccumulator: no result is available");
+    return _dilated[_dilatedActive];
 }
 
 LightmapPixels UvTemporalAccumulator::readPixels(LightmapPixelFormat format, float exposureEV) const

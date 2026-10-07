@@ -47,6 +47,9 @@ struct BG2E_API LightmapSettings {
     // before clamping to [0, 1]. RGB32F and the GPU image remain unchanged.
     float exposureEV = 0.0f;
     LightmapPixelFormat cpuFormat = LightmapPixelFormat::RGB8;
+    // Number of GPU shader passes extending edge texels into empty atlas space.
+    // Applied to both the sampled result image and CPU export.
+    uint32_t dilationPixels = 4;
 };
 
 }
