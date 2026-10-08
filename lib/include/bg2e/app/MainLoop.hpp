@@ -19,11 +19,10 @@
 #pragma once
 
 #include <bg2e/common.hpp>
-#include <bg2e/render/Engine.hpp>
-#include <bg2e/render/RenderLoop.hpp>
 #include <bg2e/app/Application.hpp>
 #include <bg2e/app/InputManager.hpp>
 #include <bg2e/app/Shortcuts.hpp>
+#include <bg2e/draw/EngineConfig.hpp>
 #include <bg2e/ui/UserInterface.hpp>
 #include <bg2e/ui/Loader.hpp>
 #include <bg2e/base/Timeout.hpp>
@@ -43,6 +42,10 @@
 
 namespace bg2e {
 namespace app {
+
+namespace detail {
+class GraphicsExecution;
+}
 
 struct WindowConfig {
     std::string title = "";
@@ -148,6 +151,10 @@ public:
     
     int32_t run(Application* application);
 
+    // Experimental draw execution path. Always requires an explicit
+    // configuration; there is no default EngineConfig argument.
+    int32_t run(Application* application, const draw::EngineConfig& config);
+
     void exit();
     
     inline void setOnExitFunction(std::function<bool()> fn) { _onExitFunction = fn; }
@@ -192,8 +199,7 @@ protected:
     
     static MainLoop * _mainLoopInstance;
     
-    render::Engine _engine;
-	render::RenderLoop _renderLoop;
+    std::unique_ptr<detail::GraphicsExecution> _execution;
 	app::InputManager _inputManager;
 	ui::UserInterface _userInterface;
  
@@ -220,6 +226,8 @@ protected:
     bg2e::base::Timeout _timeout;
 
     void initMainLoopInstance();
+
+    int32_t runInternal(Application* application, std::unique_ptr<detail::GraphicsExecution> execution);
 
     void executeSafeUpdateScene();
 };

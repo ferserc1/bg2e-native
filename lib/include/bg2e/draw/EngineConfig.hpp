@@ -18,15 +18,27 @@
 
 #pragma once
 
-#include <bg2e/app/all.hpp>
-#include <bg2e/base/all.hpp>
-#include <bg2e/db/all.hpp>
-#include <bg2e/draw/all.hpp>
-#include <bg2e/geo/all.hpp>
-#include <bg2e/gpu/all.hpp>
-#include <bg2e/json/all.hpp>
-#include <bg2e/manipulation/all.hpp>
-#include <bg2e/render/all.hpp>
-#include <bg2e/scene/all.hpp>
-#include <bg2e/ui/all.hpp>
-#include <bg2e/utils/all.hpp>
+#include <bg2e/common.hpp>
+#include <bg2e/gpu/Common.hpp>
+
+#include <string>
+
+namespace bg2e {
+namespace draw {
+
+// Configuration for the experimental draw engine. The backend field selects
+// the low-level GPU API only; the high-level execution path is selected by
+// the MainLoop run overload.
+struct EngineConfig {
+    gpu::BackendType backend = gpu::BackendType::Vulkan;
+    bool debug = false;
+
+    // Empty by default: the MainLoop appId is used as the fallback.
+    std::string applicationName = "";
+
+    gpu::PixelFormat colorFormat = gpu::PixelFormat::B8G8R8A8_UNORM;
+    gpu::PixelFormat depthFormat = gpu::PixelFormat::D32_SFLOAT;
+};
+
+}
+}

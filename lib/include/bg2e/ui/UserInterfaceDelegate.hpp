@@ -40,6 +40,16 @@ public:
     
     inline uint32_t uiWidth() const { return _viewportWidth; }
     inline uint32_t uiHeight() const { return _viewportHeight; }
+
+    // Sets the initial viewport size only when no previous size was set.
+    inline void setInitialSize(uint32_t width, uint32_t height)
+    {
+        if (_viewportWidth == 0 && _viewportHeight == 0)
+        {
+            _viewportWidth = width;
+            _viewportHeight = height;
+        }
+    }
     
 protected:
     uint32_t _viewportWidth = 0;

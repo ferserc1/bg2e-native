@@ -18,15 +18,37 @@
 
 #pragma once
 
-#include <bg2e/app/all.hpp>
-#include <bg2e/base/all.hpp>
-#include <bg2e/db/all.hpp>
-#include <bg2e/draw/all.hpp>
-#include <bg2e/geo/all.hpp>
-#include <bg2e/gpu/all.hpp>
-#include <bg2e/json/all.hpp>
-#include <bg2e/manipulation/all.hpp>
-#include <bg2e/render/all.hpp>
-#include <bg2e/scene/all.hpp>
-#include <bg2e/ui/all.hpp>
-#include <bg2e/utils/all.hpp>
+#include <bg2e/common.hpp>
+#include <bg2e/draw/FrameContext.hpp>
+#include <bg2e/gpu/Common.hpp>
+
+namespace bg2e {
+namespace draw {
+
+class Engine;
+
+// Experimental draw render loop delegate. Resources updated per in-flight
+// frame belong to the objects using them; there is no central per-frame
+// descriptor allocation callback.
+class BG2E_API RenderLoopDelegate {
+public:
+    virtual ~RenderLoopDelegate() = default;
+
+    virtual void init(Engine* engine) { _engine = engine; }
+
+    virtual void initScene() {}
+
+    virtual void resize(gpu::Size2D /* newExtent */) {}
+
+    virtual void update(const FrameContext& /* frameContext */) {}
+
+    virtual void render(const FrameContext& frameContext) = 0;
+
+    virtual void cleanup() {}
+
+protected:
+    Engine* _engine = nullptr;
+};
+
+}
+}

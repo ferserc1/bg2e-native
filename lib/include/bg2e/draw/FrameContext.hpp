@@ -18,15 +18,30 @@
 
 #pragma once
 
-#include <bg2e/app/all.hpp>
-#include <bg2e/base/all.hpp>
-#include <bg2e/db/all.hpp>
-#include <bg2e/draw/all.hpp>
-#include <bg2e/geo/all.hpp>
-#include <bg2e/gpu/all.hpp>
-#include <bg2e/json/all.hpp>
-#include <bg2e/manipulation/all.hpp>
-#include <bg2e/render/all.hpp>
-#include <bg2e/scene/all.hpp>
-#include <bg2e/ui/all.hpp>
-#include <bg2e/utils/all.hpp>
+#include <bg2e/common.hpp>
+#include <bg2e/gpu/Common.hpp>
+#include <bg2e/gpu/CommandBuffer.hpp>
+#include <bg2e/gpu/Image.hpp>
+
+#include <cstdint>
+
+namespace bg2e {
+namespace draw {
+
+class Engine;
+
+// Per-frame work context. All references are borrowed for the current
+// operation only. The color target is the retained scene image; the scene
+// does not necessarily render directly into the acquired presentation image.
+struct FrameContext {
+    Engine& engine;
+    gpu::CommandBuffer& commandBuffer;
+    gpu::Image& colorTarget;
+    gpu::Size2D extent;
+    uint64_t frameNumber = 0;
+    uint32_t frameSlot = 0;
+    float deltaSeconds = 0.0f;
+};
+
+}
+}

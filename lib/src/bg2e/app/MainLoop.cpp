@@ -19,6 +19,9 @@
 #include <bg2e/app/MainLoop.hpp>
 #include <bg2e/app/PreferencesStore.hpp>
 #include <bg2e/app/SDLUtils.hpp>
+#include <bg2e/gpu/Backend.hpp>
+
+#include "detail/GraphicsExecution.hpp"
 
 #ifdef BG2E_LINUX
 
@@ -38,6 +41,7 @@
 #include <algorithm>
 #include <cmath>
 #include <thread>
+#include <stdexcept>
 
 namespace bg2e {
 namespace app {
@@ -45,13 +49,15 @@ namespace app {
 static const char preferencesContext[] = "app";
 
 
-SDL_Window* createSDLWindow(const WindowConfig& cfg) {
+SDL_Window* createSDLWindow(const WindowConfig& cfg, gpu::WindowType windowType) {
     // Position
     int xpos = (cfg.x < 0) ? SDL_WINDOWPOS_CENTERED : cfg.x;
     int ypos = (cfg.y < 0) ? SDL_WINDOWPOS_CENTERED : cfg.y;
 
     // SDL flags derived from WindowConfig
-    Uint32 flags = SDL_WINDOW_VULKAN;
+    Uint32 flags = windowType == gpu::WindowType::Metal
+        ? SDL_WINDOW_METAL
+        : SDL_WINDOW_VULKAN;
 
     if (cfg.resizable)       flags |= SDL_WINDOW_RESIZABLE;
     if (!cfg.decorated)      flags |= SDL_WINDOW_BORDERLESS;
@@ -125,6 +131,25 @@ MainLoop::~MainLoop()
 }
 
 int32_t MainLoop::run(app::Application * application) {
+    if (!application)
+    {
+        throw std::invalid_argument("MainLoop::run: application must not be null.");
+    }
+    return runInternal(application, detail::createRenderGraphicsExecution());
+}
+
+int32_t MainLoop::run(app::Application * application, const draw::EngineConfig& config) {
+    if (!application)
+    {
+        throw std::invalid_argument("MainLoop::run: application must not be null.");
+    }
+    return runInternal(application, detail::createDrawGraphicsExecution(config));
+}
+
+int32_t MainLoop::runInternal(app::Application * application, std::unique_ptr<detail::GraphicsExecution> execution) {
+    execution->validate(*application);
+    execution->ensureRuntimeAvailable();
+
 #ifdef BG2E_IS_MAC
     SDL_SetHint(SDL_HINT_MAC_BACKGROUND_APP, "0");
 #endif
@@ -132,29 +157,13 @@ int32_t MainLoop::run(app::Application * application) {
     initSdlVideoDriver();
 	SDL_Init(SDL_INIT_VIDEO);
 
-    auto window = createSDLWindow(_windowConfig);
+    auto window = createSDLWindow(_windowConfig, execution->windowType());
 
-    _engine.init(window);
-
-    int viewportW = 0;
-    int viewportH = 0;
-
-    SDL_GetWindowSize(window, &viewportW, &viewportH);
-
-    application->uiDelegate()->_viewportWidth = viewportW;
-    application->uiDelegate()->_viewportHeight = viewportH;
-	_userInterface.setDelegate(application->uiDelegate());
-
-	_userInterface.init(&_engine);
-    _renderLoop.setDelegate(application->renderDelegate());
-	_renderLoop.init(&_engine);
+    _execution = std::move(execution);
+    _execution->initialize(window, *application, _userInterface);
 
 	_inputManager.setDelegate(application->inputDelegate());
 
-	_renderLoop.renderUICallback([&](VkCommandBuffer cmd, VkImageView targetImageView) {
-		_userInterface.draw(cmd, targetImageView);
-	});
-    
     SDL_Event event;
     bool quit = false;
     bool stopRendering = false;
@@ -165,9 +174,8 @@ int32_t MainLoop::run(app::Application * application) {
     std::chrono::steady_clock::time_point lastResizeEventTime;
     
     
-    // Initialize the main descriptor set allocator before executing the first frame
-    _engine.descriptorSetAllocator().initPool();
-    _renderLoop.initScene();
+    // Initialize the graphics resources before executing the first frame
+    _execution->initializeScene();
     auto lastRenderedFrameTime = std::chrono::steady_clock::now();
     auto nextBackgroundFrame = lastRenderedFrameTime;
     int storeWidth = _windowConfig.width;
@@ -234,7 +242,7 @@ int32_t MainLoop::run(app::Application * application) {
                 
                 lastResizeEventTime = std::chrono::steady_clock::now();
                 if (!resizing) {
-                    _engine.updateSwapchainSize();
+                    _execution->requestResize();
                     resizing = true;
                 }
                 _resizeRequested = false;
@@ -323,21 +331,12 @@ int32_t MainLoop::run(app::Application * application) {
                 continue;
             }
 
-            if (!resizing && _engine.newFrame())
-            {
-                _renderLoop.swapchainResized();
-            }
-
             const auto delta = std::chrono::duration<float, std::milli>(
                 frameTime - lastRenderedFrameTime);
-            _renderLoop.setDelta(delta.count());
             lastRenderedFrameTime = frameTime;
 
-            _userInterface.newFrame();
+            _execution->frame(delta.count(), !resizing);
 
-            if (!resizing) {
-                _renderLoop.acquireAndPresent();
-            }
             if (limitBackgroundFrameRate)
             {
                 const auto fps = _backgroundMaxFrameRate.load();
@@ -356,10 +355,9 @@ int32_t MainLoop::run(app::Application * application) {
         appPreferences.set("windowSize", glm::vec2{ storeWidth, storeHeight });
     }
 
-    _engine.device().waitIdle();
-	_renderLoop.cleanup();
-	_userInterface.cleanup();
-    _engine.cleanup();
+    _execution->waitIdle();
+    _execution->cleanup();
+    _execution.reset();
     SDL_DestroyWindow(window);
 
     return 0;
@@ -407,7 +405,12 @@ void MainLoop::executeSafeUpdateScene()
         if (_safeUpdateScene.empty()) return;
         std::swap(local, _safeUpdateScene);
     }
-    _engine.device().waitIdle();
+    // The execution exists only during an active run; outside a run there is
+    // no GPU work in flight to wait for.
+    if (_execution)
+    {
+        _execution->waitIdle();
+    }
     for (auto& entry : local)
     {
         if (!entry.hasToken)
@@ -444,7 +447,12 @@ void MainLoop::asyncLoad(
     glm::vec4 clearColor,
     std::function<void(std::exception_ptr)> onComplete)
 {
-    _renderLoop.pauseScene(clearColor);
+    if (!_execution)
+    {
+        throw std::logic_error("MainLoop::asyncLoad requires an active run; no graphics execution is available.");
+    }
+
+    _execution->pauseScene(clearColor);
 
     _userInterface.setFrameOverride([this]{ _loader.draw(); });
 
@@ -456,7 +464,7 @@ void MainLoop::asyncLoad(
 
         safeUpdateScene([this, complete = std::move(complete), error]() {
             _userInterface.clearFrameOverride();
-            _renderLoop.resumeScene();
+            _execution->resumeScene();
             if (complete) complete(error);
         });
     }).detach();

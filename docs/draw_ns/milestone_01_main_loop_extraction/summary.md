@@ -40,3 +40,11 @@ Existing applications run through the extracted production implementation withou
 
 ## Scope boundaries
 OffscreenApplication, GPUSelectionDialog, scene, db, manipulation, render-dependent UI widgets and production render internals are unchanged. Binary ABI stability across library versions is not promised by this extraction; consumers rebuild against the updated library. Source compatibility of existing Application and MainLoop call sites is required.
+
+## Completion notes (step 05 audit)
+- Final internal names: `bg2e::app::detail::GraphicsExecution` (`lib/src/bg2e/app/detail/GraphicsExecution.hpp`), implemented by `RenderGraphicsExecution` (`RenderGraphicsExecution.cpp`) and `DrawGraphicsExecution` (`DrawGraphicsExecution.cpp`); factories `createRenderGraphicsExecution()` and `createDrawGraphicsExecution(const draw::EngineConfig&)`; milestone boundary operation `ensureRuntimeAvailable()`.
+- No MainLoop subclass or external code accessed the removed `_engine`/`_renderLoop` members, so no production-only protected-member bridge was required. The only cross-boundary access was the UI viewport size, solved by the new public `ui::UserInterfaceDelegate::setInitialSize(width, height)` (only assigns when no previous size exists).
+- Production partial-initialization guarantee: `RenderGraphicsExecution` tracks established stages (engine, UI, render loop) and cleans up only those stages. No claim is made that all render partial failures are recoverable; pre-existing render failure limitations remain outside the extraction.
+- Execution destructors invoke the stage-guarded cleanup inside a try/catch so cleanup stays noexcept during exception unwinding and the original exception is preserved.
+- `MainLoop::asyncLoad` and `executeSafeUpdateScene` address the active execution; `asyncLoad` throws `std::logic_error` outside an active run. Detached asyncLoad workers remain a known lifecycle limitation; backend replacement while a run or its workers are active is unsupported.
+- Deferred topics: real `draw` GPU initialization, draw UI composition, the retained scene target and removal/no-op of `ensureRuntimeAvailable` belong to milestone 02. Experimental execution currently stops with `std::logic_error("Experimental draw execution requires milestone 02")` before any SDL/GPU resource is created.
