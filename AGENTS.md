@@ -72,6 +72,7 @@ Rebuilds the bg2e library and refreshes headers + current-platform lib inside a 
 - **Descriptor sets**: set=0 SceneData (view/proj), set=1 ObjectData (model + material + 5 texture samplers), set=2 EnvironmentData (lights + IBL)
 - **Delegate pattern**: `Application` configures `RenderLoopDelegate`, `InputDelegate`, `UserInterfaceDelegate`
 - **macOS**: bundles Vulkan dylibs (MoltenVK, validation layers) and icd.d/explicit_layer.d into the app bundle at build time
+- **bg2e::ui**: NEVER expose imgui headers outside the source code files. All imgui functions must to be called using some kind of wrapper. The bg2e::ui is used to create complex widgets and to povide a wrapper to imgui functions. 
 
 ## `bg2e::gpu` development rules
 
@@ -206,6 +207,7 @@ GLSL in `shaders/src/` compiles to `.spv` via CMake post-build using `${VULKAN_S
 - **MSVC**: uses `/MP` for parallel build and `MultiThreadedDLL` runtime
 - **macOS code signing** is explicitly disabled in CMake (`CMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED "NO"`)
 - **GLSL includes** are resolved by glslang's include path — don't move `shaders/src/lib/` relative to other shader files
+- **imgui wrapper**: NEVER include imgui headers, functions or types in any bg2 engine public header. All the imgui functions must to be called from the engine c++ source, and only can be called by the final application using the bg2e::ui wrapper functions.
 - **`.bg2` format** is the engine's proprietary binary mesh format (separate from glTF/OBJ)
 - **`skills.md`** contains the full architecture reference — read it before modifying engine internals
 
