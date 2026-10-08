@@ -15,15 +15,45 @@ public:
     virtual void init(int argc, char** argv) = 0;
 
     void setRenderDelegate(std::shared_ptr<render::RenderLoopDelegate>);
+    void setRenderDelegate(std::shared_ptr<draw::RenderLoopDelegate>);
+    void setRenderDelegate(std::nullptr_t);
     void setInputDelegate(std::shared_ptr<InputDelegate>);
     void setUiDelegate(std::shared_ptr<ui::UserInterfaceDelegate>);
 };
 ```
 
 Call the three setters from the derived application's `init()` implementation.
-A common application delegate implements all three interfaces and is shared by
-the corresponding setters.
+In production, a common application delegate can implement all three interfaces
+and be shared by the corresponding setters.
 
+## Graphics delegate registration
+
+The render and draw delegates are distinct types with distinct contracts.
+Register either through `setRenderDelegate()`. Each overload sets its own
+slot and clears the other, so the last registration wins. Passing `nullptr`
+clears both graphics slots, including when a typed empty shared pointer is used.
+Input/UI registration is independent.
+
+```cpp
+std::shared_ptr<render::RenderLoopDelegate>& renderDelegate();
+std::shared_ptr<draw::RenderLoopDelegate>& drawDelegate();
+std::shared_ptr<InputDelegate>& inputDelegate();
+std::shared_ptr<ui::UserInterfaceDelegate>& uiDelegate();
+```
+
+The getters return mutable references. Direct assignment can bypass the setter
+invariant and populate both graphics slots; MainLoop rejects that configuration.
+Prefer setters. The getter return type cannot select a run overload for you.
+
+Use `run(application)` with a production delegate and
+`run(application, draw::EngineConfig{})` with a draw delegate. Both currently
+require non-null input and UI delegates. A valid draw run still throws at the
+[milestone 01 runtime boundary](MainLoop.md#experimental-runtime-boundary).
+
+See [draw::RenderLoopDelegate](../draw/RenderLoopDelegate.md) for the experimental
+contract. It does not expose Vulkan frame resources or a central descriptor
+allocation callback. This milestone does not add a draw initialization overload
+to UserInterfaceDelegate; multibackend UI integration is pending.
 ## InputDelegate
 
 Override only the events the application needs:

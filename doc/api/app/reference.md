@@ -12,6 +12,20 @@ Class and function catalog for `bg2e::app`. The umbrella header is
 | [`WindowConfig`](MainLoop.md#windowconfig) | `MainLoop.hpp` | Initial window position, size, state, flags, and size persistence. |
 | `SafeUpdateToken` | `MainLoop.hpp` | Lifetime guard for queued safe updates. |
 
+### Execution selection
+
+| Member | Description |
+|--------|-------------|
+| `MainLoop::run(Application*)` | Production render/Vulkan execution. |
+| `MainLoop::run(Application*, const draw::EngineConfig&)` | Experimental draw selection; explicit configuration argument, Metal default on macOS and Vulkan elsewhere; runtime pending milestone 02. |
+| `Application::setRenderDelegate(shared_ptr<render::RenderLoopDelegate>)` | Registers production delegate and clears draw slot. |
+| `Application::setRenderDelegate(shared_ptr<draw::RenderLoopDelegate>)` | Registers draw delegate and clears production slot. |
+| `Application::setRenderDelegate(nullptr_t)` | Clears both graphics slots. |
+| `Application::renderDelegate()` / `drawDelegate()` | Mutable references to the separate graphics delegate slots. |
+
+See [validation and runtime availability](MainLoop.md#execution-selection-and-validation).
+The internal graphics execution interface is not an application API.
+[draw API reference](../draw/reference.md) documents the new contracts.
 ### MainLoop scheduling
 
 | Member | Description |

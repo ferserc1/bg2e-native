@@ -15,11 +15,79 @@ loop.initWindowConfig(WindowConfig::maximized("Example", true));
 return loop.run(application);
 ```
 
-`run()` initializes SDL video, creates the window and engine, installs the
+`run(application)` initializes SDL video, creates the window and engine, installs the
 application delegates, initializes the scene, and processes events and frames
 until exit. Cleanup waits for the device, releases rendering and application
 resources, destroys the window, and returns an exit code.
 
+## Execution selection and validation
+
+```cpp
+int32_t run(Application* application);
+int32_t run(Application* application, const draw::EngineConfig& config);
+```
+
+The one-argument overload always selects production `bg2e::render`, with Vulkan.
+Existing production launchers and delegate implementations remain unchanged.
+The two-argument overload selects experimental `bg2e::draw`; it has no default
+second argument. Pass `draw::EngineConfig{}` to use Metal on macOS or Vulkan on
+Linux/Windows, or set `config.backend` explicitly. See
+[EngineConfig](../draw/EngineConfig.md) for all configuration fields.
+
+The run overload, not the registered delegate or low-level backend, selects
+the high-level framework. Selecting Vulkan in EngineConfig still selects draw.
+`MainLoop` copies the supplied configuration into its private execution object.
+
+Call the application's `init(argc, argv)` in the launcher before `run()`.
+`MainLoop` does not call it automatically.
+
+### Configuration errors
+
+Before initializing SDL or creating a window, `run()` throws
+`std::invalid_argument` for:
+
+- a null application pointer;
+- a graphics delegate from the other framework, including two populated graphics slots;
+- a missing graphics delegate for the selected framework;
+- a missing UI or input delegate;
+- Metal selected for draw on a platform other than macOS.
+
+Validation follows this order: application pointer, opposite graphics slot,
+required graphics slot, UI delegate, input delegate, then the experimental
+platform restriction. Registering a draw delegate and calling `run(application)`
+does not switch frameworks; it reports the mismatch. See
+[Application registration](Application_and_input.md#graphics-delegate-registration).
+
+### Experimental runtime boundary
+
+In milestone 01, a valid draw configuration reaches an explicit availability
+boundary and throws:
+
+```text
+std::logic_error: Experimental draw execution requires milestone 02
+```
+
+No SDL window or GPU context is created by that run. Choosing the default
+Metal backend on macOS does not imply that Metal execution is implemented yet.
+Window creation, clear/presentation and multibackend UI belong to milestone 02.
+
+### Common loop and graphics execution
+
+`MainLoop` owns the input manager, UserInterface, Loader, timers and common
+scheduling. The private graphics execution implementation owns Engine and
+RenderLoop and handles initialization, scene startup, resize requests, frame
+work, GPU waiting, scene pause/resume and cleanup. It is not public API.
+
+The production implementation preserves its descriptor-pool startup and
+Vulkan UI callback. During resize debounce it prepares UI frames but suppresses
+scene acquisition/presentation. MainLoop passes elapsed milliseconds to the
+execution implementation; the draw adapter converts to seconds for its new
+RenderLoop contract. Existing production delta semantics stay unchanged.
+
+Safe updates wait through the active graphics execution before invoking queued
+work. Async loading pauses/resumes that execution while Loader/frame override
+and worker completion remain common MainLoop behavior. These runtime facilities
+currently operate through the available production route.
 ## WindowConfig
 
 `WindowConfig` describes initial position, size, state, decoration, resizing,

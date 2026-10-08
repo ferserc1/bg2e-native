@@ -19,6 +19,7 @@
 #pragma once
 
 #include <bg2e/common.hpp>
+#include <bg2e/base/PlatformTools.hpp>
 #include <bg2e/gpu/Common.hpp>
 
 #include <string>
@@ -30,7 +31,12 @@ namespace draw {
 // the low-level GPU API only; the high-level execution path is selected by
 // the MainLoop run overload.
 struct EngineConfig {
+    // Prefer the native Metal backend on macOS; use Vulkan elsewhere.
+#ifdef BG2E_IS_MAC
+    gpu::BackendType backend = gpu::BackendType::Metal;
+#else
     gpu::BackendType backend = gpu::BackendType::Vulkan;
+#endif
     bool debug = false;
 
     // Empty by default: the MainLoop appId is used as the fallback.

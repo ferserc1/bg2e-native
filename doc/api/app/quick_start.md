@@ -1,6 +1,7 @@
 # bg2e::app Quick Start Guide
 
-These recipes use `bg2e::app` APIs only. Rendering, scene, and UI delegate
+These recipes focus on `bg2e::app`, with `draw::EngineConfig` for experimental
+execution selection. Rendering, scene, and UI delegate
 implementations are intentionally outside their scope.
 
 ---
@@ -9,6 +10,7 @@ implementations are intentionally outside their scope.
 
 1. [Include the module](#include-the-module)
 2. [Configure a window](#configure-a-window)
+   - [Select an execution path](#select-an-execution-path)
 3. [Limit background rendering](#limit-background-rendering)
 4. [Change the limiter at runtime](#change-the-limiter-at-runtime)
 5. [Request a prompt frame](#request-a-prompt-frame)
@@ -35,6 +37,34 @@ loop.initWindowConfig(
 The final `true` persists the normal window size in the application preference
 directory.
 
+## Select an execution path
+
+The snippets below assume `application` has already been initialized and has
+the matching graphics delegate plus non-null input and UI delegates.
+
+```cpp
+// Existing production entry point: Vulkan on every supported platform.
+return loop.run(&application);
+```
+
+```cpp
+#include <bg2e/draw/EngineConfig.hpp>
+
+// Experimental entry point: Metal on macOS, Vulkan elsewhere.
+bg2e::draw::EngineConfig config;
+return loop.run(&application, config);
+```
+
+To explicitly select Vulkan for draw on macOS as well:
+
+```cpp
+config.backend = bg2e::gpu::BackendType::Vulkan;
+```
+
+In milestone 01 the experimental call validates configuration and then throws
+`std::logic_error("Experimental draw execution requires milestone 02")` before
+window creation. It is a configuration example, not a runnable draw tutorial.
+See [MainLoop](MainLoop.md#execution-selection-and-validation).
 ## Limit background rendering
 
 ```cpp

@@ -36,6 +36,28 @@ Application
 runtime objects and is a singleton while it exists; code running inside an
 application can access it through `MainLoop::current()`.
 
+## Production and experimental execution
+
+The `MainLoop::run()` overload selects the high-level framework:
+
+| Call | Framework | Low-level backend | Milestone 01 status |
+|------|-----------|-------------------|---------------------|
+| `run(application)` | Production `bg2e::render` | Vulkan on every platform | Available |
+| `run(application, draw::EngineConfig{})` | Experimental `bg2e::draw` | Metal on macOS, Vulkan elsewhere by default | Contracts available; execution pending |
+
+Explicitly assigning `EngineConfig::backend` overrides the experimental default.
+This does not change the production route. Neither framework is deprecated.
+
+`MainLoop` keeps window/event handling, input, scheduling, timers, preferences,
+and queued work common. A private graphics execution implementation owns the
+selected engine and rendering coordinator. Applications do not construct this
+implementation.
+
+Both routes validate their delegates before SDL/GPU allocation. A correctly
+configured experimental run currently throws `std::logic_error` with
+`Experimental draw execution requires milestone 02`, also before allocation.
+See [execution selection](MainLoop.md#execution-selection-and-validation) and
+[the experimental draw API](../draw/index.md).
 ## Background frame-rate limiting
 
 `MainLoop` can limit complete frames while the window does not have input focus.
