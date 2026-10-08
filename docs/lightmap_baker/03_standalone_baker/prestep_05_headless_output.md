@@ -1,13 +1,13 @@
 # Handoff for Define standalone output policy
 
-Next implementation step: [step-05_headless_output.md](step-05_headless_output.md). Complete this file **after** finishing step 04; this template records no implementation results.
+Next implementation step: [step-05_headless_output.md](step-05_headless_output.md). This handoff records step 04 implementation findings; project-lead compile and image-format round-trip verification remain pending.
 
-- Changed files and relevant API decisions: TODO
-- Build command, platform and result: TODO
-- Runtime/fixture evidence: TODO
-- Remaining limitations or regressions: TODO
-- Resources, ownership and synchronization cautions for the next agent: TODO
-- Exact next action: Implement the scope in step-05_headless_output.md.
+- Changed files and relevant API decisions: Added `db::ImageFormat`, `imageFormatFromExtension`, `imageFormatFromPath`, `extensionsForImageFormat`, and `canonicalImageExtension` in `lib/include/bg2e/db/image.hpp` and `lib/src/bg2e/db/image_db.cpp`. Extension discovery accepts dotted or undotted ASCII case-insensitive names. JPEG recognizes `.jpg` and `.jpeg`, with `.jpg` canonical. `saveImage` dispatches through the same format discovery while preserving both overloads and JPEG quality 100.
+- Build command, platform and result: Not run by the agent; repository instructions reserve compile/test execution for the project lead.
+- Runtime/fixture evidence: Not run. Project-lead verification should cover extension-string and filesystem-path forms, upper/lowercase and dotted/undotted inputs, unsupported extensions, and a small image save/load round-trip for PNG, JPEG, BMP and TGA.
+- Remaining limitations or regressions: No known implementation limitation. `extensionsForImageFormat` returns an empty list and `canonicalImageExtension` an empty view for an invalid enum value.
+- Resources, ownership and synchronization cautions for the next agent: Use `imageFormatFromPath` to preflight an output path before baking; use `canonicalImageExtension` when constructing a destination and `extensionsForImageFormat` when enumerating accepted aliases. `saveImage` remains extension-driven and throws for an unsupported extension.
+- Exact next action: Obtain project-lead compile and image-format round-trip verification for standalone step 04; after it passes, implement `step-05_headless_output.md`.
 
 ## Next-step instructions
 

@@ -94,4 +94,4 @@ command recording, after the frame has been submitted and advanced.
 - [`geo::GenerateUv2AtlasModifier`](../geo/GenerateUv2AtlasModifier.md)
 - [`render::UvMapPreviewRenderer`](UvMapPreviewRenderer.md)
 - [`ui::UvMapPreview`](../ui/UvMapPreview.md)
-- [Standalone baking](../../../docs/lightmap_baker/03_standalone_baker/overview.md) — planned headless CLI phase.
+- [Standalone Lightmap Baking](StandaloneBakerContext.md) — headless context and model/prefab batch workflow.

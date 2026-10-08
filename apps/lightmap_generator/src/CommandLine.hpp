@@ -18,47 +18,31 @@
 
 #pragma once
 
-#include <bg2e/common.hpp>
+#include <bg2e/render/StandaloneBakeBatch.hpp>
 
 #include <filesystem>
-#include <memory>
+#include <iosfwd>
 #include <string>
 
-namespace bg2e {
+namespace lightmap_generator {
 
-namespace render {
-class Engine;
-}
+enum class Command { Model, Prefab };
 
-namespace scene {
-class Node;
-}
+struct Options {
+    Command command = Command::Model;
+    std::filesystem::path contextPath;
+    std::filesystem::path modelPath;
+    std::filesystem::path prefabPath;
+    std::filesystem::path outputDirectory;
+    bg2e::db::ImageFormat imageFormat = bg2e::db::ImageFormat::PNG;
+    bg2e::render::StandaloneBakeBatch::Options batch;
+    bool giBouncesSpecified = false;
+    bool maxDistanceSpecified = false;
+};
 
-namespace db {
+bool helpRequested(int argc, char** argv);
+Options parseOptions(int argc, char** argv);
+void validateOptions(const Options& options);
+void printUsage(std::ostream& output);
 
-extern BG2E_API std::shared_ptr<scene::Node> loadSceneBg2(
-    const std::filesystem::path& filePath,
-    render::Engine* engine
-);
-
-extern BG2E_API std::shared_ptr<scene::Node> loadSceneBg2(
-    const std::filesystem::path& filePath,
-    render::Engine* engine,
-    bool loadGpuResources
-);
-
-extern BG2E_API std::shared_ptr<scene::Node> loadSceneBg2(
-    const std::filesystem::path& basePath,
-    const std::string& fileName,
-    render::Engine* engine
-);
-
-extern BG2E_API std::shared_ptr<scene::Node> loadSceneBg2(
-    const std::filesystem::path& basePath,
-    const std::string& fileName,
-    render::Engine* engine,
-    bool loadGpuResources
-);
-
-}
 }

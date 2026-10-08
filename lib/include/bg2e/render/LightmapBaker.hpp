@@ -32,6 +32,7 @@ class Node;
 namespace render {
 
 class BakerContext;
+class LightmapBakeExecutor;
 class UvSurfacePass;
 class UvTemporalAccumulator;
 namespace vulkan {
@@ -58,6 +59,8 @@ public:
     [[nodiscard]] std::shared_ptr<scene::Node> targetNode() const { return _targetNode; }
 
 protected:
+    friend class LightmapBakeExecutor;
+
     LightmapBaker(std::shared_ptr<BakerContext> context,
                   std::shared_ptr<scene::Node> targetNode,
                   LightmapSettings settings);

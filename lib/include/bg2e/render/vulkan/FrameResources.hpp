@@ -62,8 +62,8 @@ struct BG2E_API FrameResources {
     DescriptorSet* newDescriptorSet(VkDescriptorSetLayout);
 
 private:
-    Engine * _engine;
-    const Device * _device;
+    Engine * _engine = nullptr;
+    const Device * _device = nullptr;
     Command* _command = nullptr;
 };
 
@@ -71,4 +71,3 @@ private:
 }
 }
 }
-

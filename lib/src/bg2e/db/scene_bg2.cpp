@@ -25,11 +25,21 @@
 #include <bg2e/scene/Node.hpp>
 #include <bg2e/scene/TransformComponent.hpp>
 
+#include <stdexcept>
+
 namespace bg2e::db {
 
 std::shared_ptr<scene::Node> loadSceneBg2(
     const std::filesystem::path& filePath,
     render::Engine* engine)
+{
+    return loadSceneBg2(filePath, engine, true);
+}
+
+std::shared_ptr<scene::Node> loadSceneBg2(
+    const std::filesystem::path& filePath,
+    render::Engine* engine,
+    bool loadGpuResources)
 {
     auto model = std::unique_ptr<Bg2Mesh>(loadMeshBg2(filePath));
 
@@ -44,7 +54,14 @@ std::shared_ptr<scene::Node> loadSceneBg2(
         drawable->setSubmeshGroupName(material.groupName(), index);
         drawable->setSubmeshVisibility(material.visible(), index);
     }
-    drawable->load(engine);
+    if (loadGpuResources)
+    {
+        if (!engine)
+        {
+            throw std::invalid_argument("loadSceneBg2(): an engine is required for GPU loading");
+        }
+        drawable->load(engine);
+    }
 
     auto result = std::make_shared<scene::Node>(filePath.stem().string());
     result->addComponent(std::make_shared<scene::DrawableComponent>(drawable));
@@ -72,7 +89,16 @@ std::shared_ptr<scene::Node> loadSceneBg2(
     const std::string& fileName,
     render::Engine* engine)
 {
-    return loadSceneBg2(basePath / fileName, engine);
+    return loadSceneBg2(basePath / fileName, engine, true);
+}
+
+std::shared_ptr<scene::Node> loadSceneBg2(
+    const std::filesystem::path& basePath,
+    const std::string& fileName,
+    render::Engine* engine,
+    bool loadGpuResources)
+{
+    return loadSceneBg2(basePath / fileName, engine, loadGpuResources);
 }
 
 }

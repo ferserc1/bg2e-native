@@ -1,13 +1,13 @@
 # Handoff for Assemble model and prefab scenes
 
-Next implementation step: [step-03_input_assembly.md](step-03_input_assembly.md). Complete this file **after** finishing step 02; this template records no implementation results.
+Next implementation step: [step-03_input_assembly.md](step-03_input_assembly.md). This handoff records step 02 implementation findings and project-lead verification.
 
-- Changed files and relevant API decisions: TODO
-- Build command, platform and result: TODO
-- Runtime/fixture evidence: TODO
-- Remaining limitations or regressions: TODO
-- Resources, ownership and synchronization cautions for the next agent: TODO
-- Exact next action: Implement the scope in step-03_input_assembly.md.
+- Changed files and relevant API decisions: `StandaloneBakerContext::initialize()` now creates a context-owned `FrameResources`, descriptor allocator, and separate production `RayTracingScene`. `updateScene()` applies the first configured viewport resize, drives `willUpdate -> UpdateVisitor -> light/environment cache refresh (camera only when present) -> didUpdate`, then records and synchronously submits the context-owned TLAS build. It rejects an empty/non-traceable scene and waits for the build fence before declaring `SceneReady`. Generic `FrameResources::cleanup()` now tolerates partially initialized command/synchronization resources so initialization failures can be unwound safely.
+- Build command, platform and result: The project lead confirmed standalone step 02 compilation passed; command and platform details were not supplied. The agent did not compile.
+- Runtime/fixture evidence: The project lead confirmed the headless moving-component fixture passed; the component and transform values were not supplied.
+- Remaining limitations or regressions: `StandaloneLightmapBaker::update()` remains the explicit stub from step 01; bake submission is implemented by later standalone-baking steps. `updateScene()` requires at least one loaded, ray-tracing-enabled, visible, non-transparent instance and leaves the context in `Initialized` after failures.
+- Resources, ownership and synchronization cautions for the next agent: Attach context and target geometry before the one initial `updateScene()`; an empty TLAS is an explicit error. Repeated scene updates wait for device idle, clear the standalone descriptor pools, clean the previous context-owned TLAS before rebuilding, and reset all live baker accumulation generations. The standalone TLAS is distinct from `_frameResources->rayTracingScene` and `FrameResources::flushFrameData()` is not used. The build command buffer is submitted on the engine graphics queue and its fence is waited synchronously; the existing `RayTracingScene::update()` records the build-to-ray/compute barrier. No draw hooks or camera are required.
+- Exact next action: Implement `step-03_input_assembly.md`, loading context and model/prefab target geometry into the retained scene before `updateScene()` so all intended occluders and targets enter its single TLAS.
 
 ## Next-step instructions
 

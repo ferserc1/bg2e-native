@@ -20,10 +20,11 @@ if (!validation.valid)
 Only UV-set indices 0 (UV1 / `texCoord0`) and 1 (UV2 / `texCoord1`) are
 supported. The validator rejects empty meshes, missing or invalid submesh
 ranges, indices outside the vertex array, non-finite or out-of-range UV
-coordinates, zero-area/near-degenerate mapped triangles, and overlaps with
-positive area. Shared triangle edges and vertices are allowed. All mesh vertex
-coordinates in the selected set are checked, including vertices not referenced
-by an index.
+coordinates, UV maps without any positive-area triangle, and overlaps with
+positive area. Zero-area mapped triangles cover no texels and are ignored
+by the overlap and coverage checks. Shared triangle edges and vertices are
+allowed. All mesh vertex coordinates in the selected set are checked,
+including vertices not referenced by an index.
 
 ## Result fields
 

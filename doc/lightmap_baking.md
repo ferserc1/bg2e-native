@@ -1,9 +1,9 @@
-# Lightmap baking and UV2 editor workflow
+# Lightmap baking, UV2 editors, and standalone CLI
 
 The lightmap baker needs a usable UV2 atlas. The integrated baker runs in an
-existing engine render loop and produces one RGB indirect-light multiplier for
-each target Drawable. This page describes the UV2 generation and preview flow
-shared by `model_edit` and `bg2e_composer`.
+existing engine render loop; the standalone baker runs without a window or render
+loop. Both produce one RGB indirect-light multiplier per target Drawable. This
+page describes the UV2 generation, preview, and headless CLI workflows.
 
 ## Editor workflow
 
@@ -136,14 +136,49 @@ only controls the spacing between generated UV islands.
 
 ## Integrated API
 
-The engine API is documented in
+The integrated engine API is documented in
 [`render::IntegratedBakerContext` and `LightmapBaker`](api/render/LightmapBaker.md).
 It requires an active frame lifecycle and a valid UV2 atlas. See also the
 [geometry API](api/geo/index.md), [render API](api/render/index.md),
 [UI preview](api/ui/UvMapPreview.md), and
 [safe scene updates](safe_update_scene.md).
 
-The next implementation phase adds standalone, headless CLI baking and will
-document its command-line options and output files separately. That future
-CLI will use the same CPU modifier before loading meshes, without requiring a
-`MainLoop`.
+## Standalone scene assembly and lifecycle
+
+The CLI loads the JSON context scene, then attaches either one `.bg2` model at
+the world origin or a complete prefab subtree. Context and target Drawables are
+assembled into one scene before `StandaloneBakerContext::updateScene()`. The
+standalone context performs component updates, refreshes scene lights and
+environment resources, and builds one owned production `RayTracingScene` TLAS.
+Context geometry and target Drawables therefore participate together as GI
+occluders. A batch calls `updateScene()` once; baking additional targets does
+not rebuild the TLAS. Call `updateScene(deltaSeconds)` explicitly when scene
+inputs move or change; this advances the scene generation and resets live baker
+accumulation histories.
+
+The standalone API needs no camera, window, `MainLoop`, or renderer. Each
+`StandaloneLightmapBaker::update()` records and synchronously waits for one
+sample, then advances the engine frame counter. Read pixels after the requested
+accumulation count. The engine and assembled scene must outlive their contexts
+and bakers; destroy the batch and context before calling `Engine::cleanup()`.
+
+## Standalone UV2 and output policy
+
+Both CLI branches assemble targets with GPU loading deferred. With
+`--generate-uv2=true`, the batch applies the CPU atlas modifier to each target
+and validates it before loading target GPU meshes/BLASes and building the TLAS.
+With `false`, it validates existing UV2; invalid targets are reported once and
+skipped for baking while remaining in the full scene as potential occluders.
+The validator accepts a usable UV1 copy in UV2 and never infers provenance from
+coordinate equality.
+
+Output is preflighted for the entire eligible batch before baking. Images are
+written in the selected PNG, JPEG, BMP, or TGA format. The no-generation branch
+writes images only. The generation branch writes an image and a new `.bg2`
+copy per target, setting the generated AO image path on all submesh materials
+with UV set 1 and unit scale. Output names derive from sanitized stable node
+identities; existing paths, input aliases, and unresolved collisions are fatal.
+Input models, prefab JSON, and context JSON are never overwritten or emitted.
+The `.bg2` writer may copy referenced material texture sidecars into the output
+directory. See the [CLI guide](api/app/LightmapGenerator.md) for all four
+model/prefab and UV2 output combinations.

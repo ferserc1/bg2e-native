@@ -1,2 +1,3 @@
 add_subdirectory(model_edit)
 add_subdirectory(bg2e_composer)
+add_subdirectory(lightmap_generator)

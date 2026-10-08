@@ -23,6 +23,9 @@
 #include <bg2e/render/LightmapBaker.hpp>
 #include <bg2e/render/LightmapSettings.hpp>
 #include <bg2e/render/IntegratedBakerContext.hpp>
+#include <bg2e/render/StandaloneBakerContext.hpp>
+#include <bg2e/render/StandaloneBakeBatch.hpp>
+#include <bg2e/render/StandaloneBakeSceneAssembler.hpp>
 #include <bg2e/render/ColorAttachments.hpp>
 #include <bg2e/render/ColorAttachmentsCanvas.hpp>
 #include <bg2e/render/CubemapRenderer.hpp>

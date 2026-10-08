@@ -106,11 +106,17 @@ void checkChartSeparation(const xatlas::Atlas * atlas)
             const xatlas::Vertex & v1 = outMesh.vertexArray[outMesh.indexArray[t + 1]];
             const xatlas::Vertex & v2 = outMesh.vertexArray[outMesh.indexArray[t + 2]];
 
-            if (v0.chartIndex < 0 || v0.chartIndex != v1.chartIndex || v0.chartIndex != v2.chartIndex)
+            const int32_t chart = v0.chartIndex;
+            if (chart < 0)
+            {
+                // Zero-area face ignored by xatlas; it covers no texels.
+                continue;
+            }
+            if (chart != v1.chartIndex || chart != v2.chartIndex)
             {
                 throw std::runtime_error("GenerateUv2AtlasModifier: invalid chart assignment in xatlas output");
             }
-            const uint32_t chartId = static_cast<uint32_t>(v0.chartIndex);
+            const uint32_t chartId = static_cast<uint32_t>(chart);
 
             const float x0 = v0.uv[0], y0 = v0.uv[1];
             const float x1 = v1.uv[0], y1 = v1.uv[1];
@@ -250,7 +256,17 @@ void GenerateUv2AtlasModifier::apply()
         {
             throw std::runtime_error("GenerateUv2AtlasModifier: xatlas output vertex xref out of range");
         }
-        if (outVertex.atlasIndex != 0 || outVertex.chartIndex < 0)
+        if (outVertex.chartIndex < 0)
+        {
+            // xatlas does not chart faces with zero 3D area. Their output
+            // vertices carry chartIndex -1 and atlasIndex -1; map them to the
+            // origin so the resulting zero-area UV triangle covers no texels.
+            VertexPNUUT newVertex = _mesh->vertices[outVertex.xref];
+            newVertex.texCoord1 = { 0.0f, 0.0f };
+            newVertices.push_back(newVertex);
+            continue;
+        }
+        if (outVertex.atlasIndex != 0)
         {
             throw std::runtime_error("GenerateUv2AtlasModifier: xatlas output vertex is not in the single atlas");
         }
