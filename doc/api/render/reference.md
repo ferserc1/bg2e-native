@@ -9,6 +9,9 @@ UV and lightmap-related public symbols declared by
 | `LightmapMode`, `LightmapPixelFormat`, `LightmapSettings` | `render/LightmapSettings.hpp` | [Integrated Lightmap Baker](LightmapBaker.md#settings-and-output) |
 | `LightmapPixels`, `LightmapBaker` | `render/LightmapBaker.hpp` | [Integrated Lightmap Baker](LightmapBaker.md) |
 | `IntegratedBakerContext`, `IntegratedLightmapBaker` | `render/IntegratedBakerContext.hpp` | [Integrated Lightmap Baker](LightmapBaker.md) |
+| `StandaloneBakerContext`, `StandaloneLightmapBaker` | `render/StandaloneBakerContext.hpp` | [Standalone Lightmap Baking](StandaloneBakerContext.md) |
+| `StandaloneBakeSceneAssembler` | `render/StandaloneBakeSceneAssembler.hpp` | [Standalone Lightmap Baking](StandaloneBakerContext.md#batch-workflow) |
+| `StandaloneBakeBatch` | `render/StandaloneBakeBatch.hpp` | [Standalone Lightmap Baking](StandaloneBakerContext.md#batch-workflow) |
 
 These facilities use production `bg2e::render` Vulkan resources. They are
 separate from the experimental `bg2e::gpu` abstraction.

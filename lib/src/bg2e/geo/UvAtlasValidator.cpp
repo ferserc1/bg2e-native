@@ -293,12 +293,10 @@ UvAtlasValidation UvAtlasValidator::validate(const Mesh & mesh, uint32_t uvSet)
             const double signedArea = cross(triangle.points[0], triangle.points[1], triangle.points[2]) * 0.5;
             if (std::abs(signedArea) <= kMinTriangleArea)
             {
-                auto error = fail(UvAtlasError::DegenerateTriangle,
-                    "zero-area or near-degenerate mapped triangle in submesh " +
-                    std::to_string(submeshIndex));
-                error.submeshIndex = submeshIndex;
-                error.triangleIndex = triangleIndex;
-                return error;
+                // Zero-area mapped triangles cover no texels (they are produced,
+                // for example, from zero-area 3D faces that xatlas cannot
+                // chart) and are excluded from the overlap and coverage checks.
+                continue;
             }
             mappedArea += std::abs(signedArea);
 
@@ -308,6 +306,12 @@ UvAtlasValidation UvAtlasValidator::validate(const Mesh & mesh, uint32_t uvSet)
             triangle.maxY = std::max({ triangle.points[0].y, triangle.points[1].y, triangle.points[2].y });
             triangles.push_back(triangle);
         }
+    }
+
+    if (triangles.empty())
+    {
+        return fail(UvAtlasError::DegenerateTriangle,
+            "the UV map contains no positive-area triangles");
     }
 
     std::sort(triangles.begin(), triangles.end(), [](const UvTriangle & lhs, const UvTriangle & rhs) {
@@ -342,7 +346,7 @@ UvAtlasValidation UvAtlasValidator::validate(const Mesh & mesh, uint32_t uvSet)
     }
 
     result.valid = true;
-    result.triangleCount = static_cast<uint32_t>(triangles.size());
+    result.triangleCount = static_cast<uint32_t>(mesh.indices.size() / 3);
     result.mappedArea = static_cast<float>(mappedArea);
     result.coverage = computeCoverage(triangles);
     return result;

@@ -45,6 +45,8 @@ struct Uv2AtlasResult
 // Previous UV2 values are ignored. Position, normal,
 // tangent and UV1 (texCoord0) are copied bit-for-bit from the source vertex
 // referenced by each output vertex; only UV2 (texCoord1) is replaced.
+// Faces with zero 3D area cannot be charted by xatlas; their UV2 collapses
+// to a zero-area triangle at the origin that covers no texels.
 //
 // This modifier is CPU-only: it neither loads nor reloads GPU resources.
 // On failure apply() throws std::runtime_error and leaves the mesh unchanged.

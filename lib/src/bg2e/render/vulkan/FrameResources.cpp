@@ -70,18 +70,29 @@ void FrameResources::cleanup()
     {
         delete descriptorAllocator;
         descriptorAllocator = nullptr;
+    }
 
-        // Destroy command pool
+    if (_command && commandPool != VK_NULL_HANDLE)
+    {
         _command->destroyComandPool(commandPool);
+    }
 
-        // Destroy synchronization structures
-        vkDestroyFence(_command->device(), frameFence, nullptr);
-        vkDestroySemaphore(_command->device(), swapchainSemaphore, nullptr);
+    const VkDevice device = _device ? _device->handle() : VK_NULL_HANDLE;
+    if (device != VK_NULL_HANDLE && frameFence != VK_NULL_HANDLE)
+    {
+        vkDestroyFence(device, frameFence, nullptr);
+    }
+    if (device != VK_NULL_HANDLE && swapchainSemaphore != VK_NULL_HANDLE)
+    {
+        vkDestroySemaphore(device, swapchainSemaphore, nullptr);
+    }
 
-        // Destroy frame cleanup manager
+    if (_device)
+    {
         cleanupManager.flush(*_device);
     }
     
+    _engine = nullptr;
     _device = nullptr;
     _command = nullptr;
     descriptorAllocator = nullptr;
@@ -104,4 +115,3 @@ DescriptorSet* FrameResources::newDescriptorSet(VkDescriptorSetLayout layout)
 }
 }
 }
-

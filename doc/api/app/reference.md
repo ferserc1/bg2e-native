@@ -85,6 +85,12 @@ Access the active registry through `MainLoop::shortcuts()`.
 | `OffscreenApplicationDelegate` | `OffscreenApplication.hpp` | Offscreen initialization, frame, render, completion, and cleanup callbacks. |
 | [`OffscreenApplication`](OffscreenApplication.md) | `OffscreenApplication.hpp` | Engine and fixed-image lifecycle without a window or swapchain. |
 
+## Standalone tools
+
+| Tool | Documentation | Description |
+|------|---------------|-------------|
+| `lightmap_generator` | [LightmapGenerator](LightmapGenerator.md) | Headless model and prefab lightmap baking using the production render API. |
+
 ## Header catalog
 
 | Header | Primary contents |

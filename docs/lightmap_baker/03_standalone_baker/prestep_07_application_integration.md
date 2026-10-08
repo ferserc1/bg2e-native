@@ -1,13 +1,15 @@
 # Handoff for Create apps/lightmap_generator
 
-Next implementation step: [step-07_application_integration.md](step-07_application_integration.md). Complete this file **after** finishing step 06; this template records no implementation results.
+Next implementation step: [step-07_application_integration.md](step-07_application_integration.md). This handoff records step 06 implementation findings; project-lead compile and batch-fixture verification remain pending.
 
-- Changed files and relevant API decisions: TODO
-- Build command, platform and result: TODO
-- Runtime/fixture evidence: TODO
-- Remaining limitations or regressions: TODO
-- Resources, ownership and synchronization cautions for the next agent: TODO
-- Exact next action: Implement the scope in step-07_application_integration.md.
+- Changed files and relevant API decisions: Added `render::StandaloneBakeBatch` in `lib/include/bg2e/render/StandaloneBakeBatch.hpp` and `lib/src/bg2e/render/StandaloneBakeBatch.cpp`, exported from `bg2e/render/all.hpp`. `run(engine, assembly, outputDirectory, imageFormat, options, callback)` validates/preflights the eligible targets, creates one standalone context, calls `updateScene()` once, creates one baker per eligible target, performs exactly the configured sample count, and writes each completed target. The result reports baked/skipped counts, cancellation, and one identity/reason per skipped target. The callback receives zero-based `targetIndex` among eligible targets, `targetCount`, `completedFrames`, and `accumulationFrames`; returning false stops before another sample, and only a fully completed target is written.
+- Changed loading contract: Per project-lead decision, UV2 regeneration uses CPU-only target assembly. Call `assembleModel(context, model, std::nullopt, false)` or `assemblePrefab(context, prefab, std::nullopt, false)`. The added overloads preserve the existing immediate-GPU-load assembler APIs. The batch rejects UV2 generation if target Drawables are already GPU-loaded, generates and validates UV2 on their CPU meshes, then loads every target Drawable (including invalid-UV skipped occluders) and its BLAS before the single scene/TLAS update. For CLI consistency, use CPU-only assembly in both UV2 branches.
+- Shared bake execution: `render::LightmapBakeExecutor` now records the common UV surface, RTAO/RTGI, composition and accumulation sample for both integrated and standalone bakers. Standalone update submits and waits synchronously, then advances the engine frame counter so shared CPU readback is legal. Standalone RTGI builds IBL from the scene environment, with the renderer's procedural sky-dome environment as a fallback when none is present.
+- Build command, platform and result: Not run by the agent; repository instructions reserve compilation for the project lead.
+- Runtime/fixture evidence: Not run. Project-lead verification should confirm two eligible targets with 16 frames perform one scene/TLAS update and 32 sample submissions; invalid UV2 targets are reported once and skipped when regeneration is disabled; regeneration occurs before target GPU/BLAS loading; cancellation stops before the next submission; and completed targets use the expected image-only or image-plus-.bg2 output branch without changing input files.
+- Remaining limitations or regressions: The environment resource bundle is retained by the Engine cleanup manager until its registered Vulkan cleanup callbacks run. Destroy the batch/context before `Engine::cleanup()`, consistent with the API lifetime contract. Compile and runtime behavior for the new headless sample path remain unverified.
+- Resources, ownership and synchronization cautions for the next agent: The batch does not call `updateScene()` from its target loop and does not rebuild the TLAS per target. Keep the `Assembly` alive through `run()`. Pass output format and paths through `db::LightmapOutputWriter`; its preflight must succeed before any bake. Use the returned skipped-target reasons for one CLI warning per target and report `bakedCount`, `skippedCount`, and `cancelled` in the CLI summary. Keep argument parsing/validation in the CLI; batch settings are supplied via `StandaloneBakeBatch::Options::lightmapSettings` and `generateUv2`.
+- Exact next action: Obtain project-lead compile and multi-target, skip, UV2 CPU-only and cancellation fixture verification for standalone step 06; after it passes, implement `step-07_application_integration.md`.
 
 ## Next-step instructions
 

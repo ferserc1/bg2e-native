@@ -25,10 +25,28 @@
 #include <filesystem>
 #include <cstddef>
 #include <cstdint>
+#include <optional>
+#include <string_view>
 #include <vector>
 
 namespace bg2e {
 namespace db {
+
+enum class ImageFormat
+{
+    PNG,
+    JPEG,
+    BMP,
+    TGA
+};
+
+extern BG2E_API std::optional<ImageFormat> imageFormatFromExtension(std::string_view extension);
+
+extern BG2E_API std::optional<ImageFormat> imageFormatFromPath(const std::filesystem::path& filePath);
+
+extern BG2E_API std::vector<std::string_view> extensionsForImageFormat(ImageFormat format);
+
+extern BG2E_API std::string_view canonicalImageExtension(ImageFormat format);
 
 extern BG2E_API bg2e::base::Image * loadImage(const std::filesystem::path& filePath);
 

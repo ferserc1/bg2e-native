@@ -1,13 +1,13 @@
 # Handoff for Implement standalone batch control
 
-Next implementation step: [step-06_batch_execution.md](step-06_batch_execution.md). Complete this file **after** finishing step 05; this template records no implementation results.
+Next implementation step: [step-06_batch_execution.md](step-06_batch_execution.md). This handoff records step 05 implementation findings; project-lead compile and dry-run/fixture verification remain pending.
 
-- Changed files and relevant API decisions: TODO
-- Build command, platform and result: TODO
-- Runtime/fixture evidence: TODO
-- Remaining limitations or regressions: TODO
-- Resources, ownership and synchronization cautions for the next agent: TODO
-- Exact next action: Implement the scope in step-06_batch_execution.md.
+- Changed files and relevant API decisions: Added `db::LightmapOutputWriter` in `lib/include/bg2e/db/LightmapOutputWriter.hpp` and `lib/src/bg2e/db/LightmapOutputWriter.cpp`, exported through `bg2e/db/all.hpp`. Construct it with the output directory and `db::ImageFormat`; call `preflight(targets, writeModelCopies, protectedInputPaths)` once before baking, then call `write(pixels, targetIdentity)` for each completed target. Preflight returns the final image and optional `.bg2` paths. `writeModelCopies` must match the UV2-generation branch.
+- Build command, platform and result: Not run by the agent; plan and repository instructions reserve compilation for the project lead.
+- Runtime/fixture evidence: Not run. Project-lead verification should dry-run and exercise full-batch path planning, output collisions and input aliases, no-overwrite behavior, output confinement, RGB32F-to-RGB8 clamp/round, image-only output when UV2 generation is disabled, and `.bg2` plus AO assignment when enabled.
+- Remaining limitations or regressions: The `.bg2` serializer copies referenced non-AO material textures as sidecars into the output directory. Preflight reserves those names, rejects conflicting sources/outputs, and the writer stages copies before commit. Previous targets already committed remain intact if a later target fails; each individual target's image/model/sidecars are committed together with rollback on a write failure.
+- Resources, ownership and synchronization cautions for the next agent: `Target` carries the stable `outputIdentity`, source `.bg2` path and attached node. Pass the assembled context JSON, model/prefab JSON and all non-target source `.bg2` resources in `protectedInputPaths`; target `.bg2` paths and loaded scene texture/environment resources are protected automatically. Call preflight for the entire target batch before the first bake or output write. The output `.bg2` is serialized from a Drawable clone, with one generated AO texture path shared by its submeshes, `aoUVSet = 1` and unit scale; loaded source materials are not modified. Images use canonical extensions; float RGB is clamped and rounded once to RGB8.
+- Exact next action: Obtain project-lead compile and dry-run/fixture verification for standalone step 05; after it passes, implement `step-06_batch_execution.md`.
 
 ## Next-step instructions
 

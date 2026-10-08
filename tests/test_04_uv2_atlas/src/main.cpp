@@ -376,11 +376,20 @@ static void testValidator()
 
     {
         auto mesh = makeTwoSubmeshQuad();
+        for (auto & vertex : mesh.vertices)
+        {
+            vertex.texCoord1 = { 0.25f, 0.25f };
+        }
+        checkValidation(mesh, 1, false, geo::UvAtlasError::DegenerateTriangle,
+            "UV map without positive-area triangles rejected");
+    }
+    {
+        auto mesh = makeTwoSubmeshQuad();
         mesh.vertices[0].texCoord1 = { 0.25f, 0.25f };
         mesh.vertices[1].texCoord1 = { 0.25f, 0.25f };
         mesh.vertices[2].texCoord1 = { 0.25f, 0.25f };
-        checkValidation(mesh, 1, false, geo::UvAtlasError::DegenerateTriangle,
-            "zero-area mapped triangle rejected");
+        checkValidation(mesh, 1, true, geo::UvAtlasError::None,
+            "zero-area mapped triangle ignored among positive-area triangles");
     }
     {
         auto mesh = makeTwoSubmeshQuad();

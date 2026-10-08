@@ -15,6 +15,8 @@
 #include <bg2e/scene/Scene.hpp>
 #include <bg2e/scene/vk/LightDataBinding.hpp>
 
+#include "LightmapBakeExecutor.hpp"
+
 #include <algorithm>
 #include <functional>
 #include <stdexcept>
@@ -82,46 +84,20 @@ void IntegratedLightmapBaker::update(VkCommandBuffer cmd, vulkan::FrameResources
     }
 
     const uint32_t frameSlot = _context->engine()->currentFrameResourcesIndex();
-    recordUvSurface(cmd, frameSlot);
     context->initializeBakeDescriptorAllocator(frameSlot);
     auto& descriptorAllocator = context->bakeDescriptorAllocator(frameSlot);
-    const auto& uvSurface = _uvSurfacePass->manager(frameSlot);
     const auto& sceneBindings = context->sceneBindingSnapshot();
-
-    std::vector<base::LightData> giLights;
-    giLights.reserve(sceneBindings.lights.lightCount);
+    std::vector<base::LightData> lights;
+    lights.reserve(sceneBindings.lights.lightCount);
     for (uint32_t lightIndex = 0; lightIndex < sceneBindings.lights.lightCount; ++lightIndex)
     {
-        const auto& light = sceneBindings.lights.lights[lightIndex];
-        if (light.affectsReflections != 0)
-        {
-            giLights.push_back(light);
-        }
+        lights.push_back(sceneBindings.lights.lights[lightIndex]);
     }
-
-    if (_settings.mode == LightmapMode::RTAO)
-    {
-        context->rtaoPass().renderUv(
-            cmd, frameNumber, frameResources, descriptorAllocator,
-            uvSurface, rayTracingScene, aoImage(frameSlot),
-            _settings.samplesPerPixel, 0.1f);
-        context->rtgiPass().clearUv(cmd, giImage(frameSlot));
-    }
-    else
-    {
-        context->rtaoPass().clearUvNeutral(cmd, aoImage(frameSlot));
-        context->rtgiPass().renderUv(
-            cmd, frameNumber, frameResources, descriptorAllocator,
-            uvSurface, rayTracingScene, giImage(frameSlot),
-            irradianceMap.get(), irradianceSampler,
-            giLights, _settings);
-    }
-
-    context->compositionPass().render(
-        cmd, descriptorAllocator, uvSurface,
-        aoImage(frameSlot), giImage(frameSlot),
-        resultImage(frameSlot), _settings.mode);
-    recordAccumulation(cmd, descriptorAllocator, frameSlot);
+    LightmapBakeExecutor::recordSample(
+        *this, cmd, frameNumber, frameSlot, frameResources, descriptorAllocator,
+        rayTracingScene, context->rtaoPass(), context->rtgiPass(),
+        context->compositionPass(), irradianceMap.get(), irradianceSampler,
+        lights);
     markResultImage(frameSlot);
     _lastUpdatedFrame = frameNumber;
     _hasUpdatedFrame = true;

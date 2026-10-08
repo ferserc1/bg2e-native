@@ -1,13 +1,13 @@
 # Handoff for Drive scene updates and own the TLAS
 
-Next implementation step: [step-02_scene_update.md](step-02_scene_update.md). Complete this file **after** finishing step 01; this template records no implementation results.
+Next implementation step: [step-02_scene_update.md](step-02_scene_update.md). This handoff records step 01 implementation results and constraints.
 
-- Changed files and relevant API decisions: TODO
-- Build command, platform and result: TODO
-- Runtime/fixture evidence: TODO
-- Remaining limitations or regressions: TODO
-- Resources, ownership and synchronization cautions for the next agent: TODO
-- Exact next action: Implement the scope in step-02_scene_update.md.
+- Changed files and relevant API decisions: Added `render::StandaloneBakerContext` and `render::StandaloneLightmapBaker` in `lib/include/bg2e/render/StandaloneBakerContext.hpp` and `lib/src/bg2e/render/StandaloneBakerContext.cpp`, exported through `bg2e/render/all.hpp`. The context retains the supplied `shared_ptr<scene::Scene>` and validates that its root has not been replaced. Lifecycle calls enforce Created -> Initialized -> SceneReady -> Cleaned ordering; `updateScene` advances a 64-bit generation and resets live bakers' accumulation. `createBaker` returns a `shared_ptr`, while the context tracks weak references so it can invalidate existing histories without owning bakers. The synchronous `update()` entry point validates its context/generation and remains an explicit stub until execution is implemented.
+- Build command, platform and result: The project lead confirmed that standalone step 01 compile verification passed; command and platform details were not supplied. The agent did not compile.
+- Runtime/fixture evidence: None; step 01 adds lifecycle contracts and stubs only.
+- Remaining limitations or regressions: `updateScene` currently performs lifecycle-state/generation handling only; component update, resource initialization and TLAS construction belong to this step. `StandaloneLightmapBaker::update()` reports that synchronous GPU baking is not implemented yet.
+- Resources, ownership and synchronization cautions for the next agent: The context owns declarations for its standalone frame resources, descriptor allocator and `RayTracingScene`; initialize them in this context in step 02, never borrow `FrameResources::rayTracingScene`. `cleanup()` waits for the device before releasing any initialized owned resources, and rejects cleanup during an active baker update. Keep the scene shared pointer alive because `BakerContext` also exposes the root as a non-owning pointer. Integrated baking remains unchanged and must not drive scene lifecycle.
+- Exact next action: Implement the scope in `step-02_scene_update.md`; drive lifecycle and initialize/build the context-owned frame, descriptor and TLAS resources.
 
 ## Next-step instructions
 

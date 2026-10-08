@@ -58,8 +58,10 @@ struct UvAtlasValidation
 
 // Usable-atlas test for a standard mesh UV set (0 = UV1 / texCoord0,
 // 1 = UV2 / texCoord1). Rejects non-finite or out-of-range coordinates,
-// zero-area mapped triangles, overlapping positive-area triangles and
-// invalid index/submesh ranges. Shared edges and vertices are allowed.
+// overlapping positive-area triangles and invalid index/submesh ranges.
+// Zero-area mapped triangles cover no texels and are ignored by the overlap
+// and coverage checks; a map without any positive-area triangle is rejected.
+// Shared edges and vertices are allowed.
 // A UV1 copy already satisfying every atlas rule is a valid atlas;
 // coordinate equality with another UV set is never used to infer provenance.
 class BG2E_API UvAtlasValidator

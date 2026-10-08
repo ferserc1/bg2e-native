@@ -43,6 +43,102 @@
 
 namespace bg2e::db {
 
+namespace {
+
+bool equalsIgnoreCase(std::string_view left, std::string_view right)
+{
+    if (left.size() != right.size())
+    {
+        return false;
+    }
+
+    const auto lowerAscii = [](unsigned char value) {
+        return value >= 'A' && value <= 'Z'
+            ? static_cast<unsigned char>(value + ('a' - 'A'))
+            : value;
+    };
+
+    for (std::size_t i = 0; i < left.size(); ++i)
+    {
+        const auto leftChar = static_cast<unsigned char>(left[i]);
+        const auto rightChar = static_cast<unsigned char>(right[i]);
+        if (lowerAscii(leftChar) != lowerAscii(rightChar))
+        {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+}
+
+std::optional<ImageFormat> imageFormatFromExtension(std::string_view extension)
+{
+    if (!extension.empty() && extension.front() == '.')
+    {
+        extension.remove_prefix(1);
+    }
+
+    if (equalsIgnoreCase(extension, "png"))
+    {
+        return ImageFormat::PNG;
+    }
+    if (equalsIgnoreCase(extension, "jpg") || equalsIgnoreCase(extension, "jpeg"))
+    {
+        return ImageFormat::JPEG;
+    }
+    if (equalsIgnoreCase(extension, "bmp"))
+    {
+        return ImageFormat::BMP;
+    }
+    if (equalsIgnoreCase(extension, "tga"))
+    {
+        return ImageFormat::TGA;
+    }
+
+    return std::nullopt;
+}
+
+std::optional<ImageFormat> imageFormatFromPath(const std::filesystem::path& filePath)
+{
+    return imageFormatFromExtension(filePath.extension().string());
+}
+
+std::vector<std::string_view> extensionsForImageFormat(ImageFormat format)
+{
+    switch (format)
+    {
+        case ImageFormat::PNG:
+            return { ".png" };
+        case ImageFormat::JPEG:
+            return { ".jpg", ".jpeg" };
+        case ImageFormat::BMP:
+            return { ".bmp" };
+        case ImageFormat::TGA:
+            return { ".tga" };
+    }
+
+    return {};
+}
+
+std::string_view canonicalImageExtension(ImageFormat format)
+{
+    switch (format)
+    {
+        case ImageFormat::PNG:
+            return ".png";
+        case ImageFormat::JPEG:
+            return ".jpg";
+        case ImageFormat::BMP:
+            return ".bmp";
+        case ImageFormat::TGA:
+            return ".tga";
+    }
+
+    return {};
+}
+
 bg2e::base::Image * loadImage(const std::filesystem::path& filePath)
 {
     if (filePath.extension() == ".hdr")
@@ -145,9 +241,14 @@ void saveImage(
     uint32_t height,
     uint32_t bpp
 ) {
-    auto ext = filePath.extension();
     int writtenBytes = 0;
-    if (ext == ".png")
+    const auto format = imageFormatFromPath(filePath);
+    if (!format)
+    {
+        throw std::runtime_error("Unsupported image format");
+    }
+
+    if (*format == ImageFormat::PNG)
     {
         writtenBytes = stbi_write_png(
             filePath.string().c_str(),
@@ -156,7 +257,7 @@ void saveImage(
             0
         );
     }
-    else if (ext == ".jpg" || ext == ".jpeg")
+    else if (*format == ImageFormat::JPEG)
     {
         static const int quality = 100;
         writtenBytes = stbi_write_jpg(
@@ -166,7 +267,7 @@ void saveImage(
             quality
         );
     }
-    else if (ext == ".bmp")
+    else if (*format == ImageFormat::BMP)
     {
         writtenBytes = stbi_write_bmp(
             filePath.string().c_str(),
@@ -174,7 +275,7 @@ void saveImage(
             data
         );
     }
-    else if (ext == ".tga")
+    else if (*format == ImageFormat::TGA)
     {
         writtenBytes = stbi_write_tga(
             filePath.string().c_str(),
@@ -182,11 +283,6 @@ void saveImage(
             data
         );
     }
-    else
-    {
-        throw std::runtime_error("Unsupported image format");
-    }
-
     if (writtenBytes == 0)
     {
         throw std::runtime_error("Error writing image at path " + filePath.string());
