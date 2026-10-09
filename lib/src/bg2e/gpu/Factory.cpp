@@ -21,33 +21,53 @@
 #include <bg2e/gpu/vk/Backend.hpp>
 #include <bg2e/gpu/metal/Backend.hpp>
 
+#include <mutex>
+
 namespace bg2e {
 namespace gpu {
 
-std::unique_ptr<Backend> Factory::_backend;
+namespace {
+std::mutex backendMutex;
 
-void Factory::init(BackendType type) {
-    if (type == BackendType::Vulkan)
-    {
-        _backend = std::make_unique<vk::Backend>();
-    }
-    else if (type == BackendType::Metal && base::PlatformTools::currentPlatform() == base::Platform::macOS)
-    {
-        _backend = std::make_unique<metal::Backend>();
-    }
-    else
-    {
-        throw std::runtime_error("Could not create backend. Maybe the specified backend is not available.");
-    }
+std::shared_ptr<Backend> makeBackend(BackendType type)
+{
+    if (type == BackendType::Vulkan) return std::make_shared<vk::Backend>();
+    if (type == BackendType::Metal && base::PlatformTools::currentPlatform() == base::Platform::macOS)
+        return std::make_shared<metal::Backend>();
+    throw std::runtime_error("Could not create backend. Maybe the specified backend is not available.");
+}
+}
+
+std::shared_ptr<Backend> Factory::_backend;
+
+void Factory::init(BackendType type)
+{
+    std::lock_guard<std::mutex> lock(backendMutex);
+    if (_backend && _backend.use_count() > 1)
+        throw std::logic_error("Cannot replace the GPU backend while it is retained by an active execution or engine.");
+    _backend = makeBackend(type);
 }
 
 Backend* Factory::backend()
 {
-    if (!_backend)
-    {
-        throw std::runtime_error("Backend not initialized");
-    }
+    std::lock_guard<std::mutex> lock(backendMutex);
+    if (!_backend) throw std::runtime_error("Backend not initialized");
     return _backend.get();
+}
+
+std::shared_ptr<Backend> Factory::acquireBackend(BackendType type)
+{
+    std::lock_guard<std::mutex> lock(backendMutex);
+    if (_backend && _backend.use_count() > 1)
+        throw std::logic_error("Cannot prepare a GPU backend while another execution or engine retains it.");
+    _backend = makeBackend(type);
+    return _backend;
+}
+
+std::shared_ptr<Backend> Factory::retainBackend(Backend& backend)
+{
+    std::lock_guard<std::mutex> lock(backendMutex);
+    return _backend.get() == &backend ? _backend : std::shared_ptr<Backend>{};
 }
 
 }

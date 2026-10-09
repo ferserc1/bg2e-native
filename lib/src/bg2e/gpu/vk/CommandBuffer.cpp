@@ -69,15 +69,32 @@ CommandBuffer::CommandBuffer(vk::Device* device, VkCommandBuffer cmd, VkCommandP
 
 void CommandBuffer::begin()
 {
+    if (_recording) throw std::logic_error("Vulkan command buffer is already recording");
+    if (_completion && !_completion->completed())
+        throw std::logic_error("Vulkan command buffer is still in flight");
+    if (!_allocation) throw std::logic_error("Vulkan command buffer has no managed allocation");
+    std::lock_guard poolLock(_allocation->pool->mutex);
+    if (!_allocation->pool->pool) throw std::logic_error("Vulkan command pool is closed");
+    VK_ASSERT(vkResetCommandBuffer(_cmd, 0));
+    _completion.reset();
+    _submissionFrame.reset();
+    _presentFrame = nullptr;
+    _executable = false;
     auto beginInfo = Info::commandBufferBeginInfo();
     VK_ASSERT(vkBeginCommandBuffer(_cmd, &beginInfo));
+    _recording = true;
 }
 
 void CommandBuffer::end()
 {
+    if (!_recording || _renderingActive || _computeActive)
+        throw std::logic_error("Vulkan command buffer must close active scopes before end");
+    std::lock_guard poolLock(_allocation->pool->mutex);
     flushPendingRendering();
     _boundRTPipeline = nullptr;
     VK_ASSERT(vkEndCommandBuffer(_cmd));
+    _recording = false;
+    _executable = true;
 }
 
 void CommandBuffer::transition(gpu::Image* image, ImageLayout newLayout)
@@ -90,15 +107,13 @@ void CommandBuffer::transition(gpu::Image* image, ImageLayout newLayout)
 
     VkImageLayout oldL = toVkLayout(image->currentLayout());
     VkImageLayout newL = toVkLayout(newLayout);
-    if (oldL == newL)
-    {
-        return;
-    }
+    // Same-layout transitions can still order writes (e.g. clear/store before
+    // a delegate pass loads the same color attachment). Emit the dependency.
 
     VkImageMemoryBarrier2 barrier{};
     barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2;
     barrier.srcStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
-    barrier.srcAccessMask = VK_ACCESS_2_MEMORY_WRITE_BIT;
+    barrier.srcAccessMask = VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT;
     barrier.dstStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
     barrier.dstAccessMask = VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT;
     barrier.oldLayout = oldL;
@@ -119,6 +134,13 @@ void CommandBuffer::transition(gpu::Image* image, ImageLayout newLayout)
 
     cmdPipelineBarrier2(_cmd, &depInfo);
     image->_currentLayout = newLayout;
+}
+
+void CommandBuffer::materializeRenderPass()
+{
+    if (!_recording || !_renderingActive || _computeActive)
+        throw std::logic_error("Vulkan materializeRenderPass requires an active rendering scope.");
+    flushPendingRendering();
 }
 
 void CommandBuffer::beginRendering(gpu::SurfaceFrame* frame)

@@ -17,43 +17,149 @@
  */
 
 #include <bg2e/ui/UserInterface.hpp>
-#include <bg2e/render/vulkan/Command.hpp>
-#include <bg2e/render/vulkan/Info.hpp>
-#include <bg2e/render/vulkan/common.hpp>
-
+#include <bg2e/draw/Engine.hpp>
+#include <bg2e/gpu/Device.hpp>
+#include <bg2e/gpu/CommandBuffer.hpp>
+#include <bg2e/gpu/SurfaceFrame.hpp>
+#include <bg2e/gpu/Instance.hpp>
+#include <bg2e/app/PreferencesStore.hpp>
+#include "detail/ImGuiBackend.hpp"
 #include "imgui.h"
 #include "imgui_impl_sdl2.h"
-#include "imgui_impl_vulkan.h"
-#include "bg2e/app/Preferences.hpp"
-#include "bg2e/app/PreferencesStore.hpp"
 
-namespace bg2e {
-namespace ui {
+#include <exception>
+#include <stdexcept>
+#include <utility>
+
+namespace bg2e::ui {
 
 float UserInterface::s_uiScale = 1.0f;
 bool UserInterface::s_uiFontLoaded = false;
 bool UserInterface::s_uiScaleChanged = true;
-
 static bool s_baseStyleInitialized = false;
 static ImGuiStyle s_baseStyle;
 
-void UserInterface::init(render::Engine * engine)
-{
-    auto preferences = bg2e::app::PreferencesStore::instance().preferences("ui");
-    s_uiScale = preferences.get("uiScale", s_uiScale);
+struct UserInterface::Impl {
+    std::unique_ptr<detail::ImGuiBackend> renderer;
+    ImGuiContext* context = nullptr;
+    draw::Engine* drawEngine = nullptr;
+    bool production = false;
+    bool sdlStarted = false;
+    bool ready = false;
+    bool prepared = false;
+    gpu::CommandBuffer* preparedCommand = nullptr;
+    gpu::SurfaceFrame* preparedFrame = nullptr;
 
-    _engine = engine;
-
-    initCommands();
-
-    auto fenceInfo = render::vulkan::Info::fenceCreateInfo(VK_FENCE_CREATE_SIGNALED_BIT);
-    VK_ASSERT(vkCreateFence(_engine->device().handle(), &fenceInfo, nullptr, &_uiFence));
-
-    initImGui();
-    
-    if (_delegate)
+    void shutdown()
     {
-        _delegate->init(engine, this);
+        ready = false;
+        prepared = false;
+        preparedCommand = nullptr;
+        preparedFrame = nullptr;
+        if (context) ImGui::SetCurrentContext(context);
+        if (renderer) renderer->shutdown();
+        renderer.reset();
+        if (sdlStarted) ImGui_ImplSDL2_Shutdown();
+        sdlStarted = false;
+        if (context)
+        {
+            ImGui::DestroyContext(context);
+            s_uiFontLoaded = false;
+            s_uiScaleChanged = true;
+            s_baseStyleInitialized = false;
+        }
+        context = nullptr;
+        drawEngine = nullptr;
+    }
+};
+
+UserInterface::UserInterface() : _impl(std::make_shared<Impl>()) {}
+UserInterface::~UserInterface()
+{
+    try { cleanup(); } catch (...) { }
+}
+
+bool UserInterface::initialized() const { return _impl->ready; }
+
+void UserInterface::init(render::Engine* engine)
+{
+    if (!engine) throw std::invalid_argument("UI requires a production Engine.");
+    if (_impl->context || ImGui::GetCurrentContext()) throw std::logic_error("An ImGui context is already active.");
+    _impl = std::make_shared<Impl>(); // Old engine callbacks retain only their own lifecycle.
+    _engine = engine;
+    _impl->production = true;
+    // Capture retained state, never this: the engine determines production
+    // shutdown ordering even if the UI wrapper is destroyed first.
+    engine->cleanupManager().push([state = _impl](VkDevice) { state->shutdown(); });
+    try
+    {
+        s_uiScale = app::PreferencesStore::instance().preferences("ui").get("uiScale", s_uiScale);
+        _impl->context = ImGui::CreateContext();
+        if (!_impl->context) throw std::runtime_error("ImGui context creation failed.");
+        if (!ImGui_ImplSDL2_InitForVulkan(static_cast<SDL_Window*>(engine->windowPtr())))
+            throw std::runtime_error("ImGui SDL Vulkan initialization failed.");
+        _impl->sdlStarted = true;
+        _impl->renderer = detail::createVulkanImGuiBackend();
+        _impl->renderer->initialize(*engine);
+        if (_delegate) _delegate->init(engine, this);
+        _impl->ready = true;
+    }
+    catch (...)
+    {
+        auto error = std::current_exception();
+        try { engine->device().waitIdle(); } catch (...) { }
+        try { _impl->shutdown(); } catch (...) { }
+        std::rethrow_exception(error);
+    }
+}
+
+void UserInterface::init(draw::Engine* engine)
+{
+    if (!engine) throw std::invalid_argument("UI requires a draw Engine.");
+    if (_impl->context || ImGui::GetCurrentContext()) throw std::logic_error("An ImGui context is already active.");
+#ifndef BG2E_IS_MAC
+    if (engine->backendType() == gpu::BackendType::Metal)
+        throw std::invalid_argument("Metal UI is available only on macOS.");
+#endif
+    _impl = std::make_shared<Impl>();
+    _impl->production = false;
+    _impl->drawEngine = engine;
+    _engine = nullptr;
+    try
+    {
+        s_uiScale = app::PreferencesStore::instance().preferences("ui").get("uiScale", s_uiScale);
+        _impl->context = ImGui::CreateContext();
+        if (!_impl->context) throw std::runtime_error("ImGui context creation failed.");
+        bool sdlInitialized = false;
+        switch (engine->backendType())
+        {
+        case gpu::BackendType::Vulkan:
+            _impl->renderer = detail::createVulkanImGuiBackend();
+            sdlInitialized = ImGui_ImplSDL2_InitForVulkan(engine->instance()->window());
+            break;
+        case gpu::BackendType::Metal:
+#ifdef BG2E_IS_MAC
+            _impl->renderer = detail::createMetalImGuiBackend();
+            sdlInitialized = ImGui_ImplSDL2_InitForMetal(engine->instance()->window());
+            break;
+#else
+            throw std::invalid_argument("Metal UI is available only on macOS.");
+#endif
+        default:
+            throw std::invalid_argument("Unsupported draw UI backend.");
+        }
+        if (!sdlInitialized) throw std::runtime_error("ImGui SDL initialization failed.");
+        _impl->sdlStarted = true;
+        _impl->renderer->initialize(*engine);
+        if (_delegate) _delegate->init(engine, this);
+        _impl->ready = true;
+    }
+    catch (...)
+    {
+        auto error = std::current_exception();
+        try { engine->device()->waitIdle(); } catch (...) { }
+        try { _impl->shutdown(); } catch (...) { }
+        std::rethrow_exception(error);
     }
 }
 
@@ -89,133 +195,79 @@ void UserInterface::updateScale()
 
 void UserInterface::processEvent(SDL_Event* event)
 {
+    if (!initialized() || !event) return;
+    ImGui::SetCurrentContext(_impl->context);
     ImGui_ImplSDL2_ProcessEvent(event);
 }
 
-void UserInterface::setFrameOverride(std::function<void()> fn)
-{
-    _frameOverride = std::move(fn);
-}
+void UserInterface::setFrameOverride(std::function<void()> fn) { _frameOverride = std::move(fn); }
+void UserInterface::clearFrameOverride() { _frameOverride = nullptr; }
 
-void UserInterface::clearFrameOverride()
+void UserInterface::finishFrame()
 {
-    _frameOverride = nullptr;
+    if (s_uiScaleChanged) updateScale();
+    ImGui_ImplSDL2_NewFrame();
+    ImGui::NewFrame();
+    if (_frameOverride) _frameOverride();
+    else if (_delegate) _delegate->drawUI();
+    ImGui::Render();
+    _impl->prepared = true;
 }
 
 void UserInterface::newFrame()
 {
-    if (s_uiScaleChanged)
-    {
-        updateScale();
-    }
-
-    ImGui_ImplVulkan_NewFrame();
-    ImGui_ImplSDL2_NewFrame();
-    ImGui::NewFrame();
-
-    if (_frameOverride)
-    {
-        _frameOverride();
-    }
-    else if (_delegate) {
-        _delegate->drawUI();
-    }
-
-    ImGui::Render();
+    if (!initialized()) return;
+    if (!_impl->production) throw std::logic_error("Draw UI newFrame requires an acquired frame context.");
+    ImGui::SetCurrentContext(_impl->context);
+    _impl->renderer->prepareFrame(nullptr, nullptr);
+    finishFrame();
 }
 
-void UserInterface::draw(VkCommandBuffer cmd, VkImageView targetImageView)
+void UserInterface::newFrame(gpu::CommandBuffer& command, gpu::SurfaceFrame& frame)
 {
-    using namespace bg2e::render::vulkan;
-    auto colorAttachment = Info::attachmentInfo(
-        targetImageView,
-        nullptr,
-        VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
-    );
-    auto extent = _engine->swapchain().extent();
-    auto renderingInfo = Info::renderingInfo(
-        extent,
-        &colorAttachment,
-        nullptr
-    );
+    if (!initialized()) return;
+    if (_impl->production) throw std::logic_error("Abstract UI frames require a draw Engine.");
+    ImGui::SetCurrentContext(_impl->context);
+    _impl->prepared = false;
+    _impl->renderer->prepareFrame(&command, &frame);
+    finishFrame();
+    _impl->preparedCommand = &command;
+    _impl->preparedFrame = &frame;
+}
 
-    cmdBeginRendering(cmd, &renderingInfo);
+void UserInterface::draw(VkCommandBuffer command, VkImageView imageView)
+{
+    if (!initialized() || !_impl->prepared) return;
+    ImGui::SetCurrentContext(_impl->context);
+    _impl->renderer->draw(command, imageView);
+    _impl->prepared = false;
+}
 
-    ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), cmd);
-
-    cmdEndRendering(cmd);
+void UserInterface::draw(gpu::CommandBuffer& command, gpu::SurfaceFrame& frame)
+{
+    if (!initialized()) return;
+    if (!_impl->prepared || _impl->preparedCommand != &command || _impl->preparedFrame != &frame)
+        throw std::logic_error("UI composition must use its prepared presentation frame and commands.");
+    ImGui::SetCurrentContext(_impl->context);
+    _impl->renderer->draw(command, frame);
+    _impl->prepared = false;
+    _impl->preparedCommand = nullptr;
+    _impl->preparedFrame = nullptr;
 }
 
 void UserInterface::cleanup()
 {
-    auto preferences = bg2e::app::PreferencesStore::instance().preferences("ui");
+    auto preferences = app::PreferencesStore::instance().preferences("ui");
     preferences.set("uiScale", s_uiScale);
+    if (_impl->production) return; // The production engine owns registered shutdown.
+    std::exception_ptr error;
+    if (_impl->drawEngine)
+    {
+        try { _impl->drawEngine->device()->waitIdle(); } catch (...) { error = std::current_exception(); }
+    }
+    try { _impl->shutdown(); } catch (...) { if (!error) error = std::current_exception(); }
+    _frameOverride = nullptr;
+    if (error) std::rethrow_exception(error);
 }
 
-void UserInterface::initCommands()
-{
-    _commandPool = _engine->command().createCommandPool(VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
-    _commandBuffer = _engine->command().allocateCommandBuffer(_commandPool, 1);
-
-    _engine->cleanupManager().push([&](VkDevice dev) {
-        vkDestroyFence(dev, _uiFence, nullptr);
-        _engine->command().destroyComandPool(_commandPool);
-    });
-}
-
-void UserInterface::initImGui()
-{
-    VkDescriptorPoolSize poolSizes[] = {
-        { VK_DESCRIPTOR_TYPE_SAMPLER, 1000 },
-        { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000 },
-        { VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1000 },
-        { VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1000 },
-        { VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 1000 },
-        { VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1000 },
-        { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1000 },
-        { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1000 },
-        { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1000 },
-        { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1000 },
-        { VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1000 }
-    };
-
-    VkDescriptorPoolCreateInfo poolInfo = {};
-    poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-    poolInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
-    poolInfo.maxSets = 1000;
-    poolInfo.poolSizeCount = uint32_t(std::size(poolSizes));
-    poolInfo.pPoolSizes = poolSizes;
-
-    VK_ASSERT(vkCreateDescriptorPool(_engine->device().handle(), &poolInfo, nullptr, &_imguiPool));
-
-    ImGui::CreateContext();
-
-    SDL_Window* window = reinterpret_cast<SDL_Window*>(_engine->windowPtr());
-    ImGui_ImplSDL2_InitForVulkan(window);
-
-    ImGui_ImplVulkan_InitInfo initInfo = {};
-    initInfo.Instance = static_cast<gpu::vk::Instance*>(_engine->instance())->vkInstanceHnd();
-    initInfo.PhysicalDevice = _engine->physicalDevice().handle();
-    initInfo.Device = _engine->device().handle();
-    initInfo.Queue = _engine->command().graphicsQueue();
-    initInfo.DescriptorPool = _imguiPool;
-    initInfo.MinImageCount = _engine->numImages();
-    initInfo.ImageCount = _engine->numImages();
-    initInfo.UseDynamicRendering = true;
-    initInfo.PipelineInfoMain.PipelineRenderingCreateInfo = {};
-    initInfo.PipelineInfoMain.PipelineRenderingCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO;
-    initInfo.PipelineInfoMain.PipelineRenderingCreateInfo.colorAttachmentCount = 1;
-    VkFormat format = _engine->swapchain().imageFormat();
-    initInfo.PipelineInfoMain.PipelineRenderingCreateInfo.pColorAttachmentFormats = &format;
-    initInfo.PipelineInfoMain.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
-
-    ImGui_ImplVulkan_Init(&initInfo);
-
-    _engine->cleanupManager().push([&, this](VkDevice dev) {
-        ImGui_ImplVulkan_Shutdown();
-        vkDestroyDescriptorPool(dev, _imguiPool, nullptr);
-    });
-}
-
-}
 }

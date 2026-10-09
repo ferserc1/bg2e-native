@@ -20,6 +20,10 @@
 
 #include <bg2e/gpu/CommandBuffer.hpp>
 #include <bg2e/gpu/vk/common.hpp>
+#include <bg2e/gpu/vk/CommandPoolState.hpp>
+#include <bg2e/gpu/detail/SubmissionState.hpp>
+#include <memory>
+#include <stdexcept>
 
 namespace bg2e {
 namespace gpu {
@@ -29,12 +33,15 @@ class CubeMap;
 namespace vk {
 
 class Device;
+class Queue;
 class SurfaceFrame;
 class RayTracingPipeline;
 
 class CommandBuffer : public gpu::CommandBuffer {
 public:
     CommandBuffer() = default;
+    CommandBuffer(const CommandBuffer&) = delete;
+    CommandBuffer& operator=(const CommandBuffer&) = delete;
     CommandBuffer(vk::Device* device, VkCommandBuffer cmd, VkCommandPool pool);
 
     void begin() override;
@@ -68,6 +75,10 @@ public:
     void bindPipeline(gpu::RayTracingPipeline* pipeline) override;
     void bindResourceSet(gpu::RayTracingPipeline* pipeline, uint32_t setIndex, gpu::ResourceSet* set) override;
     void traceRays(uint32_t width, uint32_t height, uint32_t depth) override;
+    // Emit the lazy native rendering pass before interoperability draw calls.
+    void materializeRenderPass();
+
+    bool hasActiveScope() const override { return _renderingActive || _computeActive; }
     bool isValid() const override { return _cmd != VK_NULL_HANDLE; }
 
     VkCommandBuffer handle() const { return _cmd; }
@@ -76,11 +87,28 @@ public:
     vk::SurfaceFrame* presentFrame() const        { return _presentFrame; }
 
 private:
+    friend class Device;
+    friend class WindowSurface;
+    friend class OffscreenSurface;
+    void associateFrame(std::shared_ptr<gpu::SurfaceFrame> frame) { _submissionFrame = std::move(frame); }
+    void waitForCompletion() {
+        if (!_completion) throw std::logic_error("Command buffer has not been submitted");
+        _completion->wait();
+    }
+
+    friend class Queue;
+    std::shared_ptr<detail::CompletionRecord> _completion;
+    std::shared_ptr<gpu::SurfaceFrame> _submissionFrame;
+    bool _executable = false;
+
     void flushPendingRendering();
 
     vk::Device*       _device = nullptr;
     VkCommandBuffer   _cmd    = VK_NULL_HANDLE;
     VkCommandPool     _pool   = VK_NULL_HANDLE;
+    std::shared_ptr<CommandAllocation> _allocation;
+    VkQueue _originQueue = VK_NULL_HANDLE;
+    bool _recording = false;
 
     vk::SurfaceFrame* _renderFrame  = nullptr;
     bool              _renderingActive = false;

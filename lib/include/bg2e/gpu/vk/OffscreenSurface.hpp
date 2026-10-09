@@ -61,6 +61,7 @@ protected:
 private:
     std::unique_ptr<vk::Image> _colorImage;
     std::shared_ptr<vk::SurfaceFrame> _frame;
+    bool _frameAcquired = false;
 };
 
 }

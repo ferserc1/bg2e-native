@@ -40,8 +40,9 @@ class CleanupManager;
 namespace draw {
 
 // Experimental draw engine. Owns the GPU context and global lifecycle.
-// The SDL window, the Backend and its shared Instance are non-owning;
-// PhysicalDevice, Device and the window Surface are exclusively owned.
+// The SDL window and shared Instance wrapper are borrowed. Factory backends
+// are retained; caller-owned backends must outlive the Engine. Engine controls
+// the initialized Instance lifetime and exclusively owns the remaining objects.
 class BG2E_API Engine {
 public:
     Engine();

@@ -6,7 +6,7 @@ Create examples/draw/01_window_ui/src/main.cpp and its CMakeLists.txt. Register 
 Add examples/draw/README.md explaining production render versus experimental draw, selection arguments and the retained scene/UI behavior. No shader compilation is required for a clear-only scene.
 
 ## Application code
-Use app::Application and app::MainLoop. Call Application::init with argc/argv as existing launchers do. Register a draw::RenderLoopDelegate, an InputDelegate and a UserInterfaceDelegate. Select Vulkan by default and accept --backend=vulkan or --backend=metal. Reject unknown values and Metal on non-macOS with actionable exceptions. Avoid interactive console selection in a GUI application's startup.
+Use app::Application and app::MainLoop. Call Application::init with argc/argv as existing launchers do. Register a draw::RenderLoopDelegate, an InputDelegate and a UserInterfaceDelegate. Use the EngineConfig default (Metal on macOS, Vulkan elsewhere) and accept explicit --backend=vulkan or --backend=metal overrides. Reject unknown values and Metal on non-macOS with actionable exceptions. Avoid interactive console selection in a GUI application's startup.
 
 Call run(&application, engineConfig). The application does not construct a GraphicsExecution or initialize Factory. The draw delegate clears the retained scene image through gpu command interfaces; it contains no Vulkan/Metal includes or production scene resources.
 
@@ -18,6 +18,6 @@ Connect the new UserInterface preparation/composition to DrawGraphicsExecution a
 Retain common event timing, resize debounce, window preferences, focus handling and frame limits. Ensure requestFrame can request presentation without necessarily dirtying the scene; scene invalidation requests both scene refresh and a presentation wakeup. Read updated backend metadata after surface recreation.
 
 ## Completion and documentation
-Remove remaining temporary not-implemented boundaries for the supported window path; retain explicit exceptions for unsupported features. Ensure experimental delegate mismatch errors are still evaluated before allocation. Document serialized GPU completion as the initial policy and per-object resource rings as the intended future allocation model.
+Remove remaining temporary not-implemented boundaries for the supported window path; retain explicit exceptions for unsupported features. Ensure experimental delegate mismatch errors are still evaluated before allocation. Document asynchronous submission, waiting only for occupied slot reuse, coordinated global waitIdle and completion-based deferred cleanup. Per-object persistent resource rings are the intended allocation model; do not introduce a CPU wait after every frame.
 
 Record completion against these behaviors for project-lead runtime acceptance: production launchers unchanged; draw Vulkan/Metal clear and demo; pause retains scene while UI updates; positive-size resize recreates targets; minimize/restore handles unavailable frames; shutdown waits and releases selected resources. Do not create tests, add test targets or invoke builds.

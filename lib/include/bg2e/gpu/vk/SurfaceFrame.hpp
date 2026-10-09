@@ -41,6 +41,10 @@ public:
     void setRenderFinished(VkSemaphore s)      { _renderFinished = s; }
     void setInFlightFence(VkFence f)           { _inFlight = f; }
 
+    void requestRecreate() { _recreateRequested = true; }
+    bool recreateRequested() const { return _recreateRequested; }
+    void clearRecreateRequest() { _recreateRequested = false; }
+
     uint32_t        imageIndex()     const { return _imageIndex; }
     VkSwapchainKHR  swapchain()      const { return _swapchain; }
     VkSemaphore     imageAvailable() const { return _imageAvailable; }
@@ -48,6 +52,7 @@ public:
     VkFence         inFlightFence()  const { return _inFlight; }
 
 private:
+    bool _recreateRequested = false;
     gpu::Image*    _colorImage     = nullptr;
     gpu::Image*    _depthImage     = nullptr;
     uint32_t       _imageIndex     = 0;

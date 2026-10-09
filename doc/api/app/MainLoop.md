@@ -58,18 +58,18 @@ platform restriction. Registering a draw delegate and calling `run(application)`
 does not switch frameworks; it reports the mismatch. See
 [Application registration](Application_and_input.md#graphics-delegate-registration).
 
-### Experimental runtime boundary
+### Experimental execution
 
-In milestone 01, a valid draw configuration reaches an explicit availability
-boundary and throws:
+Milestone 02 step 03 enables draw initialization, retained scene color and
+presentation. After validation, MainLoop prepares and retains the configured
+backend before creating its SDL window. Empty EngineConfig::applicationName uses
+MainLoop's appId. The runtime availability boundary no longer rejects draw.
 
-```text
-std::logic_error: Experimental draw execution requires milestone 02
-```
-
-No SDL window or GPU context is created by that run. Choosing the default
-Metal backend on macOS does not imply that Metal execution is implemented yet.
-Window creation, clear/presentation and multibackend UI belong to milestone 02.
+The draw path initializes UserInterface with Vulkan or Metal in steps 04/05.
+UI preparation happens after presentation-image acquisition, even when the scene
+is paused. Event forwarding and loader frame overrides run only when the
+selected UI backend is initialized.
+Production UI behavior is unchanged.
 
 ### Common loop and graphics execution
 
@@ -86,8 +86,11 @@ RenderLoop contract. Existing production delta semantics stay unchanged.
 
 Safe updates wait through the active graphics execution before invoking queued
 work. Async loading pauses/resumes that execution while Loader/frame override
-and worker completion remain common MainLoop behavior. These runtime facilities
-currently operate through the available production route.
+and worker completion remain common MainLoop behavior in both execution paths.
+In draw, executed safe updates also invalidate the retained scene; canceled
+callbacks do not. Async loading retains the last valid scene while Loader/UI
+continues, then resumes scene refresh on the main thread. Production pause
+semantics are unchanged.
 ## WindowConfig
 
 `WindowConfig` describes initial position, size, state, decoration, resizing,
@@ -154,6 +157,27 @@ if (auto* loop = MainLoop::current()) {
 
 The call does not change the configured limit and has no meaningful cost while
 the application is in the foreground.
+
+## Scene controls
+
+```cpp
+void requestSceneFrame();
+void pauseScene(const glm::vec4& clearColor = {0.f, 0.f, 0.f, 1.f});
+void resumeScene();
+```
+
+Call these methods on the main thread during an active run; otherwise they throw
+`std::logic_error`. Each requests a presentation wakeup. In draw,
+`requestSceneFrame()` marks the retained scene dirty; while paused, it stays
+pending until resume. `requestFrame()` alone does not dirty the scene.
+`pauseScene()` preserves the last valid scene and stores a clear color for a
+replacement target (for example, after resize). UI preparation/composition keeps
+running. `resumeScene()` requests a scene refresh. Production forwards pause and
+resume to its existing coordinator; its scene already updates every frame.
+Do not mix manual pause ownership with an overlapping asyncLoad operation:
+async completion resumes the scene unconditionally.
+
+See the [window/UI example](../../../examples/draw/README.md).
 
 ## Safe scene updates
 

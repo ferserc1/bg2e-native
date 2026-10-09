@@ -36,8 +36,13 @@ then choose MainLoop's two-argument run overload. Using the production run
 overload with this delegate is a configuration error. See
 [Application](../app/Application_and_input.md#graphics-delegate-registration).
 
-Milestone 01 RenderLoop initialization/frame methods throw before normal
-callback execution. Do not rely on the intended lifecycle callback order as
-runtime behavior yet. RenderLoop::cleanup does call the registered delegate's
-cleanup even when the loop was not initialized; delegates should account for
-this and for repeated cleanup calls.
+Milestone 02 step 03 invokes init, initScene and resize before update/render.
+The first available drawable establishes the actual pixel extent. A dirty,
+unpaused scene receives update then render; a clean or paused scene continues
+presentation without these callbacks. Render opens and closes its own command
+scopes; no depth target or resource-set initialization phase is supplied.
+
+Cleanup is called once per initialized lifecycle, including a partially failed
+init callback. Repeated RenderLoop cleanup does not invoke it again. Producers
+must be stopped before teardown; the loop drains GPU work before releasing
+scene resources.

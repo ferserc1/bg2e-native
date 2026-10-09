@@ -33,3 +33,6 @@ add_subdirectory(gpu/10_cubemap_render_pass)
 add_subdirectory(gpu/11_ray_query_shadows)
 add_subdirectory(gpu/12_deferred_cleanup)
 add_subdirectory(gpu/13_ray_tracing_pipeline)
+
+# Experimental bg2e::draw examples
+add_subdirectory(draw/01_window_ui)

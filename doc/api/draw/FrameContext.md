@@ -30,8 +30,7 @@ struct FrameContext {
 References are valid for the current operation only; do not store the context
 for deferred work. A const FrameContext still contains mutable references to
 GPU commands and target resources. Objects may use frameSlot to select their
-own persistent resources once the runtime guarantees safe slot reuse.
-
-In milestone 01 no RenderLoop frame executes, so the framework does not yet
-construct or deliver these contexts. The field semantics are the new delegate
-contract, not a claim of implemented acquisition or synchronization.
+own persistent resources. Surface::beginFrame completes previous use of the
+slot before RenderLoop constructs the context. Unavailable drawables do not
+advance the slot or accumulated frame number. The color target is persistent
+scene storage rather than the current drawable; no depth target is supplied.

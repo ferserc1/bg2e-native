@@ -32,6 +32,7 @@ class Image;
 class Instance;
 class SurfaceFrame;
 class CommandBuffer;
+class CleanupManager;
 
 namespace vk    { class Backend; class Device; class Surface; }
 namespace metal { class Backend; class Device; class Surface; }
@@ -60,6 +61,7 @@ public:
     virtual uint32_t    imageCount() const = 0;
     virtual uint32_t    inFlightFrames() const = 0;
     uint64_t            frameCounter() const { return _frameCounter; }
+    uint64_t            generation() const { return _generation; }
     virtual uint32_t    currentFrameIndex() const = 0;
     virtual gpu::Image* colorImage(uint32_t index) const = 0;
     virtual gpu::Image* depthImage() const = 0;
@@ -89,6 +91,8 @@ protected:
     PhysicalDevice* _physicalDevice = nullptr;
 
     uint64_t        _frameCounter   = 0;
+    uint64_t        _generation     = 0;
+    friend class CleanupManager;
 
     friend class vk::Backend;
     friend class vk::Device;

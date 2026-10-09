@@ -46,6 +46,7 @@ namespace metal {
 
 void Device::create(gpu::Instance* /*instance*/, gpu::PhysicalDevice* physicalDevice, gpu::Surface* surface)
 {
+    _submissions = std::make_shared<detail::SubmissionState>();
     auto* metalPhysDevice = dynamic_cast<metal::PhysicalDevice*>(physicalDevice);
     if (!metalPhysDevice || !metalPhysDevice->isValid())
     {
@@ -61,6 +62,10 @@ void Device::create(gpu::Instance* /*instance*/, gpu::PhysicalDevice* physicalDe
 
     if (!gfxQueue || !presentQueue || !transferQueue)
     {
+        // These queues have not yet been transferred into the owned wrappers.
+        if (gfxQueue) gfxQueue->release();
+        if (presentQueue) presentQueue->release();
+        if (transferQueue) transferQueue->release();
         throw std::runtime_error("metal::Device::create: failed to create command queues");
     }
 
@@ -87,6 +92,7 @@ void Device::create(gpu::Instance* /*instance*/, gpu::PhysicalDevice* physicalDe
 
 void Device::cleanup()
 {
+    if (_device) _submissions->drain({}, true);
     _graphicsQueue = metal::Queue();
     _presentQueue  = metal::Queue();
     _transferQueue = metal::Queue();
@@ -100,7 +106,7 @@ void Device::cleanup()
 
 void Device::waitIdle()
 {
-    // Metal has no device-level wait-idle; completion is tracked per command buffer.
+    if (_device) _submissions->drain();
 }
 
 bool Device::isValid() const
@@ -210,19 +216,12 @@ std::shared_ptr<gpu::RayTracingPipeline> Device::createRayTracingPipeline(
 
 void Device::immediateSubmit(std::function<void(gpu::CommandBuffer*)>&& function)
 {
-    auto cmdSP = _graphicsQueue.createCommandBuffer();
-    auto* mtlCmd = dynamic_cast<metal::CommandBuffer*>(cmdSP.get());
-    if (!mtlCmd)
-    {
-        throw std::runtime_error("metal::Device::immediateSubmit: unexpected command buffer type");
-    }
-
-    cmdSP->begin();
-    function(cmdSP.get());
-    cmdSP->end();
-
-    mtlCmd->handle()->commit();
-    mtlCmd->handle()->waitUntilCompleted();
+    auto command = _graphicsQueue.createCommandBuffer("Immediate submission");
+    command->begin();
+    function(command.get());
+    command->end();
+    _graphicsQueue.submit(command.get());
+    static_cast<metal::CommandBuffer*>(command.get())->waitForCompletion();
 }
 
 #else

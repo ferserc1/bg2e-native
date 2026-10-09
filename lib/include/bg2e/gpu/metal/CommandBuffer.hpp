@@ -20,6 +20,9 @@
 
 #include <bg2e/gpu/CommandBuffer.hpp>
 #include <bg2e/gpu/metal/common.hpp>
+#include <bg2e/gpu/detail/SubmissionState.hpp>
+#include <memory>
+#include <stdexcept>
 
 namespace bg2e {
 namespace gpu {
@@ -29,6 +32,7 @@ class CubeMap;
 namespace metal {
 
 class Device;
+class Queue;
 class SurfaceFrame;
 class GraphicsPipeline;
 class ComputePipeline;
@@ -76,18 +80,37 @@ public:
     void bindPipeline(gpu::RayTracingPipeline* pipeline) override;
     void bindResourceSet(gpu::RayTracingPipeline* pipeline, uint32_t setIndex, gpu::ResourceSet* set) override;
     void traceRays(uint32_t width, uint32_t height, uint32_t depth) override;
+    bool hasActiveScope() const override;
     bool isValid() const override;
 
 #if BG2E_IS_MAC
     MTL::CommandBuffer* handle() const { return _cmd; }
+    // Borrowed native objects; valid only inside the active rendering scope.
+    MTL::RenderPassDescriptor* renderPassDescriptor() const;
+    MTL::RenderCommandEncoder* materializeRenderEncoder();
 #endif
 
 private:
+    friend class Device;
+    friend class WindowSurface;
+    friend class OffscreenSurface;
+    void associateFrame(std::shared_ptr<gpu::SurfaceFrame> frame) { _submissionFrame = std::move(frame); }
+    void waitForCompletion() {
+        if (!_completion) throw std::logic_error("Command buffer has not been submitted");
+        _completion->wait();
+    }
+
+    friend class Queue;
+    std::shared_ptr<detail::CompletionRecord> _completion;
+    std::shared_ptr<gpu::SurfaceFrame> _submissionFrame;
+    bool _executable = false;
+
 #if BG2E_IS_MAC
     void ensureRenderEncoder();
 
     metal::Device*              _device      = nullptr;
     MTL::CommandBuffer*         _cmd         = nullptr;
+    bool _submitted = false;
     MTL::RenderPassDescriptor*  _passDesc    = nullptr;
     MTL::RenderCommandEncoder*  _encoder     = nullptr;
     MTL::ComputeCommandEncoder* _computeEncoder = nullptr;

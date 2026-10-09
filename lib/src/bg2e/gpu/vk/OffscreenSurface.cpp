@@ -18,6 +18,8 @@
 
 #include <bg2e/gpu/vk/OffscreenSurface.hpp>
 #include <bg2e/gpu/vk/Device.hpp>
+#include <bg2e/gpu/vk/CommandBuffer.hpp>
+#include <stdexcept>
 #include <bg2e/gpu/vk/Image.hpp>
 #include <bg2e/gpu/Image.hpp>
 
@@ -40,10 +42,16 @@ void OffscreenSurface::createRenderTarget(gpu::Device* device, gpu::PhysicalDevi
     _frame = std::make_shared<vk::SurfaceFrame>();
     _frame->setColorImage(_colorImage.get());
     _frame->setDepthImage(_depthImage.get());
+    ++_generation;
 }
 
 void OffscreenSurface::resize(const Size2D& size)
 {
+    if (_device) _device->waitIdle();
+    if (_frame) _frame->waitForSubmissions();
+    ++_generation;
+    _frameAcquired = false;
+    if (!size.width || !size.height) { _size = size; return; }
     _size = size;
     if (_colorImage)
     {
@@ -54,6 +62,9 @@ void OffscreenSurface::resize(const Size2D& size)
 
 void OffscreenSurface::releaseRenderTarget()
 {
+    if (_device && _device->isValid()) _device->waitIdle();
+    if (_frame) _frame->waitForSubmissions();
+    _frameAcquired = false;
     _frame.reset();
     releaseDepthTarget();
     _colorImage.reset();
@@ -97,16 +108,25 @@ gpu::Image* OffscreenSurface::depthImage() const
 
 std::shared_ptr<gpu::SurfaceFrame> OffscreenSurface::beginFrame()
 {
+    if (_frameAcquired) throw std::logic_error("Offscreen surface already has an acquired frame");
+    if (!_size.width || !_size.height || !_frame) return nullptr;
+    _frame->waitForSubmissions();
+    _frameAcquired = true;
     return _frame;
 }
 
-void OffscreenSurface::present(gpu::CommandBuffer*)
+void OffscreenSurface::present(gpu::CommandBuffer* cmd)
 {
-    // No-op for offscreen
+    auto* command = dynamic_cast<vk::CommandBuffer*>(cmd);
+    if (!command || !_frame || !_frameAcquired) throw std::logic_error("Invalid offscreen frame association");
+    command->associateFrame(_frame);
 }
 
-void OffscreenSurface::endFrame(gpu::SurfaceFrame*)
+void OffscreenSurface::endFrame(gpu::SurfaceFrame* frame)
 {
+    if (!_frameAcquired || !_frame || frame != _frame.get() || !frame->hasSubmissions())
+        throw std::logic_error("Offscreen endFrame requires a submitted frame");
+    _frameAcquired = false;
     ++_frameCounter;
 }
 

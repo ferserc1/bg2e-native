@@ -31,12 +31,13 @@ class Image;
 
 class SurfaceFrame : public gpu::SurfaceFrame {
 public:
+    ~SurfaceFrame() override;
     gpu::Image* colorImage() const override;
     gpu::Image* depthImage() const override { return _depthImage; }
     bool        isValid()    const override;
 
 #if BG2E_IS_MAC
-    void setDrawable(CA::MetalDrawable* d)            { _drawable = d; }
+    void setDrawable(CA::MetalDrawable* d);
     CA::MetalDrawable* drawable() const               { return _drawable; }
 #endif
 

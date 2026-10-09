@@ -3,17 +3,24 @@
 **Header:** `<bg2e/ui/UserInterface.hpp>`, `<bg2e/ui/UserInterfaceDelegate.hpp>`
 **Namespace:** `bg2e::ui`
 
-`UserInterface` owns the Dear ImGui context and its SDL2 + Vulkan backends,
+`UserInterface` manages the Dear ImGui context, SDL2 and a private UI renderer,
+with production Vulkan and experimental draw Vulkan entry points,
 and exposes the four lifecycle hooks that `app::MainLoop` calls per frame.
 `UserInterfaceDelegate` is the application-side interface injected into it.
 
 ```cpp
 class BG2E_API UserInterface {
 public:
+    UserInterface();
+    ~UserInterface();
     void init(render::Engine *);
+    void init(draw::Engine *);
+    bool initialized() const;
     void processEvent(SDL_Event * event);
     void newFrame();
+    void newFrame(gpu::CommandBuffer&, gpu::SurfaceFrame&);
     void draw(VkCommandBuffer cmd, VkImageView targetImageView);
+    void draw(gpu::CommandBuffer&, gpu::SurfaceFrame&);
     void cleanup();
 
     void setFrameOverride(std::function<void()> fn);
@@ -29,7 +36,9 @@ public:
 class BG2E_API UserInterfaceDelegate {
     friend class app::MainLoop;
 public:
+    virtual ~UserInterfaceDelegate() = default;
     virtual void init(bg2e::render::Engine*, UserInterface*) {}
+    virtual void init(bg2e::draw::Engine*, UserInterface*) {}
     virtual void drawUI();                       // default: DemoWindow::draw()
 
     uint32_t uiWidth() const;                    // viewport size, kept by MainLoop
@@ -148,6 +157,54 @@ verify the UI is not capturing input before acting (see
 `doc/input_delegate.md` and the quick start pitfalls).
 
 ---
+
+## Experimental draw integration
+
+Milestone 02 implements `init(draw::Engine*)` for Vulkan (step 04) and Metal
+(step 05). The new delegate init overload receives the draw context; existing
+production overrides and `drawUI()` are unchanged. Metal is available only on
+macOS.
+UI backend storage lives in PImpl, with no Metal or ImGui declarations in public
+UI headers and no dependency from gpu to ui.
+
+After successful acquisition and slot synchronization, MainLoop's draw adapter
+calls `newFrame(command, frame)` before scene commands. It prepares renderer
+metadata, SDL and ImGui, executes drawUI or frameOverride, then ImGui::Render.
+`draw(command, frame)` must compose the same prepared command/frame pair after
+the scene copy. It opens a color-only LOAD/STORE overlay pass, materializes
+Vulkan's lazy native rendering scope, emits draw data and closes that scope.
+UI does not submit or present; RenderLoop controls the surrounding transitions.
+
+Metal initializes SDL with InitForMetal and uses the pinned ImGui backend's
+supported Metal-cpp bindings. Preparation uses a color-only descriptor matching
+the acquired texture's format/sample count, without opening an encoder. The
+overlay opens a separate compatible LOAD/STORE pass, borrows its descriptor,
+materializes the command buffer's encoder and records ImGui draw data. GPU ends
+the scope exactly once and owns encoder lifetime. Metadata is updated for each
+acquired texture and recreated on surface-generation/configuration changes.
+
+Vulkan uses the actual surface color format and swapchain image count rather
+than frames in flight. Surface capabilities determine a minimum image count
+satisfying ImGui's requirement of at least two. A format/count change drains
+GPU work before reinitializing the renderer. Pointer-backed configuration stays
+alive in the private backend state. Unavailable drawables do not prepare UI;
+scene pause does not suppress UI preparation. Viewport dimensions remain logical
+window units.
+
+## Context ownership and shutdown
+
+For production, `cleanup()` persists preferences and the engine's registered
+callback performs renderer, SDL and context shutdown in the established order.
+The callback retains lifecycle state without capturing the UserInterface
+wrapper. For draw, stop producers and call `cleanup()` before destroying Engine;
+cleanup waits for completion and shuts down only initialized backend stages.
+
+Context destruction resets static style/font bookkeeping. Initialization
+failures clean started stages and preserve the original exception; repeated
+cleanup is safe. `processEvent` and frame operations guard an uninitialized
+context. UserInterface owns its lifecycle and cannot be copied. Only one ImGui
+context is active at a time. Experimental scene/texture editor widget migration
+is outside this step.
 
 ## See also
 

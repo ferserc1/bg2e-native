@@ -15,12 +15,27 @@ set(BG2SCENE_INCLUDE "${THIRD_PARTY_PATH}/bg2-scene")
 # imgui
 file(GLOB IMGUI_SRC "${THIRD_PARTY_PATH}/imgui/*.cpp")
 set(IMGUI_INCLUDE "${THIRD_PARTY_PATH}/imgui")
+if(APPLE)
+    # Metal renderer from the same pinned revision as the vendored ImGui core.
+    list(APPEND IMGUI_SRC "${THIRD_PARTY_PATH}/imgui/imgui_impl_metal.mm")
+    set_source_files_properties(
+        "${THIRD_PARTY_PATH}/imgui/imgui_impl_metal.mm"
+        PROPERTIES COMPILE_DEFINITIONS "IMGUI_IMPL_METAL_CPP"
+                   COMPILE_OPTIONS "-fobjc-arc"
+    )
+    set_source_files_properties(
+        "${CMAKE_CURRENT_LIST_DIR}/../src/bg2e/ui/ImGuiMetalBackend.cpp"
+        PROPERTIES COMPILE_DEFINITIONS "IMGUI_IMPL_METAL_CPP"
+    )
+endif()
 
 # nativefiledialog
 if(APPLE)
     set(NFD_SRC "${THIRD_PARTY_PATH}/nativefiledialog/src/nfd_cocoa.m")
     enable_language(OBJC)
     enable_language(OBJCXX)
+    set(CMAKE_OBJCXX_STANDARD 20)
+    set(CMAKE_OBJCXX_STANDARD_REQUIRED ON)
     set_source_files_properties("${NFD_SRC}"
         PROPERTIES LANGUAGE OBJC
     )

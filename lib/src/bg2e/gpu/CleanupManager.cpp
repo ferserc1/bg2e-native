@@ -17,6 +17,8 @@
  */
 
 #include <bg2e/gpu/CleanupManager.hpp>
+#include <bg2e/gpu/Device.hpp>
+#include <stdexcept>
 #include <algorithm>
 
 namespace bg2e {
@@ -61,25 +63,19 @@ void CleanupManager::pushStatic(std::shared_ptr<DeviceResource>&& resource)
 
 void CleanupManager::flush()
 {
-    // Static resources first, in insertion order
-    for (auto& resource : _staticResources)
-    {
-        if (resource)
-        {
-            resource->cleanup();
-        }
-    }
+    // Remove ownership before callbacks so cleanup is never invoked twice.
+    auto staticResources = std::move(_staticResources);
+    auto resources = std::move(_resources);
     _staticResources.clear();
-
-    // Normal resources after, in reverse insertion order
-    for (auto it = _resources.rbegin(); it != _resources.rend(); ++it)
-    {
-        if (*it)
-        {
-            (*it)->cleanup();
-        }
-    }
     _resources.clear();
+    std::exception_ptr error;
+    const auto cleanup = [&error](const auto& resource) {
+        try { if (resource) resource->cleanup(); }
+        catch (...) { if (!error) error = std::current_exception(); }
+    };
+    for (auto& resource : staticResources) cleanup(resource);
+    for (auto it = resources.rbegin(); it != resources.rend(); ++it) cleanup(*it);
+    if (error) std::rethrow_exception(error);
 }
 
 void CleanupManager::clear()
@@ -95,35 +91,47 @@ bool CleanupManager::empty() const
 
 void CleanupManager::defer(std::function<void()>&& cleanup)
 {
-    _deferredCleanups.push_back({
-        _surface->frameCounter() + _surface->inFlightFrames(),
-        std::move(cleanup)
-    });
+    if (!_surface || !_surface->_device)
+        throw std::logic_error("CleanupManager::defer requires a device-backed surface");
+    auto dependencies = _surface->_device->submissionState()->snapshot();
+    _deferredCleanups.push_back({ std::move(dependencies), std::move(cleanup) });
 }
 
 void CleanupManager::flushDeferred()
 {
-    auto counter = _surface->frameCounter();
-    _deferredCleanups.erase(
-        std::remove_if(_deferredCleanups.begin(), _deferredCleanups.end(),
-            [counter](const DeferredCleanup& d) {
-                if (d.targetFrame <= counter) {
-                    d.cleanup();
-                    return true;
-                }
-                return false;
-            }),
-        _deferredCleanups.end()
-    );
+    // Remove before invoking: closures may schedule further cleanup.
+    std::vector<std::function<void()>> ready;
+    std::exception_ptr error;
+    for (auto it = _deferredCleanups.begin(); it != _deferredCleanups.end();)
+    {
+        bool completed = true;
+        for (const auto& record : it->dependencies)
+        {
+            try { if (!record->completed()) completed = false; }
+            catch (...) { if (!error) error = std::current_exception(); }
+        }
+        if (completed)
+        {
+            ready.push_back(std::move(it->cleanup));
+            it = _deferredCleanups.erase(it);
+        }
+        else ++it;
+    }
+    for (auto& cleanup : ready) cleanup();
+    if (error) std::rethrow_exception(error);
 }
 
 void CleanupManager::flushAllDeferred()
 {
-    for (auto& d : _deferredCleanups)
-    {
-        d.cleanup();
-    }
+    auto pending = std::move(_deferredCleanups);
     _deferredCleanups.clear();
+    std::exception_ptr error;
+    for (auto& entry : pending)
+    {
+        try { entry.cleanup(); }
+        catch (...) { if (!error) error = std::current_exception(); }
+    }
+    if (error) std::rethrow_exception(error);
 }
 
 }

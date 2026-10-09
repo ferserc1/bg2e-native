@@ -54,7 +54,7 @@ void WindowSurface::create(gpu::Instance* instance)
     _layer = static_cast<CA::MetalLayer*>(SDL_Metal_GetLayer(_metalView));
 
     int w, h;
-    SDL_GetWindowSize(window, &w, &h);
+    SDL_Metal_GetDrawableSize(window, &w, &h);
     _size = Size2D{ static_cast<uint32_t>(w), static_cast<uint32_t>(h) };
 }
 
@@ -90,18 +90,29 @@ void WindowSurface::createRenderTarget(gpu::Device* device, gpu::PhysicalDevice*
     _layer->setFramebufferOnly(false);
     _imageCount = 3;
 
-    createDepthTarget(_size, _depthFormat);
+    if (_size.width && _size.height) createDepthTarget(_size, _depthFormat);
+    ++_generation;
 }
 
 void WindowSurface::resize(const Size2D& size)
 {
+    if (_device) _device->waitIdle();
+    for (auto& frame : _frames) { if (frame) frame->waitForSubmissions(); frame.reset(); }
+    _currentFrame.reset();
     _size = size;
-    _layer->setDrawableSize(CGSize{ double(_size.width), double(_size.height) });
-    resizeDepthTarget(size);
+    _layer->setDrawableSize(CGSize{ double(size.width), double(size.height) });
+    if (size.width && size.height) {
+        if (_depthImage) resizeDepthTarget(size);
+        else createDepthTarget(size, _depthFormat);
+    }
+    ++_generation;
 }
 
 void WindowSurface::releaseRenderTarget()
 {
+    if (_device && _device->isValid()) _device->waitIdle();
+    for (auto& frame : _frames) { if (frame) frame->waitForSubmissions(); frame.reset(); }
+    _currentFrame.reset();
     releaseDepthTarget();
 }
 
@@ -113,31 +124,38 @@ gpu::Image* WindowSurface::depthImage() const { return _depthImage.get(); }
 
 std::shared_ptr<gpu::SurfaceFrame> WindowSurface::beginFrame()
 {
+    if (_currentFrame) throw std::logic_error("Metal surface already has an acquired frame");
+    if (!_size.width || !_size.height || !_layer) return nullptr;
+    auto& slot = _frames[_currentFrameIndex];
+    if (slot) slot->waitForSubmissions();
+    slot.reset();
     auto* drawable = _layer->nextDrawable();
+    if (!drawable) return nullptr;
     auto frame = std::make_shared<metal::SurfaceFrame>();
     frame->setDrawable(drawable);
-
-    auto colorImg = std::make_unique<metal::Image>();
-    colorImg->initFromDrawableTexture(_metalDevice, drawable->texture(),
-                                      _colorFormat, _size);
-    frame->setColorImage(std::move(colorImg));
+    auto color = std::make_unique<metal::Image>();
+    color->initFromDrawableTexture(_metalDevice, drawable->texture(), _colorFormat, _size);
+    frame->setColorImage(std::move(color));
     frame->setDepthImage(_depthImage.get());
-    _currentFrame = frame.get();
+    slot = frame;
+    _currentFrame = frame;
     return frame;
 }
 
 void WindowSurface::present(gpu::CommandBuffer* cmd)
 {
-    if (_currentFrame && _currentFrame->drawable())
-    {
-        auto* mtlCmd = dynamic_cast<metal::CommandBuffer*>(cmd);
-        mtlCmd->handle()->presentDrawable(_currentFrame->drawable());
-    }
+    auto* command = dynamic_cast<metal::CommandBuffer*>(cmd);
+    if (!command || !_currentFrame || !_currentFrame->isValid())
+        throw std::logic_error("Metal presentation requires a valid acquired frame and command buffer");
+    command->associateFrame(_currentFrame);
+    command->handle()->presentDrawable(_currentFrame->drawable());
 }
 
-void WindowSurface::endFrame(gpu::SurfaceFrame*)
+void WindowSurface::endFrame(gpu::SurfaceFrame* frame)
 {
-    _currentFrame = nullptr;
+    if (!_currentFrame || frame != _currentFrame.get() || !frame->hasSubmissions())
+        throw std::logic_error("Metal endFrame requires a submitted acquired frame");
+    _currentFrame.reset();
     _currentFrameIndex = (_currentFrameIndex + 1) % 2;
     ++_frameCounter;
 }

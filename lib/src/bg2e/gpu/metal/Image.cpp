@@ -50,6 +50,8 @@ void Image::buildTargetImage(metal::Device* device, const Size2D& size, PixelFor
     desc->setHeight(size.height);
     desc->setStorageMode(MTL::StorageModePrivate);
     desc->setUsage(MTL::TextureUsageRenderTarget | MTL::TextureUsageShaderRead);
+    // Order render writes and blit reads across command buffers on one queue.
+    desc->setHazardTrackingMode(MTL::HazardTrackingModeTracked);
 
     _texture = device->handle()->newTexture(desc);
     _ownsTexture = true;
@@ -85,6 +87,8 @@ void Image::buildDepthImage(metal::Device* device, const Size2D& size, PixelForm
     desc->setHeight(size.height);
     desc->setStorageMode(MTL::StorageModePrivate);
     desc->setUsage(MTL::TextureUsageRenderTarget | MTL::TextureUsageShaderRead);
+    // Order render writes and blit reads across command buffers on one queue.
+    desc->setHazardTrackingMode(MTL::HazardTrackingModeTracked);
 
     _texture = device->handle()->newTexture(desc);
     _ownsTexture = true;

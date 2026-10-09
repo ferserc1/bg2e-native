@@ -171,6 +171,13 @@ public:
     // even if the configured frame deadline has not been reached yet.
     void requestFrame();
 
+    // Main-thread only, during an active run. In draw, scene invalidation is
+    // independent of presentation; while paused, refresh remains pending.
+    // Production scenes already update every frame.
+    void requestSceneFrame();
+    void pauseScene(const glm::vec4& clearColor = {0.f, 0.f, 0.f, 1.f});
+    void resumeScene();
+
     // A non-null token is observed weakly; the caller must retain it until the
     // queued function should run. Releasing the last reference cancels the work.
     void safeUpdateScene(std::function<void()> fn, std::shared_ptr<SafeUpdateToken> token = nullptr)

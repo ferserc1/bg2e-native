@@ -194,12 +194,15 @@ void Instance::create()
 
 void Instance::cleanup()
 {
-    if (base::Log::isDebug() && Instance::s_debugLayerAvailable)
+    if (_instance != VK_NULL_HANDLE)
     {
-        destroyDebugMessenger();
+        if (_debugMessenger != VK_NULL_HANDLE) destroyDebugMessenger();
+        vkDestroyInstance(_instance, nullptr);
     }
-
-    vkDestroyInstance(_instance, nullptr);
+    _debugMessenger = VK_NULL_HANDLE;
+    _instance = VK_NULL_HANDLE;
+    _window = nullptr;
+    _presentationMode = PresentationMode::Undefined;
 }
 
 bool Instance::getRequiredLayers(std::vector<const char*>& requiredLayers) const

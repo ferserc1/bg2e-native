@@ -47,6 +47,7 @@ namespace vk {
 
 void Device::create(gpu::Instance* instance, gpu::PhysicalDevice* physicalDevice, gpu::Surface* surface)
 {
+    _submissions = std::make_shared<detail::SubmissionState>();
     auto* vkPhysDevice = dynamic_cast<vk::PhysicalDevice*>(physicalDevice);
     _physicalDevice = vkPhysDevice->handle();
     bool offscreen = surface->isOffscreen();
@@ -249,20 +250,6 @@ void Device::create(gpu::Instance* instance, gpu::PhysicalDevice* physicalDevice
     if (!offscreen) _presentQueue.initCommandPool(_device, this);
     _transferQueue.initCommandPool(_device, this);
 
-    // Immediate submit resources
-    {
-        auto poolInfo = Info::commandPoolCreateInfo(
-            indices.graphics.value(),
-            VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
-        VK_ASSERT(vkCreateCommandPool(_device, &poolInfo, nullptr, &_immediateCmdPool));
-
-        auto allocInfo = Info::commandBufferAllocateInfo(_immediateCmdPool, 1);
-        VK_ASSERT(vkAllocateCommandBuffers(_device, &allocInfo, &_immediateCmdBuffer));
-
-        auto fenceInfo = Info::fenceCreateInfo(0);
-        VK_ASSERT(vkCreateFence(_device, &fenceInfo, nullptr, &_immediateCmdFence));
-    }
-
     // --- VMA allocator ---
     auto* vkInst = dynamic_cast<vk::Instance*>(instance);
 
@@ -282,21 +269,15 @@ void Device::create(gpu::Instance* instance, gpu::PhysicalDevice* physicalDevice
 
 void Device::cleanup()
 {
+    if (_device != VK_NULL_HANDLE) {
+        _submissions->drain([this] {
+            auto result = vkDeviceWaitIdle(_device);
+            if (result != VK_SUCCESS) throw std::runtime_error("Vulkan device cleanup wait failed");
+        }, true);
+    }
     _graphicsQueue.destroyCommandPool();
     _presentQueue.destroyCommandPool();
     _transferQueue.destroyCommandPool();
-
-    if (_immediateCmdFence != VK_NULL_HANDLE)
-    {
-        vkDestroyFence(_device, _immediateCmdFence, nullptr);
-        _immediateCmdFence = VK_NULL_HANDLE;
-    }
-    if (_immediateCmdPool != VK_NULL_HANDLE)
-    {
-        vkDestroyCommandPool(_device, _immediateCmdPool, nullptr);
-        _immediateCmdPool = VK_NULL_HANDLE;
-        _immediateCmdBuffer = VK_NULL_HANDLE;
-    }
 
     if (_allocator != VK_NULL_HANDLE)
     {
@@ -330,7 +311,12 @@ void Device::cleanup()
 
 void Device::waitIdle()
 {
-    vkDeviceWaitIdle(_device);
+    if (_device == VK_NULL_HANDLE) return;
+    _submissions->drain([this] {
+        auto result = vkDeviceWaitIdle(_device);
+        if (result != VK_SUCCESS)
+            throw std::runtime_error("vkDeviceWaitIdle failed: " + std::to_string(result));
+    });
 }
 
 bool Device::isValid() const
@@ -471,20 +457,12 @@ std::shared_ptr<gpu::RayTracingPipeline> Device::createRayTracingPipeline(
 
 void Device::immediateSubmit(std::function<void(gpu::CommandBuffer*)>&& function)
 {
-    VK_ASSERT(vkResetFences(_device, 1, &_immediateCmdFence));
-    VK_ASSERT(vkResetCommandBuffer(_immediateCmdBuffer, 0));
-
-    vk::CommandBuffer wrapper(this, _immediateCmdBuffer, _immediateCmdPool);
-
-    wrapper.begin();
-    function(&wrapper);
-    wrapper.end();
-
-    auto cmdInfo = Info::commandBufferSubmitInfo(_immediateCmdBuffer);
-    auto submit = Info::submitInfo(&cmdInfo, nullptr, nullptr);
-    VK_ASSERT(queueSubmit2(_graphicsQueue.handle(), 1, &submit, _immediateCmdFence));
-
-    VK_ASSERT(vkWaitForFences(_device, 1, &_immediateCmdFence, VK_TRUE, UINT64_MAX));
+    auto command = _graphicsQueue.createCommandBuffer("Immediate submission");
+    command->begin();
+    function(command.get());
+    command->end();
+    _graphicsQueue.submit(command.get());
+    static_cast<vk::CommandBuffer*>(command.get())->waitForCompletion();
 }
 
 }

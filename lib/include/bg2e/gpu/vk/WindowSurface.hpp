@@ -71,6 +71,8 @@ private:
     SDL_Window* _window{nullptr};
 
     VkSwapchainKHR _swapchain{VK_NULL_HANDLE};
+    bool _recreateRequested = false;
+    bool _frameAcquired = false;
     std::vector<std::unique_ptr<vk::Image>> _colorImages;
 
     // Number of frames that can be processed concurrently (always 2).

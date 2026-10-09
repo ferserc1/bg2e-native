@@ -8,7 +8,7 @@ Engine::init receives the prepared Backend. Verify its backendType matches Engin
 Use initialization stage flags and clear ownership rules. Accessors require initialized state and return abstract references. Engine backendType reports the configured concrete choice without native casts.
 
 ## Cleanup
-Wait for actual completion through the GPU contract from step 01. Drain deferred closures and registered resources, release retained command wrappers, clean Surface before Device, clean Instance after all dependent objects. Destroy C++ wrappers in a safe order and detach borrowed pointers. Idempotent cleanup handles a partially constructed Engine without masking the triggering exception.
+Stop new draw frame production and coordinate background GPU producers, then wait for actual completion through Device::waitIdle from step 01. Its admission gate reopens when the call returns; keep producers stopped through resource destruction. Drain deferred closures and registered resources, release retained command wrappers, clean Surface before Device, clean Instance after all dependent objects. Destroy C++ wrappers in a safe order and detach borrowed pointers. Idempotent cleanup handles a partially constructed Engine without masking the triggering exception.
 
 Scene targets remain RenderLoop-owned and are cleaned before Engine surface/device destruction. UI is still not initialized in this step.
 

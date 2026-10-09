@@ -21,6 +21,7 @@
 #include <bg2e/common.hpp>
 #include <bg2e/gpu/DeviceResource.hpp>
 #include <bg2e/gpu/Surface.hpp>
+#include <bg2e/gpu/detail/SubmissionState.hpp>
 
 #include <deque>
 #include <functional>
@@ -32,7 +33,7 @@ namespace gpu {
 
 class BG2E_API CleanupManager {
 public:
-    // Constructor now requires a Surface pointer for deferred cleanup timing.
+    // Surface provides the device submission dependencies for deferred cleanup.
     // The surface is NOT owned — the caller must ensure it outlives the manager.
     explicit CleanupManager(gpu::Surface* surface);
     ~CleanupManager() = default;
@@ -54,16 +55,15 @@ public:
 
     // --- Deferred cleanup API (new) ---
 
-    // Schedule a cleanup closure to run after inFlightFrames() frames have elapsed.
-    // The closure will be executed when flushDeferred() is called and
-    // surface->frameCounter() >= targetFrame.
+    // Capture outstanding submissions. Later sends must not use retired resources.
+    // Work recorded but not submitted is not part of this snapshot.
     void defer(std::function<void()>&& cleanup);
 
-    // Execute all deferred closures whose targetFrame <= surface->frameCounter().
-    // Call this AFTER endFrame() in the render loop (i.e., after the fence).
+    // Poll dependencies without waiting; execute closures only after completion.
+    // endFrame advances logical state and does not certify GPU completion.
     void flushDeferred();
 
-    // Execute ALL pending deferred closures immediately, regardless of frame counter.
+    // Execute ALL pending deferred closures immediately, regardless of dependencies.
     // Call this after device->waitIdle() at application shutdown.
     void flushAllDeferred();
 
@@ -74,7 +74,7 @@ private:
     std::deque<std::shared_ptr<DeviceResource>> _resources;
 
     struct DeferredCleanup {
-        uint64_t targetFrame;
+        std::vector<std::shared_ptr<detail::CompletionRecord>> dependencies;
         std::function<void()> cleanup;
     };
     std::vector<DeferredCleanup> _deferredCleanups;

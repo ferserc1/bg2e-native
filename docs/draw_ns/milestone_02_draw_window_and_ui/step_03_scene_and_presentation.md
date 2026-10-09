@@ -7,15 +7,18 @@ The scene image is a persistent result, not an acquired drawable. Keep it valid 
 
 ## Frame sequence
 1. Skip a zero-sized or unavailable presentation frame without advancing application-owned resource slots.
-2. Acquire and validate SurfaceFrame. Compare surface generation/extent/format; synchronize and recreate the scene target when changed, then notify the delegate with drawable pixel size.
+2. Acquire and validate SurfaceFrame; beginFrame has completed the work occupying the slot being reused, if any. Compare surface generation/extent/format; synchronize and recreate the scene target when changed, then notify the delegate with drawable pixel size.
 3. Select the synchronized frameSlot and frameNumber from Surface. Create or safely reuse the command wrapper. Convert incoming milliseconds to seconds.
 4. Begin commands. If the scene target has never been initialized, clear it to configured/default background even when paused.
 5. If unpaused and scene-dirty, update the delegate, transition the scene image to ColorAttachment, clear as required and render the scene. Require the delegate to close any scope it opens. This minimum delegate receives only the retained scene color target; depth support can be added later.
 6. Transition scene to TransferSrc and presentation color to TransferDst; copy between matching format and extent targets through gpu::CommandBuffer::copyImage.
 7. Transition presentation color to ColorAttachment. Leave a specific optional UI composition callback slot, invoked outside active scene rendering. It is empty until steps 04/05. Do not initialize UserInterface or invoke ImGui functions before its backend exists.
-8. Transition presentation to Present; call surface.present, cmd.end, queue.submit, cmd.waitUntilCompleted, surface.endFrame and cleanupManager.flushDeferred, in that order.
+8. Transition presentation to Present; call surface.present, cmd.end, queue.submit, surface.endFrame and cleanupManager.flushDeferred, in that order. Submission associates its completion record with the slot. Retain command/frame wrappers until that slot completes. flushDeferred polls captured dependencies without blocking. Do not call waitUntilCompleted or waitIdle after each frame.
 
 Scene rendering starts dirty. Expose requestSceneFrame for invalidation; this example does not require unconditional scene redraw. pauseScene preserves the last valid image; resume marks dirty. Clear-color changes mark dirty. Existing pauseScene's color parameter is stored as a background for future scene refresh, not used to erase a valid retained image merely because a pause occurred.
+
+## Shared scene target hazards
+The retained scene image may be read by earlier presentations while a later frame updates it. Keep scene rendering and presentation copies on the same graphics queue for this milestone; transitions must express both read-to-write and write-to-read GPU dependencies. Inspect Vulkan barriers and Metal resource hazard tracking for this exact sequence rather than adding CPU waits. If work moves to separate queues later, introduce explicit inter-queue dependencies or versioned scene targets. A retained image alone does not provide synchronization. Resize/destruction first coordinates producers and drains all users.
 
 ## Execution wiring
 Implement DrawGraphicsExecution initialize/initializeScene/frame/resize/pause/resume/waitIdle/cleanup against Engine and RenderLoop. Install the draw delegate. Remove the runtime boundary now that clear/presentation can execute. Keep experimental UI initialization absent until its implementation is available; processEvent/frameOverride operations are guarded against an uninitialized UserInterface. Production retains its existing UI behavior.

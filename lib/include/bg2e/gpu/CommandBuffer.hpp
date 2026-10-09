@@ -159,6 +159,8 @@ public:
         throw std::runtime_error("traceRays not implemented");
     }
 
+    // Used by coordinators to enforce callback scope ownership.
+    virtual bool hasActiveScope() const = 0;
     virtual bool isValid() const = 0;
 };
 

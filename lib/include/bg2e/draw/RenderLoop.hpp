@@ -24,12 +24,16 @@
 #include <glm/glm.hpp>
 
 #include <memory>
+#include <functional>
+#include <cstdint>
 
 namespace bg2e {
 
 namespace ui {
 class UserInterface;
 }
+
+namespace gpu { class SurfaceFrame; }
 
 namespace draw {
 
@@ -53,7 +57,14 @@ public:
 
     void initScene();
 
+    // Frame timing is in seconds. UI composition is optional and independent.
+    void frame(float deltaSeconds);
     void frame(float deltaSeconds, ui::UserInterface& userInterface);
+    using UICompositionCallback = std::function<void(gpu::CommandBuffer&, gpu::SurfaceFrame&)>;
+    void setUICompositionCallback(UICompositionCallback callback);
+    // Runs after acquisition/slot synchronization, before scene commands.
+    void setUIFramePreparationCallback(UICompositionCallback callback);
+    void setSceneClearColor(const glm::vec4& clearColor);
 
     void requestResize();
 
@@ -72,6 +83,13 @@ protected:
     Engine* _engine = nullptr;
     std::shared_ptr<RenderLoopDelegate> _delegate;
 
+    struct Impl;
+    std::unique_ptr<Impl> _impl;
+    UICompositionCallback _uiComposition;
+    UICompositionCallback _uiPreparation;
+    bool _delegateInitialized = false;
+    bool _sceneInitialized = false;
+    uint64_t _sceneRevision = 0;
     bool _resizeRequested = false;
     bool _scenePaused = false;
     bool _sceneDirty = true;

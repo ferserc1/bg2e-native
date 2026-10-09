@@ -1,7 +1,9 @@
 # Draw Configuration Quick Start
 
-These snippets describe milestone 01 contracts. They are not a runnable draw
-window tutorial: experimental execution intentionally stops before allocation.
+These snippets select the experimental draw path. The complete
+[window/UI example](../../../examples/draw/01_window_ui/src/main.cpp) registers
+all delegates, accepts backend overrides and provides retained-scene controls.
+See its [usage notes](../../../examples/draw/README.md).
 
 ## Include and configure
 
@@ -27,8 +29,9 @@ class DrawDelegate final : public bg2e::draw::RenderLoopDelegate {
 public:
     void render(const bg2e::draw::FrameContext& context) override
     {
-        // Record scene work through context.commandBuffer and colorTarget
-        // when frame execution becomes available in milestone 02.
+        // An empty delegate presents the coordinator's background color.
+        // For scene work, record commands targeting context.colorTarget and
+        // close every rendering/compute scope before returning.
     }
 };
 ```
@@ -44,10 +47,12 @@ loop.initWindowConfig(bg2e::app::WindowConfig::withSize("Draw", 1280, 720));
 loop.run(&application, config);
 ```
 
-The call validates configuration and throws
-`std::logic_error("Experimental draw execution requires milestone 02")`.
-No window is created. Using `loop.run(&application)` instead selects production
-and throws std::invalid_argument for the draw delegate mismatch.
+The call validates configuration, creates the selected backend and window,
+and presents scene color. Input and UI delegates are still required by the
+application contract. Both Vulkan and Metal initialize their UI backend;
+Metal is available only on macOS.
+Using `loop.run(&application)` instead selects production and throws
+std::invalid_argument for the draw delegate mismatch.
 
 The existing production entry point remains unchanged and requires a production
 render delegate. See [MainLoop](../app/MainLoop.md) and [EngineConfig](EngineConfig.md).

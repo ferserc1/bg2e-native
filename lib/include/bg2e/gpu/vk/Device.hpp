@@ -73,10 +73,6 @@ private:
     vk::Queue _presentQueue;
     vk::Queue _transferQueue;
 
-    VkCommandPool   _immediateCmdPool   = VK_NULL_HANDLE;
-    VkCommandBuffer _immediateCmdBuffer = VK_NULL_HANDLE;
-    VkFence         _immediateCmdFence  = VK_NULL_HANDLE;
-
     bool     _rayTracingEnabled  = false;
     uint32_t _asScratchAlignment = 256;
 };

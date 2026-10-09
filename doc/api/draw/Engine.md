@@ -20,32 +20,46 @@ gpu::WindowSurface* surface() const;
 gpu::CleanupManager& cleanupManager();
 ```
 
-## Initialization and current behavior
+## Initialization
 
-`init()` records the borrowed window/backend pointers and configuration, then
-throws `std::logic_error` with:
+`init()` requires a non-null SDL window and a Backend whose type matches
+EngineConfig. It borrows the backend's shared Instance wrapper, rejects an
+instance already in use, applies the configured application name and debug mode,
+and creates the windowed instance. MainLoop substitutes its appId when the
+configured application name is empty.
 
-```text
-draw GPU initialization is not implemented; complete milestone 02
-```
+The engine creates a WindowSurface with the requested formats, selects a
+PhysicalDevice, and creates a Device. Device creation establishes the surface
+render target. Finally, the engine creates the CleanupManager and marks itself
+initialized. Accessors throw `std::logic_error` until initialization succeeds.
+An initialized engine must be cleaned before another call to `init()`.
 
-It does not create GPU objects or mark the engine initialized. All accessors,
-including backendType(), throw `std::logic_error("draw::Engine is not initialized.")`
-until initialization is implemented. The pointer-returning accessors do not
-return null as an alternative to this exception. A repeated init is not a
-successful retry in this milestone: initialization always reaches this boundary.
+Initialization failure cleans completed and partially started stages and
+rethrows the original exception. Cleanup allows the engine to be initialized
+again.
 
-## Ownership
+## Ownership and shutdown
 
-The shell declares borrowed SDL window, Backend and shared Instance references,
-and exclusive PhysicalDevice, Device, WindowSurface and CleanupManager ownership.
-GPU object construction is pending. Applications normally select EngineConfig
-through MainLoop rather than constructing its private execution wrapper.
+The SDL window and shared Instance wrapper are borrowed. Factory-owned backends
+are retained through a lease: Factory rejects backend replacement while the
+execution or Engine retains it. A caller-owned Backend must outlive the Engine.
+The Engine controls the initialized Instance lifetime and exclusively owns its
+PhysicalDevice, Device, WindowSurface and CleanupManager.
 
-`cleanup()` resets the shell, releases its stored wrappers and borrowed
-references, restores default configuration and clears initialization state.
-It is safe to call on an uninitialized shell and repeatedly. The destructor is
-currently defaulted; do not interpret it as an implemented GPU shutdown protocol.
-Actual synchronization and ordered GPU cleanup belong to milestone 02.
+The caller must stop frame production and coordinate background GPU producers
+before cleanup, keeping them stopped throughout resource destruction.
+`cleanup()` waits through Device::waitIdle, drains deferred and registered
+resources, destroys the surface before the device, then cleans the instance
+and detaches borrowed references. It is safe before initialization and on
+repeat calls. Explicit cleanup reports errors; the destructor attempts cleanup
+without propagating exceptions.
+
+## MainLoop execution
+
+Milestone 02 step 03 enables experimental MainLoop execution: draw can present
+retained scene color through Vulkan or Metal. UI preparation and composition are implemented for Vulkan and Metal in
+steps 04/05. Event processing and frame overrides are enabled after the selected
+UI backend is initialized.
+Scene and presentation coordination belongs to RenderLoop.
 
 See [EngineConfig](EngineConfig.md) and [RenderLoop](RenderLoop.md).

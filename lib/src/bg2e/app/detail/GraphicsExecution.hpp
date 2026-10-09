@@ -25,6 +25,7 @@
 #include <glm/glm.hpp>
 
 #include <memory>
+#include <string>
 
 struct SDL_Window;
 
@@ -47,6 +48,7 @@ public:
     virtual ~GraphicsExecution() = default;
 
     virtual gpu::WindowType windowType() const = 0;
+    virtual bool userInterfaceReady() const { return true; }
 
     // Inspects the configured delegates without allocating SDL/GPU resources.
     virtual void validate(const Application& application) const = 0;
@@ -54,6 +56,10 @@ public:
     // Invoked after successful validation, before the SDL window is created.
     // Reports whether the selected runtime path is available.
     virtual void ensureRuntimeAvailable() const = 0;
+
+    // Called after the runtime boundary and before SDL/window allocation.
+    // Production execution needs no preparation.
+    virtual void prepare(const std::string&) {}
 
     virtual void initialize(
         SDL_Window* window,
@@ -72,6 +78,8 @@ public:
 
     virtual void waitIdle() = 0;
 
+    // Production scenes are continuously updated; draw overrides invalidation.
+    virtual void requestSceneFrame() {}
     virtual void pauseScene(const glm::vec4& clearColor) = 0;
     virtual void resumeScene() = 0;
 

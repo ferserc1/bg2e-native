@@ -22,6 +22,9 @@
 #include <bg2e/gpu/vk/common.hpp>
 
 #include <memory>
+#include <vector>
+#include <bg2e/gpu/vk/CommandPoolState.hpp>
+#include <bg2e/gpu/detail/SubmissionState.hpp>
 
 namespace bg2e {
 namespace gpu {
@@ -51,6 +54,8 @@ private:
     VkDevice      _device{VK_NULL_HANDLE};
     vk::Device*   _gpuDevice{nullptr};
     VkCommandPool _commandPool{VK_NULL_HANDLE};
+    mutable std::vector<std::shared_ptr<CommandPoolState>> _poolStates;
+    std::shared_ptr<detail::SubmissionState> _submissions;
 };
 
 }

@@ -31,8 +31,15 @@ public:
 
     static Backend* backend();
 
+    // Atomically prepare and retain a backend. While a lease is held, init()
+    // rejects replacement. No GPU instance or native resources are created.
+    static std::shared_ptr<Backend> acquireBackend(BackendType type);
+
+    // Retain an existing factory backend; returns empty for caller-owned backends.
+    static std::shared_ptr<Backend> retainBackend(Backend& backend);
+
 private:
-    static std::unique_ptr<Backend> _backend;
+    static std::shared_ptr<Backend> _backend;
 };
 
 }

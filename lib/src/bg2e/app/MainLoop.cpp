@@ -149,6 +149,7 @@ int32_t MainLoop::run(app::Application * application, const draw::EngineConfig& 
 int32_t MainLoop::runInternal(app::Application * application, std::unique_ptr<detail::GraphicsExecution> execution) {
     execution->validate(*application);
     execution->ensureRuntimeAvailable();
+    execution->prepare(_appId);
 
 #ifdef BG2E_IS_MAC
     SDL_SetHint(SDL_HINT_MAC_BACKGROUND_APP, "0");
@@ -158,8 +159,17 @@ int32_t MainLoop::runInternal(app::Application * application, std::unique_ptr<de
 	SDL_Init(SDL_INIT_VIDEO);
 
     auto window = createSDLWindow(_windowConfig, execution->windowType());
+    if (!window) throw std::runtime_error(std::string("Failed to create application window: ") + SDL_GetError());
+    std::unique_ptr<SDL_Window, decltype(&SDL_DestroyWindow)> windowOwner(window, SDL_DestroyWindow);
 
     _execution = std::move(execution);
+    struct ExecutionCleanup {
+        std::unique_ptr<detail::GraphicsExecution>& execution;
+        ~ExecutionCleanup()
+        {
+            if (execution) { try { execution->cleanup(); } catch (...) { } execution.reset(); }
+        }
+    } executionCleanup{ _execution }; // Released before windowOwner on exceptions.
     _execution->initialize(window, *application, _userInterface);
 
 	_inputManager.setDelegate(application->inputDelegate());
@@ -290,7 +300,7 @@ int32_t MainLoop::runInternal(app::Application * application, std::unique_ptr<de
                 _inputManager.mouseWheel(event.wheel.x, event.wheel.y);
             }
 
-            if (!quit)
+            if (!quit && _execution->userInterfaceReady())
             {
                 _userInterface.processEvent(&event);
             }
@@ -358,7 +368,6 @@ int32_t MainLoop::runInternal(app::Application * application, std::unique_ptr<de
     _execution->waitIdle();
     _execution->cleanup();
     _execution.reset();
-    SDL_DestroyWindow(window);
 
     return 0;
 }
@@ -391,6 +400,27 @@ void MainLoop::requestFrame()
     _frameRequested.store(true);
 }
 
+void MainLoop::requestSceneFrame()
+{
+    if (!_execution) throw std::logic_error("MainLoop::requestSceneFrame requires an active run.");
+    _execution->requestSceneFrame();
+    requestFrame();
+}
+
+void MainLoop::pauseScene(const glm::vec4& clearColor)
+{
+    if (!_execution) throw std::logic_error("MainLoop::pauseScene requires an active run.");
+    _execution->pauseScene(clearColor);
+    requestFrame();
+}
+
+void MainLoop::resumeScene()
+{
+    if (!_execution) throw std::logic_error("MainLoop::resumeScene requires an active run.");
+    _execution->resumeScene();
+    requestFrame();
+}
+
 void MainLoop::requestResizeEvent()
 {
     _resizeRequested = true;
@@ -411,11 +441,13 @@ void MainLoop::executeSafeUpdateScene()
     {
         _execution->waitIdle();
     }
+    bool updated = false;
     for (auto& entry : local)
     {
         if (!entry.hasToken)
         {
             entry.function();
+            updated = true;
             continue;
         }
 
@@ -423,8 +455,10 @@ void MainLoop::executeSafeUpdateScene()
         if (token && token->alive->load())
         {
             entry.function();
+            updated = true;
         }
     }
+    if (updated && _execution) requestSceneFrame();
 }
 
 void MainLoop::drainMainThreadQueue()
@@ -454,7 +488,7 @@ void MainLoop::asyncLoad(
 
     _execution->pauseScene(clearColor);
 
-    _userInterface.setFrameOverride([this]{ _loader.draw(); });
+    if (_execution->userInterfaceReady()) _userInterface.setFrameOverride([this]{ _loader.draw(); });
 
     std::thread([this, fn = std::move(loadFn), complete = std::move(onComplete)]() mutable
     {
@@ -463,7 +497,7 @@ void MainLoop::asyncLoad(
         catch (...) { error = std::current_exception(); }
 
         safeUpdateScene([this, complete = std::move(complete), error]() {
-            _userInterface.clearFrameOverride();
+            if (_execution->userInterfaceReady()) _userInterface.clearFrameOverride();
             _execution->resumeScene();
             if (complete) complete(error);
         });

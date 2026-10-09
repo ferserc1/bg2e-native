@@ -15,6 +15,9 @@ UI is drawn into the presentation image, never into the retained scene image. Th
 
 Scene pause suppresses scene updates/draws but keeps UI and presentation alive. CPU work on a worker can leave the main thread updating UI; blocking the main thread or mutating a scene concurrently is not supported by this design. The example's UI control demonstrates frozen scene content with live UI.
 
+## Synchronization policy
+Queue::submit returns without waiting for GPU completion. Each surface slot retains its pending command/frame completion records; beginFrame waits only when reusing an occupied slot. All queues and immediateSubmit participate in per-device tracking. Device::waitIdle temporarily blocks new submissions and drains prior work; it reopens admission before returning. Lifecycle callers coordinate resource mutation with other producers. Deferred cleanup polls captured completion records, never just submitted-frame counts.
+
 ## Ordered steps
 1. [Establish completion and safe acquisition](step_01_gpu_lifecycle.md).
 2. [Initialize draw Engine](step_02_engine_initialization.md).
@@ -27,7 +30,29 @@ Scene pause suppresses scene updates/draws but keeps UI and presentation alive. 
 The example requires registration in examples/CMakeLists.txt and an example-local CMakeLists.txt; vendored Metal ImGui needs APPLE-only source selection. These are explicit implementation requirements of this milestone, not permission to restructure unrelated build configuration. AGENTS.md restricts CMake edits without explicit user authorization; obtain that authorization when executing this milestone if it has not already been granted. The present task creates planning documents only.
 
 ## Deferred scope
-No scene migration, PBR renderer, texture-widget migration, general resource editor adaptation, offscreen Application migration, multiple windows or simultaneous backend engines. Do not derive draw resource allocation policy from production's per-frame descriptor allocator. Advanced asynchronous multi-frame optimization can follow after the minimal safe lifecycle is complete.
+No scene migration, PBR renderer, texture-widget migration, general resource editor adaptation, offscreen Application migration, multiple windows or simultaneous backend engines. Do not derive draw resource allocation policy from production's per-frame descriptor allocator. Frames in flight remain asynchronous in this milestone. Slot reuse waits for that slot only; global waits are reserved for coordinated lifecycle operations. More advanced multi-queue scheduling can follow later.
 
 ## Completion
 The example runs through MainLoop with either low-level backend, clears the scene target, overlays the UI demo, handles resize/minimize/restore, retains scene content during pause and shuts down with completed GPU work. Production remains supported through its unchanged API. Runtime acceptance belongs to the project lead.
+
+## Step 06 implementation record
+
+The draw_window_ui example is registered with the existing SDL bundle helper.
+It selects EngineConfig defaults or an explicit backend argument, clears through
+abstract GPU commands and draws the demo/control windows through UI wrappers.
+MainLoop exposes scene invalidation and pause/resume without exposing execution
+internals. Successful safe-update callbacks invalidate draw's retained scene.
+Production sources and existing launchers/examples are unchanged.
+
+Project-lead runtime acceptance remains pending for these behaviors:
+
+- Existing production applications and examples continue to launch unchanged.
+- Draw clears scene color and displays UI with Vulkan and with Metal on macOS.
+- Paused scene color remains visible while UI counters and controls update;
+  edits remain pending until resume. Async loading follows the same UI-live path.
+- Positive-size resize recreates scene/presentation targets and refreshes metadata.
+- Minimize/unavailable acquisition skips frames safely; restore resumes presentation.
+- Shutdown drains selected backend submissions and releases UI/scene/GPU resources.
+
+No builds or tests were invoked by the implementation agent, and no runtime
+acceptance result is asserted.

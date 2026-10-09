@@ -59,6 +59,7 @@ protected:
 private:
     std::unique_ptr<metal::Image> _colorImage;
     std::shared_ptr<metal::SurfaceFrame> _frame;
+    bool _frameAcquired = false;
 };
 
 }

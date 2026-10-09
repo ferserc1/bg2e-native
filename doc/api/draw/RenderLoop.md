@@ -3,59 +3,73 @@
 **Header:** `<bg2e/draw/RenderLoop.hpp>`  
 **Namespace:** `bg2e::draw`
 
-Coordinates experimental scene work, UI composition and presentation separately
-from Engine's context ownership. Non-copyable. UI is borrowed, not engine-owned.
-A retained scene target is planned; this milestone stores coordination state only.
+Coordinates scene rendering and presentation on the graphics queue. Engine owns
+the GPU context; RenderLoop owns the persistent scene color and the command/frame
+wrappers retained for each frame in flight.
+
+## Lifecycle
+
+Register a RenderLoopDelegate, call `init(Engine*)`, then `initScene()` before
+`frame(float deltaSeconds)`. MainLoop performs these operations through its draw
+execution adapter and converts milliseconds to seconds. The existing
+`frame(float, ui::UserInterface&)` overload forwards to the same frame path; it
+does not initialize or call UI functions.
+
+The first available presentation frame creates a scene color image matching the
+actual drawable extent and format. The delegate receives `resize()` in drawable
+pixels, then `update()` and `render()` when the scene is dirty and unpaused.
+FrameContext contains the retained color image, synchronized resource slot,
+surface frame number and elapsed time. There is no depth target in this initial
+scene contract. The coordinator clears the scene color before rendering; the
+delegate opens and closes any scopes it needs. A scope left open is a
+configuration error reported by exception.
+
+Every presentation copies the retained scene color into the acquired drawable.
+The loop keeps scene work and copies on one graphics queue, with GPU resource
+dependencies between reads and writes. Slot reuse waits through Surface::beginFrame;
+there is no full-device or per-submit CPU wait during ordinary frame execution.
+Unavailable/zero-sized drawables skip work without advancing application slots.
+Resize and shutdown drain all users before destroying shared targets.
+
+## Invalidation and pause
+
+- `requestSceneFrame()` marks the scene dirty. It does not wake MainLoop itself.
+  Application controls should use `MainLoop::requestSceneFrame()`, which also
+  requests presentation. `MainLoop::pauseScene()` and `resumeScene()` forward
+  scene controls and request a wakeup; all three are main-thread-only.
+- `requestResize()` records target invalidation for the next available frame.
+- `setSceneClearColor(glm::vec4)` changes the background and marks the scene dirty.
+- `pauseScene(clearColor)` stores that background and pauses scene work while
+  preserving the last valid scene image. An image without valid contents is
+  cleared even when paused, including after resize.
+- `resumeScene()` resumes scene work and marks it dirty.
+
+Scene rendering starts dirty. Requests made during delegate callbacks remain
+pending for a subsequent frame. Presentation continues while the scene is clean
+or paused.
+
+## Optional UI composition
 
 ```cpp
-RenderLoop();
-~RenderLoop();
-void setDelegate(std::shared_ptr<RenderLoopDelegate> delegate);
-std::shared_ptr<RenderLoopDelegate> delegate() const;
-void init(Engine* engine);
-void initScene();
-void frame(float deltaSeconds, ui::UserInterface& userInterface);
-void requestResize();
-void pauseScene(const glm::vec4& clearColor = {0.f, 0.f, 0.f, 1.f});
-void resumeScene();
-bool isScenePaused() const;
-void requestSceneFrame();
-bool sceneDirty() const;
-void cleanup();
+using UICompositionCallback =
+    std::function<void(gpu::CommandBuffer&, gpu::SurfaceFrame&)>;
+void setUICompositionCallback(UICompositionCallback callback);
 ```
 
-## Implemented coordination state
+The callback runs after the scene copy, with presentation color in
+ColorAttachment layout and no active scene scope. It must close all scopes it
+opens. The callback is empty by default. MainLoop binds Vulkan UI in step 04 and Metal
+UI in step 05. `setUIFramePreparationCallback` installs a callback with the same
+signature, invoked after acquisition/slot synchronization and before scene work.
+It must leave all command scopes closed.
 
-Initially the scene is unpaused and dirty, with no pending resize and black
-background `(0, 0, 0, 1)`.
+## Cleanup
 
-| Operation | Current effect |
-|-----------|----------------|
-| `setDelegate()` | Stores a shared delegate; delegate() returns a shared pointer copy. |
-| `requestResize()` | Sets the pending resize flag and marks the scene dirty. |
-| `pauseScene(clearColor)` | Sets paused state and stores color; does not clear an image or change dirty state. |
-| `resumeScene()` | Clears paused state and marks scene dirty. |
-| `requestSceneFrame()` | Marks scene dirty; does not itself wake MainLoop or submit commands. |
-| `cleanup()` | Calls the delegate cleanup if registered; then resets engine pointer and coordination flags/color. |
+Call `cleanup()` while Engine is alive and all producers are stopped. It waits
+for GPU completion, cleans the initialized delegate once, releases retained
+commands/frames and scene color, then resets coordination state. The registered
+delegate remains available for another initialization. Repeated cleanup is safe;
+the destructor also attempts cleanup without propagating exceptions.
 
-cleanup retains the registered delegate, so repeated calls invoke delegate
-cleanup again. It does not establish GPU completion. The default destructor
-does not invoke this cleanup method. If the delegate cleanup throws, subsequent
-state resets in that call are not executed.
-
-## Pending execution
-
-- init stores the borrowed Engine pointer, then throws
-  `std::logic_error("draw::RenderLoop initialization is not implemented; complete milestone 02")`.
-- initScene throws
-  `std::logic_error("draw::RenderLoop scene initialization is not implemented; complete milestone 02")`.
-- frame throws
-  `std::logic_error("draw::RenderLoop frame execution is not implemented; complete milestone 02")`.
-
-No update/render callbacks, image acquisition, scene caching, UI composition or
-presentation occur. The contract uses seconds for frame timing; the internal
-MainLoop draw adapter converts its milliseconds input to seconds.
-
-Future execution will permit scene pause with live UI over the last scene
-image. That behavior is not implemented by storing the pause flag alone.
-See [FrameContext](FrameContext.md) and [RenderLoopDelegate](RenderLoopDelegate.md).
+See [FrameContext](FrameContext.md), [RenderLoopDelegate](RenderLoopDelegate.md)
+and [Engine](Engine.md).

@@ -22,6 +22,8 @@
 
 namespace bg2e {
 
+namespace draw { class Engine; }
+
 namespace app {
 
 class MainLoop;
@@ -35,7 +37,9 @@ class UserInterface;
 class BG2E_API UserInterfaceDelegate {
     friend class app::MainLoop;
 public:
+    virtual ~UserInterfaceDelegate() = default;
     virtual void init(bg2e::render::Engine*, UserInterface*) {}
+    virtual void init(bg2e::draw::Engine*, UserInterface*) {}
     virtual void drawUI();
     
     inline uint32_t uiWidth() const { return _viewportWidth; }

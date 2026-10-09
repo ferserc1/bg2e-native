@@ -22,6 +22,7 @@
 #include <bg2e/gpu/metal/common.hpp>
 
 #include <memory>
+#include <bg2e/gpu/detail/SubmissionState.hpp>
 
 namespace bg2e {
 namespace gpu {
@@ -45,13 +46,14 @@ public:
 
     CommandQueueHandle handle() const { return _commandQueue; }
 
-    void setDevice(metal::Device* device) { _device = device; }
+    void setDevice(metal::Device* device);
 
     std::shared_ptr<gpu::CommandBuffer> createCommandBuffer(const std::string& debugName = {}) const override;
     void submit(gpu::CommandBuffer* cmd) const override;
 
 private:
     CommandQueueHandle _commandQueue = nullptr;
+    std::shared_ptr<detail::SubmissionState> _submissions;
     metal::Device*     _device = nullptr;
 };
 

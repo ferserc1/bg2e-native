@@ -20,6 +20,7 @@
 
 #include <bg2e/common.hpp>
 #include <bg2e/gpu/Common.hpp>
+#include <bg2e/gpu/detail/SubmissionState.hpp>
 #include <bg2e/gpu/Buffer.hpp>
 #include <bg2e/gpu/CubeMap.hpp>
 #include <bg2e/gpu/GraphicsPipeline.hpp>
@@ -34,6 +35,9 @@
 namespace bg2e {
 namespace gpu {
 
+class CleanupManager;
+namespace vk { class Queue; }
+namespace metal { class Queue; }
 class Buffer;
 class CommandBuffer;
 class CubeMap;
@@ -56,8 +60,12 @@ class BG2E_API Device {
 public:
     virtual ~Device() = default;
 
+
     virtual void create(Instance* instance, PhysicalDevice* physicalDevice, Surface* surface) = 0;
     virtual void cleanup() = 0;
+    // Drains wrapper-managed sends while temporarily blocking new submissions.
+    // Admission reopens on return; callers coordinate subsequent resource edits.
+    // Direct sends through native handles are outside this contract.
     virtual void waitIdle() = 0;
 
     virtual bool isValid() const = 0;
@@ -136,6 +144,13 @@ public:
     {
         throw std::runtime_error("createRayTracingPipeline not implemented");
     }
+protected:
+    // Internal coordination, deliberately absent from the public Device API.
+    const std::shared_ptr<detail::SubmissionState>& submissionState() const { return _submissions; }
+    friend class CleanupManager;
+    friend class vk::Queue;
+    friend class metal::Queue;
+    std::shared_ptr<detail::SubmissionState> _submissions = std::make_shared<detail::SubmissionState>();
 };
 
 }

@@ -96,11 +96,15 @@ CommandBuffer::~CommandBuffer()
 
 void CommandBuffer::begin()
 {
+    if (_recording || _submitted) throw std::logic_error("Metal command buffer cannot begin again");
+    _executable = false;
     _recording = true;
 }
 
 void CommandBuffer::end()
 {
+    if (!_recording || _passDesc)
+        throw std::logic_error("Metal command buffer must close its render scope before end");
     if (_computeEncoder)
     {
         _computeEncoder->endEncoding();
@@ -109,6 +113,12 @@ void CommandBuffer::end()
     }
     _boundComputePipeline = nullptr;
     _recording = false;
+    _executable = true;
+}
+
+bool CommandBuffer::hasActiveScope() const
+{
+    return _passDesc || _encoder || _computeEncoder;
 }
 
 void CommandBuffer::transition(gpu::Image* image, ImageLayout newLayout)
@@ -294,6 +304,7 @@ void CommandBuffer::endRendering()
     if (!_encoder && _passDesc && _cmd)
     {
         _encoder = _cmd->renderCommandEncoder(_passDesc);
+        if (_encoder) _encoder->retain(); // Balance the scope's owned release.
     }
     if (_encoder)
     {
@@ -317,6 +328,20 @@ void CommandBuffer::endRendering()
     _boundIndexBufferOffset = 0;
 }
 
+MTL::RenderPassDescriptor* CommandBuffer::renderPassDescriptor() const
+{
+    if (!_recording || !_passDesc || _computeEncoder)
+        throw std::logic_error("Metal renderPassDescriptor requires an active render scope.");
+    return _passDesc;
+}
+
+MTL::RenderCommandEncoder* CommandBuffer::materializeRenderEncoder()
+{
+    renderPassDescriptor(); // Validate the scope before emitting native commands.
+    ensureRenderEncoder();
+    return _encoder;
+}
+
 void CommandBuffer::ensureRenderEncoder()
 {
     if (_encoder)
@@ -332,6 +357,7 @@ void CommandBuffer::ensureRenderEncoder()
         throw std::runtime_error("metal::CommandBuffer::ensureRenderEncoder: no active render pass");
     }
     _encoder = _cmd->renderCommandEncoder(_passDesc);
+    if (_encoder) _encoder->retain(); // Native result is autoreleased.
     if (!_encoder)
     {
         throw std::runtime_error("metal::CommandBuffer::ensureRenderEncoder: failed to create render encoder");
@@ -874,6 +900,7 @@ bool CommandBuffer::isValid() const
 CommandBuffer::~CommandBuffer() {}
 void CommandBuffer::begin() {}
 void CommandBuffer::end() {}
+bool CommandBuffer::hasActiveScope() const { return false; }
 void CommandBuffer::transition(gpu::Image*, ImageLayout) {}
 void CommandBuffer::beginRendering(gpu::SurfaceFrame*) {}
 void CommandBuffer::beginRendering(gpu::Image*, uint32_t) {}

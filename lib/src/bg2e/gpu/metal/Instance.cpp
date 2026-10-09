@@ -62,6 +62,8 @@ void Instance::create()
 
 void Instance::cleanup()
 {
+    _window = nullptr;
+    _presentationMode = PresentationMode::Undefined;
 }
 
 void Instance::assertMetalSupport()
