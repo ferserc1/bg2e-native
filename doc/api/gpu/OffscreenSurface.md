@@ -84,3 +84,13 @@ public:
 ```
 
 Thin Metal subclass. No additional methods or properties.
+
+
+## Completion and recreation lifecycle
+
+Acquisition waits tracked submissions occupying the reused resource slot;
+endFrame requires a submitted acquired frame and advances bookkeeping without
+waiting for its just-submitted work. Resize/release coordinates global waiting
+before destroying shared targets and changes surface generation when targets
+are recreated. Producers must remain coordinated throughout that operation.
+See [submission tracking and waitIdle](Submission_tracking_and_waitIdle.md).

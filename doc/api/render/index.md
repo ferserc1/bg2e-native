@@ -4,6 +4,31 @@ The `bg2e::render` namespace is the production Vulkan rendering API. Its
 umbrella header is `<bg2e/render/all.hpp>`. Rendering and baker resources are
 owned by an `Engine` and its active frame lifecycle.
 
+## Production and experimental frameworks
+
+The terms **production** and **experimental** describe the maturity and scope of
+bg2 engine's graphics APIs, not build configurations, deployment environments
+or compiler optimization settings.
+
+- **Production: `bg2e::render`.** This is the maintained framework used by the
+  engine's applications. It provides Vulkan rendering and integrates with the
+  production scene, material and UI components. Use it for applications that
+  need those established high-level facilities. Production does not imply that
+  an application must run on a server or use a Release build.
+- **Experimental: `bg2e::draw`.** This is a high-level framework built on the
+  backend-neutral `bg2e::gpu` API. Its windowed path supports Vulkan and Metal,
+  retained scene color and separate UI composition. Its high-level scene and
+  resource contracts have a narrower scope than render and can evolve as the
+  API develops; render components cannot simply be passed to draw. Use it when
+  evaluating the multi-backend architecture or building against its GPU-based
+  delegate contract. Experimental does not mean the code is only a mock or that
+  its window/UI path is unavailable.
+
+Draw is intended to become the successor to render. Both APIs coexist; render
+remains supported and is not deprecated. `bg2e::gpu` provides lower-level devices,
+queues, commands and resources; it does not supply render's high-level scene
+framework. Choosing Vulkan in draw does not select render.
+
 ## UV inspection and baking
 
 - [`UvMapPreviewRenderer`](UvMapPreviewRenderer.md) renders a CPU mesh's UV1 or

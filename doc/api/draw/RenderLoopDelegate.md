@@ -26,17 +26,17 @@ delegate; frame metadata is provided through FrameContext.
 
 Objects own and reuse resources for the in-flight slots they need. The delegate
 has no production-style initFrameResources callback or central descriptor-pool
-setup contract. It also has no scene/loadScene API yet: future scene-oriented
-delegates can layer those operations on top independently.
+setup contract. It does not expose a scene/loadScene API. Applications define their own
+scene-loading operations above the delegate contract.
 
-## Registration and milestone status
+## Registration and execution
 
 Register with Application::setRenderDelegate(shared_ptr<draw::RenderLoopDelegate>),
 then choose MainLoop's two-argument run overload. Using the production run
 overload with this delegate is a configuration error. See
 [Application](../app/Application_and_input.md#graphics-delegate-registration).
 
-Milestone 02 step 03 invokes init, initScene and resize before update/render.
+RenderLoop invokes init, initScene and resize before update/render.
 The first available drawable establishes the actual pixel extent. A dirty,
 unpaused scene receives update then render; a clean or paused scene continues
 presentation without these callbacks. Render opens and closes its own command
@@ -46,3 +46,6 @@ Cleanup is called once per initialized lifecycle, including a partially failed
 init callback. Repeated RenderLoop cleanup does not invoke it again. Producers
 must be stopped before teardown; the loop drains GPU work before releasing
 scene resources.
+
+See [framework scope and maturity](index.md#production-and-experimental-frameworks)
+for the distinction between render and draw.

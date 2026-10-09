@@ -486,13 +486,14 @@ The render loop follows this pattern each frame:
 9. surface->present(cmd)                -- record present
 10. cmd->end()
 11. graphicsQueue.submit(cmd)           -- submit to GPU
-12. surface->endFrame(frame)            -- present to screen, increment frame counter
-13. cleanup.flushDeferred()             -- run expired deferred cleanup closures
+12. surface->endFrame(frame)            -- advance submitted-frame bookkeeping
+13. cleanup.flushDeferred()             -- poll completion-dependent closures
 ```
 
-When using `CleanupManager`, step 13 executes deferred closures whose
-`targetFrame <= surface->frameCounter()`. This is safe because `endFrame()` has
-already waited on the fence for the current frame.
+CleanupManager::flushDeferred polls captured submission completion records and
+executes ready closures. endFrame does not wait for the just-submitted frame;
+resource-slot waits occur during beginFrame. Cleanup timing is independent of
+frameCounter. See [completion tracking](Submission_tracking_and_waitIdle.md).
 
 ## Cleanup order
 
@@ -568,7 +569,7 @@ Use `props->rayTracingSupported()` to gate any acceleration structure code.
 
 The layer provides a backend-agnostic block for hardware ray queries (Vulkan
 `VK_KHR_ray_query` / Metal ray tracing intersectors). It covers acceleration
-structures, query-capable raster shaders, and the new `RayTracingPipeline` for
+structures, query-capable raster shaders, and `RayTracingPipeline` for
 dispatching ray tracing shader stages.
 
 ### Acceleration structures and ray queries
@@ -705,3 +706,23 @@ To use these, cast the abstract pointer to the concrete type:
 auto* vkDevice = static_cast<gpu::vk::Device*>(device.get());
 VkDevice vkDev = vkDevice->handle();
 ```
+
+## GPU and high-level rendering frameworks
+
+GPU supplies backend-neutral devices, queues, commands and resources implemented
+by Vulkan and Metal. It is a lower-level API, not a scene/material framework.
+
+Render is bg2 engine's maintained production Vulkan framework, integrated with
+its scene/material/UI facilities. Draw is an experimental high-level framework
+over gpu, with GPU-based scene delegates and retained color/UI composition.
+Experimental means its high-level scope is narrower and contracts may evolve;
+it does not mean the window/UI execution path is unavailable. These are API
+maturity labels, independent of Debug/Release or deployment configuration.
+Draw is intended as render's successor; both coexist and render is not deprecated.
+
+MainLoop's config overload selects draw and initializes Factory internally;
+standalone gpu applications construct contexts explicitly. See
+[draw](../draw/index.md), [MainLoop architecture](../../architecture/MainLoop_render_draw_gpu.md)
+and [submission tracking / waitIdle](Submission_tracking_and_waitIdle.md) for
+asynchronous queues, the shared admission gate, Metal per-command completion,
+Vulkan native idle, occupied slot reuse and completion-based cleanup.

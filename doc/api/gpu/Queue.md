@@ -10,7 +10,7 @@ public:
     virtual uint32_t familyIndex() const = 0;
     virtual bool isValid() const = 0;
 
-    virtual std::shared_ptr<gpu::CommandBuffer> createCommandBuffer() const = 0;
+    virtual std::shared_ptr<gpu::CommandBuffer> createCommandBuffer(const std::string& debugName = {}) const = 0;
     virtual void submit(gpu::CommandBuffer* cmd) const = 0;
 };
 ```
@@ -32,9 +32,11 @@ queue family concept).
 Returns `true` if the queue has been successfully created and is ready to
 accept commands.
 
-### `virtual std::shared_ptr<gpu::CommandBuffer> createCommandBuffer() const = 0`
+### `virtual std::shared_ptr<gpu::CommandBuffer> createCommandBuffer(const std::string& debugName = {}) const = 0`
 
-Allocates and returns a new command buffer from this queue's command pool.
+Creates a command buffer, optionally labeling it with debugName. Vulkan uses a
+reusable exclusive pool per live allocation; Metal creates a one-shot native
+command buffer from its queue.
 The returned command buffer must be recorded and submitted through the same
 queue.
 
@@ -65,7 +67,7 @@ public:
     uint32_t familyIndex() const override;
     bool isValid() const override;
 
-    std::shared_ptr<gpu::CommandBuffer> createCommandBuffer() const override;
+    std::shared_ptr<gpu::CommandBuffer> createCommandBuffer(const std::string& debugName = {}) const override;
     void submit(gpu::CommandBuffer* cmd) const override;
 
     VkQueue handle() const;
@@ -113,7 +115,7 @@ public:
     uint32_t familyIndex() const override;
     bool isValid() const override;
 
-    std::shared_ptr<gpu::CommandBuffer> createCommandBuffer() const override;
+    std::shared_ptr<gpu::CommandBuffer> createCommandBuffer(const std::string& debugName = {}) const override;
     void submit(gpu::CommandBuffer* cmd) const override;
 
     CommandQueueHandle handle() const;
@@ -140,3 +142,17 @@ Returns the raw `MTL::CommandQueue*` handle.
 #### `uint32_t familyIndex() const override`
 
 Always returns 0. Metal has no queue family concept.
+
+## Submission lifecycle
+
+submit validates owning device/queue and closed recording state, registers an
+immutable completion record, then performs native submission under the shared
+Device admission lock. Metal commit and Vulkan queueSubmit2 are asynchronous.
+Vulkan presentation shares that transaction. Submitted Metal wrappers cannot be
+recorded/submitted again; Vulkan begin requires the previous completion to be
+terminal before resetting. Command recording itself is not made thread-safe.
+
+All device queue wrappers share tracking, even if Vulkan wrappers alias a native
+queue. Records retain native Metal buffers or Vulkan command allocations/fences
+independently of the user wrapper. Acquisition waits previous slot records before
+reuse. Full details: [submission tracking and waitIdle](Submission_tracking_and_waitIdle.md).

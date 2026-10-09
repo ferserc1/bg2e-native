@@ -17,15 +17,15 @@ Class and function catalog for `bg2e::app`. The umbrella header is
 | Member | Description |
 |--------|-------------|
 | `MainLoop::run(Application*)` | Production render/Vulkan execution. |
-| `MainLoop::run(Application*, const draw::EngineConfig&)` | Experimental draw selection; explicit configuration argument, Metal default on macOS and Vulkan elsewhere; runtime pending milestone 02. |
-| `Application::setRenderDelegate(shared_ptr<render::RenderLoopDelegate>)` | Registers production delegate and clears draw slot. |
-| `Application::setRenderDelegate(shared_ptr<draw::RenderLoopDelegate>)` | Registers draw delegate and clears production slot. |
+| `MainLoop::run(Application*, const draw::EngineConfig&)` | Experimental draw selection; explicit configuration argument, Metal default on macOS and Vulkan elsewhere; window, retained scene and UI composition. |
+| `Application::setRenderDelegate(shared_ptr<render::RenderLoopDelegate>)` | Registers render delegate and clears draw slot. |
+| `Application::setRenderDelegate(shared_ptr<draw::RenderLoopDelegate>)` | Registers draw delegate and clears render slot. |
 | `Application::setRenderDelegate(nullptr_t)` | Clears both graphics slots. |
 | `Application::renderDelegate()` / `drawDelegate()` | Mutable references to the separate graphics delegate slots. |
 
 See [validation and runtime availability](MainLoop.md#execution-selection-and-validation).
 The internal graphics execution interface is not an application API.
-[draw API reference](../draw/reference.md) documents the new contracts.
+[draw API reference](../draw/reference.md) documents its contracts.
 ### MainLoop scheduling
 
 | Member | Description |
@@ -34,7 +34,9 @@ The internal graphics execution interface is not an application API.
 | `backgroundFrameRateLimitEnabled()` | Returns the current runtime state. |
 | `setBackgroundMaxFrameRate(double)` | Sets a positive finite maximum, including fractional FPS. |
 | `backgroundMaxFrameRate()` | Returns the configured background rate. |
-| `requestFrame()` | Thread-safe request to bypass one background deadline. |
+| `requestFrame()` | Thread-safe presentation wakeup; does not invalidate retained scene. |
+| `requestSceneFrame()` | Main-thread scene invalidation and presentation wakeup during active run. |
+| `pauseScene(clearColor)` / `resumeScene()` | Main-thread scene controls; draw retains color while UI continues. |
 | `safeUpdateScene(fn, token)` | Queues main-thread work and requests a prompt frame. |
 | `timeout()` | Returns the loop-owned timer scheduler. |
 | `requestResizeEvent()` | Requests resize handling and a frame. |

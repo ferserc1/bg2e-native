@@ -26,9 +26,12 @@ config.backend = bg2e::gpu::BackendType::Vulkan;
 
 MainLoop copies the configuration. Metal selected outside macOS is rejected
 with `std::invalid_argument` before allocation. There is no runtime automatic
-fallback to another backend. The empty application name reserves the MainLoop
-appId fallback for GPU initialization; the milestone 01 runtime boundary occurs
-before that initialization, so no name is applied to a GPU instance yet.
+fallback to another backend. An empty application name is replaced by MainLoop's
+appId during backend preparation, then applied during Instance initialization.
+The requested color/depth formats configure the surface; the coordinator uses
+the actual acquired image extent/format and surface generation for retained color
+and UI compatibility. The scene FrameContext is color-only even though
+the surface may own depth resources.
 
-Configuration fields do not make runtime execution available: a valid
-experimental run still throws the [milestone 01 availability exception](../app/MainLoop.md#experimental-runtime-boundary).
+See [framework scope and maturity](index.md#production-and-experimental-frameworks)
+for the distinction between render and draw.

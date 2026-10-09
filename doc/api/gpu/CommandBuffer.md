@@ -461,3 +461,21 @@ public:
 #### `MTL::CommandBuffer* handle() const`
 
 Returns the raw `MTL::CommandBuffer*` handle.
+
+## Recording, lifetime and native UI interoperability
+
+Commands must have closed rendering/compute scopes before end and submit.
+`hasActiveScope()` reports abstract scope state; draw validates scene/UI callbacks
+against it. Metal wrappers are one-shot; draw creates fresh commands and retains
+them in their frame slot until prior GPU use completes. Vulkan wrappers reject
+begin while their old completion is pending and retain exclusive allocation
+pools while tracked sends are in flight.
+
+Private submission/frame records are not part of the abstract command API.
+Vulkan's backend-only `materializeRenderPass()` emits a pending lazy dynamic
+rendering scope before native draws. On macOS Metal exposes borrowed
+`renderPassDescriptor()` and `materializeRenderEncoder()` for the selected scope;
+gpu owns and ends the encoder. UI uses these hooks without gpu depending on ui.
+Do not commit/submit native handles independently when relying on gpu tracking.
+See [waitIdle infrastructure](Submission_tracking_and_waitIdle.md) and
+[UI frame integration](../../architecture/MainLoop_render_draw_gpu.md#ui-interoperability-lives-in-ui).

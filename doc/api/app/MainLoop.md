@@ -28,7 +28,7 @@ int32_t run(Application* application, const draw::EngineConfig& config);
 ```
 
 The one-argument overload always selects production `bg2e::render`, with Vulkan.
-Existing production launchers and delegate implementations remain unchanged.
+This route uses render graphics delegates and Vulkan resources.
 The two-argument overload selects experimental `bg2e::draw`; it has no default
 second argument. Pass `draw::EngineConfig{}` to use Metal on macOS or Vulkan on
 Linux/Windows, or set `config.backend` explicitly. See
@@ -60,16 +60,16 @@ does not switch frameworks; it reports the mismatch. See
 
 ### Experimental execution
 
-Milestone 02 step 03 enables draw initialization, retained scene color and
+Draw initializes the GPU context and coordinates retained scene color and
 presentation. After validation, MainLoop prepares and retains the configured
 backend before creating its SDL window. Empty EngineConfig::applicationName uses
-MainLoop's appId. The runtime availability boundary no longer rejects draw.
+MainLoop's appId.
 
-The draw path initializes UserInterface with Vulkan or Metal in steps 04/05.
+The draw path initializes UserInterface with Vulkan or Metal.
 UI preparation happens after presentation-image acquisition, even when the scene
 is paused. Event forwarding and loader frame overrides run only when the
 selected UI backend is initialized.
-Production UI behavior is unchanged.
+The render route uses its Vulkan UI callback.
 
 ### Common loop and graphics execution
 
@@ -78,19 +78,19 @@ scheduling. The private graphics execution implementation owns Engine and
 RenderLoop and handles initialization, scene startup, resize requests, frame
 work, GPU waiting, scene pause/resume and cleanup. It is not public API.
 
-The production implementation preserves its descriptor-pool startup and
+The render implementation initializes its descriptor pool and uses its
 Vulkan UI callback. During resize debounce it prepares UI frames but suppresses
 scene acquisition/presentation. MainLoop passes elapsed milliseconds to the
-execution implementation; the draw adapter converts to seconds for its new
-RenderLoop contract. Existing production delta semantics stay unchanged.
+execution implementation; the draw adapter converts to seconds for its
+RenderLoop contract. Render frame callbacks use milliseconds.
 
 Safe updates wait through the active graphics execution before invoking queued
 work. Async loading pauses/resumes that execution while Loader/frame override
 and worker completion remain common MainLoop behavior in both execution paths.
 In draw, executed safe updates also invalidate the retained scene; canceled
 callbacks do not. Async loading retains the last valid scene while Loader/UI
-continues, then resumes scene refresh on the main thread. Production pause
-semantics are unchanged.
+continues, then resumes scene refresh on the main thread. The render coordinator defines its own pause behavior.
+
 ## WindowConfig
 
 `WindowConfig` describes initial position, size, state, decoration, resizing,
@@ -217,3 +217,13 @@ loader are thread-safe.
 - `exit()` posts an SDL quit event and is safe to use from application actions.
 - `requestResizeEvent()` requests swapchain resize processing and a prompt frame.
 - `shortcuts()` returns the current loop's `Shortcuts` registry.
+
+## Implementation references
+
+The [MainLoop architecture](../../architecture/MainLoop_render_draw_gpu.md)
+walks through concrete source and ownership. The selected draw Device uses
+[tracked submissions and waitIdle](../gpu/Submission_tracking_and_waitIdle.md).
+Safe updates and teardown require coordination with background GPU producers:
+waitIdle reopens admission on return. Async workers capture MainLoop and must
+finish before its destruction; detached-worker lifetime is not managed by run.
+A successful example run does not imply arbitrary cross-thread scene access.

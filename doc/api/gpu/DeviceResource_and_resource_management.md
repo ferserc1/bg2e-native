@@ -171,7 +171,7 @@ This separation allows the engine to keep C++ objects alive for bookkeeping whil
 
 ## CleanupManager
 
-`gpu::CleanupManager` provides ordered cleanup for groups of `DeviceResource` objects and deferred cleanup closures whose execution is tied to the surface frame counter.
+`gpu::CleanupManager` provides ordered cleanup for groups of `DeviceResource` objects and deferred cleanup closures whose execution depends on captured submission completion records.
 
 It stores `std::shared_ptr<DeviceResource>`, not raw pointers and not lambdas. This guarantees that every registered object remains alive until the manager is flushed.
 
@@ -283,7 +283,7 @@ This allows global caches to release backend resources before the rest of the de
 
 ## Deferred cleanup
 
-In addition to ordered cleanup, `CleanupManager` supports **deferred cleanup** — scheduling GPU resource destruction closures that execute only after a specified number of frames have elapsed. This is essential for safely destroying GPU resources that may still be in use by the GPU.
+In addition to ordered cleanup, `CleanupManager` supports **deferred cleanup** — scheduling GPU resource destruction closures that become ready after captured submission completions are terminal. This is essential for safely destroying GPU resources that may still be in use by the GPU.
 
 ### The problem
 
@@ -291,7 +291,9 @@ When a GPU resource (e.g., a vertex buffer) is replaced at runtime, the old reso
 
 ### The solution
 
-`CleanupManager::defer()` schedules a closure for execution after `inFlightFrames()` frames have elapsed. By that time, the GPU is guaranteed to have finished using the resource:
+`CleanupManager::defer()` snapshots pending submissions from the surface's Device.
+The closure becomes eligible once every captured completion is terminal. Retired
+resources must not be used by later or recorded-but-unsubmitted commands:
 
 ```cpp
 // Replace geometry at runtime
@@ -309,24 +311,18 @@ gpuMesh.build(device.get());
 
 The closure captures the old `MeshPU` by move. Since `MeshPU` owns the GPU buffers as `shared_ptr<DeviceResource>`, the buffers stay alive until the closure executes.
 
-### Frame counter and timing
+### Completion dependencies and timing
 
-`CleanupManager` requires a `Surface*` at construction. The surface provides:
-
-- `frameCounter()` — monotonically increasing `uint64_t`, incremented by `endFrame()`.
-- `inFlightFrames()` — number of concurrent frames in flight (2 for window surfaces, 1 for offscreen).
-
-When `defer()` is called, it computes:
-
-```
-targetFrame = surface->frameCounter() + surface->inFlightFrames()
-```
-
-The closure executes when `flushDeferred()` is called and `surface->frameCounter() >= targetFrame`.
+The Surface is borrowed to access its Device. Deferred entries capture immutable
+completion records across all tracked queues. Neither frameCounter nor
+inFlightFrames determines destruction timing. flushDeferred polls records; no
+new presentation is required for their native completion. Stop future resource
+use before defer and preserve producer coordination. See
+[the implementation](Submission_tracking_and_waitIdle.md#completion-based-deferred-cleanup).
 
 ### Render loop integration
 
-Deferred closures are flushed **after** `endFrame()`, once the fence has been waited:
+Deferred closures are polled **after** asynchronous submit and `endFrame()`; endFrame does not wait:
 
 ```cpp
 auto frame = surface->beginFrame();
@@ -360,8 +356,8 @@ surface->resize(newSize);
 
 | Method | Description |
 |--------|-------------|
-| `defer(closure)` | Schedule a closure for deferred execution after `inFlightFrames()` frames |
-| `flushDeferred()` | Execute all closures whose `targetFrame <= frameCounter()` |
+| `defer(closure)` | Snapshot pending completions for deferred execution |
+| `flushDeferred()` | Execute closures with terminal captured completions |
 | `flushAllDeferred()` | Execute all pending closures immediately (for shutdown) |
 
 See [CleanupManager](CleanupManager.md) for the full API reference.

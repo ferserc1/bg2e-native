@@ -46,14 +46,17 @@ invariant and populate both graphics slots; MainLoop rejects that configuration.
 Prefer setters. The getter return type cannot select a run overload for you.
 
 Use `run(application)` with a production delegate and
-`run(application, draw::EngineConfig{})` with a draw delegate. Both currently
-require non-null input and UI delegates. A valid draw run still throws at the
-[milestone 01 runtime boundary](MainLoop.md#experimental-runtime-boundary).
+`run(application, draw::EngineConfig{})` with a draw delegate. Both
+require non-null input and UI delegates. A valid draw run initializes the selected
+GPU backend, window, scene coordinator and UI after configuration validation.
 
 See [draw::RenderLoopDelegate](../draw/RenderLoopDelegate.md) for the experimental
 contract. It does not expose Vulkan frame resources or a central descriptor
-allocation callback. This milestone does not add a draw initialization overload
-to UserInterfaceDelegate; multibackend UI integration is pending.
+allocation callback. UserInterfaceDelegate has separate production and draw
+initialization overloads; implement `init(draw::Engine*, UserInterface*)` for the
+draw path and draw widgets through UI wrappers. Vulkan/Metal interoperability
+is private to ui. Widgets using render scene/resources require compatible render
+objects.
 ## InputDelegate
 
 Override only the events the application needs:

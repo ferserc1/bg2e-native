@@ -1,7 +1,11 @@
 # Experimental draw examples
 
-`bg2e::render` is the production framework and remains supported.
-`bg2e::draw` is the experimental high-level framework over `bg2e::gpu`.
+`bg2e::render` is the maintained Vulkan framework used by bg2 engine applications,
+including its scene/material facilities. `bg2e::draw` is the experimental
+multi-backend framework over `bg2e::gpu`: it supplies GPU-based scene delegates
+and retained scene/UI composition while its high-level API can evolve. These
+labels describe API maturity and scope, not Debug/Release builds or deployment
+servers. Both frameworks are supported; render is not deprecated.
 These examples use the same Application/MainLoop entry points with the explicit
 EngineConfig overload. They do not initialize Factory or construct a private
 execution wrapper.
@@ -35,10 +39,5 @@ Submission is asynchronous. Acquisition waits only for reuse of an occupied
 frame slot, preserving frames in flight. Global waitIdle tracks all registered
 submissions across queues; callers coordinate producers for resize/teardown.
 Deferred cleanup uses completion records independent of reusable command/fence
-wrappers. Future objects own persistent resources indexed by frame slot rather
+wrappers. Objects should own persistent resources indexed by frame slot rather
 than allocating/destroying resources or descriptors on every frame.
-
-Implementation is complete; compilation and runtime acceptance remain with the
-project lead. Acceptance covers production launchers, both draw backends on
-supported platforms, live UI during pause, resize, minimize/restore and orderly
-shutdown. No runtime results are claimed here.

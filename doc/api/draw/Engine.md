@@ -56,10 +56,12 @@ without propagating exceptions.
 
 ## MainLoop execution
 
-Milestone 02 step 03 enables experimental MainLoop execution: draw can present
-retained scene color through Vulkan or Metal. UI preparation and composition are implemented for Vulkan and Metal in
-steps 04/05. Event processing and frame overrides are enabled after the selected
+MainLoop's draw execution path presents retained scene color through Vulkan or
+Metal with separate UI preparation/composition. Event processing and frame overrides are enabled after the selected
 UI backend is initialized.
 Scene and presentation coordination belongs to RenderLoop.
 
 See [EngineConfig](EngineConfig.md) and [RenderLoop](RenderLoop.md).
+
+See [framework scope and maturity](index.md#production-and-experimental-frameworks)
+for the distinction between render and draw.

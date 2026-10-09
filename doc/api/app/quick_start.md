@@ -61,10 +61,10 @@ To explicitly select Vulkan for draw on macOS as well:
 config.backend = bg2e::gpu::BackendType::Vulkan;
 ```
 
-In milestone 01 the experimental call validates configuration and then throws
-`std::logic_error("Experimental draw execution requires milestone 02")` before
-window creation. It is a configuration example, not a runnable draw tutorial.
-See [MainLoop](MainLoop.md#execution-selection-and-validation).
+Register draw, input and UI delegates before the experimental run. Draw
+initializes a window, retained scene color and the selected UI backend. See the
+[complete window/UI example](../../../examples/draw/01_window_ui/src/main.cpp)
+and [MainLoop](MainLoop.md#execution-selection-and-validation).
 ## Limit background rendering
 
 ```cpp

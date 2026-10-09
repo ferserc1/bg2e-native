@@ -4,7 +4,7 @@
 **Namespace:** `bg2e::ui`
 
 `UserInterface` manages the Dear ImGui context, SDL2 and a private UI renderer,
-with production Vulkan and experimental draw Vulkan entry points,
+with render/Vulkan and draw/Vulkan or draw/Metal entry points,
 and exposes the four lifecycle hooks that `app::MainLoop` calls per frame.
 `UserInterfaceDelegate` is the application-side interface injected into it.
 
@@ -160,10 +160,10 @@ verify the UI is not capturing input before acting (see
 
 ## Experimental draw integration
 
-Milestone 02 implements `init(draw::Engine*)` for Vulkan (step 04) and Metal
-(step 05). The new delegate init overload receives the draw context; existing
-production overrides and `drawUI()` are unchanged. Metal is available only on
-macOS.
+`init(draw::Engine*)` configures UI rendering for Vulkan or Metal; Metal requires
+macOS. UserInterfaceDelegate supplies `init(draw::Engine*, UserInterface*)` and
+`init(render::Engine*, UserInterface*)` overloads for the respective engine
+contexts. Both use drawUI() to describe widgets.
 UI backend storage lives in PImpl, with no Metal or ImGui declarations in public
 UI headers and no dependency from gpu to ui.
 
@@ -194,7 +194,7 @@ window units.
 ## Context ownership and shutdown
 
 For production, `cleanup()` persists preferences and the engine's registered
-callback performs renderer, SDL and context shutdown in the established order.
+callback performs renderer, SDL and context shutdown in the registered lifecycle order.
 The callback retains lifecycle state without capturing the UserInterface
 wrapper. For draw, stop producers and call `cleanup()` before destroying Engine;
 cleanup waits for completion and shuts down only initialized backend stages.
@@ -203,8 +203,8 @@ Context destruction resets static style/font bookkeeping. Initialization
 failures clean started stages and preserve the original exception; repeated
 cleanup is safe. `processEvent` and frame operations guard an uninitialized
 context. UserInterface owns its lifecycle and cannot be copied. Only one ImGui
-context is active at a time. Experimental scene/texture editor widget migration
-is outside this step.
+context is active at a time. Scene/texture editors that consume render resources
+require render-compatible objects; selecting draw does not adapt those widgets.
 
 ## See also
 
@@ -212,3 +212,11 @@ is outside this step.
 - [quick_start — Recipe 1](quick_start.md#recipe-1-wire-a-ui-into-an-application)
 - [Loader](Loader.md) — the frame-override use case.
 - [Window](Window.md) — what delegates typically draw.
+
+## Architecture reference
+
+See [MainLoop/draw integration](../../architecture/MainLoop_render_draw_gpu.md#ui-interoperability-lives-in-ui)
+for private Vulkan/Metal source excerpts, acquired-frame preparation/composition,
+encoder ownership, context lifetime and render shutdown ownership.
+Scene-dependent UI components must use resources compatible with their engine
+contract.

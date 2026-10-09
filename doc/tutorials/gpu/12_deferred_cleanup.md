@@ -8,7 +8,7 @@ This tutorial walks through the `12_deferred_cleanup` example: demonstrating def
 
 - Why GPU resources cannot always be destroyed immediately
 - How `CleanupManager::defer()` schedules closures for deferred execution
-- How `flushDeferred()` runs expired closures after `endFrame()`
+- How `flushDeferred()` runs ready closures after `endFrame()`
 - How `flushAllDeferred()` drains all pending closures at shutdown and on resize
 - How to safely replace GPU resources at runtime without validation errors
 
@@ -22,21 +22,12 @@ This tutorial walks through the `12_deferred_cleanup` example: demonstrating def
 
 When a GPU resource (e.g., a vertex buffer) is replaced at runtime, the old resource cannot be destroyed immediately. The GPU may still be referencing it in a previously submitted command buffer. Destroying it too early produces validation errors or undefined behavior.
 
-`CleanupManager::defer()` solves this by scheduling a closure for execution after `inFlightFrames()` frames have elapsed. By that time, the GPU is guaranteed to have finished using the resource:
-
-```
-Frame N:   Old mesh in use by GPU (command buffer submitted)
-Frame N+1: New mesh created, old mesh captured in closure
-Frame N+2: closure.targetFrame reached -> old mesh cleaned up
-```
-
-The `targetFrame` is computed as:
-
-```
-targetFrame = surface->frameCounter() + surface->inFlightFrames()
-```
-
-For window surfaces, `inFlightFrames()` returns 2, so the closure runs 2 frames after it was scheduled.
+`CleanupManager::defer()` snapshots the Device's pending submission completion
+records. flushDeferred polls those records and runs ready closures; destruction
+is not delayed by a fixed number of frames. Stop all future uses of the retired
+resource before defer: recorded-but-unsubmitted and later commands are outside
+the snapshot. See the
+[implementation](../../api/gpu/Submission_tracking_and_waitIdle.md).
 
 **Reference:** [GPU API -- CleanupManager](../../api/gpu/CleanupManager.md), [GPU API -- DeviceResource and resource management](../../api/gpu/DeviceResource_and_resource_management.md)
 
@@ -231,14 +222,14 @@ cmd->end();
 graphicsQueue.submit(cmd.get());
 surface->endFrame(frame.get());
 
-// Flush deferred cleanups AFTER endFrame() (fence has been waited)
+// Flush deferred cleanups AFTER endFrame() (poll tracked completions without waiting)
 cleanup.flushDeferred();
 ```
 
 The key ordering is:
 
-1. `surface->endFrame()` -- presents the frame, waits the fence for this frame slot
-2. `cleanup.flushDeferred()` -- runs any closures whose `targetFrame <= frameCounter()`
+1. `surface->endFrame()` -- advances bookkeeping for an already submitted frame; does not wait
+2. `cleanup.flushDeferred()` -- polls captured completions and runs ready closures
 
 This guarantees the GPU is done with the previous frame's resources before the deferred closures execute.
 
@@ -261,7 +252,7 @@ if (event.type == SDL_WINDOWEVENT &&
 }
 ```
 
-`device->waitIdle()` ensures the GPU is not executing any commands. `flushAllDeferred()` runs **all** pending closures immediately, regardless of frame counter. This prevents stale resources from being referenced after the swapchain is recreated.
+With producers stopped and kept stopped, `device->waitIdle()` waits all registered work. `flushAllDeferred()` runs **all** pending closures immediately, without polling completion dependencies. This prevents stale resources from being referenced after the swapchain is recreated.
 
 ### 8. Application shutdown
 
@@ -285,7 +276,7 @@ SDL_Quit();
 
 The order matters:
 
-1. `waitIdle()` -- stop the GPU
+1. `waitIdle()` -- wait submitted work with producers coordinated
 2. `flushAllDeferred()` -- execute all remaining deferred closures
 3. Ring resources and current mesh -- manually cleaned before the general flush
 4. `cleanup.flush()` -- ordered device resource cleanup (reverse insertion order)
@@ -354,14 +345,16 @@ GPU command buffer timeline:
 
 If mesh A is destroyed at the start of frame 1, the GPU command buffer for frame 0 may still reference its vertex/index buffers. This produces validation errors or undefined behavior.
 
-`defer()` captures the old resource in a closure and schedules it for destruction after `inFlightFrames()` frames (2 for window surfaces). By the time the closure runs, the GPU is guaranteed to have finished all frames that used the old resource.
+`defer()` captures old resource ownership and pending completion dependencies.
+Destruction is eligible when those records become terminal; future use of the
+retired resource must already have stopped.
 
 ### Three cleanup methods compared
 
 | Method | When to use | What it does |
 |--------|-------------|--------------|
 | `cleanup.push()` | Static resources (never replaced) | Ordered destruction on `flush()` |
-| `cleanup.defer()` | Resources replaced at runtime | Deferred destruction after N frames |
+| `cleanup.defer()` | Resources replaced at runtime | Deferred destruction after captured completions |
 | `cleanup.flushAllDeferred()` | Shutdown or resize | Immediately runs all pending deferred closures |
 
 ### The move-capture pattern
@@ -385,10 +378,10 @@ The closure captures by move to ensure the GPU resources stay alive until the cl
 
 | Method | Timing | Use case |
 |--------|--------|----------|
-| `flushDeferred()` | After `endFrame()` each frame | Normal operation -- only runs expired closures |
+| `flushDeferred()` | After `endFrame()` each frame | Normal operation -- only runs ready closures |
 | `flushAllDeferred()` | Shutdown or resize | Drains all pending closures immediately |
 
-`flushDeferred()` is selective: it only runs closures whose `targetFrame <= frameCounter()`. `flushAllDeferred()` is unconditional: it runs everything.
+`flushDeferred()` polls captured completion records selectively. `flushAllDeferred()` is unconditional and requires a preceding coordinated waitIdle.
 
 ## Next steps
 

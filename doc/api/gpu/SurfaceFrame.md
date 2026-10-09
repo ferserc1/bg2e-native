@@ -44,6 +44,7 @@ Returns `true` if the frame was successfully acquired.
 auto frame = surface->beginFrame();
 if (!frame || !frame->isValid()) return;
 
+cmd->begin();
 cmd->transition(frame->colorImage(), gpu::ImageLayout::ColorAttachment);
 cmd->transition(frame->depthImage(), gpu::ImageLayout::DepthAttachment);
 cmd->beginRendering(frame.get());
@@ -52,6 +53,8 @@ cmd->endRendering();
 cmd->transition(frame->colorImage(), gpu::ImageLayout::Present);
 
 surface->present(cmd.get());
+cmd->end();
+device->graphicsQueue().submit(cmd.get());
 surface->endFrame(frame.get());
 ```
 
@@ -107,3 +110,16 @@ Returns the fence signaled when the frame's GPU work is finished.
 **Inherits:** `gpu::SurfaceFrame`
 
 Metal frame object. Wraps the drawable and associated textures.
+
+## Internal completion records
+
+Backend friends associate submitted commands with this frame and append immutable
+completion records. Surface::beginFrame waits those records before reusing an
+occupied resource slot. They outlive wrapper reuse and cache terminal completion
+before a Vulkan frame fence is reset. Window endFrame performs bookkeeping only;
+it requires an acquired frame with a recorded submission.
+
+The generic tracker supports multiple records per slot; the Vulkan swapchain
+submit path currently restricts one presentation send per acquired frame.
+Drawable/image references are borrowed for the frame's lifetime. See
+[implementation](Submission_tracking_and_waitIdle.md#surface-slots-and-reusable-fence-correctness).

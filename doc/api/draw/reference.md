@@ -1,25 +1,24 @@
 # Draw API Reference
 
-Public contracts introduced in milestone 01. The umbrella header is
-`<bg2e/draw/all.hpp>`.
+The experimental high-level successor to production render uses the abstract
+gpu backend. The umbrella header is `<bg2e/draw/all.hpp>`; production render is
+supported and is not deprecated.
 
-| Symbol | Header | Purpose and current availability |
-|--------|--------|----------------------------------|
-| [EngineConfig](EngineConfig.md) | `EngineConfig.hpp` | Aggregate backend/debug/name/format configuration; platform-aware backend default. |
-| [Engine](Engine.md) | `Engine.hpp` | PImpl context shell; initialization/accessors currently throw. |
-| [FrameContext](FrameContext.md) | `FrameContext.hpp` | Borrowed scene command/target references and frame metadata. |
-| [RenderLoopDelegate](RenderLoopDelegate.md) | `RenderLoopDelegate.hpp` | Abstract GPU-based scene callbacks. |
-| [RenderLoop](RenderLoop.md) | `RenderLoop.hpp` | Coordination state implemented; scene/frame execution pending. |
-| Umbrella include | `all.hpp` | Includes all public draw contracts without backend-specific headers. |
+| Symbol | Header | Responsibility |
+|---|---|---|
+| [EngineConfig](EngineConfig.md) | `EngineConfig.hpp` | Backend, debug, name and requested formats; Metal default on macOS, Vulkan elsewhere. |
+| [Engine](Engine.md) | `Engine.hpp` | GPU context initialization, backend lease and staged cleanup via PImpl. |
+| [FrameContext](FrameContext.md) | `FrameContext.hpp` | Borrowed commands/color target and actual extent, frame number/slot and seconds delta. |
+| [RenderLoopDelegate](RenderLoopDelegate.md) | `RenderLoopDelegate.hpp` | GPU-based init/scene/resize/update/render/cleanup callbacks. |
+| [RenderLoop](RenderLoop.md) | `RenderLoop.hpp` | Retained scene, slot wrappers, invalidation/pause, UI callbacks and asynchronous presentation. |
 
-## Related application API
+MainLoop's config overload constructs the private draw adapter; applications do
+not initialize Factory or expose GraphicsExecution. UI initialization supports
+Vulkan and Metal using private adapters. The scene contract is color-only;
+production scene/UI components and OffscreenApplication use render-compatible
+resources and delegates. Per-object persistent resource rings replace a central transient frame
+resource allocation contract.
 
-- [MainLoop run overloads](../app/MainLoop.md#execution-selection-and-validation)
-  select production render or experimental draw.
-- [Application graphics registration](../app/Application_and_input.md#graphics-delegate-registration)
-  stores separate render/draw delegate slots.
-- [GPU API](../gpu/index.md) provides abstract backend resources.
-
-A valid draw MainLoop configuration currently throws the milestone 02
-availability exception before SDL/window/GPU allocation. Native backend
-interop and draw UI initialization are not part of this milestone's public API.
+See [MainLoop](../app/MainLoop.md), [architecture](../../architecture/MainLoop_render_draw_gpu.md),
+[GPU synchronization](../gpu/Submission_tracking_and_waitIdle.md) and
+[window/UI example](../../../examples/draw/README.md).

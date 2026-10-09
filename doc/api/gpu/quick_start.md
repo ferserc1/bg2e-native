@@ -447,7 +447,7 @@ surface->beginFrame()          // acquire swapchain image
     surface->present(cmd)      // record present
   cmd->end()
   queue.submit(cmd)            // submit to GPU
-surface->endFrame(frame)       // present to screen
+surface->endFrame(frame)       // advance submitted-frame bookkeeping
 ```
 
 **Key points:**
@@ -1288,3 +1288,25 @@ references:
   if the ring resources depend on other managed resources.
 - `Mesh` objects are not `DeviceResource` subclasses — call `mesh.cleanup()`
   manually.
+
+
+## Asynchronous lifecycle and draw entry point
+
+Queue::submit sends asynchronously. Surface::present configures/records
+presentation before cmd->end()/Queue::submit; endFrame performs bookkeeping and
+never waits the just-submitted frame. beginFrame waits only occupied slot reuse
+(and Vulkan acquired-image use); return early if acquisition is unavailable.
+Metal command buffers are one-shot: create a new command each frame. Keep owning
+resources valid through completion and select persistent object resource rings
+by currentFrameIndex, not swapchain image index.
+
+For a high-level application, use the draw EngineConfig overload of MainLoop;
+it owns backend/context initialization. See the
+[draw example](../../../examples/draw/README.md). Production render uses the
+existing one-argument overload and remains supported.
+
+For explicit GPU teardown, stop producers, call waitIdle and flushAllDeferred
+before destroying resource/surface/device/Instance state. waitIdle reopens
+submission admission, so producers stay stopped throughout cleanup.
+[Completion tracking](Submission_tracking_and_waitIdle.md) explains Metal's
+per-command wait and Vulkan's native-device wait in detail.

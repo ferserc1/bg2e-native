@@ -121,14 +121,14 @@ return 2; offscreen surfaces return 1. This is distinct from `imageCount()` — 
 swapchain may have more images than frames in flight (e.g., on Apple M-series
 hardware the swapchain may have 3 images while only 2 frames are in flight).
 
-Used by `FrameResourceRing` to size the ring and by `CleanupManager` to compute
-deferred cleanup timing.
+Used by `FrameResourceRing` to size object-owned persistent resource rings.
+CleanupManager uses completion snapshots, not this count, for deferred cleanup.
 
 ### `uint64_t frameCounter() const`
 
 Returns the monotonically increasing frame counter. Incremented automatically by
-`endFrame()` in concrete surfaces. Used by `CleanupManager` to index deferred
-cleanup closures.
+`endFrame()` after a submitted acquired frame. It is metadata, not a GPU
+completion signal or a deferred-cleanup threshold.
 
 ### `virtual uint32_t currentFrameIndex() const = 0`
 
@@ -168,7 +168,9 @@ after rendering is complete but before `endFrame()`.
 
 ### `virtual void endFrame(SurfaceFrame* frame) = 0`
 
-Submits the frame for presentation and releases frame resources.
+Checks that the acquired frame was submitted, completes acquisition bookkeeping
+and advances the slot/counter. It does not submit or wait for GPU completion.
+The concrete surface retains occupied slots until safe reuse.
 
 | Parameter | Type              | Description                    |
 |-----------|-------------------|--------------------------------|
@@ -185,8 +187,23 @@ Destroys the surface and releases all associated resources.
 The typical render loop uses three surface methods in sequence:
 
 ```cpp
-auto frame = surface->beginFrame();   // acquire next image
-// ... record and submit commands ...
-surface->present(cmd.get());          // record present
-surface->endFrame(frame.get());       // submit and present
+auto frame = surface->beginFrame(); // wait occupied slot, acquire next image
+if (!frame) return;
+auto cmd = device->graphicsQueue().createCommandBuffer("Frame");
+cmd->begin();
+// Record rendering and the appropriate presentation layout transition.
+surface->present(cmd.get()); // associate slot and record/configure presentation
+cmd->end();
+device->graphicsQueue().submit(cmd.get()); // asynchronous native send/present
+surface->endFrame(frame.get()); // bookkeeping only
 ```
+
+## Generation and completion
+
+`generation()` changes when backend render targets are recreated. Read actual
+acquired image dimensions/format and updated count rather than assuming requested
+metadata remains unchanged. Metal colorImage(index) is unavailable (nullptr);
+use the acquired SurfaceFrame drawable image. Vulkan has swapchain-index images.
+beginFrame waits previous records for the current in-flight slot; Vulkan also
+tracks acquired-image fence reuse. Zero-size/unavailable acquisition does not
+advance the slot. See [backend synchronization](Submission_tracking_and_waitIdle.md).

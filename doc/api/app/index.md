@@ -5,7 +5,7 @@ routing, runtime scheduling, preferences, shortcuts, native dialogs, recent-file
 history, and the offscreen application entry point.
 
 The main entry point for an interactive application is [`MainLoop`](MainLoop.md).
-It creates the SDL window and production rendering engine, connects the delegates
+It creates the SDL window and the selected rendering engine, connects the delegates
 stored by `Application`, processes events, and submits frames until the
 application exits.
 
@@ -36,28 +36,51 @@ Application
 runtime objects and is a singleton while it exists; code running inside an
 application can access it through `MainLoop::current()`.
 
-## Production and experimental execution
+## Production and experimental frameworks
+
+The terms **production** and **experimental** describe the maturity and scope of
+bg2 engine's graphics APIs, not build configurations, deployment environments
+or compiler optimization settings.
+
+- **Production: `bg2e::render`.** This is the maintained framework used by the
+  engine's applications. It provides Vulkan rendering and integrates with the
+  production scene, material and UI components. Use it for applications that
+  need those established high-level facilities. Production does not imply that
+  an application must run on a server or use a Release build.
+- **Experimental: `bg2e::draw`.** This is a high-level framework built on the
+  backend-neutral `bg2e::gpu` API. Its windowed path supports Vulkan and Metal,
+  retained scene color and separate UI composition. Its high-level scene and
+  resource contracts have a narrower scope than render and can evolve as the
+  API develops; render components cannot simply be passed to draw. Use it when
+  evaluating the multi-backend architecture or building against its GPU-based
+  delegate contract. Experimental does not mean the code is only a mock or that
+  its window/UI path is unavailable.
+
+Draw is intended to become the successor to render. Both APIs coexist; render
+remains supported and is not deprecated. `bg2e::gpu` provides lower-level devices,
+queues, commands and resources; it does not supply render's high-level scene
+framework. Choosing Vulkan in draw does not select render.
+
+## Framework and backend selection
 
 The `MainLoop::run()` overload selects the high-level framework:
 
-| Call | Framework | Low-level backend | Milestone 01 status |
-|------|-----------|-------------------|---------------------|
-| `run(application)` | Production `bg2e::render` | Vulkan on every platform | Available |
-| `run(application, draw::EngineConfig{})` | Experimental `bg2e::draw` | Metal on macOS, Vulkan elsewhere by default | Contracts available; execution pending |
+| Call | Framework | Low-level backend |
+|---|---|---|
+| `run(application)` | `bg2e::render` | Vulkan on every supported platform |
+| `run(application, draw::EngineConfig{})` | `bg2e::draw` | Metal on macOS, Vulkan elsewhere by default |
 
-Explicitly assigning `EngineConfig::backend` overrides the experimental default.
-This does not change the production route. Neither framework is deprecated.
+Explicitly assigning EngineConfig::backend overrides draw's default. MainLoop
+owns common window/event handling, input, scheduling, timers, preferences and
+queued work. A private graphics execution strategy owns the selected Engine and
+rendering coordinator; applications do not construct it.
 
-`MainLoop` keeps window/event handling, input, scheduling, timers, preferences,
-and queued work common. A private graphics execution implementation owns the
-selected engine and rendering coordinator. Applications do not construct this
-implementation.
+Both routes validate delegates before SDL/GPU allocation. Draw initializes the
+selected GPU and UI backends, preserving scene color while paused so UI and
+presentation can continue independently. See
+[execution selection](MainLoop.md#execution-selection-and-validation) and
+[draw API](../draw/index.md).
 
-Both routes validate their delegates before SDL/GPU allocation. A correctly
-configured experimental run currently throws `std::logic_error` with
-`Experimental draw execution requires milestone 02`, also before allocation.
-See [execution selection](MainLoop.md#execution-selection-and-validation) and
-[the experimental draw API](../draw/index.md).
 ## Background frame-rate limiting
 
 `MainLoop` can limit complete frames while the window does not have input focus.
@@ -108,3 +131,9 @@ for scheduling details and the asynchronous-work contract.
 - [Platform services](Platform_services.md) — files, history, and message boxes.
 - [Uv2SafeReload](Uv2SafeReload.md) — schedule UV2 generation and loaded Drawable reload safely.
 - [LightmapGenerator](LightmapGenerator.md) — standalone UV2 generation, headless baking, and output files.
+
+## Implementation architecture
+
+See [MainLoop, render, draw and gpu](../../architecture/MainLoop_render_draw_gpu.md)
+for source excerpts, execution strategies, ownership, frame flow, UI integration,
+asynchronous work and synchronization boundaries.

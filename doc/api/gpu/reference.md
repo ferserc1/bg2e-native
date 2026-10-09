@@ -143,3 +143,10 @@ gpu::RayTracingPipeline       (abstract)
 gpu::CleanupManager           (concrete, not polymorphic)
 gpu::FrameResourceRing<T>     (template, not polymorphic)
 ```
+
+## Submission and resource lifecycle internals
+
+[Submission tracking and waitIdle](Submission_tracking_and_waitIdle.md) documents
+CompletionRecord/SubmissionState, backend registration/native ownership,
+SurfaceFrame slot reuse and CleanupManager snapshots with extracted source.
+These are internal mechanisms, not public application synchronization objects.

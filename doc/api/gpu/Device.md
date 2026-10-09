@@ -21,18 +21,18 @@ public:
 
     virtual std::shared_ptr<Image>  createImage(const ImageDescription& description);
     virtual std::shared_ptr<Sampler> createSampler(const SamplerDescription& description);
-    virtual std::unique_ptr<ResourceSet> createResourceSet(PipelineLayout* layout,
+    virtual std::shared_ptr<ResourceSet> createResourceSet(PipelineLayout* layout,
         uint32_t setIndex, const std::string& debugName = {});
 
-    virtual std::unique_ptr<ShaderModule> createShaderModule(
+    virtual std::shared_ptr<ShaderModule> createShaderModule(
         const ShaderModuleDescription& description);
-    virtual std::unique_ptr<PipelineLayout> createPipelineLayout(
+    virtual std::shared_ptr<PipelineLayout> createPipelineLayout(
         const PipelineLayoutDescription& description);
-    virtual std::unique_ptr<GraphicsPipeline> createGraphicsPipeline(
+    virtual std::shared_ptr<GraphicsPipeline> createGraphicsPipeline(
         const GraphicsPipelineDescription& description);
-    virtual std::unique_ptr<ComputePipeline> createComputePipeline(
+    virtual std::shared_ptr<ComputePipeline> createComputePipeline(
         const ComputePipelineDescription& description);
-    virtual std::unique_ptr<Buffer> createBuffer(const std::string& debugName = {});
+    virtual std::shared_ptr<Buffer> createBuffer(const std::string& debugName = {});
 
     virtual std::shared_ptr<RayTracingMesh>  createRayTracingMesh(const RayTracingMeshDescription& description);
     virtual std::shared_ptr<RayTracingScene> createRayTracingScene(const std::string& debugName = {});
@@ -67,7 +67,10 @@ Destroys the logical device and releases all associated resources.
 
 ### `virtual void waitIdle() = 0`
 
-Blocks until all pending GPU operations on this device have completed.
+Waits tracked submissions admitted before the device-wide drain boundary.
+Metal waits per-command records; Vulkan also calls vkDeviceWaitIdle. New
+submissions block during the drain and may resume immediately afterward. See
+[implementation and producer coordination](Submission_tracking_and_waitIdle.md).
 
 ### `virtual bool isValid() const = 0`
 
@@ -85,7 +88,7 @@ Returns the presentation command queue. Valid only after `create()`.
 
 Returns the transfer command queue. Valid only after `create()`.
 
-### `virtual std::unique_ptr<ShaderModule> createShaderModule(const ShaderModuleDescription& description)`
+### `virtual std::shared_ptr<ShaderModule> createShaderModule(const ShaderModuleDescription& description)`
 
 Creates a shader module from the given description. The default implementation
 throws `std::runtime_error`; backends override this with platform-specific
@@ -95,16 +98,16 @@ logic.
 |---------------|-----------------------------|-------------------------|
 | `description` | `ShaderModuleDescription`   | Shader path, entry point, and stage. |
 
-### `virtual std::unique_ptr<PipelineLayout> createPipelineLayout(const PipelineLayoutDescription& description)`
+### `virtual std::shared_ptr<PipelineLayout> createPipelineLayout(const PipelineLayoutDescription& description)`
 
-Creates a pipeline layout defining push constant ranges and (future) descriptor
+Creates a pipeline layout defining push constant ranges and descriptor
 set layouts.
 
 | Parameter     | Type                          | Description             |
 |---------------|-------------------------------|-------------------------|
 | `description` | `PipelineLayoutDescription`   | Push constant ranges.   |
 
-### `virtual std::unique_ptr<GraphicsPipeline> createGraphicsPipeline(const GraphicsPipelineDescription& description)`
+### `virtual std::shared_ptr<GraphicsPipeline> createGraphicsPipeline(const GraphicsPipelineDescription& description)`
 
 Creates a graphics pipeline with the specified shaders, topology, and
 attachment formats.
@@ -113,7 +116,7 @@ attachment formats.
 |---------------|---------------------------------|-------------------------|
 | `description` | `GraphicsPipelineDescription`   | Pipeline configuration. |
 
-### `virtual std::unique_ptr<ComputePipeline> createComputePipeline(const ComputePipelineDescription& description)`
+### `virtual std::shared_ptr<ComputePipeline> createComputePipeline(const ComputePipelineDescription& description)`
 
 Creates a compute pipeline with the specified compute shader and layout.
 
@@ -121,7 +124,7 @@ Creates a compute pipeline with the specified compute shader and layout.
 |---------------|--------------------------------|-------------------------|
 | `description` | `ComputePipelineDescription`   | Pipeline configuration. |
 
-### `virtual std::unique_ptr<Buffer> createBuffer(const std::string& debugName = {})`
+### `virtual std::shared_ptr<Buffer> createBuffer(const std::string& debugName = {})`
 
 Allocates a new GPU buffer. The buffer is empty until one of its
 `create*` methods is called:
@@ -182,7 +185,7 @@ Allocates a GPU image (texture). See [Image](Image.md).
 
 Creates a texture sampler. See the sampler description in [Image](Image.md).
 
-### `virtual std::unique_ptr<ResourceSet> createResourceSet(PipelineLayout* layout, uint32_t setIndex, const std::string& debugName = {})`
+### `virtual std::shared_ptr<ResourceSet> createResourceSet(PipelineLayout* layout, uint32_t setIndex, const std::string& debugName = {})`
 
 Allocates a descriptor set (resource set) bound to `setIndex` of the given
 pipeline layout.
@@ -232,12 +235,12 @@ public:
 
     std::shared_ptr<gpu::Image>       createImage(const gpu::ImageDescription&) override;
     std::shared_ptr<gpu::Sampler>     createSampler(const gpu::SamplerDescription&) override;
-    std::unique_ptr<gpu::ResourceSet> createResourceSet(gpu::PipelineLayout*, uint32_t, const std::string&) override;
-    std::unique_ptr<gpu::ShaderModule>    createShaderModule(const gpu::ShaderModuleDescription&) override;
-    std::unique_ptr<gpu::PipelineLayout>  createPipelineLayout(const gpu::PipelineLayoutDescription&) override;
-    std::unique_ptr<gpu::GraphicsPipeline> createGraphicsPipeline(const gpu::GraphicsPipelineDescription&) override;
-    std::unique_ptr<gpu::ComputePipeline>  createComputePipeline(const gpu::ComputePipelineDescription&) override;
-    std::unique_ptr<gpu::Buffer>           createBuffer(const std::string& debugName = {}) override;
+    std::shared_ptr<gpu::ResourceSet> createResourceSet(gpu::PipelineLayout*, uint32_t, const std::string&) override;
+    std::shared_ptr<gpu::ShaderModule>    createShaderModule(const gpu::ShaderModuleDescription&) override;
+    std::shared_ptr<gpu::PipelineLayout>  createPipelineLayout(const gpu::PipelineLayoutDescription&) override;
+    std::shared_ptr<gpu::GraphicsPipeline> createGraphicsPipeline(const gpu::GraphicsPipelineDescription&) override;
+    std::shared_ptr<gpu::ComputePipeline>  createComputePipeline(const gpu::ComputePipelineDescription&) override;
+    std::shared_ptr<gpu::Buffer>           createBuffer(const std::string& debugName = {}) override;
     std::shared_ptr<gpu::RayTracingMesh>   createRayTracingMesh(const gpu::RayTracingMeshDescription&) override;
     std::shared_ptr<gpu::RayTracingScene>  createRayTracingScene(const std::string& debugName = {}) override;
     std::shared_ptr<gpu::RayTracingPipeline> createRayTracingPipeline(const gpu::RayTracingPipelineDescription&) override;
@@ -296,12 +299,12 @@ public:
 
     std::shared_ptr<gpu::Image>       createImage(const gpu::ImageDescription&) override;
     std::shared_ptr<gpu::Sampler>     createSampler(const gpu::SamplerDescription&) override;
-    std::unique_ptr<gpu::ResourceSet> createResourceSet(gpu::PipelineLayout*, uint32_t, const std::string&) override;
-    std::unique_ptr<gpu::ShaderModule>    createShaderModule(const gpu::ShaderModuleDescription&) override;
-    std::unique_ptr<gpu::PipelineLayout>  createPipelineLayout(const gpu::PipelineLayoutDescription&) override;
-    std::unique_ptr<gpu::GraphicsPipeline> createGraphicsPipeline(const gpu::GraphicsPipelineDescription&) override;
-    std::unique_ptr<gpu::ComputePipeline>  createComputePipeline(const gpu::ComputePipelineDescription&) override;
-    std::unique_ptr<gpu::Buffer>           createBuffer(const std::string& debugName = {}) override;
+    std::shared_ptr<gpu::ResourceSet> createResourceSet(gpu::PipelineLayout*, uint32_t, const std::string&) override;
+    std::shared_ptr<gpu::ShaderModule>    createShaderModule(const gpu::ShaderModuleDescription&) override;
+    std::shared_ptr<gpu::PipelineLayout>  createPipelineLayout(const gpu::PipelineLayoutDescription&) override;
+    std::shared_ptr<gpu::GraphicsPipeline> createGraphicsPipeline(const gpu::GraphicsPipelineDescription&) override;
+    std::shared_ptr<gpu::ComputePipeline>  createComputePipeline(const gpu::ComputePipelineDescription&) override;
+    std::shared_ptr<gpu::Buffer>           createBuffer(const std::string& debugName = {}) override;
     std::shared_ptr<gpu::RayTracingMesh>   createRayTracingMesh(const gpu::RayTracingMeshDescription&) override;
     std::shared_ptr<gpu::RayTracingScene>  createRayTracingScene(const std::string& debugName = {}) override;
     std::shared_ptr<gpu::RayTracingPipeline> createRayTracingPipeline(const gpu::RayTracingPipelineDescription&) override;
@@ -318,3 +321,17 @@ graphics/present/transfer queues.
 #### `DeviceHandle handle() const`
 
 Returns the raw `MTL::Device*` handle.
+
+## Device-wide completion boundary
+
+`waitIdle()` uses a shared submission admission gate. Vulkan invokes
+vkDeviceWaitIdle inside that gate and latches registered completions. Metal waits
+all retained native command buffers registered by every device queue, including
+nonpresentation sends and immediateSubmit. Ordinary submit remains asynchronous;
+there is no wait after every frame.
+
+The gate reopens when waitIdle finishes; stop producers throughout resource
+mutation/teardown. cleanup permanently closes admission. See the complete
+[implementation, source excerpts and limits](Submission_tracking_and_waitIdle.md).
+Resource factories return shared_ptr; backend context factories (Backend's
+Device/PhysicalDevice/Surface creation) retain their separate unique ownership.

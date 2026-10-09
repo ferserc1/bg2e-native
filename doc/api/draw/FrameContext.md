@@ -25,7 +25,7 @@ struct FrameContext {
 | `extent` | Target pixel dimensions. |
 | `frameNumber` | Accumulated frame number. |
 | `frameSlot` | Reusable in-flight resource slot; distinct from the accumulated frame number and swapchain image index. |
-| `deltaSeconds` | Elapsed time in seconds, unlike the current production loop's milliseconds. |
+| `deltaSeconds` | Elapsed time in seconds, render callbacks use milliseconds. |
 
 References are valid for the current operation only; do not store the context
 for deferred work. A const FrameContext still contains mutable references to

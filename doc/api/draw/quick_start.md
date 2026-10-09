@@ -48,11 +48,13 @@ loop.run(&application, config);
 ```
 
 The call validates configuration, creates the selected backend and window,
-and presents scene color. Input and UI delegates are still required by the
+and presents scene color. Input and UI delegates are required by the
 application contract. Both Vulkan and Metal initialize their UI backend;
 Metal is available only on macOS.
 Using `loop.run(&application)` instead selects production and throws
 std::invalid_argument for the draw delegate mismatch.
 
-The existing production entry point remains unchanged and requires a production
-render delegate. See [MainLoop](../app/MainLoop.md) and [EngineConfig](EngineConfig.md).
+The render entry point requires a render delegate. See [MainLoop](../app/MainLoop.md) and [EngineConfig](EngineConfig.md).
+
+See [framework scope and maturity](index.md#production-and-experimental-frameworks)
+for the distinction between render and draw.

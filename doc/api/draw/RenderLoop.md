@@ -19,7 +19,7 @@ The first available presentation frame creates a scene color image matching the
 actual drawable extent and format. The delegate receives `resize()` in drawable
 pixels, then `update()` and `render()` when the scene is dirty and unpaused.
 FrameContext contains the retained color image, synchronized resource slot,
-surface frame number and elapsed time. There is no depth target in this initial
+surface frame number and elapsed time. There is no depth target in the
 scene contract. The coordinator clears the scene color before rendering; the
 delegate opens and closes any scopes it needs. A scope left open is a
 configuration error reported by exception.
@@ -27,7 +27,9 @@ configuration error reported by exception.
 Every presentation copies the retained scene color into the acquired drawable.
 The loop keeps scene work and copies on one graphics queue, with GPU resource
 dependencies between reads and writes. Slot reuse waits through Surface::beginFrame;
-there is no full-device or per-submit CPU wait during ordinary frame execution.
+there is no full-device or per-submit CPU wait during ordinary frame execution
+with unchanged targets/UI metadata. Vulkan may also wait prior use of an acquired
+swapchain image.
 Unavailable/zero-sized drawables skip work without advancing application slots.
 Resize and shutdown drain all users before destroying shared targets.
 
@@ -58,8 +60,8 @@ void setUICompositionCallback(UICompositionCallback callback);
 
 The callback runs after the scene copy, with presentation color in
 ColorAttachment layout and no active scene scope. It must close all scopes it
-opens. The callback is empty by default. MainLoop binds Vulkan UI in step 04 and Metal
-UI in step 05. `setUIFramePreparationCallback` installs a callback with the same
+opens. The callback is empty by default. MainLoop binds the selected Vulkan or
+Metal UI backend. `setUIFramePreparationCallback` installs a callback with the same
 signature, invoked after acquisition/slot synchronization and before scene work.
 It must leave all command scopes closed.
 
@@ -73,3 +75,13 @@ the destructor also attempts cleanup without propagating exceptions.
 
 See [FrameContext](FrameContext.md), [RenderLoopDelegate](RenderLoopDelegate.md)
 and [Engine](Engine.md).
+
+## Synchronization reference
+
+Surface::beginFrame waits only for occupied slot reuse; Queue::submit is
+asynchronous and Surface::endFrame advances submitted frames without waiting.
+Target recreation/cleanup and renderer reinitialization intentionally use global
+waits. See [submission tracking](../gpu/Submission_tracking_and_waitIdle.md) and
+[source-backed frame flow](../../architecture/MainLoop_render_draw_gpu.md).
+Independent scene/UI passes currently share the same main-thread loop and GPU
+command buffer; they do not establish a separate UI thread.
