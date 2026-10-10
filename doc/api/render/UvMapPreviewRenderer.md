@@ -1,6 +1,6 @@
 # UvMapPreviewRenderer
 
-**Header:** `<bg2e/render/UvMapPreviewRenderer.hpp>`  
+**Header:** `<bg2e/render/UvMapPreviewRenderer.hpp>`
 **Namespace:** `bg2e::render`
 
 `UvMapPreviewRenderer` draws UV1 or UV2 triangles, tinted by submesh, over a
@@ -32,3 +32,6 @@ visualization, is required.
 
 - [`ui::UvMapPreview`](../ui/UvMapPreview.md) — embeddable widget with UV-set selection and validation feedback.
 - [Lightmap baking](../../lightmap_baking.md) — UV generation and editor integration.
+
+Sources: [header](../../../lib/include/bg2e/render/UvMapPreviewRenderer.hpp),
+[implementation](../../../lib/src/bg2e/render/UvMapPreviewRenderer.cpp).

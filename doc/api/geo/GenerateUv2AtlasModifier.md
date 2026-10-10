@@ -1,6 +1,6 @@
 # GenerateUv2AtlasModifier
 
-**Header:** `<bg2e/geo/GenerateUv2AtlasModifier.hpp>`  
+**Header:** `<bg2e/geo/GenerateUv2AtlasModifier.hpp>`
 **Namespace:** `bg2e::geo`
 
 `GenerateUv2AtlasModifier` creates a UV2 atlas for a standard `geo::Mesh` whose
@@ -15,6 +15,23 @@ geo::GenerateUv2AtlasModifier modifier(mesh.get(), options);
 modifier.apply();
 const geo::Uv2AtlasResult& result = modifier.result();
 ```
+
+## Members
+
+| Signature | Contract |
+|---|---|
+| `GenerateUv2AtlasModifier()` | No mesh selected; select with inherited `setMesh(Mesh*)`. |
+| `GenerateUv2AtlasModifier(Mesh*, const Uv2AtlasOptions& = {})` | Borrow mesh and copy options; mutation occurs only in apply. |
+| `void setOptions(const Uv2AtlasOptions&)` | Replace packing options for a later apply. |
+| `const Uv2AtlasOptions& options() const` | Stored options. |
+| `void apply() override` | Generate/validate/commit new CPU arrays; throw runtime error on failure. |
+| `const Uv2AtlasResult& result() const` | Last successful atlas metrics; meaningful only after successful apply. |
+| `setMesh(Mesh*)`, `mesh() const` | Inherited borrowed-mesh selection/access. |
+
+Zero-area 3D faces ignored by xatlas map to collapsed UV2 at `(0,0)` and cover
+no texels. Submesh ranges must be ordered, contiguous and cover the full index
+buffer. Actual returned width/height are authoritative; requested resolution
+is a packing input, not a guarantee about returned atlas dimensions.
 
 ## Options and result
 
@@ -62,3 +79,7 @@ Redistributions containing xatlas must retain that notice.
 - [`UvAtlasValidator`](UvAtlasValidator.md) — test whether a UV set is usable.
 - [`UV map preview`](../ui/UvMapPreview.md) — inspect UV1 and UV2 in an editor.
 - [Lightmap baking](../../lightmap_baking.md) — editor flow and safe regeneration.
+
+Sources: [header](../../../lib/include/bg2e/geo/GenerateUv2AtlasModifier.hpp),
+[implementation](../../../lib/src/bg2e/geo/GenerateUv2AtlasModifier.cpp).
+See [atlas architecture](../../architecture/lightmaps/uv_atlas.md).

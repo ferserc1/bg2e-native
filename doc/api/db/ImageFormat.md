@@ -44,7 +44,7 @@ empty list or empty view respectively.
 ## Saving images
 
 The existing `saveImage` overloads dispatch using the path extension and retain
-their existing writer behavior, including JPEG quality. Unsupported extensions
+their writer behavior, including JPEG quality 100. Unsupported extensions
 throw `std::runtime_error`.
 
 ```cpp
@@ -57,3 +57,23 @@ db::saveImage(outputDirectory / ("chair" +
 Float `LightmapPixels` are converted to clamped, rounded RGB8 by
 [`LightmapOutputWriter`](LightmapOutputWriter.md); this API does not add HDR
 file export.
+
+Sources: [header](../../../lib/include/bg2e/db/image.hpp),
+[implementation](../../../lib/src/bg2e/db/image_db.cpp).
+
+## Function signatures
+
+```cpp
+std::optional<ImageFormat> imageFormatFromExtension(std::string_view extension);
+std::optional<ImageFormat> imageFormatFromPath(const std::filesystem::path& filePath);
+std::vector<std::string_view> extensionsForImageFormat(ImageFormat format);
+std::string_view canonicalImageExtension(ImageFormat format);
+void saveImage(const std::filesystem::path& filePath, const uint8_t* data,
+               uint32_t width, uint32_t height, uint32_t bpp);
+void saveImage(const std::filesystem::path& basePath, const std::string& fileName,
+               const uint8_t* data, uint32_t width, uint32_t height, uint32_t bpp);
+```
+
+Here `bpp` is the number of byte components per pixel (use 3 for RGB), not a
+bit count. Format discovery returns an optional; encoding failures and unsupported
+save extensions throw. See [output architecture](../../architecture/lightmaps/output_and_materials.md).

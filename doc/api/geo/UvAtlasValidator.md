@@ -1,6 +1,6 @@
 # UvAtlasValidator
 
-**Header:** `<bg2e/geo/UvAtlasValidator.hpp>`  
+**Header:** `<bg2e/geo/UvAtlasValidator.hpp>`
 **Namespace:** `bg2e::geo`
 
 `UvAtlasValidator::validate` checks whether UV1 or UV2 forms a usable atlas.
@@ -32,11 +32,11 @@ including vertices not referenced by an index.
 |-------|---------|
 | `valid` | `true` if validation succeeded. |
 | `error` | A `UvAtlasError` code; `None` indicates success. |
-| `message` | Human-readable success/error context. |
+| `message` | Failure diagnostic; empty on success. |
 | `submeshIndex` | Submesh associated with an error, where available; overlap errors report the lower submesh index. |
-| `triangleIndex` | Triangle index within its submesh, where available. |
+| `triangleIndex` | Triangle index for the reported candidate, where available; for overlaps it comes from the first U-sorted candidate and may not correspond to the lower `submeshIndex`. |
 | `vertexIndex` | Vertex associated with a coordinate error, where available. |
-| `triangleCount` | Number of validated triangles on success. |
+| `triangleCount` | Total input triangle count on success, including ignored zero-area triangles. |
 | `mappedArea` | Sum of absolute UV triangle areas; overlapping layouts can make it exceed 1. |
 | `coverage` | Approximate fraction of the unit square covered by the UV map. |
 
@@ -54,3 +54,21 @@ coordinate equality is not treated as evidence of a missing atlas.
 
 - [`GenerateUv2AtlasModifier`](GenerateUv2AtlasModifier.md) — create a UV2 atlas.
 - [`UV map preview`](../ui/UvMapPreview.md) — view the selected UV set and validation report.
+
+## Signature and metric details
+
+```cpp
+static UvAtlasValidation validate(const Mesh& mesh, uint32_t uvSet);
+```
+
+Invalid layouts are returned as reports rather than validation exceptions.
+Positive-area/overlap thresholds are `1e-12` in normalized UV area. `coverage`
+is estimated on a fixed 512×512 center-sampling grid, independently of bake
+resolution. Metrics remain default on an overlap failure rather than reporting
+partial area. Range counts must be divisible by three; the implementation does
+not explicitly check `firstIndex % 3`. The modifier has a stricter ordered,
+contiguous-range input rule than this validator.
+
+Sources: [header](../../../lib/include/bg2e/geo/UvAtlasValidator.hpp),
+[implementation](../../../lib/src/bg2e/geo/UvAtlasValidator.cpp).
+See [validation algorithm](../../architecture/lightmaps/uv_atlas.md).

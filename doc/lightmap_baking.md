@@ -167,7 +167,8 @@ and bakers; destroy the batch and context before calling `Engine::cleanup()`.
 Both CLI branches assemble targets with GPU loading deferred. With
 `--generate-uv2=true`, the batch applies the CPU atlas modifier to each target
 and validates it before loading target GPU meshes/BLASes and building the TLAS.
-With `false`, it validates existing UV2; invalid targets are reported once and
+Generation or generated-atlas validation failures skip the affected target
+with a warning and allow the rest to continue. With `false`, it validates existing UV2; invalid targets are reported once and
 skipped for baking while remaining in the full scene as potential occluders.
 The validator accepts a usable UV1 copy in UV2 and never infers provenance from
 coordinate equality.
@@ -177,8 +178,21 @@ written in the selected PNG, JPEG, BMP, or TGA format. The no-generation branch
 writes images only. The generation branch writes an image and a new `.bg2`
 copy per target, setting the generated AO image path on all submesh materials
 with UV set 1 and unit scale. Output names derive from sanitized stable node
-identities; existing paths, input aliases, and unresolved collisions are fatal.
+identities. Input aliases and unresolved collisions are fatal; existing outputs
+are replaced by default by the CLI, or rejected with `--overwrite=false`.
 Input models, prefab JSON, and context JSON are never overwritten or emitted.
 The `.bg2` writer may copy referenced material texture sidecars into the output
 directory. See the [CLI guide](api/app/LightmapGenerator.md) for all four
 model/prefab and UV2 output combinations.
+
+## Detailed implementation documentation
+
+The [lightmap architecture guide](architecture/lightmaps/index.md) explains the
+UV2 surface projection, world-space interpolation, coverage mask, frame ownership,
+accumulation, dilation and output boundaries directly from C++ and GLSL.
+The [application guide](apps/lightmap_generator/index.md) contains the current CLI.
+
+A dedicated RGB illumination channel in the material model remains future work.
+Current exports use the scalar AO property; the deferred shader path already
+contains RGB sampling through that same texture, but this is not a separate
+material channel. See [material integration and limits](architecture/lightmaps/output_and_materials.md).

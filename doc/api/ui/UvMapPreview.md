@@ -1,6 +1,6 @@
 # UvMapPreview
 
-**Header:** `<bg2e/ui/UvMapPreview.hpp>`  
+**Header:** `<bg2e/ui/UvMapPreview.hpp>`
 **Namespace:** `bg2e::ui`
 
 `UvMapPreview` is an embeddable immediate-mode widget that displays a CPU
@@ -22,7 +22,7 @@ preview.draw();
 
 | Member | Description |
 |--------|-------------|
-| `init(render::Engine*, uint32_t resolution = 256)` | Creates the renderer and image widget. Call before `draw()`. |
+| `init(render::Engine*, uint32_t resolution = 256)` | Creates the renderer and image widget. Initialize before preview rendering; an uninitialized draw reports no target. |
 | `setMesh(std::shared_ptr<geo::Mesh>)` | Selects the shared CPU mesh; changing it marks the preview dirty. The widget retains the mesh, not its Drawable. |
 | `mesh() const` | Returns the selected shared mesh. |
 | `setUvSet(uint32_t)` / `uvSet() const` | Selects UV1 (`0`) or UV2 (`1`); values above 1 are clamped to 1. |
@@ -51,3 +51,10 @@ calls inside the engine UI implementation. The preview image is rendered by
 - [`geo::UvAtlasValidator`](../geo/UvAtlasValidator.md)
 - [`app::Uv2SafeReload`](../app/Uv2SafeReload.md)
 - [Lightmap baking](../../lightmap_baking.md)
+
+Sources: [header](../../../lib/include/bg2e/ui/UvMapPreview.hpp),
+[implementation](../../../lib/src/bg2e/ui/UvMapPreview.cpp).
+
+Calling `setMesh()` with the same shared pointer does not invalidate the preview.
+Use `refresh()` after in-place changes. `resolution()` returns zero before
+initialization; `setResolution()` before initialization does nothing.

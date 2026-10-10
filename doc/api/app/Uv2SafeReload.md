@@ -1,6 +1,6 @@
 # Uv2SafeReload
 
-**Header:** `<bg2e/app/Uv2SafeReload.hpp>`  
+**Header:** `<bg2e/app/Uv2SafeReload.hpp>`
 **Namespace:** `bg2e::app`
 
 `Uv2SafeReload` schedules CPU UV2 generation and GPU resource reload for an
@@ -72,3 +72,21 @@ modifier before loading the target into GPU resources instead.
 - [`MainLoop::safeUpdateScene`](MainLoop.md#safe-scene-updates)
 - [`geo::GenerateUv2AtlasModifier`](../geo/GenerateUv2AtlasModifier.md)
 - [`ui::UvMapPreview`](../ui/UvMapPreview.md)
+
+Sources: [header](../../../lib/include/bg2e/app/Uv2SafeReload.hpp),
+[implementation](../../../lib/src/bg2e/app/Uv2SafeReload.cpp).
+
+## Signature
+
+```cpp
+using CompletionCallback = std::function<void(const Uv2RegenerationResult&)>;
+static std::shared_ptr<SafeUpdateToken> regenerate(
+    std::weak_ptr<scene::Node> targetNode,
+    const geo::Uv2AtlasOptions& options = {},
+    CompletionCallback onComplete = nullptr);
+```
+
+Result defaults are false success, empty message, zero width/height/chart count
+and zero utilization. The callback is optional. Recreate bake resources after
+UV topology changes; resetting accumulation alone does not repair stale scene
+bindings. See [editor architecture](../../architecture/lightmaps/preview_and_editors.md).

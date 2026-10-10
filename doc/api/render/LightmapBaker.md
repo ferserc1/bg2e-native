@@ -1,97 +1,54 @@
-# Integrated Lightmap Baker
+# LightmapBaker
 
-**Headers:** `<bg2e/render/LightmapSettings.hpp>`,
-`<bg2e/render/IntegratedBakerContext.hpp>`, and
-`<bg2e/render/LightmapBaker.hpp>`  
+**Header:** `<bg2e/render/LightmapBaker.hpp>`
 **Namespace:** `bg2e::render`
 
-The integrated baker runs inside an existing windowed or offscreen engine
-frame loop. A shared `IntegratedBakerContext` owns the bake ray-tracing scene
-for each in-flight frame slot; each `IntegratedLightmapBaker` owns the target's
-UV-space buffers, accumulation, and result. The scene root and engine must
-outlive the context and its bakers. A target must be an attached standard
-Drawable with a usable UV2 atlas.
+Base class owning one target's UV surface attachments, AO/GI sample images,
+composition images, accumulation histories and dilated result. Its constructor
+is protected; obtain an `IntegratedLightmapBaker` or `StandaloneLightmapBaker`
+from the corresponding shared context.
 
-```cpp
-auto context = std::make_shared<render::IntegratedBakerContext>(engine, sceneRoot);
-context->setEnvironmentResources(renderer->environmentResources());
+## Target requirements
 
-render::LightmapSettings settings;
-settings.mode = render::LightmapMode::RTGI;
-settings.resolution = 512;
-settings.accumulationFrames = 16;
-auto baker = context->createBaker(targetNode, settings);
-```
+The target must belong to the context root and directly contain a standard,
+GPU-loaded `scene::Drawable` with nonempty indexed triangle geometry. CPU
+submesh metadata must match the Drawable; ranges and vertex indices must be
+valid. `geo::UvAtlasValidator::validate(*mesh, 1)` must accept UV2. Null,
+detached, unloaded or malformed targets throw `std::invalid_argument` at creation.
+See [settings and validation](LightmapSettings.md).
 
-In the application's render delegate, after scene/component updates and while
-recording the engine's current frame, prepare the context once and update each
-target baker:
+## Members
 
-```cpp
-context->prepareFrame(cmd, frameResources); // once per context per frame
-baker->update(cmd, frameResources);         // once per sample/frame
-```
+| Signature | Contract |
+|---|---|
+| `uint32_t completedFrames() const` | Successful updates counted: recorded updates for integrated baking, submitted and waited updates for standalone. Does not itself query GPU completion. |
+| `void resetAccumulation()` | Set progress to zero and invalidate result access. Next sample ignores old history without a GPU clear. |
+| `LightmapPixels readPixels() const` | Require a result and engine frame advance since its last update; then wait for device idle and synchronously copy the dilated RGBA32F image to tightly packed RGB. |
+| `std::shared_ptr<vulkan::Image> image() const` | Return the current dilated RGBA32F sampled image. Require a recorded result; this call does not wait for GPU completion. |
+| `const LightmapSettings& settings() const` | Immutable settings stored in this baker. |
+| `std::shared_ptr<scene::Node> targetNode() const` | Retained target reference. |
+| `virtual ~LightmapBaker()` | Schedule GPU resource release through engine deferred cleanup. |
 
-The command buffer must be the one belonging to the current `FrameResources`.
-The integrated context does not run scene lifecycle callbacks. The application
-continues to own them. The baker's updates must be recorded in the same ordered
-command stream and submitted by the running loop.
+`image()` and `readPixels()` throw `std::logic_error` before the first result
+or after reset. `readPixels()` also throws if the engine frame has not advanced;
+calling it while recording the last integrated update is invalid. Readback is
+available after any submitted sample, not only after all requested frames.
+Further updates after completion throw until reset. A retained image is mutable
+GPU storage reused by later updates, not a frozen snapshot.
 
 ## Settings and output
 
-`LightmapMode` is `RTAO` or `RTGI`. `LightmapPixelFormat` is `RGB8` or
-`RGB32F`. `LightmapSettings` defaults are:
+See [LightmapSettings, LightmapPixels and enums](LightmapSettings.md) for every
+field, default and CPU conversion rule. RTAO is a grayscale RGB multiplier;
+RTGI is a colored environment-relative indirect-light multiplier. Both result
+accessors use the same dilated image. Dedicated RGB material-channel support
+remains pending; the current output workflow uses the existing AO property.
 
-| Field | Default | Meaning |
-|-------|---------|---------|
-| `resolution` | `512` | Square output and intermediate resolution. |
-| `mode` | `RTGI` | Ray-traced ambient occlusion or global illumination. |
-| `accumulationFrames` | `16` | Number of update calls that form the accumulation. |
-| `samplesPerPixel` | `8` | Ray samples per UV texel per update. |
-| `giBounces` | `2` | RTGI bounce count. |
-| `maxRayDistance` | `50.0f` | RTGI ray range in metres; RTAO uses a fixed 0.1 m radius. |
-| `giRayBias` | `0.0005f` | RTGI ray-origin offset in metres. |
-| `exposureEV` | `0.0f` | RGB8 RTGI export exposure (`2^EV`) before clamp; does not change RGB32F or the GPU image. |
-| `cpuFormat` | `RGB8` | Format returned by `readPixels()`. |
-| `dilationPixels` | `4` | GPU dilation radius in pixels; valid range is 1–32. |
+## Execution-specific methods
 
-Each `update()` records one full-resolution accumulation iteration. Use
-`completedFrames()` to observe progress. Once the configured frame count is
-reached, further updates require `resetAccumulation()` first. `readPixels()`
-waits for the submitted result and returns tightly packed, row-major RGB
-pixels; RGB8 contains bytes, RGB32F contains floats. `image()` returns the
-sampled Vulkan result image. The result is an indirect-light multiplier:
-RTAO is grayscale visibility replicated across RGB, while RTGI is colored
-indirect light normalized against the unoccluded environment. Direct lighting
-and material emission are not multiplied by the result.
+- [IntegratedBakerContext and IntegratedLightmapBaker](IntegratedBakerContext.md): `update(cmd, frameResources)` records into the caller's frame.
+- [StandaloneBakerContext and StandaloneLightmapBaker](StandaloneBakerContext.md): `update()` submits and waits synchronously.
 
-After every accumulation update, a compute shader extends valid edge colors
-into empty atlas texels. `image()` returns this dilated GPU image, and
-`readPixels()` exports pixels from the same image. Accumulation history,
-baked texels and UV coordinates remain unchanged.
-
-## Public result access
-
-| Member | Description |
-|--------|-------------|
-| `IntegratedLightmapBaker::update(VkCommandBuffer, vulkan::FrameResources&)` | Records one sample for the prepared current frame. |
-| `LightmapBaker::completedFrames() const` | Number of recorded accumulation updates. |
-| `LightmapBaker::resetAccumulation()` | Clears accumulation history and progress. |
-| `LightmapBaker::readPixels() const` | Waits for completion and returns `LightmapPixels`. |
-| `LightmapBaker::image() const` | Shared handle to the renderable/sampled GPU result. |
-| `LightmapBaker::settings() const` | Immutable settings used by this baker. |
-| `LightmapBaker::targetNode() const` | Shared target node reference. |
-| `IntegratedBakerContext::setEnvironmentResources(EnvironmentResources*)` | Supplies the active renderer's environment resources; the renderer must outlive the context. |
-
-The same context can create bakers for multiple targets. Call
-`prepareFrame()` only once per active bake frame, then update each baker with
-that prepared command buffer and frame resources. Read CPU pixels outside
-command recording, after the frame has been submitted and advanced.
-
-## See also
-
-- [UV atlas generation and editor previews](../../lightmap_baking.md)
-- [`geo::GenerateUv2AtlasModifier`](../geo/GenerateUv2AtlasModifier.md)
-- [`render::UvMapPreviewRenderer`](UvMapPreviewRenderer.md)
-- [`ui::UvMapPreview`](../ui/UvMapPreview.md)
-- [Standalone Lightmap Baking](StandaloneBakerContext.md) — headless context and model/prefab batch workflow.
+Sources: [header](../../../lib/include/bg2e/render/LightmapBaker.hpp),
+[implementation](../../../lib/src/bg2e/render/LightmapBaker.cpp).
+For the actual UV projection see [atlas surface projection](../../architecture/lightmaps/uv_surface_projection.md).

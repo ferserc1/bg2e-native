@@ -33,7 +33,7 @@ framework. Choosing Vulkan in draw does not select render.
 
 - [`UvMapPreviewRenderer`](UvMapPreviewRenderer.md) renders a CPU mesh's UV1 or
   UV2 layout to a sampled image.
-- [`Integrated Lightmap Baker`](LightmapBaker.md) bakes a usable UV2 atlas
+- [`IntegratedBakerContext`](IntegratedBakerContext.md) bakes a usable UV2 atlas
   inside an existing application render loop.
 - [`Standalone Lightmap Baking`](StandaloneBakerContext.md) assembles a headless
   scene, shares one TLAS across target bakers, and coordinates cancellable
@@ -46,3 +46,7 @@ framework. Choosing Vulkan in draw does not select render.
 
 UV1 is preserved by atlas generation. See [Lightmap baking](../../lightmap_baking.md)
 for the model_edit, Composer, and standalone CLI workflows.
+
+See the [lightmap architecture guide](../../architecture/lightmaps/index.md) for
+UV projection, attachment storage and execution ownership, and the
+[lightmap_generator guide](../../apps/lightmap_generator/index.md) for CLI usage.
