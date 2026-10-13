@@ -36,3 +36,11 @@ add_subdirectory(gpu/13_ray_tracing_pipeline)
 
 # Experimental bg2e::draw examples
 add_subdirectory(draw/01_window_ui)
+add_subdirectory(draw/02_simple_triangle)
+add_subdirectory(draw/03_uniform_buffers)
+add_subdirectory(draw/04_render_to_texture)
+add_subdirectory(draw/05_cubemap)
+add_subdirectory(draw/06_cubemap_render_pass)
+add_subdirectory(draw/07_ray_query_shadows)
+add_subdirectory(draw/08_deferred_cleanup)
+add_subdirectory(draw/09_ray_tracing_pipeline)
