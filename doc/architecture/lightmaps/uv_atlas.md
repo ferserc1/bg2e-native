@@ -63,9 +63,9 @@ xatlas returns pixel-space chart coordinates, remapped indices and `xref`
 source-vertex references. For each output vertex the engine copies the complete
 source `VertexPNUUT`, then replaces only UV2:
 
-\[
+$$
 u = x_{atlas}/W_{atlas},\qquad v = y_{atlas}/H_{atlas}.
-\]
+$$
 
 Values beyond a `1e-4` tolerance outside the unit square are rejected; values
 within that tolerance are clamped. Source position, normal, tangent and UV1 are
@@ -99,9 +99,9 @@ by three and bounds; it does not explicitly check `firstIndex % 3`.
 
 For a UV triangle, area is:
 
-\[
+$$
 A = \tfrac12 |(u_1-u_0)(v_2-v_0)-(v_1-v_0)(u_2-u_0)|.
-\]
+$$
 
 Triangles with area at most `1e-12` are excluded from overlap and coverage.
 If all are excluded, validation returns `DegenerateTriangle`. On success,
