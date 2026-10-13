@@ -28,7 +28,7 @@ namespace metal {
 class PipelineLayout;
 
 class BG2E_API GraphicsPipeline : public gpu::GraphicsPipeline {
-public:
+  public:
 #if BG2E_IS_MAC
     GraphicsPipeline(gpu::Device* gpuDevice, MTL::Device* device, const gpu::GraphicsPipelineDescription& description);
 #else
@@ -40,25 +40,43 @@ public:
     void cleanup() override;
 
 #if BG2E_IS_MAC
-    MTL::RenderPipelineState* renderPipelineState() const { return _renderPipelineState; }
+    MTL::RenderPipelineState* renderPipelineState() const
+    {
+        return _renderPipelineState;
+    }
     // Non-null when the pipeline was created with a depth attachment format;
     // bound on the render encoder so depth testing/writing is actually applied.
-    MTL::DepthStencilState* depthStencilState() const { return _depthStencilState; }
+    MTL::DepthStencilState* depthStencilState() const
+    {
+        return _depthStencilState;
+    }
 #endif
-    gpu::PrimitiveTopology topology() const { return _topology; }
-    metal::PipelineLayout* layout() const { return _layout; }
-    gpu::CullMode          cullMode() const { return _cullMode; }
-    gpu::FrontFace         frontFace() const { return _frontFace; }
+    gpu::PrimitiveTopology topology() const
+    {
+        return _topology;
+    }
+    metal::PipelineLayout* layout() const
+    {
+        return _layout;
+    }
+    gpu::CullMode cullMode() const
+    {
+        return _cullMode;
+    }
+    gpu::FrontFace frontFace() const
+    {
+        return _frontFace;
+    }
 
-private:
+  private:
     gpu::PrimitiveTopology _topology;
     metal::PipelineLayout* _layout = nullptr;
-    gpu::CullMode  _cullMode;
+    gpu::CullMode _cullMode;
     gpu::FrontFace _frontFace;
 
 #if BG2E_IS_MAC
     MTL::RenderPipelineState* _renderPipelineState = nullptr;
-    MTL::DepthStencilState*   _depthStencilState   = nullptr;
+    MTL::DepthStencilState* _depthStencilState = nullptr;
 #endif
 };
 

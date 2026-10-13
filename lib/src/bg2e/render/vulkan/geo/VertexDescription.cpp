@@ -20,19 +20,17 @@
 
 namespace bg2e::render::vulkan::geo {
 
-
 VkVertexInputBindingDescription bindingDescriptionP()
 {
     using namespace bg2e::geo;
-    VkVertexInputBindingDescription desc {};
+    VkVertexInputBindingDescription desc{};
 
     desc.binding = 0;
     desc.stride = sizeof(VertexP);
-	desc.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+    desc.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
     return desc;
 }
-
 
 VkVertexInputBindingDescription bindingDescriptionPN()
 {
@@ -46,7 +44,6 @@ VkVertexInputBindingDescription bindingDescriptionPN()
     return desc;
 }
 
-
 VkVertexInputBindingDescription bindingDescriptionPC()
 {
     using namespace bg2e::geo;
@@ -58,7 +55,6 @@ VkVertexInputBindingDescription bindingDescriptionPC()
 
     return desc;
 }
-
 
 VkVertexInputBindingDescription bindingDescriptionPU()
 {
@@ -72,7 +68,6 @@ VkVertexInputBindingDescription bindingDescriptionPU()
     return desc;
 }
 
-
 VkVertexInputBindingDescription bindingDescriptionPNU()
 {
     using namespace bg2e::geo;
@@ -84,7 +79,6 @@ VkVertexInputBindingDescription bindingDescriptionPNU()
 
     return desc;
 }
-
 
 VkVertexInputBindingDescription bindingDescriptionPNC()
 {
@@ -98,7 +92,6 @@ VkVertexInputBindingDescription bindingDescriptionPNC()
     return desc;
 }
 
-
 VkVertexInputBindingDescription bindingDescriptionPNUC()
 {
     using namespace bg2e::geo;
@@ -111,7 +104,6 @@ VkVertexInputBindingDescription bindingDescriptionPNUC()
     return desc;
 }
 
-
 VkVertexInputBindingDescription bindingDescriptionPNUT()
 {
     using namespace bg2e::geo;
@@ -123,7 +115,6 @@ VkVertexInputBindingDescription bindingDescriptionPNUT()
 
     return desc;
 }
-
 
 VkVertexInputBindingDescription bindingDescriptionPNUUT()
 {
@@ -151,7 +142,6 @@ std::vector<VkVertexInputAttributeDescription> attributeDescriptionsP()
     return desc;
 }
 
-
 std::vector<VkVertexInputAttributeDescription> attributeDescriptionsPN()
 {
     using namespace bg2e::geo;
@@ -163,14 +153,13 @@ std::vector<VkVertexInputAttributeDescription> attributeDescriptionsPN()
     desc[0].format = VK_FORMAT_R32G32B32_SFLOAT;
     desc[0].offset = offsetof(VertexPN, position);
 
-	desc[1].binding = 0;
-	desc[1].location = 1;
-	desc[1].format = VK_FORMAT_R32G32B32_SFLOAT;
-	desc[1].offset = offsetof(VertexPN, normal);
+    desc[1].binding = 0;
+    desc[1].location = 1;
+    desc[1].format = VK_FORMAT_R32G32B32_SFLOAT;
+    desc[1].offset = offsetof(VertexPN, normal);
 
     return desc;
 }
-
 
 std::vector<VkVertexInputAttributeDescription> attributeDescriptionsPC()
 {
@@ -191,7 +180,6 @@ std::vector<VkVertexInputAttributeDescription> attributeDescriptionsPC()
     return desc;
 }
 
-
 std::vector<VkVertexInputAttributeDescription> attributeDescriptionsPU()
 {
     using namespace bg2e::geo;
@@ -210,7 +198,6 @@ std::vector<VkVertexInputAttributeDescription> attributeDescriptionsPU()
 
     return desc;
 }
-
 
 std::vector<VkVertexInputAttributeDescription> attributeDescriptionsPNU()
 {
@@ -236,7 +223,6 @@ std::vector<VkVertexInputAttributeDescription> attributeDescriptionsPNU()
     return desc;
 }
 
-
 std::vector<VkVertexInputAttributeDescription> attributeDescriptionsPNC()
 {
     using namespace bg2e::geo;
@@ -260,7 +246,6 @@ std::vector<VkVertexInputAttributeDescription> attributeDescriptionsPNC()
 
     return desc;
 }
-
 
 std::vector<VkVertexInputAttributeDescription> attributeDescriptionsPNUC()
 {
@@ -291,7 +276,6 @@ std::vector<VkVertexInputAttributeDescription> attributeDescriptionsPNUC()
     return desc;
 }
 
-
 std::vector<VkVertexInputAttributeDescription> attributeDescriptionsPNUT()
 {
     using namespace bg2e::geo;
@@ -320,7 +304,6 @@ std::vector<VkVertexInputAttributeDescription> attributeDescriptionsPNUT()
 
     return desc;
 }
-
 
 std::vector<VkVertexInputAttributeDescription> attributeDescriptionsPNUUT()
 {
@@ -355,6 +338,5 @@ std::vector<VkVertexInputAttributeDescription> attributeDescriptionsPNUUT()
 
     return desc;
 }
-
 
 }

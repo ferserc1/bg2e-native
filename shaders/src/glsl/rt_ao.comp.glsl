@@ -42,7 +42,8 @@ layout(set = 0, binding = 3, r8) uniform image2D aoOutput;
 layout(set = 0, binding = 4) uniform sampler2DArray blueNoiseTex;
 
 // Push constants
-layout(push_constant) uniform PushConstant {
+layout(push_constant) uniform PushConstant
+{
     mat4 inverseViewProjection;
     int sampleCount;
     int bounceCount;
@@ -53,22 +54,26 @@ layout(push_constant) uniform PushConstant {
     uint frameIndex;
 
     uint useBlueNoise;
-} pc;
+}
+pc;
 
 layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
 
-void main() {
+void main()
+{
     ivec2 imageSize = imageSize(aoOutput);
     ivec2 pixelCoord = ivec2(gl_GlobalInvocationID.xy);
 
-    if (pixelCoord.x >= imageSize.x || pixelCoord.y >= imageSize.y) {
+    if (pixelCoord.x >= imageSize.x || pixelCoord.y >= imageSize.y)
+    {
         return;
     }
 
     vec2 uv = vec2(pixelCoord + 0.5) / vec2(imageSize);
 
     float depth = texture(g_Depth, uv).r;
-    if (depth >= 1.0) {
+    if (depth >= 1.0)
+    {
         imageStore(aoOutput, pixelCoord, vec4(1.0, 0.0, 0.0, 0.0));
         return;
     }

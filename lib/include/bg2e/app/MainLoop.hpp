@@ -64,7 +64,7 @@ struct WindowConfig {
 
     // Common options
     bool resizable = true;
-    bool decorated = true;       // With border and title bar
+    bool decorated = true; // With border and title bar
     bool alwaysOnTop = false;
 
     // Preferences
@@ -78,8 +78,8 @@ struct WindowConfig {
         const std::string& title,
         uint32_t w,
         uint32_t h,
-        bool persistentSize = false
-    ) {
+        bool persistentSize = false)
+    {
         WindowConfig c;
         c.title = title;
         c.width = w;
@@ -92,8 +92,8 @@ struct WindowConfig {
         const std::string& title,
         int32_t x, int32_t y,
         uint32_t w, uint32_t h,
-        bool persistentSize = false
-    ) {
+        bool persistentSize = false)
+    {
         WindowConfig c;
         c.title = title;
         c.x = x;
@@ -122,10 +122,12 @@ struct WindowConfig {
     }
 };
 
-
 struct SafeUpdateToken {
     std::shared_ptr<std::atomic<bool>> alive = std::make_shared<std::atomic<bool>>(true);
-    ~SafeUpdateToken() { *alive = false; }
+    ~SafeUpdateToken()
+    {
+        *alive = false;
+    }
 };
 
 class BG2E_API MainLoop {
@@ -135,20 +137,35 @@ class BG2E_API MainLoop {
         bool hasToken = false;
     };
 
-public:
+  public:
     MainLoop(const std::string& appId);
-    MainLoop(std::string && appId);
+    MainLoop(std::string&& appId);
     ~MainLoop();
-    
-    inline const std::string & appId() const { return _appId; }
-    
-    inline void initWindowConfig(const WindowConfig& config) { _windowConfig = config; }
-    inline void initWindowConfig(WindowConfig&& config) { _windowConfig = std::move(config); }
-    
-    static MainLoop * current() { return _mainLoopInstance; }
 
-    static Shortcuts & shortcuts() { return MainLoop::current()->_shortcuts; }
-    
+    inline const std::string& appId() const
+    {
+        return _appId;
+    }
+
+    inline void initWindowConfig(const WindowConfig& config)
+    {
+        _windowConfig = config;
+    }
+    inline void initWindowConfig(WindowConfig&& config)
+    {
+        _windowConfig = std::move(config);
+    }
+
+    static MainLoop* current()
+    {
+        return _mainLoopInstance;
+    }
+
+    static Shortcuts& shortcuts()
+    {
+        return MainLoop::current()->_shortcuts;
+    }
+
     int32_t run(Application* application);
 
     // Experimental draw execution path. Always requires an explicit
@@ -156,16 +173,28 @@ public:
     int32_t run(Application* application, const draw::EngineConfig& config);
 
     void exit();
-    
-    inline void setOnExitFunction(std::function<bool()> fn) { _onExitFunction = fn; }
 
-    bg2e::base::Timeout& timeout() { return _timeout; }
+    inline void setOnExitFunction(std::function<bool()> fn)
+    {
+        _onExitFunction = fn;
+    }
+
+    bg2e::base::Timeout& timeout()
+    {
+        return _timeout;
+    }
 
     void setBackgroundFrameRateLimitEnabled(bool enabled);
-    inline bool backgroundFrameRateLimitEnabled() const { return _backgroundFrameRateLimitEnabled.load(); }
+    inline bool backgroundFrameRateLimitEnabled() const
+    {
+        return _backgroundFrameRateLimitEnabled.load();
+    }
 
     void setBackgroundMaxFrameRate(double fps);
-    inline double backgroundMaxFrameRate() const { return _backgroundMaxFrameRate.load(); }
+    inline double backgroundMaxFrameRate() const
+    {
+        return _backgroundMaxFrameRate.load();
+    }
 
     // Thread-safe. The next background polling iteration will render a frame
     // even if the configured frame deadline has not been reached yet.
@@ -184,7 +213,7 @@ public:
     {
         {
             std::lock_guard lock(_safeUpdateSceneMutex);
-            _safeUpdateScene.push_back({ std::move(fn), token, token != nullptr });
+            _safeUpdateScene.push_back({std::move(fn), token, token != nullptr});
         }
         requestFrame();
     }
@@ -194,22 +223,21 @@ public:
     void asyncLoad(
         std::function<void(ui::Loader*)> loadFn,
         glm::vec4 clearColor = {0.f, 0.f, 0.f, 1.f},
-        std::function<void(std::exception_ptr)> onComplete = nullptr
-    );
+        std::function<void(std::exception_ptr)> onComplete = nullptr);
 
-protected:
+  protected:
     WindowConfig _windowConfig;
 
     bool _quit = false;
-    
+
     std::string _appId;
-    
-    static MainLoop * _mainLoopInstance;
-    
+
+    static MainLoop* _mainLoopInstance;
+
     std::unique_ptr<detail::GraphicsExecution> _execution;
-	app::InputManager _inputManager;
-	ui::UserInterface _userInterface;
- 
+    app::InputManager _inputManager;
+    ui::UserInterface _userInterface;
+
     std::function<bool()> _onExitFunction = nullptr;
 
     std::vector<SafeUpdateSceneEntry> _safeUpdateScene;
@@ -217,8 +245,8 @@ protected:
 
     ui::Loader _loader;
 
-    std::mutex                         _mainThreadQueueMutex;
-    std::queue<std::function<void()>>  _mainThreadQueue;
+    std::mutex _mainThreadQueueMutex;
+    std::queue<std::function<void()>> _mainThreadQueue;
 
     void drainMainThreadQueue();
 
@@ -226,10 +254,10 @@ protected:
 
     bool _resizeRequested = false;
 
-    std::atomic<bool> _backgroundFrameRateLimitEnabled { false };
-    std::atomic<double> _backgroundMaxFrameRate { 1.0 };
-    std::atomic<bool> _frameRequested { false };
-    
+    std::atomic<bool> _backgroundFrameRateLimitEnabled{false};
+    std::atomic<double> _backgroundMaxFrameRate{1.0};
+    std::atomic<bool> _frameRequested{false};
+
     bg2e::base::Timeout _timeout;
 
     void initMainLoopInstance();

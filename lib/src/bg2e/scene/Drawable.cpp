@@ -20,15 +20,19 @@
 #include <bg2e/base/Log.hpp>
 #include <memory>
 
-#define assert_submesh(i)       if (i >= _submeshAttributes.size()) { \
-                                    bg2e_log_warning << "Submesh index out of bounds setting Drawable material. Submeshes=" << _submeshAttributes.size() << ", Index=" << i << bg2e_log_end; \
-                                    return;\
-                                }
+#define assert_submesh(i)                                                                                                                                        \
+    if (i >= _submeshAttributes.size())                                                                                                                          \
+    {                                                                                                                                                            \
+        bg2e_log_warning << "Submesh index out of bounds setting Drawable material. Submeshes=" << _submeshAttributes.size() << ", Index=" << i << bg2e_log_end; \
+        return;                                                                                                                                                  \
+    }
 
-#define assert_submesh_r(i, r)  if (i >= _submeshAttributes.size()) { \
-                                    bg2e_log_warning << "Submesh index out of bounds setting Drawable material. Submeshes=" << _submeshAttributes.size() << ", Index=" << i << bg2e_log_end; \
-                                    return r;\
-                                }
+#define assert_submesh_r(i, r)                                                                                                                                   \
+    if (i >= _submeshAttributes.size())                                                                                                                          \
+    {                                                                                                                                                            \
+        bg2e_log_warning << "Submesh index out of bounds setting Drawable material. Submeshes=" << _submeshAttributes.size() << ", Index=" << i << bg2e_log_end; \
+        return r;                                                                                                                                                \
+    }
 
 namespace bg2e::scene {
 
@@ -65,7 +69,7 @@ std::shared_ptr<DrawableBase> DrawableGeneric<MeshT, RenderMeshT>::clone() const
 }
 
 template <typename MeshT, typename RenderMeshT>
-void DrawableGeneric<MeshT, RenderMeshT>::applyModifier(geo::Modifier<MeshT> * mod)
+void DrawableGeneric<MeshT, RenderMeshT>::applyModifier(geo::Modifier<MeshT>* mod)
 {
     if (!isLoaded())
     {
@@ -113,7 +117,7 @@ void DrawableGeneric<MeshT, RenderMeshT>::setSubmeshTransform(const glm::mat4& m
 }
 
 template <typename MeshT, typename RenderMeshT>
-void DrawableGeneric<MeshT, RenderMeshT>::setSubmeshName(const std::string & name, uint32_t submeshIndex)
+void DrawableGeneric<MeshT, RenderMeshT>::setSubmeshName(const std::string& name, uint32_t submeshIndex)
 {
     assert_submesh(submeshIndex);
     _submeshAttributes[submeshIndex].name = name;
@@ -195,7 +199,7 @@ glm::mat4 DrawableGeneric<MeshT, RenderMeshT>::localSubmeshTransform(uint32_t in
 {
     if (index >= _submeshAttributes.size())
     {
-        return glm::mat4{ 1.0f };
+        return glm::mat4{1.0f};
     }
     return _submeshAttributes[index].transform;
 }
@@ -208,19 +212,19 @@ glm::mat4 DrawableGeneric<MeshT, RenderMeshT>::submeshTransform(uint32_t index) 
 }
 
 template <typename MeshT, typename RenderMeshT>
-void DrawableGeneric<MeshT, RenderMeshT>::load(render::Engine * engine)
+void DrawableGeneric<MeshT, RenderMeshT>::load(render::Engine* engine)
 {
     if (_mesh.get() == nullptr)
     {
         throw std::runtime_error("DrawableGeneric::load(): Error loading render data. Invalid mesh data set.");
     }
-    
+
     if (isLoaded())
     {
         bg2e_log_warning << "DrawableGeneric::load(): this drawable is already loaded" << bg2e_log_end;
         return;
     }
-    
+
     _engine = engine;
 
     buildRenderMesh();
@@ -229,7 +233,7 @@ void DrawableGeneric<MeshT, RenderMeshT>::load(render::Engine * engine)
 }
 
 template <typename MeshT, typename RenderMeshT>
-void DrawableGeneric<MeshT, RenderMeshT>::load(render::Engine * engine, std::function<void()> onTextureLoaded)
+void DrawableGeneric<MeshT, RenderMeshT>::load(render::Engine* engine, std::function<void()> onTextureLoaded)
 {
     if (_mesh.get() == nullptr)
     {
@@ -260,7 +264,7 @@ void DrawableGeneric<MeshT, RenderMeshT>::buildMaterials(std::function<void()> o
 {
     _materials.clear();
 
-    for (auto & submesh : _submeshAttributes)
+    for (auto& submesh : _submeshAttributes)
     {
         auto renderMat = new render::MaterialBase(_engine);
         renderMat->setUseTextureCache(true);
@@ -335,15 +339,15 @@ void DrawableGeneric<MeshT, RenderMeshT>::drawSubmesh(
     VkPipelineLayout layout,
     uint32_t submesh,
     DrawSubmeshFunction cb,
-    VkPipelineBindPoint bp
-) {
+    VkPipelineBindPoint bp)
+{
     if (submeshVisibility(submesh))
     {
         auto mat = renderMaterial(submesh).get();
         auto trx = submeshTransform(submesh);
-        
+
         auto descriptorSets = cb(mat, trx);
-        
+
         _renderMesh->drawSubmesh(cmd, layout, descriptorSets, submesh, bp);
     }
 }
@@ -353,17 +357,17 @@ void DrawableGeneric<MeshT, RenderMeshT>::draw(
     VkCommandBuffer cmd,
     VkPipelineLayout layout,
     DrawFunction cb,
-    VkPipelineBindPoint bp
-) {
+    VkPipelineBindPoint bp)
+{
     for (size_t i = 0; i < _materials.size(); ++i)
     {
         if (submeshVisibility(static_cast<uint32_t>(i)))
         {
             auto mat = _materials[i].get();
             auto trx = _transform * _submeshAttributes[i].transform;
-            
+
             auto descriptorSets = cb(mat, trx, static_cast<uint32_t>(i));
-            
+
             _renderMesh->drawSubmesh(cmd, layout, descriptorSets, static_cast<uint32_t>(i), bp);
         }
     }
@@ -391,7 +395,7 @@ void DrawableGeneric<MeshT, RenderMeshT>::buildMaterials()
     // Cleare existing materials
     _materials.clear();
 
-    for (auto & submesh : _submeshAttributes)
+    for (auto& submesh : _submeshAttributes)
     {
         auto renderMat = new render::MaterialBase(_engine);
         renderMat->setUseTextureCache(true);
@@ -410,13 +414,14 @@ void DrawableGeneric<MeshT, RenderMeshT>::buildRayTracingMeshes()
     if (!_rayTracingMeshes.empty())
     {
         auto meshesToDestroy = std::move(_rayTracingMeshes);
-        _engine->deferredExec([meshesToDestroy]() mutable {
-            for (auto mesh : meshesToDestroy)
-            {
-                mesh->cleanup();
-            }
-            meshesToDestroy.clear();
-        });
+        _engine->deferredExec([meshesToDestroy]() mutable
+                              {
+                                  for (auto mesh : meshesToDestroy)
+                                  {
+                                      mesh->cleanup();
+                                  }
+                                  meshesToDestroy.clear();
+                              });
     }
 
     if (rayTracingEnabled())
@@ -425,13 +430,12 @@ void DrawableGeneric<MeshT, RenderMeshT>::buildRayTracingMeshes()
 
         for (uint32_t i = 0; i < submeshesCount(); ++i)
         {
-            const auto&  sm = submeshData(i);
+            const auto& sm = submeshData(i);
             auto rtMesh = std::make_shared<RayTracingMeshGeneric<MeshT>>(
                 _engine,
                 _renderMesh.get(),
                 sm.firstIndex,
-                sm.indexCount
-            );
+                sm.indexCount);
             rtMesh->build();
             _rayTracingMeshes.push_back(std::move(rtMesh));
         }

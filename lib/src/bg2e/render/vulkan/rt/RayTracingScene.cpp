@@ -27,8 +27,8 @@ namespace render {
 namespace vulkan {
 namespace rt {
 
-RayTracingScene::RayTracingScene(Engine * engine)
-    :_engine(engine)
+RayTracingScene::RayTracingScene(Engine* engine)
+    : _engine(engine)
 {
 }
 
@@ -48,7 +48,7 @@ bool RayTracingScene::update(VkCommandBuffer cmd, scene::Node* node)
     CollectRayTracingInstancesVisitor visitor(_engine);
     node->accept(&visitor);
 
-    const auto & instances = visitor.rayTracingInstances();
+    const auto& instances = visitor.rayTracingInstances();
     _objectInstances = visitor.objectInstances();
 
     if (instances.empty())
@@ -62,38 +62,34 @@ bool RayTracingScene::update(VkCommandBuffer cmd, scene::Node* node)
         _engine,
         bufferSize,
         VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT |
-        VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+            VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
         VMA_MEMORY_USAGE_CPU_TO_GPU,
-        "TLAS instances buffer"
-    ));
+        "TLAS instances buffer"));
     auto dataPtr = _instanceBuffer->allocatedData();
-    memcpy(dataPtr,instances.data(), bufferSize);
+    memcpy(dataPtr, instances.data(), bufferSize);
     _instanceBuffer->flushAllocatedData();
-    
+
     auto instancesDeviceAddress = _instanceBuffer->deviceAddress();
 
     RTAccelerationStructureSize sizes(_engine);
 
     auto buildSizes = sizes.getTLASSizes(
         instancesDeviceAddress,
-        instances.size()
-    );
+        instances.size());
 
     _tlasBuffer = std::unique_ptr<Buffer>(Buffer::createAllocatedBuffer(
         _engine,
         buildSizes.accelerationStructureSize,
-        VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT  | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+        VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
         VMA_MEMORY_USAGE_GPU_ONLY,
-        "TLAS buffer"
-    ));
+        "TLAS buffer"));
 
     _scratchBuffer = std::unique_ptr<Buffer>(Buffer::createAllocatedBuffer(
         _engine,
         buildSizes.buildScratchSize,
         VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
         VMA_MEMORY_USAGE_GPU_ONLY,
-        "TLAS scratch buffer"
-    ));
+        "TLAS scratch buffer"));
 
     VkAccelerationStructureCreateInfoKHR tlasInfo = {};
     tlasInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_KHR;
@@ -102,11 +98,10 @@ bool RayTracingScene::update(VkCommandBuffer cmd, scene::Node* node)
     tlasInfo.size = buildSizes.accelerationStructureSize;
     tlasInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
     if (createAccelerationStructure(
-        _engine->device().handle(),
-        &tlasInfo,
-        nullptr,
-        &_tlas
-    ) != VK_SUCCESS)
+            _engine->device().handle(),
+            &tlasInfo,
+            nullptr,
+            &_tlas) != VK_SUCCESS)
     {
         cleanup();
         throw std::runtime_error("failed to create acceleration structure");
@@ -117,14 +112,13 @@ bool RayTracingScene::update(VkCommandBuffer cmd, scene::Node* node)
     buildInfo.dstAccelerationStructure = _tlas;
     buildInfo.scratchData.deviceAddress = _scratchBuffer->deviceAddress();
 
-    VkAccelerationStructureBuildRangeInfoKHR buildRangeInfo {};
+    VkAccelerationStructureBuildRangeInfoKHR buildRangeInfo{};
     buildRangeInfo.primitiveCount = static_cast<uint32_t>(instances.size());
 
-    const VkAccelerationStructureBuildRangeInfoKHR * buildRangeInfos[] = { &buildRangeInfo };
+    const VkAccelerationStructureBuildRangeInfoKHR* buildRangeInfos[] = {&buildRangeInfo};
 
     cmdBuildAccelerationStructures(
-        cmd, 1, &buildInfo, buildRangeInfos
-    );
+        cmd, 1, &buildInfo, buildRangeInfos);
 
     // Make the TLAS visible to every shader stage that may trace it, including
     // the compute-based lightmap passes and the existing fragment RT path.
@@ -133,8 +127,8 @@ bool RayTracingScene::update(VkCommandBuffer cmd, scene::Node* node)
     memoryBarrier.srcStageMask = VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR;
     memoryBarrier.srcAccessMask = VK_ACCESS_2_ACCELERATION_STRUCTURE_WRITE_BIT_KHR;
     memoryBarrier.dstStageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT |
-                                VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT |
-                                VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR;
+                                 VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT |
+                                 VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR;
     memoryBarrier.dstAccessMask = VK_ACCESS_2_ACCELERATION_STRUCTURE_READ_BIT_KHR;
 
     VkDependencyInfo dependencyInfo = {};
@@ -149,8 +143,7 @@ bool RayTracingScene::update(VkCommandBuffer cmd, scene::Node* node)
     addressInfo.accelerationStructure = _tlas;
     _tlasDeviceAddress = getAccelerationStructureDeviceAddress(
         _engine->device().handle(),
-        &addressInfo
-    );
+        &addressInfo);
 
     return true;
 }
@@ -162,20 +155,22 @@ void RayTracingScene::cleanup()
         destroyAccelerationStructure(
             _engine->device().handle(),
             _tlas,
-            nullptr
-        );
+            nullptr);
     }
     _tlas = VK_NULL_HANDLE;
 
-    if (_tlasBuffer) {
+    if (_tlasBuffer)
+    {
         _tlasBuffer.reset();
     }
 
-    if (_instanceBuffer) {
+    if (_instanceBuffer)
+    {
         _instanceBuffer.reset();
     }
 
-    if (_scratchBuffer) {
+    if (_scratchBuffer)
+    {
         _scratchBuffer.reset();
     }
 

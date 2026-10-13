@@ -25,13 +25,13 @@ class ImportServer;
 class ImportSettings;
 
 class ImportSettingsWindow : public bg2e::ui::Window {
-public:
-    void init(ImportServer * server, ImportSettings * settings);
+  public:
+    void init(ImportServer* server, ImportSettings* settings);
 
-private:
+  private:
     void drawUI();
 
-    ImportServer * _server = nullptr;
-    ImportSettings * _settings = nullptr;
+    ImportServer* _server = nullptr;
+    ImportSettings* _settings = nullptr;
     std::string _portText;
 };

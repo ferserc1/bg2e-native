@@ -33,20 +33,20 @@ class CubeMap;
 // Configuration for a single CubemapRenderPass::render() invocation.
 struct CubemapRenderPassInfo {
     // Clear the color attachment of each face/mip before invoking the callback.
-    bool  clear      = true;
+    bool clear = true;
     Color clearColor = Color(0.0f, 0.0f, 0.0f, 1.0f);
 
     // Transition the cubemap image to ColorAttachment before rendering, and to
     // ShaderReadOnly after rendering. Disable either one when the caller wants
     // to manage transitions explicitly (e.g. when chaining several passes).
     bool transitionBefore = true;
-    bool transitionAfter  = true;
+    bool transitionAfter = true;
 
     // Perspective parameters used to build the per-face projection matrix.
     // The field of view is fixed at 90 degrees and the aspect ratio at 1.0,
     // as required to cover a single cubemap face.
     float nearPlane = 0.1f;
-    float farPlane  = 1000.0f;
+    float farPlane = 1000.0f;
 };
 
 // Low-level helper that encapsulates the repetitive pattern of rendering into
@@ -74,24 +74,22 @@ struct CubemapRenderPassInfo {
 // Image transitions (ColorAttachment before, ShaderReadOnly after) are issued
 // once around the whole iteration and can be toggled through the info struct.
 class BG2E_API CubemapRenderPass {
-public:
+  public:
     // Callback invoked once per cubemap face and mip level. The projection and
     // view matrices correspond to the current face and are ready to be uploaded
     // to the shader (push constants, uniform buffer, ...).
     using RenderFunction = std::function<void(
-        CommandBuffer*    cmd,
-        CubemapFace       face,
-        uint32_t          mipLevel,
-        const glm::mat4&  projection,
-        const glm::mat4&  view
-    )>;
+        CommandBuffer* cmd,
+        CubemapFace face,
+        uint32_t mipLevel,
+        const glm::mat4& projection,
+        const glm::mat4& view)>;
 
     static void render(
-        CommandBuffer*               cmd,
-        CubeMap*                     cubemap,
+        CommandBuffer* cmd,
+        CubeMap* cubemap,
         const CubemapRenderPassInfo& info,
-        const RenderFunction&        callback
-    );
+        const RenderFunction& callback);
 };
 
 }

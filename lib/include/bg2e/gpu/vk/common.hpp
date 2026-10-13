@@ -47,8 +47,8 @@
 #include <vma/vk_mem_alloc.h>
 
 namespace bg2e::gpu::vk {
-    VkFormat    toVkFormat(gpu::PixelFormat format);
-    gpu::PixelFormat fromVkFormat(VkFormat format);
+VkFormat toVkFormat(gpu::PixelFormat format);
+gpu::PixelFormat fromVkFormat(VkFormat format);
 }
 
 #ifdef BG2E_IS_MAC
@@ -58,13 +58,15 @@ namespace bg2e::gpu::vk {
 #pragma GCC diagnostic pop
 #endif
 
-#define VK_ASSERT(x)                                                                         \
-    do {                                                                                     \
-        VkResult err = x;                                                                    \
-        if (err) {                                                                           \
-            std::string errorString = std::string("Vulkan error: ") + string_VkResult(err);  \
-            std::cerr << errorString << std::endl;                                           \
-            throw std::runtime_error(errorString);                                           \
-        }                                                                                    \
-} while(0)
-
+#define VK_ASSERT(x)                                                                        \
+    do                                                                                      \
+    {                                                                                       \
+        VkResult err = x;                                                                   \
+        if (err)                                                                            \
+        {                                                                                   \
+            std::string errorString = std::string("Vulkan error: ") + string_VkResult(err); \
+            std::cerr << errorString << std::endl;                                          \
+            throw std::runtime_error(errorString);                                          \
+        }                                                                                   \
+    }                                                                                       \
+    while (0)

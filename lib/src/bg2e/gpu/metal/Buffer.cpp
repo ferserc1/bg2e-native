@@ -29,7 +29,8 @@ namespace metal {
 
 Buffer::Buffer(metal::Device* device, const std::string& debugName)
     : gpu::Buffer(device), _device(device), _debugName(debugName)
-{}
+{
+}
 
 Buffer::~Buffer()
 {
@@ -77,12 +78,13 @@ static void uploadBufferData(metal::Device* device, MTL::Buffer*& outBuffer,
         throw std::runtime_error("metal::Buffer: failed to allocate device-local buffer");
     }
 
-    device->immediateSubmit([&](gpu::CommandBuffer* cmd) {
-        MTL::CommandBuffer* mtlCmd = dynamic_cast<metal::CommandBuffer*>(cmd)->handle();
-        MTL::BlitCommandEncoder* blit = mtlCmd->blitCommandEncoder();
-        blit->copyFromBuffer(staging, 0, outBuffer, 0, byteSize);
-        blit->endEncoding();
-    });
+    device->immediateSubmit([&](gpu::CommandBuffer* cmd)
+                            {
+                                MTL::CommandBuffer* mtlCmd = dynamic_cast<metal::CommandBuffer*>(cmd)->handle();
+                                MTL::BlitCommandEncoder* blit = mtlCmd->blitCommandEncoder();
+                                blit->copyFromBuffer(staging, 0, outBuffer, 0, byteSize);
+                                blit->endEncoding();
+                            });
 
     staging->release();
 }
@@ -90,7 +92,7 @@ static void uploadBufferData(metal::Device* device, MTL::Buffer*& outBuffer,
 void Buffer::createVertexBuffer(const void* data, uint64_t byteSize)
 {
     uploadBufferData(_device, _buffer, data, byteSize);
-    _usage    = BufferUsage::Vertex;
+    _usage = BufferUsage::Vertex;
     _byteSize = byteSize;
 
     if (!_debugName.empty())
@@ -103,7 +105,7 @@ void Buffer::createIndexBuffer(const std::vector<uint32_t>& indices)
 {
     uint64_t byteSize = indices.size() * sizeof(uint32_t);
     uploadBufferData(_device, _buffer, indices.data(), byteSize);
-    _usage    = BufferUsage::Index;
+    _usage = BufferUsage::Index;
     _byteSize = byteSize;
 
     if (!_debugName.empty())
@@ -137,7 +139,7 @@ static void createSharedBuffer(metal::Device* device, MTL::Buffer*& outBuffer,
 void Buffer::createUniformBuffer(const void* data, uint64_t byteSize)
 {
     createSharedBuffer(_device, _buffer, data, byteSize);
-    _usage    = BufferUsage::Uniform;
+    _usage = BufferUsage::Uniform;
     _byteSize = byteSize;
 
     if (!_debugName.empty())
@@ -149,7 +151,7 @@ void Buffer::createUniformBuffer(const void* data, uint64_t byteSize)
 void Buffer::createStorageBuffer(const void* data, uint64_t byteSize)
 {
     createSharedBuffer(_device, _buffer, data, byteSize);
-    _usage    = BufferUsage::Storage;
+    _usage = BufferUsage::Storage;
     _byteSize = byteSize;
 
     if (!_debugName.empty())
@@ -186,9 +188,14 @@ void Buffer::updateStorageBuffer(const void* data, uint64_t byteSize)
 
 #else
 
-void Buffer::cleanup() {}
+void Buffer::cleanup()
+{
+}
 
-bool Buffer::isValid() const { return false; }
+bool Buffer::isValid() const
+{
+    return false;
+}
 
 void Buffer::createVertexBuffer(const void*, uint64_t)
 {

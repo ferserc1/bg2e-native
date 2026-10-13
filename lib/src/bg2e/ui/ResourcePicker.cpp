@@ -16,7 +16,7 @@
 #include <bg2e/ui/Text.hpp>
 #include <bg2e/ui/Value.hpp>
 
-#include "imgui.h"
+#include <imgui.h>
 
 #include <algorithm>
 #include <system_error>
@@ -25,7 +25,7 @@ namespace bg2e::ui {
 
 namespace {
 
-std::string extensionSpec(const std::vector<std::string> & extensions)
+std::string extensionSpec(const std::vector<std::string>& extensions)
 {
     std::string result;
     for (auto extension : extensions)
@@ -34,8 +34,14 @@ std::string extensionSpec(const std::vector<std::string> & extensions)
         {
             extension.erase(extension.begin());
         }
-        if (extension.empty()) continue;
-        if (!result.empty()) result += ',';
+        if (extension.empty())
+        {
+            continue;
+        }
+        if (!result.empty())
+        {
+            result += ',';
+        }
         result += extension;
     }
     return result.empty() ? "*" : result;
@@ -44,12 +50,15 @@ std::string extensionSpec(const std::vector<std::string> & extensions)
 } // anonymous namespace
 
 bool ResourcePicker::draw(
-    const std::string & label,
-    std::filesystem::path & value,
-    const reflection::PropertyMetadata & metadata,
-    bool readOnly
-) {
-    if (readOnly) Group::beginDisabled();
+    const std::string& label,
+    std::filesystem::path& value,
+    const reflection::PropertyMetadata& metadata,
+    bool readOnly)
+{
+    if (readOnly)
+    {
+        Group::beginDisabled();
+    }
 
     // The label goes in the header instead of on the left of the input.
     // The label parameter may carry a "##id" suffix: only the visible
@@ -64,8 +73,7 @@ bool ResourcePicker::draw(
     auto fileName = value.filename().string();
     const auto textCapacity = std::max(1024, static_cast<int>(fileName.size()) + 256);
     const auto browseWidth = static_cast<float>(
-        Layout::calcButtonWidth("Browse") + Layout::getItemHorizontalSpacing()
-    );
+        Layout::calcButtonWidth("Browse") + Layout::getItemHorizontalSpacing());
     ImGui::SetNextItemWidth(Layout::getContentRegionAvailWidth() - browseWidth);
     Value::text(label, fileName, true, textCapacity);
 
@@ -73,7 +81,7 @@ bool ResourcePicker::draw(
     {
         app::FileDialog dialog;
         const auto filterName = metadata.resourceKind.empty() ? "Resources" : metadata.resourceKind;
-        dialog.setFilters({ { filterName, extensionSpec(metadata.resourceExtensions) } });
+        dialog.setFilters({{filterName, extensionSpec(metadata.resourceExtensions)}});
         auto selected = dialog.openFile();
         if (!selected.empty())
         {
@@ -91,7 +99,10 @@ bool ResourcePicker::draw(
         }
     }
 
-    if (readOnly) Group::endDisabled();
+    if (readOnly)
+    {
+        Group::endDisabled();
+    }
     return changed && !readOnly;
 }
 

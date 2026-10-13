@@ -25,7 +25,7 @@
 
 namespace bg2e::render::deferred {
 
-DenoiseFilter::DenoiseFilter(Engine * engine)
+DenoiseFilter::DenoiseFilter(Engine* engine)
     : _engine{engine}
 {
 }
@@ -35,17 +35,18 @@ DenoiseFilter::~DenoiseFilter()
     cleanup();
 }
 
-void DenoiseFilter::build(const GBufferManager * gbuffer, VkExtent2D extent)
+void DenoiseFilter::build(const GBufferManager* gbuffer, VkExtent2D extent)
 {
     _extent = extent;
 
     vulkan::factory::Sampler samplerFactory(_engine);
     _sampler = samplerFactory.build();
 
-    _engine->cleanupManager().push([&](VkDevice dev) {
-        vkDestroySampler(dev, _sampler, nullptr);
-        _sampler = VK_NULL_HANDLE;
-    });
+    _engine->cleanupManager().push([&](VkDevice dev)
+                                   {
+                                       vkDestroySampler(dev, _sampler, nullptr);
+                                       _sampler = VK_NULL_HANDLE;
+                                   });
 
     createOutputImages(extent);
     createPipeline();
@@ -67,12 +68,10 @@ void DenoiseFilter::createOutputImages(VkExtent2D extent)
                 fmt,
                 extent,
                 VK_IMAGE_USAGE_STORAGE_BIT |
-                VK_IMAGE_USAGE_SAMPLED_BIT |
-                VK_IMAGE_USAGE_TRANSFER_DST_BIT,
+                    VK_IMAGE_USAGE_SAMPLED_BIT |
+                    VK_IMAGE_USAGE_TRANSFER_DST_BIT,
                 VK_IMAGE_ASPECT_COLOR_BIT,
-                1, false, 0, VK_SAMPLE_COUNT_1_BIT
-            )
-        );
+                1, false, 0, VK_SAMPLE_COUNT_1_BIT));
     }
 }
 
@@ -85,61 +84,59 @@ void DenoiseFilter::createPipeline()
     dsLayoutFactory.addBinding(3, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE);
     _dsLayout = dsLayoutFactory.build(
         _engine->device().handle(),
-        VK_SHADER_STAGE_COMPUTE_BIT
-    );
+        VK_SHADER_STAGE_COMPUTE_BIT);
 
     vulkan::factory::PipelineLayout layoutFactory(_engine);
     layoutFactory.addDescriptorSetLayout(_dsLayout);
     layoutFactory.addPushConstantRange(
         0,
         sizeof(DenoisePushConstants),
-        VK_SHADER_STAGE_COMPUTE_BIT
-    );
+        VK_SHADER_STAGE_COMPUTE_BIT);
     _pipelineLayout = layoutFactory.build("DenoiseFilter::PipelineLayout");
 
     vulkan::factory::ComputePipeline plFactory(_engine);
     plFactory.setShader(_isHDR ? "denoise_bilateral_hdr.comp.spv" : "denoise_bilateral.comp.spv");
     _pipeline = plFactory.build(_pipelineLayout, "DenoiseFilter::Pipeline");
 
-    _engine->cleanupManager().push([&](VkDevice dev) {
-        vkDestroyPipeline(dev, _pipeline, nullptr);
-        _pipeline = VK_NULL_HANDLE;
-        vkDestroyPipelineLayout(dev, _pipelineLayout, nullptr);
-        _pipelineLayout = VK_NULL_HANDLE;
-        vkDestroyDescriptorSetLayout(dev, _dsLayout, nullptr);
-        _dsLayout = VK_NULL_HANDLE;
-    });
+    _engine->cleanupManager().push([&](VkDevice dev)
+                                   {
+                                       vkDestroyPipeline(dev, _pipeline, nullptr);
+                                       _pipeline = VK_NULL_HANDLE;
+                                       vkDestroyPipelineLayout(dev, _pipelineLayout, nullptr);
+                                       _pipelineLayout = VK_NULL_HANDLE;
+                                       vkDestroyDescriptorSetLayout(dev, _dsLayout, nullptr);
+                                       _dsLayout = VK_NULL_HANDLE;
+                                   });
 }
 
 void DenoiseFilter::render(
     VkCommandBuffer cmd,
     uint32_t currentFrame,
-    vulkan::FrameResources & frameResources,
-    const GBufferManager * gbuffer,
-    const vulkan::Image * inputImage
-)
+    vulkan::FrameResources& frameResources,
+    const GBufferManager* gbuffer,
+    const vulkan::Image* inputImage)
 {
     auto outputImage = _outputImages[_engine->currentFrameResourcesIndex()];
 
     vulkan::Image::cmdTransitionImage(cmd, outputImage->handle(),
-        VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL);
+                                      VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL);
 
     auto ds = frameResources.newDescriptorSet(_dsLayout);
     ds->beginUpdate();
     ds->addImage(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-        inputImage, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _sampler);
+                 inputImage, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _sampler);
     ds->addImage(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-        gbuffer->image(1).get(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _sampler);
+                 gbuffer->image(1).get(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _sampler);
     ds->addImage(2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-        gbuffer->depthImage().get(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _sampler);
+                 gbuffer->depthImage().get(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _sampler);
     ds->addImage(3, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
-        outputImage.get(), VK_IMAGE_LAYOUT_GENERAL);
+                 outputImage.get(), VK_IMAGE_LAYOUT_GENERAL);
     ds->endUpdate();
 
     vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, _pipeline);
     VkDescriptorSet dsHandle = ds->descriptorSet();
     vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_COMPUTE,
-        _pipelineLayout, 0, 1, &dsHandle, 0, nullptr);
+                            _pipelineLayout, 0, 1, &dsHandle, 0, nullptr);
 
     DenoisePushConstants pc{};
     pc.outputSize = glm::vec2(static_cast<float>(_extent.width), static_cast<float>(_extent.height));
@@ -149,14 +146,14 @@ void DenoiseFilter::render(
     pc.depthSigma = _depthSigma;
     pc.normalSigma = _normalSigma;
     vkCmdPushConstants(cmd, _pipelineLayout,
-        VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(DenoisePushConstants), &pc);
+                       VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(DenoisePushConstants), &pc);
 
     uint32_t groupX = static_cast<uint32_t>(std::ceil(_extent.width / 8.0f));
     uint32_t groupY = static_cast<uint32_t>(std::ceil(_extent.height / 8.0f));
     vkCmdDispatch(cmd, groupX, groupY, 1);
 
     vulkan::Image::cmdTransitionImage(cmd, outputImage->handle(),
-        VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+                                      VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 }
 
 void DenoiseFilter::resize(VkExtent2D newExtent)
@@ -195,22 +192,55 @@ void DenoiseFilter::cleanupImages()
 {
     for (auto& img : _outputImages)
     {
-        if (img) img->cleanup();
+        if (img)
+        {
+            img->cleanup();
+        }
     }
     _outputImages.clear();
 }
 
-void DenoiseFilter::setKernelRadius(int radius) { _kernelRadius = radius; }
-void DenoiseFilter::setDepthThreshold(float threshold) { _depthThreshold = threshold; }
-void DenoiseFilter::setNormalThreshold(float threshold) { _normalThreshold = threshold; }
-void DenoiseFilter::setDepthSigma(float sigma) { _depthSigma = sigma; }
-void DenoiseFilter::setNormalSigma(float sigma) { _normalSigma = sigma; }
+void DenoiseFilter::setKernelRadius(int radius)
+{
+    _kernelRadius = radius;
+}
+void DenoiseFilter::setDepthThreshold(float threshold)
+{
+    _depthThreshold = threshold;
+}
+void DenoiseFilter::setNormalThreshold(float threshold)
+{
+    _normalThreshold = threshold;
+}
+void DenoiseFilter::setDepthSigma(float sigma)
+{
+    _depthSigma = sigma;
+}
+void DenoiseFilter::setNormalSigma(float sigma)
+{
+    _normalSigma = sigma;
+}
 
-int DenoiseFilter::kernelRadius() const { return _kernelRadius; }
-float DenoiseFilter::depthThreshold() const { return _depthThreshold; }
-float DenoiseFilter::normalThreshold() const { return _normalThreshold; }
-float DenoiseFilter::depthSigma() const { return _depthSigma; }
-float DenoiseFilter::normalSigma() const { return _normalSigma; }
+int DenoiseFilter::kernelRadius() const
+{
+    return _kernelRadius;
+}
+float DenoiseFilter::depthThreshold() const
+{
+    return _depthThreshold;
+}
+float DenoiseFilter::normalThreshold() const
+{
+    return _normalThreshold;
+}
+float DenoiseFilter::depthSigma() const
+{
+    return _depthSigma;
+}
+float DenoiseFilter::normalSigma() const
+{
+    return _normalSigma;
+}
 
 std::shared_ptr<vulkan::Image> DenoiseFilter::outputImage(uint32_t frameIndex) const
 {

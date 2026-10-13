@@ -35,7 +35,7 @@ namespace vk {
 class Image;
 
 class WindowSurface : public gpu::WindowSurface, public Surface {
-public:
+  public:
     void cleanup() override;
 
     uint32_t width() const override;
@@ -49,9 +49,9 @@ public:
     void resize(const Size2D& size) override;
     void releaseRenderTarget() override;
 
-    uint32_t    imageCount() const override;
-    uint32_t    inFlightFrames() const override;
-    uint32_t    currentFrameIndex() const override;
+    uint32_t imageCount() const override;
+    uint32_t inFlightFrames() const override;
+    uint32_t currentFrameIndex() const override;
     gpu::Image* colorImage(uint32_t index) const override;
     gpu::Image* depthImage() const override;
 
@@ -61,11 +61,11 @@ public:
 
     VkSwapchainKHR swapchain() const;
 
-protected:
+  protected:
     void create(gpu::Instance* instance) override;
     void createRenderTarget(gpu::Device* device, gpu::PhysicalDevice* physicalDevice) override;
 
-private:
+  private:
     VkSurfaceKHR _surface{VK_NULL_HANDLE};
     VkInstance _vkInstance{VK_NULL_HANDLE};
     SDL_Window* _window{nullptr};
@@ -78,11 +78,11 @@ private:
     // Number of frames that can be processed concurrently (always 2).
     // This is independent of the swapchain image count.
     uint32_t _framesInFlight = 0;
-    uint32_t _currentFrame   = 0;
+    uint32_t _currentFrame = 0;
 
     // Per frame-in-flight (indexed by _currentFrame).
     std::vector<VkSemaphore> _imageAvailable;
-    std::vector<VkFence>     _inFlight;
+    std::vector<VkFence> _inFlight;
     std::vector<std::shared_ptr<vk::SurfaceFrame>> _frames;
 
     // Per swapchain image (indexed by the acquired image index). renderFinished

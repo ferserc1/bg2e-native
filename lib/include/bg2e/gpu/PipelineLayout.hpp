@@ -40,8 +40,10 @@ namespace gpu {
 //        Fragment stage: metal index >= 1
 //        Compute stage:  metal index >= 1
 class BG2E_API PipelineLayout : public DeviceResource {
-public:
-    explicit PipelineLayout(Device* device) : DeviceResource(device) {}
+  public:
+    explicit PipelineLayout(Device* device) : DeviceResource(device)
+    {
+    }
     virtual ~PipelineLayout() = default;
 };
 

@@ -25,15 +25,13 @@
 #include <vector>
 #include <cstdint>
 
-namespace bg2e::app
-{
+namespace bg2e::app {
 
 class BG2E_API Shortcuts {
-public:
+  public:
     typedef std::function<void()> ShortcutHandler;
 
-    struct ShortcutData
-    {
+    struct ShortcutData {
         bool altModifier = false;
         bool ctrlModifier = false; // In Windows/Linux is better to use cmdOrCtrlModifier instead.
         bool shiftModifier = false;
@@ -46,16 +44,16 @@ public:
     void keyDown(const KeyEvent& evt);
     void keyUp(const KeyEvent& evt);
 
-    void addShortcutMapper(const ShortcutData & shortcut);
+    void addShortcutMapper(const ShortcutData& shortcut);
 
-protected:
+  protected:
     std::vector<ShortcutData> _shortcutData;
 
     bool _altModifier = false;
     bool _ctrlModifier = false;
     bool _shiftModifier = false;
 
-    bool matchShortcut(KeyEvent::Key currentKey, const ShortcutData & sc) const;
+    bool matchShortcut(KeyEvent::Key currentKey, const ShortcutData& sc) const;
 };
 
 }

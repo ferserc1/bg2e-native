@@ -23,45 +23,47 @@
 
 #ifdef BG2E_IS_MAC
 
-#include "Metal/Metal.hpp"
-#include "Foundation/Foundation.hpp"
-#include "QuartzCore/QuartzCore.hpp"
+#include <Metal/Metal.hpp>
+#include <Foundation/Foundation.hpp>
+#include <QuartzCore/QuartzCore.hpp>
 
 namespace bg2e::gpu::metal {
-    using DeviceHandle       = MTL::Device*;
-    using CommandQueueHandle = MTL::CommandQueue*;
-    using MetalLayerHandle   = CA::MetalLayer*;
-    using TextureHandle      = MTL::Texture*;
-    using SampleStateHandle  = MTL::SamplerState*;
-    using BufferHandle       = MTL::Buffer*;
-    using TextureUsageEnum   = MTL::TextureUsage;
+using DeviceHandle = MTL::Device*;
+using CommandQueueHandle = MTL::CommandQueue*;
+using MetalLayerHandle = CA::MetalLayer*;
+using TextureHandle = MTL::Texture*;
+using SampleStateHandle = MTL::SamplerState*;
+using BufferHandle = MTL::Buffer*;
+using TextureUsageEnum = MTL::TextureUsage;
 
-    MTL::PixelFormat toMetalPixelFormat(gpu::PixelFormat format);
-    gpu::PixelFormat fromMetalPixelFormat(MTL::PixelFormat format);
+MTL::PixelFormat toMetalPixelFormat(gpu::PixelFormat format);
+gpu::PixelFormat fromMetalPixelFormat(MTL::PixelFormat format);
 }
 
 #else
 
 namespace bg2e::gpu::metal {
-    struct DeviceOpaque;
-    using DeviceHandle = DeviceOpaque*;
+struct DeviceOpaque;
+using DeviceHandle = DeviceOpaque*;
 
-    struct CommandQueueOpaque;
-    using CommandQueueHandle = CommandQueueOpaque*;
+struct CommandQueueOpaque;
+using CommandQueueHandle = CommandQueueOpaque*;
 
-    struct MetalLayerOpaque;
-    using MetalLayerHandle = MetalLayerOpaque*;
+struct MetalLayerOpaque;
+using MetalLayerHandle = MetalLayerOpaque*;
 
-    struct TextureOpaque;
-    using TextureHandle = TextureOpaque*;
+struct TextureOpaque;
+using TextureHandle = TextureOpaque*;
 
-    struct SampleStateOpaque;
-    using SampleStateHandle = SampleStateOpaque*;
+struct SampleStateOpaque;
+using SampleStateHandle = SampleStateOpaque*;
 
-    struct BufferOpaque;
-    using BufferHandle = BufferOpaque*;
+struct BufferOpaque;
+using BufferHandle = BufferOpaque*;
 
-    enum class TextureUsageEnum : uint8_t {};
+enum class TextureUsageEnum : uint8_t
+{
+};
 }
 
 #endif

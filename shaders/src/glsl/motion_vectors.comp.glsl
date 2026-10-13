@@ -24,17 +24,21 @@
 layout(binding = 0) uniform sampler2D g_Depth;
 layout(binding = 1, rg16f) uniform image2D outMotionVectors;
 
-layout(push_constant) uniform PC {
-    mat4  currentInvViewProj;
-    mat4  prevViewProj;
-    vec2  renderSize;
-} pc;
+layout(push_constant) uniform PC
+{
+    mat4 currentInvViewProj;
+    mat4 prevViewProj;
+    vec2 renderSize;
+}
+pc;
 
 layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
 
-void main() {
+void main()
+{
     ivec2 pixelCoord = ivec2(gl_GlobalInvocationID.xy);
-    if (pixelCoord.x >= int(pc.renderSize.x) || pixelCoord.y >= int(pc.renderSize.y)) {
+    if (pixelCoord.x >= int(pc.renderSize.x) || pixelCoord.y >= int(pc.renderSize.y))
+    {
         return;
     }
 
@@ -42,7 +46,8 @@ void main() {
     float depth = texture(g_Depth, currentUV).r;
 
     // Sky / empty pixels have no meaningful motion
-    if (depth >= 1.0) {
+    if (depth >= 1.0)
+    {
         imageStore(outMotionVectors, pixelCoord, vec4(0.0));
         return;
     }
@@ -50,14 +55,15 @@ void main() {
     vec3 worldPos = reconstructWorldPosition(currentUV, depth, pc.currentInvViewProj);
 
     vec4 prevClip = pc.prevViewProj * vec4(worldPos, 1.0);
-    if (prevClip.w <= 0.0) {
+    if (prevClip.w <= 0.0)
+    {
         imageStore(outMotionVectors, pixelCoord, vec4(0.0));
         return;
     }
 
     // Convert previous clip position to UV (Vulkan Y-flip)
     vec2 prevNDC = prevClip.xy / prevClip.w;
-    vec2 prevUV  = vec2(prevNDC.x * 0.5 + 0.5, 0.5 - prevNDC.y * 0.5);
+    vec2 prevUV = vec2(prevNDC.x * 0.5 + 0.5, 0.5 - prevNDC.y * 0.5);
 
     // Pixel-space motion vector: where this pixel came from in the previous frame
     vec2 motionVec = (prevUV - currentUV) * pc.renderSize;

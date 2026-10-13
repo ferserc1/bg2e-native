@@ -25,7 +25,7 @@
 #include <bg2e/ui/Text.hpp>
 #include <bg2e/ui/Value.hpp>
 
-void ImportSettingsWindow::init(ImportServer * server, ImportSettings * settings)
+void ImportSettingsWindow::init(ImportServer* server, ImportSettings* settings)
 {
     _server = server;
     _settings = settings;
@@ -34,7 +34,10 @@ void ImportSettingsWindow::init(ImportServer * server, ImportSettings * settings
     setSize(320, 120);
     close();
 
-    setDrawFunction([this]() { drawUI(); });
+    setDrawFunction([this]()
+                    {
+                        drawUI();
+                    });
 }
 
 void ImportSettingsWindow::drawUI()
@@ -53,8 +56,7 @@ void ImportSettingsWindow::drawUI()
             {
                 bg2e::app::MessageBox::showError(
                     "Import Service",
-                    "Invalid port. Use a number between 1024 and 49151."
-                );
+                    "Invalid port. Use a number between 1024 and 49151.");
             }
             else
             {
@@ -63,8 +65,7 @@ void ImportSettingsWindow::drawUI()
                 {
                     bg2e::app::MessageBox::showError(
                         "Import Service",
-                        error + ". Try a different port."
-                    );
+                        error + ". Try a different port.");
                 }
                 else
                 {
@@ -86,8 +87,7 @@ void ImportSettingsWindow::drawUI()
     if (running)
     {
         bg2e::ui::Text::text(
-            "Listening on 127.0.0.1:" + std::to_string(_server->port())
-        );
+            "Listening on 127.0.0.1:" + std::to_string(_server->port()));
     }
     else
     {

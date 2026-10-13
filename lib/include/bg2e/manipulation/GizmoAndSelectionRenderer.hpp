@@ -32,51 +32,54 @@ namespace manipulation {
 class GizmoComponent;
 
 class BG2E_API GizmoAndSelectionRenderer : public bg2e::scene::NodeVisitor {
-public:
+  public:
     void init(
-        render::Engine * engine,
-        VkSampleCountFlagBits sampleCount
-    );
+        render::Engine* engine,
+        VkSampleCountFlagBits sampleCount);
 
     // renderExtent must be the extent of the actual render target (color/depth
     // image), not the swapchain extent: the deferred renderer rescales, so they
     // differ. It is used to clamp the transform gizmo depth clear to the render
     // area.
     void draw(
-        bg2e::scene::Node * sceneRoot,
-        const glm::mat4 & viewMatrix,
-        const glm::mat4 & projMatrix,
+        bg2e::scene::Node* sceneRoot,
+        const glm::mat4& viewMatrix,
+        const glm::mat4& projMatrix,
         VkCommandBuffer cmd,
-        const VkExtent2D & renderExtent
-    );
-    void visit(bg2e::scene::Node * node) override;
-    void didVisit(bg2e::scene::Node * node) override;
+        const VkExtent2D& renderExtent);
+    void visit(bg2e::scene::Node* node) override;
+    void didVisit(bg2e::scene::Node* node) override;
 
-    inline void setLineIntensity(float i) { _lineIntensity = i; }
-    inline float getLineIntensity() const { return _lineIntensity; }
+    inline void setLineIntensity(float i)
+    {
+        _lineIntensity = i;
+    }
+    inline float getLineIntensity() const
+    {
+        return _lineIntensity;
+    }
 
-protected:
-    render::Engine * _engine = nullptr;
+  protected:
+    render::Engine* _engine = nullptr;
 
     VkSampleCountFlagBits _sampleCount = VK_SAMPLE_COUNT_1_BIT;
 
-    glm::mat4 _viewProjectionMatrix { 1.0f };
-    glm::mat4 _currentTransform { 1.0f };
+    glm::mat4 _viewProjectionMatrix{1.0f};
+    glm::mat4 _currentTransform{1.0f};
     std::stack<glm::mat4> _transformStack;
 
     float _lineIntensity = 0.8f;
 
-    struct FrameData
-    {
+    struct FrameData {
         glm::mat4 mvp;
         glm::vec4 color;
     };
 
-    glm::mat4 _viewMatrix { 1.0f };
-    glm::mat4 _projMatrix { 1.0f };
+    glm::mat4 _viewMatrix{1.0f};
+    glm::mat4 _projMatrix{1.0f};
 
     // Extent of the current render target (not the swapchain). Set in draw().
-    VkExtent2D _renderExtent { 0, 0 };
+    VkExtent2D _renderExtent{0, 0};
 
     VkCommandBuffer _cmdBuffer = VK_NULL_HANDLE;
     VkPipeline _currentBoundPipeline = VK_NULL_HANDLE;
@@ -96,8 +99,8 @@ protected:
     // the last thing rendered (on top of every other gizmo) and self-occludes
     // via the opaque depth-tested pipeline. It is recorded during visit() and
     // flushed at the end of draw().
-    GizmoComponent * _pendingTransformGizmo = nullptr;
-    glm::mat4 _pendingTransformWorld { 1.0f };
+    GizmoComponent* _pendingTransformGizmo = nullptr;
+    glm::mat4 _pendingTransformWorld{1.0f};
 
     void createSelectionPipeline();
     void createGizmoPipeline();

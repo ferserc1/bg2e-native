@@ -27,18 +27,24 @@
 namespace bg2e {
 namespace gpu {
 
-enum class PrimitiveTopology { TriangleList, TriangleStrip, LineList, PointList };
+enum class PrimitiveTopology
+{
+    TriangleList,
+    TriangleStrip,
+    LineList,
+    PointList
+};
 
 struct GraphicsPipelineDescription {
-    gpu::ShaderModule*   vertexShader   = nullptr; // non-owning; caller must keep alive
-    gpu::ShaderModule*   fragmentShader = nullptr; // non-owning; caller must keep alive
-    gpu::PipelineLayout* layout         = nullptr; // non-owning; caller must keep alive
-    PrimitiveTopology    topology       = PrimitiveTopology::TriangleList;
-    PixelFormat          colorFormat    = PixelFormat::Undefined; // from surface frame
-    PixelFormat          depthFormat    = PixelFormat::Undefined; // Undefined => no depth
-    CullMode             cullMode       = CullMode::Back;
-    FrontFace            frontFace      = FrontFace::CounterClockwise;
-    std::string          debugName;    // Debug label for validation layers / Xcode GPU Capture
+    gpu::ShaderModule* vertexShader = nullptr;   // non-owning; caller must keep alive
+    gpu::ShaderModule* fragmentShader = nullptr; // non-owning; caller must keep alive
+    gpu::PipelineLayout* layout = nullptr;       // non-owning; caller must keep alive
+    PrimitiveTopology topology = PrimitiveTopology::TriangleList;
+    PixelFormat colorFormat = PixelFormat::Undefined; // from surface frame
+    PixelFormat depthFormat = PixelFormat::Undefined; // Undefined => no depth
+    CullMode cullMode = CullMode::Back;
+    FrontFace frontFace = FrontFace::CounterClockwise;
+    std::string debugName; // Debug label for validation layers / Xcode GPU Capture
 
     std::vector<VertexBufferDescription> vertexBufferDescriptions;
 
@@ -49,8 +55,10 @@ struct GraphicsPipelineDescription {
 };
 
 class BG2E_API GraphicsPipeline : public DeviceResource {
-public:
-    explicit GraphicsPipeline(Device* device) : DeviceResource(device) {}
+  public:
+    explicit GraphicsPipeline(Device* device) : DeviceResource(device)
+    {
+    }
     virtual ~GraphicsPipeline() = default;
 };
 

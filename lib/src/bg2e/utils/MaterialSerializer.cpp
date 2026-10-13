@@ -22,7 +22,7 @@
 
 namespace bg2e::utils {
 
-base::Texture * getTexture(const std::filesystem::path& basePath, const std::string& file)
+base::Texture* getTexture(const std::filesystem::path& basePath, const std::string& file)
 {
     auto fullPath = std::filesystem::path(basePath).append(file);
     auto texture = new base::Texture();
@@ -36,33 +36,71 @@ base::Texture * getTexture(const std::filesystem::path& basePath, const std::str
 bool parseMaterial(
     json::JsonNode* node,
     const std::filesystem::path& basePath,
-    base::MaterialAttributes& result
-)
+    base::MaterialAttributes& result)
 {
-    if (!node) return false;
+    if (!node)
+    {
+        return false;
+    }
     json::ObjectReader reader(*node);
-    if (!reader.isValid()) return false;
+    if (!reader.isValid())
+    {
+        return false;
+    }
 
-    if (auto value = reader.getString("name")) result.setName(*value);
-    if (auto value = reader.getString("groupName")) result.setGroupName(*value);
-    if (auto value = reader.getBool("isTransparent")) result.setIsTransparent(*value);
-    if (auto value = reader.getNumber("refractionFactor")) result.setRefractionFactor(*value);
-    if (auto value = reader.getNumber("alphaCutoff")) result.setAlphaCutoff(*value);
-    if (auto value = reader.getBool("isSolid")) result.setIsSolid(*value);
-    if (auto value = reader.getBool("visible")) result.setVisible(*value);
-    if (auto value = reader.getBool("isUnlit")) result.setIsUnlit(*value);
+    if (auto value = reader.getString("name"))
+    {
+        result.setName(*value);
+    }
+    if (auto value = reader.getString("groupName"))
+    {
+        result.setGroupName(*value);
+    }
+    if (auto value = reader.getBool("isTransparent"))
+    {
+        result.setIsTransparent(*value);
+    }
+    if (auto value = reader.getNumber("refractionFactor"))
+    {
+        result.setRefractionFactor(*value);
+    }
+    if (auto value = reader.getNumber("alphaCutoff"))
+    {
+        result.setAlphaCutoff(*value);
+    }
+    if (auto value = reader.getBool("isSolid"))
+    {
+        result.setIsSolid(*value);
+    }
+    if (auto value = reader.getBool("visible"))
+    {
+        result.setVisible(*value);
+    }
+    if (auto value = reader.getBool("isUnlit"))
+    {
+        result.setIsUnlit(*value);
+    }
 
-    if (auto value = reader.getVec4("albedo")) result.setAlbedo(*value);
-    else if (auto value = reader.getVec3("albedo")) result.setAlbedo(*value);
+    if (auto value = reader.getVec4("albedo"))
+    {
+        result.setAlbedo(*value);
+    }
+    else if (auto value = reader.getVec3("albedo"))
+    {
+        result.setAlbedo(*value);
+    }
 
-    const auto texture = [&](const char* key) -> base::Texture* {
+    const auto texture = [&](const char* key) -> base::Texture*
+    {
         auto file = reader.getString(key);
         return file ? getTexture(basePath, *file) : nullptr;
     };
-    const auto scale = [&](const char* key) {
+    const auto scale = [&](const char* key)
+    {
         return reader.getVec2(key).value_or(std::array<float, 2>{1.0f, 1.0f});
     };
-    const auto index = [&](const char* key, uint32_t fallback = 0) {
+    const auto index = [&](const char* key, uint32_t fallback = 0)
+    {
         return reader.getInteger<uint32_t>(key).value_or(fallback);
     };
 
@@ -72,7 +110,10 @@ bool parseMaterial(
         result.setAlbedoScale(scale("albedoScale"));
         result.setAlbedoUVSet(index("albedoUV"));
     }
-    if (auto value = reader.getNumber("metalness")) result.setMetalness(*value);
+    if (auto value = reader.getNumber("metalness"))
+    {
+        result.setMetalness(*value);
+    }
     if (auto value = texture("metalnessTexture"))
     {
         result.setMetalnessTexture(value);
@@ -80,7 +121,10 @@ bool parseMaterial(
         result.setMetalnessScale(scale("metalnessScale"));
         result.setMetalnessUVSet(index("metalnessUV"));
     }
-    if (auto value = reader.getNumber("roughness")) result.setRoughness(*value);
+    if (auto value = reader.getNumber("roughness"))
+    {
+        result.setRoughness(*value);
+    }
     if (auto value = texture("roughnessTexture"))
     {
         result.setRoughnessTexture(value);
@@ -94,9 +138,18 @@ bool parseMaterial(
         result.setNormalScale(scale("normalScale"));
         result.setNormalUVSet(index("normalUV"));
     }
-    if (auto value = reader.getColor("fresnelTint")) result.setFresnelTint(*value);
-    if (auto value = reader.getNumber("sheenIntensity")) result.setSheenIntensity(*value);
-    if (auto value = reader.getColor("sheenColor")) result.setSheenColor(*value);
+    if (auto value = reader.getColor("fresnelTint"))
+    {
+        result.setFresnelTint(*value);
+    }
+    if (auto value = reader.getNumber("sheenIntensity"))
+    {
+        result.setSheenIntensity(*value);
+    }
+    if (auto value = reader.getColor("sheenColor"))
+    {
+        result.setSheenColor(*value);
+    }
     if (auto value = texture("ambientOcclussion"))
     {
         result.setAoTexture(value);
@@ -104,31 +157,49 @@ bool parseMaterial(
         result.setAoChannel(index("ambientOcclussionChannel"));
         result.setAoUVSet(index("ambientOcclussionUV", 1));
     }
-    if (auto value = reader.getNumber("lightEmission")) result.setLightEmission(*value);
-    if (auto value = texture("lightEmissionTexture")) result.setLightEmissionTexture(value);
-    if (auto value = reader.getVec2("lightEmissionScale")) result.setLightEmissionScale(*value);
-    if (auto value = reader.getInteger<uint32_t>("lightEmissionChannel")) result.setLightEmissionChannel(*value);
-    if (auto value = reader.getBool("lightEmissionInvert")) result.setLightEmissionInvert(*value);
-    if (auto value = reader.getInteger<uint32_t>("lightEmissionUV")) result.setLightEmissionUVSet(*value);
+    if (auto value = reader.getNumber("lightEmission"))
+    {
+        result.setLightEmission(*value);
+    }
+    if (auto value = texture("lightEmissionTexture"))
+    {
+        result.setLightEmissionTexture(value);
+    }
+    if (auto value = reader.getVec2("lightEmissionScale"))
+    {
+        result.setLightEmissionScale(*value);
+    }
+    if (auto value = reader.getInteger<uint32_t>("lightEmissionChannel"))
+    {
+        result.setLightEmissionChannel(*value);
+    }
+    if (auto value = reader.getBool("lightEmissionInvert"))
+    {
+        result.setLightEmissionInvert(*value);
+    }
+    if (auto value = reader.getInteger<uint32_t>("lightEmissionUV"))
+    {
+        result.setLightEmissionUVSet(*value);
+    }
     return true;
 }
 
 bool MaterialSerializer::deserializeMaterial(
     const std::string& jsonString,
     const std::filesystem::path& basePath,
-    base::MaterialAttributes& result
-) {
+    base::MaterialAttributes& result)
+{
     json::JsonParser parser(jsonString);
     auto jsonData = parser.parse();
-    
+
     return parseMaterial(jsonData.get(), basePath, result);
 }
 
 bool MaterialSerializer::deserializeMaterialArray(
     const std::string& jsonString,
     const std::filesystem::path& basePath,
-    std::vector<base::MaterialAttributes>& result
-) {
+    std::vector<base::MaterialAttributes>& result)
+{
     // TODO: Maybe this can be set in other place
     json::JsonParser parser(jsonString);
     auto jsonData = parser.parse();
@@ -137,7 +208,7 @@ bool MaterialSerializer::deserializeMaterialArray(
     {
         return false;
     }
-    
+
     bool complete = true;
     for (std::size_t i = 0; i < reader.size(); ++i)
     {
@@ -154,25 +225,25 @@ bool MaterialSerializer::deserializeMaterialArray(
 
 std::string MaterialSerializer::serializeMaterial(
     base::MaterialAttributes& mat,
-    std::vector<std::shared_ptr<base::Texture>> & uniqueTextures,
-    bool relativePaths
-) {
+    std::vector<std::shared_ptr<base::Texture>>& uniqueTextures,
+    bool relativePaths)
+{
     using namespace bg2e::json;
-    
+
     auto matJson = JSON(JsonObject{
-        { "name", JSON(mat.name()) },
-        { "groupName", JSON(mat.groupName()) },
-        { "type", JSON("pbr") },
-        { "class", JSON("PBRMaterial") },
-        { "isTransparent", JSON(mat.isTransparent()) },
-        { "refractionFactor", JSON(mat.refractionFactor()) },
-        { "alphaCutoff", JSON(mat.alphaCutoff()) },
-        { "isSolid", JSON(mat.isSolid() )},
-        { "visible", JSON(mat.visible() )},
-        { "unlit", JSON(mat.isUnlit() )},
+        {"name", JSON(mat.name())},
+        {"groupName", JSON(mat.groupName())},
+        {"type", JSON("pbr")},
+        {"class", JSON("PBRMaterial")},
+        {"isTransparent", JSON(mat.isTransparent())},
+        {"refractionFactor", JSON(mat.refractionFactor())},
+        {"alphaCutoff", JSON(mat.alphaCutoff())},
+        {"isSolid", JSON(mat.isSolid())},
+        {"visible", JSON(mat.visible())},
+        {"unlit", JSON(mat.isUnlit())},
     });
-    auto & obj = matJson->objectValue();
-    
+    auto& obj = matJson->objectValue();
+
     if (mat.albedoTexture().get())
     {
         std::filesystem::path fileName = mat.albedoTexture()->imageFilePath();
@@ -185,9 +256,9 @@ std::string MaterialSerializer::serializeMaterial(
         obj["albedoScale"] = JSON(mat.albedoScale());
         obj["albedoUV"] = JSON(mat.albedoUVSet());
     }
-    
+
     obj["albedo"] = JSON(mat.albedo());
-    
+
     if (mat.metalnessTexture().get())
     {
         std::filesystem::path fileName = mat.metalnessTexture()->imageFilePath();
@@ -201,10 +272,9 @@ std::string MaterialSerializer::serializeMaterial(
         obj["metalnessScale"] = JSON(mat.metalnessScale());
         obj["metalnessUV"] = JSON(mat.metalnessUVSet());
     }
-    
+
     obj["metalness"] = JSON(mat.metalness());
-    
-    
+
     if (mat.roughnessTexture().get())
     {
         std::filesystem::path fileName = mat.roughnessTexture()->imageFilePath();
@@ -218,11 +288,9 @@ std::string MaterialSerializer::serializeMaterial(
         obj["roughnessScale"] = JSON(mat.roughnessScale());
         obj["roughnessUV"] = JSON(mat.roughnessUVSet());
     }
-    
-    
+
     obj["roughness"] = JSON(mat.roughness());
-    
-    
+
     if (mat.normalTexture().get())
     {
         std::filesystem::path fileName = mat.normalTexture()->imageFilePath();
@@ -235,12 +303,12 @@ std::string MaterialSerializer::serializeMaterial(
         obj["normalScale"] = JSON(mat.normalScale());
         obj["normalUV"] = JSON(mat.normalUVSet());
     }
-    
+
     obj["fresnelTint"] = JSON(mat.fresnelTint());
-    
+
     obj["sheenIntensity"] = JSON(mat.sheenIntensity());
     obj["sheenColor"] = JSON(mat.sheenColor());
-    
+
     if (mat.aoTexture().get())
     {
         std::filesystem::path fileName = mat.aoTexture()->imageFilePath();
@@ -254,7 +322,7 @@ std::string MaterialSerializer::serializeMaterial(
         obj["ambientOcclussionChannel"] = JSON(mat.aoChannel());
         obj["ambientOcclussionUV"] = JSON(mat.aoUVSet());
     }
-    
+
     obj["lightEmission"] = JSON(mat.lightEmission());
     obj["lightEmissionScale"] = JSON(mat.lightEmissionScale());
     obj["lightEmissionChannel"] = JSON(mat.lightEmissionChannel());
@@ -277,12 +345,12 @@ std::string MaterialSerializer::serializeMaterial(
 
 std::string MaterialSerializer::serializeMaterialArray(
     std::vector<base::MaterialAttributes>& mat,
-    std::vector<std::shared_ptr<base::Texture>> & uniqueTextures,
-    bool relativePaths
-) {
+    std::vector<std::shared_ptr<base::Texture>>& uniqueTextures,
+    bool relativePaths)
+{
     std::string result = "[";
     std::string sep = "";
-    for (auto & m : mat)
+    for (auto& m : mat)
     {
         result += sep + serializeMaterial(m, uniqueTextures, relativePaths);
         sep = ",";
@@ -292,22 +360,22 @@ std::string MaterialSerializer::serializeMaterialArray(
 
 void MaterialSerializer::addUniqueTexture(
     std::shared_ptr<base::Texture> tex,
-    std::vector<std::shared_ptr<base::Texture>>& textures
-) {
+    std::vector<std::shared_ptr<base::Texture>>& textures)
+{
     // Only add textures associated with a file
     if (tex->imageFilePath() == "")
     {
         return;
     }
-    
-    for (auto & t : textures)
+
+    for (auto& t : textures)
     {
         if (t->imageFilePath() == tex->imageFilePath())
         {
             return;
         }
     }
-    
+
     textures.push_back(tex);
 }
 

@@ -11,9 +11,9 @@ struct VertexOut {
 };
 
 struct LightUBO {
-    float4 lightPosition;   // xyz = world position
-    float4 lightColor;      // rgb = color, a = intensity
-    float4 ambient;         // rgb = ambient term
+    float4 lightPosition; // xyz = world position
+    float4 lightColor;    // rgb = color, a = intensity
+    float4 ambient;       // rgb = ambient term
 };
 
 // Buffer indices match ShaderBinding.metal:
@@ -25,18 +25,18 @@ fragment float4 fragMain(VertexOut in [[stage_in]],
 {
     float3 N = normalize(in.worldNormal);
 
-    float3 toLight  = light.lightPosition.xyz - in.worldPos;
-    float  distance = length(toLight);
+    float3 toLight = light.lightPosition.xyz - in.worldPos;
+    float distance = length(toLight);
     float3 lightDir = toLight / distance;
-    float  ndotl    = max(dot(N, lightDir), 0.0);
+    float ndotl = max(dot(N, lightDir), 0.0);
 
     // Cast a visibility ray from the shaded point toward the light.
     const float bias = 0.02;
     float shadow = 1.0;
 
     ray r;
-    r.origin       = in.worldPos + N * bias;
-    r.direction    = lightDir;
+    r.origin = in.worldPos + N * bias;
+    r.direction = lightDir;
     r.min_distance = bias;
     r.max_distance = distance - bias;
 

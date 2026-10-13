@@ -47,18 +47,22 @@ inline float rtaoResolutionScale(RTAOQuality quality)
 {
     switch (quality)
     {
-        case RTAOQuality::Ultra:  return 1.0f;
-        case RTAOQuality::High:   return 2.0f / 3.0f;
-        case RTAOQuality::Medium: return 0.5f;
-        case RTAOQuality::Low:    return 1.0f / 3.0f;
+    case RTAOQuality::Ultra:
+        return 1.0f;
+    case RTAOQuality::High:
+        return 2.0f / 3.0f;
+    case RTAOQuality::Medium:
+        return 0.5f;
+    case RTAOQuality::Low:
+        return 1.0f / 3.0f;
     }
 
     return 1.0f;
 }
 
 class BG2E_API RTAmbientOcclusion {
-public:
-    RTAmbientOcclusion(Engine * engine);
+  public:
+    RTAmbientOcclusion(Engine* engine);
     ~RTAmbientOcclusion();
 
     void build(VkExtent2D extent);
@@ -66,10 +70,9 @@ public:
     void render(
         VkCommandBuffer cmd,
         uint32_t currentFrame,
-        vulkan::FrameResources & frameResources,
-        const GBufferManager * gbuffer,
-        const glm::mat4 & inverseViewProjection
-    );
+        vulkan::FrameResources& frameResources,
+        const GBufferManager* gbuffer,
+        const glm::mat4& inverseViewProjection);
     void buildUv();
     void renderUv(
         VkCommandBuffer cmd,
@@ -80,8 +83,7 @@ public:
         const vulkan::rt::RayTracingScene& rayTracingScene,
         vulkan::Image& aoOutput,
         uint32_t samplesPerPixel,
-        float maxRayDistance
-    );
+        float maxRayDistance);
     void clearUvNeutral(VkCommandBuffer cmd, vulkan::Image& aoOutput);
     void cleanupUv();
     void cleanup();
@@ -111,13 +113,25 @@ public:
     void setAOBounceAttenuation(float attenuation);
     float aoBounceAttenuation() const;
 
-    void setBlueNoise(const BlueNoise* blueNoise) { _blueNoise = blueNoise; }
-    void setMaterialDataBinding(vulkan::rt::RTMaterialDataBinding* binding) { _materialDataBinding = binding; }
-    void setUseBlueNoise(bool use) { _useBlueNoise = use; }
-    bool useBlueNoise() const { return _useBlueNoise; }
+    void setBlueNoise(const BlueNoise* blueNoise)
+    {
+        _blueNoise = blueNoise;
+    }
+    void setMaterialDataBinding(vulkan::rt::RTMaterialDataBinding* binding)
+    {
+        _materialDataBinding = binding;
+    }
+    void setUseBlueNoise(bool use)
+    {
+        _useBlueNoise = use;
+    }
+    bool useBlueNoise() const
+    {
+        return _useBlueNoise;
+    }
 
-private:
-    Engine * _engine;
+  private:
+    Engine* _engine;
     VkExtent2D _extent;
     bool _rtSupported = false;
     RTAOQuality _quality = RTAOQuality::High;

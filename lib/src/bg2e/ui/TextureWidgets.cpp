@@ -23,13 +23,13 @@
 #include <bg2e/ui/Text.hpp>
 #include <bg2e/ui/Button.hpp>
 
-#include "imgui.h"
-#include "imgui_impl_vulkan.h"
+#include <imgui.h>
+#include <imgui_impl_vulkan.h>
 
 namespace bg2e::ui {
 
 TextureWidgets::TextureWidgets()
-    : _filePicker{ app::FileHistory::Image }
+    : _filePicker{app::FileHistory::Image}
 {
 }
 
@@ -37,7 +37,8 @@ void TextureWidgets::init(render::Engine* engine)
 {
     _engine = engine;
     _filePicker.setThumbnailProvider(
-        [this](const std::filesystem::path& path) -> FileHistoryWidget::TextureID {
+        [this](const std::filesystem::path& path) -> FileHistoryWidget::TextureID
+        {
             return thumbnailForPath(path);
         });
 }
@@ -53,8 +54,7 @@ void TextureWidgets::drawImage(uint32_t width, uint32_t height, bool sameLine)
         }
         ImGui::Image(
             reinterpret_cast<ImTextureID>(_textureDS),
-            ImVec2(static_cast<float>(width), static_cast<float>(height))
-        );
+            ImVec2(static_cast<float>(width), static_cast<float>(height)));
     }
 }
 
@@ -73,9 +73,8 @@ bool TextureWidgets::imageButton(const std::string& id, uint32_t width, uint32_t
                 ImVec2(static_cast<float>(width), static_cast<float>(height)),
                 ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f),
                 ImVec4(0.0f, 0.0f, 0.0f, 0.0f),
-                ImVec4(1.0f, 1.0f, 1.0f, 1.0f)
-            )
-        ) {
+                ImVec4(1.0f, 1.0f, 1.0f, 1.0f)))
+        {
             return true;
         }
     }
@@ -92,8 +91,8 @@ bool TextureWidgets::selectTexture(const std::string& label, std::function<std::
 
     if (picked)
     {
-        const auto & filePath = _filePicker.selectedPath();
-        base::Texture * texture = new base::Texture();
+        const auto& filePath = _filePicker.selectedPath();
+        base::Texture* texture = new base::Texture();
         texture->setImageFilePath(filePath.string());
         texture->setMagFilter(base::Texture::FilterLinear);
         texture->setMinFilter(base::Texture::FilterLinear);
@@ -102,17 +101,17 @@ bool TextureWidgets::selectTexture(const std::string& label, std::function<std::
         setDeferredTexture(tex);
     }
 
-    if (Button::button(label.starts_with("##") ? "Clear" + label : "Clear##" + label, true)) {
+    if (Button::button(label.starts_with("##") ? "Clear" + label : "Clear##" + label, true))
+    {
         auto tex = textureCallback(nullptr);
         setDeferredTexture(tex);
     }
-    
+
     if (!label.starts_with("##"))
     {
         Text::text(label, true);
     }
-    
-    
+
     return picked;
 }
 
@@ -169,21 +168,20 @@ void TextureWidgets::clearThumbnails()
     if (_engine != nullptr)
     {
         _engine->device().waitIdle();
-        for (const auto & [path, descriptorSet] : _thumbnailDS)
+        for (const auto& [path, descriptorSet] : _thumbnailDS)
         {
             ImGui_ImplVulkan_RemoveTexture(descriptorSet);
         }
     }
     _thumbnailDS.clear();
 }
-    
+
 void TextureWidgets::initDS()
 {
     _textureDS = ImGui_ImplVulkan_AddTexture(
         _texture->sampler(),
         _texture->image()->imageView(),
-        VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
-    );
+        VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 }
 
 void TextureWidgets::clearDS()
@@ -192,7 +190,7 @@ void TextureWidgets::clearDS()
     {
         // Wait until command queues are completed to release Vulkan resources
         _texture->engine()->device().waitIdle();
-        
+
         ImGui_ImplVulkan_RemoveTexture(_textureDS);
         _textureDS = VK_NULL_HANDLE;
     }
@@ -206,5 +204,5 @@ void TextureWidgets::updateDeferredTexture()
         _deferredTexture.reset();
     }
 }
-    
+
 }

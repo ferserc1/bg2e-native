@@ -12,7 +12,8 @@ layout(set = 0, binding = 3) uniform sampler2D uvWorldNormal;
 layout(set = 0, binding = 4) uniform samplerCube irradianceMap;
 layout(set = 0, binding = 5) uniform usampler2D uvValidMask;
 
-layout(push_constant) uniform PushConstant {
+layout(push_constant) uniform PushConstant
+{
     mat4 inverseViewProjection;
     vec3 cameraPosition;
     float rayBias;
@@ -25,15 +26,18 @@ layout(push_constant) uniform PushConstant {
     uint shadowSamples;
     uint useBlueNoise;
     uint useShadows;
-} pc;
+}
+pc;
 
-layout(location = 0) rayPayloadEXT GIPayload {
+layout(location = 0) rayPayloadEXT GIPayload
+{
     vec3 hitDirectLight;
     vec3 hitAlbedo;
     vec3 hitNormal;
     vec3 hitPosition;
     uint didHit;
-} payload;
+}
+payload;
 
 vec3 uvRandomHemisphereDirection(vec3 normal, inout uint seed)
 {
@@ -44,11 +48,10 @@ vec3 uvRandomHemisphereDirection(vec3 normal, inout uint seed)
     vec3 localDirection = vec3(
         radius * cos(phi),
         radius * sin(phi),
-        sqrt(max(0.0, 1.0 - u1))
-    );
+        sqrt(max(0.0, 1.0 - u1)));
     vec3 reference = abs(normal.z) < 0.999
-        ? vec3(0.0, 0.0, 1.0)
-        : vec3(0.0, 1.0, 0.0);
+                         ? vec3(0.0, 0.0, 1.0)
+                         : vec3(0.0, 1.0, 0.0);
     vec3 tangent = normalize(cross(reference, normal));
     vec3 bitangent = cross(normal, tangent);
     return normalize(mat3(tangent, bitangent, normal) * localDirection);
@@ -59,8 +62,7 @@ vec3 normalizeAgainstEnvironment(vec3 radiance, vec3 referenceIrradiance)
     return vec3(
         referenceIrradiance.r > 1.0e-5 ? max(radiance.r / referenceIrradiance.r, 0.0) : 0.0,
         referenceIrradiance.g > 1.0e-5 ? max(radiance.g / referenceIrradiance.g, 0.0) : 0.0,
-        referenceIrradiance.b > 1.0e-5 ? max(radiance.b / referenceIrradiance.b, 0.0) : 0.0
-    );
+        referenceIrradiance.b > 1.0e-5 ? max(radiance.b / referenceIrradiance.b, 0.0) : 0.0);
 }
 
 void main()
@@ -110,7 +112,7 @@ void main()
             payload.hitNormal = vec3(0.0, 1.0, 0.0);
             payload.hitPosition = vec3(0.0);
             traceRayEXT(tlas, gl_RayFlagsNoneEXT, 0xff, 0, 0, 0,
-                origin, 0.0001, rayDirection, pc.maxDistance, 0);
+                        origin, 0.0001, rayDirection, pc.maxDistance, 0);
 
             if (payload.didHit == 0u)
             {

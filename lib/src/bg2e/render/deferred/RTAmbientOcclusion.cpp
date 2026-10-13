@@ -32,7 +32,7 @@
 
 namespace bg2e::render::deferred {
 
-RTAmbientOcclusion::RTAmbientOcclusion(Engine * engine)
+RTAmbientOcclusion::RTAmbientOcclusion(Engine* engine)
     : _engine{engine}
 {
 }
@@ -49,10 +49,11 @@ void RTAmbientOcclusion::build(VkExtent2D extent)
     vulkan::factory::Sampler samplerFactory(_engine);
     _sampler = samplerFactory.build();
 
-    _engine->cleanupManager().push([&](VkDevice dev) {
-        vkDestroySampler(dev, _sampler, nullptr);
-        _sampler = VK_NULL_HANDLE;
-    });
+    _engine->cleanupManager().push([&](VkDevice dev)
+                                   {
+                                       vkDestroySampler(dev, _sampler, nullptr);
+                                       _sampler = VK_NULL_HANDLE;
+                                   });
 
     if (!_engine->rayTracingSupported())
     {
@@ -75,9 +76,7 @@ void RTAmbientOcclusion::createWhiteFallback()
         vulkan::Image::createAllocatedImage(
             _engine, "RT AO fallback", whiteData,
             VkExtent2D{4, 4}, 1, VK_FORMAT_R8_UNORM,
-            VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT
-        )
-    );
+            VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT));
 
     _aoImages.resize(_engine->numImages());
     for (auto& ao : _aoImages)
@@ -93,8 +92,7 @@ void RTAmbientOcclusion::createAOResources(VkExtent2D extent)
     float scale = rtaoResolutionScale(_quality);
     VkExtent2D scaledExtent = {
         static_cast<uint32_t>(std::round(extent.width * scale)),
-        static_cast<uint32_t>(std::round(extent.height * scale))
-    };
+        static_cast<uint32_t>(std::round(extent.height * scale))};
 
     _aoImages.resize(_engine->numImages());
     for (uint32_t i = 0; i < _aoImages.size(); i++)
@@ -106,12 +104,10 @@ void RTAmbientOcclusion::createAOResources(VkExtent2D extent)
                 VK_FORMAT_R8_UNORM,
                 scaledExtent,
                 VK_IMAGE_USAGE_STORAGE_BIT |
-                VK_IMAGE_USAGE_SAMPLED_BIT |
-                VK_IMAGE_USAGE_TRANSFER_DST_BIT,
+                    VK_IMAGE_USAGE_SAMPLED_BIT |
+                    VK_IMAGE_USAGE_TRANSFER_DST_BIT,
                 VK_IMAGE_ASPECT_COLOR_BIT,
-                1, false, 0, VK_SAMPLE_COUNT_1_BIT
-            )
-        );
+                1, false, 0, VK_SAMPLE_COUNT_1_BIT));
     }
 }
 
@@ -125,8 +121,7 @@ void RTAmbientOcclusion::createPipeline()
     dsLayoutFactory.addBinding(4, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
     _dsLayout = dsLayoutFactory.build(
         _engine->device().handle(),
-        VK_SHADER_STAGE_COMPUTE_BIT
-    );
+        VK_SHADER_STAGE_COMPUTE_BIT);
 
     vulkan::factory::PipelineLayout layoutFactory(_engine);
     layoutFactory.addDescriptorSetLayout(_dsLayout);
@@ -137,22 +132,22 @@ void RTAmbientOcclusion::createPipeline()
     layoutFactory.addPushConstantRange(
         0,
         sizeof(AOPushConstants),
-        VK_SHADER_STAGE_COMPUTE_BIT
-    );
+        VK_SHADER_STAGE_COMPUTE_BIT);
     _pipelineLayout = layoutFactory.build("RTAmbientOcclusion::PipelineLayout");
 
     vulkan::factory::ComputePipeline plFactory(_engine);
     plFactory.setShader("rt_ao.comp.spv");
     _pipeline = plFactory.build(_pipelineLayout, "RTAmbientOcclusion::Pipeline");
 
-    _engine->cleanupManager().push([&](VkDevice dev) {
-        vkDestroyPipeline(dev, _pipeline, nullptr);
-        _pipeline = VK_NULL_HANDLE;
-        vkDestroyPipelineLayout(dev, _pipelineLayout, nullptr);
-        _pipelineLayout = VK_NULL_HANDLE;
-        vkDestroyDescriptorSetLayout(dev, _dsLayout, nullptr);
-        _dsLayout = VK_NULL_HANDLE;
-    });
+    _engine->cleanupManager().push([&](VkDevice dev)
+                                   {
+                                       vkDestroyPipeline(dev, _pipeline, nullptr);
+                                       _pipeline = VK_NULL_HANDLE;
+                                       vkDestroyPipelineLayout(dev, _pipelineLayout, nullptr);
+                                       _pipelineLayout = VK_NULL_HANDLE;
+                                       vkDestroyDescriptorSetLayout(dev, _dsLayout, nullptr);
+                                       _dsLayout = VK_NULL_HANDLE;
+                                   });
 }
 
 void RTAmbientOcclusion::buildUv()
@@ -246,19 +241,19 @@ void RTAmbientOcclusion::renderUv(
         throw std::invalid_argument("RTAmbientOcclusion::renderUv requires a non-empty context-owned TLAS");
     }
     vulkan::Image::cmdTransitionImage(cmd, aoOutput.handle(),
-        VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL);
+                                      VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL);
 
     std::unique_ptr<vulkan::DescriptorSet> inputSet(descriptorAllocator.allocate(_uvDsLayout));
     inputSet->beginUpdate();
     inputSet->addImage(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-        uvSurface.image(0).get(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _uvSampler);
+                       uvSurface.image(0).get(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _uvSampler);
     inputSet->addImage(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-        uvSurface.image(1).get(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _uvSampler);
+                       uvSurface.image(1).get(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _uvSampler);
     inputSet->addImage(2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-        uvSurface.image(3).get(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _uvMaskSampler);
+                       uvSurface.image(3).get(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _uvMaskSampler);
     inputSet->addAccelerationStructure(3, rayTracingScene.tlas());
     inputSet->addImage(4, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
-        &aoOutput, VK_IMAGE_LAYOUT_GENERAL);
+                       &aoOutput, VK_IMAGE_LAYOUT_GENERAL);
     inputSet->endUpdate();
 
     const VkDescriptorSet inputSetHandle = inputSet->descriptorSet();
@@ -267,9 +262,9 @@ void RTAmbientOcclusion::renderUv(
 
     vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, _uvPipeline);
     vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_COMPUTE,
-        _uvPipelineLayout, 0, 1, &inputSetHandle, 0, nullptr);
+                            _uvPipelineLayout, 0, 1, &inputSetHandle, 0, nullptr);
     vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_COMPUTE,
-        _uvPipelineLayout, 1, 1, &materialSetHandle, 0, nullptr);
+                            _uvPipelineLayout, 1, 1, &materialSetHandle, 0, nullptr);
 
     UvAOPushConstants pushConstants{};
     pushConstants.sampleCount = static_cast<int>(samplesPerPixel);
@@ -278,13 +273,13 @@ void RTAmbientOcclusion::renderUv(
     pushConstants.falloff = _falloff;
     pushConstants.frameIndex = currentFrame;
     vkCmdPushConstants(cmd, _uvPipelineLayout, VK_SHADER_STAGE_COMPUTE_BIT,
-        0, sizeof(UvAOPushConstants), &pushConstants);
+                       0, sizeof(UvAOPushConstants), &pushConstants);
 
     const VkExtent2D extent = aoOutput.extent2D();
     vkCmdDispatch(cmd, (extent.width + 7) / 8, (extent.height + 7) / 8, 1);
 
     vulkan::Image::cmdTransitionImage(cmd, aoOutput.handle(),
-        VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+                                      VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 }
 
 void RTAmbientOcclusion::cleanupUv()
@@ -319,21 +314,20 @@ void RTAmbientOcclusion::cleanupUv()
 void RTAmbientOcclusion::clearUvNeutral(VkCommandBuffer cmd, vulkan::Image& aoOutput)
 {
     vulkan::Image::cmdTransitionImage(cmd, aoOutput.handle(),
-        VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL);
+                                      VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL);
     VkClearColorValue clearWhite{{1.0f, 0.0f, 0.0f, 0.0f}};
     const VkImageSubresourceRange range = vulkan::Image::subresourceRange(VK_IMAGE_ASPECT_COLOR_BIT);
     vkCmdClearColorImage(cmd, aoOutput.handle(), VK_IMAGE_LAYOUT_GENERAL, &clearWhite, 1, &range);
     vulkan::Image::cmdTransitionImage(cmd, aoOutput.handle(),
-        VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+                                      VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 }
 
 void RTAmbientOcclusion::render(
     VkCommandBuffer cmd,
     uint32_t currentFrame,
-    vulkan::FrameResources & frameResources,
-    const GBufferManager * gbuffer,
-    const glm::mat4 & inverseViewProjection
-)
+    vulkan::FrameResources& frameResources,
+    const GBufferManager* gbuffer,
+    const glm::mat4& inverseViewProjection)
 {
     if (!_rtSupported)
     {
@@ -346,47 +340,47 @@ void RTAmbientOcclusion::render(
     if (tlas == VK_NULL_HANDLE)
     {
         vulkan::Image::cmdTransitionImage(cmd, aoImage->handle(),
-            VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL);
+                                          VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL);
 
         VkClearColorValue clearWhite{{1.0f, 0.0f, 0.0f, 0.0f}};
         VkImageSubresourceRange range = vulkan::Image::subresourceRange(VK_IMAGE_ASPECT_COLOR_BIT);
         vkCmdClearColorImage(cmd, aoImage->handle(), VK_IMAGE_LAYOUT_GENERAL, &clearWhite, 1, &range);
 
         vulkan::Image::cmdTransitionImage(cmd, aoImage->handle(),
-            VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+                                          VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
         return;
     }
 
     vulkan::Image::cmdTransitionImage(cmd, aoImage->handle(),
-        VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL);
+                                      VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL);
 
     auto ds = frameResources.newDescriptorSet(_dsLayout);
     ds->beginUpdate();
     ds->addImage(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-        gbuffer->image(1).get(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _sampler);
+                 gbuffer->image(1).get(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _sampler);
     ds->addImage(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-        gbuffer->depthImage().get(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _sampler);
+                 gbuffer->depthImage().get(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _sampler);
     ds->addAccelerationStructure(2, tlas);
     ds->addImage(3, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
-        aoImage.get(), VK_IMAGE_LAYOUT_GENERAL);
+                 aoImage.get(), VK_IMAGE_LAYOUT_GENERAL);
     if (_blueNoise)
     {
         ds->addImage(4, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-            _blueNoise->imageView(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _blueNoise->sampler());
+                     _blueNoise->imageView(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _blueNoise->sampler());
     }
     ds->endUpdate();
 
     vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, _pipeline);
     VkDescriptorSet dsHandle = ds->descriptorSet();
     vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_COMPUTE,
-        _pipelineLayout, 0, 1, &dsHandle, 0, nullptr);
+                            _pipelineLayout, 0, 1, &dsHandle, 0, nullptr);
 
     if (_materialDataBinding)
     {
         const auto& objectInstances = frameResources.rayTracingScene->objectInstances();
         auto matDS = _materialDataBinding->newDescriptorSet(frameResources, objectInstances);
         vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_COMPUTE,
-            _pipelineLayout, 1, 1, &matDS, 0, nullptr);
+                                _pipelineLayout, 1, 1, &matDS, 0, nullptr);
     }
 
     AOPushConstants pc{};
@@ -400,7 +394,7 @@ void RTAmbientOcclusion::render(
     pc.frameIndex = currentFrame;
     pc.useBlueNoise = (_useBlueNoise && _blueNoise) ? 1u : 0u;
     vkCmdPushConstants(cmd, _pipelineLayout,
-        VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(AOPushConstants), &pc);
+                       VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(AOPushConstants), &pc);
 
     float scale = rtaoResolutionScale(_quality);
     uint32_t scaledWidth = static_cast<uint32_t>(std::round(_extent.width * scale));
@@ -410,7 +404,7 @@ void RTAmbientOcclusion::render(
     vkCmdDispatch(cmd, groupX, groupY, 1);
 
     vulkan::Image::cmdTransitionImage(cmd, aoImage->handle(),
-        VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+                                      VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 }
 
 void RTAmbientOcclusion::setQuality(RTAOQuality quality)
@@ -518,7 +512,10 @@ void RTAmbientOcclusion::cleanupImages()
     {
         for (auto& img : _aoImages)
         {
-            if (img) img->cleanup();
+            if (img)
+            {
+                img->cleanup();
+            }
         }
     }
     _aoImages.clear();

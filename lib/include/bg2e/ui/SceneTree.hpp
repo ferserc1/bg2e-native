@@ -25,10 +25,10 @@
 
 namespace bg2e {
 namespace scene {
-    class Node;
+class Node;
 }
 namespace manipulation {
-    class SelectionManager;
+class SelectionManager;
 }
 namespace ui {
 
@@ -37,33 +37,48 @@ namespace ui {
 // set, the tree is read-only: it displays the hierarchy but clicks do not
 // change any selection and no row is highlighted.
 class BG2E_API SceneTree {
-public:
-    void setRootNode(scene::Node * root) { _root = root; }
-    scene::Node * rootNode() const { return _root; }
+  public:
+    void setRootNode(scene::Node* root)
+    {
+        _root = root;
+    }
+    scene::Node* rootNode() const
+    {
+        return _root;
+    }
 
-    void setSelectionManager(manipulation::SelectionManager * selectionManager) { _selectionManager = selectionManager; }
-    manipulation::SelectionManager * selectionManager() const { return _selectionManager; }
+    void setSelectionManager(manipulation::SelectionManager* selectionManager)
+    {
+        _selectionManager = selectionManager;
+    }
+    manipulation::SelectionManager* selectionManager() const
+    {
+        return _selectionManager;
+    }
 
     void draw();
 
     // Called after a drag & drop reparent operation modifies the hierarchy.
     using ChangedCallback = std::function<void()>;
-    void onChanged(ChangedCallback cb) { _onChanged = std::move(cb); }
+    void onChanged(ChangedCallback cb)
+    {
+        _onChanged = std::move(cb);
+    }
 
-protected:
-    scene::Node * _root = nullptr;
-    manipulation::SelectionManager * _selectionManager = nullptr;
+  protected:
+    scene::Node* _root = nullptr;
+    manipulation::SelectionManager* _selectionManager = nullptr;
 
     ChangedCallback _onChanged;
 
-    void drawNode(scene::Node * node);
-    void handleClick(scene::Node * node);
-    void handleDragSource(scene::Node * node);
-    void handleDropTarget(scene::Node * target);
-    void reparentNode(scene::Node * node, scene::Node * newParent);
+    void drawNode(scene::Node* node);
+    void handleClick(scene::Node* node);
+    void handleDragSource(scene::Node* node);
+    void handleDropTarget(scene::Node* target);
+    void reparentNode(scene::Node* node, scene::Node* newParent);
     void notifyChanged() const;
 
-    static bool isAncestor(scene::Node * ancestor, scene::Node * node);
+    static bool isAncestor(scene::Node* ancestor, scene::Node* node);
 };
 
 }

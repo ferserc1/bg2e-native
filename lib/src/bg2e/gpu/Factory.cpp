@@ -31,9 +31,14 @@ std::mutex backendMutex;
 
 std::shared_ptr<Backend> makeBackend(BackendType type)
 {
-    if (type == BackendType::Vulkan) return std::make_shared<vk::Backend>();
+    if (type == BackendType::Vulkan)
+    {
+        return std::make_shared<vk::Backend>();
+    }
     if (type == BackendType::Metal && base::PlatformTools::currentPlatform() == base::Platform::macOS)
+    {
         return std::make_shared<metal::Backend>();
+    }
     throw std::runtime_error("Could not create backend. Maybe the specified backend is not available.");
 }
 }
@@ -44,14 +49,19 @@ void Factory::init(BackendType type)
 {
     std::lock_guard<std::mutex> lock(backendMutex);
     if (_backend && _backend.use_count() > 1)
+    {
         throw std::logic_error("Cannot replace the GPU backend while it is retained by an active execution or engine.");
+    }
     _backend = makeBackend(type);
 }
 
 Backend* Factory::backend()
 {
     std::lock_guard<std::mutex> lock(backendMutex);
-    if (!_backend) throw std::runtime_error("Backend not initialized");
+    if (!_backend)
+    {
+        throw std::runtime_error("Backend not initialized");
+    }
     return _backend.get();
 }
 
@@ -59,7 +69,9 @@ std::shared_ptr<Backend> Factory::acquireBackend(BackendType type)
 {
     std::lock_guard<std::mutex> lock(backendMutex);
     if (_backend && _backend.use_count() > 1)
+    {
         throw std::logic_error("Cannot prepare a GPU backend while another execution or engine retains it.");
+    }
     _backend = makeBackend(type);
     return _backend;
 }

@@ -35,7 +35,7 @@ namespace deferred {
 // buffer plus the current and previous frame camera matrices.  Output is a
 // per-frame RG16F image at render resolution suitable for FSR3 upscaling.
 class BG2E_API MotionVectorGenerator {
-public:
+  public:
     explicit MotionVectorGenerator(Engine* engine);
     ~MotionVectorGenerator();
 
@@ -53,12 +53,11 @@ public:
         uint32_t frameIndex,
         const vulkan::Image* depthImage,
         const glm::mat4& currentInvViewProj,
-        const glm::mat4& prevViewProj
-    );
+        const glm::mat4& prevViewProj);
 
     void cleanup();
 
-private:
+  private:
     struct FrameData {
         std::unique_ptr<vulkan::Image> motionVectors;
     };
@@ -69,15 +68,15 @@ private:
         glm::vec2 renderSize;
     };
 
-    Engine*    _engine  = nullptr;
-    VkExtent2D _extent  = {};
+    Engine* _engine = nullptr;
+    VkExtent2D _extent = {};
 
-    VkPipeline            _pipeline       = VK_NULL_HANDLE;
-    VkPipelineLayout      _pipelineLayout = VK_NULL_HANDLE;
-    VkDescriptorSetLayout _dsLayout       = VK_NULL_HANDLE;
-    VkSampler             _sampler        = VK_NULL_HANDLE;
+    VkPipeline _pipeline = VK_NULL_HANDLE;
+    VkPipelineLayout _pipelineLayout = VK_NULL_HANDLE;
+    VkDescriptorSetLayout _dsLayout = VK_NULL_HANDLE;
+    VkSampler _sampler = VK_NULL_HANDLE;
 
-    std::vector<FrameData>                    _frames;
+    std::vector<FrameData> _frames;
     std::vector<vulkan::DescriptorSetAllocator*> _descriptorAllocators;
 
     void createPipeline();

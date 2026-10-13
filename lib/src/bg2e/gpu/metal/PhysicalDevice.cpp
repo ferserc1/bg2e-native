@@ -55,8 +55,7 @@ void PhysicalDevice::choose(gpu::Instance& /*instance*/, gpu::Surface& /*surface
 
         props->name = mtlDevice->name()->utf8String();
         props->totalHeapMemoryMB = static_cast<size_t>(
-            mtlDevice->recommendedMaxWorkingSetSize() / (1024ULL * 1024ULL)
-        );
+            mtlDevice->recommendedMaxWorkingSetSize() / (1024ULL * 1024ULL));
 
         if (mtlDevice->isRemovable())
         {
@@ -73,11 +72,11 @@ void PhysicalDevice::choose(gpu::Instance& /*instance*/, gpu::Surface& /*surface
 
         if (mtlDevice->supportsRaytracing())
         {
-            props->rayTracing.available            = true;
-            props->rayTracing.rayTracingPipeline   = true;
-            props->rayTracing.rayQuery             = true;
+            props->rayTracing.available = true;
+            props->rayTracing.rayTracingPipeline = true;
+            props->rayTracing.rayQuery = true;
             props->rayTracing.accelerationStructure = true;
-            props->rayTracing.bufferDeviceAddress  = true;
+            props->rayTracing.bufferDeviceAddress = true;
         }
 
         if (bestDevice == nullptr || props->getScore() > bestProps->getScore())
@@ -113,14 +112,19 @@ const std::shared_ptr<PhysicalDeviceProperties> PhysicalDevice::properties() con
 
 #else
 
-PhysicalDevice::~PhysicalDevice() {}
+PhysicalDevice::~PhysicalDevice()
+{
+}
 
 void PhysicalDevice::choose(gpu::Instance&, gpu::Surface&)
 {
     throw std::runtime_error("Metal backend is not available on this platform");
 }
 
-bool PhysicalDevice::isValid() const { return false; }
+bool PhysicalDevice::isValid() const
+{
+    return false;
+}
 
 const std::shared_ptr<PhysicalDeviceProperties> PhysicalDevice::properties() const
 {

@@ -29,9 +29,14 @@ namespace vk {
 class Device;
 
 class Image : public gpu::Image {
-public:
-    explicit Image(gpu::Device* device = nullptr) : gpu::Image(device) {}
-    ~Image() override { cleanup(); }
+  public:
+    explicit Image(gpu::Device* device = nullptr) : gpu::Image(device)
+    {
+    }
+    ~Image() override
+    {
+        cleanup();
+    }
 
     Image(const Image&) = delete;
     Image& operator=(const Image&) = delete;
@@ -42,17 +47,32 @@ public:
     void resize(const Size2D& size);
 
     void cleanup() override;
-    bool isValid() const override { return _image != VK_NULL_HANDLE; }
+    bool isValid() const override
+    {
+        return _image != VK_NULL_HANDLE;
+    }
 
     // Backend dependent functions
     void initFromSwapchainImage(vk::Device* device, VkImage image, PixelFormat format, const Size2D& size);
 
-    VkImage          handle()                     const { return _image; }
-    VkImageView      imageView()                  const { return _imageView; }
-    VkFormat         vkFormat()                   const { return _vkFormat; }
-    VkImageAspectFlags aspect()                   const { return _aspect; }
+    VkImage handle() const
+    {
+        return _image;
+    }
+    VkImageView imageView() const
+    {
+        return _imageView;
+    }
+    VkFormat vkFormat() const
+    {
+        return _vkFormat;
+    }
+    VkImageAspectFlags aspect() const
+    {
+        return _aspect;
+    }
 
-    VkImageView      cubemapFaceMipView(uint32_t face, uint32_t mipLevel) const;
+    VkImageView cubemapFaceMipView(uint32_t face, uint32_t mipLevel) const;
 
     void readPixelsRGBA8(std::vector<uint8_t>& outData, ImageLayout currentLayout = ImageLayout::ColorAttachment) override;
     void uploadRGBA8(const void* pixels, const Size2D& size) override;
@@ -64,22 +84,21 @@ public:
         PixelFormat format,
         VkImageUsageFlags usage,
         uint32_t mipLevels,
-        const std::string& debugName = {}
-    );
+        const std::string& debugName = {});
 
-private:
+  private:
     void createView();
     void createCubemapView();
 
-    vk::Device*   _device              = nullptr;
-    VkImage       _image      = VK_NULL_HANDLE;
-    VkImageView   _imageView  = VK_NULL_HANDLE;
+    vk::Device* _device = nullptr;
+    VkImage _image = VK_NULL_HANDLE;
+    VkImageView _imageView = VK_NULL_HANDLE;
     VmaAllocation _allocation = VK_NULL_HANDLE;
-    VkFormat      _vkFormat   = VK_FORMAT_UNDEFINED;
+    VkFormat _vkFormat = VK_FORMAT_UNDEFINED;
     VkImageAspectFlags _aspect = VK_IMAGE_ASPECT_COLOR_BIT;
-    bool          _ownsImage  = false;
-    VkImageUsageFlags _usage            = 0;
-    std::string       _debugName;
+    bool _ownsImage = false;
+    VkImageUsageFlags _usage = 0;
+    std::string _debugName;
     std::vector<VkImageView> _cubemapFaceMipViews;
 };
 

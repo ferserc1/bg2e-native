@@ -31,14 +31,17 @@ class Device;
 class Image;
 
 class Surface : public virtual gpu::Surface {
-protected:
-    vk::Device* vkDevice() const { return _vkDevice; }
+  protected:
+    vk::Device* vkDevice() const
+    {
+        return _vkDevice;
+    }
 
     void createDepthTarget(const Size2D& size, PixelFormat format);
     void resizeDepthTarget(const Size2D& size);
     void releaseDepthTarget();
 
-    vk::Device*                _vkDevice = nullptr;
+    vk::Device* _vkDevice = nullptr;
     std::unique_ptr<vk::Image> _depthImage;
 };
 

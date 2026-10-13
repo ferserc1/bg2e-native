@@ -32,27 +32,42 @@ namespace gpu {
 class Device;
 
 class BG2E_API CubeMap : public DeviceResource {
-public:
+  public:
     explicit CubeMap(Device* device);
     virtual ~CubeMap() = default;
 
     void create(const CubeMapDescription& description);
 
-    Image*       image()       { return _image.get(); }
-    const Image* image() const { return _image.get(); }
+    Image* image()
+    {
+        return _image.get();
+    }
+    const Image* image() const
+    {
+        return _image.get();
+    }
 
-    uint32_t    size()       const { return _size; }
-    uint32_t    mipLevels()  const { return _mipLevels; }
-    PixelFormat pixelFormat() const { return _format; }
+    uint32_t size() const
+    {
+        return _size;
+    }
+    uint32_t mipLevels() const
+    {
+        return _mipLevels;
+    }
+    PixelFormat pixelFormat() const
+    {
+        return _format;
+    }
 
     bool isValid() const override;
     void cleanup() override;
 
-protected:
+  protected:
     std::shared_ptr<gpu::Image> _image;
-    uint32_t    _size      = 0;
-    uint32_t    _mipLevels = 1;
-    PixelFormat _format    = PixelFormat::Undefined;
+    uint32_t _size = 0;
+    uint32_t _mipLevels = 1;
+    PixelFormat _format = PixelFormat::Undefined;
 };
 
 }

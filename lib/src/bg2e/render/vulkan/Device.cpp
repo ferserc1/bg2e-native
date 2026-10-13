@@ -46,8 +46,7 @@ void Device::create(VkInstance instance, const PhysicalDevice& physicalDevice, b
 
     std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
     std::set<uint32_t> uniqueQueueFamilies = {
-        graphicsFamily
-    };
+        graphicsFamily};
 
     if (!offscreen)
     {
@@ -86,7 +85,6 @@ void Device::create(VkInstance instance, const PhysicalDevice& physicalDevice, b
     VkPhysicalDeviceRayTracingPipelineFeaturesKHR rayTracingPipelineFeatures{};
     rayTracingPipelineFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_FEATURES_KHR;
     rayTracingPipelineFeatures.pNext = &rayQueryFeatures;
-
 
     VkPhysicalDeviceVulkan12Features vulkan12Features{};
     vulkan12Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
@@ -137,8 +135,7 @@ void Device::create(VkInstance instance, const PhysicalDevice& physicalDevice, b
             VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME,
             VK_KHR_RAY_QUERY_EXTENSION_NAME,
             VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME,
-            VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME
-        };
+            VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME};
 
         uint32_t extensionCount = 0;
         vkEnumerateDeviceExtensionProperties(physicalDevice.handle(), nullptr, &extensionCount, nullptr);
@@ -217,7 +214,8 @@ void Device::create(VkInstance instance, const PhysicalDevice& physicalDevice, b
 
 void Device::cleanup()
 {
-    if (_device != VK_NULL_HANDLE) {
+    if (_device != VK_NULL_HANDLE)
+    {
         vkDestroyDevice(_device, nullptr);
     }
 }

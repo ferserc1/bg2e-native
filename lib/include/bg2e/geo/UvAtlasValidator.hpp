@@ -43,17 +43,16 @@ enum class UvAtlasError
     OverlappingTriangles
 };
 
-struct UvAtlasValidation
-{
+struct UvAtlasValidation {
     bool valid = false;
     UvAtlasError error = UvAtlasError::None;
     std::string message;
-    uint32_t submeshIndex = 0;   // Submesh related to the error (lowest one for overlaps)
-    uint32_t triangleIndex = 0;  // Triangle index within the submesh
-    uint32_t vertexIndex = 0;    // Vertex index for coordinate errors
-    uint32_t triangleCount = 0;  // Total validated triangles
-    float mappedArea = 0.0f;     // Sum of absolute UV triangle areas; may exceed 1 when triangles overlap
-    float coverage = 0.0f;       // Unique fraction of the unit square covered by the UV map
+    uint32_t submeshIndex = 0;  // Submesh related to the error (lowest one for overlaps)
+    uint32_t triangleIndex = 0; // Triangle index within the submesh
+    uint32_t vertexIndex = 0;   // Vertex index for coordinate errors
+    uint32_t triangleCount = 0; // Total validated triangles
+    float mappedArea = 0.0f;    // Sum of absolute UV triangle areas; may exceed 1 when triangles overlap
+    float coverage = 0.0f;      // Unique fraction of the unit square covered by the UV map
 };
 
 // Usable-atlas test for a standard mesh UV set (0 = UV1 / texCoord0,
@@ -64,10 +63,9 @@ struct UvAtlasValidation
 // Shared edges and vertices are allowed.
 // A UV1 copy already satisfying every atlas rule is a valid atlas;
 // coordinate equality with another UV set is never used to infer provenance.
-class BG2E_API UvAtlasValidator
-{
-public:
-    static UvAtlasValidation validate(const Mesh & mesh, uint32_t uvSet);
+class BG2E_API UvAtlasValidator {
+  public:
+    static UvAtlasValidation validate(const Mesh& mesh, uint32_t uvSet);
 };
 
 }

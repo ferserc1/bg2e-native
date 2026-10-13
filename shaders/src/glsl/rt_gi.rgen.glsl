@@ -12,7 +12,8 @@ layout(set = 0, binding = 3) uniform sampler2D g_Normal;
 layout(set = 0, binding = 4) uniform samplerCube irradianceMap;
 layout(set = 0, binding = 5) uniform sampler2DArray blueNoiseTex;
 
-layout(push_constant) uniform PushConstant {
+layout(push_constant) uniform PushConstant
+{
     mat4 inverseViewProjection;
     vec3 cameraPosition;
     float rayBias;
@@ -25,27 +26,33 @@ layout(push_constant) uniform PushConstant {
     uint shadowSamples;
     uint useBlueNoise;
     uint useShadows;
-} pc;
+}
+pc;
 
-layout(location = 0) rayPayloadEXT GIPayload {
+layout(location = 0) rayPayloadEXT GIPayload
+{
     vec3 hitDirectLight;
     vec3 hitAlbedo;
     vec3 hitNormal;
     vec3 hitPosition;
     uint didHit;
-} payload;
+}
+payload;
 
-void main() {
+void main()
+{
     ivec2 pixel = ivec2(gl_LaunchIDEXT.xy);
 
-    if (pixel.x >= int(pc.outputSize.x) || pixel.y >= int(pc.outputSize.y)) {
+    if (pixel.x >= int(pc.outputSize.x) || pixel.y >= int(pc.outputSize.y))
+    {
         return;
     }
 
     vec2 uv = (vec2(pixel) + 0.5) / pc.outputSize;
 
     float depth = texture(g_Depth, uv).r;
-    if (depth >= 1.0) {
+    if (depth >= 1.0)
+    {
         imageStore(giOutput, pixel, vec4(0.0));
         return;
     }
@@ -61,23 +68,24 @@ void main() {
 
     vec3 totalRadiance = vec3(0.0);
 
-    for (uint s = 0u; s < pc.sampleCount; ++s) {
+    for (uint s = 0u; s < pc.sampleCount; ++s)
+    {
         vec3 throughput = vec3(1.0);
         vec3 sampleRadiance = vec3(0.0);
         vec3 origin = worldPos + normal * pc.rayBias;
         vec3 currentNormal = normal;
 
-        for (uint b = 0u; b < pc.bounceCount; ++b) {
+        for (uint b = 0u; b < pc.bounceCount; ++b)
+        {
             vec3 dir;
-            if (pc.useBlueNoise != 0u) {
+            if (pc.useBlueNoise != 0u)
+            {
                 vec2 xi = bnRand2(blueNoiseTex, pixel, pc.frameIndex, s * pc.bounceCount + b);
                 dir = bnHemisphereDirection(currentNormal, xi);
-            } else {
-                uint seed = uint(pixel.x) * 1973u
-                          ^ uint(pixel.y) * 9277u
-                          ^ (pc.frameIndex + 1u) * 26699u
-                          ^ s * 104729u
-                          ^ b * 48611u;
+            }
+            else
+            {
+                uint seed = uint(pixel.x) * 1973u ^ uint(pixel.y) * 9277u ^ (pc.frameIndex + 1u) * 26699u ^ s * 104729u ^ b * 48611u;
 
                 dir = randomHemisphereDirection(currentNormal, seed);
             }
@@ -97,10 +105,10 @@ void main() {
                 0.001,
                 dir,
                 pc.maxDistance,
-                0
-            );
+                0);
 
-            if (payload.didHit != 0u) {
+            if (payload.didHit != 0u)
+            {
                 // Direct light reflected by this bounce surface (color bleeding),
                 // attenuated by the path throughput accumulated so far. hitDirectLight
                 // now carries ONLY the direct lighting; the ambient is handled below.
@@ -118,10 +126,13 @@ void main() {
                 // at this surface (the irradiance map already bakes in every further
                 // bounce). Added exactly once per path, so it can never accumulate
                 // into a glow, yet it keeps deep concavities from going black.
-                if (b + 1u == pc.bounceCount) {
+                if (b + 1u == pc.bounceCount)
+                {
                     sampleRadiance += throughput * texture(irradianceMap, currentNormal).rgb;
                 }
-            } else {
+            }
+            else
+            {
                 // Ray escaped all geometry: sample the precomputed irradiance map as
                 // the incoming ambient along this direction. This is what makes a
                 // fully sky-exposed surface match the rasterized IBL path.

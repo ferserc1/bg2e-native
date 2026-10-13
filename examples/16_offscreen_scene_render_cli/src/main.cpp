@@ -17,13 +17,12 @@
  */
 #include <bg2e.hpp>
 
-class MyOffscreenApplication : public bg2e::render::DefaultOffscreenApplicationDelegate<bg2e::render::RendererBasicForward>
-{
-public:
+class MyOffscreenApplication : public bg2e::render::DefaultOffscreenApplicationDelegate<bg2e::render::RendererBasicForward> {
+  public:
     void initConfig(
-        [[maybe_unused]] int argc, [[maybe_unused]] char ** argv,
-        bg2e::app::OffscreenApplicationConfig & outConfig
-    ) override {
+        [[maybe_unused]] int argc, [[maybe_unused]] char** argv,
+        bg2e::app::OffscreenApplicationConfig& outConfig) override
+    {
         outConfig.width = 1920;
         outConfig.height = 1080;
         outConfig.createColorImage = true;
@@ -33,8 +32,8 @@ public:
     void didRenderFrame(
         uint32_t frameIndex,
         double elapsedMs,
-        VkImageLayout colorImageLayout
-    ) override {
+        VkImageLayout colorImageLayout) override
+    {
         auto width = _colorImage->extent2D().width;
         auto height = _colorImage->extent2D().height;
         size_t imageSize = width * height * 4;
@@ -45,14 +44,13 @@ public:
             0, 0,
             _colorImage->extent2D().width, _colorImage->extent2D().height,
             outData,
-            colorImageLayout
-        );
+            colorImageLayout);
 
         auto homePath = bg2e::base::PlatformTools::homePath();
         bg2e::db::saveImage(homePath / "out.jpg", outData.data(), width, height, 4);
     }
 
-protected:
+  protected:
     std::shared_ptr<bg2e::scene::Node> createScene() override
     {
         auto sceneRoot = std::make_shared<bg2e::scene::Node>("Scene Root");
@@ -73,11 +71,11 @@ protected:
         auto anotherDrawable = new bg2e::scene::DrawableComponent(drawable);
 
         secondModel->addComponent(anotherDrawable);
-        secondModel->addComponent(bg2e::scene::TransformComponent::makeTranslated(-2.0f, 0.0f, 0.0f ));
+        secondModel->addComponent(bg2e::scene::TransformComponent::makeTranslated(-2.0f, 0.0f, 0.0f));
         sceneRoot->addChild(secondModel);
 
         auto cameraNode = std::shared_ptr<bg2e::scene::Node>(new bg2e::scene::Node("Camera"));
-        cameraNode->addComponent(bg2e::scene::TransformComponent::makeTranslated(0.0f, 0.0f, 10.0f ));
+        cameraNode->addComponent(bg2e::scene::TransformComponent::makeTranslated(0.0f, 0.0f, 10.0f));
         cameraNode->addComponent(new bg2e::scene::CameraComponent());
         auto projection = new bg2e::math::OpticalProjection();
         cameraNode->camera()->setProjection(projection);
@@ -90,20 +88,18 @@ protected:
         return sceneRoot;
     }
 
-    bg2e::scene::DrawableBase * loadDrawable()
+    bg2e::scene::DrawableBase* loadDrawable()
     {
         std::filesystem::path modelPath = bg2e::base::PlatformTools::assetPath();
         modelPath.append("two_submeshes.obj");
 
         auto innerAlbedoTexture = std::make_shared<bg2e::base::Texture>(
             bg2e::base::PlatformTools::assetPath(),
-            "two_submeshes_inner_albedo.jpg"
-        );
+            "two_submeshes_inner_albedo.jpg");
 
         auto outerAlbedoTexture = std::make_shared<bg2e::base::Texture>(
             bg2e::base::PlatformTools::assetPath(),
-            "two_submeshes_outer_albedo.jpg"
-        );
+            "two_submeshes_outer_albedo.jpg");
 
         auto drawable = new bg2e::scene::Drawable();
         drawable->setMesh(bg2e::db::loadMeshObj<bg2e::geo::Mesh>(modelPath));
@@ -128,8 +124,7 @@ int main(int argc, char** argv)
     app.init(
         argc, argv,
         "my-offscreen-app",
-        std::make_shared<MyOffscreenApplication>()
-    );
+        std::make_shared<MyOffscreenApplication>());
 
     return app.run();
 }

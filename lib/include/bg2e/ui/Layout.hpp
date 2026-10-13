@@ -28,16 +28,16 @@ namespace ui {
 
 // Layout, spacing, child regions and size metrics wrappers
 class BG2E_API Layout {
-public:
+  public:
     // Use a negative value to align from right side
     static void sameLine(int32_t xPos = 0);
 
     static void spacing(int32_t spacing = 20);
 
-    static uint32_t calcTextWidth(const std::string & title);
-    static uint32_t calcTextHeight(const std::string & title);
-    static uint32_t calcButtonWidth(const std::string & title);
-    static uint32_t calcButtonHeight(const std::string & title);
+    static uint32_t calcTextWidth(const std::string& title);
+    static uint32_t calcTextHeight(const std::string& title);
+    static uint32_t calcButtonWidth(const std::string& title);
+    static uint32_t calcButtonHeight(const std::string& title);
     static uint32_t getItemHorizontalSpacing();
     static uint32_t getItemVerticalSpacing();
 
@@ -45,7 +45,7 @@ public:
 
     static float getContentRegionAvailWidth();
     static float getContentRegionAvailHeight();
-    static void beginChild(const std::string & id, float width = 0.0f, float height = 0.0f, bool border = true);
+    static void beginChild(const std::string& id, float width = 0.0f, float height = 0.0f, bool border = true);
     static void endChild();
 };
 

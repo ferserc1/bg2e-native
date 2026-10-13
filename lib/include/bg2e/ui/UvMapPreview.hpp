@@ -38,28 +38,40 @@ namespace ui {
 // init() must be called before draw(). cleanup() releases the ImGui/Vulkan
 // descriptor and must be called before the engine is destroyed.
 class BG2E_API UvMapPreview {
-public:
+  public:
     UvMapPreview();
     ~UvMapPreview();
 
-    UvMapPreview(const UvMapPreview &) = delete;
-    UvMapPreview & operator=(const UvMapPreview &) = delete;
+    UvMapPreview(const UvMapPreview&) = delete;
+    UvMapPreview& operator=(const UvMapPreview&) = delete;
 
-    void init(render::Engine * engine, uint32_t resolution = 256);
+    void init(render::Engine* engine, uint32_t resolution = 256);
 
     void setMesh(std::shared_ptr<geo::Mesh> mesh);
-    inline std::shared_ptr<geo::Mesh> mesh() const { return _mesh; }
+    inline std::shared_ptr<geo::Mesh> mesh() const
+    {
+        return _mesh;
+    }
 
     // 0 = UV1 (texCoord0), 1 = UV2 (texCoord1). Other values are clamped.
     void setUvSet(uint32_t uvSet);
-    inline uint32_t uvSet() const { return _uvSet; }
+    inline uint32_t uvSet() const
+    {
+        return _uvSet;
+    }
 
     void setResolution(uint32_t resolution);
     uint32_t resolution() const;
 
     // Side of the square preview image in the UI, in pixels.
-    inline void setDisplaySize(uint32_t size) { _displaySize = size; }
-    inline uint32_t displaySize() const { return _displaySize; }
+    inline void setDisplaySize(uint32_t size)
+    {
+        _displaySize = size;
+    }
+    inline uint32_t displaySize() const
+    {
+        return _displaySize;
+    }
 
     // Marks the preview dirty so the next draw() re-renders and re-validates.
     void refresh();
@@ -68,8 +80,8 @@ public:
 
     void cleanup();
 
-private:
-    render::Engine * _engine = nullptr;
+  private:
+    render::Engine* _engine = nullptr;
     std::unique_ptr<render::UvMapPreviewRenderer> _renderer;
     std::shared_ptr<geo::Mesh> _mesh;
     uint32_t _uvSet = 1;

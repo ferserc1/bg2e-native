@@ -25,7 +25,7 @@ namespace bg2e {
 namespace scene {
 
 class BG2E_API FixedScaleTransformControllerComponent : public Component {
-public:
+  public:
     BG2E_COMPONENT_TYPE_NAME("FixedScaleTransform");
 
     std::shared_ptr<Component> clone() const override;
@@ -33,12 +33,18 @@ public:
     void deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path&, render::Engine& engine) override;
     std::shared_ptr<json::JsonNode> serialize(const std::filesystem::path&) override;
 
-    float scale() const { return _scale; }
-    void setScale(float value) { _scale = value; }
+    float scale() const
+    {
+        return _scale;
+    }
+    void setScale(float value)
+    {
+        _scale = value;
+    }
 
     void update(float delta) override;
 
-protected:
+  protected:
     float _scale = 1.0f;
 };
 

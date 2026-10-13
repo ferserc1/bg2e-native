@@ -27,10 +27,10 @@ class RenderSettingsPreferences;
 namespace ui {
 
 class BG2E_API RenderSettingsWindow : public Window {
-public:
+  public:
     void init(render::RendererDeferred* renderer, render::RenderSettingsPreferences* prefs);
 
-private:
+  private:
     bool drawUI();
     bool drawRenderScaleSection();
     bool drawIndirectLightingModeSection();

@@ -34,62 +34,56 @@ class Device;
 // a compiled ShaderLib directory (one .spv or .metallib per shader stage), all
 // named <shader>.<stage>.<ext> and compiled with "main" as the entry point.
 class BG2E_API ShaderLib {
-public:
+  public:
     ShaderLib(const std::filesystem::path& basePath, BackendType backendType);
 
     std::shared_ptr<ShaderModule> vertex(
         const std::string& shaderName,
         Device* device,
-        const std::string& debugName = ""
-    );
+        const std::string& debugName = "");
 
     std::shared_ptr<ShaderModule> fragment(
         const std::string& shaderName,
         Device* device,
-        const std::string& debugName = ""
-    );
+        const std::string& debugName = "");
 
     std::shared_ptr<ShaderModule> compute(
         const std::string& shaderName,
         Device* device,
-        const std::string& debugName = ""
-    );
+        const std::string& debugName = "");
 
     std::shared_ptr<ShaderModule> rayGeneration(
         const std::string& shaderName,
         Device* device,
-        const std::string& debugName = ""
-    );
+        const std::string& debugName = "");
 
     std::shared_ptr<ShaderModule> miss(
         const std::string& shaderName,
         Device* device,
-        const std::string& debugName = ""
-    );
+        const std::string& debugName = "");
 
     std::shared_ptr<ShaderModule> closestHit(
         const std::string& shaderName,
         Device* device,
-        const std::string& debugName = ""
-    );
+        const std::string& debugName = "");
 
-private:
+  private:
     std::filesystem::path _basePath;
-    BackendType           _backendType;
+    BackendType _backendType;
 
     std::shared_ptr<ShaderModule> _load(
         const std::string& shaderName,
         const std::string& stageExt,
-        ShaderStage        stage,
+        ShaderStage stage,
         const std::string& debugName,
-        Device*            device);
+        Device* device);
 
     std::shared_ptr<ShaderModule> _loadOrNull(
         const std::string& shaderName,
         const std::string& stageExt,
-        ShaderStage        stage,
+        ShaderStage stage,
         const std::string& debugName,
-        Device*            device);
+        Device* device);
 };
 
 }

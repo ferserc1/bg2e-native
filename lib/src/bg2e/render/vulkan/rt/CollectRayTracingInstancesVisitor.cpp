@@ -27,13 +27,13 @@ namespace render {
 namespace vulkan {
 namespace rt {
 
-CollectRayTracingInstancesVisitor::CollectRayTracingInstancesVisitor(Engine *engine)
-    : _engine {engine}
+CollectRayTracingInstancesVisitor::CollectRayTracingInstancesVisitor(Engine* engine)
+    : _engine{engine}
 {
     _ignoreDisabled = true;
 }
 
-void CollectRayTracingInstancesVisitor::visit(scene::Node * node)
+void CollectRayTracingInstancesVisitor::visit(scene::Node* node)
 {
     auto transformComponent = node->transform();
     auto drawableComp = node->drawable();
@@ -52,12 +52,12 @@ void CollectRayTracingInstancesVisitor::visit(scene::Node * node)
         {
             if (drw->submeshVisibility(i) && !drw->renderMaterial(i)->materialAttributes().isTransparent())
             {
-                const auto & rtMesh = drw->rayTracingMesh(i);
+                const auto& rtMesh = drw->rayTracingMesh(i);
                 if (!rtMesh)
                 {
                     std::cerr << "WARN: invalid rayTracingMesh found in submesh. Check Drawable initialization ("
-                        << node->name() << " - "
-                        << drw->name() << ")" << std::endl;
+                              << node->name() << " - "
+                              << drw->name() << ")" << std::endl;
                     continue;
                 }
 
@@ -70,7 +70,7 @@ void CollectRayTracingInstancesVisitor::visit(scene::Node * node)
                 auto renderMat = drw->renderMaterial(i);
                 auto renderMesh = drw->renderMesh();
 
-                RTObjectInstance objInst {};
+                RTObjectInstance objInst{};
                 objInst.materialData.albedo = renderMat->materialAttributes().albedo();
                 objInst.materialData.albedoScale = renderMat->materialAttributes().albedoScale();
                 objInst.materialData.indexOffset = drw->submeshData(i).firstIndex;
@@ -87,20 +87,18 @@ void CollectRayTracingInstancesVisitor::visit(scene::Node * node)
                 _objectInstances.push_back(objInst);
 
                 uint32_t objIndex = static_cast<uint32_t>(_objectInstances.size() - 1);
-                _instances.push_back({
-                    .transform = mat,
-                    .instanceCustomIndex = objIndex,
-                    .mask = 0xFF,
-                    .instanceShaderBindingTableRecordOffset = 0,
-                    .flags = VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR,
-                    .accelerationStructureReference = rtMesh->deviceAddress()
-                });
+                _instances.push_back({.transform = mat,
+                                      .instanceCustomIndex = objIndex,
+                                      .mask = 0xFF,
+                                      .instanceShaderBindingTableRecordOffset = 0,
+                                      .flags = VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR,
+                                      .accelerationStructureReference = rtMesh->deviceAddress()});
             }
         }
     }
 }
 
-void CollectRayTracingInstancesVisitor::didVisit(scene::Node * node)
+void CollectRayTracingInstancesVisitor::didVisit(scene::Node* node)
 {
     auto transformComponent = node->getComponent<scene::TransformComponent>();
 

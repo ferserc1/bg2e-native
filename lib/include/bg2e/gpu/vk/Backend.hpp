@@ -29,14 +29,14 @@ namespace gpu {
 namespace vk {
 
 class Backend : public gpu::Backend {
-public:
+  public:
     gpu::Instance* sharedInstance() const override;
     gpu::WindowType windowType() const override;
     gpu::BackendType backendType() const override;
 
-    std::unique_ptr<gpu::PhysicalDevice>  createPhysicalDevice()                                const override;
-    std::unique_ptr<gpu::Device>          createDevice()                                          const override;
-    std::unique_ptr<gpu::WindowSurface>   createWindowSurface(
+    std::unique_ptr<gpu::PhysicalDevice> createPhysicalDevice() const override;
+    std::unique_ptr<gpu::Device> createDevice() const override;
+    std::unique_ptr<gpu::WindowSurface> createWindowSurface(
         gpu::Instance* instance,
         PixelFormat colorFormat = PixelFormat::B8G8R8A8_UNORM,
         PixelFormat depthFormat = PixelFormat::D32_SFLOAT) const override;
@@ -46,7 +46,7 @@ public:
         PixelFormat colorFormat = PixelFormat::R8G8B8A8_UNORM,
         PixelFormat depthFormat = PixelFormat::D32_SFLOAT) const override;
 
-private:
+  private:
     mutable std::unique_ptr<vk::Instance> _instance;
 };
 

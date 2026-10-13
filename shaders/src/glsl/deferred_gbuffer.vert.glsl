@@ -28,15 +28,19 @@ layout(location = 2) in vec2 inUV0;
 layout(location = 3) in vec2 inUV1;
 layout(location = 4) in vec3 inTangent;
 
-layout (set = 0, binding = 0) uniform SceneData {
+layout(set = 0, binding = 0) uniform SceneData
+{
     mat4 viewMatrix;
     mat4 projMatrix;
-} sceneData;
+}
+sceneData;
 
-layout (set = 1, binding = 0) uniform PBRObjectData {
+layout(set = 1, binding = 0) uniform PBRObjectData
+{
     mat4 modelMatrix;
     PBRMaterialData material;
-} objectData;
+}
+objectData;
 
 layout(location = 0) out vec3 outWorldPos;
 layout(location = 1) out vec3 outNormal;
@@ -44,7 +48,8 @@ layout(location = 2) out vec2 outUV0;
 layout(location = 3) out vec2 outUV1;
 layout(location = 4) out mat3 outTBN;
 
-void main() {
+void main()
+{
     vec4 worldPos = objectData.modelMatrix * vec4(inPosition, 1.0);
     outWorldPos = worldPos.xyz;
     outNormal = normalize(mat3(objectData.modelMatrix) * inNormal);

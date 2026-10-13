@@ -28,15 +28,14 @@ namespace bg2e {
 namespace app {
 
 class BG2E_API GPUSelectionDialog {
-public:
-    GPUSelectionDialog(const std::string & appId);
-    
-    std::shared_ptr<render::vulkan::PhysicalDeviceProperties> run();
-    
-protected:
+  public:
+    GPUSelectionDialog(const std::string& appId);
 
+    std::shared_ptr<render::vulkan::PhysicalDeviceProperties> run();
+
+  protected:
     std::string _appId;
-    
+
     std::shared_ptr<render::vulkan::PhysicalDeviceProperties> _selectedDevice;
 };
 

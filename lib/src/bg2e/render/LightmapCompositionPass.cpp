@@ -100,32 +100,32 @@ void LightmapCompositionPass::render(
     }
 
     vulkan::Image::cmdTransitionImage(cmd, output.handle(),
-        VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL);
+                                      VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL);
 
     std::unique_ptr<vulkan::DescriptorSet> descriptorSet(descriptorAllocator.allocate(_descriptorSetLayout));
     descriptorSet->beginUpdate();
     descriptorSet->addImage(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-        &aoImage, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _colorSampler);
+                            &aoImage, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _colorSampler);
     descriptorSet->addImage(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-        &giImage, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _colorSampler);
+                            &giImage, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _colorSampler);
     descriptorSet->addImage(2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-        uvSurface.image(3).get(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _maskSampler);
+                            uvSurface.image(3).get(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _maskSampler);
     descriptorSet->addImage(3, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
-        &output, VK_IMAGE_LAYOUT_GENERAL);
+                            &output, VK_IMAGE_LAYOUT_GENERAL);
     descriptorSet->endUpdate();
 
     const VkDescriptorSet descriptorSetHandle = descriptorSet->descriptorSet();
     vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, _pipeline);
     vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_COMPUTE,
-        _pipelineLayout, 0, 1, &descriptorSetHandle, 0, nullptr);
+                            _pipelineLayout, 0, 1, &descriptorSetHandle, 0, nullptr);
 
-    const PushConstants pushConstants{ mode == LightmapMode::RTGI ? 1u : 0u };
+    const PushConstants pushConstants{mode == LightmapMode::RTGI ? 1u : 0u};
     vkCmdPushConstants(cmd, _pipelineLayout, VK_SHADER_STAGE_COMPUTE_BIT,
-        0, sizeof(PushConstants), &pushConstants);
+                       0, sizeof(PushConstants), &pushConstants);
     vkCmdDispatch(cmd, (extent.width + 7) / 8, (extent.height + 7) / 8, 1);
 
     vulkan::Image::cmdTransitionImage(cmd, output.handle(),
-        VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+                                      VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 }
 
 void LightmapCompositionPass::cleanup()

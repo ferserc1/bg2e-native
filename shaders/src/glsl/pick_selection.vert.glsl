@@ -18,14 +18,16 @@
 
 #version 450
 
-layout (location = 0) in vec3 inPosition;
+layout(location = 0) in vec3 inPosition;
 
-layout (location = 0) out flat uint outIdentifier;
+layout(location = 0) out flat uint outIdentifier;
 
-layout(push_constant) uniform PickSelectionData {
+layout(push_constant) uniform PickSelectionData
+{
     mat4 mvp;
     uint identifier;
-} pickSelectionData;
+}
+pickSelectionData;
 
 void main()
 {

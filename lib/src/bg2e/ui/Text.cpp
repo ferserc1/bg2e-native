@@ -18,12 +18,12 @@
 
 #include <bg2e/ui/Text.hpp>
 
-#include "imgui.h"
+#include <imgui.h>
 
 namespace bg2e {
 namespace ui {
 
-void Text::text(const std::string & text, bool sameLine)
+void Text::text(const std::string& text, bool sameLine)
 {
     if (sameLine)
     {
@@ -32,7 +32,7 @@ void Text::text(const std::string & text, bool sameLine)
     ImGui::Text("%s", text.c_str());
 }
 
-void Text::separator(const std::string & title, bool sameLine)
+void Text::separator(const std::string& title, bool sameLine)
 {
     if (sameLine)
     {
@@ -41,7 +41,7 @@ void Text::separator(const std::string & title, bool sameLine)
     ImGui::SeparatorText(title.c_str());
 }
 
-void Text::listItem(const std::string & label, bool sameLine)
+void Text::listItem(const std::string& label, bool sameLine)
 {
     if (sameLine)
     {
@@ -50,7 +50,7 @@ void Text::listItem(const std::string & label, bool sameLine)
     ImGui::BulletText("%s", label.c_str());
 }
 
-void Text::tooltip(const std::string & text)
+void Text::tooltip(const std::string& text)
 {
     if (!text.empty() && ImGui::IsItemHovered())
     {

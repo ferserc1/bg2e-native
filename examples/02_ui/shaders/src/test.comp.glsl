@@ -1,13 +1,15 @@
 #version 450
 
-layout (local_size_x = 16, local_size_y = 16) in;
+layout(local_size_x = 16, local_size_y = 16) in;
 
-layout (binding = 0, rgba8) uniform writeonly image2D outImg;
+layout(binding = 0, rgba8) uniform writeonly image2D outImg;
 
-layout (push_constant) uniform PushConstants {
+layout(push_constant) uniform PushConstants
+{
     int width;
     int height;
-} pushConstants;
+}
+pushConstants;
 
 void main()
 {

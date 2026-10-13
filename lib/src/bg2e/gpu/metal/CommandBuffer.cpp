@@ -44,9 +44,12 @@ MTL::CullMode metalCullMode(gpu::CullMode cullMode)
 {
     switch (cullMode)
     {
-        case gpu::CullMode::None:   return MTL::CullModeNone;
-        case gpu::CullMode::Front:  return MTL::CullModeFront;
-        case gpu::CullMode::Back:   return MTL::CullModeBack;
+    case gpu::CullMode::None:
+        return MTL::CullModeNone;
+    case gpu::CullMode::Front:
+        return MTL::CullModeFront;
+    case gpu::CullMode::Back:
+        return MTL::CullModeBack;
     }
     return MTL::CullModeNone;
 }
@@ -55,8 +58,10 @@ MTL::Winding metalFrontFaceWinding(gpu::FrontFace frontFace)
 {
     switch (frontFace)
     {
-        case gpu::FrontFace::Clockwise:            return MTL::WindingClockwise;
-        case gpu::FrontFace::CounterClockwise:     return MTL::WindingCounterClockwise;
+    case gpu::FrontFace::Clockwise:
+        return MTL::WindingClockwise;
+    case gpu::FrontFace::CounterClockwise:
+        return MTL::WindingCounterClockwise;
     }
     return MTL::WindingCounterClockwise;
 }
@@ -96,7 +101,10 @@ CommandBuffer::~CommandBuffer()
 
 void CommandBuffer::begin()
 {
-    if (_recording || _submitted) throw std::logic_error("Metal command buffer cannot begin again");
+    if (_recording || _submitted)
+    {
+        throw std::logic_error("Metal command buffer cannot begin again");
+    }
     _executable = false;
     _recording = true;
 }
@@ -104,7 +112,9 @@ void CommandBuffer::begin()
 void CommandBuffer::end()
 {
     if (!_recording || _passDesc)
+    {
         throw std::logic_error("Metal command buffer must close its render scope before end");
+    }
     if (_computeEncoder)
     {
         _computeEncoder->endEncoding();
@@ -304,7 +314,10 @@ void CommandBuffer::endRendering()
     if (!_encoder && _passDesc && _cmd)
     {
         _encoder = _cmd->renderCommandEncoder(_passDesc);
-        if (_encoder) _encoder->retain(); // Balance the scope's owned release.
+        if (_encoder)
+        {
+            _encoder->retain(); // Balance the scope's owned release.
+        }
     }
     if (_encoder)
     {
@@ -317,21 +330,23 @@ void CommandBuffer::endRendering()
         _passDesc->release();
         _passDesc = nullptr;
     }
-    _boundPipeline        = nullptr;
-    _boundLayout          = nullptr;
-    _renderFrame          = nullptr;
-    _renderColorImage     = nullptr;
-    _renderDepthImage     = nullptr;
-    _renderingCubeMap     = false;
-    _renderCubeMap        = nullptr;
-    _boundIndexBuffer     = nullptr;
+    _boundPipeline = nullptr;
+    _boundLayout = nullptr;
+    _renderFrame = nullptr;
+    _renderColorImage = nullptr;
+    _renderDepthImage = nullptr;
+    _renderingCubeMap = false;
+    _renderCubeMap = nullptr;
+    _boundIndexBuffer = nullptr;
     _boundIndexBufferOffset = 0;
 }
 
 MTL::RenderPassDescriptor* CommandBuffer::renderPassDescriptor() const
 {
     if (!_recording || !_passDesc || _computeEncoder)
+    {
         throw std::logic_error("Metal renderPassDescriptor requires an active render scope.");
+    }
     return _passDesc;
 }
 
@@ -357,7 +372,10 @@ void CommandBuffer::ensureRenderEncoder()
         throw std::runtime_error("metal::CommandBuffer::ensureRenderEncoder: no active render pass");
     }
     _encoder = _cmd->renderCommandEncoder(_passDesc);
-    if (_encoder) _encoder->retain(); // Native result is autoreleased.
+    if (_encoder)
+    {
+        _encoder->retain(); // Native result is autoreleased.
+    }
     if (!_encoder)
     {
         throw std::runtime_error("metal::CommandBuffer::ensureRenderEncoder: failed to create render encoder");
@@ -414,10 +432,18 @@ void CommandBuffer::draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t 
     {
         switch (_boundPipeline->topology())
         {
-            case gpu::PrimitiveTopology::TriangleList:  primType = MTL::PrimitiveTypeTriangle; break;
-            case gpu::PrimitiveTopology::TriangleStrip: primType = MTL::PrimitiveTypeTriangleStrip; break;
-            case gpu::PrimitiveTopology::LineList:      primType = MTL::PrimitiveTypeLine; break;
-            case gpu::PrimitiveTopology::PointList:     primType = MTL::PrimitiveTypePoint; break;
+        case gpu::PrimitiveTopology::TriangleList:
+            primType = MTL::PrimitiveTypeTriangle;
+            break;
+        case gpu::PrimitiveTopology::TriangleStrip:
+            primType = MTL::PrimitiveTypeTriangleStrip;
+            break;
+        case gpu::PrimitiveTopology::LineList:
+            primType = MTL::PrimitiveTypeLine;
+            break;
+        case gpu::PrimitiveTopology::PointList:
+            primType = MTL::PrimitiveTypePoint;
+            break;
         }
     }
 
@@ -487,7 +513,7 @@ void CommandBuffer::dispatch(uint32_t groupCountX, uint32_t groupCountY, uint32_
     // Vulkan's dispatch model). Compute kernels that need a different threadgroup
     // size can be added later; for now 16x16 covers the gradient and typical
     // image-processing dispatches.
-    constexpr NS::UInteger kThreadGroupWidth  = 16;
+    constexpr NS::UInteger kThreadGroupWidth = 16;
     constexpr NS::UInteger kThreadGroupHeight = 16;
 
     MTL::Size threadsPerGroup = MTL::Size::Make(kThreadGroupWidth, kThreadGroupHeight, 1);
@@ -507,26 +533,26 @@ void CommandBuffer::pushConstants(ShaderStage stage, uint32_t offset, uint32_t s
     auto binding = _boundLayout->pushConstantBufferIndex(stage);
     switch (stage)
     {
-        case ShaderStage::Vertex:
-            ensureRenderEncoder();
-            _encoder->setVertexBytes(data, size, binding);
-            break;
-        case ShaderStage::Fragment:
-            ensureRenderEncoder();
-            _encoder->setFragmentBytes(data, size, binding);
-            break;
-        case ShaderStage::Compute:
-        case ShaderStage::RayGeneration:
-        case ShaderStage::Miss:
-        case ShaderStage::ClosestHit:
-            if (!_computeEncoder)
-            {
-                throw std::runtime_error("metal::CommandBuffer::pushConstants: no active compute scope; call beginCompute() first");
-            }
-            _computeEncoder->setBytes(data, size, binding);
-            break;
-        default:
-            break;
+    case ShaderStage::Vertex:
+        ensureRenderEncoder();
+        _encoder->setVertexBytes(data, size, binding);
+        break;
+    case ShaderStage::Fragment:
+        ensureRenderEncoder();
+        _encoder->setFragmentBytes(data, size, binding);
+        break;
+    case ShaderStage::Compute:
+    case ShaderStage::RayGeneration:
+    case ShaderStage::Miss:
+    case ShaderStage::ClosestHit:
+        if (!_computeEncoder)
+        {
+            throw std::runtime_error("metal::CommandBuffer::pushConstants: no active compute scope; call beginCompute() first");
+        }
+        _computeEncoder->setBytes(data, size, binding);
+        break;
+    default:
+        break;
     }
 }
 
@@ -546,42 +572,42 @@ void CommandBuffer::bindResourceSet(gpu::GraphicsPipeline* /*pipeline*/, uint32_
         {
             switch (entry.stage)
             {
-                case ShaderStage::Vertex:
-                    _encoder->setVertexTexture(entry.texture, entry.index);
-                    break;
-                case ShaderStage::Fragment:
-                    _encoder->setFragmentTexture(entry.texture, entry.index);
-                    break;
-                default:
-                    break;
+            case ShaderStage::Vertex:
+                _encoder->setVertexTexture(entry.texture, entry.index);
+                break;
+            case ShaderStage::Fragment:
+                _encoder->setFragmentTexture(entry.texture, entry.index);
+                break;
+            default:
+                break;
             }
         }
         if (entry.sampler)
         {
             switch (entry.stage)
             {
-                case ShaderStage::Vertex:
-                    _encoder->setVertexSamplerState(entry.sampler, entry.index);
-                    break;
-                case ShaderStage::Fragment:
-                    _encoder->setFragmentSamplerState(entry.sampler, entry.index);
-                    break;
-                default:
-                    break;
+            case ShaderStage::Vertex:
+                _encoder->setVertexSamplerState(entry.sampler, entry.index);
+                break;
+            case ShaderStage::Fragment:
+                _encoder->setFragmentSamplerState(entry.sampler, entry.index);
+                break;
+            default:
+                break;
             }
         }
         if (entry.buffer)
         {
             switch (entry.stage)
             {
-                case ShaderStage::Vertex:
-                    _encoder->setVertexBuffer(entry.buffer, 0, entry.index);
-                    break;
-                case ShaderStage::Fragment:
-                    _encoder->setFragmentBuffer(entry.buffer, 0, entry.index);
-                    break;
-                default:
-                    break;
+            case ShaderStage::Vertex:
+                _encoder->setVertexBuffer(entry.buffer, 0, entry.index);
+                break;
+            case ShaderStage::Fragment:
+                _encoder->setFragmentBuffer(entry.buffer, 0, entry.index);
+                break;
+            default:
+                break;
             }
         }
         if (entry.rtScene)
@@ -594,14 +620,14 @@ void CommandBuffer::bindResourceSet(gpu::GraphicsPipeline* /*pipeline*/, uint32_
             }
             switch (entry.stage)
             {
-                case ShaderStage::Vertex:
-                    _encoder->setVertexAccelerationStructure(entry.rtScene->handle(), entry.index);
-                    break;
-                case ShaderStage::Fragment:
-                    _encoder->setFragmentAccelerationStructure(entry.rtScene->handle(), entry.index);
-                    break;
-                default:
-                    break;
+            case ShaderStage::Vertex:
+                _encoder->setVertexAccelerationStructure(entry.rtScene->handle(), entry.index);
+                break;
+            case ShaderStage::Fragment:
+                _encoder->setFragmentAccelerationStructure(entry.rtScene->handle(), entry.index);
+                break;
+            default:
+                break;
             }
         }
     }
@@ -665,7 +691,7 @@ void CommandBuffer::bindIndexBuffer(gpu::Buffer* buffer, uint64_t offset)
         throw std::runtime_error("metal::CommandBuffer::bindIndexBuffer: not a metal::Buffer");
     }
 
-    _boundIndexBuffer       = metalBuf->handle();
+    _boundIndexBuffer = metalBuf->handle();
     _boundIndexBufferOffset = static_cast<NS::UInteger>(offset);
 }
 
@@ -685,15 +711,22 @@ void CommandBuffer::drawIndexed(uint32_t indexCount, uint32_t instanceCount,
     {
         switch (_boundPipeline->topology())
         {
-            case gpu::PrimitiveTopology::TriangleList:  primType = MTL::PrimitiveTypeTriangle;     break;
-            case gpu::PrimitiveTopology::TriangleStrip: primType = MTL::PrimitiveTypeTriangleStrip; break;
-            case gpu::PrimitiveTopology::LineList:      primType = MTL::PrimitiveTypeLine;          break;
-            case gpu::PrimitiveTopology::PointList:     primType = MTL::PrimitiveTypePoint;         break;
+        case gpu::PrimitiveTopology::TriangleList:
+            primType = MTL::PrimitiveTypeTriangle;
+            break;
+        case gpu::PrimitiveTopology::TriangleStrip:
+            primType = MTL::PrimitiveTypeTriangleStrip;
+            break;
+        case gpu::PrimitiveTopology::LineList:
+            primType = MTL::PrimitiveTypeLine;
+            break;
+        case gpu::PrimitiveTopology::PointList:
+            primType = MTL::PrimitiveTypePoint;
+            break;
         }
     }
 
-    NS::UInteger byteOffset = _boundIndexBufferOffset
-                            + static_cast<NS::UInteger>(firstIndex) * sizeof(uint32_t);
+    NS::UInteger byteOffset = _boundIndexBufferOffset + static_cast<NS::UInteger>(firstIndex) * sizeof(uint32_t);
 
     _encoder->drawIndexedPrimitives(
         primType,
@@ -703,8 +736,7 @@ void CommandBuffer::drawIndexed(uint32_t indexCount, uint32_t instanceCount,
         byteOffset,
         static_cast<NS::UInteger>(instanceCount),
         static_cast<NS::Integer>(vertexOffset),
-        static_cast<NS::UInteger>(firstInstance)
-    );
+        static_cast<NS::UInteger>(firstInstance));
 }
 
 void CommandBuffer::copyImage(gpu::Image* src, gpu::Image* dst)
@@ -769,8 +801,7 @@ void CommandBuffer::blitImage(gpu::Image* src, gpu::Image* dst)
 
     blitEncoder->copyFromTexture(
         metalSrc->texture(), 0, 0, srcOrigin, srcSize,
-        metalDst->texture(), 0, 0, dstOrigin
-    );
+        metalDst->texture(), 0, 0, dstOrigin);
     blitEncoder->endEncoding();
     blitEncoder->release();
 }
@@ -878,15 +909,14 @@ void CommandBuffer::traceRays(uint32_t width, uint32_t height, uint32_t depth)
     }
 
     // Use 8x8 threadgroups to match the Metal shader threadgroup_size
-    constexpr NS::UInteger kThreadGroupWidth  = 8;
+    constexpr NS::UInteger kThreadGroupWidth = 8;
     constexpr NS::UInteger kThreadGroupHeight = 8;
 
     MTL::Size threadsPerGroup = MTL::Size::Make(kThreadGroupWidth, kThreadGroupHeight, 1);
     MTL::Size threadGroups = MTL::Size::Make(
         (width + kThreadGroupWidth - 1) / kThreadGroupWidth,
         (height + kThreadGroupHeight - 1) / kThreadGroupHeight,
-        depth
-    );
+        depth);
     _computeEncoder->dispatchThreadgroups(threadGroups, threadsPerGroup);
 }
 
@@ -897,38 +927,104 @@ bool CommandBuffer::isValid() const
 
 #else
 
-CommandBuffer::~CommandBuffer() {}
-void CommandBuffer::begin() {}
-void CommandBuffer::end() {}
-bool CommandBuffer::hasActiveScope() const { return false; }
-void CommandBuffer::transition(gpu::Image*, ImageLayout) {}
-void CommandBuffer::beginRendering(gpu::SurfaceFrame*) {}
-void CommandBuffer::beginRendering(gpu::Image*, uint32_t) {}
-void CommandBuffer::beginRendering(gpu::Image*, gpu::Image*, uint32_t) {}
-void CommandBuffer::beginRendering(gpu::CubeMap*, CubemapFace, uint32_t) {}
-void CommandBuffer::endRendering() {}
-void CommandBuffer::beginCompute() {}
-void CommandBuffer::endCompute() {}
-void CommandBuffer::clearColor(uint32_t, const gpu::Color&) {}
-void CommandBuffer::clearDepth(float) {}
-void CommandBuffer::bindPipeline(gpu::GraphicsPipeline*) {}
-void CommandBuffer::draw(uint32_t, uint32_t, uint32_t, uint32_t) {}
-void CommandBuffer::bindPipeline(gpu::ComputePipeline*) {}
-void CommandBuffer::dispatch(uint32_t, uint32_t, uint32_t) {}
-void CommandBuffer::pushConstants(ShaderStage, uint32_t, uint32_t, const void*) {}
-void CommandBuffer::bindResourceSet(gpu::GraphicsPipeline*, uint32_t, gpu::ResourceSet*) {}
-void CommandBuffer::bindResourceSet(gpu::ComputePipeline*, uint32_t, gpu::ResourceSet*) {}
-void CommandBuffer::bindVertexBuffer(uint32_t, gpu::Buffer*, uint64_t) {}
-void CommandBuffer::bindIndexBuffer(gpu::Buffer*, uint64_t) {}
-void CommandBuffer::drawIndexed(uint32_t, uint32_t, uint32_t, int32_t, uint32_t) {}
-void CommandBuffer::copyImage(gpu::Image*, gpu::Image*) {}
-void CommandBuffer::blitImage(gpu::Image*, gpu::Image*) {}
-void CommandBuffer::buildRayTracingMesh(gpu::RayTracingMesh*) {}
-void CommandBuffer::buildRayTracingScene(gpu::RayTracingScene*) {}
-void CommandBuffer::bindPipeline(gpu::RayTracingPipeline*) {}
-void CommandBuffer::bindResourceSet(gpu::RayTracingPipeline*, uint32_t, gpu::ResourceSet*) {}
-void CommandBuffer::traceRays(uint32_t, uint32_t, uint32_t) {}
-bool CommandBuffer::isValid() const { return false; }
+CommandBuffer::~CommandBuffer()
+{
+}
+void CommandBuffer::begin()
+{
+}
+void CommandBuffer::end()
+{
+}
+bool CommandBuffer::hasActiveScope() const
+{
+    return false;
+}
+void CommandBuffer::transition(gpu::Image*, ImageLayout)
+{
+}
+void CommandBuffer::beginRendering(gpu::SurfaceFrame*)
+{
+}
+void CommandBuffer::beginRendering(gpu::Image*, uint32_t)
+{
+}
+void CommandBuffer::beginRendering(gpu::Image*, gpu::Image*, uint32_t)
+{
+}
+void CommandBuffer::beginRendering(gpu::CubeMap*, CubemapFace, uint32_t)
+{
+}
+void CommandBuffer::endRendering()
+{
+}
+void CommandBuffer::beginCompute()
+{
+}
+void CommandBuffer::endCompute()
+{
+}
+void CommandBuffer::clearColor(uint32_t, const gpu::Color&)
+{
+}
+void CommandBuffer::clearDepth(float)
+{
+}
+void CommandBuffer::bindPipeline(gpu::GraphicsPipeline*)
+{
+}
+void CommandBuffer::draw(uint32_t, uint32_t, uint32_t, uint32_t)
+{
+}
+void CommandBuffer::bindPipeline(gpu::ComputePipeline*)
+{
+}
+void CommandBuffer::dispatch(uint32_t, uint32_t, uint32_t)
+{
+}
+void CommandBuffer::pushConstants(ShaderStage, uint32_t, uint32_t, const void*)
+{
+}
+void CommandBuffer::bindResourceSet(gpu::GraphicsPipeline*, uint32_t, gpu::ResourceSet*)
+{
+}
+void CommandBuffer::bindResourceSet(gpu::ComputePipeline*, uint32_t, gpu::ResourceSet*)
+{
+}
+void CommandBuffer::bindVertexBuffer(uint32_t, gpu::Buffer*, uint64_t)
+{
+}
+void CommandBuffer::bindIndexBuffer(gpu::Buffer*, uint64_t)
+{
+}
+void CommandBuffer::drawIndexed(uint32_t, uint32_t, uint32_t, int32_t, uint32_t)
+{
+}
+void CommandBuffer::copyImage(gpu::Image*, gpu::Image*)
+{
+}
+void CommandBuffer::blitImage(gpu::Image*, gpu::Image*)
+{
+}
+void CommandBuffer::buildRayTracingMesh(gpu::RayTracingMesh*)
+{
+}
+void CommandBuffer::buildRayTracingScene(gpu::RayTracingScene*)
+{
+}
+void CommandBuffer::bindPipeline(gpu::RayTracingPipeline*)
+{
+}
+void CommandBuffer::bindResourceSet(gpu::RayTracingPipeline*, uint32_t, gpu::ResourceSet*)
+{
+}
+void CommandBuffer::traceRays(uint32_t, uint32_t, uint32_t)
+{
+}
+bool CommandBuffer::isValid() const
+{
+    return false;
+}
 
 #endif
 

@@ -43,30 +43,78 @@ namespace render {
 
 // TODO: Refactor this class to be more generic, and implement a specific renderer for each rendering technique (forward, deferred, etc.)
 class BG2E_API RendererBasicForward : public Renderer {
-public:
+  public:
     RendererBasicForward() = default;
     ~RendererBasicForward() override = default;
 
-    [[nodiscard]] VkPipeline opaquePipeline() const { return _opaquePipeline; }
-    [[nodiscard]] VkPipeline transparentPipeline() const { return _transparentPipeline; }
-    [[nodiscard]] VkPipelineLayout pipelineLayout() const { return _pipelineLayout; }
+    [[nodiscard]] VkPipeline opaquePipeline() const
+    {
+        return _opaquePipeline;
+    }
+    [[nodiscard]] VkPipeline transparentPipeline() const
+    {
+        return _transparentPipeline;
+    }
+    [[nodiscard]] VkPipelineLayout pipelineLayout() const
+    {
+        return _pipelineLayout;
+    }
 
-    [[nodiscard]] const bg2e::scene::vk::FrameDataBinding* frameDataBinding() const { return _frameDataBinding.get(); }
-    [[nodiscard]] const bg2e::scene::vk::ObjectDataBinding* objectDataBinding() const { return _objectDataBinding.get(); }
-    [[nodiscard]] const bg2e::scene::vk::EnvironmentDataBinding* environmentDataBinding() const { return _environmentDataBinding.get(); }
-    [[nodiscard]] const bg2e::scene::vk::LightDataBinding* lightDataBinding() const { return _lightDataBinding.get(); }
-    [[nodiscard]] const bg2e::render::vulkan::rt::RayTracingSceneDataBinding* rtDataBinding() const { return _rtDataBinding.get(); }
+    [[nodiscard]] const bg2e::scene::vk::FrameDataBinding* frameDataBinding() const
+    {
+        return _frameDataBinding.get();
+    }
+    [[nodiscard]] const bg2e::scene::vk::ObjectDataBinding* objectDataBinding() const
+    {
+        return _objectDataBinding.get();
+    }
+    [[nodiscard]] const bg2e::scene::vk::EnvironmentDataBinding* environmentDataBinding() const
+    {
+        return _environmentDataBinding.get();
+    }
+    [[nodiscard]] const bg2e::scene::vk::LightDataBinding* lightDataBinding() const
+    {
+        return _lightDataBinding.get();
+    }
+    [[nodiscard]] const bg2e::render::vulkan::rt::RayTracingSceneDataBinding* rtDataBinding() const
+    {
+        return _rtDataBinding.get();
+    }
 
-    inline bg2e::scene::vk::FrameDataBinding* frameDataBinding() { return _frameDataBinding.get(); }
-    inline bg2e::scene::vk::ObjectDataBinding* objectDataBinding() { return _objectDataBinding.get(); }
-    inline bg2e::scene::vk::EnvironmentDataBinding* environmentDataBinding() { return _environmentDataBinding.get(); }
-    inline bg2e::scene::vk::LightDataBinding* lightDataBinding() { return _lightDataBinding.get(); }
-    inline bg2e::render::vulkan::rt::RayTracingSceneDataBinding* rtDataBinding() { return _rtDataBinding.get(); }
+    inline bg2e::scene::vk::FrameDataBinding* frameDataBinding()
+    {
+        return _frameDataBinding.get();
+    }
+    inline bg2e::scene::vk::ObjectDataBinding* objectDataBinding()
+    {
+        return _objectDataBinding.get();
+    }
+    inline bg2e::scene::vk::EnvironmentDataBinding* environmentDataBinding()
+    {
+        return _environmentDataBinding.get();
+    }
+    inline bg2e::scene::vk::LightDataBinding* lightDataBinding()
+    {
+        return _lightDataBinding.get();
+    }
+    inline bg2e::render::vulkan::rt::RayTracingSceneDataBinding* rtDataBinding()
+    {
+        return _rtDataBinding.get();
+    }
 
-    [[nodiscard]] bool drawSkybox() const override { return _drawSkybox; }
-    inline void setDrawSkybox(bool value) override { _drawSkybox = value; }
+    [[nodiscard]] bool drawSkybox() const override
+    {
+        return _drawSkybox;
+    }
+    inline void setDrawSkybox(bool value) override
+    {
+        _drawSkybox = value;
+    }
 
-    [[nodiscard]] manipulation::GizmoAndSelectionRenderer * gizmoAndSelectionRenderer() const { return _gizmoAndSelectionRenderer.get(); }
+    [[nodiscard]] manipulation::GizmoAndSelectionRenderer* gizmoAndSelectionRenderer() const
+    {
+        return _gizmoAndSelectionRenderer.get();
+    }
 
     // This renderer is a prototype for a simple forward renderer. In the future, it will be possible to implement other rendering techniques by inheriting from this class and overriding the necessary methods.
     void build(
@@ -75,23 +123,18 @@ public:
         VkFormat colorImageFormat,
         VkFormat depthImageFormat,
         VkSampleCountFlagBits sampleCount,
-        bool isOffscreen
-    ) override;
+        bool isOffscreen) override;
 
     void initFrameResources(
-        bg2e::render::vulkan::DescriptorSetAllocator* frameAllocator
-    ) override;
+        bg2e::render::vulkan::DescriptorSetAllocator* frameAllocator) override;
 
     void initScene(
-        std::shared_ptr<bg2e::scene::Node> sceneRoot
-    ) override;
+        std::shared_ptr<bg2e::scene::Node> sceneRoot) override;
 
     void resize(
-        VkExtent2D newExtent
-    ) override;
+        VkExtent2D newExtent) override;
     void update(
-        float delta
-    ) override;
+        float delta) override;
     void draw(
         VkCommandBuffer cmd,
         uint32_t currentFrame,
@@ -99,22 +142,29 @@ public:
         const bg2e::render::vulkan::Image* depthImage,
         const bg2e::render::vulkan::Image* msaaDepthImage,
         bg2e::render::vulkan::FrameResources& frameResources,
-        VkImageLayout & outColorImageLayout,
-        VkImageLayout & outDepthImageLayout,
-        VkImageLayout & outMsaaDepthImageLayout
-    ) override;
+        VkImageLayout& outColorImageLayout,
+        VkImageLayout& outDepthImageLayout,
+        VkImageLayout& outMsaaDepthImageLayout) override;
 
     void cleanup() override;
 
     void createPipelines(bg2e::render::Engine* engine, bool useRT, VkPipelineLayout& outLayout, VkPipeline& outOpaque, VkPipeline& outTransparent, VkPipeline& outSolidTransparent);
 
-    uint32_t viewportWidth() override { return _engine->swapchain().extent().width; }
-    uint32_t viewportHeight() override { return _engine->swapchain().extent().height; }
+    uint32_t viewportWidth() override
+    {
+        return _engine->swapchain().extent().width;
+    }
+    uint32_t viewportHeight() override
+    {
+        return _engine->swapchain().extent().height;
+    }
 
-    bool supportsMsaa() override { return true; }
+    bool supportsMsaa() override
+    {
+        return true;
+    }
 
-protected:
-
+  protected:
     bg2e::render::Engine* _engine = nullptr;
 
     std::unique_ptr<bg2e::scene::vk::FrameDataBinding> _frameDataBinding;
@@ -141,7 +191,7 @@ protected:
 
     scene::vk::LightDataBinding::LightUniforms _lightUniforms;
 
-protected:
+  protected:
     void updateLights(const std::vector<std::shared_ptr<bg2e::scene::LightComponent>>& lightComponents, uint32_t maxLights) override;
 
     struct PushConstants {
@@ -150,7 +200,6 @@ protected:
         float contrast;
         float exposure;
     };
-
 };
 
 }

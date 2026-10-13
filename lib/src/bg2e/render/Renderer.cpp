@@ -20,8 +20,7 @@
 #include <bg2e/render/vulkan/rt/RayTracingScene.hpp>
 #include <bg2e/base/Log.hpp>
 
-namespace bg2e::render
-{
+namespace bg2e::render {
 void Renderer::updateScene(float delta, uint32_t maxLights)
 {
     if (!_scene)
@@ -78,4 +77,3 @@ void Renderer::endSceneRender()
 }
 
 }
-

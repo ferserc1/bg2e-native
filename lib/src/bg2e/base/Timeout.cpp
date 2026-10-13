@@ -26,13 +26,11 @@ namespace base {
 uint32_t Timeout::add(std::function<bool()> callback, uint32_t delayMs, bool executeOnExit)
 {
     uint32_t id = _nextId++;
-    _timers.push_back({
-        id,
-        std::move(callback),
-        delayMs,
-        executeOnExit,
-        std::chrono::steady_clock::now()
-    });
+    _timers.push_back({id,
+                       std::move(callback),
+                       delayMs,
+                       executeOnExit,
+                       std::chrono::steady_clock::now()});
     return id;
 }
 
@@ -40,19 +38,22 @@ void Timeout::cancel(uint32_t id)
 {
     _timers.erase(
         std::remove_if(_timers.begin(), _timers.end(),
-            [id](const TimerEntry& e) { return e.id == id; }),
-        _timers.end()
-    );
+                       [id](const TimerEntry& e)
+                       {
+                           return e.id == id;
+                       }),
+        _timers.end());
 }
 
 void Timeout::executeTimers()
 {
     auto now = std::chrono::steady_clock::now();
-    for (size_t i = 0; i < _timers.size(); )
+    for (size_t i = 0; i < _timers.size();)
     {
         auto& entry = _timers[i];
         auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
-            now - entry.lastFireTime).count();
+                           now - entry.lastFireTime)
+                           .count();
 
         if (static_cast<uint32_t>(elapsed) >= entry.delayMs)
         {
@@ -76,7 +77,7 @@ void Timeout::executeTimers()
 
 void Timeout::executeExitTimers()
 {
-    for (size_t i = 0; i < _timers.size(); )
+    for (size_t i = 0; i < _timers.size();)
     {
         if (_timers[i].executeOnExit)
         {

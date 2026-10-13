@@ -34,20 +34,20 @@ MTL::PrimitiveType primitiveTopologyToMetal(gpu::PrimitiveTopology topology)
 {
     switch (topology)
     {
-        case gpu::PrimitiveTopology::TriangleList:  return MTL::PrimitiveTypeTriangle;
-        case gpu::PrimitiveTopology::TriangleStrip: return MTL::PrimitiveTypeTriangleStrip;
-        case gpu::PrimitiveTopology::LineList:      return MTL::PrimitiveTypeLine;
-        case gpu::PrimitiveTopology::PointList:     return MTL::PrimitiveTypePoint;
+    case gpu::PrimitiveTopology::TriangleList:
+        return MTL::PrimitiveTypeTriangle;
+    case gpu::PrimitiveTopology::TriangleStrip:
+        return MTL::PrimitiveTypeTriangleStrip;
+    case gpu::PrimitiveTopology::LineList:
+        return MTL::PrimitiveTypeLine;
+    case gpu::PrimitiveTopology::PointList:
+        return MTL::PrimitiveTypePoint;
     }
     return MTL::PrimitiveTypeTriangle;
 }
 
 GraphicsPipeline::GraphicsPipeline(gpu::Device* gpuDevice, MTL::Device* device, const gpu::GraphicsPipelineDescription& description)
-    : gpu::GraphicsPipeline(gpuDevice)
-    , _topology(description.topology)
-    , _layout(dynamic_cast<metal::PipelineLayout*>(description.layout))
-    , _cullMode(description.cullMode)
-    , _frontFace(description.frontFace)
+    : gpu::GraphicsPipeline(gpuDevice), _topology(description.topology), _layout(dynamic_cast<metal::PipelineLayout*>(description.layout)), _cullMode(description.cullMode), _frontFace(description.frontFace)
 {
     auto* metalVsModule = dynamic_cast<metal::ShaderModule*>(description.vertexShader);
     auto* metalFsModule = dynamic_cast<metal::ShaderModule*>(description.fragmentShader);
@@ -133,11 +133,7 @@ void GraphicsPipeline::cleanup()
 #else
 
 GraphicsPipeline::GraphicsPipeline(gpu::Device* gpuDevice, void* /*device*/, const gpu::GraphicsPipelineDescription& description)
-    : gpu::GraphicsPipeline(gpuDevice)
-    , _topology(description.topology)
-    , _layout(dynamic_cast<metal::PipelineLayout*>(description.layout))
-    , _cullMode(description.cullMode)
-    , _frontFace(description.frontFace)
+    : gpu::GraphicsPipeline(gpuDevice), _topology(description.topology), _layout(dynamic_cast<metal::PipelineLayout*>(description.layout)), _cullMode(description.cullMode), _frontFace(description.frontFace)
 {
 }
 

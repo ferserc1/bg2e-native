@@ -57,28 +57,22 @@ static void createOffscreenImages(
 {
     using namespace bg2e;
     // Offscreen color: render target + sampled + transfer source
-    offscreenColor = device->createImage({
-        .size = size,
-        .format = gpu::PixelFormat::R8G8B8A8_UNORM,
-        .usage = gpu::ImageUsage::ColorAttachment | gpu::ImageUsage::Sampled | gpu::ImageUsage::TransferSrc | gpu::ImageUsage::Storage,
-        .debugName = "Offscreen color " + tag
-    });
+    offscreenColor = device->createImage({.size = size,
+                                          .format = gpu::PixelFormat::R8G8B8A8_UNORM,
+                                          .usage = gpu::ImageUsage::ColorAttachment | gpu::ImageUsage::Sampled | gpu::ImageUsage::TransferSrc | gpu::ImageUsage::Storage,
+                                          .debugName = "Offscreen color " + tag});
 
     // Offscreen depth: depth/stencil + sampled
-    offscreenDepth = device->createImage({
-        .size = size,
-        .format = gpu::PixelFormat::D32_SFLOAT,
-        .usage = gpu::ImageUsage::DepthStencil | gpu::ImageUsage::Sampled,
-        .debugName = "Offscreen depth " + tag
-    });
+    offscreenDepth = device->createImage({.size = size,
+                                          .format = gpu::PixelFormat::D32_SFLOAT,
+                                          .usage = gpu::ImageUsage::DepthStencil | gpu::ImageUsage::Sampled,
+                                          .debugName = "Offscreen depth " + tag});
 
     // Compute output: storage + transfer source + transfer destination
-    computeOutput = device->createImage({
-        .size = size,
-        .format = gpu::PixelFormat::R8G8B8A8_UNORM,
-        .usage = gpu::ImageUsage::Storage | gpu::ImageUsage::TransferSrc | gpu::ImageUsage::TransferDst | gpu::ImageUsage::Storage,
-        .debugName = "Compute output " + tag
-    });
+    computeOutput = device->createImage({.size = size,
+                                         .format = gpu::PixelFormat::R8G8B8A8_UNORM,
+                                         .usage = gpu::ImageUsage::Storage | gpu::ImageUsage::TransferSrc | gpu::ImageUsage::TransferDst | gpu::ImageUsage::Storage,
+                                         .debugName = "Compute output " + tag});
 }
 
 // ---------------------------------------------------------------------------
@@ -122,16 +116,19 @@ int main(int argc, char** argv)
     Uint32 windowFlags = 0;
     switch (backend->windowType())
     {
-        case gpu::WindowType::Vulkan: windowFlags = SDL_WINDOW_VULKAN; break;
-        case gpu::WindowType::Metal:  windowFlags = SDL_WINDOW_METAL;  break;
+    case gpu::WindowType::Vulkan:
+        windowFlags = SDL_WINDOW_VULKAN;
+        break;
+    case gpu::WindowType::Metal:
+        windowFlags = SDL_WINDOW_METAL;
+        break;
     }
 
     SDL_Window* window = SDL_CreateWindow(
         "GPU Render to Texture Example",
         SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
         800, 600,
-        windowFlags | SDL_WINDOW_RESIZABLE
-    );
+        windowFlags | SDL_WINDOW_RESIZABLE);
     if (!window)
     {
         std::cerr << "Failed to create window: " << SDL_GetError() << std::endl;
@@ -174,34 +171,26 @@ int main(int argc, char** argv)
     //   set 2 binding 0 -> sampled image (fragment)
     //   set 2 binding 1 -> sampler       (fragment)
     gpu::PipelineLayoutDescription graphicsLayoutDesc{};
-    graphicsLayoutDesc.resourceBindings.push_back({
-        0,
-        {.vulkan = 0, .metal = 2},
-        gpu::ResourceType::UniformBuffer,
-        gpu::ShaderStage::Vertex,
-        1
-    });
-    graphicsLayoutDesc.resourceBindings.push_back({
-        1,
-        {.vulkan = 0, .metal = 3},
-        gpu::ResourceType::UniformBuffer,
-        gpu::ShaderStage::Vertex,
-        1
-    });
-    graphicsLayoutDesc.resourceBindings.push_back({
-        2,
-        {.vulkan = 0, .metal = 0},
-        gpu::ResourceType::SampledImage,
-        gpu::ShaderStage::Fragment,
-        1
-    });
-    graphicsLayoutDesc.resourceBindings.push_back({
-        2,
-        {.vulkan = 1, .metal = 1},
-        gpu::ResourceType::Sampler,
-        gpu::ShaderStage::Fragment,
-        1
-    });
+    graphicsLayoutDesc.resourceBindings.push_back({0,
+                                                   {.vulkan = 0, .metal = 2},
+                                                   gpu::ResourceType::UniformBuffer,
+                                                   gpu::ShaderStage::Vertex,
+                                                   1});
+    graphicsLayoutDesc.resourceBindings.push_back({1,
+                                                   {.vulkan = 0, .metal = 3},
+                                                   gpu::ResourceType::UniformBuffer,
+                                                   gpu::ShaderStage::Vertex,
+                                                   1});
+    graphicsLayoutDesc.resourceBindings.push_back({2,
+                                                   {.vulkan = 0, .metal = 0},
+                                                   gpu::ResourceType::SampledImage,
+                                                   gpu::ShaderStage::Fragment,
+                                                   1});
+    graphicsLayoutDesc.resourceBindings.push_back({2,
+                                                   {.vulkan = 1, .metal = 1},
+                                                   gpu::ResourceType::Sampler,
+                                                   gpu::ShaderStage::Fragment,
+                                                   1});
     graphicsLayoutDesc.debugName = "Cube pipeline layout";
     auto graphicsLayout = device->createPipelineLayout(graphicsLayoutDesc);
     cleanup.push(graphicsLayout);
@@ -210,32 +199,27 @@ int main(int argc, char** argv)
     //   set 0 binding 0 -> storage image (input,  read-only in practice)
     //   set 0 binding 1 -> storage image (output, writable)
     gpu::PipelineLayoutDescription computeLayoutDesc{};
-    computeLayoutDesc.resourceBindings.push_back({ 0, {.vulkan = 0, .metal = 0}, gpu::ResourceType::StorageImage, gpu::ShaderStage::Compute, 1 });
-    computeLayoutDesc.resourceBindings.push_back({ 0, {.vulkan = 1, .metal = 1}, gpu::ResourceType::StorageImage, gpu::ShaderStage::Compute, 1 });
+    computeLayoutDesc.resourceBindings.push_back({0, {.vulkan = 0, .metal = 0}, gpu::ResourceType::StorageImage, gpu::ShaderStage::Compute, 1});
+    computeLayoutDesc.resourceBindings.push_back({0, {.vulkan = 1, .metal = 1}, gpu::ResourceType::StorageImage, gpu::ShaderStage::Compute, 1});
     computeLayoutDesc.debugName = "Edge filter pipeline layout";
     auto computeLayout = device->createPipelineLayout(computeLayoutDesc);
     cleanup.push(computeLayout);
 
     // 11. Procedural 2x2 texture + sampler (same as 07)
-    const std::array<std::array<uint8_t, 4>, 4> texels = {{
-        {{255,   0,   0, 255}}, {{  0, 255,   0, 255}},
-        {{  0,   0, 255, 255}}, {{255, 255,   0, 255}}
-    }};
-    auto texture = device->createImage({
-        .size = {2, 2},
-        .format = gpu::PixelFormat::R8G8B8A8_UNORM,
-        .usage = gpu::ImageUsage::Sampled | gpu::ImageUsage::TransferDst,
-        .debugName ="Procedural 2x2 texture"
-    });
+    const std::array<std::array<uint8_t, 4>, 4> texels = {{{{255, 0, 0, 255}}, {{0, 255, 0, 255}}, {{0, 0, 255, 255}}, {{255, 255, 0, 255}}}};
+    auto texture = device->createImage({.size = {2, 2},
+                                        .format = gpu::PixelFormat::R8G8B8A8_UNORM,
+                                        .usage = gpu::ImageUsage::Sampled | gpu::ImageUsage::TransferDst,
+                                        .debugName = "Procedural 2x2 texture"});
 
-    texture->uploadRGBA8(texels.data(), { 2, 2 });
+    texture->uploadRGBA8(texels.data(), {2, 2});
     device->immediateSubmit([texture](gpu::CommandBuffer* cmd)
-    {
-        cmd->transition(texture.get(), gpu::ImageLayout::ShaderReadOnly);
-    });
+                            {
+                                cmd->transition(texture.get(), gpu::ImageLayout::ShaderReadOnly);
+                            });
     cleanup.push(texture);
 
-    auto sampler = device->createSampler({ .debugName = "Default linear sampler" });
+    auto sampler = device->createSampler({.debugName = "Default linear sampler"});
     cleanup.push(sampler);
 
     // Material resource set (set 2)
@@ -251,8 +235,7 @@ int main(int argc, char** argv)
     auto view = glm::lookAt(
         glm::vec3(0.0f, 0.0f, 3.0f),
         glm::vec3(0.0f, 0.0f, 0.0f),
-        glm::vec3(0.0f, 1.0f, 0.0f)
-    );
+        glm::vec3(0.0f, 1.0f, 0.0f));
     CameraUBO cameraData{};
     cameraData.projectionView = projection * view;
 
@@ -261,29 +244,28 @@ int main(int argc, char** argv)
     cleanup.push(cameraUbo);
 
     auto cameraSet = device->createResourceSet(graphicsLayout.get(), 0, "Camera resource set");
-    cameraSet->setUniformBuffer({.vulkan = 0, .metal = 2 }, cameraUbo);
+    cameraSet->setUniformBuffer({.vulkan = 0, .metal = 2}, cameraUbo);
     cameraSet->update();
     cleanup.push(cameraSet);
 
     // 13. Per-frame model UBO ring (same as 07)
     gpu::FrameResourceRing<gpu::Buffer> modelUboRing;
     modelUboRing.create(surface.get(), [&](uint32_t i)
-    {
-        auto buffer = device->createBuffer("Model UBO ring[" + std::to_string(i) + "]");
-        buffer->createUniformBuffer(ModelUBO{});
-        return buffer;
-    });
+                        {
+                            auto buffer = device->createBuffer("Model UBO ring[" + std::to_string(i) + "]");
+                            buffer->createUniformBuffer(ModelUBO{});
+                            return buffer;
+                        });
 
     gpu::FrameResourceRing<gpu::ResourceSet> modelSetRing;
     modelSetRing.create(surface.get(), [&](uint32_t i)
-    {
-        auto set = device->createResourceSet(graphicsLayout.get(), 1,
-            "Model resource set ring[" + std::to_string(i) + "]"
-        );
-        set->setUniformBuffer({.vulkan = 0, .metal = 3}, modelUboRing.sharedAt(i));
-        set->update();
-        return set;
-    });
+                        {
+                            auto set = device->createResourceSet(graphicsLayout.get(), 1,
+                                                                 "Model resource set ring[" + std::to_string(i) + "]");
+                            set->setUniformBuffer({.vulkan = 0, .metal = 3}, modelUboRing.sharedAt(i));
+                            set->update();
+                            return set;
+                        });
 
     // 14. Cube mesh (same as 07)
     std::unique_ptr<bg2e::geo::MeshPU> cubeData(bg2e::geo::createCubePU(1.0f, 1.0f, 1.0f));
@@ -297,13 +279,13 @@ int main(int argc, char** argv)
     auto offscreenDepthFormat = gpu::PixelFormat::D32_SFLOAT;
 
     gpu::GraphicsPipelineDescription pipelineDesc{};
-    pipelineDesc.vertexShader   = vs.get();
+    pipelineDesc.vertexShader = vs.get();
     pipelineDesc.fragmentShader = fs.get();
-    pipelineDesc.layout         = graphicsLayout.get();
-    pipelineDesc.topology       = gpu::PrimitiveTopology::TriangleList;
-    pipelineDesc.colorFormat    = offscreenColorFormat;
-    pipelineDesc.depthFormat    = offscreenDepthFormat;
-    pipelineDesc.debugName      = "Cube graphics pipeline";
+    pipelineDesc.layout = graphicsLayout.get();
+    pipelineDesc.topology = gpu::PrimitiveTopology::TriangleList;
+    pipelineDesc.colorFormat = offscreenColorFormat;
+    pipelineDesc.depthFormat = offscreenDepthFormat;
+    pipelineDesc.debugName = "Cube graphics pipeline";
     pipelineDesc.addVertexBufferDescription(gpu::MeshPU::vertexBufferDescription());
     auto pipeline = device->createGraphicsPipeline(pipelineDesc);
     cleanup.push(pipeline);
@@ -311,8 +293,8 @@ int main(int argc, char** argv)
     // 16. Compute pipeline (edge filter)
     gpu::ComputePipelineDescription computePipelineDesc{};
     computePipelineDesc.computeShader = cs.get();
-    computePipelineDesc.layout        = computeLayout.get();
-    computePipelineDesc.debugName     = "Edge filter compute pipeline";
+    computePipelineDesc.layout = computeLayout.get();
+    computePipelineDesc.debugName = "Edge filter compute pipeline";
     auto computePipeline = device->createComputePipeline(computePipelineDesc);
     cleanup.push(computePipeline);
 
@@ -329,8 +311,7 @@ int main(int argc, char** argv)
     // Also not pushed to CleanupManager — recreated on resize.
     auto computeSet = createComputeResourceSet(
         device.get(), computeLayout.get(),
-        offscreenColor.get(), computeOutput.get()
-    );
+        offscreenColor.get(), computeOutput.get());
 
     // 19. Render loop
     auto& graphicsQueue = device->graphicsQueue();
@@ -341,49 +322,51 @@ int main(int argc, char** argv)
         SDL_Event event;
         while (SDL_PollEvent(&event))
         {
-            if (event.type == SDL_QUIT) running = false;
+            if (event.type == SDL_QUIT)
+            {
+                running = false;
+            }
             if (event.type == SDL_WINDOWEVENT &&
-                event.window.event == SDL_WINDOWEVENT_CLOSE) running = false;
+                event.window.event == SDL_WINDOWEVENT_CLOSE)
+            {
+                running = false;
+            }
             if (event.type == SDL_WINDOWEVENT &&
                 event.window.event == SDL_WINDOWEVENT_RESIZED)
             {
                 device->waitIdle();
                 uint32_t w = event.window.data1;
                 uint32_t h = event.window.data2;
-                if (w == 0 || h == 0) continue;
+                if (w == 0 || h == 0)
+                {
+                    continue;
+                }
                 surface->resize({w, h});
 
                 // Recreate offscreen images to match new surface size
                 offscreenColor->cleanup();
-                offscreenColor = device->createImage({
-                    .size ={w, h},
-                    .format = gpu::PixelFormat::R8G8B8A8_UNORM,
-                    .usage = gpu::ImageUsage::ColorAttachment | gpu::ImageUsage::Sampled | gpu::ImageUsage::TransferSrc | gpu::ImageUsage::Storage,
-                    .debugName = "Offscreen color"
-                });
+                offscreenColor = device->createImage({.size = {w, h},
+                                                      .format = gpu::PixelFormat::R8G8B8A8_UNORM,
+                                                      .usage = gpu::ImageUsage::ColorAttachment | gpu::ImageUsage::Sampled | gpu::ImageUsage::TransferSrc | gpu::ImageUsage::Storage,
+                                                      .debugName = "Offscreen color"});
 
                 offscreenDepth->cleanup();
-                offscreenDepth = device->createImage({
-                    .size = {w, h},
-                    .format = gpu::PixelFormat::D32_SFLOAT,
-                    .usage = gpu::ImageUsage::DepthStencil | gpu::ImageUsage::Sampled,
-                    .debugName = "Offscreen depth"
-                });
+                offscreenDepth = device->createImage({.size = {w, h},
+                                                      .format = gpu::PixelFormat::D32_SFLOAT,
+                                                      .usage = gpu::ImageUsage::DepthStencil | gpu::ImageUsage::Sampled,
+                                                      .debugName = "Offscreen depth"});
 
                 computeOutput->cleanup();
-                computeOutput = device->createImage({
-                    .size = {w, h},
-                    .format = gpu::PixelFormat::R8G8B8A8_UNORM,
-                    .usage = gpu::ImageUsage::Storage | gpu::ImageUsage::TransferSrc | gpu::ImageUsage::TransferDst | gpu::ImageUsage::Storage,
-                    .debugName = "Compute output"
-                });
+                computeOutput = device->createImage({.size = {w, h},
+                                                     .format = gpu::PixelFormat::R8G8B8A8_UNORM,
+                                                     .usage = gpu::ImageUsage::Storage | gpu::ImageUsage::TransferSrc | gpu::ImageUsage::TransferDst | gpu::ImageUsage::Storage,
+                                                     .debugName = "Compute output"});
 
                 // Recreate compute resource set with new images
                 computeSet->cleanup();
                 computeSet = createComputeResourceSet(
                     device.get(), computeLayout.get(),
-                    offscreenColor.get(), computeOutput.get()
-                );
+                    offscreenColor.get(), computeOutput.get());
 
                 // Recreate the projection matrix with the new aspect ratio
                 aspect = static_cast<float>(w) / static_cast<float>(h);
@@ -391,8 +374,7 @@ int main(int argc, char** argv)
                 view = glm::lookAt(
                     glm::vec3(0.0f, 0.0f, 3.0f),
                     glm::vec3(0.0f, 0.0f, 0.0f),
-                    glm::vec3(0.0f, 1.0f, 0.0f)
-                );
+                    glm::vec3(0.0f, 1.0f, 0.0f));
                 cameraData.projectionView = projection * view;
                 cameraUbo->updateUniformBuffer(cameraData);
             }
@@ -405,7 +387,7 @@ int main(int argc, char** argv)
         modelData.model = glm::rotate(glm::mat4(1.0f), t, glm::normalize(glm::vec3(0.4f, 1.0f, 0.2f)));
 
         auto frame = surface->beginFrame();
-        auto cmd   = graphicsQueue.createCommandBuffer("Frame command buffer");
+        auto cmd = graphicsQueue.createCommandBuffer("Frame command buffer");
 
         // Update + bind the per-frame model resources.
         auto* modelUbo = modelUboRing.current();

@@ -19,65 +19,64 @@
 #include "AppDelegate.hpp"
 #include <bg2e/ui/all.hpp>
 
-void SubmeshWindow::init(AppDelegate * delegate)
+void SubmeshWindow::init(AppDelegate* delegate)
 {
     _appDelegate = delegate;
     setTitle("Model Properties");
 
     _materialEditor.onChanged([&]()
-    {
-        _appDelegate->stage()->document()->setUnsavedChanges(true);
-    });
+                              {
+                                  _appDelegate->stage()->document()->setUnsavedChanges(true);
+                              });
 
     _drawableEditor.init(delegate->selectionManager());
 
     _drawableEditor.onChanged([&]()
-    {
-        _appDelegate->stage()->document()->setUnsavedChanges(true);
-    });
+                              {
+                                  _appDelegate->stage()->document()->setUnsavedChanges(true);
+                              });
 
     _materialEditor.setSelectionManager(delegate->selectionManager());
     _materialEditor.init(delegate->engine());
 
-    setDrawFunction([&]() {
-        auto sm = _appDelegate->selectionManager();
-        auto count = sm->selectedItems().size();
-
-        if (count == 0)
-        {
-            bg2e::ui::Text::text("No selection");
-            return;
-        }
-
-        // Count the number of different nodes
-        if (sm->selectedNodes().size() > 1)
-        {
-            // Multi-node selection only supports material editing.  The material
-            // editor receives every selected submesh material from the selection
-            // manager, so changes are applied to all of them at once.
-            _materialEditor.draw();
-
-        }
-        else
-        {
-            auto drawable = sm->selectedMesh();
-            if (drawable != nullptr)
-            {
-                if (_drawableEditor.draw())
-                {
-                    _materialEditor.clearMaterial();
-
-                    for (auto sel : _drawableEditor.selectedItems())
+    setDrawFunction([&]()
                     {
-                        _materialEditor.addEditMaterial(drawable->renderMaterial(sel));
-                    }
-                }
+                        auto sm = _appDelegate->selectionManager();
+                        auto count = sm->selectedItems().size();
 
-                _materialEditor.draw();
-            }
-        }
+                        if (count == 0)
+                        {
+                            bg2e::ui::Text::text("No selection");
+                            return;
+                        }
 
-    });
+                        // Count the number of different nodes
+                        if (sm->selectedNodes().size() > 1)
+                        {
+                            // Multi-node selection only supports material editing.  The material
+                            // editor receives every selected submesh material from the selection
+                            // manager, so changes are applied to all of them at once.
+                            _materialEditor.draw();
+                        }
+                        else
+                        {
+                            auto drawable = sm->selectedMesh();
+                            if (drawable != nullptr)
+                            {
+                                if (_drawableEditor.draw())
+                                {
+                                    _materialEditor.clearMaterial();
+
+                                    for (auto sel : _drawableEditor.selectedItems())
+                                    {
+                                        _materialEditor.addEditMaterial(drawable->renderMaterial(sel));
+                                    }
+                                }
+
+                                _materialEditor.draw();
+                            }
+                        }
+                    });
 }
 
 void SubmeshWindow::setEditMaterial(uint32_t submeshIndex)

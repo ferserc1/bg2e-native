@@ -38,22 +38,21 @@ struct FaceCamera {
 };
 
 constexpr std::array<FaceCamera, 6> kFaceCameras = {{
-    { glm::vec3( 1.0f,  0.0f,  0.0f), glm::vec3(0.0f, -1.0f,  0.0f) }, // +X
-    { glm::vec3(-1.0f,  0.0f,  0.0f), glm::vec3(0.0f, -1.0f,  0.0f) }, // -X
-    { glm::vec3( 0.0f, -1.0f,  0.0f), glm::vec3(0.0f,  0.0f, -1.0f) }, // +Y
-    { glm::vec3( 0.0f,  1.0f,  0.0f), glm::vec3(0.0f,  0.0f,  1.0f) }, // -Y
-    { glm::vec3( 0.0f,  0.0f,  1.0f), glm::vec3(0.0f, -1.0f,  0.0f) }, // +Z
-    { glm::vec3( 0.0f,  0.0f, -1.0f), glm::vec3(0.0f, -1.0f,  0.0f) }, // -Z
+    {glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f)},  // +X
+    {glm::vec3(-1.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f)}, // -X
+    {glm::vec3(0.0f, -1.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f)}, // +Y
+    {glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f)},   // -Y
+    {glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f, -1.0f, 0.0f)},  // +Z
+    {glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, -1.0f, 0.0f)}, // -Z
 }};
 
 }
 
 void CubemapRenderPass::render(
-    CommandBuffer*               cmd,
-    CubeMap*                     cubemap,
+    CommandBuffer* cmd,
+    CubeMap* cubemap,
     const CubemapRenderPassInfo& info,
-    const RenderFunction&        callback
-)
+    const RenderFunction& callback)
 {
     if (!cmd)
     {
@@ -70,8 +69,7 @@ void CubemapRenderPass::render(
 
     // Single 90 degree, 1:1 aspect projection shared by all faces and mips.
     const glm::mat4 projection = glm::perspective(
-        glm::radians(90.0f), 1.0f, info.nearPlane, info.farPlane
-    );
+        glm::radians(90.0f), 1.0f, info.nearPlane, info.farPlane);
 
     // A single transition covers every face and mip level of the image.
     if (info.transitionBefore)
@@ -84,9 +82,9 @@ void CubemapRenderPass::render(
     {
         for (uint32_t faceIndex = 0; faceIndex < 6; ++faceIndex)
         {
-            const auto&     fc   = kFaceCameras[faceIndex];
+            const auto& fc = kFaceCameras[faceIndex];
             const glm::mat4 view = glm::lookAt(glm::vec3(0.0f), fc.center, fc.up);
-            const auto      face = static_cast<CubemapFace>(faceIndex);
+            const auto face = static_cast<CubemapFace>(faceIndex);
 
             cmd->beginRendering(cubemap, face, mipLevel);
             if (info.clear)

@@ -1,39 +1,46 @@
 #version 460
 #extension GL_EXT_ray_tracing : enable
 
-layout(set = 0, binding = 0, rgba8)   uniform image2D outputImage;
+layout(set = 0, binding = 0, rgba8) uniform image2D outputImage;
 layout(set = 0, binding = 2, rgba32f) uniform image2D accumImage;
-layout(set = 0, binding = 1) uniform CameraData {
+layout(set = 0, binding = 1) uniform CameraData
+{
     mat4 viewInverse;
     mat4 projInverse;
     vec4 misc; // x=frameCount, y=width, z=height
-} cam;
+}
+cam;
 layout(set = 1, binding = 0) uniform accelerationStructureEXT tlas;
 
 // Surface information returned by the closest-hit / miss shaders.
 struct HitInfo {
-    vec3  hitPos;
-    vec3  normal;
-    vec3  albedo;
-    vec3  emission;
+    vec3 hitPos;
+    vec3 normal;
+    vec3 albedo;
+    vec3 emission;
     float roughness;
-    int   hit; // 1 = surface hit, 0 = ray escaped the scene
+    int hit; // 1 = surface hit, 0 = ray escaped the scene
 };
 layout(location = 0) rayPayloadEXT HitInfo payload;
 
-const int   MAX_BOUNCES = 8;
+const int MAX_BOUNCES = 8;
 const float PI = 3.14159265359;
 
 // PCG hash based RNG.
-uint pcg(inout uint state) {
+uint pcg(inout uint state)
+{
     state = state * 747796405u + 2891336453u;
     uint word = ((state >> ((state >> 28u) + 4u)) ^ state) * 277803737u;
     return (word >> 22u) ^ word;
 }
-float rnd(inout uint state) { return float(pcg(state)) / 4294967295.0; }
+float rnd(inout uint state)
+{
+    return float(pcg(state)) / 4294967295.0;
+}
 
 // Cosine-weighted hemisphere sample around the normal n.
-vec3 cosineHemisphere(vec3 n, inout uint state) {
+vec3 cosineHemisphere(vec3 n, inout uint state)
+{
     float r1 = rnd(state);
     float r2 = rnd(state);
     float phi = 2.0 * PI * r1;
@@ -49,7 +56,8 @@ vec3 cosineHemisphere(vec3 n, inout uint state) {
 void main()
 {
     uint seed = (gl_LaunchIDEXT.x * 1973u + gl_LaunchIDEXT.y * 9277u +
-                 uint(cam.misc.x) * 26699u) | 1u;
+                 uint(cam.misc.x) * 26699u) |
+                1u;
 
     // Sub-pixel jitter for anti-aliasing; each frame draws a fresh sample.
     vec2 jitter = vec2(rnd(seed), rnd(seed));
@@ -70,8 +78,8 @@ void main()
     for (int b = 0; b < MAX_BOUNCES; ++b)
     {
         traceRayEXT(tlas, gl_RayFlagsOpaqueEXT, 0xff,
-            0, 0, 0,
-            rayO, 0.001, rayD, 10000.0, 0);
+                    0, 0, 0,
+                    rayO, 0.001, rayD, 10000.0, 0);
 
         if (payload.hit == 0)
         {

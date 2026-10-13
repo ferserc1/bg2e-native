@@ -48,17 +48,26 @@ struct BG2E_API LightmapPixels {
 };
 
 class BG2E_API LightmapBaker {
-public:
+  public:
     virtual ~LightmapBaker();
 
-    [[nodiscard]] uint32_t completedFrames() const { return _completedFrames; }
+    [[nodiscard]] uint32_t completedFrames() const
+    {
+        return _completedFrames;
+    }
     void resetAccumulation();
     [[nodiscard]] LightmapPixels readPixels() const;
     [[nodiscard]] std::shared_ptr<vulkan::Image> image() const;
-    [[nodiscard]] const LightmapSettings& settings() const { return _settings; }
-    [[nodiscard]] std::shared_ptr<scene::Node> targetNode() const { return _targetNode; }
+    [[nodiscard]] const LightmapSettings& settings() const
+    {
+        return _settings;
+    }
+    [[nodiscard]] std::shared_ptr<scene::Node> targetNode() const
+    {
+        return _targetNode;
+    }
 
-protected:
+  protected:
     friend class LightmapBakeExecutor;
 
     LightmapBaker(std::shared_ptr<BakerContext> context,

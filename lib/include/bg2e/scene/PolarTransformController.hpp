@@ -25,7 +25,7 @@ namespace bg2e {
 namespace scene {
 
 class BG2E_API PolarTransformControllerComponent : public Component {
-public:
+  public:
     BG2E_COMPONENT_TYPE_NAME("PolarTransformController");
 
     std::shared_ptr<Component> clone() const override;
@@ -33,33 +33,63 @@ public:
     void deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path&, render::Engine& engine) override;
     std::shared_ptr<json::JsonNode> serialize(const std::filesystem::path&) override;
 
-    inline bool enabled() const { return _enabled; }
-    inline void setEnabled(bool value) { _enabled = value; }
+    inline bool enabled() const
+    {
+        return _enabled;
+    }
+    inline void setEnabled(bool value)
+    {
+        _enabled = value;
+    }
 
-    float azimuth() const { return _azimuth; }
+    float azimuth() const
+    {
+        return _azimuth;
+    }
     void setAzimuth(float value);
 
-    float elevation() const { return _elevation; }
+    float elevation() const
+    {
+        return _elevation;
+    }
     void setElevation(float value);
 
-    float distance() const { return _distance; }
+    float distance() const
+    {
+        return _distance;
+    }
     void setDistance(float value);
 
-    const glm::vec3& target() const { return _target; }
-    void setTarget(const glm::vec3& target) { _target = target; }
+    const glm::vec3& target() const
+    {
+        return _target;
+    }
+    void setTarget(const glm::vec3& target)
+    {
+        _target = target;
+    }
 
-    float eulerX() const { return _eulerX; }
+    float eulerX() const
+    {
+        return _eulerX;
+    }
     void setEulerX(float value);
 
-    float eulerY() const { return _eulerY; }
+    float eulerY() const
+    {
+        return _eulerY;
+    }
     void setEulerY(float value);
 
-    float eulerZ() const { return _eulerZ; }
+    float eulerZ() const
+    {
+        return _eulerZ;
+    }
     void setEulerZ(float value);
 
     void update(float delta) override;
 
-protected:
+  protected:
     float _azimuth = 0.0f;
     float _elevation = 0.0f;
     float _distance = 5.0f;

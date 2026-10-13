@@ -31,7 +31,10 @@ void ChainJointComponent::deserialize(
 
     json::ObjectReader reader(jsonData);
     auto jointData = reader.getObject("joint");
-    if (!jointData) return;
+    if (!jointData)
+    {
+        return;
+    }
     auto joint = base::Joint::factory(jointData->node());
     auto linkJoint = std::dynamic_pointer_cast<base::LinkJoint>(joint);
     if (linkJoint)

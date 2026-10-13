@@ -36,7 +36,7 @@ class Engine;
 namespace scene {
 
 class BG2E_API ComponentFactoryRegistry {
-public:
+  public:
     using Creator = std::function<Component*(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path&, render::Engine&, SceneLoadProgress*)>;
     using DefaultCreator = std::function<Component*()>;
 
@@ -45,8 +45,7 @@ public:
     void registerComponent(
         const std::string& componentName,
         Creator creator,
-        DefaultCreator defaultCreator
-    );
+        DefaultCreator defaultCreator);
 
     bool contains(const std::string& componentName) const;
     Component* createDefault(const std::string& componentName) const;
@@ -54,30 +53,34 @@ public:
     Component* create(std::shared_ptr<json::JsonNode> data, const std::filesystem::path&, render::Engine& engine);
     Component* create(std::shared_ptr<json::JsonNode> data, const std::filesystem::path&, render::Engine& engine, SceneLoadProgress* progress);
 
-private:
+  private:
     struct FactoryEntry {
         Creator deserialize;
         DefaultCreator createDefault;
     };
 
     std::unordered_map<std::string, FactoryEntry> _registry;
-    static ComponentFactoryRegistry * _registrySingleton;
+    static ComponentFactoryRegistry* _registrySingleton;
 };
 
 template <typename ComponentT>
 class RegisterComponent {
-public:
-    RegisterComponent() {
+  public:
+    RegisterComponent()
+    {
         ComponentFactoryRegistry::get().registerComponent(
             ComponentT::staticTypeName(),
             [](std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path& path,
-               render::Engine& engine, SceneLoadProgress* progress) {
+               render::Engine& engine, SceneLoadProgress* progress)
+            {
                 auto result = std::make_unique<ComponentT>();
                 result->deserializeWithProgress(jsonData, path, engine, progress);
                 return result.release();
             },
-            [] { return new ComponentT(); }
-        );
+            []
+            {
+                return new ComponentT();
+            });
     }
 };
 
@@ -86,4 +89,3 @@ public:
 
 #define BG2E_SCENE_REGISTER_COMPONENT(ComponentClass) \
     RegisterComponent<ComponentClass> _registerComponentInstance##ComponentClass;
-    

@@ -17,7 +17,8 @@ namespace {
 
 reflection::TypeRegistration<base::LinkJoint> _linkJointReflection(
     "bg2e::base::LinkJoint",
-    [](reflection::TypeInfoBuilder<base::LinkJoint>& t) {
+    [](reflection::TypeInfoBuilder<base::LinkJoint>& t)
+    {
         t.displayName("Link Joint");
 
         t.property("offset", &base::LinkJoint::offset, &base::LinkJoint::setOffset)
@@ -25,13 +26,13 @@ reflection::TypeRegistration<base::LinkJoint> _linkJointReflection(
             .category("Transform");
 
         t.property("eulerRotation", &base::LinkJoint::eulerRotation,
-                                    &base::LinkJoint::setEulerRotation)
+                   &base::LinkJoint::setEulerRotation)
             .displayName("Euler Rotation")
             .category("Transform")
             .tooltip("Euler rotation in radians");
 
         t.property("transformOrder", &base::LinkJoint::transformOrder,
-                                    &base::LinkJoint::setTransformOrder)
+                   &base::LinkJoint::setTransformOrder)
             .displayName("Transform Order")
             .category("Transform")
             .combo()

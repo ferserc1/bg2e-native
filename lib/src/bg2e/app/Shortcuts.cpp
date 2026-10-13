@@ -22,8 +22,7 @@
 #include <iostream>
 #include <sstream>
 
-namespace bg2e::app
-{
+namespace bg2e::app {
 std::string Shortcuts::ShortcutData::getShortcutString() const
 {
     std::stringstream ss;
@@ -52,7 +51,7 @@ std::string Shortcuts::ShortcutData::getShortcutString() const
     return ss.str();
 }
 
-    void Shortcuts::keyDown(const KeyEvent& evt)
+void Shortcuts::keyDown(const KeyEvent& evt)
 {
     if (evt.isModifier())
     {
@@ -74,7 +73,6 @@ std::string Shortcuts::ShortcutData::getShortcutString() const
             break;
         }
     }
-
 }
 
 void Shortcuts::keyUp(const KeyEvent& evt)
@@ -101,7 +99,7 @@ void Shortcuts::keyUp(const KeyEvent& evt)
     }
     else
     {
-        for (const auto & sc : _shortcutData)
+        for (const auto& sc : _shortcutData)
         {
             if (matchShortcut(evt.key(), sc))
             {
@@ -111,17 +109,17 @@ void Shortcuts::keyUp(const KeyEvent& evt)
     }
 }
 
-void Shortcuts::addShortcutMapper(const ShortcutData & shortcut)
+void Shortcuts::addShortcutMapper(const ShortcutData& shortcut)
 {
     _shortcutData.push_back(shortcut);
 }
 
-bool Shortcuts::matchShortcut(const KeyEvent::Key currentKey, const ShortcutData & sc) const
+bool Shortcuts::matchShortcut(const KeyEvent::Key currentKey, const ShortcutData& sc) const
 {
     return currentKey == sc.key &&
-        _altModifier == sc.altModifier &&
-        _shiftModifier == sc.shiftModifier &&
-        sc.ctrlModifier == _ctrlModifier;
+           _altModifier == sc.altModifier &&
+           _shiftModifier == sc.shiftModifier &&
+           sc.ctrlModifier == _ctrlModifier;
 }
 
 }

@@ -27,9 +27,9 @@
 namespace bg2e {
 namespace reflection {
 
-template<typename T>
+template <typename T>
 class TypeRegistration {
-public:
+  public:
     explicit TypeRegistration(std::function<void(TypeInfoBuilder<T>&)> define)
     {
         TypeInfoBuilder<T> builder(T::staticTypeName());

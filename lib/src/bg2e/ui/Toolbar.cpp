@@ -27,10 +27,10 @@
 namespace bg2e::ui {
 
 int32_t Toolbar::addButton(
-    ToolbarButton & button,
-    Alignment align
-) {
-    auto & vec = align == AlignLeft ? _leftButtons : _rightButtons;
+    ToolbarButton& button,
+    Alignment align)
+{
+    auto& vec = align == AlignLeft ? _leftButtons : _rightButtons;
     if (button.id < 0)
     {
         button.id = genId();
@@ -40,10 +40,10 @@ int32_t Toolbar::addButton(
 }
 
 int32_t Toolbar::addButton(
-    ToolbarButton && button,
-    Alignment align
-) {
-    auto & vec = align == AlignLeft ? _leftButtons : _rightButtons;
+    ToolbarButton&& button,
+    Alignment align)
+{
+    auto& vec = align == AlignLeft ? _leftButtons : _rightButtons;
     if (button.id < 0)
     {
         button.id = genId();
@@ -54,50 +54,52 @@ int32_t Toolbar::addButton(
 
 void Toolbar::draw()
 {
-    draw([&]() {
-        for (auto & btn : _leftButtons)
-        {
-            if (btn.action != nullptr && Button::button(btn.label, true, btn.disabled))
-            {
-                btn.action();
-            }
-            else if (btn.action == nullptr) {
-                Text::text(btn.label, true);
-            }
-        }
-        
-        auto rightButtonsSize = 0;
-        for (auto & btn : _rightButtons)
-        {
-            if (btn.action != nullptr)
-            {
-                rightButtonsSize += Layout::calcButtonWidth(btn.label) +
-                    Layout::getItemHorizontalSpacing();
-            }
-            else
-            {
-                rightButtonsSize += Layout::calcTextWidth(btn.label) +
-                    Layout::getItemHorizontalSpacing();
-            }
-        }
-        auto btnIndex = 0;
-        for (auto & btn : _rightButtons)
-        {
-            btnIndex == 0 ? Layout::sameLine(-rightButtonsSize) : Layout::sameLine();
-            if (btn.action != nullptr && Button::button(btn.label, false, btn.disabled))
-            {
-                btn.action();
-            }
-            else if (btn.action == nullptr)
-            {
-                Text::text(btn.label);
-            }
-            ++btnIndex;
-        }
-    });
+    draw([&]()
+         {
+             for (auto& btn : _leftButtons)
+             {
+                 if (btn.action != nullptr && Button::button(btn.label, true, btn.disabled))
+                 {
+                     btn.action();
+                 }
+                 else if (btn.action == nullptr)
+                 {
+                     Text::text(btn.label, true);
+                 }
+             }
+
+             auto rightButtonsSize = 0;
+             for (auto& btn : _rightButtons)
+             {
+                 if (btn.action != nullptr)
+                 {
+                     rightButtonsSize += Layout::calcButtonWidth(btn.label) +
+                                         Layout::getItemHorizontalSpacing();
+                 }
+                 else
+                 {
+                     rightButtonsSize += Layout::calcTextWidth(btn.label) +
+                                         Layout::getItemHorizontalSpacing();
+                 }
+             }
+             auto btnIndex = 0;
+             for (auto& btn : _rightButtons)
+             {
+                 btnIndex == 0 ? Layout::sameLine(-rightButtonsSize) : Layout::sameLine();
+                 if (btn.action != nullptr && Button::button(btn.label, false, btn.disabled))
+                 {
+                     btn.action();
+                 }
+                 else if (btn.action == nullptr)
+                 {
+                     Text::text(btn.label);
+                 }
+                 ++btnIndex;
+             }
+         });
 }
 
-void Toolbar::updateButtonLabel(int32_t buttonId, const std::string & newLabel)
+void Toolbar::updateButtonLabel(int32_t buttonId, const std::string& newLabel)
 {
     auto btn = findButton(buttonId);
     if (btn)
@@ -106,7 +108,7 @@ void Toolbar::updateButtonLabel(int32_t buttonId, const std::string & newLabel)
     }
 }
 
-void Toolbar::updateButtonLabel(int32_t buttonId, std::string && newLabel)
+void Toolbar::updateButtonLabel(int32_t buttonId, std::string&& newLabel)
 {
     auto btn = findButton(buttonId);
     if (btn)
@@ -133,16 +135,18 @@ void Toolbar::disableButton(int32_t buttonId)
     }
 }
 
-ToolbarButton * Toolbar::findButton(int32_t buttonId)
+ToolbarButton* Toolbar::findButton(int32_t buttonId)
 {
-    auto result = std::find_if(_leftButtons.begin(), _leftButtons.end(), [buttonId](const ToolbarButton& btn) -> bool {
-        return btn.id == buttonId;
-    });
+    auto result = std::find_if(_leftButtons.begin(), _leftButtons.end(), [buttonId](const ToolbarButton& btn) -> bool
+                               {
+                                   return btn.id == buttonId;
+                               });
     if (result == _leftButtons.end())
     {
-        result = std::find_if(_rightButtons.begin(), _rightButtons.end(), [buttonId](const ToolbarButton& btn) -> bool {
-            return btn.id == buttonId;
-        });
+        result = std::find_if(_rightButtons.begin(), _rightButtons.end(), [buttonId](const ToolbarButton& btn) -> bool
+                              {
+                                  return btn.id == buttonId;
+                              });
     }
     if (result == _rightButtons.end())
     {
@@ -158,14 +162,15 @@ void Toolbar::setDrawFunction(std::function<void()> /* drawFunction */)
 
 void Toolbar::draw(
     std::function<void()> drawFunc,
-    std::function<void()> menuFunction
-) {
+    std::function<void()> menuFunction)
+{
     Window::draw(drawFunc, menuFunction);
     if (!_menuInitialized)
     {
-        setMenuFunction([&]() {
-            _menu.draw();
-        });
+        setMenuFunction([&]()
+                        {
+                            _menu.draw();
+                        });
         _menuInitialized = false;
     }
 }
@@ -173,18 +178,28 @@ void Toolbar::draw(
 int32_t Toolbar::genId()
 {
     // Generate a unique button id not used by any button in _leftButtons or _rightButtons
-    auto idInUse = [this](int32_t candidate) -> bool {
-        for (const auto & b : _leftButtons) {
-            if (b.id == candidate) return true;
+    auto idInUse = [this](int32_t candidate) -> bool
+    {
+        for (const auto& b : _leftButtons)
+        {
+            if (b.id == candidate)
+            {
+                return true;
+            }
         }
-        for (const auto & b : _rightButtons) {
-            if (b.id == candidate) return true;
+        for (const auto& b : _rightButtons)
+        {
+            if (b.id == candidate)
+            {
+                return true;
+            }
         }
         return false;
     };
 
     int32_t candidate = 0;
-    while (idInUse(candidate)) {
+    while (idInUse(candidate))
+    {
         ++candidate;
     }
     return candidate;

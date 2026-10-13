@@ -42,7 +42,10 @@ bool PolarTransformControllerEditor::draw()
     {
         comp->setAzimuth(azimuth);
         changed = true;
-        if (_onChangedFunction) _onChangedFunction();
+        if (_onChangedFunction)
+        {
+            _onChangedFunction();
+        }
     }
 
     float elevation = comp->elevation();
@@ -50,7 +53,10 @@ bool PolarTransformControllerEditor::draw()
     {
         comp->setElevation(elevation);
         changed = true;
-        if (_onChangedFunction) _onChangedFunction();
+        if (_onChangedFunction)
+        {
+            _onChangedFunction();
+        }
     }
 
     float distance = comp->distance();
@@ -58,7 +64,10 @@ bool PolarTransformControllerEditor::draw()
     {
         comp->setDistance(distance);
         changed = true;
-        if (_onChangedFunction) _onChangedFunction();
+        if (_onChangedFunction)
+        {
+            _onChangedFunction();
+        }
     }
 
     Text::separator("Orientation");
@@ -68,7 +77,10 @@ bool PolarTransformControllerEditor::draw()
     {
         comp->setEulerX(eulerX);
         changed = true;
-        if (_onChangedFunction) _onChangedFunction();
+        if (_onChangedFunction)
+        {
+            _onChangedFunction();
+        }
     }
 
     float eulerY = comp->eulerY();
@@ -76,7 +88,10 @@ bool PolarTransformControllerEditor::draw()
     {
         comp->setEulerY(eulerY);
         changed = true;
-        if (_onChangedFunction) _onChangedFunction();
+        if (_onChangedFunction)
+        {
+            _onChangedFunction();
+        }
     }
 
     float eulerZ = comp->eulerZ();
@@ -84,7 +99,10 @@ bool PolarTransformControllerEditor::draw()
     {
         comp->setEulerZ(eulerZ);
         changed = true;
-        if (_onChangedFunction) _onChangedFunction();
+        if (_onChangedFunction)
+        {
+            _onChangedFunction();
+        }
     }
 
     Text::separator("Target");
@@ -94,7 +112,10 @@ bool PolarTransformControllerEditor::draw()
     {
         comp->setTarget(target);
         changed = true;
-        if (_onChangedFunction) _onChangedFunction();
+        if (_onChangedFunction)
+        {
+            _onChangedFunction();
+        }
     }
 
     return changed;

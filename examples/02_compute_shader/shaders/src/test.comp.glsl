@@ -1,8 +1,8 @@
 #version 450
 
-layout (local_size_x = 16, local_size_y = 16) in;
+layout(local_size_x = 16, local_size_y = 16) in;
 
-layout (binding = 0, rgba16f) uniform writeonly image2D brdfLUT;
+layout(binding = 0, rgba16f) uniform writeonly image2D brdfLUT;
 
 const uint SAMPLE_COUNT = 1024u;
 
@@ -11,18 +11,18 @@ const float PI = 3.14159265359;
 vec3 importanceSampleGGX(vec2 Xi, float roughness, vec3 N)
 {
     float a = roughness * roughness;
-    
+
     float phi = 2.0 * PI * Xi.x;
-    float cosTheta = sqrt((1.0 - Xi.y) / (1.0 + (a*a - 1.0) * Xi.y));
+    float cosTheta = sqrt((1.0 - Xi.y) / (1.0 + (a * a - 1.0) * Xi.y));
     float sinTheta = sqrt(1.0 - cosTheta * cosTheta);
-    
+
     vec3 H = vec3(sinTheta * cos(phi), sinTheta * sin(phi), cosTheta);
-    
+
     // Transform H to world space
     vec3 up = abs(N.z) < 0.999 ? vec3(0.0, 0.0, 1.0) : vec3(1.0, 0.0, 0.0);
     vec3 tangent = normalize(cross(up, N));
     vec3 bitangent = cross(N, tangent);
-    
+
     return normalize(tangent * H.x + bitangent * H.y + N * H.z);
 }
 
@@ -41,7 +41,9 @@ void main()
     ivec2 coord = ivec2(gl_GlobalInvocationID.xy);
 
     if (coord.x >= size.x || coord.y >= size.y)
+    {
         return;
+    }
 
     vec2 uv = vec2(coord) / vec2(size);
 

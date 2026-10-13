@@ -23,8 +23,7 @@ namespace bg2e {
 namespace gpu {
 
 ShaderLib::ShaderLib(const std::filesystem::path& basePath, BackendType backendType)
-    : _basePath(basePath)
-    , _backendType(backendType)
+    : _basePath(basePath), _backendType(backendType)
 {
 }
 
@@ -34,11 +33,8 @@ std::shared_ptr<ShaderModule> ShaderLib::vertex(const std::string& shaderName, D
         shaderName,
         "vert",
         ShaderStage::Vertex,
-        debugName.empty() ?
-            shaderName + " vertex shader" :
-            debugName,
-        device
-    );
+        debugName.empty() ? shaderName + " vertex shader" : debugName,
+        device);
 }
 
 std::shared_ptr<ShaderModule> ShaderLib::fragment(const std::string& shaderName, Device* device, const std::string& debugName)
@@ -47,11 +43,8 @@ std::shared_ptr<ShaderModule> ShaderLib::fragment(const std::string& shaderName,
         shaderName,
         "frag",
         ShaderStage::Fragment,
-        debugName.empty() ?
-            shaderName + " fragment shader" :
-            debugName,
-        device
-    );
+        debugName.empty() ? shaderName + " fragment shader" : debugName,
+        device);
 }
 
 std::shared_ptr<ShaderModule> ShaderLib::compute(const std::string& shaderName, Device* device, const std::string& debugName)
@@ -60,11 +53,8 @@ std::shared_ptr<ShaderModule> ShaderLib::compute(const std::string& shaderName, 
         shaderName,
         "comp",
         ShaderStage::Compute,
-        debugName.empty() ?
-            shaderName + " compute shader" :
-            debugName,
-        device
-    );
+        debugName.empty() ? shaderName + " compute shader" : debugName,
+        device);
 }
 
 std::shared_ptr<ShaderModule> ShaderLib::rayGeneration(const std::string& shaderName, Device* device, const std::string& debugName)
@@ -73,11 +63,8 @@ std::shared_ptr<ShaderModule> ShaderLib::rayGeneration(const std::string& shader
         shaderName,
         "rgen",
         ShaderStage::RayGeneration,
-        debugName.empty() ?
-            shaderName + " ray generation shader" :
-            debugName,
-        device
-    );
+        debugName.empty() ? shaderName + " ray generation shader" : debugName,
+        device);
 }
 
 std::shared_ptr<ShaderModule> ShaderLib::miss(const std::string& shaderName, Device* device, const std::string& debugName)
@@ -86,11 +73,8 @@ std::shared_ptr<ShaderModule> ShaderLib::miss(const std::string& shaderName, Dev
         shaderName,
         "rmiss",
         ShaderStage::Miss,
-        debugName.empty() ?
-            shaderName + " miss shader" :
-            debugName,
-        device
-    );
+        debugName.empty() ? shaderName + " miss shader" : debugName,
+        device);
 }
 
 std::shared_ptr<ShaderModule> ShaderLib::closestHit(const std::string& shaderName, Device* device, const std::string& debugName)
@@ -99,32 +83,29 @@ std::shared_ptr<ShaderModule> ShaderLib::closestHit(const std::string& shaderNam
         shaderName,
         "rchit",
         ShaderStage::ClosestHit,
-        debugName.empty() ?
-            shaderName + " closest hit shader" :
-            debugName,
-        device
-    );
+        debugName.empty() ? shaderName + " closest hit shader" : debugName,
+        device);
 }
 
 std::shared_ptr<ShaderModule> ShaderLib::_load(
     const std::string& shaderName,
     const std::string& stageExt,
-    ShaderStage        stage,
+    ShaderStage stage,
     const std::string& debugName,
-    Device*            device)
+    Device* device)
 {
-    std::string ext        = (_backendType == BackendType::Vulkan) ? ".spv" : ".metallib";
+    std::string ext = (_backendType == BackendType::Vulkan) ? ".spv" : ".metallib";
     std::string entryPoint = (_backendType == BackendType::Vulkan) ? "main" : stageExt + "Main";
     auto filePath = (_basePath / (shaderName + "." + stageExt + ext)).string();
-    return device->createShaderModule({ filePath, entryPoint, stage, debugName });
+    return device->createShaderModule({filePath, entryPoint, stage, debugName});
 }
 
 std::shared_ptr<ShaderModule> ShaderLib::_loadOrNull(
     const std::string& shaderName,
     const std::string& stageExt,
-    ShaderStage        stage,
+    ShaderStage stage,
     const std::string& debugName,
-    Device*            device)
+    Device* device)
 {
     std::string ext = (_backendType == BackendType::Vulkan) ? ".spv" : ".metallib";
     auto filePath = _basePath / (shaderName + "." + stageExt + ext);
@@ -138,11 +119,9 @@ std::shared_ptr<ShaderModule> ShaderLib::_loadOrNull(
     }
 
     std::string entryPoint = (_backendType == BackendType::Vulkan)
-        ? "main"
-        : stageExt + "Main";
-    return device->createShaderModule({
-        filePath.string(), entryPoint, stage, debugName
-    });
+                                 ? "main"
+                                 : stageExt + "Main";
+    return device->createShaderModule({filePath.string(), entryPoint, stage, debugName});
 }
 
 }

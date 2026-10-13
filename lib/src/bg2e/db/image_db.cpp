@@ -26,7 +26,7 @@
 
 #ifdef _WIN32
 #pragma warning(push)
-#pragma warning(disable:4996)
+#pragma warning(disable : 4996)
 #else
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated"
@@ -52,10 +52,11 @@ bool equalsIgnoreCase(std::string_view left, std::string_view right)
         return false;
     }
 
-    const auto lowerAscii = [](unsigned char value) {
+    const auto lowerAscii = [](unsigned char value)
+    {
         return value >= 'A' && value <= 'Z'
-            ? static_cast<unsigned char>(value + ('a' - 'A'))
-            : value;
+                   ? static_cast<unsigned char>(value + ('a' - 'A'))
+                   : value;
     };
 
     for (std::size_t i = 0; i < left.size(); ++i)
@@ -109,14 +110,14 @@ std::vector<std::string_view> extensionsForImageFormat(ImageFormat format)
 {
     switch (format)
     {
-        case ImageFormat::PNG:
-            return { ".png" };
-        case ImageFormat::JPEG:
-            return { ".jpg", ".jpeg" };
-        case ImageFormat::BMP:
-            return { ".bmp" };
-        case ImageFormat::TGA:
-            return { ".tga" };
+    case ImageFormat::PNG:
+        return {".png"};
+    case ImageFormat::JPEG:
+        return {".jpg", ".jpeg"};
+    case ImageFormat::BMP:
+        return {".bmp"};
+    case ImageFormat::TGA:
+        return {".tga"};
     }
 
     return {};
@@ -126,20 +127,20 @@ std::string_view canonicalImageExtension(ImageFormat format)
 {
     switch (format)
     {
-        case ImageFormat::PNG:
-            return ".png";
-        case ImageFormat::JPEG:
-            return ".jpg";
-        case ImageFormat::BMP:
-            return ".bmp";
-        case ImageFormat::TGA:
-            return ".tga";
+    case ImageFormat::PNG:
+        return ".png";
+    case ImageFormat::JPEG:
+        return ".jpg";
+    case ImageFormat::BMP:
+        return ".bmp";
+    case ImageFormat::TGA:
+        return ".tga";
     }
 
     return {};
 }
 
-bg2e::base::Image * loadImage(const std::filesystem::path& filePath)
+bg2e::base::Image* loadImage(const std::filesystem::path& filePath)
 {
     if (filePath.extension() == ".hdr")
     {
@@ -149,42 +150,41 @@ bg2e::base::Image * loadImage(const std::filesystem::path& filePath)
         {
             throw std::runtime_error("Error loading image at path " + filePath.string());
         }
-        
+
         auto result = new bg2e::base::Image(
             data,
             uint32_t(width),
             uint32_t(height),
-            4
-        );
-        
+            4);
+
         result->setPath(filePath.string());
         return result;
     }
-    else{
+    else
+    {
         int width, height, channels;
         unsigned char* data = stbi_load(filePath.string().c_str(), &width, &height, &channels, 4);
         if (!data)
         {
             throw std::runtime_error("Error loading image at path " + filePath.string());
         }
-        
+
         auto result = new bg2e::base::Image(
             data,
             uint32_t(width),
             uint32_t(height),
-            4
-        );
-        
+            4);
+
         result->setPath(filePath.string());
         return result;
     }
 }
 
-bg2e::base::Image * loadImage(const std::filesystem::path& basePath, const std::string& fileName)
+bg2e::base::Image* loadImage(const std::filesystem::path& basePath, const std::string& fileName)
 {
     auto fullPath = basePath;
     fullPath.append(fileName);
-    
+
     return loadImage(fullPath);
 }
 
@@ -192,8 +192,8 @@ std::vector<uint8_t> decodeImageRGBA8(
     const uint8_t* encodedData,
     size_t encodedSize,
     uint32_t& width,
-    uint32_t& height
-) {
+    uint32_t& height)
+{
     if (!encodedData || encodedSize == 0 || encodedSize > static_cast<size_t>(std::numeric_limits<int>::max()))
     {
         throw std::runtime_error("Invalid encoded image data");
@@ -203,7 +203,7 @@ std::vector<uint8_t> decodeImageRGBA8(
     int decodedHeight = 0;
     int channels = 0;
     auto* pixels = stbi_load_from_memory(encodedData, static_cast<int>(encodedSize),
-                                          &decodedWidth, &decodedHeight, &channels, 4);
+                                         &decodedWidth, &decodedHeight, &channels, 4);
     if (!pixels || decodedWidth <= 0 || decodedHeight <= 0)
     {
         stbi_image_free(pixels);
@@ -239,8 +239,8 @@ void saveImage(
     const uint8_t* data,
     uint32_t width,
     uint32_t height,
-    uint32_t bpp
-) {
+    uint32_t bpp)
+{
     int writtenBytes = 0;
     const auto format = imageFormatFromPath(filePath);
     if (!format)
@@ -254,8 +254,7 @@ void saveImage(
             filePath.string().c_str(),
             width, height, bpp,
             data,
-            0
-        );
+            0);
     }
     else if (*format == ImageFormat::JPEG)
     {
@@ -264,24 +263,21 @@ void saveImage(
             filePath.string().c_str(),
             width, height, bpp,
             data,
-            quality
-        );
+            quality);
     }
     else if (*format == ImageFormat::BMP)
     {
         writtenBytes = stbi_write_bmp(
             filePath.string().c_str(),
             width, height, bpp,
-            data
-        );
+            data);
     }
     else if (*format == ImageFormat::TGA)
     {
         writtenBytes = stbi_write_tga(
             filePath.string().c_str(),
             width, height, bpp,
-            data
-        );
+            data);
     }
     if (writtenBytes == 0)
     {
@@ -289,18 +285,16 @@ void saveImage(
     }
 }
 
-
 void saveImage(
     const std::filesystem::path& basePath,
     const std::string& fileName,
     const uint8_t* data,
     uint32_t width,
     uint32_t height,
-    uint32_t bpp
-) {
+    uint32_t bpp)
+{
     auto fullPath = basePath / fileName;
     saveImage(fullPath, data, width, height, bpp);
 }
-
 
 }

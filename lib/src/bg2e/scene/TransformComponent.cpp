@@ -36,119 +36,126 @@ std::shared_ptr<Component> TransformComponent::clone() const
 
 std::unique_ptr<TransformComponent> TransformComponent::makeTranslated(float x, float y, float z)
 {
-    return std::make_unique<TransformComponent>(glm::translate( glm::mat4 { 1.0f }, glm::vec3(x, y, z) ));
+    return std::make_unique<TransformComponent>(glm::translate(glm::mat4{1.0f}, glm::vec3(x, y, z)));
 }
 
 std::unique_ptr<TransformComponent> TransformComponent::makeTranslated(const glm::vec3& t)
 {
-    return std::make_unique<TransformComponent>(glm::translate( glm::mat4 { 1.0f }, t ));
+    return std::make_unique<TransformComponent>(glm::translate(glm::mat4{1.0f}, t));
 }
 
 std::unique_ptr<TransformComponent> TransformComponent::makeRotated(float alpha, float x, float y, float z)
 {
-    return std::make_unique<TransformComponent>(glm::rotate( glm::mat4 { 1.0f }, alpha, glm::vec3(x, y, z) ));
+    return std::make_unique<TransformComponent>(glm::rotate(glm::mat4{1.0f}, alpha, glm::vec3(x, y, z)));
 }
 
 std::unique_ptr<TransformComponent> TransformComponent::makeRotated(float alpha, const glm::vec3& axis)
 {
-    return std::make_unique<TransformComponent>(glm::rotate( glm::mat4 { 1.0f }, alpha, axis ));
+    return std::make_unique<TransformComponent>(glm::rotate(glm::mat4{1.0f}, alpha, axis));
 }
 
 std::unique_ptr<TransformComponent> TransformComponent::makeScaled(float xyz)
 {
-    return std::make_unique<TransformComponent>(glm::scale( glm::mat4 { 1.0f }, glm::vec3(xyz) ));
+    return std::make_unique<TransformComponent>(glm::scale(glm::mat4{1.0f}, glm::vec3(xyz)));
 }
 
 std::unique_ptr<TransformComponent> TransformComponent::makeScaled(float x, float y, float z)
 {
-    return std::make_unique<TransformComponent>(glm::scale( glm::mat4 { 1.0f }, glm::vec3(x, y, z) ));
+    return std::make_unique<TransformComponent>(glm::scale(glm::mat4{1.0f}, glm::vec3(x, y, z)));
 }
 
 std::unique_ptr<TransformComponent> TransformComponent::makeScaled(const glm::vec3& scale)
 {
-    return std::make_unique<TransformComponent>(glm::scale( glm::mat4 { 1.0f }, scale ));
+    return std::make_unique<TransformComponent>(glm::scale(glm::mat4{1.0f}, scale));
 }
 
-TransformComponent * TransformComponent::setTranslation(float x, float y, float z) {
+TransformComponent* TransformComponent::setTranslation(float x, float y, float z)
+{
     _matrix = recompose(extractRotation(_matrix), extractScale(_matrix), {x, y, z});
     return this;
 }
 
-TransformComponent * TransformComponent::setRotation(float alpha, float x, float y, float z) {
+TransformComponent* TransformComponent::setRotation(float alpha, float x, float y, float z)
+{
     const auto rotation = glm::mat3(glm::rotate(glm::mat4{1.0f}, alpha, glm::vec3(x, y, z)));
     _matrix = recompose(rotation, extractScale(_matrix), extractTranslation(_matrix));
     return this;
 }
 
-TransformComponent * TransformComponent::setScale(float xyz) {
+TransformComponent* TransformComponent::setScale(float xyz)
+{
     _matrix = recompose(extractRotation(_matrix), {xyz, xyz, xyz}, extractTranslation(_matrix));
     return this;
 }
 
-TransformComponent * TransformComponent::setScale(float x, float y, float z) {
+TransformComponent* TransformComponent::setScale(float x, float y, float z)
+{
     _matrix = recompose(extractRotation(_matrix), {x, y, z}, extractTranslation(_matrix));
     return this;
 }
 
-TransformComponent * TransformComponent::translate(float x, float y, float z)
+TransformComponent* TransformComponent::translate(float x, float y, float z)
 {
     _matrix = glm::translate(_matrix, glm::vec3(x, y, z));
     return this;
 }
 
-TransformComponent * TransformComponent::rotate(float alpha, float x, float y, float z)
+TransformComponent* TransformComponent::rotate(float alpha, float x, float y, float z)
 {
     _matrix = glm::rotate(_matrix, alpha, glm::vec3(x, y, z));
     return this;
 }
 
-TransformComponent * TransformComponent::scale(float xyz)
+TransformComponent* TransformComponent::scale(float xyz)
 {
     _matrix = glm::scale(_matrix, glm::vec3(xyz));
     return this;
 }
 
-TransformComponent * TransformComponent::scale(float x, float y, float z)
+TransformComponent* TransformComponent::scale(float x, float y, float z)
 {
     _matrix = glm::scale(_matrix, glm::vec3(x, y, z));
     return this;
 }
 
-TransformComponent * TransformComponent::setIdentity()
+TransformComponent* TransformComponent::setIdentity()
 {
     _matrix = glm::identity<glm::mat4>();
     return this;
 }
 
-TransformComponent * TransformComponent::setTranslation(const glm::vec3& t) {
+TransformComponent* TransformComponent::setTranslation(const glm::vec3& t)
+{
     _matrix = recompose(extractRotation(_matrix), extractScale(_matrix), t);
     return this;
 }
 
-TransformComponent * TransformComponent::setRotation(float alpha, const glm::vec3& axis) {
+TransformComponent* TransformComponent::setRotation(float alpha, const glm::vec3& axis)
+{
     const auto rotation = glm::mat3(glm::rotate(glm::mat4{1.0f}, alpha, axis));
     _matrix = recompose(rotation, extractScale(_matrix), extractTranslation(_matrix));
     return this;
 }
 
-TransformComponent * TransformComponent::setScale(const glm::vec3& scale) {
+TransformComponent* TransformComponent::setScale(const glm::vec3& scale)
+{
     _matrix = recompose(extractRotation(_matrix), scale, extractTranslation(_matrix));
     return this;
 }
 
-TransformComponent * TransformComponent::translate(const glm::vec3& t)
+TransformComponent* TransformComponent::translate(const glm::vec3& t)
 {
     _matrix = glm::translate(_matrix, t);
     return this;
 }
 
-TransformComponent * TransformComponent::rotate(float alpha, const glm::vec3& axis)
+TransformComponent* TransformComponent::rotate(float alpha, const glm::vec3& axis)
 {
     _matrix = glm::rotate(_matrix, alpha, axis);
     return this;
 }
 
-TransformComponent * TransformComponent::scale(const glm::vec3& scale)
+TransformComponent* TransformComponent::scale(const glm::vec3& scale)
 {
     _matrix = glm::scale(_matrix, scale);
     return this;
@@ -178,7 +185,7 @@ glm::vec3 TransformComponent::scaleValue() const
     return extractScale(_matrix);
 }
 
-TransformComponent * TransformComponent::setEulerRotation(const glm::vec3& degrees)
+TransformComponent* TransformComponent::setEulerRotation(const glm::vec3& degrees)
 {
     const auto radians = glm::radians(degrees);
     const auto rotation = glm::mat3(glm::eulerAngleXYZ(radians.x, radians.y, radians.z));
@@ -192,14 +199,14 @@ glm::mat3 TransformComponent::extractRotation(const glm::mat4& m)
     glm::mat3 r;
     constexpr float epsilon = std::numeric_limits<float>::epsilon();
     r[0] = scale.x > epsilon
-        ? glm::vec3(m[0]) / scale.x
-        : glm::vec3(1.0f, 0.0f, 0.0f);
+               ? glm::vec3(m[0]) / scale.x
+               : glm::vec3(1.0f, 0.0f, 0.0f);
     r[1] = scale.y > epsilon
-        ? glm::vec3(m[1]) / scale.y
-        : glm::vec3(0.0f, 1.0f, 0.0f);
+               ? glm::vec3(m[1]) / scale.y
+               : glm::vec3(0.0f, 1.0f, 0.0f);
     r[2] = scale.z > epsilon
-        ? glm::vec3(m[2]) / scale.z
-        : glm::vec3(0.0f, 0.0f, 1.0f);
+               ? glm::vec3(m[2]) / scale.z
+               : glm::vec3(0.0f, 0.0f, 1.0f);
     return r;
 }
 
@@ -208,8 +215,7 @@ glm::vec3 TransformComponent::extractScale(const glm::mat4& m)
     return glm::vec3(
         glm::length(glm::vec3(m[0])),
         glm::length(glm::vec3(m[1])),
-        glm::length(glm::vec3(m[2]))
-    );
+        glm::length(glm::vec3(m[2])));
 }
 
 glm::mat4 TransformComponent::recompose(const glm::mat3& rotation, const glm::vec3& scale, const glm::vec3& translation)
@@ -241,20 +247,23 @@ glm::mat4 TransformComponent::invertedWorldMatrix()
 void TransformComponent::deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path& /* basePath */, [[maybe_unused]] render::Engine& engine)
 {
     json::ObjectReader reader(jsonData);
-    if (auto matrix = reader.getGlmMat4("transformMatrix")) _matrix = *matrix;
+    if (auto matrix = reader.getGlmMat4("transformMatrix"))
+    {
+        _matrix = *matrix;
+    }
 }
 
 std::shared_ptr<json::JsonNode> TransformComponent::serialize(const std::filesystem::path& basePath)
 {
     using namespace bg2e::json;
     auto compData = Component::serialize(basePath);
-    JsonObject & obj = compData->objectValue();
-    
+    JsonObject& obj = compData->objectValue();
+
     obj["transformMatrix"] = JSON(_matrix);
-    
+
     return compData;
 }
 
 BG2E_SCENE_REGISTER_COMPONENT(TransformComponent);
-    
+
 }

@@ -27,21 +27,22 @@ namespace scene {
 namespace vk {
 
 class BG2E_API EnvironmentDataBinding : public bg2e::render::vulkan::PipelineDataBinding {
-public:
+  public:
     struct EnvironmentUniforms {
         float maxEnvMapLod;
     };
 
-    EnvironmentDataBinding(bg2e::render::Engine * engine) : PipelineDataBinding(engine) {}
+    EnvironmentDataBinding(bg2e::render::Engine* engine) : PipelineDataBinding(engine)
+    {
+    }
 
-    void initFrameResources(bg2e::render::vulkan::DescriptorSetAllocator * frameAllocator) override;
+    void initFrameResources(bg2e::render::vulkan::DescriptorSetAllocator* frameAllocator) override;
 
     VkDescriptorSetLayout createLayout(VkShaderStageFlags shaderStages = VK_SHADER_STAGE_FRAGMENT_BIT) override;
 
     VkDescriptorSet newDescriptorSet(
-        bg2e::render::vulkan::FrameResources & frameResources,
-        bg2e::render::EnvironmentResources * environmentResources
-    );
+        bg2e::render::vulkan::FrameResources& frameResources,
+        bg2e::render::EnvironmentResources* environmentResources);
 };
 
 }

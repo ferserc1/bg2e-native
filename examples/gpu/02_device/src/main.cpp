@@ -24,11 +24,16 @@ static const char* deviceTypeString(bg2e::gpu::PhysicalDeviceProperties::DeviceT
 {
     switch (type)
     {
-        case bg2e::gpu::PhysicalDeviceProperties::DiscreteGPU:   return "Discrete GPU";
-        case bg2e::gpu::PhysicalDeviceProperties::IntegratedGPU: return "Integrated GPU";
-        case bg2e::gpu::PhysicalDeviceProperties::VirtualGPU:    return "Virtual GPU";
-        case bg2e::gpu::PhysicalDeviceProperties::CPU:           return "CPU";
-        default:                                                  return "Unknown";
+    case bg2e::gpu::PhysicalDeviceProperties::DiscreteGPU:
+        return "Discrete GPU";
+    case bg2e::gpu::PhysicalDeviceProperties::IntegratedGPU:
+        return "Integrated GPU";
+    case bg2e::gpu::PhysicalDeviceProperties::VirtualGPU:
+        return "Virtual GPU";
+    case bg2e::gpu::PhysicalDeviceProperties::CPU:
+        return "CPU";
+    default:
+        return "Unknown";
     }
 }
 
@@ -57,16 +62,19 @@ int main(int argc, char** argv)
     Uint32 windowFlags = 0;
     switch (backend->windowType())
     {
-        case gpu::WindowType::Vulkan: windowFlags = SDL_WINDOW_VULKAN; break;
-        case gpu::WindowType::Metal:  windowFlags = SDL_WINDOW_METAL;  break;
+    case gpu::WindowType::Vulkan:
+        windowFlags = SDL_WINDOW_VULKAN;
+        break;
+    case gpu::WindowType::Metal:
+        windowFlags = SDL_WINDOW_METAL;
+        break;
     }
 
     SDL_Window* window = SDL_CreateWindow(
         "GPU Device Example",
         SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
         800, 600,
-        windowFlags
-    );
+        windowFlags);
     if (!window)
     {
         std::cerr << "Failed to create window: " << SDL_GetError() << std::endl;
@@ -96,7 +104,7 @@ int main(int argc, char** argv)
     device->create(instance, physicalDevice.get(), surface.get());
 
     std::cout << "  Graphics queue family: " << device->graphicsQueue().familyIndex() << std::endl;
-    std::cout << "  Present queue family:  " << device->presentQueue().familyIndex()  << std::endl;
+    std::cout << "  Present queue family:  " << device->presentQueue().familyIndex() << std::endl;
     std::cout << "  Transfer queue family: " << device->transferQueue().familyIndex() << std::endl;
     std::cout << "  Swapchain images:      " << surface->imageCount() << std::endl;
 

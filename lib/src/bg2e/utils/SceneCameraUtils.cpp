@@ -29,7 +29,7 @@
 
 namespace bg2e::utils {
 
-float cameraVerticalFieldOfView(scene::CameraComponent * camera, float fallback)
+float cameraVerticalFieldOfView(scene::CameraComponent* camera, float fallback)
 {
     const auto validFieldOfView = [](float value)
     {
@@ -45,19 +45,18 @@ float cameraVerticalFieldOfView(scene::CameraComponent * camera, float fallback)
         return fallback;
     }
 
-    if (auto perspective = dynamic_cast<math::PerspectiveProjection *>(camera->projection()))
+    if (auto perspective = dynamic_cast<math::PerspectiveProjection*>(camera->projection()))
     {
         return validFieldOfView(perspective->fov()) ? perspective->fov() : fallback;
     }
 
-    if (auto optical = dynamic_cast<math::OpticalProjection *>(camera->projection()))
+    if (auto optical = dynamic_cast<math::OpticalProjection*>(camera->projection()))
     {
         if (optical->frameSize() > 0.0f &&
             optical->focalLength() > std::numeric_limits<float>::epsilon())
         {
             const float fieldOfView = glm::degrees(2.0f * std::atan(
-                optical->frameSize() / (2.0f * optical->focalLength())
-            ));
+                                                              optical->frameSize() / (2.0f * optical->focalLength())));
             return validFieldOfView(fieldOfView) ? fieldOfView : fallback;
         }
     }
@@ -67,9 +66,8 @@ float cameraVerticalFieldOfView(scene::CameraComponent * camera, float fallback)
 
 void applyViewpointToOrbitCamera(
     const render::CameraCandidate& candidate,
-    scene::OrbitCameraComponent * orbitCamera,
-    scene::CameraComponent * camera
-)
+    scene::OrbitCameraComponent* orbitCamera,
+    scene::CameraComponent* camera)
 {
     if (!orbitCamera)
     {
@@ -87,7 +85,7 @@ void applyViewpointToOrbitCamera(
 
     orbitCamera->setCenter(candidate.target);
     orbitCamera->setDistance(orbitDistance);
-    orbitCamera->setRotation({ candidate.pitch, candidate.yaw });
+    orbitCamera->setRotation({candidate.pitch, candidate.yaw});
 }
 
 }

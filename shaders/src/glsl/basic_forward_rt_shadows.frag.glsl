@@ -35,10 +35,12 @@ layout(location = 3) in vec3 inViewPos;
 layout(location = 4) in vec3 inFragPos;
 layout(location = 5) in mat3 inTBN;
 
-layout (set = 1, binding = 0) uniform PBRObjectData {
+layout(set = 1, binding = 0) uniform PBRObjectData
+{
     mat4 modelMatrix;
     PBRMaterialData material;
-} objectData;
+}
+objectData;
 
 layout(set = 1, binding = 1) uniform sampler2D albedoTex;
 layout(set = 1, binding = 2) uniform sampler2D normalTex;
@@ -53,20 +55,25 @@ layout(push_constant) uniform PushConstant
     float brightness;
     float contrast;
     float exposure;
-} pushConstant;
+}
+pushConstant;
 
 layout(set = 2, binding = 0) uniform samplerCube irradianceMap;
 layout(set = 2, binding = 1) uniform samplerCube prefilteredEnvMap;
 layout(set = 2, binding = 2) uniform sampler2D brdfLUT;
-layout(set = 2, binding = 3) uniform EnvironmentData {
+layout(set = 2, binding = 3) uniform EnvironmentData
+{
     float maxReflectionLOD;
-} environmentData;
+}
+environmentData;
 
-layout (set = 3, binding = 0) uniform LightsBuffer {
+layout(set = 3, binding = 0) uniform LightsBuffer
+{
     LightData lights[LIGHT_COUNT];
     int lightCount;
     vec3 padding;
-} lightsBuffer;
+}
+lightsBuffer;
 
 layout(set = 4, binding = 0) uniform accelerationStructureEXT u_TLAS;
 
@@ -88,8 +95,7 @@ void main()
             pushConstant.exposure,
             pushConstant.gamma,
             pushConstant.brightness,
-            pushConstant.contrast
-        );
+            pushConstant.contrast);
         return;
     }
 
@@ -98,13 +104,15 @@ void main()
 
     vec3 Lo = vec3(0.0);
     int lightCount = lightsBuffer.lightCount;
-    for(int i = 0; i < lightCount; ++i)
+    for (int i = 0; i < lightCount; ++i)
     {
-        if (lightsBuffer.lights[i].type == LIGHT_TYPE_DISABLED) {
+        if (lightsBuffer.lights[i].type == LIGHT_TYPE_DISABLED)
+        {
             continue;
         }
         float shadowFactor = 1.0;
-        if (lightsBuffer.lights[i].castShadows != 0) {
+        if (lightsBuffer.lights[i].castShadows != 0)
+        {
             shadowFactor = queryShadow(u_TLAS, inFragPos, normal, lightsBuffer.lights[i], 32);
         }
         Lo += shadowFactor * calcRadiance(lightsBuffer.lights[i], viewDir, inFragPos, metallic, roughness, F0, normal, albedo, mat.sheenIntensity, mat.sheenColor.rgb, ambientOcclussion);
@@ -116,8 +124,7 @@ void main()
         irradianceMap, prefilteredEnvMap,
         environmentData.maxReflectionLOD,
         brdfLUT, ambientOcclussion,
-        mat.sheenIntensity, mat.sheenColor.rgb
-    );
+        mat.sheenIntensity, mat.sheenColor.rgb);
 
     vec3 color = ambient + Lo;
 
@@ -130,6 +137,5 @@ void main()
         pushConstant.exposure,
         pushConstant.gamma,
         pushConstant.brightness,
-        pushConstant.contrast
-    );
+        pushConstant.contrast);
 }

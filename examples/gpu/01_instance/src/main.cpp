@@ -17,7 +17,8 @@
  */
 #include <bg2e.hpp>
 
-int main(int argc, char ** argv) {
+int main(int argc, char** argv)
+{
     using namespace bg2e;
 
     // The default backend in macOS is Vulkan because the Metal implementation is not complete.

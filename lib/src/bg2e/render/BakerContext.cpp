@@ -11,13 +11,16 @@ namespace render {
 BakerContext::BakerContext(Engine* engine, scene::Node* rootNode)
     : _engine(engine), _rootNode(rootNode)
 {
-    if (!_engine) {
+    if (!_engine)
+    {
         throw std::invalid_argument("BakerContext: engine must not be null");
     }
-    if (!_rootNode) {
+    if (!_rootNode)
+    {
         throw std::invalid_argument("BakerContext: rootNode must not be null");
     }
-    if (!_engine->rayTracingSupported()) {
+    if (!_engine->rayTracingSupported())
+    {
         throw std::runtime_error("BakerContext requires ray tracing support");
     }
 }

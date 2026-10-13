@@ -18,19 +18,18 @@
 
 #include <bg2e/render/vulkan/rt/RTAccelerationStructureSize.hpp>
 
-namespace bg2e::render::vulkan::rt
-{
+namespace bg2e::render::vulkan::rt {
 
-RTAccelerationStructureSize::RTAccelerationStructureSize(Engine * eng)
-    :_engine{eng}
+RTAccelerationStructureSize::RTAccelerationStructureSize(Engine* eng)
+    : _engine{eng}
 {
 }
 
 VkAccelerationStructureBuildSizesInfoKHR RTAccelerationStructureSize::getTLASSizes(
     VkDeviceAddress instancesDeviceAddress,
     size_t instanceCount,
-    VkAccelerationStructureBuildTypeKHR buildType
-) {
+    VkAccelerationStructureBuildTypeKHR buildType)
+{
     _instanceData = {};
     _instanceData.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_INSTANCES_DATA_KHR;
     _instanceData.arrayOfPointers = VK_FALSE;
@@ -62,8 +61,8 @@ VkAccelerationStructureBuildSizesInfoKHR RTAccelerationStructureSize::getBLASSiz
     uint32_t maxVertex,
     uint32_t triangleCount,
     VkIndexType indexType,
-    VkAccelerationStructureBuildTypeKHR buildType
-){
+    VkAccelerationStructureBuildTypeKHR buildType)
+{
     _trianglesData = {};
     _trianglesData.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR;
     _trianglesData.vertexData.deviceAddress = vertexDeviceAddress;
@@ -93,10 +92,9 @@ VkAccelerationStructureBuildSizesInfoKHR RTAccelerationStructureSize::getBLASSiz
     return getSizes(buildType);
 }
 
-
 VkAccelerationStructureBuildSizesInfoKHR RTAccelerationStructureSize::getSizes(
-    VkAccelerationStructureBuildTypeKHR buildType
-) const {
+    VkAccelerationStructureBuildTypeKHR buildType) const
+{
     if (_primitiveCount == 0)
     {
         throw std::runtime_error("RTAccelerationStructureSize::getSizes(): primitive count is 0");
@@ -110,8 +108,7 @@ VkAccelerationStructureBuildSizesInfoKHR RTAccelerationStructureSize::getSizes(
         buildType,
         &_buildInfo,
         &_primitiveCount,
-        &buildSizes
-    );
+        &buildSizes);
 
     return buildSizes;
 }

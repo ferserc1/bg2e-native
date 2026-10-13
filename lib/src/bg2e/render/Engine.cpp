@@ -22,7 +22,7 @@
 #include <stdexcept>
 #include <algorithm>
 
-#include "bg2e/base/Log.hpp"
+#include <bg2e/base/Log.hpp>
 
 #ifdef BG2E_LINUX
 #include <SDL2/SDL.h>
@@ -58,19 +58,19 @@ void Engine::init(SDL_Window* windowPtr)
     createMemoryAllocator();
 
     vulkan::loadDeviceExtensions(_physicalDevice, _device.handle(), false);
-    
+
     _swapchain.init(this, uint32_t(width), uint32_t(height));
-    
+
     createFrameResources();
-    
+
     // Create main descriptor set allocator
     _descriptorSetAllocator = std::unique_ptr<vulkan::DescriptorSetAllocator>(
-        new vulkan::DescriptorSetAllocator()
-    );
+        new vulkan::DescriptorSetAllocator());
     _descriptorSetAllocator->init(this);
-    _cleanupManager.push([&](VkDevice) {
-        _descriptorSetAllocator.reset();
-    });
+    _cleanupManager.push([&](VkDevice)
+                         {
+                             _descriptorSetAllocator.reset();
+                         });
 }
 
 void Engine::init()
@@ -88,9 +88,9 @@ void Engine::init()
     _descriptorSetAllocator = std::make_unique<vulkan::DescriptorSetAllocator>();
     _descriptorSetAllocator->init(this);
     _cleanupManager.push([&](VkDevice)
-    {
-        _descriptorSetAllocator.reset();
-    });
+                         {
+                             _descriptorSetAllocator.reset();
+                         });
 }
 
 void Engine::cleanup()
@@ -118,8 +118,7 @@ void Engine::cleanup()
 
         vmaFreeStatsString(
             _allocator,
-            statsString
-        );
+            statsString);
     }
 
     vmaDestroyAllocator(_allocator);
@@ -248,7 +247,8 @@ uint32_t Engine::prevFrameResourcesIndex() const
     return isOffscreen() ? 0 : (_currentFrame - 1) % _frameResources.size();
 }
 
-vulkan::FrameResources& Engine::currentFrameResources() {
+vulkan::FrameResources& Engine::currentFrameResources()
+{
     return _frameResources[currentFrameResourcesIndex()];
 }
 
@@ -272,10 +272,8 @@ void Engine::destroyBuffer(VkBuffer buffer, VmaAllocation allocation)
 
 void Engine::deferredExec(std::function<void()>&& closure)
 {
-    _deferredExecs.push_back({
-        currentFrame() + numImages(),
-        std::move(closure)
-    });
+    _deferredExecs.push_back({currentFrame() + numImages(),
+                              std::move(closure)});
 }
 
 void Engine::flushDeferredExec()
@@ -283,20 +281,22 @@ void Engine::flushDeferredExec()
     auto frame = currentFrame();
     _deferredExecs.erase(
         std::remove_if(_deferredExecs.begin(), _deferredExecs.end(),
-            [frame](const DeferredExec& d) {
-                if (d.targetFrame <= frame) {
-                    d.closure();
-                    return true;
-                }
-                return false;
-            }),
-        _deferredExecs.end()
-    );
+                       [frame](const DeferredExec& d)
+                       {
+                           if (d.targetFrame <= frame)
+                           {
+                               d.closure();
+                               return true;
+                           }
+                           return false;
+                       }),
+        _deferredExecs.end());
 }
 
 void Engine::flushAllDeferredExec()
 {
-    for (auto& d : _deferredExecs) {
+    for (auto& d : _deferredExecs)
+    {
         d.closure();
     }
     _deferredExecs.clear();

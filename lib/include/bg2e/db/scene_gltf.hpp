@@ -27,18 +27,16 @@
 namespace bg2e {
 namespace db {
 
-extern BG2E_API bg2e::scene::Node * loadGltf(
+extern BG2E_API bg2e::scene::Node* loadGltf(
     const std::filesystem::path& filePath,
     render::Engine* engine,
-    bg2e::scene::SceneProgressCallback onProgress = nullptr
-);
+    bg2e::scene::SceneProgressCallback onProgress = nullptr);
 
-extern BG2E_API bg2e::scene::Node * loadGltf(
+extern BG2E_API bg2e::scene::Node* loadGltf(
     const std::filesystem::path& basePath,
     const std::string& fileName,
     render::Engine* engine,
-    bg2e::scene::SceneProgressCallback onProgress = nullptr
-);
+    bg2e::scene::SceneProgressCallback onProgress = nullptr);
 
 }
 }

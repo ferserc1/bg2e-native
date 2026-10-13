@@ -20,7 +20,7 @@
 
 namespace bg2e::scene {
 
-bool FindNodeVisitor::belongsToScene(Node * findNode, Node * sceneRoot)
+bool FindNodeVisitor::belongsToScene(Node* findNode, Node* sceneRoot)
 {
     _found = false;
     _findNode = findNode;
@@ -28,7 +28,7 @@ bool FindNodeVisitor::belongsToScene(Node * findNode, Node * sceneRoot)
     return _found;
 }
 
-void FindNodeVisitor::visit(Node * node)
+void FindNodeVisitor::visit(Node* node)
 {
     if (node == _findNode)
     {

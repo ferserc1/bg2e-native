@@ -28,7 +28,7 @@ namespace vulkan {
 template <class T>
 T loadExtension(VkInstance instance, const char* fnName, bool isOptional = false)
 {
-    auto func = (T) vkGetInstanceProcAddr(instance, fnName);
+    auto func = (T)vkGetInstanceProcAddr(instance, fnName);
     if (func == nullptr && !isOptional)
     {
         throw std::runtime_error(std::string("Error loading extension: ") + fnName);
@@ -67,157 +67,143 @@ void loadDeviceExtensions(const PhysicalDevice& physDev, VkDevice device, bool o
 {
     bg2e_log_debug << "Loading device extension functions:" << bg2e_log_end;
 
-    if (device == VK_NULL_HANDLE) {
+    if (device == VK_NULL_HANDLE)
+    {
         bg2e_log_error << "Invalid VkDevice while loading device extension functions" << bg2e_log_end;
         return;
     }
 
-    auto loadDeviceExtension = [device](const char* name) -> PFN_vkVoidFunction {
+    auto loadDeviceExtension = [device](const char* name) -> PFN_vkVoidFunction
+    {
         PFN_vkVoidFunction fn = vkGetDeviceProcAddr(device, name);
-        if (!fn) {
+        if (!fn)
+        {
             bg2e_log_warning << "Device extension function not available: " << name << bg2e_log_end;
         }
-        else {
+        else
+        {
             bg2e_log_debug << "Loaded device extension function: " << name << bg2e_log_end;
         }
         return fn;
     };
 
-    if (physDev.properties()->rayTracingSupported()) {
+    if (physDev.properties()->rayTracingSupported())
+    {
         // Acceleration structure
         cmdBuildAccelerationStructures =
             reinterpret_cast<PFN_vkCmdBuildAccelerationStructuresKHR>(
-                loadDeviceExtension("vkCmdBuildAccelerationStructuresKHR")
-            );
+                loadDeviceExtension("vkCmdBuildAccelerationStructuresKHR"));
 
         cmdCopyAccelerationStructure =
             reinterpret_cast<PFN_vkCmdCopyAccelerationStructureKHR>(
-                loadDeviceExtension("vkCmdCopyAccelerationStructureKHR")
-            );
+                loadDeviceExtension("vkCmdCopyAccelerationStructureKHR"));
 
         cmdCopyAccelerationStructureToMemory =
             reinterpret_cast<PFN_vkCmdCopyAccelerationStructureToMemoryKHR>(
-                loadDeviceExtension("vkCmdCopyAccelerationStructureToMemoryKHR")
-            );
+                loadDeviceExtension("vkCmdCopyAccelerationStructureToMemoryKHR"));
 
         cmdCopyMemoryToAccelerationStructure =
             reinterpret_cast<PFN_vkCmdCopyMemoryToAccelerationStructureKHR>(
-                loadDeviceExtension("vkCmdCopyMemoryToAccelerationStructureKHR")
-            );
+                loadDeviceExtension("vkCmdCopyMemoryToAccelerationStructureKHR"));
 
         cmdWriteAccelerationStructuresProperties =
             reinterpret_cast<PFN_vkCmdWriteAccelerationStructuresPropertiesKHR>(
-                loadDeviceExtension("vkCmdWriteAccelerationStructuresPropertiesKHR")
-            );
+                loadDeviceExtension("vkCmdWriteAccelerationStructuresPropertiesKHR"));
 
         getAccelerationStructureBuildSizes = reinterpret_cast<PFN_vkGetAccelerationStructureBuildSizesKHR>(
-                loadDeviceExtension("vkGetAccelerationStructureBuildSizesKHR")
-            );
+            loadDeviceExtension("vkGetAccelerationStructureBuildSizesKHR"));
 
         getAccelerationStructureDeviceAddress =
             reinterpret_cast<PFN_vkGetAccelerationStructureDeviceAddressKHR>(
-                loadDeviceExtension("vkGetAccelerationStructureDeviceAddressKHR")
-            );
+                loadDeviceExtension("vkGetAccelerationStructureDeviceAddressKHR"));
         createAccelerationStructure =
             reinterpret_cast<PFN_vkCreateAccelerationStructureKHR>(
-                loadDeviceExtension("vkCreateAccelerationStructureKHR")
-            );
+                loadDeviceExtension("vkCreateAccelerationStructureKHR"));
         destroyAccelerationStructure =
             reinterpret_cast<PFN_vkDestroyAccelerationStructureKHR>(
-                loadDeviceExtension("vkDestroyAccelerationStructureKHR")
-            );
-
+                loadDeviceExtension("vkDestroyAccelerationStructureKHR"));
 
         // Ray tracing pipeline
         createRayTracingPipelines =
             reinterpret_cast<PFN_vkCreateRayTracingPipelinesKHR>(
-                loadDeviceExtension("vkCreateRayTracingPipelinesKHR")
-            );
+                loadDeviceExtension("vkCreateRayTracingPipelinesKHR"));
 
         cmdTraceRays =
             reinterpret_cast<PFN_vkCmdTraceRaysKHR>(
-                loadDeviceExtension("vkCmdTraceRaysKHR")
-            );
+                loadDeviceExtension("vkCmdTraceRaysKHR"));
 
         getRayTracingShaderGroupHandles =
             reinterpret_cast<PFN_vkGetRayTracingShaderGroupHandlesKHR>(
-                loadDeviceExtension("vkGetRayTracingShaderGroupHandlesKHR")
-            );
+                loadDeviceExtension("vkGetRayTracingShaderGroupHandlesKHR"));
 
         getRayTracingCaptureReplayShaderGroupHandles =
             reinterpret_cast<PFN_vkGetRayTracingCaptureReplayShaderGroupHandlesKHR>(
-                loadDeviceExtension("vkGetRayTracingCaptureReplayShaderGroupHandlesKHR")
-            );
+                loadDeviceExtension("vkGetRayTracingCaptureReplayShaderGroupHandlesKHR"));
 
         // Deferred host operations
         createDeferredOperation =
             reinterpret_cast<PFN_vkCreateDeferredOperationKHR>(
-                loadDeviceExtension("vkCreateDeferredOperationKHR")
-            );
+                loadDeviceExtension("vkCreateDeferredOperationKHR"));
 
         destroyDeferredOperation =
             reinterpret_cast<PFN_vkDestroyDeferredOperationKHR>(
-                loadDeviceExtension("vkDestroyDeferredOperationKHR")
-            );
+                loadDeviceExtension("vkDestroyDeferredOperationKHR"));
 
         getDeferredOperationResult =
             reinterpret_cast<PFN_vkGetDeferredOperationResultKHR>(
-                loadDeviceExtension("vkGetDeferredOperationResultKHR")
-            );
+                loadDeviceExtension("vkGetDeferredOperationResultKHR"));
 
         deferredOperationJoin =
             reinterpret_cast<PFN_vkDeferredOperationJoinKHR>(
-                loadDeviceExtension("vkDeferredOperationJoinKHR")
-            );
+                loadDeviceExtension("vkDeferredOperationJoinKHR"));
     }
 }
 
 // VK_KHR_dynamic_rendering
-PFN_vkCmdBeginRenderingKHR      cmdBeginRendering;
-PFN_vkCmdEndRenderingKHR        cmdEndRendering;
+PFN_vkCmdBeginRenderingKHR cmdBeginRendering;
+PFN_vkCmdEndRenderingKHR cmdEndRendering;
 
 // VK_KHR_swapchain
-PFN_vkAcquireNextImageKHR       acquireNextImage;
-PFN_vkQueuePresentKHR           queuePresent;
-PFN_vkDestroySwapchainKHR       destroySwapchain;
+PFN_vkAcquireNextImageKHR acquireNextImage;
+PFN_vkQueuePresentKHR queuePresent;
+PFN_vkDestroySwapchainKHR destroySwapchain;
 
-PFN_vkDestroySurfaceKHR         destroySurface;
+PFN_vkDestroySurfaceKHR destroySurface;
 
 // VK_KHR_synchronization2
-PFN_vkQueueSubmit2KHR           queueSubmit2;
+PFN_vkQueueSubmit2KHR queueSubmit2;
 
-PFN_vkCmdPipelineBarrier2       cmdPipelineBarrier2;
+PFN_vkCmdPipelineBarrier2 cmdPipelineBarrier2;
 
 // VK_KHR_copy_commands2
-PFN_vkCmdBlitImage2             cmdBlitImage2;
+PFN_vkCmdBlitImage2 cmdBlitImage2;
 
 // VK_KHR_acceleration_structure
-PFN_vkCmdBuildAccelerationStructuresKHR                cmdBuildAccelerationStructures;
-PFN_vkCmdCopyAccelerationStructureKHR                  cmdCopyAccelerationStructure;
-PFN_vkCmdCopyAccelerationStructureToMemoryKHR          cmdCopyAccelerationStructureToMemory;
-PFN_vkCmdCopyMemoryToAccelerationStructureKHR          cmdCopyMemoryToAccelerationStructure;
-PFN_vkCmdWriteAccelerationStructuresPropertiesKHR      cmdWriteAccelerationStructuresProperties;
-PFN_vkGetAccelerationStructureBuildSizesKHR            getAccelerationStructureBuildSizes;
-PFN_vkCreateAccelerationStructureKHR                   createAccelerationStructure;
-PFN_vkDestroyAccelerationStructureKHR                  destroyAccelerationStructure;
-PFN_vkGetAccelerationStructureDeviceAddressKHR         getAccelerationStructureDeviceAddress;
+PFN_vkCmdBuildAccelerationStructuresKHR cmdBuildAccelerationStructures;
+PFN_vkCmdCopyAccelerationStructureKHR cmdCopyAccelerationStructure;
+PFN_vkCmdCopyAccelerationStructureToMemoryKHR cmdCopyAccelerationStructureToMemory;
+PFN_vkCmdCopyMemoryToAccelerationStructureKHR cmdCopyMemoryToAccelerationStructure;
+PFN_vkCmdWriteAccelerationStructuresPropertiesKHR cmdWriteAccelerationStructuresProperties;
+PFN_vkGetAccelerationStructureBuildSizesKHR getAccelerationStructureBuildSizes;
+PFN_vkCreateAccelerationStructureKHR createAccelerationStructure;
+PFN_vkDestroyAccelerationStructureKHR destroyAccelerationStructure;
+PFN_vkGetAccelerationStructureDeviceAddressKHR getAccelerationStructureDeviceAddress;
 
 // VK_KHR_ray_tracing_pipeline
-PFN_vkCreateRayTracingPipelinesKHR                     createRayTracingPipelines;
-PFN_vkCmdTraceRaysKHR                                  cmdTraceRays;
-PFN_vkGetRayTracingShaderGroupHandlesKHR               getRayTracingShaderGroupHandles;
-PFN_vkGetRayTracingCaptureReplayShaderGroupHandlesKHR  getRayTracingCaptureReplayShaderGroupHandles;
+PFN_vkCreateRayTracingPipelinesKHR createRayTracingPipelines;
+PFN_vkCmdTraceRaysKHR cmdTraceRays;
+PFN_vkGetRayTracingShaderGroupHandlesKHR getRayTracingShaderGroupHandles;
+PFN_vkGetRayTracingCaptureReplayShaderGroupHandlesKHR getRayTracingCaptureReplayShaderGroupHandles;
 
 // VK_KHR_deferred_host_operations
-PFN_vkCreateDeferredOperationKHR                       createDeferredOperation;
-PFN_vkDestroyDeferredOperationKHR                      destroyDeferredOperation;
-PFN_vkGetDeferredOperationResultKHR                    getDeferredOperationResult;
-PFN_vkDeferredOperationJoinKHR                         deferredOperationJoin;
+PFN_vkCreateDeferredOperationKHR createDeferredOperation;
+PFN_vkDestroyDeferredOperationKHR destroyDeferredOperation;
+PFN_vkGetDeferredOperationResultKHR getDeferredOperationResult;
+PFN_vkDeferredOperationJoinKHR deferredOperationJoin;
 
 // VK_EXT_DEBUG_UTILS_EXTENSION_NAME
-PFN_vkSetDebugUtilsObjectNameEXT                       setDebugUtilsObjectName;
+PFN_vkSetDebugUtilsObjectNameEXT setDebugUtilsObjectName;
 
 }
 }
 }
-

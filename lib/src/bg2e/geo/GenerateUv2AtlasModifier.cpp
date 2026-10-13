@@ -30,16 +30,15 @@ namespace bg2e::geo {
 
 namespace {
 
-struct AtlasDeleter
-{
-    void operator()(xatlas::Atlas * atlas) const
+struct AtlasDeleter {
+    void operator()(xatlas::Atlas* atlas) const
     {
         xatlas::Destroy(atlas);
     }
 };
 using AtlasPtr = std::unique_ptr<xatlas::Atlas, AtlasDeleter>;
 
-void validateInputMesh(const Mesh & mesh)
+void validateInputMesh(const Mesh& mesh)
 {
     if (mesh.vertices.empty())
     {
@@ -65,7 +64,7 @@ void validateInputMesh(const Mesh & mesh)
 
     // Submesh ranges must be ordered, non-overlapping and cover the whole index buffer
     uint32_t expectedFirst = 0;
-    for (const auto & submesh : mesh.submeshes)
+    for (const auto& submesh : mesh.submeshes)
     {
         if (submesh.indexCount == 0 || submesh.indexCount % 3 != 0)
         {
@@ -90,7 +89,7 @@ void validateInputMesh(const Mesh & mesh)
 
 // Rasterize each output triangle at atlas resolution and verify that texels
 // covered by one chart are not covered by any other chart.
-void checkChartSeparation(const xatlas::Atlas * atlas)
+void checkChartSeparation(const xatlas::Atlas* atlas)
 {
     const uint32_t width = atlas->width;
     const uint32_t height = atlas->height;
@@ -99,12 +98,12 @@ void checkChartSeparation(const xatlas::Atlas * atlas)
 
     for (uint32_t m = 0; m < atlas->meshCount; ++m)
     {
-        const xatlas::Mesh & outMesh = atlas->meshes[m];
+        const xatlas::Mesh& outMesh = atlas->meshes[m];
         for (uint32_t t = 0; t + 2 < outMesh.indexCount; t += 3)
         {
-            const xatlas::Vertex & v0 = outMesh.vertexArray[outMesh.indexArray[t]];
-            const xatlas::Vertex & v1 = outMesh.vertexArray[outMesh.indexArray[t + 1]];
-            const xatlas::Vertex & v2 = outMesh.vertexArray[outMesh.indexArray[t + 2]];
+            const xatlas::Vertex& v0 = outMesh.vertexArray[outMesh.indexArray[t]];
+            const xatlas::Vertex& v1 = outMesh.vertexArray[outMesh.indexArray[t + 1]];
+            const xatlas::Vertex& v2 = outMesh.vertexArray[outMesh.indexArray[t + 2]];
 
             const int32_t chart = v0.chartIndex;
             if (chart < 0)
@@ -128,10 +127,10 @@ void checkChartSeparation(const xatlas::Atlas * atlas)
                 continue;
             }
 
-            const int minX = std::max(0, static_cast<int>(std::floor(std::min({ x0, x1, x2 }))));
-            const int minY = std::max(0, static_cast<int>(std::floor(std::min({ y0, y1, y2 }))));
-            const int maxX = std::min(static_cast<int>(width) - 1, static_cast<int>(std::ceil(std::max({ x0, x1, x2 }))));
-            const int maxY = std::min(static_cast<int>(height) - 1, static_cast<int>(std::ceil(std::max({ y0, y1, y2 }))));
+            const int minX = std::max(0, static_cast<int>(std::floor(std::min({x0, x1, x2}))));
+            const int minY = std::max(0, static_cast<int>(std::floor(std::min({y0, y1, y2}))));
+            const int maxX = std::min(static_cast<int>(width) - 1, static_cast<int>(std::ceil(std::max({x0, x1, x2}))));
+            const int maxY = std::min(static_cast<int>(height) - 1, static_cast<int>(std::ceil(std::max({y0, y1, y2}))));
 
             for (int y = minY; y <= maxY; ++y)
             {
@@ -143,14 +142,14 @@ void checkChartSeparation(const xatlas::Atlas * atlas)
                     const float w1 = (x2 - px) * (y0 - py) - (x0 - px) * (y2 - py);
                     const float w2 = (x0 - px) * (y1 - py) - (x1 - px) * (y0 - py);
                     const bool inside = area > 0.0f
-                        ? (w0 >= 0.0f && w1 >= 0.0f && w2 >= 0.0f)
-                        : (w0 <= 0.0f && w1 <= 0.0f && w2 <= 0.0f);
+                                            ? (w0 >= 0.0f && w1 >= 0.0f && w2 >= 0.0f)
+                                            : (w0 <= 0.0f && w1 <= 0.0f && w2 <= 0.0f);
                     if (!inside)
                     {
                         continue;
                     }
 
-                    auto & cell = grid[static_cast<size_t>(y) * width + x];
+                    auto& cell = grid[static_cast<size_t>(y) * width + x];
                     if (cell == kEmpty)
                     {
                         cell = chartId;
@@ -206,7 +205,7 @@ void GenerateUv2AtlasModifier::apply()
     if (error != xatlas::AddMeshError::Success)
     {
         throw std::runtime_error(std::string("GenerateUv2AtlasModifier: xatlas::AddMesh failed: ") +
-            xatlas::StringForEnum(error));
+                                 xatlas::StringForEnum(error));
     }
 
     xatlas::ChartOptions chartOptions;
@@ -242,7 +241,7 @@ void GenerateUv2AtlasModifier::apply()
     const float invWidth = 1.0f / static_cast<float>(atlas->width);
     const float invHeight = 1.0f / static_cast<float>(atlas->height);
 
-    const xatlas::Mesh & outMesh = atlas->meshes[0];
+    const xatlas::Mesh& outMesh = atlas->meshes[0];
     if (outMesh.indexCount != _mesh->indices.size() || outMesh.indexCount % 3 != 0)
     {
         throw std::runtime_error("GenerateUv2AtlasModifier: xatlas output triangle count mismatch");
@@ -251,7 +250,7 @@ void GenerateUv2AtlasModifier::apply()
     newVertices.reserve(outMesh.vertexCount);
     for (uint32_t v = 0; v < outMesh.vertexCount; ++v)
     {
-        const xatlas::Vertex & outVertex = outMesh.vertexArray[v];
+        const xatlas::Vertex& outVertex = outMesh.vertexArray[v];
         if (outVertex.xref >= sourceVertexCount)
         {
             throw std::runtime_error("GenerateUv2AtlasModifier: xatlas output vertex xref out of range");
@@ -262,7 +261,7 @@ void GenerateUv2AtlasModifier::apply()
             // vertices carry chartIndex -1 and atlasIndex -1; map them to the
             // origin so the resulting zero-area UV triangle covers no texels.
             VertexPNUUT newVertex = _mesh->vertices[outVertex.xref];
-            newVertex.texCoord1 = { 0.0f, 0.0f };
+            newVertex.texCoord1 = {0.0f, 0.0f};
             newVertices.push_back(newVertex);
             continue;
         }
@@ -286,7 +285,7 @@ void GenerateUv2AtlasModifier::apply()
         vcoord = std::clamp(vcoord, 0.0f, 1.0f);
 
         VertexPNUUT newVertex = _mesh->vertices[outVertex.xref];
-        newVertex.texCoord1 = { u, vcoord };
+        newVertex.texCoord1 = {u, vcoord};
         newVertices.push_back(newVertex);
     }
 

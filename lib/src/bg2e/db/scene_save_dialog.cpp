@@ -23,9 +23,12 @@
 namespace bg2e::db {
 
 std::filesystem::path confirmSceneSavePath(const std::filesystem::path& selectedPath,
-    SceneSavePathSource source, SceneArtifactType type, SceneOverwritePolicy overwritePolicy)
+                                           SceneSavePathSource source, SceneArtifactType type, SceneOverwritePolicy overwritePolicy)
 {
-    if (selectedPath.empty()) return {};
+    if (selectedPath.empty())
+    {
+        return {};
+    }
     const auto target = inspectSceneSaveTarget(selectedPath, type);
 
     // When the final path is unchanged from the accepted native save-file
@@ -39,11 +42,12 @@ std::filesystem::path confirmSceneSavePath(const std::filesystem::path& selected
     {
         using bg2e::app::MessageBox;
         if (MessageBox::showWarning("Overwrite file",
-            "The following file already exists. Do you want to overwrite it?\n\n" + target.path.string(),
-            {
-                { .code = 0, .label = "Cancel", .key = MessageBox::Esc },
-                { .code = 1, .label = "Overwrite" }
-            }) != 1) return {};
+                                    "The following file already exists. Do you want to overwrite it?\n\n" + target.path.string(),
+                                    {{.code = 0, .label = "Cancel", .key = MessageBox::Esc},
+                                     {.code = 1, .label = "Overwrite"}}) != 1)
+        {
+            return {};
+        }
     }
     return target.path;
 }
@@ -51,7 +55,7 @@ std::filesystem::path confirmSceneSavePath(const std::filesystem::path& selected
 std::filesystem::path getSceneSavePath(SceneArtifactType type)
 {
     bg2e::app::FileDialog dialog;
-    dialog.setFilters({ { "JSON scene or prefab", "json" } });
+    dialog.setFilters({{"JSON scene or prefab", "json"}});
     return confirmSceneSavePath(dialog.saveFile(), SceneSavePathSource::NativeSaveDialog, type);
 }
 

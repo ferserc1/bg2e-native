@@ -65,24 +65,23 @@ BG2E_API bg2e::geo::MeshPNUUT* loadMeshObj<bg2e::geo::MeshPNUUT>(std::istream& i
 template <class MeshT>
 MeshT* loadMeshObj(const std::filesystem::path& filePath)
 {
-	std::ifstream stream(filePath);
-	if (!stream.is_open()) {
-		throw std::runtime_error("Error loading OBJ mesh file: " + filePath.string());
-	}
+    std::ifstream stream(filePath);
+    if (!stream.is_open())
+    {
+        throw std::runtime_error("Error loading OBJ mesh file: " + filePath.string());
+    }
 
-	return loadMeshObj<MeshT>(stream);
+    return loadMeshObj<MeshT>(stream);
 }
 
 extern BG2E_API std::shared_ptr<bg2e::scene::Drawable> loadDrawableObj(
     const std::filesystem::path& filePath,
-    bg2e::render::Engine * engine
-);
+    bg2e::render::Engine* engine);
 
 extern BG2E_API std::shared_ptr<bg2e::scene::Drawable> loadDrawableObj(
     const std::filesystem::path& basePath,
     const std::string& fileName,
-    bg2e::render::Engine * engine
-);
+    bg2e::render::Engine* engine);
 
 }
 }

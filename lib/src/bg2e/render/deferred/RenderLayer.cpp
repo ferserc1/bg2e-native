@@ -21,9 +21,7 @@
 namespace bg2e::render::deferred {
 
 RenderLayer::RenderLayer(Engine* engine)
-    : _engine { engine }
-    , _extent { 0, 0 }
-    , _outputFormat { VK_FORMAT_UNDEFINED }
+    : _engine{engine}, _extent{0, 0}, _outputFormat{VK_FORMAT_UNDEFINED}
 {
 }
 
@@ -46,8 +44,7 @@ void RenderLayer::render(
     uint32_t,
     const vulkan::Image*,
     const vulkan::Image*,
-    vulkan::FrameResources&
-)
+    vulkan::FrameResources&)
 {
 }
 

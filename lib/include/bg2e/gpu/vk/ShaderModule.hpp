@@ -28,7 +28,7 @@ namespace gpu {
 namespace vk {
 
 class BG2E_API ShaderModule : public gpu::ShaderModule {
-public:
+  public:
     ShaderModule(gpu::Device* gpuDevice, VkDevice device, const gpu::ShaderModuleDescription& description);
     ~ShaderModule() override;
 
@@ -36,10 +36,16 @@ public:
     bool isValid() const override;
     void cleanup() override;
 
-    VkShaderModule handle() const { return _shaderModule; }
-    const std::string& entryPoint() const { return _entryPoint; }
+    VkShaderModule handle() const
+    {
+        return _shaderModule;
+    }
+    const std::string& entryPoint() const
+    {
+        return _entryPoint;
+    }
 
-private:
+  private:
     VkDevice _device{VK_NULL_HANDLE};
     VkShaderModule _shaderModule{VK_NULL_HANDLE};
     ShaderStage _stage;

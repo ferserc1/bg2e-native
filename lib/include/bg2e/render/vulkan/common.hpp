@@ -69,12 +69,15 @@ void* getMappedData(VmaAllocation a);
 
 #include <bg2e/render/vulkan/extensions.hpp>
 
-#define VK_ASSERT(x)                                                                         \
-    do {                                                                                     \
-        VkResult err = x;                                                                    \
-        if (err) {                                                                           \
-            std::string errorString = std::string("Vulkan error: ") + string_VkResult(err);  \
-            std::cerr << errorString << std::endl;                                           \
-            throw std::runtime_error(errorString);                                           \
-        }                                                                                    \
-    } while(0)
+#define VK_ASSERT(x)                                                                        \
+    do                                                                                      \
+    {                                                                                       \
+        VkResult err = x;                                                                   \
+        if (err)                                                                            \
+        {                                                                                   \
+            std::string errorString = std::string("Vulkan error: ") + string_VkResult(err); \
+            std::cerr << errorString << std::endl;                                          \
+            throw std::runtime_error(errorString);                                          \
+        }                                                                                   \
+    }                                                                                       \
+    while (0)

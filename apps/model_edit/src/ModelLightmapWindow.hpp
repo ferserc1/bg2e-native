@@ -26,14 +26,17 @@ class AppDelegate;
 // Integrated lightmap baker settings and action window. The active model is
 // the only target; the mode is fixed to RTAO.
 class ModelLightmapWindow : public bg2e::ui::Window {
-public:
-    void init(AppDelegate * delegate);
+  public:
+    void init(AppDelegate* delegate);
     void cleanup();
 
-    void setMessage(const std::string& message) { _message = message; }
+    void setMessage(const std::string& message)
+    {
+        _message = message;
+    }
 
-private:
-    AppDelegate * _appDelegate = nullptr;
+  private:
+    AppDelegate* _appDelegate = nullptr;
 
     uint32_t _resolutionIndex = 2; // 512
     int _frames = 16;

@@ -35,14 +35,17 @@ namespace {
 VkDeviceAddress bufferDeviceAddress(vk::Device* device, VkBuffer buffer)
 {
     VkBufferDeviceAddressInfo info{};
-    info.sType  = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;
+    info.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;
     info.buffer = buffer;
     return vkGetBufferDeviceAddress(device->handle(), &info);
 }
 
 VkDeviceAddress alignUp(VkDeviceAddress value, VkDeviceAddress alignment)
 {
-    if (alignment == 0) return value;
+    if (alignment == 0)
+    {
+        return value;
+    }
     return (value + alignment - 1) & ~(alignment - 1);
 }
 
@@ -64,9 +67,7 @@ VkTransformMatrixKHR toVkTransform(const glm::mat4& m)
 }
 
 RayTracingScene::RayTracingScene(vk::Device* device, const std::string& debugName)
-    : gpu::RayTracingScene(device)
-    , _device(device)
-    , _debugName(debugName)
+    : gpu::RayTracingScene(device), _device(device), _debugName(debugName)
 {
 }
 
@@ -98,7 +99,7 @@ void RayTracingScene::ensureCapacity(uint32_t instanceCount)
     {
         VkBufferCreateInfo bufInfo{};
         bufInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-        bufInfo.size  = sizeof(VkAccelerationStructureInstanceKHR) * newCapacity;
+        bufInfo.size = sizeof(VkAccelerationStructureInstanceKHR) * newCapacity;
         bufInfo.usage = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR |
                         VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
 
@@ -110,26 +111,26 @@ void RayTracingScene::ensureCapacity(uint32_t instanceCount)
         VmaAllocationInfo allocOut{};
         VK_ASSERT(vmaCreateBuffer(_device->allocator(), &bufInfo, &allocCI,
                                   &_instanceBuffer, &_instanceAlloc, &allocOut));
-        _instanceMapped  = allocOut.pMappedData;
+        _instanceMapped = allocOut.pMappedData;
         _instanceAddress = bufferDeviceAddress(_device, _instanceBuffer);
     }
 
     // --- Query TLAS build sizes for the new capacity ---
     VkAccelerationStructureGeometryKHR geometry{};
-    geometry.sType        = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;
+    geometry.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;
     geometry.geometryType = VK_GEOMETRY_TYPE_INSTANCES_KHR;
-    geometry.flags        = VK_GEOMETRY_OPAQUE_BIT_KHR;
+    geometry.flags = VK_GEOMETRY_OPAQUE_BIT_KHR;
     geometry.geometry.instances.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_INSTANCES_DATA_KHR;
     geometry.geometry.instances.arrayOfPointers = VK_FALSE;
     geometry.geometry.instances.data.deviceAddress = _instanceAddress;
 
     VkAccelerationStructureBuildGeometryInfoKHR buildInfo{};
-    buildInfo.sType         = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR;
-    buildInfo.type          = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
-    buildInfo.flags         = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR;
-    buildInfo.mode          = VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR;
+    buildInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR;
+    buildInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
+    buildInfo.flags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR;
+    buildInfo.mode = VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR;
     buildInfo.geometryCount = 1;
-    buildInfo.pGeometries   = &geometry;
+    buildInfo.pGeometries = &geometry;
 
     VkAccelerationStructureBuildSizesInfoKHR sizeInfo{};
     sizeInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_SIZES_INFO_KHR;
@@ -138,29 +139,28 @@ void RayTracingScene::ensureCapacity(uint32_t instanceCount)
         VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR,
         &buildInfo,
         &newCapacity,
-        &sizeInfo
-    );
+        &sizeInfo);
 
     // --- TLAS storage buffer + object ---
     {
         VkBufferCreateInfo bufInfo{};
         bufInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-        bufInfo.size  = sizeInfo.accelerationStructureSize;
+        bufInfo.size = sizeInfo.accelerationStructureSize;
         bufInfo.usage = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR |
                         VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
 
         VmaAllocationCreateInfo allocCI{};
-        allocCI.usage         = VMA_MEMORY_USAGE_AUTO;
+        allocCI.usage = VMA_MEMORY_USAGE_AUTO;
         allocCI.requiredFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
         VK_ASSERT(vmaCreateBuffer(_device->allocator(), &bufInfo, &allocCI,
                                   &_asBuffer, &_asAlloc, nullptr));
     }
 
     VkAccelerationStructureCreateInfoKHR createInfo{};
-    createInfo.sType  = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_KHR;
+    createInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_KHR;
     createInfo.buffer = _asBuffer;
-    createInfo.size   = sizeInfo.accelerationStructureSize;
-    createInfo.type   = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
+    createInfo.size = sizeInfo.accelerationStructureSize;
+    createInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
     VK_ASSERT(createAccelerationStructure(_device->handle(), &createInfo, nullptr, &_tlas));
 
     // --- Scratch buffer (padded for the device-address alignment) ---
@@ -168,12 +168,12 @@ void RayTracingScene::ensureCapacity(uint32_t instanceCount)
         const VkDeviceAddress scratchAlign = _device->accelerationStructureScratchAlignment();
         VkBufferCreateInfo bufInfo{};
         bufInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-        bufInfo.size  = sizeInfo.buildScratchSize + scratchAlign;
+        bufInfo.size = sizeInfo.buildScratchSize + scratchAlign;
         bufInfo.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT |
                         VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
 
         VmaAllocationCreateInfo allocCI{};
-        allocCI.usage         = VMA_MEMORY_USAGE_AUTO;
+        allocCI.usage = VMA_MEMORY_USAGE_AUTO;
         allocCI.requiredFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
         VK_ASSERT(vmaCreateBuffer(_device->allocator(), &bufInfo, &allocCI,
                                   &_scratchBuffer, &_scratchAlloc, nullptr));
@@ -203,12 +203,12 @@ void RayTracingScene::build(VkCommandBuffer cmd)
             }
 
             VkAccelerationStructureInstanceKHR& dst = instances[i];
-            dst.transform                              = toVkTransform(src.transform);
-            dst.instanceCustomIndex                    = src.instanceId & 0x00FFFFFFu;
-            dst.mask                                   = src.mask;
+            dst.transform = toVkTransform(src.transform);
+            dst.instanceCustomIndex = src.instanceId & 0x00FFFFFFu;
+            dst.mask = src.mask;
             dst.instanceShaderBindingTableRecordOffset = 0;
-            dst.flags                                  = VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR;
-            dst.accelerationStructureReference         = vkMesh->deviceAddress();
+            dst.flags = VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR;
+            dst.accelerationStructureReference = vkMesh->deviceAddress();
         }
         std::memcpy(_instanceMapped, instances.data(),
                     instances.size() * sizeof(VkAccelerationStructureInstanceKHR));
@@ -217,27 +217,27 @@ void RayTracingScene::build(VkCommandBuffer cmd)
 
     // --- Build the TLAS ---
     VkAccelerationStructureGeometryKHR geometry{};
-    geometry.sType        = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;
+    geometry.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;
     geometry.geometryType = VK_GEOMETRY_TYPE_INSTANCES_KHR;
-    geometry.flags        = VK_GEOMETRY_OPAQUE_BIT_KHR;
+    geometry.flags = VK_GEOMETRY_OPAQUE_BIT_KHR;
     geometry.geometry.instances.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_INSTANCES_DATA_KHR;
-    geometry.geometry.instances.arrayOfPointers    = VK_FALSE;
+    geometry.geometry.instances.arrayOfPointers = VK_FALSE;
     geometry.geometry.instances.data.deviceAddress = _instanceAddress;
 
     VkAccelerationStructureBuildGeometryInfoKHR buildInfo{};
-    buildInfo.sType                     = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR;
-    buildInfo.type                      = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
-    buildInfo.flags                     = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR;
-    buildInfo.mode                      = VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR;
-    buildInfo.geometryCount             = 1;
-    buildInfo.pGeometries               = &geometry;
-    buildInfo.dstAccelerationStructure  = _tlas;
+    buildInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR;
+    buildInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
+    buildInfo.flags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR;
+    buildInfo.mode = VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR;
+    buildInfo.geometryCount = 1;
+    buildInfo.pGeometries = &geometry;
+    buildInfo.dstAccelerationStructure = _tlas;
     buildInfo.scratchData.deviceAddress = _scratchAddress;
 
     VkAccelerationStructureBuildRangeInfoKHR range{};
-    range.primitiveCount  = instanceCount;
+    range.primitiveCount = instanceCount;
     range.primitiveOffset = 0;
-    range.firstVertex     = 0;
+    range.firstVertex = 0;
     range.transformOffset = 0;
 
     const VkAccelerationStructureBuildRangeInfoKHR* pRange = &range;
@@ -246,18 +246,18 @@ void RayTracingScene::build(VkCommandBuffer cmd)
     // Make the freshly built TLAS visible to acceleration structure reads in
     // the fragment shader (ray queries).
     VkMemoryBarrier2 barrier{};
-    barrier.sType         = VK_STRUCTURE_TYPE_MEMORY_BARRIER_2;
-    barrier.srcStageMask  = VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR;
+    barrier.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER_2;
+    barrier.srcStageMask = VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR;
     barrier.srcAccessMask = VK_ACCESS_2_ACCELERATION_STRUCTURE_WRITE_BIT_KHR;
-    barrier.dstStageMask  = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT |
-                            VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT;
+    barrier.dstStageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT |
+                           VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT;
     barrier.dstAccessMask = VK_ACCESS_2_ACCELERATION_STRUCTURE_READ_BIT_KHR |
                             VK_ACCESS_2_SHADER_READ_BIT;
 
     VkDependencyInfo depInfo{};
-    depInfo.sType              = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
+    depInfo.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
     depInfo.memoryBarrierCount = 1;
-    depInfo.pMemoryBarriers    = &barrier;
+    depInfo.pMemoryBarriers = &barrier;
     cmdPipelineBarrier2(cmd, &depInfo);
 }
 
@@ -272,19 +272,19 @@ void RayTracingScene::destroyBuffers()
     {
         vmaDestroyBuffer(_device->allocator(), _asBuffer, _asAlloc);
         _asBuffer = VK_NULL_HANDLE;
-        _asAlloc  = VK_NULL_HANDLE;
+        _asAlloc = VK_NULL_HANDLE;
     }
     if (_scratchBuffer != VK_NULL_HANDLE)
     {
         vmaDestroyBuffer(_device->allocator(), _scratchBuffer, _scratchAlloc);
         _scratchBuffer = VK_NULL_HANDLE;
-        _scratchAlloc  = VK_NULL_HANDLE;
+        _scratchAlloc = VK_NULL_HANDLE;
     }
     if (_instanceBuffer != VK_NULL_HANDLE)
     {
         vmaDestroyBuffer(_device->allocator(), _instanceBuffer, _instanceAlloc);
         _instanceBuffer = VK_NULL_HANDLE;
-        _instanceAlloc  = VK_NULL_HANDLE;
+        _instanceAlloc = VK_NULL_HANDLE;
         _instanceMapped = nullptr;
     }
     _capacity = 0;

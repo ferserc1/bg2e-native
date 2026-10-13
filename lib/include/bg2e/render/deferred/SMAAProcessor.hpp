@@ -28,11 +28,13 @@
 
 namespace bg2e {
 namespace render {
-namespace vulkan { class DescriptorSetAllocator; }
+namespace vulkan {
+class DescriptorSetAllocator;
+}
 namespace deferred {
 
 class BG2E_API SMAAProcessor {
-public:
+  public:
     SMAAProcessor(Engine* engine);
     ~SMAAProcessor();
 
@@ -53,14 +55,13 @@ public:
     const vulkan::Image* process(
         VkCommandBuffer cmd,
         uint32_t frameIndex,
-        const vulkan::Image* inputImage
-    );
+        const vulkan::Image* inputImage);
 
     // Destroy all Vulkan resources.
     // Call during RendererDeferred::cleanup().
     void cleanup();
 
-private:
+  private:
     struct FrameData {
         std::unique_ptr<vulkan::Image> edgesImage;
         std::unique_ptr<vulkan::Image> blendWeightsImage;
@@ -109,7 +110,7 @@ private:
 
     // Push constant struct (shared across all three passes)
     struct SMAAPushConstants {
-        glm::vec2 texelSize;  // 1.0 / viewportSize
+        glm::vec2 texelSize; // 1.0 / viewportSize
     };
 };
 

@@ -72,19 +72,16 @@ void BlueNoise::build()
             dataSize,
             VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
             VMA_MEMORY_USAGE_CPU_TO_GPU,
-            "BlueNoise upload buffer"
-        )
-    );
+            "BlueNoise upload buffer"));
     memcpy(uploadBuffer->allocatedData(), bg2e_blue_noise_data, dataSize);
     uploadBuffer->flushAllocatedData();
 
     auto imgInfo = vulkan::Info::imageCreateInfo(
         blueNoiseFormat(),
         VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
-        { _size.x, _size.y, 1 },
+        {_size.x, _size.y, 1},
         _layerCount,
-        VK_SAMPLE_COUNT_1_BIT
-    );
+        VK_SAMPLE_COUNT_1_BIT);
 
     VmaAllocationCreateInfo allocInfo = {};
     allocInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
@@ -96,8 +93,7 @@ void BlueNoise::build()
         &allocInfo,
         &_image,
         &_allocation,
-        nullptr
-    );
+        nullptr);
     vmaSetAllocationName(_engine->allocator(), _allocation, "BlueNoise image");
 
     VkImageViewCreateInfo viewInfo = {};
@@ -112,45 +108,43 @@ void BlueNoise::build()
     viewInfo.subresourceRange.layerCount = _layerCount;
     VK_ASSERT(vkCreateImageView(_engine->device().handle(), &viewInfo, nullptr, &_imageView));
 
-    _engine->command().immediateSubmit([&](VkCommandBuffer cmd) {
-        vulkan::Image::cmdTransitionImage(
-            cmd,
-            _image,
-            VK_IMAGE_LAYOUT_UNDEFINED,
-            VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-            vulkan::Image::TransitionInfo(VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, _layerCount)
-        );
+    _engine->command().immediateSubmit([&](VkCommandBuffer cmd)
+                                       {
+                                           vulkan::Image::cmdTransitionImage(
+                                               cmd,
+                                               _image,
+                                               VK_IMAGE_LAYOUT_UNDEFINED,
+                                               VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                                               vulkan::Image::TransitionInfo(VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, _layerCount));
 
-        std::vector<VkBufferImageCopy> regions(_layerCount);
-        for (uint32_t layer = 0; layer < _layerCount; ++layer)
-        {
-            VkBufferImageCopy& region = regions[layer];
-            region.bufferOffset = layerSize * layer;
-            region.bufferRowLength = 0;
-            region.bufferImageHeight = 0;
-            region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-            region.imageSubresource.mipLevel = 0;
-            region.imageSubresource.baseArrayLayer = layer;
-            region.imageSubresource.layerCount = 1;
-            region.imageExtent = { _size.x, _size.y, 1 };
-        }
-        vkCmdCopyBufferToImage(
-            cmd,
-            uploadBuffer->handle(),
-            _image,
-            VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-            static_cast<uint32_t>(regions.size()),
-            regions.data()
-        );
+                                           std::vector<VkBufferImageCopy> regions(_layerCount);
+                                           for (uint32_t layer = 0; layer < _layerCount; ++layer)
+                                           {
+                                               VkBufferImageCopy& region = regions[layer];
+                                               region.bufferOffset = layerSize * layer;
+                                               region.bufferRowLength = 0;
+                                               region.bufferImageHeight = 0;
+                                               region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+                                               region.imageSubresource.mipLevel = 0;
+                                               region.imageSubresource.baseArrayLayer = layer;
+                                               region.imageSubresource.layerCount = 1;
+                                               region.imageExtent = {_size.x, _size.y, 1};
+                                           }
+                                           vkCmdCopyBufferToImage(
+                                               cmd,
+                                               uploadBuffer->handle(),
+                                               _image,
+                                               VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                                               static_cast<uint32_t>(regions.size()),
+                                               regions.data());
 
-        vulkan::Image::cmdTransitionImage(
-            cmd,
-            _image,
-            VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-            vulkan::Image::TransitionInfo(VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, _layerCount)
-        );
-    });
+                                           vulkan::Image::cmdTransitionImage(
+                                               cmd,
+                                               _image,
+                                               VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                                               VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                               vulkan::Image::TransitionInfo(VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, _layerCount));
+                                       });
 
     uploadBuffer->cleanup();
 
@@ -158,13 +152,13 @@ void BlueNoise::build()
     _sampler = samplerFactory.build(
         VK_FILTER_NEAREST, VK_FILTER_NEAREST,
         VK_SAMPLER_ADDRESS_MODE_REPEAT, VK_SAMPLER_ADDRESS_MODE_REPEAT,
-        VK_SAMPLER_ADDRESS_MODE_REPEAT
-    );
+        VK_SAMPLER_ADDRESS_MODE_REPEAT);
 
-    _engine->cleanupManager().push([&](VkDevice dev) {
-        vkDestroySampler(dev, _sampler, nullptr);
-        _sampler = VK_NULL_HANDLE;
-    });
+    _engine->cleanupManager().push([&](VkDevice dev)
+                                   {
+                                       vkDestroySampler(dev, _sampler, nullptr);
+                                       _sampler = VK_NULL_HANDLE;
+                                   });
 }
 
 void BlueNoise::cleanup()

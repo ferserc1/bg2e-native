@@ -23,8 +23,8 @@ namespace bg2e::render::vulkan::factory {
 void DescriptorSetLayout::addBinding(
     uint32_t binding,
     VkDescriptorType type,
-    uint32_t descriptorCount
-) {
+    uint32_t descriptorCount)
+{
     VkDescriptorSetLayoutBinding bindingInfo = {};
     bindingInfo.binding = binding;
     bindingInfo.descriptorCount = descriptorCount;
@@ -49,7 +49,7 @@ VkDescriptorSetLayout DescriptorSetLayout::build(VkDevice device, VkShaderStageF
         b.stageFlags |= shaderStages;
     }
 
-    VkDescriptorSetLayoutBindingFlagsCreateInfo bindingFlagsInfo {};
+    VkDescriptorSetLayoutBindingFlagsCreateInfo bindingFlagsInfo{};
     bindingFlagsInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO;
     bindingFlagsInfo.bindingCount = static_cast<uint32_t>(_bindingFlags.size());
     bindingFlagsInfo.pBindingFlags = _bindingFlags.data();

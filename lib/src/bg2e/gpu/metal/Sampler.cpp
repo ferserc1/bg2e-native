@@ -34,28 +34,44 @@ Sampler::Sampler(gpu::Device* gpuDevice, DeviceHandle device, const gpu::Sampler
 
     switch (description.minFilter)
     {
-        case gpu::Filter::Nearest: desc->setMinFilter(MTL::SamplerMinMagFilterNearest); break;
-        case gpu::Filter::Linear:  desc->setMinFilter(MTL::SamplerMinMagFilterLinear);  break;
+    case gpu::Filter::Nearest:
+        desc->setMinFilter(MTL::SamplerMinMagFilterNearest);
+        break;
+    case gpu::Filter::Linear:
+        desc->setMinFilter(MTL::SamplerMinMagFilterLinear);
+        break;
     }
 
     switch (description.magFilter)
     {
-        case gpu::Filter::Nearest: desc->setMagFilter(MTL::SamplerMinMagFilterNearest); break;
-        case gpu::Filter::Linear:  desc->setMagFilter(MTL::SamplerMinMagFilterLinear);  break;
+    case gpu::Filter::Nearest:
+        desc->setMagFilter(MTL::SamplerMinMagFilterNearest);
+        break;
+    case gpu::Filter::Linear:
+        desc->setMagFilter(MTL::SamplerMinMagFilterLinear);
+        break;
     }
 
     switch (description.mipFilter)
     {
-        case gpu::MipmapFilter::Nearest: desc->setMipFilter(MTL::SamplerMipFilterNearest); break;
-        case gpu::MipmapFilter::Linear:  desc->setMipFilter(MTL::SamplerMipFilterLinear);  break;
+    case gpu::MipmapFilter::Nearest:
+        desc->setMipFilter(MTL::SamplerMipFilterNearest);
+        break;
+    case gpu::MipmapFilter::Linear:
+        desc->setMipFilter(MTL::SamplerMipFilterLinear);
+        break;
     }
 
-    auto toMtlAddressMode = [](gpu::AddressMode m) -> MTL::SamplerAddressMode {
+    auto toMtlAddressMode = [](gpu::AddressMode m) -> MTL::SamplerAddressMode
+    {
         switch (m)
         {
-            case gpu::AddressMode::Repeat:         return MTL::SamplerAddressModeRepeat;
-            case gpu::AddressMode::ClampToEdge:    return MTL::SamplerAddressModeClampToEdge;
-            case gpu::AddressMode::MirroredRepeat: return MTL::SamplerAddressModeMirrorRepeat;
+        case gpu::AddressMode::Repeat:
+            return MTL::SamplerAddressModeRepeat;
+        case gpu::AddressMode::ClampToEdge:
+            return MTL::SamplerAddressModeClampToEdge;
+        case gpu::AddressMode::MirroredRepeat:
+            return MTL::SamplerAddressModeMirrorRepeat;
         }
         return MTL::SamplerAddressModeRepeat;
     };
@@ -101,11 +117,18 @@ Sampler::Sampler(gpu::Device* gpuDevice, DeviceHandle, const gpu::SamplerDescrip
     throw std::runtime_error("Metal backend is not available on this platform");
 }
 
-Sampler::~Sampler() {}
+Sampler::~Sampler()
+{
+}
 
-bool Sampler::isValid() const { return false; }
+bool Sampler::isValid() const
+{
+    return false;
+}
 
-void Sampler::cleanup() {}
+void Sampler::cleanup()
+{
+}
 
 #endif
 

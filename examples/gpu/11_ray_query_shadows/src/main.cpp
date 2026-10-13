@@ -50,9 +50,9 @@ struct ObjectUBO {
 };
 
 struct LightUBO {
-    glm::vec4 lightPosition;   // xyz = world position
-    glm::vec4 lightColor;      // rgb = color, a = intensity
-    glm::vec4 ambient;         // rgb = ambient term
+    glm::vec4 lightPosition; // xyz = world position
+    glm::vec4 lightColor;    // rgb = color, a = intensity
+    glm::vec4 ambient;       // rgb = ambient term
 };
 
 // A single renderable object: its rasterization mesh, per-object uniforms and
@@ -62,7 +62,7 @@ struct SceneObject {
     glm::mat4 model = glm::mat4(1.0f);
     glm::vec4 albedo = glm::vec4(1.0f);
 
-    std::shared_ptr<bg2e::gpu::Buffer>      objectUbo;
+    std::shared_ptr<bg2e::gpu::Buffer> objectUbo;
     std::shared_ptr<bg2e::gpu::ResourceSet> objectSet;
 
     std::vector<std::shared_ptr<bg2e::gpu::RayTracingMesh>> rtMeshes;
@@ -91,16 +91,19 @@ int main(int argc, char** argv)
     Uint32 windowFlags = 0;
     switch (backend->windowType())
     {
-        case gpu::WindowType::Vulkan: windowFlags = SDL_WINDOW_VULKAN; break;
-        case gpu::WindowType::Metal:  windowFlags = SDL_WINDOW_METAL;  break;
+    case gpu::WindowType::Vulkan:
+        windowFlags = SDL_WINDOW_VULKAN;
+        break;
+    case gpu::WindowType::Metal:
+        windowFlags = SDL_WINDOW_METAL;
+        break;
     }
 
     SDL_Window* window = SDL_CreateWindow(
         "GPU Ray Query Shadows Example",
         SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
         800, 600,
-        windowFlags | SDL_WINDOW_RESIZABLE
-    );
+        windowFlags | SDL_WINDOW_RESIZABLE);
     if (!window)
     {
         std::cerr << "Failed to create window: " << SDL_GetError() << std::endl;
@@ -120,14 +123,14 @@ int main(int argc, char** argv)
     if (!physicalDevice->properties()->rayTracingSupported())
     {
         bg2e_log_error << "This example requires hardware accelerated ray queries, "
-                  << "which are not supported by the selected device:\n  "
-                  << physicalDevice->properties()->name << bg2e_log_end;
+                       << "which are not supported by the selected device:\n  "
+                       << physicalDevice->properties()->name << bg2e_log_end;
 
         if (bg2e::base::PlatformTools::currentPlatform() == base::Platform::macOS &&
             backendType == gpu::BackendType::Vulkan)
         {
             bg2e_log_error << "Note that Vulkan in macOS is not compatible with ray tracing. "
-                  << "Please, try using Metal instead of Vulkan" << bg2e_log_end;
+                           << "Please, try using Metal instead of Vulkan" << bg2e_log_end;
         }
         SDL_DestroyWindow(window);
         SDL_Quit();
@@ -153,18 +156,10 @@ int main(int argc, char** argv)
     //   set 2 binding 0 -> light UBO             (fragment)
     //   set 2 binding 1 -> acceleration structure (fragment)
     gpu::PipelineLayoutDescription layoutDesc{};
-    layoutDesc.resourceBindings.push_back({
-        0, {.vulkan = 0, .metal = 2}, gpu::ResourceType::UniformBuffer, gpu::ShaderStage::Vertex, 1
-    });
-    layoutDesc.resourceBindings.push_back({
-        1, {.vulkan = 0, .metal = 3}, gpu::ResourceType::UniformBuffer, gpu::ShaderStage::Vertex, 1
-    });
-    layoutDesc.resourceBindings.push_back({
-        2, {.vulkan = 0, .metal = 1}, gpu::ResourceType::UniformBuffer, gpu::ShaderStage::Fragment, 1
-    });
-    layoutDesc.resourceBindings.push_back({
-        2, {.vulkan = 1, .metal = 2}, gpu::ResourceType::AccelerationStructure, gpu::ShaderStage::Fragment, 1
-    });
+    layoutDesc.resourceBindings.push_back({0, {.vulkan = 0, .metal = 2}, gpu::ResourceType::UniformBuffer, gpu::ShaderStage::Vertex, 1});
+    layoutDesc.resourceBindings.push_back({1, {.vulkan = 0, .metal = 3}, gpu::ResourceType::UniformBuffer, gpu::ShaderStage::Vertex, 1});
+    layoutDesc.resourceBindings.push_back({2, {.vulkan = 0, .metal = 1}, gpu::ResourceType::UniformBuffer, gpu::ShaderStage::Fragment, 1});
+    layoutDesc.resourceBindings.push_back({2, {.vulkan = 1, .metal = 2}, gpu::ResourceType::AccelerationStructure, gpu::ShaderStage::Fragment, 1});
     layoutDesc.debugName = "Ray query shadows pipeline layout";
     auto graphicsLayout = device->createPipelineLayout(layoutDesc);
     cleanup.push(graphicsLayout);
@@ -175,8 +170,7 @@ int main(int argc, char** argv)
     auto view = glm::lookAt(
         glm::vec3(4.5f, 4.0f, 5.5f),
         glm::vec3(0.0f, 0.6f, 0.0f),
-        glm::vec3(0.0f, 1.0f, 0.0f)
-    );
+        glm::vec3(0.0f, 1.0f, 0.0f));
     CameraUBO cameraData{};
     cameraData.projectionView = projection * view;
 
@@ -216,8 +210,7 @@ int main(int argc, char** argv)
         for (uint32_t s = 0; s < obj.mesh->submeshCount(); ++s)
         {
             obj.rtMeshes.push_back(
-                device->createRayTracingMesh(obj.mesh->rayTracingMeshDescription(s))
-            );
+                device->createRayTracingMesh(obj.mesh->rayTracingMeshDescription(s)));
         }
 
         objects.push_back(std::move(obj));
@@ -238,15 +231,15 @@ int main(int argc, char** argv)
 
     // 7. Build the bottom-level acceleration structures (one GPU submit).
     device->immediateSubmit([&](gpu::CommandBuffer* cmd)
-    {
-        for (auto& obj : objects)
-        {
-            for (auto& rtMesh : obj.rtMeshes)
-            {
-                cmd->buildRayTracingMesh(rtMesh.get());
-            }
-        }
-    });
+                            {
+                                for (auto& obj : objects)
+                                {
+                                    for (auto& rtMesh : obj.rtMeshes)
+                                    {
+                                        cmd->buildRayTracingMesh(rtMesh.get());
+                                    }
+                                }
+                            });
 
     // 8. Ray tracing scene (top-level acceleration structure). The instance list
     //    is rebuilt every frame to exercise the dynamic build path, even though
@@ -272,9 +265,9 @@ int main(int argc, char** argv)
     // bound into the light resource set.
     populateInstances();
     device->immediateSubmit([&](gpu::CommandBuffer* cmd)
-    {
-        rayTracingScene->buildOrUpdate(cmd);
-    });
+                            {
+                                rayTracingScene->buildOrUpdate(cmd);
+                            });
 
     // 9. Light UBO + acceleration structure resource set (set 2).
     auto lightUbo = device->createBuffer("Light UBO");
@@ -290,14 +283,14 @@ int main(int argc, char** argv)
     // 10. Graphics pipeline (depth enabled, culling disabled so single-sided
     //     primitives are fully lit/shadowed).
     gpu::GraphicsPipelineDescription pipelineDesc{};
-    pipelineDesc.vertexShader   = vs.get();
+    pipelineDesc.vertexShader = vs.get();
     pipelineDesc.fragmentShader = fs.get();
-    pipelineDesc.layout         = graphicsLayout.get();
-    pipelineDesc.topology       = gpu::PrimitiveTopology::TriangleList;
-    pipelineDesc.colorFormat    = surface->colorFormat();
-    pipelineDesc.depthFormat    = surface->depthFormat();
-    pipelineDesc.cullMode       = gpu::CullMode::None;
-    pipelineDesc.debugName      = "Ray query shadows pipeline";
+    pipelineDesc.layout = graphicsLayout.get();
+    pipelineDesc.topology = gpu::PrimitiveTopology::TriangleList;
+    pipelineDesc.colorFormat = surface->colorFormat();
+    pipelineDesc.depthFormat = surface->depthFormat();
+    pipelineDesc.cullMode = gpu::CullMode::None;
+    pipelineDesc.debugName = "Ray query shadows pipeline";
     pipelineDesc.addVertexBufferDescription(gpu::MeshPN::vertexBufferDescription());
     auto pipeline = device->createGraphicsPipeline(pipelineDesc);
     cleanup.push(pipeline);
@@ -311,17 +304,21 @@ int main(int argc, char** argv)
         SDL_Event event;
         while (SDL_PollEvent(&event))
         {
-            if (event.type == SDL_QUIT) running = false;
+            if (event.type == SDL_QUIT)
+            {
+                running = false;
+            }
             if (event.type == SDL_WINDOWEVENT &&
-                event.window.event == SDL_WINDOWEVENT_CLOSE) running = false;
+                event.window.event == SDL_WINDOWEVENT_CLOSE)
+            {
+                running = false;
+            }
             if (event.type == SDL_WINDOWEVENT &&
                 event.window.event == SDL_WINDOWEVENT_RESIZED)
             {
                 device->waitIdle();
-                surface->resize({
-                    static_cast<uint32_t>(event.window.data1),
-                    static_cast<uint32_t>(event.window.data2)
-                });
+                surface->resize({static_cast<uint32_t>(event.window.data1),
+                                 static_cast<uint32_t>(event.window.data2)});
             }
         }
 
@@ -334,14 +331,13 @@ int main(int argc, char** argv)
             orbitRadius * std::cos(t),
             4.0f,
             orbitRadius * std::sin(t),
-            1.0f
-        );
+            1.0f);
         lightData.lightColor = glm::vec4(1.0f, 0.97f, 0.9f, 1.6f);
-        lightData.ambient    = glm::vec4(0.12f, 0.12f, 0.14f, 1.0f);
+        lightData.ambient = glm::vec4(0.12f, 0.12f, 0.14f, 1.0f);
         lightUbo->updateUniformBuffer(lightData);
 
         auto frame = surface->beginFrame();
-        auto cmd   = graphicsQueue.createCommandBuffer("Frame command buffer");
+        auto cmd = graphicsQueue.createCommandBuffer("Frame command buffer");
 
         cmd->begin();
 
@@ -381,7 +377,10 @@ int main(int argc, char** argv)
     {
         obj.objectSet->cleanup();
         obj.objectUbo->cleanup();
-        for (auto& rtMesh : obj.rtMeshes) { rtMesh->cleanup(); }
+        for (auto& rtMesh : obj.rtMeshes)
+        {
+            rtMesh->cleanup();
+        }
         obj.mesh->cleanup();
     }
     objects.clear();

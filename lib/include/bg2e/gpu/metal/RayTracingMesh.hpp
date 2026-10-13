@@ -33,7 +33,7 @@ class Device;
 // build() and reused afterwards. build() must be recorded into a command buffer
 // (use CommandBuffer::buildRayTracingMesh or Device::immediateSubmit).
 class RayTracingMesh : public gpu::RayTracingMesh {
-public:
+  public:
     RayTracingMesh(metal::Device* device, const RayTracingMeshDescription& description);
     ~RayTracingMesh() override;
 
@@ -42,25 +42,31 @@ public:
 
     void cleanup() override;
     bool isValid() const override;
-    bool isBuilt() const override { return _built; }
+    bool isBuilt() const override
+    {
+        return _built;
+    }
 
 #if BG2E_IS_MAC
     // Records the primitive acceleration structure build into `cmd`.
     void build(MTL::CommandBuffer* cmd);
 
-    MTL::AccelerationStructure* handle() const { return _accelerationStructure; }
+    MTL::AccelerationStructure* handle() const
+    {
+        return _accelerationStructure;
+    }
 #endif
 
-private:
+  private:
     metal::Device* _device = nullptr;
-    bool           _built  = false;
+    bool _built = false;
 
 #if BG2E_IS_MAC
     MTL::PrimitiveAccelerationStructureDescriptor* buildDescriptor() const;
 
     MTL::AccelerationStructure* _accelerationStructure = nullptr;
-    MTL::Buffer*                _scratchBuffer         = nullptr;
-    NS::UInteger                _scratchSize           = 0;
+    MTL::Buffer* _scratchBuffer = nullptr;
+    NS::UInteger _scratchSize = 0;
 #endif
 };
 

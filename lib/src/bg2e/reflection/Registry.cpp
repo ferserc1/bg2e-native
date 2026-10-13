@@ -38,7 +38,7 @@ uint32_t objectChainDepthFrom(const TypeRegistry& registry,
     }
 
     uint32_t maxDepth = 0;
-    if (const TypeInfo * info = registry.type(typeName))
+    if (const TypeInfo* info = registry.type(typeName))
     {
         for (const PropertyInfo& p : info->properties)
         {
@@ -61,7 +61,7 @@ uint32_t objectChainDepthFrom(const TypeRegistry& registry,
 
 } // namespace
 
-TypeRegistry * TypeRegistry::_registrySingleton = nullptr;
+TypeRegistry* TypeRegistry::_registrySingleton = nullptr;
 
 TypeRegistry& TypeRegistry::get()
 {
@@ -77,7 +77,7 @@ void TypeRegistry::registerType(TypeInfo info)
     _registry[info.typeName] = std::move(info);
 }
 
-const TypeInfo * TypeRegistry::type(const std::string& typeName) const
+const TypeInfo* TypeRegistry::type(const std::string& typeName) const
 {
     auto it = _registry.find(typeName);
     return it != _registry.end() ? &it->second : nullptr;
@@ -101,8 +101,8 @@ std::vector<std::string> TypeRegistry::typeNames() const
 
 void TypeRegistry::registerSubtypeData(RegisteredSubtype subtype)
 {
-    auto & entries = _subtypes[subtype.info.baseTypeName];
-    for (auto & entry : entries)
+    auto& entries = _subtypes[subtype.info.baseTypeName];
+    for (auto& entry : entries)
     {
         if (entry.info.key == subtype.info.key)
         {
@@ -113,24 +113,30 @@ void TypeRegistry::registerSubtypeData(RegisteredSubtype subtype)
     entries.push_back(std::move(subtype));
 }
 
-const TypeRegistry::RegisteredSubtype * TypeRegistry::subtypeData(
+const TypeRegistry::RegisteredSubtype* TypeRegistry::subtypeData(
     const std::string& baseTypeName,
-    const std::string& key
-) const {
+    const std::string& key) const
+{
     auto hierarchy = _subtypes.find(baseTypeName);
-    if (hierarchy == _subtypes.end()) return nullptr;
-    for (const auto & entry : hierarchy->second)
+    if (hierarchy == _subtypes.end())
     {
-        if (entry.info.key == key) return &entry;
+        return nullptr;
+    }
+    for (const auto& entry : hierarchy->second)
+    {
+        if (entry.info.key == key)
+        {
+            return &entry;
+        }
     }
     return nullptr;
 }
 
-const SubtypeInfo * TypeRegistry::subtype(
+const SubtypeInfo* TypeRegistry::subtype(
     const std::string& baseTypeName,
-    const std::string& key
-) const {
-    const auto * entry = subtypeData(baseTypeName, key);
+    const std::string& key) const
+{
+    const auto* entry = subtypeData(baseTypeName, key);
     return entry ? &entry->info : nullptr;
 }
 
@@ -138,9 +144,12 @@ std::vector<SubtypeInfo> TypeRegistry::subtypes(const std::string& baseTypeName)
 {
     std::vector<SubtypeInfo> result;
     auto hierarchy = _subtypes.find(baseTypeName);
-    if (hierarchy == _subtypes.end()) return result;
+    if (hierarchy == _subtypes.end())
+    {
+        return result;
+    }
     result.reserve(hierarchy->second.size());
-    for (const auto & entry : hierarchy->second)
+    for (const auto& entry : hierarchy->second)
     {
         result.push_back(entry.info);
     }
@@ -149,38 +158,44 @@ std::vector<SubtypeInfo> TypeRegistry::subtypes(const std::string& baseTypeName)
 
 std::string TypeRegistry::subtypeKey(
     const std::string& baseTypeName,
-    const std::type_info& dynamicType
-) const {
+    const std::type_info& dynamicType) const
+{
     auto hierarchy = _subtypes.find(baseTypeName);
-    if (hierarchy == _subtypes.end()) return {};
-    const std::type_index type(dynamicType);
-    for (const auto & entry : hierarchy->second)
+    if (hierarchy == _subtypes.end())
     {
-        if (entry.dynamicType == type) return entry.info.key;
+        return {};
+    }
+    const std::type_index type(dynamicType);
+    for (const auto& entry : hierarchy->second)
+    {
+        if (entry.dynamicType == type)
+        {
+            return entry.info.key;
+        }
     }
     return {};
 }
 
-const void * TypeRegistry::subtypeObject(
+const void* TypeRegistry::subtypeObject(
     const std::string& baseTypeName,
     const std::string& key,
-    const void * baseObject
-) const {
-    const auto * entry = subtypeData(baseTypeName, key);
+    const void* baseObject) const
+{
+    const auto* entry = subtypeData(baseTypeName, key);
     return entry && entry->constObjectCast && baseObject
-        ? entry->constObjectCast(baseObject)
-        : nullptr;
+               ? entry->constObjectCast(baseObject)
+               : nullptr;
 }
 
-void * TypeRegistry::subtypeObject(
+void* TypeRegistry::subtypeObject(
     const std::string& baseTypeName,
     const std::string& key,
-    void * baseObject
-) const {
-    const auto * entry = subtypeData(baseTypeName, key);
+    void* baseObject) const
+{
+    const auto* entry = subtypeData(baseTypeName, key);
     return entry && entry->mutableObjectCast && baseObject
-        ? entry->mutableObjectCast(baseObject)
-        : nullptr;
+               ? entry->mutableObjectCast(baseObject)
+               : nullptr;
 }
 
 uint32_t TypeRegistry::objectChainDepth(const std::string& typeName) const

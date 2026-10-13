@@ -73,9 +73,9 @@ void DrawableComponent::draw(
     const glm::mat4& nodeTransform,
     VkCommandBuffer cmd,
     VkPipelineLayout layout,
-    std::function<std::vector<VkDescriptorSet>(render::MaterialBase *, const glm::mat4&, uint32_t submIndex)> cb,
-    VkPipelineBindPoint bp
-) {
+    std::function<std::vector<VkDescriptorSet>(render::MaterialBase*, const glm::mat4&, uint32_t submIndex)> cb,
+    VkPipelineBindPoint bp)
+{
     auto drawable = _drawable.get();
     if (drawable)
     {
@@ -87,8 +87,8 @@ void DrawableComponent::draw(
 void DrawableComponent::deserialize(
     std::shared_ptr<json::JsonNode> jsonData,
     const std::filesystem::path& basePath,
-    render::Engine& engine
-) {
+    render::Engine& engine)
+{
     json::ObjectReader reader(jsonData);
     if (auto name = reader.getString("name"))
     {
@@ -104,8 +104,8 @@ void DrawableComponent::deserializeWithProgress(
     std::shared_ptr<json::JsonNode> jsonData,
     const std::filesystem::path& basePath,
     render::Engine& engine,
-    SceneLoadProgress* progress
-) {
+    SceneLoadProgress* progress)
+{
     json::ObjectReader reader(jsonData);
     if (auto name = reader.getString("name"))
     {
@@ -113,13 +113,17 @@ void DrawableComponent::deserializeWithProgress(
         filePath.append(*name);
         filePath.replace_extension(".bg2");
 
-        _drawable = db::loadDrawableBg2(filePath, &engine, [progress]() {
-            if (progress && progress->callback)
-            {
-                progress->callback("texture", progress->loaded, progress->total);
-            }
-            if (progress) { ++progress->loaded; }
-        });
+        _drawable = db::loadDrawableBg2(filePath, &engine, [progress]()
+                                        {
+                                            if (progress && progress->callback)
+                                            {
+                                                progress->callback("texture", progress->loaded, progress->total);
+                                            }
+                                            if (progress)
+                                            {
+                                                ++progress->loaded;
+                                            }
+                                        });
     }
 }
 
@@ -127,28 +131,28 @@ std::shared_ptr<json::JsonNode> DrawableComponent::serialize(const std::filesyst
 {
     using namespace bg2e::json;
     auto compData = Component::serialize(basePath);
-    JsonObject & obj = compData->objectValue();
-    
-    Drawable * drawable = dynamic_cast<Drawable*>(_drawable.get());
+    JsonObject& obj = compData->objectValue();
+
+    Drawable* drawable = dynamic_cast<Drawable*>(_drawable.get());
     if (drawable)
     {
         if (_drawable->name() == "")
         {
             _drawable->setName(utils::uniqueId());
         }
-        
+
         obj["name"] = JSON(_drawable->name());
-        
+
         auto filePath = basePath;
         filePath.append(_drawable->name());
         filePath.replace_extension(".bg2");
-        
+
         db::storeDrawableBg2(filePath, this);
     }
 
     return compData;
 }
-    
+
 BG2E_SCENE_REGISTER_COMPONENT(DrawableComponent);
 
 }

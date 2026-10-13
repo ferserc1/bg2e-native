@@ -43,7 +43,8 @@
 namespace bg2e {
 namespace render {
 
-enum class FinalRenderMode : uint32_t {
+enum class FinalRenderMode : uint32_t
+{
     FSRQuality = 0,
     FSRBalanced = 1,
     FSRPerformance = 2,
@@ -53,14 +54,23 @@ enum class FinalRenderMode : uint32_t {
 };
 
 class BG2E_API RendererDeferred : public Renderer {
-public:
+  public:
     RendererDeferred() = default;
     ~RendererDeferred() override;
 
-    [[nodiscard]] bool drawSkybox() const override { return _skyboxLayer->drawSkybox(); }
-    inline void setDrawSkybox(bool value) override { _skyboxLayer->setDrawSkybox(value); }
+    [[nodiscard]] bool drawSkybox() const override
+    {
+        return _skyboxLayer->drawSkybox();
+    }
+    inline void setDrawSkybox(bool value) override
+    {
+        _skyboxLayer->setDrawSkybox(value);
+    }
 
-    [[nodiscard]] manipulation::GizmoAndSelectionRenderer * gizmoAndSelectionRenderer() const { return _gizmoAndSelectionRenderer.get(); }
+    [[nodiscard]] manipulation::GizmoAndSelectionRenderer* gizmoAndSelectionRenderer() const
+    {
+        return _gizmoAndSelectionRenderer.get();
+    }
 
     void build(
         bg2e::render::Engine* engine,
@@ -68,24 +78,19 @@ public:
         VkFormat colorImageFormat,
         VkFormat depthImageFormat,
         VkSampleCountFlagBits sampleCount,
-        bool isOffscreen
-    ) override;
+        bool isOffscreen) override;
 
     void initFrameResources(
-        bg2e::render::vulkan::DescriptorSetAllocator* frameAllocator
-    ) override;
+        bg2e::render::vulkan::DescriptorSetAllocator* frameAllocator) override;
 
     void initScene(
-        std::shared_ptr<bg2e::scene::Node> sceneRoot
-    ) override;
+        std::shared_ptr<bg2e::scene::Node> sceneRoot) override;
 
     void resize(
-        VkExtent2D newExtent
-    ) override;
+        VkExtent2D newExtent) override;
 
     void update(
-        float delta
-    ) override;
+        float delta) override;
 
     void draw(
         VkCommandBuffer cmd,
@@ -94,27 +99,44 @@ public:
         const bg2e::render::vulkan::Image* depthImage,
         const bg2e::render::vulkan::Image* msaaDepthImage,
         bg2e::render::vulkan::FrameResources& frameResources,
-        VkImageLayout & outColorImageLayout,
-        VkImageLayout & outDepthImageLayout,
-        VkImageLayout & outMsaaDepthImageLayout
-    ) override;
+        VkImageLayout& outColorImageLayout,
+        VkImageLayout& outDepthImageLayout,
+        VkImageLayout& outMsaaDepthImageLayout) override;
 
     void cleanup() override;
 
-    uint32_t viewportWidth() override { return _viewportExtent.width; }
-    uint32_t viewportHeight() override { return _viewportExtent.height; }
+    uint32_t viewportWidth() override
+    {
+        return _viewportExtent.width;
+    }
+    uint32_t viewportHeight() override
+    {
+        return _viewportExtent.height;
+    }
 
-    bool supportsMsaa() override { return false; }
+    bool supportsMsaa() override
+    {
+        return false;
+    }
 
     // Render scale: percentage of viewport size used for deferred rendering.
     // 100% = native resolution, <100% = lower internal resolution (for upscaling),
     // >100% = supersampling. Range is clamped to [25, 150].
     void setRenderScalePercent(float percent);
-    float renderScalePercent() const { return _renderScalePercent; }
+    float renderScalePercent() const
+    {
+        return _renderScalePercent;
+    }
 
     // Internal deferred render size (computed from viewport + render scale)
-    uint32_t renderWidth() const { return _renderExtent.width; }
-    uint32_t renderHeight() const { return _renderExtent.height; }
+    uint32_t renderWidth() const
+    {
+        return _renderExtent.width;
+    }
+    uint32_t renderHeight() const
+    {
+        return _renderExtent.height;
+    }
 
     // --- Final rendering UI API ---
     // Presents the available FSR modes plus native direct rendering.
@@ -126,8 +148,14 @@ public:
     // Currently selected index.
     uint32_t scaleOption() const;
     void setFinalRenderMode(FinalRenderMode mode);
-    FinalRenderMode finalRenderMode() const { return _finalRenderMode; }
-    bool fsrSupported() const { return _fsrAvailable; }
+    FinalRenderMode finalRenderMode() const
+    {
+        return _finalRenderMode;
+    }
+    bool fsrSupported() const
+    {
+        return _fsrAvailable;
+    }
 
     deferred::DeferredDebugVisualization debugVisualization() const;
     void setDebugVisualization(deferred::DeferredDebugVisualization debugVisualization);
@@ -243,11 +271,11 @@ public:
     void setRTReflectionUseBlueNoise(bool use);
     bool rtReflectionUseBlueNoise() const;
 
-protected:
+  protected:
     bg2e::render::Engine* _engine = nullptr;
 
-    VkExtent2D _viewportExtent;   // Final display/swapchain size
-    VkExtent2D _renderExtent;     // Internal deferred render size (may differ from viewport)
+    VkExtent2D _viewportExtent; // Final display/swapchain size
+    VkExtent2D _renderExtent;   // Internal deferred render size (may differ from viewport)
     VkFormat _colorImageFormat;
     VkFormat _depthImageFormat;
     VkSampleCountFlagBits _sampleCount;
@@ -275,28 +303,28 @@ protected:
     std::unique_ptr<vulkan::rt::ReflectionLightDataBinding> _reflectionLightDataBinding;
 
     std::unique_ptr<manipulation::GizmoAndSelectionRenderer> _gizmoAndSelectionRenderer;
-    std::unique_ptr<deferred::FinalPostProcessor>            _finalPostProcessor;
+    std::unique_ptr<deferred::FinalPostProcessor> _finalPostProcessor;
     // Keep the initialized FSR backend alive while Direct is selected. This
     // avoids repeatedly constructing FidelityFX backend interfaces and makes
     // returning from Direct deterministic.
-    std::unique_ptr<deferred::FinalPostProcessor>            _standbyFSRPostProcessor;
-    std::unique_ptr<deferred::MotionVectorGenerator>         _motionVectorGenerator;
+    std::unique_ptr<deferred::FinalPostProcessor> _standbyFSRPostProcessor;
+    std::unique_ptr<deferred::MotionVectorGenerator> _motionVectorGenerator;
 
     // Shared blue-noise texture used by the RT passes (AO/GI/reflections)
     std::unique_ptr<BlueNoise> _blueNoise;
 
     // Previous-frame camera matrices for motion vector generation
-    glm::mat4 _prevViewMatrix   = glm::mat4(1.0f);
-    glm::mat4 _prevProjMatrix   = glm::mat4(1.0f);
-    uint32_t  _frameCounter     = 0;
-    float     _deltaTimeMs      = 0.0f;
+    glm::mat4 _prevViewMatrix = glm::mat4(1.0f);
+    glm::mat4 _prevProjMatrix = glm::mat4(1.0f);
+    uint32_t _frameCounter = 0;
+    float _deltaTimeMs = 0.0f;
 
     deferred::DeferredDebugVisualization _debugVisualization = deferred::DeferredDebugVisualization::FullComposition;
 
     std::vector<base::LightData> _lights;
     std::vector<base::LightData> _reflectionLights;
 
-protected:
+  protected:
     void updateLights(const std::vector<std::shared_ptr<bg2e::scene::LightComponent>>& lightComponents, uint32_t maxLights) override;
 
     VkExtent2D computeRenderExtent(VkExtent2D viewportExtent, float scalePercent) const;

@@ -8,15 +8,19 @@ layout(location = 0) out vec3 fragWorldPos;
 layout(location = 1) out vec3 fragNormal;
 layout(location = 2) out vec3 fragLocalPos;
 
-layout(set = 0, binding = 0) uniform CameraUBO {
+layout(set = 0, binding = 0) uniform CameraUBO
+{
     mat4 projection;
     mat4 view;
     vec4 cameraPos;
-} camera;
+}
+camera;
 
-layout(set = 1, binding = 0) uniform ModelUBO {
+layout(set = 1, binding = 0) uniform ModelUBO
+{
     mat4 model;
-} object;
+}
+object;
 
 void main()
 {

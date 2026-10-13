@@ -31,11 +31,11 @@ namespace bg2e {
 namespace render {
 
 class BG2E_API RenderLoop {
-public:
+  public:
     // Init engine resources, for example, the main descriptor set allocator,
     // render images, etc
-    void init(Engine * engine);
-    
+    void init(Engine* engine);
+
     // Init scene resource, for example: create pipelines, load textures,
     // load 3d models...
     void initScene();
@@ -51,23 +51,34 @@ public:
         const vulkan::Image* colorImage,
         const vulkan::Image* depthImage,
         const vulkan::Image* msaaDepthImage,
-        vulkan::FrameResources& frameResources
-    );
+        vulkan::FrameResources& frameResources);
 
     void cleanup();
 
     void pauseScene(glm::vec4 clearColor = {0.f, 0.f, 0.f, 1.f});
     void resumeScene();
-    inline bool isScenePaused() const { return _scenePaused; }
+    inline bool isScenePaused() const
+    {
+        return _scenePaused;
+    }
 
-    inline void setDelegate(std::shared_ptr<RenderLoopDelegate> delegate) { _renderDelegate = delegate; }
+    inline void setDelegate(std::shared_ptr<RenderLoopDelegate> delegate)
+    {
+        _renderDelegate = delegate;
+    }
 
-	inline void renderUICallback(std::function<void(VkCommandBuffer, VkImageView)> callback) { _renderUICallback = callback; }
+    inline void renderUICallback(std::function<void(VkCommandBuffer, VkImageView)> callback)
+    {
+        _renderUICallback = callback;
+    }
 
-    inline void setDelta(float d) { _delta = d; }
-    
-protected:
-	Engine * _engine;
+    inline void setDelta(float d)
+    {
+        _delta = d;
+    }
+
+  protected:
+    Engine* _engine;
     bool _resizeRequested = false;
 
     std::shared_ptr<RenderLoopDelegate> _renderDelegate;
@@ -77,13 +88,12 @@ protected:
     float _delta;
 
     bool _scenePaused = false;
-    glm::vec4 _sceneClearColor { 0.f, 0.f, 0.f, 1.f };
+    glm::vec4 _sceneClearColor{0.f, 0.f, 0.f, 1.f};
 
     void cmdClearColorImage(
         VkCommandBuffer cmd,
         const vulkan::Image* targetImage,
-        const glm::vec4& clearColor
-    );
+        const glm::vec4& clearColor);
 };
 
 }

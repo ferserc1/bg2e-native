@@ -51,22 +51,21 @@ void UISettingsWindow::init(bool showBackgroundFrameRateSettings)
             auto& preferences = app::PreferencesStore::instance().preferences(preferencesContext);
             const auto storedFrameRate = preferences.get(
                 backgroundMaxFrameRateKey,
-                mainLoop->backgroundMaxFrameRate()
-            );
+                mainLoop->backgroundMaxFrameRate());
             if (std::isfinite(storedFrameRate) && storedFrameRate > 0.0)
             {
                 mainLoop->setBackgroundMaxFrameRate(storedFrameRate);
             }
             mainLoop->setBackgroundFrameRateLimitEnabled(preferences.get(
                 backgroundLimitEnabledKey,
-                mainLoop->backgroundFrameRateLimitEnabled()
-            ));
+                mainLoop->backgroundFrameRateLimitEnabled()));
         }
     }
 
-    setDrawFunction([this]() {
-        drawUI();
-    });
+    setDrawFunction([this]()
+                    {
+                        drawUI();
+                    });
 }
 
 void UISettingsWindow::drawUI()
@@ -88,15 +87,15 @@ void UISettingsWindow::drawUI()
     using GizmoComponent = bg2e::manipulation::GizmoComponent;
 
     struct GizmoTypeEntry {
-        const char * label;
+        const char* label;
         GizmoType type;
     };
     static const GizmoTypeEntry types[] = {
-        { "Camera",            GizmoType::Camera },
-        { "Point Light",       GizmoType::PointLight },
-        { "Spot Light",        GizmoType::SpotLight },
-        { "Directional Light", GizmoType::DirectionalLight },
-        { "Environment",       GizmoType::Environment },
+        {"Camera", GizmoType::Camera},
+        {"Point Light", GizmoType::PointLight},
+        {"Spot Light", GizmoType::SpotLight},
+        {"Directional Light", GizmoType::DirectionalLight},
+        {"Environment", GizmoType::Environment},
     };
 
     for (auto& entry : types)
@@ -159,7 +158,10 @@ void UISettingsWindow::drawUI()
 void UISettingsWindow::drawBackgroundFrameRateSection()
 {
     auto* mainLoop = app::MainLoop::current();
-    if (!mainLoop) return;
+    if (!mainLoop)
+    {
+        return;
+    }
 
     Text::separator("Background Performance");
 

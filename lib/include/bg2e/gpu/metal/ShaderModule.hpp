@@ -28,7 +28,7 @@ namespace gpu {
 namespace metal {
 
 class BG2E_API ShaderModule : public gpu::ShaderModule {
-public:
+  public:
 #if BG2E_IS_MAC
     ShaderModule(gpu::Device* gpuDevice, MTL::Device* device, const gpu::ShaderModuleDescription& description);
 #else
@@ -41,11 +41,17 @@ public:
     void cleanup() override;
 
 #if BG2E_IS_MAC
-    MTL::Function* function() const { return _function; }
-    MTL::Library* library() const { return _library; }
+    MTL::Function* function() const
+    {
+        return _function;
+    }
+    MTL::Library* library() const
+    {
+        return _library;
+    }
 #endif
 
-private:
+  private:
     ShaderStage _stage;
     std::string _entryPoint;
 

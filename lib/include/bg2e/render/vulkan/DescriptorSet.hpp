@@ -32,9 +32,8 @@ namespace vulkan {
 class Buffer;
 
 class BG2E_API DescriptorSet {
-public:
-
-    void init(Engine * e, VkDescriptorSet ds);
+  public:
+    void init(Engine* e, VkDescriptorSet ds);
 
     // To update a descriptor set:
     // - call beginUpdate()
@@ -54,16 +53,15 @@ public:
         VkDescriptorType type,
         VkImageView imageView,
         VkImageLayout layout,
-        VkSampler sampler = VK_NULL_HANDLE
-    ) {
+        VkSampler sampler = VK_NULL_HANDLE)
+    {
         beginUpdate();
         addImage(
             binding,
             type,
             imageView,
             layout,
-            sampler
-        );
+            sampler);
         endUpdate();
     }
 
@@ -72,18 +70,20 @@ public:
         VkDescriptorType type,
         Buffer* buffer,
         size_t size,
-        size_t offset
-    );
+        size_t offset);
 
-    inline void beginUpdate() { clear(); }
+    inline void beginUpdate()
+    {
+        clear();
+    }
 
     inline void addImage(
         uint32_t binding,
         VkDescriptorType type,
         const Image* image,
         VkImageLayout layout,
-        VkSampler sampler = VK_NULL_HANDLE
-    ) {
+        VkSampler sampler = VK_NULL_HANDLE)
+    {
         addImage(binding, type, image->imageView(), layout, sampler);
     }
 
@@ -92,15 +92,14 @@ public:
         VkDescriptorType type,
         VkImageView imageView,
         VkImageLayout layout,
-        VkSampler sampler = VK_NULL_HANDLE
-    );
+        VkSampler sampler = VK_NULL_HANDLE);
 
     void addImage(
         uint32_t binding,
         VkDescriptorType type,
         VkImageLayout layout,
-        render::Texture* texture
-    ) {
+        render::Texture* texture)
+    {
         addImage(binding, type, texture->image()->imageView(), layout, texture->sampler());
     }
 
@@ -108,8 +107,8 @@ public:
         uint32_t binding,
         VkDescriptorType type,
         VkImageLayout layout,
-        const std::shared_ptr<render::Texture>& texture
-    ) {
+        const std::shared_ptr<render::Texture>& texture)
+    {
         addImage(binding, type, texture->image()->imageView(), layout, texture->sampler());
     }
 
@@ -118,49 +117,50 @@ public:
         VkDescriptorType type,
         Buffer* buffer,
         size_t size,
-        size_t offset
-    );
+        size_t offset);
 
     void addBuffer(
         uint32_t binding,
         VkDescriptorType type,
         VkBuffer buffer,
         size_t size,
-        size_t offset
-    );
+        size_t offset);
 
     void addAccelerationStructure(
         uint32_t binding,
-        VkAccelerationStructureKHR accelerationStructure
-    );
+        VkAccelerationStructureKHR accelerationStructure);
 
     void addBufferArray(
         uint32_t binding,
         VkDescriptorType type,
         const std::vector<VkBuffer>& buffers,
         const std::vector<size_t>& sizes,
-        const std::vector<size_t>& offsets
-    );
+        const std::vector<size_t>& offsets);
 
     void addImageArray(
         uint32_t binding,
         VkDescriptorType type,
         const std::vector<VkImageView>& imageViews,
         const std::vector<VkSampler>& samplers,
-        VkImageLayout layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
-    );
+        VkImageLayout layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
     void endUpdate();
 
     // Clear all descriptor writes to add images and buffers again
     void clear();
 
-    inline VkDescriptorSet descriptorSet() const { return _ds; }
+    inline VkDescriptorSet descriptorSet() const
+    {
+        return _ds;
+    }
 
-    inline VkDescriptorSet* operator&() { return &_ds; }
+    inline VkDescriptorSet* operator&()
+    {
+        return &_ds;
+    }
 
-protected:
-    Engine * _engine = nullptr;
+  protected:
+    Engine* _engine = nullptr;
 
     std::deque<VkDescriptorImageInfo> _imageInfos;
     std::deque<VkDescriptorBufferInfo> _bufferInfos;

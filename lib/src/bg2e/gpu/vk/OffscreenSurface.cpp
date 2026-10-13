@@ -47,11 +47,21 @@ void OffscreenSurface::createRenderTarget(gpu::Device* device, gpu::PhysicalDevi
 
 void OffscreenSurface::resize(const Size2D& size)
 {
-    if (_device) _device->waitIdle();
-    if (_frame) _frame->waitForSubmissions();
+    if (_device)
+    {
+        _device->waitIdle();
+    }
+    if (_frame)
+    {
+        _frame->waitForSubmissions();
+    }
     ++_generation;
     _frameAcquired = false;
-    if (!size.width || !size.height) { _size = size; return; }
+    if (!size.width || !size.height)
+    {
+        _size = size;
+        return;
+    }
     _size = size;
     if (_colorImage)
     {
@@ -62,8 +72,14 @@ void OffscreenSurface::resize(const Size2D& size)
 
 void OffscreenSurface::releaseRenderTarget()
 {
-    if (_device && _device->isValid()) _device->waitIdle();
-    if (_frame) _frame->waitForSubmissions();
+    if (_device && _device->isValid())
+    {
+        _device->waitIdle();
+    }
+    if (_frame)
+    {
+        _frame->waitForSubmissions();
+    }
     _frameAcquired = false;
     _frame.reset();
     releaseDepthTarget();
@@ -97,7 +113,10 @@ uint32_t OffscreenSurface::currentFrameIndex() const
 
 gpu::Image* OffscreenSurface::colorImage(uint32_t index) const
 {
-    if (index == 0) return _colorImage.get();
+    if (index == 0)
+    {
+        return _colorImage.get();
+    }
     return nullptr;
 }
 
@@ -108,8 +127,14 @@ gpu::Image* OffscreenSurface::depthImage() const
 
 std::shared_ptr<gpu::SurfaceFrame> OffscreenSurface::beginFrame()
 {
-    if (_frameAcquired) throw std::logic_error("Offscreen surface already has an acquired frame");
-    if (!_size.width || !_size.height || !_frame) return nullptr;
+    if (_frameAcquired)
+    {
+        throw std::logic_error("Offscreen surface already has an acquired frame");
+    }
+    if (!_size.width || !_size.height || !_frame)
+    {
+        return nullptr;
+    }
     _frame->waitForSubmissions();
     _frameAcquired = true;
     return _frame;
@@ -118,14 +143,19 @@ std::shared_ptr<gpu::SurfaceFrame> OffscreenSurface::beginFrame()
 void OffscreenSurface::present(gpu::CommandBuffer* cmd)
 {
     auto* command = dynamic_cast<vk::CommandBuffer*>(cmd);
-    if (!command || !_frame || !_frameAcquired) throw std::logic_error("Invalid offscreen frame association");
+    if (!command || !_frame || !_frameAcquired)
+    {
+        throw std::logic_error("Invalid offscreen frame association");
+    }
     command->associateFrame(_frame);
 }
 
 void OffscreenSurface::endFrame(gpu::SurfaceFrame* frame)
 {
     if (!_frameAcquired || !_frame || frame != _frame.get() || !frame->hasSubmissions())
+    {
         throw std::logic_error("Offscreen endFrame requires a submitted frame");
+    }
     _frameAcquired = false;
     ++_frameCounter;
 }

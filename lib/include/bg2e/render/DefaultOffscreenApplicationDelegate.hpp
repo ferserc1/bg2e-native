@@ -21,25 +21,21 @@
 #include <bg2e/app/OffscreenApplication.hpp>
 #include <bg2e/scene/Node.hpp>
 
-namespace bg2e::render
-{
+namespace bg2e::render {
 
 template <typename RendererT>
-class BG2E_API DefaultOffscreenApplicationDelegate : public bg2e::app::OffscreenApplicationDelegate
-{
-public:
+class BG2E_API DefaultOffscreenApplicationDelegate : public bg2e::app::OffscreenApplicationDelegate {
+  public:
     virtual void initConfig(
-        int argc, char *argv[],
-        bg2e::app::OffscreenApplicationConfig & outConfig
-    ) override;
+        int argc, char* argv[],
+        bg2e::app::OffscreenApplicationConfig& outConfig) override;
 
     virtual void init(
-        Engine *,
+        Engine*,
         std::shared_ptr<vulkan::Image> colorImage,
-        std::shared_ptr<vulkan::Image> depthImage
-    ) override;
+        std::shared_ptr<vulkan::Image> depthImage) override;
 
-    virtual void initFrameResources(vulkan::DescriptorSetAllocator * allocator) override;
+    virtual void initFrameResources(vulkan::DescriptorSetAllocator* allocator) override;
 
     virtual void initScene() override;
 
@@ -50,32 +46,35 @@ public:
     virtual bool render(
         VkCommandBuffer cmd,
         uint32_t frameIndex,
-        vulkan::FrameResources & frameResources,
+        vulkan::FrameResources& frameResources,
         VkImageLayout colorImageLayout,
-        VkImageLayout & final_color_image_la_layout
-    ) override;
+        VkImageLayout& final_color_image_la_layout) override;
 
     virtual void didRenderFrame(
         uint32_t frameIndex,
         double elapsedMs,
-        VkImageLayout colorImageLayout
-    ) override;
+        VkImageLayout colorImageLayout) override;
 
     virtual void cleanup() override;
 
-    RendererT * renderer();
+    RendererT* renderer();
 
-protected:
-    bg2e::render::Engine * _engine;
+  protected:
+    bg2e::render::Engine* _engine;
     std::shared_ptr<vulkan::Image> _colorImage;
     std::shared_ptr<vulkan::Image> _depthImage;
 
     std::unique_ptr<RendererT> _renderer;
 
     virtual std::shared_ptr<scene::Node> createScene() = 0;
-    virtual bool continueRendering() { return false; }
+    virtual bool continueRendering()
+    {
+        return false;
+    }
 
-    virtual void onInitSceneDone(std::shared_ptr<scene::Node>) {}
+    virtual void onInitSceneDone(std::shared_ptr<scene::Node>)
+    {
+    }
 };
 
 }

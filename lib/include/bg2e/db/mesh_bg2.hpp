@@ -42,85 +42,69 @@ class Node;
 namespace bg2e {
 namespace db {
 
-struct Bg2Mesh
-{
+struct Bg2Mesh {
     std::shared_ptr<bg2e::geo::MeshPNUUT> mesh;
     std::vector<bg2e::base::MaterialAttributes> materials;
     std::optional<bg2e::base::LinkJoint> inputJoint;
     std::optional<bg2e::base::LinkJoint> outputJoint;
 };
 
-extern BG2E_API Bg2Mesh * loadMeshBg2(
-    const std::filesystem::path& filePath
-);
-extern BG2E_API Bg2Mesh * loadMeshBg2(
+extern BG2E_API Bg2Mesh* loadMeshBg2(
+    const std::filesystem::path& filePath);
+extern BG2E_API Bg2Mesh* loadMeshBg2(
     const std::filesystem::path& filePath,
-    const std::string& fileName
-);
+    const std::string& fileName);
 
 extern BG2E_API void storeMeshBg2(
     const std::filesystem::path& filePath,
-    Bg2Mesh * mesh
-);
+    Bg2Mesh* mesh);
 extern BG2E_API void storeMeshBg2(
     const std::filesystem::path& filePath,
     const std::string& fileName,
-    Bg2Mesh * mesh
-);
+    Bg2Mesh* mesh);
 
 extern BG2E_API std::shared_ptr<bg2e::scene::Drawable> loadDrawableBg2(
     const std::filesystem::path& filePath,
-    bg2e::render::Engine * engine
-);
+    bg2e::render::Engine* engine);
 extern BG2E_API std::shared_ptr<bg2e::scene::Drawable> loadDrawableBg2(
     const std::filesystem::path& filePath,
-    bg2e::render::Engine * engine,
-    std::function<void()> onTextureLoaded
-);
+    bg2e::render::Engine* engine,
+    std::function<void()> onTextureLoaded);
 extern BG2E_API std::shared_ptr<bg2e::scene::Drawable> loadDrawableBg2(
     const std::filesystem::path& basePath,
     const std::string& fileName,
-    bg2e::render::Engine * engine
-);
+    bg2e::render::Engine* engine);
 
 extern BG2E_API uint32_t countMeshTextures(const std::filesystem::path& filePath);
 
 extern BG2E_API void storeDrawableBg2(
     const std::filesystem::path& filePath,
-    bg2e::scene::Drawable* drawable
-);
+    bg2e::scene::Drawable* drawable);
 extern BG2E_API void storeDrawableBg2(
     const std::filesystem::path& basePath,
     const std::string& fileName,
-    bg2e::scene::Drawable* drawable
-);
+    bg2e::scene::Drawable* drawable);
 extern BG2E_API void storeDrawableBg2(
     const std::filesystem::path& filePath,
-    std::shared_ptr<bg2e::scene::Drawable> drawable
-);
+    std::shared_ptr<bg2e::scene::Drawable> drawable);
 extern BG2E_API void storeDrawableBg2(
     const std::filesystem::path& basePath,
     const std::string& fileName,
-    std::shared_ptr<bg2e::scene::Drawable> drawable
-);
+    std::shared_ptr<bg2e::scene::Drawable> drawable);
 extern BG2E_API void storeDrawableBg2(
     const std::filesystem::path& filePath,
-    bg2e::scene::DrawableComponent* drawable
-);
+    bg2e::scene::DrawableComponent* drawable);
 extern BG2E_API void storeDrawableBg2(
     const std::filesystem::path& basePath,
     const std::string& fileName,
-    bg2e::scene::DrawableComponent* drawable
-);
+    bg2e::scene::DrawableComponent* drawable);
 extern BG2E_API void storeDrawableBg2(
     const std::filesystem::path& filePath,
-    bg2e::scene::Node* node
-);
+    bg2e::scene::Node* node);
 extern BG2E_API void storeDrawableBg2(
     const std::filesystem::path& basePath,
     const std::string& fileName,
-    bg2e::scene::Node* node
-);
+    bg2e::scene::Node* node);
 
 }
 }

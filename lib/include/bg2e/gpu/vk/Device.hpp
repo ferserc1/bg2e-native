@@ -29,7 +29,7 @@ namespace gpu {
 namespace vk {
 
 class Device : public gpu::Device {
-public:
+  public:
     void create(gpu::Instance* instance, gpu::PhysicalDevice* physicalDevice, gpu::Surface* surface) override;
     void cleanup() override;
     void waitIdle() override;
@@ -56,16 +56,31 @@ public:
 
     void immediateSubmit(std::function<void(gpu::CommandBuffer* cmd)>&& function) override;
 
-    VkDevice handle() const { return _device; }
-    VmaAllocator allocator() const { return _allocator; }
-    VkPhysicalDevice physicalDeviceHandle() const { return _physicalDevice; }
+    VkDevice handle() const
+    {
+        return _device;
+    }
+    VmaAllocator allocator() const
+    {
+        return _allocator;
+    }
+    VkPhysicalDevice physicalDeviceHandle() const
+    {
+        return _physicalDevice;
+    }
 
     // True when the device was created with the ray tracing extensions enabled.
-    bool     rayTracingEnabled() const { return _rayTracingEnabled; }
+    bool rayTracingEnabled() const
+    {
+        return _rayTracingEnabled;
+    }
     // Minimum scratch buffer device-address alignment for acceleration builds.
-    uint32_t accelerationStructureScratchAlignment() const { return _asScratchAlignment; }
+    uint32_t accelerationStructureScratchAlignment() const
+    {
+        return _asScratchAlignment;
+    }
 
-private:
+  private:
     VkDevice _device{VK_NULL_HANDLE};
     VkPhysicalDevice _physicalDevice{VK_NULL_HANDLE};
     VmaAllocator _allocator{VK_NULL_HANDLE};
@@ -73,7 +88,7 @@ private:
     vk::Queue _presentQueue;
     vk::Queue _transferQueue;
 
-    bool     _rayTracingEnabled  = false;
+    bool _rayTracingEnabled = false;
     uint32_t _asScratchAlignment = 256;
 };
 

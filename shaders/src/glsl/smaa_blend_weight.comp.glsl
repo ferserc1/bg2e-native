@@ -37,9 +37,11 @@ layout(set = 0, binding = 1) uniform sampler2D areaTex;
 layout(set = 0, binding = 2) uniform sampler2D searchTex;
 layout(rgba8, set = 0, binding = 3) uniform image2D blendWeightsOutput;
 
-layout(push_constant) uniform PushConstant {
+layout(push_constant) uniform PushConstant
+{
     vec2 texelSize;
-} pc;
+}
+pc;
 
 layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
 
@@ -49,28 +51,31 @@ vec4 rtMetrics;
 //-----------------------------------------------------------------------------
 // Horizontal / vertical search functions
 
-float SMAASearchLength(vec2 e, float offset) {
+float SMAASearchLength(vec2 e, float offset)
+{
     // The searchTex is flipped vertically, with the left/right cases taking
     // half of the horizontal space.
     vec2 scale = SMAA_SEARCHTEX_SIZE * vec2(0.5, -1.0);
-    vec2 bias  = SMAA_SEARCHTEX_SIZE * vec2(offset, 1.0);
+    vec2 bias = SMAA_SEARCHTEX_SIZE * vec2(offset, 1.0);
 
     // Scale and bias to access texel centers.
-    scale += vec2(-1.0,  1.0);
-    bias  += vec2( 0.5, -0.5);
+    scale += vec2(-1.0, 1.0);
+    bias += vec2(0.5, -0.5);
 
     // Convert from pixel coordinates to texcoords.
     scale *= 1.0 / SMAA_SEARCHTEX_PACKED_SIZE;
-    bias  *= 1.0 / SMAA_SEARCHTEX_PACKED_SIZE;
+    bias *= 1.0 / SMAA_SEARCHTEX_PACKED_SIZE;
 
     return textureLod(searchTex, scale * e + bias, 0.0).r;
 }
 
-float SMAASearchXLeft(vec2 texcoord, float end) {
+float SMAASearchXLeft(vec2 texcoord, float end)
+{
     vec2 e = vec2(0.0, 1.0);
     while (texcoord.x > end &&
-           e.g > 0.8281 &&  // Is there some edge not activated?
-           e.r == 0.0) {    // Or is there a crossing edge that breaks the line?
+           e.g > 0.8281 && // Is there some edge not activated?
+           e.r == 0.0)
+    { // Or is there a crossing edge that breaks the line?
         e = textureLod(edgesTex, texcoord, 0.0).rg;
         texcoord = -vec2(2.0, 0.0) * rtMetrics.xy + texcoord;
     }
@@ -78,11 +83,13 @@ float SMAASearchXLeft(vec2 texcoord, float end) {
     return rtMetrics.x * offset + texcoord.x;
 }
 
-float SMAASearchXRight(vec2 texcoord, float end) {
+float SMAASearchXRight(vec2 texcoord, float end)
+{
     vec2 e = vec2(0.0, 1.0);
     while (texcoord.x < end &&
            e.g > 0.8281 &&
-           e.r == 0.0) {
+           e.r == 0.0)
+    {
         e = textureLod(edgesTex, texcoord, 0.0).rg;
         texcoord = vec2(2.0, 0.0) * rtMetrics.xy + texcoord;
     }
@@ -90,11 +97,13 @@ float SMAASearchXRight(vec2 texcoord, float end) {
     return -rtMetrics.x * offset + texcoord.x;
 }
 
-float SMAASearchYUp(vec2 texcoord, float end) {
+float SMAASearchYUp(vec2 texcoord, float end)
+{
     vec2 e = vec2(1.0, 0.0);
     while (texcoord.y > end &&
            e.r > 0.8281 &&
-           e.g == 0.0) {
+           e.g == 0.0)
+    {
         e = textureLod(edgesTex, texcoord, 0.0).rg;
         texcoord = -vec2(0.0, 2.0) * rtMetrics.xy + texcoord;
     }
@@ -102,11 +111,13 @@ float SMAASearchYUp(vec2 texcoord, float end) {
     return rtMetrics.y * offset + texcoord.y;
 }
 
-float SMAASearchYDown(vec2 texcoord, float end) {
+float SMAASearchYDown(vec2 texcoord, float end)
+{
     vec2 e = vec2(1.0, 0.0);
     while (texcoord.y < end &&
            e.r > 0.8281 &&
-           e.g == 0.0) {
+           e.g == 0.0)
+    {
         e = textureLod(edgesTex, texcoord, 0.0).rg;
         texcoord = vec2(0.0, 2.0) * rtMetrics.xy + texcoord;
     }
@@ -117,7 +128,8 @@ float SMAASearchYDown(vec2 texcoord, float end) {
 //-----------------------------------------------------------------------------
 // Area function
 
-vec2 SMAAArea(vec2 dist, float e1, float e2, float offset) {
+vec2 SMAAArea(vec2 dist, float e1, float e2, float offset)
+{
     // Rounding prevents precision errors of bilinear filtering.
     vec2 texcoord = vec2(SMAA_AREATEX_MAX_DISTANCE) * round(4.0 * vec2(e1, e2)) + dist;
 
@@ -132,10 +144,12 @@ vec2 SMAAArea(vec2 dist, float e1, float e2, float offset) {
 
 //-----------------------------------------------------------------------------
 
-void main() {
+void main()
+{
     ivec2 size = imageSize(blendWeightsOutput);
     ivec2 pixelCoord = ivec2(gl_GlobalInvocationID.xy);
-    if (pixelCoord.x >= size.x || pixelCoord.y >= size.y) {
+    if (pixelCoord.x >= size.x || pixelCoord.y >= size.y)
+    {
         return;
     }
 
@@ -145,16 +159,16 @@ void main() {
     vec2 pixcoord = vec2(pixelCoord) + 0.5;
 
     // Offsets normally computed in the SMAA vertex shader.
-    vec4 offset0 = rtMetrics.xyxy * vec4(-0.25, -0.125,  1.25, -0.125) + texcoord.xyxy;
-    vec4 offset1 = rtMetrics.xyxy * vec4(-0.125, -0.25, -0.125,  1.25) + texcoord.xyxy;
-    vec4 offset2 = rtMetrics.xxyy * (vec4(-2.0, 2.0, -2.0, 2.0) * float(SMAA_MAX_SEARCH_STEPS))
-                   + vec4(offset0.xz, offset1.yw);
+    vec4 offset0 = rtMetrics.xyxy * vec4(-0.25, -0.125, 1.25, -0.125) + texcoord.xyxy;
+    vec4 offset1 = rtMetrics.xyxy * vec4(-0.125, -0.25, -0.125, 1.25) + texcoord.xyxy;
+    vec4 offset2 = rtMetrics.xxyy * (vec4(-2.0, 2.0, -2.0, 2.0) * float(SMAA_MAX_SEARCH_STEPS)) + vec4(offset0.xz, offset1.yw);
 
     vec4 weights = vec4(0.0);
 
     vec2 e = textureLod(edgesTex, texcoord, 0.0).rg;
 
-    if (e.g > 0.0) { // Edge at north
+    if (e.g > 0.0)
+    { // Edge at north
         vec3 coords;
         vec2 d;
 
@@ -182,7 +196,8 @@ void main() {
         weights.rg = SMAAArea(sqrt_d, e1, e2, 0.0);
     }
 
-    if (e.r > 0.0) { // Edge at west
+    if (e.r > 0.0)
+    { // Edge at west
         vec3 coords;
         vec2 d;
 

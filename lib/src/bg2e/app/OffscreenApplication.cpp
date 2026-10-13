@@ -24,10 +24,10 @@
 namespace bg2e::app {
 
 void OffscreenApplication::init(
-    int argc, char ** argv,
+    int argc, char** argv,
     const std::string& appId,
-    std::shared_ptr<OffscreenApplicationDelegate> delegate
-) {
+    std::shared_ptr<OffscreenApplicationDelegate> delegate)
+{
     _delegate = delegate;
     _appId = appId;
 
@@ -40,25 +40,24 @@ void OffscreenApplication::init(
     {
         // All the flags needed to use the image for a color buffer or
         // in a compute shader
-        VkImageUsageFlags usage =   VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
-                                    VK_IMAGE_USAGE_STORAGE_BIT |
-                                    VK_IMAGE_USAGE_SAMPLED_BIT |
-                                    VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
-                                    VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+        VkImageUsageFlags usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
+                                  VK_IMAGE_USAGE_STORAGE_BIT |
+                                  VK_IMAGE_USAGE_SAMPLED_BIT |
+                                  VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
+                                  VK_IMAGE_USAGE_TRANSFER_DST_BIT;
         _colorImage = std::shared_ptr<render::vulkan::Image>(
             render::vulkan::Image::createAllocatedImage(
                 _engine.get(),
                 "OffscreenApplication color image buffer",
                 _config.colorFormat,
-                { _config.width, _config.height },
+                {_config.width, _config.height},
                 usage,
                 VK_IMAGE_ASPECT_COLOR_BIT,
-                1, false, 20, VK_SAMPLE_COUNT_1_BIT
-        ));
+                1, false, 20, VK_SAMPLE_COUNT_1_BIT));
         _engine->cleanupManager().push([this](VkDevice dev)
-        {
-            _colorImage->cleanup();
-        });
+                                       {
+                                           _colorImage->cleanup();
+                                       });
     }
 
     if (_config.createDepthImage)
@@ -68,29 +67,27 @@ void OffscreenApplication::init(
                 _engine.get(),
                 "OffscreenApplication depth image buffer",
                 VK_FORMAT_D32_SFLOAT,
-                { _config.width, _config.height },
+                {_config.width, _config.height},
                 VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
                 VK_IMAGE_ASPECT_DEPTH_BIT,
-                1, false, 20, VK_SAMPLE_COUNT_1_BIT
-        ));
+                1, false, 20, VK_SAMPLE_COUNT_1_BIT));
         render::vulkan::Image::transitionImage(
             _engine.get(),
             _depthImage->handle(),
             VK_IMAGE_LAYOUT_UNDEFINED,
-            VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL
-        );
+            VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL);
         _engine->cleanupManager().push([this](VkDevice dev)
-        {
-            _depthImage->cleanup();
-        });
+                                       {
+                                           _depthImage->cleanup();
+                                       });
     }
 
     _delegate->init(_engine.get(), _colorImage, _depthImage);
     _engine->iterateFrameResources([&](render::vulkan::FrameResources& frameResources)
-    {
-        frameResources.descriptorAllocator->init(_engine.get());
-        _delegate->initFrameResources(frameResources.descriptorAllocator);
-    });
+                                   {
+                                       frameResources.descriptorAllocator->init(_engine.get());
+                                       _delegate->initFrameResources(frameResources.descriptorAllocator);
+                                   });
     _engine->descriptorSetAllocator().initPool();
     _delegate->initScene();
 }
@@ -109,9 +106,9 @@ int OffscreenApplication::run()
     auto frameResources = _engine->currentFrameResources();
 
     _engine->cleanupManager().push([&](VkDevice dev)
-    {
-        vkDestroyCommandPool(dev, commandPool, nullptr);
-    });
+                                   {
+                                       vkDestroyCommandPool(dev, commandPool, nullptr);
+                                   });
     auto frameFence = frameResources.frameFence;
 
     _delegate->resize(_config.width, _config.height);
@@ -141,8 +138,7 @@ int OffscreenApplication::run()
                 commandBuffer,
                 _colorImage->handle(),
                 colorImageLayout,
-                VK_IMAGE_LAYOUT_GENERAL
-            );
+                VK_IMAGE_LAYOUT_GENERAL);
             colorImageLayout = VK_IMAGE_LAYOUT_GENERAL;
         }
 
@@ -152,8 +148,7 @@ int OffscreenApplication::run()
             frameIndex,
             frameResources,
             colorImageLayout,
-            finalLayout
-        );
+            finalLayout);
         colorImageLayout = finalLayout;
 
         if (_colorImage != nullptr && colorImageLayout != VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL)
@@ -162,8 +157,7 @@ int OffscreenApplication::run()
                 commandBuffer,
                 _colorImage->handle(),
                 colorImageLayout,
-                VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
-            );
+                VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
             colorImageLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
         }
 
@@ -184,8 +178,7 @@ int OffscreenApplication::run()
         _delegate->didRenderFrame(
             frameIndex,
             elapsedMs,
-            colorImageLayout
-        );
+            colorImageLayout);
 
         ++frameIndex;
         _engine->nextFrame();

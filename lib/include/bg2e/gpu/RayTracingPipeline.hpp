@@ -30,17 +30,19 @@ namespace bg2e {
 namespace gpu {
 
 struct RayTracingPipelineDescription {
-    gpu::ShaderModule*   raygenShader     = nullptr; // non-owning; stage must be RayGeneration
-    gpu::ShaderModule*   missShader       = nullptr; // non-owning; stage must be Miss (nullable on Metal)
-    gpu::ShaderModule*   closestHitShader = nullptr; // non-owning; stage must be ClosestHit (nullable on Metal)
-    gpu::PipelineLayout* layout           = nullptr; // non-owning; caller must keep alive
-    uint32_t             maxRecursionDepth = 1;      // Vulkan max ray recursion depth
-    std::string          debugName;
+    gpu::ShaderModule* raygenShader = nullptr;     // non-owning; stage must be RayGeneration
+    gpu::ShaderModule* missShader = nullptr;       // non-owning; stage must be Miss (nullable on Metal)
+    gpu::ShaderModule* closestHitShader = nullptr; // non-owning; stage must be ClosestHit (nullable on Metal)
+    gpu::PipelineLayout* layout = nullptr;         // non-owning; caller must keep alive
+    uint32_t maxRecursionDepth = 1;                // Vulkan max ray recursion depth
+    std::string debugName;
 };
 
 class BG2E_API RayTracingPipeline : public DeviceResource {
-public:
-    explicit RayTracingPipeline(Device* device) : DeviceResource(device) {}
+  public:
+    explicit RayTracingPipeline(Device* device) : DeviceResource(device)
+    {
+    }
     virtual ~RayTracingPipeline() = default;
 };
 

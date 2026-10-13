@@ -22,37 +22,63 @@ namespace bg2e::gpu::vk {
 
 VkFormat toVkFormat(gpu::PixelFormat format)
 {
-    switch (format) {
-        case gpu::PixelFormat::R8G8B8A8_UNORM:  return VK_FORMAT_R8G8B8A8_UNORM;
-        case gpu::PixelFormat::R8G8B8A8_SRGB:   return VK_FORMAT_R8G8B8A8_SRGB;
-        case gpu::PixelFormat::B8G8R8A8_UNORM:  return VK_FORMAT_B8G8R8A8_UNORM;
-        case gpu::PixelFormat::B8G8R8A8_SRGB:   return VK_FORMAT_B8G8R8A8_SRGB;
-        case gpu::PixelFormat::R16G16B16A16_SFLOAT: return VK_FORMAT_R16G16B16A16_SFLOAT;
-        case gpu::PixelFormat::R32G32B32A32_SFLOAT: return VK_FORMAT_R32G32B32A32_SFLOAT;
-        case gpu::PixelFormat::D16_UNORM:       return VK_FORMAT_D16_UNORM;
-        case gpu::PixelFormat::D32_SFLOAT:      return VK_FORMAT_D32_SFLOAT;
-        case gpu::PixelFormat::D24_UNORM_S8_UINT: return VK_FORMAT_D24_UNORM_S8_UINT;
-        case gpu::PixelFormat::D32_SFLOAT_S8_UINT: return VK_FORMAT_D32_SFLOAT_S8_UINT;
-        case gpu::PixelFormat::Undefined:       return VK_FORMAT_UNDEFINED;
-        default:                                return VK_FORMAT_UNDEFINED;
+    switch (format)
+    {
+    case gpu::PixelFormat::R8G8B8A8_UNORM:
+        return VK_FORMAT_R8G8B8A8_UNORM;
+    case gpu::PixelFormat::R8G8B8A8_SRGB:
+        return VK_FORMAT_R8G8B8A8_SRGB;
+    case gpu::PixelFormat::B8G8R8A8_UNORM:
+        return VK_FORMAT_B8G8R8A8_UNORM;
+    case gpu::PixelFormat::B8G8R8A8_SRGB:
+        return VK_FORMAT_B8G8R8A8_SRGB;
+    case gpu::PixelFormat::R16G16B16A16_SFLOAT:
+        return VK_FORMAT_R16G16B16A16_SFLOAT;
+    case gpu::PixelFormat::R32G32B32A32_SFLOAT:
+        return VK_FORMAT_R32G32B32A32_SFLOAT;
+    case gpu::PixelFormat::D16_UNORM:
+        return VK_FORMAT_D16_UNORM;
+    case gpu::PixelFormat::D32_SFLOAT:
+        return VK_FORMAT_D32_SFLOAT;
+    case gpu::PixelFormat::D24_UNORM_S8_UINT:
+        return VK_FORMAT_D24_UNORM_S8_UINT;
+    case gpu::PixelFormat::D32_SFLOAT_S8_UINT:
+        return VK_FORMAT_D32_SFLOAT_S8_UINT;
+    case gpu::PixelFormat::Undefined:
+        return VK_FORMAT_UNDEFINED;
+    default:
+        return VK_FORMAT_UNDEFINED;
     }
 }
 
 gpu::PixelFormat fromVkFormat(VkFormat format)
 {
-    switch (format) {
-        case VK_FORMAT_R8G8B8A8_UNORM:  return gpu::PixelFormat::R8G8B8A8_UNORM;
-        case VK_FORMAT_R8G8B8A8_SRGB:   return gpu::PixelFormat::R8G8B8A8_SRGB;
-        case VK_FORMAT_B8G8R8A8_UNORM:  return gpu::PixelFormat::B8G8R8A8_UNORM;
-        case VK_FORMAT_B8G8R8A8_SRGB:   return gpu::PixelFormat::B8G8R8A8_SRGB;
-        case VK_FORMAT_R16G16B16A16_SFLOAT: return gpu::PixelFormat::R16G16B16A16_SFLOAT;
-        case VK_FORMAT_R32G32B32A32_SFLOAT: return gpu::PixelFormat::R32G32B32A32_SFLOAT;
-        case VK_FORMAT_D16_UNORM:       return gpu::PixelFormat::D16_UNORM;
-        case VK_FORMAT_D32_SFLOAT:      return gpu::PixelFormat::D32_SFLOAT;
-        case VK_FORMAT_D24_UNORM_S8_UINT: return gpu::PixelFormat::D24_UNORM_S8_UINT;
-        case VK_FORMAT_D32_SFLOAT_S8_UINT: return gpu::PixelFormat::D32_SFLOAT_S8_UINT;
-        case VK_FORMAT_UNDEFINED:       return gpu::PixelFormat::Undefined;
-        default:                        return gpu::PixelFormat::Undefined;
+    switch (format)
+    {
+    case VK_FORMAT_R8G8B8A8_UNORM:
+        return gpu::PixelFormat::R8G8B8A8_UNORM;
+    case VK_FORMAT_R8G8B8A8_SRGB:
+        return gpu::PixelFormat::R8G8B8A8_SRGB;
+    case VK_FORMAT_B8G8R8A8_UNORM:
+        return gpu::PixelFormat::B8G8R8A8_UNORM;
+    case VK_FORMAT_B8G8R8A8_SRGB:
+        return gpu::PixelFormat::B8G8R8A8_SRGB;
+    case VK_FORMAT_R16G16B16A16_SFLOAT:
+        return gpu::PixelFormat::R16G16B16A16_SFLOAT;
+    case VK_FORMAT_R32G32B32A32_SFLOAT:
+        return gpu::PixelFormat::R32G32B32A32_SFLOAT;
+    case VK_FORMAT_D16_UNORM:
+        return gpu::PixelFormat::D16_UNORM;
+    case VK_FORMAT_D32_SFLOAT:
+        return gpu::PixelFormat::D32_SFLOAT;
+    case VK_FORMAT_D24_UNORM_S8_UINT:
+        return gpu::PixelFormat::D24_UNORM_S8_UINT;
+    case VK_FORMAT_D32_SFLOAT_S8_UINT:
+        return gpu::PixelFormat::D32_SFLOAT_S8_UINT;
+    case VK_FORMAT_UNDEFINED:
+        return gpu::PixelFormat::Undefined;
+    default:
+        return gpu::PixelFormat::Undefined;
     }
 }
 

@@ -45,7 +45,7 @@ namespace {
 
 using Path = std::filesystem::path;
 
-std::atomic_uint64_t temporaryCounter{ 0 };
+std::atomic_uint64_t temporaryCounter{0};
 
 Path absoluteNormalized(const Path& path, const std::string& description)
 {
@@ -59,7 +59,7 @@ Path absoluteNormalized(const Path& path, const std::string& description)
     if (error)
     {
         throw std::runtime_error("LightmapOutputWriter: could not resolve " + description + " path '" +
-            path.string() + "': " + error.message());
+                                 path.string() + "': " + error.message());
     }
     return result.lexically_normal();
 }
@@ -101,7 +101,7 @@ bool pathExistsIncludingSymlink(const Path& path)
     if (error)
     {
         throw std::runtime_error("LightmapOutputWriter: could not inspect output path '" +
-            path.string() + "': " + error.message());
+                                 path.string() + "': " + error.message());
     }
     return status.type() != std::filesystem::file_type::not_found;
 }
@@ -234,7 +234,8 @@ std::vector<MaterialTexture> materialTexturePaths(
     bool includeAo)
 {
     std::map<std::string, MaterialTexture> result;
-    const auto add = [&](const std::shared_ptr<base::Texture>& texture) {
+    const auto add = [&](const std::shared_ptr<base::Texture>& texture)
+    {
         if (!texture || texture->imageFilePath().empty())
         {
             return;
@@ -250,10 +251,10 @@ std::vector<MaterialTexture> materialTexturePaths(
         if (!std::filesystem::is_regular_file(texturePath, error) || error)
         {
             throw std::runtime_error("LightmapOutputWriter: referenced material texture is missing: '" +
-                texturePath.string() + "'");
+                                     texturePath.string() + "'");
         }
         const auto key = pathKey(texturePath);
-        result.emplace(key, MaterialTexture{ texturePath, key });
+        result.emplace(key, MaterialTexture{texturePath, key});
     };
 
     for (uint32_t index = 0; index < drawable->submeshesCount(); ++index)
@@ -308,7 +309,7 @@ void collectSceneTextureInputs(
         if (!std::filesystem::is_regular_file(environmentPath, error) || error)
         {
             throw std::runtime_error("LightmapOutputWriter: environment texture is missing: '" +
-                environmentPath.string() + "'");
+                                     environmentPath.string() + "'");
         }
         protectedKeys.insert(pathKey(environmentPath));
     }
@@ -328,7 +329,7 @@ Path uniquePendingImagePath(const Path& finalPath)
     {
         const auto suffix = temporaryCounter.fetch_add(1, std::memory_order_relaxed);
         auto filename = finalPath.stem().string() + ".pending-" + std::to_string(suffix) +
-            finalPath.extension().string();
+                        finalPath.extension().string();
         auto candidate = finalPath.parent_path() / filename;
         if (!pathExistsIncludingSymlink(candidate))
         {
@@ -351,7 +352,7 @@ Path uniqueStageDirectory(const Path& outputDirectory)
         if (error && error != std::errc::file_exists)
         {
             throw std::runtime_error("LightmapOutputWriter: could not create staging directory '" +
-                candidate.string() + "': " + error.message());
+                                     candidate.string() + "': " + error.message());
         }
     }
 }
@@ -409,13 +410,13 @@ LightmapOutputWriter::LightmapOutputWriter(Path outputDirectory, ImageFormat for
     if (error)
     {
         throw std::runtime_error("LightmapOutputWriter: could not inspect output directory '" +
-            _state->outputDirectory.string() + "': " + error.message());
+                                 _state->outputDirectory.string() + "': " + error.message());
     }
     if (outputExists &&
         !std::filesystem::is_directory(_state->outputDirectory))
     {
         throw std::invalid_argument("LightmapOutputWriter: output path is not a directory: '" +
-            _state->outputDirectory.string() + "'");
+                                    _state->outputDirectory.string() + "'");
     }
 }
 
@@ -459,23 +460,24 @@ std::vector<LightmapOutputWriter::OutputPaths> LightmapOutputWriter::preflight(
     if (error)
     {
         throw std::runtime_error("LightmapOutputWriter: could not inspect output directory '" +
-            _state->outputDirectory.string() + "': " + error.message());
+                                 _state->outputDirectory.string() + "': " + error.message());
     }
     if (outputExists &&
         !std::filesystem::is_directory(_state->outputDirectory))
     {
         throw std::invalid_argument("LightmapOutputWriter: output path is not a directory: '" +
-            _state->outputDirectory.string() + "'");
+                                    _state->outputDirectory.string() + "'");
     }
 
     std::unordered_set<std::string> protectedKeys;
-    const auto addProtectedInput = [&](const Path& path, const std::string& description) {
+    const auto addProtectedInput = [&](const Path& path, const std::string& description)
+    {
         auto absolutePath = absoluteNormalized(path, description);
         std::error_code statusError;
         if (!std::filesystem::exists(absolutePath, statusError) || statusError)
         {
             throw std::runtime_error("LightmapOutputWriter: protected input does not exist: '" +
-                absolutePath.string() + "'");
+                                     absolutePath.string() + "'");
         }
         protectedKeys.insert(pathKey(absolutePath));
     };
@@ -528,24 +530,29 @@ std::vector<LightmapOutputWriter::OutputPaths> LightmapOutputWriter::preflight(
         }
     }
 
-    enum class ArtifactKind { FinalOutput, Sidecar };
+    enum class ArtifactKind
+    {
+        FinalOutput,
+        Sidecar
+    };
     struct Reservation {
         ArtifactKind kind;
         std::string sourceKey;
     };
     std::unordered_map<std::string, Reservation> reservations;
     const auto reserveOutput = [&](const Path& path, ArtifactKind kind,
-                                   const std::string& sourceKey, bool allowSameSourceSidecar) {
+                                   const std::string& sourceKey, bool allowSameSourceSidecar)
+    {
         const auto key = pathKey(path);
         if (protectedKeys.contains(key))
         {
             throw std::runtime_error("LightmapOutputWriter: output path aliases an input resource: '" +
-                path.string() + "'");
+                                     path.string() + "'");
         }
         if (!_state->overwrite && pathExistsIncludingSymlink(path))
         {
             throw std::runtime_error("LightmapOutputWriter: output path already exists: '" +
-                path.string() + "'");
+                                     path.string() + "'");
         }
         const auto existing = reservations.find(key);
         if (existing != reservations.end())
@@ -557,9 +564,9 @@ std::vector<LightmapOutputWriter::OutputPaths> LightmapOutputWriter::preflight(
                 return key;
             }
             throw std::runtime_error("LightmapOutputWriter: output paths collide at '" +
-                path.string() + "'");
+                                     path.string() + "'");
         }
-        reservations.emplace(key, Reservation{ kind, sourceKey });
+        reservations.emplace(key, Reservation{kind, sourceKey});
         return key;
     };
 
@@ -604,8 +611,8 @@ std::vector<LightmapOutputWriter::OutputPaths> LightmapOutputWriter::preflight(
             {
                 const auto sidecarPath = _state->outputDirectory / texture.path.filename();
                 const auto key = reserveOutput(sidecarPath, ArtifactKind::Sidecar,
-                                              texture.key, true);
-                targetPlan.sidecars.push_back({ texture.path, sidecarPath, key, texture.key });
+                                               texture.key, true);
+                targetPlan.sidecars.push_back({texture.path, sidecarPath, key, texture.key});
             }
         }
 
@@ -659,23 +666,24 @@ void LightmapOutputWriter::write(const render::LightmapPixels& pixels, std::stri
     if (directoryError)
     {
         throw std::runtime_error("LightmapOutputWriter: could not create output directory '" +
-            _state->outputDirectory.string() + "': " + directoryError.message());
+                                 _state->outputDirectory.string() + "': " + directoryError.message());
     }
 
     const auto pendingImage = uniquePendingImagePath(targetPlan.outputs.imagePath);
-    const auto replaceWith = [&](const Path& staged, const Path& output) {
+    const auto replaceWith = [&](const Path& staged, const Path& output)
+    {
         if (pathExistsIncludingSymlink(output))
         {
             if (!_state->overwrite)
             {
                 throw std::runtime_error("LightmapOutputWriter: output path appeared after preflight: '" +
-                    output.string() + "'");
+                                         output.string() + "'");
             }
             std::error_code removeError;
             if (!std::filesystem::remove(output, removeError) || removeError)
             {
                 throw std::runtime_error("LightmapOutputWriter: could not overwrite existing output '" +
-                    output.string() + "'");
+                                         output.string() + "'");
             }
         }
         std::filesystem::rename(staged, output);
@@ -721,7 +729,7 @@ void LightmapOutputWriter::write(const render::LightmapPixels& pixels, std::stri
                 if (!std::filesystem::is_regular_file(stagedSidecar))
                 {
                     throw std::runtime_error("LightmapOutputWriter: expected staged texture was not written: '" +
-                        stagedSidecar.string() + "'");
+                                             stagedSidecar.string() + "'");
                 }
                 if (_state->committedSidecars.contains(sidecar.outputKey))
                 {

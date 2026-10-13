@@ -36,20 +36,19 @@
 namespace bg2e {
 namespace scene {
 
-        
 class BG2E_API DrawableBase {
-public:
+  public:
     typedef std::function<std::vector<VkDescriptorSet>(
-            bg2e::render::MaterialBase* material,
-            const glm::mat4& transform,
-            uint32_t submeshIndex
-    )> DrawFunction;
-    
+        bg2e::render::MaterialBase* material,
+        const glm::mat4& transform,
+        uint32_t submeshIndex)>
+        DrawFunction;
+
     typedef std::function<std::vector<VkDescriptorSet>(
-            bg2e::render::MaterialBase* material,
-            const glm::mat4& transform
-    )> DrawSubmeshFunction;
-    
+        bg2e::render::MaterialBase* material,
+        const glm::mat4& transform)>
+        DrawSubmeshFunction;
+
     DrawableBase() = default;
     virtual ~DrawableBase() = default;
 
@@ -65,56 +64,53 @@ public:
         VkPipelineLayout layout,
         uint32_t submesh,
         DrawSubmeshFunction cb,
-        VkPipelineBindPoint bp
-    ) = 0;
-    
+        VkPipelineBindPoint bp) = 0;
+
     virtual void draw(
         VkCommandBuffer cmd,
         VkPipelineLayout layout,
         DrawFunction cb,
-        VkPipelineBindPoint bp
-    ) = 0;
-    
+        VkPipelineBindPoint bp) = 0;
+
     inline void setTransform(const glm::mat4& mat)
     {
         _transform = mat;
     }
-    
+
     [[nodiscard]] inline const glm::mat4& transform() const
     {
         return _transform;
     }
-    
+
     inline glm::mat4& transform()
     {
         return _transform;
     }
-    
+
     [[nodiscard]] inline const std::string& name() const
     {
         return _name;
     }
-    
+
     inline void setName(const std::string& name)
     {
         _name = name;
         std::replace(_name.begin(), _name.end(), '.', '_');
     }
-    
-protected:
+
+  protected:
     // This transformation is applied to the whole mesh
-    glm::mat4 _transform { 1.0f };
+    glm::mat4 _transform{1.0f};
     std::string _name;
 };
 
 template <typename MeshT, typename RenderMeshT>
 class BG2E_API DrawableGeneric : public DrawableBase {
-public:
+  public:
     DrawableGeneric() = default;
     DrawableGeneric(const DrawableGeneric&) = delete;
     DrawableGeneric& operator=(const DrawableGeneric&) = delete;
     ~DrawableGeneric() override = default;
-
 
     static VkVertexInputBindingDescription bindingDescription()
     {
@@ -128,7 +124,7 @@ public:
 
     struct SubmeshAttributes {
         base::MaterialAttributes material;
-        glm::mat4 transform { 1.0f };
+        glm::mat4 transform{1.0f};
         std::string name;
         std::string groupName;
         bool visible = true;
@@ -136,7 +132,7 @@ public:
 
     [[nodiscard]] std::shared_ptr<DrawableBase> clone() const override;
 
-    void applyModifier(geo::Modifier<MeshT> * mod);
+    void applyModifier(geo::Modifier<MeshT>* mod);
 
     void setMesh(MeshT* mesh);
     void setMesh(std::shared_ptr<MeshT> mesh);
@@ -144,7 +140,7 @@ public:
 
     void setMaterial(const base::MaterialAttributes& mat, uint32_t submeshIndex = 0);
     void setSubmeshTransform(const glm::mat4& mat, uint32_t submeshIndex = 0);
-    void setSubmeshName(const std::string & name, uint32_t submeshIndex = 0);
+    void setSubmeshName(const std::string& name, uint32_t submeshIndex = 0);
     void setSubmeshGroupName(const std::string& groupName, uint32_t submeshIndex = 0);
     void setSubmeshVisibility(bool visible, uint32_t submeshIndex = 0);
 
@@ -160,13 +156,19 @@ public:
 
     [[nodiscard]] bg2e::geo::Submesh submeshData(uint32_t index = 0) const;
 
-    std::vector<std::shared_ptr<render::MaterialBase>> materials() { return _materials; }
+    std::vector<std::shared_ptr<render::MaterialBase>> materials()
+    {
+        return _materials;
+    }
 
     void iterateMaterials(std::function<void(base::MaterialAttributes&)> cb);
 
-    void load(render::Engine * engine);
-    void load(render::Engine * engine, std::function<void()> onTextureLoaded);
-    [[nodiscard]] inline bool isLoaded() const { return _renderMesh.get() != nullptr; }
+    void load(render::Engine* engine);
+    void load(render::Engine* engine, std::function<void()> onTextureLoaded);
+    [[nodiscard]] inline bool isLoaded() const
+    {
+        return _renderMesh.get() != nullptr;
+    }
     void reload();
 
     void loadRenderMesh();
@@ -179,41 +181,53 @@ public:
     [[nodiscard]] const std::shared_ptr<render::MaterialBase>& renderMaterial(uint32_t submeshIndex) const;
     std::shared_ptr<render::MaterialBase>& renderMaterial(uint32_t submeshIndex);
 
-    inline void setRayTracingEnabled(bool enabled) { _rayTracingEnabled = enabled; }
-    [[nodiscard]] inline bool rayTracingEnabled() const { return _rayTracingEnabled && _engine && _engine->rayTracingSupported(); }
+    inline void setRayTracingEnabled(bool enabled)
+    {
+        _rayTracingEnabled = enabled;
+    }
+    [[nodiscard]] inline bool rayTracingEnabled() const
+    {
+        return _rayTracingEnabled && _engine && _engine->rayTracingSupported();
+    }
 
-    inline const std::vector<std::shared_ptr<bg2e::render::vulkan::rt::RayTracingMeshGeneric<MeshT>>>& rayTracingMeshes() const { return _rayTracingMeshes; }
-    inline std::shared_ptr<bg2e::render::vulkan::rt::RayTracingMeshGeneric<MeshT>> & rayTracingMesh(uint32_t submesh) { return _rayTracingMeshes[submesh]; }
-    inline const std::shared_ptr<bg2e::render::vulkan::rt::RayTracingMeshGeneric<MeshT>> & rayTracingMesh(uint32_t submesh) const { return _rayTracingMeshes[submesh]; }
+    inline const std::vector<std::shared_ptr<bg2e::render::vulkan::rt::RayTracingMeshGeneric<MeshT>>>& rayTracingMeshes() const
+    {
+        return _rayTracingMeshes;
+    }
+    inline std::shared_ptr<bg2e::render::vulkan::rt::RayTracingMeshGeneric<MeshT>>& rayTracingMesh(uint32_t submesh)
+    {
+        return _rayTracingMeshes[submesh];
+    }
+    inline const std::shared_ptr<bg2e::render::vulkan::rt::RayTracingMeshGeneric<MeshT>>& rayTracingMesh(uint32_t submesh) const
+    {
+        return _rayTracingMeshes[submesh];
+    }
 
     void drawSubmesh(
         VkCommandBuffer cmd,
         VkPipelineLayout layout,
         uint32_t submesh,
         DrawSubmeshFunction cb,
-        VkPipelineBindPoint bp
-    ) override;
+        VkPipelineBindPoint bp) override;
 
     void draw(
         VkCommandBuffer cmd,
         VkPipelineLayout layout,
         DrawFunction cb,
-        VkPipelineBindPoint bp
-    ) override;
+        VkPipelineBindPoint bp) override;
 
-protected:
+  protected:
     std::shared_ptr<MeshT> _mesh;
     std::vector<SubmeshAttributes> _submeshAttributes;
 
-
     // Default material attributes. It is used only to return something if the
     // submesh attributes accessors are called with an out of bound index, because we don't
-	// whant that the access to the attributes to crash the program.
+    // whant that the access to the attributes to crash the program.
     base::MaterialAttributes _defaultMaterial;
     std::string _defaultString;
 
     // Render resources
-    render::Engine * _engine = nullptr;
+    render::Engine* _engine = nullptr;
     std::shared_ptr<RenderMeshT> _renderMesh;
     std::vector<std::shared_ptr<render::MaterialBase>> _materials;
 

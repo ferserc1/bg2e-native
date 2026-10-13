@@ -28,14 +28,14 @@
 #include <SDL2/SDL_vulkan.h>
 #include <SDL2/SDL_opengl.h>
 
-#include "imgui.h"
-#include "imgui_impl_sdl2.h"
-#include "imgui_impl_opengl3.h"
+#include <imgui.h>
+#include <imgui_impl_sdl2.h>
+#include <imgui_impl_opengl3.h>
 
 #include <vector>
 #include <iostream>
 
-#include "bg2e/app/PreferencesStore.hpp"
+#include <bg2e/app/PreferencesStore.hpp>
 
 namespace bg2e::app {
 
@@ -45,15 +45,14 @@ void getAvailableDevices(std::vector<std::shared_ptr<render::vulkan::PhysicalDev
     {
         throw std::runtime_error("GPUSelectorDialog: Error initializing SDL");
     }
-    
-    SDL_Window * dummyWindow = SDL_CreateWindow(
+
+    SDL_Window* dummyWindow = SDL_CreateWindow(
         "bg2e_dummy",
         SDL_WINDOWPOS_UNDEFINED,
         SDL_WINDOWPOS_UNDEFINED,
         1, 1,
-        SDL_WINDOW_VULKAN | SDL_WINDOW_HIDDEN
-    );
-    
+        SDL_WINDOW_VULKAN | SDL_WINDOW_HIDDEN);
+
     if (!dummyWindow)
     {
         SDL_Quit();
@@ -70,16 +69,16 @@ void getAvailableDevices(std::vector<std::shared_ptr<render::vulkan::PhysicalDev
     render::vulkan::PhysicalDevice::listSuitableDevices(instance.vkInstanceHnd(), surface, result);
     surface.cleanup();
     instance.cleanup();
-    
+
     SDL_DestroyWindow(dummyWindow);
     dummyWindow = nullptr;
-    
+
     SDL_Quit();
 }
 
 std::shared_ptr<render::vulkan::PhysicalDeviceProperties> showDeviceSelectorUI(
-    const std::vector<std::shared_ptr<render::vulkan::PhysicalDeviceProperties>>& devices
-) {
+    const std::vector<std::shared_ptr<render::vulkan::PhysicalDeviceProperties>>& devices)
+{
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_EVENTS) != 0)
     {
         throw std::runtime_error("GPUSelectorDialog: Error initializing SDL");
@@ -100,14 +99,13 @@ std::shared_ptr<render::vulkan::PhysicalDeviceProperties> showDeviceSelectorUI(
     uint32_t windowWidth = 300;
     uint32_t windowHeight = 200;
 
-    SDL_Window * window = SDL_CreateWindow(
+    SDL_Window* window = SDL_CreateWindow(
         "Select GPU Device",
         SDL_WINDOWPOS_CENTERED,
         SDL_WINDOWPOS_CENTERED,
         windowWidth,
         windowHeight,
-        SDL_WINDOW_OPENGL | SDL_WINDOW_ALLOW_HIGHDPI
-    );
+        SDL_WINDOW_OPENGL | SDL_WINDOW_ALLOW_HIGHDPI);
 
     SDL_GLContext glContext = SDL_GL_CreateContext(window);
     SDL_GL_SetSwapInterval(1); // Enable vsync
@@ -129,7 +127,7 @@ std::shared_ptr<render::vulkan::PhysicalDeviceProperties> showDeviceSelectorUI(
     auto assets = base::PlatformTools::assetPath() / "DidactGothic-Regular.ttf";
     io.Fonts->AddFontFromFileTTF(assets.string().c_str(), 16.0f);
     io.Fonts->Build();
-    auto & style = ImGui::GetStyle();
+    auto& style = ImGui::GetStyle();
     style.ScaleAllSizes(uiScale);
     io.FontGlobalScale = uiScale;
 
@@ -166,10 +164,10 @@ std::shared_ptr<render::vulkan::PhysicalDeviceProperties> showDeviceSelectorUI(
         ui::Text::text("Select the GPU device to use:");
 
         ui::SelectableList::beginList(1);
-        
+
         for (size_t i = 0; i < devices.size(); ++i)
         {
-            auto & dev = devices[i];
+            auto& dev = devices[i];
             bool selected = selectionStates[i];
             if (ui::SelectableList::item(dev->name + "##" + std::to_string(i), selected))
             {
@@ -222,18 +220,18 @@ std::shared_ptr<render::vulkan::PhysicalDeviceProperties> showDeviceSelectorUI(
     return result;
 }
 
-GPUSelectionDialog::GPUSelectionDialog(const std::string & appId)
+GPUSelectionDialog::GPUSelectionDialog(const std::string& appId)
     : _appId(appId)
 {
 }
-    
+
 std::shared_ptr<render::vulkan::PhysicalDeviceProperties> GPUSelectionDialog::run()
 {
     std::vector<std::shared_ptr<render::vulkan::PhysicalDeviceProperties>> devices;
     std::shared_ptr<render::vulkan::PhysicalDeviceProperties> result;
 
     getAvailableDevices(devices);
-    
+
     if (devices.size() == 0)
     {
         throw std::runtime_error("No Vulkan capable devices found");
@@ -242,11 +240,12 @@ std::shared_ptr<render::vulkan::PhysicalDeviceProperties> GPUSelectionDialog::ru
     {
         result = devices[0];
     }
-    else {
+    else
+    {
         result = showDeviceSelectorUI(devices);
     }
-    
+
     return result;
 }
-    
+
 }

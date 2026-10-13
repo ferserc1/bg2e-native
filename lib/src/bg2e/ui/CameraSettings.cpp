@@ -16,7 +16,7 @@
  *    along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "bg2e/ui/CameraSettings.hpp"
+#include <bg2e/ui/CameraSettings.hpp>
 #include <bg2e/ui/Button.hpp>
 #include <bg2e/ui/Numeric.hpp>
 #include <bg2e/ui/Value.hpp>
@@ -35,40 +35,47 @@ bool CameraSettings::draw()
     bool changed = false;
 
     auto opt = _cameraComponent.lock();
-    if (!opt) {
+    if (!opt)
+    {
         return false;
     }
 
     auto optical = opt->camera().projection<math::OpticalProjection>();
 
-    if (!optical) {
-        if (Button::button("Configure Projection")) {
+    if (!optical)
+    {
+        if (Button::button("Configure Projection"))
+        {
             auto proj = new math::OpticalProjection();
             proj->setFocalLength(_focalLength);
             proj->setFrameSize(_frameSize);
             proj->setFar(1000.0f);
             opt->camera().setProjection(proj);
             changed = true;
-            if (_onChangedFunction) {
+            if (_onChangedFunction)
+            {
                 _onChangedFunction();
             }
         }
         return changed;
     }
 
-    if (Numeric::sliderFloat("Focal Length", &_focalLength, 18.0f, 200.0f)) {
+    if (Numeric::sliderFloat("Focal Length", &_focalLength, 18.0f, 200.0f))
+    {
         optical->setFocalLength(_focalLength);
         changed = true;
     }
 
     auto names = sensorNames();
-    if (Value::comboBox("Sensor Size", names, _selectedSensorSize)) {
+    if (Value::comboBox("Sensor Size", names, _selectedSensorSize))
+    {
         _frameSize = sensorSize(_selectedSensorSize);
         optical->setFrameSize(_frameSize);
         changed = true;
     }
 
-    if (changed && _onChangedFunction) {
+    if (changed && _onChangedFunction)
+    {
         _onChangedFunction();
     }
 

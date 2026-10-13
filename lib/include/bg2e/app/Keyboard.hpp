@@ -24,7 +24,7 @@ namespace bg2e {
 namespace app {
 
 class BG2E_API Keyboard {
-public:
+  public:
     // Any shift key held (left or right)
     static bool shiftPressed();
 

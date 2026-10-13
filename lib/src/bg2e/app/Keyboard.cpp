@@ -22,19 +22,23 @@
 namespace bg2e {
 namespace app {
 
-bool Keyboard::shiftPressed() {
+bool Keyboard::shiftPressed()
+{
     return (SDL_GetModState() & KMOD_SHIFT) != 0;
 }
 
-bool Keyboard::controlPressed() {
+bool Keyboard::controlPressed()
+{
     return (SDL_GetModState() & KMOD_CTRL) != 0;
 }
 
-bool Keyboard::altPressed() {
+bool Keyboard::altPressed()
+{
     return (SDL_GetModState() & KMOD_ALT) != 0;
 }
 
-bool Keyboard::superPressed() {
+bool Keyboard::superPressed()
+{
     return (SDL_GetModState() & KMOD_GUI) != 0;
 }
 

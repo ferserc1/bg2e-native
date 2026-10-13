@@ -20,7 +20,7 @@
 
 namespace bg2e::reflection {
 
-const PropertyInfo * TypeInfo::property(const std::string& name) const
+const PropertyInfo* TypeInfo::property(const std::string& name) const
 {
     for (const auto& p : properties)
     {
@@ -32,7 +32,7 @@ const PropertyInfo * TypeInfo::property(const std::string& name) const
     return nullptr;
 }
 
-const ActionInfo * TypeInfo::action(const std::string& name) const
+const ActionInfo* TypeInfo::action(const std::string& name) const
 {
     for (const auto& a : actions)
     {

@@ -28,7 +28,8 @@
 namespace bg2e {
 namespace ui {
 
-enum MenuItemType {
+enum MenuItemType
+{
     Action,
     CheckableAction,
     Separator,
@@ -36,20 +37,27 @@ enum MenuItemType {
 };
 
 class BG2E_API MenuItem {
-public:
-    MenuItem() :label {}, _type { MenuItemType::Separator } {}
-    MenuItem(const std::string& l) :label { l }, _type { MenuItemType::Separator } {}
+  public:
+    MenuItem() : label{}, _type{MenuItemType::Separator}
+    {
+    }
+    MenuItem(const std::string& l) : label{l}, _type{MenuItemType::Separator}
+    {
+    }
     MenuItem(const std::string& l, const app::Shortcuts::ShortcutData& sc)
-        :label { l }, _type { MenuItemType::Action }, _shortcut {sc} {}
+        : label{l}, _type{MenuItemType::Action}, _shortcut{sc}
+    {
+    }
 
     MenuItem(const std::string& l, const app::Shortcuts::ShortcutData& sc,
              std::function<bool()> isChecked)
-        :label { l }, _type { MenuItemType::CheckableAction }, _shortcut {sc}, _checkedFn
-            (isChecked) {}
+        : label{l}, _type{MenuItemType::CheckableAction}, _shortcut{sc}, _checkedFn(isChecked)
+    {
+    }
 
     std::string label;
 
-    void addMenuItem(const MenuItem & item)
+    void addMenuItem(const MenuItem& item)
     {
         _type = MenuItemType::Submenu;
         _children.push_back(item);
@@ -59,45 +67,43 @@ public:
 
     void initShortcuts() const;
 
-protected:
+  protected:
     std::vector<MenuItem> _children;
     MenuItemType _type = MenuItemType::Separator;
-    app::Shortcuts::ShortcutData _shortcut {};
+    app::Shortcuts::ShortcutData _shortcut{};
     std::function<bool()> _checkedFn = nullptr;
 
     bool _shortcutInitialized = false;
 };
 
 class BG2E_API Menu {
-public:
+  public:
     static bool beginMenuBar();
-    
+
     static bool beginMenu(
         const std::string& label,
-        bool enabled = true
-    );
-    
+        bool enabled = true);
+
     static bool menuItem(
-        const std::string & label,
-        const std::string & shortcut = "",
+        const std::string& label,
+        const std::string& shortcut = "",
         bool selected = false,
-        bool enabled = true
-    );
-    
+        bool enabled = true);
+
     static void separator();
-    
+
     static void endMenu();
-    
+
     static void endMenuBar();
 
-    void addMenuItem(const MenuItem & item)
+    void addMenuItem(const MenuItem& item)
     {
         _menuItems.push_back(item);
     }
 
     void draw();
 
-protected:
+  protected:
     std::vector<MenuItem> _menuItems;
     bool _shortcutInitialized = false;
 };

@@ -31,12 +31,12 @@ Preferences::Preferences()
     initFilePath("preferences.json");
 }
 
-Preferences::Preferences(const std::string & scope)
+Preferences::Preferences(const std::string& scope)
 {
     initFilePath("preferences_" + scope + ".json");
 }
 
-Preferences::Preferences(std::string && scope)
+Preferences::Preferences(std::string&& scope)
 {
     initFilePath("preferences_" + scope + ".json");
 }
@@ -54,38 +54,43 @@ void Preferences::load()
         std::ifstream inFile(_filePath, std::ios::binary);
         if (!inFile.is_open())
         {
-            std::cerr << "WARN: Could not open preferences file at path \"" << _filePath << "\""  << std::endl;
+            std::cerr << "WARN: Could not open preferences file at path \"" << _filePath << "\"" << std::endl;
         }
-        else {
+        else
+        {
             inFile.seekg(0, std::ios::end);
             std::string content;
             content.resize(inFile.tellg());
-            
+
             inFile.seekg(0, std::ios::beg);
             inFile.read(&content[0], content.size());
             content.resize(static_cast<size_t>(inFile.gcount()));
             json::JsonParser parser(content);
             _root = parser.parse();
             inFile.close();
-            
-            if (!_root) {
+
+            if (!_root)
+            {
                 std::cerr << "WARN: Error parsing preferences file at path \"" << _filePath << "\"" << std::endl;
             }
         }
     }
-    
+
     if (!json::ObjectReader(_root).isValid())
     {
         _root = json::JSON(json::JsonObject{});
     }
-    
+
     _dirty = false;
 }
 
 void Preferences::save() const
 {
-    if (!_dirty) return;
-    
+    if (!_dirty)
+    {
+        return;
+    }
+
     auto fileContent = _root->toString();
     std::ofstream outFile(_filePath);
     if (outFile.is_open())
@@ -97,17 +102,18 @@ void Preferences::save() const
     {
         std::cerr << "WARN: Could not save preferences file at path \"" << _filePath << "\"" << std::endl;
     }
-    
+
     _dirty = false;
 }
-
 
 template <typename T>
 T Preferences::get(const std::string& key, const T& defaultValue) const
 {
     json::ObjectReader reader(_root);
     if constexpr (std::is_integral_v<T>)
+    {
         return reader.getInteger<T>(key).value_or(defaultValue);
+    }
     else
     {
         auto value = reader.getNumber(key);
@@ -186,7 +192,6 @@ glm::mat4 Preferences::get<glm::mat4>(const std::string& key, const glm::mat4& d
     return json::ObjectReader(_root).getGlmMat4(key).value_or(defaultValue);
 }
 
-
 // Setters
 template <typename T>
 void Preferences::set(const std::string& key, const T& value)
@@ -257,7 +262,7 @@ template BG2E_API void Preferences::set<glm::mat4>(const std::string&, const glm
 
 template BG2E_API void Preferences::set<std::string>(const std::string&, const std::string&);
 
-void Preferences::initFilePath(const std::string & fileName)
+void Preferences::initFilePath(const std::string& fileName)
 {
     auto baseDir = base::PlatformTools::settingsPath();
     _filePath = baseDir / fileName;

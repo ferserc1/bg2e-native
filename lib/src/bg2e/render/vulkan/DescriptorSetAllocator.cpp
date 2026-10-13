@@ -29,23 +29,22 @@ DescriptorSetAllocator::~DescriptorSetAllocator()
     destroy();
 }
 
-
-void DescriptorSetAllocator::init(Engine * engine)
+void DescriptorSetAllocator::init(Engine* engine)
 {
     _engine = engine;
 }
 
 void DescriptorSetAllocator::requirePoolSizeRatio(
     uint32_t maxSets,
-    const std::vector<PoolSizeRatio> &poolRatios
-) {
+    const std::vector<PoolSizeRatio>& poolRatios)
+{
     if (_initialized)
     {
         throw std::runtime_error("Trying to add pool size ratio requirement on an initialized Descriptor Set Allocator. The pool size ratios can't be modified once the allocator is inialized");
     }
-    
+
     _initMaxSets = std::max(_initMaxSets, maxSets);
-    for (auto & ratio : poolRatios)
+    for (auto& ratio : poolRatios)
     {
         _initPoolRatios.push_back(ratio);
     }
@@ -59,12 +58,12 @@ void DescriptorSetAllocator::initPool()
         return;
     }
     bg2e_log_debug << "Initializing main descriptor set allocator with " << _initPoolRatios.size() << " pool size ratio requirements." << bg2e_log_end;
-    
+
     if (_initialized)
     {
         throw std::runtime_error("DescriptorSetAllocator already initialized.");
     }
-    
+
     _poolSizes.clear();
     for (auto ratio : _initPoolRatios)
     {
@@ -73,18 +72,18 @@ void DescriptorSetAllocator::initPool()
         size.descriptorCount = uint32_t(ratio.ratio * _initMaxSets);
         _poolSizes.push_back(size);
     }
-    
+
     VkDescriptorPool newPool = createPool(_initMaxSets);
     _setsPerPool = uint32_t(std::round(float(_initMaxSets) * 1.5f));
     _readyPools.push_back(newPool);
-    
+
     _initialized = true;
 }
 
 void DescriptorSetAllocator::initPool(
     uint32_t maxSets,
-    std::vector<PoolSizeRatio> poolRatios
-) {
+    std::vector<PoolSizeRatio> poolRatios)
+{
     requirePoolSizeRatio(maxSets, poolRatios);
     initPool();
 }
@@ -100,9 +99,10 @@ VkDescriptorPool DescriptorSetAllocator::getPool()
     else
     {
         newPool = createPool(_setsPerPool);
-        
+
         _setsPerPool = uint32_t(std::round(float(_setsPerPool) * 1.5f));
-        if (_setsPerPool > 4096) {
+        if (_setsPerPool > 4096)
+        {
             _setsPerPool = 4096;
         }
     }
@@ -111,7 +111,7 @@ VkDescriptorPool DescriptorSetAllocator::getPool()
 
 VkDescriptorPool DescriptorSetAllocator::createPool(uint32_t setCount)
 {
-    VkDescriptorPoolCreateInfo  poolInfo = {};
+    VkDescriptorPoolCreateInfo poolInfo = {};
     poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
     poolInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
     poolInfo.maxSets = setCount;
@@ -154,35 +154,35 @@ void DescriptorSetAllocator::destroy()
 VkDescriptorSet DescriptorSetAllocator::allocateRaw(VkDescriptorSetLayout layout, void* pNext)
 {
     VkDescriptorPool poolToUse = getPool();
-    
+
     VkDescriptorSetAllocateInfo allocInfo = {};
     allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
     allocInfo.pNext = pNext;
     allocInfo.descriptorPool = poolToUse;
     allocInfo.descriptorSetCount = 1;
     allocInfo.pSetLayouts = &layout;
-    
+
     VkDescriptorSet descriptorSet;
     auto result = vkAllocateDescriptorSets(_engine->device().handle(), &allocInfo, &descriptorSet);
-    
+
     if (result == VK_ERROR_OUT_OF_POOL_MEMORY || result == VK_ERROR_FRAGMENTED_POOL)
     {
         _fullPools.push_back(poolToUse);
-        
+
         poolToUse = getPool();
         allocInfo.descriptorPool = poolToUse;
-        
+
         if (vkAllocateDescriptorSets(_engine->device().handle(), &allocInfo, &descriptorSet) != VK_SUCCESS)
         {
             throw new std::runtime_error("Could not allocate descriptor set. Review the configuration of the descriptor pool ratios in initPools() call. Make sure you have included all the descriptor types you are going to use in the descriptor set layout.");
         }
     }
-    
+
     _readyPools.push_back(poolToUse);
     return descriptorSet;
 }
 
-DescriptorSet * DescriptorSetAllocator::allocate(VkDescriptorSetLayout layout, void* pNext)
+DescriptorSet* DescriptorSetAllocator::allocate(VkDescriptorSetLayout layout, void* pNext)
 {
     auto dsWrapper = new DescriptorSet();
     dsWrapper->init(_engine, allocateRaw(layout, pNext));
@@ -192,4 +192,3 @@ DescriptorSet * DescriptorSetAllocator::allocate(VkDescriptorSetLayout layout, v
 }
 }
 }
-

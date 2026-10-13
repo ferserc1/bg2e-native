@@ -35,7 +35,7 @@ enum class PresentationMode
 };
 
 class BG2E_API Instance {
-public:
+  public:
     virtual ~Instance() = default;
 
     virtual void enableDebugMode(bool value) = 0;
@@ -47,10 +47,16 @@ public:
     virtual void create() = 0;
     virtual void cleanup() = 0;
 
-    [[nodiscard]] PresentationMode presentationMode() const { return _presentationMode; }
-    [[nodiscard]] SDL_Window* window() const { return _window; }
+    [[nodiscard]] PresentationMode presentationMode() const
+    {
+        return _presentationMode;
+    }
+    [[nodiscard]] SDL_Window* window() const
+    {
+        return _window;
+    }
 
-protected:
+  protected:
     PresentationMode _presentationMode = PresentationMode::Undefined;
     SDL_Window* _window = nullptr;
 };

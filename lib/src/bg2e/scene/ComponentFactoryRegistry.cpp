@@ -22,8 +22,7 @@
 
 namespace bg2e::scene {
 
-
-ComponentFactoryRegistry * ComponentFactoryRegistry::_registrySingleton = nullptr;
+ComponentFactoryRegistry* ComponentFactoryRegistry::_registrySingleton = nullptr;
 
 ComponentFactoryRegistry& ComponentFactoryRegistry::get()
 {
@@ -33,14 +32,13 @@ ComponentFactoryRegistry& ComponentFactoryRegistry::get()
     }
     return *_registrySingleton;
 }
-    
+
 void ComponentFactoryRegistry::registerComponent(
     const std::string& componentName,
     Creator creator,
-    DefaultCreator defaultCreator
-)
+    DefaultCreator defaultCreator)
 {
-    _registry[componentName] = { std::move(creator), std::move(defaultCreator) };
+    _registry[componentName] = {std::move(creator), std::move(defaultCreator)};
 }
 
 bool ComponentFactoryRegistry::contains(const std::string& componentName) const

@@ -38,40 +38,34 @@ void DirectPostProcessor::process(
     float,
     float,
     float,
-    float
-)
+    float)
 {
     vulkan::Image::cmdTransitionImage(
         cmd, colorInput->handle(),
         VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-        VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
-    );
+        VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
     vulkan::Image::cmdTransitionImage(
         cmd, colorOutput->handle(),
         VK_IMAGE_LAYOUT_UNDEFINED,
-        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
-    );
+        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
     VkImageCopy region{};
-    region.srcSubresource = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1 };
-    region.dstSubresource = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1 };
+    region.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    region.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
     region.extent = {
         colorInput->extent2D().width,
         colorInput->extent2D().height,
-        1
-    };
+        1};
     vkCmdCopyImage(
         cmd,
         colorInput->handle(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
         colorOutput->handle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-        1, &region
-    );
+        1, &region);
 
     vulkan::Image::cmdTransitionImage(
         cmd, colorOutput->handle(),
         VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-        VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
-    );
+        VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 }
 
 }

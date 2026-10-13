@@ -47,15 +47,13 @@ vec4 brightnessContrast(vec4 color, float brightness, float contrast)
         1.0, 0.0, 0.0, 0.0,
         0.0, 1.0, 0.0, 0.0,
         0.0, 0.0, 1.0, 0.0,
-        brightness, brightness, brightness, 1.0
-    );
+        brightness, brightness, brightness, 1.0);
     float t = (1.0 - contrast) / 2.0;
     mat4 contrastMat = mat4(
         contrast, 0.0, 0.0, 0.0,
         0.0, contrast, 0.0, 0.0,
         0.0, 0.0, contrast, 0.0,
-        t, t, t, 1.0
-    );
+        t, t, t, 1.0);
     return contrastMat * brightnessMat * color;
 }
 
@@ -65,15 +63,13 @@ vec3 brightnessContrast(vec3 color, float brightness, float contrast)
         1.0, 0.0, 0.0, 0.0,
         0.0, 1.0, 0.0, 0.0,
         0.0, 0.0, 1.0, 0.0,
-        brightness, brightness, brightness, 1.0
-    );
+        brightness, brightness, brightness, 1.0);
     float t = (1.0 - contrast) / 2.0;
     mat4 contrastMat = mat4(
         contrast, 0.0, 0.0, 0.0,
         0.0, contrast, 0.0, 0.0,
         0.0, 0.0, contrast, 0.0,
-        t, t, t, 1.0
-    );
+        t, t, t, 1.0);
     return (contrastMat * brightnessMat * vec4(color, 1.0)).rgb;
 }
 

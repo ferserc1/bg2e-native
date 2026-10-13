@@ -32,7 +32,7 @@ namespace render {
 namespace deferred {
 
 class BG2E_API RenderLayer {
-public:
+  public:
     RenderLayer(Engine* engine);
     virtual ~RenderLayer();
 
@@ -43,30 +43,38 @@ public:
         uint32_t currentFrame,
         const vulkan::Image* inputImage,
         const vulkan::Image* outputImage,
-        vulkan::FrameResources& frameResources
-    );
+        vulkan::FrameResources& frameResources);
     virtual void resize(VkExtent2D newExtent);
     virtual void cleanup();
 
-    void setScene(scene::Scene* scene) { _scene = scene; }
-    void setEnvironment(EnvironmentResources* environment) { _environment = environment; }
+    void setScene(scene::Scene* scene)
+    {
+        _scene = scene;
+    }
+    void setEnvironment(EnvironmentResources* environment)
+    {
+        _environment = environment;
+    }
 
     // Pass a non-null pointer to override the camera projection matrix used
     // during rendering (e.g. with FSR jitter applied).  nullptr restores the
     // default behaviour of reading from the scene camera.
-    void setProjectionOverride(const glm::mat4* proj) { _projectionOverride = proj; }
+    void setProjectionOverride(const glm::mat4* proj)
+    {
+        _projectionOverride = proj;
+    }
 
     void setColorCorrection(
         float brightness,
         float contrast,
-        float exposure
-    ) {
+        float exposure)
+    {
         _brightness = brightness;
         _contrast = contrast;
         _exposure = exposure;
     }
 
-protected:
+  protected:
     Engine* _engine;
     VkExtent2D _extent;
     VkFormat _outputFormat;

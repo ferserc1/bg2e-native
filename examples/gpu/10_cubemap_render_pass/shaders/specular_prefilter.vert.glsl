@@ -5,10 +5,12 @@ layout(location = 1) in vec2 inTexCoord;
 
 layout(location = 0) out vec3 fragDir;
 
-layout(push_constant) uniform CameraData {
+layout(push_constant) uniform CameraData
+{
     mat4 projection;
     mat4 view;
-} camera;
+}
+camera;
 
 void main()
 {

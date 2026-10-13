@@ -22,18 +22,19 @@
 #include <string>
 
 // Coordinate system of the source file. bg2e/glTF native is y_up.
-enum class ImportCoordinateSystem {
-    YUp,    // no conversion (glTF native)
-    ZUp     // wrapper gets -90 deg rotation on X
+enum class ImportCoordinateSystem
+{
+    YUp, // no conversion (glTF native)
+    ZUp  // wrapper gets -90 deg rotation on X
 };
 
 // POD describing one pending scene import. Delivered by the HTTP worker
 // thread to the main thread through the ImportServer queue. It has no
 // dependency on httplib or on any scene type.
 struct ImportRequest {
-    uint64_t id = 0;                        // assigned by ImportServer
-    std::string fileName;                   // informational / fallback node name
-    std::filesystem::path filePath;         // absolute local path (validated)
-    float unitsScale = 1.0f;                // meters per source unit
+    uint64_t id = 0;                // assigned by ImportServer
+    std::string fileName;           // informational / fallback node name
+    std::filesystem::path filePath; // absolute local path (validated)
+    float unitsScale = 1.0f;        // meters per source unit
     ImportCoordinateSystem coordinateSystem = ImportCoordinateSystem::YUp;
 };

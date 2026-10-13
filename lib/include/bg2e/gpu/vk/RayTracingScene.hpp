@@ -35,7 +35,7 @@ class Device;
 // reused across rebuilds and only grown when the instance count exceeds the
 // current capacity.
 class RayTracingScene : public gpu::RayTracingScene {
-public:
+  public:
     RayTracingScene(vk::Device* device, const std::string& debugName = {});
     ~RayTracingScene() override;
 
@@ -45,14 +45,20 @@ public:
     void buildOrUpdate(gpu::CommandBuffer* cmd) override;
 
     void cleanup() override;
-    bool isValid() const override { return _tlas != VK_NULL_HANDLE; }
+    bool isValid() const override
+    {
+        return _tlas != VK_NULL_HANDLE;
+    }
 
     // Records the TLAS build into `cmd` (called by CommandBuffer::buildRayTracingScene).
     void build(VkCommandBuffer cmd);
 
-    VkAccelerationStructureKHR handle() const { return _tlas; }
+    VkAccelerationStructureKHR handle() const
+    {
+        return _tlas;
+    }
 
-private:
+  private:
     void ensureCapacity(uint32_t instanceCount);
     void destroyBuffers();
 
@@ -61,18 +67,18 @@ private:
 
     VkAccelerationStructureKHR _tlas = VK_NULL_HANDLE;
 
-    VkBuffer      _asBuffer     = VK_NULL_HANDLE;
-    VmaAllocation _asAlloc      = VK_NULL_HANDLE;
-    VkBuffer      _scratchBuffer = VK_NULL_HANDLE;
-    VmaAllocation _scratchAlloc  = VK_NULL_HANDLE;
-    VkBuffer      _instanceBuffer = VK_NULL_HANDLE;
-    VmaAllocation _instanceAlloc  = VK_NULL_HANDLE;
-    void*         _instanceMapped = nullptr;
+    VkBuffer _asBuffer = VK_NULL_HANDLE;
+    VmaAllocation _asAlloc = VK_NULL_HANDLE;
+    VkBuffer _scratchBuffer = VK_NULL_HANDLE;
+    VmaAllocation _scratchAlloc = VK_NULL_HANDLE;
+    VkBuffer _instanceBuffer = VK_NULL_HANDLE;
+    VmaAllocation _instanceAlloc = VK_NULL_HANDLE;
+    void* _instanceMapped = nullptr;
 
-    VkDeviceAddress _scratchAddress  = 0;
+    VkDeviceAddress _scratchAddress = 0;
     VkDeviceAddress _instanceAddress = 0;
 
-    uint32_t _capacity = 0;   // instance capacity of the current buffers
+    uint32_t _capacity = 0; // instance capacity of the current buffers
 };
 
 }

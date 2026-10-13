@@ -30,39 +30,39 @@ namespace bg2e {
 namespace render {
 
 class BG2E_API GPUProcess {
-public:
-    GPUProcess(Engine * engine);
-    
+  public:
+    GPUProcess(Engine* engine);
+
     void addBinding(
         uint32_t binding,
-        vulkan::Image * img,
+        vulkan::Image* img,
         VkDescriptorType type,
         VkImageLayout initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
-        VkImageLayout finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
-    );
+        VkImageLayout finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
     void addBinding(
         uint32_t binding,
-        vulkan::Buffer * buffer,
+        vulkan::Buffer* buffer,
         VkDescriptorType type,
         uint32_t bufferSize,
-        uint32_t bufferOffset
-    );
-    
-    void executeShader(const std::string& shaderFile, VkExtent2D imageExtent);
-    
-protected:
-    Engine * _engine;
+        uint32_t bufferOffset);
 
-    union BindingPtr {
-        vulkan::Image * image;
-        vulkan::Buffer * buffer;
+    void executeShader(const std::string& shaderFile, VkExtent2D imageExtent);
+
+  protected:
+    Engine* _engine;
+
+    union BindingPtr
+    {
+        vulkan::Image* image;
+        vulkan::Buffer* buffer;
     };
-    
-    enum BindingType {
+
+    enum BindingType
+    {
         TypeImage = 0,
         TypeBuffer = 1
     };
-    
+
     struct BindingInfo {
         uint32_t index;
         BindingPtr data;
@@ -73,7 +73,7 @@ protected:
         uint32_t bufferSize;
         uint32_t bufferOffset;
     };
-    
+
     std::vector<BindingInfo> _bindings;
 };
 

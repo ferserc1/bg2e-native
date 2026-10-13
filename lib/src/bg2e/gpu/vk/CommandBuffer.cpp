@@ -48,14 +48,22 @@ VkImageLayout toVkLayout(ImageLayout layout)
 {
     switch (layout)
     {
-    case ImageLayout::Undefined:         return VK_IMAGE_LAYOUT_UNDEFINED;
-    case ImageLayout::General:           return VK_IMAGE_LAYOUT_GENERAL;
-    case ImageLayout::ColorAttachment:   return VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-    case ImageLayout::DepthAttachment:   return VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
-    case ImageLayout::ShaderReadOnly:    return VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-    case ImageLayout::TransferSrc:       return VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
-    case ImageLayout::TransferDst:       return VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-    case ImageLayout::Present:           return VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+    case ImageLayout::Undefined:
+        return VK_IMAGE_LAYOUT_UNDEFINED;
+    case ImageLayout::General:
+        return VK_IMAGE_LAYOUT_GENERAL;
+    case ImageLayout::ColorAttachment:
+        return VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    case ImageLayout::DepthAttachment:
+        return VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
+    case ImageLayout::ShaderReadOnly:
+        return VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    case ImageLayout::TransferSrc:
+        return VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+    case ImageLayout::TransferDst:
+        return VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    case ImageLayout::Present:
+        return VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
     }
     return VK_IMAGE_LAYOUT_UNDEFINED;
 }
@@ -69,12 +77,23 @@ CommandBuffer::CommandBuffer(vk::Device* device, VkCommandBuffer cmd, VkCommandP
 
 void CommandBuffer::begin()
 {
-    if (_recording) throw std::logic_error("Vulkan command buffer is already recording");
+    if (_recording)
+    {
+        throw std::logic_error("Vulkan command buffer is already recording");
+    }
     if (_completion && !_completion->completed())
+    {
         throw std::logic_error("Vulkan command buffer is still in flight");
-    if (!_allocation) throw std::logic_error("Vulkan command buffer has no managed allocation");
+    }
+    if (!_allocation)
+    {
+        throw std::logic_error("Vulkan command buffer has no managed allocation");
+    }
     std::lock_guard poolLock(_allocation->pool->mutex);
-    if (!_allocation->pool->pool) throw std::logic_error("Vulkan command pool is closed");
+    if (!_allocation->pool->pool)
+    {
+        throw std::logic_error("Vulkan command pool is closed");
+    }
     VK_ASSERT(vkResetCommandBuffer(_cmd, 0));
     _completion.reset();
     _submissionFrame.reset();
@@ -88,7 +107,9 @@ void CommandBuffer::begin()
 void CommandBuffer::end()
 {
     if (!_recording || _renderingActive || _computeActive)
+    {
         throw std::logic_error("Vulkan command buffer must close active scopes before end");
+    }
     std::lock_guard poolLock(_allocation->pool->mutex);
     flushPendingRendering();
     _boundRTPipeline = nullptr;
@@ -139,7 +160,9 @@ void CommandBuffer::transition(gpu::Image* image, ImageLayout newLayout)
 void CommandBuffer::materializeRenderPass()
 {
     if (!_recording || !_renderingActive || _computeActive)
+    {
         throw std::logic_error("Vulkan materializeRenderPass requires an active rendering scope.");
+    }
     flushPendingRendering();
 }
 
@@ -225,7 +248,7 @@ void CommandBuffer::beginRendering(gpu::CubeMap* cubemap, CubemapFace face, uint
 void CommandBuffer::clearColor(uint32_t attachmentIndex, const gpu::Color& color)
 {
     (void)attachmentIndex;
-    _clearColor = { color.r, color.g, color.b, color.a };
+    _clearColor = {color.r, color.g, color.b, color.a};
     _hasColorClear = true;
 }
 
@@ -262,16 +285,14 @@ void CommandBuffer::flushPendingRendering()
 
         VkRenderingAttachmentInfo colorAttachment = Info::attachmentInfo(
             faceView,
-            _hasColorClear ? &clearColor : nullptr
-        );
+            _hasColorClear ? &clearColor : nullptr);
 
         uint32_t mipSize = std::max(1u, _renderCubeMap->size() >> _renderCubeMipLevel);
 
         VkRenderingInfo renderInfo = Info::renderingInfo(
-            { mipSize, mipSize },
+            {mipSize, mipSize},
             &colorAttachment,
-            nullptr
-        );
+            nullptr);
 
         cmdBeginRendering(_cmd, &renderInfo);
         _renderingEmitted = true;
@@ -299,8 +320,7 @@ void CommandBuffer::flushPendingRendering()
 
     VkRenderingAttachmentInfo colorAttachment = Info::attachmentInfo(
         colorImg->imageView(),
-        _hasColorClear ? &clearColor : nullptr
-    );
+        _hasColorClear ? &clearColor : nullptr);
 
     // Determine depth image source
     vk::Image* depthImg = nullptr;
@@ -322,10 +342,9 @@ void CommandBuffer::flushPendingRendering()
     }
 
     VkRenderingInfo renderInfo = Info::renderingInfo(
-        { colorImg->width(), colorImg->height() },
+        {colorImg->width(), colorImg->height()},
         &colorAttachment,
-        depthAttachment
-    );
+        depthAttachment);
 
     cmdBeginRendering(_cmd, &renderInfo);
     _renderingEmitted = true;
@@ -484,8 +503,7 @@ void CommandBuffer::bindResourceSet(gpu::GraphicsPipeline* pipeline, uint32_t se
         vkPipe->layoutHandle(),
         setIndex,
         1, &ds,
-        0, nullptr
-    );
+        0, nullptr);
 }
 
 void CommandBuffer::bindResourceSet(gpu::ComputePipeline* pipeline, uint32_t setIndex, gpu::ResourceSet* set)
@@ -514,8 +532,7 @@ void CommandBuffer::bindResourceSet(gpu::ComputePipeline* pipeline, uint32_t set
         vkPipe->layoutHandle(),
         setIndex,
         1, &ds,
-        0, nullptr
-    );
+        0, nullptr);
 }
 
 void CommandBuffer::bindVertexBuffer(uint32_t binding, gpu::Buffer* buffer, uint64_t offset)
@@ -526,8 +543,8 @@ void CommandBuffer::bindVertexBuffer(uint32_t binding, gpu::Buffer* buffer, uint
         throw std::runtime_error("vk::CommandBuffer::bindVertexBuffer: not a vk::Buffer");
     }
 
-    VkBuffer      b   = vkBuf->handle();
-    VkDeviceSize  off = static_cast<VkDeviceSize>(offset);
+    VkBuffer b = vkBuf->handle();
+    VkDeviceSize off = static_cast<VkDeviceSize>(offset);
     vkCmdBindVertexBuffers(_cmd, binding, 1, &b, &off);
 }
 
@@ -578,8 +595,7 @@ void CommandBuffer::copyImage(gpu::Image* src, gpu::Image* dst)
         _cmd,
         vkSrc->handle(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
         vkDst->handle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-        1, &region
-    );
+        1, &region);
 }
 
 // TODO: function not fully tested
@@ -600,8 +616,7 @@ void CommandBuffer::blitImage(gpu::Image* src, gpu::Image* dst)
     region.srcOffsets[0] = {0, 0, 0};
     region.srcOffsets[1] = {
         static_cast<int32_t>(src->width()),
-        static_cast<int32_t>(src->height()), 1
-    };
+        static_cast<int32_t>(src->height()), 1};
     region.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     region.dstSubresource.mipLevel = 0;
     region.dstSubresource.baseArrayLayer = 0;
@@ -609,16 +624,14 @@ void CommandBuffer::blitImage(gpu::Image* src, gpu::Image* dst)
     region.dstOffsets[0] = {0, 0, 0};
     region.dstOffsets[1] = {
         static_cast<int32_t>(dst->width()),
-        static_cast<int32_t>(dst->height()), 1
-    };
+        static_cast<int32_t>(dst->height()), 1};
 
     vkCmdBlitImage(
         _cmd,
         vkSrc->handle(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
         vkDst->handle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
         1, &region,
-        VK_FILTER_LINEAR
-    );
+        VK_FILTER_LINEAR);
 }
 
 void CommandBuffer::buildRayTracingMesh(gpu::RayTracingMesh* mesh)
@@ -675,8 +688,7 @@ void CommandBuffer::bindResourceSet(gpu::RayTracingPipeline* pipeline, uint32_t 
         vkPipe->layoutHandle(),
         setIndex,
         1, &ds,
-        0, nullptr
-    );
+        0, nullptr);
 }
 
 void CommandBuffer::traceRays(uint32_t width, uint32_t height, uint32_t depth)
@@ -692,8 +704,7 @@ void CommandBuffer::traceRays(uint32_t width, uint32_t height, uint32_t depth)
         &_boundRTPipeline->missSBT(),
         &_boundRTPipeline->hitSBT(),
         &_boundRTPipeline->callableSBT(),
-        width, height, depth
-    );
+        width, height, depth);
 }
 
 }

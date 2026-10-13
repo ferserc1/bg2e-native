@@ -9,15 +9,18 @@
 #include "lib/ray_tracing.glsl"
 #include "lib/rt_material_data.glsl"
 
-layout(location = 0) rayPayloadInEXT GIPayload {
+layout(location = 0) rayPayloadInEXT GIPayload
+{
     vec3 hitDirectLight;
     vec3 hitAlbedo;
     vec3 hitNormal;
     vec3 hitPosition;
     uint didHit;
-} payload;
+}
+payload;
 
-layout(push_constant) uniform PushConstant {
+layout(push_constant) uniform PushConstant
+{
     mat4 inverseViewProjection;
     vec3 cameraPosition;
     float rayBias;
@@ -30,26 +33,28 @@ layout(push_constant) uniform PushConstant {
     uint shadowSamples;
     uint useBlueNoise;
     uint useShadows;
-} pc;
+}
+pc;
 
 layout(set = 0, binding = 0) uniform accelerationStructureEXT tlas;
 layout(set = 0, binding = 4) uniform samplerCube irradianceMap;
 
-layout(std430, set = 2, binding = 0) readonly buffer GILightBuffer {
+layout(std430, set = 2, binding = 0) readonly buffer GILightBuffer
+{
     LightData giLights[];
 };
 
 hitAttributeEXT vec2 attribs;
 
-void main() {
+void main()
+{
     uint matIdx = gl_InstanceCustomIndexEXT;
     uint nmatIdx = nonuniformEXT(matIdx);
 
     vec3 bary = vec3(
         1.0 - attribs.x - attribs.y,
         attribs.x,
-        attribs.y
-    );
+        attribs.y);
 
     RTMaterialData mat = materials[matIdx];
 
@@ -64,16 +69,13 @@ void main() {
     RTVertex vert1 = vb[nmatIdx].vertices[idx1];
     RTVertex vert2 = vb[nmatIdx].vertices[idx2];
 
-    vec2 uv = vert0.texCoord0 * bary.x
-            + vert1.texCoord0 * bary.y
-            + vert2.texCoord0 * bary.z;
+    vec2 uv = vert0.texCoord0 * bary.x + vert1.texCoord0 * bary.y + vert2.texCoord0 * bary.z;
 
     // Use geometry normal only — normal maps are not considered for GI bounces.
     vec3 objectNormal = normalize(
         vert0.normal * bary.x +
         vert1.normal * bary.y +
-        vert2.normal * bary.z
-    );
+        vert2.normal * bary.z);
     vec3 worldNormal = normalize(mat3(gl_ObjectToWorldEXT) * objectNormal);
 
     vec3 worldPos = gl_WorldRayOriginEXT + gl_WorldRayDirectionEXT * gl_HitTEXT;
@@ -93,10 +95,12 @@ void main() {
     vec3 directLight = vec3(0.0);
 
     // Direct contribution from lights configured to affect ray tracing.
-    for (uint i = 0u; i < pc.giLightCount; ++i) {
+    for (uint i = 0u; i < pc.giLightCount; ++i)
+    {
         LightData light = giLights[i];
         float shadowFactor = 1.0;
-        if (pc.useShadows != 0u && light.castShadows != 0) {
+        if (pc.useShadows != 0u && light.castShadows != 0)
+        {
             shadowFactor = queryShadowCutout(tlas, worldPos, worldNormal, light, int(pc.shadowSamples));
         }
         directLight += shadowFactor * computeBasicLighting(light, worldPos, worldNormal, surfaceAlbedo);

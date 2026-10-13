@@ -83,17 +83,22 @@ std::shared_ptr<Joint> LinkJoint::clone() const
 void LinkJoint::deserialize(std::shared_ptr<json::JsonNode> jsonData)
 {
     json::ObjectReader reader(jsonData);
-    if (!reader.isValid()) return;
+    if (!reader.isValid())
+    {
+        return;
+    }
 
-    if (auto offset = reader.getGlmVec3("offset")) _offset = *offset;
+    if (auto offset = reader.getGlmVec3("offset"))
+    {
+        _offset = *offset;
+    }
 
     // Keep the TypeScript behaviour: each deserialization rebuilds Euler angles
     // from the three independent fields, defaulting absent values to zero.
     _eulerRotation = glm::vec3(
         reader.getNumber("yaw").value_or(0.0f),
         reader.getNumber("pitch").value_or(0.0f),
-        reader.getNumber("roll").value_or(0.0f)
-    );
+        reader.getNumber("roll").value_or(0.0f));
 
     // `order` was used by bg2e 1.4. Prefer the current key when both exist.
     if (auto order = reader.getInteger<uint32_t>("transformOrder"); order && *order <= 1)
@@ -116,13 +121,12 @@ std::shared_ptr<json::JsonNode> LinkJoint::serialize() const
 {
     using namespace bg2e::json;
     return JSON(JsonObject{
-        { "type", JSON("LinkJoint") },
-        { "offset", JSON(_offset) },
-        { "yaw", JSON(yaw()) },
-        { "pitch", JSON(pitch()) },
-        { "roll", JSON(roll()) },
-        { "transformOrder", JSON(static_cast<uint32_t>(_transformOrder)) }
-    });
+        {"type", JSON("LinkJoint")},
+        {"offset", JSON(_offset)},
+        {"yaw", JSON(yaw())},
+        {"pitch", JSON(pitch())},
+        {"roll", JSON(roll())},
+        {"transformOrder", JSON(static_cast<uint32_t>(_transformOrder))}});
 }
 
 void LinkJoint::calculateTransform()

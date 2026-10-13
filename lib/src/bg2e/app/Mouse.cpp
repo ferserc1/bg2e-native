@@ -22,28 +22,33 @@
 namespace bg2e {
 namespace app {
 
-bool Mouse::leftButtonPressed() {
+bool Mouse::leftButtonPressed()
+{
     int x, y;
     return (SDL_GetMouseState(&x, &y) & SDL_BUTTON_LMASK) != 0;
 }
 
-bool Mouse::middleButtonPressed() {
+bool Mouse::middleButtonPressed()
+{
     int x, y;
     return (SDL_GetMouseState(&x, &y) & SDL_BUTTON_MMASK) != 0;
 }
 
-bool Mouse::rightButtonPressed() {
+bool Mouse::rightButtonPressed()
+{
     int x, y;
     return (SDL_GetMouseState(&x, &y) & SDL_BUTTON_RMASK) != 0;
 }
 
-int Mouse::x() {
+int Mouse::x()
+{
     int x, y;
     SDL_GetMouseState(&x, &y);
     return x;
 }
 
-int Mouse::y() {
+int Mouse::y()
+{
     int x, y;
     SDL_GetMouseState(&x, &y);
     return y;

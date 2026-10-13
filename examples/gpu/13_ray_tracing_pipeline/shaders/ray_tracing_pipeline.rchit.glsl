@@ -2,12 +2,12 @@
 #extension GL_EXT_ray_tracing : enable
 
 struct HitInfo {
-    vec3  hitPos;
-    vec3  normal;
-    vec3  albedo;
-    vec3  emission;
+    vec3 hitPos;
+    vec3 normal;
+    vec3 albedo;
+    vec3 emission;
     float roughness;
-    int   hit;
+    int hit;
 };
 layout(location = 0) rayPayloadInEXT HitInfo payload;
 hitAttributeEXT vec2 attribs;
@@ -20,7 +20,11 @@ struct InstanceData {
     vec4 normalOrCenter; // plane: world normal; sphere/cube: world center; w = sphere radius
     vec4 extents;        // cube: world-space half-extents
 };
-layout(set = 2, binding = 0) buffer InstanceBuffer { InstanceData data[]; } instances;
+layout(set = 2, binding = 0) buffer InstanceBuffer
+{
+    InstanceData data[];
+}
+instances;
 
 void main()
 {
@@ -32,21 +36,30 @@ void main()
     // Analytic surface normal (the scene is planes / a sphere / an axis-aligned
     // cube, all without rotation or scale beyond what is baked into the data).
     vec3 n;
-    if (shapeType == 0)        // plane
+    if (shapeType == 0) // plane
     {
         n = normalize(inst.normalOrCenter.xyz);
     }
-    else if (shapeType == 1)   // sphere
+    else if (shapeType == 1) // sphere
     {
         n = normalize(worldPos - inst.normalOrCenter.xyz);
     }
-    else                       // cube: dominant axis of the local position
+    else // cube: dominant axis of the local position
     {
         vec3 local = (worldPos - inst.normalOrCenter.xyz) / max(inst.extents.xyz, vec3(1e-4));
         vec3 a = abs(local);
-        if (a.x > a.y && a.x > a.z)      n = vec3(sign(local.x), 0.0, 0.0);
-        else if (a.y > a.z)              n = vec3(0.0, sign(local.y), 0.0);
-        else                             n = vec3(0.0, 0.0, sign(local.z));
+        if (a.x > a.y && a.x > a.z)
+        {
+            n = vec3(sign(local.x), 0.0, 0.0);
+        }
+        else if (a.y > a.z)
+        {
+            n = vec3(0.0, sign(local.y), 0.0);
+        }
+        else
+        {
+            n = vec3(0.0, 0.0, sign(local.z));
+        }
     }
 
     // Make the normal face the incoming ray (two-sided surfaces).
@@ -55,10 +68,10 @@ void main()
         n = -n;
     }
 
-    payload.hitPos    = worldPos;
-    payload.normal    = n;
-    payload.albedo    = inst.albedo.rgb;
-    payload.emission  = inst.emission.rgb;
+    payload.hitPos = worldPos;
+    payload.normal = n;
+    payload.albedo = inst.albedo.rgb;
+    payload.emission = inst.emission.rgb;
     payload.roughness = inst.albedo.a;
-    payload.hit       = 1;
+    payload.hit = 1;
 }

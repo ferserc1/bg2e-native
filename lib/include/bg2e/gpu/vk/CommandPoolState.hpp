@@ -30,11 +30,18 @@ struct CommandPoolState {
     VkDevice device = VK_NULL_HANDLE;
     VkCommandPool pool = VK_NULL_HANDLE;
 
-    ~CommandPoolState() { cleanup(); }
+    ~CommandPoolState()
+    {
+        cleanup();
+    }
 
-    void cleanup() {
+    void cleanup()
+    {
         std::lock_guard lock(mutex);
-        if (pool) vkDestroyCommandPool(device, pool, nullptr);
+        if (pool)
+        {
+            vkDestroyCommandPool(device, pool, nullptr);
+        }
         pool = VK_NULL_HANDLE;
         device = VK_NULL_HANDLE;
     }
@@ -43,11 +50,17 @@ struct CommandPoolState {
 struct CommandAllocation {
     std::shared_ptr<CommandPoolState> pool;
     VkCommandBuffer command = VK_NULL_HANDLE;
-    ~CommandAllocation() {
-        if (!command) return;
+    ~CommandAllocation()
+    {
+        if (!command)
+        {
+            return;
+        }
         std::lock_guard lock(pool->mutex);
         if (pool->pool && command)
+        {
             vkFreeCommandBuffers(pool->device, pool->pool, 1, &command);
+        }
     }
 };
 

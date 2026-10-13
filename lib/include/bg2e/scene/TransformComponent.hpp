@@ -27,46 +27,54 @@ namespace bg2e {
 namespace scene {
 
 class BG2E_API TransformComponent : public Component {
-public:
+  public:
     BG2E_COMPONENT_TYPE_NAME("Transform");
-    
+
     static std::unique_ptr<TransformComponent> makeTranslated(float x, float y, float z);
     static std::unique_ptr<TransformComponent> makeRotated(float alpha, float x, float y, float z);
     static std::unique_ptr<TransformComponent> makeScaled(float xyz);
     static std::unique_ptr<TransformComponent> makeScaled(float x, float y, float z);
-    static std::unique_ptr<TransformComponent> makeTranslated(const glm::vec3 &);
+    static std::unique_ptr<TransformComponent> makeTranslated(const glm::vec3&);
     static std::unique_ptr<TransformComponent> makeRotated(float alpha, const glm::vec3& axis);
     static std::unique_ptr<TransformComponent> makeScaled(const glm::vec3& scale);
-    
+
     TransformComponent() = default;
-    TransformComponent(const glm::mat4& matrix) : _matrix(matrix) {}
+    TransformComponent(const glm::mat4& matrix) : _matrix(matrix)
+    {
+    }
     virtual ~TransformComponent() = default;
 
-    const glm::mat4& matrix() const { return _matrix; }
-    void setMatrix(const glm::mat4& matrix) { _matrix = matrix; }
+    const glm::mat4& matrix() const
+    {
+        return _matrix;
+    }
+    void setMatrix(const glm::mat4& matrix)
+    {
+        _matrix = matrix;
+    }
 
     glm::vec3 translation() const;
     glm::vec3 eulerRotation() const;
     glm::vec3 scaleValue() const;
 
-    TransformComponent * setEulerRotation(const glm::vec3& degrees);
+    TransformComponent* setEulerRotation(const glm::vec3& degrees);
 
-    TransformComponent * setIdentity();
-    TransformComponent * setTranslation(float x, float y, float z);
-    TransformComponent * setRotation(float alpha, float x, float y, float z);
-    TransformComponent * setScale(float xyz);
-    TransformComponent * setScale(float x, float y, float z);
-    TransformComponent * translate(float x, float y, float z);
-    TransformComponent * rotate(float alpha, float x, float y, float z);
-    TransformComponent * scale(float xyz);
-    TransformComponent * scale(float x, float y, float z);
-    
-    TransformComponent * setTranslation(const glm::vec3& t);
-    TransformComponent * setRotation(float alpha, const glm::vec3& axis);
-    TransformComponent * setScale(const glm::vec3& scale);
-    TransformComponent * translate(const glm::vec3& t);
-    TransformComponent * rotate(float alpha, const glm::vec3& axis);
-    TransformComponent * scale(const glm::vec3& scale);
+    TransformComponent* setIdentity();
+    TransformComponent* setTranslation(float x, float y, float z);
+    TransformComponent* setRotation(float alpha, float x, float y, float z);
+    TransformComponent* setScale(float xyz);
+    TransformComponent* setScale(float x, float y, float z);
+    TransformComponent* translate(float x, float y, float z);
+    TransformComponent* rotate(float alpha, float x, float y, float z);
+    TransformComponent* scale(float xyz);
+    TransformComponent* scale(float x, float y, float z);
+
+    TransformComponent* setTranslation(const glm::vec3& t);
+    TransformComponent* setRotation(float alpha, const glm::vec3& axis);
+    TransformComponent* setScale(const glm::vec3& scale);
+    TransformComponent* translate(const glm::vec3& t);
+    TransformComponent* rotate(float alpha, const glm::vec3& axis);
+    TransformComponent* scale(const glm::vec3& scale);
 
     // Decomposition helpers. These assume the matrix is TRS (no shear).
     // Euler angles exposed to editors are expressed in degrees.
@@ -82,9 +90,8 @@ public:
 
     void deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path& basePath, render::Engine& engine) override;
     std::shared_ptr<json::JsonNode> serialize(const std::filesystem::path& basePath) override;
-    
 
-protected:
+  protected:
     glm::mat4 _matrix = glm::mat4(1.0f); // Identity matrix by default
 };
 

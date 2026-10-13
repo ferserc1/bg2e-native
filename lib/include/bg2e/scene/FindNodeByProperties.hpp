@@ -29,13 +29,14 @@ namespace bg2e {
 namespace scene {
 
 class BG2E_API FindNodeByProperties : public NodeVisitor {
-public:
-    enum FilterMask : uint8_t {
-        None         = 0,
-        ByName       = 1 << 0,
+  public:
+    enum FilterMask : uint8_t
+    {
+        None = 0,
+        ByName = 1 << 0,
         ByIdentifier = 1 << 1,
-        ByEnabled    = 1 << 2,
-        BySteady     = 1 << 3
+        ByEnabled = 1 << 2,
+        BySteady = 1 << 3
     };
 
     FindNodeByProperties() = default;
@@ -48,15 +49,18 @@ public:
 
     const std::vector<std::shared_ptr<Node>>& find(Node* node);
 
-    void visit(Node * node) override;
+    void visit(Node* node) override;
 
     void clearResults();
     void clearFilters();
     void clear();
 
-    const std::vector<std::shared_ptr<Node>>& results() const { return _results; }
+    const std::vector<std::shared_ptr<Node>>& results() const
+    {
+        return _results;
+    }
 
-protected:
+  protected:
     uint8_t _filterMask = None;
 
     std::string _filterName;

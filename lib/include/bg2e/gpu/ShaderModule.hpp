@@ -26,8 +26,10 @@ namespace bg2e {
 namespace gpu {
 
 class BG2E_API ShaderModule : public DeviceResource {
-public:
-    explicit ShaderModule(Device* device) : DeviceResource(device) {}
+  public:
+    explicit ShaderModule(Device* device) : DeviceResource(device)
+    {
+    }
     virtual ~ShaderModule() = default;
     virtual ShaderStage stage() const = 0;
 };

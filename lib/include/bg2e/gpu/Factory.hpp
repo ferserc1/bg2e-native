@@ -26,7 +26,7 @@ namespace bg2e {
 namespace gpu {
 
 class BG2E_API Factory {
-public:
+  public:
     static void init(BackendType type);
 
     static Backend* backend();
@@ -38,7 +38,7 @@ public:
     // Retain an existing factory backend; returns empty for caller-owned backends.
     static std::shared_ptr<Backend> retainBackend(Backend& backend);
 
-private:
+  private:
     static std::shared_ptr<Backend> _backend;
 };
 

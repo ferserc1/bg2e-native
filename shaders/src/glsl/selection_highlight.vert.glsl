@@ -18,14 +18,16 @@
 
 #version 450
 
-layout (location = 0) in vec3 inPosition;
+layout(location = 0) in vec3 inPosition;
 
-layout (location = 0) out vec4 outColor;
+layout(location = 0) out vec4 outColor;
 
-layout (push_constant) uniform FrameData {
+layout(push_constant) uniform FrameData
+{
     mat4 mvp;
     vec4 color;
-} frameData;
+}
+frameData;
 
 void main()
 {

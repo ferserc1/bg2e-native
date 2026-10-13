@@ -53,13 +53,11 @@ RayTracingPipeline::~RayTracingPipeline()
 uint32_t RayTracingPipeline::addShaderStage(
     VkShaderStageFlagBits stage,
     const std::string& fileName,
-    const std::string& entryPoint
-)
+    const std::string& entryPoint)
 {
     _stageEntryPoints.push_back(entryPoint);
     VkShaderModule shaderModule = factory::ShaderModule::loadFromSPV(
-        fileName, _engine->device().handle()
-    );
+        fileName, _engine->device().handle());
     _shaderModules.push_back(shaderModule);
 
     VkPipelineShaderStageCreateInfo stageInfo{};
@@ -145,8 +143,7 @@ void RayTracingPipeline::setAnyHitShader(const std::string& fileName, const std:
     }
     _hasAnyHitShader = true;
     const uint32_t stageIndex = addShaderStage(
-        VK_SHADER_STAGE_ANY_HIT_BIT_KHR, fileName, entryPoint
-    );
+        VK_SHADER_STAGE_ANY_HIT_BIT_KHR, fileName, entryPoint);
     _groups.back().anyHitShader = stageIndex;
 }
 
@@ -158,8 +155,7 @@ VkDeviceSize RayTracingPipeline::alignUp(VkDeviceSize value, VkDeviceSize alignm
 VkPipeline RayTracingPipeline::build(
     VkPipelineLayout layout,
     uint32_t maxRecursionDepth,
-    const std::string& name
-)
+    const std::string& name)
 {
     if (!_hasRaygenShader || !_hasClosestHitShader || !_hasMissShader)
     {
@@ -167,7 +163,7 @@ VkPipeline RayTracingPipeline::build(
     }
 
     size_t i = 0;
-    for (auto & entryPoint : _stageEntryPoints)
+    for (auto& entryPoint : _stageEntryPoints)
     {
         _stages[i].pName = entryPoint.c_str();
         ++i;
@@ -189,8 +185,7 @@ VkPipeline RayTracingPipeline::build(
         1,
         &createInfo,
         nullptr,
-        &_pipeline
-    );
+        &_pipeline);
 
     if (base::Log::isDebug() && !name.empty() && setDebugUtilsObjectName != nullptr)
     {
@@ -211,8 +206,7 @@ RayTracingPipeline::SBTData RayTracingPipeline::createSBT(const std::string& nam
     if (_pipeline == VK_NULL_HANDLE)
     {
         throw std::runtime_error(
-            "RayTracingPipeline::createSBT() called before build() or build() failed"
-        );
+            "RayTracingPipeline::createSBT() called before build() or build() failed");
     }
 
     VkPhysicalDeviceRayTracingPipelinePropertiesKHR rtProps{};
@@ -239,8 +233,7 @@ RayTracingPipeline::SBTData RayTracingPipeline::createSBT(const std::string& nam
         0,
         groupCount,
         handleDataSize,
-        handleData.data()
-    );
+        handleData.data());
 
     VkDeviceSize raygenOffset = 0;
     VkDeviceSize raygenStride = alignUp(handleSizeAligned, baseAlignment);
@@ -260,12 +253,12 @@ RayTracingPipeline::SBTData RayTracingPipeline::createSBT(const std::string& nam
     bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
     bufferInfo.size = sbtSize;
     bufferInfo.usage = VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR |
-        VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
+                       VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
 
     VmaAllocationCreateInfo allocInfo{};
     allocInfo.usage = VMA_MEMORY_USAGE_AUTO;
     allocInfo.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
-        VMA_ALLOCATION_CREATE_MAPPED_BIT;
+                      VMA_ALLOCATION_CREATE_MAPPED_BIT;
 
     VkBuffer sbtHandle = VK_NULL_HANDLE;
     VmaAllocation sbtAllocation = VK_NULL_HANDLE;
@@ -277,14 +270,12 @@ RayTracingPipeline::SBTData RayTracingPipeline::createSBT(const std::string& nam
         &allocInfo,
         &sbtHandle,
         &sbtAllocation,
-        &sbtInfo
-    ));
+        &sbtInfo));
 
     vmaSetAllocationName(
         _engine->allocator(),
         sbtAllocation,
-        "RayTracingPipeline SBT buffer"
-    );
+        "RayTracingPipeline SBT buffer");
 
     void* mappedData = getMappedData(sbtAllocation);
     std::memset(mappedData, 0, sbtSize);
@@ -292,20 +283,17 @@ RayTracingPipeline::SBTData RayTracingPipeline::createSBT(const std::string& nam
     std::memcpy(
         static_cast<uint8_t*>(mappedData) + raygenOffset,
         handleData.data() + _raygenGroupIndex * handleSize,
-        handleSize
-    );
+        handleSize);
 
     std::memcpy(
         static_cast<uint8_t*>(mappedData) + missOffset,
         handleData.data() + _missGroupIndex * handleSize,
-        handleSize
-    );
+        handleSize);
 
     std::memcpy(
         static_cast<uint8_t*>(mappedData) + hitOffset,
         handleData.data() + _hitGroupIndex * handleSize,
-        handleSize
-    );
+        handleSize);
 
     VkBufferDeviceAddressInfo addrInfo{};
     addrInfo.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;
@@ -324,7 +312,7 @@ RayTracingPipeline::SBTData RayTracingPipeline::createSBT(const std::string& nam
 
     sbtData.hitRegion.deviceAddress = bufferAddress + hitOffset;
     sbtData.hitRegion.stride = hitStride;
-    sbtData.hitRegion.size = hitStride;  // Only one entry
+    sbtData.hitRegion.size = hitStride; // Only one entry
 
     sbtData.callableRegion.deviceAddress = 0;
     sbtData.callableRegion.stride = 0;
@@ -335,8 +323,7 @@ RayTracingPipeline::SBTData RayTracingPipeline::createSBT(const std::string& nam
         sbtHandle,
         sbtAllocation,
         sbtInfo,
-        name.empty() ? "RT_SBT" : name + "_SBT"
-    );
+        name.empty() ? "RT_SBT" : name + "_SBT");
 
     finalBuffer->flushAllocatedData();
 

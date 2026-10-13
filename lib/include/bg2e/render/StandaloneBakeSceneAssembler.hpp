@@ -37,7 +37,7 @@ namespace render {
 class Engine;
 
 class BG2E_API StandaloneBakeSceneAssembler final {
-public:
+  public:
     struct Target {
         std::shared_ptr<scene::Node> node;
         // The .bg2 file backing this target's Drawable (or the model input).
@@ -77,7 +77,7 @@ public:
         std::optional<geo::Uv2AtlasOptions> uv2Options,
         bool loadTargetGpuResources) const;
 
-private:
+  private:
     Engine* _engine = nullptr;
 };
 

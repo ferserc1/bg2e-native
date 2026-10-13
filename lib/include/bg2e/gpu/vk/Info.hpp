@@ -25,21 +25,18 @@ namespace gpu {
 namespace vk {
 
 class BG2E_API Info {
-public:
+  public:
     static VkDebugUtilsMessengerCreateInfoEXT debugMessengerCreateInfo(
         PFN_vkDebugUtilsMessengerCallbackEXT callback,
-        void * pUserData = nullptr
-    );
+        void* pUserData = nullptr);
 
     static VkCommandPoolCreateInfo commandPoolCreateInfo(
         uint32_t queueFamilyIndex,
-        VkCommandPoolCreateFlags flags = 0
-    );
+        VkCommandPoolCreateFlags flags = 0);
 
     static VkCommandBufferAllocateInfo commandBufferAllocateInfo(
         VkCommandPool pool,
-        uint32_t count = 1
-    );
+        uint32_t count = 1);
 
     static VkFenceCreateInfo fenceCreateInfo(VkFenceCreateFlags flags = 0);
 
@@ -49,48 +46,41 @@ public:
 
     static VkSemaphoreSubmitInfo semaphoreSubmitInfo(
         VkPipelineStageFlags2 stageMask,
-        VkSemaphore semaphore
-    );
+        VkSemaphore semaphore);
 
     static VkCommandBufferSubmitInfo commandBufferSubmitInfo(VkCommandBuffer cmd);
 
     static VkSubmitInfo2 submitInfo(
         VkCommandBufferSubmitInfo* cmdInfo,
         VkSemaphoreSubmitInfo* signalSemaphoreInfo,
-        VkSemaphoreSubmitInfo* waitSemaphoreInfo
-    );
+        VkSemaphoreSubmitInfo* waitSemaphoreInfo);
 
     static VkSubmitInfo2 submitInfo(
         VkCommandBuffer cmd,
         VkPipelineStageFlags2 waitSemaphoreStageFlags, VkSemaphore waitSemaphore,
-        VkPipelineStageFlags2 signalSemaphoreStageFlags, VkSemaphore signalSemaphore
-    );
+        VkPipelineStageFlags2 signalSemaphoreStageFlags, VkSemaphore signalSemaphore);
 
     static VkPresentInfoKHR presentInfo(
         VkSwapchainKHR& swapchain,
         VkSemaphore& waitSemaphore,
-        uint32_t& imageIndex
-    );
+        uint32_t& imageIndex);
 
     static VkImageCreateInfo imageCreateInfo(
         VkFormat format,
         VkImageUsageFlags usageFlags,
         VkExtent3D extent,
         uint32_t arrayLayers = 1,
-        VkSampleCountFlagBits samples = VK_SAMPLE_COUNT_1_BIT
-    );
+        VkSampleCountFlagBits samples = VK_SAMPLE_COUNT_1_BIT);
 
     static VkImageViewCreateInfo imageViewCreateInfo(
         VkFormat format,
         VkImage image,
-        VkImageAspectFlags aspectFlags
-    );
+        VkImageAspectFlags aspectFlags);
 
     static VkRenderingAttachmentInfo attachmentInfo(
         VkImageView view,
         VkClearValue* clearValue,
-        VkImageLayout layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
-    );
+        VkImageLayout layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 
     static VkRenderingAttachmentInfo depthAttachmentInfo(VkImageView view, float depthValue = 1.0f, VkImageLayout layout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL);
 
@@ -98,8 +88,7 @@ public:
         VkExtent2D renderExtent,
         VkRenderingAttachmentInfo* colorAttachment,
         VkRenderingAttachmentInfo* depthAttachment,
-        uint32_t colorAttachmentsCount = 1
-    );
+        uint32_t colorAttachmentsCount = 1);
 
     static VkPipelineLayoutCreateInfo pipelineLayoutInfo();
 };

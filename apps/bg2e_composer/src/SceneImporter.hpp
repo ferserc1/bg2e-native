@@ -31,8 +31,8 @@ class ImportServer;
 class AppDelegate;
 
 class SceneImporter {
-public:
-    SceneImporter(StageScene * stage, AppDelegate * appDelegate);
+  public:
+    SceneImporter(StageScene* stage, AppDelegate* appDelegate);
 
     // Called once per frame from AppDelegate::update() on the main thread.
     void processQueue(ImportServer& server);
@@ -40,14 +40,14 @@ public:
     // Drops all tracked entries when the scene changes or the app shuts down.
     void clear();
 
-private:
+  private:
     struct ImportEntry {
         std::weak_ptr<bg2e::scene::Node> node;
         std::string identifier;
     };
 
-    StageScene * _stage;
-    AppDelegate * _appDelegate;
+    StageScene* _stage;
+    AppDelegate* _appDelegate;
     std::unordered_map<std::string, ImportEntry> _table;
 
     static std::string tableKey(const std::filesystem::path& path);

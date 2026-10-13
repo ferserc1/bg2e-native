@@ -34,14 +34,14 @@ static float3 importanceSampleGGX(float2 Xi, float3 N, float roughness)
 {
     float a = roughness * roughness;
 
-    float phi      = 2.0 * PI * Xi.x;
+    float phi = 2.0 * PI * Xi.x;
     float cosTheta = sqrt((1.0 - Xi.y) / (1.0 + (a * a - 1.0) * Xi.y));
     float sinTheta = sqrt(1.0 - cosTheta * cosTheta);
 
     float3 H = float3(cos(phi) * sinTheta, sin(phi) * sinTheta, cosTheta);
 
-    float3 up        = abs(N.z) < 0.999 ? float3(0.0, 0.0, 1.0) : float3(1.0, 0.0, 0.0);
-    float3 tangent   = normalize(cross(up, N));
+    float3 up = abs(N.z) < 0.999 ? float3(0.0, 0.0, 1.0) : float3(1.0, 0.0, 0.0);
+    float3 tangent = normalize(cross(up, N));
     float3 bitangent = cross(N, tangent);
 
     return normalize(tangent * H.x + bitangent * H.y + N * H.z);
@@ -49,21 +49,21 @@ static float3 importanceSampleGGX(float2 Xi, float3 N, float roughness)
 
 fragment float4 fragMain(VertexOut in [[stage_in]],
                          constant RoughnessUBO& params [[buffer(1)]],
-                         texturecube<float>     uEnv     [[texture(0)]],
-                         sampler                uSampler [[sampler(0)]])
+                         texturecube<float> uEnv [[texture(0)]],
+                         sampler uSampler [[sampler(0)]])
 {
     float3 N = normalize(in.dir);
     float3 V = N;
 
     const uint SAMPLE_COUNT = 64u;
-    float  totalWeight      = 0.0;
+    float totalWeight = 0.0;
     float3 prefilteredColor = float3(0.0);
 
     for (uint i = 0u; i < SAMPLE_COUNT; ++i)
     {
         float2 Xi = hammersley(i, SAMPLE_COUNT);
-        float3 H  = importanceSampleGGX(Xi, N, params.roughness);
-        float3 L  = normalize(2.0 * dot(V, H) * H - V);
+        float3 H = importanceSampleGGX(Xi, N, params.roughness);
+        float3 L = normalize(2.0 * dot(V, H) * H - V);
 
         float NdotL = max(dot(N, L), 0.0);
         if (NdotL > 0.0)

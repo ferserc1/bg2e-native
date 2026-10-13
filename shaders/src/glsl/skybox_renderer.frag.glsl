@@ -21,18 +21,19 @@
 
 #include "lib/color_correction.glsl"
 
-layout (location = 0) in vec3 inNormal;
+layout(location = 0) in vec3 inNormal;
 
-layout (location = 0) out vec4 outColor;
+layout(location = 0) out vec4 outColor;
 
-layout (set = 0, binding = 1) uniform samplerCube skybox;
+layout(set = 0, binding = 1) uniform samplerCube skybox;
 
 layout(push_constant) uniform PushConstant
 {
     float brightness;
     float contrast;
     float exposure;
-} pushConstant;
+}
+pushConstant;
 
 void main()
 {

@@ -24,10 +24,10 @@ namespace bg2e {
 namespace ui {
 
 class BG2E_API UISettingsWindow : public Window {
-public:
+  public:
     void init(bool showBackgroundFrameRateSettings = false);
 
-private:
+  private:
     void drawUI();
     void drawBackgroundFrameRateSection();
 

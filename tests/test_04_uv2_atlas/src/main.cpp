@@ -33,7 +33,7 @@ using namespace bg2e;
 
 static int g_failures = 0;
 
-static void check(bool condition, const std::string & message)
+static void check(bool condition, const std::string& message)
 {
     if (condition)
     {
@@ -52,13 +52,12 @@ static geo::Mesh makeTwoSubmeshQuad()
 {
     geo::Mesh mesh;
     mesh.vertices = {
-        { { 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 1.0f }, { 0.0f, 0.0f }, { 0.0f, 0.0f }, { 1.0f, 0.0f, 0.0f } },
-        { { 1.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 1.0f }, { 1.0f, 0.0f }, { 1.0f, 0.0f }, { 1.0f, 0.0f, 0.0f } },
-        { { 1.0f, 1.0f, 0.0f }, { 0.0f, 0.0f, 1.0f }, { 1.0f, 1.0f }, { 1.0f, 1.0f }, { 1.0f, 0.0f, 0.0f } },
-        { { 0.0f, 1.0f, 0.0f }, { 0.0f, 0.0f, 1.0f }, { 0.0f, 1.0f }, { 0.0f, 1.0f }, { 1.0f, 0.0f, 0.0f } }
-    };
-    mesh.indices = { 0, 1, 2, 0, 2, 3 };
-    mesh.submeshes = { { 0, 3 }, { 3, 3 } };
+        {{0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 0.0f}, {0.0f, 0.0f}, {1.0f, 0.0f, 0.0f}},
+        {{1.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 0.0f}, {1.0f, 0.0f}, {1.0f, 0.0f, 0.0f}},
+        {{1.0f, 1.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}, {1.0f, 1.0f}, {1.0f, 0.0f, 0.0f}},
+        {{0.0f, 1.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}, {0.0f, 1.0f}, {1.0f, 0.0f, 0.0f}}};
+    mesh.indices = {0, 1, 2, 0, 2, 3};
+    mesh.submeshes = {{0, 3}, {3, 3}};
     return mesh;
 }
 
@@ -75,12 +74,12 @@ static geo::Mesh makeQuadGrid(uint32_t quadsPerSide)
             const float x = qx * step * 2.0f;
             const float y = qy * step * 2.0f;
             const auto base = static_cast<uint32_t>(mesh.vertices.size());
-            mesh.vertices.push_back({ { x, y, 0.0f }, { 0.0f, 0.0f, 1.0f }, { 0.0f, 0.0f }, { 0.0f, 0.0f }, { 1.0f, 0.0f, 0.0f } });
-            mesh.vertices.push_back({ { x + step, y, 0.0f }, { 0.0f, 0.0f, 1.0f }, { 1.0f, 0.0f }, { 1.0f, 0.0f }, { 1.0f, 0.0f, 0.0f } });
-            mesh.vertices.push_back({ { x + step, y + step, 0.0f }, { 0.0f, 0.0f, 1.0f }, { 1.0f, 1.0f }, { 1.0f, 1.0f }, { 1.0f, 0.0f, 0.0f } });
-            mesh.vertices.push_back({ { x, y + step, 0.0f }, { 0.0f, 0.0f, 1.0f }, { 0.0f, 1.0f }, { 0.0f, 1.0f }, { 1.0f, 0.0f, 0.0f } });
-            mesh.indices.insert(mesh.indices.end(), { base, base + 1, base + 2, base, base + 2, base + 3 });
-            mesh.submeshes.push_back({ static_cast<uint32_t>(mesh.indices.size()) - 6u, 6u });
+            mesh.vertices.push_back({{x, y, 0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 0.0f}, {0.0f, 0.0f}, {1.0f, 0.0f, 0.0f}});
+            mesh.vertices.push_back({{x + step, y, 0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 0.0f}, {1.0f, 0.0f}, {1.0f, 0.0f, 0.0f}});
+            mesh.vertices.push_back({{x + step, y + step, 0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}, {1.0f, 1.0f}, {1.0f, 0.0f, 0.0f}});
+            mesh.vertices.push_back({{x, y + step, 0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}, {0.0f, 1.0f}, {1.0f, 0.0f, 0.0f}});
+            mesh.indices.insert(mesh.indices.end(), {base, base + 1, base + 2, base, base + 2, base + 3});
+            mesh.submeshes.push_back({static_cast<uint32_t>(mesh.indices.size()) - 6u, 6u});
         }
     }
     return mesh;
@@ -88,9 +87,9 @@ static geo::Mesh makeQuadGrid(uint32_t quadsPerSide)
 
 // Bit-for-bit attribute match (position, normal, UV1, tangent) against any
 // source vertex. Fixtures contain no NaNs, so operator== is exact here.
-static bool matchesSourceVertex(const geo::VertexPNUUT & v, const geo::Mesh & source)
+static bool matchesSourceVertex(const geo::VertexPNUUT& v, const geo::Mesh& source)
 {
-    for (const auto & s : source.vertices)
+    for (const auto& s : source.vertices)
     {
         if (std::memcmp(&v.position, &s.position, sizeof(v.position)) == 0 &&
             std::memcmp(&v.normal, &s.normal, sizeof(v.normal)) == 0 &&
@@ -103,9 +102,9 @@ static bool matchesSourceVertex(const geo::VertexPNUUT & v, const geo::Mesh & so
     return false;
 }
 
-static bool uv2InUnitRange(const geo::Mesh & mesh)
+static bool uv2InUnitRange(const geo::Mesh& mesh)
 {
-    for (const auto & v : mesh.vertices)
+    for (const auto& v : mesh.vertices)
     {
         if (!std::isfinite(v.texCoord1.x) || !std::isfinite(v.texCoord1.y) ||
             v.texCoord1.x < 0.0f || v.texCoord1.x > 1.0f ||
@@ -123,33 +122,33 @@ static void testTwoSubmeshesSharedVertices()
     auto mesh = makeTwoSubmeshQuad();
     const auto source = mesh;
 
-    geo::GenerateUv2AtlasModifier mod(&mesh, { .resolution = 256, .paddingPixels = 4 });
+    geo::GenerateUv2AtlasModifier mod(&mesh, {.resolution = 256, .paddingPixels = 4});
     bool thrown = false;
     try
     {
         mod.apply();
     }
-    catch (const std::exception & e)
+    catch (const std::exception& e)
     {
         thrown = true;
         std::cout << "       unexpected exception: " << e.what() << std::endl;
     }
     check(!thrown, "apply() succeeds on a two-submesh quad");
 
-    const auto & result = mod.result();
+    const auto& result = mod.result();
     check(result.width == 256 && result.height == 256, "single atlas at requested resolution");
     check(result.chartCount >= 1, "at least one chart generated");
     check(result.utilization > 0.0f && result.utilization <= 1.0f, "utilization in (0, 1]");
 
     check(mesh.indices.size() == source.indices.size(), "triangle count preserved");
     check(mesh.submeshes.size() == 2 &&
-          mesh.submeshes[0].firstIndex == 0 && mesh.submeshes[0].indexCount == 3 &&
-          mesh.submeshes[1].firstIndex == 3 && mesh.submeshes[1].indexCount == 3,
+              mesh.submeshes[0].firstIndex == 0 && mesh.submeshes[0].indexCount == 3 &&
+              mesh.submeshes[1].firstIndex == 3 && mesh.submeshes[1].indexCount == 3,
           "submesh order and ranges preserved");
     check(uv2InUnitRange(mesh), "UV2 coordinates finite and in [0,1]");
 
     bool attributesCopied = true;
-    for (const auto & v : mesh.vertices)
+    for (const auto& v : mesh.vertices)
     {
         attributesCopied = attributesCopied && matchesSourceVertex(v, source);
     }
@@ -162,30 +161,30 @@ static void testCubeRegeneratesWholeObject()
     std::unique_ptr<geo::Mesh> cube(geo::createCube(1.0f, 1.0f, 1.0f));
     const auto source = *cube;
     check(!geo::UvAtlasValidator::validate(*cube, 1).valid,
-        "cube starts with overlapping UV2 face mappings");
+          "cube starts with overlapping UV2 face mappings");
 
     // The old UV2 channel must have no influence on the generated layout.
-    for (auto & vertex : cube->vertices)
+    for (auto& vertex : cube->vertices)
     {
-        vertex.texCoord1 = { 999.0f, 999.0f };
+        vertex.texCoord1 = {999.0f, 999.0f};
     }
 
-    geo::GenerateUv2AtlasModifier mod(cube.get(), { .resolution = 256, .paddingPixels = 4 });
+    geo::GenerateUv2AtlasModifier mod(cube.get(), {.resolution = 256, .paddingPixels = 4});
     mod.apply();
     check(cube->submeshes.size() == source.submeshes.size(),
-        "all six material submeshes preserved");
+          "all six material submeshes preserved");
     bool sameRanges = cube->submeshes.size() == source.submeshes.size();
     for (size_t i = 0; i < source.submeshes.size() && i < cube->submeshes.size(); ++i)
     {
         sameRanges = sameRanges &&
-            cube->submeshes[i].firstIndex == source.submeshes[i].firstIndex &&
-            cube->submeshes[i].indexCount == source.submeshes[i].indexCount;
+                     cube->submeshes[i].firstIndex == source.submeshes[i].firstIndex &&
+                     cube->submeshes[i].indexCount == source.submeshes[i].indexCount;
     }
     check(sameRanges, "cube submesh index ranges preserved");
     check(geo::UvAtlasValidator::validate(*cube, 1).valid,
-        "all six faces occupy one nonoverlapping UV2 atlas");
+          "all six faces occupy one nonoverlapping UV2 atlas");
     bool attributesCopied = true;
-    for (const auto & vertex : cube->vertices)
+    for (const auto& vertex : cube->vertices)
     {
         attributesCopied = attributesCopied && matchesSourceVertex(vertex, source);
     }
@@ -196,12 +195,12 @@ static void testExistingUv2Replaced()
 {
     std::cout << "--- existing UV2 replacement ---" << std::endl;
     auto mesh = makeTwoSubmeshQuad();
-    for (auto & v : mesh.vertices)
+    for (auto& v : mesh.vertices)
     {
-        v.texCoord1 = { 999.0f, 999.0f };
+        v.texCoord1 = {999.0f, 999.0f};
     }
 
-    geo::GenerateUv2AtlasModifier mod(&mesh, { .resolution = 128, .paddingPixels = 2 });
+    geo::GenerateUv2AtlasModifier mod(&mesh, {.resolution = 128, .paddingPixels = 2});
     mod.apply();
     check(uv2InUnitRange(mesh), "invalid previous UV2 values replaced by a valid atlas");
 }
@@ -210,7 +209,7 @@ static void testInvalidInput()
 {
     std::cout << "--- invalid input leaves the mesh unchanged ---" << std::endl;
 
-    auto expectThrowKeepsMesh = [](geo::Mesh mesh, const char * message)
+    auto expectThrowKeepsMesh = [](geo::Mesh mesh, const char* message)
     {
         const auto source = mesh;
         bool thrown = false;
@@ -219,7 +218,7 @@ static void testInvalidInput()
             geo::GenerateUv2AtlasModifier mod(&mesh);
             mod.apply();
         }
-        catch (const std::runtime_error &)
+        catch (const std::runtime_error&)
         {
             thrown = true;
         }
@@ -227,8 +226,8 @@ static void testInvalidInput()
         if (thrown)
         {
             check(mesh.vertices.size() == source.vertices.size() &&
-                  mesh.indices == source.indices &&
-                  mesh.submeshes.size() == source.submeshes.size(),
+                      mesh.indices == source.indices &&
+                      mesh.submeshes.size() == source.submeshes.size(),
                   "  mesh unchanged after failure");
         }
     };
@@ -261,7 +260,7 @@ static void testInvalidInput()
             geo::GenerateUv2AtlasModifier mod(nullptr);
             mod.apply();
         }
-        catch (const std::runtime_error &)
+        catch (const std::runtime_error&)
         {
             thrown = true;
         }
@@ -281,10 +280,10 @@ static void testPackingFailure()
     bool thrown = false;
     try
     {
-        geo::GenerateUv2AtlasModifier mod(&mesh, { .resolution = 16, .paddingPixels = 4 });
+        geo::GenerateUv2AtlasModifier mod(&mesh, {.resolution = 16, .paddingPixels = 4});
         mod.apply();
     }
-    catch (const std::runtime_error &)
+    catch (const std::runtime_error&)
     {
         thrown = true;
     }
@@ -295,10 +294,10 @@ static void testPackingFailure()
     bool thrown2 = false;
     try
     {
-        geo::GenerateUv2AtlasModifier mod(&mesh2, { .resolution = 0, .paddingPixels = 4 });
+        geo::GenerateUv2AtlasModifier mod(&mesh2, {.resolution = 0, .paddingPixels = 4});
         mod.apply();
     }
-    catch (const std::runtime_error &)
+    catch (const std::runtime_error&)
     {
         thrown2 = true;
     }
@@ -309,11 +308,12 @@ static void testPackingFailure()
 static geo::Mesh makeDoubleQuad(bool overlappingUv2)
 {
     geo::Mesh mesh;
-    const auto uvFor = [overlappingUv2](uint32_t corner) {
+    const auto uvFor = [overlappingUv2](uint32_t corner)
+    {
         // Non-overlapping layout: first quad on the left half, second on the right
-        const glm::vec2 unique[4] = { { 0.0f, 0.0f }, { 0.5f, 0.0f }, { 0.5f, 1.0f }, { 0.0f, 1.0f } };
-        const glm::vec2 shifted[4] = { { 0.5f, 0.0f }, { 1.0f, 0.0f }, { 1.0f, 1.0f }, { 0.5f, 1.0f } };
-        const glm::vec2 full[4] = { { 0.0f, 0.0f }, { 1.0f, 0.0f }, { 1.0f, 1.0f }, { 0.0f, 1.0f } };
+        const glm::vec2 unique[4] = {{0.0f, 0.0f}, {0.5f, 0.0f}, {0.5f, 1.0f}, {0.0f, 1.0f}};
+        const glm::vec2 shifted[4] = {{0.5f, 0.0f}, {1.0f, 0.0f}, {1.0f, 1.0f}, {0.5f, 1.0f}};
+        const glm::vec2 full[4] = {{0.0f, 0.0f}, {1.0f, 0.0f}, {1.0f, 1.0f}, {0.0f, 1.0f}};
         return overlappingUv2 ? full[corner % 4] : (corner < 4 ? unique[corner] : shifted[corner % 4]);
     };
     for (uint32_t q = 0; q < 2; ++q)
@@ -323,30 +323,28 @@ static geo::Mesh makeDoubleQuad(bool overlappingUv2)
         for (uint32_t c = 0; c < 4; ++c)
         {
             const auto uv = uvFor(q * 4 + c);
-            mesh.vertices.push_back({
-                { x + (c == 1 || c == 2 ? 1.0f : 0.0f), (c >= 2 ? 1.0f : 0.0f), 0.0f },
-                { 0.0f, 0.0f, 1.0f },
-                uv,
-                uv,
-                { 1.0f, 0.0f, 0.0f }
-            });
+            mesh.vertices.push_back({{x + (c == 1 || c == 2 ? 1.0f : 0.0f), (c >= 2 ? 1.0f : 0.0f), 0.0f},
+                                     {0.0f, 0.0f, 1.0f},
+                                     uv,
+                                     uv,
+                                     {1.0f, 0.0f, 0.0f}});
         }
-        mesh.indices.insert(mesh.indices.end(), { base, base + 1, base + 2, base, base + 2, base + 3 });
-        mesh.submeshes.push_back({ static_cast<uint32_t>(mesh.indices.size()) - 6u, 6u });
+        mesh.indices.insert(mesh.indices.end(), {base, base + 1, base + 2, base, base + 2, base + 3});
+        mesh.submeshes.push_back({static_cast<uint32_t>(mesh.indices.size()) - 6u, 6u});
     }
     return mesh;
 }
 
-static void checkValidation(const geo::Mesh & mesh, uint32_t uvSet, bool expectValid,
-    geo::UvAtlasError expectedError, const std::string & message)
+static void checkValidation(const geo::Mesh& mesh, uint32_t uvSet, bool expectValid,
+                            geo::UvAtlasError expectedError, const std::string& message)
 {
     const auto result = geo::UvAtlasValidator::validate(mesh, uvSet);
     check(result.valid == expectValid, message);
     if (!expectValid)
     {
         check(result.error == expectedError,
-            "  expected error category " + std::to_string(static_cast<int>(expectedError)) +
-            ", got " + std::to_string(static_cast<int>(result.error)) + " (" + result.message + ")");
+              "  expected error category " + std::to_string(static_cast<int>(expectedError)) +
+                  ", got " + std::to_string(static_cast<int>(result.error)) + " (" + result.message + ")");
     }
     else
     {
@@ -364,86 +362,86 @@ static void testValidator()
     // A valid UV1 map is also a valid UV2 atlas when copied (no provenance inference)
     checkValidation(makeTwoSubmeshQuad(), 0, true, geo::UvAtlasError::None, "valid UV1 map accepted");
     checkValidation(makeTwoSubmeshQuad(), 1, true, geo::UvAtlasError::None,
-        "copied UV1 that is already a valid unique atlas accepted as UV2");
+                    "copied UV1 that is already a valid unique atlas accepted as UV2");
 
     checkValidation(makeDoubleQuad(false), 1, true, geo::UvAtlasError::None,
-        "non-overlapping two-quad UV2 atlas accepted");
+                    "non-overlapping two-quad UV2 atlas accepted");
 
     checkValidation(makeDoubleQuad(true), 1, false, geo::UvAtlasError::OverlappingTriangles,
-        "overlapping copied-UV1 fallback rejected as UV2");
+                    "overlapping copied-UV1 fallback rejected as UV2");
     checkValidation(makeDoubleQuad(true), 0, false, geo::UvAtlasError::OverlappingTriangles,
-        "overlapping UV1 map rejected as UV1");
+                    "overlapping UV1 map rejected as UV1");
 
     {
         auto mesh = makeTwoSubmeshQuad();
-        for (auto & vertex : mesh.vertices)
+        for (auto& vertex : mesh.vertices)
         {
-            vertex.texCoord1 = { 0.25f, 0.25f };
+            vertex.texCoord1 = {0.25f, 0.25f};
         }
         checkValidation(mesh, 1, false, geo::UvAtlasError::DegenerateTriangle,
-            "UV map without positive-area triangles rejected");
+                        "UV map without positive-area triangles rejected");
     }
     {
         auto mesh = makeTwoSubmeshQuad();
-        mesh.vertices[0].texCoord1 = { 0.25f, 0.25f };
-        mesh.vertices[1].texCoord1 = { 0.25f, 0.25f };
-        mesh.vertices[2].texCoord1 = { 0.25f, 0.25f };
+        mesh.vertices[0].texCoord1 = {0.25f, 0.25f};
+        mesh.vertices[1].texCoord1 = {0.25f, 0.25f};
+        mesh.vertices[2].texCoord1 = {0.25f, 0.25f};
         checkValidation(mesh, 1, true, geo::UvAtlasError::None,
-            "zero-area mapped triangle ignored among positive-area triangles");
+                        "zero-area mapped triangle ignored among positive-area triangles");
     }
     {
         auto mesh = makeTwoSubmeshQuad();
-        mesh.vertices[0].texCoord1 = { 1.5f, 0.0f };
+        mesh.vertices[0].texCoord1 = {1.5f, 0.0f};
         checkValidation(mesh, 1, false, geo::UvAtlasError::CoordinateOutOfRange,
-            "coordinate outside [0,1] rejected");
+                        "coordinate outside [0,1] rejected");
     }
     {
         auto mesh = makeTwoSubmeshQuad();
-        mesh.vertices[0].texCoord1 = { std::nanf(""), 0.0f };
+        mesh.vertices[0].texCoord1 = {std::nanf(""), 0.0f};
         checkValidation(mesh, 1, false, geo::UvAtlasError::NonFiniteCoordinate,
-            "non-finite coordinate rejected");
+                        "non-finite coordinate rejected");
     }
     {
         auto mesh = makeTwoSubmeshQuad();
         mesh.submeshes.clear();
         checkValidation(mesh, 1, false, geo::UvAtlasError::MissingSubmeshes,
-            "missing submeshes rejected");
+                        "missing submeshes rejected");
     }
     {
         auto mesh = makeTwoSubmeshQuad();
         mesh.submeshes[1].firstIndex = 0;
         checkValidation(mesh, 1, false, geo::UvAtlasError::OverlappingSubmeshRanges,
-            "overlapping submesh ranges rejected");
+                        "overlapping submesh ranges rejected");
     }
     {
         auto mesh = makeTwoSubmeshQuad();
         mesh.submeshes[0].indexCount = 0;
         checkValidation(mesh, 1, false, geo::UvAtlasError::InvalidSubmeshRange,
-            "empty submesh range rejected");
+                        "empty submesh range rejected");
     }
     {
         auto mesh = makeTwoSubmeshQuad();
         mesh.indices[0] = 100;
         checkValidation(mesh, 1, false, geo::UvAtlasError::IndexOutOfRange,
-            "out-of-range vertex index rejected");
+                        "out-of-range vertex index rejected");
     }
     {
         const auto result = geo::UvAtlasValidator::validate(makeTwoSubmeshQuad(), 2);
         check(!result.valid && result.error == geo::UvAtlasError::UnsupportedUvSet,
-            "unsupported UV set rejected");
+              "unsupported UV set rejected");
     }
 
     // The xatlas modifier output must pass the usable-atlas test
     {
         auto mesh = makeDoubleQuad(true);
-        geo::GenerateUv2AtlasModifier mod(&mesh, { .resolution = 256, .paddingPixels = 4 });
+        geo::GenerateUv2AtlasModifier mod(&mesh, {.resolution = 256, .paddingPixels = 4});
         mod.apply();
         checkValidation(mesh, 1, true, geo::UvAtlasError::None,
-            "xatlas-generated UV2 atlas accepted");
+                        "xatlas-generated UV2 atlas accepted");
     }
 }
 
-int main(int, char **)
+int main(int, char**)
 {
     testTwoSubmeshesSharedVertices();
     testCubeRegeneratesWholeObject();

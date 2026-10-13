@@ -54,7 +54,7 @@ const std::vector<std::shared_ptr<Node>>& FindNodeByProperties::find(Node* node)
     return _results;
 }
 
-void FindNodeByProperties::visit(Node * node)
+void FindNodeByProperties::visit(Node* node)
 {
     if (_filterMask == None)
     {

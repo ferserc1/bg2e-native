@@ -44,11 +44,14 @@ namespace detail {
 // Internal extraction interface. Owns the selected engine and rendering
 // coordinator on behalf of MainLoop. Not part of the application API.
 class GraphicsExecution {
-public:
+  public:
     virtual ~GraphicsExecution() = default;
 
     virtual gpu::WindowType windowType() const = 0;
-    virtual bool userInterfaceReady() const { return true; }
+    virtual bool userInterfaceReady() const
+    {
+        return true;
+    }
 
     // Inspects the configured delegates without allocating SDL/GPU resources.
     virtual void validate(const Application& application) const = 0;
@@ -59,13 +62,14 @@ public:
 
     // Called after the runtime boundary and before SDL/window allocation.
     // Production execution needs no preparation.
-    virtual void prepare(const std::string&) {}
+    virtual void prepare(const std::string&)
+    {
+    }
 
     virtual void initialize(
         SDL_Window* window,
         Application& application,
-        ui::UserInterface& userInterface
-    ) = 0;
+        ui::UserInterface& userInterface) = 0;
 
     virtual void initializeScene() = 0;
 
@@ -79,7 +83,9 @@ public:
     virtual void waitIdle() = 0;
 
     // Production scenes are continuously updated; draw overrides invalidation.
-    virtual void requestSceneFrame() {}
+    virtual void requestSceneFrame()
+    {
+    }
     virtual void pauseScene(const glm::vec4& clearColor) = 0;
     virtual void resumeScene() = 0;
 

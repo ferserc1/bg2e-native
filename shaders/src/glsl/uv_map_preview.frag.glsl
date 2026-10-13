@@ -3,10 +3,12 @@
 layout(location = 0) in vec3 barycentric;
 layout(location = 1) flat in uint submeshIndex;
 
-layout(push_constant) uniform PreviewParams {
+layout(push_constant) uniform PreviewParams
+{
     float lineWidth;
     uint mode; // 0 = UV triangles, 1 = atlas boundary lines
-} params;
+}
+params;
 
 layout(location = 0) out vec4 outColor;
 

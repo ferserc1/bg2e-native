@@ -37,11 +37,12 @@ int runBatch(bg2e::render::Engine& engine, const lightmap_generator::Options& op
 {
     bg2e::render::StandaloneBakeSceneAssembler assembler(&engine);
     auto assembly = options.command == lightmap_generator::Command::Model
-        ? assembler.assembleModel(options.contextPath, options.modelPath, std::nullopt, false)
-        : assembler.assemblePrefab(options.contextPath, options.prefabPath, std::nullopt, false);
+                        ? assembler.assembleModel(options.contextPath, options.modelPath, std::nullopt, false)
+                        : assembler.assemblePrefab(options.contextPath, options.prefabPath, std::nullopt, false);
 
     std::signal(SIGINT, handleInterrupt);
-    auto progress = [](const bg2e::render::StandaloneBakeBatch::Progress& value) {
+    auto progress = [](const bg2e::render::StandaloneBakeBatch::Progress& value)
+    {
         std::cout << "\rBaking target " << (value.targetIndex + 1) << "/" << value.targetCount
                   << ": " << value.completedFrames << "/" << value.accumulationFrames << " samples"
                   << std::flush;
@@ -51,7 +52,8 @@ int runBatch(bg2e::render::Engine& engine, const lightmap_generator::Options& op
         }
         return cancelRequested == 0;
     };
-    auto warning = [](const bg2e::render::StandaloneBakeBatch::SkippedTarget& target) {
+    auto warning = [](const bg2e::render::StandaloneBakeBatch::SkippedTarget& target)
+    {
         std::cerr << "Warning: skipped target '" << target.identity << "': " << target.reason << '\n';
     };
 
@@ -131,7 +133,10 @@ int main(int argc, char** argv)
     catch (const std::exception& error)
     {
         std::cerr << "lightmap_generator: engine cleanup failed: " << error.what() << '\n';
-        if (result == 0) result = 1;
+        if (result == 0)
+        {
+            result = 1;
+        }
     }
     return result;
 }

@@ -9,13 +9,16 @@
 #include "lib/ray_tracing.glsl"
 #include "lib/rt_material_data.glsl"
 
-layout(location = 0) rayPayloadInEXT ReflectionPayload {
+layout(location = 0) rayPayloadInEXT ReflectionPayload
+{
     vec3 hitColor;
     float hitDistance;
     uint didHit;
-} payload;
+}
+payload;
 
-layout(push_constant) uniform PushConstant {
+layout(push_constant) uniform PushConstant
+{
     mat4 inverseViewProjection;
     vec3 cameraPosition;
     float maxRoughness;
@@ -28,26 +31,28 @@ layout(push_constant) uniform PushConstant {
     uint reflectionLightCount;
     uint shadowSamples;
     uint useBlueNoise;
-} pc;
+}
+pc;
 
 layout(set = 0, binding = 0) uniform accelerationStructureEXT tlas;
 layout(set = 0, binding = 5) uniform samplerCube irradianceMap;
 
-layout(std430, set = 2, binding = 0) readonly buffer ReflectionLightBuffer {
+layout(std430, set = 2, binding = 0) readonly buffer ReflectionLightBuffer
+{
     LightData reflectionLights[];
 };
 
 hitAttributeEXT vec2 attribs;
 
-void main() {
+void main()
+{
     uint matIdx = gl_InstanceCustomIndexEXT;
     uint nmatIdx = nonuniformEXT(matIdx);
 
     vec3 bary = vec3(
         1.0 - attribs.x - attribs.y,
         attribs.x,
-        attribs.y
-    );
+        attribs.y);
 
     RTMaterialData mat = materials[matIdx];
 
@@ -66,17 +71,14 @@ void main() {
     RTVertex vert1 = vb[nmatIdx].vertices[idx1];
     RTVertex vert2 = vb[nmatIdx].vertices[idx2];
 
-    vec2 uv = vert0.texCoord0 * bary.x
-            + vert1.texCoord0 * bary.y
-            + vert2.texCoord0 * bary.z;
+    vec2 uv = vert0.texCoord0 * bary.x + vert1.texCoord0 * bary.y + vert2.texCoord0 * bary.z;
 
     // Interpolate object-space normal and transform to world space.
     // gl_ObjectToWorldEXT 3x3 is correct for rigid/uniform-scale transforms.
     vec3 objectNormal = normalize(
         vert0.normal * bary.x +
         vert1.normal * bary.y +
-        vert2.normal * bary.z
-    );
+        vert2.normal * bary.z);
     vec3 worldNormal = normalize(mat3(gl_ObjectToWorldEXT) * objectNormal);
 
     // World-space position of the reflection ray hit point.

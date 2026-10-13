@@ -39,7 +39,8 @@ std::shared_ptr<bg2e::scene::Mesh> makeTwoSubmeshFixture()
     using namespace bg2e;
     auto mesh = std::make_shared<scene::Mesh>();
 
-    const auto vertex = [](glm::vec3 position, glm::vec2 uv1, glm::vec2 uv2) {
+    const auto vertex = [](glm::vec3 position, glm::vec2 uv1, glm::vec2 uv2)
+    {
         geo::VertexPNUUT result{};
         result.position = position;
         result.normal = glm::vec3(0.0f, 0.0f, 1.0f);
@@ -53,12 +54,11 @@ std::shared_ptr<bg2e::scene::Mesh> makeTwoSubmeshFixture()
         vertex({-0.8f, -0.8f, 0.0f}, {0.0f, 0.0f}, {0.1f, 0.1f}),
         vertex({-0.2f, -0.8f, 0.0f}, {1.0f, 0.0f}, {0.4f, 0.1f}),
         vertex({-0.8f, -0.2f, 0.0f}, {0.0f, 1.0f}, {0.1f, 0.4f}),
-        vertex({ 0.2f,  0.2f, 0.0f}, {0.0f, 0.0f}, {0.6f, 0.6f}),
-        vertex({ 0.8f,  0.2f, 0.0f}, {1.0f, 0.0f}, {0.9f, 0.6f}),
-        vertex({ 0.8f,  0.8f, 0.0f}, {1.0f, 1.0f}, {0.9f, 0.9f})
-    };
-    mesh->indices = { 0, 1, 2, 3, 4, 5 };
-    mesh->submeshes = { { 0, 3 }, { 3, 3 } };
+        vertex({0.2f, 0.2f, 0.0f}, {0.0f, 0.0f}, {0.6f, 0.6f}),
+        vertex({0.8f, 0.2f, 0.0f}, {1.0f, 0.0f}, {0.9f, 0.6f}),
+        vertex({0.8f, 0.8f, 0.0f}, {1.0f, 1.0f}, {0.9f, 0.9f})};
+    mesh->indices = {0, 1, 2, 3, 4, 5};
+    mesh->submeshes = {{0, 3}, {3, 3}};
     return mesh;
 }
 
@@ -83,11 +83,11 @@ int main()
 
         {
             bg2e::render::GBufferManager cameraProfile(&engine);
-            cameraProfile.build({ 4, 4 });
+            cameraProfile.build({4, 4});
             require(cameraProfile.imageCount() == 6, "default camera G-buffer did not add the baked RGB attachment");
             require(cameraProfile.depthImage() != nullptr, "default camera G-buffer lost its depth image");
             require(cameraProfile.depthFormat() == VK_FORMAT_D32_SFLOAT,
-                "default camera G-buffer changed its D32 depth format");
+                    "default camera G-buffer changed its D32 depth format");
         }
 
         {
@@ -98,16 +98,17 @@ int main()
             drawable.load(&engine);
 
             constexpr uint32_t resolution = 64;
-            bg2e::render::UvSurfacePass surfacePass(&engine, { resolution, resolution });
+            bg2e::render::UvSurfacePass surfacePass(&engine, {resolution, resolution});
             const auto& gbuffer = surfacePass.manager(0);
             require(gbuffer.imageCount() == 4, "UV surface pass did not create four color attachments");
             require(!gbuffer.depthImage(), "UV surface G-buffer unexpectedly has a depth image");
             require(gbuffer.depthFormat() == VK_FORMAT_UNDEFINED,
-                "UV surface G-buffer did not report VK_FORMAT_UNDEFINED depth");
+                    "UV surface G-buffer did not report VK_FORMAT_UNDEFINED depth");
 
-            engine.command().immediateSubmit([&](VkCommandBuffer cmd) {
-                surfacePass.record(cmd, drawable, glm::mat4(1.0f), 0);
-            });
+            engine.command().immediateSubmit([&](VkCommandBuffer cmd)
+                                             {
+                                                 surfacePass.record(cmd, drawable, glm::mat4(1.0f), 0);
+                                             });
             const auto diagnostic = surfacePass.readDiagnostic(0);
 
             std::array<uint32_t, 2> coverageBySubmesh{};
@@ -131,7 +132,8 @@ int main()
             require(coverageBySubmesh[1] > 0, "second UV2 submesh produced no covered texels");
             require(emptyTexels > 0, "fixture unexpectedly covered every atlas texel");
 
-            const auto texelAtUv = [resolution](float u, float v) {
+            const auto texelAtUv = [resolution](float u, float v)
+            {
                 const uint32_t x = static_cast<uint32_t>(u * resolution);
                 const uint32_t y = static_cast<uint32_t>((1.0f - v) * resolution);
                 return static_cast<size_t>(y) * resolution + x;
@@ -140,11 +142,11 @@ int main()
             const size_t secondRegion = texelAtUv(0.75f, 0.7f);
             const size_t emptyRegion = texelAtUv(0.5f, 0.5f);
             require(diagnostic.validTexels[firstRegion] == 1 && diagnostic.submeshIndices[firstRegion] == 0,
-                "known first-submesh UV sample has incorrect coverage or identity");
+                    "known first-submesh UV sample has incorrect coverage or identity");
             require(diagnostic.validTexels[secondRegion] == 1 && diagnostic.submeshIndices[secondRegion] == 1,
-                "known second-submesh UV sample has incorrect coverage or identity");
+                    "known second-submesh UV sample has incorrect coverage or identity");
             require(diagnostic.validTexels[emptyRegion] == 0,
-                "uncovered atlas sample was marked valid; bake consumers could leak light there");
+                    "uncovered atlas sample was marked valid; bake consumers could leak light there");
 
             std::cout << "UV surface diagnostic passed: submesh 0=" << coverageBySubmesh[0]
                       << " texels, submesh 1=" << coverageBySubmesh[1]
@@ -156,23 +158,26 @@ int main()
             constexpr uint32_t previewResolution = 64;
             bg2e::render::UvMapPreviewRenderer preview(&engine, previewResolution);
             require(preview.texture() != nullptr && preview.texture()->image() != nullptr,
-                "UV map preview did not expose a renderable texture");
+                    "UV map preview did not expose a renderable texture");
 
-            const auto texelAtUv = [previewResolution](float u, float v) {
+            const auto texelAtUv = [previewResolution](float u, float v)
+            {
                 const uint32_t x = static_cast<uint32_t>(u * previewResolution);
                 const uint32_t y = static_cast<uint32_t>((1.0f - v) * previewResolution);
                 return (static_cast<size_t>(y) * previewResolution + x) * 4;
             };
-            const auto readPreview = [&]() {
+            const auto readPreview = [&]()
+            {
                 std::vector<uint8_t> pixels;
                 bg2e::render::vulkan::Image::readPixelsRGBA8(&engine, preview.texture()->image(),
-                    0, 0, previewResolution, previewResolution, pixels,
-                    VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+                                                             0, 0, previewResolution, previewResolution, pixels,
+                                                             VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
                 require(pixels.size() == static_cast<size_t>(previewResolution) * previewResolution * 4,
-                    "UV map preview readback returned an unexpected size");
+                        "UV map preview readback returned an unexpected size");
                 return pixels;
             };
-            const auto isBlack = [](const std::vector<uint8_t>& pixels, size_t offset) {
+            const auto isBlack = [](const std::vector<uint8_t>& pixels, size_t offset)
+            {
                 return pixels[offset] == 0 && pixels[offset + 1] == 0 && pixels[offset + 2] == 0;
             };
 
@@ -180,23 +185,23 @@ int main()
             preview.render(*mesh, 0);
             auto uv1Pixels = readPreview();
             require(!isBlack(uv1Pixels, texelAtUv(0.2f, 0.2f)),
-                "UV1 preview did not fill the covered triangle region");
+                    "UV1 preview did not fill the covered triangle region");
 
             // UV2: two small triangles; (0.2, 0.2) is covered and (0.5, 0.5) is empty
             preview.render(*mesh, 1);
             auto uv2Pixels = readPreview();
             require(!isBlack(uv2Pixels, texelAtUv(0.2f, 0.2f)),
-                "UV2 preview did not fill the first submesh region");
+                    "UV2 preview did not fill the first submesh region");
             require(isBlack(uv2Pixels, texelAtUv(0.5f, 0.5f)),
-                "UV2 preview filled an uncovered texel; coverage preview is unreliable");
+                    "UV2 preview filled an uncovered texel; coverage preview is unreliable");
 
             bool boundaryFound = false;
             for (uint32_t i = 0; i < previewResolution && !boundaryFound; ++i)
             {
-                for (uint32_t edge : { 0u, previewResolution - 1u })
+                for (uint32_t edge : {0u, previewResolution - 1u})
                 {
-                    for (auto offset : { (static_cast<size_t>(edge) * previewResolution + i) * 4,
-                                         (static_cast<size_t>(i) * previewResolution + edge) * 4 })
+                    for (auto offset : {(static_cast<size_t>(edge) * previewResolution + i) * 4,
+                                        (static_cast<size_t>(i) * previewResolution + edge) * 4})
                     {
                         if (uv2Pixels[offset] > 200 && uv2Pixels[offset + 1] > 200 && uv2Pixels[offset + 2] > 200)
                         {
@@ -212,9 +217,9 @@ int main()
             preview.setResolution(32);
             preview.render(*mesh, 1);
             require(preview.texture() != nullptr && preview.texture()->image() != nullptr,
-                "UV map preview lost its texture after a resolution change");
+                    "UV map preview lost its texture after a resolution change");
             require(preview.texture()->image()->extent2D().width == 32,
-                "UV map preview target was not recreated at the new resolution");
+                    "UV map preview target was not recreated at the new resolution");
 
             std::cout << "UV map preview smoke test passed" << std::endl;
         }

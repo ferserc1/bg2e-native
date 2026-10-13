@@ -25,27 +25,59 @@
 #include <vector>
 
 namespace bg2e {
-namespace base { class Image; }
+namespace base {
+class Image;
+}
 namespace gpu {
 
-namespace vk    { class CommandBuffer; }
-namespace metal { class CommandBuffer; }
+namespace vk {
+class CommandBuffer;
+}
+namespace metal {
+class CommandBuffer;
+}
 
 class BG2E_API Image : public DeviceResource {
-public:
-    explicit Image(Device* device) : DeviceResource(device) {}
+  public:
+    explicit Image(Device* device) : DeviceResource(device)
+    {
+    }
     virtual ~Image() = default;
 
-    PixelFormat   pixelFormat() const { return _pixelFormat; }
-    const Size2D& size()        const { return _size; }
-    uint32_t      width()       const { return _size.width;  }
-    uint32_t      height()      const { return _size.height; }
+    PixelFormat pixelFormat() const
+    {
+        return _pixelFormat;
+    }
+    const Size2D& size() const
+    {
+        return _size;
+    }
+    uint32_t width() const
+    {
+        return _size.width;
+    }
+    uint32_t height() const
+    {
+        return _size.height;
+    }
 
-    ImageType     imageType()   const { return _imageType; }
-    uint32_t      mipLevels()   const { return _mipLevels; }
-    bool          isCubemap()   const { return _imageType == ImageType::Cubemap; }
+    ImageType imageType() const
+    {
+        return _imageType;
+    }
+    uint32_t mipLevels() const
+    {
+        return _mipLevels;
+    }
+    bool isCubemap() const
+    {
+        return _imageType == ImageType::Cubemap;
+    }
 
-    ImageLayout   currentLayout() const { return _currentLayout; }
+    ImageLayout currentLayout() const
+    {
+        return _currentLayout;
+    }
 
     virtual void readPixelsRGBA8(
         std::vector<uint8_t>& outData,
@@ -64,15 +96,15 @@ public:
         throw std::runtime_error("Image::uploadImage not implemented");
     }
 
-protected:
+  protected:
     // _currentLayout must always mirror the real backend layout of the image.
     // Assign it directly only right after the API call that actually changes the
     // layout (e.g. a pipeline barrier), so the tracked value stays in sync.
-    PixelFormat   _pixelFormat   = PixelFormat::Undefined;
-    Size2D        _size;
-    ImageLayout   _currentLayout = ImageLayout::Undefined;
-    ImageType     _imageType     = ImageType::Image2D;
-    uint32_t      _mipLevels     = 1;
+    PixelFormat _pixelFormat = PixelFormat::Undefined;
+    Size2D _size;
+    ImageLayout _currentLayout = ImageLayout::Undefined;
+    ImageType _imageType = ImageType::Image2D;
+    uint32_t _mipLevels = 1;
 
     friend class vk::CommandBuffer;
     friend class metal::CommandBuffer;

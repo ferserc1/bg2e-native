@@ -47,22 +47,20 @@ struct DeferredGBufferData {
 vec3 reconstructWorldPosition(
     vec2 uv,
     float depth,
-    mat4 inverseViewProjection
-) {
+    mat4 inverseViewProjection)
+{
     // We invert the V coordinate because in Vulkan, screen coordinates
     // are vertically inverted. We need to perform vertical sampling
     // because, to reconstruct the position using the inverse viewProjection matrix,
     // those coordinates will be screen coordinates
     vec2 ndc = vec2(
         uv.x * 2.0 - 1.0,
-        (1.0 - uv.y) * 2.0 - 1.0
-    );
+        (1.0 - uv.y) * 2.0 - 1.0);
     vec4 clipPosition = vec4(
         ndc.x,
         ndc.y,
         depth,
-        1.0
-    );
+        1.0);
 
     vec4 worldPosition = inverseViewProjection * clipPosition;
     worldPosition /= worldPosition.w;
@@ -74,8 +72,8 @@ DeferredGBufferData setupDeferredGBuffer(
     sampler2D g_Albedo, sampler2D g_Normal, sampler2D g_Material, sampler2D g_FresnelFlags, sampler2D g_SheenColor,
     sampler2D g_InputImage, sampler2D g_Depth,
     vec2 vTexcoord, mat4 inverseViewProjection,
-    mat4 viewMatrix
-) {
+    mat4 viewMatrix)
+{
     DeferredGBufferData gbuf;
 
     gbuf.albedo = texture(g_Albedo, vTexcoord);
@@ -91,7 +89,8 @@ DeferredGBufferData setupDeferredGBuffer(
     gbuf.transparent = (materialFlags & MATERIAL_FLAG_TRANSPARENT) != 0u;
     gbuf.hasBakedLightmap = (materialFlags & MATERIAL_FLAG_HAS_BAKED_LIGHTMAP) != 0u;
 
-    if (gbuf.albedo.a == 0) {
+    if (gbuf.albedo.a == 0)
+    {
         gbuf.isEmpty = true;
         return gbuf;
     }
@@ -102,8 +101,7 @@ DeferredGBufferData setupDeferredGBuffer(
     gbuf.worldPos = reconstructWorldPosition(
         vTexcoord,
         depth,
-        inverseViewProjection
-    );
+        inverseViewProjection);
 
     gbuf.metallic = materialData.r;
     gbuf.roughness = max(materialData.g, 0.05);
@@ -126,8 +124,8 @@ vec4 compositeFinalColor(
     vec3 ambient, vec3 directLighting,
     vec4 inputColor, float albedoAlpha,
     float inExposure, float gamma,
-    float brightness, float contrast
-) {
+    float brightness, float contrast)
+{
     vec3 color = ambient + directLighting;
 
     vec3 finalColor = exposure(color, inExposure);
@@ -148,9 +146,10 @@ vec4 applyRefraction(
     vec2 texCoord,
     float refractionFactor,
     vec4 albedo,
-    sampler2D inputImage
-) {
-    if (albedo.a >= 1.0) {
+    sampler2D inputImage)
+{
+    if (albedo.a >= 1.0)
+    {
         return texture(inputImage, texCoord);
     }
 
@@ -175,18 +174,18 @@ float rand(inout uint seed)
     return float(seed) / float(0xffffffffu);
 }
 
-vec2 rand2(uint seed) {
+vec2 rand2(uint seed)
+{
     return vec2(
-    float(hash(seed)) / float(0xffffffffu),
-    float(hash(seed + 1u)) / float(0xffffffffu)
-    );
+        float(hash(seed)) / float(0xffffffffu),
+        float(hash(seed + 1u)) / float(0xffffffffu));
 }
 
 mat3 buildTBN(vec3 normal)
 {
     vec3 up = abs(normal.x) < 0.999
-        ? vec3(0.0, 0.0, 1.0)
-        : vec3(1.0, 0.0, 0.0);
+                  ? vec3(0.0, 0.0, 1.0)
+                  : vec3(1.0, 0.0, 0.0);
 
     vec3 tangent = normalize(cross(up, normal));
     vec3 bitangent = cross(normal, tangent);
@@ -205,8 +204,7 @@ vec3 randomHemisphereDirection(vec3 normal, inout uint seed)
     vec3 localDir = vec3(
         r * cos(phi),
         r * sin(phi),
-        sqrt(max(0.0, 1.0 - u1))
-    );
+        sqrt(max(0.0, 1.0 - u1)));
 
     return normalize(buildTBN(normal) * localDir);
 }

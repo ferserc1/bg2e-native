@@ -31,7 +31,7 @@ namespace bg2e {
 namespace app {
 
 class BG2E_API PreferencesStore {
-public:
+  public:
     static PreferencesStore& instance();
 
     // Global preferences → empty scope
@@ -46,7 +46,7 @@ public:
     // an application crash
     void saveAll();
 
-private:
+  private:
     PreferencesStore() = default;
 
     PreferencesStore(const PreferencesStore&) = delete;

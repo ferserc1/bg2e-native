@@ -21,7 +21,7 @@
 #include <bg2e/scene/ComponentFactoryRegistry.hpp>
 #include <bg2e/scene/TransformVisitor.hpp>
 
-#include "bg2e/scene/Scene.hpp"
+#include <bg2e/scene/Scene.hpp>
 
 namespace bg2e::scene {
 
@@ -34,44 +34,47 @@ std::shared_ptr<Component> LightComponent::clone() const
 
 const glm::vec3 LightComponent::position() const
 {
-    glm::vec3 pos { 0.0f, 0.0f, 0.0f };
-    
+    glm::vec3 pos{0.0f, 0.0f, 0.0f};
+
     if (ownerNode())
     {
         pos = ownerNode()->worldMatrix() * glm::vec4(pos, 1.0);
     }
-    
+
     return pos;
 }
 
 const glm::vec3 LightComponent::direction() const
 {
-    glm::vec3 dir { 0.0f, 0.0f, 1.0f };
-    
+    glm::vec3 dir{0.0f, 0.0f, 1.0f};
+
     if (ownerNode())
     {
         auto rotation = glm::mat3(ownerNode()->worldMatrix());
         dir = rotation * dir;
     }
-    
+
     return dir;
 }
 
 void LightComponent::deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path& /* basePath */, [[maybe_unused]] render::Engine& engine)
 {
     json::ObjectReader reader(jsonData);
-    if (auto light = reader.getObject("lightData")) _light.deserialize(light->node());
+    if (auto light = reader.getObject("lightData"))
+    {
+        _light.deserialize(light->node());
+    }
 }
 
 std::shared_ptr<json::JsonNode> LightComponent::serialize(const std::filesystem::path& basePath)
 {
     using namespace bg2e::json;
     auto compData = Component::serialize(basePath);
-    JsonObject & obj = compData->objectValue();
-    
+    JsonObject& obj = compData->objectValue();
+
     auto lightData = _light.serialize();
     obj["lightData"] = lightData;
-    
+
     return compData;
 }
 

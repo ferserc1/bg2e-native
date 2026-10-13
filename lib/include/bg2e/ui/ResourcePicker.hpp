@@ -19,13 +19,12 @@
 namespace bg2e::ui {
 
 class BG2E_API ResourcePicker {
-public:
+  public:
     static bool draw(
-        const std::string & label,
-        std::filesystem::path & value,
-        const reflection::PropertyMetadata & metadata,
-        bool readOnly = false
-    );
+        const std::string& label,
+        std::filesystem::path& value,
+        const reflection::PropertyMetadata& metadata,
+        bool readOnly = false);
 };
 
 }

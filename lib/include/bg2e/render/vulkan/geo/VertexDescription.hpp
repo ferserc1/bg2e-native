@@ -28,7 +28,6 @@ namespace render {
 namespace vulkan {
 namespace geo {
 
-
 BG2E_API VkVertexInputBindingDescription bindingDescriptionP();
 
 BG2E_API VkVertexInputBindingDescription bindingDescriptionPN();
@@ -64,8 +63,6 @@ BG2E_API std::vector<VkVertexInputAttributeDescription> attributeDescriptionsPNU
 BG2E_API std::vector<VkVertexInputAttributeDescription> attributeDescriptionsPNUT();
 
 BG2E_API std::vector<VkVertexInputAttributeDescription> attributeDescriptionsPNUUT();
-
-
 
 }
 }

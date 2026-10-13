@@ -5,10 +5,12 @@ layout(location = 1) in vec3 inNormal;
 layout(location = 2) in vec2 inUv1;
 layout(location = 3) in vec2 inUv2;
 
-layout(push_constant) uniform DrawData {
+layout(push_constant) uniform DrawData
+{
     mat4 objectToWorld;
     uint submeshIndex;
-} drawData;
+}
+drawData;
 
 layout(location = 0) out vec3 worldPosition;
 layout(location = 1) out vec3 worldNormal;

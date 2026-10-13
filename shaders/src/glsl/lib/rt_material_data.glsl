@@ -38,9 +38,9 @@ struct RTVertex {
 
 // Must match C++ RTMaterialData struct layout (56 bytes)
 struct RTMaterialData {
-    vec4 albedo;          // base::Color (rgba)
+    vec4 albedo; // base::Color (rgba)
     vec2 albedoScale;
-    uint indexOffset;     // firstIndex of the submesh in the shared index buffer
+    uint indexOffset; // firstIndex of the submesh in the shared index buffer
     float lightEmission;
     uint lightEmissionChannel;
     uint lightEmissionInvert;
@@ -49,17 +49,22 @@ struct RTMaterialData {
     float alphaCutoff;
 };
 
-layout(scalar, set = RT_MATERIAL_SET, binding = 0) readonly buffer MaterialDataBuffer {
+layout(scalar, set = RT_MATERIAL_SET, binding = 0) readonly buffer MaterialDataBuffer
+{
     RTMaterialData materials[];
 };
 
-layout(scalar, set = RT_MATERIAL_SET, binding = 1) readonly buffer VertexBuffer {
+layout(scalar, set = RT_MATERIAL_SET, binding = 1) readonly buffer VertexBuffer
+{
     RTVertex vertices[];
-} vb[MAX_RT_OBJECTS];
+}
+vb[MAX_RT_OBJECTS];
 
-layout(scalar, set = RT_MATERIAL_SET, binding = 2) readonly buffer IndexBuffer {
+layout(scalar, set = RT_MATERIAL_SET, binding = 2) readonly buffer IndexBuffer
+{
     uint indices[];
-} ib[MAX_RT_OBJECTS];
+}
+ib[MAX_RT_OBJECTS];
 
 layout(set = RT_MATERIAL_SET, binding = 3) uniform sampler2D albedoTex[MAX_RT_OBJECTS];
 layout(set = RT_MATERIAL_SET, binding = 4) uniform sampler2D lightEmissionTex[MAX_RT_OBJECTS];
@@ -92,7 +97,10 @@ vec2 rtHitAlbedoUV(uint matIdx, uint primitiveId, vec3 bary, out uint nmatIdx)
 bool rtAlphaTestHit(uint matIdx, uint primitiveId, vec3 bary)
 {
     RTMaterialData mat = materials[matIdx];
-    if (mat.alphaCutoff <= 0.0) return true;
+    if (mat.alphaCutoff <= 0.0)
+    {
+        return true;
+    }
     uint nmatIdx;
     vec2 uv = rtHitAlbedoUV(matIdx, primitiveId, bary, nmatIdx);
     return texture(albedoTex[nmatIdx], uv).a * mat.albedo.a >= mat.alphaCutoff;
@@ -125,24 +133,34 @@ float queryShadowCutout(accelerationStructureEXT tlas, vec3 worldPos, vec3 norma
 {
     vec3 toLight;
     float tMax;
-    if (light.type == LIGHT_TYPE_DIRECTIONAL) {
+    if (light.type == LIGHT_TYPE_DIRECTIONAL)
+    {
         toLight = -normalize(light.direction);
         tMax = 1000000.0;
-    } else {
+    }
+    else
+    {
         toLight = light.position - worldPos;
         tMax = length(toLight);
         toLight = normalize(toLight);
     }
     vec3 origin = worldPos + normal * 0.01;
     int samples = light.shadowSamples > maxSamples ? maxSamples : light.shadowSamples;
-    if (samples <= 1) return _shadowRayTestCutout(tlas, origin, toLight, tMax) ? 1.0 : 0.0;
+    if (samples <= 1)
+    {
+        return _shadowRayTestCutout(tlas, origin, toLight, tMax) ? 1.0 : 0.0;
+    }
     float angle = light.type == LIGHT_TYPE_DIRECTIONAL
-        ? light.sourceSize * 3.14159265 / 180.0 : atan(light.sourceSize, tMax);
+                      ? light.sourceSize * 3.14159265 / 180.0
+                      : atan(light.sourceSize, tMax);
     int occluded = 0;
     for (int i = 0; i < samples; ++i)
     {
         vec2 seed = worldPos.xz * 1000.0 + vec2(float(i) * 13.7, float(i) * 7.3);
-        if (!_shadowRayTestCutout(tlas, origin, _shadowRandomDirection(toLight, seed, angle), tMax)) ++occluded;
+        if (!_shadowRayTestCutout(tlas, origin, _shadowRandomDirection(toLight, seed, angle), tMax))
+        {
+            ++occluded;
+        }
     }
     return 1.0 - float(occluded) / float(samples);
 }
@@ -151,10 +169,13 @@ float hardShadowCutout(accelerationStructureEXT tlas, vec3 worldPos, vec3 normal
 {
     vec3 toLight;
     float tMax;
-    if (light.type == LIGHT_TYPE_DIRECTIONAL) {
+    if (light.type == LIGHT_TYPE_DIRECTIONAL)
+    {
         toLight = -normalize(light.direction);
         tMax = 1000000.0;
-    } else {
+    }
+    else
+    {
         toLight = light.position - worldPos;
         tMax = length(toLight);
         toLight = normalize(toLight);
@@ -163,11 +184,11 @@ float hardShadowCutout(accelerationStructureEXT tlas, vec3 worldPos, vec3 normal
 }
 
 bool queryAOCutout(accelerationStructureEXT tlas, vec3 worldPos, vec3 normal, vec3 rayDir,
-    float radius, float bias, out float hitDistance)
+                   float radius, float bias, out float hitDistance)
 {
     rayQueryEXT rq;
     rayQueryInitializeEXT(rq, tlas, gl_RayFlagsTerminateOnFirstHitEXT,
-        0xFF, worldPos + normal * bias, 0.001, rayDir, radius);
+                          0xFF, worldPos + normal * bias, 0.001, rayDir, radius);
     while (rayQueryProceedEXT(rq))
     {
         if (rayQueryGetIntersectionTypeEXT(rq, false) == gl_RayQueryCandidateIntersectionTriangleEXT &&

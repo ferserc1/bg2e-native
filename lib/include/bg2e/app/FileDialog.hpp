@@ -30,26 +30,26 @@ namespace bg2e {
 namespace app {
 
 class BG2E_API FileDialog {
-public:
+  public:
     using FileFilters = std::map<std::string, std::string>;
-    
+
     static void test();
-    
+
     std::filesystem::path openFile();
-    
+
     std::filesystem::path saveFile();
-    
+
     std::filesystem::path pickFolder();
 
     void setFilters(const FileFilters& filters);
-    
+
     static std::filesystem::path getOpenFilePath(const FileFilters& filters);
     static std::filesystem::path getSaveFilePath(const FileFilters& filters);
     static std::filesystem::path getPickFolderPath();
-    
+
     static FileFilters imageFilters;
-    
-protected:
+
+  protected:
     FileFilters _filters;
 };
 

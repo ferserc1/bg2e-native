@@ -24,7 +24,7 @@
 #include <bg2e/render/vulkan/factory/PipelineLayout.hpp>
 #include <bg2e/base/PlatformTools.hpp>
 
-#include "bg2e/render/vulkan/rt/RayTracingScene.hpp"
+#include <bg2e/render/vulkan/rt/RayTracingScene.hpp>
 
 namespace bg2e::render {
 
@@ -34,8 +34,8 @@ void RendererBasicForward::build(
     VkFormat colorImageFormat,
     VkFormat depthImageFormat,
     VkSampleCountFlagBits sampleCount,
-    bool isOffscreen
-) {
+    bool isOffscreen)
+{
     _engine = engine;
     _viewportExtent = initialExtent;
     _colorImageFormat = colorImageFormat;
@@ -51,17 +51,14 @@ void RendererBasicForward::build(
     _environment = std::unique_ptr<bg2e::render::EnvironmentResources>(
         new bg2e::render::EnvironmentResources(
             _engine,
-            { colorImageFormat },
+            {colorImageFormat},
             depthImageFormat,
-            sampleCount
-        )
-    );
+            sampleCount));
 
     if (!isOffscreen)
     {
         _gizmoAndSelectionRenderer = std::make_unique<bg2e::manipulation::GizmoAndSelectionRenderer>();
         _gizmoAndSelectionRenderer->init(engine, _sampleCount);
-
     }
 
     createPipelines(engine, false, _pipelineLayout, _opaquePipeline, _transparentPipeline, _solidTransparentPipeline);
@@ -72,8 +69,8 @@ void RendererBasicForward::build(
 }
 
 void RendererBasicForward::initFrameResources(
-    bg2e::render::vulkan::DescriptorSetAllocator* frameAllocator
-) {
+    bg2e::render::vulkan::DescriptorSetAllocator* frameAllocator)
+{
     _frameDataBinding->initFrameResources(frameAllocator);
     _objectDataBinding->initFrameResources(frameAllocator);
     _environmentDataBinding->initFrameResources(frameAllocator);
@@ -83,8 +80,8 @@ void RendererBasicForward::initFrameResources(
 }
 
 void RendererBasicForward::initScene(
-    std::shared_ptr<bg2e::scene::Node> sceneRoot
-) {
+    std::shared_ptr<bg2e::scene::Node> sceneRoot)
+{
     _scene = std::make_unique<bg2e::scene::Scene>();
     _scene->setSceneRoot(sceneRoot);
 
@@ -95,36 +92,37 @@ void RendererBasicForward::initScene(
     auto envTexture = std::make_shared<bg2e::render::Texture>(_engine);
     envTexture->load(skyDomeTexture);
     _environment->build(
-        envTexture,         // Equirectangular texture
-        { 2048, 2048 },     // Cube map size
-        { 32, 32 },         // Irradiance map size
-        { 1024, 1024 }      // Specular reflection map size
+        envTexture,   // Equirectangular texture
+        {2048, 2048}, // Cube map size
+        {32, 32},     // Irradiance map size
+        {1024, 1024}  // Specular reflection map size
     );
-    
+
     _scene->updateLights();
 
     // Call the resizeViewportVisitor to set the initial viewport size in cameras
     _resizeVisitor.resizeViewport(_scene->rootNode(), _viewportExtent);
 
-    _engine->cleanupManager().push([&](VkDevice) {
-        _scene.reset();
-    });
+    _engine->cleanupManager().push([&](VkDevice)
+                                   {
+                                       _scene.reset();
+                                   });
 }
 
 void RendererBasicForward::resize(
-    VkExtent2D newExtent
-) {
+    VkExtent2D newExtent)
+{
     _viewportExtent = newExtent;
     _scene->willResize();
 
     _resizeVisitor.resizeViewport(_scene->rootNode(), newExtent);
-    
+
     _scene->didResize();
 }
 
 void RendererBasicForward::update(
-    float delta
-) {
+    float delta)
+{
     updateScene(delta, BG2E_MAX_FORWARD_LIGHTS);
 }
 
@@ -135,10 +133,9 @@ void RendererBasicForward::draw(
     [[maybe_unused]] const bg2e::render::vulkan::Image* depthImage,
     const bg2e::render::vulkan::Image* msaaDepthImage,
     bg2e::render::vulkan::FrameResources& frameResources,
-    VkImageLayout & outColorImageLayout,
-    VkImageLayout & outDepthImageLayout,
-    VkImageLayout & outMsaaDepthImageLayout
-)
+    VkImageLayout& outColorImageLayout,
+    VkImageLayout& outDepthImageLayout,
+    VkImageLayout& outMsaaDepthImageLayout)
 {
     using namespace bg2e::render::vulkan;
 
@@ -149,30 +146,28 @@ void RendererBasicForward::draw(
     auto cameraWorldPos = mainCamera->ownerNode()->worldPosition();
     auto viewMatrix = mainCamera->ownerNode()->invertedWorldMatrix();
 
-    VkClearColorValue clearValue{ { 0.0f, 0.0f, 0.0f, 1.0f } };
+    VkClearColorValue clearValue{{0.0f, 0.0f, 0.0f, 1.0f}};
     macros::cmdClearImagesAndBeginRendering(
         cmd,
-        { colorImage },
+        {colorImage},
         clearValue, VK_IMAGE_LAYOUT_UNDEFINED,
-        msaaDepthImage, 1.0f
-    );
+        msaaDepthImage, 1.0f);
 
     macros::cmdSetDefaultViewportAndScissor(cmd, colorImage->extent2D());
 
-    
     //viewMatrix = glm::lookAt(glm::vec3{ 0.0f, 0.0f, 10.0f }, glm::vec3{ 0.0f, 0.0f, 0.0f }, glm::vec3{ 0.0f, 1.0f, 0.0f });
     auto sceneDS = _frameDataBinding->newDescriptorSet(
         frameResources,
         viewMatrix,
-        projMatrix
-    );
+        projMatrix);
 
-    if (drawSkybox()) {
+    if (drawSkybox())
+    {
         _environment->drawSkybox(cmd, currentFrame, frameResources);
     }
 
     auto envDS = _environmentDataBinding->newDescriptorSet(frameResources, _environment.get());
-    
+
     auto lightDS = _lightDataBinding->newDescriptorSet(frameResources, _lightUniforms);
 
     auto tlas = frameResources.rayTracingScene->tlas();
@@ -184,12 +179,11 @@ void RendererBasicForward::draw(
 
     auto rtSceneDS = useRT ? _rtDataBinding->newDescriptorSet(frameResources, tlas) : VK_NULL_HANDLE;
 
-    static struct PushConstants pushConstants {
+    static struct PushConstants pushConstants{
         .gamma = 2.2f,
         .brightness = 0.0,
         .contrast = 1.0f,
-        .exposure = 1.0
-    };
+        .exposure = 1.0};
     pushConstants.brightness = _brightness;
     pushConstants.contrast = _contrast;
     pushConstants.exposure = _exposure;
@@ -199,62 +193,56 @@ void RendererBasicForward::draw(
         VK_SHADER_STAGE_FRAGMENT_BIT,
         0,
         sizeof(PushConstants),
-        &pushConstants
-    );
+        &pushConstants);
 
-    auto dsFunction = [&](bg2e::render::MaterialBase * mat, const glm::mat4& transform, uint32_t /*submesh*/) {
+    auto dsFunction = [&](bg2e::render::MaterialBase* mat, const glm::mat4& transform, uint32_t /*submesh*/)
+    {
         auto modelDS = _objectDataBinding->newDescriptorSet(
             frameResources,
             mat,
-            transform
-        );
+            transform);
         if (useRT)
         {
-            return std::vector<VkDescriptorSet> {
+            return std::vector<VkDescriptorSet>{
                 sceneDS,
                 modelDS,
                 envDS,
                 lightDS,
-                rtSceneDS
-            };
+                rtSceneDS};
         }
         else
         {
-            return std::vector<VkDescriptorSet> {
+            return std::vector<VkDescriptorSet>{
                 sceneDS,
                 modelDS,
                 envDS,
-                lightDS
-            };
+                lightDS};
         }
     };
-    
+
     vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, activeOpaque);
     _renderQueue.render(
         bg2e::render::RenderQueueType::Opaque,
         cmd,
         activeLayout,
         dsFunction,
-        cameraWorldPos
-    );
-    
+        cameraWorldPos);
+
     vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, activeTransparent);
     _renderQueue.render(
         bg2e::render::RenderQueueType::Transparent,
         cmd,
         activeLayout,
         dsFunction,
-        cameraWorldPos
-    );
-    
+        cameraWorldPos);
+
     vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, activeSolidTransparent);
     _renderQueue.render(
         bg2e::render::RenderQueueType::SolidTransparent,
         cmd,
         activeLayout,
         dsFunction,
-        cameraWorldPos
-    );
+        cameraWorldPos);
 
     if (!_isOffscreen)
     {
@@ -263,8 +251,7 @@ void RendererBasicForward::draw(
             viewMatrix,
             projMatrix,
             cmd,
-            colorImage->extent2D()
-        );
+            colorImage->extent2D());
     }
 
     vulkan::cmdEndRendering(cmd);
@@ -295,8 +282,8 @@ void RendererBasicForward::createPipelines(
     VkPipelineLayout& outLayout,
     VkPipeline& outOpaque,
     VkPipeline& outTransparent,
-    VkPipeline& outSolidTransparent
-) {
+    VkPipeline& outSolidTransparent)
+{
     auto frameDSLayout = frameDataBinding()->createLayout();
     auto objectDSLayout = objectDataBinding()->createLayout();
     auto envDSLayout = environmentDataBinding()->createLayout();
@@ -315,11 +302,11 @@ void RendererBasicForward::createPipelines(
     layoutFactory.addPushConstantRange(
         0,
         sizeof(PushConstants),
-        VK_SHADER_STAGE_FRAGMENT_BIT
-    );
+        VK_SHADER_STAGE_FRAGMENT_BIT);
     outLayout = layoutFactory.build("RendererBasicForward::PipelineLayout");
 
-    auto createPipeline = [&](bool isTransparent, bool isSolidTransparent) -> VkPipeline {
+    auto createPipeline = [&](bool isTransparent, bool isSolidTransparent) -> VkPipeline
+    {
         bg2e::render::vulkan::factory::GraphicsPipeline plFactory(engine);
 
         plFactory.addShader("basic_forward.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
@@ -357,9 +344,10 @@ void RendererBasicForward::createPipelines(
         }
         auto result = plFactory.build(outLayout, "RendererBasicForward::Pipeline");
 
-        engine->cleanupManager().push([&, result](VkDevice dev) {
-            vkDestroyPipeline(dev, result, nullptr);
-        });
+        engine->cleanupManager().push([&, result](VkDevice dev)
+                                      {
+                                          vkDestroyPipeline(dev, result, nullptr);
+                                      });
         return result;
     };
 
@@ -367,16 +355,17 @@ void RendererBasicForward::createPipelines(
     outTransparent = createPipeline(true, false);
     outSolidTransparent = createPipeline(false, true);
 
-    engine->cleanupManager().push([&, frameDSLayout, objectDSLayout, envDSLayout, lightDSLayout](VkDevice dev) {
-        vkDestroyPipelineLayout(dev, outLayout, nullptr);
-    });
+    engine->cleanupManager().push([&, frameDSLayout, objectDSLayout, envDSLayout, lightDSLayout](VkDevice dev)
+                                  {
+                                      vkDestroyPipelineLayout(dev, outLayout, nullptr);
+                                  });
 }
 
 void RendererBasicForward::updateLights(const std::vector<std::shared_ptr<bg2e::scene::LightComponent>>& lightComponents, uint32_t maxLights)
 {
     auto lights = static_cast<uint32_t>(lightComponents.size() < maxLights
-        ? lightComponents.size()
-        : maxLights);
+                                            ? lightComponents.size()
+                                            : maxLights);
     _lightUniforms.lightCount = lights;
     for (uint32_t i = 0; i < lights; ++i)
     {

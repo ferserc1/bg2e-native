@@ -35,12 +35,12 @@ void Component::setPriority(uint32_t newPriority)
     }
 }
 
-Scene * Component::scene()
+Scene* Component::scene()
 {
     return _owner != nullptr ? _owner->scene() : nullptr;
 }
 
-std::string componentName(Component * component)
+std::string componentName(Component* component)
 {
     return typeid(*component).name();
 }
@@ -48,18 +48,21 @@ std::string componentName(Component * component)
 void Component::deserialize(
     std::shared_ptr<json::JsonNode> jsonData,
     [[maybe_unused]] const std::filesystem::path& basePath,
-    [[maybe_unused]] render::Engine& engine
-) {
+    [[maybe_unused]] render::Engine& engine)
+{
     json::ObjectReader reader(jsonData);
-    if (auto priority = reader.getInteger<uint32_t>("priority")) _priority = *priority;
+    if (auto priority = reader.getInteger<uint32_t>("priority"))
+    {
+        _priority = *priority;
+    }
 }
 
 void Component::deserializeWithProgress(
     std::shared_ptr<json::JsonNode> jsonData,
     const std::filesystem::path& basePath,
     render::Engine& engine,
-    [[maybe_unused]] SceneLoadProgress* progress
-) {
+    [[maybe_unused]] SceneLoadProgress* progress)
+{
     deserialize(jsonData, basePath, engine);
 }
 
@@ -67,9 +70,8 @@ std::shared_ptr<json::JsonNode> Component::serialize(const std::filesystem::path
 {
     using namespace bg2e::json;
     return JSON(JsonObject{
-        { "type", JSON(typeName()) },
-        { "priority", JSON(static_cast<double>(_priority)) }
-    });
+        {"type", JSON(typeName())},
+        {"priority", JSON(static_cast<double>(_priority))}});
 }
 
 }

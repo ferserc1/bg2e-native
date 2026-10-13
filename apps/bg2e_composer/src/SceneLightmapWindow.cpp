@@ -21,7 +21,7 @@
 
 #include <algorithm>
 
-void SceneLightmapWindow::init(AppDelegate * delegate)
+void SceneLightmapWindow::init(AppDelegate* delegate)
 {
     _appDelegate = delegate;
     setTitle("Scene Lightmap Baker");
@@ -29,144 +29,145 @@ void SceneLightmapWindow::init(AppDelegate * delegate)
     _preview.init(delegate->engine());
     _uvPreview.init(delegate->engine());
 
-    setDrawFunction([this]() {
-        using namespace bg2e::ui;
+    setDrawFunction([this]()
+                    {
+                        using namespace bg2e::ui;
 
-        auto targets = collectTargets();
-        if (targets.empty())
-        {
-            Text::text("The scene contains no Drawable nodes to bake.");
-            return;
-        }
+                        auto targets = collectTargets();
+                        if (targets.empty())
+                        {
+                            Text::text("The scene contains no Drawable nodes to bake.");
+                            return;
+                        }
 
-        Text::separator("Bake Targets");
-        for (const auto& node : targets)
-        {
-            bool selected = isSelected(node);
-            const std::string label = node->name() + "##" + std::to_string(reinterpret_cast<uintptr_t>(node.get()));
-            if (Button::checkBox(label, &selected))
-            {
-                setSelected(node, selected);
-            }
-        }
+                        Text::separator("Bake Targets");
+                        for (const auto& node : targets)
+                        {
+                            bool selected = isSelected(node);
+                            const std::string label = node->name() + "##" + std::to_string(reinterpret_cast<uintptr_t>(node.get()));
+                            if (Button::checkBox(label, &selected))
+                            {
+                                setSelected(node, selected);
+                            }
+                        }
 
-        auto selection = lockedSelection();
+                        auto selection = lockedSelection();
 
-        Text::separator("UV Atlas");
-        Numeric::sliderInt("UV2 Padding", &_uv2Padding, 0, 32);
-        if (Button::button("Generate UV2", false, _uv2Pending > 0))
-        {
-            if (selection.empty())
-            {
-                _message = "Select at least one target.";
-            }
-            else
-            {
-                generateUv2(selection);
-            }
-        }
-        if (_uv2Pending > 0)
-        {
-            Text::text("Generating UV2 atlases: " + std::to_string(_uv2Pending) + " pending...");
-        }
+                        Text::separator("UV Atlas");
+                        Numeric::sliderInt("UV2 Padding", &_uv2Padding, 0, 32);
+                        if (Button::button("Generate UV2", false, _uv2Pending > 0))
+                        {
+                            if (selection.empty())
+                            {
+                                _message = "Select at least one target.";
+                            }
+                            else
+                            {
+                                generateUv2(selection);
+                            }
+                        }
+                        if (_uv2Pending > 0)
+                        {
+                            Text::text("Generating UV2 atlases: " + std::to_string(_uv2Pending) + " pending...");
+                        }
 
-        // Preview the first selected target's UV layout
-        std::shared_ptr<bg2e::geo::Mesh> previewMesh;
-        if (!selection.empty())
-        {
-            if (auto* component = selection.front()->drawable())
-            {
-                if (auto drawable = component->drawable())
-                {
-                    previewMesh = drawable->mesh();
-                }
-            }
-        }
-        _uvPreview.setMesh(previewMesh);
-        _uvPreview.draw();
+                        // Preview the first selected target's UV layout
+                        std::shared_ptr<bg2e::geo::Mesh> previewMesh;
+                        if (!selection.empty())
+                        {
+                            if (auto* component = selection.front()->drawable())
+                            {
+                                if (auto drawable = component->drawable())
+                                {
+                                    previewMesh = drawable->mesh();
+                                }
+                            }
+                        }
+                        _uvPreview.setMesh(previewMesh);
+                        _uvPreview.draw();
 
-        Text::separator("Bake Settings");
-        uint32_t mode = static_cast<uint32_t>(_mode);
-        if (Value::comboBox("Mode", { "Ray Traced Ambient Occlusion", "Ray Traced Global Illumination" }, mode))
-        {
-            _mode = static_cast<int>(mode);
-        }
-        Value::comboBox("Resolution", { "128", "256", "512", "1024", "2048", "4096" }, _resolutionIndex);
-        Numeric::sliderInt("Accumulation Frames", &_frames, 1, 512);
-        Numeric::sliderInt("Samples per Pixel", &_samples, 1, 256);
-        Numeric::sliderInt("Lightmap Dilation", &_lightmapDilation, 1, 32);
-        Group::beginDisabled(_mode == 0);
-        Numeric::sliderInt("GI Bounces", &_giBounces, 1, 8);
-        Group::endDisabled();
-        Group::beginDisabled(_mode == 0);
-        Numeric::drag("GI Max Ray Distance", &_maxDistance, 0.5f, 0.01f, 10000.0f);
-        Numeric::drag("GI Ray Bias (m)", &_giRayBias, 0.0001f, 0.0f, 0.05f);
-        Numeric::drag("GI Export Exposure (EV)", &_exposureEV, 0.1f, -16.0f, 16.0f);
-        Group::endDisabled();
+                        Text::separator("Bake Settings");
+                        uint32_t mode = static_cast<uint32_t>(_mode);
+                        if (Value::comboBox("Mode", {"Ray Traced Ambient Occlusion", "Ray Traced Global Illumination"}, mode))
+                        {
+                            _mode = static_cast<int>(mode);
+                        }
+                        Value::comboBox("Resolution", {"128", "256", "512", "1024", "2048", "4096"}, _resolutionIndex);
+                        Numeric::sliderInt("Accumulation Frames", &_frames, 1, 512);
+                        Numeric::sliderInt("Samples per Pixel", &_samples, 1, 256);
+                        Numeric::sliderInt("Lightmap Dilation", &_lightmapDilation, 1, 32);
+                        Group::beginDisabled(_mode == 0);
+                        Numeric::sliderInt("GI Bounces", &_giBounces, 1, 8);
+                        Group::endDisabled();
+                        Group::beginDisabled(_mode == 0);
+                        Numeric::drag("GI Max Ray Distance", &_maxDistance, 0.5f, 0.01f, 10000.0f);
+                        Numeric::drag("GI Ray Bias (m)", &_giRayBias, 0.0001f, 0.0f, 0.05f);
+                        Numeric::drag("GI Export Exposure (EV)", &_exposureEV, 0.1f, -16.0f, 16.0f);
+                        Group::endDisabled();
 
-        const bool baking = _appDelegate->lightmapBakeActive();
-        if (Button::button("Generate Selected", false, baking))
-        {
-            auto nodes = lockedSelection();
-            if (nodes.empty())
-            {
-                _message = "Select at least one target.";
-            }
-            else
-            {
-                bg2e::render::LightmapSettings settings;
-                settings.resolution = 128u << _resolutionIndex;
-                settings.accumulationFrames = static_cast<uint32_t>(std::max(_frames, 1));
-                settings.samplesPerPixel = static_cast<uint32_t>(std::max(_samples, 1));
-                settings.giBounces = static_cast<uint32_t>(std::max(_giBounces, 1));
-                settings.maxRayDistance = std::max(_maxDistance, 0.01f);
-                settings.giRayBias = _giRayBias;
-                settings.exposureEV = _exposureEV;
-                settings.mode = _mode == 1
-                    ? bg2e::render::LightmapMode::RTGI
-                    : bg2e::render::LightmapMode::RTAO;
-                settings.cpuFormat = bg2e::render::LightmapPixelFormat::RGB8;
-                settings.dilationPixels = static_cast<uint32_t>(std::max(_lightmapDilation, 1));
-                try
-                {
-                    _message.clear();
-                    _appDelegate->requestLightmapBake(nodes, settings);
-                }
-                catch (const std::exception& error)
-                {
-                    _message = error.what();
-                    bg2e::app::MessageBox::showError("Scene Lightmap Baker", error.what());
-                }
-            }
-        }
+                        const bool baking = _appDelegate->lightmapBakeActive();
+                        if (Button::button("Generate Selected", false, baking))
+                        {
+                            auto nodes = lockedSelection();
+                            if (nodes.empty())
+                            {
+                                _message = "Select at least one target.";
+                            }
+                            else
+                            {
+                                bg2e::render::LightmapSettings settings;
+                                settings.resolution = 128u << _resolutionIndex;
+                                settings.accumulationFrames = static_cast<uint32_t>(std::max(_frames, 1));
+                                settings.samplesPerPixel = static_cast<uint32_t>(std::max(_samples, 1));
+                                settings.giBounces = static_cast<uint32_t>(std::max(_giBounces, 1));
+                                settings.maxRayDistance = std::max(_maxDistance, 0.01f);
+                                settings.giRayBias = _giRayBias;
+                                settings.exposureEV = _exposureEV;
+                                settings.mode = _mode == 1
+                                                    ? bg2e::render::LightmapMode::RTGI
+                                                    : bg2e::render::LightmapMode::RTAO;
+                                settings.cpuFormat = bg2e::render::LightmapPixelFormat::RGB8;
+                                settings.dilationPixels = static_cast<uint32_t>(std::max(_lightmapDilation, 1));
+                                try
+                                {
+                                    _message.clear();
+                                    _appDelegate->requestLightmapBake(nodes, settings);
+                                }
+                                catch (const std::exception& error)
+                                {
+                                    _message = error.what();
+                                    bg2e::app::MessageBox::showError("Scene Lightmap Baker", error.what());
+                                }
+                            }
+                        }
 
-        if (baking)
-        {
-            const auto progress = _appDelegate->lightmapBakeProgress();
-            Text::text(
-                "Baking frame " + std::to_string(progress.first) +
-                " / " + std::to_string(progress.second));
-        }
+                        if (baking)
+                        {
+                            const auto progress = _appDelegate->lightmapBakeProgress();
+                            Text::text(
+                                "Baking frame " + std::to_string(progress.first) +
+                                " / " + std::to_string(progress.second));
+                        }
 
-        if (!_message.empty())
-        {
-            Text::text(_message);
-        }
+                        if (!_message.empty())
+                        {
+                            Text::text(_message);
+                        }
 
-        const auto& resultPath = _appDelegate->lastLightmapPath();
-        if (!resultPath.empty() && resultPath != _previewPath)
-        {
-            _previewPath = resultPath;
-            _preview.setEditTexture(std::make_shared<bg2e::render::Texture>(
-                _appDelegate->engine(),
-                std::make_shared<bg2e::base::Texture>(_previewPath)));
-        }
-        if (!_previewPath.empty())
-        {
-            Text::separator("Last Result Preview");
-            _preview.drawImage(192, 192);
-        }
-    });
+                        const auto& resultPath = _appDelegate->lastLightmapPath();
+                        if (!resultPath.empty() && resultPath != _previewPath)
+                        {
+                            _previewPath = resultPath;
+                            _preview.setEditTexture(std::make_shared<bg2e::render::Texture>(
+                                _appDelegate->engine(),
+                                std::make_shared<bg2e::base::Texture>(_previewPath)));
+                        }
+                        if (!_previewPath.empty())
+                        {
+                            Text::separator("Last Result Preview");
+                            _preview.drawImage(192, 192);
+                        }
+                    });
 }
 
 void SceneLightmapWindow::cleanup()
@@ -216,7 +217,8 @@ void SceneLightmapWindow::generateUv2(const std::vector<std::shared_ptr<bg2e::sc
     {
         _uv2Tokens.push_back(bg2e::app::Uv2SafeReload::regenerate(
             node, options,
-            [this](const bg2e::app::Uv2RegenerationResult& result) {
+            [this](const bg2e::app::Uv2RegenerationResult& result)
+            {
                 if (_uv2Pending > 0)
                 {
                     --_uv2Pending;
@@ -248,7 +250,7 @@ std::vector<std::shared_ptr<bg2e::scene::Node>> SceneLightmapWindow::collectTarg
         return result;
     }
 
-    std::vector<std::shared_ptr<bg2e::scene::Node>> stack { editableRoot };
+    std::vector<std::shared_ptr<bg2e::scene::Node>> stack{editableRoot};
     while (!stack.empty())
     {
         auto node = stack.back();
@@ -290,9 +292,10 @@ void SceneLightmapWindow::setSelected(const std::shared_ptr<bg2e::scene::Node>& 
     }
     else
     {
-        std::erase_if(_selectedTargets, [&](const std::weak_ptr<bg2e::scene::Node>& weakNode) {
-            auto locked = weakNode.lock();
-            return !locked || locked == node;
-        });
+        std::erase_if(_selectedTargets, [&](const std::weak_ptr<bg2e::scene::Node>& weakNode)
+                      {
+                          auto locked = weakNode.lock();
+                          return !locked || locked == node;
+                      });
     }
 }

@@ -35,7 +35,7 @@ namespace bg2e {
 namespace render {
 
 class BG2E_API Renderer {
-public:
+  public:
     virtual ~Renderer() = default;
 
     virtual void build(
@@ -44,9 +44,8 @@ public:
         VkFormat colorImageFormat,
         VkFormat depthImageFormat,
         VkSampleCountFlagBits sampleCount,
-        bool isOffscreen
-    ) = 0;
-    
+        bool isOffscreen) = 0;
+
     virtual void initFrameResources(bg2e::render::vulkan::DescriptorSetAllocator* frameAllocator) = 0;
     virtual void initScene(std::shared_ptr<bg2e::scene::Node> sceneRoot) = 0;
     virtual void resize(VkExtent2D newExtent) = 0;
@@ -58,38 +57,70 @@ public:
         const bg2e::render::vulkan::Image* depthImage,
         const bg2e::render::vulkan::Image* msaaDepthImage,
         bg2e::render::vulkan::FrameResources& frameResources,
-        VkImageLayout & outColorImageLayout,
-        VkImageLayout & outDepthImageLayout,
-        VkImageLayout & outMsaaDepthImageLayout
-    ) = 0;
+        VkImageLayout& outColorImageLayout,
+        VkImageLayout& outDepthImageLayout,
+        VkImageLayout& outMsaaDepthImageLayout) = 0;
     virtual void cleanup() = 0;
 
-    bg2e::scene::Scene* scene() const { return _scene.get(); };
+    bg2e::scene::Scene* scene() const
+    {
+        return _scene.get();
+    };
     // Non-owning access to the renderer's scene IBL resources. Applications may
     // share this handle with integrated baking contexts while the scene is locked.
-    EnvironmentResources* environmentResources() { return _environment.get(); }
-    const EnvironmentResources* environmentResources() const { return _environment.get(); }
+    EnvironmentResources* environmentResources()
+    {
+        return _environment.get();
+    }
+    const EnvironmentResources* environmentResources() const
+    {
+        return _environment.get();
+    }
 
     virtual void setDrawSkybox(bool drawSkybox) = 0;
     virtual bool drawSkybox() const = 0;
-    int skyboxBlurLevel() const { return _environment->skyboxBlurLevel(); }
-    void setSkyboxBlurLevel(int l) { _environment->setSkyboxBlurLevel(l); }
-    
+    int skyboxBlurLevel() const
+    {
+        return _environment->skyboxBlurLevel();
+    }
+    void setSkyboxBlurLevel(int l)
+    {
+        _environment->setSkyboxBlurLevel(l);
+    }
+
     virtual uint32_t viewportWidth() = 0;
     virtual uint32_t viewportHeight() = 0;
 
     virtual bool supportsMsaa() = 0;
 
-    void setBrightness(float b) { _brightness = b; }
-    [[nodiscard]] float brightness() const { return _brightness; }
+    void setBrightness(float b)
+    {
+        _brightness = b;
+    }
+    [[nodiscard]] float brightness() const
+    {
+        return _brightness;
+    }
 
-    void setContrast(float c) { _contrast = c; }
-    [[nodiscard]] float contrast() const { return _contrast; }
+    void setContrast(float c)
+    {
+        _contrast = c;
+    }
+    [[nodiscard]] float contrast() const
+    {
+        return _contrast;
+    }
 
-    void setExposure(float e) { _exposure = e; }
-    [[nodiscard]] float exposure() const { return _exposure; }
+    void setExposure(float e)
+    {
+        _exposure = e;
+    }
+    [[nodiscard]] float exposure() const
+    {
+        return _exposure;
+    }
 
-protected:
+  protected:
     std::unique_ptr<EnvironmentResources> _environment;
     size_t _skyImageHash;
 
@@ -116,7 +147,7 @@ protected:
     // and generate the light data
     void updateScene(float delta, uint32_t maxLights = std::numeric_limits<uint32_t>::max());
 
-protected:
+  protected:
     virtual void updateLights(const std::vector<std::shared_ptr<bg2e::scene::LightComponent>>& lightComponents, uint32_t maxLights) = 0;
 
     // Call the begin render scene callbacks, update the skybox image if needed,
@@ -124,8 +155,7 @@ protected:
     void prepareSceneRender(
         VkCommandBuffer cmd,
         uint32_t currentFrame,
-        render::vulkan::FrameResources& frameResources
-    );
+        render::vulkan::FrameResources& frameResources);
 
     // Call the end renderer scene callbacks
     void endSceneRender();

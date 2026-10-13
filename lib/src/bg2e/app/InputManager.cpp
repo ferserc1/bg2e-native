@@ -21,7 +21,7 @@
 
 #include <SDL2/SDL.h>
 
-#include "imgui.h"
+#include <imgui.h>
 
 namespace bg2e {
 namespace app {
@@ -30,11 +30,11 @@ glm::vec2 InputManager::normalizedCursorPosition(uint32_t viewportWidth, uint32_
 {
     int x, y;
     SDL_GetMouseState(&x, &y);
-    
+
     float nx = static_cast<float>(x) / static_cast<float>(viewportWidth);
     float ny = static_cast<float>(y) / static_cast<float>(viewportHeight);
-    
-    return glm::vec2{ nx * 2.0f - 1.0f, ny * 2.0f - 1.0f };
+
+    return glm::vec2{nx * 2.0f - 1.0f, ny * 2.0f - 1.0f};
 }
 
 void InputManager::keyDown(const KeyEvent& event)
@@ -57,7 +57,7 @@ void InputManager::keyUp(const KeyEvent& event)
 
 void InputManager::mouseMove(int x, int y)
 {
-	ImGuiIO& io = ImGui::GetIO();
+    ImGuiIO& io = ImGui::GetIO();
     if (_delegate.get() && !io.WantCaptureMouse)
     {
         _delegate->mouseMove(x, y);
@@ -88,16 +88,14 @@ void InputManager::mouseWheel(int deltaX, int deltaY)
     if (_delegate.get() && !io.WantCaptureMouse)
     {
         auto factor = base::PlatformTools::currentPlatform() == base::Platform::macOS
-            ? 0.7f
-            : 1.0f;
+                          ? 0.7f
+                          : 1.0f;
 
         _delegate->mouseWheel(
             static_cast<int>(static_cast<float>(deltaX) * factor),
-            static_cast<int>(static_cast<float>(deltaY) * factor)
-        );
+            static_cast<int>(static_cast<float>(deltaY) * factor));
     }
 }
-
 
 }
 }

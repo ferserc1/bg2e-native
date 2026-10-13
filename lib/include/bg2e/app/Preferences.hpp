@@ -31,37 +31,37 @@ namespace bg2e {
 namespace app {
 
 class BG2E_API Preferences {
-public:
+  public:
     Preferences();
-    explicit Preferences(const std::string & scope);
-    explicit Preferences(std::string && scope);
+    explicit Preferences(const std::string& scope);
+    explicit Preferences(std::string&& scope);
     ~Preferences();
-    
+
     void load();
-    
+
     void save() const;
-    
+
     // Getters
     template <typename T>
-    T get(const std::string & key, const T& defaultValue) const;
+    T get(const std::string& key, const T& defaultValue) const;
     std::string get(const std::string& key, std::string&& defaultValue) const;
-        
+
     // Setters
     template <typename T>
-    void set(const std::string & key, const T& value);
-    
-    void set(const std::string & key, const char* value);
-    
-    void set(const std::string & key, std::string && value);
-    
-protected:
+    void set(const std::string& key, const T& value);
+
+    void set(const std::string& key, const char* value);
+
+    void set(const std::string& key, std::string&& value);
+
+  protected:
     std::filesystem::path _filePath;
     std::shared_ptr<json::JsonNode> _root;
-    
+
     mutable bool _dirty = false;
-    
-    void initFilePath(const std::string & fileName);
-    
+
+    void initFilePath(const std::string& fileName);
+
     std::string _emptyString = "";
 };
 
@@ -141,7 +141,6 @@ extern template BG2E_API void Preferences::set<glm::mat3>(const std::string&, co
 extern template BG2E_API void Preferences::set<glm::mat4>(const std::string&, const glm::mat4&);
 
 extern template BG2E_API void Preferences::set<std::string>(const std::string&, const std::string&);
-
 
 }
 }

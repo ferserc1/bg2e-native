@@ -26,24 +26,30 @@
 
 namespace bg2e {
 namespace scene {
-    class Node;
+class Node;
 }
 namespace ui {
 
 class BG2E_API NodeEditor {
-public:
+  public:
     using ChangedCallback = std::function<void()>;
 
-    void setNode(scene::Node * node);
+    void setNode(scene::Node* node);
     void setNodes(const std::vector<scene::Node*>& nodes);
-    scene::Node * node() const { return _node; }
+    scene::Node* node() const
+    {
+        return _node;
+    }
 
     void draw();
 
     void onChanged(ChangedCallback cb)
     {
         _onChanged = cb;
-        _componentInspector.onChanged([this]() { notifyChanged(); });
+        _componentInspector.onChanged([this]()
+                                      {
+                                          notifyChanged();
+                                      });
     }
 
     void onResourceChanged(ComponentInspector::ResourceChangedCallback cb)
@@ -51,8 +57,8 @@ public:
         _componentInspector.onResourceChanged(std::move(cb));
     }
 
-protected:
-    scene::Node * _node = nullptr;
+  protected:
+    scene::Node* _node = nullptr;
     size_t _selectionCount = 0;
 
     ComponentInspector _componentInspector;

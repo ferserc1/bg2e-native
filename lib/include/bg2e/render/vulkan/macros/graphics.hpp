@@ -33,31 +33,26 @@ extern BG2E_API void cmdSetDefaultViewportAndScissor(VkCommandBuffer cmd, VkExte
 
 extern BG2E_API void cmdClearImageAndBeginRendering(
     VkCommandBuffer cmd,
-    const Image * colorImage,
+    const Image* colorImage,
     VkClearColorValue clearValue,
     VkImageLayout colorImageInitialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
-    const Image * depthImage = nullptr,
-    float depthValue = 1.0f
-);
-
+    const Image* depthImage = nullptr,
+    float depthValue = 1.0f);
 
 extern BG2E_API void cmdClearImagesAndBeginRendering(
     VkCommandBuffer cmd,
-    const std::vector<const Image *>& colorImages,
+    const std::vector<const Image*>& colorImages,
     VkClearColorValue clearValue,
     VkImageLayout colorImageInitialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
-    const Image * depthImage = nullptr,
-    float depthValue = 1.0f
-);
-
+    const Image* depthImage = nullptr,
+    float depthValue = 1.0f);
 
 extern BG2E_API void cmdClearImageAndSetLayout(
     VkCommandBuffer cmd,
     const Image* colorImage,
     VkClearColorValue clearValue,
     VkImageLayout initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
-    VkImageLayout finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
-);
+    VkImageLayout finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 
 }
 }

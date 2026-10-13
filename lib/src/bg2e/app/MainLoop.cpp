@@ -48,24 +48,39 @@ namespace app {
 
 static const char preferencesContext[] = "app";
 
-
-SDL_Window* createSDLWindow(const WindowConfig& cfg, gpu::WindowType windowType) {
+SDL_Window* createSDLWindow(const WindowConfig& cfg, gpu::WindowType windowType)
+{
     // Position
     int xpos = (cfg.x < 0) ? SDL_WINDOWPOS_CENTERED : cfg.x;
     int ypos = (cfg.y < 0) ? SDL_WINDOWPOS_CENTERED : cfg.y;
 
     // SDL flags derived from WindowConfig
     Uint32 flags = windowType == gpu::WindowType::Metal
-        ? SDL_WINDOW_METAL
-        : SDL_WINDOW_VULKAN;
+                       ? SDL_WINDOW_METAL
+                       : SDL_WINDOW_VULKAN;
 
-    if (cfg.resizable)       flags |= SDL_WINDOW_RESIZABLE;
-    if (!cfg.decorated)      flags |= SDL_WINDOW_BORDERLESS;
-    if (cfg.alwaysOnTop)     flags |= SDL_WINDOW_ALWAYS_ON_TOP;
+    if (cfg.resizable)
+    {
+        flags |= SDL_WINDOW_RESIZABLE;
+    }
+    if (!cfg.decorated)
+    {
+        flags |= SDL_WINDOW_BORDERLESS;
+    }
+    if (cfg.alwaysOnTop)
+    {
+        flags |= SDL_WINDOW_ALWAYS_ON_TOP;
+    }
 
     // States
-    if (cfg.isFullscreen)    flags |= SDL_WINDOW_FULLSCREEN_DESKTOP;
-    if (cfg.isMaximized)     flags |= SDL_WINDOW_MAXIMIZED;
+    if (cfg.isFullscreen)
+    {
+        flags |= SDL_WINDOW_FULLSCREEN_DESKTOP;
+    }
+    if (cfg.isMaximized)
+    {
+        flags |= SDL_WINDOW_MAXIMIZED;
+    }
 
     auto width = cfg.width;
     auto height = cfg.height;
@@ -73,9 +88,8 @@ SDL_Window* createSDLWindow(const WindowConfig& cfg, gpu::WindowType windowType)
     {
         auto appPreferences = PreferencesStore::instance().preferences(preferencesContext);
         auto windowSize = appPreferences.get("windowSize", glm::vec2(
-            static_cast<float>(width),
-            static_cast<float>(height)
-        ));
+                                                               static_cast<float>(width),
+                                                               static_cast<float>(height)));
         width = static_cast<int>(windowSize.x);
         height = static_cast<int>(windowSize.y);
     }
@@ -86,20 +100,18 @@ SDL_Window* createSDLWindow(const WindowConfig& cfg, gpu::WindowType windowType)
         ypos,
         width,
         height,
-        flags
-    );
+        flags);
 
-    if (!window) {
+    if (!window)
+    {
         throw std::runtime_error(
-            std::string("Failed to create SDL window: ") + SDL_GetError()
-        );
+            std::string("Failed to create SDL window: ") + SDL_GetError());
     }
 
     return window;
 }
 
-
-MainLoop * MainLoop::_mainLoopInstance = nullptr;
+MainLoop* MainLoop::_mainLoopInstance = nullptr;
 
 void MainLoop::initMainLoopInstance()
 {
@@ -111,13 +123,13 @@ void MainLoop::initMainLoopInstance()
 }
 
 MainLoop::MainLoop(const std::string& appId)
-    :_appId { appId }
+    : _appId{appId}
 {
     initMainLoopInstance();
 }
 
-MainLoop::MainLoop(std::string && appId)
-    :_appId { appId }
+MainLoop::MainLoop(std::string&& appId)
+    : _appId{appId}
 {
     initMainLoopInstance();
 }
@@ -130,7 +142,8 @@ MainLoop::~MainLoop()
     }
 }
 
-int32_t MainLoop::run(app::Application * application) {
+int32_t MainLoop::run(app::Application* application)
+{
     if (!application)
     {
         throw std::invalid_argument("MainLoop::run: application must not be null.");
@@ -138,7 +151,8 @@ int32_t MainLoop::run(app::Application * application) {
     return runInternal(application, detail::createRenderGraphicsExecution());
 }
 
-int32_t MainLoop::run(app::Application * application, const draw::EngineConfig& config) {
+int32_t MainLoop::run(app::Application* application, const draw::EngineConfig& config)
+{
     if (!application)
     {
         throw std::invalid_argument("MainLoop::run: application must not be null.");
@@ -146,7 +160,8 @@ int32_t MainLoop::run(app::Application * application, const draw::EngineConfig& 
     return runInternal(application, detail::createDrawGraphicsExecution(config));
 }
 
-int32_t MainLoop::runInternal(app::Application * application, std::unique_ptr<detail::GraphicsExecution> execution) {
+int32_t MainLoop::runInternal(app::Application* application, std::unique_ptr<detail::GraphicsExecution> execution)
+{
     execution->validate(*application);
     execution->ensureRuntimeAvailable();
     execution->prepare(_appId);
@@ -156,10 +171,13 @@ int32_t MainLoop::runInternal(app::Application * application, std::unique_ptr<de
 #endif
 
     initSdlVideoDriver();
-	SDL_Init(SDL_INIT_VIDEO);
+    SDL_Init(SDL_INIT_VIDEO);
 
     auto window = createSDLWindow(_windowConfig, execution->windowType());
-    if (!window) throw std::runtime_error(std::string("Failed to create application window: ") + SDL_GetError());
+    if (!window)
+    {
+        throw std::runtime_error(std::string("Failed to create application window: ") + SDL_GetError());
+    }
     std::unique_ptr<SDL_Window, decltype(&SDL_DestroyWindow)> windowOwner(window, SDL_DestroyWindow);
 
     _execution = std::move(execution);
@@ -167,12 +185,22 @@ int32_t MainLoop::runInternal(app::Application * application, std::unique_ptr<de
         std::unique_ptr<detail::GraphicsExecution>& execution;
         ~ExecutionCleanup()
         {
-            if (execution) { try { execution->cleanup(); } catch (...) { } execution.reset(); }
+            if (execution)
+            {
+                try
+                {
+                    execution->cleanup();
+                }
+                catch (...)
+                {
+                }
+                execution.reset();
+            }
         }
-    } executionCleanup{ _execution }; // Released before windowOwner on exceptions.
+    } executionCleanup{_execution}; // Released before windowOwner on exceptions.
     _execution->initialize(window, *application, _userInterface);
 
-	_inputManager.setDelegate(application->inputDelegate());
+    _inputManager.setDelegate(application->inputDelegate());
 
     SDL_Event event;
     bool quit = false;
@@ -182,27 +210,27 @@ int32_t MainLoop::runInternal(app::Application * application, std::unique_ptr<de
     auto minResizeInterval = 500;
     constexpr auto backgroundPollInterval = std::chrono::milliseconds(50);
     std::chrono::steady_clock::time_point lastResizeEventTime;
-    
-    
+
     // Initialize the graphics resources before executing the first frame
     _execution->initializeScene();
     auto lastRenderedFrameTime = std::chrono::steady_clock::now();
     auto nextBackgroundFrame = lastRenderedFrameTime;
     int storeWidth = _windowConfig.width;
     int storeHeight = _windowConfig.height;
-    
+
     while (!quit)
     {
         while (SDL_PollEvent(&event) != 0)
         {
-            
+
             if (event.type == SDL_QUIT)
             {
                 if (_onExitFunction)
                 {
                     quit = _onExitFunction();
                 }
-                else {
+                else
+                {
                     quit = true;
                 }
             }
@@ -214,55 +242,56 @@ int32_t MainLoop::runInternal(app::Application * application, std::unique_ptr<de
                 application->inputDelegate()->fileDropped(std::filesystem::path(pathStr));
             }
             else if (event.type == SDL_WINDOWEVENT &&
-                event.window.event == SDL_WINDOWEVENT_MINIMIZED)
+                     event.window.event == SDL_WINDOWEVENT_MINIMIZED)
             {
                 stopRendering = true;
             }
             else if (event.type == SDL_WINDOWEVENT &&
-                event.window.event == SDL_WINDOWEVENT_RESTORED)
+                     event.window.event == SDL_WINDOWEVENT_RESTORED)
             {
                 stopRendering = false;
                 nextBackgroundFrame = std::chrono::steady_clock::now();
                 requestFrame();
             }
             else if (event.type == SDL_WINDOWEVENT &&
-                event.window.event == SDL_WINDOWEVENT_FOCUS_GAINED)
+                     event.window.event == SDL_WINDOWEVENT_FOCUS_GAINED)
             {
                 isForeground = true;
                 lastRenderedFrameTime = std::chrono::steady_clock::now();
                 requestFrame();
             }
             else if (event.type == SDL_WINDOWEVENT &&
-                event.window.event == SDL_WINDOWEVENT_FOCUS_LOST)
+                     event.window.event == SDL_WINDOWEVENT_FOCUS_LOST)
             {
                 isForeground = false;
                 nextBackgroundFrame = std::chrono::steady_clock::now();
                 requestFrame();
             }
             else if ((event.type == SDL_WINDOWEVENT &&
-                event.window.event == SDL_WINDOWEVENT_RESIZED) ||
-                _resizeRequested
-            ) {
+                      event.window.event == SDL_WINDOWEVENT_RESIZED) ||
+                     _resizeRequested)
+            {
                 int w, h;
                 SDL_GetWindowSize(window, &w, &h);
                 storeWidth = w;
                 storeHeight = h;
                 application->uiDelegate()->_viewportWidth = static_cast<uint32_t>(w);
                 application->uiDelegate()->_viewportHeight = static_cast<uint32_t>(h);
-                
+
                 lastResizeEventTime = std::chrono::steady_clock::now();
-                if (!resizing) {
+                if (!resizing)
+                {
                     _execution->requestResize();
                     resizing = true;
                 }
                 _resizeRequested = false;
             }
-			else if (event.type == SDL_KEYUP || event.type == SDL_KEYDOWN)
-			{
-			    const auto bg2eEvent = KeyEvent::fromSDLEvent(event);
+            else if (event.type == SDL_KEYUP || event.type == SDL_KEYDOWN)
+            {
+                const auto bg2eEvent = KeyEvent::fromSDLEvent(event);
                 if (event.key.state == SDL_PRESSED)
                 {
-					_inputManager.keyDown(bg2eEvent);
+                    _inputManager.keyDown(bg2eEvent);
                     _shortcuts.keyDown(bg2eEvent);
                 }
                 else if (event.key.state == SDL_RELEASED)
@@ -270,17 +299,16 @@ int32_t MainLoop::runInternal(app::Application * application, std::unique_ptr<de
                     _inputManager.keyUp(bg2eEvent);
                     _shortcuts.keyUp(bg2eEvent);
                 }
-			}
+            }
             else if (event.type == SDL_MOUSEMOTION || event.type == SDL_MOUSEBUTTONDOWN || event.type == SDL_MOUSEBUTTONUP)
             {
                 int x, y;
                 SDL_GetMouseState(&x, &y);
-                
+
                 if (event.type == SDL_MOUSEBUTTONDOWN || event.type == SDL_MOUSEBUTTONUP)
                 {
-                    auto button = event.button.button == SDL_BUTTON_LEFT ?
-                        0 : event.button.button == SDL_BUTTON_MIDDLE ?
-                        1 : 2;
+                    auto button = event.button.button == SDL_BUTTON_LEFT ? 0 : event.button.button == SDL_BUTTON_MIDDLE ? 1
+                                                                                                                        : 2;
                     if (event.button.state == SDL_PRESSED)
                     {
                         _inputManager.mouseButtonDown(button, x, y);
@@ -306,18 +334,19 @@ int32_t MainLoop::runInternal(app::Application * application, std::unique_ptr<de
             }
         }
 
-            if (!quit)
-            {
-                executeSafeUpdateScene();
+        if (!quit)
+        {
+            executeSafeUpdateScene();
 
-                drainMainThreadQueue();
+            drainMainThreadQueue();
 
-                _timeout.executeTimers();
+            _timeout.executeTimers();
 
-                if (resizing)
+            if (resizing)
             {
                 auto now = std::chrono::steady_clock::now();
-                if (now - lastResizeEventTime > std::chrono::milliseconds(minResizeInterval)) {
+                if (now - lastResizeEventTime > std::chrono::milliseconds(minResizeInterval))
+                {
                     resizing = false;
                 }
             }
@@ -337,7 +366,7 @@ int32_t MainLoop::runInternal(app::Application * application, std::unique_ptr<de
             {
                 const auto remaining = nextBackgroundFrame - frameTime;
                 std::this_thread::sleep_for(std::min(remaining,
-                    std::chrono::duration_cast<std::chrono::steady_clock::duration>(backgroundPollInterval)));
+                                                     std::chrono::duration_cast<std::chrono::steady_clock::duration>(backgroundPollInterval)));
                 continue;
             }
 
@@ -352,7 +381,7 @@ int32_t MainLoop::runInternal(app::Application * application, std::unique_ptr<de
                 const auto fps = _backgroundMaxFrameRate.load();
                 const auto period = std::chrono::duration<double>(1.0 / fps);
                 nextBackgroundFrame = std::chrono::steady_clock::now() +
-                    std::chrono::duration_cast<std::chrono::steady_clock::duration>(period);
+                                      std::chrono::duration_cast<std::chrono::steady_clock::duration>(period);
             }
         }
     }
@@ -362,7 +391,7 @@ int32_t MainLoop::runInternal(app::Application * application, std::unique_ptr<de
     if (_windowConfig.persistentSize)
     {
         auto appPreferences = PreferencesStore::instance().preferences(preferencesContext);
-        appPreferences.set("windowSize", glm::vec2{ storeWidth, storeHeight });
+        appPreferences.set("windowSize", glm::vec2{storeWidth, storeHeight});
     }
 
     _execution->waitIdle();
@@ -402,21 +431,30 @@ void MainLoop::requestFrame()
 
 void MainLoop::requestSceneFrame()
 {
-    if (!_execution) throw std::logic_error("MainLoop::requestSceneFrame requires an active run.");
+    if (!_execution)
+    {
+        throw std::logic_error("MainLoop::requestSceneFrame requires an active run.");
+    }
     _execution->requestSceneFrame();
     requestFrame();
 }
 
 void MainLoop::pauseScene(const glm::vec4& clearColor)
 {
-    if (!_execution) throw std::logic_error("MainLoop::pauseScene requires an active run.");
+    if (!_execution)
+    {
+        throw std::logic_error("MainLoop::pauseScene requires an active run.");
+    }
     _execution->pauseScene(clearColor);
     requestFrame();
 }
 
 void MainLoop::resumeScene()
 {
-    if (!_execution) throw std::logic_error("MainLoop::resumeScene requires an active run.");
+    if (!_execution)
+    {
+        throw std::logic_error("MainLoop::resumeScene requires an active run.");
+    }
     _execution->resumeScene();
     requestFrame();
 }
@@ -432,7 +470,10 @@ void MainLoop::executeSafeUpdateScene()
     std::vector<SafeUpdateSceneEntry> local;
     {
         std::lock_guard lock(_safeUpdateSceneMutex);
-        if (_safeUpdateScene.empty()) return;
+        if (_safeUpdateScene.empty())
+        {
+            return;
+        }
         std::swap(local, _safeUpdateScene);
     }
     // The execution exists only during an active run; outside a run there is
@@ -458,7 +499,10 @@ void MainLoop::executeSafeUpdateScene()
             updated = true;
         }
     }
-    if (updated && _execution) requestSceneFrame();
+    if (updated && _execution)
+    {
+        requestSceneFrame();
+    }
 }
 
 void MainLoop::drainMainThreadQueue()
@@ -466,7 +510,10 @@ void MainLoop::drainMainThreadQueue()
     std::queue<std::function<void()>> local;
     {
         std::lock_guard lock(_mainThreadQueueMutex);
-        if (_mainThreadQueue.empty()) return;
+        if (_mainThreadQueue.empty())
+        {
+            return;
+        }
         std::swap(local, _mainThreadQueue);
     }
     while (!local.empty())
@@ -488,20 +535,40 @@ void MainLoop::asyncLoad(
 
     _execution->pauseScene(clearColor);
 
-    if (_execution->userInterfaceReady()) _userInterface.setFrameOverride([this]{ _loader.draw(); });
+    if (_execution->userInterfaceReady())
+    {
+        _userInterface.setFrameOverride([this]
+                                        {
+                                            _loader.draw();
+                                        });
+    }
 
     std::thread([this, fn = std::move(loadFn), complete = std::move(onComplete)]() mutable
-    {
-        std::exception_ptr error;
-        try { fn(&_loader); }
-        catch (...) { error = std::current_exception(); }
+                {
+                    std::exception_ptr error;
+                    try
+                    {
+                        fn(&_loader);
+                    }
+                    catch (...)
+                    {
+                        error = std::current_exception();
+                    }
 
-        safeUpdateScene([this, complete = std::move(complete), error]() {
-            if (_execution->userInterfaceReady()) _userInterface.clearFrameOverride();
-            _execution->resumeScene();
-            if (complete) complete(error);
-        });
-    }).detach();
+                    safeUpdateScene([this, complete = std::move(complete), error]()
+                                    {
+                                        if (_execution->userInterfaceReady())
+                                        {
+                                            _userInterface.clearFrameOverride();
+                                        }
+                                        _execution->resumeScene();
+                                        if (complete)
+                                        {
+                                            complete(error);
+                                        }
+                                    });
+                })
+        .detach();
 }
 
 }

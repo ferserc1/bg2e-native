@@ -28,7 +28,7 @@ namespace gpu {
 namespace metal {
 
 class PhysicalDevice : public gpu::PhysicalDevice {
-public:
+  public:
     ~PhysicalDevice() override;
 
     void choose(gpu::Instance& instance, gpu::Surface& surface) override;
@@ -37,9 +37,12 @@ public:
 
     const std::shared_ptr<PhysicalDeviceProperties> properties() const override;
 
-    DeviceHandle metalDevice() const { return _device; }
+    DeviceHandle metalDevice() const
+    {
+        return _device;
+    }
 
-private:
+  private:
     DeviceHandle _device = nullptr;
     std::shared_ptr<PhysicalDeviceProperties> _properties;
 };

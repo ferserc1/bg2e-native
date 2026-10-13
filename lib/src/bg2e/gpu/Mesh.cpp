@@ -31,12 +31,11 @@ VertexBufferDescription MeshGeneric<bg2e::geo::MeshP>::vertexBufferDescription()
 {
     using V = bg2e::geo::VertexP;
     VertexBufferDescription desc;
-    desc.binding   = 0;
-    desc.stride    = sizeof(V);
+    desc.binding = 0;
+    desc.stride = sizeof(V);
     desc.inputRate = VertexInputRate::Vertex;
     desc.attributes = {
-        { 0, 0, VertexSemantic::Position, Format::R32G32B32_SFLOAT, static_cast<uint32_t>(offsetof(V, position)) }
-    };
+        {0, 0, VertexSemantic::Position, Format::R32G32B32_SFLOAT, static_cast<uint32_t>(offsetof(V, position))}};
     return desc;
 }
 
@@ -48,13 +47,12 @@ VertexBufferDescription MeshGeneric<bg2e::geo::MeshPN>::vertexBufferDescription(
 {
     using V = bg2e::geo::VertexPN;
     VertexBufferDescription desc;
-    desc.binding   = 0;
-    desc.stride    = sizeof(V);
+    desc.binding = 0;
+    desc.stride = sizeof(V);
     desc.inputRate = VertexInputRate::Vertex;
     desc.attributes = {
-        { 0, 0, VertexSemantic::Position, Format::R32G32B32_SFLOAT, static_cast<uint32_t>(offsetof(V, position)) },
-        { 1, 0, VertexSemantic::Normal,   Format::R32G32B32_SFLOAT, static_cast<uint32_t>(offsetof(V, normal))   }
-    };
+        {0, 0, VertexSemantic::Position, Format::R32G32B32_SFLOAT, static_cast<uint32_t>(offsetof(V, position))},
+        {1, 0, VertexSemantic::Normal, Format::R32G32B32_SFLOAT, static_cast<uint32_t>(offsetof(V, normal))}};
     return desc;
 }
 
@@ -66,13 +64,12 @@ VertexBufferDescription MeshGeneric<bg2e::geo::MeshPC>::vertexBufferDescription(
 {
     using V = bg2e::geo::VertexPC;
     VertexBufferDescription desc;
-    desc.binding   = 0;
-    desc.stride    = sizeof(V);
+    desc.binding = 0;
+    desc.stride = sizeof(V);
     desc.inputRate = VertexInputRate::Vertex;
     desc.attributes = {
-        { 0, 0, VertexSemantic::Position, Format::R32G32B32_SFLOAT,    static_cast<uint32_t>(offsetof(V, position)) },
-        { 1, 0, VertexSemantic::Color,    Format::R32G32B32A32_SFLOAT, static_cast<uint32_t>(offsetof(V, color))    }
-    };
+        {0, 0, VertexSemantic::Position, Format::R32G32B32_SFLOAT, static_cast<uint32_t>(offsetof(V, position))},
+        {1, 0, VertexSemantic::Color, Format::R32G32B32A32_SFLOAT, static_cast<uint32_t>(offsetof(V, color))}};
     return desc;
 }
 
@@ -84,13 +81,12 @@ VertexBufferDescription MeshGeneric<bg2e::geo::MeshPU>::vertexBufferDescription(
 {
     using V = bg2e::geo::VertexPU;
     VertexBufferDescription desc;
-    desc.binding   = 0;
-    desc.stride    = sizeof(V);
+    desc.binding = 0;
+    desc.stride = sizeof(V);
     desc.inputRate = VertexInputRate::Vertex;
     desc.attributes = {
-        { 0, 0, VertexSemantic::Position,  Format::R32G32B32_SFLOAT, static_cast<uint32_t>(offsetof(V, position))  },
-        { 1, 0, VertexSemantic::TexCoord0, Format::R32G32_SFLOAT,    static_cast<uint32_t>(offsetof(V, texCoord0)) }
-    };
+        {0, 0, VertexSemantic::Position, Format::R32G32B32_SFLOAT, static_cast<uint32_t>(offsetof(V, position))},
+        {1, 0, VertexSemantic::TexCoord0, Format::R32G32_SFLOAT, static_cast<uint32_t>(offsetof(V, texCoord0))}};
     return desc;
 }
 
@@ -102,14 +98,13 @@ VertexBufferDescription MeshGeneric<bg2e::geo::MeshPNU>::vertexBufferDescription
 {
     using V = bg2e::geo::VertexPNU;
     VertexBufferDescription desc;
-    desc.binding   = 0;
-    desc.stride    = sizeof(V);
+    desc.binding = 0;
+    desc.stride = sizeof(V);
     desc.inputRate = VertexInputRate::Vertex;
     desc.attributes = {
-        { 0, 0, VertexSemantic::Position,  Format::R32G32B32_SFLOAT, static_cast<uint32_t>(offsetof(V, position))  },
-        { 1, 0, VertexSemantic::Normal,    Format::R32G32B32_SFLOAT, static_cast<uint32_t>(offsetof(V, normal))    },
-        { 2, 0, VertexSemantic::TexCoord0, Format::R32G32_SFLOAT,    static_cast<uint32_t>(offsetof(V, texCoord0)) }
-    };
+        {0, 0, VertexSemantic::Position, Format::R32G32B32_SFLOAT, static_cast<uint32_t>(offsetof(V, position))},
+        {1, 0, VertexSemantic::Normal, Format::R32G32B32_SFLOAT, static_cast<uint32_t>(offsetof(V, normal))},
+        {2, 0, VertexSemantic::TexCoord0, Format::R32G32_SFLOAT, static_cast<uint32_t>(offsetof(V, texCoord0))}};
     return desc;
 }
 
@@ -121,14 +116,13 @@ VertexBufferDescription MeshGeneric<bg2e::geo::MeshPNC>::vertexBufferDescription
 {
     using V = bg2e::geo::VertexPNC;
     VertexBufferDescription desc;
-    desc.binding   = 0;
-    desc.stride    = sizeof(V);
+    desc.binding = 0;
+    desc.stride = sizeof(V);
     desc.inputRate = VertexInputRate::Vertex;
     desc.attributes = {
-        { 0, 0, VertexSemantic::Position, Format::R32G32B32_SFLOAT,    static_cast<uint32_t>(offsetof(V, position)) },
-        { 1, 0, VertexSemantic::Normal,   Format::R32G32B32_SFLOAT,    static_cast<uint32_t>(offsetof(V, normal))   },
-        { 2, 0, VertexSemantic::Color,    Format::R32G32B32A32_SFLOAT, static_cast<uint32_t>(offsetof(V, color))    }
-    };
+        {0, 0, VertexSemantic::Position, Format::R32G32B32_SFLOAT, static_cast<uint32_t>(offsetof(V, position))},
+        {1, 0, VertexSemantic::Normal, Format::R32G32B32_SFLOAT, static_cast<uint32_t>(offsetof(V, normal))},
+        {2, 0, VertexSemantic::Color, Format::R32G32B32A32_SFLOAT, static_cast<uint32_t>(offsetof(V, color))}};
     return desc;
 }
 
@@ -140,15 +134,14 @@ VertexBufferDescription MeshGeneric<bg2e::geo::MeshPNUC>::vertexBufferDescriptio
 {
     using V = bg2e::geo::VertexPNUC;
     VertexBufferDescription desc;
-    desc.binding   = 0;
-    desc.stride    = sizeof(V);
+    desc.binding = 0;
+    desc.stride = sizeof(V);
     desc.inputRate = VertexInputRate::Vertex;
     desc.attributes = {
-        { 0, 0, VertexSemantic::Position,  Format::R32G32B32_SFLOAT,    static_cast<uint32_t>(offsetof(V, position))  },
-        { 1, 0, VertexSemantic::Normal,    Format::R32G32B32_SFLOAT,    static_cast<uint32_t>(offsetof(V, normal))    },
-        { 2, 0, VertexSemantic::TexCoord0, Format::R32G32_SFLOAT,       static_cast<uint32_t>(offsetof(V, texCoord0)) },
-        { 3, 0, VertexSemantic::Color,     Format::R32G32B32A32_SFLOAT, static_cast<uint32_t>(offsetof(V, color))     }
-    };
+        {0, 0, VertexSemantic::Position, Format::R32G32B32_SFLOAT, static_cast<uint32_t>(offsetof(V, position))},
+        {1, 0, VertexSemantic::Normal, Format::R32G32B32_SFLOAT, static_cast<uint32_t>(offsetof(V, normal))},
+        {2, 0, VertexSemantic::TexCoord0, Format::R32G32_SFLOAT, static_cast<uint32_t>(offsetof(V, texCoord0))},
+        {3, 0, VertexSemantic::Color, Format::R32G32B32A32_SFLOAT, static_cast<uint32_t>(offsetof(V, color))}};
     return desc;
 }
 
@@ -160,15 +153,14 @@ VertexBufferDescription MeshGeneric<bg2e::geo::MeshPNUT>::vertexBufferDescriptio
 {
     using V = bg2e::geo::VertexPNUT;
     VertexBufferDescription desc;
-    desc.binding   = 0;
-    desc.stride    = sizeof(V);
+    desc.binding = 0;
+    desc.stride = sizeof(V);
     desc.inputRate = VertexInputRate::Vertex;
     desc.attributes = {
-        { 0, 0, VertexSemantic::Position,  Format::R32G32B32_SFLOAT, static_cast<uint32_t>(offsetof(V, position))  },
-        { 1, 0, VertexSemantic::Normal,    Format::R32G32B32_SFLOAT, static_cast<uint32_t>(offsetof(V, normal))    },
-        { 2, 0, VertexSemantic::TexCoord0, Format::R32G32_SFLOAT,    static_cast<uint32_t>(offsetof(V, texCoord0)) },
-        { 3, 0, VertexSemantic::Tangent,   Format::R32G32B32_SFLOAT, static_cast<uint32_t>(offsetof(V, tangent))   }
-    };
+        {0, 0, VertexSemantic::Position, Format::R32G32B32_SFLOAT, static_cast<uint32_t>(offsetof(V, position))},
+        {1, 0, VertexSemantic::Normal, Format::R32G32B32_SFLOAT, static_cast<uint32_t>(offsetof(V, normal))},
+        {2, 0, VertexSemantic::TexCoord0, Format::R32G32_SFLOAT, static_cast<uint32_t>(offsetof(V, texCoord0))},
+        {3, 0, VertexSemantic::Tangent, Format::R32G32B32_SFLOAT, static_cast<uint32_t>(offsetof(V, tangent))}};
     return desc;
 }
 
@@ -180,16 +172,15 @@ VertexBufferDescription MeshGeneric<bg2e::geo::MeshPNUUT>::vertexBufferDescripti
 {
     using V = bg2e::geo::VertexPNUUT;
     VertexBufferDescription desc;
-    desc.binding   = 0;
-    desc.stride    = sizeof(V);
+    desc.binding = 0;
+    desc.stride = sizeof(V);
     desc.inputRate = VertexInputRate::Vertex;
     desc.attributes = {
-        { 0, 0, VertexSemantic::Position,  Format::R32G32B32_SFLOAT, static_cast<uint32_t>(offsetof(V, position))  },
-        { 1, 0, VertexSemantic::Normal,    Format::R32G32B32_SFLOAT, static_cast<uint32_t>(offsetof(V, normal))    },
-        { 2, 0, VertexSemantic::TexCoord0, Format::R32G32_SFLOAT,    static_cast<uint32_t>(offsetof(V, texCoord0)) },
-        { 3, 0, VertexSemantic::TexCoord1, Format::R32G32_SFLOAT,    static_cast<uint32_t>(offsetof(V, texCoord1)) },
-        { 4, 0, VertexSemantic::Tangent,   Format::R32G32B32_SFLOAT, static_cast<uint32_t>(offsetof(V, tangent))   }
-    };
+        {0, 0, VertexSemantic::Position, Format::R32G32B32_SFLOAT, static_cast<uint32_t>(offsetof(V, position))},
+        {1, 0, VertexSemantic::Normal, Format::R32G32B32_SFLOAT, static_cast<uint32_t>(offsetof(V, normal))},
+        {2, 0, VertexSemantic::TexCoord0, Format::R32G32_SFLOAT, static_cast<uint32_t>(offsetof(V, texCoord0))},
+        {3, 0, VertexSemantic::TexCoord1, Format::R32G32_SFLOAT, static_cast<uint32_t>(offsetof(V, texCoord1))},
+        {4, 0, VertexSemantic::Tangent, Format::R32G32B32_SFLOAT, static_cast<uint32_t>(offsetof(V, tangent))}};
     return desc;
 }
 
@@ -202,7 +193,6 @@ template class BG2E_API MeshGeneric<bg2e::geo::MeshPNC>;
 template class BG2E_API MeshGeneric<bg2e::geo::MeshPNUC>;
 template class BG2E_API MeshGeneric<bg2e::geo::MeshPNUT>;
 template class BG2E_API MeshGeneric<bg2e::geo::MeshPNUUT>;
-
 
 }
 }

@@ -26,18 +26,21 @@ namespace gpu {
 namespace vk {
 
 class BG2E_API Sampler : public gpu::Sampler {
-public:
+  public:
     Sampler(gpu::Device* gpuDevice, VkDevice device, const gpu::SamplerDescription& description);
     ~Sampler() override;
 
     bool isValid() const override;
     void cleanup() override;
 
-    VkSampler handle() const { return _sampler; }
+    VkSampler handle() const
+    {
+        return _sampler;
+    }
 
-private:
-    VkDevice   _device{VK_NULL_HANDLE};
-    VkSampler  _sampler{VK_NULL_HANDLE};
+  private:
+    VkDevice _device{VK_NULL_HANDLE};
+    VkSampler _sampler{VK_NULL_HANDLE};
 };
 
 }

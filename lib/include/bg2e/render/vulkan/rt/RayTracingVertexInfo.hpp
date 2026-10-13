@@ -98,4 +98,3 @@ struct RayTracingVertexInfo<bg2e::geo::MeshPNUUT> {
 }
 }
 }
-

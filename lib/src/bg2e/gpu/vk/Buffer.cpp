@@ -77,7 +77,8 @@ VkBufferUsageFlags toVkBufferUsage(BufferUsage usage, bool rayTracingEnabled)
 
 Buffer::Buffer(vk::Device* device, const std::string& debugName)
     : gpu::Buffer(device), _device(device), _debugName(debugName)
-{}
+{
+}
 
 Buffer::~Buffer()
 {
@@ -89,7 +90,7 @@ void Buffer::cleanup()
     if (_buffer != VK_NULL_HANDLE && _device != nullptr)
     {
         vmaDestroyBuffer(_device->allocator(), _buffer, _allocation);
-        _buffer     = VK_NULL_HANDLE;
+        _buffer = VK_NULL_HANDLE;
         _allocation = VK_NULL_HANDLE;
         _mappedData = nullptr;
     }
@@ -98,9 +99,9 @@ void Buffer::cleanup()
 void Buffer::createVertexBuffer(const void* data, uint64_t byteSize)
 {
     VkBufferUsageFlags vkUsage =
-        VK_BUFFER_USAGE_VERTEX_BUFFER_BIT     |
-        VK_BUFFER_USAGE_TRANSFER_DST_BIT      |
-        VK_BUFFER_USAGE_STORAGE_BUFFER_BIT    |
+        VK_BUFFER_USAGE_VERTEX_BUFFER_BIT |
+        VK_BUFFER_USAGE_TRANSFER_DST_BIT |
+        VK_BUFFER_USAGE_STORAGE_BUFFER_BIT |
         VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
 
     // When ray tracing is available, also allow this buffer to be used as
@@ -118,9 +119,9 @@ void Buffer::createIndexBuffer(const std::vector<uint32_t>& indices)
     uint64_t byteSize = indices.size() * sizeof(uint32_t);
 
     VkBufferUsageFlags vkUsage =
-        VK_BUFFER_USAGE_INDEX_BUFFER_BIT      |
-        VK_BUFFER_USAGE_TRANSFER_DST_BIT      |
-        VK_BUFFER_USAGE_STORAGE_BUFFER_BIT    |
+        VK_BUFFER_USAGE_INDEX_BUFFER_BIT |
+        VK_BUFFER_USAGE_TRANSFER_DST_BIT |
+        VK_BUFFER_USAGE_STORAGE_BUFFER_BIT |
         VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
 
     if (_device->rayTracingEnabled())
@@ -138,7 +139,7 @@ VkDeviceAddress Buffer::deviceAddress() const
         return 0;
     }
     VkBufferDeviceAddressInfo info{};
-    info.sType  = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;
+    info.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;
     info.buffer = _buffer;
     return vkGetBufferDeviceAddress(_device->handle(), &info);
 }
@@ -177,7 +178,7 @@ void Buffer::createMappedBuffer(const void* data, uint64_t byteSize,
     // updated every frame (e.g. per-object matrices); no staging copy needed.
     VkBufferCreateInfo bufInfo{};
     bufInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-    bufInfo.size  = byteSize;
+    bufInfo.size = byteSize;
     bufInfo.usage = vkUsage;
 
     VmaAllocationCreateInfo allocCI{};
@@ -199,7 +200,7 @@ void Buffer::createMappedBuffer(const void* data, uint64_t byteSize,
         std::memcpy(_mappedData, data, byteSize);
     }
 
-    _usage    = gpuUsage;
+    _usage = gpuUsage;
     _byteSize = byteSize;
 }
 
@@ -208,12 +209,12 @@ void Buffer::updateMappedBuffer(const void* data, uint64_t byteSize, const char*
     if (_mappedData == nullptr)
     {
         throw std::runtime_error(std::string("vk::Buffer::") + debugTag +
-            ": buffer is not host-visible (was it created with createUniformBuffer/createStorageBuffer?)");
+                                 ": buffer is not host-visible (was it created with createUniformBuffer/createStorageBuffer?)");
     }
     if (byteSize > _byteSize)
     {
         throw std::runtime_error(std::string("vk::Buffer::") + debugTag +
-            ": update size exceeds the buffer capacity");
+                                 ": update size exceeds the buffer capacity");
     }
     std::memcpy(_mappedData, data, byteSize);
 }
@@ -224,12 +225,12 @@ void Buffer::uploadWithStaging(const void* data, uint64_t byteSize,
     cleanup();
 
     // Staging buffer: CPU-writable, used only for the upload
-    VkBuffer      stagingBuffer = VK_NULL_HANDLE;
-    VmaAllocation stagingAlloc  = VK_NULL_HANDLE;
+    VkBuffer stagingBuffer = VK_NULL_HANDLE;
+    VmaAllocation stagingAlloc = VK_NULL_HANDLE;
 
     VkBufferCreateInfo stagingInfo{};
     stagingInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-    stagingInfo.size  = byteSize;
+    stagingInfo.size = byteSize;
     stagingInfo.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
 
     VmaAllocationCreateInfo stagingAllocCI{};
@@ -245,30 +246,31 @@ void Buffer::uploadWithStaging(const void* data, uint64_t byteSize,
     // Device-local buffer
     VkBufferCreateInfo bufInfo{};
     bufInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-    bufInfo.size  = byteSize;
+    bufInfo.size = byteSize;
     bufInfo.usage = vkUsage;
 
     VmaAllocationCreateInfo allocCI{};
-    allocCI.usage         = VMA_MEMORY_USAGE_AUTO;
+    allocCI.usage = VMA_MEMORY_USAGE_AUTO;
     allocCI.requiredFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
 
     VK_ASSERT(vmaCreateBuffer(_device->allocator(), &bufInfo, &allocCI,
                               &_buffer, &_allocation, nullptr));
 
     // Upload via immediate submit
-    _device->immediateSubmit([&](gpu::CommandBuffer* cmd) {
-        VkCommandBuffer raw = dynamic_cast<vk::CommandBuffer*>(cmd)->handle();
+    _device->immediateSubmit([&](gpu::CommandBuffer* cmd)
+                             {
+                                 VkCommandBuffer raw = dynamic_cast<vk::CommandBuffer*>(cmd)->handle();
 
-        VkBufferCopy region{};
-        region.srcOffset = 0;
-        region.dstOffset = 0;
-        region.size      = byteSize;
-        vkCmdCopyBuffer(raw, stagingBuffer, _buffer, 1, &region);
-    });
+                                 VkBufferCopy region{};
+                                 region.srcOffset = 0;
+                                 region.dstOffset = 0;
+                                 region.size = byteSize;
+                                 vkCmdCopyBuffer(raw, stagingBuffer, _buffer, 1, &region);
+                             });
 
     vmaDestroyBuffer(_device->allocator(), stagingBuffer, stagingAlloc);
 
-    _usage    = gpuUsage;
+    _usage = gpuUsage;
     _byteSize = byteSize;
 }
 

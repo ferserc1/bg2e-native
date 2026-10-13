@@ -32,9 +32,7 @@ namespace gpu {
 namespace vk {
 
 ResourceSet::ResourceSet(gpu::Device* gpuDevice, VkDevice device, const vk::PipelineLayout* layout, uint32_t setIndex, const std::string& debugName)
-    : gpu::ResourceSet(gpuDevice)
-    , _device(device)
-    , _setIndex(setIndex)
+    : gpu::ResourceSet(gpuDevice), _device(device), _setIndex(setIndex)
 {
     VkDescriptorSetLayout dsLayout = layout->descriptorSetLayout(setIndex);
     if (dsLayout == VK_NULL_HANDLE)
@@ -53,32 +51,60 @@ ResourceSet::ResourceSet(gpu::Device* gpuDevice, VkDevice device, const vk::Pipe
 
     for (const auto& rb : desc.resourceBindings)
     {
-        if (rb.set != setIndex) continue;
+        if (rb.set != setIndex)
+        {
+            continue;
+        }
         switch (rb.type)
         {
-            case ResourceType::SampledImage:  sampledImageCount += rb.count; break;
-            case ResourceType::StorageImage:  storageImageCount += rb.count; break;
-            case ResourceType::Sampler:       samplerCount += rb.count; break;
-            case ResourceType::UniformBuffer: uniformBufferCount += rb.count; break;
-            case ResourceType::StorageBuffer: storageBufferCount += rb.count; break;
-            case ResourceType::AccelerationStructure: accelerationStructureCount += rb.count; break;
-            default: break;
+        case ResourceType::SampledImage:
+            sampledImageCount += rb.count;
+            break;
+        case ResourceType::StorageImage:
+            storageImageCount += rb.count;
+            break;
+        case ResourceType::Sampler:
+            samplerCount += rb.count;
+            break;
+        case ResourceType::UniformBuffer:
+            uniformBufferCount += rb.count;
+            break;
+        case ResourceType::StorageBuffer:
+            storageBufferCount += rb.count;
+            break;
+        case ResourceType::AccelerationStructure:
+            accelerationStructureCount += rb.count;
+            break;
+        default:
+            break;
         }
     }
 
     std::vector<VkDescriptorPoolSize> poolSizes;
     if (sampledImageCount > 0)
-        poolSizes.push_back({ VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, sampledImageCount });
+    {
+        poolSizes.push_back({VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, sampledImageCount});
+    }
     if (storageImageCount > 0)
-        poolSizes.push_back({ VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, storageImageCount });
+    {
+        poolSizes.push_back({VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, storageImageCount});
+    }
     if (samplerCount > 0)
-        poolSizes.push_back({ VK_DESCRIPTOR_TYPE_SAMPLER, samplerCount });
+    {
+        poolSizes.push_back({VK_DESCRIPTOR_TYPE_SAMPLER, samplerCount});
+    }
     if (uniformBufferCount > 0)
-        poolSizes.push_back({ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, uniformBufferCount });
+    {
+        poolSizes.push_back({VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, uniformBufferCount});
+    }
     if (storageBufferCount > 0)
-        poolSizes.push_back({ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, storageBufferCount });
+    {
+        poolSizes.push_back({VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, storageBufferCount});
+    }
     if (accelerationStructureCount > 0)
-        poolSizes.push_back({ VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, accelerationStructureCount });
+    {
+        poolSizes.push_back({VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, accelerationStructureCount});
+    }
 
     VkDescriptorPoolCreateInfo poolInfo{};
     poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
@@ -238,7 +264,7 @@ void ResourceSet::setUniformBuffer(ShaderBinding binding, gpu::Buffer* buffer)
     VkDescriptorBufferInfo bufferInfo{};
     bufferInfo.buffer = vkBuffer->handle();
     bufferInfo.offset = 0;
-    bufferInfo.range  = vkBuffer->byteSize();
+    bufferInfo.range = vkBuffer->byteSize();
 
     _bufferInfos.push_back(bufferInfo);
 
@@ -270,7 +296,7 @@ void ResourceSet::setStorageBuffer(ShaderBinding binding, gpu::Buffer* buffer)
     VkDescriptorBufferInfo bufferInfo{};
     bufferInfo.buffer = vkBuffer->handle();
     bufferInfo.offset = 0;
-    bufferInfo.range  = vkBuffer->byteSize();
+    bufferInfo.range = vkBuffer->byteSize();
 
     _bufferInfos.push_back(bufferInfo);
 
@@ -337,22 +363,21 @@ void ResourceSet::update()
     {
         switch (_writeInfoKinds[i])
         {
-            case WriteInfoKind::Image:
-                _pendingWrites[i].pImageInfo = &_imageInfos[_writeInfoIndices[i]];
-                break;
-            case WriteInfoKind::Buffer:
-                _pendingWrites[i].pBufferInfo = &_bufferInfos[_writeInfoIndices[i]];
-                break;
-            case WriteInfoKind::AccelerationStructure:
-            {
-                const size_t idx = _writeInfoIndices[i];
-                VkWriteDescriptorSetAccelerationStructureKHR& asInfo = _asInfos[idx];
-                asInfo.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR;
-                asInfo.accelerationStructureCount = 1;
-                asInfo.pAccelerationStructures    = &_asHandles[idx];
-                _pendingWrites[i].pNext = &asInfo;
-                break;
-            }
+        case WriteInfoKind::Image:
+            _pendingWrites[i].pImageInfo = &_imageInfos[_writeInfoIndices[i]];
+            break;
+        case WriteInfoKind::Buffer:
+            _pendingWrites[i].pBufferInfo = &_bufferInfos[_writeInfoIndices[i]];
+            break;
+        case WriteInfoKind::AccelerationStructure: {
+            const size_t idx = _writeInfoIndices[i];
+            VkWriteDescriptorSetAccelerationStructureKHR& asInfo = _asInfos[idx];
+            asInfo.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR;
+            asInfo.accelerationStructureCount = 1;
+            asInfo.pAccelerationStructures = &_asHandles[idx];
+            _pendingWrites[i].pNext = &asInfo;
+            break;
+        }
         }
     }
 

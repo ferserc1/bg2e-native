@@ -24,14 +24,14 @@ namespace bg2e {
 namespace scene {
 
 class BG2E_API UpdateVisitor : public NodeVisitor {
-public:
+  public:
     UpdateVisitor();
-    
-    void update(Node * sceneRoot, float delta);
-    
-    void visit(Node *) override;
 
-protected:
+    void update(Node* sceneRoot, float delta);
+
+    void visit(Node*) override;
+
+  protected:
     float _delta = 0.0f;
 };
 

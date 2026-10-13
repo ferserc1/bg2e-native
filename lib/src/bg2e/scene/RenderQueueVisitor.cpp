@@ -16,7 +16,7 @@
  *    along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "../include/bg2e/scene/RenderQueueVisitor.hpp"
+#include <bg2e/scene/RenderQueueVisitor.hpp>
 #include <bg2e/scene/Drawable.hpp>
 #include <bg2e/scene/DrawableComponent.hpp>
 #include <bg2e/scene/TransformComponent.hpp>
@@ -41,25 +41,30 @@ RenderQueueVisitor<DrawableT>::RenderQueueVisitor()
 template <typename DrawableT>
 void RenderQueueVisitor<DrawableT>::enqueue(
     bg2e::scene::Node* sceneRoot,
-    bg2e::render::RenderQueue<DrawableT>* renderQueue
-) {
+    bg2e::render::RenderQueue<DrawableT>* renderQueue)
+{
     _renderQueue = renderQueue;
     _renderQueue->beginFrame();
     sceneRoot->accept(this);
 }
 
 template <typename DrawableT>
-void RenderQueueVisitor<DrawableT>::visit(bg2e::scene::Node* node) {
+void RenderQueueVisitor<DrawableT>::visit(bg2e::scene::Node* node)
+{
     auto drawableComponent = node->getComponent<bg2e::scene::DrawableComponent>();
     auto transformComponent = node->getComponent<bg2e::scene::TransformComponent>();
-    if (transformComponent) {
+    if (transformComponent)
+    {
         _transformStack.push(_currentTransform);
         _currentTransform = _currentTransform * transformComponent->matrix();
     }
-    if (drawableComponent) {
+    if (drawableComponent)
+    {
         Drawable* drawable = dynamic_cast<Drawable*>(drawableComponent->drawableBase().get());
-        if (drawable) {
-            for (size_t i = 0; i < drawable->materials().size(); ++i) {
+        if (drawable)
+        {
+            for (size_t i = 0; i < drawable->materials().size(); ++i)
+            {
                 if (drawable->submeshVisibility(static_cast<uint32_t>(i)))
                 {
                     std::shared_ptr<render::MaterialBase> mat = drawable->renderMaterial(static_cast<uint32_t>(i));
@@ -74,9 +79,11 @@ void RenderQueueVisitor<DrawableT>::visit(bg2e::scene::Node* node) {
 }
 
 template <typename DrawableT>
-void RenderQueueVisitor<DrawableT>::didVisit(bg2e::scene::Node* node) {
+void RenderQueueVisitor<DrawableT>::didVisit(bg2e::scene::Node* node)
+{
     auto transformComponent = node->getComponent<bg2e::scene::TransformComponent>();
-    if (transformComponent) {
+    if (transformComponent)
+    {
         _currentTransform = _transformStack.top();
         _transformStack.pop();
     }
@@ -136,9 +143,5 @@ template void RenderQueueVisitor<scene::DrawablePNUUT>::enqueue(Node*, bg2e::ren
 template void RenderQueueVisitor<scene::DrawablePNUUT>::visit(Node*);
 template void RenderQueueVisitor<scene::DrawablePNUUT>::didVisit(Node*);
 
-
-
 } // namespace scene
 } // namespace bg2e
-
-

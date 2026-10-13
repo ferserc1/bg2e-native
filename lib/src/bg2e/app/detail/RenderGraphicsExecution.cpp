@@ -40,7 +40,7 @@ namespace app {
 namespace detail {
 
 class RenderGraphicsExecution : public GraphicsExecution {
-public:
+  public:
     RenderGraphicsExecution() = default;
 
     // Exception-unwind safety: release any established stage if the owner is
@@ -91,8 +91,7 @@ public:
     void initialize(
         SDL_Window* window,
         Application& application,
-        ui::UserInterface& userInterface
-    ) override
+        ui::UserInterface& userInterface) override
     {
         _engine.init(window);
         _engineInitialized = true;
@@ -102,8 +101,7 @@ public:
         SDL_GetWindowSize(window, &viewportW, &viewportH);
         application.uiDelegate()->setInitialSize(
             static_cast<uint32_t>(viewportW),
-            static_cast<uint32_t>(viewportH)
-        );
+            static_cast<uint32_t>(viewportH));
 
         userInterface.setDelegate(application.uiDelegate());
         userInterface.init(&_engine);
@@ -114,9 +112,10 @@ public:
         _renderLoop.init(&_engine);
         _renderLoopInitialized = true;
 
-        _renderLoop.renderUICallback([&](VkCommandBuffer cmd, VkImageView targetImageView) {
-            _userInterface->draw(cmd, targetImageView);
-        });
+        _renderLoop.renderUICallback([&](VkCommandBuffer cmd, VkImageView targetImageView)
+                                     {
+                                         _userInterface->draw(cmd, targetImageView);
+                                     });
     }
 
     void initializeScene() override
@@ -193,7 +192,7 @@ public:
         _userInterface = nullptr;
     }
 
-protected:
+  protected:
     render::Engine _engine;
     render::RenderLoop _renderLoop;
     ui::UserInterface* _userInterface = nullptr;

@@ -26,12 +26,12 @@
 // scene import service settings (TCP port and enable flag) in
 // preferences_import.json.
 class ImportSettings {
-public:
+  public:
     static constexpr uint32_t DefaultPort = 8643;
-    static constexpr uint32_t MinPort = 1024;    // below: privileged
-    static constexpr uint32_t MaxPort = 49151;   // above: ephemeral/dynamic range
+    static constexpr uint32_t MinPort = 1024;  // below: privileged
+    static constexpr uint32_t MaxPort = 49151; // above: ephemeral/dynamic range
 
-    ImportSettings();   // constructs Preferences("import"), does NOT load
+    ImportSettings(); // constructs Preferences("import"), does NOT load
 
     void load();
     void save();
@@ -39,13 +39,13 @@ public:
     uint32_t port() const;
     void setPort(uint32_t port);
 
-    bool serviceEnabled() const;        // default: true
+    bool serviceEnabled() const; // default: true
     void setServiceEnabled(bool enabled);
 
     // Numeric string typed in the UI -> validated port.
     // Returns false when empty, non-numeric, or outside [MinPort, MaxPort].
     static bool parsePort(const std::string& text, uint32_t& outPort);
 
-private:
-    bg2e::app::Preferences _prefs { "import" };
+  private:
+    bg2e::app::Preferences _prefs{"import"};
 };

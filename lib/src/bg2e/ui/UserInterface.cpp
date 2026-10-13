@@ -24,8 +24,8 @@
 #include <bg2e/gpu/Instance.hpp>
 #include <bg2e/app/PreferencesStore.hpp>
 #include "detail/ImGuiBackend.hpp"
-#include "imgui.h"
-#include "imgui_impl_sdl2.h"
+#include <imgui.h>
+#include <imgui_impl_sdl2.h>
 
 #include <exception>
 #include <stdexcept>
@@ -56,10 +56,19 @@ struct UserInterface::Impl {
         prepared = false;
         preparedCommand = nullptr;
         preparedFrame = nullptr;
-        if (context) ImGui::SetCurrentContext(context);
-        if (renderer) renderer->shutdown();
+        if (context)
+        {
+            ImGui::SetCurrentContext(context);
+        }
+        if (renderer)
+        {
+            renderer->shutdown();
+        }
         renderer.reset();
-        if (sdlStarted) ImGui_ImplSDL2_Shutdown();
+        if (sdlStarted)
+        {
+            ImGui_ImplSDL2_Shutdown();
+        }
         sdlStarted = false;
         if (context)
         {
@@ -73,53 +82,101 @@ struct UserInterface::Impl {
     }
 };
 
-UserInterface::UserInterface() : _impl(std::make_shared<Impl>()) {}
+UserInterface::UserInterface() : _impl(std::make_shared<Impl>())
+{
+}
 UserInterface::~UserInterface()
 {
-    try { cleanup(); } catch (...) { }
+    try
+    {
+        cleanup();
+    }
+    catch (...)
+    {
+    }
 }
 
-bool UserInterface::initialized() const { return _impl->ready; }
+bool UserInterface::initialized() const
+{
+    return _impl->ready;
+}
 
 void UserInterface::init(render::Engine* engine)
 {
-    if (!engine) throw std::invalid_argument("UI requires a production Engine.");
-    if (_impl->context || ImGui::GetCurrentContext()) throw std::logic_error("An ImGui context is already active.");
+    if (!engine)
+    {
+        throw std::invalid_argument("UI requires a production Engine.");
+    }
+    if (_impl->context || ImGui::GetCurrentContext())
+    {
+        throw std::logic_error("An ImGui context is already active.");
+    }
     _impl = std::make_shared<Impl>(); // Old engine callbacks retain only their own lifecycle.
     _engine = engine;
     _impl->production = true;
     // Capture retained state, never this: the engine determines production
     // shutdown ordering even if the UI wrapper is destroyed first.
-    engine->cleanupManager().push([state = _impl](VkDevice) { state->shutdown(); });
+    engine->cleanupManager().push([state = _impl](VkDevice)
+                                  {
+                                      state->shutdown();
+                                  });
     try
     {
         s_uiScale = app::PreferencesStore::instance().preferences("ui").get("uiScale", s_uiScale);
         _impl->context = ImGui::CreateContext();
-        if (!_impl->context) throw std::runtime_error("ImGui context creation failed.");
+        if (!_impl->context)
+        {
+            throw std::runtime_error("ImGui context creation failed.");
+        }
         if (!ImGui_ImplSDL2_InitForVulkan(static_cast<SDL_Window*>(engine->windowPtr())))
+        {
             throw std::runtime_error("ImGui SDL Vulkan initialization failed.");
+        }
         _impl->sdlStarted = true;
         _impl->renderer = detail::createVulkanImGuiBackend();
         _impl->renderer->initialize(*engine);
-        if (_delegate) _delegate->init(engine, this);
+        if (_delegate)
+        {
+            _delegate->init(engine, this);
+        }
         _impl->ready = true;
     }
     catch (...)
     {
         auto error = std::current_exception();
-        try { engine->device().waitIdle(); } catch (...) { }
-        try { _impl->shutdown(); } catch (...) { }
+        try
+        {
+            engine->device().waitIdle();
+        }
+        catch (...)
+        {
+        }
+        try
+        {
+            _impl->shutdown();
+        }
+        catch (...)
+        {
+        }
         std::rethrow_exception(error);
     }
 }
 
 void UserInterface::init(draw::Engine* engine)
 {
-    if (!engine) throw std::invalid_argument("UI requires a draw Engine.");
-    if (_impl->context || ImGui::GetCurrentContext()) throw std::logic_error("An ImGui context is already active.");
+    if (!engine)
+    {
+        throw std::invalid_argument("UI requires a draw Engine.");
+    }
+    if (_impl->context || ImGui::GetCurrentContext())
+    {
+        throw std::logic_error("An ImGui context is already active.");
+    }
 #ifndef BG2E_IS_MAC
     if (engine->backendType() == gpu::BackendType::Metal)
+    {
         throw std::invalid_argument("Metal UI is available only on macOS.");
+    }
 #endif
     _impl = std::make_shared<Impl>();
     _impl->production = false;
@@ -129,7 +186,10 @@ void UserInterface::init(draw::Engine* engine)
     {
         s_uiScale = app::PreferencesStore::instance().preferences("ui").get("uiScale", s_uiScale);
         _impl->context = ImGui::CreateContext();
-        if (!_impl->context) throw std::runtime_error("ImGui context creation failed.");
+        if (!_impl->context)
+        {
+            throw std::runtime_error("ImGui context creation failed.");
+        }
         bool sdlInitialized = false;
         switch (engine->backendType())
         {
@@ -148,17 +208,35 @@ void UserInterface::init(draw::Engine* engine)
         default:
             throw std::invalid_argument("Unsupported draw UI backend.");
         }
-        if (!sdlInitialized) throw std::runtime_error("ImGui SDL initialization failed.");
+        if (!sdlInitialized)
+        {
+            throw std::runtime_error("ImGui SDL initialization failed.");
+        }
         _impl->sdlStarted = true;
         _impl->renderer->initialize(*engine);
-        if (_delegate) _delegate->init(engine, this);
+        if (_delegate)
+        {
+            _delegate->init(engine, this);
+        }
         _impl->ready = true;
     }
     catch (...)
     {
         auto error = std::current_exception();
-        try { engine->device()->waitIdle(); } catch (...) { }
-        try { _impl->shutdown(); } catch (...) { }
+        try
+        {
+            engine->device()->waitIdle();
+        }
+        catch (...)
+        {
+        }
+        try
+        {
+            _impl->shutdown();
+        }
+        catch (...)
+        {
+        }
         std::rethrow_exception(error);
     }
 }
@@ -184,7 +262,7 @@ void UserInterface::updateScale()
         s_baseStyleInitialized = true;
     }
 
-    auto & style = ImGui::GetStyle();
+    auto& style = ImGui::GetStyle();
     style = s_baseStyle;
 
     style.ScaleAllSizes(s_uiScale);
@@ -195,29 +273,53 @@ void UserInterface::updateScale()
 
 void UserInterface::processEvent(SDL_Event* event)
 {
-    if (!initialized() || !event) return;
+    if (!initialized() || !event)
+    {
+        return;
+    }
     ImGui::SetCurrentContext(_impl->context);
     ImGui_ImplSDL2_ProcessEvent(event);
 }
 
-void UserInterface::setFrameOverride(std::function<void()> fn) { _frameOverride = std::move(fn); }
-void UserInterface::clearFrameOverride() { _frameOverride = nullptr; }
+void UserInterface::setFrameOverride(std::function<void()> fn)
+{
+    _frameOverride = std::move(fn);
+}
+void UserInterface::clearFrameOverride()
+{
+    _frameOverride = nullptr;
+}
 
 void UserInterface::finishFrame()
 {
-    if (s_uiScaleChanged) updateScale();
+    if (s_uiScaleChanged)
+    {
+        updateScale();
+    }
     ImGui_ImplSDL2_NewFrame();
     ImGui::NewFrame();
-    if (_frameOverride) _frameOverride();
-    else if (_delegate) _delegate->drawUI();
+    if (_frameOverride)
+    {
+        _frameOverride();
+    }
+    else if (_delegate)
+    {
+        _delegate->drawUI();
+    }
     ImGui::Render();
     _impl->prepared = true;
 }
 
 void UserInterface::newFrame()
 {
-    if (!initialized()) return;
-    if (!_impl->production) throw std::logic_error("Draw UI newFrame requires an acquired frame context.");
+    if (!initialized())
+    {
+        return;
+    }
+    if (!_impl->production)
+    {
+        throw std::logic_error("Draw UI newFrame requires an acquired frame context.");
+    }
     ImGui::SetCurrentContext(_impl->context);
     _impl->renderer->prepareFrame(nullptr, nullptr);
     finishFrame();
@@ -225,8 +327,14 @@ void UserInterface::newFrame()
 
 void UserInterface::newFrame(gpu::CommandBuffer& command, gpu::SurfaceFrame& frame)
 {
-    if (!initialized()) return;
-    if (_impl->production) throw std::logic_error("Abstract UI frames require a draw Engine.");
+    if (!initialized())
+    {
+        return;
+    }
+    if (_impl->production)
+    {
+        throw std::logic_error("Abstract UI frames require a draw Engine.");
+    }
     ImGui::SetCurrentContext(_impl->context);
     _impl->prepared = false;
     _impl->renderer->prepareFrame(&command, &frame);
@@ -237,7 +345,10 @@ void UserInterface::newFrame(gpu::CommandBuffer& command, gpu::SurfaceFrame& fra
 
 void UserInterface::draw(VkCommandBuffer command, VkImageView imageView)
 {
-    if (!initialized() || !_impl->prepared) return;
+    if (!initialized() || !_impl->prepared)
+    {
+        return;
+    }
     ImGui::SetCurrentContext(_impl->context);
     _impl->renderer->draw(command, imageView);
     _impl->prepared = false;
@@ -245,9 +356,14 @@ void UserInterface::draw(VkCommandBuffer command, VkImageView imageView)
 
 void UserInterface::draw(gpu::CommandBuffer& command, gpu::SurfaceFrame& frame)
 {
-    if (!initialized()) return;
+    if (!initialized())
+    {
+        return;
+    }
     if (!_impl->prepared || _impl->preparedCommand != &command || _impl->preparedFrame != &frame)
+    {
         throw std::logic_error("UI composition must use its prepared presentation frame and commands.");
+    }
     ImGui::SetCurrentContext(_impl->context);
     _impl->renderer->draw(command, frame);
     _impl->prepared = false;
@@ -259,15 +375,38 @@ void UserInterface::cleanup()
 {
     auto preferences = app::PreferencesStore::instance().preferences("ui");
     preferences.set("uiScale", s_uiScale);
-    if (_impl->production) return; // The production engine owns registered shutdown.
+    if (_impl->production)
+    {
+        return; // The production engine owns registered shutdown.
+    }
     std::exception_ptr error;
     if (_impl->drawEngine)
     {
-        try { _impl->drawEngine->device()->waitIdle(); } catch (...) { error = std::current_exception(); }
+        try
+        {
+            _impl->drawEngine->device()->waitIdle();
+        }
+        catch (...)
+        {
+            error = std::current_exception();
+        }
     }
-    try { _impl->shutdown(); } catch (...) { if (!error) error = std::current_exception(); }
+    try
+    {
+        _impl->shutdown();
+    }
+    catch (...)
+    {
+        if (!error)
+        {
+            error = std::current_exception();
+        }
+    }
     _frameOverride = nullptr;
-    if (error) std::rethrow_exception(error);
+    if (error)
+    {
+        std::rethrow_exception(error);
+    }
 }
 
 }

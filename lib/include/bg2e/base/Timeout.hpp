@@ -28,7 +28,7 @@ namespace bg2e {
 namespace base {
 
 class BG2E_API Timeout {
-public:
+  public:
     // Adds a timer. callback fires after delayMs. Returns timer ID.
     // If executeOnExit is true, callback fires once more at main loop exit
     // regardless of elapsed time.
@@ -42,7 +42,7 @@ public:
     // Call once at main loop exit. Fires all executeOnExit timers.
     void executeExitTimers();
 
-private:
+  private:
     struct TimerEntry {
         uint32_t id;
         std::function<bool()> callback;

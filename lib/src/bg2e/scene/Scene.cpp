@@ -29,7 +29,10 @@ namespace bg2e::scene {
 std::shared_ptr<Scene> Scene::deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path& basePath, render::Engine& engine, SceneLoadProgress* progress)
 {
     json::ObjectReader reader(jsonData);
-    if (!reader.isValid()) return nullptr;
+    if (!reader.isValid())
+    {
+        return nullptr;
+    }
 
     // Read and log version
     if (auto version = reader.getObject("version"))
@@ -65,7 +68,7 @@ std::shared_ptr<Scene> Scene::deserialize(std::shared_ptr<json::JsonNode> jsonDa
     return scene;
 }
 
-bool Scene::sceneHasCamera(Node * rootNode)
+bool Scene::sceneHasCamera(Node* rootNode)
 {
     if (!rootNode)
     {
@@ -76,7 +79,7 @@ bool Scene::sceneHasCamera(Node * rootNode)
     return !findCamera.cameras().empty();
 }
 
-bool Scene::validateScene(Node * rootNode)
+bool Scene::validateScene(Node* rootNode)
 {
     // Add future checks here as additional independent calls, for example:
     //   return sceneHasCamera(rootNode) && sceneHasEnvironment(rootNode);
@@ -89,7 +92,7 @@ void Scene::setSceneRoot(std::shared_ptr<Node> sceneRoot)
     {
         throw std::runtime_error("Scene::setSceneRoot(): The specified scene root is already added to an scene.");
     }
-    
+
     _sceneRoot = sceneRoot;
     _mainEnvironment = nullptr;
     _mainCameraNode = nullptr;
@@ -97,7 +100,7 @@ void Scene::setSceneRoot(std::shared_ptr<Node> sceneRoot)
     updateLights();
 }
 
-void Scene::setMainCamera(CameraComponent * camera)
+void Scene::setMainCamera(CameraComponent* camera)
 {
     if (!camera)
     {
@@ -109,12 +112,13 @@ void Scene::setMainCamera(CameraComponent * camera)
         // The camera belongs to the scene: set main camera
         _mainCameraNode = camera->ownerNode();
     }
-    else{
+    else
+    {
         throw std::runtime_error("Scene::setMainCamera() - The camera node does not belong to this scene");
     }
 }
-    
-CameraComponent * Scene::mainCamera()
+
+CameraComponent* Scene::mainCamera()
 {
     if (!_mainCameraNode)
     {
@@ -128,7 +132,7 @@ CameraComponent * Scene::mainCamera()
                 _mainCameraNode = cam->ownerNode();
             }
         }
-        
+
         if (!_mainCameraNode)
         {
             throw std::runtime_error("Scenes::mainCamera() - No cameras found in the scene");
@@ -137,13 +141,13 @@ CameraComponent * Scene::mainCamera()
     return _mainCameraNode->camera();
 }
 
-EnvironmentComponent * Scene::mainEnvironment()
+EnvironmentComponent* Scene::mainEnvironment()
 {
     if (!_mainEnvironment)
     {
         FindNodeComponentVisitor<EnvironmentComponent> findEnvironment;
         auto envs = findEnvironment.find(_sceneRoot.get());
-        
+
         // Get the first environment found in the scene.
         // TODO: improve this
         // It should be possible to choose which environment you want to use if there are several in the scene
@@ -167,7 +171,10 @@ void Scene::updateLights()
     for (auto& l : lightNodes)
     {
         auto node = l.lock();
-        if (!node) continue;
+        if (!node)
+        {
+            continue;
+        }
         auto lc = std::dynamic_pointer_cast<LightComponent>(node->light()->shared_from_this());
         if (lc.get() != nullptr)
         {
@@ -201,22 +208,18 @@ void Scene::updateAll()
 
 void Scene::willResize()
 {
-
 }
 
 void Scene::didResize()
 {
-
 }
 
 void Scene::willUpdate()
 {
-
 }
 
 void Scene::didUpdate()
 {
-
 }
 
 void Scene::willDraw()
@@ -227,6 +230,5 @@ void Scene::didDraw()
 {
     _lightsChanged = false;
 }
-
 
 }

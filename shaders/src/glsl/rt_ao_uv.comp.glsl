@@ -33,13 +33,15 @@ layout(set = 0, binding = 2) uniform usampler2D uvValidMask;
 layout(set = 0, binding = 3) uniform accelerationStructureEXT tlas;
 layout(set = 0, binding = 4, r8) uniform image2D aoOutput;
 
-layout(push_constant) uniform PushConstant {
+layout(push_constant) uniform PushConstant
+{
     int sampleCount;
     float maxRayDistance;
     float bias;
     float falloff;
     uint frameIndex;
-} pc;
+}
+pc;
 
 layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
 
@@ -52,13 +54,12 @@ vec3 uvRandomHemisphereDirection(vec3 normal, inout uint seed)
     vec3 localDirection = vec3(
         radius * cos(phi),
         radius * sin(phi),
-        sqrt(max(0.0, 1.0 - u1))
-    );
+        sqrt(max(0.0, 1.0 - u1)));
 
     // Choose a reference axis that cannot be parallel to the surface normal.
     vec3 reference = abs(normal.z) < 0.999
-        ? vec3(0.0, 0.0, 1.0)
-        : vec3(0.0, 1.0, 0.0);
+                         ? vec3(0.0, 0.0, 1.0)
+                         : vec3(0.0, 1.0, 0.0);
     vec3 tangent = normalize(cross(reference, normal));
     vec3 bitangent = cross(normal, tangent);
     return normalize(mat3(tangent, bitangent, normal) * localDirection);

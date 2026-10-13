@@ -18,10 +18,9 @@
 
 #include <bg2e/render/vulkan/rt/utils.hpp>
 
-namespace bg2e::render::vulkan::rt
-{
+namespace bg2e::render::vulkan::rt {
 
-VkTransformMatrixKHR mat4ToVkTransformMatrix(const glm::mat4 &m)
+VkTransformMatrixKHR mat4ToVkTransformMatrix(const glm::mat4& m)
 {
     VkTransformMatrixKHR out{};
 

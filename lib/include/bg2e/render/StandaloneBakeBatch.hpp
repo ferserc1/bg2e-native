@@ -34,7 +34,7 @@ namespace render {
 class Engine;
 
 class BG2E_API StandaloneBakeBatch final {
-public:
+  public:
     struct Options {
         LightmapSettings lightmapSettings{};
         bool generateUv2 = false;

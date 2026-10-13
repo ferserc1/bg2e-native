@@ -25,18 +25,16 @@ namespace bg2e::scene {
 
 SkyDomeTextureGenerator::SkyDomeTextureGenerator()
 {
-
 }
 
-SkyDomeTextureGenerator::SkyDomeTextureGenerator(uint32_t w, uint32_t h, uint32_t bpp) :ProceduralTextureGenerator(w, h, bpp)
+SkyDomeTextureGenerator::SkyDomeTextureGenerator(uint32_t w, uint32_t h, uint32_t bpp) : ProceduralTextureGenerator(w, h, bpp)
 {
-
 }
 
 uint8_t* SkyDomeTextureGenerator::generate()
 {
     auto size = _width * _height * _bpp;
-    uint8_t * buffer = new uint8_t[size];
+    uint8_t* buffer = new uint8_t[size];
 
     auto halfHeight = _height / 2;
     for (uint32_t line = 0; line < _height; ++line)
@@ -56,7 +54,8 @@ uint8_t* SkyDomeTextureGenerator::generate()
                 buffer[lineOffset + colOffset + 2] = b;
                 buffer[lineOffset + colOffset + 3] = 255;
             }
-            else{
+            else
+            {
                 auto t = static_cast<float>(line - halfHeight) / static_cast<float>(halfHeight);
                 auto r = static_cast<uint8_t>(std::lerp(horizonColor.r, groundColor.r, t) * 255.0f);
                 auto g = static_cast<uint8_t>(std::lerp(horizonColor.g, groundColor.g, t) * 255.0f);
@@ -74,8 +73,8 @@ uint8_t* SkyDomeTextureGenerator::generate()
 std::string SkyDomeTextureGenerator::imageIdentifier()
 {
     return std::string("sky_dome_") +
-        std::to_string(_width) + "x" + std::to_string(_height) + "@" + std::to_string(_bpp) +
-        ceilColor.toString() + "-" + ceilHorizonColor.toString() + "-" + horizonColor.toString() + "-" + groundColor.toString();
+           std::to_string(_width) + "x" + std::to_string(_height) + "@" + std::to_string(_bpp) +
+           ceilColor.toString() + "-" + ceilHorizonColor.toString() + "-" + horizonColor.toString() + "-" + groundColor.toString();
 }
 
 }

@@ -11,9 +11,9 @@ struct PushConstants {
 };
 
 fragment float4 fragMain(VertexOut in [[stage_in]],
-                     constant PushConstants& pc [[buffer(0)]],
-                     texture2d<float> uTex      [[texture(0)]],
-                     sampler          uSampler  [[sampler(1)]])
+                         constant PushConstants& pc [[buffer(0)]],
+                         texture2d<float> uTex [[texture(0)]],
+                         sampler uSampler [[sampler(1)]])
 {
     float4 tex = uTex.sample(uSampler, in.uv);
     return float4(tex.rgb * pc.color.rgb, tex.a * pc.color.a);

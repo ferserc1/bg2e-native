@@ -40,15 +40,16 @@ struct RayTracingCapabilities {
     inline bool fullSupported() const
     {
         return available &&
-            rayTracingPipeline &&
-            rayQuery &&
-            accelerationStructure &&
-            bufferDeviceAddress;
+               rayTracingPipeline &&
+               rayQuery &&
+               accelerationStructure &&
+               bufferDeviceAddress;
     }
 };
 
 struct PhysicalDeviceProperties {
-    enum DeviceType {
+    enum DeviceType
+    {
         IntegratedGPU,
         DiscreteGPU,
         VirtualGPU,
@@ -65,31 +66,29 @@ struct PhysicalDeviceProperties {
 
     RayTracingCapabilities rayTracing;
 
-    static PhysicalDeviceProperties * query(VkPhysicalDevice device);
+    static PhysicalDeviceProperties* query(VkPhysicalDevice device);
 
     uint32_t getScore() const;
 
     bool rayTracingSupported() const;
 
-private:
+  private:
     PhysicalDeviceProperties() = default;
 };
 
 class PhysicalDevice {
-public:
+  public:
     static const std::vector<const char*>& getRequiredDeviceExtensions(bool offscreen);
-    
+
     static void listSuitableDevices(
         VkInstance instance,
         const Surface& surface,
-        std::vector<std::shared_ptr<PhysicalDeviceProperties>>& result
-    );
-    
-    struct QueueFamilyIndices
-    {
+        std::vector<std::shared_ptr<PhysicalDeviceProperties>>& result);
+
+    struct QueueFamilyIndices {
         std::optional<uint32_t> graphics;
         std::optional<uint32_t> present;
-        
+
         inline bool isComplete()
         {
             return graphics.has_value() && present.has_value();
@@ -99,22 +98,21 @@ public:
         {
             return graphics.has_value();
         }
-        
+
         static QueueFamilyIndices get(VkPhysicalDevice device, const Surface& surface);
         static QueueFamilyIndices graphicsOnly(VkPhysicalDevice device);
     };
 
-    struct SwapChainSupportDetails
-    {
+    struct SwapChainSupportDetails {
         VkSurfaceCapabilitiesKHR capabilities;
-		std::vector<VkSurfaceFormatKHR> formats;
-		std::vector<VkPresentModeKHR> presentModes;
+        std::vector<VkSurfaceFormatKHR> formats;
+        std::vector<VkPresentModeKHR> presentModes;
         VkSampleCountFlagBits maxMSAASamples;
 
-		static SwapChainSupportDetails get(VkPhysicalDevice device, const Surface& surface);
-		VkSurfaceFormatKHR chooseSurfaceFormat(VkFormat preferredFormat) const;
-		VkPresentModeKHR choosePresentMode(VkPresentModeKHR preferredPresentMode, VkPresentModeKHR fallbackMode = VK_PRESENT_MODE_FIFO_KHR) const;
-		VkExtent2D chooseExtent(const Surface& surface) const;
+        static SwapChainSupportDetails get(VkPhysicalDevice device, const Surface& surface);
+        VkSurfaceFormatKHR chooseSurfaceFormat(VkFormat preferredFormat) const;
+        VkPresentModeKHR choosePresentMode(VkPresentModeKHR preferredPresentMode, VkPresentModeKHR fallbackMode = VK_PRESENT_MODE_FIFO_KHR) const;
+        VkExtent2D chooseExtent(const Surface& surface) const;
         uint32_t imageCount() const;
     };
 
@@ -125,9 +123,15 @@ public:
 
     QueueFamilyIndices queueFamilyIndices() const;
 
-	inline VkPhysicalDevice handle() const { return _device; }
-	inline bool isValid() const { return _device != VK_NULL_HANDLE; }
-    
+    inline VkPhysicalDevice handle() const
+    {
+        return _device;
+    }
+    inline bool isValid() const
+    {
+        return _device != VK_NULL_HANDLE;
+    }
+
     inline const Surface& surface() const
     {
         if (!_surface)
@@ -137,11 +141,14 @@ public:
         return *_surface;
     }
 
-    const std::shared_ptr<PhysicalDeviceProperties> properties() const { return _properties; }
+    const std::shared_ptr<PhysicalDeviceProperties> properties() const
+    {
+        return _properties;
+    }
 
-protected:
-	VkPhysicalDevice _device = VK_NULL_HANDLE;
-    const Surface * _surface = nullptr;
+  protected:
+    VkPhysicalDevice _device = VK_NULL_HANDLE;
+    const Surface* _surface = nullptr;
     std::shared_ptr<PhysicalDeviceProperties> _properties;
 
     static bool isSuitable(VkPhysicalDevice device, const Surface& surface);

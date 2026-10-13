@@ -82,20 +82,20 @@ void testBakedMaterialFlag()
     bg2e::render::uniforms::PBRMaterialData material{};
     material = attributes;
     require((material.flags & bg2e::render::uniforms::PBRMaterialData::HAS_BAKED_LIGHTMAP) == 0,
-        "material without an explicit AO texture was marked as baked");
+            "material without an explicit AO texture was marked as baked");
 
     attributes.setAoTexture(std::make_shared<bg2e::base::Texture>(std::string("fixture_lightmap.png")));
     material = attributes;
     require((material.flags & bg2e::render::uniforms::PBRMaterialData::HAS_BAKED_LIGHTMAP) != 0,
-        "explicit AO texture did not set the internal baked-lightmap flag");
+            "explicit AO texture did not set the internal baked-lightmap flag");
 }
 
-class SolidRgbLightmapGenerator final : public bg2e::base::ProceduralTextureGenerator
-{
-public:
+class SolidRgbLightmapGenerator final : public bg2e::base::ProceduralTextureGenerator {
+  public:
     SolidRgbLightmapGenerator()
         : ProceduralTextureGenerator(2, 2, 4)
-    {}
+    {
+    }
 
     uint8_t* generate() override
     {
@@ -110,8 +110,14 @@ public:
         return pixels;
     }
 
-    std::string imageIdentifier() override { return "lightmap-fixture-rgb-230-82-31"; }
-    bg2e::base::Color::Type colorType() override { return bg2e::base::Color::TypeLinear; }
+    std::string imageIdentifier() override
+    {
+        return "lightmap-fixture-rgb-230-82-31";
+    }
+    bg2e::base::Color::Type colorType() override
+    {
+        return bg2e::base::Color::TypeLinear;
+    }
 };
 
 void verifyBakedRgbGBuffer(
@@ -124,7 +130,7 @@ void verifyBakedRgbGBuffer(
     using namespace bg2e;
     using namespace bg2e::render::vulkan;
     render::GBufferManager gbuffer(&engine);
-    gbuffer.build({ 64, 64 });
+    gbuffer.build({64, 64});
 
     factory::PipelineLayout layoutFactory(&engine);
     layoutFactory.addDescriptorSetLayout(frameDataBinding.createLayout());
@@ -142,28 +148,30 @@ void verifyBakedRgbGBuffer(
     pipelineFactory.addShader("deferred_gbuffer.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
     const VkPipeline pipeline = pipelineFactory.build(pipelineLayout, "BakedRgbFixture::Pipeline");
 
-    engine.command().immediateSubmit([&](VkCommandBuffer cmd) {
-        gbuffer.beginRender(cmd, false);
-        macros::cmdSetDefaultViewportAndScissor(cmd, gbuffer.extent());
-        vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
-        const VkDescriptorSet sceneSet = frameDataBinding.newDescriptorSet(
-            frameResources, glm::mat4(1.0f), glm::mat4(1.0f));
-        drawableComponent.draw(glm::mat4(1.0f), cmd, pipelineLayout,
-            [&](render::MaterialBase* material, const glm::mat4& transform, uint32_t) {
-                const VkDescriptorSet objectSet = objectDataBinding.newDescriptorSet(
-                    frameResources, material, transform);
-                return std::vector<VkDescriptorSet>{ sceneSet, objectSet };
-            });
-        cmdEndRendering(cmd);
-        gbuffer.transitionToShaderRead(cmd);
-    });
+    engine.command().immediateSubmit([&](VkCommandBuffer cmd)
+                                     {
+                                         gbuffer.beginRender(cmd, false);
+                                         macros::cmdSetDefaultViewportAndScissor(cmd, gbuffer.extent());
+                                         vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+                                         const VkDescriptorSet sceneSet = frameDataBinding.newDescriptorSet(
+                                             frameResources, glm::mat4(1.0f), glm::mat4(1.0f));
+                                         drawableComponent.draw(glm::mat4(1.0f), cmd, pipelineLayout,
+                                                                [&](render::MaterialBase* material, const glm::mat4& transform, uint32_t)
+                                                                {
+                                                                    const VkDescriptorSet objectSet = objectDataBinding.newDescriptorSet(
+                                                                        frameResources, material, transform);
+                                                                    return std::vector<VkDescriptorSet>{sceneSet, objectSet};
+                                                                });
+                                         cmdEndRendering(cmd);
+                                         gbuffer.transitionToShaderRead(cmd);
+                                     });
 
     std::vector<uint8_t> bakedPixels;
     std::vector<uint8_t> flagsPixels;
     Image::readPixelsRGBA8(&engine, gbuffer.image(5).get(), 0, 0, 64, 64,
-        bakedPixels, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+                           bakedPixels, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
     Image::readPixelsRGBA8(&engine, gbuffer.image(3).get(), 0, 0, 64, 64,
-        flagsPixels, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+                           flagsPixels, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
     bool foundRgbSample = false;
     bool foundBakedFlag = false;
@@ -178,7 +186,7 @@ void verifyBakedRgbGBuffer(
         const int green = bakedPixels[offset + 1];
         const int blue = bakedPixels[offset + 2];
         foundRgbSample = foundRgbSample ||
-            (std::abs(red - 230) < 4 && std::abs(green - 82) < 4 && std::abs(blue - 31) < 4);
+                         (std::abs(red - 230) < 4 && std::abs(green - 82) < 4 && std::abs(blue - 31) < 4);
         foundBakedFlag = foundBakedFlag || (flagsPixels[offset + 3] & (1u << 3)) != 0u;
     }
     require(foundRgbSample, "G-buffer baked-lightmap attachment collapsed or lost RGB channels");
@@ -198,7 +206,8 @@ std::shared_ptr<bg2e::scene::Mesh> makeTriangleMesh()
     using namespace bg2e;
     auto mesh = std::make_shared<scene::Mesh>();
 
-    const auto vertex = [](glm::vec3 position, glm::vec2 uv) {
+    const auto vertex = [](glm::vec3 position, glm::vec2 uv)
+    {
         geo::VertexPNUUT result{};
         result.position = position;
         result.normal = glm::vec3(0.0f, 0.0f, 1.0f);
@@ -210,11 +219,10 @@ std::shared_ptr<bg2e::scene::Mesh> makeTriangleMesh()
 
     mesh->vertices = {
         vertex({-0.8f, -0.8f, 0.0f}, {0.1f, 0.1f}),
-        vertex({ 0.8f, -0.8f, 0.0f}, {0.9f, 0.1f}),
-        vertex({-0.8f,  0.8f, 0.0f}, {0.1f, 0.9f})
-    };
-    mesh->indices = { 0, 1, 2 };
-    mesh->submeshes = { { 0, 3 } };
+        vertex({0.8f, -0.8f, 0.0f}, {0.9f, 0.1f}),
+        vertex({-0.8f, 0.8f, 0.0f}, {0.1f, 0.9f})};
+    mesh->indices = {0, 1, 2};
+    mesh->submeshes = {{0, 3}};
     return mesh;
 }
 
@@ -222,7 +230,8 @@ std::shared_ptr<bg2e::scene::Mesh> makeOverhangMesh()
 {
     using namespace bg2e;
     auto mesh = std::make_shared<scene::Mesh>();
-    const auto vertex = [](glm::vec3 position, glm::vec2 uv) {
+    const auto vertex = [](glm::vec3 position, glm::vec2 uv)
+    {
         geo::VertexPNUUT result{};
         result.position = position;
         result.normal = glm::vec3(0.0f, 0.0f, 1.0f);
@@ -235,10 +244,9 @@ std::shared_ptr<bg2e::scene::Mesh> makeOverhangMesh()
         vertex({-0.55f, -0.55f, 0.08f}, {0.0f, 0.0f}),
         vertex({-0.10f, -0.55f, 0.08f}, {1.0f, 0.0f}),
         vertex({-0.10f, -0.10f, 0.08f}, {1.0f, 1.0f}),
-        vertex({-0.55f, -0.10f, 0.08f}, {0.0f, 1.0f})
-    };
-    mesh->indices = { 0, 1, 2, 0, 2, 3 };
-    mesh->submeshes = { { 0, 6 } };
+        vertex({-0.55f, -0.10f, 0.08f}, {0.0f, 1.0f})};
+    mesh->indices = {0, 1, 2, 0, 2, 3};
+    mesh->submeshes = {{0, 6}};
     return mesh;
 }
 
@@ -272,8 +280,8 @@ std::vector<glm::vec4> readLightmapImage(
     const VkExtent2D extent = image.extent2D();
     const VkDeviceSize pixelCount = static_cast<VkDeviceSize>(extent.width) * extent.height;
     require(image.format() == VK_FORMAT_R16G16B16A16_SFLOAT ||
-            image.format() == VK_FORMAT_R32G32B32A32_SFLOAT,
-        "lightmap fixture received an unsupported float image format");
+                image.format() == VK_FORMAT_R32G32B32A32_SFLOAT,
+            "lightmap fixture received an unsupported float image format");
     const bool fullFloat = image.format() == VK_FORMAT_R32G32B32A32_SFLOAT;
     const VkDeviceSize byteCount = pixelCount * (fullFloat ? sizeof(float) : sizeof(uint16_t)) * 4;
     std::unique_ptr<bg2e::render::vulkan::Buffer> staging(
@@ -284,42 +292,43 @@ std::vector<glm::vec4> readLightmapImage(
             VMA_MEMORY_USAGE_GPU_TO_CPU,
             "Lightmap fixture readback"));
 
-    engine.command().immediateSubmit([&](VkCommandBuffer cmd) {
-        bg2e::render::vulkan::Image::TransitionInfo toTransfer(
-            VK_IMAGE_ASPECT_COLOR_BIT,
-            0,
-            VK_REMAINING_MIP_LEVELS,
-            0,
-            VK_REMAINING_ARRAY_LAYERS,
-            VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
-            VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT,
-            VK_PIPELINE_STAGE_2_TRANSFER_BIT,
-            VK_ACCESS_2_TRANSFER_READ_BIT);
-        bg2e::render::vulkan::Image::cmdTransitionImage(
-            cmd, image.handle(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-            VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, toTransfer);
+    engine.command().immediateSubmit([&](VkCommandBuffer cmd)
+                                     {
+                                         bg2e::render::vulkan::Image::TransitionInfo toTransfer(
+                                             VK_IMAGE_ASPECT_COLOR_BIT,
+                                             0,
+                                             VK_REMAINING_MIP_LEVELS,
+                                             0,
+                                             VK_REMAINING_ARRAY_LAYERS,
+                                             VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
+                                             VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT,
+                                             VK_PIPELINE_STAGE_2_TRANSFER_BIT,
+                                             VK_ACCESS_2_TRANSFER_READ_BIT);
+                                         bg2e::render::vulkan::Image::cmdTransitionImage(
+                                             cmd, image.handle(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                             VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, toTransfer);
 
-        VkBufferImageCopy copy{};
-        copy.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        copy.imageSubresource.layerCount = 1;
-        copy.imageExtent = { extent.width, extent.height, 1 };
-        vkCmdCopyImageToBuffer(cmd, image.handle(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-            staging->handle(), 1, &copy);
+                                         VkBufferImageCopy copy{};
+                                         copy.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+                                         copy.imageSubresource.layerCount = 1;
+                                         copy.imageExtent = {extent.width, extent.height, 1};
+                                         vkCmdCopyImageToBuffer(cmd, image.handle(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                                                                staging->handle(), 1, &copy);
 
-        bg2e::render::vulkan::Image::TransitionInfo toSampling(
-            VK_IMAGE_ASPECT_COLOR_BIT,
-            0,
-            VK_REMAINING_MIP_LEVELS,
-            0,
-            VK_REMAINING_ARRAY_LAYERS,
-            VK_PIPELINE_STAGE_2_TRANSFER_BIT,
-            VK_ACCESS_2_TRANSFER_READ_BIT,
-            VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
-            VK_ACCESS_2_SHADER_SAMPLED_READ_BIT);
-        bg2e::render::vulkan::Image::cmdTransitionImage(
-            cmd, image.handle(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, toSampling);
-    });
+                                         bg2e::render::vulkan::Image::TransitionInfo toSampling(
+                                             VK_IMAGE_ASPECT_COLOR_BIT,
+                                             0,
+                                             VK_REMAINING_MIP_LEVELS,
+                                             0,
+                                             VK_REMAINING_ARRAY_LAYERS,
+                                             VK_PIPELINE_STAGE_2_TRANSFER_BIT,
+                                             VK_ACCESS_2_TRANSFER_READ_BIT,
+                                             VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
+                                             VK_ACCESS_2_SHADER_SAMPLED_READ_BIT);
+                                         bg2e::render::vulkan::Image::cmdTransitionImage(
+                                             cmd, image.handle(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                                             VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, toSampling);
+                                     });
 
     VK_ASSERT(vmaInvalidateAllocation(engine.allocator(), staging->allocation(), 0, VK_WHOLE_SIZE));
     std::vector<glm::vec4> pixels(static_cast<size_t>(pixelCount));
@@ -354,9 +363,8 @@ glm::vec4 sampleAtUv(const std::vector<glm::vec4>& pixels, uint32_t resolution, 
     return pixels[static_cast<size_t>(y) * resolution + x];
 }
 
-class RenderDelegateFixture
-{
-public:
+class RenderDelegateFixture {
+  public:
     RenderDelegateFixture(
         bg2e::render::Engine& engine,
         bg2e::render::IntegratedBakerContext& context,
@@ -397,8 +405,7 @@ public:
         _environmentResources.update(frame.commandBuffer, _engine.currentFrame(), frame);
 
         auto* ordinaryScene = frame.rayTracingScene;
-        struct RestoreScenePointer
-        {
+        struct RestoreScenePointer {
             bg2e::render::vulkan::FrameResources& frame;
             bg2e::render::vulkan::rt::RayTracingScene* scene;
             bool active = false;
@@ -409,14 +416,14 @@ public:
                     frame.rayTracingScene = scene;
                 }
             }
-        } restore{ frame, ordinaryScene };
+        } restore{frame, ordinaryScene};
 
         if (ordinaryRendererFirst)
         {
             require(ordinaryScene->update(frame.commandBuffer, _root.get()),
-                "ordinary frame TLAS update failed");
+                    "ordinary frame TLAS update failed");
             require(ordinaryScene->objectInstances().size() >= 2,
-                "overhang fixture geometry was not included in the scene TLAS");
+                    "overhang fixture geometry was not included in the scene TLAS");
         }
         else
         {
@@ -424,8 +431,11 @@ public:
             // context builds and consumes its independent TLAS.
             frame.rayTracingScene = nullptr;
             restore.active = true;
-            requireThrows([&]() { _bakers.front()->update(frame.commandBuffer, frame); },
-                "baker update before prepareFrame was accepted");
+            requireThrows([&]()
+                          {
+                              _bakers.front()->update(frame.commandBuffer, frame);
+                          },
+                          "baker update before prepareFrame was accepted");
         }
 
         _context.prepareFrame(frame.commandBuffer, frame);
@@ -435,8 +445,11 @@ public:
             auto otherRoot = std::make_shared<bg2e::scene::Node>("other root");
             _root->removeChild(_target);
             otherRoot->addChild(_target);
-            requireThrows([&]() { _bakers.front()->update(frame.commandBuffer, frame); },
-                "baker accepted a target moved to another root");
+            requireThrows([&]()
+                          {
+                              _bakers.front()->update(frame.commandBuffer, frame);
+                          },
+                          "baker accepted a target moved to another root");
             otherRoot->removeChild(_target);
             _root->addChild(_target);
         }
@@ -447,8 +460,11 @@ public:
         }
         for (auto* baker : _bakers)
         {
-            requireThrows([&]() { baker->update(frame.commandBuffer, frame); },
-                "baker accepted two updates in one engine frame");
+            requireThrows([&]()
+                          {
+                              baker->update(frame.commandBuffer, frame);
+                          },
+                          "baker accepted two updates in one engine frame");
         }
 
         if (!ordinaryRendererFirst)
@@ -456,7 +472,7 @@ public:
             frame.rayTracingScene = ordinaryScene;
             restore.active = false;
             require(ordinaryScene->update(frame.commandBuffer, _root.get()),
-                "ordinary frame TLAS update after baking failed");
+                    "ordinary frame TLAS update after baking failed");
         }
 
         VK_ASSERT(vkEndCommandBuffer(frame.commandBuffer));
@@ -472,7 +488,7 @@ public:
             _engine.device().graphicsQueue(), 1, &submitInfo, frame.frameFence));
     }
 
-private:
+  private:
     bg2e::render::Engine& _engine;
     bg2e::render::IntegratedBakerContext& _context;
     bg2e::render::EnvironmentResources& _environmentResources;
@@ -507,8 +523,7 @@ int main()
         SDL_WINDOWPOS_UNDEFINED,
         64,
         64,
-        SDL_WINDOW_VULKAN | SDL_WINDOW_HIDDEN
-    );
+        SDL_WINDOW_VULKAN | SDL_WINDOW_HIDDEN);
     if (!window)
     {
         std::cout << "Integrated baker scene-binding fixture skipped: no Vulkan window is available" << std::endl;
@@ -523,9 +538,10 @@ int main()
     {
         engine.init(window);
         engineInitialized = true;
-        engine.iterateFrameResources([&](bg2e::render::vulkan::FrameResources& frame) {
-            frame.descriptorAllocator->init(&engine);
-        });
+        engine.iterateFrameResources([&](bg2e::render::vulkan::FrameResources& frame)
+                                     {
+                                         frame.descriptorAllocator->init(&engine);
+                                     });
 
         if (!engine.rayTracingSupported())
         {
@@ -538,19 +554,21 @@ int main()
 
         auto environmentTexture = std::shared_ptr<bg2e::render::Texture>(
             bg2e::render::Texture::colorTexture(
-                &engine, bg2e::base::Color(0.45f, 0.65f, 0.8f, 1.0f), { 8, 4 }));
+                &engine, bg2e::base::Color(0.45f, 0.65f, 0.8f, 1.0f), {8, 4}));
         environmentResources = std::make_unique<bg2e::render::EnvironmentResources>(&engine);
         bg2e::scene::vk::FrameDataBinding frameDataBinding(&engine);
         bg2e::scene::vk::ObjectDataBinding objectDataBinding(&engine);
-        engine.iterateFrameResources([&](bg2e::render::vulkan::FrameResources& frame) {
-            environmentResources->initFrameResources(frame.descriptorAllocator);
-            frameDataBinding.initFrameResources(frame.descriptorAllocator);
-            objectDataBinding.initFrameResources(frame.descriptorAllocator);
-        });
-        engine.iterateFrameResources([](bg2e::render::vulkan::FrameResources& frame) {
-            frame.descriptorAllocator->initPool();
-        });
-        environmentResources->build(environmentTexture, { 32, 32 }, { 8, 8 }, { 16, 16 });
+        engine.iterateFrameResources([&](bg2e::render::vulkan::FrameResources& frame)
+                                     {
+                                         environmentResources->initFrameResources(frame.descriptorAllocator);
+                                         frameDataBinding.initFrameResources(frame.descriptorAllocator);
+                                         objectDataBinding.initFrameResources(frame.descriptorAllocator);
+                                     });
+        engine.iterateFrameResources([](bg2e::render::vulkan::FrameResources& frame)
+                                     {
+                                         frame.descriptorAllocator->initPool();
+                                     });
+        environmentResources->build(environmentTexture, {32, 32}, {8, 8}, {16, 16});
 
         {
             bg2e::scene::Scene scene;
@@ -581,7 +599,7 @@ int main()
             root->addChild(lightNode);
             scene.setSceneRoot(root);
             verifyBakedRgbGBuffer(engine, engine.currentFrameResources(),
-                frameDataBinding, objectDataBinding, *target->drawable());
+                                  frameDataBinding, objectDataBinding, *target->drawable());
 
             auto context = std::make_shared<bg2e::render::IntegratedBakerContext>(&engine, root.get());
             context->setEnvironmentResources(environmentResources.get());
@@ -597,19 +615,23 @@ int main()
             auto& firstFrame = engine.currentFrameResources();
             auto isolatedImage = baker->image();
             require(baker->completedFrames() == 1, "first sample was not counted");
-            requireThrows([&]() { (void)baker->readPixels(); },
-                "CPU readback was accepted before the frame advanced");
+            requireThrows([&]()
+                          {
+                              (void)baker->readPixels();
+                          },
+                          "CPU readback was accepted before the frame advanced");
             VK_ASSERT(vkWaitForFences(engine.device().handle(), 1, &firstFrame.frameFence, VK_TRUE, UINT64_MAX));
             const auto isolatedPixels = readLightmapImage(engine, *isolatedImage);
             require(std::all_of(isolatedPixels.begin(), isolatedPixels.end(),
-                [](const glm::vec4& value) {
-                    return value.r > 0.995f && value.g > 0.995f && value.b > 0.995f;
-                }),
-                "isolated plane produced non-neutral RTAO values");
+                                [](const glm::vec4& value)
+                                {
+                                    return value.r > 0.995f && value.g > 0.995f && value.b > 0.995f;
+                                }),
+                    "isolated plane produced non-neutral RTAO values");
             require(sampleAtUv(isolatedPixels, settings.resolution, 0.53f, 0.5f).a > 0.5f,
-                "GPU lightmap dilation did not fill the texel beside the UV island");
+                    "GPU lightmap dilation did not fill the texel beside the UV island");
             require(sampleAtUv(isolatedPixels, settings.resolution, 0.75f, 0.75f).a < 0.5f,
-                "GPU lightmap dilation reached beyond its configured radius");
+                    "GPU lightmap dilation reached beyond its configured radius");
 
             auto overhangNode = std::make_shared<bg2e::scene::Node>("overhanging occluder");
             auto overhangDrawable = std::make_shared<bg2e::scene::Drawable>();
@@ -651,9 +673,9 @@ int main()
             const glm::vec4 awayFromOverhang = sampleAtUv(rtaoPixels, settings.resolution, 0.15f, 0.15f);
             const glm::vec4 uncoveredTexel = sampleAtUv(rtaoPixels, settings.resolution, 0.75f, 0.75f);
             require(underOverhang.r + 0.08f < awayFromOverhang.r,
-                "overhanging geometry did not selectively darken its mapped RTAO texels");
+                    "overhanging geometry did not selectively darken its mapped RTAO texels");
             require(uncoveredTexel.r > 0.995f && uncoveredTexel.g > 0.995f && uncoveredTexel.b > 0.995f,
-                "uncovered UV atlas texel did not retain neutral RTAO visibility");
+                    "uncovered UV atlas texel did not retain neutral RTAO visibility");
             const auto rtaoShadowPixels = readLightmapImage(engine, *rtaoShadowImage);
             const auto rtgiPixels = readLightmapImage(engine, *rtgiImage);
             const auto rtgiShadowPixels = readLightmapImage(engine, *rtgiShadowImage);
@@ -664,12 +686,12 @@ int main()
                       << "), GI=(" << gi.r << ", " << gi.g << ", " << gi.b << "), GI+shadow=("
                       << giWithShadow.r << ", " << giWithShadow.g << ", " << giWithShadow.b << ")" << std::endl;
             require(rtaoWithShadow.r < 0.05f && rtaoWithShadow.g < 0.05f && rtaoWithShadow.b < 0.05f,
-                "fully shadowed RTAO texel was not near black");
+                    "fully shadowed RTAO texel was not near black");
             require(std::isfinite(gi.r) && std::isfinite(gi.g) && std::isfinite(gi.b) &&
-                    (std::abs(gi.r - gi.g) > 0.02f || std::abs(gi.g - gi.b) > 0.02f),
-                "RTGI did not retain a colored indirect multiplier");
+                        (std::abs(gi.r - gi.g) > 0.02f || std::abs(gi.g - gi.b) > 0.02f),
+                    "RTGI did not retain a colored indirect multiplier");
             require(giWithShadow.r < 0.05f && giWithShadow.g < 0.05f && giWithShadow.b < 0.05f,
-                "fully shadowed RTGI texel was not near black");
+                    "fully shadowed RTGI texel was not near black");
 
             // Revisit slot zero after its fence completes. The command-buffer
             // handle is recycled, so frame-number validation must reject stale
@@ -677,15 +699,15 @@ int main()
             engine.nextFrame();
             const auto rtaoCpu = baker->readPixels();
             require(rtaoCpu.width == settings.resolution && rtaoCpu.height == settings.resolution &&
-                    rtaoCpu.format == bg2e::render::LightmapPixelFormat::RGB8 &&
-                    std::get<std::vector<uint8_t>>(rtaoCpu.rgb).size() ==
-                        static_cast<size_t>(settings.resolution) * settings.resolution * 3,
-                "RGB8 CPU readback has the wrong dimensions or packing");
+                        rtaoCpu.format == bg2e::render::LightmapPixelFormat::RGB8 &&
+                        std::get<std::vector<uint8_t>>(rtaoCpu.rgb).size() ==
+                            static_cast<size_t>(settings.resolution) * settings.resolution * 3,
+                    "RGB8 CPU readback has the wrong dimensions or packing");
             const auto rtgiCpu = bakerRtgi->readPixels();
             require(rtgiCpu.format == bg2e::render::LightmapPixelFormat::RGB32F &&
-                    std::get<std::vector<float>>(rtgiCpu.rgb).size() ==
-                        static_cast<size_t>(settings.resolution) * settings.resolution * 3,
-                "RGB32F CPU readback has the wrong packing");
+                        std::get<std::vector<float>>(rtgiCpu.rgb).size() ==
+                            static_cast<size_t>(settings.resolution) * settings.resolution * 3,
+                    "RGB32F CPU readback has the wrong packing");
             auto transientBaker = context->createBaker(target, settings);
             auto& recycledFrame = engine.currentFrameResources();
             VK_ASSERT(vkWaitForFences(engine.device().handle(), 1, &recycledFrame.frameFence, VK_TRUE, UINT64_MAX));
@@ -695,8 +717,11 @@ int main()
             beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
             beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
             VK_ASSERT(vkBeginCommandBuffer(recycledFrame.commandBuffer, &beginInfo));
-            requireThrows([&]() { baker->update(recycledFrame.commandBuffer, recycledFrame); },
-                "recycled command buffer accepted stale frame preparation");
+            requireThrows([&]()
+                          {
+                              baker->update(recycledFrame.commandBuffer, recycledFrame);
+                          },
+                          "recycled command buffer accepted stale frame preparation");
             context->prepareFrame(recycledFrame.commandBuffer, recycledFrame);
             baker->update(recycledFrame.commandBuffer, recycledFrame);
             transientBaker->update(recycledFrame.commandBuffer, recycledFrame);
@@ -714,7 +739,7 @@ int main()
             transientBaker.reset(); // Submitted resources must survive this destruction.
             VK_ASSERT(vkWaitForFences(engine.device().handle(), 1, &recycledFrame.frameFence, VK_TRUE, UINT64_MAX));
             require(baker->completedFrames() == 2,
-                "UV accumulation did not count the second sample after reset");
+                    "UV accumulation did not count the second sample after reset");
         }
 
         environmentTexture.reset();

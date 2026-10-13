@@ -33,7 +33,7 @@ namespace vulkan {
 namespace factory {
 
 class BG2E_API RayTracingPipeline {
-public:
+  public:
     explicit RayTracingPipeline(Engine* engine);
     ~RayTracingPipeline();
 
@@ -45,8 +45,7 @@ public:
     VkPipeline build(
         VkPipelineLayout layout,
         uint32_t maxRecursionDepth = 1,
-        const std::string& name = ""
-    );
+        const std::string& name = "");
 
     struct SBTData {
         std::unique_ptr<vulkan::Buffer> buffer;
@@ -58,13 +57,19 @@ public:
 
     SBTData createSBT(const std::string& name = "");
 
-    VkPipeline pipeline() const { return _pipeline; }
-    uint32_t groupCount() const { return static_cast<uint32_t>(_groups.size()); }
+    VkPipeline pipeline() const
+    {
+        return _pipeline;
+    }
+    uint32_t groupCount() const
+    {
+        return static_cast<uint32_t>(_groups.size());
+    }
 
     // Reset the factory to use it again to create another pipeline
     void reset();
 
-private:
+  private:
     Engine* _engine = nullptr;
     VkPipeline _pipeline = VK_NULL_HANDLE;
 
@@ -86,8 +91,7 @@ private:
     uint32_t addShaderStage(
         VkShaderStageFlagBits stage,
         const std::string& fileName,
-        const std::string& entryPoint
-    );
+        const std::string& entryPoint);
 
     static VkDeviceSize alignUp(VkDeviceSize value, VkDeviceSize alignment);
 };

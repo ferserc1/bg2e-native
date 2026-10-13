@@ -20,14 +20,14 @@
 
 #include <cstring>
 
-#include "imgui.h"
+#include <imgui.h>
 
 namespace bg2e {
 namespace ui {
 
 bool Value::text(const std::string& label, std::string& value, int maxLength, bool sameLine, bool disabled)
 {
-    char * stringValue = new char[maxLength];
+    char* stringValue = new char[maxLength];
     strcpy(stringValue, value.c_str());
     if (sameLine)
     {
@@ -45,16 +45,16 @@ bool Value::text(const std::string& label, std::string& value, int maxLength, bo
     if (changed)
     {
         value = stringValue;
-        delete [] stringValue;
+        delete[] stringValue;
         return true;
     }
-    delete [] stringValue;
+    delete[] stringValue;
     return false;
 }
 
 bool Value::text(const std::string& id, std::string& value, bool readOnly, int maxLength, bool sameLine)
 {
-    char * stringValue = new char[maxLength];
+    char* stringValue = new char[maxLength];
     strcpy(stringValue, value.c_str());
     if (sameLine)
     {
@@ -65,10 +65,10 @@ bool Value::text(const std::string& id, std::string& value, bool readOnly, int m
     if (ImGui::InputText(imguiId.c_str(), stringValue, maxLength, flags))
     {
         value = stringValue;
-        delete [] stringValue;
+        delete[] stringValue;
         return true;
     }
-    delete [] stringValue;
+    delete[] stringValue;
     return false;
 }
 
@@ -77,8 +77,8 @@ bool Value::textWithHint(
     const std::string& hint,
     std::string& value,
     int maxLength,
-    bool sameLine
-) {
+    bool sameLine)
+{
     if (sameLine)
     {
         ImGui::SameLine();
@@ -90,13 +90,13 @@ bool Value::textWithHint(
 bool Value::colorPicker(
     const std::string& label,
     bg2e::base::Color& color,
-    bool sameLine
-) {
+    bool sameLine)
+{
     if (sameLine)
     {
         ImGui::SameLine();
     }
-    float col[] = { color.r, color.g, color.b, color.a };
+    float col[] = {color.r, color.g, color.b, color.a};
     bool result = ImGui::ColorEdit4(label.c_str(), col);
     color.r = col[0];
     color.g = col[1];
@@ -108,10 +108,10 @@ bool Value::colorPicker(
 bool Value::comboBox(
     const std::string& label,
     const std::vector<std::string>& items,
-    uint32_t &selected,
+    uint32_t& selected,
     bool sameLine,
-    bool fitPreview
-) {
+    bool fitPreview)
+{
     if (sameLine)
     {
         ImGui::SameLine();
@@ -150,7 +150,6 @@ bool Value::comboBox(
             }
         }
 
-
         ImGui::EndCombo();
     }
 
@@ -159,11 +158,11 @@ bool Value::comboBox(
 
 bool Value::comboBox(
     const std::vector<std::string>& items,
-    uint32_t &selected,
+    uint32_t& selected,
     const std::string& id,
     bool sameLine,
-    bool fitPreview
-) {
+    bool fitPreview)
+{
     return Value::comboBox("##" + id, items, selected, sameLine, fitPreview);
 }
 

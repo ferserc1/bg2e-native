@@ -23,12 +23,11 @@
 #include <bg2e/render/RenderSettingsPreferences.hpp>
 
 void ToolBar::init(
-    AppDelegate * delegate,
-    bg2e::ui::UISettingsWindow * uiSettings,
-    bg2e::ui::RenderSettingsWindow * renderSettings,
-    bg2e::render::RenderSettingsPreferences * renderPrefs,
-    ImportSettingsWindow * importSettings
-)
+    AppDelegate* delegate,
+    bg2e::ui::UISettingsWindow* uiSettings,
+    bg2e::ui::RenderSettingsWindow* renderSettings,
+    bg2e::render::RenderSettingsPreferences* renderPrefs,
+    ImportSettingsWindow* importSettings)
 {
     using namespace bg2e::ui;
     _appDelegate = delegate;
@@ -36,276 +35,216 @@ void ToolBar::init(
     _renderSettingsWindow = renderSettings;
     _renderPrefs = renderPrefs;
     _importSettingsWindow = importSettings;
-    
-    bg2e::app::MainLoop::current()->setOnExitFunction([]() -> bool {
-        return bg2e::app::MessageBox::showWarning("Quit Composer", "Any unsaved changes will be lost. Are you sure you want to quit?", {
-            { .code = 1, .label = "Quit" },
-            { .code = 2, .label = "Cancel", .key = bg2e::app::MessageBox::Esc }
-        }) == 1;
-    });
+
+    bg2e::app::MainLoop::current()->setOnExitFunction([]() -> bool
+                                                      {
+                                                          return bg2e::app::MessageBox::showWarning("Quit Composer", "Any unsaved changes will be lost. Are you sure you want to quit?", {{.code = 1, .label = "Quit"}, {.code = 2, .label = "Cancel", .key = bg2e::app::MessageBox::Esc}}) == 1;
+                                                      });
 
     bg2e::ui::MenuItem file("File");
-    file.addMenuItem({ "Open Scene", {
-        .ctrlModifier = true,
-        .key = bg2e::app::KeyEvent::KeyO,
-        .handler = [&]() {
-            if (!_appDelegate->stage()->checkUnsavedChanges()) return;
+    file.addMenuItem({"Open Scene", {.ctrlModifier = true, .key = bg2e::app::KeyEvent::KeyO, .handler = [&]()
+                                                                                             {
+                                                                                                 if (!_appDelegate->stage()->checkUnsavedChanges())
+                                                                                                 {
+                                                                                                     return;
+                                                                                                 }
 
-            bg2e::app::FileDialog fd;
-            fd.setFilters({
-                { "bg2e scene", "json,vitscnj" }
-            });
-            auto filePath = fd.openFile();
+                                                                                                 bg2e::app::FileDialog fd;
+                                                                                                 fd.setFilters({{"bg2e scene", "json,vitscnj"}});
+                                                                                                 auto filePath = fd.openFile();
 
-            if (!filePath.empty())
-            {
-                _appDelegate->asyncLoadGuarded([&, filePath](bg2e::ui::Loader* loader)
-                {
-                    _appDelegate->stage()->openScene(filePath, [&](const std::string& modelName, uint32_t processed, uint32_t total) {
-                        loader->setMessage("Loading model " + modelName + "...");
-                        loader->setProgress(static_cast<float>(processed) / static_cast<float>(total));
-                    });
-                }, glm::vec4{ 0.2, 0.2, 0.31, 1.0f });
-            }
-        }
-    }});
-    file.addMenuItem({ "Import bg2 Model", {
-        .handler = [&]()
-        {
-            bg2e::app::FileDialog fd;
-            fd.setFilters({
-                { "bg2e 3D model", "bg2,vwglb" }
-            });
-            auto filePath = fd.openFile();
+                                                                                                 if (!filePath.empty())
+                                                                                                 {
+                                                                                                     _appDelegate->asyncLoadGuarded([&, filePath](bg2e::ui::Loader* loader)
+                                                                                                                                    {
+                                                                                                                                        _appDelegate->stage()->openScene(filePath, [&](const std::string& modelName, uint32_t processed, uint32_t total)
+                                                                                                                                                                         {
+                                                                                                                                                                             loader->setMessage("Loading model " + modelName + "...");
+                                                                                                                                                                             loader->setProgress(static_cast<float>(processed) / static_cast<float>(total));
+                                                                                                                                                                         });
+                                                                                                                                    },
+                                                                                                                                    glm::vec4{0.2, 0.2, 0.31, 1.0f});
+                                                                                                 }
+                                                                                             }}});
+    file.addMenuItem({"Import bg2 Model", {.handler = [&]()
+                                           {
+                                               bg2e::app::FileDialog fd;
+                                               fd.setFilters({{"bg2e 3D model", "bg2,vwglb"}});
+                                               auto filePath = fd.openFile();
 
-            if (!filePath.empty())
-            {
-                _appDelegate->stage()->importModelBg2(filePath);
-            }
-        }
-    }});
-    file.addMenuItem({ "Import GLTF Scene", {
-        .handler = [&]()
-        {
-            bg2e::app::FileDialog fd;
-            fd.setFilters({
-                { "glTF scene", "gltf,glb" }
-            });
-            auto filePath = fd.openFile();
+                                               if (!filePath.empty())
+                                               {
+                                                   _appDelegate->stage()->importModelBg2(filePath);
+                                               }
+                                           }}});
+    file.addMenuItem({"Import GLTF Scene", {.handler = [&]()
+                                            {
+                                                bg2e::app::FileDialog fd;
+                                                fd.setFilters({{"glTF scene", "gltf,glb"}});
+                                                auto filePath = fd.openFile();
 
-            if (!filePath.empty())
-            {
-                _appDelegate->selectionManager()->deselect();
-                _appDelegate->asyncLoadGuarded([this, filePath](bg2e::ui::Loader* loader) {
-                    _appDelegate->stage()->importGltfScene(filePath,
-                        [loader](const std::string& name, int processed, int total) {
-                            loader->setMessage("Importing " + name + "...");
-                            loader->setProgress(total > 0 ? static_cast<float>(processed) / total : 0.0f);
-                        });
-                }, glm::vec4{ 0.2, 0.2, 0.31, 1.0f });
-            }
-        }
-    }});
-    file.addMenuItem({ "Export Selected Model(s)...", {
-        .handler = [&]()
-        {
-            _appDelegate->stage()->exportSelectedModels();
-        }
-    }});
-    file.addMenuItem({ "Save", {
-        .ctrlModifier = true,
-        .key = bg2e::app::KeyEvent::KeyS,
-        .handler = [&]()
-        {
-            _appDelegate->stage()->saveScene(_appDelegate->stage()->document()->path());
-        }
-    }});
-    file.addMenuItem({ "Save As...", {
-        .ctrlModifier = true,
-        .shiftModifier = true,
-        .key = bg2e::app::KeyEvent::KeyS,
-        .handler = [&]()
-        {
-            _appDelegate->stage()->saveScene();
-        }
-    }});
-    file.addMenuItem({});   // Separator
-    file.addMenuItem({ "Import Settings...", {
-        .handler = [&]()
-        {
-            _importSettingsWindow->open();
-        }
-    }});
-    file.addMenuItem({});   // Separator
-    file.addMenuItem({ "Quit", {
-        .ctrlModifier = true,
-        .key = bg2e::app::KeyEvent::KeyQ,
-        .handler = [&]()
-        {
-            bg2e::app::MainLoop::current()->exit();
-        }
-    }});
+                                                if (!filePath.empty())
+                                                {
+                                                    _appDelegate->selectionManager()->deselect();
+                                                    _appDelegate->asyncLoadGuarded([this, filePath](bg2e::ui::Loader* loader)
+                                                                                   {
+                                                                                       _appDelegate->stage()->importGltfScene(filePath,
+                                                                                                                              [loader](const std::string& name, int processed, int total)
+                                                                                                                              {
+                                                                                                                                  loader->setMessage("Importing " + name + "...");
+                                                                                                                                  loader->setProgress(total > 0 ? static_cast<float>(processed) / total : 0.0f);
+                                                                                                                              });
+                                                                                   },
+                                                                                   glm::vec4{0.2, 0.2, 0.31, 1.0f});
+                                                }
+                                            }}});
+    file.addMenuItem({"Export Selected Model(s)...", {.handler = [&]()
+                                                      {
+                                                          _appDelegate->stage()->exportSelectedModels();
+                                                      }}});
+    file.addMenuItem({"Save", {.ctrlModifier = true, .key = bg2e::app::KeyEvent::KeyS, .handler = [&]()
+                                                                                       {
+                                                                                           _appDelegate->stage()->saveScene(_appDelegate->stage()->document()->path());
+                                                                                       }}});
+    file.addMenuItem({"Save As...", {.ctrlModifier = true, .shiftModifier = true, .key = bg2e::app::KeyEvent::KeyS, .handler = [&]()
+                                                                                                                    {
+                                                                                                                        _appDelegate->stage()->saveScene();
+                                                                                                                    }}});
+    file.addMenuItem({}); // Separator
+    file.addMenuItem({"Import Settings...", {.handler = [&]()
+                                             {
+                                                 _importSettingsWindow->open();
+                                             }}});
+    file.addMenuItem({}); // Separator
+    file.addMenuItem({"Quit", {.ctrlModifier = true, .key = bg2e::app::KeyEvent::KeyQ, .handler = [&]()
+                                                                                       {
+                                                                                           bg2e::app::MainLoop::current()->exit();
+                                                                                       }}});
     addMenuItem(file);
 
     bg2e::ui::MenuItem view("View");
-    view.addMenuItem({ "Toggle Selection Highlight", {
-        .shiftModifier = true,
-        .key = bg2e::app::KeyEvent::KeySpace,
-        .handler = [&]()
-        {
-            _appDelegate->toggleSelectionHighlight();
-        }
-    }});
-    view.addMenuItem({ "Reset Camera", {
-        .ctrlModifier = true,
-        .key = bg2e::app::KeyEvent::KeyA,
-        .handler = [&]()
-        {
-            _appDelegate->stage()->orbitCamera()->reset();
-
-        }
-    }});
-    view.addMenuItem({ "Center Camera", {
-        .shiftModifier = true,
-        .key = bg2e::app::KeyEvent::KeyF,
-        .handler = [&]()
-        {
-            auto selection = _appDelegate->selectionManager()->selectedNode();
-            _appDelegate->stage()->centerCameraOnTarget(selection);
-        }
-    }});
+    view.addMenuItem({"Toggle Selection Highlight", {.shiftModifier = true, .key = bg2e::app::KeyEvent::KeySpace, .handler = [&]()
+                                                                                                                  {
+                                                                                                                      _appDelegate->toggleSelectionHighlight();
+                                                                                                                  }}});
+    view.addMenuItem({"Reset Camera", {.ctrlModifier = true, .key = bg2e::app::KeyEvent::KeyA, .handler = [&]()
+                                                                                               {
+                                                                                                   _appDelegate->stage()->orbitCamera()->reset();
+                                                                                               }}});
+    view.addMenuItem({"Center Camera", {.shiftModifier = true, .key = bg2e::app::KeyEvent::KeyF, .handler = [&]()
+                                                                                                 {
+                                                                                                     auto selection = _appDelegate->selectionManager()->selectedNode();
+                                                                                                     _appDelegate->stage()->centerCameraOnTarget(selection);
+                                                                                                 }}});
     addMenuItem(view);
 
     bg2e::ui::MenuItem scene("Scene");
-    scene.addMenuItem({ "Add light", {
-        .handler = [&]()
-        {
-            _appDelegate->stage()->addLightNode();
-        }
-    }});
-    scene.addMenuItem({ "Cube", {
-        .handler = [&]()
-        {
-            _appDelegate->stage()->addCubeNode();
-        }
-    }});
-    scene.addMenuItem({ "Plane", {
-        .handler = [&]()
-        {
-            _appDelegate->stage()->addPlaneNode();
-        }
-    }});
-    scene.addMenuItem({ "Sphere", {
-        .handler = [&]()
-        {
-            _appDelegate->stage()->addSphereNode();
-        }
-    }});
+    scene.addMenuItem({"Add light", {.handler = [&]()
+                                     {
+                                         _appDelegate->stage()->addLightNode();
+                                     }}});
+    scene.addMenuItem({"Cube", {.handler = [&]()
+                                {
+                                    _appDelegate->stage()->addCubeNode();
+                                }}});
+    scene.addMenuItem({"Plane", {.handler = [&]()
+                                 {
+                                     _appDelegate->stage()->addPlaneNode();
+                                 }}});
+    scene.addMenuItem({"Sphere", {.handler = [&]()
+                                  {
+                                      _appDelegate->stage()->addSphereNode();
+                                  }}});
     scene.addMenuItem({});
-    scene.addMenuItem({ "Empty Node", {
-        .handler = [&]()
-        {
-            _appDelegate->stage()->addEmptyNode();
-        }
-    }});
-    scene.addMenuItem({});   // Separator
-    scene.addMenuItem({ "Duplicate Selection", {
-        .handler = [&]()
-        {
-            _appDelegate->stage()->duplicateSelectedNode();
-        }
-    }});
-    scene.addMenuItem({});   // Separator
-    scene.addMenuItem({ "Remove Selection", {
-        .handler = [&]()
-        {
-            _appDelegate->stage()->removeSelectedNode();
-        }
-    }});
+    scene.addMenuItem({"Empty Node", {.handler = [&]()
+                                      {
+                                          _appDelegate->stage()->addEmptyNode();
+                                      }}});
+    scene.addMenuItem({}); // Separator
+    scene.addMenuItem({"Duplicate Selection", {.handler = [&]()
+                                               {
+                                                   _appDelegate->stage()->duplicateSelectedNode();
+                                               }}});
+    scene.addMenuItem({}); // Separator
+    scene.addMenuItem({"Remove Selection", {.handler = [&]()
+                                            {
+                                                _appDelegate->stage()->removeSelectedNode();
+                                            }}});
     addMenuItem(scene);
 
     bg2e::ui::MenuItem window("Window");
-    window.addMenuItem({ "Submesh Editor", {
-        .handler = [&]()
-        {
-            _appDelegate->workspace().toggleLeftPanel();
-        }
-    }, [&]() {
-        return _appDelegate->workspace().leftPanelVisible();
-    }});
-    window.addMenuItem({ "Scene", {
-        .handler = [&]()
-        {
-            _appDelegate->workspace().toggleRightPanel();
-        }
-    }, [&]() {
-        return _appDelegate->workspace().rightPanelVisible();
-    }});
-    window.addMenuItem({});   // Separator
-    window.addMenuItem({ "UI Settings", {
-        .handler = [&]()
-        {
-            _uiSettingsWindow->open();
-        }
-    }});
-    window.addMenuItem({ "Render Settings", {
-        .handler = [&]()
-        {
-            _renderSettingsWindow->open();
-        }
-    }});
-    window.addMenuItem({ "Lightmap Baker", {
-        .handler = [&]()
-        {
-            _appDelegate->sceneLightmapWindow().open();
-        }
-    }});
+    window.addMenuItem({"Submesh Editor", {.handler = [&]()
+                                           {
+                                               _appDelegate->workspace().toggleLeftPanel();
+                                           }},
+                        [&]()
+                        {
+                            return _appDelegate->workspace().leftPanelVisible();
+                        }});
+    window.addMenuItem({"Scene", {.handler = [&]()
+                                  {
+                                      _appDelegate->workspace().toggleRightPanel();
+                                  }},
+                        [&]()
+                        {
+                            return _appDelegate->workspace().rightPanelVisible();
+                        }});
+    window.addMenuItem({}); // Separator
+    window.addMenuItem({"UI Settings", {.handler = [&]()
+                                        {
+                                            _uiSettingsWindow->open();
+                                        }}});
+    window.addMenuItem({"Render Settings", {.handler = [&]()
+                                            {
+                                                _renderSettingsWindow->open();
+                                            }}});
+    window.addMenuItem({"Lightmap Baker", {.handler = [&]()
+                                           {
+                                               _appDelegate->sceneLightmapWindow().open();
+                                           }}});
     addMenuItem(window);
 
-    addButton({
-        .label = "Lightmaps",
-        .action = [&]() {
-            _appDelegate->sceneLightmapWindow().open();
-        }
-    });
+    addButton({.label = "Lightmaps",
+               .action = [&]()
+               {
+                   _appDelegate->sceneLightmapWindow().open();
+               }});
 
-    _indirectButtonId = addButton({
-        .label = "RT AO/GI: On##rt_indirect",
-        .action = [this]() {
-            _renderPrefs->setIndirectLightingEnabled(!_renderPrefs->indirectLightingEnabled());
-        }
-    });
-    _reflectionsButtonId = addButton({
-        .label = "RT Reflections: On##rt_reflections",
-        .action = [this]() {
-            _renderPrefs->setRTReflectionsEnabled(!_renderPrefs->rtReflectionsEnabled());
-        }
-    });
+    _indirectButtonId = addButton({.label = "RT AO/GI: On##rt_indirect",
+                                   .action = [this]()
+                                   {
+                                       _renderPrefs->setIndirectLightingEnabled(!_renderPrefs->indirectLightingEnabled());
+                                   }});
+    _reflectionsButtonId = addButton({.label = "RT Reflections: On##rt_reflections",
+                                      .action = [this]()
+                                      {
+                                          _renderPrefs->setRTReflectionsEnabled(!_renderPrefs->rtReflectionsEnabled());
+                                      }});
 
-    addButton({
-        .label = "Submesh Editor",
-        .action = [&]() {
-            _appDelegate->workspace().toggleLeftPanel();
-        }
-    }, AlignRight);
-    
-    addButton({
-        .label = "Scene",
-        .action = [&]() {
-            _appDelegate->workspace().toggleRightPanel();
-        }
-    }, AlignRight);
+    addButton({.label = "Submesh Editor",
+               .action = [&]()
+               {
+                   _appDelegate->workspace().toggleLeftPanel();
+               }},
+              AlignRight);
+
+    addButton({.label = "Scene",
+               .action = [&]()
+               {
+                   _appDelegate->workspace().toggleRightPanel();
+               }},
+              AlignRight);
 }
 
 void ToolBar::draw()
 {
     updateButtonLabel(_indirectButtonId,
-        _renderPrefs->indirectLightingEnabled()
-            ? "RT AO/GI: On##rt_indirect"
-            : "RT AO/GI: Off##rt_indirect");
+                      _renderPrefs->indirectLightingEnabled()
+                          ? "RT AO/GI: On##rt_indirect"
+                          : "RT AO/GI: Off##rt_indirect");
     updateButtonLabel(_reflectionsButtonId,
-        _renderPrefs->rtReflectionsEnabled()
-            ? "RT Reflections: On##rt_reflections"
-            : "RT Reflections: Off##rt_reflections");
+                      _renderPrefs->rtReflectionsEnabled()
+                          ? "RT Reflections: On##rt_reflections"
+                          : "RT Reflections: Off##rt_reflections");
     bg2e::ui::Toolbar::draw();
 }

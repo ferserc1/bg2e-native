@@ -74,12 +74,30 @@ struct StandaloneBakerContext::BakeResources {
 
     ~BakeResources()
     {
-        if (rtaoPass) rtaoPass->cleanup();
-        if (rtgiPass) rtgiPass->cleanup();
-        if (compositionPass) compositionPass->cleanup();
-        if (materialDataBinding) materialDataBinding->cleanup();
-        if (lightDataBinding) lightDataBinding->cleanup();
-        if (descriptorAllocator) descriptorAllocator->destroy();
+        if (rtaoPass)
+        {
+            rtaoPass->cleanup();
+        }
+        if (rtgiPass)
+        {
+            rtgiPass->cleanup();
+        }
+        if (compositionPass)
+        {
+            compositionPass->cleanup();
+        }
+        if (materialDataBinding)
+        {
+            materialDataBinding->cleanup();
+        }
+        if (lightDataBinding)
+        {
+            lightDataBinding->cleanup();
+        }
+        if (descriptorAllocator)
+        {
+            descriptorAllocator->destroy();
+        }
     }
 };
 
@@ -260,24 +278,16 @@ void StandaloneBakerContext::initializeBakeResources()
         VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR | VK_SHADER_STAGE_COMPUTE_BIT);
     resources->materialDataBinding->initFrameResources(resources->descriptorAllocator.get());
     resources->lightDataBinding->initFrameResources(resources->descriptorAllocator.get());
-    resources->descriptorAllocator->requirePoolSizeRatio(1, {
-        { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 3 },
-        { VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 1 },
-        { VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1 }
-    });
-    resources->descriptorAllocator->requirePoolSizeRatio(1, {
-        { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 4 },
-        { VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 1 },
-        { VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1 }
-    });
-    resources->descriptorAllocator->requirePoolSizeRatio(1, {
-        { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 3 },
-        { VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1 }
-    });
-    resources->descriptorAllocator->requirePoolSizeRatio(1, {
-        { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 3 },
-        { VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1 }
-    });
+    resources->descriptorAllocator->requirePoolSizeRatio(1, {{VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 3},
+                                                             {VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 1},
+                                                             {VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1}});
+    resources->descriptorAllocator->requirePoolSizeRatio(1, {{VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 4},
+                                                             {VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 1},
+                                                             {VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1}});
+    resources->descriptorAllocator->requirePoolSizeRatio(1, {{VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 3},
+                                                             {VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1}});
+    resources->descriptorAllocator->requirePoolSizeRatio(1, {{VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 3},
+                                                             {VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1}});
 
     resources->rtaoPass = std::make_shared<deferred::RTAmbientOcclusion>(engine());
     resources->rtaoPass->setMaterialDataBinding(resources->materialDataBinding.get());
@@ -291,9 +301,10 @@ void StandaloneBakerContext::initializeBakeResources()
     // EnvironmentResources registers cleanup callbacks that capture its owner.
     // Keep it alive until those callbacks run during Engine::cleanup().
     auto retainedEnvironment = std::make_shared<std::shared_ptr<EnvironmentResources>>();
-    engine()->cleanupManager().push([retainedEnvironment](VkDevice) {
-        retainedEnvironment->reset();
-    });
+    engine()->cleanupManager().push([retainedEnvironment](VkDevice)
+                                    {
+                                        retainedEnvironment->reset();
+                                    });
     resources->environmentResources = std::make_shared<EnvironmentResources>(engine());
     *retainedEnvironment = resources->environmentResources;
     resources->environmentResources->initFrameResources(_frameResources->descriptorAllocator);
@@ -327,8 +338,8 @@ void StandaloneBakerContext::refreshEnvironmentResource()
     auto* environment = _scene->mainEnvironment();
     const bool hasEnvironment = environment && !environment->environmentImage().empty();
     const std::string imagePath = hasEnvironment
-        ? environment->environmentImage()
-        : "__bg2e_default_environment__";
+                                      ? environment->environmentImage()
+                                      : "__bg2e_default_environment__";
     const size_t imageHash = hasEnvironment ? environment->imgHash() : 0;
     if (imagePath == _environmentImage && imageHash == _environmentImageHash)
     {
@@ -562,7 +573,7 @@ void StandaloneBakerContext::recordAndSubmitSceneTlas()
         VK_ASSERT(vkCreateFence(device, &fenceInfo, nullptr, &frame.frameFence));
         throw std::runtime_error(
             std::string("StandaloneBakerContext::updateScene: waiting for TLAS build failed: ") +
-                string_VkResult(waitResult));
+            string_VkResult(waitResult));
     }
 
     frame.cleanupManager.flush(engine()->device());
@@ -631,7 +642,7 @@ void StandaloneBakerContext::requireState(State expected, const char* operation)
     if (_state != expected)
     {
         throw std::logic_error(std::string("StandaloneBakerContext::") + operation +
-            ": operation is invalid for the current lifecycle state");
+                               ": operation is invalid for the current lifecycle state");
     }
 }
 
@@ -640,7 +651,7 @@ void StandaloneBakerContext::requireCurrentSceneRoot(const char* operation) cons
     if (!_scene || _scene->rootNode() != rootNode())
     {
         throw std::logic_error(std::string("StandaloneBakerContext::") + operation +
-            ": scene root changed after context construction; create a new context");
+                               ": scene root changed after context construction; create a new context");
     }
 }
 

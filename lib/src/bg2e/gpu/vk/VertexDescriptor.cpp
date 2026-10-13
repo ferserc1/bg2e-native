@@ -26,18 +26,23 @@ VkFormat VertexDescriptor::toVkVertexFormat(gpu::Format format)
 {
     switch (format)
     {
-        case gpu::Format::R32_SFLOAT:          return VK_FORMAT_R32_SFLOAT;
-        case gpu::Format::R32G32_SFLOAT:       return VK_FORMAT_R32G32_SFLOAT;
-        case gpu::Format::R32G32B32_SFLOAT:    return VK_FORMAT_R32G32B32_SFLOAT;
-        case gpu::Format::R32G32B32A32_SFLOAT: return VK_FORMAT_R32G32B32A32_SFLOAT;
-        default:                               return VK_FORMAT_UNDEFINED;
+    case gpu::Format::R32_SFLOAT:
+        return VK_FORMAT_R32_SFLOAT;
+    case gpu::Format::R32G32_SFLOAT:
+        return VK_FORMAT_R32G32_SFLOAT;
+    case gpu::Format::R32G32B32_SFLOAT:
+        return VK_FORMAT_R32G32B32_SFLOAT;
+    case gpu::Format::R32G32B32A32_SFLOAT:
+        return VK_FORMAT_R32G32B32A32_SFLOAT;
+    default:
+        return VK_FORMAT_UNDEFINED;
     }
 }
 
 void VertexDescriptor::buildVkVertexInput(
-    const std::vector<gpu::VertexBufferDescription>&  descriptions,
-    std::vector<VkVertexInputBindingDescription>&     outBindings,
-    std::vector<VkVertexInputAttributeDescription>&   outAttributes)
+    const std::vector<gpu::VertexBufferDescription>& descriptions,
+    std::vector<VkVertexInputBindingDescription>& outBindings,
+    std::vector<VkVertexInputAttributeDescription>& outAttributes)
 {
     outBindings.clear();
     outAttributes.clear();
@@ -45,20 +50,20 @@ void VertexDescriptor::buildVkVertexInput(
     for (const auto& desc : descriptions)
     {
         VkVertexInputBindingDescription binding{};
-        binding.binding   = desc.binding;
-        binding.stride    = desc.stride;
+        binding.binding = desc.binding;
+        binding.stride = desc.stride;
         binding.inputRate = (desc.inputRate == gpu::VertexInputRate::Vertex)
-                          ? VK_VERTEX_INPUT_RATE_VERTEX
-                          : VK_VERTEX_INPUT_RATE_INSTANCE;
+                                ? VK_VERTEX_INPUT_RATE_VERTEX
+                                : VK_VERTEX_INPUT_RATE_INSTANCE;
         outBindings.push_back(binding);
 
         for (const auto& attr : desc.attributes)
         {
             VkVertexInputAttributeDescription vkAttr{};
             vkAttr.location = attr.location;
-            vkAttr.binding  = attr.binding;
-            vkAttr.format   = toVkVertexFormat(attr.format);
-            vkAttr.offset   = attr.offset;
+            vkAttr.binding = attr.binding;
+            vkAttr.format = toVkVertexFormat(attr.format);
+            vkAttr.offset = attr.offset;
             outAttributes.push_back(vkAttr);
         }
     }

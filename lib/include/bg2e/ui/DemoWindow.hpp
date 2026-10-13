@@ -24,7 +24,7 @@ namespace bg2e {
 namespace ui {
 
 class BG2E_API DemoWindow {
-public:
+  public:
     static void draw();
 };
 

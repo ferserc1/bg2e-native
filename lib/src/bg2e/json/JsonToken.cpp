@@ -41,7 +41,8 @@ std::string JsonToken::toString()
     case JsonTokenType::Comma:
         return "Comma";
     case JsonTokenType::Boolean:
-        return "Boolean: " + value;;
+        return "Boolean: " + value;
+        ;
     case JsonTokenType::NullType:
         return "Null";
     default:
@@ -49,10 +50,9 @@ std::string JsonToken::toString()
     }
 }
 
-JsonTokenizer::JsonTokenizer(std::istream * s)
-    :stream(s)
+JsonTokenizer::JsonTokenizer(std::istream* s)
+    : stream(s)
 {
-
 }
 
 char JsonTokenizer::getWithoutWhiteSpace()
@@ -82,10 +82,12 @@ JsonToken JsonTokenizer::getToken()
     {
         token.type = JsonTokenType::String;
         token.value = "";
-        while (stream->get(c) && c != '"') {
+        while (stream->get(c) && c != '"')
+        {
             token.value += c;
         }
-        if (c != '"') {
+        if (c != '"')
+        {
             // Reached the end of the stream without a closing quote. Without
             // this guard the loop would spin forever (a failed get() leaves
             // 'c' unchanged), which is exactly what happens when a corrupt or
@@ -101,7 +103,7 @@ JsonToken JsonTokenizer::getToken()
     {
         token.type = JsonTokenType::CurlyClose;
     }
-    else if (c == '-' || (c>='0' && c <='9') || c == '.' || c == 'e' || c == '+')
+    else if (c == '-' || (c >= '0' && c <= '9') || c == '.' || c == 'e' || c == '+')
     {
         token.type = JsonTokenType::Number;
         token.value = "";
@@ -169,7 +171,7 @@ bool JsonTokenizer::hasMoreTokens()
         rollBackToken();
         return true;
     }
-    catch(std::exception &)
+    catch (std::exception&)
     {
         return false;
     }
@@ -179,6 +181,5 @@ void JsonTokenizer::rollBackToken()
 {
     replayToken = hasLastToken;
 }
-
 
 }

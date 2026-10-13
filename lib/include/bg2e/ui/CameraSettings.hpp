@@ -31,7 +31,7 @@ namespace bg2e {
 namespace ui {
 
 class BG2E_API CameraSettings {
-public:
+  public:
     virtual ~CameraSettings();
 
     void setCameraComponent(scene::CameraComponent* camera)
@@ -43,18 +43,24 @@ public:
     {
         _cameraComponent = camera;
         auto cameraComponent = _cameraComponent.lock();
-        if (cameraComponent) {
+        if (cameraComponent)
+        {
             auto optical = cameraComponent->camera().projection<math::OpticalProjection>();
-            if (optical) {
+            if (optical)
+            {
                 _focalLength = optical->focalLength();
                 _frameSize = optical->frameSize();
                 _selectedSensorSize = getSensorIndex(_frameSize);
-            } else {
+            }
+            else
+            {
                 _focalLength = 35.0f;
                 _frameSize = 35.0f;
                 _selectedSensorSize = 1;
             }
-        } else {
+        }
+        else
+        {
             _focalLength = 35.0f;
             _frameSize = 35.0f;
             _selectedSensorSize = 1;
@@ -70,29 +76,38 @@ public:
 
     void cleanup();
 
-    inline void onChanged(std::function<void()> cb) { _onChangedFunction = cb; }
+    inline void onChanged(std::function<void()> cb)
+    {
+        _onChangedFunction = cb;
+    }
 
     static const std::vector<std::string>& sensorNames()
     {
-        if (_sensorNames.empty()) {
+        if (_sensorNames.empty())
+        {
             _sensorNames = {
                 "APS-C (22mm)",
                 "Full Frame (35mm)",
                 "Medium Format (50mm)",
-                "Large Format (75mm)"
-            };
+                "Large Format (75mm)"};
         }
         return _sensorNames;
     }
 
     static float sensorSize(uint32_t index)
     {
-        switch (index) {
-            case 0: return 22.0f;
-            case 1: return 35.0f;
-            case 2: return 50.0f;
-            case 3: return 75.0f;
-            default: return 35.0f;
+        switch (index)
+        {
+        case 0:
+            return 22.0f;
+        case 1:
+            return 35.0f;
+        case 2:
+            return 50.0f;
+        case 3:
+            return 75.0f;
+        default:
+            return 35.0f;
         }
     }
 
@@ -100,9 +115,11 @@ public:
     {
         float minDist = std::numeric_limits<float>::max();
         uint32_t bestIndex = 1;
-        for (uint32_t i = 0; i < 4; ++i) {
+        for (uint32_t i = 0; i < 4; ++i)
+        {
             float dist = std::abs(sensorSize(i) - frameSize);
-            if (dist < minDist) {
+            if (dist < minDist)
+            {
                 minDist = dist;
                 bestIndex = i;
             }
@@ -110,7 +127,7 @@ public:
         return bestIndex;
     }
 
-protected:
+  protected:
     std::weak_ptr<scene::CameraComponent> _cameraComponent;
 
     float _focalLength = 35.0f;

@@ -24,17 +24,18 @@ using namespace bg2e;
 namespace {
 
 reflection::TypeRegistration<scene::TransformComponent> _transformReflection(
-    [](reflection::TypeInfoBuilder<scene::TransformComponent>& t) {
+    [](reflection::TypeInfoBuilder<scene::TransformComponent>& t)
+    {
         t.displayName("Transform");
 
         t.property("translation", &scene::TransformComponent::translation,
-                                  static_cast<scene::TransformComponent*(scene::TransformComponent::*)(const glm::vec3&)>(
-                                      &scene::TransformComponent::setTranslation))
+                   static_cast<scene::TransformComponent* (scene::TransformComponent::*)(const glm::vec3&)>(
+                       &scene::TransformComponent::setTranslation))
             .displayName("Translation")
             .category("Transform");
 
         t.property("rotation", &scene::TransformComponent::eulerRotation,
-                               &scene::TransformComponent::setEulerRotation)
+                   &scene::TransformComponent::setEulerRotation)
             .displayName("Rotation")
             .category("Transform")
             .range(-180.0, 180.0)
@@ -42,8 +43,8 @@ reflection::TypeRegistration<scene::TransformComponent> _transformReflection(
             .tooltip("Euler rotation in degrees");
 
         t.property("scale", &scene::TransformComponent::scaleValue,
-                            static_cast<scene::TransformComponent*(scene::TransformComponent::*)(const glm::vec3&)>(
-                                &scene::TransformComponent::setScale))
+                   static_cast<scene::TransformComponent* (scene::TransformComponent::*)(const glm::vec3&)>(
+                       &scene::TransformComponent::setScale))
             .displayName("Scale")
             .category("Transform");
 

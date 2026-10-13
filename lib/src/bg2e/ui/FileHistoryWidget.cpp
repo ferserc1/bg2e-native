@@ -21,12 +21,12 @@
 #include <bg2e/app/FileDialog.hpp>
 #include <bg2e/ui/Button.hpp>
 
-#include "imgui.h"
+#include <imgui.h>
 
 namespace bg2e::ui {
 
 FileHistoryWidget::FileHistoryWidget(const std::string& historyType)
-    : _historyType{ historyType }
+    : _historyType{historyType}
 {
 }
 
@@ -74,7 +74,7 @@ bool FileHistoryWidget::drawImageButton(const std::string& id, TextureID image,
 
 void FileHistoryWidget::openPicker()
 {
-    auto & history = app::FileHistory::get();
+    auto& history = app::FileHistory::get();
     if (history.empty(_historyType))
     {
         auto filePath = app::FileDialog::getOpenFilePath(history.filtersFor(_historyType));
@@ -95,7 +95,7 @@ bool FileHistoryWidget::drawHistoryPopup()
 
     if (ImGui::BeginPopup(_popupId.c_str()))
     {
-        auto & history = app::FileHistory::get();
+        auto& history = app::FileHistory::get();
 
         if (Button::button("Open file...##" + _popupId))
         {
@@ -112,7 +112,7 @@ bool FileHistoryWidget::drawHistoryPopup()
         if (ImGui::BeginChild(("##scroll" + _popupId).c_str(), ImVec2(360.0f, 240.0f), true))
         {
             bool entryPicked = false;
-            for (const auto & entry : history.entries(_historyType))
+            for (const auto& entry : history.entries(_historyType))
             {
                 ImGui::PushID(entry.string().c_str());
 

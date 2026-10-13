@@ -18,12 +18,12 @@
 
 #include <bg2e/ui/Group.hpp>
 
-#include "imgui.h"
+#include <imgui.h>
 
 namespace bg2e {
 namespace ui {
 
-bool Group::beginTree(const std::string & label)
+bool Group::beginTree(const std::string& label)
 {
     return ImGui::TreeNodeEx(label.c_str(), ImGuiTreeNodeFlags_DefaultOpen);
 }
@@ -33,7 +33,7 @@ void Group::endTree()
     ImGui::TreePop();
 }
 
-bool Group::collapsingHeader(const std::string & title, bool visible, bool allowOverlap)
+bool Group::collapsingHeader(const std::string& title, bool visible, bool allowOverlap)
 {
     ImGuiTreeNodeFlags flags = visible ? ImGuiTreeNodeFlags_DefaultOpen : 0;
     if (allowOverlap)

@@ -30,12 +30,18 @@ VkShaderStageFlags shaderStageToVkFlags(ShaderStage stage)
 {
     switch (stage)
     {
-        case ShaderStage::Vertex:          return VK_SHADER_STAGE_VERTEX_BIT;
-        case ShaderStage::Fragment:        return VK_SHADER_STAGE_FRAGMENT_BIT;
-        case ShaderStage::Compute:         return VK_SHADER_STAGE_COMPUTE_BIT;
-        case ShaderStage::RayGeneration:   return VK_SHADER_STAGE_RAYGEN_BIT_KHR;
-        case ShaderStage::Miss:            return VK_SHADER_STAGE_MISS_BIT_KHR;
-        case ShaderStage::ClosestHit:      return VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR;
+    case ShaderStage::Vertex:
+        return VK_SHADER_STAGE_VERTEX_BIT;
+    case ShaderStage::Fragment:
+        return VK_SHADER_STAGE_FRAGMENT_BIT;
+    case ShaderStage::Compute:
+        return VK_SHADER_STAGE_COMPUTE_BIT;
+    case ShaderStage::RayGeneration:
+        return VK_SHADER_STAGE_RAYGEN_BIT_KHR;
+    case ShaderStage::Miss:
+        return VK_SHADER_STAGE_MISS_BIT_KHR;
+    case ShaderStage::ClosestHit:
+        return VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR;
     }
     return VK_SHADER_STAGE_VERTEX_BIT;
 }
@@ -44,20 +50,24 @@ static VkDescriptorType toVkDescriptorType(ResourceType type)
 {
     switch (type)
     {
-        case ResourceType::UniformBuffer: return VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        case ResourceType::StorageBuffer: return VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-        case ResourceType::SampledImage:  return VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-        case ResourceType::StorageImage:  return VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
-        case ResourceType::Sampler:       return VK_DESCRIPTOR_TYPE_SAMPLER;
-        case ResourceType::AccelerationStructure: return VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
+    case ResourceType::UniformBuffer:
+        return VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    case ResourceType::StorageBuffer:
+        return VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    case ResourceType::SampledImage:
+        return VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+    case ResourceType::StorageImage:
+        return VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+    case ResourceType::Sampler:
+        return VK_DESCRIPTOR_TYPE_SAMPLER;
+    case ResourceType::AccelerationStructure:
+        return VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
     }
     return VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
 }
 
 PipelineLayout::PipelineLayout(gpu::Device* gpuDevice, VkDevice device, const gpu::PipelineLayoutDescription& description)
-    : gpu::PipelineLayout(gpuDevice)
-    , _device(device)
-    , _description(description)
+    : gpu::PipelineLayout(gpuDevice), _device(device), _description(description)
 {
     validatePushConstantRanges(description.pushConstants);
 
@@ -66,8 +76,7 @@ PipelineLayout::PipelineLayout(gpu::Device* gpuDevice, VkDevice device, const gp
     // Group resource bindings by set index and create descriptor set layouts
     if (!description.resourceBindings.empty())
     {
-        struct BindingWithSet
-        {
+        struct BindingWithSet {
             uint32_t set;
             VkDescriptorSetLayoutBinding binding;
         };
@@ -83,8 +92,11 @@ PipelineLayout::PipelineLayout(gpu::Device* gpuDevice, VkDevice device, const gp
             vkBinding.descriptorCount = rb.count;
             vkBinding.stageFlags = shaderStageToVkFlags(rb.stage);
 
-            bindingsBySet.push_back({ rb.set, vkBinding });
-            if (rb.set > maxSet) maxSet = rb.set;
+            bindingsBySet.push_back({rb.set, vkBinding});
+            if (rb.set > maxSet)
+            {
+                maxSet = rb.set;
+            }
         }
 
         _descriptorSetLayouts.resize(maxSet + 1, VK_NULL_HANDLE);
@@ -97,7 +109,10 @@ PipelineLayout::PipelineLayout(gpu::Device* gpuDevice, VkDevice device, const gp
 
         for (uint32_t i = 0; i < layoutsBySet.size(); ++i)
         {
-            if (layoutsBySet[i].empty()) continue;
+            if (layoutsBySet[i].empty())
+            {
+                continue;
+            }
 
             VkDescriptorSetLayoutCreateInfo layoutInfo{};
             layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
@@ -130,7 +145,7 @@ PipelineLayout::PipelineLayout(gpu::Device* gpuDevice, VkDevice device, const gp
     {
         VkPushConstantRange vkRange{};
         vkRange.offset = range.offset;
-        vkRange.size   = range.size;
+        vkRange.size = range.size;
         vkRange.stageFlags = shaderStageToVkFlags(range.stage);
         vkRanges.push_back(vkRange);
     }
@@ -190,7 +205,10 @@ void PipelineLayout::cleanup()
 
 VkDescriptorSetLayout PipelineLayout::descriptorSetLayout(uint32_t set) const
 {
-    if (set >= _descriptorSetLayouts.size()) return VK_NULL_HANDLE;
+    if (set >= _descriptorSetLayouts.size())
+    {
+        return VK_NULL_HANDLE;
+    }
     return _descriptorSetLayouts[set];
 }
 

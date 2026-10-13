@@ -52,7 +52,7 @@ using SceneProgressCallback = std::function<void(const std::string& nodeName, in
 struct SceneLoadProgress {
     SceneProgressCallback callback;
     int loaded = 0;
-    int total  = 0;
+    int total = 0;
 };
 
 struct SceneSaveProgress {
@@ -63,31 +63,61 @@ struct SceneSaveProgress {
 
 class BG2E_API Node : public std::enable_shared_from_this<Node> {
     friend class Scene;
-public:
+
+  public:
     Node();
     Node(const std::string& name);
     virtual ~Node();
-    
-    inline const std::string& name() const { return _name; }
-    inline void setName(const std::string & name) { _name = name; }
-    inline const std::string& identifier() const { return _identifier; }
-    inline bool disabled() const { return _disabled; }
-    inline void setDisabled(bool d = true) { _disabled = d; }
-    inline bool enabled() const { return !_disabled; }
-    inline void setEnabled(bool e = true) { _disabled = !e; }
-    inline bool steady() const { return _steady; }
-    inline void setSteady(bool s) { _steady = s; }
-    
-    
-    void addChild(Node * node);
+
+    inline const std::string& name() const
+    {
+        return _name;
+    }
+    inline void setName(const std::string& name)
+    {
+        _name = name;
+    }
+    inline const std::string& identifier() const
+    {
+        return _identifier;
+    }
+    inline bool disabled() const
+    {
+        return _disabled;
+    }
+    inline void setDisabled(bool d = true)
+    {
+        _disabled = d;
+    }
+    inline bool enabled() const
+    {
+        return !_disabled;
+    }
+    inline void setEnabled(bool e = true)
+    {
+        _disabled = !e;
+    }
+    inline bool steady() const
+    {
+        return _steady;
+    }
+    inline void setSteady(bool s)
+    {
+        _steady = s;
+    }
+
+    void addChild(Node* node);
     void addChild(std::shared_ptr<Node> node);
-    void removeChild(const std::shared_ptr<Node> & node);
+    void removeChild(const std::shared_ptr<Node>& node);
     const std::vector<std::shared_ptr<Node>>& children() const;
     void clearChildren();
-    
-    Node * parent() { return _parent; }
-    
-    void addComponent(Component * comp);
+
+    Node* parent()
+    {
+        return _parent;
+    }
+
+    void addComponent(Component* comp);
     void addComponent(std::shared_ptr<Component> comp);
 
     template <typename ComponentT>
@@ -99,9 +129,9 @@ public:
     void removeComponent(std::shared_ptr<Component> comp);
     const std::unordered_map<std::string, std::shared_ptr<Component>>& components() const;
     const std::vector<std::shared_ptr<Component>>& orderedComponents() const;
-    
+
     template <typename ComponentT>
-    ComponentT * getComponent()
+    ComponentT* getComponent()
     {
         auto className = typeid(ComponentT).name();
         if (_components.find(className) != _components.end())
@@ -111,17 +141,35 @@ public:
         return nullptr;
     }
 
-    void setComponentsOrderDirty() const { _componentsOrderDirty = true; }
-    
-    inline TransformComponent * transform() { return getComponent<TransformComponent>(); }
-    inline DrawableComponent * drawable() { return getComponent<DrawableComponent>(); }
-    inline CameraComponent * camera() { return getComponent<CameraComponent>(); }
-    inline EnvironmentComponent * environment() { return getComponent<EnvironmentComponent>(); }
-    inline LightComponent * light() { return getComponent<LightComponent>(); }
-    
-    void accept(NodeVisitor * visitor);
-    void acceptReverse(NodeVisitor * visitor);
-    
+    void setComponentsOrderDirty() const
+    {
+        _componentsOrderDirty = true;
+    }
+
+    inline TransformComponent* transform()
+    {
+        return getComponent<TransformComponent>();
+    }
+    inline DrawableComponent* drawable()
+    {
+        return getComponent<DrawableComponent>();
+    }
+    inline CameraComponent* camera()
+    {
+        return getComponent<CameraComponent>();
+    }
+    inline EnvironmentComponent* environment()
+    {
+        return getComponent<EnvironmentComponent>();
+    }
+    inline LightComponent* light()
+    {
+        return getComponent<LightComponent>();
+    }
+
+    void accept(NodeVisitor* visitor);
+    void acceptReverse(NodeVisitor* visitor);
+
     glm::mat4 worldMatrix();
     glm::mat4 invertedWorldMatrix();
     glm::vec3 worldPosition();
@@ -129,7 +177,7 @@ public:
     glm::vec3 rightVector();
     glm::vec3 upVector();
 
-    Node * sceneRoot();
+    Node* sceneRoot();
 
     // Returns a deep, independent copy of this node: a fresh node (with its own
     // unique identifier) carrying a deep copy of every component (see
@@ -139,22 +187,25 @@ public:
     // result afterwards if a distinct name is required.
     [[nodiscard]] std::shared_ptr<Node> clone() const;
 
-    inline Scene * scene() { return sceneRoot()->_scene; }
-    
+    inline Scene* scene()
+    {
+        return sceneRoot()->_scene;
+    }
+
     void deserialize(std::shared_ptr<json::JsonNode>, const std::filesystem::path&,
                      render::Engine& engine, SceneLoadProgress* progress = nullptr);
     std::shared_ptr<json::JsonNode> serialize(const std::filesystem::path&,
-                                             SceneSaveProgress* progress = nullptr);
+                                              SceneSaveProgress* progress = nullptr);
 
-protected:
+  protected:
     std::vector<std::shared_ptr<Node>> _children;
-    Node * _parent = nullptr;
-    Scene * _scene = nullptr;
-    
+    Node* _parent = nullptr;
+    Scene* _scene = nullptr;
+
     std::unordered_map<std::string, std::shared_ptr<Component>> _components;
     mutable std::vector<std::shared_ptr<Component>> _orderedComponents;
     mutable bool _componentsOrderDirty = false;
-    
+
     std::string _name;
     std::string _identifier;
     bool _disabled = false;

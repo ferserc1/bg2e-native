@@ -32,42 +32,42 @@ namespace macros {
 // store the Buffer object in any kind of smart pointer
 template <typename T>
 Buffer* createBuffer(
-    Engine * engine,
+    Engine* engine,
     FrameResources& frameResources,
     const T& data,
     VkBufferUsageFlags usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
     VmaMemoryUsage memoryUsage = VMA_MEMORY_USAGE_CPU_ONLY,
-    const std::string & name = ""
-) {
+    const std::string& name = "")
+{
     auto buffer = bg2e::render::vulkan::Buffer::createAllocatedBuffer(
         engine, sizeof(T),
         usage,
         memoryUsage,
-        name
-    );
-    
+        name);
+
     auto vkBuffer = buffer->handle();
     auto bufferAllocation = buffer->allocation();
-    frameResources.cleanupManager.push([&, engine, vkBuffer, bufferAllocation, buffer](VkDevice) {
-        delete buffer;
-    });
-    
+    frameResources.cleanupManager.push([&, engine, vkBuffer, bufferAllocation, buffer](VkDevice)
+                                       {
+                                           delete buffer;
+                                       });
+
     auto dataPtr = reinterpret_cast<T*>(buffer->allocatedData());
     *dataPtr = data;
     buffer->flushAllocatedData();
-    
+
     return buffer;
 }
 
 template <typename T>
 Buffer* createBuffer(
-    Engine * engine,
+    Engine* engine,
     FrameResources& frameResources,
     const std::vector<T>& data,
     VkBufferUsageFlags usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
     VmaMemoryUsage memoryUsage = VMA_MEMORY_USAGE_CPU_ONLY,
-    const std::string & name = ""
-) {
+    const std::string& name = "")
+{
     const VkDeviceSize bufferSize = sizeof(T) * data.size();
 
     if (bufferSize == 0)
@@ -80,21 +80,20 @@ Buffer* createBuffer(
         bufferSize,
         usage,
         memoryUsage,
-        name
-    );
+        name);
 
     auto vkBuffer = buffer->handle();
     auto bufferAllocation = buffer->allocation();
 
-    frameResources.cleanupManager.push([&, engine, vkBuffer, bufferAllocation, buffer](VkDevice) {
-        delete buffer;
-    });
+    frameResources.cleanupManager.push([&, engine, vkBuffer, bufferAllocation, buffer](VkDevice)
+                                       {
+                                           delete buffer;
+                                       });
 
     std::memcpy(
         buffer->allocatedData(),
         data.data(),
-        static_cast<size_t>(bufferSize)
-    );
+        static_cast<size_t>(bufferSize));
 
     buffer->flushAllocatedData();
 

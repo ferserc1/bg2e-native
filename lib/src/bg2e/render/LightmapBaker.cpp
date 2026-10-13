@@ -30,9 +30,9 @@ LightmapBaker::LightmapBaker(std::shared_ptr<BakerContext> context,
 {
     validateTarget();
     _uvSurfacePass = std::make_shared<UvSurfacePass>(
-        _context->engine(), VkExtent2D{ _settings.resolution, _settings.resolution });
+        _context->engine(), VkExtent2D{_settings.resolution, _settings.resolution});
     _accumulator = std::make_shared<UvTemporalAccumulator>(
-        _context->engine(), VkExtent2D{ _settings.resolution, _settings.resolution });
+        _context->engine(), VkExtent2D{_settings.resolution, _settings.resolution});
     const uint32_t frameSlots = _context->engine()->numImages();
     _aoImages.resize(frameSlots);
     _giImages.resize(frameSlots);
@@ -44,37 +44,31 @@ LightmapBaker::LightmapBaker(std::shared_ptr<BakerContext> context,
                 _context->engine(),
                 "LightmapBaker RTAO result " + std::to_string(frameSlot),
                 VK_FORMAT_R8_UNORM,
-                VkExtent2D{ _settings.resolution, _settings.resolution },
+                VkExtent2D{_settings.resolution, _settings.resolution},
                 VK_IMAGE_USAGE_STORAGE_BIT |
-                VK_IMAGE_USAGE_SAMPLED_BIT |
-                VK_IMAGE_USAGE_TRANSFER_DST_BIT |
-                VK_IMAGE_USAGE_TRANSFER_SRC_BIT
-            )
-        );
+                    VK_IMAGE_USAGE_SAMPLED_BIT |
+                    VK_IMAGE_USAGE_TRANSFER_DST_BIT |
+                    VK_IMAGE_USAGE_TRANSFER_SRC_BIT));
         _giImages[frameSlot] = std::shared_ptr<vulkan::Image>(
             vulkan::Image::createAllocatedImage(
                 _context->engine(),
                 "LightmapBaker RTGI result " + std::to_string(frameSlot),
                 VK_FORMAT_R16G16B16A16_SFLOAT,
-                VkExtent2D{ _settings.resolution, _settings.resolution },
+                VkExtent2D{_settings.resolution, _settings.resolution},
                 VK_IMAGE_USAGE_STORAGE_BIT |
-                VK_IMAGE_USAGE_SAMPLED_BIT |
-                VK_IMAGE_USAGE_TRANSFER_DST_BIT |
-                VK_IMAGE_USAGE_TRANSFER_SRC_BIT
-            )
-        );
+                    VK_IMAGE_USAGE_SAMPLED_BIT |
+                    VK_IMAGE_USAGE_TRANSFER_DST_BIT |
+                    VK_IMAGE_USAGE_TRANSFER_SRC_BIT));
         _resultImages[frameSlot] = std::shared_ptr<vulkan::Image>(
             vulkan::Image::createAllocatedImage(
                 _context->engine(),
                 "LightmapBaker composed RGB multiplier " + std::to_string(frameSlot),
                 VK_FORMAT_R16G16B16A16_SFLOAT,
-                VkExtent2D{ _settings.resolution, _settings.resolution },
+                VkExtent2D{_settings.resolution, _settings.resolution},
                 VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
-                VK_IMAGE_USAGE_STORAGE_BIT |
-                VK_IMAGE_USAGE_SAMPLED_BIT |
-                VK_IMAGE_USAGE_TRANSFER_SRC_BIT
-            )
-        );
+                    VK_IMAGE_USAGE_STORAGE_BIT |
+                    VK_IMAGE_USAGE_SAMPLED_BIT |
+                    VK_IMAGE_USAGE_TRANSFER_SRC_BIT));
     }
 }
 
@@ -89,94 +83,115 @@ LightmapBaker::~LightmapBaker()
     auto aoImages = std::move(_aoImages);
     auto giImages = std::move(_giImages);
     auto resultImages = std::move(_resultImages);
-    _context->engine()->deferredExec([
-        pass = std::move(pass),
-        accumulator = std::move(accumulator),
-        aoImages = std::move(aoImages),
-        giImages = std::move(giImages),
-        resultImages = std::move(resultImages)]() mutable {
-        pass.reset();
-        accumulator.reset();
-        aoImages.clear();
-        giImages.clear();
-        resultImages.clear();
-    });
+    _context->engine()->deferredExec([pass = std::move(pass),
+                                      accumulator = std::move(accumulator),
+                                      aoImages = std::move(aoImages),
+                                      giImages = std::move(giImages),
+                                      resultImages = std::move(resultImages)]() mutable
+                                     {
+                                         pass.reset();
+                                         accumulator.reset();
+                                         aoImages.clear();
+                                         giImages.clear();
+                                         resultImages.clear();
+                                     });
 }
 
 void LightmapBaker::validateTarget() const
 {
-    if (!_context) {
+    if (!_context)
+    {
         throw std::invalid_argument("LightmapBaker: context must not be null");
     }
-    if (!_targetNode) {
+    if (!_targetNode)
+    {
         throw std::invalid_argument("LightmapBaker: target node must not be null");
     }
-    if (_targetNode->sceneRoot() != _context->rootNode()) {
+    if (_targetNode->sceneRoot() != _context->rootNode())
+    {
         throw std::invalid_argument("LightmapBaker: target node belongs to a different scene root");
     }
 
     const auto component = _targetNode->drawable();
     const auto drawable = component ? component->drawable() : std::shared_ptr<scene::Drawable>{};
-    if (!drawable) {
+    if (!drawable)
+    {
         throw std::invalid_argument("LightmapBaker: target node must contain a standard scene::Drawable");
     }
     const auto mesh = drawable->mesh();
-    if (!mesh || drawable->submeshesCount() == 0 || mesh->vertices.empty() || mesh->indices.empty()) {
+    if (!mesh || drawable->submeshesCount() == 0 || mesh->vertices.empty() || mesh->indices.empty())
+    {
         throw std::invalid_argument("LightmapBaker: target Drawable must contain nonempty triangle submeshes");
     }
-    if (mesh->submeshes.size() != drawable->submeshesCount()) {
+    if (mesh->submeshes.size() != drawable->submeshesCount())
+    {
         throw std::invalid_argument("LightmapBaker: target Drawable submesh metadata does not match its CPU mesh");
     }
-    if (!drawable->isLoaded()) {
+    if (!drawable->isLoaded())
+    {
         throw std::invalid_argument("LightmapBaker: target Drawable must be loaded on the context engine");
     }
 
-    for (uint32_t submeshIndex = 0; submeshIndex < drawable->submeshesCount(); ++submeshIndex) {
+    for (uint32_t submeshIndex = 0; submeshIndex < drawable->submeshesCount(); ++submeshIndex)
+    {
         const auto submesh = drawable->submeshData(submeshIndex);
         const uint64_t end = static_cast<uint64_t>(submesh.firstIndex) + submesh.indexCount;
-        if (submesh.indexCount == 0 || submesh.indexCount % 3 != 0 || end > mesh->indices.size()) {
+        if (submesh.indexCount == 0 || submesh.indexCount % 3 != 0 || end > mesh->indices.size())
+        {
             throw std::invalid_argument("LightmapBaker: target Drawable has an invalid triangle submesh index range");
         }
-        for (uint64_t index = submesh.firstIndex; index < end; ++index) {
-            if (mesh->indices[static_cast<size_t>(index)] >= mesh->vertices.size()) {
+        for (uint64_t index = submesh.firstIndex; index < end; ++index)
+        {
+            if (mesh->indices[static_cast<size_t>(index)] >= mesh->vertices.size())
+            {
                 throw std::invalid_argument("LightmapBaker: target Drawable has an index outside its vertex array");
             }
         }
     }
 
-    if (_settings.resolution == 0) {
+    if (_settings.resolution == 0)
+    {
         throw std::invalid_argument("LightmapBaker: resolution must be positive");
     }
-    if (_settings.accumulationFrames == 0) {
+    if (_settings.accumulationFrames == 0)
+    {
         throw std::invalid_argument("LightmapBaker: accumulationFrames must be positive");
     }
-    if (_settings.samplesPerPixel == 0) {
+    if (_settings.samplesPerPixel == 0)
+    {
         throw std::invalid_argument("LightmapBaker: samplesPerPixel must be positive");
     }
-    if (_settings.samplesPerPixel > static_cast<uint32_t>(std::numeric_limits<int>::max())) {
+    if (_settings.samplesPerPixel > static_cast<uint32_t>(std::numeric_limits<int>::max()))
+    {
         throw std::invalid_argument("LightmapBaker: samplesPerPixel exceeds the RTAO shader limit");
     }
     if (_settings.mode == LightmapMode::RTGI &&
-        (!std::isfinite(_settings.maxRayDistance) || _settings.maxRayDistance <= 0.0f)) {
+        (!std::isfinite(_settings.maxRayDistance) || _settings.maxRayDistance <= 0.0f))
+    {
         throw std::invalid_argument("LightmapBaker: maxRayDistance must be finite and positive");
     }
     if (_settings.mode == LightmapMode::RTGI &&
         (!std::isfinite(_settings.giRayBias) || _settings.giRayBias < 0.0f ||
-         _settings.giRayBias >= _settings.maxRayDistance)) {
+         _settings.giRayBias >= _settings.maxRayDistance))
+    {
         throw std::invalid_argument("LightmapBaker: giRayBias must be finite, non-negative and smaller than maxRayDistance");
     }
     if (!std::isfinite(_settings.exposureEV) ||
-        _settings.exposureEV < -16.0f || _settings.exposureEV > 16.0f) {
+        _settings.exposureEV < -16.0f || _settings.exposureEV > 16.0f)
+    {
         throw std::invalid_argument("LightmapBaker: exposureEV must be finite and within [-16, 16]");
     }
-    if (_settings.mode != LightmapMode::RTAO && _settings.mode != LightmapMode::RTGI) {
+    if (_settings.mode != LightmapMode::RTAO && _settings.mode != LightmapMode::RTGI)
+    {
         throw std::invalid_argument("LightmapBaker: mode has an unsupported value");
     }
     if (_settings.cpuFormat != LightmapPixelFormat::RGB8 &&
-        _settings.cpuFormat != LightmapPixelFormat::RGB32F) {
+        _settings.cpuFormat != LightmapPixelFormat::RGB32F)
+    {
         throw std::invalid_argument("LightmapBaker: cpuFormat has an unsupported value");
     }
-    if (_settings.dilationPixels == 0 || _settings.dilationPixels > 32) {
+    if (_settings.dilationPixels == 0 || _settings.dilationPixels > 32)
+    {
         throw std::invalid_argument("LightmapBaker: dilationPixels must be in [1, 32]");
     }
 
@@ -275,7 +290,7 @@ LightmapPixels LightmapBaker::readPixels() const
     // queuing a transfer ahead of the application's pending submission.
     _context->engine()->device().waitIdle();
     return _accumulator->readPixels(_settings.cpuFormat,
-        _settings.mode == LightmapMode::RTGI ? _settings.exposureEV : 0.0f);
+                                    _settings.mode == LightmapMode::RTGI ? _settings.exposureEV : 0.0f);
 }
 
 std::shared_ptr<vulkan::Image> LightmapBaker::image() const

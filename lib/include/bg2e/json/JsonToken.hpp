@@ -27,7 +27,8 @@
 namespace bg2e {
 namespace json {
 
-enum class JsonTokenType {
+enum class JsonTokenType
+{
     CurlyOpen,
     CurlyClose,
     Colon,
@@ -46,18 +47,17 @@ struct JsonToken {
     std::string toString();
 };
 
-
 class BG2E_API JsonTokenizer {
-public:
-    JsonTokenizer(std::istream * s);
+  public:
+    JsonTokenizer(std::istream* s);
 
     char getWithoutWhiteSpace();
     JsonToken getToken();
     bool hasMoreTokens();
     void rollBackToken();
 
-protected:
-    std::istream * stream;
+  protected:
+    std::istream* stream;
     // Replay the last token without seeking in a translated text stream.
     JsonToken lastToken;
     bool hasLastToken = false;

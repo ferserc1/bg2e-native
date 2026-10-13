@@ -42,38 +42,68 @@ struct SceneLoadProgress;
 
 class BG2E_API Component : public std::enable_shared_from_this<Component> {
     friend class Node;
-public:
-    
-    virtual ~Component() = default;
-    
-    inline Node * ownerNode() const { return _owner; }
-    Scene * scene();
 
-    uint32_t priority() const { return _priority; }
+  public:
+    virtual ~Component() = default;
+
+    inline Node* ownerNode() const
+    {
+        return _owner;
+    }
+    Scene* scene();
+
+    uint32_t priority() const
+    {
+        return _priority;
+    }
     void setPriority(uint32_t newPriority);
 
     // Use it to prevent serialization of this component on save scenes
-    void setIgnoreSerialization(bool s) { _ignoreSerialization = s; }
-    [[nodiscard]] bool ignoreSerialization() const { return _ignoreSerialization; }
+    void setIgnoreSerialization(bool s)
+    {
+        _ignoreSerialization = s;
+    }
+    [[nodiscard]] bool ignoreSerialization() const
+    {
+        return _ignoreSerialization;
+    }
 
-    virtual void resizeViewport(const math::Viewport&) {}
-    
-    virtual void animate(float /* delta */) {}
-    
-    virtual void update(float /* delta */) {}
-    
-    virtual void mouseMove(int /* x */, int /* y */) {}
+    virtual void resizeViewport(const math::Viewport&)
+    {
+    }
 
-    virtual void mouseButtonDown(int /* button */, int /* x */, int /* y */) {}
+    virtual void animate(float /* delta */)
+    {
+    }
 
-    virtual void mouseButtonUp(int /* button */, int /* x */, int /* y */) {}
+    virtual void update(float /* delta */)
+    {
+    }
 
-    virtual void mouseWheel(int /* deltaX */, int /* deltaY */) {}
+    virtual void mouseMove(int /* x */, int /* y */)
+    {
+    }
 
-    virtual void keyDown(const app::KeyEvent& /* keyEvent */) {}
-    
-    virtual void keyUp(const app::KeyEvent&  /* keyEvent */) {}
-    
+    virtual void mouseButtonDown(int /* button */, int /* x */, int /* y */)
+    {
+    }
+
+    virtual void mouseButtonUp(int /* button */, int /* x */, int /* y */)
+    {
+    }
+
+    virtual void mouseWheel(int /* deltaX */, int /* deltaY */)
+    {
+    }
+
+    virtual void keyDown(const app::KeyEvent& /* keyEvent */)
+    {
+    }
+
+    virtual void keyUp(const app::KeyEvent& /* keyEvent */)
+    {
+    }
+
     virtual std::string typeName() const = 0;
 
     // Returns a deep, independent copy of this component, detached from any node
@@ -89,27 +119,39 @@ public:
     virtual void deserializeWithProgress(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path& basePath, render::Engine& engine, SceneLoadProgress* progress);
     virtual std::shared_ptr<json::JsonNode> serialize(const std::filesystem::path& basePath);
 
-protected:
-
+  protected:
     // Weak ptr to avoid circular references
-    Node * _owner = nullptr;
+    Node* _owner = nullptr;
 
     uint32_t _priority = 0;
 
     bool _ignoreSerialization = false;
 
-    virtual void willAddToNode(Node *) {}
-    virtual void didAddToNode(Node *) {}
-    virtual void willRemoveFromNode(Node *) {}
-    virtual void didRemoveFromNode(Node *) {}
+    virtual void willAddToNode(Node*)
+    {
+    }
+    virtual void didAddToNode(Node*)
+    {
+    }
+    virtual void willRemoveFromNode(Node*)
+    {
+    }
+    virtual void didRemoveFromNode(Node*)
+    {
+    }
 };
 
-extern BG2E_API std::string componentName(Component * comp);
+extern BG2E_API std::string componentName(Component* comp);
 
 #define BG2E_COMPONENT_TYPE_NAME(typeNameString) \
-    static std::string staticTypeName() { return typeNameString; } \
-    std::string typeName() const override { return typeNameString; }
-
+    static std::string staticTypeName()          \
+    {                                            \
+        return typeNameString;                   \
+    }                                            \
+    std::string typeName() const override        \
+    {                                            \
+        return typeNameString;                   \
+    }
 
 }
 }

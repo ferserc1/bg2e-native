@@ -35,7 +35,7 @@ static constexpr uint32_t MAX_OBJECTS = 256;
 struct RTMaterialData {
     base::Color albedo;
     glm::vec2 albedoScale;
-    uint32_t indexOffset;   // firstIndex of the submesh in the shared index buffer
+    uint32_t indexOffset; // firstIndex of the submesh in the shared index buffer
     float lightEmission;
     uint32_t lightEmissionChannel;
     uint32_t lightEmissionInvert;
@@ -56,8 +56,8 @@ struct RTMaterialInstance {
 
 struct RTObjectInstance {
     RTMaterialData materialData;
-    const Buffer*  vertexBuffer = nullptr;
-    const Buffer*  indexBuffer = nullptr;
+    const Buffer* vertexBuffer = nullptr;
+    const Buffer* indexBuffer = nullptr;
     std::shared_ptr<render::Texture> albedoTexture;
     std::shared_ptr<render::Texture> lightEmissionTexture;
 };

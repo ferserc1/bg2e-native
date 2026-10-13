@@ -45,11 +45,11 @@ class RayTracingScene;
 }
 
 class BG2E_API StandaloneLightmapBaker final : public LightmapBaker {
-public:
+  public:
     // Submits one bake sample synchronously after the context has prepared a scene generation.
     void update();
 
-private:
+  private:
     friend class StandaloneBakerContext;
     StandaloneLightmapBaker(std::shared_ptr<BakerContext> context,
                             std::shared_ptr<scene::Node> targetNode,
@@ -60,7 +60,7 @@ private:
 };
 
 class BG2E_API StandaloneBakerContext final : public BakerContext {
-public:
+  public:
     StandaloneBakerContext(Engine* engine, std::shared_ptr<scene::Scene> scene);
     ~StandaloneBakerContext() override;
 
@@ -74,10 +74,11 @@ public:
         LightmapSettings settings = {});
     void cleanup();
 
-private:
+  private:
     friend class StandaloneLightmapBaker;
 
-    enum class State : uint8_t {
+    enum class State : uint8_t
+    {
         Created,
         Initialized,
         SceneReady,

@@ -27,20 +27,20 @@ UpdateVisitor::UpdateVisitor()
     _ignoreDisabled = true;
 }
 
-void UpdateVisitor::update(Node * sceneRoot, float delta)
+void UpdateVisitor::update(Node* sceneRoot, float delta)
 {
     _delta = delta;
     sceneRoot->accept(this);
 }
 
-void UpdateVisitor::visit(Node * node)
+void UpdateVisitor::visit(Node* node)
 {
     // Animation
     for (const auto comp : node->orderedComponents())
     {
         comp->animate(_delta);
     }
-    
+
     // Update
     for (const auto comp : node->orderedComponents())
     {

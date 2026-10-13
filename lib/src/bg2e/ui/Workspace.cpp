@@ -23,12 +23,12 @@ namespace bg2e::ui {
 
 void Workspace::setup(
     uint32_t width, uint32_t height,
-    Window * toolBar,
-    Window * leftPanel,
-    Window * rightPanel,
-    Window * bottomPanel,
-    Window * statusBar
-) {
+    Window* toolBar,
+    Window* leftPanel,
+    Window* rightPanel,
+    Window* bottomPanel,
+    Window* statusBar)
+{
     _uiScale = UserInterface::getScale();
 
     _viewportWidth = width;
@@ -38,7 +38,7 @@ void Workspace::setup(
     _rightPanel = rightPanel;
     _bottomPanel = bottomPanel;
     _statusBar = statusBar;
-    
+
     updateWindows();
 }
 
@@ -47,7 +47,6 @@ void Workspace::resize(uint32_t width, uint32_t height)
     _viewportWidth = width;
     _viewportHeight = height;
     updateWindows();
-    
 }
 
 void Workspace::draw()
@@ -62,17 +61,17 @@ void Workspace::draw()
     {
         _toolBar->draw();
     }
-    
+
     if (_leftPanel && _drawLeftPanel)
     {
         _leftPanel->draw();
     }
-    
+
     if (_rightPanel && _drawRightPanel)
     {
         _rightPanel->draw();
     }
-    
+
     if (_bottomPanel && _drawBottomPanel)
     {
         _bottomPanel->draw();
@@ -99,7 +98,7 @@ void Workspace::updateWindows()
 
         _toolBar->setPosition(0, 0);
         _toolBar->setSize(_viewportWidth, _toolBarHeight * UserInterface::getScale());
-        _toolBar->options = Window::Options {
+        _toolBar->options = Window::Options{
             .noTitleBar = true,
             .noScrollbar = true,
             .noMenu = false,
@@ -108,8 +107,7 @@ void Workspace::updateWindows()
             .noCollapse = true,
             .noNav = true,
             .noBringToFront = true,
-            .noClose = true
-        };
+            .noClose = true};
     }
 
     //
@@ -122,7 +120,7 @@ void Workspace::updateWindows()
         _statusBar->setPosition(0, _viewportHeight - statusPadding);
         _statusBar->setSize(_viewportWidth, _statusBarHeight * UserInterface::getScale());
 
-        _statusBar->options = Window::Options {
+        _statusBar->options = Window::Options{
             .noTitleBar = true,
             .noScrollbar = true,
             .noMenu = true,
@@ -131,8 +129,7 @@ void Workspace::updateWindows()
             .noCollapse = true,
             .noNav = true,
             .noBringToFront = true,
-            .noClose = true
-        };
+            .noClose = true};
     }
 
     //
@@ -144,10 +141,9 @@ void Workspace::updateWindows()
 
         _bottomPanel->setPosition(
             0,
-            _viewportHeight - statusPadding - bottomPadding
-        );
+            _viewportHeight - statusPadding - bottomPadding);
         _bottomPanel->setSize(_viewportWidth, bottomPadding);
-        _bottomPanel->options = Window::Options {
+        _bottomPanel->options = Window::Options{
             .noTitleBar = false,
             .noScrollbar = false,
             .noMenu = true,
@@ -156,8 +152,7 @@ void Workspace::updateWindows()
             .noCollapse = true,
             .noNav = true,
             .noBringToFront = true,
-            .noClose = true
-        };
+            .noClose = true};
     }
 
     //
@@ -170,7 +165,7 @@ void Workspace::updateWindows()
 
         _leftPanel->setPosition(0, topPadding);
         _leftPanel->setSize(panelWidth, availableHeight);
-        _leftPanel->options = Window::Options {
+        _leftPanel->options = Window::Options{
             .noTitleBar = false,
             .noScrollbar = false,
             .noMenu = true,
@@ -179,8 +174,7 @@ void Workspace::updateWindows()
             .noCollapse = true,
             .noNav = true,
             .noBringToFront = true,
-            .noClose = true
-        };
+            .noClose = true};
     }
 
     //
@@ -193,7 +187,7 @@ void Workspace::updateWindows()
 
         _rightPanel->setPosition(_viewportWidth - panelWidth, topPadding);
         _rightPanel->setSize(panelWidth, availableHeight);
-        _rightPanel->options = Window::Options {
+        _rightPanel->options = Window::Options{
             .noTitleBar = false,
             .noScrollbar = false,
             .noMenu = true,
@@ -202,13 +196,11 @@ void Workspace::updateWindows()
             .noCollapse = true,
             .noNav = true,
             .noBringToFront = true,
-            .noClose = true
-        };
+            .noClose = true};
     }
 }
 
-
-uint32_t Workspace::getPanelSize(PanelSize & size, uint32_t vpSize)
+uint32_t Workspace::getPanelSize(PanelSize& size, uint32_t vpSize)
 {
     auto result = static_cast<uint32_t>(static_cast<float>(vpSize) * size.relative);
     if (result > size.max)

@@ -29,10 +29,9 @@
 
 namespace bg2e::render {
 
-SkyboxRenderer::SkyboxRenderer(Engine * engine)
-    :_engine { engine }
+SkyboxRenderer::SkyboxRenderer(Engine* engine)
+    : _engine{engine}
 {
-
 }
 
 SkyboxRenderer::~SkyboxRenderer()
@@ -42,10 +41,8 @@ SkyboxRenderer::~SkyboxRenderer()
 
 void SkyboxRenderer::initFrameResources(vulkan::DescriptorSetAllocator* allocator)
 {
-    allocator->requirePoolSizeRatio(1, {
-        { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1 },
-        { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1 }
-    });
+    allocator->requirePoolSizeRatio(1, {{VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1},
+                                        {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1}});
 }
 
 void SkyboxRenderer::build(
@@ -54,35 +51,32 @@ void SkyboxRenderer::build(
     VkFormat depthAttachmentFormat,
     const std::string& vshaderFile,
     const std::string& fshaderFile,
-    float cubeSize
-) {
+    float cubeSize)
+{
     _skyTexture = skyTexture;
-    
+
     auto cubeMesh = std::unique_ptr<bg2e::geo::MeshP>(
-        bg2e::geo::createCubeP(cubeSize, cubeSize, cubeSize, false)
-    );
-    
+        bg2e::geo::createCubeP(cubeSize, cubeSize, cubeSize, false));
+
     _cube = std::shared_ptr<vulkan::geo::MeshP>(new vulkan::geo::MeshP(_engine));
     _cube->setMeshData(cubeMesh.get());
     _cube->build();
-    
+
     vulkan::factory::DescriptorSetLayout dsFactory;
     dsFactory.addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
     dsFactory.addBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
     _dsLayout = dsFactory.build(
         _engine->device().handle(),
-        VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT
-    );
-    
+        VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT);
+
     vulkan::factory::PipelineLayout layoutFactory(_engine);
     layoutFactory.addDescriptorSetLayout(_dsLayout);
     layoutFactory.addPushConstantRange(
         0,
         sizeof(PushConstants),
-        VK_SHADER_STAGE_FRAGMENT_BIT
-    );
+        VK_SHADER_STAGE_FRAGMENT_BIT);
     _pipelineLayout = layoutFactory.build("SkyboxRenderer::PipelineLayout");
-    
+
     vulkan::factory::GraphicsPipeline plFactory(_engine);
     plFactory.addShader(vshaderFile, VK_SHADER_STAGE_VERTEX_BIT);
     plFactory.addShader(fshaderFile, VK_SHADER_STAGE_FRAGMENT_BIT);
@@ -111,33 +105,31 @@ void SkyboxRenderer::update(const glm::mat4& view, const glm::mat4& proj)
     // We invert the Z axis so that reflections from the environment are consistent with the
     // rendered skybox. This will cause faces to appear inverted, so in the pipeline we have
     // marked the back faces to be hidden, instead of rendering the sphere from the inside.
-    _skyData.view = glm::scale(view, glm::vec3{ 1, 1, -1 });
+    _skyData.view = glm::scale(view, glm::vec3{1, 1, -1});
     _skyData.proj = proj;
 }
 
 void SkyboxRenderer::draw(
     VkCommandBuffer commandBuffer,
     uint32_t, // currentFrame,
-    vulkan::FrameResources& frameResources
-) {
+    vulkan::FrameResources& frameResources)
+{
     auto skyDataBuffer = vulkan::macros::createBuffer(_engine, frameResources, _skyData);
-    
+
     auto descriptorSet = frameResources.newDescriptorSet(_dsLayout);
     descriptorSet->beginUpdate();
-        descriptorSet->addBuffer(
-            0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-            skyDataBuffer, sizeof(SkyData), 0
-        );
-        descriptorSet->addImage(
-            1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-            _skyTexture->image(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-            _skyTexture->sampler()
-        );
+    descriptorSet->addBuffer(
+        0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+        skyDataBuffer, sizeof(SkyData), 0);
+    descriptorSet->addImage(
+        1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+        _skyTexture->image(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+        _skyTexture->sampler());
     descriptorSet->endUpdate();
-    std::array<VkDescriptorSet, 1> ds = { descriptorSet->descriptorSet() };
-    
+    std::array<VkDescriptorSet, 1> ds = {descriptorSet->descriptorSet()};
+
     vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, _pipeline);
-    
+
     vkCmdBindDescriptorSets(
         commandBuffer,
         VK_PIPELINE_BIND_POINT_GRAPHICS,
@@ -145,16 +137,14 @@ void SkyboxRenderer::draw(
         0,
         uint32_t(ds.size()),
         ds.data(),
-        0, nullptr
-    );
+        0, nullptr);
 
     vkCmdPushConstants(
         commandBuffer,
         _pipelineLayout,
         VK_SHADER_STAGE_FRAGMENT_BIT,
-        0, sizeof (PushConstants), &_pushConstants
-    );
-    
+        0, sizeof(PushConstants), &_pushConstants);
+
     _cube->draw(commandBuffer);
 }
 
@@ -177,6 +167,5 @@ void SkyboxRenderer::cleanup()
     _dsLayout = VK_NULL_HANDLE;
     _cube.reset();
 }
-    
 
 }

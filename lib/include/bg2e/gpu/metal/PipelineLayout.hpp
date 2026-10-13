@@ -36,19 +36,28 @@ namespace metal {
 //
 // Throws std::runtime_error on validation failure.
 class BG2E_API PipelineLayout : public gpu::PipelineLayout {
-public:
+  public:
     PipelineLayout(gpu::Device* gpuDevice, const gpu::PipelineLayoutDescription& description);
     ~PipelineLayout() override;
 
     bool isValid() const override;
     void cleanup() override;
 
-    const gpu::PipelineLayoutDescription& description() const { return _description; }
+    const gpu::PipelineLayoutDescription& description() const
+    {
+        return _description;
+    }
 
-    const std::vector<ResourceBinding>& resourceBindings() const { return _description.resourceBindings; }
+    const std::vector<ResourceBinding>& resourceBindings() const
+    {
+        return _description.resourceBindings;
+    }
 
     // Metal texture/sampler argument index: uses the metal field of ShaderBinding.
-    uint32_t metalIndex(const ResourceBinding& b) const { return b.binding.metal; }
+    uint32_t metalIndex(const ResourceBinding& b) const
+    {
+        return b.binding.metal;
+    }
 
     // Metal buffer argument index: uses the metal field of ShaderBinding directly.
     uint32_t metalBufferIndex(const ResourceBinding& b) const
@@ -69,17 +78,23 @@ public:
     {
         switch (stage)
         {
-            case ShaderStage::Vertex:   return 1;
-            case ShaderStage::Fragment: return 0;
-            case ShaderStage::Compute:          return 0;
-            case ShaderStage::RayGeneration:    return 0;
-            case ShaderStage::Miss:             return 0;
-            case ShaderStage::ClosestHit:       return 0;
+        case ShaderStage::Vertex:
+            return 1;
+        case ShaderStage::Fragment:
+            return 0;
+        case ShaderStage::Compute:
+            return 0;
+        case ShaderStage::RayGeneration:
+            return 0;
+        case ShaderStage::Miss:
+            return 0;
+        case ShaderStage::ClosestHit:
+            return 0;
         }
         return 0;
     }
 
-private:
+  private:
     gpu::PipelineLayoutDescription _description;
 };
 

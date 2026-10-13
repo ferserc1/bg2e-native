@@ -111,8 +111,7 @@ void generateUv2Atlas(
 {
     const geo::Uv2AtlasOptions atlasOptions{
         options.lightmapSettings.resolution,
-        options.uv2PaddingPixels
-    };
+        options.uv2PaddingPixels};
 
     auto mesh = target.drawable->mesh();
     if (!mesh)
@@ -204,7 +203,7 @@ StandaloneBakeBatch::Result StandaloneBakeBatch::run(
 
         if (options.generateUv2)
         {
-            validTargets.push_back({ &target, std::move(drawable) });
+            validTargets.push_back({&target, std::move(drawable)});
             continue;
         }
 
@@ -212,14 +211,14 @@ StandaloneBakeBatch::Result StandaloneBakeBatch::run(
         const auto validation = geo::UvAtlasValidator::validate(*mesh, 1);
         if (!validation.valid)
         {
-            result.skippedTargets.push_back({ target.outputIdentity, validation.message });
+            result.skippedTargets.push_back({target.outputIdentity, validation.message});
             if (onWarning)
             {
                 onWarning(result.skippedTargets.back());
             }
             continue;
         }
-        validTargets.push_back({ &target, std::move(drawable) });
+        validTargets.push_back({&target, std::move(drawable)});
     }
     result.skippedCount = static_cast<uint32_t>(result.skippedTargets.size());
 
@@ -234,17 +233,14 @@ StandaloneBakeBatch::Result StandaloneBakeBatch::run(
     outputTargets.reserve(validTargets.size());
     for (const auto& target : validTargets)
     {
-        outputTargets.push_back({
-            target.assemblyTarget->outputIdentity,
-            target.assemblyTarget->inputSourcePath,
-            target.assemblyTarget->node
-        });
+        outputTargets.push_back({target.assemblyTarget->outputIdentity,
+                                 target.assemblyTarget->inputSourcePath,
+                                 target.assemblyTarget->node});
     }
 
     std::vector<std::filesystem::path> protectedInputPaths{
         assembly.contextSourcePath,
-        assembly.inputSourcePath
-    };
+        assembly.inputSourcePath};
     protectedInputPaths.reserve(protectedInputPaths.size() + assembly.targets.size());
     for (const auto& target : assembly.targets)
     {
@@ -269,10 +265,8 @@ StandaloneBakeBatch::Result StandaloneBakeBatch::run(
             }
             catch (const std::exception& error)
             {
-                result.skippedTargets.push_back({
-                    target.assemblyTarget->outputIdentity,
-                    std::string("UV2 generation failed: ") + error.what()
-                });
+                result.skippedTargets.push_back({target.assemblyTarget->outputIdentity,
+                                                 std::string("UV2 generation failed: ") + error.what()});
                 if (onWarning)
                 {
                     onWarning(result.skippedTargets.back());
@@ -290,7 +284,7 @@ StandaloneBakeBatch::Result StandaloneBakeBatch::run(
     loadTargetDrawables(engine, assembly.targets);
 
     auto context = std::make_shared<StandaloneBakerContext>(engine, assembly.scene);
-    context->initialize({ options.lightmapSettings.resolution, options.lightmapSettings.resolution });
+    context->initialize({options.lightmapSettings.resolution, options.lightmapSettings.resolution});
     context->updateScene(0.0f);
 
     std::vector<std::shared_ptr<StandaloneLightmapBaker>> bakers;
@@ -305,7 +299,7 @@ StandaloneBakeBatch::Result StandaloneBakeBatch::run(
     {
         const auto& target = validTargets[targetIndex];
         auto& baker = bakers[targetIndex];
-        if (onProgress && !onProgress({ targetIndex, targetCount, 0, options.lightmapSettings.accumulationFrames }))
+        if (onProgress && !onProgress({targetIndex, targetCount, 0, options.lightmapSettings.accumulationFrames}))
         {
             result.cancelled = true;
             break;
@@ -315,11 +309,10 @@ StandaloneBakeBatch::Result StandaloneBakeBatch::run(
         while (baker->completedFrames() < options.lightmapSettings.accumulationFrames)
         {
             baker->update();
-            if (onProgress && !onProgress({
-                    targetIndex,
-                    targetCount,
-                    baker->completedFrames(),
-                    options.lightmapSettings.accumulationFrames }))
+            if (onProgress && !onProgress({targetIndex,
+                                           targetCount,
+                                           baker->completedFrames(),
+                                           options.lightmapSettings.accumulationFrames}))
             {
                 stopAfterTarget = true;
                 break;

@@ -38,7 +38,10 @@ void FixedScaleTransformControllerComponent::deserialize(std::shared_ptr<json::J
     Component::deserialize(jsonData, {}, engine);
 
     json::ObjectReader reader(jsonData);
-    if (auto scale = reader.getNumber("scale")) _scale = *scale;
+    if (auto scale = reader.getNumber("scale"))
+    {
+        _scale = *scale;
+    }
 }
 
 std::shared_ptr<json::JsonNode> FixedScaleTransformControllerComponent::serialize(const std::filesystem::path& basePath)

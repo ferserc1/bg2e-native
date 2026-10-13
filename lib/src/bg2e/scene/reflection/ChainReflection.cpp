@@ -16,7 +16,8 @@ using namespace bg2e;
 namespace {
 
 reflection::TypeRegistration<scene::ChainComponent> _chainReflection(
-    [](reflection::TypeInfoBuilder<scene::ChainComponent>& t) {
+    [](reflection::TypeInfoBuilder<scene::ChainComponent>& t)
+    {
         t.displayName("Chain");
     });
 

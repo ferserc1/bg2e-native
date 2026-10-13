@@ -19,7 +19,7 @@
 
 #include <bg2e/db/image.hpp>
 
-void AppDelegate::init(bg2e::render::Engine * engine)
+void AppDelegate::init(bg2e::render::Engine* engine)
 {
     bg2e::render::DefaultRenderLoopDelegate<bg2e::render::RendererDeferred>::init(engine);
     _selectionManager = std::make_shared<bg2e::manipulation::SelectionManager>(engine);
@@ -34,8 +34,7 @@ void AppDelegate::swapchainResized(VkExtent2D extent)
 
 void AppDelegate::update(
     uint32_t currentFrame,
-    bg2e::render::vulkan::FrameResources& frameResources
-)
+    bg2e::render::vulkan::FrameResources& frameResources)
 {
     DefaultRenderLoopDelegate::update(currentFrame, frameResources);
 
@@ -63,8 +62,7 @@ VkImageLayout AppDelegate::render(
     const bg2e::render::vulkan::Image* colorImage,
     const bg2e::render::vulkan::Image* depthImage,
     const bg2e::render::vulkan::Image* msaaDepthImage,
-    bg2e::render::vulkan::FrameResources& frameResources
-)
+    bg2e::render::vulkan::FrameResources& frameResources)
 {
     auto layout = DefaultRenderLoopDelegate::render(
         cmd, currentFrame, colorImage, depthImage, msaaDepthImage, frameResources);
@@ -115,7 +113,7 @@ void AppDelegate::requestLightmapBake(const bg2e::render::LightmapSettings& sett
     _bakeTarget = target;
     _bakeError.clear();
     _bakeTempPath = std::filesystem::temp_directory_path() /
-        ("bg2e_model_edit_lightmap_" + std::to_string(++_bakeCounter) + ".png");
+                    ("bg2e_model_edit_lightmap_" + std::to_string(++_bakeCounter) + ".png");
     _bakeState = LightmapBakeState::Baking;
 }
 
@@ -153,7 +151,7 @@ void AppDelegate::finishLightmapBake()
         {
             drawable->material(submesh).setAoTexture(texture);
             drawable->material(submesh).setAoUVSet(1);
-            drawable->material(submesh).setAoScale(glm::vec2{ 1.0f, 1.0f });
+            drawable->material(submesh).setAoScale(glm::vec2{1.0f, 1.0f});
             auto renderMaterial = drawable->renderMaterial(submesh);
             renderMaterial->setMaterialAttributes(drawable->material(submesh));
             renderMaterial->updateTextures();
@@ -242,14 +240,13 @@ void AppDelegate::fileDropped(const std::filesystem::path& path)
 std::shared_ptr<bg2e::scene::Node> AppDelegate::createScene()
 {
     _stage = std::make_shared<StageScene>(_engine, this);
-    
+
     auto scene = _stage->init();
-    
+
     renderer()->setSkyboxBlurLevel(2);
-    
+
     initWorkspace();
-    
-    
+
     return scene;
 }
 
@@ -288,8 +285,6 @@ void AppDelegate::setSelectionHighlightMode(SelectionHighlightMode mode)
     updateSelectionHighlight();
 }
 
-
-
 void AppDelegate::initWorkspace()
 {
     // Initialize preferences and load saved settings
@@ -297,10 +292,12 @@ void AppDelegate::initWorkspace()
     _renderPrefs->load();
 
     // Register timer: persist every 60 seconds, also persist on exit
-    bg2e::app::MainLoop::current()->timeout().add([this]() -> bool {
-        _renderPrefs->persist();
-        return true;
-    }, 60000, true);  // executeOnExit = true
+    bg2e::app::MainLoop::current()->timeout().add([this]() -> bool
+                                                  {
+                                                      _renderPrefs->persist();
+                                                      return true;
+                                                  },
+                                                  60000, true); // executeOnExit = true
 
     _workspace.leftPanelSize().min = 300;
     _environmentPanel.init(this, renderer());
@@ -318,15 +315,14 @@ void AppDelegate::initWorkspace()
     // Force update status to setup the initial state of
     // fileStatus and saveStatus
     _stage->document()->updateStatus();
- 
+
     _workspace.setup(
         uiWidth(), uiHeight(),
         &_toolBar,
         &_submeshPanel,
         &_environmentPanel,
-        nullptr,  // Use nullptr if you dont't want to use this panel
-        &_statusBar
-    );
+        nullptr, // Use nullptr if you dont't want to use this panel
+        &_statusBar);
 }
 
 void AppDelegate::updateSelectionHighlight()

@@ -32,78 +32,74 @@ namespace bg2e {
 namespace render {
 
 class BG2E_API CubemapRenderer {
-public:
-    CubemapRenderer(Engine *);
-    
+  public:
+    CubemapRenderer(Engine*);
+
     void initFrameResources(vulkan::DescriptorSetAllocator*);
-    
+
     void build(
         std::shared_ptr<vulkan::Image> inputSkyBox,
         const std::string& vshaderFile,
         const std::string& fshaderFile,
-        VkExtent2D cubeImageSize = { 1024, 1024 },
+        VkExtent2D cubeImageSize = {1024, 1024},
         bool useMipmaps = false,
         uint32_t maxMipmapLevels = 20,
-        VkFormat imageFormat = VK_FORMAT_R16G16B16A16_SFLOAT
-    );
-    
+        VkFormat imageFormat = VK_FORMAT_R16G16B16A16_SFLOAT);
+
     void update(
         VkCommandBuffer commandBuffer,
         uint32_t currentFrame,
-        vulkan::FrameResources& frameResources
-    );
-    
-    std::shared_ptr<vulkan::Image> cubeMapImage() { return _cubeMapImage; }
-    
-protected:
-    Engine * _engine;
-    
+        vulkan::FrameResources& frameResources);
+
+    std::shared_ptr<vulkan::Image> cubeMapImage()
+    {
+        return _cubeMapImage;
+    }
+
+  protected:
+    Engine* _engine;
+
     std::shared_ptr<vulkan::Image> _inputSkybox;
     VkSampler _skyImageSampler;
-    
-    struct MipLevelImageViews
-    {
+
+    struct MipLevelImageViews {
         VkImageView imageViews[6];
     };
     std::shared_ptr<vulkan::Image> _cubeMapImage;
     std::vector<MipLevelImageViews> _cubeMapImageViews;
-    
-    struct ProjectionData
-    {
+
+    struct ProjectionData {
         glm::mat4 view[6];
         glm::mat4 proj;
     };
-    glm::mat4 _viewTransform = glm::mat4{ 1.0f };
+    glm::mat4 _viewTransform = glm::mat4{1.0f};
     ProjectionData _projectionData;
     std::unique_ptr<vulkan::Buffer> _projectionDataBuffer;
-    
+
     struct SkyPushConstants {
         int currentFace;
         int currentMipLevel;
         int totalMipLevels;
     };
-    
+
     VkDescriptorSetLayout _descriptorSetLayout;
     VkPipelineLayout _layout;
     VkPipeline _pipeline;
-    
-    
+
     std::unique_ptr<vulkan::geo::MeshP> _cube;
-    
+
     void initImages(
         VkExtent2D cubeImageSize,
         bool useMipmaps,
         uint32_t maxMipmapLevels,
-        VkFormat imageFormat = VK_FORMAT_R16G16B16A16_SFLOAT
-    );
-    
+        VkFormat imageFormat = VK_FORMAT_R16G16B16A16_SFLOAT);
+
     void createPipelineLayout();
-    
+
     void initPipeline(
         const std::string& vshaderFile,
-        const std::string& fshaderFile
-    );
-    
+        const std::string& fshaderFile);
+
     void initGeometry();
 };
 

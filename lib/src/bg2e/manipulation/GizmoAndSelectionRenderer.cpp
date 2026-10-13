@@ -27,9 +27,9 @@
 namespace bg2e::manipulation {
 
 void GizmoAndSelectionRenderer::init(
-    render::Engine * engine,
-    VkSampleCountFlagBits sampleCount
-) {
+    render::Engine* engine,
+    VkSampleCountFlagBits sampleCount)
+{
     _engine = engine;
     _sampleCount = sampleCount;
     createSelectionPipeline();
@@ -38,12 +38,12 @@ void GizmoAndSelectionRenderer::init(
 }
 
 void GizmoAndSelectionRenderer::draw(
-    bg2e::scene::Node * sceneRoot,
-    const glm::mat4 & viewMatrix,
-    const glm::mat4 & projMatrix,
+    bg2e::scene::Node* sceneRoot,
+    const glm::mat4& viewMatrix,
+    const glm::mat4& projMatrix,
     VkCommandBuffer cmd,
-    const VkExtent2D & renderExtent
-) {
+    const VkExtent2D& renderExtent)
+{
     _viewMatrix = viewMatrix;
     _projMatrix = projMatrix;
     _viewProjectionMatrix = projMatrix * viewMatrix;
@@ -57,7 +57,7 @@ void GizmoAndSelectionRenderer::draw(
     flushTransformGizmo();
 }
 
-void GizmoAndSelectionRenderer::visit(bg2e::scene::Node * node)
+void GizmoAndSelectionRenderer::visit(bg2e::scene::Node* node)
 {
     auto trx = node->getComponent<bg2e::scene::TransformComponent>();
     auto selectable = node->getComponent<bg2e::manipulation::SelectableComponent>();
@@ -89,8 +89,7 @@ void GizmoAndSelectionRenderer::visit(bg2e::scene::Node * node)
                 auto albedo = mat->materialAttributes().albedo();
                 FrameData frameData = {
                     .mvp = _viewProjectionMatrix * _currentTransform * drw->submeshTransform(i),
-                    .color = glm::vec4{ albedo.r, albedo.g, albedo.b, _lineIntensity }
-                };
+                    .color = glm::vec4{albedo.r, albedo.g, albedo.b, _lineIntensity}};
 
                 vkCmdPushConstants(
                     _cmdBuffer,
@@ -98,8 +97,7 @@ void GizmoAndSelectionRenderer::visit(bg2e::scene::Node * node)
                     VK_SHADER_STAGE_VERTEX_BIT,
                     0,
                     sizeof(FrameData),
-                    &frameData
-                );
+                    &frameData);
 
                 mesh->drawSubmesh(_cmdBuffer, i);
             }
@@ -121,7 +119,10 @@ void GizmoAndSelectionRenderer::visit(bg2e::scene::Node * node)
     if (gizmo && gizmo->currentGizmoType() != GizmoType::None)
     {
         auto type = gizmo->currentGizmoType();
-        if (!GizmoComponent::isGizmoVisible(type)) return;
+        if (!GizmoComponent::isGizmoVisible(type))
+        {
+            return;
+        }
 
         auto drw = gizmo->drawable();
         if (drw)
@@ -141,8 +142,7 @@ void GizmoAndSelectionRenderer::visit(bg2e::scene::Node * node)
 
                 FrameData frameData = {
                     .mvp = _viewProjectionMatrix * gizmoTransform * drw->submeshTransform(i),
-                    .color = glm::vec4{ gizmoColor.r, gizmoColor.g, gizmoColor.b, opacity }
-                };
+                    .color = glm::vec4{gizmoColor.r, gizmoColor.g, gizmoColor.b, opacity}};
 
                 vkCmdPushConstants(
                     _cmdBuffer,
@@ -150,8 +150,7 @@ void GizmoAndSelectionRenderer::visit(bg2e::scene::Node * node)
                     VK_SHADER_STAGE_VERTEX_BIT,
                     0,
                     sizeof(FrameData),
-                    &frameData
-                );
+                    &frameData);
 
                 mesh->drawSubmesh(_cmdBuffer, i);
             }
@@ -159,7 +158,7 @@ void GizmoAndSelectionRenderer::visit(bg2e::scene::Node * node)
     }
 }
 
-void GizmoAndSelectionRenderer::didVisit(bg2e::scene::Node * node)
+void GizmoAndSelectionRenderer::didVisit(bg2e::scene::Node* node)
 {
     auto trx = node->getComponent<bg2e::scene::TransformComponent>();
     if (trx)
@@ -185,19 +184,18 @@ void GizmoAndSelectionRenderer::flushTransformGizmo()
     auto mesh = drw->renderMesh();
     auto submeshes = drw->submeshesCount();
     auto gizmoTransform = _pendingTransformGizmo->renderTransform(
-        _pendingTransformWorld, _viewMatrix, _projMatrix, GizmoType::Transform
-    );
+        _pendingTransformWorld, _viewMatrix, _projMatrix, GizmoType::Transform);
     float opacity = GizmoComponent::gizmoOpacity(GizmoType::Transform);
 
     // Clear the depth buffer so the transform gizmo always draws on top of the
     // scene while still self-occluding via the opaque pipeline. Safe because
     // nothing samples depth after the gizmo pass (the depth buffer is only used
     // as an attachment within the scene render).
-    VkClearAttachment depthClear {};
+    VkClearAttachment depthClear{};
     depthClear.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-    depthClear.clearValue.depthStencil = { 1.0f, 0 };
-    VkClearRect clearRect {};
-    clearRect.rect.offset = { 0, 0 };
+    depthClear.clearValue.depthStencil = {1.0f, 0};
+    VkClearRect clearRect{};
+    clearRect.rect.offset = {0, 0};
     clearRect.rect.extent = _renderExtent;
     clearRect.baseArrayLayer = 0;
     clearRect.layerCount = 1;
@@ -216,8 +214,7 @@ void GizmoAndSelectionRenderer::flushTransformGizmo()
         auto albedo = drw->renderMaterial(i)->materialAttributes().albedo();
         FrameData frameData = {
             .mvp = _viewProjectionMatrix * gizmoTransform * drw->submeshTransform(i),
-            .color = glm::vec4{ albedo.r, albedo.g, albedo.b, opacity }
-        };
+            .color = glm::vec4{albedo.r, albedo.g, albedo.b, opacity}};
 
         vkCmdPushConstants(
             _cmdBuffer,
@@ -225,8 +222,7 @@ void GizmoAndSelectionRenderer::flushTransformGizmo()
             VK_SHADER_STAGE_VERTEX_BIT,
             0,
             sizeof(FrameData),
-            &frameData
-        );
+            &frameData);
 
         mesh->drawSubmesh(_cmdBuffer, i);
     }
@@ -258,10 +254,10 @@ void GizmoAndSelectionRenderer::createSelectionPipeline()
     auto pipeline = plFactory.build(_selectionPipelineLayout, "GizmoAndSelectionRenderer::SelectionPipeline");
     _selectionPipeline = pipeline;
     _engine->cleanupManager().push([&, pipeline, pipelineLayout](VkDevice dev)
-    {
-        vkDestroyPipeline(dev, pipeline, nullptr);
-        vkDestroyPipelineLayout(dev, pipelineLayout, nullptr);
-    });
+                                   {
+                                       vkDestroyPipeline(dev, pipeline, nullptr);
+                                       vkDestroyPipelineLayout(dev, pipelineLayout, nullptr);
+                                   });
 }
 
 void GizmoAndSelectionRenderer::createGizmoPipeline()
@@ -290,10 +286,10 @@ void GizmoAndSelectionRenderer::createGizmoPipeline()
     auto pipeline = plFactory.build(_gizmoPipelineLayout, "GizmoAndSelectionRenderer::GizmoPipeline");
     _gizmoPipeline = pipeline;
     _engine->cleanupManager().push([&, pipeline, pipelineLayout](VkDevice dev)
-    {
-        vkDestroyPipeline(dev, pipeline, nullptr);
-        vkDestroyPipelineLayout(dev, pipelineLayout, nullptr);
-    });
+                                   {
+                                       vkDestroyPipeline(dev, pipeline, nullptr);
+                                       vkDestroyPipelineLayout(dev, pipelineLayout, nullptr);
+                                   });
 }
 
 void GizmoAndSelectionRenderer::createOpaqueGizmoPipeline()
@@ -320,9 +316,9 @@ void GizmoAndSelectionRenderer::createOpaqueGizmoPipeline()
     auto pipeline = plFactory.build(_gizmoPipelineLayout, "GizmoAndSelectionRenderer::OpaqueGizmoPipeline");
     _opaqueGizmoPipeline = pipeline;
     _engine->cleanupManager().push([&, pipeline](VkDevice dev)
-    {
-        vkDestroyPipeline(dev, pipeline, nullptr);
-    });
+                                   {
+                                       vkDestroyPipeline(dev, pipeline, nullptr);
+                                   });
 }
 
 }

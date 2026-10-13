@@ -24,7 +24,7 @@ namespace bg2e {
 namespace app {
 
 class BG2E_API Mouse {
-public:
+  public:
     static bool leftButtonPressed();
     static bool middleButtonPressed();
     static bool rightButtonPressed();

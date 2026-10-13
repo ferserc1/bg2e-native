@@ -76,16 +76,14 @@ std::filesystem::path bg2e::base::PlatformTools::applicationPath()
         auto length = GetModuleFileNameW(
             nullptr,
             buffer.data(),
-            static_cast<DWORD>(buffer.size())
-        );
+            static_cast<DWORD>(buffer.size()));
 
         if (length == 0)
         {
             throw std::system_error(
                 static_cast<int>(GetLastError()),
                 std::system_category(),
-                "Unable to resolve the executable path"
-            );
+                "Unable to resolve the executable path");
         }
         if (length < buffer.size())
         {
@@ -134,10 +132,10 @@ std::filesystem::path bg2e::base::PlatformTools::settingsPath()
     auto appId = app::MainLoop::current()->appId();
 
 #ifdef BG2E_IS_LINUX
-    const char * home = getenv("HOME");
+    const char* home = getenv("HOME");
     if (!home)
     {
-        struct passwd * pw = getpwuid(getuid());
+        struct passwd* pw = getpwuid(getuid());
         home = pw->pw_dir;
     }
     basePath = fs::path(home) / ".config" / appId;
@@ -150,17 +148,18 @@ std::filesystem::path bg2e::base::PlatformTools::settingsPath()
     }
     else
     {
-        char *home = getenv("USERPROFILE");
+        char* home = getenv("USERPROFILE");
         basePath = home ? fs::path(home) / appId : fs::current_path() / appId;
     }
 #endif
 
-    try {
+    try
+    {
         fs::create_directories(basePath);
     }
-    catch (std::runtime_error const &)
+    catch (std::runtime_error const&)
     {
-        std::cerr << "Unable to create settings directory at path \"" << basePath << "\"" << std::endl; 
+        std::cerr << "Unable to create settings directory at path \"" << basePath << "\"" << std::endl;
     }
     return basePath;
 }
@@ -170,10 +169,10 @@ std::filesystem::path bg2e::base::PlatformTools::homePath()
     namespace fs = std::filesystem;
 
 #ifdef BG2E_IS_LINUX
-    const char * home = getenv("HOME");
+    const char* home = getenv("HOME");
     if (!home)
     {
-        struct passwd * pw = getpwuid(getuid());
+        struct passwd* pw = getpwuid(getuid());
         home = pw->pw_dir;
     }
     return fs::path(home);
@@ -183,7 +182,7 @@ std::filesystem::path bg2e::base::PlatformTools::homePath()
     {
         return fs::path(path);
     }
-    char * home = getenv("USERPROFILE");
+    char* home = getenv("USERPROFILE");
     return home ? fs::path(home) : ".";
 #else
 #error "Unresolved platform"

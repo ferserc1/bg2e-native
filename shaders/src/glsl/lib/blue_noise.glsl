@@ -53,12 +53,11 @@ vec3 bnHemisphereDirection(vec3 normal, vec2 xi)
     vec3 localDir = vec3(
         r * cos(phi),
         r * sin(phi),
-        sqrt(max(0.0, 1.0 - xi.x))
-    );
+        sqrt(max(0.0, 1.0 - xi.x)));
 
     vec3 up = abs(normal.x) < 0.999
-        ? vec3(0.0, 0.0, 1.0)
-        : vec3(1.0, 0.0, 0.0);
+                  ? vec3(0.0, 0.0, 1.0)
+                  : vec3(1.0, 0.0, 0.0);
 
     vec3 tangent = normalize(cross(up, normal));
     vec3 bitangent = cross(normal, tangent);

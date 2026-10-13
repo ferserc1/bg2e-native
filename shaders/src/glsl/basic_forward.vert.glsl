@@ -23,7 +23,6 @@
 #include "lib/normal_map.glsl"
 #include "lib/color_correction.glsl"
 
-
 layout(location = 0) in vec3 inPosition;
 layout(location = 1) in vec3 inNormal;
 layout(location = 2) in vec2 inUV0;
@@ -38,27 +37,30 @@ layout(location = 4) out vec3 outFragPos;
 
 layout(location = 5) out mat3 outTBN;
 
-layout (set = 0, binding = 0) uniform SceneData {
+layout(set = 0, binding = 0) uniform SceneData
+{
     mat4 viewMatrix;
     mat4 projMatrix;
-} sceneData;
+}
+sceneData;
 
-layout (set = 1, binding = 0) uniform PBRObjectData {
+layout(set = 1, binding = 0) uniform PBRObjectData
+{
     mat4 modelMatrix;
     PBRMaterialData material;
-} objectData;
+}
+objectData;
 
-
-void main() {
-	gl_Position = sceneData.projMatrix * sceneData.viewMatrix * objectData.modelMatrix * vec4(inPosition, 1.0f);
-	outUV0 = inUV0;
+void main()
+{
+    gl_Position = sceneData.projMatrix * sceneData.viewMatrix * objectData.modelMatrix * vec4(inPosition, 1.0f);
+    outUV0 = inUV0;
     outUV1 = inUV1;
 
     outTBN = TBNMatrix(objectData.modelMatrix, inNormal, inTangent);
-    
+
     outNormal = mat3(objectData.modelMatrix) * inNormal;
 
     outViewPos = (inverse(sceneData.viewMatrix) * vec4(0.0, 0.0, 0.0, 1.0)).xyz;
     outFragPos = (objectData.modelMatrix * vec4(inPosition, 1.0f)).xyz;
 }
-

@@ -18,18 +18,23 @@ struct InstanceData {
     float4 extents;        // cube: world-space half-extents
 };
 
-constant int   MAX_BOUNCES = 8;
+constant int MAX_BOUNCES = 8;
 constant float PI = 3.14159265359;
 
-static uint pcg(thread uint& state) {
+static uint pcg(thread uint& state)
+{
     state = state * 747796405u + 2891336453u;
     uint word = ((state >> ((state >> 28u) + 4u)) ^ state) * 277803737u;
     return (word >> 22u) ^ word;
 }
-static float rnd(thread uint& state) { return float(pcg(state)) / 4294967295.0; }
+static float rnd(thread uint& state)
+{
+    return float(pcg(state)) / 4294967295.0;
+}
 
 // Cosine-weighted hemisphere sample around the normal n.
-static float3 cosineHemisphere(float3 n, thread uint& state) {
+static float3 cosineHemisphere(float3 n, thread uint& state)
+{
     float r1 = rnd(state);
     float r2 = rnd(state);
     float phi = 2.0 * PI * r1;
@@ -44,13 +49,16 @@ static float3 cosineHemisphere(float3 n, thread uint& state) {
 
 kernel void rgenMain(
     texture2d<float, access::read_write> outputImage [[texture(0)]],
-    texture2d<float, access::read_write> accumImage  [[texture(1)]],
+    texture2d<float, access::read_write> accumImage [[texture(1)]],
     device const CameraData& cam [[buffer(1)]],
     instance_acceleration_structure tlas [[buffer(2)]],
     device const InstanceData* instances [[buffer(3)]],
     uint2 gid [[thread_position_in_grid]])
 {
-    if (gid.x >= uint(cam.misc.y) || gid.y >= uint(cam.misc.z)) return;
+    if (gid.x >= uint(cam.misc.y) || gid.y >= uint(cam.misc.z))
+    {
+        return;
+    }
 
     uint seed = (gid.x * 1973u + gid.y * 9277u + uint(cam.misc.x) * 26699u) | 1u;
 
@@ -99,21 +107,30 @@ kernel void rgenMain(
 
         // Analytic surface normal.
         float3 n;
-        if (shapeType == 0)        // plane
+        if (shapeType == 0) // plane
         {
             n = normalize(inst.normalOrCenter.xyz);
         }
-        else if (shapeType == 1)   // sphere
+        else if (shapeType == 1) // sphere
         {
             n = normalize(worldPos - inst.normalOrCenter.xyz);
         }
-        else                       // cube: dominant axis of the local position
+        else // cube: dominant axis of the local position
         {
             float3 local = (worldPos - inst.normalOrCenter.xyz) / max(inst.extents.xyz, float3(1e-4));
             float3 a = abs(local);
-            if (a.x > a.y && a.x > a.z)      n = float3(sign(local.x), 0.0, 0.0);
-            else if (a.y > a.z)              n = float3(0.0, sign(local.y), 0.0);
-            else                             n = float3(0.0, 0.0, sign(local.z));
+            if (a.x > a.y && a.x > a.z)
+            {
+                n = float3(sign(local.x), 0.0, 0.0);
+            }
+            else if (a.y > a.z)
+            {
+                n = float3(0.0, sign(local.y), 0.0);
+            }
+            else
+            {
+                n = float3(0.0, 0.0, sign(local.z));
+            }
         }
         if (dot(n, rayD) > 0.0)
         {

@@ -29,15 +29,15 @@
 #include <filesystem>
 #include <functional>
 
-#include "bg2e/scene/Scene.hpp"
+#include <bg2e/scene/Scene.hpp>
 
 class AppDelegate;
 
 class StageScene {
-public:
+  public:
     using OnSceneSwapCallback = std::function<void()>;
 
-    StageScene(bg2e::render::Engine * engine, AppDelegate * appDelegate);
+    StageScene(bg2e::render::Engine* engine, AppDelegate* appDelegate);
 
     // Builds containerRoot + default editable scene; returns containerRoot
     std::shared_ptr<bg2e::scene::Node> init();
@@ -66,8 +66,7 @@ public:
         bool sourceIsZUp,
         std::string& errorOut,
         std::shared_ptr<bg2e::scene::Node> parentOverride = nullptr,
-        bg2e::scene::SceneProgressCallback progressCallback = nullptr
-    );
+        bg2e::scene::SceneProgressCallback progressCallback = nullptr);
 
     // Removes an imported node without showing a confirmation dialog.
     void removeImportedNode(std::shared_ptr<bg2e::scene::Node> node);
@@ -106,28 +105,46 @@ public:
 
     bool checkUnsavedChanges();
 
-    inline bool isSceneValid() const { return _editableRoot != nullptr; }
+    inline bool isSceneValid() const
+    {
+        return _editableRoot != nullptr;
+    }
 
-    inline std::shared_ptr<bg2e::scene::Node> sceneRoot() const { return _containerRoot; }
+    inline std::shared_ptr<bg2e::scene::Node> sceneRoot() const
+    {
+        return _containerRoot;
+    }
     // The editable subtree shown in the scene tree
-    inline std::shared_ptr<bg2e::scene::Node> editableRoot() const { return _editableRoot; }
+    inline std::shared_ptr<bg2e::scene::Node> editableRoot() const
+    {
+        return _editableRoot;
+    }
 
     // Resolved from the current scene content (not stored)
-    bg2e::scene::OrbitCameraComponent * orbitCamera();
-    bg2e::scene::CameraComponent * cameraComponent();
+    bg2e::scene::OrbitCameraComponent* orbitCamera();
+    bg2e::scene::CameraComponent* cameraComponent();
 
     // Selects an analyzed view of target and applies it to the orbit camera
     // without modifying OrbitCameraComponent::centerOnTarget.
-    void centerCameraOnTarget(bg2e::scene::Node * target);
+    void centerCameraOnTarget(bg2e::scene::Node* target);
 
-    inline Document * document() { return _document.get(); }
-    inline bg2e::render::Engine * engine() const { return _engine; }
+    inline Document* document()
+    {
+        return _document.get();
+    }
+    inline bg2e::render::Engine* engine() const
+    {
+        return _engine;
+    }
 
-    inline void onSceneSwap(OnSceneSwapCallback cb) { _onSceneSwap = std::move(cb); }
+    inline void onSceneSwap(OnSceneSwapCallback cb)
+    {
+        _onSceneSwap = std::move(cb);
+    }
 
-protected:
-    bg2e::render::Engine * _engine;
-    AppDelegate * _appDelegate;
+  protected:
+    bg2e::render::Engine* _engine;
+    AppDelegate* _appDelegate;
     std::unique_ptr<Document> _document;
 
     std::shared_ptr<bg2e::scene::Node> _containerRoot;
@@ -160,9 +177,9 @@ protected:
 
     // If the scene's main camera has no projection, assign an optical projection
     // (50 mm film size, 55 mm lens) so the aspect ratio renders correctly
-    void ensureMainCameraProjection(bg2e::scene::Scene * scene);
+    void ensureMainCameraProjection(bg2e::scene::Scene* scene);
 
     // Adds GizmoComponent to every camera, light and environment node in root
     // that does not already have one
-    void addGizmoComponents(bg2e::scene::Node * root);
+    void addGizmoComponents(bg2e::scene::Node* root);
 };

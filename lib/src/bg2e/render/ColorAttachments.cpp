@@ -20,8 +20,8 @@
 
 namespace bg2e::render {
 
-ColorAttachments::ColorAttachments(Engine * engine, const std::vector<VkFormat>& formats)
-    :_engine{ engine }
+ColorAttachments::ColorAttachments(Engine* engine, const std::vector<VkFormat>& formats)
+    : _engine{engine}
 {
     _attachmentFormats.assign(formats.begin(), formats.end());
 }
@@ -35,19 +35,18 @@ void ColorAttachments::build(VkExtent2D extent)
 {
     _extent = extent;
     cleanup();
-    
+
     for (auto format : _attachmentFormats)
     {
         auto image = vulkan::Image::createAllocatedImage(
             _engine,
             "ColorAttachments image buffer",
-			format,
-			extent,
-			VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT |
-			VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-			VK_IMAGE_ASPECT_COLOR_BIT,
-            1, false, 20, VK_SAMPLE_COUNT_1_BIT
-        );
+            format,
+            extent,
+            VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT |
+                VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+            VK_IMAGE_ASPECT_COLOR_BIT,
+            1, false, 20, VK_SAMPLE_COUNT_1_BIT);
         _images.push_back(std::shared_ptr<vulkan::Image>(image));
         _targetImages.push_back(image);
     }

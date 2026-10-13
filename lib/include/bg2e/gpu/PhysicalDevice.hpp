@@ -41,15 +41,16 @@ struct RayTracingCapabilities {
     inline bool fullSupported() const
     {
         return available &&
-            rayTracingPipeline &&
-            rayQuery &&
-            accelerationStructure &&
-            bufferDeviceAddress;
+               rayTracingPipeline &&
+               rayQuery &&
+               accelerationStructure &&
+               bufferDeviceAddress;
     }
 };
 
 struct BG2E_API PhysicalDeviceProperties {
-    enum DeviceType {
+    enum DeviceType
+    {
         IntegratedGPU,
         DiscreteGPU,
         VirtualGPU,
@@ -70,19 +71,18 @@ struct BG2E_API PhysicalDeviceProperties {
 
     static PhysicalDeviceProperties* create();
 
-protected:
+  protected:
     PhysicalDeviceProperties() = default;
 };
 
 class BG2E_API PhysicalDevice {
-public:
+  public:
     virtual ~PhysicalDevice() = default;
 
     static void listSuitableDevices(
         const Instance* instance,
         const Surface* surface,
-        std::vector<std::shared_ptr<PhysicalDeviceProperties>>& result
-    );
+        std::vector<std::shared_ptr<PhysicalDeviceProperties>>& result);
 
     virtual void choose(Instance& instance, Surface& surface) = 0;
 

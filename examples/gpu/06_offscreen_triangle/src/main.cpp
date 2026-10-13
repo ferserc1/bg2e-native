@@ -50,7 +50,7 @@ int main(int argc, char** argv)
     instance->create();
 
     // 4. Create offscreen surface
-    const gpu::Size2D size{ 800, 600 };
+    const gpu::Size2D size{800, 600};
     std::shared_ptr<gpu::Surface> surface = backend->createOffscreenSurface(instance, size);
 
     // 5. Select physical device
@@ -74,28 +74,28 @@ int main(int argc, char** argv)
         auto vsPath = (shaderBasePath / targetName / "triangle.vert.spv").string();
         auto fsPath = (shaderBasePath / targetName / "triangle.frag.spv").string();
         auto csPath = (shaderBasePath / targetName / "noop.comp.spv").string();
-        vs = device->createShaderModule({ vsPath, "main", gpu::ShaderStage::Vertex,   "Triangle vertex shader" });
-        fs = device->createShaderModule({ fsPath, "main", gpu::ShaderStage::Fragment, "Triangle fragment shader" });
-        cs = device->createShaderModule({ csPath, "main", gpu::ShaderStage::Compute,  "Noop compute shader" });
+        vs = device->createShaderModule({vsPath, "main", gpu::ShaderStage::Vertex, "Triangle vertex shader"});
+        fs = device->createShaderModule({fsPath, "main", gpu::ShaderStage::Fragment, "Triangle fragment shader"});
+        cs = device->createShaderModule({csPath, "main", gpu::ShaderStage::Compute, "Noop compute shader"});
     }
     else
     {
         auto vsPath = (shaderBasePath / targetName / "triangle.vert.metallib").string();
         auto fsPath = (shaderBasePath / targetName / "triangle.frag.metallib").string();
         auto csPath = (shaderBasePath / targetName / "noop.comp.metallib").string();
-        vs = device->createShaderModule({ vsPath, "vertMain", gpu::ShaderStage::Vertex,   "Triangle vertex shader" });
-        fs = device->createShaderModule({ fsPath, "fragMain", gpu::ShaderStage::Fragment, "Triangle fragment shader" });
-        cs = device->createShaderModule({ csPath, "compMain", gpu::ShaderStage::Compute,  "Noop compute shader" });
+        vs = device->createShaderModule({vsPath, "vertMain", gpu::ShaderStage::Vertex, "Triangle vertex shader"});
+        fs = device->createShaderModule({fsPath, "fragMain", gpu::ShaderStage::Fragment, "Triangle fragment shader"});
+        cs = device->createShaderModule({csPath, "compMain", gpu::ShaderStage::Compute, "Noop compute shader"});
     }
 
     // Graphics layout with push constant range for fragment stage
     gpu::PipelineLayoutDescription graphicsLayoutDesc{};
-    graphicsLayoutDesc.pushConstants.push_back({ 0, sizeof(PushConstants), gpu::ShaderStage::Fragment });
+    graphicsLayoutDesc.pushConstants.push_back({0, sizeof(PushConstants), gpu::ShaderStage::Fragment});
     graphicsLayoutDesc.debugName = "Graphics pipeline layout";
     auto graphicsLayout = device->createPipelineLayout(graphicsLayoutDesc);
 
     // Compute layout (empty, no push constants or bindings)
-    auto computeLayout = device->createPipelineLayout({ .debugName = "Compute pipeline layout" });
+    auto computeLayout = device->createPipelineLayout({.debugName = "Compute pipeline layout"});
 
     // Get attachment formats from surface
     auto colorFormat = surface->colorFormat();
@@ -123,11 +123,14 @@ int main(int argc, char** argv)
     auto& graphicsQueue = device->graphicsQueue();
 
     PushConstants push{};
-    push.color[0] = 1.0f; push.color[1] = 0.4f; push.color[2] = 0.1f; push.color[3] = 1.0f;
-    gpu::Color clearColor{ 0.1f, 0.1f, 0.15f, 1.0f };
+    push.color[0] = 1.0f;
+    push.color[1] = 0.4f;
+    push.color[2] = 0.1f;
+    push.color[3] = 1.0f;
+    gpu::Color clearColor{0.1f, 0.1f, 0.15f, 1.0f};
 
     auto frame = surface->beginFrame();
-    auto cmd   = graphicsQueue.createCommandBuffer("Frame command buffer");
+    auto cmd = graphicsQueue.createCommandBuffer("Frame command buffer");
 
     cmd->begin();
 

@@ -26,5 +26,3 @@ mat3 TBNMatrix(mat4 model, vec3 normal, vec3 tangent)
     vec3 B = cross(T, N);
     return mat3(T, B, N);
 }
-
-

@@ -23,7 +23,7 @@
 namespace bg2e::render::deferred {
 
 SkyboxLayer::SkyboxLayer(Engine* engine)
-    : RenderLayer { engine }
+    : RenderLayer{engine}
 {
 }
 
@@ -41,15 +41,14 @@ void SkyboxLayer::render(
     uint32_t currentFrame,
     const vulkan::Image* /*inputImage*/,
     const vulkan::Image* outputImage,
-    vulkan::FrameResources& frameResources
-)
+    vulkan::FrameResources& frameResources)
 {
     if (!_environment || !_scene)
     {
         return;
     }
 
-    VkClearColorValue clearValue{ { 0.0f, 0.0f, 0.0f, 1.0f } };
+    VkClearColorValue clearValue{{0.0f, 0.0f, 0.0f, 1.0f}};
     vulkan::macros::cmdClearImageAndBeginRendering(cmd, outputImage, clearValue);
 
     vulkan::macros::cmdSetDefaultViewportAndScissor(cmd, _extent);

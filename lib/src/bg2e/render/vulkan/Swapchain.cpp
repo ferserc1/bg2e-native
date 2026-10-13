@@ -24,7 +24,7 @@ namespace bg2e {
 namespace render {
 namespace vulkan {
 
-void Swapchain::init(Engine * engine, uint32_t width, uint32_t height)
+void Swapchain::init(Engine* engine, uint32_t width, uint32_t height)
 {
     _engine = engine;
     create(width, height);
@@ -40,13 +40,13 @@ void Swapchain::cleanup()
     if (_engine)
     {
         _msaaImages.clear();
-        
+
         _colorImages.clear();
-        
+
         _depthImage.reset();
-        
+
         _msaaDepthImage.reset();
-        
+
         vkDestroySwapchainKHR(_engine->device().handle(), _swapchain, nullptr);
 
         for (auto i = 0; i < _imageViews.size(); ++i)
@@ -67,8 +67,8 @@ void Swapchain::screenshot(
     std::vector<uint8_t>& outData,
     uint32_t& outWidth,
     uint32_t& outHeight,
-    uint32_t& outBpp
-) {
+    uint32_t& outBpp)
+{
     auto prevImage = _engine->prevFrameResourcesIndex();
     auto image = msaaResolveImage(prevImage);
     auto extent = image->extent2D();
@@ -81,34 +81,32 @@ void Swapchain::screenshot(
         0, 0,
         extent.width, extent.height,
         outData,
-        VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
-    );
+        VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
 }
 
 void Swapchain::create(uint32_t width, uint32_t height)
 {
     cleanup();
-    
+
     auto device = _engine->device();
     auto physicalDevice = _engine->physicalDevice();
     auto surface = _engine->surface();
     auto supportDetails = PhysicalDevice::SwapChainSupportDetails::get(
         physicalDevice.handle(),
-        surface
-    );
-    
+        surface);
+
     auto surfaceFormat = supportDetails.chooseSurfaceFormat(VK_FORMAT_R8G8B8A8_UNORM);
     auto presentMode = supportDetails.choosePresentMode(VK_PRESENT_MODE_MAILBOX_KHR);
     auto extent = supportDetails.chooseExtent(surface);
     uint32_t imageCount = supportDetails.imageCount();
     auto graphicsFamily = device.graphicsFamily();
     auto presentFamily = device.presentFamily();
-    uint32_t queueFamilyIndices[] = { graphicsFamily, presentFamily };
+    uint32_t queueFamilyIndices[] = {graphicsFamily, presentFamily};
     _imageFormat = surfaceFormat.format;
     _extent = extent;
     _msaaSampleCount = supportDetails.maxMSAASamples;
-    
-    VkSwapchainCreateInfoKHR createInfo {};
+
+    VkSwapchainCreateInfoKHR createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
     createInfo.surface = _engine->surface().handle();
     createInfo.minImageCount = imageCount;
@@ -117,7 +115,7 @@ void Swapchain::create(uint32_t width, uint32_t height)
     createInfo.imageExtent = extent;
     createInfo.imageArrayLayers = 1;
     createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-    
+
     if (graphicsFamily != presentFamily)
     {
         createInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
@@ -128,15 +126,15 @@ void Swapchain::create(uint32_t width, uint32_t height)
     {
         createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
     }
-    
+
     createInfo.preTransform = supportDetails.capabilities.currentTransform;
     createInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
     createInfo.presentMode = presentMode;
     createInfo.clipped = VK_TRUE;
     createInfo.oldSwapchain = VK_NULL_HANDLE;
-    
+
     VK_ASSERT(vkCreateSwapchainKHR(_engine->device().handle(), &createInfo, nullptr, &_swapchain));
-    
+
     vkGetSwapchainImagesKHR(_engine->device().handle(), _swapchain, &imageCount, nullptr);
     _images.resize(imageCount);
     vkGetSwapchainImagesKHR(_engine->device().handle(), _swapchain, &imageCount, _images.data());
@@ -157,15 +155,14 @@ void Swapchain::create(uint32_t width, uint32_t height)
             _engine,
             "Swapchain multisampled image buffer",
             _imageFormat,
-            { width, height },
+            {width, height},
             VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
             VK_IMAGE_ASPECT_COLOR_BIT,
             1, false, 0,
-            _msaaSampleCount
-        );
+            _msaaSampleCount);
         _msaaImages.push_back(std::shared_ptr<Image>(msaaImage));
     }
-    
+
     // Depth image
     _depthImage = std::shared_ptr<Image>(Image::createAllocatedImage(
         _engine,
@@ -175,9 +172,8 @@ void Swapchain::create(uint32_t width, uint32_t height)
         VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
         VK_IMAGE_ASPECT_DEPTH_BIT,
         1, false, 0,
-        VK_SAMPLE_COUNT_1_BIT
-    ));
-    
+        VK_SAMPLE_COUNT_1_BIT));
+
     // MSAA Depth image
     _msaaDepthImage = std::shared_ptr<Image>(Image::createAllocatedImage(
         _engine,
@@ -187,9 +183,8 @@ void Swapchain::create(uint32_t width, uint32_t height)
         VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
         VK_IMAGE_ASPECT_DEPTH_BIT,
         1, false, 0,
-        _msaaSampleCount
-    ));
-    
+        _msaaSampleCount));
+
     _colorImages.clear();
     _imageViews.clear();
     auto imageViewCreateInfo = Info::imageViewCreateInfo(_imageFormat, VK_NULL_HANDLE, VK_IMAGE_ASPECT_COLOR_BIT);
@@ -200,27 +195,25 @@ void Swapchain::create(uint32_t width, uint32_t height)
         imageViewCreateInfo.image = _images[i];
         VK_ASSERT(vkCreateImageView(device.handle(), &imageViewCreateInfo, nullptr, &imageView));
         _imageViews.push_back(imageView);
-        
+
         _colorImages.push_back(Image::wrapSwapchainImage(this, static_cast<uint32_t>(i)));
     }
 
     // Transition depth image to VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL
     _engine->command().immediateSubmit([&](VkCommandBuffer cmd)
-    {
-        Image::cmdTransitionImage(
-            cmd,
-            _msaaDepthImage->handle(),
-            VK_IMAGE_LAYOUT_UNDEFINED,
-            VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL
-        );
+                                       {
+                                           Image::cmdTransitionImage(
+                                               cmd,
+                                               _msaaDepthImage->handle(),
+                                               VK_IMAGE_LAYOUT_UNDEFINED,
+                                               VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL);
 
-        Image::cmdTransitionImage(
-            cmd,
-            _depthImage->handle(),
-            VK_IMAGE_LAYOUT_UNDEFINED,
-            VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL
-        );
-    });
+                                           Image::cmdTransitionImage(
+                                               cmd,
+                                               _depthImage->handle(),
+                                               VK_IMAGE_LAYOUT_UNDEFINED,
+                                               VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL);
+                                       });
 }
 
 }

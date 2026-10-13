@@ -37,7 +37,7 @@ class Node;
 namespace db {
 
 class BG2E_API LightmapOutputWriter final {
-public:
+  public:
     struct Target {
         std::string identity;
         std::filesystem::path inputModelPath;
@@ -77,7 +77,7 @@ public:
 
     [[nodiscard]] const std::filesystem::path& outputDirectory() const;
 
-private:
+  private:
     struct State;
     std::unique_ptr<State> _state;
 };

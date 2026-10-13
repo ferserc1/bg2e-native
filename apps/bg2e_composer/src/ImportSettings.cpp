@@ -56,7 +56,10 @@ bool ImportSettings::parsePort(const std::string& text, uint32_t& outPort)
 {
     if (text.empty() ||
         !std::all_of(text.begin(), text.end(),
-                     [](unsigned char c){ return std::isdigit(c); }))
+                     [](unsigned char c)
+                     {
+                         return std::isdigit(c);
+                     }))
     {
         return false;
     }
@@ -72,6 +75,6 @@ bool ImportSettings::parsePort(const std::string& text, uint32_t& outPort)
     }
     catch (...)
     {
-        return false;   // out_of_range on absurdly long input
+        return false; // out_of_range on absurdly long input
     }
 }

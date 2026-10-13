@@ -35,21 +35,24 @@ class Image;
 class SurfaceFrame;
 
 class WindowSurface : public gpu::WindowSurface, public Surface {
-public:
+  public:
     void cleanup() override;
 
     uint32_t width() const override;
     uint32_t height() const override;
     bool isValid() const override;
 
-    MetalLayerHandle metalLayer() const { return _layer; }
+    MetalLayerHandle metalLayer() const
+    {
+        return _layer;
+    }
 
     void resize(const Size2D& size) override;
     void releaseRenderTarget() override;
 
-    uint32_t    imageCount() const override;
-    uint32_t    inFlightFrames() const override;
-    uint32_t    currentFrameIndex() const override;
+    uint32_t imageCount() const override;
+    uint32_t inFlightFrames() const override;
+    uint32_t currentFrameIndex() const override;
     gpu::Image* colorImage(uint32_t index) const override;
     gpu::Image* depthImage() const override;
 
@@ -57,11 +60,11 @@ public:
     void present(gpu::CommandBuffer* cmd) override;
     void endFrame(gpu::SurfaceFrame* frame) override;
 
-protected:
+  protected:
     void create(gpu::Instance* instance) override;
     void createRenderTarget(gpu::Device* device, gpu::PhysicalDevice* physicalDevice) override;
 
-private:
+  private:
     void* _metalView = nullptr;
     MetalLayerHandle _layer = nullptr;
     uint32_t _imageCount = 0;

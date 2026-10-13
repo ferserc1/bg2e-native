@@ -18,15 +18,15 @@
 
 #include <bg2e/ui/DragDrop.hpp>
 
-#include "imgui.h"
+#include <imgui.h>
 
 #include <cstring>
 
 namespace bg2e {
 namespace ui {
 
-bool DragDrop::beginSource(const std::string & payloadType,
-                           const void * payloadData, size_t payloadSize,
+bool DragDrop::beginSource(const std::string& payloadType,
+                           const void* payloadData, size_t payloadSize,
                            bool disabled)
 {
     if (disabled)
@@ -47,13 +47,13 @@ void DragDrop::endSource()
     ImGui::EndDragDropSource();
 }
 
-bool DragDrop::acceptPayload(const std::string & payloadType,
-                             void * payloadData, size_t payloadSize)
+bool DragDrop::acceptPayload(const std::string& payloadType,
+                             void* payloadData, size_t payloadSize)
 {
     bool accepted = false;
     if (ImGui::BeginDragDropTarget())
     {
-        if (const ImGuiPayload * payload = ImGui::AcceptDragDropPayload(payloadType.c_str()))
+        if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(payloadType.c_str()))
         {
             if (payload->Data && static_cast<size_t>(payload->DataSize) == payloadSize)
             {
@@ -66,7 +66,7 @@ bool DragDrop::acceptPayload(const std::string & payloadType,
     return accepted;
 }
 
-void DragDrop::setPreviewText(const std::string & text)
+void DragDrop::setPreviewText(const std::string& text)
 {
     ImGui::TextUnformatted(text.c_str());
 }

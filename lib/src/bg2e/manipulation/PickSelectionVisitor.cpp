@@ -29,15 +29,15 @@ namespace bg2e::manipulation {
 
 void PickSelectionVisitor::pick(
     bg2e::scene::Node* sceneRoot,
-    const glm::mat4 & viewMatrix,
-    const glm::mat4 & projMatrix,
+    const glm::mat4& viewMatrix,
+    const glm::mat4& projMatrix,
     VkCommandBuffer cmd,
     VkPipelineLayout layout,
     VkPipeline depthPipeline,
     VkPipeline noDepthPipeline,
-    const VkExtent2D & renderExtent,
-    bool includeTransformGizmo
-) {
+    const VkExtent2D& renderExtent,
+    bool includeTransformGizmo)
+{
     _commandBuffer = cmd;
     _layout = layout;
     _depthPipeline = depthPipeline;
@@ -69,7 +69,7 @@ void PickSelectionVisitor::bindPipeline(VkPipeline pipeline)
     }
 }
 
-void PickSelectionVisitor::visit(bg2e::scene::Node * node)
+void PickSelectionVisitor::visit(bg2e::scene::Node* node)
 {
     auto drawable = node->getComponent<bg2e::scene::DrawableComponent>();
     auto transformComponent = node->getComponent<bg2e::scene::TransformComponent>();
@@ -102,8 +102,7 @@ void PickSelectionVisitor::visit(bg2e::scene::Node * node)
             _lookupNodes[submeshIdentifier] = {
                 .node = node,
                 .submeshIndex = submesh,
-                .kind = PickKind::Drawable
-            };
+                .kind = PickKind::Drawable};
             pushConstants.mvp = _projMatrix * _viewMatrix * _currentTransform * submeshTransform;
             vkCmdPushConstants(
                 _commandBuffer,
@@ -111,8 +110,7 @@ void PickSelectionVisitor::visit(bg2e::scene::Node * node)
                 VK_SHADER_STAGE_VERTEX_BIT,
                 0,
                 sizeof(SelectionManager::PushConstantData),
-                &pushConstants
-            );
+                &pushConstants);
 
             mesh->drawSubmesh(_commandBuffer, submesh);
         }
@@ -124,12 +122,10 @@ void PickSelectionVisitor::visit(bg2e::scene::Node * node)
         gizmo->currentGizmoType() != GizmoType::None &&
         GizmoComponent::isGizmoVisible(gizmo->currentGizmoType()))
     {
-        _pendingGizmos.push_back({
-            .node = node,
-            .gizmo = gizmo,
-            .world = _currentTransform,
-            .identifier = selectableComponent->gizmoIdentifier()
-        });
+        _pendingGizmos.push_back({.node = node,
+                                  .gizmo = gizmo,
+                                  .world = _currentTransform,
+                                  .identifier = selectableComponent->gizmoIdentifier()});
     }
 
     // Transform gizmo: pickable whenever it is visible, no SelectableComponent
@@ -142,7 +138,7 @@ void PickSelectionVisitor::visit(bg2e::scene::Node * node)
     }
 }
 
-void PickSelectionVisitor::didVisit(bg2e::scene::Node * node)
+void PickSelectionVisitor::didVisit(bg2e::scene::Node* node)
 {
     auto transformComponent = node->getComponent<bg2e::scene::TransformComponent>();
     if (transformComponent)
@@ -161,7 +157,7 @@ void PickSelectionVisitor::flushGizmos()
 
     // Depth-disabled: type gizmos always pick on top of the scene.
     bindPipeline(_noDepthPipeline);
-    for (const auto & pending : _pendingGizmos)
+    for (const auto& pending : _pendingGizmos)
     {
         auto drw = pending.gizmo->drawable();
         if (!drw)
@@ -176,8 +172,7 @@ void PickSelectionVisitor::flushGizmos()
         _lookupNodes[pending.identifier] = {
             .node = pending.node,
             .submeshIndex = 0,
-            .kind = PickKind::Gizmo
-        };
+            .kind = PickKind::Gizmo};
 
         for (uint32_t i = 0; i < drw->submeshesCount(); ++i)
         {
@@ -190,8 +185,7 @@ void PickSelectionVisitor::flushGizmos()
                 VK_SHADER_STAGE_VERTEX_BIT,
                 0,
                 sizeof(SelectionManager::PushConstantData),
-                &pushConstants
-            );
+                &pushConstants);
             mesh->drawSubmesh(_commandBuffer, i);
         }
     }
@@ -212,16 +206,15 @@ void PickSelectionVisitor::flushTransformGizmo()
 
     auto mesh = drw->renderMesh();
     auto gizmoTransform = _pendingTransformGizmo->renderTransform(
-        _pendingTransformWorld, _viewMatrix, _projMatrix, GizmoType::Transform
-    );
+        _pendingTransformWorld, _viewMatrix, _projMatrix, GizmoType::Transform);
 
     // Clear the depth buffer so the transform gizmo is pickable on top of the
     // scene while still self-occluding via the depth-tested pipeline.
-    VkClearAttachment depthClear {};
+    VkClearAttachment depthClear{};
     depthClear.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-    depthClear.clearValue.depthStencil = { 1.0f, 0 };
-    VkClearRect clearRect {};
-    clearRect.rect.offset = { 0, 0 };
+    depthClear.clearValue.depthStencil = {1.0f, 0};
+    VkClearRect clearRect{};
+    clearRect.rect.offset = {0, 0};
     clearRect.rect.extent = _renderExtent;
     clearRect.baseArrayLayer = 0;
     clearRect.layerCount = 1;
@@ -239,8 +232,7 @@ void PickSelectionVisitor::flushTransformGizmo()
         _lookupNodes[identifier] = {
             .node = _pendingTransformGizmo->ownerNode(),
             .submeshIndex = i,
-            .kind = PickKind::TransformGizmo
-        };
+            .kind = PickKind::TransformGizmo};
 
         SelectionManager::PushConstantData pushConstants;
         pushConstants.identifier = identifier;
@@ -251,13 +243,12 @@ void PickSelectionVisitor::flushTransformGizmo()
             VK_SHADER_STAGE_VERTEX_BIT,
             0,
             sizeof(SelectionManager::PushConstantData),
-            &pushConstants
-        );
+            &pushConstants);
         mesh->drawSubmesh(_commandBuffer, i);
     }
 }
 
-PickSelectionVisitor::SubmeshLookupData * PickSelectionVisitor::findObject(uint32_t identifier)
+PickSelectionVisitor::SubmeshLookupData* PickSelectionVisitor::findObject(uint32_t identifier)
 {
     if (_lookupNodes.find(identifier) != _lookupNodes.end())
     {

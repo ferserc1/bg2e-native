@@ -22,128 +22,118 @@
 #include <iostream>
 
 class TestKeyMouseDelegate : public bg2e::render::RenderLoopDelegate,
-	public bg2e::app::InputDelegate,
-	public bg2e::ui::UserInterfaceDelegate
-{
-public:
-	void init(bg2e::render::Engine * vulkan) override
-	{
-		using namespace bg2e::render::vulkan;
-		RenderLoopDelegate::init(vulkan);
-	}
+                             public bg2e::app::InputDelegate,
+                             public bg2e::ui::UserInterfaceDelegate {
+  public:
+    void init(bg2e::render::Engine* vulkan) override
+    {
+        using namespace bg2e::render::vulkan;
+        RenderLoopDelegate::init(vulkan);
+    }
 
     void initScene() override
     {
     }
 
-	void swapchainResized(VkExtent2D newExtent) override
-	{
-	}
+    void swapchainResized(VkExtent2D newExtent) override
+    {
+    }
 
-	VkImageLayout render(
-		VkCommandBuffer cmd,
-		uint32_t currentFrame,
-		const bg2e::render::vulkan::Image* colorImage,
-		const bg2e::render::vulkan::Image* depthImage,
+    VkImageLayout render(
+        VkCommandBuffer cmd,
+        uint32_t currentFrame,
+        const bg2e::render::vulkan::Image* colorImage,
+        const bg2e::render::vulkan::Image* depthImage,
         const bg2e::render::vulkan::Image* msaaDepthImage,
-		bg2e::render::vulkan::FrameResources& frameResources
-	) override {
-		using namespace bg2e::render::vulkan;
+        bg2e::render::vulkan::FrameResources& frameResources) override
+    {
+        using namespace bg2e::render::vulkan;
 
-		Image::cmdTransitionImage(
-			cmd,
-			colorImage->handle(),
-			VK_IMAGE_LAYOUT_UNDEFINED,
-			VK_IMAGE_LAYOUT_GENERAL
-		);
+        Image::cmdTransitionImage(
+            cmd,
+            colorImage->handle(),
+            VK_IMAGE_LAYOUT_UNDEFINED,
+            VK_IMAGE_LAYOUT_GENERAL);
 
-		VkClearColorValue clearValue{ { 0.0f, 0.0f, 0.0f, 1.0f } };
-		auto clearRange = Image::subresourceRange(VK_IMAGE_ASPECT_COLOR_BIT);
-		vkCmdClearColorImage(
-			cmd,
-			colorImage->handle(),
-			VK_IMAGE_LAYOUT_GENERAL,
-			&clearValue, 1, &clearRange
-		);
+        VkClearColorValue clearValue{{0.0f, 0.0f, 0.0f, 1.0f}};
+        auto clearRange = Image::subresourceRange(VK_IMAGE_ASPECT_COLOR_BIT);
+        vkCmdClearColorImage(
+            cmd,
+            colorImage->handle(),
+            VK_IMAGE_LAYOUT_GENERAL,
+            &clearValue, 1, &clearRange);
 
-		Image::cmdTransitionImage(
-			cmd, colorImage->handle(),
-			VK_IMAGE_LAYOUT_GENERAL,
-			VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
-		);
+        Image::cmdTransitionImage(
+            cmd, colorImage->handle(),
+            VK_IMAGE_LAYOUT_GENERAL,
+            VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 
-		return VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-	}
+        return VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    }
 
-	// ============ User Interface Delegate Functions =========
-	void init(bg2e::render::Engine *, bg2e::ui::UserInterface*) override {
-		_window.setTitle("Keyboard & Mouse Test");
-		_window.options.noClose = true;
+    // ============ User Interface Delegate Functions =========
+    void init(bg2e::render::Engine*, bg2e::ui::UserInterface*) override
+    {
+        _window.setTitle("Keyboard & Mouse Test");
+        _window.options.noClose = true;
         _window.options.minWidth = 280;
         _window.options.minHeight = 200;
         _window.setPosition(0, 0);
         _window.setSize(280, 200);
-	}
+    }
 
-	void drawUI() override
-	{
-		using namespace bg2e::ui;
-		using namespace bg2e::app;
+    void drawUI() override
+    {
+        using namespace bg2e::ui;
+        using namespace bg2e::app;
 
-		_window.draw([]() {
-			Text::text("== Keyboard Modifiers ==");
-			Text::text(
-				std::string("Shift:   ") + (Keyboard::shiftPressed() ? "ON" : "OFF")
-			);
-			Text::text(
-				std::string("Control: ") + (Keyboard::controlPressed() ? "ON" : "OFF")
-			);
-			Text::text(
-				std::string("Alt:     ") + (Keyboard::altPressed() ? "ON" : "OFF")
-			);
-			Text::text(
-				std::string("Super:   ") + (Keyboard::superPressed() ? "ON" : "OFF")
-			);
+        _window.draw([]()
+                     {
+                         Text::text("== Keyboard Modifiers ==");
+                         Text::text(
+                             std::string("Shift:   ") + (Keyboard::shiftPressed() ? "ON" : "OFF"));
+                         Text::text(
+                             std::string("Control: ") + (Keyboard::controlPressed() ? "ON" : "OFF"));
+                         Text::text(
+                             std::string("Alt:     ") + (Keyboard::altPressed() ? "ON" : "OFF"));
+                         Text::text(
+                             std::string("Super:   ") + (Keyboard::superPressed() ? "ON" : "OFF"));
 
-			Text::text("");
-			Text::text("== Mouse State ==");
-			Text::text(
-				std::string("Left:    ") + (Mouse::leftButtonPressed() ? "ON" : "OFF")
-			);
-			Text::text(
-				std::string("Middle:  ") + (Mouse::middleButtonPressed() ? "ON" : "OFF")
-			);
-			Text::text(
-				std::string("Right:   ") + (Mouse::rightButtonPressed() ? "ON" : "OFF")
-			);
-			Text::text(
-				"Pos X:   " + std::to_string(Mouse::x())
-			);
-			Text::text(
-				"Pos Y:   " + std::to_string(Mouse::y())
-			);
-		});
-	}
+                         Text::text("");
+                         Text::text("== Mouse State ==");
+                         Text::text(
+                             std::string("Left:    ") + (Mouse::leftButtonPressed() ? "ON" : "OFF"));
+                         Text::text(
+                             std::string("Middle:  ") + (Mouse::middleButtonPressed() ? "ON" : "OFF"));
+                         Text::text(
+                             std::string("Right:   ") + (Mouse::rightButtonPressed() ? "ON" : "OFF"));
+                         Text::text(
+                             "Pos X:   " + std::to_string(Mouse::x()));
+                         Text::text(
+                             "Pos Y:   " + std::to_string(Mouse::y()));
+                     });
+    }
 
-protected:
-	bg2e::ui::Window _window;
+  protected:
+    bg2e::ui::Window _window;
 };
 
 class MyApplication : public bg2e::app::Application {
-public:
-	void init(int argc, char** argv) override
-	{
-		auto delegate = std::shared_ptr<TestKeyMouseDelegate>(new TestKeyMouseDelegate());
-		setRenderDelegate(delegate);
-		setInputDelegate(delegate);
-		setUiDelegate(delegate);
-	}
+  public:
+    void init(int argc, char** argv) override
+    {
+        auto delegate = std::shared_ptr<TestKeyMouseDelegate>(new TestKeyMouseDelegate());
+        setRenderDelegate(delegate);
+        setInputDelegate(delegate);
+        setUiDelegate(delegate);
+    }
 };
 
-int main(int argc, char ** argv) {
+int main(int argc, char** argv)
+{
 
     bg2e::app::MainLoop mainLoop("org.bg2engine.tests.key_and_mouse");
-	MyApplication app;
-	app.init(argc, argv);
+    MyApplication app;
+    app.init(argc, argv);
     return mainLoop.run(&app);
 }

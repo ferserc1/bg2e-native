@@ -26,27 +26,26 @@ namespace scene {
 namespace vk {
 
 class BG2E_API FrameDataBinding : public bg2e::render::vulkan::PipelineDataBinding {
-public:
+  public:
     struct SceneUniforms {
         glm::mat4 viewMatrix;
         glm::mat4 projectionMatrix;
     };
-    
-    FrameDataBinding(bg2e::render::Engine * engine) : PipelineDataBinding(engine) {}
-    
-    void initFrameResources(bg2e::render::vulkan::DescriptorSetAllocator * frameAllocator) override;
-    
+
+    FrameDataBinding(bg2e::render::Engine* engine) : PipelineDataBinding(engine)
+    {
+    }
+
+    void initFrameResources(bg2e::render::vulkan::DescriptorSetAllocator* frameAllocator) override;
+
     VkDescriptorSetLayout createLayout(VkShaderStageFlags shaderStages = VK_SHADER_STAGE_VERTEX_BIT) override;
-    
+
     VkDescriptorSet newDescriptorSet(
-        bg2e::render::vulkan::FrameResources & frameResources,
-        const glm::mat4 & viewMatrix,
-        const glm::mat4 & projectionMatrix
-    );
+        bg2e::render::vulkan::FrameResources& frameResources,
+        const glm::mat4& viewMatrix,
+        const glm::mat4& projectionMatrix);
 };
 
 }
 }
 }
-
-

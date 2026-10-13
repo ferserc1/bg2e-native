@@ -28,39 +28,35 @@ namespace vulkan {
 namespace rt {
 
 class BG2E_API RTMaterialDataBinding : public PipelineDataBinding {
-public:
+  public:
     static constexpr uint32_t MAX_OBJECTS = 256;
 
-    RTMaterialDataBinding(Engine * engine);
+    RTMaterialDataBinding(Engine* engine);
 
-    void initFrameResources(DescriptorSetAllocator * frameAllocator) override;
+    void initFrameResources(DescriptorSetAllocator* frameAllocator) override;
 
     VkDescriptorSetLayout createLayout(
-        VkShaderStageFlags shaderStages = VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR
-    ) override;
+        VkShaderStageFlags shaderStages = VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR) override;
 
     VkDescriptorSet newDescriptorSet(
-        FrameResources & frameResources,
-        const std::vector<RTObjectInstance> & objectInstances
-    );
+        FrameResources& frameResources,
+        const std::vector<RTObjectInstance>& objectInstances);
 
     VkDescriptorSet newDescriptorSet(
-        FrameResources & frameResources,
-        DescriptorSetAllocator & descriptorAllocator,
-        const std::vector<RTObjectInstance> & objectInstances
-    );
+        FrameResources& frameResources,
+        DescriptorSetAllocator& descriptorAllocator,
+        const std::vector<RTObjectInstance>& objectInstances);
 
     void cleanup();
 
-protected:
+  protected:
     VkBuffer _dummyBuffer = VK_NULL_HANDLE;
-    Buffer * _dummyBufferObj = nullptr;
+    Buffer* _dummyBufferObj = nullptr;
 
     VkDescriptorSet writeDescriptorSet(
-        FrameResources & frameResources,
-        DescriptorSet * descriptorSet,
-        const std::vector<RTObjectInstance> & objectInstances
-    );
+        FrameResources& frameResources,
+        DescriptorSet* descriptorSet,
+        const std::vector<RTObjectInstance>& objectInstances);
 };
 
 }

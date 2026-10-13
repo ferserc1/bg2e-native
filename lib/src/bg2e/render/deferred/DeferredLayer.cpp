@@ -27,8 +27,7 @@
 namespace bg2e::render::deferred {
 
 DeferredLayer::DeferredLayer(Engine* engine, LayerType type)
-    : RenderLayer { engine }
-    , _layerType { type }
+    : RenderLayer{engine}, _layerType{type}
 {
 }
 
@@ -41,56 +40,80 @@ const vulkan::Image* DeferredLayer::resolveDebugSource(const vulkan::Image* inpu
 {
     switch (_debugVisualization)
     {
-        case DeferredDebugVisualization::GBufferAlbedo:
-            return gbuffer->image(0).get();
-        case DeferredDebugVisualization::GBufferNormal:
-            return gbuffer->image(1).get();
-        case DeferredDebugVisualization::GBufferMaterial:
-            return gbuffer->image(2).get();
-        case DeferredDebugVisualization::GBufferFresnelFlags:
-            return gbuffer->image(3).get();
-        case DeferredDebugVisualization::GBufferSheenColor:
-            return gbuffer->image(4).get();
-        case DeferredDebugVisualization::GBufferDepth:
-            return gbuffer->depthImage().get();
-        case DeferredDebugVisualization::InputImage:
-            return inputImage;
-        case DeferredDebugVisualization::RTAmbientOcclusion:
-            if (!_indirectLightingEnabled) return _neutralAOImage.get();
-            return _rtAmbientOcclusion->aoImage(_engine->currentFrameResourcesIndex()).get();
-        case DeferredDebugVisualization::DenoisedAO:
-            if (!_indirectLightingEnabled) return _neutralAOImage.get();
-            return _denoiseFilter->outputImage(_engine->currentFrameResourcesIndex()).get();
-        case DeferredDebugVisualization::TemporalAccumulatedAO:
-            if (!_indirectLightingEnabled) return _neutralAOImage.get();
-            return _temporalAccumulator
-                ? _temporalAccumulator->outputImage(_engine->currentFrameResourcesIndex()).get()
-                : _rtAmbientOcclusion->aoImage(_engine->currentFrameResourcesIndex()).get();
-        case DeferredDebugVisualization::RTReflections:
-            if (!rtReflectionsEnabled()) return _rtReflectionFallbackImage.get();
-            return _rtReflections ? _rtReflections->reflectionImage(_engine->currentFrameResourcesIndex()).get() : nullptr;
-        case DeferredDebugVisualization::TemporalAccumulatedReflections:
-            if (!rtReflectionsEnabled()) return _rtReflectionFallbackImage.get();
-            return _temporalReflectionAccumulator
-                ? _temporalReflectionAccumulator->outputImage(_engine->currentFrameResourcesIndex()).get()
-                : nullptr;
-        case DeferredDebugVisualization::RTReflectionMask:
-            if (!rtReflectionsEnabled()) return _rtReflectionFallbackImage.get();
-            return _temporalReflectionAccumulator
-                ? _temporalReflectionAccumulator->outputImage(_engine->currentFrameResourcesIndex()).get()
-                : nullptr;
-        case DeferredDebugVisualization::RTGlobalIllumination:
-            if (!_indirectLightingEnabled || !rtGIEnabled()) return _rtGIFallbackImage.get();
-            return _rtGlobalIllumination
-                ? _rtGlobalIllumination->giImage(_engine->currentFrameResourcesIndex()).get()
-                : nullptr;
-        case DeferredDebugVisualization::DenoisedGI:
-            if (!_indirectLightingEnabled || !rtGIEnabled()) return _rtGIFallbackImage.get();
-            return _denoiseGIFilter
-                ? _denoiseGIFilter->outputImage(_engine->currentFrameResourcesIndex()).get()
-                : nullptr;
-        default:
-            return gbuffer->image(0).get();
+    case DeferredDebugVisualization::GBufferAlbedo:
+        return gbuffer->image(0).get();
+    case DeferredDebugVisualization::GBufferNormal:
+        return gbuffer->image(1).get();
+    case DeferredDebugVisualization::GBufferMaterial:
+        return gbuffer->image(2).get();
+    case DeferredDebugVisualization::GBufferFresnelFlags:
+        return gbuffer->image(3).get();
+    case DeferredDebugVisualization::GBufferSheenColor:
+        return gbuffer->image(4).get();
+    case DeferredDebugVisualization::GBufferDepth:
+        return gbuffer->depthImage().get();
+    case DeferredDebugVisualization::InputImage:
+        return inputImage;
+    case DeferredDebugVisualization::RTAmbientOcclusion:
+        if (!_indirectLightingEnabled)
+        {
+            return _neutralAOImage.get();
+        }
+        return _rtAmbientOcclusion->aoImage(_engine->currentFrameResourcesIndex()).get();
+    case DeferredDebugVisualization::DenoisedAO:
+        if (!_indirectLightingEnabled)
+        {
+            return _neutralAOImage.get();
+        }
+        return _denoiseFilter->outputImage(_engine->currentFrameResourcesIndex()).get();
+    case DeferredDebugVisualization::TemporalAccumulatedAO:
+        if (!_indirectLightingEnabled)
+        {
+            return _neutralAOImage.get();
+        }
+        return _temporalAccumulator
+                   ? _temporalAccumulator->outputImage(_engine->currentFrameResourcesIndex()).get()
+                   : _rtAmbientOcclusion->aoImage(_engine->currentFrameResourcesIndex()).get();
+    case DeferredDebugVisualization::RTReflections:
+        if (!rtReflectionsEnabled())
+        {
+            return _rtReflectionFallbackImage.get();
+        }
+        return _rtReflections ? _rtReflections->reflectionImage(_engine->currentFrameResourcesIndex()).get() : nullptr;
+    case DeferredDebugVisualization::TemporalAccumulatedReflections:
+        if (!rtReflectionsEnabled())
+        {
+            return _rtReflectionFallbackImage.get();
+        }
+        return _temporalReflectionAccumulator
+                   ? _temporalReflectionAccumulator->outputImage(_engine->currentFrameResourcesIndex()).get()
+                   : nullptr;
+    case DeferredDebugVisualization::RTReflectionMask:
+        if (!rtReflectionsEnabled())
+        {
+            return _rtReflectionFallbackImage.get();
+        }
+        return _temporalReflectionAccumulator
+                   ? _temporalReflectionAccumulator->outputImage(_engine->currentFrameResourcesIndex()).get()
+                   : nullptr;
+    case DeferredDebugVisualization::RTGlobalIllumination:
+        if (!_indirectLightingEnabled || !rtGIEnabled())
+        {
+            return _rtGIFallbackImage.get();
+        }
+        return _rtGlobalIllumination
+                   ? _rtGlobalIllumination->giImage(_engine->currentFrameResourcesIndex()).get()
+                   : nullptr;
+    case DeferredDebugVisualization::DenoisedGI:
+        if (!_indirectLightingEnabled || !rtGIEnabled())
+        {
+            return _rtGIFallbackImage.get();
+        }
+        return _denoiseGIFilter
+                   ? _denoiseGIFilter->outputImage(_engine->currentFrameResourcesIndex()).get()
+                   : nullptr;
+    default:
+        return gbuffer->image(0).get();
     }
 }
 
@@ -118,8 +141,7 @@ void DeferredLayer::build(VkExtent2D extent, VkFormat outputFormat)
             VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR |
             VK_SHADER_STAGE_ANY_HIT_BIT_KHR |
             VK_SHADER_STAGE_FRAGMENT_BIT |
-            VK_SHADER_STAGE_COMPUTE_BIT
-        );
+            VK_SHADER_STAGE_COMPUTE_BIT);
     }
 
     // Create AO pass after its shared material binding is ready.
@@ -177,9 +199,7 @@ void DeferredLayer::build(VkExtent2D extent, VkFormat outputFormat)
             vulkan::Image::createAllocatedImage(
                 _engine, "DeferredLayer: RTGI fallback", blackData.data(),
                 VkExtent2D{1, 1}, 4, VK_FORMAT_R16G16B16A16_SFLOAT,
-                VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT
-            )
-        );
+                VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT));
     }
 
     // White R8_UNORM fallback used as AO=1 when indirect passes are skipped
@@ -190,9 +210,7 @@ void DeferredLayer::build(VkExtent2D extent, VkFormat outputFormat)
             vulkan::Image::createAllocatedImage(
                 _engine, "DeferredLayer: neutral AO", whiteData,
                 VkExtent2D{4, 4}, 1, VK_FORMAT_R8_UNORM,
-                VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT
-            )
-        );
+                VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT));
     }
 
     // Create fallback image for RT reflections (1x1, alpha=0 → cubemap fallback)
@@ -202,9 +220,7 @@ void DeferredLayer::build(VkExtent2D extent, VkFormat outputFormat)
             vulkan::Image::createAllocatedImage(
                 _engine, "DeferredLayer: RT Reflections fallback", blackData.data(),
                 VkExtent2D{1, 1}, 4, VK_FORMAT_R16G16B16A16_SFLOAT,
-                VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT
-            )
-        );
+                VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT));
     }
 
     // Create per-layer data bindings
@@ -235,10 +251,11 @@ void DeferredLayer::build(VkExtent2D extent, VkFormat outputFormat)
     vulkan::factory::Sampler samplerFactory(_engine);
     _gbufferSampler = samplerFactory.build();
 
-    _engine->cleanupManager().push([&](VkDevice dev) {
-        vkDestroySampler(dev, _gbufferSampler, nullptr);
-        _gbufferSampler = VK_NULL_HANDLE;
-    });
+    _engine->cleanupManager().push([&](VkDevice dev)
+                                   {
+                                       vkDestroySampler(dev, _gbufferSampler, nullptr);
+                                       _gbufferSampler = VK_NULL_HANDLE;
+                                   });
 }
 
 void DeferredLayer::initFrameResources(vulkan::DescriptorSetAllocator* allocator)
@@ -247,9 +264,7 @@ void DeferredLayer::initFrameResources(vulkan::DescriptorSetAllocator* allocator
     _fragmentFrameDataBinding->initFrameResources(allocator);
     _objectDataBinding->initFrameResources(allocator);
     _environmentDataBinding->initFrameResources(allocator);
-    allocator->requirePoolSizeRatio(1, {
-        { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 10 }
-    });
+    allocator->requirePoolSizeRatio(1, {{VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 10}});
     if (_rtMaterialDataBinding)
     {
         _rtMaterialDataBinding->initFrameResources(allocator);
@@ -261,8 +276,7 @@ void DeferredLayer::render(
     uint32_t currentFrame,
     const vulkan::Image* inputImage,
     const vulkan::Image* outputImage,
-    vulkan::FrameResources& frameResources
-)
+    vulkan::FrameResources& frameResources)
 {
     if (!_scene || !_renderQueue)
     {
@@ -295,15 +309,13 @@ void DeferredLayer::render(
             transparentDepthBufferImage->handle(),
             VK_IMAGE_LAYOUT_UNDEFINED,
             VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-            transitionInfo
-        );
+            transitionInfo);
         vulkan::Image::cmdTransitionImage(
             cmd,
             opaqueDepthBufferImage->handle(),
             VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
             VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-            transitionInfo
-        );
+            transitionInfo);
 
         VkImageCopy copyRegion = {};
         copyRegion.srcSubresource.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
@@ -325,23 +337,20 @@ void DeferredLayer::render(
             transparentDepthBufferImage->handle(),
             VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
             1,
-            &copyRegion
-        );
+            &copyRegion);
 
         vulkan::Image::cmdTransitionImage(
             cmd,
             transparentDepthBufferImage->handle(),
             VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
             VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-            transitionInfo
-        );
+            transitionInfo);
         vulkan::Image::cmdTransitionImage(
             cmd,
             opaqueDepthBufferImage->handle(),
             VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
             VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-            transitionInfo
-        );
+            transitionInfo);
     }
 
     renderGBufferPass(cmd, currentFrame, gbuffer, frameResources, viewMatrix, projMatrix, cameraWorldPos);
@@ -350,9 +359,9 @@ void DeferredLayer::render(
 
     // Skip only live RT indirect work; IBL and baked maps remain in composition.
     bool skipIndirectPasses = !_indirectLightingEnabled ||
-        (_isTransparent && _skipIndirectLightingForTransparent) ||
-        (_indirectLightingMode == IndirectLightingMode::RTGI &&
-            (!_rtGlobalIllumination || !_rtGlobalIllumination->rtSupported() || !rtGIEnabled()));
+                              (_isTransparent && _skipIndirectLightingForTransparent) ||
+                              (_indirectLightingMode == IndirectLightingMode::RTGI &&
+                               (!_rtGlobalIllumination || !_rtGlobalIllumination->rtSupported() || !rtGIEnabled()));
 
     if (useRT)
     {
@@ -374,8 +383,7 @@ void DeferredLayer::render(
                     auto aoImg = _rtAmbientOcclusion->aoImage(frameResourcesIndex);
                     _temporalAccumulator->render(
                         cmd, currentFrame, frameResources, gbuffer,
-                        aoImg.get(), invVP, viewMatrix, projMatrix, cameraProjection
-                    );
+                        aoImg.get(), invVP, viewMatrix, projMatrix, cameraProjection);
                     aoInputForDenoise = _temporalAccumulator->outputImage(frameResourcesIndex).get();
                 }
                 else
@@ -388,33 +396,28 @@ void DeferredLayer::render(
                      _rtGlobalIllumination && _rtGlobalIllumination->rtSupported())
             {
                 // RTGI path
-                auto tlas = frameResources.rayTracingScene ?
-                    frameResources.rayTracingScene->tlas() : VK_NULL_HANDLE;
-                const auto& objectInstances = (tlas != VK_NULL_HANDLE && frameResources.rayTracingScene) ?
-                    frameResources.rayTracingScene->objectInstances() :
-                    std::vector<vulkan::rt::RTObjectInstance>{};
+                auto tlas = frameResources.rayTracingScene ? frameResources.rayTracingScene->tlas() : VK_NULL_HANDLE;
+                const auto& objectInstances = (tlas != VK_NULL_HANDLE && frameResources.rayTracingScene) ? frameResources.rayTracingScene->objectInstances() : std::vector<vulkan::rt::RTObjectInstance>{};
 
                 _rtGlobalIllumination->render(
                     cmd, currentFrame, frameResources, gbuffer,
                     invVP, cameraWorldPos, tlas, objectInstances,
                     _environment->irradianceMapImage().get(),
                     _environment->irradianceMapSampler(),
-                    _reflectionLights
-                );
+                    _reflectionLights);
 
                 auto rawGIImage = _rtGlobalIllumination->giImage(frameResourcesIndex);
                 if (_temporalGIAccumulator)
                 {
                     _temporalGIAccumulator->render(
                         cmd, currentFrame, frameResources, gbuffer,
-                        rawGIImage.get(), invVP, viewMatrix, projMatrix, cameraProjection
-                    );
+                        rawGIImage.get(), invVP, viewMatrix, projMatrix, cameraProjection);
                     const vulkan::Image* temporalGIImage =
                         _temporalGIAccumulator->outputImage(frameResourcesIndex).get();
                     if (_denoiseGIFilter)
                     {
                         _denoiseGIFilter->render(cmd, currentFrame, frameResources,
-                            gbuffer, temporalGIImage);
+                                                 gbuffer, temporalGIImage);
                     }
                 }
             }
@@ -423,8 +426,7 @@ void DeferredLayer::render(
         // RT Reflections pass (after indirect, before composite)
         if (_rtReflections && _rtReflections->rtSupported())
         {
-            auto tlas = frameResources.rayTracingScene ?
-                frameResources.rayTracingScene->tlas() : VK_NULL_HANDLE;
+            auto tlas = frameResources.rayTracingScene ? frameResources.rayTracingScene->tlas() : VK_NULL_HANDLE;
 
             if (tlas != VK_NULL_HANDLE && _rtReflections->settings().enabled)
             {
@@ -435,14 +437,12 @@ void DeferredLayer::render(
                     invVP, cameraWorldPos, tlas, objectInstances,
                     _environment->irradianceMapImage().get(),
                     _environment->irradianceMapSampler(),
-                    _reflectionLights
-                );
+                    _reflectionLights);
 
                 auto rawReflectionImage = _rtReflections->reflectionImage(frameResourcesIndex);
                 _temporalReflectionAccumulator->render(
                     cmd, currentFrame, frameResources, gbuffer,
-                    rawReflectionImage.get(), invVP, viewMatrix, projMatrix, cameraProjection
-                );
+                    rawReflectionImage.get(), invVP, viewMatrix, projMatrix, cameraProjection);
 
                 reflectionInputForComposite = _temporalReflectionAccumulator->outputImage(frameResourcesIndex).get();
             }
@@ -477,13 +477,31 @@ void DeferredLayer::resize(VkExtent2D newExtent)
         gb->resize(newExtent);
     }
     _rtAmbientOcclusion->resize(newExtent);
-    if (_temporalAccumulator) _temporalAccumulator->resize(newExtent);
+    if (_temporalAccumulator)
+    {
+        _temporalAccumulator->resize(newExtent);
+    }
     _denoiseFilter->resize(newExtent);
-    if (_rtReflections) _rtReflections->resize(newExtent, _viewportExtent);
-    if (_temporalReflectionAccumulator) _temporalReflectionAccumulator->resize(newExtent);
-    if (_rtGlobalIllumination) _rtGlobalIllumination->resize(newExtent);
-    if (_temporalGIAccumulator) _temporalGIAccumulator->resize(newExtent);
-    if (_denoiseGIFilter) _denoiseGIFilter->resize(newExtent);
+    if (_rtReflections)
+    {
+        _rtReflections->resize(newExtent, _viewportExtent);
+    }
+    if (_temporalReflectionAccumulator)
+    {
+        _temporalReflectionAccumulator->resize(newExtent);
+    }
+    if (_rtGlobalIllumination)
+    {
+        _rtGlobalIllumination->resize(newExtent);
+    }
+    if (_temporalGIAccumulator)
+    {
+        _temporalGIAccumulator->resize(newExtent);
+    }
+    if (_denoiseGIFilter)
+    {
+        _denoiseGIFilter->resize(newExtent);
+    }
 }
 
 void DeferredLayer::refreshRTReflectionExtent()
@@ -506,24 +524,59 @@ void DeferredLayer::cleanup()
     }
     _gbuffers.clear();
 
-    if (_rtAmbientOcclusion) _rtAmbientOcclusion->cleanup();
-    if (_temporalAccumulator) _temporalAccumulator->cleanup();
-    if (_denoiseFilter) _denoiseFilter->cleanup();
-    if (_temporalReflectionAccumulator) _temporalReflectionAccumulator->cleanup();
-    if (_rtReflections) _rtReflections->cleanup();
-    if (_rtMaterialDataBinding) _rtMaterialDataBinding->cleanup();
-    if (_rtReflectionFallbackImage) _rtReflectionFallbackImage->cleanup();
-    if (_rtGlobalIllumination) _rtGlobalIllumination->cleanup();
-    if (_temporalGIAccumulator) _temporalGIAccumulator->cleanup();
-    if (_denoiseGIFilter) _denoiseGIFilter->cleanup();
-    if (_rtGIFallbackImage) _rtGIFallbackImage->cleanup();
-    if (_neutralAOImage) _neutralAOImage->cleanup();
+    if (_rtAmbientOcclusion)
+    {
+        _rtAmbientOcclusion->cleanup();
+    }
+    if (_temporalAccumulator)
+    {
+        _temporalAccumulator->cleanup();
+    }
+    if (_denoiseFilter)
+    {
+        _denoiseFilter->cleanup();
+    }
+    if (_temporalReflectionAccumulator)
+    {
+        _temporalReflectionAccumulator->cleanup();
+    }
+    if (_rtReflections)
+    {
+        _rtReflections->cleanup();
+    }
+    if (_rtMaterialDataBinding)
+    {
+        _rtMaterialDataBinding->cleanup();
+    }
+    if (_rtReflectionFallbackImage)
+    {
+        _rtReflectionFallbackImage->cleanup();
+    }
+    if (_rtGlobalIllumination)
+    {
+        _rtGlobalIllumination->cleanup();
+    }
+    if (_temporalGIAccumulator)
+    {
+        _temporalGIAccumulator->cleanup();
+    }
+    if (_denoiseGIFilter)
+    {
+        _denoiseGIFilter->cleanup();
+    }
+    if (_rtGIFallbackImage)
+    {
+        _rtGIFallbackImage->cleanup();
+    }
+    if (_neutralAOImage)
+    {
+        _neutralAOImage->cleanup();
+    }
 
     _frameDataBinding->cleanup();
     _fragmentFrameDataBinding->cleanup();
     _objectDataBinding->cleanup();
     _environmentDataBinding->cleanup();
-
 }
 
 std::shared_ptr<vulkan::Image> DeferredLayer::depthBuffer()
@@ -534,14 +587,26 @@ std::shared_ptr<vulkan::Image> DeferredLayer::depthBuffer()
 
 void DeferredLayer::setBlueNoise(const BlueNoise* blueNoise)
 {
-    if (_rtAmbientOcclusion) _rtAmbientOcclusion->setBlueNoise(blueNoise);
-    if (_rtGlobalIllumination) _rtGlobalIllumination->setBlueNoise(blueNoise);
-    if (_rtReflections) _rtReflections->setBlueNoise(blueNoise);
+    if (_rtAmbientOcclusion)
+    {
+        _rtAmbientOcclusion->setBlueNoise(blueNoise);
+    }
+    if (_rtGlobalIllumination)
+    {
+        _rtGlobalIllumination->setBlueNoise(blueNoise);
+    }
+    if (_rtReflections)
+    {
+        _rtReflections->setBlueNoise(blueNoise);
+    }
 }
 
 void DeferredLayer::setAOQuality(RTAOQuality quality)
 {
-    if (_rtAmbientOcclusion) _rtAmbientOcclusion->setQuality(quality);
+    if (_rtAmbientOcclusion)
+    {
+        _rtAmbientOcclusion->setQuality(quality);
+    }
 }
 
 RTAOQuality DeferredLayer::aoQuality() const
@@ -551,7 +616,10 @@ RTAOQuality DeferredLayer::aoQuality() const
 
 void DeferredLayer::setAOSampleCount(int count)
 {
-    if (_rtAmbientOcclusion) _rtAmbientOcclusion->setAOSampleCount(count);
+    if (_rtAmbientOcclusion)
+    {
+        _rtAmbientOcclusion->setAOSampleCount(count);
+    }
 }
 
 int DeferredLayer::aoSampleCount() const
@@ -561,7 +629,10 @@ int DeferredLayer::aoSampleCount() const
 
 void DeferredLayer::setAOBounceCount(int count)
 {
-    if (_rtAmbientOcclusion) _rtAmbientOcclusion->setAOBounceCount(count);
+    if (_rtAmbientOcclusion)
+    {
+        _rtAmbientOcclusion->setAOBounceCount(count);
+    }
 }
 
 int DeferredLayer::aoBounceCount() const
@@ -571,7 +642,10 @@ int DeferredLayer::aoBounceCount() const
 
 void DeferredLayer::setAORadius(float radius)
 {
-    if (_rtAmbientOcclusion) _rtAmbientOcclusion->setAORadius(radius);
+    if (_rtAmbientOcclusion)
+    {
+        _rtAmbientOcclusion->setAORadius(radius);
+    }
 }
 
 float DeferredLayer::aoRadius() const
@@ -581,7 +655,10 @@ float DeferredLayer::aoRadius() const
 
 void DeferredLayer::setAOBias(float bias)
 {
-    if (_rtAmbientOcclusion) _rtAmbientOcclusion->setAOBias(bias);
+    if (_rtAmbientOcclusion)
+    {
+        _rtAmbientOcclusion->setAOBias(bias);
+    }
 }
 
 float DeferredLayer::aoBias() const
@@ -591,7 +668,10 @@ float DeferredLayer::aoBias() const
 
 void DeferredLayer::setAOFalloff(float falloff)
 {
-    if (_rtAmbientOcclusion) _rtAmbientOcclusion->setAOFalloff(falloff);
+    if (_rtAmbientOcclusion)
+    {
+        _rtAmbientOcclusion->setAOFalloff(falloff);
+    }
 }
 
 float DeferredLayer::aoFalloff() const
@@ -601,7 +681,10 @@ float DeferredLayer::aoFalloff() const
 
 void DeferredLayer::setAOBounceAttenuation(float attenuation)
 {
-    if (_rtAmbientOcclusion) _rtAmbientOcclusion->setAOBounceAttenuation(attenuation);
+    if (_rtAmbientOcclusion)
+    {
+        _rtAmbientOcclusion->setAOBounceAttenuation(attenuation);
+    }
 }
 
 float DeferredLayer::aoBounceAttenuation() const
@@ -611,7 +694,10 @@ float DeferredLayer::aoBounceAttenuation() const
 
 void DeferredLayer::setAOUseBlueNoise(bool use)
 {
-    if (_rtAmbientOcclusion) _rtAmbientOcclusion->setUseBlueNoise(use);
+    if (_rtAmbientOcclusion)
+    {
+        _rtAmbientOcclusion->setUseBlueNoise(use);
+    }
 }
 
 bool DeferredLayer::aoUseBlueNoise() const
@@ -621,7 +707,10 @@ bool DeferredLayer::aoUseBlueNoise() const
 
 void DeferredLayer::setTemporalHistoryWeight(float weight)
 {
-    if (_temporalAccumulator) _temporalAccumulator->setHistoryWeight(weight);
+    if (_temporalAccumulator)
+    {
+        _temporalAccumulator->setHistoryWeight(weight);
+    }
 }
 
 float DeferredLayer::temporalHistoryWeight() const
@@ -631,7 +720,10 @@ float DeferredLayer::temporalHistoryWeight() const
 
 void DeferredLayer::setTemporalDepthThreshold(float threshold)
 {
-    if (_temporalAccumulator) _temporalAccumulator->setDepthThreshold(threshold);
+    if (_temporalAccumulator)
+    {
+        _temporalAccumulator->setDepthThreshold(threshold);
+    }
 }
 
 float DeferredLayer::temporalDepthThreshold() const
@@ -641,7 +733,10 @@ float DeferredLayer::temporalDepthThreshold() const
 
 void DeferredLayer::setTemporalNormalThreshold(float threshold)
 {
-    if (_temporalAccumulator) _temporalAccumulator->setNormalThreshold(threshold);
+    if (_temporalAccumulator)
+    {
+        _temporalAccumulator->setNormalThreshold(threshold);
+    }
 }
 
 float DeferredLayer::temporalNormalThreshold() const
@@ -651,7 +746,10 @@ float DeferredLayer::temporalNormalThreshold() const
 
 void DeferredLayer::setTemporalMode(TemporalAccumulator::AccumulationMode mode)
 {
-    if (_temporalAccumulator) _temporalAccumulator->setAccumulationMode(mode);
+    if (_temporalAccumulator)
+    {
+        _temporalAccumulator->setAccumulationMode(mode);
+    }
 }
 
 TemporalAccumulator::AccumulationMode DeferredLayer::temporalMode() const
@@ -661,7 +759,10 @@ TemporalAccumulator::AccumulationMode DeferredLayer::temporalMode() const
 
 void DeferredLayer::setDenoiseKernelRadius(int radius)
 {
-    if (_denoiseFilter) _denoiseFilter->setKernelRadius(radius);
+    if (_denoiseFilter)
+    {
+        _denoiseFilter->setKernelRadius(radius);
+    }
 }
 
 int DeferredLayer::denoiseKernelRadius() const
@@ -671,7 +772,10 @@ int DeferredLayer::denoiseKernelRadius() const
 
 void DeferredLayer::setDenoiseDepthThreshold(float threshold)
 {
-    if (_denoiseFilter) _denoiseFilter->setDepthThreshold(threshold);
+    if (_denoiseFilter)
+    {
+        _denoiseFilter->setDepthThreshold(threshold);
+    }
 }
 
 float DeferredLayer::denoiseDepthThreshold() const
@@ -681,7 +785,10 @@ float DeferredLayer::denoiseDepthThreshold() const
 
 void DeferredLayer::setDenoiseNormalThreshold(float threshold)
 {
-    if (_denoiseFilter) _denoiseFilter->setNormalThreshold(threshold);
+    if (_denoiseFilter)
+    {
+        _denoiseFilter->setNormalThreshold(threshold);
+    }
 }
 
 float DeferredLayer::denoiseNormalThreshold() const
@@ -691,7 +798,10 @@ float DeferredLayer::denoiseNormalThreshold() const
 
 void DeferredLayer::setDenoiseDepthSigma(float sigma)
 {
-    if (_denoiseFilter) _denoiseFilter->setDepthSigma(sigma);
+    if (_denoiseFilter)
+    {
+        _denoiseFilter->setDepthSigma(sigma);
+    }
 }
 
 float DeferredLayer::denoiseDepthSigma() const
@@ -701,7 +811,10 @@ float DeferredLayer::denoiseDepthSigma() const
 
 void DeferredLayer::setDenoiseNormalSigma(float sigma)
 {
-    if (_denoiseFilter) _denoiseFilter->setNormalSigma(sigma);
+    if (_denoiseFilter)
+    {
+        _denoiseFilter->setNormalSigma(sigma);
+    }
 }
 
 float DeferredLayer::denoiseNormalSigma() const
@@ -711,9 +824,15 @@ float DeferredLayer::denoiseNormalSigma() const
 
 void DeferredLayer::setRTReflectionsEnabled(bool enabled)
 {
-    if (!_rtReflections || _rtReflections->settings().enabled == enabled) return;
+    if (!_rtReflections || _rtReflections->settings().enabled == enabled)
+    {
+        return;
+    }
     _rtReflections->setEnabled(enabled);
-    if (_temporalReflectionAccumulator) _temporalReflectionAccumulator->invalidateHistory();
+    if (_temporalReflectionAccumulator)
+    {
+        _temporalReflectionAccumulator->invalidateHistory();
+    }
 }
 
 bool DeferredLayer::rtReflectionsEnabled() const
@@ -723,9 +842,15 @@ bool DeferredLayer::rtReflectionsEnabled() const
 
 void DeferredLayer::setRTReflectionSampleCount(uint32_t count)
 {
-    if (!_rtReflections || _rtReflections->settings().sampleCount == count) return;
+    if (!_rtReflections || _rtReflections->settings().sampleCount == count)
+    {
+        return;
+    }
     _rtReflections->setSampleCount(count);
-    if (_temporalReflectionAccumulator) _temporalReflectionAccumulator->invalidateHistory();
+    if (_temporalReflectionAccumulator)
+    {
+        _temporalReflectionAccumulator->invalidateHistory();
+    }
 }
 
 uint32_t DeferredLayer::rtReflectionSampleCount() const
@@ -735,9 +860,15 @@ uint32_t DeferredLayer::rtReflectionSampleCount() const
 
 void DeferredLayer::setRTReflectionMaxRoughness(float r)
 {
-    if (!_rtReflections || _rtReflections->settings().maxRoughness == r) return;
+    if (!_rtReflections || _rtReflections->settings().maxRoughness == r)
+    {
+        return;
+    }
     _rtReflections->setMaxRoughness(r);
-    if (_temporalReflectionAccumulator) _temporalReflectionAccumulator->invalidateHistory();
+    if (_temporalReflectionAccumulator)
+    {
+        _temporalReflectionAccumulator->invalidateHistory();
+    }
 }
 
 float DeferredLayer::rtReflectionMaxRoughness() const
@@ -747,9 +878,15 @@ float DeferredLayer::rtReflectionMaxRoughness() const
 
 void DeferredLayer::setRTReflectionRayBias(float b)
 {
-    if (!_rtReflections || _rtReflections->settings().rayBias == b) return;
+    if (!_rtReflections || _rtReflections->settings().rayBias == b)
+    {
+        return;
+    }
     _rtReflections->setRayBias(b);
-    if (_temporalReflectionAccumulator) _temporalReflectionAccumulator->invalidateHistory();
+    if (_temporalReflectionAccumulator)
+    {
+        _temporalReflectionAccumulator->invalidateHistory();
+    }
 }
 
 float DeferredLayer::rtReflectionRayBias() const
@@ -759,9 +896,15 @@ float DeferredLayer::rtReflectionRayBias() const
 
 void DeferredLayer::setRTReflectionMaxDistance(float d)
 {
-    if (!_rtReflections || _rtReflections->settings().maxDistance == d) return;
+    if (!_rtReflections || _rtReflections->settings().maxDistance == d)
+    {
+        return;
+    }
     _rtReflections->setMaxDistance(d);
-    if (_temporalReflectionAccumulator) _temporalReflectionAccumulator->invalidateHistory();
+    if (_temporalReflectionAccumulator)
+    {
+        _temporalReflectionAccumulator->invalidateHistory();
+    }
 }
 
 float DeferredLayer::rtReflectionMaxDistance() const
@@ -771,9 +914,15 @@ float DeferredLayer::rtReflectionMaxDistance() const
 
 void DeferredLayer::setRTReflectionRoughnessSpread(float s)
 {
-    if (!_rtReflections || _rtReflections->settings().roughnessSpread == s) return;
+    if (!_rtReflections || _rtReflections->settings().roughnessSpread == s)
+    {
+        return;
+    }
     _rtReflections->setRoughnessSpread(s);
-    if (_temporalReflectionAccumulator) _temporalReflectionAccumulator->invalidateHistory();
+    if (_temporalReflectionAccumulator)
+    {
+        _temporalReflectionAccumulator->invalidateHistory();
+    }
 }
 
 float DeferredLayer::rtReflectionRoughnessSpread() const
@@ -783,9 +932,15 @@ float DeferredLayer::rtReflectionRoughnessSpread() const
 
 void DeferredLayer::setRTReflectionShadowSamples(uint32_t samples)
 {
-    if (!_rtReflections || _rtReflections->settings().shadowSamples == samples) return;
+    if (!_rtReflections || _rtReflections->settings().shadowSamples == samples)
+    {
+        return;
+    }
     _rtReflections->setShadowSamples(samples);
-    if (_temporalReflectionAccumulator) _temporalReflectionAccumulator->invalidateHistory();
+    if (_temporalReflectionAccumulator)
+    {
+        _temporalReflectionAccumulator->invalidateHistory();
+    }
 }
 
 uint32_t DeferredLayer::rtReflectionShadowSamples() const
@@ -795,9 +950,15 @@ uint32_t DeferredLayer::rtReflectionShadowSamples() const
 
 void DeferredLayer::setRTReflectionQuality(RTReflectionQuality quality)
 {
-    if (!_rtReflections || _rtReflections->settings().quality == quality) return;
+    if (!_rtReflections || _rtReflections->settings().quality == quality)
+    {
+        return;
+    }
     _rtReflections->setQuality(quality);
-    if (_temporalReflectionAccumulator) _temporalReflectionAccumulator->invalidateHistory();
+    if (_temporalReflectionAccumulator)
+    {
+        _temporalReflectionAccumulator->invalidateHistory();
+    }
 }
 
 RTReflectionQuality DeferredLayer::rtReflectionQuality() const
@@ -807,9 +968,15 @@ RTReflectionQuality DeferredLayer::rtReflectionQuality() const
 
 void DeferredLayer::setRTReflectionUseBlueNoise(bool use)
 {
-    if (!_rtReflections || _rtReflections->settings().useBlueNoise == use) return;
+    if (!_rtReflections || _rtReflections->settings().useBlueNoise == use)
+    {
+        return;
+    }
     _rtReflections->setUseBlueNoise(use);
-    if (_temporalReflectionAccumulator) _temporalReflectionAccumulator->invalidateHistory();
+    if (_temporalReflectionAccumulator)
+    {
+        _temporalReflectionAccumulator->invalidateHistory();
+    }
 }
 
 bool DeferredLayer::rtReflectionUseBlueNoise() const
@@ -824,25 +991,49 @@ void DeferredLayer::setIndirectLightingMode(IndirectLightingMode mode)
         _indirectLightingMode = IndirectLightingMode::RTAO;
         return;
     }
-    if (_indirectLightingMode == mode) return;
+    if (_indirectLightingMode == mode)
+    {
+        return;
+    }
     _indirectLightingMode = mode;
-    if (_temporalAccumulator) _temporalAccumulator->invalidateHistory();
-    if (_temporalGIAccumulator) _temporalGIAccumulator->invalidateHistory();
+    if (_temporalAccumulator)
+    {
+        _temporalAccumulator->invalidateHistory();
+    }
+    if (_temporalGIAccumulator)
+    {
+        _temporalGIAccumulator->invalidateHistory();
+    }
 }
 
 void DeferredLayer::setIndirectLightingEnabled(bool enabled)
 {
-    if (_indirectLightingEnabled == enabled) return;
+    if (_indirectLightingEnabled == enabled)
+    {
+        return;
+    }
     _indirectLightingEnabled = enabled;
-    if (_temporalAccumulator) _temporalAccumulator->invalidateHistory();
-    if (_temporalGIAccumulator) _temporalGIAccumulator->invalidateHistory();
+    if (_temporalAccumulator)
+    {
+        _temporalAccumulator->invalidateHistory();
+    }
+    if (_temporalGIAccumulator)
+    {
+        _temporalGIAccumulator->invalidateHistory();
+    }
 }
 
 void DeferredLayer::setRTGIEnabled(bool enabled)
 {
-    if (!_rtGlobalIllumination || _rtGlobalIllumination->settings().enabled == enabled) return;
+    if (!_rtGlobalIllumination || _rtGlobalIllumination->settings().enabled == enabled)
+    {
+        return;
+    }
     _rtGlobalIllumination->setEnabled(enabled);
-    if (_temporalGIAccumulator) _temporalGIAccumulator->invalidateHistory();
+    if (_temporalGIAccumulator)
+    {
+        _temporalGIAccumulator->invalidateHistory();
+    }
 }
 
 bool DeferredLayer::rtGIEnabled() const
@@ -852,7 +1043,10 @@ bool DeferredLayer::rtGIEnabled() const
 
 void DeferredLayer::setRTGISampleCount(uint32_t count)
 {
-    if (_rtGlobalIllumination) _rtGlobalIllumination->setSampleCount(count);
+    if (_rtGlobalIllumination)
+    {
+        _rtGlobalIllumination->setSampleCount(count);
+    }
 }
 
 uint32_t DeferredLayer::rtGISampleCount() const
@@ -862,7 +1056,10 @@ uint32_t DeferredLayer::rtGISampleCount() const
 
 void DeferredLayer::setRTGIBounceCount(uint32_t count)
 {
-    if (_rtGlobalIllumination) _rtGlobalIllumination->setBounceCount(count);
+    if (_rtGlobalIllumination)
+    {
+        _rtGlobalIllumination->setBounceCount(count);
+    }
 }
 
 uint32_t DeferredLayer::rtGIBounceCount() const
@@ -872,7 +1069,10 @@ uint32_t DeferredLayer::rtGIBounceCount() const
 
 void DeferredLayer::setRTGIRayBias(float bias)
 {
-    if (_rtGlobalIllumination) _rtGlobalIllumination->setRayBias(bias);
+    if (_rtGlobalIllumination)
+    {
+        _rtGlobalIllumination->setRayBias(bias);
+    }
 }
 
 float DeferredLayer::rtGIRayBias() const
@@ -882,7 +1082,10 @@ float DeferredLayer::rtGIRayBias() const
 
 void DeferredLayer::setRTGIMaxDistance(float distance)
 {
-    if (_rtGlobalIllumination) _rtGlobalIllumination->setMaxDistance(distance);
+    if (_rtGlobalIllumination)
+    {
+        _rtGlobalIllumination->setMaxDistance(distance);
+    }
 }
 
 float DeferredLayer::rtGIMaxDistance() const
@@ -892,7 +1095,10 @@ float DeferredLayer::rtGIMaxDistance() const
 
 void DeferredLayer::setRTGIQuality(RTGIQuality quality)
 {
-    if (_rtGlobalIllumination) _rtGlobalIllumination->setQuality(quality);
+    if (_rtGlobalIllumination)
+    {
+        _rtGlobalIllumination->setQuality(quality);
+    }
 }
 
 RTGIQuality DeferredLayer::rtGIQuality() const
@@ -902,7 +1108,10 @@ RTGIQuality DeferredLayer::rtGIQuality() const
 
 void DeferredLayer::setRTGIShadowSamples(uint32_t samples)
 {
-    if (_rtGlobalIllumination) _rtGlobalIllumination->setShadowSamples(samples);
+    if (_rtGlobalIllumination)
+    {
+        _rtGlobalIllumination->setShadowSamples(samples);
+    }
 }
 
 uint32_t DeferredLayer::rtGIShadowSamples() const
@@ -912,7 +1121,10 @@ uint32_t DeferredLayer::rtGIShadowSamples() const
 
 void DeferredLayer::setRTGIUseBlueNoise(bool use)
 {
-    if (_rtGlobalIllumination) _rtGlobalIllumination->setUseBlueNoise(use);
+    if (_rtGlobalIllumination)
+    {
+        _rtGlobalIllumination->setUseBlueNoise(use);
+    }
 }
 
 bool DeferredLayer::rtGIUseBlueNoise() const
@@ -930,8 +1142,7 @@ void DeferredLayer::createGBufferPipeline()
     layoutFactory.addPushConstantRange(
         0,
         sizeof(CompositePushConstants),
-        VK_SHADER_STAGE_FRAGMENT_BIT
-    );
+        VK_SHADER_STAGE_FRAGMENT_BIT);
     _gbufferPipelineLayout = layoutFactory.build("DeferredLayer::GBufferPipelineLayout");
 
     // Create G-buffer pipeline
@@ -952,7 +1163,6 @@ void DeferredLayer::createGBufferPipeline()
         plFactory.enableDepthtest(true, VK_COMPARE_OP_LESS);
     }
 
-
     plFactory.inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
     plFactory.setCullMode(VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_COUNTER_CLOCKWISE);
     plFactory.disableMultisample();
@@ -963,30 +1173,30 @@ void DeferredLayer::createGBufferPipeline()
 
     _gbufferPipeline = plFactory.build(_gbufferPipelineLayout, "DeferredLayer::GBufferPipeline");
 
-    _engine->cleanupManager().push([&](VkDevice dev) {
-        vkDestroyPipeline(dev, _gbufferPipeline, nullptr);
-        _gbufferPipeline = VK_NULL_HANDLE;
-        vkDestroyPipelineLayout(dev, _gbufferPipelineLayout, nullptr);
-        _gbufferPipelineLayout = VK_NULL_HANDLE;
-    });
+    _engine->cleanupManager().push([&](VkDevice dev)
+                                   {
+                                       vkDestroyPipeline(dev, _gbufferPipeline, nullptr);
+                                       _gbufferPipeline = VK_NULL_HANDLE;
+                                       vkDestroyPipelineLayout(dev, _gbufferPipelineLayout, nullptr);
+                                       _gbufferPipelineLayout = VK_NULL_HANDLE;
+                                   });
 }
 
 void DeferredLayer::createCompositePipeline()
 {
     // G-buffer inputs retain their original indices; binding 7 is the baked RGB multiplier.
     vulkan::factory::DescriptorSetLayout dsLayoutFactory;
-    dsLayoutFactory.addBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);  // g_Albedo
-    dsLayoutFactory.addBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);  // g_Normal
-    dsLayoutFactory.addBinding(2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);  // g_Material
-    dsLayoutFactory.addBinding(3, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);  // g_FresnelFlags
-    dsLayoutFactory.addBinding(4, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);  // g_SheenColor
-    dsLayoutFactory.addBinding(5, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);  // g_InputImage
-    dsLayoutFactory.addBinding(6, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);  // g_Depth
-    dsLayoutFactory.addBinding(7, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);  // g_BakedLightmap
+    dsLayoutFactory.addBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER); // g_Albedo
+    dsLayoutFactory.addBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER); // g_Normal
+    dsLayoutFactory.addBinding(2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER); // g_Material
+    dsLayoutFactory.addBinding(3, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER); // g_FresnelFlags
+    dsLayoutFactory.addBinding(4, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER); // g_SheenColor
+    dsLayoutFactory.addBinding(5, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER); // g_InputImage
+    dsLayoutFactory.addBinding(6, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER); // g_Depth
+    dsLayoutFactory.addBinding(7, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER); // g_BakedLightmap
     _compositeGBufferDSLayout = dsLayoutFactory.build(
         _engine->device().handle(),
-        VK_SHADER_STAGE_FRAGMENT_BIT
-    );
+        VK_SHADER_STAGE_FRAGMENT_BIT);
 
     // Create pipeline layout
     vulkan::factory::PipelineLayout layoutFactory(_engine);
@@ -998,8 +1208,7 @@ void DeferredLayer::createCompositePipeline()
     layoutFactory.addPushConstantRange(
         0,
         sizeof(CompositePushConstants),
-        VK_SHADER_STAGE_FRAGMENT_BIT
-    );
+        VK_SHADER_STAGE_FRAGMENT_BIT);
     _compositePipelineLayout = layoutFactory.build("DeferredLayer::CompositePipelineLayout");
 
     // Create composite pipeline
@@ -1020,12 +1229,13 @@ void DeferredLayer::createCompositePipeline()
 
     _compositePipeline = plFactory.build(_compositePipelineLayout, "DeferredLayer::CompositePipeline");
 
-    _engine->cleanupManager().push([&](VkDevice dev) {
-        vkDestroyPipeline(dev, _compositePipeline, nullptr);
-        vkDestroyPipelineLayout(dev, _compositePipelineLayout, nullptr);
-        vkDestroyDescriptorSetLayout(dev, _compositeGBufferDSLayout, nullptr);
-        vkDestroyDescriptorSetLayout(dev, _compositeGBufferRTDSLayout, nullptr);
-    });
+    _engine->cleanupManager().push([&](VkDevice dev)
+                                   {
+                                       vkDestroyPipeline(dev, _compositePipeline, nullptr);
+                                       vkDestroyPipelineLayout(dev, _compositePipelineLayout, nullptr);
+                                       vkDestroyDescriptorSetLayout(dev, _compositeGBufferDSLayout, nullptr);
+                                       vkDestroyDescriptorSetLayout(dev, _compositeGBufferRTDSLayout, nullptr);
+                                   });
 }
 
 void DeferredLayer::createCompositePipelineRT()
@@ -1036,20 +1246,19 @@ void DeferredLayer::createCompositePipelineRT()
     }
 
     vulkan::factory::DescriptorSetLayout dsLayoutFactory;
-    dsLayoutFactory.addBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);  // g_Albedo
-    dsLayoutFactory.addBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);  // g_Normal
-    dsLayoutFactory.addBinding(2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);  // g_Material
-    dsLayoutFactory.addBinding(3, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);  // g_FresnelFlags
-    dsLayoutFactory.addBinding(4, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);  // g_SheenColor
-    dsLayoutFactory.addBinding(5, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);  // g_InputImage
-    dsLayoutFactory.addBinding(6, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);  // g_Depth
-    dsLayoutFactory.addBinding(7, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);  // g_AO
-    dsLayoutFactory.addBinding(8, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);  // g_RTReflection
-    dsLayoutFactory.addBinding(9, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);  // g_BakedLightmap
+    dsLayoutFactory.addBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER); // g_Albedo
+    dsLayoutFactory.addBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER); // g_Normal
+    dsLayoutFactory.addBinding(2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER); // g_Material
+    dsLayoutFactory.addBinding(3, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER); // g_FresnelFlags
+    dsLayoutFactory.addBinding(4, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER); // g_SheenColor
+    dsLayoutFactory.addBinding(5, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER); // g_InputImage
+    dsLayoutFactory.addBinding(6, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER); // g_Depth
+    dsLayoutFactory.addBinding(7, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER); // g_AO
+    dsLayoutFactory.addBinding(8, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER); // g_RTReflection
+    dsLayoutFactory.addBinding(9, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER); // g_BakedLightmap
     _compositeGBufferRTDSLayout = dsLayoutFactory.build(
         _engine->device().handle(),
-        VK_SHADER_STAGE_FRAGMENT_BIT
-    );
+        VK_SHADER_STAGE_FRAGMENT_BIT);
 
     // Create pipeline layout with RT data binding
     vulkan::factory::PipelineLayout layoutFactory(_engine);
@@ -1063,8 +1272,7 @@ void DeferredLayer::createCompositePipelineRT()
     layoutFactory.addPushConstantRange(
         0,
         sizeof(CompositePushConstants),
-        VK_SHADER_STAGE_FRAGMENT_BIT
-    );
+        VK_SHADER_STAGE_FRAGMENT_BIT);
     _compositePipelineRTLayout = layoutFactory.build("DeferredLayer::CompositeRTPipelineLayout");
 
     // Create composite RT pipeline
@@ -1085,12 +1293,13 @@ void DeferredLayer::createCompositePipelineRT()
 
     _compositePipelineRT = plFactory.build(_compositePipelineRTLayout, "DeferredLayer::CompositeRTPipeline");
 
-    _engine->cleanupManager().push([&](VkDevice dev) {
-        vkDestroyPipeline(dev, _compositePipelineRT, nullptr);
-        _compositePipelineRT = VK_NULL_HANDLE;
-        vkDestroyPipelineLayout(dev, _compositePipelineRTLayout, nullptr);
-        _compositePipelineRTLayout = VK_NULL_HANDLE;
-    });
+    _engine->cleanupManager().push([&](VkDevice dev)
+                                   {
+                                       vkDestroyPipeline(dev, _compositePipelineRT, nullptr);
+                                       _compositePipelineRT = VK_NULL_HANDLE;
+                                       vkDestroyPipelineLayout(dev, _compositePipelineRTLayout, nullptr);
+                                       _compositePipelineRTLayout = VK_NULL_HANDLE;
+                                   });
 }
 
 void DeferredLayer::createDebugPipeline()
@@ -1099,16 +1308,14 @@ void DeferredLayer::createDebugPipeline()
     dsLayoutFactory.addBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
     _debugDSLayout = dsLayoutFactory.build(
         _engine->device().handle(),
-        VK_SHADER_STAGE_FRAGMENT_BIT
-    );
+        VK_SHADER_STAGE_FRAGMENT_BIT);
 
     vulkan::factory::PipelineLayout layoutFactory(_engine);
     layoutFactory.addDescriptorSetLayout(_debugDSLayout);
     layoutFactory.addPushConstantRange(
         0,
         sizeof(DebugPushConstants),
-        VK_SHADER_STAGE_FRAGMENT_BIT
-    );
+        VK_SHADER_STAGE_FRAGMENT_BIT);
     _debugPipelineLayout = layoutFactory.build("DeferredLayer::DebugPipelineLayout");
 
     vulkan::factory::GraphicsPipeline plFactory(_engine);
@@ -1127,24 +1334,24 @@ void DeferredLayer::createDebugPipeline()
 
     _debugPipeline = plFactory.build(_debugPipelineLayout, "DeferredLayer::DebugPipeline");
 
-    _engine->cleanupManager().push([&](VkDevice dev) {
-        vkDestroyPipeline(dev, _debugPipeline, nullptr);
-        vkDestroyPipelineLayout(dev, _debugPipelineLayout, nullptr);
-        _debugPipelineLayout = VK_NULL_HANDLE;
-        vkDestroyDescriptorSetLayout(dev, _debugDSLayout, nullptr);
-        _debugDSLayout = VK_NULL_HANDLE;
-    });
+    _engine->cleanupManager().push([&](VkDevice dev)
+                                   {
+                                       vkDestroyPipeline(dev, _debugPipeline, nullptr);
+                                       vkDestroyPipelineLayout(dev, _debugPipelineLayout, nullptr);
+                                       _debugPipelineLayout = VK_NULL_HANDLE;
+                                       vkDestroyDescriptorSetLayout(dev, _debugDSLayout, nullptr);
+                                       _debugDSLayout = VK_NULL_HANDLE;
+                                   });
 }
 
 void DeferredLayer::renderGBufferPass(
     VkCommandBuffer cmd,
     uint32_t currentFrame,
-    GBufferManager * gbuffer,
+    GBufferManager* gbuffer,
     vulkan::FrameResources& frameResources,
     const glm::mat4& viewMatrix,
     const glm::mat4& projMatrix,
-    const glm::vec3& cameraWorldPos
-)
+    const glm::vec3& cameraWorldPos)
 {
     gbuffer->beginRender(cmd, _isTransparent);
 
@@ -1154,9 +1361,10 @@ void DeferredLayer::renderGBufferPass(
 
     auto sceneDS = _frameDataBinding->newDescriptorSet(frameResources, viewMatrix, projMatrix);
 
-    auto dsFunction = [&](MaterialBase* mat, const glm::mat4& transform, uint32_t /*submesh*/) {
+    auto dsFunction = [&](MaterialBase* mat, const glm::mat4& transform, uint32_t /*submesh*/)
+    {
         auto objectDS = _objectDataBinding->newDescriptorSet(frameResources, mat, transform);
-        return std::vector<VkDescriptorSet> { sceneDS, objectDS };
+        return std::vector<VkDescriptorSet>{sceneDS, objectDS};
     };
 
     if (_layerType == LayerType::Opaque)
@@ -1166,8 +1374,7 @@ void DeferredLayer::renderGBufferPass(
             cmd,
             _gbufferPipelineLayout,
             dsFunction,
-            cameraWorldPos
-        );
+            cameraWorldPos);
     }
     else
     {
@@ -1176,15 +1383,13 @@ void DeferredLayer::renderGBufferPass(
             cmd,
             _gbufferPipelineLayout,
             dsFunction,
-            cameraWorldPos
-        );
+            cameraWorldPos);
         _renderQueue->render(
             RenderQueueType::SolidTransparent,
             cmd,
             _gbufferPipelineLayout,
             dsFunction,
-            cameraWorldPos
-        );
+            cameraWorldPos);
     }
 
     vulkan::cmdEndRendering(cmd);
@@ -1200,8 +1405,7 @@ void DeferredLayer::renderCompositePass(
     vulkan::FrameResources& frameResources,
     const glm::mat4& viewMatrix,
     const glm::mat4& projMatrix,
-    const vulkan::Image* reflectionImage
-)
+    const vulkan::Image* reflectionImage)
 {
     auto* gbuffer = _gbuffers[_engine->currentFrameResourcesIndex()].get();
 
@@ -1209,7 +1413,7 @@ void DeferredLayer::renderCompositePass(
     gbuffer->transitionToShaderRead(cmd);
 
     // Clear output image and begin rendering
-    VkClearColorValue clearValue{ { 0.0f, 0.0f, 0.0f, 1.0f } };
+    VkClearColorValue clearValue{{0.0f, 0.0f, 0.0f, 1.0f}};
     vulkan::macros::cmdClearImageAndBeginRendering(cmd, outputImage, clearValue, VK_IMAGE_LAYOUT_UNDEFINED);
     vulkan::macros::cmdSetDefaultViewportAndScissor(cmd, _extent);
 
@@ -1229,28 +1433,28 @@ void DeferredLayer::renderCompositePass(
     auto gbufferDS = frameResources.newDescriptorSet(activeGBufferLayout);
     gbufferDS->beginUpdate();
     gbufferDS->addImage(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-        gbuffer->image(0).get(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _gbufferSampler);
+                        gbuffer->image(0).get(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _gbufferSampler);
     gbufferDS->addImage(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-        gbuffer->image(1).get(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _gbufferSampler);
+                        gbuffer->image(1).get(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _gbufferSampler);
     gbufferDS->addImage(2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-        gbuffer->image(2).get(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _gbufferSampler);
+                        gbuffer->image(2).get(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _gbufferSampler);
     gbufferDS->addImage(3, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-        gbuffer->image(3).get(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _gbufferSampler);
+                        gbuffer->image(3).get(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _gbufferSampler);
     gbufferDS->addImage(4, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-        gbuffer->image(4).get(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _gbufferSampler);
+                        gbuffer->image(4).get(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _gbufferSampler);
     gbufferDS->addImage(5, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-        inputImage, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _gbufferSampler);
+                        inputImage, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _gbufferSampler);
     gbufferDS->addImage(6, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-        gbuffer->depthImage().get(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _gbufferSampler);
+                        gbuffer->depthImage().get(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _gbufferSampler);
     if (!useRT)
     {
         gbufferDS->addImage(7, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-            gbuffer->image(5).get(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _gbufferSampler);
+                            gbuffer->image(5).get(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _gbufferSampler);
     }
     bool skipIndirectPasses = !_indirectLightingEnabled ||
-        (_isTransparent && _skipIndirectLightingForTransparent) ||
-        (_indirectLightingMode == IndirectLightingMode::RTGI &&
-            (!_rtGlobalIllumination || !_rtGlobalIllumination->rtSupported() || !rtGIEnabled()));
+                              (_isTransparent && _skipIndirectLightingForTransparent) ||
+                              (_indirectLightingMode == IndirectLightingMode::RTGI &&
+                               (!_rtGlobalIllumination || !_rtGlobalIllumination->rtSupported() || !rtGIEnabled()));
 
     // Determine whether GI mode is actually active this frame
     bool rtgiActive = !skipIndirectPasses &&
@@ -1277,13 +1481,13 @@ void DeferredLayer::renderCompositePass(
         }
 
         gbufferDS->addImage(7, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-            indirectImg, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _gbufferSampler);
+                            indirectImg, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _gbufferSampler);
 
         const vulkan::Image* reflImg = reflectionImage ? reflectionImage : _rtReflectionFallbackImage.get();
         gbufferDS->addImage(8, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-            reflImg, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _gbufferSampler);
+                            reflImg, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _gbufferSampler);
         gbufferDS->addImage(9, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-            gbuffer->image(5).get(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _gbufferSampler);
+                            gbuffer->image(5).get(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _gbufferSampler);
     }
     gbufferDS->endUpdate();
 
@@ -1291,7 +1495,6 @@ void DeferredLayer::renderCompositePass(
     auto sceneDS = _fragmentFrameDataBinding->newDescriptorSet(frameResources, viewMatrix, projMatrix);
     auto envDS = _environmentDataBinding->newDescriptorSet(frameResources, _environment);
     auto lightDS = _lightDataBinding->newDescriptorSet(frameResources, _lights);
-
 
     // Push constants
     auto inverseViewProjection = glm::inverse(projMatrix * viewMatrix);
@@ -1311,19 +1514,18 @@ void DeferredLayer::renderCompositePass(
         VK_SHADER_STAGE_FRAGMENT_BIT,
         0,
         sizeof(CompositePushConstants),
-        &pc
-    );
+        &pc);
 
     // Bind descriptor sets
-    VkDescriptorSet gbufferDSPtr[] = { gbufferDS->descriptorSet() };
+    VkDescriptorSet gbufferDSPtr[] = {gbufferDS->descriptorSet()};
     vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
-        activeLayout, 0, 1, gbufferDSPtr, 0, nullptr);
+                            activeLayout, 0, 1, gbufferDSPtr, 0, nullptr);
     vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
-        activeLayout, 1, 1, &sceneDS, 0, nullptr);
+                            activeLayout, 1, 1, &sceneDS, 0, nullptr);
     vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
-        activeLayout, 2, 1, &envDS, 0, nullptr);
+                            activeLayout, 2, 1, &envDS, 0, nullptr);
     vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
-        activeLayout, 3, 1, &lightDS, 0, nullptr);
+                            activeLayout, 3, 1, &lightDS, 0, nullptr);
 
     if (useRT)
     {
@@ -1331,16 +1533,14 @@ void DeferredLayer::renderCompositePass(
         vkCmdBindDescriptorSets(
             cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
             activeLayout, 4, 1, &rtDS,
-            0, nullptr
-        );
+            0, nullptr);
 
         const auto& objectInstances = frameResources.rayTracingScene->objectInstances();
         auto matDS = _rtMaterialDataBinding->newDescriptorSet(frameResources, objectInstances);
         vkCmdBindDescriptorSets(
             cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
             activeLayout, 5, 1, &matDS,
-            0, nullptr
-        );
+            0, nullptr);
     }
 
     // Draw fullscreen quad (6 vertices, 2 triangles)
@@ -1355,12 +1555,11 @@ void DeferredLayer::renderDebugPass(
     const vulkan::Image* sourceImage,
     const vulkan::Image* outputImage,
     vulkan::FrameResources& frameResources,
-    uint32_t channelMode
-)
+    uint32_t channelMode)
 {
 
     // 3. Clear output image and begin rendering
-    VkClearColorValue clearValue{ { 0.0f, 0.0f, 1.0f, 1.0f } };
+    VkClearColorValue clearValue{{0.0f, 0.0f, 1.0f, 1.0f}};
     vulkan::macros::cmdClearImageAndBeginRendering(cmd, outputImage, clearValue, VK_IMAGE_LAYOUT_UNDEFINED);
     vulkan::macros::cmdSetDefaultViewportAndScissor(cmd, _extent);
 
@@ -1371,22 +1570,21 @@ void DeferredLayer::renderDebugPass(
     auto ds = frameResources.newDescriptorSet(_debugDSLayout);
     ds->beginUpdate();
     ds->addImage(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-        sourceImage, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _gbufferSampler);
+                 sourceImage, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _gbufferSampler);
     ds->endUpdate();
 
-    VkDescriptorSet dsPtr[] = { ds->descriptorSet() };
+    VkDescriptorSet dsPtr[] = {ds->descriptorSet()};
     vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
-        _debugPipelineLayout, 0, 1, dsPtr, 0, nullptr);
+                            _debugPipelineLayout, 0, 1, dsPtr, 0, nullptr);
 
     // Push constants for channel mode
-    const DebugPushConstants pc { channelMode };
+    const DebugPushConstants pc{channelMode};
     vkCmdPushConstants(
         cmd, _debugPipelineLayout,
         VK_SHADER_STAGE_FRAGMENT_BIT,
         0,
         sizeof(DebugPushConstants),
-        &pc
-    );
+        &pc);
 
     // 6. Draw fullscreen quad
     vkCmdDraw(cmd, 6, 1, 0, 0);

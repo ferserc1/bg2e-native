@@ -32,12 +32,12 @@ UvTemporalAccumulator::UvTemporalAccumulator(Engine* engine, VkExtent2D extent)
             engine, "UV bake history " + std::to_string(i),
             VK_FORMAT_R32G32B32A32_SFLOAT, extent,
             VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT |
-            VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT));
+                VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT));
         _dilated[i].reset(vulkan::Image::createAllocatedImage(
             engine, "UV bake dilated result " + std::to_string(i),
             VK_FORMAT_R32G32B32A32_SFLOAT, extent,
             VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT |
-            VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT));
+                VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT));
     }
 
     vulkan::factory::Sampler samplerFactory(engine);
@@ -80,13 +80,34 @@ UvTemporalAccumulator::UvTemporalAccumulator(Engine* engine, VkExtent2D extent)
 UvTemporalAccumulator::~UvTemporalAccumulator()
 {
     const VkDevice device = _engine->device().handle();
-    if (_pipeline) vkDestroyPipeline(device, _pipeline, nullptr);
-    if (_pipelineLayout) vkDestroyPipelineLayout(device, _pipelineLayout, nullptr);
-    if (_descriptorSetLayout) vkDestroyDescriptorSetLayout(device, _descriptorSetLayout, nullptr);
-    if (_dilationPipeline) vkDestroyPipeline(device, _dilationPipeline, nullptr);
-    if (_dilationPipelineLayout) vkDestroyPipelineLayout(device, _dilationPipelineLayout, nullptr);
-    if (_dilationDescriptorSetLayout) vkDestroyDescriptorSetLayout(device, _dilationDescriptorSetLayout, nullptr);
-    if (_sampler) vkDestroySampler(device, _sampler, nullptr);
+    if (_pipeline)
+    {
+        vkDestroyPipeline(device, _pipeline, nullptr);
+    }
+    if (_pipelineLayout)
+    {
+        vkDestroyPipelineLayout(device, _pipelineLayout, nullptr);
+    }
+    if (_descriptorSetLayout)
+    {
+        vkDestroyDescriptorSetLayout(device, _descriptorSetLayout, nullptr);
+    }
+    if (_dilationPipeline)
+    {
+        vkDestroyPipeline(device, _dilationPipeline, nullptr);
+    }
+    if (_dilationPipelineLayout)
+    {
+        vkDestroyPipelineLayout(device, _dilationPipelineLayout, nullptr);
+    }
+    if (_dilationDescriptorSetLayout)
+    {
+        vkDestroyDescriptorSetLayout(device, _dilationDescriptorSetLayout, nullptr);
+    }
+    if (_sampler)
+    {
+        vkDestroySampler(device, _sampler, nullptr);
+    }
 }
 
 void UvTemporalAccumulator::record(VkCommandBuffer cmd,
@@ -109,33 +130,33 @@ void UvTemporalAccumulator::record(VkCommandBuffer cmd,
     const uint32_t next = _hasResult ? 1u - _active : 0u;
     auto& output = *_history[next];
     vulkan::Image::cmdTransitionImage(cmd, output.handle(),
-        _initialized[next] ? VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL : VK_IMAGE_LAYOUT_UNDEFINED,
-        VK_IMAGE_LAYOUT_GENERAL);
+                                      _initialized[next] ? VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL : VK_IMAGE_LAYOUT_UNDEFINED,
+                                      VK_IMAGE_LAYOUT_GENERAL);
 
     std::unique_ptr<vulkan::DescriptorSet> set(descriptors.allocate(_descriptorSetLayout));
     set->beginUpdate();
     set->addImage(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-        &sample, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _sampler);
+                  &sample, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _sampler);
     // The previous image is not read when previousSamples == 0, but a valid
     // image descriptor is still required. The freshly written output has a
     // valid view and remains untouched by the previous-history branch.
     set->addImage(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-        previousSamples ? _history[_active].get() : &sample,
-        VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _sampler);
+                  previousSamples ? _history[_active].get() : &sample,
+                  VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _sampler);
     set->addImage(2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-        uvSurface.image(3).get(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _sampler);
+                  uvSurface.image(3).get(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _sampler);
     set->addImage(3, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, &output, VK_IMAGE_LAYOUT_GENERAL);
     set->endUpdate();
 
     const VkDescriptorSet rawSet = set->descriptorSet();
     vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, _pipeline);
     vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_COMPUTE,
-        _pipelineLayout, 0, 1, &rawSet, 0, nullptr);
+                            _pipelineLayout, 0, 1, &rawSet, 0, nullptr);
     vkCmdPushConstants(cmd, _pipelineLayout, VK_SHADER_STAGE_COMPUTE_BIT,
-        0, sizeof(previousSamples), &previousSamples);
+                       0, sizeof(previousSamples), &previousSamples);
     vkCmdDispatch(cmd, (_extent.width + 7) / 8, (_extent.height + 7) / 8, 1);
     vulkan::Image::cmdTransitionImage(cmd, output.handle(),
-        VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+                                      VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
     _initialized[next] = true;
 
@@ -147,26 +168,26 @@ void UvTemporalAccumulator::record(VkCommandBuffer cmd,
         const uint32_t targetIndex = pass % 2;
         auto& dilationTarget = *_dilated[targetIndex];
         vulkan::Image::cmdTransitionImage(cmd, dilationTarget.handle(),
-            _dilatedInitialized[targetIndex] ? VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
-                                              : VK_IMAGE_LAYOUT_UNDEFINED,
-            VK_IMAGE_LAYOUT_GENERAL);
+                                          _dilatedInitialized[targetIndex] ? VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+                                                                           : VK_IMAGE_LAYOUT_UNDEFINED,
+                                          VK_IMAGE_LAYOUT_GENERAL);
 
         std::unique_ptr<vulkan::DescriptorSet> dilationSet(
             descriptors.allocate(_dilationDescriptorSetLayout));
         dilationSet->beginUpdate();
         dilationSet->addImage(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-            dilationSource, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _sampler);
+                              dilationSource, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _sampler);
         dilationSet->addImage(1, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
-            &dilationTarget, VK_IMAGE_LAYOUT_GENERAL);
+                              &dilationTarget, VK_IMAGE_LAYOUT_GENERAL);
         dilationSet->endUpdate();
 
         const VkDescriptorSet rawDilationSet = dilationSet->descriptorSet();
         vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, _dilationPipeline);
         vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_COMPUTE,
-            _dilationPipelineLayout, 0, 1, &rawDilationSet, 0, nullptr);
+                                _dilationPipelineLayout, 0, 1, &rawDilationSet, 0, nullptr);
         vkCmdDispatch(cmd, (_extent.width + 7) / 8, (_extent.height + 7) / 8, 1);
         vulkan::Image::cmdTransitionImage(cmd, dilationTarget.handle(),
-            VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+                                          VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
         _dilatedInitialized[targetIndex] = true;
         dilationSource = &dilationTarget;
@@ -186,7 +207,10 @@ void UvTemporalAccumulator::reset()
 
 std::shared_ptr<vulkan::Image> UvTemporalAccumulator::image() const
 {
-    if (!_hasDilatedResult) throw std::logic_error("UvTemporalAccumulator: no result is available");
+    if (!_hasDilatedResult)
+    {
+        throw std::logic_error("UvTemporalAccumulator: no result is available");
+    }
     return _dilated[_dilatedActive];
 }
 
@@ -207,18 +231,19 @@ LightmapPixels UvTemporalAccumulator::readPixels(LightmapPixelFormat format, flo
         _engine, byteCount, VK_BUFFER_USAGE_TRANSFER_DST_BIT,
         VMA_MEMORY_USAGE_GPU_TO_CPU, "UV bake RGB readback"));
 
-    _engine->command().immediateSubmit([&](VkCommandBuffer cmd) {
-        vulkan::Image::cmdTransitionImage(cmd, resultImage->handle(),
-            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
-        VkBufferImageCopy copy{};
-        copy.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        copy.imageSubresource.layerCount = 1;
-        copy.imageExtent = {_extent.width, _extent.height, 1};
-        vkCmdCopyImageToBuffer(cmd, resultImage->handle(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-            staging->handle(), 1, &copy);
-        vulkan::Image::cmdTransitionImage(cmd, resultImage->handle(),
-            VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-    });
+    _engine->command().immediateSubmit([&](VkCommandBuffer cmd)
+                                       {
+                                           vulkan::Image::cmdTransitionImage(cmd, resultImage->handle(),
+                                                                             VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
+                                           VkBufferImageCopy copy{};
+                                           copy.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+                                           copy.imageSubresource.layerCount = 1;
+                                           copy.imageExtent = {_extent.width, _extent.height, 1};
+                                           vkCmdCopyImageToBuffer(cmd, resultImage->handle(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                                                                  staging->handle(), 1, &copy);
+                                           vulkan::Image::cmdTransitionImage(cmd, resultImage->handle(),
+                                                                             VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+                                       });
     VK_ASSERT(vmaInvalidateAllocation(_engine->allocator(), staging->allocation(), 0, VK_WHOLE_SIZE));
 
     LightmapPixels pixels;

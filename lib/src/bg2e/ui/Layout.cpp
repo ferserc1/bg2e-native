@@ -18,7 +18,7 @@
 
 #include <bg2e/ui/Layout.hpp>
 
-#include "imgui.h"
+#include <imgui.h>
 
 namespace bg2e {
 namespace ui {
@@ -31,7 +31,8 @@ void Layout::sameLine(int32_t xPos)
         auto winWidth = ImGui::GetWindowWidth();
         ImGui::SameLine(winWidth - static_cast<float>(xPos));
     }
-    else {
+    else
+    {
         ImGui::SameLine(static_cast<float>(xPos));
     }
 }
@@ -41,26 +42,26 @@ void Layout::spacing(int32_t spacing)
     ImGui::Dummy(ImVec2(0, static_cast<float>(spacing)));
 }
 
-uint32_t Layout::calcTextWidth(const std::string & title)
+uint32_t Layout::calcTextWidth(const std::string& title)
 {
     ImVec2 textSize = ImGui::CalcTextSize(title.c_str());
     return static_cast<uint32_t>(textSize.x);
 }
 
-uint32_t Layout::calcTextHeight(const std::string & title)
+uint32_t Layout::calcTextHeight(const std::string& title)
 {
     ImVec2 textSize = ImGui::CalcTextSize(title.c_str());
     return static_cast<uint32_t>(textSize.y);
 }
 
-uint32_t Layout::calcButtonWidth(const std::string & title)
+uint32_t Layout::calcButtonWidth(const std::string& title)
 {
     ImVec2 textSize = ImGui::CalcTextSize(title.c_str());
     ImVec2 padding = ImGui::GetStyle().FramePadding;
     return static_cast<uint32_t>(textSize.x + padding.x * 2.0f);
 }
 
-uint32_t Layout::calcButtonHeight(const std::string & title)
+uint32_t Layout::calcButtonHeight(const std::string& title)
 {
     ImVec2 textSize = ImGui::CalcTextSize(title.c_str());
     ImVec2 padding = ImGui::GetStyle().FramePadding;
@@ -94,7 +95,7 @@ float Layout::getContentRegionAvailHeight()
     return ImGui::GetContentRegionAvail().y;
 }
 
-void Layout::beginChild(const std::string & id, float width, float height, bool border)
+void Layout::beginChild(const std::string& id, float width, float height, bool border)
 {
     ImGui::BeginChild(id.c_str(), ImVec2(width, height), border);
 }

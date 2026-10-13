@@ -21,13 +21,13 @@
 
 namespace bg2e::scene {
 
-void FindCameraVisitor::findCameras(Node * node)
+void FindCameraVisitor::findCameras(Node* node)
 {
     cleanup();
     node->accept(this);
 }
 
-void FindCameraVisitor::visit(Node * node)
+void FindCameraVisitor::visit(Node* node)
 {
     auto camera = node->camera();
     if (camera)

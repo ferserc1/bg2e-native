@@ -31,22 +31,33 @@ class Engine;
 // frame belong to the objects using them; there is no central per-frame
 // descriptor allocation callback.
 class BG2E_API RenderLoopDelegate {
-public:
+  public:
     virtual ~RenderLoopDelegate() = default;
 
-    virtual void init(Engine* engine) { _engine = engine; }
+    virtual void init(Engine* engine)
+    {
+        _engine = engine;
+    }
 
-    virtual void initScene() {}
+    virtual void initScene()
+    {
+    }
 
-    virtual void resize(gpu::Size2D /* newExtent */) {}
+    virtual void resize(gpu::Size2D /* newExtent */)
+    {
+    }
 
-    virtual void update(const FrameContext& /* frameContext */) {}
+    virtual void update(const FrameContext& /* frameContext */)
+    {
+    }
 
     virtual void render(const FrameContext& frameContext) = 0;
 
-    virtual void cleanup() {}
+    virtual void cleanup()
+    {
+    }
 
-protected:
+  protected:
     Engine* _engine = nullptr;
 };
 

@@ -80,33 +80,33 @@ vec3 calcRadiancePoint(
     vec3 albedo,
     float sheenIntensity,
     vec3 sheenColor,
-    float ambientOcclussion
-) {
+    float ambientOcclussion)
+{
     // calculate per-light radiance
     vec3 L = normalize(light.position - fragPos);
     vec3 H = normalize(viewDir + L);
-    float attenuation    = calcAttenuation(light.position, fragPos);
-    vec3 radiance     = light.color.rgb * light.intensity * attenuation;
-    
+    float attenuation = calcAttenuation(light.position, fragPos);
+    vec3 radiance = light.color.rgb * light.intensity * attenuation;
+
     // cook-torrance brdf
     float NDF = distributionGGX(normal, H, roughness);
-    float G   = geometrySmith(normal, viewDir, L, roughness);
-    vec3 F    = fresnelSchlick(max(dot(H, viewDir), 0.0), F0);
-    
+    float G = geometrySmith(normal, viewDir, L, roughness);
+    vec3 F = fresnelSchlick(max(dot(H, viewDir), 0.0), F0);
+
     vec3 kS = F;
     vec3 kD = vec3(1.0) - kS;
     kD *= 1.0 - metallic;
-    
-    vec3 numerator    = NDF * G * F;
+
+    vec3 numerator = NDF * G * F;
     float denominator = 4.0 * max(dot(normal, viewDir), 0.0) * max(dot(normal, L), 0.0) + 0.0001;
-    vec3 specular     = numerator / denominator;
-        
+    vec3 specular = numerator / denominator;
+
     // add to outgoing radiance Lo
     float NdotL = max(dot(normal, L), 0.0);
     vec3 base = (kD * albedo / PI + specular) * radiance * NdotL;
-    
+
     vec3 sheen = calcSheen(normal, viewDir, sheenColor, sheenIntensity) * ambientOcclussion;
-    
+
     return base + sheen;
 }
 
@@ -142,16 +142,16 @@ vec3 calcRadianceSpot(LightData light, vec3 viewDir, vec3 fragPos, float metalli
 
     // cook-torrance brdf
     float NDF = distributionGGX(normal, H, roughness);
-    float G   = geometrySmith(normal, viewDir, L, roughness);
-    vec3 F    = fresnelSchlick(max(dot(H, viewDir), 0.0), F0);
+    float G = geometrySmith(normal, viewDir, L, roughness);
+    vec3 F = fresnelSchlick(max(dot(H, viewDir), 0.0), F0);
 
     vec3 kS = F;
     vec3 kD = vec3(1.0) - kS;
     kD *= 1.0 - metallic;
 
-    vec3 numerator    = NDF * G * F;
+    vec3 numerator = NDF * G * F;
     float denominator = 4.0 * max(dot(normal, viewDir), 0.0) * max(dot(normal, L), 0.0) + 0.0001;
-    vec3 specular     = numerator / denominator;
+    vec3 specular = numerator / denominator;
 
     // add to outgoing radiance Lo
     float NdotL = max(dot(normal, L), 0.0);
@@ -164,20 +164,20 @@ vec3 calcRadianceDirectional(LightData light, vec3 viewDir, vec3 fragPos, float 
 {
     vec3 L = normalize(-light.direction);
     vec3 H = normalize(viewDir + L);
-    vec3 radiance     = light.color.rgb * light.intensity;
+    vec3 radiance = light.color.rgb * light.intensity;
 
     // cook-torrance brdf
     float NDF = distributionGGX(normal, H, roughness);
-    float G   = geometrySmith(normal, viewDir, L, roughness);
-    vec3 F    = fresnelSchlick(max(dot(H, viewDir), 0.0), F0);
+    float G = geometrySmith(normal, viewDir, L, roughness);
+    vec3 F = fresnelSchlick(max(dot(H, viewDir), 0.0), F0);
 
     vec3 kS = F;
     vec3 kD = vec3(1.0) - kS;
     kD *= 1.0 - metallic;
 
-    vec3 numerator    = NDF * G * F;
+    vec3 numerator = NDF * G * F;
     float denominator = 4.0 * max(dot(normal, viewDir), 0.0) * max(dot(normal, L), 0.0) + 0.0001;
-    vec3 specular     = numerator / denominator;
+    vec3 specular = numerator / denominator;
 
     // add to outgoing radiance Lo
     float NdotL = max(dot(normal, L), 0.0);
@@ -197,8 +197,8 @@ vec3 calcRadiance(
     vec3 albedo,
     float sheenIntensity,
     vec3 sheenColor,
-    float ambientOcclussion
-) {
+    float ambientOcclussion)
+{
     if (light.type == LIGHT_TYPE_POINT)
     {
         return calcRadiancePoint(light, viewDir, fragPos, metallic, roughness, F0, normal, albedo, sheenIntensity, sheenColor, ambientOcclussion);
@@ -227,12 +227,12 @@ vec3 calcAmbientLight(
     sampler2D brdfLUT,
     float ambientOcclussion,
     float sheenIntensity,
-    vec3 sheenColor
-) {
+    vec3 sheenColor)
+{
     vec3 R = reflect(-viewDir, normal);
-    
+
     vec3 F = fresnelSchlickRoughness(max(dot(normal, viewDir), 0.0), F0, roughness);
-    
+
     vec3 Ks = F;
     vec3 Kd = 1.0 - Ks;
     Kd *= 1.0 - metallic;
@@ -247,12 +247,11 @@ vec3 calcAmbientLight(
     vec3 prefilteredColor = mix(prefilteredColor1, prefilteredColor2, fract(sampleRoughness));
     vec2 brdfUV = vec2(clamp(max(dot(normal, viewDir), 0.0), 0.01, 0.99), roughness);
     vec2 envBRDF = texture(brdfLUT, brdfUV).rg;
-    
+
     vec3 specular = prefilteredColor * (F * envBRDF.x + envBRDF.y);
-    
 
     vec3 base = (Kd * diffuse + specular) * ambientOcclussion;
     vec3 sheen = calcSheen(normal, viewDir, sheenColor, sheenIntensity) * ambientOcclussion;
-    
+
     return base + sheen;
 }

@@ -22,19 +22,19 @@
 
 namespace bg2e::scene {
 
-void ResizeViewportVisitor::resizeViewport(Node * sceneRoot, const math::Viewport& vp)
+void ResizeViewportVisitor::resizeViewport(Node* sceneRoot, const math::Viewport& vp)
 {
     _vp = vp;
     sceneRoot->accept(this);
 }
 
-void ResizeViewportVisitor::resizeViewport(Node *sceneRoot, const VkExtent2D &viewportExtent)
+void ResizeViewportVisitor::resizeViewport(Node* sceneRoot, const VkExtent2D& viewportExtent)
 {
     _vp = math::Viewport(viewportExtent.width, viewportExtent.height);
     sceneRoot->accept(this);
 }
-    
-void ResizeViewportVisitor::visit(Node * node)
+
+void ResizeViewportVisitor::visit(Node* node)
 {
     for (auto comp : node->orderedComponents())
     {

@@ -56,16 +56,25 @@ void Device::create(gpu::Instance* /*instance*/, gpu::PhysicalDevice* physicalDe
     _device = metalPhysDevice->metalDevice();
     _device->retain();
 
-    auto* gfxQueue      = _device->newCommandQueue();
-    auto* presentQueue  = _device->newCommandQueue();
+    auto* gfxQueue = _device->newCommandQueue();
+    auto* presentQueue = _device->newCommandQueue();
     auto* transferQueue = _device->newCommandQueue();
 
     if (!gfxQueue || !presentQueue || !transferQueue)
     {
         // These queues have not yet been transferred into the owned wrappers.
-        if (gfxQueue) gfxQueue->release();
-        if (presentQueue) presentQueue->release();
-        if (transferQueue) transferQueue->release();
+        if (gfxQueue)
+        {
+            gfxQueue->release();
+        }
+        if (presentQueue)
+        {
+            presentQueue->release();
+        }
+        if (transferQueue)
+        {
+            transferQueue->release();
+        }
         throw std::runtime_error("metal::Device::create: failed to create command queues");
     }
 
@@ -77,7 +86,7 @@ void Device::create(gpu::Instance* /*instance*/, gpu::PhysicalDevice* physicalDe
     }
 
     _graphicsQueue = metal::Queue(gfxQueue);
-    _presentQueue  = metal::Queue(presentQueue);
+    _presentQueue = metal::Queue(presentQueue);
     _transferQueue = metal::Queue(transferQueue);
 
     _graphicsQueue.setDevice(this);
@@ -92,9 +101,12 @@ void Device::create(gpu::Instance* /*instance*/, gpu::PhysicalDevice* physicalDe
 
 void Device::cleanup()
 {
-    if (_device) _submissions->drain({}, true);
+    if (_device)
+    {
+        _submissions->drain({}, true);
+    }
     _graphicsQueue = metal::Queue();
-    _presentQueue  = metal::Queue();
+    _presentQueue = metal::Queue();
     _transferQueue = metal::Queue();
 
     if (_device)
@@ -106,7 +118,10 @@ void Device::cleanup()
 
 void Device::waitIdle()
 {
-    if (_device) _submissions->drain();
+    if (_device)
+    {
+        _submissions->drain();
+    }
 }
 
 bool Device::isValid() const
@@ -114,9 +129,18 @@ bool Device::isValid() const
     return _device != nullptr;
 }
 
-const gpu::Queue& Device::graphicsQueue() const { return _graphicsQueue; }
-const gpu::Queue& Device::presentQueue()  const { return _presentQueue;  }
-const gpu::Queue& Device::transferQueue() const { return _transferQueue; }
+const gpu::Queue& Device::graphicsQueue() const
+{
+    return _graphicsQueue;
+}
+const gpu::Queue& Device::presentQueue() const
+{
+    return _presentQueue;
+}
+const gpu::Queue& Device::transferQueue() const
+{
+    return _transferQueue;
+}
 
 std::shared_ptr<gpu::ShaderModule> Device::createShaderModule(const gpu::ShaderModuleDescription& description)
 {
@@ -165,11 +189,12 @@ std::shared_ptr<gpu::Image> Device::createImage(const ImageDescription& descript
     {
         MTL::TextureUsage usage = MTL::TextureUsageShaderRead;
         if (hasFlag(description.usage, ImageUsage::ColorAttachment))
+        {
             usage |= MTL::TextureUsageRenderTarget;
+        }
         img->buildCubemapImage(
             this, description.size, description.format,
-            usage, mipLevels, description.debugName
-        );
+            usage, mipLevels, description.debugName);
     }
     else if (isDepthFormat(description.format))
     {
@@ -231,13 +256,29 @@ void Device::create(gpu::Instance*, gpu::PhysicalDevice*, gpu::Surface*)
     throw std::runtime_error("Metal backend is not available on this platform");
 }
 
-void Device::cleanup() {}
-void Device::waitIdle() {}
-bool Device::isValid() const { return false; }
+void Device::cleanup()
+{
+}
+void Device::waitIdle()
+{
+}
+bool Device::isValid() const
+{
+    return false;
+}
 
-const gpu::Queue& Device::graphicsQueue() const { return _graphicsQueue; }
-const gpu::Queue& Device::presentQueue()  const { return _presentQueue;  }
-const gpu::Queue& Device::transferQueue() const { return _transferQueue; }
+const gpu::Queue& Device::graphicsQueue() const
+{
+    return _graphicsQueue;
+}
+const gpu::Queue& Device::presentQueue() const
+{
+    return _presentQueue;
+}
+const gpu::Queue& Device::transferQueue() const
+{
+    return _transferQueue;
+}
 
 std::shared_ptr<gpu::ShaderModule> Device::createShaderModule(const gpu::ShaderModuleDescription& description)
 {

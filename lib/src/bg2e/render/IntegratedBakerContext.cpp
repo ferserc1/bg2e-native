@@ -26,8 +26,7 @@
 namespace bg2e {
 namespace render {
 
-struct IntegratedBakerContext::SceneBindingSnapshot
-{
+struct IntegratedBakerContext::SceneBindingSnapshot {
     scene::vk::LightDataBinding::LightUniforms lights{};
     std::string environmentImage;
     size_t environmentImageHash = 0;
@@ -112,8 +111,7 @@ IntegratedBakerContext::IntegratedBakerContext(Engine* engine, scene::Node* root
         VK_SHADER_STAGE_FRAGMENT_BIT |
         VK_SHADER_STAGE_COMPUTE_BIT |
         VK_SHADER_STAGE_ANY_HIT_BIT_KHR |
-        VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR
-    );
+        VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR);
     _rtaoPass = std::make_unique<deferred::RTAmbientOcclusion>(engine);
     _rtaoPass->setMaterialDataBinding(_rtMaterialDataBinding.get());
     _rtaoPass->buildUv();
@@ -137,24 +135,16 @@ IntegratedBakerContext::IntegratedBakerContext(Engine* engine, scene::Node* root
         _bakeDescriptorAllocators[slot]->init(engine);
         _rtMaterialDataBinding->initFrameResources(_bakeDescriptorAllocators[slot].get());
         _giLightDataBinding->initFrameResources(_bakeDescriptorAllocators[slot].get());
-        _bakeDescriptorAllocators[slot]->requirePoolSizeRatio(1, {
-            { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 3 },
-            { VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 1 },
-            { VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1 }
-        });
-        _bakeDescriptorAllocators[slot]->requirePoolSizeRatio(1, {
-            { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 4 },
-            { VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 1 },
-            { VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1 }
-        });
-        _bakeDescriptorAllocators[slot]->requirePoolSizeRatio(1, {
-            { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 3 },
-            { VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1 }
-        });
-        _bakeDescriptorAllocators[slot]->requirePoolSizeRatio(1, {
-            { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 3 },
-            { VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1 }
-        });
+        _bakeDescriptorAllocators[slot]->requirePoolSizeRatio(1, {{VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 3},
+                                                                  {VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 1},
+                                                                  {VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1}});
+        _bakeDescriptorAllocators[slot]->requirePoolSizeRatio(1, {{VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 4},
+                                                                  {VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 1},
+                                                                  {VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1}});
+        _bakeDescriptorAllocators[slot]->requirePoolSizeRatio(1, {{VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 3},
+                                                                  {VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1}});
+        _bakeDescriptorAllocators[slot]->requirePoolSizeRatio(1, {{VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 3},
+                                                                  {VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1}});
     }
 }
 
@@ -165,8 +155,7 @@ IntegratedBakerContext::~IntegratedBakerContext()
         return;
     }
 
-    struct DeferredResources
-    {
+    struct DeferredResources {
         std::vector<std::unique_ptr<vulkan::rt::RayTracingScene>> scenes;
         std::vector<std::unique_ptr<vulkan::DescriptorSetAllocator>> descriptorAllocators;
         std::unique_ptr<vulkan::rt::RTMaterialDataBinding> materialDataBinding;
@@ -187,35 +176,36 @@ IntegratedBakerContext::~IntegratedBakerContext()
     retained->rtaoPass = std::move(_rtaoPass);
     retained->rtgiPass = std::move(_rtgiPass);
     retained->compositionPass = std::move(_compositionPass);
-    engine()->deferredExec([retained = std::move(retained)]() {
-        retained->scenes.clear();
-        retained->descriptorAllocators.clear();
-        if (retained->rtgiPass)
-        {
-            retained->rtgiPass->cleanupUv();
-            retained->rtgiPass.reset();
-        }
-        if (retained->compositionPass)
-        {
-            retained->compositionPass->cleanup();
-            retained->compositionPass.reset();
-        }
-        if (retained->rtaoPass)
-        {
-            retained->rtaoPass->cleanupUv();
-            retained->rtaoPass.reset();
-        }
-        if (retained->materialDataBinding)
-        {
-            retained->materialDataBinding->cleanup();
-            retained->materialDataBinding.reset();
-        }
-        if (retained->giLightDataBinding)
-        {
-            retained->giLightDataBinding->cleanup();
-            retained->giLightDataBinding.reset();
-        }
-    });
+    engine()->deferredExec([retained = std::move(retained)]()
+                           {
+                               retained->scenes.clear();
+                               retained->descriptorAllocators.clear();
+                               if (retained->rtgiPass)
+                               {
+                                   retained->rtgiPass->cleanupUv();
+                                   retained->rtgiPass.reset();
+                               }
+                               if (retained->compositionPass)
+                               {
+                                   retained->compositionPass->cleanup();
+                                   retained->compositionPass.reset();
+                               }
+                               if (retained->rtaoPass)
+                               {
+                                   retained->rtaoPass->cleanupUv();
+                                   retained->rtaoPass.reset();
+                               }
+                               if (retained->materialDataBinding)
+                               {
+                                   retained->materialDataBinding->cleanup();
+                                   retained->materialDataBinding.reset();
+                               }
+                               if (retained->giLightDataBinding)
+                               {
+                                   retained->giLightDataBinding->cleanup();
+                                   retained->giLightDataBinding.reset();
+                               }
+                           });
 }
 
 void IntegratedBakerContext::prepareFrame(
@@ -287,7 +277,7 @@ void IntegratedBakerContext::prepareFrame(
         throw std::runtime_error("IntegratedBakerContext::prepareFrame: context root contains no traceable instances");
     }
 
-    _preparedFrame = { true, frameNumber, frameSlot, cmd };
+    _preparedFrame = {true, frameNumber, frameSlot, cmd};
     _lastPreparedFrame = frameNumber;
     _hasPreparedAnyFrame = true;
 }
@@ -422,7 +412,8 @@ void IntegratedBakerContext::captureSceneBindings()
     }
     else
     {
-        std::function<void(scene::Node*)> collect = [&](scene::Node* node) {
+        std::function<void(scene::Node*)> collect = [&](scene::Node* node)
+        {
             if (!node || !node->enabled())
             {
                 return;

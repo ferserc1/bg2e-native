@@ -43,13 +43,13 @@ class Buffer;
 // the vertex stride, position offset and submesh index range automatically.
 struct RayTracingMeshDescription {
     // Existing GPU buffers shared with the rasterization mesh.
-    gpu::Buffer* vertexBuffer = nullptr;   // interleaved vertex buffer
-    gpu::Buffer* indexBuffer  = nullptr;   // 32-bit index buffer
+    gpu::Buffer* vertexBuffer = nullptr; // interleaved vertex buffer
+    gpu::Buffer* indexBuffer = nullptr;  // 32-bit index buffer
 
-    uint32_t vertexCount    = 0;           // number of vertices in the vertex buffer
-    uint32_t vertexStride   = 0;           // bytes between consecutive vertices
-    uint32_t positionOffset = 0;           // byte offset of the position attribute
-    Format   vertexFormat   = Format::R32G32B32_SFLOAT; // position format
+    uint32_t vertexCount = 0;                       // number of vertices in the vertex buffer
+    uint32_t vertexStride = 0;                      // bytes between consecutive vertices
+    uint32_t positionOffset = 0;                    // byte offset of the position attribute
+    Format vertexFormat = Format::R32G32B32_SFLOAT; // position format
 
     // Submesh index range inside the shared index buffer.
     uint32_t firstIndex = 0;
@@ -59,16 +59,21 @@ struct RayTracingMeshDescription {
 };
 
 class BG2E_API RayTracingMesh : public DeviceResource {
-public:
-    explicit RayTracingMesh(Device* device) : DeviceResource(device) {}
+  public:
+    explicit RayTracingMesh(Device* device) : DeviceResource(device)
+    {
+    }
     ~RayTracingMesh() override = default;
 
-    const RayTracingMeshDescription& description() const { return _description; }
+    const RayTracingMeshDescription& description() const
+    {
+        return _description;
+    }
 
     // True once the acceleration structure has been built on the GPU.
     virtual bool isBuilt() const = 0;
 
-protected:
+  protected:
     RayTracingMeshDescription _description;
 };
 

@@ -31,9 +31,11 @@ struct Controller {
 };
 
 class SceneDelegate final : public draw::RenderLoopDelegate {
-public:
+  public:
     explicit SceneDelegate(std::shared_ptr<Controller> controller)
-        : _controller(std::move(controller)) {}
+        : _controller(std::move(controller))
+    {
+    }
 
     void render(const draw::FrameContext& context) override
     {
@@ -44,14 +46,16 @@ public:
         ++_controller->sceneFrames;
     }
 
-private:
+  private:
     std::shared_ptr<Controller> _controller;
 };
 
 class UiDelegate final : public ui::UserInterfaceDelegate {
-public:
+  public:
     explicit UiDelegate(std::shared_ptr<Controller> controller)
-        : _controller(std::move(controller)) {}
+        : _controller(std::move(controller))
+    {
+    }
 
     void init(draw::Engine*, ui::UserInterface*) override
     {
@@ -65,35 +69,49 @@ public:
     {
         ++_controller->uiFrames;
         ui::DemoWindow::draw();
-        _window.draw([this] {
-            auto& state = *_controller;
-            ui::Text::text("Backend: " + state.backend);
-            ui::Text::text("UI frames: " + std::to_string(state.uiFrames));
-            ui::Text::text("Scene updates: " + std::to_string(state.sceneFrames));
-            if (ui::Value::colorPicker("Background", state.color))
-                state.loop.requestSceneFrame();
-            if (ui::Button::checkBox("Pause scene", &state.paused))
-            {
-                if (state.paused)
-                    state.loop.pauseScene({state.color.r, state.color.g, state.color.b, state.color.a});
-                else
-                    state.loop.resumeScene();
-            }
-            if (ui::Button::button("Refresh scene")) state.loop.requestSceneFrame();
-            if (state.paused)
-                ui::Text::text("Scene changes remain pending until resumed.");
-        });
+        _window.draw([this]
+                     {
+                         auto& state = *_controller;
+                         ui::Text::text("Backend: " + state.backend);
+                         ui::Text::text("UI frames: " + std::to_string(state.uiFrames));
+                         ui::Text::text("Scene updates: " + std::to_string(state.sceneFrames));
+                         if (ui::Value::colorPicker("Background", state.color))
+                         {
+                             state.loop.requestSceneFrame();
+                         }
+                         if (ui::Button::checkBox("Pause scene", &state.paused))
+                         {
+                             if (state.paused)
+                             {
+                                 state.loop.pauseScene({state.color.r, state.color.g, state.color.b, state.color.a});
+                             }
+                             else
+                             {
+                                 state.loop.resumeScene();
+                             }
+                         }
+                         if (ui::Button::button("Refresh scene"))
+                         {
+                             state.loop.requestSceneFrame();
+                         }
+                         if (state.paused)
+                         {
+                             ui::Text::text("Scene changes remain pending until resumed.");
+                         }
+                     });
     }
 
-private:
+  private:
     std::shared_ptr<Controller> _controller;
     ui::Window _window;
 };
 
 class Application final : public app::Application {
-public:
+  public:
     explicit Application(app::MainLoop& loop)
-        : _controller(std::make_shared<Controller>(Controller{loop})) {}
+        : _controller(std::make_shared<Controller>(Controller{loop}))
+    {
+    }
 
     void init(int argc, char** argv) override
     {
@@ -102,17 +120,24 @@ public:
         {
             const std::string argument = argv[i];
             if (argument != "--backend=vulkan" && argument != "--backend=metal")
+            {
                 throw std::invalid_argument("Unknown argument '" + argument +
-                    "'. Use --backend=vulkan or --backend=metal.");
+                                            "'. Use --backend=vulkan or --backend=metal.");
+            }
             if (backendSpecified)
+            {
                 throw std::invalid_argument("Specify --backend only once.");
+            }
             backendSpecified = true;
             _config.backend = argument == "--backend=metal"
-                ? gpu::BackendType::Metal : gpu::BackendType::Vulkan;
+                                  ? gpu::BackendType::Metal
+                                  : gpu::BackendType::Vulkan;
         }
 #ifndef BG2E_IS_MAC
         if (_config.backend == gpu::BackendType::Metal)
+        {
             throw std::invalid_argument("Metal is available only on macOS. Use --backend=vulkan.");
+        }
 #endif
         _controller->backend = _config.backend == gpu::BackendType::Metal ? "Metal" : "Vulkan";
         setRenderDelegate(std::make_shared<SceneDelegate>(_controller));
@@ -120,9 +145,12 @@ public:
         setUiDelegate(std::make_shared<UiDelegate>(_controller));
     }
 
-    const draw::EngineConfig& config() const { return _config; }
+    const draw::EngineConfig& config() const
+    {
+        return _config;
+    }
 
-private:
+  private:
     draw::EngineConfig _config;
     std::shared_ptr<Controller> _controller;
 };

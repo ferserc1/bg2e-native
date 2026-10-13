@@ -26,9 +26,8 @@ namespace render {
 namespace vulkan {
 namespace factory {
 
-ComputePipeline::ComputePipeline(Engine * engine)
-    :_engine(engine)
-    , _shaderModule(VK_NULL_HANDLE)
+ComputePipeline::ComputePipeline(Engine* engine)
+    : _engine(engine), _shaderModule(VK_NULL_HANDLE)
 {
 }
 
@@ -80,8 +79,7 @@ VkPipeline ComputePipeline::build(VkPipelineLayout layout, const std::string& na
         1,
         &pipelineInfo,
         nullptr,
-        &pipeline
-    ));
+        &pipeline));
 
     if (base::Log::isDebug() || !name.empty() && setDebugUtilsObjectName != nullptr)
     {
@@ -93,8 +91,7 @@ VkPipeline ComputePipeline::build(VkPipelineLayout layout, const std::string& na
 
         setDebugUtilsObjectName(
             _engine->device().handle(),
-            &nameInfo
-        );
+            &nameInfo);
     }
     return pipeline;
 }

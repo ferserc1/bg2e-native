@@ -59,13 +59,13 @@ std::filesystem::path absoluteInputPath(
     if (error)
     {
         throw std::runtime_error("StandaloneBakeSceneAssembler: could not resolve " + kind + " path '" +
-            path.string() + "': " + error.message());
+                                 path.string() + "': " + error.message());
     }
     result = result.lexically_normal();
     if (!std::filesystem::is_regular_file(result, error) || error)
     {
         throw std::invalid_argument("StandaloneBakeSceneAssembler: " + kind + " file does not exist: '" +
-            result.string() + "'");
+                                    result.string() + "'");
     }
     return result;
 }
@@ -93,7 +93,7 @@ std::shared_ptr<json::JsonNode> parseJsonFile(const std::filesystem::path& path)
     catch (const std::exception& error)
     {
         throw std::runtime_error("StandaloneBakeSceneAssembler: invalid JSON file '" + path.string() +
-            "': " + error.what());
+                                 "': " + error.what());
     }
 }
 
@@ -103,7 +103,7 @@ void requireRegularFile(const std::filesystem::path& path, const std::string& ro
     if (!std::filesystem::is_regular_file(path, error) || error)
     {
         throw std::runtime_error("StandaloneBakeSceneAssembler: missing " + role + " file '" +
-            path.string() + "'");
+                                 path.string() + "'");
     }
 }
 
@@ -133,18 +133,18 @@ void validateBg2Asset(const std::filesystem::path& path)
     catch (const std::exception& error)
     {
         throw std::runtime_error("StandaloneBakeSceneAssembler: invalid .bg2 asset '" + path.string() +
-            "': " + error.what());
+                                 "': " + error.what());
     }
     if (!mesh || !mesh->mesh || mesh->mesh->vertices.empty() || mesh->mesh->indices.empty() ||
         mesh->mesh->submeshes.empty())
     {
         throw std::runtime_error("StandaloneBakeSceneAssembler: .bg2 asset contains no usable mesh: '" +
-            path.string() + "'");
+                                 path.string() + "'");
     }
     if (mesh->materials.size() != mesh->mesh->submeshes.size())
     {
         throw std::runtime_error("StandaloneBakeSceneAssembler: material/submesh count mismatch in '" +
-            path.string() + "'");
+                                 path.string() + "'");
     }
 
     uint64_t nextIndex = 0;
@@ -156,14 +156,14 @@ void validateBg2Asset(const std::filesystem::path& path)
             submesh.indexCount % 3 != 0 || end > mesh->mesh->indices.size())
         {
             throw std::runtime_error("StandaloneBakeSceneAssembler: invalid triangle submesh range " +
-                std::to_string(submeshIndex) + " in '" + path.string() + "'");
+                                     std::to_string(submeshIndex) + " in '" + path.string() + "'");
         }
         for (uint64_t index = submesh.firstIndex; index < end; ++index)
         {
             if (mesh->mesh->indices[static_cast<size_t>(index)] >= mesh->mesh->vertices.size())
             {
                 throw std::runtime_error("StandaloneBakeSceneAssembler: vertex index out of range in '" +
-                    path.string() + "'");
+                                         path.string() + "'");
             }
         }
         nextIndex = end;
@@ -171,7 +171,7 @@ void validateBg2Asset(const std::filesystem::path& path)
     if (nextIndex != mesh->mesh->indices.size())
     {
         throw std::runtime_error("StandaloneBakeSceneAssembler: submesh ranges do not cover the index buffer in '" +
-            path.string() + "'");
+                                 path.string() + "'");
     }
 
     for (const auto& material : mesh->materials)
@@ -212,7 +212,7 @@ JsonValidationSummary validateSerializedNode(
     if (!nodeReader.isValid())
     {
         throw std::runtime_error("StandaloneBakeSceneAssembler: malformed node at " + nodePath +
-            " in '" + ownerPath.string() + "'");
+                                 " in '" + ownerPath.string() + "'");
     }
 
     JsonValidationSummary result;
@@ -224,14 +224,14 @@ JsonValidationSummary validateSerializedNode(
             if (!component)
             {
                 throw std::runtime_error("StandaloneBakeSceneAssembler: malformed component " +
-                    std::to_string(index) + " at " + nodePath + " in '" + ownerPath.string() + "'");
+                                         std::to_string(index) + " at " + nodePath + " in '" + ownerPath.string() + "'");
             }
             const auto type = component->getString("type");
             if (!type || type->empty() || !scene::ComponentFactoryRegistry::get().contains(*type))
             {
                 bg2e_log_warning << "StandaloneBakeSceneAssembler: skipping unknown or missing component type '"
-                    << (type ? *type : std::string{}) << "' at " << nodePath
-                    << " in '" << ownerPath.string() << "'" << bg2e_log_end;
+                                 << (type ? *type : std::string{}) << "' at " << nodePath
+                                 << " in '" << ownerPath.string() << "'" << bg2e_log_end;
                 continue;
             }
             ++result.componentCount;
@@ -242,7 +242,7 @@ JsonValidationSummary validateSerializedNode(
                 if (!name || name->empty())
                 {
                     throw std::runtime_error("StandaloneBakeSceneAssembler: Drawable at " + nodePath +
-                        " has no asset name in '" + ownerPath.string() + "'");
+                                             " has no asset name in '" + ownerPath.string() + "'");
                 }
                 const auto drawablePath = drawableAssetPath(basePath, *name);
                 requireRegularFile(drawablePath, "Drawable referenced by " + nodePath + " in");
@@ -255,7 +255,7 @@ JsonValidationSummary validateSerializedNode(
                     textureName && !textureName->empty())
                 {
                     requireRegularFile(basePath / *textureName,
-                        "environment texture referenced by " + nodePath + " in");
+                                       "environment texture referenced by " + nodePath + " in");
                 }
             }
         }
@@ -263,7 +263,7 @@ JsonValidationSummary validateSerializedNode(
     else if (!nodeReader.isUndefined("components") && !nodeReader.isNull("components"))
     {
         throw std::runtime_error("StandaloneBakeSceneAssembler: components must be an array at " +
-            nodePath + " in '" + ownerPath.string() + "'");
+                                 nodePath + " in '" + ownerPath.string() + "'");
     }
 
     if (auto children = nodeReader.getArray("children"))
@@ -274,20 +274,20 @@ JsonValidationSummary validateSerializedNode(
             if (!child)
             {
                 throw std::runtime_error("StandaloneBakeSceneAssembler: malformed child " +
-                    std::to_string(index) + " at " + nodePath + " in '" + ownerPath.string() + "'");
+                                         std::to_string(index) + " at " + nodePath + " in '" + ownerPath.string() + "'");
             }
             const auto childPath = nodePath + "/children[" + std::to_string(index) + "]";
             const auto childSummary = validateSerializedNode(
                 child->node(), basePath, ownerPath, childPath);
             result.componentCount += childSummary.componentCount;
             result.drawableSourcePaths.insert(result.drawableSourcePaths.end(),
-                childSummary.drawableSourcePaths.begin(), childSummary.drawableSourcePaths.end());
+                                              childSummary.drawableSourcePaths.begin(), childSummary.drawableSourcePaths.end());
         }
     }
     else if (!nodeReader.isUndefined("children") && !nodeReader.isNull("children"))
     {
         throw std::runtime_error("StandaloneBakeSceneAssembler: children must be an array at " +
-            nodePath + " in '" + ownerPath.string() + "'");
+                                 nodePath + " in '" + ownerPath.string() + "'");
     }
 
     return result;
@@ -304,7 +304,7 @@ ParsedSceneInput parseSceneInput(
     if (!reader.isValid())
     {
         throw std::runtime_error("StandaloneBakeSceneAssembler: JSON root must be an object in '" +
-            path.string() + "'");
+                                 path.string() + "'");
     }
 
     if (auto sceneNodes = reader.getArray("scene"))
@@ -316,7 +316,7 @@ ParsedSceneInput parseSceneInput(
             if (!node)
             {
                 throw std::runtime_error("StandaloneBakeSceneAssembler: malformed scene node " +
-                    std::to_string(index) + " in '" + path.string() + "'");
+                                         std::to_string(index) + " in '" + path.string() + "'");
             }
             result.roots.push_back(node->node());
         }
@@ -326,7 +326,7 @@ ParsedSceneInput parseSceneInput(
     if (reader.isObject("scene"))
     {
         throw std::runtime_error("StandaloneBakeSceneAssembler: scene must be an array in '" +
-            path.string() + "'");
+                                 path.string() + "'");
     }
 
     if (allowSingleNode && reader.getString("type").value_or("") == "Node")
@@ -336,7 +336,7 @@ ParsedSceneInput parseSceneInput(
     }
 
     throw std::runtime_error("StandaloneBakeSceneAssembler: expected a scene document" +
-        std::string(allowSingleNode ? " or serialized Node" : "") + " in '" + path.string() + "'");
+                             std::string(allowSingleNode ? " or serialized Node" : "") + " in '" + path.string() + "'");
 }
 
 std::shared_ptr<scene::Scene> loadContextScene(
@@ -352,26 +352,26 @@ std::shared_ptr<scene::Scene> loadContextScene(
             "scene[" + std::to_string(index) + "]");
         summary.componentCount += nodeSummary.componentCount;
         summary.drawableSourcePaths.insert(summary.drawableSourcePaths.end(),
-            nodeSummary.drawableSourcePaths.begin(), nodeSummary.drawableSourcePaths.end());
+                                           nodeSummary.drawableSourcePaths.begin(), nodeSummary.drawableSourcePaths.end());
     }
 
     auto loadedScene = db::loadScene(path, *engine);
     if (!loadedScene || !loadedScene->rootNode())
     {
         throw std::runtime_error("StandaloneBakeSceneAssembler: failed to load context scene '" +
-            path.string() + "'");
+                                 path.string() + "'");
     }
     const auto loadedDrawableCount = countLoadedDrawables(loadedScene->rootNode());
     if (loadedDrawableCount != summary.drawableSourcePaths.size())
     {
         throw std::runtime_error("StandaloneBakeSceneAssembler: context scene '" + path.string() +
-            "' loaded " + std::to_string(loadedDrawableCount) + " of " +
-            std::to_string(summary.drawableSourcePaths.size()) + " declared Drawable components");
+                                 "' loaded " + std::to_string(loadedDrawableCount) + " of " +
+                                 std::to_string(summary.drawableSourcePaths.size()) + " declared Drawable components");
     }
     if (countLoadedComponents(loadedScene->rootNode()) != summary.componentCount)
     {
         throw std::runtime_error("StandaloneBakeSceneAssembler: context scene contains components that failed to load: '" +
-            path.string() + "'");
+                                 path.string() + "'");
     }
     return loadedScene;
 }
@@ -416,12 +416,18 @@ std::shared_ptr<scene::Node> deserializeNodeWithCpuDrawables(
     if (!reader.isValid())
     {
         throw std::runtime_error("StandaloneBakeSceneAssembler: malformed CPU-loaded prefab node at " +
-            nodePath + " in '" + ownerPath.string() + "'");
+                                 nodePath + " in '" + ownerPath.string() + "'");
     }
 
     auto node = std::make_shared<scene::Node>(reader.getString("name").value_or(""));
-    if (auto enabled = reader.getBool("enabled")) node->setEnabled(*enabled);
-    if (auto steady = reader.getBool("steady")) node->setSteady(*steady);
+    if (auto enabled = reader.getBool("enabled"))
+    {
+        node->setEnabled(*enabled);
+    }
+    if (auto steady = reader.getBool("steady"))
+    {
+        node->setSteady(*steady);
+    }
 
     if (auto components = reader.getArray("components"))
     {
@@ -431,7 +437,7 @@ std::shared_ptr<scene::Node> deserializeNodeWithCpuDrawables(
             if (!componentReader)
             {
                 throw std::runtime_error("StandaloneBakeSceneAssembler: malformed component " +
-                    std::to_string(index) + " at " + nodePath + " in '" + ownerPath.string() + "'");
+                                         std::to_string(index) + " at " + nodePath + " in '" + ownerPath.string() + "'");
             }
             auto componentData = componentReader->node();
             const auto type = componentReader->getString("type").value_or("");
@@ -441,7 +447,7 @@ std::shared_ptr<scene::Node> deserializeNodeWithCpuDrawables(
                 if (!assetName || assetName->empty())
                 {
                     throw std::runtime_error("StandaloneBakeSceneAssembler: Drawable at " + nodePath +
-                        " has no asset name in '" + ownerPath.string() + "'");
+                                             " has no asset name in '" + ownerPath.string() + "'");
                 }
                 const auto drawablePath = drawableAssetPath(basePath, *assetName);
                 auto drawable = loadCpuDrawable(drawablePath);
@@ -455,8 +461,8 @@ std::shared_ptr<scene::Node> deserializeNodeWithCpuDrawables(
             if (!component)
             {
                 bg2e_log_warning << "StandaloneBakeSceneAssembler: skipping component '" << type
-                    << "' that failed to load at " << nodePath
-                    << " in '" << ownerPath.string() << "'" << bg2e_log_end;
+                                 << "' that failed to load at " << nodePath
+                                 << " in '" << ownerPath.string() << "'" << bg2e_log_end;
                 continue;
             }
             node->addComponent(component);
@@ -471,7 +477,7 @@ std::shared_ptr<scene::Node> deserializeNodeWithCpuDrawables(
             if (!child)
             {
                 throw std::runtime_error("StandaloneBakeSceneAssembler: malformed child " +
-                    std::to_string(index) + " at " + nodePath + " in '" + ownerPath.string() + "'");
+                                         std::to_string(index) + " at " + nodePath + " in '" + ownerPath.string() + "'");
             }
             node->addChild(deserializeNodeWithCpuDrawables(
                 child->node(), basePath, ownerPath,
@@ -499,7 +505,7 @@ LoadedPrefab loadPrefabSceneCpu(
     if (drawableSourcePaths.empty())
     {
         throw std::runtime_error("StandaloneBakeSceneAssembler: prefab contains no Drawable components: '" +
-            path.string() + "'");
+                                 path.string() + "'");
     }
 
     auto loadedScene = std::make_shared<scene::Scene>();
@@ -507,8 +513,7 @@ LoadedPrefab loadPrefabSceneCpu(
     return {
         std::move(loadedScene),
         countLoadedComponents(root.get()),
-        std::move(drawableSourcePaths)
-    };
+        std::move(drawableSourcePaths)};
 }
 
 LoadedPrefab loadPrefabScene(
@@ -520,7 +525,7 @@ LoadedPrefab loadPrefabScene(
     if (parsed.roots.empty())
     {
         throw std::runtime_error("StandaloneBakeSceneAssembler: prefab contains no root nodes: '" +
-            path.string() + "'");
+                                 path.string() + "'");
     }
 
     std::vector<std::filesystem::path> drawableSourcePaths;
@@ -532,12 +537,12 @@ LoadedPrefab loadPrefabScene(
             parsed.isSceneDocument ? "scene[" + std::to_string(index) + "]" : "root");
         componentCount += nodeSummary.componentCount;
         drawableSourcePaths.insert(drawableSourcePaths.end(),
-            nodeSummary.drawableSourcePaths.begin(), nodeSummary.drawableSourcePaths.end());
+                                   nodeSummary.drawableSourcePaths.begin(), nodeSummary.drawableSourcePaths.end());
     }
     if (drawableSourcePaths.empty())
     {
         throw std::runtime_error("StandaloneBakeSceneAssembler: prefab contains no Drawable components: '" +
-            path.string() + "'");
+                                 path.string() + "'");
     }
 
     if (!loadTargetGpuResources)
@@ -554,8 +559,7 @@ LoadedPrefab loadPrefabScene(
     {
         using namespace json;
         auto wrappedDocument = JSON(JsonObject{
-            { "scene", JSON(JsonList{ parsed.roots.front() }) }
-        });
+            {"scene", JSON(JsonList{parsed.roots.front()})}});
         loadedScene = scene::Scene::deserialize(
             wrappedDocument, path.parent_path(), *engine);
     }
@@ -564,7 +568,7 @@ LoadedPrefab loadPrefabScene(
     {
         throw std::runtime_error("StandaloneBakeSceneAssembler: failed to load prefab '" + path.string() + "'");
     }
-    return { std::move(loadedScene), componentCount, std::move(drawableSourcePaths) };
+    return {std::move(loadedScene), componentCount, std::move(drawableSourcePaths)};
 }
 
 size_t countLoadedDrawables(scene::Node* node)
@@ -635,12 +639,12 @@ void collectSceneTargets(
     if (!seenNodes.insert(node).second)
     {
         throw std::runtime_error("StandaloneBakeSceneAssembler: duplicate node attachment under '" +
-            node->name() + "' while assembling '" + inputPath.string() + "'");
+                                 node->name() + "' while assembling '" + inputPath.string() + "'");
     }
     if (node->identifier().empty() || !seenIdentifiers.insert(node->identifier()).second)
     {
         throw std::runtime_error("StandaloneBakeSceneAssembler: duplicate or empty node identity at '" +
-            node->name() + "' while assembling '" + inputPath.string() + "'");
+                                 node->name() + "' while assembling '" + inputPath.string() + "'");
     }
 
     const bool isTargetRoot = node == targetRoot;
@@ -661,9 +665,9 @@ void collectSceneTargets(
                 if ((requireGpuLoaded && !drawable->isLoaded()) || !drawable->mesh())
                 {
                     throw std::runtime_error("StandaloneBakeSceneAssembler: target Drawable is unavailable at '" +
-                        nodeIdentity + "' from '" + inputPath.string() + "'");
+                                             nodeIdentity + "' from '" + inputPath.string() + "'");
                 }
-                targets.push_back({ node->shared_from_this(), std::move(drawable), nodeIdentity });
+                targets.push_back({node->shared_from_this(), std::move(drawable), nodeIdentity});
             }
         }
     }
@@ -675,7 +679,7 @@ void collectSceneTargets(
         if (!child || child->parent() != node)
         {
             throw std::runtime_error("StandaloneBakeSceneAssembler: invalid child ownership below '" +
-                node->name() + "' while assembling '" + inputPath.string() + "'");
+                                     node->name() + "' while assembling '" + inputPath.string() + "'");
         }
         std::string childIdentity = relativeIdentity;
         if (inTargetSubtree)
@@ -697,7 +701,7 @@ std::vector<DrawableTarget> collectTargets(
         targetRoot->sceneRoot() != contextRoot)
     {
         throw std::runtime_error("StandaloneBakeSceneAssembler: target subtree was not attached to the context root for '" +
-            inputPath.string() + "'");
+                                 inputPath.string() + "'");
     }
 
     std::vector<DrawableTarget> targets;
@@ -708,7 +712,7 @@ std::vector<DrawableTarget> collectTargets(
     if (targets.empty())
     {
         throw std::runtime_error("StandaloneBakeSceneAssembler: target input contains no standard Drawable nodes: '" +
-            inputPath.string() + "'");
+                                 inputPath.string() + "'");
     }
     return targets;
 }
@@ -746,7 +750,7 @@ void generateUv2AndReload(
         catch (const std::exception& error)
         {
             throw std::runtime_error("StandaloneBakeSceneAssembler: UV2 generation failed for target '" +
-                target.outputIdentity + "' from '" + inputPath.string() + "': " + error.what());
+                                     target.outputIdentity + "' from '" + inputPath.string() + "': " + error.what());
         }
     }
 
@@ -766,7 +770,7 @@ void generateUv2AndReload(
     catch (const std::exception& error)
     {
         throw std::runtime_error("StandaloneBakeSceneAssembler: GPU reload after UV2 generation failed for '" +
-            inputPath.string() + "': " + error.what());
+                                 inputPath.string() + "': " + error.what());
     }
 }
 
@@ -782,7 +786,7 @@ std::vector<StandaloneBakeSceneAssembler::Target> makeAssemblyTargets(
     result.reserve(targets.size());
     for (size_t index = 0; index < targets.size(); ++index)
     {
-        result.push_back({ targets[index].node, inputSourcePaths[index], targets[index].outputIdentity });
+        result.push_back({targets[index].node, inputSourcePaths[index], targets[index].outputIdentity});
     }
     return result;
 }
@@ -820,11 +824,14 @@ StandaloneBakeSceneAssembler::Assembly StandaloneBakeSceneAssembler::assembleMod
     const auto modelPath = absoluteInputPath(modelBg2, "model");
     std::string extension = modelPath.extension().string();
     std::transform(extension.begin(), extension.end(), extension.begin(),
-        [](unsigned char character) { return static_cast<char>(std::tolower(character)); });
+                   [](unsigned char character)
+                   {
+                       return static_cast<char>(std::tolower(character));
+                   });
     if (extension != ".bg2")
     {
         throw std::invalid_argument("StandaloneBakeSceneAssembler: model input must be a .bg2 file: '" +
-            modelPath.string() + "'");
+                                    modelPath.string() + "'");
     }
     validateBg2Asset(modelPath);
 
@@ -837,7 +844,7 @@ StandaloneBakeSceneAssembler::Assembly StandaloneBakeSceneAssembler::assembleMod
     if (modelRoot->parent())
     {
         throw std::runtime_error("StandaloneBakeSceneAssembler: model loader returned an already attached node for '" +
-            modelPath.string() + "'");
+                                 modelPath.string() + "'");
     }
     auto* transform = modelRoot->transform();
     if (!transform)
@@ -853,7 +860,7 @@ StandaloneBakeSceneAssembler::Assembly StandaloneBakeSceneAssembler::assembleMod
     if (targets.size() != 1 || targets.front().node != modelRoot)
     {
         throw std::runtime_error("StandaloneBakeSceneAssembler: .bg2 model must produce exactly one Drawable target: '" +
-            modelPath.string() + "'");
+                                 modelPath.string() + "'");
     }
     generateUv2AndReload(_engine, targets, uv2Options, modelPath, loadTargetGpuResources);
 
@@ -861,8 +868,7 @@ StandaloneBakeSceneAssembler::Assembly StandaloneBakeSceneAssembler::assembleMod
         std::move(contextScene),
         contextPath,
         modelPath,
-        makeAssemblyTargets(targets, std::vector<std::filesystem::path>{ modelPath })
-    };
+        makeAssemblyTargets(targets, std::vector<std::filesystem::path>{modelPath})};
 }
 
 StandaloneBakeSceneAssembler::Assembly StandaloneBakeSceneAssembler::assemblePrefab(
@@ -888,7 +894,7 @@ StandaloneBakeSceneAssembler::Assembly StandaloneBakeSceneAssembler::assemblePre
     if (!prefabRoot || prefabRoot->parent())
     {
         throw std::runtime_error("StandaloneBakeSceneAssembler: prefab root cannot be attached cleanly from '" +
-            prefabPath.string() + "'");
+                                 prefabPath.string() + "'");
     }
 
     contextScene->rootNode()->addChild(prefabRoot);
@@ -896,7 +902,7 @@ StandaloneBakeSceneAssembler::Assembly StandaloneBakeSceneAssembler::assemblePre
         prefabRoot->sceneRoot() != contextScene->rootNode())
     {
         throw std::runtime_error("StandaloneBakeSceneAssembler: prefab root attachment failed for '" +
-            prefabPath.string() + "'");
+                                 prefabPath.string() + "'");
     }
     prefab.scene.reset();
 
@@ -904,13 +910,13 @@ StandaloneBakeSceneAssembler::Assembly StandaloneBakeSceneAssembler::assemblePre
     if (loadedDrawableCount != prefab.drawableSourcePaths.size())
     {
         throw std::runtime_error("StandaloneBakeSceneAssembler: prefab '" + prefabPath.string() +
-            "' loaded " + std::to_string(loadedDrawableCount) + " of " +
-            std::to_string(prefab.drawableSourcePaths.size()) + " declared Drawable components");
+                                 "' loaded " + std::to_string(loadedDrawableCount) + " of " +
+                                 std::to_string(prefab.drawableSourcePaths.size()) + " declared Drawable components");
     }
     if (countLoadedComponents(prefabRoot.get()) != prefab.componentCount)
     {
         throw std::runtime_error("StandaloneBakeSceneAssembler: prefab '" + prefabPath.string() +
-            "' did not load every declared component");
+                                 "' did not load every declared component");
     }
 
     auto targets = collectTargets(
@@ -922,8 +928,7 @@ StandaloneBakeSceneAssembler::Assembly StandaloneBakeSceneAssembler::assemblePre
         std::move(contextScene),
         contextPath,
         prefabPath,
-        makeAssemblyTargets(targets, prefab.drawableSourcePaths)
-    };
+        makeAssemblyTargets(targets, prefab.drawableSourcePaths)};
 }
 
 }

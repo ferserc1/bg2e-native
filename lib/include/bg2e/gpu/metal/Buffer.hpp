@@ -30,7 +30,7 @@ namespace metal {
 class Device;
 
 class Buffer : public gpu::Buffer {
-public:
+  public:
     Buffer(metal::Device* device, const std::string& debugName = {});
     ~Buffer() override;
 
@@ -49,12 +49,15 @@ public:
     void updateStorageBuffer(const void* data, uint64_t byteSize) override;
 
 #if BG2E_IS_MAC
-    MTL::Buffer* handle() const { return _buffer; }
+    MTL::Buffer* handle() const
+    {
+        return _buffer;
+    }
 #endif
 
-private:
+  private:
     metal::Device* _device = nullptr;
-    std::string    _debugName;
+    std::string _debugName;
 
 #if BG2E_IS_MAC
     MTL::Buffer* _buffer = nullptr;

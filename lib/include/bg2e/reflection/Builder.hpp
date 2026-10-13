@@ -38,61 +38,103 @@
 namespace bg2e {
 namespace reflection {
 
-template<typename T>
+template <typename T>
 using ValueT = std::remove_cv_t<std::remove_reference_t<T>>;
 
-template<typename Class, typename MemberFn>
+template <typename Class, typename MemberFn>
 struct GetterTraits;
 
-template<typename Class, typename R>
+template <typename Class, typename R>
 struct GetterTraits<Class, R (Class::*)() const> {
     using ValueType = ValueT<R>;
 };
 
-template<typename Class, typename R>
+template <typename Class, typename R>
 struct GetterTraits<Class, R (Class::*)()> {
     using ValueType = ValueT<R>;
 };
 
-template<typename Class, typename MemberFn>
+template <typename Class, typename MemberFn>
 struct SetterTraits;
 
-template<typename Class, typename R, typename V>
+template <typename Class, typename R, typename V>
 struct SetterTraits<Class, R (Class::*)(V)> {
     using ValueType = ValueT<V>;
 };
 
 namespace detail {
 
-template<typename T>
+template <typename T>
 constexpr std::optional<PropertyType> scalarPropertyTypeOf()
 {
     using U = ValueT<T>;
-    if constexpr (std::is_same_v<U, bool>)                  return PropertyType::Bool;
-    else if constexpr (std::is_same_v<U, int32_t>)          return PropertyType::Int;
-    else if constexpr (std::is_same_v<U, uint32_t>)         return PropertyType::UInt;
-    else if constexpr (std::is_same_v<U, float>)            return PropertyType::Float;
-    else if constexpr (std::is_same_v<U, double>)           return PropertyType::Double;
-    else if constexpr (std::is_same_v<U, std::string>)      return PropertyType::String;
-    else if constexpr (std::is_same_v<U, glm::vec2>)        return PropertyType::Vec2;
-    else if constexpr (std::is_same_v<U, glm::vec3>)        return PropertyType::Vec3;
-    else if constexpr (std::is_same_v<U, glm::vec4>)        return PropertyType::Vec4;
-    else if constexpr (std::is_same_v<U, glm::mat4>)        return PropertyType::Mat4;
-    else if constexpr (std::is_same_v<U, base::Color>)      return PropertyType::Color;
-    else if constexpr (std::is_same_v<U, std::filesystem::path>) return PropertyType::Path;
-    else if constexpr (std::is_enum_v<U>)                   return PropertyType::Enum;
-    else                                                    return std::nullopt;
+    if constexpr (std::is_same_v<U, bool>)
+    {
+        return PropertyType::Bool;
+    }
+    else if constexpr (std::is_same_v<U, int32_t>)
+    {
+        return PropertyType::Int;
+    }
+    else if constexpr (std::is_same_v<U, uint32_t>)
+    {
+        return PropertyType::UInt;
+    }
+    else if constexpr (std::is_same_v<U, float>)
+    {
+        return PropertyType::Float;
+    }
+    else if constexpr (std::is_same_v<U, double>)
+    {
+        return PropertyType::Double;
+    }
+    else if constexpr (std::is_same_v<U, std::string>)
+    {
+        return PropertyType::String;
+    }
+    else if constexpr (std::is_same_v<U, glm::vec2>)
+    {
+        return PropertyType::Vec2;
+    }
+    else if constexpr (std::is_same_v<U, glm::vec3>)
+    {
+        return PropertyType::Vec3;
+    }
+    else if constexpr (std::is_same_v<U, glm::vec4>)
+    {
+        return PropertyType::Vec4;
+    }
+    else if constexpr (std::is_same_v<U, glm::mat4>)
+    {
+        return PropertyType::Mat4;
+    }
+    else if constexpr (std::is_same_v<U, base::Color>)
+    {
+        return PropertyType::Color;
+    }
+    else if constexpr (std::is_same_v<U, std::filesystem::path>)
+    {
+        return PropertyType::Path;
+    }
+    else if constexpr (std::is_enum_v<U>)
+    {
+        return PropertyType::Enum;
+    }
+    else
+    {
+        return std::nullopt;
+    }
 }
 
 } // namespace detail
 
-template<typename T>
+template <typename T>
 constexpr bool isScalarPropertyType()
 {
     return detail::scalarPropertyTypeOf<T>().has_value();
 }
 
-template<typename T>
+template <typename T>
 constexpr PropertyType propertyTypeOf()
 {
     constexpr auto type = detail::scalarPropertyTypeOf<T>();
@@ -100,31 +142,88 @@ constexpr PropertyType propertyTypeOf()
     return *type;
 }
 
-template<typename T> class TypeInfoBuilder;
+template <typename T>
+class TypeInfoBuilder;
 
-template<typename T>
+template <typename T>
 class PropertyBuilder {
-public:
+  public:
     PropertyBuilder(TypeInfoBuilder<T>& builder, size_t index)
-        : _builder(builder), _index(index) {}
+        : _builder(builder), _index(index)
+    {
+    }
 
-    PropertyBuilder& displayName(std::string v) { info().metadata.displayName = std::move(v); return *this; }
-    PropertyBuilder& category(std::string v)    { info().metadata.category = std::move(v); return *this; }
-    PropertyBuilder& tooltip(std::string v)     { info().metadata.tooltip = std::move(v); return *this; }
+    PropertyBuilder& displayName(std::string v)
+    {
+        info().metadata.displayName = std::move(v);
+        return *this;
+    }
+    PropertyBuilder& category(std::string v)
+    {
+        info().metadata.category = std::move(v);
+        return *this;
+    }
+    PropertyBuilder& tooltip(std::string v)
+    {
+        info().metadata.tooltip = std::move(v);
+        return *this;
+    }
 
-    PropertyBuilder& range(double minV, double maxV) { info().metadata.min = minV; info().metadata.max = maxV; return *this; }
-    PropertyBuilder& min(double v)  { info().metadata.min = v; return *this; }
-    PropertyBuilder& max(double v)  { info().metadata.max = v; return *this; }
-    PropertyBuilder& step(double v) { info().metadata.step = v; return *this; }
+    PropertyBuilder& range(double minV, double maxV)
+    {
+        info().metadata.min = minV;
+        info().metadata.max = maxV;
+        return *this;
+    }
+    PropertyBuilder& min(double v)
+    {
+        info().metadata.min = v;
+        return *this;
+    }
+    PropertyBuilder& max(double v)
+    {
+        info().metadata.max = v;
+        return *this;
+    }
+    PropertyBuilder& step(double v)
+    {
+        info().metadata.step = v;
+        return *this;
+    }
 
-    PropertyBuilder& editor(PropertyEditor e) { info().editor = e; return *this; }
-    PropertyBuilder& input()    { return editor(PropertyEditor::Input); }
-    PropertyBuilder& slider()   { return editor(PropertyEditor::Slider); }
-    PropertyBuilder& drag()     { return editor(PropertyEditor::Drag); }
-    PropertyBuilder& checkbox() { return editor(PropertyEditor::Checkbox); }
-    PropertyBuilder& combo()    { return editor(PropertyEditor::Combo); }
-    PropertyBuilder& colorEditor() { return editor(PropertyEditor::Color); }
-    PropertyBuilder& angle()    { return editor(PropertyEditor::Angle); }
+    PropertyBuilder& editor(PropertyEditor e)
+    {
+        info().editor = e;
+        return *this;
+    }
+    PropertyBuilder& input()
+    {
+        return editor(PropertyEditor::Input);
+    }
+    PropertyBuilder& slider()
+    {
+        return editor(PropertyEditor::Slider);
+    }
+    PropertyBuilder& drag()
+    {
+        return editor(PropertyEditor::Drag);
+    }
+    PropertyBuilder& checkbox()
+    {
+        return editor(PropertyEditor::Checkbox);
+    }
+    PropertyBuilder& combo()
+    {
+        return editor(PropertyEditor::Combo);
+    }
+    PropertyBuilder& colorEditor()
+    {
+        return editor(PropertyEditor::Color);
+    }
+    PropertyBuilder& angle()
+    {
+        return editor(PropertyEditor::Angle);
+    }
 
     PropertyBuilder& enumValue(std::string label, int64_t value)
     {
@@ -135,14 +234,13 @@ public:
     PropertyBuilder& resource(
         std::string kind,
         std::vector<std::string> extensions = {},
-        bool projectRelative = false
-    ) {
-        auto & property = info();
+        bool projectRelative = false)
+    {
+        auto& property = info();
         if (property.type != PropertyType::String && property.type != PropertyType::Path)
         {
             throw std::logic_error(
-                "bg2e::reflection: resource() requires a string or filesystem path property"
-            );
+                "bg2e::reflection: resource() requires a string or filesystem path property");
         }
         property.metadata.resourceValueType = property.type;
         property.type = PropertyType::Resource;
@@ -152,82 +250,136 @@ public:
         return *this;
     }
 
-    template<typename EnumT>
+    template <typename EnumT>
     PropertyBuilder& enumValue(std::string label, EnumT value)
     {
         return enumValue(std::move(label), static_cast<int64_t>(value));
     }
 
-private:
-    PropertyInfo& info() { return _builder.propertyAt(_index); }
+  private:
+    PropertyInfo& info()
+    {
+        return _builder.propertyAt(_index);
+    }
 
     TypeInfoBuilder<T>& _builder;
     size_t _index;
 };
 
-template<typename T>
+template <typename T>
 class ObjectBuilder {
-public:
+  public:
     ObjectBuilder(TypeInfoBuilder<T>& builder, size_t index)
-        : _builder(builder), _index(index) {}
+        : _builder(builder), _index(index)
+    {
+    }
 
-    ObjectBuilder& displayName(std::string v) { info().metadata.displayName = std::move(v); return *this; }
-    ObjectBuilder& category(std::string v)    { info().metadata.category = std::move(v); return *this; }
-    ObjectBuilder& tooltip(std::string v)     { info().metadata.tooltip = std::move(v); return *this; }
+    ObjectBuilder& displayName(std::string v)
+    {
+        info().metadata.displayName = std::move(v);
+        return *this;
+    }
+    ObjectBuilder& category(std::string v)
+    {
+        info().metadata.category = std::move(v);
+        return *this;
+    }
+    ObjectBuilder& tooltip(std::string v)
+    {
+        info().metadata.tooltip = std::move(v);
+        return *this;
+    }
 
     // No editor(), slider(), drag(), range(), min(), max(), step(),
     // enumValue(), ... : they are meaningless for object properties and
     // must fail to compile instead of being silently ignored.
 
-private:
-    PropertyInfo& info() { return _builder.propertyAt(_index); }
+  private:
+    PropertyInfo& info()
+    {
+        return _builder.propertyAt(_index);
+    }
 
     TypeInfoBuilder<T>& _builder;
     size_t _index;
 };
 
-template<typename T>
+template <typename T>
 class PolymorphicObjectBuilder {
-public:
+  public:
     PolymorphicObjectBuilder(TypeInfoBuilder<T>& builder, size_t index)
-        : _builder(builder), _index(index) {}
+        : _builder(builder), _index(index)
+    {
+    }
 
-    PolymorphicObjectBuilder& displayName(std::string v) { info().metadata.displayName = std::move(v); return *this; }
-    PolymorphicObjectBuilder& category(std::string v)    { info().metadata.category = std::move(v); return *this; }
-    PolymorphicObjectBuilder& tooltip(std::string v)     { info().metadata.tooltip = std::move(v); return *this; }
+    PolymorphicObjectBuilder& displayName(std::string v)
+    {
+        info().metadata.displayName = std::move(v);
+        return *this;
+    }
+    PolymorphicObjectBuilder& category(std::string v)
+    {
+        info().metadata.category = std::move(v);
+        return *this;
+    }
+    PolymorphicObjectBuilder& tooltip(std::string v)
+    {
+        info().metadata.tooltip = std::move(v);
+        return *this;
+    }
     PolymorphicObjectBuilder& subtype(std::string key)
     {
         info().polymorphicSubtypeKeys.push_back(std::move(key));
         return *this;
     }
 
-private:
-    PropertyInfo& info() { return _builder.propertyAt(_index); }
+  private:
+    PropertyInfo& info()
+    {
+        return _builder.propertyAt(_index);
+    }
 
     TypeInfoBuilder<T>& _builder;
     size_t _index;
 };
 
-template<typename T>
+template <typename T>
 class ActionBuilder {
-public:
+  public:
     ActionBuilder(TypeInfoBuilder<T>& builder, size_t index)
-        : _builder(builder), _index(index) {}
+        : _builder(builder), _index(index)
+    {
+    }
 
-    ActionBuilder& displayName(std::string v) { info().displayName = std::move(v); return *this; }
-    ActionBuilder& category(std::string v)    { info().category = std::move(v); return *this; }
-    ActionBuilder& tooltip(std::string v)     { info().tooltip = std::move(v); return *this; }
+    ActionBuilder& displayName(std::string v)
+    {
+        info().displayName = std::move(v);
+        return *this;
+    }
+    ActionBuilder& category(std::string v)
+    {
+        info().category = std::move(v);
+        return *this;
+    }
+    ActionBuilder& tooltip(std::string v)
+    {
+        info().tooltip = std::move(v);
+        return *this;
+    }
 
-private:
-    ActionInfo& info() { return _builder.actionAt(_index); }
+  private:
+    ActionInfo& info()
+    {
+        return _builder.actionAt(_index);
+    }
 
     TypeInfoBuilder<T>& _builder;
     size_t _index;
 };
 
-template<typename T>
+template <typename T>
 class TypeInfoBuilder {
-public:
+  public:
     explicit TypeInfoBuilder(std::string typeName)
     {
         _info.typeName = std::move(typeName);
@@ -239,18 +391,19 @@ public:
         return *this;
     }
 
-    template<typename Getter, typename Setter>
+    template <typename Getter, typename Setter>
     PropertyBuilder<T> property(std::string name, Getter getter, Setter setter)
     {
         using GetterValue = typename GetterTraits<T, Getter>::ValueType;
         using SetterValue = typename SetterTraits<T, Setter>::ValueType;
         static_assert(std::is_same_v<GetterValue, SetterValue>,
-            "bg2e::reflection: getter and setter must use the same value type");
+                      "bg2e::reflection: getter and setter must use the same value type");
 
         PropertyInfo p;
         p.name = std::move(name);
         p.type = propertyTypeOf<GetterValue>();
-        p.getter = [getter](const void * instance) -> std::any {
+        p.getter = [getter](const void* instance) -> std::any
+        {
             auto object = const_cast<T*>(static_cast<const T*>(instance));
             if constexpr (std::is_enum_v<GetterValue>)
             {
@@ -261,12 +414,12 @@ public:
                 return std::any((object->*getter)());
             }
         };
-        p.setter = [setter](void * instance, const std::any& value) {
+        p.setter = [setter](void* instance, const std::any& value)
+        {
             if constexpr (std::is_enum_v<GetterValue>)
             {
                 (static_cast<T*>(instance)->*setter)(
-                    static_cast<GetterValue>(std::any_cast<int64_t>(value))
-                );
+                    static_cast<GetterValue>(std::any_cast<int64_t>(value)));
             }
             else
             {
@@ -277,7 +430,7 @@ public:
         return PropertyBuilder<T>(*this, _info.properties.size() - 1);
     }
 
-    template<typename Getter>
+    template <typename Getter>
     PropertyBuilder<T> property(std::string name, Getter getter)
     {
         using GetterValue = typename GetterTraits<T, Getter>::ValueType;
@@ -285,7 +438,8 @@ public:
         PropertyInfo p;
         p.name = std::move(name);
         p.type = propertyTypeOf<GetterValue>();
-        p.getter = [getter](const void * instance) -> std::any {
+        p.getter = [getter](const void* instance) -> std::any
+        {
             auto object = const_cast<T*>(static_cast<const T*>(instance));
             if constexpr (std::is_enum_v<GetterValue>)
             {
@@ -302,18 +456,19 @@ public:
 
     // Read-only object property: const reference getter only.
     // Getter signature: const U& (T::*)() const
-    template<typename Getter>
+    template <typename Getter>
     ObjectBuilder<T> object(std::string name, std::string objectTypeName, Getter getter)
     {
         using U = typename GetterTraits<T, Getter>::ValueType;
         static_assert(std::is_class_v<U> && !isScalarPropertyType<U>(),
-            "bg2e::reflection: object() requires a non-scalar class type; use property() for scalars");
+                      "bg2e::reflection: object() requires a non-scalar class type; use property() for scalars");
 
         PropertyInfo p;
         p.name = std::move(name);
         p.type = PropertyType::Object;
         p.objectTypeName = std::move(objectTypeName);
-        p.objectGetter = [getter](const void * instance) -> const void * {
+        p.objectGetter = [getter](const void* instance) -> const void*
+        {
             auto object = static_cast<const T*>(instance);
             return static_cast<const void*>(&(object->*getter)());
         };
@@ -323,26 +478,28 @@ public:
 
     // Editable object property: const + mutable reference getters.
     // Signatures: const U& (T::*)() const  and  U& (T::*)()
-    template<typename ConstGetter, typename MutableGetter>
+    template <typename ConstGetter, typename MutableGetter>
     ObjectBuilder<T> object(std::string name, std::string objectTypeName,
                             ConstGetter constGetter, MutableGetter mutableGetter)
     {
         using U = typename GetterTraits<T, ConstGetter>::ValueType;
         using MU = typename GetterTraits<T, MutableGetter>::ValueType;
         static_assert(std::is_same_v<U, MU>,
-            "bg2e::reflection: const and mutable object getters must return the same type");
+                      "bg2e::reflection: const and mutable object getters must return the same type");
         static_assert(std::is_class_v<U> && !isScalarPropertyType<U>(),
-            "bg2e::reflection: object() requires a non-scalar class type; use property() for scalars");
+                      "bg2e::reflection: object() requires a non-scalar class type; use property() for scalars");
 
         PropertyInfo p;
         p.name = std::move(name);
         p.type = PropertyType::Object;
         p.objectTypeName = std::move(objectTypeName);
-        p.objectGetter = [constGetter](const void * instance) -> const void * {
+        p.objectGetter = [constGetter](const void* instance) -> const void*
+        {
             auto object = static_cast<const T*>(instance);
             return static_cast<const void*>(&(object->*constGetter)());
         };
-        p.objectMutableGetter = [mutableGetter](void * instance) -> void * {
+        p.objectMutableGetter = [mutableGetter](void* instance) -> void*
+        {
             auto object = static_cast<T*>(instance);
             return static_cast<void*>(&(object->*mutableGetter)());
         };
@@ -352,40 +509,46 @@ public:
 
     // Editable owned polymorphic property. Accessors return pointers to the
     // current Base object; the replacer accepts a newly-created shared owner.
-    template<typename Base, typename ConstGetter, typename MutableGetter, typename Replacer>
+    template <typename Base, typename ConstGetter, typename MutableGetter, typename Replacer>
     PolymorphicObjectBuilder<T> polymorphicObject(
         std::string name,
         std::string baseTypeName,
         ConstGetter constGetter,
         MutableGetter mutableGetter,
-        Replacer replacer
-    ) {
+        Replacer replacer)
+    {
         PropertyInfo p;
         p.name = std::move(name);
         p.type = PropertyType::PolymorphicObject;
         p.polymorphicBaseTypeName = std::move(baseTypeName);
-        p.polymorphicObjectGetter = [constGetter](const void * instance) -> const void * {
-            const auto * object = static_cast<const T*>(instance);
+        p.polymorphicObjectGetter = [constGetter](const void* instance) -> const void*
+        {
+            const auto* object = static_cast<const T*>(instance);
             return static_cast<const Base*>(std::invoke(constGetter, *object));
         };
-        p.polymorphicObjectMutableGetter = [mutableGetter](void * instance) -> void * {
-            auto * object = static_cast<T*>(instance);
+        p.polymorphicObjectMutableGetter = [mutableGetter](void* instance) -> void*
+        {
+            auto* object = static_cast<T*>(instance);
             return static_cast<Base*>(std::invoke(mutableGetter, *object));
         };
         const auto hierarchy = p.polymorphicBaseTypeName;
-        p.polymorphicTypeKey = [constGetter, hierarchy](const void * instance) -> std::string {
-            const auto * object = static_cast<const T*>(instance);
-            const auto * current = static_cast<const Base*>(std::invoke(constGetter, *object));
+        p.polymorphicTypeKey = [constGetter, hierarchy](const void* instance) -> std::string
+        {
+            const auto* object = static_cast<const T*>(instance);
+            const auto* current = static_cast<const Base*>(std::invoke(constGetter, *object));
             return current
-                ? TypeRegistry::get().subtypeKey(hierarchy, typeid(*current))
-                : std::string{};
+                       ? TypeRegistry::get().subtypeKey(hierarchy, typeid(*current))
+                       : std::string{};
         };
         p.polymorphicObjectReplacer = [replacer, hierarchy](
-            void * instance,
-            const std::string& subtypeKey
-        ) -> bool {
+                                          void* instance,
+                                          const std::string& subtypeKey) -> bool
+        {
             auto replacement = TypeRegistry::get().createSubtype<Base>(hierarchy, subtypeKey);
-            if (!replacement) return false;
+            if (!replacement)
+            {
+                return false;
+            }
             std::invoke(replacer, *static_cast<T*>(instance), std::move(replacement));
             return true;
         };
@@ -395,39 +558,42 @@ public:
 
     // Read-only polymorphic property: its subtype and reflected values can be
     // inspected, but it cannot be edited or replaced.
-    template<typename Base, typename ConstGetter>
+    template <typename Base, typename ConstGetter>
     PolymorphicObjectBuilder<T> polymorphicObject(
         std::string name,
         std::string baseTypeName,
-        ConstGetter constGetter
-    ) {
+        ConstGetter constGetter)
+    {
         PropertyInfo p;
         p.name = std::move(name);
         p.type = PropertyType::PolymorphicObject;
         p.polymorphicBaseTypeName = std::move(baseTypeName);
-        p.polymorphicObjectGetter = [constGetter](const void * instance) -> const void * {
-            const auto * object = static_cast<const T*>(instance);
+        p.polymorphicObjectGetter = [constGetter](const void* instance) -> const void*
+        {
+            const auto* object = static_cast<const T*>(instance);
             return static_cast<const Base*>(std::invoke(constGetter, *object));
         };
         const auto hierarchy = p.polymorphicBaseTypeName;
-        p.polymorphicTypeKey = [constGetter, hierarchy](const void * instance) -> std::string {
-            const auto * object = static_cast<const T*>(instance);
-            const auto * current = static_cast<const Base*>(std::invoke(constGetter, *object));
+        p.polymorphicTypeKey = [constGetter, hierarchy](const void* instance) -> std::string
+        {
+            const auto* object = static_cast<const T*>(instance);
+            const auto* current = static_cast<const Base*>(std::invoke(constGetter, *object));
             return current
-                ? TypeRegistry::get().subtypeKey(hierarchy, typeid(*current))
-                : std::string{};
+                       ? TypeRegistry::get().subtypeKey(hierarchy, typeid(*current))
+                       : std::string{};
         };
         _info.properties.push_back(std::move(p));
         return PolymorphicObjectBuilder<T>(*this, _info.properties.size() - 1);
     }
 
-    template<typename Method>
+    template <typename Method>
         requires std::is_member_function_pointer_v<Method>
     ActionBuilder<T> action(std::string name, Method method)
     {
         ActionInfo a;
         a.name = std::move(name);
-        a.invoke = [method](void * instance) {
+        a.invoke = [method](void* instance)
+        {
             (static_cast<T*>(instance)->*method)();
         };
         _info.actions.push_back(std::move(a));
@@ -440,25 +606,35 @@ public:
     // The is_member_pointer_v exclusion is required because member
     // pointers are invocable with T* via std::invoke and would make
     // this overload ambiguous with the member-function one.
-    template<typename F>
-        requires (std::is_invocable_v<F, T*> && !std::is_member_pointer_v<F>)
+    template <typename F>
+        requires(std::is_invocable_v<F, T*> && !std::is_member_pointer_v<F>)
     ActionBuilder<T> action(std::string name, F fn)
     {
         ActionInfo a;
         a.name = std::move(name);
-        a.invoke = [fn = std::move(fn)](void * instance) {
+        a.invoke = [fn = std::move(fn)](void* instance)
+        {
             std::invoke(fn, static_cast<T*>(instance));
         };
         _info.actions.push_back(std::move(a));
         return ActionBuilder<T>(*this, _info.actions.size() - 1);
     }
 
-    const TypeInfo& build() const { return _info; }
+    const TypeInfo& build() const
+    {
+        return _info;
+    }
 
-    PropertyInfo& propertyAt(size_t index) { return _info.properties[index]; }
-    ActionInfo& actionAt(size_t index)     { return _info.actions[index]; }
+    PropertyInfo& propertyAt(size_t index)
+    {
+        return _info.properties[index];
+    }
+    ActionInfo& actionAt(size_t index)
+    {
+        return _info.actions[index];
+    }
 
-protected:
+  protected:
     TypeInfo _info;
 };
 

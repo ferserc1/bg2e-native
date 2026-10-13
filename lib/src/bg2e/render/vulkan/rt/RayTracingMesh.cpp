@@ -32,44 +32,46 @@ namespace rt {
 
 template <typename MeshT>
 RayTracingMeshGeneric<MeshT>::RayTracingMeshGeneric(Engine* engine,
-												   geo::MeshGeneric<MeshT>* mesh,
-												   uint32_t firstIndex,
-												   uint32_t indexCount)
-	: _engine{ engine }
-	, _mesh{ mesh }
-	, _firstIndex{ firstIndex }
-	, _indexCount{ indexCount }
+                                                    geo::MeshGeneric<MeshT>* mesh,
+                                                    uint32_t firstIndex,
+                                                    uint32_t indexCount)
+    : _engine{engine}, _mesh{mesh}, _firstIndex{firstIndex}, _indexCount{indexCount}
 {
 }
 
 template <typename MeshT>
 RayTracingMeshGeneric<MeshT>::~RayTracingMeshGeneric()
 {
-	cleanup();
+    cleanup();
 }
 
 template <typename MeshT>
 void RayTracingMeshGeneric<MeshT>::build()
 {
-	if (isBuilt()) {
-		return;
-	}
+    if (isBuilt())
+    {
+        return;
+    }
 
-	if (!_mesh) {
-		throw std::runtime_error("RayTracingMeshGeneric::build(): mesh is null");
-	}
+    if (!_mesh)
+    {
+        throw std::runtime_error("RayTracingMeshGeneric::build(): mesh is null");
+    }
 
-	if (_mesh->meshData().vertices.empty() || _mesh->meshData().indices.empty()) {
-		throw std::runtime_error("RayTracingMeshGeneric::build(): mesh data is empty");
-	}
+    if (_mesh->meshData().vertices.empty() || _mesh->meshData().indices.empty())
+    {
+        throw std::runtime_error("RayTracingMeshGeneric::build(): mesh data is empty");
+    }
 
-	if (_indexCount == 0) {
-		throw std::runtime_error("RayTracingMeshGeneric::build(): indexCount is zero");
-	}
+    if (_indexCount == 0)
+    {
+        throw std::runtime_error("RayTracingMeshGeneric::build(): indexCount is zero");
+    }
 
-	if ((_indexCount % 3) != 0) {
-		throw std::runtime_error("RayTracingMeshGeneric::build(): indexCount is not a multiple of 3");
-	}
+    if ((_indexCount % 3) != 0)
+    {
+        throw std::runtime_error("RayTracingMeshGeneric::build(): indexCount is not a multiple of 3");
+    }
 
     if (!_engine->rayTracingSupported())
     {
@@ -84,24 +86,21 @@ void RayTracingMeshGeneric<MeshT>::build()
         vertexStride(),
         static_cast<uint32_t>(_mesh->meshData().vertices.size() - 1),
         triangleCount(),
-        VK_INDEX_TYPE_UINT32
-    );
+        VK_INDEX_TYPE_UINT32);
 
     _blasBuffer = std::unique_ptr<Buffer>(Buffer::createAllocatedBuffer(
         _engine,
         buildSizesInfo.accelerationStructureSize,
         VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
         VMA_MEMORY_USAGE_GPU_ONLY,
-        "BLAS buffer"
-    ));
+        "BLAS buffer"));
 
     std::unique_ptr<Buffer> scratchBuffer = std::unique_ptr<Buffer>(Buffer::createAllocatedBuffer(
         _engine,
         buildSizesInfo.buildScratchSize,
         VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
         VMA_MEMORY_USAGE_GPU_ONLY,
-        "BLAS scratch buffer"
-    ));
+        "BLAS scratch buffer"));
 
     VkAccelerationStructureCreateInfoKHR blasInfo{};
     blasInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_KHR;
@@ -110,11 +109,10 @@ void RayTracingMeshGeneric<MeshT>::build()
     blasInfo.size = buildSizesInfo.accelerationStructureSize;
     blasInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
     if (createAccelerationStructure(
-        _engine->device().handle(),
-        &blasInfo,
-        nullptr,
-        &_blas
-    ) != VK_SUCCESS)
+            _engine->device().handle(),
+            &blasInfo,
+            nullptr,
+            &_blas) != VK_SUCCESS)
     {
         cleanup();
         throw std::runtime_error("failed to create acceleration structure!");
@@ -132,12 +130,12 @@ void RayTracingMeshGeneric<MeshT>::build()
     buildRangeInfo.firstVertex = 0;
     buildRangeInfo.transformOffset = 0;
 
-    const VkAccelerationStructureBuildRangeInfoKHR* buildRangeInfos[] = { &buildRangeInfo };
-    _engine->command().immediateSubmit([&](VkCommandBuffer cmd) {
-        cmdBuildAccelerationStructures(
-            cmd, 1, &buildInfo, buildRangeInfos
-        );
-    });
+    const VkAccelerationStructureBuildRangeInfoKHR* buildRangeInfos[] = {&buildRangeInfo};
+    _engine->command().immediateSubmit([&](VkCommandBuffer cmd)
+                                       {
+                                           cmdBuildAccelerationStructures(
+                                               cmd, 1, &buildInfo, buildRangeInfos);
+                                       });
 
     // Get the BLAS device address
     VkAccelerationStructureDeviceAddressInfoKHR addressInfo{};
@@ -145,8 +143,7 @@ void RayTracingMeshGeneric<MeshT>::build()
     addressInfo.accelerationStructure = _blas;
     _blasDeviceAddress = getAccelerationStructureDeviceAddress(
         _engine->device().handle(),
-        &addressInfo
-    );
+        &addressInfo);
 }
 
 template <typename MeshT>
@@ -157,82 +154,82 @@ void RayTracingMeshGeneric<MeshT>::cleanup()
         destroyAccelerationStructure(
             _engine->device().handle(),
             _blas,
-            nullptr
-        );
+            nullptr);
     }
-	if (_blasBuffer) {
-		_blasBuffer->cleanup();
-		_blasBuffer.reset();
-	}
+    if (_blasBuffer)
+    {
+        _blasBuffer->cleanup();
+        _blasBuffer.reset();
+    }
 
-	_blas = VK_NULL_HANDLE;
-	_blasDeviceAddress = 0;
+    _blas = VK_NULL_HANDLE;
+    _blasDeviceAddress = 0;
 }
 
 template <typename MeshT>
 bool RayTracingMeshGeneric<MeshT>::isBuilt() const
 {
-	return _blas != VK_NULL_HANDLE;
+    return _blas != VK_NULL_HANDLE;
 }
 
 template <typename MeshT>
 uint32_t RayTracingMeshGeneric<MeshT>::firstIndex() const
 {
-	return _firstIndex;
+    return _firstIndex;
 }
 
 template <typename MeshT>
 uint32_t RayTracingMeshGeneric<MeshT>::indexCount() const
 {
-	return _indexCount;
+    return _indexCount;
 }
 
 template <typename MeshT>
 uint32_t RayTracingMeshGeneric<MeshT>::triangleCount() const
 {
-	return _indexCount / 3;
+    return _indexCount / 3;
 }
 
 template <typename MeshT>
 VkDeviceAddress RayTracingMeshGeneric<MeshT>::vertexDeviceAddress() const
 {
-	return _mesh ? _mesh->vertexDeviceAddress() : 0;
+    return _mesh ? _mesh->vertexDeviceAddress() : 0;
 }
 
 template <typename MeshT>
 VkDeviceAddress RayTracingMeshGeneric<MeshT>::indexDeviceAddress() const
 {
-	return _mesh ? _mesh->indexDeviceAddress() : 0;
+    return _mesh ? _mesh->indexDeviceAddress() : 0;
 }
 
 template <typename MeshT>
 VkFormat RayTracingMeshGeneric<MeshT>::positionFormat() const
 {
-	return RayTracingVertexInfo<MeshT>::kPositionFormat;
+    return RayTracingVertexInfo<MeshT>::kPositionFormat;
 }
 
 template <typename MeshT>
 uint32_t RayTracingMeshGeneric<MeshT>::vertexStride() const
 {
-	return static_cast<uint32_t>(RayTracingVertexInfo<MeshT>::kStride);
+    return static_cast<uint32_t>(RayTracingVertexInfo<MeshT>::kStride);
 }
 
 template <typename MeshT>
 VkDeviceSize RayTracingMeshGeneric<MeshT>::positionOffset() const
 {
-	return RayTracingVertexInfo<MeshT>::kPositionOffset;
+    return RayTracingVertexInfo<MeshT>::kPositionOffset;
 }
 
 template <typename MeshT>
 VkAccelerationStructureKHR RayTracingMeshGeneric<MeshT>::handle() const
 {
-	return _blas;
+    return _blas;
 }
 
 template <typename MeshT>
 VkDeviceAddress RayTracingMeshGeneric<MeshT>::deviceAddress() const
 {
-	return _blasDeviceAddress;
+    return _blasDeviceAddress;
 }
 
 // Explicit template instantiations

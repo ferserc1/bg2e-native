@@ -39,7 +39,12 @@ struct InstanceData {
     glm::vec4 extents;        // cube: world-space half-extents
 };
 
-enum class ShapeType : int { Plane = 0, Sphere = 1, Cube = 2 };
+enum class ShapeType : int
+{
+    Plane = 0,
+    Sphere = 1,
+    Cube = 2
+};
 
 int main(int argc, char** argv)
 {
@@ -67,19 +72,22 @@ int main(int argc, char** argv)
     Uint32 windowFlags = 0;
     switch (backend->windowType())
     {
-        case gpu::WindowType::Vulkan: windowFlags = SDL_WINDOW_VULKAN; break;
-        case gpu::WindowType::Metal:  windowFlags = SDL_WINDOW_METAL;  break;
+    case gpu::WindowType::Vulkan:
+        windowFlags = SDL_WINDOW_VULKAN;
+        break;
+    case gpu::WindowType::Metal:
+        windowFlags = SDL_WINDOW_METAL;
+        break;
     }
 
-    constexpr uint32_t kWindowWidth  = 800;
+    constexpr uint32_t kWindowWidth = 800;
     constexpr uint32_t kWindowHeight = 600;
 
     SDL_Window* window = SDL_CreateWindow(
         "GPU Ray Tracing Pipeline Example",
         SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
         kWindowWidth, kWindowHeight,
-        windowFlags | SDL_WINDOW_RESIZABLE
-    );
+        windowFlags | SDL_WINDOW_RESIZABLE);
     if (!window)
     {
         std::cerr << "Failed to create window: " << SDL_GetError() << std::endl;
@@ -122,26 +130,11 @@ int main(int argc, char** argv)
     //    set 1: acceleration structure
     //    set 2: per-instance material/shape data SSBO
     gpu::PipelineLayoutDescription layoutDesc{};
-    layoutDesc.resourceBindings.push_back({
-        0, {.vulkan = 0, .metal = 0}, gpu::ResourceType::StorageImage,
-        gpu::ShaderStage::RayGeneration, 1
-    });
-    layoutDesc.resourceBindings.push_back({
-        0, {.vulkan = 1, .metal = 1}, gpu::ResourceType::UniformBuffer,
-        gpu::ShaderStage::RayGeneration, 1
-    });
-    layoutDesc.resourceBindings.push_back({
-        0, {.vulkan = 2, .metal = 1}, gpu::ResourceType::StorageImage,
-        gpu::ShaderStage::RayGeneration, 1
-    });
-    layoutDesc.resourceBindings.push_back({
-        1, {.vulkan = 0, .metal = 2}, gpu::ResourceType::AccelerationStructure,
-        gpu::ShaderStage::RayGeneration, 1
-    });
-    layoutDesc.resourceBindings.push_back({
-        2, {.vulkan = 0, .metal = 3}, gpu::ResourceType::StorageBuffer,
-        gpu::ShaderStage::ClosestHit, 1
-    });
+    layoutDesc.resourceBindings.push_back({0, {.vulkan = 0, .metal = 0}, gpu::ResourceType::StorageImage, gpu::ShaderStage::RayGeneration, 1});
+    layoutDesc.resourceBindings.push_back({0, {.vulkan = 1, .metal = 1}, gpu::ResourceType::UniformBuffer, gpu::ShaderStage::RayGeneration, 1});
+    layoutDesc.resourceBindings.push_back({0, {.vulkan = 2, .metal = 1}, gpu::ResourceType::StorageImage, gpu::ShaderStage::RayGeneration, 1});
+    layoutDesc.resourceBindings.push_back({1, {.vulkan = 0, .metal = 2}, gpu::ResourceType::AccelerationStructure, gpu::ShaderStage::RayGeneration, 1});
+    layoutDesc.resourceBindings.push_back({2, {.vulkan = 0, .metal = 3}, gpu::ResourceType::StorageBuffer, gpu::ShaderStage::ClosestHit, 1});
     layoutDesc.debugName = "RT pipeline layout";
     auto layout = device->createPipelineLayout(layoutDesc);
     cleanup.push(layout);
@@ -152,32 +145,23 @@ int main(int argc, char** argv)
     //    portable storage format that supports shader read_write on both
     //    Vulkan and Metal (a float format like R32G32B32A32_SFLOAT is 16
     //    bytes/pixel and cannot be byte-copied into the 8-bit swapchain).
-    auto outputImage = device->createImage({
-        {kWindowWidth, kWindowHeight}, gpu::PixelFormat::R8G8B8A8_UNORM,
-        gpu::ImageUsage::Storage | gpu::ImageUsage::TransferSrc,
-        gpu::ImageType::Image2D, 1, 0, "RT output image"
-    });
+    auto outputImage = device->createImage({{kWindowWidth, kWindowHeight}, gpu::PixelFormat::R8G8B8A8_UNORM, gpu::ImageUsage::Storage | gpu::ImageUsage::TransferSrc, gpu::ImageType::Image2D, 1, 0, "RT output image"});
     cleanup.push(outputImage);
 
     // 4b. Create HDR accumulation image. The path tracer integrates many noisy
     //     samples over time (Monte Carlo), so the running average is stored in
     //     a float image to avoid the banding/freezing an 8-bit buffer would
     //     cause. It is tonemapped into the 8-bit output image each frame.
-    auto accumImage = device->createImage({
-        {kWindowWidth, kWindowHeight}, gpu::PixelFormat::R32G32B32A32_SFLOAT,
-        gpu::ImageUsage::Storage,
-        gpu::ImageType::Image2D, 1, 0, "RT accumulation image"
-    });
+    auto accumImage = device->createImage({{kWindowWidth, kWindowHeight}, gpu::PixelFormat::R32G32B32A32_SFLOAT, gpu::ImageUsage::Storage, gpu::ImageType::Image2D, 1, 0, "RT accumulation image"});
     cleanup.push(accumImage);
 
     // 5. Create camera UBO
     float aspect = static_cast<float>(kWindowWidth) / static_cast<float>(kWindowHeight);
     auto projection = glm::perspective(glm::radians(40.0f), aspect, 0.1f, 100.0f);
     auto view = glm::lookAt(
-        glm::vec3(0.0f, 2.7f, 15.0f),  // camera position
+        glm::vec3(0.0f, 2.7f, 15.0f), // camera position
         glm::vec3(0.0f, 2.7f, 0.0f),  // look-at center
-        glm::vec3(0.0f, 1.0f, 0.0f)
-    );
+        glm::vec3(0.0f, 1.0f, 0.0f));
 
     CameraData camData{};
     camData.viewInverse = glm::inverse(view);
@@ -212,32 +196,31 @@ int main(int argc, char** argv)
         piece->model = model;
 
         InstanceData& inst = piece->instance;
-        inst.albedo   = glm::vec4(albedo, roughness);
+        inst.albedo = glm::vec4(albedo, roughness);
         inst.emission = glm::vec4(emission, static_cast<float>(shapeType));
-        inst.extents  = glm::vec4(0.0f);
+        inst.extents = glm::vec4(0.0f);
 
         const glm::vec3 center = glm::vec3(model[3]);
         switch (shapeType)
         {
-            case ShapeType::Plane:
-                // Plane local normal is +Y; store the world-space normal.
-                inst.normalOrCenter =
-                    glm::vec4(glm::normalize(glm::mat3(model) * glm::vec3(0.0f, 1.0f, 0.0f)), 0.0f);
-                break;
-            case ShapeType::Sphere:
-                inst.normalOrCenter = glm::vec4(center, shapeParam.w);
-                break;
-            case ShapeType::Cube:
-                inst.normalOrCenter = glm::vec4(center, 0.0f);
-                inst.extents        = glm::vec4(glm::vec3(shapeParam), 0.0f);
-                break;
+        case ShapeType::Plane:
+            // Plane local normal is +Y; store the world-space normal.
+            inst.normalOrCenter =
+                glm::vec4(glm::normalize(glm::mat3(model) * glm::vec3(0.0f, 1.0f, 0.0f)), 0.0f);
+            break;
+        case ShapeType::Sphere:
+            inst.normalOrCenter = glm::vec4(center, shapeParam.w);
+            break;
+        case ShapeType::Cube:
+            inst.normalOrCenter = glm::vec4(center, 0.0f);
+            inst.extents = glm::vec4(glm::vec3(shapeParam), 0.0f);
+            break;
         }
 
         for (uint32_t s = 0; s < piece->mesh->submeshCount(); ++s)
         {
             piece->rtMeshes.push_back(
-                device->createRayTracingMesh(piece->mesh->rayTracingMeshDescription(s))
-            );
+                device->createRayTracingMesh(piece->mesh->rayTracingMeshDescription(s)));
         }
 
         pieces.push_back(piece);
@@ -245,7 +228,7 @@ int main(int argc, char** argv)
     };
 
     constexpr float kWallRoughness = 0.5f; // matte-ish walls (rough at 50%)
-    constexpr float kShiny         = 0.0f; // mirror-like objects
+    constexpr float kShiny = 0.0f;         // mirror-like objects
 
     // Floor (matte grey)
     addPiece(bg2e::geo::createPlanePN(5.5f, 5.5f),
@@ -303,15 +286,15 @@ int main(int argc, char** argv)
 
     // 7. Build BLAS
     device->immediateSubmit([&](gpu::CommandBuffer* cmd)
-    {
-        for (auto& piece : pieces)
-        {
-            for (auto& rtMesh : piece->rtMeshes)
-            {
-                cmd->buildRayTracingMesh(rtMesh.get());
-            }
-        }
-    });
+                            {
+                                for (auto& piece : pieces)
+                                {
+                                    for (auto& rtMesh : piece->rtMeshes)
+                                    {
+                                        cmd->buildRayTracingMesh(rtMesh.get());
+                                    }
+                                }
+                            });
 
     // 8. Create TLAS
     auto rayTracingScene = device->createRayTracingScene("Cornell box scene");
@@ -331,14 +314,14 @@ int main(int argc, char** argv)
     }
 
     device->immediateSubmit([&](gpu::CommandBuffer* cmd)
-    {
-        rayTracingScene->buildOrUpdate(cmd);
-    });
+                            {
+                                rayTracingScene->buildOrUpdate(cmd);
+                            });
 
     // 9. Create instance data SSBO
     auto instanceBuffer = device->createBuffer("Instance Data SSBO");
     instanceBuffer->createStorageBuffer(allInstanceData.data(),
-        allInstanceData.size() * sizeof(InstanceData));
+                                        allInstanceData.size() * sizeof(InstanceData));
     cleanup.push(instanceBuffer);
 
     // 10. Create resource sets
@@ -389,32 +372,30 @@ int main(int argc, char** argv)
         SDL_Event event;
         while (SDL_PollEvent(&event))
         {
-            if (event.type == SDL_QUIT) running = false;
+            if (event.type == SDL_QUIT)
+            {
+                running = false;
+            }
             if (event.type == SDL_WINDOWEVENT &&
-                event.window.event == SDL_WINDOWEVENT_CLOSE) running = false;
+                event.window.event == SDL_WINDOWEVENT_CLOSE)
+            {
+                running = false;
+            }
             if (event.type == SDL_WINDOWEVENT &&
                 event.window.event == SDL_WINDOWEVENT_RESIZED)
             {
-                uint32_t newWidth  = static_cast<uint32_t>(event.window.data1);
+                uint32_t newWidth = static_cast<uint32_t>(event.window.data1);
                 uint32_t newHeight = static_cast<uint32_t>(event.window.data2);
                 device->waitIdle();
                 surface->resize({newWidth, newHeight});
 
                 // Recreate output and accumulation images for the new size
                 outputImage->cleanup();
-                auto newOutput = device->createImage({
-                    {newWidth, newHeight}, gpu::PixelFormat::R8G8B8A8_UNORM,
-                    gpu::ImageUsage::Storage | gpu::ImageUsage::TransferSrc,
-                    gpu::ImageType::Image2D, 1, 0, "RT output image"
-                });
+                auto newOutput = device->createImage({{newWidth, newHeight}, gpu::PixelFormat::R8G8B8A8_UNORM, gpu::ImageUsage::Storage | gpu::ImageUsage::TransferSrc, gpu::ImageType::Image2D, 1, 0, "RT output image"});
                 cleanup.push(newOutput);
 
                 accumImage->cleanup();
-                auto newAccum = device->createImage({
-                    {newWidth, newHeight}, gpu::PixelFormat::R32G32B32A32_SFLOAT,
-                    gpu::ImageUsage::Storage,
-                    gpu::ImageType::Image2D, 1, 0, "RT accumulation image"
-                });
+                auto newAccum = device->createImage({{newWidth, newHeight}, gpu::PixelFormat::R32G32B32A32_SFLOAT, gpu::ImageUsage::Storage, gpu::ImageType::Image2D, 1, 0, "RT accumulation image"});
                 cleanup.push(newAccum);
 
                 // Update resource set with the new images
@@ -427,7 +408,7 @@ int main(int argc, char** argv)
                 cleanup.push(newOutputSet);
 
                 outputImage = std::move(newOutput);
-                accumImage  = std::move(newAccum);
+                accumImage = std::move(newAccum);
                 outputSet = std::move(newOutputSet);
 
                 camData.misc.y = static_cast<float>(newWidth);
@@ -455,7 +436,10 @@ int main(int argc, char** argv)
         cameraUbo->updateUniformBuffer(camData);
 
         auto frame = surface->beginFrame();
-        if (!frame) continue;
+        if (!frame)
+        {
+            continue;
+        }
 
         auto cmd = graphicsQueue.createCommandBuffer("Frame");
 
@@ -489,7 +473,10 @@ int main(int argc, char** argv)
     device->waitIdle();
     for (auto& piece : pieces)
     {
-        for (auto& rtMesh : piece->rtMeshes) { rtMesh->cleanup(); }
+        for (auto& rtMesh : piece->rtMeshes)
+        {
+            rtMesh->cleanup();
+        }
         piece->mesh->cleanup();
     }
     pieces.clear();

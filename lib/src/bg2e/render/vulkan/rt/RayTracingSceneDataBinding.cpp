@@ -21,13 +21,11 @@
 
 namespace bg2e::render::vulkan::rt {
 
-void RayTracingSceneDataBinding::initFrameResources(bg2e::render::vulkan::DescriptorSetAllocator * frameAllocator)
+void RayTracingSceneDataBinding::initFrameResources(bg2e::render::vulkan::DescriptorSetAllocator* frameAllocator)
 {
     if (_engine->rayTracingSupported())
     {
-        frameAllocator->requirePoolSizeRatio(1, {
-        { VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 1 }
-        });
+        frameAllocator->requirePoolSizeRatio(1, {{VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 1}});
     }
 }
 
@@ -39,21 +37,19 @@ VkDescriptorSetLayout RayTracingSceneDataBinding::createLayout(VkShaderStageFlag
 
         dsFactory.addBinding(
             0,
-            VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR
-        );
+            VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR);
 
         _layout = dsFactory.build(
             _engine->device().handle(),
-            shaderStages
-        );
+            shaderStages);
     }
     return _layout;
 }
 
 VkDescriptorSet RayTracingSceneDataBinding::newDescriptorSet(
-    bg2e::render::vulkan::FrameResources & frameResources,
-    VkAccelerationStructureKHR tlas
-) {
+    bg2e::render::vulkan::FrameResources& frameResources,
+    VkAccelerationStructureKHR tlas)
+{
     if (!_engine->rayTracingSupported())
     {
         return VK_NULL_HANDLE;
@@ -71,7 +67,7 @@ VkDescriptorSet RayTracingSceneDataBinding::newDescriptorSet(
 
     auto ds = frameResources.newDescriptorSet(_layout);
     ds->beginUpdate();
-        ds->addAccelerationStructure(0, tlas);
+    ds->addAccelerationStructure(0, tlas);
     ds->endUpdate();
     return ds->descriptorSet();
 }

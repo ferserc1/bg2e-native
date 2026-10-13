@@ -25,9 +25,8 @@
 #include <bg2e/gpu/metal/Image.hpp>
 #include <bg2e/gpu/WindowSurface.hpp>
 #include <bg2e/gpu/SurfaceFrame.hpp>
-#include "imgui.h"
-#include "imgui_impl_metal.h"
-
+#include <imgui.h>
+#include <imgui_impl_metal.h>
 
 #include <stdexcept>
 
@@ -35,10 +34,13 @@ namespace bg2e::ui::detail {
 namespace {
 struct AutoreleaseScope {
     NS::AutoreleasePool* pool = NS::AutoreleasePool::alloc()->init();
-    ~AutoreleaseScope() { pool->release(); }
+    ~AutoreleaseScope()
+    {
+        pool->release();
+    }
 };
 class MetalImGuiBackend final : public ImGuiBackend {
-public:
+  public:
     void initialize(render::Engine&) override
     {
         throw std::invalid_argument("Production UI uses the Vulkan renderer.");
@@ -47,31 +49,46 @@ public:
     void initialize(draw::Engine& engine) override
     {
         auto* device = dynamic_cast<gpu::metal::Device*>(engine.device());
-        if (!device || !device->isValid()) throw std::invalid_argument("Metal UI requires a valid Metal Device.");
+        if (!device || !device->isValid())
+        {
+            throw std::invalid_argument("Metal UI requires a valid Metal Device.");
+        }
         _engine = &engine;
         {
             AutoreleaseScope autoreleaseScope;
             _rendererStarted = true;
             if (!ImGui_ImplMetal_Init(device->handle()))
+            {
                 throw std::runtime_error("ImGui Metal initialization failed.");
+            }
         }
     }
 
     void prepareFrame(gpu::CommandBuffer* command, gpu::SurfaceFrame* frame) override
     {
         if (!_engine || !_rendererStarted || !command || !frame || !frame->isValid())
+        {
             throw std::logic_error("Metal UI preparation requires an acquired presentation frame.");
+        }
         if (!dynamic_cast<gpu::metal::CommandBuffer*>(command) || command->hasActiveScope())
+        {
             throw std::invalid_argument("Metal UI preparation requires Metal commands without active scopes.");
+        }
         auto* image = dynamic_cast<gpu::metal::Image*>(frame->colorImage());
-        if (!image || !image->texture()) throw std::invalid_argument("Metal UI requires a Metal presentation image.");
+        if (!image || !image->texture())
+        {
+            throw std::invalid_argument("Metal UI requires a Metal presentation image.");
+        }
         auto* texture = image->texture();
         if (!_preparation || _generation != _engine->surface()->generation() ||
             _format != texture->pixelFormat() || _sampleCount != texture->sampleCount())
         {
             releasePreparation();
             _preparation = MTL::RenderPassDescriptor::alloc()->init();
-            if (!_preparation) throw std::runtime_error("Could not allocate Metal UI preparation metadata.");
+            if (!_preparation)
+            {
+                throw std::runtime_error("Could not allocate Metal UI preparation metadata.");
+            }
             _generation = _engine->surface()->generation();
             _format = texture->pixelFormat();
             _sampleCount = texture->sampleCount();
@@ -96,8 +113,13 @@ public:
     {
         auto* metalCommand = dynamic_cast<gpu::metal::CommandBuffer*>(&command);
         if (!_engine || !_preparation || !metalCommand || !frame.isValid() || !frame.colorImage())
+        {
             throw std::invalid_argument("Metal UI composition requires a prepared Metal frame.");
-        if (command.hasActiveScope()) throw std::logic_error("Metal UI composition requires closed scene scopes.");
+        }
+        if (command.hasActiveScope())
+        {
+            throw std::logic_error("Metal UI composition requires closed scene scopes.");
+        }
         {
             AutoreleaseScope autoreleaseScope;
             command.beginRendering(frame.colorImage()); // Color-only LOAD/STORE.
@@ -105,11 +127,13 @@ public:
             auto* texture = pass->colorAttachments()->object(0)->texture();
             if (!texture || texture->pixelFormat() != _format || texture->sampleCount() != _sampleCount ||
                 pass->depthAttachment()->texture() || pass->stencilAttachment()->texture())
+            {
                 throw std::logic_error("Metal UI preparation and overlay pass configurations differ.");
+            }
             auto* encoder = metalCommand->materializeRenderEncoder();
             ImGui_ImplMetal_RenderDrawData(ImGui::GetDrawData(),
-                metalCommand->handle(),
-                encoder);
+                                           metalCommand->handle(),
+                                           encoder);
             command.endRendering(); // GPU owns and ends the encoder exactly once.
         }
     }
@@ -119,17 +143,22 @@ public:
         {
             AutoreleaseScope autoreleaseScope;
             if (_rendererStarted && ImGui::GetCurrentContext() && ImGui::GetIO().BackendRendererUserData)
+            {
                 ImGui_ImplMetal_Shutdown();
+            }
             _rendererStarted = false;
             releasePreparation();
             _engine = nullptr;
         }
     }
 
-private:
+  private:
     void releasePreparation()
     {
-        if (_preparation) _preparation->release();
+        if (_preparation)
+        {
+            _preparation->release();
+        }
         _preparation = nullptr;
     }
 

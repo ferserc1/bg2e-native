@@ -22,281 +22,223 @@
 #include <bg2e/ui/RenderSettingsWindow.hpp>
 #include <bg2e/render/RenderSettingsPreferences.hpp>
 
-void ToolBar::init(AppDelegate * delegate, bg2e::ui::UISettingsWindow * uiSettings,
-                   bg2e::ui::RenderSettingsWindow * renderSettings,
-                   bg2e::render::RenderSettingsPreferences * renderPrefs)
+void ToolBar::init(AppDelegate* delegate, bg2e::ui::UISettingsWindow* uiSettings,
+                   bg2e::ui::RenderSettingsWindow* renderSettings,
+                   bg2e::render::RenderSettingsPreferences* renderPrefs)
 {
     using namespace bg2e::ui;
     _appDelegate = delegate;
     _uiSettingsWindow = uiSettings;
     _renderSettingsWindow = renderSettings;
     _renderPrefs = renderPrefs;
-    
-    bg2e::app::MainLoop::current()->setOnExitFunction([]() -> bool {
-        return bg2e::app::MessageBox::showWarning("Quit Model Edit", "Any unsaved changes will be lost. Are you sure you want to quit?", {
-            { .code = 1, .label = "Quit" },
-            { .code = 2, .label = "Cancel", .key = bg2e::app::MessageBox::Esc }
-        }) == 1;
-    });
+
+    bg2e::app::MainLoop::current()->setOnExitFunction([]() -> bool
+                                                      {
+                                                          return bg2e::app::MessageBox::showWarning("Quit Model Edit", "Any unsaved changes will be lost. Are you sure you want to quit?", {{.code = 1, .label = "Quit"}, {.code = 2, .label = "Cancel", .key = bg2e::app::MessageBox::Esc}}) == 1;
+                                                      });
 
     bg2e::ui::MenuItem file("File");
-    file.addMenuItem({ "Open", {
-        .ctrlModifier = true,
-        .key = bg2e::app::KeyEvent::KeyO,
-        .handler = [&]() {
-            bg2e::app::FileDialog fd;
-            fd.setFilters({
-                { "bg2e 3D model", "bg2,vwglb" }
-            });
-            auto filePath = fd.openFile();
+    file.addMenuItem({"Open", {.ctrlModifier = true, .key = bg2e::app::KeyEvent::KeyO, .handler = [&]()
+                                                                                       {
+                                                                                           bg2e::app::FileDialog fd;
+                                                                                           fd.setFilters({{"bg2e 3D model", "bg2,vwglb"}});
+                                                                                           auto filePath = fd.openFile();
 
-            if (!filePath.empty())
-            {
-                _appDelegate->stage()->loadModel(filePath);
-            }
-        }
-    }});
-    file.addMenuItem({ "Import GLTF", {
-        .handler = [&]()
-        {
-            bg2e::app::FileDialog fd;
-            fd.setFilters({
-                { "gltf file", "glb,gltf" }
-            });
-            auto filePath = fd.openFile();
+                                                                                           if (!filePath.empty())
+                                                                                           {
+                                                                                               _appDelegate->stage()->loadModel(filePath);
+                                                                                           }
+                                                                                       }}});
+    file.addMenuItem({"Import GLTF", {.handler = [&]()
+                                      {
+                                          bg2e::app::FileDialog fd;
+                                          fd.setFilters({{"gltf file", "glb,gltf"}});
+                                          auto filePath = fd.openFile();
 
-            if (!filePath.empty())
-            {
-                _appDelegate->stage()->importGltf(filePath);
-            }
-        }
-    }});
-    file.addMenuItem({ "Import OBJ", {
-        .handler = [&]()
-        {
-            bg2e::app::FileDialog fd;
-                fd.setFilters({
-                    { "OBJ file", "obj" }
-                });
-                auto filePath = fd.openFile();
+                                          if (!filePath.empty())
+                                          {
+                                              _appDelegate->stage()->importGltf(filePath);
+                                          }
+                                      }}});
+    file.addMenuItem({"Import OBJ", {.handler = [&]()
+                                     {
+                                         bg2e::app::FileDialog fd;
+                                         fd.setFilters({{"OBJ file", "obj"}});
+                                         auto filePath = fd.openFile();
 
-                if (!filePath.empty())
-                {
-                    _appDelegate->stage()->importObj(filePath);
-                }
-        }
-    }});
-    file.addMenuItem({ "Save", {
-        .ctrlModifier = true,
-        .key = bg2e::app::KeyEvent::KeyS,
-        .handler = [&]()
-        {
-            auto filePath = _appDelegate->stage()->document()->path();
-            if (filePath.empty())
-            {
-                bg2e::app::FileDialog fd;
-                fd.setFilters({
-                    { "bg2e 3D model", "bg2,vwglb" }
-                });
-                filePath = fd.saveFile();
-            }
+                                         if (!filePath.empty())
+                                         {
+                                             _appDelegate->stage()->importObj(filePath);
+                                         }
+                                     }}});
+    file.addMenuItem({"Save", {.ctrlModifier = true, .key = bg2e::app::KeyEvent::KeyS, .handler = [&]()
+                                                                                       {
+                                                                                           auto filePath = _appDelegate->stage()->document()->path();
+                                                                                           if (filePath.empty())
+                                                                                           {
+                                                                                               bg2e::app::FileDialog fd;
+                                                                                               fd.setFilters({{"bg2e 3D model", "bg2,vwglb"}});
+                                                                                               filePath = fd.saveFile();
+                                                                                           }
 
-            if (!filePath.empty())
-            {
-                _appDelegate->stage()->saveModel(filePath);
-            }
-        }
-    }});
-    file.addMenuItem({ "Save As...", {
-        .ctrlModifier = true,
-        .shiftModifier = true,
-        .key = bg2e::app::KeyEvent::KeyS,
-        .handler = [&]()
-        {
-            bg2e::app::FileDialog fd;
-            fd.setFilters({
-                { "bg2e 3D model", "bg2,vwglb" }
-            });
-            auto filePath = fd.saveFile();
+                                                                                           if (!filePath.empty())
+                                                                                           {
+                                                                                               _appDelegate->stage()->saveModel(filePath);
+                                                                                           }
+                                                                                       }}});
+    file.addMenuItem({"Save As...", {.ctrlModifier = true, .shiftModifier = true, .key = bg2e::app::KeyEvent::KeyS, .handler = [&]()
+                                                                                                                    {
+                                                                                                                        bg2e::app::FileDialog fd;
+                                                                                                                        fd.setFilters({{"bg2e 3D model", "bg2,vwglb"}});
+                                                                                                                        auto filePath = fd.saveFile();
 
-            if (!filePath.empty())
-            {
-                _appDelegate->stage()->saveModel(filePath);
-            }
-        }
-    }});
-    file.addMenuItem({});   // Separator
-    file.addMenuItem({ "Quit", {
-        .ctrlModifier = true,
-        .key = bg2e::app::KeyEvent::KeyQ,
-        .handler = [&]()
-        {
-            bg2e::app::MainLoop::current()->exit();
-        }
-    }});
+                                                                                                                        if (!filePath.empty())
+                                                                                                                        {
+                                                                                                                            _appDelegate->stage()->saveModel(filePath);
+                                                                                                                        }
+                                                                                                                    }}});
+    file.addMenuItem({}); // Separator
+    file.addMenuItem({"Quit", {.ctrlModifier = true, .key = bg2e::app::KeyEvent::KeyQ, .handler = [&]()
+                                                                                       {
+                                                                                           bg2e::app::MainLoop::current()->exit();
+                                                                                       }}});
     addMenuItem(file);
 
     bg2e::ui::MenuItem view("View");
-    view.addMenuItem({ "Toggle Selection Highlight", {
-        .shiftModifier = true,
-        .key = bg2e::app::KeyEvent::KeySpace,
-        .handler = [&]()
-        {
-            _appDelegate->toggleSelectionHighlight();
-        }
-    }});
-    view.addMenuItem({ "Center Camera", {
-        .ctrlModifier = true,
-        .key = bg2e::app::KeyEvent::KeyA,
-        .handler = [&]()
-        {
-            _appDelegate->stage()->centerCameraOnTarget();
-        }
-    }});
+    view.addMenuItem({"Toggle Selection Highlight", {.shiftModifier = true, .key = bg2e::app::KeyEvent::KeySpace, .handler = [&]()
+                                                                                                                  {
+                                                                                                                      _appDelegate->toggleSelectionHighlight();
+                                                                                                                  }}});
+    view.addMenuItem({"Center Camera", {.ctrlModifier = true, .key = bg2e::app::KeyEvent::KeyA, .handler = [&]()
+                                                                                                {
+                                                                                                    _appDelegate->stage()->centerCameraOnTarget();
+                                                                                                }}});
     addMenuItem(view);
 
     bg2e::ui::MenuItem window("Window");
-    window.addMenuItem({ "Submesh Editor", {
-        .handler = [&]()
-        {
-            _appDelegate->workspace().toggleLeftPanel();
-        }
-    }, [&]() {
-        return _appDelegate->workspace().leftPanelVisible();
-    }});
-    window.addMenuItem({ "Environment", {
-        .handler = [&]()
-        {
-            _appDelegate->workspace().toggleRightPanel();
-        }
-    }, [&]() {
-        return _appDelegate->workspace().rightPanelVisible();
-    }});
-    window.addMenuItem({});   // Separator
-    window.addMenuItem({ "UI Settings", {
-        .handler = [&]()
-        {
-            _uiSettingsWindow->open();
-        }
-    }});
-    window.addMenuItem({ "Render Settings", {
-        .handler = [&]()
-        {
-            _renderSettingsWindow->open();
-        }
-    }});
-    window.addMenuItem({ "Lightmap Baker", {
-        .handler = [&]()
-        {
-            _appDelegate->lightmapWindow().open();
-        }
-    }});
+    window.addMenuItem({"Submesh Editor", {.handler = [&]()
+                                           {
+                                               _appDelegate->workspace().toggleLeftPanel();
+                                           }},
+                        [&]()
+                        {
+                            return _appDelegate->workspace().leftPanelVisible();
+                        }});
+    window.addMenuItem({"Environment", {.handler = [&]()
+                                        {
+                                            _appDelegate->workspace().toggleRightPanel();
+                                        }},
+                        [&]()
+                        {
+                            return _appDelegate->workspace().rightPanelVisible();
+                        }});
+    window.addMenuItem({}); // Separator
+    window.addMenuItem({"UI Settings", {.handler = [&]()
+                                        {
+                                            _uiSettingsWindow->open();
+                                        }}});
+    window.addMenuItem({"Render Settings", {.handler = [&]()
+                                            {
+                                                _renderSettingsWindow->open();
+                                            }}});
+    window.addMenuItem({"Lightmap Baker", {.handler = [&]()
+                                           {
+                                               _appDelegate->lightmapWindow().open();
+                                           }}});
     addMenuItem(window);
 
-    addButton({
-        .label = "Y-axis > Z-axis",
-        .action = [&]()
-        {
-            using namespace bg2e::geo;
-            _appDelegate->stage()->document()->setUnsavedChanges(true);
-            auto drw = _appDelegate->stage()->targetDrawable();
-            if (drw.get())
-            {
-                drw->applyModifier(new ConvertAxisModifier<Mesh>(ConvertAxisModifier<Mesh>::Mode::ZtoY));
-            }
-        }
-    });
+    addButton({.label = "Y-axis > Z-axis",
+               .action = [&]()
+               {
+                   using namespace bg2e::geo;
+                   _appDelegate->stage()->document()->setUnsavedChanges(true);
+                   auto drw = _appDelegate->stage()->targetDrawable();
+                   if (drw.get())
+                   {
+                       drw->applyModifier(new ConvertAxisModifier<Mesh>(ConvertAxisModifier<Mesh>::Mode::ZtoY));
+                   }
+               }});
 
-    addButton({
-        .label = "Center Geometry",
-        .action = [&]()
-        {
-            using namespace bg2e::geo;
-            _appDelegate->stage()->document()->setUnsavedChanges(true);
-            auto drw = _appDelegate->stage()->targetDrawable();
-            if (drw.get())
-            {
-                drw->applyModifier(new CenterGeometryModifier<Mesh>());
-            }
-        }
-    });
+    addButton({.label = "Center Geometry",
+               .action = [&]()
+               {
+                   using namespace bg2e::geo;
+                   _appDelegate->stage()->document()->setUnsavedChanges(true);
+                   auto drw = _appDelegate->stage()->targetDrawable();
+                   if (drw.get())
+                   {
+                       drw->applyModifier(new CenterGeometryModifier<Mesh>());
+                   }
+               }});
 
-    addButton({
-        .label = "Put on Floor",
-        .action = [&]()
-        {
-            using namespace bg2e::geo;
-            _appDelegate->stage()->document()->setUnsavedChanges(true);
-            auto drw = _appDelegate->stage()->targetDrawable();
-            if (drw.get())
-            {
-                drw->applyModifier(new PutOnFloorGeometryModifier<Mesh>());
-            }
-        }
-    });
+    addButton({.label = "Put on Floor",
+               .action = [&]()
+               {
+                   using namespace bg2e::geo;
+                   _appDelegate->stage()->document()->setUnsavedChanges(true);
+                   auto drw = _appDelegate->stage()->targetDrawable();
+                   if (drw.get())
+                   {
+                       drw->applyModifier(new PutOnFloorGeometryModifier<Mesh>());
+                   }
+               }});
 
-    addButton({
-        .label = "cm to m",
-        .action = [&]()
-        {
-            using namespace bg2e::geo;
-            _appDelegate->stage()->document()->setUnsavedChanges(true);
-            auto drw = _appDelegate->stage()->targetDrawable();
-            if (drw.get())
-            {
-                auto trx = glm::scale(
-                    glm::mat4 { 1.0f },
-                    glm::vec3(0.01f, 0.01f, 0.01f)
-                );
-                drw->applyModifier(new ApplyTransformModifier<Mesh>(trx));
-            }
-        }
-    });
-    
-    addButton({
-        .label = "Lightmaps",
-        .action = [&]() {
-            _appDelegate->lightmapWindow().open();
-        }
-    });
+    addButton({.label = "cm to m",
+               .action = [&]()
+               {
+                   using namespace bg2e::geo;
+                   _appDelegate->stage()->document()->setUnsavedChanges(true);
+                   auto drw = _appDelegate->stage()->targetDrawable();
+                   if (drw.get())
+                   {
+                       auto trx = glm::scale(
+                           glm::mat4{1.0f},
+                           glm::vec3(0.01f, 0.01f, 0.01f));
+                       drw->applyModifier(new ApplyTransformModifier<Mesh>(trx));
+                   }
+               }});
 
-    _indirectButtonId = addButton({
-        .label = "RT AO/GI: On##rt_indirect",
-        .action = [this]() {
-            _renderPrefs->setIndirectLightingEnabled(!_renderPrefs->indirectLightingEnabled());
-        }
-    });
-    _reflectionsButtonId = addButton({
-        .label = "RT Reflections: On##rt_reflections",
-        .action = [this]() {
-            _renderPrefs->setRTReflectionsEnabled(!_renderPrefs->rtReflectionsEnabled());
-        }
-    });
+    addButton({.label = "Lightmaps",
+               .action = [&]()
+               {
+                   _appDelegate->lightmapWindow().open();
+               }});
 
-    addButton({
-        .label = "Submesh Editor",
-        .action = [&]() {
-            _appDelegate->workspace().toggleLeftPanel();
-        }
-    }, AlignRight);
-    
-    addButton({
-        .label = "Environment",
-        .action = [&]() {
-            _appDelegate->workspace().toggleRightPanel();
-        }
-    }, AlignRight);
+    _indirectButtonId = addButton({.label = "RT AO/GI: On##rt_indirect",
+                                   .action = [this]()
+                                   {
+                                       _renderPrefs->setIndirectLightingEnabled(!_renderPrefs->indirectLightingEnabled());
+                                   }});
+    _reflectionsButtonId = addButton({.label = "RT Reflections: On##rt_reflections",
+                                      .action = [this]()
+                                      {
+                                          _renderPrefs->setRTReflectionsEnabled(!_renderPrefs->rtReflectionsEnabled());
+                                      }});
+
+    addButton({.label = "Submesh Editor",
+               .action = [&]()
+               {
+                   _appDelegate->workspace().toggleLeftPanel();
+               }},
+              AlignRight);
+
+    addButton({.label = "Environment",
+               .action = [&]()
+               {
+                   _appDelegate->workspace().toggleRightPanel();
+               }},
+              AlignRight);
 }
 
 void ToolBar::draw()
 {
     updateButtonLabel(_indirectButtonId,
-        _renderPrefs->indirectLightingEnabled()
-            ? "RT AO/GI: On##rt_indirect"
-            : "RT AO/GI: Off##rt_indirect");
+                      _renderPrefs->indirectLightingEnabled()
+                          ? "RT AO/GI: On##rt_indirect"
+                          : "RT AO/GI: Off##rt_indirect");
     updateButtonLabel(_reflectionsButtonId,
-        _renderPrefs->rtReflectionsEnabled()
-            ? "RT Reflections: On##rt_reflections"
-            : "RT Reflections: Off##rt_reflections");
+                      _renderPrefs->rtReflectionsEnabled()
+                          ? "RT Reflections: On##rt_reflections"
+                          : "RT Reflections: Off##rt_reflections");
     bg2e::ui::Toolbar::draw();
 }

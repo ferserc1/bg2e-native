@@ -38,7 +38,7 @@ class SurfaceFrame;
 class RayTracingPipeline;
 
 class CommandBuffer : public gpu::CommandBuffer {
-public:
+  public:
     CommandBuffer() = default;
     CommandBuffer(const CommandBuffer&) = delete;
     CommandBuffer& operator=(const CommandBuffer&) = delete;
@@ -78,21 +78,43 @@ public:
     // Emit the lazy native rendering pass before interoperability draw calls.
     void materializeRenderPass();
 
-    bool hasActiveScope() const override { return _renderingActive || _computeActive; }
-    bool isValid() const override { return _cmd != VK_NULL_HANDLE; }
+    bool hasActiveScope() const override
+    {
+        return _renderingActive || _computeActive;
+    }
+    bool isValid() const override
+    {
+        return _cmd != VK_NULL_HANDLE;
+    }
 
-    VkCommandBuffer handle() const { return _cmd; }
+    VkCommandBuffer handle() const
+    {
+        return _cmd;
+    }
 
-    void setPresentFrame(vk::SurfaceFrame* frame) { _presentFrame = frame; }
-    vk::SurfaceFrame* presentFrame() const        { return _presentFrame; }
+    void setPresentFrame(vk::SurfaceFrame* frame)
+    {
+        _presentFrame = frame;
+    }
+    vk::SurfaceFrame* presentFrame() const
+    {
+        return _presentFrame;
+    }
 
-private:
+  private:
     friend class Device;
     friend class WindowSurface;
     friend class OffscreenSurface;
-    void associateFrame(std::shared_ptr<gpu::SurfaceFrame> frame) { _submissionFrame = std::move(frame); }
-    void waitForCompletion() {
-        if (!_completion) throw std::logic_error("Command buffer has not been submitted");
+    void associateFrame(std::shared_ptr<gpu::SurfaceFrame> frame)
+    {
+        _submissionFrame = std::move(frame);
+    }
+    void waitForCompletion()
+    {
+        if (!_completion)
+        {
+            throw std::logic_error("Command buffer has not been submitted");
+        }
         _completion->wait();
     }
 
@@ -103,22 +125,22 @@ private:
 
     void flushPendingRendering();
 
-    vk::Device*       _device = nullptr;
-    VkCommandBuffer   _cmd    = VK_NULL_HANDLE;
-    VkCommandPool     _pool   = VK_NULL_HANDLE;
+    vk::Device* _device = nullptr;
+    VkCommandBuffer _cmd = VK_NULL_HANDLE;
+    VkCommandPool _pool = VK_NULL_HANDLE;
     std::shared_ptr<CommandAllocation> _allocation;
     VkQueue _originQueue = VK_NULL_HANDLE;
     bool _recording = false;
 
-    vk::SurfaceFrame* _renderFrame  = nullptr;
-    bool              _renderingActive = false;
-    bool              _computeActive = false;
-    bool              _renderingEmitted = false;
-    VkClearColorValue _clearColor = {{ 0, 0, 0, 1 }};
-    float             _clearDepth = 1.0f;
-    bool              _hasColorClear = false;
-    bool              _hasDepthClear = false;
-    VkPipelineLayout  _boundLayoutHandle = VK_NULL_HANDLE;
+    vk::SurfaceFrame* _renderFrame = nullptr;
+    bool _renderingActive = false;
+    bool _computeActive = false;
+    bool _renderingEmitted = false;
+    VkClearColorValue _clearColor = {{0, 0, 0, 1}};
+    float _clearDepth = 1.0f;
+    bool _hasColorClear = false;
+    bool _hasDepthClear = false;
+    VkPipelineLayout _boundLayoutHandle = VK_NULL_HANDLE;
 
     vk::RayTracingPipeline* _boundRTPipeline = nullptr;
 
@@ -127,10 +149,10 @@ private:
     gpu::Image* _renderColorImage = nullptr;
     gpu::Image* _renderDepthImage = nullptr;
 
-    gpu::CubeMap*  _renderCubeMap     = nullptr;
-    uint32_t       _renderCubeFace    = 0;
-    uint32_t       _renderCubeMipLevel = 0;
-    bool           _renderingCubeMap  = false;
+    gpu::CubeMap* _renderCubeMap = nullptr;
+    uint32_t _renderCubeFace = 0;
+    uint32_t _renderCubeMipLevel = 0;
+    bool _renderingCubeMap = false;
 };
 
 }

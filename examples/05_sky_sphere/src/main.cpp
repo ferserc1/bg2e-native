@@ -21,103 +21,95 @@
 #include <numbers>
 
 class ClearScreenDelegate : public bg2e::render::RenderLoopDelegate,
-	public bg2e::app::InputDelegate,
-	public bg2e::ui::UserInterfaceDelegate
-{
-public:
-	void init(bg2e::render::Engine * vulkan) override
-	{
-		using namespace bg2e::render::vulkan;
-		RenderLoopDelegate::init(vulkan);
-  
+                            public bg2e::app::InputDelegate,
+                            public bg2e::ui::UserInterfaceDelegate {
+  public:
+    void init(bg2e::render::Engine* vulkan) override
+    {
+        using namespace bg2e::render::vulkan;
+        RenderLoopDelegate::init(vulkan);
+
         // If you need to use the main descriptor set allocator, add all the required pool size ratios
         // in the init function.
-        vulkan->descriptorSetAllocator().requirePoolSizeRatio(1, {
-            { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1 }
-        });
-	}
- 
+        vulkan->descriptorSetAllocator().requirePoolSizeRatio(1, {{VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1}});
+    }
+
     void initFrameResources(bg2e::render::vulkan::DescriptorSetAllocator* frameAllocator) override
     {
-        frameAllocator->requirePoolSizeRatio(1, {
-            { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 2 },
-            { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1 }
-        });
+        frameAllocator->requirePoolSizeRatio(1, {{VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 2},
+                                                 {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1}});
         frameAllocator->initPool();
     }
- 
+
     void initScene() override
     {
         // Use the initScene function to initialize and create scene resources, such as pipelines, 3D models
         // or textures
-        
+
         auto assetsPath = bg2e::base::PlatformTools::assetPath();
-        
-		// You can use plain pointers in this case, because the base::Image and base::Texture objects will not
-		// be used outside of this function. Internally, these objects will be stored in a shared_ptr and will be
-		// managed by the render::Texture object.
-		// But if you plan to use the objects more than once, you ALWAYS must to use a shared_ptr to share the pointer
-		// between the Texture object and the rest of the application.
-		auto texture = new bg2e::base::Texture(assetsPath, "country_field_sun.jpg");
+
+        // You can use plain pointers in this case, because the base::Image and base::Texture objects will not
+        // be used outside of this function. Internally, these objects will be stored in a shared_ptr and will be
+        // managed by the render::Texture object.
+        // But if you plan to use the objects more than once, you ALWAYS must to use a shared_ptr to share the pointer
+        // between the Texture object and the rest of the application.
+        auto texture = new bg2e::base::Texture(assetsPath, "country_field_sun.jpg");
         texture->setMagFilter(bg2e::base::Texture::FilterLinear);
         texture->setMinFilter(bg2e::base::Texture::FilterLinear);
 
-		_skyTexture = std::shared_ptr<bg2e::render::Texture>(new bg2e::render::Texture(
-			_engine,
-			texture
-		));
-  
+        _skyTexture = std::shared_ptr<bg2e::render::Texture>(new bg2e::render::Texture(
+            _engine,
+            texture));
+
         texture = new bg2e::base::Texture(assetsPath, "logo_2a.png");
         texture->setMagFilter(bg2e::base::Texture::FilterLinear);
         texture->setMinFilter(bg2e::base::Texture::FilterLinear);
         texture->setUseMipmaps(true);
         _boxTexture = std::shared_ptr<bg2e::render::Texture>(new bg2e::render::Texture(
             _engine,
-            texture
-        ));
-  
-        _engine->cleanupManager().push([&](VkDevice) {
-            _skyTexture.reset();
-            _boxTexture.reset();
-        });
-	
-		createPipeline();
+            texture));
 
-        _sceneData.viewMatrix = glm::lookAt(glm::vec3{ 0.0f, 0.0f, 5.0f}, { 0.0f, 0.0f, 0.0f }, { 0.0f, 1.0f, 0.0f });
-        
+        _engine->cleanupManager().push([&](VkDevice)
+                                       {
+                                           _skyTexture.reset();
+                                           _boxTexture.reset();
+                                       });
+
+        createPipeline();
+
+        _sceneData.viewMatrix = glm::lookAt(glm::vec3{0.0f, 0.0f, 5.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f});
+
         auto vpSize = _engine->swapchain().extent();
         _sceneData.projMatrix = glm::perspective(
             glm::radians(50.0f),
             float(vpSize.width) / float(vpSize.height),
-            0.1f, 40.0f
-        );
+            0.1f, 40.0f);
 
-        _objectData.modelMatrix = glm::mat4{ 1.0f };
-        
-        _boxData.modelMatrix = glm::mat4{ 1.0f };
-        
-		createVertexData();
+        _objectData.modelMatrix = glm::mat4{1.0f};
+
+        _boxData.modelMatrix = glm::mat4{1.0f};
+
+        createVertexData();
     }
 
-	void swapchainResized(VkExtent2D newExtent) override
-	{
+    void swapchainResized(VkExtent2D newExtent) override
+    {
         _sceneData.projMatrix = glm::perspective(
             glm::radians(50.0f),
             float(newExtent.width) / float(newExtent.height),
-            0.1f, 40.0f
-        );
-	}
+            0.1f, 40.0f);
+    }
 
-	VkImageLayout render(
-		VkCommandBuffer cmd,
-		uint32_t currentFrame,
-		const bg2e::render::vulkan::Image* colorImage,
-		const bg2e::render::vulkan::Image* depthImage,
+    VkImageLayout render(
+        VkCommandBuffer cmd,
+        uint32_t currentFrame,
+        const bg2e::render::vulkan::Image* colorImage,
+        const bg2e::render::vulkan::Image* depthImage,
         const bg2e::render::vulkan::Image* msaaDepthImage,
-		bg2e::render::vulkan::FrameResources& frameResources
-	) override {
-		using namespace bg2e::render::vulkan;
-  
+        bg2e::render::vulkan::FrameResources& frameResources) override
+    {
+        using namespace bg2e::render::vulkan;
+
         // You can use this function when a descriptor set only contains one unique uniform buffer.
         // The uniformBufferDescriptorSet function automatically create the uniform buffer and descriptor set
         // inside the FrameResources object, upload the buffer data and update the descriptor set in one single
@@ -128,23 +120,19 @@ public:
         // they are used within the same frame.
         auto sceneDS = macros::uniformBufferDescriptorSet(
             _engine, frameResources,
-            _sceneDSLayout, _sceneData, currentFrame
-        );
-        
-    
-		float flash = std::abs(std::sin(currentFrame / 120.0f));
-		VkClearColorValue clearValue{ { 0.0f, 0.0f, flash, 1.0f } };
+            _sceneDSLayout, _sceneData, currentFrame);
+
+        float flash = std::abs(std::sin(currentFrame / 120.0f));
+        VkClearColorValue clearValue{{0.0f, 0.0f, flash, 1.0f}};
         macros::cmdClearImageAndBeginRendering(
             cmd,
             colorImage, clearValue, VK_IMAGE_LAYOUT_UNDEFINED,
-            msaaDepthImage, 1.0f
-        );
+            msaaDepthImage, 1.0f);
 
-		macros::cmdSetDefaultViewportAndScissor(cmd, colorImage->extent2D());
+        macros::cmdSetDefaultViewportAndScissor(cmd, colorImage->extent2D());
 
-		vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, _pipeline);
+        vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, _pipeline);
 
-        
         // You can use macros::createBuffer to create a buffer, copy the data and manage the buffer allocation
         // inside a frame resource in one single function.
         // Vulkan objects as well as buffer stack memory and descriptor set memory are automatically managed by
@@ -152,221 +140,212 @@ public:
         // Then, you can use frameResources.newDescriptorSet() to allocate a descriptor set and update it with
         // the buffer. The descriptor set memory will be also managed by the frameResources object.
         // Using this method you can manage descriptor sets formed by more than one uniform buffer.
-        
+
         // In this example, we create an uniform buffer to store the object model matrix. Then, we create
         // a descriptor set for each submesh. The descriptor set contains the uniform buffer and the texture.
         // The uniform buffer with the model matrix is the same for every submeshes, but the texture can
         // be different.
         _objectData.modelMatrix = glm::rotate(_objectData.modelMatrix, 0.02f, glm::vec3(0.0f, 1.0f, 0.0f));
         auto objectDataBuffer = macros::createBuffer(_engine, frameResources, _objectData);
-        
-		for (uint32_t i = 0; i < _skyMesh->submeshCount(); ++i)
-		{
+
+        for (uint32_t i = 0; i < _skyMesh->submeshCount(); ++i)
+        {
             auto objectDS = frameResources.newDescriptorSet(_objectDSLayout);
             objectDS->beginUpdate();
-                objectDS->addBuffer(
-                    0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-                    objectDataBuffer, sizeof(ObjectData), 0
-                );
-                objectDS->addImage(
-                    1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                    _skyTexture->image()->imageView(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                    _skyTexture->sampler()
-                );
+            objectDS->addBuffer(
+                0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                objectDataBuffer, sizeof(ObjectData), 0);
+            objectDS->addImage(
+                1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                _skyTexture->image()->imageView(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                _skyTexture->sampler());
             objectDS->endUpdate();
-            
+
             std::array<VkDescriptorSet, 2> sets = {
                 sceneDS->descriptorSet(),
-                objectDS->descriptorSet()
-            };
-            
+                objectDS->descriptorSet()};
+
             vkCmdBindDescriptorSets(
                 cmd,
                 VK_PIPELINE_BIND_POINT_GRAPHICS,
                 _layout, 0,
                 uint32_t(sets.size()),
                 sets.data(),
-                0, nullptr
-            );
-			_skyMesh->drawSubmesh(cmd, i);
-		}
+                0, nullptr);
+            _skyMesh->drawSubmesh(cmd, i);
+        }
 
-		// Use this function to draw one unique mesh including all the indexes
-		// _skyMesh->draw(cmd);
-  
+        // Use this function to draw one unique mesh including all the indexes
+        // _skyMesh->draw(cmd);
+
         _boxData.modelMatrix = glm::rotate(_boxData.modelMatrix, delta() * -0.0015f, glm::vec3(1.0f, 1.0f, 0.0f));
         auto boxDataBuffer = macros::createBuffer(_engine, frameResources, _boxData);
         auto boxDS = frameResources.newDescriptorSet(_objectDSLayout);
         boxDS->beginUpdate();
-            boxDS->addBuffer(
-                0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-                boxDataBuffer, sizeof(ObjectData), 0
-            );
-            boxDS->addImage(
-                1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                _boxTexture->image()->imageView(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                _boxTexture->sampler()
-            );
+        boxDS->addBuffer(
+            0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+            boxDataBuffer, sizeof(ObjectData), 0);
+        boxDS->addImage(
+            1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+            _boxTexture->image()->imageView(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+            _boxTexture->sampler());
         boxDS->endUpdate();
         std::array<VkDescriptorSet, 2> sets = {
             sceneDS->descriptorSet(),
-            boxDS->descriptorSet()
-        };
+            boxDS->descriptorSet()};
         vkCmdBindDescriptorSets(
             cmd,
             VK_PIPELINE_BIND_POINT_GRAPHICS,
             _layout, 0,
             uint32_t(sets.size()),
             sets.data(),
-            0, nullptr
-        );
+            0, nullptr);
         _boxMesh->draw(cmd);
-        
-		bg2e::render::vulkan::cmdEndRendering(cmd);
 
-		return VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-	}
+        bg2e::render::vulkan::cmdEndRendering(cmd);
 
-	// ============ User Interface Delegate Functions =========
-	void init(bg2e::render::Engine *, bg2e::ui::UserInterface*) override {
-		_window.setTitle("ImGui Wrapper Demo");
-		_window.options.noClose = true;
-		_window.options.minWidth = 100;
-		_window.options.minHeight = 50;
-		_window.setPosition(0, 0);
-		_window.setSize(150, 90);
-	}
+        return VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    }
 
-	void drawUI() override
-	{
-		using namespace bg2e::ui;
-		_window.draw([]() {
-			Text::text("Hello, world!");
-		});
-	}
+    // ============ User Interface Delegate Functions =========
+    void init(bg2e::render::Engine*, bg2e::ui::UserInterface*) override
+    {
+        _window.setTitle("ImGui Wrapper Demo");
+        _window.options.noClose = true;
+        _window.options.minWidth = 100;
+        _window.options.minHeight = 50;
+        _window.setPosition(0, 0);
+        _window.setSize(150, 90);
+    }
 
-protected:
-	bg2e::ui::Window _window;
+    void drawUI() override
+    {
+        using namespace bg2e::ui;
+        _window.draw([]()
+                     {
+                         Text::text("Hello, world!");
+                     });
+    }
 
-	VkPipelineLayout _layout;
-	VkPipeline _pipeline;
- 
-	std::unique_ptr<bg2e::render::vulkan::geo::MeshPU> _skyMesh;
+  protected:
+    bg2e::ui::Window _window;
+
+    VkPipelineLayout _layout;
+    VkPipeline _pipeline;
+
+    std::unique_ptr<bg2e::render::vulkan::geo::MeshPU> _skyMesh;
     std::unique_ptr<bg2e::render::vulkan::geo::MeshPU> _boxMesh;
- 
-	std::shared_ptr<bg2e::render::Texture> _skyTexture;
+
+    std::shared_ptr<bg2e::render::Texture> _skyTexture;
     std::shared_ptr<bg2e::render::Texture> _boxTexture;
 
     VkDescriptorSetLayout _sceneDSLayout;
     VkDescriptorSetLayout _objectDSLayout;
-    
-    struct SceneData
-    {
+
+    struct SceneData {
         glm::mat4 viewMatrix;
         glm::mat4 projMatrix;
     };
-    
+
     SceneData _sceneData;
-    
-    struct ObjectData
-    {
+
+    struct ObjectData {
         glm::mat4 modelMatrix;
     };
     ObjectData _objectData;
     ObjectData _boxData;
 
-	void createPipeline()
-	{
-		bg2e::render::vulkan::factory::GraphicsPipeline plFactory(_engine);
+    void createPipeline()
+    {
+        bg2e::render::vulkan::factory::GraphicsPipeline plFactory(_engine);
 
-		plFactory.addShader("sky_sphere/texture.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
-		plFactory.addShader("sky_sphere/texture.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
+        plFactory.addShader("sky_sphere/texture.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
+        plFactory.addShader("sky_sphere/texture.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
 
-		auto bindingDescription = bg2e::render::vulkan::geo::MeshPU::bindingDescription();
-		auto attributeDescriptions = bg2e::render::vulkan::geo::MeshPU::attributeDescriptions();
+        auto bindingDescription = bg2e::render::vulkan::geo::MeshPU::bindingDescription();
+        auto attributeDescriptions = bg2e::render::vulkan::geo::MeshPU::attributeDescriptions();
 
-		plFactory.vertexInputState.vertexBindingDescriptionCount = 1;
-		plFactory.vertexInputState.pVertexBindingDescriptions = &bindingDescription;
-		plFactory.vertexInputState.vertexAttributeDescriptionCount = uint32_t(attributeDescriptions.size());
-		plFactory.vertexInputState.pVertexAttributeDescriptions = attributeDescriptions.data();
-  
+        plFactory.vertexInputState.vertexBindingDescriptionCount = 1;
+        plFactory.vertexInputState.pVertexBindingDescriptions = &bindingDescription;
+        plFactory.vertexInputState.vertexAttributeDescriptionCount = uint32_t(attributeDescriptions.size());
+        plFactory.vertexInputState.pVertexAttributeDescriptions = attributeDescriptions.data();
+
         bg2e::render::vulkan::factory::DescriptorSetLayout dsFactory;
-        
+
         dsFactory.clear();
         dsFactory.addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
         _sceneDSLayout = dsFactory.build(_engine->device().handle(), VK_SHADER_STAGE_VERTEX_BIT);
-        
+
         dsFactory.clear();
         dsFactory.addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
         dsFactory.addBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
         _objectDSLayout = dsFactory.build(_engine->device().handle(), VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT);
-        
 
-		auto layoutInfo = bg2e::render::vulkan::Info::pipelineLayoutInfo();
+        auto layoutInfo = bg2e::render::vulkan::Info::pipelineLayoutInfo();
         VkDescriptorSetLayout setLayouts[] = {
             _sceneDSLayout,
-            _objectDSLayout
-        };
+            _objectDSLayout};
         layoutInfo.pSetLayouts = setLayouts;
         layoutInfo.setLayoutCount = 2;
-		VK_ASSERT(vkCreatePipelineLayout(_engine->device().handle(), &layoutInfo, nullptr, &_layout));
-        
+        VK_ASSERT(vkCreatePipelineLayout(_engine->device().handle(), &layoutInfo, nullptr, &_layout));
+
         plFactory.setDepthFormat(_engine->swapchain().depthImageFormat());
         plFactory.enableDepthtest(true, VK_COMPARE_OP_LESS);
         plFactory.inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
         plFactory.setCullMode(VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_COUNTER_CLOCKWISE);
-		plFactory.setColorAttachmentFormat(_engine->swapchain().imageFormat());
-		_pipeline = plFactory.build(_layout, "Example05SkySphere::Pipeline");
+        plFactory.setColorAttachmentFormat(_engine->swapchain().imageFormat());
+        _pipeline = plFactory.build(_layout, "Example05SkySphere::Pipeline");
 
-		_engine->cleanupManager().push([&](VkDevice dev) {
-			vkDestroyPipeline(dev, _pipeline, nullptr);
-			vkDestroyPipelineLayout(dev, _layout, nullptr);
-            vkDestroyDescriptorSetLayout(dev, _sceneDSLayout, nullptr);
-            vkDestroyDescriptorSetLayout(dev, _objectDSLayout, nullptr);
-		});
-	}
+        _engine->cleanupManager().push([&](VkDevice dev)
+                                       {
+                                           vkDestroyPipeline(dev, _pipeline, nullptr);
+                                           vkDestroyPipelineLayout(dev, _layout, nullptr);
+                                           vkDestroyDescriptorSetLayout(dev, _sceneDSLayout, nullptr);
+                                           vkDestroyDescriptorSetLayout(dev, _objectDSLayout, nullptr);
+                                       });
+    }
 
-	void createVertexData()
-	{
-		using namespace bg2e::render::vulkan;
-  
+    void createVertexData()
+    {
+        using namespace bg2e::render::vulkan;
+
         auto mesh = std::unique_ptr<bg2e::geo::MeshPU>(
-            bg2e::geo::createSpherePU(10.0f, 30, 30, true)
-        );
-        
+            bg2e::geo::createSpherePU(10.0f, 30, 30, true));
+
         _skyMesh = std::unique_ptr<bg2e::render::vulkan::geo::MeshPU>(new bg2e::render::vulkan::geo::MeshPU(_engine));
         _skyMesh->setMeshData(mesh.get());
-		_skyMesh->build();
-  
+        _skyMesh->build();
+
         mesh = std::unique_ptr<bg2e::geo::MeshPU>(
-            bg2e::geo::createCubePU(1.0f, 1.0f, 1.0f)
-        );
-        
+            bg2e::geo::createCubePU(1.0f, 1.0f, 1.0f));
+
         _boxMesh = std::unique_ptr<bg2e::render::vulkan::geo::MeshPU>(new bg2e::render::vulkan::geo::MeshPU(_engine));
         _boxMesh->setMeshData(mesh.get());
         _boxMesh->build();
 
-		_engine->cleanupManager().push([this](VkDevice dev) {
-			_skyMesh.reset();
-            _boxMesh.reset();
-		});
-	}
+        _engine->cleanupManager().push([this](VkDevice dev)
+                                       {
+                                           _skyMesh.reset();
+                                           _boxMesh.reset();
+                                       });
+    }
 };
 
 class MyApplication : public bg2e::app::Application {
-public:
-	void init(int argc, char** argv) override
-	{
-		auto delegate = std::shared_ptr<ClearScreenDelegate>(new ClearScreenDelegate());
-		setRenderDelegate(delegate);
-		setInputDelegate(delegate);
-		setUiDelegate(delegate);
-	}
+  public:
+    void init(int argc, char** argv) override
+    {
+        auto delegate = std::shared_ptr<ClearScreenDelegate>(new ClearScreenDelegate());
+        setRenderDelegate(delegate);
+        setInputDelegate(delegate);
+        setUiDelegate(delegate);
+    }
 };
 
-int main(int argc, char** argv) {
-	bg2e::app::MainLoop mainLoop("org.bg2engine.examples.sky-sphere");
-	MyApplication app;
-	app.init(argc, argv);
-	return mainLoop.run(&app);
+int main(int argc, char** argv)
+{
+    bg2e::app::MainLoop mainLoop("org.bg2engine.examples.sky-sphere");
+    MyApplication app;
+    app.init(argc, argv);
+    return mainLoop.run(&app);
 }

@@ -40,9 +40,9 @@ namespace app {
 namespace detail {
 
 class DrawGraphicsExecution : public GraphicsExecution {
-public:
+  public:
     explicit DrawGraphicsExecution(const draw::EngineConfig& config)
-        : _config { config }
+        : _config{config}
     {
     }
 
@@ -59,7 +59,10 @@ public:
 
     gpu::WindowType windowType() const override
     {
-        if (!_backend) throw std::logic_error("Draw backend has not been prepared.");
+        if (!_backend)
+        {
+            throw std::logic_error("Draw backend has not been prepared.");
+        }
         return _backend->windowType();
     }
 
@@ -91,23 +94,36 @@ public:
 #endif
     }
 
-    void ensureRuntimeAvailable() const override {}
-    bool userInterfaceReady() const override { return _uiInitialized; }
+    void ensureRuntimeAvailable() const override
+    {
+    }
+    bool userInterfaceReady() const override
+    {
+        return _uiInitialized;
+    }
 
     void prepare(const std::string& applicationId) override
     {
-        if (_backend) return;
-        if (_config.applicationName.empty()) _config.applicationName = applicationId;
+        if (_backend)
+        {
+            return;
+        }
+        if (_config.applicationName.empty())
+        {
+            _config.applicationName = applicationId;
+        }
         _backend = gpu::Factory::acquireBackend(_config.backend);
     }
 
     void initialize(
         SDL_Window* window,
         Application& application,
-        ui::UserInterface& userInterface
-    ) override
+        ui::UserInterface& userInterface) override
     {
-        if (!_backend) throw std::logic_error("Draw backend has not been prepared.");
+        if (!_backend)
+        {
+            throw std::logic_error("Draw backend has not been prepared.");
+        }
         _engine.init(window, *_backend, _config);
         _engineInitialized = true;
         _userInterface = &userInterface;
@@ -120,12 +136,14 @@ public:
         userInterface.setDelegate(application.uiDelegate());
         userInterface.init(&_engine);
         _uiInitialized = true;
-        _renderLoop.setUIFramePreparationCallback([this](auto& command, auto& frame) {
-            _userInterface->newFrame(command, frame);
-        });
-        _renderLoop.setUICompositionCallback([this](auto& command, auto& frame) {
-            _userInterface->draw(command, frame);
-        });
+        _renderLoop.setUIFramePreparationCallback([this](auto& command, auto& frame)
+                                                  {
+                                                      _userInterface->newFrame(command, frame);
+                                                  });
+        _renderLoop.setUICompositionCallback([this](auto& command, auto& frame)
+                                             {
+                                                 _userInterface->draw(command, frame);
+                                             });
     }
 
     void initializeScene() override
@@ -141,9 +159,15 @@ public:
 
     void frame(float deltaMilliseconds, bool renderingAllowed) override
     {
-        if (!renderingAllowed || !_engineInitialized) return;
+        if (!renderingAllowed || !_engineInitialized)
+        {
+            return;
+        }
         const auto size = drawableSize();
-        if (size.isZero()) return;
+        if (size.isZero())
+        {
+            return;
+        }
         if (_resizePending || size != _lastDrawableSize)
         {
             _engine.surface()->resize(size);
@@ -156,7 +180,10 @@ public:
 
     void waitIdle() override
     {
-        if (_engineInitialized) _engine.device()->waitIdle();
+        if (_engineInitialized)
+        {
+            _engine.device()->waitIdle();
+        }
     }
 
     void requestSceneFrame() override
@@ -179,31 +206,63 @@ public:
         // MainLoop has stopped frame production; background producers must also
         // be stopped by their owner before GPU resources are destroyed.
         std::exception_ptr error;
-        try { _renderLoop.cleanup(); } catch (...) { error = std::current_exception(); }
+        try
+        {
+            _renderLoop.cleanup();
+        }
+        catch (...)
+        {
+            error = std::current_exception();
+        }
         if (_uiInitialized)
         {
-            try { _userInterface->cleanup(); } catch (...) { if (!error) error = std::current_exception(); }
+            try
+            {
+                _userInterface->cleanup();
+            }
+            catch (...)
+            {
+                if (!error)
+                {
+                    error = std::current_exception();
+                }
+            }
             _uiInitialized = false;
         }
-        try { _engine.cleanup(); } catch (...) { if (!error) error = std::current_exception(); }
+        try
+        {
+            _engine.cleanup();
+        }
+        catch (...)
+        {
+            if (!error)
+            {
+                error = std::current_exception();
+            }
+        }
         _engineInitialized = false;
         _userInterface = nullptr;
         _backend.reset();
-        if (error) std::rethrow_exception(error);
+        if (error)
+        {
+            std::rethrow_exception(error);
+        }
     }
 
-protected:
+  protected:
     gpu::Size2D drawableSize() const
     {
         int width = 0, height = 0;
         auto* window = _engine.instance()->window();
 #ifdef BG2E_IS_MAC
         if (_config.backend == gpu::BackendType::Metal)
+        {
             SDL_Metal_GetDrawableSize(window, &width, &height);
+        }
         else
 #endif
             SDL_Vulkan_GetDrawableSize(window, &width, &height);
-        return { uint32_t(width > 0 ? width : 0), uint32_t(height > 0 ? height : 0) };
+        return {uint32_t(width > 0 ? width : 0), uint32_t(height > 0 ? height : 0)};
     }
 
     gpu::Size2D _lastDrawableSize;

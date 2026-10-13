@@ -3,7 +3,7 @@ using namespace metal;
 
 struct VertexIn {
     float3 position [[attribute(0)]];
-    float3 normal   [[attribute(1)]];
+    float3 normal [[attribute(1)]];
 };
 
 struct VertexOut {
@@ -19,7 +19,7 @@ struct CameraUBO {
 
 struct ObjectUBO {
     float4x4 model;
-    float4   albedo;
+    float4 albedo;
 };
 
 // Buffer indices match ShaderBinding.metal:
@@ -31,9 +31,9 @@ vertex VertexOut vertMain(VertexIn in [[stage_in]],
 {
     VertexOut out;
     float4 worldPos = object.model * float4(in.position, 1.0);
-    out.worldPos    = worldPos.xyz;
+    out.worldPos = worldPos.xyz;
     out.worldNormal = (object.model * float4(in.normal, 0.0)).xyz;
-    out.albedo      = object.albedo.rgb;
-    out.position    = camera.projectionView * worldPos;
+    out.albedo = object.albedo.rgb;
+    out.position = camera.projectionView * worldPos;
     return out;
 }

@@ -31,20 +31,20 @@ namespace scene {
 namespace vk {
 
 class BG2E_API DeferredLightDataBinding : public bg2e::render::vulkan::PipelineDataBinding {
-public:
-
+  public:
     std::vector<base::LightData> lights;
 
-    DeferredLightDataBinding(bg2e::render::Engine * engine) : PipelineDataBinding(engine) {}
+    DeferredLightDataBinding(bg2e::render::Engine* engine) : PipelineDataBinding(engine)
+    {
+    }
 
-    void initFrameResources(bg2e::render::vulkan::DescriptorSetAllocator * frameAllocator) override;
+    void initFrameResources(bg2e::render::vulkan::DescriptorSetAllocator* frameAllocator) override;
 
     VkDescriptorSetLayout createLayout(VkShaderStageFlags shaderStages = VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_VERTEX_BIT) override;
 
     VkDescriptorSet newDescriptorSet(
-        bg2e::render::vulkan::FrameResources & frameResources,
-        const std::vector<base::LightData>& lights
-    );
+        bg2e::render::vulkan::FrameResources& frameResources,
+        const std::vector<base::LightData>& lights);
 };
 
 }

@@ -30,23 +30,27 @@ layout(set = 0, binding = 2) uniform sampler2D g_Depth;
 layout(set = 0, binding = 3, rgba8) uniform image2D outImage;
 
 // Push constants
-layout(push_constant) uniform PushConstant {
-    vec2        outputSize;
-    int         kernelRadius;
-    float       depthThreshold;
-    float       normalThreshold;
-    float       depthSigma;
-    float       normalSigma;
-    uint        padding;
-} pc;
+layout(push_constant) uniform PushConstant
+{
+    vec2 outputSize;
+    int kernelRadius;
+    float depthThreshold;
+    float normalThreshold;
+    float depthSigma;
+    float normalSigma;
+    uint padding;
+}
+pc;
 
 layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
 
-void main() {
+void main()
+{
     ivec2 imageSize = imageSize(outImage);
     ivec2 pixelCoord = ivec2(gl_GlobalInvocationID.xy);
 
-    if (pixelCoord.x >= imageSize.x || pixelCoord.y >= imageSize.y) {
+    if (pixelCoord.x >= imageSize.x || pixelCoord.y >= imageSize.y)
+    {
         return;
     }
 
@@ -56,7 +60,8 @@ void main() {
     vec3 centerNormal = texture(g_Normal, uv).xyz * 2.0 - 1.0;
     float centerDepth = texture(g_Depth, uv).r;
 
-    if (centerDepth >= 1.0) {
+    if (centerDepth >= 1.0)
+    {
         imageStore(outImage, pixelCoord, vec4(1.0, 0.0, 0.0, 1.0));
         return;
     }
@@ -66,8 +71,10 @@ void main() {
     int radius = pc.kernelRadius;
     int kernelSize = 2 * radius + 1;
 
-    for (int y = -radius; y <= radius; ++y) {
-        for (int x = -radius; x <= radius; ++x) {
+    for (int y = -radius; y <= radius; ++y)
+    {
+        for (int x = -radius; x <= radius; ++x)
+        {
             vec2 neighborUV = uv + vec2(float(x), float(y)) / pc.outputSize;
             float neighborInput = texture(g_InputImage, neighborUV).r;
             vec3 neighborNormal = texture(g_Normal, neighborUV).xyz * 2.0 - 1.0;

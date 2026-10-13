@@ -26,7 +26,11 @@
 
 namespace lightmap_generator {
 
-enum class Command { Model, Prefab };
+enum class Command
+{
+    Model,
+    Prefab
+};
 
 struct Options {
     Command command = Command::Model;

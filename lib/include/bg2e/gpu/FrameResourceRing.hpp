@@ -35,7 +35,7 @@ class FrameResourceRing {
     static_assert(std::is_base_of_v<DeviceResource, T>,
                   "FrameResourceRing<T>: T must derive from DeviceResource");
 
-public:
+  public:
     FrameResourceRing() = default;
     ~FrameResourceRing() = default;
 
@@ -122,7 +122,7 @@ public:
         _surface = nullptr;
     }
 
-private:
+  private:
     gpu::Surface* _surface = nullptr;
     std::vector<std::shared_ptr<T>> _resources;
 };

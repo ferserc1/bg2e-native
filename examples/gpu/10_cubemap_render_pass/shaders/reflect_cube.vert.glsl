@@ -7,20 +7,24 @@ layout(location = 2) in vec2 inTexCoord;
 layout(location = 0) out vec3 fragWorldPos;
 layout(location = 1) out vec3 fragNormal;
 
-layout(set = 0, binding = 0) uniform CameraUBO {
+layout(set = 0, binding = 0) uniform CameraUBO
+{
     mat4 projection;
     mat4 view;
     vec4 cameraPos;
-} camera;
+}
+camera;
 
-layout(set = 1, binding = 0) uniform ModelUBO {
+layout(set = 1, binding = 0) uniform ModelUBO
+{
     mat4 model;
-} object;
+}
+object;
 
 void main()
 {
     vec4 worldPos = object.model * vec4(inPosition, 1.0);
-    gl_Position  = camera.projection * camera.view * worldPos;
+    gl_Position = camera.projection * camera.view * worldPos;
     fragWorldPos = worldPos.xyz;
-    fragNormal   = mat3(object.model) * inNormal;
+    fragNormal = mat3(object.model) * inNormal;
 }

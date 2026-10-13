@@ -25,14 +25,12 @@
 namespace bg2e {
 namespace geo {
 
-struct Uv2AtlasOptions
-{
+struct Uv2AtlasOptions {
     uint32_t resolution = 512;
     uint32_t paddingPixels = 4;
 };
 
-struct Uv2AtlasResult
-{
+struct Uv2AtlasResult {
     uint32_t width = 0;
     uint32_t height = 0;
     uint32_t chartCount = 0;
@@ -51,25 +49,35 @@ struct Uv2AtlasResult
 // This modifier is CPU-only: it neither loads nor reloads GPU resources.
 // On failure apply() throws std::runtime_error and leaves the mesh unchanged.
 class BG2E_API GenerateUv2AtlasModifier final : public Modifier<Mesh> {
-public:
+  public:
     GenerateUv2AtlasModifier()
-        :Modifier<Mesh>()
-    {}
+        : Modifier<Mesh>()
+    {
+    }
 
-    GenerateUv2AtlasModifier(Mesh * mesh, const Uv2AtlasOptions & options = {})
-        :Modifier<Mesh>(mesh)
-        ,_options { options }
-    {}
+    GenerateUv2AtlasModifier(Mesh* mesh, const Uv2AtlasOptions& options = {})
+        : Modifier<Mesh>(mesh), _options{options}
+    {
+    }
 
-    inline void setOptions(const Uv2AtlasOptions & options) { _options = options; }
-    inline const Uv2AtlasOptions & options() const { return _options; }
+    inline void setOptions(const Uv2AtlasOptions& options)
+    {
+        _options = options;
+    }
+    inline const Uv2AtlasOptions& options() const
+    {
+        return _options;
+    }
 
     void apply() override;
 
     // Valid only after a successful apply()
-    inline const Uv2AtlasResult & result() const { return _result; }
+    inline const Uv2AtlasResult& result() const
+    {
+        return _result;
+    }
 
-protected:
+  protected:
     Uv2AtlasOptions _options;
     Uv2AtlasResult _result;
 };

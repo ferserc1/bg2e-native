@@ -33,8 +33,7 @@ namespace app {
 
 struct SafeUpdateToken;
 
-struct Uv2RegenerationResult
-{
+struct Uv2RegenerationResult {
     bool success = false;
     std::string message;
     uint32_t atlasWidth = 0;
@@ -63,8 +62,8 @@ struct Uv2RegenerationResult
 // successful reload, callers must invalidate any active bake accumulation and
 // refresh UV previews (UvMapPreview::refresh) through the completion callback.
 class BG2E_API Uv2SafeReload {
-public:
-    using CompletionCallback = std::function<void(const Uv2RegenerationResult &)>;
+  public:
+    using CompletionCallback = std::function<void(const Uv2RegenerationResult&)>;
 
     // Schedules regeneration of the standard scene::Drawable directly attached
     // to targetNode. Returns the cancellation token (never null). The callback
@@ -72,7 +71,7 @@ public:
     // work begins. A node that expires before execution is reported as failure.
     static std::shared_ptr<SafeUpdateToken> regenerate(
         std::weak_ptr<scene::Node> targetNode,
-        const geo::Uv2AtlasOptions & options = {},
+        const geo::Uv2AtlasOptions& options = {},
         CompletionCallback onComplete = nullptr);
 };
 

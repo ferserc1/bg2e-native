@@ -23,7 +23,7 @@
 namespace bg2e::scene {
 
 class BG2E_API ChainComponent final : public Component {
-public:
+  public:
     BG2E_COMPONENT_TYPE_NAME("Chain");
 
     std::shared_ptr<Component> clone() const override;

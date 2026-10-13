@@ -27,12 +27,12 @@
 
 namespace bg2e {
 namespace scene {
-    class LightComponent;
+class LightComponent;
 }
 namespace ui {
 
 class BG2E_API LightEditor {
-public:
+  public:
     virtual ~LightEditor();
 
     void setIntensityRange(float min, float max);
@@ -56,9 +56,12 @@ public:
 
     void cleanup();
 
-    inline void onChanged(std::function<void()> cb) { _onChangedFunction = cb; }
+    inline void onChanged(std::function<void()> cb)
+    {
+        _onChangedFunction = cb;
+    }
 
-protected:
+  protected:
     std::weak_ptr<scene::LightComponent> _lightComponent;
 
     float _intensityMin = 0.0f;

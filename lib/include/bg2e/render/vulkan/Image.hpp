@@ -33,42 +33,33 @@ namespace vulkan {
 class Swapchain;
 
 class BG2E_API Image {
-public:
+  public:
     struct TransitionInfo {
         TransitionInfo(
-            VkImageAspectFlags    aspectMask = 0,
-            uint32_t              mipLevel = 0,
-            uint32_t              mipLevelsCount = VK_REMAINING_MIP_LEVELS,
-            uint32_t			  baseArrayLayer = 0,
-            uint32_t			  layerCount = VK_REMAINING_ARRAY_LAYERS,
+            VkImageAspectFlags aspectMask = 0,
+            uint32_t mipLevel = 0,
+            uint32_t mipLevelsCount = VK_REMAINING_MIP_LEVELS,
+            uint32_t baseArrayLayer = 0,
+            uint32_t layerCount = VK_REMAINING_ARRAY_LAYERS,
             VkPipelineStageFlags2 srcStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,
-            VkAccessFlags2        srcAccessMask = VK_ACCESS_2_MEMORY_WRITE_BIT,
+            VkAccessFlags2 srcAccessMask = VK_ACCESS_2_MEMORY_WRITE_BIT,
             VkPipelineStageFlags2 dstStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,
-            VkAccessFlags2        dstAccessMask = VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT
-        )
-            :aspectMask { aspectMask }
-            ,mipLevel { mipLevel }
-            ,mipLevelsCount { mipLevelsCount }
-            ,baseArrayLayer { baseArrayLayer }
-            ,layerCount { layerCount }
-            ,srcStageMask { srcStageMask }
-            ,srcAccessMask { srcAccessMask }
-            ,dstStageMask { dstStageMask }
-            ,dstAccessMask { dstAccessMask }
-        {}
-        
-        
-        VkImageAspectFlags    aspectMask = 0;
-        uint32_t              mipLevel = 0;
-        uint32_t              mipLevelsCount = VK_REMAINING_MIP_LEVELS;
-        uint32_t			  baseArrayLayer = 0;
-        uint32_t			  layerCount = VK_REMAINING_ARRAY_LAYERS;
+            VkAccessFlags2 dstAccessMask = VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT)
+            : aspectMask{aspectMask}, mipLevel{mipLevel}, mipLevelsCount{mipLevelsCount}, baseArrayLayer{baseArrayLayer}, layerCount{layerCount}, srcStageMask{srcStageMask}, srcAccessMask{srcAccessMask}, dstStageMask{dstStageMask}, dstAccessMask{dstAccessMask}
+        {
+        }
+
+        VkImageAspectFlags aspectMask = 0;
+        uint32_t mipLevel = 0;
+        uint32_t mipLevelsCount = VK_REMAINING_MIP_LEVELS;
+        uint32_t baseArrayLayer = 0;
+        uint32_t layerCount = VK_REMAINING_ARRAY_LAYERS;
         VkPipelineStageFlags2 srcStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
-        VkAccessFlags2        srcAccessMask = VK_ACCESS_2_MEMORY_WRITE_BIT;
+        VkAccessFlags2 srcAccessMask = VK_ACCESS_2_MEMORY_WRITE_BIT;
         VkPipelineStageFlags2 dstStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
-        VkAccessFlags2        dstAccessMask = VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT;
+        VkAccessFlags2 dstAccessMask = VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT;
     };
-    
+
     /*
      *   Add an image transition command to the command buffer to switch from one layout
      *   to another.
@@ -79,12 +70,11 @@ public:
      *   It is recommended to fine-tune these parameters for the intended use of the image.
      */
     static void cmdTransitionImage(
-        VkCommandBuffer       cmd,
-        VkImage               image,
-        VkImageLayout         oldLayout,
-        VkImageLayout         newLayout,
-        TransitionInfo        transitionInfo = TransitionInfo()
-    );
+        VkCommandBuffer cmd,
+        VkImage image,
+        VkImageLayout oldLayout,
+        VkImageLayout newLayout,
+        TransitionInfo transitionInfo = TransitionInfo());
 
     /*
 	 * Execute a transition on an image blocking the thread. It works in the same way as the
@@ -93,35 +83,34 @@ public:
 	 * of receiving the command buffer directly.
      */
     static void transitionImage(
-        Engine*               engine,
-        VkImage               image,
-        VkImageLayout         oldLayout,
-        VkImageLayout         newLayout,
-        TransitionInfo        transitionInfo = TransitionInfo()
-    );
+        Engine* engine,
+        VkImage image,
+        VkImageLayout oldLayout,
+        VkImageLayout newLayout,
+        TransitionInfo transitionInfo = TransitionInfo());
 
     /*
      *  Returns a default initialised VkImageSubresourceRange structure for all mipmaps and layers.
      */
     static VkImageSubresourceRange subresourceRange(VkImageAspectFlags aspectMask);
 
-	static uint32_t getMipLevels(VkExtent2D extent);
+    static uint32_t getMipLevels(VkExtent2D extent);
 
-    static int32_t getMipLevelSize(int32_t baseMipLevelSize, uint32_t mipLevel) {
+    static int32_t getMipLevelSize(int32_t baseMipLevelSize, uint32_t mipLevel)
+    {
         return int32_t(baseMipLevelSize >> mipLevel);
     }
-    
+
     /*
      *   Setup an image to image copy command
      */
     static void cmdCopy(
         VkCommandBuffer cmd,
-        VkImage         srcImage,
-        VkExtent2D      srcSize,
-        VkImage         dstImage,
-        VkExtent2D      dstSize
-    );
-    
+        VkImage srcImage,
+        VkExtent2D srcSize,
+        VkImage dstImage,
+        VkExtent2D dstSize);
+
     /*
      *  Setup an image to image copy command, but also adds the
      *  required transitions to the source and destination image.
@@ -131,19 +120,18 @@ public:
      */
     static void cmdCopy(
         VkCommandBuffer cmd,
-        VkImage         srcImage,
-        VkExtent2D      srcSize,
-        VkImageLayout 	srcInitialLayout,
-        VkImage         dstImage,
-        VkExtent2D      dstSize,
-        VkImageLayout   dstInitialLayout,
-        VkImageLayout 	srcFinalLayout = VK_IMAGE_LAYOUT_UNDEFINED,
-        VkImageLayout   dstFinalLayout = VK_IMAGE_LAYOUT_UNDEFINED
-    );
-    
+        VkImage srcImage,
+        VkExtent2D srcSize,
+        VkImageLayout srcInitialLayout,
+        VkImage dstImage,
+        VkExtent2D dstSize,
+        VkImageLayout dstInitialLayout,
+        VkImageLayout srcFinalLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+        VkImageLayout dstFinalLayout = VK_IMAGE_LAYOUT_UNDEFINED);
+
     static Image* createAllocatedImage(
-        Engine * vulkanData,
-        const std::string & imageName,
+        Engine* vulkanData,
+        const std::string& imageName,
         VkFormat format,
         VkExtent2D extent,
         VkImageUsageFlags usage,
@@ -151,68 +139,86 @@ public:
         uint32_t arrayLayers = 1,
         bool useMipmaps = false,
         uint32_t maxMipmapLevels = 20,
-        VkSampleCountFlagBits samples = VK_SAMPLE_COUNT_1_BIT
-    );
-    
+        VkSampleCountFlagBits samples = VK_SAMPLE_COUNT_1_BIT);
+
     static Image* createAllocatedImage(
-        Engine * vulkanData,
-        const std::string & imageName,
+        Engine* vulkanData,
+        const std::string& imageName,
         void* data,
         VkExtent2D extent,
-        uint32_t dataBytesPerPixel,  // WARNING: for now, it only works with 4 bpp
+        uint32_t dataBytesPerPixel, // WARNING: for now, it only works with 4 bpp
         VkFormat imageFormat,
         VkImageUsageFlags usage,
         VkImageAspectFlags aspectFlags = VK_IMAGE_ASPECT_COLOR_BIT,
         bool useMipmaps = false,
-        uint32_t maxMipmapLevels = 20
-    );
+        uint32_t maxMipmapLevels = 20);
 
     static Image* wrapSwapchainImage(
         const Swapchain* swapchain,
-        uint32_t swapchainImageIndex
-    );
+        uint32_t swapchainImageIndex);
 
     static void readPixelsRGBA8(
-        Engine * vulkanData,
-        const Image * image,
+        Engine* vulkanData,
+        const Image* image,
         uint32_t x,
         uint32_t y,
         uint32_t width,
         uint32_t height,
         std::vector<uint8_t>& outData,
-        VkImageLayout initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
-    );
+        VkImageLayout initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 
     virtual ~Image();
-    
+
     void cleanup();
 
-    inline VkImage handle() const { return _image; }
-    inline VkImageView imageView() const { return _imageView; }
-    inline VmaAllocation allocation() const { return _allocation; }
-    inline const VkExtent3D& extent() const { return _extent; }
-    inline const VkExtent2D extent2D() const { return VkExtent2D{ _extent.width, _extent.height }; }
-    inline VkFormat format() const { return _format; }
-	inline uint32_t mipLevels() const { return _mipLevels; }
-    inline VkSampleCountFlagBits sampleCount() const { return _sampleCount; }
+    inline VkImage handle() const
+    {
+        return _image;
+    }
+    inline VkImageView imageView() const
+    {
+        return _imageView;
+    }
+    inline VmaAllocation allocation() const
+    {
+        return _allocation;
+    }
+    inline const VkExtent3D& extent() const
+    {
+        return _extent;
+    }
+    inline const VkExtent2D extent2D() const
+    {
+        return VkExtent2D{_extent.width, _extent.height};
+    }
+    inline VkFormat format() const
+    {
+        return _format;
+    }
+    inline uint32_t mipLevels() const
+    {
+        return _mipLevels;
+    }
+    inline VkSampleCountFlagBits sampleCount() const
+    {
+        return _sampleCount;
+    }
 
-
-protected:
+  protected:
     // Only allow create images using factory functions
     Image() = default;
-    
+
     VkImage _image = VK_NULL_HANDLE;
     VkImageView _imageView = VK_NULL_HANDLE;
     VmaAllocation _allocation = VK_NULL_HANDLE;
-    VkExtent3D _extent = { 0, 0, 0 };
+    VkExtent3D _extent = {0, 0, 0};
     VkFormat _format = VK_FORMAT_R8G8B8A8_UNORM;
     uint32_t _mipLevels = 1;
     VkSampleCountFlagBits _sampleCount = VK_SAMPLE_COUNT_1_BIT;
-    
-    Engine * _engine = nullptr;
+
+    Engine* _engine = nullptr;
 };
 
 }
 }
 }
-

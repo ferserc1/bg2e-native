@@ -32,14 +32,29 @@ namespace gpu {
 
 template <typename MeshT>
 class BG2E_API MeshGeneric {
-public:
+  public:
     using geo_type = MeshT;
 
-    MeshT&       meshData()       { return _meshData; }
-    const MeshT& meshData() const { return _meshData; }
+    MeshT& meshData()
+    {
+        return _meshData;
+    }
+    const MeshT& meshData() const
+    {
+        return _meshData;
+    }
 
-    void setMeshData(const MeshT& data)  { _meshData = data; }
-    void setMeshData(const MeshT* data)  { if (data) _meshData = *data; }
+    void setMeshData(const MeshT& data)
+    {
+        _meshData = data;
+    }
+    void setMeshData(const MeshT* data)
+    {
+        if (data)
+        {
+            _meshData = *data;
+        }
+    }
 
     uint32_t submeshCount() const
     {
@@ -106,46 +121,66 @@ public:
         const auto& submesh = _meshData.submeshes[submeshIndex];
 
         gpu::RayTracingMeshDescription desc;
-        desc.vertexBuffer   = _vertexBuffer.get();
-        desc.indexBuffer    = _indexBuffer.get();
-        desc.vertexCount    = static_cast<uint32_t>(_meshData.vertices.size());
-        desc.vertexStride   = vbDesc.stride;
+        desc.vertexBuffer = _vertexBuffer.get();
+        desc.indexBuffer = _indexBuffer.get();
+        desc.vertexCount = static_cast<uint32_t>(_meshData.vertices.size());
+        desc.vertexStride = vbDesc.stride;
         desc.positionOffset = positionOffset;
-        desc.vertexFormat   = positionFormat;
-        desc.firstIndex     = submesh.firstIndex;
-        desc.indexCount     = submesh.indexCount;
+        desc.vertexFormat = positionFormat;
+        desc.firstIndex = submesh.firstIndex;
+        desc.indexCount = submesh.indexCount;
         return desc;
     }
 
-    gpu::Buffer*       vertexBuffer()       { return _vertexBuffer.get(); }
-    const gpu::Buffer* vertexBuffer() const { return _vertexBuffer.get(); }
+    gpu::Buffer* vertexBuffer()
+    {
+        return _vertexBuffer.get();
+    }
+    const gpu::Buffer* vertexBuffer() const
+    {
+        return _vertexBuffer.get();
+    }
 
-    gpu::Buffer*       indexBuffer()       { return _indexBuffer.get(); }
-    const gpu::Buffer* indexBuffer() const { return _indexBuffer.get(); }
+    gpu::Buffer* indexBuffer()
+    {
+        return _indexBuffer.get();
+    }
+    const gpu::Buffer* indexBuffer() const
+    {
+        return _indexBuffer.get();
+    }
 
     void cleanup()
     {
-        if (_vertexBuffer) { _vertexBuffer->cleanup(); _vertexBuffer.reset(); }
-        if (_indexBuffer)  { _indexBuffer->cleanup();  _indexBuffer.reset(); }
+        if (_vertexBuffer)
+        {
+            _vertexBuffer->cleanup();
+            _vertexBuffer.reset();
+        }
+        if (_indexBuffer)
+        {
+            _indexBuffer->cleanup();
+            _indexBuffer.reset();
+        }
     }
 
-private:
-    MeshT                        _meshData;
+  private:
+    MeshT _meshData;
     std::shared_ptr<gpu::Buffer> _vertexBuffer;
     std::shared_ptr<gpu::Buffer> _indexBuffer;
 };
 
-typedef BG2E_API  MeshGeneric<bg2e::geo::MeshP> MeshP;
-typedef BG2E_API  MeshGeneric<bg2e::geo::MeshPN> MeshPN;
-typedef BG2E_API  MeshGeneric<bg2e::geo::MeshPC> MeshPC;
-typedef BG2E_API  MeshGeneric<bg2e::geo::MeshPU> MeshPU;
-typedef BG2E_API  MeshGeneric<bg2e::geo::MeshPNU> MeshPNU;
-typedef BG2E_API  MeshGeneric<bg2e::geo::MeshPNC> MeshPNC;
-typedef BG2E_API  MeshGeneric<bg2e::geo::MeshPNUC> MeshPNUC;
-typedef BG2E_API  MeshGeneric<bg2e::geo::MeshPNUT> MeshPNUT;
-typedef BG2E_API  MeshGeneric<bg2e::geo::MeshPNUUT> MeshPNUUT;
+typedef BG2E_API MeshGeneric<bg2e::geo::MeshP> MeshP;
+typedef BG2E_API MeshGeneric<bg2e::geo::MeshPN> MeshPN;
+typedef BG2E_API MeshGeneric<bg2e::geo::MeshPC> MeshPC;
+typedef BG2E_API MeshGeneric<bg2e::geo::MeshPU> MeshPU;
+typedef BG2E_API MeshGeneric<bg2e::geo::MeshPNU> MeshPNU;
+typedef BG2E_API MeshGeneric<bg2e::geo::MeshPNC> MeshPNC;
+typedef BG2E_API MeshGeneric<bg2e::geo::MeshPNUC> MeshPNUC;
+typedef BG2E_API MeshGeneric<bg2e::geo::MeshPNUT> MeshPNUT;
+typedef BG2E_API MeshGeneric<bg2e::geo::MeshPNUUT> MeshPNUUT;
 
-typedef BG2E_API  MeshGeneric<bg2e::geo::Mesh> Mesh;
+typedef BG2E_API MeshGeneric<bg2e::geo::Mesh> Mesh;
 
 }
 }

@@ -25,35 +25,61 @@
 namespace bg2e {
 namespace geo {
 
-class AABoundingBoxBase
-{
-public:
-    [[nodiscard]] constexpr const glm::vec3& min() const noexcept { return _min; }
-    [[nodiscard]] constexpr const glm::vec3& max() const noexcept { return _max; }
-    [[nodiscard]] glm::vec3 size() const noexcept { return _max - _min; }
-    [[nodiscard]] glm::vec3 halfSize() const noexcept { return size() * 0.5f; }
-    [[nodiscard]] glm::vec3 center() const noexcept { return 0.5f * (_min + _max); }
+class AABoundingBoxBase {
+  public:
+    [[nodiscard]] constexpr const glm::vec3& min() const noexcept
+    {
+        return _min;
+    }
+    [[nodiscard]] constexpr const glm::vec3& max() const noexcept
+    {
+        return _max;
+    }
+    [[nodiscard]] glm::vec3 size() const noexcept
+    {
+        return _max - _min;
+    }
+    [[nodiscard]] glm::vec3 halfSize() const noexcept
+    {
+        return size() * 0.5f;
+    }
+    [[nodiscard]] glm::vec3 center() const noexcept
+    {
+        return 0.5f * (_min + _max);
+    }
 
-    bool isValid() const noexcept { return _valid; }
+    bool isValid() const noexcept
+    {
+        return _valid;
+    }
 
-protected:
-    AABoundingBoxBase() : _min(0.0f), _max(0.0f), _valid(false) {}
-    AABoundingBoxBase(glm::vec3 min, glm::vec3 max, bool valid) : _min(min), _max(max), _valid(valid) {}
+  protected:
+    AABoundingBoxBase() : _min(0.0f), _max(0.0f), _valid(false)
+    {
+    }
+    AABoundingBoxBase(glm::vec3 min, glm::vec3 max, bool valid) : _min(min), _max(max), _valid(valid)
+    {
+    }
 
-    glm::vec3& mutableMin() noexcept { return _min; }
-    glm::vec3& mutableMax() noexcept { return _max; }
+    glm::vec3& mutableMin() noexcept
+    {
+        return _min;
+    }
+    glm::vec3& mutableMax() noexcept
+    {
+        return _max;
+    }
 
     bool _valid;
 
-private:
+  private:
     glm::vec3 _min;
     glm::vec3 _max;
 };
 
 template <typename MeshT>
-class AABoundingBox : public AABoundingBoxBase
-{
-public:
+class AABoundingBox : public AABoundingBoxBase {
+  public:
     explicit AABoundingBox(const MeshT& mesh)
         : AABoundingBoxBase()
     {
@@ -76,7 +102,8 @@ public:
         : AABoundingBoxBase()
     {
         assert(submeshIndex < mesh.submeshes.size());
-        if (!(submeshIndex < mesh.submeshes.size())) {
+        if (!(submeshIndex < mesh.submeshes.size()))
+        {
             return;
         }
 
@@ -87,7 +114,8 @@ public:
         : AABoundingBoxBase()
     {
         assert(submeshIndex < mesh->submeshes.size());
-        if (!(submeshIndex < mesh->submeshes.size())) {
+        if (!(submeshIndex < mesh->submeshes.size()))
+        {
             return;
         }
 
@@ -98,24 +126,28 @@ public:
         : AABoundingBoxBase()
     {
         assert(submeshIndex < mesh->submeshes.size());
-        if (!(submeshIndex < mesh->submeshes.size())) {
+        if (!(submeshIndex < mesh->submeshes.size()))
+        {
             return;
         }
 
         computeFromSubmesh(*mesh, submeshIndex);
     }
 
-private:
-    void computeFromVertices(const MeshT& mesh) {
+  private:
+    void computeFromVertices(const MeshT& mesh)
+    {
         assert(!mesh.vertices.empty());
-        if (mesh.vertices.empty()) {
+        if (mesh.vertices.empty())
+        {
             return;
         }
 
         glm::vec3 bbMin = mesh.vertices[0].position;
         glm::vec3 bbMax = bbMin;
 
-        for (const auto& v : mesh.vertices) {
+        for (const auto& v : mesh.vertices)
+        {
             bbMin = glm::min(bbMin, v.position);
             bbMax = glm::max(bbMax, v.position);
         }
@@ -125,11 +157,13 @@ private:
         _valid = true;
     }
 
-    void computeFromSubmesh(const MeshT& mesh, uint32_t submeshIndex) {
+    void computeFromSubmesh(const MeshT& mesh, uint32_t submeshIndex)
+    {
         const auto& submesh = mesh.submeshes[submeshIndex];
 
         assert(!mesh.vertices.empty());
-        if (mesh.vertices.empty()) {
+        if (mesh.vertices.empty())
+        {
             return;
         }
 
@@ -137,7 +171,8 @@ private:
         glm::vec3 bbMax = bbMin;
 
         const auto* indices = mesh.indices.data();
-        for (uint32_t i = 0; i < submesh.indexCount; ++i) {
+        for (uint32_t i = 0; i < submesh.indexCount; ++i)
+        {
             uint32_t idx = indices[submesh.firstIndex + i];
             bbMin = glm::min(bbMin, mesh.vertices[idx].position);
             bbMax = glm::max(bbMax, mesh.vertices[idx].position);

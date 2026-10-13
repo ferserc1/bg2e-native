@@ -23,8 +23,7 @@
 
 #include <exception>
 
-SceneImporter::SceneImporter(StageScene * stage, AppDelegate * appDelegate) :
-    _stage(stage), _appDelegate(appDelegate)
+SceneImporter::SceneImporter(StageScene* stage, AppDelegate* appDelegate) : _stage(stage), _appDelegate(appDelegate)
 {
 }
 
@@ -35,7 +34,7 @@ std::string SceneImporter::tableKey(const std::filesystem::path& path)
 
 void SceneImporter::sweep()
 {
-    for (auto it = _table.begin(); it != _table.end(); )
+    for (auto it = _table.begin(); it != _table.end();)
     {
         auto node = it->second.node.lock();
         if (!node || node->parent() == nullptr ||
@@ -54,7 +53,10 @@ void SceneImporter::processQueue(ImportServer& server)
 {
     sweep();
     ImportRequest request;
-    if (server.takePending(request)) processOne(server, request);
+    if (server.takePending(request))
+    {
+        processOne(server, request);
+    }
 }
 
 void SceneImporter::processOne(ImportServer& server, const ImportRequest& request)
@@ -69,8 +71,14 @@ void SceneImporter::processOne(ImportServer& server, const ImportRequest& reques
         oldNode = it->second.node.lock();
         if (oldNode)
         {
-            if (auto* parent = oldNode->parent()) oldParent = parent->shared_from_this();
-            else oldNode.reset();
+            if (auto* parent = oldNode->parent())
+            {
+                oldParent = parent->shared_from_this();
+            }
+            else
+            {
+                oldNode.reset();
+            }
         }
     }
 
@@ -81,37 +89,51 @@ void SceneImporter::processOne(ImportServer& server, const ImportRequest& reques
     };
     auto outcome = std::make_shared<Outcome>();
     _appDelegate->asyncLoadGuarded(
-        [this, request, oldNode, oldParent, outcome](bg2e::ui::Loader* loader) {
+        [this, request, oldNode, oldParent, outcome](bg2e::ui::Loader* loader)
+        {
             outcome->node = _stage->importGltfScene(
                 request.filePath, request.unitsScale,
                 request.coordinateSystem == ImportCoordinateSystem::ZUp,
                 outcome->error, oldParent,
-                [loader](const std::string& name, int processed, int total) {
+                [loader](const std::string& name, int processed, int total)
+                {
                     loader->setMessage("Importing " + name + "...");
                     loader->setProgress(total > 0 ? static_cast<float>(processed) / total : 0.0f);
                 });
-            if (outcome->node && oldNode) _stage->removeImportedNode(oldNode);
+            if (outcome->node && oldNode)
+            {
+                _stage->removeImportedNode(oldNode);
+            }
         },
-        glm::vec4{ 0.2, 0.2, 0.31, 1.0f },
-        [this, &server, request, key, outcome](std::exception_ptr exception) {
+        glm::vec4{0.2, 0.2, 0.31, 1.0f},
+        [this, &server, request, key, outcome](std::exception_ptr exception)
+        {
             if (exception)
             {
-                try { std::rethrow_exception(exception); }
-                catch (const std::exception& e) { outcome->error = e.what(); }
-                catch (...) { outcome->error = "Unknown import error"; }
+                try
+                {
+                    std::rethrow_exception(exception);
+                }
+                catch (const std::exception& e)
+                {
+                    outcome->error = e.what();
+                }
+                catch (...)
+                {
+                    outcome->error = "Unknown import error";
+                }
             }
             if (outcome->node && outcome->node->parent())
             {
-                _table[key] = ImportEntry{ outcome->node, outcome->node->identifier() };
+                _table[key] = ImportEntry{outcome->node, outcome->node->identifier()};
                 server.fulfil(request.id, true, "Imported " + request.fileName);
             }
             else
             {
                 server.fulfil(request.id, false,
-                    outcome->error.empty() ? "Import failed" : outcome->error);
+                              outcome->error.empty() ? "Import failed" : outcome->error);
             }
-        }
-    );
+        });
 }
 
 void SceneImporter::clear()

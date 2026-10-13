@@ -40,16 +40,16 @@ enum class WindowType
 };
 
 class BG2E_API Backend {
-public:
+  public:
     virtual ~Backend() = default;
 
     [[nodiscard]] virtual gpu::Instance* sharedInstance() const = 0;
     [[nodiscard]] virtual WindowType windowType() const = 0;
     [[nodiscard]] virtual BackendType backendType() const = 0;
 
-    [[nodiscard]] virtual std::unique_ptr<gpu::PhysicalDevice>  createPhysicalDevice()                                     const = 0;
-    [[nodiscard]] virtual std::unique_ptr<gpu::Device>          createDevice()                                               const = 0;
-    [[nodiscard]] virtual std::unique_ptr<gpu::WindowSurface>   createWindowSurface(
+    [[nodiscard]] virtual std::unique_ptr<gpu::PhysicalDevice> createPhysicalDevice() const = 0;
+    [[nodiscard]] virtual std::unique_ptr<gpu::Device> createDevice() const = 0;
+    [[nodiscard]] virtual std::unique_ptr<gpu::WindowSurface> createWindowSurface(
         gpu::Instance* instance,
         PixelFormat colorFormat = PixelFormat::B8G8R8A8_UNORM,
         PixelFormat depthFormat = PixelFormat::D32_SFLOAT) const = 0;

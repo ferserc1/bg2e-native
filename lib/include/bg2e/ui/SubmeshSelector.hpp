@@ -35,7 +35,7 @@ namespace ui {
 // Manage submeshes of the first selected item that contains a Drawable component
 // using the SelectionManager as data source.
 class BG2E_API SubmeshSelector {
-public:
+  public:
     virtual ~SubmeshSelector();
 
     void init(std::shared_ptr<manipulation::SelectionManager> sm);
@@ -46,7 +46,7 @@ public:
 
     // Returns the index of the first submesh selected or -1 if any
     int32_t selectedItem() const;
-    
+
     // Returns all the index of the selected submeshes
     std::vector<uint32_t> selectedItems() const;
 
@@ -57,8 +57,7 @@ public:
 
     void cleanup();
 
-protected:
-
+  protected:
     void initWidgets();
 
     void clearWidgets();

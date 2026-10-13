@@ -25,7 +25,7 @@ namespace bg2e::ui::detail {
 
 // UI owns backend integration. No GPU type depends on ImGui or ui.
 class ImGuiBackend {
-public:
+  public:
     virtual ~ImGuiBackend() = default;
     virtual void initialize(render::Engine&) = 0;
     virtual void initialize(draw::Engine&) = 0;

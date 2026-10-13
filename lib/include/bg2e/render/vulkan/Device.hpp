@@ -28,25 +28,45 @@ namespace render {
 namespace vulkan {
 
 class BG2E_API Device {
-public:
+  public:
+    void create(VkInstance instance, const PhysicalDevice& physicalDevice, bool offscreen);
 
- 	void create(VkInstance instance, const PhysicalDevice& physicalDevice, bool offscreen);
+    void cleanup();
 
-	void cleanup();
+    inline VkDevice handle() const
+    {
+        return _device;
+    }
+    inline bool isValid() const
+    {
+        return _device != VK_NULL_HANDLE;
+    }
 
-	inline VkDevice handle() const { return _device; }
-	inline bool isValid() const { return _device != VK_NULL_HANDLE; }
+    inline VkQueue graphicsQueue() const
+    {
+        return _graphicsQueue;
+    }
+    inline VkQueue presentQueue() const
+    {
+        return _presentQueue;
+    }
+    inline VkQueue immediateQueue() const
+    {
+        return _immediateQueue;
+    }
+    inline uint32_t graphicsFamily() const
+    {
+        return _graphicsFamily;
+    }
+    inline uint32_t presentFamily() const
+    {
+        return _presentFamily;
+    }
 
-    inline VkQueue graphicsQueue() const { return _graphicsQueue; }
-    inline VkQueue presentQueue() const { return _presentQueue; }
-    inline VkQueue immediateQueue() const { return _immediateQueue; }
-    inline uint32_t graphicsFamily() const { return _graphicsFamily; }
-    inline uint32_t presentFamily() const { return _presentFamily; }
-    
     void waitIdle() const;
 
-protected:
-	VkDevice _device = VK_NULL_HANDLE;
+  protected:
+    VkDevice _device = VK_NULL_HANDLE;
     VkQueue _graphicsQueue = VK_NULL_HANDLE;
     VkQueue _presentQueue = VK_NULL_HANDLE;
     VkQueue _immediateQueue = VK_NULL_HANDLE;

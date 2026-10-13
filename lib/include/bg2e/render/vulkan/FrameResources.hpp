@@ -33,9 +33,8 @@ namespace vulkan {
 class DescriptorSetAllocator;
 class DescriptorSet;
 
-namespace rt
-{
-    class RayTracingScene;
+namespace rt {
+class RayTracingScene;
 }
 
 struct BG2E_API FrameResources {
@@ -45,28 +44,27 @@ struct BG2E_API FrameResources {
     VkFence frameFence = VK_NULL_HANDLE;
     CleanupManager cleanupManager;
     DescriptorSetAllocator* descriptorAllocator = nullptr;
-    rt::RayTracingScene * rayTracingScene = nullptr;
+    rt::RayTracingScene* rayTracingScene = nullptr;
 
-    void init(bg2e::render::Engine * engine, Command* command);
+    void init(bg2e::render::Engine* engine, Command* command);
 
     // Remove temporary resources used by this frame
     void flushFrameData();
 
     // Remove all the resources used by the frame
     void cleanup();
-    
+
     // A simple way to allocate a descriptor set. The pointer to this
     // DescriptorSet object will be automatically released after the
     // frame is done. Important: do not store this pointer in any kind
     // of smart pointer
     DescriptorSet* newDescriptorSet(VkDescriptorSetLayout);
 
-private:
-    Engine * _engine = nullptr;
-    const Device * _device = nullptr;
+  private:
+    Engine* _engine = nullptr;
+    const Device* _device = nullptr;
     Command* _command = nullptr;
 };
-
 
 }
 }

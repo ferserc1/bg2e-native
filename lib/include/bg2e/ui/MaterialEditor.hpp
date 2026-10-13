@@ -28,11 +28,13 @@
 #include <functional>
 
 namespace bg2e {
-namespace render { class Engine; }
+namespace render {
+class Engine;
+}
 namespace ui {
 
 class BG2E_API MaterialEditor {
-public:
+  public:
     virtual ~MaterialEditor();
 
     // Stack-resident editors receive their engine through initialization.
@@ -55,15 +57,18 @@ public:
 
     void cleanup();
 
-    inline void onChanged(std::function<void()> cb) { _onChangedFunction = cb; }
+    inline void onChanged(std::function<void()> cb)
+    {
+        _onChangedFunction = cb;
+    }
 
-protected:
+  protected:
     render::Engine* _engine = nullptr;
     std::shared_ptr<manipulation::SelectionManager> _selectionManager;
 
     std::shared_ptr<render::MaterialBase> _material;
     std::vector<std::shared_ptr<render::MaterialBase>> _editMaterialList;
-    
+
     TextureWidgets _albedoWidget;
     TextureWidgets _normalWidget;
     TextureWidgets _metallicWidget;
@@ -72,7 +77,7 @@ protected:
     TextureWidgets _lightEmissionWidget;
 
     std::function<void()> _onChangedFunction;
-    
+
     void initWidgets();
     void clearWidgets();
 

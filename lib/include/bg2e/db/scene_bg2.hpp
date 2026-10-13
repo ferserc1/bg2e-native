@@ -38,27 +38,23 @@ namespace db {
 
 extern BG2E_API std::shared_ptr<scene::Node> loadSceneBg2(
     const std::filesystem::path& filePath,
-    render::Engine* engine
-);
+    render::Engine* engine);
 
 extern BG2E_API std::shared_ptr<scene::Node> loadSceneBg2(
     const std::filesystem::path& filePath,
     render::Engine* engine,
-    bool loadGpuResources
-);
+    bool loadGpuResources);
 
 extern BG2E_API std::shared_ptr<scene::Node> loadSceneBg2(
     const std::filesystem::path& basePath,
     const std::string& fileName,
-    render::Engine* engine
-);
+    render::Engine* engine);
 
 extern BG2E_API std::shared_ptr<scene::Node> loadSceneBg2(
     const std::filesystem::path& basePath,
     const std::string& fileName,
     render::Engine* engine,
-    bool loadGpuResources
-);
+    bool loadGpuResources);
 
 }
 }

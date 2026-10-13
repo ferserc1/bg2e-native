@@ -25,12 +25,21 @@ namespace bg2e {
 namespace gpu {
 
 class BG2E_API OffscreenSurface : public virtual Surface {
-public:
-    explicit OffscreenSurface(const Size2D& size) { _size = size; }
+  public:
+    explicit OffscreenSurface(const Size2D& size)
+    {
+        _size = size;
+    }
 
-    bool isOffscreen() const override { return true; }
+    bool isOffscreen() const override
+    {
+        return true;
+    }
 
-    virtual void cleanup() override { releaseRenderTarget(); }
+    virtual void cleanup() override
+    {
+        releaseRenderTarget();
+    }
 };
 
 }

@@ -26,9 +26,9 @@ namespace render {
 namespace vulkan {
 
 void DescriptorSet::init(
-    Engine * engine,
-    VkDescriptorSet ds
-) {
+    Engine* engine,
+    VkDescriptorSet ds)
+{
     _engine = engine;
     _ds = ds;
 }
@@ -38,16 +38,15 @@ void DescriptorSet::updateBuffer(
     VkDescriptorType type,
     Buffer* buffer,
     size_t size,
-    size_t offset
-) {
+    size_t offset)
+{
     beginUpdate();
     addBuffer(
         binding,
         type,
         buffer,
         size,
-        offset
-    );
+        offset);
     endUpdate();
 }
 
@@ -56,15 +55,15 @@ void DescriptorSet::addImage(
     VkDescriptorType type,
     VkImageView imageView,
     VkImageLayout layout,
-    VkSampler sampler
-) {
-    
+    VkSampler sampler)
+{
+
     VkDescriptorImageInfo imgInfo = {};
     imgInfo.imageView = imageView;
     imgInfo.imageLayout = layout;
     imgInfo.sampler = sampler;
     VkDescriptorImageInfo& info = _imageInfos.emplace_back(imgInfo);
-    
+
     VkWriteDescriptorSet write = {};
     write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
     write.dstBinding = binding;
@@ -72,24 +71,23 @@ void DescriptorSet::addImage(
     write.descriptorCount = 1;
     write.descriptorType = type;
     write.pImageInfo = &info;
-    
+
     _writes.push_back(write);
 }
-
 
 void DescriptorSet::addBuffer(
     uint32_t binding,
     VkDescriptorType type,
     VkBuffer buffer,
     size_t size,
-    size_t offset
-) {
+    size_t offset)
+{
     VkDescriptorBufferInfo bufInfo = {};
     bufInfo.buffer = buffer;
     bufInfo.offset = offset;
     bufInfo.range = size;
     VkDescriptorBufferInfo& info = _bufferInfos.emplace_back(bufInfo);
-    
+
     VkWriteDescriptorSet write = {};
     write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
     write.dstBinding = binding;
@@ -105,22 +103,20 @@ void DescriptorSet::addBuffer(
     VkDescriptorType type,
     Buffer* buffer,
     size_t size,
-    size_t offset
-) {
+    size_t offset)
+{
     addBuffer(binding, type, buffer->handle(), size, offset);
 }
 
 void DescriptorSet::addAccelerationStructure(
     uint32_t binding,
-    VkAccelerationStructureKHR accelerationStructure
-) {
+    VkAccelerationStructureKHR accelerationStructure)
+{
     _accelerationStructures.push_back(accelerationStructure);
 
-    _asInfo.push_back({
-        .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR,
-        .accelerationStructureCount = 1,
-        .pAccelerationStructures = &_accelerationStructures.back()
-    });
+    _asInfo.push_back({.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR,
+                       .accelerationStructureCount = 1,
+                       .pAccelerationStructures = &_accelerationStructures.back()});
 
     VkWriteDescriptorSet write = {};
     write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -138,8 +134,8 @@ void DescriptorSet::addBufferArray(
     VkDescriptorType type,
     const std::vector<VkBuffer>& buffers,
     const std::vector<size_t>& sizes,
-    const std::vector<size_t>& offsets
-) {
+    const std::vector<size_t>& offsets)
+{
     auto& infos = _bufferInfoArrays.emplace_back(buffers.size());
     for (size_t i = 0; i < buffers.size(); ++i)
     {
@@ -164,8 +160,8 @@ void DescriptorSet::addImageArray(
     VkDescriptorType type,
     const std::vector<VkImageView>& imageViews,
     const std::vector<VkSampler>& samplers,
-    VkImageLayout layout
-) {
+    VkImageLayout layout)
+{
     auto& infos = _imageInfoArrays.emplace_back(imageViews.size());
     for (size_t i = 0; i < imageViews.size(); ++i)
     {
@@ -204,4 +200,3 @@ void DescriptorSet::clear()
 }
 }
 }
-

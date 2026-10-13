@@ -39,15 +39,13 @@ namespace {
 
 // Non-indexed vertex: UV position, barycentric coordinates for the
 // in-shader wireframe, and the submesh index used for tinting.
-struct PreviewVertex
-{
+struct PreviewVertex {
     glm::vec2 uv;
     glm::vec3 barycentric;
     uint32_t submesh;
 };
 
-struct PreviewPushConstants
-{
+struct PreviewPushConstants {
     float lineWidth;
     uint32_t mode; // 0 = UV triangles, 1 = atlas boundary lines
 };
@@ -84,9 +82,8 @@ std::vector<VkVertexInputAttributeDescription> previewAttributes()
 
 } // anonymous namespace
 
-UvMapPreviewRenderer::UvMapPreviewRenderer(Engine * engine, uint32_t resolution)
-    : _engine(engine)
-    , _resolution(resolution)
+UvMapPreviewRenderer::UvMapPreviewRenderer(Engine* engine, uint32_t resolution)
+    : _engine(engine), _resolution(resolution)
 {
     if (!_engine)
     {
@@ -122,17 +119,16 @@ void UvMapPreviewRenderer::setResolution(uint32_t resolution)
 
 void UvMapPreviewRenderer::createTarget()
 {
-    auto * image = vulkan::Image::createAllocatedImage(
+    auto* image = vulkan::Image::createAllocatedImage(
         _engine,
         "UvMapPreviewRenderer target",
         VK_FORMAT_R8G8B8A8_UNORM,
-        { _resolution, _resolution },
+        {_resolution, _resolution},
         VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
-        VK_IMAGE_USAGE_SAMPLED_BIT |
-        VK_IMAGE_USAGE_TRANSFER_SRC_BIT
-    );
+            VK_IMAGE_USAGE_SAMPLED_BIT |
+            VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
 
-    auto * baseTexture = new base::Texture();
+    auto* baseTexture = new base::Texture();
     baseTexture->setUseMipmaps(false);
     baseTexture->setMagFilter(base::Texture::FilterLinear);
     baseTexture->setMinFilter(base::Texture::FilterLinear);
@@ -170,18 +166,13 @@ void UvMapPreviewRenderer::createResources()
 
     // [0,1] atlas boundary as a line list
     const PreviewVertex border[] = {
-        { { 0.0f, 0.0f }, { 0.0f, 0.0f, 0.0f }, 0 }, { { 1.0f, 0.0f }, { 0.0f, 0.0f, 0.0f }, 0 },
-        { { 1.0f, 0.0f }, { 0.0f, 0.0f, 0.0f }, 0 }, { { 1.0f, 1.0f }, { 0.0f, 0.0f, 0.0f }, 0 },
-        { { 1.0f, 1.0f }, { 0.0f, 0.0f, 0.0f }, 0 }, { { 0.0f, 1.0f }, { 0.0f, 0.0f, 0.0f }, 0 },
-        { { 0.0f, 1.0f }, { 0.0f, 0.0f, 0.0f }, 0 }, { { 0.0f, 0.0f }, { 0.0f, 0.0f, 0.0f }, 0 }
-    };
+        {{0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, 0}, {{1.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, 0}, {{1.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, 0}, {{1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, 0}, {{1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, 0}, {{0.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, 0}, {{0.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, 0}, {{0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, 0}};
     _borderBuffer = std::unique_ptr<vulkan::Buffer>(vulkan::Buffer::createAllocatedBuffer(
         _engine,
         sizeof(border),
         VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
         VMA_MEMORY_USAGE_CPU_TO_GPU,
-        "UvMapPreviewRenderer atlas boundary"
-    ));
+        "UvMapPreviewRenderer atlas boundary"));
     std::memcpy(_borderBuffer->allocatedData(), border, sizeof(border));
     _borderBuffer->flushAllocatedData();
 }
@@ -205,7 +196,7 @@ void UvMapPreviewRenderer::destroyPipelines()
     }
 }
 
-void UvMapPreviewRenderer::render(const geo::Mesh & mesh, uint32_t uvSet)
+void UvMapPreviewRenderer::render(const geo::Mesh& mesh, uint32_t uvSet)
 {
     if (uvSet > 1)
     {
@@ -216,32 +207,34 @@ void UvMapPreviewRenderer::render(const geo::Mesh & mesh, uint32_t uvSet)
     // barycentric coordinates. Invalid indices are skipped: the preview is a
     // diagnostic view and must tolerate meshes that fail UvAtlasValidator.
     std::vector<PreviewVertex> vertices;
-    const auto appendTriangle = [&](uint32_t i0, uint32_t i1, uint32_t i2, uint32_t submeshIndex) {
+    const auto appendTriangle = [&](uint32_t i0, uint32_t i1, uint32_t i2, uint32_t submeshIndex)
+    {
         const auto vertexCount = static_cast<uint32_t>(mesh.vertices.size());
         if (i0 >= vertexCount || i1 >= vertexCount || i2 >= vertexCount)
         {
             return;
         }
-        const auto uvOf = [uvSet](const geo::VertexPNUUT & vertex) {
+        const auto uvOf = [uvSet](const geo::VertexPNUUT& vertex)
+        {
             return uvSet == 0 ? vertex.texCoord0 : vertex.texCoord1;
         };
-        vertices.push_back({ uvOf(mesh.vertices[i0]), { 1.0f, 0.0f, 0.0f }, submeshIndex });
-        vertices.push_back({ uvOf(mesh.vertices[i1]), { 0.0f, 1.0f, 0.0f }, submeshIndex });
-        vertices.push_back({ uvOf(mesh.vertices[i2]), { 0.0f, 0.0f, 1.0f }, submeshIndex });
+        vertices.push_back({uvOf(mesh.vertices[i0]), {1.0f, 0.0f, 0.0f}, submeshIndex});
+        vertices.push_back({uvOf(mesh.vertices[i1]), {0.0f, 1.0f, 0.0f}, submeshIndex});
+        vertices.push_back({uvOf(mesh.vertices[i2]), {0.0f, 0.0f, 1.0f}, submeshIndex});
     };
 
     if (!mesh.submeshes.empty())
     {
         for (uint32_t submeshIndex = 0; submeshIndex < mesh.submeshes.size(); ++submeshIndex)
         {
-            const auto & submesh = mesh.submeshes[submeshIndex];
+            const auto& submesh = mesh.submeshes[submeshIndex];
             const uint64_t end = std::min<uint64_t>(
                 static_cast<uint64_t>(submesh.firstIndex) + submesh.indexCount,
                 mesh.indices.size());
             for (uint64_t index = submesh.firstIndex; index + 2 < end; index += 3)
             {
                 appendTriangle(mesh.indices[index], mesh.indices[index + 1],
-                    mesh.indices[index + 2], submeshIndex);
+                               mesh.indices[index + 2], submeshIndex);
             }
         }
     }
@@ -250,7 +243,7 @@ void UvMapPreviewRenderer::render(const geo::Mesh & mesh, uint32_t uvSet)
         for (size_t index = 0; index + 2 < mesh.indices.size(); index += 3)
         {
             appendTriangle(mesh.indices[index], mesh.indices[index + 1],
-                mesh.indices[index + 2], 0);
+                           mesh.indices[index + 2], 0);
         }
     }
 
@@ -265,59 +258,58 @@ void UvMapPreviewRenderer::render(const geo::Mesh & mesh, uint32_t uvSet)
             vertexBytes,
             VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
             VMA_MEMORY_USAGE_CPU_TO_GPU,
-            "UvMapPreviewRenderer vertices"
-        ));
+            "UvMapPreviewRenderer vertices"));
         std::memcpy(vertexBuffer->allocatedData(), vertices.data(), vertexBytes);
         vertexBuffer->flushAllocatedData();
     }
 
-    auto * targetImage = _texture->image();
-    const VkExtent2D extent { _resolution, _resolution };
-    const PreviewPushConstants triangleParams { 1.5f / static_cast<float>(_resolution), kTriangleMode };
-    const PreviewPushConstants boundaryParams { 0.0f, kBoundaryMode };
+    auto* targetImage = _texture->image();
+    const VkExtent2D extent{_resolution, _resolution};
+    const PreviewPushConstants triangleParams{1.5f / static_cast<float>(_resolution), kTriangleMode};
+    const PreviewPushConstants boundaryParams{0.0f, kBoundaryMode};
     const auto vertexCount = static_cast<uint32_t>(vertices.size());
     const auto initialLayout = _targetLayout;
     const VkBuffer vertexHandle = vertexBuffer ? vertexBuffer->handle() : VK_NULL_HANDLE;
     const VkBuffer borderHandle = _borderBuffer->handle();
 
-    _engine->command().immediateSubmit([&](VkCommandBuffer cmd) {
-        VkClearColorValue clearValue { { 0.0f, 0.0f, 0.0f, 1.0f } };
-        vulkan::macros::cmdClearImageAndBeginRendering(cmd, targetImage, clearValue, initialLayout);
-        vulkan::macros::cmdSetDefaultViewportAndScissor(cmd, extent);
+    _engine->command().immediateSubmit([&](VkCommandBuffer cmd)
+                                       {
+                                           VkClearColorValue clearValue{{0.0f, 0.0f, 0.0f, 1.0f}};
+                                           vulkan::macros::cmdClearImageAndBeginRendering(cmd, targetImage, clearValue, initialLayout);
+                                           vulkan::macros::cmdSetDefaultViewportAndScissor(cmd, extent);
 
-        if (vertexHandle != VK_NULL_HANDLE)
-        {
-            vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, _trianglePipeline);
-            vkCmdPushConstants(cmd, _pipelineLayout, VK_SHADER_STAGE_FRAGMENT_BIT,
-                0, sizeof(PreviewPushConstants), &triangleParams);
-            VkDeviceSize offset = 0;
-            vkCmdBindVertexBuffers(cmd, 0, 1, &vertexHandle, &offset);
-            vkCmdDraw(cmd, vertexCount, 1, 0, 0);
-        }
+                                           if (vertexHandle != VK_NULL_HANDLE)
+                                           {
+                                               vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, _trianglePipeline);
+                                               vkCmdPushConstants(cmd, _pipelineLayout, VK_SHADER_STAGE_FRAGMENT_BIT,
+                                                                  0, sizeof(PreviewPushConstants), &triangleParams);
+                                               VkDeviceSize offset = 0;
+                                               vkCmdBindVertexBuffers(cmd, 0, 1, &vertexHandle, &offset);
+                                               vkCmdDraw(cmd, vertexCount, 1, 0, 0);
+                                           }
 
-        vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, _linePipeline);
-        vkCmdPushConstants(cmd, _pipelineLayout, VK_SHADER_STAGE_FRAGMENT_BIT,
-            0, sizeof(PreviewPushConstants), &boundaryParams);
-        VkDeviceSize offset = 0;
-        vkCmdBindVertexBuffers(cmd, 0, 1, &borderHandle, &offset);
-        vkCmdDraw(cmd, 8, 1, 0, 0);
+                                           vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, _linePipeline);
+                                           vkCmdPushConstants(cmd, _pipelineLayout, VK_SHADER_STAGE_FRAGMENT_BIT,
+                                                              0, sizeof(PreviewPushConstants), &boundaryParams);
+                                           VkDeviceSize offset = 0;
+                                           vkCmdBindVertexBuffers(cmd, 0, 1, &borderHandle, &offset);
+                                           vkCmdDraw(cmd, 8, 1, 0, 0);
 
-        vulkan::cmdEndRendering(cmd);
+                                           vulkan::cmdEndRendering(cmd);
 
-        vulkan::Image::TransitionInfo toSampling(
-            VK_IMAGE_ASPECT_COLOR_BIT,
-            0,
-            VK_REMAINING_MIP_LEVELS,
-            0,
-            VK_REMAINING_ARRAY_LAYERS,
-            VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
-            VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,
-            VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
-            VK_ACCESS_2_SHADER_SAMPLED_READ_BIT
-        );
-        vulkan::Image::cmdTransitionImage(cmd, targetImage->handle(),
-            VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, toSampling);
-    });
+                                           vulkan::Image::TransitionInfo toSampling(
+                                               VK_IMAGE_ASPECT_COLOR_BIT,
+                                               0,
+                                               VK_REMAINING_MIP_LEVELS,
+                                               0,
+                                               VK_REMAINING_ARRAY_LAYERS,
+                                               VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
+                                               VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,
+                                               VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
+                                               VK_ACCESS_2_SHADER_SAMPLED_READ_BIT);
+                                           vulkan::Image::cmdTransitionImage(cmd, targetImage->handle(),
+                                                                             VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, toSampling);
+                                       });
 
     _targetLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 }

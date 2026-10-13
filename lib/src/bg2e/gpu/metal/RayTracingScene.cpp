@@ -30,9 +30,7 @@ namespace gpu {
 namespace metal {
 
 RayTracingScene::RayTracingScene(metal::Device* device, const std::string& debugName)
-    : gpu::RayTracingScene(device)
-    , _device(device)
-    , _debugName(debugName)
+    : gpu::RayTracingScene(device), _device(device), _debugName(debugName)
 {
 }
 
@@ -96,7 +94,10 @@ void RayTracingScene::build(MTL::CommandBuffer* cmd)
     const NS::UInteger descSize = sizeof(MTL::AccelerationStructureInstanceDescriptor);
     if (!_instanceBuffer || instanceCount > _instanceCapacity)
     {
-        if (_instanceBuffer) { _instanceBuffer->release(); }
+        if (_instanceBuffer)
+        {
+            _instanceBuffer->release();
+        }
         const NS::UInteger capacity = instanceCount > 0 ? instanceCount : 1;
         _instanceBuffer = _device->handle()->newBuffer(capacity * descSize,
                                                        MTL::ResourceStorageModeShared);
@@ -139,14 +140,20 @@ void RayTracingScene::build(MTL::CommandBuffer* cmd)
 
     if (!_instanceAS || _asSize < sizes.accelerationStructureSize)
     {
-        if (_instanceAS) { _instanceAS->release(); }
+        if (_instanceAS)
+        {
+            _instanceAS->release();
+        }
         _instanceAS = _device->handle()->newAccelerationStructure(sizes.accelerationStructureSize);
         _asSize = sizes.accelerationStructureSize;
     }
 
     if (!_scratchBuffer || _scratchSize < sizes.buildScratchBufferSize)
     {
-        if (_scratchBuffer) { _scratchBuffer->release(); }
+        if (_scratchBuffer)
+        {
+            _scratchBuffer->release();
+        }
         _scratchBuffer = _device->handle()->newBuffer(sizes.buildScratchBufferSize,
                                                       MTL::ResourceStorageModePrivate);
         _scratchSize = sizes.buildScratchBufferSize;
@@ -161,9 +168,21 @@ void RayTracingScene::build(MTL::CommandBuffer* cmd)
 
 void RayTracingScene::cleanup()
 {
-    if (_scratchBuffer)  { _scratchBuffer->release();  _scratchBuffer = nullptr; }
-    if (_instanceBuffer) { _instanceBuffer->release(); _instanceBuffer = nullptr; }
-    if (_instanceAS)     { _instanceAS->release();     _instanceAS = nullptr; }
+    if (_scratchBuffer)
+    {
+        _scratchBuffer->release();
+        _scratchBuffer = nullptr;
+    }
+    if (_instanceBuffer)
+    {
+        _instanceBuffer->release();
+        _instanceBuffer = nullptr;
+    }
+    if (_instanceAS)
+    {
+        _instanceAS->release();
+        _instanceAS = nullptr;
+    }
     _instanceCapacity = 0;
     _asSize = 0;
     _scratchSize = 0;
@@ -173,8 +192,14 @@ void RayTracingScene::cleanup()
 
 #else
 
-bool RayTracingScene::isValid() const { return false; }
-void RayTracingScene::cleanup() { _instances.clear(); }
+bool RayTracingScene::isValid() const
+{
+    return false;
+}
+void RayTracingScene::cleanup()
+{
+    _instances.clear();
+}
 
 #endif
 

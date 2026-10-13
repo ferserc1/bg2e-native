@@ -28,7 +28,7 @@ namespace bg2e {
 namespace render {
 
 class UvSurfacePass {
-public:
+  public:
     struct Diagnostic {
         VkExtent2D extent{};
         std::vector<uint32_t> submeshIndices;
@@ -50,7 +50,7 @@ public:
     [[nodiscard]] const GBufferManager& manager(uint32_t frameSlot) const;
     [[nodiscard]] Diagnostic readDiagnostic(uint32_t frameSlot) const;
 
-private:
+  private:
     Engine* _engine;
     VkExtent2D _extent;
     std::vector<std::unique_ptr<GBufferManager>> _managers;

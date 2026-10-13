@@ -36,7 +36,9 @@ namespace vk {
 static void setObjectName(VkDevice device, VkObjectType objectType, uint64_t objectHandle, const std::string& name)
 {
     if (!base::Log::isDebug() || name.empty() || setDebugUtilsObjectName == nullptr)
+    {
         return;
+    }
 
     VkDebugUtilsObjectNameInfoEXT nameInfo{};
     nameInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
@@ -55,10 +57,7 @@ void Image::buildTargetImage(vk::Device* device, const Size2D& size, PixelFormat
     _pixelFormat = format;
     _vkFormat = toVkFormat(format);
     _aspect = VK_IMAGE_ASPECT_COLOR_BIT;
-    _usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT
-           | VK_IMAGE_USAGE_SAMPLED_BIT
-           | VK_IMAGE_USAGE_TRANSFER_SRC_BIT
-           | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    _usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     _ownsImage = true;
     _currentLayout = ImageLayout::Undefined;
     _debugName = debugName;
@@ -69,8 +68,7 @@ void Image::buildTargetImage(vk::Device* device, const Size2D& size, PixelFormat
     extent.depth = 1;
 
     VkImageCreateInfo imgInfo = Info::imageCreateInfo(
-        _vkFormat, _usage, extent, 1, VK_SAMPLE_COUNT_1_BIT
-    );
+        _vkFormat, _usage, extent, 1, VK_SAMPLE_COUNT_1_BIT);
     imgInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
     VmaAllocationCreateInfo allocInfo{};
@@ -78,8 +76,7 @@ void Image::buildTargetImage(vk::Device* device, const Size2D& size, PixelFormat
     allocInfo.requiredFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
 
     VK_ASSERT(vmaCreateImage(
-        device->allocator(), &imgInfo, &allocInfo, &_image, &_allocation, nullptr
-    ));
+        device->allocator(), &imgInfo, &allocInfo, &_image, &_allocation, nullptr));
 
     if (!debugName.empty())
     {
@@ -108,8 +105,7 @@ void Image::buildDepthImage(vk::Device* device, const Size2D& size, PixelFormat 
     {
         _aspect |= VK_IMAGE_ASPECT_STENCIL_BIT;
     }
-    _usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT
-           | VK_IMAGE_USAGE_SAMPLED_BIT;
+    _usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
     _ownsImage = true;
     _currentLayout = ImageLayout::Undefined;
     _debugName = debugName;
@@ -120,8 +116,7 @@ void Image::buildDepthImage(vk::Device* device, const Size2D& size, PixelFormat 
     extent.depth = 1;
 
     VkImageCreateInfo imgInfo = Info::imageCreateInfo(
-        _vkFormat, _usage, extent, 1, VK_SAMPLE_COUNT_1_BIT
-    );
+        _vkFormat, _usage, extent, 1, VK_SAMPLE_COUNT_1_BIT);
     imgInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
     VmaAllocationCreateInfo allocInfo{};
@@ -129,8 +124,7 @@ void Image::buildDepthImage(vk::Device* device, const Size2D& size, PixelFormat 
     allocInfo.requiredFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
 
     VK_ASSERT(vmaCreateImage(
-        device->allocator(), &imgInfo, &allocInfo, &_image, &_allocation, nullptr
-    ));
+        device->allocator(), &imgInfo, &allocInfo, &_image, &_allocation, nullptr));
 
     if (!debugName.empty())
     {
@@ -165,8 +159,7 @@ void Image::buildSampledImage(vk::Device* device, const Size2D& size, PixelForma
     extent.depth = 1;
 
     VkImageCreateInfo imgInfo = Info::imageCreateInfo(
-        _vkFormat, usage, extent, 1, VK_SAMPLE_COUNT_1_BIT
-    );
+        _vkFormat, usage, extent, 1, VK_SAMPLE_COUNT_1_BIT);
     imgInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
     VmaAllocationCreateInfo allocInfo{};
@@ -174,8 +167,7 @@ void Image::buildSampledImage(vk::Device* device, const Size2D& size, PixelForma
     allocInfo.requiredFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
 
     VK_ASSERT(vmaCreateImage(
-        device->allocator(), &imgInfo, &allocInfo, &_image, &_allocation, nullptr
-    ));
+        device->allocator(), &imgInfo, &allocInfo, &_image, &_allocation, nullptr));
 
     if (!debugName.empty())
     {
@@ -214,13 +206,12 @@ void Image::buildCubemapImage(vk::Device* device, const Size2D& size, PixelForma
     _mipLevels = mipLevels;
 
     VkExtent3D extent{};
-    extent.width  = size.width;
+    extent.width = size.width;
     extent.height = size.height;
-    extent.depth  = 1;
+    extent.depth = 1;
 
     VkImageCreateInfo imgInfo = Info::imageCreateInfo(
-        _vkFormat, usage, extent, 6, VK_SAMPLE_COUNT_1_BIT
-    );
+        _vkFormat, usage, extent, 6, VK_SAMPLE_COUNT_1_BIT);
     imgInfo.mipLevels = mipLevels;
     imgInfo.flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
     imgInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
@@ -230,8 +221,7 @@ void Image::buildCubemapImage(vk::Device* device, const Size2D& size, PixelForma
     allocInfo.requiredFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
 
     VK_ASSERT(vmaCreateImage(
-        device->allocator(), &imgInfo, &allocInfo, &_image, &_allocation, nullptr
-    ));
+        device->allocator(), &imgInfo, &allocInfo, &_image, &_allocation, nullptr));
 
     if (!debugName.empty())
     {
@@ -297,12 +287,10 @@ void Image::initFromSwapchainImage(vk::Device* device, VkImage image, PixelForma
 void Image::createView()
 {
     VkImageViewCreateInfo viewInfo = Info::imageViewCreateInfo(
-        _vkFormat, _image, _aspect
-    );
+        _vkFormat, _image, _aspect);
 
     VK_ASSERT(vkCreateImageView(
-        _device->handle(), &viewInfo, nullptr, &_imageView
-    ));
+        _device->handle(), &viewInfo, nullptr, &_imageView));
 }
 
 void Image::createCubemapView()
@@ -323,14 +311,19 @@ void Image::createCubemapView()
     viewInfo.subresourceRange.layerCount = 6;
 
     VK_ASSERT(vkCreateImageView(
-        _device->handle(), &viewInfo, nullptr, &_imageView
-    ));
+        _device->handle(), &viewInfo, nullptr, &_imageView));
 }
 
 VkImageView Image::cubemapFaceMipView(uint32_t face, uint32_t mipLevel) const
 {
-    if (_imageType != ImageType::Cubemap) return VK_NULL_HANDLE;
-    if (face >= 6 || mipLevel >= _mipLevels) return VK_NULL_HANDLE;
+    if (_imageType != ImageType::Cubemap)
+    {
+        return VK_NULL_HANDLE;
+    }
+    if (face >= 6 || mipLevel >= _mipLevels)
+    {
+        return VK_NULL_HANDLE;
+    }
     return _cubemapFaceMipViews[mipLevel * 6 + face];
 }
 
@@ -387,7 +380,8 @@ void Image::cleanup()
 
 void Image::readPixelsRGBA8(std::vector<uint8_t>& outData, ImageLayout currentLayout)
 {
-    if (_pixelFormat != PixelFormat::R8G8B8A8_UNORM) {
+    if (_pixelFormat != PixelFormat::R8G8B8A8_UNORM)
+    {
         throw std::runtime_error("vk::Image::readPixelsRGBA8: only R8G8B8A8_UNORM is supported");
     }
 
@@ -399,7 +393,7 @@ void Image::readPixelsRGBA8(std::vector<uint8_t>& outData, ImageLayout currentLa
     VmaAllocation stagingAlloc = VK_NULL_HANDLE;
     VkBufferCreateInfo bufInfo{};
     bufInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-    bufInfo.size  = imageSize;
+    bufInfo.size = imageSize;
     bufInfo.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
     VmaAllocationCreateInfo allocCI{};
     allocCI.usage = VMA_MEMORY_USAGE_GPU_TO_CPU;
@@ -419,28 +413,29 @@ void Image::readPixelsRGBA8(std::vector<uint8_t>& outData, ImageLayout currentLa
     // to once the copy-to-buffer has finished.
     const ImageLayout restoreLayout = currentLayout;
 
-    _device->immediateSubmit([&](gpu::CommandBuffer* cmd) {
-        // Source layout is taken from the real, tracked layout of the image.
-        cmd->transition(this, ImageLayout::TransferSrc);
+    _device->immediateSubmit([&](gpu::CommandBuffer* cmd)
+                             {
+                                 // Source layout is taken from the real, tracked layout of the image.
+                                 cmd->transition(this, ImageLayout::TransferSrc);
 
-        VkCommandBuffer raw = dynamic_cast<vk::CommandBuffer*>(cmd)->handle();
+                                 VkCommandBuffer raw = dynamic_cast<vk::CommandBuffer*>(cmd)->handle();
 
-        VkBufferImageCopy region{};
-        region.bufferOffset = 0;
-        region.bufferRowLength = 0;
-        region.bufferImageHeight = 0;
-        region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        region.imageSubresource.mipLevel = 0;
-        region.imageSubresource.baseArrayLayer = 0;
-        region.imageSubresource.layerCount = 1;
-        region.imageOffset = { 0, 0, 0 };
-        region.imageExtent = { w, h, 1 };
+                                 VkBufferImageCopy region{};
+                                 region.bufferOffset = 0;
+                                 region.bufferRowLength = 0;
+                                 region.bufferImageHeight = 0;
+                                 region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+                                 region.imageSubresource.mipLevel = 0;
+                                 region.imageSubresource.baseArrayLayer = 0;
+                                 region.imageSubresource.layerCount = 1;
+                                 region.imageOffset = {0, 0, 0};
+                                 region.imageExtent = {w, h, 1};
 
-        vkCmdCopyImageToBuffer(raw, _image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                               staging, 1, &region);
+                                 vkCmdCopyImageToBuffer(raw, _image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                                                        staging, 1, &region);
 
-        cmd->transition(this, restoreLayout);
-    });
+                                 cmd->transition(this, restoreLayout);
+                             });
 
     outData.resize(imageSize);
     std::memcpy(outData.data(), allocOut.pMappedData, imageSize);
@@ -450,11 +445,13 @@ void Image::readPixelsRGBA8(std::vector<uint8_t>& outData, ImageLayout currentLa
 
 void Image::uploadRGBA8(const void* pixels, const Size2D& size)
 {
-    if (_pixelFormat != PixelFormat::R8G8B8A8_UNORM) {
+    if (_pixelFormat != PixelFormat::R8G8B8A8_UNORM)
+    {
         throw std::runtime_error("vk::Image::uploadRGBA8: only R8G8B8A8_UNORM is supported");
     }
 
-    if (size.width != _size.width || size.height != _size.height) {
+    if (size.width != _size.width || size.height != _size.height)
+    {
         throw std::runtime_error("vk::Image::uploadRGBA8: size mismatch");
     }
 
@@ -466,7 +463,7 @@ void Image::uploadRGBA8(const void* pixels, const Size2D& size)
     VmaAllocation stagingAlloc = VK_NULL_HANDLE;
     VkBufferCreateInfo bufInfo{};
     bufInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-    bufInfo.size  = bufferSize;
+    bufInfo.size = bufferSize;
     bufInfo.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
     VmaAllocationCreateInfo allocCI{};
     allocCI.usage = VMA_MEMORY_USAGE_CPU_TO_GPU;
@@ -485,28 +482,29 @@ void Image::uploadRGBA8(const void* pixels, const Size2D& size)
     // left in ShaderReadOnly by the final transition, which keeps the tracked
     // layout in sync with the real one.
 
-    _device->immediateSubmit([&](gpu::CommandBuffer* cmd) {
-        // Source layout is taken from the real, tracked layout of the image.
-        cmd->transition(this, ImageLayout::TransferDst);
+    _device->immediateSubmit([&](gpu::CommandBuffer* cmd)
+                             {
+                                 // Source layout is taken from the real, tracked layout of the image.
+                                 cmd->transition(this, ImageLayout::TransferDst);
 
-        VkCommandBuffer raw = dynamic_cast<vk::CommandBuffer*>(cmd)->handle();
+                                 VkCommandBuffer raw = dynamic_cast<vk::CommandBuffer*>(cmd)->handle();
 
-        VkBufferImageCopy region{};
-        region.bufferOffset = 0;
-        region.bufferRowLength = 0;
-        region.bufferImageHeight = 0;
-        region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        region.imageSubresource.mipLevel = 0;
-        region.imageSubresource.baseArrayLayer = 0;
-        region.imageSubresource.layerCount = 1;
-        region.imageOffset = { 0, 0, 0 };
-        region.imageExtent = { w, h, 1 };
+                                 VkBufferImageCopy region{};
+                                 region.bufferOffset = 0;
+                                 region.bufferRowLength = 0;
+                                 region.bufferImageHeight = 0;
+                                 region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+                                 region.imageSubresource.mipLevel = 0;
+                                 region.imageSubresource.baseArrayLayer = 0;
+                                 region.imageSubresource.layerCount = 1;
+                                 region.imageOffset = {0, 0, 0};
+                                 region.imageExtent = {w, h, 1};
 
-        vkCmdCopyBufferToImage(raw, staging, _image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                               1, &region);
+                                 vkCmdCopyBufferToImage(raw, staging, _image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                                                        1, &region);
 
-        cmd->transition(this, ImageLayout::ShaderReadOnly);
-    });
+                                 cmd->transition(this, ImageLayout::ShaderReadOnly);
+                             });
 
     vmaDestroyBuffer(_device->allocator(), staging, stagingAlloc);
 }
@@ -519,15 +517,21 @@ static uint16_t floatToHalf(float f)
     int32_t exponent = ((bits >> 23) & 0xFF) - 127;
     uint32_t mantissa = bits & 0x7FFFFF;
 
-    if (exponent > 15) {
+    if (exponent > 15)
+    {
         return static_cast<uint16_t>(sign | 0x7C00);
     }
-    if (exponent < -14) {
+    if (exponent < -14)
+    {
         uint32_t m = (mantissa | 0x8000) >> (-exponent - 14 + 1);
-        if (m & 0x1000) m += 0x2000;
+        if (m & 0x1000)
+        {
+            m += 0x2000;
+        }
         return static_cast<uint16_t>(sign | (m >> 13));
     }
-    if (exponent == -127) {
+    if (exponent == -127)
+    {
         return static_cast<uint16_t>(sign);
     }
     return static_cast<uint16_t>(sign | ((exponent + 15) << 10) | (mantissa >> 13));
@@ -535,14 +539,16 @@ static uint16_t floatToHalf(float f)
 
 void Image::uploadImage(const base::Image* image)
 {
-    if (!image || (!image->data() && !image->dataf())) {
+    if (!image || (!image->data() && !image->dataf()))
+    {
         throw std::runtime_error("vk::Image::uploadImage: null or empty image");
     }
 
     const uint32_t w = _size.width;
     const uint32_t h = _size.height;
 
-    if (image->width() != w || image->height() != h) {
+    if (image->width() != w || image->height() != h)
+    {
         throw std::runtime_error("vk::Image::uploadImage: size mismatch");
     }
 
@@ -550,43 +556,50 @@ void Image::uploadImage(const base::Image* image)
     const void* srcData = nullptr;
     std::vector<uint16_t> halfData;
 
-    switch (_pixelFormat) {
-        case PixelFormat::R8G8B8A8_UNORM:
-        case PixelFormat::R8G8B8A8_SRGB:
-        case PixelFormat::B8G8R8A8_UNORM:
-        case PixelFormat::B8G8R8A8_SRGB:
-            bytesPerPixel = 4;
-            srcData = image->data();
-            break;
-        case PixelFormat::R16G16B16A16_SFLOAT:
-            bytesPerPixel = 8;
-            if (image->dataf()) {
-                const float* src = image->dataf();
-                size_t pixelCount = size_t(w) * h;
-                halfData.resize(pixelCount * 4);
-                for (size_t i = 0; i < pixelCount * 4; ++i) {
-                    halfData[i] = floatToHalf(src[i]);
-                }
-                srcData = halfData.data();
-            } else {
-                const uint8_t* src = image->data();
-                size_t pixelCount = size_t(w) * h;
-                halfData.resize(pixelCount * 4);
-                for (size_t i = 0; i < pixelCount * 4; ++i) {
-                    halfData[i] = floatToHalf(src[i] / 255.0f);
-                }
-                srcData = halfData.data();
+    switch (_pixelFormat)
+    {
+    case PixelFormat::R8G8B8A8_UNORM:
+    case PixelFormat::R8G8B8A8_SRGB:
+    case PixelFormat::B8G8R8A8_UNORM:
+    case PixelFormat::B8G8R8A8_SRGB:
+        bytesPerPixel = 4;
+        srcData = image->data();
+        break;
+    case PixelFormat::R16G16B16A16_SFLOAT:
+        bytesPerPixel = 8;
+        if (image->dataf())
+        {
+            const float* src = image->dataf();
+            size_t pixelCount = size_t(w) * h;
+            halfData.resize(pixelCount * 4);
+            for (size_t i = 0; i < pixelCount * 4; ++i)
+            {
+                halfData[i] = floatToHalf(src[i]);
             }
-            break;
-        case PixelFormat::R32G32B32A32_SFLOAT:
-            bytesPerPixel = 16;
-            srcData = image->dataf();
-            break;
-        default:
-            throw std::runtime_error("vk::Image::uploadImage: unsupported pixel format");
+            srcData = halfData.data();
+        }
+        else
+        {
+            const uint8_t* src = image->data();
+            size_t pixelCount = size_t(w) * h;
+            halfData.resize(pixelCount * 4);
+            for (size_t i = 0; i < pixelCount * 4; ++i)
+            {
+                halfData[i] = floatToHalf(src[i] / 255.0f);
+            }
+            srcData = halfData.data();
+        }
+        break;
+    case PixelFormat::R32G32B32A32_SFLOAT:
+        bytesPerPixel = 16;
+        srcData = image->dataf();
+        break;
+    default:
+        throw std::runtime_error("vk::Image::uploadImage: unsupported pixel format");
     }
 
-    if (!srcData) {
+    if (!srcData)
+    {
         throw std::runtime_error("vk::Image::uploadImage: no source data for this format");
     }
 
@@ -596,7 +609,7 @@ void Image::uploadImage(const base::Image* image)
     VmaAllocation stagingAlloc = VK_NULL_HANDLE;
     VkBufferCreateInfo bufInfo{};
     bufInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-    bufInfo.size  = bufferSize;
+    bufInfo.size = bufferSize;
     bufInfo.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
     VmaAllocationCreateInfo allocCI{};
     allocCI.usage = VMA_MEMORY_USAGE_CPU_TO_GPU;
@@ -607,27 +620,28 @@ void Image::uploadImage(const base::Image* image)
 
     std::memcpy(allocOut.pMappedData, srcData, bufferSize);
 
-    _device->immediateSubmit([&](gpu::CommandBuffer* cmd) {
-        cmd->transition(this, ImageLayout::TransferDst);
+    _device->immediateSubmit([&](gpu::CommandBuffer* cmd)
+                             {
+                                 cmd->transition(this, ImageLayout::TransferDst);
 
-        VkCommandBuffer raw = dynamic_cast<vk::CommandBuffer*>(cmd)->handle();
+                                 VkCommandBuffer raw = dynamic_cast<vk::CommandBuffer*>(cmd)->handle();
 
-        VkBufferImageCopy region{};
-        region.bufferOffset = 0;
-        region.bufferRowLength = 0;
-        region.bufferImageHeight = 0;
-        region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        region.imageSubresource.mipLevel = 0;
-        region.imageSubresource.baseArrayLayer = 0;
-        region.imageSubresource.layerCount = 1;
-        region.imageOffset = { 0, 0, 0 };
-        region.imageExtent = { w, h, 1 };
+                                 VkBufferImageCopy region{};
+                                 region.bufferOffset = 0;
+                                 region.bufferRowLength = 0;
+                                 region.bufferImageHeight = 0;
+                                 region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+                                 region.imageSubresource.mipLevel = 0;
+                                 region.imageSubresource.baseArrayLayer = 0;
+                                 region.imageSubresource.layerCount = 1;
+                                 region.imageOffset = {0, 0, 0};
+                                 region.imageExtent = {w, h, 1};
 
-        vkCmdCopyBufferToImage(raw, staging, _image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                               1, &region);
+                                 vkCmdCopyBufferToImage(raw, staging, _image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                                                        1, &region);
 
-        cmd->transition(this, ImageLayout::ShaderReadOnly);
-    });
+                                 cmd->transition(this, ImageLayout::ShaderReadOnly);
+                             });
 
     vmaDestroyBuffer(_device->allocator(), staging, stagingAlloc);
 }

@@ -37,11 +37,11 @@ class RayTracingScene;
 class RayTracingPipeline;
 
 class BG2E_API CommandBuffer {
-public:
+  public:
     virtual ~CommandBuffer() = default;
 
     virtual void begin() = 0;
-    virtual void end()   = 0;
+    virtual void end() = 0;
 
     virtual void transition(gpu::Image* image, ImageLayout newLayout) = 0;
 

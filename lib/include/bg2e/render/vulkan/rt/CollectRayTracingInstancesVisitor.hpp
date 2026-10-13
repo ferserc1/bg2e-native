@@ -33,12 +33,12 @@ namespace vulkan {
 namespace rt {
 
 class BG2E_API CollectRayTracingInstancesVisitor : public scene::NodeVisitor {
-public:
-    CollectRayTracingInstancesVisitor(Engine * engine);
+  public:
+    CollectRayTracingInstancesVisitor(Engine* engine);
     ~CollectRayTracingInstancesVisitor() override = default;
 
-    void visit(scene::Node *node) override;
-    void didVisit(scene::Node *node) override;
+    void visit(scene::Node* node) override;
+    void didVisit(scene::Node* node) override;
 
     [[nodiscard]] const std::vector<VkAccelerationStructureInstanceKHR>& rayTracingInstances() const
     {
@@ -50,13 +50,13 @@ public:
         return _objectInstances;
     }
 
-protected:
-    Engine * _engine = nullptr;
+  protected:
+    Engine* _engine = nullptr;
 
     std::vector<VkAccelerationStructureInstanceKHR> _instances;
     std::vector<RTObjectInstance> _objectInstances;
 
-    glm::mat4 _currentTransform{ 1.0f };
+    glm::mat4 _currentTransform{1.0f};
     std::stack<glm::mat4> _transformStack;
 };
 

@@ -17,13 +17,14 @@ using namespace bg2e;
 namespace {
 
 reflection::TypeRegistration<scene::DrawableComponent> _drawableReflection(
-    [](reflection::TypeInfoBuilder<scene::DrawableComponent>& t) {
+    [](reflection::TypeInfoBuilder<scene::DrawableComponent>& t)
+    {
         t.displayName("Drawable");
 
         t.action("Swap Drawable", [](scene::DrawableComponent* comp)
-        {
-            app::MessageBox::showInfo("Swap drawable", "Method not implemented");
-        });
+                 {
+                     app::MessageBox::showInfo("Swap drawable", "Method not implemented");
+                 });
     });
 
 }

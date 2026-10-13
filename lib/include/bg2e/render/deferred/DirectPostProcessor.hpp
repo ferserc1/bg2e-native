@@ -13,7 +13,7 @@ namespace bg2e::render::deferred {
 // sharpening, or scaling. The only operation is the copy required to move the
 // deferred result into the final output image.
 class BG2E_API DirectPostProcessor : public FinalPostProcessor {
-public:
+  public:
     bool build(Engine* engine, VkExtent2D renderExtent, VkExtent2D displayExtent,
                VkFormat colorFormat) override;
     void resize(VkExtent2D renderExtent, VkExtent2D displayExtent) override;
@@ -24,15 +24,31 @@ public:
                  const vulkan::Image* motionVectors, const vulkan::Image* colorOutput,
                  float deltaMs, float cameraNear, float cameraFar,
                  float cameraFovVertical) override;
-    void cleanup() override {}
+    void cleanup() override
+    {
+    }
 
-    std::string processorName() const override { return "Final Rendering"; }
-    std::vector<std::string> scaleOptions() const override { return { "Direct (100%, No AA)" }; }
-    void setScaleOption(uint32_t) override {}
-    uint32_t scaleOption() const override { return 0; }
-    float renderScalePercent() const override { return 100.0f; }
+    std::string processorName() const override
+    {
+        return "Final Rendering";
+    }
+    std::vector<std::string> scaleOptions() const override
+    {
+        return {"Direct (100%, No AA)"};
+    }
+    void setScaleOption(uint32_t) override
+    {
+    }
+    uint32_t scaleOption() const override
+    {
+        return 0;
+    }
+    float renderScalePercent() const override
+    {
+        return 100.0f;
+    }
 
-private:
+  private:
     VkExtent2D _renderExtent{};
     VkExtent2D _displayExtent{};
 };

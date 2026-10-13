@@ -46,12 +46,12 @@ void MotionVectorGenerator::build(VkExtent2D renderExtent)
         VK_FILTER_NEAREST,
         VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
         VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
-        VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE
-    );
-    _engine->cleanupManager().push([this](VkDevice dev) {
-        vkDestroySampler(dev, _sampler, nullptr);
-        _sampler = VK_NULL_HANDLE;
-    });
+        VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE);
+    _engine->cleanupManager().push([this](VkDevice dev)
+                                   {
+                                       vkDestroySampler(dev, _sampler, nullptr);
+                                       _sampler = VK_NULL_HANDLE;
+                                   });
 
     createPipeline();
     createDescriptorAllocators();
@@ -64,8 +64,7 @@ void MotionVectorGenerator::createPipeline()
     dsLayoutFactory.addBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
     dsLayoutFactory.addBinding(1, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE);
     _dsLayout = dsLayoutFactory.build(
-        _engine->device().handle(), VK_SHADER_STAGE_COMPUTE_BIT
-    );
+        _engine->device().handle(), VK_SHADER_STAGE_COMPUTE_BIT);
 
     vulkan::factory::PipelineLayout layoutFactory(_engine);
     layoutFactory.addDescriptorSetLayout(_dsLayout);
@@ -76,14 +75,15 @@ void MotionVectorGenerator::createPipeline()
     plFactory.setShader("motion_vectors.comp.spv");
     _pipeline = plFactory.build(_pipelineLayout, "MotionVectorGenerator::Pipeline");
 
-    _engine->cleanupManager().push([this](VkDevice dev) {
-        vkDestroyPipeline(dev, _pipeline, nullptr);
-        _pipeline = VK_NULL_HANDLE;
-        vkDestroyPipelineLayout(dev, _pipelineLayout, nullptr);
-        _pipelineLayout = VK_NULL_HANDLE;
-        vkDestroyDescriptorSetLayout(dev, _dsLayout, nullptr);
-        _dsLayout = VK_NULL_HANDLE;
-    });
+    _engine->cleanupManager().push([this](VkDevice dev)
+                                   {
+                                       vkDestroyPipeline(dev, _pipeline, nullptr);
+                                       _pipeline = VK_NULL_HANDLE;
+                                       vkDestroyPipelineLayout(dev, _pipelineLayout, nullptr);
+                                       _pipelineLayout = VK_NULL_HANDLE;
+                                       vkDestroyDescriptorSetLayout(dev, _dsLayout, nullptr);
+                                       _dsLayout = VK_NULL_HANDLE;
+                                   });
 }
 
 void MotionVectorGenerator::createFrameImages(VkExtent2D extent)
@@ -101,9 +101,7 @@ void MotionVectorGenerator::createFrameImages(VkExtent2D extent)
                 extent,
                 VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
                 VK_IMAGE_ASPECT_COLOR_BIT,
-                1, false, 0, VK_SAMPLE_COUNT_1_BIT
-            )
-        );
+                1, false, 0, VK_SAMPLE_COUNT_1_BIT));
     }
 }
 
@@ -111,7 +109,10 @@ void MotionVectorGenerator::cleanupFrameImages()
 {
     for (auto& f : _frames)
     {
-        if (f.motionVectors) f.motionVectors->cleanup();
+        if (f.motionVectors)
+        {
+            f.motionVectors->cleanup();
+        }
     }
     _frames.clear();
 }
@@ -125,24 +126,27 @@ void MotionVectorGenerator::createDescriptorAllocators()
     {
         auto* alloc = new vulkan::DescriptorSetAllocator();
         alloc->init(_engine);
-        alloc->requirePoolSizeRatio(4, {
-            { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 0.5f },
-            { VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,          0.5f }
-        });
+        alloc->requirePoolSizeRatio(4, {{VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 0.5f},
+                                        {VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 0.5f}});
         alloc->initPool();
         _descriptorAllocators[i] = alloc;
     }
 
-    _engine->cleanupManager().push([this](VkDevice) {
-        destroyAllocators();
-    });
+    _engine->cleanupManager().push([this](VkDevice)
+                                   {
+                                       destroyAllocators();
+                                   });
 }
 
 void MotionVectorGenerator::destroyAllocators()
 {
     for (auto* alloc : _descriptorAllocators)
     {
-        if (alloc) { alloc->destroy(); delete alloc; }
+        if (alloc)
+        {
+            alloc->destroy();
+            delete alloc;
+        }
     }
     _descriptorAllocators.clear();
 }
@@ -158,8 +162,7 @@ const vulkan::Image* MotionVectorGenerator::generate(
     uint32_t frameIndex,
     const vulkan::Image* depthImage,
     const glm::mat4& currentInvViewProj,
-    const glm::mat4& prevViewProj
-)
+    const glm::mat4& prevViewProj)
 {
     uint32_t fIdx = frameIndex % _engine->numImages();
     auto& frame = _frames[fIdx];
@@ -169,32 +172,31 @@ const vulkan::Image* MotionVectorGenerator::generate(
     vulkan::Image::cmdTransitionImage(
         cmd, frame.motionVectors->handle(),
         VK_IMAGE_LAYOUT_UNDEFINED,
-        VK_IMAGE_LAYOUT_GENERAL
-    );
+        VK_IMAGE_LAYOUT_GENERAL);
 
     auto ds = alloc->allocate(_dsLayout);
     ds->beginUpdate();
     // depthImage was created with VK_IMAGE_ASPECT_DEPTH_BIT, so imageView() is correct
     ds->addImage(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-        depthImage->imageView(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _sampler);
+                 depthImage->imageView(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _sampler);
     ds->addImage(1, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
-        frame.motionVectors.get(), VK_IMAGE_LAYOUT_GENERAL);
+                 frame.motionVectors.get(), VK_IMAGE_LAYOUT_GENERAL);
     ds->endUpdate();
 
     PushConstants pc;
     pc.currentInvViewProj = currentInvViewProj;
-    pc.prevViewProj       = prevViewProj;
-    pc.renderSize         = glm::vec2(static_cast<float>(_extent.width),
-                                      static_cast<float>(_extent.height));
+    pc.prevViewProj = prevViewProj;
+    pc.renderSize = glm::vec2(static_cast<float>(_extent.width),
+                              static_cast<float>(_extent.height));
 
     vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, _pipeline);
     VkDescriptorSet dsHandle = ds->descriptorSet();
     vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_COMPUTE,
-        _pipelineLayout, 0, 1, &dsHandle, 0, nullptr);
+                            _pipelineLayout, 0, 1, &dsHandle, 0, nullptr);
     vkCmdPushConstants(cmd, _pipelineLayout, VK_SHADER_STAGE_COMPUTE_BIT,
-        0, sizeof(PushConstants), &pc);
+                       0, sizeof(PushConstants), &pc);
 
-    uint32_t gx = static_cast<uint32_t>(std::ceil(static_cast<float>(_extent.width)  / 8.0f));
+    uint32_t gx = static_cast<uint32_t>(std::ceil(static_cast<float>(_extent.width) / 8.0f));
     uint32_t gy = static_cast<uint32_t>(std::ceil(static_cast<float>(_extent.height) / 8.0f));
     vkCmdDispatch(cmd, gx, gy, 1);
 

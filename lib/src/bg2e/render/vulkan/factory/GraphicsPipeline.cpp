@@ -26,8 +26,8 @@ namespace render {
 namespace vulkan {
 namespace factory {
 
-GraphicsPipeline::GraphicsPipeline(Engine * engine)
-    :_engine(engine)
+GraphicsPipeline::GraphicsPipeline(Engine* engine)
+    : _engine(engine)
 {
     vertexInputState.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
     inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
@@ -37,7 +37,7 @@ GraphicsPipeline::GraphicsPipeline(Engine * engine)
     depthStencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
     _renderInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO;
     _renderInfo.depthAttachmentFormat = VK_FORMAT_UNDEFINED;
-    
+
     // Default values
     setInputTopology(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
     setPolygonMode(VK_POLYGON_MODE_FILL);
@@ -68,11 +68,9 @@ void GraphicsPipeline::addShader(const std::string& fileName, VkShaderStageFlagB
 
 void GraphicsPipeline::addShader(VkShaderModule shaderModule, VkShaderStageFlagBits stage, const std::string& entryPoint)
 {
-    _shaders.push_back({
-        shaderModule,
-        stage,
-        entryPoint
-    });
+    _shaders.push_back({shaderModule,
+                        stage,
+                        entryPoint});
 }
 
 void GraphicsPipeline::clearShaders()
@@ -158,7 +156,7 @@ void GraphicsPipeline::setColorAttachmentFormat(VkFormat format, uint32_t viewMa
 {
     _colorAttachmentformat.clear();
     _colorAttachmentformat.push_back(format);
-    
+
     _renderInfo.colorAttachmentCount = 1;
     _renderInfo.pColorAttachmentFormats = &_colorAttachmentformat[0];
     _renderInfo.viewMask = viewMask;
@@ -167,7 +165,7 @@ void GraphicsPipeline::setColorAttachmentFormat(VkFormat format, uint32_t viewMa
 void GraphicsPipeline::setColorAttachmentFormat(const std::vector<VkFormat>& formats, uint32_t viewMask)
 {
     _colorAttachmentformat.assign(formats.begin(), formats.end());
-    
+
     _renderInfo.colorAttachmentCount = static_cast<uint32_t>(_colorAttachmentformat.size());
     _renderInfo.pColorAttachmentFormats = _colorAttachmentformat.data();
     _renderInfo.viewMask = viewMask;
@@ -191,7 +189,8 @@ void GraphicsPipeline::disableDepthtest()
     depthStencil.maxDepthBounds = 1.f;
 }
 
-void GraphicsPipeline::enableDepthtest(bool depthWriteEnable, VkCompareOp op) {
+void GraphicsPipeline::enableDepthtest(bool depthWriteEnable, VkCompareOp op)
+{
     depthStencil.depthTestEnable = VK_TRUE;
     depthStencil.depthWriteEnable = depthWriteEnable;
     depthStencil.depthCompareOp = op;
@@ -206,10 +205,10 @@ void GraphicsPipeline::enableDepthtest(bool depthWriteEnable, VkCompareOp op) {
 
 void GraphicsPipeline::disableBlending()
 {
-    colorBlendAttachment.colorWriteMask = 
-        VK_COLOR_COMPONENT_R_BIT | 
-        VK_COLOR_COMPONENT_G_BIT | 
-        VK_COLOR_COMPONENT_B_BIT | 
+    colorBlendAttachment.colorWriteMask =
+        VK_COLOR_COMPONENT_R_BIT |
+        VK_COLOR_COMPONENT_G_BIT |
+        VK_COLOR_COMPONENT_B_BIT |
         VK_COLOR_COMPONENT_A_BIT;
     colorBlendAttachment.blendEnable = VK_FALSE;
 }
@@ -217,9 +216,9 @@ void GraphicsPipeline::disableBlending()
 void GraphicsPipeline::enableBlendingAdditive()
 {
     colorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT |
-        VK_COLOR_COMPONENT_G_BIT |
-        VK_COLOR_COMPONENT_B_BIT |
-        VK_COLOR_COMPONENT_A_BIT;
+                                          VK_COLOR_COMPONENT_G_BIT |
+                                          VK_COLOR_COMPONENT_B_BIT |
+                                          VK_COLOR_COMPONENT_A_BIT;
     colorBlendAttachment.blendEnable = VK_TRUE;
     colorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
     colorBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ONE;
@@ -232,9 +231,9 @@ void GraphicsPipeline::enableBlendingAdditive()
 void GraphicsPipeline::enableBlendingAlphablend()
 {
     colorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT |
-        VK_COLOR_COMPONENT_G_BIT |
-        VK_COLOR_COMPONENT_B_BIT |
-        VK_COLOR_COMPONENT_A_BIT;
+                                          VK_COLOR_COMPONENT_G_BIT |
+                                          VK_COLOR_COMPONENT_B_BIT |
+                                          VK_COLOR_COMPONENT_A_BIT;
     colorBlendAttachment.blendEnable = VK_TRUE;
     colorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
     colorBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
@@ -244,25 +243,25 @@ void GraphicsPipeline::enableBlendingAlphablend()
     colorBlendAttachment.alphaBlendOp = VK_BLEND_OP_ADD;
 }
 
-VkPipeline GraphicsPipeline::build(VkPipelineLayout layout, const std::string & name)
+VkPipeline GraphicsPipeline::build(VkPipelineLayout layout, const std::string& name)
 {
     VkPipelineViewportStateCreateInfo viewportInfo = {};
     viewportInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
     viewportInfo.viewportCount = 1;
     viewportInfo.scissorCount = 1;
-    
+
     if (_bindingDescriptions.size() > 0)
     {
         vertexInputState.vertexBindingDescriptionCount = uint32_t(_bindingDescriptions.size());
         vertexInputState.pVertexBindingDescriptions = _bindingDescriptions.data();
     }
-    
+
     if (_attributeDescriptions.size() > 0)
     {
         vertexInputState.vertexAttributeDescriptionCount = uint32_t(_attributeDescriptions.size());
         vertexInputState.pVertexAttributeDescriptions = _attributeDescriptions.data();
     }
-    
+
     // For now, if we are using color blend, we'll use the same configuration
     // for all attachments
     std::vector<VkPipelineColorBlendAttachmentState> colorBlendAttachments;
@@ -276,20 +275,20 @@ VkPipeline GraphicsPipeline::build(VkPipelineLayout layout, const std::string & 
     colorBlending.logicOp = VK_LOGIC_OP_COPY;
     colorBlending.attachmentCount = static_cast<uint32_t>(colorBlendAttachments.size());
     colorBlending.pAttachments = colorBlendAttachments.data();
-    
+
     VkGraphicsPipelineCreateInfo pipelineInfo = {};
     pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
     std::vector<VkPipelineShaderStageCreateInfo> stages;
-    for (auto &shaderData : _shaders)
+    for (auto& shaderData : _shaders)
     {
         stages.push_back({
             VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
             nullptr,
-            0,                                  // flags;
-            shaderData.stage,                   // stage;
-            shaderData.shaderModule,            // module;
-            shaderData.entryPoint.c_str(),      // pName;
-            nullptr                             // pSpecializationInfo;
+            0,                             // flags;
+            shaderData.stage,              // stage;
+            shaderData.shaderModule,       // module;
+            shaderData.entryPoint.c_str(), // pName;
+            nullptr                        // pSpecializationInfo;
         });
     }
     pipelineInfo.pStages = stages.data();
@@ -302,18 +301,18 @@ VkPipeline GraphicsPipeline::build(VkPipelineLayout layout, const std::string & 
     pipelineInfo.pColorBlendState = &colorBlending;
     pipelineInfo.pDepthStencilState = &depthStencil;
     pipelineInfo.layout = layout;
-    
+
     // In dynamic rendering mode, we use pNext to store the color and depth attachments formats
     pipelineInfo.pNext = &_renderInfo;
 
-    std::vector<VkDynamicState> dynamicStates = { _dynamicStates.begin(), _dynamicStates.end() };
-    
+    std::vector<VkDynamicState> dynamicStates = {_dynamicStates.begin(), _dynamicStates.end()};
+
     VkPipelineDynamicStateCreateInfo dynamicInfo = {};
     dynamicInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
     dynamicInfo.pDynamicStates = dynamicStates.data();
     dynamicInfo.dynamicStateCount = static_cast<uint32_t>(dynamicStates.size());
     pipelineInfo.pDynamicState = &dynamicInfo;
-    
+
     VkPipeline pipeline;
     VK_ASSERT(vkCreateGraphicsPipelines(_engine->device().handle(), nullptr, 1, &pipelineInfo, nullptr, &pipeline));
 
@@ -327,8 +326,7 @@ VkPipeline GraphicsPipeline::build(VkPipelineLayout layout, const std::string & 
 
         setDebugUtilsObjectName(
             _engine->device().handle(),
-            &nameInfo
-        );
+            &nameInfo);
     }
     return pipeline;
 }
@@ -338,7 +336,7 @@ void GraphicsPipeline::reset()
     clearInputBindingDescriptions();
     clearInputAttributeDescriptions();
     clearShaders();
-    
+
     vertexInputState.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
     inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
     rasterizer.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
@@ -347,7 +345,7 @@ void GraphicsPipeline::reset()
     depthStencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
     _renderInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO;
     _renderInfo.depthAttachmentFormat = VK_FORMAT_UNDEFINED;
-    
+
     // Default values
     setInputTopology(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
     setPolygonMode(VK_POLYGON_MODE_FILL);

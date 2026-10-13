@@ -34,33 +34,58 @@ enum class BackendType
 };
 
 struct Size2D {
-    uint32_t width  = 0;
+    uint32_t width = 0;
     uint32_t height = 0;
 
     Size2D() = default;
-    Size2D(uint32_t w, uint32_t h) : width(w), height(h) {}
+    Size2D(uint32_t w, uint32_t h) : width(w), height(h)
+    {
+    }
 
-    bool operator==(const Size2D& o) const { return width == o.width && height == o.height; }
-    bool operator!=(const Size2D& o) const { return !(*this == o); }
-    bool isZero() const { return width == 0 || height == 0; }
+    bool operator==(const Size2D& o) const
+    {
+        return width == o.width && height == o.height;
+    }
+    bool operator!=(const Size2D& o) const
+    {
+        return !(*this == o);
+    }
+    bool isZero() const
+    {
+        return width == 0 || height == 0;
+    }
 };
 
 struct Size3D {
-    uint32_t width  = 0;
+    uint32_t width = 0;
     uint32_t height = 0;
-    uint32_t depth  = 1;
+    uint32_t depth = 1;
 
     Size3D() = default;
-    Size3D(uint32_t w, uint32_t h, uint32_t d = 1) : width(w), height(h), depth(d) {}
-    explicit Size3D(const Size2D& s, uint32_t d = 1) : width(s.width), height(s.height), depth(d) {}
+    Size3D(uint32_t w, uint32_t h, uint32_t d = 1) : width(w), height(h), depth(d)
+    {
+    }
+    explicit Size3D(const Size2D& s, uint32_t d = 1) : width(s.width), height(s.height), depth(d)
+    {
+    }
 
-    Size2D toSize2D() const { return Size2D{ width, height }; }
+    Size2D toSize2D() const
+    {
+        return Size2D{width, height};
+    }
 
-    bool operator==(const Size3D& o) const { return width == o.width && height == o.height && depth == o.depth; }
-    bool operator!=(const Size3D& o) const { return !(*this == o); }
+    bool operator==(const Size3D& o) const
+    {
+        return width == o.width && height == o.height && depth == o.depth;
+    }
+    bool operator!=(const Size3D& o) const
+    {
+        return !(*this == o);
+    }
 };
 
-enum class PixelFormat {
+enum class PixelFormat
+{
     Undefined = 0,
 
     // --- Color ---
@@ -80,16 +105,12 @@ enum class PixelFormat {
 
 constexpr bool isDepthFormat(PixelFormat f)
 {
-    return f == PixelFormat::D16_UNORM
-        || f == PixelFormat::D32_SFLOAT
-        || f == PixelFormat::D24_UNORM_S8_UINT
-        || f == PixelFormat::D32_SFLOAT_S8_UINT;
+    return f == PixelFormat::D16_UNORM || f == PixelFormat::D32_SFLOAT || f == PixelFormat::D24_UNORM_S8_UINT || f == PixelFormat::D32_SFLOAT_S8_UINT;
 }
 
 constexpr bool hasStencil(PixelFormat f)
 {
-    return f == PixelFormat::D24_UNORM_S8_UINT
-        || f == PixelFormat::D32_SFLOAT_S8_UINT;
+    return f == PixelFormat::D24_UNORM_S8_UINT || f == PixelFormat::D32_SFLOAT_S8_UINT;
 }
 
 struct Color {
@@ -99,10 +120,13 @@ struct Color {
     float a = 1.0f;
 
     Color() = default;
-    Color(float r_, float g_, float b_, float a_ = 1.0f) : r(r_), g(g_), b(b_), a(a_) {}
+    Color(float r_, float g_, float b_, float a_ = 1.0f) : r(r_), g(g_), b(b_), a(a_)
+    {
+    }
 };
 
-enum class ImageLayout {
+enum class ImageLayout
+{
     Undefined = 0,
     General,
     ColorAttachment,
@@ -113,7 +137,8 @@ enum class ImageLayout {
     Present
 };
 
-enum class ShaderStage {
+enum class ShaderStage
+{
     Vertex,
     Fragment,
     Compute,
@@ -122,35 +147,34 @@ enum class ShaderStage {
     ClosestHit
 };
 
-enum class PipelineBarrierFlags : uint32_t {
-    None                 = 0,
-    AllCommands          = 1 << 0,
-    VertexInput          = 1 << 1,
-    VertexShader         = 1 << 2,
-    FragmentShader       = 1 << 3,
-    ComputeShader        = 1 << 4,
-    Transfer             = 1 << 5,
+enum class PipelineBarrierFlags : uint32_t
+{
+    None = 0,
+    AllCommands = 1 << 0,
+    VertexInput = 1 << 1,
+    VertexShader = 1 << 2,
+    FragmentShader = 1 << 3,
+    ComputeShader = 1 << 4,
+    Transfer = 1 << 5,
     ColorAttachmentOutput = 1 << 6,
-    EarlyFragment        = 1 << 7,
-    LateFragment         = 1 << 8,
-    BottomOfPipe         = 1 << 9,
-    TopOfPipe            = 1 << 10,
-    MemoryRead           = 1 << 11,
-    MemoryWrite          = 1 << 12
+    EarlyFragment = 1 << 7,
+    LateFragment = 1 << 8,
+    BottomOfPipe = 1 << 9,
+    TopOfPipe = 1 << 10,
+    MemoryRead = 1 << 11,
+    MemoryWrite = 1 << 12
 };
 
 inline PipelineBarrierFlags operator|(PipelineBarrierFlags a, PipelineBarrierFlags b)
 {
     return static_cast<PipelineBarrierFlags>(
-        static_cast<uint32_t>(a) | static_cast<uint32_t>(b)
-    );
+        static_cast<uint32_t>(a) | static_cast<uint32_t>(b));
 }
 
 inline PipelineBarrierFlags operator&(PipelineBarrierFlags a, PipelineBarrierFlags b)
 {
     return static_cast<PipelineBarrierFlags>(
-        static_cast<uint32_t>(a) & static_cast<uint32_t>(b)
-    );
+        static_cast<uint32_t>(a) & static_cast<uint32_t>(b));
 }
 
 inline PipelineBarrierFlags& operator|=(PipelineBarrierFlags& a, PipelineBarrierFlags b)
@@ -167,7 +191,7 @@ struct ShaderModuleDescription {
     std::string filePath;            // Vulkan: .spv ; Metal: .metallib
     std::string entryPoint = "main"; // Vulkan: SPIR-V entry ; Metal: MTL function name
     ShaderStage stage = ShaderStage::Vertex;
-    std::string debugName;           // Debug label for validation layers / Xcode GPU Capture
+    std::string debugName; // Debug label for validation layers / Xcode GPU Capture
 };
 
 // Push constant range descriptor.
@@ -185,21 +209,22 @@ struct ShaderModuleDescription {
 // Only one PushConstantRange per ShaderStage is allowed. Duplicates are
 // rejected at PipelineLayout creation time.
 struct PushConstantRange {
-    uint32_t    offset = 0;     // Vulkan push constant offset (ignored by Metal)
-    uint32_t    size   = 0;     // Vulkan minimum guaranteed: 128 bytes; Metal limit: ~4 KB
-    ShaderStage stage  = ShaderStage::Vertex; // single shader stage (not a bitmask)
+    uint32_t offset = 0;                     // Vulkan push constant offset (ignored by Metal)
+    uint32_t size = 0;                       // Vulkan minimum guaranteed: 128 bytes; Metal limit: ~4 KB
+    ShaderStage stage = ShaderStage::Vertex; // single shader stage (not a bitmask)
 };
 
 // --- Resource binding types ---------------------------------------------------
 
-enum class ResourceType {
-    UniformBuffer,         // VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER / Metal [[buffer(N)]]
-    StorageBuffer,         // VK_DESCRIPTOR_TYPE_STORAGE_BUFFER / Metal [[buffer(N)]]
-    SampledImage,          // VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE  / Metal [[texture(N)]]
-    StorageImage,          // VK_DESCRIPTOR_TYPE_STORAGE_IMAGE  / Metal [[texture(N)]] (read-write)
-    Sampler,               // VK_DESCRIPTOR_TYPE_SAMPLER        / Metal [[sampler(N)]]
-    AccelerationStructure  // VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR / Metal [[buffer(N)]]
-                           // (instance_acceleration_structure argument)
+enum class ResourceType
+{
+    UniformBuffer,        // VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER / Metal [[buffer(N)]]
+    StorageBuffer,        // VK_DESCRIPTOR_TYPE_STORAGE_BUFFER / Metal [[buffer(N)]]
+    SampledImage,         // VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE  / Metal [[texture(N)]]
+    StorageImage,         // VK_DESCRIPTOR_TYPE_STORAGE_IMAGE  / Metal [[texture(N)]] (read-write)
+    Sampler,              // VK_DESCRIPTOR_TYPE_SAMPLER        / Metal [[sampler(N)]]
+    AccelerationStructure // VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR / Metal [[buffer(N)]]
+                          // (instance_acceleration_structure argument)
 };
 
 // Backend-specific binding indices.
@@ -217,7 +242,7 @@ enum class ResourceType {
 // PushConstantRange docs).
 struct ShaderBinding {
     uint32_t vulkan = 0;
-    uint32_t metal  = 0;
+    uint32_t metal = 0;
 };
 
 // Resource binding descriptor for a single shader resource.
@@ -234,11 +259,11 @@ struct ShaderBinding {
 // affected because Metal [[texture(N)]] and [[sampler(N)]] use separate
 // namespaces from [[buffer(N)]].
 struct ResourceBinding {
-    uint32_t      set     = 0;
+    uint32_t set = 0;
     ShaderBinding binding = {};
-    ResourceType  type    = ResourceType::SampledImage;
-    ShaderStage   stage   = ShaderStage::Fragment;
-    uint32_t      count   = 1;   // array size; 1 for this iteration
+    ResourceType type = ResourceType::SampledImage;
+    ShaderStage stage = ShaderStage::Fragment;
+    uint32_t count = 1; // array size; 1 for this iteration
 };
 
 // Pipeline layout description.
@@ -273,8 +298,8 @@ struct ResourceBinding {
 //   constant ModelUBO&            model [[buffer(2)]];
 struct PipelineLayoutDescription {
     std::vector<PushConstantRange> pushConstants;
-    std::vector<ResourceBinding>   resourceBindings;
-    std::string debugName;           // Debug label for validation layers / Xcode GPU Capture
+    std::vector<ResourceBinding> resourceBindings;
+    std::string debugName; // Debug label for validation layers / Xcode GPU Capture
 };
 
 // Validate that at most one PushConstantRange is declared per ShaderStage.
@@ -291,60 +316,60 @@ inline void validatePushConstantRanges(const std::vector<PushConstantRange>& ran
     {
         switch (r.stage)
         {
-            case ShaderStage::Vertex:
-                if (hasVertex)
-                {
-                    throw std::runtime_error(
-                        "PipelineLayout validation failed: more than one push constant range "
-                        "declared for Vertex stage.");
-                }
-                hasVertex = true;
-                break;
-            case ShaderStage::Fragment:
-                if (hasFragment)
-                {
-                    throw std::runtime_error(
-                        "PipelineLayout validation failed: more than one push constant range "
-                        "declared for Fragment stage.");
-                }
-                hasFragment = true;
-                break;
-            case ShaderStage::Compute:
-                if (hasCompute)
-                {
-                    throw std::runtime_error(
-                        "PipelineLayout validation failed: more than one push constant range "
-                        "declared for Compute stage.");
-                }
-                hasCompute = true;
-                break;
-            case ShaderStage::RayGeneration:
-                if (hasRayGeneration)
-                {
-                    throw std::runtime_error(
-                        "PipelineLayout validation failed: more than one push constant range "
-                        "declared for RayGeneration stage.");
-                }
-                hasRayGeneration = true;
-                break;
-            case ShaderStage::Miss:
-                if (hasMiss)
-                {
-                    throw std::runtime_error(
-                        "PipelineLayout validation failed: more than one push constant range "
-                        "declared for Miss stage.");
-                }
-                hasMiss = true;
-                break;
-            case ShaderStage::ClosestHit:
-                if (hasClosestHit)
-                {
-                    throw std::runtime_error(
-                        "PipelineLayout validation failed: more than one push constant range "
-                        "declared for ClosestHit stage.");
-                }
-                hasClosestHit = true;
-                break;
+        case ShaderStage::Vertex:
+            if (hasVertex)
+            {
+                throw std::runtime_error(
+                    "PipelineLayout validation failed: more than one push constant range "
+                    "declared for Vertex stage.");
+            }
+            hasVertex = true;
+            break;
+        case ShaderStage::Fragment:
+            if (hasFragment)
+            {
+                throw std::runtime_error(
+                    "PipelineLayout validation failed: more than one push constant range "
+                    "declared for Fragment stage.");
+            }
+            hasFragment = true;
+            break;
+        case ShaderStage::Compute:
+            if (hasCompute)
+            {
+                throw std::runtime_error(
+                    "PipelineLayout validation failed: more than one push constant range "
+                    "declared for Compute stage.");
+            }
+            hasCompute = true;
+            break;
+        case ShaderStage::RayGeneration:
+            if (hasRayGeneration)
+            {
+                throw std::runtime_error(
+                    "PipelineLayout validation failed: more than one push constant range "
+                    "declared for RayGeneration stage.");
+            }
+            hasRayGeneration = true;
+            break;
+        case ShaderStage::Miss:
+            if (hasMiss)
+            {
+                throw std::runtime_error(
+                    "PipelineLayout validation failed: more than one push constant range "
+                    "declared for Miss stage.");
+            }
+            hasMiss = true;
+            break;
+        case ShaderStage::ClosestHit:
+            if (hasClosestHit)
+            {
+                throw std::runtime_error(
+                    "PipelineLayout validation failed: more than one push constant range "
+                    "declared for ClosestHit stage.");
+            }
+            hasClosestHit = true;
+            break;
         }
     }
 }
@@ -367,98 +392,117 @@ inline void validateMetalBufferBindings(const std::vector<ResourceBinding>& bind
         bool isBufferType = (rb.type == ResourceType::UniformBuffer ||
                              rb.type == ResourceType::StorageBuffer ||
                              rb.type == ResourceType::AccelerationStructure);
-        if (!isBufferType) continue;
+        if (!isBufferType)
+        {
+            continue;
+        }
 
         switch (rb.stage)
         {
-            case ShaderStage::Vertex:
-                if (rb.binding.metal < 2)
-                {
-                    throw std::runtime_error(
-                        "PipelineLayout validation failed: Metal vertex buffer resource binding "
-                        "uses index " + std::to_string(rb.binding.metal) + ", but vertex-stage "
-                        "UniformBuffer/StorageBuffer bindings must use index >= 2. buffer(0) is "
-                        "reserved for the geometric vertex buffer and buffer(1) is reserved for "
-                        "vertex push constants.");
-                }
-                break;
-            case ShaderStage::Fragment:
-                if (rb.binding.metal < 1)
-                {
-                    throw std::runtime_error(
-                        "PipelineLayout validation failed: Metal fragment buffer resource binding "
-                        "uses index " + std::to_string(rb.binding.metal) + ", but fragment-stage "
-                        "UniformBuffer/StorageBuffer bindings must use index >= 1. buffer(0) is "
-                        "reserved for fragment push constants.");
-                }
-                break;
-            case ShaderStage::Compute:
-                if (rb.binding.metal < 1)
-                {
-                    throw std::runtime_error(
-                        "PipelineLayout validation failed: Metal compute buffer resource binding "
-                        "uses index " + std::to_string(rb.binding.metal) + ", but compute-stage "
-                        "UniformBuffer/StorageBuffer bindings must use index >= 1. buffer(0) is "
-                        "reserved for compute push constants.");
-                }
-                break;
-            case ShaderStage::RayGeneration:
-            case ShaderStage::Miss:
-            case ShaderStage::ClosestHit:
-                if (rb.binding.metal < 1)
-                {
-                    throw std::runtime_error(
-                        "PipelineLayout validation failed: Metal ray tracing buffer resource binding "
-                        "uses index " + std::to_string(rb.binding.metal) + ", but ray-tracing-stage "
-                        "UniformBuffer/StorageBuffer bindings must use index >= 1. buffer(0) is "
-                        "reserved for push constants.");
-                }
-                break;
+        case ShaderStage::Vertex:
+            if (rb.binding.metal < 2)
+            {
+                throw std::runtime_error(
+                    "PipelineLayout validation failed: Metal vertex buffer resource binding "
+                    "uses index " +
+                    std::to_string(rb.binding.metal) + ", but vertex-stage "
+                                                       "UniformBuffer/StorageBuffer bindings must use index >= 2. buffer(0) is "
+                                                       "reserved for the geometric vertex buffer and buffer(1) is reserved for "
+                                                       "vertex push constants.");
+            }
+            break;
+        case ShaderStage::Fragment:
+            if (rb.binding.metal < 1)
+            {
+                throw std::runtime_error(
+                    "PipelineLayout validation failed: Metal fragment buffer resource binding "
+                    "uses index " +
+                    std::to_string(rb.binding.metal) + ", but fragment-stage "
+                                                       "UniformBuffer/StorageBuffer bindings must use index >= 1. buffer(0) is "
+                                                       "reserved for fragment push constants.");
+            }
+            break;
+        case ShaderStage::Compute:
+            if (rb.binding.metal < 1)
+            {
+                throw std::runtime_error(
+                    "PipelineLayout validation failed: Metal compute buffer resource binding "
+                    "uses index " +
+                    std::to_string(rb.binding.metal) + ", but compute-stage "
+                                                       "UniformBuffer/StorageBuffer bindings must use index >= 1. buffer(0) is "
+                                                       "reserved for compute push constants.");
+            }
+            break;
+        case ShaderStage::RayGeneration:
+        case ShaderStage::Miss:
+        case ShaderStage::ClosestHit:
+            if (rb.binding.metal < 1)
+            {
+                throw std::runtime_error(
+                    "PipelineLayout validation failed: Metal ray tracing buffer resource binding "
+                    "uses index " +
+                    std::to_string(rb.binding.metal) + ", but ray-tracing-stage "
+                                                       "UniformBuffer/StorageBuffer bindings must use index >= 1. buffer(0) is "
+                                                       "reserved for push constants.");
+            }
+            break;
         }
     }
 }
 
 // --- Sampler description vocabulary ------------------------------------------
 
-enum class Filter       { Nearest, Linear };
-enum class MipmapFilter { Nearest, Linear };
-enum class AddressMode  { Repeat, ClampToEdge, MirroredRepeat };
+enum class Filter
+{
+    Nearest,
+    Linear
+};
+enum class MipmapFilter
+{
+    Nearest,
+    Linear
+};
+enum class AddressMode
+{
+    Repeat,
+    ClampToEdge,
+    MirroredRepeat
+};
 
 struct SamplerDescription {
-    Filter       minFilter    = Filter::Linear;
-    Filter       magFilter    = Filter::Linear;
-    MipmapFilter mipFilter    = MipmapFilter::Nearest;
-    AddressMode  addressModeU = AddressMode::Repeat;
-    AddressMode  addressModeV = AddressMode::Repeat;
-    AddressMode  addressModeW = AddressMode::Repeat;
-    std::string  debugName;          // Debug label for validation layers / Xcode GPU Capture
+    Filter minFilter = Filter::Linear;
+    Filter magFilter = Filter::Linear;
+    MipmapFilter mipFilter = MipmapFilter::Nearest;
+    AddressMode addressModeU = AddressMode::Repeat;
+    AddressMode addressModeV = AddressMode::Repeat;
+    AddressMode addressModeW = AddressMode::Repeat;
+    std::string debugName; // Debug label for validation layers / Xcode GPU Capture
 };
 
 // --- Image usage flags -------------------------------------------------------
 
-enum class ImageUsage : uint32_t {
-    None            = 0,
+enum class ImageUsage : uint32_t
+{
+    None = 0,
     ColorAttachment = 1 << 0,
-    DepthStencil    = 1 << 1,
-    Sampled         = 1 << 2,
-    Storage         = 1 << 3,
-    TransferSrc     = 1 << 4,
-    TransferDst     = 1 << 5,
-    Present         = 1 << 6
+    DepthStencil = 1 << 1,
+    Sampled = 1 << 2,
+    Storage = 1 << 3,
+    TransferSrc = 1 << 4,
+    TransferDst = 1 << 5,
+    Present = 1 << 6
 };
 
 inline ImageUsage operator|(ImageUsage a, ImageUsage b)
 {
     return static_cast<ImageUsage>(
-        static_cast<uint32_t>(a) | static_cast<uint32_t>(b)
-    );
+        static_cast<uint32_t>(a) | static_cast<uint32_t>(b));
 }
 
 inline ImageUsage operator&(ImageUsage a, ImageUsage b)
 {
     return static_cast<ImageUsage>(
-        static_cast<uint32_t>(a) & static_cast<uint32_t>(b)
-    );
+        static_cast<uint32_t>(a) & static_cast<uint32_t>(b));
 }
 
 inline ImageUsage& operator|=(ImageUsage& a, ImageUsage b)
@@ -471,7 +515,8 @@ inline bool hasFlag(ImageUsage flags, ImageUsage flag)
     return (static_cast<uint32_t>(flags) & static_cast<uint32_t>(flag)) != 0;
 }
 
-enum class ImageType {
+enum class ImageType
+{
     Image2D,
     Cubemap
 };
@@ -486,8 +531,14 @@ enum class ImageType {
 // `minMipSize` of 0 is treated as 1 (full mip chain down to 1x1).
 inline uint32_t mipLevelsForMinSize(uint32_t size, uint32_t minMipSize)
 {
-    if (size == 0) return 1;
-    if (minMipSize == 0) minMipSize = 1;
+    if (size == 0)
+    {
+        return 1;
+    }
+    if (minMipSize == 0)
+    {
+        minMipSize = 1;
+    }
     uint32_t levels = 1;
     uint32_t current = size;
     while ((current >> 1) >= minMipSize)
@@ -501,17 +552,17 @@ inline uint32_t mipLevelsForMinSize(uint32_t size, uint32_t minMipSize)
 // --- Image description for standalone image creation -------------------------
 
 struct ImageDescription {
-    Size2D      size;
+    Size2D size;
     PixelFormat format = PixelFormat::R8G8B8A8_UNORM;
-    ImageUsage  usage  = ImageUsage::Sampled | ImageUsage::TransferDst;
-    ImageType   type   = ImageType::Image2D;
-    uint32_t    mipLevels = 1;
+    ImageUsage usage = ImageUsage::Sampled | ImageUsage::TransferDst;
+    ImageType type = ImageType::Image2D;
+    uint32_t mipLevels = 1;
     // Minimum mip level size, in pixels, on the largest image dimension.
     // When > 0, the number of mip levels is derived from `size` and this value
     // (see mipLevelsForMinSize) and overrides `mipLevels`. When 0, `mipLevels`
     // is used as-is.
-    uint32_t    minMipSize = 0;
-    std::string debugName;          // Debug label for validation layers / Xcode GPU Capture
+    uint32_t minMipSize = 0;
+    std::string debugName; // Debug label for validation layers / Xcode GPU Capture
 };
 
 // Resolve the effective mip level count for an image description: derived from
@@ -521,7 +572,8 @@ inline uint32_t effectiveMipLevels(const ImageDescription& description)
     if (description.minMipSize > 0)
     {
         uint32_t maxDim = description.size.width > description.size.height
-            ? description.size.width : description.size.height;
+                              ? description.size.width
+                              : description.size.height;
         return mipLevelsForMinSize(maxDim, description.minMipSize);
     }
     return description.mipLevels;
@@ -529,7 +581,8 @@ inline uint32_t effectiveMipLevels(const ImageDescription& description)
 
 // --- Vertex attribute format --------------------------------------------------
 
-enum class Format {
+enum class Format
+{
     Undefined = 0,
     R32_SFLOAT,
     R32G32_SFLOAT,
@@ -539,17 +592,18 @@ enum class Format {
 
 // --- Buffer usage flags -------------------------------------------------------
 
-enum class BufferUsage : uint32_t {
-    None                            = 0,
-    Vertex                          = 1 << 0,
-    Index                           = 1 << 1,
-    Uniform                         = 1 << 2,
-    Storage                         = 1 << 3,
-    TransferSrc                     = 1 << 4,
-    TransferDst                     = 1 << 5,
+enum class BufferUsage : uint32_t
+{
+    None = 0,
+    Vertex = 1 << 0,
+    Index = 1 << 1,
+    Uniform = 1 << 2,
+    Storage = 1 << 3,
+    TransferSrc = 1 << 4,
+    TransferDst = 1 << 5,
     AccelerationStructureBuildInput = 1 << 6,
-    ShaderDeviceAddress             = 1 << 7,
-    ShaderBindingTable              = 1 << 8
+    ShaderDeviceAddress = 1 << 7,
+    ShaderBindingTable = 1 << 8
 };
 
 inline BufferUsage operator|(BufferUsage a, BufferUsage b)
@@ -562,7 +616,10 @@ inline BufferUsage operator&(BufferUsage a, BufferUsage b)
     return static_cast<BufferUsage>(static_cast<uint32_t>(a) & static_cast<uint32_t>(b));
 }
 
-inline BufferUsage& operator|=(BufferUsage& a, BufferUsage b) { return a = a | b; }
+inline BufferUsage& operator|=(BufferUsage& a, BufferUsage b)
+{
+    return a = a | b;
+}
 
 inline bool hasFlag(BufferUsage flags, BufferUsage flag)
 {
@@ -571,7 +628,8 @@ inline bool hasFlag(BufferUsage flags, BufferUsage flag)
 
 // --- Vertex description -------------------------------------------------------
 
-enum class VertexSemantic {
+enum class VertexSemantic
+{
     Position,
     Normal,
     Color,
@@ -580,32 +638,43 @@ enum class VertexSemantic {
     Tangent
 };
 
-enum class VertexInputRate {
+enum class VertexInputRate
+{
     Vertex,
     Instance
 };
 
 struct VertexAttributeDescription {
-    uint32_t       location = 0;
-    uint32_t       binding  = 0;
+    uint32_t location = 0;
+    uint32_t binding = 0;
     VertexSemantic semantic = VertexSemantic::Position;
-    Format         format   = Format::R32G32B32_SFLOAT;
-    uint32_t       offset   = 0;
+    Format format = Format::R32G32B32_SFLOAT;
+    uint32_t offset = 0;
 };
 
 struct VertexBufferDescription {
-    uint32_t                              binding   = 0;
-    uint32_t                              stride    = 0;
-    VertexInputRate                       inputRate = VertexInputRate::Vertex;
+    uint32_t binding = 0;
+    uint32_t stride = 0;
+    VertexInputRate inputRate = VertexInputRate::Vertex;
     std::vector<VertexAttributeDescription> attributes;
 };
 
-enum class CullMode { None, Front, Back };
-enum class FrontFace { Clockwise, CounterClockwise };
+enum class CullMode
+{
+    None,
+    Front,
+    Back
+};
+enum class FrontFace
+{
+    Clockwise,
+    CounterClockwise
+};
 
 // --- Cubemap -----------------------------------------------------------------
 
-enum class CubemapFace : uint32_t {
+enum class CubemapFace : uint32_t
+{
     PositiveX = 0,
     NegativeX = 1,
     PositiveY = 2,
@@ -615,17 +684,14 @@ enum class CubemapFace : uint32_t {
 };
 
 struct CubeMapDescription {
-    uint32_t    size   = 512;
+    uint32_t size = 512;
     PixelFormat format = PixelFormat::R16G16B16A16_SFLOAT;
-    ImageUsage  usage  = ImageUsage::Sampled
-                       | ImageUsage::ColorAttachment
-                       | ImageUsage::TransferSrc
-                       | ImageUsage::TransferDst;
-    uint32_t    mipLevels = 1;
+    ImageUsage usage = ImageUsage::Sampled | ImageUsage::ColorAttachment | ImageUsage::TransferSrc | ImageUsage::TransferDst;
+    uint32_t mipLevels = 1;
     // Minimum mip level size, in pixels. When > 0, the number of mip levels is
     // derived from `size` and this value (see mipLevelsForMinSize) and
     // overrides `mipLevels`. When 0, `mipLevels` is used as-is.
-    uint32_t    minMipSize = 0;
+    uint32_t minMipSize = 0;
     std::string debugName;
 };
 

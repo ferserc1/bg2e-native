@@ -22,29 +22,30 @@
 #include "EnvironmentSettings.hpp"
 #include "SubmeshWindow.hpp"
 
-class  AppDelegate;
+class AppDelegate;
 
 namespace bg2e::ui {
 class RenderSettingsWindow;
 class UISettingsWindow;
 }
-namespace bg2e::render { class RenderSettingsPreferences; }
+namespace bg2e::render {
+class RenderSettingsPreferences;
+}
 
 class ToolBar : public bg2e::ui::Toolbar {
-public:
+  public:
     virtual ~ToolBar() = default;
 
-    void init(AppDelegate * delegate, bg2e::ui::UISettingsWindow * uiSettings,
-              bg2e::ui::RenderSettingsWindow * renderSettings,
-              bg2e::render::RenderSettingsPreferences * renderPrefs);
+    void init(AppDelegate* delegate, bg2e::ui::UISettingsWindow* uiSettings,
+              bg2e::ui::RenderSettingsWindow* renderSettings,
+              bg2e::render::RenderSettingsPreferences* renderPrefs);
     void draw() override;
 
-protected:
-
-    AppDelegate * _appDelegate = nullptr;
-    bg2e::ui::UISettingsWindow * _uiSettingsWindow = nullptr;
-    bg2e::ui::RenderSettingsWindow * _renderSettingsWindow = nullptr;
-    bg2e::render::RenderSettingsPreferences * _renderPrefs = nullptr;
+  protected:
+    AppDelegate* _appDelegate = nullptr;
+    bg2e::ui::UISettingsWindow* _uiSettingsWindow = nullptr;
+    bg2e::ui::RenderSettingsWindow* _renderSettingsWindow = nullptr;
+    bg2e::render::RenderSettingsPreferences* _renderPrefs = nullptr;
     int32_t _indirectButtonId = -1;
     int32_t _reflectionsButtonId = -1;
 };

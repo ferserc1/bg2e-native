@@ -35,22 +35,22 @@
 
 namespace bg2e::app {
 
-FileDialog::FileFilters FileDialog::imageFilters {
-    { "Images", "jpg,jpeg,png,bmp,webp" }
-};
+FileDialog::FileFilters FileDialog::imageFilters{
+    {"Images", "jpg,jpeg,png,bmp,webp"}};
 
 void FileDialog::test()
 {
     NFD::Guard nfdGuard;
-    
+
     NFD::UniquePath outPath;
-    
-    nfdfilteritem_t filterItem[1] = {{ "bg2e model files", "bg2,vwglb" }};
-    
+
+    nfdfilteritem_t filterItem[1] = {{"bg2e model files", "bg2,vwglb"}};
+
     nfdresult_t result = NFD::OpenDialog(outPath, filterItem, 1);
     if (result == NFD_OKAY)
     {
-        std::cout << "Success!" << std::endl << outPath.get() << std::endl;
+        std::cout << "Success!" << std::endl
+                  << outPath.get() << std::endl;
     }
     else if (result == NFD_CANCEL)
     {
@@ -68,27 +68,27 @@ std::filesystem::path FileDialog::openFile()
     {
         throw std::runtime_error("FileDialog::openFile(): No filters specified");
     }
-    
+
     Preferences prefs;
     auto lastPath = prefs.get<std::string>("fileDialog.lastOpenPath", "");
-    
+
     NFD::Guard();
-    
+
     NFD::UniquePath outPath;
-    
-    nfdfilteritem_t * filters = new nfdfilteritem_t[_filters.size()];
+
+    nfdfilteritem_t* filters = new nfdfilteritem_t[_filters.size()];
     size_t i = 0;
-    for (auto & f : _filters)
+    for (auto& f : _filters)
     {
         filters[i].name = f.first.c_str();
         filters[i].spec = f.second.c_str();
-        
+
         ++i;
     }
     std::filesystem::path result;
     const char* defaultPath = lastPath.empty() ? nullptr : lastPath.c_str();
-    nfdresult_t nfdResult= NFD::OpenDialog(outPath, filters, static_cast<nfdfiltersize_t>(_filters.size()), defaultPath);
-    
+    nfdresult_t nfdResult = NFD::OpenDialog(outPath, filters, static_cast<nfdfiltersize_t>(_filters.size()), defaultPath);
+
     if (nfdResult == NFD_OKAY)
     {
         result = outPath.get();
@@ -98,38 +98,38 @@ std::filesystem::path FileDialog::openFile()
     {
         throw std::runtime_error("Error opening file dialog:" + std::string(NFD::GetError()));
     }
-    
-    delete [] filters;
+
+    delete[] filters;
     return result;
 }
-    
+
 std::filesystem::path FileDialog::saveFile()
 {
     if (_filters.size() == 0)
     {
         throw std::runtime_error("FileDialog::openFile(): No filters specified");
     }
-    
+
     Preferences prefs;
     auto lastPath = prefs.get<std::string>("fileDialog.lastSavePath", "");
-    
+
     NFD::Guard();
-    
+
     NFD::UniquePath outPath;
-    
-    nfdfilteritem_t * filters = new nfdfilteritem_t[_filters.size()];
+
+    nfdfilteritem_t* filters = new nfdfilteritem_t[_filters.size()];
     size_t i = 0;
-    for (auto & f : _filters)
+    for (auto& f : _filters)
     {
         filters[i].name = f.first.c_str();
         filters[i].spec = f.second.c_str();
-        
+
         ++i;
     }
     std::filesystem::path result;
     const char* defaultPath = lastPath.empty() ? nullptr : lastPath.c_str();
-    nfdresult_t nfdResult= NFD::SaveDialog(outPath, filters, static_cast<nfdfiltersize_t>(_filters.size()), defaultPath);
-    
+    nfdresult_t nfdResult = NFD::SaveDialog(outPath, filters, static_cast<nfdfiltersize_t>(_filters.size()), defaultPath);
+
     if (nfdResult == NFD_OKAY)
     {
         result = outPath.get();
@@ -139,8 +139,8 @@ std::filesystem::path FileDialog::saveFile()
     {
         throw std::runtime_error("Error opening file dialog:" + std::string(NFD::GetError()));
     }
-    
-    delete [] filters;
+
+    delete[] filters;
     return result;
 }
 
@@ -148,12 +148,12 @@ std::filesystem::path FileDialog::pickFolder()
 {
     Preferences prefs;
     auto lastPath = prefs.get<std::string>("fileDialog.lastFolderPath", "");
-    
+
     NFD::Guard nfdGuard;
-    
+
     NFD::UniquePath outPath;
     std::filesystem::path result;
-    
+
     const char* defaultPath = lastPath.empty() ? nullptr : lastPath.c_str();
     nfdresult_t nfdResult = NFD::PickFolder(outPath, defaultPath);
     if (nfdResult == NFD_OKAY)
@@ -165,10 +165,10 @@ std::filesystem::path FileDialog::pickFolder()
     {
         throw std::runtime_error("Error picking directory: " + std::string(NFD::GetError()));
     }
-    
+
     return result;
 }
-    
+
 void FileDialog::setFilters(const FileFilters& filters)
 {
     _filters = filters;

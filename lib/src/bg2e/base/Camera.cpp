@@ -26,7 +26,7 @@ const glm::mat4& Camera::updateProjectionMatrix()
     {
         _projection->apply(_projMatrix);
     }
-    
+
     return _projMatrix;
 }
 

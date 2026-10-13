@@ -22,11 +22,9 @@
 
 namespace bg2e::scene::vk {
 
-void LightDataBinding::initFrameResources(bg2e::render::vulkan::DescriptorSetAllocator * frameAllocator)
+void LightDataBinding::initFrameResources(bg2e::render::vulkan::DescriptorSetAllocator* frameAllocator)
 {
-    frameAllocator->requirePoolSizeRatio(1, {
-        { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, BG2E_MAX_FORWARD_LIGHTS }
-    });
+    frameAllocator->requirePoolSizeRatio(1, {{VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, BG2E_MAX_FORWARD_LIGHTS}});
 }
 
 VkDescriptorSetLayout LightDataBinding::createLayout(VkShaderStageFlags shaderStages)
@@ -43,9 +41,9 @@ VkDescriptorSetLayout LightDataBinding::createLayout(VkShaderStageFlags shaderSt
 }
 
 VkDescriptorSet LightDataBinding::newDescriptorSet(
-    bg2e::render::vulkan::FrameResources & frameResources,
-    const LightUniforms & lights
-) {
+    bg2e::render::vulkan::FrameResources& frameResources,
+    const LightUniforms& lights)
+{
     if (_layout == VK_NULL_HANDLE)
     {
         throw std::runtime_error("LightDataBinding::newDescriptorSet() - The descriptor set layout is not created");
@@ -54,10 +52,9 @@ VkDescriptorSet LightDataBinding::newDescriptorSet(
     auto uniformBuffer = bg2e::render::vulkan::macros::createBuffer(_engine, frameResources, lights);
     auto ds = frameResources.newDescriptorSet(_layout);
     ds->beginUpdate();
-        ds->addBuffer(
-            0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-            uniformBuffer, sizeof(LightUniforms), 0
-        );
+    ds->addBuffer(
+        0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+        uniformBuffer, sizeof(LightUniforms), 0);
     ds->endUpdate();
     return ds->descriptorSet();
 }

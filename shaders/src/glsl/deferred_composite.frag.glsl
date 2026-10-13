@@ -35,26 +35,33 @@ layout(set = 0, binding = 6) uniform sampler2D g_Depth;
 layout(set = 0, binding = 7) uniform sampler2D g_BakedLightmap;
 
 // Scene data (set=1)
-layout(set = 1, binding = 0) uniform SceneData {
+layout(set = 1, binding = 0) uniform SceneData
+{
     mat4 viewMatrix;
     mat4 projMatrix;
-} sceneData;
+}
+sceneData;
 
 // Environment data (set=2)
 layout(set = 2, binding = 0) uniform samplerCube irradianceMap;
 layout(set = 2, binding = 1) uniform samplerCube prefilteredEnvMap;
 layout(set = 2, binding = 2) uniform sampler2D brdfLUT;
-layout(set = 2, binding = 3) uniform EnvironmentData {
+layout(set = 2, binding = 3) uniform EnvironmentData
+{
     float maxReflectionLOD;
-} environmentData;
+}
+environmentData;
 
 // Light data (set=3)
-layout(std430, set = 3, binding = 0) readonly buffer LightBuffer {
+layout(std430, set = 3, binding = 0) readonly buffer LightBuffer
+{
     LightData lights[];
-} LightsBuffer;
+}
+LightsBuffer;
 
 // Push constants
-layout(push_constant) uniform PushConstant {
+layout(push_constant) uniform PushConstant
+{
     float gamma;
     float brightness;
     float contrast;
@@ -67,46 +74,51 @@ layout(push_constant) uniform PushConstant {
     uint padding3;
 
     mat4 inverseViewProjection;
-} pushConstant;
-
+}
+pushConstant;
 
 layout(location = 0) in vec2 vTexcoord;
 layout(location = 0) out vec4 outColor;
 
-void main() {
+void main()
+{
     DeferredGBufferData gbuf = setupDeferredGBuffer(
         g_Albedo, g_Normal, g_Material, g_FresnelFlags, g_SheenColor,
         g_InputImage, g_Depth,
         vTexcoord,
         pushConstant.inverseViewProjection,
-        sceneData.viewMatrix
-    );
+        sceneData.viewMatrix);
 
-    if (gbuf.isEmpty) {
+    if (gbuf.isEmpty)
+    {
         outColor = gbuf.inputColor;
         outColor.a = 0.0;
         return;
     }
 
-    if (gbuf.unlit) {
+    if (gbuf.unlit)
+    {
         outColor = fragmentShaderOutput(
             vec4(gbuf.albedo.rgb, 1.0),
             pushConstant.exposure,
             pushConstant.gamma,
             pushConstant.brightness,
-            pushConstant.contrast
-        );
+            pushConstant.contrast);
         return;
     }
 
     float liveAO = gbuf.hasBakedLightmap ? 1.0 : gbuf.ao;
     vec3 Lo = vec3(0.0);
-    for (int i = 0; i < pushConstant.lightCount; i++) {
-        if (LightsBuffer.lights[i].type == LIGHT_TYPE_DISABLED) continue;
+    for (int i = 0; i < pushConstant.lightCount; i++)
+    {
+        if (LightsBuffer.lights[i].type == LIGHT_TYPE_DISABLED)
+        {
+            continue;
+        }
         Lo += calcRadiance(LightsBuffer.lights[i], gbuf.viewDir, gbuf.worldPos,
-                          gbuf.metallic, gbuf.roughness,
-                          gbuf.F0, gbuf.normal, gbuf.albedo.rgb,
-                          gbuf.sheenIntensity, gbuf.sheenColor, liveAO);
+                           gbuf.metallic, gbuf.roughness,
+                           gbuf.F0, gbuf.normal, gbuf.albedo.rgb,
+                           gbuf.sheenIntensity, gbuf.sheenColor, liveAO);
     }
 
     vec3 ambient = calcAmbientLight(gbuf.viewDir, gbuf.normal, gbuf.F0, gbuf.albedo.rgb,
@@ -121,17 +133,16 @@ void main() {
         // The baked lightmap modulates indirect lighting only.
         vec3 bakedMultiplier = texture(g_BakedLightmap, vTexcoord).rgb;
         outColor = compositeFinalColor(ambient * bakedMultiplier + emissionColor,
-            Lo, gbuf.inputColor, gbuf.albedo.a,
-            pushConstant.exposure, pushConstant.gamma,
-            pushConstant.brightness, pushConstant.contrast);
+                                       Lo, gbuf.inputColor, gbuf.albedo.a,
+                                       pushConstant.exposure, pushConstant.gamma,
+                                       pushConstant.brightness, pushConstant.contrast);
         return;
     }
 
     // Refraction on translucent fragments (per-material factor from the G-buffer).
     vec4 background = applyRefraction(
         sceneData.viewMatrix, gbuf.normal, vTexcoord,
-        gbuf.refractionFactor, gbuf.albedo, g_InputImage
-    );
+        gbuf.refractionFactor, gbuf.albedo, g_InputImage);
 
     outColor = compositeFinalColor(ambient + emissionColor, Lo, background, gbuf.albedo.a,
                                    pushConstant.exposure, pushConstant.gamma,

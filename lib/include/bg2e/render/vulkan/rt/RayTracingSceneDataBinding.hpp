@@ -27,21 +27,21 @@ namespace vulkan {
 namespace rt {
 
 class BG2E_API RayTracingSceneDataBinding : public PipelineDataBinding {
-public:
-    RayTracingSceneDataBinding(bg2e::render::Engine * engine) : PipelineDataBinding(engine) {}
+  public:
+    RayTracingSceneDataBinding(bg2e::render::Engine* engine) : PipelineDataBinding(engine)
+    {
+    }
 
-    void initFrameResources(bg2e::render::vulkan::DescriptorSetAllocator * frameAllocator) override;
+    void initFrameResources(bg2e::render::vulkan::DescriptorSetAllocator* frameAllocator) override;
 
     VkDescriptorSetLayout createLayout(
         VkShaderStageFlags shaderStages = VK_SHADER_STAGE_FRAGMENT_BIT |
-            VK_SHADER_STAGE_RAYGEN_BIT_KHR |
-            VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR
-    ) override;
+                                          VK_SHADER_STAGE_RAYGEN_BIT_KHR |
+                                          VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR) override;
 
     VkDescriptorSet newDescriptorSet(
-        bg2e::render::vulkan::FrameResources & frameResources,
-        VkAccelerationStructureKHR tlas
-    );
+        bg2e::render::vulkan::FrameResources& frameResources,
+        VkAccelerationStructureKHR tlas);
 };
 
 }

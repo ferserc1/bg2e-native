@@ -32,7 +32,7 @@ namespace bg2e {
 namespace gpu {
 
 class BG2E_API CleanupManager {
-public:
+  public:
     // Surface provides the device submission dependencies for deferred cleanup.
     // The surface is NOT owned — the caller must ensure it outlives the manager.
     explicit CleanupManager(gpu::Surface* surface);
@@ -67,7 +67,7 @@ public:
     // Call this after device->waitIdle() at application shutdown.
     void flushAllDeferred();
 
-private:
+  private:
     gpu::Surface* _surface;
 
     std::deque<std::shared_ptr<DeviceResource>> _staticResources;

@@ -37,7 +37,7 @@ RayTracingPipeline::RayTracingPipeline(
     : gpu::RayTracingPipeline(gpuDevice), _device(device), _allocator(allocator)
 {
     auto* vkRgenModule = dynamic_cast<vk::ShaderModule*>(description.raygenShader);
-    auto* vkLayout     = dynamic_cast<vk::PipelineLayout*>(description.layout);
+    auto* vkLayout = dynamic_cast<vk::PipelineLayout*>(description.layout);
 
     if (!vkRgenModule || !vkLayout)
     {
@@ -182,9 +182,7 @@ RayTracingPipeline::RayTracingPipeline(
     VkBufferCreateInfo bufferInfo{};
     bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
     bufferInfo.size = sbtSize;
-    bufferInfo.usage = VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR
-                     | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT
-                     | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+    bufferInfo.usage = VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
 
     VmaAllocationCreateInfo allocInfo{};
     allocInfo.usage = VMA_MEMORY_USAGE_AUTO_PREFER_HOST;
@@ -215,7 +213,7 @@ RayTracingPipeline::RayTracingPipeline(
     // Set up SBT regions
     // Region layout: [raygen] [miss] [hit] [callable]
     uint32_t raygenOffset = 0;
-    uint32_t missOffset = alignedHandleSize;    // after raygen
+    uint32_t missOffset = alignedHandleSize;             // after raygen
     uint32_t hitOffset = missOffset + alignedHandleSize; // after miss
     // callable is empty
 

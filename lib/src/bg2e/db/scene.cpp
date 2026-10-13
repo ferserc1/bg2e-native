@@ -36,13 +36,19 @@ namespace bg2e::db {
 static int countJsonNodes(std::shared_ptr<bg2e::json::JsonNode> jsonNode)
 {
     json::ObjectReader reader(jsonNode);
-    if (!reader.isValid()) return 0;
+    if (!reader.isValid())
+    {
+        return 0;
+    }
     int count = 1;
     if (auto children = reader.getArray("children"))
     {
         for (std::size_t i = 0; i < children->size(); ++i)
         {
-            if (auto child = children->getObject(i)) count += countJsonNodes(child->node());
+            if (auto child = children->getObject(i))
+            {
+                count += countJsonNodes(child->node());
+            }
         }
     }
     return count;
@@ -51,7 +57,10 @@ static int countJsonNodes(std::shared_ptr<bg2e::json::JsonNode> jsonNode)
 static int countEnvironmentImages(std::shared_ptr<bg2e::json::JsonNode> jsonNode)
 {
     json::ObjectReader reader(jsonNode);
-    if (!reader.isValid()) return 0;
+    if (!reader.isValid())
+    {
+        return 0;
+    }
     int count = 0;
 
     if (auto components = reader.getArray("components"))
@@ -73,7 +82,10 @@ static int countEnvironmentImages(std::shared_ptr<bg2e::json::JsonNode> jsonNode
     {
         for (std::size_t i = 0; i < children->size(); ++i)
         {
-            if (auto child = children->getObject(i)) count += countEnvironmentImages(child->node());
+            if (auto child = children->getObject(i))
+            {
+                count += countEnvironmentImages(child->node());
+            }
         }
     }
     return count;
@@ -82,7 +94,10 @@ static int countEnvironmentImages(std::shared_ptr<bg2e::json::JsonNode> jsonNode
 static int countDrawableTextures(std::shared_ptr<bg2e::json::JsonNode> jsonNode, const std::filesystem::path& basePath)
 {
     json::ObjectReader reader(jsonNode);
-    if (!reader.isValid()) return 0;
+    if (!reader.isValid())
+    {
+        return 0;
+    }
     int count = 0;
 
     if (auto components = reader.getArray("components"))
@@ -107,7 +122,10 @@ static int countDrawableTextures(std::shared_ptr<bg2e::json::JsonNode> jsonNode,
     {
         for (std::size_t i = 0; i < children->size(); ++i)
         {
-            if (auto child = children->getObject(i)) count += countDrawableTextures(child->node(), basePath);
+            if (auto child = children->getObject(i))
+            {
+                count += countDrawableTextures(child->node(), basePath);
+            }
         }
     }
     return count;
@@ -115,7 +133,10 @@ static int countDrawableTextures(std::shared_ptr<bg2e::json::JsonNode> jsonNode,
 
 static int countSceneNodes(bg2e::scene::Node* node)
 {
-    if (!node) { return 0; }
+    if (!node)
+    {
+        return 0;
+    }
     int count = 1;
     for (auto& child : node->children())
     {
@@ -127,13 +148,13 @@ static int countSceneNodes(bg2e::scene::Node* node)
 std::shared_ptr<bg2e::scene::Scene> loadScene(
     const std::filesystem::path& filePath,
     bg2e::render::Engine& engine,
-    bg2e::scene::SceneProgressCallback onProgress
-) {
+    bg2e::scene::SceneProgressCallback onProgress)
+{
     // Preserve bytes so the file size matches the number of characters read.
     std::ifstream inFile(filePath, std::ios::binary);
     if (!inFile.is_open())
     {
-        bg2e_log_error << "Could not open scene file at path \"" << filePath << "\""  << bg2e_log_end;
+        bg2e_log_error << "Could not open scene file at path \"" << filePath << "\"" << bg2e_log_end;
         return nullptr;
     }
 
@@ -148,7 +169,8 @@ std::shared_ptr<bg2e::scene::Scene> loadScene(
     auto parser = json::JsonParser(content);
     auto sceneFile = parser.parse();
 
-    if (!sceneFile) {
+    if (!sceneFile)
+    {
         bg2e_log_error << "Error parsing scene file at path \"" << filePath << "\"" << bg2e_log_end;
         return nullptr;
     }
@@ -165,7 +187,10 @@ std::shared_ptr<bg2e::scene::Scene> loadScene(
             for (std::size_t i = 0; i < sceneList->size(); ++i)
             {
                 auto nodeData = sceneList->getObject(i);
-                if (!nodeData) continue;
+                if (!nodeData)
+                {
+                    continue;
+                }
                 progress.total += countJsonNodes(nodeData->node());
                 progress.total += countEnvironmentImages(nodeData->node());
                 progress.total += countDrawableTextures(nodeData->node(), basePath);
@@ -188,16 +213,16 @@ std::shared_ptr<bg2e::scene::Scene> loadScene(
     const std::filesystem::path& basePath,
     const std::string& fileName,
     bg2e::render::Engine& engine,
-    bg2e::scene::SceneProgressCallback onProgress
-) {
+    bg2e::scene::SceneProgressCallback onProgress)
+{
     return loadScene(basePath / fileName, engine, onProgress);
 }
 
 void saveScene(
     bg2e::scene::Node* sceneRoot,
     const std::filesystem::path& filePath,
-    bg2e::scene::SceneProgressCallback onProgress
-) {
+    bg2e::scene::SceneProgressCallback onProgress)
+{
     auto rootPath = filePath;
     rootPath.remove_filename();
 
@@ -235,14 +260,13 @@ void saveScene(
         file.open(filePath);
         using namespace bg2e::json;
         auto sceneJson = JSON(JsonObject{
-            { "fileType", JSON("bg2e::scene") },
-            { "version", JSON(JsonObject{
-                { "major", JSON(1) },
-                { "minor", JSON(0) },
-                { "rev", JSON(0) },
-            })},
-            { "scene", JSON(JsonList{sceneData})}
-        });
+            {"fileType", JSON("bg2e::scene")},
+            {"version", JSON(JsonObject{
+                            {"major", JSON(1)},
+                            {"minor", JSON(0)},
+                            {"rev", JSON(0)},
+                        })},
+            {"scene", JSON(JsonList{sceneData})}});
         file << sceneJson->toString();
         file.close();
     }
@@ -258,8 +282,8 @@ void saveScene(
     bg2e::scene::Node* sceneRoot,
     const std::filesystem::path& basePath,
     const std::string& fileName,
-    bg2e::scene::SceneProgressCallback onProgress
-) {
+    bg2e::scene::SceneProgressCallback onProgress)
+{
     saveScene(sceneRoot, basePath / fileName, onProgress);
 }
 

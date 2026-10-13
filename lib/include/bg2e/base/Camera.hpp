@@ -29,66 +29,88 @@ namespace bg2e {
 namespace base {
 
 class BG2E_API Camera {
-public:
-    inline void setProjection(math::Projection * p) { _projection = std::shared_ptr<math::Projection>(p); }
-    inline void setProjection(std::shared_ptr<math::Projection> p) { _projection = p; }
-    inline math::Projection * projection() { return _projection.get(); }
-    inline const math::Projection * projection() const { return _projection.get(); }
+  public:
+    inline void setProjection(math::Projection* p)
+    {
+        _projection = std::shared_ptr<math::Projection>(p);
+    }
+    inline void setProjection(std::shared_ptr<math::Projection> p)
+    {
+        _projection = p;
+    }
+    inline math::Projection* projection()
+    {
+        return _projection.get();
+    }
+    inline const math::Projection* projection() const
+    {
+        return _projection.get();
+    }
     template <class T>
-    inline T * projection() { return dynamic_cast<T*>(_projection.get()); }
+    inline T* projection()
+    {
+        return dynamic_cast<T*>(_projection.get());
+    }
     template <class T>
-    inline const T * projection() const { return dynamic_cast<const T*>(_projection.get()); }
-    
-    inline const glm::mat4& projectionMatrix() const { return _projMatrix; }
-    
+    inline const T* projection() const
+    {
+        return dynamic_cast<const T*>(_projection.get());
+    }
+
+    inline const glm::mat4& projectionMatrix() const
+    {
+        return _projMatrix;
+    }
+
     const glm::mat4& updateProjectionMatrix();
-    
+
     void deserialize(std::shared_ptr<json::JsonNode> jsonData)
     {
         json::ObjectReader reader(jsonData);
-        if (!reader.isValid()) return;
+        if (!reader.isValid())
+        {
+            return;
+        }
 
         if (auto projection = reader.getObject("projection"))
         {
-                auto type = projection->getString("type").value_or("");
+            auto type = projection->getString("type").value_or("");
 
-                if (type == "PerspectiveProjection")
-                {
-                    auto proj = std::make_shared<math::PerspectiveProjection>();
-                    proj->deserialize(projection->node());
-                    _projection = proj;
-                }
-                else if (type == "OpticalProjection")
-                {
-                    auto proj = std::make_shared<math::OpticalProjection>();
-                    proj->deserialize(projection->node());
-                    _projection = proj;
-                }
+            if (type == "PerspectiveProjection")
+            {
+                auto proj = std::make_shared<math::PerspectiveProjection>();
+                proj->deserialize(projection->node());
+                _projection = proj;
+            }
+            else if (type == "OpticalProjection")
+            {
+                auto proj = std::make_shared<math::OpticalProjection>();
+                proj->deserialize(projection->node());
+                _projection = proj;
+            }
         }
         else if (auto matrix = reader.getGlmMat4("projectionMatrix"))
         {
             _projMatrix = *matrix;
         }
     }
-    
+
     std::shared_ptr<json::JsonNode> serialize()
     {
         using namespace bg2e::json;
         if (_projection.get())
         {
             return JSON(JsonObject{
-                { "projection", _projection->serialize() }
-            });
+                {"projection", _projection->serialize()}});
         }
         else
         {
             return JSON(JsonObject{
-                { "projectionMatrix", JSON(_projMatrix) }
-            });
+                {"projectionMatrix", JSON(_projMatrix)}});
         }
     }
-    
-protected:
+
+  protected:
     std::shared_ptr<math::Projection> _projection;
     glm::mat4 _projMatrix;
 };

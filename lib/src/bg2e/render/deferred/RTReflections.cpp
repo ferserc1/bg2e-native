@@ -40,21 +40,21 @@ RTReflections::~RTReflections()
 void RTReflections::build(
     const GBufferManager* gbuffer,
     VkExtent2D renderExtent,
-    VkExtent2D viewportExtent
-)
+    VkExtent2D viewportExtent)
 {
     _renderExtent = renderExtent;
     _viewportExtent = viewportExtent;
 
     vulkan::factory::Sampler samplerFactory(_engine);
     _sampler = samplerFactory.build(VK_FILTER_LINEAR, VK_FILTER_LINEAR,
-        VK_SAMPLER_ADDRESS_MODE_REPEAT, VK_SAMPLER_ADDRESS_MODE_REPEAT,
-        VK_SAMPLER_ADDRESS_MODE_REPEAT);
+                                    VK_SAMPLER_ADDRESS_MODE_REPEAT, VK_SAMPLER_ADDRESS_MODE_REPEAT,
+                                    VK_SAMPLER_ADDRESS_MODE_REPEAT);
 
-    _engine->cleanupManager().push([&](VkDevice dev) {
-        vkDestroySampler(dev, _sampler, nullptr);
-        _sampler = VK_NULL_HANDLE;
-    });
+    _engine->cleanupManager().push([&](VkDevice dev)
+                                   {
+                                       vkDestroySampler(dev, _sampler, nullptr);
+                                       _sampler = VK_NULL_HANDLE;
+                                   });
 
     if (!_engine->rayTracingSupported())
     {
@@ -78,9 +78,7 @@ void RTReflections::createFallbackImage()
         vulkan::Image::createAllocatedImage(
             _engine, "RTReflections: fallback image", whiteData.data(),
             VkExtent2D{4, 4}, bpp, VK_FORMAT_R16G16B16A16_SFLOAT,
-            VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT
-        )
-    );
+            VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT));
 }
 
 VkExtent2D RTReflections::computeReflectionExtent() const
@@ -88,8 +86,7 @@ VkExtent2D RTReflections::computeReflectionExtent() const
     float scale = rtReflectionResolutionScale(_settings.quality);
     return {
         std::max(1u, static_cast<uint32_t>(std::round(_viewportExtent.width * scale))),
-        std::max(1u, static_cast<uint32_t>(std::round(_viewportExtent.height * scale)))
-    };
+        std::max(1u, static_cast<uint32_t>(std::round(_viewportExtent.height * scale)))};
 }
 
 void RTReflections::createReflectionResources()
@@ -108,12 +105,10 @@ void RTReflections::createReflectionResources()
                 VK_FORMAT_R16G16B16A16_SFLOAT,
                 _reflectionExtent,
                 VK_IMAGE_USAGE_STORAGE_BIT |
-                VK_IMAGE_USAGE_SAMPLED_BIT |
-                VK_IMAGE_USAGE_TRANSFER_DST_BIT,
+                    VK_IMAGE_USAGE_SAMPLED_BIT |
+                    VK_IMAGE_USAGE_TRANSFER_DST_BIT,
                 VK_IMAGE_ASPECT_COLOR_BIT,
-                1, false, 0, VK_SAMPLE_COUNT_1_BIT
-            )
-        );
+                1, false, 0, VK_SAMPLE_COUNT_1_BIT));
     }
 }
 
@@ -126,14 +121,13 @@ void RTReflections::createPipeline()
     dsLayoutFactory.addBinding(3, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
     dsLayoutFactory.addBinding(4, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
     dsLayoutFactory.addBinding(5, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
-    dsLayoutFactory.addBinding(6, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);   // blue noise
+    dsLayoutFactory.addBinding(6, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER); // blue noise
     _dsLayout = dsLayoutFactory.build(
         _engine->device().handle(),
         VK_SHADER_STAGE_RAYGEN_BIT_KHR |
-        VK_SHADER_STAGE_MISS_BIT_KHR |
-        VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR |
-        VK_SHADER_STAGE_ANY_HIT_BIT_KHR
-    );
+            VK_SHADER_STAGE_MISS_BIT_KHR |
+            VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR |
+            VK_SHADER_STAGE_ANY_HIT_BIT_KHR);
 
     vulkan::factory::PipelineLayout layoutFactory(_engine);
     layoutFactory.addDescriptorSetLayout(_dsLayout);
@@ -144,14 +138,12 @@ void RTReflections::createPipeline()
     if (_reflectionLightDataBinding)
     {
         layoutFactory.addDescriptorSetLayout(
-            _reflectionLightDataBinding->createLayout(VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR)
-        );
+            _reflectionLightDataBinding->createLayout(VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR));
     }
     layoutFactory.addPushConstantRange(
         0,
         sizeof(ReflectionPushConstants),
-        VK_SHADER_STAGE_RAYGEN_BIT_KHR | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR
-    );
+        VK_SHADER_STAGE_RAYGEN_BIT_KHR | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR);
     _pipelineLayout = layoutFactory.build("RTReflections::PipelineLayout");
 
     vulkan::factory::RayTracingPipeline rtPipelineFactory(_engine);
@@ -181,8 +173,7 @@ void RTReflections::render(
     const std::vector<vulkan::rt::RTObjectInstance>& objectInstances,
     vulkan::Image* irradianceMap,
     VkSampler irradianceSampler,
-    const std::vector<base::LightData>& reflectionLights
-)
+    const std::vector<base::LightData>& reflectionLights)
 {
     if (!_settings.enabled)
     {
@@ -200,58 +191,58 @@ void RTReflections::render(
         auto output = _reflectionImages.empty() ? _fallbackImage : _reflectionImages[frameIndex];
 
         vulkan::Image::cmdTransitionImage(cmd, output->handle(),
-            VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL);
+                                          VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL);
 
         VkClearColorValue clearBlack{{0.0f, 0.0f, 0.0f, 0.0f}};
         VkImageSubresourceRange range = vulkan::Image::subresourceRange(VK_IMAGE_ASPECT_COLOR_BIT);
         vkCmdClearColorImage(cmd, output->handle(), VK_IMAGE_LAYOUT_GENERAL, &clearBlack, 1, &range);
 
         vulkan::Image::cmdTransitionImage(cmd, output->handle(),
-            VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+                                          VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
         return;
     }
 
     auto output = _reflectionImages[frameIndex];
     vulkan::Image::cmdTransitionImage(cmd, output->handle(),
-        VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL);
+                                      VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL);
 
     auto ds = frameResources.newDescriptorSet(_dsLayout);
     ds->beginUpdate();
     ds->addAccelerationStructure(0, tlas);
     ds->addImage(1, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
-        output.get(), VK_IMAGE_LAYOUT_GENERAL);
+                 output.get(), VK_IMAGE_LAYOUT_GENERAL);
     ds->addImage(2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-        gbuffer->depthImage().get(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _sampler);
+                 gbuffer->depthImage().get(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _sampler);
     ds->addImage(3, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-        gbuffer->image(1).get(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _sampler);
+                 gbuffer->image(1).get(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _sampler);
     ds->addImage(4, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-        gbuffer->image(2).get(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _sampler);
+                 gbuffer->image(2).get(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _sampler);
     ds->addImage(5, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-        irradianceMap, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, irradianceSampler);
+                 irradianceMap, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, irradianceSampler);
     if (_blueNoise)
     {
         ds->addImage(6, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-            _blueNoise->imageView(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _blueNoise->sampler());
+                     _blueNoise->imageView(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, _blueNoise->sampler());
     }
     ds->endUpdate();
 
     vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, _pipeline);
     VkDescriptorSet dsHandle = ds->descriptorSet();
     vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR,
-        _pipelineLayout, 0, 1, &dsHandle, 0, nullptr);
+                            _pipelineLayout, 0, 1, &dsHandle, 0, nullptr);
 
     if (_materialDataBinding && objectInstances.size() > 0)
     {
         auto materialDS = _materialDataBinding->newDescriptorSet(frameResources, objectInstances);
         vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR,
-            _pipelineLayout, 1, 1, &materialDS, 0, nullptr);
+                                _pipelineLayout, 1, 1, &materialDS, 0, nullptr);
     }
 
     if (_reflectionLightDataBinding)
     {
         auto lightDS = _reflectionLightDataBinding->newDescriptorSet(frameResources, reflectionLights);
         vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR,
-            _pipelineLayout, 2, 1, &lightDS, 0, nullptr);
+                                _pipelineLayout, 2, 1, &lightDS, 0, nullptr);
     }
 
     ReflectionPushConstants pc{};
@@ -260,8 +251,7 @@ void RTReflections::render(
     pc.maxRoughness = _settings.maxRoughness;
     pc.outputSize = glm::vec2(
         static_cast<float>(_reflectionExtent.width),
-        static_cast<float>(_reflectionExtent.height)
-    );
+        static_cast<float>(_reflectionExtent.height));
     pc.sampleCount = _settings.sampleCount;
     pc.frameIndex = currentFrame;
     pc.rayBias = _settings.rayBias;
@@ -271,8 +261,8 @@ void RTReflections::render(
     pc.shadowSamples = _settings.shadowSamples;
     pc.useBlueNoise = (_settings.useBlueNoise && _blueNoise) ? 1u : 0u;
     vkCmdPushConstants(cmd, _pipelineLayout,
-        VK_SHADER_STAGE_RAYGEN_BIT_KHR | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR,
-        0, sizeof(ReflectionPushConstants), &pc);
+                       VK_SHADER_STAGE_RAYGEN_BIT_KHR | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR,
+                       0, sizeof(ReflectionPushConstants), &pc);
 
     vulkan::cmdTraceRays(
         cmd,
@@ -282,11 +272,10 @@ void RTReflections::render(
         &_callableRegion,
         _reflectionExtent.width,
         _reflectionExtent.height,
-        1
-    );
+        1);
 
     vulkan::Image::cmdTransitionImage(cmd, output->handle(),
-        VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+                                      VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 }
 
 void RTReflections::cleanup()
@@ -361,9 +350,12 @@ void RTReflections::resize(VkExtent2D renderExtent, VkExtent2D viewportExtent)
 
 void RTReflections::cleanupImages()
 {
-    for(auto& img : _reflectionImages)
+    for (auto& img : _reflectionImages)
     {
-        if (img) img->cleanup();
+        if (img)
+        {
+            img->cleanup();
+        }
     }
     _reflectionImages.clear();
 

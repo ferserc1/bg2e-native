@@ -25,151 +25,181 @@ namespace bg2e::json {
 
 JsonNode JsonNode::s_nullValue;
 
-JsonNode::JsonNode() :type(Type::Null)
+JsonNode::JsonNode() : type(Type::Null)
 {
-    
 }
 
-JsonNode::JsonNode(Type t) :type(t)
+JsonNode::JsonNode(Type t) : type(t)
 {
-
 }
 
-JsonNode::JsonNode(const JsonObject& p) {
-    setValue(p);
-}
-
-JsonNode::JsonNode(JsonObject&& p) {
-    setValue(p);
-}
-
-JsonNode::JsonNode(const JsonList& p) {
-    setValue(p);
-}
-
-JsonNode::JsonNode(JsonList&& p) {
-    setValue(p);
-}
-
-JsonNode::JsonNode(const char* p) {
-    setValue(p);
-}
-
-JsonNode::JsonNode(std::string&& p) {
-    setValue(p);
-}
-
-JsonNode::JsonNode(const std::string & p) {
-    setValue(p);
-}
-
-JsonNode::JsonNode(char p) {
-    setValue(p);
-}
-
-JsonNode::JsonNode(int8_t p) {
-    setValue(p);
-}
-
-JsonNode::JsonNode(int16_t p) {
-    setValue(p);
-}
-
-JsonNode::JsonNode(int32_t p) {
-    setValue(p);
-}
-
-JsonNode::JsonNode(int64_t p) {
-    setValue(p);
-}
-
-JsonNode::JsonNode(uint8_t p) {
-    setValue(p);
-}
-
-JsonNode::JsonNode(uint16_t p) {
-    setValue(p);
-}
-
-JsonNode::JsonNode(uint32_t p) {
-    setValue(p);
-}
-
-JsonNode::JsonNode(uint64_t p) {
-    setValue(p);
-}
-
-JsonNode::JsonNode(float p) {
-    setValue(p);
-}
-
-JsonNode::JsonNode(double p) {
-    setValue(p);
-}
-
-JsonNode::JsonNode(bool p) {
-    setValue(p);
-}
-
-JsonNode::JsonNode(const base::Color & p)
+JsonNode::JsonNode(const JsonObject& p)
 {
     setValue(p);
 }
 
-JsonNode::JsonNode(const glm::vec2 & p) {
+JsonNode::JsonNode(JsonObject&& p)
+{
     setValue(p);
 }
 
-JsonNode::JsonNode(const glm::vec3 & p) {
+JsonNode::JsonNode(const JsonList& p)
+{
     setValue(p);
 }
 
-JsonNode::JsonNode(const glm::vec4 & p) {
+JsonNode::JsonNode(JsonList&& p)
+{
     setValue(p);
 }
 
-JsonNode::JsonNode(const glm::mat3 & p) {
+JsonNode::JsonNode(const char* p)
+{
     setValue(p);
 }
 
-JsonNode::JsonNode(const glm::mat4 & p) {
+JsonNode::JsonNode(std::string&& p)
+{
     setValue(p);
 }
 
-JsonNode::JsonNode(const std::array<float, 2> & p) {
+JsonNode::JsonNode(const std::string& p)
+{
     setValue(p);
 }
 
-JsonNode::JsonNode(const std::array<float, 3> & p) {
+JsonNode::JsonNode(char p)
+{
     setValue(p);
 }
 
-JsonNode::JsonNode(const std::array<float, 4> & p) {
+JsonNode::JsonNode(int8_t p)
+{
     setValue(p);
 }
 
-JsonNode::JsonNode(const std::array<float, 9> & p) {
+JsonNode::JsonNode(int16_t p)
+{
     setValue(p);
 }
 
-JsonNode::JsonNode(const std::array<float, 16> & p) {
+JsonNode::JsonNode(int32_t p)
+{
     setValue(p);
 }
 
-
-JsonNode::~JsonNode() {
+JsonNode::JsonNode(int64_t p)
+{
+    setValue(p);
 }
 
-void JsonNode::printNode(int indentationLevel) {
+JsonNode::JsonNode(uint8_t p)
+{
+    setValue(p);
+}
+
+JsonNode::JsonNode(uint16_t p)
+{
+    setValue(p);
+}
+
+JsonNode::JsonNode(uint32_t p)
+{
+    setValue(p);
+}
+
+JsonNode::JsonNode(uint64_t p)
+{
+    setValue(p);
+}
+
+JsonNode::JsonNode(float p)
+{
+    setValue(p);
+}
+
+JsonNode::JsonNode(double p)
+{
+    setValue(p);
+}
+
+JsonNode::JsonNode(bool p)
+{
+    setValue(p);
+}
+
+JsonNode::JsonNode(const base::Color& p)
+{
+    setValue(p);
+}
+
+JsonNode::JsonNode(const glm::vec2& p)
+{
+    setValue(p);
+}
+
+JsonNode::JsonNode(const glm::vec3& p)
+{
+    setValue(p);
+}
+
+JsonNode::JsonNode(const glm::vec4& p)
+{
+    setValue(p);
+}
+
+JsonNode::JsonNode(const glm::mat3& p)
+{
+    setValue(p);
+}
+
+JsonNode::JsonNode(const glm::mat4& p)
+{
+    setValue(p);
+}
+
+JsonNode::JsonNode(const std::array<float, 2>& p)
+{
+    setValue(p);
+}
+
+JsonNode::JsonNode(const std::array<float, 3>& p)
+{
+    setValue(p);
+}
+
+JsonNode::JsonNode(const std::array<float, 4>& p)
+{
+    setValue(p);
+}
+
+JsonNode::JsonNode(const std::array<float, 9>& p)
+{
+    setValue(p);
+}
+
+JsonNode::JsonNode(const std::array<float, 16>& p)
+{
+    setValue(p);
+}
+
+JsonNode::~JsonNode()
+{
+}
+
+void JsonNode::printNode(int indentationLevel)
+{
     std::cout << toString(indentationLevel);
 }
 
-std::string JsonNode::toString(int indentationLevel) {
+std::string JsonNode::toString(int indentationLevel)
+{
     std::string indentation = std::string(indentationLevel * 2, ' ');
     std::string innerIndentation = std::string((indentationLevel + 1) * 2, ' ');
     std::string outputString = "";
 
-    switch (type) {
+    switch (type)
+    {
     case Type::String:
         outputString += "\"" + _stringValue + "\"";
         break;
@@ -182,13 +212,15 @@ std::string JsonNode::toString(int indentationLevel) {
     case Type::Null:
         outputString += "null";
         break;
-    
+
     case Type::List: {
         outputString += "[";
         size_t index = 0;
         bool emptyList = true;
-        for (auto node : (_listValue)) {
-            if (emptyList) {
+        for (auto node : (_listValue))
+        {
+            if (emptyList)
+            {
                 outputString += "\n";
             }
             emptyList = false;
@@ -200,7 +232,8 @@ std::string JsonNode::toString(int indentationLevel) {
             {
                 outputString += innerIndentation + node->toString(indentationLevel + 1);
             }
-            if (index < (_listValue).size() - 1) {
+            if (index < (_listValue).size() - 1)
+            {
                 outputString += ",";
             }
             outputString += "\n";
@@ -213,8 +246,10 @@ std::string JsonNode::toString(int indentationLevel) {
         outputString += "{";
         bool emptyObject = true;
         for (JsonObject::iterator i = (_objectValue).begin();
-            i != (_objectValue).end(); ++i) {
-            if (emptyObject) {
+             i != (_objectValue).end(); ++i)
+        {
+            if (emptyObject)
+            {
                 outputString += "\n";
             }
             emptyObject = false;
@@ -222,7 +257,8 @@ std::string JsonNode::toString(int indentationLevel) {
             outputString += i->second->toString(indentationLevel + 1);
             JsonObject::iterator next = i;
             next++;
-            if (next != (_objectValue).end()) {
+            if (next != (_objectValue).end())
+            {
                 outputString += ",";
             }
             outputString += "\n";
@@ -239,7 +275,8 @@ std::string JsonNode::serialize()
     std::setlocale(LC_NUMERIC, "C");
     std::string outputString = "";
 
-    switch (type) {
+    switch (type)
+    {
     case Type::String:
         outputString += "\"" + _stringValue + "\"";
         break;
@@ -252,13 +289,15 @@ std::string JsonNode::serialize()
     case Type::Null:
         outputString += "null";
         break;
-    
+
     case Type::List: {
         outputString += "[";
         size_t index = 0;
-        for (auto node : (_listValue)) {
+        for (auto node : (_listValue))
+        {
             outputString += node->serialize();
-            if (index < (_listValue).size() - 1) {
+            if (index < (_listValue).size() - 1)
+            {
                 outputString += ",";
             }
             index++;
@@ -269,12 +308,14 @@ std::string JsonNode::serialize()
     case Type::Object: {
         outputString += "{";
         for (JsonObject::iterator i = (_objectValue).begin();
-            i != (_objectValue).end(); ++i) {
+             i != (_objectValue).end(); ++i)
+        {
             outputString += "\"" + i->first + "\":";
             outputString += i->second->serialize();
             JsonObject::iterator next = i;
             next++;
-            if (next != (_objectValue).end()) {
+            if (next != (_objectValue).end())
+            {
                 outputString += ",";
             }
         }
@@ -380,60 +421,59 @@ std::shared_ptr<JsonNode> JSON(bool p)
     return std::make_shared<JsonNode>(p);
 }
 
-std::shared_ptr<JsonNode> JSON(const base::Color & p)
+std::shared_ptr<JsonNode> JSON(const base::Color& p)
 {
     return std::make_shared<JsonNode>(p);
 }
 
-std::shared_ptr<JsonNode> JSON(const glm::vec2 & p)
+std::shared_ptr<JsonNode> JSON(const glm::vec2& p)
 {
     return std::make_shared<JsonNode>(p);
 }
 
-std::shared_ptr<JsonNode> JSON(const glm::vec3 & p)
+std::shared_ptr<JsonNode> JSON(const glm::vec3& p)
 {
     return std::make_shared<JsonNode>(p);
 }
 
-std::shared_ptr<JsonNode> JSON(const glm::vec4 & p)
+std::shared_ptr<JsonNode> JSON(const glm::vec4& p)
 {
     return std::make_shared<JsonNode>(p);
 }
 
-std::shared_ptr<JsonNode> JSON(const glm::mat3 & p)
+std::shared_ptr<JsonNode> JSON(const glm::mat3& p)
 {
     return std::make_shared<JsonNode>(p);
 }
 
-std::shared_ptr<JsonNode> JSON(const glm::mat4 & p)
+std::shared_ptr<JsonNode> JSON(const glm::mat4& p)
 {
     return std::make_shared<JsonNode>(p);
 }
 
-std::shared_ptr<JsonNode> JSON(const std::array<float, 2> & p)
+std::shared_ptr<JsonNode> JSON(const std::array<float, 2>& p)
 {
     return std::make_shared<JsonNode>(p);
 }
 
-std::shared_ptr<JsonNode> JSON(const std::array<float, 3> & p)
+std::shared_ptr<JsonNode> JSON(const std::array<float, 3>& p)
 {
     return std::make_shared<JsonNode>(p);
 }
 
-std::shared_ptr<JsonNode> JSON(const std::array<float, 4> & p)
+std::shared_ptr<JsonNode> JSON(const std::array<float, 4>& p)
 {
     return std::make_shared<JsonNode>(p);
 }
 
-std::shared_ptr<JsonNode> JSON(const std::array<float, 9> & p)
+std::shared_ptr<JsonNode> JSON(const std::array<float, 9>& p)
 {
     return std::make_shared<JsonNode>(p);
 }
 
-std::shared_ptr<JsonNode> JSON(const std::array<float, 16> & p)
+std::shared_ptr<JsonNode> JSON(const std::array<float, 16>& p)
 {
     return std::make_shared<JsonNode>(p);
 }
-
 
 }

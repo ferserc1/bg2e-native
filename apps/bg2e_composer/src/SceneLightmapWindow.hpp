@@ -27,18 +27,21 @@ class AppDelegate;
 // Drawable, allows multi-selection and bakes one image per selected target
 // through a single shared integrated baker context.
 class SceneLightmapWindow : public bg2e::ui::Window {
-public:
-    void init(AppDelegate * delegate);
+  public:
+    void init(AppDelegate* delegate);
     void cleanup();
 
-    void setMessage(const std::string& message) { _message = message; }
+    void setMessage(const std::string& message)
+    {
+        _message = message;
+    }
 
-private:
-    AppDelegate * _appDelegate = nullptr;
+  private:
+    AppDelegate* _appDelegate = nullptr;
 
     std::vector<std::weak_ptr<bg2e::scene::Node>> _selectedTargets;
 
-    int _mode = 1; // 0 = RTAO, 1 = RTGI
+    int _mode = 1;                 // 0 = RTAO, 1 = RTGI
     uint32_t _resolutionIndex = 2; // 512
     int _frames = 16;
     int _samples = 8;

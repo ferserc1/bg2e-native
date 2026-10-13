@@ -28,7 +28,7 @@ namespace gpu {
 namespace metal {
 
 class Instance : public gpu::Instance {
-public:
+  public:
     Instance();
 
     void setApplicationName(const std::string& name) override;
@@ -40,7 +40,7 @@ public:
     void create() override;
     void cleanup() override;
 
-private:
+  private:
     bool _debugMode = false;
     std::string _applicationName = "bg2 engine Metal Application";
 

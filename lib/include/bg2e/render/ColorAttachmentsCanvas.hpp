@@ -30,31 +30,29 @@ namespace bg2e {
 namespace render {
 
 class BG2E_API ColorAttachmentsCanvas {
-public:
-    ColorAttachmentsCanvas(Engine *, std::shared_ptr<ColorAttachments> attachments);
-    
+  public:
+    ColorAttachmentsCanvas(Engine*, std::shared_ptr<ColorAttachments> attachments);
+
     // TODO: Allow to add uniform buffers
-    
+
     void initFrameResources(vulkan::DescriptorSetAllocator*);
-    
+
     void build(
         const std::string& fragmentShader,
         VkFormat targetImageFormat,
-        VkSampleCountFlagBits sampleCount
-    );
-    
+        VkSampleCountFlagBits sampleCount);
+
     void draw(
         VkCommandBuffer cmd,
         uint32_t currentFrame,
-        const vulkan::Image * targetImage,
-        vulkan::FrameResources& frameResources
-    );
-    
-protected:
-    Engine * _engine;
-    
+        const vulkan::Image* targetImage,
+        vulkan::FrameResources& frameResources);
+
+  protected:
+    Engine* _engine;
+
     std::shared_ptr<ColorAttachments> _attachments;
-    
+
     VkPipeline _pipeline;
     VkPipelineLayout _pipelineLayout;
     VkDescriptorSetLayout _attachmentsDSLayout;

@@ -31,7 +31,7 @@ namespace metal {
 class Device;
 
 class Queue : public gpu::Queue {
-public:
+  public:
     Queue() = default;
     explicit Queue(CommandQueueHandle commandQueue);
     ~Queue() override;
@@ -44,17 +44,20 @@ public:
     uint32_t familyIndex() const override;
     bool isValid() const override;
 
-    CommandQueueHandle handle() const { return _commandQueue; }
+    CommandQueueHandle handle() const
+    {
+        return _commandQueue;
+    }
 
     void setDevice(metal::Device* device);
 
     std::shared_ptr<gpu::CommandBuffer> createCommandBuffer(const std::string& debugName = {}) const override;
     void submit(gpu::CommandBuffer* cmd) const override;
 
-private:
+  private:
     CommandQueueHandle _commandQueue = nullptr;
     std::shared_ptr<detail::SubmissionState> _submissions;
-    metal::Device*     _device = nullptr;
+    metal::Device* _device = nullptr;
 };
 
 }

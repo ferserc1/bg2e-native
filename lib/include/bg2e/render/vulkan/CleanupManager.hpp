@@ -29,8 +29,7 @@ namespace render {
 namespace vulkan {
 
 class BG2E_API CleanupManager {
-public:
-
+  public:
     void push(std::function<void(VkDevice)>&& fn)
     {
         _deleters.push_back(fn);
@@ -58,10 +57,9 @@ public:
         _deleters.clear();
     }
 
-protected:
+  protected:
     std::deque<std::function<void(VkDevice)>> _staticDeleters;
     std::deque<std::function<void(VkDevice)>> _deleters;
-
 };
 
 }

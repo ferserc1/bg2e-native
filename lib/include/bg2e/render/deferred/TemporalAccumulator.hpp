@@ -42,7 +42,7 @@ namespace deferred {
 // If the accumulation dispatch is ever moved to a separate async compute
 // queue, explicit cross-queue semaphores will be required.
 class BG2E_API TemporalAccumulator {
-public:
+  public:
     TemporalAccumulator(Engine* engine);
     ~TemporalAccumulator();
 
@@ -57,8 +57,7 @@ public:
         const glm::mat4& currentInverseViewProjection,
         const glm::mat4& currentView,
         const glm::mat4& currentProjection,
-        const glm::mat4& currentCameraProjection
-    );
+        const glm::mat4& currentCameraProjection);
     void cleanup();
 
     // The frameIndex parameter is ignored: the accumulator keeps a single
@@ -69,7 +68,11 @@ public:
 
     void invalidateHistory();
 
-    enum class AccumulationMode { Interactive, Progressive };
+    enum class AccumulationMode
+    {
+        Interactive,
+        Progressive
+    };
     void setAccumulationMode(AccumulationMode mode);
     AccumulationMode accumulationMode() const;
 
@@ -81,13 +84,25 @@ public:
     float depthThreshold() const;
     float normalThreshold() const;
 
-    void setFormat(VkFormat format) { _format = format; }
-    VkFormat format() const { return _format; }
+    void setFormat(VkFormat format)
+    {
+        _format = format;
+    }
+    VkFormat format() const
+    {
+        return _format;
+    }
 
-    void setIsHDR(bool value) { _isHDR = value; }
-    bool isHDR() const { return _isHDR; }
+    void setIsHDR(bool value)
+    {
+        _isHDR = value;
+    }
+    bool isHDR() const
+    {
+        return _isHDR;
+    }
 
-private:
+  private:
     Engine* _engine;
     VkExtent2D _extent;
 

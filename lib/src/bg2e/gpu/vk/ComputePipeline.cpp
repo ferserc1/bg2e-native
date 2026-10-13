@@ -32,7 +32,7 @@ ComputePipeline::ComputePipeline(gpu::Device* gpuDevice, VkDevice device, const 
     : gpu::ComputePipeline(gpuDevice), _device(device)
 {
     auto* vkCsModule = dynamic_cast<vk::ShaderModule*>(description.computeShader);
-    auto* vkLayout   = dynamic_cast<vk::PipelineLayout*>(description.layout);
+    auto* vkLayout = dynamic_cast<vk::PipelineLayout*>(description.layout);
 
     if (!vkCsModule || !vkLayout)
     {

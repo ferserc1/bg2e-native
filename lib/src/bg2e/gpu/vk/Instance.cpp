@@ -40,7 +40,7 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL bg2e_mainDebugCallback(
     {
         std::cerr << "Validation layer: " << pCallbackData->pMessage << std::endl;
     }
-    
+
     return VK_FALSE;
 }
 
@@ -56,7 +56,7 @@ Instance::Instance()
         bg2e_log_debug << "\t" << layer.layerName << bg2e_log_end;
         _availableLayers.push_back(layer.layerName);
     }
-    
+
     uint32_t extensionCount = 0;
     vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
     std::vector<VkExtensionProperties> availableExtensions(extensionCount);
@@ -196,7 +196,10 @@ void Instance::cleanup()
 {
     if (_instance != VK_NULL_HANDLE)
     {
-        if (_debugMessenger != VK_NULL_HANDLE) destroyDebugMessenger();
+        if (_debugMessenger != VK_NULL_HANDLE)
+        {
+            destroyDebugMessenger();
+        }
         vkDestroyInstance(_instance, nullptr);
     }
     _debugMessenger = VK_NULL_HANDLE;
@@ -329,7 +332,7 @@ bool Instance::getRequiredExtensions(std::vector<const char*>& requiredExtension
 VkResult Instance::createDebugMessenger()
 {
     auto debugCreateInfo = Info::debugMessengerCreateInfo(bg2e_mainDebugCallback);
-    auto func = (PFN_vkCreateDebugUtilsMessengerEXT) vkGetInstanceProcAddr(_instance, "vkCreateDebugUtilsMessengerEXT");
+    auto func = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(_instance, "vkCreateDebugUtilsMessengerEXT");
     if (func != nullptr)
     {
         return func(_instance, &debugCreateInfo, nullptr, &_debugMessenger);
@@ -339,7 +342,7 @@ VkResult Instance::createDebugMessenger()
 
 void Instance::destroyDebugMessenger()
 {
-    auto func = (PFN_vkDestroyDebugUtilsMessengerEXT) vkGetInstanceProcAddr(_instance, "vkDestroyDebugUtilsMessengerEXT");
+    auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(_instance, "vkDestroyDebugUtilsMessengerEXT");
     if (func != nullptr)
     {
         func(_instance, _debugMessenger, nullptr);

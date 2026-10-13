@@ -49,80 +49,135 @@ class DescriptorSetAllocator;
 }
 
 class BG2E_API Engine {
-public:
-
-    void init(SDL_Window * windowPtr);
+  public:
+    void init(SDL_Window* windowPtr);
 
     // Offscreen application
     void init();
 
     void cleanup();
 
-    inline const void* windowPtr() const { return _windowPtr; }
-    inline void* windowPtr() { return _windowPtr; }
+    inline const void* windowPtr() const
+    {
+        return _windowPtr;
+    }
+    inline void* windowPtr()
+    {
+        return _windowPtr;
+    }
 
-    inline gpu::Instance* instance() { return _gpuInstance.get(); }
-    inline const gpu::Instance* instance() const { return _gpuInstance.get(); }
-    inline const vulkan::PhysicalDevice& physicalDevice() const { return _physicalDevice; }
-    const vulkan:: Surface& surface() const;
-    inline const vulkan::Device& device() const { return _device; }
+    inline gpu::Instance* instance()
+    {
+        return _gpuInstance.get();
+    }
+    inline const gpu::Instance* instance() const
+    {
+        return _gpuInstance.get();
+    }
+    inline const vulkan::PhysicalDevice& physicalDevice() const
+    {
+        return _physicalDevice;
+    }
+    const vulkan::Surface& surface() const;
+    inline const vulkan::Device& device() const
+    {
+        return _device;
+    }
     vulkan::Swapchain& swapchain();
     const vulkan::Swapchain& swapchain() const;
-    inline vulkan::Command& command() { return _command; }
-    inline const vulkan::Command& command() const { return _command; }
-    inline const vulkan::DescriptorSetAllocator& descriptorSetAllocator() const { return *_descriptorSetAllocator.get(); }
-    inline vulkan::DescriptorSetAllocator& descriptorSetAllocator() { return *_descriptorSetAllocator.get(); }
+    inline vulkan::Command& command()
+    {
+        return _command;
+    }
+    inline const vulkan::Command& command() const
+    {
+        return _command;
+    }
+    inline const vulkan::DescriptorSetAllocator& descriptorSetAllocator() const
+    {
+        return *_descriptorSetAllocator.get();
+    }
+    inline vulkan::DescriptorSetAllocator& descriptorSetAllocator()
+    {
+        return *_descriptorSetAllocator.get();
+    }
 
     //inline uint32_t numImages() const { return isOffscreen() ? 1 : static_cast<uint32_t>(_swapchain.images().size()); }
-    inline uint32_t numImages() const { return 2; }
+    inline uint32_t numImages() const
+    {
+        return 2;
+    }
     uint32_t currentFrameResourcesIndex() const;
     uint32_t prevFrameResourcesIndex() const;
     vulkan::FrameResources& currentFrameResources();
     const vulkan::FrameResources& currentFrameResources() const;
 
-    inline uint32_t currentFrame() const { return _currentFrame; }
-    inline void nextFrame() { ++_currentFrame; }
+    inline uint32_t currentFrame() const
+    {
+        return _currentFrame;
+    }
+    inline void nextFrame()
+    {
+        ++_currentFrame;
+    }
     void iterateFrameResources(std::function<void(vulkan::FrameResources&)> cb);
 
-    inline vulkan::CleanupManager& cleanupManager() { return _cleanupManager; }
+    inline vulkan::CleanupManager& cleanupManager()
+    {
+        return _cleanupManager;
+    }
 
-    inline VmaAllocator allocator() const { return _allocator; }
+    inline VmaAllocator allocator() const
+    {
+        return _allocator;
+    }
 
-    inline bool rayTracingSupported() const { return _physicalDevice.properties()->rayTracingSupported(); }
+    inline bool rayTracingSupported() const
+    {
+        return _physicalDevice.properties()->rayTracingSupported();
+    }
 
-    inline uint32_t maxRayTracingObjects() const { return _maxRayTracingObjects; }
+    inline uint32_t maxRayTracingObjects() const
+    {
+        return _maxRayTracingObjects;
+    }
 
-    inline void updateSwapchainSize() { _resizeRequested = true; }
+    inline void updateSwapchainSize()
+    {
+        _resizeRequested = true;
+    }
 
     // This function returns true if the swapchain have been resized
     bool newFrame();
 
-	// Destroy a buffer allocated with the Vulkan Memory Allocator
-	void destroyBuffer(VkBuffer buffer, VmaAllocation allocation);
+    // Destroy a buffer allocated with the Vulkan Memory Allocator
+    void destroyBuffer(VkBuffer buffer, VmaAllocation allocation);
 
-    bool isOffscreen() const { return _windowPtr == nullptr; }
+    bool isOffscreen() const
+    {
+        return _windowPtr == nullptr;
+    }
 
     // Deferred execution: schedule a closure to run after numImages() frames
     void deferredExec(std::function<void()>&& closure);
     void flushDeferredExec();
     void flushAllDeferredExec();
 
-protected:
+  protected:
     SDL_Window* _windowPtr = nullptr;
 
-private:
-
+  private:
     bool _debugLayers = true;
 
     std::unique_ptr<gpu::vk::Instance> _gpuInstance;
 
     VkInstance vkInstance() const;
-	vulkan::Surface _surface;
-	vulkan::PhysicalDevice _physicalDevice;
+    vulkan::Surface _surface;
+    vulkan::PhysicalDevice _physicalDevice;
     vulkan::Device _device;
     vulkan::Swapchain _swapchain;
     vulkan::Command _command;
-    
+
     std::unique_ptr<vulkan::DescriptorSetAllocator> _descriptorSetAllocator;
 
     std::vector<vulkan::FrameResources> _frameResources;
@@ -149,7 +204,6 @@ private:
 
     void createFrameResources();
     void cleanupFrameResources();
-
 };
 
 }

@@ -29,16 +29,36 @@
 namespace bg2e {
 namespace reflection {
 
-enum class PropertyType {
-    Bool, Int, UInt, Float, Double, String,
-    Vec2, Vec3, Vec4, Mat4,
-    Color, Enum, Resource, Path,
-    Object, PolymorphicObject
+enum class PropertyType
+{
+    Bool,
+    Int,
+    UInt,
+    Float,
+    Double,
+    String,
+    Vec2,
+    Vec3,
+    Vec4,
+    Mat4,
+    Color,
+    Enum,
+    Resource,
+    Path,
+    Object,
+    PolymorphicObject
 };
 
-enum class PropertyEditor {
-    Default, Input, Slider, Drag,
-    Checkbox, Combo, Color, Angle
+enum class PropertyEditor
+{
+    Default,
+    Input,
+    Slider,
+    Drag,
+    Checkbox,
+    Combo,
+    Color,
+    Angle
 };
 
 struct PropertyMetadata {
@@ -82,9 +102,9 @@ struct PropertyInfo {
     // Object properties (type == PropertyType::Object) only:
     // the sub-object is addressed by pointer and edited in place through
     // its own reflected setters; there is deliberately no parent setter.
-    std::string objectTypeName;                             // TypeRegistry key of the sub-object type
-    std::function<const void*(const void*)> objectGetter;   // address of the sub-object (always set)
-    std::function<void*(void*)> objectMutableGetter;        // empty => sub-object is read-only
+    std::string objectTypeName;                           // TypeRegistry key of the sub-object type
+    std::function<const void*(const void*)> objectGetter; // address of the sub-object (always set)
+    std::function<void*(void*)> objectMutableGetter;      // empty => sub-object is read-only
 
     // Owned polymorphic object properties only. The registry key identifies
     // the base hierarchy; the active subtype callback returns a registered
@@ -110,8 +130,7 @@ struct PropertyInfo {
         }
         if (type == PropertyType::PolymorphicObject)
         {
-            return !static_cast<bool>(polymorphicObjectMutableGetter)
-                && !static_cast<bool>(polymorphicObjectReplacer);
+            return !static_cast<bool>(polymorphicObjectMutableGetter) && !static_cast<bool>(polymorphicObjectReplacer);
         }
         return !static_cast<bool>(setter);
     }

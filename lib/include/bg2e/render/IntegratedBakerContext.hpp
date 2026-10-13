@@ -50,10 +50,10 @@ class ReflectionLightDataBinding;
 }
 
 class BG2E_API IntegratedLightmapBaker final : public LightmapBaker {
-public:
+  public:
     void update(VkCommandBuffer cmd, vulkan::FrameResources& frameResources);
 
-private:
+  private:
     friend class IntegratedBakerContext;
     IntegratedLightmapBaker(std::shared_ptr<BakerContext> context,
                             std::shared_ptr<scene::Node> targetNode,
@@ -64,7 +64,7 @@ private:
 };
 
 class BG2E_API IntegratedBakerContext final : public BakerContext {
-public:
+  public:
     IntegratedBakerContext(Engine* engine, scene::Node* rootNode);
     ~IntegratedBakerContext() override;
 
@@ -77,7 +77,7 @@ public:
         std::shared_ptr<scene::Node> targetNode,
         LightmapSettings settings = {});
 
-private:
+  private:
     friend class IntegratedLightmapBaker;
 
     struct SceneBindingSnapshot;

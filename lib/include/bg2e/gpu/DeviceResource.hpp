@@ -28,7 +28,7 @@ namespace gpu {
 class BG2E_API Device;
 
 class BG2E_API DeviceResource : public std::enable_shared_from_this<DeviceResource> {
-public:
+  public:
     explicit DeviceResource(Device* device);
     virtual ~DeviceResource() = default;
 
@@ -37,7 +37,7 @@ public:
     virtual bool isValid() const = 0;
     virtual void cleanup() = 0;
 
-protected:
+  protected:
     Device* _device = nullptr;
 };
 

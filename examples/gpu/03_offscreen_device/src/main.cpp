@@ -23,11 +23,16 @@ static const char* deviceTypeString(bg2e::gpu::PhysicalDeviceProperties::DeviceT
 {
     switch (type)
     {
-        case bg2e::gpu::PhysicalDeviceProperties::DiscreteGPU:   return "Discrete GPU";
-        case bg2e::gpu::PhysicalDeviceProperties::IntegratedGPU: return "Integrated GPU";
-        case bg2e::gpu::PhysicalDeviceProperties::VirtualGPU:    return "Virtual GPU";
-        case bg2e::gpu::PhysicalDeviceProperties::CPU:           return "CPU";
-        default:                                                  return "Unknown";
+    case bg2e::gpu::PhysicalDeviceProperties::DiscreteGPU:
+        return "Discrete GPU";
+    case bg2e::gpu::PhysicalDeviceProperties::IntegratedGPU:
+        return "Integrated GPU";
+    case bg2e::gpu::PhysicalDeviceProperties::VirtualGPU:
+        return "Virtual GPU";
+    case bg2e::gpu::PhysicalDeviceProperties::CPU:
+        return "CPU";
+    default:
+        return "Unknown";
     }
 }
 
@@ -55,7 +60,7 @@ int main(int /*argc*/, char** /*argv*/)
     instance->create();
 
     // 4. Create offscreen surface
-    auto surface = backend->createOffscreenSurface(instance, gpu::Size2D{ 800, 600 });
+    auto surface = backend->createOffscreenSurface(instance, gpu::Size2D{800, 600});
 
     // 5. Select physical device
     auto physicalDevice = backend->createPhysicalDevice();
@@ -72,7 +77,7 @@ int main(int /*argc*/, char** /*argv*/)
     device->create(instance, physicalDevice.get(), surface.get());
 
     std::cout << "  Graphics queue family: " << device->graphicsQueue().familyIndex() << std::endl;
-    std::cout << "  Present queue family:  " << device->presentQueue().familyIndex()  << std::endl;
+    std::cout << "  Present queue family:  " << device->presentQueue().familyIndex() << std::endl;
     std::cout << "  Transfer queue family: " << device->transferQueue().familyIndex() << std::endl;
     std::cout << "  Image count:           " << surface->imageCount() << std::endl;
     std::cout << "  Surface size:          " << surface->width() << "x" << surface->height() << std::endl;

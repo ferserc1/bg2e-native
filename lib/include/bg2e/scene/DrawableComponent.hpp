@@ -25,12 +25,16 @@ namespace bg2e {
 namespace scene {
 
 class BG2E_API DrawableComponent : public Component {
-public:
+  public:
     BG2E_COMPONENT_TYPE_NAME("Drawable");
-    
+
     DrawableComponent() = default;
-    DrawableComponent(std::shared_ptr<DrawableBase> drw) :_drawable { drw } {}
-    DrawableComponent(DrawableBase * drw) :_drawable { std::shared_ptr<DrawableBase>(drw) } {}
+    DrawableComponent(std::shared_ptr<DrawableBase> drw) : _drawable{drw}
+    {
+    }
+    DrawableComponent(DrawableBase* drw) : _drawable{std::shared_ptr<DrawableBase>(drw)}
+    {
+    }
     virtual ~DrawableComponent() = default;
 
     std::shared_ptr<DrawableBase> drawableBase();
@@ -45,15 +49,14 @@ public:
         const glm::mat4& nodeTransform,
         VkCommandBuffer cmd,
         VkPipelineLayout layout,
-        std::function<std::vector<VkDescriptorSet>(render::MaterialBase *, const glm::mat4&, uint32_t submIndex)> cb,
-        VkPipelineBindPoint bp = VK_PIPELINE_BIND_POINT_GRAPHICS
-    );
+        std::function<std::vector<VkDescriptorSet>(render::MaterialBase*, const glm::mat4&, uint32_t submIndex)> cb,
+        VkPipelineBindPoint bp = VK_PIPELINE_BIND_POINT_GRAPHICS);
 
     void deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path& basePath, render::Engine& engine) override;
     void deserializeWithProgress(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path& basePath, render::Engine& engine, SceneLoadProgress* progress) override;
     std::shared_ptr<json::JsonNode> serialize(const std::filesystem::path& basePath) override;
 
-protected:
+  protected:
     std::shared_ptr<DrawableBase> _drawable;
 };
 

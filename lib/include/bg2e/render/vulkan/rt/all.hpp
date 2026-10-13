@@ -24,4 +24,3 @@
 #include <bg2e/render/vulkan/rt/RayTracingSceneDataBinding.hpp>
 #include <bg2e/render/vulkan/rt/RTAccelerationStructureSize.hpp>
 #include <bg2e/render/vulkan/rt/utils.hpp>
-

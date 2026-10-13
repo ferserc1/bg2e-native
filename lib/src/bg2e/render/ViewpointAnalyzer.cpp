@@ -47,8 +47,8 @@ std::vector<float> sampleValues(const ViewpointSampleRange& range)
     }
 
     const float denominator = range.cyclic
-        ? static_cast<float>(range.samples)
-        : static_cast<float>(range.samples - 1);
+                                  ? static_cast<float>(range.samples)
+                                  : static_cast<float>(range.samples - 1);
     const float step = (range.max - range.min) / denominator;
     for (uint32_t i = 0; i < range.samples; ++i)
     {
@@ -57,23 +57,23 @@ std::vector<float> sampleValues(const ViewpointSampleRange& range)
     return result;
 }
 
-uint32_t decodeIdentifier(const uint8_t * pixel)
+uint32_t decodeIdentifier(const uint8_t* pixel)
 {
     return static_cast<uint32_t>(pixel[0]) |
-        (static_cast<uint32_t>(pixel[1]) << 8u) |
-        (static_cast<uint32_t>(pixel[2]) << 16u) |
-        (static_cast<uint32_t>(pixel[3]) << 24u);
+           (static_cast<uint32_t>(pixel[1]) << 8u) |
+           (static_cast<uint32_t>(pixel[2]) << 16u) |
+           (static_cast<uint32_t>(pixel[3]) << 24u);
 }
 
 float linearizeDepth(float depth, float nearPlane, float farPlane)
 {
     const float denominator = farPlane - depth * (farPlane - nearPlane);
     return denominator > std::numeric_limits<float>::epsilon()
-        ? nearPlane * farPlane / denominator
-        : farPlane;
+               ? nearPlane * farPlane / denominator
+               : farPlane;
 }
 
-size_t checkedMultiply(size_t lhs, size_t rhs, const char * description)
+size_t checkedMultiply(size_t lhs, size_t rhs, const char* description)
 {
     if (rhs != 0 && lhs > std::numeric_limits<size_t>::max() / rhs)
     {
@@ -84,15 +84,14 @@ size_t checkedMultiply(size_t lhs, size_t rhs, const char * description)
 
 }
 
-struct ViewpointAnalyzer::DrawItem
-{
+struct ViewpointAnalyzer::DrawItem {
     std::shared_ptr<scene::Drawable> drawable;
-    glm::mat4 modelMatrix { 1.0f };
+    glm::mat4 modelMatrix{1.0f};
     uint32_t submesh = 0;
     uint32_t identifier = 0;
 };
 
-ViewpointAnalyzer::ViewpointAnalyzer(Engine * engine)
+ViewpointAnalyzer::ViewpointAnalyzer(Engine* engine)
     : _engine(engine)
 {
     if (!_engine)
@@ -157,7 +156,7 @@ void ViewpointAnalyzer::validateConfig() const
         throw std::invalid_argument("ViewpointAnalyzer: image dimensions must be greater than zero");
     }
 
-    const auto validateRange = [](const ViewpointSampleRange& range, const char * name)
+    const auto validateRange = [](const ViewpointSampleRange& range, const char* name)
     {
         if (range.samples == 0 || !std::isfinite(range.min) || !std::isfinite(range.max) || range.max < range.min)
         {
@@ -210,58 +209,63 @@ std::vector<CameraCandidate> ViewpointAnalyzer::generateCandidates(const scene::
     const glm::vec3 center = bounds.center();
 
     for (float targetHeight : targetValues)
-    for (float fieldOfView : fovValues)
-    for (float distanceScale : distanceValues)
-    for (float pitch : pitchValues)
-    for (float yaw : yawValues)
     {
-        CameraCandidate candidate;
-        candidate.yaw = yaw;
-        candidate.pitch = pitch;
-        candidate.targetHeight = targetHeight;
-        candidate.distanceScale = distanceScale;
-        candidate.fieldOfView = fieldOfView;
-        candidate.target = { center.x, bounds.min().y + size.y * targetHeight, center.z };
+        for (float fieldOfView : fovValues)
+        {
+            for (float distanceScale : distanceValues)
+            {
+                for (float pitch : pitchValues)
+                {
+                    for (float yaw : yawValues)
+                    {
+                        CameraCandidate candidate;
+                        candidate.yaw = yaw;
+                        candidate.pitch = pitch;
+                        candidate.targetHeight = targetHeight;
+                        candidate.distanceScale = distanceScale;
+                        candidate.fieldOfView = fieldOfView;
+                        candidate.target = {center.x, bounds.min().y + size.y * targetHeight, center.z};
 
-        // Moving the target vertically moves it away from the AABB center. Fit
-        // the sphere around the actual target so target-height optimization does
-        // not accidentally change framing or clip the object.
-        const float verticalRadius = std::max(
-            candidate.target.y - bounds.min().y,
-            bounds.max().y - candidate.target.y
-        );
-        const float radius = std::max(glm::length(glm::vec3(
-            size.x * 0.5f, verticalRadius, size.z * 0.5f
-        )), 0.001f);
-        const float halfFov = glm::radians(fieldOfView) * 0.5f;
-        candidate.distance = radius / std::sin(halfFov) * distanceScale;
-        candidate.nearPlane = std::max(0.001f, candidate.distance - radius * 1.25f);
-        candidate.farPlane = candidate.distance + radius * 1.25f;
+                        // Moving the target vertically moves it away from the AABB center. Fit
+                        // the sphere around the actual target so target-height optimization does
+                        // not accidentally change framing or clip the object.
+                        const float verticalRadius = std::max(
+                            candidate.target.y - bounds.min().y,
+                            bounds.max().y - candidate.target.y);
+                        const float radius = std::max(glm::length(glm::vec3(
+                                                          size.x * 0.5f, verticalRadius, size.z * 0.5f)),
+                                                      0.001f);
+                        const float halfFov = glm::radians(fieldOfView) * 0.5f;
+                        candidate.distance = radius / std::sin(halfFov) * distanceScale;
+                        candidate.nearPlane = std::max(0.001f, candidate.distance - radius * 1.25f);
+                        candidate.farPlane = candidate.distance + radius * 1.25f;
 
-        const float yawRadians = glm::radians(yaw);
-        const float pitchRadians = glm::radians(pitch);
-        const float horizontal = std::cos(pitchRadians);
-        const glm::vec3 direction {
-            horizontal * std::sin(yawRadians),
-            std::sin(pitchRadians),
-            horizontal * std::cos(yawRadians)
-        };
+                        const float yawRadians = glm::radians(yaw);
+                        const float pitchRadians = glm::radians(pitch);
+                        const float horizontal = std::cos(pitchRadians);
+                        const glm::vec3 direction{
+                            horizontal * std::sin(yawRadians),
+                            std::sin(pitchRadians),
+                            horizontal * std::cos(yawRadians)};
 
-        candidate.position = candidate.target + direction * candidate.distance;
-        candidate.viewMatrix = glm::lookAtLH(candidate.position, candidate.target, glm::vec3(0.0f, 1.0f, 0.0f));
-        candidate.projectionMatrix = glm::perspectiveLH_ZO(
-            glm::radians(fieldOfView),
-            static_cast<float>(_config.width) / static_cast<float>(_config.height),
-            candidate.nearPlane,
-            candidate.farPlane
-        );
-        result.push_back(candidate);
+                        candidate.position = candidate.target + direction * candidate.distance;
+                        candidate.viewMatrix = glm::lookAtLH(candidate.position, candidate.target, glm::vec3(0.0f, 1.0f, 0.0f));
+                        candidate.projectionMatrix = glm::perspectiveLH_ZO(
+                            glm::radians(fieldOfView),
+                            static_cast<float>(_config.width) / static_cast<float>(_config.height),
+                            candidate.nearPlane,
+                            candidate.farPlane);
+                        result.push_back(candidate);
+                    }
+                }
+            }
+        }
     }
 
     return result;
 }
 
-void ViewpointAnalyzer::collectDrawItems(scene::Node * node, std::vector<DrawItem>& items)
+void ViewpointAnalyzer::collectDrawItems(scene::Node* node, std::vector<DrawItem>& items)
 {
     if (!node || node->disabled())
     {
@@ -285,18 +289,14 @@ void ViewpointAnalyzer::collectDrawItems(scene::Node * node, std::vector<DrawIte
             }
 
             const uint32_t identifier = static_cast<uint32_t>(_analyzedSubmeshes.size() + 1u);
-            _analyzedSubmeshes.push_back({
-                .identifier = identifier,
-                .node = node->weak_from_this(),
-                .drawable = drawableShared,
-                .submesh = submesh
-            });
-            items.push_back({
-                .drawable = drawable,
-                .modelMatrix = node->worldMatrix() * drawable->localSubmeshTransform(submesh),
-                .submesh = submesh,
-                .identifier = identifier
-            });
+            _analyzedSubmeshes.push_back({.identifier = identifier,
+                                          .node = node->weak_from_this(),
+                                          .drawable = drawableShared,
+                                          .submesh = submesh});
+            items.push_back({.drawable = drawable,
+                             .modelMatrix = node->worldMatrix() * drawable->localSubmeshTransform(submesh),
+                             .submesh = submesh,
+                             .identifier = identifier});
         }
     }
 
@@ -306,7 +306,7 @@ void ViewpointAnalyzer::collectDrawItems(scene::Node * node, std::vector<DrawIte
     }
 }
 
-std::vector<ViewSample> ViewpointAnalyzer::analyze(scene::Node * rootNode)
+std::vector<ViewSample> ViewpointAnalyzer::analyze(scene::Node* rootNode)
 {
     if (!rootNode)
     {
@@ -333,88 +333,79 @@ std::vector<ViewSample> ViewpointAnalyzer::analyze(scene::Node * rootNode)
 
     auto identifierReadback = std::unique_ptr<vulkan::Buffer>(vulkan::Buffer::createAllocatedBuffer(
         _engine, batchBytes, VK_BUFFER_USAGE_TRANSFER_DST_BIT, VMA_MEMORY_USAGE_GPU_TO_CPU,
-        "ViewpointAnalyzer identifier readback"
-    ));
+        "ViewpointAnalyzer identifier readback"));
     auto depthReadback = std::unique_ptr<vulkan::Buffer>(vulkan::Buffer::createAllocatedBuffer(
         _engine, batchBytes, VK_BUFFER_USAGE_TRANSFER_DST_BIT, VMA_MEMORY_USAGE_GPU_TO_CPU,
-        "ViewpointAnalyzer depth readback"
-    ));
+        "ViewpointAnalyzer depth readback"));
 
     _engine->command().immediateSubmit([&](VkCommandBuffer cmd)
-    {
-        VkImageLayout identifierLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-        VkImageLayout depthLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+                                       {
+                                           VkImageLayout identifierLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+                                           VkImageLayout depthLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
-        for (size_t viewIndex = 0; viewIndex < candidates.size(); ++viewIndex)
-        {
-            vulkan::Image::cmdTransitionImage(
-                cmd, _identifierImage->handle(), identifierLayout, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                vulkan::Image::TransitionInfo(VK_IMAGE_ASPECT_COLOR_BIT)
-            );
-            vulkan::Image::cmdTransitionImage(
-                cmd, _depthImage->handle(), depthLayout, VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL,
-                vulkan::Image::TransitionInfo(VK_IMAGE_ASPECT_DEPTH_BIT)
-            );
+                                           for (size_t viewIndex = 0; viewIndex < candidates.size(); ++viewIndex)
+                                           {
+                                               vulkan::Image::cmdTransitionImage(
+                                                   cmd, _identifierImage->handle(), identifierLayout, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                                                   vulkan::Image::TransitionInfo(VK_IMAGE_ASPECT_COLOR_BIT));
+                                               vulkan::Image::cmdTransitionImage(
+                                                   cmd, _depthImage->handle(), depthLayout, VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL,
+                                                   vulkan::Image::TransitionInfo(VK_IMAGE_ASPECT_DEPTH_BIT));
 
-            VkClearValue identifierClear {};
-            auto colorAttachment = vulkan::Info::attachmentInfo(_identifierImage->imageView(), &identifierClear);
-            auto depthAttachment = vulkan::Info::depthAttachmentInfo(_depthImage->imageView(), 1.0f);
-            auto renderingInfo = vulkan::Info::renderingInfo(_extent, &colorAttachment, &depthAttachment);
-            vulkan::cmdBeginRendering(cmd, &renderingInfo);
-            vulkan::macros::cmdSetDefaultViewportAndScissor(cmd, _extent);
-            vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, _pipeline);
+                                               VkClearValue identifierClear{};
+                                               auto colorAttachment = vulkan::Info::attachmentInfo(_identifierImage->imageView(), &identifierClear);
+                                               auto depthAttachment = vulkan::Info::depthAttachmentInfo(_depthImage->imageView(), 1.0f);
+                                               auto renderingInfo = vulkan::Info::renderingInfo(_extent, &colorAttachment, &depthAttachment);
+                                               vulkan::cmdBeginRendering(cmd, &renderingInfo);
+                                               vulkan::macros::cmdSetDefaultViewportAndScissor(cmd, _extent);
+                                               vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, _pipeline);
 
-            const auto& camera = candidates[viewIndex];
-            for (const auto& item : drawItems)
-            {
-                PushConstantData pushConstants;
-                pushConstants.mvp = camera.projectionMatrix * camera.viewMatrix * item.modelMatrix;
-                pushConstants.identifier = item.identifier;
-                vkCmdPushConstants(
-                    cmd, _pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT,
-                    0, sizeof(PushConstantData), &pushConstants
-                );
-                item.drawable->renderMesh()->drawSubmesh(cmd, item.submesh);
-            }
-            vulkan::cmdEndRendering(cmd);
+                                               const auto& camera = candidates[viewIndex];
+                                               for (const auto& item : drawItems)
+                                               {
+                                                   PushConstantData pushConstants;
+                                                   pushConstants.mvp = camera.projectionMatrix * camera.viewMatrix * item.modelMatrix;
+                                                   pushConstants.identifier = item.identifier;
+                                                   vkCmdPushConstants(
+                                                       cmd, _pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT,
+                                                       0, sizeof(PushConstantData), &pushConstants);
+                                                   item.drawable->renderMesh()->drawSubmesh(cmd, item.submesh);
+                                               }
+                                               vulkan::cmdEndRendering(cmd);
 
-            vulkan::Image::cmdTransitionImage(
-                cmd, _identifierImage->handle(), VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                vulkan::Image::TransitionInfo(VK_IMAGE_ASPECT_COLOR_BIT)
-            );
-            vulkan::Image::cmdTransitionImage(
-                cmd, _depthImage->handle(), VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL,
-                VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                vulkan::Image::TransitionInfo(VK_IMAGE_ASPECT_DEPTH_BIT)
-            );
+                                               vulkan::Image::cmdTransitionImage(
+                                                   cmd, _identifierImage->handle(), VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                                                   VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                                                   vulkan::Image::TransitionInfo(VK_IMAGE_ASPECT_COLOR_BIT));
+                                               vulkan::Image::cmdTransitionImage(
+                                                   cmd, _depthImage->handle(), VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL,
+                                                   VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                                                   vulkan::Image::TransitionInfo(VK_IMAGE_ASPECT_DEPTH_BIT));
 
-            VkBufferImageCopy identifierCopy {};
-            identifierCopy.bufferOffset = viewIndex * bytesPerView;
-            identifierCopy.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-            identifierCopy.imageSubresource.layerCount = 1;
-            identifierCopy.imageExtent = { _config.width, _config.height, 1 };
-            vkCmdCopyImageToBuffer(
-                cmd, _identifierImage->handle(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                identifierReadback->handle(), 1, &identifierCopy
-            );
+                                               VkBufferImageCopy identifierCopy{};
+                                               identifierCopy.bufferOffset = viewIndex * bytesPerView;
+                                               identifierCopy.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+                                               identifierCopy.imageSubresource.layerCount = 1;
+                                               identifierCopy.imageExtent = {_config.width, _config.height, 1};
+                                               vkCmdCopyImageToBuffer(
+                                                   cmd, _identifierImage->handle(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                                                   identifierReadback->handle(), 1, &identifierCopy);
 
-            VkBufferImageCopy depthCopy = identifierCopy;
-            depthCopy.imageSubresource.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-            vkCmdCopyImageToBuffer(
-                cmd, _depthImage->handle(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                depthReadback->handle(), 1, &depthCopy
-            );
+                                               VkBufferImageCopy depthCopy = identifierCopy;
+                                               depthCopy.imageSubresource.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+                                               vkCmdCopyImageToBuffer(
+                                                   cmd, _depthImage->handle(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                                                   depthReadback->handle(), 1, &depthCopy);
 
-            identifierLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
-            depthLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
-        }
-    });
+                                               identifierLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+                                               depthLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+                                           }
+                                       });
 
     VK_ASSERT(vmaInvalidateAllocation(_engine->allocator(), identifierReadback->allocation(), 0, VK_WHOLE_SIZE));
     VK_ASSERT(vmaInvalidateAllocation(_engine->allocator(), depthReadback->allocation(), 0, VK_WHOLE_SIZE));
-    const auto * identifierData = static_cast<const uint8_t *>(identifierReadback->allocatedData());
-    const auto * depthData = static_cast<const float *>(depthReadback->allocatedData());
+    const auto* identifierData = static_cast<const uint8_t*>(identifierReadback->allocatedData());
+    const auto* depthData = static_cast<const float*>(depthReadback->allocatedData());
 
     std::vector<ViewSample> samples;
     samples.reserve(candidates.size());
@@ -431,35 +422,36 @@ std::vector<ViewSample> ViewpointAnalyzer::analyze(scene::Node * rootNode)
         float minDepth = std::numeric_limits<float>::max();
         float maxDepth = 0.0f;
 
-        const auto * viewIdentifiers = identifierData + viewIndex * bytesPerView;
-        const auto * viewDepth = depthData + viewIndex * pixelCount;
+        const auto* viewIdentifiers = identifierData + viewIndex * bytesPerView;
+        const auto* viewDepth = depthData + viewIndex * pixelCount;
         for (uint32_t y = 0; y < _config.height; ++y)
-        for (uint32_t x = 0; x < _config.width; ++x)
         {
-            const size_t pixelIndex = static_cast<size_t>(y) * _config.width + x;
-            const uint32_t identifier = decodeIdentifier(viewIdentifiers + pixelIndex * 4u);
-            if (identifier == 0 || identifier > drawItems.size())
+            for (uint32_t x = 0; x < _config.width; ++x)
             {
-                continue;
-            }
+                const size_t pixelIndex = static_cast<size_t>(y) * _config.width + x;
+                const uint32_t identifier = decodeIdentifier(viewIdentifiers + pixelIndex * 4u);
+                if (identifier == 0 || identifier > drawItems.size())
+                {
+                    continue;
+                }
 
-            ++sample.analysis.visiblePixelCount;
-            ++sample.analysis.pixelsPerSubmesh[identifier - 1u];
-            if (x == 0 || y == 0 || x + 1 == _config.width || y + 1 == _config.height)
-            {
-                ++sample.analysis.borderPixelCount;
-            }
-            minPixel = glm::min(minPixel, glm::uvec2(x, y));
-            maxPixel = glm::max(maxPixel, glm::uvec2(x, y));
+                ++sample.analysis.visiblePixelCount;
+                ++sample.analysis.pixelsPerSubmesh[identifier - 1u];
+                if (x == 0 || y == 0 || x + 1 == _config.width || y + 1 == _config.height)
+                {
+                    ++sample.analysis.borderPixelCount;
+                }
+                minPixel = glm::min(minPixel, glm::uvec2(x, y));
+                maxPixel = glm::max(maxPixel, glm::uvec2(x, y));
 
-            const float linearDepth = linearizeDepth(
-                viewDepth[pixelIndex], sample.camera.nearPlane, sample.camera.farPlane
-            );
-            minDepth = std::min(minDepth, linearDepth);
-            maxDepth = std::max(maxDepth, linearDepth);
-            const double delta = linearDepth - depthMean;
-            depthMean += delta / sample.analysis.visiblePixelCount;
-            depthM2 += delta * (linearDepth - depthMean);
+                const float linearDepth = linearizeDepth(
+                    viewDepth[pixelIndex], sample.camera.nearPlane, sample.camera.farPlane);
+                minDepth = std::min(minDepth, linearDepth);
+                maxDepth = std::max(maxDepth, linearDepth);
+                const double delta = linearDepth - depthMean;
+                depthMean += delta / sample.analysis.visiblePixelCount;
+                depthM2 += delta * (linearDepth - depthMean);
+            }
         }
 
         for (uint32_t count : sample.analysis.pixelsPerSubmesh)
@@ -483,7 +475,7 @@ std::vector<ViewSample> ViewpointAnalyzer::analyze(scene::Node * rootNode)
     return samples;
 }
 
-std::vector<ViewSample> ViewpointAnalyzer::analyze(scene::Scene * scene)
+std::vector<ViewSample> ViewpointAnalyzer::analyze(scene::Scene* scene)
 {
     if (!scene)
     {
@@ -500,16 +492,16 @@ float ViewpointAnalyzer::score(const ViewSample& sample) const
     return coverage - clipped * 2.0f;
 }
 
-const ViewSample * ViewpointAnalyzer::bestSample(const std::vector<ViewSample>& samples)
+const ViewSample* ViewpointAnalyzer::bestSample(const std::vector<ViewSample>& samples)
 {
     if (samples.empty())
     {
         return nullptr;
     }
     return &*std::max_element(samples.begin(), samples.end(), [](const ViewSample& lhs, const ViewSample& rhs)
-    {
-        return lhs.score < rhs.score;
-    });
+                              {
+                                  return lhs.score < rhs.score;
+                              });
 }
 
 void ViewpointAnalyzer::ensureResources()
@@ -527,17 +519,15 @@ void ViewpointAnalyzer::ensureResources()
 
 void ViewpointAnalyzer::createImages()
 {
-    _extent = { _config.width, _config.height };
+    _extent = {_config.width, _config.height};
     _identifierImage = std::shared_ptr<vulkan::Image>(vulkan::Image::createAllocatedImage(
         _engine, "ViewpointAnalyzer identifier image", IdentifierFormat, _extent,
         VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
-        VK_IMAGE_ASPECT_COLOR_BIT, 1, false, 1, VK_SAMPLE_COUNT_1_BIT
-    ));
+        VK_IMAGE_ASPECT_COLOR_BIT, 1, false, 1, VK_SAMPLE_COUNT_1_BIT));
     _depthImage = std::shared_ptr<vulkan::Image>(vulkan::Image::createAllocatedImage(
         _engine, "ViewpointAnalyzer depth image", DepthFormat, _extent,
         VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
-        VK_IMAGE_ASPECT_DEPTH_BIT, 1, false, 1, VK_SAMPLE_COUNT_1_BIT
-    ));
+        VK_IMAGE_ASPECT_DEPTH_BIT, 1, false, 1, VK_SAMPLE_COUNT_1_BIT));
 }
 
 void ViewpointAnalyzer::createPipeline()
@@ -563,7 +553,7 @@ void ViewpointAnalyzer::cleanupImages()
 {
     _identifierImage.reset();
     _depthImage.reset();
-    _extent = { 0, 0 };
+    _extent = {0, 0};
 }
 
 }

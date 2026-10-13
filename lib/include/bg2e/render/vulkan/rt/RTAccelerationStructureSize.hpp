@@ -22,18 +22,16 @@
 #include <bg2e/render/vulkan/common.hpp>
 #include <bg2e/render/Engine.hpp>
 
-namespace bg2e::render::vulkan::rt
-{
+namespace bg2e::render::vulkan::rt {
 
 class BG2E_API RTAccelerationStructureSize {
-public:
-    RTAccelerationStructureSize(Engine * eng);
+  public:
+    RTAccelerationStructureSize(Engine* eng);
 
     VkAccelerationStructureBuildSizesInfoKHR getTLASSizes(
         VkDeviceAddress instancesDeviceAddress,
         size_t instanceCount,
-        VkAccelerationStructureBuildTypeKHR buildType = VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR
-    );
+        VkAccelerationStructureBuildTypeKHR buildType = VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR);
 
     VkAccelerationStructureBuildSizesInfoKHR getBLASSizes(
         VkDeviceAddress vertexDeviceAddress,
@@ -43,13 +41,15 @@ public:
         uint32_t maxVertex,
         uint32_t triangleCount,
         VkIndexType indexType = VK_INDEX_TYPE_UINT32,
-        VkAccelerationStructureBuildTypeKHR buildType = VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR
-    );
+        VkAccelerationStructureBuildTypeKHR buildType = VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR);
 
-    [[nodiscard]] VkAccelerationStructureBuildGeometryInfoKHR buildInfo() const { return _buildInfo; }
+    [[nodiscard]] VkAccelerationStructureBuildGeometryInfoKHR buildInfo() const
+    {
+        return _buildInfo;
+    }
 
-protected:
-    Engine * _engine;
+  protected:
+    Engine* _engine;
 
     uint32_t _primitiveCount = 0;
     VkAccelerationStructureGeometryTrianglesDataKHR _trianglesData{};
@@ -58,8 +58,7 @@ protected:
     VkAccelerationStructureBuildGeometryInfoKHR _buildInfo{};
 
     VkAccelerationStructureBuildSizesInfoKHR getSizes(
-        VkAccelerationStructureBuildTypeKHR buildType
-    ) const;
+        VkAccelerationStructureBuildTypeKHR buildType) const;
 };
 
 }

@@ -24,8 +24,11 @@ namespace bg2e {
 namespace gpu {
 
 class BG2E_API WindowSurface : public virtual Surface {
-public:
-    bool isOffscreen() const override { return false; }
+  public:
+    bool isOffscreen() const override
+    {
+        return false;
+    }
 
     // cleanup() must call releaseRenderTarget() before destroying surface resources,
     // because the render target depends on the device (swapchain/VMA images).

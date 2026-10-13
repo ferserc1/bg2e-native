@@ -27,45 +27,67 @@
 namespace bg2e::base {
 
 class BG2E_API Joint {
-public:
+  public:
     virtual ~Joint() = default;
 
     static std::shared_ptr<Joint> factory(std::shared_ptr<json::JsonNode> jsonData);
 
-    const glm::mat4& transform() const { return _transform; }
+    const glm::mat4& transform() const
+    {
+        return _transform;
+    }
 
     virtual void applyTransform(glm::mat4& destination) const = 0;
     virtual std::shared_ptr<Joint> clone() const = 0;
     virtual void deserialize(std::shared_ptr<json::JsonNode> jsonData) = 0;
     virtual std::shared_ptr<json::JsonNode> serialize() const = 0;
 
-protected:
-    glm::mat4 _transform { 1.0f };
+  protected:
+    glm::mat4 _transform{1.0f};
 };
 
-enum class LinkTransformOrder : uint32_t {
+enum class LinkTransformOrder : uint32_t
+{
     RotateTranslate = 0,
     TranslateRotate = 1
 };
 
 class BG2E_API LinkJoint : public Joint {
-public:
+  public:
     LinkJoint() = default;
 
-    const glm::vec3& offset() const { return _offset; }
+    const glm::vec3& offset() const
+    {
+        return _offset;
+    }
     void setOffset(const glm::vec3& value);
 
-    const glm::vec3& eulerRotation() const { return _eulerRotation; }
+    const glm::vec3& eulerRotation() const
+    {
+        return _eulerRotation;
+    }
     void setEulerRotation(const glm::vec3& value);
 
-    float yaw() const { return _eulerRotation.x; }
+    float yaw() const
+    {
+        return _eulerRotation.x;
+    }
     void setYaw(float value);
-    float pitch() const { return _eulerRotation.y; }
+    float pitch() const
+    {
+        return _eulerRotation.y;
+    }
     void setPitch(float value);
-    float roll() const { return _eulerRotation.z; }
+    float roll() const
+    {
+        return _eulerRotation.z;
+    }
     void setRoll(float value);
 
-    LinkTransformOrder transformOrder() const { return _transformOrder; }
+    LinkTransformOrder transformOrder() const
+    {
+        return _transformOrder;
+    }
     void setTransformOrder(LinkTransformOrder value);
 
     void applyTransform(glm::mat4& destination) const override;
@@ -73,13 +95,13 @@ public:
     void deserialize(std::shared_ptr<json::JsonNode> jsonData) override;
     std::shared_ptr<json::JsonNode> serialize() const override;
 
-protected:
+  protected:
     void calculateTransform();
     void multiplyTransform(glm::mat4& destination) const;
     void multiplyRotation(glm::mat4& destination) const;
 
-    glm::vec3 _offset { 0.0f };
-    glm::vec3 _eulerRotation { 0.0f };
+    glm::vec3 _offset{0.0f};
+    glm::vec3 _eulerRotation{0.0f};
     LinkTransformOrder _transformOrder = LinkTransformOrder::TranslateRotate;
 };
 

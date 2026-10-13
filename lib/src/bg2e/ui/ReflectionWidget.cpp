@@ -45,36 +45,36 @@ using reflection::PropertyType;
 
 // Visible label + unique ImGui ID. The property name is unique inside a
 // TypeInfo, so it is enough to disambiguate widgets inside the same ID scope.
-std::string labelFor(const reflection::PropertyInfo & prop)
+std::string labelFor(const reflection::PropertyInfo& prop)
 {
-    const auto & displayName = prop.metadata.displayName;
+    const auto& displayName = prop.metadata.displayName;
     return (displayName.empty() ? prop.name : displayName) + "##" + prop.name;
 }
 
 // Plain visible name, for widgets that show the text verbatim (Text)
-std::string nameFor(const reflection::PropertyInfo & prop)
+std::string nameFor(const reflection::PropertyInfo& prop)
 {
     return prop.metadata.displayName.empty() ? prop.name : prop.metadata.displayName;
 }
 
-float minOr(const reflection::PropertyMetadata & md, float fallback)
+float minOr(const reflection::PropertyMetadata& md, float fallback)
 {
     return md.min ? static_cast<float>(*md.min) : fallback;
 }
 
-float maxOr(const reflection::PropertyMetadata & md, float fallback)
+float maxOr(const reflection::PropertyMetadata& md, float fallback)
 {
     return md.max ? static_cast<float>(*md.max) : fallback;
 }
 
-float stepOr(const reflection::PropertyMetadata & md, float fallback)
+float stepOr(const reflection::PropertyMetadata& md, float fallback)
 {
     return md.step ? static_cast<float>(*md.step) : fallback;
 }
 
-bool drawIntEditor(const std::string & label, int & v, const reflection::PropertyInfo & prop)
+bool drawIntEditor(const std::string& label, int& v, const reflection::PropertyInfo& prop)
 {
-    const auto & md = prop.metadata;
+    const auto& md = prop.metadata;
     int min = static_cast<int>(minOr(md, 0.0f));
     int max = static_cast<int>(maxOr(md, 100.0f));
     switch (prop.editor)
@@ -88,9 +88,9 @@ bool drawIntEditor(const std::string & label, int & v, const reflection::Propert
     }
 }
 
-bool drawFloatEditor(const std::string & label, float & v, const reflection::PropertyInfo & prop)
+bool drawFloatEditor(const std::string& label, float& v, const reflection::PropertyInfo& prop)
 {
-    const auto & md = prop.metadata;
+    const auto& md = prop.metadata;
     float min = minOr(md, 0.0f);
     float max = maxOr(md, 1.0f);
     switch (prop.editor)
@@ -101,8 +101,7 @@ bool drawFloatEditor(const std::string & label, float & v, const reflection::Pro
         // Drag without an explicit range is left unclamped (0, 0)
         return Numeric::drag(
             label, &v, stepOr(md, 0.1f),
-            md.min ? min : 0.0f, md.max ? max : 0.0f
-        );
+            md.min ? min : 0.0f, md.max ? max : 0.0f);
     case PropertyEditor::Angle:
         // Angles are edited in degrees; use the metadata range if present
         if (md.min && md.max)
@@ -115,9 +114,9 @@ bool drawFloatEditor(const std::string & label, float & v, const reflection::Pro
     }
 }
 
-bool drawVec2Editor(const std::string & label, glm::vec2 & v, const reflection::PropertyInfo & prop)
+bool drawVec2Editor(const std::string& label, glm::vec2& v, const reflection::PropertyInfo& prop)
 {
-    const auto & md = prop.metadata;
+    const auto& md = prop.metadata;
     const float min = minOr(md, 0.0f);
     const float max = maxOr(md, 1.0f);
     switch (prop.editor)
@@ -127,8 +126,7 @@ bool drawVec2Editor(const std::string & label, glm::vec2 & v, const reflection::
     case PropertyEditor::Drag:
         return Vector::dragVec2(
             label, v, stepOr(md, 0.1f),
-            md.min ? min : 0.0f, md.max ? max : 0.0f
-        );
+            md.min ? min : 0.0f, md.max ? max : 0.0f);
     case PropertyEditor::Angle:
         if (md.min && md.max)
         {
@@ -140,9 +138,9 @@ bool drawVec2Editor(const std::string & label, glm::vec2 & v, const reflection::
     }
 }
 
-bool drawVec3Editor(const std::string & label, glm::vec3 & v, const reflection::PropertyInfo & prop)
+bool drawVec3Editor(const std::string& label, glm::vec3& v, const reflection::PropertyInfo& prop)
 {
-    const auto & md = prop.metadata;
+    const auto& md = prop.metadata;
     const float min = minOr(md, 0.0f);
     const float max = maxOr(md, 1.0f);
     switch (prop.editor)
@@ -152,8 +150,7 @@ bool drawVec3Editor(const std::string & label, glm::vec3 & v, const reflection::
     case PropertyEditor::Drag:
         return Vector::dragVec3(
             label, v, stepOr(md, 0.1f),
-            md.min ? min : 0.0f, md.max ? max : 0.0f
-        );
+            md.min ? min : 0.0f, md.max ? max : 0.0f);
     case PropertyEditor::Angle:
         if (md.min && md.max)
         {
@@ -165,9 +162,9 @@ bool drawVec3Editor(const std::string & label, glm::vec3 & v, const reflection::
     }
 }
 
-bool drawVec4Editor(const std::string & label, glm::vec4 & v, const reflection::PropertyInfo & prop)
+bool drawVec4Editor(const std::string& label, glm::vec4& v, const reflection::PropertyInfo& prop)
 {
-    const auto & md = prop.metadata;
+    const auto& md = prop.metadata;
     const float min = minOr(md, 0.0f);
     const float max = maxOr(md, 1.0f);
     switch (prop.editor)
@@ -177,8 +174,7 @@ bool drawVec4Editor(const std::string & label, glm::vec4 & v, const reflection::
     case PropertyEditor::Drag:
         return Vector::dragVec4(
             label, v, stepOr(md, 0.1f),
-            md.min ? min : 0.0f, md.max ? max : 0.0f
-        );
+            md.min ? min : 0.0f, md.max ? max : 0.0f);
     case PropertyEditor::Angle:
         if (md.min && md.max)
         {
@@ -193,14 +189,14 @@ bool drawVec4Editor(const std::string & label, glm::vec4 & v, const reflection::
 } // anonymous namespace
 
 bool ReflectionWidget::drawProperties(
-    void * instance,
-    const reflection::TypeInfo & info,
-    uint32_t depth
-) {
+    void* instance,
+    const reflection::TypeInfo& info,
+    uint32_t depth)
+{
     // Group properties by category, preserving first-appearance order
     std::vector<std::string> categories;
     std::vector<std::vector<const reflection::PropertyInfo*>> groups;
-    for (const auto & prop : info.properties)
+    for (const auto& prop : info.properties)
     {
         size_t idx = 0;
         for (; idx < categories.size(); ++idx)
@@ -227,12 +223,11 @@ bool ReflectionWidget::drawProperties(
         if (useTree)
         {
             open = Group::beginTree(
-                categories[g] + "##" + info.typeName + std::to_string(depth) + "_" + std::to_string(g)
-            );
+                categories[g] + "##" + info.typeName + std::to_string(depth) + "_" + std::to_string(g));
         }
         if (open)
         {
-            for (auto * prop : groups[g])
+            for (auto* prop : groups[g])
             {
                 Group::pushId(id++);
                 if (drawProperty(instance, *prop, depth))
@@ -251,14 +246,14 @@ bool ReflectionWidget::drawProperties(
 }
 
 void ReflectionWidget::drawActions(
-    void * instance,
-    const reflection::TypeInfo & info
-) {
+    void* instance,
+    const reflection::TypeInfo& info)
+{
     int id = 0;
-    for (const auto & action : info.actions)
+    for (const auto& action : info.actions)
     {
         Group::pushId(id++);
-        const auto & label = action.displayName.empty() ? action.name : action.displayName;
+        const auto& label = action.displayName.empty() ? action.name : action.displayName;
         if (Button::button(label + "##" + action.name))
         {
             action.invoke(instance);
@@ -269,10 +264,10 @@ void ReflectionWidget::drawActions(
 }
 
 bool ReflectionWidget::drawProperty(
-    void * instance,
-    const reflection::PropertyInfo & prop,
-    uint32_t depth
-) {
+    void* instance,
+    const reflection::PropertyInfo& prop,
+    uint32_t depth)
+{
     if (prop.type == PropertyType::Object)
     {
         return drawObjectProperty(instance, prop, depth);
@@ -285,9 +280,9 @@ bool ReflectionWidget::drawProperty(
 }
 
 bool ReflectionWidget::drawScalarProperty(
-    void * instance,
-    const reflection::PropertyInfo & prop
-) {
+    void* instance,
+    const reflection::PropertyInfo& prop)
+{
     const auto label = labelFor(prop);
     const bool readOnly = prop.isReadOnly();
     bool changed = false;
@@ -302,25 +297,37 @@ bool ReflectionWidget::drawScalarProperty(
     case PropertyType::Bool: {
         auto v = std::any_cast<bool>(prop.getter(instance));
         changed = Button::checkBox(label, &v);
-        if (changed) prop.setter(instance, v);
+        if (changed)
+        {
+            prop.setter(instance, v);
+        }
         break;
     }
     case PropertyType::Int: {
         int v = static_cast<int>(std::any_cast<int32_t>(prop.getter(instance)));
         changed = drawIntEditor(label, v, prop);
-        if (changed) prop.setter(instance, static_cast<int32_t>(v));
+        if (changed)
+        {
+            prop.setter(instance, static_cast<int32_t>(v));
+        }
         break;
     }
     case PropertyType::UInt: {
         int v = static_cast<int>(std::any_cast<uint32_t>(prop.getter(instance)));
         changed = drawIntEditor(label, v, prop);
-        if (changed && v >= 0) prop.setter(instance, static_cast<uint32_t>(v));
+        if (changed && v >= 0)
+        {
+            prop.setter(instance, static_cast<uint32_t>(v));
+        }
         break;
     }
     case PropertyType::Float: {
         auto v = std::any_cast<float>(prop.getter(instance));
         changed = drawFloatEditor(label, v, prop);
-        if (changed) prop.setter(instance, v);
+        if (changed)
+        {
+            prop.setter(instance, v);
+        }
         break;
     }
     case PropertyType::Double: {
@@ -336,43 +343,64 @@ bool ReflectionWidget::drawScalarProperty(
             changed = drawFloatEditor(label, f, prop);
             v = static_cast<double>(f);
         }
-        if (changed) prop.setter(instance, v);
+        if (changed)
+        {
+            prop.setter(instance, v);
+        }
         break;
     }
     case PropertyType::String: {
         auto v = std::any_cast<std::string>(prop.getter(instance));
         changed = Value::text(label, v);
-        if (changed) prop.setter(instance, v);
+        if (changed)
+        {
+            prop.setter(instance, v);
+        }
         break;
     }
     case PropertyType::Vec2: {
         auto v = std::any_cast<glm::vec2>(prop.getter(instance));
         changed = drawVec2Editor(label, v, prop);
-        if (changed) prop.setter(instance, v);
+        if (changed)
+        {
+            prop.setter(instance, v);
+        }
         break;
     }
     case PropertyType::Vec3: {
         auto v = std::any_cast<glm::vec3>(prop.getter(instance));
         changed = drawVec3Editor(label, v, prop);
-        if (changed) prop.setter(instance, v);
+        if (changed)
+        {
+            prop.setter(instance, v);
+        }
         break;
     }
     case PropertyType::Vec4: {
         auto v = std::any_cast<glm::vec4>(prop.getter(instance));
         changed = drawVec4Editor(label, v, prop);
-        if (changed) prop.setter(instance, v);
+        if (changed)
+        {
+            prop.setter(instance, v);
+        }
         break;
     }
     case PropertyType::Mat4: {
         auto v = std::any_cast<glm::mat4>(prop.getter(instance));
         changed = Vector::mat4(label, v);
-        if (changed) prop.setter(instance, v);
+        if (changed)
+        {
+            prop.setter(instance, v);
+        }
         break;
     }
     case PropertyType::Color: {
         auto v = std::any_cast<base::Color>(prop.getter(instance));
         changed = Value::colorPicker(label, v);
-        if (changed) prop.setter(instance, v);
+        if (changed)
+        {
+            prop.setter(instance, v);
+        }
         break;
     }
     case PropertyType::Enum: {
@@ -389,7 +417,7 @@ bool ReflectionWidget::drawScalarProperty(
         std::vector<int64_t> values;
         uint32_t selected = 0;
         bool currentFound = false;
-        for (const auto & [optionLabel, optionValue] : prop.metadata.enumOptions)
+        for (const auto& [optionLabel, optionValue] : prop.metadata.enumOptions)
         {
             if (optionValue == currentValue)
             {
@@ -406,7 +434,10 @@ bool ReflectionWidget::drawScalarProperty(
             values.push_back(currentValue);
         }
         changed = Value::comboBox(label, labels, selected);
-        if (changed) prop.setter(instance, values[selected]);
+        if (changed)
+        {
+            prop.setter(instance, values[selected]);
+        }
         break;
     }
     case PropertyType::Path: {
@@ -453,15 +484,15 @@ bool ReflectionWidget::drawScalarProperty(
 }
 
 bool ReflectionWidget::drawObjectProperty(
-    void * instance,
-    const reflection::PropertyInfo & prop,
-    uint32_t depth
-) {
-    const auto & displayName = prop.metadata.displayName;
+    void* instance,
+    const reflection::PropertyInfo& prop,
+    uint32_t depth)
+{
+    const auto& displayName = prop.metadata.displayName;
     const auto label = displayName.empty() ? prop.name : displayName;
 
-    const auto * objectInfo = reflection::TypeRegistry::get().type(prop.objectTypeName);
-    const void * subObject = prop.objectGetter ? prop.objectGetter(instance) : nullptr;
+    const auto* objectInfo = reflection::TypeRegistry::get().type(prop.objectTypeName);
+    const void* subObject = prop.objectGetter ? prop.objectGetter(instance) : nullptr;
 
     if (!objectInfo || !subObject)
     {
@@ -489,12 +520,12 @@ bool ReflectionWidget::drawObjectProperty(
             Group::beginDisabled();
         }
 
-        void * mutableSubObject = readOnly ? nullptr : prop.objectMutableGetter(instance);
+        void* mutableSubObject = readOnly ? nullptr : prop.objectMutableGetter(instance);
         changed = drawProperties(
-            mutableSubObject ? mutableSubObject : const_cast<void*>(subObject),
-            *objectInfo,
-            depth + 1
-        ) && !readOnly;
+                      mutableSubObject ? mutableSubObject : const_cast<void*>(subObject),
+                      *objectInfo,
+                      depth + 1) &&
+                  !readOnly;
         drawActions(mutableSubObject ? mutableSubObject : const_cast<void*>(subObject), *objectInfo);
 
         if (readOnly)
@@ -508,12 +539,12 @@ bool ReflectionWidget::drawObjectProperty(
 }
 
 bool ReflectionWidget::drawPolymorphicObjectProperty(
-    void * instance,
-    const reflection::PropertyInfo & prop,
-    uint32_t depth
-) {
+    void* instance,
+    const reflection::PropertyInfo& prop,
+    uint32_t depth)
+{
     const auto label = nameFor(prop);
-    auto & registry = reflection::TypeRegistry::get();
+    auto& registry = reflection::TypeRegistry::get();
     std::vector<reflection::SubtypeInfo> options;
     if (prop.polymorphicSubtypeKeys.empty())
     {
@@ -522,20 +553,20 @@ bool ReflectionWidget::drawPolymorphicObjectProperty(
     else
     {
         options.reserve(prop.polymorphicSubtypeKeys.size());
-        for (const auto & key : prop.polymorphicSubtypeKeys)
+        for (const auto& key : prop.polymorphicSubtypeKeys)
         {
-            if (const auto * option = registry.subtype(prop.polymorphicBaseTypeName, key))
+            if (const auto* option = registry.subtype(prop.polymorphicBaseTypeName, key))
             {
                 options.push_back(*option);
             }
         }
     }
-    const void * currentObject = prop.polymorphicObjectGetter
-        ? prop.polymorphicObjectGetter(instance)
-        : nullptr;
+    const void* currentObject = prop.polymorphicObjectGetter
+                                    ? prop.polymorphicObjectGetter(instance)
+                                    : nullptr;
     std::string currentKey = currentObject && prop.polymorphicTypeKey
-        ? prop.polymorphicTypeKey(instance)
-        : std::string{};
+                                 ? prop.polymorphicTypeKey(instance)
+                                 : std::string{};
 
     if (currentObject && currentKey.empty())
     {
@@ -546,9 +577,9 @@ bool ReflectionWidget::drawPolymorphicObjectProperty(
         return false;
     }
 
-    const reflection::SubtypeInfo * activeSubtype = currentKey.empty()
-        ? nullptr
-        : registry.subtype(prop.polymorphicBaseTypeName, currentKey);
+    const reflection::SubtypeInfo* activeSubtype = currentKey.empty()
+                                                       ? nullptr
+                                                       : registry.subtype(prop.polymorphicBaseTypeName, currentKey);
     if (currentObject && !activeSubtype)
     {
         Group::beginDisabled();
@@ -564,9 +595,12 @@ bool ReflectionWidget::drawPolymorphicObjectProperty(
         std::vector<std::string> subtypeLabels;
         std::vector<std::string> subtypeKeys;
         uint32_t selected = 0;
-        for (const auto & option : options)
+        for (const auto& option : options)
         {
-            if (option.key == currentKey) selected = static_cast<uint32_t>(subtypeLabels.size());
+            if (option.key == currentKey)
+            {
+                selected = static_cast<uint32_t>(subtypeLabels.size());
+            }
             subtypeLabels.push_back(option.displayName);
             subtypeKeys.push_back(option.key);
         }
@@ -587,13 +621,18 @@ bool ReflectionWidget::drawPolymorphicObjectProperty(
         }
         else
         {
-            if (!canReplace) Group::beginDisabled();
+            if (!canReplace)
+            {
+                Group::beginDisabled();
+            }
             const bool selectionChanged = Value::comboBox(
                 "Type##" + prop.name,
                 subtypeLabels,
-                selected
-            );
-            if (!canReplace) Group::endDisabled();
+                selected);
+            if (!canReplace)
+            {
+                Group::endDisabled();
+            }
 
             if (selectionChanged && canReplace && !subtypeKeys[selected].empty())
             {
@@ -601,21 +640,21 @@ bool ReflectionWidget::drawPolymorphicObjectProperty(
 
                 // Replacement invalidates every pointer obtained above.
                 currentObject = prop.polymorphicObjectGetter
-                    ? prop.polymorphicObjectGetter(instance)
-                    : nullptr;
+                                    ? prop.polymorphicObjectGetter(instance)
+                                    : nullptr;
                 currentKey = currentObject && prop.polymorphicTypeKey
-                    ? prop.polymorphicTypeKey(instance)
-                    : std::string{};
+                                 ? prop.polymorphicTypeKey(instance)
+                                 : std::string{};
                 activeSubtype = currentKey.empty()
-                    ? nullptr
-                    : registry.subtype(prop.polymorphicBaseTypeName, currentKey);
+                                    ? nullptr
+                                    : registry.subtype(prop.polymorphicBaseTypeName, currentKey);
             }
         }
 
         if (currentObject && activeSubtype)
         {
-            const auto * baseInfo = registry.type(prop.polymorphicBaseTypeName);
-            const auto * subtypeInfo = registry.type(activeSubtype->typeName);
+            const auto* baseInfo = registry.type(prop.polymorphicBaseTypeName);
+            const auto* subtypeInfo = registry.type(activeSubtype->typeName);
             if (!subtypeInfo)
             {
                 Group::beginDisabled();
@@ -628,34 +667,35 @@ bool ReflectionWidget::drawPolymorphicObjectProperty(
             }
             else
             {
-                void * mutableBaseObject = prop.polymorphicObjectMutableGetter
-                    ? prop.polymorphicObjectMutableGetter(instance)
-                    : nullptr;
-                void * mutableSubtypeObject = registry.subtypeObject(
+                void* mutableBaseObject = prop.polymorphicObjectMutableGetter
+                                              ? prop.polymorphicObjectMutableGetter(instance)
+                                              : nullptr;
+                void* mutableSubtypeObject = registry.subtypeObject(
                     prop.polymorphicBaseTypeName,
                     currentKey,
-                    mutableBaseObject
-                );
-                const void * subtypeObject = registry.subtypeObject(
+                    mutableBaseObject);
+                const void* subtypeObject = registry.subtypeObject(
                     prop.polymorphicBaseTypeName,
                     currentKey,
-                    currentObject
-                );
+                    currentObject);
                 const bool readOnly = mutableBaseObject == nullptr;
-                if (readOnly) Group::beginDisabled();
+                if (readOnly)
+                {
+                    Group::beginDisabled();
+                }
 
-                auto * editBaseObject = mutableBaseObject
-                    ? mutableBaseObject
-                    : const_cast<void*>(currentObject);
+                auto* editBaseObject = mutableBaseObject
+                                           ? mutableBaseObject
+                                           : const_cast<void*>(currentObject);
                 if (baseInfo && activeSubtype->typeName != prop.polymorphicBaseTypeName)
                 {
                     changed = drawProperties(editBaseObject, *baseInfo, depth + 1) || changed;
                     drawActions(editBaseObject, *baseInfo);
                 }
 
-                auto * editSubtypeObject = mutableSubtypeObject
-                    ? mutableSubtypeObject
-                    : const_cast<void*>(subtypeObject);
+                auto* editSubtypeObject = mutableSubtypeObject
+                                              ? mutableSubtypeObject
+                                              : const_cast<void*>(subtypeObject);
                 if (editSubtypeObject)
                 {
                     changed = drawProperties(editSubtypeObject, *subtypeInfo, depth + 1) || changed;
@@ -665,7 +705,10 @@ bool ReflectionWidget::drawPolymorphicObjectProperty(
                 {
                     Text::text("<invalid subtype object>");
                 }
-                if (readOnly) Group::endDisabled();
+                if (readOnly)
+                {
+                    Group::endDisabled();
+                }
             }
         }
         else if (!currentObject)

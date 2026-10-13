@@ -46,16 +46,19 @@ int main(int argc, char** argv)
     Uint32 windowFlags = 0;
     switch (backend->windowType())
     {
-        case gpu::WindowType::Vulkan: windowFlags = SDL_WINDOW_VULKAN; break;
-        case gpu::WindowType::Metal:  windowFlags = SDL_WINDOW_METAL;  break;
+    case gpu::WindowType::Vulkan:
+        windowFlags = SDL_WINDOW_VULKAN;
+        break;
+    case gpu::WindowType::Metal:
+        windowFlags = SDL_WINDOW_METAL;
+        break;
     }
 
     SDL_Window* window = SDL_CreateWindow(
         "GPU Clear Loop Example",
         SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
         800, 600,
-        windowFlags
-    );
+        windowFlags);
     if (!window)
     {
         std::cerr << "Failed to create window: " << SDL_GetError() << std::endl;
@@ -87,27 +90,32 @@ int main(int argc, char** argv)
         SDL_Event event;
         while (SDL_PollEvent(&event))
         {
-            if (event.type == SDL_QUIT) running = false;
+            if (event.type == SDL_QUIT)
+            {
+                running = false;
+            }
             if (event.type == SDL_WINDOWEVENT &&
-                event.window.event == SDL_WINDOWEVENT_CLOSE) running = false;
+                event.window.event == SDL_WINDOWEVENT_CLOSE)
+            {
+                running = false;
+            }
             if (event.type == SDL_WINDOWEVENT &&
                 event.window.event == SDL_WINDOWEVENT_RESIZED)
             {
-                surface->resize({ static_cast<uint32_t>(event.window.data1),
-                                  static_cast<uint32_t>(event.window.data2) });
+                surface->resize({static_cast<uint32_t>(event.window.data1),
+                                 static_cast<uint32_t>(event.window.data2)});
             }
         }
 
         const float t = static_cast<float>(SDL_GetTicks64()) / 1000.0f;
-        gpu::Color clearColor {
+        gpu::Color clearColor{
             0.5f + 0.5f * std::sin(t),
             0.5f + 0.5f * std::sin(t + 2.0f),
             0.5f + 0.5f * std::sin(t + 4.0f),
-            1.0f
-        };
+            1.0f};
 
         auto frame = surface->beginFrame();
-        auto cmd   = graphicsQueue.createCommandBuffer("Frame command buffer");
+        auto cmd = graphicsQueue.createCommandBuffer("Frame command buffer");
 
         cmd->begin();
         cmd->transition(frame->colorImage(), gpu::ImageLayout::ColorAttachment);

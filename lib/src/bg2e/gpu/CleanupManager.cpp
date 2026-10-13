@@ -69,13 +69,35 @@ void CleanupManager::flush()
     _staticResources.clear();
     _resources.clear();
     std::exception_ptr error;
-    const auto cleanup = [&error](const auto& resource) {
-        try { if (resource) resource->cleanup(); }
-        catch (...) { if (!error) error = std::current_exception(); }
+    const auto cleanup = [&error](const auto& resource)
+    {
+        try
+        {
+            if (resource)
+            {
+                resource->cleanup();
+            }
+        }
+        catch (...)
+        {
+            if (!error)
+            {
+                error = std::current_exception();
+            }
+        }
     };
-    for (auto& resource : staticResources) cleanup(resource);
-    for (auto it = resources.rbegin(); it != resources.rend(); ++it) cleanup(*it);
-    if (error) std::rethrow_exception(error);
+    for (auto& resource : staticResources)
+    {
+        cleanup(resource);
+    }
+    for (auto it = resources.rbegin(); it != resources.rend(); ++it)
+    {
+        cleanup(*it);
+    }
+    if (error)
+    {
+        std::rethrow_exception(error);
+    }
 }
 
 void CleanupManager::clear()
@@ -92,9 +114,11 @@ bool CleanupManager::empty() const
 void CleanupManager::defer(std::function<void()>&& cleanup)
 {
     if (!_surface || !_surface->_device)
+    {
         throw std::logic_error("CleanupManager::defer requires a device-backed surface");
+    }
     auto dependencies = _surface->_device->submissionState()->snapshot();
-    _deferredCleanups.push_back({ std::move(dependencies), std::move(cleanup) });
+    _deferredCleanups.push_back({std::move(dependencies), std::move(cleanup)});
 }
 
 void CleanupManager::flushDeferred()
@@ -107,18 +131,39 @@ void CleanupManager::flushDeferred()
         bool completed = true;
         for (const auto& record : it->dependencies)
         {
-            try { if (!record->completed()) completed = false; }
-            catch (...) { if (!error) error = std::current_exception(); }
+            try
+            {
+                if (!record->completed())
+                {
+                    completed = false;
+                }
+            }
+            catch (...)
+            {
+                if (!error)
+                {
+                    error = std::current_exception();
+                }
+            }
         }
         if (completed)
         {
             ready.push_back(std::move(it->cleanup));
             it = _deferredCleanups.erase(it);
         }
-        else ++it;
+        else
+        {
+            ++it;
+        }
     }
-    for (auto& cleanup : ready) cleanup();
-    if (error) std::rethrow_exception(error);
+    for (auto& cleanup : ready)
+    {
+        cleanup();
+    }
+    if (error)
+    {
+        std::rethrow_exception(error);
+    }
 }
 
 void CleanupManager::flushAllDeferred()
@@ -128,10 +173,22 @@ void CleanupManager::flushAllDeferred()
     std::exception_ptr error;
     for (auto& entry : pending)
     {
-        try { entry.cleanup(); }
-        catch (...) { if (!error) error = std::current_exception(); }
+        try
+        {
+            entry.cleanup();
+        }
+        catch (...)
+        {
+            if (!error)
+            {
+                error = std::current_exception();
+            }
+        }
     }
-    if (error) std::rethrow_exception(error);
+    if (error)
+    {
+        std::rethrow_exception(error);
+    }
 }
 
 }

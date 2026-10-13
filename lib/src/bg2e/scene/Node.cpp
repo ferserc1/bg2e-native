@@ -22,32 +22,28 @@
 #include <bg2e/utils/utils.hpp>
 #include <bg2e/scene/TransformVisitor.hpp>
 
-#include "bg2e/base/Log.hpp"
-#include "bg2e/scene/Scene.hpp"
+#include <bg2e/base/Log.hpp>
+#include <bg2e/scene/Scene.hpp>
 
 #include <algorithm>
 
 namespace bg2e::scene {
 
 Node::Node()
-    :_identifier { utils::uniqueId() }
+    : _identifier{utils::uniqueId()}
 {
-
 }
 
 Node::Node(const std::string& name)
-    :_name { name }
-    ,_identifier { utils::uniqueId() }
+    : _name{name}, _identifier{utils::uniqueId()}
 {
-
 }
 
 Node::~Node()
 {
-
 }
 
-void Node::addChild(Node * node)
+void Node::addChild(Node* node)
 {
     addChild(std::shared_ptr<Node>(node));
 }
@@ -58,7 +54,7 @@ void Node::addChild(std::shared_ptr<Node> node)
     node->_parent = this;
 }
 
-void Node::removeChild(const std::shared_ptr<Node> & node)
+void Node::removeChild(const std::shared_ptr<Node>& node)
 {
     if (!node)
     {
@@ -113,7 +109,7 @@ void Node::clearChildren()
     _children.clear();
 }
 
-void Node::addComponent(Component * comp)
+void Node::addComponent(Component* comp)
 {
     addComponent(std::shared_ptr<Component>(comp));
 }
@@ -148,7 +144,10 @@ void Node::addComponent(std::shared_ptr<Component> comp)
 
 void Node::removeComponent(std::shared_ptr<Component> comp)
 {
-    if (!comp) return;
+    if (!comp)
+    {
+        return;
+    }
 
     comp->willRemoveFromNode(this);
     auto plainPtr = comp.get();
@@ -166,7 +165,6 @@ void Node::removeComponent(std::shared_ptr<Component> comp)
     sortComponents();
 }
 
-
 const std::unordered_map<std::string, std::shared_ptr<Component>>& Node::components() const
 {
     return _components;
@@ -177,7 +175,7 @@ const std::vector<std::shared_ptr<Component>>& Node::orderedComponents() const
     return _orderedComponents;
 }
 
-void Node::accept(NodeVisitor * visitor)
+void Node::accept(NodeVisitor* visitor)
 {
     if (!visitor->ignoreDisabled() || !_disabled)
     {
@@ -198,7 +196,7 @@ void Node::accept(NodeVisitor * visitor)
     }
 }
 
-void Node::acceptReverse(NodeVisitor * visitor)
+void Node::acceptReverse(NodeVisitor* visitor)
 {
     if (!visitor->ignoreDisabled() || !_disabled)
     {
@@ -229,22 +227,22 @@ glm::vec3 Node::worldPosition()
 glm::vec3 Node::forwardVector()
 {
     auto wm = worldMatrix();
-    return glm::normalize(glm::mat3{ wm } * glm::vec3{ 0.0f, 0.0f, 1.0f });
+    return glm::normalize(glm::mat3{wm} * glm::vec3{0.0f, 0.0f, 1.0f});
 }
 
 glm::vec3 Node::rightVector()
 {
     auto wm = worldMatrix();
-    return glm::normalize(glm::mat3{ wm } * glm::vec3{ 1.0f, 0.0f, 0.0f });
+    return glm::normalize(glm::mat3{wm} * glm::vec3{1.0f, 0.0f, 0.0f});
 }
 
 glm::vec3 Node::upVector()
 {
     auto wm = worldMatrix();
-    return glm::normalize(glm::mat3{wm } * glm::vec3{ 0.0f, 1.0f, 0.0f });
+    return glm::normalize(glm::mat3{wm} * glm::vec3{0.0f, 1.0f, 0.0f});
 }
 
-Node * Node::sceneRoot()
+Node* Node::sceneRoot()
 {
     if (_parent == nullptr)
     {
@@ -256,20 +254,35 @@ Node * Node::sceneRoot()
 void Node::deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path& basePath, render::Engine& engine, SceneLoadProgress* progress)
 {
     json::ObjectReader reader(jsonData);
-    if (!reader.isValid()) return;
+    if (!reader.isValid())
+    {
+        return;
+    }
 
     // Read basic node properties
-    if (auto name = reader.getString("name")) _name = *name;
+    if (auto name = reader.getString("name"))
+    {
+        _name = *name;
+    }
 
     // Fire callback before the heavy component/child work
     if (progress && progress->callback)
     {
         progress->callback(_name, progress->loaded, progress->total);
     }
-    if (progress) { ++progress->loaded; }
+    if (progress)
+    {
+        ++progress->loaded;
+    }
 
-    if (auto enabled = reader.getBool("enabled")) _disabled = !*enabled;
-    if (auto steady = reader.getBool("steady")) _steady = *steady;
+    if (auto enabled = reader.getBool("enabled"))
+    {
+        _disabled = !*enabled;
+    }
+    if (auto steady = reader.getBool("steady"))
+    {
+        _steady = *steady;
+    }
 
     // Deserialize components
     if (auto components = reader.getArray("components"))
@@ -308,28 +321,36 @@ void Node::deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::file
     }
 }
 
-std::shared_ptr<json::JsonNode> Node::serialize(const std::filesystem::path & basePath,
+std::shared_ptr<json::JsonNode> Node::serialize(const std::filesystem::path& basePath,
                                                 SceneSaveProgress* progress)
 {
     // Fire callback before serializing this node
-    if (progress && progress->callback) {
+    if (progress && progress->callback)
+    {
         progress->callback(_name, progress->saved, progress->total);
     }
-    if (progress) { ++progress->saved; }
+    if (progress)
+    {
+        ++progress->saved;
+    }
 
     using namespace bg2e::json;
     auto result = JSON(JsonObject{});
-    auto & obj = result->objectValue();
+    auto& obj = result->objectValue();
 
-    obj["type"]    = JSON("Node");
-    obj["name"]    = JSON(name());
+    obj["type"] = JSON("Node");
+    obj["name"] = JSON(name());
     obj["enabled"] = JSON(enabled());
-    obj["steady"]  = JSON(steady());
+    obj["steady"] = JSON(steady());
 
     // Serialize components (unchanged)
     auto components = JSON(JsonList());
-    for (auto& comp : _components) {
-        if (comp.second->ignoreSerialization()) { continue; }
+    for (auto& comp : _components)
+    {
+        if (comp.second->ignoreSerialization())
+        {
+            continue;
+        }
         auto compData = comp.second->serialize(basePath);
         components->listValue().push_back(compData);
     }
@@ -337,7 +358,8 @@ std::shared_ptr<json::JsonNode> Node::serialize(const std::filesystem::path & ba
 
     // Serialize children — forward the same progress pointer
     auto children = JSON(JsonList());
-    for (auto& child : _children) {
+    for (auto& child : _children)
+    {
         auto childData = child->serialize(basePath, progress);
         children->listValue().push_back(childData);
     }
@@ -366,10 +388,9 @@ void Node::sortComponents() const
             [](const auto& a, const auto& b)
             {
                 return a->priority() > b->priority();
-            }
-        );
+            });
         _componentsOrderDirty = false;
     }
 }
-    
+
 }

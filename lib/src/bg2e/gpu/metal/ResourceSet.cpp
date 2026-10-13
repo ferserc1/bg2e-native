@@ -32,9 +32,7 @@ namespace metal {
 #if BG2E_IS_MAC
 
 ResourceSet::ResourceSet(gpu::Device* gpuDevice, const metal::PipelineLayout* layout, uint32_t setIndex)
-    : gpu::ResourceSet(gpuDevice)
-    , _setIndex(setIndex)
-    , _layout(layout)
+    : gpu::ResourceSet(gpuDevice), _setIndex(setIndex), _layout(layout)
 {
 }
 
@@ -175,9 +173,9 @@ void ResourceSet::setRayTracingScene(ShaderBinding binding, gpu::RayTracingScene
             rb.type == ResourceType::AccelerationStructure)
         {
             ResourceEntry entry;
-            entry.index   = _layout->metalBufferIndex(rb);
-            entry.type    = rb.type;
-            entry.stage   = rb.stage;
+            entry.index = _layout->metalBufferIndex(rb);
+            entry.type = rb.type;
+            entry.stage = rb.stage;
             entry.rtScene = metalScene;
 
             for (auto& e : _entries)
@@ -255,18 +253,41 @@ ResourceSet::ResourceSet(gpu::Device* gpuDevice, const metal::PipelineLayout*, u
     throw std::runtime_error("Metal backend is not available on this platform");
 }
 
-ResourceSet::~ResourceSet() {}
+ResourceSet::~ResourceSet()
+{
+}
 
-void ResourceSet::setStorageImage(ShaderBinding, gpu::Image*) {}
-void ResourceSet::setSampledImage(ShaderBinding, gpu::Image*) {}
-void ResourceSet::setSampler(ShaderBinding, gpu::Sampler*) {}
-void ResourceSet::setUniformBuffer(ShaderBinding, gpu::Buffer*) {}
-void ResourceSet::setStorageBuffer(ShaderBinding, gpu::Buffer*) {}
-void ResourceSet::setRayTracingScene(ShaderBinding, gpu::RayTracingScene*) {}
-void ResourceSet::setBufferBinding(ShaderBinding, gpu::Buffer*, ResourceType, const char*) {}
-void ResourceSet::update() {}
-bool ResourceSet::isValid() const { return false; }
-void ResourceSet::cleanup() {}
+void ResourceSet::setStorageImage(ShaderBinding, gpu::Image*)
+{
+}
+void ResourceSet::setSampledImage(ShaderBinding, gpu::Image*)
+{
+}
+void ResourceSet::setSampler(ShaderBinding, gpu::Sampler*)
+{
+}
+void ResourceSet::setUniformBuffer(ShaderBinding, gpu::Buffer*)
+{
+}
+void ResourceSet::setStorageBuffer(ShaderBinding, gpu::Buffer*)
+{
+}
+void ResourceSet::setRayTracingScene(ShaderBinding, gpu::RayTracingScene*)
+{
+}
+void ResourceSet::setBufferBinding(ShaderBinding, gpu::Buffer*, ResourceType, const char*)
+{
+}
+void ResourceSet::update()
+{
+}
+bool ResourceSet::isValid() const
+{
+    return false;
+}
+void ResourceSet::cleanup()
+{
+}
 
 #endif
 

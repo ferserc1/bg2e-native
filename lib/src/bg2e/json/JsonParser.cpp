@@ -25,7 +25,7 @@
 
 namespace bg2e::json {
 
-std::shared_ptr<JsonNode> & JsonParser::parse()
+std::shared_ptr<JsonNode>& JsonParser::parse()
 {
     try
     {
@@ -34,7 +34,8 @@ std::shared_ptr<JsonNode> & JsonParser::parse()
         if (tokenizer.hasMoreTokens())
         {
             JsonToken token = tokenizer.getToken();
-            switch (token.type) {
+            switch (token.type)
+            {
             case JsonTokenType::CurlyOpen:
                 root = parseObject();
                 break;
@@ -71,7 +72,7 @@ std::shared_ptr<JsonNode> & JsonParser::parse()
             throw std::logic_error("Expected end of file but found additional tokens after the root JSON value");
         }
     }
-    catch(std::logic_error &e)
+    catch (std::logic_error& e)
     {
         std::cout << "Warning:" << e.what() << std::endl;
     }
@@ -99,7 +100,8 @@ std::shared_ptr<JsonNode> JsonParser::parseObject()
                 tokenizer.getToken();
                 nextToken = tokenizer.getToken();
                 std::shared_ptr<JsonNode> node;
-                switch (nextToken.type) {
+                switch (nextToken.type)
+                {
                 case JsonTokenType::String:
                     tokenizer.rollBackToken();
                     keyObjectMap[key] = parseString();
@@ -139,7 +141,7 @@ std::shared_ptr<JsonNode> JsonParser::parseObject()
         }
         else
         {
-                throw std::logic_error("No more tokens");
+            throw std::logic_error("No more tokens");
         }
     }
     node->setValue(keyObjectMap);
@@ -160,16 +162,15 @@ std::shared_ptr<JsonNode> JsonParser::parseNumber()
     std::shared_ptr<JsonNode> node = std::make_shared<JsonNode>();
     JsonToken nextToken = tokenizer.getToken();
     std::string value = nextToken.value;
-    
-    #ifdef BG2E_LINUX
+
+#ifdef BG2E_LINUX
     // Linux version: based in from_chars because stof and stod depends on system localization
     // settings, and will don't work in some locations where the comma is the decimal separator
     double dValue = 0.0;
     auto [ptr, ec] = std::from_chars(
         value.data(),
         value.data() + value.size(),
-        dValue
-    );
+        dValue);
 
     if (ec == std::errc::invalid_argument)
     {
@@ -177,15 +178,16 @@ std::shared_ptr<JsonNode> JsonParser::parseNumber()
         node->setValue(0);
     }
     else if (ec == std::errc::result_out_of_range ||
-            static_cast<float>(dValue) == std::numeric_limits<float>::infinity()
-    ) {
+             static_cast<float>(dValue) == std::numeric_limits<float>::infinity())
+    {
         node->setValue(std::numeric_limits<float>::max());
     }
-    else {
+    else
+    {
         node->setValue(static_cast<float>(dValue));
     }
-    
-    #else
+
+#else
     // Mac/Windows version: the stod version is tested and it works well. Apart from that, the
     // from_chars method does not work in macOS until version 26
     try
@@ -205,8 +207,8 @@ std::shared_ptr<JsonNode> JsonParser::parseNumber()
             node->setValue(std::numeric_limits<float>::min());
         }
     }
-    #endif
-    
+#endif
+
     return node;
 }
 
@@ -225,7 +227,8 @@ std::shared_ptr<JsonNode> JsonParser::parseList()
         else
         {
             JsonToken nextToken = tokenizer.getToken();
-            switch (nextToken.type) {
+            switch (nextToken.type)
+            {
             case JsonTokenType::ListOpen:
                 childNode = parseList();
                 break;
@@ -248,15 +251,18 @@ std::shared_ptr<JsonNode> JsonParser::parseList()
                 childNode = parseNull();
                 break;
             case JsonTokenType::Comma:
-                if (childNode != nullptr) {
+                if (childNode != nullptr)
+                {
                     list.push_back(childNode);
                 }
-                else {
+                else
+                {
                     throw std::logic_error("Unexpected null node found in list");
                 }
                 break;
             case JsonTokenType::ListClose:
-                if (childNode != nullptr) {
+                if (childNode != nullptr)
+                {
                     list.push_back(childNode);
                 }
                 hasCompleted = true;

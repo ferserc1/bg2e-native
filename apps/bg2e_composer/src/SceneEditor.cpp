@@ -27,74 +27,82 @@
 #include <filesystem>
 #include <exception>
 
-void SceneEditor::init(AppDelegate * delegate)
+void SceneEditor::init(AppDelegate* delegate)
 {
     _appDelegate = delegate;
     setTitle("Scene");
 
-    _nodeEditor.onChanged([&]() {
-        _appDelegate->stage()->document()->setUnsavedChanges(true);
-        auto scene = _appDelegate->stage()->sceneRoot()->scene();
-        if (scene) scene->updateAll();
-    });
+    _nodeEditor.onChanged([&]()
+                          {
+                              _appDelegate->stage()->document()->setUnsavedChanges(true);
+                              auto scene = _appDelegate->stage()->sceneRoot()->scene();
+                              if (scene)
+                              {
+                                  scene->updateAll();
+                              }
+                          });
 
-    _sceneTree.onChanged([&]() {
-        _appDelegate->stage()->document()->setUnsavedChanges(true);
-        auto scene = _appDelegate->stage()->sceneRoot()->scene();
-        if (scene) scene->updateAll();
-    });
+    _sceneTree.onChanged([&]()
+                         {
+                             _appDelegate->stage()->document()->setUnsavedChanges(true);
+                             auto scene = _appDelegate->stage()->sceneRoot()->scene();
+                             if (scene)
+                             {
+                                 scene->updateAll();
+                             }
+                         });
 
     _nodeEditor.onResourceChanged([&](
-        bg2e::scene::Component * component,
-        const std::string& propertyName,
-        const std::filesystem::path& /* previousPath */,
-        const std::filesystem::path& selectedPath
-    ) -> bool {
-        auto * environment = dynamic_cast<bg2e::scene::EnvironmentComponent*>(component);
-        if (!environment || propertyName != "environmentImage")
-        {
-            return true;
-        }
+                                      bg2e::scene::Component* component,
+                                      const std::string& propertyName,
+                                      const std::filesystem::path& /* previousPath */,
+                                      const std::filesystem::path& selectedPath) -> bool
+                                  {
+                                      auto* environment = dynamic_cast<bg2e::scene::EnvironmentComponent*>(component);
+                                      if (!environment || propertyName != "environmentImage")
+                                      {
+                                          return true;
+                                      }
 
-        std::error_code error;
-        if (selectedPath.empty() ||
-            !std::filesystem::is_regular_file(selectedPath, error) || error)
-        {
-            bg2e_log_warning << "Environment image does not exist: "
-                             << selectedPath.string() << bg2e_log_end;
-            return false;
-        }
+                                      std::error_code error;
+                                      if (selectedPath.empty() ||
+                                          !std::filesystem::is_regular_file(selectedPath, error) || error)
+                                      {
+                                          bg2e_log_warning << "Environment image does not exist: "
+                                                           << selectedPath.string() << bg2e_log_end;
+                                          return false;
+                                      }
 
-        try
-        {
-            bg2e::utils::TextureCache::get().load(
-                _appDelegate->stage()->engine(),
-                selectedPath
-            );
-            return true;
-        }
-        catch (const std::exception& exception)
-        {
-            bg2e_log_warning << "Could not load environment image: "
-                             << exception.what() << bg2e_log_end;
-            return false;
-        }
-    });
+                                      try
+                                      {
+                                          bg2e::utils::TextureCache::get().load(
+                                              _appDelegate->stage()->engine(),
+                                              selectedPath);
+                                          return true;
+                                      }
+                                      catch (const std::exception& exception)
+                                      {
+                                          bg2e_log_warning << "Could not load environment image: "
+                                                           << exception.what() << bg2e_log_end;
+                                          return false;
+                                      }
+                                  });
 
-    setDrawFunction([&]() {
-        _sceneTree.setRootNode(_appDelegate->stage()->editableRoot().get());
+    setDrawFunction([&]()
+                    {
+                        _sceneTree.setRootNode(_appDelegate->stage()->editableRoot().get());
 
-        const float avail = bg2e::ui::Layout::getContentRegionAvailHeight();
-        const float treeHeight = avail * 0.5f;
+                        const float avail = bg2e::ui::Layout::getContentRegionAvailHeight();
+                        const float treeHeight = avail * 0.5f;
 
-        bg2e::ui::Layout::beginChild("scene_tree", 0.0f, treeHeight);
-        _sceneTree.draw();
-        bg2e::ui::Layout::endChild();
+                        bg2e::ui::Layout::beginChild("scene_tree", 0.0f, treeHeight);
+                        _sceneTree.draw();
+                        bg2e::ui::Layout::endChild();
 
-        bg2e::ui::Layout::beginChild("node_editor");
-        _nodeEditor.draw();
-        bg2e::ui::Layout::endChild();
-    });
+                        bg2e::ui::Layout::beginChild("node_editor");
+                        _nodeEditor.draw();
+                        bg2e::ui::Layout::endChild();
+                    });
 }
 
 void SceneEditor::drawChainComponentControls()

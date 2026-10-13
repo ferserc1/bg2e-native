@@ -22,37 +22,35 @@
 
 #include <algorithm>
 
-
 namespace bg2e::ui {
 
 SubmeshSelector::~SubmeshSelector()
 {
-    
 }
 
 void SubmeshSelector::init(std::shared_ptr<manipulation::SelectionManager> sm)
 {
     _selectionMgr = sm;
     _selectionMgr->onSelect([&]()
-    {
-        _currentSelection.node.reset();
-        _currentSelection.drawable.reset();
-        _currentSelection.mesh.reset();
-        _currentSelection.submesh = -1;
-        for (auto item : _selectionMgr->selectedItems())
-        {
-            if (!item->drawable.expired())
-            {
-                _currentSelection.node = item->node;
-                _currentSelection.drawable = item->drawable;
-                _currentSelection.mesh = item->mesh;
-                _currentSelection.submesh = item->submesh;
-                break;
-            }
-        }
-        clearWidgets();
-        initWidgets();
-    });
+                            {
+                                _currentSelection.node.reset();
+                                _currentSelection.drawable.reset();
+                                _currentSelection.mesh.reset();
+                                _currentSelection.submesh = -1;
+                                for (auto item : _selectionMgr->selectedItems())
+                                {
+                                    if (!item->drawable.expired())
+                                    {
+                                        _currentSelection.node = item->node;
+                                        _currentSelection.drawable = item->drawable;
+                                        _currentSelection.mesh = item->mesh;
+                                        _currentSelection.submesh = item->submesh;
+                                        break;
+                                    }
+                                }
+                                clearWidgets();
+                                initWidgets();
+                            });
 }
 
 std::shared_ptr<scene::Drawable> SubmeshSelector::editDrawable()
@@ -91,7 +89,7 @@ std::vector<uint32_t> SubmeshSelector::selectedItems() const
 
     if (curDrawable.get())
     {
-        for (auto & item : _selectionMgr->selectedItems())
+        for (auto& item : _selectionMgr->selectedItems())
         {
             auto itemMesh = item->mesh.lock();
             if (itemMesh.get() == curDrawable.get())
@@ -112,15 +110,12 @@ void SubmeshSelector::addSelectedItem(uint32_t index) const
         !_selectionMgr->isSelected(
             node,
             drawable,
-            index
-        )
-    )
+            index))
     {
         _selectionMgr->addToSelectedItems(
             node,
             drawable,
-            index
-        );
+            index);
     }
 }
 
@@ -138,7 +133,6 @@ bool SubmeshSelector::draw()
     {
         drawableName = "Drawable";
     }
-
 
     Text::separator("Submeshes");
     SelectableList::beginList(1);
@@ -178,13 +172,10 @@ void SubmeshSelector::cleanup()
 
 void SubmeshSelector::initWidgets()
 {
-
-
 }
 
 void SubmeshSelector::clearWidgets()
 {
-
 }
 
 }

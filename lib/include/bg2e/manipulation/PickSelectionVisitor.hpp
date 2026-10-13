@@ -33,17 +33,17 @@ class GizmoComponent;
 
 // What kind of element a pick identifier refers to. Determines how the
 // SelectionManager reacts to a hit.
-enum class PickKind {
-    Drawable,        // regular drawable submesh -> submesh selection
-    Gizmo,           // light/environment/camera gizmo -> node selection
-    TransformGizmo   // transform gizmo part -> transform interaction
+enum class PickKind
+{
+    Drawable,      // regular drawable submesh -> submesh selection
+    Gizmo,         // light/environment/camera gizmo -> node selection
+    TransformGizmo // transform gizmo part -> transform interaction
 };
 
 class BG2E_API PickSelectionVisitor : public bg2e::scene::NodeVisitor {
-public:
-    struct SubmeshLookupData
-    {
-        bg2e::scene::Node * node;
+  public:
+    struct SubmeshLookupData {
+        bg2e::scene::Node* node;
         uint32_t submeshIndex;
         PickKind kind = PickKind::Drawable;
     };
@@ -57,33 +57,32 @@ public:
     // transform manipulation is disabled).
     void pick(
         bg2e::scene::Node* sceneRoot,
-        const glm::mat4 & viewMatrix,
-        const glm::mat4 & projMatrix,
+        const glm::mat4& viewMatrix,
+        const glm::mat4& projMatrix,
         VkCommandBuffer cmd,
         VkPipelineLayout layout,
         VkPipeline depthPipeline,
         VkPipeline noDepthPipeline,
-        const VkExtent2D & renderExtent,
-        bool includeTransformGizmo
-    );
+        const VkExtent2D& renderExtent,
+        bool includeTransformGizmo);
 
-    void visit(bg2e::scene::Node *) override;
-    void didVisit(bg2e::scene::Node * node) override;
+    void visit(bg2e::scene::Node*) override;
+    void didVisit(bg2e::scene::Node* node) override;
 
-    SubmeshLookupData * findObject(uint32_t identifier);
+    SubmeshLookupData* findObject(uint32_t identifier);
 
-protected:
+  protected:
     VkCommandBuffer _commandBuffer = VK_NULL_HANDLE;
     VkPipelineLayout _layout = VK_NULL_HANDLE;
     VkPipeline _depthPipeline = VK_NULL_HANDLE;
     VkPipeline _noDepthPipeline = VK_NULL_HANDLE;
     VkPipeline _currentBoundPipeline = VK_NULL_HANDLE;
-    VkExtent2D _renderExtent { 0, 0 };
+    VkExtent2D _renderExtent{0, 0};
 
     glm::mat4 _viewMatrix;
     glm::mat4 _projMatrix;
 
-    glm::mat4 _currentTransform { 1.0f };
+    glm::mat4 _currentTransform{1.0f};
     std::stack<glm::mat4> _transformStack;
 
     std::unordered_map<uint32_t, SubmeshLookupData> _lookupNodes;
@@ -92,16 +91,16 @@ protected:
     // drawn after it (depth-disabled) so they sit on top of the whole scene,
     // mirroring the visual gizmo renderer.
     struct PendingGizmo {
-        bg2e::scene::Node * node;
-        GizmoComponent * gizmo;
+        bg2e::scene::Node* node;
+        GizmoComponent* gizmo;
         glm::mat4 world;
         uint32_t identifier;
     };
     std::vector<PendingGizmo> _pendingGizmos;
 
     // The transform gizmo is drawn last over a cleared depth buffer.
-    GizmoComponent * _pendingTransformGizmo = nullptr;
-    glm::mat4 _pendingTransformWorld { 1.0f };
+    GizmoComponent* _pendingTransformGizmo = nullptr;
+    glm::mat4 _pendingTransformWorld{1.0f};
     bool _includeTransformGizmo = true;
 
     void bindPipeline(VkPipeline pipeline);

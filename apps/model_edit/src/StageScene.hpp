@@ -29,18 +29,18 @@
 #include <memory>
 #include <filesystem>
 
-#include "bg2e/scene/Scene.hpp"
+#include <bg2e/scene/Scene.hpp>
 
 class AppDelegate;
 
 class StageScene {
-public:
-    StageScene(bg2e::render::Engine * engine, AppDelegate * appDelegate);
-    
+  public:
+    StageScene(bg2e::render::Engine* engine, AppDelegate* appDelegate);
+
     std::shared_ptr<bg2e::scene::Node> init();
-    
+
     void loadModel(const std::filesystem::path& path);
-    
+
     void saveModel(const std::filesystem::path& path);
 
     void close();
@@ -52,69 +52,110 @@ public:
 
     void importGltf(const std::filesystem::path& path);
 
-    inline bool multiMeshScene() const { return _targetNames.size() > 0; }
-    inline const std::vector<std::string>& targetNames() const { return _targetNames; }
+    inline bool multiMeshScene() const
+    {
+        return _targetNames.size() > 0;
+    }
+    inline const std::vector<std::string>& targetNames() const
+    {
+        return _targetNames;
+    }
     void selectTargetNode(uint32_t index);
-    inline uint32_t selectedTargetNodeIndex() const { return _selectedTargetNode; }
-    
-    inline std::shared_ptr<bg2e::scene::Node> sceneRoot() const { return _sceneRoot; }
-    
-    inline bg2e::scene::EnvironmentComponent * environment() { return _environment.lock().get(); }
-    inline bg2e::scene::EnvironmentComponent * environment() const { return _environment.lock().get(); }
-    
-    inline bg2e::scene::OrbitCameraComponent * orbitCamera() { return _orbitCamera; }
-    inline bg2e::scene::OrbitCameraComponent * orbitCamera() const { return _orbitCamera; }
+    inline uint32_t selectedTargetNodeIndex() const
+    {
+        return _selectedTargetNode;
+    }
 
-    bg2e::scene::CameraComponent * cameraComponent();
-    bg2e::scene::CameraComponent * cameraComponent() const;
+    inline std::shared_ptr<bg2e::scene::Node> sceneRoot() const
+    {
+        return _sceneRoot;
+    }
+
+    inline bg2e::scene::EnvironmentComponent* environment()
+    {
+        return _environment.lock().get();
+    }
+    inline bg2e::scene::EnvironmentComponent* environment() const
+    {
+        return _environment.lock().get();
+    }
+
+    inline bg2e::scene::OrbitCameraComponent* orbitCamera()
+    {
+        return _orbitCamera;
+    }
+    inline bg2e::scene::OrbitCameraComponent* orbitCamera() const
+    {
+        return _orbitCamera;
+    }
+
+    bg2e::scene::CameraComponent* cameraComponent();
+    bg2e::scene::CameraComponent* cameraComponent() const;
 
     // Selects an analyzed view of the currently loaded model and applies it to
     // the orbit camera without modifying OrbitCameraComponent::centerOnTarget.
     void centerCameraOnTarget();
 
-    inline bool isModelValid() const { return _targetNode.get() != nullptr; }
+    inline bool isModelValid() const
+    {
+        return _targetNode.get() != nullptr;
+    }
     std::shared_ptr<bg2e::scene::Drawable> targetDrawable();
     // Node that directly owns the active model's DrawableComponent. It is the
     // lightmap bake target; nullptr when no model is loaded.
-    std::shared_ptr<bg2e::scene::Node> targetModelNode() { return _targetModelNode; }
+    std::shared_ptr<bg2e::scene::Node> targetModelNode()
+    {
+        return _targetModelNode;
+    }
 
     void cleanup();
 
     bool checkUnsavedChanges();
 
-    inline Document * document() { return _document.get(); }
+    inline Document* document()
+    {
+        return _document.get();
+    }
 
     const std::vector<std::shared_ptr<bg2e::scene::LightComponent>>& lights() const
     {
         return _sceneRoot->scene()->lightComponents();
     }
     void iterateLights(std::function<void(std::shared_ptr<bg2e::scene::LightComponent>)> cb);
-    [[nodiscard]] uint32_t maxLights() const { return 5; }
+    [[nodiscard]] uint32_t maxLights() const
+    {
+        return 5;
+    }
 
     void addLight();
     void removeLight(uint32_t index);
 
     void showFloor(bool show);
-    [[nodiscard]] bool isFloorVisible() const { return _showFloor; }
+    [[nodiscard]] bool isFloorVisible() const
+    {
+        return _showFloor;
+    }
 
     void setFlorHeight(float h);
-    [[nodiscard]] float floorHeight() const { return _floorHeight; }
+    [[nodiscard]] float floorHeight() const
+    {
+        return _floorHeight;
+    }
 
     void saveEnvironmentSettings();
     void saveEnvironmentSettings(const std::filesystem::path& path);
     void restoreEnvironmentSettings();
     void restoreEnvironmentSettings(const std::filesystem::path& path);
 
+  protected:
+    bg2e::render::Engine* _engine;
 
-protected:
-    bg2e::render::Engine * _engine;
-
-    AppDelegate * _appDelegate;
+    AppDelegate* _appDelegate;
 
     std::unique_ptr<Document> _document;
 
     std::shared_ptr<bg2e::scene::Node> _sceneRoot;
-    
+
     // This is the node where the loaded model is placed
     std::shared_ptr<bg2e::scene::Node> _targetNode = nullptr;
 
@@ -148,21 +189,20 @@ protected:
     float _floorHeight = 0.0f;
 
     std::weak_ptr<bg2e::scene::EnvironmentComponent> _environment;
-    bg2e::scene::OrbitCameraComponent * _orbitCamera = nullptr;
+    bg2e::scene::OrbitCameraComponent* _orbitCamera = nullptr;
     std::unique_ptr<bg2e::render::ViewpointAnalyzer> _viewpointAnalyzer;
     std::shared_ptr<bg2e::scene::Node> _environmentNode;
     bool _restoringEnvironment = false;
     std::shared_ptr<bg2e::app::SafeUpdateToken> _restoreToken;
 
-// The "name" parameter is mandatory if the scene is not build yet
+    // The "name" parameter is mandatory if the scene is not build yet
     std::shared_ptr<bg2e::scene::Node> createLightNode(
         bg2e::base::Light::LightType type,
         float azimuth,
         float elevation,
         float distance = 2.0f,
         const bg2e::base::Color& color = bg2e::base::Color::White(),
-        const std::string & name = ""
-    );
+        const std::string& name = "");
 
     std::shared_ptr<bg2e::scene::Node> createFloorNode();
 };

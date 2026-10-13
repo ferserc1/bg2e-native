@@ -25,26 +25,53 @@ namespace bg2e {
 namespace scene {
 
 class BG2E_API CameraComponent : public Component {
-public:
+  public:
     BG2E_COMPONENT_TYPE_NAME("Camera");
-    
+
     CameraComponent();
     virtual ~CameraComponent();
-    
-    const base::Camera& camera() const { return _camera; }
-    base::Camera& camera() { return _camera; }
-    
-    math::Projection * projection() { return _camera.projection(); }
-    const math::Projection * projection() const { return _camera.projection(); }
+
+    const base::Camera& camera() const
+    {
+        return _camera;
+    }
+    base::Camera& camera()
+    {
+        return _camera;
+    }
+
+    math::Projection* projection()
+    {
+        return _camera.projection();
+    }
+    const math::Projection* projection() const
+    {
+        return _camera.projection();
+    }
     template <class T>
-    T* projection() { return _camera.projection<T>(); }
+    T* projection()
+    {
+        return _camera.projection<T>();
+    }
     template <class T>
-    const T* projection() const { return _camera.projection<T>(); }
-    void setProjection(math::Projection * proj) { _camera.setProjection(proj); }
-    void setProjection(std::shared_ptr<math::Projection> proj) { _camera.setProjection(proj); }
-    const glm::mat4& projectionMatrix() const { return _camera.projectionMatrix(); }
+    const T* projection() const
+    {
+        return _camera.projection<T>();
+    }
+    void setProjection(math::Projection* proj)
+    {
+        _camera.setProjection(proj);
+    }
+    void setProjection(std::shared_ptr<math::Projection> proj)
+    {
+        _camera.setProjection(proj);
+    }
+    const glm::mat4& projectionMatrix() const
+    {
+        return _camera.projectionMatrix();
+    }
     const glm::mat4& viewMatrix() const;
-    
+
     void resizeViewport(const math::Viewport& vp) override;
     void update(float delta) override;
 
@@ -52,14 +79,13 @@ public:
 
     void deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path& basePath, render::Engine& engine) override;
     std::shared_ptr<json::JsonNode> serialize(const std::filesystem::path& basePath) override;
-    
-protected:
+
+  protected:
     base::Camera _camera;
 
     // This matrix is obtained from the node inverse view matrix.
-    mutable glm::mat4 _viewMatrix{ 1.0f };
+    mutable glm::mat4 _viewMatrix{1.0f};
 };
-
 
 }
 }

@@ -31,19 +31,25 @@ VkShaderStageFlags shaderStageToVkFlags(ShaderStage stage);
 // Validates the PipelineLayoutDescription at construction: at most one
 // PushConstantRange per ShaderStage. Throws std::runtime_error on failure.
 class BG2E_API PipelineLayout : public gpu::PipelineLayout {
-public:
+  public:
     PipelineLayout(gpu::Device* gpuDevice, VkDevice device, const gpu::PipelineLayoutDescription& description);
     ~PipelineLayout() override;
 
     bool isValid() const override;
     void cleanup() override;
 
-    VkPipelineLayout handle() const { return _pipelineLayout; }
+    VkPipelineLayout handle() const
+    {
+        return _pipelineLayout;
+    }
 
     VkDescriptorSetLayout descriptorSetLayout(uint32_t set) const;
-    const gpu::PipelineLayoutDescription& description() const { return _description; }
+    const gpu::PipelineLayoutDescription& description() const
+    {
+        return _description;
+    }
 
-private:
+  private:
     VkDevice _device{VK_NULL_HANDLE};
     VkPipelineLayout _pipelineLayout{VK_NULL_HANDLE};
     gpu::PipelineLayoutDescription _description;

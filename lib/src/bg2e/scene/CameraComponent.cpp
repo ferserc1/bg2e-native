@@ -20,18 +20,16 @@
 #include <bg2e/json/NodeReader.hpp>
 #include <bg2e/scene/ComponentFactoryRegistry.hpp>
 
-#include "bg2e/scene/Node.hpp"
+#include <bg2e/scene/Node.hpp>
 
 namespace bg2e::scene {
 
 CameraComponent::CameraComponent()
 {
-
 }
 
 CameraComponent::~CameraComponent()
 {
-
 }
 
 std::shared_ptr<Component> CameraComponent::clone() const
@@ -67,15 +65,18 @@ void CameraComponent::update(float /* delta */)
 void CameraComponent::deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path& /* basePath */, [[maybe_unused]] render::Engine& engine)
 {
     json::ObjectReader reader(jsonData);
-    if (auto camera = reader.getObject("cameraData")) _camera.deserialize(camera->node());
+    if (auto camera = reader.getObject("cameraData"))
+    {
+        _camera.deserialize(camera->node());
+    }
 }
 
 std::shared_ptr<json::JsonNode> CameraComponent::serialize(const std::filesystem::path& basePath)
 {
     using namespace bg2e::json;
     auto compData = Component::serialize(basePath);
-    JsonObject & obj = compData->objectValue();
-    
+    JsonObject& obj = compData->objectValue();
+
     obj["cameraData"] = _camera.serialize();
 
     return compData;

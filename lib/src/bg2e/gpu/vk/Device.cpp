@@ -55,8 +55,7 @@ void Device::create(gpu::Instance* instance, gpu::PhysicalDevice* physicalDevice
 
     std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
     std::set<uint32_t> uniqueQueueFamilies = {
-        indices.graphics.value()
-    };
+        indices.graphics.value()};
 
     if (!offscreen)
     {
@@ -162,8 +161,7 @@ void Device::create(gpu::Instance* instance, gpu::PhysicalDevice* physicalDevice
             VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME,
             VK_KHR_RAY_QUERY_EXTENSION_NAME,
             VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME,
-            VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME
-        };
+            VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME};
 
         uint32_t extensionCount = 0;
         vkEnumerateDeviceExtensionProperties(vkPhysDevice->handle(), nullptr, &extensionCount, nullptr);
@@ -247,7 +245,10 @@ void Device::create(gpu::Instance* instance, gpu::PhysicalDevice* physicalDevice
 
     // Initialize command pools for each queue
     _graphicsQueue.initCommandPool(_device, this);
-    if (!offscreen) _presentQueue.initCommandPool(_device, this);
+    if (!offscreen)
+    {
+        _presentQueue.initCommandPool(_device, this);
+    }
     _transferQueue.initCommandPool(_device, this);
 
     // --- VMA allocator ---
@@ -255,9 +256,9 @@ void Device::create(gpu::Instance* instance, gpu::PhysicalDevice* physicalDevice
 
     VmaAllocatorCreateInfo allocatorInfo{};
     allocatorInfo.physicalDevice = vkPhysDevice->handle();
-    allocatorInfo.device         = _device;
-    allocatorInfo.instance       = vkInst->vkInstanceHnd();
-    allocatorInfo.flags          = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
+    allocatorInfo.device = _device;
+    allocatorInfo.instance = vkInst->vkInstanceHnd();
+    allocatorInfo.flags = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
 
     VK_ASSERT(vmaCreateAllocator(&allocatorInfo, &_allocator));
 
@@ -269,11 +270,17 @@ void Device::create(gpu::Instance* instance, gpu::PhysicalDevice* physicalDevice
 
 void Device::cleanup()
 {
-    if (_device != VK_NULL_HANDLE) {
-        _submissions->drain([this] {
-            auto result = vkDeviceWaitIdle(_device);
-            if (result != VK_SUCCESS) throw std::runtime_error("Vulkan device cleanup wait failed");
-        }, true);
+    if (_device != VK_NULL_HANDLE)
+    {
+        _submissions->drain([this]
+                            {
+                                auto result = vkDeviceWaitIdle(_device);
+                                if (result != VK_SUCCESS)
+                                {
+                                    throw std::runtime_error("Vulkan device cleanup wait failed");
+                                }
+                            },
+                            true);
     }
     _graphicsQueue.destroyCommandPool();
     _presentQueue.destroyCommandPool();
@@ -295,8 +302,7 @@ void Device::cleanup()
 
             vmaFreeStatsString(
                 _allocator,
-                statsString
-            );
+                statsString);
         }
 
         vmaDestroyAllocator(_allocator);
@@ -311,12 +317,18 @@ void Device::cleanup()
 
 void Device::waitIdle()
 {
-    if (_device == VK_NULL_HANDLE) return;
-    _submissions->drain([this] {
-        auto result = vkDeviceWaitIdle(_device);
-        if (result != VK_SUCCESS)
-            throw std::runtime_error("vkDeviceWaitIdle failed: " + std::to_string(result));
-    });
+    if (_device == VK_NULL_HANDLE)
+    {
+        return;
+    }
+    _submissions->drain([this]
+                        {
+                            auto result = vkDeviceWaitIdle(_device);
+                            if (result != VK_SUCCESS)
+                            {
+                                throw std::runtime_error("vkDeviceWaitIdle failed: " + std::to_string(result));
+                            }
+                        });
 }
 
 bool Device::isValid() const
@@ -385,15 +397,29 @@ std::shared_ptr<gpu::Image> Device::createImage(const ImageDescription& descript
     if (description.type == ImageType::Cubemap)
     {
         VkImageUsageFlags usage = 0;
-        if (hasFlag(description.usage, ImageUsage::Sampled))         { usage |= VK_IMAGE_USAGE_SAMPLED_BIT; }
-        if (hasFlag(description.usage, ImageUsage::Storage))         { usage |= VK_IMAGE_USAGE_STORAGE_BIT; }
-        if (hasFlag(description.usage, ImageUsage::TransferSrc))     { usage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT; }
-        if (hasFlag(description.usage, ImageUsage::TransferDst))     { usage |= VK_IMAGE_USAGE_TRANSFER_DST_BIT; }
-        if (hasFlag(description.usage, ImageUsage::ColorAttachment)) { usage |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT; }
+        if (hasFlag(description.usage, ImageUsage::Sampled))
+        {
+            usage |= VK_IMAGE_USAGE_SAMPLED_BIT;
+        }
+        if (hasFlag(description.usage, ImageUsage::Storage))
+        {
+            usage |= VK_IMAGE_USAGE_STORAGE_BIT;
+        }
+        if (hasFlag(description.usage, ImageUsage::TransferSrc))
+        {
+            usage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+        }
+        if (hasFlag(description.usage, ImageUsage::TransferDst))
+        {
+            usage |= VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+        }
+        if (hasFlag(description.usage, ImageUsage::ColorAttachment))
+        {
+            usage |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+        }
         img->buildCubemapImage(
             this, description.size, description.format,
-            usage, mipLevels, description.debugName
-        );
+            usage, mipLevels, description.debugName);
     }
     // Depth images need buildDepthImage to set the correct aspect mask.
     else if (isDepthFormat(description.format))
@@ -403,12 +429,30 @@ std::shared_ptr<gpu::Image> Device::createImage(const ImageDescription& descript
     else
     {
         VkImageUsageFlags usage = 0;
-        if (hasFlag(description.usage, ImageUsage::Sampled))         { usage |= VK_IMAGE_USAGE_SAMPLED_BIT; }
-        if (hasFlag(description.usage, ImageUsage::Storage))         { usage |= VK_IMAGE_USAGE_STORAGE_BIT; }
-        if (hasFlag(description.usage, ImageUsage::TransferSrc))     { usage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT; }
-        if (hasFlag(description.usage, ImageUsage::TransferDst))     { usage |= VK_IMAGE_USAGE_TRANSFER_DST_BIT; }
-        if (hasFlag(description.usage, ImageUsage::ColorAttachment)) { usage |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT; }
-        if (hasFlag(description.usage, ImageUsage::DepthStencil))    { usage |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT; }
+        if (hasFlag(description.usage, ImageUsage::Sampled))
+        {
+            usage |= VK_IMAGE_USAGE_SAMPLED_BIT;
+        }
+        if (hasFlag(description.usage, ImageUsage::Storage))
+        {
+            usage |= VK_IMAGE_USAGE_STORAGE_BIT;
+        }
+        if (hasFlag(description.usage, ImageUsage::TransferSrc))
+        {
+            usage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+        }
+        if (hasFlag(description.usage, ImageUsage::TransferDst))
+        {
+            usage |= VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+        }
+        if (hasFlag(description.usage, ImageUsage::ColorAttachment))
+        {
+            usage |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+        }
+        if (hasFlag(description.usage, ImageUsage::DepthStencil))
+        {
+            usage |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+        }
 
         img->buildSampledImage(this, description.size, description.format, usage, description.debugName);
     }

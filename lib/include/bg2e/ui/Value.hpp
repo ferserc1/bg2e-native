@@ -30,14 +30,13 @@ namespace ui {
 
 // Non-numeric value editors (text fields, color picker and combo boxes)
 class BG2E_API Value {
-public:
+  public:
     static bool text(
         const std::string& label,
         std::string& value,
         int maxLength = 200,
         bool sameLine = false,
-        bool disabled = false
-    );
+        bool disabled = false);
 
     // ID-only text input: no visible label on the left, the id parameter
     // is only used as ImGui identifier. Pass readOnly = true to render a
@@ -47,48 +46,43 @@ public:
         std::string& value,
         bool readOnly,
         int maxLength = 200,
-        bool sameLine = false
-    );
+        bool sameLine = false);
 
     static bool textWithHint(
         const std::string& label,
         const std::string& hint,
         std::string& value,
         int maxLength = 200,
-        bool sameLine = false
-    );
+        bool sameLine = false);
 
     static bool colorPicker(
         const std::string& label,
-        bg2e::base::Color & color,
-        bool sameLine = false
-    );
+        bg2e::base::Color& color,
+        bool sameLine = false);
 
     static bool comboBox(
         const std::string& label,
         const std::vector<std::string>& items,
-        uint32_t &selected,
+        uint32_t& selected,
         bool sameLine = false,
-        bool fitPreview = false
-    );
+        bool fitPreview = false);
 
     static bool comboBox(
         const std::vector<std::string>& items,
-        uint32_t &selected,
+        uint32_t& selected,
         const std::string& id,
         bool sameLine = false,
-        bool fitPreview = false
-    );
+        bool fitPreview = false);
 
     typedef std::function<void(std::vector<std::string>&)> ItemListCallback;
 
     static bool comboBox(
         const std::string& label,
         ItemListCallback itemsCb,
-        uint32_t &selected,
+        uint32_t& selected,
         bool sameLine = false,
-        bool fitPreview = false
-    ) {
+        bool fitPreview = false)
+    {
         std::vector<std::string> items;
         itemsCb(items);
         return Value::comboBox(label, items, selected, sameLine, fitPreview);
@@ -96,11 +90,11 @@ public:
 
     static bool comboBox(
         ItemListCallback itemsCb,
-        uint32_t &selected,
+        uint32_t& selected,
         const std::string& id,
         bool sameLine = false,
-        bool fitPreview = false
-    ) {
+        bool fitPreview = false)
+    {
         std::vector<std::string> items;
         itemsCb(items);
         return Value::comboBox(items, selected, id, sameLine, fitPreview);

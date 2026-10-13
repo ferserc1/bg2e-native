@@ -37,19 +37,31 @@ namespace bg2e::render {
  *  the layer count.
  */
 class BG2E_API BlueNoise {
-public:
+  public:
     explicit BlueNoise(Engine* engine);
     ~BlueNoise();
 
     void build();
     void cleanup();
 
-    VkImageView imageView() const { return _imageView; }
-    VkSampler sampler() const { return _sampler; }
-    glm::uvec2 size() const { return _size; }
-    uint32_t layerCount() const { return _layerCount; }
+    VkImageView imageView() const
+    {
+        return _imageView;
+    }
+    VkSampler sampler() const
+    {
+        return _sampler;
+    }
+    glm::uvec2 size() const
+    {
+        return _size;
+    }
+    uint32_t layerCount() const
+    {
+        return _layerCount;
+    }
 
-private:
+  private:
     Engine* _engine = nullptr;
 
     VkImage _image = VK_NULL_HANDLE;

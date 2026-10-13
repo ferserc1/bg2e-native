@@ -26,18 +26,31 @@ namespace scene {
 class Node;
 
 class NodeVisitor {
-public:
+  public:
     virtual ~NodeVisitor() = default;
-    
-    virtual void visit(Node *) {}
-    virtual void didVisit(Node *) {}
-    
-    inline void setIgnoreDisabled(bool i) { _ignoreDisabled = i; }
-    inline bool ignoreDisabled() const { return _ignoreDisabled; }
-    
-    virtual bool cancel() { return false; }
-    
-protected:
+
+    virtual void visit(Node*)
+    {
+    }
+    virtual void didVisit(Node*)
+    {
+    }
+
+    inline void setIgnoreDisabled(bool i)
+    {
+        _ignoreDisabled = i;
+    }
+    inline bool ignoreDisabled() const
+    {
+        return _ignoreDisabled;
+    }
+
+    virtual bool cancel()
+    {
+        return false;
+    }
+
+  protected:
     bool _ignoreDisabled = false;
 };
 

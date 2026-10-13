@@ -30,7 +30,7 @@ namespace bg2e {
 namespace app {
 
 class BG2E_API FileHistory {
-public:
+  public:
     static FileHistory& get();
 
     // Well-known type names (registered automatically in the constructor)
@@ -54,11 +54,11 @@ public:
 
     static constexpr size_t MaxEntriesPerType = 32;
 
-protected:
+  protected:
     FileHistory();
     virtual ~FileHistory() = default;
 
-    static FileHistory * g_singleton;
+    static FileHistory* g_singleton;
 
     std::unordered_map<std::string, FileDialog::FileFilters> _typeFilters;
     std::unordered_map<std::string, std::vector<std::filesystem::path>> _histories;

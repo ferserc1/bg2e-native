@@ -20,9 +20,8 @@
 #include <AppDelegate.hpp>
 
 Document::Document(AppDelegate* del)
-    :_appDelegate(del)
+    : _appDelegate(del)
 {
-
 }
 
 void Document::setPath(const std::filesystem::path& path)
@@ -69,4 +68,3 @@ void Document::updateStatus()
         _appDelegate->saveStatus()->setText("All changes saved");
     }
 }
-

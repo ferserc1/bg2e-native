@@ -16,19 +16,18 @@ using namespace bg2e;
 namespace {
 
 reflection::TypeRegistration<scene::EnvironmentComponent> _environmentReflection(
-    [](reflection::TypeInfoBuilder<scene::EnvironmentComponent>& t) {
+    [](reflection::TypeInfoBuilder<scene::EnvironmentComponent>& t)
+    {
         t.displayName("Environment");
         t.property(
-            "environmentImage",
-            &scene::EnvironmentComponent::environmentImage,
-            static_cast<void(scene::EnvironmentComponent::*)(const std::string&)>(
-                &scene::EnvironmentComponent::setEnvironmentImage
-            )
-        )
+             "environmentImage",
+             &scene::EnvironmentComponent::environmentImage,
+             static_cast<void (scene::EnvironmentComponent::*)(const std::string&)>(
+                 &scene::EnvironmentComponent::setEnvironmentImage))
             .displayName("Environment Image")
             .category("Environment")
             .tooltip("Equirectangular HDR or image used for environment lighting")
-            .resource("Environment Images", { "hdr", "exr", "jpg", "jpeg", "png", "bmp", "webp" });
+            .resource("Environment Images", {"hdr", "exr", "jpg", "jpeg", "png", "bmp", "webp"});
     });
 
 }

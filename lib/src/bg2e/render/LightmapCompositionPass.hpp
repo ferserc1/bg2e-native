@@ -25,9 +25,8 @@
 
 namespace bg2e::render {
 
-class LightmapCompositionPass
-{
-public:
+class LightmapCompositionPass {
+  public:
     explicit LightmapCompositionPass(Engine* engine);
     ~LightmapCompositionPass();
 
@@ -45,7 +44,7 @@ public:
 
     void cleanup();
 
-private:
+  private:
     Engine* _engine = nullptr;
     VkPipeline _pipeline = VK_NULL_HANDLE;
     VkPipelineLayout _pipelineLayout = VK_NULL_HANDLE;

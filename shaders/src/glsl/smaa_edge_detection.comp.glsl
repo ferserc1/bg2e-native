@@ -34,24 +34,29 @@
 layout(set = 0, binding = 0) uniform sampler2D inputImage;
 layout(rg8, set = 0, binding = 1) uniform image2D edgesOutput;
 
-layout(push_constant) uniform PushConstant {
+layout(push_constant) uniform PushConstant
+{
     vec2 texelSize;
-} pc;
+}
+pc;
 
 layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
 
 // SMAA_RT_METRICS = (1/width, 1/height, width, height)
 vec4 rtMetrics;
 
-float luma(vec2 uv) {
+float luma(vec2 uv)
+{
     const vec3 w = vec3(0.2126, 0.7152, 0.0722);
     return dot(textureLod(inputImage, uv, 0.0).rgb, w);
 }
 
-void main() {
+void main()
+{
     ivec2 size = imageSize(edgesOutput);
     ivec2 pixelCoord = ivec2(gl_GlobalInvocationID.xy);
-    if (pixelCoord.x >= size.x || pixelCoord.y >= size.y) {
+    if (pixelCoord.x >= size.x || pixelCoord.y >= size.y)
+    {
         return;
     }
 
@@ -60,7 +65,7 @@ void main() {
 
     // Neighbor offsets normally computed in the SMAA vertex shader.
     vec4 offset0 = rtMetrics.xyxy * vec4(-1.0, 0.0, 0.0, -1.0) + texcoord.xyxy; // left / top
-    vec4 offset1 = rtMetrics.xyxy * vec4( 1.0, 0.0, 0.0,  1.0) + texcoord.xyxy; // right / bottom
+    vec4 offset1 = rtMetrics.xyxy * vec4(1.0, 0.0, 0.0, 1.0) + texcoord.xyxy;   // right / bottom
     vec4 offset2 = rtMetrics.xyxy * vec4(-2.0, 0.0, 0.0, -2.0) + texcoord.xyxy; // leftleft / toptop
 
     vec2 threshold = vec2(SMAA_THRESHOLD);
@@ -68,20 +73,21 @@ void main() {
     // Luma of the current pixel and its left/top neighbors.
     float L = luma(texcoord);
     float Lleft = luma(offset0.xy);
-    float Ltop  = luma(offset0.zw);
+    float Ltop = luma(offset0.zw);
 
     vec4 delta;
     delta.xy = abs(L - vec2(Lleft, Ltop));
     vec2 edges = step(threshold, delta.xy);
 
     // No edge here: write zero (the edges image is not cleared each frame).
-    if (dot(edges, vec2(1.0)) == 0.0) {
+    if (dot(edges, vec2(1.0)) == 0.0)
+    {
         imageStore(edgesOutput, pixelCoord, vec4(0.0));
         return;
     }
 
     // Right / bottom deltas.
-    float Lright  = luma(offset1.xy);
+    float Lright = luma(offset1.xy);
     float Lbottom = luma(offset1.zw);
     delta.zw = abs(L - vec2(Lright, Lbottom));
 
@@ -90,7 +96,7 @@ void main() {
 
     // Left-left / top-top deltas.
     float Lleftleft = luma(offset2.xy);
-    float Ltoptop   = luma(offset2.zw);
+    float Ltoptop = luma(offset2.zw);
     delta.zw = abs(vec2(Lleft, Ltop) - vec2(Lleftleft, Ltoptop));
 
     // Final maximum delta.

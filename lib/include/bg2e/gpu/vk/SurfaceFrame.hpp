@@ -28,38 +28,92 @@ namespace vk {
 class Image;
 
 class SurfaceFrame : public gpu::SurfaceFrame {
-public:
-    gpu::Image* colorImage() const override { return _colorImage; }
-    gpu::Image* depthImage() const override { return _depthImage; }
-    bool        isValid()    const override { return _colorImage != nullptr; }
+  public:
+    gpu::Image* colorImage() const override
+    {
+        return _colorImage;
+    }
+    gpu::Image* depthImage() const override
+    {
+        return _depthImage;
+    }
+    bool isValid() const override
+    {
+        return _colorImage != nullptr;
+    }
 
-    void setColorImage(gpu::Image* img)        { _colorImage = img; }
-    void setDepthImage(gpu::Image* img)        { _depthImage = img; }
-    void setImageIndex(uint32_t index)         { _imageIndex = index; }
-    void setSwapchain(VkSwapchainKHR sc)       { _swapchain = sc; }
-    void setImageAvailable(VkSemaphore s)      { _imageAvailable = s; }
-    void setRenderFinished(VkSemaphore s)      { _renderFinished = s; }
-    void setInFlightFence(VkFence f)           { _inFlight = f; }
+    void setColorImage(gpu::Image* img)
+    {
+        _colorImage = img;
+    }
+    void setDepthImage(gpu::Image* img)
+    {
+        _depthImage = img;
+    }
+    void setImageIndex(uint32_t index)
+    {
+        _imageIndex = index;
+    }
+    void setSwapchain(VkSwapchainKHR sc)
+    {
+        _swapchain = sc;
+    }
+    void setImageAvailable(VkSemaphore s)
+    {
+        _imageAvailable = s;
+    }
+    void setRenderFinished(VkSemaphore s)
+    {
+        _renderFinished = s;
+    }
+    void setInFlightFence(VkFence f)
+    {
+        _inFlight = f;
+    }
 
-    void requestRecreate() { _recreateRequested = true; }
-    bool recreateRequested() const { return _recreateRequested; }
-    void clearRecreateRequest() { _recreateRequested = false; }
+    void requestRecreate()
+    {
+        _recreateRequested = true;
+    }
+    bool recreateRequested() const
+    {
+        return _recreateRequested;
+    }
+    void clearRecreateRequest()
+    {
+        _recreateRequested = false;
+    }
 
-    uint32_t        imageIndex()     const { return _imageIndex; }
-    VkSwapchainKHR  swapchain()      const { return _swapchain; }
-    VkSemaphore     imageAvailable() const { return _imageAvailable; }
-    VkSemaphore     renderFinished() const { return _renderFinished; }
-    VkFence         inFlightFence()  const { return _inFlight; }
+    uint32_t imageIndex() const
+    {
+        return _imageIndex;
+    }
+    VkSwapchainKHR swapchain() const
+    {
+        return _swapchain;
+    }
+    VkSemaphore imageAvailable() const
+    {
+        return _imageAvailable;
+    }
+    VkSemaphore renderFinished() const
+    {
+        return _renderFinished;
+    }
+    VkFence inFlightFence() const
+    {
+        return _inFlight;
+    }
 
-private:
+  private:
     bool _recreateRequested = false;
-    gpu::Image*    _colorImage     = nullptr;
-    gpu::Image*    _depthImage     = nullptr;
-    uint32_t       _imageIndex     = 0;
-    VkSwapchainKHR _swapchain      = VK_NULL_HANDLE;
-    VkSemaphore    _imageAvailable = VK_NULL_HANDLE;
-    VkSemaphore    _renderFinished = VK_NULL_HANDLE;
-    VkFence        _inFlight       = VK_NULL_HANDLE;
+    gpu::Image* _colorImage = nullptr;
+    gpu::Image* _depthImage = nullptr;
+    uint32_t _imageIndex = 0;
+    VkSwapchainKHR _swapchain = VK_NULL_HANDLE;
+    VkSemaphore _imageAvailable = VK_NULL_HANDLE;
+    VkSemaphore _renderFinished = VK_NULL_HANDLE;
+    VkFence _inFlight = VK_NULL_HANDLE;
 };
 
 }

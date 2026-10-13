@@ -15,6 +15,6 @@ vertex VertexOut vertMain(VertexIn in [[stage_in]])
 {
     VertexOut out;
     out.position = float4(in.position, 1.0);
-    out.uv       = in.texCoord;
+    out.uv = in.texCoord;
     return out;
 }

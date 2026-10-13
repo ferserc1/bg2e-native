@@ -29,14 +29,16 @@
 #include <bg2e/ui/RenderSettingsWindow.hpp>
 
 class AppDelegate : public bg2e::render::DefaultRenderLoopDelegate<bg2e::render::RendererDeferred>,
-	public bg2e::app::InputDelegate,
-	public bg2e::ui::UserInterfaceDelegate
-{
-public:
-    bg2e::render::Renderer * rendererBase() { return this->renderer(); }
+                    public bg2e::app::InputDelegate,
+                    public bg2e::ui::UserInterfaceDelegate {
+  public:
+    bg2e::render::Renderer* rendererBase()
+    {
+        return this->renderer();
+    }
 
-    void init(bg2e::render::Engine * engine) override;
-     
+    void init(bg2e::render::Engine* engine) override;
+
     void swapchainResized(VkExtent2D extent) override;
 
     void update(uint32_t currentFrame,
@@ -48,35 +50,55 @@ public:
         const bg2e::render::vulkan::Image* colorImage,
         const bg2e::render::vulkan::Image* depthImage,
         const bg2e::render::vulkan::Image* msaaDepthImage,
-        bg2e::render::vulkan::FrameResources& frameResources
-    ) override;
+        bg2e::render::vulkan::FrameResources& frameResources) override;
 
-	void drawUI() override;
- 
+    void drawUI() override;
+
     // InputDelegate
     void mouseMove(int x, int y) override;
-    
+
     void mouseButtonDown(int button, int x, int y) override;
-    
+
     void mouseButtonUp(int button, int x, int y) override;
-    
+
     void mouseWheel(int deltaX, int deltaY) override;
 
     void fileDropped(const std::filesystem::path&) override;
-    
+
     void cleanup() override;
-    
+
     // Application resources
-    inline StageScene * stage() const { return _stage.get(); }
-    inline StageScene * stage() { return _stage.get(); }
-    
-    inline bg2e::ui::Workspace& workspace() { return _workspace; }
-    inline const bg2e::ui::Workspace& workspace() const { return _workspace; }
+    inline StageScene* stage() const
+    {
+        return _stage.get();
+    }
+    inline StageScene* stage()
+    {
+        return _stage.get();
+    }
 
-    inline std::shared_ptr<bg2e::manipulation::SelectionManager> selectionManager() const { return _selectionManager; }
+    inline bg2e::ui::Workspace& workspace()
+    {
+        return _workspace;
+    }
+    inline const bg2e::ui::Workspace& workspace() const
+    {
+        return _workspace;
+    }
 
-    [[nodiscard]] std::shared_ptr<bg2e::ui::StatusItem> fileStatus() const { return _fileStatus; }
-    [[nodiscard]] std::shared_ptr<bg2e::ui::StatusItem> saveStatus() const { return _saveStatus; }
+    inline std::shared_ptr<bg2e::manipulation::SelectionManager> selectionManager() const
+    {
+        return _selectionManager;
+    }
+
+    [[nodiscard]] std::shared_ptr<bg2e::ui::StatusItem> fileStatus() const
+    {
+        return _fileStatus;
+    }
+    [[nodiscard]] std::shared_ptr<bg2e::ui::StatusItem> saveStatus() const
+    {
+        return _saveStatus;
+    }
 
     enum SelectionHighlightMode
     {
@@ -92,31 +114,43 @@ public:
     // Throws std::exception on validation errors (for example, invalid UV2).
     void requestLightmapBake(const bg2e::render::LightmapSettings& settings);
     void cancelLightmapBake();
-    [[nodiscard]] bool lightmapBakeActive() const { return _bakeState != LightmapBakeState::Idle; }
+    [[nodiscard]] bool lightmapBakeActive() const
+    {
+        return _bakeState != LightmapBakeState::Idle;
+    }
     [[nodiscard]] uint32_t lightmapBakeCompletedFrames() const;
     [[nodiscard]] uint32_t lightmapBakeTotalFrames() const;
-    [[nodiscard]] const std::filesystem::path& lastLightmapPath() const { return _lastLightmapPath; }
-    [[nodiscard]] const std::string& lightmapBakeError() const { return _bakeError; }
-    inline ModelLightmapWindow& lightmapWindow() { return _lightmapWindow; }
+    [[nodiscard]] const std::filesystem::path& lastLightmapPath() const
+    {
+        return _lastLightmapPath;
+    }
+    [[nodiscard]] const std::string& lightmapBakeError() const
+    {
+        return _bakeError;
+    }
+    inline ModelLightmapWindow& lightmapWindow()
+    {
+        return _lightmapWindow;
+    }
 
-protected:
+  protected:
     bg2e::scene::InputVisitor _inputVisitor;
-    
+
     bg2e::ui::Workspace _workspace;
-    ToolBar _toolBar {};
-    SubmeshWindow _submeshPanel {};
-    EnvironmentSettings _environmentPanel {};
-    bg2e::ui::UISettingsWindow _uiSettingsWindow {};
-    bg2e::ui::RenderSettingsWindow _renderSettingsWindow {};
-    ModelLightmapWindow _lightmapWindow {};
+    ToolBar _toolBar{};
+    SubmeshWindow _submeshPanel{};
+    EnvironmentSettings _environmentPanel{};
+    bg2e::ui::UISettingsWindow _uiSettingsWindow{};
+    bg2e::ui::RenderSettingsWindow _renderSettingsWindow{};
+    ModelLightmapWindow _lightmapWindow{};
     std::unique_ptr<bg2e::render::RenderSettingsPreferences> _renderPrefs;
 
     std::shared_ptr<bg2e::ui::StatusItem> _fileStatus;
     std::shared_ptr<bg2e::ui::StatusItem> _saveStatus;
     bg2e::ui::StatusBar _statusBar;
-    
+
     std::shared_ptr<StageScene> _stage;
-    
+
     std::shared_ptr<bg2e::scene::Node> createScene() override;
 
     std::shared_ptr<bg2e::manipulation::SelectionManager> _selectionManager;
@@ -125,7 +159,12 @@ protected:
 
     SelectionHighlightMode _selectionHighlightMode = SelectionHard;
 
-    enum class LightmapBakeState { Idle, Baking, Readback };
+    enum class LightmapBakeState
+    {
+        Idle,
+        Baking,
+        Readback
+    };
     LightmapBakeState _bakeState = LightmapBakeState::Idle;
     std::shared_ptr<bg2e::render::IntegratedBakerContext> _bakeContext;
     std::unique_ptr<bg2e::render::IntegratedLightmapBaker> _bakeBaker;
@@ -136,7 +175,7 @@ protected:
     uint32_t _bakeCounter = 0;
 
     void finishLightmapBake();
-    
+
     void initWorkspace();
 
     void updateSelectionHighlight();

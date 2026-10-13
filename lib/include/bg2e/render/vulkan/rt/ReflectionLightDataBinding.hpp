@@ -35,34 +35,32 @@ namespace rt {
 // the smallest possible light set, and so it is only built when ray tracing is
 // available.
 class BG2E_API ReflectionLightDataBinding : public PipelineDataBinding {
-public:
+  public:
     static constexpr uint32_t MAX_LIGHTS = 8;
 
-    ReflectionLightDataBinding(bg2e::render::Engine * engine) : PipelineDataBinding(engine) {}
+    ReflectionLightDataBinding(bg2e::render::Engine* engine) : PipelineDataBinding(engine)
+    {
+    }
 
-    void initFrameResources(bg2e::render::vulkan::DescriptorSetAllocator * frameAllocator) override;
+    void initFrameResources(bg2e::render::vulkan::DescriptorSetAllocator* frameAllocator) override;
 
     VkDescriptorSetLayout createLayout(
-        VkShaderStageFlags shaderStages = VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR
-    ) override;
+        VkShaderStageFlags shaderStages = VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR) override;
 
     VkDescriptorSet newDescriptorSet(
-        bg2e::render::vulkan::FrameResources & frameResources,
-        const std::vector<base::LightData> & lights
-    );
+        bg2e::render::vulkan::FrameResources& frameResources,
+        const std::vector<base::LightData>& lights);
 
     VkDescriptorSet newDescriptorSet(
-        bg2e::render::vulkan::FrameResources & frameResources,
+        bg2e::render::vulkan::FrameResources& frameResources,
         DescriptorSetAllocator& descriptorAllocator,
-        const std::vector<base::LightData> & lights
-    );
+        const std::vector<base::LightData>& lights);
 
-protected:
+  protected:
     VkDescriptorSet writeDescriptorSet(
         bg2e::render::vulkan::FrameResources& frameResources,
         DescriptorSet* descriptorSet,
-        const std::vector<base::LightData>& lights
-    );
+        const std::vector<base::LightData>& lights);
 };
 
 }

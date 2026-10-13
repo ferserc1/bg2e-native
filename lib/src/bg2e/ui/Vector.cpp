@@ -24,16 +24,16 @@
 
 #include <unordered_map>
 
-#include "imgui.h"
+#include <imgui.h>
 
 namespace bg2e {
 namespace ui {
 
 bool Vector::vec2(
     const std::string& label,
-    int * value,
-    bool sameLine
-) {
+    int* value,
+    bool sameLine)
+{
     if (sameLine)
     {
         ImGui::SameLine();
@@ -43,9 +43,9 @@ bool Vector::vec2(
 
 bool Vector::vec3(
     const std::string& label,
-    int * value,
-    bool sameLine
-) {
+    int* value,
+    bool sameLine)
+{
     if (sameLine)
     {
         ImGui::SameLine();
@@ -55,9 +55,9 @@ bool Vector::vec3(
 
 bool Vector::vec4(
     const std::string& label,
-    int * value,
-    bool sameLine
-) {
+    int* value,
+    bool sameLine)
+{
     if (sameLine)
     {
         ImGui::SameLine();
@@ -67,9 +67,9 @@ bool Vector::vec4(
 
 bool Vector::vec2(
     const std::string& label,
-    float * value,
-    bool sameLine
-) {
+    float* value,
+    bool sameLine)
+{
     if (sameLine)
     {
         ImGui::SameLine();
@@ -79,9 +79,9 @@ bool Vector::vec2(
 
 bool Vector::vec3(
     const std::string& label,
-    float * value,
-    bool sameLine
-) {
+    float* value,
+    bool sameLine)
+{
     if (sameLine)
     {
         ImGui::SameLine();
@@ -91,9 +91,9 @@ bool Vector::vec3(
 
 bool Vector::vec4(
     const std::string& label,
-    float * value,
-    bool sameLine
-) {
+    float* value,
+    bool sameLine)
+{
     if (sameLine)
     {
         ImGui::SameLine();
@@ -104,9 +104,9 @@ bool Vector::vec4(
 bool Vector::vec2(
     const std::string& label,
     glm::vec2& value,
-    bool sameLine
-) {
-    float inValue[] { value.x, value.y };
+    bool sameLine)
+{
+    float inValue[]{value.x, value.y};
     if (vec2(label, inValue, sameLine))
     {
         value.x = inValue[0];
@@ -119,9 +119,9 @@ bool Vector::vec2(
 bool Vector::vec3(
     const std::string& label,
     glm::vec3& value,
-    bool sameLine
-) {
-    float inValue[] { value.x, value.y, value.z };
+    bool sameLine)
+{
+    float inValue[]{value.x, value.y, value.z};
     if (vec3(label, inValue, sameLine))
     {
         value.x = inValue[0];
@@ -135,9 +135,9 @@ bool Vector::vec3(
 bool Vector::vec4(
     const std::string& label,
     glm::vec4& value,
-    bool sameLine
-) {
-    float inValue[] { value.x, value.y, value.z, value.w };
+    bool sameLine)
+{
+    float inValue[]{value.x, value.y, value.z, value.w};
     if (vec4(label, inValue, sameLine))
     {
         value.x = inValue[0];
@@ -151,11 +151,11 @@ bool Vector::vec4(
 
 bool Vector::sliderVec2(
     const std::string& label,
-    float * value,
+    float* value,
     float min,
     float max,
-    bool sameLine
-) {
+    bool sameLine)
+{
     if (sameLine)
     {
         ImGui::SameLine();
@@ -165,11 +165,11 @@ bool Vector::sliderVec2(
 
 bool Vector::sliderVec3(
     const std::string& label,
-    float * value,
+    float* value,
     float min,
     float max,
-    bool sameLine
-) {
+    bool sameLine)
+{
     if (sameLine)
     {
         ImGui::SameLine();
@@ -179,11 +179,11 @@ bool Vector::sliderVec3(
 
 bool Vector::sliderVec4(
     const std::string& label,
-    float * value,
+    float* value,
     float min,
     float max,
-    bool sameLine
-) {
+    bool sameLine)
+{
     if (sameLine)
     {
         ImGui::SameLine();
@@ -196,8 +196,8 @@ bool Vector::sliderVec2(
     glm::vec2& value,
     float min,
     float max,
-    bool sameLine
-) {
+    bool sameLine)
+{
     return sliderVec2(label, &value.x, min, max, sameLine);
 }
 
@@ -206,8 +206,8 @@ bool Vector::sliderVec3(
     glm::vec3& value,
     float min,
     float max,
-    bool sameLine
-) {
+    bool sameLine)
+{
     return sliderVec3(label, &value.x, min, max, sameLine);
 }
 
@@ -216,19 +216,19 @@ bool Vector::sliderVec4(
     glm::vec4& value,
     float min,
     float max,
-    bool sameLine
-) {
+    bool sameLine)
+{
     return sliderVec4(label, &value.x, min, max, sameLine);
 }
 
 bool Vector::dragVec2(
     const std::string& label,
-    float * value,
+    float* value,
     float speed,
     float min,
     float max,
-    bool sameLine
-) {
+    bool sameLine)
+{
     if (sameLine)
     {
         ImGui::SameLine();
@@ -238,12 +238,12 @@ bool Vector::dragVec2(
 
 bool Vector::dragVec3(
     const std::string& label,
-    float * value,
+    float* value,
     float speed,
     float min,
     float max,
-    bool sameLine
-) {
+    bool sameLine)
+{
     if (sameLine)
     {
         ImGui::SameLine();
@@ -253,12 +253,12 @@ bool Vector::dragVec3(
 
 bool Vector::dragVec4(
     const std::string& label,
-    float * value,
+    float* value,
     float speed,
     float min,
     float max,
-    bool sameLine
-) {
+    bool sameLine)
+{
     if (sameLine)
     {
         ImGui::SameLine();
@@ -272,8 +272,8 @@ bool Vector::dragVec2(
     float speed,
     float min,
     float max,
-    bool sameLine
-) {
+    bool sameLine)
+{
     return dragVec2(label, &value.x, speed, min, max, sameLine);
 }
 
@@ -283,8 +283,8 @@ bool Vector::dragVec3(
     float speed,
     float min,
     float max,
-    bool sameLine
-) {
+    bool sameLine)
+{
     return dragVec3(label, &value.x, speed, min, max, sameLine);
 }
 
@@ -294,8 +294,8 @@ bool Vector::dragVec4(
     float speed,
     float min,
     float max,
-    bool sameLine
-) {
+    bool sameLine)
+{
     return dragVec4(label, &value.x, speed, min, max, sameLine);
 }
 
@@ -303,7 +303,8 @@ bool Vector::mat4(
     const std::string& label,
     glm::mat4& value,
     bool /* sameLine */
-) {
+)
+{
     struct Mat4Cache {
         glm::mat4 lastMatrix;
         glm::vec3 eulerDegrees;
@@ -320,12 +321,30 @@ bool Vector::mat4(
         scale.z = glm::length(glm::vec3(value[2]));
 
         glm::mat3 rot;
-        if (scale.x != 0.0f) rot[0] = glm::vec3(value[0]) / scale.x;
-        else rot[0] = glm::vec3(1.0f, 0.0f, 0.0f);
-        if (scale.y != 0.0f) rot[1] = glm::vec3(value[1]) / scale.y;
-        else rot[1] = glm::vec3(0.0f, 1.0f, 0.0f);
-        if (scale.z != 0.0f) rot[2] = glm::vec3(value[2]) / scale.z;
-        else rot[2] = glm::vec3(0.0f, 0.0f, 1.0f);
+        if (scale.x != 0.0f)
+        {
+            rot[0] = glm::vec3(value[0]) / scale.x;
+        }
+        else
+        {
+            rot[0] = glm::vec3(1.0f, 0.0f, 0.0f);
+        }
+        if (scale.y != 0.0f)
+        {
+            rot[1] = glm::vec3(value[1]) / scale.y;
+        }
+        else
+        {
+            rot[1] = glm::vec3(0.0f, 1.0f, 0.0f);
+        }
+        if (scale.z != 0.0f)
+        {
+            rot[2] = glm::vec3(value[2]) / scale.z;
+        }
+        else
+        {
+            rot[2] = glm::vec3(0.0f, 0.0f, 1.0f);
+        }
 
         float xr, yr, zr;
         glm::extractEulerAngleXYZ(glm::mat4(rot), xr, yr, zr);
@@ -344,17 +363,24 @@ bool Vector::mat4(
     scale.z = glm::length(glm::vec3(value[2]));
 
     bool changed = false;
-    if (vec3(("Position##" + label).c_str(), pos)) changed = true;
-    if (vec3(("Rotation##" + label).c_str(), eulerDeg)) changed = true;
-    if (vec3(("Scale##" + label).c_str(), scale)) changed = true;
+    if (vec3(("Position##" + label).c_str(), pos))
+    {
+        changed = true;
+    }
+    if (vec3(("Rotation##" + label).c_str(), eulerDeg))
+    {
+        changed = true;
+    }
+    if (vec3(("Scale##" + label).c_str(), scale))
+    {
+        changed = true;
+    }
 
     if (changed)
     {
         cacheIt->second.eulerDegrees = eulerDeg;
         glm::vec3 rad = glm::radians(eulerDeg);
-        value = glm::translate(glm::mat4(1.0f), pos)
-            * glm::eulerAngleXYZ(rad.x, rad.y, rad.z)
-            * glm::scale(glm::mat4(1.0f), scale);
+        value = glm::translate(glm::mat4(1.0f), pos) * glm::eulerAngleXYZ(rad.x, rad.y, rad.z) * glm::scale(glm::mat4(1.0f), scale);
         cacheIt->second.lastMatrix = value;
     }
 

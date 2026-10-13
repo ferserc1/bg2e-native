@@ -29,7 +29,7 @@ namespace render {
 class RendererDeferred;
 
 class BG2E_API RenderSettingsPreferences {
-public:
+  public:
     explicit RenderSettingsPreferences(RendererDeferred* renderer);
 
     void load();
@@ -129,7 +129,7 @@ public:
     float denoiseNormalSigma() const;
     void setDenoiseNormalSigma(float value);
 
-private:
+  private:
     RendererDeferred* _renderer;
     app::Preferences _prefs;
     bool _dirty = false;

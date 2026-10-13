@@ -27,21 +27,21 @@ namespace bg2e {
 namespace ui {
 
 class BG2E_API Loader {
-public:
+  public:
     void setMessage(const std::string& msg);
     std::string getMessage() const;
 
-    void setProgress(float progress);   // clamped to [0, 1]
+    void setProgress(float progress); // clamped to [0, 1]
     float getProgress() const;
 
     // Call once per ImGui frame while the loader is active.
     // Draws a centered non-closeable window with message + progress bar.
     void draw();
 
-private:
+  private:
     mutable std::recursive_mutex _mutex;
-    std::string _message  = "Loading...";
-    float       _progress = 0.f;
+    std::string _message = "Loading...";
+    float _progress = 0.f;
 };
 
 } // ui

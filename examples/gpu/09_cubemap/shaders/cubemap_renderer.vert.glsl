@@ -5,14 +5,18 @@ layout(location = 1) in vec2 inTexCoord;
 
 layout(location = 0) out vec2 fragUV;
 
-layout(push_constant) uniform CameraData {
+layout(push_constant) uniform CameraData
+{
     mat4 projection;
     mat4 view;
-} camera;
+}
+camera;
 
-layout(set = 0, binding = 0) uniform ModelUBO {
+layout(set = 0, binding = 0) uniform ModelUBO
+{
     mat4 model;
-} object;
+}
+object;
 
 void main()
 {

@@ -24,15 +24,21 @@
 class AppDelegate;
 
 class SceneEditor : public bg2e::ui::Window {
-public:
-    void init(AppDelegate * delegate);
+  public:
+    void init(AppDelegate* delegate);
     void cleanup();
 
-    bg2e::ui::SceneTree & sceneTree() { return _sceneTree; }
-    bg2e::ui::NodeEditor & nodeEditor() { return _nodeEditor; }
+    bg2e::ui::SceneTree& sceneTree()
+    {
+        return _sceneTree;
+    }
+    bg2e::ui::NodeEditor& nodeEditor()
+    {
+        return _nodeEditor;
+    }
 
-protected:
-    AppDelegate * _appDelegate = nullptr;
+  protected:
+    AppDelegate* _appDelegate = nullptr;
     bg2e::ui::SceneTree _sceneTree;
     bg2e::ui::NodeEditor _nodeEditor;
 

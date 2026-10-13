@@ -5,9 +5,11 @@ layout(set = 0, binding = 1) uniform sampler2D previousHistory;
 layout(set = 0, binding = 2) uniform usampler2D validTexelMask;
 layout(set = 0, binding = 3, rgba32f) uniform image2D nextHistory;
 
-layout(push_constant) uniform PushConstant {
+layout(push_constant) uniform PushConstant
+{
     uint previousSamples;
-} pc;
+}
+pc;
 
 layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
 
@@ -15,7 +17,10 @@ void main()
 {
     ivec2 pixel = ivec2(gl_GlobalInvocationID.xy);
     ivec2 extent = imageSize(nextHistory);
-    if (pixel.x >= extent.x || pixel.y >= extent.y) return;
+    if (pixel.x >= extent.x || pixel.y >= extent.y)
+    {
+        return;
+    }
 
     if (texelFetch(validTexelMask, pixel, 0).r == 0u)
     {

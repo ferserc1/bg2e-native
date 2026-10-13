@@ -33,7 +33,9 @@ namespace ui {
 class UserInterface;
 }
 
-namespace gpu { class SurfaceFrame; }
+namespace gpu {
+class SurfaceFrame;
+}
 
 namespace draw {
 
@@ -43,15 +45,21 @@ class Engine;
 // composition and presentation. Owns the coordination state and, from
 // milestone 02 on, the retained scene target. The engine does not own the UI.
 class BG2E_API RenderLoop {
-public:
+  public:
     RenderLoop();
     ~RenderLoop();
 
     RenderLoop(const RenderLoop&) = delete;
     RenderLoop& operator=(const RenderLoop&) = delete;
 
-    inline void setDelegate(std::shared_ptr<RenderLoopDelegate> delegate) { _delegate = delegate; }
-    inline std::shared_ptr<RenderLoopDelegate> delegate() const { return _delegate; }
+    inline void setDelegate(std::shared_ptr<RenderLoopDelegate> delegate)
+    {
+        _delegate = delegate;
+    }
+    inline std::shared_ptr<RenderLoopDelegate> delegate() const
+    {
+        return _delegate;
+    }
 
     void init(Engine* engine);
 
@@ -68,18 +76,24 @@ public:
 
     void requestResize();
 
-    void pauseScene(const glm::vec4& clearColor = { 0.f, 0.f, 0.f, 1.f });
+    void pauseScene(const glm::vec4& clearColor = {0.f, 0.f, 0.f, 1.f});
     void resumeScene();
-    inline bool isScenePaused() const { return _scenePaused; }
+    inline bool isScenePaused() const
+    {
+        return _scenePaused;
+    }
 
     // Marks the retained scene image as outdated. The next frame will run the
     // scene delegate update/render even if presentation continues meanwhile.
     void requestSceneFrame();
-    inline bool sceneDirty() const { return _sceneDirty; }
+    inline bool sceneDirty() const
+    {
+        return _sceneDirty;
+    }
 
     void cleanup();
 
-protected:
+  protected:
     Engine* _engine = nullptr;
     std::shared_ptr<RenderLoopDelegate> _delegate;
 
@@ -93,7 +107,7 @@ protected:
     bool _resizeRequested = false;
     bool _scenePaused = false;
     bool _sceneDirty = true;
-    glm::vec4 _sceneClearColor { 0.f, 0.f, 0.f, 1.f };
+    glm::vec4 _sceneClearColor{0.f, 0.f, 0.f, 1.f};
 };
 
 }

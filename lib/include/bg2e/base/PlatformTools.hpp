@@ -52,10 +52,15 @@ static const bool is_linux = true;
 namespace bg2e {
 namespace base {
 
-enum class Platform { macOS, Windows, Linux };
+enum class Platform
+{
+    macOS,
+    Windows,
+    Linux
+};
 
 class BG2E_API PlatformTools {
-public:
+  public:
     static Platform currentPlatform();
 
     // Returns the absolute directory that anchors application resources. This

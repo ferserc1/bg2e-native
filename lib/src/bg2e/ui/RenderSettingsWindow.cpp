@@ -33,9 +33,10 @@ void RenderSettingsWindow::init(
     setSize(350, 600);
     close();
 
-    setDrawFunction([this]() {
-        drawUI();
-    });
+    setDrawFunction([this]()
+                    {
+                        drawUI();
+                    });
 }
 
 bool RenderSettingsWindow::drawUI()
@@ -83,8 +84,7 @@ bool RenderSettingsWindow::drawIndirectLightingModeSection()
     bg2e::ui::Group::beginDisabled(!enabled);
 
     static const std::vector<std::string> modeItems = {
-        "Ambient Occlusion (RTAO)", "Global Illumination (RTGI)"
-    };
+        "Ambient Occlusion (RTAO)", "Global Illumination (RTGI)"};
     uint32_t modeIdx = _prefs->indirectLightingMode();
 
     if (bg2e::ui::Value::comboBox("Mode##IndirectLighting", modeItems, modeIdx))
@@ -95,7 +95,7 @@ bool RenderSettingsWindow::drawIndirectLightingModeSection()
 
     bg2e::ui::Text::separator();
 
-    if (_prefs->indirectLightingMode() == 1)  // RTGI
+    if (_prefs->indirectLightingMode() == 1) // RTGI
     {
         changed |= drawRTGISection();
     }
@@ -111,7 +111,7 @@ bool RenderSettingsWindow::drawRTAOSection()
 {
     bg2e::ui::Text::text("Ambient Occlusion", true);
 
-    static const std::vector<std::string> qualityItems = { "Low", "Medium", "High", "Ultra" };
+    static const std::vector<std::string> qualityItems = {"Low", "Medium", "High", "Ultra"};
     uint32_t qualityIdx = _prefs->aoQualityIndex();
     if (bg2e::ui::Value::comboBox("Quality##RTAO", qualityItems, qualityIdx))
     {
@@ -173,7 +173,7 @@ bool RenderSettingsWindow::drawRTGISection()
         _prefs->setRTGIEnabled(enabled);
     }
 
-    static const std::vector<std::string> qualityItems = { "Low", "Medium", "High", "Ultra" };
+    static const std::vector<std::string> qualityItems = {"Low", "Medium", "High", "Ultra"};
     uint32_t qualityIdx = _prefs->rtGIQualityIndex();
     if (bg2e::ui::Value::comboBox("Quality##RTGI", qualityItems, qualityIdx))
     {
@@ -229,7 +229,7 @@ bool RenderSettingsWindow::drawRTReflectionsSection()
         _prefs->setRTReflectionsEnabled(enabled);
     }
 
-    static const std::vector<std::string> qualityItems = { "Low", "Medium", "High", "Ultra" };
+    static const std::vector<std::string> qualityItems = {"Low", "Medium", "High", "Ultra"};
     uint32_t qualityIdx = _prefs->rtReflectionQualityIndex();
     if (bg2e::ui::Value::comboBox("Quality##RTReflections", qualityItems, qualityIdx))
     {
@@ -285,7 +285,7 @@ bool RenderSettingsWindow::drawTemporalAccumulatorSection()
 {
     bg2e::ui::Text::text("Temporal Accumulator", true);
 
-    static const std::vector<std::string> modeItems = { "Interactive", "Progressive" };
+    static const std::vector<std::string> modeItems = {"Interactive", "Progressive"};
     uint32_t modeIdx = _prefs->temporalMode();
     if (bg2e::ui::Value::comboBox("Mode##Temporal", modeItems, modeIdx))
     {

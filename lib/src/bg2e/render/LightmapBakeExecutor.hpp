@@ -15,7 +15,7 @@ namespace bg2e::render {
 class LightmapCompositionPass;
 
 class LightmapBakeExecutor final {
-public:
+  public:
     static void recordSample(
         LightmapBaker& baker,
         VkCommandBuffer commandBuffer,

@@ -35,15 +35,15 @@ struct Response;
 // The HTTP worker thread never touches the scene graph: it enqueues
 // one ImportRequest and blocks until Composer restores its UI.
 class ImportServer {
-public:
+  public:
     ImportServer();
-    ~ImportServer();            // calls stop()
+    ~ImportServer(); // calls stop()
 
     // Binds synchronously (error known before returning) and launches the
     // listen thread. Returns "" on success, or a human-readable error
     // (invalid port / port in use) for the UI alert.
     std::string start(uint32_t port);
-    void stop();                // stop() + join; safe to call when stopped
+    void stop(); // stop() + join; safe to call when stopped
     bool isRunning() const;
     uint32_t port() const;
 
@@ -55,7 +55,7 @@ public:
 
     bool busy() const;
 
-private:
+  private:
     // Runs on the HTTP worker thread: parse + validate JSON, enqueue the
     // request and block until fulfil() or service stop.
     void handleImport(const httplib::Request& req, httplib::Response& res);

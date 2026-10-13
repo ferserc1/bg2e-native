@@ -40,7 +40,8 @@ class BlueNoise;
 
 namespace deferred {
 
-enum class RTReflectionQuality {
+enum class RTReflectionQuality
+{
     Low,
     Medium,
     High,
@@ -51,10 +52,14 @@ inline float rtReflectionResolutionScale(RTReflectionQuality quality)
 {
     switch (quality)
     {
-        case RTReflectionQuality::Ultra:  return 1.0f;
-        case RTReflectionQuality::High:   return 2.0f / 3.0f;
-        case RTReflectionQuality::Medium: return 0.5f;
-        case RTReflectionQuality::Low:    return 1.0f / 3.0f;
+    case RTReflectionQuality::Ultra:
+        return 1.0f;
+    case RTReflectionQuality::High:
+        return 2.0f / 3.0f;
+    case RTReflectionQuality::Medium:
+        return 0.5f;
+    case RTReflectionQuality::Low:
+        return 1.0f / 3.0f;
     }
     return 1.0f;
 }
@@ -79,12 +84,18 @@ struct RTReflectionSettings {
 };
 
 class BG2E_API RTReflections {
-public:
+  public:
     explicit RTReflections(Engine* engine);
     ~RTReflections();
 
-    void setMaterialDataBinding(vulkan::rt::RTMaterialDataBinding* binding) { _materialDataBinding = binding; }
-    void setReflectionLightDataBinding(vulkan::rt::ReflectionLightDataBinding* binding) { _reflectionLightDataBinding = binding; }
+    void setMaterialDataBinding(vulkan::rt::RTMaterialDataBinding* binding)
+    {
+        _materialDataBinding = binding;
+    }
+    void setReflectionLightDataBinding(vulkan::rt::ReflectionLightDataBinding* binding)
+    {
+        _reflectionLightDataBinding = binding;
+    }
 
     void build(const GBufferManager* gbuffer, VkExtent2D renderExtent, VkExtent2D viewportExtent);
     void resize(VkExtent2D renderExtent, VkExtent2D viewportExtent);
@@ -100,30 +111,68 @@ public:
         const std::vector<vulkan::rt::RTObjectInstance>& objectInstances,
         vulkan::Image* irradianceMap,
         VkSampler irradianceSampler,
-        const std::vector<base::LightData>& reflectionLights
-    );
+        const std::vector<base::LightData>& reflectionLights);
 
     void cleanup();
 
     std::shared_ptr<vulkan::Image> reflectionImage(uint32_t frameIndex) const;
-    VkSampler sampler() const { return _sampler; }
-    bool rtSupported() const { return _rtSupported; }
+    VkSampler sampler() const
+    {
+        return _sampler;
+    }
+    bool rtSupported() const
+    {
+        return _rtSupported;
+    }
 
-    void setSettings(const RTReflectionSettings& settings) { _settings = settings; }
-    const RTReflectionSettings& settings() const { return _settings; }
+    void setSettings(const RTReflectionSettings& settings)
+    {
+        _settings = settings;
+    }
+    const RTReflectionSettings& settings() const
+    {
+        return _settings;
+    }
 
-    void setEnabled(bool enabled) { _settings.enabled = enabled; }
-    void setSampleCount(uint32_t count) { _settings.sampleCount = count; }
-    void setMaxRoughness(float roughness) { _settings.maxRoughness = roughness; }
-    void setRayBias(float bias) { _settings.rayBias = bias; }
-    void setMaxDistance(float distance) { _settings.maxDistance = distance; }
-    void setRoughnessSpread(float spread) { _settings.roughnessSpread = spread; }
-    void setShadowSamples(uint32_t samples) { _settings.shadowSamples = samples; }
-    void setUseBlueNoise(bool use) { _settings.useBlueNoise = use; }
-    void setBlueNoise(const BlueNoise* blueNoise) { _blueNoise = blueNoise; }
+    void setEnabled(bool enabled)
+    {
+        _settings.enabled = enabled;
+    }
+    void setSampleCount(uint32_t count)
+    {
+        _settings.sampleCount = count;
+    }
+    void setMaxRoughness(float roughness)
+    {
+        _settings.maxRoughness = roughness;
+    }
+    void setRayBias(float bias)
+    {
+        _settings.rayBias = bias;
+    }
+    void setMaxDistance(float distance)
+    {
+        _settings.maxDistance = distance;
+    }
+    void setRoughnessSpread(float spread)
+    {
+        _settings.roughnessSpread = spread;
+    }
+    void setShadowSamples(uint32_t samples)
+    {
+        _settings.shadowSamples = samples;
+    }
+    void setUseBlueNoise(bool use)
+    {
+        _settings.useBlueNoise = use;
+    }
+    void setBlueNoise(const BlueNoise* blueNoise)
+    {
+        _blueNoise = blueNoise;
+    }
     void setQuality(RTReflectionQuality quality);
 
-private:
+  private:
     Engine* _engine = nullptr;
     RTReflectionSettings _settings;
     VkExtent2D _renderExtent{};

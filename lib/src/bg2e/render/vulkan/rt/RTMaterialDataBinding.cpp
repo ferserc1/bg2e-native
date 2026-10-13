@@ -30,17 +30,15 @@ namespace render {
 namespace vulkan {
 namespace rt {
 
-RTMaterialDataBinding::RTMaterialDataBinding(Engine * engine)
+RTMaterialDataBinding::RTMaterialDataBinding(Engine* engine)
     : PipelineDataBinding(engine)
 {
 }
 
-void RTMaterialDataBinding::initFrameResources(DescriptorSetAllocator * frameAllocator)
+void RTMaterialDataBinding::initFrameResources(DescriptorSetAllocator* frameAllocator)
 {
-    frameAllocator->requirePoolSizeRatio(1, {
-        { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1 + 2 * MAX_OBJECTS },
-        { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2 * MAX_OBJECTS }
-    });
+    frameAllocator->requirePoolSizeRatio(1, {{VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1 + 2 * MAX_OBJECTS},
+                                             {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2 * MAX_OBJECTS}});
 }
 
 VkDescriptorSetLayout RTMaterialDataBinding::createLayout(VkShaderStageFlags shaderStages)
@@ -59,9 +57,9 @@ VkDescriptorSetLayout RTMaterialDataBinding::createLayout(VkShaderStageFlags sha
 }
 
 VkDescriptorSet RTMaterialDataBinding::newDescriptorSet(
-    FrameResources & frameResources,
-    const std::vector<RTObjectInstance> & objectInstances
-) {
+    FrameResources& frameResources,
+    const std::vector<RTObjectInstance>& objectInstances)
+{
     if (_layout == VK_NULL_HANDLE)
     {
         throw std::runtime_error("RTMaterialDataBinding::newDescriptorSet() - Layout not created");
@@ -71,10 +69,10 @@ VkDescriptorSet RTMaterialDataBinding::newDescriptorSet(
 }
 
 VkDescriptorSet RTMaterialDataBinding::newDescriptorSet(
-    FrameResources & frameResources,
-    DescriptorSetAllocator & descriptorAllocator,
-    const std::vector<RTObjectInstance> & objectInstances
-) {
+    FrameResources& frameResources,
+    DescriptorSetAllocator& descriptorAllocator,
+    const std::vector<RTObjectInstance>& objectInstances)
+{
     if (_layout == VK_NULL_HANDLE)
     {
         throw std::runtime_error("RTMaterialDataBinding::newDescriptorSet() - Layout not created");
@@ -85,10 +83,10 @@ VkDescriptorSet RTMaterialDataBinding::newDescriptorSet(
 }
 
 VkDescriptorSet RTMaterialDataBinding::writeDescriptorSet(
-    FrameResources & frameResources,
-    DescriptorSet * ds,
-    const std::vector<RTObjectInstance> & objectInstances
-) {
+    FrameResources& frameResources,
+    DescriptorSet* ds,
+    const std::vector<RTObjectInstance>& objectInstances)
+{
     size_t instanceCount = std::min<size_t>(objectInstances.size(), MAX_OBJECTS);
     if (_layout == VK_NULL_HANDLE || !ds)
     {
@@ -97,7 +95,7 @@ VkDescriptorSet RTMaterialDataBinding::writeDescriptorSet(
 
     std::vector<RTMaterialData> materialData;
     materialData.reserve(objectInstances.size());
-    for (const auto & inst : objectInstances)
+    for (const auto& inst : objectInstances)
     {
         materialData.push_back(inst.materialData);
     }
@@ -107,19 +105,17 @@ VkDescriptorSet RTMaterialDataBinding::writeDescriptorSet(
         materialData.push_back(RTMaterialData{});
     }
 
-    auto * materialBuffer = macros::createBuffer(
+    auto* materialBuffer = macros::createBuffer(
         _engine, frameResources, materialData,
         VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
         VMA_MEMORY_USAGE_CPU_ONLY,
-        "RTMaterialDataBinding: material data SSBO"
-    );
+        "RTMaterialDataBinding: material data SSBO");
 
     ds->beginUpdate();
 
     ds->addBuffer(
         0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-        materialBuffer, materialData.size() * sizeof(RTMaterialData), 0
-    );
+        materialBuffer, materialData.size() * sizeof(RTMaterialData), 0);
 
     auto whiteTex = Texture::whiteTexture(_engine);
 
@@ -143,8 +139,7 @@ VkDescriptorSet RTMaterialDataBinding::writeDescriptorSet(
                         _engine, 1,
                         VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
                         VMA_MEMORY_USAGE_CPU_ONLY,
-                        "RTMaterialDataBinding: dummy buffer"
-                    );
+                        "RTMaterialDataBinding: dummy buffer");
                     _dummyBuffer = _dummyBufferObj->handle();
                 }
                 vertexBuffers[i] = _dummyBuffer;
@@ -175,8 +170,7 @@ VkDescriptorSet RTMaterialDataBinding::writeDescriptorSet(
                         _engine, 1,
                         VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
                         VMA_MEMORY_USAGE_CPU_ONLY,
-                        "RTMaterialDataBinding: dummy buffer"
-                    );
+                        "RTMaterialDataBinding: dummy buffer");
                     _dummyBuffer = _dummyBufferObj->handle();
                 }
                 indexBuffers[i] = _dummyBuffer;

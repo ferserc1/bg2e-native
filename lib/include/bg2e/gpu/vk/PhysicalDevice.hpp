@@ -30,14 +30,17 @@ namespace gpu {
 namespace vk {
 
 class PhysicalDevice : public gpu::PhysicalDevice {
-public:
+  public:
     void choose(gpu::Instance& instance, gpu::Surface& surface) override;
 
     bool isValid() const override;
 
     const std::shared_ptr<PhysicalDeviceProperties> properties() const override;
 
-    VkPhysicalDevice handle() const { return _physicalDevice; }
+    VkPhysicalDevice handle() const
+    {
+        return _physicalDevice;
+    }
 
     struct QueueFamilyIndices {
         std::optional<uint32_t> graphics;
@@ -52,7 +55,7 @@ public:
 
     static const std::vector<const char*>& getRequiredDeviceExtensions(bool offscreen);
 
-private:
+  private:
     VkPhysicalDevice _physicalDevice{VK_NULL_HANDLE};
     std::shared_ptr<PhysicalDeviceProperties> _properties;
     const gpu::Surface* _surface{nullptr};

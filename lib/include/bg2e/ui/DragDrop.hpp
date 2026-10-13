@@ -29,25 +29,25 @@ namespace ui {
 // Wrapper for ImGui drag & drop. Payloads are identified by a string type
 // and carry a raw memory block of payloadSize bytes copied on set/accept.
 class BG2E_API DragDrop {
-public:
+  public:
     // Starts a drag source on the last submitted item. Returns true while a
     // drag is in progress; in that case endSource() must be called after
     // drawing the drag preview (see setPreviewText()). The payload data is
     // copied at this point.
-    static bool beginSource(const std::string & payloadType,
-                            const void * payloadData, size_t payloadSize,
+    static bool beginSource(const std::string& payloadType,
+                            const void* payloadData, size_t payloadSize,
                             bool disabled = false);
     static void endSource();
 
     // Starts a drop target on the last submitted item. Returns true (and
     // copies the payload into payloadData) on the frame the drop happens.
     // The payload is only accepted if its size matches payloadSize.
-    static bool acceptPayload(const std::string & payloadType,
-                              void * payloadData, size_t payloadSize);
+    static bool acceptPayload(const std::string& payloadType,
+                              void* payloadData, size_t payloadSize);
 
     // Draws a preview text inside an active drag source (between
     // beginSource() and endSource()).
-    static void setPreviewText(const std::string & text);
+    static void setPreviewText(const std::string& text);
 };
 
 }

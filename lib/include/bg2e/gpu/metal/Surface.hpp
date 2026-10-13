@@ -31,14 +31,17 @@ class Device;
 class Image;
 
 class Surface : public virtual gpu::Surface {
-protected:
-    metal::Device* metalDevice() const { return _metalDevice; }
+  protected:
+    metal::Device* metalDevice() const
+    {
+        return _metalDevice;
+    }
 
     void createDepthTarget(const Size2D& size, PixelFormat format);
     void resizeDepthTarget(const Size2D& size);
     void releaseDepthTarget();
 
-    metal::Device*                _metalDevice = nullptr;
+    metal::Device* _metalDevice = nullptr;
     std::unique_ptr<metal::Image> _depthImage;
 };
 

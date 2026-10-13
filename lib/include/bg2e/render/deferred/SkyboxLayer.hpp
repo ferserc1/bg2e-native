@@ -25,7 +25,7 @@ namespace render {
 namespace deferred {
 
 class BG2E_API SkyboxLayer : public RenderLayer {
-public:
+  public:
     SkyboxLayer(Engine* engine);
     ~SkyboxLayer() override;
 
@@ -35,15 +35,20 @@ public:
         uint32_t currentFrame,
         const vulkan::Image* inputImage,
         const vulkan::Image* outputImage,
-        vulkan::FrameResources& frameResources
-    ) override;
+        vulkan::FrameResources& frameResources) override;
     void resize(VkExtent2D newExtent) override;
     void cleanup() override;
 
-    [[nodiscard]] bool drawSkybox() const { return _drawSkybox; }
-    void setDrawSkybox(bool drawSkybox) { _drawSkybox = drawSkybox; }
+    [[nodiscard]] bool drawSkybox() const
+    {
+        return _drawSkybox;
+    }
+    void setDrawSkybox(bool drawSkybox)
+    {
+        _drawSkybox = drawSkybox;
+    }
 
-protected:
+  protected:
     bool _drawSkybox = true;
 };
 

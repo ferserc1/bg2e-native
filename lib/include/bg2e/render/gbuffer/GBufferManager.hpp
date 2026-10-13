@@ -28,14 +28,14 @@ namespace bg2e {
 namespace render {
 
 class BG2E_API GBufferManager {
-public:
+  public:
     struct Configuration {
         std::vector<VkFormat> colorFormats;
         VkFormat depthFormat = VK_FORMAT_UNDEFINED;
     };
 
-    GBufferManager(Engine * engine);
-    GBufferManager(Engine * engine, const Configuration& configuration);
+    GBufferManager(Engine* engine);
+    GBufferManager(Engine* engine, const Configuration& configuration);
     ~GBufferManager();
 
     void build(VkExtent2D extent);
@@ -56,15 +56,15 @@ public:
     void beginRender(VkCommandBuffer cmd, bool isTransparent);
     void beginRender(VkCommandBuffer cmd);
 
-private:
-    Engine * _engine;
-    
+  private:
+    Engine* _engine;
+
     VkExtent2D _extent;
-    
+
     std::vector<std::shared_ptr<vulkan::Image>> _colorImages;
     std::vector<const vulkan::Image*> _colorImagePtrs;
     std::vector<VkFormat> _colorFormats;
-    
+
     std::shared_ptr<vulkan::Image> _depthImage;
     VkFormat _depthFormat = VK_FORMAT_D32_SFLOAT;
 

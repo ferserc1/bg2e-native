@@ -41,11 +41,13 @@ void WindowSurface::create(gpu::Instance* instance)
     _vkInstance = vkInst->vkInstanceHnd();
     _window = instance->window();
     if (!SDL_Vulkan_CreateSurface(_window, _vkInstance, &_surface))
+    {
         throw std::runtime_error(std::string("Failed to create Vulkan window surface: ") + SDL_GetError());
+    }
 
     int w, h;
     SDL_Vulkan_GetDrawableSize(_window, &w, &h);
-    _size = Size2D{ static_cast<uint32_t>(w), static_cast<uint32_t>(h) };
+    _size = Size2D{static_cast<uint32_t>(w), static_cast<uint32_t>(h)};
 }
 
 void WindowSurface::cleanup()
@@ -92,7 +94,10 @@ void WindowSurface::createRenderTarget(gpu::Device* device, gpu::PhysicalDevice*
     _device = device;
     _physicalDevice = physicalDevice;
 
-    if (!_size.width || !_size.height) return;
+    if (!_size.width || !_size.height)
+    {
+        return;
+    }
     auto* vkDevice = dynamic_cast<vk::Device*>(device);
     auto* vkPhys = dynamic_cast<vk::PhysicalDevice*>(physicalDevice);
     _vkDevice = vkDevice;
@@ -138,7 +143,7 @@ void WindowSurface::createRenderTarget(gpu::Device* device, gpu::PhysicalDevice*
     // Extent
     if (caps.currentExtent.width != 0xFFFFFFFF)
     {
-        _size = Size2D{ caps.currentExtent.width, caps.currentExtent.height };
+        _size = Size2D{caps.currentExtent.width, caps.currentExtent.height};
     }
     else
     {
@@ -146,11 +151,16 @@ void WindowSurface::createRenderTarget(gpu::Device* device, gpu::PhysicalDevice*
         _size.height = std::clamp(_size.height, caps.minImageExtent.height, caps.maxImageExtent.height);
     }
 
-    if (!_size.width || !_size.height) return;
+    if (!_size.width || !_size.height)
+    {
+        return;
+    }
 
     const VkImageUsageFlags requiredUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     if ((caps.supportedUsageFlags & requiredUsage) != requiredUsage)
+    {
         throw std::runtime_error("Vulkan presentation images do not support color attachment and transfer destination usage.");
+    }
 
     // Image count
     uint32_t imageCount = caps.minImageCount + 1;
@@ -166,7 +176,7 @@ void WindowSurface::createRenderTarget(gpu::Device* device, gpu::PhysicalDevice*
     createInfo.minImageCount = imageCount;
     createInfo.imageFormat = chosenFormat.format;
     createInfo.imageColorSpace = chosenFormat.colorSpace;
-    createInfo.imageExtent = VkExtent2D{ _size.width, _size.height };
+    createInfo.imageExtent = VkExtent2D{_size.width, _size.height};
     createInfo.imageArrayLayers = 1;
     createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
 
@@ -242,17 +252,35 @@ void WindowSurface::createRenderTarget(gpu::Device* device, gpu::PhysicalDevice*
 
 void WindowSurface::resize(const Size2D& size)
 {
-    if (_device && _device->isValid()) _device->waitIdle();
+    if (_device && _device->isValid())
+    {
+        _device->waitIdle();
+    }
     setSize(size);
     releaseRenderTarget();
-    if (size.width && size.height) createRenderTarget(_device, _physicalDevice);
-    else ++_generation;
+    if (size.width && size.height)
+    {
+        createRenderTarget(_device, _physicalDevice);
+    }
+    else
+    {
+        ++_generation;
+    }
 }
 
 void WindowSurface::releaseRenderTarget()
 {
-    if (_device && _device->isValid()) _device->waitIdle();
-    for (auto& frame : _frames) if (frame) frame->waitForSubmissions();
+    if (_device && _device->isValid())
+    {
+        _device->waitIdle();
+    }
+    for (auto& frame : _frames)
+    {
+        if (frame)
+        {
+            frame->waitForSubmissions();
+        }
+    }
     _frameAcquired = false;
     if (vkDevice() != nullptr)
     {
@@ -333,41 +361,77 @@ gpu::Image* WindowSurface::depthImage() const
 
 std::shared_ptr<gpu::SurfaceFrame> WindowSurface::beginFrame()
 {
-    if (_frameAcquired) throw std::logic_error("Vulkan surface already has an acquired frame");
+    if (_frameAcquired)
+    {
+        throw std::logic_error("Vulkan surface already has an acquired frame");
+    }
     int width = 0, height = 0;
     SDL_Vulkan_GetDrawableSize(_window, &width, &height);
-    if (width <= 0 || height <= 0) return nullptr;
+    if (width <= 0 || height <= 0)
+    {
+        return nullptr;
+    }
     for (const auto& frame : _frames)
-        if (frame->recreateRequested()) _recreateRequested = true;
-    if (_recreateRequested || !_swapchain) resize({ uint32_t(width), uint32_t(height) });
+    {
+        if (frame->recreateRequested())
+        {
+            _recreateRequested = true;
+        }
+    }
+    if (_recreateRequested || !_swapchain)
+    {
+        resize({uint32_t(width), uint32_t(height)});
+    }
     for (int attempt = 0; attempt < 2; ++attempt)
     {
-        if (!_swapchain || _frames.empty()) return nullptr;
+        if (!_swapchain || _frames.empty())
+        {
+            return nullptr;
+        }
         auto frame = _frames[_currentFrame];
         // Latch old records before the fence can be reset by a later submit.
         frame->waitForSubmissions();
         VkDevice device = vkDevice()->handle();
         auto result = vkWaitForFences(device, 1, &_inFlight[_currentFrame], VK_TRUE, UINT64_MAX);
-        if (result != VK_SUCCESS) throw std::runtime_error("Vulkan frame-slot wait failed");
+        if (result != VK_SUCCESS)
+        {
+            throw std::runtime_error("Vulkan frame-slot wait failed");
+        }
         uint32_t imageIndex = 0;
         result = acquireNextImage(device, _swapchain, UINT64_MAX,
-            _imageAvailable[_currentFrame], VK_NULL_HANDLE, &imageIndex);
-        if (result == VK_ERROR_OUT_OF_DATE_KHR) {
-            resize({ uint32_t(width), uint32_t(height) });
+                                  _imageAvailable[_currentFrame], VK_NULL_HANDLE, &imageIndex);
+        if (result == VK_ERROR_OUT_OF_DATE_KHR)
+        {
+            resize({uint32_t(width), uint32_t(height)});
             continue;
         }
-        if (result == VK_TIMEOUT || result == VK_NOT_READY) return nullptr;
+        if (result == VK_TIMEOUT || result == VK_NOT_READY)
+        {
+            return nullptr;
+        }
         if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
+        {
             throw std::runtime_error("Vulkan image acquisition failed: " + std::to_string(result));
+        }
         const bool suboptimal = result == VK_SUBOPTIMAL_KHR;
-        if (imageIndex >= _colorImages.size()) throw std::runtime_error("Invalid Vulkan swapchain image index");
-        if (_imagesInFlight[imageIndex]) {
+        if (imageIndex >= _colorImages.size())
+        {
+            throw std::runtime_error("Invalid Vulkan swapchain image index");
+        }
+        if (_imagesInFlight[imageIndex])
+        {
             result = vkWaitForFences(device, 1, &_imagesInFlight[imageIndex], VK_TRUE, UINT64_MAX);
-            if (result != VK_SUCCESS) throw std::runtime_error("Vulkan image-use wait failed");
+            if (result != VK_SUCCESS)
+            {
+                throw std::runtime_error("Vulkan image-use wait failed");
+            }
         }
         _imagesInFlight[imageIndex] = _inFlight[_currentFrame];
         frame->clearRecreateRequest();
-        if (suboptimal) _recreateRequested = true;
+        if (suboptimal)
+        {
+            _recreateRequested = true;
+        }
         frame->setColorImage(_colorImages[imageIndex].get());
         frame->setDepthImage(_depthImage.get());
         frame->setImageIndex(imageIndex);
@@ -385,7 +449,10 @@ std::shared_ptr<gpu::SurfaceFrame> WindowSurface::beginFrame()
 void WindowSurface::present(gpu::CommandBuffer* cmd)
 {
     auto* command = dynamic_cast<vk::CommandBuffer*>(cmd);
-    if (!command || !_frameAcquired) throw std::logic_error("Vulkan present requires an acquired frame");
+    if (!command || !_frameAcquired)
+    {
+        throw std::logic_error("Vulkan present requires an acquired frame");
+    }
     command->associateFrame(_frames[_currentFrame]);
     command->setPresentFrame(_frames[_currentFrame].get());
 }
@@ -393,7 +460,9 @@ void WindowSurface::present(gpu::CommandBuffer* cmd)
 void WindowSurface::endFrame(gpu::SurfaceFrame* frame)
 {
     if (!_frameAcquired || frame != _frames[_currentFrame].get() || !frame->hasSubmissions())
+    {
         throw std::logic_error("Vulkan endFrame requires a submitted acquired frame");
+    }
     _frameAcquired = false;
     _currentFrame = (_currentFrame + 1) % _framesInFlight;
     ++_frameCounter;

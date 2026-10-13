@@ -30,7 +30,7 @@ namespace vk {
 class PipelineLayout;
 
 class BG2E_API ResourceSet : public gpu::ResourceSet {
-public:
+  public:
     ResourceSet(gpu::Device* gpuDevice, VkDevice device, const vk::PipelineLayout* layout, uint32_t setIndex, const std::string& debugName = {});
     ~ResourceSet() override;
 
@@ -43,32 +43,43 @@ public:
 
     void update() override;
 
-    uint32_t setIndex() const override { return _setIndex; }
+    uint32_t setIndex() const override
+    {
+        return _setIndex;
+    }
     bool isValid() const override;
     void cleanup() override;
 
-    VkDescriptorSet handle() const { return _descriptorSet; }
+    VkDescriptorSet handle() const
+    {
+        return _descriptorSet;
+    }
 
-private:
-    VkDevice        _device{VK_NULL_HANDLE};
-    uint32_t        _setIndex{0};
+  private:
+    VkDevice _device{VK_NULL_HANDLE};
+    uint32_t _setIndex{0};
     VkDescriptorPool _descriptorPool{VK_NULL_HANDLE};
-    VkDescriptorSet  _descriptorSet{VK_NULL_HANDLE};
+    VkDescriptorSet _descriptorSet{VK_NULL_HANDLE};
 
     // Intermediate storage kept alive until update() is called. pImageInfo /
     // pBufferInfo are not bound in the set* methods because pushing into the
     // info vectors may reallocate and invalidate pointers to earlier elements;
     // instead each write records which info vector it targets and the index, and
     // the pointers are resolved in update() once the vectors stop growing.
-    enum class WriteInfoKind { Image, Buffer, AccelerationStructure };
+    enum class WriteInfoKind
+    {
+        Image,
+        Buffer,
+        AccelerationStructure
+    };
 
-    std::vector<VkDescriptorImageInfo>  _imageInfos;
+    std::vector<VkDescriptorImageInfo> _imageInfos;
     std::vector<VkDescriptorBufferInfo> _bufferInfos;
     std::vector<VkAccelerationStructureKHR> _asHandles;
     std::vector<VkWriteDescriptorSetAccelerationStructureKHR> _asInfos;
-    std::vector<VkWriteDescriptorSet>   _pendingWrites;
-    std::vector<WriteInfoKind>          _writeInfoKinds;
-    std::vector<size_t>                 _writeInfoIndices;
+    std::vector<VkWriteDescriptorSet> _pendingWrites;
+    std::vector<WriteInfoKind> _writeInfoKinds;
+    std::vector<size_t> _writeInfoIndices;
 };
 
 }

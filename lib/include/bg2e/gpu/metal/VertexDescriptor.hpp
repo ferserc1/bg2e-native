@@ -28,11 +28,10 @@ namespace gpu {
 namespace metal {
 
 class VertexDescriptor {
-public:
+  public:
 #if BG2E_IS_MAC
     static MTL::VertexDescriptor* buildMetalVertexDescriptor(
-        const std::vector<gpu::VertexBufferDescription>& descriptions
-    );
+        const std::vector<gpu::VertexBufferDescription>& descriptions);
 
     static MTL::VertexFormat toMetalVertexFormat(gpu::Format format);
 #endif

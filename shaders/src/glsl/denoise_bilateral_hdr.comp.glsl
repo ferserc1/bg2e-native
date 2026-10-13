@@ -29,23 +29,27 @@ layout(set = 0, binding = 2) uniform sampler2D g_Depth;
 // Output image (RGBA16F for HDR GI irradiance)
 layout(set = 0, binding = 3, rgba16f) uniform image2D outImage;
 
-layout(push_constant) uniform PushConstant {
-    vec2        outputSize;
-    int         kernelRadius;
-    float       depthThreshold;
-    float       normalThreshold;
-    float       depthSigma;
-    float       normalSigma;
-    uint        padding;
-} pc;
+layout(push_constant) uniform PushConstant
+{
+    vec2 outputSize;
+    int kernelRadius;
+    float depthThreshold;
+    float normalThreshold;
+    float depthSigma;
+    float normalSigma;
+    uint padding;
+}
+pc;
 
 layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
 
-void main() {
+void main()
+{
     ivec2 imgSize = imageSize(outImage);
     ivec2 pixelCoord = ivec2(gl_GlobalInvocationID.xy);
 
-    if (pixelCoord.x >= imgSize.x || pixelCoord.y >= imgSize.y) {
+    if (pixelCoord.x >= imgSize.x || pixelCoord.y >= imgSize.y)
+    {
         return;
     }
 
@@ -54,7 +58,8 @@ void main() {
     vec3 centerNormal = texture(g_Normal, uv).xyz * 2.0 - 1.0;
     float centerDepth = texture(g_Depth, uv).r;
 
-    if (centerDepth >= 1.0) {
+    if (centerDepth >= 1.0)
+    {
         imageStore(outImage, pixelCoord, vec4(0.0, 0.0, 0.0, 1.0));
         return;
     }
@@ -63,8 +68,10 @@ void main() {
     float weightSum = 0.0;
     int radius = pc.kernelRadius;
 
-    for (int y = -radius; y <= radius; ++y) {
-        for (int x = -radius; x <= radius; ++x) {
+    for (int y = -radius; y <= radius; ++y)
+    {
+        for (int x = -radius; x <= radius; ++x)
+        {
             vec2 neighborUV = uv + vec2(float(x), float(y)) / pc.outputSize;
             vec3 neighborInput = texture(g_InputImage, neighborUV).rgb;
             vec3 neighborNormal = texture(g_Normal, neighborUV).xyz * 2.0 - 1.0;
@@ -75,11 +82,11 @@ void main() {
 
             float depthDiff = abs(centerDepth - neighborDepth);
             float depthWeight = depthDiff < pc.depthThreshold ? 1.0
-                : exp(-(depthDiff * depthDiff) / (2.0 * pc.depthSigma * pc.depthSigma));
+                                                              : exp(-(depthDiff * depthDiff) / (2.0 * pc.depthSigma * pc.depthSigma));
 
             float normalDot = clamp(dot(centerNormal, neighborNormal), 0.0, 1.0);
             float normalWeight = normalDot > pc.normalThreshold ? 1.0
-                : exp(-(1.0 - normalDot) / pc.normalSigma);
+                                                                : exp(-(1.0 - normalDot) / pc.normalSigma);
 
             float weight = spatialWeight * depthWeight * normalWeight;
             sum += neighborInput * weight;

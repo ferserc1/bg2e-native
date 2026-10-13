@@ -28,8 +28,8 @@
 
 namespace bg2e {
 namespace scene {
-    class Component;
-    class Node;
+class Component;
+class Node;
 }
 namespace ui {
 
@@ -37,15 +37,14 @@ namespace ui {
 // with reflection metadata remain visible even when they expose no editable
 // properties, because they may provide essential scene behavior.
 class BG2E_API ComponentInspector {
-public:
+  public:
     using ResourceChangedCallback = std::function<bool(
-        scene::Component * component,
+        scene::Component* component,
         const std::string& propertyName,
         const std::filesystem::path& previousPath,
-        const std::filesystem::path& selectedPath
-    )>;
+        const std::filesystem::path& selectedPath)>;
 
-    void setNode(scene::Node * node)
+    void setNode(scene::Node* node)
     {
         if (_node != node)
         {
@@ -53,16 +52,25 @@ public:
             _selectedComponentIndex = 0;
         }
     }
-    scene::Node * node() const { return _node; }
+    scene::Node* node() const
+    {
+        return _node;
+    }
 
     void draw();
 
     // Fired when any property changes or a component is removed
-    void onChanged(std::function<void()> cb) { _onChanged = cb; }
-    void onResourceChanged(ResourceChangedCallback cb) { _onResourceChanged = std::move(cb); }
+    void onChanged(std::function<void()> cb)
+    {
+        _onChanged = cb;
+    }
+    void onResourceChanged(ResourceChangedCallback cb)
+    {
+        _onResourceChanged = std::move(cb);
+    }
 
-protected:
-    scene::Node * _node = nullptr;
+  protected:
+    scene::Node* _node = nullptr;
     uint32_t _selectedComponentIndex = 0;
     std::function<void()> _onChanged;
     ResourceChangedCallback _onResourceChanged;

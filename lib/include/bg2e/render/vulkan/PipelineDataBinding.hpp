@@ -25,11 +25,13 @@ namespace render {
 namespace vulkan {
 
 class PipelineDataBinding {
-public:
-    PipelineDataBinding(bg2e::render::Engine * engine) : _engine(engine) {}
+  public:
+    PipelineDataBinding(bg2e::render::Engine* engine) : _engine(engine)
+    {
+    }
     virtual ~PipelineDataBinding() = default;
 
-    virtual void initFrameResources(bg2e::render::vulkan::DescriptorSetAllocator * frameAllocator) = 0;
+    virtual void initFrameResources(bg2e::render::vulkan::DescriptorSetAllocator* frameAllocator) = 0;
 
     virtual VkDescriptorSetLayout createLayout(VkShaderStageFlags shaderStages) = 0;
 
@@ -41,15 +43,16 @@ public:
             _layout = VK_NULL_HANDLE;
         }
     }
-    
-    inline VkDescriptorSetLayout layout() const { return _layout; }
 
-protected:
-    bg2e::render::Engine * _engine;
-    
+    inline VkDescriptorSetLayout layout() const
+    {
+        return _layout;
+    }
+
+  protected:
+    bg2e::render::Engine* _engine;
+
     VkDescriptorSetLayout _layout = VK_NULL_HANDLE;
-
-    
 };
 
 }

@@ -16,10 +16,11 @@ using namespace bg2e;
 namespace {
 
 reflection::TypeRegistration<scene::FixedScaleTransformControllerComponent> _fixedScaleReflection(
-    [](reflection::TypeInfoBuilder<scene::FixedScaleTransformControllerComponent>& t) {
+    [](reflection::TypeInfoBuilder<scene::FixedScaleTransformControllerComponent>& t)
+    {
         t.displayName("Fixed Scale Transform");
         t.property("scale", &scene::FixedScaleTransformControllerComponent::scale,
-                            &scene::FixedScaleTransformControllerComponent::setScale)
+                   &scene::FixedScaleTransformControllerComponent::setScale)
             .displayName("Scale")
             .category("Transform")
             .range(0.0, 1000.0)

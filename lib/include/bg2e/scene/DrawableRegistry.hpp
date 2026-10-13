@@ -29,11 +29,11 @@ namespace bg2e {
 namespace scene {
 
 class BG2E_API DrawableRegistry {
-public:
+  public:
     void registerDrawable(std::shared_ptr<DrawableBase> drawable);
     void cleanup();
 
-private:
+  private:
     std::vector<std::shared_ptr<DrawableBase>> _drawables;
     bool nameExists(const std::string& name) const;
 };

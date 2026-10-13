@@ -31,17 +31,17 @@ class PipelineLayout;
 class RayTracingScene;
 
 struct ResourceEntry {
-    uint32_t             index = 0;    // Metal arg index (from PipelineLayout)
-    ResourceType         type = ResourceType::SampledImage;
-    ShaderStage          stage = ShaderStage::Fragment;
-    TextureHandle        texture = nullptr;    // for Sampled/Storage image
-    SampleStateHandle    sampler = nullptr;    // for Sampler
-    BufferHandle         buffer  = nullptr;    // for Uniform/Storage buffer
-    RayTracingScene*     rtScene = nullptr;    // for AccelerationStructure
+    uint32_t index = 0; // Metal arg index (from PipelineLayout)
+    ResourceType type = ResourceType::SampledImage;
+    ShaderStage stage = ShaderStage::Fragment;
+    TextureHandle texture = nullptr;     // for Sampled/Storage image
+    SampleStateHandle sampler = nullptr; // for Sampler
+    BufferHandle buffer = nullptr;       // for Uniform/Storage buffer
+    RayTracingScene* rtScene = nullptr;  // for AccelerationStructure
 };
 
 class BG2E_API ResourceSet : public gpu::ResourceSet {
-public:
+  public:
     ResourceSet(gpu::Device* gpuDevice, const metal::PipelineLayout* layout, uint32_t setIndex);
     ~ResourceSet() override;
 
@@ -54,19 +54,25 @@ public:
 
     void update() override;
 
-    uint32_t setIndex() const override { return _setIndex; }
+    uint32_t setIndex() const override
+    {
+        return _setIndex;
+    }
     bool isValid() const override;
     void cleanup() override;
 
-    const std::vector<ResourceEntry>& entries() const { return _entries; }
+    const std::vector<ResourceEntry>& entries() const
+    {
+        return _entries;
+    }
 
-private:
+  private:
     void setBufferBinding(ShaderBinding binding, gpu::Buffer* buffer,
                           ResourceType type, const char* debugTag);
 
-    uint32_t    _setIndex{0};
+    uint32_t _setIndex{0};
     const metal::PipelineLayout* _layout = nullptr;
-    std::vector<ResourceEntry>   _entries;
+    std::vector<ResourceEntry> _entries;
 };
 
 }

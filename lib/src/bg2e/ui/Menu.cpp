@@ -19,42 +19,41 @@
 #include <bg2e/ui/Menu.hpp>
 #include <bg2e/app/MainLoop.hpp>
 
-#include "imgui.h"
+#include <imgui.h>
 
 namespace bg2e::ui {
 
 void MenuItem::draw() const
 {
-    switch (_type) {
+    switch (_type)
+    {
     case MenuItemType::Submenu:
         if (Menu::beginMenu(label))
         {
-            for (auto & subItem : _children)
+            for (auto& subItem : _children)
             {
                 subItem.draw();
             }
             Menu::endMenu();
         }
         break;
-    case MenuItemType::Action:
+    case MenuItemType::Action: {
+        std::string shortcut = _shortcut.getShortcutString();
+        if (Menu::menuItem(label, shortcut))
         {
-            std::string shortcut = _shortcut.getShortcutString();
-            if (Menu::menuItem(label, shortcut))
-            {
-                _shortcut.handler();
-            }
-            break;
+            _shortcut.handler();
         }
-    case MenuItemType::CheckableAction:
+        break;
+    }
+    case MenuItemType::CheckableAction: {
+        std::string shortcut = _shortcut.getShortcutString();
+        bool checked = _checkedFn ? _checkedFn() : false;
+        if (Menu::menuItem(label, shortcut, checked))
         {
-            std::string shortcut = _shortcut.getShortcutString();
-            bool checked = _checkedFn ? _checkedFn() : false;
-            if (Menu::menuItem(label, shortcut, checked))
-            {
-                _shortcut.handler();
-            }
-            break;
+            _shortcut.handler();
         }
+        break;
+    }
     case MenuItemType::Separator:
         Menu::separator();
         break;
@@ -66,7 +65,7 @@ void MenuItem::initShortcuts() const
     switch (_type)
     {
     case MenuItemType::Submenu:
-        for (auto &menuItem : _children)
+        for (auto& menuItem : _children)
         {
             menuItem.initShortcuts();
         }
@@ -74,14 +73,14 @@ void MenuItem::initShortcuts() const
     case MenuItemType::Action:
         if (_shortcut.key != app::KeyEvent::KeyUnknown)
         {
-            auto & shortcuts = app::MainLoop::current()->shortcuts();
+            auto& shortcuts = app::MainLoop::current()->shortcuts();
             shortcuts.addShortcutMapper(_shortcut);
         }
         break;
     case MenuItemType::CheckableAction:
         if (_shortcut.key != app::KeyEvent::KeyUnknown)
         {
-            auto & shortcuts = app::MainLoop::current()->shortcuts();
+            auto& shortcuts = app::MainLoop::current()->shortcuts();
             shortcuts.addShortcutMapper(_shortcut);
         }
         break;
@@ -123,7 +122,7 @@ void Menu::endMenuBar()
 
 void Menu::draw()
 {
-    for (auto & item : _menuItems)
+    for (auto& item : _menuItems)
     {
         if (!_shortcutInitialized)
         {

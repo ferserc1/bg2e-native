@@ -21,6 +21,6 @@ vertex VertexOut vertMain(VertexIn in [[stage_in]],
 {
     VertexOut out;
     out.position = camera.projection * camera.view * float4(in.position, 1.0);
-    out.uv       = in.texCoord;
+    out.uv = in.texCoord;
     return out;
 }

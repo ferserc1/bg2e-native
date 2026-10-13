@@ -26,29 +26,27 @@
 #include <iostream>
 #include <string>
 
-#include "bg2e/scene/FindNodeVisitor.hpp"
+#include <bg2e/scene/FindNodeVisitor.hpp>
 
-StageScene::StageScene(bg2e::render::Engine * engine, AppDelegate * appDelegate)
-    :_engine { engine }
-    ,_appDelegate { appDelegate }
-    ,_document(std::make_unique<Document>(appDelegate) )
+StageScene::StageScene(bg2e::render::Engine* engine, AppDelegate* appDelegate)
+    : _engine{engine}, _appDelegate{appDelegate}, _document(std::make_unique<Document>(appDelegate))
 {
 }
 
 std::shared_ptr<bg2e::scene::Node> StageScene::init()
 {
     auto sceneRoot = std::make_shared<bg2e::scene::Node>("Scene Root");
-    
+
     auto cameraNode = std::shared_ptr<bg2e::scene::Node>(new bg2e::scene::Node("Camera"));
-    cameraNode->addComponent(bg2e::scene::TransformComponent::makeTranslated(0.0f, 0.0f, 2.0f ));
-    
+    cameraNode->addComponent(bg2e::scene::TransformComponent::makeTranslated(0.0f, 0.0f, 2.0f));
+
     cameraNode->addComponent(new bg2e::scene::CameraComponent());
     auto projection = new bg2e::math::OpticalProjection();
     projection->setFocalLength(35.0f);
     projection->setFrameSize(35.0f);
     projection->setFar(1000.0f);
     cameraNode->camera()->setProjection(projection);
-    
+
     auto cameraRotation = new bg2e::scene::Node("Camera Rotation");
     cameraRotation->addComponent(new bg2e::scene::TransformComponent());
     auto cameraRotationComponent = new bg2e::scene::OrbitCameraComponent();
@@ -64,8 +62,8 @@ std::shared_ptr<bg2e::scene::Node> StageScene::init()
     cameraRotationComponent->setInitialDistance(2.0f);
     cameraRotationComponent->setWheelSpeed(2.0f);
     cameraRotationComponent->setPanSpeed(0.5f);
-    cameraRotationComponent->setRotation(glm::vec2{ 13.0f, 10.0f });
-    
+    cameraRotationComponent->setRotation(glm::vec2{13.0f, 10.0f});
+
     cameraRotation->addComponent(cameraRotationComponent);
     cameraRotation->addChild(cameraNode);
     sceneRoot->addChild(cameraRotation);
@@ -87,8 +85,7 @@ std::shared_ptr<bg2e::scene::Node> StageScene::init()
         bg2e::base::Light::TypeDirectional,
         225.0f, 56.27f, 3.33f,
         bg2e::base::Color::White(),
-        "Directional Light"
-    );
+        "Directional Light");
 
     // Optimize the directional light to allow a quick change to spot light
     auto polarTrx = directionalLight->getComponent<bg2e::scene::PolarTransformControllerComponent>();
@@ -106,8 +103,7 @@ std::shared_ptr<bg2e::scene::Node> StageScene::init()
         bg2e::base::Light::TypeOmni,
         45.0f, 30.0f, 2.0,
         bg2e::base::Color(0.3f, 0.5f, 0.9f, 1.0f),
-        "Point Light"
-    );
+        "Point Light");
     _lightsNode->addChild(pointLight);
 
     // Target node: the node where the loaded model is placed
@@ -116,7 +112,7 @@ std::shared_ptr<bg2e::scene::Node> StageScene::init()
 
     auto floor = createFloorNode();
     environmentNode->addChild(floor);
-    
+
     _sceneRoot = sceneRoot;
 
     // Restore environment settings
@@ -162,7 +158,6 @@ void StageScene::close()
     _document->setStatus("", false);
 }
 
-
 void StageScene::importModel(const std::filesystem::path& path)
 {
     // Get file extension
@@ -171,8 +166,10 @@ void StageScene::importModel(const std::filesystem::path& path)
         extension.cbegin(),
         extension.cend(),
         extension.begin(),
-        [](unsigned char c) { return std::tolower(c); }
-    );
+        [](unsigned char c)
+        {
+            return std::tolower(c);
+        });
     if (extension == ".obj")
     {
         importObj(path);
@@ -216,7 +213,10 @@ void StageScene::importGltf(const std::filesystem::path& path)
         for (auto& drawableNodeWp : drawableNodes)
         {
             auto drawableNode = drawableNodeWp.lock();
-            if (!drawableNode) continue;
+            if (!drawableNode)
+            {
+                continue;
+            }
             auto drawable = drawableNode->getComponent<bg2e::scene::DrawableComponent>()->drawable();
             _targetDrawables.push_back(drawable);
             _targetNames.push_back(drawableNode->name());
@@ -253,7 +253,6 @@ std::shared_ptr<bg2e::scene::Drawable> StageScene::targetDrawable()
     return _targetDrawable;
 }
 
-
 void StageScene::cleanup()
 {
     _viewpointAnalyzer.reset();
@@ -272,12 +271,12 @@ bool StageScene::checkUnsavedChanges()
         auto response = bg2e::app::MessageBox::showWarning(
             "Unsaved changes",
             "There are unsaved changes. Do you want to save your changes before continuing?",
-            {
-                { .code = 0, .label = "Cancel", },
-                { .code = 1, .label = "Save" },
-                { .code = 2, .label = "No" }
-            }
-        );
+            {{
+                 .code = 0,
+                 .label = "Cancel",
+             },
+             {.code = 1, .label = "Save"},
+             {.code = 2, .label = "No"}});
 
         if (response == 0)
         {
@@ -288,9 +287,7 @@ bool StageScene::checkUnsavedChanges()
             if (_document->path().empty())
             {
                 bg2e::app::FileDialog fd;
-                fd.setFilters({
-                    { "bg2e 3D model", "bg2,vwglb" }
-                });
+                fd.setFilters({{"bg2e 3D model", "bg2,vwglb"}});
                 auto filePath = fd.saveFile();
                 if (filePath.empty())
                 {
@@ -341,7 +338,10 @@ void StageScene::restoreEnvironmentSettings()
 
 void StageScene::restoreEnvironmentSettings(const std::filesystem::path& path)
 {
-    if (_restoringEnvironment) return;
+    if (_restoringEnvironment)
+    {
+        return;
+    }
     _restoringEnvironment = true;
 
     auto newScene = bg2e::db::loadScene(path, *_engine);
@@ -368,7 +368,11 @@ void StageScene::restoreEnvironmentSettings(const std::filesystem::path& path)
             [this, environmentNode, newScene, lightNodes, floorNodes]()
             {
                 auto envNode = environmentNode[0].lock();
-                if (!envNode) { _restoringEnvironment = false; return; }
+                if (!envNode)
+                {
+                    _restoringEnvironment = false;
+                    return;
+                }
                 _sceneRoot->removeChild(_environmentNode);
                 _environment = std::dynamic_pointer_cast<bg2e::scene::EnvironmentComponent>(envNode->environment()->shared_from_this());
                 _environmentNode = std::static_pointer_cast<bg2e::scene::Node>(newScene->rootNode()->shared_from_this());
@@ -411,8 +415,7 @@ void StageScene::restoreEnvironmentSettings(const std::filesystem::path& path)
                     }
                 }
             },
-            _restoreToken
-        );
+            _restoreToken);
     }
     else
     {
@@ -441,8 +444,7 @@ void StageScene::addLight()
     auto distance = 2.0f;
     auto l = createLightNode(
         bg2e::base::Light::TypeOmni,
-        static_cast<float>(azimuth), static_cast<float>(elevation)
-    );
+        static_cast<float>(azimuth), static_cast<float>(elevation));
     _lightsNode->addChild(l);
     _sceneRoot->scene()->updateLights();
 }
@@ -461,13 +463,13 @@ void StageScene::removeLight(uint32_t index)
 }
 
 std::shared_ptr<bg2e::scene::Node> StageScene::createLightNode(
-   bg2e::base::Light::LightType type,
-   float azimuth,
-   float elevation,
-   float distance,
-   const bg2e::base::Color& color,
-   const std::string & name
-) {
+    bg2e::base::Light::LightType type,
+    float azimuth,
+    float elevation,
+    float distance,
+    const bg2e::base::Color& color,
+    const std::string& name)
+{
     using namespace bg2e::scene;
     auto lightName = name;
     if (lightName == "")
@@ -536,22 +538,30 @@ std::shared_ptr<bg2e::scene::Node> StageScene::createFloorNode()
     return _floorNode;
 }
 
-bg2e::scene::CameraComponent * StageScene::cameraComponent()
+bg2e::scene::CameraComponent* StageScene::cameraComponent()
 {
     auto orbitNode = _orbitCamera->ownerNode();
-    for (auto & child : orbitNode->children()) {
+    for (auto& child : orbitNode->children())
+    {
         auto cam = child->getComponent<bg2e::scene::CameraComponent>();
-        if (cam) return cam;
+        if (cam)
+        {
+            return cam;
+        }
     }
     return nullptr;
 }
 
-bg2e::scene::CameraComponent * StageScene::cameraComponent() const
+bg2e::scene::CameraComponent* StageScene::cameraComponent() const
 {
     auto orbitNode = _orbitCamera->ownerNode();
-    for (auto & child : orbitNode->children()) {
+    for (auto& child : orbitNode->children())
+    {
         auto cam = child->getComponent<bg2e::scene::CameraComponent>();
-        if (cam) return cam;
+        if (cam)
+        {
+            return cam;
+        }
     }
     return nullptr;
 }
@@ -576,7 +586,7 @@ void StageScene::centerCameraOnTarget()
 
     auto config = _viewpointAnalyzer->config();
     const float fieldOfView = bg2e::utils::cameraVerticalFieldOfView(cameraComponent());
-    config.fieldOfView = { fieldOfView, fieldOfView, 1, false };
+    config.fieldOfView = {fieldOfView, fieldOfView, 1, false};
     _viewpointAnalyzer->setConfig(config);
 
     const auto samples = _viewpointAnalyzer->analyze(_targetNode.get());

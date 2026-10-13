@@ -26,8 +26,10 @@ namespace bg2e {
 namespace gpu {
 
 class BG2E_API Sampler : public DeviceResource {
-public:
-    explicit Sampler(Device* device) : DeviceResource(device) {}
+  public:
+    explicit Sampler(Device* device) : DeviceResource(device)
+    {
+    }
     virtual ~Sampler() = default;
 };
 

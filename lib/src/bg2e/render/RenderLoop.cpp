@@ -23,19 +23,20 @@
 namespace bg2e {
 namespace render {
 
-void RenderLoop::init(Engine * engine)
+void RenderLoop::init(Engine* engine)
 {
-	_engine = engine;
+    _engine = engine;
 
     if (_renderDelegate)
     {
         _renderDelegate->init(engine);
     }
-    
-	_engine->iterateFrameResources([&](vulkan::FrameResources& frameResources) {
-        frameResources.descriptorAllocator->init(_engine);
-		initFrameResources(frameResources.descriptorAllocator);
-	});
+
+    _engine->iterateFrameResources([&](vulkan::FrameResources& frameResources)
+                                   {
+                                       frameResources.descriptorAllocator->init(_engine);
+                                       initFrameResources(frameResources.descriptorAllocator);
+                                   });
 }
 
 void RenderLoop::initScene()
@@ -49,9 +50,10 @@ void RenderLoop::initScene()
 void RenderLoop::acquireAndPresent()
 {
     static VkFence skipFence = VK_NULL_HANDLE;
-	if (!_engine) {
+    if (!_engine)
+    {
         throw new std::runtime_error("RenderLoop::render(): The frame cannot be rendered because Vulkan object has not been set.");
-	}
+    }
 
     VkDevice dev = _engine->device().handle();
     auto swapchainData = _engine->swapchain();
@@ -59,7 +61,7 @@ void RenderLoop::acquireAndPresent()
     auto graphicsQueue = _engine->device().graphicsQueue();
 
     auto& frameResources = _engine->currentFrameResources();
-	auto cmd = frameResources.commandBuffer;
+    auto cmd = frameResources.commandBuffer;
     auto frameFence = frameResources.frameFence;
     auto swapchainSemaphore = frameResources.swapchainSemaphore;
 
@@ -77,7 +79,7 @@ void RenderLoop::acquireAndPresent()
     _engine->flushDeferredExec();
 
     uint32_t swapchainImageIndex;
-	auto acquireResult = vulkan::acquireNextImage(dev, swapchain, 10000000000, swapchainSemaphore, nullptr, &swapchainImageIndex);
+    auto acquireResult = vulkan::acquireNextImage(dev, swapchain, 10000000000, swapchainSemaphore, nullptr, &swapchainImageIndex);
     if (acquireResult == VK_SUBOPTIMAL_KHR)
     {
         std::cout << "VK_SUBOPTIMAL_KHR" << std::endl;
@@ -117,8 +119,7 @@ void RenderLoop::acquireAndPresent()
             cmd,
             resolveImage->handle(),
             VK_IMAGE_LAYOUT_UNDEFINED,
-            VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
-        );
+            VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
 
         if (_scenePaused)
         {
@@ -126,8 +127,7 @@ void RenderLoop::acquireAndPresent()
                 cmd,
                 msaaImage->handle(),
                 VK_IMAGE_LAYOUT_UNDEFINED,
-                VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
-            );
+                VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
             cmdClearColorImage(cmd, msaaImage, _sceneClearColor);
 
@@ -135,15 +135,13 @@ void RenderLoop::acquireAndPresent()
                 cmd,
                 msaaImage->handle(),
                 VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
-            );
+                VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 
             vulkan::Image::cmdTransitionImage(
                 cmd,
                 resolveImage->handle(),
                 VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
-                VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
-            );
+                VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
             cmdClearColorImage(cmd, resolveImage, _sceneClearColor);
 
@@ -151,8 +149,7 @@ void RenderLoop::acquireAndPresent()
                 cmd,
                 resolveImage->handle(),
                 VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
-            );
+                VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
         }
         else
         {
@@ -160,34 +157,29 @@ void RenderLoop::acquireAndPresent()
                 cmd,
                 msaaImage->handle(),
                 VK_IMAGE_LAYOUT_UNDEFINED,
-                VK_IMAGE_LAYOUT_GENERAL
-            );
+                VK_IMAGE_LAYOUT_GENERAL);
 
             auto lastSwapchainLayout = render(
                 cmd,
                 msaaImage,
                 depthImage,
                 msaaDepthImage,
-                frameResources
-            );
+                frameResources);
 
-            if (lastSwapchainLayout != VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL) {
+            if (lastSwapchainLayout != VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL)
+            {
                 vulkan::Image::cmdTransitionImage(
                     cmd,
                     msaaImage->handle(),
                     lastSwapchainLayout,
-                    VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
-                );
+                    VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
             }
-
 
             vulkan::Image::cmdTransitionImage(
                 cmd,
                 resolveImage->handle(),
                 VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
-                VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
-            );
-
+                VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
             // Resolve the MSAA image to the swapchain image
             VkImageResolve region = {};
@@ -195,23 +187,21 @@ void RenderLoop::acquireAndPresent()
             region.srcSubresource.mipLevel = 0;
             region.srcSubresource.baseArrayLayer = 0;
             region.srcSubresource.layerCount = 1;
-            region.srcOffset = { 0, 0, 0 };
+            region.srcOffset = {0, 0, 0};
             region.dstSubresource = region.srcSubresource;
-            region.dstOffset = { 0, 0, 0 };
-            region.extent = { msaaImage->extent() };
+            region.dstOffset = {0, 0, 0};
+            region.extent = {msaaImage->extent()};
             vkCmdResolveImage(
                 cmd,
                 msaaImage->handle(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
                 resolveImage->handle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                1, &region
-            );
+                1, &region);
 
             vulkan::Image::cmdTransitionImage(
                 cmd,
                 resolveImage->handle(),
                 VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
-            );
+                VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
         }
     }
     else
@@ -222,8 +212,7 @@ void RenderLoop::acquireAndPresent()
                 cmd,
                 resolveImage->handle(),
                 VK_IMAGE_LAYOUT_UNDEFINED,
-                VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
-            );
+                VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
             cmdClearColorImage(cmd, resolveImage, _sceneClearColor);
 
@@ -231,8 +220,7 @@ void RenderLoop::acquireAndPresent()
                 cmd,
                 resolveImage->handle(),
                 VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
-            );
+                VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
         }
         else
         {
@@ -241,42 +229,38 @@ void RenderLoop::acquireAndPresent()
                 cmd,
                 resolveImage->handle(),
                 VK_IMAGE_LAYOUT_UNDEFINED,
-                VK_IMAGE_LAYOUT_GENERAL
-            );
+                VK_IMAGE_LAYOUT_GENERAL);
 
             auto lastSwapchainLayout = render(
                 cmd,
                 resolveImage,
                 depthImage,
                 depthImage,
-                frameResources
-            );
+                frameResources);
 
-            if (lastSwapchainLayout != VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL) {
+            if (lastSwapchainLayout != VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL)
+            {
                 vulkan::Image::cmdTransitionImage(
                     cmd,
                     resolveImage->handle(),
                     lastSwapchainLayout,
-                    VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
-                );
+                    VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
             }
         }
     }
 
-    
     // TODO: Instead of using the swapchain image to render the user interface, we could use another image
     // and combine it with the swap chain here
-	if (_renderUICallback)
-	{
-		_renderUICallback(cmd, resolveImage->imageView());
-	}
-    
+    if (_renderUICallback)
+    {
+        _renderUICallback(cmd, resolveImage->imageView());
+    }
+
     vulkan::Image::cmdTransitionImage(
         cmd,
         resolveImage->handle(),
         VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-        VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
-    );
+        VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
 
     // End command buffer
     VK_ASSERT(vkEndCommandBuffer(cmd));
@@ -285,12 +269,10 @@ void RenderLoop::acquireAndPresent()
     auto cmdInfo = vulkan::Info::commandBufferSubmitInfo(cmd);
     auto waitSemaphoreInfo = vulkan::Info::semaphoreSubmitInfo(
         VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
-        swapchainSemaphore
-    );
+        swapchainSemaphore);
     auto signalSemaphoreInfo = vulkan::Info::semaphoreSubmitInfo(
         VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT,
-        renderSemaphore
-    );
+        renderSemaphore);
     auto submitInfo = vulkan::Info::submitInfo(&cmdInfo, &signalSemaphoreInfo, &waitSemaphoreInfo);
     VK_ASSERT(vulkan::queueSubmit2(graphicsQueue, 1, &submitInfo, frameFence));
 
@@ -313,7 +295,7 @@ void RenderLoop::swapchainResized()
     {
         std::cout << "RenderLoop::swapchainResized()" << std::endl;
         auto newExtent = _engine->swapchain().extent();
-		_renderDelegate->swapchainResized(newExtent);
+        _renderDelegate->swapchainResized(newExtent);
     }
 }
 
@@ -330,8 +312,8 @@ VkImageLayout RenderLoop::render(
     const vulkan::Image* colorImage,
     const vulkan::Image* depthImage,
     const vulkan::Image* msaaDepthImage,
-    vulkan::FrameResources& frameResources
-) {
+    vulkan::FrameResources& frameResources)
+{
     if (_renderDelegate)
     {
         return _renderDelegate->render(
@@ -340,8 +322,7 @@ VkImageLayout RenderLoop::render(
             colorImage,
             depthImage,
             msaaDepthImage,
-            frameResources
-        );
+            frameResources);
     }
     else
     {
@@ -360,7 +341,9 @@ void RenderLoop::cleanup()
 void RenderLoop::pauseScene(glm::vec4 clearColor)
 {
     if (_engine)
+    {
         _engine->device().waitIdle();
+    }
     _sceneClearColor = clearColor;
     _scenePaused = true;
 }
@@ -368,15 +351,16 @@ void RenderLoop::pauseScene(glm::vec4 clearColor)
 void RenderLoop::resumeScene()
 {
     if (_engine)
+    {
         _engine->device().waitIdle();
+    }
     _scenePaused = false;
 }
 
 void RenderLoop::cmdClearColorImage(
     VkCommandBuffer cmd,
     const vulkan::Image* targetImage,
-    const glm::vec4& clearColor
-)
+    const glm::vec4& clearColor)
 {
     VkClearColorValue clearValue{};
     clearValue.float32[0] = clearColor.r;
@@ -385,19 +369,18 @@ void RenderLoop::cmdClearColorImage(
     clearValue.float32[3] = clearColor.a;
 
     VkImageSubresourceRange range{};
-    range.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
-    range.baseMipLevel   = 0;
-    range.levelCount     = 1;
+    range.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    range.baseMipLevel = 0;
+    range.levelCount = 1;
     range.baseArrayLayer = 0;
-    range.layerCount     = 1;
+    range.layerCount = 1;
 
     vkCmdClearColorImage(
         cmd,
         targetImage->handle(),
         VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
         &clearValue,
-        1, &range
-    );
+        1, &range);
 }
 
 }

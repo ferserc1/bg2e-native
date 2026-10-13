@@ -42,7 +42,7 @@ namespace ui {
 namespace {
 
 struct ResourceSnapshot {
-    const reflection::PropertyInfo * property = nullptr;
+    const reflection::PropertyInfo* property = nullptr;
     std::filesystem::path value;
 };
 
@@ -68,42 +68,41 @@ std::vector<ComponentOption> availableComponents(const scene::Node& node)
         const bool alreadyAdded = std::any_of(
             nodeComponents.begin(),
             nodeComponents.end(),
-            [&typeName](const std::shared_ptr<scene::Component>& component) {
+            [&typeName](const std::shared_ptr<scene::Component>& component)
+            {
                 return component->typeName() == typeName;
-            }
-        );
+            });
         if (alreadyAdded)
         {
             continue;
         }
 
         const auto* typeInfo = reflectionRegistry.type(typeName);
-        result.push_back({
-            typeName,
-            typeInfo && !typeInfo->displayName.empty() ? typeInfo->displayName : typeName
-        });
+        result.push_back({typeName,
+                          typeInfo && !typeInfo->displayName.empty() ? typeInfo->displayName : typeName});
     }
 
-    std::sort(result.begin(), result.end(), [](const ComponentOption& lhs, const ComponentOption& rhs) {
-        return lhs.displayName < rhs.displayName;
-    });
+    std::sort(result.begin(), result.end(), [](const ComponentOption& lhs, const ComponentOption& rhs)
+              {
+                  return lhs.displayName < rhs.displayName;
+              });
     return result;
 }
 
 std::filesystem::path resourceValue(
     const reflection::PropertyInfo& property,
-    const void * instance
-) {
+    const void* instance)
+{
     const auto value = property.getter(instance);
     return property.metadata.resourceValueType == reflection::PropertyType::String
-        ? std::filesystem::path(std::any_cast<std::string>(value))
-        : std::any_cast<std::filesystem::path>(value);
+               ? std::filesystem::path(std::any_cast<std::string>(value))
+               : std::any_cast<std::filesystem::path>(value);
 }
 
 void restoreResource(
     const ResourceSnapshot& snapshot,
-    void * instance
-) {
+    void* instance)
+{
     if (snapshot.property->metadata.resourceValueType == reflection::PropertyType::String)
     {
         snapshot.property->setter(instance, snapshot.value.string());
@@ -146,8 +145,7 @@ void ComponentInspector::draw()
         if (Button::button("Add Component", false))
         {
             auto* component = scene::ComponentFactoryRegistry::get().createDefault(
-                componentOptions[_selectedComponentIndex].typeName
-            );
+                componentOptions[_selectedComponentIndex].typeName);
             if (component)
             {
                 _node->addComponent(component);
@@ -165,9 +163,9 @@ void ComponentInspector::draw()
     std::shared_ptr<scene::Component> pendingRemove;
     int id = 0;
 
-    for (auto & comp : _node->orderedComponents())
+    for (auto& comp : _node->orderedComponents())
     {
-        const auto * typeInfo = reflection::TypeRegistry::get().type(comp->typeName());
+        const auto* typeInfo = reflection::TypeRegistry::get().type(comp->typeName());
         if (!typeInfo)
         {
             continue;
@@ -176,8 +174,8 @@ void ComponentInspector::draw()
         Group::pushId(id++);
 
         const auto headerTitle = !typeInfo->displayName.empty()
-            ? typeInfo->displayName
-            : comp->typeName();
+                                     ? typeInfo->displayName
+                                     : comp->typeName();
 
         // allowOverlap: the Remove button is drawn on top of the header row
         // (sameLine), so the header must not steal its mouse clicks.
@@ -185,8 +183,7 @@ void ComponentInspector::draw()
         {
             // Right-aligned remove button on the header row
             auto removeWidth = static_cast<int32_t>(
-                Layout::calcButtonWidth("Remove") + Layout::getItemHorizontalSpacing()
-            );
+                Layout::calcButtonWidth("Remove") + Layout::getItemHorizontalSpacing());
             Layout::sameLine(-removeWidth);
             if (Button::button("Remove"))
             {
@@ -195,25 +192,28 @@ void ComponentInspector::draw()
             }
 
             std::vector<ResourceSnapshot> resources;
-            for (const auto & property : typeInfo->properties)
+            for (const auto& property : typeInfo->properties)
             {
                 if (property.type == reflection::PropertyType::Resource && property.getter)
                 {
-                    resources.push_back({ &property, resourceValue(property, comp.get()) });
+                    resources.push_back({&property, resourceValue(property, comp.get())});
                 }
             }
 
             bool componentChanged = ReflectionWidget::drawProperties(comp.get(), *typeInfo);
             size_t changedResources = 0;
             size_t rejectedResources = 0;
-            for (const auto & resource : resources)
+            for (const auto& resource : resources)
             {
                 const auto selected = resourceValue(*resource.property, comp.get());
-                if (selected == resource.value) continue;
+                if (selected == resource.value)
+                {
+                    continue;
+                }
                 ++changedResources;
 
                 if (_onResourceChanged && !_onResourceChanged(
-                        comp.get(), resource.property->name, resource.value, selected))
+                                              comp.get(), resource.property->name, resource.value, selected))
                 {
                     restoreResource(resource, comp.get());
                     ++rejectedResources;
@@ -244,9 +244,10 @@ void ComponentInspector::draw()
         // after the device is idle. The node and the component are captured
         // as shared_ptr so they stay alive until the lambda executes.
         auto node = _node->shared_from_this();
-        app::MainLoop::current()->safeUpdateScene([node, pendingRemove]() {
-            node->removeComponent(pendingRemove);
-        });
+        app::MainLoop::current()->safeUpdateScene([node, pendingRemove]()
+                                                  {
+                                                      node->removeComponent(pendingRemove);
+                                                  });
         changed = true;
     }
 

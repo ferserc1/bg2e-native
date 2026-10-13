@@ -33,10 +33,12 @@ layout(location = 3) in vec3 inViewPos;
 layout(location = 4) in vec3 inFragPos;
 layout(location = 5) in mat3 inTBN;
 
-layout (set = 1, binding = 0) uniform PBRObjectData {
+layout(set = 1, binding = 0) uniform PBRObjectData
+{
     mat4 modelMatrix;
     PBRMaterialData material;
-} objectData;
+}
+objectData;
 
 layout(set = 1, binding = 1) uniform sampler2D albedoTex;
 layout(set = 1, binding = 2) uniform sampler2D normalTex;
@@ -51,20 +53,25 @@ layout(push_constant) uniform PushConstant
     float brightness;
     float contrast;
     float exposure;
-} pushConstant;
+}
+pushConstant;
 
 layout(set = 2, binding = 0) uniform samplerCube irradianceMap;
 layout(set = 2, binding = 1) uniform samplerCube prefilteredEnvMap;
 layout(set = 2, binding = 2) uniform sampler2D brdfLUT;
-layout(set = 2, binding = 3) uniform EnvironmentData {
+layout(set = 2, binding = 3) uniform EnvironmentData
+{
     float maxReflectionLOD;
-} environmentData;
+}
+environmentData;
 
-layout (set = 3, binding = 0) uniform LightBuffer {
+layout(set = 3, binding = 0) uniform LightBuffer
+{
     LightData lights[LIGHT_COUNT];
     int lightCount;
     vec3 padding;
-} LightsBuffer;
+}
+LightsBuffer;
 
 void main()
 {
@@ -84,8 +91,7 @@ void main()
             pushConstant.exposure,
             pushConstant.gamma,
             pushConstant.brightness,
-            pushConstant.contrast
-        );
+            pushConstant.contrast);
         return;
     }
 
@@ -94,23 +100,23 @@ void main()
 
     vec3 Lo = vec3(0.0);
     int lightCount = LightsBuffer.lightCount;
-    for(int i = 0; i < lightCount; ++i)
+    for (int i = 0; i < lightCount; ++i)
     {
-        if (LightsBuffer.lights[i].castShadows == 0) {
+        if (LightsBuffer.lights[i].castShadows == 0)
+        {
             Lo += calcRadiance(LightsBuffer.lights[i], viewDir, inFragPos, metallic, roughness, F0, normal, albedo, mat.sheenIntensity, mat.sheenColor.rgb, ambientOcclussion);
             continue;
         }
         Lo += calcRadiance(LightsBuffer.lights[i], viewDir, inFragPos, metallic, roughness, F0, normal, albedo, mat.sheenIntensity, mat.sheenColor.rgb, ambientOcclussion);
     }
-  
+
     vec3 ambient = calcAmbientLight(
-        viewDir, normal, F0, 
+        viewDir, normal, F0,
         albedo, metallic, roughness,
         irradianceMap, prefilteredEnvMap,
         environmentData.maxReflectionLOD,
         brdfLUT, ambientOcclussion,
-        mat.sheenIntensity, mat.sheenColor.rgb
-    );
+        mat.sheenIntensity, mat.sheenColor.rgb);
 
     vec3 color = ambient + Lo;
 

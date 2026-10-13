@@ -18,7 +18,7 @@
 
 #include <bg2e/ui/Loader.hpp>
 
-#include "imgui.h"
+#include <imgui.h>
 
 #include <algorithm>
 
@@ -59,16 +59,15 @@ void Loader::draw()
     ImGui::SetNextWindowPos(
         ImVec2((io.DisplaySize.x - winW) * 0.5f,
                (io.DisplaySize.y - winH) * 0.5f),
-        ImGuiCond_Always
-    );
+        ImGuiCond_Always);
     ImGui::SetNextWindowSize(ImVec2(winW, winH), ImGuiCond_Always);
 
     ImGuiWindowFlags flags =
-        ImGuiWindowFlags_NoTitleBar   |
-        ImGuiWindowFlags_NoResize     |
-        ImGuiWindowFlags_NoMove       |
-        ImGuiWindowFlags_NoScrollbar  |
-        ImGuiWindowFlags_NoCollapse   |
+        ImGuiWindowFlags_NoTitleBar |
+        ImGuiWindowFlags_NoResize |
+        ImGuiWindowFlags_NoMove |
+        ImGuiWindowFlags_NoScrollbar |
+        ImGuiWindowFlags_NoCollapse |
         ImGuiWindowFlags_NoNav;
 
     if (ImGui::Begin("##loader", nullptr, flags))

@@ -41,7 +41,7 @@ void SelectableComponent::update(float)
     {
         return;
     }
-    
+
     auto drwComponent = ownerNode()->drawable();
     auto drw = drwComponent ? dynamic_cast<scene::Drawable*>(drwComponent->drawableBase().get()) : nullptr;
     if (_submeshCount == 0 && drw)
@@ -79,7 +79,6 @@ uint32_t SelectableComponent::generateIdentifier()
     SelectableComponent::_lastIdentifier++;
     return SelectableComponent::_lastIdentifier;
 }
-
 
 scene::BG2E_SCENE_REGISTER_COMPONENT(SelectableComponent);
 

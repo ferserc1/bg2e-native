@@ -32,9 +32,11 @@ layout(set = 0, binding = 0) uniform sampler2D colorTex;
 layout(set = 0, binding = 1) uniform sampler2D blendTex;
 layout(rgba8, set = 0, binding = 2) uniform image2D outputImage;
 
-layout(push_constant) uniform PushConstant {
+layout(push_constant) uniform PushConstant
+{
     vec2 texelSize;
-} pc;
+}
+pc;
 
 layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
 
@@ -42,19 +44,29 @@ layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
 vec4 rtMetrics;
 
 // Conditional move helpers (replace components where cond is true).
-void SMAAMovc2(bvec2 cond, inout vec2 v, vec2 value) {
-    if (cond.x) v.x = value.x;
-    if (cond.y) v.y = value.y;
+void SMAAMovc2(bvec2 cond, inout vec2 v, vec2 value)
+{
+    if (cond.x)
+    {
+        v.x = value.x;
+    }
+    if (cond.y)
+    {
+        v.y = value.y;
+    }
 }
-void SMAAMovc4(bvec4 cond, inout vec4 v, vec4 value) {
+void SMAAMovc4(bvec4 cond, inout vec4 v, vec4 value)
+{
     SMAAMovc2(cond.xy, v.xy, value.xy);
     SMAAMovc2(cond.zw, v.zw, value.zw);
 }
 
-void main() {
+void main()
+{
     ivec2 size = imageSize(outputImage);
     ivec2 pixelCoord = ivec2(gl_GlobalInvocationID.xy);
-    if (pixelCoord.x >= size.x || pixelCoord.y >= size.y) {
+    if (pixelCoord.x >= size.x || pixelCoord.y >= size.y)
+    {
         return;
     }
 
@@ -64,12 +76,13 @@ void main() {
 
     // Fetch the blending weights for the current pixel.
     vec4 a;
-    a.x = textureLod(blendTex, offset.xy, 0.0).a;   // Right
-    a.y = textureLod(blendTex, offset.zw, 0.0).g;   // Top
-    a.wz = textureLod(blendTex, texcoord, 0.0).xz;  // Bottom / Left
+    a.x = textureLod(blendTex, offset.xy, 0.0).a;  // Right
+    a.y = textureLod(blendTex, offset.zw, 0.0).g;  // Top
+    a.wz = textureLod(blendTex, texcoord, 0.0).xz; // Bottom / Left
 
     // No blending weights: pass the color through unchanged.
-    if (dot(a, vec4(1.0)) < 1e-5) {
+    if (dot(a, vec4(1.0)) < 1e-5)
+    {
         vec4 color = textureLod(colorTex, texcoord, 0.0);
         imageStore(outputImage, pixelCoord, vec4(color.rgb, 1.0));
         return;

@@ -28,12 +28,11 @@ namespace gpu {
 namespace vk {
 
 class VertexDescriptor {
-public:
+  public:
     static void buildVkVertexInput(
         const std::vector<gpu::VertexBufferDescription>& descriptions,
-        std::vector<VkVertexInputBindingDescription>&    outBindings,
-        std::vector<VkVertexInputAttributeDescription>&  outAttributes
-    );
+        std::vector<VkVertexInputBindingDescription>& outBindings,
+        std::vector<VkVertexInputAttributeDescription>& outAttributes);
 
     static VkFormat toVkVertexFormat(gpu::Format format);
 };

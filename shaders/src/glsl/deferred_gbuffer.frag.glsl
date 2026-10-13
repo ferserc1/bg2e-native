@@ -22,10 +22,12 @@
 #include "lib/uniforms.glsl"
 #include "lib/normal_map.glsl"
 
-layout (set = 1, binding = 0) uniform PBRObjectData {
+layout(set = 1, binding = 0) uniform PBRObjectData
+{
     mat4 modelMatrix;
     PBRMaterialData material;
-} objectData;
+}
+objectData;
 
 layout(set = 1, binding = 1) uniform sampler2D albedoTex;
 layout(set = 1, binding = 2) uniform sampler2D normalTex;
@@ -47,7 +49,8 @@ layout(location = 2) in vec2 inUV0;
 layout(location = 3) in vec2 inUV1;
 layout(location = 4) in mat3 inTBN;
 
-void main() {
+void main()
+{
     PBRMaterialData mat = objectData.material;
 
     // Albedo (sRGB to linear; alpha remains linear)
@@ -85,7 +88,7 @@ void main() {
     // replicated to RGB; RGB bakes therefore remain channel-preserving.
     if ((flags & MATERIAL_FLAG_HAS_BAKED_LIGHTMAP) != 0u)
     {
-        vec2 uv[2] = { inUV0, inUV1 };
+        vec2 uv[2] = {inUV0, inUV1};
         g_BakedLightmap = vec4(texture(aoTex, uv[mat.aoUVSet]).rgb, 1.0);
     }
     else

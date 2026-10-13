@@ -22,12 +22,13 @@
 
 namespace bg2e::render::vulkan::macros {
 
-void cmdSetDefaultViewportAndScissor(VkCommandBuffer cmd, VkExtent2D extent) {
+void cmdSetDefaultViewportAndScissor(VkCommandBuffer cmd, VkExtent2D extent)
+{
     VkViewport viewport = {};
 
     viewport.x = 0.0f;
     viewport.width = static_cast<float>(extent.width);
-    
+
     // Invert Y axis
     viewport.height = -static_cast<float>(extent.height);
     viewport.y = static_cast<float>(extent.height);
@@ -43,32 +44,29 @@ void cmdSetDefaultViewportAndScissor(VkCommandBuffer cmd, VkExtent2D extent) {
 
 void cmdClearImageAndBeginRendering(
     VkCommandBuffer cmd,
-    const Image * colorImage,
+    const Image* colorImage,
     VkClearColorValue clearValue,
     VkImageLayout colorImageInitialLayout,
-    const Image * depthImage,
-    float depthValue
-) {
+    const Image* depthImage,
+    float depthValue)
+{
     Image::cmdTransitionImage(
         cmd,
         colorImage->handle(),
         colorImageInitialLayout,
-        VK_IMAGE_LAYOUT_GENERAL
-    );
+        VK_IMAGE_LAYOUT_GENERAL);
 
     auto clearRange = Image::subresourceRange(VK_IMAGE_ASPECT_COLOR_BIT);
     vkCmdClearColorImage(
         cmd,
         colorImage->handle(),
         VK_IMAGE_LAYOUT_GENERAL,
-        &clearValue, 1, &clearRange
-    );
+        &clearValue, 1, &clearRange);
 
     Image::cmdTransitionImage(
         cmd, colorImage->handle(),
         VK_IMAGE_LAYOUT_GENERAL,
-        VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
-    );
+        VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 
     if (depthImage)
     {
@@ -87,17 +85,17 @@ void cmdClearImageAndBeginRendering(
 
 extern BG2E_API void cmdClearImagesAndBeginRendering(
     VkCommandBuffer cmd,
-    const std::vector<const Image *>& colorImages,
+    const std::vector<const Image*>& colorImages,
     VkClearColorValue clearValue,
     VkImageLayout colorImageInitialLayout,
-    const Image * depthImage,
-    float depthValue
-) {
+    const Image* depthImage,
+    float depthValue)
+{
     if (colorImages.size() == 0)
     {
         throw new std::runtime_error("cmdClearImagesAndBeginRender - parameter error: the colorImage vector is empty");
     }
-    
+
     auto clearRange = Image::subresourceRange(VK_IMAGE_ASPECT_COLOR_BIT);
     std::vector<VkRenderingAttachmentInfo> colorAttachments;
     VkExtent2D imageExtent = colorImages[0]->extent2D();
@@ -106,27 +104,23 @@ extern BG2E_API void cmdClearImagesAndBeginRendering(
         Image::cmdTransitionImage(
             cmd, image->handle(),
             colorImageInitialLayout,
-            VK_IMAGE_LAYOUT_GENERAL
-        );
-        
+            VK_IMAGE_LAYOUT_GENERAL);
+
         vkCmdClearColorImage(
             cmd,
             image->handle(),
             VK_IMAGE_LAYOUT_GENERAL,
-            &clearValue, 1, &clearRange
-        );
-        
+            &clearValue, 1, &clearRange);
+
         Image::cmdTransitionImage(
             cmd, image->handle(),
             VK_IMAGE_LAYOUT_GENERAL,
-            VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
-        );
-        
+            VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+
         auto colorAttachment = Info::attachmentInfo(image->imageView(), nullptr);
         colorAttachments.push_back(colorAttachment);
     }
-    
-    
+
     if (depthImage)
     {
         auto depthAttachment = Info::depthAttachmentInfo(depthImage->imageView(), depthValue);
@@ -134,8 +128,7 @@ extern BG2E_API void cmdClearImagesAndBeginRendering(
             imageExtent,
             colorAttachments.data(),
             &depthAttachment,
-            static_cast<uint32_t>(colorAttachments.size())
-        );
+            static_cast<uint32_t>(colorAttachments.size()));
         cmdBeginRendering(cmd, &renderInfo);
     }
     else
@@ -144,8 +137,7 @@ extern BG2E_API void cmdClearImagesAndBeginRendering(
             imageExtent,
             colorAttachments.data(),
             nullptr,
-            static_cast<uint32_t>(colorAttachments.size())
-        );
+            static_cast<uint32_t>(colorAttachments.size()));
         cmdBeginRendering(cmd, &renderInfo);
     }
 }
@@ -155,28 +147,25 @@ void cmdClearImageAndSetLayout(
     const Image* colorImage,
     VkClearColorValue clearValue,
     VkImageLayout initialLayout,
-    VkImageLayout finalLayout
-) {
+    VkImageLayout finalLayout)
+{
     Image::cmdTransitionImage(
         cmd,
         colorImage->handle(),
         initialLayout,
-        VK_IMAGE_LAYOUT_GENERAL
-    );
+        VK_IMAGE_LAYOUT_GENERAL);
 
     auto clearRange = Image::subresourceRange(VK_IMAGE_ASPECT_COLOR_BIT);
     vkCmdClearColorImage(
         cmd,
         colorImage->handle(),
         VK_IMAGE_LAYOUT_GENERAL,
-        &clearValue, 1, &clearRange
-    );
+        &clearValue, 1, &clearRange);
 
     Image::cmdTransitionImage(
         cmd, colorImage->handle(),
         VK_IMAGE_LAYOUT_GENERAL,
-        finalLayout
-    );
+        finalLayout);
 }
 
 }

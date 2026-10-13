@@ -35,10 +35,10 @@ class RayTracingMesh;
 
 // A single instance of a RayTracingMesh inside a RayTracingScene.
 struct RayTracingInstance {
-    gpu::RayTracingMesh* mesh       = nullptr;
-    glm::mat4            transform  = glm::mat4(1.0f); // world transform
-    uint32_t            instanceId  = 0;               // user instance id
-    uint32_t            mask        = 0xFF;            // visibility mask
+    gpu::RayTracingMesh* mesh = nullptr;
+    glm::mat4 transform = glm::mat4(1.0f); // world transform
+    uint32_t instanceId = 0;               // user instance id
+    uint32_t mask = 0xFF;                  // visibility mask
 };
 
 // Top-level ray tracing acceleration structure containing instances of
@@ -57,28 +57,39 @@ struct RayTracingInstance {
 //   scene->buildOrUpdate(cmd);   // before beginRendering
 //
 class BG2E_API RayTracingScene : public DeviceResource {
-public:
-    explicit RayTracingScene(Device* device) : DeviceResource(device) {}
+  public:
+    explicit RayTracingScene(Device* device) : DeviceResource(device)
+    {
+    }
     ~RayTracingScene() override = default;
 
     // CPU-side instance list management (common to all backends).
-    void clearInstances() { _instances.clear(); }
+    void clearInstances()
+    {
+        _instances.clear();
+    }
 
     void addInstance(gpu::RayTracingMesh* mesh, const glm::mat4& transform,
                      uint32_t instanceId, uint32_t mask = 0xFF)
     {
-        _instances.push_back({ mesh, transform, instanceId, mask });
+        _instances.push_back({mesh, transform, instanceId, mask});
     }
 
-    const std::vector<RayTracingInstance>& instances() const { return _instances; }
-    size_t instanceCount() const { return _instances.size(); }
+    const std::vector<RayTracingInstance>& instances() const
+    {
+        return _instances;
+    }
+    size_t instanceCount() const
+    {
+        return _instances.size();
+    }
 
     // Build or update the top-level acceleration structure from the current
     // instance list, recording the GPU commands into `cmd`. Must be called
     // outside an active rendering scope.
     virtual void buildOrUpdate(gpu::CommandBuffer* cmd) = 0;
 
-protected:
+  protected:
     std::vector<RayTracingInstance> _instances;
 };
 

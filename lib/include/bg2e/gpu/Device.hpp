@@ -36,8 +36,12 @@ namespace bg2e {
 namespace gpu {
 
 class CleanupManager;
-namespace vk { class Queue; }
-namespace metal { class Queue; }
+namespace vk {
+class Queue;
+}
+namespace metal {
+class Queue;
+}
 class Buffer;
 class CommandBuffer;
 class CubeMap;
@@ -57,9 +61,8 @@ class RayTracingScene;
 class RayTracingPipeline;
 
 class BG2E_API Device {
-public:
+  public:
     virtual ~Device() = default;
-
 
     virtual void create(Instance* instance, PhysicalDevice* physicalDevice, Surface* surface) = 0;
     virtual void cleanup() = 0;
@@ -144,9 +147,13 @@ public:
     {
         throw std::runtime_error("createRayTracingPipeline not implemented");
     }
-protected:
+
+  protected:
     // Internal coordination, deliberately absent from the public Device API.
-    const std::shared_ptr<detail::SubmissionState>& submissionState() const { return _submissions; }
+    const std::shared_ptr<detail::SubmissionState>& submissionState() const
+    {
+        return _submissions;
+    }
     friend class CleanupManager;
     friend class vk::Queue;
     friend class metal::Queue;

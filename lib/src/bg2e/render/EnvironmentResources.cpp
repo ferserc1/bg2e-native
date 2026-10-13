@@ -23,88 +23,81 @@
 namespace bg2e {
 namespace render {
 
-EnvironmentResources::EnvironmentResources(bg2e::render::Engine * engine)
-    :_engine(engine)
+EnvironmentResources::EnvironmentResources(bg2e::render::Engine* engine)
+    : _engine(engine)
 {
     _sphereToCubemap = std::unique_ptr<SphereToCubemapRenderer>(
-        new SphereToCubemapRenderer(_engine)
-    );
+        new SphereToCubemapRenderer(_engine));
     _irradianceRenderer = std::unique_ptr<IrradianceCubemapRenderer>(
-        new IrradianceCubemapRenderer(_engine)
-    );
+        new IrradianceCubemapRenderer(_engine));
     _specularRenderer = std::unique_ptr<SpecularReflectionCubemapRenderer>(
-        new SpecularReflectionCubemapRenderer(_engine)
-    );
-    
+        new SpecularReflectionCubemapRenderer(_engine));
+
     buildBRDF();
-    
+
     vulkan::factory::Sampler samplerFactory(_engine);
     _cubeMapSampler = samplerFactory.build();
     _irradianceMapSampler = samplerFactory.build();
     _specularReflectionSampler = samplerFactory.build();
     _brdfIntegrationMapSampler = samplerFactory.build();
-    
-    _engine->cleanupManager().push([&](VkDevice device) {
-        _brdfIntegrationMap.reset();
-        vkDestroySampler(device, _cubeMapSampler, nullptr);
-        vkDestroySampler(device, _irradianceMapSampler, nullptr);
-        vkDestroySampler(device, _specularReflectionSampler, nullptr);
-        vkDestroySampler(device, _brdfIntegrationMapSampler, nullptr);
-    });
+
+    _engine->cleanupManager().push([&](VkDevice device)
+                                   {
+                                       _brdfIntegrationMap.reset();
+                                       vkDestroySampler(device, _cubeMapSampler, nullptr);
+                                       vkDestroySampler(device, _irradianceMapSampler, nullptr);
+                                       vkDestroySampler(device, _specularReflectionSampler, nullptr);
+                                       vkDestroySampler(device, _brdfIntegrationMapSampler, nullptr);
+                                   });
 }
 
 EnvironmentResources::EnvironmentResources(
-    bg2e::render::Engine * engine,
+    bg2e::render::Engine* engine,
     const std::vector<VkFormat>& targetImages,
     VkFormat depthFormat,
-    VkSampleCountFlagBits sampleCount
-)
-    :_engine(engine)
-    ,_depthImageFormat(depthFormat)
+    VkSampleCountFlagBits sampleCount)
+    : _engine(engine), _depthImageFormat(depthFormat)
 {
     _targetImagesFormat.assign(targetImages.begin(), targetImages.end());
-    
+
     _sphereToCubemap = std::unique_ptr<SphereToCubemapRenderer>(
-        new SphereToCubemapRenderer(_engine)
-    );
+        new SphereToCubemapRenderer(_engine));
     _irradianceRenderer = std::unique_ptr<IrradianceCubemapRenderer>(
-        new IrradianceCubemapRenderer(_engine)
-    );
+        new IrradianceCubemapRenderer(_engine));
     _specularRenderer = std::unique_ptr<SpecularReflectionCubemapRenderer>(
-        new SpecularReflectionCubemapRenderer(_engine)
-    );
+        new SpecularReflectionCubemapRenderer(_engine));
     _skyboxRenderer = std::unique_ptr<SkyboxRenderer>(
-        new SkyboxRenderer(_engine)
-    );
+        new SkyboxRenderer(_engine));
     _skyboxRenderer->setSampleCount(sampleCount);
-    
+
     buildBRDF();
-    
+
     vulkan::factory::Sampler samplerFactory(_engine);
     _cubeMapSampler = samplerFactory.build();
     _irradianceMapSampler = samplerFactory.build();
-    
+
     // TODO: get this value from the specular renderer
     samplerFactory.createInfo.maxLod = 10;
     _specularReflectionSampler = samplerFactory.build();
     samplerFactory.createInfo.maxLod = 0;
     _brdfIntegrationMapSampler = samplerFactory.build();
-    
-    _engine->cleanupManager().push([&](VkDevice device) {
-        _brdfIntegrationMap.reset();
-        vkDestroySampler(device, _cubeMapSampler, nullptr);
-        vkDestroySampler(device, _irradianceMapSampler, nullptr);
-        vkDestroySampler(device, _specularReflectionSampler, nullptr);
-        vkDestroySampler(device, _brdfIntegrationMapSampler, nullptr);
-    });
+
+    _engine->cleanupManager().push([&](VkDevice device)
+                                   {
+                                       _brdfIntegrationMap.reset();
+                                       vkDestroySampler(device, _cubeMapSampler, nullptr);
+                                       vkDestroySampler(device, _irradianceMapSampler, nullptr);
+                                       vkDestroySampler(device, _specularReflectionSampler, nullptr);
+                                       vkDestroySampler(device, _brdfIntegrationMapSampler, nullptr);
+                                   });
 }
 
-void EnvironmentResources::initFrameResources(bg2e::render::vulkan::DescriptorSetAllocator *frameAllocator)
+void EnvironmentResources::initFrameResources(bg2e::render::vulkan::DescriptorSetAllocator* frameAllocator)
 {
     _sphereToCubemap->initFrameResources(frameAllocator);
     _irradianceRenderer->initFrameResources(frameAllocator);
     _specularRenderer->initFrameResources(frameAllocator);
-    
+
     if (_skyboxRenderer.get())
     {
         _skyboxRenderer->initFrameResources(frameAllocator);
@@ -115,13 +108,13 @@ void EnvironmentResources::build(
     const std::filesystem::path& environmentTexture,
     VkExtent2D cubeMapSize,
     VkExtent2D irradianceMapSize,
-    VkExtent2D specularReflectionSize
-) {
+    VkExtent2D specularReflectionSize)
+{
     _sphereToCubemap->build(environmentTexture, cubeMapSize);
     _cubemapChanged = true;
     _irradianceRenderer->build(_sphereToCubemap->cubeMapImage(), irradianceMapSize);
     _specularRenderer->build(_sphereToCubemap->cubeMapImage(), specularReflectionSize);
-    
+
     if (_skyboxRenderer.get())
     {
         auto bt = new base::Texture();
@@ -134,27 +127,27 @@ void EnvironmentResources::build(
             bt->setMagFilter(base::Texture::FilterLinear);
             bt->setMinFilter(base::Texture::FilterLinear);
         }
-        
-        _cubeMapTexture = std::shared_ptr<bg2e::render::Texture>(
-            new bg2e::render::Texture(_engine, bt, skyboxSource)
-        );
 
-        _engine->cleanupManager().push([&](VkDevice) {
-            _cubeMapTexture.reset();
-            _skyboxRenderer.reset();
-            _sphereToCubemap.reset();
-        });
+        _cubeMapTexture = std::shared_ptr<bg2e::render::Texture>(
+            new bg2e::render::Texture(_engine, bt, skyboxSource));
+
+        _engine->cleanupManager().push([&](VkDevice)
+                                       {
+                                           _cubeMapTexture.reset();
+                                           _skyboxRenderer.reset();
+                                           _sphereToCubemap.reset();
+                                       });
         _skyboxRenderer->build(
             _cubeMapTexture,
             _targetImagesFormat,
-            _depthImageFormat
-        );
+            _depthImageFormat);
     }
     else
     {
-        _engine->cleanupManager().push([&](VkDevice) {
-            _sphereToCubemap = nullptr;
-        });
+        _engine->cleanupManager().push([&](VkDevice)
+                                       {
+                                           _sphereToCubemap = nullptr;
+                                       });
     }
 }
 
@@ -162,13 +155,13 @@ void EnvironmentResources::build(
     std::shared_ptr<render::Texture> texture,
     VkExtent2D cubeMapSize,
     VkExtent2D irradianceMapSize,
-    VkExtent2D specularReflectionSize
-) {
+    VkExtent2D specularReflectionSize)
+{
     _sphereToCubemap->build(texture, cubeMapSize);
     _cubemapChanged = true;
     _irradianceRenderer->build(_sphereToCubemap->cubeMapImage(), irradianceMapSize);
     _specularRenderer->build(_sphereToCubemap->cubeMapImage(), specularReflectionSize);
-    
+
     if (_skyboxRenderer.get())
     {
         auto bt = new base::Texture();
@@ -181,27 +174,27 @@ void EnvironmentResources::build(
             bt->setMagFilter(base::Texture::FilterLinear);
             bt->setMinFilter(base::Texture::FilterLinear);
         }
-        
+
         _cubeMapTexture = std::shared_ptr<bg2e::render::Texture>(
-            new bg2e::render::Texture(_engine, bt, skyboxSource)
-        );
-        
-        _engine->cleanupManager().push([&](VkDevice) {
-            _cubeMapTexture.reset();
-            _skyboxRenderer.reset();
-            _sphereToCubemap.reset();
-        });
+            new bg2e::render::Texture(_engine, bt, skyboxSource));
+
+        _engine->cleanupManager().push([&](VkDevice)
+                                       {
+                                           _cubeMapTexture.reset();
+                                           _skyboxRenderer.reset();
+                                           _sphereToCubemap.reset();
+                                       });
         _skyboxRenderer->build(
             _cubeMapTexture,
             _targetImagesFormat,
-            _depthImageFormat
-        );
+            _depthImageFormat);
     }
     else
     {
-        _engine->cleanupManager().push([&](VkDevice) {
-            _sphereToCubemap = nullptr;
-        });
+        _engine->cleanupManager().push([&](VkDevice)
+                                       {
+                                           _sphereToCubemap = nullptr;
+                                       });
     }
 }
 
@@ -226,8 +219,8 @@ void EnvironmentResources::setSkyboxBlurLevel(int blurLevel)
 void EnvironmentResources::update(
     VkCommandBuffer cmd,
     uint32_t currentFrame,
-    bg2e::render::vulkan::FrameResources& frameResources
-) {
+    bg2e::render::vulkan::FrameResources& frameResources)
+{
     if (_cubemapChanged)
     {
         _sphereToCubemap->update(cmd, frameResources);
@@ -239,8 +232,8 @@ void EnvironmentResources::update(
 
 void EnvironmentResources::updateSkybox(
     const glm::mat4& viewMatrix,
-    const glm::mat4& projMatrix
-) {
+    const glm::mat4& projMatrix)
+{
     if (_skyboxRenderer.get())
     {
         if (_blurChanged)
@@ -264,8 +257,8 @@ void EnvironmentResources::updateSkybox(
 void EnvironmentResources::drawSkybox(
     VkCommandBuffer cmd,
     uint32_t currentFrame,
-    vulkan::FrameResources& frameResources
-) {
+    vulkan::FrameResources& frameResources)
+{
     if (_skyboxRenderer.get())
     {
         _skyboxRenderer->draw(cmd, currentFrame, frameResources);

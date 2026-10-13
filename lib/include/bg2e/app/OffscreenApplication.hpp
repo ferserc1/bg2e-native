@@ -33,8 +33,7 @@ namespace bg2e::app {
  * This structure defines the properties of the render targets that will be
  * created and used during the lifetime of the application.
  */
-struct OffscreenApplicationConfig
-{
+struct OffscreenApplicationConfig {
     /**
      * Width of the render target in pixels.
      */
@@ -72,9 +71,8 @@ struct OffscreenApplicationConfig
     VkFormat colorFormat = VK_FORMAT_R8G8B8A8_UNORM;
 };
 
-class OffscreenApplicationDelegate
-{
-public:
+class OffscreenApplicationDelegate {
+  public:
     /**
      * Called before any initialization is performed.
      *
@@ -86,9 +84,10 @@ public:
      * @param outConfig Configuration object to initialize.
      */
     virtual void initConfig(
-        [[maybe_unused]] int argc, [[maybe_unused]] char ** argv,
-        [[maybe_unused]] OffscreenApplicationConfig & outConfig
-    ) {}
+        [[maybe_unused]] int argc, [[maybe_unused]] char** argv,
+        [[maybe_unused]] OffscreenApplicationConfig& outConfig)
+    {
+    }
 
     /**
      * Called when the rendering engine has been initialized.
@@ -103,8 +102,9 @@ public:
     virtual void init(
         [[maybe_unused]] bg2e::render::Engine* engine,
         [[maybe_unused]] std::shared_ptr<render::vulkan::Image> colorImage,
-        [[maybe_unused]] std::shared_ptr<render::vulkan::Image> depthImage
-    ) {}
+        [[maybe_unused]] std::shared_ptr<render::vulkan::Image> depthImage)
+    {
+    }
 
     /**
      * Called when the frame resources descriptor set allocator is about to be initialized.
@@ -115,13 +115,17 @@ public:
      *
      * @param allocator Descriptor set allocator used by frame resources.
      */
-    virtual void initFrameResources([[maybe_unused]] render::vulkan::DescriptorSetAllocator * allocator) {}
+    virtual void initFrameResources([[maybe_unused]] render::vulkan::DescriptorSetAllocator* allocator)
+    {
+    }
 
     /**
      * Called after the entire rendering engine and frame resource descriptor sets
      * have been fully initialized.
      */
-    virtual void initScene() {}
+    virtual void initScene()
+    {
+    }
 
     /**
      * Called once immediately after initScene() to maintain compatibility with
@@ -135,8 +139,9 @@ public:
      */
     virtual void resize(
         [[maybe_unused]] uint32_t width,
-        [[maybe_unused]] uint32_t height
-    ) {}
+        [[maybe_unused]] uint32_t height)
+    {
+    }
 
     /**
      * Called at the beginning of each frame.
@@ -151,8 +156,9 @@ public:
     virtual void frame(
         [[maybe_unused]] float delta,
         [[maybe_unused]] uint32_t frameIndex,
-        [[maybe_unused]] render::vulkan::FrameResources& frameResources
-    ) {}
+        [[maybe_unused]] render::vulkan::FrameResources& frameResources)
+    {
+    }
 
     /**
      * Called to render the frame.
@@ -172,8 +178,7 @@ public:
         uint32_t frameIndex,
         render::vulkan::FrameResources& frameResources,
         VkImageLayout colorImageLayout,
-        VkImageLayout &outFinalColorImageLayout
-    ) = 0;
+        VkImageLayout& outFinalColorImageLayout) = 0;
 
     /**
      * Called after a frame has been fully rendered.
@@ -191,8 +196,9 @@ public:
     virtual void didRenderFrame(
         [[maybe_unused]] uint32_t frameIndex,
         [[maybe_unused]] double elapsedMs,
-        [[maybe_unused]] VkImageLayout colorImageLayout
-    ) {}
+        [[maybe_unused]] VkImageLayout colorImageLayout)
+    {
+    }
 
     /**
      * Called to manually release any resources created by the delegate.
@@ -200,27 +206,33 @@ public:
      * Prefer using Engine cleanupManager() or managed pointers whenever possible.
      * This method should only be used when those mechanisms are not sufficient.
      */
-    virtual void cleanup() {}
+    virtual void cleanup()
+    {
+    }
 
-    float delta() const { return _delta; }
-    void setDelta(float delta) { _delta = delta; }
+    float delta() const
+    {
+        return _delta;
+    }
+    void setDelta(float delta)
+    {
+        _delta = delta;
+    }
 
-protected:
+  protected:
     float _delta = 0.0f;
 };
 
 class BG2E_API OffscreenApplication {
-public:
-
+  public:
     void init(
-        int argc, char ** argv,
+        int argc, char** argv,
         const std::string& appId,
-        std::shared_ptr<OffscreenApplicationDelegate> delegate
-    );
+        std::shared_ptr<OffscreenApplicationDelegate> delegate);
 
     int run();
 
-protected:
+  protected:
     void cleanup();
 
     OffscreenApplicationConfig _config;

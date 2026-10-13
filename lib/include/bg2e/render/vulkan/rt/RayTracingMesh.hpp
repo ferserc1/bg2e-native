@@ -29,7 +29,7 @@ namespace rt {
 
 template <typename MeshT>
 class BG2E_API RayTracingMeshGeneric {
-public:
+  public:
     RayTracingMeshGeneric(Engine* engine, geo::MeshGeneric<MeshT>* mesh, uint32_t firstIndex, uint32_t indexCount);
     ~RayTracingMeshGeneric();
 
@@ -53,7 +53,7 @@ public:
     [[nodiscard]] VkAccelerationStructureKHR handle() const;
     [[nodiscard]] VkDeviceAddress deviceAddress() const;
 
-protected:
+  protected:
     Engine* _engine = nullptr;
     geo::MeshGeneric<MeshT>* _mesh = nullptr;
     uint32_t _firstIndex = 0;

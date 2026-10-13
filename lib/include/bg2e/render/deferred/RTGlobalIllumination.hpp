@@ -45,7 +45,8 @@ class BlueNoise;
 
 namespace deferred {
 
-enum class RTGIQuality {
+enum class RTGIQuality
+{
     Low,
     Medium,
     High,
@@ -56,10 +57,14 @@ inline float rtgiResolutionScale(RTGIQuality quality)
 {
     switch (quality)
     {
-        case RTGIQuality::Ultra:  return 1.0f;
-        case RTGIQuality::High:   return 2.0f / 3.0f;
-        case RTGIQuality::Medium: return 0.5f;
-        case RTGIQuality::Low:    return 1.0f / 3.0f;
+    case RTGIQuality::Ultra:
+        return 1.0f;
+    case RTGIQuality::High:
+        return 2.0f / 3.0f;
+    case RTGIQuality::Medium:
+        return 0.5f;
+    case RTGIQuality::Low:
+        return 1.0f / 3.0f;
     }
     return 1.0f;
 }
@@ -81,12 +86,18 @@ struct RTGISettings {
 };
 
 class BG2E_API RTGlobalIllumination {
-public:
+  public:
     explicit RTGlobalIllumination(Engine* engine);
     ~RTGlobalIllumination();
 
-    void setMaterialDataBinding(vulkan::rt::RTMaterialDataBinding* binding) { _materialDataBinding = binding; }
-    void setReflectionLightDataBinding(vulkan::rt::ReflectionLightDataBinding* binding) { _reflectionLightDataBinding = binding; }
+    void setMaterialDataBinding(vulkan::rt::RTMaterialDataBinding* binding)
+    {
+        _materialDataBinding = binding;
+    }
+    void setReflectionLightDataBinding(vulkan::rt::ReflectionLightDataBinding* binding)
+    {
+        _reflectionLightDataBinding = binding;
+    }
 
     void build(const GBufferManager* gbuffer, VkExtent2D extent);
     void buildUv();
@@ -103,8 +114,7 @@ public:
         const std::vector<vulkan::rt::RTObjectInstance>& objectInstances,
         vulkan::Image* irradianceMap,
         VkSampler irradianceSampler,
-        const std::vector<base::LightData>& giLights
-    );
+        const std::vector<base::LightData>& giLights);
     void renderUv(
         VkCommandBuffer cmd,
         uint32_t currentFrame,
@@ -116,31 +126,66 @@ public:
         vulkan::Image* irradianceMap,
         VkSampler irradianceSampler,
         const std::vector<base::LightData>& giLights,
-        const LightmapSettings& settings
-    );
+        const LightmapSettings& settings);
     void clearUv(VkCommandBuffer cmd, vulkan::Image& giOutput);
     void cleanupUv();
 
     void cleanup();
 
     std::shared_ptr<vulkan::Image> giImage(uint32_t frameIndex) const;
-    VkSampler sampler() const { return _sampler; }
-    bool rtSupported() const { return _rtSupported; }
+    VkSampler sampler() const
+    {
+        return _sampler;
+    }
+    bool rtSupported() const
+    {
+        return _rtSupported;
+    }
 
-    void setSettings(const RTGISettings& settings) { _settings = settings; }
-    const RTGISettings& settings() const { return _settings; }
+    void setSettings(const RTGISettings& settings)
+    {
+        _settings = settings;
+    }
+    const RTGISettings& settings() const
+    {
+        return _settings;
+    }
 
-    void setEnabled(bool enabled) { _settings.enabled = enabled; }
-    void setSampleCount(uint32_t count) { _settings.sampleCount = count; }
-    void setBounceCount(uint32_t count) { _settings.bounceCount = count; }
-    void setRayBias(float bias) { _settings.rayBias = bias; }
-    void setMaxDistance(float distance) { _settings.maxDistance = distance; }
-    void setShadowSamples(uint32_t samples) { _settings.shadowSamples = samples; }
-    void setUseBlueNoise(bool use) { _settings.useBlueNoise = use; }
-    void setBlueNoise(const BlueNoise* blueNoise) { _blueNoise = blueNoise; }
+    void setEnabled(bool enabled)
+    {
+        _settings.enabled = enabled;
+    }
+    void setSampleCount(uint32_t count)
+    {
+        _settings.sampleCount = count;
+    }
+    void setBounceCount(uint32_t count)
+    {
+        _settings.bounceCount = count;
+    }
+    void setRayBias(float bias)
+    {
+        _settings.rayBias = bias;
+    }
+    void setMaxDistance(float distance)
+    {
+        _settings.maxDistance = distance;
+    }
+    void setShadowSamples(uint32_t samples)
+    {
+        _settings.shadowSamples = samples;
+    }
+    void setUseBlueNoise(bool use)
+    {
+        _settings.useBlueNoise = use;
+    }
+    void setBlueNoise(const BlueNoise* blueNoise)
+    {
+        _blueNoise = blueNoise;
+    }
     void setQuality(RTGIQuality quality);
 
-private:
+  private:
     Engine* _engine = nullptr;
     RTGISettings _settings;
     VkExtent2D _extent{};

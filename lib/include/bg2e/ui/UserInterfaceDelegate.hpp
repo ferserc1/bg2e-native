@@ -22,7 +22,9 @@
 
 namespace bg2e {
 
-namespace draw { class Engine; }
+namespace draw {
+class Engine;
+}
 
 namespace app {
 
@@ -36,14 +38,25 @@ class UserInterface;
 
 class BG2E_API UserInterfaceDelegate {
     friend class app::MainLoop;
-public:
+
+  public:
     virtual ~UserInterfaceDelegate() = default;
-    virtual void init(bg2e::render::Engine*, UserInterface*) {}
-    virtual void init(bg2e::draw::Engine*, UserInterface*) {}
+    virtual void init(bg2e::render::Engine*, UserInterface*)
+    {
+    }
+    virtual void init(bg2e::draw::Engine*, UserInterface*)
+    {
+    }
     virtual void drawUI();
-    
-    inline uint32_t uiWidth() const { return _viewportWidth; }
-    inline uint32_t uiHeight() const { return _viewportHeight; }
+
+    inline uint32_t uiWidth() const
+    {
+        return _viewportWidth;
+    }
+    inline uint32_t uiHeight() const
+    {
+        return _viewportHeight;
+    }
 
     // Sets the initial viewport size only when no previous size was set.
     inline void setInitialSize(uint32_t width, uint32_t height)
@@ -54,8 +67,8 @@ public:
             _viewportHeight = height;
         }
     }
-    
-protected:
+
+  protected:
     uint32_t _viewportWidth = 0;
     uint32_t _viewportHeight = 0;
 };

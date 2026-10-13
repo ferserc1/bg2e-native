@@ -35,30 +35,26 @@ namespace db {
 extern BG2E_API std::shared_ptr<bg2e::scene::Scene> loadScene(
     const std::filesystem::path& filePath,
     bg2e::render::Engine& engine,
-    bg2e::scene::SceneProgressCallback onProgress = nullptr
-);
+    bg2e::scene::SceneProgressCallback onProgress = nullptr);
 
 extern BG2E_API std::shared_ptr<bg2e::scene::Scene> loadScene(
     const std::filesystem::path& basePath,
     const std::string& fileName,
     bg2e::render::Engine& engine,
-    bg2e::scene::SceneProgressCallback onProgress = nullptr
-);
+    bg2e::scene::SceneProgressCallback onProgress = nullptr);
 
 // Writes to the supplied path without imposing scene-directory naming rules.
 // Throws on output-open, write, or close failure.
 extern BG2E_API void saveScene(
     bg2e::scene::Node* sceneRoot,
     const std::filesystem::path& filePath,
-    bg2e::scene::SceneProgressCallback onProgress = nullptr
-);
+    bg2e::scene::SceneProgressCallback onProgress = nullptr);
 
 extern BG2E_API void saveScene(
     bg2e::scene::Node* sceneRoot,
     const std::filesystem::path& basePath,
     const std::string& fileName,
-    bg2e::scene::SceneProgressCallback onProgress = nullptr
-);
+    bg2e::scene::SceneProgressCallback onProgress = nullptr);
 
 }
 }

@@ -79,8 +79,14 @@ float parsePositiveFloat(std::string_view value, const std::string& optionName)
 bool parseBool(std::string_view value, const std::string& optionName)
 {
     const auto normalized = asciiLower(value);
-    if (normalized == "true") return true;
-    if (normalized == "false") return false;
+    if (normalized == "true")
+    {
+        return true;
+    }
+    if (normalized == "false")
+    {
+        return false;
+    }
     throw std::invalid_argument(optionName + " must be true or false");
 }
 
@@ -115,7 +121,7 @@ void requireRegularFile(const std::filesystem::path& path, const std::string& de
     if (!std::filesystem::is_regular_file(path, error) || error)
     {
         throw std::invalid_argument(description + " file does not exist or is not a regular file: '" +
-            path.string() + "'");
+                                    path.string() + "'");
     }
 }
 
@@ -126,7 +132,7 @@ void validateOutputDirectory(const std::filesystem::path& path)
     if (error)
     {
         throw std::invalid_argument("Could not inspect output directory '" + path.string() + "': " +
-            error.message());
+                                    error.message());
     }
     if (exists && !std::filesystem::is_directory(path, error))
     {
@@ -135,16 +141,19 @@ void validateOutputDirectory(const std::filesystem::path& path)
     if (error)
     {
         throw std::invalid_argument("Could not inspect output directory '" + path.string() + "': " +
-            error.message());
+                                    error.message());
     }
 
     auto parent = path.parent_path();
-    if (parent.empty()) parent = ".";
+    if (parent.empty())
+    {
+        parent = ".";
+    }
     const bool parentExists = std::filesystem::exists(parent, error);
     if (error)
     {
         throw std::invalid_argument("Could not inspect output parent directory '" + parent.string() + "': " +
-            error.message());
+                                    error.message());
     }
     if (parentExists && !std::filesystem::is_directory(parent))
     {
@@ -334,22 +343,21 @@ void validateOptions(const Options& options)
 
 void printUsage(std::ostream& output)
 {
-    output <<
-        "Usage:\n"
-        "  lightmap_generator model --context <scene.json> --model <target.bg2> --output <directory> [options]\n"
-        "  lightmap_generator prefab --context <scene.json> --prefab <target.json> --output <directory> [options]\n"
-        "\n"
-        "Options (values may use --name=value or --name value):\n"
-        "  --format <png|jpg|jpeg|bmp|tga>  Image format (default: png)\n"
-        "  --resolution <pixels>             Square bake/UV2 resolution (default: 512)\n"
-        "  --frames <count>                  Accumulation frames (default: 16)\n"
-        "  --mode <rtao|rtgi>                Bake mode (default: rtgi)\n"
-        "  --generate-uv2 <true|false>       Generate UV2 and write .bg2 copies (default: true)\n"
-        "  --overwrite <true|false>          Overwrite existing output files (default: true)\n"
-        "  --samples-per-pixel <count>       Samples per pixel (default: 8)\n"
-        "  --gi-bounces <count>              RTGI bounces (default: 2; RTGI only)\n"
-        "  --max-distance <meters>           RTGI ray distance (default: 50; RTGI only)\n"
-        "  --help                            Show this help\n";
+    output << "Usage:\n"
+              "  lightmap_generator model --context <scene.json> --model <target.bg2> --output <directory> [options]\n"
+              "  lightmap_generator prefab --context <scene.json> --prefab <target.json> --output <directory> [options]\n"
+              "\n"
+              "Options (values may use --name=value or --name value):\n"
+              "  --format <png|jpg|jpeg|bmp|tga>  Image format (default: png)\n"
+              "  --resolution <pixels>             Square bake/UV2 resolution (default: 512)\n"
+              "  --frames <count>                  Accumulation frames (default: 16)\n"
+              "  --mode <rtao|rtgi>                Bake mode (default: rtgi)\n"
+              "  --generate-uv2 <true|false>       Generate UV2 and write .bg2 copies (default: true)\n"
+              "  --overwrite <true|false>          Overwrite existing output files (default: true)\n"
+              "  --samples-per-pixel <count>       Samples per pixel (default: 8)\n"
+              "  --gi-bounces <count>              RTGI bounces (default: 2; RTGI only)\n"
+              "  --max-distance <meters>           RTGI ray distance (default: 50; RTGI only)\n"
+              "  --help                            Show this help\n";
 }
 
 }

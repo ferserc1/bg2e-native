@@ -52,20 +52,39 @@ void OffscreenSurface::createRenderTarget(gpu::Device* device, gpu::PhysicalDevi
 
 void OffscreenSurface::resize(const Size2D& size)
 {
-    if (_device) _device->waitIdle();
-    if (_frame) _frame->waitForSubmissions();
+    if (_device)
+    {
+        _device->waitIdle();
+    }
+    if (_frame)
+    {
+        _frame->waitForSubmissions();
+    }
     ++_generation;
     _frameAcquired = false;
-    if (!size.width || !size.height) { _size = size; return; }
+    if (!size.width || !size.height)
+    {
+        _size = size;
+        return;
+    }
     _size = size;
-    if (_colorImage) _colorImage->resize(size);
+    if (_colorImage)
+    {
+        _colorImage->resize(size);
+    }
     resizeDepthTarget(size);
 }
 
 void OffscreenSurface::releaseRenderTarget()
 {
-    if (_device && _device->isValid()) _device->waitIdle();
-    if (_frame) _frame->waitForSubmissions();
+    if (_device && _device->isValid())
+    {
+        _device->waitIdle();
+    }
+    if (_frame)
+    {
+        _frame->waitForSubmissions();
+    }
     _frameAcquired = false;
     _frame.reset();
     releaseDepthTarget();
@@ -82,20 +101,41 @@ bool OffscreenSurface::isValid() const
     return _colorImage && _colorImage->isValid();
 }
 
-uint32_t OffscreenSurface::imageCount() const { return 1; }
-uint32_t OffscreenSurface::inFlightFrames() const { return 1; }
-uint32_t OffscreenSurface::currentFrameIndex() const { return 0; }
+uint32_t OffscreenSurface::imageCount() const
+{
+    return 1;
+}
+uint32_t OffscreenSurface::inFlightFrames() const
+{
+    return 1;
+}
+uint32_t OffscreenSurface::currentFrameIndex() const
+{
+    return 0;
+}
 gpu::Image* OffscreenSurface::colorImage(uint32_t index) const
 {
-    if (index == 0) return _colorImage.get();
+    if (index == 0)
+    {
+        return _colorImage.get();
+    }
     return nullptr;
 }
-gpu::Image* OffscreenSurface::depthImage() const { return _depthImage.get(); }
+gpu::Image* OffscreenSurface::depthImage() const
+{
+    return _depthImage.get();
+}
 
 std::shared_ptr<gpu::SurfaceFrame> OffscreenSurface::beginFrame()
 {
-    if (_frameAcquired) throw std::logic_error("Offscreen surface already has an acquired frame");
-    if (!_size.width || !_size.height || !_frame) return nullptr;
+    if (_frameAcquired)
+    {
+        throw std::logic_error("Offscreen surface already has an acquired frame");
+    }
+    if (!_size.width || !_size.height || !_frame)
+    {
+        return nullptr;
+    }
     _frame->waitForSubmissions();
     // Update the frame's color image reference (it may have been resized)
     _frame->setColorImageRef(_colorImage.get());
@@ -106,14 +146,19 @@ std::shared_ptr<gpu::SurfaceFrame> OffscreenSurface::beginFrame()
 void OffscreenSurface::present(gpu::CommandBuffer* cmd)
 {
     auto* command = dynamic_cast<metal::CommandBuffer*>(cmd);
-    if (!command || !_frame || !_frameAcquired) throw std::logic_error("Invalid offscreen frame association");
+    if (!command || !_frame || !_frameAcquired)
+    {
+        throw std::logic_error("Invalid offscreen frame association");
+    }
     command->associateFrame(_frame);
 }
 
 void OffscreenSurface::endFrame(gpu::SurfaceFrame* frame)
 {
     if (!_frameAcquired || !_frame || frame != _frame.get() || !frame->hasSubmissions())
+    {
         throw std::logic_error("Offscreen endFrame requires a submitted frame");
+    }
     _frameAcquired = false;
     ++_frameCounter;
 }
@@ -132,19 +177,49 @@ void OffscreenSurface::resize(const Size2D&)
     throw std::runtime_error("Metal backend is not available on this platform");
 }
 
-void OffscreenSurface::releaseRenderTarget() {}
-void OffscreenSurface::cleanup() {}
-bool OffscreenSurface::isValid() const { return false; }
+void OffscreenSurface::releaseRenderTarget()
+{
+}
+void OffscreenSurface::cleanup()
+{
+}
+bool OffscreenSurface::isValid() const
+{
+    return false;
+}
 
-uint32_t OffscreenSurface::imageCount() const { return 0; }
-uint32_t OffscreenSurface::inFlightFrames() const { return 0; }
-uint32_t OffscreenSurface::currentFrameIndex() const { return 0; }
-gpu::Image* OffscreenSurface::colorImage(uint32_t) const { return nullptr; }
-gpu::Image* OffscreenSurface::depthImage() const { return nullptr; }
+uint32_t OffscreenSurface::imageCount() const
+{
+    return 0;
+}
+uint32_t OffscreenSurface::inFlightFrames() const
+{
+    return 0;
+}
+uint32_t OffscreenSurface::currentFrameIndex() const
+{
+    return 0;
+}
+gpu::Image* OffscreenSurface::colorImage(uint32_t) const
+{
+    return nullptr;
+}
+gpu::Image* OffscreenSurface::depthImage() const
+{
+    return nullptr;
+}
 
-std::shared_ptr<gpu::SurfaceFrame> OffscreenSurface::beginFrame() { return nullptr; }
-void OffscreenSurface::present(gpu::CommandBuffer*) {}
-void OffscreenSurface::endFrame(gpu::SurfaceFrame*) { ++_frameCounter; }
+std::shared_ptr<gpu::SurfaceFrame> OffscreenSurface::beginFrame()
+{
+    return nullptr;
+}
+void OffscreenSurface::present(gpu::CommandBuffer*)
+{
+}
+void OffscreenSurface::endFrame(gpu::SurfaceFrame*)
+{
+    ++_frameCounter;
+}
 
 #endif
 

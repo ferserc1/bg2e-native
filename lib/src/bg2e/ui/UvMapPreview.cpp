@@ -31,7 +31,7 @@ UvMapPreview::~UvMapPreview()
     cleanup();
 }
 
-void UvMapPreview::init(render::Engine * engine, uint32_t resolution)
+void UvMapPreview::init(render::Engine* engine, uint32_t resolution)
 {
     _engine = engine;
     _renderer = std::make_unique<render::UvMapPreviewRenderer>(engine, resolution);
@@ -89,7 +89,9 @@ void UvMapPreview::updatePreview()
     // Non-owning handle: _renderer outlives the widget texture reference
     // (cleanup() clears _imageWidget before _renderer is destroyed)
     _imageWidget.setDeferredTexture(std::shared_ptr<render::Texture>(
-        _renderer->texture(), [](render::Texture *) {}));
+        _renderer->texture(), [](render::Texture*)
+        {
+        }));
     _dirty = false;
 }
 

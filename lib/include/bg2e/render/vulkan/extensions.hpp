@@ -37,51 +37,50 @@ void loadDeviceExtensions(const bg2e::render::vulkan::PhysicalDevice& physDev, V
 // Allways check that _OPT function pointers are valid before use them
 
 // VK_KHR_dynamic_rendering
-extern BG2E_API PFN_vkCmdBeginRenderingKHR      cmdBeginRendering;
-extern BG2E_API PFN_vkCmdEndRenderingKHR        cmdEndRendering;
+extern BG2E_API PFN_vkCmdBeginRenderingKHR cmdBeginRendering;
+extern BG2E_API PFN_vkCmdEndRenderingKHR cmdEndRendering;
 
 // VK_KHR_swapchain
-extern BG2E_API PFN_vkAcquireNextImageKHR       acquireNextImage;
-extern BG2E_API PFN_vkQueuePresentKHR           queuePresent;
-extern BG2E_API PFN_vkDestroySwapchainKHR       destroySwapchain;
+extern BG2E_API PFN_vkAcquireNextImageKHR acquireNextImage;
+extern BG2E_API PFN_vkQueuePresentKHR queuePresent;
+extern BG2E_API PFN_vkDestroySwapchainKHR destroySwapchain;
 
-extern BG2E_API PFN_vkDestroySurfaceKHR         destroySurface;
+extern BG2E_API PFN_vkDestroySurfaceKHR destroySurface;
 
 // VK_KHR_synchronization2
-extern BG2E_API PFN_vkQueueSubmit2KHR           queueSubmit2;
+extern BG2E_API PFN_vkQueueSubmit2KHR queueSubmit2;
 
-extern BG2E_API PFN_vkCmdPipelineBarrier2       cmdPipelineBarrier2;
+extern BG2E_API PFN_vkCmdPipelineBarrier2 cmdPipelineBarrier2;
 
 // VK_KHR_copy_commands2
-extern BG2E_API PFN_vkCmdBlitImage2             cmdBlitImage2;
+extern BG2E_API PFN_vkCmdBlitImage2 cmdBlitImage2;
 
 // VK_KHR_acceleration_structure
-extern BG2E_API PFN_vkCmdBuildAccelerationStructuresKHR                cmdBuildAccelerationStructures;
-extern BG2E_API PFN_vkCmdCopyAccelerationStructureKHR                  cmdCopyAccelerationStructure;
-extern BG2E_API PFN_vkCmdCopyAccelerationStructureToMemoryKHR          cmdCopyAccelerationStructureToMemory;
-extern BG2E_API PFN_vkCmdCopyMemoryToAccelerationStructureKHR          cmdCopyMemoryToAccelerationStructure;
-extern BG2E_API PFN_vkCmdWriteAccelerationStructuresPropertiesKHR      cmdWriteAccelerationStructuresProperties;
-extern BG2E_API PFN_vkGetAccelerationStructureBuildSizesKHR            getAccelerationStructureBuildSizes;
-extern BG2E_API PFN_vkCreateAccelerationStructureKHR                   createAccelerationStructure;
-extern BG2E_API PFN_vkDestroyAccelerationStructureKHR                  destroyAccelerationStructure;
-extern BG2E_API PFN_vkGetAccelerationStructureDeviceAddressKHR         getAccelerationStructureDeviceAddress;
+extern BG2E_API PFN_vkCmdBuildAccelerationStructuresKHR cmdBuildAccelerationStructures;
+extern BG2E_API PFN_vkCmdCopyAccelerationStructureKHR cmdCopyAccelerationStructure;
+extern BG2E_API PFN_vkCmdCopyAccelerationStructureToMemoryKHR cmdCopyAccelerationStructureToMemory;
+extern BG2E_API PFN_vkCmdCopyMemoryToAccelerationStructureKHR cmdCopyMemoryToAccelerationStructure;
+extern BG2E_API PFN_vkCmdWriteAccelerationStructuresPropertiesKHR cmdWriteAccelerationStructuresProperties;
+extern BG2E_API PFN_vkGetAccelerationStructureBuildSizesKHR getAccelerationStructureBuildSizes;
+extern BG2E_API PFN_vkCreateAccelerationStructureKHR createAccelerationStructure;
+extern BG2E_API PFN_vkDestroyAccelerationStructureKHR destroyAccelerationStructure;
+extern BG2E_API PFN_vkGetAccelerationStructureDeviceAddressKHR getAccelerationStructureDeviceAddress;
 
 // VK_KHR_ray_tracing_pipeline
-extern BG2E_API PFN_vkCreateRayTracingPipelinesKHR                     createRayTracingPipelines;
-extern BG2E_API PFN_vkCmdTraceRaysKHR                                  cmdTraceRays;
-extern BG2E_API PFN_vkGetRayTracingShaderGroupHandlesKHR               getRayTracingShaderGroupHandles;
-extern BG2E_API PFN_vkGetRayTracingCaptureReplayShaderGroupHandlesKHR  getRayTracingCaptureReplayShaderGroupHandles;
+extern BG2E_API PFN_vkCreateRayTracingPipelinesKHR createRayTracingPipelines;
+extern BG2E_API PFN_vkCmdTraceRaysKHR cmdTraceRays;
+extern BG2E_API PFN_vkGetRayTracingShaderGroupHandlesKHR getRayTracingShaderGroupHandles;
+extern BG2E_API PFN_vkGetRayTracingCaptureReplayShaderGroupHandlesKHR getRayTracingCaptureReplayShaderGroupHandles;
 
 // VK_KHR_deferred_host_operations
-extern BG2E_API PFN_vkCreateDeferredOperationKHR                       createDeferredOperation;
-extern BG2E_API PFN_vkDestroyDeferredOperationKHR                      destroyDeferredOperation;
-extern BG2E_API PFN_vkGetDeferredOperationResultKHR                    getDeferredOperationResult;
-extern BG2E_API PFN_vkDeferredOperationJoinKHR                         deferredOperationJoin;
+extern BG2E_API PFN_vkCreateDeferredOperationKHR createDeferredOperation;
+extern BG2E_API PFN_vkDestroyDeferredOperationKHR destroyDeferredOperation;
+extern BG2E_API PFN_vkGetDeferredOperationResultKHR getDeferredOperationResult;
+extern BG2E_API PFN_vkDeferredOperationJoinKHR deferredOperationJoin;
 
 // VK_EXT_DEBUG_UTILS_EXTENSION_NAME
-extern BG2E_API PFN_vkSetDebugUtilsObjectNameEXT                       setDebugUtilsObjectName;
+extern BG2E_API PFN_vkSetDebugUtilsObjectNameEXT setDebugUtilsObjectName;
 
 }
 }
 }
-

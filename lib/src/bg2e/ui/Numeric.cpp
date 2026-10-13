@@ -18,16 +18,16 @@
 
 #include <bg2e/ui/Numeric.hpp>
 
-#include "imgui.h"
+#include <imgui.h>
 
 namespace bg2e {
 namespace ui {
 
 bool Numeric::number(
     const std::string& label,
-    int * value,
-    bool sameLine
-) {
+    int* value,
+    bool sameLine)
+{
     if (sameLine)
     {
         ImGui::SameLine();
@@ -37,9 +37,9 @@ bool Numeric::number(
 
 bool Numeric::number(
     const std::string& label,
-    float * value,
-    bool sameLine
-) {
+    float* value,
+    bool sameLine)
+{
     if (sameLine)
     {
         ImGui::SameLine();
@@ -49,9 +49,9 @@ bool Numeric::number(
 
 bool Numeric::number(
     const std::string& label,
-    double * value,
-    bool sameLine
-) {
+    double* value,
+    bool sameLine)
+{
     if (sameLine)
     {
         ImGui::SameLine();
@@ -61,11 +61,11 @@ bool Numeric::number(
 
 bool Numeric::slider(
     const std::string& label,
-    int * value,
+    int* value,
     int min,
     int max,
-    bool sameLine
-) {
+    bool sameLine)
+{
     if (sameLine)
     {
         ImGui::SameLine();
@@ -75,11 +75,11 @@ bool Numeric::slider(
 
 bool Numeric::slider(
     const std::string& label,
-    float * value,
+    float* value,
     float min,
     float max,
-    bool sameLine
-)  {
+    bool sameLine)
+{
     if (sameLine)
     {
         ImGui::SameLine();
@@ -89,11 +89,11 @@ bool Numeric::slider(
 
 bool Numeric::sliderInt(
     const std::string& label,
-    int * value,
+    int* value,
     int min,
     int max,
-    bool sameLine
-) {
+    bool sameLine)
+{
     if (sameLine)
     {
         ImGui::SameLine();
@@ -103,11 +103,11 @@ bool Numeric::sliderInt(
 
 bool Numeric::sliderFloat(
     const std::string& label,
-    float * value,
+    float* value,
     float min,
     float max,
-    bool sameLine
-) {
+    bool sameLine)
+{
     if (sameLine)
     {
         ImGui::SameLine();
@@ -117,27 +117,27 @@ bool Numeric::sliderFloat(
 
 bool Numeric::sliderDouble(
     const std::string& label,
-    double * value,
+    double* value,
     double min,
     double max,
     bool /* sameLine */
-) {
+)
+{
     return sliderFloat(
         label,
         reinterpret_cast<float*>(value),
         static_cast<float>(min),
-        static_cast<float>(max)
-    );
+        static_cast<float>(max));
 }
 
 bool Numeric::drag(
     const std::string& label,
-    float * value,
+    float* value,
     float speed,
     float min,
     float max,
-    bool sameLine
-) {
+    bool sameLine)
+{
     if (sameLine)
     {
         ImGui::SameLine();
@@ -147,12 +147,12 @@ bool Numeric::drag(
 
 bool Numeric::drag(
     const std::string& label,
-    int * value,
+    int* value,
     float speed,
     int min,
     int max,
-    bool sameLine
-) {
+    bool sameLine)
+{
     if (sameLine)
     {
         ImGui::SameLine();

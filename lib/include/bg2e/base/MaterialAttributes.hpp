@@ -33,185 +33,489 @@ namespace bg2e {
 namespace base {
 
 class BG2E_API MaterialAttributes {
-public:
-    
+  public:
     MaterialAttributes();
-    
-    inline bool isTransparent() const { return _isTransparent; }
-    inline void setIsTransparent(bool t) { _isTransparent = t; }
-    
-    inline bool isSolid() const { return _isSolid; }
-    inline void setIsSolid(bool s) { _isSolid = s; }
 
-    inline bool isUnlit() const { return _unlit; }
-    inline void setIsUnlit(bool t) { _unlit = t; }
+    inline bool isTransparent() const
+    {
+        return _isTransparent;
+    }
+    inline void setIsTransparent(bool t)
+    {
+        _isTransparent = t;
+    }
+
+    inline bool isSolid() const
+    {
+        return _isSolid;
+    }
+    inline void setIsSolid(bool s)
+    {
+        _isSolid = s;
+    }
+
+    inline bool isUnlit() const
+    {
+        return _unlit;
+    }
+    inline void setIsUnlit(bool t)
+    {
+        _unlit = t;
+    }
 
     // Screen-space refraction strength, only applied to transparent materials.
-    inline float refractionFactor() const { return _refractionFactor; }
-    inline void setRefractionFactor(float f) { _refractionFactor = f; }
+    inline float refractionFactor() const
+    {
+        return _refractionFactor;
+    }
+    inline void setRefractionFactor(float f)
+    {
+        _refractionFactor = f;
+    }
 
     // Alpha test threshold. Fragments with final albedo alpha below this
     // value are discarded. Applies to opaque and transparent materials.
-    inline float alphaCutoff() const { return _alphaCutoff; }
-    inline void setAlphaCutoff(float c) { _alphaCutoff = c; }
+    inline float alphaCutoff() const
+    {
+        return _alphaCutoff;
+    }
+    inline void setAlphaCutoff(float c)
+    {
+        _alphaCutoff = c;
+    }
 
-    inline const Color & albedo() const { return _albedo; }
-    inline void setAlbedo(const Color & c) { _albedo = c; }
-    inline void setAlbedo(const std::array<float, 3>& s) { _albedo = base::Color{ s.at(0), s.at(1), s.at(2), 1.0f }; }
-    inline void setAlbedo(const std::array<float, 4>& s) { _albedo = base::Color{ s.at(0), s.at(1), s.at(2), s.at(3)}; }
-    
-    inline std::shared_ptr<Texture> albedoTexture() const { return _albedoTexture; }
-    inline void setAlbedoTexture(Texture * t) { setAlbedoTexture(std::shared_ptr<Texture>(t)); }
-    inline void setAlbedoTexture(std::shared_ptr<Texture> t) { _albedoTextureUpdated = false; _albedoTexture = t; }
-    inline bool albedoTextureUpdated() const { return _albedoTextureUpdated; }
-    
-    inline const glm::vec2 & albedoScale() const { return _albedoScale; }
-    inline void setAlbedoScale(const glm::vec2& offset) { _albedoScale = offset; }
-    inline void setAlbedoScale(const std::array<float, 2>& s) { _albedoScale = {s[0], s[1]}; }
+    inline const Color& albedo() const
+    {
+        return _albedo;
+    }
+    inline void setAlbedo(const Color& c)
+    {
+        _albedo = c;
+    }
+    inline void setAlbedo(const std::array<float, 3>& s)
+    {
+        _albedo = base::Color{s.at(0), s.at(1), s.at(2), 1.0f};
+    }
+    inline void setAlbedo(const std::array<float, 4>& s)
+    {
+        _albedo = base::Color{s.at(0), s.at(1), s.at(2), s.at(3)};
+    }
 
-    inline uint32_t albedoUVSet() const { return _albedoUVSet; }
-    inline void setAlbedoUVSet(uint32_t uvSet) { _albedoUVSet = uvSet; }
-    
-    inline float metalness() const { return _metalness; }
-    inline void setMetalness(float m) { _metalness = m; }
+    inline std::shared_ptr<Texture> albedoTexture() const
+    {
+        return _albedoTexture;
+    }
+    inline void setAlbedoTexture(Texture* t)
+    {
+        setAlbedoTexture(std::shared_ptr<Texture>(t));
+    }
+    inline void setAlbedoTexture(std::shared_ptr<Texture> t)
+    {
+        _albedoTextureUpdated = false;
+        _albedoTexture = t;
+    }
+    inline bool albedoTextureUpdated() const
+    {
+        return _albedoTextureUpdated;
+    }
 
-    inline std::shared_ptr<Texture> metalnessTexture() const { return _metalnessTexture; }
-    inline void setMetalnessTexture(Texture * t) { setMetalnessTexture(std::shared_ptr<Texture>(t)); }
-    inline void setMetalnessTexture(std::shared_ptr<Texture> t) { _metalnessTextureUpdated = false; _metalnessTexture = t; }
-    inline bool metalnessTextureUpdated() const { return _metalnessTextureUpdated; }
-    
-    inline const glm::vec2 & metalnessScale() const { return _metalnessScale; }
-    inline void setMetalnessScale(const glm::vec2& s) { _metalnessScale = s; }
-    inline void setMetalnessScale(const std::array<float, 2>& s) { _metalnessScale = {s[0], s[1]}; }
-    
-    inline uint32_t metalnessChannel() const { return _metalnessChannel; }
-    inline void setMetalnessChannel(uint32_t c) { _metalnessChannel = c; }
+    inline const glm::vec2& albedoScale() const
+    {
+        return _albedoScale;
+    }
+    inline void setAlbedoScale(const glm::vec2& offset)
+    {
+        _albedoScale = offset;
+    }
+    inline void setAlbedoScale(const std::array<float, 2>& s)
+    {
+        _albedoScale = {s[0], s[1]};
+    }
 
-    inline bool metalnessInvert() const { return _metalnessInvert; }
-    inline void setMetalnessInvert(bool i) { _metalnessInvert = i; }
+    inline uint32_t albedoUVSet() const
+    {
+        return _albedoUVSet;
+    }
+    inline void setAlbedoUVSet(uint32_t uvSet)
+    {
+        _albedoUVSet = uvSet;
+    }
 
-    inline uint32_t metalnessUVSet() const { return _metalnessUVSet; }
-    inline void setMetalnessUVSet(uint32_t uvSet) { _metalnessUVSet = uvSet; }
-    
-    inline float roughness() const { return _roughness; }
-    inline void setRoughness(float r) { _roughness = r; }
+    inline float metalness() const
+    {
+        return _metalness;
+    }
+    inline void setMetalness(float m)
+    {
+        _metalness = m;
+    }
 
-    inline std::shared_ptr<Texture> roughnessTexture() const { return _roughnessTexture; }
-    inline void setRoughnessTexture(Texture * t) { setRoughnessTexture(std::shared_ptr<Texture>(t)); }
-    inline void setRoughnessTexture(std::shared_ptr<Texture> t) { _roughnessTextureUpdated = false; _roughnessTexture = t; }
-    inline bool roughnessTextureUpdated() const { return _roughnessTextureUpdated; }
+    inline std::shared_ptr<Texture> metalnessTexture() const
+    {
+        return _metalnessTexture;
+    }
+    inline void setMetalnessTexture(Texture* t)
+    {
+        setMetalnessTexture(std::shared_ptr<Texture>(t));
+    }
+    inline void setMetalnessTexture(std::shared_ptr<Texture> t)
+    {
+        _metalnessTextureUpdated = false;
+        _metalnessTexture = t;
+    }
+    inline bool metalnessTextureUpdated() const
+    {
+        return _metalnessTextureUpdated;
+    }
 
-    inline const glm::vec2 & roughnessScale() const { return _roughnessScale; }
-    inline void setRoughnessScale(const glm::vec2& s) { _roughnessScale = s; }
-    inline void setRoughnessScale(const std::array<float, 2>& s) { _roughnessScale = {s[0], s[1]}; }
+    inline const glm::vec2& metalnessScale() const
+    {
+        return _metalnessScale;
+    }
+    inline void setMetalnessScale(const glm::vec2& s)
+    {
+        _metalnessScale = s;
+    }
+    inline void setMetalnessScale(const std::array<float, 2>& s)
+    {
+        _metalnessScale = {s[0], s[1]};
+    }
 
-    inline uint32_t roughnessChannel() const { return _roughnessChannel; }
-    inline void setRoughnessChannel(uint32_t c) { _roughnessChannel = c; }
+    inline uint32_t metalnessChannel() const
+    {
+        return _metalnessChannel;
+    }
+    inline void setMetalnessChannel(uint32_t c)
+    {
+        _metalnessChannel = c;
+    }
 
-    inline bool roughnessInvert() const { return _roughnessInvert; }
-    inline void setRoughnessInvert(bool i) { _roughnessInvert = i; }
+    inline bool metalnessInvert() const
+    {
+        return _metalnessInvert;
+    }
+    inline void setMetalnessInvert(bool i)
+    {
+        _metalnessInvert = i;
+    }
 
-    inline uint32_t roughnessUVSet() const { return _roughnessUVSet; }
-    inline void setRoughnessUVSet(uint32_t uvSet) { _roughnessUVSet = uvSet; }
+    inline uint32_t metalnessUVSet() const
+    {
+        return _metalnessUVSet;
+    }
+    inline void setMetalnessUVSet(uint32_t uvSet)
+    {
+        _metalnessUVSet = uvSet;
+    }
 
-    inline std::shared_ptr<Texture> normalTexture() const { return _normalTexture; }
-    inline void setNormalTexture(Texture * t) { setNormalTexture(std::shared_ptr<Texture>(t)); }
-    inline void setNormalTexture(std::shared_ptr<Texture> t) { _normalTextureUpdated = false; _normalTexture = t; }
-    inline bool normalTextureUpdated() const { return _normalTextureUpdated; }
+    inline float roughness() const
+    {
+        return _roughness;
+    }
+    inline void setRoughness(float r)
+    {
+        _roughness = r;
+    }
 
-    inline const glm::vec2 & normalScale() const { return _normalScale; }
-    inline void setNormalScale(const glm::vec2& s) { _normalScale = s; }
-    inline void setNormalScale(const std::array<float, 2>& s) { _normalScale = {s[0], s[1]}; }
+    inline std::shared_ptr<Texture> roughnessTexture() const
+    {
+        return _roughnessTexture;
+    }
+    inline void setRoughnessTexture(Texture* t)
+    {
+        setRoughnessTexture(std::shared_ptr<Texture>(t));
+    }
+    inline void setRoughnessTexture(std::shared_ptr<Texture> t)
+    {
+        _roughnessTextureUpdated = false;
+        _roughnessTexture = t;
+    }
+    inline bool roughnessTextureUpdated() const
+    {
+        return _roughnessTextureUpdated;
+    }
 
-    inline uint32_t normalUVSet() const { return _normalUVSet; }
-    inline void setNormalUVSet(uint32_t uvSet) { _normalUVSet = uvSet; }
-    
-    inline const Color & fresnelTint() const { return _fresnelTint; }
-    inline void setFresnelTint(const Color& c) { _fresnelTint = c; }
-    
-    inline float sheenIntensity() const { return _sheenIntensity; }
-    inline void setSheenIntensity(float s) { _sheenIntensity = s; }
-    
-    inline const Color & sheenColor() const { return _sheenColor; }
-    inline void setSheenColor(const Color & color) { _sheenColor = color; }
+    inline const glm::vec2& roughnessScale() const
+    {
+        return _roughnessScale;
+    }
+    inline void setRoughnessScale(const glm::vec2& s)
+    {
+        _roughnessScale = s;
+    }
+    inline void setRoughnessScale(const std::array<float, 2>& s)
+    {
+        _roughnessScale = {s[0], s[1]};
+    }
 
-    inline std::shared_ptr<Texture> aoTexture() const { return _aoTexture; }
-    inline void setAoTexture(Texture * t) { setAoTexture(std::shared_ptr<Texture>(t)); }
-    inline void setAoTexture(std::shared_ptr<Texture> t) { _aoTextureUpdated = false; _aoTexture = t; }
-    inline bool aoTextureUpdated() const { return _aoTextureUpdated; }
+    inline uint32_t roughnessChannel() const
+    {
+        return _roughnessChannel;
+    }
+    inline void setRoughnessChannel(uint32_t c)
+    {
+        _roughnessChannel = c;
+    }
 
-    inline const glm::vec2 & aoScale() const { return _aoScale; }
-    inline void setAoScale(const glm::vec2& s) { _aoScale = s; }
-    inline void setAoScale(const std::array<float, 2>& s) { _aoScale = {s[0], s[1]}; }
+    inline bool roughnessInvert() const
+    {
+        return _roughnessInvert;
+    }
+    inline void setRoughnessInvert(bool i)
+    {
+        _roughnessInvert = i;
+    }
 
-    inline uint32_t aoChannel() const { return _aoChannel; }
-    inline void setAoChannel(uint32_t c) { _aoChannel = c; }
+    inline uint32_t roughnessUVSet() const
+    {
+        return _roughnessUVSet;
+    }
+    inline void setRoughnessUVSet(uint32_t uvSet)
+    {
+        _roughnessUVSet = uvSet;
+    }
 
-    inline uint32_t aoUVSet() const { return _aoUVSet; }
-    inline void setAoUVSet(uint32_t uvSet) { _aoUVSet = uvSet; }
+    inline std::shared_ptr<Texture> normalTexture() const
+    {
+        return _normalTexture;
+    }
+    inline void setNormalTexture(Texture* t)
+    {
+        setNormalTexture(std::shared_ptr<Texture>(t));
+    }
+    inline void setNormalTexture(std::shared_ptr<Texture> t)
+    {
+        _normalTextureUpdated = false;
+        _normalTexture = t;
+    }
+    inline bool normalTextureUpdated() const
+    {
+        return _normalTextureUpdated;
+    }
 
-    inline float lightEmission() const { return _lightEmission; }
-    inline void setLightEmission(float e) { _lightEmission = e; }
+    inline const glm::vec2& normalScale() const
+    {
+        return _normalScale;
+    }
+    inline void setNormalScale(const glm::vec2& s)
+    {
+        _normalScale = s;
+    }
+    inline void setNormalScale(const std::array<float, 2>& s)
+    {
+        _normalScale = {s[0], s[1]};
+    }
 
-    inline std::shared_ptr<Texture> lightEmissionTexture() const { return _lightEmissionTexture; }
-    inline void setLightEmissionTexture(Texture * t) { setLightEmissionTexture(std::shared_ptr<Texture>(t)); }
-    inline void setLightEmissionTexture(std::shared_ptr<Texture> t) { _lightEmissionTextureUpdated = false; _lightEmissionTexture = t; }
-    inline bool lightEmissionTextureUpdated() const { return _lightEmissionTextureUpdated; }
+    inline uint32_t normalUVSet() const
+    {
+        return _normalUVSet;
+    }
+    inline void setNormalUVSet(uint32_t uvSet)
+    {
+        _normalUVSet = uvSet;
+    }
 
-    inline const glm::vec2 & lightEmissionScale() const { return _lightEmissionScale; }
-    inline void setLightEmissionScale(const glm::vec2& s) { _lightEmissionScale = s; }
-    inline void setLightEmissionScale(const std::array<float, 2>& s) { _lightEmissionScale = {s[0], s[1]}; }
+    inline const Color& fresnelTint() const
+    {
+        return _fresnelTint;
+    }
+    inline void setFresnelTint(const Color& c)
+    {
+        _fresnelTint = c;
+    }
 
-    inline uint32_t lightEmissionChannel() const { return _lightEmissionChannel; }
-    inline void setLightEmissionChannel(uint32_t c) { _lightEmissionChannel = c; }
+    inline float sheenIntensity() const
+    {
+        return _sheenIntensity;
+    }
+    inline void setSheenIntensity(float s)
+    {
+        _sheenIntensity = s;
+    }
 
-    inline bool lightEmissionInvert() const { return _lightEmissionInvert; }
-    inline void setLightEmissionInvert(bool i) { _lightEmissionInvert = i; }
+    inline const Color& sheenColor() const
+    {
+        return _sheenColor;
+    }
+    inline void setSheenColor(const Color& color)
+    {
+        _sheenColor = color;
+    }
 
-    inline uint32_t lightEmissionUVSet() const { return _lightEmissionUVSet; }
-    inline void setLightEmissionUVSet(uint32_t uvSet) { _lightEmissionUVSet = uvSet; }
+    inline std::shared_ptr<Texture> aoTexture() const
+    {
+        return _aoTexture;
+    }
+    inline void setAoTexture(Texture* t)
+    {
+        setAoTexture(std::shared_ptr<Texture>(t));
+    }
+    inline void setAoTexture(std::shared_ptr<Texture> t)
+    {
+        _aoTextureUpdated = false;
+        _aoTexture = t;
+    }
+    inline bool aoTextureUpdated() const
+    {
+        return _aoTextureUpdated;
+    }
+
+    inline const glm::vec2& aoScale() const
+    {
+        return _aoScale;
+    }
+    inline void setAoScale(const glm::vec2& s)
+    {
+        _aoScale = s;
+    }
+    inline void setAoScale(const std::array<float, 2>& s)
+    {
+        _aoScale = {s[0], s[1]};
+    }
+
+    inline uint32_t aoChannel() const
+    {
+        return _aoChannel;
+    }
+    inline void setAoChannel(uint32_t c)
+    {
+        _aoChannel = c;
+    }
+
+    inline uint32_t aoUVSet() const
+    {
+        return _aoUVSet;
+    }
+    inline void setAoUVSet(uint32_t uvSet)
+    {
+        _aoUVSet = uvSet;
+    }
+
+    inline float lightEmission() const
+    {
+        return _lightEmission;
+    }
+    inline void setLightEmission(float e)
+    {
+        _lightEmission = e;
+    }
+
+    inline std::shared_ptr<Texture> lightEmissionTexture() const
+    {
+        return _lightEmissionTexture;
+    }
+    inline void setLightEmissionTexture(Texture* t)
+    {
+        setLightEmissionTexture(std::shared_ptr<Texture>(t));
+    }
+    inline void setLightEmissionTexture(std::shared_ptr<Texture> t)
+    {
+        _lightEmissionTextureUpdated = false;
+        _lightEmissionTexture = t;
+    }
+    inline bool lightEmissionTextureUpdated() const
+    {
+        return _lightEmissionTextureUpdated;
+    }
+
+    inline const glm::vec2& lightEmissionScale() const
+    {
+        return _lightEmissionScale;
+    }
+    inline void setLightEmissionScale(const glm::vec2& s)
+    {
+        _lightEmissionScale = s;
+    }
+    inline void setLightEmissionScale(const std::array<float, 2>& s)
+    {
+        _lightEmissionScale = {s[0], s[1]};
+    }
+
+    inline uint32_t lightEmissionChannel() const
+    {
+        return _lightEmissionChannel;
+    }
+    inline void setLightEmissionChannel(uint32_t c)
+    {
+        _lightEmissionChannel = c;
+    }
+
+    inline bool lightEmissionInvert() const
+    {
+        return _lightEmissionInvert;
+    }
+    inline void setLightEmissionInvert(bool i)
+    {
+        _lightEmissionInvert = i;
+    }
+
+    inline uint32_t lightEmissionUVSet() const
+    {
+        return _lightEmissionUVSet;
+    }
+    inline void setLightEmissionUVSet(uint32_t uvSet)
+    {
+        _lightEmissionUVSet = uvSet;
+    }
 
     void setUpdated();
-    
+
     inline bool isUpdated() const
     {
-        return  _albedoTextureUpdated &&
-                _metalnessTextureUpdated &&
-                _roughnessTextureUpdated &&
-                _normalTextureUpdated &&
-                _aoTextureUpdated &&
-                _lightEmissionTextureUpdated;
+        return _albedoTextureUpdated &&
+               _metalnessTextureUpdated &&
+               _roughnessTextureUpdated &&
+               _normalTextureUpdated &&
+               _aoTextureUpdated &&
+               _lightEmissionTextureUpdated;
     }
-    
+
     // Metadata: in a bg2 file, Materials store some data from their associated submesh.
     // This is metadata: it does not belong to the material, but to the submesh. It is
     // stored in materialAttributes for serialisation and deserialisation to bg2 files.
-    inline const std::string& name() const { return _name; }
-    inline void setName(const std::string& name) { _name = name; }
-    
-    inline const std::string& groupName() const { return _groupName; }
-    inline void setGroupName(const std::string& groupName) { _groupName = groupName; }
-    
-    inline bool visible() const { return _visible; }
-    inline void setVisible(bool v) { _visible = v; }
+    inline const std::string& name() const
+    {
+        return _name;
+    }
+    inline void setName(const std::string& name)
+    {
+        _name = name;
+    }
 
-protected:
-    
+    inline const std::string& groupName() const
+    {
+        return _groupName;
+    }
+    inline void setGroupName(const std::string& groupName)
+    {
+        _groupName = groupName;
+    }
+
+    inline bool visible() const
+    {
+        return _visible;
+    }
+    inline void setVisible(bool v)
+    {
+        _visible = v;
+    }
+
+  protected:
     bool _isTransparent = false;
     bool _isSolid = true;
     bool _unlit = false;
     float _refractionFactor = 0.017f;
     float _alphaCutoff = 0.5f;
-    
+
     Color _albedo = Color::White();
     std::shared_ptr<Texture> _albedoTexture;
-    glm::vec2 _albedoScale{ 1.0f, 1.0f };
+    glm::vec2 _albedoScale{1.0f, 1.0f};
     uint32_t _albedoUVSet = 0;
     bool _albedoTextureUpdated = true;
-    
+
     float _metalness = 0.0f;
     std::shared_ptr<Texture> _metalnessTexture;
-    glm::vec2 _metalnessScale{ 1.0f, 1.0f };
+    glm::vec2 _metalnessScale{1.0f, 1.0f};
     uint32_t _metalnessChannel = 0;
     bool _metalnessInvert = false;
     uint32_t _metalnessUVSet = 0;
@@ -219,31 +523,31 @@ protected:
 
     float _roughness = 0.9f;
     std::shared_ptr<Texture> _roughnessTexture;
-    glm::vec2 _roughnessScale{ 1.0f, 1.0f };
+    glm::vec2 _roughnessScale{1.0f, 1.0f};
     uint32_t _roughnessChannel = 0;
     bool _roughnessInvert = false;
     uint32_t _roughnessUVSet = 0;
     bool _roughnessTextureUpdated = true;
 
     std::shared_ptr<Texture> _normalTexture;
-    glm::vec2 _normalScale{ 1.0f, 1.0f };
+    glm::vec2 _normalScale{1.0f, 1.0f};
     uint32_t _normalUVSet = 0;
     bool _normalTextureUpdated = true;
-    
+
     Color _fresnelTint = Color::White();
 
     float _sheenIntensity = 0.0f;
     Color _sheenColor = Color::White();
-    
+
     std::shared_ptr<Texture> _aoTexture;
-    glm::vec2 _aoScale{ 1.0f, 1.0f };
+    glm::vec2 _aoScale{1.0f, 1.0f};
     uint32_t _aoChannel = 0;
     uint32_t _aoUVSet = 0;
     bool _aoTextureUpdated = true;
 
     float _lightEmission = 0.0f;
     std::shared_ptr<Texture> _lightEmissionTexture;
-    glm::vec2 _lightEmissionScale{ 1.0f, 1.0f };
+    glm::vec2 _lightEmissionScale{1.0f, 1.0f};
     uint32_t _lightEmissionChannel = 0;
     bool _lightEmissionInvert = false;
     uint32_t _lightEmissionUVSet = 0;

@@ -24,7 +24,7 @@
 #include <iomanip>
 #include <sstream>
 
-void AppDelegate::init(bg2e::render::Engine * engine)
+void AppDelegate::init(bg2e::render::Engine* engine)
 {
     bg2e::render::DefaultRenderLoopDelegate<bg2e::render::RendererDeferred>::init(engine);
     _selectionManager = std::make_shared<bg2e::manipulation::SelectionManager>(engine);
@@ -39,13 +39,11 @@ void AppDelegate::swapchainResized(VkExtent2D extent)
 
 void AppDelegate::update(
     uint32_t currentFrame,
-    bg2e::render::vulkan::FrameResources& frameResources
-)
+    bg2e::render::vulkan::FrameResources& frameResources)
 {
     bg2e::render::DefaultRenderLoopDelegate<bg2e::render::RendererDeferred>::update(
         currentFrame,
-        frameResources
-    );
+        frameResources);
 
     if (_asyncLoadsInProgress.load() == 0 && _sceneImporter)
     {
@@ -76,8 +74,7 @@ VkImageLayout AppDelegate::render(
     const bg2e::render::vulkan::Image* colorImage,
     const bg2e::render::vulkan::Image* depthImage,
     const bg2e::render::vulkan::Image* msaaDepthImage,
-    bg2e::render::vulkan::FrameResources& frameResources
-)
+    bg2e::render::vulkan::FrameResources& frameResources)
 {
     auto layout = DefaultRenderLoopDelegate::render(
         cmd, currentFrame, colorImage, depthImage, msaaDepthImage, frameResources);
@@ -114,8 +111,7 @@ VkImageLayout AppDelegate::render(
 
 void AppDelegate::requestLightmapBake(
     const std::vector<std::shared_ptr<bg2e::scene::Node>>& targets,
-    const bg2e::render::LightmapSettings& settings
-)
+    const bg2e::render::LightmapSettings& settings)
 {
     if (lightmapBakeActive())
     {
@@ -143,10 +139,13 @@ void AppDelegate::requestLightmapBake(
             job.node = target;
             job.baker = _bakeContext->createBaker(target, settings);
             auto name = target->name();
-            std::replace_if(name.begin(), name.end(),
-                [](char c) { return !std::isalnum(static_cast<unsigned char>(c)); }, '_');
+            std::replace_if(name.begin(), name.end(), [](char c)
+                            {
+                                return !std::isalnum(static_cast<unsigned char>(c));
+                            },
+                            '_');
             job.tempPath = std::filesystem::temp_directory_path() /
-                ("bg2e_composer_lightmap_" + name + "_" + std::to_string(++_bakeCounter) + ".png");
+                           ("bg2e_composer_lightmap_" + name + "_" + std::to_string(++_bakeCounter) + ".png");
             jobs.push_back(std::move(job));
         }
         catch (const std::exception& error)
@@ -183,7 +182,7 @@ std::pair<uint32_t, uint32_t> AppDelegate::lightmapBakeProgress() const
         completed += job.baker->completedFrames();
         total += job.baker->settings().accumulationFrames;
     }
-    return { completed, total };
+    return {completed, total};
 }
 
 void AppDelegate::finishLightmapBakes()
@@ -196,8 +195,8 @@ void AppDelegate::finishLightmapBakes()
 
         auto* drawableComponent = job.node->drawable();
         auto drawable = drawableComponent
-            ? std::dynamic_pointer_cast<bg2e::scene::Drawable>(drawableComponent->drawable())
-            : nullptr;
+                            ? std::dynamic_pointer_cast<bg2e::scene::Drawable>(drawableComponent->drawable())
+                            : nullptr;
         if (drawable)
         {
             auto texture = std::make_shared<bg2e::base::Texture>(job.tempPath);
@@ -205,7 +204,7 @@ void AppDelegate::finishLightmapBakes()
             {
                 drawable->material(submesh).setAoTexture(texture);
                 drawable->material(submesh).setAoUVSet(1);
-                drawable->material(submesh).setAoScale(glm::vec2{ 1.0f, 1.0f });
+                drawable->material(submesh).setAoScale(glm::vec2{1.0f, 1.0f});
                 auto renderMaterial = drawable->renderMaterial(submesh);
                 renderMaterial->setMaterialAttributes(drawable->material(submesh));
                 renderMaterial->updateTextures();
@@ -222,20 +221,23 @@ void AppDelegate::finishLightmapBakes()
 void AppDelegate::asyncLoadGuarded(
     std::function<void(bg2e::ui::Loader*)> loadFn,
     glm::vec4 clearColor,
-    std::function<void(std::exception_ptr)> onComplete
-)
+    std::function<void(std::exception_ptr)> onComplete)
 {
     _asyncLoadsInProgress.fetch_add(1);
     bg2e::app::MainLoop::current()->asyncLoad(
-        [fn = std::move(loadFn)](bg2e::ui::Loader* loader) {
+        [fn = std::move(loadFn)](bg2e::ui::Loader* loader)
+        {
             fn(loader);
         },
         clearColor,
-        [this, complete = std::move(onComplete)](std::exception_ptr error) {
+        [this, complete = std::move(onComplete)](std::exception_ptr error)
+        {
             _asyncLoadsInProgress.fetch_sub(1);
-            if (complete) complete(error);
-        }
-    );
+            if (complete)
+            {
+                complete(error);
+            }
+        });
 }
 
 void AppDelegate::drawUI()
@@ -306,7 +308,10 @@ void AppDelegate::mouseWheel(int deltaX, int deltaY)
 
 void AppDelegate::fileDropped(const std::filesystem::path& path)
 {
-    if (_asyncLoadsInProgress.load() > 0) return;
+    if (_asyncLoadsInProgress.load() > 0)
+    {
+        return;
+    }
     auto ext = path.extension();
 
     if (!stage()->checkUnsavedChanges())
@@ -321,26 +326,27 @@ void AppDelegate::fileDropped(const std::filesystem::path& path)
     else if (ext == ".json" || ext == ".vitscnj")
     {
         asyncLoadGuarded([&, path](bg2e::ui::Loader* loader)
-        {
-            stage()->openScene(path, [&](const std::string& modelName, uint32_t processed, uint32_t total) {
-                loader->setMessage("_statusBarLoading model " + modelName + "...");
-                loader->setProgress(static_cast<float>(processed) / static_cast<float>(total));
-            });
-        }, glm::vec4{ 0.2, 0.2, 0.31, 1.0f });
+                         {
+                             stage()->openScene(path, [&](const std::string& modelName, uint32_t processed, uint32_t total)
+                                                {
+                                                    loader->setMessage("_statusBarLoading model " + modelName + "...");
+                                                    loader->setProgress(static_cast<float>(processed) / static_cast<float>(total));
+                                                });
+                         },
+                         glm::vec4{0.2, 0.2, 0.31, 1.0f});
     }
 }
 
 std::shared_ptr<bg2e::scene::Node> AppDelegate::createScene()
 {
     _stage = std::make_shared<StageScene>(_engine, this);
-    
+
     auto scene = _stage->init();
-    
+
     renderer()->setSkyboxBlurLevel(2);
-    
+
     initWorkspace();
-    
-    
+
     return scene;
 }
 
@@ -385,7 +391,6 @@ void AppDelegate::setSelectionHighlightMode(SelectionHighlightMode mode)
     updateSelectionHighlight();
 }
 
-
 void AppDelegate::initWorkspace()
 {
     // Initialize preferences and load saved settings
@@ -394,10 +399,12 @@ void AppDelegate::initWorkspace()
     _renderPrefs->load();
 
     // Register timer: persist every 60 seconds, also persist on exit
-    bg2e::app::MainLoop::current()->timeout().add([this]() -> bool {
-        _renderPrefs->persist();
-        return true;
-    }, 60000, true);  // executeOnExit = true
+    bg2e::app::MainLoop::current()->timeout().add([this]() -> bool
+                                                  {
+                                                      _renderPrefs->persist();
+                                                      return true;
+                                                  },
+                                                  60000, true); // executeOnExit = true
 
     _workspace.leftPanelSize().min = 300;
     _sceneEditor.init(this);
@@ -410,37 +417,48 @@ void AppDelegate::initWorkspace()
     // Keep the node editor in sync with whatever changes the selection (tree
     // clicks, 3D picking or programmatic changes). The material panel reacts on
     // its own through MaterialEditor's onSelect callback.
-    _selectionManager->onSelect([&]() {
-        std::vector<bg2e::scene::Node*> nodes;
-        for (const auto& weakNode : _selectionManager->selectedNodes())
-        {
-            if (auto node = weakNode.lock())
-            {
-                nodes.push_back(node.get());
-            }
-        }
+    _selectionManager->onSelect([&]()
+                                {
+                                    std::vector<bg2e::scene::Node*> nodes;
+                                    for (const auto& weakNode : _selectionManager->selectedNodes())
+                                    {
+                                        if (auto node = weakNode.lock())
+                                        {
+                                            nodes.push_back(node.get());
+                                        }
+                                    }
 
-        if (nodes.empty())          _sceneEditor.nodeEditor().setNode(nullptr);
-        else if (nodes.size() == 1) _sceneEditor.nodeEditor().setNode(nodes.front());
-        else                        _sceneEditor.nodeEditor().setNodes(nodes);
+                                    if (nodes.empty())
+                                    {
+                                        _sceneEditor.nodeEditor().setNode(nullptr);
+                                    }
+                                    else if (nodes.size() == 1)
+                                    {
+                                        _sceneEditor.nodeEditor().setNode(nodes.front());
+                                    }
+                                    else
+                                    {
+                                        _sceneEditor.nodeEditor().setNodes(nodes);
+                                    }
 
-        // Keep the submesh/material panel in sync with the primary selection.
-        if (!nodes.empty())
-        {
-            _submeshPanel.setEditMaterial(_selectionManager->selectedSubmesh());
-        }
-    });
+                                    // Keep the submesh/material panel in sync with the primary selection.
+                                    if (!nodes.empty())
+                                    {
+                                        _submeshPanel.setEditMaterial(_selectionManager->selectedSubmesh());
+                                    }
+                                });
 
     // Edge case: clear the selection on scene swap. The onSelect callback above
     // takes care of clearing the node editor.
-    _stage->onSceneSwap([&]() {
-        _selectionManager->deselect();
-        cancelLightmapBake();
-        if (_sceneImporter)
-        {
-            _sceneImporter->clear();
-        }
-    });
+    _stage->onSceneSwap([&]()
+                        {
+                            _selectionManager->deselect();
+                            cancelLightmapBake();
+                            if (_sceneImporter)
+                            {
+                                _sceneImporter->clear();
+                            }
+                        });
 
     _uiSettingsWindow.init(true);
     _renderSettingsWindow.init(deferredRenderer, _renderPrefs.get());
@@ -470,37 +488,36 @@ void AppDelegate::initWorkspace()
         }
     }
 
+    _selectionManager->onSelect([&]()
+                                {
+                                    auto selectedNode = _selectionManager->selectedNode();
+                                    auto selectionSize = glm::vec3{0.0f};
+                                    if (selectedNode)
+                                    {
+                                        bg2e::scene::BoundingBox boundingBox(selectedNode);
+                                        selectionSize = boundingBox.size();
+                                    }
 
-    _selectionManager->onSelect([&]() {
-        auto selectedNode = _selectionManager->selectedNode();
-        auto selectionSize = glm::vec3{ 0.0f };
-        if (selectedNode)
-        {
-            bg2e::scene::BoundingBox boundingBox(selectedNode);
-            selectionSize = boundingBox.size();
-        }
-
-        std::ostringstream status;
-        status << "Selection size: "
-               << std::fixed << std::setprecision(2)
-               << selectionSize.x << " x "
-               << selectionSize.y << " x "
-               << selectionSize.z;
-        _selectionStatus->setText(status.str());
-    });
+                                    std::ostringstream status;
+                                    status << "Selection size: "
+                                           << std::fixed << std::setprecision(2)
+                                           << selectionSize.x << " x "
+                                           << selectionSize.y << " x "
+                                           << selectionSize.z;
+                                    _selectionStatus->setText(status.str());
+                                });
 
     // Force update status to setup the initial state of
     // fileStatus and saveStatus
     _stage->document()->updateStatus();
- 
+
     _workspace.setup(
         uiWidth(), uiHeight(),
         &_toolBar,
         &_submeshPanel,
         &_sceneEditor,
-        nullptr,  // Use nullptr if you dont't want to use this panel
-        &_statusBar
-    );
+        nullptr, // Use nullptr if you dont't want to use this panel
+        &_statusBar);
 }
 
 void AppDelegate::updateSelectionHighlight()

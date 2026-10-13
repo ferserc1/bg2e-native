@@ -26,18 +26,27 @@ namespace gpu {
 namespace vk {
 
 class BG2E_API GraphicsPipeline : public gpu::GraphicsPipeline {
-public:
+  public:
     GraphicsPipeline(gpu::Device* gpuDevice, VkDevice device, const gpu::GraphicsPipelineDescription& description);
     ~GraphicsPipeline() override;
 
     bool isValid() const override;
     void cleanup() override;
 
-    VkPipeline handle() const { return _pipeline; }
-    VkPipelineBindPoint bindPoint() const { return _bindPoint; }
-    VkPipelineLayout layoutHandle() const { return _layoutHandle; }
+    VkPipeline handle() const
+    {
+        return _pipeline;
+    }
+    VkPipelineBindPoint bindPoint() const
+    {
+        return _bindPoint;
+    }
+    VkPipelineLayout layoutHandle() const
+    {
+        return _layoutHandle;
+    }
 
-private:
+  private:
     VkDevice _device{VK_NULL_HANDLE};
     VkPipeline _pipeline{VK_NULL_HANDLE};
     VkPipelineBindPoint _bindPoint{VK_PIPELINE_BIND_POINT_GRAPHICS};

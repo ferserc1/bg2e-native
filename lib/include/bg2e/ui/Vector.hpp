@@ -28,135 +28,117 @@ namespace ui {
 
 // Vector and matrix value editors
 class BG2E_API Vector {
-public:
+  public:
     static bool vec2(
         const std::string& label,
-        int * value,
-        bool sameLine = false
-    );
+        int* value,
+        bool sameLine = false);
 
     static bool vec3(
         const std::string& label,
-        int * value,
-        bool sameLine = false
-    );
+        int* value,
+        bool sameLine = false);
 
     static bool vec4(
         const std::string& label,
-        int * value,
-        bool sameLine = false
-    );
+        int* value,
+        bool sameLine = false);
 
     static bool vec2(
         const std::string& label,
-        float * value,
-        bool sameLine = false
-    );
+        float* value,
+        bool sameLine = false);
 
     static bool vec3(
         const std::string& label,
-        float * value,
-        bool sameLine = false
-    );
+        float* value,
+        bool sameLine = false);
 
     static bool vec4(
         const std::string& label,
-        float * value,
-        bool sameLine = false
-    );
+        float* value,
+        bool sameLine = false);
 
     static bool vec2(
         const std::string& label,
         glm::vec2& value,
-        bool sameLine = false
-    );
+        bool sameLine = false);
 
     static bool vec3(
         const std::string& label,
         glm::vec3& value,
-        bool sameLine = false
-    );
+        bool sameLine = false);
 
     static bool vec4(
         const std::string& label,
         glm::vec4& value,
-        bool sameLine = false
-    );
+        bool sameLine = false);
 
     static bool sliderVec2(
         const std::string& label,
-        float * value,
+        float* value,
         float min,
         float max,
-        bool sameLine = false
-    );
+        bool sameLine = false);
 
     static bool sliderVec3(
         const std::string& label,
-        float * value,
+        float* value,
         float min,
         float max,
-        bool sameLine = false
-    );
+        bool sameLine = false);
 
     static bool sliderVec4(
         const std::string& label,
-        float * value,
+        float* value,
         float min,
         float max,
-        bool sameLine = false
-    );
+        bool sameLine = false);
 
     static bool sliderVec2(
         const std::string& label,
         glm::vec2& value,
         float min,
         float max,
-        bool sameLine = false
-    );
+        bool sameLine = false);
 
     static bool sliderVec3(
         const std::string& label,
         glm::vec3& value,
         float min,
         float max,
-        bool sameLine = false
-    );
+        bool sameLine = false);
 
     static bool sliderVec4(
         const std::string& label,
         glm::vec4& value,
         float min,
         float max,
-        bool sameLine = false
-    );
+        bool sameLine = false);
 
     static bool dragVec2(
         const std::string& label,
-        float * value,
+        float* value,
         float speed = 0.1f,
         float min = 0.0f,
         float max = 0.0f,
-        bool sameLine = false
-    );
+        bool sameLine = false);
 
     static bool dragVec3(
         const std::string& label,
-        float * value,
+        float* value,
         float speed = 0.1f,
         float min = 0.0f,
         float max = 0.0f,
-        bool sameLine = false
-    );
+        bool sameLine = false);
 
     static bool dragVec4(
         const std::string& label,
-        float * value,
+        float* value,
         float speed = 0.1f,
         float min = 0.0f,
         float max = 0.0f,
-        bool sameLine = false
-    );
+        bool sameLine = false);
 
     static bool dragVec2(
         const std::string& label,
@@ -164,8 +146,7 @@ public:
         float speed = 0.1f,
         float min = 0.0f,
         float max = 0.0f,
-        bool sameLine = false
-    );
+        bool sameLine = false);
 
     static bool dragVec3(
         const std::string& label,
@@ -173,8 +154,7 @@ public:
         float speed = 0.1f,
         float min = 0.0f,
         float max = 0.0f,
-        bool sameLine = false
-    );
+        bool sameLine = false);
 
     static bool dragVec4(
         const std::string& label,
@@ -182,8 +162,7 @@ public:
         float speed = 0.1f,
         float min = 0.0f,
         float max = 0.0f,
-        bool sameLine = false
-    );
+        bool sameLine = false);
 
     // Edits a 4x4 transform matrix decomposed as position / rotation (degrees)
     // / scale rows. Rotation is cached internally (keyed by label) to keep the
@@ -192,8 +171,7 @@ public:
     static bool mat4(
         const std::string& label,
         glm::mat4& value,
-        bool sameLine = false
-    );
+        bool sameLine = false);
 };
 
 }

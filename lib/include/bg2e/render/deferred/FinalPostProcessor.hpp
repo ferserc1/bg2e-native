@@ -38,7 +38,7 @@ namespace deferred {
 //   DirectPostProcessor — native output without AA or scaling
 //   FSRPostProcessor    — Windows and Linux only
 class BG2E_API FinalPostProcessor {
-public:
+  public:
     virtual ~FinalPostProcessor() = default;
 
     // Returns true when the processor is ready for use. A false result allows
@@ -47,8 +47,7 @@ public:
         Engine* engine,
         VkExtent2D renderExtent,
         VkExtent2D displayExtent,
-        VkFormat colorFormat
-    ) = 0;
+        VkFormat colorFormat) = 0;
 
     // Recreate size-dependent resources. Call when viewport or render scale changes.
     virtual void resize(VkExtent2D renderExtent, VkExtent2D displayExtent) = 0;
@@ -60,8 +59,7 @@ public:
     virtual glm::mat4 prepare(
         const glm::mat4& projMatrix,
         uint32_t frameCounter,
-        VkExtent2D renderExtent
-    ) = 0;
+        VkExtent2D renderExtent) = 0;
 
     // Execute the post-processing pass.
     //   colorInput   — scene color at render resolution (SHADER_READ_ONLY_OPTIMAL on entry)
@@ -80,8 +78,7 @@ public:
         float deltaMs,
         float cameraNear,
         float cameraFar,
-        float cameraFovVertical
-    ) = 0;
+        float cameraFovVertical) = 0;
 
     virtual void cleanup() = 0;
 

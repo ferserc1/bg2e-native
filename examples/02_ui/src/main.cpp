@@ -18,263 +18,266 @@
 #include <bg2e.hpp>
 
 class ClearScreenDelegate : public bg2e::render::RenderLoopDelegate,
-	public bg2e::app::InputDelegate,
-	public bg2e::ui::UserInterfaceDelegate
-{
-public:
-	void init(bg2e::render::Engine * vulkan) override
-	{
-		using namespace bg2e::render::vulkan;
-		RenderLoopDelegate::init(vulkan);
-	}
- 
+                            public bg2e::app::InputDelegate,
+                            public bg2e::ui::UserInterfaceDelegate {
+  public:
+    void init(bg2e::render::Engine* vulkan) override
+    {
+        using namespace bg2e::render::vulkan;
+        RenderLoopDelegate::init(vulkan);
+    }
+
     void initScene() override
     {
         createPipeline();
     }
 
-	void swapchainResized(VkExtent2D newExtent) override
-	{
-	}
+    void swapchainResized(VkExtent2D newExtent) override
+    {
+    }
 
-	VkImageLayout render(
-		VkCommandBuffer cmd,
-		uint32_t currentFrame,
-		const bg2e::render::vulkan::Image* colorImage,
-		const bg2e::render::vulkan::Image* depthImage,
-        const bg2e::render::vulkan::Image* msaaDepthImage,      
-		bg2e::render::vulkan::FrameResources& frameResources
-	) override {
-		using namespace bg2e::render::vulkan;
+    VkImageLayout render(
+        VkCommandBuffer cmd,
+        uint32_t currentFrame,
+        const bg2e::render::vulkan::Image* colorImage,
+        const bg2e::render::vulkan::Image* depthImage,
+        const bg2e::render::vulkan::Image* msaaDepthImage,
+        bg2e::render::vulkan::FrameResources& frameResources) override
+    {
+        using namespace bg2e::render::vulkan;
 
-		Image::cmdTransitionImage(
-			cmd,
-			colorImage->handle(),
-			VK_IMAGE_LAYOUT_UNDEFINED,
-			VK_IMAGE_LAYOUT_GENERAL
-		);
+        Image::cmdTransitionImage(
+            cmd,
+            colorImage->handle(),
+            VK_IMAGE_LAYOUT_UNDEFINED,
+            VK_IMAGE_LAYOUT_GENERAL);
 
-		float flash = std::abs(std::sin(currentFrame / 120.0f));
-		VkClearColorValue clearValue{ { 0.0f, 0.0f, flash, 1.0f } };
-		auto clearRange = Image::subresourceRange(VK_IMAGE_ASPECT_COLOR_BIT);
-		vkCmdClearColorImage(
-			cmd,
-			colorImage->handle(),
-			VK_IMAGE_LAYOUT_GENERAL,
-			&clearValue, 1, &clearRange
-		);
+        float flash = std::abs(std::sin(currentFrame / 120.0f));
+        VkClearColorValue clearValue{{0.0f, 0.0f, flash, 1.0f}};
+        auto clearRange = Image::subresourceRange(VK_IMAGE_ASPECT_COLOR_BIT);
+        vkCmdClearColorImage(
+            cmd,
+            colorImage->handle(),
+            VK_IMAGE_LAYOUT_GENERAL,
+            &clearValue, 1, &clearRange);
 
-		Image::cmdTransitionImage(
-			cmd, colorImage->handle(),
-			VK_IMAGE_LAYOUT_GENERAL,
-			VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
-		);
+        Image::cmdTransitionImage(
+            cmd, colorImage->handle(),
+            VK_IMAGE_LAYOUT_GENERAL,
+            VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 
-		auto colorAttachment = Info::attachmentInfo(colorImage->imageView(), nullptr);
-		auto renderInfo = Info::renderingInfo(colorImage->extent2D(), &colorAttachment, nullptr);
-		cmdBeginRendering(cmd, &renderInfo);
+        auto colorAttachment = Info::attachmentInfo(colorImage->imageView(), nullptr);
+        auto renderInfo = Info::renderingInfo(colorImage->extent2D(), &colorAttachment, nullptr);
+        cmdBeginRendering(cmd, &renderInfo);
 
-		macros::cmdSetDefaultViewportAndScissor(cmd, colorImage->extent2D());
+        macros::cmdSetDefaultViewportAndScissor(cmd, colorImage->extent2D());
 
-		vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, _pipeline);
+        vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, _pipeline);
 
-		vkCmdDraw(cmd, 3, 1, 0, 0);
+        vkCmdDraw(cmd, 3, 1, 0, 0);
 
-		bg2e::render::vulkan::cmdEndRendering(cmd);
-  
-		return VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-	}
+        bg2e::render::vulkan::cmdEndRendering(cmd);
 
-	void keyDown(const bg2e::app::KeyEvent& event) override
-	{
-		bg2e_log_debug << "Key down: " << event.key() << bg2e_log_end;
-	}
+        return VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    }
 
-	void keyUp(const bg2e::app::KeyEvent& event) override
-	{
-		bg2e_log_debug << "Key up: " << event.key() << bg2e_log_end;
+    void keyDown(const bg2e::app::KeyEvent& event) override
+    {
+        bg2e_log_debug << "Key down: " << event.key() << bg2e_log_end;
+    }
 
-		if (event.key() == bg2e::app::KeyEvent::Key::KeySpace)
-		{
-			_window.open();
-		}
-		else if (event.key() == bg2e::app::KeyEvent::Key::KeyEscape)
-		{
-			_window.close();
-		}
-	}
+    void keyUp(const bg2e::app::KeyEvent& event) override
+    {
+        bg2e_log_debug << "Key up: " << event.key() << bg2e_log_end;
 
-	void mouseMove(int x, int y) override
-	{
-		bg2e_log_debug << "Mouse move: " << x << ", " << y << bg2e_log_end;
-	}
+        if (event.key() == bg2e::app::KeyEvent::Key::KeySpace)
+        {
+            _window.open();
+        }
+        else if (event.key() == bg2e::app::KeyEvent::Key::KeyEscape)
+        {
+            _window.close();
+        }
+    }
 
-	void mouseButtonDown(int button, int x, int y) override
-	{
-		bg2e_log_debug << "Mouse button down: " << button << " at " << x << ", " << y << bg2e_log_end;
-	}
+    void mouseMove(int x, int y) override
+    {
+        bg2e_log_debug << "Mouse move: " << x << ", " << y << bg2e_log_end;
+    }
 
-	void mouseButtonUp(int button, int x, int y) override
-	{
-		bg2e_log_debug << "Mouse button up: " << button << " at " << x << ", " << y << bg2e_log_end;
-	}
+    void mouseButtonDown(int button, int x, int y) override
+    {
+        bg2e_log_debug << "Mouse button down: " << button << " at " << x << ", " << y << bg2e_log_end;
+    }
 
-	void mouseWheel(int deltaX, int deltaY) override
-	{
-		bg2e_log_debug << "Mouse wheel: " << deltaX << ", " << deltaY << bg2e_log_end;
-	}
+    void mouseButtonUp(int button, int x, int y) override
+    {
+        bg2e_log_debug << "Mouse button up: " << button << " at " << x << ", " << y << bg2e_log_end;
+    }
 
-	// ============ User Interface Delegate Functions =========
-	void init(bg2e::render::Engine *, bg2e::ui::UserInterface*) override {
-		_window.setTitle("ImGui Wrapper Demo");
-		_window.options.noClose = true;
+    void mouseWheel(int deltaX, int deltaY) override
+    {
+        bg2e_log_debug << "Mouse wheel: " << deltaX << ", " << deltaY << bg2e_log_end;
+    }
+
+    // ============ User Interface Delegate Functions =========
+    void init(bg2e::render::Engine*, bg2e::ui::UserInterface*) override
+    {
+        _window.setTitle("ImGui Wrapper Demo");
+        _window.options.noClose = true;
         _window.options.minWidth = 200;
         _window.options.minHeight = 480;
         _window.setPosition(0, 0);
         _window.setSize(400, 500);
-	}
+    }
 
-	void drawUI() override
-	{
-		using namespace bg2e::ui;
-  
+    void drawUI() override
+    {
+        using namespace bg2e::ui;
+
         static bool checkBoxTest = true;
         static int buttonTest = 0;
         static int radioButtonTest1 = 0;
         static int radioButtonTest2 = 0;
 
-		//bg2e::ui::DemoWindow::draw();
-		_window.draw([]() {
-			Text::text("Hello, world!");
-            Text::separator();
-            Text::text("This is a list:");
-            Text::listItem("First item");
-            Text::listItem("Second item");
-            Text::listItem("Third item");
-            Text::listItem("Fourth item");
-            Text::separator();
-            Text::text("Text - ");
-            Text::text("inline", true);
-            Text::separator();
-            Button::checkBox("Test", &checkBoxTest);
-            
-            if (Button::button("Click Me"))
-            {
-                ++buttonTest;
-            }
-            if (buttonTest & 1)
-            {
-                Text::text("Clicked", true);
-            }
-            
-            Text::separator("Radio button group 1");
-            Button::radioButton("Value 1", &radioButtonTest1, 0);
-            Button::radioButton("Value 2", &radioButtonTest1, 1);
-            Button::radioButton("Value 3", &radioButtonTest1, 2);
-            Text::text("Value");
-            Text::text(std::to_string(radioButtonTest1 + 1), true);
-            
-            Text::separator("Radio button group 2");
-            Button::radioButton("Value A", &radioButtonTest2, 0);
-            Button::radioButton("Value B", &radioButtonTest2, 1);
-            Button::radioButton("Value C", &radioButtonTest2, 2);
-            switch (radioButtonTest2)
-            {
-                case 0: Text::text("Value A"); break;
-                case 1: Text::text("Value B"); break;
-                case 2: Text::text("Value C"); break;
-            }
-            
-            Text::separator("Inputs");
-            static std::string testStringValue = "Hola";
-            Value::text("Test string", testStringValue);
-            Text::text(testStringValue.c_str());
-            
-            static std::string testStringValue2;
-            Value::textWithHint("Test string 2", "Enter test here", testStringValue2);
-            Text::text(testStringValue2.c_str());
-            
-            static int testIntValue = 0;
-            Numeric::number("Int value", &testIntValue);
-            Text::text(std::to_string(testIntValue));
-            
-            static float testFloatValue = 0.0f;
-            Numeric::number("Float value", &testFloatValue);
-            Text::text(std::to_string(testFloatValue));
-            
-            static double testDoubleValue = 0.0;
-            Numeric::number("Double value", &testDoubleValue);
-            Text::text(std::to_string(testDoubleValue));
-            
-            static int testInt2[2] = { 10, 20 };
-            Vector::vec2("Vec 2", testInt2);
-            Text::text(std::to_string(testInt2[0]) + " " + std::to_string(testInt2[1]));
-            
-            static int testInt3[3] = { 1, 2, 3 };
-            Vector::vec3("Vec 3", testInt3);
-            Text::text(
-                std::to_string(testInt3[0]) + " " +
-                std::to_string(testInt3[1]) + " " +
-                std::to_string(testInt3[2])
-            );
-                
-            static float testFloat4[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
-            Vector::vec4("Vec 4", testFloat4);
-            Text::text(
-                std::to_string(testFloat4[0]) + " " +
-                std::to_string(testFloat4[1]) + " " +
-                std::to_string(testFloat4[2]) + " " +
-                std::to_string(testFloat4[3])
-            );
+        //bg2e::ui::DemoWindow::draw();
+        _window.draw([]()
+                     {
+                         Text::text("Hello, world!");
+                         Text::separator();
+                         Text::text("This is a list:");
+                         Text::listItem("First item");
+                         Text::listItem("Second item");
+                         Text::listItem("Third item");
+                         Text::listItem("Fourth item");
+                         Text::separator();
+                         Text::text("Text - ");
+                         Text::text("inline", true);
+                         Text::separator();
+                         Button::checkBox("Test", &checkBoxTest);
 
-            static float testRotation[3] = { 0.0f, 0.0f, 0.0f };
-            Vector::sliderVec3("Rotation slider", testRotation, -180.0f, 180.0f);
+                         if (Button::button("Click Me"))
+                         {
+                             ++buttonTest;
+                         }
+                         if (buttonTest & 1)
+                         {
+                             Text::text("Clicked", true);
+                         }
 
-            static float testDragVector[3] = { 0.0f, 0.0f, 0.0f };
-            Vector::dragVec3("Drag vector", testDragVector, 0.5f, -180.0f, 180.0f);
-		});
-	}
+                         Text::separator("Radio button group 1");
+                         Button::radioButton("Value 1", &radioButtonTest1, 0);
+                         Button::radioButton("Value 2", &radioButtonTest1, 1);
+                         Button::radioButton("Value 3", &radioButtonTest1, 2);
+                         Text::text("Value");
+                         Text::text(std::to_string(radioButtonTest1 + 1), true);
 
-protected:
-	bg2e::ui::Window _window;
- 
+                         Text::separator("Radio button group 2");
+                         Button::radioButton("Value A", &radioButtonTest2, 0);
+                         Button::radioButton("Value B", &radioButtonTest2, 1);
+                         Button::radioButton("Value C", &radioButtonTest2, 2);
+                         switch (radioButtonTest2)
+                         {
+                         case 0:
+                             Text::text("Value A");
+                             break;
+                         case 1:
+                             Text::text("Value B");
+                             break;
+                         case 2:
+                             Text::text("Value C");
+                             break;
+                         }
+
+                         Text::separator("Inputs");
+                         static std::string testStringValue = "Hola";
+                         Value::text("Test string", testStringValue);
+                         Text::text(testStringValue.c_str());
+
+                         static std::string testStringValue2;
+                         Value::textWithHint("Test string 2", "Enter test here", testStringValue2);
+                         Text::text(testStringValue2.c_str());
+
+                         static int testIntValue = 0;
+                         Numeric::number("Int value", &testIntValue);
+                         Text::text(std::to_string(testIntValue));
+
+                         static float testFloatValue = 0.0f;
+                         Numeric::number("Float value", &testFloatValue);
+                         Text::text(std::to_string(testFloatValue));
+
+                         static double testDoubleValue = 0.0;
+                         Numeric::number("Double value", &testDoubleValue);
+                         Text::text(std::to_string(testDoubleValue));
+
+                         static int testInt2[2] = {10, 20};
+                         Vector::vec2("Vec 2", testInt2);
+                         Text::text(std::to_string(testInt2[0]) + " " + std::to_string(testInt2[1]));
+
+                         static int testInt3[3] = {1, 2, 3};
+                         Vector::vec3("Vec 3", testInt3);
+                         Text::text(
+                             std::to_string(testInt3[0]) + " " +
+                             std::to_string(testInt3[1]) + " " +
+                             std::to_string(testInt3[2]));
+
+                         static float testFloat4[4] = {0.0f, 0.0f, 0.0f, 1.0f};
+                         Vector::vec4("Vec 4", testFloat4);
+                         Text::text(
+                             std::to_string(testFloat4[0]) + " " +
+                             std::to_string(testFloat4[1]) + " " +
+                             std::to_string(testFloat4[2]) + " " +
+                             std::to_string(testFloat4[3]));
+
+                         static float testRotation[3] = {0.0f, 0.0f, 0.0f};
+                         Vector::sliderVec3("Rotation slider", testRotation, -180.0f, 180.0f);
+
+                         static float testDragVector[3] = {0.0f, 0.0f, 0.0f};
+                         Vector::dragVec3("Drag vector", testDragVector, 0.5f, -180.0f, 180.0f);
+                     });
+    }
+
+  protected:
+    bg2e::ui::Window _window;
+
     VkPipelineLayout _layout;
     VkPipeline _pipeline;
-        
+
     void createPipeline()
     {
         bg2e::render::vulkan::factory::GraphicsPipeline plFactory(_engine);
-        
+
         plFactory.addShader("ui/test.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
         plFactory.addShader("ui/test.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
-        
+
         auto layoutInfo = bg2e::render::vulkan::Info::pipelineLayoutInfo();
         VK_ASSERT(vkCreatePipelineLayout(_engine->device().handle(), &layoutInfo, nullptr, &_layout));
         plFactory.setColorAttachmentFormat(_engine->swapchain().imageFormat());
         _pipeline = plFactory.build(_layout, "Example02UI::Pipeline");
-        
-        _engine->cleanupManager().push([&](VkDevice dev) {
-            vkDestroyPipeline(dev, _pipeline, nullptr);
-            vkDestroyPipelineLayout(dev, _layout, nullptr);
-        });
+
+        _engine->cleanupManager().push([&](VkDevice dev)
+                                       {
+                                           vkDestroyPipeline(dev, _pipeline, nullptr);
+                                           vkDestroyPipelineLayout(dev, _layout, nullptr);
+                                       });
     }
 };
 
 class MyApplication : public bg2e::app::Application {
-public:
-	void init(int argc, char** argv) override
-	{
-		auto delegate = std::shared_ptr<ClearScreenDelegate>(new ClearScreenDelegate());
-		setRenderDelegate(delegate);
-		setInputDelegate(delegate);
-		setUiDelegate(delegate);
-	}
+  public:
+    void init(int argc, char** argv) override
+    {
+        auto delegate = std::shared_ptr<ClearScreenDelegate>(new ClearScreenDelegate());
+        setRenderDelegate(delegate);
+        setInputDelegate(delegate);
+        setUiDelegate(delegate);
+    }
 };
 
-int main(int argc, char ** argv)
+int main(int argc, char** argv)
 {
     bg2e::app::MainLoop mainLoop("org.bg2engine.examples.ui");
-	MyApplication app;
-	app.init(argc, argv);
+    MyApplication app;
+    app.init(argc, argv);
     return mainLoop.run(&app);
 }

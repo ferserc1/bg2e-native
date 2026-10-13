@@ -25,32 +25,32 @@ namespace bg2e::ui {
 void StatusBar::draw()
 {
     draw([&]()
-    {
-        auto textSize = Layout::calcTextHeight("text") + Layout::getItemVerticalSpacing();
-        Layout::padding(0, height() / 2 - textSize);
+         {
+             auto textSize = Layout::calcTextHeight("text") + Layout::getItemVerticalSpacing();
+             Layout::padding(0, height() / 2 - textSize);
 
-        auto sameLine = false;
-        for (auto & item : _leftItems)
-        {
-            Text::text(item->getText(), sameLine);
-            sameLine = true;
-        }
+             auto sameLine = false;
+             for (auto& item : _leftItems)
+             {
+                 Text::text(item->getText(), sameLine);
+                 sameLine = true;
+             }
 
-        auto rightButtonsSize = 0;
-        for (auto & item : _rightItems)
-        {
-            rightButtonsSize += Layout::calcTextWidth(item->getText()) +
-                Layout::getItemHorizontalSpacing();
-        }
+             auto rightButtonsSize = 0;
+             for (auto& item : _rightItems)
+             {
+                 rightButtonsSize += Layout::calcTextWidth(item->getText()) +
+                                     Layout::getItemHorizontalSpacing();
+             }
 
-        auto txtIndex = 0;
-        for (auto & item : _rightItems)
-        {
-            txtIndex == 0 ? Layout::sameLine(-rightButtonsSize) : Layout::sameLine();
-            Text::text(item->getText(), false);
-            ++txtIndex;
-        }
-    });
+             auto txtIndex = 0;
+             for (auto& item : _rightItems)
+             {
+                 txtIndex == 0 ? Layout::sameLine(-rightButtonsSize) : Layout::sameLine();
+                 Text::text(item->getText(), false);
+                 ++txtIndex;
+             }
+         });
 }
 
 void StatusBar::setDrawFunction([[maybe_unused]] std::function<void()> drawFunction)
@@ -59,8 +59,8 @@ void StatusBar::setDrawFunction([[maybe_unused]] std::function<void()> drawFunct
 
 void StatusBar::draw(
     std::function<void()> drawFunc,
-    std::function<void()> menuFunction
-) {
+    std::function<void()> menuFunction)
+{
     Window::draw(drawFunc, menuFunction);
 }
 

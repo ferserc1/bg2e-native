@@ -29,7 +29,7 @@ namespace gpu {
 namespace vk {
 
 class Instance : public gpu::Instance {
-public:
+  public:
     Instance();
 
     // gpu::Instance interface
@@ -43,14 +43,17 @@ public:
     void cleanup() override;
 
     // Vulkan-specific accessor (not part of abstract interface)
-    VkInstance vkInstanceHnd() const { return _instance; }
+    VkInstance vkInstanceHnd() const
+    {
+        return _instance;
+    }
 
     // Layer and extension queries — used by Device during creation
     bool getRequiredLayers(std::vector<const char*>& requiredLayers) const;
     bool getRequiredExtensions(SDL_Window* window, std::vector<const char*>& requiredExtensions) const;
     bool getRequiredExtensions(std::vector<const char*>& requiredExtensions) const;
 
-private:
+  private:
     VkInstance _instance = VK_NULL_HANDLE;
     VkDebugUtilsMessengerEXT _debugMessenger = VK_NULL_HANDLE;
 

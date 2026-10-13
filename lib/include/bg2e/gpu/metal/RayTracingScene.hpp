@@ -35,7 +35,7 @@ class Device;
 // Reuses the instance descriptor buffer and scratch buffer across rebuilds,
 // growing them only when the instance count exceeds the current capacity.
 class RayTracingScene : public gpu::RayTracingScene {
-public:
+  public:
     RayTracingScene(metal::Device* device, const std::string& debugName = {});
     ~RayTracingScene() override;
 
@@ -51,7 +51,10 @@ public:
     // Records the instance acceleration structure build into `cmd`.
     void build(MTL::CommandBuffer* cmd);
 
-    MTL::AccelerationStructure* handle() const { return _instanceAS; }
+    MTL::AccelerationStructure* handle() const
+    {
+        return _instanceAS;
+    }
 
     // Primitive acceleration structures referenced by the current build. They
     // must be made resident (useResource) before the instance acceleration
@@ -62,17 +65,17 @@ public:
     }
 #endif
 
-private:
+  private:
     metal::Device* _device = nullptr;
-    std::string    _debugName;
+    std::string _debugName;
 
 #if BG2E_IS_MAC
-    MTL::AccelerationStructure* _instanceAS     = nullptr;
-    MTL::Buffer*                _instanceBuffer = nullptr;
-    MTL::Buffer*                _scratchBuffer  = nullptr;
-    NS::UInteger                _instanceCapacity = 0;
-    NS::UInteger                _asSize           = 0;
-    NS::UInteger                _scratchSize      = 0;
+    MTL::AccelerationStructure* _instanceAS = nullptr;
+    MTL::Buffer* _instanceBuffer = nullptr;
+    MTL::Buffer* _scratchBuffer = nullptr;
+    NS::UInteger _instanceCapacity = 0;
+    NS::UInteger _asSize = 0;
+    NS::UInteger _scratchSize = 0;
 
     std::vector<MTL::AccelerationStructure*> _referencedPrimitives;
 #endif

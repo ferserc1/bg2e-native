@@ -31,21 +31,21 @@ namespace vulkan {
 namespace factory {
 
 class BG2E_API GraphicsPipeline {
-public:
-    GraphicsPipeline(Engine * engine);
+  public:
+    GraphicsPipeline(Engine* engine);
     ~GraphicsPipeline();
-    
+
     void addShader(const std::string& fileName, VkShaderStageFlagBits stage, const std::string& entryPoint = "main", const std::string& basePath = "");
     void addShader(VkShaderModule shaderModule, VkShaderStageFlagBits stage, const std::string& entryPoint = "main");
     void clearShaders();
-    
+
     void addInputBindingDescription(VkVertexInputBindingDescription desc);
     void addInputAttributeDescription(VkVertexInputAttributeDescription desc);
     void setInputBindingDescription(VkVertexInputBindingDescription desc);
     void setInputAttributeDescriptions(const std::vector<VkVertexInputAttributeDescription>& desc);
     void clearInputBindingDescriptions();
     void clearInputAttributeDescriptions();
-    
+
     // Template function to add both input binding and attribute descriptions depending on the type of mesh
     // TODO: Check if this is working on Visual Studio/Windows
     template <typename DrawableT>
@@ -69,7 +69,7 @@ public:
     void disableBlending();
     void enableBlendingAdditive();
     void enableBlendingAlphablend();
-    
+
     VkPipelineVertexInputStateCreateInfo vertexInputState = {};
     VkPipelineInputAssemblyStateCreateInfo inputAssembly = {};
     VkPipelineRasterizationStateCreateInfo rasterizer = {};
@@ -77,29 +77,32 @@ public:
     VkPipelineMultisampleStateCreateInfo multisampling = {};
     VkPipelineDepthStencilStateCreateInfo depthStencil = {};
 
-    void addDynamicState(VkDynamicState state) { _dynamicStates.emplace(state); }
-    
-    VkPipeline build(VkPipelineLayout layout, const std::string & name);
-    
+    void addDynamicState(VkDynamicState state)
+    {
+        _dynamicStates.emplace(state);
+    }
+
+    VkPipeline build(VkPipelineLayout layout, const std::string& name);
+
     void reset();
-    
-protected:
-    Engine * _engine;
+
+  protected:
+    Engine* _engine;
 
     VkPipelineRenderingCreateInfo _renderInfo = {};
     std::vector<VkFormat> _colorAttachmentformat;
-    
+
     struct ShaderData {
         VkShaderModule shaderModule;
         VkShaderStageFlagBits stage;
         std::string entryPoint;
     };
-    
+
     std::vector<ShaderData> _shaders;
 
     // Viewport and scissor are allways dynamic
-    std::set<VkDynamicState> _dynamicStates = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR };
-    
+    std::set<VkDynamicState> _dynamicStates = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};
+
     std::vector<VkVertexInputBindingDescription> _bindingDescriptions;
     std::vector<VkVertexInputAttributeDescription> _attributeDescriptions;
 };
@@ -108,4 +111,3 @@ protected:
 }
 }
 }
-

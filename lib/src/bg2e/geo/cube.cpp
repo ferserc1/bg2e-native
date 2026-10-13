@@ -31,180 +31,131 @@ void createCubeBase(
     bool flipFaces,
     std::function<void(VertexPNUT)> vertexCallback,
     std::function<void(uint32_t)> indexCallback,
-    std::function<void(uint32_t, uint32_t)> submeshCallback
-)
+    std::function<void(uint32_t, uint32_t)> submeshCallback)
 {
     float halfWidth = width / 2.0f;
     float halfHeight = height / 2.0f;
     float halfDepth = depth / 2.0f;
 
     // Front face
-    glm::vec3 N { 0.0f, 0.0f, 1.0f };
-    glm::vec3 T { 1.0f, 0.0f, 0.0f };
-    vertexCallback({
-        { -halfWidth, halfHeight, halfDepth },
-        N,
-        { 0.0f, 0.0f },
-        T
-    });
-    vertexCallback({
-        { halfWidth, halfHeight, halfDepth },
-        N,
-        { 1.0f, 0.0f },
-        T
-    });
-    vertexCallback({
-        { halfWidth, -halfHeight, halfDepth },
-        N,
-        { 1.0f, 1.0f },
-        T
-    });
-    vertexCallback({
-        { -halfWidth, -halfHeight, halfDepth },
-        N,
-        { 0.0f, 1.0f },
-        T
-    });
+    glm::vec3 N{0.0f, 0.0f, 1.0f};
+    glm::vec3 T{1.0f, 0.0f, 0.0f};
+    vertexCallback({{-halfWidth, halfHeight, halfDepth},
+                    N,
+                    {0.0f, 0.0f},
+                    T});
+    vertexCallback({{halfWidth, halfHeight, halfDepth},
+                    N,
+                    {1.0f, 0.0f},
+                    T});
+    vertexCallback({{halfWidth, -halfHeight, halfDepth},
+                    N,
+                    {1.0f, 1.0f},
+                    T});
+    vertexCallback({{-halfWidth, -halfHeight, halfDepth},
+                    N,
+                    {0.0f, 1.0f},
+                    T});
 
     // Back face
-    N = glm::vec3{ 0.0f, 0.0f,-1.0f };
-    T = glm::vec3{-1.0f, 0.0f, 0.0f };
-    vertexCallback({
-        { halfWidth, halfHeight, -halfDepth },
-        N,
-        { 0.0f, 0.0f },
-        T
-    });
-    vertexCallback({
-        { -halfWidth, halfHeight, -halfDepth },
-        N,
-        { 1.0f, 0.0f },
-        T
-    });
-    vertexCallback({
-        { -halfWidth, -halfHeight, -halfDepth },
-        N,
-        { 1.0f, 1.0f },
-        T
-    });
-    vertexCallback({
-        { halfWidth, -halfHeight, -halfDepth },
-        N,
-        { 0.0f, 1.0f },
-        T
-    });
+    N = glm::vec3{0.0f, 0.0f, -1.0f};
+    T = glm::vec3{-1.0f, 0.0f, 0.0f};
+    vertexCallback({{halfWidth, halfHeight, -halfDepth},
+                    N,
+                    {0.0f, 0.0f},
+                    T});
+    vertexCallback({{-halfWidth, halfHeight, -halfDepth},
+                    N,
+                    {1.0f, 0.0f},
+                    T});
+    vertexCallback({{-halfWidth, -halfHeight, -halfDepth},
+                    N,
+                    {1.0f, 1.0f},
+                    T});
+    vertexCallback({{halfWidth, -halfHeight, -halfDepth},
+                    N,
+                    {0.0f, 1.0f},
+                    T});
 
     // Right face
-    N = glm::vec3{ 1.0f, 0.0f, 0.0f };
-    T = glm::vec3{ 0.0f, 0.0f, -1.0f };
-    vertexCallback({
-        { halfWidth, -halfHeight, halfDepth },
-        N,
-        { 0.0f, 1.0f },
-        T
-    });
-    vertexCallback({
-        { halfWidth, halfHeight, halfDepth },
-        N,
-        { 0.0f, 0.0f },
-        T
-    });
-    vertexCallback({
-        { halfWidth, halfHeight, -halfDepth },
-        N,
-        { 1.0f, 0.0f },
-        T
-    });
-    vertexCallback({
-        { halfWidth, -halfHeight, -halfDepth },
-        N,
-        { 1.0f, 1.0f },
-        T
-    });
+    N = glm::vec3{1.0f, 0.0f, 0.0f};
+    T = glm::vec3{0.0f, 0.0f, -1.0f};
+    vertexCallback({{halfWidth, -halfHeight, halfDepth},
+                    N,
+                    {0.0f, 1.0f},
+                    T});
+    vertexCallback({{halfWidth, halfHeight, halfDepth},
+                    N,
+                    {0.0f, 0.0f},
+                    T});
+    vertexCallback({{halfWidth, halfHeight, -halfDepth},
+                    N,
+                    {1.0f, 0.0f},
+                    T});
+    vertexCallback({{halfWidth, -halfHeight, -halfDepth},
+                    N,
+                    {1.0f, 1.0f},
+                    T});
 
     // Left face
-    N = glm::vec3{-1.0f, 0.0f, 0.0f };
-    T = glm::vec3{ 0.0f, 0.0f, 1.0f };
-    vertexCallback({
-        { -halfWidth, -halfHeight, -halfDepth },
-        N,
-        { 0.0f, 1.0f },
-        T
-    });
-    vertexCallback({
-        { -halfWidth, halfHeight, -halfDepth },
-        N,
-        { 0.0f, 0.0f },
-        T
-    });
-    vertexCallback({
-        { -halfWidth, halfHeight, halfDepth },
-        N,
-        { 1.0f, 0.0f },
-        T
-    });
-    vertexCallback({
-        { -halfWidth, -halfHeight, halfDepth },
-        N,
-        { 1.0f, 1.0f },
-        T
-    });
+    N = glm::vec3{-1.0f, 0.0f, 0.0f};
+    T = glm::vec3{0.0f, 0.0f, 1.0f};
+    vertexCallback({{-halfWidth, -halfHeight, -halfDepth},
+                    N,
+                    {0.0f, 1.0f},
+                    T});
+    vertexCallback({{-halfWidth, halfHeight, -halfDepth},
+                    N,
+                    {0.0f, 0.0f},
+                    T});
+    vertexCallback({{-halfWidth, halfHeight, halfDepth},
+                    N,
+                    {1.0f, 0.0f},
+                    T});
+    vertexCallback({{-halfWidth, -halfHeight, halfDepth},
+                    N,
+                    {1.0f, 1.0f},
+                    T});
 
     // Bottom face
-    N = glm::vec3{ 0.0f,-1.0f, 0.0f };
-    T = glm::vec3{-1.0f, 0.0f, 0.0f };
-    vertexCallback({
-        { -halfWidth, -halfHeight, -halfDepth },
-        N,
-        { 0.0f, 0.0f },
-        T
-    });
-    vertexCallback({
-        { -halfWidth, -halfHeight, halfDepth },
-        N,
-        { 1.0f, 0.0f },
-        T
-    });
-    vertexCallback({
-        { halfWidth, -halfHeight, halfDepth },
-        N,
-        { 1.0f, 1.0f },
-        T
-    });
-    vertexCallback({
-        { halfWidth, -halfHeight, -halfDepth },
-        N,
-        { 0.0f, 1.0f },
-        T
-    });
+    N = glm::vec3{0.0f, -1.0f, 0.0f};
+    T = glm::vec3{-1.0f, 0.0f, 0.0f};
+    vertexCallback({{-halfWidth, -halfHeight, -halfDepth},
+                    N,
+                    {0.0f, 0.0f},
+                    T});
+    vertexCallback({{-halfWidth, -halfHeight, halfDepth},
+                    N,
+                    {1.0f, 0.0f},
+                    T});
+    vertexCallback({{halfWidth, -halfHeight, halfDepth},
+                    N,
+                    {1.0f, 1.0f},
+                    T});
+    vertexCallback({{halfWidth, -halfHeight, -halfDepth},
+                    N,
+                    {0.0f, 1.0f},
+                    T});
 
     // Top face
-    N = glm::vec3{ 0.0f, 1.0f, 0.0f };
-    T = glm::vec3{ 1.0f, 0.0f, 0.0f };
-    vertexCallback({
-        { -halfWidth, halfHeight, halfDepth },
-        N,
-        { 0.0f, 0.0f },
-        T
-    });
-    vertexCallback({
-        { -halfWidth, halfHeight, -halfDepth },
-        N,
-        { 1.0f, 0.0f },
-        T
-    });
-    vertexCallback({
-        { halfWidth, halfHeight, -halfDepth },
-        N,
-        { 1.0f, 1.0f },
-        T
-    });
-    vertexCallback({
-        { halfWidth, halfHeight, halfDepth },
-        N,
-        { 0.0f, 1.0f },
-        T
-    });
+    N = glm::vec3{0.0f, 1.0f, 0.0f};
+    T = glm::vec3{1.0f, 0.0f, 0.0f};
+    vertexCallback({{-halfWidth, halfHeight, halfDepth},
+                    N,
+                    {0.0f, 0.0f},
+                    T});
+    vertexCallback({{-halfWidth, halfHeight, -halfDepth},
+                    N,
+                    {1.0f, 0.0f},
+                    T});
+    vertexCallback({{halfWidth, halfHeight, -halfDepth},
+                    N,
+                    {1.0f, 1.0f},
+                    T});
+    vertexCallback({{halfWidth, halfHeight, halfDepth},
+                    N,
+                    {0.0f, 1.0f},
+                    T});
 
     if (!flipFaces)
     {
@@ -295,7 +246,6 @@ void createCubeBase(
         indexCallback(20);
     }
 
-
     submeshCallback(0, 6);
     submeshCallback(6, 6);
     submeshCallback(12, 6);
@@ -312,16 +262,18 @@ bg2e::geo::MeshP* createCubeP(float width, float height, float depth, bool flipF
         height,
         depth,
         flipFaces,
-        [&](VertexPNUT vertex) {
-            result->vertices.push_back({
-                vertex.position
-            });
-        }, [&](uint32_t index) {
+        [&](VertexPNUT vertex)
+        {
+            result->vertices.push_back({vertex.position});
+        },
+        [&](uint32_t index)
+        {
             result->indices.push_back(index);
-        }, [&](uint32_t base, uint32_t count) {
-            result->submeshes.push_back({ base, count });
-        }   
-    );
+        },
+        [&](uint32_t base, uint32_t count)
+        {
+            result->submeshes.push_back({base, count});
+        });
     return result;
 }
 
@@ -333,17 +285,19 @@ bg2e::geo::MeshPC* createCubePC(float width, float height, float depth, bool fli
         height,
         depth,
         flipFaces,
-        [&](VertexPNUT vertex) {
-            result->vertices.push_back({
-                vertex.position,
-                { 1.0f, 1.0f, 1.0f, 1.0f }
-            });
-        }, [&](uint32_t index) {
+        [&](VertexPNUT vertex)
+        {
+            result->vertices.push_back({vertex.position,
+                                        {1.0f, 1.0f, 1.0f, 1.0f}});
+        },
+        [&](uint32_t index)
+        {
             result->indices.push_back(index);
-        }, [&](uint32_t base, uint32_t count) {
-            result->submeshes.push_back({ base, count });
-        }
-    );
+        },
+        [&](uint32_t base, uint32_t count)
+        {
+            result->submeshes.push_back({base, count});
+        });
     return result;
 }
 
@@ -355,17 +309,19 @@ bg2e::geo::MeshPN* createCubePN(float width, float height, float depth, bool fli
         height,
         depth,
         flipFaces,
-        [&](VertexPNUT vertex) {
-            result->vertices.push_back({
-                vertex.position,
-                vertex.normal
-            });
-        }, [&](uint32_t index) {
+        [&](VertexPNUT vertex)
+        {
+            result->vertices.push_back({vertex.position,
+                                        vertex.normal});
+        },
+        [&](uint32_t index)
+        {
             result->indices.push_back(index);
-        }, [&](uint32_t base, uint32_t count) {
-            result->submeshes.push_back({ base, count });
-        }
-    );
+        },
+        [&](uint32_t base, uint32_t count)
+        {
+            result->submeshes.push_back({base, count});
+        });
     return result;
 }
 
@@ -377,17 +333,19 @@ bg2e::geo::MeshPU* createCubePU(float width, float height, float depth, bool fli
         height,
         depth,
         flipFaces,
-        [&](VertexPNUT vertex) {
-            result->vertices.push_back({
-                vertex.position,
-                vertex.texCoord0
-            });
-        }, [&](uint32_t index) {
+        [&](VertexPNUT vertex)
+        {
+            result->vertices.push_back({vertex.position,
+                                        vertex.texCoord0});
+        },
+        [&](uint32_t index)
+        {
             result->indices.push_back(index);
-        }, [&](uint32_t base, uint32_t count) {
-            result->submeshes.push_back({ base, count });
-        }
-    );
+        },
+        [&](uint32_t base, uint32_t count)
+        {
+            result->submeshes.push_back({base, count});
+        });
     return result;
 }
 
@@ -399,18 +357,20 @@ bg2e::geo::MeshPNU* createCubePNU(float width, float height, float depth, bool f
         height,
         depth,
         flipFaces,
-        [&](VertexPNUT vertex) {
-            result->vertices.push_back({
-                vertex.position,
-                vertex.normal,
-                vertex.texCoord0
-            });
-        }, [&](uint32_t index) {
+        [&](VertexPNUT vertex)
+        {
+            result->vertices.push_back({vertex.position,
+                                        vertex.normal,
+                                        vertex.texCoord0});
+        },
+        [&](uint32_t index)
+        {
             result->indices.push_back(index);
-        }, [&](uint32_t base, uint32_t count) {
-            result->submeshes.push_back({ base, count });
-        }
-    );
+        },
+        [&](uint32_t base, uint32_t count)
+        {
+            result->submeshes.push_back({base, count});
+        });
     return result;
 }
 
@@ -422,18 +382,20 @@ bg2e::geo::MeshPNC* createCubePNC(float width, float height, float depth, bool f
         height,
         depth,
         flipFaces,
-        [&](VertexPNUT vertex) {
-            result->vertices.push_back({
-                vertex.position,
-                vertex.normal,
-                { 1.0f, 1.0f, 1.0f, 1.0f }
-            });
-        }, [&](uint32_t index) {
+        [&](VertexPNUT vertex)
+        {
+            result->vertices.push_back({vertex.position,
+                                        vertex.normal,
+                                        {1.0f, 1.0f, 1.0f, 1.0f}});
+        },
+        [&](uint32_t index)
+        {
             result->indices.push_back(index);
-        }, [&](uint32_t base, uint32_t count) {
-            result->submeshes.push_back({ base, count });
-        }
-    );
+        },
+        [&](uint32_t base, uint32_t count)
+        {
+            result->submeshes.push_back({base, count});
+        });
     return result;
 }
 
@@ -445,19 +407,21 @@ bg2e::geo::MeshPNUC* createCubePNUC(float width, float height, float depth, bool
         height,
         depth,
         flipFaces,
-        [&](VertexPNUT vertex) {
-            result->vertices.push_back({
-                vertex.position,
-                vertex.normal,
-                vertex.texCoord0,
-                { 1.0f, 1.0f, 1.0f, 1.0f }
-            });
-        }, [&](uint32_t index) {
+        [&](VertexPNUT vertex)
+        {
+            result->vertices.push_back({vertex.position,
+                                        vertex.normal,
+                                        vertex.texCoord0,
+                                        {1.0f, 1.0f, 1.0f, 1.0f}});
+        },
+        [&](uint32_t index)
+        {
             result->indices.push_back(index);
-        }, [&](uint32_t base, uint32_t count) {
-            result->submeshes.push_back({ base, count });
-        }
-    );
+        },
+        [&](uint32_t base, uint32_t count)
+        {
+            result->submeshes.push_back({base, count});
+        });
     return result;
 }
 
@@ -469,19 +433,21 @@ bg2e::geo::MeshPNUT* createCubePNUT(float width, float height, float depth, bool
         height,
         depth,
         flipFaces,
-        [&](VertexPNUT vertex) {
-            result->vertices.push_back({
-                vertex.position,
-                vertex.normal,
-                vertex.texCoord0,
-                vertex.tangent
-            });
-        }, [&](uint32_t index) {
+        [&](VertexPNUT vertex)
+        {
+            result->vertices.push_back({vertex.position,
+                                        vertex.normal,
+                                        vertex.texCoord0,
+                                        vertex.tangent});
+        },
+        [&](uint32_t index)
+        {
             result->indices.push_back(index);
-        }, [&](uint32_t base, uint32_t count) {
-            result->submeshes.push_back({ base, count });
-        }
-    );
+        },
+        [&](uint32_t base, uint32_t count)
+        {
+            result->submeshes.push_back({base, count});
+        });
     return result;
 }
 
@@ -493,20 +459,22 @@ bg2e::geo::MeshPNUUT* createCubePNUUT(float width, float height, float depth, bo
         height,
         depth,
         flipFaces,
-        [&](VertexPNUT vertex) {
-            result->vertices.push_back({
-                vertex.position,
-                vertex.normal,
-                vertex.texCoord0,
-                vertex.texCoord0,
-				vertex.tangent
-            });
-        }, [&](uint32_t index) {
+        [&](VertexPNUT vertex)
+        {
+            result->vertices.push_back({vertex.position,
+                                        vertex.normal,
+                                        vertex.texCoord0,
+                                        vertex.texCoord0,
+                                        vertex.tangent});
+        },
+        [&](uint32_t index)
+        {
             result->indices.push_back(index);
-        }, [&](uint32_t base, uint32_t count) {
-            result->submeshes.push_back({ base, count });
-        }
-    );
+        },
+        [&](uint32_t base, uint32_t count)
+        {
+            result->submeshes.push_back({base, count});
+        });
     return result;
 }
 

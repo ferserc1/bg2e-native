@@ -27,13 +27,13 @@ namespace ui {
 
 // Non-interactive display widgets wrappers
 class BG2E_API Text {
-public:
-    static void text(const std::string & text, bool sameLine = false);
-    static void separator(const std::string & title = "", bool sameLine = false);
-    static void listItem(const std::string & label, bool sameLine = false);
+  public:
+    static void text(const std::string& text, bool sameLine = false);
+    static void separator(const std::string& title = "", bool sameLine = false);
+    static void listItem(const std::string& label, bool sameLine = false);
 
     // Shows a tooltip when the last drawn item is hovered. No-op on empty text.
-    static void tooltip(const std::string & text);
+    static void tooltip(const std::string& text);
 };
 
 }

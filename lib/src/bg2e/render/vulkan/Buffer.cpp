@@ -24,14 +24,12 @@ namespace render {
 namespace vulkan {
 
 Buffer::Buffer(
-    Engine * engine,
+    Engine* engine,
     VkBuffer buffer,
     VmaAllocation allocation,
     VmaAllocationInfo info,
-    const std::string & name
-) :_engine(engine), _buffer(buffer), _allocation(allocation), _info(info), _debugName(name)
+    const std::string& name) : _engine(engine), _buffer(buffer), _allocation(allocation), _info(info), _debugName(name)
 {
-
 }
 
 Buffer::~Buffer()
@@ -40,12 +38,12 @@ Buffer::~Buffer()
 }
 
 Buffer* Buffer::createAllocatedBuffer(
-    Engine * engine,
+    Engine* engine,
     size_t allocSize,
     VkBufferUsageFlags usage,
     VmaMemoryUsage memoryUsage,
-    const std::string & name
-) {
+    const std::string& name)
+{
     auto buffer = new Buffer();
 
     buffer->_engine = engine;
@@ -67,10 +65,9 @@ Buffer* Buffer::createAllocatedBuffer(
         &allocInfo,
         &buffer->_buffer,
         &buffer->_allocation,
-        &buffer->_info
-    ));
+        &buffer->_info));
 
-    if (base::Log::isDebug() && !name.empty()  && setDebugUtilsObjectName != nullptr)
+    if (base::Log::isDebug() && !name.empty() && setDebugUtilsObjectName != nullptr)
     {
         VkDebugUtilsObjectNameInfoEXT nameInfo = {};
         nameInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
@@ -80,14 +77,12 @@ Buffer* Buffer::createAllocatedBuffer(
 
         setDebugUtilsObjectName(
             engine->device().handle(),
-            &nameInfo
-        );
+            &nameInfo);
 
         vmaSetAllocationName(
             engine->allocator(),
             buffer->_allocation,
-            name.c_str()
-        );
+            name.c_str());
     }
 
     return buffer;
@@ -115,8 +110,7 @@ void Buffer::flushAllocatedData()
         _engine->allocator(),
         _allocation,
         0,
-        VK_WHOLE_SIZE
-    );
+        VK_WHOLE_SIZE);
 }
 
 VkDeviceAddress Buffer::deviceAddress() const
@@ -135,4 +129,3 @@ VkDeviceAddress Buffer::deviceAddress() const
 }
 }
 }
-

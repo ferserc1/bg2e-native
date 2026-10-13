@@ -24,20 +24,29 @@
 namespace bg2e::scene {
 
 class BG2E_API ChainJointComponent : public Component {
-public:
-    base::LinkJoint& joint() { return _joint; }
-    const base::LinkJoint& joint() const { return _joint; }
-    void setJoint(const base::LinkJoint& value) { _joint = value; }
+  public:
+    base::LinkJoint& joint()
+    {
+        return _joint;
+    }
+    const base::LinkJoint& joint() const
+    {
+        return _joint;
+    }
+    void setJoint(const base::LinkJoint& value)
+    {
+        _joint = value;
+    }
 
     void deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path& basePath, render::Engine& engine) override;
     std::shared_ptr<json::JsonNode> serialize(const std::filesystem::path& basePath) override;
 
-protected:
+  protected:
     base::LinkJoint _joint;
 };
 
 class BG2E_API InputChainJointComponent final : public ChainJointComponent {
-public:
+  public:
     BG2E_COMPONENT_TYPE_NAME("InputChainJoint");
 
     InputChainJointComponent();
@@ -46,7 +55,7 @@ public:
 };
 
 class BG2E_API OutputChainJointComponent final : public ChainJointComponent {
-public:
+  public:
     BG2E_COMPONENT_TYPE_NAME("OutputChainJoint");
 
     OutputChainJointComponent();

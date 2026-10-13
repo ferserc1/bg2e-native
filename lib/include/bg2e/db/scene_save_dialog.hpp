@@ -22,8 +22,16 @@
 
 namespace bg2e::db {
 
-enum class SceneSavePathSource { Direct, NativeSaveDialog };
-enum class SceneOverwritePolicy { Confirm, Allow };
+enum class SceneSavePathSource
+{
+    Direct,
+    NativeSaveDialog
+};
+enum class SceneOverwritePolicy
+{
+    Confirm,
+    Allow
+};
 
 // Resolve and request native overwrite confirmation when required. No ImGui or
 // rendering context is needed. Returns empty on cancellation; throws on error.

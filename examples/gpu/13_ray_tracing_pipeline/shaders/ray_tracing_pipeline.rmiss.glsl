@@ -2,12 +2,12 @@
 #extension GL_EXT_ray_tracing : enable
 
 struct HitInfo {
-    vec3  hitPos;
-    vec3  normal;
-    vec3  albedo;
-    vec3  emission;
+    vec3 hitPos;
+    vec3 normal;
+    vec3 albedo;
+    vec3 emission;
     float roughness;
-    int   hit;
+    int hit;
 };
 layout(location = 0) rayPayloadInEXT HitInfo payload;
 

@@ -155,13 +155,15 @@ class RayTracingScene;
  *   passed separately via vkCmdPushConstants and do not occupy a binding index.
  */
 class BG2E_API ResourceSet : public DeviceResource {
-public:
-    explicit ResourceSet(Device* device) : DeviceResource(device) {}
+  public:
+    explicit ResourceSet(Device* device) : DeviceResource(device)
+    {
+    }
     virtual ~ResourceSet() = default;
 
     virtual void setStorageImage(ShaderBinding binding, gpu::Image* image) = 0;
     virtual void setSampledImage(ShaderBinding binding, gpu::Image* image) = 0;
-    virtual void setSampler(ShaderBinding binding, gpu::Sampler* sampler)  = 0;
+    virtual void setSampler(ShaderBinding binding, gpu::Sampler* sampler) = 0;
     virtual void setUniformBuffer(ShaderBinding binding, gpu::Buffer* buffer) = 0;
     virtual void setStorageBuffer(ShaderBinding binding, gpu::Buffer* buffer) = 0;
     virtual void setRayTracingScene(ShaderBinding binding, gpu::RayTracingScene* scene) = 0;
@@ -178,7 +180,7 @@ public:
         setStorageBuffer(binding, buffer.get());
     }
 
-    virtual void update() = 0;   // flush assignments to the backend
+    virtual void update() = 0; // flush assignments to the backend
 
     virtual uint32_t setIndex() const = 0;
     virtual bool isValid() const = 0;

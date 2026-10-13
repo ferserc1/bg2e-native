@@ -24,8 +24,7 @@ namespace bg2e {
 namespace render {
 
 RenderSettingsPreferences::RenderSettingsPreferences(RendererDeferred* renderer)
-    : _renderer(renderer)
-    , _prefs("render")
+    : _renderer(renderer), _prefs("render")
 {
 }
 
@@ -51,14 +50,14 @@ void RenderSettingsPreferences::load()
     _renderer->setIndirectLightingMode(
         static_cast<deferred::IndirectLightingMode>(
             _prefs.get("render_il_mode",
-                static_cast<uint32_t>(_renderer->indirectLightingMode()))));
+                       static_cast<uint32_t>(_renderer->indirectLightingMode()))));
     _renderer->setIndirectLightingEnabled(
         _prefs.get("render_il_enabled", _renderer->indirectLightingEnabled()));
 
     // RTAO
     _renderer->setAOQuality(static_cast<deferred::RTAOQuality>(
         _prefs.get("render_ao_qualityIndex",
-            static_cast<uint32_t>(_renderer->aoQuality()))));
+                   static_cast<uint32_t>(_renderer->aoQuality()))));
     _renderer->setAOSampleCount(
         _prefs.get("render_ao_sampleCount", _renderer->aoSampleCount()));
     _renderer->setAOBounceCount(
@@ -79,7 +78,7 @@ void RenderSettingsPreferences::load()
         _prefs.get("render_gi_enabled", _renderer->rtGIEnabled()));
     _renderer->setRTGIQuality(static_cast<deferred::RTGIQuality>(
         _prefs.get("render_gi_qualityIndex",
-            static_cast<uint32_t>(_renderer->rtGIQuality()))));
+                   static_cast<uint32_t>(_renderer->rtGIQuality()))));
     _renderer->setRTGISampleCount(
         _prefs.get("render_gi_sampleCount", _renderer->rtGISampleCount()));
     _renderer->setRTGIBounceCount(
@@ -110,14 +109,14 @@ void RenderSettingsPreferences::load()
         _prefs.get("render_reflect_shadowSamples", static_cast<int>(_renderer->rtReflectionShadowSamples())));
     _renderer->setRTReflectionQuality(static_cast<deferred::RTReflectionQuality>(
         _prefs.get("render_reflect_qualityIndex",
-            static_cast<uint32_t>(_renderer->rtReflectionQuality()))));
+                   static_cast<uint32_t>(_renderer->rtReflectionQuality()))));
     _renderer->setRTReflectionUseBlueNoise(
         _prefs.get("render_reflect_useBlueNoise", _renderer->rtReflectionUseBlueNoise()));
 
     // Temporal
     _renderer->setTemporalMode(static_cast<deferred::TemporalAccumulator::AccumulationMode>(
         _prefs.get("render_ta_mode",
-            static_cast<uint32_t>(_renderer->temporalMode()))));
+                   static_cast<uint32_t>(_renderer->temporalMode()))));
     _renderer->setTemporalHistoryWeight(
         _prefs.get("render_ta_historyWeight", _renderer->temporalHistoryWeight()));
     _renderer->setTemporalDepthThreshold(
@@ -142,7 +141,10 @@ void RenderSettingsPreferences::load()
 
 void RenderSettingsPreferences::persist()
 {
-    if (!_dirty) return;
+    if (!_dirty)
+    {
+        return;
+    }
 
     _prefs.set("render_final_mode", static_cast<uint32_t>(_renderer->finalRenderMode()));
     _prefs.set("render_il_mode", static_cast<uint32_t>(_renderer->indirectLightingMode()));
@@ -192,44 +194,158 @@ void RenderSettingsPreferences::persist()
 }
 
 // --- Getters (read directly from renderer) ---
-uint32_t RenderSettingsPreferences::finalRenderingIndex() const { return _renderer->scaleOption(); }
-uint32_t RenderSettingsPreferences::renderScaleIndex() const { return finalRenderingIndex(); }
-uint32_t RenderSettingsPreferences::indirectLightingMode() const { return static_cast<uint32_t>(_renderer->indirectLightingMode()); }
-bool RenderSettingsPreferences::indirectLightingEnabled() const { return _renderer->indirectLightingEnabled(); }
-uint32_t RenderSettingsPreferences::aoQualityIndex() const { return static_cast<uint32_t>(_renderer->aoQuality()); }
-int RenderSettingsPreferences::aoSampleCount() const { return _renderer->aoSampleCount(); }
-int RenderSettingsPreferences::aoBounceCount() const { return _renderer->aoBounceCount(); }
-float RenderSettingsPreferences::aoRadius() const { return _renderer->aoRadius(); }
-float RenderSettingsPreferences::aoBias() const { return _renderer->aoBias(); }
-float RenderSettingsPreferences::aoFalloff() const { return _renderer->aoFalloff(); }
-float RenderSettingsPreferences::aoBounceAttenuation() const { return _renderer->aoBounceAttenuation(); }
-bool RenderSettingsPreferences::aoUseBlueNoise() const { return _renderer->aoUseBlueNoise(); }
-bool RenderSettingsPreferences::rtGIEnabled() const { return _renderer->rtGIEnabled(); }
-uint32_t RenderSettingsPreferences::rtGIQualityIndex() const { return static_cast<uint32_t>(_renderer->rtGIQuality()); }
-int RenderSettingsPreferences::rtGISampleCount() const { return static_cast<int>(_renderer->rtGISampleCount()); }
-int RenderSettingsPreferences::rtGIBounceCount() const { return static_cast<int>(_renderer->rtGIBounceCount()); }
-float RenderSettingsPreferences::rtGIRayBias() const { return _renderer->rtGIRayBias(); }
-float RenderSettingsPreferences::rtGIMaxDistance() const { return _renderer->rtGIMaxDistance(); }
-int RenderSettingsPreferences::rtGIShadowSamples() const { return static_cast<int>(_renderer->rtGIShadowSamples()); }
-bool RenderSettingsPreferences::rtGIUseBlueNoise() const { return _renderer->rtGIUseBlueNoise(); }
-bool RenderSettingsPreferences::rtReflectionsEnabled() const { return _renderer->rtReflectionsEnabled(); }
-int RenderSettingsPreferences::rtReflectionSampleCount() const { return _renderer->rtReflectionSampleCount(); }
-float RenderSettingsPreferences::rtReflectionMaxRoughness() const { return _renderer->rtReflectionMaxRoughness(); }
-float RenderSettingsPreferences::rtReflectionRayBias() const { return _renderer->rtReflectionRayBias(); }
-float RenderSettingsPreferences::rtReflectionMaxDistance() const { return _renderer->rtReflectionMaxDistance(); }
-float RenderSettingsPreferences::rtReflectionRoughnessSpread() const { return _renderer->rtReflectionRoughnessSpread(); }
-int RenderSettingsPreferences::rtReflectionShadowSamples() const { return static_cast<int>(_renderer->rtReflectionShadowSamples()); }
-uint32_t RenderSettingsPreferences::rtReflectionQualityIndex() const { return static_cast<uint32_t>(_renderer->rtReflectionQuality()); }
-bool RenderSettingsPreferences::rtReflectionUseBlueNoise() const { return _renderer->rtReflectionUseBlueNoise(); }
-uint32_t RenderSettingsPreferences::temporalMode() const { return static_cast<uint32_t>(_renderer->temporalMode()); }
-float RenderSettingsPreferences::temporalHistoryWeight() const { return _renderer->temporalHistoryWeight(); }
-float RenderSettingsPreferences::temporalDepthThreshold() const { return _renderer->temporalDepthThreshold(); }
-float RenderSettingsPreferences::temporalNormalThreshold() const { return _renderer->temporalNormalThreshold(); }
-int RenderSettingsPreferences::denoiseKernelRadius() const { return _renderer->denoiseKernelRadius(); }
-float RenderSettingsPreferences::denoiseDepthThreshold() const { return _renderer->denoiseDepthThreshold(); }
-float RenderSettingsPreferences::denoiseNormalThreshold() const { return _renderer->denoiseNormalThreshold(); }
-float RenderSettingsPreferences::denoiseDepthSigma() const { return _renderer->denoiseDepthSigma(); }
-float RenderSettingsPreferences::denoiseNormalSigma() const { return _renderer->denoiseNormalSigma(); }
+uint32_t RenderSettingsPreferences::finalRenderingIndex() const
+{
+    return _renderer->scaleOption();
+}
+uint32_t RenderSettingsPreferences::renderScaleIndex() const
+{
+    return finalRenderingIndex();
+}
+uint32_t RenderSettingsPreferences::indirectLightingMode() const
+{
+    return static_cast<uint32_t>(_renderer->indirectLightingMode());
+}
+bool RenderSettingsPreferences::indirectLightingEnabled() const
+{
+    return _renderer->indirectLightingEnabled();
+}
+uint32_t RenderSettingsPreferences::aoQualityIndex() const
+{
+    return static_cast<uint32_t>(_renderer->aoQuality());
+}
+int RenderSettingsPreferences::aoSampleCount() const
+{
+    return _renderer->aoSampleCount();
+}
+int RenderSettingsPreferences::aoBounceCount() const
+{
+    return _renderer->aoBounceCount();
+}
+float RenderSettingsPreferences::aoRadius() const
+{
+    return _renderer->aoRadius();
+}
+float RenderSettingsPreferences::aoBias() const
+{
+    return _renderer->aoBias();
+}
+float RenderSettingsPreferences::aoFalloff() const
+{
+    return _renderer->aoFalloff();
+}
+float RenderSettingsPreferences::aoBounceAttenuation() const
+{
+    return _renderer->aoBounceAttenuation();
+}
+bool RenderSettingsPreferences::aoUseBlueNoise() const
+{
+    return _renderer->aoUseBlueNoise();
+}
+bool RenderSettingsPreferences::rtGIEnabled() const
+{
+    return _renderer->rtGIEnabled();
+}
+uint32_t RenderSettingsPreferences::rtGIQualityIndex() const
+{
+    return static_cast<uint32_t>(_renderer->rtGIQuality());
+}
+int RenderSettingsPreferences::rtGISampleCount() const
+{
+    return static_cast<int>(_renderer->rtGISampleCount());
+}
+int RenderSettingsPreferences::rtGIBounceCount() const
+{
+    return static_cast<int>(_renderer->rtGIBounceCount());
+}
+float RenderSettingsPreferences::rtGIRayBias() const
+{
+    return _renderer->rtGIRayBias();
+}
+float RenderSettingsPreferences::rtGIMaxDistance() const
+{
+    return _renderer->rtGIMaxDistance();
+}
+int RenderSettingsPreferences::rtGIShadowSamples() const
+{
+    return static_cast<int>(_renderer->rtGIShadowSamples());
+}
+bool RenderSettingsPreferences::rtGIUseBlueNoise() const
+{
+    return _renderer->rtGIUseBlueNoise();
+}
+bool RenderSettingsPreferences::rtReflectionsEnabled() const
+{
+    return _renderer->rtReflectionsEnabled();
+}
+int RenderSettingsPreferences::rtReflectionSampleCount() const
+{
+    return _renderer->rtReflectionSampleCount();
+}
+float RenderSettingsPreferences::rtReflectionMaxRoughness() const
+{
+    return _renderer->rtReflectionMaxRoughness();
+}
+float RenderSettingsPreferences::rtReflectionRayBias() const
+{
+    return _renderer->rtReflectionRayBias();
+}
+float RenderSettingsPreferences::rtReflectionMaxDistance() const
+{
+    return _renderer->rtReflectionMaxDistance();
+}
+float RenderSettingsPreferences::rtReflectionRoughnessSpread() const
+{
+    return _renderer->rtReflectionRoughnessSpread();
+}
+int RenderSettingsPreferences::rtReflectionShadowSamples() const
+{
+    return static_cast<int>(_renderer->rtReflectionShadowSamples());
+}
+uint32_t RenderSettingsPreferences::rtReflectionQualityIndex() const
+{
+    return static_cast<uint32_t>(_renderer->rtReflectionQuality());
+}
+bool RenderSettingsPreferences::rtReflectionUseBlueNoise() const
+{
+    return _renderer->rtReflectionUseBlueNoise();
+}
+uint32_t RenderSettingsPreferences::temporalMode() const
+{
+    return static_cast<uint32_t>(_renderer->temporalMode());
+}
+float RenderSettingsPreferences::temporalHistoryWeight() const
+{
+    return _renderer->temporalHistoryWeight();
+}
+float RenderSettingsPreferences::temporalDepthThreshold() const
+{
+    return _renderer->temporalDepthThreshold();
+}
+float RenderSettingsPreferences::temporalNormalThreshold() const
+{
+    return _renderer->temporalNormalThreshold();
+}
+int RenderSettingsPreferences::denoiseKernelRadius() const
+{
+    return _renderer->denoiseKernelRadius();
+}
+float RenderSettingsPreferences::denoiseDepthThreshold() const
+{
+    return _renderer->denoiseDepthThreshold();
+}
+float RenderSettingsPreferences::denoiseNormalThreshold() const
+{
+    return _renderer->denoiseNormalThreshold();
+}
+float RenderSettingsPreferences::denoiseDepthSigma() const
+{
+    return _renderer->denoiseDepthSigma();
+}
+float RenderSettingsPreferences::denoiseNormalSigma() const
+{
+    return _renderer->denoiseNormalSigma();
+}
 
 // --- Setters (write to renderer + mark dirty) ---
 void RenderSettingsPreferences::setRenderScaleIndex(uint32_t v)

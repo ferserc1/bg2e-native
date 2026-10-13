@@ -26,7 +26,7 @@ namespace bg2e {
 namespace render {
 namespace vulkan {
 
-void FrameResources::init(bg2e::render::Engine * engine, Command* command)
+void FrameResources::init(bg2e::render::Engine* engine, Command* command)
 {
     _engine = engine;
     _device = &_engine->device();
@@ -91,7 +91,7 @@ void FrameResources::cleanup()
     {
         cleanupManager.flush(*_device);
     }
-    
+
     _engine = nullptr;
     _device = nullptr;
     _command = nullptr;
@@ -105,12 +105,12 @@ void FrameResources::cleanup()
 DescriptorSet* FrameResources::newDescriptorSet(VkDescriptorSetLayout layout)
 {
     auto ds = descriptorAllocator->allocate(layout);
-    cleanupManager.push([ds](VkDevice) {
-        delete ds;
-    });
+    cleanupManager.push([ds](VkDevice)
+                        {
+                            delete ds;
+                        });
     return ds;
 }
-
 
 }
 }

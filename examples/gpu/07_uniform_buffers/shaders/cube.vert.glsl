@@ -5,13 +5,17 @@ layout(location = 1) in vec2 inTexCoord;
 
 layout(location = 0) out vec2 fragUV;
 
-layout(set = 0, binding = 0) uniform CameraUBO {
+layout(set = 0, binding = 0) uniform CameraUBO
+{
     mat4 projectionView;
-} camera;
+}
+camera;
 
-layout(set = 1, binding = 0) uniform ModelUBO {
+layout(set = 1, binding = 0) uniform ModelUBO
+{
     mat4 model;
-} object;
+}
+object;
 
 void main()
 {

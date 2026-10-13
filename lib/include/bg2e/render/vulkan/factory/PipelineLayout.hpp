@@ -28,25 +28,32 @@ namespace vulkan {
 namespace factory {
 
 class BG2E_API PipelineLayout {
-public:
-    PipelineLayout(Engine * engine) :_engine{engine} {}
+  public:
+    PipelineLayout(Engine* engine) : _engine{engine}
+    {
+    }
 
-    inline void addPushConstantRange(VkPushConstantRange pushConstant) { _pushConstantRanges.push_back(pushConstant); }
-    inline void addDescriptorSetLayout(VkDescriptorSetLayout dsLayout) { _descriptorSetLayouts.push_back(dsLayout); }
+    inline void addPushConstantRange(VkPushConstantRange pushConstant)
+    {
+        _pushConstantRanges.push_back(pushConstant);
+    }
+    inline void addDescriptorSetLayout(VkDescriptorSetLayout dsLayout)
+    {
+        _descriptorSetLayouts.push_back(dsLayout);
+    }
     inline void addPushConstantRange(uint32_t offset, size_t size, VkShaderStageFlags stageFlags)
     {
-        addPushConstantRange({ .stageFlags = stageFlags, .offset = offset, .size = uint32_t(size) });
+        addPushConstantRange({.stageFlags = stageFlags, .offset = offset, .size = uint32_t(size)});
     }
-    
+
     VkPipelineLayout build(const std::string& name);
-    
+
     void reset();
-    
-protected:
-    Engine * _engine;
+
+  protected:
+    Engine* _engine;
     std::vector<VkPushConstantRange> _pushConstantRanges;
     std::vector<VkDescriptorSetLayout> _descriptorSetLayouts;
-    
 };
 
 }

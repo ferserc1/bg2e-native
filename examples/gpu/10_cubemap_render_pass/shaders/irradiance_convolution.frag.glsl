@@ -1,7 +1,7 @@
 #version 450
 
 layout(set = 0, binding = 0) uniform textureCube uEnv;
-layout(set = 0, binding = 1) uniform sampler     uSampler;
+layout(set = 0, binding = 1) uniform sampler uSampler;
 
 layout(location = 0) in vec3 fragDir;
 layout(location = 0) out vec4 outColor;
@@ -14,13 +14,13 @@ void main()
     // environment cubemap around the surface normal (the face direction).
     vec3 N = normalize(fragDir);
 
-    vec3 up    = abs(N.y) < 0.999 ? vec3(0.0, 1.0, 0.0) : vec3(1.0, 0.0, 0.0);
+    vec3 up = abs(N.y) < 0.999 ? vec3(0.0, 1.0, 0.0) : vec3(1.0, 0.0, 0.0);
     vec3 right = normalize(cross(up, N));
     up = normalize(cross(N, right));
 
-    vec3  irradiance  = vec3(0.0);
+    vec3 irradiance = vec3(0.0);
     float sampleDelta = 0.05;
-    float nrSamples   = 0.0;
+    float nrSamples = 0.0;
 
     for (float phi = 0.0; phi < 2.0 * PI; phi += sampleDelta)
     {
@@ -29,12 +29,9 @@ void main()
             vec3 tangentSample = vec3(sin(theta) * cos(phi),
                                       sin(theta) * sin(phi),
                                       cos(theta));
-            vec3 sampleVec = tangentSample.x * right
-                           + tangentSample.y * up
-                           + tangentSample.z * N;
+            vec3 sampleVec = tangentSample.x * right + tangentSample.y * up + tangentSample.z * N;
 
-            irradiance += texture(samplerCube(uEnv, uSampler), sampleVec).rgb
-                        * cos(theta) * sin(theta);
+            irradiance += texture(samplerCube(uEnv, uSampler), sampleVec).rgb * cos(theta) * sin(theta);
             nrSamples += 1.0;
         }
     }

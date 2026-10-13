@@ -26,8 +26,7 @@
 namespace bg2e {
 namespace geo {
 
-struct Submesh
-{
+struct Submesh {
     uint32_t firstIndex;
     uint32_t indexCount;
 };

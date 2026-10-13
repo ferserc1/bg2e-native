@@ -26,10 +26,10 @@ namespace bg2e {
 namespace ui {
 
 class BG2E_API SelectableList {
-public:
+  public:
     static void beginList(int columns = 1);
-    static bool item(const std::string & title, bool & selected);
-    static bool itemButton(const std::string & title);
+    static bool item(const std::string& title, bool& selected);
+    static bool itemButton(const std::string& title);
     static void endList();
 };
 

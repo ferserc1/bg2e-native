@@ -39,19 +39,19 @@ void TextureCache::destroy()
     }
 }
 
-std::shared_ptr<render::Texture> TextureCache::load(render::Engine * engine, const std::filesystem::path& filePath)
+std::shared_ptr<render::Texture> TextureCache::load(render::Engine* engine, const std::filesystem::path& filePath)
 {
     return load(engine, filePath.string());
 }
 
-std::shared_ptr<render::Texture> TextureCache::load(render::Engine * engine, const std::filesystem::path& filePath, const std::string& fileName)
+std::shared_ptr<render::Texture> TextureCache::load(render::Engine* engine, const std::filesystem::path& filePath, const std::string& fileName)
 {
     auto fullPath = filePath;
     fullPath.append(fileName);
     return load(engine, fullPath);
 }
 
-std::shared_ptr<render::Texture> TextureCache::load(render::Engine * engine, const std::string& filePath)
+std::shared_ptr<render::Texture> TextureCache::load(render::Engine* engine, const std::string& filePath)
 {
     base::Texture defaultSettings;
     defaultSettings.setAddressMode(base::Texture::AddressModeRepeat);
@@ -62,25 +62,25 @@ std::shared_ptr<render::Texture> TextureCache::load(render::Engine * engine, con
     return load(engine, defaultSettings);
 }
 
-std::shared_ptr<render::Texture> TextureCache::load(render::Engine * engine, const base::Texture& settings)
+std::shared_ptr<render::Texture> TextureCache::load(render::Engine* engine, const base::Texture& settings)
 {
     auto filePath = settings.imageFilePath();
     if (filePath == "")
     {
         throw std::runtime_error("TextureCache: could not load texture because the texture data does not contains an image file path");
     }
-    
+
     // A single image file can be used by views with different sampler settings.
     const auto key = filePath + "|" +
-        std::to_string(settings.magFilter()) + "|" +
-        std::to_string(settings.minFilter()) + "|" +
-        std::to_string(settings.useMipmaps()) + "|" +
-        std::to_string(settings.addressModeU()) + "|" +
-        std::to_string(settings.addressModeV()) + "|" +
-        std::to_string(settings.addressModeW()) + "|" +
-        std::to_string(settings.maxLod()) + "|" +
-        std::to_string(settings.minLod()) + "|" +
-        std::to_string(settings.colorType());
+                     std::to_string(settings.magFilter()) + "|" +
+                     std::to_string(settings.minFilter()) + "|" +
+                     std::to_string(settings.useMipmaps()) + "|" +
+                     std::to_string(settings.addressModeU()) + "|" +
+                     std::to_string(settings.addressModeV()) + "|" +
+                     std::to_string(settings.addressModeW()) + "|" +
+                     std::to_string(settings.maxLod()) + "|" +
+                     std::to_string(settings.minLod()) + "|" +
+                     std::to_string(settings.colorType());
     if (_textures.find(key) == _textures.end())
     {
         std::cout << "Texture not found in cache: " << filePath << std::endl;

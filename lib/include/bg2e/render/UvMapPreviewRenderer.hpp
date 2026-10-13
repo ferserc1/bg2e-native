@@ -41,29 +41,38 @@ class Buffer;
 // texture through the render::Texture handle returned by texture().
 // It never mutates the mesh and does not depend on bg2e::ui.
 class BG2E_API UvMapPreviewRenderer {
-public:
-    UvMapPreviewRenderer(Engine * engine, uint32_t resolution = 512);
+  public:
+    UvMapPreviewRenderer(Engine* engine, uint32_t resolution = 512);
     ~UvMapPreviewRenderer();
 
-    UvMapPreviewRenderer(const UvMapPreviewRenderer &) = delete;
-    UvMapPreviewRenderer & operator=(const UvMapPreviewRenderer &) = delete;
+    UvMapPreviewRenderer(const UvMapPreviewRenderer&) = delete;
+    UvMapPreviewRenderer& operator=(const UvMapPreviewRenderer&) = delete;
 
     // Recreates the target image safely, waiting for pending GPU work.
     void setResolution(uint32_t resolution);
-    inline uint32_t resolution() const { return _resolution; }
+    inline uint32_t resolution() const
+    {
+        return _resolution;
+    }
 
     // Renders the selected UV set (0 = UV1, 1 = UV2). Synchronous: submits the
     // work and waits for completion, leaving the image in
     // VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL.
-    void render(const geo::Mesh & mesh, uint32_t uvSet);
+    void render(const geo::Mesh& mesh, uint32_t uvSet);
 
     // Sampled image of the last render() call, valid until the next
     // setResolution(). Usable wherever a render::Texture is accepted.
-    inline Texture * texture() { return _texture.get(); }
-    inline const Texture * texture() const { return _texture.get(); }
+    inline Texture* texture()
+    {
+        return _texture.get();
+    }
+    inline const Texture* texture() const
+    {
+        return _texture.get();
+    }
 
-private:
-    Engine * _engine;
+  private:
+    Engine* _engine;
     uint32_t _resolution;
     std::unique_ptr<Texture> _texture;
     VkImageLayout _targetLayout = VK_IMAGE_LAYOUT_UNDEFINED;

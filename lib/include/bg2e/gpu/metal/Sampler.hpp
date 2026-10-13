@@ -26,18 +26,21 @@ namespace gpu {
 namespace metal {
 
 class BG2E_API Sampler : public gpu::Sampler {
-public:
+  public:
     Sampler(gpu::Device* gpuDevice, DeviceHandle device, const gpu::SamplerDescription& description);
     ~Sampler() override;
 
     [[nodiscard]] bool isValid() const override;
     void cleanup() override;
 
-    [[nodiscard]] SampleStateHandle handle() const { return _samplerState; }
+    [[nodiscard]] SampleStateHandle handle() const
+    {
+        return _samplerState;
+    }
 
-private:
-    DeviceHandle        _device = nullptr;
-    SampleStateHandle  _samplerState = nullptr;
+  private:
+    DeviceHandle _device = nullptr;
+    SampleStateHandle _samplerState = nullptr;
 };
 
 }

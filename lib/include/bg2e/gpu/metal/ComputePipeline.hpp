@@ -28,7 +28,7 @@ namespace metal {
 class PipelineLayout;
 
 class BG2E_API ComputePipeline : public gpu::ComputePipeline {
-public:
+  public:
 #if BG2E_IS_MAC
     ComputePipeline(gpu::Device* gpuDevice, MTL::Device* device, const gpu::ComputePipelineDescription& description);
 #else
@@ -40,13 +40,25 @@ public:
     void cleanup() override;
 
 #if BG2E_IS_MAC
-    MTL::ComputePipelineState* computePipelineState() const { return _computePipelineState; }
-    NS::UInteger maxTotalThreadsPerThreadgroup() const { return _maxTotalThreadsPerThreadgroup; }
-    NS::UInteger threadExecutionWidth() const { return _threadExecutionWidth; }
+    MTL::ComputePipelineState* computePipelineState() const
+    {
+        return _computePipelineState;
+    }
+    NS::UInteger maxTotalThreadsPerThreadgroup() const
+    {
+        return _maxTotalThreadsPerThreadgroup;
+    }
+    NS::UInteger threadExecutionWidth() const
+    {
+        return _threadExecutionWidth;
+    }
 #endif
-    metal::PipelineLayout* layout() const { return _layout; }
+    metal::PipelineLayout* layout() const
+    {
+        return _layout;
+    }
 
-private:
+  private:
     metal::PipelineLayout* _layout = nullptr;
 #if BG2E_IS_MAC
     MTL::ComputePipelineState* _computePipelineState = nullptr;

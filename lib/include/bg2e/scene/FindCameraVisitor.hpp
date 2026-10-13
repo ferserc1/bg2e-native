@@ -27,17 +27,19 @@ namespace bg2e {
 namespace scene {
 
 class BG2E_API FindCameraVisitor : public NodeVisitor {
-public:
-    void findCameras(Node *);
+  public:
+    void findCameras(Node*);
 
     void visit(Node*);
-    
-    void cleanup();
-    
-    std::vector<std::weak_ptr<CameraComponent>> cameras() const { return _cameras; }
 
-protected:
-    
+    void cleanup();
+
+    std::vector<std::weak_ptr<CameraComponent>> cameras() const
+    {
+        return _cameras;
+    }
+
+  protected:
     std::vector<std::weak_ptr<CameraComponent>> _cameras;
 };
 

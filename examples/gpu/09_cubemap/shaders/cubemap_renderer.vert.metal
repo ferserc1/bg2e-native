@@ -21,11 +21,11 @@ struct ModelUBO {
 };
 
 vertex VertexOut vertMain(VertexIn in [[stage_in]],
-                      constant CameraData& camera [[buffer(1)]],
-                      constant ModelUBO&  model  [[buffer(2)]])
+                          constant CameraData& camera [[buffer(1)]],
+                          constant ModelUBO& model [[buffer(2)]])
 {
     VertexOut out;
     out.position = camera.projection * camera.view * model.model * float4(in.position, 1.0);
-    out.uv       = in.texCoord;
+    out.uv = in.texCoord;
     return out;
 }

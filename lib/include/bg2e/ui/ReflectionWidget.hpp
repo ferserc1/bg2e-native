@@ -30,47 +30,41 @@ namespace ui {
 // interface for any reflected type, addressing instances as void*, using
 // only the bg2e::ui wrapper classes (Text, Group, Button, Numeric, Vector, Value).
 class BG2E_API ReflectionWidget {
-public:
+  public:
     // Draws an editor for every property described by 'info', grouped by
     // category (first-appearance order). 'instance' addresses the reflected
     // object. 'depth' is the Object-property nesting level (a root instance
     // is depth 0, capped at reflection::maxObjectDepth).
     // Returns true if any property value was modified.
     static bool drawProperties(
-        void * instance,
-        const reflection::TypeInfo & info,
-        uint32_t depth = 0
-    );
+        void* instance,
+        const reflection::TypeInfo& info,
+        uint32_t depth = 0);
 
     // Draws one button per action described by 'info'.
     static void drawActions(
-        void * instance,
-        const reflection::TypeInfo & info
-    );
+        void* instance,
+        const reflection::TypeInfo& info);
 
-protected:
+  protected:
     static bool drawProperty(
-        void * instance,
-        const reflection::PropertyInfo & prop,
-        uint32_t depth
-    );
+        void* instance,
+        const reflection::PropertyInfo& prop,
+        uint32_t depth);
 
     static bool drawScalarProperty(
-        void * instance,
-        const reflection::PropertyInfo & prop
-    );
+        void* instance,
+        const reflection::PropertyInfo& prop);
 
     static bool drawObjectProperty(
-        void * instance,
-        const reflection::PropertyInfo & prop,
-        uint32_t depth
-    );
+        void* instance,
+        const reflection::PropertyInfo& prop,
+        uint32_t depth);
 
     static bool drawPolymorphicObjectProperty(
-        void * instance,
-        const reflection::PropertyInfo & prop,
-        uint32_t depth
-    );
+        void* instance,
+        const reflection::PropertyInfo& prop,
+        uint32_t depth);
 };
 
 }

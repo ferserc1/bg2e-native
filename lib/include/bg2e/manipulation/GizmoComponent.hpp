@@ -38,7 +38,8 @@ class Scene;
 
 namespace manipulation {
 
-enum class GizmoType {
+enum class GizmoType
+{
     None,
     Camera,
     PointLight,
@@ -50,16 +51,23 @@ enum class GizmoType {
 
 // Identifies which part of the transform gizmo is being interacted with. The
 // transformation math is applied in a later step; this only carries intent.
-enum class TransformHandle {
+enum class TransformHandle
+{
     None,
-    TranslateX, TranslateY, TranslateZ,
-    RotateX, RotateY, RotateZ,
-    ScaleX, ScaleY, ScaleZ,
+    TranslateX,
+    TranslateY,
+    TranslateZ,
+    RotateX,
+    RotateY,
+    RotateZ,
+    ScaleX,
+    ScaleY,
+    ScaleZ,
     ScaleUniform
 };
 
 class BG2E_API GizmoComponent : public scene::DrawableComponent {
-public:
+  public:
     BG2E_COMPONENT_TYPE_NAME("Gizmo");
 
     GizmoComponent(render::Engine* engine);
@@ -70,12 +78,20 @@ public:
     std::shared_ptr<scene::Component> clone() const override;
 
     // No serialization — gizmos are runtime-only
-    void deserialize(std::shared_ptr<json::JsonNode>, const std::filesystem::path&, render::Engine&) override {}
-    std::shared_ptr<json::JsonNode> serialize(const std::filesystem::path&) override { return nullptr; }
+    void deserialize(std::shared_ptr<json::JsonNode>, const std::filesystem::path&, render::Engine&) override
+    {
+    }
+    std::shared_ptr<json::JsonNode> serialize(const std::filesystem::path&) override
+    {
+        return nullptr;
+    }
 
     void update(float delta) override;
 
-    GizmoType currentGizmoType() const { return _currentGizmoType; }
+    GizmoType currentGizmoType() const
+    {
+        return _currentGizmoType;
+    }
 
     // Returns the light color for light gizmos, white for camera/environment
     base::Color gizmoColor() const;
@@ -84,8 +100,7 @@ public:
     glm::mat4 renderTransform(
         const glm::mat4& worldTransform,
         const glm::mat4& viewMatrix,
-        const glm::mat4& projMatrix
-    ) const;
+        const glm::mat4& projMatrix) const;
 
     // Same as above but using the scale configured for an explicit gizmo type.
     // Used to render the transform gizmo facet (GizmoType::Transform), whose
@@ -94,16 +109,21 @@ public:
         const glm::mat4& worldTransform,
         const glm::mat4& viewMatrix,
         const glm::mat4& projMatrix,
-        GizmoType type
-    ) const;
+        GizmoType type) const;
 
     // --- Transform gizmo facet ---------------------------------------------
     // The transform gizmo is an independent facet that can coexist with the
     // type gizmo above (a light node shows both its light gizmo and, when it is
     // the current transform node, the transform gizmo). It is only visible when
     // this node is the current transform node AND owns a TransformComponent.
-    [[nodiscard]] bool transformVisible() const { return _transformVisible; }
-    void setTransformVisible(bool visible) { _transformVisible = visible; }
+    [[nodiscard]] bool transformVisible() const
+    {
+        return _transformVisible;
+    }
+    void setTransformVisible(bool visible)
+    {
+        _transformVisible = visible;
+    }
 
     // Lazily-loaded shared transform gizmo drawable. Returns nullptr until the
     // asset has been loaded (see ensureTransformGizmoLoaded()).
@@ -144,26 +164,32 @@ public:
     void beginTransform(TransformHandle handle, int mouseX, int mouseY);
     void updateTransform(scene::Scene* scene, int mouseX, int mouseY);
     void endTransform();
-    [[nodiscard]] TransformHandle activeHandle() const { return _activeHandle; }
-    [[nodiscard]] bool isTransforming() const { return _activeHandle != TransformHandle::None; }
+    [[nodiscard]] TransformHandle activeHandle() const
+    {
+        return _activeHandle;
+    }
+    [[nodiscard]] bool isTransforming() const
+    {
+        return _activeHandle != TransformHandle::None;
+    }
 
     static float gizmoScale(GizmoType type);
-    static void  setGizmoScale(GizmoType type, float scale);
+    static void setGizmoScale(GizmoType type, float scale);
 
     static float gizmoOpacity(GizmoType type);
-    static void  setGizmoOpacity(GizmoType type, float opacity);
+    static void setGizmoOpacity(GizmoType type, float opacity);
 
-    static bool  isGizmoVisible(GizmoType type);
-    static void  setGizmoVisible(GizmoType type, bool visible);
+    static bool isGizmoVisible(GizmoType type);
+    static void setGizmoVisible(GizmoType type, bool visible);
 
     // Scale sensitivity: controls how many pixels of mouse movement correspond
     // to a meaningful scale change. Higher values = slower scaling.
     static float gizmoScaleSensitivity(GizmoType type);
-    static void  setGizmoScaleSensitivity(GizmoType type, float sensitivity);
+    static void setGizmoScaleSensitivity(GizmoType type, float sensitivity);
 
     static void cleanupStatic();
 
-private:
+  private:
     render::Engine* _engine;
     GizmoType _currentGizmoType = GizmoType::None;
     bool _transformVisible = false;
@@ -175,15 +201,15 @@ private:
     TransformHandle _activeHandle = TransformHandle::None;
 
     // Drag-start state captured at beginTransform
-    glm::mat4 _initialLocalMatrix { 1.0f };
-    glm::mat3 _parentRotation { 1.0f };
-    glm::mat3 _localRotation { 1.0f };
-    glm::vec3 _localAxis { 0.0f };
-    glm::vec3 _worldAxis { 0.0f };
-    glm::vec3 _initialWorldPos { 0.0f };
-    glm::vec3 _initialScale { 1.0f };
-    glm::vec3 _initialIntersection { 0.0f };
-    glm::vec3 _initialAxisPoint { 0.0f };
+    glm::mat4 _initialLocalMatrix{1.0f};
+    glm::mat3 _parentRotation{1.0f};
+    glm::mat3 _localRotation{1.0f};
+    glm::vec3 _localAxis{0.0f};
+    glm::vec3 _worldAxis{0.0f};
+    glm::vec3 _initialWorldPos{0.0f};
+    glm::vec3 _initialScale{1.0f};
+    glm::vec3 _initialIntersection{0.0f};
+    glm::vec3 _initialAxisPoint{0.0f};
     float _parentScaleAxis = 1.0f;
     int _mouseDownX = 0;
     int _mouseDownY = 0;
@@ -194,12 +220,15 @@ private:
     // Returns the submesh index of the currently active handle, or -1.
     int activeSubmeshIndex() const;
 
-    struct Ray { glm::vec3 origin; glm::vec3 dir; };
+    struct Ray {
+        glm::vec3 origin;
+        glm::vec3 dir;
+    };
     Ray rayFromCursor(scene::Scene* scene, int x, int y) const;
     glm::vec3 closestPointOnAxis(glm::vec3 axisOrigin, glm::vec3 axisDir,
-                                  glm::vec3 rayOrigin, glm::vec3 rayDir) const;
+                                 glm::vec3 rayOrigin, glm::vec3 rayDir) const;
     glm::vec3 intersectPlane(scene::Scene* scene, glm::vec3 planeNormal,
-                              glm::vec3 planePoint, int x, int y) const;
+                             glm::vec3 planePoint, int x, int y) const;
 
     GizmoType resolveGizmoType() const;
     void loadGizmo(GizmoType type);
@@ -216,7 +245,7 @@ private:
 
     static std::unordered_map<GizmoType, float> _gizmoScales;
     static std::unordered_map<GizmoType, float> _gizmoOpacities;
-    static std::unordered_map<GizmoType, bool>  _gizmoVisible;
+    static std::unordered_map<GizmoType, bool> _gizmoVisible;
     static std::unordered_map<GizmoType, float> _gizmoScaleSensitivity;
 
     // Tracks the single node whose transform gizmo is currently visible.

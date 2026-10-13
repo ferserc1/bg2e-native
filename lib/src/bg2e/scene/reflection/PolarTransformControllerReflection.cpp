@@ -16,34 +16,57 @@ using namespace bg2e;
 namespace {
 
 reflection::TypeRegistration<scene::PolarTransformControllerComponent> _polarTransformReflection(
-    [](reflection::TypeInfoBuilder<scene::PolarTransformControllerComponent>& t) {
+    [](reflection::TypeInfoBuilder<scene::PolarTransformControllerComponent>& t)
+    {
         t.displayName("Polar Transform Controller");
 
         t.property("enabled", &scene::PolarTransformControllerComponent::enabled,
-                              &scene::PolarTransformControllerComponent::setEnabled)
-            .displayName("Enabled").category("General").checkbox();
+                   &scene::PolarTransformControllerComponent::setEnabled)
+            .displayName("Enabled")
+            .category("General")
+            .checkbox();
         t.property("azimuth", &scene::PolarTransformControllerComponent::azimuth,
-                              &scene::PolarTransformControllerComponent::setAzimuth)
-            .displayName("Azimuth").category("Polar Position").range(0.0, 360.0).angle();
+                   &scene::PolarTransformControllerComponent::setAzimuth)
+            .displayName("Azimuth")
+            .category("Polar Position")
+            .range(0.0, 360.0)
+            .angle();
         t.property("elevation", &scene::PolarTransformControllerComponent::elevation,
-                                &scene::PolarTransformControllerComponent::setElevation)
-            .displayName("Elevation").category("Polar Position").range(-90.0, 90.0).angle();
+                   &scene::PolarTransformControllerComponent::setElevation)
+            .displayName("Elevation")
+            .category("Polar Position")
+            .range(-90.0, 90.0)
+            .angle();
         t.property("distance", &scene::PolarTransformControllerComponent::distance,
-                               &scene::PolarTransformControllerComponent::setDistance)
-            .displayName("Distance").category("Polar Position").range(0.0, 100000.0).step(0.1).drag();
+                   &scene::PolarTransformControllerComponent::setDistance)
+            .displayName("Distance")
+            .category("Polar Position")
+            .range(0.0, 100000.0)
+            .step(0.1)
+            .drag();
         t.property("target", &scene::PolarTransformControllerComponent::target,
-                             &scene::PolarTransformControllerComponent::setTarget)
-            .displayName("Target").category("Polar Position");
+                   &scene::PolarTransformControllerComponent::setTarget)
+            .displayName("Target")
+            .category("Polar Position");
 
         t.property("eulerX", &scene::PolarTransformControllerComponent::eulerX,
-                             &scene::PolarTransformControllerComponent::setEulerX)
-            .displayName("X").category("Euler Rotation").range(-180.0, 180.0).angle();
+                   &scene::PolarTransformControllerComponent::setEulerX)
+            .displayName("X")
+            .category("Euler Rotation")
+            .range(-180.0, 180.0)
+            .angle();
         t.property("eulerY", &scene::PolarTransformControllerComponent::eulerY,
-                             &scene::PolarTransformControllerComponent::setEulerY)
-            .displayName("Y").category("Euler Rotation").range(-180.0, 180.0).angle();
+                   &scene::PolarTransformControllerComponent::setEulerY)
+            .displayName("Y")
+            .category("Euler Rotation")
+            .range(-180.0, 180.0)
+            .angle();
         t.property("eulerZ", &scene::PolarTransformControllerComponent::eulerZ,
-                             &scene::PolarTransformControllerComponent::setEulerZ)
-            .displayName("Z").category("Euler Rotation").range(-180.0, 180.0).angle();
+                   &scene::PolarTransformControllerComponent::setEulerZ)
+            .displayName("Z")
+            .category("Euler Rotation")
+            .range(-180.0, 180.0)
+            .angle();
     });
 
 }

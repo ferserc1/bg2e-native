@@ -44,7 +44,7 @@ namespace draw {
 // are retained; caller-owned backends must outlive the Engine. Engine controls
 // the initialized Instance lifetime and exclusively owns the remaining objects.
 class BG2E_API Engine {
-public:
+  public:
     Engine();
     ~Engine();
 
@@ -61,7 +61,7 @@ public:
     gpu::WindowSurface* surface() const;
     gpu::CleanupManager& cleanupManager();
 
-private:
+  private:
     struct Impl;
     std::unique_ptr<Impl> _impl;
 };

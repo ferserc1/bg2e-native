@@ -42,19 +42,20 @@ vec3 _shadowRandomDirection(vec3 normal, vec2 seed, float angle)
     return normalize(
         tangent * cos(phi) * sinTheta +
         bitangent * sin(phi) * sinTheta +
-        normal * cosTheta
-    );
+        normal * cosTheta);
 }
 
 bool _shadowRayTest(
     accelerationStructureEXT tlas,
-    vec3 origin, vec3 dir, float tMax
-) {
+    vec3 origin, vec3 dir, float tMax)
+{
     rayQueryEXT rq;
     rayQueryInitializeEXT(rq, tlas,
-        gl_RayFlagsTerminateOnFirstHitEXT | gl_RayFlagsOpaqueEXT,
-        0xFF, origin, 0.001, dir, tMax);
-    while (rayQueryProceedEXT(rq)) {}
+                          gl_RayFlagsTerminateOnFirstHitEXT | gl_RayFlagsOpaqueEXT,
+                          0xFF, origin, 0.001, dir, tMax);
+    while (rayQueryProceedEXT(rq))
+    {
+    }
 
     return rayQueryGetIntersectionTypeEXT(rq, true) ==
            gl_RayQueryCommittedIntersectionNoneEXT;
@@ -64,18 +65,23 @@ float queryShadow(
     accelerationStructureEXT tlas,
     vec3 worldPos, vec3 normal,
     LightData light,
-    int maxSamples
-) {
+    int maxSamples)
+{
     vec3 toLight;
     float tMax;
-    if (light.type == LIGHT_TYPE_POINT) {
+    if (light.type == LIGHT_TYPE_POINT)
+    {
         toLight = light.position - worldPos;
         tMax = length(toLight);
         toLight = normalize(toLight);
-    } else if (light.type == LIGHT_TYPE_DIRECTIONAL) {
+    }
+    else if (light.type == LIGHT_TYPE_DIRECTIONAL)
+    {
         toLight = -normalize(light.direction);
         tMax = 1000000.0;
-    } else {
+    }
+    else
+    {
         toLight = light.position - worldPos;
         tMax = length(toLight);
         toLight = normalize(toLight);
@@ -90,9 +96,12 @@ float queryShadow(
     }
 
     float angle;
-    if (light.type == LIGHT_TYPE_DIRECTIONAL) {
+    if (light.type == LIGHT_TYPE_DIRECTIONAL)
+    {
         angle = light.sourceSize * 3.14159265 / 180.0;
-    } else {
+    }
+    else
+    {
         angle = atan(light.sourceSize, tMax);
     }
 
@@ -115,14 +124,17 @@ float queryShadow(
 float hardShadow(
     accelerationStructureEXT tlas,
     vec3 worldPos, vec3 normal,
-    LightData light
-) {
+    LightData light)
+{
     vec3 toLight;
     float tMax;
-    if (light.type == LIGHT_TYPE_DIRECTIONAL) {
+    if (light.type == LIGHT_TYPE_DIRECTIONAL)
+    {
         toLight = -normalize(light.direction);
         tMax = 1000000.0;
-    } else {
+    }
+    else
+    {
         toLight = light.position - worldPos;
         tMax = length(toLight);
         toLight = normalize(toLight);
@@ -138,8 +150,8 @@ bool queryAO(
     vec3 rayDir,
     float radius,
     float bias,
-    out float hitDistance
-) {
+    out float hitDistance)
+{
     rayQueryEXT rq;
 
     rayQueryInitializeEXT(
@@ -150,10 +162,11 @@ bool queryAO(
         worldPos + normal * bias,
         0.001,
         rayDir,
-        radius
-    );
+        radius);
 
-    while (rayQueryProceedEXT(rq)) {}
+    while (rayQueryProceedEXT(rq))
+    {
+    }
 
     bool hit = rayQueryGetIntersectionTypeEXT(rq, true) != gl_RayQueryCommittedIntersectionNoneEXT;
 

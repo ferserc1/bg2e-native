@@ -27,11 +27,9 @@ namespace scene {
 
 class Node;
 
-class BG2E_API BoundingBox : public geo::AABoundingBoxBase
-{
-public:
-    struct Options
-    {
+class BG2E_API BoundingBox : public geo::AABoundingBoxBase {
+  public:
+    struct Options {
         bool includeDisabledNodes = false;
         bool includeInvisibleSubmeshes = false;
     };
@@ -39,7 +37,7 @@ public:
     explicit BoundingBox(Node* node);
     BoundingBox(Node* node, const Options& options);
 
-private:
+  private:
     void processNode(Node* node, const Options& options);
     void addSubmesh(const geo::AABoundingBox<scene::Mesh>& box, const glm::mat4& transform);
     void addPoint(const glm::vec3& point);

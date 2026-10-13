@@ -22,7 +22,8 @@
 namespace bg2e {
 namespace base {
 
-bool Log::isDebug() {
+bool Log::isDebug()
+{
 #if NDEBUG
     return false;
 #else

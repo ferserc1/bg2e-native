@@ -27,8 +27,9 @@ namespace bg2e {
 namespace base {
 
 class BG2E_API Log {
-public:
-    enum class Level {
+  public:
+    enum class Level
+    {
         Info = 0,
         Warning = 1,
         Error = 2,
@@ -37,18 +38,22 @@ public:
 
     static bool isDebug();
 
-    Log(Level l) : _level{l} {}
+    Log(Level l) : _level{l}
+    {
+    }
 
     template <typename T>
-    Log& operator << (const T & value) {
-        auto & out_fn = (_level == Level::Error || _level == Level::Warning) ? std::cerr : std::cout;
-        if ((_level == Level::Debug && isDebug()) || _level != Level::Debug) {
+    Log& operator<<(const T& value)
+    {
+        auto& out_fn = (_level == Level::Error || _level == Level::Warning) ? std::cerr : std::cout;
+        if ((_level == Level::Debug && isDebug()) || _level != Level::Debug)
+        {
             out_fn << value;
         }
         return *this;
     }
 
-protected:
+  protected:
     Level _level;
 };
 

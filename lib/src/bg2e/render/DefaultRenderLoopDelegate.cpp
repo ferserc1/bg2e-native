@@ -30,7 +30,7 @@ DefaultRenderLoopDelegate<RendererT>::~DefaultRenderLoopDelegate()
 }
 
 template <typename RendererT>
-void DefaultRenderLoopDelegate<RendererT>::init(render::Engine * engine)
+void DefaultRenderLoopDelegate<RendererT>::init(render::Engine* engine)
 {
     RenderLoopDelegate::init(engine);
 
@@ -41,8 +41,7 @@ void DefaultRenderLoopDelegate<RendererT>::init(render::Engine * engine)
         engine->swapchain().imageFormat(),
         engine->swapchain().depthImageFormat(),
         engine->swapchain().sampleCount(),
-        false
-    );
+        false);
 }
 
 template <typename RendererT>
@@ -69,8 +68,8 @@ void DefaultRenderLoopDelegate<RendererT>::swapchainResized(VkExtent2D newExtent
 template <typename RendererT>
 void DefaultRenderLoopDelegate<RendererT>::update(
     uint32_t /* currentFrame */,
-    render::vulkan::FrameResources&
-) {
+    render::vulkan::FrameResources&)
+{
     _renderer->update(delta());
 }
 
@@ -81,8 +80,8 @@ VkImageLayout DefaultRenderLoopDelegate<RendererT>::render(
     const render::vulkan::Image* colorImage,
     const render::vulkan::Image* depthImage,
     const render::vulkan::Image* msaaDepthImage,
-    render::vulkan::FrameResources& frameResources
-) {
+    render::vulkan::FrameResources& frameResources)
+{
     VkImageLayout newColorImageLayout;
     VkImageLayout newDepthImageLayout;
     VkImageLayout newMsaaDepthImageLayout;
@@ -95,8 +94,7 @@ VkImageLayout DefaultRenderLoopDelegate<RendererT>::render(
         frameResources,
         newColorImageLayout,
         newDepthImageLayout,
-        newMsaaDepthImageLayout
-    );
+        newMsaaDepthImageLayout);
     return newColorImageLayout;
 }
 

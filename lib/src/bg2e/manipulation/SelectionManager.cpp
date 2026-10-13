@@ -20,41 +20,40 @@
 
 #include <bg2e/render/all.hpp>
 
-#include "bg2e/base/Log.hpp"
-#include "bg2e/manipulation/SelectableComponent.hpp"
-#include "bg2e/manipulation/GizmoComponent.hpp"
+#include <bg2e/base/Log.hpp>
+#include <bg2e/manipulation/SelectableComponent.hpp>
+#include <bg2e/manipulation/GizmoComponent.hpp>
 
 namespace bg2e::manipulation {
 
-SelectionManager::SelectionManager(render::Engine * engine)
+SelectionManager::SelectionManager(render::Engine* engine)
     : _engine(engine)
 {
-
 }
 
 void SelectionManager::init()
 {
     createImage();
     createPipeline();
-    
+
     _pickVisitor = std::make_shared<manipulation::PickSelectionVisitor>();
 }
 
 bool SelectionManager::pick(
-    scene::Node * rootNode,
-    const glm::mat4 & viewMatrix,
-    const glm::mat4 & projMatrix,
-    const math::Viewport & vp,
+    scene::Node* rootNode,
+    const glm::mat4& viewMatrix,
+    const glm::mat4& projMatrix,
+    const math::Viewport& vp,
     uint32_t x,
     uint32_t y,
-    bool additive
-) {
+    bool additive)
+{
     if (!additive)
     {
         deselect();
     }
 
-    SelectionItem result {};
+    SelectionItem result{};
     if (pickObject(rootNode, viewMatrix, projMatrix, vp, x, y, &result))
     {
         auto nodePtr = result.nodePtr();
@@ -101,7 +100,7 @@ bool SelectionManager::pick(
     return false;
 }
 
-bool SelectionManager::mouseButtonDown(scene::Scene * scene, int button, int x, int y)
+bool SelectionManager::mouseButtonDown(scene::Scene* scene, int button, int x, int y)
 {
     _mouseDownX = x;
     _mouseDownY = y;
@@ -110,7 +109,7 @@ bool SelectionManager::mouseButtonDown(scene::Scene * scene, int button, int x, 
     // manipulation is enabled and a transform gizmo is currently visible.
     if (button == 0 && _transformManipulationEnabled && GizmoComponent::currentTransformNode())
     {
-        SelectionItem result {};
+        SelectionItem result{};
         if (pickObject(scene, x, y, &result) && result.kind == PickKind::TransformGizmo)
         {
             if (auto node = result.nodePtr())
@@ -121,8 +120,7 @@ bool SelectionManager::mouseButtonDown(scene::Scene * scene, int button, int x, 
                     {
                         auto handle = GizmoComponent::handleForSubmesh(
                             drw->submeshName(result.submesh),
-                            drw->submeshGroupName(result.submesh)
-                        );
+                            drw->submeshGroupName(result.submesh));
                         gizmo->beginTransform(handle, x, y);
                         _capturing = true;
                         return false; // captured: do not propagate to the scene graph
@@ -151,7 +149,7 @@ bool SelectionManager::mouseMove(scene::Scene* scene, int x, int y)
     return true;
 }
 
-bool SelectionManager::mouseButtonUp(scene::Scene * scene, int button, int x, int y, bool additive)
+bool SelectionManager::mouseButtonUp(scene::Scene* scene, int button, int x, int y, bool additive)
 {
     if (_capturing)
     {
@@ -178,14 +176,14 @@ bool SelectionManager::mouseButtonUp(scene::Scene * scene, int button, int x, in
 }
 
 bool SelectionManager::pickObject(
-    scene::Node * rootNode,
-    const glm::mat4 & viewMatrix,
-    const glm::mat4 & projMatrix,
-    const math::Viewport & vp,
+    scene::Node* rootNode,
+    const glm::mat4& viewMatrix,
+    const glm::mat4& projMatrix,
+    const math::Viewport& vp,
     uint32_t x,
     uint32_t y,
-    SelectionItem * result
-) {
+    SelectionItem* result)
+{
     if (!result)
     {
         throw std::runtime_error("SelectionManager::pickObject: result is null");
@@ -219,7 +217,7 @@ bool SelectionManager::pickObject(
 
 void SelectionManager::deselect()
 {
-    for (const auto & item : _selectedItems)
+    for (const auto& item : _selectedItems)
     {
         if (auto node = item->node.lock())
         {
@@ -235,7 +233,7 @@ void SelectionManager::deselect()
     callOnChange();
 }
 
-bool SelectionManager::isSelected(const scene::Node * node)
+bool SelectionManager::isSelected(const scene::Node* node)
 {
     if (!node)
     {
@@ -245,16 +243,18 @@ bool SelectionManager::isSelected(const scene::Node * node)
     return std::any_of(
         _selectedNodes.cbegin(),
         _selectedNodes.cend(),
-        [node](const std::weak_ptr<scene::Node>& n) { return n.lock().get() == node; }
-    );
+        [node](const std::weak_ptr<scene::Node>& n)
+        {
+            return n.lock().get() == node;
+        });
 }
 
-bool SelectionManager::isSelected(const scene::Node * node, const scene::DrawableComponent * drawable, uint32_t submesh)
+bool SelectionManager::isSelected(const scene::Node* node, const scene::DrawableComponent* drawable, uint32_t submesh)
 {
     return isSelected(node, drawable->drawable().get(), submesh);
 }
 
-bool SelectionManager::isSelected(const scene::Node * node, const scene::Drawable * drawable, uint32_t submesh)
+bool SelectionManager::isSelected(const scene::Node* node, const scene::Drawable* drawable, uint32_t submesh)
 {
     if (!node || !drawable)
     {
@@ -262,18 +262,17 @@ bool SelectionManager::isSelected(const scene::Node * node, const scene::Drawabl
     }
 
     return std::find_if(
-        _selectedItems.cbegin(),
-        _selectedItems.cend(),
-        [node, drawable, submesh](const std::shared_ptr<SelectionItem>& curItem)
-        {
-            auto curNode = curItem->node.lock();
-            auto curMesh = curItem->mesh.lock();
-            return curNode.get() == node && curMesh.get() == drawable && submesh == curItem->submesh;
-        }
-    ) != _selectedItems.cend();
+               _selectedItems.cbegin(),
+               _selectedItems.cend(),
+               [node, drawable, submesh](const std::shared_ptr<SelectionItem>& curItem)
+               {
+                   auto curNode = curItem->node.lock();
+                   auto curMesh = curItem->mesh.lock();
+                   return curNode.get() == node && curMesh.get() == drawable && submesh == curItem->submesh;
+               }) != _selectedItems.cend();
 }
 
-bool SelectionManager::addToSelectedItems(scene::Node * node, scene::DrawableComponent * drawable, uint32_t submesh)
+bool SelectionManager::addToSelectedItems(scene::Node* node, scene::DrawableComponent* drawable, uint32_t submesh)
 {
     // Are the pointets valid?
     if (!node || !drawable || !drawable->drawable().get())
@@ -325,7 +324,7 @@ bool SelectionManager::addToSelectedItems(scene::Node * node, scene::DrawableCom
     return true;
 }
 
-bool SelectionManager::addToSelectedItems(scene::Node * node)
+bool SelectionManager::addToSelectedItems(scene::Node* node)
 {
     if (!node)
     {
@@ -334,7 +333,7 @@ bool SelectionManager::addToSelectedItems(scene::Node * node)
 
     // If the node owns a drawable, select it at submesh level (submesh 0) so it
     // also highlights in the 3D view, reusing all the validation above.
-    if (auto * drawable = node->drawable())
+    if (auto* drawable = node->drawable())
     {
         return addToSelectedItems(node, drawable, 0);
     }
@@ -357,7 +356,7 @@ bool SelectionManager::addToSelectedItems(scene::Node * node)
     return true;
 }
 
-void SelectionManager::removeFromSelectedItems(scene::Node * node)
+void SelectionManager::removeFromSelectedItems(scene::Node* node)
 {
     if (!node)
     {
@@ -381,8 +380,7 @@ void SelectionManager::removeFromSelectedItems(scene::Node * node)
             sel->setSelected(curItem->submesh, false);
             changed = true;
             return true;
-        }
-    );
+        });
 
     removeSelectedNode(node);
 
@@ -392,7 +390,7 @@ void SelectionManager::removeFromSelectedItems(scene::Node * node)
     }
 }
 
-void SelectionManager::removeFromSelectedItems(scene::Node * node, uint32_t submesh)
+void SelectionManager::removeFromSelectedItems(scene::Node* node, uint32_t submesh)
 {
     const auto drawable = const_cast<scene::DrawableComponent*>(node->getComponent<scene::DrawableComponent>());
     return removeFromSelectedItems(drawable, submesh);
@@ -428,8 +426,7 @@ void SelectionManager::removeFromSelectedItems(scene::DrawableComponent* drawabl
                 return true;
             }
             return false;
-        }
-    );
+        });
 
     // If the node has no remaining selected submeshes, drop it from the node list
     if (changed && !nodeHasSelectedItems(node))
@@ -444,73 +441,69 @@ void SelectionManager::removeFromSelectedItems(scene::DrawableComponent* drawabl
 }
 
 uint32_t SelectionManager::pickObjectId(
-    scene::Node * rootNode,
-    const glm::mat4 & viewMatrix,
-    const glm::mat4 & projMatrix,
-    const math::Viewport & vp,
+    scene::Node* rootNode,
+    const glm::mat4& viewMatrix,
+    const glm::mat4& projMatrix,
+    const math::Viewport& vp,
     uint32_t x,
-    uint32_t y
-) {
+    uint32_t y)
+{
     using namespace render::vulkan;
 
     if (_image->extent2D().width != static_cast<uint32_t>(vp.width) ||
-        _image->extent2D().height != static_cast<uint32_t>(vp.height)
-    ) {
+        _image->extent2D().height != static_cast<uint32_t>(vp.height))
+    {
         cleanupImage();
         createImage();
     }
 
-    _engine->command().immediateSubmit([&](VkCommandBuffer cmd) {
-        Image::cmdTransitionImage(
-            cmd,
-            _image->handle(),
-            VK_IMAGE_LAYOUT_UNDEFINED,
-            VK_IMAGE_LAYOUT_GENERAL
-        );
-        VkClearColorValue clearValue { { 0.0f, 0.0f, 0.0f, 0.0f } };
-        auto clearRange = Image::subresourceRange(VK_IMAGE_ASPECT_COLOR_BIT);
-        vkCmdClearColorImage(
-            cmd,
-            _image->handle(), VK_IMAGE_LAYOUT_GENERAL,
-            &clearValue, 1, &clearRange
-        );
+    _engine->command().immediateSubmit([&](VkCommandBuffer cmd)
+                                       {
+                                           Image::cmdTransitionImage(
+                                               cmd,
+                                               _image->handle(),
+                                               VK_IMAGE_LAYOUT_UNDEFINED,
+                                               VK_IMAGE_LAYOUT_GENERAL);
+                                           VkClearColorValue clearValue{{0.0f, 0.0f, 0.0f, 0.0f}};
+                                           auto clearRange = Image::subresourceRange(VK_IMAGE_ASPECT_COLOR_BIT);
+                                           vkCmdClearColorImage(
+                                               cmd,
+                                               _image->handle(), VK_IMAGE_LAYOUT_GENERAL,
+                                               &clearValue, 1, &clearRange);
 
-        Image::cmdTransitionImage(
-            cmd,
-            _image->handle(),
-            VK_IMAGE_LAYOUT_GENERAL,
-            VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
-        );
+                                           Image::cmdTransitionImage(
+                                               cmd,
+                                               _image->handle(),
+                                               VK_IMAGE_LAYOUT_GENERAL,
+                                               VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 
-        auto colorAttachment = Info::attachmentInfo(_image->imageView(), nullptr);
-        auto depthAttachment = Info::depthAttachmentInfo(_engine->swapchain().depthImage()->imageView());
-        auto renderInfo = Info::renderingInfo(_image->extent2D(), &colorAttachment, &depthAttachment);
+                                           auto colorAttachment = Info::attachmentInfo(_image->imageView(), nullptr);
+                                           auto depthAttachment = Info::depthAttachmentInfo(_engine->swapchain().depthImage()->imageView());
+                                           auto renderInfo = Info::renderingInfo(_image->extent2D(), &colorAttachment, &depthAttachment);
 
-        cmdBeginRendering(cmd, &renderInfo);
+                                           cmdBeginRendering(cmd, &renderInfo);
 
-        macros::cmdSetDefaultViewportAndScissor(cmd, _image->extent2D());
+                                           macros::cmdSetDefaultViewportAndScissor(cmd, _image->extent2D());
 
-        // The visitor binds the pipelines itself: depth-tested for drawables and
-        // the transform gizmo, depth-disabled for the type gizmos.
-        _pickVisitor->pick(
-            rootNode, viewMatrix, projMatrix, cmd, _pipelineLayout,
-            _pipeline, _pipelineNoDepth, _image->extent2D(),
-            _transformManipulationEnabled
-        );
+                                           // The visitor binds the pipelines itself: depth-tested for drawables and
+                                           // the transform gizmo, depth-disabled for the type gizmos.
+                                           _pickVisitor->pick(
+                                               rootNode, viewMatrix, projMatrix, cmd, _pipelineLayout,
+                                               _pipeline, _pipelineNoDepth, _image->extent2D(),
+                                               _transformManipulationEnabled);
 
-        cmdEndRendering(cmd);
-    });
+                                           cmdEndRendering(cmd);
+                                       });
 
     // Read pixels in image
-    std::vector<uint8_t> outData = { 0, 0, 0, 0 };
+    std::vector<uint8_t> outData = {0, 0, 0, 0};
     Image::readPixelsRGBA8(
         _engine,
         _image.get(),
         x, y,
         1, 1,
         outData,
-        VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
-    );
+        VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
     return SelectableComponent::decodeObjectId(outData.data());
 }
 
@@ -526,29 +519,28 @@ void SelectionManager::createImage()
             VK_FORMAT_R8G8B8A8_UNORM,
             extent,
             VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
-            VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
+                VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
             VK_IMAGE_ASPECT_COLOR_BIT,
-            1, false, 20, VK_SAMPLE_COUNT_1_BIT
-        )
-    );
-    
-    _engine->cleanupManager().push([&](VkDevice) {
-        _image.reset();
-    });
+            1, false, 20, VK_SAMPLE_COUNT_1_BIT));
+
+    _engine->cleanupManager().push([&](VkDevice)
+                                   {
+                                       _image.reset();
+                                   });
 }
 
 void SelectionManager::createPipeline()
 {
     using namespace bg2e::render::vulkan;
     factory::GraphicsPipeline plFactory(_engine);
-    
+
     plFactory.addShader("pick_selection.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
     plFactory.addShader("pick_selection.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
-    
+
     render::vulkan::factory::PipelineLayout layoutFactory(_engine);
     layoutFactory.addPushConstantRange(0, sizeof(PushConstantData), VK_SHADER_STAGE_VERTEX_BIT);
     _pipelineLayout = layoutFactory.build("SelectionManager::PipelineLayout");
-    
+
     plFactory.setInputState<render::vulkan::geo::Mesh>();
     plFactory.setColorAttachmentFormat(_image->format());
     plFactory.setDepthFormat(_engine->swapchain().depthImageFormat());
@@ -563,11 +555,12 @@ void SelectionManager::createPipeline()
     plFactory.disableDepthtest();
     _pipelineNoDepth = plFactory.build(_pipelineLayout, "SelectionManager::PipelineNoDepth");
 
-    _engine->cleanupManager().push([&](VkDevice dev) {
-        vkDestroyPipeline(dev, _pipeline, nullptr);
-        vkDestroyPipeline(dev, _pipelineNoDepth, nullptr);
-        vkDestroyPipelineLayout(dev, _pipelineLayout, nullptr);
-    });
+    _engine->cleanupManager().push([&](VkDevice dev)
+                                   {
+                                       vkDestroyPipeline(dev, _pipeline, nullptr);
+                                       vkDestroyPipeline(dev, _pipelineNoDepth, nullptr);
+                                       vkDestroyPipelineLayout(dev, _pipelineLayout, nullptr);
+                                   });
 }
 
 void SelectionManager::cleanupImage()
@@ -581,16 +574,16 @@ void SelectionManager::callOnChange()
 
     // Point the transform gizmo at the primary selected node before notifying
     // listeners, so onSelect callbacks already observe the current transform.
-    scene::Node * primary = _selectedNodes.empty() ? nullptr : _selectedNodes.front().lock().get();
+    scene::Node* primary = _selectedNodes.empty() ? nullptr : _selectedNodes.front().lock().get();
     GizmoComponent::setCurrentTransform(primary);
 
-    for (auto & cb : _onSelectCallbacks)
+    for (auto& cb : _onSelectCallbacks)
     {
         cb();
     }
 }
 
-void SelectionManager::addUniqueSelectedNode(scene::Node * node)
+void SelectionManager::addUniqueSelectedNode(scene::Node* node)
 {
     if (!node)
     {
@@ -599,8 +592,10 @@ void SelectionManager::addUniqueSelectedNode(scene::Node * node)
 
     const bool exists = std::any_of(
         _selectedNodes.begin(), _selectedNodes.end(),
-        [node](const std::weak_ptr<scene::Node>& n) { return n.lock().get() == node; }
-    );
+        [node](const std::weak_ptr<scene::Node>& n)
+        {
+            return n.lock().get() == node;
+        });
 
     if (!exists)
     {
@@ -608,7 +603,7 @@ void SelectionManager::addUniqueSelectedNode(scene::Node * node)
     }
 }
 
-void SelectionManager::removeSelectedNode(scene::Node * node)
+void SelectionManager::removeSelectedNode(scene::Node* node)
 {
     std::erase_if(
         _selectedNodes,
@@ -616,16 +611,17 @@ void SelectionManager::removeSelectedNode(scene::Node * node)
         {
             auto locked = n.lock();
             return !locked || locked.get() == node;
-        }
-    );
+        });
 }
 
-bool SelectionManager::nodeHasSelectedItems(const scene::Node * node) const
+bool SelectionManager::nodeHasSelectedItems(const scene::Node* node) const
 {
     return std::any_of(
         _selectedItems.cbegin(), _selectedItems.cend(),
-        [node](const std::shared_ptr<SelectionItem>& item) { return item->node.lock().get() == node; }
-    );
+        [node](const std::shared_ptr<SelectionItem>& item)
+        {
+            return item->node.lock().get() == node;
+        });
 }
 
 void SelectionManager::prioritizeDrawableNode()

@@ -85,16 +85,19 @@ int main(int argc, char** argv)
     Uint32 windowFlags = 0;
     switch (backend->windowType())
     {
-        case gpu::WindowType::Vulkan: windowFlags = SDL_WINDOW_VULKAN; break;
-        case gpu::WindowType::Metal:  windowFlags = SDL_WINDOW_METAL;  break;
+    case gpu::WindowType::Vulkan:
+        windowFlags = SDL_WINDOW_VULKAN;
+        break;
+    case gpu::WindowType::Metal:
+        windowFlags = SDL_WINDOW_METAL;
+        break;
     }
 
     SDL_Window* window = SDL_CreateWindow(
         "GPU Cubemap Example",
         SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
         800, 600,
-        windowFlags | SDL_WINDOW_RESIZABLE
-    );
+        windowFlags | SDL_WINDOW_RESIZABLE);
     if (!window)
     {
         std::cerr << "Failed to create window: " << SDL_GetError() << std::endl;
@@ -145,23 +148,10 @@ int main(int argc, char** argv)
     cubemapRendererLayoutDesc.pushConstants.push_back(
         // 0: offset inside push constants.  This value only affects to Vulkan shaders
         // In Metal shaders, the push constant index are 1 for vertex shader and 0 for fragment and compute shaders
-        {0, sizeof(CubemapCameraPushConstants), gpu::ShaderStage::Vertex}
-    );
-    cubemapRendererLayoutDesc.resourceBindings.push_back({
-        0, {.vulkan = 0, .metal = 2},
-        gpu::ResourceType::UniformBuffer,
-        gpu::ShaderStage::Vertex, 1
-    });
-    cubemapRendererLayoutDesc.resourceBindings.push_back({
-        1, {.vulkan = 0, .metal = 0},
-        gpu::ResourceType::SampledImage,
-        gpu::ShaderStage::Fragment, 1
-    });
-    cubemapRendererLayoutDesc.resourceBindings.push_back({
-        1, {.vulkan = 1, .metal = 0},
-        gpu::ResourceType::Sampler,
-        gpu::ShaderStage::Fragment, 1
-    });
+        {0, sizeof(CubemapCameraPushConstants), gpu::ShaderStage::Vertex});
+    cubemapRendererLayoutDesc.resourceBindings.push_back({0, {.vulkan = 0, .metal = 2}, gpu::ResourceType::UniformBuffer, gpu::ShaderStage::Vertex, 1});
+    cubemapRendererLayoutDesc.resourceBindings.push_back({1, {.vulkan = 0, .metal = 0}, gpu::ResourceType::SampledImage, gpu::ShaderStage::Fragment, 1});
+    cubemapRendererLayoutDesc.resourceBindings.push_back({1, {.vulkan = 1, .metal = 0}, gpu::ResourceType::Sampler, gpu::ShaderStage::Fragment, 1});
     cubemapRendererLayoutDesc.debugName = "Cubemap renderer pipeline layout";
     auto cubemapRendererLayout = device->createPipelineLayout(cubemapRendererLayoutDesc);
     cleanup.push(cubemapRendererLayout);
@@ -177,33 +167,12 @@ int main(int argc, char** argv)
     cubeReflectionLayoutDesc.pushConstants.push_back(
         // 0 is the offset of the push constant in Vulkan. In Metal, que push constant index are 1 for vertex shader
         // and 0 for fragment and compute shader
-        {0, sizeof(CubeReflectionPushConstants), gpu::ShaderStage::Fragment}
-    );
-    cubeReflectionLayoutDesc.resourceBindings.push_back({
-        0, {.vulkan = 0, .metal = 2},
-        gpu::ResourceType::UniformBuffer,
-        gpu::ShaderStage::Vertex, 1
-    });
-    cubeReflectionLayoutDesc.resourceBindings.push_back({
-        1, {.vulkan = 0, .metal = 3},
-        gpu::ResourceType::UniformBuffer,
-        gpu::ShaderStage::Vertex, 1
-    });
-    cubeReflectionLayoutDesc.resourceBindings.push_back({
-        2, {.vulkan = 0, .metal = 0},
-        gpu::ResourceType::SampledImage,
-        gpu::ShaderStage::Fragment, 1
-    });
-    cubeReflectionLayoutDesc.resourceBindings.push_back({
-        2, {.vulkan = 1, .metal = 0},
-        gpu::ResourceType::Sampler,
-        gpu::ShaderStage::Fragment, 1
-    });
-    cubeReflectionLayoutDesc.resourceBindings.push_back({
-        3, {.vulkan = 0, .metal = 3},
-        gpu::ResourceType::UniformBuffer,
-        gpu::ShaderStage::Fragment, 1
-    });
+        {0, sizeof(CubeReflectionPushConstants), gpu::ShaderStage::Fragment});
+    cubeReflectionLayoutDesc.resourceBindings.push_back({0, {.vulkan = 0, .metal = 2}, gpu::ResourceType::UniformBuffer, gpu::ShaderStage::Vertex, 1});
+    cubeReflectionLayoutDesc.resourceBindings.push_back({1, {.vulkan = 0, .metal = 3}, gpu::ResourceType::UniformBuffer, gpu::ShaderStage::Vertex, 1});
+    cubeReflectionLayoutDesc.resourceBindings.push_back({2, {.vulkan = 0, .metal = 0}, gpu::ResourceType::SampledImage, gpu::ShaderStage::Fragment, 1});
+    cubeReflectionLayoutDesc.resourceBindings.push_back({2, {.vulkan = 1, .metal = 0}, gpu::ResourceType::Sampler, gpu::ShaderStage::Fragment, 1});
+    cubeReflectionLayoutDesc.resourceBindings.push_back({3, {.vulkan = 0, .metal = 3}, gpu::ResourceType::UniformBuffer, gpu::ShaderStage::Fragment, 1});
     cubeReflectionLayoutDesc.debugName = "Cube reflection pipeline layout";
     auto cubeReflectionLayout = device->createPipelineLayout(cubeReflectionLayoutDesc);
     cleanup.push(cubeReflectionLayout);
@@ -211,21 +180,19 @@ int main(int argc, char** argv)
     // 11. Equirectangular HDR texture
     auto assetsPath = base::PlatformTools::assetPath();
     auto imageData = std::shared_ptr<base::Image>(bg2e::db::loadImage(assetsPath / "autumn_field_4k.hdr"));
-    auto equirectTexture = device->createImage({
-        .size = {imageData->width(), imageData->height()},
-        .format = gpu::PixelFormat::R16G16B16A16_SFLOAT,
-        .usage = gpu::ImageUsage::Sampled | gpu::ImageUsage::TransferDst,
-        .debugName = "Equirect HDR texture"
-    });
+    auto equirectTexture = device->createImage({.size = {imageData->width(), imageData->height()},
+                                                .format = gpu::PixelFormat::R16G16B16A16_SFLOAT,
+                                                .usage = gpu::ImageUsage::Sampled | gpu::ImageUsage::TransferDst,
+                                                .debugName = "Equirect HDR texture"});
     equirectTexture->uploadImage(imageData.get());
 
     device->immediateSubmit([equirectTexture](gpu::CommandBuffer* cmd)
-    {
-        cmd->transition(equirectTexture.get(), gpu::ImageLayout::ShaderReadOnly);
-    });
+                            {
+                                cmd->transition(equirectTexture.get(), gpu::ImageLayout::ShaderReadOnly);
+                            });
     cleanup.push(equirectTexture);
 
-    auto sampler = device->createSampler({ .debugName = "Default linear sampler" });
+    auto sampler = device->createSampler({.debugName = "Default linear sampler"});
     cleanup.push(sampler);
 
     // Equirect texture resource set (set 1): texture + sampler, persistent.
@@ -237,16 +204,11 @@ int main(int argc, char** argv)
 
     // 12. Cubemap render target
     const uint32_t cubemapSize = 512;
-    auto cubeMap = device->createCubeMap({
-        .size = cubemapSize,
-        .format = gpu::PixelFormat::R16G16B16A16_SFLOAT,
-        .usage = gpu::ImageUsage::Sampled
-               | gpu::ImageUsage::ColorAttachment
-               | gpu::ImageUsage::TransferSrc
-               | gpu::ImageUsage::TransferDst,
-        .mipLevels = 1,
-        .debugName = "Skybox cubemap"
-    });
+    auto cubeMap = device->createCubeMap({.size = cubemapSize,
+                                          .format = gpu::PixelFormat::R16G16B16A16_SFLOAT,
+                                          .usage = gpu::ImageUsage::Sampled | gpu::ImageUsage::ColorAttachment | gpu::ImageUsage::TransferSrc | gpu::ImageUsage::TransferDst,
+                                          .mipLevels = 1,
+                                          .debugName = "Skybox cubemap"});
     cleanup.push(cubeMap);
 
     // Cubemap texture resource set (set 2): cubemap image + sampler, persistent.
@@ -263,8 +225,7 @@ int main(int argc, char** argv)
     glm::mat4 view = glm::lookAt(
         cameraEye,
         glm::vec3(0.0f, 0.0f, 0.0f),
-        glm::vec3(0.0f, 1.0f, 0.0f)
-    );
+        glm::vec3(0.0f, 1.0f, 0.0f));
 
     CameraUBO cameraData{};
     cameraData.projection = projection;
@@ -283,23 +244,22 @@ int main(int argc, char** argv)
     // 14. Per-frame model UBO for the cubemap renderer sphere
     gpu::FrameResourceRing<gpu::Buffer> cubemapModelUboRing;
     cubemapModelUboRing.create(surface.get(), [&](uint32_t i)
-    {
-        auto buffer = device->createBuffer("Cubemap model UBO ring[" + std::to_string(i) + "]");
-        buffer->createUniformBuffer(ModelUBO{});
-        return buffer;
-    });
+                               {
+                                   auto buffer = device->createBuffer("Cubemap model UBO ring[" + std::to_string(i) + "]");
+                                   buffer->createUniformBuffer(ModelUBO{});
+                                   return buffer;
+                               });
 
     gpu::FrameResourceRing<gpu::ResourceSet> cubemapModelSetRing;
     cubemapModelSetRing.create(surface.get(), [&](uint32_t i)
-    {
-        auto set = device->createResourceSet(
-            cubemapRendererLayout.get(), 0,
-            "Cubemap model set ring[" + std::to_string(i) + "]"
-        );
-        set->setUniformBuffer({.vulkan = 0, .metal = 2}, cubemapModelUboRing.sharedAt(i));
-        set->update();
-        return set;
-    });
+                               {
+                                   auto set = device->createResourceSet(
+                                       cubemapRendererLayout.get(), 0,
+                                       "Cubemap model set ring[" + std::to_string(i) + "]");
+                                   set->setUniformBuffer({.vulkan = 0, .metal = 2}, cubemapModelUboRing.sharedAt(i));
+                                   set->update();
+                                   return set;
+                               });
 
     // 15. Sphere mesh (position + texCoord0) for cubemap rendering
     std::unique_ptr<bg2e::geo::MeshPU> sphereData(bg2e::geo::createSpherePU(50.0f, 16, 16, true));
@@ -316,44 +276,42 @@ int main(int argc, char** argv)
     // Per-frame model UBO for the cube
     gpu::FrameResourceRing<gpu::Buffer> cubeModelUboRing;
     cubeModelUboRing.create(surface.get(), [&](uint32_t i)
-    {
-        auto buffer = device->createBuffer("Cube model UBO ring[" + std::to_string(i) + "]");
-        buffer->createUniformBuffer(ModelUBO{});
-        return buffer;
-    });
+                            {
+                                auto buffer = device->createBuffer("Cube model UBO ring[" + std::to_string(i) + "]");
+                                buffer->createUniformBuffer(ModelUBO{});
+                                return buffer;
+                            });
 
     gpu::FrameResourceRing<gpu::ResourceSet> cubeModelSetRing;
     cubeModelSetRing.create(surface.get(), [&](uint32_t i)
-    {
-        auto set = device->createResourceSet(
-            cubeReflectionLayout.get(), 1,
-            "Cube model set ring[" + std::to_string(i) + "]"
-        );
-        set->setUniformBuffer({.vulkan = 0, .metal = 3}, cubeModelUboRing.sharedAt(i));
-        set->update();
-        return set;
-    });
+                            {
+                                auto set = device->createResourceSet(
+                                    cubeReflectionLayout.get(), 1,
+                                    "Cube model set ring[" + std::to_string(i) + "]");
+                                set->setUniformBuffer({.vulkan = 0, .metal = 3}, cubeModelUboRing.sharedAt(i));
+                                set->update();
+                                return set;
+                            });
 
     // Cube render settings UBO ring (set 3)
     gpu::FrameResourceRing<gpu::Buffer> cubeSettingsUboRing;
     cubeSettingsUboRing.create(surface.get(), [&](uint32_t i)
-    {
-        auto buffer = device->createBuffer("Cube settings UBO ring[" + std::to_string(i) + "]");
-        buffer->createUniformBuffer(CubeRenderSettingsUBO{});
-        return buffer;
-    });
+                               {
+                                   auto buffer = device->createBuffer("Cube settings UBO ring[" + std::to_string(i) + "]");
+                                   buffer->createUniformBuffer(CubeRenderSettingsUBO{});
+                                   return buffer;
+                               });
 
     gpu::FrameResourceRing<gpu::ResourceSet> cubeSettingsSetRing;
     cubeSettingsSetRing.create(surface.get(), [&](uint32_t i)
-    {
-        auto set = device->createResourceSet(
-            cubeReflectionLayout.get(), 3,
-            "Cube settings set ring[" + std::to_string(i) + "]"
-        );
-        set->setUniformBuffer({.vulkan = 0, .metal = 3}, cubeSettingsUboRing.sharedAt(i));
-        set->update();
-        return set;
-    });
+                               {
+                                   auto set = device->createResourceSet(
+                                       cubeReflectionLayout.get(), 3,
+                                       "Cube settings set ring[" + std::to_string(i) + "]");
+                                   set->setUniformBuffer({.vulkan = 0, .metal = 3}, cubeSettingsUboRing.sharedAt(i));
+                                   set->update();
+                                   return set;
+                               });
 
     // 17. Graphics pipelines
     auto colorFormat = surface->colorFormat();
@@ -361,27 +319,27 @@ int main(int argc, char** argv)
 
     // Cubemap renderer pipeline
     gpu::GraphicsPipelineDescription cubemapRendererPipelineDesc{};
-    cubemapRendererPipelineDesc.vertexShader   = cubemapRendererVs.get();
+    cubemapRendererPipelineDesc.vertexShader = cubemapRendererVs.get();
     cubemapRendererPipelineDesc.fragmentShader = cubemapRendererFs.get();
-    cubemapRendererPipelineDesc.layout         = cubemapRendererLayout.get();
-    cubemapRendererPipelineDesc.topology       = gpu::PrimitiveTopology::TriangleList;
-    cubemapRendererPipelineDesc.colorFormat    = gpu::PixelFormat::R16G16B16A16_SFLOAT;
-    cubemapRendererPipelineDesc.depthFormat    = gpu::PixelFormat::Undefined;
-    cubemapRendererPipelineDesc.cullMode       = gpu::CullMode::None;
-    cubemapRendererPipelineDesc.debugName      = "Cubemap renderer pipeline";
+    cubemapRendererPipelineDesc.layout = cubemapRendererLayout.get();
+    cubemapRendererPipelineDesc.topology = gpu::PrimitiveTopology::TriangleList;
+    cubemapRendererPipelineDesc.colorFormat = gpu::PixelFormat::R16G16B16A16_SFLOAT;
+    cubemapRendererPipelineDesc.depthFormat = gpu::PixelFormat::Undefined;
+    cubemapRendererPipelineDesc.cullMode = gpu::CullMode::None;
+    cubemapRendererPipelineDesc.debugName = "Cubemap renderer pipeline";
     cubemapRendererPipelineDesc.addVertexBufferDescription(gpu::MeshPU::vertexBufferDescription());
     auto cubemapRendererPipeline = device->createGraphicsPipeline(cubemapRendererPipelineDesc);
     cleanup.push(cubemapRendererPipeline);
 
     // Cube reflection pipeline
     gpu::GraphicsPipelineDescription cubeReflectionPipelineDesc{};
-    cubeReflectionPipelineDesc.vertexShader   = cubeReflectionVs.get();
+    cubeReflectionPipelineDesc.vertexShader = cubeReflectionVs.get();
     cubeReflectionPipelineDesc.fragmentShader = cubeReflectionFs.get();
-    cubeReflectionPipelineDesc.layout         = cubeReflectionLayout.get();
-    cubeReflectionPipelineDesc.topology       = gpu::PrimitiveTopology::TriangleList;
-    cubeReflectionPipelineDesc.colorFormat    = colorFormat;
-    cubeReflectionPipelineDesc.depthFormat    = depthFormat;
-    cubeReflectionPipelineDesc.debugName      = "Cube reflection pipeline";
+    cubeReflectionPipelineDesc.layout = cubeReflectionLayout.get();
+    cubeReflectionPipelineDesc.topology = gpu::PrimitiveTopology::TriangleList;
+    cubeReflectionPipelineDesc.colorFormat = colorFormat;
+    cubeReflectionPipelineDesc.depthFormat = depthFormat;
+    cubeReflectionPipelineDesc.debugName = "Cube reflection pipeline";
     cubeReflectionPipelineDesc.addVertexBufferDescription(gpu::MeshPNU::vertexBufferDescription());
     auto cubeReflectionPipeline = device->createGraphicsPipeline(cubeReflectionPipelineDesc);
     cleanup.push(cubeReflectionPipeline);
@@ -398,12 +356,12 @@ int main(int argc, char** argv)
     };
 
     std::array<CubemapFaceCamera, 6> faceCameras = {{
-        { glm::vec3(0.0f), glm::vec3( 1.0f,  0.0f,  0.0f), glm::vec3(0.0f, -1.0f,  0.0f) }, // +X
-        { glm::vec3(0.0f), glm::vec3(-1.0f,  0.0f,  0.0f), glm::vec3(0.0f, -1.0f,  0.0f) }, // -X
-        { glm::vec3(0.0f), glm::vec3( 0.0f,  -1.0f,  0.0f), glm::vec3(0.0f,  0.0f,  -1.0f) }, // +Y
-        { glm::vec3(0.0f), glm::vec3( 0.0f, 1.0f,  0.0f), glm::vec3(0.0f,  0.0f, 1.0f) }, // -Y
-        { glm::vec3(0.0f), glm::vec3( 0.0f,  0.0f,  1.0f), glm::vec3(0.0f, -1.0f,  0.0f) }, // +Z
-        { glm::vec3(0.0f), glm::vec3( 0.0f,  0.0f, -1.0f), glm::vec3(0.0f, -1.0f,  0.0f) }, // -Z
+        {glm::vec3(0.0f), glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f)},  // +X
+        {glm::vec3(0.0f), glm::vec3(-1.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f)}, // -X
+        {glm::vec3(0.0f), glm::vec3(0.0f, -1.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f)}, // +Y
+        {glm::vec3(0.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f)},   // -Y
+        {glm::vec3(0.0f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f, -1.0f, 0.0f)},  // +Z
+        {glm::vec3(0.0f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, -1.0f, 0.0f)}, // -Z
     }};
 
     // 19. Render loop
@@ -416,17 +374,21 @@ int main(int argc, char** argv)
         SDL_Event event;
         while (SDL_PollEvent(&event))
         {
-            if (event.type == SDL_QUIT) running = false;
+            if (event.type == SDL_QUIT)
+            {
+                running = false;
+            }
             if (event.type == SDL_WINDOWEVENT &&
-                event.window.event == SDL_WINDOWEVENT_CLOSE) running = false;
+                event.window.event == SDL_WINDOWEVENT_CLOSE)
+            {
+                running = false;
+            }
             if (event.type == SDL_WINDOWEVENT &&
                 event.window.event == SDL_WINDOWEVENT_RESIZED)
             {
                 device->waitIdle();
-                surface->resize({
-                    static_cast<uint32_t>(event.window.data1),
-                    static_cast<uint32_t>(event.window.data2)
-                });
+                surface->resize({static_cast<uint32_t>(event.window.data1),
+                                 static_cast<uint32_t>(event.window.data2)});
             }
             if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_SPACE)
             {
@@ -440,7 +402,7 @@ int main(int argc, char** argv)
         const float t = static_cast<float>(SDL_GetTicks64()) / 1000.0f;
 
         auto frame = surface->beginFrame();
-        auto cmd   = graphicsQueue.createCommandBuffer("Frame command buffer");
+        auto cmd = graphicsQueue.createCommandBuffer("Frame command buffer");
 
         cmd->begin();
 

@@ -34,7 +34,7 @@ namespace deferred {
 // Available on Windows and Linux. Applies per-frame Halton jitter and upscales
 // from render resolution to display resolution with temporal anti-aliasing.
 class BG2E_API FSRPostProcessor : public FinalPostProcessor {
-public:
+  public:
     FSRPostProcessor() = default;
     ~FSRPostProcessor() override;
 
@@ -42,8 +42,7 @@ public:
         Engine* engine,
         VkExtent2D renderExtent,
         VkExtent2D displayExtent,
-        VkFormat colorFormat
-    ) override;
+        VkFormat colorFormat) override;
 
     void resize(VkExtent2D renderExtent, VkExtent2D displayExtent) override;
 
@@ -52,8 +51,7 @@ public:
     glm::mat4 prepare(
         const glm::mat4& projMatrix,
         uint32_t frameCounter,
-        VkExtent2D renderExtent
-    ) override;
+        VkExtent2D renderExtent) override;
 
     void process(
         VkCommandBuffer cmd,
@@ -65,28 +63,33 @@ public:
         float deltaMs,
         float cameraNear,
         float cameraFar,
-        float cameraFovVertical
-    ) override;
+        float cameraFovVertical) override;
 
     void cleanup() override;
 
-    std::string processorName() const override { return "FSR3 Scale"; }
+    std::string processorName() const override
+    {
+        return "FSR3 Scale";
+    }
     std::vector<std::string> scaleOptions() const override;
     void setScaleOption(uint32_t index) override;
-    uint32_t scaleOption() const override { return _scaleOptionIndex; }
+    uint32_t scaleOption() const override
+    {
+        return _scaleOptionIndex;
+    }
     float renderScalePercent() const override;
 
-private:
-    Engine*    _engine        = nullptr;
-    VkExtent2D _renderExtent  = {};
+  private:
+    Engine* _engine = nullptr;
+    VkExtent2D _renderExtent = {};
     VkExtent2D _displayExtent = {};
-    VkFormat   _colorFormat   = VK_FORMAT_UNDEFINED;
+    VkFormat _colorFormat = VK_FORMAT_UNDEFINED;
 
     // FSR3 context and backend
-    FfxFsr3UpscalerContext _fsrContext  = {};
-    FfxInterface           _fsrBackend  = {};
-    void*                  _scratchBuffer = nullptr;
-    bool                   _contextValid  = false;
+    FfxFsr3UpscalerContext _fsrContext = {};
+    FfxInterface _fsrBackend = {};
+    void* _scratchBuffer = nullptr;
+    bool _contextValid = false;
 
     // Jitter state — computed by prepare(), consumed by process()
     float _jitterX = 0.0f;
@@ -96,11 +99,11 @@ private:
 
     // Ordered to match scaleOptions()
     static constexpr FfxFsr3UpscalerQualityMode kQualityModes[] = {
-        FFX_FSR3UPSCALER_QUALITY_MODE_QUALITY,            // 0: Quality   (67%)
-        FFX_FSR3UPSCALER_QUALITY_MODE_BALANCED,           // 1: Balanced  (59%)
-        FFX_FSR3UPSCALER_QUALITY_MODE_PERFORMANCE,        // 2: Perf.     (50%)
-        FFX_FSR3UPSCALER_QUALITY_MODE_ULTRA_PERFORMANCE,  // 3: Ultra     (33%)
-        FFX_FSR3UPSCALER_QUALITY_MODE_NATIVEAA,           // 4: Native AA (100%)
+        FFX_FSR3UPSCALER_QUALITY_MODE_QUALITY,           // 0: Quality   (67%)
+        FFX_FSR3UPSCALER_QUALITY_MODE_BALANCED,          // 1: Balanced  (59%)
+        FFX_FSR3UPSCALER_QUALITY_MODE_PERFORMANCE,       // 2: Perf.     (50%)
+        FFX_FSR3UPSCALER_QUALITY_MODE_ULTRA_PERFORMANCE, // 3: Ultra     (33%)
+        FFX_FSR3UPSCALER_QUALITY_MODE_NATIVEAA,          // 4: Native AA (100%)
     };
 
     bool createContext();

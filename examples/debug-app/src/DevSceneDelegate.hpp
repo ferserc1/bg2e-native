@@ -20,18 +20,17 @@
 #include <bg2e.hpp>
 
 class DevSceneDelegate : public bg2e::render::DefaultRenderLoopDelegate<bg2e::render::RendererBasicForward>,
-	public bg2e::app::InputDelegate,
-	public bg2e::ui::UserInterfaceDelegate
-{
-public:
-    void init(bg2e::render::Engine * engine) override;
-    
-	// ============ User Interface Delegate Functions =========
-	void init(bg2e::render::Engine*, bg2e::ui::UserInterface*) override;
- 
+                         public bg2e::app::InputDelegate,
+                         public bg2e::ui::UserInterfaceDelegate {
+  public:
+    void init(bg2e::render::Engine* engine) override;
+
+    // ============ User Interface Delegate Functions =========
+    void init(bg2e::render::Engine*, bg2e::ui::UserInterface*) override;
+
     void swapchainResized(VkExtent2D newSize) override;
-	void drawUI() override;
- 
+    void drawUI() override;
+
     // InputDelegate
     void mouseMove(int x, int y) override;
     void mouseButtonDown(int button, int x, int y) override;
@@ -40,7 +39,7 @@ public:
 
     void cleanup() override;
 
-protected:
+  protected:
     bg2e::scene::InputVisitor _inputVisitor;
     bg2e::ui::MaterialEditor _materialEditor;
     bg2e::ui::DrawableEditor _drawableEditor;
@@ -49,14 +48,14 @@ protected:
     bg2e::ui::Window _leftPanel;
     bg2e::ui::Window _rightPanel;
     bg2e::ui::Window _bottomPanel;
-    
+
     std::shared_ptr<bg2e::manipulation::SelectionManager> _selectionManager;
-    
+
     std::shared_ptr<bg2e::scene::Drawable> _targetDrawable;
-    bg2e::scene::EnvironmentComponent * _environment;
-    bg2e::scene::OrbitCameraComponent * _orbitCamera;
-    
+    bg2e::scene::EnvironmentComponent* _environment;
+    bg2e::scene::OrbitCameraComponent* _orbitCamera;
+
     std::shared_ptr<bg2e::scene::Node> scene1();
-    
+
     std::shared_ptr<bg2e::scene::Node> createScene() override;
 };

@@ -30,11 +30,9 @@ namespace render {
 namespace vulkan {
 namespace rt {
 
-void ReflectionLightDataBinding::initFrameResources(DescriptorSetAllocator * frameAllocator)
+void ReflectionLightDataBinding::initFrameResources(DescriptorSetAllocator* frameAllocator)
 {
-    frameAllocator->requirePoolSizeRatio(1, {
-        { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, MAX_LIGHTS }
-    });
+    frameAllocator->requirePoolSizeRatio(1, {{VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, MAX_LIGHTS}});
 }
 
 VkDescriptorSetLayout ReflectionLightDataBinding::createLayout(VkShaderStageFlags shaderStages)
@@ -49,9 +47,9 @@ VkDescriptorSetLayout ReflectionLightDataBinding::createLayout(VkShaderStageFlag
 }
 
 VkDescriptorSet ReflectionLightDataBinding::newDescriptorSet(
-    FrameResources & frameResources,
-    const std::vector<base::LightData> & lights
-) {
+    FrameResources& frameResources,
+    const std::vector<base::LightData>& lights)
+{
     if (_layout == VK_NULL_HANDLE)
     {
         throw std::runtime_error("ReflectionLightDataBinding::newDescriptorSet() - The descriptor set layout is not created");
@@ -64,8 +62,7 @@ VkDescriptorSet ReflectionLightDataBinding::newDescriptorSet(
 VkDescriptorSet ReflectionLightDataBinding::newDescriptorSet(
     FrameResources& frameResources,
     DescriptorSetAllocator& descriptorAllocator,
-    const std::vector<base::LightData>& lights
-)
+    const std::vector<base::LightData>& lights)
 {
     if (_layout == VK_NULL_HANDLE)
     {
@@ -78,8 +75,7 @@ VkDescriptorSet ReflectionLightDataBinding::newDescriptorSet(
 VkDescriptorSet ReflectionLightDataBinding::writeDescriptorSet(
     FrameResources& frameResources,
     DescriptorSet* ds,
-    const std::vector<base::LightData>& lights
-)
+    const std::vector<base::LightData>& lights)
 {
     if (!ds)
     {
@@ -89,31 +85,27 @@ VkDescriptorSet ReflectionLightDataBinding::writeDescriptorSet(
     // A storage buffer cannot be empty. When there are no reflection lights we
     // still allocate a single disabled light: the shader receives a light count
     // of zero and never reads it, but the descriptor stays valid.
-    Buffer * lightBuffer = nullptr;
+    Buffer* lightBuffer = nullptr;
     size_t bufferLightCount = lights.size();
     if (bufferLightCount == 0)
     {
-        std::vector<base::LightData> dummyLights {
-            {
-                .position = glm::vec3(0.0f, 0.0f, 0.0f),
-                .intensity = 0.0f,
-                .color = base::Color::Black(),
-                .direction = glm::vec3(1.0f, 0.0f, 0.0f),
-                .type = base::Light::LightType::TypeDisabled,
-                .spotAngle = 0.0f,
-                .spotCutoff = 0.0f,
-                .castShadows = 0,
-                .sourceSize = 0.0f,
-                .shadowSamples = 0,
-                .affectsReflections = 0
-            }
-        };
+        std::vector<base::LightData> dummyLights{
+            {.position = glm::vec3(0.0f, 0.0f, 0.0f),
+             .intensity = 0.0f,
+             .color = base::Color::Black(),
+             .direction = glm::vec3(1.0f, 0.0f, 0.0f),
+             .type = base::Light::LightType::TypeDisabled,
+             .spotAngle = 0.0f,
+             .spotCutoff = 0.0f,
+             .castShadows = 0,
+             .sourceSize = 0.0f,
+             .shadowSamples = 0,
+             .affectsReflections = 0}};
         lightBuffer = macros::createBuffer(
             _engine, frameResources, dummyLights,
             VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
             VMA_MEMORY_USAGE_CPU_ONLY,
-            "ReflectionLightDataBinding: light data SSBO"
-        );
+            "ReflectionLightDataBinding: light data SSBO");
         bufferLightCount = 1;
     }
     else
@@ -122,15 +114,13 @@ VkDescriptorSet ReflectionLightDataBinding::writeDescriptorSet(
             _engine, frameResources, lights,
             VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
             VMA_MEMORY_USAGE_CPU_ONLY,
-            "ReflectionLightDataBinding: light data SSBO"
-        );
+            "ReflectionLightDataBinding: light data SSBO");
     }
 
     ds->beginUpdate();
-        ds->addBuffer(
-            0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-            lightBuffer, sizeof(base::LightData) * bufferLightCount, 0
-        );
+    ds->addBuffer(
+        0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+        lightBuffer, sizeof(base::LightData) * bufferLightCount, 0);
     ds->endUpdate();
     return ds->descriptorSet();
 }

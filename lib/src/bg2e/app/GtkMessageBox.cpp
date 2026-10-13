@@ -22,14 +22,13 @@
 #include <gtk/gtk.h>
 #endif
 
-namespace bg2e::app::internal
-{
+namespace bg2e::app::internal {
 
 int32_t GtkMessageBox::showMessage(const std::string& title, const std::string& message)
 {
 #ifdef BG2E_LINUX
     int argc = 0;
-    char ** argv = nullptr;
+    char** argv = nullptr;
     if (!gtk_init_check(&argc, &argv))
     {
         return -1;
@@ -49,24 +48,21 @@ int32_t GtkMessageBox::showMessage(const std::string& title, const std::string& 
         break;
     }
 
-    GtkWidget * dialog = gtk_message_dialog_new(
+    GtkWidget* dialog = gtk_message_dialog_new(
         nullptr,
         static_cast<GtkDialogFlags>(GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT),
         type,
         GTK_BUTTONS_NONE,
         "%s",
-        message.c_str()
-    );
+        message.c_str());
 
     gtk_window_set_title(GTK_WINDOW(dialog), title.c_str());
 
     if (_buttons.size() == 0)
     {
-        _buttons.push_back({
-            .code = 0,
-            .label = "Ok",
-            .key = MessageBox::ButtonDefaultKey::Return
-        });
+        _buttons.push_back({.code = 0,
+                            .label = "Ok",
+                            .key = MessageBox::ButtonDefaultKey::Return});
     }
 
     for (const auto& button : _buttons)
@@ -75,8 +71,7 @@ int32_t GtkMessageBox::showMessage(const std::string& title, const std::string& 
         gtk_dialog_add_button(
             GTK_DIALOG(dialog),
             button.label.c_str(),
-            button.code
-        );
+            button.code);
     }
 
     int response = gtk_dialog_run(GTK_DIALOG(dialog));

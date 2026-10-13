@@ -24,7 +24,7 @@
 
 namespace bg2e::ui {
 
-void NodeEditor::setNode(scene::Node * node)
+void NodeEditor::setNode(scene::Node* node)
 {
     _node = node;
     _selectionCount = node ? 1 : 0;

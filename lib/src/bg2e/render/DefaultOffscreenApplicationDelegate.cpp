@@ -22,22 +22,21 @@
 #include <bg2e/render/RendererBasicForward.hpp>
 #include <bg2e/render/RendererDeferred.hpp>
 
-namespace bg2e::render
-{
+namespace bg2e::render {
 
 template <typename RendererT>
 void DefaultOffscreenApplicationDelegate<RendererT>::initConfig(
-    int argc, char *argv[],
-    bg2e::app::OffscreenApplicationConfig & outConfig
-) {
+    int argc, char* argv[],
+    bg2e::app::OffscreenApplicationConfig& outConfig)
+{
 }
 
 template <typename RendererT>
 void DefaultOffscreenApplicationDelegate<RendererT>::init(
-    Engine * engine,
+    Engine* engine,
     std::shared_ptr<vulkan::Image> colorImage,
-    std::shared_ptr<vulkan::Image> depthImage
-) {
+    std::shared_ptr<vulkan::Image> depthImage)
+{
     _engine = engine;
     _colorImage = colorImage;
     _depthImage = depthImage;
@@ -49,12 +48,11 @@ void DefaultOffscreenApplicationDelegate<RendererT>::init(
         _colorImage->format(),
         _depthImage->format(),
         VK_SAMPLE_COUNT_1_BIT,
-        true
-    );
+        true);
 }
 
 template <typename RendererT>
-void DefaultOffscreenApplicationDelegate<RendererT>::initFrameResources(vulkan::DescriptorSetAllocator * allocator)
+void DefaultOffscreenApplicationDelegate<RendererT>::initFrameResources(vulkan::DescriptorSetAllocator* allocator)
 {
     _renderer->initFrameResources(allocator);
     allocator->initPool();
@@ -78,8 +76,8 @@ template <typename RendererT>
 void DefaultOffscreenApplicationDelegate<RendererT>::frame(
     float delta,
     [[maybe_unused]] uint32_t frameIndex,
-    [[maybe_unused]] vulkan::FrameResources& frameResources
-) {
+    [[maybe_unused]] vulkan::FrameResources& frameResources)
+{
     _renderer->update(delta);
 }
 
@@ -87,10 +85,10 @@ template <typename RendererT>
 bool DefaultOffscreenApplicationDelegate<RendererT>::render(
     VkCommandBuffer cmd,
     uint32_t frameIndex,
-    vulkan::FrameResources & frameResources,
+    vulkan::FrameResources& frameResources,
     VkImageLayout colorImageLayout,
-    VkImageLayout & finalColorImageLayout
-) {
+    VkImageLayout& finalColorImageLayout)
+{
     VkImageLayout newColorImageLayout;
     VkImageLayout newDepthImageLayout;
     VkImageLayout newMsaaDepthImageLayout;
@@ -103,8 +101,7 @@ bool DefaultOffscreenApplicationDelegate<RendererT>::render(
         frameResources,
         newColorImageLayout,
         newDepthImageLayout,
-        newMsaaDepthImageLayout
-    );
+        newMsaaDepthImageLayout);
     finalColorImageLayout = newColorImageLayout;
 
     return continueRendering();
@@ -114,9 +111,8 @@ template <typename RendererT>
 void DefaultOffscreenApplicationDelegate<RendererT>::didRenderFrame(
     uint32_t frameIndex,
     double elapsedMs,
-    VkImageLayout colorImageLayout
-) {
-
+    VkImageLayout colorImageLayout)
+{
 }
 
 template <typename RendererT>

@@ -26,11 +26,19 @@ namespace bg2e {
 namespace gpu {
 
 class Image;
-namespace vk { class Queue; class WindowSurface; class OffscreenSurface; }
-namespace metal { class Queue; class WindowSurface; class OffscreenSurface; }
+namespace vk {
+class Queue;
+class WindowSurface;
+class OffscreenSurface;
+}
+namespace metal {
+class Queue;
+class WindowSurface;
+class OffscreenSurface;
+}
 
 class BG2E_API SurfaceFrame {
-public:
+  public:
     virtual ~SurfaceFrame() = default;
 
     virtual gpu::Image* colorImage() const = 0;
@@ -38,7 +46,7 @@ public:
 
     virtual bool isValid() const = 0;
 
-private:
+  private:
     friend class vk::Queue;
     friend class vk::WindowSurface;
     friend class vk::OffscreenSurface;
@@ -46,19 +54,39 @@ private:
     friend class metal::WindowSurface;
     friend class metal::OffscreenSurface;
     // Backend-only lifetime tracking. Multiple sends may occupy a frame slot.
-    void trackSubmission(const std::shared_ptr<detail::CompletionRecord>& record) { _submissions.push_back(record); }
-    bool hasSubmissions() const { return !_submissions.empty(); }
-    void waitForSubmissions() {
+    void trackSubmission(const std::shared_ptr<detail::CompletionRecord>& record)
+    {
+        _submissions.push_back(record);
+    }
+    bool hasSubmissions() const
+    {
+        return !_submissions.empty();
+    }
+    void waitForSubmissions()
+    {
         std::exception_ptr error;
-        for (const auto& record : _submissions) {
-            try { record->wait(); }
-            catch (...) { if (!error) error = std::current_exception(); }
+        for (const auto& record : _submissions)
+        {
+            try
+            {
+                record->wait();
+            }
+            catch (...)
+            {
+                if (!error)
+                {
+                    error = std::current_exception();
+                }
+            }
         }
         _submissions.clear();
-        if (error) std::rethrow_exception(error);
+        if (error)
+        {
+            std::rethrow_exception(error);
+        }
     }
 
-private:
+  private:
     std::vector<std::shared_ptr<detail::CompletionRecord>> _submissions;
 };
 

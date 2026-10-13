@@ -29,7 +29,7 @@ namespace bg2e {
 namespace ui {
 
 class BG2E_API FileHistoryWidget {
-public:
+  public:
     // Opaque texture identifier, so this header does not expose imgui.h.
     // Compatible with ImTextureID and VkDescriptorSet (both are 64-bit values).
     // A value of 0 means "no texture available".
@@ -42,16 +42,22 @@ public:
     bool draw(const std::string& id, const std::string& buttonLabel = "Select file...");
     bool drawImageButton(const std::string& id, TextureID image, uint32_t width, uint32_t height);
 
-    inline const std::filesystem::path& selectedPath() const { return _selectedPath; }
+    inline const std::filesystem::path& selectedPath() const
+    {
+        return _selectedPath;
+    }
 
     inline void setThumbnailProvider(ThumbnailProvider provider)
     {
         _thumbnailProvider = provider;
     }
 
-    inline const std::string& historyType() const { return _historyType; }
+    inline const std::string& historyType() const
+    {
+        return _historyType;
+    }
 
-protected:
+  protected:
     std::string _historyType;
     std::filesystem::path _selectedPath;
     ThumbnailProvider _thumbnailProvider;

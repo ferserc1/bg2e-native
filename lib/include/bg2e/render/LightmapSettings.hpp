@@ -29,8 +29,16 @@ namespace render {
 // RTGI is componentwise GI irradiance / unoccluded environment irradiance
 // (zero reference channels produce zero). The factor modulates indirect light;
 // direct lighting and material emission remain independent.
-enum class LightmapMode { RTAO, RTGI };
-enum class LightmapPixelFormat { RGB8, RGB32F };
+enum class LightmapMode
+{
+    RTAO,
+    RTGI
+};
+enum class LightmapPixelFormat
+{
+    RGB8,
+    RGB32F
+};
 
 struct BG2E_API LightmapSettings {
     uint32_t resolution = 512;

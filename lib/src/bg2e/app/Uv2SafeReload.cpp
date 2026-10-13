@@ -28,7 +28,7 @@ namespace app {
 
 std::shared_ptr<SafeUpdateToken> Uv2SafeReload::regenerate(
     std::weak_ptr<scene::Node> targetNode,
-    const geo::Uv2AtlasOptions & options,
+    const geo::Uv2AtlasOptions& options,
     CompletionCallback onComplete)
 {
     auto token = std::make_shared<SafeUpdateToken>();
@@ -38,16 +38,16 @@ std::shared_ptr<SafeUpdateToken> Uv2SafeReload::regenerate(
     {
         if (onComplete)
         {
-            onComplete({ false, "Uv2SafeReload: the target node no longer exists" });
+            onComplete({false, "Uv2SafeReload: the target node no longer exists"});
         }
         return token;
     }
-    scene::Node * expectedRoot = node->sceneRoot();
+    scene::Node* expectedRoot = node->sceneRoot();
 
     MainLoop::current()->safeUpdateScene(
         [weakNode = targetNode, expectedRoot, options, onComplete]()
         {
-            auto report = [onComplete](const Uv2RegenerationResult & r)
+            auto report = [onComplete](const Uv2RegenerationResult& r)
             {
                 if (onComplete)
                 {
@@ -58,28 +58,28 @@ std::shared_ptr<SafeUpdateToken> Uv2SafeReload::regenerate(
             auto target = weakNode.lock();
             if (!target)
             {
-                report({ false, "Uv2SafeReload: the target node no longer exists" });
+                report({false, "Uv2SafeReload: the target node no longer exists"});
                 return;
             }
 
             if (target->sceneRoot() != expectedRoot)
             {
-                report({ false, "Uv2SafeReload: the target node belongs to a different scene root" });
+                report({false, "Uv2SafeReload: the target node belongs to a different scene root"});
                 return;
             }
 
-            auto * component = target->drawable();
+            auto* component = target->drawable();
             auto drawable = component != nullptr ? component->drawable() : nullptr;
             if (!drawable)
             {
-                report({ false, "Uv2SafeReload: the target node has no standard Drawable component" });
+                report({false, "Uv2SafeReload: the target node has no standard Drawable component"});
                 return;
             }
 
             auto mesh = drawable->mesh();
             if (!mesh || !drawable->isLoaded())
             {
-                report({ false, "Uv2SafeReload: the target Drawable has no loaded mesh" });
+                report({false, "Uv2SafeReload: the target Drawable has no loaded mesh"});
                 return;
             }
 
@@ -94,23 +94,21 @@ std::shared_ptr<SafeUpdateToken> Uv2SafeReload::regenerate(
 
                 if (drawable->submeshesCount() != submeshCount)
                 {
-                    report({ false, "Uv2SafeReload: submesh count changed during regeneration" });
+                    report({false, "Uv2SafeReload: submesh count changed during regeneration"});
                     return;
                 }
 
-                const auto & atlas = modifier.result();
-                report({
-                    true,
-                    "",
-                    atlas.width,
-                    atlas.height,
-                    atlas.chartCount,
-                    atlas.utilization
-                });
+                const auto& atlas = modifier.result();
+                report({true,
+                        "",
+                        atlas.width,
+                        atlas.height,
+                        atlas.chartCount,
+                        atlas.utilization});
             }
-            catch (const std::exception & e)
+            catch (const std::exception& e)
             {
-                report({ false, std::string("Uv2SafeReload: ") + e.what() });
+                report({false, std::string("Uv2SafeReload: ") + e.what()});
             }
         },
         token);

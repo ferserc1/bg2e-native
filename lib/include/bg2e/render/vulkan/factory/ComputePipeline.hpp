@@ -28,8 +28,8 @@ namespace vulkan {
 namespace factory {
 
 class BG2E_API ComputePipeline {
-public:
-    ComputePipeline(Engine * engine);
+  public:
+    ComputePipeline(Engine* engine);
     ~ComputePipeline();
 
     void setShader(const std::string& fileName, const std::string& entryPoint = "main", const std::string& basePath = "");
@@ -37,8 +37,8 @@ public:
 
     VkPipeline build(VkPipelineLayout layout, const std::string& name);
 
-protected:
-    Engine * _engine;
+  protected:
+    Engine* _engine;
 
     VkShaderModule _shaderModule;
     std::string _shaderEntryPoint = "main";

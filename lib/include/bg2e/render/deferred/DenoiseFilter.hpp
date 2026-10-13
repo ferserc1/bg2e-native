@@ -32,19 +32,18 @@ namespace render {
 namespace deferred {
 
 class BG2E_API DenoiseFilter {
-public:
-    DenoiseFilter(Engine * engine);
+  public:
+    DenoiseFilter(Engine* engine);
     ~DenoiseFilter();
 
-    void build(const GBufferManager * gbuffer, VkExtent2D extent);
+    void build(const GBufferManager* gbuffer, VkExtent2D extent);
     void resize(VkExtent2D newExtent);
     void render(
         VkCommandBuffer cmd,
         uint32_t currentFrame,
-        vulkan::FrameResources & frameResources,
-        const GBufferManager * gbuffer,
-        const vulkan::Image * inputImage
-    );
+        vulkan::FrameResources& frameResources,
+        const GBufferManager* gbuffer,
+        const vulkan::Image* inputImage);
     void cleanup();
 
     std::shared_ptr<vulkan::Image> outputImage(uint32_t frameIndex) const;
@@ -63,11 +62,17 @@ public:
     float normalSigma() const;
 
     // Must be set before build(). When true, uses RGBA16F output and the HDR bilateral shader.
-    void setIsHDR(bool hdr) { _isHDR = hdr; }
-    bool isHDR() const { return _isHDR; }
+    void setIsHDR(bool hdr)
+    {
+        _isHDR = hdr;
+    }
+    bool isHDR() const
+    {
+        return _isHDR;
+    }
 
-private:
-    Engine * _engine;
+  private:
+    Engine* _engine;
     VkExtent2D _extent;
 
     std::vector<std::shared_ptr<vulkan::Image>> _outputImages;

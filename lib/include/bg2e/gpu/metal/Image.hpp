@@ -29,9 +29,14 @@ namespace metal {
 class Device;
 
 class Image : public gpu::Image {
-public:
-    explicit Image(gpu::Device* device = nullptr) : gpu::Image(device) {}
-    ~Image() override { cleanup(); }
+  public:
+    explicit Image(gpu::Device* device = nullptr) : gpu::Image(device)
+    {
+    }
+    ~Image() override
+    {
+        cleanup();
+    }
 
     Image(const Image&) = delete;
     Image& operator=(const Image&) = delete;
@@ -51,9 +56,11 @@ public:
         metal::Device* device,
         TextureHandle texture,
         PixelFormat format,
-        const Size2D& size
-    );
-    TextureHandle texture() const { return _texture; }
+        const Size2D& size);
+    TextureHandle texture() const
+    {
+        return _texture;
+    }
 
     void readPixelsRGBA8(std::vector<uint8_t>& outData, ImageLayout currentLayout = ImageLayout::ColorAttachment) override;
     void uploadRGBA8(const void* pixels, const Size2D& size) override;
@@ -61,11 +68,11 @@ public:
 
     struct CubemapFaceMipTarget {
         TextureHandle texture = nullptr;
-        uint32_t face     = 0;
+        uint32_t face = 0;
         uint32_t mipLevel = 0;
     };
 
-    bool         isValidCubemapFaceMip(uint32_t face, uint32_t mipLevel) const;
+    bool isValidCubemapFaceMip(uint32_t face, uint32_t mipLevel) const;
     CubemapFaceMipTarget cubemapFaceMipTarget(uint32_t face, uint32_t mipLevel) const;
 
     void buildCubemapImage(
@@ -74,15 +81,14 @@ public:
         PixelFormat format,
         TextureUsageEnum usage,
         uint32_t mipLevels,
-        const std::string& debugName = {}
-    );
+        const std::string& debugName = {});
 
-private:
-    metal::Device* _device      = nullptr;
-    TextureHandle  _texture     = nullptr;
-    bool           _isDepth     = false;
-    bool           _ownsTexture = true;
-    std::string    _debugName;
+  private:
+    metal::Device* _device = nullptr;
+    TextureHandle _texture = nullptr;
+    bool _isDepth = false;
+    bool _ownsTexture = true;
+    std::string _debugName;
 };
 
 }

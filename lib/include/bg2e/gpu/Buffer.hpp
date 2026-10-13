@@ -29,12 +29,20 @@ namespace bg2e {
 namespace gpu {
 
 class BG2E_API Buffer : public DeviceResource {
-public:
-    explicit Buffer(Device* device) : DeviceResource(device) {}
+  public:
+    explicit Buffer(Device* device) : DeviceResource(device)
+    {
+    }
     virtual ~Buffer() = default;
 
-    uint64_t    byteSize() const { return _byteSize; }
-    BufferUsage usage()    const { return _usage; }
+    uint64_t byteSize() const
+    {
+        return _byteSize;
+    }
+    BufferUsage usage() const
+    {
+        return _usage;
+    }
 
     virtual void createVertexBuffer(const void* data, uint64_t byteSize)
     {
@@ -105,9 +113,9 @@ public:
         updateStorageBuffer(data.data(), data.size() * sizeof(T));
     }
 
-protected:
-    BufferUsage _usage    = BufferUsage::None;
-    uint64_t    _byteSize = 0;
+  protected:
+    BufferUsage _usage = BufferUsage::None;
+    uint64_t _byteSize = 0;
 };
 
 }

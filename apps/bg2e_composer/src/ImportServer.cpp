@@ -17,8 +17,8 @@
  */
 #include "ImportServer.hpp"
 
-#include <httplib.h>                      // sole includer of httplib.h
-#include <bg2e/json/JsonParser.hpp>       // engine JSON parser
+#include <httplib.h>                // sole includer of httplib.h
+#include <bg2e/json/JsonParser.hpp> // engine JSON parser
 #include <bg2e/json/JsonNode.hpp>
 #include <bg2e/app/MainLoop.hpp>
 
@@ -43,7 +43,10 @@ std::string lowerCase(const std::string& text)
 {
     std::string out = text;
     std::transform(out.begin(), out.end(), out.begin(),
-                   [](unsigned char c){ return static_cast<char>(std::tolower(c)); });
+                   [](unsigned char c)
+                   {
+                       return static_cast<char>(std::tolower(c));
+                   });
     return out;
 }
 
@@ -56,23 +59,33 @@ std::string jsonEscape(const std::string& text)
     {
         switch (c)
         {
-            case '"':  out += "\\\""; break;
-            case '\\': out += "\\\\"; break;
-            case '\n': out += "\\n"; break;
-            case '\r': out += "\\r"; break;
-            case '\t': out += "\\t"; break;
-            default:
-                if (static_cast<unsigned char>(c) < 0x20)
-                {
-                    static const char* hex = "0123456789abcdef";
-                    out += "\\u00";
-                    out += hex[(c >> 4) & 0xF];
-                    out += hex[c & 0xF];
-                }
-                else
-                {
-                    out += c;
-                }
+        case '"':
+            out += "\\\"";
+            break;
+        case '\\':
+            out += "\\\\";
+            break;
+        case '\n':
+            out += "\\n";
+            break;
+        case '\r':
+            out += "\\r";
+            break;
+        case '\t':
+            out += "\\t";
+            break;
+        default:
+            if (static_cast<unsigned char>(c) < 0x20)
+            {
+                static const char* hex = "0123456789abcdef";
+                out += "\\u00";
+                out += hex[(c >> 4) & 0xF];
+                out += hex[c & 0xF];
+            }
+            else
+            {
+                out += c;
+            }
         }
     }
     return out;
@@ -87,18 +100,37 @@ void fail(httplib::Response& res, int status, const std::string& message)
 
 bool unitsToScale(const std::string& units, float& scale)
 {
-    if (units == "m")  { scale = 1.0f;    return true; }
-    if (units == "cm") { scale = 0.01f;   return true; }
-    if (units == "mm") { scale = 0.001f;  return true; }
-    if (units == "in") { scale = 0.0254f; return true; }
-    if (units == "ft") { scale = 0.3048f; return true; }
+    if (units == "m")
+    {
+        scale = 1.0f;
+        return true;
+    }
+    if (units == "cm")
+    {
+        scale = 0.01f;
+        return true;
+    }
+    if (units == "mm")
+    {
+        scale = 0.001f;
+        return true;
+    }
+    if (units == "in")
+    {
+        scale = 0.0254f;
+        return true;
+    }
+    if (units == "ft")
+    {
+        scale = 0.3048f;
+        return true;
+    }
     return false;
 }
 
 }
 
-ImportServer::ImportServer() :
-    _impl(std::make_unique<Impl>())
+ImportServer::ImportServer() : _impl(std::make_unique<Impl>())
 {
 }
 
@@ -109,8 +141,14 @@ ImportServer::~ImportServer()
 
 std::string ImportServer::start(uint32_t port)
 {
-    if (_impl->listenThread.joinable()) return "Service already running";
-    if (port < 1024 || port > 49151) return "Port out of valid range (1024-49151)";
+    if (_impl->listenThread.joinable())
+    {
+        return "Service already running";
+    }
+    if (port < 1024 || port > 49151)
+    {
+        return "Port out of valid range (1024-49151)";
+    }
 
     _impl->server = std::make_unique<httplib::Server>();
     auto& svr = *_impl->server;
@@ -118,27 +156,33 @@ std::string ImportServer::start(uint32_t port)
     // Make an occupied port fail the bind (default SO_REUSEPORT would share it).
     // socket_t is a global typedef in this httplib version (defined before
     // namespace httplib), so the parameter type must stay unqualified.
-    svr.set_socket_options([](socket_t sock) {
-    #ifdef _WIN32
-        httplib::set_socket_opt(sock, SOL_SOCKET, SO_EXCLUSIVEADDRUSE, 1);
-    #else
-        httplib::set_socket_opt(sock, SOL_SOCKET, SO_REUSEADDR, 1);
-    #endif
-    });
+    svr.set_socket_options([](socket_t sock)
+                           {
+#ifdef _WIN32
+                               httplib::set_socket_opt(sock, SOL_SOCKET, SO_EXCLUSIVEADDRUSE, 1);
+#else
+                               httplib::set_socket_opt(sock, SOL_SOCKET, SO_REUSEADDR, 1);
+#endif
+                           });
 
     // One handler may wait for import completion; others answer busy/status.
-    svr.new_task_queue = [] { return new httplib::ThreadPool(4, 32); };
+    svr.new_task_queue = []
+    {
+        return new httplib::ThreadPool(4, 32);
+    };
 
-    svr.Get("/status", [this](const httplib::Request&, httplib::Response& res) {
-        std::string body = std::string("{\"running\":true,\"port\":") +
-            std::to_string(_impl->boundPort) +
-            ",\"busy\":" + (busy() ? "true" : "false") + "}";
-        res.set_content(body, "application/json");
-    });
+    svr.Get("/status", [this](const httplib::Request&, httplib::Response& res)
+            {
+                std::string body = std::string("{\"running\":true,\"port\":") +
+                                   std::to_string(_impl->boundPort) +
+                                   ",\"busy\":" + (busy() ? "true" : "false") + "}";
+                res.set_content(body, "application/json");
+            });
 
-    svr.Post("/import", [this](const httplib::Request& req, httplib::Response& res) {
-        handleImport(req, res);
-    });
+    svr.Post("/import", [this](const httplib::Request& req, httplib::Response& res)
+             {
+                 handleImport(req, res);
+             });
 
     if (!svr.bind_to_port("127.0.0.1", static_cast<int>(port)))
     {
@@ -151,9 +195,10 @@ std::string ImportServer::start(uint32_t port)
         _accepting = true;
     }
 
-    _impl->listenThread = std::thread([&svr]() {
-        svr.listen_after_bind();           // blocks until stop()
-    });
+    _impl->listenThread = std::thread([&svr]()
+                                      {
+                                          svr.listen_after_bind(); // blocks until stop()
+                                      });
     svr.wait_until_ready();
     return "";
 }
@@ -174,12 +219,11 @@ void ImportServer::stop()
     _cv.notify_all();
     if (_impl->listenThread.joinable())
     {
-        _impl->server->stop();             // noexcept, wakes the accept loop
+        _impl->server->stop(); // noexcept, wakes the accept loop
         _impl->listenThread.join();
     }
-    _impl->server.reset();                 // fresh instance for the next start()
+    _impl->server.reset(); // fresh instance for the next start()
     _impl->boundPort = 0;
-
 }
 
 bool ImportServer::isRunning() const
@@ -195,7 +239,10 @@ uint32_t ImportServer::port() const
 bool ImportServer::takePending(ImportRequest& request)
 {
     std::lock_guard lock(_mutex);
-    if (!_slot || _slot->taken || _slot->done) return false;
+    if (!_slot || _slot->taken || _slot->done)
+    {
+        return false;
+    }
     _slot->taken = true;
     request = _slot->request;
     return true;
@@ -205,7 +252,10 @@ void ImportServer::fulfil(uint64_t id, bool ok, const std::string& message)
 {
     {
         std::lock_guard lock(_mutex);
-        if (!_slot || _slot->request.id != id || _slot->done) return;
+        if (!_slot || _slot->request.id != id || _slot->done)
+        {
+            return;
+        }
         _slot->done = true;
         _slot->ok = ok;
         _slot->message = message;
@@ -325,7 +375,10 @@ void ImportServer::handleImport(const httplib::Request& req, httplib::Response& 
     std::string message;
     {
         std::unique_lock lock(_mutex);
-        _cv.wait(lock, [&slot] { return slot->done; });
+        _cv.wait(lock, [&slot]
+                 {
+                     return slot->done;
+                 });
         ok = slot->ok;
         message = slot->message;
     }

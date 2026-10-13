@@ -42,21 +42,39 @@ VkExtent2D RendererDeferred::computeRenderExtent(VkExtent2D viewportExtent, floa
 {
     uint32_t w = static_cast<uint32_t>(std::round(viewportExtent.width * scalePercent / 100.0f));
     uint32_t h = static_cast<uint32_t>(std::round(viewportExtent.height * scalePercent / 100.0f));
-    if (w < 1) w = 1;
-    if (h < 1) h = 1;
-    return { w, h };
+    if (w < 1)
+    {
+        w = 1;
+    }
+    if (h < 1)
+    {
+        h = 1;
+    }
+    return {w, h};
 }
 
 void RendererDeferred::setRenderScalePercent(float percent)
 {
     _engine->device().waitIdle();
-    if (percent < 25.0f) percent = 25.0f;
-    if (percent > 150.0f) percent = 150.0f;
-    if (percent == _renderScalePercent) return;
+    if (percent < 25.0f)
+    {
+        percent = 25.0f;
+    }
+    if (percent > 150.0f)
+    {
+        percent = 150.0f;
+    }
+    if (percent == _renderScalePercent)
+    {
+        return;
+    }
 
     _renderScalePercent = percent;
 
-    if (!_engine) return;
+    if (!_engine)
+    {
+        return;
+    }
 
     auto newRenderExtent = computeRenderExtent(_viewportExtent, _renderScalePercent);
     if (newRenderExtent.width == _renderExtent.width && newRenderExtent.height == _renderExtent.height)
@@ -81,13 +99,11 @@ void RendererDeferred::setRenderScalePercent(float percent)
             _colorImageFormat,
             _renderExtent,
             VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
-            VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
-            VK_IMAGE_USAGE_TRANSFER_DST_BIT |
-            VK_IMAGE_USAGE_SAMPLED_BIT,
+                VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
+                VK_IMAGE_USAGE_TRANSFER_DST_BIT |
+                VK_IMAGE_USAGE_SAMPLED_BIT,
             VK_IMAGE_ASPECT_COLOR_BIT,
-            1, false, 20, VK_SAMPLE_COUNT_1_BIT
-        )
-    );
+            1, false, 20, VK_SAMPLE_COUNT_1_BIT));
 
     _opaqueImage->cleanup();
     _opaqueImage = std::shared_ptr<vulkan::Image>(
@@ -97,13 +113,11 @@ void RendererDeferred::setRenderScalePercent(float percent)
             _colorImageFormat,
             _renderExtent,
             VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
-            VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
-            VK_IMAGE_USAGE_TRANSFER_DST_BIT |
-            VK_IMAGE_USAGE_SAMPLED_BIT,
+                VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
+                VK_IMAGE_USAGE_TRANSFER_DST_BIT |
+                VK_IMAGE_USAGE_SAMPLED_BIT,
             VK_IMAGE_ASPECT_COLOR_BIT,
-            1, false, 20, VK_SAMPLE_COUNT_1_BIT
-        )
-    );
+            1, false, 20, VK_SAMPLE_COUNT_1_BIT));
 
     _transparentImage->cleanup();
     _transparentImage = std::shared_ptr<vulkan::Image>(
@@ -113,16 +127,20 @@ void RendererDeferred::setRenderScalePercent(float percent)
             _colorImageFormat,
             _renderExtent,
             VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
-            VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
-            VK_IMAGE_USAGE_TRANSFER_DST_BIT |
-            VK_IMAGE_USAGE_SAMPLED_BIT,
+                VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
+                VK_IMAGE_USAGE_TRANSFER_DST_BIT |
+                VK_IMAGE_USAGE_SAMPLED_BIT,
             VK_IMAGE_ASPECT_COLOR_BIT,
-            1, false, 20, VK_SAMPLE_COUNT_1_BIT
-        )
-    );
+            1, false, 20, VK_SAMPLE_COUNT_1_BIT));
 
-    if (_motionVectorGenerator) _motionVectorGenerator->resize(_renderExtent);
-    if (_finalPostProcessor)    _finalPostProcessor->resize(_renderExtent, _viewportExtent);
+    if (_motionVectorGenerator)
+    {
+        _motionVectorGenerator->resize(_renderExtent);
+    }
+    if (_finalPostProcessor)
+    {
+        _finalPostProcessor->resize(_renderExtent, _viewportExtent);
+    }
 
     _scene->didResize();
 }
@@ -133,8 +151,8 @@ void RendererDeferred::build(
     VkFormat colorImageFormat,
     VkFormat depthImageFormat,
     VkSampleCountFlagBits, // Ignore swap chain sample count
-    bool isOffscreen
-) {
+    bool isOffscreen)
+{
     VkSampleCountFlagBits sampleCount = VK_SAMPLE_COUNT_1_BIT;
 
     _engine = engine;
@@ -151,15 +169,14 @@ void RendererDeferred::build(
     _environment = std::unique_ptr<EnvironmentResources>(
         new EnvironmentResources(
             _engine,
-            { colorImageFormat },
+            {colorImageFormat},
             depthImageFormat,
-            sampleCount
-        )
-    );
+            sampleCount));
 
     // Create shared data bindings for deferred layers
     _lightDataBinding = std::make_unique<scene::vk::DeferredLightDataBinding>(_engine);
-    if (_engine->rayTracingSupported()) {
+    if (_engine->rayTracingSupported())
+    {
         _rtDataBinding = std::make_unique<vulkan::rt::RayTracingSceneDataBinding>(_engine);
         _reflectionLightDataBinding = std::make_unique<vulkan::rt::ReflectionLightDataBinding>(_engine);
     }
@@ -177,27 +194,37 @@ void RendererDeferred::build(
     _opaqueLayer = std::make_unique<deferred::DeferredLayer>(_engine, deferred::LayerType::Opaque);
     _opaqueLayer->setViewportExtent(_viewportExtent);
     _opaqueLayer->setLightDataBinding(_lightDataBinding.get());
-    if (_rtDataBinding) _opaqueLayer->setRtDataBinding(_rtDataBinding.get());
-    if (_reflectionLightDataBinding) _opaqueLayer->setReflectionLightDataBinding(_reflectionLightDataBinding.get());
+    if (_rtDataBinding)
+    {
+        _opaqueLayer->setRtDataBinding(_rtDataBinding.get());
+    }
+    if (_reflectionLightDataBinding)
+    {
+        _opaqueLayer->setReflectionLightDataBinding(_reflectionLightDataBinding.get());
+    }
     _opaqueLayer->build(_renderExtent, colorImageFormat);
     _opaqueLayer->setScene(_scene.get());
     _opaqueLayer->setEnvironment(_environment.get());
     _opaqueLayer->setRenderQueue(&_renderQueue);
     _opaqueLayer->setBlueNoise(_blueNoise.get());
 
-
     _transparentLayer = std::make_unique<deferred::DeferredLayer>(_engine, deferred::LayerType::Transparent);
     _transparentLayer->setViewportExtent(_viewportExtent);
     _transparentLayer->setLightDataBinding(_lightDataBinding.get());
-    if (_rtDataBinding) _transparentLayer->setRtDataBinding(_rtDataBinding.get());
-    if (_reflectionLightDataBinding) _transparentLayer->setReflectionLightDataBinding(_reflectionLightDataBinding.get());
+    if (_rtDataBinding)
+    {
+        _transparentLayer->setRtDataBinding(_rtDataBinding.get());
+    }
+    if (_reflectionLightDataBinding)
+    {
+        _transparentLayer->setReflectionLightDataBinding(_reflectionLightDataBinding.get());
+    }
     _transparentLayer->build(_renderExtent, colorImageFormat);
     _transparentLayer->setScene(_scene.get());
     _transparentLayer->setEnvironment(_environment.get());
     _transparentLayer->setRenderQueue(&_renderQueue);
     _transparentLayer->setIsTransparent(true);
     _transparentLayer->setBlueNoise(_blueNoise.get());
-
 
     // Create intermediate images
     _skyboxImage = std::shared_ptr<vulkan::Image>(
@@ -207,13 +234,11 @@ void RendererDeferred::build(
             colorImageFormat,
             _renderExtent,
             VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
-            VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
-            VK_IMAGE_USAGE_TRANSFER_DST_BIT |
-            VK_IMAGE_USAGE_SAMPLED_BIT,
+                VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
+                VK_IMAGE_USAGE_TRANSFER_DST_BIT |
+                VK_IMAGE_USAGE_SAMPLED_BIT,
             VK_IMAGE_ASPECT_COLOR_BIT,
-            1, false, 20, VK_SAMPLE_COUNT_1_BIT
-        )
-    );
+            1, false, 20, VK_SAMPLE_COUNT_1_BIT));
 
     _opaqueImage = std::shared_ptr<vulkan::Image>(
         vulkan::Image::createAllocatedImage(
@@ -222,13 +247,11 @@ void RendererDeferred::build(
             colorImageFormat,
             _renderExtent,
             VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
-            VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
-            VK_IMAGE_USAGE_TRANSFER_DST_BIT |
-            VK_IMAGE_USAGE_SAMPLED_BIT,
+                VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
+                VK_IMAGE_USAGE_TRANSFER_DST_BIT |
+                VK_IMAGE_USAGE_SAMPLED_BIT,
             VK_IMAGE_ASPECT_COLOR_BIT,
-            1, false, 20, VK_SAMPLE_COUNT_1_BIT
-        )
-    );
+            1, false, 20, VK_SAMPLE_COUNT_1_BIT));
 
     // Intermediate image for the transparent layer output. The selected final
     // path reads this image and writes to colorImage, which may be a swapchain
@@ -240,16 +263,15 @@ void RendererDeferred::build(
             colorImageFormat,
             _renderExtent,
             VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
-            VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
-            VK_IMAGE_USAGE_TRANSFER_DST_BIT |
-            VK_IMAGE_USAGE_SAMPLED_BIT,
+                VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
+                VK_IMAGE_USAGE_TRANSFER_DST_BIT |
+                VK_IMAGE_USAGE_SAMPLED_BIT,
             VK_IMAGE_ASPECT_COLOR_BIT,
-            1, false, 20, VK_SAMPLE_COUNT_1_BIT
-        )
-    );
+            1, false, 20, VK_SAMPLE_COUNT_1_BIT));
 
     // GizmoAndSelectionRenderer (non-offscreen only)
-    if (!isOffscreen) {
+    if (!isOffscreen)
+    {
         _gizmoAndSelectionRenderer = std::make_unique<manipulation::GizmoAndSelectionRenderer>();
         _gizmoAndSelectionRenderer->init(engine, VK_SAMPLE_COUNT_1_BIT);
     }
@@ -288,14 +310,16 @@ void RendererDeferred::build(
 }
 
 void RendererDeferred::initFrameResources(
-    bg2e::render::vulkan::DescriptorSetAllocator* frameAllocator
-) {
+    bg2e::render::vulkan::DescriptorSetAllocator* frameAllocator)
+{
     _environment->initFrameResources(frameAllocator);
     _lightDataBinding->initFrameResources(frameAllocator);
-    if (_rtDataBinding) {
+    if (_rtDataBinding)
+    {
         _rtDataBinding->initFrameResources(frameAllocator);
     }
-    if (_reflectionLightDataBinding) {
+    if (_reflectionLightDataBinding)
+    {
         _reflectionLightDataBinding->initFrameResources(frameAllocator);
     }
     _skyboxLayer->initFrameResources(frameAllocator);
@@ -304,8 +328,8 @@ void RendererDeferred::initFrameResources(
 }
 
 void RendererDeferred::initScene(
-    std::shared_ptr<bg2e::scene::Node> sceneRoot
-) {
+    std::shared_ptr<bg2e::scene::Node> sceneRoot)
+{
     _scene->setSceneRoot(sceneRoot);
 
     auto skyDomeTexture = std::make_shared<bg2e::base::Texture>();
@@ -316,23 +340,23 @@ void RendererDeferred::initScene(
     envTexture->load(skyDomeTexture);
     _environment->build(
         envTexture,
-        { 2048, 2048 },
-        { 32, 32 },
-        { 1024, 1024 }
-    );
+        {2048, 2048},
+        {32, 32},
+        {1024, 1024});
 
     _scene->updateLights();
 
     _resizeVisitor.resizeViewport(_scene->rootNode(), _viewportExtent);
 
-    _engine->cleanupManager().push([&](VkDevice) {
-        _scene.reset();
-    });
+    _engine->cleanupManager().push([&](VkDevice)
+                                   {
+                                       _scene.reset();
+                                   });
 }
 
 void RendererDeferred::resize(
-    VkExtent2D newExtent
-) {
+    VkExtent2D newExtent)
+{
     _viewportExtent = newExtent;
 
     _opaqueLayer->setViewportExtent(_viewportExtent);
@@ -364,16 +388,14 @@ void RendererDeferred::resize(
             _colorImageFormat,
             _renderExtent,
             VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
-            VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
-            VK_IMAGE_USAGE_TRANSFER_DST_BIT |
-            VK_IMAGE_USAGE_SAMPLED_BIT,
+                VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
+                VK_IMAGE_USAGE_TRANSFER_DST_BIT |
+                VK_IMAGE_USAGE_SAMPLED_BIT,
             VK_IMAGE_ASPECT_COLOR_BIT,
             1,
             false,
             20,
-            VK_SAMPLE_COUNT_1_BIT
-        )
-    );
+            VK_SAMPLE_COUNT_1_BIT));
     _opaqueImage->cleanup();
     _opaqueImage = std::shared_ptr<vulkan::Image>(
         vulkan::Image::createAllocatedImage(
@@ -382,16 +404,14 @@ void RendererDeferred::resize(
             _colorImageFormat,
             _renderExtent,
             VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
-            VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
-            VK_IMAGE_USAGE_TRANSFER_DST_BIT |
-            VK_IMAGE_USAGE_SAMPLED_BIT,
+                VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
+                VK_IMAGE_USAGE_TRANSFER_DST_BIT |
+                VK_IMAGE_USAGE_SAMPLED_BIT,
             VK_IMAGE_ASPECT_COLOR_BIT,
             1,
             false,
             20,
-            VK_SAMPLE_COUNT_1_BIT
-        )
-    );
+            VK_SAMPLE_COUNT_1_BIT));
     _transparentImage->cleanup();
     _transparentImage = std::shared_ptr<vulkan::Image>(
         vulkan::Image::createAllocatedImage(
@@ -400,19 +420,23 @@ void RendererDeferred::resize(
             _colorImageFormat,
             _renderExtent,
             VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
-            VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
-            VK_IMAGE_USAGE_TRANSFER_DST_BIT |
-            VK_IMAGE_USAGE_SAMPLED_BIT,
+                VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
+                VK_IMAGE_USAGE_TRANSFER_DST_BIT |
+                VK_IMAGE_USAGE_SAMPLED_BIT,
             VK_IMAGE_ASPECT_COLOR_BIT,
             1,
             false,
             20,
-            VK_SAMPLE_COUNT_1_BIT
-        )
-    );
+            VK_SAMPLE_COUNT_1_BIT));
 
-    if (_motionVectorGenerator) _motionVectorGenerator->resize(_renderExtent);
-    if (_finalPostProcessor)    _finalPostProcessor->resize(_renderExtent, _viewportExtent);
+    if (_motionVectorGenerator)
+    {
+        _motionVectorGenerator->resize(_renderExtent);
+    }
+    if (_finalPostProcessor)
+    {
+        _finalPostProcessor->resize(_renderExtent, _viewportExtent);
+    }
 
     _resizeVisitor.resizeViewport(_scene->rootNode(), _viewportExtent);
 
@@ -420,8 +444,8 @@ void RendererDeferred::resize(
 }
 
 void RendererDeferred::update(
-    float delta
-) {
+    float delta)
+{
     _deltaTimeMs = delta * 1000.0f;
     updateScene(delta, BG2E_MAX_DEFERRED_LIGHTS);
 }
@@ -433,14 +457,14 @@ void RendererDeferred::draw(
     [[maybe_unused]] const bg2e::render::vulkan::Image* depthImage,
     [[maybe_unused]] const bg2e::render::vulkan::Image* msaaDepthImage,
     bg2e::render::vulkan::FrameResources& frameResources,
-    VkImageLayout & outColorImageLayout,
-    VkImageLayout & outDepthImageLayout,
-    VkImageLayout & outMsaaDepthImageLayout
-) {
+    VkImageLayout& outColorImageLayout,
+    VkImageLayout& outDepthImageLayout,
+    VkImageLayout& outMsaaDepthImageLayout)
+{
     // --- Gather camera matrices before prepareSceneRender modifies the skybox ---
     auto mainCamera = _scene->mainCamera();
     auto viewMatrix = mainCamera->ownerNode()->invertedWorldMatrix();
-    auto origProj   = mainCamera->projectionMatrix();
+    auto origProj = mainCamera->projectionMatrix();
 
     // FSR applies Halton jitter; Direct returns the projection unchanged.
     auto jitteredProj = _finalPostProcessor->prepare(origProj, _frameCounter, _renderExtent);
@@ -486,17 +510,15 @@ void RendererDeferred::draw(
     _skyboxLayer->render(cmd, currentFrame, nullptr, _skyboxImage.get(), frameResources);
 
     vulkan::Image::cmdTransitionImage(cmd, _skyboxImage->handle(),
-        VK_IMAGE_LAYOUT_UNDEFINED,
-        VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
-    );
+                                      VK_IMAGE_LAYOUT_UNDEFINED,
+                                      VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
     // Layer 2: Opaque
     _opaqueLayer->render(cmd, currentFrame, _skyboxImage.get(), _opaqueImage.get(), frameResources);
 
     vulkan::Image::cmdTransitionImage(cmd, _opaqueImage->handle(),
-        VK_IMAGE_LAYOUT_UNDEFINED,
-        VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
-    );
+                                      VK_IMAGE_LAYOUT_UNDEFINED,
+                                      VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
     // Layer 3: Transparent
     _transparentLayer->setOpaqueDepthBuffer(_opaqueLayer->depthBuffer());
@@ -515,26 +537,28 @@ void RendererDeferred::draw(
             cmd, currentFrame,
             _transparentLayer->depthBuffer().get(),
             glm::inverse(origProj * viewMatrix),
-            _prevProjMatrix * _prevViewMatrix
-        );
+            _prevProjMatrix * _prevViewMatrix);
     }
 
     // === Final output (FSR or native direct copy) ===
     vulkan::Image::cmdTransitionImage(
         cmd, _transparentImage->handle(),
         VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-        VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
-    );
+        VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
     float cameraNear = 0.1f, cameraFar = 1000.0f, cameraFovV = glm::radians(60.0f);
     if (auto* proj = mainCamera->projection())
     {
         cameraNear = proj->near();
-        cameraFar  = proj->far();
+        cameraFar = proj->far();
         if (auto* persp = dynamic_cast<bg2e::math::PerspectiveProjection*>(proj))
+        {
             cameraFovV = glm::radians(persp->fov());
+        }
         else if (auto* optical = dynamic_cast<bg2e::math::OpticalProjection*>(proj))
+        {
             cameraFovV = 2.0f * std::atan(optical->frameSize() / (optical->focalLength() * 2.0f));
+        }
     }
 
     _finalPostProcessor->process(
@@ -546,8 +570,7 @@ void RendererDeferred::draw(
         _deltaTimeMs,
         cameraNear,
         cameraFar,
-        cameraFovV
-    );
+        cameraFovV);
 
     // process() guarantees colorImage is in COLOR_ATTACHMENT_OPTIMAL on exit
     // Gizmos (editor-only, non-offscreen)
@@ -560,8 +583,7 @@ void RendererDeferred::draw(
             cmd,
             depthImage->handle(),
             VK_IMAGE_LAYOUT_UNDEFINED,
-            VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL
-        );
+            VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL);
 
         auto colorAttachment = vulkan::Info::attachmentInfo(colorImage->imageView(), nullptr);
         auto depthAttachment = vulkan::Info::depthAttachmentInfo(depthImage->imageView());
@@ -575,7 +597,6 @@ void RendererDeferred::draw(
         vulkan::cmdEndRendering(cmd);
     }
 
-
     // === End scene render (from Renderer base) ===
     endSceneRender();
 
@@ -584,21 +605,25 @@ void RendererDeferred::draw(
     _prevProjMatrix = origProj;
     _frameCounter++;
 
-    outColorImageLayout     = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-    outDepthImageLayout     = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
+    outColorImageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    outDepthImageLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
     outMsaaDepthImageLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
 }
 
-void RendererDeferred::cleanup() {
-    if (_finalPostProcessor) {
+void RendererDeferred::cleanup()
+{
+    if (_finalPostProcessor)
+    {
         _finalPostProcessor->cleanup();
         _finalPostProcessor.reset();
     }
-    if (_standbyFSRPostProcessor) {
+    if (_standbyFSRPostProcessor)
+    {
         _standbyFSRPostProcessor->cleanup();
         _standbyFSRPostProcessor.reset();
     }
-    if (_motionVectorGenerator) {
+    if (_motionVectorGenerator)
+    {
         _motionVectorGenerator->cleanup();
         _motionVectorGenerator.reset();
     }
@@ -1068,15 +1093,17 @@ std::string RendererDeferred::scaleProcessorName() const
 
 std::vector<std::string> RendererDeferred::scaleOptions() const
 {
-    if (!_fsrAvailable) return { "Direct (100%, No AA)" };
+    if (!_fsrAvailable)
+    {
+        return {"Direct (100%, No AA)"};
+    }
     return {
         "FSR Native AA (100%)",
         "FSR Quality (67%)",
         "FSR Balanced (59%)",
         "FSR Performance (50%)",
         "FSR Ultra Performance (33%)",
-        "Direct (100%, No AA)"
-    };
+        "Direct (100%, No AA)"};
 }
 
 void RendererDeferred::setScaleOption(uint32_t index)
@@ -1093,23 +1120,34 @@ void RendererDeferred::setScaleOption(uint32_t index)
         FinalRenderMode::FSRBalanced,
         FinalRenderMode::FSRPerformance,
         FinalRenderMode::FSRUltraPerformance,
-        FinalRenderMode::Direct
-    };
+        FinalRenderMode::Direct};
     constexpr uint32_t modeCount = sizeof(modes) / sizeof(modes[0]);
-    if (index < modeCount) setFinalRenderMode(modes[index]);
+    if (index < modeCount)
+    {
+        setFinalRenderMode(modes[index]);
+    }
 }
 
 uint32_t RendererDeferred::scaleOption() const
 {
-    if (!_fsrAvailable) return 0;
+    if (!_fsrAvailable)
+    {
+        return 0;
+    }
     switch (_finalRenderMode)
     {
-        case FinalRenderMode::FSRNativeAA:          return 0;
-        case FinalRenderMode::FSRQuality:           return 1;
-        case FinalRenderMode::FSRBalanced:          return 2;
-        case FinalRenderMode::FSRPerformance:       return 3;
-        case FinalRenderMode::FSRUltraPerformance:  return 4;
-        case FinalRenderMode::Direct:               return 5;
+    case FinalRenderMode::FSRNativeAA:
+        return 0;
+    case FinalRenderMode::FSRQuality:
+        return 1;
+    case FinalRenderMode::FSRBalanced:
+        return 2;
+    case FinalRenderMode::FSRPerformance:
+        return 3;
+    case FinalRenderMode::FSRUltraPerformance:
+        return 4;
+    case FinalRenderMode::Direct:
+        return 5;
     }
     return 3;
 }
@@ -1120,7 +1158,10 @@ void RendererDeferred::setFinalRenderMode(FinalRenderMode mode)
     {
         mode = FinalRenderMode::Direct;
     }
-    if (_finalPostProcessor && mode == _finalRenderMode) return;
+    if (_finalPostProcessor && mode == _finalRenderMode)
+    {
+        return;
+    }
 
 #if !defined(__APPLE__)
     // Quality changes within FSR reuse the active processor. The normal render
@@ -1136,12 +1177,23 @@ void RendererDeferred::setFinalRenderMode(FinalRenderMode mode)
             uint32_t fsrIndex = 2;
             switch (mode)
             {
-                case FinalRenderMode::FSRQuality:          fsrIndex = 0; break;
-                case FinalRenderMode::FSRBalanced:         fsrIndex = 1; break;
-                case FinalRenderMode::FSRPerformance:      fsrIndex = 2; break;
-                case FinalRenderMode::FSRUltraPerformance: fsrIndex = 3; break;
-                case FinalRenderMode::FSRNativeAA:         fsrIndex = 4; break;
-                case FinalRenderMode::Direct: break;
+            case FinalRenderMode::FSRQuality:
+                fsrIndex = 0;
+                break;
+            case FinalRenderMode::FSRBalanced:
+                fsrIndex = 1;
+                break;
+            case FinalRenderMode::FSRPerformance:
+                fsrIndex = 2;
+                break;
+            case FinalRenderMode::FSRUltraPerformance:
+                fsrIndex = 3;
+                break;
+            case FinalRenderMode::FSRNativeAA:
+                fsrIndex = 4;
+                break;
+            case FinalRenderMode::Direct:
+                break;
             }
             fsrProc->setScaleOption(fsrIndex);
             _finalRenderMode = mode;
@@ -1188,12 +1240,23 @@ void RendererDeferred::createFinalPostProcessor(FinalRenderMode mode)
     uint32_t fsrIndex = 2;
     switch (mode)
     {
-        case FinalRenderMode::FSRQuality:          fsrIndex = 0; break;
-        case FinalRenderMode::FSRBalanced:         fsrIndex = 1; break;
-        case FinalRenderMode::FSRPerformance:      fsrIndex = 2; break;
-        case FinalRenderMode::FSRUltraPerformance: fsrIndex = 3; break;
-        case FinalRenderMode::FSRNativeAA:         fsrIndex = 4; break;
-        case FinalRenderMode::Direct: break;
+    case FinalRenderMode::FSRQuality:
+        fsrIndex = 0;
+        break;
+    case FinalRenderMode::FSRBalanced:
+        fsrIndex = 1;
+        break;
+    case FinalRenderMode::FSRPerformance:
+        fsrIndex = 2;
+        break;
+    case FinalRenderMode::FSRUltraPerformance:
+        fsrIndex = 3;
+        break;
+    case FinalRenderMode::FSRNativeAA:
+        fsrIndex = 4;
+        break;
+    case FinalRenderMode::Direct:
+        break;
     }
 
     if (_finalPostProcessor)
@@ -1246,28 +1309,26 @@ void RendererDeferred::createFinalPostProcessor(FinalRenderMode mode)
 
 void RendererDeferred::updateLights(
     const std::vector<std::shared_ptr<bg2e::scene::LightComponent>>& lightComponents,
-    [[maybe_unused]] uint32_t maxLights
-) {
+    [[maybe_unused]] uint32_t maxLights)
+{
     _lights.clear();
     _lights.resize(lightComponents.size());
 
     // Deferred render: maxLight is ignored
 
-    for (auto & comp : lightComponents)
+    for (auto& comp : lightComponents)
     {
-        _lights.push_back({
-            .position = comp->position(),
-            .intensity = comp->light().intensity(),
-            .color = comp->light().color(),
-            .direction = comp->direction(),
-            .type = comp->light().type(),
-            .spotAngle = comp->light().spotAngle(),
-            .spotCutoff = comp->light().spotCutoff(),
-            .castShadows = comp->light().castShadows() ? 1 : 0,
-            .sourceSize = comp->light().sourceSize(),
-            .shadowSamples = static_cast<int32_t>(comp->light().shadowSamples()),
-            .affectsReflections = comp->light().affectsReflections() ? 1 : 0
-        });
+        _lights.push_back({.position = comp->position(),
+                           .intensity = comp->light().intensity(),
+                           .color = comp->light().color(),
+                           .direction = comp->direction(),
+                           .type = comp->light().type(),
+                           .spotAngle = comp->light().spotAngle(),
+                           .spotCutoff = comp->light().spotCutoff(),
+                           .castShadows = comp->light().castShadows() ? 1 : 0,
+                           .sourceSize = comp->light().sourceSize(),
+                           .shadowSamples = static_cast<int32_t>(comp->light().shadowSamples()),
+                           .affectsReflections = comp->light().affectsReflections() ? 1 : 0});
     }
 }
 

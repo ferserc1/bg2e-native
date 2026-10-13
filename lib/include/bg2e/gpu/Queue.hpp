@@ -29,7 +29,7 @@ namespace gpu {
 class CommandBuffer;
 
 class BG2E_API Queue {
-public:
+  public:
     virtual ~Queue() = default;
     virtual uint32_t familyIndex() const = 0;
     virtual bool isValid() const = 0;

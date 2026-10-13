@@ -27,12 +27,13 @@ layout(location = 1) in vec3 inPosition;
 layout(set = 1, binding = 1) uniform sampler2D colorTex;
 layout(set = 1, binding = 2) uniform samplerCube giTex;
 
-void main() {
+void main()
+{
     float gamma = 2.2;
-    
+
     vec3 color = texture(colorTex, inTexCoord).rgb;
     vec3 lighting = texture(giTex, inPosition).rgb;
-    
+
     color = pow(color, vec3(1.0 / gamma));
     colorAttachment1 = vec4(color, 1.0f) * vec4(lighting, 1.0);
     colorAttachment2 = vec4(lighting, 1.0);

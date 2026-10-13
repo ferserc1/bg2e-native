@@ -22,11 +22,9 @@
 
 namespace bg2e::scene::vk {
 
-void DeferredLightDataBinding::initFrameResources(bg2e::render::vulkan::DescriptorSetAllocator * frameAllocator)
+void DeferredLightDataBinding::initFrameResources(bg2e::render::vulkan::DescriptorSetAllocator* frameAllocator)
 {
-    frameAllocator->requirePoolSizeRatio(1, {
-        { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, BG2E_MAX_DEFERRED_LIGHTS }
-    });
+    frameAllocator->requirePoolSizeRatio(1, {{VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, BG2E_MAX_DEFERRED_LIGHTS}});
 }
 
 VkDescriptorSetLayout DeferredLightDataBinding::createLayout(VkShaderStageFlags shaderStages)
@@ -43,39 +41,35 @@ VkDescriptorSetLayout DeferredLightDataBinding::createLayout(VkShaderStageFlags 
 }
 
 VkDescriptorSet DeferredLightDataBinding::newDescriptorSet(
-    bg2e::render::vulkan::FrameResources & frameResources,
-    const std::vector<base::LightData> & lights
-) {
+    bg2e::render::vulkan::FrameResources& frameResources,
+    const std::vector<base::LightData>& lights)
+{
     if (_layout == VK_NULL_HANDLE)
     {
         throw std::runtime_error("DeferredLightDataBinding::newDescriptorSet() - The descriptor set layout is not created");
     }
 
-    render::vulkan::Buffer * lightBuffer = nullptr;
+    render::vulkan::Buffer* lightBuffer = nullptr;
     auto bufferLightCount = lights.size();
     if (bufferLightCount == 0)
     {
         // Create a dummy black light to prevent pass Vulkan an empty buffer
-        std::vector<base::LightData> dummyLights {
-            {
-                .position = glm::vec3(0.0f, 0.0f, 0.0f),
-                .intensity = 0.0f,
-                .color = base::Color::Black(),
-                .direction = glm::vec3(1.0f, 0.0f, 0.0f),
-                .type = base::Light::LightType::TypeDisabled,
-                .spotAngle = 0.0f,
-                .spotCutoff = 0.0f,
-                .castShadows = 0,
-                .sourceSize = 0.0f,
-                .shadowSamples = 0
-            }
-        };
+        std::vector<base::LightData> dummyLights{
+            {.position = glm::vec3(0.0f, 0.0f, 0.0f),
+             .intensity = 0.0f,
+             .color = base::Color::Black(),
+             .direction = glm::vec3(1.0f, 0.0f, 0.0f),
+             .type = base::Light::LightType::TypeDisabled,
+             .spotAngle = 0.0f,
+             .spotCutoff = 0.0f,
+             .castShadows = 0,
+             .sourceSize = 0.0f,
+             .shadowSamples = 0}};
         lightBuffer = bg2e::render::vulkan::macros::createBuffer(
             _engine,
             frameResources,
             dummyLights,
-            VK_BUFFER_USAGE_STORAGE_BUFFER_BIT
-        );
+            VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
         bufferLightCount = 1;
     }
     else
@@ -84,16 +78,14 @@ VkDescriptorSet DeferredLightDataBinding::newDescriptorSet(
             _engine,
             frameResources,
             lights,
-            VK_BUFFER_USAGE_STORAGE_BUFFER_BIT
-        );
+            VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
     }
 
     auto ds = frameResources.newDescriptorSet(_layout);
     ds->beginUpdate();
-        ds->addBuffer(
-            0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-            lightBuffer, sizeof(base::LightData) * bufferLightCount, 0
-        );
+    ds->addBuffer(
+        0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+        lightBuffer, sizeof(base::LightData) * bufferLightCount, 0);
     ds->endUpdate();
     return ds->descriptorSet();
 }

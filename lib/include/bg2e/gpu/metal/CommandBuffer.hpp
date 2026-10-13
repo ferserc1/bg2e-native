@@ -39,7 +39,7 @@ class ComputePipeline;
 class PipelineLayout;
 
 class CommandBuffer : public gpu::CommandBuffer {
-public:
+  public:
     CommandBuffer() = default;
 #if BG2E_IS_MAC
     CommandBuffer(metal::Device* device, MTL::CommandBuffer* cmd);
@@ -84,19 +84,29 @@ public:
     bool isValid() const override;
 
 #if BG2E_IS_MAC
-    MTL::CommandBuffer* handle() const { return _cmd; }
+    MTL::CommandBuffer* handle() const
+    {
+        return _cmd;
+    }
     // Borrowed native objects; valid only inside the active rendering scope.
     MTL::RenderPassDescriptor* renderPassDescriptor() const;
     MTL::RenderCommandEncoder* materializeRenderEncoder();
 #endif
 
-private:
+  private:
     friend class Device;
     friend class WindowSurface;
     friend class OffscreenSurface;
-    void associateFrame(std::shared_ptr<gpu::SurfaceFrame> frame) { _submissionFrame = std::move(frame); }
-    void waitForCompletion() {
-        if (!_completion) throw std::logic_error("Command buffer has not been submitted");
+    void associateFrame(std::shared_ptr<gpu::SurfaceFrame> frame)
+    {
+        _submissionFrame = std::move(frame);
+    }
+    void waitForCompletion()
+    {
+        if (!_completion)
+        {
+            throw std::logic_error("Command buffer has not been submitted");
+        }
         _completion->wait();
     }
 
@@ -108,29 +118,29 @@ private:
 #if BG2E_IS_MAC
     void ensureRenderEncoder();
 
-    metal::Device*              _device      = nullptr;
-    MTL::CommandBuffer*         _cmd         = nullptr;
+    metal::Device* _device = nullptr;
+    MTL::CommandBuffer* _cmd = nullptr;
     bool _submitted = false;
-    MTL::RenderPassDescriptor*  _passDesc    = nullptr;
-    MTL::RenderCommandEncoder*  _encoder     = nullptr;
+    MTL::RenderPassDescriptor* _passDesc = nullptr;
+    MTL::RenderCommandEncoder* _encoder = nullptr;
     MTL::ComputeCommandEncoder* _computeEncoder = nullptr;
-    metal::SurfaceFrame*        _renderFrame = nullptr;
-    bool                        _recording   = false;
-    metal::GraphicsPipeline*    _boundPipeline = nullptr;
-    metal::ComputePipeline*     _boundComputePipeline = nullptr;
-    gpu::RayTracingPipeline*    _boundRayTracingPipeline = nullptr;
-    metal::PipelineLayout*      _boundLayout = nullptr;
+    metal::SurfaceFrame* _renderFrame = nullptr;
+    bool _recording = false;
+    metal::GraphicsPipeline* _boundPipeline = nullptr;
+    metal::ComputePipeline* _boundComputePipeline = nullptr;
+    gpu::RayTracingPipeline* _boundRayTracingPipeline = nullptr;
+    metal::PipelineLayout* _boundLayout = nullptr;
 
-    MTL::Buffer*                _boundIndexBuffer       = nullptr;
-    NS::UInteger                _boundIndexBufferOffset = 0;
+    MTL::Buffer* _boundIndexBuffer = nullptr;
+    NS::UInteger _boundIndexBufferOffset = 0;
 
     gpu::Image* _renderColorImage = nullptr;
     gpu::Image* _renderDepthImage = nullptr;
 
-    gpu::CubeMap*  _renderCubeMap     = nullptr;
-    uint32_t       _renderCubeFace    = 0;
-    uint32_t       _renderCubeMipLevel = 0;
-    bool           _renderingCubeMap  = false;
+    gpu::CubeMap* _renderCubeMap = nullptr;
+    uint32_t _renderCubeFace = 0;
+    uint32_t _renderCubeMipLevel = 0;
+    bool _renderingCubeMap = false;
 #endif
 };
 

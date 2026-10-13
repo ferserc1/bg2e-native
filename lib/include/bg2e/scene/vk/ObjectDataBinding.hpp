@@ -28,26 +28,26 @@ namespace scene {
 namespace vk {
 
 class BG2E_API ObjectDataBinding : public bg2e::render::vulkan::PipelineDataBinding {
-public:
-    struct ObjectUniforms
-    {
+  public:
+    struct ObjectUniforms {
         glm::mat4 modelMatrix;
-        
+
         render::uniforms::PBRMaterialData material;
     };
 
-    ObjectDataBinding(bg2e::render::Engine * engine) : PipelineDataBinding(engine) {}
-    
-    void initFrameResources(bg2e::render::vulkan::DescriptorSetAllocator * frameAllocator) override;
-    
+    ObjectDataBinding(bg2e::render::Engine* engine) : PipelineDataBinding(engine)
+    {
+    }
+
+    void initFrameResources(bg2e::render::vulkan::DescriptorSetAllocator* frameAllocator) override;
+
     // The invoker of this function is the owner of the Set Descriptor and shall be responsible for deleting it.
     VkDescriptorSetLayout createLayout(VkShaderStageFlags shaderStages = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT) override;
-    
+
     VkDescriptorSet newDescriptorSet(
-        bg2e::render::vulkan::FrameResources & frameResources,
-        bg2e::render::MaterialBase * material,
-        const glm::mat4& modelMatrix
-    );
+        bg2e::render::vulkan::FrameResources& frameResources,
+        bg2e::render::MaterialBase* material,
+        const glm::mat4& modelMatrix);
 };
 
 }

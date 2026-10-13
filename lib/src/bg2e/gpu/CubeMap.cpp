@@ -57,18 +57,17 @@ void CubeMap::create(const CubeMapDescription& description)
         mipLevels = mipLevelsForMinSize(description.size, description.minMipSize);
     }
 
-    _size      = description.size;
+    _size = description.size;
     _mipLevels = mipLevels;
-    _format    = description.format;
+    _format = description.format;
 
     _image = device()->createImage(ImageDescription{
-        .size      = { description.size, description.size },
-        .format    = description.format,
-        .usage     = description.usage,
-        .type      = ImageType::Cubemap,
+        .size = {description.size, description.size},
+        .format = description.format,
+        .usage = description.usage,
+        .type = ImageType::Cubemap,
         .mipLevels = mipLevels,
-        .debugName = description.debugName
-    });
+        .debugName = description.debugName});
 }
 
 bool CubeMap::isValid() const
@@ -83,9 +82,9 @@ void CubeMap::cleanup()
         _image->cleanup();
         _image.reset();
     }
-    _size      = 0;
+    _size = 0;
     _mipLevels = 1;
-    _format    = PixelFormat::Undefined;
+    _format = PixelFormat::Undefined;
 }
 
 }

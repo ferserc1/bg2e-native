@@ -28,8 +28,9 @@ namespace bg2e {
 namespace base {
 
 class Light {
-public:
-    enum LightType {
+  public:
+    enum LightType
+    {
         TypeOmni = 5,
         TypeSpot = 1,
         TypeDirectional = 4,
@@ -40,88 +41,181 @@ public:
     Light() = default;
     virtual ~Light() = default;
 
-    virtual void setColor(const Color& color) { _color = color; }
-    virtual const Color& color() const { return _color; }
+    virtual void setColor(const Color& color)
+    {
+        _color = color;
+    }
+    virtual const Color& color() const
+    {
+        return _color;
+    }
 
-    virtual void setIntensity(float intensity) { _intensity = intensity; }
-    virtual float intensity() const { return _intensity; }
+    virtual void setIntensity(float intensity)
+    {
+        _intensity = intensity;
+    }
+    virtual float intensity() const
+    {
+        return _intensity;
+    }
 
-    virtual void setType(LightType type) { _type = type; }
-    virtual LightType type() const { return _type; }
+    virtual void setType(LightType type)
+    {
+        _type = type;
+    }
+    virtual LightType type() const
+    {
+        return _type;
+    }
 
-    virtual void setSpotAngle(float a) { _spotAngle = a; }
-    virtual float spotAngle() const { return _spotAngle; }
+    virtual void setSpotAngle(float a)
+    {
+        _spotAngle = a;
+    }
+    virtual float spotAngle() const
+    {
+        return _spotAngle;
+    }
 
-    virtual void setSpotCutoff(float a) { _spotCutoff = a; }
-    virtual float spotCutoff() const { return _spotCutoff; }
+    virtual void setSpotCutoff(float a)
+    {
+        _spotCutoff = a;
+    }
+    virtual float spotCutoff() const
+    {
+        return _spotCutoff;
+    }
 
-    virtual void setCastShadows(bool cast) { _castShadows = cast; }
-    virtual bool castShadows() const { return _castShadows; }
+    virtual void setCastShadows(bool cast)
+    {
+        _castShadows = cast;
+    }
+    virtual bool castShadows() const
+    {
+        return _castShadows;
+    }
 
-    virtual void setSourceSize(float size) { _sourceSize = size; }
-    virtual float sourceSize() const { return _sourceSize; }
+    virtual void setSourceSize(float size)
+    {
+        _sourceSize = size;
+    }
+    virtual float sourceSize() const
+    {
+        return _sourceSize;
+    }
 
-    virtual void setShadowSamples(uint32_t samples) { _shadowSamples = samples; }
-    virtual uint32_t shadowSamples() const { return _shadowSamples; }
+    virtual void setShadowSamples(uint32_t samples)
+    {
+        _shadowSamples = samples;
+    }
+    virtual uint32_t shadowSamples() const
+    {
+        return _shadowSamples;
+    }
 
-    virtual void setAffectsReflections(bool affects) { _affectsReflections = affects; }
-    virtual bool affectsReflections() const { return _affectsReflections; }
+    virtual void setAffectsReflections(bool affects)
+    {
+        _affectsReflections = affects;
+    }
+    virtual bool affectsReflections() const
+    {
+        return _affectsReflections;
+    }
 
     std::string typeString() const
     {
         switch (_type)
         {
-            case TypeOmni:
-                return "kTypePoint";
-            case TypeSpot:
-                return "kTypeSpot";
-            case TypeDirectional:
-                return "kTypeDirectional";
-            default:
-                return "kTypeDisabled";
+        case TypeOmni:
+            return "kTypePoint";
+        case TypeSpot:
+            return "kTypeSpot";
+        case TypeDirectional:
+            return "kTypeDirectional";
+        default:
+            return "kTypeDisabled";
         }
     }
 
     void deserialize(std::shared_ptr<json::JsonNode> jsonData)
     {
         json::ObjectReader reader(jsonData);
-        if (!reader.isValid()) return;
+        if (!reader.isValid())
+        {
+            return;
+        }
 
-        if (auto color = reader.getColor("color")) _color = *color;
-        if (auto intensity = reader.getNumber("intensity")) _intensity = *intensity;
+        if (auto color = reader.getColor("color"))
+        {
+            _color = *color;
+        }
+        if (auto intensity = reader.getNumber("intensity"))
+        {
+            _intensity = *intensity;
+        }
         if (auto type = reader.getString("type"))
         {
-            if (*type == "kTypePoint") _type = TypeOmni;
-            else if (*type == "kTypeSpot") _type = TypeSpot;
-            else if (*type == "kTypeDirectional") _type = TypeDirectional;
-            else _type = TypeDisabled;
+            if (*type == "kTypePoint")
+            {
+                _type = TypeOmni;
+            }
+            else if (*type == "kTypeSpot")
+            {
+                _type = TypeSpot;
+            }
+            else if (*type == "kTypeDirectional")
+            {
+                _type = TypeDirectional;
+            }
+            else
+            {
+                _type = TypeDisabled;
+            }
         }
-        if (auto value = reader.getNumber("spotAngle")) _spotAngle = *value;
-        if (auto value = reader.getNumber("spotCutoff")) _spotCutoff = *value;
-        if (auto value = reader.getBool("castShadows")) _castShadows = *value;
-        if (auto value = reader.getNumber("sourceSize")) _sourceSize = *value;
-        if (auto value = reader.getInteger<uint32_t>("shadowSamples")) _shadowSamples = *value;
-        if (auto value = reader.getBool("affectsReflections")) _affectsReflections = *value;
+        if (auto value = reader.getNumber("spotAngle"))
+        {
+            _spotAngle = *value;
+        }
+        if (auto value = reader.getNumber("spotCutoff"))
+        {
+            _spotCutoff = *value;
+        }
+        if (auto value = reader.getBool("castShadows"))
+        {
+            _castShadows = *value;
+        }
+        if (auto value = reader.getNumber("sourceSize"))
+        {
+            _sourceSize = *value;
+        }
+        if (auto value = reader.getInteger<uint32_t>("shadowSamples"))
+        {
+            _shadowSamples = *value;
+        }
+        if (auto value = reader.getBool("affectsReflections"))
+        {
+            _affectsReflections = *value;
+        }
     }
-    
+
     std::shared_ptr<json::JsonNode> serialize()
     {
         using namespace bg2e::json;
         return JSON(JsonObject{
-            { "color", JSON(_color) },
-            { "intensity", JSON(_intensity) },
-            { "type", JSON(typeString()) },
-            { "spotAngle", JSON(_spotAngle) },
-            { "spotCutoff", JSON(_spotCutoff) },
-            { "castShadows", JSON(_castShadows) },
-            { "sourceSize", JSON(_sourceSize) },
-            { "shadowSamples", JSON(static_cast<int>(_shadowSamples)) },
-            { "affectsReflections", JSON(_affectsReflections) },
+            {"color", JSON(_color)},
+            {"intensity", JSON(_intensity)},
+            {"type", JSON(typeString())},
+            {"spotAngle", JSON(_spotAngle)},
+            {"spotCutoff", JSON(_spotCutoff)},
+            {"castShadows", JSON(_castShadows)},
+            {"sourceSize", JSON(_sourceSize)},
+            {"shadowSamples", JSON(static_cast<int>(_shadowSamples))},
+            {"affectsReflections", JSON(_affectsReflections)},
         });
     }
 
-protected:
-    Color _color { 1.0f, 1.0f, 1.0f, 1.0f };
+  protected:
+    Color _color{1.0f, 1.0f, 1.0f, 1.0f};
     float _intensity = 1.0f;
     LightType _type = TypeOmni;
     float _spotAngle = 22.0f;
@@ -132,8 +226,7 @@ protected:
     bool _affectsReflections = true;
 };
 
-struct LightData
-{
+struct LightData {
     glm::vec3 position;
     float intensity;
 

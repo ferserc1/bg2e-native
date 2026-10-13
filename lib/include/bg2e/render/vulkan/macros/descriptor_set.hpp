@@ -42,29 +42,29 @@ namespace macros {
 // will be automatically released when the frame is done.
 template <typename T>
 DescriptorSet* uniformBufferDescriptorSet(
-    Engine * engine,
+    Engine* engine,
     FrameResources& frameResources,
     VkDescriptorSetLayout descriptorSetLayout,
-    const T& data, uint32_t currentFrame
-) {
-     auto uniformBuffer = Buffer::createAllocatedBuffer(
+    const T& data, uint32_t currentFrame)
+{
+    auto uniformBuffer = Buffer::createAllocatedBuffer(
         engine,
         sizeof(T),
         VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
         VMA_MEMORY_USAGE_CPU_ONLY,
-        "Uniform Buffer Descriptor Set"
-    );
-    
+        "Uniform Buffer Descriptor Set");
+
     auto dataPtr = reinterpret_cast<T*>(uniformBuffer->allocatedData());
     *dataPtr = data;
     uniformBuffer->flushAllocatedData();
-    
+
     auto descriptorSet = frameResources.newDescriptorSet(descriptorSetLayout);
     descriptorSet->updateBuffer(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, uniformBuffer, sizeof(T), 0);
-    frameResources.cleanupManager.push([&, uniformBuffer](VkDevice dev) {
-        uniformBuffer->cleanup();
-        delete uniformBuffer;
-    });
+    frameResources.cleanupManager.push([&, uniformBuffer](VkDevice dev)
+                                       {
+                                           uniformBuffer->cleanup();
+                                           delete uniformBuffer;
+                                       });
     return descriptorSet;
 }
 

@@ -33,9 +33,8 @@ namespace bg2e::utils {
 
 /** Returns the camera's vertical FOV in degrees, or fallback if unavailable. */
 BG2E_API float cameraVerticalFieldOfView(
-    scene::CameraComponent * camera,
-    float fallback = 35.0f
-);
+    scene::CameraComponent* camera,
+    float fallback = 35.0f);
 
 /**
  * Applies an analyzed camera candidate to an orbit controller. The distance is
@@ -43,8 +42,7 @@ BG2E_API float cameraVerticalFieldOfView(
  */
 BG2E_API void applyViewpointToOrbitCamera(
     const render::CameraCandidate& candidate,
-    scene::OrbitCameraComponent * orbitCamera,
-    scene::CameraComponent * camera
-);
+    scene::OrbitCameraComponent* orbitCamera,
+    scene::CameraComponent* camera);
 
 }

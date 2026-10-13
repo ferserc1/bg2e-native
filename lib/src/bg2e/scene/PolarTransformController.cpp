@@ -81,8 +81,7 @@ void PolarTransformControllerComponent::update([[maybe_unused]] float delta)
         polarMatrix = glm::rotate(polarMatrix, glm::radians(_elevation), glm::vec3{-1.0f, 0.0f, 0.0f});
 
         glm::vec3 position = glm::vec3(
-            polarMatrix * glm::vec4{0.0f, 0.0f, _distance, 1.0f}
-        );
+            polarMatrix * glm::vec4{0.0f, 0.0f, _distance, 1.0f});
 
         glm::mat4 finalMatrix{1.0f};
         finalMatrix = glm::translate(finalMatrix, position);
@@ -109,13 +108,34 @@ void PolarTransformControllerComponent::deserialize(std::shared_ptr<json::JsonNo
     Component::deserialize(jsonData, {}, engine);
 
     json::ObjectReader reader(jsonData);
-    if (auto value = reader.getNumber("azimuth")) setAzimuth(*value);
-    if (auto value = reader.getNumber("elevation")) setElevation(*value);
-    if (auto value = reader.getNumber("distance")) setDistance(*value);
-    if (auto value = reader.getGlmVec3("target")) _target = *value;
-    if (auto value = reader.getNumber("eulerX")) _eulerX = *value;
-    if (auto value = reader.getNumber("eulerY")) _eulerY = *value;
-    if (auto value = reader.getNumber("eulerZ")) _eulerZ = *value;
+    if (auto value = reader.getNumber("azimuth"))
+    {
+        setAzimuth(*value);
+    }
+    if (auto value = reader.getNumber("elevation"))
+    {
+        setElevation(*value);
+    }
+    if (auto value = reader.getNumber("distance"))
+    {
+        setDistance(*value);
+    }
+    if (auto value = reader.getGlmVec3("target"))
+    {
+        _target = *value;
+    }
+    if (auto value = reader.getNumber("eulerX"))
+    {
+        _eulerX = *value;
+    }
+    if (auto value = reader.getNumber("eulerY"))
+    {
+        _eulerY = *value;
+    }
+    if (auto value = reader.getNumber("eulerZ"))
+    {
+        _eulerZ = *value;
+    }
 }
 
 std::shared_ptr<json::JsonNode> PolarTransformControllerComponent::serialize(const std::filesystem::path& basePath)

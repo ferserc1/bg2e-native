@@ -27,84 +27,74 @@ namespace ui {
 
 // Scalar numeric value editors (input, slider and drag widgets)
 class BG2E_API Numeric {
-public:
+  public:
     static bool number(
         const std::string& label,
-        int * value,
-        bool sameLine = false
-    );
+        int* value,
+        bool sameLine = false);
 
     static bool number(
         const std::string& label,
-        float * value,
-        bool sameLine = false
-    );
+        float* value,
+        bool sameLine = false);
 
     static bool number(
         const std::string& label,
-        double * value,
-        bool sameLine = false
-    );
+        double* value,
+        bool sameLine = false);
 
     static bool slider(
         const std::string& label,
-        int * value,
+        int* value,
         int min = 0,
         int max = 100,
-        bool sameLine = false
-    );
+        bool sameLine = false);
 
     static bool slider(
         const std::string& label,
-        float * value,
+        float* value,
         float min = 0.0f,
         float max = 1.0f,
-        bool sameLine = false
-    );
+        bool sameLine = false);
 
     static bool sliderInt(
         const std::string& label,
-        int * value,
+        int* value,
         int min = 0,
         int max = 255,
-        bool sameLine = false
-    );
+        bool sameLine = false);
 
     static bool sliderFloat(
         const std::string& label,
-        float * value,
+        float* value,
         float min = 0.0f,
         float max = 1.0f,
-        bool sameLine = false
-    );
+        bool sameLine = false);
 
     static bool sliderDouble(
         const std::string& label,
-        double * value,
+        double* value,
         double min = 0.0,
         double max = 1.0,
-        bool sameLine = false
-    );
+        bool sameLine = false);
 
     // min == max == 0 means unclamped range (standard ImGui convention)
     static bool drag(
         const std::string& label,
-        float * value,
+        float* value,
         float speed = 0.1f,
         float min = 0.0f,
         float max = 0.0f,
-        bool sameLine = false
-    );
+        bool sameLine = false);
 
     // min == max == 0 means unclamped range (standard ImGui convention)
     static bool drag(
         const std::string& label,
-        int * value,
+        int* value,
         float speed = 1.0f,
         int min = 0,
         int max = 0,
-        bool sameLine = false
-    );
+        bool sameLine = false);
 };
 
 }

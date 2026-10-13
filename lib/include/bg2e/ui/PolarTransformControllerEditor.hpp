@@ -26,20 +26,20 @@
 
 namespace bg2e {
 namespace scene {
-    class PolarTransformControllerComponent;
+class PolarTransformControllerComponent;
 }
 namespace ui {
 
 class BG2E_API PolarTransformControllerEditor {
-public:
+  public:
     virtual ~PolarTransformControllerEditor();
 
-    void setComponent(scene::PolarTransformControllerComponent * comp)
+    void setComponent(scene::PolarTransformControllerComponent* comp)
     {
         setComponent(std::dynamic_pointer_cast<scene::PolarTransformControllerComponent>(comp->shared_from_this()));
     }
 
-    void setComponent(const std::shared_ptr<scene::PolarTransformControllerComponent> & component)
+    void setComponent(const std::shared_ptr<scene::PolarTransformControllerComponent>& component)
     {
         _component = component;
     }
@@ -53,9 +53,12 @@ public:
 
     void cleanup();
 
-    inline void onChanged(std::function<void()> cb) { _onChangedFunction = cb; }
+    inline void onChanged(std::function<void()> cb)
+    {
+        _onChangedFunction = cb;
+    }
 
-protected:
+  protected:
     std::weak_ptr<scene::PolarTransformControllerComponent> _component;
 
     std::function<void()> _onChangedFunction;

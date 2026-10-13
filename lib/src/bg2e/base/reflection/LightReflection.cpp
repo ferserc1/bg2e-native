@@ -24,65 +24,66 @@ using namespace bg2e;
 namespace {
 
 reflection::TypeRegistration<base::Light> _lightReflection("bg2e::base::Light",
-    [](reflection::TypeInfoBuilder<base::Light>& t) {
-        t.displayName("Light Data");
+                                                           [](reflection::TypeInfoBuilder<base::Light>& t)
+                                                           {
+                                                               t.displayName("Light Data");
 
-        t.property("color", &base::Light::color, &base::Light::setColor)
-            .displayName("Color")
-            .category("Common Properties")
-            .colorEditor();
+                                                               t.property("color", &base::Light::color, &base::Light::setColor)
+                                                                   .displayName("Color")
+                                                                   .category("Common Properties")
+                                                                   .colorEditor();
 
-        t.property("intensity", &base::Light::intensity, &base::Light::setIntensity)
-            .displayName("Intensity")
-            .category("Common Properties")
-            .range(0.0, 50.0)
-            .slider()
-            .step(0.1);
+                                                               t.property("intensity", &base::Light::intensity, &base::Light::setIntensity)
+                                                                   .displayName("Intensity")
+                                                                   .category("Common Properties")
+                                                                   .range(0.0, 50.0)
+                                                                   .slider()
+                                                                   .step(0.1);
 
-        t.property("type", &base::Light::type, &base::Light::setType)
-            .displayName("Type")
-            .category("Common Properties")
-            .combo()
-            .enumValue("Omni", base::Light::TypeOmni)
-            .enumValue("Spot", base::Light::TypeSpot)
-            .enumValue("Directional", base::Light::TypeDirectional)
-            .enumValue("Disabled", base::Light::TypeDisabled);
+                                                               t.property("type", &base::Light::type, &base::Light::setType)
+                                                                   .displayName("Type")
+                                                                   .category("Common Properties")
+                                                                   .combo()
+                                                                   .enumValue("Omni", base::Light::TypeOmni)
+                                                                   .enumValue("Spot", base::Light::TypeSpot)
+                                                                   .enumValue("Directional", base::Light::TypeDirectional)
+                                                                   .enumValue("Disabled", base::Light::TypeDisabled);
 
-        t.property("spotAngle", &base::Light::spotAngle, &base::Light::setSpotAngle)
-            .displayName("Spot Angle")
-            .category("Spot")
-            .range(0.0, 90.0)
-            .angle();
+                                                               t.property("spotAngle", &base::Light::spotAngle, &base::Light::setSpotAngle)
+                                                                   .displayName("Spot Angle")
+                                                                   .category("Spot")
+                                                                   .range(0.0, 90.0)
+                                                                   .angle();
 
-        t.property("spotCutoff", &base::Light::spotCutoff, &base::Light::setSpotCutoff)
-            .displayName("Spot Cutoff")
-            .category("Spot")
-            .range(0.0, 90.0)
-            .angle();
+                                                               t.property("spotCutoff", &base::Light::spotCutoff, &base::Light::setSpotCutoff)
+                                                                   .displayName("Spot Cutoff")
+                                                                   .category("Spot")
+                                                                   .range(0.0, 90.0)
+                                                                   .angle();
 
-        t.property("castShadows", &base::Light::castShadows, &base::Light::setCastShadows)
-            .displayName("Cast Shadows")
-            .category("Shadows")
-            .checkbox();
+                                                               t.property("castShadows", &base::Light::castShadows, &base::Light::setCastShadows)
+                                                                   .displayName("Cast Shadows")
+                                                                   .category("Shadows")
+                                                                   .checkbox();
 
-        t.property("shadowSamples", &base::Light::shadowSamples, &base::Light::setShadowSamples)
-            .displayName("Shadow Samples")
-            .category("Shadows")
-            .range(1.0, 64.0)
-            .step(1.0);
+                                                               t.property("shadowSamples", &base::Light::shadowSamples, &base::Light::setShadowSamples)
+                                                                   .displayName("Shadow Samples")
+                                                                   .category("Shadows")
+                                                                   .range(1.0, 64.0)
+                                                                   .step(1.0);
 
-        t.property("sourceSize", &base::Light::sourceSize, &base::Light::setSourceSize)
-            .displayName("Source Size")
-            .category("Ray Tracing")
-            .range(0.0, 10.0)
-            .drag()
-            .step(0.01);
+                                                               t.property("sourceSize", &base::Light::sourceSize, &base::Light::setSourceSize)
+                                                                   .displayName("Source Size")
+                                                                   .category("Ray Tracing")
+                                                                   .range(0.0, 10.0)
+                                                                   .drag()
+                                                                   .step(0.01);
 
-        t.property("affectsReflections", &base::Light::affectsReflections,
-                                         &base::Light::setAffectsReflections)
-            .displayName("Affects Reflections")
-            .category("Ray Tracing")
-            .checkbox();
-    });
+                                                               t.property("affectsReflections", &base::Light::affectsReflections,
+                                                                          &base::Light::setAffectsReflections)
+                                                                   .displayName("Affects Reflections")
+                                                                   .category("Ray Tracing")
+                                                                   .checkbox();
+                                                           });
 
 }

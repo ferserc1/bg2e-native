@@ -34,10 +34,14 @@ VkPrimitiveTopology primitiveTopologyToVk(gpu::PrimitiveTopology topology)
 {
     switch (topology)
     {
-        case gpu::PrimitiveTopology::TriangleList:  return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-        case gpu::PrimitiveTopology::TriangleStrip: return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
-        case gpu::PrimitiveTopology::LineList:      return VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
-        case gpu::PrimitiveTopology::PointList:     return VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
+    case gpu::PrimitiveTopology::TriangleList:
+        return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+    case gpu::PrimitiveTopology::TriangleStrip:
+        return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
+    case gpu::PrimitiveTopology::LineList:
+        return VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
+    case gpu::PrimitiveTopology::PointList:
+        return VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
     }
     return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
 }
@@ -46,9 +50,12 @@ VkCullModeFlags cullModeToVk(gpu::CullMode cullMode)
 {
     switch (cullMode)
     {
-        case gpu::CullMode::None:   return VK_CULL_MODE_NONE;
-        case gpu::CullMode::Front:  return VK_CULL_MODE_FRONT_BIT;
-        case gpu::CullMode::Back:   return VK_CULL_MODE_BACK_BIT;
+    case gpu::CullMode::None:
+        return VK_CULL_MODE_NONE;
+    case gpu::CullMode::Front:
+        return VK_CULL_MODE_FRONT_BIT;
+    case gpu::CullMode::Back:
+        return VK_CULL_MODE_BACK_BIT;
     }
     return VK_CULL_MODE_NONE;
 }
@@ -57,8 +64,10 @@ VkFrontFace frontFaceToVk(gpu::FrontFace frontFace)
 {
     switch (frontFace)
     {
-        case gpu::FrontFace::Clockwise:            return VK_FRONT_FACE_CLOCKWISE;
-        case gpu::FrontFace::CounterClockwise:     return VK_FRONT_FACE_COUNTER_CLOCKWISE;
+    case gpu::FrontFace::Clockwise:
+        return VK_FRONT_FACE_CLOCKWISE;
+    case gpu::FrontFace::CounterClockwise:
+        return VK_FRONT_FACE_COUNTER_CLOCKWISE;
     }
     return VK_FRONT_FACE_COUNTER_CLOCKWISE;
 }
@@ -68,7 +77,7 @@ GraphicsPipeline::GraphicsPipeline(gpu::Device* gpuDevice, VkDevice device, cons
 {
     auto* vkVsModule = dynamic_cast<vk::ShaderModule*>(description.vertexShader);
     auto* vkFsModule = dynamic_cast<vk::ShaderModule*>(description.fragmentShader);
-    auto* vkLayout   = dynamic_cast<vk::PipelineLayout*>(description.layout);
+    auto* vkLayout = dynamic_cast<vk::PipelineLayout*>(description.layout);
 
     if (!vkVsModule || !vkFsModule || !vkLayout)
     {
@@ -90,10 +99,10 @@ GraphicsPipeline::GraphicsPipeline(gpu::Device* gpuDevice, VkDevice device, cons
     fsStage.module = vkFsModule->handle();
     fsStage.pName = vkFsModule->entryPoint().c_str();
 
-    VkPipelineShaderStageCreateInfo stages[] = { vsStage, fsStage };
+    VkPipelineShaderStageCreateInfo stages[] = {vsStage, fsStage};
 
     // Vertex input: built from descriptions (empty = vertex_id only)
-    std::vector<VkVertexInputBindingDescription>   bindings;
+    std::vector<VkVertexInputBindingDescription> bindings;
     std::vector<VkVertexInputAttributeDescription> attributes;
 
     if (!description.vertexBufferDescriptions.empty())
@@ -103,11 +112,11 @@ GraphicsPipeline::GraphicsPipeline(gpu::Device* gpuDevice, VkDevice device, cons
     }
 
     VkPipelineVertexInputStateCreateInfo vertexInput{};
-    vertexInput.sType                           = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-    vertexInput.vertexBindingDescriptionCount   = static_cast<uint32_t>(bindings.size());
-    vertexInput.pVertexBindingDescriptions      = bindings.empty()    ? nullptr : bindings.data();
+    vertexInput.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+    vertexInput.vertexBindingDescriptionCount = static_cast<uint32_t>(bindings.size());
+    vertexInput.pVertexBindingDescriptions = bindings.empty() ? nullptr : bindings.data();
     vertexInput.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributes.size());
-    vertexInput.pVertexAttributeDescriptions    = attributes.empty()  ? nullptr : attributes.data();
+    vertexInput.pVertexAttributeDescriptions = attributes.empty() ? nullptr : attributes.data();
 
     // Input assembly
     VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
@@ -118,8 +127,7 @@ GraphicsPipeline::GraphicsPipeline(gpu::Device* gpuDevice, VkDevice device, cons
     // Viewport & scissor: dynamic (set at draw time)
     std::array<VkDynamicState, 2> dynamicStates = {
         VK_DYNAMIC_STATE_VIEWPORT,
-        VK_DYNAMIC_STATE_SCISSOR
-    };
+        VK_DYNAMIC_STATE_SCISSOR};
     VkPipelineDynamicStateCreateInfo dynamicState{};
     dynamicState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
     dynamicState.dynamicStateCount = static_cast<uint32_t>(dynamicStates.size());
@@ -151,8 +159,7 @@ GraphicsPipeline::GraphicsPipeline(gpu::Device* gpuDevice, VkDevice device, cons
     // Color blend: 1 attachment, blend disabled, RGBA write mask
     VkPipelineColorBlendAttachmentState colorAttachment{};
     colorAttachment.blendEnable = VK_FALSE;
-    colorAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT
-        | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+    colorAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
 
     VkPipelineColorBlendStateCreateInfo colorBlend{};
     colorBlend.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
@@ -172,8 +179,8 @@ GraphicsPipeline::GraphicsPipeline(gpu::Device* gpuDevice, VkDevice device, cons
     // Dynamic rendering: color + depth formats
     VkFormat colorFormat = toVkFormat(description.colorFormat);
     VkFormat depthFormat = (description.depthFormat != PixelFormat::Undefined)
-        ? toVkFormat(description.depthFormat)
-        : VK_FORMAT_UNDEFINED;
+                               ? toVkFormat(description.depthFormat)
+                               : VK_FORMAT_UNDEFINED;
 
     VkPipelineRenderingCreateInfo renderingInfo{};
     renderingInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO;

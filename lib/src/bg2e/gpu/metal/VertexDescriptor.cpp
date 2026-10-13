@@ -28,11 +28,16 @@ MTL::VertexFormat VertexDescriptor::toMetalVertexFormat(gpu::Format format)
 {
     switch (format)
     {
-        case gpu::Format::R32_SFLOAT:          return MTL::VertexFormatFloat;
-        case gpu::Format::R32G32_SFLOAT:       return MTL::VertexFormatFloat2;
-        case gpu::Format::R32G32B32_SFLOAT:    return MTL::VertexFormatFloat3;
-        case gpu::Format::R32G32B32A32_SFLOAT: return MTL::VertexFormatFloat4;
-        default:                               return MTL::VertexFormatInvalid;
+    case gpu::Format::R32_SFLOAT:
+        return MTL::VertexFormatFloat;
+    case gpu::Format::R32G32_SFLOAT:
+        return MTL::VertexFormatFloat2;
+    case gpu::Format::R32G32B32_SFLOAT:
+        return MTL::VertexFormatFloat3;
+    case gpu::Format::R32G32B32A32_SFLOAT:
+        return MTL::VertexFormatFloat4;
+    default:
+        return MTL::VertexFormatInvalid;
     }
 }
 
@@ -46,8 +51,8 @@ MTL::VertexDescriptor* VertexDescriptor::buildMetalVertexDescriptor(
         auto* layout = vtxDesc->layouts()->object(desc.binding);
         layout->setStride(desc.stride);
         layout->setStepFunction(desc.inputRate == gpu::VertexInputRate::Vertex
-            ? MTL::VertexStepFunctionPerVertex
-            : MTL::VertexStepFunctionPerInstance);
+                                    ? MTL::VertexStepFunctionPerVertex
+                                    : MTL::VertexStepFunctionPerInstance);
         layout->setStepRate(1);
 
         for (const auto& attr : desc.attributes)

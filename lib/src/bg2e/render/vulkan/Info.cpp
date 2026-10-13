@@ -24,8 +24,9 @@ namespace vulkan {
 
 VkDebugUtilsMessengerCreateInfoEXT Info::debugMessengerCreateInfo(
     PFN_vkDebugUtilsMessengerCallbackEXT callback,
-    void * /* pUserData */
-) {
+    void* /* pUserData */
+)
+{
     VkDebugUtilsMessengerCreateInfoEXT debugInfo{};
     debugInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
     debugInfo.messageSeverity =
@@ -43,8 +44,8 @@ VkDebugUtilsMessengerCreateInfoEXT Info::debugMessengerCreateInfo(
 
 VkCommandPoolCreateInfo Info::commandPoolCreateInfo(
     uint32_t queueFamilyIndex,
-    VkCommandPoolCreateFlags flags
-) {
+    VkCommandPoolCreateFlags flags)
+{
     VkCommandPoolCreateInfo info = {};
     info.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
     info.queueFamilyIndex = queueFamilyIndex;
@@ -54,15 +55,14 @@ VkCommandPoolCreateInfo Info::commandPoolCreateInfo(
 
 VkCommandBufferAllocateInfo Info::commandBufferAllocateInfo(
     VkCommandPool pool,
-    uint32_t count
-) {
+    uint32_t count)
+{
     VkCommandBufferAllocateInfo info = {};
     info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
     info.commandPool = pool;
     info.commandBufferCount = count;
     info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
     return info;
-
 }
 
 VkFenceCreateInfo Info::fenceCreateInfo(VkFenceCreateFlags flags)
@@ -93,29 +93,29 @@ VkCommandBufferBeginInfo Info::commandBufferBeginInfo(VkCommandBufferUsageFlags 
 VkSemaphoreSubmitInfo Info::semaphoreSubmitInfo(VkPipelineStageFlags2 stageMask, VkSemaphore semaphore)
 {
     VkSemaphoreSubmitInfo submitInfo{};
-	submitInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO;
-	submitInfo.semaphore = semaphore;
-	submitInfo.stageMask = stageMask;
-	submitInfo.deviceIndex = 0;
-	submitInfo.value = 1;
-	return submitInfo;
+    submitInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO;
+    submitInfo.semaphore = semaphore;
+    submitInfo.stageMask = stageMask;
+    submitInfo.deviceIndex = 0;
+    submitInfo.value = 1;
+    return submitInfo;
 }
 
 VkCommandBufferSubmitInfo Info::commandBufferSubmitInfo(VkCommandBuffer cmd)
 {
     VkCommandBufferSubmitInfo info{};
-	info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO;
-	info.pNext = nullptr;
-	info.commandBuffer = cmd;
-	info.deviceMask = 0;
-	return info;
+    info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO;
+    info.pNext = nullptr;
+    info.commandBuffer = cmd;
+    info.deviceMask = 0;
+    return info;
 }
 
 VkSubmitInfo2 Info::submitInfo(
     VkCommandBufferSubmitInfo* cmdInfo,
     VkSemaphoreSubmitInfo* signalSemaphoreInfo,
-    VkSemaphoreSubmitInfo* waitSemaphoreInfo
-) {
+    VkSemaphoreSubmitInfo* waitSemaphoreInfo)
+{
     VkSubmitInfo2 info = {};
     info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO_2;
     info.pNext = nullptr;
@@ -135,16 +135,16 @@ VkSubmitInfo2 Info::submitInfo(
 VkPresentInfoKHR Info::presentInfo(
     VkSwapchainKHR& swapchain,
     VkSemaphore& waitSemaphore,
-    uint32_t& imageIndex
-) {
+    uint32_t& imageIndex)
+{
     VkPresentInfoKHR presentInfo = {};
-	presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-	presentInfo.pNext = nullptr;
-	presentInfo.pSwapchains = &swapchain;
-	presentInfo.swapchainCount = 1;
-	presentInfo.pWaitSemaphores = &waitSemaphore;
-	presentInfo.waitSemaphoreCount = 1;
-	presentInfo.pImageIndices = &imageIndex;
+    presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+    presentInfo.pNext = nullptr;
+    presentInfo.pSwapchains = &swapchain;
+    presentInfo.swapchainCount = 1;
+    presentInfo.pWaitSemaphores = &waitSemaphore;
+    presentInfo.waitSemaphoreCount = 1;
+    presentInfo.pImageIndices = &imageIndex;
     return presentInfo;
 }
 
@@ -153,8 +153,8 @@ VkImageCreateInfo Info::imageCreateInfo(
     VkImageUsageFlags usageFlags,
     VkExtent3D extent,
     uint32_t arrayLayers,
-    VkSampleCountFlagBits samples
-) {
+    VkSampleCountFlagBits samples)
+{
     VkImageCreateInfo info = {};
     info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
     info.pNext = nullptr;
@@ -172,8 +172,8 @@ VkImageCreateInfo Info::imageCreateInfo(
 VkImageViewCreateInfo Info::imageViewCreateInfo(
     VkFormat format,
     VkImage image,
-    VkImageAspectFlags aspectFlags
-) {
+    VkImageAspectFlags aspectFlags)
+{
     VkImageViewCreateInfo info = {};
     info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
     info.viewType = VK_IMAGE_VIEW_TYPE_2D;
@@ -190,8 +190,8 @@ VkImageViewCreateInfo Info::imageViewCreateInfo(
 VkRenderingAttachmentInfo Info::attachmentInfo(
     VkImageView view,
     VkClearValue* clearValue,
-    VkImageLayout layout
-) {
+    VkImageLayout layout)
+{
     VkRenderingAttachmentInfo info = {};
     info.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
     info.imageView = view;
@@ -200,7 +200,8 @@ VkRenderingAttachmentInfo Info::attachmentInfo(
     info.imageLayout = layout;
     info.resolveMode = VK_RESOLVE_MODE_NONE;
     info.resolveImageView = VK_NULL_HANDLE;
-    if (clearValue) {
+    if (clearValue)
+    {
         info.clearValue = *clearValue;
     }
     return info;
@@ -210,9 +211,9 @@ VkRenderingAttachmentInfo Info::depthAttachmentInfo(
     VkImageView view,
     float depthValue,
     VkImageLayout layout,
-    VkAttachmentLoadOp depthLoadOp
-) {
-    VkRenderingAttachmentInfo depthAttachment {};
+    VkAttachmentLoadOp depthLoadOp)
+{
+    VkRenderingAttachmentInfo depthAttachment{};
     depthAttachment.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
     depthAttachment.pNext = nullptr;
 
@@ -232,11 +233,11 @@ VkRenderingInfo Info::renderingInfo(
     VkExtent2D renderExtent,
     VkRenderingAttachmentInfo* colorAttachment,
     VkRenderingAttachmentInfo* depthAttachment,
-    uint32_t colorAttachmentsCount
-) {
-    VkRenderingInfo renderInfo {};
+    uint32_t colorAttachmentsCount)
+{
+    VkRenderingInfo renderInfo{};
     renderInfo.sType = VK_STRUCTURE_TYPE_RENDERING_INFO;
-    renderInfo.renderArea = VkRect2D { VkOffset2D { 0, 0 }, renderExtent };
+    renderInfo.renderArea = VkRect2D{VkOffset2D{0, 0}, renderExtent};
     renderInfo.layerCount = 1;
     renderInfo.colorAttachmentCount = colorAttachmentsCount;
     renderInfo.pColorAttachments = colorAttachment;
@@ -247,7 +248,7 @@ VkRenderingInfo Info::renderingInfo(
 
 VkPipelineLayoutCreateInfo Info::pipelineLayoutInfo()
 {
-    VkPipelineLayoutCreateInfo info {};
+    VkPipelineLayoutCreateInfo info{};
     info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
     info.flags = 0;
     info.setLayoutCount = 0;
@@ -260,4 +261,3 @@ VkPipelineLayoutCreateInfo Info::pipelineLayoutInfo()
 }
 }
 }
-

@@ -30,8 +30,10 @@ static VkFilter toVkFilter(gpu::Filter f)
 {
     switch (f)
     {
-        case gpu::Filter::Nearest: return VK_FILTER_NEAREST;
-        case gpu::Filter::Linear:  return VK_FILTER_LINEAR;
+    case gpu::Filter::Nearest:
+        return VK_FILTER_NEAREST;
+    case gpu::Filter::Linear:
+        return VK_FILTER_LINEAR;
     }
     return VK_FILTER_LINEAR;
 }
@@ -40,8 +42,10 @@ static VkSamplerMipmapMode toVkMipmapMode(gpu::MipmapFilter f)
 {
     switch (f)
     {
-        case gpu::MipmapFilter::Nearest: return VK_SAMPLER_MIPMAP_MODE_NEAREST;
-        case gpu::MipmapFilter::Linear:  return VK_SAMPLER_MIPMAP_MODE_LINEAR;
+    case gpu::MipmapFilter::Nearest:
+        return VK_SAMPLER_MIPMAP_MODE_NEAREST;
+    case gpu::MipmapFilter::Linear:
+        return VK_SAMPLER_MIPMAP_MODE_LINEAR;
     }
     return VK_SAMPLER_MIPMAP_MODE_NEAREST;
 }
@@ -50,9 +54,12 @@ static VkSamplerAddressMode toVkAddressMode(gpu::AddressMode m)
 {
     switch (m)
     {
-        case gpu::AddressMode::Repeat:         return VK_SAMPLER_ADDRESS_MODE_REPEAT;
-        case gpu::AddressMode::ClampToEdge:    return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-        case gpu::AddressMode::MirroredRepeat: return VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
+    case gpu::AddressMode::Repeat:
+        return VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    case gpu::AddressMode::ClampToEdge:
+        return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+    case gpu::AddressMode::MirroredRepeat:
+        return VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
     }
     return VK_SAMPLER_ADDRESS_MODE_REPEAT;
 }

@@ -27,23 +27,22 @@
 namespace bg2e {
 namespace render {
 
-template<typename RendererT>
+template <typename RendererT>
 class BG2E_API DefaultRenderLoopDelegate : public RenderLoopDelegate {
-public:
+  public:
     virtual ~DefaultRenderLoopDelegate() = 0;
 
-    void init(render::Engine * engine) override;
+    void init(render::Engine* engine) override;
 
     void initFrameResources(render::vulkan::DescriptorSetAllocator*) override;
-    
+
     void initScene() override;
 
     void swapchainResized(VkExtent2D) override;
 
     void update(
         uint32_t currentFrame,
-        render::vulkan::FrameResources&
-    )override;
+        render::vulkan::FrameResources&) override;
 
     VkImageLayout render(
         VkCommandBuffer cmd,
@@ -51,10 +50,9 @@ public:
         const render::vulkan::Image* colorImage,
         const render::vulkan::Image* depthImage,
         const render::vulkan::Image* msaaDepthImage,
-        render::vulkan::FrameResources& frameResources
-    ) override;
+        render::vulkan::FrameResources& frameResources) override;
 
-	void cleanup() override;
+    void cleanup() override;
 
     bool supportsMsaa() override
     {
@@ -62,9 +60,9 @@ public:
     }
 
     RendererT* renderer();
-    
-protected:
-	std::unique_ptr<RendererT> _renderer;
+
+  protected:
+    std::unique_ptr<RendererT> _renderer;
 
     virtual std::shared_ptr<scene::Node> createScene() = 0;
 };

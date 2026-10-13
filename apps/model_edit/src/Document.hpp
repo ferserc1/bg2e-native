@@ -22,13 +22,15 @@
 
 class AppDelegate;
 
-class Document
-{
-public:
-    Document(AppDelegate * del);
+class Document {
+  public:
+    Document(AppDelegate* del);
 
     void setPath(const std::filesystem::path& path);
-    inline const std::filesystem::path& path() const { return _path; }
+    inline const std::filesystem::path& path() const
+    {
+        return _path;
+    }
 
     void setUnsavedChanges(bool s);
     bool unsavedChanges() const;
@@ -37,9 +39,9 @@ public:
 
     void updateStatus();
 
-protected:
+  protected:
     std::filesystem::path _path;
     bool _unsavedChanges = false;
 
-    AppDelegate * _appDelegate;
+    AppDelegate* _appDelegate;
 };

@@ -23,7 +23,7 @@
 
 namespace bg2e::render::vulkan::factory {
 
-VkPipelineLayout PipelineLayout::build(const std::string & name)
+VkPipelineLayout PipelineLayout::build(const std::string& name)
 {
     auto layoutInfo = Info::pipelineLayoutInfo();
     if (_pushConstantRanges.size() > 0)
@@ -31,7 +31,7 @@ VkPipelineLayout PipelineLayout::build(const std::string & name)
         layoutInfo.pPushConstantRanges = _pushConstantRanges.data();
         layoutInfo.pushConstantRangeCount = uint32_t(_pushConstantRanges.size());
     }
-    
+
     if (_descriptorSetLayouts.size() > 0)
     {
         layoutInfo.pSetLayouts = _descriptorSetLayouts.data();
@@ -51,8 +51,7 @@ VkPipelineLayout PipelineLayout::build(const std::string & name)
 
         setDebugUtilsObjectName(
             _engine->device().handle(),
-            &nameInfo
-        );
+            &nameInfo);
     }
     return result;
 }

@@ -30,17 +30,23 @@ namespace bg2e {
 namespace json {
 
 class BG2E_API JsonParser {
-    std::istream * stream;
+    std::istream* stream;
     std::shared_ptr<JsonNode> root;
     std::unique_ptr<JsonNode> current;
     JsonTokenizer tokenizer;
 
-public:
-    JsonParser(std::istream * stream) :tokenizer(stream) {}
-    JsonParser(const std::string& buffer) :tokenizer(&_sstream), _sstream(buffer) {}
-    JsonParser(const char* buffer) :tokenizer(&_sstream), _sstream(buffer) {}
+  public:
+    JsonParser(std::istream* stream) : tokenizer(stream)
+    {
+    }
+    JsonParser(const std::string& buffer) : tokenizer(&_sstream), _sstream(buffer)
+    {
+    }
+    JsonParser(const char* buffer) : tokenizer(&_sstream), _sstream(buffer)
+    {
+    }
 
-    std::shared_ptr<JsonNode> & parse();
+    std::shared_ptr<JsonNode>& parse();
 
     std::shared_ptr<JsonNode> parseObject();
     std::shared_ptr<JsonNode> parseString();
@@ -48,7 +54,7 @@ public:
     std::shared_ptr<JsonNode> parseList();
     std::shared_ptr<JsonNode> parseBoolean();
     std::shared_ptr<JsonNode> parseNull();
-    
+
     std::stringstream _sstream;
 };
 

@@ -27,11 +27,10 @@ namespace bg2e::scene {
 
 EnvironmentComponent::EnvironmentComponent()
 {
-
 }
 
 EnvironmentComponent::EnvironmentComponent(const std::string& img)
-    :_environmentImage{img}
+    : _environmentImage{img}
 {
     _imgHash = std::hash<std::string>{}(img);
 }
@@ -53,7 +52,6 @@ std::shared_ptr<Component> EnvironmentComponent::clone() const
 
 EnvironmentComponent::~EnvironmentComponent()
 {
-
 }
 
 void EnvironmentComponent::setEnvironmentImage(const std::string& img)
@@ -75,8 +73,8 @@ void EnvironmentComponent::deserializeWithProgress(
     std::shared_ptr<json::JsonNode> jsonData,
     const std::filesystem::path& basePath,
     render::Engine& engine,
-    SceneLoadProgress* progress
-) {
+    SceneLoadProgress* progress)
+{
     deserialize(jsonData, basePath, engine);
 
     if (!_environmentImage.empty())
@@ -86,7 +84,10 @@ void EnvironmentComponent::deserializeWithProgress(
         {
             progress->callback(_environmentImage, progress->loaded, progress->total);
         }
-        if (progress) { ++progress->loaded; }
+        if (progress)
+        {
+            ++progress->loaded;
+        }
     }
 }
 
@@ -94,7 +95,7 @@ std::shared_ptr<json::JsonNode> EnvironmentComponent::serialize(const std::files
 {
     using namespace bg2e::json;
     auto compData = Component::serialize(basePath);
-    JsonObject & obj = compData->objectValue();
+    JsonObject& obj = compData->objectValue();
     std::filesystem::path dstFilePath = basePath;
     std::filesystem::path srcFilePath = _environmentImage;
     auto fileName = srcFilePath.filename();
@@ -104,7 +105,7 @@ std::shared_ptr<json::JsonNode> EnvironmentComponent::serialize(const std::files
         std::filesystem::copy(srcFilePath, dstFilePath, std::filesystem::copy_options::overwrite_existing);
     }
     obj["equirectangularTexture"] = JSON(fileName.string());
-    
+
     // The following properties are deprecated and are not serialized:
     // - irradianceIntensity
     // - showSkybox

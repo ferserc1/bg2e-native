@@ -29,7 +29,7 @@ namespace deferred {
 // Available on all platforms. Does not use depth or motion vectors.
 // Jitter is not applied (prepare() returns projMatrix unchanged).
 class BG2E_API SMAAPostProcessor : public FinalPostProcessor {
-public:
+  public:
     SMAAPostProcessor() = default;
     ~SMAAPostProcessor() override = default;
 
@@ -37,16 +37,14 @@ public:
         Engine* engine,
         VkExtent2D renderExtent,
         VkExtent2D displayExtent,
-        VkFormat colorFormat
-    ) override;
+        VkFormat colorFormat) override;
 
     void resize(VkExtent2D renderExtent, VkExtent2D displayExtent) override;
 
     glm::mat4 prepare(
         const glm::mat4& projMatrix,
         uint32_t frameCounter,
-        VkExtent2D renderExtent
-    ) override;
+        VkExtent2D renderExtent) override;
 
     void process(
         VkCommandBuffer cmd,
@@ -58,25 +56,30 @@ public:
         float deltaMs,
         float cameraNear,
         float cameraFar,
-        float cameraFovVertical
-    ) override;
+        float cameraFovVertical) override;
 
     void cleanup() override;
 
-    std::string processorName() const override { return "Render Scale"; }
+    std::string processorName() const override
+    {
+        return "Render Scale";
+    }
     std::vector<std::string> scaleOptions() const override;
     void setScaleOption(uint32_t index) override;
-    uint32_t scaleOption() const override { return _scaleOptionIndex; }
+    uint32_t scaleOption() const override
+    {
+        return _scaleOptionIndex;
+    }
     float renderScalePercent() const override;
 
-private:
-    static constexpr float kScaleValues[] = { 25.0f, 50.0f, 75.0f, 100.0f, 150.0f };
+  private:
+    static constexpr float kScaleValues[] = {25.0f, 50.0f, 75.0f, 100.0f, 150.0f};
 
-    Engine*                         _engine            = nullptr;
-    VkExtent2D                      _renderExtent      = {};
-    VkExtent2D                      _displayExtent     = {};
-    uint32_t                        _scaleOptionIndex  = 1; // default: 50%
-    std::unique_ptr<SMAAProcessor>  _smaa;
+    Engine* _engine = nullptr;
+    VkExtent2D _renderExtent = {};
+    VkExtent2D _displayExtent = {};
+    uint32_t _scaleOptionIndex = 1; // default: 50%
+    std::unique_ptr<SMAAProcessor> _smaa;
 };
 
 }

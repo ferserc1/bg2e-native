@@ -34,23 +34,26 @@ class Engine;
 namespace scene {
 
 class BG2E_API Scene {
-public:
+  public:
     static std::shared_ptr<Scene> deserialize(std::shared_ptr<json::JsonNode>, const std::filesystem::path&, render::Engine& engine, SceneLoadProgress* progress = nullptr);
 
     void setSceneRoot(std::shared_ptr<Node> scene);
-    void setMainCamera(CameraComponent * camera);
+    void setMainCamera(CameraComponent* camera);
 
     // Non-throwing scene validation. Each rule is a separate static function so
     // new checks can be added independently without touching existing ones.
     // validateScene() is the aggregate entry point used by file-open flows.
-    static bool validateScene(Node * rootNode);
-    static bool sceneHasCamera(Node * rootNode);
+    static bool validateScene(Node* rootNode);
+    static bool sceneHasCamera(Node* rootNode);
 
-    inline Node * rootNode() { return _sceneRoot.get(); }
-    
-    CameraComponent * mainCamera();
-    EnvironmentComponent * mainEnvironment();
-    
+    inline Node* rootNode()
+    {
+        return _sceneRoot.get();
+    }
+
+    CameraComponent* mainCamera();
+    EnvironmentComponent* mainEnvironment();
+
     // Call this once in the update() function every time a light is added
     // or removed from the scene
     void updateLights();
@@ -64,13 +67,21 @@ public:
     // Call this when you want to update all the scene object references (ligths, environment, camera)
     void updateAll();
 
+    [[nodiscard]] const std::vector<std::shared_ptr<LightComponent>>& lightComponents() const
+    {
+        return _lightComponents;
+    }
+    [[nodiscard]] const std::vector<base::Light*> lights() const
+    {
+        return _lights;
+    }
 
-    [[nodiscard]] const std::vector<std::shared_ptr<LightComponent>>& lightComponents() const { return _lightComponents; }
-    [[nodiscard]] const std::vector<base::Light*> lights() const { return _lights; }
-    
     // Indicates whether the lights have changed since the last frame. This flag is set to false in didDraw().
-    inline bool lightsChanged() const { return _lightsChanged; }
-    
+    inline bool lightsChanged() const
+    {
+        return _lightsChanged;
+    }
+
     // Render loop events
     void willResize();
     void didResize();
@@ -79,11 +90,10 @@ public:
     void willDraw();
     void didDraw();
 
-    
-protected:    
+  protected:
     std::shared_ptr<Node> _sceneRoot;
-    Node * _mainCameraNode = nullptr;
-    Node * _mainEnvironment = nullptr;
+    Node* _mainCameraNode = nullptr;
+    Node* _mainEnvironment = nullptr;
     std::vector<std::shared_ptr<LightComponent>> _lightComponents;
     std::vector<base::Light*> _lights;
 

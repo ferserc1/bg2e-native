@@ -19,28 +19,31 @@ using namespace bg2e;
 namespace {
 
 reflection::TypeRegistration<scene::CameraComponent> _cameraComponentReflection(
-    [](reflection::TypeInfoBuilder<scene::CameraComponent>& t) {
+    [](reflection::TypeInfoBuilder<scene::CameraComponent>& t)
+    {
         t.displayName("Camera");
 
         t.polymorphicObject<math::Projection>(
-            "projection",
-            "bg2e::math::Projection",
-            [](const scene::CameraComponent& camera) -> const math::Projection * {
-                return camera.projection();
-            },
-            [](scene::CameraComponent& camera) -> math::Projection * {
-                return camera.projection();
-            },
-            [](scene::CameraComponent& camera, std::shared_ptr<math::Projection> replacement) {
-                if (const auto * current = camera.projection())
-                {
-                    replacement->setNear(current->near());
-                    replacement->setFar(current->far());
-                    replacement->setViewport(current->viewport());
-                }
-                camera.setProjection(std::move(replacement));
-            }
-        )
+             "projection",
+             "bg2e::math::Projection",
+             [](const scene::CameraComponent& camera) -> const math::Projection*
+             {
+                 return camera.projection();
+             },
+             [](scene::CameraComponent& camera) -> math::Projection*
+             {
+                 return camera.projection();
+             },
+             [](scene::CameraComponent& camera, std::shared_ptr<math::Projection> replacement)
+             {
+                 if (const auto* current = camera.projection())
+                 {
+                     replacement->setNear(current->near());
+                     replacement->setFar(current->far());
+                     replacement->setViewport(current->viewport());
+                 }
+                 camera.setProjection(std::move(replacement));
+             })
             .displayName("Projection")
             .category("Camera")
             .tooltip("Projection model and its editable parameters")

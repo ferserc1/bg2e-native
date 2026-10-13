@@ -21,14 +21,14 @@
 
 #include "lib/color_correction.glsl"
 
-layout (location = 0) in vec3 fragNormal;
-layout (location = 1) in flat int inCurrentMipLevel;
-layout (location = 2) in flat int inTotalMipLevels;
-layout (location = 3) in flat int inFaceIndex;
+layout(location = 0) in vec3 fragNormal;
+layout(location = 1) in flat int inCurrentMipLevel;
+layout(location = 2) in flat int inTotalMipLevels;
+layout(location = 3) in flat int inFaceIndex;
 
-layout (location = 0) out vec4 outFragColor;
+layout(location = 0) out vec4 outFragColor;
 
-layout (set = 0, binding = 1) uniform samplerCube skyTexture;
+layout(set = 0, binding = 1) uniform samplerCube skyTexture;
 
 void main()
 {
@@ -38,10 +38,10 @@ void main()
     vec3 normal = normalize(fragNormal);
     vec3 irradiance = vec3(0.0);
     vec3 maxRange = vec3(40.0);
-    
+
     vec3 up = vec3(0.0, 1.0, 0.0);
     vec3 right = cross(up, normal);
-    up = cross(normal,right);
+    up = cross(normal, right);
 
     float nrSamples = 0.0;
     for (float phi = 0.0; phi < 2 * PI; phi += sampleDelta)

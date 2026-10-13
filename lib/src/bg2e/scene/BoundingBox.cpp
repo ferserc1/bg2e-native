@@ -63,8 +63,7 @@ void BoundingBox::processNode(Node* node, const Options& options)
         {
             const auto count = std::min(
                 submeshCount,
-                static_cast<uint32_t>(mesh->submeshes.size())
-            );
+                static_cast<uint32_t>(mesh->submeshes.size()));
 
             for (uint32_t submeshIndex = 0; submeshIndex < count; ++submeshIndex)
             {
@@ -96,15 +95,14 @@ void BoundingBox::addSubmesh(const geo::AABoundingBox<scene::Mesh>& box, const g
     const auto& min = box.min();
     const auto& max = box.max();
     const std::array<glm::vec3, 8> corners = {
-        glm::vec3{ min.x, min.y, min.z },
-        glm::vec3{ min.x, min.y, max.z },
-        glm::vec3{ min.x, max.y, min.z },
-        glm::vec3{ min.x, max.y, max.z },
-        glm::vec3{ max.x, min.y, min.z },
-        glm::vec3{ max.x, min.y, max.z },
-        glm::vec3{ max.x, max.y, min.z },
-        glm::vec3{ max.x, max.y, max.z }
-    };
+        glm::vec3{min.x, min.y, min.z},
+        glm::vec3{min.x, min.y, max.z},
+        glm::vec3{min.x, max.y, min.z},
+        glm::vec3{min.x, max.y, max.z},
+        glm::vec3{max.x, min.y, min.z},
+        glm::vec3{max.x, min.y, max.z},
+        glm::vec3{max.x, max.y, min.z},
+        glm::vec3{max.x, max.y, max.z}};
 
     for (const auto& corner : corners)
     {

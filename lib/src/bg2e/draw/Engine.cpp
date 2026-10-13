@@ -67,22 +67,35 @@ struct Engine::Impl {
 };
 
 Engine::Engine()
-    : _impl { std::make_unique<Impl>() }
+    : _impl{std::make_unique<Impl>()}
 {
 }
 
 Engine::~Engine()
 {
-    try { cleanup(); } catch (...) { /* Explicit cleanup reports shutdown errors. */ }
+    try
+    {
+        cleanup();
+    }
+    catch (...)
+    { /* Explicit cleanup reports shutdown errors. */
+    }
 }
 
 void Engine::init(SDL_Window* window, gpu::Backend& backend, const EngineConfig& config)
 {
     if (_impl->initialized || _impl->instanceCreationStarted || _impl->cleaning)
+    {
         throw std::logic_error("draw::Engine is already initialized or changing lifecycle state.");
-    if (!window) throw std::invalid_argument("draw::Engine::init requires an SDL window.");
+    }
+    if (!window)
+    {
+        throw std::invalid_argument("draw::Engine::init requires an SDL window.");
+    }
     if (backend.backendType() != config.backend)
+    {
         throw std::invalid_argument("draw::Engine backend does not match EngineConfig::backend.");
+    }
 
     try
     {
@@ -91,11 +104,16 @@ void Engine::init(SDL_Window* window, gpu::Backend& backend, const EngineConfig&
         _impl->backend = &backend;
         _impl->config = config;
         _impl->instance = backend.sharedInstance();
-        if (!_impl->instance) throw std::runtime_error("Draw backend returned no Instance.");
+        if (!_impl->instance)
+        {
+            throw std::runtime_error("Draw backend returned no Instance.");
+        }
         // The backend owns the wrapper; this Engine owns its initialized lifetime.
         // Do not overwrite an instance used by another context.
         if (_impl->instance->presentationMode() != gpu::PresentationMode::Undefined)
+        {
             throw std::logic_error("Draw backend shared Instance is already in use.");
+        }
         _impl->instanceCreationStarted = true;
         _impl->instance->setApplicationName(config.applicationName);
         _impl->instance->enableDebugMode(config.debug);
@@ -103,58 +121,127 @@ void Engine::init(SDL_Window* window, gpu::Backend& backend, const EngineConfig&
 
         _impl->surface = backend.createWindowSurface(_impl->instance, config.colorFormat, config.depthFormat);
         if (!_impl->surface)
+        {
             throw std::runtime_error("Draw backend returned no WindowSurface.");
+        }
         _impl->physicalDevice = backend.createPhysicalDevice();
-        if (!_impl->physicalDevice) throw std::runtime_error("Draw backend returned no PhysicalDevice.");
+        if (!_impl->physicalDevice)
+        {
+            throw std::runtime_error("Draw backend returned no PhysicalDevice.");
+        }
         _impl->physicalDevice->choose(*_impl->instance, *_impl->surface);
-        if (!_impl->physicalDevice->isValid()) throw std::runtime_error("No suitable draw GPU device.");
+        if (!_impl->physicalDevice->isValid())
+        {
+            throw std::runtime_error("No suitable draw GPU device.");
+        }
         _impl->device = backend.createDevice();
-        if (!_impl->device) throw std::runtime_error("Draw backend returned no Device.");
+        if (!_impl->device)
+        {
+            throw std::runtime_error("Draw backend returned no Device.");
+        }
         _impl->deviceCreationStarted = true;
         // Device::create also creates the surface render target.
         _impl->device->create(_impl->instance, _impl->physicalDevice.get(), _impl->surface.get());
-        if (!_impl->device->isValid()) throw std::runtime_error("Draw GPU Device creation failed.");
+        if (!_impl->device->isValid())
+        {
+            throw std::runtime_error("Draw GPU Device creation failed.");
+        }
         // Vulkan surface validity includes its swapchain, created by Device.
-        if (!_impl->surface->isValid()) throw std::runtime_error("Draw surface render target creation failed.");
+        if (!_impl->surface->isValid())
+        {
+            throw std::runtime_error("Draw surface render target creation failed.");
+        }
         _impl->cleanupManager = std::make_unique<gpu::CleanupManager>(_impl->surface.get());
         _impl->initialized = true;
     }
     catch (...)
     {
         const auto error = std::current_exception();
-        try { cleanup(); } catch (...) { /* Preserve the initialization failure. */ }
+        try
+        {
+            cleanup();
+        }
+        catch (...)
+        { /* Preserve the initialization failure. */
+        }
         std::rethrow_exception(error);
     }
 }
 
 void Engine::cleanup()
 {
-    if (_impl->cleaning) return;
+    if (_impl->cleaning)
+    {
+        return;
+    }
     _impl->cleaning = true;
     std::exception_ptr error;
-    const auto attempt = [&error](auto&& operation) {
-        try { operation(); } catch (...) { if (!error) error = std::current_exception(); }
+    const auto attempt = [&error](auto&& operation)
+    {
+        try
+        {
+            operation();
+        }
+        catch (...)
+        {
+            if (!error)
+            {
+                error = std::current_exception();
+            }
+        }
     };
     // Callers stop frame/background producers before entering this method and
     // keep them stopped: waitIdle's submission gate reopens on return.
     if (_impl->deviceCreationStarted && _impl->device->isValid())
-        attempt([&] { _impl->device->waitIdle(); });
+    {
+        attempt([&]
+                {
+                    _impl->device->waitIdle();
+                });
+    }
     if (_impl->cleanupManager)
     {
-        attempt([&] { _impl->cleanupManager->flushAllDeferred(); });
-        attempt([&] { _impl->cleanupManager->flush(); });
+        attempt([&]
+                {
+                    _impl->cleanupManager->flushAllDeferred();
+                });
+        attempt([&]
+                {
+                    _impl->cleanupManager->flush();
+                });
         _impl->cleanupManager.reset();
     }
     // Keep the device alive while surfaces release frame command wrappers,
     // depth targets, swapchain images and presentation synchronization.
-    if (_impl->surface) attempt([&] { _impl->surface->cleanup(); });
+    if (_impl->surface)
+    {
+        attempt([&]
+                {
+                    _impl->surface->cleanup();
+                });
+    }
     _impl->surface.reset();
-    if (_impl->deviceCreationStarted) attempt([&] { _impl->device->cleanup(); });
+    if (_impl->deviceCreationStarted)
+    {
+        attempt([&]
+                {
+                    _impl->device->cleanup();
+                });
+    }
     _impl->device.reset();
     _impl->physicalDevice.reset();
-    if (_impl->instanceCreationStarted) attempt([&] { _impl->instance->cleanup(); });
+    if (_impl->instanceCreationStarted)
+    {
+        attempt([&]
+                {
+                    _impl->instance->cleanup();
+                });
+    }
     _impl->reset();
-    if (error) std::rethrow_exception(error);
+    if (error)
+    {
+        std::rethrow_exception(error);
+    }
 }
 
 gpu::BackendType Engine::backendType() const

@@ -30,11 +30,12 @@ namespace bg2e {
 namespace gpu {
 namespace metal {
 
-
 class OffscreenSurface : public gpu::OffscreenSurface, public Surface {
-public:
+  public:
     explicit OffscreenSurface(const Size2D& size)
-        : gpu::OffscreenSurface(size) {}
+        : gpu::OffscreenSurface(size)
+    {
+    }
     ~OffscreenSurface() override;
 
     void resize(const Size2D& size) override;
@@ -43,9 +44,9 @@ public:
 
     bool isValid() const override;
 
-    uint32_t    imageCount() const override;
-    uint32_t    inFlightFrames() const override;
-    uint32_t    currentFrameIndex() const override;
+    uint32_t imageCount() const override;
+    uint32_t inFlightFrames() const override;
+    uint32_t currentFrameIndex() const override;
     gpu::Image* colorImage(uint32_t index) const override;
     gpu::Image* depthImage() const override;
 
@@ -53,10 +54,10 @@ public:
     void present(gpu::CommandBuffer* cmd) override;
     void endFrame(gpu::SurfaceFrame* frame) override;
 
-protected:
+  protected:
     void createRenderTarget(gpu::Device* device, gpu::PhysicalDevice* physicalDevice) override;
 
-private:
+  private:
     std::unique_ptr<metal::Image> _colorImage;
     std::shared_ptr<metal::SurfaceFrame> _frame;
     bool _frameAcquired = false;

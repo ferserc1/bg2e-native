@@ -26,7 +26,9 @@ bool DrawableRegistry::nameExists(const std::string& name) const
     for (const auto& d : _drawables)
     {
         if (d->name() == name)
+        {
             return true;
+        }
     }
     return false;
 }
@@ -36,7 +38,9 @@ void DrawableRegistry::registerDrawable(std::shared_ptr<DrawableBase> drawable)
     for (const auto& d : _drawables)
     {
         if (d.get() == drawable.get())
+        {
             return;
+        }
     }
 
     std::string name = drawable->name();

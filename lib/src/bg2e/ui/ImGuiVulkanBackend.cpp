@@ -27,8 +27,8 @@
 #include <bg2e/gpu/vk/common.hpp>
 #include <bg2e/render/vulkan/Info.hpp>
 #include <bg2e/render/vulkan/extensions.hpp>
-#include "imgui.h"
-#include "imgui_impl_vulkan.h"
+#include <imgui.h>
+#include <imgui_impl_vulkan.h>
 
 #include <algorithm>
 #include <stdexcept>
@@ -39,19 +39,24 @@ namespace {
 void check(VkResult result)
 {
     if (result != VK_SUCCESS)
+    {
         throw std::runtime_error("ImGui Vulkan operation failed: " + std::to_string(result));
+    }
 }
 
-template<class Concrete, class Abstract>
+template <class Concrete, class Abstract>
 Concrete& require(Abstract* object, const char* description)
 {
     auto* result = dynamic_cast<Concrete*>(object);
-    if (!result) throw std::invalid_argument(description);
+    if (!result)
+    {
+        throw std::invalid_argument(description);
+    }
     return *result;
 }
 
 class VulkanImGuiBackend final : public ImGuiBackend {
-public:
+  public:
     void initialize(render::Engine& engine) override
     {
         _production = &engine;
@@ -95,9 +100,14 @@ public:
         if (_draw)
         {
             if (!command || !frame || !frame->isValid())
+            {
                 throw std::logic_error("Draw UI preparation requires an acquired frame and commands.");
+            }
             require<gpu::vk::CommandBuffer>(command, "UI commands must use Vulkan.");
-            if (command->hasActiveScope()) throw std::logic_error("Prepare UI outside active command scopes.");
+            if (command->hasActiveScope())
+            {
+                throw std::logic_error("Prepare UI outside active command scopes.");
+            }
             if (_generation != _draw->surface()->generation())
             {
                 const auto oldFormat = _format;
@@ -118,7 +128,10 @@ public:
 
     void draw(VkCommandBuffer command, VkImageView imageView) override
     {
-        if (!_production) throw std::logic_error("Native Vulkan UI draw requires the production engine.");
+        if (!_production)
+        {
+            throw std::logic_error("Native Vulkan UI draw requires the production engine.");
+        }
         using namespace render::vulkan;
         auto attachment = Info::attachmentInfo(imageView, nullptr, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
         auto rendering = Info::renderingInfo(_production->swapchain().extent(), &attachment, nullptr);
@@ -130,9 +143,14 @@ public:
     void draw(gpu::CommandBuffer& command, gpu::SurfaceFrame& frame) override
     {
         if (!_draw || !frame.isValid() || !frame.colorImage())
+        {
             throw std::logic_error("Draw UI requires a valid presentation target.");
+        }
         auto& vkCommand = require<gpu::vk::CommandBuffer>(&command, "UI commands must use Vulkan.");
-        if (command.hasActiveScope()) throw std::logic_error("UI overlay requires closed scene scopes.");
+        if (command.hasActiveScope())
+        {
+            throw std::logic_error("UI overlay requires closed scene scopes.");
+        }
         command.beginRendering(frame.colorImage()); // Color-only LOAD/STORE, no clear.
         vkCommand.materializeRenderPass();
         ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), vkCommand.handle());
@@ -142,9 +160,18 @@ public:
     void shutdown() override
     {
         stopRenderer();
-        if (_pool) vkDestroyDescriptorPool(_info.Device, _pool, nullptr);
-        if (_fence) vkDestroyFence(_info.Device, _fence, nullptr);
-        if (_commandPool) vkDestroyCommandPool(_info.Device, _commandPool, nullptr);
+        if (_pool)
+        {
+            vkDestroyDescriptorPool(_info.Device, _pool, nullptr);
+        }
+        if (_fence)
+        {
+            vkDestroyFence(_info.Device, _fence, nullptr);
+        }
+        if (_commandPool)
+        {
+            vkDestroyCommandPool(_info.Device, _commandPool, nullptr);
+        }
         _pool = VK_NULL_HANDLE;
         _fence = VK_NULL_HANDLE;
         _commandPool = VK_NULL_HANDLE;
@@ -152,7 +179,7 @@ public:
         _draw = nullptr;
     }
 
-private:
+  private:
     void readSurfaceConfiguration()
     {
         auto& surface = require<gpu::vk::WindowSurface>(_draw->surface(), "Draw Vulkan UI requires a Vulkan window surface.");
@@ -162,7 +189,9 @@ private:
         _info.ImageCount = surface.imageCount();
         if (_info.ImageCount < _info.MinImageCount ||
             (capabilities.maxImageCount && _info.MinImageCount > capabilities.maxImageCount))
+        {
             throw std::runtime_error("Vulkan swapchain image counts do not satisfy ImGui's minimum of two.");
+        }
         _format = gpu::vk::toVkFormat(surface.colorFormat());
         _generation = surface.generation();
     }
@@ -170,18 +199,17 @@ private:
     void createPool()
     {
         VkDescriptorPoolSize sizes[] = {
-            { VK_DESCRIPTOR_TYPE_SAMPLER, 1000 },
-            { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000 },
-            { VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1000 },
-            { VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1000 },
-            { VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 1000 },
-            { VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1000 },
-            { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1000 },
-            { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1000 },
-            { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1000 },
-            { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1000 },
-            { VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1000 }
-        };
+            {VK_DESCRIPTOR_TYPE_SAMPLER, 1000},
+            {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000},
+            {VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1000},
+            {VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1000},
+            {VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 1000},
+            {VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1000},
+            {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1000},
+            {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1000},
+            {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1000},
+            {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1000},
+            {VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1000}};
         VkDescriptorPoolCreateInfo info{};
         info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
         info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
@@ -194,7 +222,9 @@ private:
     void initializeRenderer()
     {
         if (_info.MinImageCount < 2 || _info.ImageCount < _info.MinImageCount)
+        {
             throw std::runtime_error("ImGui Vulkan requires at least two swapchain images.");
+        }
         _info.ApiVersion = VK_API_VERSION_1_3;
         _info.DescriptorPool = _pool;
         _info.UseDynamicRendering = true;
@@ -205,13 +235,18 @@ private:
         rendering.colorAttachmentCount = 1;
         rendering.pColorAttachmentFormats = &_format; // Backend-owned lifetime.
         _rendererStarted = true;
-        if (!ImGui_ImplVulkan_Init(&_info)) throw std::runtime_error("ImGui Vulkan initialization failed.");
+        if (!ImGui_ImplVulkan_Init(&_info))
+        {
+            throw std::runtime_error("ImGui Vulkan initialization failed.");
+        }
     }
 
     void stopRenderer()
     {
         if (_rendererStarted && ImGui::GetCurrentContext() && ImGui::GetIO().BackendRendererUserData)
+        {
             ImGui_ImplVulkan_Shutdown();
+        }
         _rendererStarted = false;
     }
 

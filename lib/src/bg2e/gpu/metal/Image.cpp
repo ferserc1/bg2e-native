@@ -175,7 +175,7 @@ void Image::buildStorageImage(metal::Device* device, const Size2D& size, PixelFo
 }
 
 void Image::buildCubemapImage(metal::Device* device, const Size2D& size, PixelFormat format,
-                               MTL::TextureUsage usage, uint32_t mipLevels, const std::string& debugName)
+                              MTL::TextureUsage usage, uint32_t mipLevels, const std::string& debugName)
 {
     cleanup();
 
@@ -218,30 +218,42 @@ void Image::buildCubemapImage(metal::Device* device, const Size2D& size, PixelFo
 }
 
 void Image::initFromDrawableTexture(metal::Device* device, TextureHandle texture,
-                                     PixelFormat format, const Size2D& size)
+                                    PixelFormat format, const Size2D& size)
 {
     cleanup();
-    _device        = device;
-    _texture       = texture;
-    _size          = size;
-    _pixelFormat   = format;
-    _isDepth       = false;
-    _ownsTexture   = false;
+    _device = device;
+    _texture = texture;
+    _size = size;
+    _pixelFormat = format;
+    _isDepth = false;
+    _ownsTexture = false;
     _currentLayout = ImageLayout::Undefined;
 }
 
 bool Image::isValidCubemapFaceMip(uint32_t face, uint32_t mipLevel) const
 {
-    if (_imageType != ImageType::Cubemap) return false;
-    if (face >= 6) return false;
-    if (mipLevel >= _mipLevels) return false;
+    if (_imageType != ImageType::Cubemap)
+    {
+        return false;
+    }
+    if (face >= 6)
+    {
+        return false;
+    }
+    if (mipLevel >= _mipLevels)
+    {
+        return false;
+    }
     return true;
 }
 
 Image::CubemapFaceMipTarget Image::cubemapFaceMipTarget(uint32_t face, uint32_t mipLevel) const
 {
-    if (!isValidCubemapFaceMip(face, mipLevel)) return { nullptr, 0, 0 };
-    return { _texture, face, mipLevel };
+    if (!isValidCubemapFaceMip(face, mipLevel))
+    {
+        return {nullptr, 0, 0};
+    }
+    return {_texture, face, mipLevel};
 }
 
 void Image::resize(const Size2D& size)
@@ -281,7 +293,8 @@ bool Image::isValid() const
 
 void Image::readPixelsRGBA8(std::vector<uint8_t>& outData, ImageLayout /*currentLayout*/)
 {
-    if (_pixelFormat != PixelFormat::R8G8B8A8_UNORM) {
+    if (_pixelFormat != PixelFormat::R8G8B8A8_UNORM)
+    {
         throw std::runtime_error("metal::Image::readPixelsRGBA8: only R8G8B8A8_UNORM is supported");
     }
 
@@ -296,29 +309,32 @@ void Image::readPixelsRGBA8(std::vector<uint8_t>& outData, ImageLayout /*current
 
     MTL::Buffer* staging = _device->handle()->newBuffer(
         bufferSize, MTL::ResourceStorageModeShared);
-    if (!staging) {
+    if (!staging)
+    {
         throw std::runtime_error("metal::Image::readPixelsRGBA8: newBuffer failed");
     }
 
-    _device->immediateSubmit([&](gpu::CommandBuffer* cmd) {
-        MTL::CommandBuffer* mtlCmd = dynamic_cast<metal::CommandBuffer*>(cmd)->handle();
-        MTL::BlitCommandEncoder* blit = mtlCmd->blitCommandEncoder();
-        blit->copyFromTexture(
-            _texture,
-            0,
-            0,
-            MTL::Origin{ 0, 0, 0 },
-            MTL::Size{ w, h, 1 },
-            staging,
-            0,
-            paddedBytesPerRow,
-            paddedBytesPerRow * h);
-        blit->endEncoding();
-    });
+    _device->immediateSubmit([&](gpu::CommandBuffer* cmd)
+                             {
+                                 MTL::CommandBuffer* mtlCmd = dynamic_cast<metal::CommandBuffer*>(cmd)->handle();
+                                 MTL::BlitCommandEncoder* blit = mtlCmd->blitCommandEncoder();
+                                 blit->copyFromTexture(
+                                     _texture,
+                                     0,
+                                     0,
+                                     MTL::Origin{0, 0, 0},
+                                     MTL::Size{w, h, 1},
+                                     staging,
+                                     0,
+                                     paddedBytesPerRow,
+                                     paddedBytesPerRow * h);
+                                 blit->endEncoding();
+                             });
 
     outData.resize(size_t(unpaddedBytesPerRow) * h);
     const uint8_t* src = static_cast<const uint8_t*>(staging->contents());
-    for (uint32_t y = 0; y < h; ++y) {
+    for (uint32_t y = 0; y < h; ++y)
+    {
         std::memcpy(outData.data() + size_t(y) * unpaddedBytesPerRow,
                     src + size_t(y) * paddedBytesPerRow,
                     unpaddedBytesPerRow);
@@ -329,11 +345,13 @@ void Image::readPixelsRGBA8(std::vector<uint8_t>& outData, ImageLayout /*current
 
 void Image::uploadRGBA8(const void* pixels, const Size2D& size)
 {
-    if (_pixelFormat != PixelFormat::R8G8B8A8_UNORM) {
+    if (_pixelFormat != PixelFormat::R8G8B8A8_UNORM)
+    {
         throw std::runtime_error("metal::Image::uploadRGBA8: only R8G8B8A8_UNORM is supported");
     }
 
-    if (size.width != _size.width || size.height != _size.height) {
+    if (size.width != _size.width || size.height != _size.height)
+    {
         throw std::runtime_error("metal::Image::uploadRGBA8: size mismatch");
     }
 
@@ -343,27 +361,29 @@ void Image::uploadRGBA8(const void* pixels, const Size2D& size)
     const size_t bufferSize = size_t(bytesPerRow) * h;
 
     MTL::Buffer* staging = _device->handle()->newBuffer(bufferSize, MTL::ResourceStorageModeShared);
-    if (!staging) {
+    if (!staging)
+    {
         throw std::runtime_error("metal::Image::uploadRGBA8: newBuffer failed");
     }
 
     std::memcpy(staging->contents(), pixels, bufferSize);
 
-    _device->immediateSubmit([&](gpu::CommandBuffer* cmd) {
-        MTL::CommandBuffer* mtlCmd = dynamic_cast<metal::CommandBuffer*>(cmd)->handle();
-        MTL::BlitCommandEncoder* blit = mtlCmd->blitCommandEncoder();
-        blit->copyFromBuffer(
-            staging,
-            0,
-            bytesPerRow,
-            bufferSize,
-            MTL::Size{ w, h, 1 },
-            _texture,
-            0,
-            0,
-            MTL::Origin{ 0, 0, 0 });
-        blit->endEncoding();
-    });
+    _device->immediateSubmit([&](gpu::CommandBuffer* cmd)
+                             {
+                                 MTL::CommandBuffer* mtlCmd = dynamic_cast<metal::CommandBuffer*>(cmd)->handle();
+                                 MTL::BlitCommandEncoder* blit = mtlCmd->blitCommandEncoder();
+                                 blit->copyFromBuffer(
+                                     staging,
+                                     0,
+                                     bytesPerRow,
+                                     bufferSize,
+                                     MTL::Size{w, h, 1},
+                                     _texture,
+                                     0,
+                                     0,
+                                     MTL::Origin{0, 0, 0});
+                                 blit->endEncoding();
+                             });
 
     staging->release();
 }
@@ -376,15 +396,21 @@ static uint16_t floatToHalf(float f)
     int32_t exponent = ((bits >> 23) & 0xFF) - 127;
     uint32_t mantissa = bits & 0x7FFFFF;
 
-    if (exponent > 15) {
+    if (exponent > 15)
+    {
         return static_cast<uint16_t>(sign | 0x7C00);
     }
-    if (exponent < -14) {
+    if (exponent < -14)
+    {
         uint32_t m = (mantissa | 0x8000) >> (-exponent - 14 + 1);
-        if (m & 0x1000) m += 0x2000;
+        if (m & 0x1000)
+        {
+            m += 0x2000;
+        }
         return static_cast<uint16_t>(sign | (m >> 13));
     }
-    if (exponent == -127) {
+    if (exponent == -127)
+    {
         return static_cast<uint16_t>(sign);
     }
     return static_cast<uint16_t>(sign | ((exponent + 15) << 10) | (mantissa >> 13));
@@ -392,14 +418,16 @@ static uint16_t floatToHalf(float f)
 
 void Image::uploadImage(const base::Image* image)
 {
-    if (!image || (!image->data() && !image->dataf())) {
+    if (!image || (!image->data() && !image->dataf()))
+    {
         throw std::runtime_error("metal::Image::uploadImage: null or empty image");
     }
 
     const uint32_t w = _size.width;
     const uint32_t h = _size.height;
 
-    if (image->width() != w || image->height() != h) {
+    if (image->width() != w || image->height() != h)
+    {
         throw std::runtime_error("metal::Image::uploadImage: size mismatch");
     }
 
@@ -407,43 +435,50 @@ void Image::uploadImage(const base::Image* image)
     const void* srcData = nullptr;
     std::vector<uint16_t> halfData;
 
-    switch (_pixelFormat) {
-        case PixelFormat::R8G8B8A8_UNORM:
-        case PixelFormat::R8G8B8A8_SRGB:
-        case PixelFormat::B8G8R8A8_UNORM:
-        case PixelFormat::B8G8R8A8_SRGB:
-            bytesPerPixel = 4;
-            srcData = image->data();
-            break;
-        case PixelFormat::R16G16B16A16_SFLOAT:
-            bytesPerPixel = 8;
-            if (image->dataf()) {
-                const float* src = image->dataf();
-                size_t pixelCount = size_t(w) * h;
-                halfData.resize(pixelCount * 4);
-                for (size_t i = 0; i < pixelCount * 4; ++i) {
-                    halfData[i] = floatToHalf(src[i]);
-                }
-                srcData = halfData.data();
-            } else {
-                const uint8_t* src = image->data();
-                size_t pixelCount = size_t(w) * h;
-                halfData.resize(pixelCount * 4);
-                for (size_t i = 0; i < pixelCount * 4; ++i) {
-                    halfData[i] = floatToHalf(src[i] / 255.0f);
-                }
-                srcData = halfData.data();
+    switch (_pixelFormat)
+    {
+    case PixelFormat::R8G8B8A8_UNORM:
+    case PixelFormat::R8G8B8A8_SRGB:
+    case PixelFormat::B8G8R8A8_UNORM:
+    case PixelFormat::B8G8R8A8_SRGB:
+        bytesPerPixel = 4;
+        srcData = image->data();
+        break;
+    case PixelFormat::R16G16B16A16_SFLOAT:
+        bytesPerPixel = 8;
+        if (image->dataf())
+        {
+            const float* src = image->dataf();
+            size_t pixelCount = size_t(w) * h;
+            halfData.resize(pixelCount * 4);
+            for (size_t i = 0; i < pixelCount * 4; ++i)
+            {
+                halfData[i] = floatToHalf(src[i]);
             }
-            break;
-        case PixelFormat::R32G32B32A32_SFLOAT:
-            bytesPerPixel = 16;
-            srcData = image->dataf();
-            break;
-        default:
-            throw std::runtime_error("metal::Image::uploadImage: unsupported pixel format");
+            srcData = halfData.data();
+        }
+        else
+        {
+            const uint8_t* src = image->data();
+            size_t pixelCount = size_t(w) * h;
+            halfData.resize(pixelCount * 4);
+            for (size_t i = 0; i < pixelCount * 4; ++i)
+            {
+                halfData[i] = floatToHalf(src[i] / 255.0f);
+            }
+            srcData = halfData.data();
+        }
+        break;
+    case PixelFormat::R32G32B32A32_SFLOAT:
+        bytesPerPixel = 16;
+        srcData = image->dataf();
+        break;
+    default:
+        throw std::runtime_error("metal::Image::uploadImage: unsupported pixel format");
     }
 
-    if (!srcData) {
+    if (!srcData)
+    {
         throw std::runtime_error("metal::Image::uploadImage: no source data for this format");
     }
 
@@ -451,27 +486,29 @@ void Image::uploadImage(const base::Image* image)
     const size_t bufferSize = size_t(bytesPerRow) * h;
 
     MTL::Buffer* staging = _device->handle()->newBuffer(bufferSize, MTL::ResourceStorageModeShared);
-    if (!staging) {
+    if (!staging)
+    {
         throw std::runtime_error("metal::Image::uploadImage: newBuffer failed");
     }
 
     std::memcpy(staging->contents(), srcData, bufferSize);
 
-    _device->immediateSubmit([&](gpu::CommandBuffer* cmd) {
-        MTL::CommandBuffer* mtlCmd = dynamic_cast<metal::CommandBuffer*>(cmd)->handle();
-        MTL::BlitCommandEncoder* blit = mtlCmd->blitCommandEncoder();
-        blit->copyFromBuffer(
-            staging,
-            0,
-            bytesPerRow,
-            bufferSize,
-            MTL::Size{ w, h, 1 },
-            _texture,
-            0,
-            0,
-            MTL::Origin{ 0, 0, 0 });
-        blit->endEncoding();
-    });
+    _device->immediateSubmit([&](gpu::CommandBuffer* cmd)
+                             {
+                                 MTL::CommandBuffer* mtlCmd = dynamic_cast<metal::CommandBuffer*>(cmd)->handle();
+                                 MTL::BlitCommandEncoder* blit = mtlCmd->blitCommandEncoder();
+                                 blit->copyFromBuffer(
+                                     staging,
+                                     0,
+                                     bytesPerRow,
+                                     bufferSize,
+                                     MTL::Size{w, h, 1},
+                                     _texture,
+                                     0,
+                                     0,
+                                     MTL::Origin{0, 0, 0});
+                                 blit->endEncoding();
+                             });
 
     staging->release();
 }
@@ -523,9 +560,14 @@ Image::CubemapFaceMipTarget Image::cubemapFaceMipTarget(uint32_t, uint32_t) cons
     throw std::runtime_error("Metal backend is not available on this platform");
 }
 
-void Image::cleanup() {}
+void Image::cleanup()
+{
+}
 
-bool Image::isValid() const { return false; }
+bool Image::isValid() const
+{
+    return false;
+}
 
 void Image::readPixelsRGBA8(std::vector<uint8_t>&, ImageLayout)
 {

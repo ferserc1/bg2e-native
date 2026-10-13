@@ -9,7 +9,8 @@ struct VertexOut {
     float4 position [[position]];
 };
 
-vertex VertexOut vertexShader(VertexIn in [[stage_in]]) {
+vertex VertexOut vertexShader(VertexIn in [[stage_in]])
+{
     VertexOut out;
     out.position = in.position;
     return out;

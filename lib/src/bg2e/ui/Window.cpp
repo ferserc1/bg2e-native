@@ -19,22 +19,22 @@
 #include <bg2e/ui/Window.hpp>
 #include <bg2e/base/PlatformTools.hpp>
 
-#include "imgui.h"
+#include <imgui.h>
 
 namespace bg2e {
 namespace ui {
 
-const char * Window::s_defaultWindowTitle = "Window";
+const char* Window::s_defaultWindowTitle = "Window";
 uint32_t Window::s_windowIndex = 0;
 
 void Window::draw(
     std::function<void()> drawFunction,
-    std::function<void()> menuFunction
-) {
-	if (!_open)
-	{
-		return;
-	}
+    std::function<void()> menuFunction)
+{
+    if (!_open)
+    {
+        return;
+    }
 
     // The default window title is Window, but there cannot be more than one window with the same title
     if (_title == s_defaultWindowTitle)
@@ -46,21 +46,18 @@ void Window::draw(
     bool* open = options.noClose ? nullptr : &_open;
     ImGui::SetNextWindowSizeConstraints(
         ImVec2(float(options.minWidth), float(options.minHeight)),
-        ImVec2(float(options.maxWidth), float(options.maxHeight))
-    );
+        ImVec2(float(options.maxWidth), float(options.maxHeight)));
     if (_posX >= 0 && _posY >= 0)
     {
         ImGui::SetNextWindowPos(
             ImVec2(float(_posX), float(_posY)),
-            options.noMove ? 0 : ImGuiCond_FirstUseEver
-        );
+            options.noMove ? 0 : ImGuiCond_FirstUseEver);
     }
-    if (_width>0 && _height > 0)
+    if (_width > 0 && _height > 0)
     {
         ImGui::SetNextWindowSize(
             ImVec2(float(_width), float(_height)),
-            options.noResize ? 0 : ImGuiCond_FirstUseEver
-        );
+            options.noResize ? 0 : ImGuiCond_FirstUseEver);
     }
 
     if (ImGui::Begin(_title.c_str(), open, _windowFlags))
@@ -94,49 +91,49 @@ void Window::draw()
 void Window::updateFlags()
 {
     _windowFlags = 0;
-	if (options.noTitleBar)
+    if (options.noTitleBar)
     {
-		_windowFlags |= ImGuiWindowFlags_NoTitleBar;
+        _windowFlags |= ImGuiWindowFlags_NoTitleBar;
     }
 
-	if (options.noScrollbar)
+    if (options.noScrollbar)
     {
-		_windowFlags |= ImGuiWindowFlags_NoScrollbar;
+        _windowFlags |= ImGuiWindowFlags_NoScrollbar;
     }
 
-	if (!options.noMenu)
+    if (!options.noMenu)
     {
-		_windowFlags |= ImGuiWindowFlags_MenuBar;
+        _windowFlags |= ImGuiWindowFlags_MenuBar;
     }
 
-	if (options.noMove)
+    if (options.noMove)
     {
-		_windowFlags |= ImGuiWindowFlags_NoMove;
+        _windowFlags |= ImGuiWindowFlags_NoMove;
     }
 
-	if (options.noResize)
+    if (options.noResize)
     {
-		_windowFlags |= ImGuiWindowFlags_NoResize;
+        _windowFlags |= ImGuiWindowFlags_NoResize;
     }
 
-	if (options.noCollapse)
+    if (options.noCollapse)
     {
-		_windowFlags |= ImGuiWindowFlags_NoCollapse;
+        _windowFlags |= ImGuiWindowFlags_NoCollapse;
     }
 
-	if (options.noNav)
+    if (options.noNav)
     {
-		_windowFlags |= ImGuiWindowFlags_NoNav;
+        _windowFlags |= ImGuiWindowFlags_NoNav;
     }
 
-	if (options.noBackground)
+    if (options.noBackground)
     {
-		_windowFlags |= ImGuiWindowFlags_NoBackground;
+        _windowFlags |= ImGuiWindowFlags_NoBackground;
     }
 
-	if (options.noBringToFront)
+    if (options.noBringToFront)
     {
-		_windowFlags |= ImGuiWindowFlags_NoBringToFrontOnFocus;
+        _windowFlags |= ImGuiWindowFlags_NoBringToFrontOnFocus;
     }
 }
 

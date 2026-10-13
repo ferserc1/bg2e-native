@@ -18,12 +18,12 @@
 
 #include <bg2e/ui/Button.hpp>
 
-#include "imgui.h"
+#include <imgui.h>
 
 namespace bg2e {
 namespace ui {
 
-bool Button::button(const std::string & title, bool sameLine, bool disabled)
+bool Button::button(const std::string& title, bool sameLine, bool disabled)
 {
     if (disabled)
     {
@@ -41,7 +41,7 @@ bool Button::button(const std::string & title, bool sameLine, bool disabled)
     return result;
 }
 
-bool Button::checkBox(const std::string & title, bool * value, bool sameLine, bool disabled)
+bool Button::checkBox(const std::string& title, bool* value, bool sameLine, bool disabled)
 {
     if (disabled)
     {
@@ -59,7 +59,7 @@ bool Button::checkBox(const std::string & title, bool * value, bool sameLine, bo
     return result;
 }
 
-bool Button::radioButton(const std::string & label, int * value, int id, bool sameLine, bool disabled)
+bool Button::radioButton(const std::string& label, int* value, int id, bool sameLine, bool disabled)
 {
     if (disabled)
     {

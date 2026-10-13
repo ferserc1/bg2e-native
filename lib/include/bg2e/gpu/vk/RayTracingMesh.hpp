@@ -34,7 +34,7 @@ class Device;
 // actual build is recorded into a command buffer by build(); use
 // CommandBuffer::buildRayTracingMesh or Device::immediateSubmit.
 class RayTracingMesh : public gpu::RayTracingMesh {
-public:
+  public:
     RayTracingMesh(vk::Device* device, const RayTracingMeshDescription& description);
     ~RayTracingMesh() override;
 
@@ -42,37 +42,49 @@ public:
     RayTracingMesh& operator=(const RayTracingMesh&) = delete;
 
     void cleanup() override;
-    bool isValid() const override { return _accelerationStructure != VK_NULL_HANDLE; }
-    bool isBuilt() const override { return _built; }
+    bool isValid() const override
+    {
+        return _accelerationStructure != VK_NULL_HANDLE;
+    }
+    bool isBuilt() const override
+    {
+        return _built;
+    }
 
     // Records the BLAS build into `cmd`.
     void build(VkCommandBuffer cmd);
 
-    VkAccelerationStructureKHR handle() const { return _accelerationStructure; }
-    VkDeviceAddress deviceAddress() const { return _deviceAddress; }
+    VkAccelerationStructureKHR handle() const
+    {
+        return _accelerationStructure;
+    }
+    VkDeviceAddress deviceAddress() const
+    {
+        return _deviceAddress;
+    }
 
-private:
+  private:
     vk::Device* _device = nullptr;
 
     VkAccelerationStructureKHR _accelerationStructure = VK_NULL_HANDLE;
-    VkBuffer       _asBuffer      = VK_NULL_HANDLE;
-    VmaAllocation  _asAlloc       = VK_NULL_HANDLE;
-    VkBuffer       _scratchBuffer = VK_NULL_HANDLE;
-    VmaAllocation  _scratchAlloc  = VK_NULL_HANDLE;
+    VkBuffer _asBuffer = VK_NULL_HANDLE;
+    VmaAllocation _asAlloc = VK_NULL_HANDLE;
+    VkBuffer _scratchBuffer = VK_NULL_HANDLE;
+    VmaAllocation _scratchAlloc = VK_NULL_HANDLE;
 
     VkDeviceAddress _deviceAddress = 0;
-    bool            _built         = false;
+    bool _built = false;
 
     // Cached geometry inputs (device addresses are stable for the lifetime of
     // the source buffers).
-    VkDeviceAddress _vertexAddress  = 0;
-    VkDeviceAddress _indexAddress   = 0;
+    VkDeviceAddress _vertexAddress = 0;
+    VkDeviceAddress _indexAddress = 0;
     VkDeviceAddress _scratchAddress = 0;
-    VkFormat        _vertexFormat   = VK_FORMAT_R32G32B32_SFLOAT;
-    uint32_t        _vertexStride   = 0;
-    uint32_t        _maxVertex      = 0;
-    uint32_t        _firstIndex     = 0;
-    uint32_t        _primitiveCount = 0;
+    VkFormat _vertexFormat = VK_FORMAT_R32G32B32_SFLOAT;
+    uint32_t _vertexStride = 0;
+    uint32_t _maxVertex = 0;
+    uint32_t _firstIndex = 0;
+    uint32_t _primitiveCount = 0;
 };
 
 }

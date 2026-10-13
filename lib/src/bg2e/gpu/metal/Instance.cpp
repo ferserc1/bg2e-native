@@ -82,14 +82,32 @@ Instance::Instance()
 {
 }
 
-void Instance::setApplicationName(const std::string&) { }
-const std::string& Instance::applicationName() const { return _applicationName; }
-void Instance::enableDebugMode(bool) { }
-bool Instance::debugModeEnabled() const { return false; }
-void Instance::create(SDL_Window* window) {}
-void Instance::create() {}
-void Instance::cleanup() { }
-void Instance::assertMetalSupport() {}
+void Instance::setApplicationName(const std::string&)
+{
+}
+const std::string& Instance::applicationName() const
+{
+    return _applicationName;
+}
+void Instance::enableDebugMode(bool)
+{
+}
+bool Instance::debugModeEnabled() const
+{
+    return false;
+}
+void Instance::create(SDL_Window* window)
+{
+}
+void Instance::create()
+{
+}
+void Instance::cleanup()
+{
+}
+void Instance::assertMetalSupport()
+{
+}
 
 #endif
 

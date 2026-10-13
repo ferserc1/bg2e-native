@@ -23,11 +23,11 @@ struct ModelUBO {
 //   set 0, binding 0 (camera) -> metal 8
 //   set 1, binding 0 (model)  -> metal 16
 vertex VertexOut vertMain(VertexIn in [[stage_in]],
-                      constant CameraUBO& camera [[buffer(2)]],
-                      constant ModelUBO&  model  [[buffer(3)]])
+                          constant CameraUBO& camera [[buffer(2)]],
+                          constant ModelUBO& model [[buffer(3)]])
 {
     VertexOut out;
     out.position = camera.projectionView * model.model * float4(in.position, 1.0);
-    out.uv       = in.texCoord;
+    out.uv = in.texCoord;
     return out;
 }

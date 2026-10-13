@@ -14,17 +14,20 @@ void main()
 {
     ivec2 pos = ivec2(gl_GlobalInvocationID.xy);
     ivec2 size = imageSize(inputImage);
-    if (pos.x >= size.x || pos.y >= size.y) return;
+    if (pos.x >= size.x || pos.y >= size.y)
+    {
+        return;
+    }
 
     // Sample 3x3 neighborhood luminances
     float tl = luma(imageLoad(inputImage, pos + ivec2(-1, -1)).rgb);
-    float t  = luma(imageLoad(inputImage, pos + ivec2( 0, -1)).rgb);
-    float tr = luma(imageLoad(inputImage, pos + ivec2( 1, -1)).rgb);
-    float l  = luma(imageLoad(inputImage, pos + ivec2(-1,  0)).rgb);
-    float r  = luma(imageLoad(inputImage, pos + ivec2( 1,  0)).rgb);
-    float bl = luma(imageLoad(inputImage, pos + ivec2(-1,  1)).rgb);
-    float b  = luma(imageLoad(inputImage, pos + ivec2( 0,  1)).rgb);
-    float br = luma(imageLoad(inputImage, pos + ivec2( 1,  1)).rgb);
+    float t = luma(imageLoad(inputImage, pos + ivec2(0, -1)).rgb);
+    float tr = luma(imageLoad(inputImage, pos + ivec2(1, -1)).rgb);
+    float l = luma(imageLoad(inputImage, pos + ivec2(-1, 0)).rgb);
+    float r = luma(imageLoad(inputImage, pos + ivec2(1, 0)).rgb);
+    float bl = luma(imageLoad(inputImage, pos + ivec2(-1, 1)).rgb);
+    float b = luma(imageLoad(inputImage, pos + ivec2(0, 1)).rgb);
+    float br = luma(imageLoad(inputImage, pos + ivec2(1, 1)).rgb);
 
     // Sobel kernels
     float gx = -tl - 2.0 * l - bl + tr + 2.0 * r + br;

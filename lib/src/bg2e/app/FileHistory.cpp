@@ -27,7 +27,7 @@ const std::string FileHistory::Image = "image";
 const std::string FileHistory::Bg2Model = "bg2model";
 const std::string FileHistory::Model3D = "model3d";
 
-FileHistory * FileHistory::g_singleton = nullptr;
+FileHistory* FileHistory::g_singleton = nullptr;
 
 FileHistory& FileHistory::get()
 {
@@ -40,9 +40,9 @@ FileHistory& FileHistory::get()
 
 FileHistory::FileHistory()
 {
-    registerType(Image, "Images", { "jpg", "jpeg", "png", "bmp", "webp" });
-    registerType(Bg2Model, "bg2e model", { "bg2" });
-    registerType(Model3D, "3D models", { "bg2", "obj", "gltf", "glb" });
+    registerType(Image, "Images", {"jpg", "jpeg", "png", "bmp", "webp"});
+    registerType(Bg2Model, "bg2e model", {"bg2"});
+    registerType(Model3D, "3D models", {"bg2", "obj", "gltf", "glb"});
 }
 
 void FileHistory::registerType(const std::string& typeName,
@@ -59,7 +59,7 @@ void FileHistory::registerType(const std::string& typeName,
         extensionList += extensions[i];
     }
 
-    _typeFilters[typeName] = FileDialog::FileFilters { { filterLabel, extensionList } };
+    _typeFilters[typeName] = FileDialog::FileFilters{{filterLabel, extensionList}};
     _histories.try_emplace(typeName);
 }
 
@@ -85,7 +85,7 @@ void FileHistory::add(const std::string& typeName, const std::filesystem::path& 
         throw std::runtime_error("FileHistory::add(): unregistered type '" + typeName + "'");
     }
 
-    auto & list = _histories[typeName];
+    auto& list = _histories[typeName];
     // Copy before mutating: path may reference an element of list itself
     // (e.g. a caller iterating entries()), so erase/insert would invalidate it
     auto newPath = path;
@@ -120,7 +120,7 @@ void FileHistory::clear(const std::string& typeName)
 
 void FileHistory::clearAll()
 {
-    for (auto & [typeName, history] : _histories)
+    for (auto& [typeName, history] : _histories)
     {
         history.clear();
     }

@@ -15,13 +15,14 @@ using namespace bg2e;
 
 namespace {
 
-constexpr const char * projectionType = "bg2e::math::Projection";
-constexpr const char * perspectiveType = "bg2e::math::PerspectiveProjection";
-constexpr const char * opticalType = "bg2e::math::OpticalProjection";
+constexpr const char* projectionType = "bg2e::math::Projection";
+constexpr const char* perspectiveType = "bg2e::math::PerspectiveProjection";
+constexpr const char* opticalType = "bg2e::math::OpticalProjection";
 
 reflection::TypeRegistration<math::Projection> _projectionReflection(
     projectionType,
-    [](reflection::TypeInfoBuilder<math::Projection>& t) {
+    [](reflection::TypeInfoBuilder<math::Projection>& t)
+    {
         t.displayName("Projection");
 
         t.property("near", &math::Projection::near, &math::Projection::setNear)
@@ -41,10 +42,11 @@ reflection::TypeRegistration<math::Projection> _projectionReflection(
 
 reflection::TypeRegistration<math::PerspectiveProjection> _perspectiveReflection(
     perspectiveType,
-    [](reflection::TypeInfoBuilder<math::PerspectiveProjection>& t) {
+    [](reflection::TypeInfoBuilder<math::PerspectiveProjection>& t)
+    {
         t.displayName("Perspective Projection");
         t.property("fov", &math::PerspectiveProjection::fov,
-                          &math::PerspectiveProjection::setFov)
+                   &math::PerspectiveProjection::setFov)
             .displayName("Field of View")
             .category("Perspective")
             .range(1.0, 179.0)
@@ -53,10 +55,11 @@ reflection::TypeRegistration<math::PerspectiveProjection> _perspectiveReflection
 
 reflection::TypeRegistration<math::OpticalProjection> _opticalReflection(
     opticalType,
-    [](reflection::TypeInfoBuilder<math::OpticalProjection>& t) {
+    [](reflection::TypeInfoBuilder<math::OpticalProjection>& t)
+    {
         t.displayName("Optical Projection");
         t.property("focalLength", &math::OpticalProjection::focalLength,
-                                  &math::OpticalProjection::setFocalLength)
+                   &math::OpticalProjection::setFocalLength)
             .displayName("Focal Length")
             .category("Optics")
             .range(0.1, 1000.0)
@@ -64,7 +67,7 @@ reflection::TypeRegistration<math::OpticalProjection> _opticalReflection(
             .drag();
 
         t.property("frameSize", &math::OpticalProjection::frameSize,
-                               &math::OpticalProjection::setFrameSize)
+                   &math::OpticalProjection::setFrameSize)
             .displayName("Frame Size")
             .category("Optics")
             .range(0.1, 1000.0)
@@ -75,19 +78,17 @@ reflection::TypeRegistration<math::OpticalProjection> _opticalReflection(
 struct ProjectionSubtypeRegistration {
     ProjectionSubtypeRegistration()
     {
-        auto & registry = reflection::TypeRegistry::get();
+        auto& registry = reflection::TypeRegistry::get();
         registry.registerSubtype<math::Projection, math::PerspectiveProjection>(
             projectionType,
             "PerspectiveProjection",
             "Perspective",
-            perspectiveType
-        );
+            perspectiveType);
         registry.registerSubtype<math::Projection, math::OpticalProjection>(
             projectionType,
             "OpticalProjection",
             "Optical",
-            opticalType
-        );
+            opticalType);
     }
 };
 

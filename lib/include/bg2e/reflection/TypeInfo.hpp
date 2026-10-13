@@ -40,8 +40,8 @@ struct TypeInfo {
     std::vector<PropertyInfo> properties;
     std::vector<ActionInfo> actions;
 
-    const PropertyInfo * property(const std::string& name) const;
-    const ActionInfo * action(const std::string& name) const;
+    const PropertyInfo* property(const std::string& name) const;
+    const ActionInfo* action(const std::string& name) const;
 };
 
 }

@@ -29,8 +29,7 @@ namespace metal {
 #if BG2E_IS_MAC
 
 RayTracingMesh::RayTracingMesh(metal::Device* device, const RayTracingMeshDescription& description)
-    : gpu::RayTracingMesh(device)
-    , _device(device)
+    : gpu::RayTracingMesh(device), _device(device)
 {
     _description = description;
 
@@ -58,7 +57,7 @@ bool RayTracingMesh::isValid() const
 MTL::PrimitiveAccelerationStructureDescriptor* RayTracingMesh::buildDescriptor() const
 {
     auto* vertexBuffer = dynamic_cast<metal::Buffer*>(_description.vertexBuffer)->handle();
-    auto* indexBuffer  = dynamic_cast<metal::Buffer*>(_description.indexBuffer)->handle();
+    auto* indexBuffer = dynamic_cast<metal::Buffer*>(_description.indexBuffer)->handle();
 
     auto* triangles = MTL::AccelerationStructureTriangleGeometryDescriptor::alloc()->init();
     triangles->setVertexBuffer(vertexBuffer);
@@ -70,7 +69,7 @@ MTL::PrimitiveAccelerationStructureDescriptor* RayTracingMesh::buildDescriptor()
     triangles->setTriangleCount(_description.indexCount / 3);
     triangles->setOpaque(true);
 
-    const NS::Object* geometries[] = { triangles };
+    const NS::Object* geometries[] = {triangles};
     NS::Array* geometryArray = NS::Array::array(geometries, 1);
 
     auto* descriptor = MTL::PrimitiveAccelerationStructureDescriptor::alloc()->init();
@@ -98,7 +97,10 @@ void RayTracingMesh::build(MTL::CommandBuffer* cmd)
 
     if (!_scratchBuffer || _scratchSize < sizes.buildScratchBufferSize)
     {
-        if (_scratchBuffer) { _scratchBuffer->release(); }
+        if (_scratchBuffer)
+        {
+            _scratchBuffer->release();
+        }
         _scratchBuffer = _device->handle()->newBuffer(sizes.buildScratchBufferSize,
                                                       MTL::ResourceStorageModePrivate);
         _scratchSize = sizes.buildScratchBufferSize;
@@ -130,16 +132,22 @@ void RayTracingMesh::cleanup()
 #else
 
 RayTracingMesh::RayTracingMesh(metal::Device* device, const RayTracingMeshDescription& description)
-    : gpu::RayTracingMesh(device)
-    , _device(device)
+    : gpu::RayTracingMesh(device), _device(device)
 {
     _description = description;
     throw std::runtime_error("Metal backend is not available on this platform");
 }
 
-RayTracingMesh::~RayTracingMesh() {}
-void RayTracingMesh::cleanup() {}
-bool RayTracingMesh::isValid() const { return false; }
+RayTracingMesh::~RayTracingMesh()
+{
+}
+void RayTracingMesh::cleanup()
+{
+}
+bool RayTracingMesh::isValid() const
+{
+    return false;
+}
 
 #endif
 

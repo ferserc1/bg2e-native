@@ -20,7 +20,7 @@ vertex VertexOut vertMain(VertexIn in [[stage_in]],
                           constant CameraData& camera [[buffer(1)]])
 {
     VertexOut out;
-    out.dir      = in.position;
+    out.dir = in.position;
     out.position = camera.projection * camera.view * float4(in.position, 1.0);
     return out;
 }

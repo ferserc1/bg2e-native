@@ -24,7 +24,7 @@
 
 namespace bg2e::ui {
 
-LightEditor::~ LightEditor() = default;
+LightEditor::~LightEditor() = default;
 
 void LightEditor::setIntensityRange(float min, float max)
 {
@@ -34,9 +34,18 @@ void LightEditor::setIntensityRange(float min, float max)
 
 static base::Light::LightType lightTypeByIdx(size_t idx)
 {
-    if (idx == 0) return base::Light::TypeOmni;
-    if (idx == 1) return base::Light::TypeSpot;
-    if (idx == 2) return base::Light::TypeDirectional;
+    if (idx == 0)
+    {
+        return base::Light::TypeOmni;
+    }
+    if (idx == 1)
+    {
+        return base::Light::TypeSpot;
+    }
+    if (idx == 2)
+    {
+        return base::Light::TypeDirectional;
+    }
     return base::Light::TypeDisabled;
 }
 
@@ -49,33 +58,42 @@ bool LightEditor::draw()
     }
 
     const std::vector<std::string> s_lightTypeNames = {
-        "OMNI", "SPOT", "DIRECTIONAL", "DISABLED"
-    };
+        "OMNI", "SPOT", "DIRECTIONAL", "DISABLED"};
 
     auto& light = const_cast<base::Light&>(comp->light());
 
     uint32_t currentTypeIdx = 0;
     switch (light.type())
     {
-        case base::Light::TypeOmni: currentTypeIdx = 0; break;
-        case base::Light::TypeSpot: currentTypeIdx = 1; break;
-        case base::Light::TypeDirectional: currentTypeIdx = 2; break;
-        default: currentTypeIdx = 3; break;
+    case base::Light::TypeOmni:
+        currentTypeIdx = 0;
+        break;
+    case base::Light::TypeSpot:
+        currentTypeIdx = 1;
+        break;
+    case base::Light::TypeDirectional:
+        currentTypeIdx = 2;
+        break;
+    default:
+        currentTypeIdx = 3;
+        break;
     }
 
     bool changed = false;
 
-
     Text::separator("Basic properties");
 
     if (Value::comboBox(
-        "Light Type",
-        s_lightTypeNames,
-        currentTypeIdx, false))
+            "Light Type",
+            s_lightTypeNames,
+            currentTypeIdx, false))
     {
         light.setType(lightTypeByIdx(currentTypeIdx));
         changed = true;
-        if (_onChangedFunction) _onChangedFunction();
+        if (_onChangedFunction)
+        {
+            _onChangedFunction();
+        }
     }
 
     base::Color color = light.color();
@@ -83,16 +101,22 @@ bool LightEditor::draw()
     {
         light.setColor(color);
         changed = true;
-        if (_onChangedFunction) _onChangedFunction();
+        if (_onChangedFunction)
+        {
+            _onChangedFunction();
+        }
     }
 
     float intensity = light.intensity();
     if (Numeric::sliderFloat(
-        "Light Intensity", &intensity, _intensityMin, _intensityMax))
+            "Light Intensity", &intensity, _intensityMin, _intensityMax))
     {
         light.setIntensity(intensity);
         changed = true;
-        if (_onChangedFunction) _onChangedFunction();
+        if (_onChangedFunction)
+        {
+            _onChangedFunction();
+        }
     }
 
     Text::separator("Shadows");
@@ -101,7 +125,10 @@ bool LightEditor::draw()
     {
         light.setCastShadows(castShadows);
         changed = true;
-        if (_onChangedFunction) _onChangedFunction();
+        if (_onChangedFunction)
+        {
+            _onChangedFunction();
+        }
     }
 
     bool affectReflections = light.affectsReflections();
@@ -109,7 +136,10 @@ bool LightEditor::draw()
     {
         light.setAffectsReflections(affectReflections);
         changed = true;
-        if (_onChangedFunction) _onChangedFunction();
+        if (_onChangedFunction)
+        {
+            _onChangedFunction();
+        }
     }
     if (castShadows)
     {
@@ -118,7 +148,10 @@ bool LightEditor::draw()
         {
             light.setSourceSize(sourceSize);
             changed = true;
-            if (_onChangedFunction) _onChangedFunction();
+            if (_onChangedFunction)
+            {
+                _onChangedFunction();
+            }
         }
 
         int shadowSamples = static_cast<int>(light.shadowSamples());
@@ -126,7 +159,10 @@ bool LightEditor::draw()
         {
             light.setShadowSamples(static_cast<uint32_t>(shadowSamples));
             changed = true;
-            if (_onChangedFunction) _onChangedFunction();
+            if (_onChangedFunction)
+            {
+                _onChangedFunction();
+            }
         }
     }
 
@@ -138,7 +174,10 @@ bool LightEditor::draw()
         {
             light.setSpotAngle(spotAngle);
             changed = true;
-            if (_onChangedFunction) _onChangedFunction();
+            if (_onChangedFunction)
+            {
+                _onChangedFunction();
+            }
         }
 
         float spotCutoff = light.spotCutoff();
@@ -146,7 +185,10 @@ bool LightEditor::draw()
         {
             light.setSpotCutoff(spotCutoff);
             changed = true;
-            if (_onChangedFunction) _onChangedFunction();
+            if (_onChangedFunction)
+            {
+                _onChangedFunction();
+            }
         }
     }
 

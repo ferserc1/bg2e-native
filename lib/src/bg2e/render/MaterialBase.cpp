@@ -21,8 +21,8 @@
 
 namespace bg2e::render {
 
-MaterialBase::MaterialBase(Engine * engine)
-    :_engine(engine)
+MaterialBase::MaterialBase(Engine* engine)
+    : _engine(engine)
 {
     _albedoTexture = Texture::whiteTexture(engine);
     _normalTexture = Texture::whiteTexture(engine);
@@ -39,23 +39,22 @@ MaterialBase::~MaterialBase()
 }
 
 void updateTexture(
-    Engine * engine,
+    Engine* engine,
     std::shared_ptr<base::Texture> texData,
     std::shared_ptr<Texture>& outTexture,
     bool useCache,
-    std::shared_ptr<Texture> fallbackTexture
-) {
+    std::shared_ptr<Texture> fallbackTexture)
+{
     if (outTexture.get())
     {
         outTexture.reset();
     }
-    
+
     if (texData != nullptr && !useCache)
     {
         outTexture = std::make_shared<Texture>(
-                engine,
-                texData
-            );
+            engine,
+            texData);
     }
     else if (texData != nullptr)
     {
@@ -65,7 +64,8 @@ void updateTexture(
         }
         outTexture = utils::TextureCache::get().load(engine, *texData);
     }
-    else {
+    else
+    {
         outTexture = fallbackTexture;
     }
 }
@@ -81,43 +81,61 @@ void MaterialBase::updateTextures(std::function<void()> onTextureLoaded)
     {
         return;
     }
-    
+
     if (!_materialAttributes.albedoTextureUpdated())
     {
         updateTexture(_engine, _materialAttributes.albedoTexture(), _albedoTexture, useTextureCache(), Texture::whiteTexture(_engine));
-        if (onTextureLoaded && _materialAttributes.albedoTexture()) { onTextureLoaded(); }
+        if (onTextureLoaded && _materialAttributes.albedoTexture())
+        {
+            onTextureLoaded();
+        }
     }
-    
+
     if (!_materialAttributes.metalnessTextureUpdated())
     {
         updateTexture(_engine, _materialAttributes.metalnessTexture(), _metalnessTexture, useTextureCache(), Texture::whiteTexture(_engine));
-        if (onTextureLoaded && _materialAttributes.metalnessTexture()) { onTextureLoaded(); }
+        if (onTextureLoaded && _materialAttributes.metalnessTexture())
+        {
+            onTextureLoaded();
+        }
     }
-    
+
     if (!_materialAttributes.roughnessTextureUpdated())
     {
         updateTexture(_engine, _materialAttributes.roughnessTexture(), _roughnessTexture, useTextureCache(), Texture::whiteTexture(_engine));
-        if (onTextureLoaded && _materialAttributes.roughnessTexture()) { onTextureLoaded(); }
+        if (onTextureLoaded && _materialAttributes.roughnessTexture())
+        {
+            onTextureLoaded();
+        }
     }
-    
+
     if (!_materialAttributes.normalTextureUpdated())
     {
         updateTexture(_engine, _materialAttributes.normalTexture(), _normalTexture, useTextureCache(), Texture::normalTexture(_engine));
-        if (onTextureLoaded && _materialAttributes.normalTexture()) { onTextureLoaded(); }
+        if (onTextureLoaded && _materialAttributes.normalTexture())
+        {
+            onTextureLoaded();
+        }
     }
-    
+
     if (!_materialAttributes.aoTextureUpdated())
     {
         updateTexture(_engine, _materialAttributes.aoTexture(), _aoTexture, useTextureCache(), Texture::whiteTexture(_engine));
-        if (onTextureLoaded && _materialAttributes.aoTexture()) { onTextureLoaded(); }
+        if (onTextureLoaded && _materialAttributes.aoTexture())
+        {
+            onTextureLoaded();
+        }
     }
 
     if (!_materialAttributes.lightEmissionTextureUpdated())
     {
         updateTexture(_engine, _materialAttributes.lightEmissionTexture(), _lightEmissionTexture, useTextureCache(), Texture::whiteTexture(_engine));
-        if (onTextureLoaded && _materialAttributes.lightEmissionTexture()) { onTextureLoaded(); }
+        if (onTextureLoaded && _materialAttributes.lightEmissionTexture())
+        {
+            onTextureLoaded();
+        }
     }
-    
+
     _materialAttributes.setUpdated();
 }
 

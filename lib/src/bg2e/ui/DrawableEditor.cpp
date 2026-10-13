@@ -26,10 +26,9 @@ namespace bg2e::ui {
 
 DrawableEditor::~DrawableEditor()
 {
-
 }
 
-void DrawableEditor::init(const std::shared_ptr<manipulation::SelectionManager> & selectionManager)
+void DrawableEditor::init(const std::shared_ptr<manipulation::SelectionManager>& selectionManager)
 {
     _submeshSelector.init(selectionManager);
 }
@@ -37,18 +36,18 @@ void DrawableEditor::init(const std::shared_ptr<manipulation::SelectionManager> 
 bool DrawableEditor::draw()
 {
     std::shared_ptr<scene::Drawable> drawable = _submeshSelector.editDrawable();
-    auto drawableName = drawable.get() && !drawable->name().empty() ?
-        drawable->name() : "Drawable";
+    auto drawableName = drawable.get() && !drawable->name().empty() ? drawable->name() : "Drawable";
     auto changed = false;
-        
-    if (drawable.get() && Group::collapsingHeader(drawableName)) {
+
+    if (drawable.get() && Group::collapsingHeader(drawableName))
+    {
         if (_submeshSelector.draw())
         {
             changed = true;
         }
-        
+
         auto selectedPlist = _submeshSelector.selectedItem();
-        
+
         if (selectedPlist != -1)
         {
             std::string nameLabel = "Name";
@@ -56,14 +55,13 @@ bool DrawableEditor::draw()
             auto plName = drawable->submeshName(selectedPlist);
             auto grpName = drawable->submeshGroupName(selectedPlist);
             auto visible = drawable->submeshVisibility(selectedPlist);
-            
+
             if (_submeshSelector.selectedItems().size() > 1)
             {
                 separatorLabel += " (" + std::to_string(_submeshSelector.selectedItems().size()) + " items selected)";
             }
             Text::separator(separatorLabel);
-            
-            
+
             if (Value::text(nameLabel, plName))
             {
                 drawable->setSubmeshName(plName, selectedPlist);
@@ -91,7 +89,7 @@ bool DrawableEditor::draw()
             }
         }
     }
-     
+
     return changed;
 }
 

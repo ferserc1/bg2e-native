@@ -35,52 +35,54 @@ namespace bg2e {
 namespace reflection {
 
 class BG2E_API TypeRegistry {
-public:
+  public:
     static TypeRegistry& get();
 
     // Registers (or replaces) the metadata for info.typeName.
     void registerType(TypeInfo info);
 
     // nullptr if the type has no reflection metadata.
-    const TypeInfo * type(const std::string& typeName) const;
+    const TypeInfo* type(const std::string& typeName) const;
     bool contains(const std::string& typeName) const;
     std::vector<std::string> typeNames() const;
 
     // Registers a subtype and a type-safe factory for a polymorphic base.
     // Type metadata and subtype metadata may be registered in any order.
-    template<typename Base, typename Derived>
+    template <typename Base, typename Derived>
     void registerSubtype(
         std::string baseTypeName,
         std::string key,
         std::string displayName,
-        std::string typeName = {}
-    ) {
+        std::string typeName = {})
+    {
         static_assert(std::is_base_of_v<Base, Derived>,
-            "bg2e::reflection: registered subtype must derive from its base type");
+                      "bg2e::reflection: registered subtype must derive from its base type");
         static_assert(std::is_polymorphic_v<Base>,
-            "bg2e::reflection: polymorphic subtype bases must have virtual dispatch");
+                      "bg2e::reflection: polymorphic subtype bases must have virtual dispatch");
         static_assert(std::is_default_constructible_v<Derived>,
-            "bg2e::reflection: default subtype registration requires a default constructor");
+                      "bg2e::reflection: default subtype registration requires a default constructor");
         registerSubtype<Base, Derived>(
             std::move(baseTypeName), std::move(key), std::move(displayName),
-            [] { return std::make_shared<Derived>(); },
-            std::move(typeName)
-        );
+            []
+            {
+                return std::make_shared<Derived>();
+            },
+            std::move(typeName));
     }
 
-    template<typename Base, typename Derived, typename Factory>
+    template <typename Base, typename Derived, typename Factory>
         requires std::is_invocable_r_v<std::shared_ptr<Derived>, Factory>
     void registerSubtype(
         std::string baseTypeName,
         std::string key,
         std::string displayName,
         Factory factory,
-        std::string typeName = {}
-    ) {
+        std::string typeName = {})
+    {
         static_assert(std::is_base_of_v<Base, Derived>,
-            "bg2e::reflection: registered subtype must derive from its base type");
+                      "bg2e::reflection: registered subtype must derive from its base type");
         static_assert(std::is_polymorphic_v<Base>,
-            "bg2e::reflection: polymorphic subtype bases must have virtual dispatch");
+                      "bg2e::reflection: polymorphic subtype bases must have virtual dispatch");
         SubtypeInfo info;
         info.baseTypeName = std::move(baseTypeName);
         info.key = std::move(key);
@@ -90,37 +92,41 @@ public:
         RegisteredSubtype registered;
         registered.info = std::move(info);
         registered.dynamicType = std::type_index(typeid(Derived));
-        registered.factory = [factory = std::move(factory)]() -> std::any {
+        registered.factory = [factory = std::move(factory)]() -> std::any
+        {
             return std::any(std::shared_ptr<Base>(factory()));
         };
-        registered.constObjectCast = [](const void * object) -> const void * {
+        registered.constObjectCast = [](const void* object) -> const void*
+        {
             return dynamic_cast<const Derived*>(static_cast<const Base*>(object));
         };
-        registered.mutableObjectCast = [](void * object) -> void * {
+        registered.mutableObjectCast = [](void* object) -> void*
+        {
             return dynamic_cast<Derived*>(static_cast<Base*>(object));
         };
         registerSubtypeData(std::move(registered));
     }
 
-    const SubtypeInfo * subtype(const std::string& baseTypeName, const std::string& key) const;
+    const SubtypeInfo* subtype(const std::string& baseTypeName, const std::string& key) const;
     std::vector<SubtypeInfo> subtypes(const std::string& baseTypeName) const;
     std::string subtypeKey(const std::string& baseTypeName, const std::type_info& dynamicType) const;
-    const void * subtypeObject(
+    const void* subtypeObject(
         const std::string& baseTypeName,
         const std::string& key,
-        const void * baseObject
-    ) const;
-    void * subtypeObject(
+        const void* baseObject) const;
+    void* subtypeObject(
         const std::string& baseTypeName,
         const std::string& key,
-        void * baseObject
-    ) const;
+        void* baseObject) const;
 
-    template<typename Base>
+    template <typename Base>
     std::shared_ptr<Base> createSubtype(const std::string& baseTypeName, const std::string& key) const
     {
-        const auto * registered = subtypeData(baseTypeName, key);
-        if (!registered || !registered->factory) return {};
+        const auto* registered = subtypeData(baseTypeName, key);
+        if (!registered || !registered->factory)
+        {
+            return {};
+        }
         try
         {
             return std::any_cast<std::shared_ptr<Base>>(registered->factory());
@@ -143,7 +149,7 @@ public:
     // whose chains exceed the limit.
     bool validateObjectDepth(std::vector<std::string>* offenders = nullptr) const;
 
-protected:
+  protected:
     TypeRegistry() = default;
 
     struct RegisteredSubtype {
@@ -155,14 +161,13 @@ protected:
     };
 
     void registerSubtypeData(RegisteredSubtype subtype);
-    const RegisteredSubtype * subtypeData(
+    const RegisteredSubtype* subtypeData(
         const std::string& baseTypeName,
-        const std::string& key
-    ) const;
+        const std::string& key) const;
 
     std::unordered_map<std::string, TypeInfo> _registry;
     std::unordered_map<std::string, std::vector<RegisteredSubtype>> _subtypes;
-    static TypeRegistry * _registrySingleton;
+    static TypeRegistry* _registrySingleton;
 };
 
 }

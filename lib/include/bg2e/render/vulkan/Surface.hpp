@@ -19,7 +19,7 @@
 #pragma once
 
 #include <bg2e/common.hpp>
-#include <bg2e/base/PlatformTools.hpp>  
+#include <bg2e/base/PlatformTools.hpp>
 #include <bg2e/render/vulkan/common.hpp>
 #include <SDL2/SDL.h>
 
@@ -28,16 +28,22 @@ namespace render {
 namespace vulkan {
 
 class BG2E_API Surface {
-public:
+  public:
     void create(VkInstance instance, SDL_Window* window);
     void cleanup();
 
     VkExtent2D getExtent() const;
 
-    inline VkSurfaceKHR handle() const { return _surface; }
-    inline bool isValid() { return _surface != VK_NULL_HANDLE; }
+    inline VkSurfaceKHR handle() const
+    {
+        return _surface;
+    }
+    inline bool isValid()
+    {
+        return _surface != VK_NULL_HANDLE;
+    }
 
-protected:
+  protected:
     VkSurfaceKHR _surface = VK_NULL_HANDLE;
     VkInstance _instance = VK_NULL_HANDLE;
     SDL_Window* _window = nullptr;

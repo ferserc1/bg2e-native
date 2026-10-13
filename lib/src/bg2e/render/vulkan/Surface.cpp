@@ -45,10 +45,9 @@ VkExtent2D Surface::getExtent() const
 {
     int width, height;
     SDL_GetWindowSize(_window, &width, &height);
-    return { static_cast<uint32_t>(width), static_cast<uint32_t>(height) };
+    return {static_cast<uint32_t>(width), static_cast<uint32_t>(height)};
 }
 
 }
 }
 }
-

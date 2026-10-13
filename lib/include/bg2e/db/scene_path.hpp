@@ -23,7 +23,11 @@
 
 namespace bg2e::db {
 
-enum class SceneArtifactType { Scene, Prefab };
+enum class SceneArtifactType
+{
+    Scene,
+    Prefab
+};
 
 // Resolve an existing directory as Name/Name.json, or use a JSON file directly.
 // Returns an absolute path. Throws for missing/non-file targets or invalid extensions.
@@ -38,16 +42,16 @@ struct SceneSaveTarget {
 
 // Naming validation only: does not require an existing file or parse JSON.
 BG2E_API bool isValidScenePath(const std::filesystem::path& jsonPath,
-    SceneArtifactType type = SceneArtifactType::Scene);
+                               SceneArtifactType type = SceneArtifactType::Scene);
 
 // Append .json if necessary, and for Scene enforce Name/Name.json.
 // Throws on an invalid name. Does not change the filesystem.
 BG2E_API std::filesystem::path resolveSceneSavePath(const std::filesystem::path& selectedPath,
-    SceneArtifactType type = SceneArtifactType::Scene);
+                                                    SceneArtifactType type = SceneArtifactType::Scene);
 
 // Resolve and inspect the destination without creating anything or displaying UI.
 // Throws on inaccessible paths, conflicting directories/files, or a final symlink.
 BG2E_API SceneSaveTarget inspectSceneSaveTarget(const std::filesystem::path& selectedPath,
-    SceneArtifactType type = SceneArtifactType::Scene);
+                                                SceneArtifactType type = SceneArtifactType::Scene);
 
 }

@@ -115,11 +115,11 @@ void UvSurfacePass::record(VkCommandBuffer cmd,
     {
         // Vulkan's negative-height viewport maps UV2 v=1 to the first (top) image row.
         const glm::mat4 objectToWorld = nodeWorld * drawable.transform() *
-            drawable.localSubmeshTransform(submeshIndex);
+                                        drawable.localSubmeshTransform(submeshIndex);
         vkCmdPushConstants(cmd, _pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT,
-            0, sizeof(glm::mat4), &objectToWorld);
+                           0, sizeof(glm::mat4), &objectToWorld);
         vkCmdPushConstants(cmd, _pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT,
-            sizeof(glm::mat4), sizeof(uint32_t), &submeshIndex);
+                           sizeof(glm::mat4), sizeof(uint32_t), &submeshIndex);
         renderMesh->drawSubmesh(cmd, submeshIndex);
     }
 
@@ -158,58 +158,56 @@ UvSurfacePass::Diagnostic UvSurfacePass::readDiagnostic(uint32_t frameSlot) cons
         imageBytes * 2,
         VK_BUFFER_USAGE_TRANSFER_DST_BIT,
         VMA_MEMORY_USAGE_GPU_TO_CPU,
-        "UV surface diagnostic readback"
-    ));
+        "UV surface diagnostic readback"));
 
     // Diagnostic readback is intentionally blocking and may be invoked only after
     // the frame containing record() has been submitted.
     _engine->device().waitIdle();
-    _engine->command().immediateSubmit([&](VkCommandBuffer cmd) {
-        const auto idImage = target.image(2);
-        const auto maskImage = target.image(3);
-        vulkan::Image::TransitionInfo toTransfer(
-            VK_IMAGE_ASPECT_COLOR_BIT,
-            0,
-            VK_REMAINING_MIP_LEVELS,
-            0,
-            VK_REMAINING_ARRAY_LAYERS,
-            VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,
-            VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT,
-            VK_PIPELINE_STAGE_2_TRANSFER_BIT,
-            VK_ACCESS_2_TRANSFER_READ_BIT
-        );
-        vulkan::Image::cmdTransitionImage(cmd, idImage->handle(),
-            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, toTransfer);
-        vulkan::Image::cmdTransitionImage(cmd, maskImage->handle(),
-            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, toTransfer);
+    _engine->command().immediateSubmit([&](VkCommandBuffer cmd)
+                                       {
+                                           const auto idImage = target.image(2);
+                                           const auto maskImage = target.image(3);
+                                           vulkan::Image::TransitionInfo toTransfer(
+                                               VK_IMAGE_ASPECT_COLOR_BIT,
+                                               0,
+                                               VK_REMAINING_MIP_LEVELS,
+                                               0,
+                                               VK_REMAINING_ARRAY_LAYERS,
+                                               VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,
+                                               VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT,
+                                               VK_PIPELINE_STAGE_2_TRANSFER_BIT,
+                                               VK_ACCESS_2_TRANSFER_READ_BIT);
+                                           vulkan::Image::cmdTransitionImage(cmd, idImage->handle(),
+                                                                             VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, toTransfer);
+                                           vulkan::Image::cmdTransitionImage(cmd, maskImage->handle(),
+                                                                             VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, toTransfer);
 
-        VkBufferImageCopy region{};
-        region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        region.imageSubresource.layerCount = 1;
-        region.imageExtent = { result.extent.width, result.extent.height, 1 };
-        vkCmdCopyImageToBuffer(cmd, idImage->handle(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-            stagingBuffer->handle(), 1, &region);
+                                           VkBufferImageCopy region{};
+                                           region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+                                           region.imageSubresource.layerCount = 1;
+                                           region.imageExtent = {result.extent.width, result.extent.height, 1};
+                                           vkCmdCopyImageToBuffer(cmd, idImage->handle(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                                                                  stagingBuffer->handle(), 1, &region);
 
-        region.bufferOffset = imageBytes;
-        vkCmdCopyImageToBuffer(cmd, maskImage->handle(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-            stagingBuffer->handle(), 1, &region);
+                                           region.bufferOffset = imageBytes;
+                                           vkCmdCopyImageToBuffer(cmd, maskImage->handle(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                                                                  stagingBuffer->handle(), 1, &region);
 
-        vulkan::Image::TransitionInfo toSampling(
-            VK_IMAGE_ASPECT_COLOR_BIT,
-            0,
-            VK_REMAINING_MIP_LEVELS,
-            0,
-            VK_REMAINING_ARRAY_LAYERS,
-            VK_PIPELINE_STAGE_2_TRANSFER_BIT,
-            VK_ACCESS_2_TRANSFER_READ_BIT,
-            VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,
-            VK_ACCESS_2_SHADER_SAMPLED_READ_BIT
-        );
-        vulkan::Image::cmdTransitionImage(cmd, idImage->handle(),
-            VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, toSampling);
-        vulkan::Image::cmdTransitionImage(cmd, maskImage->handle(),
-            VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, toSampling);
-    });
+                                           vulkan::Image::TransitionInfo toSampling(
+                                               VK_IMAGE_ASPECT_COLOR_BIT,
+                                               0,
+                                               VK_REMAINING_MIP_LEVELS,
+                                               0,
+                                               VK_REMAINING_ARRAY_LAYERS,
+                                               VK_PIPELINE_STAGE_2_TRANSFER_BIT,
+                                               VK_ACCESS_2_TRANSFER_READ_BIT,
+                                               VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,
+                                               VK_ACCESS_2_SHADER_SAMPLED_READ_BIT);
+                                           vulkan::Image::cmdTransitionImage(cmd, idImage->handle(),
+                                                                             VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, toSampling);
+                                           vulkan::Image::cmdTransitionImage(cmd, maskImage->handle(),
+                                                                             VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, toSampling);
+                                       });
 
     VK_ASSERT(vmaInvalidateAllocation(_engine->allocator(), stagingBuffer->allocation(), 0, VK_WHOLE_SIZE));
     const auto* mapped = static_cast<const uint32_t*>(stagingBuffer->allocatedData());

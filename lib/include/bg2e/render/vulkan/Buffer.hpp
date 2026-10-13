@@ -27,42 +27,56 @@ namespace render {
 namespace vulkan {
 
 class BG2E_API Buffer {
-public:
+  public:
     virtual ~Buffer();
 
     Buffer(
-        Engine * engine,
+        Engine* engine,
         VkBuffer buffer,
         VmaAllocation allocation,
         VmaAllocationInfo info,
-        const std::string & name = ""
-    );
+        const std::string& name = "");
 
     static Buffer* createAllocatedBuffer(
-        Engine * engine,
+        Engine* engine,
         size_t allocSize,
         VkBufferUsageFlags usage,
         VmaMemoryUsage memoryUsage,
-        const std::string & name = ""
-    );
+        const std::string& name = "");
 
     void cleanup();
 
     [[nodiscard]] VkDeviceAddress deviceAddress() const;
-    
+
     void* allocatedData();
     void flushAllocatedData();
 
-    [[nodiscard]] VkBuffer handle() const { return _buffer; }
-    [[nodiscard]] VmaAllocation allocation() const { return _allocation; }
-    [[nodiscard]] VmaAllocationInfo allocationInfo() const { return _info; }
-    [[nodiscard]] size_t logicSize() const { return _logicSize; }
+    [[nodiscard]] VkBuffer handle() const
+    {
+        return _buffer;
+    }
+    [[nodiscard]] VmaAllocation allocation() const
+    {
+        return _allocation;
+    }
+    [[nodiscard]] VmaAllocationInfo allocationInfo() const
+    {
+        return _info;
+    }
+    [[nodiscard]] size_t logicSize() const
+    {
+        return _logicSize;
+    }
 
-    [[nodiscard]] const std::string & debugName() const { return _debugName; }
-protected:
+    [[nodiscard]] const std::string& debugName() const
+    {
+        return _debugName;
+    }
+
+  protected:
     Buffer() = default;
 
-    Engine * _engine = nullptr;
+    Engine* _engine = nullptr;
 
     VkBuffer _buffer = VK_NULL_HANDLE;
     VmaAllocation _allocation = VK_NULL_HANDLE;
@@ -75,4 +89,3 @@ protected:
 }
 }
 }
-

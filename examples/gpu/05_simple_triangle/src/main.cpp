@@ -53,16 +53,19 @@ int main(int argc, char** argv)
     Uint32 windowFlags = 0;
     switch (backend->windowType())
     {
-        case gpu::WindowType::Vulkan: windowFlags = SDL_WINDOW_VULKAN; break;
-        case gpu::WindowType::Metal:  windowFlags = SDL_WINDOW_METAL;  break;
+    case gpu::WindowType::Vulkan:
+        windowFlags = SDL_WINDOW_VULKAN;
+        break;
+    case gpu::WindowType::Metal:
+        windowFlags = SDL_WINDOW_METAL;
+        break;
     }
 
     SDL_Window* window = SDL_CreateWindow(
         "GPU Simple Triangle Example",
         SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
         800, 600,
-        windowFlags
-    );
+        windowFlags);
     if (!window)
     {
         std::cerr << "Failed to create window: " << SDL_GetError() << std::endl;
@@ -98,47 +101,42 @@ int main(int argc, char** argv)
         auto vsPath = (shaderBasePath / targetName / "triangle.vert.spv").string();
         auto fsPath = (shaderBasePath / targetName / "triangle.frag.spv").string();
         auto csPath = (shaderBasePath / targetName / "gradient.comp.spv").string();
-        vs = device->createShaderModule({ vsPath, "main", gpu::ShaderStage::Vertex,   "Triangle vertex shader" });
-        fs = device->createShaderModule({ fsPath, "main", gpu::ShaderStage::Fragment, "Triangle fragment shader" });
-        cs = device->createShaderModule({ csPath, "main", gpu::ShaderStage::Compute,  "Gradient compute shader" });
+        vs = device->createShaderModule({vsPath, "main", gpu::ShaderStage::Vertex, "Triangle vertex shader"});
+        fs = device->createShaderModule({fsPath, "main", gpu::ShaderStage::Fragment, "Triangle fragment shader"});
+        cs = device->createShaderModule({csPath, "main", gpu::ShaderStage::Compute, "Gradient compute shader"});
     }
     else
     {
         auto vsPath = (shaderBasePath / targetName / "triangle.vert.metallib").string();
         auto fsPath = (shaderBasePath / targetName / "triangle.frag.metallib").string();
         auto csPath = (shaderBasePath / targetName / "gradient.comp.metallib").string();
-        vs = device->createShaderModule({ vsPath, "vertMain", gpu::ShaderStage::Vertex,   "Triangle vertex shader" });
-        fs = device->createShaderModule({ fsPath, "fragMain", gpu::ShaderStage::Fragment, "Triangle fragment shader" });
-        cs = device->createShaderModule({ csPath, "compMain", gpu::ShaderStage::Compute,  "Gradient compute shader" });
+        vs = device->createShaderModule({vsPath, "vertMain", gpu::ShaderStage::Vertex, "Triangle vertex shader"});
+        fs = device->createShaderModule({fsPath, "fragMain", gpu::ShaderStage::Fragment, "Triangle fragment shader"});
+        cs = device->createShaderModule({csPath, "compMain", gpu::ShaderStage::Compute, "Gradient compute shader"});
     }
 
     // Graphics layout with push constant range and SampledImage + Sampler bindings
     gpu::PipelineLayoutDescription graphicsLayoutDesc{};
-    graphicsLayoutDesc.pushConstants.push_back({ 0, sizeof(PushConstants), gpu::ShaderStage::Fragment });
-    graphicsLayoutDesc.resourceBindings.push_back({ 0, {.vulkan = 0, .metal = 0}, gpu::ResourceType::SampledImage, gpu::ShaderStage::Fragment, 1 });
-    graphicsLayoutDesc.resourceBindings.push_back({ 0, {.vulkan = 1, .metal = 1}, gpu::ResourceType::Sampler,      gpu::ShaderStage::Fragment, 1 });
+    graphicsLayoutDesc.pushConstants.push_back({0, sizeof(PushConstants), gpu::ShaderStage::Fragment});
+    graphicsLayoutDesc.resourceBindings.push_back({0, {.vulkan = 0, .metal = 0}, gpu::ResourceType::SampledImage, gpu::ShaderStage::Fragment, 1});
+    graphicsLayoutDesc.resourceBindings.push_back({0, {.vulkan = 1, .metal = 1}, gpu::ResourceType::Sampler, gpu::ShaderStage::Fragment, 1});
     graphicsLayoutDesc.debugName = "Graphics pipeline layout";
     auto graphicsLayout = device->createPipelineLayout(graphicsLayoutDesc);
 
     // Procedural 2×2 texture
-    const std::array<std::array<uint8_t,4>, 4> texels = {{
-        {{255,   0,   0, 255}}, {{  0, 255,   0, 255}},
-        {{  0,   0, 255, 255}}, {{255, 255,   0, 255}}
-    }};
-    auto texture = device->createImage({
-        .size = {2, 2},
-        .format = gpu::PixelFormat::R8G8B8A8_UNORM,
-        .usage = gpu::ImageUsage::Sampled | gpu::ImageUsage::TransferDst,
-        .debugName = "Procedural 2x2 texture"
-    });
-    texture->uploadRGBA8(texels.data(), { 2, 2 });
+    const std::array<std::array<uint8_t, 4>, 4> texels = {{{{255, 0, 0, 255}}, {{0, 255, 0, 255}}, {{0, 0, 255, 255}}, {{255, 255, 0, 255}}}};
+    auto texture = device->createImage({.size = {2, 2},
+                                        .format = gpu::PixelFormat::R8G8B8A8_UNORM,
+                                        .usage = gpu::ImageUsage::Sampled | gpu::ImageUsage::TransferDst,
+                                        .debugName = "Procedural 2x2 texture"});
+    texture->uploadRGBA8(texels.data(), {2, 2});
     device->immediateSubmit([texture](gpu::CommandBuffer* cmd)
-    {
-        cmd->transition(texture.get(), gpu::ImageLayout::ShaderReadOnly);
-    });
+                            {
+                                cmd->transition(texture.get(), gpu::ImageLayout::ShaderReadOnly);
+                            });
 
     // Sampler with default settings (linear/linear, repeat)
-    auto sampler = device->createSampler({ .debugName = "Default linear sampler" });
+    auto sampler = device->createSampler({.debugName = "Default linear sampler"});
 
     // Static graphics resource set (texture + sampler, bound every frame)
     auto textureSet = device->createResourceSet(graphicsLayout.get(), 0, "Static texture set");
@@ -148,9 +146,7 @@ int main(int argc, char** argv)
 
     // Compute layout with StorageImage binding at set=0, binding=0
     gpu::PipelineLayoutDescription computeLayoutDesc{};
-    computeLayoutDesc.resourceBindings.push_back({
-        0, {.vulkan = 0, .metal = 0}, gpu::ResourceType::StorageImage, gpu::ShaderStage::Compute, 1
-    });
+    computeLayoutDesc.resourceBindings.push_back({0, {.vulkan = 0, .metal = 0}, gpu::ResourceType::StorageImage, gpu::ShaderStage::Compute, 1});
     computeLayoutDesc.debugName = "Compute pipeline layout";
     auto computeLayout = device->createPipelineLayout(computeLayoutDesc);
 
@@ -164,22 +160,32 @@ int main(int argc, char** argv)
     bg2e::geo::MeshPU meshData;
     meshData.vertices = {
         // perimeter (angle = -90° + i*72°)
-        { { 0.0000f, -0.5000f, 0.0f }, { 0.500f, 0.000f } },   // 0 – top
-        { { 0.4755f, -0.1545f, 0.0f }, { 0.976f, 0.345f } },   // 1 – upper-right
-        { { 0.2939f,  0.4045f, 0.0f }, { 0.794f, 0.905f } },   // 2 – lower-right
-        { {-0.2939f,  0.4045f, 0.0f }, { 0.206f, 0.905f } },   // 3 – lower-left
-        { {-0.4755f, -0.1545f, 0.0f }, { 0.024f, 0.345f } },   // 4 – upper-left
+        {{0.0000f, -0.5000f, 0.0f}, {0.500f, 0.000f}},  // 0 – top
+        {{0.4755f, -0.1545f, 0.0f}, {0.976f, 0.345f}},  // 1 – upper-right
+        {{0.2939f, 0.4045f, 0.0f}, {0.794f, 0.905f}},   // 2 – lower-right
+        {{-0.2939f, 0.4045f, 0.0f}, {0.206f, 0.905f}},  // 3 – lower-left
+        {{-0.4755f, -0.1545f, 0.0f}, {0.024f, 0.345f}}, // 4 – upper-left
         // centre
-        { { 0.0000f,  0.0000f, 0.0f }, { 0.500f, 0.500f } },   // 5
+        {{0.0000f, 0.0000f, 0.0f}, {0.500f, 0.500f}}, // 5
     };
     meshData.indices = {
-        5, 0, 1,
-        5, 1, 2,
-        5, 2, 3,
-        5, 3, 4,
-        5, 4, 0,
+        5,
+        0,
+        1,
+        5,
+        1,
+        2,
+        5,
+        2,
+        3,
+        5,
+        3,
+        4,
+        5,
+        4,
+        0,
     };
-    meshData.submeshes = { { 0, 15 } };
+    meshData.submeshes = {{0, 15}};
 
     gpu::MeshPU mesh;
     mesh.setMeshData(meshData);
@@ -187,13 +193,13 @@ int main(int argc, char** argv)
 
     // Graphics pipeline (with vertex buffer description)
     gpu::GraphicsPipelineDescription pipelineDesc{};
-    pipelineDesc.vertexShader   = vs.get();
+    pipelineDesc.vertexShader = vs.get();
     pipelineDesc.fragmentShader = fs.get();
-    pipelineDesc.layout         = graphicsLayout.get();
-    pipelineDesc.topology       = gpu::PrimitiveTopology::TriangleList;
-    pipelineDesc.colorFormat    = colorFormat;
-    pipelineDesc.depthFormat    = depthFormat;
-    pipelineDesc.debugName      = "Main graphics pipeline";
+    pipelineDesc.layout = graphicsLayout.get();
+    pipelineDesc.topology = gpu::PrimitiveTopology::TriangleList;
+    pipelineDesc.colorFormat = colorFormat;
+    pipelineDesc.depthFormat = depthFormat;
+    pipelineDesc.debugName = "Main graphics pipeline";
     pipelineDesc.addVertexBufferDescription(gpu::MeshPU::vertexBufferDescription());
 
     auto pipeline = device->createGraphicsPipeline(pipelineDesc);
@@ -201,8 +207,8 @@ int main(int argc, char** argv)
     // Compute pipeline
     gpu::ComputePipelineDescription computePipelineDesc{};
     computePipelineDesc.computeShader = cs.get();
-    computePipelineDesc.layout        = computeLayout.get();
-    computePipelineDesc.debugName     = "Gradient compute pipeline";
+    computePipelineDesc.layout = computeLayout.get();
+    computePipelineDesc.debugName = "Gradient compute pipeline";
     auto computePipeline = device->createComputePipeline(computePipelineDesc);
 
     // Resource set ring: one set per swapchain image
@@ -212,7 +218,7 @@ int main(int argc, char** argv)
     for (uint32_t i = 0; i < imageCount; ++i)
     {
         resourceSets.push_back(device->createResourceSet(computeLayout.get(), 0,
-            "Compute resource set ring[" + std::to_string(i) + "]"));
+                                                         "Compute resource set ring[" + std::to_string(i) + "]"));
     }
     uint32_t ringIndex = 0;
 
@@ -225,14 +231,20 @@ int main(int argc, char** argv)
         SDL_Event event;
         while (SDL_PollEvent(&event))
         {
-            if (event.type == SDL_QUIT) running = false;
+            if (event.type == SDL_QUIT)
+            {
+                running = false;
+            }
             if (event.type == SDL_WINDOWEVENT &&
-                event.window.event == SDL_WINDOWEVENT_CLOSE) running = false;
+                event.window.event == SDL_WINDOWEVENT_CLOSE)
+            {
+                running = false;
+            }
             if (event.type == SDL_WINDOWEVENT &&
                 event.window.event == SDL_WINDOWEVENT_RESIZED)
             {
-                surface->resize({ static_cast<uint32_t>(event.window.data1),
-                                  static_cast<uint32_t>(event.window.data2) });
+                surface->resize({static_cast<uint32_t>(event.window.data1),
+                                 static_cast<uint32_t>(event.window.data2)});
             }
         }
 
@@ -245,7 +257,7 @@ int main(int argc, char** argv)
         push.color[3] = 1.0f;
 
         auto frame = surface->beginFrame();
-        auto cmd   = graphicsQueue.createCommandBuffer("Frame command buffer");
+        auto cmd = graphicsQueue.createCommandBuffer("Frame command buffer");
 
         cmd->begin();
 
@@ -261,7 +273,7 @@ int main(int argc, char** argv)
         rs->update();
         cmd->bindResourceSet(computePipeline.get(), 0, rs);
 
-        uint32_t gx = (frame->colorImage()->width()  + 15) / 16;
+        uint32_t gx = (frame->colorImage()->width() + 15) / 16;
         uint32_t gy = (frame->colorImage()->height() + 15) / 16;
         cmd->dispatch(gx, gy, 1);
 

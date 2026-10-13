@@ -31,19 +31,25 @@ namespace render {
 class Engine;
 
 class BG2E_API BakerContext : public std::enable_shared_from_this<BakerContext> {
-public:
+  public:
     virtual ~BakerContext() = default;
 
     BakerContext(const BakerContext&) = delete;
     BakerContext& operator=(const BakerContext&) = delete;
 
-    [[nodiscard]] Engine* engine() const { return _engine; }
-    [[nodiscard]] scene::Node* rootNode() const { return _rootNode; }
+    [[nodiscard]] Engine* engine() const
+    {
+        return _engine;
+    }
+    [[nodiscard]] scene::Node* rootNode() const
+    {
+        return _rootNode;
+    }
 
-protected:
+  protected:
     BakerContext(Engine* engine, scene::Node* rootNode);
 
-private:
+  private:
     Engine* _engine;
     scene::Node* _rootNode;
 };

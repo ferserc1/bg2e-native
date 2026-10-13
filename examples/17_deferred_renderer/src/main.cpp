@@ -20,11 +20,15 @@
 #include <random>
 
 class RotateComponent : public bg2e::scene::Component {
-public:
+  public:
     BG2E_COMPONENT_TYPE_NAME("RotateCamera")
 
-    RotateComponent() : _factor(1.0f) {}
-    RotateComponent(float factor) : _factor(factor) {}
+    RotateComponent() : _factor(1.0f)
+    {
+    }
+    RotateComponent(float factor) : _factor(factor)
+    {
+    }
 
     void update(float delta) override
     {
@@ -41,16 +45,16 @@ public:
         return std::make_shared<RotateComponent>(_factor);
     }
 
-protected:
+  protected:
     float _factor;
 };
 
 class DeferredRendererDelegate : public bg2e::render::DefaultRenderLoopDelegate<bg2e::render::RendererDeferred>,
-    public bg2e::app::InputDelegate,
-    public bg2e::ui::UserInterfaceDelegate
-{
-public:
-    void init(bg2e::render::Engine*, bg2e::ui::UserInterface*) override {
+                                 public bg2e::app::InputDelegate,
+                                 public bg2e::ui::UserInterfaceDelegate {
+  public:
+    void init(bg2e::render::Engine*, bg2e::ui::UserInterface*) override
+    {
         _window.setTitle("Deferred renderer");
         _window.options.noClose = true;
         _window.options.minWidth = 190;
@@ -59,51 +63,54 @@ public:
         _window.setSize(200, 100);
     }
 
-    void drawUI() override {
-        _window.draw([&]() {
-            bg2e::ui::Text::text("Deferred renderer shell");
+    void drawUI() override
+    {
+        _window.draw([&]()
+                     {
+                         bg2e::ui::Text::text("Deferred renderer shell");
 
-            _fpsAccumulator += delta();
-            _fpsFrameCount++;
-            if (_fpsAccumulator >= 1000.0f)
-            {
-                _fps = static_cast<int>(1000.0f * _fpsFrameCount / _fpsAccumulator);
-                _fpsAccumulator = 0.0f;
-                _fpsFrameCount = 0;
-            }
-            std::string fpsLine = "FPS: " + std::to_string(_fps);
-            bg2e::ui::Text::text(fpsLine);
+                         _fpsAccumulator += delta();
+                         _fpsFrameCount++;
+                         if (_fpsAccumulator >= 1000.0f)
+                         {
+                             _fps = static_cast<int>(1000.0f * _fpsFrameCount / _fpsAccumulator);
+                             _fpsAccumulator = 0.0f;
+                             _fpsFrameCount = 0;
+                         }
+                         std::string fpsLine = "FPS: " + std::to_string(_fps);
+                         bg2e::ui::Text::text(fpsLine);
 
-            auto drawSkybox = renderer()->drawSkybox();
-            if (bg2e::ui::Button::checkBox("Draw skybox", &drawSkybox))
-            {
-                renderer()->setDrawSkybox(drawSkybox);
-            }
+                         auto drawSkybox = renderer()->drawSkybox();
+                         if (bg2e::ui::Button::checkBox("Draw skybox", &drawSkybox))
+                         {
+                             renderer()->setDrawSkybox(drawSkybox);
+                         }
 
-            auto blurLevel = renderer()->skyboxBlurLevel();
-            if (bg2e::ui::Numeric::sliderInt("Skybox blur", &blurLevel, 0, 6))
-            {
-                renderer()->setSkyboxBlurLevel(blurLevel);
-            }
+                         auto blurLevel = renderer()->skyboxBlurLevel();
+                         if (bg2e::ui::Numeric::sliderInt("Skybox blur", &blurLevel, 0, 6))
+                         {
+                             renderer()->setSkyboxBlurLevel(blurLevel);
+                         }
 
-            auto renderLayer = renderer()->debugVisualization();
-            int32_t renderLayerId = static_cast<int32_t>(renderLayer);
-            const int32_t numLayers = static_cast<int32_t>(bg2e::render::deferred::DeferredDebugVisualization::MaxLayer) - 1;
-            if (bg2e::ui::Numeric::sliderInt("Render Layer", &renderLayerId, 0, numLayers))
-            {
-                renderer()->setDebugVisualization(static_cast<bg2e::render::deferred::DeferredDebugVisualization>(renderLayerId));
-            }
-        });
+                         auto renderLayer = renderer()->debugVisualization();
+                         int32_t renderLayerId = static_cast<int32_t>(renderLayer);
+                         const int32_t numLayers = static_cast<int32_t>(bg2e::render::deferred::DeferredDebugVisualization::MaxLayer) - 1;
+                         if (bg2e::ui::Numeric::sliderInt("Render Layer", &renderLayerId, 0, numLayers))
+                         {
+                             renderer()->setDebugVisualization(static_cast<bg2e::render::deferred::DeferredDebugVisualization>(renderLayerId));
+                         }
+                     });
     }
 
-protected:
+  protected:
     bg2e::ui::Window _window;
 
     int _fps = 0;
     float _fpsAccumulator = 0.0f;
     int _fpsFrameCount = 0;
 
-    std::shared_ptr<bg2e::scene::Node> createScene() override {
+    std::shared_ptr<bg2e::scene::Node> createScene() override
+    {
         auto sceneRoot = std::make_shared<bg2e::scene::Node>("Scene Root");
         sceneRoot->addComponent(new bg2e::scene::EnvironmentComponent(bg2e::base::PlatformTools::assetPath(), "HDR_multi_nebulae_1.hdr"));
 
@@ -123,15 +130,14 @@ protected:
         auto anotherDrawableComponent = new bg2e::scene::DrawableComponent(anotherDrawable);
 
         secondModel->addComponent(anotherDrawableComponent);
-        secondModel->addComponent(bg2e::scene::TransformComponent::makeTranslated(-2.0f, 0.0f, 0.0f ));
+        secondModel->addComponent(bg2e::scene::TransformComponent::makeTranslated(-2.0f, 0.0f, 0.0f));
         sceneRoot->addChild(secondModel);
-
 
         auto floor = createFloorNode();
         sceneRoot->addChild(floor);
 
         auto cameraNode = std::shared_ptr<bg2e::scene::Node>(new bg2e::scene::Node("Camera"));
-        cameraNode->addComponent(bg2e::scene::TransformComponent::makeTranslated(0.0f, 2.0f, 10.0f ));
+        cameraNode->addComponent(bg2e::scene::TransformComponent::makeTranslated(0.0f, 2.0f, 10.0f));
         cameraNode->transform()->rotate(0.0f, -1.0f, 0.0f, 0.0f);
         cameraNode->addComponent(new bg2e::scene::CameraComponent());
         auto projection = new bg2e::math::OpticalProjection();
@@ -150,50 +156,42 @@ protected:
         return sceneRoot;
     }
 
-    bg2e::scene::DrawableBase * loadDrawable(bool transparent = false)
+    bg2e::scene::DrawableBase* loadDrawable(bool transparent = false)
     {
         std::filesystem::path modelPath = bg2e::base::PlatformTools::assetPath();
         modelPath.append("two_submeshes.obj");
 
         auto innerAlbedoTexture = std::make_shared<bg2e::base::Texture>(
             bg2e::base::PlatformTools::assetPath(),
-            "two_submeshes_inner_albedo.jpg"
-        );
+            "two_submeshes_inner_albedo.jpg");
 
         auto innerMetallicTexture = std::make_shared<bg2e::base::Texture>(
             bg2e::base::PlatformTools::assetPath(),
-            "two_submeshes_inner_metallic.jpg"
-        );
+            "two_submeshes_inner_metallic.jpg");
 
         auto innerRoughnessTexture = std::make_shared<bg2e::base::Texture>(
             bg2e::base::PlatformTools::assetPath(),
-            "two_submeshes_inner_roughness.jpg"
-        );
+            "two_submeshes_inner_roughness.jpg");
 
         auto innerNormalTexture = std::make_shared<bg2e::base::Texture>(
             bg2e::base::PlatformTools::assetPath(),
-            "two_submeshes_inner_normal.jpg"
-        );
+            "two_submeshes_inner_normal.jpg");
 
         auto outerAlbedoTexture = std::make_shared<bg2e::base::Texture>(
             bg2e::base::PlatformTools::assetPath(),
-            "two_submeshes_outer_albedo.jpg"
-        );
+            "two_submeshes_outer_albedo.jpg");
 
         auto outerMetallicTexture = std::make_shared<bg2e::base::Texture>(
             bg2e::base::PlatformTools::assetPath(),
-            "two_submeshes_outer_metallic.jpg"
-        );
+            "two_submeshes_outer_metallic.jpg");
 
         auto outerRoughnessTexture = std::make_shared<bg2e::base::Texture>(
             bg2e::base::PlatformTools::assetPath(),
-            "two_submeshes_outer_roughness.jpg"
-        );
+            "two_submeshes_outer_roughness.jpg");
 
         auto outerNormalTexture = std::make_shared<bg2e::base::Texture>(
             bg2e::base::PlatformTools::assetPath(),
-            "two_submeshes_outer_normal.jpg"
-        );
+            "two_submeshes_outer_normal.jpg");
 
         auto drawable = new bg2e::scene::Drawable();
         drawable->setMesh(bg2e::db::loadMeshObj<bg2e::geo::Mesh>(modelPath));
@@ -224,9 +222,9 @@ protected:
         return drawable;
     }
 
-    bg2e::scene::Node * createLights()
+    bg2e::scene::Node* createLights()
     {
-        auto * lightsRoot = new bg2e::scene::Node("Lights");
+        auto* lightsRoot = new bg2e::scene::Node("Lights");
         lightsRoot->addComponent(new RotateComponent(-10.0f));
         lightsRoot->addComponent(new bg2e::scene::TransformComponent());
         std::random_device rd;
@@ -246,21 +244,19 @@ protected:
                     colorDist(gen),
                     colorDist(gen),
                     colorDist(gen),
-                    1.0f
-                ),
-                true
-            ));
+                    1.0f),
+                true));
         }
 
         return lightsRoot;
     }
 
-    bg2e::scene::Node * createLight(
+    bg2e::scene::Node* createLight(
         const glm::vec3& position,
         const bg2e::base::Color& color,
-        bool castShadows
-    ) {
-        auto * lightNode = new bg2e::scene::Node("Light");
+        bool castShadows)
+    {
+        auto* lightNode = new bg2e::scene::Node("Light");
 
         lightNode->addComponent(new bg2e::scene::LightComponent());
         lightNode->light()->light().setType(bg2e::base::Light::TypeOmni);
@@ -289,8 +285,9 @@ protected:
 };
 
 class MyApplication : public bg2e::app::Application {
-public:
-    void init(int argc, char** argv) override {
+  public:
+    void init(int argc, char** argv) override
+    {
         auto delegate = std::make_shared<DeferredRendererDelegate>();
         setRenderDelegate(delegate);
         setInputDelegate(delegate);
@@ -298,7 +295,8 @@ public:
     }
 };
 
-int main(int argc, char** argv) {
+int main(int argc, char** argv)
+{
     bg2e::app::MainLoop mainLoop("org.bg2engine.examples.deferred-renderer");
     MyApplication app;
     app.init(argc, argv);

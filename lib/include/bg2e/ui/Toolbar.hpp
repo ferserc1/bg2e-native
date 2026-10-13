@@ -38,12 +38,13 @@ struct ToolbarButton {
 };
 
 class BG2E_API Toolbar : public Window {
-public:
-    enum Alignment {
+  public:
+    enum Alignment
+    {
         AlignLeft,
         AlignRight
     };
-    
+
     /**
      * Adds a button to the toolbar.
      * - If button.id < 0, a unique ID will be generated for this Toolbar.
@@ -55,10 +56,9 @@ public:
      * @return The button ID in this Toolbar. If a new one was generated, the generated ID is returned.
      */
     int32_t addButton(
-        ToolbarButton & button,
-        Alignment align = AlignLeft
-    );
-    
+        ToolbarButton& button,
+        Alignment align = AlignLeft);
+
     /**
      * Move-enabled overload of 'addButton'.
      * - If button.id < 0, a unique ID will be generated for this Toolbar.
@@ -70,33 +70,32 @@ public:
      * @return The button ID in this Toolbar. If a new one was generated, the generated ID is returned.
      */
     int32_t addButton(
-        ToolbarButton && button,
-        Alignment align = AlignLeft
-    );
+        ToolbarButton&& button,
+        Alignment align = AlignLeft);
 
     void draw() override;
-    
-    void updateButtonLabel(int32_t buttonId, const std::string & newLabel);
-    void updateButtonLabel(int32_t buttonId, std::string && newLabel);
+
+    void updateButtonLabel(int32_t buttonId, const std::string& newLabel);
+    void updateButtonLabel(int32_t buttonId, std::string&& newLabel);
     void enableButton(int32_t buttonId);
     void disableButton(int32_t buttonId);
-    
-    ToolbarButton * findButton(int32_t buttonId);
 
-    void addMenuItem(const MenuItem & menuItem)
+    ToolbarButton* findButton(int32_t buttonId);
+
+    void addMenuItem(const MenuItem& menuItem)
     {
         _menu.addMenuItem(menuItem);
     }
 
-protected:
+  protected:
     std::vector<ToolbarButton> _leftButtons;
     std::vector<ToolbarButton> _rightButtons;
     Menu _menu;
     bool _menuInitialized = false;
-    
+
     void setDrawFunction(std::function<void()> drawFunction) override;
     void draw(std::function<void()> drawFunc, std::function<void()> menuFunction = nullptr) override;
-    
+
     int32_t genId();
 };
 

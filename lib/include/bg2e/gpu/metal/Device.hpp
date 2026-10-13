@@ -29,7 +29,7 @@ namespace gpu {
 namespace metal {
 
 class Device : public gpu::Device {
-public:
+  public:
     void create(gpu::Instance* instance, gpu::PhysicalDevice* physicalDevice, gpu::Surface* surface) override;
     void cleanup() override;
     void waitIdle() override;
@@ -56,9 +56,12 @@ public:
 
     void immediateSubmit(std::function<void(gpu::CommandBuffer* cmd)>&& function) override;
 
-    DeviceHandle handle() const { return _device; }
+    DeviceHandle handle() const
+    {
+        return _device;
+    }
 
-private:
+  private:
     DeviceHandle _device = nullptr;
     metal::Queue _graphicsQueue;
     metal::Queue _presentQueue;

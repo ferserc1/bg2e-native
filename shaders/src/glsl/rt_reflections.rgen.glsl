@@ -12,7 +12,8 @@ layout(set = 0, binding = 3) uniform sampler2D g_Normal;
 layout(set = 0, binding = 4) uniform sampler2D g_Material;
 layout(set = 0, binding = 6) uniform sampler2DArray blueNoiseTex;
 
-layout(push_constant) uniform PushConstant {
+layout(push_constant) uniform PushConstant
+{
     mat4 inverseViewProjection;
     vec3 cameraPosition;
     float maxRoughness;
@@ -25,15 +26,19 @@ layout(push_constant) uniform PushConstant {
     uint reflectionLightCount;
     uint shadowSamples;
     uint useBlueNoise;
-} pc;
+}
+pc;
 
-layout(location = 0) rayPayloadEXT ReflectionPayload {
+layout(location = 0) rayPayloadEXT ReflectionPayload
+{
     vec3 hitColor;
     float hitDistance;
     uint didHit;
-} payload;
+}
+payload;
 
-vec3 sampleGGXLike(vec2 xi, vec3 direction, float roughness) {
+vec3 sampleGGXLike(vec2 xi, vec3 direction, float roughness)
+{
     float a = max(roughness * roughness, 0.001);
     float phi = 2.0 * 3.14159265359 * xi.x;
     float cosTheta = sqrt((1.0 - xi.y) / (1.0 + (a * a - 1.0) * xi.y));
@@ -48,10 +53,12 @@ vec3 sampleGGXLike(vec2 xi, vec3 direction, float roughness) {
     return normalize(tangent * localSample.x + bitangent * localSample.y + direction * localSample.z);
 }
 
-void main() {
+void main()
+{
     ivec2 pixel = ivec2(gl_LaunchIDEXT.xy);
 
-    if (pixel.x >= int(pc.outputSize.x) || pixel.y >= int(pc.outputSize.y)) {
+    if (pixel.x >= int(pc.outputSize.x) || pixel.y >= int(pc.outputSize.y))
+    {
         return;
     }
 
@@ -64,17 +71,20 @@ void main() {
 
     float roughness = material.g;
 
-    if (depth >= 1.0) {
+    if (depth >= 1.0)
+    {
         imageStore(reflectionOutput, pixel, vec4(0.0));
         return;
     }
 
-    if (roughness > pc.maxRoughness) {
+    if (roughness > pc.maxRoughness)
+    {
         imageStore(reflectionOutput, pixel, vec4(0.0));
         return;
     }
 
-    if (length(normal) < 0.5) {
+    if (length(normal) < 0.5)
+    {
         imageStore(reflectionOutput, pixel, vec4(0.0));
         return;
     }
@@ -92,41 +102,45 @@ void main() {
     // previous quadratic policy reduced too much of the glossy range to one
     // ray and produced unstable, visibly under-sampled reflections.
     const float mirrorThreshold = 0.01;
-    if (roughness <= mirrorThreshold) {
+    if (roughness <= mirrorThreshold)
+    {
         samples = 1u;
-    } else {
+    }
+    else
+    {
         uint minimumGlossySamples = min(samples, 2u);
         float roughnessRange = max(pc.maxRoughness - mirrorThreshold, 0.0001);
         float sampleFactor = smoothstep(
             0.0,
             1.0,
-            clamp((roughness - mirrorThreshold) / roughnessRange, 0.0, 1.0)
-        );
+            clamp((roughness - mirrorThreshold) / roughnessRange, 0.0, 1.0));
         samples = uint(ceil(mix(
             float(minimumGlossySamples),
             float(samples),
-            sampleFactor
-        )));
+            sampleFactor)));
     }
 
-    for (uint i = 0u; i < samples; ++i) {
+    for (uint i = 0u; i < samples; ++i)
+    {
         vec2 xi;
-        if (pc.useBlueNoise != 0u) {
+        if (pc.useBlueNoise != 0u)
+        {
             xi = bnRand2(blueNoiseTex, pixel, pc.frameIndex, i);
-        } else {
-            uint seed = uint(pixel.x) * 1973u
-                      ^ uint(pixel.y) * 9277u
-                      ^ (pc.frameIndex + 1u) * 26699u
-                      ^ i * 104729u;
+        }
+        else
+        {
+            uint seed = uint(pixel.x) * 1973u ^ uint(pixel.y) * 9277u ^ (pc.frameIndex + 1u) * 26699u ^ i * 104729u;
 
             xi = rand2(seed);
         }
 
         vec3 rayDir = reflectionDir;
-        if (roughness > 0.01) {
+        if (roughness > 0.01)
+        {
             rayDir = sampleGGXLike(xi, reflectionDir, roughness * pc.roughnessSpread);
 
-            if (dot(rayDir, normal) <= 0.01) {
+            if (dot(rayDir, normal) <= 0.01)
+            {
                 rayDir = normalize(reflectionDir + normal * 0.1);
             }
         }
@@ -146,16 +160,17 @@ void main() {
             0.001,
             rayDir,
             pc.maxDistance,
-            0
-        );
+            0);
 
-        if (payload.didHit != 0u) {
+        if (payload.didHit != 0u)
+        {
             accumulatedColor += payload.hitColor;
             validHits++;
         }
     }
 
-    if (validHits > 0u) {
+    if (validHits > 0u)
+    {
         vec3 avgColor = accumulatedColor / float(validHits);
         // Alpha encodes the per-pixel reflection certainty: the fraction of
         // samples that found geometry. Using a continuous value instead of a
@@ -163,7 +178,9 @@ void main() {
         // partially-occluded reflections, where only some samples hit.
         float certainty = float(validHits) / float(samples);
         imageStore(reflectionOutput, pixel, vec4(avgColor, certainty));
-    } else {
+    }
+    else
+    {
         imageStore(reflectionOutput, pixel, vec4(0.0));
     }
 }

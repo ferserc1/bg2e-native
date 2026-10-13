@@ -15,28 +15,29 @@ using namespace bg2e;
 
 namespace {
 
-template<typename ComponentT>
+template <typename ComponentT>
 void registerJointProperty(reflection::TypeInfoBuilder<ComponentT>& t)
 {
     t.object(
-        "joint",
-        "bg2e::base::LinkJoint",
-        static_cast<const base::LinkJoint&(ComponentT::*)() const>(&ComponentT::joint),
-        static_cast<base::LinkJoint&(ComponentT::*)()>(&ComponentT::joint)
-    )
+         "joint",
+         "bg2e::base::LinkJoint",
+         static_cast<const base::LinkJoint& (ComponentT::*)() const>(&ComponentT::joint),
+         static_cast<base::LinkJoint& (ComponentT::*)()>(&ComponentT::joint))
         .displayName("Joint")
         .category("Chain")
         .tooltip("Transform applied at this chain connection");
 }
 
 reflection::TypeRegistration<scene::InputChainJointComponent> _inputJointReflection(
-    [](reflection::TypeInfoBuilder<scene::InputChainJointComponent>& t) {
+    [](reflection::TypeInfoBuilder<scene::InputChainJointComponent>& t)
+    {
         t.displayName("Input Chain Joint");
         registerJointProperty(t);
     });
 
 reflection::TypeRegistration<scene::OutputChainJointComponent> _outputJointReflection(
-    [](reflection::TypeInfoBuilder<scene::OutputChainJointComponent>& t) {
+    [](reflection::TypeInfoBuilder<scene::OutputChainJointComponent>& t)
+    {
         t.displayName("Output Chain Joint");
         registerJointProperty(t);
     });

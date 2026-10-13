@@ -28,9 +28,9 @@
 #include <string>
 #include <vector>
 
-#include "bg2e/scene/FindNodeVisitor.hpp"
-#include "bg2e/scene/FindCameraVisitor.hpp"
-#include "bg2e/scene/FindNodeComponentVisitor.hpp"
+#include <bg2e/scene/FindNodeVisitor.hpp>
+#include <bg2e/scene/FindCameraVisitor.hpp>
+#include <bg2e/scene/FindNodeComponentVisitor.hpp>
 #include <bg2e/manipulation/GizmoComponent.hpp>
 #include <bg2e/manipulation/SelectableComponent.hpp>
 #include <bg2e/scene/LightComponent.hpp>
@@ -85,10 +85,8 @@ bool isValidExportNodeName(const std::string& name)
 
 }
 
-StageScene::StageScene(bg2e::render::Engine * engine, AppDelegate * appDelegate)
-    :_engine { engine }
-    ,_appDelegate { appDelegate }
-    ,_document(std::make_unique<Document>(appDelegate) )
+StageScene::StageScene(bg2e::render::Engine* engine, AppDelegate* appDelegate)
+    : _engine{engine}, _appDelegate{appDelegate}, _document(std::make_unique<Document>(appDelegate))
 {
 }
 
@@ -126,7 +124,7 @@ std::shared_ptr<bg2e::scene::Node> StageScene::buildDefaultScene()
     orbitCameraComp->setInitialDistance(2.0f);
     orbitCameraComp->setWheelSpeed(2.0f);
     orbitCameraComp->setPanSpeed(0.5f);
-    orbitCameraComp->setRotation(glm::vec2{ 13.0f, 10.0f });
+    orbitCameraComp->setRotation(glm::vec2{13.0f, 10.0f});
     cameraNode->addComponent(orbitCameraComp);
 
     scene->addChild(cameraNode);
@@ -146,8 +144,7 @@ std::shared_ptr<bg2e::scene::Node> StageScene::buildDefaultScene()
     auto environmentNode = std::make_shared<bg2e::scene::Node>("Environment");
     environmentNode->addComponent(new bg2e::scene::TransformComponent());
     environmentNode->addComponent(
-        new bg2e::scene::EnvironmentComponent(bg2e::base::PlatformTools::assetPath(), "mirrored_hall_4k.hdr")
-    );
+        new bg2e::scene::EnvironmentComponent(bg2e::base::PlatformTools::assetPath(), "mirrored_hall_4k.hdr"));
 
     scene->addChild(environmentNode);
 
@@ -160,20 +157,29 @@ void StageScene::setEditableRoot(std::shared_ptr<bg2e::scene::Node> newEditableR
 {
     _swapToken = std::make_shared<bg2e::app::SafeUpdateToken>();
     bg2e::app::MainLoop::current()->safeUpdateScene(
-        [this, newEditableRoot]() {
+        [this, newEditableRoot]()
+        {
             _appDelegate->selectionManager()->deselect();
-            if (_editableRoot) _containerRoot->removeChild(_editableRoot);
+            if (_editableRoot)
+            {
+                _containerRoot->removeChild(_editableRoot);
+            }
             _editableRoot = newEditableRoot;
             _containerRoot->addChild(_editableRoot);
             auto scene = _containerRoot->scene();
             scene->updateAll();
-            if (auto cam = cameraComponent()) scene->setMainCamera(cam);
+            if (auto cam = cameraComponent())
+            {
+                scene->setMainCamera(cam);
+            }
             ensureMainCameraProjection(scene);
             addGizmoComponents(_editableRoot.get());
-            if (_onSceneSwap) _onSceneSwap();
+            if (_onSceneSwap)
+            {
+                _onSceneSwap();
+            }
         },
-        _swapToken
-    );
+        _swapToken);
 }
 
 void StageScene::openScene(const std::filesystem::path& path, bg2e::scene::SceneProgressCallback progressCallback)
@@ -194,8 +200,7 @@ void StageScene::openScene(const std::filesystem::path& path, bg2e::scene::Scene
     {
         bg2e::app::MessageBox::showError(
             "Error opening scene",
-            "The selected file does not appear to be a valid scene."
-        );
+            "The selected file does not appear to be a valid scene.");
         return;
     }
 
@@ -233,15 +238,16 @@ void StageScene::importModelBg2(const std::filesystem::path& path)
     node->addComponent(new bg2e::manipulation::SelectableComponent());
     node->addComponent(new bg2e::manipulation::GizmoComponent(_engine));
     auto parent = newNodeParent();
-    bg2e::app::MainLoop::current()->safeUpdateScene([this, node, parent]() {
-        parent->addChild(node);
-        _containerRoot->scene()->updateAll();
-    });
+    bg2e::app::MainLoop::current()->safeUpdateScene([this, node, parent]()
+                                                    {
+                                                        parent->addChild(node);
+                                                        _containerRoot->scene()->updateAll();
+                                                    });
     _document->setUnsavedChanges(true);
 }
 
 void StageScene::importGltfScene(const std::filesystem::path& path,
-                                bg2e::scene::SceneProgressCallback progressCallback)
+                                 bg2e::scene::SceneProgressCallback progressCallback)
 {
     try
     {
@@ -250,8 +256,7 @@ void StageScene::importGltfScene(const std::filesystem::path& path,
         {
             bg2e::app::MessageBox::showError(
                 "Import glTF scene",
-                "Could not load the specified glTF file."
-            );
+                "Could not load the specified glTF file.");
             return;
         }
 
@@ -276,8 +281,7 @@ std::shared_ptr<bg2e::scene::Node> StageScene::importGltfScene(
     bool sourceIsZUp,
     std::string& errorOut,
     std::shared_ptr<bg2e::scene::Node> parentOverride,
-    bg2e::scene::SceneProgressCallback progressCallback
-)
+    bg2e::scene::SceneProgressCallback progressCallback)
 {
     try
     {
@@ -292,18 +296,17 @@ std::shared_ptr<bg2e::scene::Node> StageScene::importGltfScene(
 
         auto wrapper = std::make_shared<bg2e::scene::Node>(path.stem().string());
         auto transform = new bg2e::scene::TransformComponent();
-        glm::mat4 matrix{ 1.0f };
+        glm::mat4 matrix{1.0f};
         if (sourceIsZUp)
         {
             matrix = glm::rotate(
                 matrix,
                 glm::radians(-90.0f),
-                glm::vec3{ 1.0f, 0.0f, 0.0f }
-            );
+                glm::vec3{1.0f, 0.0f, 0.0f});
         }
         if (unitsScale != 1.0f)
         {
-            matrix = glm::scale(matrix, glm::vec3{ unitsScale });
+            matrix = glm::scale(matrix, glm::vec3{unitsScale});
         }
         transform->setMatrix(matrix);
         wrapper->addComponent(transform);
@@ -338,7 +341,8 @@ void StageScene::removeImportedNode(std::shared_ptr<bg2e::scene::Node> node)
         return;
     }
 
-    auto isInSubtree = [node](bg2e::scene::Node * candidate) {
+    auto isInSubtree = [node](bg2e::scene::Node* candidate)
+    {
         while (candidate)
         {
             if (candidate == node.get())
@@ -350,24 +354,28 @@ void StageScene::removeImportedNode(std::shared_ptr<bg2e::scene::Node> node)
         return false;
     };
 
-    bg2e::app::MainLoop::current()->safeUpdateScene([this, node, parent, isInSubtree]() {
-        auto selectionManager = _appDelegate->selectionManager();
-        bool selected = isInSubtree(selectionManager->selectedNode());
-        if (!selected)
-        {
-            for (const auto& weakNode : selectionManager->selectedNodes())
-            {
-                if (auto selectedNode = weakNode.lock(); isInSubtree(selectedNode.get()))
-                {
-                    selected = true;
-                    break;
-                }
-            }
-        }
-        if (selected) selectionManager->deselect();
-        parent->removeChild(node);
-        _containerRoot->scene()->updateAll();
-    });
+    bg2e::app::MainLoop::current()->safeUpdateScene([this, node, parent, isInSubtree]()
+                                                    {
+                                                        auto selectionManager = _appDelegate->selectionManager();
+                                                        bool selected = isInSubtree(selectionManager->selectedNode());
+                                                        if (!selected)
+                                                        {
+                                                            for (const auto& weakNode : selectionManager->selectedNodes())
+                                                            {
+                                                                if (auto selectedNode = weakNode.lock(); isInSubtree(selectedNode.get()))
+                                                                {
+                                                                    selected = true;
+                                                                    break;
+                                                                }
+                                                            }
+                                                        }
+                                                        if (selected)
+                                                        {
+                                                            selectionManager->deselect();
+                                                        }
+                                                        parent->removeChild(node);
+                                                        _containerRoot->scene()->updateAll();
+                                                    });
     _document->setUnsavedChanges(true);
 }
 
@@ -388,8 +396,7 @@ void StageScene::exportSelectedModels()
         {
             bg2e::app::MessageBox::showError(
                 "Export selected models",
-                "Select at least one node to export."
-            );
+                "Select at least one node to export.");
             return;
         }
 
@@ -400,14 +407,11 @@ void StageScene::exportSelectedModels()
             {
                 bg2e::app::MessageBox::showError(
                     "Export selected model",
-                    "The selected node does not contain a drawable."
-                );
+                    "The selected node does not contain a drawable.");
                 return;
             }
 
-            auto filePath = bg2e::app::FileDialog::getSaveFilePath({
-                { "bg2e 3D model", "bg2" }
-            });
+            auto filePath = bg2e::app::FileDialog::getSaveFilePath({{"bg2e 3D model", "bg2"}});
             if (filePath.empty())
             {
                 return;
@@ -435,14 +439,12 @@ void StageScene::exportSelectedModels()
             if (!isValidExportNodeName(node->name()))
             {
                 throw std::runtime_error(
-                    "Node name '" + node->name() + "' cannot be used as an export directory name."
-                );
+                    "Node name '" + node->name() + "' cannot be used as an export directory name.");
             }
             if (!nodeNames.insert(node->name()).second)
             {
                 throw std::runtime_error(
-                    "More than one selected drawable node is named '" + node->name() + "'."
-                );
+                    "More than one selected drawable node is named '" + node->name() + "'.");
             }
             exportNodes.push_back(node);
         }
@@ -451,8 +453,7 @@ void StageScene::exportSelectedModels()
         {
             bg2e::app::MessageBox::showError(
                 "Export selected models",
-                "None of the selected nodes contains a drawable."
-            );
+                "None of the selected nodes contains a drawable.");
             return;
         }
 
@@ -470,8 +471,7 @@ void StageScene::exportSelectedModels()
             std::filesystem::create_directories(modelDirectory);
             bg2e::db::storeDrawableBg2(
                 modelDirectory / (node->name() + ".bg2"),
-                node.get()
-            );
+                node.get());
         }
     }
     catch (const std::exception& error)
@@ -498,7 +498,7 @@ glm::vec3 StageScene::placementLocalPosition(bg2e::scene::Node* parent)
     auto cam = cameraComponent();
     if (!cam || !cam->ownerNode())
     {
-        return glm::vec3{ 0.0f };
+        return glm::vec3{0.0f};
     }
 
     auto cameraNode = cam->ownerNode();
@@ -513,7 +513,7 @@ glm::vec3 StageScene::placementLocalPosition(bg2e::scene::Node* parent)
     // The new node may hang from a parent with its own world transform. Express
     // the target world position in the parent's local space so the node lands at
     // the right place regardless of the parent's transform.
-    glm::mat4 parentWorld = parent ? parent->worldMatrix() : glm::mat4{ 1.0f };
+    glm::mat4 parentWorld = parent ? parent->worldMatrix() : glm::mat4{1.0f};
     return glm::vec3(glm::inverse(parentWorld) * glm::vec4(targetWorldPos, 1.0f));
 }
 
@@ -530,16 +530,20 @@ void StageScene::insertNewNode(std::shared_ptr<bg2e::scene::Node> node, std::sha
         node->addComponent(new bg2e::manipulation::GizmoComponent(_engine));
     }
 
-    bg2e::app::MainLoop::current()->safeUpdateScene([this, node, parent]() {
-        parent->addChild(node);
-        _containerRoot->scene()->updateAll();
-    });
+    bg2e::app::MainLoop::current()->safeUpdateScene([this, node, parent]()
+                                                    {
+                                                        parent->addChild(node);
+                                                        _containerRoot->scene()->updateAll();
+                                                    });
     _document->setUnsavedChanges(true);
 }
 
 void StageScene::addLightNode()
 {
-    if (!_editableRoot) return;
+    if (!_editableRoot)
+    {
+        return;
+    }
 
     auto parent = newNodeParent();
 
@@ -559,7 +563,10 @@ void StageScene::addLightNode()
 
 void StageScene::addCubeNode()
 {
-    if (!_editableRoot) return;
+    if (!_editableRoot)
+    {
+        return;
+    }
 
     auto parent = newNodeParent();
 
@@ -582,7 +589,10 @@ void StageScene::addCubeNode()
 
 void StageScene::addPlaneNode()
 {
-    if (!_editableRoot) return;
+    if (!_editableRoot)
+    {
+        return;
+    }
 
     auto parent = newNodeParent();
 
@@ -605,7 +615,10 @@ void StageScene::addPlaneNode()
 
 void StageScene::addSphereNode()
 {
-    if (!_editableRoot) return;
+    if (!_editableRoot)
+    {
+        return;
+    }
 
     auto parent = newNodeParent();
 
@@ -679,11 +692,8 @@ void StageScene::removeSelectedNode()
     auto response = bg2e::app::MessageBox::showWarning(
         "Remove selection",
         "The selected node and all its children will be removed. This action cannot be undone. Do you want to continue?",
-        {
-            { .code = 0, .label = "Cancel", .key = bg2e::app::MessageBox::Esc },
-            { .code = 1, .label = "Remove" }
-        }
-    );
+        {{.code = 0, .label = "Cancel", .key = bg2e::app::MessageBox::Esc},
+         {.code = 1, .label = "Remove"}});
 
     if (response != 1)
     {
@@ -702,16 +712,20 @@ void StageScene::removeSelectedNode()
     // selection highlight pointing at a destroyed object.
     _appDelegate->selectionManager()->deselect();
 
-    bg2e::app::MainLoop::current()->safeUpdateScene([this, node, parent]() {
-        parent->removeChild(node);
-        _containerRoot->scene()->updateAll();
-    });
+    bg2e::app::MainLoop::current()->safeUpdateScene([this, node, parent]()
+                                                    {
+                                                        parent->removeChild(node);
+                                                        _containerRoot->scene()->updateAll();
+                                                    });
     _document->setUnsavedChanges(true);
 }
 
 void StageScene::addEmptyNode()
 {
-    if (!_editableRoot) return;
+    if (!_editableRoot)
+    {
+        return;
+    }
 
     auto parent = newNodeParent();
 
@@ -739,14 +753,17 @@ bool StageScene::saveScene(const std::filesystem::path& path)
             // A redirected legacy path or a different destination may belong to
             // another scene, so those saves must retain overwrite confirmation.
             const bool savingCurrentDocument = !target.pathChanged && !_document->path().empty() &&
-                target.path == std::filesystem::absolute(_document->path());
+                                               target.path == std::filesystem::absolute(_document->path());
             finalPath = bg2e::db::confirmSceneSavePath(path,
-                bg2e::db::SceneSavePathSource::Direct,
-                bg2e::db::SceneArtifactType::Scene,
-                savingCurrentDocument ? bg2e::db::SceneOverwritePolicy::Allow
-                                      : bg2e::db::SceneOverwritePolicy::Confirm);
+                                                       bg2e::db::SceneSavePathSource::Direct,
+                                                       bg2e::db::SceneArtifactType::Scene,
+                                                       savingCurrentDocument ? bg2e::db::SceneOverwritePolicy::Allow
+                                                                             : bg2e::db::SceneOverwritePolicy::Confirm);
         }
-        if (finalPath.empty()) return false;
+        if (finalPath.empty())
+        {
+            return false;
+        }
 
         std::filesystem::create_directories(finalPath.parent_path());
         // Writes _editableRoot as the single top-level node of the scene file.
@@ -785,12 +802,12 @@ bool StageScene::checkUnsavedChanges()
         auto response = bg2e::app::MessageBox::showWarning(
             "Unsaved changes",
             "There are unsaved changes. Do you want to save your changes before continuing?",
-            {
-                { .code = 0, .label = "Cancel", },
-                { .code = 1, .label = "Save" },
-                { .code = 2, .label = "No" }
-            }
-        );
+            {{
+                 .code = 0,
+                 .label = "Cancel",
+             },
+             {.code = 1, .label = "Save"},
+             {.code = 2, .label = "No"}});
 
         if (response == 0)
         {
@@ -809,9 +826,12 @@ bool StageScene::checkUnsavedChanges()
     return true;
 }
 
-bg2e::scene::OrbitCameraComponent * StageScene::orbitCamera()
+bg2e::scene::OrbitCameraComponent* StageScene::orbitCamera()
 {
-    if (!_editableRoot) return nullptr;
+    if (!_editableRoot)
+    {
+        return nullptr;
+    }
     bg2e::scene::FindNodeComponentVisitor<bg2e::scene::OrbitCameraComponent> finder;
     auto results = finder.find(_editableRoot.get());
     if (!results.empty())
@@ -825,20 +845,26 @@ bg2e::scene::OrbitCameraComponent * StageScene::orbitCamera()
     return nullptr;
 }
 
-void StageScene::ensureMainCameraProjection(bg2e::scene::Scene * scene)
+void StageScene::ensureMainCameraProjection(bg2e::scene::Scene* scene)
 {
-    if (!scene) return;
+    if (!scene)
+    {
+        return;
+    }
     auto cam = scene->mainCamera();
-    if (!cam || cam->projection()) return;
+    if (!cam || cam->projection())
+    {
+        return;
+    }
 
     auto projection = new bg2e::math::OpticalProjection();
-    projection->setFrameSize(50.0f);    // film size: 50 mm
-    projection->setFocalLength(55.0f);  // lens: 55 mm
+    projection->setFrameSize(50.0f);   // film size: 50 mm
+    projection->setFocalLength(55.0f); // lens: 55 mm
     projection->setFar(1000.0f);
     cam->setProjection(projection);
 }
 
-void StageScene::addGizmoComponents(bg2e::scene::Node * root)
+void StageScene::addGizmoComponents(bg2e::scene::Node* root)
 {
     using namespace bg2e::manipulation;
 
@@ -870,9 +896,12 @@ void StageScene::addGizmoComponents(bg2e::scene::Node * root)
     }
 }
 
-bg2e::scene::CameraComponent * StageScene::cameraComponent()
+bg2e::scene::CameraComponent* StageScene::cameraComponent()
 {
-    if (!_editableRoot) return nullptr;
+    if (!_editableRoot)
+    {
+        return nullptr;
+    }
     bg2e::scene::FindCameraVisitor finder;
     finder.findCameras(_editableRoot.get());
     auto cameras = finder.cameras();
@@ -883,7 +912,7 @@ bg2e::scene::CameraComponent * StageScene::cameraComponent()
     return nullptr;
 }
 
-void StageScene::centerCameraOnTarget(bg2e::scene::Node * target)
+void StageScene::centerCameraOnTarget(bg2e::scene::Node* target)
 {
     auto orbit = orbitCamera();
     if (!orbit)
@@ -904,8 +933,8 @@ void StageScene::centerCameraOnTarget(bg2e::scene::Node * target)
 
     auto config = _viewpointAnalyzer->config();
     const float fieldOfView = bg2e::utils::cameraVerticalFieldOfView(cameraComponent());
-    config.fieldOfView = { fieldOfView, fieldOfView, 1, false };
-    config.targetHeight = { .min = 0.6f, .max = 0.8f, .samples = 1, .cyclic = false };
+    config.fieldOfView = {fieldOfView, fieldOfView, 1, false};
+    config.targetHeight = {.min = 0.6f, .max = 0.8f, .samples = 1, .cyclic = false};
     _viewpointAnalyzer->setConfig(config);
 
     const auto samples = _viewpointAnalyzer->analyze(target);

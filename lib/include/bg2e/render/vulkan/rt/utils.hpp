@@ -21,11 +21,8 @@
 #include <bg2e/render/vulkan/common.hpp>
 #include <bg2e/math/base.hpp>
 
-namespace bg2e::render::vulkan::rt
-{
+namespace bg2e::render::vulkan::rt {
 
-
-extern VkTransformMatrixKHR BG2E_API mat4ToVkTransformMatrix(const glm::mat4 &m);
-
+extern VkTransformMatrixKHR BG2E_API mat4ToVkTransformMatrix(const glm::mat4& m);
 
 }

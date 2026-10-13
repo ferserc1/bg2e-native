@@ -50,9 +50,15 @@ void Surface::releaseDepthTarget()
 
 #else
 
-void Surface::createDepthTarget(const Size2D&, PixelFormat) {}
-void Surface::resizeDepthTarget(const Size2D&) {}
-void Surface::releaseDepthTarget() {}
+void Surface::createDepthTarget(const Size2D&, PixelFormat)
+{
+}
+void Surface::resizeDepthTarget(const Size2D&)
+{
+}
+void Surface::releaseDepthTarget()
+{
+}
 
 #endif
 

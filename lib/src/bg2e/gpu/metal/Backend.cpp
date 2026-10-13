@@ -59,10 +59,19 @@ std::unique_ptr<gpu::WindowSurface> Backend::createWindowSurface(
     std::unique_ptr<gpu::WindowSurface> surface = std::make_unique<metal::WindowSurface>();
     surface->setColorFormat(colorFormat);
     surface->setDepthFormat(depthFormat);
-    try { surface->create(instance); }
+    try
+    {
+        surface->create(instance);
+    }
     catch (...)
     {
-        try { surface->cleanup(); } catch (...) { }
+        try
+        {
+            surface->cleanup();
+        }
+        catch (...)
+        {
+        }
         throw;
     }
     return surface;

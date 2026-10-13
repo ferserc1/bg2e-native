@@ -25,18 +25,33 @@ namespace metal {
 
 #if BG2E_IS_MAC
 
-SurfaceFrame::~SurfaceFrame() { if (_drawable) _drawable->release(); }
+SurfaceFrame::~SurfaceFrame()
+{
+    if (_drawable)
+    {
+        _drawable->release();
+    }
+}
 
 void SurfaceFrame::setDrawable(CA::MetalDrawable* drawable)
 {
-    if (drawable) drawable->retain();
-    if (_drawable) _drawable->release();
+    if (drawable)
+    {
+        drawable->retain();
+    }
+    if (_drawable)
+    {
+        _drawable->release();
+    }
     _drawable = drawable;
 }
 
 gpu::Image* SurfaceFrame::colorImage() const
 {
-    if (_colorImage) return _colorImage.get();
+    if (_colorImage)
+    {
+        return _colorImage.get();
+    }
     return _colorImageRaw;
 }
 

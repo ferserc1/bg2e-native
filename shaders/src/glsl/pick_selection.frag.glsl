@@ -18,9 +18,9 @@
 
 #version 450
 
-layout (location = 0) out vec4 outColor;
+layout(location = 0) out vec4 outColor;
 
-layout (location = 0) in flat uint inIdentifier;
+layout(location = 0) in flat uint inIdentifier;
 
 void main()
 {
@@ -28,10 +28,9 @@ void main()
 
     uvec4 bytes = uvec4(
         inIdentifier & 0xFFu,
-        (inIdentifier >> 8)  & 0xFFu,
+        (inIdentifier >> 8) & 0xFFu,
         (inIdentifier >> 16) & 0xFFu,
-        (inIdentifier >> 24) & 0xFFu
-    );
+        (inIdentifier >> 24) & 0xFFu);
 
     outColor = vec4(bytes) * inv255;
 }

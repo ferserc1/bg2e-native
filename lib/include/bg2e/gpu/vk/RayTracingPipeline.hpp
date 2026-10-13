@@ -26,7 +26,7 @@ namespace gpu {
 namespace vk {
 
 class BG2E_API RayTracingPipeline : public gpu::RayTracingPipeline {
-public:
+  public:
     RayTracingPipeline(gpu::Device* gpuDevice, VkDevice device, VmaAllocator allocator,
                        const gpu::RayTracingPipelineDescription& description);
     ~RayTracingPipeline() override;
@@ -34,16 +34,37 @@ public:
     bool isValid() const override;
     void cleanup() override;
 
-    VkPipeline handle() const { return _pipeline; }
-    VkPipelineBindPoint bindPoint() const { return VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR; }
-    VkPipelineLayout layoutHandle() const { return _layoutHandle; }
+    VkPipeline handle() const
+    {
+        return _pipeline;
+    }
+    VkPipelineBindPoint bindPoint() const
+    {
+        return VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR;
+    }
+    VkPipelineLayout layoutHandle() const
+    {
+        return _layoutHandle;
+    }
 
-    const VkStridedDeviceAddressRegionKHR& raygenSBT() const { return _raygenRegion; }
-    const VkStridedDeviceAddressRegionKHR& missSBT() const { return _missRegion; }
-    const VkStridedDeviceAddressRegionKHR& hitSBT() const { return _hitRegion; }
-    const VkStridedDeviceAddressRegionKHR& callableSBT() const { return _callableRegion; }
+    const VkStridedDeviceAddressRegionKHR& raygenSBT() const
+    {
+        return _raygenRegion;
+    }
+    const VkStridedDeviceAddressRegionKHR& missSBT() const
+    {
+        return _missRegion;
+    }
+    const VkStridedDeviceAddressRegionKHR& hitSBT() const
+    {
+        return _hitRegion;
+    }
+    const VkStridedDeviceAddressRegionKHR& callableSBT() const
+    {
+        return _callableRegion;
+    }
 
-private:
+  private:
     VkDevice _device{VK_NULL_HANDLE};
     VmaAllocator _allocator{VK_NULL_HANDLE};
     VkPipeline _pipeline{VK_NULL_HANDLE};

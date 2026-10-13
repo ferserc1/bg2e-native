@@ -34,18 +34,27 @@ namespace vulkan {
 namespace rt {
 
 class BG2E_API RayTracingScene {
-public:
-    RayTracingScene(Engine * engine);
+  public:
+    RayTracingScene(Engine* engine);
     ~RayTracingScene();
 
-    bool update(VkCommandBuffer cmd, scene::Node * node);
+    bool update(VkCommandBuffer cmd, scene::Node* node);
     void cleanup();
 
-    [[nodiscard]] VkAccelerationStructureKHR tlas() const { return _tlas; }
-    [[nodiscard]] uint64_t deviceAddress() const { return _tlasDeviceAddress; }
-    [[nodiscard]] const std::vector<RTObjectInstance>& objectInstances() const { return _objectInstances; }
+    [[nodiscard]] VkAccelerationStructureKHR tlas() const
+    {
+        return _tlas;
+    }
+    [[nodiscard]] uint64_t deviceAddress() const
+    {
+        return _tlasDeviceAddress;
+    }
+    [[nodiscard]] const std::vector<RTObjectInstance>& objectInstances() const
+    {
+        return _objectInstances;
+    }
 
-protected:
+  protected:
     render::Engine* _engine = nullptr;
 
     std::unique_ptr<Buffer> _instanceBuffer;

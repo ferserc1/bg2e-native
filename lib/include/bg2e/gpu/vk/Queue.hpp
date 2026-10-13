@@ -33,7 +33,7 @@ namespace vk {
 class Device;
 
 class Queue : public gpu::Queue {
-public:
+  public:
     Queue() = default;
     Queue(VkQueue queue, uint32_t family);
 
@@ -48,11 +48,11 @@ public:
     std::shared_ptr<gpu::CommandBuffer> createCommandBuffer(const std::string& debugName = {}) const override;
     void submit(gpu::CommandBuffer* cmd) const override;
 
-private:
-    VkQueue       _queue{VK_NULL_HANDLE};
-    uint32_t      _familyIndex{UINT32_MAX};
-    VkDevice      _device{VK_NULL_HANDLE};
-    vk::Device*   _gpuDevice{nullptr};
+  private:
+    VkQueue _queue{VK_NULL_HANDLE};
+    uint32_t _familyIndex{UINT32_MAX};
+    VkDevice _device{VK_NULL_HANDLE};
+    vk::Device* _gpuDevice{nullptr};
     VkCommandPool _commandPool{VK_NULL_HANDLE};
     mutable std::vector<std::shared_ptr<CommandPoolState>> _poolStates;
     std::shared_ptr<detail::SubmissionState> _submissions;

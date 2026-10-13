@@ -30,10 +30,9 @@ namespace bg2e {
 namespace app {
 
 class BG2E_API InputManager {
-public:
-
+  public:
     static glm::vec2 normalizedCursorPosition(uint32_t viewportWidth, uint32_t viewportHeight);
-    
+
     void keyDown(const KeyEvent& event);
     void keyUp(const KeyEvent& event);
     void mouseMove(int x, int y);
@@ -41,9 +40,12 @@ public:
     void mouseButtonUp(int button, int x, int y);
     void mouseWheel(int deltaX, int deltaY);
 
-    inline void setDelegate(std::shared_ptr<InputDelegate> delegate) { _delegate = delegate; }
+    inline void setDelegate(std::shared_ptr<InputDelegate> delegate)
+    {
+        _delegate = delegate;
+    }
 
-protected:
+  protected:
     std::shared_ptr<InputDelegate> _delegate;
 };
 

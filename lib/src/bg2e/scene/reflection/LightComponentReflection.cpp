@@ -24,15 +24,16 @@ using namespace bg2e;
 namespace {
 
 reflection::TypeRegistration<scene::LightComponent> _lightComponentReflection(
-    [](reflection::TypeInfoBuilder<scene::LightComponent>& t) {
+    [](reflection::TypeInfoBuilder<scene::LightComponent>& t)
+    {
         t.displayName("Light Source");
 
         // light() has const and non-const overloads => static_cast disambiguation.
         // The sub-object is edited in place through base::Light's own
         // reflected setters (registered under "bg2e::base::Light").
         t.object("light", "bg2e::base::Light",
-                 static_cast<const base::Light&(scene::LightComponent::*)() const>(&scene::LightComponent::light),
-                 static_cast<base::Light&(scene::LightComponent::*)()>(&scene::LightComponent::light))
+                 static_cast<const base::Light& (scene::LightComponent::*)() const>(&scene::LightComponent::light),
+                 static_cast<base::Light& (scene::LightComponent::*)()>(&scene::LightComponent::light))
             .displayName("Properties")
             .category("Light")
             .tooltip("Light parameters, edited in place");

@@ -9,7 +9,10 @@ void main()
 {
     ivec2 pixel = ivec2(gl_GlobalInvocationID.xy);
     ivec2 extent = imageSize(outputImage);
-    if (any(greaterThanEqual(pixel, extent))) return;
+    if (any(greaterThanEqual(pixel, extent)))
+    {
+        return;
+    }
 
     vec4 current = texelFetch(sourceImage, pixel, 0);
     if (current.a > 0.5)
@@ -28,7 +31,10 @@ void main()
         {
             ivec2 neighbor = pixel + ivec2(x, y);
             if (any(lessThan(neighbor, ivec2(0))) ||
-                any(greaterThanEqual(neighbor, extent))) continue;
+                any(greaterThanEqual(neighbor, extent)))
+            {
+                continue;
+            }
 
             vec4 candidate = texelFetch(sourceImage, neighbor, 0);
             int distance = abs(x) + abs(y);
