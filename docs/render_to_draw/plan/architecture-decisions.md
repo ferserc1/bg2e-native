@@ -1,0 +1,95 @@
+# Operative architecture decisions
+
+[Plan index](index.md) · [Review protocol](review-protocol.md)
+
+These decisions consolidate the user's conclusions. They supersede conflicting earlier assessment suggestions. Names proposed for new extension APIs may be refined during implementation, with pending steps updated at each milestone review.
+
+## 1. Namespace ownership
+
+| Namespace | Responsibilities |
+|---|---|
+| `gpu` | Low-level graphics/device capabilities, buffers/images/subresources, native Vulkan/Metal implementation, shader binding data, command execution and necessary SDK/native bridges. |
+| `draw` | Engine, Drawable/material/texture resources, runtime Renderer/delegate, settings facade, draw visitors/queues/bindings and generic upscaler interface. |
+| `draw::pipeline` | **Public**, advanced renderer construction objects: RenderLayer, GBuffer/pass objects, shadow/indirect/reflection passes, temporal/denoise, motion vectors and final processing. Not a private/internal namespace. |
+| `draw::environment` | Public cubemap/sphere conversion, irradiance/specular prefilter, skybox and BRDF generation/resources. More directly useful standalone than pipeline internals. |
+| `bake` | All baking map resources/configuration/pixels, contexts, executors, UV-surface/composition/accumulation, UV preview, standalone assembly/batch and specialized output/preflight orchestration. May depend on draw/pipeline/gpu/scene/DB. |
+| `geo` | UV2 atlas modifier and geometry operations remain here. |
+| `utils` | New generic BlueNoise and experimental viewpoint analysis/candidate helpers; existing TextureCache retained with draw overloads. |
+| `manipulation` | Editor selection, input capture, gizmo/manipulation objects and rendering integration; scene/draw/GPU dependencies are acceptable. |
+| `scene` | Graph/components, CPU descriptions, graph update/input/transform visitors, dual DrawableComponent during transition. No new data-binding implementation here. |
+| `db` | Low-level file/representation serialization and high-level engine-aware resource loading/saving. |
+| `ui` | Wrapper widgets/inspectors/settings/texture displays, adapted by complexity; no ImGui public types. |
+
+`draw::pipeline` is the proposed name for the advanced-public subnamespace. Its classes must be usable by external renderers and bake. Do not hide them behind PImpl-only/private classes by default. Existing necessary private application execution classes may remain; new private classes require a concrete rationale, not a generic preference for hiding implementation.
+
+## 2. Reimplementation and coexistence
+
+Production render remains readable and operational until M09 primarily as a behavior reference. New logic uses gpu. Shared engine-dependent objects use overloads and an initialized execution-mode tag or equivalent simple state; wrong-mode access is explicit, never an implicit second engine initialization. Eliminate engine dependencies only in functions useful without graphics initialization or where removal is simple.
+
+New Drawable lives in draw and retains its connector role: CPU mesh, submesh attributes, GPU mesh/material resources and tracing geometry as needed. Do not implement the external-realization redesign suggested in the original analysis. DrawableComponent supports `scene::Drawable` and `draw::Drawable` through typed construction/setter/accessor paths. Keep its original accessors for production and add clearly named experimental access while both types coexist; never silently downcast one to the other.
+
+A Drawable clone duplicates CPU geometry **and GPU mesh/material realizations**, including associated acceleration resources when built. Preserve independence of mutable material/texture GPU objects as required by this contract; CPU source data sharing must not undermine editable clones. TextureCache may share ordinary explicitly cached immutable inputs, but clone must not route through shared mutable GPU realization paths. No default instancing; dedicated instancing components are future work.
+
+Mesh/texture edits are uncommon: synchronize producers, `waitIdle`, update/rebuild and resume. Do not use frame-resource rings for those objects. Mutable per-frame shader data and effect outputs may still need slot-safe resources; temporal history is a separate rendered-frame sequence. WaitIdle is a safe edit boundary, not routine per-frame rendering.
+
+TextureCache remains a singleton/service with typed production/draw overloads and minimal separate backing storage/mode validation. Avoid redesign into ResourceManager, generalized asset catalogs or a new persistent resource-identity framework. Prevent accidental cross-device resource reuse with the smallest necessary context ownership check/clear policy; do not expand the cache project.
+
+## 3. Reflection-driven settings without duplicated values
+
+`draw::RenderSettingsPreferences` keeps no configuration values. It exposes getters/setters and property enumeration over active renderer/pass/upscaler objects, plus save/restore and JSON serialization/deserialization. Holding active target references, metadata bindings, a catalog generation and a persistence service is acceptable; copying renderer values into a parallel preferences model is not.
+
+Reuse reflection PropertyInfo/TypeInfo/TypeRegistry and their accessor/type/metadata contracts. Reflection currently describes values and UI but is not itself a serializer: implement an explicit settings codec using getters/setters. Enums are erased as `int64_t`; validate types/ranges/options and do not convert display option indices into configuration identities. Runtime visibility is an **instance-specific filtered view**, not mutation of shared static type metadata.
+
+UI-facing objects register/activate their visible settings. Ordinary C++ accessors remain complete, even for options not shown in UI. A runtime renderer or pass/upscaler replacement detaches old property targets, updates generation, binds new objects and refreshes the catalog. The renderer objects remain the source of truth. No requirement to store disconnected profiles inside the stateless facade; persisted documents are explicit data artifacts.
+
+Export contains schema version, stable renderer/upscaler identity and stable property keys/types/values. Import validates first, reports unknown/unavailable fields, and applies setters at a safe update boundary; malformed input is not silently coerced. Persisted defaults and explicit imported documents have a declared precedence. Headless code uses the same codec without initializing UI.
+
+## 4. Runtime delegate and extensible public components
+
+Introduce a non-template scene-renderer delegate owning a polymorphic `draw::Renderer` through explicit ownership. It can replace the active renderer at a safe frame boundary while retaining the scene. Only RendererDeferred is supplied. A test can replace it with another instance/configuration of the same class to verify lifetime/settings rebinding without inventing a second renderer product.
+
+Public configuration structs select compatible layer, illumination, shadow, temporal/denoise and final-processing objects and shaders. Define borrowed/shared/owned lifetimes and format/extent/input requirements. Defaults create normal engine objects; applications can subclass and replace them. Reuse this pipeline in bake rather than exporting a second independent algorithm family.
+
+No MSAA fields/targets/promises in the new renderer architecture. All planned renderer paths are deferred and single sample. Production-only MSAA survives only until its legacy deletion.
+
+## 5. Hardware capabilities and backend specificity
+
+GPU exposes device primitive capability/format/usage/limit queries. Draw combines those facts with SDK availability, successful creation and selected component requirements to determine effective features and UI options. FSR availability is not solely a hardware boolean; neither is a valid shader path implied by an acceleration capability.
+
+Shader binding descriptions retain explicit Vulkan and Metal indices; extend resource arrays, offsets/ranges, stage visibility and read/write primitives as needed. No new shader abstraction, automatic shader translation, backend-neutral binding language or extra shader authoring rules. ShaderLib remains a naming/loading convenience; Vulkan and Metal shader implementations may differ substantially.
+
+All **new native Vulkan implementation** stays inside gpu, including a narrowly scoped native FidelityFX bridge if required. Draw's FSR policy object can request its GPU backend bridge; dynamic casts to `gpu::vk` implementations are legitimate at that integration seam, with explicit device checks and native handlers added where necessary. The bridge handles SDK/native commands, not scene/material/renderer policy. UI wrappers similarly delegate native registration/drawing to a GPU backend integration without introducing a GPU dependency on `ui`. This reconciles native SDK/UI interop with the requirement to remove Vulkan implementation outside GPU. Existing production/native integration code is retained as reference during coexistence and removed or relocated in M09; new code must not expand it outside GPU.
+
+For complex operations such as readPixels or mipmap generation, select generic command primitives versus backend-implemented convenience operations by **comparative implementation complexity**. A documented native convenience method in GPU is acceptable when a higher-level implementation would require more awkward infrastructure. Preserve precise state/completion/readback format semantics.
+
+## 6. Upscaling and temporal scope
+
+Public `draw::Upscaler` (proposed name) has stable identifier/label, capability/options enumeration, ordinary accessors, reflected UI parameters, input/output extent contract and recording/reset lifecycle. Applications can register/inject external implementations. Final output does not hard-code an FSR enum as the universe of modes.
+
+Default output is user-selected internal render-resolution reduction followed by ordinary fullscreen resampling to output, with no temporal engine processing. Preserve lower resolution when FSR is unavailable; do not force 100%. FSR is optional in M01 on supported Vulkan/SDK paths. Metal native upscaling and application-integrated DLSS are future examples of the extension mechanism, not engine implementation tasks here.
+
+FSR intrinsically maintains temporal SDK state and requires jitter/motion inputs. M01 permits its own SDK state and minimal camera-depth motion-vector generation, but **does not implement engine TemporalAccumulator or DenoiseFilter**. M03 introduces reusable engine histories/denoise and revisits moving-object motion/reset needs. The non-FSR default is fully non-temporal in M01.
+
+## 7. DB levels and graphics-free scene representation
+
+Low-level serialization/deserialization reads/writes schema, graph descriptions, resource references and supplied CPU data. It does not fully load images/meshes into GPU resources or claim to export GPU-only textures. A graphics-free scene representation can be unresolved; complete resource readiness is not promised.
+
+High-level load/save overloads accept the chosen Engine, invoke low-level IO, realize resources, or read device images into host buffers for export. CPU mesh file parsing can still operate without an engine; low-level serialization must not initiate unrequested resource loading. Define high-level output completeness and progress/failure semantics rather than silently discard a GPU-only generated texture.
+
+## 8. Milestone scope and deferred decisions
+
+M01 includes raster PBR/layers/transparency/IBL, alpha-aware query soft shadows, reflection-based settings and FSR/scale output. No baking, headless application, editor manipulation/apps, engine temporal accumulation or denoise. Its original production reference uses opaque/transparent models, a floor, camera rotation, environment, materials and lights; retain these supported parts and remove unsupported RT debug/effect controls.
+
+Advanced GI/AO/reflection implementation choices are deliberately left to M03. Re-read current GPU RT documentation then. Vulkan uses actual RT pipeline stages/SBT; Metal uses compute/intersection shaders with equivalent results. Do not invent a true native Metal RayTracingPipeline or force shared shader source. Non-opaque geometry support for query shadows is already required in M01.
+
+All bake resources—including LightmapSettings, LightmapPixels, UvMapPreviewRenderer, contexts, StandaloneBakeSceneAssembler and StandaloneBakeBatch—live in bake. UV2 stays in geo. New optimal-viewpoint tools live in utils; existing `render::ViewpointAnalyzer` (the actual current class name) stays untouched until legacy removal. Manipulation remains a high-level engine namespace.
+
+Specialized LightmapOutputWriter preflight/batch/model-copy policy also belongs in bake; generic image/scene file encoding remains in DB. Preserve the existing production DB entry points during coexistence, then remove those wrappers in M09.
+
+Production's generic image-processing/fullscreen/attachment helpers must remain possible through public draw::pipeline resource/pass objects and GPU primitives. SMAA is spatial AA, not MSAA: its implemented facility is preserved in M03 as a public optional processor/final-output component, outside the default resolution-reduction path. It does not justify adding MSAA or a forward renderer.
+
+## 9. Shader organization
+
+Proposed source layout: `shaders/src/draw/<pipeline>/` with the GLSL and Metal stage files together, and `shaders/src/draw/lib/` for shared `.glsl`/`.metal` includes. Bake shaders use `shaders/src/bake/<pipeline>/` with the same paired layout and may reuse public draw kernels/objects. Compiled libraries retain distinct `draw/<pipeline>` and `bake/<pipeline>` paths, so old production shaders remain unambiguous through M08.
+
+Use actual ShaderLib resolution/entry points and current CMake helper behavior as evidence; header comments/historical docs are not sufficient. Do not flatten libraries into one output folder where stage filenames collide. Complete installation, app bundles and standalone packages, not only development-tree loading.
