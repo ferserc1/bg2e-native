@@ -20,7 +20,6 @@
 
 #include <bg2e/scene/NodeVisitor.hpp>
 #include <bg2e/math/projections.hpp>
-#include <bg2e/render/Engine.hpp>
 
 namespace bg2e {
 namespace scene {
@@ -32,7 +31,17 @@ class BG2E_API ResizeViewportVisitor : public NodeVisitor {
     }
 
     void resizeViewport(Node* sceneRoot, const math::Viewport& vp);
-    void resizeViewport(Node* sceneRoot, const VkExtent2D& viewportExtent);
+    // Accept existing native/generic extent values without importing their API.
+    template <typename Extent>
+        requires requires(const Extent& extent)
+        {
+            static_cast<float>(extent.width);
+            static_cast<float>(extent.height);
+        }
+    void resizeViewport(Node* sceneRoot, const Extent& extent)
+    {
+        resizeViewport(sceneRoot, math::Viewport(float(extent.width), float(extent.height)));
+    }
 
     void visit(Node*) override;
 

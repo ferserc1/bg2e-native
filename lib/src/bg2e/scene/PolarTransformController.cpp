@@ -103,9 +103,14 @@ void PolarTransformControllerComponent::update([[maybe_unused]] float delta)
     }
 }
 
-void PolarTransformControllerComponent::deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path&, [[maybe_unused]] render::Engine& engine)
+void PolarTransformControllerComponent::deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path& basePath, render::Engine&)
 {
-    Component::deserialize(jsonData, {}, engine);
+    deserialize(jsonData, basePath);
+}
+
+void PolarTransformControllerComponent::deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path& /* basePath */)
+{
+    deserializeCommon(jsonData);
 
     json::ObjectReader reader(jsonData);
     if (auto value = reader.getNumber("azimuth"))
@@ -136,6 +141,11 @@ void PolarTransformControllerComponent::deserialize(std::shared_ptr<json::JsonNo
     {
         _eulerZ = *value;
     }
+}
+
+std::shared_ptr<json::JsonNode> PolarTransformControllerComponent::serializeReferences(const std::filesystem::path& basePath)
+{
+    return PolarTransformControllerComponent::serialize(basePath);
 }
 
 std::shared_ptr<json::JsonNode> PolarTransformControllerComponent::serialize(const std::filesystem::path& basePath)

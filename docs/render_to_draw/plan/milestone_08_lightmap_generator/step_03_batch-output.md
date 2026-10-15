@@ -1,8 +1,8 @@
 # M08-03 — Bake batch/output writer and protected complete exports
 
-[Milestone summary](summary.md) · [Plan index](../index.md) · [Architecture decisions](../architecture-decisions.md)
+[Milestone summary](summary.md) · [Plan index](../index.md) · [Architecture decisions](../architecture-decisions.md) · [Execution protocol](../execution-protocol.md) · [Progress](../progress.md)
 
-**Status:** planned. **Prerequisites:** M08-01/M08-02 and M04 pixel contracts.
+**Execution status:** see [progress](../progress.md). **Prerequisites:** M08-01/M08-02 and M04 pixel contracts.
 
 ## Scope and deliverable
 
@@ -29,10 +29,14 @@ Current sources to inspect: [lib/include/bg2e/render/StandaloneBakeBatch.hpp](..
 - Preflight catches target/output/input collisions before baking/export, and overwrite permission is honored precisely.
 - Byte/float outputs and model copies reload with correct resource/UV/multiplier semantics; no original source asset is overwritten accidentally.
 
-These are future checks. Run compilation only on explicit user request; record missing runtime/backend evidence as pending, never as a pass.
+Delegate compilation and applicable runtime checks to the project lead; perform relevant nonexecuting static checks yourself. After delivering this step or its correction, update progress to `awaiting_project_lead` and stop. Their instruction to continue accepts the preceding delivery as compiled/checked without failures; record that basis without inventing test/backend details. Follow the [execution protocol](../execution-protocol.md).
 
 ## Downstream comparison
 
 M08-04 consumes this orchestration. M09 removes production writer wrappers and all render::LightmapPixels dependencies; bake remains the owner.
 
 Record actual API, ownership and verification in the milestone review. Follow [the review protocol](../review-protocol.md) and edit affected pending steps when actual contracts differ.
+
+## M01-16 reviewed baseline
+
+M01 raw/reference JSON IO and raw completed color readback are building blocks, not complete batch/save semantics. Consume real M04 LightmapPixels and M06/M07 full resource-save contracts before implementing specialized bake writer/preflight/atomic publication. Preserve explicit byte/float color/orientation metadata and input protection. See [M01 review](../milestone_01_deferred_renderer/review.md).

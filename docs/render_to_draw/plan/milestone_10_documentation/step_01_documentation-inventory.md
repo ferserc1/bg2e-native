@@ -1,37 +1,21 @@
-# M10-01 — Inventory every doc page against final source
+# M10-01 — Audit the accumulated documentation inventory
 
-[Milestone summary](summary.md) · [Plan index](../index.md) · [Architecture decisions](../architecture-decisions.md)
+[Milestone summary](summary.md) · [Plan index](../index.md) · [Documentation policy](../documentation-policy.md) · [Execution protocol](../execution-protocol.md) · [Progress](../progress.md)
 
-**Status:** planned. **Prerequisites:** Accepted M09 review.
+**Execution status:** see progress. **Prerequisites:** Accepted M09-08 documentation closure.
 
 ## Scope and deliverable
 
-- `doc/`
-- `doc/api/`
-- `doc/tutorials/`
-- `doc/apps/`
-- `docs/render_to_draw/plan/milestone_09_cleanup/review.md`
+Audit existing maintained `doc/` pages and M01–M09 documentation handoffs against final source, products and distributed coverage. Record findings and localized corrections for the final M10 review. This step does not postpone earlier documentation authoring to M10.
 
-Paths above include current references and proposed outputs. New paths are targets, not files claimed to exist. Public names follow the architecture contract and may be refined with the remaining plan updated.
+## Audit work
 
-Current sources to inspect: [doc/](../../../../doc), [doc/api/](../../../../doc/api), [doc/tutorials/](../../../../doc/tutorials), [doc/apps/](../../../../doc/apps).
+1. Collect M01–M09 documentation.md coverage/source/disposition records and their current maintained doc/ pages; do not restart authoring from the initial plan.
+2. Check that every maintained page, including retained foundation pages, has a resolved keep/update/remove/replace disposition and final source owner. Confirm docs/render_to_draw history is separated from maintained usage guidance.
+3. Compare the inventory with final M09 source/public headers, targets and settings schemas; identify omissions against the distributed owner in documentation-policy.md. Make localized inventory corrections; substantive missing content must be repaired as an unmet owning-step requirement.
 
-## Implementation work
+## Verification and exit
 
-1. List every maintained document and classify update/keep/remove/replace, including API indexes/reference tables, tutorials, conceptual pages, application docs and build/distribution instructions.
-2. Map final source headers/public classes/targets/config schemas from M09 to their documentation owners. Use actual code and example call sites, not tentative plan names.
-3. Identify old render/scene::vk/scene Drawable/native callbacks, forward/MSAA and experimental-opt-in guidance to remove or replace.
-4. Keep unchanged accurate foundation pages, but review their dependency/examples/cross-links; do not claim all-doc review after changing only draw pages.
+Complete traceable inventory of existing cumulative documentation, with no unowned omissions.
 
-## Verification and exit conditions
-
-- The inventory covers every current doc file and every newly public draw/pipeline/environment/bake/utils component.
-- Each obsolete page has a concrete disposition and final navigation destination.
-
-These are future checks. Run compilation only on explicit user request; record missing runtime/backend evidence as pending, never as a pass.
-
-## Downstream comparison
-
-M10-02–M10-05 execute this map; final review must include pages kept unchanged and why they remain accurate.
-
-Record actual API, ownership and verification in the milestone review. Follow [the review protocol](../review-protocol.md) and edit affected pending steps when actual contracts differ.
+Perform relevant static checks. Compilation/runtime validation belongs to the project lead unless explicitly requested. Deliver one step, update progress and wait for lead acceptance under the execution protocol. No new engine feature, build-system change or future API documentation is authorized by this audit.

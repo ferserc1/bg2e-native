@@ -21,6 +21,7 @@
 #include <bg2e/base/Log.hpp>
 
 #include <stdexcept>
+#include <cmath>
 
 namespace bg2e {
 namespace gpu {
@@ -60,6 +61,8 @@ static VkSamplerAddressMode toVkAddressMode(gpu::AddressMode m)
         return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
     case gpu::AddressMode::MirroredRepeat:
         return VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
+    case gpu::AddressMode::ClampToBorder:
+        return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
     }
     return VK_SAMPLER_ADDRESS_MODE_REPEAT;
 }
@@ -67,6 +70,12 @@ static VkSamplerAddressMode toVkAddressMode(gpu::AddressMode m)
 Sampler::Sampler(gpu::Device* gpuDevice, VkDevice device, const gpu::SamplerDescription& description)
     : gpu::Sampler(gpuDevice), _device(device)
 {
+    if (!std::isfinite(description.mipLodBias) || !std::isfinite(description.minLod) || !std::isfinite(description.maxLod) ||
+        description.minLod < 0.0f || description.maxLod < description.minLod)
+    {
+        throw std::invalid_argument("Sampler LOD interval is invalid");
+    }
+
     VkSamplerCreateInfo createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
     createInfo.magFilter = toVkFilter(description.magFilter);
@@ -77,13 +86,14 @@ Sampler::Sampler(gpu::Device* gpuDevice, VkDevice device, const gpu::SamplerDesc
     createInfo.addressModeW = toVkAddressMode(description.addressModeW);
     createInfo.anisotropyEnable = VK_FALSE;
     createInfo.maxAnisotropy = 1.0f;
-    createInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+    createInfo.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_BLACK;
     createInfo.unnormalizedCoordinates = VK_FALSE;
     createInfo.compareEnable = VK_FALSE;
     createInfo.compareOp = VK_COMPARE_OP_ALWAYS;
-    createInfo.minLod = 0.0f;
-    createInfo.maxLod = 0.0f;
-    createInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+    createInfo.minLod = description.minLod;
+    createInfo.maxLod = description.maxLod;
+    createInfo.mipLodBias = description.mipLodBias;
+    createInfo.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_BLACK;
     createInfo.unnormalizedCoordinates = VK_FALSE;
 
     VkResult result = vkCreateSampler(_device, &createInfo, nullptr, &_sampler);

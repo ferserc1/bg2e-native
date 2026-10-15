@@ -1,36 +1,22 @@
-# M10-06 — Final code/documentation review and close the implementation plan
+# M10-06 — Review cumulative documentation and close the plan
 
-[Milestone summary](summary.md) · [Plan index](../index.md) · [Architecture decisions](../architecture-decisions.md)
+[Milestone summary](summary.md) · [Plan index](../index.md) · [Documentation policy](../documentation-policy.md) · [Execution protocol](../execution-protocol.md) · [Progress](../progress.md)
 
-**Status:** planned. **Prerequisites:** M10 documentation/product consistency evidence.
+**Execution status:** see progress. **Prerequisites:** M10-01–M10-05.
 
 ## Scope and deliverable
 
-- `docs/render_to_draw/plan/milestone_10_documentation/review.md`
-- `docs/render_to_draw/plan/index.md`
-- `docs/render_to_draw/plan/architecture-decisions.md`
-- `doc/`
+Audit existing maintained `doc/` pages and M01–M09 documentation handoffs against final source, products and distributed coverage. Record findings and localized corrections for the final M10 review. This step does not postpone earlier documentation authoring to M10.
 
-Paths above include current references and proposed outputs. New paths are targets, not files claimed to exist. Public names follow the architecture contract and may be refined with the remaining plan updated.
+## Audit work
 
-Current sources to inspect: [docs/render_to_draw/plan/index.md](../index.md), [docs/render_to_draw/plan/architecture-decisions.md](../architecture-decisions.md), [doc/](../../../../doc).
+1. Create review.md only during execution with actual source/revision/product baseline, cumulative M01–M09 documentation evidence and M10 audit findings/corrections.
+2. Compare final documentation and delivered products against every preserved coverage requirement in documentation-policy.md and requirements-map.md; verify source/API/ownership/lifecycle/settings/CLI/build/extension correctness.
+3. Confirm no unimplemented planned feature has been described as available. Resolve in-scope omissions against their owning documentation steps; list only explicit out-of-scope follow-ups and truthful verification limits.
+4. Update progress to final acceptance pending after delivery. Lead acceptance closes the plan; do not report completion merely because the audit was planned.
 
-## Implementation work
+## Verification and exit
 
-1. Follow the review protocol against final implementation, documentation and every delivered milestone product. There are no pending implementation milestones, so compare completed requirements and actual maintained docs instead.
-2. Record final namespaces/classes/products/config schemas and source/public-extension/clone/safety/capability contracts; list any unmet required gate explicitly.
-3. Update plan statuses and architecture refinements without rewriting earlier intent/evidence. Confirm every earlier milestone review updated the future tasks it affected.
-4. List future ResourceManager, native Metal upscaling, application-integrated licensed upscalers or other improvements as out-of-scope follow-up work, not as silently completed features.
+Complete final audit report and coherent maintained documentation; final lead acceptance closes the implementation plan.
 
-## Verification and exit conditions
-
-- The final review reconciles all ten milestones with source/products/docs and preserves honest verification gaps.
-- Draw is documented as production; there is no remaining supported render path or old-application compatibility promise.
-
-These are future checks. Run compilation only on explicit user request; record missing runtime/backend evidence as pending, never as a pass.
-
-## Downstream comparison
-
-The plan is complete only when actual required products/removal/docs gates are accepted. Months elapsed, document count or successful builds alone do not constitute completion.
-
-Record actual API, ownership and verification in the milestone review. Follow [the review protocol](../review-protocol.md) and edit affected pending steps when actual contracts differ.
+Perform relevant static checks. Compilation/runtime validation belongs to the project lead unless explicitly requested. Deliver one step, update progress and wait for lead acceptance under the execution protocol. No new engine feature, build-system change or future API documentation is authorized by this audit.

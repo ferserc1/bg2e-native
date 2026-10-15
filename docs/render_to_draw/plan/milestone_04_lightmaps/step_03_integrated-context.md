@@ -1,8 +1,8 @@
 # M04-03 — Integrated context and shared AO/GI bake execution
 
-[Milestone summary](summary.md) · [Plan index](../index.md) · [Architecture decisions](../architecture-decisions.md)
+[Milestone summary](summary.md) · [Plan index](../index.md) · [Architecture decisions](../architecture-decisions.md) · [Execution protocol](../execution-protocol.md) · [Progress](../progress.md)
 
-**Status:** planned. **Prerequisites:** M04-01/M04-02 and M03 effects.
+**Execution status:** see [progress](../progress.md). **Prerequisites:** M04-01/M04-02 and M03 effects.
 
 ## Scope and deliverable
 
@@ -29,10 +29,26 @@ Current sources to inspect: [lib/include/bg2e/render/IntegratedBakerContext.hpp]
 - Prepared-frame mismatches, duplicate updates, removed targets and scene edits are rejected or reset according to the declared contract.
 - An integrated bake runs alongside scene presentation without overwriting raster/selection descriptor or tracing resources.
 
-These are future checks. Run compilation only on explicit user request; record missing runtime/backend evidence as pending, never as a pass.
+Delegate compilation and applicable runtime checks to the project lead; perform relevant nonexecuting static checks yourself. After delivering this step or its correction, update progress to `awaiting_project_lead` and stop. Their instruction to continue accepts the preceding delivery as compiled/checked without failures; record that basis without inventing test/backend details. Follow the [execution protocol](../execution-protocol.md).
 
 ## Downstream comparison
 
 M04-06 and M06/M07 use these lifecycle hooks. M08 implements a different standalone scheduler over the same public bake execution pieces.
 
 Record actual API, ownership and verification in the milestone review. Follow [the review protocol](../review-protocol.md) and edit affected pending steps when actual contracts differ.
+
+## M01-09 geometry and material extraction
+
+Use the draw queue/visitor and binding contracts in [bindings-visitors.md](../milestone_01_deferred_renderer/bindings-visitors.md), including node/drawable/submesh transforms, hidden branches, retained resource snapshots and per-acquired-slot mutable data. Material HasAOTexture means AO presence only; add actual baked-lightmap metadata/flags rather than treating every AO texture as baked lighting. Geometry/texture changes occur at stopped boundaries and require fresh extraction/rebinding.
+
+## M01-10 reusable raster stages
+
+Reuse public GBuffer/DeferredLayer/FinalLayer/RenderTarget/FullscreenPass from the [actual graph](../milestone_01_deferred_renderer/raster-layers.md), with native binding/packing and acquired-slot ownership intact. G-buffer channel5 is currently white; AO presence never activates baked data. Add compatible actual bake multipliers here without duplicating a private lighting family. Tone/color correction occurs once after linear HDR composition. Standalone UV/bake orchestration stays in bake; renderer environment generation requires a safe lifecycle/pre-acquire boundary.
+
+## M01-11 alpha visibility boundary
+
+M01-11 adds [compute cutout-aware shadow visibility](../milestone_01_deferred_renderer/query-shadows.md), a dense instance/UV/alpha-only table with eight distinct image/sampler pairs and generic native opacity flags. Bake reuses the actual arbitrary RT material path chosen by M03, not this restricted table as a complete bake shading model. Preserve UV-set/scale/linear-alpha/cutoff and exact submesh ranges, actual source-size/sample semantics, per-submission owners and non-opaque accepted-candidate filtering. No bake or arbitrary material addressing was added in M01-11.
+
+## M01-16 reviewed baseline
+
+RendererDeferred does not expose private G-buffer targets as a bake API. Reuse public surface/effect profiles from M03 (or add the minimal borrowed contract with slot/generation lifetime); use EnvironmentGenerator::resources() or explicit configuration.environment shared snapshots. Current neutral baked RGB is not real map application: RGB multiplier/UV metadata and invalidation still belong to this milestone. See [M01 review](../milestone_01_deferred_renderer/review.md).

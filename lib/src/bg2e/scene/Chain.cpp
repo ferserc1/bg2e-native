@@ -70,12 +70,19 @@ void ChainComponent::animate([[maybe_unused]] float delta)
     }
 }
 
-void ChainComponent::deserialize(
-    std::shared_ptr<json::JsonNode> jsonData,
-    const std::filesystem::path& basePath,
-    render::Engine& engine)
+void ChainComponent::deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path& basePath, render::Engine&)
 {
-    Component::deserialize(jsonData, basePath, engine);
+    deserialize(jsonData, basePath);
+}
+
+void ChainComponent::deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path& /* basePath */)
+{
+    deserializeCommon(jsonData);
+}
+
+std::shared_ptr<json::JsonNode> ChainComponent::serializeReferences(const std::filesystem::path& basePath)
+{
+    return ChainComponent::serialize(basePath);
 }
 
 std::shared_ptr<json::JsonNode> ChainComponent::serialize(const std::filesystem::path& basePath)

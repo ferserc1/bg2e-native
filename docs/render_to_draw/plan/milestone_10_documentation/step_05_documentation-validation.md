@@ -1,36 +1,22 @@
-# M10-05 — Links, snippets and complete maintained-doc consistency
+# M10-05 — Audit links, snippets and maintained-document consistency
 
-[Milestone summary](summary.md) · [Plan index](../index.md) · [Architecture decisions](../architecture-decisions.md)
+[Milestone summary](summary.md) · [Plan index](../index.md) · [Documentation policy](../documentation-policy.md) · [Execution protocol](../execution-protocol.md) · [Progress](../progress.md)
 
-**Status:** planned. **Prerequisites:** M10-01–M10-04.
+**Execution status:** see progress. **Prerequisites:** M10-01–M10-04.
 
 ## Scope and deliverable
 
-- `doc/`
-- `examples/draw/`
-- `apps/draw/`
-- `lib/include/bg2e/`
+Audit existing maintained `doc/` pages and M01–M09 documentation handoffs against final source, products and distributed coverage. Record findings and localized corrections for the final M10 review. This step does not postpone earlier documentation authoring to M10.
 
-Paths above include current references and proposed outputs. New paths are targets, not files claimed to exist. Public names follow the architecture contract and may be refined with the remaining plan updated.
+## Audit work
 
-Current sources to inspect: [doc/](../../../../doc), [examples/draw/](../../../../examples/draw), [lib/include/bg2e/](../../../../lib/include/bg2e).
+1. Validate maintained navigation/relative links/anchors and symbol/header/target/resource references across all inventory entries, including pages kept unchanged.
+2. Search for obsolete render/scene::vk/native callbacks, aliases/target paths, experimental-opt-in claims, forward/MSAA/clone promises and inconsistent diagrams/shader names. Distinguish deliberate historical discussion from working usage instructions.
+3. Compare snippets statically with delivered code; builds/runtime demonstrations require explicit lead authorization. Record unexecuted snippets and unspecified backend coverage honestly.
+4. Apply localized consistency corrections and resolve all audit findings; this is an audit of previously authored pages, not deferred creation of the documentation set.
 
-## Implementation work
+## Verification and exit
 
-1. Validate all relative links/anchors, code-symbol/header paths, namespace/status statements and API references against final source and actual installed/runtime layout.
-2. Search all maintained doc files for obsolete rendering types, aliases, old target paths, opt-in experimental instructions and unsupported capability/clone/MSAA promises.
-3. Inspect every retained/rewritten page from the inventory, including reflection/gpu/math/base pages with examples or cross-links. Update diagrams and shader naming conventions.
-4. Compile/run documentation demonstrations only on explicit authorization; otherwise cross-check snippets against already validated example code and record unverified standalone snippets honestly.
+All maintained inventory entries have resolved audit dispositions; no broken navigation or obsolete working-code guidance remains.
 
-## Verification and exit conditions
-
-- No broken maintained navigation or working-code reference to deleted APIs remains; intentionally historical text is clearly separated from usage instructions.
-- The inventory has a resolved disposition for every doc page and a traceable final API/example mapping.
-
-These are future checks. Run compilation only on explicit user request; record missing runtime/backend evidence as pending, never as a pass.
-
-## Downstream comparison
-
-M10-06 records the final documentation-versus-code comparison rather than marking completeness from a clean link checker alone.
-
-Record actual API, ownership and verification in the milestone review. Follow [the review protocol](../review-protocol.md) and edit affected pending steps when actual contracts differ.
+Perform relevant static checks. Compilation/runtime validation belongs to the project lead unless explicitly requested. Deliver one step, update progress and wait for lead acceptance under the execution protocol. No new engine feature, build-system change or future API documentation is authorized by this audit.

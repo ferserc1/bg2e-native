@@ -1,8 +1,8 @@
 # M01-01 — Public object families and configuration contracts
 
-[Milestone summary](summary.md) · [Plan index](../index.md) · [Architecture decisions](../architecture-decisions.md)
+[Milestone summary](summary.md) · [Plan index](../index.md) · [Architecture decisions](../architecture-decisions.md) · [Execution protocol](../execution-protocol.md) · [Progress](../progress.md)
 
-**Status:** planned. **Prerequisites:** Plan root decisions.
+**Execution status:** see [progress](../progress.md). **Prerequisites:** Plan root decisions.
 
 ## Scope and deliverable
 
@@ -27,10 +27,14 @@ Current sources to inspect: [lib/include/bg2e/draw/all.hpp](../../../../lib/incl
 - Static review can trace a user-provided compatible layer/pass from configuration into the virtual recording call.
 - Headers do not pull production render wrappers into new core interfaces; no new private class without a specific necessity.
 
-These are future checks. Run compilation only on explicit user request; record missing runtime/backend evidence as pending, never as a pass.
+Delegate compilation and applicable runtime checks to the project lead; perform relevant nonexecuting static checks yourself. After delivering this step or its correction, update progress to `awaiting_project_lead` and stop. Their instruction to continue accepts the preceding delivery as compiled/checked without failures; record that basis without inventing test/backend details. Follow the [execution protocol](../execution-protocol.md).
 
 ## Downstream comparison
 
 M01-05, M01-06, M01-10 and all bake/RT steps depend on these exact ownership and input contracts.
 
 Record actual API, ownership and verification in the milestone review. Follow [the review protocol](../review-protocol.md) and edit affected pending steps when actual contracts differ.
+
+## Implemented contract reference
+
+See [M01-01 public contracts](contracts.md) for actual API names, ownership, dispatch, initialization modes and deferred compatibility checks. Acceptance remains recorded in progress.md.

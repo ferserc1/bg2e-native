@@ -218,7 +218,8 @@ echo "Copying assets..."
 cp -r "${REPO_ROOT}/assets/"* "${TARGET_PATH}/assets/"
 
 echo "Copying compiled shaders..."
-cp "${SHADER_DIR}/"*.spv "${TARGET_PATH}/shaders/"
+# Preserve native shader libraries and nested pipeline names.
+cp -R "${SHADER_DIR}/." "${TARGET_PATH}/shaders/"
 
 echo "Copying CMake modules..."
 cp "${REPO_ROOT}/cmake/FindVulkan.cmake" "${TARGET_PATH}/cmake/"

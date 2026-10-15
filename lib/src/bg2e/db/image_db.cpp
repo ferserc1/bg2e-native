@@ -19,6 +19,8 @@
 #include <bg2e/db/image.hpp>
 
 #include <limits>
+#include <memory>
+#include <algorithm>
 #include <stdexcept>
 
 #define STB_IMAGE_IMPLEMENTATION
@@ -151,8 +153,11 @@ bg2e::base::Image* loadImage(const std::filesystem::path& filePath)
             throw std::runtime_error("Error loading image at path " + filePath.string());
         }
 
+        std::unique_ptr<float, decltype(&stbi_image_free)> decoded(data, stbi_image_free);
+        auto owned = std::make_unique<float[]>(size_t(width) * size_t(height) * 4);
+        std::copy_n(data, size_t(width) * size_t(height) * 4, owned.get());
         auto result = new bg2e::base::Image(
-            data,
+            owned.release(),
             uint32_t(width),
             uint32_t(height),
             4);
@@ -169,8 +174,11 @@ bg2e::base::Image* loadImage(const std::filesystem::path& filePath)
             throw std::runtime_error("Error loading image at path " + filePath.string());
         }
 
+        std::unique_ptr<unsigned char, decltype(&stbi_image_free)> decoded(data, stbi_image_free);
+        auto owned = std::make_unique<unsigned char[]>(size_t(width) * size_t(height) * 4);
+        std::copy_n(data, size_t(width) * size_t(height) * 4, owned.get());
         auto result = new bg2e::base::Image(
-            data,
+            owned.release(),
             uint32_t(width),
             uint32_t(height),
             4);

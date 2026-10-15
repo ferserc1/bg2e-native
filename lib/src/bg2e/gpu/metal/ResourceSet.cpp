@@ -43,6 +43,25 @@ ResourceSet::~ResourceSet()
 
 void ResourceSet::setStorageImage(ShaderBinding binding, gpu::Image* image)
 {
+    if (!image)
+    {
+        throw std::invalid_argument("Image binding requires an image");
+    }
+    setStorageImage(binding, image->view({0, 1, 0, image->arrayLayers()}));
+}
+
+void ResourceSet::setStorageImage(ShaderBinding binding, const ImageView& view)
+{
+    auto* image = view.image;
+    if (!image || image->device() != device() || !hasFlag(image->usage(), ImageUsage::Storage))
+    {
+        throw std::invalid_argument("Image view device/usage is incompatible with this resource set");
+    }
+    image->view(view.range);
+    if (view.range.mipCount != 1 || isDepthFormat(image->pixelFormat()))
+    {
+        throw std::invalid_argument("A storage image view selects exactly one color mip");
+    }
     auto* metalImage = dynamic_cast<metal::Image*>(image);
     if (!metalImage)
     {
@@ -59,7 +78,7 @@ void ResourceSet::setStorageImage(ShaderBinding binding, gpu::Image* image)
             entry.index = _layout->metalIndex(rb);
             entry.type = rb.type;
             entry.stage = rb.stage;
-            entry.texture = metalImage->texture();
+            entry.texture = metalImage->subresourceView(view.range);
 
             // Replace existing entry or append
             for (auto& e : _entries)
@@ -80,6 +99,21 @@ void ResourceSet::setStorageImage(ShaderBinding binding, gpu::Image* image)
 
 void ResourceSet::setSampledImage(ShaderBinding binding, gpu::Image* image)
 {
+    if (!image)
+    {
+        throw std::invalid_argument("Image binding requires an image");
+    }
+    setSampledImage(binding, image->fullView());
+}
+
+void ResourceSet::setSampledImage(ShaderBinding binding, const ImageView& view)
+{
+    auto* image = view.image;
+    if (!image || image->device() != device() || !hasFlag(image->usage(), ImageUsage::Sampled))
+    {
+        throw std::invalid_argument("Image view device/usage is incompatible with this resource set");
+    }
+    image->view(view.range);
     auto* metalImage = dynamic_cast<metal::Image*>(image);
     if (!metalImage)
     {
@@ -95,7 +129,7 @@ void ResourceSet::setSampledImage(ShaderBinding binding, gpu::Image* image)
             entry.index = _layout->metalIndex(rb);
             entry.type = rb.type;
             entry.stage = rb.stage;
-            entry.texture = metalImage->texture();
+            entry.texture = metalImage->subresourceView(view.range);
 
             for (auto& e : _entries)
             {
@@ -257,6 +291,14 @@ ResourceSet::~ResourceSet()
 {
 }
 
+void ResourceSet::setStorageImage(ShaderBinding, const ImageView&)
+{
+    throw std::runtime_error("Metal backend is not available on this platform");
+}
+void ResourceSet::setSampledImage(ShaderBinding, const ImageView&)
+{
+    throw std::runtime_error("Metal backend is not available on this platform");
+}
 void ResourceSet::setStorageImage(ShaderBinding, gpu::Image*)
 {
 }

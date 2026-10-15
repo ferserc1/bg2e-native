@@ -35,6 +35,10 @@ namespace scene {
 
 class BG2E_API Scene {
   public:
+    static std::shared_ptr<Scene> deserialize(std::shared_ptr<json::JsonNode> data, const std::filesystem::path& basePath,
+        SceneLoadProgress* progress = nullptr);
+    static std::shared_ptr<Scene> deserialize(std::shared_ptr<json::JsonNode> data, const std::filesystem::path& basePath,
+        draw::Engine& engine, SceneLoadProgress* progress = nullptr);
     static std::shared_ptr<Scene> deserialize(std::shared_ptr<json::JsonNode>, const std::filesystem::path&, render::Engine& engine, SceneLoadProgress* progress = nullptr);
 
     void setSceneRoot(std::shared_ptr<Node> scene);

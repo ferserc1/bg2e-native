@@ -1,37 +1,22 @@
-# M10-03 — Runnable tutorials for delivered examples and customization
+# M10-03 — Audit delivered-example tutorials and customization guides
 
-[Milestone summary](summary.md) · [Plan index](../index.md) · [Architecture decisions](../architecture-decisions.md)
+[Milestone summary](summary.md) · [Plan index](../index.md) · [Documentation policy](../documentation-policy.md) · [Execution protocol](../execution-protocol.md) · [Progress](../progress.md)
 
-**Status:** planned. **Prerequisites:** M10-01/M10-02.
+**Execution status:** see progress. **Prerequisites:** M10-01/M10-02.
 
 ## Scope and deliverable
 
-- `doc/tutorials/draw/`
-- `doc/tutorials/gpu/`
-- `doc/deferred_render_model.md`
-- `doc/delegate_system.md`
-- `doc/lightmap_baking.md`
+Audit existing maintained `doc/` pages and M01–M09 documentation handoffs against final source, products and distributed coverage. Record findings and localized corrections for the final M10 review. This step does not postpone earlier documentation authoring to M10.
 
-Paths above include current references and proposed outputs. New paths are targets, not files claimed to exist. Public names follow the architecture contract and may be refined with the remaining plan updated.
+## Audit work
 
-Current sources to inspect: [doc/tutorials/draw/](../../../../doc/tutorials/draw), [doc/tutorials/gpu/](../../../../doc/tutorials/gpu), [doc/deferred_render_model.md](../../../../doc/deferred_render_model.md), [doc/delegate_system.md](../../../../doc/delegate_system.md), [doc/lightmap_baking.md](../../../../doc/lightmap_baking.md).
+1. Compare existing tutorials to actual delivered deferred/manipulation/lightmaps/offscreen examples, effects/history code and public renderer/pass/subclass/shader/upscaler customization call sites.
+2. Check no-RT/SDK-unavailable fallback, matched shader folders/indices, settings round trips, headless precedence, UV/sample/time/color semantics and clone independence.
+3. Confirm referenced targets/resources exist and obsolete forward/render tutorials are retired or clearly historical; retain valid current GPU tutorials.
+4. Correct local snippet/link drift. Do not create the tutorial collection here: missing guides remain obligations of the milestone that delivered the functionality.
 
-## Implementation work
+## Verification and exit
 
-1. Document each delivered example: basic deferred/soft shadows/FSR default scale, manipulation/MaterialModifier, complete effects/histories, integrated lightmaps and accumulated offscreen output.
-2. Provide focused runtime renderer replacement, public pass/subclass/shader injection and application-owned external upscaler demonstrations using actual final APIs.
-3. Explain no-RT fallback, query versus advanced RT kernels, matched shader folders/binding indices, settings file round-trip and headless parameter precedence.
-4. Update or retire traditional forward/render tutorials and architectural explanations that now reference deleted classes. Retain valid primitive GPU examples with correct current behavior.
+Existing tutorials describe supported delivered products and match their actual source; execution evidence remains honestly attributed.
 
-## Verification and exit conditions
-
-- Tutorial snippets correspond to final example call sites; all referenced targets/assets/shader libraries exist.
-- Steps clarify actual accumulated-frame and UV-map semantics, clone independence and optional capability limits without claiming unsupported implementations.
-
-These are future checks. Run compilation only on explicit user request; record missing runtime/backend evidence as pending, never as a pass.
-
-## Downstream comparison
-
-M10-04 aligns app/CLI instructions and M10-05 validates linked snippets/navigation across the whole documentation set.
-
-Record actual API, ownership and verification in the milestone review. Follow [the review protocol](../review-protocol.md) and edit affected pending steps when actual contracts differ.
+Perform relevant static checks. Compilation/runtime validation belongs to the project lead unless explicitly requested. Deliver one step, update progress and wait for lead acceptance under the execution protocol. No new engine feature, build-system change or future API documentation is authorized by this audit.

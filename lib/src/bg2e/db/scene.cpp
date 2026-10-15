@@ -30,6 +30,7 @@
 
 #include <fstream>
 #include <stdexcept>
+#include <iterator>
 
 namespace bg2e::db {
 
@@ -143,6 +144,166 @@ static int countSceneNodes(bg2e::scene::Node* node)
         count += countSceneNodes(child.get());
     }
     return count;
+}
+
+static void validateSceneDocument(const std::shared_ptr<json::JsonNode>& document)
+{
+    json::ObjectReader reader(document);
+    if (!reader.isValid() || !reader.getArray("scene"))
+    {
+        throw std::invalid_argument("Scene document requires an object containing a scene array");
+    }
+    if (auto type = reader.getNode("fileType"); type && (!type->isString() || type->stringValue() != "bg2e::scene"))
+    {
+        throw std::invalid_argument("Unsupported scene document type");
+    }
+}
+
+std::shared_ptr<json::JsonNode> readSceneDocument(const std::filesystem::path& filePath)
+{
+    std::ifstream input(filePath, std::ios::binary);
+    if (!input)
+    {
+        throw std::runtime_error("Could not open scene document: " + filePath.string());
+    }
+    std::string content((std::istreambuf_iterator<char>(input)), std::istreambuf_iterator<char>());
+    if (input.bad())
+    {
+        throw std::runtime_error("Could not read scene document: " + filePath.string());
+    }
+    auto document = json::JsonParser(content).parse();
+    validateSceneDocument(document);
+    return document;
+}
+
+void writeSceneDocument(std::shared_ptr<json::JsonNode> document, const std::filesystem::path& filePath)
+{
+    validateSceneDocument(document);
+    try
+    {
+        std::ofstream output;
+        output.exceptions(std::ios::failbit | std::ios::badbit);
+        output.open(filePath, std::ios::binary);
+        output << document->toString();
+        output.close();
+    }
+    catch (const std::ios_base::failure& error)
+    {
+        throw std::runtime_error("Could not write scene document '" + filePath.string() + "': " + error.what());
+    }
+}
+
+void saveSceneReferences(scene::Node* root, const std::filesystem::path& filePath,
+    scene::SceneProgressCallback onProgress)
+{
+    if (!root)
+    {
+        throw std::invalid_argument("Scene reference serialization requires a root");
+    }
+    scene::SceneSaveProgress progress;
+    progress.callback = onProgress;
+    progress.total = countSceneNodes(root);
+    using namespace json;
+    auto document = JSON(JsonObject{
+        {"fileType", JSON("bg2e::scene")},
+        {"version", JSON(JsonObject{{"major", JSON(1)}, {"minor", JSON(0)}, {"rev", JSON(0)}})},
+        {"scene", JSON(JsonList{root->serializeReferences(filePath.parent_path(), onProgress ? &progress : nullptr)})}});
+    writeSceneDocument(document, filePath);
+}
+
+static int countDrawTextures(std::shared_ptr<json::JsonNode> data, const std::filesystem::path& basePath)
+{
+    json::ObjectReader reader(data);
+    int result = 0;
+    if (auto components = reader.getArray("components"))
+    {
+        for (std::size_t i = 0; i < components->size(); ++i)
+        {
+            auto component = components->getObject(i);
+            if (!component || component->getString("type").value_or("") != "Drawable")
+            {
+                continue;
+            }
+            std::filesystem::path path;
+            if (auto source = component->getString("path"))
+            {
+                path = basePath / *source;
+            }
+            else if (auto name = component->getString("name"))
+            {
+                path = basePath / *name;
+                path.replace_extension(".bg2");
+            }
+            if (path.extension() == ".bg2")
+            {
+                result += countMeshTextures(path);
+            }
+        }
+    }
+    if (auto children = reader.getArray("children"))
+    {
+        for (std::size_t i = 0; i < children->size(); ++i)
+        {
+            if (auto child = children->getObject(i))
+            {
+                result += countDrawTextures(child->node(), basePath);
+            }
+        }
+    }
+    return result;
+}
+
+static std::shared_ptr<scene::Scene> loadSceneRepresentation(const std::filesystem::path& filePath,
+    draw::Engine* engine, scene::SceneProgressCallback onProgress)
+{
+    auto document = readSceneDocument(filePath);
+    scene::SceneLoadProgress progress;
+    progress.callback = onProgress;
+    if (onProgress)
+    {
+        auto nodes = json::ObjectReader(document).getArray("scene");
+        for (std::size_t i = 0; i < nodes->size(); ++i)
+        {
+            auto node = nodes->getObject(i);
+            if (node)
+            {
+                progress.total += countJsonNodes(node->node());
+                if (engine)
+                {
+                    progress.total += countDrawTextures(node->node(), filePath.parent_path());
+                }
+            }
+        }
+    }
+    auto result = scene::Scene::deserialize(document, filePath.parent_path(), onProgress ? &progress : nullptr);
+    if (engine)
+    {
+        result->rootNode()->loadResources(*engine, onProgress ? &progress : nullptr);
+    }
+    return result;
+}
+
+std::shared_ptr<scene::Scene> loadScene(const std::filesystem::path& filePath, scene::SceneProgressCallback onProgress)
+{
+    return loadSceneRepresentation(filePath, nullptr, onProgress);
+}
+
+std::shared_ptr<scene::Scene> loadScene(const std::filesystem::path& basePath, const std::string& fileName,
+    scene::SceneProgressCallback onProgress)
+{
+    return loadScene(basePath / fileName, onProgress);
+}
+
+std::shared_ptr<scene::Scene> loadScene(const std::filesystem::path& filePath, draw::Engine& engine,
+    scene::SceneProgressCallback onProgress)
+{
+    return loadSceneRepresentation(filePath, &engine, onProgress);
+}
+
+std::shared_ptr<scene::Scene> loadScene(const std::filesystem::path& basePath, const std::string& fileName,
+    draw::Engine& engine, scene::SceneProgressCallback onProgress)
+{
+    return loadScene(basePath / fileName, engine, onProgress);
 }
 
 std::shared_ptr<bg2e::scene::Scene> loadScene(

@@ -1,14 +1,11 @@
 #include <bg2e/app/Application.hpp>
 #include <bg2e/app/InputDelegate.hpp>
-#include <bg2e/db/image.hpp>
-#include <bg2e/gpu/CubeMap.hpp>
-#include <bg2e/gpu/CubemapRenderPass.hpp>
-#include <bg2e/geo/sphere.hpp>
 #include <bg2e/app/MainLoop.hpp>
 #include <bg2e/base/Color.hpp>
 #include <bg2e/base/PlatformTools.hpp>
 #include <bg2e/draw/RenderLoopDelegate.hpp>
 #include <bg2e/draw/Engine.hpp>
+#include <bg2e/draw/environment/all.hpp>
 #include <bg2e/gpu/Device.hpp>
 #include <bg2e/gpu/CleanupManager.hpp>
 #include <bg2e/gpu/FrameResourceRing.hpp>
@@ -51,11 +48,6 @@ struct Controller {
     std::string backend;
 };
 
-struct CubemapCameraPushConstants {
-    glm::mat4 projection{1.0f};
-    glm::mat4 view{1.0f};
-};
-
 struct CameraUBO {
     glm::mat4 projection{1.0f};
     glm::mat4 view{1.0f};
@@ -66,13 +58,6 @@ struct ModelUBO {
     glm::mat4 model{1.0f};
 };
 
-struct RoughnessUBO {
-    float roughness = 0.0f;
-    float _pad0 = 0.0f;
-    float _pad1 = 0.0f;
-    float _pad2 = 0.0f;
-};
-
 struct ReflectPushConstants {
     glm::vec3 cameraPos;
     float lod = 0.0f;
@@ -80,7 +65,6 @@ struct ReflectPushConstants {
 
 static_assert(sizeof(ReflectPushConstants) == 16);
 static_assert(offsetof(ReflectPushConstants, lod) == 12);
-static_assert(sizeof(RoughnessUBO) == 16);
 
 const std::vector<std::string> mapNames = {"Original environment", "Diffuse irradiance", "Specular reflection"};
 
@@ -95,70 +79,12 @@ class SceneDelegate final : public draw::RenderLoopDelegate {
     {
         auto* device = _engine->device();
         _cleanup = std::make_unique<gpu::CleanupManager>(_engine->surface());
-        // Shader modules
-        auto shaderBasePath = base::PlatformTools::shaderPath();
-        gpu::ShaderLib shaderLib(shaderBasePath / "draw_cubemap_render_pass", _engine->backendType());
-
-        auto equirectVs = shaderLib.vertex("equirect_to_cube", device);
-        auto equirectFs = shaderLib.fragment("equirect_to_cube", device);
-        auto irradianceVs = shaderLib.vertex("irradiance_convolution", device);
-        auto irradianceFs = shaderLib.fragment("irradiance_convolution", device);
-        auto specularVs = shaderLib.vertex("specular_prefilter", device);
-        auto specularFs = shaderLib.fragment("specular_prefilter", device);
+        const auto shaderRoot = base::PlatformTools::shaderPath();
+        gpu::ShaderLib shaderLib(shaderRoot / "draw_cubemap_render_pass", _engine->backendType());
         auto reflectVs = shaderLib.vertex("reflect_cube", device);
         auto reflectFs = shaderLib.fragment("reflect_cube", device);
-        _cleanup->push(equirectVs);
-        _cleanup->push(equirectFs);
-        _cleanup->push(irradianceVs);
-        _cleanup->push(irradianceFs);
-        _cleanup->push(specularVs);
-        _cleanup->push(specularFs);
         _cleanup->push(reflectVs);
         _cleanup->push(reflectFs);
-
-        // Pipeline layouts -----------------------------------------------------
-
-        // Equirect -> cube: vertex push constants (proj/view) + set0 (2D texture).
-        gpu::PipelineLayoutDescription equirectLayoutDesc{};
-        equirectLayoutDesc.pushConstants.push_back(
-            {0, sizeof(CubemapCameraPushConstants), gpu::ShaderStage::Vertex});
-        equirectLayoutDesc.resourceBindings.push_back(
-            {0, {.vulkan = 0, .metal = 0}, gpu::ResourceType::SampledImage, gpu::ShaderStage::Fragment, 1});
-        equirectLayoutDesc.resourceBindings.push_back(
-            {0, {.vulkan = 1, .metal = 0}, gpu::ResourceType::Sampler, gpu::ShaderStage::Fragment, 1});
-        equirectLayoutDesc.debugName = "Equirect to cube pipeline layout";
-        auto equirectLayout = device->createPipelineLayout(equirectLayoutDesc);
-        _cleanup->push(equirectLayout);
-
-        // Irradiance convolution: vertex push constants + set0 (source cubemap).
-        gpu::PipelineLayoutDescription irradianceLayoutDesc{};
-        irradianceLayoutDesc.pushConstants.push_back(
-            {0, sizeof(CubemapCameraPushConstants), gpu::ShaderStage::Vertex});
-        irradianceLayoutDesc.resourceBindings.push_back(
-            {0, {.vulkan = 0, .metal = 0}, gpu::ResourceType::SampledImage, gpu::ShaderStage::Fragment, 1});
-        irradianceLayoutDesc.resourceBindings.push_back(
-            {0, {.vulkan = 1, .metal = 0}, gpu::ResourceType::Sampler, gpu::ShaderStage::Fragment, 1});
-        irradianceLayoutDesc.debugName = "Irradiance convolution pipeline layout";
-        auto irradianceLayout = device->createPipelineLayout(irradianceLayoutDesc);
-        _cleanup->push(irradianceLayout);
-
-        // Specular prefilter: vertex push constants + set0 (source cubemap) +
-        // set1 (per-mip roughness UBO, sampled per mip level).
-        gpu::PipelineLayoutDescription specularLayoutDesc{};
-        specularLayoutDesc.pushConstants.push_back(
-            {0, sizeof(CubemapCameraPushConstants), gpu::ShaderStage::Vertex});
-        specularLayoutDesc.resourceBindings.push_back(
-            {0, {.vulkan = 0, .metal = 0}, gpu::ResourceType::SampledImage, gpu::ShaderStage::Fragment, 1});
-        specularLayoutDesc.resourceBindings.push_back(
-            {0, {.vulkan = 1, .metal = 0}, gpu::ResourceType::Sampler, gpu::ShaderStage::Fragment, 1});
-        specularLayoutDesc.resourceBindings.push_back(
-            {1, {.vulkan = 0, .metal = 1}, gpu::ResourceType::UniformBuffer, gpu::ShaderStage::Fragment, 1});
-        specularLayoutDesc.debugName = "Specular prefilter pipeline layout";
-        auto specularLayout = device->createPipelineLayout(specularLayoutDesc);
-        _cleanup->push(specularLayout);
-
-        // Reflect cube: fragment push constants (cameraPos + lod), set0 camera UBO,
-        // set1 model UBO, set2 cubemap.
         gpu::PipelineLayoutDescription reflectLayoutDesc{};
         reflectLayoutDesc.pushConstants.push_back(
             {0, sizeof(ReflectPushConstants), gpu::ShaderStage::Fragment});
@@ -174,232 +100,21 @@ class SceneDelegate final : public draw::RenderLoopDelegate {
         auto reflectLayout = device->createPipelineLayout(reflectLayoutDesc);
         _cleanup->push(reflectLayout);
 
-        // Equirectangular HDR source texture
-        auto assetsPath = base::PlatformTools::assetPath();
-        auto imageData = std::shared_ptr<base::Image>(db::loadImage(assetsPath / "autumn_field_4k.hdr"));
-        if (!imageData || imageData->width() == 0 || imageData->height() == 0)
-        {
-            throw std::runtime_error("Failed to load the cubemap HDR environment.");
-        }
-        auto equirectTexture = device->createImage({.size = {imageData->width(), imageData->height()},
-                                                    .format = gpu::PixelFormat::R16G16B16A16_SFLOAT,
-                                                    .usage = gpu::ImageUsage::Sampled | gpu::ImageUsage::TransferDst,
-                                                    .debugName = "Equirect HDR texture"});
-        _cleanup->push(equirectTexture);
-        equirectTexture->uploadImage(imageData.get());
-        device->immediateSubmit([equirectTexture](gpu::CommandBuffer* cmd)
-                                {
-                                    cmd->transition(equirectTexture.get(), gpu::ImageLayout::ShaderReadOnly);
-                                });
 
-        // Linear mip filtering so the specular map can be sampled across its mip
-        // chain with textureLod; Repeat addressing keeps the equirect projection
-        // seamless and cubemap sampling is seamless regardless of address mode.
-        auto sampler = device->createSampler({.mipFilter = gpu::MipmapFilter::Linear,
-                                              .debugName = "Default linear sampler"});
-        _cleanup->push(sampler);
-
-        // Cubemap render targets ---------------------------------------------
-
-        // Original environment cubemap, single mip.
-        const uint32_t originalSize = 1024;
-        auto originalCubeMap = device->createCubeMap({.size = originalSize,
-                                                      .format = gpu::PixelFormat::R16G16B16A16_SFLOAT,
-                                                      .usage = gpu::ImageUsage::Sampled | gpu::ImageUsage::ColorAttachment | gpu::ImageUsage::TransferSrc | gpu::ImageUsage::TransferDst,
-                                                      .mipLevels = 1,
-                                                      .debugName = "Original environment cubemap"});
-        _cleanup->push(originalCubeMap);
-
-        // Diffuse irradiance map, small and single mip.
-        const uint32_t irradianceSize = 32;
-        auto irradianceCubeMap = device->createCubeMap({.size = irradianceSize,
-                                                        .format = gpu::PixelFormat::R16G16B16A16_SFLOAT,
-                                                        .usage = gpu::ImageUsage::Sampled | gpu::ImageUsage::ColorAttachment | gpu::ImageUsage::TransferSrc | gpu::ImageUsage::TransferDst,
-                                                        .mipLevels = 1,
-                                                        .debugName = "Irradiance cubemap"});
-        _cleanup->push(irradianceCubeMap);
-
-        // Specular reflection map: same size as the original, with multiple mips.
-        // minMipSize = 8 makes the mip chain stop at 8x8 px.
-        auto specularCubeMap = device->createCubeMap({.size = originalSize,
-                                                      .format = gpu::PixelFormat::R16G16B16A16_SFLOAT,
-                                                      .usage = gpu::ImageUsage::Sampled | gpu::ImageUsage::ColorAttachment | gpu::ImageUsage::TransferSrc | gpu::ImageUsage::TransferDst,
-                                                      .minMipSize = 8,
-                                                      .debugName = "Specular reflection cubemap"});
-        _cleanup->push(specularCubeMap);
-
-        const uint32_t specularMipLevels = specularCubeMap->mipLevels();
-        _controller->specularMipLevels = specularMipLevels;
-
-        // Resource sets used during cubemap generation -----------------------
-
-        auto equirectSet = device->createResourceSet(equirectLayout.get(), 0, "Equirect source set");
-        equirectSet->setSampledImage({.vulkan = 0, .metal = 0}, equirectTexture.get());
-        equirectSet->setSampler({.vulkan = 1, .metal = 0}, sampler.get());
-        equirectSet->update();
-        _cleanup->push(equirectSet);
-
-        auto irradianceSourceSet = device->createResourceSet(irradianceLayout.get(), 0, "Irradiance source set");
-        irradianceSourceSet->setSampledCubeMap({.vulkan = 0, .metal = 0}, originalCubeMap.get());
-        irradianceSourceSet->setSampler({.vulkan = 1, .metal = 0}, sampler.get());
-        irradianceSourceSet->update();
-        _cleanup->push(irradianceSourceSet);
-
-        auto specularSourceSet = device->createResourceSet(specularLayout.get(), 0, "Specular source set");
-        specularSourceSet->setSampledCubeMap({.vulkan = 0, .metal = 0}, originalCubeMap.get());
-        specularSourceSet->setSampler({.vulkan = 1, .metal = 0}, sampler.get());
-        specularSourceSet->update();
-        _cleanup->push(specularSourceSet);
-
-        // One roughness UBO + set per specular mip level. Each mip uses a distinct
-        // buffer so they can all be consumed inside a single command buffer.
-        std::vector<std::shared_ptr<gpu::Buffer>> roughnessUbos;
-        std::vector<std::shared_ptr<gpu::ResourceSet>> roughnessSets;
-        roughnessUbos.reserve(specularMipLevels);
-        roughnessSets.reserve(specularMipLevels);
-        for (uint32_t mip = 0; mip < specularMipLevels; ++mip)
-        {
-            RoughnessUBO data{};
-            data.roughness = specularMipLevels > 1
-                                 ? float(mip) / float(specularMipLevels - 1)
-                                 : 0.0f;
-
-            auto ubo = device->createBuffer("Roughness UBO mip[" + std::to_string(mip) + "]");
-            _cleanup->push(ubo);
-            ubo->createUniformBuffer(data);
-
-            auto set = device->createResourceSet(specularLayout.get(), 1,
-                                                 "Roughness set mip[" + std::to_string(mip) + "]");
-            _cleanup->push(set);
-            set->setUniformBuffer({.vulkan = 0, .metal = 1}, ubo);
-            set->update();
-
-            roughnessUbos.push_back(ubo);
-            roughnessSets.push_back(set);
-        }
-
-        // Meshes --------------------------------------------------------------
-
-        // Inverted sphere with equirect UVs to project the HDR into the cubemap.
-        std::unique_ptr<bg2e::geo::MeshPU> sphereData(bg2e::geo::createSpherePU(50.0f, 32, 32, true));
-        gpu::MeshPU skyboxSphere;
-        skyboxSphere.setMeshData(*sphereData);
-        skyboxSphere.build(device);
-
-        // Unit cube spanning [-1, 1]; its local position is used as the per-face
-        // sampling direction for the convolution / prefilter passes.
-        std::unique_ptr<bg2e::geo::MeshPU> dirCubeData(bg2e::geo::createCubePU(2.0f, 2.0f, 2.0f));
-        gpu::MeshPU dirCube;
-        dirCube.setMeshData(*dirCubeData);
-        dirCube.build(device);
-
+        _environmentGenerator = std::make_unique<draw::environment::EnvironmentGenerator>(*_engine, shaderRoot);
+        _environmentResources = _environmentGenerator->build(base::PlatformTools::assetPath() / "autumn_field_4k.hdr");
+        _controller->specularMipLevels = _environmentResources->prefilteredSpecular->mipLevels();
+        _skybox.settings().shaderRoot = shaderRoot;
+        _skybox.setEnvironment(_environmentResources);
         // On-screen reflective cube.
         std::unique_ptr<bg2e::geo::MeshPNU> reflectCubeData(bg2e::geo::createCubePNU(1.0f, 1.0f, 1.0f));
         _cube.setMeshData(*reflectCubeData);
         _cube.build(device);
 
-        // Pipelines -----------------------------------------------------------
 
-        const auto cubeColorFormat = gpu::PixelFormat::R16G16B16A16_SFLOAT;
-
-        gpu::GraphicsPipelineDescription equirectPipelineDesc{};
-        equirectPipelineDesc.vertexShader = equirectVs.get();
-        equirectPipelineDesc.fragmentShader = equirectFs.get();
-        equirectPipelineDesc.layout = equirectLayout.get();
-        equirectPipelineDesc.topology = gpu::PrimitiveTopology::TriangleList;
-        equirectPipelineDesc.colorFormat = cubeColorFormat;
-        equirectPipelineDesc.depthFormat = gpu::PixelFormat::Undefined;
-        equirectPipelineDesc.cullMode = gpu::CullMode::None;
-        equirectPipelineDesc.debugName = "Equirect to cube pipeline";
-        equirectPipelineDesc.addVertexBufferDescription(gpu::MeshPU::vertexBufferDescription());
-        auto equirectPipeline = device->createGraphicsPipeline(equirectPipelineDesc);
-        _cleanup->push(equirectPipeline);
-
-        gpu::GraphicsPipelineDescription irradiancePipelineDesc{};
-        irradiancePipelineDesc.vertexShader = irradianceVs.get();
-        irradiancePipelineDesc.fragmentShader = irradianceFs.get();
-        irradiancePipelineDesc.layout = irradianceLayout.get();
-        irradiancePipelineDesc.topology = gpu::PrimitiveTopology::TriangleList;
-        irradiancePipelineDesc.colorFormat = cubeColorFormat;
-        irradiancePipelineDesc.depthFormat = gpu::PixelFormat::Undefined;
-        irradiancePipelineDesc.cullMode = gpu::CullMode::None;
-        irradiancePipelineDesc.debugName = "Irradiance convolution pipeline";
-        irradiancePipelineDesc.addVertexBufferDescription(gpu::MeshPU::vertexBufferDescription());
-        auto irradiancePipeline = device->createGraphicsPipeline(irradiancePipelineDesc);
-        _cleanup->push(irradiancePipeline);
-
-        gpu::GraphicsPipelineDescription specularPipelineDesc{};
-        specularPipelineDesc.vertexShader = specularVs.get();
-        specularPipelineDesc.fragmentShader = specularFs.get();
-        specularPipelineDesc.layout = specularLayout.get();
-        specularPipelineDesc.topology = gpu::PrimitiveTopology::TriangleList;
-        specularPipelineDesc.colorFormat = cubeColorFormat;
-        specularPipelineDesc.depthFormat = gpu::PixelFormat::Undefined;
-        specularPipelineDesc.cullMode = gpu::CullMode::None;
-        specularPipelineDesc.debugName = "Specular prefilter pipeline";
-        specularPipelineDesc.addVertexBufferDescription(gpu::MeshPU::vertexBufferDescription());
-        auto specularPipeline = device->createGraphicsPipeline(specularPipelineDesc);
-        _cleanup->push(specularPipeline);
-
-        // Generate the three cubemaps once, before the render loop -----------
-        //
-        // Each generation step is driven by gpu::CubemapRenderPass, which iterates
-        // the six faces (and, for the specular map, every mip level), sets up the
-        // matrices, viewport/scissor, begin/end rendering and image transitions.
-        gpu::CubemapRenderPassInfo genInfo{};
-        genInfo.clear = true;
-        genInfo.clearColor = gpu::Color(0.0f, 0.0f, 0.0f, 1.0f);
-        genInfo.transitionBefore = true;
-        genInfo.transitionAfter = true;
-
-        device->immediateSubmit([&](gpu::CommandBuffer* cmd)
-                                {
-                                    // 1) Original environment cubemap from the equirectangular texture.
-                                    gpu::CubemapRenderPass::render(cmd, originalCubeMap.get(), genInfo,
-                                                                   [&](gpu::CommandBuffer* c, gpu::CubemapFace, uint32_t,
-                                                                       const glm::mat4& projection, const glm::mat4& view)
-                                                                   {
-                                                                       CubemapCameraPushConstants pc{projection, view};
-                                                                       c->bindPipeline(equirectPipeline.get());
-                                                                       c->bindResourceSet(equirectPipeline.get(), 0, equirectSet.get());
-                                                                       c->pushConstants(gpu::ShaderStage::Vertex, 0, sizeof(pc), &pc);
-                                                                       skyboxSphere.draw(c);
-                                                                   });
-
-                                    // 2) Diffuse irradiance map convolved from the original cubemap.
-                                    gpu::CubemapRenderPass::render(cmd, irradianceCubeMap.get(), genInfo,
-                                                                   [&](gpu::CommandBuffer* c, gpu::CubemapFace, uint32_t,
-                                                                       const glm::mat4& projection, const glm::mat4& view)
-                                                                   {
-                                                                       CubemapCameraPushConstants pc{projection, view};
-                                                                       c->bindPipeline(irradiancePipeline.get());
-                                                                       c->bindResourceSet(irradiancePipeline.get(), 0, irradianceSourceSet.get());
-                                                                       c->pushConstants(gpu::ShaderStage::Vertex, 0, sizeof(pc), &pc);
-                                                                       dirCube.draw(c);
-                                                                   });
-
-                                    // 3) Specular reflection map: each mip level is prefiltered with an
-                                    //    increasing roughness (roughness = mip / (mipCount - 1)).
-                                    gpu::CubemapRenderPass::render(cmd, specularCubeMap.get(), genInfo,
-                                                                   [&](gpu::CommandBuffer* c, gpu::CubemapFace, uint32_t mipLevel,
-                                                                       const glm::mat4& projection, const glm::mat4& view)
-                                                                   {
-                                                                       CubemapCameraPushConstants pc{projection, view};
-                                                                       c->bindPipeline(specularPipeline.get());
-                                                                       c->bindResourceSet(specularPipeline.get(), 0, specularSourceSet.get());
-                                                                       c->bindResourceSet(specularPipeline.get(), 1, roughnessSets[mipLevel].get());
-                                                                       c->pushConstants(gpu::ShaderStage::Vertex, 0, sizeof(pc), &pc);
-                                                                       dirCube.draw(c);
-                                                                   });
-                                });
-
-        // immediateSubmit has completed: conversion-only mesh buffers can retire.
-        skyboxSphere.cleanup();
-        dirCube.cleanup();
         _reflectVs = reflectVs;
         _reflectFs = reflectFs;
         _reflectLayout = reflectLayout;
-
         _cameraUbo = device->createBuffer("Camera UBO");
         _cleanup->push(_cameraUbo);
         _cameraUbo->createUniformBuffer(CameraUBO{});
@@ -408,19 +123,20 @@ class SceneDelegate final : public draw::RenderLoopDelegate {
         _cameraSet->setUniformBuffer({.vulkan = 0, .metal = 2}, _cameraUbo);
         _cameraSet->update();
 
-        auto makeCubeSet = [this, device, &sampler](gpu::CubeMap* map, const std::string& name)
+
+        auto makeCubeSet = [this, device](const std::shared_ptr<gpu::Image>& map, const std::string& name)
         {
             auto set = device->createResourceSet(_reflectLayout.get(), 2, name);
             _cleanup->push(set);
-            set->setSampledCubeMap({.vulkan = 0, .metal = 0}, map);
-            set->setSampler({.vulkan = 1, .metal = 0}, sampler.get());
+            set->setSampledImage({.vulkan = 0, .metal = 0}, map.get());
+            set->setSampler({.vulkan = 1, .metal = 0}, _environmentResources->sampler.get());
             set->update();
             return set;
         };
         _cubeSets = {
-            makeCubeSet(originalCubeMap.get(), "Reflect original cube set"),
-            makeCubeSet(irradianceCubeMap.get(), "Reflect irradiance cube set"),
-            makeCubeSet(specularCubeMap.get(), "Reflect specular cube set")
+            makeCubeSet(_environmentResources->sky, "Reflect original cube set"),
+            makeCubeSet(_environmentResources->irradiance, "Reflect irradiance cube set"),
+            makeCubeSet(_environmentResources->prefilteredSpecular, "Reflect specular cube set")
         };
     }
 
@@ -466,6 +182,8 @@ class SceneDelegate final : public draw::RenderLoopDelegate {
         pipeline.debugName = "Reflect cube pipeline";
         pipeline.addVertexBufferDescription(gpu::MeshPNU::vertexBufferDescription());
         _pipeline = device->createGraphicsPipeline(pipeline);
+        _skybox.initialize(*_engine, surface->colorFormat(), _depth->pixelFormat());
+        _skybox.setCamera(camera.view, camera.projection);
     }
 
     void update(const draw::FrameContext& context) override
@@ -485,6 +203,7 @@ class SceneDelegate final : public draw::RenderLoopDelegate {
         const auto& color = _controller->color;
         command.clearColor(0, {color.r, color.g, color.b, color.a});
         command.clearDepth(1.0f);
+        _skybox.draw(command, context.extent);
         ReflectPushConstants push{};
         push.cameraPos = _cameraEye;
         push.lod = _controller->activeMap == 2 ? static_cast<float>(_controller->specularLod) : 0.0f;
@@ -518,6 +237,13 @@ class SceneDelegate final : public draw::RenderLoopDelegate {
         _reflectLayout.reset();
         _reflectFs.reset();
         _reflectVs.reset();
+        _skybox.cleanup();
+        _environmentResources.reset();
+        if (_environmentGenerator)
+        {
+            _environmentGenerator->cleanup();
+            _environmentGenerator.reset();
+        }
     }
 
   private:
@@ -539,6 +265,9 @@ class SceneDelegate final : public draw::RenderLoopDelegate {
         _modelUboRing.clear();
     }
 
+    std::unique_ptr<draw::environment::EnvironmentGenerator> _environmentGenerator;
+    std::shared_ptr<const draw::environment::EnvironmentResources> _environmentResources;
+    draw::environment::SkyboxRenderer _skybox;
     std::shared_ptr<Controller> _controller;
     float _time = 0.0f;
     const glm::vec3 _cameraEye{0.0f, 0.0f, 3.0f};

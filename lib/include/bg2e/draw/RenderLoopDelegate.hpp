@@ -22,6 +22,8 @@
 #include <bg2e/draw/FrameContext.hpp>
 #include <bg2e/gpu/Common.hpp>
 
+#include <functional>
+
 namespace bg2e {
 namespace draw {
 
@@ -47,6 +49,18 @@ class BG2E_API RenderLoopDelegate {
     {
     }
 
+    // Called before acquisition/UI preparation/recording, including while paused.
+    // Lifecycle changes may drain the device here; no command scope is active.
+    virtual void prepareFrame()
+    {
+    }
+
+    // The default preserves existing custom delegate resize overrides.
+    virtual void surfaceChanged(gpu::Size2D extent, gpu::PixelFormat /* format */)
+    {
+        resize(extent);
+    }
+
     virtual void update(const FrameContext& /* frameContext */)
     {
     }
@@ -58,7 +72,21 @@ class BG2E_API RenderLoopDelegate {
     }
 
   protected:
+    // Main-thread invalidation. Animation may call this during update/record to
+    // keep the following scene frame dirty, independently of UI presentation.
+    void requestSceneFrame()
+    {
+        if (_requestSceneFrame)
+        {
+            _requestSceneFrame();
+        }
+    }
+
     Engine* _engine = nullptr;
+
+  private:
+    friend class RenderLoop;
+    std::function<void()> _requestSceneFrame;
 };
 
 }

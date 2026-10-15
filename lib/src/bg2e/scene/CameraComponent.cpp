@@ -62,8 +62,14 @@ void CameraComponent::update(float /* delta */)
     _camera.updateProjectionMatrix();
 }
 
-void CameraComponent::deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path& /* basePath */, [[maybe_unused]] render::Engine& engine)
+void CameraComponent::deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path& basePath, render::Engine&)
 {
+    deserialize(jsonData, basePath);
+}
+
+void CameraComponent::deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path& /* basePath */)
+{
+    deserializeCommon(jsonData);
     json::ObjectReader reader(jsonData);
     if (auto camera = reader.getObject("cameraData"))
     {
@@ -80,6 +86,11 @@ std::shared_ptr<json::JsonNode> CameraComponent::serialize(const std::filesystem
     obj["cameraData"] = _camera.serialize();
 
     return compData;
+}
+
+std::shared_ptr<json::JsonNode> CameraComponent::serializeReferences(const std::filesystem::path& basePath)
+{
+    return CameraComponent::serialize(basePath);
 }
 
 BG2E_SCENE_REGISTER_COMPONENT(CameraComponent);

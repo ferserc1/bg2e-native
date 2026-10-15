@@ -1,8 +1,8 @@
 # M07-04 — Guarded asynchronous import and server integration
 
-[Milestone summary](summary.md) · [Plan index](../index.md) · [Architecture decisions](../architecture-decisions.md)
+[Milestone summary](summary.md) · [Plan index](../index.md) · [Architecture decisions](../architecture-decisions.md) · [Execution protocol](../execution-protocol.md) · [Progress](../progress.md)
 
-**Status:** planned. **Prerequisites:** M07-02/M07-03 and existing MainLoop safeUpdateScene.
+**Execution status:** see [progress](../progress.md). **Prerequisites:** M07-02/M07-03 and existing MainLoop safeUpdateScene.
 
 ## Scope and deliverable
 
@@ -28,10 +28,14 @@ Current sources to inspect: [apps/bg2e_composer/src/SceneImporter.cpp](../../../
 - Queued/canceled/failed/successful imports leave correct progress and scene state; late completion after scene replacement is ignored safely.
 - Scene UI remains responsive according to current loader policy and no GPU objects are used from unsupported threads or another engine mode.
 
-These are future checks. Run compilation only on explicit user request; record missing runtime/backend evidence as pending, never as a pass.
+Delegate compilation and applicable runtime checks to the project lead; perform relevant nonexecuting static checks yourself. After delivering this step or its correction, update progress to `awaiting_project_lead` and stop. Their instruction to continue accepts the preceding delivery as compiled/checked without failures; record that basis without inventing test/backend details. Follow the [execution protocol](../execution-protocol.md).
 
 ## Downstream comparison
 
 M08 batch assembly can reuse parsers but not composer-specific networking/scheduling. M09 final cleanup audits server/import code for hidden legacy calls.
 
 Record actual API, ownership and verification in the milestone review. Follow [the review protocol](../review-protocol.md) and edit affected pending steps when actual contracts differ.
+
+## M01-16 reviewed baseline
+
+Use actual delegate rendererGeneration and catalog generation with weak target references; add scene/job generation rather than treating those as the same identity. Direct Texture reload/updateSampler invalidates captured image/sampler pointers; rebuild extraction/bindings and reset effect/bake state before publication. Worker schema parsing must not implicitly invoke windowed UI or native upload. See [M01 review](../milestone_01_deferred_renderer/review.md).

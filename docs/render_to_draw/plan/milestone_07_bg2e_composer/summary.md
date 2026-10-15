@@ -1,8 +1,8 @@
 # M07 — Experimental bg2e_composer application
 
-[Plan index](../index.md) · [Architecture decisions](../architecture-decisions.md) · [Review protocol](../review-protocol.md)
+[Plan index](../index.md) · [Architecture decisions](../architecture-decisions.md) · [Review protocol](../review-protocol.md) · [Execution protocol](../execution-protocol.md) · [Progress](../progress.md)
 
-**Status:** planned, not implemented. **Entry prerequisites:** Accepted M06 shared editor/resource/IO review and all previous product gates.
+**Execution status:** see [progress](../progress.md). **Entry prerequisites:** Accepted M06 shared editor/resource/IO review and all previous product gates.
 
 ## Working product
 
@@ -25,8 +25,11 @@ A runnable `apps/draw/bg2e_composer` reproduces scene composition/editing/import
 | [M07-05](step_05_scene-baking.md) | Scene-wide bake jobs, previews and complete saves |
 | [M07-06](step_06_product-validation.md) | Composer feature parity and complete-scene regression |
 | [M07-07](step_07_review.md) | Review M07 scene/import contracts and revise CLI/cleanup |
+| [M07-08](step_08_documentation.md) | Update maintained documentation cumulatively through M07 |
 
 ## Milestone exit gate
+
+- The final [documentation step](step_08_documentation.md) updates maintained `doc/` through this milestone and is accepted before the next milestone; no future implementation is documented as available.
 
 - The new composer opens/saves/imports complete scenes with the single-editable-root behavior and required resources.
 - Scene-tree/reflected editing/selection/gizmos, graph cloning, materials, camera/environment/light edits and viewpoint helpers work.
@@ -34,8 +37,16 @@ A runnable `apps/draw/bg2e_composer` reproduces scene composition/editing/import
 - Scene-wide integrated baking, UV preview/output metadata and dynamic graphics configuration work.
 - M07 review adapts standalone/batch/retirement/documentation tasks and records current production regressions.
 
-Check Vulkan and Metal where the capability exists, plus a no-RT configuration and SDK-unavailable fallback. Product gates require actual evidence; static review or an unexecuted checklist cannot certify a working product. Build authorization follows the repository policy. Preserve production regression references through M08.
+Provide the project lead with applicable Vulkan/Metal, no-RT and SDK-unavailable checks. The lead compiles/tests after each step; the agent performs static inspection and does not run builds/runtime checks unless explicitly instructed. Their instruction to continue accepts the preceding delivered step under the [execution protocol](../execution-protocol.md), without repeated confirmation or mandatory test artifacts. Record who checked what and leave unspecified coverage unspecified. Preserve production regression references through M08.
 
 ## Required code-versus-plan review
 
-The last step is part of this milestone. Create `review.md` only after execution with actual revisions/contracts/results. Compare the code against every pending milestone and update affected summaries and step files, including dependencies, paths and validation. The final step lists milestone-specific comparisons. Do not rewrite completed history to conceal a design change.
+The technical review is the penultimate step; the cumulative documentation update is the final required step. Create `review.md` only after execution with actual revisions/contracts/results. Compare the code against every pending milestone and update affected summaries and step files, including dependencies, paths and validation. The review step lists milestone-specific comparisons; the documentation step closes the milestone under the cumulative documentation policy. Do not rewrite completed history to conceal a design change.
+
+## M01 review handoff
+
+Consume actual M06 full IO plus M01 raw/reference IO, fresh node IDs/deep resource clones, generation-bearing queued settings and later manipulation. Async adoption needs distinct scene/job validity and resource-reload rebinding; renderer generation alone is insufficient. See [M01 review](../milestone_01_deferred_renderer/review.md) for source evidence, classifications and verification limits. Milestone order and product gate remain unchanged.
+
+## Documentation closure order
+
+The technical review now hands off to [M07-08](step_08_documentation.md), not directly to the next milestone. Earlier next-milestone handoff statements are historical and superseded by this order. See [documentation policy](../documentation-policy.md).

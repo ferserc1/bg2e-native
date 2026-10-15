@@ -102,6 +102,19 @@ compile_shaders(
     ${DST_SHADER_DIR}
 )
 
+# Keep new draw libraries separate from the production shader directory contents.
+# Existing app resource bundling copies BG2E_SHADER_DIR recursively.
+compile_paired_shader_tree(
+    ${BG2E_TARGET_NAME}
+    "${VULKAN_SDK}"
+    "${CMAKE_SOURCE_DIR}/shaders/src/draw"
+    "${DST_SHADER_DIR}/draw"
+)
+# Direct installs retain the same paths as development/app/standalone resources.
+install(DIRECTORY "${DST_SHADER_DIR}/draw"
+    DESTINATION shaders COMPONENT RuntimeShaders
+    FILES_MATCHING PATTERN "*.spv" PATTERN "*.metallib")
+
 # Exported variables
 set(BG2E_LIB_TARGET ${BG2E_TARGET_NAME} PARENT_SCOPE)
 set(BG2E_RUNTIME_BINARY "$<TARGET_FILE:${BG2E_TARGET_NAME}>" PARENT_SCOPE)

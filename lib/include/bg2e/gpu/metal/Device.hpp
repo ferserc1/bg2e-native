@@ -35,6 +35,15 @@ class Device : public gpu::Device {
     void waitIdle() override;
 
     bool isValid() const override;
+    RayTracingCapabilities rayTracingCapabilities() const override
+    {
+        return _rayTracingCapabilities;
+    }
+    RenderingCapabilities renderingCapabilities() const override
+    {
+        return _renderingCapabilities;
+    }
+    FormatCapabilities formatCapabilities(PixelFormat format) const override;
 
     const gpu::Queue& graphicsQueue() const override;
     const gpu::Queue& presentQueue() const override;
@@ -62,6 +71,8 @@ class Device : public gpu::Device {
     }
 
   private:
+    RenderingCapabilities _renderingCapabilities;
+    RayTracingCapabilities _rayTracingCapabilities;
     DeviceHandle _device = nullptr;
     metal::Queue _graphicsQueue;
     metal::Queue _presentQueue;

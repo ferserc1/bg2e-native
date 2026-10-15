@@ -1,8 +1,8 @@
 # M09-02 — Draw-only application defaults and surviving products
 
-[Milestone summary](summary.md) · [Plan index](../index.md) · [Architecture decisions](../architecture-decisions.md)
+[Milestone summary](summary.md) · [Plan index](../index.md) · [Architecture decisions](../architecture-decisions.md) · [Execution protocol](../execution-protocol.md) · [Progress](../progress.md)
 
-**Status:** planned. **Prerequisites:** M09-01.
+**Execution status:** see [progress](../progress.md). **Prerequisites:** M09-01.
 
 ## Scope and deliverable
 
@@ -30,7 +30,7 @@ Current sources to inspect: [lib/include/bg2e/app/Application.hpp](../../../../l
 - All supported windowed/headless/new application targets start through draw defaults and explicit backend override still works.
 - No production Engine is linked/created by supported app entry points, including failure/cleanup paths.
 
-These are future checks. Run compilation only on explicit user request; record missing runtime/backend evidence as pending, never as a pass.
+Delegate compilation and applicable runtime checks to the project lead; perform relevant nonexecuting static checks yourself. After delivering this step or its correction, update progress to `awaiting_project_lead` and stop. Their instruction to continue accepts the preceding delivery as compiled/checked without failures; record that basis without inventing test/backend details. Follow the [execution protocol](../execution-protocol.md).
 
 ## Downstream comparison
 

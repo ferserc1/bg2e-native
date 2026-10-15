@@ -154,6 +154,23 @@ class BG2E_API JsonNode {
         throw std::logic_error("Improper return type: object");
     }
 
+    const std::string& stringValue() const
+    {
+        if (!isString())
+        {
+            throw std::logic_error("Improper return type: string");
+        }
+        return _stringValue;
+    }
+    bool boolValue() const
+    {
+        if (!isBool())
+        {
+            throw std::logic_error("Improper return type: bool");
+        }
+        return _boolValue;
+    }
+
     const std::string& stringValue()
     {
         if (type == Type::String)

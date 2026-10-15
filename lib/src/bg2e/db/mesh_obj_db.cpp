@@ -29,6 +29,9 @@
 
 #include <fstream>
 #include <functional>
+#include <memory>
+#include <cstdint>
+#include <stdexcept>
 
 namespace bg2e::db {
 
@@ -51,44 +54,74 @@ void readObjMesh(
     std::string warn;
     std::string err;
 
-    tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, &inputStream);
+    const bool loaded = tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, &inputStream);
     if (!warn.empty())
     {
         bg2e_log_warning << "Warning loading OBJ file: " << warn << bg2e_log_end;
     }
 
-    if (!err.empty())
+    if (!loaded || !err.empty())
     {
         throw std::runtime_error(std::string("Error loading OBJ file: ") + err);
     }
 
+    auto positionAt = [&](int index)
+    {
+        if (index < 0 || size_t(index) >= attrib.vertices.size() / 3)
+        {
+            throw std::runtime_error("OBJ position index is out of range");
+        }
+        const auto offset = size_t(index) * 3;
+        return glm::vec3{attrib.vertices[offset], attrib.vertices[offset + 1], attrib.vertices[offset + 2]};
+    };
     uint32_t currentIndex = 0;
-    uint32_t submeshOffset = 0;
     for (const auto& shape : shapes)
     {
-        uint32_t submeshCount = 0;
-        for (const auto& index : shape.mesh.indices)
+        if (shape.mesh.indices.size() % 3 != 0 || shape.mesh.indices.size() > UINT32_MAX - currentIndex)
         {
-            // Curretly, the loader only supports triangles
-
-            glm::vec3 position{
-                attrib.vertices[3 * index.vertex_index],
-                attrib.vertices[3 * index.vertex_index + 1],
-                attrib.vertices[3 * index.vertex_index + 2]};
-            glm::vec3 normal{
-                attrib.normals[3 * index.normal_index],
-                attrib.normals[3 * index.normal_index + 1],
-                attrib.normals[3 * index.normal_index + 2]};
-            glm::vec2 uv{
-                attrib.texcoords[2 * index.texcoord_index],
-                1.0f - attrib.texcoords[2 * index.texcoord_index + 1]};
-
+            throw std::runtime_error("OBJ requires triangulated 32-bit indexed geometry");
+        }
+        const auto submeshOffset = currentIndex;
+        for (size_t i = 0; i < shape.mesh.indices.size(); ++i)
+        {
+            const auto& index = shape.mesh.indices[i];
+            const auto position = positionAt(index.vertex_index);
+            glm::vec3 normal;
+            if (index.normal_index < 0)
+            {
+                const auto first = i - i % 3;
+                const auto p0 = positionAt(shape.mesh.indices[first].vertex_index);
+                const auto p1 = positionAt(shape.mesh.indices[first + 1].vertex_index);
+                const auto p2 = positionAt(shape.mesh.indices[first + 2].vertex_index);
+                const auto cross = glm::cross(p1 - p0, p2 - p0);
+                normal = glm::length(cross) > 1e-8f ? glm::normalize(cross) : glm::vec3{0, 0, 1};
+            }
+            else
+            {
+                if (size_t(index.normal_index) >= attrib.normals.size() / 3)
+                {
+                    throw std::runtime_error("OBJ normal index is out of range");
+                }
+                const auto offset = size_t(index.normal_index) * 3;
+                normal = {attrib.normals[offset], attrib.normals[offset + 1], attrib.normals[offset + 2]};
+            }
+            glm::vec2 uv{0};
+            if (index.texcoord_index >= 0)
+            {
+                if (size_t(index.texcoord_index) >= attrib.texcoords.size() / 2)
+                {
+                    throw std::runtime_error("OBJ UV index is out of range");
+                }
+                const auto offset = size_t(index.texcoord_index) * 2;
+                uv = {attrib.texcoords[offset], 1.0f - attrib.texcoords[offset + 1]};
+            }
             vertexCallback(position, normal, uv);
             indexCallback(currentIndex++);
-            ++submeshCount;
         }
-        submeshCallback(submeshOffset, submeshCount);
-        submeshOffset = currentIndex;
+        if (currentIndex > submeshOffset)
+        {
+            submeshCallback(submeshOffset, currentIndex - submeshOffset);
+        }
     }
 }
 
@@ -259,7 +292,7 @@ bg2e::geo::MeshPNUT* loadMeshObj<bg2e::geo::MeshPNUT>(std::istream& inputStream)
 template <>
 bg2e::geo::MeshPNUUT* loadMeshObj<bg2e::geo::MeshPNUUT>(std::istream& inputStream)
 {
-    auto mesh = new bg2e::geo::MeshPNUUT();
+    auto mesh = std::make_unique<bg2e::geo::MeshPNUUT>();
 
     readObjMesh(
         inputStream,
@@ -276,10 +309,29 @@ bg2e::geo::MeshPNUUT* loadMeshObj<bg2e::geo::MeshPNUUT>(std::istream& inputStrea
             mesh->submeshes.push_back({offset, count});
         });
 
-    geo::GenTangentsModifier<geo::MeshPNUUT> tangentGenerator(mesh);
+    geo::GenTangentsModifier<geo::MeshPNUUT> tangentGenerator(mesh.get());
     tangentGenerator.apply();
 
-    return mesh;
+    return mesh.release();
+}
+
+std::shared_ptr<draw::Drawable> loadDrawableObj(const std::filesystem::path& filePath, draw::Engine& engine)
+{
+    auto result = std::make_shared<draw::Drawable>();
+    result->setName(filePath.stem().string());
+    result->setMesh(std::shared_ptr<geo::MeshPNUUT>(loadMeshObj<geo::MeshPNUUT>(filePath)));
+    for (uint32_t i = 0; i < result->submeshesCount(); ++i)
+    {
+        result->setSubmeshName("submesh_" + std::to_string(i), i);
+    }
+    result->load(&engine);
+    return result;
+}
+
+std::shared_ptr<draw::Drawable> loadDrawableObj(const std::filesystem::path& basePath,
+    const std::string& fileName, draw::Engine& engine)
+{
+    return loadDrawableObj(basePath / fileName, engine);
 }
 
 std::shared_ptr<bg2e::scene::Drawable> loadDrawableObj(

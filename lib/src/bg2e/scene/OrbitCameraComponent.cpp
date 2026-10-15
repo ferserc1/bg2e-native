@@ -34,8 +34,14 @@ std::shared_ptr<Component> OrbitCameraComponent::clone() const
     return copy;
 }
 
-void OrbitCameraComponent::deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path&, [[maybe_unused]] render::Engine& engine)
+void OrbitCameraComponent::deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path& basePath, render::Engine&)
 {
+    deserialize(jsonData, basePath);
+}
+
+void OrbitCameraComponent::deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path& /* basePath */)
+{
+    deserializeCommon(jsonData);
     json::ObjectReader reader(jsonData);
     if (!reader.isValid())
     {
@@ -474,14 +480,26 @@ void OrbitCameraComponent::centerOnTarget(bg2e::scene::Node* target)
     else
     {
         _distance = _initialDistance;
-        bg2e::scene::Drawable* drawable;
-        if (target->drawable() &&
-            ((drawable = target->drawable()->drawable().get())))
+        const auto centerDrawable = [&](const auto& drawable)
         {
-            geo::AABoundingBox bbox(drawable->mesh());
-            if (bbox.isValid())
+            if (drawable && drawable->mesh())
             {
-                _distance = std::max({bbox.max().x, bbox.max().y, bbox.max().z}) * 2.0f;
+                geo::AABoundingBox bbox(drawable->mesh());
+                if (bbox.isValid())
+                {
+                    _distance = std::max({bbox.max().x, bbox.max().y, bbox.max().z}) * 2.0f;
+                }
+            }
+        };
+        if (auto component = target->drawable())
+        {
+            if (component->executionMode() == DrawableComponent::ExecutionMode::Draw)
+            {
+                centerDrawable(component->drawDrawable());
+            }
+            else
+            {
+                centerDrawable(component->drawable());
             }
         }
 
@@ -506,6 +524,11 @@ OrbitCameraComponent::OrbitAction OrbitCameraComponent::getOrbitAction()
         return OrbitAction::Zoom;
     }
     return OrbitAction::None;
+}
+
+std::shared_ptr<json::JsonNode> OrbitCameraComponent::serializeReferences(const std::filesystem::path& basePath)
+{
+    return OrbitCameraComponent::serialize(basePath);
 }
 
 BG2E_SCENE_REGISTER_COMPONENT(OrbitCameraComponent);

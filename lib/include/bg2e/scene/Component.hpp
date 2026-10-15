@@ -30,6 +30,10 @@
 
 namespace bg2e {
 
+namespace draw {
+class Engine;
+}
+
 namespace render {
 class Engine;
 }
@@ -115,11 +119,20 @@ class BG2E_API Component : public std::enable_shared_from_this<Component> {
     // copy. Implementations must leave _owner null; Node::addComponent adopts it.
     virtual std::shared_ptr<Component> clone() const = 0;
 
+    // Representation only: no files, device, or resource realization. Unsupported
+    // custom components fail explicitly until they implement this contract.
+    virtual void deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path& basePath);
+    virtual std::shared_ptr<json::JsonNode> serializeReferences(const std::filesystem::path& basePath);
+    // Synchronous resource realization; stop frame/background producers first.
+    virtual void loadResources(draw::Engine& engine, SceneLoadProgress* progress = nullptr);
+
     virtual void deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path& basePath, render::Engine& engine);
     virtual void deserializeWithProgress(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path& basePath, render::Engine& engine, SceneLoadProgress* progress);
     virtual std::shared_ptr<json::JsonNode> serialize(const std::filesystem::path& basePath);
 
   protected:
+    void deserializeCommon(std::shared_ptr<json::JsonNode> jsonData);
+
     // Weak ptr to avoid circular references
     Node* _owner = nullptr;
 

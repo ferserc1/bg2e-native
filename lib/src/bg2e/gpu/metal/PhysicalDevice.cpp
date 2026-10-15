@@ -20,6 +20,7 @@
 #include <bg2e/gpu/metal/common.hpp>
 
 #include <stdexcept>
+#include <algorithm>
 #include <iostream>
 
 namespace bg2e {
@@ -27,6 +28,75 @@ namespace gpu {
 namespace metal {
 
 #if BG2E_IS_MAC
+
+RenderingCapabilities queryRenderingCapabilities(MTL::Device* device)
+{
+    RenderingCapabilities result;
+    if (!device)
+    {
+        return result;
+    }
+    result.maxColorAttachments = 8;
+    result.maxImageDimension2D = device->supportsFamily(MTL::GPUFamilyApple2) &&
+        !device->supportsFamily(MTL::GPUFamilyApple3) ? 8192 : 16384;
+    result.independentBlend = true;
+    if (device->supportsFamily(MTL::GPUFamilyApple1))
+    {
+        result.maxColorAttachmentBytesPerSample = device->supportsFamily(MTL::GPUFamilyApple7) ? 128 :
+            (device->supportsFamily(MTL::GPUFamilyApple4) ? 64 : 32);
+    }
+    return result;
+}
+
+FormatCapabilities queryFormatCapabilities(MTL::Device* device, PixelFormat format)
+{
+    FormatCapabilities result;
+    if (!device || toMetalPixelFormat(format) == MTL::PixelFormatInvalid)
+    {
+        return result;
+    }
+    if (format == PixelFormat::D24_UNORM_S8_UINT && !device->isDepth24Stencil8PixelFormatSupported())
+    {
+        return result;
+    }
+    result.usages = ImageUsage::Sampled | ImageUsage::TransferSrc | ImageUsage::TransferDst;
+    if (isDepthFormat(format))
+    {
+        result.usages |= ImageUsage::DepthStencil;
+        result.linearFiltering = format == PixelFormat::D16_UNORM || format == PixelFormat::D24_UNORM_S8_UINT ||
+            !device->supportsFamily(MTL::GPUFamilyApple1) || device->supportsFamily(MTL::GPUFamilyApple9);
+        return result;
+    }
+    result.usages |= ImageUsage::ColorAttachment;
+    // Metal sRGB/BGRA formats cannot be shader-write destinations.
+    if (format != PixelFormat::R8G8B8A8_SRGB && format != PixelFormat::B8G8R8A8_SRGB &&
+        format != PixelFormat::B8G8R8A8_UNORM)
+    {
+        result.usages |= ImageUsage::Storage;
+    }
+    const bool integer = isUnsignedIntegerFormat(format) || isSignedIntegerFormat(format);
+    const bool float32 = format == PixelFormat::R32_SFLOAT || format == PixelFormat::R32G32_SFLOAT ||
+        format == PixelFormat::R32G32B32A32_SFLOAT;
+    result.colorAttachmentBytesPerSample = pixelFormatBytes(format);
+    if (device->supportsFamily(MTL::GPUFamilyApple1))
+    {
+        // Small normalized/half formats may expand in tile memory. Use an
+        // eight-byte floor; native pipeline creation is the final validator.
+        result.colorAttachmentBytesPerSample = std::max(8u, result.colorAttachmentBytesPerSample);
+    }
+    result.blend = !integer;
+    result.linearFiltering = !integer && (!float32 || device->supports32BitFloatFiltering());
+    // The native blit encoder copies exact texels; it does not rescale images.
+    result.blitSource = false;
+    result.blitDestination = false;
+    result.mipmapGeneration = result.linearFiltering;
+    return result;
+}
+
+FormatCapabilities PhysicalDevice::formatCapabilities(PixelFormat format) const
+{
+    return queryFormatCapabilities(_device, format);
+}
 
 PhysicalDevice::~PhysicalDevice()
 {
@@ -53,6 +123,7 @@ void PhysicalDevice::choose(gpu::Instance& /*instance*/, gpu::Surface& /*surface
         auto* mtlDevice = static_cast<MTL::Device*>(devices->object(i));
         auto* props = PhysicalDeviceProperties::create();
 
+        props->rendering = queryRenderingCapabilities(mtlDevice);
         props->name = mtlDevice->name()->utf8String();
         props->totalHeapMemoryMB = static_cast<size_t>(
             mtlDevice->recommendedMaxWorkingSetSize() / (1024ULL * 1024ULL));
@@ -75,6 +146,7 @@ void PhysicalDevice::choose(gpu::Instance& /*instance*/, gpu::Surface& /*surface
             props->rayTracing.available = true;
             props->rayTracing.rayTracingPipeline = true;
             props->rayTracing.rayQuery = true;
+            props->rayTracing.rayQueryInRenderStages = mtlDevice->supportsRaytracingFromRender();
             props->rayTracing.accelerationStructure = true;
             props->rayTracing.bufferDeviceAddress = true;
         }
@@ -111,6 +183,11 @@ const std::shared_ptr<PhysicalDeviceProperties> PhysicalDevice::properties() con
 }
 
 #else
+
+FormatCapabilities PhysicalDevice::formatCapabilities(PixelFormat) const
+{
+    return {};
+}
 
 PhysicalDevice::~PhysicalDevice()
 {

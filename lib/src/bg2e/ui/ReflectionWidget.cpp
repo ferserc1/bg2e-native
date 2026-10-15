@@ -29,6 +29,10 @@
 #include <bg2e/ui/ResourcePicker.hpp>
 
 #include <any>
+#include <charconv>
+#include <limits>
+#include <algorithm>
+#include <stdexcept>
 #include <cstdint>
 #include <filesystem>
 #include <string>
@@ -243,6 +247,77 @@ bool ReflectionWidget::drawProperties(
         }
     }
     return changed;
+}
+
+bool ReflectionWidget::editValue(std::any& value, const reflection::PropertyInfo& property, bool editable)
+{
+    auto proxy = property;
+    // Replace both access paths: delayed settings must never invoke target setters.
+    proxy.getter = [&value](const void*)
+    {
+        return value;
+    };
+    proxy.setter = [&value](void*, const std::any& next)
+    {
+        value = next;
+    };
+    const bool writable = editable && !property.isReadOnly();
+    Group::beginDisabled(!writable);
+    struct DisabledScope {
+        ~DisabledScope()
+        {
+            Group::endDisabled();
+        }
+    } disabledScope;
+    bool changed = false;
+    const auto label = labelFor(proxy);
+    if (proxy.type == PropertyType::UInt)
+    {
+        auto text = std::to_string(std::any_cast<uint32_t>(value));
+        if (Value::text(label, text, 32))
+        {
+            uint32_t next = 0;
+            const auto result = std::from_chars(text.data(), text.data() + text.size(), next);
+            if (result.ec == std::errc{} && result.ptr == text.data() + text.size())
+            {
+                value = next;
+                changed = true;
+            }
+        }
+    }
+    else if (proxy.type == PropertyType::Double)
+    {
+        auto next = std::any_cast<double>(value);
+        changed = Numeric::number(label, &next);
+        if (changed)
+        {
+            value = next;
+        }
+    }
+    else if (proxy.type == PropertyType::String || proxy.type == PropertyType::Path)
+    {
+        auto text = proxy.type == PropertyType::Path ? std::any_cast<std::filesystem::path>(value).string() : std::any_cast<std::string>(value);
+        const auto capacity = std::max(size_t(1024), text.size() + 256);
+        if (capacity > size_t(std::numeric_limits<int>::max()))
+        {
+            Text::text("Value is too long to edit");
+        }
+        else if (Value::text(label, text, int(capacity)))
+        {
+            value = proxy.type == PropertyType::Path ? std::any(std::filesystem::path(text)) : std::any(text);
+            changed = true;
+        }
+    }
+    else if (proxy.type == PropertyType::Object || proxy.type == PropertyType::PolymorphicObject)
+    {
+        Text::text(nameFor(proxy) + ": unsupported settings type");
+    }
+    else
+    {
+        changed = drawScalarProperty(nullptr, proxy);
+    }
+    Text::tooltip(proxy.metadata.tooltip);
+    return writable && changed;
 }
 
 void ReflectionWidget::drawActions(

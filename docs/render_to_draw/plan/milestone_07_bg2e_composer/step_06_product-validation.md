@@ -1,8 +1,8 @@
 # M07-06 — Composer feature parity and complete-scene regression
 
-[Milestone summary](summary.md) · [Plan index](../index.md) · [Architecture decisions](../architecture-decisions.md)
+[Milestone summary](summary.md) · [Plan index](../index.md) · [Architecture decisions](../architecture-decisions.md) · [Execution protocol](../execution-protocol.md) · [Progress](../progress.md)
 
-**Status:** planned. **Prerequisites:** M07-01–M07-05.
+**Execution status:** see [progress](../progress.md). **Prerequisites:** M07-01–M07-05.
 
 ## Scope and deliverable
 
@@ -26,7 +26,7 @@ Current sources to inspect: [apps/bg2e_composer/](../../../../apps/bg2e_composer
 - The new target operates from a deployed layout and scenes round-trip with resources and the expected hierarchy.
 - Required application workflows have evidence and production app/examples remain functioning before retirement.
 
-These are future checks. Run compilation only on explicit user request; record missing runtime/backend evidence as pending, never as a pass.
+Delegate compilation and applicable runtime checks to the project lead; perform relevant nonexecuting static checks yourself. After delivering this step or its correction, update progress to `awaiting_project_lead` and stop. Their instruction to continue accepts the preceding delivery as compiled/checked without failures; record that basis without inventing test/backend details. Follow the [execution protocol](../execution-protocol.md).
 
 ## Downstream comparison
 

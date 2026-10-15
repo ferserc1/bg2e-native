@@ -26,6 +26,8 @@
 #include <memory>
 #include <functional>
 #include <cstdint>
+#include <stdexcept>
+#include <utility>
 
 namespace bg2e {
 
@@ -54,7 +56,11 @@ class BG2E_API RenderLoop {
 
     inline void setDelegate(std::shared_ptr<RenderLoopDelegate> delegate)
     {
-        _delegate = delegate;
+        if (_engine)
+        {
+            throw std::logic_error("Cannot replace an initialized draw delegate; queue its renderer replacement instead");
+        }
+        _delegate = std::move(delegate);
     }
     inline std::shared_ptr<RenderLoopDelegate> delegate() const
     {
@@ -91,6 +97,15 @@ class BG2E_API RenderLoop {
         return _sceneDirty;
     }
 
+    uint64_t presentedFrameCount() const
+    {
+        return _presentationCount;
+    }
+    uint64_t renderedSceneCount() const
+    {
+        return _renderedSceneCount;
+    }
+
     void cleanup();
 
   protected:
@@ -101,6 +116,10 @@ class BG2E_API RenderLoop {
     std::unique_ptr<Impl> _impl;
     UICompositionCallback _uiComposition;
     UICompositionCallback _uiPreparation;
+    bool _frameActive = false;
+    uint64_t _presentationCount = 0;
+    uint64_t _renderedSceneCount = 0;
+    float _sceneDeltaSeconds = 0.0f;
     bool _delegateInitialized = false;
     bool _sceneInitialized = false;
     uint64_t _sceneRevision = 0;

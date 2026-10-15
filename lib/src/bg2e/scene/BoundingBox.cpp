@@ -46,36 +46,50 @@ void BoundingBox::processNode(Node* node, const Options& options)
     }
 
     auto drawableComponent = node->drawable();
-    auto drawable = drawableComponent ? drawableComponent->drawable() : nullptr;
-    auto mesh = drawable ? drawable->mesh() : nullptr;
-
-    if (mesh)
+    const auto processDrawable = [&](const auto& drawable, bool drawPath)
     {
-        const auto worldMatrix = node->worldMatrix();
-        const auto submeshCount = drawable->submeshesCount();
+        auto mesh = drawable ? drawable->mesh() : nullptr;
 
-        if (mesh->submeshes.empty())
+        if (mesh)
         {
-            geo::AABoundingBox<scene::Mesh> box(*mesh);
-            addSubmesh(box, worldMatrix);
+            const auto worldMatrix = drawPath ? node->worldMatrix() * drawable->transform() : node->worldMatrix();
+            const auto submeshCount = drawable->submeshesCount();
+
+            if (mesh->submeshes.empty())
+            {
+                geo::AABoundingBox<scene::Mesh> box(*mesh);
+                addSubmesh(box, worldMatrix);
+            }
+            else
+            {
+                const auto count = std::min(
+                    submeshCount,
+                    static_cast<uint32_t>(mesh->submeshes.size()));
+
+                for (uint32_t submeshIndex = 0; submeshIndex < count; ++submeshIndex)
+                {
+                    if (!options.includeInvisibleSubmeshes && (!drawable->submeshVisibility(submeshIndex) ||
+                        (drawPath && !drawable->material(submeshIndex).visible())))
+                    {
+                        continue;
+                    }
+
+                    geo::AABoundingBox<scene::Mesh> box(*mesh, submeshIndex);
+                    auto transform = worldMatrix * drawable->localSubmeshTransform(submeshIndex);
+                    addSubmesh(box, transform);
+                }
+            }
+        }
+    };
+    if (drawableComponent)
+    {
+        if (drawableComponent->executionMode() == DrawableComponent::ExecutionMode::Draw)
+        {
+            processDrawable(drawableComponent->drawDrawable(), true);
         }
         else
         {
-            const auto count = std::min(
-                submeshCount,
-                static_cast<uint32_t>(mesh->submeshes.size()));
-
-            for (uint32_t submeshIndex = 0; submeshIndex < count; ++submeshIndex)
-            {
-                if (!options.includeInvisibleSubmeshes && !drawable->submeshVisibility(submeshIndex))
-                {
-                    continue;
-                }
-
-                geo::AABoundingBox<scene::Mesh> box(*mesh, submeshIndex);
-                auto transform = worldMatrix * drawable->localSubmeshTransform(submeshIndex);
-                addSubmesh(box, transform);
-            }
+            processDrawable(drawableComponent->drawable(), false);
         }
     }
 

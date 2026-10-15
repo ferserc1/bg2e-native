@@ -35,6 +35,15 @@ class Device : public gpu::Device {
     void waitIdle() override;
 
     bool isValid() const override;
+    RayTracingCapabilities rayTracingCapabilities() const override
+    {
+        return _rayTracingCapabilities;
+    }
+    RenderingCapabilities renderingCapabilities() const override
+    {
+        return _renderingCapabilities;
+    }
+    FormatCapabilities formatCapabilities(PixelFormat format) const override;
 
     const gpu::Queue& graphicsQueue() const override;
     const gpu::Queue& presentQueue() const override;
@@ -81,6 +90,8 @@ class Device : public gpu::Device {
     }
 
   private:
+    RenderingCapabilities _renderingCapabilities;
+    RayTracingCapabilities _rayTracingCapabilities;
     VkDevice _device{VK_NULL_HANDLE};
     VkPhysicalDevice _physicalDevice{VK_NULL_HANDLE};
     VmaAllocator _allocator{VK_NULL_HANDLE};
@@ -89,6 +100,7 @@ class Device : public gpu::Device {
     vk::Queue _transferQueue;
 
     bool _rayTracingEnabled = false;
+    bool _rayTracingPipelineEnabled = false;
     uint32_t _asScratchAlignment = 256;
 };
 

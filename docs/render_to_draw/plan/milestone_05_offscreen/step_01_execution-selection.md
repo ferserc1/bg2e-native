@@ -1,8 +1,8 @@
 # M05-01 — Public offscreen contracts and production/draw init overloads
 
-[Milestone summary](summary.md) · [Plan index](../index.md) · [Architecture decisions](../architecture-decisions.md)
+[Milestone summary](summary.md) · [Plan index](../index.md) · [Architecture decisions](../architecture-decisions.md) · [Execution protocol](../execution-protocol.md) · [Progress](../progress.md)
 
-**Status:** planned. **Prerequisites:** Accepted M04 review; MainLoop execution pattern.
+**Execution status:** see [progress](../progress.md). **Prerequisites:** Accepted M04 review; MainLoop execution pattern.
 
 ## Scope and deliverable
 
@@ -28,7 +28,7 @@ Current sources to inspect: [lib/include/bg2e/app/OffscreenApplication.hpp](../.
 - Calling each init overload selects only its intended engine implementation; invalid mixed delegates/configurations fail before resources are allocated.
 - Current production CLI behavior remains intact under authorized checks, while new headers expose no native Vulkan implementation.
 
-These are future checks. Run compilation only on explicit user request; record missing runtime/backend evidence as pending, never as a pass.
+Delegate compilation and applicable runtime checks to the project lead; perform relevant nonexecuting static checks yourself. After delivering this step or its correction, update progress to `awaiting_project_lead` and stop. Their instruction to continue accepts the preceding delivery as compiled/checked without failures; record that basis without inventing test/backend details. Follow the [execution protocol](../execution-protocol.md).
 
 ## Downstream comparison
 

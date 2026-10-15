@@ -1,8 +1,8 @@
 # M01-07 — Graphics-free serialization and simple engine-aware load paths
 
-[Milestone summary](summary.md) · [Plan index](../index.md) · [Architecture decisions](../architecture-decisions.md)
+[Milestone summary](summary.md) · [Plan index](../index.md) · [Architecture decisions](../architecture-decisions.md) · [Execution protocol](../execution-protocol.md) · [Progress](../progress.md)
 
-**Status:** planned. **Prerequisites:** M01-06.
+**Execution status:** see [progress](../progress.md). **Prerequisites:** M01-06.
 
 ## Scope and deliverable
 
@@ -28,10 +28,18 @@ Current sources to inspect: [lib/include/bg2e/db/scene.hpp](../../../../lib/incl
 - A schema/reference round-trip can run without Engine/SDL/device initialization.
 - The initial example loads its mesh/textures using only the draw path; production load convenience functions still work.
 
-These are future checks. Run compilation only on explicit user request; record missing runtime/backend evidence as pending, never as a pass.
+Delegate compilation and applicable runtime checks to the project lead; perform relevant nonexecuting static checks yourself. After delivering this step or its correction, update progress to `awaiting_project_lead` and stop. Their instruction to continue accepts the preceding delivery as compiled/checked without failures; record that basis without inventing test/backend details. Follow the [execution protocol](../execution-protocol.md).
 
 ## Downstream comparison
 
 M06-02/M07-02/M08-02 complete resource IO on these two levels. Record actual factory signatures/custom-component fallback requirements for those steps.
 
 Record actual API, ownership and verification in the milestone review. Follow [the review protocol](../review-protocol.md) and edit affected pending steps when actual contracts differ.
+
+## M01-06 resource handoff
+
+M01-06 supplies `draw::Drawable` (standard geo::MeshPNUUT), live material access and typed DrawableComponent construction/setters/drawDrawable/executionMode. Implement draw-aware load/save and component serialization explicitly; the legacy component serializer rejected draw data at M01-06 to prevent silent omission. GPU-only material textures can be cloned by exact transfer but require explicit image readback for export; adopted images without a source cannot be reloaded from an invented path. The existing image loader now owns SDR/HDR pixels consistently with base::Image. See [drawable-resources.md](drawable-resources.md).
+
+## Implemented M01-07 handoff
+
+Actual API, custom component requirements, resource ownership and lead checks are recorded in [db-levels.md](db-levels.md). Representation-only IO is explicitly named readSceneDocument/writeSceneDocument/saveSceneReferences. Full draw resource export remains scheduled in M06/M07; it must not be confused with reference serialization.

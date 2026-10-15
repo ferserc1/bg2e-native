@@ -19,6 +19,7 @@
 #pragma once
 
 #include <bg2e/common.hpp>
+#include <bg2e/gpu/Common.hpp>
 
 #include <optional>
 #include <vector>
@@ -37,6 +38,17 @@ struct RayTracingCapabilities {
     bool rayQuery = false;
     bool accelerationStructure = false;
     bool bufferDeviceAddress = false;
+    bool rayQueryInRenderStages = false; // Metal requires a separate native capability.
+
+    // Backend execution model, not a promise of native Metal SBT stages.
+    inline bool querySupported() const
+    {
+        return available && rayQuery && accelerationStructure && bufferDeviceAddress;
+    }
+    inline bool pipelineSupported() const
+    {
+        return available && rayTracingPipeline && accelerationStructure && bufferDeviceAddress;
+    }
 
     inline bool fullSupported() const
     {
@@ -65,6 +77,7 @@ struct BG2E_API PhysicalDeviceProperties {
     uint32_t id = 0;
 
     RayTracingCapabilities rayTracing;
+    RenderingCapabilities rendering;
 
     uint32_t getScore() const;
     bool rayTracingSupported() const;
@@ -84,6 +97,10 @@ class BG2E_API PhysicalDevice {
         const Surface* surface,
         std::vector<std::shared_ptr<PhysicalDeviceProperties>>& result);
 
+    virtual FormatCapabilities formatCapabilities(PixelFormat format) const
+    {
+        return {};
+    }
     virtual void choose(Instance& instance, Surface& surface) = 0;
 
     virtual bool isValid() const = 0;

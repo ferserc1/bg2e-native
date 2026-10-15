@@ -28,6 +28,8 @@ Production render remains readable and operational until M09 primarily as a beha
 
 New Drawable lives in draw and retains its connector role: CPU mesh, submesh attributes, GPU mesh/material resources and tracing geometry as needed. Do not implement the external-realization redesign suggested in the original analysis. DrawableComponent supports `scene::Drawable` and `draw::Drawable` through typed construction/setter/accessor paths. Keep its original accessors for production and add clearly named experimental access while both types coexist; never silently downcast one to the other.
 
+In the new `draw` API, name backend-realized resources with the `draw` prefix (for example, `DrawMesh`, `drawMesh()` and `drawMaterial()`), including aliases and internal fields where applicable. Existing `renderMesh()`/`renderMaterial()` names remain part of the legacy production API until its planned removal.
+
 A Drawable clone duplicates CPU geometry **and GPU mesh/material realizations**, including associated acceleration resources when built. Preserve independence of mutable material/texture GPU objects as required by this contract; CPU source data sharing must not undermine editable clones. TextureCache may share ordinary explicitly cached immutable inputs, but clone must not route through shared mutable GPU realization paths. No default instancing; dedicated instancing components are future work.
 
 Mesh/texture edits are uncommon: synchronize producers, `waitIdle`, update/rebuild and resume. Do not use frame-resource rings for those objects. Mutable per-frame shader data and effect outputs may still need slot-safe resources; temporal history is a separate rendered-frame sequence. WaitIdle is a safe edit boundary, not routine per-frame rendering.
@@ -43,6 +45,8 @@ Reuse reflection PropertyInfo/TypeInfo/TypeRegistry and their accessor/type/meta
 UI-facing objects register/activate their visible settings. Ordinary C++ accessors remain complete, even for options not shown in UI. A runtime renderer or pass/upscaler replacement detaches old property targets, updates generation, binds new objects and refreshes the catalog. The renderer objects remain the source of truth. No requirement to store disconnected profiles inside the stateless facade; persisted documents are explicit data artifacts.
 
 Export contains schema version, stable renderer/upscaler identity and stable property keys/types/values. Import validates first, reports unknown/unavailable fields, and applies setters at a safe update boundary; malformed input is not silently coerced. Persisted defaults and explicit imported documents have a declared precedence. Headless code uses the same codec without initializing UI.
+
+M01-12 delivers this through SettingsCatalog/SettingsCodec/SettingsImport and the optional facade; see [the actual contract](milestone_01_deferred_renderer/reflected-settings.md). Catalog generations are unique across instances, renderer callbacks retain weak ownership, and queued edits commit before acquisition after GPU drain. Settings wire numbers use typed decimal strings to preserve precision through JsonNode; Preferences stores an escaped-safe hex document. Explicit documents bypass persisted defaults and omitted fields retain live values.
 
 ## 4. Runtime delegate and extensible public components
 
@@ -93,3 +97,18 @@ Production's generic image-processing/fullscreen/attachment helpers must remain 
 Proposed source layout: `shaders/src/draw/<pipeline>/` with the GLSL and Metal stage files together, and `shaders/src/draw/lib/` for shared `.glsl`/`.metal` includes. Bake shaders use `shaders/src/bake/<pipeline>/` with the same paired layout and may reuse public draw kernels/objects. Compiled libraries retain distinct `draw/<pipeline>` and `bake/<pipeline>` paths, so old production shaders remain unambiguous through M08.
 
 Use actual ShaderLib resolution/entry points and current CMake helper behavior as evidence; header comments/historical docs are not sufficient. Do not flatten libraries into one output folder where stage filenames collide. Complete installation, app bundles and standalone packages, not only development-tree loading.
+
+## M01-13 implemented resolution/upscaling boundary
+
+See [upscaling.md](milestone_01_deferred_renderer/upscaling.md). Open Upscaler injection is through shared RendererConfiguration ownership; implementation-owned live reflection metadata is discovered without an enum. ResolutionSettings enabled/scale is the authoritative internal/output ratio even without FSR. Existing native/fixed behavior stays the startup default until reduction is enabled. RendererDeferred reconstructs output-sized linear HDR before the single final tone/color operation; final replacements use finalContract(output, depth, true). FSR native handlers and SDK are confined to gpu::vk::FidelityFXBridge, with separate SDK/backend/hardware status, SDK-owned histories and camera-only motion. No general engine history/denoise is introduced.
+
+## M01 review: reusable baseline and deferred boundaries
+
+The [M01 review](milestone_01_deferred_renderer/review.md) is the implemented-source baseline, not a new architecture approval. Public rendering/subresource primitives, synchronous tight raw color readback, generic query opacity, live settings/codec, open upscaling and environment snapshots are reusable. Depth readback, general 2D arrays, draw-aware Selectable/schema hooks, public overlay/effect surface access, arbitrary RT hit-material lookup and windowless draw initialization remain their explicit M02/M03/M05 tasks. Query IDs/table order, selection IDs, node IDs and catalog/renderer/job generations are distinct identities.
+
+Keep deep CPU/GPU clones and borrowed Engine/device lifetimes, phase-specific production coexistence through M08 and removal at M09. M01 private graph images do not authorize copying a private renderer into tools: add minimal public borrowed profiles where later passes require them. The small eight-pair UV/alpha shadow table is not a settled advanced RT architecture; M03-01 retains the project-lead-owned checkpoint. FSR temporal state is not engine history, exact scene averaging or bake accumulation. No ResourceManager redesign, native Metal upscaler or DLSS implementation is introduced by this review.
+
+
+## Incremental documentation closure (project lead direction, 2026-10-15)
+
+M01–M09 each add a final documentation step after their technical review, updating canonical maintained doc/ to the implementation delivered so far. Do not document unimplemented later milestones as available. M10 remains as a lighter final audit of the cumulative documentation, retaining its stable step IDs and original final coverage. [Documentation policy](documentation-policy.md) maps every former M10 authoring requirement to its milestone owner. This scheduling change does not authorize implementing documentation steps in the planning-update turn.

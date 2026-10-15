@@ -161,6 +161,14 @@ class BG2E_API ResourceSet : public DeviceResource {
     }
     virtual ~ResourceSet() = default;
 
+    virtual void setStorageImage(ShaderBinding binding, const ImageView& view)
+    {
+        throw std::runtime_error("Storage image views are not implemented");
+    }
+    virtual void setSampledImage(ShaderBinding binding, const ImageView& view)
+    {
+        throw std::runtime_error("Sampled image views are not implemented");
+    }
     virtual void setStorageImage(ShaderBinding binding, gpu::Image* image) = 0;
     virtual void setSampledImage(ShaderBinding binding, gpu::Image* image) = 0;
     virtual void setSampler(ShaderBinding binding, gpu::Sampler* sampler) = 0;

@@ -19,6 +19,7 @@
 #include <bg2e/scene/ComponentFactoryRegistry.hpp>
 #include <bg2e/json/NodeReader.hpp>
 #include <bg2e/base/Log.hpp>
+#include <stdexcept>
 
 namespace bg2e::scene {
 
@@ -55,6 +56,36 @@ Component* ComponentFactoryRegistry::createDefault(const std::string& componentN
         return nullptr;
     }
     return it->second.createDefault();
+}
+
+Component* ComponentFactoryRegistry::create(std::shared_ptr<json::JsonNode> data, const std::filesystem::path& basePath)
+{
+    json::ObjectReader reader(data);
+    auto type = reader.getString("type");
+    if (!reader.isValid() || !type || type->empty())
+    {
+        throw std::invalid_argument("Component representation requires a type");
+    }
+    auto it = _registry.find(*type);
+    if (it == _registry.end() || !it->second.createDefault)
+    {
+        throw std::invalid_argument("No schema constructor registered for component " + *type);
+    }
+    std::unique_ptr<Component> result(it->second.createDefault());
+    if (!result)
+    {
+        throw std::runtime_error("Component constructor returned null for " + *type);
+    }
+    result->deserialize(data, basePath);
+    return result.release();
+}
+
+Component* ComponentFactoryRegistry::create(std::shared_ptr<json::JsonNode> data, const std::filesystem::path& basePath,
+    draw::Engine& engine, SceneLoadProgress* progress)
+{
+    std::unique_ptr<Component> result(create(data, basePath));
+    result->loadResources(engine, progress);
+    return result.release();
 }
 
 Component* ComponentFactoryRegistry::create(std::shared_ptr<json::JsonNode> data, const std::filesystem::path& basePath, render::Engine& engine)

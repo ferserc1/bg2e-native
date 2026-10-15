@@ -42,6 +42,15 @@ namespace bg2e {
 namespace gpu {
 namespace metal {
 
+FormatCapabilities Device::formatCapabilities(PixelFormat format) const
+{
+#if BG2E_IS_MAC
+    return queryFormatCapabilities(_device, format);
+#else
+    return {};
+#endif
+}
+
 #if BG2E_IS_MAC
 
 void Device::create(gpu::Instance* /*instance*/, gpu::PhysicalDevice* physicalDevice, gpu::Surface* surface)
@@ -55,6 +64,8 @@ void Device::create(gpu::Instance* /*instance*/, gpu::PhysicalDevice* physicalDe
 
     _device = metalPhysDevice->metalDevice();
     _device->retain();
+    _renderingCapabilities = metalPhysDevice->properties()->rendering;
+    _rayTracingCapabilities = metalPhysDevice->properties()->rayTracing;
 
     auto* gfxQueue = _device->newCommandQueue();
     auto* presentQueue = _device->newCommandQueue();
@@ -114,6 +125,8 @@ void Device::cleanup()
         _device->release();
         _device = nullptr;
     }
+    _renderingCapabilities = {};
+    _rayTracingCapabilities = {};
 }
 
 void Device::waitIdle()
@@ -179,35 +192,19 @@ std::shared_ptr<gpu::ResourceSet> Device::createResourceSet(gpu::PipelineLayout*
 
 std::shared_ptr<gpu::Image> Device::createImage(const ImageDescription& description)
 {
+    const auto limits = renderingCapabilities();
+    const bool depthFormat = isDepthFormat(description.format);
+    if (description.size.isZero() || description.size.width > limits.maxImageDimension2D ||
+        description.size.height > limits.maxImageDimension2D || description.usage == ImageUsage::None ||
+        !formatCapabilities(description.format).supports(description.usage) ||
+        (depthFormat && hasFlag(description.usage, ImageUsage::ColorAttachment)) ||
+        (!depthFormat && hasFlag(description.usage, ImageUsage::DepthStencil)))
+    {
+        throw std::invalid_argument("Image format/usage/extent is unsupported by this device");
+    }
+
     auto img = std::make_shared<metal::Image>(this);
-
-    // Resolve the effective mip level count: derived from minMipSize when set,
-    // otherwise the explicit mipLevels value.
-    const uint32_t mipLevels = effectiveMipLevels(description);
-
-    if (description.type == ImageType::Cubemap)
-    {
-        MTL::TextureUsage usage = MTL::TextureUsageShaderRead;
-        if (hasFlag(description.usage, ImageUsage::ColorAttachment))
-        {
-            usage |= MTL::TextureUsageRenderTarget;
-        }
-        img->buildCubemapImage(
-            this, description.size, description.format,
-            usage, mipLevels, description.debugName);
-    }
-    else if (isDepthFormat(description.format))
-    {
-        img->buildDepthImage(this, description.size, description.format, description.debugName);
-    }
-    else if (hasFlag(description.usage, ImageUsage::Storage))
-    {
-        img->buildStorageImage(this, description.size, description.format, description.debugName);
-    }
-    else
-    {
-        img->buildSampledImage(this, description.size, description.format, description.debugName);
-    }
+    img->buildImage(this, description);
     return img;
 }
 

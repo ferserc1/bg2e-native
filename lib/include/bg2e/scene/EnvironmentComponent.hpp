@@ -53,8 +53,25 @@ class BG2E_API EnvironmentComponent : public Component {
         return _imgHash;
     }
 
+    // Declarative draw sky settings; normalized blur selects GGX roughness.
+    void setSkyboxBlur(float blur);
+    float skyboxBlur() const
+    {
+        return _skyboxBlur;
+    }
+    void setSkyboxVisible(bool visible)
+    {
+        _skyboxVisible = visible;
+    }
+    bool skyboxVisible() const
+    {
+        return _skyboxVisible;
+    }
+
     std::shared_ptr<Component> clone() const override;
 
+    void deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path& basePath) override;
+    std::shared_ptr<json::JsonNode> serializeReferences(const std::filesystem::path& basePath) override;
     void deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path& basePath, render::Engine& engine) override;
     void deserializeWithProgress(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path& basePath, render::Engine& engine, SceneLoadProgress* progress) override;
     std::shared_ptr<json::JsonNode> serialize(const std::filesystem::path& basePath) override;
@@ -62,6 +79,8 @@ class BG2E_API EnvironmentComponent : public Component {
   protected:
     std::string _environmentImage;
     size_t _imgHash = 0;
+    float _skyboxBlur = 0.0f;
+    bool _skyboxVisible = true;
 
     // TODO: Other environment parameters
 };

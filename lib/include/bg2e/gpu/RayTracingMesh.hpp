@@ -56,6 +56,7 @@ struct RayTracingMeshDescription {
     uint32_t indexCount = 0;
 
     std::string debugName;
+    bool opaque = true; // False exposes triangle candidates to query/intersection filtering.
 };
 
 class BG2E_API RayTracingMesh : public DeviceResource {

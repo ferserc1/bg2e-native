@@ -20,6 +20,7 @@
 
 #include <bg2e/common.hpp>
 #include <bg2e/gpu/Common.hpp>
+#include <bg2e/gpu/PhysicalDevice.hpp>
 #include <bg2e/gpu/detail/SubmissionState.hpp>
 #include <bg2e/gpu/Buffer.hpp>
 #include <bg2e/gpu/CubeMap.hpp>
@@ -72,6 +73,19 @@ class BG2E_API Device {
     virtual void waitIdle() = 0;
 
     virtual bool isValid() const = 0;
+    // Physical support and enabled logical-device limits are queried separately.
+    virtual RayTracingCapabilities rayTracingCapabilities() const
+    {
+        return {};
+    }
+    virtual RenderingCapabilities renderingCapabilities() const
+    {
+        return {};
+    }
+    virtual FormatCapabilities formatCapabilities(PixelFormat format) const
+    {
+        return {};
+    }
 
     virtual const Queue& graphicsQueue() const = 0;
     virtual const Queue& presentQueue() const = 0;

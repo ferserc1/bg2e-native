@@ -90,7 +90,7 @@ void loadDeviceExtensions(const PhysicalDevice& physDev, VkDevice device, bool o
         return fn;
     };
 
-    if (physDev.properties()->rayTracingSupported())
+    if (physDev.properties()->rayTracing.querySupported() || physDev.properties()->rayTracing.pipelineSupported())
     {
         // Acceleration structure
         cmdBuildAccelerationStructures =
@@ -126,22 +126,26 @@ void loadDeviceExtensions(const PhysicalDevice& physDev, VkDevice device, bool o
             reinterpret_cast<PFN_vkDestroyAccelerationStructureKHR>(
                 loadDeviceExtension("vkDestroyAccelerationStructureKHR"));
 
-        // Ray tracing pipeline
-        createRayTracingPipelines =
-            reinterpret_cast<PFN_vkCreateRayTracingPipelinesKHR>(
-                loadDeviceExtension("vkCreateRayTracingPipelinesKHR"));
+        if (physDev.properties()->rayTracing.pipelineSupported())
+        {
+            // Ray tracing pipeline
+            createRayTracingPipelines =
+                reinterpret_cast<PFN_vkCreateRayTracingPipelinesKHR>(
+                    loadDeviceExtension("vkCreateRayTracingPipelinesKHR"));
 
-        cmdTraceRays =
-            reinterpret_cast<PFN_vkCmdTraceRaysKHR>(
-                loadDeviceExtension("vkCmdTraceRaysKHR"));
+            cmdTraceRays =
+                reinterpret_cast<PFN_vkCmdTraceRaysKHR>(
+                    loadDeviceExtension("vkCmdTraceRaysKHR"));
 
-        getRayTracingShaderGroupHandles =
-            reinterpret_cast<PFN_vkGetRayTracingShaderGroupHandlesKHR>(
-                loadDeviceExtension("vkGetRayTracingShaderGroupHandlesKHR"));
+            getRayTracingShaderGroupHandles =
+                reinterpret_cast<PFN_vkGetRayTracingShaderGroupHandlesKHR>(
+                    loadDeviceExtension("vkGetRayTracingShaderGroupHandlesKHR"));
 
-        getRayTracingCaptureReplayShaderGroupHandles =
-            reinterpret_cast<PFN_vkGetRayTracingCaptureReplayShaderGroupHandlesKHR>(
-                loadDeviceExtension("vkGetRayTracingCaptureReplayShaderGroupHandlesKHR"));
+            getRayTracingCaptureReplayShaderGroupHandles =
+                reinterpret_cast<PFN_vkGetRayTracingCaptureReplayShaderGroupHandlesKHR>(
+                    loadDeviceExtension("vkGetRayTracingCaptureReplayShaderGroupHandlesKHR"));
+
+        }
 
         // Deferred host operations
         createDeferredOperation =

@@ -1,8 +1,8 @@
 # M06-02 — Complete engine-aware model/scene resource load and save
 
-[Milestone summary](summary.md) · [Plan index](../index.md) · [Architecture decisions](../architecture-decisions.md)
+[Milestone summary](summary.md) · [Plan index](../index.md) · [Architecture decisions](../architecture-decisions.md) · [Execution protocol](../execution-protocol.md) · [Progress](../progress.md)
 
-**Status:** planned. **Prerequisites:** M06-01, M01 DB levels and M05 readback.
+**Execution status:** see [progress](../progress.md). **Prerequisites:** M06-01, M01 DB levels and M05 readback.
 
 ## Scope and deliverable
 
@@ -29,10 +29,18 @@ Current sources to inspect: [lib/include/bg2e/db/scene.hpp](../../../../lib/incl
 - Load/edit/save/reload required formats and graph metadata; schema-only round-trip needs no graphics context.
 - A texture created solely on GPU is exported and reloaded with correct color/UV/lightmap settings, not dropped or represented by an unresolved nonexistent file.
 
-These are future checks. Run compilation only on explicit user request; record missing runtime/backend evidence as pending, never as a pass.
+Delegate compilation and applicable runtime checks to the project lead; perform relevant nonexecuting static checks yourself. After delivering this step or its correction, update progress to `awaiting_project_lead` and stop. Their instruction to continue accepts the preceding delivery as compiled/checked without failures; record that basis without inventing test/backend details. Follow the [execution protocol](../execution-protocol.md).
 
 ## Downstream comparison
 
 M07 scene IO and M08 bake model/preflight use these complete resource paths. M09 removes production overloads without breaking neutral IO.
 
 Record actual API, ownership and verification in the milestone review. Follow [the review protocol](../review-protocol.md) and edit affected pending steps when actual contracts differ.
+
+## M01-07 actual DB baseline
+
+Build on [db-levels.md](../milestone_01_deferred_renderer/db-levels.md): readSceneDocument/writeSceneDocument preserve raw JSON without devices; loadScene(path) creates a typed graph with unresolved references; saveSceneReferences explicitly writes references only. Engine-aware draw scene/BG2/OBJ overloads use draw::Engine& and Node/Component::loadResources. OBJ has no MTL import yet. Complete draw save/export is not implemented and existing production save rejects draw resources. Implement real GPU readback/resource encoding and publication here rather than relabeling reference IO as complete save. New factory schema/draw paths use DefaultCreator plus virtual two-argument deserialize/serializeReferences and optional loadResources; unsupported custom components throw instead of invoking production creators. Preserve custom subclass fields explicitly.
+
+## M01-16 reviewed baseline
+
+Existing readSceneDocument/writeSceneDocument preserve raw JSON; loadScene schema/reference IO does not realize resources. Node/Component::loadResources, draw BG2/OBJ overloads and strict mode/context rejection exist. Complete high-level draw save currently rejects resource export; OBJ maps in the example are explicitly assigned, not MTL import. Implement the actual missing glTF/MTL, edited/GPU-only resource save, joint/custom-component round trips using M05 readback and preserve production overloads. See [M01 review](../milestone_01_deferred_renderer/review.md).

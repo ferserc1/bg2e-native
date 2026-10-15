@@ -48,6 +48,26 @@ MTL::PixelFormat toMetalPixelFormat(gpu::PixelFormat format)
 {
     switch (format)
     {
+    case gpu::PixelFormat::R8_UNORM:
+        return MTL::PixelFormatR8Unorm;
+    case gpu::PixelFormat::R8G8_UNORM:
+        return MTL::PixelFormatRG8Unorm;
+    case gpu::PixelFormat::R16_SFLOAT:
+        return MTL::PixelFormatR16Float;
+    case gpu::PixelFormat::R16G16_SFLOAT:
+        return MTL::PixelFormatRG16Float;
+    case gpu::PixelFormat::R32_SFLOAT:
+        return MTL::PixelFormatR32Float;
+    case gpu::PixelFormat::R32G32_SFLOAT:
+        return MTL::PixelFormatRG32Float;
+    case gpu::PixelFormat::R32_UINT:
+        return MTL::PixelFormatR32Uint;
+    case gpu::PixelFormat::R32_SINT:
+        return MTL::PixelFormatR32Sint;
+    case gpu::PixelFormat::R32G32_UINT:
+        return MTL::PixelFormatRG32Uint;
+    case gpu::PixelFormat::R32G32B32A32_UINT:
+        return MTL::PixelFormatRGBA32Uint;
     case gpu::PixelFormat::R8G8B8A8_UNORM:
         return MTL::PixelFormatRGBA8Unorm;
     case gpu::PixelFormat::R8G8B8A8_SRGB:
@@ -79,6 +99,26 @@ gpu::PixelFormat fromMetalPixelFormat(MTL::PixelFormat format)
 {
     switch (format)
     {
+    case MTL::PixelFormatR8Unorm:
+        return gpu::PixelFormat::R8_UNORM;
+    case MTL::PixelFormatRG8Unorm:
+        return gpu::PixelFormat::R8G8_UNORM;
+    case MTL::PixelFormatR16Float:
+        return gpu::PixelFormat::R16_SFLOAT;
+    case MTL::PixelFormatRG16Float:
+        return gpu::PixelFormat::R16G16_SFLOAT;
+    case MTL::PixelFormatR32Float:
+        return gpu::PixelFormat::R32_SFLOAT;
+    case MTL::PixelFormatRG32Float:
+        return gpu::PixelFormat::R32G32_SFLOAT;
+    case MTL::PixelFormatR32Uint:
+        return gpu::PixelFormat::R32_UINT;
+    case MTL::PixelFormatR32Sint:
+        return gpu::PixelFormat::R32_SINT;
+    case MTL::PixelFormatRG32Uint:
+        return gpu::PixelFormat::R32G32_UINT;
+    case MTL::PixelFormatRGBA32Uint:
+        return gpu::PixelFormat::R32G32B32A32_UINT;
     case MTL::PixelFormatRGBA8Unorm:
         return gpu::PixelFormat::R8G8B8A8_UNORM;
     case MTL::PixelFormatRGBA8Unorm_sRGB:

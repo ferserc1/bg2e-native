@@ -1,8 +1,8 @@
 # M06-05 — Model UV2 preview and integrated lightmap workflow
 
-[Milestone summary](summary.md) · [Plan index](../index.md) · [Architecture decisions](../architecture-decisions.md)
+[Milestone summary](summary.md) · [Plan index](../index.md) · [Architecture decisions](../architecture-decisions.md) · [Execution protocol](../execution-protocol.md) · [Progress](../progress.md)
 
-**Status:** planned. **Prerequisites:** M06-02/M06-03 and accepted M04 APIs.
+**Execution status:** see [progress](../progress.md). **Prerequisites:** M06-02/M06-03 and accepted M04 APIs.
 
 ## Scope and deliverable
 
@@ -27,7 +27,7 @@ Current sources to inspect: [apps/model_edit/src/ModelLightmapWindow.cpp](../../
 - Generate/preview/bake/apply/save/reload lightmaps on a model and verify live indirect toggling/baked contribution.
 - Cancel/reopen/load/delete/renderer replacement during bake follows the declared safety policy and leaves UI/document state correct.
 
-These are future checks. Run compilation only on explicit user request; record missing runtime/backend evidence as pending, never as a pass.
+Delegate compilation and applicable runtime checks to the project lead; perform relevant nonexecuting static checks yourself. After delivering this step or its correction, update progress to `awaiting_project_lead` and stop. Their instruction to continue accepts the preceding delivery as compiled/checked without failures; record that basis without inventing test/backend details. Follow the [execution protocol](../execution-protocol.md).
 
 ## Downstream comparison
 

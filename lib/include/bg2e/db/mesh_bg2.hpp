@@ -23,6 +23,7 @@
 #include <bg2e/base/Joint.hpp>
 #include <bg2e/base/MaterialAttributes.hpp>
 #include <bg2e/geo/Mesh.hpp>
+#include <bg2e/draw/Drawable.hpp>
 #include <bg2e/scene/Drawable.hpp>
 #include <bg2e/render/Engine.hpp>
 
@@ -62,6 +63,12 @@ extern BG2E_API void storeMeshBg2(
     const std::filesystem::path& filePath,
     const std::string& fileName,
     Bg2Mesh* mesh);
+
+extern BG2E_API std::shared_ptr<draw::Drawable> loadDrawableBg2(
+    const std::filesystem::path& filePath, draw::Engine& engine,
+    std::function<void()> onTextureLoaded = nullptr);
+extern BG2E_API std::shared_ptr<draw::Drawable> loadDrawableBg2(
+    const std::filesystem::path& basePath, const std::string& fileName, draw::Engine& engine);
 
 extern BG2E_API std::shared_ptr<bg2e::scene::Drawable> loadDrawableBg2(
     const std::filesystem::path& filePath,

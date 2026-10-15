@@ -34,6 +34,8 @@ class BG2E_API ResourceSet : public gpu::ResourceSet {
     ResourceSet(gpu::Device* gpuDevice, VkDevice device, const vk::PipelineLayout* layout, uint32_t setIndex, const std::string& debugName = {});
     ~ResourceSet() override;
 
+    void setStorageImage(ShaderBinding binding, const ImageView& view) override;
+    void setSampledImage(ShaderBinding binding, const ImageView& view) override;
     void setStorageImage(ShaderBinding binding, gpu::Image* image) override;
     void setSampledImage(ShaderBinding binding, gpu::Image* image) override;
     void setSampler(ShaderBinding binding, gpu::Sampler* sampler) override;

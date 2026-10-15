@@ -32,6 +32,25 @@ class Engine;
 
 namespace db {
 
+// Representation IO preserves unknown fields/components without constructing a
+// graph or opening referenced assets. Neither operation exports GPU resources.
+extern BG2E_API std::shared_ptr<json::JsonNode> readSceneDocument(const std::filesystem::path& filePath);
+extern BG2E_API void writeSceneDocument(std::shared_ptr<json::JsonNode> document,
+    const std::filesystem::path& filePath);
+extern BG2E_API void saveSceneReferences(scene::Node* root, const std::filesystem::path& filePath,
+    scene::SceneProgressCallback onProgress = nullptr);
+
+// Builds a graph of CPU attributes and unresolved source references only.
+extern BG2E_API std::shared_ptr<scene::Scene> loadScene(const std::filesystem::path& filePath,
+    scene::SceneProgressCallback onProgress = nullptr);
+extern BG2E_API std::shared_ptr<scene::Scene> loadScene(const std::filesystem::path& basePath,
+    const std::string& fileName, scene::SceneProgressCallback onProgress = nullptr);
+// Realizes mesh/material resources using only the supplied draw context.
+extern BG2E_API std::shared_ptr<scene::Scene> loadScene(const std::filesystem::path& filePath,
+    draw::Engine& engine, scene::SceneProgressCallback onProgress = nullptr);
+extern BG2E_API std::shared_ptr<scene::Scene> loadScene(const std::filesystem::path& basePath,
+    const std::string& fileName, draw::Engine& engine, scene::SceneProgressCallback onProgress = nullptr);
+
 extern BG2E_API std::shared_ptr<bg2e::scene::Scene> loadScene(
     const std::filesystem::path& filePath,
     bg2e::render::Engine& engine,

@@ -1,8 +1,8 @@
 # M07-01 — Inventory and create apps/draw/bg2e_composer
 
-[Milestone summary](summary.md) · [Plan index](../index.md) · [Architecture decisions](../architecture-decisions.md)
+[Milestone summary](summary.md) · [Plan index](../index.md) · [Architecture decisions](../architecture-decisions.md) · [Execution protocol](../execution-protocol.md) · [Progress](../progress.md)
 
-**Status:** planned. **Prerequisites:** Accepted M06 review.
+**Execution status:** see [progress](../progress.md). **Prerequisites:** Accepted M06 review.
 
 ## Scope and deliverable
 
@@ -29,10 +29,14 @@ Current sources to inspect: [apps/bg2e_composer/src/AppDelegate.hpp](../../../..
 - The new composer starts and displays its editing stage using draw only.
 - The feature matrix captures scene/import/job behaviors, not only toolbar/window appearance.
 
-These are future checks. Run compilation only on explicit user request; record missing runtime/backend evidence as pending, never as a pass.
+Delegate compilation and applicable runtime checks to the project lead; perform relevant nonexecuting static checks yourself. After delivering this step or its correction, update progress to `awaiting_project_lead` and stop. Their instruction to continue accepts the preceding delivery as compiled/checked without failures; record that basis without inventing test/backend details. Follow the [execution protocol](../execution-protocol.md).
 
 ## Downstream comparison
 
 M07-02–M07-06 complete this inventory; M09 promotion keeps surviving target/assets consistent.
 
 Record actual API, ownership and verification in the milestone review. Follow [the review protocol](../review-protocol.md) and edit affected pending steps when actual contracts differ.
+
+## M01-13 renderer settings integration
+
+Read [upscaling.md](../milestone_01_deferred_renderer/upscaling.md). Import/export the live resolution/upscaler catalog using stable implementation identifiers and existing SettingsCodec. Reuse queued pre-acquire resize/rebind/reset behavior; preserve external implementation injection and SDK/backend/hardware status.

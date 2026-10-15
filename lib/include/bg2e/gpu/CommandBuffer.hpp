@@ -25,6 +25,7 @@
 namespace bg2e {
 namespace gpu {
 
+class Device;
 class Buffer;
 class CubeMap;
 class Image;
@@ -44,6 +45,29 @@ class BG2E_API CommandBuffer {
     virtual void end() = 0;
 
     virtual void transition(gpu::Image* image, ImageLayout newLayout) = 0;
+    virtual void transition(gpu::Image* image, ImageLayout newLayout, const ImageSubresourceRange& range)
+    {
+        throw std::runtime_error("Subresource transitions are not implemented");
+    }
+    // Exact copies: matching color formats or depth-only D16/D32; no stencil.
+    virtual void copyImage(const ImageView& source, const ImageView& destination)
+    {
+        throw std::runtime_error("Subresource copies are not implemented");
+    }
+    virtual void generateMipmaps(gpu::Image* image, ImageLayout finalLayout = ImageLayout::ShaderReadOnly)
+    {
+        throw std::runtime_error("Mipmap generation is not implemented");
+    }
+    static void validateCopy(const ImageView& source, const ImageView& destination, const Device& device);
+    static void validateMipmapGeneration(const gpu::Image& image, const Device& device, ImageLayout finalLayout);
+
+    // Explicit attachment path. Layout transitions are the caller's responsibility.
+    virtual void beginRendering(const RenderingDescription& description)
+    {
+        throw std::runtime_error("Attachment-array rendering is not implemented");
+    }
+    static Size2D validateRendering(const RenderingDescription& description, const Device& device);
+    static void validatePipelineAttachments(const RenderingDescription& description, const GraphicsPipeline& pipeline);
 
     virtual void beginRendering(gpu::SurfaceFrame* frame) = 0;
     virtual void beginRendering(gpu::Image* colorImage, uint32_t mipLevel = 0)

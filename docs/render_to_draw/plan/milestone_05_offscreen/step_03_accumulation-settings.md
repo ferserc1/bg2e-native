@@ -1,8 +1,8 @@
 # M05-03 — Headless configuration import and exact frame accumulation
 
-[Milestone summary](summary.md) · [Plan index](../index.md) · [Architecture decisions](../architecture-decisions.md)
+[Milestone summary](summary.md) · [Plan index](../index.md) · [Architecture decisions](../architecture-decisions.md) · [Execution protocol](../execution-protocol.md) · [Progress](../progress.md)
 
-**Status:** planned. **Prerequisites:** M05-02 and M03 histories/settings codec.
+**Execution status:** see [progress](../progress.md). **Prerequisites:** M05-02 and M03 histories/settings codec.
 
 ## Scope and deliverable
 
@@ -25,10 +25,22 @@ Paths above include current references and proposed outputs. New paths are targe
 - N=1 matches the single-frame conversion; a controlled varying sample sequence verifies the configured accumulated result and N stopping condition.
 - An exported UI configuration imports without UI; malformed dimensions/counts/config types fail before starting the job and unsupported options yield declared diagnostics.
 
-These are future checks. Run compilation only on explicit user request; record missing runtime/backend evidence as pending, never as a pass.
+Delegate compilation and applicable runtime checks to the project lead; perform relevant nonexecuting static checks yourself. After delivering this step or its correction, update progress to `awaiting_project_lead` and stop. Their instruction to continue accepts the preceding delivery as compiled/checked without failures; record that basis without inventing test/backend details. Follow the [execution protocol](../execution-protocol.md).
 
 ## Downstream comparison
 
 M05-04/M05-05 demonstrate output semantics. M08 imports the same graphics configuration but has independent UV-sample accumulation rules.
 
 Record actual API, ownership and verification in the milestone review. Follow [the review protocol](../review-protocol.md) and edit affected pending steps when actual contracts differ.
+
+## M01-12 headless settings handoff
+
+Use [the live catalog and codec](../milestone_01_deferred_renderer/reflected-settings.md) directly, with no window/UI/delegate construction. Bind actual offscreen renderer/effect objects through SettingsTarget and stable component/type/property IDs; serialize/validate/apply using SettingsCodec at a stopped boundary. Numeric strings preserve exact uint32/double/int64 enum values. Reject unsupported options by default or explicitly skip with diagnostics. Explicit imported files bypass persisted defaults; omitted properties retain current live values. Never route this protocol through legacy JsonNode parse/toString or duplicate values in an offscreen preferences model.
+
+## M01-13 resolution/upscaler contracts
+
+Read [upscaling.md](../milestone_01_deferred_renderer/upscaling.md). Reuse ResolutionSettings and open Upscaler component identifiers/live catalog settings. Resolve internal extent from the renderer policy, keep reconstructed HDR/output extent separate and call explicit safe resize/reset for offscreen callers without DefaultRenderLoopDelegate. FSR SDK accumulation does not satisfy this step's required scene accumulation/output semantics.
+
+## M01-16 reviewed baseline
+
+Use actual SettingsCatalog/SettingsCodec and renderer/upscaler target identifiers; facade connect/queue methods require a windowed DefaultRenderLoopDelegate and are not the headless execution interface. Direct validated import applies at the new stopped job boundary. Current product startup explicit file bypasses persisted defaults; this step intentionally adds its documented CLI override/precedence policy. SDK FSR state cannot replace exact linear scene sample averaging. See [M01 review](../milestone_01_deferred_renderer/review.md).

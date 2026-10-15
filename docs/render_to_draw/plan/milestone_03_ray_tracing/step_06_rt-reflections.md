@@ -1,8 +1,8 @@
 # M03-06 — Public traced reflections and resolution semantics
 
-[Milestone summary](summary.md) · [Plan index](../index.md) · [Architecture decisions](../architecture-decisions.md)
+[Milestone summary](summary.md) · [Plan index](../index.md) · [Architecture decisions](../architecture-decisions.md) · [Execution protocol](../execution-protocol.md) · [Progress](../progress.md)
 
-**Status:** planned. **Prerequisites:** M03-01–M03-03/M03-05 shared hit data.
+**Execution status:** see [progress](../progress.md). **Prerequisites:** M03-01–M03-03/M03-05 shared hit data.
 
 ## Scope and deliverable
 
@@ -27,10 +27,14 @@ Current sources to inspect: [lib/src/bg2e/render/deferred/RTReflections.cpp](../
 - Reflective/rough surfaces, misses and alpha-cutout hits compose correctly; output-size-only and internal-scale changes resize the appropriate resources.
 - Fallback retains environment specular behavior, and user component injection follows the public pass contract.
 
-These are future checks. Run compilation only on explicit user request; record missing runtime/backend evidence as pending, never as a pass.
+Delegate compilation and applicable runtime checks to the project lead; perform relevant nonexecuting static checks yourself. After delivering this step or its correction, update progress to `awaiting_project_lead` and stop. Their instruction to continue accepts the preceding delivery as compiled/checked without failures; record that basis without inventing test/backend details. Follow the [execution protocol](../execution-protocol.md).
 
 ## Downstream comparison
 
 M03-07 owns reflection histories separately from GI/AO. M05 freezes scene while collecting requested rendered-frame samples.
 
 Record actual API, ownership and verification in the milestone review. Follow [the review protocol](../review-protocol.md) and edit affected pending steps when actual contracts differ.
+
+## M01-08 IBL fallback ABI
+
+Use the same validated EnvironmentResources and public services from [environment-tools.md](../milestone_01_deferred_renderer/environment-tools.md). Prefilter mips encode perceptual roughness linearly; BRDF RG is A/B at (NdotV, roughness) with F0*A+B composition. Sky/prefilter are linear radiance; irradiance includes PI. Retain snapshots across submitted work and never overwrite authored prefilter mips or synchronously rebuild while recording RT work.

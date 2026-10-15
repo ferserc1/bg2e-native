@@ -2,6 +2,8 @@
 
 [Plan index](index.md) · [Architecture decisions](architecture-decisions.md) · [Review protocol](review-protocol.md)
 
+Step selection, cross-chat handoff and project lead validation are governed by [execution-protocol.md](execution-protocol.md), with actual execution status in [progress.md](progress.md).
+
 This table makes the user conclusions traceable to concrete step files. It records planned coverage, not successful implementation. The linked steps identify work, current references, verification and downstream impact. At milestone reviews update this map if a task moves or its contract changes.
 
 | Requirement/decision | Concrete steps |
@@ -61,4 +63,19 @@ This table makes the user conclusions traceable to concrete step files. It recor
 - New native implementation lives in GPU; explicit backend binding indices and permitted backend casts are not a new shader abstraction.
 - TextureCache gets only the minimal dual path, not the future ResourceManager.
 - The choice of draw::pipeline as the advanced-public subnamespace is a concrete proposal, refinable during M01 review without hiding its public objects.
-- A missing machine or unauthorized build is recorded as unverified; plan files are never evidence that a working milestone product already exists.
+- Compilation/runtime checks belong to the project lead. Their continuation instruction accepts the preceding delivery without requiring reconfirmation or logs; record unspecified backend coverage accurately. Planning documents alone and silence never establish acceptance.
+- Different chats implement one step at a time and update the shared progress record. A failure report keeps correction work on the reported step; each technical review and subsequent final cumulative documentation update are tracked steps before entering the next milestone.
+
+## Cumulative documentation requirement
+
+All original M10 final documentation outcomes remain required under the [coverage and ownership map](documentation-policy.md). Authoring moves to these final milestone steps; existing M10 references in the table above identify final audits, not deferred authoring. Only implemented functionality through each milestone is documented.
+
+- [M01-17](milestone_01_deferred_renderer/step_17_documentation.md) — cumulative documentation through M01.
+- [M02-09](milestone_02_manipulation/step_09_documentation.md) — cumulative documentation through M02.
+- [M03-11](milestone_03_ray_tracing/step_11_documentation.md) — cumulative documentation through M03.
+- [M04-08](milestone_04_lightmaps/step_08_documentation.md) — cumulative documentation through M04.
+- [M05-07](milestone_05_offscreen/step_07_documentation.md) — cumulative documentation through M05.
+- [M06-08](milestone_06_model_edit/step_08_documentation.md) — cumulative documentation through M06.
+- [M07-08](milestone_07_bg2e_composer/step_08_documentation.md) — cumulative documentation through M07.
+- [M08-07](milestone_08_lightmap_generator/step_07_documentation.md) — cumulative documentation through M08.
+- [M09-08](milestone_09_cleanup/step_08_documentation.md) — cumulative documentation through M09.

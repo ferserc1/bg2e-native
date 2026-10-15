@@ -21,6 +21,7 @@
 #include <bg2e/gpu/Image.hpp>
 #include <bg2e/gpu/vk/common.hpp>
 #include <vector>
+#include <map>
 
 namespace bg2e {
 namespace gpu {
@@ -44,6 +45,11 @@ class Image : public gpu::Image {
     void buildTargetImage(vk::Device* device, const Size2D& size, PixelFormat format, const std::string& debugName = {});
     void buildDepthImage(vk::Device* device, const Size2D& size, PixelFormat format, const std::string& debugName = {});
     void buildSampledImage(vk::Device* device, const Size2D& size, PixelFormat format, VkImageUsageFlags usage, const std::string& debugName = {});
+    void buildImage(vk::Device* device, const ImageDescription& description);
+    void upload(const ImageUploadDescription& description, ImageLayout finalLayout = ImageLayout::ShaderReadOnly) override;
+    void readPixels(std::vector<uint8_t>& data, const ImageSubresourceRange& range,
+                    ImageLayout finalLayout = ImageLayout::ShaderReadOnly) override;
+    ImageUsage usage() const override;
     void resize(const Size2D& size);
 
     void cleanup() override;
@@ -53,7 +59,8 @@ class Image : public gpu::Image {
     }
 
     // Backend dependent functions
-    void initFromSwapchainImage(vk::Device* device, VkImage image, PixelFormat format, const Size2D& size);
+    void initFromSwapchainImage(vk::Device* device, VkImage image, PixelFormat format, const Size2D& size,
+                                VkImageUsageFlags usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
 
     VkImage handle() const
     {
@@ -72,6 +79,8 @@ class Image : public gpu::Image {
         return _aspect;
     }
 
+    VkImageView subresourceView(const ImageSubresourceRange& range, bool attachment = false) const;
+
     VkImageView cubemapFaceMipView(uint32_t face, uint32_t mipLevel) const;
 
     void readPixelsRGBA8(std::vector<uint8_t>& outData, ImageLayout currentLayout = ImageLayout::ColorAttachment) override;
@@ -88,7 +97,7 @@ class Image : public gpu::Image {
 
   private:
     void createView();
-    void createCubemapView();
+
 
     vk::Device* _device = nullptr;
     VkImage _image = VK_NULL_HANDLE;
@@ -99,7 +108,7 @@ class Image : public gpu::Image {
     bool _ownsImage = false;
     VkImageUsageFlags _usage = 0;
     std::string _debugName;
-    std::vector<VkImageView> _cubemapFaceMipViews;
+    mutable std::map<std::array<uint32_t, 5>, VkImageView> _subresourceViews;
 };
 
 }

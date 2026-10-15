@@ -47,6 +47,10 @@ class CommandBuffer : public gpu::CommandBuffer {
     void begin() override;
     void end() override;
     void transition(gpu::Image* image, ImageLayout newLayout) override;
+    void transition(gpu::Image* image, ImageLayout newLayout, const ImageSubresourceRange& range) override;
+    void copyImage(const ImageView& source, const ImageView& destination) override;
+    void generateMipmaps(gpu::Image* image, ImageLayout finalLayout = ImageLayout::ShaderReadOnly) override;
+    void beginRendering(const RenderingDescription& description) override;
     void beginRendering(gpu::SurfaceFrame* frame) override;
     void beginRendering(gpu::Image* colorImage, uint32_t mipLevel = 0) override;
     void beginRendering(gpu::Image* colorImage, gpu::Image* depthImage, uint32_t mipLevel = 0) override;
@@ -122,6 +126,8 @@ class CommandBuffer : public gpu::CommandBuffer {
     std::shared_ptr<detail::CompletionRecord> _completion;
     std::shared_ptr<gpu::SurfaceFrame> _submissionFrame;
     bool _executable = false;
+    std::optional<RenderingDescription> _attachmentRendering;
+    Size2D _attachmentExtent;
 
     void flushPendingRendering();
 

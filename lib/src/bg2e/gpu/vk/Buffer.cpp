@@ -198,6 +198,7 @@ void Buffer::createMappedBuffer(const void* data, uint64_t byteSize,
     if (data != nullptr && _mappedData != nullptr)
     {
         std::memcpy(_mappedData, data, byteSize);
+        VK_ASSERT(vmaFlushAllocation(_device->allocator(), _allocation, 0, byteSize));
     }
 
     _usage = gpuUsage;
@@ -217,6 +218,7 @@ void Buffer::updateMappedBuffer(const void* data, uint64_t byteSize, const char*
                                  ": update size exceeds the buffer capacity");
     }
     std::memcpy(_mappedData, data, byteSize);
+    VK_ASSERT(vmaFlushAllocation(_device->allocator(), _allocation, 0, byteSize));
 }
 
 void Buffer::uploadWithStaging(const void* data, uint64_t byteSize,

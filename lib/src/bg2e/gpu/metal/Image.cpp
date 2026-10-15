@@ -24,229 +24,175 @@
 #include <bg2e/base/Image.hpp>
 
 #include <cstring>
+#include <algorithm>
 #include <stdexcept>
 
 namespace bg2e {
 namespace gpu {
 namespace metal {
 
+ImageUsage Image::usage() const
+{
+    return _usage;
+}
+
 #if BG2E_IS_MAC
+
+void Image::buildImage(metal::Device* device, const ImageDescription& description)
+{
+    gpu::Image::validateDescription(description);
+    if (!device || !device->isValid() || !device->formatCapabilities(description.format).supports(description.usage))
+    {
+        throw std::invalid_argument("Metal image device/format/usage is unsupported");
+    }
+    if (isValid() && _device)
+    {
+        _device->waitIdle();
+    }
+    cleanup();
+    _device = device;
+    DeviceResource::_device = device;
+    _size = description.size;
+    _pixelFormat = description.format;
+    _imageType = description.type;
+    _mipLevels = effectiveMipLevels(description);
+    _usage = description.usage;
+    _isDepth = isDepthFormat(_pixelFormat);
+    _ownsTexture = true;
+    _debugName = description.debugName;
+    resetLayoutTracking();
+    auto* descriptor = MTL::TextureDescriptor::alloc()->init();
+    descriptor->setTextureType(isCubemap() ? MTL::TextureTypeCube : MTL::TextureType2D);
+    descriptor->setPixelFormat(toMetalPixelFormat(_pixelFormat));
+    descriptor->setWidth(width());
+    descriptor->setHeight(height());
+    descriptor->setMipmapLevelCount(_mipLevels);
+    descriptor->setStorageMode(MTL::StorageModePrivate);
+    MTL::TextureUsage nativeUsage = MTL::TextureUsagePixelFormatView;
+    if (hasFlag(_usage, ImageUsage::Sampled))
+    {
+        nativeUsage |= MTL::TextureUsageShaderRead;
+    }
+    if (hasFlag(_usage, ImageUsage::Storage))
+    {
+        nativeUsage |= MTL::TextureUsageShaderWrite;
+    }
+    if (hasFlag(_usage, ImageUsage::ColorAttachment) || hasFlag(_usage, ImageUsage::DepthStencil))
+    {
+        nativeUsage |= MTL::TextureUsageRenderTarget;
+    }
+    descriptor->setUsage(nativeUsage);
+    descriptor->setHazardTrackingMode(MTL::HazardTrackingModeTracked);
+    _texture = device->handle()->newTexture(descriptor);
+    descriptor->release();
+    if (!_texture)
+    {
+        throw std::runtime_error("Metal image allocation failed for the requested format/usage/mips");
+    }
+    if (base::Log::isDebug() && !_debugName.empty())
+    {
+        _texture->setLabel(NS::String::string(_debugName.c_str(), NS::UTF8StringEncoding));
+    }
+}
 
 void Image::buildTargetImage(metal::Device* device, const Size2D& size, PixelFormat format, const std::string& debugName)
 {
-    cleanup();
-
-    _device = device;
-    _size = size;
-    _pixelFormat = format;
-    _isDepth = false;
-    _currentLayout = ImageLayout::Undefined;
-    _debugName = debugName;
-
-    auto* desc = MTL::TextureDescriptor::alloc()->init();
-    desc->setTextureType(MTL::TextureType2D);
-    desc->setPixelFormat(toMetalPixelFormat(format));
-    desc->setWidth(size.width);
-    desc->setHeight(size.height);
-    desc->setStorageMode(MTL::StorageModePrivate);
-    desc->setUsage(MTL::TextureUsageRenderTarget | MTL::TextureUsageShaderRead);
-    // Order render writes and blit reads across command buffers on one queue.
-    desc->setHazardTrackingMode(MTL::HazardTrackingModeTracked);
-
-    _texture = device->handle()->newTexture(desc);
-    _ownsTexture = true;
-    desc->release();
-
-    if (!_texture)
-    {
-        throw std::runtime_error("metal::Image::buildTargetImage: newTexture failed");
-    }
-
-    if (base::Log::isDebug() && !debugName.empty())
-    {
-        _texture->setLabel(NS::String::string(debugName.c_str(), NS::UTF8StringEncoding));
-    }
+    buildImage(device, {.size = size, .format = format,
+        .usage = ImageUsage::ColorAttachment | ImageUsage::Sampled | ImageUsage::TransferSrc | ImageUsage::TransferDst,
+        .debugName = debugName});
 }
-
 void Image::buildDepthImage(metal::Device* device, const Size2D& size, PixelFormat format, const std::string& debugName)
 {
-    cleanup();
-
-    _device = device;
-    _size = size;
-    _pixelFormat = format;
-    _isDepth = true;
-    _ownsTexture = true;
-    _currentLayout = ImageLayout::Undefined;
-    _debugName = debugName;
-
-    auto* desc = MTL::TextureDescriptor::alloc()->init();
-    desc->setTextureType(MTL::TextureType2D);
-    desc->setPixelFormat(toMetalPixelFormat(format));
-    desc->setWidth(size.width);
-    desc->setHeight(size.height);
-    desc->setStorageMode(MTL::StorageModePrivate);
-    desc->setUsage(MTL::TextureUsageRenderTarget | MTL::TextureUsageShaderRead);
-    // Order render writes and blit reads across command buffers on one queue.
-    desc->setHazardTrackingMode(MTL::HazardTrackingModeTracked);
-
-    _texture = device->handle()->newTexture(desc);
-    _ownsTexture = true;
-    desc->release();
-
-    if (!_texture)
-    {
-        throw std::runtime_error("metal::Image::buildDepthImage: newTexture failed");
-    }
-
-    if (base::Log::isDebug() && !debugName.empty())
-    {
-        _texture->setLabel(NS::String::string(debugName.c_str(), NS::UTF8StringEncoding));
-    }
+    buildImage(device, {.size = size, .format = format,
+        .usage = ImageUsage::DepthStencil | ImageUsage::Sampled, .debugName = debugName});
 }
-
-void Image::buildSampledImage(metal::Device* device, const Size2D& size, PixelFormat format, const std::string& debugName)
+void Image::buildSampledImage(metal::Device* device, const Size2D& size, PixelFormat format,
+                              const std::string& debugName, ImageUsage usage)
 {
-    cleanup();
-
-    _device = device;
-    _size = size;
-    _pixelFormat = format;
-    _isDepth = false;
-    _ownsTexture = true;
-    _currentLayout = ImageLayout::Undefined;
-    _debugName = debugName;
-
-    auto* desc = MTL::TextureDescriptor::alloc()->init();
-    desc->setTextureType(MTL::TextureType2D);
-    desc->setPixelFormat(toMetalPixelFormat(format));
-    desc->setWidth(size.width);
-    desc->setHeight(size.height);
-    desc->setStorageMode(MTL::StorageModePrivate);
-    desc->setUsage(MTL::TextureUsageShaderRead);
-
-    _texture = device->handle()->newTexture(desc);
-    desc->release();
-
-    if (!_texture)
-    {
-        throw std::runtime_error("metal::Image::buildSampledImage: newTexture failed");
-    }
-
-    if (base::Log::isDebug() && !debugName.empty())
-    {
-        _texture->setLabel(NS::String::string(debugName.c_str(), NS::UTF8StringEncoding));
-    }
+    buildImage(device, {.size = size, .format = format, .usage = usage, .debugName = debugName});
 }
-
 void Image::buildStorageImage(metal::Device* device, const Size2D& size, PixelFormat format, const std::string& debugName)
 {
-    cleanup();
-
-    _device = device;
-    _size = size;
-    _pixelFormat = format;
-    _isDepth = false;
-    _ownsTexture = true;
-    _currentLayout = ImageLayout::Undefined;
-    _debugName = debugName;
-
-    auto* desc = MTL::TextureDescriptor::alloc()->init();
-    desc->setTextureType(MTL::TextureType2D);
-    desc->setPixelFormat(toMetalPixelFormat(format));
-    desc->setWidth(size.width);
-    desc->setHeight(size.height);
-    desc->setStorageMode(MTL::StorageModePrivate);
-    desc->setUsage(MTL::TextureUsageShaderRead | MTL::TextureUsageShaderWrite);
-
-    _texture = device->handle()->newTexture(desc);
-    _ownsTexture = true;
-    desc->release();
-
-    if (!_texture)
-    {
-        throw std::runtime_error("metal::Image::buildStorageImage: newTexture failed");
-    }
-
-    if (base::Log::isDebug() && !debugName.empty())
-    {
-        _texture->setLabel(NS::String::string(debugName.c_str(), NS::UTF8StringEncoding));
-    }
+    buildImage(device, {.size = size, .format = format,
+        .usage = ImageUsage::Storage | ImageUsage::Sampled | ImageUsage::TransferSrc | ImageUsage::TransferDst,
+        .debugName = debugName});
 }
-
 void Image::buildCubemapImage(metal::Device* device, const Size2D& size, PixelFormat format,
-                              MTL::TextureUsage usage, uint32_t mipLevels, const std::string& debugName)
+                              MTL::TextureUsage usage, uint32_t levels, const std::string& debugName)
 {
-    cleanup();
-
-    if (size.width != size.height)
+    ImageUsage generic = ImageUsage::TransferSrc | ImageUsage::TransferDst;
+    if (usage & MTL::TextureUsageShaderRead)
     {
-        throw std::runtime_error("metal::Image::buildCubemapImage: cubemap requires square dimensions");
+        generic |= ImageUsage::Sampled;
     }
-
-    _device = device;
-    _size = size;
-    _pixelFormat = format;
-    _isDepth = false;
-    _ownsTexture = true;
-    _currentLayout = ImageLayout::Undefined;
-    _debugName = debugName;
-    _imageType = ImageType::Cubemap;
-    _mipLevels = mipLevels;
-
-    auto* desc = MTL::TextureDescriptor::alloc()->init();
-    desc->setTextureType(MTL::TextureTypeCube);
-    desc->setPixelFormat(toMetalPixelFormat(format));
-    desc->setWidth(size.width);
-    desc->setHeight(size.height);
-    desc->setMipmapLevelCount(mipLevels);
-    desc->setStorageMode(MTL::StorageModePrivate);
-    desc->setUsage(usage);
-
-    _texture = device->handle()->newTexture(desc);
-    desc->release();
-
-    if (!_texture)
+    if (usage & MTL::TextureUsageShaderWrite)
     {
-        throw std::runtime_error("metal::Image::buildCubemapImage: newTexture failed");
+        generic |= ImageUsage::Storage;
     }
-
-    if (base::Log::isDebug() && !debugName.empty())
+    if (usage & MTL::TextureUsageRenderTarget)
     {
-        _texture->setLabel(NS::String::string(debugName.c_str(), NS::UTF8StringEncoding));
+        generic |= ImageUsage::ColorAttachment;
     }
+    buildImage(device, {.size = size, .format = format, .usage = generic,
+        .type = ImageType::Cubemap, .mipLevels = levels, .debugName = debugName});
 }
 
-void Image::initFromDrawableTexture(metal::Device* device, TextureHandle texture,
-                                    PixelFormat format, const Size2D& size)
+TextureHandle Image::subresourceView(const ImageSubresourceRange& range)
+{
+    view(range); // Validate the supported view shape as well as its bounds.
+    if (range == fullRange())
+    {
+        return _texture;
+    }
+    const std::array<uint32_t, 4> key{range.baseMipLevel, range.mipCount, range.baseArrayLayer, range.layerCount};
+    const auto found = _subresourceViews.find(key);
+    if (found != _subresourceViews.end())
+    {
+        return found->second;
+    }
+    auto* result = _texture->newTextureView(toMetalPixelFormat(_pixelFormat),
+        range.layerCount == 6 ? MTL::TextureTypeCube : MTL::TextureType2D,
+        NS::Range{range.baseMipLevel, range.mipCount}, NS::Range{range.baseArrayLayer, range.layerCount});
+    if (!result)
+    {
+        throw std::runtime_error("Metal subresource texture view creation failed");
+    }
+    _subresourceViews.emplace(key, result);
+    return result;
+}
+
+void Image::initFromDrawableTexture(metal::Device* device, TextureHandle texture, PixelFormat format, const Size2D& size)
 {
     cleanup();
     _device = device;
+    DeviceResource::_device = device;
     _texture = texture;
     _size = size;
     _pixelFormat = format;
-    _isDepth = false;
+    _imageType = ImageType::Image2D;
+    _mipLevels = 1;
     _ownsTexture = false;
-    _currentLayout = ImageLayout::Undefined;
+    _isDepth = false;
+    _usage = ImageUsage::ColorAttachment | ImageUsage::Present;
+    if (_texture && (_texture->usage() & MTL::TextureUsageShaderRead))
+    {
+        _usage |= ImageUsage::Sampled;
+    }
+    if (_texture && (_texture->usage() & MTL::TextureUsageShaderWrite))
+    {
+        _usage |= ImageUsage::Storage;
+    }
+    if (_texture && !_texture->isFramebufferOnly())
+    {
+        _usage |= ImageUsage::TransferSrc | ImageUsage::TransferDst;
+    }
+    resetLayoutTracking();
 }
 
 bool Image::isValidCubemapFaceMip(uint32_t face, uint32_t mipLevel) const
 {
-    if (_imageType != ImageType::Cubemap)
-    {
-        return false;
-    }
-    if (face >= 6)
-    {
-        return false;
-    }
-    if (mipLevel >= _mipLevels)
-    {
-        return false;
-    }
-    return true;
+    return isCubemap() && isValid() && face < 6 && mipLevel < _mipLevels;
 }
-
 Image::CubemapFaceMipTarget Image::cubemapFaceMipTarget(uint32_t face, uint32_t mipLevel) const
 {
     if (!isValidCubemapFaceMip(face, mipLevel))
@@ -258,32 +204,29 @@ Image::CubemapFaceMipTarget Image::cubemapFaceMipTarget(uint32_t face, uint32_t 
 
 void Image::resize(const Size2D& size)
 {
-    metal::Device* storedDevice = _device;
-    PixelFormat storedFormat = _pixelFormat;
-    bool wasDepth = _isDepth;
-    std::string storedDebugName = _debugName;
-
-    cleanup();
-
-    _size = size;
-
-    if (wasDepth)
+    if (!_ownsTexture)
     {
-        buildDepthImage(storedDevice, size, storedFormat, storedDebugName);
+        throw std::logic_error("Cannot resize a wrapped image");
     }
-    else
-    {
-        buildTargetImage(storedDevice, size, storedFormat, storedDebugName);
-    }
+    ImageDescription description{.size = size, .format = _pixelFormat, .usage = _usage, .type = _imageType,
+        .mipLevels = std::min(_mipLevels, mipLevelsForMinSize(std::max(size.width, size.height), 1)), .debugName = _debugName};
+    buildImage(_device, description);
 }
 
 void Image::cleanup()
 {
+    for (const auto& entry : _subresourceViews)
+    {
+        entry.second->release();
+    }
+    _subresourceViews.clear();
     if (_texture && _ownsTexture)
     {
         _texture->release();
-        _texture = nullptr;
     }
+    _texture = nullptr;
+    _usage = ImageUsage::None;
+    resetLayoutTracking();
 }
 
 bool Image::isValid() const
@@ -291,299 +234,193 @@ bool Image::isValid() const
     return _texture != nullptr;
 }
 
-void Image::readPixelsRGBA8(std::vector<uint8_t>& outData, ImageLayout /*currentLayout*/)
+void Image::upload(const ImageUploadDescription& description, ImageLayout finalLayout)
 {
-    if (_pixelFormat != PixelFormat::R8G8B8A8_UNORM)
-    {
-        throw std::runtime_error("metal::Image::readPixelsRGBA8: only R8G8B8A8_UNORM is supported");
-    }
-
-    const uint32_t w = _size.width;
-    const uint32_t h = _size.height;
-
-    const uint32_t unpaddedBytesPerRow = w * 4;
-    const uint32_t alignment = 256;
-    const uint32_t paddedBytesPerRow =
-        ((unpaddedBytesPerRow + alignment - 1) / alignment) * alignment;
-    const size_t bufferSize = size_t(paddedBytesPerRow) * h;
-
-    MTL::Buffer* staging = _device->handle()->newBuffer(
-        bufferSize, MTL::ResourceStorageModeShared);
+    const size_t sourceStride = validateUpload(description);
+    validateLayout(finalLayout);
+    _device->waitIdle();
+    const auto extent = mipExtent(description.mipLevel);
+    const size_t tight = size_t(extent.width) * pixelFormatBytes(_pixelFormat);
+    const size_t stride = (tight + 255) & ~size_t(255);
+    const size_t bytes = stride * extent.height;
+    auto* staging = _device->handle()->newBuffer(bytes, MTL::ResourceStorageModeShared);
     if (!staging)
     {
-        throw std::runtime_error("metal::Image::readPixelsRGBA8: newBuffer failed");
+        throw std::runtime_error("Metal upload staging buffer allocation failed");
     }
-
-    _device->immediateSubmit([&](gpu::CommandBuffer* cmd)
-                             {
-                                 MTL::CommandBuffer* mtlCmd = dynamic_cast<metal::CommandBuffer*>(cmd)->handle();
-                                 MTL::BlitCommandEncoder* blit = mtlCmd->blitCommandEncoder();
-                                 blit->copyFromTexture(
-                                     _texture,
-                                     0,
-                                     0,
-                                     MTL::Origin{0, 0, 0},
-                                     MTL::Size{w, h, 1},
-                                     staging,
-                                     0,
-                                     paddedBytesPerRow,
-                                     paddedBytesPerRow * h);
-                                 blit->endEncoding();
-                             });
-
-    outData.resize(size_t(unpaddedBytesPerRow) * h);
-    const uint8_t* src = static_cast<const uint8_t*>(staging->contents());
-    for (uint32_t y = 0; y < h; ++y)
+    for (uint32_t row = 0; row < extent.height; ++row)
     {
-        std::memcpy(outData.data() + size_t(y) * unpaddedBytesPerRow,
-                    src + size_t(y) * paddedBytesPerRow,
-                    unpaddedBytesPerRow);
+        std::memcpy(static_cast<uint8_t*>(staging->contents()) + row * stride,
+            static_cast<const uint8_t*>(description.data) + row * sourceStride, tight);
     }
-
+    const ImageSubresourceRange range{description.mipLevel, 1, description.arrayLayer, 1};
+    try
+    {
+        _device->immediateSubmit([&](gpu::CommandBuffer* command)
+        {
+            command->transition(this, ImageLayout::TransferDst, range);
+            auto* encoder = static_cast<metal::CommandBuffer*>(command)->handle()->blitCommandEncoder();
+            if (!encoder)
+            {
+                throw std::runtime_error("Metal upload blit encoder creation failed");
+            }
+            encoder->copyFromBuffer(staging, 0, stride, bytes, MTL::Size{extent.width, extent.height, 1},
+                _texture, range.baseArrayLayer, range.baseMipLevel, MTL::Origin{0, 0, 0});
+            encoder->endEncoding(); // Autoreleased; no owned release.
+            command->transition(this, finalLayout, range);
+        });
+    }
+    catch (...)
+    {
+        staging->release();
+        throw;
+    }
     staging->release();
 }
 
+void Image::readPixels(std::vector<uint8_t>& data, const ImageSubresourceRange& range, ImageLayout finalLayout)
+{
+    validateRange(range);
+    validateLayout(finalLayout);
+    if (range.mipCount != 1 || range.layerCount != 1 || _isDepth || !hasFlag(_usage, ImageUsage::TransferSrc) ||
+        currentLayout(range) == ImageLayout::Undefined)
+    {
+        throw std::invalid_argument("Readback requires one initialized color subresource with TransferSrc usage");
+    }
+    _device->waitIdle();
+    const auto extent = mipExtent(range.baseMipLevel);
+    const size_t tight = size_t(extent.width) * pixelFormatBytes(_pixelFormat);
+    const size_t stride = (tight + 255) & ~size_t(255);
+    const size_t bytes = stride * extent.height;
+    auto* staging = _device->handle()->newBuffer(bytes, MTL::ResourceStorageModeShared);
+    if (!staging)
+    {
+        throw std::runtime_error("Metal readback staging buffer allocation failed");
+    }
+    try
+    {
+        _device->immediateSubmit([&](gpu::CommandBuffer* command)
+        {
+            command->transition(this, ImageLayout::TransferSrc, range);
+            auto* encoder = static_cast<metal::CommandBuffer*>(command)->handle()->blitCommandEncoder();
+            if (!encoder)
+            {
+                throw std::runtime_error("Metal readback blit encoder creation failed");
+            }
+            encoder->copyFromTexture(_texture, range.baseArrayLayer, range.baseMipLevel, MTL::Origin{0, 0, 0},
+                MTL::Size{extent.width, extent.height, 1}, staging, 0, stride, bytes);
+            encoder->endEncoding();
+            command->transition(this, finalLayout, range);
+        });
+        data.resize(tight * extent.height);
+        for (uint32_t row = 0; row < extent.height; ++row)
+        {
+            std::memcpy(data.data() + row * tight, static_cast<const uint8_t*>(staging->contents()) + row * stride, tight);
+        }
+    }
+    catch (...)
+    {
+        staging->release();
+        throw;
+    }
+    staging->release();
+}
+
+void Image::readPixelsRGBA8(std::vector<uint8_t>& data, ImageLayout finalLayout)
+{
+    if (_pixelFormat != PixelFormat::R8G8B8A8_UNORM)
+    {
+        throw std::invalid_argument("readPixelsRGBA8 requires R8G8B8A8_UNORM");
+    }
+    readPixels(data, {}, finalLayout);
+}
 void Image::uploadRGBA8(const void* pixels, const Size2D& size)
 {
-    if (_pixelFormat != PixelFormat::R8G8B8A8_UNORM)
+    if (_pixelFormat != PixelFormat::R8G8B8A8_UNORM || size != _size)
     {
-        throw std::runtime_error("metal::Image::uploadRGBA8: only R8G8B8A8_UNORM is supported");
+        throw std::invalid_argument("uploadRGBA8 requires matching RGBA8 dimensions");
     }
-
-    if (size.width != _size.width || size.height != _size.height)
-    {
-        throw std::runtime_error("metal::Image::uploadRGBA8: size mismatch");
-    }
-
-    const uint32_t w = _size.width;
-    const uint32_t h = _size.height;
-    const uint32_t bytesPerRow = w * 4;
-    const size_t bufferSize = size_t(bytesPerRow) * h;
-
-    MTL::Buffer* staging = _device->handle()->newBuffer(bufferSize, MTL::ResourceStorageModeShared);
-    if (!staging)
-    {
-        throw std::runtime_error("metal::Image::uploadRGBA8: newBuffer failed");
-    }
-
-    std::memcpy(staging->contents(), pixels, bufferSize);
-
-    _device->immediateSubmit([&](gpu::CommandBuffer* cmd)
-                             {
-                                 MTL::CommandBuffer* mtlCmd = dynamic_cast<metal::CommandBuffer*>(cmd)->handle();
-                                 MTL::BlitCommandEncoder* blit = mtlCmd->blitCommandEncoder();
-                                 blit->copyFromBuffer(
-                                     staging,
-                                     0,
-                                     bytesPerRow,
-                                     bufferSize,
-                                     MTL::Size{w, h, 1},
-                                     _texture,
-                                     0,
-                                     0,
-                                     MTL::Origin{0, 0, 0});
-                                 blit->endEncoding();
-                             });
-
-    staging->release();
+    upload({pixels, size_t(width()) * height() * 4});
 }
-
-static uint16_t floatToHalf(float f)
-{
-    uint32_t bits;
-    std::memcpy(&bits, &f, sizeof(bits));
-    uint32_t sign = (bits >> 16) & 0x8000;
-    int32_t exponent = ((bits >> 23) & 0xFF) - 127;
-    uint32_t mantissa = bits & 0x7FFFFF;
-
-    if (exponent > 15)
-    {
-        return static_cast<uint16_t>(sign | 0x7C00);
-    }
-    if (exponent < -14)
-    {
-        uint32_t m = (mantissa | 0x8000) >> (-exponent - 14 + 1);
-        if (m & 0x1000)
-        {
-            m += 0x2000;
-        }
-        return static_cast<uint16_t>(sign | (m >> 13));
-    }
-    if (exponent == -127)
-    {
-        return static_cast<uint16_t>(sign);
-    }
-    return static_cast<uint16_t>(sign | ((exponent + 15) << 10) | (mantissa >> 13));
-}
-
 void Image::uploadImage(const base::Image* image)
 {
-    if (!image || (!image->data() && !image->dataf()))
-    {
-        throw std::runtime_error("metal::Image::uploadImage: null or empty image");
-    }
-
-    const uint32_t w = _size.width;
-    const uint32_t h = _size.height;
-
-    if (image->width() != w || image->height() != h)
-    {
-        throw std::runtime_error("metal::Image::uploadImage: size mismatch");
-    }
-
-    size_t bytesPerPixel = 0;
-    const void* srcData = nullptr;
-    std::vector<uint16_t> halfData;
-
-    switch (_pixelFormat)
-    {
-    case PixelFormat::R8G8B8A8_UNORM:
-    case PixelFormat::R8G8B8A8_SRGB:
-    case PixelFormat::B8G8R8A8_UNORM:
-    case PixelFormat::B8G8R8A8_SRGB:
-        bytesPerPixel = 4;
-        srcData = image->data();
-        break;
-    case PixelFormat::R16G16B16A16_SFLOAT:
-        bytesPerPixel = 8;
-        if (image->dataf())
-        {
-            const float* src = image->dataf();
-            size_t pixelCount = size_t(w) * h;
-            halfData.resize(pixelCount * 4);
-            for (size_t i = 0; i < pixelCount * 4; ++i)
-            {
-                halfData[i] = floatToHalf(src[i]);
-            }
-            srcData = halfData.data();
-        }
-        else
-        {
-            const uint8_t* src = image->data();
-            size_t pixelCount = size_t(w) * h;
-            halfData.resize(pixelCount * 4);
-            for (size_t i = 0; i < pixelCount * 4; ++i)
-            {
-                halfData[i] = floatToHalf(src[i] / 255.0f);
-            }
-            srcData = halfData.data();
-        }
-        break;
-    case PixelFormat::R32G32B32A32_SFLOAT:
-        bytesPerPixel = 16;
-        srcData = image->dataf();
-        break;
-    default:
-        throw std::runtime_error("metal::Image::uploadImage: unsupported pixel format");
-    }
-
-    if (!srcData)
-    {
-        throw std::runtime_error("metal::Image::uploadImage: no source data for this format");
-    }
-
-    const uint32_t bytesPerRow = w * bytesPerPixel;
-    const size_t bufferSize = size_t(bytesPerRow) * h;
-
-    MTL::Buffer* staging = _device->handle()->newBuffer(bufferSize, MTL::ResourceStorageModeShared);
-    if (!staging)
-    {
-        throw std::runtime_error("metal::Image::uploadImage: newBuffer failed");
-    }
-
-    std::memcpy(staging->contents(), srcData, bufferSize);
-
-    _device->immediateSubmit([&](gpu::CommandBuffer* cmd)
-                             {
-                                 MTL::CommandBuffer* mtlCmd = dynamic_cast<metal::CommandBuffer*>(cmd)->handle();
-                                 MTL::BlitCommandEncoder* blit = mtlCmd->blitCommandEncoder();
-                                 blit->copyFromBuffer(
-                                     staging,
-                                     0,
-                                     bytesPerRow,
-                                     bufferSize,
-                                     MTL::Size{w, h, 1},
-                                     _texture,
-                                     0,
-                                     0,
-                                     MTL::Origin{0, 0, 0});
-                                 blit->endEncoding();
-                             });
-
-    staging->release();
+    gpu::Image::uploadImage(image);
 }
 
 #else
 
+void Image::buildImage(metal::Device*, const ImageDescription&)
+{
+    throw std::runtime_error("Metal backend is not available on this platform");
+}
 void Image::buildTargetImage(metal::Device*, const Size2D&, PixelFormat, const std::string&)
 {
     throw std::runtime_error("Metal backend is not available on this platform");
 }
-
 void Image::buildDepthImage(metal::Device*, const Size2D&, PixelFormat, const std::string&)
 {
     throw std::runtime_error("Metal backend is not available on this platform");
 }
-
-void Image::resize(const Size2D&)
+void Image::buildSampledImage(metal::Device*, const Size2D&, PixelFormat, const std::string&, ImageUsage)
 {
     throw std::runtime_error("Metal backend is not available on this platform");
 }
-
-void Image::initFromDrawableTexture(metal::Device*, TextureHandle, PixelFormat, const Size2D&)
-{
-    throw std::runtime_error("Metal backend is not available on this platform");
-}
-
-void Image::buildSampledImage(metal::Device*, const Size2D&, PixelFormat, const std::string&)
-{
-    throw std::runtime_error("Metal backend is not available on this platform");
-}
-
 void Image::buildStorageImage(metal::Device*, const Size2D&, PixelFormat, const std::string&)
 {
     throw std::runtime_error("Metal backend is not available on this platform");
 }
-
 void Image::buildCubemapImage(metal::Device*, const Size2D&, PixelFormat, TextureUsageEnum, uint32_t, const std::string&)
 {
     throw std::runtime_error("Metal backend is not available on this platform");
 }
-
-bool Image::isValidCubemapFaceMip(uint32_t, uint32_t) const
+TextureHandle Image::subresourceView(const ImageSubresourceRange&)
 {
     throw std::runtime_error("Metal backend is not available on this platform");
 }
-
+void Image::resize(const Size2D&)
+{
+    throw std::runtime_error("Metal backend is not available on this platform");
+}
+void Image::initFromDrawableTexture(metal::Device*, TextureHandle, PixelFormat, const Size2D&)
+{
+    throw std::runtime_error("Metal backend is not available on this platform");
+}
+bool Image::isValidCubemapFaceMip(uint32_t, uint32_t) const
+{
+    return false;
+}
 Image::CubemapFaceMipTarget Image::cubemapFaceMipTarget(uint32_t, uint32_t) const
 {
     throw std::runtime_error("Metal backend is not available on this platform");
 }
-
 void Image::cleanup()
 {
+    resetLayoutTracking();
 }
-
 bool Image::isValid() const
 {
     return false;
 }
-
+void Image::upload(const ImageUploadDescription&, ImageLayout)
+{
+    throw std::runtime_error("Metal backend is not available on this platform");
+}
+void Image::readPixels(std::vector<uint8_t>&, const ImageSubresourceRange&, ImageLayout)
+{
+    throw std::runtime_error("Metal backend is not available on this platform");
+}
 void Image::readPixelsRGBA8(std::vector<uint8_t>&, ImageLayout)
 {
     throw std::runtime_error("Metal backend is not available on this platform");
 }
-
 void Image::uploadRGBA8(const void*, const Size2D&)
 {
     throw std::runtime_error("Metal backend is not available on this platform");
 }
-
 void Image::uploadImage(const base::Image*)
 {
     throw std::runtime_error("Metal backend is not available on this platform");
 }
-
 #endif
 
 }

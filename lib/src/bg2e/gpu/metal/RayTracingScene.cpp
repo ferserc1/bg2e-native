@@ -115,8 +115,15 @@ void RayTracingScene::build(MTL::CommandBuffer* cmd)
 
             MTL::AccelerationStructureInstanceDescriptor& dst = descriptors[i];
             dst.transformationMatrix = toPackedFloat4x3(src.transform);
-            dst.options = MTL::AccelerationStructureInstanceOptionOpaque |
-                          MTL::AccelerationStructureInstanceOptionDisableTriangleCulling;
+            dst.options = MTL::AccelerationStructureInstanceOptionDisableTriangleCulling;
+            if (src.opacity == RayTracingOpacity::ForceOpaque)
+            {
+                dst.options |= MTL::AccelerationStructureInstanceOptionOpaque;
+            }
+            else if (src.opacity == RayTracingOpacity::ForceNonOpaque)
+            {
+                dst.options |= MTL::AccelerationStructureInstanceOptionNonOpaque;
+            }
             dst.mask = src.mask;
             dst.intersectionFunctionTableOffset = 0;
             dst.accelerationStructureIndex = primitiveIndex[metalMesh->handle()];

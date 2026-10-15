@@ -1,8 +1,8 @@
 # M01-02 — GPU MRT, pipeline state, formats and capabilities
 
-[Milestone summary](summary.md) · [Plan index](../index.md) · [Architecture decisions](../architecture-decisions.md)
+[Milestone summary](summary.md) · [Plan index](../index.md) · [Architecture decisions](../architecture-decisions.md) · [Execution protocol](../execution-protocol.md) · [Progress](../progress.md)
 
-**Status:** planned. **Prerequisites:** M01-01.
+**Execution status:** see [progress](../progress.md). **Prerequisites:** M01-01.
 
 ## Scope and deliverable
 
@@ -29,10 +29,14 @@ Current sources to inspect: [lib/include/bg2e/gpu/Common.hpp](../../../../lib/in
 - A primitive MRT probe writes distinct channels and reuses depth on both backends, without scene/render dependencies.
 - Existing triangle/cubemap examples retain behavior; unsupported attachment configurations return a clear capability/validation result.
 
-These are future checks. Run compilation only on explicit user request; record missing runtime/backend evidence as pending, never as a pass.
+Delegate compilation and applicable runtime checks to the project lead; perform relevant nonexecuting static checks yourself. After delivering this step or its correction, update progress to `awaiting_project_lead` and stop. Their instruction to continue accepts the preceding delivery as compiled/checked without failures; record that basis without inventing test/backend details. Follow the [execution protocol](../execution-protocol.md).
 
 ## Downstream comparison
 
 M01-10/M01-11 use these primitives; M03/M04/M05 must reuse or deliberately extend them rather than add native Vulkan code elsewhere.
 
 Record actual API, ownership and verification in the milestone review. Follow [the review protocol](../review-protocol.md) and edit affected pending steps when actual contracts differ.
+
+## Implemented interface reference
+
+See [GPU rendering primitives](gpu-rendering-primitives.md) for actual descriptions, capability queries, validation limits and the manual MRT probe. Acceptance is recorded in progress.md.

@@ -33,12 +33,20 @@ namespace gpu {
 class CommandBuffer;
 class RayTracingMesh;
 
+enum class RayTracingOpacity
+{
+    Geometry,
+    ForceOpaque,
+    ForceNonOpaque
+};
+
 // A single instance of a RayTracingMesh inside a RayTracingScene.
 struct RayTracingInstance {
     gpu::RayTracingMesh* mesh = nullptr;
     glm::mat4 transform = glm::mat4(1.0f); // world transform
     uint32_t instanceId = 0;               // user instance id
     uint32_t mask = 0xFF;                  // visibility mask
+    RayTracingOpacity opacity = RayTracingOpacity::Geometry;
 };
 
 // Top-level ray tracing acceleration structure containing instances of
@@ -70,9 +78,9 @@ class BG2E_API RayTracingScene : public DeviceResource {
     }
 
     void addInstance(gpu::RayTracingMesh* mesh, const glm::mat4& transform,
-                     uint32_t instanceId, uint32_t mask = 0xFF)
+                     uint32_t instanceId, uint32_t mask = 0xFF, RayTracingOpacity opacity = RayTracingOpacity::Geometry)
     {
-        _instances.push_back({mesh, transform, instanceId, mask});
+        _instances.push_back({mesh, transform, instanceId, mask, opacity});
     }
 
     const std::vector<RayTracingInstance>& instances() const

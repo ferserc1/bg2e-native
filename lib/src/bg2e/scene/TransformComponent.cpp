@@ -244,8 +244,14 @@ glm::mat4 TransformComponent::invertedWorldMatrix()
     return glm::inverse(worldMatrix());
 }
 
-void TransformComponent::deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path& /* basePath */, [[maybe_unused]] render::Engine& engine)
+void TransformComponent::deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path& basePath, render::Engine&)
 {
+    deserialize(jsonData, basePath);
+}
+
+void TransformComponent::deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path& /* basePath */)
+{
+    deserializeCommon(jsonData);
     json::ObjectReader reader(jsonData);
     if (auto matrix = reader.getGlmMat4("transformMatrix"))
     {
@@ -262,6 +268,11 @@ std::shared_ptr<json::JsonNode> TransformComponent::serialize(const std::filesys
     obj["transformMatrix"] = JSON(_matrix);
 
     return compData;
+}
+
+std::shared_ptr<json::JsonNode> TransformComponent::serializeReferences(const std::filesystem::path& basePath)
+{
+    return TransformComponent::serialize(basePath);
 }
 
 BG2E_SCENE_REGISTER_COMPONENT(TransformComponent);

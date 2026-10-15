@@ -1,38 +1,22 @@
-# M10-04 — Application, CLI, build and final breaking-change docs
+# M10-04 — Audit applications, CLI and distribution guidance
 
-[Milestone summary](summary.md) · [Plan index](../index.md) · [Architecture decisions](../architecture-decisions.md)
+[Milestone summary](summary.md) · [Plan index](../index.md) · [Documentation policy](../documentation-policy.md) · [Execution protocol](../execution-protocol.md) · [Progress](../progress.md)
 
-**Status:** planned. **Prerequisites:** M10-01–M10-03 and final targets from M09.
+**Execution status:** see progress. **Prerequisites:** M10-01–M10-03 and accepted M09-08.
 
 ## Scope and deliverable
 
-- `doc/apps/`
-- `doc/api/app/`
-- `doc/workspace_api.md`
-- `doc/safe_update_scene.md`
-- `doc/window_api.md`
-- `doc/input_delegate.md`
+Audit existing maintained `doc/` pages and M01–M09 documentation handoffs against final source, products and distributed coverage. Record findings and localized corrections for the final M10 review. This step does not postpone earlier documentation authoring to M10.
 
-Paths above include current references and proposed outputs. New paths are targets, not files claimed to exist. Public names follow the architecture contract and may be refined with the remaining plan updated.
+## Audit work
 
-Current sources to inspect: [doc/apps/](../../../../doc/apps), [doc/api/app/](../../../../doc/api/app), [doc/workspace_api.md](../../../../doc/workspace_api.md), [doc/safe_update_scene.md](../../../../doc/safe_update_scene.md), [doc/window_api.md](../../../../doc/window_api.md), [doc/input_delegate.md](../../../../doc/input_delegate.md).
+1. Audit existing apps/draw guides against final model editor/composer/lightmap generator executables and current UI/import/material/viewpoint/bake/async/safe-edit workflows.
+2. Check offscreen/batch CLI settings/precedence, output paths/counts/formats/preflight/errors/overwrite behavior against implemented parsers and products.
+3. Check build generators, SDK/resources/native Vulkan/Metal deployment, package/standalone/library-update guidance against current scripts and installed layout.
+4. Check actual breaking changes/draw promotion and removed old APIs. Make localized corrections without promising compatibility shims or unsupported features; missing substantial application/distribution guidance must be repaired under its distributed owner.
 
-## Implementation work
+## Verification and exit
 
-1. Update all supported application guides to final apps/draw targets/source locations and actual UI/material/import/viewpoint/bake workflows.
-2. Document offscreen and lightmap-generator CLI configuration, output paths/counts/formats/preflight/errors, settings import and overwrite policy.
-3. Update build/platform generator/resource/SDK/package/standalone guidance to final distribution, keeping required GPU Vulkan/Metal deployment distinct from deleted render wrappers.
-4. State the deliberate removal of previous application APIs and draw promotion. Do not promise compatibility shims, old MSAA/forward behavior or future ResourceManager/Metal/DLSS features.
+Existing application and deployment instructions point to correct supported targets, resources and actual behavior.
 
-## Verification and exit conditions
-
-- A user can identify the correct final executable and necessary deployment/resources for each app/CLI from documentation.
-- Settings/file/output examples and safe editing/async lifecycle descriptions match observed product behavior and source.
-
-These are future checks. Run compilation only on explicit user request; record missing runtime/backend evidence as pending, never as a pass.
-
-## Downstream comparison
-
-M10-05 audits all remaining pages, including broader conceptual documents whose rendering references are easy to miss.
-
-Record actual API, ownership and verification in the milestone review. Follow [the review protocol](../review-protocol.md) and edit affected pending steps when actual contracts differ.
+Perform relevant static checks. Compilation/runtime validation belongs to the project lead unless explicitly requested. Deliver one step, update progress and wait for lead acceptance under the execution protocol. No new engine feature, build-system change or future API documentation is authorized by this audit.

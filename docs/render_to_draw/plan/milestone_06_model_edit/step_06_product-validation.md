@@ -1,15 +1,15 @@
 # M06-06 — Model editor parity and application packaging checks
 
-[Milestone summary](summary.md) · [Plan index](../index.md) · [Architecture decisions](../architecture-decisions.md)
+[Milestone summary](summary.md) · [Plan index](../index.md) · [Architecture decisions](../architecture-decisions.md) · [Execution protocol](../execution-protocol.md) · [Progress](../progress.md)
 
-**Status:** planned. **Prerequisites:** M06-01–M06-05.
+**Execution status:** see [progress](../progress.md). **Prerequisites:** M06-01–M06-05.
 
 ## Scope and deliverable
 
 - `apps/draw/model_edit/`
 - `apps/model_edit/`
 - `scripts/PACKAGING.md`
-- `examples/draw/manipulation/src/main.cpp`
+- `examples/draw/11_manipulation/src/main.cpp`
 
 Paths above include current references and proposed outputs. New paths are targets, not files claimed to exist. Public names follow the architecture contract and may be refined with the remaining plan updated.
 
@@ -27,7 +27,7 @@ Current sources to inspect: [apps/model_edit/](../../../../apps/model_edit), [sc
 - The application is runnable from its bundled/installed layout and required editor workflows have evidence.
 - Production editor and new engine examples retain behavior; unavailable backend verification is documented as a gap.
 
-These are future checks. Run compilation only on explicit user request; record missing runtime/backend evidence as pending, never as a pass.
+Delegate compilation and applicable runtime checks to the project lead; perform relevant nonexecuting static checks yourself. After delivering this step or its correction, update progress to `awaiting_project_lead` and stop. Their instruction to continue accepts the preceding delivery as compiled/checked without failures; record that basis without inventing test/backend details. Follow the [execution protocol](../execution-protocol.md).
 
 ## Downstream comparison
 

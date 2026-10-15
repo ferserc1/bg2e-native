@@ -1,8 +1,8 @@
 # M05-02 — Windowless draw Engine and frame execution
 
-[Milestone summary](summary.md) · [Plan index](../index.md) · [Architecture decisions](../architecture-decisions.md)
+[Milestone summary](summary.md) · [Plan index](../index.md) · [Architecture decisions](../architecture-decisions.md) · [Execution protocol](../execution-protocol.md) · [Progress](../progress.md)
 
-**Status:** planned. **Prerequisites:** M05-01 and existing GPU OffscreenSurface.
+**Execution status:** see [progress](../progress.md). **Prerequisites:** M05-01 and existing GPU OffscreenSurface.
 
 ## Scope and deliverable
 
@@ -17,7 +17,7 @@ Current sources to inspect: [lib/include/bg2e/draw/Engine.hpp](../../../../lib/i
 
 ## Implementation work
 
-1. Add windowless initialization over GPU OffscreenSurface and generic surface/device context. Preserve explicit windowSurface access for windowed UI/resize callers rather than assume all surfaces are WindowSurface.
+1. Add windowless initialization over GPU OffscreenSurface and generic surface/device context: the reviewed draw::Engine currently only exposes init(SDL_Window*, Backend&, EngineConfig) and WindowSurface* surface(). Retain explicit window-surface access for current callers, add generic/headless ownership, and adapt slot-count derivation without inventing a hidden SDL window.
 2. Share resource/renderer services with windowed draw; define backend/Instance ownership and do not silently initialize a shared active Instance twice.
 3. Implement a non-template offscreen renderer delegate using the same polymorphic Renderer and actual render-frame chronology, slot synchronization and explicit completion.
 4. Disable editor overlays and force requested scene renders even though no presentation/dirty-scene UI is driving them. Define frozen-animation versus fixed-step time policy.
@@ -27,10 +27,14 @@ Current sources to inspect: [lib/include/bg2e/draw/Engine.hpp](../../../../lib/i
 - Headless deferred rendering initializes with no SDL window/UI, and windowed examples remain operational after surface accessor changes.
 - Frames submit/complete safely with correct slots and cleanup on creation/render errors; no-RT devices use ordinary rendering.
 
-These are future checks. Run compilation only on explicit user request; record missing runtime/backend evidence as pending, never as a pass.
+Delegate compilation and applicable runtime checks to the project lead; perform relevant nonexecuting static checks yourself. After delivering this step or its correction, update progress to `awaiting_project_lead` and stop. Their instruction to continue accepts the preceding delivery as compiled/checked without failures; record that basis without inventing test/backend details. Follow the [execution protocol](../execution-protocol.md).
 
 ## Downstream comparison
 
 M05-03 defines accumulated-frame semantics; M08 uses the headless context but not a camera renderer to obtain bake resources.
 
 Record actual API, ownership and verification in the milestone review. Follow [the review protocol](../review-protocol.md) and edit affected pending steps when actual contracts differ.
+
+## M01-05 lifecycle handoff
+
+Reuse M01-05's non-template renderer ownership and synchronized initialize/attach/resize/update/record/cleanup contract. Headless scene submissions use sceneFrameNumber/sceneDeltaSeconds; do not infer scene history from presentation count or introduce a second incompatible FrameContext. Follow [runtime-renderer.md](../milestone_01_deferred_renderer/runtime-renderer.md) for queued replacement and stale settings-target invalidation.

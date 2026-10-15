@@ -209,6 +209,11 @@ class BG2E_API MainLoop {
 
     // A non-null token is observed weakly; the caller must retain it until the
     // queued function should run. Releasing the last reference cancels the work.
+    // For draw renderer settings, also capture a weak DefaultRenderLoopDelegate
+    // and its rendererGeneration, then use withRenderer inside the operation.
+    // safeUpdateScene drains GPU users but cannot make an old raw target valid.
+    // setRenderer itself queues replacement for the next draw prepareFrame;
+    // it is not committed synchronously by this queue.
     void safeUpdateScene(std::function<void()> fn, std::shared_ptr<SafeUpdateToken> token = nullptr)
     {
         {

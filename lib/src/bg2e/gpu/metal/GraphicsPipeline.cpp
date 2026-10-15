@@ -23,6 +23,7 @@
 #include <bg2e/base/Log.hpp>
 
 #include <stdexcept>
+#include <bg2e/gpu/Device.hpp>
 
 namespace bg2e {
 namespace gpu {
@@ -46,9 +47,54 @@ MTL::PrimitiveType primitiveTopologyToMetal(gpu::PrimitiveTopology topology)
     return MTL::PrimitiveTypeTriangle;
 }
 
+MTL::CompareFunction compareOperation(CompareOperation value)
+{
+    const MTL::CompareFunction values[] = {MTL::CompareFunctionNever, MTL::CompareFunctionLess, MTL::CompareFunctionEqual, MTL::CompareFunctionLessEqual, MTL::CompareFunctionGreater, MTL::CompareFunctionNotEqual, MTL::CompareFunctionGreaterEqual, MTL::CompareFunctionAlways};
+    return values[static_cast<size_t>(value)];
+}
+MTL::BlendFactor blendFactor(BlendFactor value)
+{
+    const MTL::BlendFactor values[] = {MTL::BlendFactorZero, MTL::BlendFactorOne, MTL::BlendFactorSourceColor, MTL::BlendFactorOneMinusSourceColor, MTL::BlendFactorDestinationColor, MTL::BlendFactorOneMinusDestinationColor, MTL::BlendFactorSourceAlpha, MTL::BlendFactorOneMinusSourceAlpha, MTL::BlendFactorDestinationAlpha, MTL::BlendFactorOneMinusDestinationAlpha};
+    return values[static_cast<size_t>(value)];
+}
+MTL::BlendOperation blendOperation(BlendOperation value)
+{
+    const MTL::BlendOperation values[] = {MTL::BlendOperationAdd, MTL::BlendOperationSubtract, MTL::BlendOperationReverseSubtract, MTL::BlendOperationMin, MTL::BlendOperationMax};
+    return values[static_cast<size_t>(value)];
+}
+MTL::ColorWriteMask colorWriteMask(ColorWriteMask value)
+{
+    uint32_t result = 0;
+    const auto mask = static_cast<uint32_t>(value);
+    if (mask & 1u)
+    {
+        result |= MTL::ColorWriteMaskRed;
+    }
+    if (mask & 2u)
+    {
+        result |= MTL::ColorWriteMaskGreen;
+    }
+    if (mask & 4u)
+    {
+        result |= MTL::ColorWriteMaskBlue;
+    }
+    if (mask & 8u)
+    {
+        result |= MTL::ColorWriteMaskAlpha;
+    }
+    return static_cast<MTL::ColorWriteMask>(result);
+}
+
 GraphicsPipeline::GraphicsPipeline(gpu::Device* gpuDevice, MTL::Device* device, const gpu::GraphicsPipelineDescription& description)
     : gpu::GraphicsPipeline(gpuDevice), _topology(description.topology), _layout(dynamic_cast<metal::PipelineLayout*>(description.layout)), _cullMode(description.cullMode), _frontFace(description.frontFace)
 {
+    if (!gpuDevice)
+    {
+        throw std::invalid_argument("Graphics pipeline requires a device");
+    }
+    validateDescription(description, *gpuDevice);
+    setAttachmentDescription(description);
+
     auto* metalVsModule = dynamic_cast<metal::ShaderModule*>(description.vertexShader);
     auto* metalFsModule = dynamic_cast<metal::ShaderModule*>(description.fragmentShader);
 
@@ -64,11 +110,28 @@ GraphicsPipeline::GraphicsPipeline(gpu::Device* gpuDevice, MTL::Device* device, 
     descriptor->setFragmentFunction(metalFsModule->function());
     descriptor->setLabel(NS::String::string(description.debugName.c_str(), NS::UTF8StringEncoding));
 
-    descriptor->colorAttachments()->object(0)->setPixelFormat(toMetalPixelFormat(description.colorFormat));
+    for (size_t i = 0; i < _colorAttachments.size(); ++i)
+    {
+        const auto& attachment = _colorAttachments[i];
+        auto* target = descriptor->colorAttachments()->object(i);
+        target->setPixelFormat(toMetalPixelFormat(attachment.format));
+        target->setBlendingEnabled(attachment.blend.enabled);
+        target->setSourceRGBBlendFactor(blendFactor(attachment.blend.sourceColor));
+        target->setDestinationRGBBlendFactor(blendFactor(attachment.blend.destinationColor));
+        target->setRgbBlendOperation(blendOperation(attachment.blend.colorOperation));
+        target->setSourceAlphaBlendFactor(blendFactor(attachment.blend.sourceAlpha));
+        target->setDestinationAlphaBlendFactor(blendFactor(attachment.blend.destinationAlpha));
+        target->setAlphaBlendOperation(blendOperation(attachment.blend.alphaOperation));
+        target->setWriteMask(colorWriteMask(attachment.blend.writeMask));
+    }
 
     if (description.depthFormat != PixelFormat::Undefined)
     {
         descriptor->setDepthAttachmentPixelFormat(toMetalPixelFormat(description.depthFormat));
+        if (hasStencil(description.depthFormat))
+        {
+            descriptor->setStencilAttachmentPixelFormat(toMetalPixelFormat(description.depthFormat));
+        }
     }
 
     if (!description.vertexBufferDescriptions.empty())
@@ -99,10 +162,16 @@ GraphicsPipeline::GraphicsPipeline(gpu::Device* gpuDevice, MTL::Device* device, 
     if (description.depthFormat != PixelFormat::Undefined)
     {
         auto* depthDesc = MTL::DepthStencilDescriptor::alloc()->init();
-        depthDesc->setDepthCompareFunction(MTL::CompareFunctionLess);
-        depthDesc->setDepthWriteEnabled(true);
+        const auto state = description.depthState.value_or(DepthState{true, true, CompareOperation::Less});
+        depthDesc->setDepthCompareFunction(state.testEnabled ? compareOperation(state.compare) : MTL::CompareFunctionAlways);
+        depthDesc->setDepthWriteEnabled(state.writeEnabled);
         _depthStencilState = device->newDepthStencilState(depthDesc);
         depthDesc->release();
+        if (!_depthStencilState)
+        {
+            cleanup();
+            throw std::runtime_error("Metal depth state creation failed");
+        }
     }
 }
 

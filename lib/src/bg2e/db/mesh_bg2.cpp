@@ -17,6 +17,7 @@
  */
 
 #include <bg2e/db/mesh_bg2.hpp>
+#include <utility>
 #include <bg2e/geo/sphere.hpp>
 #include <bg2e/geo/modifiers.hpp>
 #include <bg2e/utils/MaterialSerializer.hpp>
@@ -601,6 +602,35 @@ void storeMeshBg2(const std::filesystem::path& filePath, const std::string& file
     storeMeshBg2(fullPath, mesh);
 }
 
+std::shared_ptr<draw::Drawable> loadDrawableBg2(const std::filesystem::path& filePath,
+    draw::Engine& engine, std::function<void()> onTextureLoaded)
+{
+    std::unique_ptr<Bg2Mesh> model(loadMeshBg2(filePath));
+    if (!model || !model->mesh || model->materials.size() != model->mesh->submeshes.size())
+    {
+        throw std::runtime_error("Invalid BG2 mesh/material representation: " + filePath.string());
+    }
+    auto result = std::make_shared<draw::Drawable>();
+    result->setName(filePath.stem().string());
+    result->setMesh(model->mesh);
+    for (uint32_t i = 0; i < model->materials.size(); ++i)
+    {
+        const auto& material = model->materials[i];
+        result->setMaterial(material, i);
+        result->setSubmeshName(material.name(), i);
+        result->setSubmeshGroupName(material.groupName(), i);
+        result->setSubmeshVisibility(material.visible(), i);
+    }
+    result->load(&engine, std::move(onTextureLoaded));
+    return result;
+}
+
+std::shared_ptr<draw::Drawable> loadDrawableBg2(const std::filesystem::path& basePath,
+    const std::string& fileName, draw::Engine& engine)
+{
+    return loadDrawableBg2(basePath / fileName, engine);
+}
+
 std::shared_ptr<bg2e::scene::Drawable> loadDrawableBg2(
     const std::filesystem::path& filePath,
     bg2e::render::Engine* engine)
@@ -675,6 +705,10 @@ static uint32_t countMaterialTextures(const base::MaterialAttributes& mat)
         ++count;
     }
     if (mat.aoTexture() && !mat.aoTexture()->imageFilePath().empty())
+    {
+        ++count;
+    }
+    if (mat.lightEmissionTexture() && !mat.lightEmissionTexture()->imageFilePath().empty())
     {
         ++count;
     }

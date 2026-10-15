@@ -1,41 +1,35 @@
-# M10 — Final documentation for the production engine
+# M10 — Final audit of cumulative documentation
 
-[Plan index](../index.md) · [Architecture decisions](../architecture-decisions.md) · [Review protocol](../review-protocol.md)
+[Plan index](../index.md) · [Documentation policy](../documentation-policy.md) · [Review protocol](../review-protocol.md) · [Execution protocol](../execution-protocol.md) · [Progress](../progress.md)
 
-**Status:** planned, not implemented. **Entry prerequisites:** Accepted M09 final API/product/source-to-document mapping; read actual final code, not only initial plan names.
+**Execution status:** see progress. **Entry prerequisites:** Accepted M09-08 documentation closure, final source/product baseline and all M01–M09 documentation handoffs.
 
 ## Working product
 
-The maintained documentation under `doc/` accurately describes draw as production, gpu native primitives/capabilities, public draw::pipeline/environment extension points, bake/utils/manipulation, two-level DB IO, reflected settings and all supported examples/applications. Old rendering usage/experimental-opt-in guidance is removed.
+A final reviewed, coherent maintained documentation set under `doc/`, already authored incrementally by M01–M09. It covers the same final API/reference, tutorials, applications/CLI/build/distribution and validation scope originally assigned to M10. This milestone verifies the accumulated result and makes localized corrections rather than writing that set from scratch.
 
 ## Scope exclusions
 
-- No new engine features, replacement renderer, ResourceManager, Metal native upscaler or external DLSS implementation.
-- No old-application API compatibility documentation or working render namespace snippets.
-- Historical analysis/planning under docs/ remains labeled history; it does not override current maintained API docs.
+No new engine features, future API guides, missing-feature implementation or deferred bulk documentation authoring. Preserve historical planning evidence separately. No unsupported ResourceManager, native Metal upscaler, DLSS, forward/MSAA or old application compatibility promises.
 
-## Ordered steps
+## Ordered audit steps
 
 | Step | Deliverable |
 |---|---|
-| [M10-01](step_01_documentation-inventory.md) | Inventory every doc page against final source |
-| [M10-02](step_02_api-reference.md) | Final API, boundaries, capabilities and extension reference |
-| [M10-03](step_03_tutorials.md) | Runnable tutorials for delivered examples and customization |
-| [M10-04](step_04_apps-build-distribution.md) | Application, CLI, build and final breaking-change docs |
-| [M10-05](step_05_documentation-validation.md) | Links, snippets and complete maintained-doc consistency |
-| [M10-06](step_06_final-review.md) | Final code/documentation review and close the implementation plan |
+| [M10-01](step_01_documentation-inventory.md) | Audit cumulative inventory and source/page dispositions |
+| [M10-02](step_02_api-reference.md) | Audit final API, capabilities, ownership and extensions |
+| [M10-03](step_03_tutorials.md) | Audit delivered-example tutorials and customization |
+| [M10-04](step_04_apps-build-distribution.md) | Audit existing app/CLI/build/distribution guidance |
+| [M10-05](step_05_documentation-validation.md) | Validate maintained navigation, snippets and consistency |
+| [M10-06](step_06_final-review.md) | Final cumulative documentation review and plan closure |
 
-## Milestone exit gate
+Step IDs and filenames remain stable; their work is now audit/reconciliation of existing content. Substantive missing coverage is an unmet M01–M09 documentation requirement to correct before completion, not a new authoring phase here.
 
-- Every maintained page under doc/ is reviewed for namespace/type/path/status/lifecycle/binding/schema accuracy.
-- Public advanced components and compatible injection/subclass examples are documented, not presented as inaccessible internals.
-- Settings export/import, runtime renderer/upscaler rebinding, deep GPU clone, safe rare edits and graphics-free versus complete IO are explicit.
-- Tutorials/apps/build/package/offscreen/bake instructions point to final supported targets and resources.
-- Broken links/stale code snippets/obsolete render or MSAA/forward promises are removed from maintained usage documentation.
-- M10 final review compares actual code and all delivered products with the completed plan and lists only explicit out-of-scope follow-up work.
+## Exit gate
 
-Check Vulkan and Metal where the capability exists, plus a no-RT configuration and SDK-unavailable fallback. Product gates require actual evidence; static review or an unexecuted checklist cannot certify a working product. Build authorization follows the repository policy. Preserve production regression references through M08.
-
-## Required code-versus-plan review
-
-The last step is part of this milestone. Create `review.md` only after execution with actual revisions/contracts/results. Compare the code against every pending milestone and update affected summaries and step files, including dependencies, paths and validation. The final step lists milestone-specific comparisons. Do not rewrite completed history to conceal a design change.
+- Every maintained page, including retained foundations, is reconciled with final code and products.
+- All former M10 coverage is accounted for by the [distributed ownership map](../documentation-policy.md); advanced public components remain discoverable and usable.
+- API/lifecycle/clone/settings/binding/capability/IO/bake/app/CLI/build guidance is accurate; links, snippets and diagrams are consistent.
+- No unimplemented functionality or obsolete production/experimental status is taught as current usage.
+- Actual checks and lead evidence remain separate; no agent build/runtime claim without execution authorization.
+- review.md records final findings/corrections, scope limits and final acceptance condition. No pending implementation milestones remain.

@@ -1,8 +1,8 @@
 # M04-01 — Bake namespace and public configuration/pixel contracts
 
-[Milestone summary](summary.md) · [Plan index](../index.md) · [Architecture decisions](../architecture-decisions.md)
+[Milestone summary](summary.md) · [Plan index](../index.md) · [Architecture decisions](../architecture-decisions.md) · [Execution protocol](../execution-protocol.md) · [Progress](../progress.md)
 
-**Status:** planned. **Prerequisites:** Accepted M03 review.
+**Execution status:** see [progress](../progress.md). **Prerequisites:** Accepted M03 review.
 
 ## Scope and deliverable
 
@@ -29,10 +29,14 @@ Current sources to inspect: [lib/include/bg2e/render/LightmapSettings.hpp](../..
 - Public declarations can express AO/GI and future map generation inputs without native Vulkan descriptors or a mandatory RendererDeferred.
 - No implementation depends on future standalone APIs merely to run an integrated bake.
 
-These are future checks. Run compilation only on explicit user request; record missing runtime/backend evidence as pending, never as a pass.
+Delegate compilation and applicable runtime checks to the project lead; perform relevant nonexecuting static checks yourself. After delivering this step or its correction, update progress to `awaiting_project_lead` and stop. Their instruction to continue accepts the preceding delivery as compiled/checked without failures; record that basis without inventing test/backend details. Follow the [execution protocol](../execution-protocol.md).
 
 ## Downstream comparison
 
 M04-03/M04-04 implement these values/lifetimes. M08 completes StandaloneBakerContext/SceneAssembler/Batch in bake, not DB or draw.
 
 Record actual API, ownership and verification in the milestone review. Follow [the review protocol](../review-protocol.md) and edit affected pending steps when actual contracts differ.
+
+## M01-08 reusable environment tools
+
+Standalone/IBL bake inputs reuse public draw::environment generation services and shared EnvironmentResources described in [environment-tools.md](../milestone_01_deferred_renderer/environment-tools.md). Generation is synchronous at a stopped-producer boundary and independent of RT support; preserve linear radiance, PI-inclusive irradiance, authored roughness mips and BRDF A/B conventions. External retained images keep shared owners, and Engine/device outlive every bake user.

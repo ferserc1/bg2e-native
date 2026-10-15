@@ -67,7 +67,7 @@ MTL::PrimitiveAccelerationStructureDescriptor* RayTracingMesh::buildDescriptor()
     triangles->setIndexBufferOffset(_description.firstIndex * sizeof(uint32_t));
     triangles->setIndexType(MTL::IndexTypeUInt32);
     triangles->setTriangleCount(_description.indexCount / 3);
-    triangles->setOpaque(true);
+    triangles->setOpaque(_description.opaque);
 
     const NS::Object* geometries[] = {triangles};
     NS::Array* geometryArray = NS::Array::array(geometries, 1);

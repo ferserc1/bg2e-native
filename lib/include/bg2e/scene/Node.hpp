@@ -192,6 +192,14 @@ class BG2E_API Node : public std::enable_shared_from_this<Node> {
         return sceneRoot()->_scene;
     }
 
+    void deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path& basePath,
+        SceneLoadProgress* progress = nullptr);
+    void deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path& basePath,
+        draw::Engine& engine, SceneLoadProgress* progress = nullptr);
+    void loadResources(draw::Engine& engine, SceneLoadProgress* progress = nullptr);
+    std::shared_ptr<json::JsonNode> serializeReferences(const std::filesystem::path& basePath,
+        SceneSaveProgress* progress = nullptr);
+
     void deserialize(std::shared_ptr<json::JsonNode>, const std::filesystem::path&,
                      render::Engine& engine, SceneLoadProgress* progress = nullptr);
     std::shared_ptr<json::JsonNode> serialize(const std::filesystem::path&,

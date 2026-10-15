@@ -161,6 +161,25 @@ ResourceSet::~ResourceSet()
 
 void ResourceSet::setStorageImage(ShaderBinding binding, gpu::Image* image)
 {
+    if (!image)
+    {
+        throw std::invalid_argument("Image binding requires an image");
+    }
+    setStorageImage(binding, image->view({0, 1, 0, image->arrayLayers()}));
+}
+
+void ResourceSet::setStorageImage(ShaderBinding binding, const ImageView& view)
+{
+    auto* image = view.image;
+    if (!image || image->device() != device() || !hasFlag(image->usage(), ImageUsage::Storage))
+    {
+        throw std::invalid_argument("Image view device/usage is incompatible with this resource set");
+    }
+    image->view(view.range);
+    if (view.range.mipCount != 1 || isDepthFormat(image->pixelFormat()))
+    {
+        throw std::invalid_argument("A storage image view selects exactly one color mip");
+    }
     auto* vkImage = dynamic_cast<vk::Image*>(image);
     if (!vkImage)
     {
@@ -170,7 +189,7 @@ void ResourceSet::setStorageImage(ShaderBinding binding, gpu::Image* image)
     const size_t infoIndex = _imageInfos.size();
 
     VkDescriptorImageInfo imageInfo{};
-    imageInfo.imageView = vkImage->imageView();
+    imageInfo.imageView = vkImage->subresourceView(view.range);
     imageInfo.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
 
     _imageInfos.push_back(imageInfo);
@@ -192,6 +211,21 @@ void ResourceSet::setStorageImage(ShaderBinding binding, gpu::Image* image)
 
 void ResourceSet::setSampledImage(ShaderBinding binding, gpu::Image* image)
 {
+    if (!image)
+    {
+        throw std::invalid_argument("Image binding requires an image");
+    }
+    setSampledImage(binding, image->fullView());
+}
+
+void ResourceSet::setSampledImage(ShaderBinding binding, const ImageView& view)
+{
+    auto* image = view.image;
+    if (!image || image->device() != device() || !hasFlag(image->usage(), ImageUsage::Sampled))
+    {
+        throw std::invalid_argument("Image view device/usage is incompatible with this resource set");
+    }
+    image->view(view.range);
     auto* vkImage = dynamic_cast<vk::Image*>(image);
     if (!vkImage)
     {
@@ -201,7 +235,7 @@ void ResourceSet::setSampledImage(ShaderBinding binding, gpu::Image* image)
     const size_t infoIndex = _imageInfos.size();
 
     VkDescriptorImageInfo imageInfo{};
-    imageInfo.imageView = vkImage->imageView();
+    imageInfo.imageView = vkImage->subresourceView(view.range);
     imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
     _imageInfos.push_back(imageInfo);

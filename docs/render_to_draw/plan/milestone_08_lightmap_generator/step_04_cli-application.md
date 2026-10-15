@@ -1,8 +1,8 @@
 # M08-04 — Build apps/draw/lightmap_generator and configuration flow
 
-[Milestone summary](summary.md) · [Plan index](../index.md) · [Architecture decisions](../architecture-decisions.md)
+[Milestone summary](summary.md) · [Plan index](../index.md) · [Architecture decisions](../architecture-decisions.md) · [Execution protocol](../execution-protocol.md) · [Progress](../progress.md)
 
-**Status:** planned. **Prerequisites:** M08-01–M08-03.
+**Execution status:** see [progress](../progress.md). **Prerequisites:** M08-01–M08-03.
 
 ## Scope and deliverable
 
@@ -28,7 +28,7 @@ Current sources to inspect: [apps/lightmap_generator/src/CommandLine.hpp](../../
 - Representative model/prefab/context batches run headlessly and produce expected maps/model copies at requested sample settings.
 - Invalid args/config, unavailable RT, output errors and canceled/failed jobs have clear non-success status and clean shutdown.
 
-These are future checks. Run compilation only on explicit user request; record missing runtime/backend evidence as pending, never as a pass.
+Delegate compilation and applicable runtime checks to the project lead; perform relevant nonexecuting static checks yourself. After delivering this step or its correction, update progress to `awaiting_project_lead` and stop. Their instruction to continue accepts the preceding delivery as compiled/checked without failures; record that basis without inventing test/backend details. Follow the [execution protocol](../execution-protocol.md).
 
 ## Downstream comparison
 

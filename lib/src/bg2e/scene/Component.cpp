@@ -20,6 +20,7 @@
 #include <bg2e/json/NodeReader.hpp>
 #include <bg2e/scene/Node.hpp>
 #include <bg2e/scene/Scene.hpp>
+#include <stdexcept>
 
 namespace bg2e::scene {
 
@@ -50,11 +51,30 @@ void Component::deserialize(
     [[maybe_unused]] const std::filesystem::path& basePath,
     [[maybe_unused]] render::Engine& engine)
 {
+    deserializeCommon(jsonData);
+}
+
+void Component::deserializeCommon(std::shared_ptr<json::JsonNode> jsonData)
+{
     json::ObjectReader reader(jsonData);
     if (auto priority = reader.getInteger<uint32_t>("priority"))
     {
-        _priority = *priority;
+        setPriority(*priority);
     }
+}
+
+void Component::deserialize(std::shared_ptr<json::JsonNode>, const std::filesystem::path&)
+{
+    throw std::logic_error(typeName() + " does not implement graphics-free deserialization");
+}
+
+std::shared_ptr<json::JsonNode> Component::serializeReferences(const std::filesystem::path&)
+{
+    throw std::logic_error(typeName() + " does not implement reference-only serialization");
+}
+
+void Component::loadResources(draw::Engine&, SceneLoadProgress*)
+{
 }
 
 void Component::deserializeWithProgress(

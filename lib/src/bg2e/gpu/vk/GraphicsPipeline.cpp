@@ -24,6 +24,7 @@
 #include <bg2e/base/Log.hpp>
 
 #include <stdexcept>
+#include <bg2e/gpu/Device.hpp>
 #include <array>
 
 namespace bg2e {
@@ -72,9 +73,32 @@ VkFrontFace frontFaceToVk(gpu::FrontFace frontFace)
     return VK_FRONT_FACE_COUNTER_CLOCKWISE;
 }
 
+VkCompareOp compareOperation(CompareOperation value)
+{
+    const VkCompareOp values[] = {VK_COMPARE_OP_NEVER, VK_COMPARE_OP_LESS, VK_COMPARE_OP_EQUAL, VK_COMPARE_OP_LESS_OR_EQUAL, VK_COMPARE_OP_GREATER, VK_COMPARE_OP_NOT_EQUAL, VK_COMPARE_OP_GREATER_OR_EQUAL, VK_COMPARE_OP_ALWAYS};
+    return values[static_cast<size_t>(value)];
+}
+VkBlendFactor blendFactor(BlendFactor value)
+{
+    const VkBlendFactor values[] = {VK_BLEND_FACTOR_ZERO, VK_BLEND_FACTOR_ONE, VK_BLEND_FACTOR_SRC_COLOR, VK_BLEND_FACTOR_ONE_MINUS_SRC_COLOR, VK_BLEND_FACTOR_DST_COLOR, VK_BLEND_FACTOR_ONE_MINUS_DST_COLOR, VK_BLEND_FACTOR_SRC_ALPHA, VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA, VK_BLEND_FACTOR_DST_ALPHA, VK_BLEND_FACTOR_ONE_MINUS_DST_ALPHA};
+    return values[static_cast<size_t>(value)];
+}
+VkBlendOp blendOperation(BlendOperation value)
+{
+    const VkBlendOp values[] = {VK_BLEND_OP_ADD, VK_BLEND_OP_SUBTRACT, VK_BLEND_OP_REVERSE_SUBTRACT, VK_BLEND_OP_MIN, VK_BLEND_OP_MAX};
+    return values[static_cast<size_t>(value)];
+}
+
 GraphicsPipeline::GraphicsPipeline(gpu::Device* gpuDevice, VkDevice device, const gpu::GraphicsPipelineDescription& description)
     : gpu::GraphicsPipeline(gpuDevice), _device(device)
 {
+    if (!gpuDevice)
+    {
+        throw std::invalid_argument("Graphics pipeline requires a device");
+    }
+    validateDescription(description, *gpuDevice);
+    setAttachmentDescription(description);
+
     auto* vkVsModule = dynamic_cast<vk::ShaderModule*>(description.vertexShader);
     auto* vkFsModule = dynamic_cast<vk::ShaderModule*>(description.fragmentShader);
     auto* vkLayout = dynamic_cast<vk::PipelineLayout*>(description.layout);
@@ -156,37 +180,44 @@ GraphicsPipeline::GraphicsPipeline(gpu::Device* gpuDevice, VkDevice device, cons
     multisample.sampleShadingEnable = VK_FALSE;
     multisample.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
 
-    // Color blend: 1 attachment, blend disabled, RGBA write mask
-    VkPipelineColorBlendAttachmentState colorAttachment{};
-    colorAttachment.blendEnable = VK_FALSE;
-    colorAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
-
+    std::vector<VkPipelineColorBlendAttachmentState> blends;
+    std::vector<VkFormat> colorFormats;
+    for (const auto& attachment : _colorAttachments)
+    {
+        const auto& state = attachment.blend;
+        VkPipelineColorBlendAttachmentState blend{};
+        blend.blendEnable = state.enabled;
+        blend.srcColorBlendFactor = blendFactor(state.sourceColor);
+        blend.dstColorBlendFactor = blendFactor(state.destinationColor);
+        blend.colorBlendOp = blendOperation(state.colorOperation);
+        blend.srcAlphaBlendFactor = blendFactor(state.sourceAlpha);
+        blend.dstAlphaBlendFactor = blendFactor(state.destinationAlpha);
+        blend.alphaBlendOp = blendOperation(state.alphaOperation);
+        blend.colorWriteMask = static_cast<VkColorComponentFlags>(state.writeMask);
+        blends.push_back(blend);
+        colorFormats.push_back(toVkFormat(attachment.format));
+    }
     VkPipelineColorBlendStateCreateInfo colorBlend{};
     colorBlend.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
-    colorBlend.attachmentCount = 1;
-    colorBlend.pAttachments = &colorAttachment;
+    colorBlend.attachmentCount = static_cast<uint32_t>(blends.size());
+    colorBlend.pAttachments = blends.data();
 
-    // Depth-stencil: enabled only if depthFormat != Undefined
     VkPipelineDepthStencilStateCreateInfo depthStencil{};
     depthStencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
     if (description.depthFormat != PixelFormat::Undefined)
     {
-        depthStencil.depthTestEnable = VK_TRUE;
-        depthStencil.depthWriteEnable = VK_TRUE;
-        depthStencil.depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL;
+        const auto state = description.depthState.value_or(DepthState{});
+        depthStencil.depthTestEnable = state.testEnabled || state.writeEnabled;
+        depthStencil.depthWriteEnable = state.writeEnabled;
+        depthStencil.depthCompareOp = state.testEnabled ? compareOperation(state.compare) : VK_COMPARE_OP_ALWAYS;
     }
-
-    // Dynamic rendering: color + depth formats
-    VkFormat colorFormat = toVkFormat(description.colorFormat);
-    VkFormat depthFormat = (description.depthFormat != PixelFormat::Undefined)
-                               ? toVkFormat(description.depthFormat)
-                               : VK_FORMAT_UNDEFINED;
-
+    const VkFormat depthFormat = toVkFormat(description.depthFormat);
     VkPipelineRenderingCreateInfo renderingInfo{};
     renderingInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO;
-    renderingInfo.colorAttachmentCount = 1;
-    renderingInfo.pColorAttachmentFormats = &colorFormat;
+    renderingInfo.colorAttachmentCount = static_cast<uint32_t>(colorFormats.size());
+    renderingInfo.pColorAttachmentFormats = colorFormats.data();
     renderingInfo.depthAttachmentFormat = depthFormat;
+    renderingInfo.stencilAttachmentFormat = hasStencil(description.depthFormat) ? depthFormat : VK_FORMAT_UNDEFINED;
 
     // Pipeline create info
     VkGraphicsPipelineCreateInfo pipelineInfo{};

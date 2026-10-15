@@ -50,6 +50,12 @@ class BG2E_API ComponentFactoryRegistry {
     bool contains(const std::string& componentName) const;
     Component* createDefault(const std::string& componentName) const;
 
+    // Strict schema/draw paths use the registered default constructor followed
+    // by Component's graphics-free parser. They never invoke a production Creator.
+    Component* create(std::shared_ptr<json::JsonNode> data, const std::filesystem::path& basePath);
+    Component* create(std::shared_ptr<json::JsonNode> data, const std::filesystem::path& basePath,
+        draw::Engine& engine, SceneLoadProgress* progress = nullptr);
+
     Component* create(std::shared_ptr<json::JsonNode> data, const std::filesystem::path&, render::Engine& engine);
     Component* create(std::shared_ptr<json::JsonNode> data, const std::filesystem::path&, render::Engine& engine, SceneLoadProgress* progress);
 

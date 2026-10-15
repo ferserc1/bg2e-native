@@ -1,8 +1,8 @@
 # M02-06 — Experimental optimal-viewpoint tools in utils
 
-[Milestone summary](summary.md) · [Plan index](../index.md) · [Architecture decisions](../architecture-decisions.md)
+[Milestone summary](summary.md) · [Plan index](../index.md) · [Architecture decisions](../architecture-decisions.md) · [Execution protocol](../execution-protocol.md) · [Progress](../progress.md)
 
-**Status:** planned. **Prerequisites:** M02-02 and M01 draw visitors/resources.
+**Execution status:** see [progress](../progress.md). **Prerequisites:** M02-02 and M01 draw visitors/resources.
 
 ## Scope and deliverable
 
@@ -28,7 +28,7 @@ Current sources to inspect: [lib/include/bg2e/render/ViewpointAnalyzer.hpp](../.
 - On an equivalent scene, candidate generation and ID statistics are inspectable and sensible; the new utility can run in draw mode without production resources.
 - Empty scene, off-frustum candidates and multiple submesh identities have defined results; legacy analyzer behavior is unchanged.
 
-These are future checks. Run compilation only on explicit user request; record missing runtime/backend evidence as pending, never as a pass.
+Delegate compilation and applicable runtime checks to the project lead; perform relevant nonexecuting static checks yourself. After delivering this step or its correction, update progress to `awaiting_project_lead` and stop. Their instruction to continue accepts the preceding delivery as compiled/checked without failures; record that basis without inventing test/backend details. Follow the [execution protocol](../execution-protocol.md).
 
 ## Downstream comparison
 

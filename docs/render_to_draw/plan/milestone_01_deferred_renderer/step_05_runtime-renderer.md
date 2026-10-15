@@ -1,8 +1,8 @@
 # M01-05 — Non-template delegate and runtime renderer lifecycle
 
-[Milestone summary](summary.md) · [Plan index](../index.md) · [Architecture decisions](../architecture-decisions.md)
+[Milestone summary](summary.md) · [Plan index](../index.md) · [Architecture decisions](../architecture-decisions.md) · [Execution protocol](../execution-protocol.md) · [Progress](../progress.md)
 
-**Status:** planned. **Prerequisites:** M01-01.
+**Execution status:** see [progress](../progress.md). **Prerequisites:** M01-01.
 
 ## Scope and deliverable
 
@@ -25,10 +25,11 @@ Current sources to inspect: [lib/include/bg2e/draw/RenderLoopDelegate.hpp](../..
 
 ## Verification and exit conditions
 
-- An example replaces one RendererDeferred instance with another and resumes the same scene with refreshed property targets.
+- The manual lifecycle fixture replaces minimal Renderer instances and resumes the same retained scene with invalidated/rebound target generations. RendererDeferred is not available until M01-10; the actual RendererDeferred-to-RendererDeferred example with the M01-12 settings facade is required in M01-15.
+- Actual ownership, lifecycle hooks, scene counters and lead checks are documented in [runtime-renderer.md](runtime-renderer.md).
 - No use-after-free on pending UI callbacks/commands; pause/resize/resume and ordinary draw examples remain functional.
 
-These are future checks. Run compilation only on explicit user request; record missing runtime/backend evidence as pending, never as a pass.
+Delegate compilation and applicable runtime checks to the project lead; perform relevant nonexecuting static checks yourself. After delivering this step or its correction, update progress to `awaiting_project_lead` and stop. Their instruction to continue accepts the preceding delivery as compiled/checked without failures; record that basis without inventing test/backend details. Follow the [execution protocol](../execution-protocol.md).
 
 ## Downstream comparison
 

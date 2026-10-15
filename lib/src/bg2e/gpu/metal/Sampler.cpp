@@ -20,6 +20,7 @@
 #include <bg2e/base/Log.hpp>
 
 #include <stdexcept>
+#include <cmath>
 
 namespace bg2e {
 namespace gpu {
@@ -30,7 +31,27 @@ namespace metal {
 Sampler::Sampler(gpu::Device* gpuDevice, DeviceHandle device, const gpu::SamplerDescription& description)
     : gpu::Sampler(gpuDevice), _device(device)
 {
+    if (!std::isfinite(description.mipLodBias) || !std::isfinite(description.minLod) || !std::isfinite(description.maxLod) ||
+        description.minLod < 0.0f || description.maxLod < description.minLod)
+    {
+        throw std::invalid_argument("Sampler LOD interval is invalid");
+    }
+
     auto* desc = MTL::SamplerDescriptor::alloc()->init();
+    desc->setLodMinClamp(description.minLod);
+    desc->setLodMaxClamp(description.maxLod);
+    // lodBias is absent on older Metal runtimes. Zero needs no setter there;
+    // nonzero requests must fail explicitly rather than silently lose settings.
+    if (class_respondsToSelector(object_getClass(reinterpret_cast<id>(desc)), sel_registerName("setLodBias:")))
+    {
+        desc->setLodBias(description.mipLodBias);
+    }
+    else if (description.mipLodBias != 0.0f)
+    {
+        desc->release();
+        throw std::runtime_error("Metal runtime does not support sampler LOD bias");
+    }
+    desc->setBorderColor(MTL::SamplerBorderColorOpaqueBlack);
 
     switch (description.minFilter)
     {
@@ -72,6 +93,8 @@ Sampler::Sampler(gpu::Device* gpuDevice, DeviceHandle device, const gpu::Sampler
             return MTL::SamplerAddressModeClampToEdge;
         case gpu::AddressMode::MirroredRepeat:
             return MTL::SamplerAddressModeMirrorRepeat;
+        case gpu::AddressMode::ClampToBorder:
+            return MTL::SamplerAddressModeClampToBorderColor;
         }
         return MTL::SamplerAddressModeRepeat;
     };

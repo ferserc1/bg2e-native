@@ -23,3 +23,36 @@
 #include <bg2e/draw/FrameContext.hpp>
 #include <bg2e/draw/RenderLoopDelegate.hpp>
 #include <bg2e/draw/RenderLoop.hpp>
+
+#include <bg2e/draw/Renderer.hpp>
+#include <bg2e/draw/pipeline/RenderLayer.hpp>
+#include <bg2e/draw/environment/all.hpp>
+
+#include <bg2e/draw/DefaultRenderLoopDelegate.hpp>
+
+#include <bg2e/draw/Drawable.hpp>
+#include <bg2e/draw/Texture.hpp>
+#include <bg2e/draw/MaterialBase.hpp>
+
+#include <bg2e/draw/ShaderData.hpp>
+#include <bg2e/draw/RenderQueue.hpp>
+#include <bg2e/draw/RenderQueueVisitor.hpp>
+#include <bg2e/draw/DrawVisitor.hpp>
+#include <bg2e/draw/CollectRayTracingInstancesVisitor.hpp>
+#include <bg2e/draw/FrameDataBinding.hpp>
+#include <bg2e/draw/ObjectDataBinding.hpp>
+#include <bg2e/draw/LightDataBinding.hpp>
+#include <bg2e/draw/EnvironmentDataBinding.hpp>
+
+#include <bg2e/draw/RendererDeferred.hpp>
+#include <bg2e/draw/pipeline/RenderTarget.hpp>
+#include <bg2e/draw/pipeline/FullscreenPass.hpp>
+#include <bg2e/draw/pipeline/GBuffer.hpp>
+#include <bg2e/draw/pipeline/DeferredLayer.hpp>
+
+#include <bg2e/draw/pipeline/SoftShadowPass.hpp>
+
+#include <bg2e/draw/RenderSettingsPreferences.hpp>
+
+#include <bg2e/draw/Upscaler.hpp>
+#include <bg2e/draw/FsrUpscaler.hpp>

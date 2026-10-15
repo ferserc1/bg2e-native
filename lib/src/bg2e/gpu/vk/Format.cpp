@@ -24,6 +24,26 @@ VkFormat toVkFormat(gpu::PixelFormat format)
 {
     switch (format)
     {
+    case gpu::PixelFormat::R8_UNORM:
+        return VK_FORMAT_R8_UNORM;
+    case gpu::PixelFormat::R8G8_UNORM:
+        return VK_FORMAT_R8G8_UNORM;
+    case gpu::PixelFormat::R16_SFLOAT:
+        return VK_FORMAT_R16_SFLOAT;
+    case gpu::PixelFormat::R16G16_SFLOAT:
+        return VK_FORMAT_R16G16_SFLOAT;
+    case gpu::PixelFormat::R32_SFLOAT:
+        return VK_FORMAT_R32_SFLOAT;
+    case gpu::PixelFormat::R32G32_SFLOAT:
+        return VK_FORMAT_R32G32_SFLOAT;
+    case gpu::PixelFormat::R32_UINT:
+        return VK_FORMAT_R32_UINT;
+    case gpu::PixelFormat::R32_SINT:
+        return VK_FORMAT_R32_SINT;
+    case gpu::PixelFormat::R32G32_UINT:
+        return VK_FORMAT_R32G32_UINT;
+    case gpu::PixelFormat::R32G32B32A32_UINT:
+        return VK_FORMAT_R32G32B32A32_UINT;
     case gpu::PixelFormat::R8G8B8A8_UNORM:
         return VK_FORMAT_R8G8B8A8_UNORM;
     case gpu::PixelFormat::R8G8B8A8_SRGB:
@@ -55,6 +75,26 @@ gpu::PixelFormat fromVkFormat(VkFormat format)
 {
     switch (format)
     {
+    case VK_FORMAT_R8_UNORM:
+        return gpu::PixelFormat::R8_UNORM;
+    case VK_FORMAT_R8G8_UNORM:
+        return gpu::PixelFormat::R8G8_UNORM;
+    case VK_FORMAT_R16_SFLOAT:
+        return gpu::PixelFormat::R16_SFLOAT;
+    case VK_FORMAT_R16G16_SFLOAT:
+        return gpu::PixelFormat::R16G16_SFLOAT;
+    case VK_FORMAT_R32_SFLOAT:
+        return gpu::PixelFormat::R32_SFLOAT;
+    case VK_FORMAT_R32G32_SFLOAT:
+        return gpu::PixelFormat::R32G32_SFLOAT;
+    case VK_FORMAT_R32_UINT:
+        return gpu::PixelFormat::R32_UINT;
+    case VK_FORMAT_R32_SINT:
+        return gpu::PixelFormat::R32_SINT;
+    case VK_FORMAT_R32G32_UINT:
+        return gpu::PixelFormat::R32G32_UINT;
+    case VK_FORMAT_R32G32B32A32_UINT:
+        return gpu::PixelFormat::R32G32B32A32_UINT;
     case VK_FORMAT_R8G8B8A8_UNORM:
         return gpu::PixelFormat::R8G8B8A8_UNORM;
     case VK_FORMAT_R8G8B8A8_SRGB:

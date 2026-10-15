@@ -33,15 +33,25 @@ std::shared_ptr<Component> FixedScaleTransformControllerComponent::clone() const
     return copy;
 }
 
-void FixedScaleTransformControllerComponent::deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path&, [[maybe_unused]] render::Engine& engine)
+void FixedScaleTransformControllerComponent::deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path& basePath, render::Engine&)
 {
-    Component::deserialize(jsonData, {}, engine);
+    deserialize(jsonData, basePath);
+}
+
+void FixedScaleTransformControllerComponent::deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path& /* basePath */)
+{
+    deserializeCommon(jsonData);
 
     json::ObjectReader reader(jsonData);
     if (auto scale = reader.getNumber("scale"))
     {
         _scale = *scale;
     }
+}
+
+std::shared_ptr<json::JsonNode> FixedScaleTransformControllerComponent::serializeReferences(const std::filesystem::path& basePath)
+{
+    return FixedScaleTransformControllerComponent::serialize(basePath);
 }
 
 std::shared_ptr<json::JsonNode> FixedScaleTransformControllerComponent::serialize(const std::filesystem::path& basePath)

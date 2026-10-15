@@ -18,6 +18,7 @@
 
 #include <bg2e/gpu/metal/CommandBuffer.hpp>
 #include <bg2e/gpu/metal/Buffer.hpp>
+#include <bg2e/gpu/metal/Device.hpp>
 #include <bg2e/gpu/metal/GraphicsPipeline.hpp>
 #include <bg2e/gpu/metal/ComputePipeline.hpp>
 #include <bg2e/gpu/metal/PipelineLayout.hpp>
@@ -32,6 +33,7 @@
 #include <bg2e/gpu/SurfaceFrame.hpp>
 
 #include <algorithm>
+#include <cmath>
 #include <stdexcept>
 
 namespace bg2e {
@@ -133,13 +135,127 @@ bool CommandBuffer::hasActiveScope() const
 
 void CommandBuffer::transition(gpu::Image* image, ImageLayout newLayout)
 {
-    // Metal manages hazards automatically for render targets.
-    // This is bookkeeping only for validation/debug.
-    image->_currentLayout = newLayout;
+    if (!image)
+    {
+        throw std::invalid_argument("Image transition requires an image");
+    }
+    transition(image, newLayout, image->fullRange());
+}
+void CommandBuffer::transition(gpu::Image* image, ImageLayout newLayout, const ImageSubresourceRange& range)
+{
+    if (!_recording || hasActiveScope() || !dynamic_cast<metal::Image*>(image) || !image->isValid() || image->device() != _device)
+    {
+        throw std::logic_error("Image transition requires a valid recording device outside active scopes");
+    }
+    image->validateRange(range);
+    image->validateLayout(newLayout);
+    // Private textures are hazard-tracked; native encoder boundaries order
+    // writes on this queue. This is per-subresource API state bookkeeping.
+    image->setLayout(range, newLayout);
+}
+
+void CommandBuffer::beginRendering(const RenderingDescription& description)
+{
+    if (!_recording || hasActiveScope() || !_device)
+    {
+        throw std::logic_error("Attachment rendering requires recording outside another scope");
+    }
+    const auto extent = validateRendering(description, *_device);
+    for (const auto& attachment : description.colors)
+    {
+        if (!dynamic_cast<metal::Image*>(attachment.image))
+        {
+            throw std::invalid_argument("Color attachment is not a Metal image");
+        }
+    }
+    if (description.depth && !dynamic_cast<metal::Image*>(description.depth->image))
+    {
+        throw std::invalid_argument("Depth attachment is not a Metal image");
+    }
+    const auto loadOperation = [](AttachmentLoadOperation operation)
+    {
+        switch (operation)
+        {
+        case AttachmentLoadOperation::Load:
+            return MTL::LoadActionLoad;
+        case AttachmentLoadOperation::Clear:
+            return MTL::LoadActionClear;
+        case AttachmentLoadOperation::DontCare:
+            return MTL::LoadActionDontCare;
+        }
+        return MTL::LoadActionDontCare;
+    };
+    const auto storeOperation = [](AttachmentStoreOperation operation)
+    {
+        return operation == AttachmentStoreOperation::Store ? MTL::StoreActionStore : MTL::StoreActionDontCare;
+    };
+    _passDesc = MTL::RenderPassDescriptor::alloc()->init();
+    for (size_t i = 0; i < description.colors.size(); ++i)
+    {
+        const auto& attachment = description.colors[i];
+        auto* image = static_cast<metal::Image*>(attachment.image);
+        auto* native = _passDesc->colorAttachments()->object(i);
+        native->setTexture(image->texture());
+        native->setLevel(attachment.subresource.baseMipLevel);
+        native->setSlice(attachment.subresource.baseArrayLayer);
+        native->setLoadAction(loadOperation(attachment.load));
+        native->setStoreAction(storeOperation(attachment.store));
+        MTL::ClearColor clear;
+        if (isUnsignedIntegerFormat(image->pixelFormat()))
+        {
+            const auto& value = attachment.clear.unsignedInteger;
+            clear = MTL::ClearColor(value[0], value[1], value[2], value[3]);
+        }
+        else if (isSignedIntegerFormat(image->pixelFormat()))
+        {
+            const auto& value = attachment.clear.signedInteger;
+            clear = MTL::ClearColor(value[0], value[1], value[2], value[3]);
+        }
+        else
+        {
+            const auto& value = attachment.clear.floatingPoint;
+            clear = MTL::ClearColor(value.r, value.g, value.b, value.a);
+        }
+        native->setClearColor(clear);
+    }
+    if (description.depth)
+    {
+        const auto& attachment = *description.depth;
+        auto* image = static_cast<metal::Image*>(attachment.image);
+        auto* native = _passDesc->depthAttachment();
+        native->setTexture(image->texture());
+        native->setLevel(attachment.subresource.baseMipLevel);
+        native->setSlice(attachment.subresource.baseArrayLayer);
+        native->setLoadAction(loadOperation(attachment.load));
+        native->setStoreAction(storeOperation(attachment.store));
+        native->setClearDepth(attachment.clearDepth);
+        if (hasStencil(image->pixelFormat()))
+        {
+            auto* stencil = _passDesc->stencilAttachment();
+            stencil->setTexture(image->texture());
+            stencil->setLevel(attachment.subresource.baseMipLevel);
+            stencil->setSlice(attachment.subresource.baseArrayLayer);
+            stencil->setLoadAction(loadOperation(attachment.load));
+            stencil->setStoreAction(storeOperation(attachment.store));
+            stencil->setClearStencil(attachment.clearStencil);
+        }
+    }
+    _attachmentRendering = description;
+    _attachmentExtent = extent;
+    _renderFrame = nullptr;
+    _renderColorImage = nullptr;
+    _renderDepthImage = nullptr;
+    _renderingCubeMap = false;
+    _renderCubeMap = nullptr;
 }
 
 void CommandBuffer::beginRendering(gpu::SurfaceFrame* frame)
 {
+    if (!_recording || hasActiveScope())
+    {
+        throw std::logic_error("Rendering requires recording outside another active scope");
+    }
+    _attachmentRendering.reset();
     if (_computeEncoder)
     {
         throw std::runtime_error("metal::CommandBuffer::beginRendering: a compute scope is still active; call endCompute() before beginRendering()");
@@ -171,127 +287,65 @@ void CommandBuffer::beginRendering(gpu::SurfaceFrame* frame)
     {
         _passDesc->depthAttachment()->setTexture(depthImg->texture());
         _passDesc->depthAttachment()->setLoadAction(MTL::LoadActionDontCare);
-        _passDesc->depthAttachment()->setStoreAction(MTL::StoreActionDontCare);
+        _passDesc->depthAttachment()->setStoreAction(MTL::StoreActionStore);
     }
 }
 
-void CommandBuffer::beginRendering(gpu::Image* colorImage, uint32_t /*mipLevel*/)
+void CommandBuffer::beginRendering(gpu::Image* colorImage, uint32_t mipLevel)
 {
-    if (_computeEncoder)
-    {
-        throw std::runtime_error("metal::CommandBuffer::beginRendering: a compute scope is still active; call endCompute() before beginRendering()");
-    }
-
-    _renderFrame = nullptr;
-    _renderColorImage = colorImage;
-    _renderDepthImage = nullptr;
-    _renderingCubeMap = false;
-    _renderCubeMap = nullptr;
-
-    _passDesc = MTL::RenderPassDescriptor::alloc()->init();
-
-    auto* colorImg = dynamic_cast<metal::Image*>(colorImage);
-    if (colorImg && colorImg->texture())
-    {
-        _passDesc->colorAttachments()->object(0)->setTexture(colorImg->texture());
-        _passDesc->colorAttachments()->object(0)->setLoadAction(MTL::LoadActionLoad);
-        _passDesc->colorAttachments()->object(0)->setStoreAction(MTL::StoreActionStore);
-    }
+    RenderingDescription description;
+    description.colors.push_back({colorImage});
+    description.colors.back().subresource = {mipLevel, 1, 0, 1};
+    beginRendering(description);
 }
-
-void CommandBuffer::beginRendering(gpu::Image* colorImage, gpu::Image* depthImage, uint32_t /*mipLevel*/)
+void CommandBuffer::beginRendering(gpu::Image* colorImage, gpu::Image* depthImage, uint32_t mipLevel)
 {
-    if (_computeEncoder)
+    RenderingDescription description;
+    description.colors.push_back({colorImage});
+    description.colors.back().subresource = {mipLevel, 1, 0, 1};
+    if (depthImage)
     {
-        throw std::runtime_error("metal::CommandBuffer::beginRendering: a compute scope is still active; call endCompute() before beginRendering()");
+        description.depth = DepthAttachmentDescription{depthImage, AttachmentLoadOperation::Clear};
+        description.depth->subresource = {mipLevel, 1, 0, 1};
     }
-
-    _renderFrame = nullptr;
-    _renderColorImage = colorImage;
-    _renderDepthImage = depthImage;
-    _renderingCubeMap = false;
-    _renderCubeMap = nullptr;
-
-    _passDesc = MTL::RenderPassDescriptor::alloc()->init();
-
-    auto* colorImg = dynamic_cast<metal::Image*>(colorImage);
-    if (colorImg && colorImg->texture())
-    {
-        _passDesc->colorAttachments()->object(0)->setTexture(colorImg->texture());
-        _passDesc->colorAttachments()->object(0)->setLoadAction(MTL::LoadActionLoad);
-        _passDesc->colorAttachments()->object(0)->setStoreAction(MTL::StoreActionStore);
-    }
-
-    auto* depthImg = dynamic_cast<metal::Image*>(depthImage);
-    if (depthImg && depthImg->isValid() && depthImg->texture())
-    {
-        _passDesc->depthAttachment()->setTexture(depthImg->texture());
-        _passDesc->depthAttachment()->setLoadAction(MTL::LoadActionDontCare);
-        _passDesc->depthAttachment()->setStoreAction(MTL::StoreActionDontCare);
-    }
+    beginRendering(description);
 }
-
 void CommandBuffer::beginRendering(gpu::CubeMap* cubemap, CubemapFace face, uint32_t mipLevel)
 {
-    if (_computeEncoder)
+    if (!cubemap || !cubemap->isValid() || static_cast<uint32_t>(face) >= 6)
     {
-        throw std::runtime_error("metal::CommandBuffer::beginRendering(CubeMap): a compute scope is still active; call endCompute() before beginRendering()");
+        throw std::invalid_argument("Cubemap rendering requires a valid cube and face");
     }
-    if (!cubemap)
-    {
-        throw std::runtime_error("metal::CommandBuffer::beginRendering(CubeMap): cubemap is null");
-    }
-    if (!cubemap->isValid())
-    {
-        throw std::runtime_error("metal::CommandBuffer::beginRendering(CubeMap): cubemap is not valid");
-    }
-    if (!cubemap->image())
-    {
-        throw std::runtime_error("metal::CommandBuffer::beginRendering(CubeMap): cubemap image is null");
-    }
-    if (!cubemap->image()->isCubemap())
-    {
-        throw std::runtime_error("metal::CommandBuffer::beginRendering(CubeMap): image is not a cubemap");
-    }
-    if (static_cast<uint32_t>(face) > 5)
-    {
-        throw std::runtime_error("metal::CommandBuffer::beginRendering(CubeMap): face must be in [0, 5]");
-    }
-    if (mipLevel >= cubemap->mipLevels())
-    {
-        throw std::runtime_error("metal::CommandBuffer::beginRendering(CubeMap): mipLevel out of range");
-    }
-
-    auto* metalImage = dynamic_cast<metal::Image*>(cubemap->image());
-    if (!metalImage || !metalImage->isValidCubemapFaceMip(static_cast<uint32_t>(face), mipLevel))
-    {
-        throw std::runtime_error("metal::CommandBuffer::beginRendering(CubeMap): invalid cubemap face/mip");
-    }
-
-    _renderFrame = nullptr;
-    _renderColorImage = nullptr;
-    _renderDepthImage = nullptr;
-    _renderCubeMap = cubemap;
-    _renderCubeFace = static_cast<uint32_t>(face);
-    _renderCubeMipLevel = mipLevel;
-    _renderingCubeMap = true;
-
-    _passDesc = MTL::RenderPassDescriptor::alloc()->init();
-
-    auto target = metalImage->cubemapFaceMipTarget(static_cast<uint32_t>(face), mipLevel);
-    _passDesc->colorAttachments()->object(0)->setTexture(target.texture);
-    _passDesc->colorAttachments()->object(0)->setSlice(target.face);
-    _passDesc->colorAttachments()->object(0)->setLevel(target.mipLevel);
-    _passDesc->colorAttachments()->object(0)->setLoadAction(MTL::LoadActionLoad);
-    _passDesc->colorAttachments()->object(0)->setStoreAction(MTL::StoreActionStore);
+    RenderingDescription description;
+    description.colors.push_back({cubemap->image()});
+    description.colors.back().subresource = {mipLevel, 1, static_cast<uint32_t>(face), 1};
+    beginRendering(description);
 }
 
 void CommandBuffer::clearColor(uint32_t attachmentIndex, const gpu::Color& color)
 {
-    (void)attachmentIndex;
+    if (!_passDesc || _encoder)
+    {
+        throw std::logic_error("Clear color must precede render encoder materialization");
+    }
+    const size_t count = _attachmentRendering ? _attachmentRendering->colors.size() : 1;
+    if (attachmentIndex >= count)
+    {
+        throw std::out_of_range("Color attachment index is out of range");
+    }
+    if (_attachmentRendering)
+    {
+        auto& attachment = _attachmentRendering->colors[attachmentIndex];
+        if (isUnsignedIntegerFormat(attachment.image->pixelFormat()) || isSignedIntegerFormat(attachment.image->pixelFormat()))
+        {
+            throw std::invalid_argument("Use typed integer clear values in RenderingDescription");
+        }
+        attachment.load = AttachmentLoadOperation::Clear;
+        attachment.clear.floatingPoint = color;
+    }
     if (_passDesc)
     {
-        auto* colorAtt = _passDesc->colorAttachments()->object(0);
+        auto* colorAtt = _passDesc->colorAttachments()->object(attachmentIndex);
         colorAtt->setLoadAction(MTL::LoadActionClear);
         colorAtt->setClearColor(MTL::ClearColor(color.r, color.g, color.b, color.a));
     }
@@ -299,11 +353,23 @@ void CommandBuffer::clearColor(uint32_t attachmentIndex, const gpu::Color& color
 
 void CommandBuffer::clearDepth(float depth)
 {
+    if (!_passDesc || _encoder || !std::isfinite(depth) || depth < 0.0f || depth > 1.0f)
+    {
+        throw std::logic_error("Clear depth must precede render encoder materialization with a valid value");
+    }
+    if (_attachmentRendering)
+    {
+        if (!_attachmentRendering->depth)
+        {
+            throw std::invalid_argument("No depth attachment");
+        }
+        _attachmentRendering->depth->load = AttachmentLoadOperation::Clear;
+        _attachmentRendering->depth->clearDepth = depth;
+    }
     if (_passDesc)
     {
         _passDesc->depthAttachment()->setLoadAction(MTL::LoadActionClear);
         _passDesc->depthAttachment()->setClearDepth(depth);
-        _passDesc->depthAttachment()->setStoreAction(MTL::StoreActionDontCare);
     }
 }
 
@@ -332,6 +398,7 @@ void CommandBuffer::endRendering()
     }
     _boundPipeline = nullptr;
     _boundLayout = nullptr;
+    _attachmentRendering.reset();
     _renderFrame = nullptr;
     _renderColorImage = nullptr;
     _renderDepthImage = nullptr;
@@ -390,13 +457,26 @@ void CommandBuffer::bindPipeline(gpu::GraphicsPipeline* pipeline)
         throw std::runtime_error("metal::CommandBuffer::bindPipeline: not a metal::GraphicsPipeline");
     }
 
+    if (_attachmentRendering)
+    {
+        if (!metalPipeline->isValid() || metalPipeline->device() != _device)
+        {
+            throw std::invalid_argument("Pipeline must belong to the rendering device");
+        }
+        validatePipelineAttachments(*_attachmentRendering, *metalPipeline);
+    }
     ensureRenderEncoder();
     _encoder->setRenderPipelineState(metalPipeline->renderPipelineState());
     _encoder->setCullMode(metalCullMode(metalPipeline->cullMode()));
     _encoder->setFrontFacingWinding(metalFrontFaceWinding(metalPipeline->frontFace()));
-    if (metalPipeline->depthStencilState())
+    _encoder->setDepthStencilState(metalPipeline->depthStencilState());
+
+    if (_attachmentRendering)
     {
-        _encoder->setDepthStencilState(metalPipeline->depthStencilState());
+        MTL::Viewport viewport{0.0, 0.0, static_cast<double>(_attachmentExtent.width),
+            static_cast<double>(_attachmentExtent.height), 0.0, 1.0};
+        _encoder->setViewport(viewport);
+        _encoder->setScissorRect(MTL::ScissorRect{0, 0, _attachmentExtent.width, _attachmentExtent.height});
     }
 
     if (_renderingCubeMap && _renderCubeMap)
@@ -739,71 +819,63 @@ void CommandBuffer::drawIndexed(uint32_t indexCount, uint32_t instanceCount,
         static_cast<NS::UInteger>(firstInstance));
 }
 
-void CommandBuffer::copyImage(gpu::Image* src, gpu::Image* dst)
+void CommandBuffer::copyImage(gpu::Image* source, gpu::Image* destination)
 {
-    auto* metalSrc = dynamic_cast<metal::Image*>(src);
-    auto* metalDst = dynamic_cast<metal::Image*>(dst);
-    if (!metalSrc || !metalDst)
-    {
-        throw std::runtime_error("metal::CommandBuffer::copyImage: not a metal::Image");
-    }
-
-    // End any active encoder before starting blit
-    if (_encoder)
-    {
-        _encoder->endEncoding();
-        _encoder->release();
-        _encoder = nullptr;
-    }
-    if (_computeEncoder)
-    {
-        _computeEncoder->endEncoding();
-        _computeEncoder->release();
-        _computeEncoder = nullptr;
-    }
-
-    auto* blitEncoder = _cmd->blitCommandEncoder();
-    blitEncoder->copyFromTexture(metalSrc->texture(), metalDst->texture());
-    blitEncoder->endEncoding();
-    blitEncoder->release();
+    copyImage(ImageView{source, {}}, ImageView{destination, {}});
 }
-
-// TODO: function not fully tested
-void CommandBuffer::blitImage(gpu::Image* src, gpu::Image* dst)
+void CommandBuffer::copyImage(const ImageView& source, const ImageView& destination)
 {
-    auto* metalSrc = dynamic_cast<metal::Image*>(src);
-    auto* metalDst = dynamic_cast<metal::Image*>(dst);
-    if (!metalSrc || !metalDst)
+    if (!_recording || hasActiveScope() || !_device || !_cmd)
     {
-        throw std::runtime_error("metal::CommandBuffer::blitImage: not a metal::Image");
+        throw std::logic_error("Image copies require recording outside active scopes");
     }
-
-    // End any active encoder before starting blit
-    if (_encoder)
+    validateCopy(source, destination, *_device);
+    auto* nativeSource = dynamic_cast<metal::Image*>(source.image);
+    auto* nativeDestination = dynamic_cast<metal::Image*>(destination.image);
+    if (!nativeSource || !nativeDestination)
     {
-        _encoder->endEncoding();
-        _encoder->release();
-        _encoder = nullptr;
+        throw std::invalid_argument("Image copy requires Metal images");
     }
-    if (_computeEncoder)
+    const auto extent = source.image->mipExtent(source.range.baseMipLevel);
+    auto* encoder = _cmd->blitCommandEncoder();
+    if (!encoder)
     {
-        _computeEncoder->endEncoding();
-        _computeEncoder->release();
-        _computeEncoder = nullptr;
+        throw std::runtime_error("Metal copy blit encoder creation failed");
     }
-
-    auto* blitEncoder = _cmd->blitCommandEncoder();
-
-    MTL::Origin srcOrigin(0, 0, 0);
-    MTL::Size srcSize(src->width(), src->height(), 1);
-    MTL::Origin dstOrigin(0, 0, 0);
-    MTL::Size dstSize(dst->width(), dst->height(), 1);
-
-    blitEncoder->copyFromTexture(
-        metalSrc->texture(), 0, 0, srcOrigin, srcSize,
-        metalDst->texture(), 0, 0, dstOrigin);
-    blitEncoder->endEncoding();
-    blitEncoder->release();
+    encoder->copyFromTexture(nativeSource->texture(), source.range.baseArrayLayer, source.range.baseMipLevel,
+        MTL::Origin{0, 0, 0}, MTL::Size{extent.width, extent.height, 1}, nativeDestination->texture(),
+        destination.range.baseArrayLayer, destination.range.baseMipLevel, MTL::Origin{0, 0, 0});
+    encoder->endEncoding();
+}
+void CommandBuffer::generateMipmaps(gpu::Image* image, ImageLayout finalLayout)
+{
+    auto* native = dynamic_cast<metal::Image*>(image);
+    if (!_recording || hasActiveScope() || !native || !_device || !_cmd)
+    {
+        throw std::logic_error("Mipmap generation requires recording outside active scopes");
+    }
+    validateMipmapGeneration(*image, *_device, finalLayout);
+    if (image->mipLevels() > 1)
+    {
+        transition(image, ImageLayout::TransferSrc, {0, 1, 0, image->arrayLayers()});
+        transition(image, ImageLayout::TransferDst, {1, image->mipLevels() - 1, 0, image->arrayLayers()});
+        auto* encoder = _cmd->blitCommandEncoder();
+        if (!encoder)
+        {
+            throw std::runtime_error("Metal mipmap blit encoder creation failed");
+        }
+        encoder->generateMipmaps(native->texture());
+        encoder->endEncoding();
+    }
+    transition(image, finalLayout);
+}
+void CommandBuffer::blitImage(gpu::Image* source, gpu::Image* destination)
+{
+    if (!source || !destination || source->size() != destination->size())
+    {
+        throw std::invalid_argument("Metal blitImage does not rescale textures; use a rendering/compute resampler");
+    }
+    copyImage(source, destination);
 }
 
 void CommandBuffer::buildRayTracingMesh(gpu::RayTracingMesh* mesh)
@@ -940,20 +1012,56 @@ bool CommandBuffer::hasActiveScope() const
 {
     return false;
 }
+void CommandBuffer::transition(gpu::Image*, ImageLayout, const ImageSubresourceRange&)
+{
+    throw std::runtime_error("Metal backend is not available on this platform");
+}
+void CommandBuffer::copyImage(const ImageView&, const ImageView&)
+{
+    throw std::runtime_error("Metal backend is not available on this platform");
+}
+void CommandBuffer::generateMipmaps(gpu::Image*, ImageLayout)
+{
+    throw std::runtime_error("Metal backend is not available on this platform");
+}
 void CommandBuffer::transition(gpu::Image*, ImageLayout)
 {
 }
+void CommandBuffer::beginRendering(const RenderingDescription&)
+{
+    throw std::runtime_error("Metal backend is not available on this platform");
+}
 void CommandBuffer::beginRendering(gpu::SurfaceFrame*)
 {
+    if (_attachmentRendering)
+    {
+        throw std::logic_error("Close attachment rendering before opening another scope");
+    }
+    _attachmentRendering.reset();
 }
 void CommandBuffer::beginRendering(gpu::Image*, uint32_t)
 {
+    if (_attachmentRendering)
+    {
+        throw std::logic_error("Close attachment rendering before opening another scope");
+    }
+    _attachmentRendering.reset();
 }
 void CommandBuffer::beginRendering(gpu::Image*, gpu::Image*, uint32_t)
 {
+    if (_attachmentRendering)
+    {
+        throw std::logic_error("Close attachment rendering before opening another scope");
+    }
+    _attachmentRendering.reset();
 }
 void CommandBuffer::beginRendering(gpu::CubeMap*, CubemapFace, uint32_t)
 {
+    if (_attachmentRendering)
+    {
+        throw std::logic_error("Close attachment rendering before opening another scope");
+    }
+    _attachmentRendering.reset();
 }
 void CommandBuffer::endRendering()
 {

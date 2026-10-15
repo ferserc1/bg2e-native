@@ -23,8 +23,58 @@
 #include <bg2e/json/JsonParser.hpp>
 #include <bg2e/json/NodeReader.hpp>
 #include <bg2e/base/Log.hpp>
+#include <stdexcept>
 
 namespace bg2e::scene {
+
+std::shared_ptr<Scene> Scene::deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path& basePath, SceneLoadProgress* progress)
+{
+    json::ObjectReader reader(jsonData);
+    if (!reader.isValid() || !reader.getArray("scene"))
+    {
+        throw std::invalid_argument("Scene representation requires a scene array");
+    }
+
+    // Read and log version
+    if (auto version = reader.getObject("version"))
+    {
+        int major = version->getInteger<int>("major").value_or(0);
+        int minor = version->getInteger<int>("minor").value_or(0);
+        int rev = version->getInteger<int>("rev").value_or(0);
+        bg2e_log_debug << "Loading scene file version " << major << "." << minor << "." << rev << bg2e_log_end;
+    }
+
+    // Create root node
+    auto sceneRoot = std::make_shared<Node>("scene root");
+
+    // Deserialize nodes from scene array
+    if (auto sceneList = reader.getArray("scene"))
+    {
+        for (std::size_t i = 0; i < sceneList->size(); ++i)
+        {
+            auto nodeData = sceneList->getObject(i);
+            if (!nodeData)
+            {
+                throw std::invalid_argument("Invalid scene node representation");
+            }
+            auto node = std::make_shared<Node>();
+            node->deserialize(nodeData->node(), basePath, progress);
+            sceneRoot->addChild(node);
+        }
+    }
+
+    auto scene = std::make_shared<Scene>();
+    scene->setSceneRoot(sceneRoot);
+    return scene;
+}
+
+std::shared_ptr<Scene> Scene::deserialize(std::shared_ptr<json::JsonNode> data, const std::filesystem::path& basePath,
+    draw::Engine& engine, SceneLoadProgress* progress)
+{
+    auto result = deserialize(data, basePath, progress);
+    result->rootNode()->loadResources(engine, progress);
+    return result;
+}
 
 std::shared_ptr<Scene> Scene::deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path& basePath, render::Engine& engine, SceneLoadProgress* progress)
 {

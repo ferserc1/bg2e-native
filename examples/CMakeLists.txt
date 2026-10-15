@@ -44,3 +44,6 @@ add_subdirectory(draw/06_cubemap_render_pass)
 add_subdirectory(draw/07_ray_query_shadows)
 add_subdirectory(draw/08_deferred_cleanup)
 add_subdirectory(draw/09_ray_tracing_pipeline)
+
+# M01 deferred scene product over the experimental draw API.
+add_subdirectory(draw/10_deferred_renderer)

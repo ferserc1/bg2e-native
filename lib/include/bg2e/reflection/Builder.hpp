@@ -454,6 +454,61 @@ class TypeInfoBuilder {
         return PropertyBuilder<T>(*this, _info.properties.size() - 1);
     }
 
+    // Typed callables adapt live struct-backed settings without a proxy value model.
+    // The erased getter/setter contract remains exact, including int64_t enum IDs.
+    template <typename V, typename Getter, typename Setter>
+    PropertyBuilder<T> accessor(std::string name, Getter getter, Setter setter)
+    {
+        PropertyInfo property;
+        property.name = std::move(name);
+        property.type = propertyTypeOf<V>();
+        property.getter = [getter](const void* instance) -> std::any
+        {
+            if constexpr (std::is_enum_v<V>)
+            {
+                return int64_t(std::invoke(getter, *static_cast<const T*>(instance)));
+            }
+            else
+            {
+                return V(std::invoke(getter, *static_cast<const T*>(instance)));
+            }
+        };
+        property.setter = [setter](void* instance, const std::any& value)
+        {
+            if constexpr (std::is_enum_v<V>)
+            {
+                std::invoke(setter, *static_cast<T*>(instance), static_cast<V>(std::any_cast<int64_t>(value)));
+            }
+            else
+            {
+                std::invoke(setter, *static_cast<T*>(instance), std::any_cast<V>(value));
+            }
+        };
+        _info.properties.push_back(std::move(property));
+        return PropertyBuilder<T>(*this, _info.properties.size() - 1);
+    }
+
+    template <typename V, typename Getter>
+    PropertyBuilder<T> accessor(std::string name, Getter getter)
+    {
+        PropertyInfo property;
+        property.name = std::move(name);
+        property.type = propertyTypeOf<V>();
+        property.getter = [getter](const void* instance) -> std::any
+        {
+            if constexpr (std::is_enum_v<V>)
+            {
+                return int64_t(std::invoke(getter, *static_cast<const T*>(instance)));
+            }
+            else
+            {
+                return V(std::invoke(getter, *static_cast<const T*>(instance)));
+            }
+        };
+        _info.properties.push_back(std::move(property));
+        return PropertyBuilder<T>(*this, _info.properties.size() - 1);
+    }
+
     // Read-only object property: const reference getter only.
     // Getter signature: const U& (T::*)() const
     template <typename Getter>

@@ -29,6 +29,8 @@ namespace ui {
 
 class BG2E_API Window {
   public:
+    virtual ~Window() = default;
+
     enum DockingSide
     {
         DockLeft,

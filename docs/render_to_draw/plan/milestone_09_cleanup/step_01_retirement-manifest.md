@@ -1,8 +1,8 @@
 # M09-01 — Actual dependency inventory and deletion manifest
 
-[Milestone summary](summary.md) · [Plan index](../index.md) · [Architecture decisions](../architecture-decisions.md)
+[Milestone summary](summary.md) · [Plan index](../index.md) · [Architecture decisions](../architecture-decisions.md) · [Execution protocol](../execution-protocol.md) · [Progress](../progress.md)
 
-**Status:** planned. **Prerequisites:** Accepted M08 review and all product evidence.
+**Execution status:** see [progress](../progress.md). **Prerequisites:** Accepted M08 review and all product evidence.
 
 ## Scope and deliverable
 
@@ -31,10 +31,14 @@ Current sources to inspect: [lib/include/bg2e/render/](../../../../lib/include/b
 - Every remaining render/scene::vk/legacy Drawable reference has an assigned replacement or deletion, including build/scripts/tests.
 - The manifest does not schedule deletion of author assets, GPU Vulkan support or graphics-free scene/file functions.
 
-These are future checks. Run compilation only on explicit user request; record missing runtime/backend evidence as pending, never as a pass.
+Delegate compilation and applicable runtime checks to the project lead; perform relevant nonexecuting static checks yourself. After delivering this step or its correction, update progress to `awaiting_project_lead` and stop. Their instruction to continue accepts the preceding delivery as compiled/checked without failures; record that basis without inventing test/backend details. Follow the [execution protocol](../execution-protocol.md).
 
 ## Downstream comparison
 
 M09-02–M09-06 execute this manifest; M10 uses its source-to-document mapping as the authority rather than the initial plan names.
 
 Record actual API, ownership and verification in the milestone review. Follow [the review protocol](../review-protocol.md) and edit affected pending steps when actual contracts differ.
+
+## M01-16 reviewed baseline
+
+Include actual dual DrawableComponent accessors/mode tags, production scene visitors/scene::vk, ComponentFactoryRegistry/DB overloads, strong production versus weak draw TextureCache maps, legacy TextureWidgets native public members, UserInterfaceDelegate production init, application execution branches, manual tests/gpu/tests/draw probes, templates and paired shader deployment. A matching filename does not prove a replacement is implemented or accepted. See [M01 review](../milestone_01_deferred_renderer/review.md).

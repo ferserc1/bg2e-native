@@ -263,3 +263,62 @@ Fullscreen shaders follow example 04. CMake preserves the source's shader helper
 and packaging conventions under `shaders/draw_ray_tracing_pipeline`.
 See [Tutorial 09](../../doc/tutorials/draw/09_ray_tracing_pipeline.md) for the
 complete implementation walkthrough.
+
+## Deferred renderer product (M01)
+
+The `draw_deferred_renderer` target in `draw/10_deferred_renderer` is the first
+high-level deferred scene over `gpu` on Vulkan/Metal. It uses the non-template
+DefaultRenderLoopDelegate, RendererDeferred, scene components and draw Drawable;
+the production `17_deferred_renderer` remains a separate regression reference.
+
+The scene retains the textured two-submesh OBJ (ten provided material maps),
+a nested opaque model and deep clone, both ordinary and solid transparency,
+floor, HDR environment, orbiting perspective camera and four rotating lights.
+It adds an alpha-checker canopy and a packed-channel/UV1 cube. The original
+reference's ten lights are reduced to four to respect draw's eight-light ABI.
+Default internal scale is 67%, using single-sample bilinear reconstruction with
+one final color operation. FSR is optional; unavailable SDK/backend/device keeps
+reduced-resolution output. Advanced AO/GI/reflections, engine accumulation,
+denoise, baking and manipulation are intentionally absent until their milestones.
+
+```sh
+# Executable under bin/<platform>; on macOS use its app bundle executable.
+draw_deferred_renderer --backend=vulkan
+draw_deferred_renderer --backend=metal --upscaler=fsr
+draw_deferred_renderer --no-rt --upscaler=application
+draw_deferred_renderer --upscaler=fsr --settings=/path/to/graphics.json
+```
+
+Options are `--backend=vulkan|metal`, `--upscaler=bilinear|fsr|application`,
+`--no-rt`, `--validation`, `--settings=FILE` and `--restore-preferences`.
+No backend prompt is used. Unknown/repeated options fail before GPU allocation.
+`--help` prints the options. Metal requires macOS. No-RT fixture mode disables
+Drawable tracing geometry, light shadow requests and the shadow setting; it does
+not pretend to change the hardware's reported query capabilities. Native no-RT
+hardware also uses the supported ordinary lighting fallback.
+
+The scene panel provides pause/refresh/animation, upscaler choice, same-type
+renderer replacement, stale-edit rejection, clone tint/roughness, glass opacity,
+transparent visibility, cutout visibility/threshold and packed-channel selection/
+inversion. CPU values are read from actual objects and material edits are queued
+at a drained boundary. Clone initialization checks independent CPU/GPU mesh,
+material, texture/image/sampler ownership and applies a distinct tint. Injected
+CountingGBuffer displays actual opaque/transparent pass counts; the application
+resampler supplies live reflected controls without engine registration.
+
+GraphicsSettingsWindow reads live reflected final/debug/sky/environment/light/
+shadow/resolution/upscaler settings, imports/exports exact typed settings files
+and explicitly saves/restores optional preferences. No settings restore happens
+implicitly. With both startup inputs, `--settings=FILE` takes precedence over
+`--restore-preferences`. Use a document matching the selected upscaler; strict
+unknown/unavailable/type diagnostics are displayed. Renderer replacement retains
+the scene, final layer/settings, shadow settings, scale policy and counters;
+old queued actions are rejected by generation. UI presentations while paused do
+not advance scene animation or SDK temporal state.
+
+Engine shader libraries and existing assets are deployed by bundle_app_sdl;
+there are no private copies of PBR/environment/query/upscale algorithms or new
+application shaders. The target follows existing platform bundle/output and
+packaging conventions. Agent work does not establish compilation/runtime success:
+see the [manual acceptance checklist](10_deferred_renderer/README.md) and
+[implementation handoff](../../docs/render_to_draw/plan/milestone_01_deferred_renderer/working-example.md).

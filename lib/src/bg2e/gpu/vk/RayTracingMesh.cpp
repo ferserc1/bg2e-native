@@ -114,7 +114,7 @@ RayTracingMesh::RayTracingMesh(vk::Device* device, const RayTracingMeshDescripti
     VkAccelerationStructureGeometryKHR geometry{};
     geometry.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;
     geometry.geometryType = VK_GEOMETRY_TYPE_TRIANGLES_KHR;
-    geometry.flags = VK_GEOMETRY_OPAQUE_BIT_KHR;
+    geometry.flags = _description.opaque ? VK_GEOMETRY_OPAQUE_BIT_KHR : 0;
     geometry.geometry.triangles.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR;
     geometry.geometry.triangles.vertexFormat = _vertexFormat;
     geometry.geometry.triangles.vertexData.deviceAddress = _vertexAddress;
@@ -178,7 +178,7 @@ void RayTracingMesh::build(VkCommandBuffer cmd)
     VkAccelerationStructureGeometryKHR geometry{};
     geometry.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;
     geometry.geometryType = VK_GEOMETRY_TYPE_TRIANGLES_KHR;
-    geometry.flags = VK_GEOMETRY_OPAQUE_BIT_KHR;
+    geometry.flags = _description.opaque ? VK_GEOMETRY_OPAQUE_BIT_KHR : 0;
     geometry.geometry.triangles.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR;
     geometry.geometry.triangles.vertexFormat = _vertexFormat;
     geometry.geometry.triangles.vertexData.deviceAddress = _vertexAddress;

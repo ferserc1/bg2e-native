@@ -27,6 +27,11 @@ namespace bg2e {
 namespace gpu {
 namespace metal {
 
+#if BG2E_IS_MAC
+RenderingCapabilities queryRenderingCapabilities(MTL::Device* device);
+FormatCapabilities queryFormatCapabilities(MTL::Device* device, PixelFormat format);
+#endif
+
 class PhysicalDevice : public gpu::PhysicalDevice {
   public:
     ~PhysicalDevice() override;
@@ -34,6 +39,7 @@ class PhysicalDevice : public gpu::PhysicalDevice {
     void choose(gpu::Instance& instance, gpu::Surface& surface) override;
 
     bool isValid() const override;
+    FormatCapabilities formatCapabilities(PixelFormat format) const override;
 
     const std::shared_ptr<PhysicalDeviceProperties> properties() const override;
 

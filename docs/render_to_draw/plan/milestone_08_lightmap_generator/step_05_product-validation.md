@@ -1,8 +1,8 @@
 # M08-05 — Standalone CLI parity, multiple targets and deployment
 
-[Milestone summary](summary.md) · [Plan index](../index.md) · [Architecture decisions](../architecture-decisions.md)
+[Milestone summary](summary.md) · [Plan index](../index.md) · [Architecture decisions](../architecture-decisions.md) · [Execution protocol](../execution-protocol.md) · [Progress](../progress.md)
 
-**Status:** planned. **Prerequisites:** M08-01–M08-04.
+**Execution status:** see [progress](../progress.md). **Prerequisites:** M08-01–M08-04.
 
 ## Scope and deliverable
 
@@ -27,7 +27,7 @@ Current sources to inspect: [apps/lightmap_generator/](../../../../apps/lightmap
 - Output images/model metadata are inspected independently; successfully returning from the CLI is not sole evidence of correct maps.
 - All required new applications/products have validation evidence sufficient for the retirement review, with unresolved parity gaps explicit.
 
-These are future checks. Run compilation only on explicit user request; record missing runtime/backend evidence as pending, never as a pass.
+Delegate compilation and applicable runtime checks to the project lead; perform relevant nonexecuting static checks yourself. After delivering this step or its correction, update progress to `awaiting_project_lead` and stop. Their instruction to continue accepts the preceding delivery as compiled/checked without failures; record that basis without inventing test/backend details. Follow the [execution protocol](../execution-protocol.md).
 
 ## Downstream comparison
 

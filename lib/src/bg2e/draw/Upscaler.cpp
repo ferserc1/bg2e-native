@@ -1,0 +1,100 @@
+#include <bg2e/draw/Upscaler.hpp>
+#include <bg2e/draw/Engine.hpp>
+#include <bg2e/gpu/Device.hpp>
+#include <bg2e/reflection/Builder.hpp>
+#include <cmath>
+#include <stdexcept>
+#include <algorithm>
+
+namespace bg2e::draw {
+float ResolutionSettings::scale() const
+{
+    return _scale;
+}
+void ResolutionSettings::setScale(float value)
+{
+    if (!std::isfinite(value) || value < 0.25f || value > 1.0f)
+    {
+        throw std::invalid_argument("Resolution scale must be between 0.25 and 1");
+    }
+    _scale = value;
+}
+bool ResolutionSettings::enabled() const
+{
+    return _enabled;
+}
+void ResolutionSettings::setEnabled(bool value)
+{
+    _enabled = value;
+}
+gpu::Size2D ResolutionSettings::resolve(gpu::Size2D output, gpu::Size2D fixed) const
+{
+    if (!_enabled)
+    {
+        return fixed;
+    }
+    return {std::max(1u, uint32_t(std::floor(double(output.width) * _scale))),
+        std::max(1u, uint32_t(std::floor(double(output.height) * _scale)))};
+}
+reflection::TypeInfo ResolutionSettings::settingsType() const
+{
+    reflection::TypeInfoBuilder<ResolutionSettings> type("bg2e.draw.resolution.v1");
+    type.property("enabled", &ResolutionSettings::enabled, &ResolutionSettings::setEnabled).category("Resolution");
+    type.property("scale", &ResolutionSettings::scale, &ResolutionSettings::setScale).category("Resolution").range(0.25, 1);
+    return type.build();
+}
+std::string ResamplingUpscaler::identifier() const
+{
+    return "bg2e.draw.bilinear.v1";
+}
+std::string ResamplingUpscaler::label() const
+{
+    return "Bilinear reconstruction";
+}
+UpscalerRequirements ResamplingUpscaler::requirements() const
+{
+    return {};
+}
+void ResamplingUpscaler::initialize(Engine& engine, const UpscalerConfiguration& configuration)
+{
+    gpu::PipelineLayoutDescription layout;
+    layout.resourceBindings.push_back({0, {0, 0}, gpu::ResourceType::SampledImage, gpu::ShaderStage::Fragment, 1});
+    layout.resourceBindings.push_back({0, {1, 0}, gpu::ResourceType::Sampler, gpu::ShaderStage::Fragment, 1});
+    layout.pushConstants.push_back({0, 16, gpu::ShaderStage::Fragment});
+    _pass.initialize(engine, configuration.shaderRoot, "draw/upscale/resample", engine.device()->createPipelineLayout(layout),
+        gpu::PixelFormat::R16G16B16A16_SFLOAT, configuration.frameSlots);
+    _ready = true;
+}
+void ResamplingUpscaler::resize(const UpscalerConfiguration&)
+{
+}
+bool ResamplingUpscaler::available() const
+{
+    return _ready;
+}
+std::string ResamplingUpscaler::status() const
+{
+    return _ready ? "Available" : "Not initialized";
+}
+bool ResamplingUpscaler::record(const UpscalerInput& input)
+{
+    const glm::vec4 size{float(input.output.size().width), float(input.output.size().height), 0, 0};
+    _pass.draw(input.frame, input.output, {&input.color}, 0, {}, &size, sizeof(size));
+    return true;
+}
+void ResamplingUpscaler::reset()
+{
+}
+void ResamplingUpscaler::cleanup()
+{
+    _ready = false;
+    _pass.cleanup();
+}
+reflection::TypeInfo ResamplingUpscaler::settingsType() const
+{
+    reflection::TypeInfoBuilder<ResamplingUpscaler> type(identifier());
+    type.property("available", &ResamplingUpscaler::available).category("Capabilities");
+    type.property("status", &ResamplingUpscaler::status).category("Capabilities");
+    return type.build();
+}
+}

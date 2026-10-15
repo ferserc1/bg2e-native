@@ -48,6 +48,29 @@ struct GraphicsPipelineDescription {
 
     std::vector<VertexBufferDescription> vertexBufferDescriptions;
 
+    // Nonempty array replaces legacy colorFormat; conflicting declarations fail.
+    // Empty array + Undefined colorFormat represents a depth-only pipeline.
+    std::vector<ColorAttachmentState> colorAttachments;
+    // Unset preserves each backend's historical depth defaults.
+    std::optional<DepthState> depthState;
+
+    std::vector<ColorAttachmentState> resolvedColorAttachments() const
+    {
+        if (!colorAttachments.empty())
+        {
+            if (colorFormat != PixelFormat::Undefined)
+            {
+                throw std::invalid_argument("Use colorAttachments or colorFormat, not both");
+            }
+            return colorAttachments;
+        }
+        if (colorFormat != PixelFormat::Undefined)
+        {
+            return {{colorFormat, {}}};
+        }
+        return {};
+    }
+
     void addVertexBufferDescription(const VertexBufferDescription& desc)
     {
         vertexBufferDescriptions.push_back(desc);
@@ -60,6 +83,25 @@ class BG2E_API GraphicsPipeline : public DeviceResource {
     {
     }
     virtual ~GraphicsPipeline() = default;
+
+    const std::vector<ColorAttachmentState>& colorAttachments() const
+    {
+        return _colorAttachments;
+    }
+    PixelFormat depthFormat() const
+    {
+        return _depthFormat;
+    }
+    static void validateDescription(const GraphicsPipelineDescription& description, const Device& device);
+
+  protected:
+    void setAttachmentDescription(const GraphicsPipelineDescription& description)
+    {
+        _colorAttachments = description.resolvedColorAttachments();
+        _depthFormat = description.depthFormat;
+    }
+    std::vector<ColorAttachmentState> _colorAttachments;
+    PixelFormat _depthFormat = PixelFormat::Undefined;
 };
 
 }

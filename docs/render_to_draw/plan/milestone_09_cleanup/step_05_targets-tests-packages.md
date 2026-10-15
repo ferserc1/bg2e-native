@@ -1,8 +1,8 @@
 # M09-05 — Retire legacy shaders/examples and repair tests/distribution
 
-[Milestone summary](summary.md) · [Plan index](../index.md) · [Architecture decisions](../architecture-decisions.md)
+[Milestone summary](summary.md) · [Plan index](../index.md) · [Architecture decisions](../architecture-decisions.md) · [Execution protocol](../execution-protocol.md) · [Progress](../progress.md)
 
-**Status:** planned. **Prerequisites:** M09-01–M09-04.
+**Execution status:** see [progress](../progress.md). **Prerequisites:** M09-01–M09-04.
 
 ## Scope and deliverable
 
@@ -33,10 +33,14 @@ Current sources to inspect: [CMakeLists.txt](../../../../CMakeLists.txt), [lib/C
 - Configure/build/install/package checks, when authorized, contain no missing/dead render targets, headers or resources.
 - A generated standalone project and installed new products load final shader libraries; adapted tests/examples do not include legacy APIs.
 
-These are future checks. Run compilation only on explicit user request; record missing runtime/backend evidence as pending, never as a pass.
+Delegate compilation and applicable runtime checks to the project lead; perform relevant nonexecuting static checks yourself. After delivering this step or its correction, update progress to `awaiting_project_lead` and stop. Their instruction to continue accepts the preceding delivery as compiled/checked without failures; record that basis without inventing test/backend details. Follow the [execution protocol](../execution-protocol.md).
 
 ## Downstream comparison
 
 M10 build/tutorial/distribution pages must match final target/source/runtime paths, including retained GPU backend libraries.
 
 Record actual API, ownership and verification in the milestone review. Follow [the review protocol](../review-protocol.md) and edit affected pending steps when actual contracts differ.
+
+## M01-16 reviewed baseline
+
+Preserve the real draw_deferred_renderer target and later accepted products; disposition each manual M01 probe explicitly rather than claiming an automatic test suite. Keep paired shaders/src/draw pipeline paths, gpu::vk::FidelityFXBridge optional SDK linkage and recursive standalone copies. Remove legacy-only shaders/targets only after the per-file manifest confirms no surviving consumer. See [M01 review](../milestone_01_deferred_renderer/review.md).

@@ -32,10 +32,16 @@ class Device;
 
 // Backend-agnostic shader library loader. Resolves per-stage shader files from
 // a compiled ShaderLib directory (one .spv or .metallib per shader stage), all
-// named <shader>.<stage>.<ext> and compiled with "main" as the entry point.
+// named <shader>.<stage>.<ext>. Vulkan uses main; Metal uses <stage>Main.
+// basePath may select a deployed pipeline folder (e.g. shaders/draw/composite).
 class BG2E_API ShaderLib {
   public:
     ShaderLib(const std::filesystem::path& basePath, BackendType backendType);
+
+    // Resolves a file without opening it or creating a GPU resource. Relative nested
+    // shader names preserve pipeline directories; absolute/traversing names fail.
+    std::filesystem::path stagePath(const std::string& shaderName, ShaderStage stage) const;
+    static std::string entryPoint(BackendType backendType, ShaderStage stage);
 
     std::shared_ptr<ShaderModule> vertex(
         const std::string& shaderName,
@@ -73,14 +79,12 @@ class BG2E_API ShaderLib {
 
     std::shared_ptr<ShaderModule> _load(
         const std::string& shaderName,
-        const std::string& stageExt,
         ShaderStage stage,
         const std::string& debugName,
         Device* device);
 
     std::shared_ptr<ShaderModule> _loadOrNull(
         const std::string& shaderName,
-        const std::string& stageExt,
         ShaderStage stage,
         const std::string& debugName,
         Device* device);

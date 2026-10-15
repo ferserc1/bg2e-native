@@ -24,6 +24,7 @@
 
 #include <bg2e/render/Texture.hpp>
 #include <bg2e/base/Texture.hpp>
+#include <bg2e/draw/Texture.hpp>
 #include <bg2e/render/Engine.hpp>
 
 namespace bg2e {
@@ -45,6 +46,11 @@ class BG2E_API TextureCache {
     // configure the resulting Texture. The texture image is loaded from the filePath
     std::shared_ptr<render::Texture> load(render::Engine*, const base::Texture& settings);
 
+    std::shared_ptr<draw::Texture> load(draw::Engine*, const std::filesystem::path& filePath);
+    std::shared_ptr<draw::Texture> load(draw::Engine*, const std::filesystem::path& filePath, const std::string& fileName);
+    std::shared_ptr<draw::Texture> load(draw::Engine*, const std::string& filePath);
+    std::shared_ptr<draw::Texture> load(draw::Engine*, const base::Texture& settings);
+
     // Remove all objects from the cache
     void emptyCache();
 
@@ -55,6 +61,8 @@ class BG2E_API TextureCache {
     static TextureCache* g_singleton;
 
     std::unordered_map<std::string, std::shared_ptr<render::Texture>> _textures;
+    // Weak draw entries: Engine/device must outlive every external realization.
+    std::unordered_map<std::string, std::weak_ptr<draw::Texture>> _drawTextures;
 };
 
 }

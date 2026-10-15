@@ -19,6 +19,8 @@
 #include <bg2e/gpu/ShaderLib.hpp>
 #include <bg2e/gpu/Device.hpp>
 
+#include <stdexcept>
+
 namespace bg2e {
 namespace gpu {
 
@@ -27,11 +29,50 @@ ShaderLib::ShaderLib(const std::filesystem::path& basePath, BackendType backendT
 {
 }
 
+namespace {
+std::string stageExtension(ShaderStage stage)
+{
+    switch (stage)
+    {
+    case ShaderStage::Vertex: return "vert";
+    case ShaderStage::Fragment: return "frag";
+    case ShaderStage::Compute: return "comp";
+    case ShaderStage::RayGeneration: return "rgen";
+    case ShaderStage::Miss: return "rmiss";
+    case ShaderStage::ClosestHit: return "rchit";
+    default: throw std::invalid_argument("ShaderLib requires one supported shader stage");
+    }
+}
+}
+
+std::filesystem::path ShaderLib::stagePath(const std::string& shaderName, ShaderStage stage) const
+{
+    const std::filesystem::path name(shaderName);
+    if (name.empty() || name.is_absolute() || name.has_root_path() || name.filename().empty())
+    {
+        throw std::invalid_argument("ShaderLib requires a relative shader name");
+    }
+    for (const auto& part : name)
+    {
+        if (part == ".." || part == ".")
+        {
+            throw std::invalid_argument("ShaderLib shader names cannot traverse directories");
+        }
+    }
+    const auto extension = _backendType == BackendType::Vulkan ? ".spv" : ".metallib";
+    return _basePath / (name.generic_string() + "." + stageExtension(stage) + extension);
+}
+
+std::string ShaderLib::entryPoint(BackendType backendType, ShaderStage stage)
+{
+    const auto extension = stageExtension(stage);
+    return backendType == BackendType::Vulkan ? "main" : extension + "Main";
+}
+
 std::shared_ptr<ShaderModule> ShaderLib::vertex(const std::string& shaderName, Device* device, const std::string& debugName)
 {
     return _load(
         shaderName,
-        "vert",
         ShaderStage::Vertex,
         debugName.empty() ? shaderName + " vertex shader" : debugName,
         device);
@@ -41,7 +82,6 @@ std::shared_ptr<ShaderModule> ShaderLib::fragment(const std::string& shaderName,
 {
     return _load(
         shaderName,
-        "frag",
         ShaderStage::Fragment,
         debugName.empty() ? shaderName + " fragment shader" : debugName,
         device);
@@ -51,7 +91,6 @@ std::shared_ptr<ShaderModule> ShaderLib::compute(const std::string& shaderName, 
 {
     return _load(
         shaderName,
-        "comp",
         ShaderStage::Compute,
         debugName.empty() ? shaderName + " compute shader" : debugName,
         device);
@@ -61,7 +100,6 @@ std::shared_ptr<ShaderModule> ShaderLib::rayGeneration(const std::string& shader
 {
     return _load(
         shaderName,
-        "rgen",
         ShaderStage::RayGeneration,
         debugName.empty() ? shaderName + " ray generation shader" : debugName,
         device);
@@ -71,7 +109,6 @@ std::shared_ptr<ShaderModule> ShaderLib::miss(const std::string& shaderName, Dev
 {
     return _loadOrNull(
         shaderName,
-        "rmiss",
         ShaderStage::Miss,
         debugName.empty() ? shaderName + " miss shader" : debugName,
         device);
@@ -81,7 +118,6 @@ std::shared_ptr<ShaderModule> ShaderLib::closestHit(const std::string& shaderNam
 {
     return _loadOrNull(
         shaderName,
-        "rchit",
         ShaderStage::ClosestHit,
         debugName.empty() ? shaderName + " closest hit shader" : debugName,
         device);
@@ -89,39 +125,30 @@ std::shared_ptr<ShaderModule> ShaderLib::closestHit(const std::string& shaderNam
 
 std::shared_ptr<ShaderModule> ShaderLib::_load(
     const std::string& shaderName,
-    const std::string& stageExt,
     ShaderStage stage,
     const std::string& debugName,
     Device* device)
 {
-    std::string ext = (_backendType == BackendType::Vulkan) ? ".spv" : ".metallib";
-    std::string entryPoint = (_backendType == BackendType::Vulkan) ? "main" : stageExt + "Main";
-    auto filePath = (_basePath / (shaderName + "." + stageExt + ext)).string();
-    return device->createShaderModule({filePath, entryPoint, stage, debugName});
+    if (!device)
+    {
+        throw std::invalid_argument("ShaderLib requires a device");
+    }
+    const auto filePath = stagePath(shaderName, stage);
+    return device->createShaderModule({filePath.string(), entryPoint(_backendType, stage), stage, debugName});
 }
 
 std::shared_ptr<ShaderModule> ShaderLib::_loadOrNull(
     const std::string& shaderName,
-    const std::string& stageExt,
     ShaderStage stage,
     const std::string& debugName,
     Device* device)
 {
-    std::string ext = (_backendType == BackendType::Vulkan) ? ".spv" : ".metallib";
-    auto filePath = _basePath / (shaderName + "." + stageExt + ext);
-
-    if (_backendType == BackendType::Metal)
+    const auto filePath = stagePath(shaderName, stage);
+    if (_backendType == BackendType::Metal && !std::filesystem::exists(filePath))
     {
-        if (!std::filesystem::exists(filePath))
-        {
-            return nullptr;
-        }
+        return nullptr;
     }
-
-    std::string entryPoint = (_backendType == BackendType::Vulkan)
-                                 ? "main"
-                                 : stageExt + "Main";
-    return device->createShaderModule({filePath.string(), entryPoint, stage, debugName});
+    return _load(shaderName, stage, debugName, device);
 }
 
 }

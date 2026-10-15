@@ -44,6 +44,10 @@ class BG2E_API Image : public DeviceResource {
     }
     virtual ~Image() = default;
 
+    virtual ImageUsage usage() const
+    {
+        return ImageUsage::None;
+    }
     PixelFormat pixelFormat() const
     {
         return _pixelFormat;
@@ -74,10 +78,32 @@ class BG2E_API Image : public DeviceResource {
         return _imageType == ImageType::Cubemap;
     }
 
-    ImageLayout currentLayout() const
+    uint32_t arrayLayers() const
     {
-        return _currentLayout;
+        return isCubemap() ? 6u : 1u;
     }
+    ImageSubresourceRange fullRange() const
+    {
+        return {0, _mipLevels, 0, arrayLayers()};
+    }
+    Size2D mipExtent(uint32_t mipLevel) const;
+    void validateRange(const ImageSubresourceRange& range) const;
+    ImageView view(const ImageSubresourceRange& range);
+    ImageView fullView();
+    // Throws for a mixed-layout range; never reports Undefined for valid data
+    // merely because another mip/layer has a different layout.
+    ImageLayout currentLayout() const;
+    ImageLayout currentLayout(const ImageSubresourceRange& range) const;
+    void validateLayout(ImageLayout layout) const;
+    size_t validateUpload(const ImageUploadDescription& description) const;
+
+    // Synchronous rare-edit conveniences: callers stop producers. Implementations
+    // wait for outstanding users and complete staging work before returning.
+    virtual void upload(const ImageUploadDescription& description, ImageLayout finalLayout = ImageLayout::ShaderReadOnly);
+    virtual void readPixels(std::vector<uint8_t>& data, const ImageSubresourceRange& range,
+                            ImageLayout finalLayout = ImageLayout::ShaderReadOnly);
+    void generateMipmaps(ImageLayout finalLayout = ImageLayout::ShaderReadOnly);
+    static void validateDescription(const ImageDescription& description);
 
     virtual void readPixelsRGBA8(
         std::vector<uint8_t>& outData,
@@ -91,17 +117,16 @@ class BG2E_API Image : public DeviceResource {
         throw std::runtime_error("Image::uploadRGBA8 not implemented");
     }
 
-    virtual void uploadImage(const base::Image* image)
-    {
-        throw std::runtime_error("Image::uploadImage not implemented");
-    }
+    virtual void uploadImage(const base::Image* image);
 
   protected:
-    // _currentLayout must always mirror the real backend layout of the image.
-    // Assign it directly only right after the API call that actually changes the
-    // layout (e.g. a pipeline barrier), so the tracked value stays in sync.
+    void setLayout(const ImageSubresourceRange& range, ImageLayout layout);
+    void resetLayoutTracking();
+    std::vector<ImageLayout> _subresourceLayouts;
     PixelFormat _pixelFormat = PixelFormat::Undefined;
     Size2D _size;
+    // Uniform initial layout before the per-mip/layer table is materialized.
+    // Native commands update the table; builders reset it on allocation.
     ImageLayout _currentLayout = ImageLayout::Undefined;
     ImageType _imageType = ImageType::Image2D;
     uint32_t _mipLevels = 1;

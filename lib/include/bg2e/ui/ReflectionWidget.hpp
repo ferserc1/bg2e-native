@@ -41,6 +41,10 @@ class BG2E_API ReflectionWidget {
         const reflection::TypeInfo& info,
         uint32_t depth = 0);
 
+    // Edits a transient scalar value only; never invokes the original property's
+    // accessors. The caller validates/queues the result against its live target.
+    static bool editValue(std::any& value, const reflection::PropertyInfo& property, bool editable = true);
+
     // Draws one button per action described by 'info'.
     static void drawActions(
         void* instance,

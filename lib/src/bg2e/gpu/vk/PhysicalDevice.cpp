@@ -101,6 +101,56 @@ PhysicalDevice::QueueFamilyIndices PhysicalDevice::queryQueueFamilies(VkPhysical
     return queryQueueFamiliesImpl(device, surface);
 }
 
+FormatCapabilities queryFormatCapabilities(VkPhysicalDevice device, PixelFormat format)
+{
+    FormatCapabilities result;
+    if (device == VK_NULL_HANDLE || format == PixelFormat::Undefined)
+    {
+        return result;
+    }
+    VkFormatProperties properties{};
+    vkGetPhysicalDeviceFormatProperties(device, toVkFormat(format), &properties);
+    const auto flags = properties.optimalTilingFeatures;
+    if (flags & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT)
+    {
+        result.usages |= ImageUsage::ColorAttachment;
+    }
+    if (flags & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT)
+    {
+        result.usages |= ImageUsage::DepthStencil;
+    }
+    if (flags & VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT)
+    {
+        result.usages |= ImageUsage::Sampled;
+    }
+    if (flags & VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT)
+    {
+        result.usages |= ImageUsage::Storage;
+    }
+    if (flags & VK_FORMAT_FEATURE_TRANSFER_SRC_BIT)
+    {
+        result.usages |= ImageUsage::TransferSrc;
+    }
+    if (flags & VK_FORMAT_FEATURE_TRANSFER_DST_BIT)
+    {
+        result.usages |= ImageUsage::TransferDst;
+    }
+    result.blitSource = (flags & VK_FORMAT_FEATURE_BLIT_SRC_BIT) != 0;
+    result.blitDestination = (flags & VK_FORMAT_FEATURE_BLIT_DST_BIT) != 0;
+    result.mipmapGeneration = result.blitSource && result.blitDestination &&
+        (flags & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT) != 0 && !isDepthFormat(format) &&
+        !isUnsignedIntegerFormat(format) && !isSignedIntegerFormat(format);
+    result.colorAttachmentBytesPerSample = pixelFormatBytes(format);
+    result.blend = (flags & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT) != 0;
+    result.linearFiltering = (flags & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT) != 0;
+    return result;
+}
+
+FormatCapabilities PhysicalDevice::formatCapabilities(PixelFormat format) const
+{
+    return queryFormatCapabilities(_physicalDevice, format);
+}
+
 PhysicalDeviceProperties* PhysicalDevice::queryProperties(VkPhysicalDevice device)
 {
     auto props = PhysicalDeviceProperties::create();
@@ -141,6 +191,11 @@ PhysicalDeviceProperties* PhysicalDevice::queryProperties(VkPhysicalDevice devic
         props->deviceType = PhysicalDeviceProperties::Other;
     }
 
+    props->rendering.maxColorAttachments = deviceProperties.limits.maxColorAttachments;
+    props->rendering.maxImageDimension2D = deviceProperties.limits.maxImageDimension2D;
+    VkPhysicalDeviceFeatures coreFeatures{};
+    vkGetPhysicalDeviceFeatures(device, &coreFeatures);
+    props->rendering.independentBlend = coreFeatures.independentBlend;
     props->name = deviceProperties.deviceName;
     props->vendor = deviceProperties.vendorID;
     props->id = deviceProperties.deviceID;
@@ -186,14 +241,15 @@ PhysicalDeviceProperties* PhysicalDevice::queryProperties(VkPhysicalDevice devic
         availableExtensionNames.insert(ext.extensionName);
     }
 
-    bool hasRTExtensions =
-        availableExtensionNames.count(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME) &&
+    props->rayTracing.available =
         availableExtensionNames.count(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME) &&
+        availableExtensionNames.count(VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME) &&
         availableExtensionNames.count(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
-
-    props->rayTracing.available = hasRTExtensions;
-    props->rayTracing.rayTracingPipeline = rtPipelineFeatures.rayTracingPipeline;
-    props->rayTracing.rayQuery = rayQueryFeatures.rayQuery;
+    props->rayTracing.rayTracingPipeline = rtPipelineFeatures.rayTracingPipeline &&
+        availableExtensionNames.count(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
+    props->rayTracing.rayQuery = rayQueryFeatures.rayQuery &&
+        availableExtensionNames.count(VK_KHR_RAY_QUERY_EXTENSION_NAME);
+    props->rayTracing.rayQueryInRenderStages = props->rayTracing.rayQuery;
     props->rayTracing.accelerationStructure = asFeatures.accelerationStructure;
     props->rayTracing.bufferDeviceAddress = bufferDeviceAddressFeatures.bufferDeviceAddress;
 

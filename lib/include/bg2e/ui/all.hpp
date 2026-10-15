@@ -51,3 +51,5 @@
 #include <bg2e/ui/UISettingsWindow.hpp>
 #include <bg2e/ui/RenderSettingsWindow.hpp>
 #include <bg2e/ui/Loader.hpp>
+
+#include <bg2e/ui/GraphicsSettingsWindow.hpp>

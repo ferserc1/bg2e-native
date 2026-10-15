@@ -1,8 +1,8 @@
 # M06-07 — Review M06 application APIs and revise composer/CLI/retirement
 
-[Milestone summary](summary.md) · [Plan index](../index.md) · [Architecture decisions](../architecture-decisions.md)
+[Milestone summary](summary.md) · [Plan index](../index.md) · [Architecture decisions](../architecture-decisions.md) · [Execution protocol](../execution-protocol.md) · [Progress](../progress.md)
 
-**Status:** planned. **Prerequisites:** M06 parity/product evidence.
+**Execution status:** see [progress](../progress.md). **Prerequisites:** M06 parity/product evidence.
 
 ## Scope and deliverable
 
@@ -24,10 +24,14 @@ Paths above include current references and proposed outputs. New paths are targe
 - The report and actual edited pending steps cover all shared and application-specific differences.
 - No core API dependency on apps/draw/model_edit was introduced to implement reusable resources.
 
-These are future checks. Run compilation only on explicit user request; record missing runtime/backend evidence as pending, never as a pass.
+Delegate compilation and applicable runtime checks to the project lead; perform relevant nonexecuting static checks yourself. After delivering this step or its correction, update progress to `awaiting_project_lead` and stop. Their instruction to continue accepts the preceding delivery as compiled/checked without failures; record that basis without inventing test/backend details. Follow the [execution protocol](../execution-protocol.md).
 
 ## Downstream comparison
 
 Composer migration begins from the reviewed application/resource architecture, not a second independent adaptation of old engine calls.
 
 Record actual API, ownership and verification in the milestone review. Follow [the review protocol](../review-protocol.md) and edit affected pending steps when actual contracts differ.
+
+## Revised final handoff
+
+This technical review is followed by [M06-08 — Cumulative documentation](step_08_documentation.md) in the same milestone. On review delivery, progress points to that documentation step, with normal lead acceptance required. The review does not close the milestone or authorize the following milestone by itself. Reconcile its report with the documentation handoff after that final step.

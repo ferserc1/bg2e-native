@@ -1,8 +1,8 @@
 # M07-07 — Review M07 scene/import contracts and revise CLI/cleanup
 
-[Milestone summary](summary.md) · [Plan index](../index.md) · [Architecture decisions](../architecture-decisions.md)
+[Milestone summary](summary.md) · [Plan index](../index.md) · [Architecture decisions](../architecture-decisions.md) · [Execution protocol](../execution-protocol.md) · [Progress](../progress.md)
 
-**Status:** planned. **Prerequisites:** M07 product/scene/bake evidence.
+**Execution status:** see [progress](../progress.md). **Prerequisites:** M07 product/scene/bake evidence.
 
 ## Scope and deliverable
 
@@ -24,10 +24,14 @@ Paths above include current references and proposed outputs. New paths are targe
 - The review names actual interfaces and edits all impacted pending tasks, with complete-scene/bake evidence.
 - No hidden production dependency is being justified as harmless merely because the new app window works.
 
-These are future checks. Run compilation only on explicit user request; record missing runtime/backend evidence as pending, never as a pass.
+Delegate compilation and applicable runtime checks to the project lead; perform relevant nonexecuting static checks yourself. After delivering this step or its correction, update progress to `awaiting_project_lead` and stop. Their instruction to continue accepts the preceding delivery as compiled/checked without failures; record that basis without inventing test/backend details. Follow the [execution protocol](../execution-protocol.md).
 
 ## Downstream comparison
 
 M08 runs against the now-complete shared scene/resource APIs; final deletion remains gated on standalone product parity.
 
 Record actual API, ownership and verification in the milestone review. Follow [the review protocol](../review-protocol.md) and edit affected pending steps when actual contracts differ.
+
+## Revised final handoff
+
+This technical review is followed by [M07-08 — Cumulative documentation](step_08_documentation.md) in the same milestone. On review delivery, progress points to that documentation step, with normal lead acceptance required. The review does not close the milestone or authorize the following milestone by itself. Reconcile its report with the documentation handoff after that final step.

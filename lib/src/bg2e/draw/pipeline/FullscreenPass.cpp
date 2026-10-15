@@ -1,0 +1,108 @@
+#include <bg2e/draw/pipeline/FullscreenPass.hpp>
+#include <bg2e/draw/Engine.hpp>
+#include <bg2e/gpu/Device.hpp>
+#include <bg2e/gpu/ShaderLib.hpp>
+#include <limits>
+
+namespace bg2e::draw::pipeline {
+void FullscreenPass::initialize(Engine& engine, const std::filesystem::path& shaderRoot,
+    const std::string& fragment, std::shared_ptr<gpu::PipelineLayout> layout,
+    gpu::PixelFormat output, uint32_t slots)
+{
+    if (_engine || !layout || layout->device() != engine.device() || slots == 0)
+    {
+        throw std::invalid_argument("Fullscreen pass requires a fresh lifecycle, matching layout and slots");
+    }
+    _engine = &engine;
+    _layout = std::move(layout);
+    gpu::ShaderLib library(shaderRoot, engine.backendType());
+    _vertex = library.vertex("draw/raster/fullscreen", engine.device());
+    _fragment = library.fragment(fragment, engine.device());
+    gpu::GraphicsPipelineDescription description;
+    description.layout = _layout.get();
+    description.vertexShader = _vertex.get();
+    description.fragmentShader = _fragment.get();
+    description.colorFormat = output;
+    description.cullMode = gpu::CullMode::None;
+    description.depthState = gpu::DepthState{false, false, gpu::CompareOperation::Always};
+    _pipeline = engine.device()->createGraphicsPipeline(description);
+    gpu::SamplerDescription sampler;
+    // Nearest supports every sampled G-buffer format including depth. Final
+    // reconstruction implements bilinear explicitly, independent of format support.
+    sampler.minFilter = sampler.magFilter = gpu::Filter::Nearest;
+    sampler.addressModeU = sampler.addressModeV = sampler.addressModeW = gpu::AddressMode::ClampToEdge;
+    sampler.maxLod = 0;
+    _sampler = engine.device()->createSampler(sampler);
+    _sets.resize(slots);
+    _serial.assign(slots, std::numeric_limits<uint64_t>::max());
+}
+void FullscreenPass::beginFrame(const FrameContext& frame)
+{
+    if (&frame.engine != _engine || frame.frameSlot >= _sets.size())
+    {
+        throw std::invalid_argument("Fullscreen frame slot/context mismatch");
+    }
+    if (_serial[frame.frameSlot] != frame.frameNumber)
+    {
+        _sets[frame.frameSlot].clear();
+        _serial[frame.frameSlot] = frame.frameNumber;
+    }
+}
+void FullscreenPass::draw(const FrameContext& frame, gpu::Image& output,
+    const std::vector<gpu::Image*>& inputs, uint32_t imageSet,
+    const std::vector<std::pair<uint32_t, gpu::ResourceSet*>>& sets, const void* push, uint32_t pushSize, const std::vector<uint32_t>& metalImages)
+{
+    beginFrame(frame);
+    if (!metalImages.empty() && metalImages.size() != inputs.size())
+    {
+        throw std::invalid_argument("Fullscreen native image map must match input count");
+    }
+    auto& command = frame.commandBuffer;
+    auto resources = _engine->device()->createResourceSet(_layout.get(), imageSet);
+    for (uint32_t i = 0; i < inputs.size(); ++i)
+    {
+        if (!inputs[i] || inputs[i] == &output || inputs[i]->device() != _engine->device())
+        {
+            throw std::invalid_argument("Fullscreen inputs must be valid, distinct from output and on the same device");
+        }
+        command.transition(inputs[i], gpu::ImageLayout::ShaderReadOnly);
+        const auto metal = metalImages.empty() ? i : metalImages[i];
+        resources->setSampledImage({i, metal}, inputs[i]);
+        resources->setSampler({uint32_t(inputs.size()) + i, metal}, _sampler.get());
+    }
+    resources->update();
+    _sets[frame.frameSlot].push_back(resources);
+    command.transition(&output, gpu::ImageLayout::ColorAttachment);
+    gpu::RenderingDescription rendering;
+    rendering.colors.push_back({.image = &output, .load = gpu::AttachmentLoadOperation::DontCare});
+    command.beginRendering(rendering);
+    command.bindPipeline(_pipeline.get());
+    command.bindResourceSet(_pipeline.get(), imageSet, resources.get());
+    for (const auto& [index, set] : sets)
+    {
+        command.bindResourceSet(_pipeline.get(), index, set);
+    }
+    if (pushSize)
+    {
+        command.pushConstants(gpu::ShaderStage::Fragment, 0, pushSize, push);
+    }
+    command.draw(3);
+    command.endRendering();
+    command.transition(&output, gpu::ImageLayout::ShaderReadOnly);
+}
+void FullscreenPass::cleanup()
+{
+    if (_engine)
+    {
+        _engine->device()->waitIdle();
+    }
+    _sets.clear();
+    _serial.clear();
+    _pipeline.reset();
+    _sampler.reset();
+    _vertex.reset();
+    _fragment.reset();
+    _layout.reset();
+    _engine = nullptr;
+}
+}

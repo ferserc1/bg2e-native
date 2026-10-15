@@ -1,8 +1,8 @@
 # M07-03 — Scene editor, reflection, materials and manipulation
 
-[Milestone summary](summary.md) · [Plan index](../index.md) · [Architecture decisions](../architecture-decisions.md)
+[Milestone summary](summary.md) · [Plan index](../index.md) · [Architecture decisions](../architecture-decisions.md) · [Execution protocol](../execution-protocol.md) · [Progress](../progress.md)
 
-**Status:** planned. **Prerequisites:** M07-02 and shared M02/M06 widgets.
+**Execution status:** see [progress](../progress.md). **Prerequisites:** M07-02 and shared M02/M06 widgets.
 
 ## Scope and deliverable
 
@@ -28,10 +28,14 @@ Current sources to inspect: [apps/bg2e_composer/src/SceneEditor.cpp](../../../..
 - Tree selection, property editing, transform handles and material changes refer to the same node/submesh and preserve clone independence.
 - Renderer/settings rebinding and component/scene replacement do not leave UI or selection pointers targeting removed objects.
 
-These are future checks. Run compilation only on explicit user request; record missing runtime/backend evidence as pending, never as a pass.
+Delegate compilation and applicable runtime checks to the project lead; perform relevant nonexecuting static checks yourself. After delivering this step or its correction, update progress to `awaiting_project_lead` and stop. Their instruction to continue accepts the preceding delivery as compiled/checked without failures; record that basis without inventing test/backend details. Follow the [execution protocol](../execution-protocol.md).
 
 ## Downstream comparison
 
 M07-04 async publication and M07-05 bake jobs must update these exact inspector/selection/history hooks.
 
 Record actual API, ownership and verification in the milestone review. Follow [the review protocol](../review-protocol.md) and edit affected pending steps when actual contracts differ.
+
+## M01-14 renderer settings UI
+
+Reuse [GraphicsSettingsWindow](../milestone_01_deferred_renderer/settings-ui.md) and the connected live facade for graphics settings. Full scene/material/texture-preview editors remain separate adaptation work; ResourcePicker only returns native-free file intent. Preserve safe queued edits, generation refresh and weak completions when composing editor lifecycle callbacks.

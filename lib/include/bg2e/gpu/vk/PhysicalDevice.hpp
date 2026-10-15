@@ -29,11 +29,14 @@ namespace bg2e {
 namespace gpu {
 namespace vk {
 
+FormatCapabilities queryFormatCapabilities(VkPhysicalDevice device, PixelFormat format);
+
 class PhysicalDevice : public gpu::PhysicalDevice {
   public:
     void choose(gpu::Instance& instance, gpu::Surface& surface) override;
 
     bool isValid() const override;
+    FormatCapabilities formatCapabilities(PixelFormat format) const override;
 
     const std::shared_ptr<PhysicalDeviceProperties> properties() const override;
 

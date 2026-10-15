@@ -21,6 +21,7 @@
 #include <bg2e/gpu/Image.hpp>
 #include <bg2e/gpu/metal/common.hpp>
 #include <vector>
+#include <map>
 
 namespace bg2e {
 namespace gpu {
@@ -43,9 +44,14 @@ class Image : public gpu::Image {
 
     void buildTargetImage(metal::Device* device, const Size2D& size, PixelFormat format, const std::string& debugName = {});
     void buildDepthImage(metal::Device* device, const Size2D& size, PixelFormat format, const std::string& debugName = {});
-    void buildSampledImage(metal::Device* device, const Size2D& size, PixelFormat format, const std::string& debugName = {});
+    void buildSampledImage(metal::Device* device, const Size2D& size, PixelFormat format, const std::string& debugName = {}, ImageUsage usage = ImageUsage::Sampled | ImageUsage::TransferSrc | ImageUsage::TransferDst);
     void buildStorageImage(metal::Device* device, const Size2D& size, PixelFormat format, const std::string& debugName = {});
 
+    void buildImage(metal::Device* device, const ImageDescription& description);
+    void upload(const ImageUploadDescription& description, ImageLayout finalLayout = ImageLayout::ShaderReadOnly) override;
+    void readPixels(std::vector<uint8_t>& data, const ImageSubresourceRange& range,
+                    ImageLayout finalLayout = ImageLayout::ShaderReadOnly) override;
+    ImageUsage usage() const override;
     void resize(const Size2D& size);
 
     void cleanup() override;
@@ -57,6 +63,8 @@ class Image : public gpu::Image {
         TextureHandle texture,
         PixelFormat format,
         const Size2D& size);
+    TextureHandle subresourceView(const ImageSubresourceRange& range);
+
     TextureHandle texture() const
     {
         return _texture;
@@ -87,8 +95,10 @@ class Image : public gpu::Image {
     metal::Device* _device = nullptr;
     TextureHandle _texture = nullptr;
     bool _isDepth = false;
+    ImageUsage _usage = ImageUsage::None;
     bool _ownsTexture = true;
     std::string _debugName;
+    std::map<std::array<uint32_t, 4>, TextureHandle> _subresourceViews;
 };
 
 }

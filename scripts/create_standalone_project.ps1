@@ -125,7 +125,7 @@ Write-Host "Copying assets..."
 Copy-Item "$RepoRoot\assets\*" "$TargetPath\assets\" -Recurse -Force
 
 Write-Host "Copying compiled shaders..."
-Copy-Item "$RepoRoot\bin\windows\shaders\*.spv" "$TargetPath\shaders\" -Force
+Copy-Item "$RepoRoot\bin\windows\shaders\*" "$TargetPath\shaders\" -Recurse -Force
 
 Write-Host "Copying CMake modules..."
 Copy-Item "$RepoRoot\cmake\FindVulkan.cmake" "$TargetPath\cmake\" -Force

@@ -57,8 +57,14 @@ const glm::vec3 LightComponent::direction() const
     return dir;
 }
 
-void LightComponent::deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path& /* basePath */, [[maybe_unused]] render::Engine& engine)
+void LightComponent::deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path& basePath, render::Engine&)
 {
+    deserialize(jsonData, basePath);
+}
+
+void LightComponent::deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path& /* basePath */)
+{
+    deserializeCommon(jsonData);
     json::ObjectReader reader(jsonData);
     if (auto light = reader.getObject("lightData"))
     {
@@ -94,6 +100,11 @@ void LightComponent::didRemoveFromNode(Node* prevOwner)
     {
         scene->updateLights();
     }
+}
+
+std::shared_ptr<json::JsonNode> LightComponent::serializeReferences(const std::filesystem::path& basePath)
+{
+    return LightComponent::serialize(basePath);
 }
 
 BG2E_SCENE_REGISTER_COMPONENT(LightComponent);

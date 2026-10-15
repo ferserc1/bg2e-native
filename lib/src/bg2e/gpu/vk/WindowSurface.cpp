@@ -210,7 +210,7 @@ void WindowSurface::createRenderTarget(gpu::Device* device, gpu::PhysicalDevice*
     for (auto& vkImage : swapchainImages)
     {
         auto img = std::make_unique<vk::Image>();
-        img->initFromSwapchainImage(vkDevice, vkImage, _colorFormat, _size);
+        img->initFromSwapchainImage(vkDevice, vkImage, _colorFormat, _size, createInfo.imageUsage);
         _colorImages.push_back(std::move(img));
     }
 

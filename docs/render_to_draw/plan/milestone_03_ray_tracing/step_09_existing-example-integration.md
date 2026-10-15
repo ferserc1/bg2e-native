@@ -1,14 +1,14 @@
 # M03-09 — Integrate effects and verify existing examples only
 
-[Milestone summary](summary.md) · [Plan index](../index.md) · [Architecture decisions](../architecture-decisions.md)
+[Milestone summary](summary.md) · [Plan index](../index.md) · [Architecture decisions](../architecture-decisions.md) · [Execution protocol](../execution-protocol.md) · [Progress](../progress.md)
 
-**Status:** planned. **Prerequisites:** M03-04–M03-08.
+**Execution status:** see [progress](../progress.md). **Prerequisites:** M03-04–M03-08.
 
 ## Scope and deliverable
 
 - `lib/include/bg2e/draw/RendererDeferred.hpp`
-- `examples/draw/deferred_renderer/src/main.cpp`
-- `examples/draw/manipulation/src/main.cpp`
+- `examples/draw/10_deferred_renderer/src/main.cpp`
+- `examples/draw/11_manipulation/src/main.cpp`
 - `lib/include/bg2e/draw/RenderSettingsPreferences.hpp`
 - `lib/include/bg2e/render/deferred/SMAAProcessor.hpp`
 - `lib/include/bg2e/draw/pipeline/SMAAProcessor.hpp`
@@ -30,10 +30,18 @@ Paths above include current references and proposed outputs. New paths are targe
 - Primitive/effect unavailable states produce accurate UI and usable rendering, without forced FSR/full-RT capability coupling.
 - The public optional SMAA component operates on no-RT raster output and can be selected/injected without hard-coding FSR as the only final processor.
 
-These are future checks. Run compilation only on explicit user request; record missing runtime/backend evidence as pending, never as a pass.
+Delegate compilation and applicable runtime checks to the project lead; perform relevant nonexecuting static checks yourself. After delivering this step or its correction, update progress to `awaiting_project_lead` and stop. Their instruction to continue accepts the preceding delivery as compiled/checked without failures; record that basis without inventing test/backend details. Follow the [execution protocol](../execution-protocol.md).
 
 ## Downstream comparison
 
 M04/M05 products reuse this full scene renderer and its actual effect input/reset/convergence contracts.
 
 Record actual API, ownership and verification in the milestone review. Follow [the review protocol](../review-protocol.md) and edit affected pending steps when actual contracts differ.
+
+## M01-14 reflected effect UI
+
+Use [GraphicsSettingsWindow](../milestone_01_deferred_renderer/settings-ui.md) and real catalog extensions for implemented effect settings. New targets appear through per-frame descriptor enumeration and safe queued application; do not recreate closed effect controls or a copied configuration model. Preserve explicit availability/status and catalog generations on resource replacement.
+
+## M01-15 actual example
+
+Extend target draw_deferred_renderer at examples/draw/10_deferred_renderer and the eventual manipulation product; do not create a new advanced-RT target. [working-example.md](../milestone_01_deferred_renderer/working-example.md) and the example README list retained/deferred reference capabilities. Current FSR is camera-only, query occluders exclude transparency, and debug modes show the last processed layer. Restore implemented effects through real catalog extensions.

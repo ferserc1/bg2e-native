@@ -26,6 +26,7 @@
 #include <bg2e/scene/Scene.hpp>
 
 #include <algorithm>
+#include <stdexcept>
 
 namespace bg2e::scene {
 
@@ -251,6 +252,93 @@ Node* Node::sceneRoot()
     return _parent->sceneRoot();
 }
 
+void Node::deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path& basePath, SceneLoadProgress* progress)
+{
+    json::ObjectReader reader(jsonData);
+    if (!reader.isValid())
+    {
+        throw std::invalid_argument("Node representation must be a JSON object");
+    }
+
+    // Read basic node properties
+    if (auto name = reader.getString("name"))
+    {
+        _name = *name;
+    }
+
+    // Fire callback before the heavy component/child work
+    if (progress && progress->callback)
+    {
+        progress->callback(_name, progress->loaded, progress->total);
+    }
+    if (progress)
+    {
+        ++progress->loaded;
+    }
+
+    if (auto enabled = reader.getBool("enabled"))
+    {
+        _disabled = !*enabled;
+    }
+    if (auto steady = reader.getBool("steady"))
+    {
+        _steady = *steady;
+    }
+
+    // Deserialize components
+    if (auto components = reader.getArray("components"))
+    {
+        for (std::size_t i = 0; i < components->size(); ++i)
+        {
+            auto compData = components->getObject(i);
+            if (!compData)
+            {
+                throw std::invalid_argument("Invalid component representation in node " + _name);
+            }
+            auto* comp = ComponentFactoryRegistry::get().create(compData->node(), basePath);
+            if (comp)
+            {
+                addComponent(std::shared_ptr<Component>(comp));
+            }
+        }
+    }
+
+    // Deserialize children recursively
+    if (auto children = reader.getArray("children"))
+    {
+        for (std::size_t i = 0; i < children->size(); ++i)
+        {
+            auto childData = children->getObject(i);
+            if (!childData)
+            {
+                throw std::invalid_argument("Invalid child representation in node " + _name);
+            }
+            auto childNode = std::make_shared<Node>();
+            childNode->deserialize(childData->node(), basePath, progress);
+            addChild(childNode);
+        }
+    }
+}
+
+void Node::deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path& basePath,
+    draw::Engine& engine, SceneLoadProgress* progress)
+{
+    deserialize(jsonData, basePath, progress);
+    loadResources(engine, progress);
+}
+
+void Node::loadResources(draw::Engine& engine, SceneLoadProgress* progress)
+{
+    for (const auto& entry : _components)
+    {
+        entry.second->loadResources(engine, progress);
+    }
+    for (const auto& child : _children)
+    {
+        child->loadResources(engine, progress);
+    }
+}
+
 void Node::deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path& basePath, render::Engine& engine, SceneLoadProgress* progress)
 {
     json::ObjectReader reader(jsonData);
@@ -361,6 +449,53 @@ std::shared_ptr<json::JsonNode> Node::serialize(const std::filesystem::path& bas
     for (auto& child : _children)
     {
         auto childData = child->serialize(basePath, progress);
+        children->listValue().push_back(childData);
+    }
+    obj["children"] = children;
+
+    return result;
+}
+
+std::shared_ptr<json::JsonNode> Node::serializeReferences(const std::filesystem::path& basePath,
+                                                SceneSaveProgress* progress)
+{
+    // Fire callback before serializing this node
+    if (progress && progress->callback)
+    {
+        progress->callback(_name, progress->saved, progress->total);
+    }
+    if (progress)
+    {
+        ++progress->saved;
+    }
+
+    using namespace bg2e::json;
+    auto result = JSON(JsonObject{});
+    auto& obj = result->objectValue();
+
+    obj["type"] = JSON("Node");
+    obj["name"] = JSON(name());
+    obj["enabled"] = JSON(enabled());
+    obj["steady"] = JSON(steady());
+
+    // Serialize components (unchanged)
+    auto components = JSON(JsonList());
+    for (auto& comp : _components)
+    {
+        if (comp.second->ignoreSerialization())
+        {
+            continue;
+        }
+        auto compData = comp.second->serializeReferences(basePath);
+        components->listValue().push_back(compData);
+    }
+    obj["components"] = components;
+
+    // Serialize children — forward the same progress pointer
+    auto children = JSON(JsonList());
+    for (auto& child : _children)
+    {
+        auto childData = child->serializeReferences(basePath, progress);
         children->listValue().push_back(childData);
     }
     obj["children"] = children;

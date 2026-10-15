@@ -23,6 +23,9 @@
 #include <bg2e/scene/Scene.hpp>
 #include <bg2e/utils/TextureCache.hpp>
 
+#include <cmath>
+#include <stdexcept>
+
 namespace bg2e::scene {
 
 EnvironmentComponent::EnvironmentComponent()
@@ -60,12 +63,30 @@ void EnvironmentComponent::setEnvironmentImage(const std::string& img)
     _imgHash = std::hash<std::string>{}(img);
 }
 
-void EnvironmentComponent::deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path& basePath, [[maybe_unused]] render::Engine& engine)
+void EnvironmentComponent::setSkyboxBlur(float blur)
 {
+    if (!std::isfinite(blur) || blur < 0 || blur > 1)
+    {
+        throw std::invalid_argument("Skybox blur must be finite and normalized to [0, 1]");
+    }
+    _skyboxBlur = blur;
+}
+
+void EnvironmentComponent::deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path& basePath, render::Engine&)
+{
+    deserialize(jsonData, basePath);
+}
+
+void EnvironmentComponent::deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path& basePath)
+{
+    deserializeCommon(jsonData);
     json::ObjectReader reader(jsonData);
+    setSkyboxBlur(float(reader.getNumber("skyboxBlur").value_or(0.0)));
+    setSkyboxVisible(reader.getBool("skyboxVisible").value_or(true));
     if (auto textureName = reader.getString("equirectangularTexture"))
     {
-        setEnvironmentImage(basePath, *textureName);
+        setEnvironmentImage(textureName->empty() ? std::string{} :
+            std::filesystem::absolute(basePath / *textureName).lexically_normal().string());
     }
 }
 
@@ -96,6 +117,8 @@ std::shared_ptr<json::JsonNode> EnvironmentComponent::serialize(const std::files
     using namespace bg2e::json;
     auto compData = Component::serialize(basePath);
     JsonObject& obj = compData->objectValue();
+    obj["skyboxBlur"] = JSON(_skyboxBlur);
+    obj["skyboxVisible"] = JSON(_skyboxVisible);
     std::filesystem::path dstFilePath = basePath;
     std::filesystem::path srcFilePath = _environmentImage;
     auto fileName = srcFilePath.filename();
@@ -115,6 +138,21 @@ std::shared_ptr<json::JsonNode> EnvironmentComponent::serialize(const std::files
     // - specularMapL2Size
 
     return compData;
+}
+
+std::shared_ptr<json::JsonNode> EnvironmentComponent::serializeReferences(const std::filesystem::path& basePath)
+{
+    auto result = Component::serialize(basePath);
+    result->objectValue()["skyboxBlur"] = json::JSON(_skyboxBlur);
+    result->objectValue()["skyboxVisible"] = json::JSON(_skyboxVisible);
+    if (!_environmentImage.empty())
+    {
+        const auto source = std::filesystem::absolute(_environmentImage).lexically_normal();
+        const auto base = basePath.empty() ? std::filesystem::current_path() : std::filesystem::absolute(basePath);
+        const auto relative = source.lexically_relative(base.lexically_normal());
+        result->objectValue()["equirectangularTexture"] = json::JSON((relative.empty() ? source : relative).generic_string());
+    }
+    return result;
 }
 
 BG2E_SCENE_REGISTER_COMPONENT(EnvironmentComponent);

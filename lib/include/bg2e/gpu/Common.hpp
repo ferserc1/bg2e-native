@@ -20,6 +20,10 @@
 
 #include <bg2e/common.hpp>
 
+#include <cstdint>
+#include <cstddef>
+#include <array>
+#include <optional>
 #include <string>
 #include <vector>
 #include <stdexcept>
@@ -100,7 +104,19 @@ enum class PixelFormat
     D16_UNORM,
     D32_SFLOAT,
     D24_UNORM_S8_UINT,
-    D32_SFLOAT_S8_UINT
+    D32_SFLOAT_S8_UINT,
+
+    // Additional scalar/vector and integer render/storage formats.
+    R8_UNORM,
+    R8G8_UNORM,
+    R16_SFLOAT,
+    R16G16_SFLOAT,
+    R32_SFLOAT,
+    R32G32_SFLOAT,
+    R32_UINT,
+    R32_SINT,
+    R32G32_UINT,
+    R32G32B32A32_UINT,
 };
 
 constexpr bool isDepthFormat(PixelFormat f)
@@ -466,7 +482,8 @@ enum class AddressMode
 {
     Repeat,
     ClampToEdge,
-    MirroredRepeat
+    MirroredRepeat,
+    ClampToBorder
 };
 
 struct SamplerDescription {
@@ -477,6 +494,9 @@ struct SamplerDescription {
     AddressMode addressModeV = AddressMode::Repeat;
     AddressMode addressModeW = AddressMode::Repeat;
     std::string debugName; // Debug label for validation layers / Xcode GPU Capture
+    float minLod = 0.0f;
+    float maxLod = 1000.0f;
+    float mipLodBias = 0.0f;
 };
 
 // --- Image usage flags -------------------------------------------------------
@@ -513,6 +533,178 @@ inline ImageUsage& operator|=(ImageUsage& a, ImageUsage b)
 inline bool hasFlag(ImageUsage flags, ImageUsage flag)
 {
     return (static_cast<uint32_t>(flags) & static_cast<uint32_t>(flag)) != 0;
+}
+
+
+// Single-sample rendering state vocabulary.
+enum class CompareOperation
+{
+    Never, Less, Equal, LessOrEqual, Greater, NotEqual, GreaterOrEqual, Always
+};
+enum class BlendFactor
+{
+    Zero, One, SourceColor, OneMinusSourceColor, DestinationColor,
+    OneMinusDestinationColor, SourceAlpha, OneMinusSourceAlpha,
+    DestinationAlpha, OneMinusDestinationAlpha
+};
+enum class BlendOperation
+{
+    Add, Subtract, ReverseSubtract, Min, Max
+};
+enum class ColorWriteMask : uint32_t
+{
+    None = 0, Red = 1, Green = 2, Blue = 4, Alpha = 8, All = 15
+};
+inline ColorWriteMask operator|(ColorWriteMask a, ColorWriteMask b)
+{
+    return static_cast<ColorWriteMask>(static_cast<uint32_t>(a) | static_cast<uint32_t>(b));
+}
+struct BlendState {
+    bool enabled = false;
+    BlendFactor sourceColor = BlendFactor::One;
+    BlendFactor destinationColor = BlendFactor::Zero;
+    BlendOperation colorOperation = BlendOperation::Add;
+    BlendFactor sourceAlpha = BlendFactor::One;
+    BlendFactor destinationAlpha = BlendFactor::Zero;
+    BlendOperation alphaOperation = BlendOperation::Add;
+    ColorWriteMask writeMask = ColorWriteMask::All;
+    bool operator==(const BlendState&) const = default;
+};
+struct DepthState {
+    bool testEnabled = true;
+    bool writeEnabled = true;
+    CompareOperation compare = CompareOperation::LessOrEqual;
+};
+struct ColorAttachmentState {
+    PixelFormat format = PixelFormat::Undefined;
+    BlendState blend;
+};
+enum class AttachmentLoadOperation
+{
+    Load, Clear, DontCare
+};
+enum class AttachmentStoreOperation
+{
+    Store, DontCare
+};
+// Counts are explicit, nonzero and never mean "remaining". Array layers are
+// cube faces in CubemapFace order, or layer zero for an ordinary 2D image.
+struct ImageSubresourceRange {
+    uint32_t baseMipLevel = 0;
+    uint32_t mipCount = 1;
+    uint32_t baseArrayLayer = 0;
+    uint32_t layerCount = 1;
+    bool operator==(const ImageSubresourceRange&) const = default;
+};
+class Image;
+// Borrowed view: its image and cached native view must survive GPU completion.
+// One layer denotes a 2D view; all six faces denote a cube sampling view.
+struct ImageView {
+    Image* image = nullptr;
+    ImageSubresourceRange range;
+};
+struct ImageUploadDescription {
+    const void* data = nullptr; // Packed target-format texels; no implicit conversion.
+    size_t byteSize = 0;
+    size_t bytesPerRow = 0; // Zero selects tight packing.
+    uint32_t mipLevel = 0;
+    uint32_t arrayLayer = 0;
+};
+struct ColorClearValue {
+    Color floatingPoint;
+    std::array<uint32_t, 4> unsignedInteger = {};
+    std::array<int32_t, 4> signedInteger = {};
+};
+struct ColorAttachmentDescription {
+    Image* image = nullptr; // Borrowed until GPU completion.
+    AttachmentLoadOperation load = AttachmentLoadOperation::Load;
+    AttachmentStoreOperation store = AttachmentStoreOperation::Store;
+    ColorClearValue clear;
+    ImageSubresourceRange subresource; // Exactly one mip and one layer.
+};
+struct DepthAttachmentDescription {
+    Image* image = nullptr;
+    AttachmentLoadOperation load = AttachmentLoadOperation::Load;
+    AttachmentStoreOperation store = AttachmentStoreOperation::Store;
+    float clearDepth = 1.0f;
+    uint32_t clearStencil = 0;
+    ImageSubresourceRange subresource;
+};
+struct RenderingDescription {
+    std::vector<ColorAttachmentDescription> colors;
+    std::optional<DepthAttachmentDescription> depth;
+};
+struct RenderingCapabilities {
+    uint32_t maxColorAttachments = 0;
+    uint32_t maxImageDimension2D = 0;
+    // Zero means no additional aggregate color storage limit.
+    uint32_t maxColorAttachmentBytesPerSample = 0;
+    bool independentBlend = false;
+};
+struct FormatCapabilities {
+    ImageUsage usages = ImageUsage::None;
+    bool blend = false;
+    bool linearFiltering = false;
+    bool blitSource = false; // Scaled blit support; exact copies use transfer usages.
+    bool blitDestination = false;
+    bool mipmapGeneration = false;
+    uint32_t colorAttachmentBytesPerSample = 0;
+    bool supports(ImageUsage requested) const
+    {
+        return (static_cast<uint32_t>(usages) & static_cast<uint32_t>(requested)) == static_cast<uint32_t>(requested);
+    }
+};
+inline bool isUnsignedIntegerFormat(PixelFormat format)
+{
+    return format == PixelFormat::R32_UINT || format == PixelFormat::R32G32_UINT ||
+           format == PixelFormat::R32G32B32A32_UINT;
+}
+inline bool isSignedIntegerFormat(PixelFormat format)
+{
+    return format == PixelFormat::R32_SINT;
+}
+inline uint32_t pixelFormatBytes(PixelFormat format)
+{
+    switch (format)
+    {
+    case PixelFormat::R8_UNORM:
+        return 1;
+    case PixelFormat::R8G8_UNORM:
+        return 2;
+    case PixelFormat::R16_SFLOAT:
+        return 2;
+    case PixelFormat::R16G16_SFLOAT:
+        return 4;
+    case PixelFormat::R32_SFLOAT:
+        return 4;
+    case PixelFormat::R32G32_SFLOAT:
+        return 8;
+    case PixelFormat::R32_UINT:
+        return 4;
+    case PixelFormat::R32_SINT:
+        return 4;
+    case PixelFormat::R32G32_UINT:
+        return 8;
+    case PixelFormat::R32G32B32A32_UINT:
+        return 16;
+
+    case PixelFormat::R8G8B8A8_UNORM:
+    case PixelFormat::R8G8B8A8_SRGB:
+    case PixelFormat::B8G8R8A8_UNORM:
+    case PixelFormat::B8G8R8A8_SRGB:
+    case PixelFormat::D32_SFLOAT:
+    case PixelFormat::D24_UNORM_S8_UINT:
+        return 4;
+    case PixelFormat::R16G16B16A16_SFLOAT:
+    case PixelFormat::D32_SFLOAT_S8_UINT:
+        return 8;
+    case PixelFormat::R32G32B32A32_SFLOAT:
+        return 16;
+    case PixelFormat::D16_UNORM:
+        return 2;
+    default:
+        return 0;
+    }
 }
 
 enum class ImageType

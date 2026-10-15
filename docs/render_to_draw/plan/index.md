@@ -10,27 +10,31 @@ The user's conclusions take precedence over recommendations in the earlier asses
 
 | ID | Milestone | Working product at completion | Main prerequisite |
 |---|---|---|---|
-| M01 | [Initial deferred renderer](milestone_01_deferred_renderer/summary.md) | `examples/draw/deferred_renderer`: Vulkan/Metal deferred scene, optional query soft shadows, resolution scaling and optional FSR, new runtime renderer delegate/settings. | Existing GPU/draw/application foundations. |
-| M02 | [Manipulation](milestone_02_manipulation/summary.md) | `examples/draw/manipulation`: picking, editor manipulation and material modifications through `utils::MaterialModifier`. | M01. |
+| M01 | [Initial deferred renderer](milestone_01_deferred_renderer/summary.md) | `examples/draw/10_deferred_renderer`: Vulkan/Metal deferred scene, optional query soft shadows, resolution scaling and optional FSR, new runtime renderer delegate/settings. | Existing GPU/draw/application foundations. |
+| M02 | [Manipulation](milestone_02_manipulation/summary.md) | `examples/draw/11_manipulation`: picking, editor manipulation and material modifications through `utils::MaterialModifier`. | M01. |
 | M03 | [Complete ray tracing](milestone_03_ray_tracing/summary.md) | Both existing new examples gain supported RTAO/RTGI/reflections, histories and denoise; no new example. | M01–M02 and an explicit backend RT design checkpoint. |
-| M04 | [Integrated lightmaps](milestone_04_lightmaps/summary.md) | `examples/draw/lightmaps`: generated UV2 and integrated baked maps, live GI disabled, progress/reset and correct material application. | M03. |
-| M05 | [Offscreen applications](milestone_05_offscreen/summary.md) | `examples/draw/offscreen_application`: one output image to a CLI directory, configurable output/internal resolution and accumulated scene frames. | M01/M03; follows M04 in the agreed sequence. |
+| M04 | [Integrated lightmaps](milestone_04_lightmaps/summary.md) | `examples/draw/12_lightmaps`: generated UV2 and integrated baked maps, live GI disabled, progress/reset and correct material application. | M03. |
+| M05 | [Offscreen applications](milestone_05_offscreen/summary.md) | `examples/draw/13_offscreen_application`: one output image to a CLI directory, configurable output/internal resolution and accumulated scene frames. | M01/M03; follows M04 in the agreed sequence. |
 | M06 | [Model editor integration](milestone_06_model_edit/summary.md) | `apps/draw/model_edit` with the production application's useful behavior on draw, including assets, editing and baking. | M01–M05. |
 | M07 | [Composer integration](milestone_07_bg2e_composer/summary.md) | `apps/draw/bg2e_composer` with scene composition, import, reflection/editor tools and baking. | M06. |
 | M08 | [Lightmap generator integration](milestone_08_lightmap_generator/summary.md) | `apps/draw/lightmap_generator`: standalone bake contexts, batch/assembly/output workflow. | M04–M07. |
 | M09 | [Final cleanup and promotion](milestone_09_cleanup/summary.md) | Render namespace and its entry points removed; draw is production, all supported executables use the new API. No previous application API support. | All earlier product gates accepted. |
-| M10 | [Documentation](milestone_10_documentation/summary.md) | All maintained documentation under `doc/` matches the final engine, products and extension points. | M09. |
+| M10 | [Final documentation audit](milestone_10_documentation/summary.md) | All maintained documentation under `doc/` matches the final engine, products and extension points. | M09. |
 
-Each directory contains `summary.md` and an ordered file per implementation/review step. Step IDs, rather than tentative filenames/class names, are the stable dependency references. Each milestone ends with a **code-versus-remaining-plan review**; its report and actual updates to pending milestones are part of completion, not optional notes.
+Each directory contains `summary.md` and an ordered file per implementation/review/documentation step. Step IDs, rather than tentative filenames/class names, are the stable dependency references. M01–M09 close with a **code-versus-remaining-plan review followed by a separate cumulative documentation step**. Both are required. Maintained documentation covers only implementation delivered through that milestone; M10 audits the resulting complete set. See [documentation policy and preserved coverage](documentation-policy.md).
 
 ## Execution and verification rules
 
-1. Read the relevant repository instructions, current code, the milestone summary, its steps and the latest accepted review report before implementing. The plan is a baseline, not permission to ignore later decisions.
+The [cross-chat execution protocol](execution-protocol.md) and [shared progress record](progress.md) govern step selection, handoff and acceptance. Read both before every implementation or correction. The human user is the project lead and owns compilation/runtime checks after each step. Their instruction to continue accepts the preceding delivered step; no repeated confirmation is required.
+
+For a new chat, referencing **this index and progress.md is sufficient**. The agent must open the actual step linked in progress.md's **Next step to implement** field without asking the project lead to identify it. Every step delivery updates that link, its next action and any acceptance condition; a reported failure points back to correction work instead of advancing.
+
+1. Read the relevant repository instructions, execution protocol/progress, current code, the milestone summary, its selected step and the latest actual review report before implementing. Select work using the protocol, not another chat's memory. Implement one step per request and record its handoff.
 2. Preserve production behavior as a readable reference through M08. Add overloaded engine paths to shared high-level objects where useful. Do not introduce a generalized compatibility architecture solely to avoid simple dependencies.
-3. A milestone is complete only when its working product and exit checks are supported by evidence. Compilation alone does not establish graphics parity; static review alone does not establish a runnable product.
-4. Respect the repository's explicit build restriction. Build/runtime checks in this plan are **future acceptance checks**, executed by the user or by an agent only when the user explicitly requests compilation. Record `not run`/`not available` accurately and do not claim an untested gate has passed. This documentation request does not authorize builds.
+3. A milestone is complete when its required product/review work is implemented and accepted by the project lead. Static inspection does not establish runtime behavior. Lead continuation is valid acceptance under the agreed convention; record its basis without fabricating test/backend details or demanding logs.
+4. Delegate compilation, shader compilation, runtime tests and build-producing scripts to the project lead after every step. The agent performs relevant nonexecuting static checks and runs builds/tests only when explicitly instructed. Deliver checks/expected behavior, update progress to `awaiting_project_lead`, and stop. A failure report requires correction; continuation accepts the delivered correction and authorizes the next step.
 5. CMake/example/application/shader packaging changes are identified as future work required by the products. No CMake changes are made now. At execution, follow the explicit authorization and repository policy then in force; do not silently omit runnable targets because sources are globbed into the library.
-6. Metal and Vulkan are target backends. Test the raster/no-RT path independently of optional RT/SDK support. Missing test hardware is a recorded verification gap, not proof of success or justification to remove the fallback.
+6. Metal and Vulkan are target backends. Include applicable raster/no-RT and optional-feature cases in the checklist delegated to the lead. Record reported coverage accurately; unspecified coverage does not block acceptance under their continuation convention and does not justify claiming all backends were tested or removing a fallback.
 7. Public renderer/pass configuration supports application-owned compatible replacements. No new private implementation class without a concrete necessity documented in review. Ordinary private members/functions are not prohibited.
 8. No MSAA, forward renderer, ResourceManager, native Metal upscaler or DLSS implementation is included. Extension points for future upscalers are included. Advanced RT choices are deferred to M03, not silently settled by M01.
 
@@ -53,12 +57,20 @@ Each directory contains `summary.md` and an ordered file per implementation/revi
 | Bake namespace, including preview/settings/pixels/batch | M04-01 | M04-06 | Standalone/batch M08. |
 | OffscreenApplication production/draw overloads | M05-01 | M05-04 | Canonical draw-only path M09. |
 | No Vulkan implementation outside GPU in new code | M01-01/M01-13 | Every product | Repository-wide final check M09. |
-| Review and revise remaining plan after each milestone | [Review protocol](review-protocol.md) | Every final step | M10 final actual-code documentation review. |
+| Review and revise remaining plan after each milestone | [Review protocol](review-protocol.md) | Every technical review, then final cumulative documentation | M10 audits the complete accumulated documentation. |
 
 ## Reading order and current status
 
-Read [architecture-decisions.md](architecture-decisions.md), [review-protocol.md](review-protocol.md), then M01. [Source anchors](source-anchors.md) identifies current APIs/documents that implementers should inspect. All milestones are **planned, not implemented**. No implementation report is fabricated here.
+Read [execution-protocol.md](execution-protocol.md) and [progress.md](progress.md) first, then [architecture-decisions.md](architecture-decisions.md), [review-protocol.md](review-protocol.md) and the selected milestone/step. [Source anchors](source-anchors.md) identifies current APIs/documents to inspect. Execution status belongs in the shared progress record, rather than in generic planning text or chat history.
 
-[Requirement coverage](requirements-map.md) maps the user's conclusions to concrete step files. The plan currently contains ten milestone summaries and eighty implementation/review step documents. Filenames identify proposed outputs; only source links point to existing files.
+[Requirement coverage](requirements-map.md) maps the user's conclusions to concrete step files. The plan currently contains ten milestone summaries and 89 implementation/review/documentation step documents. Filenames identify proposed outputs; only source links point to existing files.
 
 The incomplete sentence in the requested M03 deliverable is interpreted as verification of the existing `deferred_renderer` and `manipulation` examples. No extra example is introduced in that milestone. New lightmap/offscreen example names are the proposed concrete paths listed above; preserve the user's explicitly specified paths elsewhere.
+
+M01-12 implementation contract: [live settings catalog, codec and facade](milestone_01_deferred_renderer/reflected-settings.md). See progress for its validation state and the M01-13 successor.
+
+M01 review delivery: [actual contracts and M02–M10 impact](milestone_01_deferred_renderer/review.md). See progress.md for correction/acceptance state. M01-16 review now hands off to [M01-17 documentation](milestone_01_deferred_renderer/step_17_documentation.md); M02-01 follows only after that documentation closure is accepted.
+
+## Distributed documentation closure
+
+Each milestone documentation step updates the canonical maintained pages for the cumulative implementation, not future planned APIs. M09 finishes production-status/retirement and whole-document reconciliation; M10 audits that delivered set. The [coverage/ownership policy](documentation-policy.md) preserves all original final documentation outcomes.

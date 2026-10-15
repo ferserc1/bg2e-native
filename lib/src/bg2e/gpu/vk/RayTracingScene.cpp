@@ -119,7 +119,7 @@ void RayTracingScene::ensureCapacity(uint32_t instanceCount)
     VkAccelerationStructureGeometryKHR geometry{};
     geometry.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;
     geometry.geometryType = VK_GEOMETRY_TYPE_INSTANCES_KHR;
-    geometry.flags = VK_GEOMETRY_OPAQUE_BIT_KHR;
+    geometry.flags = 0; // Opacity is selected by each instance and its BLAS geometry.
     geometry.geometry.instances.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_INSTANCES_DATA_KHR;
     geometry.geometry.instances.arrayOfPointers = VK_FALSE;
     geometry.geometry.instances.data.deviceAddress = _instanceAddress;
@@ -208,6 +208,14 @@ void RayTracingScene::build(VkCommandBuffer cmd)
             dst.mask = src.mask;
             dst.instanceShaderBindingTableRecordOffset = 0;
             dst.flags = VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR;
+            if (src.opacity == RayTracingOpacity::ForceOpaque)
+            {
+                dst.flags |= VK_GEOMETRY_INSTANCE_FORCE_OPAQUE_BIT_KHR;
+            }
+            else if (src.opacity == RayTracingOpacity::ForceNonOpaque)
+            {
+                dst.flags |= VK_GEOMETRY_INSTANCE_FORCE_NO_OPAQUE_BIT_KHR;
+            }
             dst.accelerationStructureReference = vkMesh->deviceAddress();
         }
         std::memcpy(_instanceMapped, instances.data(),
@@ -219,7 +227,7 @@ void RayTracingScene::build(VkCommandBuffer cmd)
     VkAccelerationStructureGeometryKHR geometry{};
     geometry.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;
     geometry.geometryType = VK_GEOMETRY_TYPE_INSTANCES_KHR;
-    geometry.flags = VK_GEOMETRY_OPAQUE_BIT_KHR;
+    geometry.flags = 0; // Opacity is selected by each instance and its BLAS geometry.
     geometry.geometry.instances.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_INSTANCES_DATA_KHR;
     geometry.geometry.instances.arrayOfPointers = VK_FALSE;
     geometry.geometry.instances.data.deviceAddress = _instanceAddress;

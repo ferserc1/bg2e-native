@@ -1,8 +1,8 @@
 # M03-03 — Generic BlueNoise data and GPU resource in utils
 
-[Milestone summary](summary.md) · [Plan index](../index.md) · [Architecture decisions](../architecture-decisions.md)
+[Milestone summary](summary.md) · [Plan index](../index.md) · [Architecture decisions](../architecture-decisions.md) · [Execution protocol](../execution-protocol.md) · [Progress](../progress.md)
 
-**Status:** planned. **Prerequisites:** M01 image/subresource primitives and M03-02.
+**Execution status:** see [progress](../progress.md). **Prerequisites:** M01 image/subresource primitives and M03-02.
 
 ## Scope and deliverable
 
@@ -19,7 +19,7 @@ Current sources to inspect: [lib/src/bg2e/render/BlueNoise.cpp](../../../../lib/
 
 1. Implement generic precomputed sample/noise resource use in utils, exposing tile/channel/layer metadata and GPU image/sampler access without production Engine/native Vulkan objects.
 2. Choose a GPU Device or draw Engine overload as the simplest residency interface; keep CPU sample data usable where meaningful without initialization.
-3. Complete primitive 2D-array image/layer upload/view support if still missing; native array operations belong in GPU. Preserve explicit shader-side sampling conventions.
+3. Implement genuine 2D-array description/layer/upload/view support if the chosen noise layout requires it: reviewed M01 ImageType only has Image2D/Cubemap and arrayLayers is 1/6. Cubemap/mip APIs are reusable primitives, not existing general array support. Keep native operations in GPU and explicit shader sampling conventions.
 4. Allow effect/bake callers to share explicitly owned noise resources; rare replacement uses safe completion rather than per-frame texture rings. Keep production BlueNoise untouched until cleanup.
 
 ## Verification and exit conditions
@@ -27,7 +27,7 @@ Current sources to inspect: [lib/src/bg2e/render/BlueNoise.cpp](../../../../lib/
 - Noise tiles/layers are sampled correctly on Vulkan/Metal and are reusable by a utility caller outside RendererDeferred.
 - A missing/disabled noise resource yields the declared alternative sampling mode; ownership survives renderer/effect replacement.
 
-These are future checks. Run compilation only on explicit user request; record missing runtime/backend evidence as pending, never as a pass.
+Delegate compilation and applicable runtime checks to the project lead; perform relevant nonexecuting static checks yourself. After delivering this step or its correction, update progress to `awaiting_project_lead` and stop. Their instruction to continue accepts the preceding delivery as compiled/checked without failures; record that basis without inventing test/backend details. Follow the [execution protocol](../execution-protocol.md).
 
 ## Downstream comparison
 

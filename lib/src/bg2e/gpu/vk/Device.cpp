@@ -125,6 +125,8 @@ void Device::create(gpu::Instance* instance, gpu::PhysicalDevice* physicalDevice
         throw std::runtime_error("Synchronization 2 not supported");
     }
 
+    _renderingCapabilities = vkPhysDevice->properties()->rendering;
+
     // --- Base activation ---
     features2.features.samplerAnisotropy = VK_TRUE;
     vulkan12Features.bufferDeviceAddress = VK_TRUE;
@@ -135,13 +137,19 @@ void Device::create(gpu::Instance* instance, gpu::PhysicalDevice* physicalDevice
     // --- RT optional ---
     std::vector<const char*> rtExtensions;
 
-    bool enableRT =
-        vkPhysDevice->properties()->rayTracing.fullSupported() &&
-        accelerationStructureFeatures.accelerationStructure &&
-        rayQueryFeatures.rayQuery &&
+    const auto& rt = vkPhysDevice->properties()->rayTracing;
+    const bool enableQuery = rt.querySupported() && accelerationStructureFeatures.accelerationStructure &&
+        rayQueryFeatures.rayQuery;
+    const bool enablePipeline = rt.pipelineSupported() && accelerationStructureFeatures.accelerationStructure &&
         rayTracingPipelineFeatures.rayTracingPipeline;
-
+    const bool enableRT = enableQuery || enablePipeline;
     _rayTracingEnabled = enableRT;
+    _rayTracingPipelineEnabled = enablePipeline;
+    _rayTracingCapabilities = {enableRT, enablePipeline, enableQuery, enableRT,
+        vulkan12Features.bufferDeviceAddress == VK_TRUE, enableQuery};
+    accelerationStructureFeatures.accelerationStructure = enableRT;
+    rayQueryFeatures.rayQuery = enableQuery;
+    rayTracingPipelineFeatures.rayTracingPipeline = enablePipeline;
     if (enableRT)
     {
         // Query the scratch buffer offset alignment for acceleration builds.
@@ -158,10 +166,15 @@ void Device::create(gpu::Instance* instance, gpu::PhysicalDevice* physicalDevice
 
         const std::vector<const char*> optionalRTExtensions = {
             VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME,
-            VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME,
-            VK_KHR_RAY_QUERY_EXTENSION_NAME,
-            VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME,
-            VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME};
+            VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME};
+        if (enableQuery)
+        {
+            rtExtensions.push_back(VK_KHR_RAY_QUERY_EXTENSION_NAME);
+        }
+        if (enablePipeline)
+        {
+            rtExtensions.push_back(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
+        }
 
         uint32_t extensionCount = 0;
         vkEnumerateDeviceExtensionProperties(vkPhysDevice->handle(), nullptr, &extensionCount, nullptr);
@@ -180,6 +193,23 @@ void Device::create(gpu::Instance* instance, gpu::PhysicalDevice* physicalDevice
             {
                 rtExtensions.push_back(ext);
             }
+        }
+    }
+
+    vulkan12Features.pNext = &synchronization2Features;
+    if (enableRT)
+    {
+        vulkan12Features.pNext = &accelerationStructureFeatures;
+        accelerationStructureFeatures.pNext = &synchronization2Features;
+        if (enableQuery)
+        {
+            accelerationStructureFeatures.pNext = &rayQueryFeatures;
+            rayQueryFeatures.pNext = &synchronization2Features;
+        }
+        if (enablePipeline)
+        {
+            rayTracingPipelineFeatures.pNext = accelerationStructureFeatures.pNext;
+            accelerationStructureFeatures.pNext = &rayTracingPipelineFeatures;
         }
     }
 
@@ -313,6 +343,10 @@ void Device::cleanup()
         vkDestroyDevice(_device, nullptr);
         _device = VK_NULL_HANDLE;
     }
+    _renderingCapabilities = {};
+    _rayTracingCapabilities = {};
+    _rayTracingEnabled = false;
+    _rayTracingPipelineEnabled = false;
 }
 
 void Device::waitIdle()
@@ -329,6 +363,11 @@ void Device::waitIdle()
                                 throw std::runtime_error("vkDeviceWaitIdle failed: " + std::to_string(result));
                             }
                         });
+}
+
+FormatCapabilities Device::formatCapabilities(PixelFormat format) const
+{
+    return queryFormatCapabilities(_physicalDevice, format);
 }
 
 bool Device::isValid() const
@@ -388,74 +427,19 @@ std::shared_ptr<gpu::ResourceSet> Device::createResourceSet(gpu::PipelineLayout*
 
 std::shared_ptr<gpu::Image> Device::createImage(const ImageDescription& description)
 {
+    const auto limits = renderingCapabilities();
+    const bool depthFormat = isDepthFormat(description.format);
+    if (description.size.isZero() || description.size.width > limits.maxImageDimension2D ||
+        description.size.height > limits.maxImageDimension2D || description.usage == ImageUsage::None ||
+        !formatCapabilities(description.format).supports(description.usage) ||
+        (depthFormat && hasFlag(description.usage, ImageUsage::ColorAttachment)) ||
+        (!depthFormat && hasFlag(description.usage, ImageUsage::DepthStencil)))
+    {
+        throw std::invalid_argument("Image format/usage/extent is unsupported by this device");
+    }
+
     auto img = std::make_shared<vk::Image>(this);
-
-    // Resolve the effective mip level count: derived from minMipSize when set,
-    // otherwise the explicit mipLevels value.
-    const uint32_t mipLevels = effectiveMipLevels(description);
-
-    if (description.type == ImageType::Cubemap)
-    {
-        VkImageUsageFlags usage = 0;
-        if (hasFlag(description.usage, ImageUsage::Sampled))
-        {
-            usage |= VK_IMAGE_USAGE_SAMPLED_BIT;
-        }
-        if (hasFlag(description.usage, ImageUsage::Storage))
-        {
-            usage |= VK_IMAGE_USAGE_STORAGE_BIT;
-        }
-        if (hasFlag(description.usage, ImageUsage::TransferSrc))
-        {
-            usage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
-        }
-        if (hasFlag(description.usage, ImageUsage::TransferDst))
-        {
-            usage |= VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-        }
-        if (hasFlag(description.usage, ImageUsage::ColorAttachment))
-        {
-            usage |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-        }
-        img->buildCubemapImage(
-            this, description.size, description.format,
-            usage, mipLevels, description.debugName);
-    }
-    // Depth images need buildDepthImage to set the correct aspect mask.
-    else if (isDepthFormat(description.format))
-    {
-        img->buildDepthImage(this, description.size, description.format, description.debugName);
-    }
-    else
-    {
-        VkImageUsageFlags usage = 0;
-        if (hasFlag(description.usage, ImageUsage::Sampled))
-        {
-            usage |= VK_IMAGE_USAGE_SAMPLED_BIT;
-        }
-        if (hasFlag(description.usage, ImageUsage::Storage))
-        {
-            usage |= VK_IMAGE_USAGE_STORAGE_BIT;
-        }
-        if (hasFlag(description.usage, ImageUsage::TransferSrc))
-        {
-            usage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
-        }
-        if (hasFlag(description.usage, ImageUsage::TransferDst))
-        {
-            usage |= VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-        }
-        if (hasFlag(description.usage, ImageUsage::ColorAttachment))
-        {
-            usage |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-        }
-        if (hasFlag(description.usage, ImageUsage::DepthStencil))
-        {
-            usage |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
-        }
-
-        img->buildSampledImage(this, description.size, description.format, usage, description.debugName);
-    }
+    img->buildImage(this, description);
     return img;
 }
 
@@ -492,9 +476,9 @@ std::shared_ptr<gpu::RayTracingScene> Device::createRayTracingScene(const std::s
 std::shared_ptr<gpu::RayTracingPipeline> Device::createRayTracingPipeline(
     const gpu::RayTracingPipelineDescription& description)
 {
-    if (!_rayTracingEnabled)
+    if (!_rayTracingPipelineEnabled)
     {
-        throw std::runtime_error("vk::Device::createRayTracingPipeline: ray tracing is not supported");
+        throw std::runtime_error("vk::Device::createRayTracingPipeline: tracing pipelines are not supported");
     }
     return std::make_shared<vk::RayTracingPipeline>(this, _device, _allocator, description);
 }

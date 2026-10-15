@@ -1,0 +1,263 @@
+#include <bg2e/draw/pipeline/DeferredLayer.hpp>
+#include <bg2e/draw/pipeline/GBuffer.hpp>
+#include <bg2e/gpu/Device.hpp>
+#include <bg2e/base/PlatformTools.hpp>
+#include <bg2e/gpu/WindowSurface.hpp>
+#include <cmath>
+
+namespace bg2e::draw::pipeline {
+namespace {
+void imageBindings(gpu::PipelineLayoutDescription& layout, uint32_t set, uint32_t count, bool shadows = false)
+{
+    for (uint32_t i = 0; i < count; ++i)
+    {
+        const uint32_t metal = shadows && i >= 8 ? i + 4 : i;
+        layout.resourceBindings.push_back({set, {i, metal}, gpu::ResourceType::SampledImage, gpu::ShaderStage::Fragment, 1});
+        layout.resourceBindings.push_back({set, {count + i, metal}, gpu::ResourceType::Sampler, gpu::ShaderStage::Fragment, 1});
+    }
+}
+uint32_t slots(Engine& engine, uint32_t count)
+{
+    if (count == 0 && engine.surface())
+    {
+        count = engine.surface()->inFlightFrames();
+    }
+    if (count == 0)
+    {
+        throw std::invalid_argument("Raster passes require an explicit frame slot count without a surface");
+    }
+    return count;
+}
+}
+PassContract deferredContract(gpu::PixelFormat depth, bool shadows)
+{
+    auto result = gbufferContract(depth);
+    result.shaderInterface = shadows ? "draw.raster.deferred.shadows.v1" : "draw.raster.deferred.v1";
+    result.inputs = std::move(result.outputs);
+    for (auto& slot : result.inputs)
+    {
+        slot.usage = gpu::ImageUsage::Sampled;
+    }
+    result.inputs.push_back({"background", gpu::PixelFormat::R16G16B16A16_SFLOAT});
+    if (shadows)
+    {
+        result.inputs.push_back({"shadow0", gpu::PixelFormat::R16G16B16A16_SFLOAT});
+        result.inputs.push_back({"shadow1", gpu::PixelFormat::R16G16B16A16_SFLOAT});
+    }
+    result.outputs = {{"color", gpu::PixelFormat::R16G16B16A16_SFLOAT, ExtentDomain::Internal,
+        gpu::ImageUsage::ColorAttachment | gpu::ImageUsage::Sampled}};
+    return result;
+}
+gpu::PipelineLayoutDescription deferredBindingLayout(bool shadows)
+{
+    auto layout = drawBindingLayout();
+    // Set 1 is unused by lighting: reserve textures 0..7 for G-buffer/background;
+    // environment occupies native textures 8..11 in this fullscreen ABI.
+    layout.resourceBindings.clear();
+    layout.resourceBindings.push_back({0, {0, 2}, gpu::ResourceType::UniformBuffer, gpu::ShaderStage::Vertex, 1});
+    layout.resourceBindings.push_back({0, {1, 6}, gpu::ResourceType::UniformBuffer, gpu::ShaderStage::Fragment, 1});
+    layout.resourceBindings.push_back({2, {0, 4}, gpu::ResourceType::UniformBuffer, gpu::ShaderStage::Fragment, 1});
+    for (uint32_t i = 0; i < 4; ++i)
+    {
+        layout.resourceBindings.push_back({3, {i, 8 + i}, gpu::ResourceType::SampledImage, gpu::ShaderStage::Fragment, 1});
+        layout.resourceBindings.push_back({3, {4 + i, 8 + i}, gpu::ResourceType::Sampler, gpu::ShaderStage::Fragment, 1});
+    }
+    layout.resourceBindings.push_back({3, {8, 5}, gpu::ResourceType::UniformBuffer, gpu::ShaderStage::Fragment, 1});
+    imageBindings(layout, 1, shadows ? 10 : 8, shadows);
+    layout.pushConstants.push_back({0, sizeof(glm::uvec4), gpu::ShaderStage::Fragment});
+    return layout;
+}
+DeferredLayer::DeferredLayer(std::filesystem::path root, uint32_t count, gpu::PixelFormat depth, bool shadows)
+    : _shaderRoot(root.empty() ? base::PlatformTools::shaderPath() : std::move(root)), _slots(count), _contract(deferredContract(depth, shadows))
+{
+}
+LightingDebugView DeferredLayer::debugView() const
+{
+    return _debugView;
+}
+void DeferredLayer::setDebugView(LightingDebugView value)
+{
+    if (uint32_t(value) > uint32_t(LightingDebugView::Baked))
+    {
+        throw std::invalid_argument("Unknown lighting debug view");
+    }
+    _debugView = value;
+}
+const PassContract& DeferredLayer::contract() const
+{
+    return _contract;
+}
+void DeferredLayer::initialize(Engine& engine, const LayerConfiguration& configuration)
+{
+    const bool shadows = configuration.contract.shaderInterface == "draw.raster.deferred.shadows.v1";
+    _contract = deferredContract(configuration.contract.inputs.at(6).format, shadows);
+    _pass.initialize(engine, _shaderRoot, shadows ? "draw/raster/deferred_shadow" : "draw/raster/deferred",
+        engine.device()->createPipelineLayout(deferredBindingLayout(shadows)),
+        gpu::PixelFormat::R16G16B16A16_SFLOAT, slots(engine, _slots));
+}
+void DeferredLayer::attachScene(std::shared_ptr<scene::Node>)
+{
+}
+void DeferredLayer::resize(const LayerConfiguration&)
+{
+}
+void DeferredLayer::update(const FrameContext& frame)
+{
+    _pass.beginFrame(frame);
+}
+void DeferredLayer::record(const PassContext& context)
+{
+    const auto* raster = context.raster;
+    if (!raster || !raster->frame || !raster->lights || !raster->environment)
+    {
+        throw std::invalid_argument("Deferred layer requires prepared frame/light/environment bindings");
+    }
+    std::vector<gpu::Image*> inputs;
+    for (const auto& input : context.inputs)
+    {
+        inputs.push_back(input.image);
+    }
+    const std::vector<uint32_t> indices = inputs.size() == 10 ? std::vector<uint32_t>{0, 1, 2, 3, 4, 5, 6, 7, 12, 13} : std::vector<uint32_t>{};
+    const glm::uvec4 debug{uint32_t(_debugView), 0, 0, 0};
+    _pass.draw(context.frame, *context.outputs.at(0).image, inputs, 1,
+        {{0, raster->frame->set(context.frame)}, {2, raster->lights->set(context.frame)}, {3, raster->environment->set(context.frame)}},
+        &debug, sizeof(debug), indices);
+}
+void DeferredLayer::cleanup()
+{
+    _pass.cleanup();
+}
+PassContract finalContract(gpu::PixelFormat output, gpu::PixelFormat depth, bool reconstructedColor)
+{
+    PassContract result{"draw.raster.final.v1", {{"color", gpu::PixelFormat::R16G16B16A16_SFLOAT}},
+        {{"output", output, ExtentDomain::Output, gpu::ImageUsage::ColorAttachment | gpu::ImageUsage::Sampled}}};
+    if (reconstructedColor)
+    {
+        result.shaderInterface = "draw.raster.final.reconstructed.v1";
+        result.inputs[0].extent = ExtentDomain::Output;
+    }
+    auto gbuffer = gbufferContract(depth);
+    for (auto slot : gbuffer.outputs)
+    {
+        slot.usage = gpu::ImageUsage::Sampled;
+        result.inputs.push_back(slot);
+    }
+    return result;
+}
+FinalLayer::FinalLayer(std::filesystem::path root, uint32_t count, gpu::PixelFormat output, gpu::PixelFormat depth, bool reconstructedColor)
+    : _shaderRoot(root.empty() ? base::PlatformTools::shaderPath() : std::move(root)), _slots(count), _contract(finalContract(output, depth, reconstructedColor))
+{
+}
+float FinalLayer::exposure() const
+{
+    return settings.color.x;
+}
+void FinalLayer::setExposure(float value)
+{
+    if (!std::isfinite(value) || value < -32.0f || value > 32.0f)
+    {
+        throw std::invalid_argument("Final exposure is outside its supported range");
+    }
+    settings.color.x = value;
+}
+float FinalLayer::contrast() const
+{
+    return settings.color.y;
+}
+void FinalLayer::setContrast(float value)
+{
+    if (!std::isfinite(value) || value < 0.0f || value > 10.0f)
+    {
+        throw std::invalid_argument("Final contrast is outside its supported range");
+    }
+    settings.color.y = value;
+}
+float FinalLayer::brightness() const
+{
+    return settings.color.z;
+}
+void FinalLayer::setBrightness(float value)
+{
+    if (!std::isfinite(value) || value < -1.0f || value > 1.0f)
+    {
+        throw std::invalid_argument("Final brightness is outside its supported range");
+    }
+    settings.color.z = value;
+}
+float FinalLayer::gamma() const
+{
+    return settings.color.w;
+}
+void FinalLayer::setGamma(float value)
+{
+    if (!std::isfinite(value) || value < 0.1f || value > 8.0f)
+    {
+        throw std::invalid_argument("Final gamma is outside its supported range");
+    }
+    settings.color.w = value;
+}
+FinalDebugView FinalLayer::debugView() const
+{
+    return static_cast<FinalDebugView>(settings.display.x);
+}
+void FinalLayer::setDebugView(FinalDebugView value)
+{
+    if (static_cast<uint32_t>(value) > uint32_t(FinalDebugView::RawHDR))
+    {
+        throw std::invalid_argument("Unknown final debug view identity");
+    }
+    settings.display.x = static_cast<uint32_t>(value);
+}
+const PassContract& FinalLayer::contract() const
+{
+    return _contract;
+}
+void FinalLayer::initialize(Engine& engine, const LayerConfiguration& configuration)
+{
+    const auto format = configuration.contract.outputs.at(0).format;
+    _contract = finalContract(format, configuration.contract.inputs.at(7).format,
+        configuration.contract.inputs[0].extent == ExtentDomain::Output);
+    settings.display.y = format == gpu::PixelFormat::R8G8B8A8_SRGB || format == gpu::PixelFormat::B8G8R8A8_SRGB;
+    gpu::PipelineLayoutDescription layout;
+    imageBindings(layout, 0, 8);
+    layout.pushConstants.push_back({0, sizeof(FinalSettings), gpu::ShaderStage::Fragment});
+    _pass.initialize(engine, _shaderRoot, "draw/raster/final", engine.device()->createPipelineLayout(layout), format, slots(engine, _slots));
+}
+void FinalLayer::attachScene(std::shared_ptr<scene::Node>)
+{
+}
+void FinalLayer::resize(const LayerConfiguration&)
+{
+}
+void FinalLayer::update(const FrameContext& frame)
+{
+    _pass.beginFrame(frame);
+}
+void FinalLayer::record(const PassContext& context)
+{
+    for (uint32_t i = 0; i < 4; ++i)
+    {
+        if (!std::isfinite(settings.color[i]))
+        {
+            throw std::invalid_argument("Final color settings must be finite");
+        }
+    }
+    if (settings.color.w <= 0 || std::abs(settings.color.x) > 32 || settings.display.x > uint32_t(FinalDebugView::RawHDR))
+    {
+        throw std::invalid_argument("Invalid final gamma/exposure/debug view");
+    }
+    std::vector<gpu::Image*> inputs;
+    for (const auto& input : context.inputs)
+    {
+        inputs.push_back(input.image);
+    }
+    settings.display.y = context.outputs.at(0).image->pixelFormat() == gpu::PixelFormat::R8G8B8A8_SRGB ||
+        context.outputs.at(0).image->pixelFormat() == gpu::PixelFormat::B8G8R8A8_SRGB;
+    settings.outputExtent = {float(context.frame.extent.width), float(context.frame.extent.height), 0, 0};
+    _pass.draw(context.frame, *context.outputs.at(0).image, inputs, 0, {}, &settings, sizeof(settings));
+}
+void FinalLayer::cleanup()
+{
+    _pass.cleanup();
+}
+}
