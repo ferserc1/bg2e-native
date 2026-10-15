@@ -22,7 +22,7 @@ public:
 
 Abstract GPU image. Represents a texture or render target. Images are obtained
 from `SurfaceFrame::colorImage()`, `SurfaceFrame::depthImage()`, or created
-internally by the surface.
+through `Device::createImage(ImageDescription)` or internally by the surface.
 
 ---
 
@@ -54,7 +54,8 @@ Returns the image height in pixels.
 
 ### `ImageLayout currentLayout() const`
 
-Returns the current layout state of the image. Updated automatically when
+Returns the current uniform layout state of the image; mixed subresource layouts
+throw. Use `currentLayout(range)` to inspect a selected range. Updated when
 `CommandBuffer::transition()` is recorded.
 
 ---
@@ -106,3 +107,6 @@ Metal image wrapper. Wraps `MTL::Texture*`.
 | Method    | Return type     | Description                |
 |-----------|-----------------|----------------------------|
 | `handle()`| `MTL::Texture*` | Raw Metal texture handle.  |
+
+See [rendering/subresources and transfer](Subresources_and_rendering.md) for
+MRT attachments, explicit views/layouts, capability limits and synchronous IO.

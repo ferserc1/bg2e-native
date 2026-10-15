@@ -10,6 +10,8 @@ Record the starting and finishing revisions, working-tree changes, relevant plat
 
 Do not replace source inspection with a prior agent's completion claim. Check declarations, implementation, shader libraries and actual application callers. Treat the older assessment as a source snapshot, not an immutable specification.
 
+For every touched source/header/shader and every milestone's final static review, check all repository style requirements: full GPL header on repository-owned files (preserving third-party licenses); braces for all control flow; C/C++ code-block braces on new lines except class/struct/namespace; unindented namespace contents; angled includes except necessary private includes; blank separation between consecutive `.cpp` function definitions; and purpose-based grouping of class/struct methods with blank lines between groups. Record violations and exact paths; do not treat a whitespace mention elsewhere in a step as a substitute for these explicit checks.
+
 ## 2. Compare planned and actual contracts
 
 For each implemented public object, record actual namespace/header, lifecycle, ownership, accessors, reflected settings, initialization overloads and downstream callers. Compare particularly:

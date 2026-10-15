@@ -14,11 +14,17 @@ supported and is not deprecated.
 
 MainLoop's config overload constructs the private draw adapter; applications do
 not initialize Factory or expose GraphicsExecution. UI initialization supports
-Vulkan and Metal using private adapters. The scene contract is color-only;
-production scene/UI components and OffscreenApplication use render-compatible
-resources and delegates. Per-object persistent resource rings replace a central transient frame
+Vulkan and Metal using private adapters. The loop supplies retained color; RendererDeferred owns its internal depth/G-buffer graph.
+OffscreenApplication and production resource-dependent UI retain their render contracts. Per-object persistent resource rings replace a central transient frame
 resource allocation contract.
 
 See [MainLoop](../app/MainLoop.md), [architecture](../../architecture/MainLoop_render_draw_gpu.md),
 [GPU synchronization](../gpu/Submission_tracking_and_waitIdle.md) and
 [window/UI example](../../../examples/draw/README.md).
+
+## Scene renderer and resources
+
+- [RendererDeferred and DefaultRenderLoopDelegate](RendererDeferred.md): runtime ownership, lifecycle and public pipeline replacement.
+- [Drawable, material, scene and bindings](Resources.md): typed coexistence, deep clones and safe edits.
+- [Environment tools](Environment.md): public conversion/IBL and HDR precision.
+- [Settings and upscaling](Settings.md): live catalog, codec/facade/UI, resolution and optional FSR.

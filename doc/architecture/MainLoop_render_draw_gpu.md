@@ -757,8 +757,12 @@ void Engine::cleanup()
 | UI context and native adapters | `lib/src/bg2e/ui/UserInterface.cpp`, `ImGuiVulkanBackend.cpp`, `ImGuiMetalBackend.cpp` |
 | Completion registry and frame reuse | `lib/include/bg2e/gpu/detail/SubmissionState.hpp`, `gpu/SurfaceFrame.hpp`, backend Queue/Surface sources |
 
-Draw scene callbacks expose a color-only target. Render scene/material APIs and
-UI components that consume those resources are separate contracts.
+Draw scene callbacks expose retained color. RendererDeferred now owns the
+internal depth/G-buffer graph and DefaultRenderLoopDelegate owns the runtime
+renderer. DrawableComponent provides typed production/draw resource access;
+GraphicsSettingsWindow uses the live draw facade. See the current
+[renderer reference](../api/draw/RendererDeferred.md). Earlier abbreviated base
+delegate excerpts omit its prepareFrame/surfaceChanged hooks.
 OffscreenApplication uses render. There is no automatic multi-context backend
 management or UI thread. Multiple layers currently call waitIdle during cleanup
 and resize (MainLoop, coordinator/UI, Engine/surface); these overlapping drains

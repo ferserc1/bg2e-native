@@ -9,6 +9,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Always generate responses in **English**, regardless of the language the user writes in.
 - Avoid loops that repeat the same response; if stuck, ask the user.
 
+## Source style
+
+- Repository-owned C/C++ source/header and shader files must start with the complete project GPL header. Preserve existing third-party licenses in vendored files.
+- In `.cpp` implementations, leave at least one blank line between the closing brace of a function definition and the following function definition.
+- Group class/struct methods by purpose and leave at least one blank line between groups; keep related overloads together and do not add blank lines inside a group solely for this rule.
+- Always brace control flow, put C/C++ code-block opening braces on new lines except for classes/structs/namespaces, do not indent namespace contents, and prefer angled includes except for necessary private includes. Cosmetic changes must preserve behavior.
+
 ## Build system
 
 **Generator is platform-locked:**

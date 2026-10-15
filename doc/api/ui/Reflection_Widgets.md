@@ -95,3 +95,10 @@ use this hook to validate and load selected resources.
 - [ResourcePicker](ResourcePicker.md)
 - [Reflection API](../reflection/index.md)
 - [NodeEditor](SceneEditors.md#nodeeditor)
+
+## Transient value editing
+
+`ReflectionWidget::editValue` uses transient accessor proxies for a supplied
+value without invoking the original target setters or traversing raw object
+pointers. GraphicsSettingsWindow uses it before queueing live changes; see
+[draw settings](../draw/Settings.md).

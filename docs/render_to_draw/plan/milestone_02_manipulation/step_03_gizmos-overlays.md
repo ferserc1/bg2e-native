@@ -35,3 +35,7 @@ Delegate compilation and applicable runtime checks to the project lead; perform 
 M06/M07 integrate these optional objects. M05 headless paths must omit overlays without modifying the core renderer.
 
 Record actual API, ownership and verification in the milestone review. Follow [the review protocol](../review-protocol.md) and edit affected pending steps when actual contracts differ.
+
+## M02-01 actual handoff
+
+M02-01 adds draw init(engine) and ToolExecutionMode to GizmoAndSelectionRenderer, but no draw recording yet. Extend this public optional tool with the planned GPU surface/camera contract. GizmoComponent exposes manipulationMode, transformDrawDrawable, synchronizeResources and cleanupDrawResources, with instance-owned draw caches and weak safe callbacks. Preserve unlit axis colors, no tracing geometry, typed production paths and stopped-boundary resource release.

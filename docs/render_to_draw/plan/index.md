@@ -27,6 +27,8 @@ Each directory contains `summary.md` and an ordered file per implementation/revi
 
 The [cross-chat execution protocol](execution-protocol.md) and [shared progress record](progress.md) govern step selection, handoff and acceptance. Read both before every implementation or correction. The human user is the project lead and owns compilation/runtime checks after each step. Their instruction to continue accepts the preceding delivered step; no repeated confirmation is required.
 
+All implementation and review work must also satisfy the repository source-style/license rules in `AGENTS.md`, made explicit for this plan in [execution-protocol.md](execution-protocol.md): full GPL headers on repository-owned C/C++ and shader files, blank lines between `.cpp` function definitions, and purpose-grouped class/struct methods separated by blank lines. Review steps check these rules explicitly.
+
 For a new chat, referencing **this index and progress.md is sufficient**. The agent must open the actual step linked in progress.md's **Next step to implement** field without asking the project lead to identify it. Every step delivery updates that link, its next action and any acceptance condition; a reported failure points back to correction work instead of advancing.
 
 1. Read the relevant repository instructions, execution protocol/progress, current code, the milestone summary, its selected step and the latest actual review report before implementing. Select work using the protocol, not another chat's memory. Implement one step per request and record its handoff.

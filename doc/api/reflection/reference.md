@@ -128,3 +128,9 @@ Any other type triggers a compile-time error
 | `bg2e/reflection/Builder.hpp` | accessor traits, type deduction, and all five builders (`Property`, `Object`, `PolymorphicObject`, `Action`, `TypeInfo`) |
 | `bg2e/reflection/Registration.hpp` | `TypeRegistration` |
 | `bg2e/reflection/all.hpp` | umbrella (includes all of the above) |
+
+## Experimental draw scene path
+
+The separate [draw renderer lifecycle](../draw/RendererDeferred.md) and [live settings contract](../draw/Settings.md)
+cover deferred scene ownership, public injection and queued safe changes.
+Production render behavior described above remains supported.

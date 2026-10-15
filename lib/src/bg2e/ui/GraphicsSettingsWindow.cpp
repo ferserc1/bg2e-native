@@ -1,3 +1,22 @@
+/*
+*    business grade graphic engine (bg2 engine)
+ *    Copyright (C) 2026  Fernando Serrano Carpena
+ *
+ *    This program is free software: you can redistribute it and/or modify
+ *    it under the terms of the GNU General Public License as published by
+ *    the Free Software Foundation, either version 3 of the License, or
+ *    (at your option) any later version.
+ *
+ *    This program is distributed in the hope that it will be useful,
+ *    but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *    GNU General Public License for more details.
+ *
+ *    You should have received a copy of the GNU General Public License
+ *    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
+
 #include <bg2e/ui/GraphicsSettingsWindow.hpp>
 #include <bg2e/ui/ReflectionWidget.hpp>
 #include <bg2e/ui/Button.hpp>
@@ -11,6 +30,7 @@
 
 namespace bg2e::ui {
 namespace {
+
 std::string readable(const std::string& name)
 {
     std::string result;
@@ -36,6 +56,7 @@ std::string readable(const std::string& name)
     }
     return result;
 }
+
 std::string componentLabel(const std::string& component)
 {
     if (component.starts_with("upscaler/"))
@@ -52,47 +73,58 @@ std::string componentLabel(const std::string& component)
     }
     return readable(component);
 }
+
 }
+
 struct GraphicsSettingsWindow::State {
     draw::SettingsResult result;
     uint64_t generation = 0;
     uint32_t pending = 0;
     bool showUnavailable = true;
 };
+
 GraphicsSettingsWindow::GraphicsSettingsWindow() : _state(std::make_shared<State>())
 {
     static std::atomic<uint64_t> sequence{0};
     setTitle("Graphics settings##graphicsSettings" + std::to_string(++sequence));
     options.noMenu = true;
 }
+
 GraphicsSettingsWindow::~GraphicsSettingsWindow() = default;
+
 void GraphicsSettingsWindow::bind(std::shared_ptr<draw::RenderSettingsPreferences> preferences)
 {
     clear();
     _preferences = std::move(preferences);
 }
+
 void GraphicsSettingsWindow::clear()
 {
     _state = std::make_shared<State>(); // Invalidates weak completion callbacks.
     _preferences.reset();
 }
+
 bool GraphicsSettingsWindow::pending() const
 {
     return _state->pending != 0;
 }
+
 uint64_t GraphicsSettingsWindow::catalogGeneration() const
 {
     return _preferences ? _preferences->catalog().generation() : 0;
 }
+
 const draw::SettingsResult& GraphicsSettingsWindow::lastResult() const
 {
     return _state->result;
 }
+
 void GraphicsSettingsWindow::report(const std::string& code, const std::string& message)
 {
     _state->result = {};
     _state->result.issues.push_back({code, "", message});
 }
+
 draw::RenderSettingsPreferences::Completion GraphicsSettingsWindow::completion()
 {
     ++_state->pending;
@@ -109,6 +141,7 @@ draw::RenderSettingsPreferences::Completion GraphicsSettingsWindow::completion()
         }
     };
 }
+
 void GraphicsSettingsWindow::queueEdit(draw::SettingHandle handle, std::any value)
 {
     if (!_preferences)
@@ -118,6 +151,7 @@ void GraphicsSettingsWindow::queueEdit(draw::SettingHandle handle, std::any valu
     }
     _preferences->queueSet(std::move(handle), std::move(value), completion());
 }
+
 void GraphicsSettingsWindow::importFile(const std::filesystem::path& path, draw::UnknownSettingPolicy policy)
 {
     if (!_preferences)
@@ -135,6 +169,7 @@ void GraphicsSettingsWindow::importFile(const std::filesystem::path& path, draw:
         report("import_failed", error.what());
     }
 }
+
 void GraphicsSettingsWindow::exportFile(const std::filesystem::path& path)
 {
     if (!_preferences || pending())
@@ -152,6 +187,7 @@ void GraphicsSettingsWindow::exportFile(const std::filesystem::path& path)
         report("export_failed", error.what());
     }
 }
+
 void GraphicsSettingsWindow::persist()
 {
     if (!_preferences || pending())
@@ -169,6 +205,7 @@ void GraphicsSettingsWindow::persist()
         report("persistence_failed", error.what());
     }
 }
+
 void GraphicsSettingsWindow::restore(draw::UnknownSettingPolicy policy)
 {
     if (!_preferences)
@@ -178,6 +215,7 @@ void GraphicsSettingsWindow::restore(draw::UnknownSettingPolicy policy)
     }
     _preferences->queueRestore(policy, completion());
 }
+
 void GraphicsSettingsWindow::draw()
 {
     Window::draw([this]
@@ -185,6 +223,7 @@ void GraphicsSettingsWindow::draw()
         drawContents();
     });
 }
+
 void GraphicsSettingsWindow::drawContents()
 {
     if (!_preferences || _preferences->catalog().rendererId().empty())
@@ -245,6 +284,7 @@ void GraphicsSettingsWindow::drawContents()
     {
         Text::text(std::string(issue.error ? "Error: " : "Notice: ") + issue.path + " " + issue.message);
     }
+
     // Availability can change without a generation change (e.g. light type), so
     // enumerate every frame. Only handles/metadata and transient values are used.
     const auto descriptors = catalog.properties(_state->showUnavailable);
@@ -256,6 +296,7 @@ void GraphicsSettingsWindow::drawContents()
             components.push_back(descriptor.handle.component);
         }
     }
+
     for (const auto& component : components)
     {
         if (!Group::beginTree(componentLabel(component) + "##" + component))

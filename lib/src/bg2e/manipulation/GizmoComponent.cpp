@@ -32,6 +32,7 @@
 #include <bg2e/manipulation/SelectableComponent.hpp>
 
 #include <cmath>
+#include <stdexcept>
 
 namespace bg2e::manipulation {
 
@@ -74,8 +75,12 @@ std::unordered_map<GizmoType, float> GizmoComponent::_gizmoScaleSensitivity = {
 };
 
 GizmoComponent::GizmoComponent(render::Engine* engine)
-    : _engine{engine}
+    : _engine{engine}, _mode{ToolExecutionMode::Production}
 {
+    if (!engine)
+    {
+        throw std::invalid_argument("GizmoComponent requires a production engine");
+    }
     if (!_cleanupRegistered)
     {
         _cleanupRegistered = true;
@@ -86,18 +91,49 @@ GizmoComponent::GizmoComponent(render::Engine* engine)
     }
 }
 
+GizmoComponent::GizmoComponent(draw::Engine* engine)
+    : _drawEngine{engine}, _mode{ToolExecutionMode::Draw}
+{
+    if (!engine)
+    {
+        throw std::invalid_argument("GizmoComponent requires a draw engine");
+    }
+    setIgnoreSerialization(true);
+}
+
 std::shared_ptr<scene::Component> GizmoComponent::clone() const
 {
     // A gizmo's state is entirely transient (current gizmo type, active transform
     // handle, drag-start data) and is rebuilt from the owner node on update(). The
     // clone is therefore a brand new gizmo bound to the same engine, not a copy of
     // the source's interaction state.
-    return std::make_shared<GizmoComponent>(_engine);
+    auto result = _mode == ToolExecutionMode::Draw
+        ? std::make_shared<GizmoComponent>(_drawEngine)
+        : std::make_shared<GizmoComponent>(_engine);
+    result->setPriority(priority());
+    result->setIgnoreSerialization(ignoreSerialization());
+    return result;
+}
+
+void GizmoComponent::didAddToNode(scene::Node* node)
+{
+    _ownerReference = node->weak_from_this();
+}
+
+void GizmoComponent::didRemoveFromNode(scene::Node*)
+{
+    endTransform();
+    _ownerReference.reset();
+    _transformVisible = false;
+    if (_currentTransform.lock().get() == this)
+    {
+        _currentTransform.reset();
+    }
 }
 
 GizmoType GizmoComponent::resolveGizmoType() const
 {
-    auto node = ownerNode();
+    auto node = _ownerReference.lock();
     if (!node)
     {
         return GizmoType::None;
@@ -249,6 +285,14 @@ std::shared_ptr<scene::Drawable> GizmoComponent::getCachedGizmo(GizmoType type, 
 
 void GizmoComponent::loadGizmo(GizmoType type)
 {
+    if (_mode == ToolExecutionMode::Draw)
+    {
+        if (auto resource = getDrawGizmo(type))
+        {
+            setDrawable(resource);
+        }
+        return;
+    }
     auto cachedDrawable = getCachedGizmo(type, _engine);
     if (cachedDrawable)
     {
@@ -263,23 +307,144 @@ void GizmoComponent::unloadGizmo()
 
 void GizmoComponent::ensureTransformGizmoLoaded()
 {
-    if (_gizmoCache.find(GizmoType::Transform) != _gizmoCache.end())
+    if (_mode == ToolExecutionMode::Draw)
     {
-        return;
+        getDrawGizmo(GizmoType::Transform);
     }
-
-    // Defer the GPU buffer creation to a safe scene-update point.
-    auto engine = _engine;
-    app::MainLoop::current()->safeUpdateScene([engine]()
-                                              {
-                                                  getCachedGizmo(GizmoType::Transform, engine);
-                                              });
+    else
+    {
+        getCachedGizmo(GizmoType::Transform, _engine);
+    }
 }
 
 std::shared_ptr<scene::Drawable> GizmoComponent::transformDrawable() const
 {
+    if (_mode != ToolExecutionMode::Production)
+    {
+        throw std::logic_error("Use transformDrawDrawable for a draw gizmo");
+    }
     auto it = _gizmoCache.find(GizmoType::Transform);
     return it != _gizmoCache.end() ? it->second : nullptr;
+}
+
+std::shared_ptr<draw::Drawable> GizmoComponent::transformDrawDrawable() const
+{
+    if (_mode != ToolExecutionMode::Draw)
+    {
+        throw std::logic_error("Use transformDrawable for a production gizmo");
+    }
+    auto it = _drawGizmoCache.find(GizmoType::Transform);
+    return it != _drawGizmoCache.end() ? it->second : nullptr;
+}
+
+std::shared_ptr<draw::Drawable> GizmoComponent::getDrawGizmo(GizmoType type)
+{
+    if (auto it = _drawGizmoCache.find(type); it != _drawGizmoCache.end())
+    {
+        return it->second;
+    }
+    auto assets = base::PlatformTools::assetPath();
+    std::shared_ptr<geo::MeshPNUUT> mesh;
+    std::unique_ptr<db::Bg2Mesh> parsed;
+    switch (type)
+    {
+    case GizmoType::Transform:
+        parsed.reset(db::loadMeshBg2(assets, "transformGizmo.bg2"));
+        break;
+    case GizmoType::DirectionalLight:
+        parsed.reset(db::loadMeshBg2(assets, "dir-light-gizmo.bg2"));
+        break;
+    case GizmoType::SpotLight:
+        parsed.reset(db::loadMeshBg2(assets, "spot-light-gizmo.bg2"));
+        break;
+    case GizmoType::Camera:
+        parsed.reset(db::loadMeshBg2(assets, "camera.bg2"));
+        break;
+    case GizmoType::Environment:
+        parsed.reset(db::loadMeshBg2(assets, "environment.bg2"));
+        break;
+    case GizmoType::PointLight:
+        mesh.reset(geo::createSphere(0.5f, 10, 10));
+        break;
+    default:
+        return nullptr;
+    }
+    if (parsed)
+    {
+        mesh = parsed->mesh;
+    }
+    auto resource = std::make_shared<draw::Drawable>();
+    resource->setMesh(mesh);
+    resource->setRayTracingEnabled(false);
+    for (uint32_t i = 0; i < resource->submeshesCount(); ++i)
+    {
+        if (parsed && i < parsed->materials.size())
+        {
+            resource->setMaterial(parsed->materials[i], i);
+        }
+        // The BG2 reader retains submesh names/groups in material metadata.
+        const auto& material = resource->material(i);
+        resource->setSubmeshName(material.name(), i);
+        resource->setSubmeshGroupName(material.groupName(), i);
+        auto handle = handleForSubmesh(resource->submeshName(i), resource->submeshGroupName(i));
+        base::Color color = base::Color::White();
+        if (handle == TransformHandle::TranslateX || handle == TransformHandle::RotateX)
+        {
+            color = base::Color::Red();
+        }
+        else if (handle == TransformHandle::TranslateY || handle == TransformHandle::RotateY)
+        {
+            color = base::Color::Green();
+        }
+        else if (handle == TransformHandle::TranslateZ || handle == TransformHandle::RotateZ)
+        {
+            color = base::Color::Blue();
+        }
+        resource->material(i).setIsUnlit(true);
+        resource->material(i).setAlbedo(color);
+    }
+    resource->load(_drawEngine);
+    _drawGizmoCache[type] = resource;
+    return resource;
+}
+
+void GizmoComponent::cleanupDrawResources()
+{
+    if (_mode != ToolExecutionMode::Draw)
+    {
+        throw std::logic_error("cleanupDrawResources requires a draw gizmo");
+    }
+    endTransform();
+    clearDrawable();
+    _drawGizmoCache.clear();
+    _transformSubmeshIds.clear();
+    _currentGizmoType = GizmoType::None;
+    _transformVisible = false;
+    if (_currentTransform.lock().get() == this)
+    {
+        _currentTransform.reset();
+    }
+}
+
+void GizmoComponent::synchronizeResources()
+{
+    const auto type = resolveGizmoType();
+    if (type != _currentGizmoType)
+    {
+        if (type == GizmoType::None)
+        {
+            unloadGizmo();
+        }
+        else
+        {
+            loadGizmo(type);
+        }
+        _currentGizmoType = type;
+    }
+    if (_transformVisible)
+    {
+        ensureTransformGizmoLoaded();
+    }
 }
 
 void GizmoComponent::setCurrentTransform(scene::Node* node)
@@ -307,7 +472,7 @@ scene::Node* GizmoComponent::currentTransformNode()
 {
     if (auto giz = _currentTransform.lock())
     {
-        return giz->ownerNode();
+        return giz->_ownerReference.lock().get();
     }
     return nullptr;
 }
@@ -402,13 +567,9 @@ TransformHandle GizmoComponent::handleForSubmesh(const std::string& name, const 
 
 uint32_t GizmoComponent::transformSubmeshIdentifier(uint32_t submeshIndex)
 {
-    auto drw = transformDrawable();
-    if (!drw)
-    {
-        return 0;
-    }
-
-    auto count = drw->submeshesCount();
+    auto drawResource = _mode == ToolExecutionMode::Draw ? transformDrawDrawable() : nullptr;
+    auto resource = _mode == ToolExecutionMode::Production ? transformDrawable() : nullptr;
+    auto count = drawResource ? drawResource->submeshesCount() : resource ? resource->submeshesCount() : 0;
     if (submeshIndex >= count)
     {
         return 0;
@@ -431,7 +592,7 @@ void GizmoComponent::beginTransform(TransformHandle handle, int mouseX, int mous
     _mouseDownX = mouseX;
     _mouseDownY = mouseY;
 
-    auto node = ownerNode();
+    auto node = _ownerReference.lock();
     if (!node || !node->transform())
     {
         return;
@@ -468,7 +629,7 @@ void GizmoComponent::beginTransform(TransformHandle handle, int mouseX, int mous
     // so we can compute deltas relative to it (avoiding the origin jump)
     if (handle >= TransformHandle::TranslateX && handle <= TransformHandle::TranslateZ)
     {
-        auto node = ownerNode();
+        auto node = _ownerReference.lock();
         auto scene = node->scene();
         auto ray = rayFromCursor(scene, mouseX, mouseY);
         _initialAxisPoint = closestPointOnAxis(
@@ -478,14 +639,20 @@ void GizmoComponent::beginTransform(TransformHandle handle, int mouseX, int mous
     // For rotation: compute initial intersection with the perpendicular plane
     if (handle >= TransformHandle::RotateX && handle <= TransformHandle::RotateZ)
     {
-        auto node = ownerNode();
+        auto node = _ownerReference.lock();
         auto scene = node->scene();
         _initialIntersection = intersectPlane(scene, _worldAxis, _initialWorldPos, mouseX, mouseY);
     }
 
     // Highlight active handle: store original color, set yellow
-    auto drw = transformDrawable();
+    auto drawResource = _mode == ToolExecutionMode::Draw ? transformDrawDrawable() : nullptr;
+    auto drw = _mode == ToolExecutionMode::Production ? transformDrawable() : nullptr;
     int submeshIdx = activeSubmeshIndex();
+    if (drawResource && submeshIdx >= 0)
+    {
+        _originalHandleColor = drawResource->material(submeshIdx).albedo();
+        drawResource->material(submeshIdx).setAlbedo(base::Color::Yellow());
+    }
     if (drw && submeshIdx >= 0)
     {
         _originalHandleColor = drw->renderMaterial(submeshIdx)->materialAttributes().albedo();
@@ -501,7 +668,7 @@ void GizmoComponent::updateTransform(scene::Scene* scene, int mouseX, int mouseY
         return;
     }
 
-    auto node = ownerNode();
+    auto node = _ownerReference.lock();
     if (!node || !node->transform())
     {
         return;
@@ -579,8 +746,13 @@ void GizmoComponent::updateTransform(scene::Scene* scene, int mouseX, int mouseY
 void GizmoComponent::endTransform()
 {
     // Restore original handle color
-    auto drw = transformDrawable();
+    auto drawResource = _mode == ToolExecutionMode::Draw ? transformDrawDrawable() : nullptr;
+    auto drw = _mode == ToolExecutionMode::Production ? transformDrawable() : nullptr;
     int submeshIdx = activeSubmeshIndex();
+    if (drawResource && submeshIdx >= 0)
+    {
+        drawResource->material(submeshIdx).setAlbedo(_originalHandleColor);
+    }
     if (drw && submeshIdx >= 0)
     {
         drw->material(submeshIdx).setAlbedo(_originalHandleColor);
@@ -616,15 +788,13 @@ int GizmoComponent::activeSubmeshIndex() const
     {
         return -1;
     }
-    auto drw = transformDrawable();
-    if (!drw)
-    {
-        return -1;
-    }
-    auto count = drw->submeshesCount();
+    auto drawResource = _mode == ToolExecutionMode::Draw ? transformDrawDrawable() : nullptr;
+    auto drw = _mode == ToolExecutionMode::Production ? transformDrawable() : nullptr;
+    auto count = drawResource ? drawResource->submeshesCount() : drw ? drw->submeshesCount() : 0;
     for (uint32_t i = 0; i < count; ++i)
     {
-        if (handleForSubmesh(drw->submeshName(i), drw->submeshGroupName(i)) == _activeHandle)
+        if (handleForSubmesh(drawResource ? drawResource->submeshName(i) : drw->submeshName(i),
+            drawResource ? drawResource->submeshGroupName(i) : drw->submeshGroupName(i)) == _activeHandle)
         {
             return static_cast<int>(i);
         }
@@ -704,38 +874,36 @@ void GizmoComponent::setGizmoScaleSensitivity(GizmoType type, float sensitivity)
 
 void GizmoComponent::update(float)
 {
-    // Make sure the shared transform asset is available once this node becomes
-    // the current transform target.
-    if (_transformVisible)
-    {
-        ensureTransformGizmoLoaded();
-    }
-
-    auto newType = resolveGizmoType();
-    if (newType == _currentGizmoType)
+    const bool needsTransform = _transformVisible &&
+        (_mode == ToolExecutionMode::Draw ? !transformDrawDrawable() : !transformDrawable());
+    if (_resourceUpdatePending || (resolveGizmoType() == _currentGizmoType && !needsTransform))
     {
         return;
     }
-
-    _currentGizmoType = newType;
-
-    // Defer the actual mesh swap to avoid destroying buffers mid-render
-    app::MainLoop::current()->safeUpdateScene([this, newType]()
-                                              {
-                                                  if (newType == GizmoType::None)
-                                                  {
-                                                      unloadGizmo();
-                                                  }
-                                                  else
-                                                  {
-                                                      loadGizmo(newType);
-                                                  }
-                                              });
+    auto loop = app::MainLoop::current();
+    if (!loop)
+    {
+        throw std::logic_error("Gizmo resource changes require MainLoop or explicit synchronizeResources at a stopped boundary");
+    }
+    auto weak = weak_from_this();
+    _resourceUpdatePending = true;
+    loop->safeUpdateScene([weak]()
+    {
+        if (auto component = weak.lock())
+        {
+            auto gizmo = std::static_pointer_cast<GizmoComponent>(component);
+            gizmo->_resourceUpdatePending = false;
+            if (auto node = gizmo->_ownerReference.lock(); node && node->getComponent<GizmoComponent>() == gizmo.get())
+            {
+                gizmo->synchronizeResources();
+            }
+        }
+    });
 }
 
 base::Color GizmoComponent::gizmoColor() const
 {
-    auto node = ownerNode();
+    auto node = _ownerReference.lock();
     if (node)
     {
         auto lightComp = node->light();

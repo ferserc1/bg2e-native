@@ -1121,3 +1121,9 @@ Located under `lib/include/bg2e/render/vulkan/rt/` (implementations in
 | `rt_material_data.glsl` | RT material/vertex bindings, alpha testing, cutout shadow/AO queries |
 | `blue_noise.glsl` | Blue-noise sampling (`bnRand2`, `bnHemisphereDirection`) |
 | `smaa.glsl` | SMAA constants and LUT metrics |
+
+## Experimental draw scene path
+
+The separate [draw renderer lifecycle](api/draw/RendererDeferred.md) and [live settings contract](api/draw/Settings.md)
+cover deferred scene ownership, public injection and queued safe changes.
+Production render behavior described above remains supported.

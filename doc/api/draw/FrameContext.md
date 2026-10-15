@@ -14,6 +14,8 @@ struct FrameContext {
     uint64_t frameNumber = 0;
     uint32_t frameSlot = 0;
     float deltaSeconds = 0.0f;
+    uint64_t sceneFrameNumber = 0;
+    float sceneDeltaSeconds = 0.0f;
 };
 ```
 
@@ -23,9 +25,11 @@ struct FrameContext {
 | `commandBuffer` | Borrowed commands for this operation. |
 | `colorTarget` | Retained scene color image; not necessarily the acquired presentation image. |
 | `extent` | Target pixel dimensions. |
-| `frameNumber` | Accumulated frame number. |
+| `frameNumber` | Presentation sequence. |
 | `frameSlot` | Reusable in-flight resource slot; distinct from the accumulated frame number and swapchain image index. |
-| `deltaSeconds` | Elapsed time in seconds, render callbacks use milliseconds. |
+| `deltaSeconds` | Presentation elapsed time in seconds; production render callbacks use milliseconds. |
+| `sceneFrameNumber` | Zero-based scene submission sequence; paused/UI-only presentations do not advance it. |
+| `sceneDeltaSeconds` | Active elapsed time since the previous submitted scene, excluding paused time. |
 
 References are valid for the current operation only; do not store the context
 for deferred work. A const FrameContext still contains mutable references to

@@ -242,3 +242,9 @@ Use `safeUpdateScene` whenever you need to add, remove, or replace nodes in the
 scene graph outside of the initialization phase. Use a `SafeUpdateToken` when the
 lambda captures `this` or references to objects that may be destroyed before the
 next frame.
+
+## Experimental draw scene path
+
+The separate [draw renderer lifecycle](api/draw/RendererDeferred.md) and [live settings contract](api/draw/Settings.md)
+cover deferred scene ownership, public injection and queued safe changes.
+Production render behavior described above remains supported.

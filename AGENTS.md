@@ -10,11 +10,14 @@ cmake --build build
 ## Cosmetic code style
 
 - These cosmetic rules apply only to C, C++, and shader source files (`.c`, `.cpp`, `.h`, `.hpp`, and shaders such as `.glsl` and `.metal`). They do not apply to build-system files, scripts, Markdown, or other file types.
-- Always use braces for every control-flow statement and loop, including single-statement bodies.
-- Put opening braces on a new line for all code blocks, except for classes, structs, and namespaces.
+- Every repository-owned C/C++ source/header and shader file must begin with the repository's full GPL license header, including new files. Preserve an existing third-party license in vendored files; do not replace it with the project GPL header.
+- In `.cpp` implementation files, leave at least one blank line between the closing brace of a function definition and the next function definition.
+- In class/struct definitions, group functions by purpose (for example: constructors/destructors, initialization, lifecycle, accessors, operations, callbacks, helpers) and leave at least one blank line between adjacent groups. Keep related overloads together; do not add blank lines between methods in the same group solely for this rule.
+- For C/C++, put opening braces on a new line for all code blocks, except for classes, structs, and namespaces.
 - Do not indent namespace contents relative to the namespace declaration.
 - Prefer angled includes (`<...>`) over quoted includes (`"..."`). Use quoted includes only when necessary, such as including a private header from a source file in the `src` folder.
 - Cosmetic style changes must not change program behavior.
+- Always use braces for every control-flow statement and loop, including single-statement bodies.
 
 **Generator is platform-locked:**
 - Linux: `Ninja` (only supported)

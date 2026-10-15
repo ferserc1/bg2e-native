@@ -24,6 +24,7 @@ exercise the experimental APIs separately from that production path.
 | 07 | [Ray Query Shadows](07_ray_query_shadows.md) | Rasterized scene with fragment visibility rays, BLAS/TLAS builds, and per-slot light/acceleration resources |
 | 08 | [Deferred Cleanup](08_deferred_cleanup.md) | Cube/sphere replacement, completion-based mesh retirement, release counters, and resize/shutdown draining |
 | 09 | [Ray Tracing Pipeline](09_ray_tracing_pipeline.md) | Cornell box path tracing, progressive HDR accumulation, per-slot camera data, and sampled retained output |
+| 10 | [Deferred renderer](10_deferred_renderer.md) | Scene resources, query shadows, live settings, public pass injection and reduced resolution/optional FSR |
 
 New tutorials will be added to this table as the draw example series grows.
 The numbering follows the corresponding directories in `examples/draw/`.

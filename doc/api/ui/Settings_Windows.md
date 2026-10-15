@@ -121,3 +121,11 @@ draggable/resizable chrome and can be closed with their X button.
 - `apps/model_edit/src/AppDelegate.cpp` — reference wiring (including the
   60 s preference-persist timer pattern).
 - [UserInterface](UserInterface.md) — the scale mechanism.
+
+## Experimental graphics settings
+
+`GraphicsSettingsWindow` binds a shared draw::RenderSettingsPreferences facade
+and queues edits/imports at the renderer safe boundary. It reads live reflected
+metadata and values, refreshes on generations and reports availability/errors.
+See [settings contract](../draw/Settings.md). Production RenderSettingsWindow
+and UISettingsWindow keep the contracts above.

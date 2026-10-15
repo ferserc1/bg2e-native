@@ -19,6 +19,8 @@
 #pragma once
 
 #include <bg2e/common.hpp>
+#include <bg2e/manipulation/ToolExecutionMode.hpp>
+#include <bg2e/draw/Engine.hpp>
 #include <bg2e/render/Engine.hpp>
 #include <bg2e/scene/Drawable.hpp>
 #include <bg2e/scene/CameraComponent.hpp>
@@ -29,35 +31,33 @@
 #include <bg2e/render/vulkan/Image.hpp>
 
 #include <memory>
+#include <algorithm>
 #include <vector>
 #include <functional>
 
 namespace bg2e {
 namespace manipulation {
 
-struct SelectionItem {
+struct BG2E_API SelectionItem {
     std::weak_ptr<scene::Node> node;
     std::weak_ptr<scene::DrawableComponent> drawable;
     std::weak_ptr<scene::Drawable> mesh;
-    uint32_t submesh;
+    uint32_t submesh = 0;
     PickKind kind = PickKind::Drawable;
 
-    [[nodiscard]] scene::Node* nodePtr() const
-    {
-        return node.lock().get();
-    }
-    [[nodiscard]] scene::DrawableComponent* drawablePtr() const
-    {
-        return drawable.lock().get();
-    }
-    [[nodiscard]] scene::Drawable* meshPtr() const
-    {
-        return mesh.lock().get();
-    }
-    [[nodiscard]] bool expired() const
-    {
-        return node.expired() || drawable.expired() || mesh.expired();
-    }
+    std::weak_ptr<draw::Drawable> drawMesh;
+    ToolExecutionMode mode = ToolExecutionMode::Production;
+    uint32_t selectionIdentifier = 0;
+
+    // Locks validate membership/resource replacement as well as weak lifetime.
+    [[nodiscard]] std::shared_ptr<scene::Drawable> lockMesh() const;
+    [[nodiscard]] std::shared_ptr<draw::Drawable> lockDrawMesh() const;
+    [[nodiscard]] scene::Node* nodePtr() const;
+    [[nodiscard]] scene::DrawableComponent* drawablePtr() const;
+    [[nodiscard]] scene::Drawable* meshPtr() const;
+    [[nodiscard]] draw::Drawable* drawMeshPtr() const;
+    [[nodiscard]] bool expired() const;
+
 };
 
 typedef std::function<void()> OnSelectCallback;
@@ -69,7 +69,15 @@ class BG2E_API SelectionManager {
         uint32_t identifier;
     };
 
-    SelectionManager(render::Engine* engine);
+    explicit SelectionManager(render::Engine* engine);
+    explicit SelectionManager(draw::Engine* engine);
+    ToolExecutionMode executionMode() const
+    {
+        return _mode;
+    }
+    // Call at scene-update boundaries after resource/component removal or replacement.
+    // Prunes invalid selections and notifies once if the selection changed.
+    void refreshSelection();
     virtual ~SelectionManager() = default;
 
     void init();
@@ -186,20 +194,45 @@ class BG2E_API SelectionManager {
         _transformManipulationEnabled = e;
     }
 
-    // IMPORTANT: Be sure to deselect the elements you want to remove from the scene before deleting them.
+    // Removal is safe through weak references; refreshSelection prunes stale entries.
     void deselect();
 
     // selectedItem returns the first item in the selection array, when multi select is enabled
     [[nodiscard]] inline std::shared_ptr<SelectionItem> selectedItem() const
     {
-        return _selectedItems.empty() ? nullptr : _selectedItems.front();
+        for (const auto& item : _selectedItems)
+        {
+            if (!item->expired())
+            {
+                return item;
+            }
+        }
+        return nullptr;
     }
 
     [[nodiscard]] inline scene::Node* selectedNode() const
     {
-        return selectedItem()
-                   ? selectedItem()->nodePtr()
-                   : (_selectedNodes.empty() ? nullptr : _selectedNodes.front().lock().get());
+        if (auto item = selectedItem())
+        {
+            return item->nodePtr();
+        }
+        for (const auto& weak : _selectedNodes)
+        {
+            if (auto node = weak.lock())
+            {
+                // A dead geometry reference must not become a node-only selection.
+                const bool hasGeometryEntry = std::any_of(_selectedItems.begin(), _selectedItems.end(),
+                    [&](const std::shared_ptr<SelectionItem>& item)
+                    {
+                        return item->node.lock() == node;
+                    });
+                if (!hasGeometryEntry)
+                {
+                    return node.get();
+                }
+            }
+        }
+        return nullptr;
     }
     [[nodiscard]] inline scene::DrawableComponent* selectedDrawable() const
     {
@@ -208,6 +241,10 @@ class BG2E_API SelectionManager {
     [[nodiscard]] inline scene::Drawable* selectedMesh() const
     {
         return selectedItem() ? selectedItem()->meshPtr() : nullptr;
+    }
+    [[nodiscard]] inline draw::Drawable* selectedDrawMesh() const
+    {
+        return selectedItem() ? selectedItem()->drawMeshPtr() : nullptr;
     }
     [[nodiscard]] inline uint32_t selectedSubmesh() const
     {
@@ -236,6 +273,7 @@ class BG2E_API SelectionManager {
     bool isSelected(const scene::Node* node);
     bool isSelected(const scene::Node* node, const scene::DrawableComponent* drawable, uint32_t submesh);
     bool isSelected(const scene::Node* node, const scene::Drawable* drawable, uint32_t submesh);
+    bool isSelected(const scene::Node* node, const draw::Drawable* drawable, uint32_t submesh);
 
     bool addToSelectedItems(scene::Node* node, scene::DrawableComponent* drawable, uint32_t submesh);
     // Node-level selection overload. If the node owns a DrawableComponent it is
@@ -263,7 +301,9 @@ class BG2E_API SelectionManager {
     }
 
   protected:
-    render::Engine* _engine;
+    render::Engine* _engine = nullptr;
+    draw::Engine* _drawEngine = nullptr;
+    ToolExecutionMode _mode = ToolExecutionMode::Uninitialized;
 
     VkPipeline _pipeline = VK_NULL_HANDLE;        // depth-tested (drawables, transform gizmo)
     VkPipeline _pipelineNoDepth = VK_NULL_HANDLE; // depth-disabled (type gizmos, on top)

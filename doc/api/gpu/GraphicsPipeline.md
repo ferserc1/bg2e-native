@@ -20,6 +20,10 @@ struct GraphicsPipelineDescription {
     PixelFormat                        depthFormat               = PixelFormat::Undefined;
     std::vector<VertexBufferDescription> vertexBufferDescriptions;
     std::string                        debugName;
+    CullMode cullMode = CullMode::Back;
+    FrontFace frontFace = FrontFace::CounterClockwise;
+    std::vector<ColorAttachmentState> colorAttachments;
+    std::optional<DepthState> depthState;
 
     void addVertexBufferDescription(const VertexBufferDescription& desc);
 };
@@ -188,3 +192,18 @@ and no depth state is set.
 Returns the Metal depth-stencil state object, or `nullptr` if no depth
 attachment was specified in `GraphicsPipelineDescription`. Available on
 macOS only.
+
+See [rendering/subresources and transfer](Subresources_and_rendering.md) for
+MRT attachments, explicit views/layouts, capability limits and synchronous IO.
+
+## Explicit attachment/state contract
+
+Nonempty `colorAttachments` replaces `colorFormat`; setting both is rejected.
+An empty list plus Undefined colorFormat describes a depth-only pipeline.
+Each ColorAttachmentState has a format and independent BlendState/write mask.
+Optional `depthState` selects explicit depth test/write/compare; leaving it unset
+preserves backend historical defaults. CullMode/FrontFace select raster state.
+`resolvedColorAttachments()` resolves the legacy shorthand, and pipeline
+`colorAttachments()`/`depthFormat()` expose the realized attachment contract.
+Validation checks formats/usages, independent blend and aggregate device limits
+against the active rendering description. All described paths are single-sample.

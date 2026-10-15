@@ -726,3 +726,6 @@ standalone gpu applications construct contexts explicitly. See
 and [submission tracking / waitIdle](Submission_tracking_and_waitIdle.md) for
 asynchronous queues, the shared admission gate, Metal per-command completion,
 Vulkan native idle, occupied slot reuse and completion-based cleanup.
+
+See [rendering/subresources and transfer](Subresources_and_rendering.md) for
+MRT attachments, explicit views/layouts, capability limits and synchronous IO.

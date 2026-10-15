@@ -14,3 +14,8 @@ production database formats. Its umbrella header is `<bg2e/db/all.hpp>`.
 
 - [Render API](../render/index.md)
 - [Standalone lightmap generator CLI](../app/LightmapGenerator.md)
+
+## Representation and experimental draw
+
+[Scene references and draw resource loading](SceneReferences.md) explains raw
+document preservation, graphics-free typed graphs and synchronous realization.

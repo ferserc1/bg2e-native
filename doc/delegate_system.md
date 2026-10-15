@@ -213,3 +213,9 @@ The BG2E delegate system provides:
 
 It is a powerful structure for building tools, editors, visualization software, and any application requiring clear separation of concerns.
 
+
+## Experimental draw scene path
+
+The separate [draw renderer lifecycle](api/draw/RendererDeferred.md) and [live settings contract](api/draw/Settings.md)
+cover deferred scene ownership, public injection and queued safe changes.
+Production render behavior described above remains supported.

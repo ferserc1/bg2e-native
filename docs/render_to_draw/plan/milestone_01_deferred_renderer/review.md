@@ -177,3 +177,12 @@ the pending M01-16 review resumes; the prior acceptance history remains recorded
 ## Lead-directed documentation scheduling revision
 
 The project lead validated the HDR precision correction and requested cumulative documentation closure at every milestone. The prior next-milestone handoff is superseded: M01-16 review hands off to [M01-17 documentation](step_17_documentation.md), which must be delivered and accepted before M02-01. This is a plan update, not a claim that maintained documentation has already been updated. The separate transparency issue remains explicitly deferred by the lead and is not reported as fixed. See [policy](../documentation-policy.md) and progress for current state.
+
+## M01-17 documentation closure (2026-10-15)
+
+The project lead explicitly validated M01-16. Maintained documentation now
+covers the delivered scene renderer/resources/environment/settings/GPU/DB/UI
+contracts and numbered working example; see [coverage and checks](documentation.md).
+The lead waived separate documentation validation and authorized immediate M02-01.
+The accepted HDR correction and deferred transparency issue remain visible; no
+additional runtime/backend evidence is inferred. Earlier handoffs are historical.

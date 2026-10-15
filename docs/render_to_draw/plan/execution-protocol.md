@@ -20,6 +20,16 @@ A request explicitly naming the immediate next step after a delivered step also 
 
 The plan is a months-long reimplementation, not a request to finish it in one chat. Earlier architectural recommendations remain historical where the project lead's conclusions supersede them. Routine names/implementation choices may be refined and recorded; preserve the fixed user decisions in [architecture-decisions.md](architecture-decisions.md). Missing architecture decisions explicitly deferred to M03 are not resolved by generic permission to continue.
 
+## 1a. Source formatting and license requirements
+
+Apply the repository's `AGENTS.md` source-style rules to every new or modified C/C++ source/header and shader, including examples and app-owned shaders: always use braces for control flow, place C/C++ code-block opening braces on new lines (except class/struct/namespace), do not indent namespace contents, prefer angled includes except for necessary private headers, and ensure cosmetic edits do not change behavior. In particular:
+
+- Every repository-owned source/header/shader file begins with the complete project GPL header. Do not overwrite or replace an existing third-party license in vendored files.
+- In `.cpp` files, leave a blank line between the closing brace of each function definition and the next function definition.
+- In class/struct definitions, group methods by purpose and leave at least one blank line between groups (for example: constructors/destructors, initialization, lifecycle, accessors, operations, callbacks, helpers). Keep related overloads together; do not add blank lines between methods in a group solely to satisfy this rule.
+
+Include these checks in static review and review-step exit criteria. Formatting-only corrections must not alter behavior. A pre-existing violation discovered outside the selected step may be reported with exact paths; expand the correction scope when needed to satisfy the user's explicit request or when modifying that file.
+
 ## 2. Start every implementation chat
 
 1. Read applicable `AGENTS.md` instructions and the current user request.

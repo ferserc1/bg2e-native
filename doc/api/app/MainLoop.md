@@ -227,3 +227,9 @@ Safe updates and teardown require coordination with background GPU producers:
 waitIdle reopens admission on return. Async workers capture MainLoop and must
 finish before its destruction; detached-worker lifetime is not managed by run.
 A successful example run does not imply arbitrary cross-thread scene access.
+
+## Experimental draw scene path
+
+The separate [draw renderer lifecycle](../draw/RendererDeferred.md) and [live settings contract](../draw/Settings.md)
+cover deferred scene ownership, public injection and queued safe changes.
+Production render behavior described above remains supported.

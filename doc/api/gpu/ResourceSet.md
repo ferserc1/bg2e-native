@@ -349,3 +349,6 @@ via `useResource`.
 
 The `set` field of `ResourceBinding` is ignored in Metal — all resources are
 bound by their Metal argument index directly.
+
+See [rendering/subresources and transfer](Subresources_and_rendering.md) for
+MRT attachments, explicit views/layouts, capability limits and synchronous IO.

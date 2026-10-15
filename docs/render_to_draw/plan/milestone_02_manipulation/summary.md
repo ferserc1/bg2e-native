@@ -46,7 +46,7 @@ The technical review is the penultimate step; the cumulative documentation updat
 
 ## M01 review handoff
 
-Reuse the accepted deferred product, typed draw DrawableComponent and live settings; selection/manipulation remains unimplemented. M02-01 must fix production-only Selectable update and add pure schema hooks. Picking reuses raw color readback, overlays need an explicit public unjittered surface seam, and preview registration remains separate work. See [M01 review](../milestone_01_deferred_renderer/review.md) for source evidence, classifications and verification limits. Milestone order and product gate remain unchanged.
+Reuse the accepted deferred product, typed draw DrawableComponent and live settings; at that handoff selection/manipulation remained unimplemented. M02-01 now delivers the typed mode/reference/schema/gizmo foundation; see [actual contracts](dual-manipulation.md). Picking reuses raw color readback, overlays need an explicit public unjittered surface seam, and preview registration remains separate work. See [M01 review](../milestone_01_deferred_renderer/review.md) for source evidence, classifications and verification limits. Milestone order and product gate remain unchanged.
 
 ## Documentation closure order
 

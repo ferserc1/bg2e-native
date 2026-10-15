@@ -71,8 +71,8 @@ The private execution wrapper is constructed by MainLoop, not the application.
 
 See [quick start](quick_start.md), [API reference](reference.md),
 [MainLoop selection](../app/MainLoop.md#execution-selection-and-validation) and
-[GPU API](../gpu/index.md). OffscreenApplication and render-dependent scene/UI
-components use the render API and do not accept draw context/resources.
+[GPU API](../gpu/index.md). OffscreenApplication remains production-only. DrawableComponent has explicit typed
+production/draw paths; resource-dependent UI migration is selective.
 
 ## Implementation details
 
@@ -80,3 +80,10 @@ Read [MainLoop architecture](../../architecture/MainLoop_render_draw_gpu.md) for
 source-backed engine/coordination/UI ownership and frame flow, and
 [GPU submission tracking](../gpu/Submission_tracking_and_waitIdle.md) for
 asynchronous sends, resource-slot reuse and safe cleanup.
+
+## Deferred scene API
+
+Use [RendererDeferred](RendererDeferred.md) with the non-template
+DefaultRenderLoopDelegate for scene rendering, [resources](Resources.md),
+[environment](Environment.md) and [live settings/upscaling](Settings.md).
+Start with the [deferred tutorial](../../tutorials/draw/10_deferred_renderer.md).

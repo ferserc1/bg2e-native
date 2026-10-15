@@ -39,11 +39,15 @@ class BG2E_API SelectableComponent : public scene::Component {
     // update(); a clone starts fresh so it never shares ids with the source.
     std::shared_ptr<scene::Component> clone() const override;
 
+    using scene::Component::deserialize;
+    void deserialize(std::shared_ptr<json::JsonNode> data, const std::filesystem::path& basePath) override;
+    std::shared_ptr<json::JsonNode> serializeReferences(const std::filesystem::path& basePath) override;
     void update(float) override;
 
     inline uint32_t identifier(uint32_t submeshIndex)
     {
-        return _identifier[submeshIndex];
+        auto it = _identifier.find(submeshIndex);
+        return it == _identifier.end() ? 0 : it->second;
     }
     inline uint32_t submeshCount() const
     {
@@ -70,7 +74,7 @@ class BG2E_API SelectableComponent : public scene::Component {
 
     inline bool isSelected(uint32_t submeshIndex) const
     {
-        return _submeshSelected[submeshIndex];
+        return submeshIndex < _submeshSelected.size() && _submeshSelected[submeshIndex];
     }
     inline void setSelected(uint32_t submeshIndex, bool selected)
     {
@@ -91,6 +95,9 @@ class BG2E_API SelectableComponent : public scene::Component {
     uint32_t _submeshCount = 0;
     uint32_t _gizmoIdentifier = 0;
 
+    // Replacement or a changed submesh count invalidates selection and pick IDs.
+    std::weak_ptr<void> _drawableIdentity;
+    std::weak_ptr<void> _meshIdentity;
     static uint32_t _lastIdentifier;
 };
 

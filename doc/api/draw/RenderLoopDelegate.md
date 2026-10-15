@@ -11,6 +11,8 @@ virtual ~RenderLoopDelegate() = default;
 virtual void init(Engine* engine);
 virtual void initScene();
 virtual void resize(gpu::Size2D newExtent);
+virtual void prepareFrame();
+virtual void surfaceChanged(gpu::Size2D extent, gpu::PixelFormat format);
 virtual void update(const FrameContext& frameContext);
 virtual void render(const FrameContext& frameContext) = 0;
 virtual void cleanup();
@@ -49,3 +51,12 @@ scene resources.
 
 See [framework scope and maturity](index.md#production-and-experimental-frameworks)
 for the distinction between render and draw.
+
+## Runtime renderer delegate
+
+`prepareFrame()` is called before acquisition/UI preparation, including while
+paused; commit lifecycle changes there with no active command scope.
+`surfaceChanged(extent, format)` defaults to `resize(extent)` for custom delegates.
+Protected `requestSceneFrame()` invalidates subsequent scene work.
+[DefaultRenderLoopDelegate](RendererDeferred.md) implements runtime renderer/scene
+ownership, queued replacement and generation-checked updates above this base.

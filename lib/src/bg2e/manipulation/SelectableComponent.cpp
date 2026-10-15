@@ -20,6 +20,8 @@
 #include <bg2e/scene/ComponentFactoryRegistry.hpp>
 #include <bg2e/scene/Node.hpp>
 #include <bg2e/scene/Drawable.hpp>
+#include <limits>
+#include <stdexcept>
 
 namespace bg2e::manipulation {
 
@@ -32,7 +34,10 @@ std::shared_ptr<scene::Component> SelectableComponent::clone() const
     // Pick identifiers are allocated lazily from a global counter in update(), so
     // a clone must start empty to receive its own identifiers instead of copying
     // the source's, which would make two nodes share the same pick ids.
-    return std::make_shared<SelectableComponent>();
+    auto result = std::make_shared<SelectableComponent>();
+    result->setPriority(priority());
+    result->setIgnoreSerialization(ignoreSerialization());
+    return result;
 }
 
 void SelectableComponent::update(float)
@@ -42,16 +47,36 @@ void SelectableComponent::update(float)
         return;
     }
 
-    auto drwComponent = ownerNode()->drawable();
-    auto drw = drwComponent ? dynamic_cast<scene::Drawable*>(drwComponent->drawableBase().get()) : nullptr;
-    if (_submeshCount == 0 && drw)
+    auto component = ownerNode()->drawable();
+    std::shared_ptr<void> drawableIdentity;
+    std::shared_ptr<void> meshIdentity;
+    uint32_t count = 0;
+    if (component && component->executionMode() == scene::DrawableComponent::ExecutionMode::Draw)
     {
-        _submeshCount = drw->submeshesCount();
-        _submeshSelected.resize(_submeshCount);
-        for (uint32_t i = 0; i < _submeshCount; ++i)
+        auto drawable = component->drawDrawable();
+        drawableIdentity = drawable;
+        meshIdentity = drawable->mesh();
+        count = drawable->submeshesCount();
+    }
+    else if (component && component->executionMode() == scene::DrawableComponent::ExecutionMode::Production)
+    {
+        if (auto drawable = component->drawable())
+        {
+            drawableIdentity = drawable;
+            meshIdentity = drawable->mesh();
+            count = drawable->submeshesCount();
+        }
+    }
+    if (_drawableIdentity.lock() != drawableIdentity || _meshIdentity.lock() != meshIdentity || count != _submeshCount)
+    {
+        _drawableIdentity = drawableIdentity;
+        _meshIdentity = meshIdentity;
+        _submeshCount = count;
+        _identifier.clear();
+        _submeshSelected.assign(count, false);
+        for (uint32_t i = 0; i < count; ++i)
         {
             _identifier[i] = generateIdentifier();
-            _submeshSelected[i] = false;
         }
     }
 
@@ -76,8 +101,29 @@ uint32_t SelectableComponent::_lastIdentifier = 0;
 
 uint32_t SelectableComponent::generateIdentifier()
 {
+    if (_lastIdentifier == std::numeric_limits<uint32_t>::max())
+    {
+        throw std::overflow_error("Selection identifier capacity exhausted");
+    }
     SelectableComponent::_lastIdentifier++;
     return SelectableComponent::_lastIdentifier;
+}
+
+void SelectableComponent::deserialize(std::shared_ptr<json::JsonNode> data, const std::filesystem::path&)
+{
+    deserializeCommon(data);
+    // Runtime selection and identifiers never come from a scene document.
+    _identifier.clear();
+    _submeshSelected.clear();
+    _submeshCount = 0;
+    _gizmoIdentifier = 0;
+    _drawableIdentity.reset();
+    _meshIdentity.reset();
+}
+
+std::shared_ptr<json::JsonNode> SelectableComponent::serializeReferences(const std::filesystem::path& basePath)
+{
+    return Component::serialize(basePath);
 }
 
 scene::BG2E_SCENE_REGISTER_COMPONENT(SelectableComponent);

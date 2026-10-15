@@ -16,7 +16,7 @@ execution adapter and converts milliseconds to seconds. The existing
 does not initialize or call UI functions.
 
 The first available presentation frame creates a scene color image matching the
-actual drawable extent and format. The delegate receives `resize()` in drawable
+actual drawable extent and format. The delegate receives `surfaceChanged(extent, format)` (defaulting to resize) in drawable
 pixels, then `update()` and `render()` when the scene is dirty and unpaused.
 FrameContext contains the retained color image, synchronized resource slot,
 surface frame number and elapsed time. There is no depth target in the
@@ -85,3 +85,7 @@ waits. See [submission tracking](../gpu/Submission_tracking_and_waitIdle.md) and
 [source-backed frame flow](../../architecture/MainLoop_render_draw_gpu.md).
 Independent scene/UI passes currently share the same main-thread loop and GPU
 command buffer; they do not establish a separate UI thread.
+
+`prepareFrame()` runs before acquisition/UI work, including while paused, so
+DefaultRenderLoopDelegate can commit queued renderer/settings lifecycle changes.
+Its [renderer graph](RendererDeferred.md) owns depth and G-buffer resources.

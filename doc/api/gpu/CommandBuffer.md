@@ -479,3 +479,6 @@ gpu owns and ends the encoder. UI uses these hooks without gpu depending on ui.
 Do not commit/submit native handles independently when relying on gpu tracking.
 See [waitIdle infrastructure](Submission_tracking_and_waitIdle.md) and
 [UI frame integration](../../architecture/MainLoop_render_draw_gpu.md#ui-interoperability-lives-in-ui).
+
+See [rendering/subresources and transfer](Subresources_and_rendering.md) for
+MRT attachments, explicit views/layouts, capability limits and synchronous IO.

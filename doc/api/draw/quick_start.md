@@ -58,3 +58,6 @@ The render entry point requires a render delegate. See [MainLoop](../app/MainLoo
 
 See [framework scope and maturity](index.md#production-and-experimental-frameworks)
 for the distinction between render and draw.
+
+For a scene renderer rather than custom command recording, use the
+[deferred scene tutorial](../../tutorials/draw/10_deferred_renderer.md).

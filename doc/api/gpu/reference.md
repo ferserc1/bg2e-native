@@ -150,3 +150,6 @@ gpu::FrameResourceRing<T>     (template, not polymorphic)
 CompletionRecord/SubmissionState, backend registration/native ownership,
 SurfaceFrame slot reuse and CleanupManager snapshots with extracted source.
 These are internal mechanisms, not public application synchronization objects.
+
+See [rendering/subresources and transfer](Subresources_and_rendering.md) for
+MRT attachments, explicit views/layouts, capability limits and synchronous IO.

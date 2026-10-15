@@ -38,3 +38,7 @@ Record actual API, ownership and verification in the milestone review. Follow [t
 ## M01-15 scene product to derive from
 
 Reuse the actual examples/draw/10_deferred_renderer product and [working-example.md](../milestone_01_deferred_renderer/working-example.md), not an assumed private renderer loop. Retain the shared facade/window, queued replacement/material edit generation checks, native-free app resampler and CountingGBuffer integration. The scene supplies OBJ/clones/glass/cutout/packed-UV fixtures; selection/gizmos remain this milestone's work.
+
+## M02-01 actual handoff
+
+Use the M02-01 typed selection/gizmo contracts in dual-manipulation.md. Call refreshSelection after scene/resource edits, release all instance-owned draw gizmo resources before Engine cleanup, and keep optional tools out of ordinary lighting/query geometry. Existing MainLoop safe callbacks use weak component/node lifetimes.

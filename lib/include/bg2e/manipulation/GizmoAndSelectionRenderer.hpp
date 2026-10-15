@@ -19,6 +19,8 @@
 #pragma once
 
 #include <bg2e/common.hpp>
+#include <bg2e/manipulation/ToolExecutionMode.hpp>
+#include <bg2e/draw/Engine.hpp>
 #include <bg2e/scene/NodeVisitor.hpp>
 #include <bg2e/math/all.hpp>
 #include <bg2e/scene/Drawable.hpp>
@@ -36,6 +38,14 @@ class BG2E_API GizmoAndSelectionRenderer : public bg2e::scene::NodeVisitor {
     void init(
         render::Engine* engine,
         VkSampleCountFlagBits sampleCount);
+
+    // Optional application-owned tool, independent of Renderer attachment.
+    // M02-01 establishes mode only; draw overlay recording follows in M02-03.
+    void init(draw::Engine* engine);
+    ToolExecutionMode executionMode() const
+    {
+        return _mode;
+    }
 
     // renderExtent must be the extent of the actual render target (color/depth
     // image), not the swapchain extent: the deferred renderer rescales, so they
@@ -61,6 +71,8 @@ class BG2E_API GizmoAndSelectionRenderer : public bg2e::scene::NodeVisitor {
 
   protected:
     render::Engine* _engine = nullptr;
+    draw::Engine* _drawEngine = nullptr;
+    ToolExecutionMode _mode = ToolExecutionMode::Uninitialized;
 
     VkSampleCountFlagBits _sampleCount = VK_SAMPLE_COUNT_1_BIT;
 

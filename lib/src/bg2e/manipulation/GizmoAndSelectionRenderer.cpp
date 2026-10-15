@@ -23,6 +23,7 @@
 #include <bg2e/scene/Node.hpp>
 #include <bg2e/render/all.hpp>
 #include <bg2e/scene/LightComponent.hpp>
+#include <stdexcept>
 
 namespace bg2e::manipulation {
 
@@ -30,11 +31,26 @@ void GizmoAndSelectionRenderer::init(
     render::Engine* engine,
     VkSampleCountFlagBits sampleCount)
 {
+    if (!engine || _mode != ToolExecutionMode::Uninitialized)
+    {
+        throw std::logic_error("Initialize overlay once with a non-null production engine");
+    }
+    _mode = ToolExecutionMode::Production;
     _engine = engine;
     _sampleCount = sampleCount;
     createSelectionPipeline();
     createGizmoPipeline();
     createOpaqueGizmoPipeline();
+}
+
+void GizmoAndSelectionRenderer::init(draw::Engine* engine)
+{
+    if (!engine || _mode != ToolExecutionMode::Uninitialized)
+    {
+        throw std::logic_error("Initialize overlay once with a non-null draw engine");
+    }
+    _mode = ToolExecutionMode::Draw;
+    _drawEngine = engine;
 }
 
 void GizmoAndSelectionRenderer::draw(
@@ -44,6 +60,10 @@ void GizmoAndSelectionRenderer::draw(
     VkCommandBuffer cmd,
     const VkExtent2D& renderExtent)
 {
+    if (_mode != ToolExecutionMode::Production)
+    {
+        throw std::logic_error("Native overlay draw requires production mode; draw recording follows in M02-03");
+    }
     _viewMatrix = viewMatrix;
     _projMatrix = projMatrix;
     _viewProjectionMatrix = projMatrix * viewMatrix;

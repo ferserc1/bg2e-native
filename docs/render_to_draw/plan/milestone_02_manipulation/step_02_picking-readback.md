@@ -47,3 +47,7 @@ The actual [raster graph](../milestone_01_deferred_renderer/raster-layers.md) ke
 ## M01-16 reviewed baseline
 
 Canonical RenderQueue IDs are one-based 24-bit per snapshot; SelectableComponent IDs are separately globally allocated. Define the mapping explicitly, retain nodeId/submeshIndex and weak scene ownership, and reject deleted/rebound snapshots. Do not use dense query instance order as an object ID. See [M01 review](../milestone_01_deferred_renderer/review.md).
+
+## M02-01 actual handoff
+
+M02-01 provides ToolExecutionMode, SelectionItem mode/drawMesh/selectionIdentifier and typed lockMesh/lockDrawMesh access, selectedDrawMesh and refreshSelection. Replace the explicit draw pick guards; keep CPU selection ready before GPU init. Map retained queue IDs into those weak references and reject node/component/resource/ID replacement. Do not confuse global Selectable IDs with frame queue IDs.

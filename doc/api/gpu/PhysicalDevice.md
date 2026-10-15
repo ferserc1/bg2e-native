@@ -170,3 +170,6 @@ typedef.
 
 Returns the raw `MTL::Device*` handle (on macOS) or an opaque pointer (on
 other platforms).
+
+See [rendering/subresources and transfer](Subresources_and_rendering.md) for
+MRT attachments, explicit views/layouts, capability limits and synchronous IO.

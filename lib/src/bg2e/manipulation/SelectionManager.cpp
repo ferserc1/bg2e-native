@@ -26,13 +26,151 @@
 
 namespace bg2e::manipulation {
 
-SelectionManager::SelectionManager(render::Engine* engine)
-    : _engine(engine)
+bool SelectionItem::expired() const
 {
+    auto n = node.lock();
+    if (!n)
+    {
+        return true;
+    }
+    if (kind != PickKind::Drawable)
+    {
+        return false;
+    }
+    auto component = drawable.lock();
+    if (!component || component->ownerNode() != n.get() || n->drawable() != component.get())
+    {
+        return true;
+    }
+    uint32_t count = 0;
+    if (mode == ToolExecutionMode::Draw && component->executionMode() == scene::DrawableComponent::ExecutionMode::Draw)
+    {
+        auto resource = drawMesh.lock();
+        if (!resource || component->drawDrawable() != resource)
+        {
+            return true;
+        }
+        count = resource->submeshesCount();
+    }
+    else if (mode == ToolExecutionMode::Production && component->executionMode() == scene::DrawableComponent::ExecutionMode::Production)
+    {
+        auto resource = mesh.lock();
+        if (!resource || component->drawable() != resource)
+        {
+            return true;
+        }
+        count = resource->submeshesCount();
+    }
+    else
+    {
+        return true;
+    }
+    auto selectable = n->getComponent<SelectableComponent>();
+    if (!selectable || submesh >= count)
+    {
+        return true;
+    }
+    // Synchronize CPU identity/count so a same-owner setMesh also invalidates IDs.
+    selectable->update(0);
+    return selectionIdentifier && selectable->identifier(submesh) != selectionIdentifier;
+}
+
+std::shared_ptr<scene::Drawable> SelectionItem::lockMesh() const
+{
+    return mode == ToolExecutionMode::Production && !expired() ? mesh.lock() : nullptr;
+}
+std::shared_ptr<draw::Drawable> SelectionItem::lockDrawMesh() const
+{
+    return mode == ToolExecutionMode::Draw && !expired() ? drawMesh.lock() : nullptr;
+}
+scene::Node* SelectionItem::nodePtr() const
+{
+    return !expired() ? node.lock().get() : nullptr;
+}
+scene::DrawableComponent* SelectionItem::drawablePtr() const
+{
+    return !expired() ? drawable.lock().get() : nullptr;
+}
+scene::Drawable* SelectionItem::meshPtr() const
+{
+    return lockMesh().get();
+}
+draw::Drawable* SelectionItem::drawMeshPtr() const
+{
+    return lockDrawMesh().get();
+}
+
+void SelectionManager::refreshSelection()
+{
+    std::vector<scene::Node*> affected;
+    const auto removed = std::erase_if(_selectedItems, [&](const std::shared_ptr<SelectionItem>& item)
+    {
+        if (!item || item->expired())
+        {
+            if (item)
+            {
+                if (auto n = item->node.lock())
+                {
+                    if (auto selectable = n->getComponent<SelectableComponent>())
+                    {
+                        selectable->update(0);
+                    }
+                    affected.push_back(n.get());
+                }
+            }
+            return true;
+        }
+        return false;
+    });
+    const auto removedNodes = std::erase_if(_selectedNodes, [&](const std::weak_ptr<scene::Node>& weak)
+    {
+        auto n = weak.lock();
+        return !n || (std::find(affected.begin(), affected.end(), n.get()) != affected.end() && !nodeHasSelectedItems(n.get()));
+    });
+    if (removed || removedNodes)
+    {
+        callOnChange();
+    }
+}
+
+bool SelectionManager::isSelected(const scene::Node* node, const draw::Drawable* drawable, uint32_t submesh)
+{
+    refreshSelection();
+    if (!node || !drawable)
+    {
+        return false;
+    }
+    return std::any_of(_selectedItems.begin(), _selectedItems.end(), [&](const std::shared_ptr<SelectionItem>& item)
+    {
+        return item->node.lock().get() == node && item->lockDrawMesh().get() == drawable && item->submesh == submesh;
+    });
+}
+
+SelectionManager::SelectionManager(render::Engine* engine)
+    : _engine(engine), _mode(ToolExecutionMode::Production)
+{
+    if (!engine)
+    {
+        throw std::invalid_argument("SelectionManager requires a production engine");
+    }
+}
+
+SelectionManager::SelectionManager(draw::Engine* engine)
+    : _drawEngine(engine), _mode(ToolExecutionMode::Draw)
+{
+    if (!engine)
+    {
+        throw std::invalid_argument("SelectionManager requires a draw engine");
+    }
 }
 
 void SelectionManager::init()
 {
+    if (_mode == ToolExecutionMode::Draw)
+    {
+        // CPU selection is ready. GPU picking resources are added in M02-02.
+        return;
+    }
     createImage();
     createPipeline();
 
@@ -48,6 +186,10 @@ bool SelectionManager::pick(
     uint32_t y,
     bool additive)
 {
+    if (_mode == ToolExecutionMode::Draw)
+    {
+        throw std::logic_error("Draw GPU picking is not implemented yet (M02-02)");
+    }
     if (!additive)
     {
         deselect();
@@ -189,6 +331,11 @@ bool SelectionManager::pickObject(
         throw std::runtime_error("SelectionManager::pickObject: result is null");
     }
 
+    if (_mode != ToolExecutionMode::Production || !_pickVisitor)
+    {
+        throw std::logic_error("Picking requires initialized production resources; draw picking follows in M02-02");
+    }
+    *result = SelectionItem{};
     auto objectId = pickObjectId(rootNode, viewMatrix, projMatrix, vp, x, y);
     if (auto objectData = _pickVisitor->findObject(objectId))
     {
@@ -240,6 +387,7 @@ bool SelectionManager::isSelected(const scene::Node* node)
         return false;
     }
 
+    refreshSelection();
     return std::any_of(
         _selectedNodes.cbegin(),
         _selectedNodes.cend(),
@@ -251,11 +399,21 @@ bool SelectionManager::isSelected(const scene::Node* node)
 
 bool SelectionManager::isSelected(const scene::Node* node, const scene::DrawableComponent* drawable, uint32_t submesh)
 {
+    refreshSelection();
+    if (!drawable)
+    {
+        return false;
+    }
+    if (drawable->executionMode() == scene::DrawableComponent::ExecutionMode::Draw)
+    {
+        return isSelected(node, drawable->drawDrawable().get(), submesh);
+    }
     return isSelected(node, drawable->drawable().get(), submesh);
 }
 
 bool SelectionManager::isSelected(const scene::Node* node, const scene::Drawable* drawable, uint32_t submesh)
 {
+    refreshSelection();
     if (!node || !drawable)
     {
         return false;
@@ -268,14 +426,14 @@ bool SelectionManager::isSelected(const scene::Node* node, const scene::Drawable
                {
                    auto curNode = curItem->node.lock();
                    auto curMesh = curItem->mesh.lock();
-                   return curNode.get() == node && curMesh.get() == drawable && submesh == curItem->submesh;
+                   return !curItem->expired() && curNode.get() == node && curMesh.get() == drawable && submesh == curItem->submesh;
                }) != _selectedItems.cend();
 }
 
 bool SelectionManager::addToSelectedItems(scene::Node* node, scene::DrawableComponent* drawable, uint32_t submesh)
 {
-    // Are the pointets valid?
-    if (!node || !drawable || !drawable->drawable().get())
+    refreshSelection();
+    if (!node || !drawable || drawable->ownerNode() != node || node->drawable() != drawable)
     {
         return false;
     }
@@ -287,9 +445,20 @@ bool SelectionManager::addToSelectedItems(scene::Node* node, scene::DrawableComp
         return false;
     }
 
-    // Is the submesh index valid?
-    auto mesh = drawable->drawable();
-    if (submesh >= mesh->submeshesCount())
+    const auto mode = drawable->executionMode();
+    if ((mode == scene::DrawableComponent::ExecutionMode::Draw && _mode != ToolExecutionMode::Draw) ||
+        (mode == scene::DrawableComponent::ExecutionMode::Production && _mode != ToolExecutionMode::Production))
+    {
+        throw std::logic_error("SelectionManager cannot select geometry from another execution mode");
+    }
+    auto mesh = mode == scene::DrawableComponent::ExecutionMode::Production ? drawable->drawable() : nullptr;
+    auto drawMesh = mode == scene::DrawableComponent::ExecutionMode::Draw ? drawable->drawDrawable() : nullptr;
+    if (drawMesh && drawMesh->engine() && drawMesh->engine() != _drawEngine)
+    {
+        throw std::logic_error("SelectionManager cannot select geometry from another draw engine");
+    }
+    const auto count = drawMesh ? drawMesh->submeshesCount() : mesh ? mesh->submeshesCount() : 0;
+    if (submesh >= count)
     {
         return false;
     }
@@ -311,6 +480,10 @@ bool SelectionManager::addToSelectedItems(scene::Node* node, scene::DrawableComp
     selectItem->node = node->weak_from_this();
     selectItem->drawable = std::weak_ptr<scene::DrawableComponent>(std::dynamic_pointer_cast<scene::DrawableComponent>(drawable->shared_from_this()));
     selectItem->mesh = mesh;
+    selectItem->drawMesh = drawMesh;
+    selectItem->mode = _mode;
+    selComponent->update(0);
+    selectItem->selectionIdentifier = selComponent->identifier(submesh);
     selectItem->submesh = submesh;
     _selectedItems.push_back(selectItem);
 
@@ -329,6 +502,11 @@ bool SelectionManager::addToSelectedItems(scene::Node* node)
     if (!node)
     {
         return false;
+    }
+
+    if (auto gizmo = node->getComponent<GizmoComponent>(); gizmo && gizmo->manipulationMode() != _mode)
+    {
+        throw std::logic_error("SelectionManager cannot attach tooling from another execution mode");
     }
 
     // If the node owns a drawable, select it at submesh level (submesh 0) so it

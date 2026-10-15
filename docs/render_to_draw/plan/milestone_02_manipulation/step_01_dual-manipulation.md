@@ -38,3 +38,7 @@ Record actual API, ownership and verification in the milestone review. Follow [t
 ## M01-07 schema handoff
 
 SelectableComponent currently inherits only the production Component parser; the new typed schema/draw factory rejects it until its graphics-free parser and serializeReferences contract are implemented. Add those trivial attribute hooks alongside the actual draw-aware selection/update work here, retaining per-instance runtime identifiers. See [db-levels.md](../milestone_01_deferred_renderer/db-levels.md). Raw scene document IO already retains its JSON without constructing it.
+
+## M02-01 actual handoff
+
+Delivered contracts and validation are recorded in [dual-manipulation.md](dual-manipulation.md). Execution status remains in progress.md.

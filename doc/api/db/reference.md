@@ -9,3 +9,6 @@ Image-format and lightmap-output symbols declared by `<bg2e/db/all.hpp>`:
 | `extensionsForImageFormat`, `canonicalImageExtension` | `db/image.hpp` | [ImageFormat](ImageFormat.md#extension-mapping) |
 | `saveImage` | `db/image.hpp` | [ImageFormat](ImageFormat.md#saving-images) |
 | `LightmapOutputWriter` | `db/LightmapOutputWriter.hpp` | [LightmapOutputWriter](LightmapOutputWriter.md) |
+
+See [SceneReferences](SceneReferences.md) for the separate representation and
+draw Engine overloads; full production IO coverage is not implied for draw.

@@ -19,6 +19,8 @@
 #pragma once
 
 #include <bg2e/common.hpp>
+#include <bg2e/manipulation/ToolExecutionMode.hpp>
+#include <bg2e/draw/Engine.hpp>
 #include <bg2e/scene/DrawableComponent.hpp>
 #include <bg2e/scene/Drawable.hpp>
 #include <bg2e/base/Light.hpp>
@@ -70,7 +72,16 @@ class BG2E_API GizmoComponent : public scene::DrawableComponent {
   public:
     BG2E_COMPONENT_TYPE_NAME("Gizmo");
 
-    GizmoComponent(render::Engine* engine);
+    explicit GizmoComponent(render::Engine* engine);
+    explicit GizmoComponent(draw::Engine* engine);
+    ToolExecutionMode manipulationMode() const
+    {
+        return _mode;
+    }
+    // Optional tools attach to scene nodes, not to Renderer. Call at a stopped
+    // scene boundary when using an application loop other than MainLoop.
+    void synchronizeResources();
+    void cleanupDrawResources();
     virtual ~GizmoComponent() = default;
 
     // Gizmos are runtime-only helpers: a clone is a fresh gizmo for the same
@@ -128,6 +139,7 @@ class BG2E_API GizmoComponent : public scene::DrawableComponent {
     // Lazily-loaded shared transform gizmo drawable. Returns nullptr until the
     // asset has been loaded (see ensureTransformGizmoLoaded()).
     [[nodiscard]] std::shared_ptr<scene::Drawable> transformDrawable() const;
+    [[nodiscard]] std::shared_ptr<draw::Drawable> transformDrawDrawable() const;
 
     // Current transform node management. setCurrentTransform hides the previous
     // transform gizmo, resets the tracked component and, if the given node owns
@@ -189,8 +201,19 @@ class BG2E_API GizmoComponent : public scene::DrawableComponent {
 
     static void cleanupStatic();
 
+  protected:
+    void didAddToNode(scene::Node* node) override;
+    void didRemoveFromNode(scene::Node* node) override;
+
   private:
-    render::Engine* _engine;
+    std::weak_ptr<scene::Node> _ownerReference;
+    render::Engine* _engine = nullptr;
+    draw::Engine* _drawEngine = nullptr;
+    ToolExecutionMode _mode = ToolExecutionMode::Uninitialized;
+    // Instance-owned draw resources never cross device/context or clone lifetimes.
+    std::unordered_map<GizmoType, std::shared_ptr<draw::Drawable>> _drawGizmoCache;
+    std::shared_ptr<draw::Drawable> getDrawGizmo(GizmoType type);
+    bool _resourceUpdatePending = false;
     GizmoType _currentGizmoType = GizmoType::None;
     bool _transformVisible = false;
 
