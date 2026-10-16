@@ -71,16 +71,22 @@ class BG2E_API SelectionManager {
 
     explicit SelectionManager(render::Engine* engine);
     explicit SelectionManager(draw::Engine* engine);
+    virtual ~SelectionManager() = default;
+
     ToolExecutionMode executionMode() const
     {
         return _mode;
     }
+
+    void init();
     // Call at scene-update boundaries after resource/component removal or replacement.
     // Prunes invalid selections and notifies once if the selection changed.
     void refreshSelection();
-    virtual ~SelectionManager() = default;
 
-    void init();
+    // Draw picking uses top-left logical coordinates, including viewport origin.
+    // Set drawable pixels per logical unit (for example 2,2 for Retina).
+    // Call picks at a stopped scene/GPU boundary, outside frame recording.
+    void setPickPixelScale(float x, float y);
 
     bool pick(
         scene::Node* rootNode,
@@ -321,6 +327,12 @@ class BG2E_API SelectionManager {
     int _mouseDownY = 0;
     std::vector<std::shared_ptr<SelectionItem>> _selectedItems;
     std::vector<std::weak_ptr<scene::Node>> _selectedNodes;
+
+    glm::vec2 _pickPixelScale{1.0f};
+
+    bool pickDrawObject(scene::Node* root, const glm::mat4& view,
+        const glm::mat4& projection, const math::Viewport& viewport,
+        uint32_t x, uint32_t y, SelectionItem* result);
 
     uint32_t pickObjectId(
         scene::Node* rootNode,

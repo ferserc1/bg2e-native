@@ -65,6 +65,16 @@ class BG2E_API Texture {
     {
         return _sampler.get();
     }
+    // Retained snapshots for consumers whose submissions outlive a texture reload.
+    std::shared_ptr<gpu::Image> imageResource() const
+    {
+        return _image;
+    }
+    std::shared_ptr<gpu::Sampler> samplerResource() const
+    {
+        return _sampler;
+    }
+
     void setColorType(base::Color::Type type)
     {
         _settings->setColorType(type);

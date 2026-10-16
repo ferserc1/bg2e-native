@@ -24,6 +24,7 @@
 #include <bg2e/gpu/Instance.hpp>
 #include <bg2e/app/PreferencesStore.hpp>
 #include "detail/ImGuiBackend.hpp"
+#include "detail/PreviewRegistry.hpp"
 #include <imgui.h>
 #include <imgui_impl_sdl2.h>
 
@@ -41,6 +42,7 @@ static ImGuiStyle s_baseStyle;
 
 struct UserInterface::Impl {
     std::unique_ptr<detail::ImGuiBackend> renderer;
+    std::shared_ptr<detail::PreviewRegistry> previews;
     ImGuiContext* context = nullptr;
     draw::Engine* drawEngine = nullptr;
     bool production = false;
@@ -59,6 +61,11 @@ struct UserInterface::Impl {
         if (context)
         {
             ImGui::SetCurrentContext(context);
+        }
+        if (previews)
+        {
+            previews->shutdown();
+            previews.reset();
         }
         if (renderer)
         {
@@ -85,6 +92,7 @@ struct UserInterface::Impl {
 UserInterface::UserInterface() : _impl(std::make_shared<Impl>())
 {
 }
+
 UserInterface::~UserInterface()
 {
     try
@@ -214,6 +222,7 @@ void UserInterface::init(draw::Engine* engine)
         }
         _impl->sdlStarted = true;
         _impl->renderer->initialize(*engine);
+        _impl->previews = std::make_shared<detail::PreviewRegistry>(*engine, *_impl->renderer);
         if (_delegate)
         {
             _delegate->init(engine, this);
@@ -285,6 +294,7 @@ void UserInterface::setFrameOverride(std::function<void()> fn)
 {
     _frameOverride = std::move(fn);
 }
+
 void UserInterface::clearFrameOverride()
 {
     _frameOverride = nullptr;
@@ -338,6 +348,7 @@ void UserInterface::newFrame(gpu::CommandBuffer& command, gpu::SurfaceFrame& fra
     ImGui::SetCurrentContext(_impl->context);
     _impl->prepared = false;
     _impl->renderer->prepareFrame(&command, &frame);
+    _impl->previews->beginFrame();
     finishFrame();
     _impl->preparedCommand = &command;
     _impl->preparedFrame = &frame;
@@ -369,6 +380,15 @@ void UserInterface::draw(gpu::CommandBuffer& command, gpu::SurfaceFrame& frame)
     _impl->prepared = false;
     _impl->preparedCommand = nullptr;
     _impl->preparedFrame = nullptr;
+}
+
+std::shared_ptr<TexturePreview> UserInterface::texturePreview(const std::shared_ptr<draw::Texture>& texture)
+{
+    if (!initialized() || !_impl->previews)
+    {
+        throw std::logic_error("Texture previews require an initialized draw UI session");
+    }
+    return _impl->previews->create(texture);
 }
 
 void UserInterface::cleanup()

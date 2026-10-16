@@ -20,6 +20,14 @@ Paths above include current references and proposed outputs. New paths are targe
 3. Accumulate the scene in a declared linear/HDR domain before final encoding using public pipeline accumulation support. If existing TemporalAccumulator only provides reprojected/EMA histories, add the smallest public frame-average mode/object rather than mislabel warm-up as accumulation.
 4. Specify behavior with FSR and effect histories, jitter, animated scenes/fixed timestep and N=1. Preserve separate output extent and lower internal resolution; no-RT/no-effect accumulation is still meaningful and valid.
 
+M02 overlays are optional final-output passes, and its selection/viewpoint readbacks
+are synchronous editor jobs outside scene-frame submission. Declare whether
+offscreen output includes any registered overlay; default scene averaging should
+exclude editor selection/gizmos unless the job explicitly opts in. Only completed
+scene samples count toward N. A MaterialModifier/editor action or scene reload
+must be serialized outside the frozen accumulation interval or reset the job's
+sample/history generation before further samples (see [M02 review](../milestone_02_manipulation/review.md)).
+
 ## Verification and exit conditions
 
 - N=1 matches the single-frame conversion; a controlled varying sample sequence verifies the configured accumulated result and N stopping condition.

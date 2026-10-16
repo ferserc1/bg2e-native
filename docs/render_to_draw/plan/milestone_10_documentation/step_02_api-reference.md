@@ -15,6 +15,14 @@ Audit existing maintained `doc/` pages and M01–M09 documentation handoffs agai
 3. Check explicit backend bindings/native boundaries, primitive versus SDK/runtime capabilities and genuine Vulkan/Metal differences. Confirm no unsupported ResourceManager, Metal upscaler, DLSS, forward/MSAA or compatibility promise.
 4. Correct localized inconsistencies in existing pages. Missing substantive reference belongs to its M01–M09 documentation owner; do not invent unimplemented APIs.
 
+Include the [M02 review](../milestone_02_manipulation/review.md) in the source
+map: distinguish transient selection/picking IDs from queue/TLAS identities,
+document synchronous RGBA8/D32 operations and stopped-boundary requirements,
+separate stored CPU material definitions from live attributes, and describe
+preview/overlay/gizmo ownership and cleanup. Preserve the documented M02 evidence
+limit: project-lead continuation is acceptance under protocol, with later
+backend/scenario coverage unspecified.
+
 ## Verification and exit
 
 Existing API documentation agrees with final declarations, metadata, capabilities and public extension points.

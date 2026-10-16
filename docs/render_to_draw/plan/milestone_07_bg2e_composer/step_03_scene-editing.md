@@ -16,6 +16,8 @@ Paths above include current references and proposed outputs. New paths are targe
 
 Current sources to inspect: [apps/bg2e_composer/src/SceneEditor.cpp](../../../../apps/bg2e_composer/src/SceneEditor.cpp), [apps/bg2e_composer/src/SubmeshWindow.cpp](../../../../apps/bg2e_composer/src/SubmeshWindow.cpp), [apps/bg2e_composer/src/ToolBar.cpp](../../../../apps/bg2e_composer/src/ToolBar.cpp), [lib/include/bg2e/ui/ReflectionWidget.hpp](../../../../lib/include/bg2e/ui/ReflectionWidget.hpp).
 
+For M02-06 viewpoint framing, use `utils::ViewpointAnalyzer` with the draw Engine and a stopped scene/GPU boundary. The analyzer performs synchronous ID and D32 readbacks; invoke it as an explicit user action, not during frame/UI preparation. Map samples through `analyzedSubmeshes()` and apply a chosen candidate with the draw `applyViewpointToOrbitCamera` overload.
+
 ## Implementation work
 
 1. Port scene tree and component inspector actions, adding/removing/duplicating nodes and cameras/lights/environments/controllers with draw geometry access where needed.
@@ -39,3 +41,43 @@ Record actual API, ownership and verification in the milestone review. Follow [t
 ## M01-14 renderer settings UI
 
 Reuse [GraphicsSettingsWindow](../milestone_01_deferred_renderer/settings-ui.md) and the connected live facade for graphics settings. Full scene/material/texture-preview editors remain separate adaptation work; ResourcePicker only returns native-free file intent. Preserve safe queued edits, generation refresh and weak completions when composing editor lifecycle callbacks.
+
+## M02-03 implemented overlay integration
+
+Use [the actual overlay contract](../milestone_02_manipulation/overlays.md): register a shared
+GizmoAndSelectionRenderer in RendererConfiguration.overlays before initialization.
+RendererDeferred drives prepare/update/post-final record and cleanup. MeshOverlayPass
+provides public shader/graphics replacement and explicit geometric depth/line/blend
+policies at output resolution without jitter. Prepare mesh topology before acquisition,
+request a scene frame after selection edits, and retain Engine through tool cleanup.
+Do not add private renderer target access or draw tools into ordinary scene extraction.
+
+## M02-04 actual material patch handoff
+
+Use [draw MaterialModifier contracts](../milestone_02_manipulation/material-modifier.md): materialDefinition()
+is the stored CPU target, while material() aliases live state after loading.
+Drawable patches affect both independently; direct MaterialBase patches are live
+only. Queue at a stopped boundary, validate weak targets, request redraw and reset
+histories even on partial failure. Existing updateTextures flushes pending slots;
+callbacks/errors are nontransactional. alphaCutoff is supported by the shared decoder.
+
+## M02-05 actual widget integration
+
+Use [the widget decision table](../milestone_02_manipulation/widgets.md). DrawMaterialEditor binds Engine plus
+a shared DefaultRenderLoopDelegate and a typed draw selection (or explicit weak
+material), then queues partial edits. DrawTextureWidgets/TexturePreview use the
+draw UserInterface session, retain actual GPU snapshots and retire registrations
+after completion. No image upload or material setter belongs in UI draw. Use the
+safe onChanged(Renderer&) callback for future history invalidation. ComponentInspector
+and raw scene/property mutations require the later queued app adaptation; they
+are not certified as draw-safe by M02. UV/bake previews remain with M04.
+
+## M02-08 actual edit notification
+
+Use the [M02 review](../milestone_02_manipulation/review.md): the material widget
+queues weak resource/selection targets and renderer generations, while general
+scene/reflection mutation remains unimplemented by M02. Composer edits must also
+validate current scene membership and document generation, mark unsaved changes,
+and notify render histories, bake jobs, selection and previews after material,
+geometry, component or scene replacement. A renderer generation alone does not
+protect an async import or document swap.

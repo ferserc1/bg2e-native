@@ -38,3 +38,9 @@ Record actual API, ownership and verification in the milestone review. Follow [t
 ## M01-05 lifecycle handoff
 
 Reuse M01-05's non-template renderer ownership and synchronized initialize/attach/resize/update/record/cleanup contract. Headless scene submissions use sceneFrameNumber/sceneDeltaSeconds; do not infer scene history from presentation count or introduce a second incompatible FrameContext. Follow [runtime-renderer.md](../milestone_01_deferred_renderer/runtime-renderer.md) for queued replacement and stale settings-target invalidation.
+
+## M02-03 optional overlay boundary
+
+RendererConfiguration.overlays defaults empty. Offscreen/headless paths omit these
+optional public post-final extensions and need no SelectionManager or manipulation
+resources. See [overlay lifecycle](../milestone_02_manipulation/overlays.md).

@@ -15,6 +15,8 @@ Audit existing maintained `doc/` pages and M01–M09 documentation handoffs agai
 3. Confirm referenced targets/resources exist and obsolete forward/render tutorials are retired or clearly historical; retain valid current GPU tutorials.
 4. Correct local snippet/link drift. Do not create the tutorial collection here: missing guides remain obligations of the milestone that delivered the functionality.
 
+For manipulation tutorials, compare examples against the [M02 review](../milestone_02_manipulation/review.md): selection capture and UI event routing, exact/group/regex partial patches, clone behavior, optional final overlays, `--no-rt`, and synchronous best-view limitations. Do not imply the draw utility alone handles arbitrary reflected scene edits, alpha-aware picking or async viewpoint analysis.
+
 ## Verification and exit
 
 Existing tutorials describe supported delivered products and match their actual source; execution evidence remains honestly attributed.

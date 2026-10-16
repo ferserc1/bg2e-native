@@ -4,6 +4,12 @@
 
 **Execution status:** see [progress](../progress.md). **Entry prerequisites:** Accepted M04–M07 bake/pixel/scene/headless application reviews and current CLI feature inventory.
 
+M02's viewport selection, `SelectionItem` IDs, UI preview handles and overlays
+are editor-only lifetimes. Standalone assembly/batch must own bake-target and
+source generations, refresh geometry/material snapshots after UV2 reload, and
+exclude manipulation tool meshes from export/tracing. Loaded draw clone support
+does not imply complete GPU-authored image export. See [M02 review](../milestone_02_manipulation/review.md).
+
 ## Working product
 
 A runnable `apps/draw/lightmap_generator` uses windowless draw/GPU execution and public bake StandaloneBakerContext/SceneAssembler/Batch/output resources. It matches the current CLI map-generation, target validation, UV2, accumulation, output and overwrite behavior without a viewport renderer or production Engine.

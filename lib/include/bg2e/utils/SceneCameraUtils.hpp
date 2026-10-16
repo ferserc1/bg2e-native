@@ -31,6 +31,8 @@ struct CameraCandidate;
 
 namespace bg2e::utils {
 
+struct CameraCandidate;
+
 /** Returns the camera's vertical FOV in degrees, or fallback if unavailable. */
 BG2E_API float cameraVerticalFieldOfView(
     scene::CameraComponent* camera,
@@ -39,9 +41,16 @@ BG2E_API float cameraVerticalFieldOfView(
 /**
  * Applies an analyzed camera candidate to an orbit controller. The distance is
  * adjusted when the CameraComponent is on a translated child of the orbit node.
+ * Both overloads preserve the camera's projection and all its parameters. The
+ * candidate's FOV and clipping planes describe analysis rendering only.
  */
 BG2E_API void applyViewpointToOrbitCamera(
     const render::CameraCandidate& candidate,
+    scene::OrbitCameraComponent* orbitCamera,
+    scene::CameraComponent* camera);
+
+BG2E_API void applyViewpointToOrbitCamera(
+    const CameraCandidate& candidate,
     scene::OrbitCameraComponent* orbitCamera,
     scene::CameraComponent* camera);
 

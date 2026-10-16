@@ -4,6 +4,12 @@
 
 **Execution status:** see [progress](../progress.md). **Entry prerequisites:** Accepted M01–M05 products/reviews; inventory the current application before copying behavior.
 
+M02 establishes `DrawMaterialEditor`/`DrawTextureWidgets`, typed weak selection,
+optional output overlays and a synchronous draw viewpoint analyzer. It does not
+make generic reflected scene/component mutation safe: M06 must provide its own
+queued weak-target and scene/resource-generation checks, unsaved-state and
+history notifications, and teardown ordering. See [M02 review](../milestone_02_manipulation/review.md).
+
 ## Working product
 
 A runnable `apps/draw/model_edit` reproduces the current model editor using draw, reflected graphics options, manipulation/material APIs, utils viewpoint tools and bake UV/lightmap resources. The existing apps/model_edit stays functional as reference until M09.

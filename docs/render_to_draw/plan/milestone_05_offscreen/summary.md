@@ -4,6 +4,12 @@
 
 **Execution status:** see [progress](../progress.md). **Entry prerequisites:** Accepted M01–M04 reviews; GPU offscreen support exists but application execution has no experimental equivalent yet.
 
+M02 makes overlays optional through `RendererConfiguration::overlays`; the
+manipulation example's final-output overlay is editor presentation state, not an
+implicit scene signal. M05 must explicitly state whether an offscreen sample
+includes configured overlays and must never count synchronous picking/viewpoint
+submissions as rendered-scene samples. See [M02 review](../milestone_02_manipulation/review.md).
+
 ## Working product
 
 A runnable `examples/draw/13_offscreen_application`, based on deferred_renderer, writes one completed scene image into the directory passed on the command line. Output/internal rendering resolution, number of accumulated frames, backend and an exported graphics-settings file are configurable; it starts without a window or UI.

@@ -4,6 +4,13 @@
 
 **Execution status:** see [progress](../progress.md). **Prerequisites:** M04-01/M04-02/M04-04 and M02 widget decisions.
 
+The [M02 widget review](../milestone_02_manipulation/review.md) establishes that
+draw texture previews retain UI-session GPU snapshots and must be released before
+UI/Engine teardown. Bake UV preview output needs its own lifecycle and texture
+registration, and must retire/rebind after resolution or source reload; it cannot
+reuse production widget handles or assume draw material preview lifetime covers
+bake outputs.
+
 ## Scope and deliverable
 
 - `lib/include/bg2e/render/UvMapPreviewRenderer.hpp`

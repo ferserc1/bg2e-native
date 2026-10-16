@@ -35,8 +35,10 @@ class SceneInputs : public scene::NodeVisitor {
     {
         setIgnoreDisabled(true);
     }
+
     scene::CameraComponent* camera = nullptr;
     scene::EnvironmentComponent* environment = nullptr;
+
     void visit(scene::Node* node) override
     {
         if (!camera)
@@ -50,14 +52,17 @@ class SceneInputs : public scene::NodeVisitor {
     }
 };
 }
+
 RendererDeferred::RendererDeferred(std::filesystem::path root, uint32_t slots)
     : _shaderRoot(root.empty() ? base::PlatformTools::shaderPath() : std::move(root)), _requestedSlots(slots)
 {
 }
+
 const RendererConfiguration& RendererDeferred::configuration() const
 {
     return _configuration;
 }
+
 void RendererDeferred::initialize(Engine& engine, RendererConfiguration configuration)
 {
     if (_engine)
@@ -167,6 +172,11 @@ void RendererDeferred::initialize(Engine& engine, RendererConfiguration configur
     _object.initialize(engine, _drawLayout, count);
     _lights.initialize(engine, _lightingLayout, count);
     _environmentBinding.initialize(engine, _lightingLayout, count, 8);
+    for (const auto& overlay : _configuration.overlays)
+    {
+        ++_initializedOverlays; // Cleanup also covers partially initialized overlays.
+        overlay->initialize(engine, overlayConfiguration());
+    }
     buildTargets();
     if (_configuration.environment)
     {
@@ -181,6 +191,13 @@ void RendererDeferred::initialize(Engine& engine, RendererConfiguration configur
     }
     std::dynamic_pointer_cast<environment::SkyboxPass>(_configuration.layers[3].layer)->setEnvironment(_environment);
 }
+
+pipeline::OverlayConfiguration RendererDeferred::overlayConfiguration() const
+{
+    return {_configuration.outputExtent, _configuration.outputFormat,
+        _configuration.depthFormat, uint32_t(_targets.size())};
+}
+
 void RendererDeferred::buildTargets()
 {
     using pipeline::RenderTarget;
@@ -221,6 +238,7 @@ void RendererDeferred::buildTargets()
         slot = std::move(next);
     }
 }
+
 void RendererDeferred::attachScene(std::shared_ptr<scene::Node> sceneRoot)
 {
     if (!_engine)
@@ -250,8 +268,13 @@ void RendererDeferred::attachScene(std::shared_ptr<scene::Node> sceneRoot)
         selection.layer->attachScene(_scene);
     }
     _configuration.softShadows->attachScene(_scene);
+    for (const auto& overlay : _configuration.overlays)
+    {
+        overlay->attachScene(_scene);
+    }
     prepareFrame();
 }
+
 void RendererDeferred::resize(gpu::Size2D output, gpu::Size2D internal)
 {
     if (!_engine || output.isZero() || internal.isZero())
@@ -272,6 +295,10 @@ void RendererDeferred::resize(gpu::Size2D output, gpu::Size2D internal)
     _shadowConfiguration.outputExtent = output;
     _shadowConfiguration.internalExtent = internal;
     _configuration.softShadows->resize(_shadowConfiguration);
+    for (const auto& overlay : _configuration.overlays)
+    {
+        overlay->resize(overlayConfiguration());
+    }
     buildTargets();
     if (_scene)
     {
@@ -279,11 +306,21 @@ void RendererDeferred::resize(gpu::Size2D output, gpu::Size2D internal)
         resize.resizeViewport(_scene.get(), internal);
     }
 }
+
 bool RendererDeferred::prepareFrame()
 {
-    if (!_engine || !_generator)
+    if (!_engine)
     {
         return false;
+    }
+    bool overlayChanged = false;
+    for (const auto& overlay : _configuration.overlays)
+    {
+        overlayChanged = overlay->prepareFrame() || overlayChanged;
+    }
+    if (!_generator)
+    {
+        return overlayChanged;
     }
     SceneInputs inputs;
     if (_scene)
@@ -297,7 +334,7 @@ bool RendererDeferred::prepareFrame()
         if (!generated && next == _environment)
         {
             _environmentError.clear();
-            return false;
+            return overlayChanged;
         }
         std::dynamic_pointer_cast<environment::SkyboxPass>(_configuration.layers[3].layer)->setEnvironment(next);
         _environment = std::move(next);
@@ -308,9 +345,10 @@ bool RendererDeferred::prepareFrame()
     {
         // Published previous resources remain usable; report failed replacement.
         _environmentError = error.what();
-        return false;
+        return overlayChanged;
     }
 }
+
 void RendererDeferred::checkFrame(const FrameContext& frame) const
 {
     if (&frame.engine != _engine || frame.frameSlot >= _targets.size() || frame.extent != _configuration.outputExtent ||
@@ -322,6 +360,7 @@ void RendererDeferred::checkFrame(const FrameContext& frame) const
         throw std::invalid_argument("Renderer frame engine/slot/extent/format or scope mismatch");
     }
 }
+
 void RendererDeferred::update(const FrameContext& frame)
 {
     checkFrame(frame);
@@ -379,9 +418,15 @@ void RendererDeferred::update(const FrameContext& frame)
     {
         selection.layer->update(frame);
     }
+    const pipeline::OverlayContext overlayContext{frame, _scene.get(), slot.queue, slot.camera.view, slot.camera.projection};
+    for (const auto& overlay : _configuration.overlays)
+    {
+        overlay->update(overlayContext);
+    }
     slot.serial = frame.frameNumber;
     slot.prepared = true;
 }
+
 void RendererDeferred::dispatch(size_t stage, const FrameContext& frame,
     const std::vector<pipeline::ImageBinding>& inputs, const std::vector<pipeline::ImageBinding>& outputs,
     const pipeline::RasterFrame* raster)
@@ -389,6 +434,7 @@ void RendererDeferred::dispatch(size_t stage, const FrameContext& frame,
     const auto& selected = _configuration.layers.at(stage);
     Renderer::recordLayer(selected, {frame, selected.configuration, inputs, outputs, _scene.get(), raster});
 }
+
 void RendererDeferred::record(const FrameContext& frame)
 {
     checkFrame(frame);
@@ -461,7 +507,22 @@ void RendererDeferred::record(const FrameContext& frame)
     std::vector<pipeline::ImageBinding> finalInputs{{"color", slot.reconstructed.get()}};
     finalInputs.insert(finalInputs.end(), gbuffer.begin(), gbuffer.end());
     dispatch(2, frame, finalInputs, {{"output", &frame.colorTarget}}, &raster);
+    const pipeline::OverlayContext overlayContext{frame, _scene.get(), slot.queue, slot.camera.view, slot.camera.projection};
+    for (const auto& overlay : _configuration.overlays)
+    {
+        if (frame.commandBuffer.hasActiveScope())
+        {
+            throw std::logic_error("Overlay must begin outside a command scope");
+        }
+        overlay->record(overlayContext);
+        if (frame.commandBuffer.hasActiveScope())
+        {
+            throw std::logic_error("Overlay left an active command scope");
+        }
+    }
+    frame.commandBuffer.transition(&frame.colorTarget, gpu::ImageLayout::ShaderReadOnly);
 }
+
 void RendererDeferred::setCamera(const glm::mat4& view, const glm::mat4& projection)
 {
     if (!_explicitCamera)
@@ -472,12 +533,14 @@ void RendererDeferred::setCamera(const glm::mat4& view, const glm::mat4& project
     _projection = projection;
     _explicitCamera = true;
 }
+
 void RendererDeferred::useSceneCamera()
 {
     resetUpscaler();
     _explicitCamera = false;
     _view = _projection = glm::mat4{1};
 }
+
 pipeline::FinalSettings& RendererDeferred::finalSettings()
 {
     auto pass = std::dynamic_pointer_cast<pipeline::FinalLayer>(_configuration.layers.at(2).layer);
@@ -487,18 +550,22 @@ pipeline::FinalSettings& RendererDeferred::finalSettings()
     }
     return pass->settings;
 }
+
 const RenderQueue& RendererDeferred::queue() const
 {
     return _queue;
 }
+
 std::shared_ptr<pipeline::SoftShadowPass> RendererDeferred::softShadows() const
 {
     return _configuration.softShadows;
 }
+
 bool RendererDeferred::inspectOpaqueLayer() const
 {
     return _inspectOpaqueLayer;
 }
+
 void RendererDeferred::setInspectOpaqueLayer(bool value)
 {
     if (_inspectOpaqueLayer != value)
@@ -507,34 +574,42 @@ void RendererDeferred::setInspectOpaqueLayer(bool value)
         resetUpscaler();
     }
 }
+
 bool RendererDeferred::usesQueryShadows() const
 {
     return _queryShadows;
 }
+
 environment::EnvironmentGenerator* RendererDeferred::environmentGenerator() const
 {
     return _generator.get();
 }
+
 const std::string& RendererDeferred::environmentError() const
 {
     return _environmentError;
 }
+
 UpscalerConfiguration RendererDeferred::upscaleConfiguration() const
 {
     return {_configuration.internalExtent, _configuration.outputExtent, uint32_t(_targets.size()), _shaderRoot};
 }
+
 bool RendererDeferred::needsReconfiguration() const
 {
     return _configuration.upscaler && _configuration.upscaler->needsRebuild();
 }
+
 std::shared_ptr<Upscaler> RendererDeferred::upscaler() const
 {
     return _configuration.upscaler;
 }
+
 std::shared_ptr<ResolutionSettings> RendererDeferred::resolution() const
 {
     return _configuration.resolution;
 }
+
 void RendererDeferred::resetUpscaler()
 {
     if (_configuration.upscaler)
@@ -542,6 +617,7 @@ void RendererDeferred::resetUpscaler()
         _configuration.upscaler->reset();
     }
 }
+
 void RendererDeferred::setCameraParameters(float nearPlane, float farPlane, float fov)
 {
     if (!std::isfinite(nearPlane) || !std::isfinite(farPlane) || !std::isfinite(fov) ||
@@ -554,12 +630,18 @@ void RendererDeferred::setCameraParameters(float nearPlane, float farPlane, floa
     _upscaleCamera.verticalFov = fov;
     resetUpscaler();
 }
+
 void RendererDeferred::cleanup()
 {
     if (_engine)
     {
         _engine->device()->waitIdle();
     }
+    for (size_t i = _initializedOverlays; i > 0; --i)
+    {
+        _configuration.overlays.at(i - 1)->cleanup();
+    }
+    _initializedOverlays = 0;
     for (auto& selection : _configuration.layers)
     {
         selection.layer->cleanup();

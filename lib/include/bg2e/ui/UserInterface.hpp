@@ -24,10 +24,12 @@
 #include <SDL2/SDL.h>
 
 #include <functional>
+#include <bg2e/ui/TexturePreview.hpp>
 
 namespace bg2e {
 namespace draw {
 class Engine;
+class Texture;
 }
 namespace gpu {
 class CommandBuffer;
@@ -56,6 +58,10 @@ class BG2E_API UserInterface {
     void draw(gpu::CommandBuffer&, gpu::SurfaceFrame&);
 
     void cleanup();
+
+    // Draw sessions only. Preview snapshots survive texture reload and become
+    // invalid on cleanup. Create/draw on the UI thread; no producer mutation.
+    std::shared_ptr<TexturePreview> texturePreview(const std::shared_ptr<draw::Texture>& texture);
 
     void setFrameOverride(std::function<void()> fn);
     void clearFrameOverride();

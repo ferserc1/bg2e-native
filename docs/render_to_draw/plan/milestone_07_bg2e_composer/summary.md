@@ -4,6 +4,12 @@
 
 **Execution status:** see [progress](../progress.md). **Entry prerequisites:** Accepted M06 shared editor/resource/IO review and all previous product gates.
 
+M02 confirms that weak editor selection and renderer-generation checks do not
+replace document/scene-generation checks for composer edits or asynchronous
+imports. MaterialModifier owns neither dirty state nor baker/history invalidation;
+the composer coordinates queued changes, redraw/reset, save state and job validity.
+See [M02 review](../milestone_02_manipulation/review.md).
+
 ## Working product
 
 A runnable `apps/draw/bg2e_composer` reproduces scene composition/editing/import/baking through draw and the new DB/settings/tools APIs. The production composer stays operational through M08 as a behavior reference.

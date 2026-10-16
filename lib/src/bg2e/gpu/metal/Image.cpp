@@ -334,6 +334,54 @@ void Image::readPixelsRGBA8(std::vector<uint8_t>& data, ImageLayout finalLayout)
     }
     readPixels(data, {}, finalLayout);
 }
+
+void Image::readPixelsDepth32(std::vector<float>& data, ImageLayout finalLayout)
+{
+    validateLayout(finalLayout);
+    if (_pixelFormat != PixelFormat::D32_SFLOAT || !hasFlag(_usage, ImageUsage::TransferSrc) ||
+        currentLayout() == ImageLayout::Undefined)
+    {
+        throw std::invalid_argument("Depth readback requires an initialized D32_SFLOAT image with TransferSrc usage");
+    }
+    _device->waitIdle();
+    const size_t tight = size_t(width()) * sizeof(float);
+    const size_t stride = (tight + 255) & ~size_t(255);
+    const size_t bytes = stride * height();
+    auto* staging = _device->handle()->newBuffer(bytes, MTL::ResourceStorageModeShared);
+    if (!staging)
+    {
+        throw std::runtime_error("Metal depth readback staging buffer allocation failed");
+    }
+    try
+    {
+        _device->immediateSubmit([&](gpu::CommandBuffer* command)
+        {
+            command->transition(this, ImageLayout::TransferSrc);
+            auto* encoder = static_cast<metal::CommandBuffer*>(command)->handle()->blitCommandEncoder();
+            if (!encoder)
+            {
+                throw std::runtime_error("Metal depth readback blit encoder creation failed");
+            }
+            encoder->copyFromTexture(_texture, 0, 0, MTL::Origin{0, 0, 0}, MTL::Size{width(), height(), 1},
+                staging, 0, stride, bytes);
+            encoder->endEncoding();
+            command->transition(this, finalLayout);
+        });
+        data.resize(size_t(width()) * height());
+        for (uint32_t row = 0; row < height(); ++row)
+        {
+            std::memcpy(data.data() + size_t(row) * width(),
+                static_cast<const uint8_t*>(staging->contents()) + size_t(row) * stride, tight);
+        }
+    }
+    catch (...)
+    {
+        staging->release();
+        throw;
+    }
+    staging->release();
+}
+
 void Image::uploadRGBA8(const void* pixels, const Size2D& size)
 {
     if (_pixelFormat != PixelFormat::R8G8B8A8_UNORM || size != _size)
@@ -410,6 +458,11 @@ void Image::readPixels(std::vector<uint8_t>&, const ImageSubresourceRange&, Imag
     throw std::runtime_error("Metal backend is not available on this platform");
 }
 void Image::readPixelsRGBA8(std::vector<uint8_t>&, ImageLayout)
+{
+    throw std::runtime_error("Metal backend is not available on this platform");
+}
+
+void Image::readPixelsDepth32(std::vector<float>&, ImageLayout)
 {
     throw std::runtime_error("Metal backend is not available on this platform");
 }

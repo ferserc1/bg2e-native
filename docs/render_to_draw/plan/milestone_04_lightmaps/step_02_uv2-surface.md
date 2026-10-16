@@ -43,3 +43,7 @@ Use M01-06's standard `draw::Drawable::Mesh` (geo::MeshPNUUT) and `reload` after
 ## M01-16 UV naming clarification
 
 UV2 means the second channel: MeshPNUUT::texCoord1 and material UV selector 1. M01 accepts selectors 0/1; it does not have a third UV set at index 2. Reuse the geo atlas modifier for that second channel and explicitly refresh uploaded geometry/tracing and baked material semantics.
+
+## M02 selection and edit lifetime
+
+Use the stopped-boundary mesh update contract from the [M02 review](../milestone_02_manipulation/review.md). Replacing topology/CPU mesh identity via `setMesh()` can invalidate `SelectableComponent` IDs; changing UVs and calling same-topology `Drawable::reload()` does not necessarily do so. In either case, invalidate any in-flight bake/source generation, wait for users, rebuild draw raster/BLAS resources, and re-extract queues/bindings that retain the old GPU mesh. Do not use the pick ID as a bake target generation or assume `refreshSelection()` detects UV-only changes.

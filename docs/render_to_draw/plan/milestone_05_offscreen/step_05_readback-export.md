@@ -23,6 +23,12 @@ Current sources to inspect: [lib/include/bg2e/gpu/Image.hpp](../../../../lib/inc
 3. Validate output orientation/color domain/alpha and error paths, including unwritable destination, unsupported output options and cleanup after failure.
 4. Compare the headless scene with equivalent interactive configuration and record differences caused by animation/overlay/accumulation policy rather than hide them.
 
+M02's picking and viewpoint utilities use their own synchronous RGBA8/D32
+readbacks; they do not supply the completed output image or its encoding policy.
+When comparing output, state whether configured final overlays were recorded and
+ensure no selection/gizmo/editor preview is silently included in a scene-only
+export. See [M02 review](../milestone_02_manipulation/review.md).
+
 ## Verification and exit conditions
 
 - Independent image inspection verifies file format/dimensions, orientation and content after completion on available backends.

@@ -84,16 +84,29 @@ void Drawable::setMaterial(const base::MaterialAttributes& value, uint32_t index
 {
     material(index) = cloneMaterialAttributes(value);
 }
+
 base::MaterialAttributes& Drawable::material(uint32_t index)
 {
     auto& attributes = _attributes.at(index);
     return index < _materials.size() && _materials[index] ? _materials[index]->materialAttributes() : attributes.material;
 }
+
 const base::MaterialAttributes& Drawable::material(uint32_t index) const
 {
     const auto& attributes = _attributes.at(index);
     return index < _materials.size() && _materials[index] ? _materials[index]->materialAttributes() : attributes.material;
 }
+
+base::MaterialAttributes& Drawable::materialDefinition(uint32_t index)
+{
+    return _attributes.at(index).material;
+}
+
+const base::MaterialAttributes& Drawable::materialDefinition(uint32_t index) const
+{
+    return _attributes.at(index).material;
+}
+
 void Drawable::iterateMaterials(std::function<void(base::MaterialAttributes&)> operation)
 {
     for (uint32_t i = 0; i < submeshesCount(); ++i)
@@ -160,6 +173,7 @@ bool Drawable::rayTracingEnabled() const
 {
     return _rayTracingEnabled && _engine && _engine->device()->rayTracingCapabilities().accelerationStructure;
 }
+
 void Drawable::buildRayTracingMeshes()
 {
     _loaded = false;
@@ -197,6 +211,7 @@ void Drawable::reload()
     updateMaterials();
     buildRayTracingMeshes();
 }
+
 void Drawable::applyModifier(geo::Modifier<Mesh>* modifier)
 {
     if (!_mesh || !modifier)
@@ -292,6 +307,7 @@ void Drawable::drawSubmesh(const FrameContext& frame, uint32_t index, const Draw
     bind(*_materials.at(index), submeshTransform(index), index);
     _drawMesh->drawSubmesh(&frame.commandBuffer, index);
 }
+
 void Drawable::draw(const FrameContext& frame, const DrawFunction& bind) const
 {
     for (uint32_t i = 0; i < submeshesCount(); ++i)

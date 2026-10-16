@@ -21,6 +21,7 @@
 #include <bg2e/base/MaterialAttributes.hpp>
 #include <bg2e/json/JsonNode.hpp>
 #include <bg2e/scene/Drawable.hpp>
+#include <bg2e/draw/Drawable.hpp>
 
 #include <filesystem>
 #include <functional>
@@ -70,6 +71,28 @@ class BG2E_API MaterialModifier {
                          TextureLoadedCallback callback = {}) const;
     // Uses regex_search, equivalent to JavaScript RegExp.test, not regex_match.
     std::size_t applyAll(scene::Drawable& drawable, const std::regex& groupPattern,
+                         TextureLoadedCallback callback = {}) const;
+
+    // Draw overloads use the same patch/return/callback policy. Call at a stopped
+    // scene/GPU boundary. updateTextures uses the target's cache policy and flushes
+    // pending texture slots; failures propagate after any already applied edits.
+    // Direct material edits affect live attributes only. Drawable edits patch the
+    // stored materialDefinition and live attributes separately, without copying
+    // a whole material. The caller requests redraw/history reset (for example via
+    // DefaultRenderLoopDelegate::enqueueRendererUpdate) after edits, also on failure.
+    bool apply(draw::MaterialBase& material, TextureLoadedCallback callback = {}) const;
+    bool apply(const std::shared_ptr<draw::MaterialBase>& material,
+               TextureLoadedCallback callback = {}) const;
+
+    bool apply(draw::Drawable& drawable, uint32_t submeshIndex,
+               TextureLoadedCallback callback = {}) const;
+    bool apply(draw::Drawable& drawable, const std::string& submeshName,
+               TextureLoadedCallback callback = {}) const;
+
+    std::size_t applyAll(draw::Drawable& drawable, TextureLoadedCallback callback = {}) const;
+    std::size_t applyAll(draw::Drawable& drawable, const std::string& groupName,
+                         TextureLoadedCallback callback = {}) const;
+    std::size_t applyAll(draw::Drawable& drawable, const std::regex& groupPattern,
                          TextureLoadedCallback callback = {}) const;
 
   private:

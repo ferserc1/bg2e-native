@@ -71,6 +71,7 @@ class Image : public gpu::Image {
     }
 
     void readPixelsRGBA8(std::vector<uint8_t>& outData, ImageLayout currentLayout = ImageLayout::ColorAttachment) override;
+    void readPixelsDepth32(std::vector<float>& outData, ImageLayout currentLayout = ImageLayout::TransferSrc) override;
     void uploadRGBA8(const void* pixels, const Size2D& size) override;
     void uploadImage(const base::Image* image) override;
 

@@ -42,3 +42,20 @@ Use M01-05's `FrameContext::sceneFrameNumber` for submitted scene history progre
 ## M01-13 FSR coexistence
 
 Read [upscaling.md](../milestone_01_deferred_renderer/upscaling.md). FSR owns SDK temporal state and camera-only motion; it is not the engine history abstraction. Extend object motion/reactive/reset information through the open Upscaler contract without closing external injection. Preserve sceneFrameNumber jitter, current jittered versus previous unjittered clip, previous-minus-current framebuffer pixel motion and negative-height Vulkan viewport Y. Transparent last-layer depth is not the preserved opaque depth. Coordinate camera cuts/discontinuous edits with RendererDeferred::resetUpscaler at a safe boundary.
+
+## M02-04 material edit invalidation
+
+[MaterialModifier](../milestone_02_manipulation/material-modifier.md) patches CPU/live
+attributes independently at stopped boundaries. The application queues generation-
+checked edits and requests redraw/reset even after partial failure; resetUpscaler
+is the current hook. Extend this edit boundary to new effect histories rather
+than expecting the utility to retain renderer/scene ownership.
+
+M02-05's DrawMaterialEditor also validates renderer generation, binding revision
+and weak selected-resource identity, and invokes its `onChanged(Renderer&)`
+callback after queued changes (including partial failure). M02-07 demonstrates
+the application adapter. M03 effect histories need an explicit app notification
+that resets each affected history at the same safe boundary; do not couple the
+generic MaterialModifier utility to renderer history ownership. Geometry/topology
+replacement additionally invalidates selection identities and requires fresh
+extraction, not only a material-history reset. See [M02 review](../milestone_02_manipulation/review.md).

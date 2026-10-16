@@ -38,3 +38,11 @@ Record actual API, ownership and verification in the milestone review. Follow [t
 ## M01-07 actual DB baseline
 
 [db-levels.md](../milestone_01_deferred_renderer/db-levels.md) distinguishes raw document/reference IO from resource realization. Headless assembly may read references without a graphics context, then loadResources on its intended draw Engine. Unknown custom components require explicit schema/constructor support or raw document handling. Batch outputs must use the complete engine-aware resource export implemented in M06/M07; saveSceneReferences does not write baked images or GPU-authored material contents.
+
+The [M02 review](../milestone_02_manipulation/review.md) confirms viewport gizmos
+are optional scene components with separate instance-owned GPU drawables and
+must not enter the bake scene's render queue/TLAS or output model. Selection IDs
+are transient editor identity, not stable batch target identity. UV-only edits
+and same-topology reloads need explicit bake-generation invalidation even when
+Selectable IDs remain valid; topology replacement additionally refreshes
+selection/resource mappings.

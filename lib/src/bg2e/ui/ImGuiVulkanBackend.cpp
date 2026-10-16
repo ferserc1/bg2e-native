@@ -18,6 +18,7 @@
 
 #include "detail/ImGuiBackend.hpp"
 #include <bg2e/draw/Engine.hpp>
+#include <bg2e/gpu/vk/TexturePreview.hpp>
 #include <bg2e/gpu/vk/Instance.hpp>
 #include <bg2e/gpu/vk/PhysicalDevice.hpp>
 #include <bg2e/gpu/vk/Device.hpp>
@@ -33,6 +34,7 @@
 #include <algorithm>
 #include <stdexcept>
 #include <string>
+#include <unordered_set>
 
 namespace bg2e::ui::detail {
 namespace {
@@ -179,6 +181,26 @@ class VulkanImGuiBackend final : public ImGuiBackend {
         _draw = nullptr;
     }
 
+    uint64_t registerTexture(gpu::Image& image, gpu::Sampler& sampler) override
+    {
+        const auto identifier = gpu::vk::registerTexturePreview(image, sampler);
+        _previewIdentifiers.insert(identifier);
+        return identifier;
+    }
+
+    void removeTexture(uint64_t identifier) override
+    {
+        if (_previewIdentifiers.erase(identifier))
+        {
+            gpu::vk::removeTexturePreview(identifier);
+        }
+    }
+
+    uint64_t textureGeneration() const override
+    {
+        return _textureGeneration;
+    }
+
   private:
     void readSurfaceConfiguration()
     {
@@ -221,6 +243,7 @@ class VulkanImGuiBackend final : public ImGuiBackend {
 
     void initializeRenderer()
     {
+        ++_textureGeneration;
         if (_info.MinImageCount < 2 || _info.ImageCount < _info.MinImageCount)
         {
             throw std::runtime_error("ImGui Vulkan requires at least two swapchain images.");
@@ -245,6 +268,11 @@ class VulkanImGuiBackend final : public ImGuiBackend {
     {
         if (_rendererStarted && ImGui::GetCurrentContext() && ImGui::GetIO().BackendRendererUserData)
         {
+            for (const auto identifier : _previewIdentifiers)
+            {
+                gpu::vk::removeTexturePreview(identifier);
+            }
+            _previewIdentifiers.clear();
             ImGui_ImplVulkan_Shutdown();
         }
         _rendererStarted = false;
@@ -259,6 +287,8 @@ class VulkanImGuiBackend final : public ImGuiBackend {
     VkFormat _format = VK_FORMAT_UNDEFINED;
     uint64_t _generation = 0;
     bool _rendererStarted = false;
+    uint64_t _textureGeneration = 0;
+    std::unordered_set<uint64_t> _previewIdentifiers;
 };
 }
 

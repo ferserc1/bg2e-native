@@ -4,6 +4,13 @@
 
 **Execution status:** see [progress](../progress.md). **Prerequisites:** M08-01/M08-02 and M04 pixel contracts.
 
+Keep complete output/preflight identities separate from M02 selection/pick IDs.
+MaterialModifier and draw UI edit paths are nontransactional and do not own batch
+publication or atomic saves; standalone jobs must snapshot source generation,
+revalidate before writing and preserve protected-input semantics after failures.
+M02's clone implementation copies live resources but is not a resource exporter.
+See [M02 review](../milestone_02_manipulation/review.md).
+
 ## Scope and deliverable
 
 - `lib/include/bg2e/render/StandaloneBakeBatch.hpp`

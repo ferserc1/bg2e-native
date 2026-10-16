@@ -4,6 +4,8 @@
 
 **Execution status:** see [progress](../progress.md). **Entry prerequisites:** Accepted M01/M02 products and reviews. Advanced RT design choices are not approved by the earlier query-shadow implementation.
 
+M02 supplies typed weak selection identities, synchronous submission-local RGBA8 picking, draw viewpoint D32 readback, partial CPU/live material edits and application-owned invalidation. These are editing/application facilities, not an advanced RT material ABI or render history. See [M02 review](../milestone_02_manipulation/review.md). M03-01 remains a lead-owned explicit backend/material-addressing decision.
+
 ## Working product
 
 The existing `examples/draw/10_deferred_renderer` and `examples/draw/11_manipulation` expose supported RTAO/RTGI, reflections and their temporal/denoise controls through live reflected settings. No new example is created. Vulkan and Metal use explicit equivalent backend shader implementations; no-RT raster behavior remains valid.

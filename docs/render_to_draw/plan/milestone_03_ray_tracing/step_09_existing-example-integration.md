@@ -4,6 +4,15 @@
 
 **Execution status:** see [progress](../progress.md). **Prerequisites:** M03-04–M03-08.
 
+The [M02 review](../milestone_02_manipulation/review.md) records the actual safe
+edit boundary: MaterialModifier does not own invalidation; DrawMaterialEditor
+queues weak/generation-checked edits and exposes `onChanged(Renderer&)`; the
+application resets the currently affected history and requests redraw. Adapt this
+to effect-specific histories, including partial failures, geometry replacement,
+selection/resource invalidation and no-RT behavior. The review's continuation
+acceptance does not supply new runtime/backend evidence; retain the lead checks
+below as explicit validation rather than assuming them from source inspection.
+
 ## Scope and deliverable
 
 - `lib/include/bg2e/draw/RendererDeferred.hpp`

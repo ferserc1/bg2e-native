@@ -52,3 +52,11 @@ M01-11 adds [compute cutout-aware shadow visibility](../milestone_01_deferred_re
 ## M01-16 reviewed baseline
 
 RendererDeferred does not expose private G-buffer targets as a bake API. Reuse public surface/effect profiles from M03 (or add the minimal borrowed contract with slot/generation lifetime); use EnvironmentGenerator::resources() or explicit configuration.environment shared snapshots. Current neutral baked RGB is not real map application: RGB multiplier/UV metadata and invalidation still belong to this milestone. See [M01 review](../milestone_01_deferred_renderer/review.md).
+
+The [M02 edit/selection review](../milestone_02_manipulation/review.md) adds
+application-owned generation checks and stopped-boundary `MaterialModifier`
+updates, but it does not provide bake invalidation. Integrated contexts must
+subscribe to or receive explicit source-edit/reload notifications for material,
+UV/topology, environment and scene replacement; invalidate in-flight generations
+and refresh queue/bindings before accepting another sample. `SelectionItem` and
+viewpoint candidate IDs are editor-local and do not establish bake identity.

@@ -4,3 +4,4 @@
 - [Composer import service](composer/import_service.md): scene import service integration.
 
 - [Experimental deferred renderer example and deployment](draw_deferred_renderer.md).
+- [Experimental manipulation example](draw_manipulation.md).

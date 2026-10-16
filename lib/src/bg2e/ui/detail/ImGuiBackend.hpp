@@ -20,10 +20,11 @@
 
 #include <bg2e/ui/UserInterface.hpp>
 #include <memory>
+#include <bg2e/gpu/Sampler.hpp>
 
 namespace bg2e::ui::detail {
 
-// UI owns backend integration. No GPU type depends on ImGui or ui.
+// UI owns the session; GPU backend helpers handle native texture registration.
 class ImGuiBackend {
   public:
     virtual ~ImGuiBackend() = default;
@@ -33,6 +34,10 @@ class ImGuiBackend {
     virtual void draw(VkCommandBuffer, VkImageView) = 0;
     virtual void draw(gpu::CommandBuffer&, gpu::SurfaceFrame&) = 0;
     virtual void shutdown() = 0;
+
+    virtual uint64_t registerTexture(gpu::Image&, gpu::Sampler&) = 0;
+    virtual void removeTexture(uint64_t identifier) = 0;
+    virtual uint64_t textureGeneration() const = 0;
 };
 
 std::unique_ptr<ImGuiBackend> createVulkanImGuiBackend();

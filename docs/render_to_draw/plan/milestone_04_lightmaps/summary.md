@@ -4,6 +4,13 @@
 
 **Execution status:** see [progress](../progress.md). **Entry prerequisites:** Accepted M03 backend/effect/surface/history review and prior scene/material safe-edit contracts.
 
+M02 distinguishes partial CPU/live material edits from geometry reloads and exposes
+weak typed selection identity plus application-owned queued invalidation. UV2 is
+`texCoord1`/material selector 1; same-topology `Drawable::reload()` rebuilds GPU
+geometry but does not itself promise a new selection ID or bake generation. M04
+must own an explicit bake/source generation and refresh extracted render/bake
+resources after UV/topology changes. See [M02 review](../milestone_02_manipulation/review.md).
+
 ## Working product
 
 A runnable `examples/draw/12_lightmaps`, derived from deferred_renderer, generates UV set 2 and bakes maps for suitable scene objects, applies their metadata/textures and renders with live indirect GI/AO disabled. Public baking resources live in bg2e::bake; the atlas modifier remains in geo.

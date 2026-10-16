@@ -1,5 +1,10 @@
 # TextureWidgets
 
+This page documents the production `render::Texture` widget. The draw API has
+a separate [`DrawTextureWidgets`](DrawTextureWidgets.md) class and a GPU-neutral
+[`TexturePreview`](TexturePreview.md) lifecycle; their results describe edit
+intent so applications can enqueue safe draw-scene updates.
+
 **Header:** `<bg2e/ui/TextureWidgets.hpp>`
 **Namespace:** `bg2e::ui`
 

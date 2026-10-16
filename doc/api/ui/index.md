@@ -20,6 +20,10 @@ directly over its own ImGui context).
 > of the swapchain image through a dynamic-rendering pass. It does **not** use
 > the experimental `bg2e::gpu` abstraction directly (except through
 > `render::Engine` internals).
+>
+> The experimental draw path has a small, separate set of wrappers, including
+> `DrawMaterialEditor` and `DrawTextureWidgets`. These do not make the
+> production scene editors or Vulkan texture widgets compatible with draw.
 
 ---
 
@@ -232,6 +236,9 @@ ui::DemoWindow                    (static-only, wraps ImGui::ShowDemoWindow)
 | **[`Value`](Value.md)** | `Value.hpp` | Non-numeric value editors: text fields, RGBA color picker and combo boxes (with a dynamic-list overload). |
 | **[`SelectableList`](SelectableList.md)** | `SelectableList.hpp` | Multi-column table of selectable rows with optional per-row buttons. |
 | **[`TextureWidgets`](TextureWidgets.md)** | `TextureWidgets.hpp` | Renders a `render::Texture` as an ImGui image/image-button; adds/removes ImGui Vulkan descriptor sets, with deferred texture swapping. |
+| **[`DrawTextureWidgets`](DrawTextureWidgets.md)** | `DrawTextureWidgets.hpp` | Draw-API texture picker/preview that returns edit intent for a queued application update. |
+| **[`TexturePreview`](TexturePreview.md)** | `TexturePreview.hpp` | Opaque draw texture preview whose registrations survive submitted UI draws and expire with the UI session. |
+| **[`DrawMaterialEditor`](Material_Editors.md#drawmaterialeditor)** | `DrawMaterialEditor.hpp` | Experimental draw material editor with weak-target queued patches and renderer-generation checks. |
 | **[`UvMapPreview`](UvMapPreview.md)** | `UvMapPreview.hpp` | Embeddable UV1/UV2 preview with atlas validation feedback; uses the render preview and `TextureWidgets`. |
 
 ### Scene editors
@@ -318,6 +325,9 @@ The whole layer is DPI-scale aware:
   [Material & Drawable editors](Material_Editors.md),
   [Scene editors](SceneEditors.md), [Reflection widgets](Reflection_Widgets.md),
   [Settings windows](Settings_Windows.md), [Loader](Loader.md).
+- Experimental draw widgets: [DrawMaterialEditor](Material_Editors.md#drawmaterialeditor)
+  and [DrawTextureWidgets](DrawTextureWidgets.md). For selection and viewport
+  interactions see the [manipulation API](../manipulation/index.md).
 - Related global docs: `doc/delegate_system.md` (delegate architecture),
   `doc/workspace_api.md`, `doc/window_api.md`, `doc/input_delegate.md`.
 - The reflection metadata that drives

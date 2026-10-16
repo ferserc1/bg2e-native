@@ -4,6 +4,13 @@
 
 **Execution status:** see [progress](../progress.md). **Prerequisites:** M07-02/M07-03 and existing MainLoop safeUpdateScene.
 
+M02 DrawMaterialEditor validates renderer generation, binding revision and weak
+selected-resource identity, but that does not validate a document or an import
+request. Give each scene/document and import job an independent generation/token;
+on publication recheck both plus source/target membership, then invalidate stale
+selection/editor/bake/render bindings before replacing nodes/resources. Preserve
+the existing scene on cancellation or failed publication. See [M02 review](../milestone_02_manipulation/review.md).
+
 ## Scope and deliverable
 
 - `apps/bg2e_composer/src/SceneImporter.cpp`

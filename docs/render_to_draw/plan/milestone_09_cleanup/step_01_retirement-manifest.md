@@ -42,3 +42,14 @@ Record actual API, ownership and verification in the milestone review. Follow [t
 ## M01-16 reviewed baseline
 
 Include actual dual DrawableComponent accessors/mode tags, production scene visitors/scene::vk, ComponentFactoryRegistry/DB overloads, strong production versus weak draw TextureCache maps, legacy TextureWidgets native public members, UserInterfaceDelegate production init, application execution branches, manual tests/gpu/tests/draw probes, templates and paired shader deployment. A matching filename does not prove a replacement is implemented or accepted. See [M01 review](../milestone_01_deferred_renderer/review.md).
+
+## M02 retirement inventory
+
+Add `OverlayPass`/`MeshOverlayPass`, `GizmoAndSelectionRenderer` dual init and
+draw component caches, `SelectionManager`/`SelectableComponent` mode overloads,
+`DrawMaterialEditor`, `DrawTextureWidgets`, `TexturePreview` UI-session registry,
+draw `ViewpointAnalyzer` and the distinct draw camera helper overload to the
+manifest. Map each production counterpart and caller separately; M02 supplies
+the draw path but does not by itself prove production callers migrated or
+regressions passed. Retain the draw preview's UI drain/unregister order and
+instance gizmo cleanup before Engine release. See [M02 review](../milestone_02_manipulation/review.md).

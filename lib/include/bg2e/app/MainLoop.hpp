@@ -156,6 +156,14 @@ class BG2E_API MainLoop {
         _windowConfig = std::move(config);
     }
 
+    // Main-thread only. Logical window dimensions, independent of drawable
+    // pixel density. Updated before initialization callbacks and on resize;
+    // returns zero outside an active run.
+    glm::uvec2 windowSize() const
+    {
+        return _windowSize;
+    }
+
     static MainLoop* current()
     {
         return _mainLoopInstance;
@@ -232,6 +240,7 @@ class BG2E_API MainLoop {
 
   protected:
     WindowConfig _windowConfig;
+    glm::uvec2 _windowSize{0, 0};
 
     bool _quit = false;
 

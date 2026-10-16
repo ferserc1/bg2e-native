@@ -33,7 +33,9 @@ namespace bg2e::draw {
 class BG2E_API RendererDeferred : public Renderer {
   public:
     explicit RendererDeferred(std::filesystem::path shaderRoot = {}, uint32_t frameSlots = 0);
+
     const RendererConfiguration& configuration() const override;
+
     void initialize(Engine& engine, RendererConfiguration configuration) override;
     void attachScene(std::shared_ptr<scene::Node> sceneRoot) override;
     void resize(gpu::Size2D outputExtent, gpu::Size2D internalExtent) override;
@@ -42,6 +44,7 @@ class BG2E_API RendererDeferred : public Renderer {
     void update(const FrameContext& frame) override;
     void record(const FrameContext& frame) override;
     void cleanup() override;
+
     // Explicit camera overrides first enabled scene camera; no camera uses identity.
     void setCamera(const glm::mat4& view, const glm::mat4& projection);
     void useSceneCamera();
@@ -49,6 +52,7 @@ class BG2E_API RendererDeferred : public Renderer {
     std::shared_ptr<Upscaler> upscaler() const;
     std::shared_ptr<ResolutionSettings> resolution() const;
     void setCameraParameters(float nearPlane, float farPlane, float verticalFovRadians);
+
     pipeline::FinalSettings& finalSettings();
     const RenderQueue& queue() const;
     std::shared_ptr<pipeline::SoftShadowPass> softShadows() const;
@@ -68,8 +72,11 @@ class BG2E_API RendererDeferred : public Renderer {
         uint64_t serial = 0;
         bool prepared = false;
     };
+
     void buildTargets();
     UpscalerConfiguration upscaleConfiguration() const;
+    pipeline::OverlayConfiguration overlayConfiguration() const;
+
     void checkFrame(const FrameContext& frame) const;
     void dispatch(size_t stage, const FrameContext& frame,
         const std::vector<pipeline::ImageBinding>& inputs,
@@ -89,6 +96,7 @@ class BG2E_API RendererDeferred : public Renderer {
     LightDataBinding _lights;
     EnvironmentDataBinding _environmentBinding;
     std::vector<Targets> _targets;
+    size_t _initializedOverlays = 0;
     RenderQueue _queue;
     glm::mat4 _view{1}, _projection{1};
     bool _explicitCamera = false;

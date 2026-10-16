@@ -16,6 +16,8 @@ Paths above include current references and proposed outputs. New paths are targe
 
 Current sources to inspect: [lib/include/bg2e/render/ViewpointAnalyzer.hpp](../../../../lib/include/bg2e/render/ViewpointAnalyzer.hpp), [lib/src/bg2e/render/ViewpointAnalyzer.cpp](../../../../lib/src/bg2e/render/ViewpointAnalyzer.cpp), [lib/include/bg2e/utils/SceneCameraUtils.hpp](../../../../lib/include/bg2e/utils/SceneCameraUtils.hpp).
 
+M02-02 now supplies reusable draw picking shaders and generic GPU images, but generic image readback rejects depth formats on both backends. The implementation may add a typed `gpu::Image::readPixelsDepth32` operation after comparing complexity; keep depth copy/layout/completion behavior inside each GPU backend. The analyzer must use an independent candidate ID map, not interactive selection identifiers.
+
 ## Implementation work
 
 1. Implement the new analyzer/candidate/range/statistic API in utils using draw/GPU measurement resources. Leave the current production ViewpointAnalyzer implementation untouched.
@@ -35,3 +37,10 @@ Delegate compilation and applicable runtime checks to the project lead; perform 
 M06/M07 integrate optimal framing UI. M05 can later reuse measurement offscreen but no headless application is implemented here.
 
 Record actual API, ownership and verification in the milestone review. Follow [the review protocol](../review-protocol.md) and edit affected pending steps when actual contracts differ.
+
+## M02-02 actual picking handoff
+
+See [picking.md](picking.md) for synchronous submission-local IDs, typed selection,
+unjittered/top-left viewport coordinates, setPickPixelScale and stopped-producer
+requirements. Reuse RGBA8 geometric picking; no depth readback was added.
+Route input at a safe boundary and refresh DPI scale on window changes.

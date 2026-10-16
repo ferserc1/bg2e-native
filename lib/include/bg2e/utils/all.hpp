@@ -19,5 +19,6 @@
 #pragma once
 
 #include <bg2e/utils/SceneCameraUtils.hpp>
+#include <bg2e/utils/ViewpointAnalyzer.hpp>
 #include <bg2e/utils/TextureCache.hpp>
 #include <bg2e/utils/MaterialModifier.hpp>

@@ -4,6 +4,13 @@
 
 **Execution status:** see [progress](../progress.md). **Prerequisites:** M06-02/M06-03 and accepted M04 APIs.
 
+UV/topology edits must use M04's stopped-producer reload/rebuild and explicit
+bake-generation invalidation. M02 selection refresh does not detect UV-only
+changes after a same-topology `Drawable::reload()`, and MaterialModifier does not
+notify a baker itself. Route document edits through the app's queued change
+notification so editor previews, bake jobs and render histories are invalidated
+consistently; see the [M02 review](../milestone_02_manipulation/review.md).
+
 ## Scope and deliverable
 
 - `apps/model_edit/src/ModelLightmapWindow.cpp`

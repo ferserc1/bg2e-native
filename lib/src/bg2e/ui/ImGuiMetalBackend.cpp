@@ -20,6 +20,7 @@
 #ifdef BG2E_IS_MAC
 #include "detail/ImGuiBackend.hpp"
 #include <bg2e/draw/Engine.hpp>
+#include <bg2e/gpu/metal/TexturePreview.hpp>
 #include <bg2e/gpu/metal/Device.hpp>
 #include <bg2e/gpu/metal/CommandBuffer.hpp>
 #include <bg2e/gpu/metal/Image.hpp>
@@ -150,6 +151,21 @@ class MetalImGuiBackend final : public ImGuiBackend {
             releasePreparation();
             _engine = nullptr;
         }
+    }
+
+    uint64_t registerTexture(gpu::Image& image, gpu::Sampler& sampler) override
+    {
+        return gpu::metal::registerTexturePreview(image, sampler);
+    }
+
+    void removeTexture(uint64_t identifier) override
+    {
+        gpu::metal::removeTexturePreview(identifier);
+    }
+
+    uint64_t textureGeneration() const override
+    {
+        return 1;
     }
 
   private:

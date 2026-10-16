@@ -32,7 +32,7 @@ Delegate compilation and applicable runtime checks to the project lead; perform 
 
 ## Downstream comparison
 
-M02-06 viewpoint measurements reuse ID/depth primitives; M06/M07 selection widgets use the resulting stable map/lifetime contract.
+M02-06 reuses the paired draw picking ID shaders/format and adds typed D32 readback in `gpu::Image`; it has a separate candidate-to-submesh map from interactive selection IDs. M06/M07 framing is an explicit stopped-boundary synchronous action, not a frame/UI task.
 
 Record actual API, ownership and verification in the milestone review. Follow [the review protocol](../review-protocol.md) and edit affected pending steps when actual contracts differ.
 

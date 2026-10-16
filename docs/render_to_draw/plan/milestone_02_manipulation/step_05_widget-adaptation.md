@@ -39,3 +39,12 @@ Record actual API, ownership and verification in the milestone review. Follow [t
 ## M01-14 actual settings UI
 
 Reuse [GraphicsSettingsWindow](../milestone_01_deferred_renderer/settings-ui.md) for renderer settings. ReflectionWidget::editValue edits transient scalar values; it does not authorize direct delayed setters on target objects. The deferred example only needs ResourcePicker HDR intent; legacy TextureWidgets still exposes the production Vulkan preview path. Adapt each required material/image/picking widget separately with native-free public interfaces and retained resource lifetimes; do not assume previews were migrated by M01-14.
+
+## M02-04 actual material patch handoff
+
+Use [draw MaterialModifier contracts](material-modifier.md): materialDefinition()
+is the stored CPU target, while material() aliases live state after loading.
+Drawable patches affect both independently; direct MaterialBase patches are live
+only. Queue at a stopped boundary, validate weak targets, request redraw and reset
+histories even on partial failure. Existing updateTextures flushes pending slots;
+callbacks/errors are nontransactional. alphaCutoff is supported by the shared decoder.

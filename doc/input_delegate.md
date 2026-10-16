@@ -112,6 +112,13 @@ public:
 
 The `MainLoop` receives backend events and routes them to the active input delegate.
 
+The input delegate is not itself a scene-graph dispatcher. For scene components
+such as `OrbitCameraController`, the application must forward events to the
+scene graph (commonly with `scene::InputVisitor`) after applying its own capture
+policy. The [draw manipulation example](tutorials/draw/11_manipulation.md)
+demonstrates forwarding camera gestures while keeping gizmo-captured gestures
+inside `SelectionManager`.
+
 ---
 
 ## Behavior Summary

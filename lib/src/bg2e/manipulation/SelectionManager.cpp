@@ -79,22 +79,27 @@ std::shared_ptr<scene::Drawable> SelectionItem::lockMesh() const
 {
     return mode == ToolExecutionMode::Production && !expired() ? mesh.lock() : nullptr;
 }
+
 std::shared_ptr<draw::Drawable> SelectionItem::lockDrawMesh() const
 {
     return mode == ToolExecutionMode::Draw && !expired() ? drawMesh.lock() : nullptr;
 }
+
 scene::Node* SelectionItem::nodePtr() const
 {
     return !expired() ? node.lock().get() : nullptr;
 }
+
 scene::DrawableComponent* SelectionItem::drawablePtr() const
 {
     return !expired() ? drawable.lock().get() : nullptr;
 }
+
 scene::Drawable* SelectionItem::meshPtr() const
 {
     return lockMesh().get();
 }
+
 draw::Drawable* SelectionItem::drawMeshPtr() const
 {
     return lockDrawMesh().get();
@@ -168,7 +173,7 @@ void SelectionManager::init()
 {
     if (_mode == ToolExecutionMode::Draw)
     {
-        // CPU selection is ready. GPU picking resources are added in M02-02.
+        // Picking resources are submission-local and created on demand.
         return;
     }
     createImage();
@@ -186,11 +191,7 @@ bool SelectionManager::pick(
     uint32_t y,
     bool additive)
 {
-    if (_mode == ToolExecutionMode::Draw)
-    {
-        throw std::logic_error("Draw GPU picking is not implemented yet (M02-02)");
-    }
-    if (!additive)
+    if (!additive && _mode == ToolExecutionMode::Production)
     {
         deselect();
     }
@@ -205,6 +206,11 @@ bool SelectionManager::pick(
         if (result.kind == PickKind::TransformGizmo)
         {
             return true;
+        }
+
+        if (!additive && _mode == ToolExecutionMode::Draw)
+        {
+            deselect();
         }
 
         // Light/environment/camera gizmo: node-level selection (additive /
@@ -258,11 +264,13 @@ bool SelectionManager::mouseButtonDown(scene::Scene* scene, int button, int x, i
             {
                 if (auto gizmo = node->getComponent<GizmoComponent>())
                 {
-                    if (auto drw = gizmo->transformDrawable())
+                    const auto production = _mode == ToolExecutionMode::Production ? gizmo->transformDrawable() : nullptr;
+                    const auto modern = _mode == ToolExecutionMode::Draw ? gizmo->transformDrawDrawable() : nullptr;
+                    if (production || modern)
                     {
                         auto handle = GizmoComponent::handleForSubmesh(
-                            drw->submeshName(result.submesh),
-                            drw->submeshGroupName(result.submesh));
+                            modern ? modern->submeshName(result.submesh) : production->submeshName(result.submesh),
+                            modern ? modern->submeshGroupName(result.submesh) : production->submeshGroupName(result.submesh));
                         gizmo->beginTransform(handle, x, y);
                         _capturing = true;
                         return false; // captured: do not propagate to the scene graph
@@ -331,9 +339,14 @@ bool SelectionManager::pickObject(
         throw std::runtime_error("SelectionManager::pickObject: result is null");
     }
 
+    if (_mode == ToolExecutionMode::Draw)
+    {
+        *result = SelectionItem{};
+        return pickDrawObject(rootNode, viewMatrix, projMatrix, vp, x, y, result);
+    }
     if (_mode != ToolExecutionMode::Production || !_pickVisitor)
     {
-        throw std::logic_error("Picking requires initialized production resources; draw picking follows in M02-02");
+        throw std::logic_error("Production picking requires initialized resources");
     }
     *result = SelectionItem{};
     auto objectId = pickObjectId(rootNode, viewMatrix, projMatrix, vp, x, y);

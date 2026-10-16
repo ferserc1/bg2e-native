@@ -77,6 +77,14 @@ public:
 All methods have empty defaults. Mouse button indexes are `0` for left, `1`
 for middle, and `2` for other/right buttons in the current main-loop mapping.
 
+`InputDelegate` is the application event boundary; it does not automatically
+dispatch events to scene components. Applications that use scene controllers
+must forward uncaptured input through `scene::InputVisitor` (or their own
+component event routing). The manipulation sample combines that routing with
+`SelectionManager`: uncaptured mouse gestures reach `OrbitCameraController`,
+while captured gizmo gestures remain with the selection manager. See the
+[manipulation tutorial](../../tutorials/draw/11_manipulation.md#14-give-input-its-own-small-state-machine).
+
 ## KeyEvent
 
 `KeyEvent` wraps the engine key enum. `key()` returns the key,

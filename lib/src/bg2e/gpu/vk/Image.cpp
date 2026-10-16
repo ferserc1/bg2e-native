@@ -406,6 +406,52 @@ void Image::readPixelsRGBA8(std::vector<uint8_t>& data, ImageLayout finalLayout)
     }
     readPixels(data, {}, finalLayout);
 }
+
+void Image::readPixelsDepth32(std::vector<float>& data, ImageLayout finalLayout)
+{
+    validateLayout(finalLayout);
+    if (_pixelFormat != PixelFormat::D32_SFLOAT || !hasFlag(usage(), ImageUsage::TransferSrc) ||
+        currentLayout() == ImageLayout::Undefined)
+    {
+        throw std::invalid_argument("Depth readback requires an initialized D32_SFLOAT image with TransferSrc usage");
+    }
+    _device->waitIdle();
+    const size_t bytes = size_t(width()) * height() * sizeof(float);
+    VkBuffer buffer = VK_NULL_HANDLE;
+    VmaAllocation allocation = VK_NULL_HANDLE;
+    VkBufferCreateInfo info{};
+    info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    info.size = bytes;
+    info.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+    VmaAllocationCreateInfo allocationInfo{};
+    allocationInfo.usage = VMA_MEMORY_USAGE_GPU_TO_CPU;
+    allocationInfo.flags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
+    VmaAllocationInfo mapped{};
+    VK_ASSERT(vmaCreateBuffer(_device->allocator(), &info, &allocationInfo, &buffer, &allocation, &mapped));
+    try
+    {
+        _device->immediateSubmit([&](gpu::CommandBuffer* command)
+        {
+            command->transition(this, ImageLayout::TransferSrc);
+            VkBufferImageCopy region{};
+            region.imageSubresource = {VK_IMAGE_ASPECT_DEPTH_BIT, 0, 0, 1};
+            region.imageExtent = {_size.width, _size.height, 1};
+            vkCmdCopyImageToBuffer(static_cast<vk::CommandBuffer*>(command)->handle(), _image,
+                VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, buffer, 1, &region);
+            command->transition(this, finalLayout);
+        });
+        VK_ASSERT(vmaInvalidateAllocation(_device->allocator(), allocation, 0, VK_WHOLE_SIZE));
+        data.resize(size_t(width()) * height());
+        std::memcpy(data.data(), mapped.pMappedData, bytes);
+    }
+    catch (...)
+    {
+        vmaDestroyBuffer(_device->allocator(), buffer, allocation);
+        throw;
+    }
+    vmaDestroyBuffer(_device->allocator(), buffer, allocation);
+}
+
 void Image::uploadRGBA8(const void* pixels, const Size2D& size)
 {
     if (_pixelFormat != PixelFormat::R8G8B8A8_UNORM || size != _size)

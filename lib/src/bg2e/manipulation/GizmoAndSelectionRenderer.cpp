@@ -24,8 +24,15 @@
 #include <bg2e/render/all.hpp>
 #include <bg2e/scene/LightComponent.hpp>
 #include <stdexcept>
+#include <utility>
 
 namespace bg2e::manipulation {
+
+GizmoAndSelectionRenderer::GizmoAndSelectionRenderer(std::shared_ptr<draw::pipeline::MeshOverlayPass> graphics)
+    : _graphics(std::move(graphics))
+{
+}
+
 
 void GizmoAndSelectionRenderer::init(
     render::Engine* engine,
@@ -62,7 +69,7 @@ void GizmoAndSelectionRenderer::draw(
 {
     if (_mode != ToolExecutionMode::Production)
     {
-        throw std::logic_error("Native overlay draw requires production mode; draw recording follows in M02-03");
+        throw std::logic_error("Native overlay draw requires production mode");
     }
     _viewMatrix = viewMatrix;
     _projMatrix = projMatrix;
@@ -79,6 +86,11 @@ void GizmoAndSelectionRenderer::draw(
 
 void GizmoAndSelectionRenderer::visit(bg2e::scene::Node* node)
 {
+    if (_mode == ToolExecutionMode::Draw)
+    {
+        _drawNodes.push_back(node->weak_from_this());
+        return;
+    }
     auto trx = node->getComponent<bg2e::scene::TransformComponent>();
     auto selectable = node->getComponent<bg2e::manipulation::SelectableComponent>();
     auto drawable = node->getComponent<bg2e::scene::DrawableComponent>();
@@ -180,6 +192,10 @@ void GizmoAndSelectionRenderer::visit(bg2e::scene::Node* node)
 
 void GizmoAndSelectionRenderer::didVisit(bg2e::scene::Node* node)
 {
+    if (_mode == ToolExecutionMode::Draw)
+    {
+        return;
+    }
     auto trx = node->getComponent<bg2e::scene::TransformComponent>();
     if (trx)
     {

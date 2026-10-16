@@ -4,6 +4,11 @@
 `<bg2e/ui/SubmeshSelector.hpp>`
 **Namespace:** `bg2e::ui`
 
+The editors described below are the production `render` widgets. The
+experimental draw path has a separate [`DrawMaterialEditor`](#drawmaterialeditor)
+whose edits are queued and applied at a safe renderer boundary; it does not
+make the production editor draw-compatible.
+
 The PBR editing widgets. They come in two flavors of data binding: **manual**
 (you hand them a `render::MaterialBase`) and **selection-driven** (you hand
 them a `manipulation::SelectionManager` and they follow the 3D picks).
@@ -161,3 +166,25 @@ descriptor-backed texture widgets. Call `cleanup()` from your delegate's
 - [quick_start — Recipes 10 & 11](quick_start.md#recipe-10-material-editor-driven-by-a-selectionmanager)
 - [TextureWidgets](TextureWidgets.md) — the slot widget used internally.
 - `manipulation::SelectionManager` docs / header for the selection model.
+
+## `DrawMaterialEditor`
+
+**Header:** `<bg2e/ui/DrawMaterialEditor.hpp>`
+
+The draw editor is separate from `MaterialEditor`. Initialize it with the draw
+engine and a shared `draw::DefaultRenderLoopDelegate`, then optionally bind a
+`SelectionManager`. Its `draw(UserInterface&)` method renders controls but
+does not mutate the selected target inline. `queuePatch()` and
+`queueClearTexture()` enqueue intent; weak target, renderer generation and
+binding revision checks protect the later safe-boundary application.
+
+```cpp
+_drawMaterialEditor.init(engine, delegate);
+_drawMaterialEditor.setSelectionManager(selection);
+_drawMaterialEditor.draw(ui); // during UI drawing
+```
+
+Call `cleanup()` before the engine is destroyed. `onChanged()` lets the app
+reset application-owned histories; the deferred renderer's upscaler reset is
+handled automatically. A pending/error status is available through
+`pending()` and `error()`.

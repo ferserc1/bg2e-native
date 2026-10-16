@@ -69,6 +69,13 @@ void drawUI() override        // called between NewFrame() and Render()
 - Capture `this` freely in UI callbacks: the delegate lives as long as the
   `Application`.
 
+The generic UI infrastructure can be initialized for draw/Vulkan or
+draw/Metal, but many composite widgets remain production-render widgets. In
+particular, use [`DrawMaterialEditor`](Material_Editors.md#drawmaterialeditor)
+and [`DrawTextureWidgets`](DrawTextureWidgets.md) for their explicitly
+supported draw workflows; `MaterialEditor`, `DrawableEditor` and
+`TextureWidgets` still consume production resources.
+
 ---
 
 ## Lifecycle

@@ -39,3 +39,10 @@ Record actual API, ownership and verification in the milestone review. Follow [t
 ## M02-01 actual handoff
 
 M02-01 adds draw init(engine) and ToolExecutionMode to GizmoAndSelectionRenderer, but no draw recording yet. Extend this public optional tool with the planned GPU surface/camera contract. GizmoComponent exposes manipulationMode, transformDrawDrawable, synchronizeResources and cleanupDrawResources, with instance-owned draw caches and weak safe callbacks. Preserve unlit axis colors, no tracing geometry, typed production paths and stopped-boundary resource release.
+
+## M02-02 actual picking handoff
+
+See [picking.md](picking.md) for synchronous submission-local IDs, typed selection,
+unjittered/top-left viewport coordinates, setPickPixelScale and stopped-producer
+requirements. Reuse RGBA8 geometric picking; no depth readback was added.
+Route input at a safe boundary and refresh DPI scale on window changes.

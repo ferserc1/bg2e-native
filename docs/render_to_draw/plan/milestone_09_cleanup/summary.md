@@ -4,6 +4,13 @@
 
 **Execution status:** see [progress](../progress.md). **Entry prerequisites:** All M01–M08 working products accepted with code-versus-plan reviews; actual removal manifest and unresolved parity checks reviewed first.
 
+The [M02 review](../milestone_02_manipulation/review.md) identifies additional
+coexisting artifacts for the retirement manifest: `OverlayPass` and draw
+manipulation, draw-specific material/texture widgets and UI-session preview
+registrations, typed selection and viewpoint overloads, plus their legacy
+production counterparts. Runtime evidence is required before deleting the latter;
+draw gizmos/previews must release their owners before Engine/UI teardown.
+
 ## Working product
 
 The engine exposes draw as its only production rendering framework. The render namespace, legacy scene Drawables/bindings/visitors, production Engine overloads, obsolete application/example entry points and temporary compatibility support are removed. New applications remain the supported products; no old application API/binary support is retained.

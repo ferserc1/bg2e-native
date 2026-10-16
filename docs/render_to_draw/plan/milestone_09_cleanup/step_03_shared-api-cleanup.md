@@ -36,4 +36,13 @@ Delegate compilation and applicable runtime checks to the project lead; perform 
 
 M09-06 checks final behavior. M10 references final namespaces/accessors, not transitional drawDrawable/legacy overload instructions.
 
+The [M02 review](../milestone_02_manipulation/review.md) records the concrete
+draw replacements: typed weak selection identities, draw MaterialModifier
+overloads, separate queued draw widgets, UI-session texture previews, optional
+overlays and the `utils::ViewpointAnalyzer(draw::Engine*)` path. Delete each
+production overload only after all corresponding model_edit/composer/remaining
+production callers and the M02/M06/M07 behavior gates are accounted for. Do not
+collapse CPU definitions and live draw material targets into a whole-material
+write during API cleanup.
+
 Record actual API, ownership and verification in the milestone review. Follow [the review protocol](../review-protocol.md) and edit affected pending steps when actual contracts differ.

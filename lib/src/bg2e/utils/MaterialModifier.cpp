@@ -23,6 +23,7 @@
 #include <cmath>
 #include <limits>
 #include <optional>
+#include <utility>
 
 namespace bg2e::utils {
 namespace {
@@ -82,6 +83,7 @@ std::shared_ptr<base::Texture> texture(const std::filesystem::path& basePath,
 
 struct MaterialModifier::Data {
     std::filesystem::path basePath;
+    std::optional<float> alphaCutoff;
     std::optional<float> refractionFactor;
     std::optional<float> metalness;
     std::optional<float> roughness;
@@ -147,6 +149,7 @@ MaterialModifier::MaterialModifier(const std::shared_ptr<json::JsonNode>& node,
 
     auto data = std::make_shared<Data>();
     data->basePath = path;
+    data->alphaCutoff = field<float>(reader, "alphaCutoff");
     data->refractionFactor = field<float>(reader, "refractionFactor");
     data->metalness = field<float>(reader, "metalness");
     data->roughness = field<float>(reader, "roughness");
@@ -239,6 +242,10 @@ bool MaterialModifier::apply(base::MaterialAttributes& material) const
         return false;
     }
     const auto& data = *_data;
+    if (data.alphaCutoff)
+    {
+        material.setAlphaCutoff(*data.alphaCutoff);
+    }
     if (data.refractionFactor)
     {
         material.setRefractionFactor(*data.refractionFactor);
@@ -465,6 +472,99 @@ std::size_t MaterialModifier::applyAll(scene::Drawable& drawable, const std::str
 }
 
 std::size_t MaterialModifier::applyAll(scene::Drawable& drawable, const std::regex& pattern,
+                                       TextureLoadedCallback callback) const
+{
+    std::size_t count = 0;
+    for (uint32_t i = 0; i < drawable.submeshesCount(); ++i)
+    {
+        if (std::regex_search(drawable.submeshGroupName(i), pattern) &&
+            apply(drawable, i, callback))
+        {
+            ++count;
+        }
+    }
+    return count;
+}
+
+bool MaterialModifier::apply(draw::MaterialBase& material, TextureLoadedCallback callback) const
+{
+    if (!apply(material.materialAttributes()))
+    {
+        return false;
+    }
+    material.updateTextures(std::move(callback));
+    return true;
+}
+
+bool MaterialModifier::apply(const std::shared_ptr<draw::MaterialBase>& material,
+                             TextureLoadedCallback callback) const
+{
+    return material && apply(*material, std::move(callback));
+}
+
+bool MaterialModifier::apply(draw::Drawable& drawable, uint32_t index,
+                             TextureLoadedCallback callback) const
+{
+    if (!_data || index >= drawable.submeshesCount())
+    {
+        return false;
+    }
+    // Resolve the runtime target before touching CPU data.
+    auto live = drawable.isLoaded() ? drawable.drawMaterial(index) : nullptr;
+    if (drawable.isLoaded() && !live)
+    {
+        return false;
+    }
+    apply(drawable.materialDefinition(index));
+    if (live)
+    {
+        apply(live, std::move(callback));
+    }
+    return true;
+}
+
+bool MaterialModifier::apply(draw::Drawable& drawable, const std::string& submeshName,
+                             TextureLoadedCallback callback) const
+{
+    for (uint32_t i = 0; i < drawable.submeshesCount(); ++i)
+    {
+        if (drawable.submeshName(i) == submeshName)
+        {
+            return apply(drawable, i, std::move(callback));
+        }
+    }
+    return false;
+}
+
+std::size_t MaterialModifier::applyAll(draw::Drawable& drawable,
+                                       TextureLoadedCallback callback) const
+{
+    std::size_t count = 0;
+    for (uint32_t i = 0; i < drawable.submeshesCount(); ++i)
+    {
+        if (apply(drawable, i, callback))
+        {
+            ++count;
+        }
+    }
+    return count;
+}
+
+std::size_t MaterialModifier::applyAll(draw::Drawable& drawable, const std::string& group,
+                                       TextureLoadedCallback callback) const
+{
+    std::size_t count = 0;
+    for (uint32_t i = 0; i < drawable.submeshesCount(); ++i)
+    {
+        if (drawable.submeshGroupName(i) == group && apply(drawable, i, callback))
+        {
+            ++count;
+        }
+    }
+    return count;
+}
+
+std::size_t MaterialModifier::applyAll(draw::Drawable& drawable, const std::regex& pattern,
                                        TextureLoadedCallback callback) const
 {
     std::size_t count = 0;

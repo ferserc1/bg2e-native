@@ -87,3 +87,6 @@ Use [RendererDeferred](RendererDeferred.md) with the non-template
 DefaultRenderLoopDelegate for scene rendering, [resources](Resources.md),
 [environment](Environment.md) and [live settings/upscaling](Settings.md).
 Start with the [deferred tutorial](../../tutorials/draw/10_deferred_renderer.md).
+For selection, gizmos, material edits and viewpoint tools, continue with the
+[manipulation tutorial](../../tutorials/draw/11_manipulation.md) and the
+[manipulation API](../manipulation/index.md).

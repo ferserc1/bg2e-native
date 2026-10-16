@@ -112,6 +112,13 @@ class BG2E_API Image : public DeviceResource {
         throw std::runtime_error("Image::readPixelsRGBA8 not implemented");
     }
 
+    virtual void readPixelsDepth32(
+        std::vector<float>& outData,
+        ImageLayout finalLayout = ImageLayout::TransferSrc)
+    {
+        throw std::runtime_error("Image::readPixelsDepth32 not implemented");
+    }
+
     virtual void uploadRGBA8(const void* pixels, const Size2D& size)
     {
         throw std::runtime_error("Image::uploadRGBA8 not implemented");

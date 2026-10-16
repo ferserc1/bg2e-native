@@ -15,6 +15,15 @@ Paths above include current references and proposed outputs. New paths are targe
 
 Current sources to inspect: [apps/model_edit/src/StageScene.cpp](../../../../apps/model_edit/src/StageScene.cpp), [lib/include/bg2e/utils/SceneCameraUtils.hpp](../../../../lib/include/bg2e/utils/SceneCameraUtils.hpp).
 
+M02-06 delivers `utils::ViewpointAnalyzer(draw::Engine*)`, draw-scene overloads, candidate/statistic types and a typed D32 GPU readback. Framing analysis is synchronous and requires stopped scene/GPU producers; use the draw overload of `applyViewpointToOrbitCamera` to update candidate projection data. The production overload and analyzer remain unchanged.
+
+M02-08 confirms this is an explicit, synchronous editor action, not suitable for
+UI preparation or an asynchronous worker without an additional ownership/job
+design. Map returned IDs through that result's `analyzedSubmeshes()` only. A
+failed or empty analysis must leave camera, document and render settings unchanged;
+do not serialize temporary analyzer configuration as user settings. See
+[M02 review](../milestone_02_manipulation/review.md).
+
 ## Implementation work
 
 1. Wire automatic framing/best-view workflows to the new utils analyzer/candidate types and new camera helper overloads.

@@ -83,6 +83,13 @@ class BG2E_API Drawable {
     base::MaterialAttributes& material(uint32_t index = 0);
     const base::MaterialAttributes& material(uint32_t index = 0) const;
     void iterateMaterials(std::function<void(base::MaterialAttributes&)> operation);
+
+    // Stored CPU definition, independent of material()'s live alias after loading.
+    // Editing it does not update an existing GPU material. Initial load uses it;
+    // cleanup retains its existing behavior of snapshotting live state into it.
+    base::MaterialAttributes& materialDefinition(uint32_t index = 0);
+    const base::MaterialAttributes& materialDefinition(uint32_t index = 0) const;
+
     void setSubmeshTransform(const glm::mat4& value, uint32_t index = 0)
     {
         _attributes.at(index).transform = value;

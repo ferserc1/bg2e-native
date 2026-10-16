@@ -44,3 +44,45 @@ Reuse [GraphicsSettingsWindow](../milestone_01_deferred_renderer/settings-ui.md)
 ## M01-16 reviewed baseline
 
 GraphicsSettingsWindow/ReflectionWidget::editValue are complete live scalar settings views with queued edits; they do not migrate legacy TextureWidgets/MaterialEditor/UV previews. Audit the production VkDescriptorSet and renderer dependencies in each old widget and use the M02 native-free registration/lifetime contract. Keep the lead-added virtual Window destructor. See [M01 review](../milestone_01_deferred_renderer/review.md).
+
+## M02-03 implemented overlay integration
+
+Use [the actual overlay contract](../milestone_02_manipulation/overlays.md): register a shared
+GizmoAndSelectionRenderer in RendererConfiguration.overlays before initialization.
+RendererDeferred drives prepare/update/post-final record and cleanup. MeshOverlayPass
+provides public shader/graphics replacement and explicit geometric depth/line/blend
+policies at output resolution without jitter. Prepare mesh topology before acquisition,
+request a scene frame after selection edits, and retain Engine through tool cleanup.
+Do not add private renderer target access or draw tools into ordinary scene extraction.
+
+## M02-04 actual material patch handoff
+
+Use [draw MaterialModifier contracts](../milestone_02_manipulation/material-modifier.md): materialDefinition()
+is the stored CPU target, while material() aliases live state after loading.
+Drawable patches affect both independently; direct MaterialBase patches are live
+only. Queue at a stopped boundary, validate weak targets, request redraw and reset
+histories even on partial failure. Existing updateTextures flushes pending slots;
+callbacks/errors are nontransactional. alphaCutoff is supported by the shared decoder.
+
+## M02-05 actual widget integration
+
+Use [the widget decision table](../milestone_02_manipulation/widgets.md). DrawMaterialEditor binds Engine plus
+a shared DefaultRenderLoopDelegate and a typed draw selection (or explicit weak
+material), then queues partial edits. DrawTextureWidgets/TexturePreview use the
+draw UserInterface session, retain actual GPU snapshots and retire registrations
+after completion. No image upload or material setter belongs in UI draw. Use the
+safe onChanged(Renderer&) callback for future history invalidation. ComponentInspector
+and raw scene/property mutations require the later queued app adaptation; they
+are not certified as draw-safe by M02. UV/bake previews remain with M04.
+
+## M02-08 actual review boundary
+
+Use [the M02 technical review](../milestone_02_manipulation/review.md) as the
+source of truth: SelectionItem holds weak node/component/high-level draw resource
+identity and selection IDs are distinct from render queue/TLAS IDs. DrawMaterialEditor
+checks renderer generation, binding revision and selected-resource validity, but
+does not make a general ComponentInspector or reflected node setter safe. M06
+must queue scene/property edits, validate current-scene membership and document
+generation, request redraw/reset after partial failure, and detach widget/tool
+resources before UI/Engine teardown. Reloaded/replaced geometry requires fresh
+queue/binding snapshots; keep unsaved-document dirty state in the app.

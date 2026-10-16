@@ -10,18 +10,18 @@ This is the execution record for all implementation chats. The **Next step to im
 |---|---|
 | Workflow state | `awaiting_project_lead` |
 | Current milestone | M02 — Manipulation |
-| Active step | None — M02-01 delivered |
-| Last implemented step | M02-01 — Dual-mode manipulation objects and scene references |
-| Last accepted step | M01-17 — documentation closure; separate validation waived by explicit lead instruction |
-| Awaiting project lead validation | M02-01 — library/caller compilation, CPU fixture and applicable backend/production gizmo checks |
-| Next step to implement | [M02-02 — Picking graphics and minimally sufficient GPU readback](milestone_02_manipulation/step_02_picking-readback.md) |
+| Active step | None — M02-09 cumulative documentation delivered |
+| Last implemented step | M02-09 — maintained API, tutorial, UI, input and application documentation |
+| Last accepted step | M02-08 — accepted by project-lead continuation; M02-07 camera issue reported solved |
+| Awaiting project lead validation | M02-09 documentation acceptance; final M02 Vulkan runtime validation remains outstanding |
+| Next step to implement | [M03-01 — Advanced ray-tracing design checkpoint](milestone_03_ray_tracing/step_01_rt-design-checkpoint.md) |
 | Next action | `wait_for_project_lead` |
-| Condition before starting | M02-01 requires lead acceptance/continuation. M01-16 explicitly validated and M01-17 accepted without separate validation by lead direction. Transparency remains deferred. |
+| Condition before starting | Accept M02-09 and complete the outstanding Vulkan runtime check before starting M03-01. No build/runtime result is claimed by this documentation pass. Transparency remains deferred. |
 | Record initialization baseline | `b955833f314d09a191de13b83c90cacc10666ae7`; working tree was clean before this workflow documentation update. |
 | Validation owner | Human user / project lead |
 | Agent build/runtime execution | Not performed; delegated to the project lead by default. |
 
-M01-01 accepted by project lead continuation; compilation/checks assumed successful under the agreed convention. Backend/scenario coverage not specified. M01-02 accepted by project lead continuation; compilation/checks assumed successful, backend coverage unspecified. M01-03, including the Metal warning correction, accepted by project lead continuation; coverage unspecified. M01-04 accepted by project lead continuation; compilation/checks assumed successful, backend/deployment coverage unspecified. M01-05 accepted by project lead continuation; compilation/checks assumed successful, coverage unspecified. M01-06 accepted by continuation after the lead corrected compilation issues; backend coverage unspecified. M01-07 accepted by project lead continuation; compilation/checks assumed successful, coverage unspecified. M01-08 accepted by project lead continuation; compilation/checks assumed successful, coverage unspecified. M01-09 accepted by project lead continuation; compilation/checks assumed successful, coverage unspecified. M01-10 accepted after lead compilation corrections; irradianceImage rename and explicit CommandBuffer include reviewed as behavior-preserving. M01-11 accepted by continuation; compilation/checks assumed successful, backend coverage unspecified. M01-12, including its type-validation correction, accepted by project lead continuation instruction; backend coverage unspecified. M01-13 accepted by project lead continuation instruction; backend coverage unspecified. M01-14 accepted by project lead continuation after adding virtual Window destructor; backend coverage unspecified. M01-15 accepted by project lead continuation instruction; backend/scenario coverage unspecified. M01 HDR correction explicitly validated; transparency remains deferred. M01-16 explicitly validated by the lead and M01-17 documentation closed with separate validation waived. M02-01 delivered for lead checks; backend/scenario coverage remains unspecified. Chronological handoffs below preserve earlier states.
+M01-01 accepted by project lead continuation; compilation/checks assumed successful under the agreed convention. Backend/scenario coverage not specified. M01-02 accepted by project lead continuation; compilation/checks assumed successful, backend coverage unspecified. M01-03, including the Metal warning correction, accepted by project lead continuation; coverage unspecified. M01-04 accepted by project lead continuation; compilation/checks assumed successful, backend/deployment coverage unspecified. M01-05 accepted by project lead continuation; compilation/checks assumed successful, coverage unspecified. M01-06 accepted by continuation after the lead corrected compilation issues; backend coverage unspecified. M01-07 accepted by project lead continuation; compilation/checks assumed successful, coverage unspecified. M01-08 accepted by project lead continuation; compilation/checks assumed successful, coverage unspecified. M01-09 accepted by project lead continuation; compilation/checks assumed successful, coverage unspecified. M01-10 accepted after lead compilation corrections; irradianceImage rename and explicit CommandBuffer include reviewed as behavior-preserving. M01-11 accepted by continuation; compilation/checks assumed successful, backend coverage unspecified. M01-12, including its type-validation correction, accepted by project lead continuation instruction; backend coverage unspecified. M01-13 accepted by project lead continuation instruction; backend coverage unspecified. M01-14 accepted by project lead continuation after adding virtual Window destructor; backend coverage unspecified. M01-15 accepted by project lead continuation instruction; backend/scenario coverage unspecified. M01 HDR correction explicitly validated; transparency remains deferred. M01-16 explicitly validated by the lead and M01-17 documentation closed with separate validation waived. M02-01 accepted by lead continuation; lead reports validation through this state on macOS Metal and Linux Vulkan. Chronological handoffs below preserve earlier states.
 
 ## Rules for maintaining the next-step field
 
@@ -107,7 +107,15 @@ Future entries should record actual interfaces/paths/decisions and pending-plan 
 | Implementation delivered | M01-11 | Compute cutout-aware visibility, generic opacity overrides, dense submesh UV/alpha lookup, per-light softness, acquired-slot lifetimes, unshadowed fallback and manual checks delivered. Static checks only; M01-12 linked pending acceptance. |
 
 | [M01-17](milestone_01_deferred_renderer/step_17_documentation.md) | `accepted` | Baseline 4d58ce60f568; maintained doc/ API/tutorial/app/conceptual/navigation updates, documentation.md and review handoff. | Actual declarations/callers, resource/status/ownership/codec/FSR limits, local paths and scoped whitespace checked. No build/runtime. | Lead explicitly waived separate documentation validation and authorized immediate M02-01 after completion. | Cumulative M01 closure; transparency deferral remains visible. Future authoring owners retained in documentation.md. |
-| [M02-01](milestone_02_manipulation/step_01_dual-manipulation.md) | `awaiting_project_lead` | Baseline 4d58ce60f568 plus this turn's M01 docs; manipulation tool modes/draw overloads, typed weak selection, Selectable schema/identity updates, instance-owned draw gizmos/weak safe callbacks, overlay mode, CPU manual fixture and actual contract report. | Includes/signatures/callers/schema/lifetimes/identity/backend boundaries, delimiters, local links and scoped whitespace. No compilation/shaders/runtime. | Pending lead compilation/checks; no new backend evidence claimed. | See dual-manipulation.md and tests/manipulation/dual_mode. Draw picking/overlay recording remain M02-02/M02-03; M02-02 is next after acceptance. No CMake edits. Concurrent unrelated UI edits preserved. |
+| [M02-01](milestone_02_manipulation/step_01_dual-manipulation.md) | `accepted` | Baseline 4d58ce60f568 plus this turn's M01 docs; manipulation tool modes/draw overloads, typed weak selection, Selectable schema/identity updates, instance-owned draw gizmos/weak safe callbacks, overlay mode, CPU manual fixture and actual contract report. | Includes/signatures/callers/schema/lifetimes/identity/backend boundaries, delimiters, local links and scoped whitespace. No compilation/shaders/runtime. | Accepted by lead continuation; lead reports checks through this state on macOS Metal and Linux Vulkan. | See dual-manipulation.md and tests/manipulation/dual_mode. Draw picking/overlay recording remain M02-02/M02-03; M02-02 is next after acceptance. No CMake edits. Concurrent unrelated UI edits preserved. |
+| [M02-02](milestone_02_manipulation/step_02_picking-readback.md) | `accepted` | Baseline 7b217bcb6d9a; SelectionManager draw picking/input, DrawPicking.cpp, paired picking shaders and manual checklist. | Signatures/identity/lifetimes, RGBA8/push ABI, pass load/store, completion/orientation/discovery, GPL/style and whitespace inspected. No builds/runtime. | Accepted by project lead continuation; backend coverage unspecified. | See picking.md; M02-03 follows acceptance. No GPU or CMake changes. |
+| [M02-03](milestone_02_manipulation/step_03_gizmos-overlays.md) | `accepted` | Baseline 7b217bcb6d9a plus preserved M02-02; public OverlayPass/MeshOverlayPass, RendererConfiguration/RendererDeferred lifecycle, draw GizmoAndSelectionRenderer snapshots/edge cache, paired shaders and lead checklist. | Signatures/includes/callers, acquired-slot ownership/partial cleanup, shader ABI, depth/color ordering, topology, dependency/GPL/style/whitespace and links inspected. No compilation/runtime. | Accepted by project lead continuation; backend coverage unspecified. | See overlays.md; optional output-sized unjittered extension, geometric scene depth and separate transform depth. M02-04 follows acceptance. No CMake changes. |
+| [M02-04](milestone_02_manipulation/step_04_material-modifier.md) | `accepted` | Baseline 7b217bcb6d9a with preserved M02-02/03; draw MaterialModifier overloads, Drawable materialDefinition seam, shared alphaCutoff decoder, CPU fixture/checklist. | Include/signature/caller/setter mapping, independent targets, texture/cache/completion/callback policy, source GPL/style/whitespace and local links inspected. No builds/tests executed. | Accepted by project lead continuation; backend coverage unspecified. | See material-modifier.md; application queues redraw/history reset even on partial failure. M02-05 follows acceptance; no CMake changes. |
+| [M02-05](milestone_02_manipulation/step_05_widget-adaptation.md) | `accepted` | Baseline 7b217bcb6d9a plus preserved M02-02–04; separate DrawMaterialEditor/DrawTextureWidgets, TexturePreview/session registry, shared Texture GPU snapshots, backend generation/registration helpers in GPU and decision/checklist docs. | Includes/callers/API/setter mapping, queued weak/generation identities and error invalidation, retained preview resources/retirement/backend generations, new native-free public headers/GPU dependencies, GPL/style/whitespace/links inspected. No build/runtime. | Accepted by project lead continuation instruction; backend coverage not specified. | See widgets.md and tests/ui/draw_material. Scene inspector/bake widgets retain later owners. M02-06 follows; no CMake changes. |
+| [M02-06](milestone_02_manipulation/step_06_viewpoint-utils.md) | `accepted` | Baseline 7b217bcb6d9a plus preserved M02-02–05; new utils analyzer/types, camera overload, GPU typed D32 readback in both native backends, actual API/checklists and M06/M07 integration guidance. Production render analyzer and camera overload remain unchanged. | Compared analyzer algorithms/shader ABI and render queue/bounds contracts; inspected D32 format, usage, layout, completion and Vulkan/Metal readback implementations; checked dependencies, candidate/selection map separation and source formatting. `git diff --check`. No build/shader/runtime execution. | Accepted by project lead continuation instruction; backend coverage not specified. | See viewpoint-analysis.md and tests/manipulation/viewpoint. M02-07 follows; no CMake changes in M02-06. |
+| [M02-07](milestone_02_manipulation/step_07_working-example.md) | `accepted` | Preserved existing uncommitted M01/M02 work and delivered `examples/draw/11_manipulation`, registered as `draw_manipulation`. Includes draw selection/gizmo overlay, input routing, draw material editing and viewpoint action; later corrections removed CLI options, use engine wrappers, fix 70% render/pick scale, keep camera components on one node, use editor-style mouse mapping, preserve camera projection and remove temporary debug traces. | Static source review and documentation mapping; no build/runtime run recorded by this agent. | Project lead requested M02-09 after reporting the camera/manipulation issue solved. Vulkan runtime validation remains outstanding; no other backend result is inferred. | See example, [M02 review](milestone_02_manipulation/review.md) and tutorial. SDL remains behind engine wrappers. |
+| [M02-08](milestone_02_manipulation/step_08_review.md) | `accepted` | Added [review.md](milestone_02_manipulation/review.md) and updated affected M03–M10 pending summaries/steps with actual draw manipulation, edit notification, preview, viewpoint, identity and lifecycle contracts. Subsequent corrections are recorded chronologically in review.md. | Static source/plan inspection; no build/shader/runtime execution. | Accepted by project-lead continuation to proceed with M02-09. This does not certify Vulkan runtime behavior. | See [M02 review](milestone_02_manipulation/review.md). |
+| [M02-09](milestone_02_manipulation/step_09_documentation.md) | `awaiting_project_lead` | Added cumulative references for manipulation and utils, draw UI wrappers, event forwarding, tutorial #11, app guidance and navigation; removed camera trace code from the example. | Static link/anchor/header/source/target checks and `git diff --check`; no build, shader compilation or runtime/backend check. | Documentation is delivered for lead acceptance. Lead reports the behavior is solved; Vulkan validation remains outstanding before M02 closure. | See [documentation handoff](milestone_02_manipulation/documentation.md). M03-01 is gated on M02-09 acceptance and Vulkan validation. |
 
 ## M01-01 handoff
 
@@ -369,3 +377,317 @@ lead validates library/callers, CPU fixture and applicable Vulkan/Metal/producti
 interaction. Concurrent draw/UI edits were preserved and excluded from scoped checks;
 whole-tree whitespace checks reported trailing blanks in those separate changes.
 No CMake changes. M02-01 awaits acceptance; M02-02 is linked as successor.
+
+## M02-02 started
+
+Lead reports all changes checked through M02-01 on macOS Metal and Linux Vulkan and authorizes the next step. M02-01 accepted; M02-02 in progress. No agent compilation or runtime execution.
+
+## M02-02 handoff
+
+Delivered [picking contracts](milestone_02_manipulation/picking.md) and
+[lead checks](../../../tests/manipulation/picking/README.md). Synchronous RGBA8
+geometry/type/transform picking uses retained canonical IDs and weak selection
+identity, unjittered top-left viewport coordinates and explicit DPI scale.
+Metal-compatible transform depth restart preserves color. Typed handle input
+and draw empty clearing are integrated. No GPU/CMake/native changes, compilation,
+shader compilation or runtime execution. Static checks only; lead validates both
+backends and production regressions. M02-03 is the successor after acceptance.
+
+## M02-03 started
+
+M02-02 accepted by project lead continuation. No additional backend coverage
+reported. M02-03 active; existing uncommitted M02-02 changes preserved.
+
+## M02-03 handoff
+
+Delivered [actual overlay contracts](milestone_02_manipulation/overlays.md) and
+[lead checklist](../../../tests/manipulation/overlays/README.md). Public optional
+RendererConfiguration.overlays and OverlayContext provide acquired-slot final
+output and original camera/queue access. GizmoAndSelectionRenderer implements
+the lifecycle using an injected public MeshOverlayPass; explicit edges, live
+selection/material colors, type icons and last/self-occluding transform handles
+are retained per slot. Output-resolution geometric scene depth is opt-in;
+line/fill/blending/shaders are configurable before initialization. No new native
+implementation, GPU API, CMake edit or executable was introduced.
+
+M02-02 accepted by continuation with no extra backend evidence. Static checks
+cover includes/callers/ownership, shader push/vertex ABI, rendering transitions,
+GPL/source style/whitespace and local links. No build, shader compilation or
+runtime execution. Existing uncommitted M02-02 changes preserved. Updated M02-07,
+M05 offscreen and M06/M07 integration steps with actual extension lifecycle and
+safe preparation/refresh rules. M02-03 awaits lead validation; M02-04 is next.
+
+## M02-04 started
+
+M02-03 accepted by lead continuation. M02-04 active; earlier uncommitted work
+preserved. Agent compilation/runtime execution remains prohibited by default.
+
+## M02-04 handoff
+
+Delivered [draw material patch contracts](milestone_02_manipulation/material-modifier.md)
+and [CPU fixture/live checklist](../../../tests/utils/material_modifier_draw/README.md).
+Drawable::materialDefinition exposes stored CPU attributes independently of the
+loaded material() alias. Indexed/named/group/regex draw overloads patch CPU/live
+fields independently, reusing target texture/cache/callback policy. Shared decoder
+now accepts alphaCutoff. No whole-material synchronization, target retention, new
+renderer ownership or MaterialBase implementation change. Existing cleanup/clone
+snapshot semantics and nontransactional failure/callback behavior are documented.
+
+M02-03 accepted by continuation; no extra backend evidence supplied. Static source,
+setter/ABI/caller/dependency/lifetime/whitespace/link checks only. CPU fixture is
+supplied but not compiled/run; no shaders/build/runtime execution or CMake edits.
+Updated M02-05/07, M03 history and M06/M07 tool integration with real CPU/live and
+queued redraw/reset boundaries. Lead validates M02-04; M02-05 is the successor.
+
+## M02-05 handoff
+
+M02-04 accepted by project lead continuation; no extra backend results supplied.
+Delivered [widget contracts/decision table](milestone_02_manipulation/widgets.md)
+and [lead checklist](../../../tests/ui/draw_material/README.md). Separate
+DrawMaterialEditor reads live values, queues field-only MaterialModifier patches
+or explicit Clear, validates weak scene/resource identities and renderer/binding
+generations, and handles error/reset/redraw at the safe boundary. Multi-selection
+shows primary values and edits specified fields on valid selected submeshes.
+
+DrawTextureWidgets uses native-free TexturePreview handles from draw UserInterface.
+Retained image/sampler snapshots survive reload; orphan registrations retire after
+a following-frame drain, Vulkan backend reinit advances generations and frees
+tracked IDs, and UI cleanup invalidates handles/releases snapshots before backend
+shutdown. Native preview helpers live in GPU with no higher-level engine dependency.
+Metal uses the standard ImGui sampler for previews. File history lists names without
+on-demand thumbnail uploads in UI draw. Existing production widgets remain intact.
+
+Static source/include/caller/setter/ownership/generation/dependency/GPL/style/link
+and whitespace checks pass; no compiler, shader compiler, executable or runtime
+check was run. No CMake edits or new executable. M02-07/M06/M07 instructions now
+use actual widgets and explicitly defer raw scene/property/UV/bake workflows.
+M02-05 awaits lead validation; M02-06 viewpoint tools is next.
+
+## M02-06 started
+
+M02-05 accepted by project lead continuation; no additional backend coverage
+reported. M02-06 active. Preserved all existing uncommitted source and plan work.
+
+## M02-06 handoff
+
+Delivered [draw viewpoint analysis contracts](milestone_02_manipulation/viewpoint-analysis.md)
+and [manual lead checks](../../../tests/manipulation/viewpoint/README.md).
+`utils::ViewpointAnalyzer` is a separate draw/GPU analyzer with candidate,
+per-submesh ID and coverage/border/depth statistics. It reuses the draw picking
+shaders, synchronous RenderQueueVisitor snapshots and D32 images; it never uses
+ray tracing. Added typed `gpu::Image::readPixelsDepth32` for initialized D32
+TransferSrc images in Vulkan and Metal. The new camera helper overload applies
+orbit target/rotation/distance and perspective/optical FOV/clipping planes.
+Production `render::ViewpointAnalyzer` and its camera helper overload are intact.
+
+Static inspection checked candidate sampling/scoring and projection fitting,
+draw queue/bounds/submesh mapping, 80-byte shader push ABI, D32 format/usage,
+backend copy/layout/completion paths, utility dependencies, docs links and source
+style; `git diff --check` passes. No build, shader compilation, test or runtime
+execution was performed. Lead validates Vulkan and Metal D32 readback, expected
+statistics and production regression as available. M02-06 awaits acceptance;
+M02-07 is the linked successor. No CMake changes.
+
+
+## M02-07 handoff
+
+- Accepted M02-06 by project lead continuation instruction; compilation/checks
+  are assumed successful under the agreed convention, with backend/scenario
+  coverage unspecified.
+- Added [the registered manipulation example](../../../examples/draw/11_manipulation/src/main.cpp)
+  and its local executable target; `examples/CMakeLists.txt` includes the new
+  subdirectory. The M01 deferred renderer example was left intact as the
+  baseline.
+- The scene reuses the M01 OBJ clones, glass, cutout canopy and packed UV/channel
+  fixtures. Drawable objects receive draw `SelectableComponent` and
+  `GizmoComponent`; a shared `GizmoAndSelectionRenderer` overlay is configured
+  before renderer initialization. `SelectionManager` routes mouse gestures and
+  captures active transform drags before unconsumed events reach
+  `scene::InputVisitor` and the orbit camera. Ctrl state is also read from SDL's
+  modifier mask at mouse boundaries so additive picking remains stable if key-up
+  arrives before mouse-up.
+- `DrawMaterialEditor` is bound to the draw selection and delegate. Scalar and
+  texture/alpha/UV presets apply selected submesh patches; additional
+  MaterialModifier buttons exercise exact group and regex matching across the
+  selected drawable. The editor's safe queue updates live GPU material state,
+  including texture refresh; clone sliders and side-by-side selection support
+  independence checks.
+- The optional best-view action queues synchronous analysis at a stopped
+  renderer boundary, applies `ViewSample.camera` through the draw camera helper,
+  and resets deferred upscaling history. Logical camera viewport is restored
+  after renderer resize; pick scale follows internal render extent versus
+  logical window size. Delete and deselect controls use queued/safe selection
+  changes. `--no-rt` disables drawable tracing geometry and shadow requests.
+- Static review inspected actual declarations and call sites for overlays,
+  selection capture, event routing, material editor queue semantics, modifier
+  group/regex behavior, camera helper, DPI scale and example resource bundling.
+  Gizmo GPU resources and editor texture sessions are released while the draw
+  engine/UI session is alive; clone edits update both stored and live material
+  state, and discontinuous edits reset deferred history. License/style, balanced
+  delimiters and scoped `git diff --check` pass.
+  No CMake configure, build, shader compilation, test or runtime check was run by
+  the agent. The project lead owns Vulkan/Metal compilation/runtime verification.
+- M02-07 accepted by the project lead continuation instruction; compilation/checks
+  are assumed successful, backend/scenario coverage unspecified. M02-08 review is
+  recorded below.
+
+## M02-08 handoff
+
+- Accepted M02-07 by project lead continuation; compilation/checks are assumed
+  successful under protocol, with backend/scenario coverage unspecified.
+- Delivered the [M02 code-versus-remaining-plan review](milestone_02_manipulation/review.md).
+  It records actual selection/picking identities, overlay/gizmo ownership,
+  MaterialModifier/widget boundaries, viewpoint readback, clone/reload limits and
+  the lead/agent verification split.
+- Updated affected M03–M10 summaries and owning steps for edit/history resets,
+  bake/source generations, offscreen overlay/sample policy, safe editor mutations,
+  async document generations, batch identity/export, retirement inventory and
+  final API/tutorial audits. M03-01 remains the project-lead-owned advanced RT
+  architecture checkpoint; no M03 implementation or decision was started.
+- Static checks: local Markdown links across the review and affected pages
+  resolve; scoped whitespace/diff checks pass. No build, shader compilation,
+  executable, test or backend runtime was run by the agent. M02-08 awaits project
+  lead review acceptance; M02-09 cumulative documentation is the successor.
+
+## M02-07 failure report after M02-08 delivery
+
+On 2026-10-16 the project lead reported two clang compilation failures in the manipulation example: `DefaultRenderLoopDelegate` was constructed with only a configuration instead of a renderer owner, and `UiDelegate` called `weak_from_this()` without a shared-ownership base. The lead also requires example input functionality to use engine wrappers instead of direct SDL includes/calls. Correction takes precedence over M02-09; the previously delivered M02-08 review remains pending acceptance. No build was requested.
+
+## M02-07 correction handoff — 2026-10-16
+
+- Replaced every example SDL call/include with engine APIs. Existing
+  `app::Keyboard::controlPressed()` handles Ctrl. New
+  `app::MainLoop::windowSize()` reports logical dimensions before scene/UI
+  initialization and after resize, resetting on normal/exceptional run exit.
+  Camera viewport and internal-to-logical picking scale use this accessor.
+- Fixed the base constructor by passing an owned `RendererDeferred` and the
+  existing overlay configuration. Made `UiDelegate` inherit
+  `enable_shared_from_this<UiDelegate>`; application `make_shared` ownership
+  precedes UI initialization and the cleanup callback remains weak.
+- Static checks covered actual signatures, shared/weak ownership, window-size
+  initialization/resize/exception cleanup, source license/style, absence of
+  direct SDL/native-window references in the example and whitespace. No CMake
+  edits, configuration, compilation, shader work or runtime execution performed.
+- Lead validation: compile `draw_manipulation`, exercise Ctrl-click additive
+  selection, resize/DPI camera and picking alignment, and close the application
+  with the material editor active. The correction and M02-08 review/addendum
+  await acceptance together; M02-09 remains the successor after validation.
+
+## M02-07 fixed-scale correction handoff — 2026-10-16
+
+The lead clarified that the observed internal extents were zero, not the
+previously reported large integers. The example queried renderer configuration
+before the first surface notification and passed zero to `setPickPixelScale`.
+This is an example lifecycle error; `Size2D` already initializes to zero.
+
+- Added one fixed `RenderScale = 0.7f` constant. `makeRendererConfiguration()`
+  enables resolution scaling at 70% of output dimensions; no user control changes
+  it. `init()` sets the selection pixel scale once using the same constant.
+- Removed `refreshPickScale()` and its per-frame configuration query. English
+  comments cross-reference both initialization functions and distinguish physical
+  render output from the independent logical-coordinate picking image on Retina.
+- Static inspection checks the shared constant, enabled resolution policy, single
+  positive picking-scale assignment, absence of the old refresh/configuration
+  query and source whitespace. No compilation/runtime checks or CMake edits.
+- Lead checks: start `draw_manipulation` without the zero-scale exception, then
+  select/drag and resize on normal/Retina displays. Rendering stays at 70%; picking
+  stays at 0.7 pixels per logical unit. M02-08 review and corrections await
+  acceptance; M02-09 remains the successor.
+
+## M02-07 single-node camera correction — 2026-10-16
+
+The lead clarified that Transform, OrbitCameraController and CameraComponent
+belong on the same node. The example now creates exactly one camera node with
+all three components and its projection; the separate child camera and look-at
+transform were removed. SceneState names this owner `cameraNode`, and the best
+viewpoint action obtains both camera and orbit controller directly from it.
+Comments explain the shared transform and application of analyzed candidates.
+
+Static checks verified one camera component, one orbit controller and no child
+camera/pivot references. No compilation/runtime checks or CMake changes. The lead
+checks orbit/pan/zoom, selection and best-view framing; the correction remains
+part of the M02-07/M02-08 pending validation before M02-09.
+
+## M02-07 editor mouse controls correction — 2026-10-16
+
+The lead clarified that the apparent mouse issue was the example's interaction
+mapping and requested the editor controls: left drag rotates, right drag pans,
+middle drag zooms. No shared camera/input API changes were requested or made.
+
+Compared model_edit's direct click-pick/scene forwarding with Composer's
+SelectionManager gizmo capture routing. The example now combines those patterns:
+left down/move reaches the scene unless a gizmo captures it; left release picks
+only when down/up differ by at most two logical pixels on each axis. Noncaptured
+releases always reach the scene, including after picking, to end camera gestures.
+The example performs its own tolerant pick and calls SelectionManager mouse-up
+only to finish captured gizmo gestures, avoiding duplicate exact-position picks.
+Ctrl additive selection is retained. Comments and visible controls describe the
+mapping and tolerance. The shared SelectionManager and both apps are unchanged.
+
+Static inspection checked button mapping, inclusive tolerance boundaries,
+single pick dispatch, balanced scene release, gizmo capture and whitespace.
+No compilation/runtime checks or CMake edits. Lead checks each drag mapping,
+click offsets of 0/2/3 pixels, Ctrl-click and gizmo drags. Corrections remain
+pending lead validation with M02-08; M02-09 is still the successor.
+
+## M02-07 camera diagnostics — 2026-10-16
+
+At the lead's request, added example-only `[camera-debug]` output after mouse
+movement/wheel and best-viewpoint application. Logs are emitted after the normal
+renderer scene update, once per scene update with pending input, so they report
+the applied world transform rather than parameters waiting to be applied.
+Output includes world position, normalized viewing direction (local -Z for this
+example's RH projection), orbit center/pitch/yaw/distance and near/far planes.
+No camera/controller/analyzer behavior was changed. Static placement and
+whitespace checked; no compilation or runtime execution. The lead will perform
+the diagnostic run and report conclusions before further fixes.
+
+## M02-07 / M02-06 projection preservation correction — 2026-10-16
+
+The lead's diagnostic trace shows that mouse rotation changes world position and
+front, but best-viewpoint application changed near/far from 0.1/100 to
+51.2542/104.465 while orbit distance was limited to 24. The lead clarified the
+contract: applying a viewpoint must never change the scene camera's projection.
+
+Removed perspective FOV/near/far and optical focal-length/near/far writes from
+the utils::CameraCandidate overload of applyViewpointToOrbitCamera. It now changes
+only orbit center, distance and rotation, using the camera node only for the
+existing child-distance compensation. The production overload already preserves
+projection and is unchanged. Analyzer candidate projection parameters remain
+internal to analysis rendering. Updated the public helper contract, M02 viewpoint
+documentation and manual verification checklist; this supersedes M02-06's earlier
+projection-copy handoff description.
+
+Static inspection verified that the draw helper contains no projection mutation
+and retains its pose setters; whitespace checks passed. No compilation, shader
+compilation, runtime checks or CMake changes. Lead checks Best viewpoint and the
+debug log: camera near/far and FOV must remain unchanged before/after application
+and mouse movement. The independent orbit-distance limit is unchanged by this
+projection-only correction. M02-07 corrections/M02-08 review remain pending
+validation before M02-09.
+
+## M02-09 documentation handoff — 2026-10-16
+
+- The project lead reports the camera/manipulation behavior is solved and
+  requested the documentation step; Vulkan validation remains outstanding.
+- Removed temporary `[camera-debug]` output, pending-reason state and its input
+  and best-view triggers from `draw_manipulation`; interaction behavior is intact.
+- Added maintained `manipulation` and `utils` API references, draw widget and
+  input-routing guidance, tutorial 11, app guidance and navigation updates. The
+  page/source disposition is recorded in
+  [M02-09 documentation.md](milestone_02_manipulation/documentation.md).
+- Static local link/anchor, public header, example source/target path and
+  whitespace checks passed. No build, shader compilation or runtime test was
+  run. M02-09 awaits lead acceptance; complete the Vulkan check before entering
+  M03-01.
+
+### M02-09 tutorial correction
+
+The lead rejected the initial overview and the later complete-source listing.
+Rewrote tutorial 11 as 26 explanatory steps for building the application from
+an empty file. Focused snippets and concrete implementation recipes cover all
+example behavior without a full-file dump. Updated incoming anchor/navigation
+and the documentation handoff. Removed the example's remaining `--no-rt`
+configuration per the earlier instruction; default tracing/shadow behavior is
+unchanged. Static review only; no build/runtime checks. M02-09 acceptance and
+the final Vulkan check remain outstanding.

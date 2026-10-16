@@ -183,6 +183,8 @@ int32_t MainLoop::runInternal(app::Application* application, std::unique_ptr<det
     _execution = std::move(execution);
     struct ExecutionCleanup {
         std::unique_ptr<detail::GraphicsExecution>& execution;
+        glm::uvec2& windowSize;
+
         ~ExecutionCleanup()
         {
             if (execution)
@@ -196,8 +198,14 @@ int32_t MainLoop::runInternal(app::Application* application, std::unique_ptr<det
                 }
                 execution.reset();
             }
+            windowSize = glm::uvec2{0, 0};
         }
-    } executionCleanup{_execution}; // Released before windowOwner on exceptions.
+    } executionCleanup{_execution, _windowSize}; // Released before windowOwner on exceptions.
+    int logicalWidth = 0;
+    int logicalHeight = 0;
+    SDL_GetWindowSize(window, &logicalWidth, &logicalHeight);
+    _windowSize = glm::uvec2{static_cast<uint32_t>(std::max(logicalWidth, 0)),
+        static_cast<uint32_t>(std::max(logicalHeight, 0))};
     _execution->initialize(window, *application, _userInterface);
 
     _inputManager.setDelegate(application->inputDelegate());
@@ -273,6 +281,8 @@ int32_t MainLoop::runInternal(app::Application* application, std::unique_ptr<det
             {
                 int w, h;
                 SDL_GetWindowSize(window, &w, &h);
+                _windowSize = glm::uvec2{static_cast<uint32_t>(std::max(w, 0)),
+                    static_cast<uint32_t>(std::max(h, 0))};
                 storeWidth = w;
                 storeHeight = h;
                 application->uiDelegate()->_viewportWidth = static_cast<uint32_t>(w);

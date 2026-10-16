@@ -51,3 +51,24 @@ Reuse the accepted deferred product, typed draw DrawableComponent and live setti
 ## Documentation closure order
 
 The technical review now hands off to [M02-09](step_09_documentation.md), not directly to the next milestone. Earlier next-milestone handoff statements are historical and superseded by this order. See [documentation policy](../documentation-policy.md).
+
+## M02-03 implementation handoff
+
+[Overlay contracts](overlays.md) define optional RendererConfiguration.overlays,
+borrowed unjittered output callbacks, public MeshOverlayPass replacement, explicit
+depth/line/blend policies and per-acquired-slot GPU retention. The final product
+uses these delivered objects; no private renderer access or separate native tool
+renderer is needed. Acceptance status remains in progress.md.
+
+## M02-05 widget handoff
+
+[Widget decisions](widgets.md) select separate DrawMaterialEditor and
+DrawTextureWidgets with session-scoped native-free previews and queued material
+edits. Existing generic lists/settings/primitive controls are reused; raw scene
+inspectors and bake previews retain their explicit later owners.
+
+## M02-08 review handoff
+
+The [M02 technical review](review.md) records the accepted product contracts,
+verification boundary, and concrete updates to M03–M10. M02-09 remains the
+required cumulative maintained-documentation step before entering M03.

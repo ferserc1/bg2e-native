@@ -21,6 +21,7 @@
 #include <bg2e/draw/environment/all.hpp>
 #include <bg2e/draw/Engine.hpp>
 #include <bg2e/draw/Upscaler.hpp>
+#include <bg2e/draw/pipeline/OverlayPass.hpp>
 #include <stdexcept>
 #include <cstddef>
 
@@ -42,6 +43,8 @@ struct RendererConfiguration {
     std::shared_ptr<pipeline::SoftShadowPass> softShadows; // Null selects the public default query pass.
     std::shared_ptr<Upscaler> upscaler; // Null selects public bilinear reconstruction.
     std::shared_ptr<ResolutionSettings> resolution; // Null preserves fixed/follow-output policy.
+    // Optional ordered post-final passes; shared ownership, one renderer lifecycle each.
+    std::vector<std::shared_ptr<pipeline::OverlayPass>> overlays;
 };
 
 // Public runtime renderer family. The delegate exclusively owns its renderer
@@ -94,6 +97,20 @@ class BG2E_API Renderer {
             !gpu::isDepthFormat(configuration.depthFormat))
         {
             throw std::invalid_argument("Renderer color/depth formats are incompatible");
+        }
+        for (size_t i = 0; i < configuration.overlays.size(); ++i)
+        {
+            if (!configuration.overlays[i])
+            {
+                throw std::invalid_argument("Renderer overlay must not be null");
+            }
+            for (size_t j = 0; j < i; ++j)
+            {
+                if (configuration.overlays[i] == configuration.overlays[j])
+                {
+                    throw std::invalid_argument("Renderer overlay cannot occupy two lifecycle slots");
+                }
+            }
         }
         for (const auto& selection : configuration.layers)
         {

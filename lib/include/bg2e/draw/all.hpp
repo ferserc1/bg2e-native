@@ -56,3 +56,5 @@
 
 #include <bg2e/draw/Upscaler.hpp>
 #include <bg2e/draw/FsrUpscaler.hpp>
+
+#include <bg2e/draw/pipeline/OverlayPass.hpp>

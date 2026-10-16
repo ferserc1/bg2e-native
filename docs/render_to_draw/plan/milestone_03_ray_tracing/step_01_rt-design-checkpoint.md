@@ -43,3 +43,15 @@ Inspect [query-shadows.md](../milestone_01_deferred_renderer/query-shadows.md), 
 ## M01-16 reviewed baseline
 
 Decision owner remains the project lead after concrete backend/table options are prepared. M01 provides only dense UV/alpha query lookup with eight distinct image/sampler pairs and explicit overflow; neither that limit nor its layout is an approved arbitrary hit-material architecture. Record chosen resource addressing, candidate filtering, capacities, transparency and native stage arrangement before M03-02/M04 depend on it. See [M01 review](../milestone_01_deferred_renderer/review.md).
+
+## M02 selection and edit boundary
+
+M02 adds submission-local RGBA8 pick IDs mapped to weak typed `SelectionItem`s;
+these IDs are not canonical queue object IDs, persistent selectable IDs or dense
+TLAS indices. Its draw viewpoint analyzer is a synchronous stopped-boundary D32
+readback tool. Neither belongs in the advanced hit-material addressing scheme.
+MaterialModifier and DrawMaterialEditor leave edit notifications/history resets
+to the application at a queued safe boundary. This design checkpoint must select
+the future tracing mutation/reset contract explicitly; it must not treat
+`RendererDeferred::resetUpscaler()` as the eventual effect-history API. See the
+[M02 review](../milestone_02_manipulation/review.md).

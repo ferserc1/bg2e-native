@@ -53,3 +53,9 @@
 #include <bg2e/ui/Loader.hpp>
 
 #include <bg2e/ui/GraphicsSettingsWindow.hpp>
+
+#include <bg2e/ui/DrawMaterialEditor.hpp>
+
+#include <bg2e/ui/DrawTextureWidgets.hpp>
+
+#include <bg2e/ui/TexturePreview.hpp>

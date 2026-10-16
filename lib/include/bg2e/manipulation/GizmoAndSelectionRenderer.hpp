@@ -21,6 +21,7 @@
 #include <bg2e/common.hpp>
 #include <bg2e/manipulation/ToolExecutionMode.hpp>
 #include <bg2e/draw/Engine.hpp>
+#include <bg2e/draw/pipeline/OverlayPass.hpp>
 #include <bg2e/scene/NodeVisitor.hpp>
 #include <bg2e/math/all.hpp>
 #include <bg2e/scene/Drawable.hpp>
@@ -33,19 +34,32 @@ namespace manipulation {
 
 class GizmoComponent;
 
-class BG2E_API GizmoAndSelectionRenderer : public bg2e::scene::NodeVisitor {
+class BG2E_API GizmoAndSelectionRenderer : public bg2e::scene::NodeVisitor, public draw::pipeline::OverlayPass {
   public:
+    explicit GizmoAndSelectionRenderer(std::shared_ptr<draw::pipeline::MeshOverlayPass> graphics = {});
+
     void init(
         render::Engine* engine,
         VkSampleCountFlagBits sampleCount);
 
     // Optional application-owned tool, independent of Renderer attachment.
-    // M02-01 establishes mode only; draw overlay recording follows in M02-03.
+    // Direct draw callers also initialize the OverlayPass lifecycle before use.
     void init(draw::Engine* engine);
+
     ToolExecutionMode executionMode() const
     {
         return _mode;
     }
+
+    void initialize(draw::Engine& engine, const draw::pipeline::OverlayConfiguration& configuration) override;
+    void attachScene(std::shared_ptr<scene::Node> root) override;
+    void resize(const draw::pipeline::OverlayConfiguration& configuration) override;
+    bool prepareFrame() override;
+    void update(const draw::pipeline::OverlayContext& context) override;
+    void record(const draw::pipeline::OverlayContext& context) override;
+    void cleanup() override;
+
+    std::shared_ptr<draw::pipeline::MeshOverlayPass> graphics() const;
 
     // renderExtent must be the extent of the actual render target (color/depth
     // image), not the swapchain extent: the deferred renderer rescales, so they
@@ -57,6 +71,7 @@ class BG2E_API GizmoAndSelectionRenderer : public bg2e::scene::NodeVisitor {
         const glm::mat4& projMatrix,
         VkCommandBuffer cmd,
         const VkExtent2D& renderExtent);
+
     void visit(bg2e::scene::Node* node) override;
     void didVisit(bg2e::scene::Node* node) override;
 
@@ -113,6 +128,27 @@ class BG2E_API GizmoAndSelectionRenderer : public bg2e::scene::NodeVisitor {
     // flushed at the end of draw().
     GizmoComponent* _pendingTransformGizmo = nullptr;
     glm::mat4 _pendingTransformWorld{1.0f};
+
+    struct EdgeMesh {
+        std::weak_ptr<draw::Drawable::DrawMesh> source;
+        std::shared_ptr<draw::Drawable::DrawMesh> lines;
+    };
+    struct OverlayFrame {
+        draw::pipeline::OverlayDrawList draws;
+        uint64_t serial = 0;
+        bool prepared = false;
+    };
+
+    void collectDrawNodes(scene::Node* root);
+    bool cacheLines(const std::shared_ptr<draw::Drawable>& drawable);
+    std::shared_ptr<draw::Drawable::DrawMesh> lineMesh(const std::shared_ptr<draw::Drawable::DrawMesh>& source) const;
+
+    std::shared_ptr<draw::pipeline::MeshOverlayPass> _graphics;
+    bool _overlayInitialized = false;
+    std::shared_ptr<scene::Node> _drawScene;
+    std::vector<std::weak_ptr<scene::Node>> _drawNodes;
+    std::vector<EdgeMesh> _edgeMeshes;
+    std::vector<OverlayFrame> _overlayFrames;
 
     void createSelectionPipeline();
     void createGizmoPipeline();
