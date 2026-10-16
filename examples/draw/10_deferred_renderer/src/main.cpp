@@ -16,102 +16,22 @@
  *    along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <bg2e/app/Application.hpp>
-#include <bg2e/app/InputDelegate.hpp>
-#include <bg2e/app/MainLoop.hpp>
-#include <bg2e/app/Preferences.hpp>
-#include <bg2e/base/PlatformTools.hpp>
-#include <bg2e/draw/all.hpp>
-#include <bg2e/db/mesh_obj.hpp>
-#include <bg2e/geo/cube.hpp>
-#include <bg2e/geo/plane.hpp>
-#include <bg2e/scene/Node.hpp>
-#include <bg2e/scene/DrawableComponent.hpp>
-#include <bg2e/scene/CameraComponent.hpp>
-#include <bg2e/scene/EnvironmentComponent.hpp>
-#include <bg2e/scene/LightComponent.hpp>
-#include <bg2e/scene/TransformComponent.hpp>
-#include <bg2e/reflection/Builder.hpp>
-#include <bg2e/ui/GraphicsSettingsWindow.hpp>
-#include <bg2e/ui/UserInterfaceDelegate.hpp>
-#include <bg2e/ui/Button.hpp>
-#include <bg2e/ui/Numeric.hpp>
-#include <bg2e/ui/Text.hpp>
-#include <bg2e/ui/Value.hpp>
+#include <bg2e.hpp>
+
 #include <cmath>
 #include <cstdint>
-#include <filesystem>
 #include <functional>
-#include <memory>
-#include <vector>
 #include <iostream>
-#include <set>
+#include <memory>
+#include <string>
+#include <utility>
+#include <vector>
 #include <stdexcept>
 
 namespace {
 using namespace bg2e;
-class SceneDelegate;
 
-// This application's menu is not an engine upscaler enum/registration table.
-class ApplicationUpscaler final : public draw::ResamplingUpscaler {
-  public:
-    std::string identifier() const override
-    {
-        return "example.resampler.v1";
-    }
-    std::string label() const override
-    {
-        return "Application resampler";
-    }
-    bool enabled() const
-    {
-        return _enabled;
-    }
-    void setEnabled(bool value)
-    {
-        _enabled = value;
-    }
-    uint32_t calls() const
-    {
-        return _calls;
-    }
-    bool record(const draw::UpscalerInput& input) override
-    {
-        if (!_enabled)
-        {
-            return false;
-        }
-        ++_calls;
-        return ResamplingUpscaler::record(input);
-    }
-    reflection::TypeInfo settingsType() const override
-    {
-        reflection::TypeInfoBuilder<ApplicationUpscaler> type(identifier());
-        type.property("enabled", &ApplicationUpscaler::enabled, &ApplicationUpscaler::setEnabled);
-        type.property("recordedFrames", &ApplicationUpscaler::calls);
-        return type.build();
-    }
-  private:
-    bool _enabled = true;
-    uint32_t _calls = 0;
-};
-class CountingGBuffer final : public draw::pipeline::GBuffer {
-  public:
-    uint64_t opaque = 0, transparent = 0;
-    void record(const draw::pipeline::PassContext& context) override
-    {
-        GBuffer::record(context);
-        if (context.raster && context.raster->item)
-        {
-            ++transparent;
-        }
-        else
-        {
-            ++opaque;
-        }
-    }
-};
-// Explicit zero-to-one depth avoids depending on a translation unit's GLM defines.
+// The deferred renderer uses a zero-to-one depth range on both supported backends.
 class CameraProjection final : public math::PerspectiveProjection {
   public:
     void apply(glm::mat4& matrix) override
@@ -119,19 +39,21 @@ class CameraProjection final : public math::PerspectiveProjection {
         matrix = glm::perspectiveRH_ZO(glm::radians(fov()), _viewport.width / _viewport.height, near(), far());
     }
 };
-// These fixtures have one material across every cube face. The generic cube
-// primitive exposes six face submeshes; retain all indices in one material domain.
+
+// A single material range makes the canopy material cover all six cube faces.
 std::shared_ptr<draw::Drawable::Mesh> singleMaterialCube(float width, float height, float depth)
 {
     auto mesh = std::shared_ptr<draw::Drawable::Mesh>(geo::createCube(width, height, depth));
     mesh->submeshes = {{0, uint32_t(mesh->indices.size())}};
     return mesh;
 }
+
 class CutoutTexture final : public base::ProceduralTextureGenerator {
   public:
     CutoutTexture() : ProceduralTextureGenerator(32, 32, 4)
     {
     }
+
     uint8_t* generate() override
     {
         auto* pixels = new uint8_t[32 * 32 * 4];
@@ -139,25 +61,28 @@ class CutoutTexture final : public base::ProceduralTextureGenerator {
         {
             for (uint32_t x = 0; x < 32; ++x)
             {
-                const auto p = (y * 32 + x) * 4;
-                pixels[p] = 245;
-                pixels[p + 1] = 180;
-                pixels[p + 2] = 40;
-                pixels[p + 3] = ((x / 4 + y / 4) % 2) ? 255 : 0;
+                const auto pixel = (y * 32 + x) * 4;
+                pixels[pixel] = 245;
+                pixels[pixel + 1] = 180;
+                pixels[pixel + 2] = 40;
+                pixels[pixel + 3] = ((x / 4 + y / 4) % 2) ? 255 : 0;
             }
         }
         return pixels;
     }
+
     std::string imageIdentifier() override
     {
         return "draw-deferred-alpha-checker-v1";
     }
 };
+
 class PackedTexture final : public base::ProceduralTextureGenerator {
   public:
     PackedTexture() : ProceduralTextureGenerator(8, 8, 4)
     {
     }
+
     uint8_t* generate() override
     {
         auto* pixels = new uint8_t[8 * 8 * 4];
@@ -165,150 +90,87 @@ class PackedTexture final : public base::ProceduralTextureGenerator {
         {
             for (uint32_t x = 0; x < 8; ++x)
             {
-                const auto p = (y * 8 + x) * 4;
-                pixels[p] = x < 4 ? 51 : 204;
-                pixels[p + 1] = 166;
-                pixels[p + 2] = 230;
-                pixels[p + 3] = 255;
+                const auto pixel = (y * 8 + x) * 4;
+                pixels[pixel] = x < 4 ? 51 : 204;
+                pixels[pixel + 1] = 166;
+                pixels[pixel + 2] = 230;
+                pixels[pixel + 3] = 255;
             }
         }
         return pixels;
     }
+
     std::string imageIdentifier() override
     {
         return "draw-deferred-packed-channels-v1";
     }
 };
-struct State {
-    explicit State(app::MainLoop& mainLoop) : loop(mainLoop), persistence("draw_deferred_renderer")
-    {
-        persistence.load();
-    }
-    app::MainLoop& loop;
-    app::Preferences persistence; // Must outlive facade, borrowed by it.
-    std::shared_ptr<draw::RenderSettingsPreferences> preferences;
-    std::weak_ptr<SceneDelegate> delegate;
-    std::shared_ptr<draw::Drawable> original, clone, glass, solidGlass, cutout, channels;
-    std::shared_ptr<draw::pipeline::SoftShadowPass> shadows;
-    std::shared_ptr<CountingGBuffer> gbuffer = std::make_shared<CountingGBuffer>();
-    std::shared_ptr<draw::pipeline::FinalLayer> final;
-    std::shared_ptr<draw::ResolutionSettings> resolution = std::make_shared<draw::ResolutionSettings>();
-    std::shared_ptr<scene::Node> cutoutNode, glassNode, solidGlassNode;
-    bool forcedNoRt = false, animateCamera = true, animateLights = true, paused = false;
-    uint32_t upscalerChoice = 0;
-    uint64_t sceneFrames = 0, uiFrames = 0, replacements = 0;
-    std::string backend, message;
-    std::filesystem::path settingsFile;
-    bool restorePreferences = false;
+
+struct SceneState {
+    std::shared_ptr<scene::Node> cameraPivot;
+    std::shared_ptr<scene::Node> lights;
+    std::shared_ptr<scene::Node> canopy;
+    std::shared_ptr<draw::Drawable> clone;
+    std::vector<std::shared_ptr<scene::Node>> lightNodes;
+    float cameraAngle = 0.0f;
+    float lightAngle = 0.0f;
+    bool animateCamera = true;
+    bool animateLights = true;
 };
+
 class SceneDelegate final : public draw::DefaultRenderLoopDelegate {
   public:
-    explicit SceneDelegate(std::shared_ptr<State> state)
-        : DefaultRenderLoopDelegate(std::make_unique<draw::RendererDeferred>(), configurationFor(*state)), _state(std::move(state))
+    SceneDelegate()
+        : DefaultRenderLoopDelegate(std::make_unique<draw::RendererDeferred>())
     {
         setContinuousRendering(true);
     }
-    static draw::RendererConfiguration configurationFor(State& state)
+
+    SceneState& state()
     {
-        draw::RendererConfiguration configuration;
-        configuration.outputFormat = state.final->contract().outputs.at(0).format;
-        configuration.depthFormat = state.final->contract().inputs.at(7).format;
-        configuration.resolution = state.resolution;
-        if (state.upscalerChoice == 1)
-        {
-            configuration.upscaler = std::make_shared<draw::FsrUpscaler>();
-        }
-        else if (state.upscalerChoice == 2)
-        {
-            configuration.upscaler = std::make_shared<ApplicationUpscaler>();
-        }
-        if (!state.shadows)
-        {
-            state.shadows = std::make_shared<draw::pipeline::SoftShadowPass>();
-            state.shadows->settings().enabled = !state.forcedNoRt;
-        }
-        configuration.softShadows = state.shadows;
-        configuration.layers.push_back({state.gbuffer, {{}, {}, state.gbuffer->contract()}});
-        configuration.layers.push_back({state.final, {{}, {}, draw::pipeline::finalContract(configuration.outputFormat, configuration.depthFormat, true)}});
-        return configuration;
+        return _state;
     }
-    void replace(uint32_t upscaler)
-    {
-        _state->upscalerChoice = upscaler;
-        setRenderer(std::make_unique<draw::RendererDeferred>(), configurationFor(*_state));
-        ++_state->replacements;
-    }
-    void prepareFrame() override
-    {
-        DefaultRenderLoopDelegate::prepareFrame();
-        if (!_restored && renderer() && !_state->preferences->catalog().rendererId().empty())
-        {
-            _restored = true;
-            if (!_state->settingsFile.empty())
-            {
-                const auto document = draw::SettingsCodec::readFile(_state->settingsFile);
-                _state->preferences->queueImport(*document, draw::UnknownSettingPolicy::Reject, startupCompletion());
-            }
-            else if (_state->restorePreferences)
-            {
-                _state->preferences->queueRestore(draw::UnknownSettingPolicy::Reject, startupCompletion());
-            }
-        }
-    }
+
     void update(const draw::FrameContext& frame) override
     {
-        if (_state->animateCamera)
+        if (_state.animateCamera)
         {
-            _cameraAngle += frame.sceneDeltaSeconds * 0.12f;
+            _state.cameraAngle += frame.sceneDeltaSeconds * 0.12f;
+            _state.cameraPivot->transform()->setRotation(_state.cameraAngle, 0, 1, 0);
         }
-        if (_state->animateLights)
+        if (_state.animateLights)
         {
-            _lightAngle += frame.sceneDeltaSeconds * 0.2f;
+            _state.lightAngle += frame.sceneDeltaSeconds * 0.2f;
+            _state.lights->transform()->setRotation(_state.lightAngle, 0, 1, 0);
         }
-        _cameraPivot->transform()->setRotation(_cameraAngle, 0, 1, 0);
-        _lights->transform()->setRotation(_lightAngle, 0, 1, 0);
         DefaultRenderLoopDelegate::update(frame);
-        ++_state->sceneFrames;
     }
+
     void cleanup() override
     {
         DefaultRenderLoopDelegate::cleanup();
-        _state->preferences->clear();
-        for (auto& drawable : _owned)
+        // Drawable::cleanup releases GPU resources while the engine is still alive.
+        for (auto& drawable : _drawables)
         {
             drawable->cleanup();
         }
-        _owned.clear();
-        _state->original.reset();
-        _state->clone.reset();
-        _state->glass.reset();
-        _state->solidGlass.reset();
-        _state->cutout.reset();
-        _state->channels.reset();
-        _state->cutoutNode.reset();
-        _state->glassNode.reset();
-        _state->solidGlassNode.reset();
-        _cameraPivot.reset();
-        _lights.reset();
     }
+
   protected:
     std::shared_ptr<scene::Node> createScene() override
     {
-        auto root = std::make_shared<scene::Node>("Draw deferred scene");
+        auto root = std::make_shared<scene::Node>("Deferred scene");
         root->addComponent(new scene::EnvironmentComponent(base::PlatformTools::assetPath(), "HDR_multi_nebulae_1.hdr"));
+
         auto model = std::make_shared<draw::Drawable>();
         model->setMesh(db::loadMeshObj<draw::Drawable::Mesh>(base::PlatformTools::assetPath() / "two_submeshes.obj"));
-        if (model->submeshesCount() != 2)
-        {
-            throw std::runtime_error("Deferred example expects two OBJ submeshes");
-        }
-        const char* names[] = {"outer", "inner"};
+        const char* submeshNames[] = {"outer", "inner"};
         for (uint32_t i = 0; i < 2; ++i)
         {
-            auto texture = [&](const std::string& suffix)
+            auto texture = [&](const std::string& map)
             {
                 return std::make_shared<base::Texture>(base::PlatformTools::assetPath(),
-                    "two_submeshes_" + std::string(names[i]) + "_" + suffix + ".jpg");
+                    "two_submeshes_" + std::string(submeshNames[i]) + "_" + map + ".jpg");
             };
             auto& material = model->material(i);
             material.setAlbedoTexture(texture("albedo"));
@@ -319,40 +181,43 @@ class SceneDelegate final : public draw::DefaultRenderLoopDelegate {
             material.setMetalness(1);
             material.setRoughness(1);
             material.setAlphaCutoff(0);
-            model->setSubmeshName(names[i], i);
+            model->setSubmeshName(submeshNames[i], i);
         }
         model->material(1).setFresnelTint(base::Color(0.8f, 0.2f, 1));
         model->material(1).setSheenColor(base::Color::Blue());
         model->material(1).setSheenIntensity(0.5f);
         load(model);
-        _state->original = model;
+
         auto nested = std::make_shared<scene::Node>("Nested models");
         nested->addComponent(scene::TransformComponent::makeTranslated(0, 0.3f, 0));
         root->addChild(nested);
-        addDrawable(nested, "Original opaque", model, {-3, 0, 0});
-        _state->clone = model->clone();
-        _owned.push_back(_state->clone);
-        _state->clone->material(0).setAlbedo(base::Color(0.3f, 0.8f, 1));
-        verifyClone();
-        addDrawable(nested, "Independent clone", _state->clone, {0, 0, -1});
-        _state->glass = model->clone();
-        _owned.push_back(_state->glass);
-        _state->glass->iterateMaterials([](auto& material)
+        addDrawable(nested, "Original", model, {-3, 0, 0});
+
+        _state.clone = model->clone();
+        _state.clone->material(0).setAlbedo(base::Color(0.3f, 0.8f, 1));
+        _drawables.push_back(_state.clone);
+        addDrawable(nested, "Independent clone", _state.clone, {0, 0, -1});
+
+        auto glass = model->clone();
+        glass->iterateMaterials([](auto& material)
         {
             material.setAlbedo(base::Color(1, 1, 1, 0.45f));
             material.setIsTransparent(true);
             material.setRefractionFactor(0.1f);
         });
-        _state->glassNode = addDrawable(root, "Transparent model", _state->glass, {3, 0, 0});
-        _state->solidGlass = model->clone();
-        _owned.push_back(_state->solidGlass);
-        _state->solidGlass->iterateMaterials([](auto& material)
+        _drawables.push_back(glass);
+        addDrawable(root, "Transparent model", glass, {3, 0, 0});
+
+        auto solidGlass = model->clone();
+        solidGlass->iterateMaterials([](auto& material)
         {
             material.setAlbedo(base::Color(0.7f, 1, 0.7f, 0.5f));
             material.setIsTransparent(true);
             material.setIsSolid(true);
         });
-        _state->solidGlassNode = addDrawable(root, "Solid transparent model", _state->solidGlass, {1.5f, 0, 2.5f});
+        _drawables.push_back(solidGlass);
+        addDrawable(root, "Solid transparent model", solidGlass, {1.5f, 0, 2.5f});
+
         auto floor = std::make_shared<draw::Drawable>();
         floor->setMesh(geo::createPlane(30, 30));
         floor->material().setAlbedo(base::Color(0.55f, 0.55f, 0.55f));
@@ -361,29 +226,32 @@ class SceneDelegate final : public draw::DefaultRenderLoopDelegate {
         floor->material().setRoughness(0.75f);
         load(floor);
         addDrawable(root, "Floor", floor, {0, -1.05f, 0});
-        _state->cutout = std::make_shared<draw::Drawable>();
-        _state->cutout->setMesh(singleMaterialCube(2.4f, 0.06f, 2.4f));
+
+        auto canopy = std::make_shared<draw::Drawable>();
+        canopy->setMesh(singleMaterialCube(2.4f, 0.06f, 2.4f));
         auto checker = std::make_shared<base::Texture>(std::make_shared<CutoutTexture>());
         checker->setUseMipmaps(false);
         checker->setMinFilter(base::Texture::FilterNearest);
         checker->setMagFilter(base::Texture::FilterNearest);
-        _state->cutout->material().setAlbedoTexture(checker);
-        _state->cutout->material().setAlphaCutoff(0.5f);
-        _state->cutout->material().setMetalness(0);
-        load(_state->cutout);
-        _state->cutoutNode = addDrawable(root, "Alpha-cutout canopy", _state->cutout, {-3, 2.4f, 1.5f});
-        _state->channels = std::make_shared<draw::Drawable>();
+        canopy->material().setAlbedoTexture(checker);
+        canopy->material().setAlphaCutoff(0.5f);
+        canopy->material().setMetalness(0);
+        load(canopy);
+        _state.canopy = addDrawable(root, "Alpha-cutout canopy", canopy, {-3, 2.4f, 1.5f});
+
+        // UV1 is scaled separately so the packed map demonstrates material UV selection.
         auto channelMesh = singleMaterialCube(1.4f, 1.4f, 1.4f);
         for (auto& vertex : channelMesh->vertices)
         {
             vertex.texCoord1 = vertex.texCoord0 * 2.0f;
         }
-        _state->channels->setMesh(channelMesh);
+        auto channels = std::make_shared<draw::Drawable>();
+        channels->setMesh(channelMesh);
         auto packed = std::make_shared<base::Texture>(std::make_shared<PackedTexture>());
         packed->setUseMipmaps(false);
         packed->setMinFilter(base::Texture::FilterNearest);
         packed->setMagFilter(base::Texture::FilterNearest);
-        auto& packedMaterial = _state->channels->material();
+        auto& packedMaterial = channels->material();
         packedMaterial.setAlbedo(base::Color(0.8f, 0.3f, 0.15f));
         packedMaterial.setAlphaCutoff(0);
         packedMaterial.setMetalnessTexture(packed);
@@ -396,19 +264,22 @@ class SceneDelegate final : public draw::DefaultRenderLoopDelegate {
         packedMaterial.setRoughnessChannel(1);
         packedMaterial.setAoTexture(packed);
         packedMaterial.setAoChannel(2);
-        load(_state->channels);
-        addDrawable(root, "Packed channel and UV1 fixture", _state->channels, {-1.5f, -0.3f, 2.5f});
-        _cameraPivot = std::make_shared<scene::Node>("Camera orbit");
-        _cameraPivot->addComponent(new scene::TransformComponent());
+        load(channels);
+        addDrawable(root, "Packed channels", channels, {-1.5f, -0.3f, 2.5f});
+
+        _state.cameraPivot = std::make_shared<scene::Node>("Camera orbit");
+        _state.cameraPivot->addComponent(new scene::TransformComponent());
         auto camera = std::make_shared<scene::Node>("Camera");
-        camera->addComponent(new scene::TransformComponent(glm::inverse(glm::lookAtRH(glm::vec3(0, 5, 13), glm::vec3(0, 0.5f, 0), glm::vec3(0, 1, 0)))));
+        camera->addComponent(new scene::TransformComponent(glm::inverse(glm::lookAtRH(
+            glm::vec3(0, 5, 13), glm::vec3(0, 0.5f, 0), glm::vec3(0, 1, 0)))));
         camera->addComponent(new scene::CameraComponent());
         camera->camera()->setProjection(new CameraProjection());
-        _cameraPivot->addChild(camera);
-        root->addChild(_cameraPivot);
-        _lights = std::make_shared<scene::Node>("Rotating lights");
-        _lights->addComponent(new scene::TransformComponent());
-        root->addChild(_lights);
+        _state.cameraPivot->addChild(camera);
+        root->addChild(_state.cameraPivot);
+
+        _state.lights = std::make_shared<scene::Node>("Rotating lights");
+        _state.lights->addComponent(new scene::TransformComponent());
+        root->addChild(_state.lights);
         for (uint32_t i = 0; i < 4; ++i)
         {
             auto light = std::make_shared<scene::Node>("Light " + std::to_string(i + 1));
@@ -419,36 +290,24 @@ class SceneDelegate final : public draw::DefaultRenderLoopDelegate {
             value.setType(base::Light::TypeOmni);
             value.setColor(base::Color(i == 0 ? 1 : 0.65f, i == 1 ? 1 : 0.7f, i == 2 ? 1 : 0.75f));
             value.setIntensity(35);
-            value.setCastShadows(!_state->forcedNoRt);
+            value.setCastShadows(true);
             value.setSourceSize(0.25f);
             value.setShadowSamples(8);
-            _lights->addChild(light);
+            _state.lightNodes.push_back(light);
+            _state.lights->addChild(light);
         }
         return root;
     }
+
   private:
-    draw::RenderSettingsPreferences::Completion startupCompletion()
-    {
-        const std::weak_ptr<State> weak = _state;
-        return [weak](draw::SettingsResult result)
-        {
-            if (auto state = weak.lock())
-            {
-                state->message = result.valid() ? "Startup settings applied" : "Startup settings rejected";
-                for (const auto& issue : result.issues)
-                {
-                    state->message += ": " + issue.message;
-                }
-            }
-        };
-    }
     void load(const std::shared_ptr<draw::Drawable>& drawable)
     {
-        _owned.push_back(drawable); // Retain even if realization fails halfway.
-        drawable->setRayTracingEnabled(!_state->forcedNoRt);
+        // Keep each drawable until cleanup, including if loading fails partway through.
+        _drawables.push_back(drawable);
         drawable->load(_engine);
     }
-    static std::shared_ptr<scene::Node> addDrawable(const std::shared_ptr<scene::Node>& parent,
+
+    std::shared_ptr<scene::Node> addDrawable(const std::shared_ptr<scene::Node>& parent,
         const std::string& name, std::shared_ptr<draw::Drawable> drawable, glm::vec3 position)
     {
         auto node = std::make_shared<scene::Node>(name);
@@ -457,308 +316,130 @@ class SceneDelegate final : public draw::DefaultRenderLoopDelegate {
         parent->addChild(node);
         return node;
     }
-    void verifyClone()
-    {
-        const auto& a = _state->original;
-        const auto& b = _state->clone;
-        const auto ta = a->drawMaterial(0)->albedoTexture();
-        const auto tb = b->drawMaterial(0)->albedoTexture();
-        if (a->mesh() == b->mesh() || a->drawMesh() == b->drawMesh() ||
-            a->drawMaterial(0) == b->drawMaterial(0) || ta == tb ||
-            ta->image() == tb->image() || ta->sampler() == tb->sampler() || a->material(0).albedo().r == b->material(0).albedo().r)
-        {
-            throw std::runtime_error("Drawable deep-clone ownership/material independence failed");
-        }
-        _state->message = "Independent mesh, material, texture, image and sampler clones verified.";
-    }
-    std::shared_ptr<State> _state;
-    std::shared_ptr<scene::Node> _cameraPivot, _lights;
-    std::vector<std::shared_ptr<draw::Drawable>> _owned;
-    float _cameraAngle = 0, _lightAngle = 0;
-    bool _restored = false;
+
+    SceneState _state;
+    std::vector<std::shared_ptr<draw::Drawable>> _drawables;
 };
+
 class UiDelegate final : public ui::UserInterfaceDelegate {
   public:
-    explicit UiDelegate(std::shared_ptr<State> state) : _state(std::move(state))
+    explicit UiDelegate(std::weak_ptr<SceneDelegate> delegate) : _delegate(std::move(delegate))
     {
-        _settings.bind(_state->preferences);
-        _settings.setPosition(920, 10);
-        _settings.setSize(430, 650);
         _controls.setTitle("Deferred scene");
         _controls.setPosition(10, 10);
-        _controls.setSize(320, 650);
-        _controls.options.noClose = true;
+        _controls.setSize(360, 620);
     }
+
     void drawUI() override
     {
-        ++_state->uiFrames;
-        auto loop = _state->delegate.lock();
-        if (!loop)
+        auto delegate = _delegate.lock();
+        if (!delegate || !delegate->scene())
         {
             return;
         }
+        auto& state = delegate->state();
         _controls.draw([&]
         {
-            ui::Text::text("Backend: " + _state->backend);
-            ui::Text::text("Scene / UI frames: " + std::to_string(_state->sceneFrames) + " / " + std::to_string(_state->uiFrames));
-            ui::Text::text("G-buffer opaque / transparent passes: " + std::to_string(_state->gbuffer->opaque) + " / " + std::to_string(_state->gbuffer->transparent));
-            ui::Text::text("Renderer replacements: " + std::to_string(_state->replacements));
-            if (ui::Button::checkBox("Pause scene", &_state->paused))
+            ui::Text::text("Scene controls");
+            if (ui::Button::checkBox("Animate camera", &state.animateCamera))
             {
-                if (_state->paused)
+                app::MainLoop::current()->requestSceneFrame();
+            }
+            if (ui::Button::checkBox("Animate lights", &state.animateLights))
+            {
+                app::MainLoop::current()->requestSceneFrame();
+            }
+            for (size_t i = 0; i < state.lightNodes.size(); ++i)
+            {
+                auto& light = state.lightNodes[i]->light()->light();
+                float intensity = light.intensity();
+                if (ui::Numeric::sliderFloat("Light " + std::to_string(i + 1) + " intensity", &intensity, 0, 60))
                 {
-                    _state->loop.pauseScene();
-                }
-                else
-                {
-                    _state->loop.resumeScene();
-                }
-            }
-            const bool cameraChanged = ui::Button::checkBox("Orbit camera", &_state->animateCamera);
-            const bool lightsChanged = ui::Button::checkBox("Rotate lights", &_state->animateLights);
-            if (cameraChanged || lightsChanged)
-            {
-                _state->loop.requestSceneFrame();
-            }
-            if (ui::Button::button("Refresh scene"))
-            {
-                _state->loop.requestSceneFrame();
-            }
-            if (ui::Button::button("Graphics settings"))
-            {
-                _settings.open();
-            }
-            auto selected = _state->upscalerChoice;
-            if (ui::Value::comboBox("Upscaler", {"Bilinear", "FSR 3.1", "Application resampler"}, selected))
-            {
-                loop->replace(selected);
-            }
-            if (ui::Button::button("Replace renderer"))
-            {
-                loop->replace(_state->upscalerChoice);
-            }
-            if (ui::Button::button("Queue stale edit and replace"))
-            {
-                const auto weak = std::weak_ptr<State>(_state);
-                auto& catalog = _state->preferences->catalog();
-                if (!catalog.rendererId().empty())
-                {
-                    _state->preferences->queueSet(catalog.handle("final", "exposure"), 1.0f, [weak](draw::SettingsResult result)
+                    edit(delegate, [i, intensity](SceneState& scene)
                     {
-                        if (auto state = weak.lock())
-                        {
-                            state->message = result.valid() ? "Unexpected: stale edit was accepted" : "Stale edit rejected after replacement";
-                        }
-                    });
-                    loop->replace(_state->upscalerChoice);
-                }
-            }
-            if (auto* renderer = dynamic_cast<draw::RendererDeferred*>(loop->renderer()))
-            {
-                const auto& configuration = renderer->configuration();
-                ui::Text::text("Internal: " + std::to_string(configuration.internalExtent.width) + " x " + std::to_string(configuration.internalExtent.height));
-                if (auto upscaler = renderer->upscaler())
-                {
-                    ui::Text::text(upscaler->label() + ": " + upscaler->status());
-                }
-                if (auto shadows = renderer->softShadows())
-                {
-                    ui::Text::text("Query shadows: " + shadows->status());
-                }
-                if (_state->forcedNoRt)
-                {
-                    ui::Text::text("Forced no-RT fixture: no tracing geometry; shadow lights disabled.");
-                }
-            }
-            if (_state->original && _state->clone)
-            {
-                ui::Text::separator("Independent clone material");
-                auto color = _state->clone->material(0).albedo();
-                if (ui::Value::colorPicker("Clone outer tint", color))
-                {
-                    edit(loop, [color](State& state)
-                    {
-                        state.clone->material(0).setAlbedo(color);
+                        scene.lightNodes[i]->light()->light().setIntensity(intensity);
                     });
                 }
-                float roughness = _state->clone->material(0).roughness();
-                if (ui::Numeric::sliderFloat("Clone roughness", &roughness, 0.02f, 1))
+                auto color = light.color();
+                if (ui::Value::colorPicker("Light " + std::to_string(i + 1) + " color", color))
                 {
-                    edit(loop, [roughness](State& state)
+                    edit(delegate, [i, color](SceneState& scene)
                     {
-                        state.clone->material(0).setRoughness(roughness);
-                    });
-                }
-                bool showGlass = _state->glassNode->enabled();
-                if (ui::Button::checkBox("Transparent models", &showGlass))
-                {
-                    edit(loop, [showGlass](State& state)
-                    {
-                        state.glassNode->setEnabled(showGlass);
-                        state.solidGlassNode->setEnabled(showGlass);
-                    });
-                }
-                auto alpha = _state->glass->material(0).albedo().a;
-                if (ui::Numeric::sliderFloat("Glass opacity", &alpha, 0.05f, 1))
-                {
-                    edit(loop, [alpha](State& state)
-                    {
-                        state.glass->iterateMaterials([alpha](auto& material)
-                        {
-                            auto color = material.albedo();
-                            color.a = alpha;
-                            material.setAlbedo(color);
-                        });
-                    });
-                }
-                const std::vector<std::string> channelLabels{"Red", "Green", "Blue", "Alpha"};
-                auto channel = _state->channels->material().metalnessChannel();
-                if (ui::Value::comboBox("Fixture metalness channel", channelLabels, channel))
-                {
-                    edit(loop, [channel](State& state)
-                    {
-                        state.channels->material().setMetalnessChannel(channel);
-                    });
-                }
-                bool inverted = _state->channels->material().metalnessInvert();
-                if (ui::Button::checkBox("Invert fixture metalness", &inverted))
-                {
-                    edit(loop, [inverted](State& state)
-                    {
-                        state.channels->material().setMetalnessInvert(inverted);
-                    });
-                }
-                auto cutoff = _state->cutout->material().alphaCutoff();
-                if (ui::Numeric::sliderFloat("Cutout threshold", &cutoff, 0, 1))
-                {
-                    edit(loop, [cutoff](State& state)
-                    {
-                        state.cutout->material().setAlphaCutoff(cutoff);
-                    });
-                }
-                bool visible = _state->cutoutNode->enabled();
-                if (ui::Button::checkBox("Cutout canopy", &visible))
-                {
-                    edit(loop, [visible](State& state)
-                    {
-                        state.cutoutNode->setEnabled(visible);
+                        scene.lightNodes[i]->light()->light().setColor(color);
                     });
                 }
             }
-            ui::Text::text(_state->message);
+            ui::Text::separator("Cloned model material");
+            auto tint = state.clone->material(0).albedo();
+            if (ui::Value::colorPicker("Clone tint", tint))
+            {
+                edit(delegate, [tint](SceneState& scene)
+                {
+                    scene.clone->material(0).setAlbedo(tint);
+                });
+            }
+            float roughness = state.clone->material(0).roughness();
+            if (ui::Numeric::sliderFloat("Clone roughness", &roughness, 0.02f, 1))
+            {
+                edit(delegate, [roughness](SceneState& scene)
+                {
+                    scene.clone->material(0).setRoughness(roughness);
+                });
+            }
+            bool showCanopy = state.canopy->enabled();
+            if (ui::Button::checkBox("Cutout canopy", &showCanopy))
+            {
+                edit(delegate, [showCanopy](SceneState& scene)
+                {
+                    scene.canopy->setEnabled(showCanopy);
+                });
+            }
         });
-        _settings.draw();
     }
+
   private:
-    void edit(const std::shared_ptr<SceneDelegate>& loop, std::function<void(State&)> operation)
+    void edit(const std::shared_ptr<SceneDelegate>& delegate, std::function<void(SceneState&)> operation)
     {
-        const auto weak = std::weak_ptr<State>(_state);
-        loop->enqueueRendererUpdate(loop->rendererGeneration(), [weak, operation](draw::Renderer& renderer)
+        const auto weakDelegate = std::weak_ptr<SceneDelegate>(delegate);
+        delegate->enqueueRendererUpdate(delegate->rendererGeneration(), [weakDelegate, operation = std::move(operation)](draw::Renderer&)
         {
-            if (auto state = weak.lock())
+            if (auto activeDelegate = weakDelegate.lock())
             {
-                operation(*state);
-                if (auto* deferred = dynamic_cast<draw::RendererDeferred*>(&renderer))
-                {
-                    deferred->resetUpscaler();
-                }
-            }
-        }, [weak]
-        {
-            if (auto state = weak.lock())
-            {
-                state->message = "Material edit cancelled after renderer rebind";
+                operation(activeDelegate->state());
             }
         });
     }
-    std::shared_ptr<State> _state;
+
+    std::weak_ptr<SceneDelegate> _delegate;
     ui::Window _controls;
-    ui::GraphicsSettingsWindow _settings;
 };
+
 class Application final : public app::Application {
   public:
-    explicit Application(app::MainLoop& loop) : _state(std::make_shared<State>(loop))
+    void init(int, char**) override
     {
-    }
-    void init(int argc, char** argv) override
-    {
-        std::set<std::string> seen;
-        for (int i = 1; i < argc; ++i)
-        {
-            const std::string argument = argv[i];
-            const auto key = argument.substr(0, argument.find('='));
-            if (!seen.insert(key).second)
-            {
-                throw std::invalid_argument("Repeated option: " + key);
-            }
-            if (argument == "--backend=vulkan" || argument == "--backend=metal")
-            {
-                _config.backend = argument == "--backend=metal" ? gpu::BackendType::Metal : gpu::BackendType::Vulkan;
-            }
-            else if (argument == "--upscaler=bilinear" || argument == "--upscaler=fsr" || argument == "--upscaler=application")
-            {
-                _state->upscalerChoice = argument == "--upscaler=fsr" ? 1 : argument == "--upscaler=application" ? 2 : 0;
-            }
-            else if (argument == "--no-rt")
-            {
-                _state->forcedNoRt = true;
-            }
-            else if (argument == "--validation")
-            {
-                _config.debug = true;
-            }
-            else if (argument.starts_with("--settings=") && argument.size() > 11)
-            {
-                _state->settingsFile = argument.substr(11);
-            }
-            else if (argument == "--restore-preferences")
-            {
-                _state->restorePreferences = true;
-            }
-            else
-            {
-                throw std::invalid_argument("Unknown option: " + argument);
-            }
-        }
-#ifndef BG2E_IS_MAC
-        if (_config.backend == gpu::BackendType::Metal)
-        {
-            throw std::invalid_argument("Metal requires macOS");
-        }
-#endif
-        _state->backend = _config.backend == gpu::BackendType::Metal ? "Metal" : "Vulkan";
-        _state->resolution->setEnabled(true);
-        _state->resolution->setScale(0.67f);
-        _state->final = std::make_shared<draw::pipeline::FinalLayer>(std::filesystem::path{}, 0,
-            _config.colorFormat, _config.depthFormat, true);
-        _state->preferences = std::make_shared<draw::RenderSettingsPreferences>(&_state->persistence);
-        auto delegate = std::make_shared<SceneDelegate>(_state);
-        _state->delegate = delegate;
-        _state->preferences->connect(delegate);
+        auto delegate = std::make_shared<SceneDelegate>();
         setRenderDelegate(delegate);
         setInputDelegate(std::make_shared<app::InputDelegate>());
-        setUiDelegate(std::make_shared<UiDelegate>(_state));
+        setUiDelegate(std::make_shared<UiDelegate>(delegate));
     }
+
     const draw::EngineConfig& config() const
     {
         return _config;
     }
+
   private:
     draw::EngineConfig _config;
-    std::shared_ptr<State> _state;
 };
 }
+
 int main(int argc, char** argv)
 {
-    if (argc == 2 && std::string(argv[1]) == "--help")
-    {
-        std::cout << "draw_deferred_renderer [--backend=vulkan|metal] [--upscaler=bilinear|fsr|application] [--no-rt] [--validation] [--settings=FILE] [--restore-preferences]\n";
-        return 0;
-    }
     try
     {
         bg2e::app::MainLoop loop("org.bg2e.examples.draw.deferred-renderer");
-        Application application(loop);
+        Application application;
         application.init(argc, argv);
         loop.initWindowConfig(bg2e::app::WindowConfig::withSize("bg2e draw: deferred renderer", 1380, 800));
         return loop.run(&application, application.config());

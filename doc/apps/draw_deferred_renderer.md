@@ -1,8 +1,9 @@
 # Experimental deferred renderer example and distribution
 
 `examples/draw/10_deferred_renderer` registers target `draw_deferred_renderer`.
-See the [tutorial](../tutorials/draw/10_deferred_renderer.md) for CLI and controls.
-This is a windowed example, not a migrated model editor or headless application.
+See the [tutorial](../tutorials/draw/10_deferred_renderer.md) for the scene
+delegate structure and its small set of learning controls. This is a windowed
+example, not a migrated model editor or headless application.
 
 Configure with the platform generator: Linux Ninja, macOS Xcode for working
 native file dialogs (Ninja is usable for development with that limitation),
