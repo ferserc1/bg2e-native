@@ -18,6 +18,8 @@
 
 #pragma once
 
+#include <algorithm>
+
 #include <bg2e/common.hpp>
 
 #include <cstdint>
@@ -160,7 +162,8 @@ enum class ShaderStage
     Compute,
     RayGeneration,
     Miss,
-    ClosestHit
+    ClosestHit,
+    AnyHit
 };
 
 enum class PipelineBarrierFlags : uint32_t
@@ -279,7 +282,11 @@ struct ResourceBinding {
     ShaderBinding binding = {};
     ResourceType type = ResourceType::SampledImage;
     ShaderStage stage = ShaderStage::Fragment;
-    uint32_t count = 1; // array size; 1 for this iteration
+    uint32_t count = 1; // Fixed descriptor count, fully populated before use.
+    std::vector<ShaderStage> additionalStages; // Native Vulkan visibility union.
+    // For sampled-image/sampler arrays: explicit Metal buffer slot; binding.metal
+    // is the first [[id(N)]] inside that argument buffer. UINT32_MAX = direct.
+    uint32_t metalArgumentBuffer = UINT32_MAX;
 };
 
 // Pipeline layout description.
@@ -322,71 +329,16 @@ struct PipelineLayoutDescription {
 // Throws std::runtime_error on failure.
 inline void validatePushConstantRanges(const std::vector<PushConstantRange>& ranges)
 {
-    bool hasVertex = false;
-    bool hasFragment = false;
-    bool hasCompute = false;
-    bool hasRayGeneration = false;
-    bool hasMiss = false;
-    bool hasClosestHit = false;
-    for (const auto& r : ranges)
+    uint32_t seen = 0;
+    for (const auto& range : ranges)
     {
-        switch (r.stage)
+        const auto stage = static_cast<uint32_t>(range.stage);
+        if (stage > static_cast<uint32_t>(ShaderStage::AnyHit) ||
+            (seen & (1u << stage)) || range.size == 0 || range.size % 4 || range.offset % 4)
         {
-        case ShaderStage::Vertex:
-            if (hasVertex)
-            {
-                throw std::runtime_error(
-                    "PipelineLayout validation failed: more than one push constant range "
-                    "declared for Vertex stage.");
-            }
-            hasVertex = true;
-            break;
-        case ShaderStage::Fragment:
-            if (hasFragment)
-            {
-                throw std::runtime_error(
-                    "PipelineLayout validation failed: more than one push constant range "
-                    "declared for Fragment stage.");
-            }
-            hasFragment = true;
-            break;
-        case ShaderStage::Compute:
-            if (hasCompute)
-            {
-                throw std::runtime_error(
-                    "PipelineLayout validation failed: more than one push constant range "
-                    "declared for Compute stage.");
-            }
-            hasCompute = true;
-            break;
-        case ShaderStage::RayGeneration:
-            if (hasRayGeneration)
-            {
-                throw std::runtime_error(
-                    "PipelineLayout validation failed: more than one push constant range "
-                    "declared for RayGeneration stage.");
-            }
-            hasRayGeneration = true;
-            break;
-        case ShaderStage::Miss:
-            if (hasMiss)
-            {
-                throw std::runtime_error(
-                    "PipelineLayout validation failed: more than one push constant range "
-                    "declared for Miss stage.");
-            }
-            hasMiss = true;
-            break;
-        case ShaderStage::ClosestHit:
-            if (hasClosestHit)
-            {
-                throw std::runtime_error(
-                    "PipelineLayout validation failed: more than one push constant range "
-                    "declared for ClosestHit stage.");
-            }
-            hasClosestHit = true;
-            break;
+            throw std::runtime_error("Invalid or duplicate push constant stage/range");
         }
+        seen |= 1u << stage;
     }
 }
 
@@ -407,16 +359,18 @@ inline void validateMetalBufferBindings(const std::vector<ResourceBinding>& bind
     {
         bool isBufferType = (rb.type == ResourceType::UniformBuffer ||
                              rb.type == ResourceType::StorageBuffer ||
-                             rb.type == ResourceType::AccelerationStructure);
+                             rb.type == ResourceType::AccelerationStructure ||
+                             rb.metalArgumentBuffer != UINT32_MAX);
         if (!isBufferType)
         {
             continue;
         }
 
+        const auto metalIndex = rb.metalArgumentBuffer == UINT32_MAX ? rb.binding.metal : rb.metalArgumentBuffer;
         switch (rb.stage)
         {
         case ShaderStage::Vertex:
-            if (rb.binding.metal < 2)
+            if (metalIndex < 2)
             {
                 throw std::runtime_error(
                     "PipelineLayout validation failed: Metal vertex buffer resource binding "
@@ -428,7 +382,7 @@ inline void validateMetalBufferBindings(const std::vector<ResourceBinding>& bind
             }
             break;
         case ShaderStage::Fragment:
-            if (rb.binding.metal < 1)
+            if (metalIndex < 1)
             {
                 throw std::runtime_error(
                     "PipelineLayout validation failed: Metal fragment buffer resource binding "
@@ -439,7 +393,7 @@ inline void validateMetalBufferBindings(const std::vector<ResourceBinding>& bind
             }
             break;
         case ShaderStage::Compute:
-            if (rb.binding.metal < 1)
+            if (metalIndex < 1)
             {
                 throw std::runtime_error(
                     "PipelineLayout validation failed: Metal compute buffer resource binding "
@@ -452,7 +406,8 @@ inline void validateMetalBufferBindings(const std::vector<ResourceBinding>& bind
         case ShaderStage::RayGeneration:
         case ShaderStage::Miss:
         case ShaderStage::ClosestHit:
-            if (rb.binding.metal < 1)
+        case ShaderStage::AnyHit:
+            if (metalIndex < 1)
             {
                 throw std::runtime_error(
                     "PipelineLayout validation failed: Metal ray tracing buffer resource binding "
@@ -462,6 +417,104 @@ inline void validateMetalBufferBindings(const std::vector<ResourceBinding>& bind
                                                        "reserved for push constants.");
             }
             break;
+        }
+    }
+}
+
+// Enabled logical-device limits for fully populated sampled-resource arrays.
+// Limits include ordinary resources; callers reserve their other bindings first.
+struct ResourceArrayCapabilities {
+    bool nonUniformSampledResources = false;
+    uint32_t maxSampledImages = 0;
+    uint32_t maxSamplers = 0;
+    uint32_t maxResourcesPerStage = 0;
+    uint64_t maxStorageBufferRange = 0;
+
+    uint32_t profileCapacity(uint32_t reservedImages = 0, uint32_t reservedSamplers = 0,
+                             uint32_t reservedResources = 0) const
+    {
+        for (uint32_t count : {256u, 128u, 32u})
+        {
+            if (nonUniformSampledResources && uint64_t(count) + reservedImages <= maxSampledImages &&
+                uint64_t(count) + reservedSamplers <= maxSamplers &&
+                uint64_t(count) * 2 + reservedResources <= maxResourcesPerStage)
+            {
+                return count;
+            }
+        }
+        return 0;
+    }
+};
+
+// Arrays are sampled images/samplers only. Other resources remain scalar.
+inline void validateResourceArrays(const PipelineLayoutDescription& description,
+                                   const ResourceArrayCapabilities& caps)
+{
+    std::array<uint64_t, 7> images{}, samplers{}, resources{};
+    for (size_t i = 0; i < description.resourceBindings.size(); ++i)
+    {
+        const auto& rb = description.resourceBindings[i];
+        if (rb.count == 0 || (rb.count > 1 && rb.type != ResourceType::SampledImage && rb.type != ResourceType::Sampler))
+        {
+            throw std::invalid_argument("Only nonempty sampled-image/sampler arrays are supported");
+        }
+        if ((rb.count > 1 || rb.metalArgumentBuffer != UINT32_MAX) && !caps.nonUniformSampledResources)
+        {
+            throw std::runtime_error("Nonuniform sampled-resource arrays are unavailable");
+        }
+        for (size_t j = 0; j < i; ++j)
+        {
+            const auto& other = description.resourceBindings[j];
+            if (rb.set == other.set && rb.binding.vulkan == other.binding.vulkan)
+            {
+                throw std::invalid_argument("Duplicate Vulkan set/binding; use additionalStages for visibility");
+            }
+        }
+        auto addStage = [&](ShaderStage stage)
+        {
+            const auto index = static_cast<size_t>(stage);
+            if (index >= resources.size())
+            {
+                throw std::invalid_argument("Invalid resource shader stage");
+            }
+            resources[index] += rb.count;
+            images[index] += rb.type == ResourceType::SampledImage ? rb.count : 0;
+            samplers[index] += rb.type == ResourceType::Sampler ? rb.count : 0;
+        };
+        addStage(rb.stage);
+        for (auto stage : rb.additionalStages)
+        {
+            if (stage == rb.stage || std::count(rb.additionalStages.begin(), rb.additionalStages.end(), stage) != 1)
+            {
+                throw std::invalid_argument("Duplicate resource stage visibility");
+            }
+            addStage(stage);
+        }
+    }
+    // Enforce limits only when using the new array path, preserving scalar callers.
+    const bool arrays = std::any_of(description.resourceBindings.begin(), description.resourceBindings.end(),
+        [](const auto& rb)
+        {
+            return rb.count > 1 || rb.metalArgumentBuffer != UINT32_MAX;
+        });
+    if (arrays)
+    {
+        uint64_t totalImages = 0, totalSamplers = 0;
+        for (const auto& rb : description.resourceBindings)
+        {
+            totalImages += rb.type == ResourceType::SampledImage ? rb.count : 0;
+            totalSamplers += rb.type == ResourceType::Sampler ? rb.count : 0;
+        }
+        if (totalImages > caps.maxSampledImages || totalSamplers > caps.maxSamplers)
+        {
+            throw std::invalid_argument("Pipeline sampled-resource table exceeds device limits");
+        }
+        for (size_t i = 0; i < resources.size(); ++i)
+        {
+            if (images[i] > caps.maxSampledImages || samplers[i] > caps.maxSamplers || resources[i] > caps.maxResourcesPerStage)
+            {
+                throw std::invalid_argument("Pipeline resources exceed per-stage limits");
+            }
         }
     }
 }

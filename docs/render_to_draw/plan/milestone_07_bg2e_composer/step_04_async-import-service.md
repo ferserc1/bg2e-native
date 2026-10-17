@@ -46,3 +46,9 @@ Record actual API, ownership and verification in the milestone review. Follow [t
 ## M01-16 reviewed baseline
 
 Use actual delegate rendererGeneration and catalog generation with weak target references; add scene/job generation rather than treating those as the same identity. Direct Texture reload/updateSampler invalidates captured image/sampler pointers; rebuild extraction/bindings and reset effect/bake state before publication. Worker schema parsing must not implicitly invoke windowed UI or native upload. See [M01 review](../milestone_01_deferred_renderer/review.md).
+
+## M03-10 reviewed implementation requirement
+
+Keep scene/import job validity separate from renderer/catalog generations. After stopped adoption reload geometry identities, replace retained tracing/material snapshots, invalidate effect/SDK histories and rebind live settings/selection. Do not let asynchronous jobs retain a borrowed catalog target from a removed scene.
+
+Source and validation boundaries: [M03 technical review](../milestone_03_ray_tracing/review.md). Include these conditions in this step's implementation and exit checks.

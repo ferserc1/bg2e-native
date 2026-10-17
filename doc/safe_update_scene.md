@@ -248,3 +248,18 @@ next frame.
 The separate [draw renderer lifecycle](api/draw/RendererDeferred.md) and [live settings contract](api/draw/Settings.md)
 cover deferred scene ownership, public injection and queued safe changes.
 Production render behavior described above remains supported.
+
+## Experimental draw histories and settings
+
+Draw edits use DefaultRenderLoopDelegate::enqueueRendererUpdate with current
+renderer generation at the synchronized pre-acquisition boundary. Use the callback's
+Renderer::invalidateHistories before a possibly partial multi-object mutation,
+and request scene work; do not capture an old renderer pointer. The built-in
+signature detects many identities/value changes, but in-place uploads/custom shader
+changes and same-camera teleports still require explicit notification. Settings
+catalog/window edits use the same safe queued path. Renderer generation is not a
+replacement for document/import/bake-job generations.
+
+See [renderer lifecycle](api/draw/RendererDeferred.md), [settings](api/draw/Settings.md)
+and [temporal ownership](api/draw/TemporalAccumulator.md). This addition does not
+migrate production safeUpdateScene callers or create a draw bake scheduler.

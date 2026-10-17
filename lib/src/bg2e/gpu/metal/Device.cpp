@@ -36,6 +36,7 @@
 #include <bg2e/base/Log.hpp>
 
 #include <stdexcept>
+#include <algorithm>
 #include <memory>
 
 namespace bg2e {
@@ -66,6 +67,11 @@ void Device::create(gpu::Instance* /*instance*/, gpu::PhysicalDevice* physicalDe
     _device->retain();
     _renderingCapabilities = metalPhysDevice->properties()->rendering;
     _rayTracingCapabilities = metalPhysDevice->properties()->rayTracing;
+    const bool tier2 = _device->argumentBuffersSupport() == MTL::ArgumentBuffersTier2;
+    // Conservative engine ceilings, below Tier-2 native texture limits.
+    _resourceArrayCapabilities = {tier2, tier2 ? 256u : 0u,
+        tier2 ? static_cast<uint32_t>(std::min<NS::UInteger>(256, _device->maxArgumentBufferSamplerCount())) : 0u,
+        tier2 ? 1024u : 0u, _device->maxBufferLength()};
 
     auto* gfxQueue = _device->newCommandQueue();
     auto* presentQueue = _device->newCommandQueue();
@@ -125,6 +131,7 @@ void Device::cleanup()
         _device->release();
         _device = nullptr;
     }
+    _resourceArrayCapabilities = {};
     _renderingCapabilities = {};
     _rayTracingCapabilities = {};
 }
@@ -183,7 +190,7 @@ std::shared_ptr<gpu::Sampler> Device::createSampler(const gpu::SamplerDescriptio
 std::shared_ptr<gpu::ResourceSet> Device::createResourceSet(gpu::PipelineLayout* layout, uint32_t setIndex, const std::string& /*debugName*/)
 {
     auto* metalLayout = dynamic_cast<metal::PipelineLayout*>(layout);
-    if (!metalLayout)
+    if (!metalLayout || metalLayout->device() != this || !metalLayout->isValid())
     {
         throw std::runtime_error("metal::Device::createResourceSet: invalid PipelineLayout");
     }
@@ -256,9 +263,11 @@ void Device::create(gpu::Instance*, gpu::PhysicalDevice*, gpu::Surface*)
 void Device::cleanup()
 {
 }
+
 void Device::waitIdle()
 {
 }
+
 bool Device::isValid() const
 {
     return false;
@@ -305,7 +314,7 @@ std::shared_ptr<gpu::Sampler> Device::createSampler(const gpu::SamplerDescriptio
 std::shared_ptr<gpu::ResourceSet> Device::createResourceSet(gpu::PipelineLayout* layout, uint32_t setIndex, const std::string& /*debugName*/)
 {
     auto* metalLayout = dynamic_cast<metal::PipelineLayout*>(layout);
-    if (!metalLayout)
+    if (!metalLayout || metalLayout->device() != this || !metalLayout->isValid())
     {
         throw std::runtime_error("metal::Device::createResourceSet: invalid PipelineLayout");
     }

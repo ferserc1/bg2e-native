@@ -56,3 +56,38 @@ Reuse public M01 pipeline/environment/query primitives, canonical/dense identity
 ## Documentation closure order
 
 The technical review now hands off to [M03-11](step_11_documentation.md), not directly to the next milestone. Earlier next-milestone handoff statements are historical and superseded by this order. See [documentation policy](../documentation-policy.md).
+
+## M03-01 checkpoint delivery
+
+[rt-design.md](rt-design.md) records the source comparison and recommended native execution, packed geometry, bounded resource arrays, cutout/transparency and mutation/history contracts. The project lead accepted the recommendation by continuation to M03-02. No new GPU API, shader or effect is delivered by M03-01. Pending steps and M04/M08 consumers carry this dependency. See [rt-gpu-data.md](rt-gpu-data.md) for the delivered M03-02 primitive implementation and validation limits.
+
+## M03-03 implemented noise boundary
+
+[blue-noise.md](blue-noise.md) records CPU rank views/sampling, Device-backed shared RGBA8 2D atlas residency and paired native helpers, with hash fallback and caller-owned sample sequencing. General physical image arrays are not introduced by this layout. M03-04 and later effects/bake use these actual contracts.
+
+## M03-05 actual GI handoff
+
+[rtgi.md](rtgi.md) records public RTGlobalIllumination, native Vulkan raygen/miss/closest-hit/any-hit with depth one, Metal compute queries, shared material tables and explicit receivers. RGBA16 output is incoming diffuse radiance/pi before receiver albedo with alpha validity; invalid zero restores diffuse IBL. RendererDeferred selects IBL/AO/GI independently of retained settings, preserves specular IBL and supports scaled GI inputs. History/filter/UI and baked presence policy remain pending. Reuse this exact normalization and matching-capacity snapshot ownership.
+
+## M03-06 actual reflection handoff
+
+Use [rt-reflections.md](rt-reflections.md): public RTReflections reuses retained scene tables and camera/explicit surfaces, with receiver roughness and camera position. Quality scales display output independently of G-buffer/internal/FSR extent. RGBA16 RGB is mean geometry-hit radiance before receiver BRDF, unpremultiplied; alpha is finite accepted hits/actualSamples. Preserve fractional confidence and rejected masks separately from GI binary validity and AO scalar visibility. The lighting pass blends prefiltered IBL with traced radiance using confidence and applies split-sum BRDF once. FullscreenPass supports an optional independent Metal sampler map; reflection texture16 shares nearest sampler0. Histories/filter/UI remain pending.
+
+## M03-07 actual temporal handoff
+
+Use [temporal.md](temporal.md): public TemporalAccumulator returns owned sampled scalar/HDR output or borrowed raw pass-through; SurfaceInputs/TemporalView expose inputs without private renderer access. Keys separate signal/view/layer, sceneFrameNumber advances actual work, maxFrames bounds per-pixel arithmetic/rolling/frozen accumulation. GI binary validity and reflection fractional confidence remain distinct. Renderer::invalidateHistories coordinates SDK and engine histories; resetUpscaler forwards for existing adapters. Exact extraction/settings signatures detect identity/value changes; in-place uploads/custom shaders and same-camera teleports require app notification. Object motion conservatively resets until previous-object vectors are added. Fresh history images and per-slot retained versions avoid overwrite; same ordered queue/submission discipline is required.
+
+## M03-08 actual filter handoff
+
+Use [denoise.md](denoise.md): RendererDeferred injects/exposes DenoiseFilter and resolves tracing -> temporal -> spatial -> lighting. Inputs reuse SurfaceInputs; output keeps scalar R16/HDR RGBA16 and independent source extent. GI validity and reflection confidence are explicit; filtered RGB stays unpremultiplied and never replaces temporal history. Camera thresholds use linear view Z, explicit profiles use world distance. Virtual settingsType/settingsInstance accessors support live catalog binding; M03-09 must register real controls/preferences and avoid copied settings values. Unsupported profiles return borrowed source; fresh output owners and per-slot descriptors remain alive through completion.
+
+## M03-10 technical review delivery
+
+[Actual technical review](review.md) records source contracts, corrected UI integration, example-specific active GI/reflection defaults, verification limits and edited pending M04–M10 steps. Await lead acceptance, then execute M03-11 cumulative maintained documentation before M04.
+
+## Final M03 step delivered
+
+[M03-11 documentation closure](documentation.md) updates maintained references,
+tutorials and app/build guidance cumulatively through M03. This is the last step
+in the ordered table; M03-10 is the accepted technical review. Await M03-11 lead
+acceptance before entering M04-01; no additional M03 implementation is scheduled.

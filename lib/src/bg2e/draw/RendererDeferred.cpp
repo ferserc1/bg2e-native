@@ -26,6 +26,7 @@
 #include <bg2e/scene/ResizeViewportVisitor.hpp>
 #include <algorithm>
 #include <cmath>
+#include <set>
 
 namespace bg2e::draw {
 namespace {
@@ -114,24 +115,113 @@ void RendererDeferred::initialize(Engine& engine, RendererConfiguration configur
     }
     _shadowConfiguration = {_configuration.outputExtent, _configuration.internalExtent, pipeline::softShadowContract(depth)};
     _configuration.softShadows->initialize(engine, _shadowConfiguration);
+    if (!_configuration.ambientOcclusion)
+    {
+        pipeline::RTAOConfiguration aoConfiguration;
+        aoConfiguration.shaderRoot = _shaderRoot;
+        _configuration.ambientOcclusion = std::make_shared<pipeline::RTAmbientOcclusion>(aoConfiguration);
+    }
+    _configuration.ambientOcclusion->initialize(*engine.device(),engine.backendType(),count);
+    if (!_configuration.globalIllumination)
+    {
+        pipeline::RTGIConfiguration giConfiguration;
+        giConfiguration.shaderRoot = _shaderRoot;
+        _configuration.globalIllumination = std::make_shared<pipeline::RTGlobalIllumination>(giConfiguration);
+    }
+    _configuration.globalIllumination->initialize(*engine.device(),engine.backendType(),count);
+    if (!_configuration.reflections)
+    {
+        pipeline::RTReflectionConfiguration configuration;
+        configuration.shaderRoot = _shaderRoot;
+        _configuration.reflections = std::make_shared<pipeline::RTReflections>(configuration);
+    }
+    _configuration.reflections->initialize(*engine.device(),engine.backendType(),count);
+    if (!_configuration.temporal)
+    {
+        pipeline::TemporalConfiguration configuration;
+        configuration.shaderRoot = _shaderRoot;
+        _configuration.temporal = std::make_shared<pipeline::TemporalAccumulator>(configuration);
+    }
+    _configuration.temporal->initialize(*engine.device(),engine.backendType(),count);
+    if (!_configuration.denoise)
+    {
+        pipeline::DenoiseConfiguration configuration;
+        configuration.shaderRoot = _shaderRoot;
+        _configuration.denoise = std::make_shared<pipeline::DenoiseFilter>(configuration);
+    }
+    _configuration.denoise->initialize(*engine.device(),engine.backendType(),count);
+    if (_configuration.finalProcessor)
+    {
+        _configuration.finalProcessor->initialize(engine,_configuration.outputFormat,count);
+    }
+    const auto ao = _configuration.ambientOcclusion;
+    const auto gi = _configuration.globalIllumination;
+    const auto reflection = _configuration.reflections;
+    if ((ao->available() && !ao->noise()) || (gi->available() && !gi->noise()) ||
+        (reflection->available() && !reflection->noise()))
+    {
+        try
+        {
+            _sharedNoise = std::make_shared<utils::BlueNoise>(*engine.device());
+            _sharedNoise->build();
+            if (!ao->noise())
+            {
+                ao->setNoise(_sharedNoise);
+            }
+            if (!gi->noise())
+            {
+                gi->setNoise(_sharedNoise);
+            }
+            if (!reflection->noise())
+            {
+                reflection->setNoise(_sharedNoise);
+            }
+            _noiseStatus = "Shared blue noise ready; individual controls select atlas or hash";
+        }
+        catch (const std::exception& error)
+        {
+            _noiseStatus = std::string("Shared blue noise unavailable: ")+error.what();
+            _sharedNoise.reset();
+        }
+    }
+    setIndirectLightingMode(_configuration.indirectLighting);
     // An explicitly injected unshadowed lighting contract opts this graph out
     // without forcing an incompatible replacement on query-capable devices.
     const bool unshadowedReplacement = std::any_of(_configuration.layers.begin(), _configuration.layers.end(), [](const auto& selection)
     {
-        return selection.configuration.contract.shaderInterface == "draw.raster.deferred.v1";
+        const auto& id = selection.configuration.contract.shaderInterface;
+        return id.find("draw.raster.deferred") == 0 && id.find(".shadows.") == std::string::npos;
     });
     _queryShadows = _configuration.softShadows->available() && !unshadowedReplacement;
     const bool queryShadows = _queryShadows;
+    const bool legacyLighting = std::any_of(_configuration.layers.begin(),_configuration.layers.end(),[](const auto& selection)
+    {
+        const auto& id = selection.configuration.contract.shaderInterface;
+        return id.find("draw.raster.deferred") == 0 && id.find(".ao.") == std::string::npos;
+    });
+    _ambientOcclusion = _configuration.ambientOcclusion->available() && !legacyLighting;
+    const bool oldLighting = std::any_of(_configuration.layers.begin(),_configuration.layers.end(),[](const auto& selection)
+    {
+        const auto& id = selection.configuration.contract.shaderInterface;
+        return id.find("draw.raster.deferred") == 0 && id.find(".gi.") == std::string::npos;
+    });
+    _globalIllumination = _configuration.globalIllumination->available() && !oldLighting;
+    const bool oldReflectionLighting = std::any_of(_configuration.layers.begin(),_configuration.layers.end(),[](const auto& selection)
+    {
+        const auto& id = selection.configuration.contract.shaderInterface;
+        return id.find("draw.raster.deferred") == 0 && id.find(".reflections.") == std::string::npos;
+    });
+    _reflections = _configuration.reflections->available() && !oldReflectionLighting;
     auto supplied = std::move(_configuration.layers);
     _configuration.layers.clear();
     auto sky = std::make_shared<environment::SkyboxRenderer>();
     sky->settings().shaderRoot = _shaderRoot;
     std::vector<std::shared_ptr<pipeline::RenderLayer>> defaults{
         std::make_shared<pipeline::GBuffer>(_shaderRoot),
-        std::make_shared<pipeline::DeferredLayer>(_shaderRoot, count, depth, queryShadows),
+        std::make_shared<pipeline::DeferredLayer>(_shaderRoot, count, depth, queryShadows, _ambientOcclusion, _globalIllumination, _reflections),
         std::make_shared<pipeline::FinalLayer>(_shaderRoot, count), sky};
     const auto hdr = gpu::PixelFormat::R16G16B16A16_SFLOAT;
-    std::vector<pipeline::PassContract> contracts{pipeline::gbufferContract(depth), pipeline::deferredContract(depth, queryShadows),
+    std::vector<pipeline::PassContract> contracts{pipeline::gbufferContract(depth), pipeline::deferredContract(depth, queryShadows, _ambientOcclusion, _globalIllumination, _reflections),
         pipeline::finalContract(_configuration.outputFormat, depth, true),
         {"draw.environment.skybox.v1", {}, {{"color", hdr, pipeline::ExtentDomain::Internal, gpu::ImageUsage::ColorAttachment | gpu::ImageUsage::Sampled},
             {"depth", depth, pipeline::ExtentDomain::Internal, gpu::ImageUsage::DepthStencil}}}};
@@ -167,7 +257,7 @@ void RendererDeferred::initialize(Engine& engine, RendererConfiguration configur
     }
     Renderer::validateConfiguration(_configuration);
     _drawLayout = engine.device()->createPipelineLayout(drawBindingLayout());
-    _lightingLayout = engine.device()->createPipelineLayout(pipeline::deferredBindingLayout(queryShadows));
+    _lightingLayout = engine.device()->createPipelineLayout(pipeline::deferredBindingLayout(queryShadows, _ambientOcclusion, _globalIllumination, _reflections));
     _frame.initialize(engine, _lightingLayout, count);
     _object.initialize(engine, _drawLayout, count);
     _lights.initialize(engine, _lightingLayout, count);
@@ -235,6 +325,32 @@ void RendererDeferred::buildTargets()
                 next.shadows.push_back(_engine->device()->createImage(description));
             }
         }
+        if (_ambientOcclusion)
+        {
+            gpu::ImageDescription description;
+            description.size = _configuration.ambientOcclusion->outputExtent(size);
+            description.format = gpu::PixelFormat::R16_SFLOAT;
+            description.usage = gpu::ImageUsage::Storage | gpu::ImageUsage::Sampled | gpu::ImageUsage::ColorAttachment;
+            description.debugName = "draw scalar ambient visibility";
+            next.ao = _engine->device()->createImage(description);
+        }
+        if (_globalIllumination)
+        {
+            gpu::ImageDescription description;
+            description.size = _configuration.globalIllumination->outputExtent(size);
+            description.format = gpu::PixelFormat::R16G16B16A16_SFLOAT;
+            description.usage = gpu::ImageUsage::Sampled | gpu::ImageUsage::Storage | gpu::ImageUsage::ColorAttachment;
+            next.gi = _engine->device()->createImage(description);
+        }
+        if (_reflections)
+        {
+            gpu::ImageDescription description;
+            description.size = _configuration.reflections->outputExtent(_configuration.outputExtent);
+            description.format = gpu::PixelFormat::R16G16B16A16_SFLOAT;
+            description.usage = gpu::ImageUsage::Sampled | gpu::ImageUsage::Storage | gpu::ImageUsage::ColorAttachment;
+            description.debugName = "draw output-relative reflected radiance/confidence";
+            next.reflections = _engine->device()->createImage(description);
+        }
         slot = std::move(next);
     }
 }
@@ -268,6 +384,10 @@ void RendererDeferred::attachScene(std::shared_ptr<scene::Node> sceneRoot)
         selection.layer->attachScene(_scene);
     }
     _configuration.softShadows->attachScene(_scene);
+    _configuration.ambientOcclusion->reset();
+    _configuration.globalIllumination->reset();
+    _configuration.reflections->reset();
+    invalidateHistories();
     for (const auto& overlay : _configuration.overlays)
     {
         overlay->attachScene(_scene);
@@ -295,6 +415,10 @@ void RendererDeferred::resize(gpu::Size2D output, gpu::Size2D internal)
     _shadowConfiguration.outputExtent = output;
     _shadowConfiguration.internalExtent = internal;
     _configuration.softShadows->resize(_shadowConfiguration);
+    _configuration.ambientOcclusion->reset();
+    _configuration.globalIllumination->reset();
+    _configuration.reflections->reset();
+    invalidateHistories();
     for (const auto& overlay : _configuration.overlays)
     {
         overlay->resize(overlayConfiguration());
@@ -338,6 +462,7 @@ bool RendererDeferred::prepareFrame()
         }
         std::dynamic_pointer_cast<environment::SkyboxPass>(_configuration.layers[3].layer)->setEnvironment(next);
         _environment = std::move(next);
+        invalidateHistories();
         _environmentError.clear();
         return true;
     }
@@ -377,6 +502,7 @@ void RendererDeferred::update(const FrameContext& frame)
         _scene->accept(&inputs);
         if (!_explicitCamera)
         {
+            _temporalCameraIdentity = inputs.camera;
             _view = inputs.camera ? inputs.camera->viewMatrix() : glm::mat4{1};
             _projection = inputs.camera ? inputs.camera->projectionMatrix() : glm::mat4{1};
         }
@@ -386,9 +512,18 @@ void RendererDeferred::update(const FrameContext& frame)
     else
     {
         slot.queue.beginFrame(*_engine);
+        _temporalCameraIdentity = nullptr;
     }
     slot.queue.sort(glm::vec3(glm::inverse(_view)[3]));
     _queue = slot.queue;
+    auto signature = temporalSignature(slot.queue);
+    if (signature != _historySignature)
+    {
+        invalidateHistories();
+        _historySignature = std::move(signature);
+    }
+    _configuration.temporal->beginFrame(frame.frameSlot,frame.frameNumber,frame.sceneFrameNumber);
+    _configuration.denoise->beginFrame(frame.frameSlot,frame.frameNumber);
     slot.camera = _upscaleCamera;
     slot.camera.view = _view;
     slot.camera.projection = _projection;
@@ -412,6 +547,32 @@ void RendererDeferred::update(const FrameContext& frame)
     if (_queryShadows)
     {
         _configuration.softShadows->prepare(frame, slot.queue, _view, slot.jitteredProjection);
+    }
+    if (_ambientOcclusion)
+    {
+        if (_configuration.indirectLighting == IndirectLightingMode::AmbientOcclusion)
+        {
+            _configuration.ambientOcclusion->prepare(frame.frameSlot,frame.frameNumber,slot.queue);
+        }
+        else
+        {
+            _configuration.ambientOcclusion->prepareSnapshot(frame.frameSlot,frame.frameNumber,nullptr);
+        }
+    }
+    if (_globalIllumination)
+    {
+        if (_configuration.indirectLighting == IndirectLightingMode::GlobalIllumination)
+        {
+            _configuration.globalIllumination->prepare(frame.frameSlot,frame.frameNumber,slot.queue);
+        }
+        else
+        {
+            _configuration.globalIllumination->prepareSnapshot(frame.frameSlot,frame.frameNumber,nullptr);
+        }
+    }
+    if (_reflections)
+    {
+        _configuration.reflections->prepare(frame.frameSlot,frame.frameNumber,slot.queue);
     }
     std::dynamic_pointer_cast<environment::SkyboxPass>(_configuration.layers[3].layer)->setCamera(_view, slot.jitteredProjection);
     for (auto& selection : _configuration.layers)
@@ -454,8 +615,30 @@ void RendererDeferred::record(const FrameContext& frame)
     pipeline::RenderTarget::copy(frame.commandBuffer, *slot.gbuffer[6], *slot.opaqueDepth);
     pipeline::RenderTarget::clear(frame.commandBuffer, *slot.colorA);
     dispatch(3, frame, {}, {{"color", slot.colorA.get()}, {"depth", slot.opaqueDepth.get()}});
-    auto composite = [&](gpu::Image* background, gpu::Image* output)
+    auto composite = [&](gpu::Image* background, gpu::Image* output, uint64_t layer)
     {
+        auto resolveSignal = [&](pipeline::TemporalSignal kind, gpu::Image& signal, gpu::Image* material = nullptr,
+            float maxRoughness = 1.0f)
+        {
+            pipeline::SurfaceInputs surface;
+            surface.normal = slot.gbuffer[1].get();
+            surface.depthOrPosition = slot.gbuffer[6].get();
+            surface.inverseViewProjection = glm::inverse(slot.jitteredProjection*_view);
+            const pipeline::TemporalView view{_view,_projection,slot.jitteredProjection,true};
+            const auto accumulated = _configuration.temporal->record({frame.commandBuffer,frame.frameSlot,frame.frameNumber,
+                frame.sceneFrameNumber,_historyGeneration,{kind,0,layer},signal,surface,view,material,maxRoughness});
+            pipeline::DenoiseSignal filteredKind = pipeline::DenoiseSignal::Visibility;
+            if (kind == pipeline::TemporalSignal::DiffuseRadiance)
+            {
+                filteredKind = pipeline::DenoiseSignal::DiffuseRadiance;
+            }
+            else if (kind == pipeline::TemporalSignal::ReflectedRadiance)
+            {
+                filteredKind = pipeline::DenoiseSignal::ReflectedRadiance;
+            }
+            return _configuration.denoise->record({frame.commandBuffer,frame.frameSlot,frame.frameNumber,
+                {filteredKind,0,layer},*accumulated.image,surface,_view,material,maxRoughness}).image;
+        };
         auto inputs = gbuffer;
         inputs.push_back({"background", background});
         if (_queryShadows)
@@ -466,9 +649,64 @@ void RendererDeferred::record(const FrameContext& frame)
             Renderer::recordLayer(selection, {frame, selection.configuration, sources, visibility, _scene.get(), &raster});
             inputs.insert(inputs.end(), visibility.begin(), visibility.end());
         }
+        if (_ambientOcclusion)
+        {
+            pipeline::SurfaceInputs surface;
+            surface.normal = slot.gbuffer[1].get();
+            surface.depthOrPosition = slot.gbuffer[6].get();
+            surface.inverseViewProjection = glm::inverse(slot.jitteredProjection*_view);
+            _configuration.ambientOcclusion->record({frame.commandBuffer,frame.frameSlot,frame.frameNumber,
+                uint32_t(frame.sceneFrameNumber),surface,*slot.ao});
+            auto* signal = slot.ao.get();
+            if (_configuration.indirectLighting == IndirectLightingMode::AmbientOcclusion && _configuration.ambientOcclusion->enabled())
+            {
+                signal = resolveSignal(pipeline::TemporalSignal::Visibility,*signal);
+            }
+            inputs.push_back({"ambientOcclusion",signal});
+        }
+        if (_globalIllumination)
+        {
+            if (_configuration.indirectLighting == IndirectLightingMode::GlobalIllumination)
+            {
+                pipeline::SurfaceInputs surface;
+                surface.normal = slot.gbuffer[1].get();
+                surface.depthOrPosition = slot.gbuffer[6].get();
+                surface.inverseViewProjection = glm::inverse(slot.jitteredProjection*_view);
+                _configuration.globalIllumination->record({frame.commandBuffer,frame.frameSlot,frame.frameNumber,
+                    uint32_t(frame.sceneFrameNumber),surface,*slot.gi,slot.queue.lights(),_environment});
+            }
+            else
+            {
+                pipeline::RenderTarget::clear(frame.commandBuffer,*slot.gi,{0,0,0,0});
+            }
+            auto* signal = slot.gi.get();
+            if (_configuration.indirectLighting == IndirectLightingMode::GlobalIllumination && _configuration.globalIllumination->enabled())
+            {
+                signal = resolveSignal(pipeline::TemporalSignal::DiffuseRadiance,*signal);
+            }
+            inputs.push_back({"globalIllumination",signal});
+        }
+        if (_reflections)
+        {
+            pipeline::SurfaceInputs surface;
+            surface.normal = slot.gbuffer[1].get();
+            surface.depthOrPosition = slot.gbuffer[6].get();
+            surface.inverseViewProjection = glm::inverse(slot.jitteredProjection*_view);
+            const auto camera = glm::vec3(glm::inverse(_view)[3]);
+            _configuration.reflections->record({frame.commandBuffer,frame.frameSlot,frame.frameNumber,
+                uint32_t(frame.sceneFrameNumber),surface,*slot.reflections,*slot.gbuffer[2],
+                _configuration.outputExtent,camera,slot.queue.lights(),_environment});
+            auto* signal = slot.reflections.get();
+            if (_configuration.reflections->enabled())
+            {
+                signal = resolveSignal(pipeline::TemporalSignal::ReflectedRadiance,*signal,slot.gbuffer[2].get(),
+                    _configuration.reflections->maxRoughness());
+            }
+            inputs.push_back({"reflections",signal});
+        }
         dispatch(1, frame, inputs, {{"color", output}}, &raster);
     };
-    composite(slot.colorA.get(), slot.colorB.get());
+    composite(slot.colorA.get(), slot.colorB.get(),0);
     gpu::Image* current = slot.colorB.get();
     gpu::Image* next = slot.colorA.get();
     // Merge both transparent classes into one stable far-to-near order.
@@ -496,7 +734,7 @@ void RendererDeferred::record(const FrameContext& frame)
         pipeline::RenderTarget::copy(frame.commandBuffer, *slot.opaqueDepth, *slot.gbuffer[6]);
         raster.item = item;
         dispatch(0, frame, {}, gbuffer, &raster);
-        composite(current, next);
+        composite(current, next,(uint64_t(item->objectId)<<32)|item->submeshIndex);
         std::swap(current, next);
     }
     UpscalerInput upscale{frame, *current, *slot.opaqueDepth, *slot.reconstructed, slot.camera, slot.jitteredProjection};
@@ -507,6 +745,14 @@ void RendererDeferred::record(const FrameContext& frame)
     std::vector<pipeline::ImageBinding> finalInputs{{"color", slot.reconstructed.get()}};
     finalInputs.insert(finalInputs.end(), gbuffer.begin(), gbuffer.end());
     dispatch(2, frame, finalInputs, {{"output", &frame.colorTarget}}, &raster);
+    if (_configuration.finalProcessor)
+    {
+        _configuration.finalProcessor->record(frame);
+        if (frame.commandBuffer.hasActiveScope())
+        {
+            throw std::logic_error("Final processor left an active command scope");
+        }
+    }
     const pipeline::OverlayContext overlayContext{frame, _scene.get(), slot.queue, slot.camera.view, slot.camera.projection};
     for (const auto& overlay : _configuration.overlays)
     {
@@ -561,6 +807,16 @@ std::shared_ptr<pipeline::SoftShadowPass> RendererDeferred::softShadows() const
     return _configuration.softShadows;
 }
 
+std::shared_ptr<pipeline::RTAmbientOcclusion> RendererDeferred::ambientOcclusion() const
+{
+    return _configuration.ambientOcclusion;
+}
+
+bool RendererDeferred::usesAmbientOcclusion() const
+{
+    return _ambientOcclusion;
+}
+
 bool RendererDeferred::inspectOpaqueLayer() const
 {
     return _inspectOpaqueLayer;
@@ -597,7 +853,13 @@ UpscalerConfiguration RendererDeferred::upscaleConfiguration() const
 
 bool RendererDeferred::needsReconfiguration() const
 {
-    return _configuration.upscaler && _configuration.upscaler->needsRebuild();
+    const bool reflectionResize = _reflections && !_targets.empty() && _targets.front().reflections &&
+        _targets.front().reflections->size() != _configuration.reflections->outputExtent(_configuration.outputExtent);
+    const bool giResize = _globalIllumination && !_targets.empty() && _targets.front().gi &&
+        _targets.front().gi->size() != _configuration.globalIllumination->outputExtent(_configuration.internalExtent);
+    const bool aoResize = _ambientOcclusion && !_targets.empty() && _targets.front().ao &&
+        _targets.front().ao->size() != _configuration.ambientOcclusion->outputExtent(_configuration.internalExtent);
+    return reflectionResize || giResize || aoResize || (_configuration.upscaler && _configuration.upscaler->needsRebuild());
 }
 
 std::shared_ptr<Upscaler> RendererDeferred::upscaler() const
@@ -612,10 +874,34 @@ std::shared_ptr<ResolutionSettings> RendererDeferred::resolution() const
 
 void RendererDeferred::resetUpscaler()
 {
+    invalidateHistories();
+}
+
+void RendererDeferred::invalidateHistories()
+{
+    if (_historyGeneration == UINT64_MAX)
+    {
+        throw std::overflow_error("Renderer history generation exhausted");
+    }
+    ++_historyGeneration;
+    if (_configuration.temporal)
+    {
+        _configuration.temporal->invalidate();
+    }
     if (_configuration.upscaler)
     {
         _configuration.upscaler->reset();
     }
+}
+
+uint64_t RendererDeferred::historyGeneration() const
+{
+    return _historyGeneration;
+}
+
+std::shared_ptr<pipeline::TemporalAccumulator> RendererDeferred::temporal() const
+{
+    return _configuration.temporal;
 }
 
 void RendererDeferred::setCameraParameters(float nearPlane, float farPlane, float fov)
@@ -642,6 +928,10 @@ void RendererDeferred::cleanup()
         _configuration.overlays.at(i - 1)->cleanup();
     }
     _initializedOverlays = 0;
+    if (_configuration.finalProcessor)
+    {
+        _configuration.finalProcessor->cleanup();
+    }
     for (auto& selection : _configuration.layers)
     {
         selection.layer->cleanup();
@@ -649,6 +939,10 @@ void RendererDeferred::cleanup()
     if (_configuration.softShadows)
     {
         _configuration.softShadows->cleanup();
+    }
+    if (_configuration.ambientOcclusion)
+    {
+        _configuration.ambientOcclusion->cleanup();
     }
     if (_configuration.upscaler)
     {
@@ -661,6 +955,28 @@ void RendererDeferred::cleanup()
     }
     _shadowConfiguration = {};
     _queryShadows = false;
+    if (_configuration.globalIllumination)
+    {
+        _configuration.globalIllumination->cleanup();
+    }
+    if (_configuration.reflections)
+    {
+        _configuration.reflections->cleanup();
+    }
+    if (_configuration.temporal)
+    {
+        _configuration.temporal->cleanup();
+    }
+    if (_configuration.denoise)
+    {
+        _configuration.denoise->cleanup();
+    }
+    _historySignature.clear();
+    _ambientOcclusion = false;
+    _globalIllumination = false;
+    _reflections = false;
+    _sharedNoise.reset();
+    _noiseStatus = "No shared atlas allocated; effects use injected noise or hash";
     _frame.cleanup();
     _object.cleanup();
     _lights.cleanup();
@@ -680,4 +996,186 @@ void RendererDeferred::cleanup()
     _environmentError.clear();
     _engine = nullptr;
 }
+
+std::shared_ptr<pipeline::RTGlobalIllumination> RendererDeferred::globalIllumination() const
+{
+    return _configuration.globalIllumination;
+}
+
+bool RendererDeferred::usesGlobalIllumination() const
+{
+    return _globalIllumination;
+}
+
+IndirectLightingMode RendererDeferred::indirectLightingMode() const
+{
+    return _configuration.indirectLighting;
+}
+
+void RendererDeferred::setIndirectLightingMode(IndirectLightingMode value)
+{
+    if (uint32_t(value) > uint32_t(IndirectLightingMode::GlobalIllumination))
+    {
+        throw std::invalid_argument("Unknown indirect lighting mode");
+    }
+    _configuration.indirectLighting = value;
+}
+
+std::shared_ptr<pipeline::RTReflections> RendererDeferred::reflections() const
+{
+    return _configuration.reflections;
+}
+
+bool RendererDeferred::usesReflections() const
+{
+    return _reflections;
+}
+
+std::vector<uint8_t> RendererDeferred::temporalSignature(const RenderQueue& queue) const
+{
+    std::vector<uint8_t> bytes;
+    auto append = [&](const auto& value)
+    {
+        const auto* first = reinterpret_cast<const uint8_t*>(&value);
+        bytes.insert(bytes.end(),first,first+sizeof(value));
+    };
+    auto pointer = [&](const auto* value)
+    {
+        append(reinterpret_cast<uintptr_t>(value));
+    };
+    append(_projection);
+    append(_explicitCamera);
+    pointer(_temporalCameraIdentity);
+    append(_configuration.outputExtent.width);
+    append(_configuration.outputExtent.height);
+    append(_configuration.internalExtent.width);
+    append(_configuration.internalExtent.height);
+    append(_configuration.indirectLighting);
+    pointer(_configuration.upscaler.get());
+    const auto requirements = _configuration.upscaler->requirements();
+    append(requirements.opaqueDepth);
+    append(requirements.cameraMotion);
+    append(requirements.jitter);
+    append(requirements.storageOutput);
+    const bool correspondenceNeeded = _configuration.temporal->available() && _configuration.temporal->settings().enabled &&
+        ((_ambientOcclusion && _configuration.ambientOcclusion->enabled() && _configuration.indirectLighting == IndirectLightingMode::AmbientOcclusion) ||
+         (_globalIllumination && _configuration.globalIllumination->enabled() && _configuration.indirectLighting == IndirectLightingMode::GlobalIllumination) ||
+         (_reflections && _configuration.reflections->enabled()));
+    std::set<std::pair<std::string,uint32_t>> correspondence;
+    for (const auto& item : queue.items())
+    {
+        if (correspondenceNeeded && (item.nodeId.empty() || !correspondence.emplace(item.nodeId,item.submeshIndex).second))
+        {
+            throw std::invalid_argument("Temporal correspondence requires unique nonempty node/submesh identities");
+        }
+        append(item.objectId);
+        append(item.submeshIndex);
+        append(item.nodeId.size());
+        bytes.insert(bytes.end(),item.nodeId.begin(),item.nodeId.end());
+        pointer(item.drawMesh.get());
+        pointer(item.tracingMesh.get());
+        pointer(item.drawMaterial.get());
+        append(item.worldMatrix);
+        append(item.materialData);
+        append(item.rayTracingEnabled);
+        for (uint32_t i = 0; i < 6; ++i)
+        {
+            pointer(item.textureImages[i]);
+            pointer(item.textureSamplers[i]);
+        }
+    }
+    append(queue.lights());
+    pointer(_environment.get());
+    if (_environment)
+    {
+        pointer(_environment->sky.get());
+        pointer(_environment->irradiance.get());
+        pointer(_environment->prefilteredSpecular.get());
+        pointer(_environment->brdf.get());
+        pointer(_environment->sampler.get());
+        append(_environment->skyboxBlur);
+        append(_environment->skyboxVisible);
+    }
+    auto noise = [&](const auto& owner)
+    {
+        pointer(owner.get());
+        if (owner && owner->isReady())
+        {
+            pointer(owner->image().get());
+            pointer(owner->sampler().get());
+            append(owner->shaderMetadata());
+        }
+    };
+    const auto& ao = _configuration.ambientOcclusion->settings();
+    append(ao.enabled);
+    append(ao.quality);
+    append(ao.sampleCount);
+    append(ao.bounceCount);
+    append(ao.radius);
+    append(ao.bias);
+    append(ao.falloff);
+    append(ao.bounceAttenuation);
+    append(ao.useBlueNoise);
+    noise(_configuration.ambientOcclusion->noise());
+    const auto& gi = _configuration.globalIllumination->settings();
+    append(gi.enabled);
+    append(gi.quality);
+    append(gi.sampleCount);
+    append(gi.bounceCount);
+    append(gi.bias);
+    append(gi.maxDistance);
+    append(gi.shadowSamples);
+    append(gi.useShadows);
+    append(gi.useBlueNoise);
+    noise(_configuration.globalIllumination->noise());
+    const auto& reflection = _configuration.reflections->settings();
+    append(reflection.enabled);
+    append(reflection.quality);
+    append(reflection.sampleCount);
+    append(reflection.bias);
+    append(reflection.maxDistance);
+    append(reflection.maxRoughness);
+    append(reflection.roughnessSpread);
+    append(reflection.shadowSamples);
+    append(reflection.useShadows);
+    append(reflection.useBlueNoise);
+    noise(_configuration.reflections->noise());
+    const auto& shadows = _configuration.softShadows->settings();
+    append(shadows.enabled);
+    append(shadows.bias);
+    append(shadows.directionalDistance);
+    append(shadows.maxSamples);
+    const auto& temporal = _configuration.temporal->settings();
+    append(temporal.enabled);
+    append(temporal.maxFrames);
+    append(temporal.freezeAtLimit);
+    append(temporal.absolutePositionThreshold);
+    append(temporal.relativePositionThreshold);
+    append(temporal.normalThreshold);
+    // Use virtual getters so injected filter controls report their effective values.
+    append(_configuration.denoise->enabled());
+    append(_configuration.denoise->kernelRadius());
+    append(_configuration.denoise->depthThreshold());
+    append(_configuration.denoise->normalThreshold());
+    append(_configuration.denoise->depthSigma());
+    append(_configuration.denoise->normalSigma());
+    append(_configuration.denoise->spatialSigma());
+    return bytes;
+}
+
+std::shared_ptr<pipeline::DenoiseFilter> RendererDeferred::denoise() const
+{
+    return _configuration.denoise;
+}
+
+std::shared_ptr<pipeline::FinalProcessor> RendererDeferred::finalProcessor() const
+{
+    return _configuration.finalProcessor;
+}
+
+const std::string& RendererDeferred::noiseStatus() const
+{
+    return _noiseStatus;
+}
+
 }

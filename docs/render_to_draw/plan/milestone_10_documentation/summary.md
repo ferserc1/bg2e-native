@@ -39,3 +39,7 @@ Step IDs and filenames remain stable; their work is now audit/reconciliation of 
 - No unimplemented functionality or obsolete production/experimental status is taught as current usage.
 - Actual checks and lead evidence remain separate; no agent build/runtime claim without execution authorization.
 - review.md records final findings/corrections, scope limits and final acceptance condition. No pending implementation milestones remain.
+
+## M03 reviewed dependency
+
+[M03 technical review](../milestone_03_ray_tracing/review.md) is the actual source/ownership/signal/settings baseline. Its pending-plan impact table and the concrete additions in this milestone's step files supersede historical statements that explicit profiles or effect controls are still unimplemented. Keep exact averaging, chart isolation, required-job capabilities and actual validation evidence distinct from interactive fallback/history behavior.

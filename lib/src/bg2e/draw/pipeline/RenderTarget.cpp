@@ -36,6 +36,7 @@ std::shared_ptr<gpu::Image> RenderTarget::create(Engine& engine, gpu::Size2D ext
     }
     return engine.device()->createImage(description);
 }
+
 void RenderTarget::clear(gpu::CommandBuffer& command, gpu::Image& color, gpu::Color value)
 {
     command.transition(&color, gpu::ImageLayout::ColorAttachment);
@@ -49,6 +50,7 @@ void RenderTarget::clear(gpu::CommandBuffer& command, gpu::Image& color, gpu::Co
     command.endRendering();
     command.transition(&color, gpu::ImageLayout::ShaderReadOnly);
 }
+
 void RenderTarget::copy(gpu::CommandBuffer& command, gpu::Image& source, gpu::Image& destination)
 {
     command.transition(&source, gpu::ImageLayout::TransferSrc);

@@ -1,5 +1,11 @@
 # Lightmap baking, UV2 editors, and standalone CLI
 
+This page documents the existing production `bg2e::render` workflow. The experimental
+[draw advanced-lighting API](architecture/draw_advanced_lighting.md) has separate
+public components, settings, signals and ownership. Its reusable world-surface
+inputs do not deliver draw integrated/standalone baking or windowless application
+orchestration; retain this production guide for current applications.
+
 The lightmap baker needs a usable UV2 atlas. The integrated baker runs in an
 existing engine render loop; the standalone baker runs without a window or render
 loop. Both produce one RGB indirect-light multiplier per target Drawable. This

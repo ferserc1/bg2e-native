@@ -17,6 +17,11 @@
  */
 
 #include <bg2e.hpp>
+#include <bg2e/app/PreferencesStore.hpp>
+#include <bg2e/draw/RenderSettingsPreferences.hpp>
+#include <bg2e/ui/GraphicsSettingsWindow.hpp>
+#include <bg2e/ui/ReflectionWidget.hpp>
+#include <bg2e/reflection/Builder.hpp>
 #include <bg2e/app/Keyboard.hpp>
 
 #include <algorithm>
@@ -133,11 +138,19 @@ class SceneDelegate final : public draw::DefaultRenderLoopDelegate {
     {
         draw::RendererConfiguration configuration;
         // Render at a fixed 70% of the output dimensions to demonstrate picking
-        // with a scaled image. There are no user controls for this scale.
+        // with a scaled image. The shared settings catalog can change this scale.
         // init() uses the same constant to configure the selection API.
         configuration.resolution = std::make_shared<draw::ResolutionSettings>();
         configuration.resolution->setEnabled(true);
         configuration.resolution->setScale(RenderScale);
+        configuration.upscaler = std::make_shared<draw::FsrUpscaler>();
+        std::static_pointer_cast<draw::FsrUpscaler>(configuration.upscaler)->setEnabled(false);
+        configuration.finalProcessor = std::make_shared<draw::pipeline::SMAAProcessor>();
+        configuration.indirectLighting = draw::IndirectLightingMode::GlobalIllumination;
+        configuration.globalIllumination = std::make_shared<draw::pipeline::RTGlobalIllumination>();
+        configuration.globalIllumination->setEnabled(true);
+        configuration.reflections = std::make_shared<draw::pipeline::RTReflections>();
+        configuration.reflections->setEnabled(true);
         configuration.overlays.push_back(std::make_shared<manipulation::GizmoAndSelectionRenderer>());
         return configuration;
     }
@@ -226,7 +239,7 @@ class SceneDelegate final : public draw::DefaultRenderLoopDelegate {
     void requestBestView()
     {
         const auto weakDelegate = _self;
-        enqueueRendererUpdate(rendererGeneration(), [weakDelegate](draw::Renderer&)
+        enqueueRendererUpdate(rendererGeneration(), [weakDelegate](draw::Renderer& renderer)
         {
             auto delegate = weakDelegate.lock();
             if (!delegate || !delegate->_analyzer || !delegate->_state.sceneContext)
@@ -242,12 +255,9 @@ class SceneDelegate final : public draw::DefaultRenderLoopDelegate {
             // Apply the candidate to the controller and camera on the same node.
             auto cameraNode = delegate->_state.cameraNode;
             auto* orbit = cameraNode->getComponent<scene::OrbitCameraComponent>();
+            renderer.invalidateHistories();
             utils::applyViewpointToOrbitCamera(best->camera, orbit, cameraNode->camera());
             delegate->_state.sceneContext->updateCamera();
-            if (auto* deferred = dynamic_cast<draw::RendererDeferred*>(delegate->renderer()))
-            {
-                deferred->resetUpscaler();
-            }
         });
     }
 
@@ -290,10 +300,7 @@ class SceneDelegate final : public draw::DefaultRenderLoopDelegate {
                 parent->removeChild(selected);
                 selection->refreshSelection();
                 delegate->_state.sceneContext->updateAll();
-                if (auto* deferred = dynamic_cast<draw::RendererDeferred*>(&renderer))
-                {
-                    deferred->resetUpscaler();
-                }
+                renderer.invalidateHistories();
             }
         });
     }
@@ -703,6 +710,56 @@ class UiDelegate final : public ui::UserInterfaceDelegate, public std::enable_sh
         _controls.setTitle("Manipulation");
         _controls.setPosition(10, 10);
         _controls.setSize(430, 700);
+        auto active = _delegate.lock();
+        if (!active)
+        {
+            throw std::logic_error("Graphics settings require a live scene delegate");
+        }
+        // Connect before the first renderer attachment; callbacks rebind on replacement.
+        auto& store = app::PreferencesStore::instance().preferences("draw.manipulation.graphics");
+        _preferences = std::make_shared<draw::RenderSettingsPreferences>(&store);
+        const auto weakDelegate = _delegate;
+        _preferences->connect(active, [weakDelegate](draw::Renderer& renderer, draw::SettingsCatalog& catalog)
+        {
+            auto delegate = weakDelegate.lock();
+            if (!delegate)
+            {
+                return;
+            }
+            using Transform = scene::TransformComponent;
+            reflection::TypeInfoBuilder<Transform> type("draw.manipulation.lightPose.v1");
+            type.accessor<glm::vec3>("position", [](const Transform& transform)
+            {
+                return transform.translation();
+            }, [](Transform& transform, const glm::vec3& value)
+            {
+                transform.setTranslation(value);
+            }).displayName("Position XYZ (local)").category("Local transform").drag().step(0.1);
+            type.accessor<glm::vec3>("orientationDegrees", [](const Transform& transform)
+            {
+                return transform.eulerRotation();
+            }, [](Transform& transform, const glm::vec3& value)
+            {
+                transform.setEulerRotation(value);
+            }).displayName("Orientation XYZ (degrees)").category("Local transform").drag().step(1).range(-180,180);
+            for (const auto& node : delegate->state().lightNodes)
+            {
+                // Node ownership keeps its component alive; catalog generation guards queued edits.
+                catalog.add({"lightPose/"+node->identifier(),type.build(),node->transform(),node,{},
+                    [weakDelegate,&renderer]
+                    {
+                        if (auto owner = weakDelegate.lock())
+                        {
+                            owner->state().animateLights = false;
+                        }
+                        renderer.invalidateHistories();
+                    },{}});
+            }
+        });
+        _graphics.bind(_preferences);
+        _graphics.setPosition(460, 10);
+        _graphics.setSize(520, 620);
+        _graphics.open();
     }
 
     void init(draw::Engine* engine, ui::UserInterface* interface) override
@@ -720,10 +777,7 @@ class UiDelegate final : public ui::UserInterfaceDelegate, public std::enable_sh
         {
             if (auto active = weakDelegate.lock())
             {
-                if (auto* deferred = dynamic_cast<draw::RendererDeferred*>(&renderer))
-                {
-                    deferred->resetUpscaler();
-                }
+                renderer.invalidateHistories();
                 active->requestRedraw();
             }
         });
@@ -744,9 +798,14 @@ class UiDelegate final : public ui::UserInterfaceDelegate, public std::enable_sh
         {
             return;
         }
+        _graphics.draw();
         auto& state = delegate->state();
         _controls.draw([&]
         {
+            if (ui::Button::button("Graphics settings"))
+            {
+                _graphics.open();
+            }
             ui::Text::text("Click a submesh to select it. Ctrl-click adds/removes selection; drag the gizmo to transform.");
             ui::Text::text("Drag: left to orbit, right to pan, middle to zoom. Click tolerance: 2 pixels per axis.");
             ui::Text::separator("Scene");
@@ -767,6 +826,7 @@ class UiDelegate final : public ui::UserInterfaceDelegate, public std::enable_sh
             {
                 delegate->removeSelected();
             }
+            drawLights(delegate);
             ui::Text::separator("MaterialModifier presets");
             if (ui::Button::button("Scalar: roughness 0.22 / metalness 0.65", false, !hasSelection(delegate)))
             {
@@ -788,11 +848,8 @@ class UiDelegate final : public ui::UserInterfaceDelegate, public std::enable_sh
                     const utils::MaterialModifier patch(std::string{R"({"roughness":0.6})"});
                     delegate->enqueueRendererUpdate(delegate->rendererGeneration(), [drawable, patch](draw::Renderer& renderer)
                     {
+                        renderer.invalidateHistories();
                         patch.applyAll(*drawable, std::string("body/front"));
-                        if (auto* deferred = dynamic_cast<draw::RendererDeferred*>(&renderer))
-                        {
-                            deferred->resetUpscaler();
-                        }
                     });
                 }
             }
@@ -807,11 +864,8 @@ class UiDelegate final : public ui::UserInterfaceDelegate, public std::enable_sh
                     const std::regex groupPattern("body/.*");
                     delegate->enqueueRendererUpdate(delegate->rendererGeneration(), [drawable, patch, groupPattern](draw::Renderer& renderer)
                     {
+                        renderer.invalidateHistories();
                         patch.applyAll(*drawable, groupPattern);
-                        if (auto* deferred = dynamic_cast<draw::RendererDeferred*>(&renderer))
-                        {
-                            deferred->resetUpscaler();
-                        }
                     });
                 }
             }
@@ -855,10 +909,52 @@ class UiDelegate final : public ui::UserInterfaceDelegate, public std::enable_sh
     void cleanup()
     {
         _editor.cleanup();
+        _graphics.clear();
+        _preferences->clear();
         _interface = nullptr;
     }
 
   private:
+    void drawLights(const std::shared_ptr<SceneDelegate>& delegate)
+    {
+        if (!ui::Group::beginTree("Lights"))
+        {
+            return;
+        }
+        ui::Text::text("Editing a light pauses animation. Position and Euler angles are local to the Lights group.");
+        ui::Text::text("Orientation affects spot and directional lights; point lights emit in every direction.");
+        const auto descriptors = _preferences->catalog().properties(true);
+        for (const auto& node : delegate->state().lightNodes)
+        {
+            if (!ui::Group::beginTree(node->name()+"##lightEditor"+node->identifier()))
+            {
+                continue;
+            }
+            const auto properties = "light/"+node->identifier();
+            const auto pose = "lightPose/"+node->identifier();
+            for (const auto& descriptor : descriptors)
+            {
+                if (descriptor.handle.component != properties && descriptor.handle.component != pose)
+                {
+                    continue;
+                }
+                auto value = _preferences->catalog().read(descriptor.handle);
+                auto property = descriptor.property;
+                if (ui::ReflectionWidget::editValue(value,property,descriptor.available && !_graphics.pending()))
+                {
+                    // Use the same validated queued path as Graphics settings, not live UI writes.
+                    edit(delegate, [](SceneState& state)
+                    {
+                        state.animateLights = false;
+                    });
+                    _graphics.queueEdit(descriptor.handle,std::move(value));
+                }
+            }
+            ui::Group::endTree();
+        }
+        ui::Group::endTree();
+    }
+
     bool hasSelection(const std::shared_ptr<SceneDelegate>& delegate) const
     {
         return delegate->selection()->selectedItem() != nullptr;
@@ -871,17 +967,16 @@ class UiDelegate final : public ui::UserInterfaceDelegate, public std::enable_sh
         {
             if (auto activeDelegate = weakDelegate.lock())
             {
+                renderer.invalidateHistories();
                 operation(activeDelegate->state());
-                if (auto* deferred = dynamic_cast<draw::RendererDeferred*>(&renderer))
-                {
-                    deferred->resetUpscaler();
-                }
             }
         });
     }
 
     std::weak_ptr<SceneDelegate> _delegate;
     ui::UserInterface* _interface = nullptr;
+    std::shared_ptr<draw::RenderSettingsPreferences> _preferences;
+    ui::GraphicsSettingsWindow _graphics;
     ui::Window _controls;
     ui::DrawMaterialEditor _editor;
 };

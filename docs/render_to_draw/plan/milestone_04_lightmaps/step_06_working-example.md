@@ -38,3 +38,9 @@ Record actual API, ownership and verification in the milestone review. Follow [t
 ## M01-15 reusable product
 
 Derive scene/application integration from examples/draw/10_deferred_renderer; see [working-example.md](../milestone_01_deferred_renderer/working-example.md). Its packed-channel fixture is material input/debug verification, not UV2 baking or a baked-lightmap implementation. Preserve shared delegate/settings/lifecycle integration when adding actual bake contexts.
+
+## M03-10 reviewed implementation requirement
+
+Start from the actual manipulation/deferred settings-window wiring, not assumed MainLoop auto-registration. When baked multipliers are applied explicitly disable live indirect AO/GI to avoid double lighting; decide reflection behavior separately. Verify chart isolation, full geometry reload and immutable snapshot ownership.
+
+Source and validation boundaries: [M03 technical review](../milestone_03_ray_tracing/review.md). Include these conditions in this step's implementation and exit checks.

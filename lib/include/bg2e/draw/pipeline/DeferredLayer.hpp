@@ -22,16 +22,16 @@
 #include <bg2e/draw/pipeline/RasterFrame.hpp>
 
 namespace bg2e::draw::pipeline {
-BG2E_API PassContract deferredContract(gpu::PixelFormat depth, bool shadows = false);
-BG2E_API gpu::PipelineLayoutDescription deferredBindingLayout(bool shadows = false);
+BG2E_API PassContract deferredContract(gpu::PixelFormat depth, bool shadows = false, bool ambientOcclusion = false, bool globalIllumination = false, bool reflections = false);
+BG2E_API gpu::PipelineLayoutDescription deferredBindingLayout(bool shadows = false, bool ambientOcclusion = false, bool globalIllumination = false, bool reflections = false);
 enum class LightingDebugView : uint32_t
 {
-    Final, Albedo, Direct, Indirect, Emission, NonFinite, Irradiance, Prefiltered, BRDF, Occlusion, Baked
+    Final, Albedo, Direct, Indirect, Emission, NonFinite, Irradiance, Prefiltered, BRDF, Occlusion, Baked, RayVisibility, DiffuseGI, ReflectedRadiance, ReflectionConfidence
 };
 class BG2E_API DeferredLayer : public RenderLayer {
   public:
     explicit DeferredLayer(std::filesystem::path shaderRoot = {}, uint32_t slots = 0,
-        gpu::PixelFormat depth = gpu::PixelFormat::D32_SFLOAT, bool shadows = false);
+        gpu::PixelFormat depth = gpu::PixelFormat::D32_SFLOAT, bool shadows = false, bool ambientOcclusion = false, bool globalIllumination = false, bool reflections = false);
     LightingDebugView debugView() const;
     void setDebugView(LightingDebugView value);
     const PassContract& contract() const override;

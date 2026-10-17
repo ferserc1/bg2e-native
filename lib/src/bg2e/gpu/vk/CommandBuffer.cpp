@@ -508,7 +508,7 @@ void CommandBuffer::endCompute()
 void CommandBuffer::bindPipeline(gpu::GraphicsPipeline* pipeline)
 {
     auto* vkPipe = dynamic_cast<vk::GraphicsPipeline*>(pipeline);
-    if (!vkPipe)
+    if (!vkPipe || vkPipe->device() != _device || !vkPipe->isValid())
     {
         throw std::runtime_error("vk::CommandBuffer::bindPipeline: not a vk::GraphicsPipeline");
     }
@@ -581,7 +581,7 @@ void CommandBuffer::bindPipeline(gpu::ComputePipeline* pipeline)
     }
 
     auto* vkPipe = dynamic_cast<vk::ComputePipeline*>(pipeline);
-    if (!vkPipe)
+    if (!vkPipe || vkPipe->device() != _device || !vkPipe->isValid())
     {
         throw std::runtime_error("vk::CommandBuffer::bindPipeline(ComputePipeline): not a vk::ComputePipeline");
     }
@@ -613,7 +613,7 @@ void CommandBuffer::pushConstants(ShaderStage stage, uint32_t offset, uint32_t s
 void CommandBuffer::bindResourceSet(gpu::GraphicsPipeline* pipeline, uint32_t setIndex, gpu::ResourceSet* set)
 {
     auto* vkPipe = dynamic_cast<vk::GraphicsPipeline*>(pipeline);
-    if (!vkPipe)
+    if (!vkPipe || vkPipe->device() != _device || !vkPipe->isValid())
     {
         throw std::runtime_error("vk::CommandBuffer::bindResourceSet(GraphicsPipeline): not a vk::GraphicsPipeline");
     }
@@ -642,7 +642,7 @@ void CommandBuffer::bindResourceSet(gpu::ComputePipeline* pipeline, uint32_t set
     }
 
     auto* vkPipe = dynamic_cast<vk::ComputePipeline*>(pipeline);
-    if (!vkPipe)
+    if (!vkPipe || vkPipe->device() != _device || !vkPipe->isValid())
     {
         throw std::runtime_error("vk::CommandBuffer::bindResourceSet(ComputePipeline): not a vk::ComputePipeline");
     }
@@ -800,7 +800,7 @@ void CommandBuffer::buildRayTracingScene(gpu::RayTracingScene* scene)
 void CommandBuffer::bindPipeline(gpu::RayTracingPipeline* pipeline)
 {
     auto* vkPipe = dynamic_cast<vk::RayTracingPipeline*>(pipeline);
-    if (!vkPipe)
+    if (!vkPipe || vkPipe->device() != _device || !vkPipe->isValid())
     {
         throw std::runtime_error("vk::CommandBuffer::bindPipeline(RayTracingPipeline): not a vk::RayTracingPipeline");
     }
@@ -813,13 +813,13 @@ void CommandBuffer::bindPipeline(gpu::RayTracingPipeline* pipeline)
 void CommandBuffer::bindResourceSet(gpu::RayTracingPipeline* pipeline, uint32_t setIndex, gpu::ResourceSet* set)
 {
     auto* vkPipe = dynamic_cast<vk::RayTracingPipeline*>(pipeline);
-    if (!vkPipe)
+    if (!vkPipe || vkPipe->device() != _device || !vkPipe->isValid())
     {
         throw std::runtime_error("vk::CommandBuffer::bindResourceSet(RayTracingPipeline): not a vk::RayTracingPipeline");
     }
 
     auto* vkSet = dynamic_cast<vk::ResourceSet*>(set);
-    if (!vkSet)
+    if (!vkSet || vkSet->device() != _device || vkSet->setIndex() != setIndex || !vkSet->isValid())
     {
         throw std::runtime_error("vk::CommandBuffer::bindResourceSet(RayTracingPipeline): not a vk::ResourceSet");
     }
@@ -841,6 +841,20 @@ void CommandBuffer::traceRays(uint32_t width, uint32_t height, uint32_t depth)
         throw std::runtime_error("vk::CommandBuffer::traceRays: no ray tracing pipeline bound");
     }
 
+    VkPhysicalDeviceRayTracingPipelinePropertiesKHR properties{};
+    properties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_PROPERTIES_KHR;
+    VkPhysicalDeviceProperties2 deviceProperties{};
+    deviceProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+    deviceProperties.pNext = &properties;
+    vkGetPhysicalDeviceProperties2(_device->physicalDeviceHandle(), &deviceProperties);
+    const auto& limits = deviceProperties.properties.limits;
+    if (!width || !height || !depth || uint64_t(width) * height > properties.maxRayDispatchInvocationCount / depth ||
+        uint64_t(width) > uint64_t(limits.maxComputeWorkGroupCount[0]) * limits.maxComputeWorkGroupSize[0] ||
+        uint64_t(height) > uint64_t(limits.maxComputeWorkGroupCount[1]) * limits.maxComputeWorkGroupSize[1] ||
+        uint64_t(depth) > uint64_t(limits.maxComputeWorkGroupCount[2]) * limits.maxComputeWorkGroupSize[2])
+    {
+        throw std::invalid_argument("Tracing dispatch exceeds device dimensions/invocation limit");
+    }
     cmdTraceRays(
         _cmd,
         &_boundRTPipeline->raygenSBT(),

@@ -1,5 +1,11 @@
 # bg2e Deferred Renderer — Technical Reference
 
+This page documents the existing production `bg2e::render` workflow. The experimental
+[draw advanced-lighting API](architecture/draw_advanced_lighting.md) has separate
+public components, settings, signals and ownership. Its reusable world-surface
+inputs do not deliver draw integrated/standalone baking or windowless application
+orchestration; retain this production guide for current applications.
+
 This document describes the deferred rendering pipeline implemented by
 `bg2e::render::RendererDeferred` and its subsystems: render layers, G-buffer
 layout, lighting composition, ray-traced effects (shadows, ambient occlusion,

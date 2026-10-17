@@ -44,3 +44,11 @@ Reuse retained RenderQueue Items/CollectRayTracingInstancesVisitor metadata and 
 ## M01-11 lookup and opacity primitives
 
 The [actual shadow query table](../milestone_01_deferred_renderer/query-shadows.md) supplies dense TLAS-instance indexing and submesh-local firstIndex-resolved UV triples plus cutoff/albedo alpha. It is limited to eight distinct statically bound cutout image/sampler pairs and is not a complete ray shading table. Reuse generic geometry/instance opacity and canonical correspondence, then implement the arbitrary data path selected in M03-01. Vulkan and Metal expose non-opaque triangle candidates; preserve alpha rejection without a force-opaque ray override. Query visibility uses compute with no render-stage requirement; advanced tracing execution remains the separate native design checkpoint.
+
+## M03-01 checkpoint handoff — accepted by lead continuation
+
+Implement the accepted [M03-01 design](rt-design.md): AnyHit/stage visibility and native Vulkan single-group SBT hardening; scalar-compatible bounded indexed image/sampler bindings, nonuniform-indexing and argument-buffer capabilities/limits, Metal Tier-2 encoding/residency, and complete fallback-filled profiles. No raw geometry address framework or texture atlas. Validate optional-stage SBT offsets, base/record alignment, noncoherent flush, device ownership and failed creation cleanup. Preserve current scalar/query/demo callers. GPU receives primitive buffers/resources only; the public draw tracing snapshot builder is introduced with M03-04. The primitive probe must exercise packed indexed hit lookup, cutout continuation, divergent images/samplers, more than eight textures and explicit capacity failure on both native paths. The selected implemented signatures and profile contract are recorded in [rt-gpu-data.md](rt-gpu-data.md).
+
+## Delivery
+
+See [rt-gpu-data.md](rt-gpu-data.md) and the [manual primitive fixture](../../../../tests/gpu/advanced_tracing/README.md). GPU APIs, native implementations and 32/128/256 probe shaders are delivered; compilation/runtime validation remains with the project lead. M03-03 is the next step.

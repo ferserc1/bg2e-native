@@ -56,3 +56,7 @@ Consume actual M06 full IO plus M01 raw/reference IO, fresh node IDs/deep resour
 ## Documentation closure order
 
 The technical review now hands off to [M07-08](step_08_documentation.md), not directly to the next milestone. Earlier next-milestone handoff statements are historical and superseded by this order. See [documentation policy](../documentation-policy.md).
+
+## M03 reviewed dependency
+
+[M03 technical review](../milestone_03_ray_tracing/review.md) is the actual source/ownership/signal/settings baseline. Its pending-plan impact table and the concrete additions in this milestone's step files supersede historical statements that explicit profiles or effect controls are still unimplemented. Keep exact averaging, chart isolation, required-job capabilities and actual validation evidence distinct from interactive fallback/history behavior.

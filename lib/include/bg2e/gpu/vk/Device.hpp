@@ -43,6 +43,10 @@ class Device : public gpu::Device {
     {
         return _renderingCapabilities;
     }
+    ResourceArrayCapabilities resourceArrayCapabilities() const override
+    {
+        return _resourceArrayCapabilities;
+    }
     FormatCapabilities formatCapabilities(PixelFormat format) const override;
 
     const gpu::Queue& graphicsQueue() const override;
@@ -90,6 +94,7 @@ class Device : public gpu::Device {
     }
 
   private:
+    ResourceArrayCapabilities _resourceArrayCapabilities;
     RenderingCapabilities _renderingCapabilities;
     RayTracingCapabilities _rayTracingCapabilities;
     VkDevice _device{VK_NULL_HANDLE};

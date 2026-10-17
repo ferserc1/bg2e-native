@@ -28,3 +28,9 @@ backend/scenario coverage unspecified.
 Existing API documentation agrees with final declarations, metadata, capabilities and public extension points.
 
 Perform relevant static checks. Compilation/runtime validation belongs to the project lead unless explicitly requested. Deliver one step, update progress and wait for lead acceptance under the execution protocol. No new engine feature, build-system change or future API documentation is authorized by this audit.
+
+## M03-10 reviewed implementation requirement
+
+Audit SurfaceInputs formats, snapshot capacity/lifetime, signal normalization/confidence, requested settings versus availability and example-owned transforms against final source. Distinguish bounded display histories from exact bake/offscreen accumulation and final SMAA from denoise; preserve retirement-era renames without retaining deleted APIs.
+
+Source and validation boundaries: [M03 technical review](../milestone_03_ray_tracing/review.md). Include these conditions in this step's implementation and exit checks.

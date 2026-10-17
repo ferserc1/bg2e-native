@@ -9,14 +9,14 @@ This is the execution record for all implementation chats. The **Next step to im
 | Field | Value |
 |---|---|
 | Workflow state | `awaiting_project_lead` |
-| Current milestone | M02 — Manipulation |
-| Active step | None — M02-09 cumulative documentation delivered |
-| Last implemented step | M02-09 — maintained API, tutorial, UI, input and application documentation |
-| Last accepted step | M02-08 — accepted by project-lead continuation; M02-07 camera issue reported solved |
-| Awaiting project lead validation | M02-09 documentation acceptance; final M02 Vulkan runtime validation remains outstanding |
-| Next step to implement | [M03-01 — Advanced ray-tracing design checkpoint](milestone_03_ray_tracing/step_01_rt-design-checkpoint.md) |
+| Current milestone | M03 — Complete advanced ray tracing |
+| Active step | M03-11 — final cumulative documentation closure delivered |
+| Last implemented step | M03-11 — cumulative maintained documentation through M03 (last step of milestone) |
+| Last accepted step | M03-10 — accepted by project lead continuation instruction; backend/scenario coverage not specified |
+| Awaiting project lead validation | M03-11 — documentation closure / final M03 acceptance |
+| Next step to implement | [M04-01 — Bake namespace and public configuration/pixel contracts](milestone_04_lightmaps/step_01_bake-contracts.md) |
 | Next action | `wait_for_project_lead` |
-| Condition before starting | Accept M02-09 and complete the outstanding Vulkan runtime check before starting M03-01. No build/runtime result is claimed by this documentation pass. Transparency remains deferred. |
+| Condition before starting | Project lead acceptance of M03-11 closes M03 and authorizes M04-01 under the continuation convention. |
 | Record initialization baseline | `b955833f314d09a191de13b83c90cacc10666ae7`; working tree was clean before this workflow documentation update. |
 | Validation owner | Human user / project lead |
 | Agent build/runtime execution | Not performed; delegated to the project lead by default. |
@@ -61,6 +61,14 @@ Add a row for each started step. Steps absent from this table are `not_started`.
 | [M01-15](milestone_01_deferred_renderer/step_15_working-example.md) | `accepted` | Baseline b955833f314d plus preserved previous uncommitted work/lead Window fix. New draw_deferred_renderer main/target/checklist, examples registration/README; FinalLayer reconstructedColor constructor argument for correct pre-initialization injection; working-example.md and affected successor handoffs. Uncommitted. | Local includes/signatures/virtuals/delimiters, referenced asset existence, constructor/pass contracts, shared/weak ownership/cleanup, live scalar versus texture edits, scene-time/queue/reset/generation paths, CLI/target/resources, native boundary, documentation links and git diff --check. No configure/build/shader/runtime execution. | Accepted by project lead continuation instruction; compilation/checks assumed successful under the agreed convention, backend/scenario coverage unspecified. | See working-example.md and examples/draw/10_deferred_renderer/README.md. CMake edits limited to the explicit M01-15 target registration/deliverable. No production app changes. Runtime assertions/counters are implemented probes, not observed passing results. HDR correction explicitly accepted; separate transparency issue deferred. M01 closure authorized by the lead. |
 
 | [M01-16](milestone_01_deferred_renderer/step_16_review.md) | `accepted` | Source revision b955833f314d unchanged; inherited uncommitted M01 code/plan/probes preserved. New review.md, nine pending summaries and concrete owning steps, root index/architecture/progress updates. Documentation-only review; no source/build mutations. | Actual public APIs/owners/ABI/native transfers/product callers inspected; pending M02–M10 implementation work compared; review/whole-plan relative path links and git diff --check. No configuration/compilation/shader/runtime execution. | Explicit lead validation on 2026-10-15. M01-15 accepted by project lead continuation; backend/scenario details unspecified. | Review distinguishes reusable primitives, deliberate later requirements and verification gaps. Selectable mode/schema, independent CPU/live modifier seam, depth/array/public-profile/windowless tasks explicit in owning steps. M03 architectural checkpoint stays lead-owned. Followed by M01-17 documentation under revised ordering; earlier delivery history retained. |
+| [M03-04](milestone_03_ray_tracing/step_04_rtao.md) | `accepted` | HEAD `15f67dff9efad51c878740bc1ddbce94f880ed46` plus preserved M03-01–03 edits; public tracing snapshots/RTAO, paired kernels/lighting variants, renderer integration, manual fixture and documentation. Uncommitted. | Source/ABI/native bindings/ownership, licenses/delimiters, 24 paired profile wrappers and local links; git diff --check. No compilation/runtime execution. | Accepted by project lead continuation; backend/scenario coverage unspecified. | See rtao.md; scalar history/filtering/UI remain later steps; legacy soft shadows retain separate eight-cutout-pair limit. |
+| [M03-05](milestone_03_ray_tracing/step_05_rtgi.md) | `accepted` | HEAD `15f67dff9efad51c878740bc1ddbce94f880ed46` plus preserved prior uncommitted work; public RTGlobalIllumination, native transport profiles, mode/lighting integration, manual fixture and docs. Uncommitted. | 76 new source files checked for licenses/delimiters/includes/preprocessor; 60 native wrappers, native lighting binding maps, API definitions, ownership/ABI and documentation links; git diff --check. No compilation/runtime execution. | Accepted by project lead continuation; backend/scenario coverage unspecified. | See rtgi.md; HDR alpha validity, diffuse IBL replacement and retained settings; histories/filter/UI pending; legacy soft-shadow table limit unchanged. |
+| [M03-06](milestone_03_ray_tracing/step_06_rt-reflections.md) | `accepted` | HEAD `15f67dff9efad51c878740bc1ddbce94f880ed46` plus preserved prior uncommitted work; public RTReflections, paired native profiles, display-relative targets, confidence/IBL composition, manual fixture and docs. Uncommitted. | 81 new source files checked for licenses/delimiters/includes/preprocessor; 60 native wrappers, eight paired lighting variants, descriptor completeness/Metal sampler bounds, API definitions, ABI/ownership and local links; git diff --check. No compilation/runtime execution. | Accepted by project lead continuation; backend/scenario coverage unspecified. | See rt-reflections.md; unpremultiplied hit radiance/fractional confidence, output-relative quality; separate histories/filter/UI remain pending. |
+| [M03-07](milestone_03_ray_tracing/step_07_temporal.md) | `accepted` | HEAD `15f67dff9efad51c878740bc1ddbce94f880ed46` plus preserved prior uncommitted work; public TemporalAccumulator/MotionVectorGenerator, paired compute, renderer invalidation/signatures, manual fixture and docs. Uncommitted. | Fifteen new source files, eight compute wrappers, ABI/native bindings, ownership/sequence/invalidation review, licenses/delimiters/preprocessor/includes, API definitions and local links; git diff --check. No compilation/runtime execution. | Accepted by project lead continuation; backend/scenario coverage unspecified. | See temporal.md; camera-only reprojection, conservative moving-object reset, same ordered queue and provisional recording chronology. Spatial filtering/UI remain pending. |
+| [M03-08](milestone_03_ray_tracing/step_08_denoise.md) | `accepted` | HEAD `15f67dff9efad51c878740bc1ddbce94f880ed46` plus preserved prior uncommitted work; public DenoiseFilter, paired profiles, after-temporal renderer integration, virtual accessor metadata, manual fixture and docs. Uncommitted. | Thirteen new source files, eight native wrappers, logical/native bindings/ABI, ownership/ordering, live metadata definitions, licenses/delimiters/preprocessor/includes and local links; git diff --check. No compilation/runtime execution. | Accepted by project lead continuation; backend/scenario coverage unspecified. | See denoise.md; exact scalar/HDR profiles, explicit surface guides, confidence/validity, per-call scratch; visible controls/preferences remain M03-09. |
+| [M03-09](milestone_03_ray_tracing/step_09_existing-example-integration.md) | `accepted` | HEAD `15f67dff9efad51c878740bc1ddbce94f880ed46` plus preserved earlier uncommitted work; live effect settings/codec, two existing examples, final processor/SMAA native kernels, shared noise, debug signals, query-capacity fallback, manual fixtures and handoff docs. Uncommitted. | 59 source licenses/includes/lexical delimiters; eight SMAA wrappers and binding/ABI review; graph ordering, live target registration, local links; git diff --check. No compilation/runtime. | Accepted by project lead continuation instruction, including corrected visible UI and requested manipulation light controls/defaults; backend/scenario coverage not specified. | See integration.md and advanced_integration manual matrix. Next M03-10, then M03-11 cumulative docs. |
+| [M03-10](milestone_03_ray_tracing/step_10_review.md) | `accepted` | HEAD `15f67dff9efad51c878740bc1ddbce94f880ed46` plus preserved uncommitted baseline; review.md, rt-design reconciliation, 19 pending step files/seven downstream summaries, cosmetic separators in three pipeline implementations. | Opening GPL scan across 338 scoped files; native/source/signal/settings/ownership review; focused static checks, local Markdown links, non-whitespace-token equality for cosmetic edits and git diff --check. No compilation/runtime. | Accepted by project lead continuation instruction; backend/scenario coverage not specified. | Next M03-11 cumulative docs; M04 not yet authorized. |
+| [M03-11](milestone_03_ray_tracing/step_11_documentation.md) | `awaiting_project_lead` | HEAD `15f67dff9efad51c878740bc1ddbce94f880ed46` plus preserved prior work; five new/twenty-four updated maintained pages, documentation.md coverage and review handoff. Documentation only. | 29 maintained pages, 344 local links/anchors, 73 header/source references, code fences, source-backed tutorial wiring/defaults, git diff --check. No compile/runtime. | Pending project lead documentation/final M03 acceptance. | Last M03 step; next M04-01 after acceptance. |
 
 ## Open issues
 
@@ -115,7 +123,10 @@ Future entries should record actual interfaces/paths/decisions and pending-plan 
 | [M02-06](milestone_02_manipulation/step_06_viewpoint-utils.md) | `accepted` | Baseline 7b217bcb6d9a plus preserved M02-02–05; new utils analyzer/types, camera overload, GPU typed D32 readback in both native backends, actual API/checklists and M06/M07 integration guidance. Production render analyzer and camera overload remain unchanged. | Compared analyzer algorithms/shader ABI and render queue/bounds contracts; inspected D32 format, usage, layout, completion and Vulkan/Metal readback implementations; checked dependencies, candidate/selection map separation and source formatting. `git diff --check`. No build/shader/runtime execution. | Accepted by project lead continuation instruction; backend coverage not specified. | See viewpoint-analysis.md and tests/manipulation/viewpoint. M02-07 follows; no CMake changes in M02-06. |
 | [M02-07](milestone_02_manipulation/step_07_working-example.md) | `accepted` | Preserved existing uncommitted M01/M02 work and delivered `examples/draw/11_manipulation`, registered as `draw_manipulation`. Includes draw selection/gizmo overlay, input routing, draw material editing and viewpoint action; later corrections removed CLI options, use engine wrappers, fix 70% render/pick scale, keep camera components on one node, use editor-style mouse mapping, preserve camera projection and remove temporary debug traces. | Static source review and documentation mapping; no build/runtime run recorded by this agent. | Project lead requested M02-09 after reporting the camera/manipulation issue solved. Vulkan runtime validation remains outstanding; no other backend result is inferred. | See example, [M02 review](milestone_02_manipulation/review.md) and tutorial. SDL remains behind engine wrappers. |
 | [M02-08](milestone_02_manipulation/step_08_review.md) | `accepted` | Added [review.md](milestone_02_manipulation/review.md) and updated affected M03–M10 pending summaries/steps with actual draw manipulation, edit notification, preview, viewpoint, identity and lifecycle contracts. Subsequent corrections are recorded chronologically in review.md. | Static source/plan inspection; no build/shader/runtime execution. | Accepted by project-lead continuation to proceed with M02-09. This does not certify Vulkan runtime behavior. | See [M02 review](milestone_02_manipulation/review.md). |
-| [M02-09](milestone_02_manipulation/step_09_documentation.md) | `awaiting_project_lead` | Added cumulative references for manipulation and utils, draw UI wrappers, event forwarding, tutorial #11, app guidance and navigation; removed camera trace code from the example. | Static link/anchor/header/source/target checks and `git diff --check`; no build, shader compilation or runtime/backend check. | Documentation is delivered for lead acceptance. Lead reports the behavior is solved; Vulkan validation remains outstanding before M02 closure. | See [documentation handoff](milestone_02_manipulation/documentation.md). M03-01 is gated on M02-09 acceptance and Vulkan validation. |
+| [M02-09](milestone_02_manipulation/step_09_documentation.md) | `accepted` | Added cumulative references for manipulation and utils, draw UI wrappers, event forwarding, tutorial #11, app guidance and navigation; removed camera trace code from the example. | Static link/anchor/header/source/target checks and `git diff --check`; no build, shader compilation or runtime/backend check. | Accepted by lead continuation on 2026-10-16; lead explicitly reports manipulation working on macOS Metal and Linux Vulkan. | See [documentation handoff](milestone_02_manipulation/documentation.md). M02 gate closed; M03-01 authorized by the same continuation. |
+| [M03-01](milestone_03_ray_tracing/step_01_rt-design-checkpoint.md) | `accepted` | Baseline `15f67dff9efad51c878740bc1ddbce94f880ed46`, clean entry; uncommitted design and pending-plan updates only. | GPU native pipeline/resource/query and draw material/identity comparison; native primary docs, scoped links and `git diff --check`; no build/runtime execution. | M02 accepted on explicit macOS Metal/Linux Vulkan report and continuation; M03-01 accepted by project lead continuation. | See rt-design.md. Design accepted by continuation to M03-02; source baseline findings retained in rt-design.md. |
+| [M03-02](milestone_03_ray_tracing/step_02_rt-gpu-data.md) | `accepted` | Baseline `15f67dff9efad51c878740bc1ddbce94f880ed46` plus preserved uncommitted M03-01 work. GPU Common/Device/ResourceSet/ShaderLib/RT headers and native implementations; primitive paired shader profiles and manual fixture; API and plan handoffs. Uncommitted. | Signatures/callers/native API names, bindings/packing/profile discovery, optional SBT layout/flush/cleanup, array ownership/limits and acceleration ordering, licenses/delimiters/GPU dependencies, scoped links and `git diff --check`. No compile/shader/runtime execution. | M03-01 accepted by lead continuation; M03-02 accepted by project lead continuation; compilation/checks assumed successful, backend/scenario coverage unspecified. | See rt-gpu-data.md and tests/gpu/advanced_tracing/README.md. No CMake/production rendering edits. M03-03 authorized by project-lead continuation. |
+| [M03-03](milestone_03_ray_tracing/step_03_blue-noise-utils.md) | `accepted` | Baseline `15f67dff9efad51c878740bc1ddbce94f880ed46` plus preserved M03-01/02 edits; new utils/BlueNoise header/source and umbrella export, paired noise helpers/probe kernels, manual fixture and API/plan documentation. Uncommitted. | CPU/native metadata/sequence/bindings, upload/readback/retained owners and replacement paths, embedded asset shape/histograms, source licenses/includes/delimiters, scoped links and git diff --check. No compilation or CPU/GPU test execution. | M03-02 accepted by continuation; M03-03 lead-reported GLSL sampler-constructor failure corrected in source, awaiting recompile/validation. | See blue-noise.md and tests/utils/blue_noise/README.md. Logical-layer atlas, no physical image-array extension; production noise and CMake untouched. Next M03-04 pending acceptance. |
 
 ## M01-01 handoff
 
@@ -691,3 +702,280 @@ and the documentation handoff. Removed the example's remaining `--no-rt`
 configuration per the earlier instruction; default tracing/shadow behavior is
 unchanged. Static review only; no build/runtime checks. M02-09 acceptance and
 the final Vulkan check remain outstanding.
+
+## 2026-10-16 — M02 accepted; M03-01 delivered
+
+The project lead reports completing the M02 Linux check and states that manipulation APIs work on macOS Metal and Linux Vulkan. This closes the outstanding M02 Vulkan runtime gate and accepts M02-09 by the instruction to proceed. Device models and individual runtime scenarios remain unspecified; earlier handoffs above are historical.
+
+M03-01 started at `15f67dff9efad51c878740bc1ddbce94f880ed46`, with a clean working tree. Delivered uncommitted planning changes: `milestone_03_ray_tracing/rt-design.md`, the M03 summary/checkpoint and M03-02–10 handoffs, affected M04/M08 summaries/steps, architecture decisions and this ledger. The design compares actual GPU pipeline/resource/query code and maintained RT documentation, and proposes native Vulkan stages plus Metal compute queries, packed indexed geometry, bounded image/sampler tables, shared cutout evaluation, explicit surface contracts and tracing/history invalidation. No source, public API, shader or CMake changes.
+
+The recommendation deliberately remains pending project-lead acceptance, including its native feature requirements, capacity errors and exclusion of blended secondary transport. Continuation to M03-02 selects it; a different choice revises the checkpoint first. No unresolved failure is reported. Static checks: inspected source/declarations/callers and production GI behavior references, native primary documentation, scoped Markdown links and `git diff --check`. No build/configuration/shader compilation/runtime check was run. Design review is the only validation required for this step.
+
+## M03-02 implementation entry
+
+Project lead continuation accepts the M03-01 recommendation, including native stages, bounded native resource arrays, packed geometry and deferred blended secondary transport. Entry revision remains `15f67dff9efad51c878740bc1ddbce94f880ed46`, with the uncommitted M03-01 planning changes preserved. `skills.md` is absent from the repository; current architecture.md, operative decisions and actual GPU sources are the available architecture references. No build is authorized.
+
+## M03-02 delivery — primitive GPU tracing/data access
+
+The lead's continuation accepted the explicit M03-01 recommendation. Delivered AnyHit and optional Vulkan hit-group stages, additional native descriptor visibility, fixed whole-array sampled image/sampler setters, explicit Metal argument-buffer grouping and native residency, enabled array capability/limit profiles, scalar-compatible validation and storage-buffer range checks. Hardened Vulkan optional SBT indexing, handle/base alignment, mapping flush/failure cleanup and dispatch limits; added BLAS→TLAS and TLAS→RT read ordering plus scene mesh/device/index checks. All new native work stays inside gpu.
+
+The primitive fixture/shader profiles test indexed packed geometry, nonzero index/vertex bases, dense identity, UV1, divergent resources/samplers, cutout continuation and exact expected pixels, plus explicit invalid-resource/capacity cases. It is delivered for lead execution, not claimed as run. Shader discovery already recognizes all new stages; no CMake edits or new executable target. Full draw material snapshots, normal transforms, six-slot shading and scene mutation integration remain M03-04 onward; array graphics-stage support on Metal is not provided.
+
+Static source/license/dependency/delimiter, API/caller/native binding, profile discovery and scoped Markdown link review plus `git diff --check` completed. The agent did not configure/build, compile shaders, launch tests/examples or run packaging. Lead checks: build engine/paired shaders, run manual advanced-tracing probe on Vulkan query/native pipeline and Metal compute, existing GPU RT example and draw examples 10/11/shadow fallbacks, unavailable indexing/no-RT, and native validation/slot retirement cases. Next pointer is M03-03; stop for acceptance.
+
+## 2026-10-17 — M03-03 entry
+
+M03-02 accepted by project lead continuation; compilation/checks assumed successful under the agreed convention, backend/scenario coverage unspecified. M03-03 starts at `15f67dff9efad51c878740bc1ddbce94f880ed46` with inherited uncommitted M03-01/02 work preserved. No build/runtime execution authorized. `skills.md` is absent; architecture.md, operative plan and actual sources remain the architecture references.
+
+## 2026-10-17 — M03-03 delivery
+
+Delivered utils::BlueNoiseData (borrowed CPU ranks, validation/wrapped texels/sample2D), sampleNoise2D with explicit null-data hash alternative, and Device-backed utils::BlueNoise with synchronous build, strong failed-replacement behavior, copied shared image/sampler owners and tile/channel/layer metadata. Default ranks reuse the existing private production byte header unchanged; the utility has no render Engine/native graphics dependency. M09's manifest now explicitly relocates this pure data header before render directory deletion.
+
+Selected layout: logical tiles stacked in a sampled/readback/upload RGBA8 UNORM 2D atlas (default 128x512), with exact channel expansion and nearest/zero-LOD sampler. No physical image-array primitives or implicit tracing-table entries are introduced. Paired draw/lib helpers use explicit tile-local texel reads, byte-rank reconstruction, bounded uint32 sequence rotations and declared hash fallback. CPU/GPU fixtures verify raw upload, samples, wrapping/layers, overflow keys, invalid metadata and retained old snapshots across replacement/cleanup when the lead runs them. GPU sampling of disabled noise binds no noise image/sampler. No advanced effect is introduced yet.
+
+Agent static inspection confirmed original data shape/131072 bytes and balanced byte-rank histograms, SHA256 recorded in blue-noise.md; source was not regenerated and spatial diagnostics were not run. Reviewed signatures/includes/lifetimes/native binding/sequence packing, licenses/delimiters and scoped Markdown links; git diff --check passed. No configure/build, shader compiler, test executable, CPU/GPU fixture, renderer or packaging invocation. Production BlueNoise/data/shaders/scripts and CMake are untouched.
+
+Lead validation: compile engine and paired shaders, run the manual CPU/Vulkan/Metal utility fixture with native diagnostics, test shared-owner/replacement and no-RT utility reuse, and preserve existing production compilation. Coverage for the accepted M03-02 remains unspecified. Next is M03-04 RTAO, conditional on this delivery's acceptance.
+
+## 2026-10-17 — M03-03 compiler failure report
+
+The lead reports glslang compilation failure for draw/blue_noise/probe.comp.glsl:36 (`sampler constructor must appear at point of use`) with Vulkan SDK 1.4.313.1, target Vulkan 1.2 on the macOS build. The probe passed a constructed combined sampler2D as a user-function argument. Reopen M03-03; fix the helper/caller contract and downstream instructions before advancing. No passing correction build is claimed.
+
+## 2026-10-17 — M03-03 GLSL correction delivered
+
+Changed bg2eBlueNoise2 GLSL arguments from combined sampler2D to separate texture2D/sampler. Construction now occurs directly in texelFetch, and the probe passes the separate noiseImage/noiseSampler bindings. Updated API documentation, implementation handoff and M03-04 caller guidance. Existing descriptor indices, CPU/Metal sampling and disabled-noise variant remain unchanged. Static review found the single GLSL caller and verified signature/argument consistency and point-of-use construction; git diff --check passed. No compilation or runtime execution. M03-04 remains next, conditional on the lead accepting this correction.
+
+## M03-04 entry
+
+The lead continuation accepts M03-03 including its GLSL sampler-constructor correction; compilation/checks assumed successful under the agreed convention, backend/scenario coverage unspecified. Entry HEAD `15f67dff9efad51c878740bc1ddbce94f880ed46` plus preserved uncommitted M03-01–03 changes. No compile/runtime execution is authorized. Public tracing snapshot/surface primitives belong in draw::pipeline; production render remains unchanged.
+
+## 2026-10-17 — M03-04 delivery
+
+Delivered public TracingSceneResources/TracingSnapshot with retained immutable geometry, transformed dense instances, complete MaterialData/UV0/UV1 and independent bounded native image/sampler tables. Shared cutout predicates use actual interpolated submesh UVs and nearest accepted hits. Public replaceable RTAmbientOcclusion supports camera-depth and explicit position/normal/coverage receivers, independent quality resolution, configurable samples/bounces/radius/bias/falloff/attenuation and shared BlueNoise/hash variants. Paired Vulkan/Metal kernels cover all 32/128/256 profiles. RendererDeferred integrates optional scalar AO and compatible lighting variants, retaining old shader contracts and capability fallback. Neutral output is one; direct PBR/emission/unlit and existing material AO arithmetic remain intact.
+
+Per-slot snapshots and per-invocation resources remain retained through completion; reset/cleanup drain at stopped boundaries. No per-frame waitIdle, CMake edits or production render migration. Added a manual fixture for cutout UV changes/rear occluders, dense IDs/submesh offsets, geometry reuse, radius, disabled/noise paths and camera/explicit receiver equivalence. Documentation records exact ABI/bindings, ownership, validation requirements and downstream limitations, including the existing separate soft-shadow cutout limit.
+
+Agent performed only nonexecuting source inspection, license/delimiter/local include checks, all 24 native profile wrapper checks, new documentation link checks and git diff --check. No configure/build, shader compiler, fixture or renderer execution. Project lead must compile engine and paired shaders, run the fixture on Vulkan/Metal with diagnostics and validate deferred/manipulation regression plus unsupported-device fallback. Next M03-05 RTGI is conditional on M03-04 acceptance.
+
+## M03-05 entry
+
+Lead continuation accepts M03-04 under the execution convention; backend/scenario coverage unspecified. Existing uncommitted changes are preserved. No build/runtime execution authorized.
+
+## 2026-10-17 — M03-05 delivery
+
+Delivered RTGlobalIllumination with public settings/accessors, compatible shader/subclass replacement, camera/explicit receivers and retained matching-capacity tracing snapshots. Vulkan uses iterative raygen plus miss/closest-hit/any-hit at recursion depth one; Metal uses compute nearest-intersection transport. Sixty native wrappers cover camera/world, hash/blue and 32/128/256 capacity. Hit transport evaluates albedo/cutout UV and scalar emission semantics, geometric normals, participating point/spot/directional lights with cutout-aware shadow samples, and environment escape/terminal ambient once per path.
+
+HDR RGBA16 output is incoming diffuse radiance/pi before receiver albedo, with explicit alpha validity; disabled/empty/unavailable output is invalid zero. RendererDeferred integrates scaled GI targets and diffuse IBL replacement while preserving specular IBL, sheen, material AO, baked multiplier, direct PBR and emission. IBL/AO/GI selection retains component settings, suppresses inactive scene snapshots and preserves ordinary composition when GI is unsupported or disabled. Existing lighting variants remain available for explicit replacement. The shared scene tables and production render implementation are unchanged by M03-05.
+
+Added a manual fixture for dense IDs/submesh bases/geometry reuse, emissive HDR and cutout continuation, distance versus excluded geometry, environment escape, blue noise/bounces, participating light contribution, virtual dispatch, camera/explicit agreement and disabled/empty alpha. Agent performed nonexecuting source/license/delimiter/preprocessor/include/profile/binding/API/link inspection and git diff --check only. No configure/build, shader compiler, fixture, renderer or packaging execution; no CMake edits. Lead must compile engine/native shaders and validate Vulkan/Metal, unsupported fallback and existing examples with diagnostics. Coverage for accepted M03-04 remains unspecified. M03-06 reflections is next, conditional on acceptance of this delivery.
+
+## M03-06 entry
+
+Lead continuation accepts M03-05 under the execution convention; backend/scenario coverage unspecified. Prior uncommitted changes are preserved. Architecture reference skills.md remains absent; architecture.md, actual sources and accepted native contracts are used. No build/runtime execution authorized.
+
+## 2026-10-17 — M03-06 delivery
+
+Delivered RTReflections with replaceable public configuration/lifecycle/recording, quality/sampling/roughness/bias/distance/shadow/noise accessors, camera or explicit receivers, receiver material and camera position. It reuses existing packed scene/cutout/native hit helpers. Vulkan raygen/miss/closest-hit/any-hit and Metal compute query wrappers cover twelve surface/noise/capacity profiles. Hit shading includes slot-correct albedo/emission/normal maps, inverse-transpose normals, model-transformed tangents and mirrored determinant sign, environment diffuse and participating lights with cutout-aware shadows.
+
+Output RGBA16 RGB is unpremultiplied mean finite geometry-hit radiance before receiver BRDF; alpha is accepted hits/actualSamples. Misses/roughness rejection/empty/disabled/unavailable results preserve prefiltered specular IBL through zero confidence. RendererDeferred integrates optional independent reflections with display-relative quality, scaled lighting inputs and confidence-weighted split-sum composition. Diffuse AO/GI/IBL selection and material/direct/emission behavior remain separate. Eight new paired lighting variants retain old contracts. FullscreenPass adds an optional independent native sampler map so reflection texture16 shares nearest sampler0 within Metal fragment sampler bounds.
+
+The manual fixture covers shared geometry/dense IDs/submesh offsets/UV cutouts, deterministic mirror emission, rear emitters through holes, distance misses, glossy partial confidence with unpremultiplied radiance, roughness rejection, shared noise, camera/explicit equivalence and a 2x2 display-relative target over a 1x1 receiver, plus disabled/empty/virtual dispatch. Documentation defines exact ABI, source tangent convention, lifetime/fallback and downstream history/confidence requirements.
+
+Agent performed only nonexecuting source checks: 81 new source files, 60 native wrappers, eight paired lighting descriptor/native sampler maps, licenses/delimiters/preprocessor/includes, API definitions/ABI/ownership and local documentation links; git diff --check passed. No configure/build, shader compilation, fixture, renderer or packaging execution. No CMake or production render edits in this step. Lead must compile and validate Vulkan/Metal diagnostics, unsupported fallback, normal-map/mirrored/shadow/resize scenarios and existing deferred/manipulation regressions. Coverage for accepted M03-05 remains unspecified. Next M03-07 histories/temporal accumulation is conditional on acceptance of this delivery.
+
+## M03-07 entry
+
+Lead continuation accepts M03-06; backend/scenario coverage unspecified. Preserve existing uncommitted work. No build/runtime execution authorized. Architecture references remain architecture.md and operative plan; skills.md is absent.
+
+## 2026-10-17 — M03-07 delivery
+
+Delivered public TemporalAccumulator with borrowed TemporalInput/SurfaceInputs/TemporalView, separate signal/view/layer keys, actual rendered-scene sequence independent of presentation slots, reset generations and scalar/HDR native kernels. Immutable per-invocation signal/position/normal-count images and retained previous/next versions keep submitted history safe; disabled/unavailable paths return the borrowed raw signal. Histories prune stale keys and enforce a bounded capacity. Position/normal/coverage/roughness rejection preserves AO neutral visibility, GI validity and confidence-weighted unpremultiplied reflection radiance. Arithmetic means before the frame bound, rolling or frozen behavior at the bound, and nominal versus per-pixel counts are documented.
+
+RendererDeferred injects/exposes the public component, accumulates each active effect for opaque and stable transparent submesh layers, and coordinates generic Renderer::invalidateHistories with existing resetUpscaler adapters and FSR state. Exact initialized extraction/settings signatures detect identity/material/transform/light/environment/quality/mode/noise changes before jitter preparation; explicit application notification remains necessary for in-place content/custom shaders and same-camera teleports. Duplicate persistent node/submesh correspondence is diagnosed when active. Existing tracing snapshots are freshly prepared from the same extracted queue after reset.
+
+MotionVectorGenerator provides the public CPU camera-motion reference with previous/current unjittered transforms from current jittered clip and correct framebuffer Y. Existing FSR GPU motion and SDK jitter ownership remain unchanged. Moving-object vectors are not introduced: geometry/transform changes conservatively reset effect and SDK histories; previous-object reprojection is explicitly deferred. Same ordered queue submission is required, and abandoned recording must invalidate provisional histories. Fresh history images avoid mutable overwrite at the cost of allocations; a reuse pool is a later optimization, not an asset frame ring.
+
+Added a manual numerical fixture for simulated presentation gaps/two retired slots, separate scalar/GI/reflection arithmetic, fractional confidence, retained outputs, rolling/frozen limits, generation and position/normal rejection, view/layer separation, camera/explicit profiles, invalid/black GI, roughness rejection and disabled pass-through, plus CPU jitter/motion reference assertions. These fixtures were not executed. Agent performed nonexecuting inspection of fifteen new source files, eight native wrappers, descriptor/ABI/ownership/sequence/reset paths, license/delimiter/preprocessor/include/API/link checks and git diff --check. No configure/build/shader compiler/runtime/packaging execution; no CMake or production render changes.
+
+Lead must compile native shaders/engine and validate Vulkan/Metal, asynchronous ordered slots, pause/UI-only/pick/overlay chronology, edit/cut/resize/FSR resets, reprojection and confidence edges, unsupported fallback and existing examples. Coverage for accepted M03-06 remains unspecified. M03-08 spatial denoise is next, conditional on this delivery's acceptance.
+
+## M03-08 entry
+
+Lead continuation accepts M03-07; backend/scenario coverage unspecified. Preserve existing uncommitted work. No build/runtime execution authorized. Architecture reference remains architecture.md and operative plan; skills.md is absent.
+
+## 2026-10-17 — M03-08 delivery
+
+Delivered public DenoiseFilter with compatible shader/configuration/lifecycle/resource replacement, per-effect/view/layer keys and borrowed SurfaceInputs. Native camera/world x scalar/HDR compute profiles filter R16 visibility or RGBA16 radiance at the signal extent, independently of the surface extent. Bilateral weights combine spatial distance, geometry distance and normals, with hard rejection and normalized borders. Camera guides compare linear view Z; explicit guides compare world separation without a fake camera. GI validity, black valid radiance, reflection fractional confidence, unpremultiplied RGB and roughness eligibility remain distinct. Missing profiles return the borrowed input without wrong-format allocation.
+
+RendererDeferred appends shared filter injection/exposure and resolves tracing -> temporal -> spatial -> lighting per active effect/layer. Filter outputs remain separate from temporal history and bake averages. Fresh invocation outputs/descriptors/uniforms are retained per completed slot; external result owners remain valid and no per-frame waitIdle is introduced. Virtual control getters/setters, settingsType and matching settingsInstance metadata permit live catalog enumeration of injected filters. Renderer signatures read the actual virtual getters and coordinate history/SDK reset. Built-in visible controls/preferences remain M03-09.
+
+Added a manual fixture for actual metadata read/write and record override, scalar smoothing, constant HDR energy, odd 5x3 extents/borders, coverage, world-distance and normal discontinuities, confidence weighting, invalid GI centers, reflection roughness rejection, camera profiles, independent 3x1 signal extent, retained prior output and no-op/disabled borrowed results. Agent performed only static checks: thirteen new source files, eight paired wrappers, bindings/ABI/ownership/order, metadata definitions, licenses/delimiters/preprocessor/includes, documentation links and git diff --check. No configure/build, shader compiler, fixture, renderer or packaging execution. No CMake or production render edits in this step.
+
+Lead must compile engine/native shaders and validate Vulkan/Metal diagnostics, partial/unsupported capability fallback, extreme controls, asynchronous completed-slot ownership, shader/subclass replacements, HDR/confidence edges and existing deferred/manipulation examples. Coverage for accepted M03-07 remains unspecified. M03-09 existing-example controls/integration is next, conditional on acceptance of this delivery.
+
+## M03-09 entry
+
+Lead continuation accepts M03-08; backend/scenario coverage unspecified. Preserve prior uncommitted work. No build/runtime execution authorized. Architecture references are architecture.md and operative plan; skills.md is absent.
+
+M03-09 delivered live metadata/settingsInstance hooks for AO, GI, reflections and
+temporal alongside existing denoise metadata. RenderSettingsPreferences binds all
+six optional component targets, indirect selection, graph/capability/noise status,
+light reflection participation and appended resolved signal debug views. Requested
+values remain editable and strict-codec serializable without hardware availability.
+Distance/bias pairs are validated before mutations. Queued settings reset engine/
+SDK histories even after reported partial application; explicit scene/material
+operations invalidate before potentially partial edits. Existing editor callback,
+clone/resource identity and application loop behavior are retained.
+
+Both existing examples inject disabled optional FSR and SMAA; ordinary resampling
+remains default. The basic example exposes resolution settings without changing its
+default dimensions. RendererDeferred allocates a shared BlueNoise atlas only when
+needed by an available effect lacking injected noise. Legacy eight-cutout-pair
+query-shadow capacity is explicitly reported: table construction still throws a
+specific length_error subtype; the pass catches only this case, renders neutral
+whole-scene shadow visibility and retries on the next scene frame. Advanced tables
+are independent and never truncated.
+
+Public FinalProcessor/SMAAProcessor provide optional after-color/before-overlay
+processing and a device-only reusable process API. Paired edge/weights/blend/copy
+shaders port the existing orthogonal SMAA 1x profile with official vendored lookup
+bytes and unchanged original licenses. Fresh RG8/RGBA8/RGBA16 scratch, a 32-byte UBO,
+explicit bindings/transitions and completed-slot retained ownership support odd
+extents and held outputs. Missing native formats/profiles leave original color
+usable. SMAA has no RT/FSR gate; disabled is a borrowed pass-through. No diagonal/
+corner detection, temporal SMAA or MSAA is claimed.
+
+Added manual metadata/no-device strict round-trip and numerical SMAA fixtures plus
+an integration matrix for both examples, unsupported/partial capabilities, SDK
+fallbacks, import/stale handles, edits/clone/picking regression and resource lifetime.
+Agent performed only static checks: 59 touched source licenses, local includes and
+lexical balance; eight native SMAA wrappers, logical/Metal bindings and ABI review;
+signal diagnostics, final/overlay ordering, six live targets and authored local
+links; git diff --check. No configure/build, shader compiler, fixture, executable or
+packaging execution. No CMake or production render edits in this step.
+
+Lead must compile engine/native shaders and validate Vulkan/Metal/no-RT/partial
+capability behavior and the manual matrix. Source inspection is not backend proof.
+M03-08 acceptance rests on continuation; exact backend/scenario coverage remains
+unspecified. M03-10 review is the next required step after acceptance, followed by
+M03-11 cumulative maintained documentation. Pending M04/M05 and retirement notes
+now name actual final-processing/settings/ownership contracts and retained lookup
+data. The complete M03 review and cumulative docs are not claimed by this step.
+
+Final static review also checked every deferred Metal sample against declared samplers, preserving reflection texture16 sharing sampler0. No runtime claim is added.
+
+## M03-09 correction — missing visible graphics controls
+
+Lead screenshots and report showed only scene/manipulation windows, with no effect
+controls. Source inspection confirms the prior delivery omitted example-owned
+RenderSettingsPreferences::connect, GraphicsSettingsWindow::bind and draw calls.
+The earlier claim that the examples already displayed shared settings was wrong.
+The request to continue implements this correction, not acceptance/advancement to
+M03-10. Both examples now own/connect live facades before the first renderer bind,
+show/draw the settings window at startup and expose a reopen button. Separate
+borrowed PreferencesStore scopes enable explicit save/restore as well as JSON.
+Manipulation clears the settings facade/window at its existing cleanup boundary.
+
+Also removed duplicate finalProcessor recording from RendererDeferred::update;
+only record after final color invokes the optional processor. This corrects stale
+input and duplicate-serial failure when enabling SMAA. No CMake or production
+render changes. Agent checks call-site/lifecycle wiring, single final-processor
+ordering, licenses/includes/delimiters and diff whitespace only. No compilation,
+shader compiler or runtime execution. Lead must validate startup, reopening,
+actual effect toggles/status, preferences/rebind and SMAA; M03-09 remains awaiting
+project lead. Next required step after acceptance remains M03-10.
+
+## M03-09 requested addition — manipulation lights and active GI defaults
+
+Lead requests light property/position/orientation editing in draw_manipulation and
+GI plus reflections active initially. This extends the pending integration work;
+no M03-10 review or new backend validation is implied. The manipulation factory
+now explicitly selects GlobalIllumination and injects enabled GI/reflection objects.
+Other renderer/example defaults, FSR/SMAA defaults and capability fallbacks remain.
+
+The Manipulation window adds per-light editors using actual catalog descriptors
+and GraphicsSettingsWindow::queueEdit, preserving validation, availability, queued
+renderer generation checks and SDK/engine invalidation. An example-owned facade
+extension adds live local position and Euler-degrees targets per light. Node owners
+retain component lifetime; rebind creates current handles. Pose changes stop parent
+animation and invalidate histories; dedicated property edits queue the same pause
+before the catalog mutation. Transforms preserve other TRS components. Both JSON
+and preference serialization include pose targets. Omni orientation has no visual
+meaning; spot/directional lights follow transformed local +Z. Current parent
+rotation is retained on pause, so positions are explicitly local.
+
+Agent checked factory defaults, metadata getter/setter signatures, target owners,
+queue/edit/animation/reset ordering, source includes/licenses/delimiters and
+whitespace. No build, shader compilation or runtime execution. Lead validation
+includes both panels, all light types/properties, pose preservation, animated
+parent behavior, import/rebind and supported/unsupported GI/reflections. M03-09
+remains awaiting project lead validation; M03-10 is still the next required step.
+
+## M03-10 technical review delivery
+
+Latest continuation accepts M03-09, including visible-settings/SMAA corrections and
+manipulation per-light local pose/properties plus active GI/reflection defaults.
+Acceptance basis: project lead continuation instruction; backend/scenario coverage
+not specified. Preserve earlier failure reports/screenshots and corrections as
+history; they do not establish measured GI/reflection performance or parity.
+
+Created milestone_03_ray_tracing/review.md from declarations, implementations,
+native kernels and real callers. It records bounded packed material/geometry ABI,
+capability profiles, cutouts/transparent exclusions, AO/GI/reflection normalization,
+public camera/explicit surfaces, bounded display histories, guide-based denoise,
+shared noise, live metadata/codec/edit generations and optional final SMAA.
+Classifies actual refinements, legacy-shadow degradation, corrected missing UI,
+intentional exclusions and verification gaps separately. No new architecture
+migration or invented hardware coverage. rt-design.md links concrete final source
+contracts rather than leaving proposed profiles as undocumented assumptions.
+
+Updated nineteen actual pending step files across M03-11 and M04–M10 plus all
+seven downstream milestone summaries. They schedule UV world-position/normal/
+coverage and chart isolation, exact raw bake/linear HDR scene averaging, completed
+slot/snapshot ownership, final-AA ordering, required-job capability errors,
+example-owned pose target mapping, explicit app settings-window wiring and safe
+async edits. Retirement keeps official SMAA lookup bytes/licenses and actual draw
+shader deployment. Full maintained documentation still belongs to M03-11.
+
+Static GPL scan covers 338 pipeline headers/implementations and draw shaders.
+Reviewed cosmetic rules at changed source sites; corrected adjacent function
+separation in SoftShadowPass.cpp, RenderTarget.cpp and GBuffer.cpp, with identical
+non-whitespace tokens before/after. Focused source/includes/delimiters, paired native
+bindings/declared samplers/order, Markdown links and diff whitespace checked.
+No CMake edits, configure/build, shader compiler, fixture, application or packaging
+execution. Native numerical/performance/asynchronous failure-path checks remain
+lead-owned and unspecified except historical reports explicitly cited in review.
+
+M03-10 is awaiting project lead. Next required step is M03-11 cumulative maintained
+documentation, then its acceptance before entering M04. This review alone does not
+close M03 or deliver any bake/headless application API.
+
+## M03-11 final documentation delivery
+
+M03-10 accepted by project lead continuation instruction; no specific backend or
+scenario evidence added. Implemented final M03 documentation step with five added
+and twenty-four updated maintained pages. New surface/snapshot/camera-motion,
+GraphicsSettingsWindow and advanced-lighting architecture references describe
+actual APIs, ownership/native profiles and exclusions. Existing effect/settings/
+renderer references, two ordered tutorials, app/distribution guidance, navigation
+and affected production/conceptual guides are reconciled in place. Full inventory,
+retained pages and remaining M04–M10 ownership are in documentation.md; review.md
+has the cumulative closure handoff. No extra M03 step is required.
+
+Corrected stale effect/UI/history availability, deferred scale, shadow overflow
+and chart-isolation claims. Actual GI mode/enabled split, manipulation light poses
+and defaults, typed codec identity, partial-failure invalidation, no-RT fallback
+and final SMAA resources/order are documented without future baking/headless APIs
+being presented as delivered. Tutorials preserve ordered construction and focused
+current constructor/metadata/editor recipes rather than a whole-file listing.
+
+Static checks: 29 maintained pages, 344 real local links and anchors, 73 existing
+public/private source header references, balanced fences, source-matching example
+constructors/call sites/defaults and git diff --check. No CMake/source edits,
+configure/build, native shader compilation, fixture/application, image export or
+packaging execution. Actual backend numerical/performance evidence remains as
+specified in review.md, not inferred from documentation checks.
+
+M03-11 is the last ordered milestone-3 step, delivered awaiting project lead.
+Continuation accepts this documentation closure and selects M04-01; M04 is not
+implemented or authorized by this delivery alone. Next pointer names its real file.

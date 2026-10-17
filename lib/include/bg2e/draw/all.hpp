@@ -58,3 +58,17 @@
 #include <bg2e/draw/FsrUpscaler.hpp>
 
 #include <bg2e/draw/pipeline/OverlayPass.hpp>
+
+#include <bg2e/draw/pipeline/TracingSceneResources.hpp>
+#include <bg2e/draw/pipeline/RTAmbientOcclusion.hpp>
+
+#include <bg2e/draw/pipeline/RTGlobalIllumination.hpp>
+
+#include <bg2e/draw/pipeline/RTReflections.hpp>
+
+#include <bg2e/draw/pipeline/TemporalAccumulator.hpp>
+#include <bg2e/draw/pipeline/MotionVectorGenerator.hpp>
+
+#include <bg2e/draw/pipeline/DenoiseFilter.hpp>
+
+#include <bg2e/draw/pipeline/SMAAProcessor.hpp>

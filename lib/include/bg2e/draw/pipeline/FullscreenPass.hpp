@@ -37,7 +37,8 @@ class BG2E_API FullscreenPass {
     void draw(const FrameContext& frame, gpu::Image& output,
         const std::vector<gpu::Image*>& inputs, uint32_t imageSet,
         const std::vector<std::pair<uint32_t, gpu::ResourceSet*>>& sets,
-        const void* push = nullptr, uint32_t pushSize = 0, const std::vector<uint32_t>& metalImages = {});
+        const void* push = nullptr, uint32_t pushSize = 0, const std::vector<uint32_t>& metalImages = {},
+        const std::vector<uint32_t>& metalSamplers = {});
     void cleanup();
   private:
     Engine* _engine = nullptr;

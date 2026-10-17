@@ -56,3 +56,28 @@ The current Engine is window-only and the codec is usable without UI; those are 
 ## Documentation closure order
 
 The technical review now hands off to [M05-07](step_07_documentation.md), not directly to the next milestone. Earlier next-milestone handoff statements are historical and superseded by this order. See [documentation policy](../documentation-policy.md).
+
+## M03-06 reflection contract
+
+[Reflection handoff](../milestone_03_ray_tracing/rt-reflections.md) defines output-relative quality independent of internal surfaces and unpremultiplied HDR hit radiance plus fractional confidence. Freeze scene/receiver/quality while advancing rendered sample keys for requested samples; accumulation must distinguish confidence from GI validity and retain IBL fallback for misses. Existing shared snapshot completion/ownership rules apply.
+
+## M03-07 temporal boundary
+
+[Temporal handoff](../milestone_03_ray_tracing/temporal.md) supplies independent effect/view/layer histories, bounded nominal and per-pixel convergence, rolling/frozen settings and explicit reset generation. It is not an exact UV bake average or a requested-frame scheduler. Select actual submitted scene samples, retain confidence semantics, freeze scene state and distinguish nominal frameCount from pixel counts restarted by rejection. Explicit stationary surfaces can use same-UV correspondence; define the bake signal separately.
+
+## M03-09 integration contract
+
+Read [integration](../milestone_03_ray_tracing/integration.md). Reuse public
+requested settings and matching metadata instance addresses independent of device
+availability. FinalProcessor/SMAAProcessor apply optional final opaque color AA
+after reconstruction/color and before overlays/UI; default remains resampling.
+Headless device-level SMAA returns borrowed source or fresh owned RGBA16 output
+under an explicitly retired slot/serial contract. Do not filter exact bake averages
+with spatial AA or reuse denoised display histories for sample accumulation.
+Legacy query shadow overflow now reports sceneSupported/status and neutral whole
+scene visibility; advanced material tables retain their independent capacities.
+Review the lead validation matrix before claiming backend coverage.
+
+## M03 reviewed dependency
+
+[M03 technical review](../milestone_03_ray_tracing/review.md) is the actual source/ownership/signal/settings baseline. Its pending-plan impact table and the concrete additions in this milestone's step files supersede historical statements that explicit profiles or effect controls are still unimplemented. Keep exact averaging, chart isolation, required-job capabilities and actual validation evidence distinct from interactive fallback/history behavior.

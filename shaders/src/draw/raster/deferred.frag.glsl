@@ -90,6 +90,22 @@ vec4 composite()
     {
         return vec4(baked, 1.0);
     }
+    if (lightingDebug.value.x == 11u)
+    {
+        return vec4(vec3(1.0),1.0);
+    }
+    if (lightingDebug.value.x == 12u)
+    {
+        return vec4((vec4(0.0)).rgb,1.0);
+    }
+    if (lightingDebug.value.x == 13u)
+    {
+        return vec4((vec4(0.0)).rgb,1.0);
+    }
+    if (lightingDebug.value.x == 14u)
+    {
+        return vec4(vec3((vec4(0.0)).a),1.0);
+    }
     vec3 direct = vec3(0.0);
     vec3 indirect = vec3(0.0);
     vec3 emission = a.rgb * normalEmission.a;

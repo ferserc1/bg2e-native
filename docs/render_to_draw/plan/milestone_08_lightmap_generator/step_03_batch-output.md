@@ -47,3 +47,9 @@ Record actual API, ownership and verification in the milestone review. Follow [t
 ## M01-16 reviewed baseline
 
 M01 raw/reference JSON IO and raw completed color readback are building blocks, not complete batch/save semantics. Consume real M04 LightmapPixels and M06/M07 full resource-save contracts before implementing specialized bake writer/preflight/atomic publication. Preserve explicit byte/float color/orientation metadata and input protection. See [M01 review](../milestone_01_deferred_renderer/review.md).
+
+## M03-10 reviewed implementation requirement
+
+Reuse M04 chart-isolated raw-signal averaging and declared validity/HDR normalization, not TemporalAccumulator frameCount or denoised histories. Retain immutable snapshots and output owners until submitted work completes on cancel/error. Preflight required tracing/capacity before model/map output; preserve protected-input/overwrite guarantees.
+
+Source and validation boundaries: [M03 technical review](../milestone_03_ray_tracing/review.md). Include these conditions in this step's implementation and exit checks.

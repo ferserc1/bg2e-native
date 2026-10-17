@@ -44,3 +44,13 @@ Reuse M01-05's non-template renderer ownership and synchronized initialize/attac
 RendererConfiguration.overlays defaults empty. Offscreen/headless paths omit these
 optional public post-final extensions and need no SelectionManager or manipulation
 resources. See [overlay lifecycle](../milestone_02_manipulation/overlays.md).
+
+## M03-06 reflection contract
+
+[Reflection handoff](../milestone_03_ray_tracing/rt-reflections.md) defines output-relative quality independent of internal surfaces and unpremultiplied HDR hit radiance plus fractional confidence. Freeze scene/receiver/quality while advancing rendered sample keys for requested samples; accumulation must distinguish confidence from GI validity and retain IBL fallback for misses. Existing shared snapshot completion/ownership rules apply.
+
+## M03-10 reviewed implementation requirement
+
+Own a real completed-slot/serial sequence with stopped initialize/cleanup and ordered submissions, independent of a surface. Existing SMAA process(Device) is reusable, but does not create the windowless Engine/context. Keep Device and all borrowed signal/environment owners alive; no UI-only sequence increments.
+
+Source and validation boundaries: [M03 technical review](../milestone_03_ray_tracing/review.md). Include these conditions in this step's implementation and exit checks.

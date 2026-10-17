@@ -47,9 +47,11 @@ void registerTypes()
         TypeInfoBuilder<Lighting> lighting("bg2e.draw.lighting.v1");
         lighting.property("debugView", &Lighting::debugView, &Lighting::setDebugView).category("Diagnostics")
             .enumValue("Final lighting", 0).enumValue("Unlit albedo", 1).enumValue("Direct light only", 2)
-            .enumValue("IBL only", 3).enumValue("Emission only", 4).enumValue("Nonfinite values (magenta)", 5)
+            .enumValue("Indirect lighting", 3).enumValue("Emission only", 4).enumValue("Nonfinite values (magenta)", 5)
             .enumValue("IBL irradiance sample", 6).enumValue("IBL prefiltered sample", 7)
-            .enumValue("IBL BRDF LUT sample", 8).enumValue("Ambient occlusion", 9).enumValue("Baked multiplier", 10);
+            .enumValue("IBL BRDF LUT sample", 8).enumValue("Ambient occlusion", 9).enumValue("Baked multiplier", 10)
+            .enumValue("Ray visibility",11).enumValue("Diffuse GI signal",12)
+            .enumValue("Reflected radiance signal",13).enumValue("Reflection confidence",14);
         TypeRegistry::get().registerType(lighting.build());
         TypeInfoBuilder<Final> final("bg2e.draw.final.v1");
         final.property("exposure", &Final::exposure, &Final::setExposure).category("Color").range(-32, 32);
@@ -99,6 +101,7 @@ void registerTypes()
             o.settings().maxSamples = v;
         }).category("Shadows").range(1, pipeline::MaxShadowSamples);
         shadows.property("available", &Shadows::available).category("Capabilities");
+        shadows.property("sceneSupported", &Shadows::sceneSupported).category("Capabilities");
         shadows.property("status", &Shadows::status).category("Capabilities");
         shadows.accessor<uint32_t>("alphaTextureLimit", [](const Shadows&)
         {
@@ -133,6 +136,7 @@ void registerTypes()
             .enumValue("Directional", base::Light::TypeDirectional).enumValue("Disabled", base::Light::TypeDisabled);
         light.property("spotAngle", &base::Light::spotAngle, &base::Light::setSpotAngle).category("Spot").range(0, 90);
         light.property("spotCutoff", &base::Light::spotCutoff, &base::Light::setSpotCutoff).category("Spot").range(0, 90);
+        light.property("affectsReflections", &base::Light::affectsReflections, &base::Light::setAffectsReflections).category("Light");
         light.property("castShadows", &base::Light::castShadows, &base::Light::setCastShadows).category("Shadows");
         light.property("sourceSize", &base::Light::sourceSize, &base::Light::setSourceSize).category("Shadows").min(0);
         light.property("shadowSamples", &base::Light::shadowSamples, &base::Light::setShadowSamples)
@@ -169,10 +173,17 @@ void registerTypes()
         TypeInfoBuilder<RendererDeferred> renderer("bg2e.draw.renderer.deferred.v1");
         renderer.property("inspectOpaqueLayer", &RendererDeferred::inspectOpaqueLayer, &RendererDeferred::setInspectOpaqueLayer).category("Diagnostics");
         renderer.property("queryGraphSelected", &RendererDeferred::usesQueryShadows).category("Capabilities");
+        renderer.property("indirectLighting", &RendererDeferred::indirectLightingMode, &RendererDeferred::setIndirectLightingMode)
+            .category("Indirect lighting").enumValue("IBL",0).enumValue("AO",1).enumValue("GI",2);
+        renderer.property("aoGraphSelected", &RendererDeferred::usesAmbientOcclusion).category("Capabilities");
+        renderer.property("giGraphSelected", &RendererDeferred::usesGlobalIllumination).category("Capabilities");
+        renderer.property("reflectionGraphSelected", &RendererDeferred::usesReflections).category("Capabilities");
+        renderer.property("noiseStatus", &RendererDeferred::noiseStatus).category("Capabilities");
         renderer.property("environmentError", &RendererDeferred::environmentError).category("Environment");
         TypeRegistry::get().registerType(renderer.build());
     });
 }
+
 SettingsTarget target(std::string id, const std::string& type, void* instance, std::shared_ptr<void> owner = {})
 {
     SettingsTarget result;
@@ -182,11 +193,7 @@ SettingsTarget target(std::string id, const std::string& type, void* instance, s
     result.owner = std::move(owner);
     return result;
 }
-bool queryAvailable(RendererDeferred& renderer)
-{
-    const auto pass = renderer.softShadows();
-    return renderer.usesQueryShadows() && pass && pass->available();
-}
+
 void bindScene(SettingsCatalog& catalog, RendererDeferred& renderer, const std::shared_ptr<scene::Node>& node,
     bool& environmentBound)
 {
@@ -209,15 +216,11 @@ void bindScene(SettingsCatalog& catalog, RendererDeferred& renderer, const std::
     {
         auto* light = &component->light();
         auto entry = target("light/" + node->identifier(), "bg2e.draw.light.v1", light, component->shared_from_this());
-        entry.available = [&renderer, light](const std::string& property)
+        entry.available = [light](const std::string& property)
         {
             if (property == "spotAngle" || property == "spotCutoff")
             {
                 return light->type() == base::Light::TypeSpot;
-            }
-            if (property == "castShadows" || property == "sourceSize" || property == "shadowSamples")
-            {
-                return queryAvailable(renderer);
             }
             return true;
         };
@@ -228,6 +231,7 @@ void bindScene(SettingsCatalog& catalog, RendererDeferred& renderer, const std::
         bindScene(catalog, renderer, child, environmentBound);
     }
 }
+
 void bindGeneration(SettingsCatalog& catalog, environment::EnvironmentGenerator& generator)
 {
     const auto& config = generator.configuration();
@@ -280,12 +284,14 @@ void bindGeneration(SettingsCatalog& catalog, environment::EnvironmentGenerator&
         catalog.add(std::move(entry));
     }
 }
+
 SettingsResult failure(const char* code, const std::string& message)
 {
     SettingsResult result;
     result.issues.push_back({code, "", message});
     return result;
 }
+
 std::string hexEncode(const std::string& input)
 {
     constexpr char digits[] = "0123456789abcdef";
@@ -298,6 +304,7 @@ std::string hexEncode(const std::string& input)
     }
     return result;
 }
+
 std::string hexDecode(const std::string& input)
 {
     if (input.size() % 2)
@@ -322,6 +329,7 @@ std::string hexDecode(const std::string& input)
     return result;
 }
 }
+
 RenderSettingsPreferences::RenderSettingsPreferences(app::Preferences* persistence, std::string key)
     : _persistence(persistence), _key(std::move(key))
 {
@@ -330,6 +338,7 @@ RenderSettingsPreferences::RenderSettingsPreferences(app::Preferences* persisten
         throw std::invalid_argument("Settings persistence requires a key");
     }
 }
+
 SettingsCatalog& RenderSettingsPreferences::catalog()
 {
     return _catalog;
@@ -338,11 +347,13 @@ const SettingsCatalog& RenderSettingsPreferences::catalog() const
 {
     return _catalog;
 }
+
 void RenderSettingsPreferences::clear()
 {
     _catalog.reset();
     _rendererGeneration = 0;
 }
+
 void RenderSettingsPreferences::bind(Renderer& renderer, std::shared_ptr<scene::Node> root, ExtendCatalog extensions)
 {
     clear();
@@ -379,10 +390,6 @@ void RenderSettingsPreferences::bind(Renderer& renderer, std::shared_ptr<scene::
             if (auto shadows = deferred->softShadows())
             {
                 auto entry = target("shadows", "bg2e.draw.shadows.v1", shadows.get(), shadows);
-                entry.available = [deferred](const std::string& property)
-                {
-                    return property == "available" || property == "status" || property == "alphaTextureLimit" || queryAvailable(*deferred);
-                };
                 entry.validate = [](const std::map<std::string, std::any>& values)
                 {
                     if (std::any_cast<float>(values.at("directionalDistance")) <= 2 * std::any_cast<float>(values.at("bias")))
@@ -392,6 +399,39 @@ void RenderSettingsPreferences::bind(Renderer& renderer, std::shared_ptr<scene::
                 };
                 _catalog.add(std::move(entry));
             }
+            // Writable requested values remain serializable on unsupported devices.
+            // Each injected component supplies both its metadata and matching base address.
+            auto addEffect = [&](const std::string& id, const auto& effect, const std::string& distance = {})
+            {
+                if (!effect)
+                {
+                    return;
+                }
+                SettingsTarget entry{id,effect->settingsType(),effect->settingsInstance(),effect,{},{},{}};
+                entry.changed = [deferred]
+                {
+                    deferred->invalidateHistories();
+                };
+                if (!distance.empty())
+                {
+                    entry.validate = [distance](const std::map<std::string,std::any>& values)
+                    {
+                        // Replacement metadata can define a different public property set.
+                        if (values.contains(distance) && values.contains("bias") &&
+                            std::any_cast<float>(values.at(distance)) <= 2*std::any_cast<float>(values.at("bias")))
+                        {
+                            throw std::invalid_argument("Effect distance must exceed twice its ray bias");
+                        }
+                    };
+                }
+                _catalog.add(std::move(entry));
+            };
+            addEffect("ambientOcclusion",deferred->ambientOcclusion(),"radius");
+            addEffect("globalIllumination",deferred->globalIllumination(),"maxDistance");
+            addEffect("reflections",deferred->reflections(),"maxDistance");
+            addEffect("temporal",deferred->temporal());
+            addEffect("denoise",deferred->denoise());
+            addEffect("finalProcessor",deferred->finalProcessor());
             if (auto generator = deferred->environmentGenerator())
             {
                 bindGeneration(_catalog, *generator);
@@ -414,6 +454,7 @@ void RenderSettingsPreferences::bind(Renderer& renderer, std::shared_ptr<scene::
         throw;
     }
 }
+
 void RenderSettingsPreferences::connect(const std::shared_ptr<DefaultRenderLoopDelegate>& delegate, ExtendCatalog extensions)
 {
     if (!delegate || !_delegate.expired())
@@ -441,14 +482,17 @@ void RenderSettingsPreferences::connect(const std::shared_ptr<DefaultRenderLoopD
     });
     _delegate = delegate;
 }
+
 void RenderSettingsPreferences::queueSet(SettingHandle handle, std::any value, Completion completion)
 {
     enqueue(SettingsCodec::prepare(_catalog, {{std::move(handle), std::move(value)}}), std::move(completion));
 }
+
 void RenderSettingsPreferences::queueImport(const json::JsonNode& document, UnknownSettingPolicy policy, Completion completion)
 {
     enqueue(SettingsCodec::validate(document, _catalog, policy), std::move(completion));
 }
+
 void RenderSettingsPreferences::enqueue(SettingsImport plan, Completion completion)
 {
     if (!plan.result().valid())
@@ -469,10 +513,11 @@ void RenderSettingsPreferences::enqueue(SettingsImport plan, Completion completi
         return;
     }
     const std::weak_ptr<RenderSettingsPreferences> self = shared_from_this();
-    delegate->enqueueRendererUpdate(_rendererGeneration, [self, plan, completion](Renderer&)
+    delegate->enqueueRendererUpdate(_rendererGeneration, [self, plan, completion](Renderer& renderer)
     {
         auto owner = self.lock();
         auto result = owner ? plan.apply(owner->_catalog) : failure("target_expired", "Settings facade no longer exists");
+        renderer.invalidateHistories(); // Includes reported partial application failures.
         if (completion)
         {
             completion(std::move(result));
@@ -489,6 +534,7 @@ bool RenderSettingsPreferences::hasPersistence() const
 {
     return _persistence != nullptr;
 }
+
 void RenderSettingsPreferences::queueRestore(UnknownSettingPolicy policy, Completion completion)
 {
     if (!_persistence)
@@ -531,6 +577,7 @@ void RenderSettingsPreferences::persist() const
     _persistence->set(_key, hexEncode(SettingsCodec::stringify(*SettingsCodec::serialize(_catalog))));
     _persistence->save();
 }
+
 SettingsResult RenderSettingsPreferences::restore(const json::JsonNode* explicitDocument, UnknownSettingPolicy policy)
 {
     try

@@ -38,7 +38,8 @@ struct RasterFrame;
 enum class ExtentDomain
 {
     Internal,
-    Output
+    Output,
+    Scaled // Explicit producer-defined nonzero extent; normalized sampled inputs.
 };
 
 struct ImageSlot {

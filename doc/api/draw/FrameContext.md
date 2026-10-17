@@ -38,3 +38,5 @@ own persistent resources. Surface::beginFrame completes previous use of the
 slot before RenderLoop constructs the context. Unavailable drawables do not
 advance the slot or accumulated frame number. The color target is persistent
 scene storage rather than the current drawable; no depth target is supplied.
+
+See [TemporalAccumulator](TemporalAccumulator.md) for independent rendered-view effect histories, borrowed public surfaces, camera motion, bounded convergence and invalidateHistories application notifications.

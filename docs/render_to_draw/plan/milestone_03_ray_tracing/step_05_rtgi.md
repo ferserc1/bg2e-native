@@ -34,3 +34,23 @@ Delegate compilation and applicable runtime checks to the project lead; perform 
 M03-07/M03-08 supply HDR history/denoise; M04/M08 consume the effect independently of a camera renderer.
 
 Record actual API, ownership and verification in the milestone review. Follow [the review protocol](../review-protocol.md) and edit affected pending steps when actual contracts differ.
+
+## M03-01 checkpoint handoff — accepted by lead continuation
+
+Follow the accepted [M03-01 design](rt-design.md) and M03-04 public tracing/surface resources: Vulkan raygen iterative transport, miss and one closest-hit/any-hit triangle group; Metal compute iterative transport with nearest committed intersection queries. Share logical hit/material/light/environment semantics, not shader source. Preserve geometric GI hit normals, per-slot UV/color/channel/emission semantics and explicit LOD0 baseline. Specify linear HDR signal normalization/replacement and validity so disabled/unsupported restores IBL/baked composition. Default tracing excludes both blended transparent classes; no implicit opaque conversion or transmission implementation.
+
+## M03-02 actual primitive contract
+
+Read [rt-gpu-data.md](rt-gpu-data.md). Use ShaderStage::AnyHit, appended anyHitShader, ResourceBinding::additionalStages and explicit metalArgumentBuffer/argument IDs. Set complete arrays through setSampledImages/setSamplers; choose matching 32/128/256 native shader profiles from logical-device resourceArrayCapabilities after reserving other bindings. Metal arrays currently support compute/RT color 2D sampled resources only, with retained source owners and retired/drained updates. Arbitrary draw geometry/material snapshot construction remains M03-04; the primitive probe's tiny material record is not the engine ABI. No buffer-address or array graphics-stage infrastructure is implied.
+
+## M03-03 actual noise input
+
+Reuse [utils::BlueNoise](blue-noise.md): CPU layer-major rank data and an explicitly shared RGBA8 color 2D atlas, with uint4 metadata and paired bg2eBlueNoise2/bg2eHashNoise2 helpers under draw/lib. Logical layers are stacked in Y; physical arrayLayers is one. Do not copy production sampler2DArray bindings or assume general image-array support. Effects own rendered-view/sample keys and disabled/missing-noise variants without texture access; the utility does not advance presentation/slot state or reserve tracing-table capacity implicitly. Retain image/sampler owners and metadata snapshots through completion.
+
+## M03-04 actual implementation handoff
+
+Use [rtao.md](rtao.md): public RTAmbientOcclusion, SurfaceInputs camera/explicit profiles and TracingSceneResources/TracingSnapshot now exist. Reuse dense IDs, retained material tables, scalar R16 output and explicit renderedSample keys. AO has independent quality dimensions via ExtentDomain::Scaled. No history/filtering or visible controls are implemented here. Legacy SoftShadowPass retains its separate eight-cutout-pair limit; reconcile that consumer during integration/review. Native pipeline GLSL users may include tracing.glsl without DRAW_TRACE_QUERIES; compute-query users define it first.
+
+## M03-05 delivered contract
+
+See [rtgi.md](rtgi.md) for actual APIs, native stages, ABI, linear HDR validity/composition and ownership. Compilation/runtime validation remains with the project lead.

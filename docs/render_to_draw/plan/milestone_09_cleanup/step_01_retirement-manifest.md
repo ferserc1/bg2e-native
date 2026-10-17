@@ -53,3 +53,28 @@ manifest. Map each production counterpart and caller separately; M02 supplies
 the draw path but does not by itself prove production callers migrated or
 regressions passed. Retain the draw preview's UI drain/unregister order and
 instance gizmo cleanup before Engine release. See [M02 review](../milestone_02_manipulation/review.md).
+
+## M03-03 shared rank-source dependency
+
+Before deleting lib/src/bg2e/render, relocate its pure blue_noise_data.h into the utils source area and update utils/BlueNoise.cpp's private include. M03-03 deliberately shares this single authoritative precomputed rank source while leaving production BlueNoise unchanged. Preserve the bytes/metadata and the new [CPU/atlas sampling contract](../milestone_03_ray_tracing/blue-noise.md); update generation/validation script paths when retiring the legacy directory. This source-only data dependency must not be mistaken for a remaining render API/native dependency.
+
+## M03-09 concrete integration handoff
+
+Use [integration contracts](../milestone_03_ray_tracing/integration.md): live
+requested effect settings persist independently of capability status; renderer
+mode selects IBL/AO/GI separately from reflections. Existing examples inject
+optional disabled FSR and SMAA. FinalProcessor/SMAAProcessor apply final scene AA
+after color/reconstruction and before overlays/UI, with standalone borrowed/owned
+output and retired-slot contracts. Reuse shared noise and explicit invalidation.
+Legacy query shadows retain an eight-pair limit but degrade the entire scene to
+neutral visibility with sceneSupported/status on overflow; advanced tables remain
+independent and never truncated. Review no-RT/partial support and the manual matrix.
+Keep official AreaTex/SearchTex bytes and original licenses in iryku_smaa during
+production retirement: draw SMAA now consumes those resources. Do not use spatial
+AA or denoised histories as bake averages. Runtime checks remain lead-owned.
+
+## M03-10 reviewed implementation requirement
+
+Keep lib/third_party/iryku_smaa/AreaTex.h and SearchTex.h with original licenses: draw SMAA consumes them. Inventory draw/lib tracing, temporal, denoise and SMAA native profiles plus manual fixtures before deleting production shader/build/package entries; legacy shadow capacity degradation is not advanced table parity.
+
+Source and validation boundaries: [M03 technical review](../milestone_03_ray_tracing/review.md). Include these conditions in this step's implementation and exit checks.

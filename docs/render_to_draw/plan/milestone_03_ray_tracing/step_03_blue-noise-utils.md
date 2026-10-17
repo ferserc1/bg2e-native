@@ -34,3 +34,11 @@ Delegate compilation and applicable runtime checks to the project lead; perform 
 M03 effects and M04 baking reuse utils::BlueNoise rather than add draw/bake-specific duplicate data families.
 
 Record actual API, ownership and verification in the milestone review. Follow [the review protocol](../review-protocol.md) and edit affected pending steps when actual contracts differ.
+
+## M03-01 checkpoint handoff — accepted by lead continuation
+
+Keep BlueNoise independent of the proposed tracing table service in [M03-01](rt-design.md). Texture data and GPU ownership live in utils; effects choose sampling and rendered-view sequencing. Do not consume table-array capacity silently or assume a frame-in-flight slot is a new noise/history sample.
+
+## Actual delivery
+
+[blue-noise.md](blue-noise.md) records utils::BlueNoiseData/sampleNoise2D and Device-backed utils::BlueNoise, plus explicit native sampling helpers and a manual CPU/GPU fixture. The selected layout is a single RGBA8 2D atlas with logical layers stacked in Y, so physical image-array primitives are not needed or implemented. Keep the original ranked bytes and production API untouched during coexistence. Next is M03-04 after lead acceptance.

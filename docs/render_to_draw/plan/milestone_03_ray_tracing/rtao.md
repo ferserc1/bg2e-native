@@ -1,0 +1,39 @@
+# M03-04 implementation handoff
+
+[Step](step_04_rtao.md) · [Public API](../../../../doc/api/draw/RTAmbientOcclusion.md) · [Manual validation](../../../../tests/draw/rtao/README.md)
+
+## Public pass and integration
+
+`draw::pipeline::RTAmbientOcclusion` is a Device-backed, replaceable compute-query pass. `RTAOConfiguration` selects shaderRoot, a compatible shaderPrefix, the `draw.rtao.v1` interface and optional shared `utils::BlueNoise`. Lifecycle, preparation, recording, availability and output extent are virtual. It accepts a RenderQueue or an already prepared TracingSnapshot, independent of RendererDeferred.
+
+RendererConfiguration::ambientOcclusion injects the shared pass; null constructs the default, initially disabled. RendererDeferred exposes ambientOcclusion() and usesAmbientOcclusion(). Capability-selected lighting contracts are `draw.raster.deferred.ao.v1` and `draw.raster.deferred.shadows.ao.v1`. Explicit older base/shadow contracts retain their original inputs and opt out of AO. The new paired lighting shaders multiply indirect ambient/baked lighting and the existing direct sheen term by scalar AO, leave direct PBR/emission/unlit unchanged, and display materialAO*rayAO in the occlusion diagnostic. Material AO remains applied through existing lighting arithmetic. Actual baked carriers and presence policy remain M04 work.
+
+Low/Medium/High/Ultra output scales are 1/3, 1/2, 2/3 and 1, rounded to nearest and clamped to one pixel. `ExtentDomain::Scaled` permits the AO lighting input's independent extent; the producer validates the selected quality dimensions and consumers use normalized coordinates. Renderer target reconfiguration detects quality changes. Settings expose enabled, quality, 1..64 samples, 1..8 bounces, positive finite radius/bias/falloff, attenuation in [0,1] and noise selection. Active recording requires radius > 2*bias. Changes must occur at the application's synchronized mutation boundary, followed by a requested scene frame. UI/reflection controls remain M03-09; general history invalidation remains M03-07. Reset the active upscaler for discontinuous changes until that integration lands.
+
+## Surface and output contracts
+
+CameraDepth uses sampled RGBA16_SFLOAT encoded world normals (RGB zero means uncovered), sampled D16/D32 depth, and a finite invertible inverse view-projection. Reconstruction follows the current draw camera convention, including Y inversion. WorldPositionCoverage uses signed world XYZ normals in RGBA16_SFLOAT, world positions in RGBA32_SFLOAT, and R8_UNORM coverage > 0. Inputs share a nonzero extent and Device and are single-sample color/depth 2D resources as appropriate. The explicit profile requires no synthetic camera and is the M04/M08 surface bridge.
+
+Output is R16_SFLOAT with Storage|Sampled|ColorAttachment usage at outputExtent(surface.extent()). Active input/output aliasing is rejected. Uncovered/invalid receiver pixels, empty scenes and disabled passes produce 1. Query/array/format capability failure makes the pass unavailable without constructing tracing snapshots or renderer AO targets. RendererDeferred selects the original lighting path in that case. Standalone neutral recording still requires a valid scalar output supported by the Device. `status()` describes initialization failure.
+
+The estimator uses cosine hemisphere rays, nearest accepted hits, radius falloff and configurable attenuated bounce contributions. Subsequent bounces use transformed triangle geometric normals. It has no history or denoiser. Optional shared BlueNoise uses two channels, retained atlas/sampler owners and copied metadata; missing/unready noise selects resource-free hash variants. The caller supplies renderedSample, independent of presentation serial/slot.
+
+## Shared geometry and materials
+
+`TracingSceneResources(Device&, capacity)` selects an explicit 32/128/256 bounded profile. RTAO selects from resourceArrayCapabilities after reserving four images, two samplers and thirteen resources. Preparation collects traceable opaque/cutout items, excludes blended classes, validates all material/transform/geometry resources, and rejects overflow before publishing the snapshot. Image and sampler tables deduplicate independently and retain actual native resource owners. All six source texture slots, UV0/UV1, color/scalar decoding and MaterialData are preserved. AO currently evaluates only albedo alpha for cutout acceptance. Existing SoftShadowPass still has its separate eight-cutout-pair limit; disable that legacy shadow consumer when validating larger AO tables. Its migration remains downstream integration work.
+
+Packed ABI: TracingVertex is 64 bytes (position/normal/UV0+UV1/tangent vec4); TracingInstanceData is 160 (model, inverse-transpose normal, indexBase/vertexBase/triangleCount/materialIndex, canonical object/submesh/mirrored identity); TracingMaterialData is 256 (192-byte MaterialData plus two uvec4 image indices and two sampler indices). Dense TLAS instance IDs address the snapshot; canonical IDs are retained separately. Packed indices remain local and vertexBase is applied once. Mesh CPU data is immutable after build; reload creates new DrawMesh identity. Geometry buffers are cached by retained mesh identity, while transforms/materials/TLAS are fresh per snapshot. Source tangent XYZ has no handedness; packed W is one, with mirrored-instance identity recorded separately for future consumers.
+
+Set 1 bindings 0..6 contain vertices, indices, instances, materials, TLAS, image array and sampler array. Metal maps the first five to buffers 2..6, then argument buffer 8 with image IDs 0..capacity-1 and sampler IDs capacity..2*capacity-1. Every array entry is initialized with a retained fallback. No hidden table slots or GPU-to-draw dependency are introduced.
+
+The surface set 0 binds uniforms, normal, depth/position, coverage, nearest sampler, scalar storage output, and optional noise image/sampler. Metal uses buffer 1, textures 0/1/2/4 (noise 3), sampler 9 (noise 10). Uniform ABI is 128 bytes: inverseVP at 0, parameters at 64, counts at 80, noise metadata at 96, source/output extents at 112. Native wrappers cover both surfaces, both noise variants and all three capacities. GLSL defines DRAW_TRACE_QUERIES before including tracing.glsl; later native pipeline consumers can reuse material/candidate helpers without enabling query helpers.
+
+## Ownership and recording
+
+Prepare each retired slot once per acquired serial; retain caller surfaces/output through completion. Each invocation keeps separate uniforms, surface/scene sets and noise owners so transparent composites cannot overwrite earlier commands. Snapshot::build transitions material images and builds TLAS once, outside active scopes, before resourceSet creation. A snapshot marked built during an abandoned command recording must be discarded. Cache replacement never mutates previously published snapshots. No per-frame waitIdle is added; reset/cleanup drain at stopped boundaries. Cleanup must precede Device destruction, including externally retained injected components/snapshots.
+
+## Validation status and downstream work
+
+Only nonexecuting source checks were performed: includes, native binding maps/ABI, profile wrappers, ownership, paired shader calls, license/delimiter checks and git diff --check. No configure, build, shader compilation or probe was executed. The lead must compile both native shader trees and run the manual fixture with diagnostics on Vulkan and Metal, then verify the existing deferred/manipulation examples and no-RT fallback.
+
+M03-05/06 reuse packed snapshots and cutout predicates; emissive/light/normal-map transport remains their work. M03-07 adds scalar history; M03-08 filtering; M03-09 visible controls and integration; M03-10 cross-effect review. M04/M08 consume explicit surfaces and the same scene ownership/capacity rules. No bake context or production render migration is part of this step.

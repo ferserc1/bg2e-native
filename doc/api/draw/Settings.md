@@ -49,7 +49,7 @@ not adapt all production material/texture/picking widgets.
 `ResolutionSettings` is authoritative on Vulkan and Metal. Enabled policy uses
 floor(output × scale), with scale in [0.25, 1]; disabling restores the original
 fixed/follow-output extent. Default settings are disabled/1.0; the deferred
-example explicitly enables 0.67. Reduction remains usable without FSR.
+example retains these defaults, while manipulation enables scale 0.7. Reduction remains usable without FSR.
 
 `Upscaler` is a public injectable lifecycle with identifier/label, requirements,
 availability/status, prepare/record/reset and reflected settings metadata.
@@ -64,9 +64,74 @@ SDK availability. At most four SDK queued frames are supported. Acquired-slot
 resources and ordered command recording avoid routine per-frame idle/readback.
 Motion is camera-only with preserved opaque depth and conventional finite RH
 perspective/zero-to-one depth. Identity/orthographic cameras use unjittered
-fallback. Moving objects/glass can ghost; no reactive masks or general engine
-histories are supplied. Attach/resize/replacement/projection/discontinuity and
+fallback. Moving objects/glass can ghost; no reactive masks or previous-object vectors
+are supplied. Separate engine effect histories are available through TemporalAccumulator. Attach/resize/replacement/projection/discontinuity and
 explicit `RendererDeferred::resetUpscaler()` camera cuts reset history.
 Native Metal upscaling and DLSS are not implemented.
 
 See [working tutorial](../../tutorials/draw/10_deferred_renderer.md).
+
+## Implemented effect targets and diagnostics
+
+| Target | Requested properties / meaning |
+|---|---|
+| renderer | indirectLighting enum IBL=0, AmbientOcclusion=1, GlobalIllumination=2; inspectOpaqueLayer |
+| ambientOcclusion | enabled, quality, sampleCount, bounceCount, radius, bias, falloff, bounceAttenuation, useBlueNoise |
+| globalIllumination | enabled, quality, sampleCount, bounceCount, bias, maxDistance, shadowSamples, useShadows, useBlueNoise |
+| reflections | enabled, quality, sampleCount, bias, maxDistance, maxRoughness, roughnessSpread, shadowSamples, useShadows, useBlueNoise |
+| temporal | enabled, freezeAtLimit, maxFrames, absolute/relativePositionThreshold, normalThreshold |
+| denoise | enabled, kernelRadius, depthThreshold, normalThreshold, depthSigma, normalSigma, spatialSigma |
+| finalProcessor (when injected) | SMAA enabled, threshold, searchSteps; custom processor may provide different metadata |
+| light/<node identifier> | type, color, intensity, spotAngle/cutoff, castShadows, sourceSize, shadowSamples, affectsReflections |
+
+AO/GI/reflection and temporal objects expose virtual settingsType/settingsInstance;
+use both matching addresses when binding replacements, as for denoise/final processors.
+Availability/status/tableCapacity/blueNoiseActive and renderer graph selections are
+read-only. Requested effect/shadow/light values remain editable and serializable
+without RT support; a successful import does not guarantee effective tracing.
+Scene capacity errors are distinct from unsupported primitives. AO radius and
+GI/reflection maxDistance must exceed twice bias; catalog validation checks proposed
+pairs before mutation. Unknown target/property/type remains a strict import error.
+
+To activate GI select renderer.indirectLighting=2 AND globalIllumination.enabled=true.
+Reflections require reflections.enabled=true independently. Manipulation sets these
+by default; deferred starts with tracing components disabled. Both examples show
+Graphics settings at startup and have reopen buttons; MainLoop does not add it.
+Settings are requested values, with no implicit preference restore.
+
+Lighting debugView appends RayVisibility=11, DiffuseGI=12, ReflectedRadiance=13 and
+ReflectionConfidence=14. These inspect resolved post-temporal/post-denoise signals
+before receiver BRDF/final color, for the last processed layer. Missing AO gives
+one, missing GI/reflection zero. Occlusion=9 includes material AO; Indirect=3 includes
+selected GI/reflections. Final color/debug conversion still affects display;
+RawHDR bypasses color processing but normalized targets cannot display arbitrary HDR.
+
+Manipulation extends the catalog with lightPose/<node identifier>: position and
+orientationDegrees vectors. They are local to the Lights parent and use real
+TransformComponent accessors, preserve the other TRS parts, and stop animation
+when changed. Dedicated light-property controls also pause animation. These
+example-owned target IDs are not a general document/headless scene schema;
+other callers must supply explicit extensions/mapping or reject/skip unknown IDs.
+
+Queued changes invalidate engine/SDK histories even after reported partial failure.
+Direct stopped-boundary imports/custom mutations must also notify/reset as needed.
+See [GraphicsSettingsWindow](../ui/GraphicsSettingsWindow.md),
+[histories](TemporalAccumulator.md) and [optional final SMAA](SMAAProcessor.md).
+
+## Serialized document identity
+
+The codec writes schema `bg2e.draw.settings`, version string `1`, renderer identity
+`bg2e.draw.deferred.v1` and a components list. Each component stores id, type and
+properties; each writable available property stores type and value. Effect type
+IDs are `bg2e.draw.rtao.v1`, `bg2e.draw.rtgi.v1`,
+`bg2e.draw.reflections.v1`, `bg2e.draw.temporal.v1`, `bg2e.draw.denoise.v1`
+and, for the shipped processor, `bg2e.draw.smaa.v1`. Read-only capabilities are not
+serialized. Example pose type is `draw.manipulation.lightPose.v1`; unknown example
+extensions require an explicit mapping or policy in a different application.
+
+Import checks schema/version/renderer and live component/property types before
+mutation. It validates the proposed set and reports setter/rollback failures;
+arbitrary setter side effects cannot be made transactionally safe by the codec.
+Use typed decimal strings for numeric payloads and SettingsCodec for parse/write.
+Preferences stores the codec document as ASCII hex to avoid the legacy JsonNode
+writer's escaping limitations; this does not make disk save failures transactional.

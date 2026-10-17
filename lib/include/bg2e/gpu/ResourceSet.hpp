@@ -24,6 +24,7 @@
 
 #include <cstdint>
 #include <memory>
+#include <span>
 
 namespace bg2e {
 namespace gpu {
@@ -175,6 +176,17 @@ class BG2E_API ResourceSet : public DeviceResource {
     virtual void setUniformBuffer(ShaderBinding binding, gpu::Buffer* buffer) = 0;
     virtual void setStorageBuffer(ShaderBinding binding, gpu::Buffer* buffer) = 0;
     virtual void setRayTracingScene(ShaderBinding binding, gpu::RayTracingScene* scene) = 0;
+
+    // Full fixed-size arrays, including fallback entries. Borrow resources through
+    // submission completion; update only at a retired-slot or drained boundary.
+    virtual void setSampledImages(ShaderBinding binding, std::span<const ImageView> views)
+    {
+        throw std::runtime_error("Sampled image arrays are not implemented");
+    }
+    virtual void setSamplers(ShaderBinding binding, std::span<gpu::Sampler* const> samplers)
+    {
+        throw std::runtime_error("Sampler arrays are not implemented");
+    }
 
     void setSampledCubeMap(ShaderBinding binding, gpu::CubeMap* cubeMap);
 

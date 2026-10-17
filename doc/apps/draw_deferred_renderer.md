@@ -28,3 +28,26 @@ Do not copy only the executable while omitting shaders/assets/runtime libraries.
 This documentation pass did not run builds or packaging, or certify packaged
 backend/FSR availability. Production apps and their documented workflows remain
 under `bg2e::render`.
+
+## Delivered advanced effect controls
+
+Graphics settings opens beside Deferred scene at startup; the scene window's
+Graphics settings button reopens it. Expand Renderer for indirect mode, Global
+illumination for Enabled, and Reflections for its independent Enabled toggle.
+Deferred starts with tracing disabled, resolution policy disabled/1.0, FSR/SMAA
+disabled. GI requires both mode and enabled. Inspect available/status and graph
+selection before interpreting unchanged output as an active effect. Pause camera
+and light animation to examine convergence. [Settings](../api/draw/Settings.md)
+lists diagnostic signals, exact target IDs and explicit preference/JSON behavior.
+
+Deploy draw shaders in rtao, rtgi, rt_reflections, temporal_accumulation, denoise,
+smaa and shared draw/lib native profiles. GI/reflection need Vulkan pipeline
+support or Metal query support plus indexed tables/formats; plain GPU initialization
+is insufficient. Missing optional SDK/effect/native profiles retain raster/IBL/
+resampling with diagnostics. Keep official iryku_smaa AreaTex/SearchTex bytes and
+licenses; no downloaded runtime lookup asset is needed. Native final AA requires
+its own filterable storage/lookup formats as [SMAA](../api/draw/SMAAProcessor.md) specifies.
+
+The agent performed static documentation/source checks only. Lead continuation
+accepts delivered implementation without specifying all devices/scenarios;
+no measured GI/reflection performance or packaged shader availability is asserted.

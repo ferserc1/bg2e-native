@@ -38,6 +38,7 @@ Sampler::Sampler(gpu::Device* gpuDevice, DeviceHandle device, const gpu::Sampler
     }
 
     auto* desc = MTL::SamplerDescriptor::alloc()->init();
+    desc->setSupportArgumentBuffers(true);
     desc->setLodMinClamp(description.minLod);
     desc->setLodMaxClamp(description.maxLod);
     // lodBias is absent on older Metal runtimes. Zero needs no setter there;

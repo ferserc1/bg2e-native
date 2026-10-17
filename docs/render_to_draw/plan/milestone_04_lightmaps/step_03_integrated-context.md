@@ -60,3 +60,29 @@ subscribe to or receive explicit source-edit/reload notifications for material,
 UV/topology, environment and scene replacement; invalidate in-flight generations
 and refresh queue/bindings before accepting another sample. `SelectionItem` and
 viewpoint candidate IDs are editor-local and do not establish bake identity.
+
+## M03-01 tracing checkpoint dependency
+
+The [advanced tracing design](../milestone_03_ray_tracing/rt-design.md) was accepted by project-lead continuation. [M03-02](../milestone_03_ray_tracing/rt-gpu-data.md) delivers primitive arrays/stages; the draw snapshot builder and bake infrastructure remain pending. After M03 implementation/review, reuse the public draw::pipeline tracing snapshot, packed geometry/material data, bounded image/sampler resources and shared cutout predicate. Supply explicit UV-space world-position/normal/coverage surfaces without a camera RendererDeferred. Check effective capacities and required tracing support before a job; invalidate scene/baker generations after material/texture/topology edits. Keep bake sample accumulation separate from rendered-view histories and FSR state. Do not duplicate a private table/shading family or silently bake with truncated/unsupported resources.
+
+## M03-03 shared noise resource
+
+Use the implemented [utils noise contract](../milestone_03_ray_tracing/blue-noise.md) for CPU sample data and shared Device-backed residency. Its tiles are logical layers in a color 2D atlas, not physical image-array layers. Bake jobs choose/reset explicit uint32 sample keys independently of presentation slots and retain image/sampler/metadata owners; disabled sampling uses the declared hash alternative without an unbound texture. No bake-specific duplicate noise data or generator is needed.
+
+## M03-04 actual surface bridge
+
+Reuse [RTAO contracts](../milestone_03_ray_tracing/rtao.md): SurfaceInputs::WorldPositionCoverage uses signed RGBA16 normals, RGBA32 world positions and R8 coverage, without a camera. TracingSceneResources produces retained bounded geometry/material snapshots independently of RendererDeferred. Caller owns completed-slot discipline, surface/output lifetimes and renderedSample sequencing. Bake accumulation/presence policy is still this milestone’s work.
+
+## M03-05 actual HDR GI bridge
+
+[RTGI handoff](../milestone_03_ray_tracing/rtgi.md) provides Device-backed RTGlobalIllumination with camera/explicit SurfaceInputs, retained matching-capacity TracingSnapshot and logical LightUniforms/EnvironmentResources. RGBA16 RGB is incoming diffuse radiance/pi before receiver albedo; alpha is validity. Accumulation/export must preserve that normalization and distinguish valid black from invalid zero. Empty scenes currently return invalid fallback; bake orchestration must explicitly define its environment-only policy.
+
+## M03-08 explicit-surface filtering
+
+[Public DenoiseFilter](../milestone_03_ray_tracing/denoise.md) consumes signed normals/world positions/R8 coverage without a fake camera and uses world-distance/normal rejection. Decide chart/coverage isolation and whether filtering is appropriate for the bake signal; no chart ID or exact bake average is supplied by M03-08. Keep accumulation and filtered output distinct, retain owners through completion and preserve GI validity/reflection confidence normalization.
+
+## M03-10 reviewed implementation requirement
+
+Use TracingSceneResources(device, capacity), prepare(queue), retained TracingSnapshot and effect prepareSnapshot with compatible capacity/device. Call snapshot build only in its one recording/submission; discard after aborted recording. Schedule begin/prepare/record against completed slots, retain source/environment owners on cancellation and use explicit renderedSample keys. No RendererDeferred private target dependency.
+
+Source and validation boundaries: [M03 technical review](../milestone_03_ray_tracing/review.md). Include these conditions in this step's implementation and exit checks.

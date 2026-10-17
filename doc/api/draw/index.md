@@ -90,3 +90,24 @@ Start with the [deferred tutorial](../../tutorials/draw/10_deferred_renderer.md)
 For selection, gizmos, material edits and viewpoint tools, continue with the
 [manipulation tutorial](../../tutorials/draw/11_manipulation.md) and the
 [manipulation API](../manipulation/index.md).
+
+See [RTAmbientOcclusion](RTAmbientOcclusion.md) for the optional public scalar AO pass and shared tracing snapshots.
+
+See [RTGlobalIllumination](RTGlobalIllumination.md) for the optional diffuse HDR GI pass and IBL/AO/GI mode selection.
+
+See [RTReflections](RTReflections.md) for output-relative traced HDR specular radiance and confidence-based IBL composition.
+
+See [TemporalAccumulator](TemporalAccumulator.md) for independent rendered-view effect histories, borrowed public surfaces, camera motion, bounded convergence and invalidateHistories application notifications.
+
+See [DenoiseFilter](DenoiseFilter.md) for reusable scalar/HDR bilateral filtering after temporal accumulation, explicit surface guides, confidence semantics and live accessor metadata.
+
+- [Optional SMAA final processing](SMAAProcessor.md)
+
+## Advanced effect contracts
+
+- [SurfaceInputs](SurfaceInputs.md): camera reconstruction and explicit world surfaces.
+- [TracingSceneResources](TracingSceneResources.md): packed tables and retained snapshots.
+- [RTAmbientOcclusion](RTAmbientOcclusion.md), [RTGlobalIllumination](RTGlobalIllumination.md), [RTReflections](RTReflections.md).
+- [TemporalAccumulator](TemporalAccumulator.md), [MotionVectorGenerator](MotionVectorGenerator.md), [DenoiseFilter](DenoiseFilter.md).
+- [FinalProcessor and SMAAProcessor](SMAAProcessor.md).
+- [Advanced lighting architecture](../../architecture/draw_advanced_lighting.md).

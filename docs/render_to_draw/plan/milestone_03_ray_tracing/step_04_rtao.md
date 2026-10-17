@@ -34,3 +34,21 @@ Delegate compilation and applicable runtime checks to the project lead; perform 
 M03-07/M03-08 add scalar history/filtering. M04 maps its UV surface profile onto this public surface-input contract.
 
 Record actual API, ownership and verification in the milestone review. Follow [the review protocol](../review-protocol.md) and edit affected pending steps when actual contracts differ.
+
+## M03-01 checkpoint handoff — accepted by lead continuation
+
+After acceptance of [M03-01](rt-design.md), introduce public draw::pipeline tracing snapshot and surface-input contracts here, including the CPU packed-geometry/material builder and retained owners. GPU primitives come from M03-02; no draw policy belongs in GPU. Use dense TLAS order, explicit submesh index/vertex bases, 192-byte MaterialData semantics and bounded independent image/sampler tables. AO uses compute queries independently of native Vulkan pipeline support, evaluates cutouts with the same predicate used by later effects, returns neutral 1 and validates scene capacity before publishing. Expose camera-depth and explicit world-position surface profiles for bake reuse. This step precedes GI/reflections; do not depend on a table builder scheduled after AO.
+
+## M03-02 actual primitive contract
+
+Read [rt-gpu-data.md](rt-gpu-data.md). Use ShaderStage::AnyHit, appended anyHitShader, ResourceBinding::additionalStages and explicit metalArgumentBuffer/argument IDs. Set complete arrays through setSampledImages/setSamplers; choose matching 32/128/256 native shader profiles from logical-device resourceArrayCapabilities after reserving other bindings. Metal arrays currently support compute/RT color 2D sampled resources only, with retained source owners and retired/drained updates. Arbitrary draw geometry/material snapshot construction remains M03-04; the primitive probe's tiny material record is not the engine ABI. No buffer-address or array graphics-stage infrastructure is implied.
+
+## M03-03 actual noise input
+
+Reuse [utils::BlueNoise](blue-noise.md): CPU layer-major rank data and an explicitly shared RGBA8 color 2D atlas, with uint4 metadata and paired bg2eBlueNoise2/bg2eHashNoise2 helpers under draw/lib. Logical layers are stacked in Y; physical arrayLayers is one. Do not copy production sampler2DArray bindings or assume general image-array support. Effects own rendered-view/sample keys and disabled/missing-noise variants without texture access; the utility does not advance presentation/slot state or reserve tracing-table capacity implicitly. Retain image/sampler owners and metadata snapshots through completion.
+
+GLSL noise calls must pass texture2D and sampler separately to bg2eBlueNoise2; its internal texelFetch constructs sampler2D at point of use. Do not pass a combined sampler constructor through a user-function argument.
+
+## M03-04 delivered contract
+
+See [rtao.md](rtao.md) for actual public APIs, native bindings, ownership, composition, fallback and limitations, and the [manual fixture](../../../../tests/draw/rtao/README.md). Delivery awaits project lead compilation/runtime validation.

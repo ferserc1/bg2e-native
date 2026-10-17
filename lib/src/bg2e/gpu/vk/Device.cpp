@@ -37,6 +37,7 @@
 #include <bg2e/gpu/Surface.hpp>
 #include <bg2e/base/Log.hpp>
 
+#include <algorithm>
 #include <set>
 #include <vector>
 #include <memory>
@@ -127,11 +128,18 @@ void Device::create(gpu::Instance* instance, gpu::PhysicalDevice* physicalDevice
 
     _renderingCapabilities = vkPhysDevice->properties()->rendering;
 
+    VkPhysicalDeviceProperties bindingProperties{};
+    vkGetPhysicalDeviceProperties(vkPhysDevice->handle(), &bindingProperties);
+    const auto& limits = bindingProperties.limits;
+    _resourceArrayCapabilities = {
+        vulkan12Features.shaderSampledImageArrayNonUniformIndexing == VK_TRUE,
+        std::min(limits.maxPerStageDescriptorSampledImages, limits.maxDescriptorSetSampledImages),
+        std::min(limits.maxPerStageDescriptorSamplers, limits.maxDescriptorSetSamplers),
+        limits.maxPerStageResources, limits.maxStorageBufferRange};
+
     // --- Base activation ---
     features2.features.samplerAnisotropy = VK_TRUE;
     vulkan12Features.bufferDeviceAddress = VK_TRUE;
-    vulkan12Features.descriptorIndexing = VK_TRUE;
-    vulkan12Features.descriptorBindingPartiallyBound = VK_TRUE;
     vulkan11Features.multiview = VK_TRUE;
 
     // --- RT optional ---
@@ -343,6 +351,7 @@ void Device::cleanup()
         vkDestroyDevice(_device, nullptr);
         _device = VK_NULL_HANDLE;
     }
+    _resourceArrayCapabilities = {};
     _renderingCapabilities = {};
     _rayTracingCapabilities = {};
     _rayTracingEnabled = false;
@@ -418,7 +427,7 @@ std::shared_ptr<gpu::Sampler> Device::createSampler(const gpu::SamplerDescriptio
 std::shared_ptr<gpu::ResourceSet> Device::createResourceSet(gpu::PipelineLayout* layout, uint32_t setIndex, const std::string& debugName)
 {
     auto* vkLayout = dynamic_cast<vk::PipelineLayout*>(layout);
-    if (!vkLayout)
+    if (!vkLayout || vkLayout->device() != this || !vkLayout->isValid())
     {
         throw std::runtime_error("vk::Device::createResourceSet: invalid PipelineLayout");
     }

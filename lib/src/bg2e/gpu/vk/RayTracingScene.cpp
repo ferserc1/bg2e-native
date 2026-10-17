@@ -197,14 +197,14 @@ void RayTracingScene::build(VkCommandBuffer cmd)
         {
             const auto& src = _instances[i];
             auto* vkMesh = dynamic_cast<vk::RayTracingMesh*>(src.mesh);
-            if (!vkMesh || !vkMesh->isBuilt())
+            if (!vkMesh || vkMesh->device() != device() || !vkMesh->isBuilt() || src.instanceId > 0x00ffffffu)
             {
                 throw std::runtime_error("vk::RayTracingScene::build: instance references an unbuilt RayTracingMesh");
             }
 
             VkAccelerationStructureInstanceKHR& dst = instances[i];
             dst.transform = toVkTransform(src.transform);
-            dst.instanceCustomIndex = src.instanceId & 0x00FFFFFFu;
+            dst.instanceCustomIndex = src.instanceId;
             dst.mask = src.mask;
             dst.instanceShaderBindingTableRecordOffset = 0;
             dst.flags = VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR;
@@ -259,6 +259,10 @@ void RayTracingScene::build(VkCommandBuffer cmd)
     barrier.srcAccessMask = VK_ACCESS_2_ACCELERATION_STRUCTURE_WRITE_BIT_KHR;
     barrier.dstStageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT |
                            VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT;
+    if (_device->rayTracingCapabilities().pipelineSupported())
+    {
+        barrier.dstStageMask |= VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR;
+    }
     barrier.dstAccessMask = VK_ACCESS_2_ACCELERATION_STRUCTURE_READ_BIT_KHR |
                             VK_ACCESS_2_SHADER_READ_BIT;
 

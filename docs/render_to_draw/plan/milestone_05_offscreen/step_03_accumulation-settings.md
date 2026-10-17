@@ -52,3 +52,17 @@ Read [upscaling.md](../milestone_01_deferred_renderer/upscaling.md). Reuse Resol
 ## M01-16 reviewed baseline
 
 Use actual SettingsCatalog/SettingsCodec and renderer/upscaler target identifiers; facade connect/queue methods require a windowed DefaultRenderLoopDelegate and are not the headless execution interface. Direct validated import applies at the new stopped job boundary. Current product startup explicit file bypasses persisted defaults; this step intentionally adds its documented CLI override/precedence policy. SDK FSR state cannot replace exact linear scene sample averaging. See [M01 review](../milestone_01_deferred_renderer/review.md).
+
+## M03-06 reflection contract
+
+[Reflection handoff](../milestone_03_ray_tracing/rt-reflections.md) defines output-relative quality independent of internal surfaces and unpremultiplied HDR hit radiance plus fractional confidence. Freeze scene/receiver/quality while advancing rendered sample keys for requested samples; accumulation must distinguish confidence from GI validity and retain IBL fallback for misses. Existing shared snapshot completion/ownership rules apply.
+
+## M03-07 temporal boundary
+
+[Temporal handoff](../milestone_03_ray_tracing/temporal.md) supplies independent effect/view/layer histories, bounded nominal and per-pixel convergence, rolling/frozen settings and explicit reset generation. It is not an exact UV bake average or a requested-frame scheduler. Select actual submitted scene samples, retain confidence semantics, freeze scene state and distinguish nominal frameCount from pixel counts restarted by rejection. Explicit stationary surfaces can use same-UV correspondence; define the bake signal separately.
+
+## M03-10 reviewed implementation requirement
+
+Implement the planned FrameAccumulator as exact linear HDR scene averaging, independent of bounded/reprojected TemporalAccumulator. Freeze scene and explicit sample keys; define whether effect histories/FSR warm up or contribute and count only requested completed scene samples. Final tone/color and optional SMAA must operate on the resolved average once. UI exports may contain example-owned lightPose targets: provide explicit scene-ID mapping/catalog extensions or reject/skip with diagnostics, never silently import into unrelated objects.
+
+Source and validation boundaries: [M03 technical review](../milestone_03_ray_tracing/review.md). Include these conditions in this step's implementation and exit checks.

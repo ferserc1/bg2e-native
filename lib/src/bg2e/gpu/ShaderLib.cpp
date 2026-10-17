@@ -40,6 +40,7 @@ std::string stageExtension(ShaderStage stage)
     case ShaderStage::RayGeneration: return "rgen";
     case ShaderStage::Miss: return "rmiss";
     case ShaderStage::ClosestHit: return "rchit";
+    case ShaderStage::AnyHit: return "rahit";
     default: throw std::invalid_argument("ShaderLib requires one supported shader stage");
     }
 }
@@ -121,6 +122,12 @@ std::shared_ptr<ShaderModule> ShaderLib::closestHit(const std::string& shaderNam
         ShaderStage::ClosestHit,
         debugName.empty() ? shaderName + " closest hit shader" : debugName,
         device);
+}
+
+std::shared_ptr<ShaderModule> ShaderLib::anyHit(const std::string& shaderName, Device* device, const std::string& debugName)
+{
+    return _loadOrNull(shaderName, ShaderStage::AnyHit,
+        debugName.empty() ? shaderName + " any hit shader" : debugName, device);
 }
 
 std::shared_ptr<ShaderModule> ShaderLib::_load(

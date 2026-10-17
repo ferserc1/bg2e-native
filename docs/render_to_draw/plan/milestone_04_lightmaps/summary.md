@@ -58,3 +58,24 @@ Reuse existing depthless MRT/float/integer formats/raw completed color transfer 
 ## Documentation closure order
 
 The technical review now hands off to [M04-08](step_08_documentation.md), not directly to the next milestone. Earlier next-milestone handoff statements are historical and superseded by this order. See [documentation policy](../documentation-policy.md).
+
+## M03-01 tracing checkpoint dependency
+
+The [advanced tracing design](../milestone_03_ray_tracing/rt-design.md) was accepted by project-lead continuation. [M03-02](../milestone_03_ray_tracing/rt-gpu-data.md) delivers primitive arrays/stages; the draw snapshot builder and bake infrastructure remain pending. After M03 implementation/review, reuse the public draw::pipeline tracing snapshot, packed geometry/material data, bounded image/sampler resources and shared cutout predicate. Supply explicit UV-space world-position/normal/coverage surfaces without a camera RendererDeferred. Check effective capacities and required tracing support before a job; invalidate scene/baker generations after material/texture/topology edits. Keep bake sample accumulation separate from rendered-view histories and FSR state. Do not duplicate a private table/shading family or silently bake with truncated/unsupported resources.
+
+## M03-09 integration contract
+
+Read [integration](../milestone_03_ray_tracing/integration.md). Reuse public
+requested settings and matching metadata instance addresses independent of device
+availability. FinalProcessor/SMAAProcessor apply optional final opaque color AA
+after reconstruction/color and before overlays/UI; default remains resampling.
+Headless device-level SMAA returns borrowed source or fresh owned RGBA16 output
+under an explicitly retired slot/serial contract. Do not filter exact bake averages
+with spatial AA or reuse denoised display histories for sample accumulation.
+Legacy query shadow overflow now reports sceneSupported/status and neutral whole
+scene visibility; advanced material tables retain their independent capacities.
+Review the lead validation matrix before claiming backend coverage.
+
+## M03 reviewed dependency
+
+[M03 technical review](../milestone_03_ray_tracing/review.md) is the actual source/ownership/signal/settings baseline. Its pending-plan impact table and the concrete additions in this milestone's step files supersede historical statements that explicit profiles or effect controls are still unimplemented. Keep exact averaging, chart isolation, required-job capabilities and actual validation evidence distinct from interactive fallback/history behavior.

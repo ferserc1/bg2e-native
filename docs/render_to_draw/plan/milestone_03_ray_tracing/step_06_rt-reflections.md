@@ -38,3 +38,27 @@ Record actual API, ownership and verification in the milestone review. Follow [t
 ## M01-08 IBL fallback ABI
 
 Use the same validated EnvironmentResources and public services from [environment-tools.md](../milestone_01_deferred_renderer/environment-tools.md). Prefilter mips encode perceptual roughness linearly; BRDF RG is A/B at (NdotV, roughness) with F0*A+B composition. Sky/prefilter are linear radiance; irradiance includes PI. Retain snapshots across submitted work and never overwrite authored prefilter mips or synchronously rebuild while recording RT work.
+
+## M03-01 checkpoint handoff — accepted by lead continuation
+
+Use the same accepted [M03-01](rt-design.md) and M03-04 snapshot/candidate/material contracts as GI, with native Vulkan stages and Metal nearest-hit compute. Define tangent/normal-map orientation including mirrored transforms, explicit LOD sampling and environment miss behavior. Reflection quality remains output-relative, independent of internal G-buffer/FSR scale. HDR radiance and confidence have separate semantics; preserve IBL for unavailable/rejected samples. Do not introduce another material table or transparent transport policy.
+
+## M03-02 actual primitive contract
+
+Read [rt-gpu-data.md](rt-gpu-data.md). Use ShaderStage::AnyHit, appended anyHitShader, ResourceBinding::additionalStages and explicit metalArgumentBuffer/argument IDs. Set complete arrays through setSampledImages/setSamplers; choose matching 32/128/256 native shader profiles from logical-device resourceArrayCapabilities after reserving other bindings. Metal arrays currently support compute/RT color 2D sampled resources only, with retained source owners and retired/drained updates. Arbitrary draw geometry/material snapshot construction remains M03-04; the primitive probe's tiny material record is not the engine ABI. No buffer-address or array graphics-stage infrastructure is implied.
+
+## M03-03 actual noise input
+
+Reuse [utils::BlueNoise](blue-noise.md): CPU layer-major rank data and an explicitly shared RGBA8 color 2D atlas, with uint4 metadata and paired bg2eBlueNoise2/bg2eHashNoise2 helpers under draw/lib. Logical layers are stacked in Y; physical arrayLayers is one. Do not copy production sampler2DArray bindings or assume general image-array support. Effects own rendered-view/sample keys and disabled/missing-noise variants without texture access; the utility does not advance presentation/slot state or reserve tracing-table capacity implicitly. Retain image/sampler owners and metadata snapshots through completion.
+
+## M03-04 actual implementation handoff
+
+Use [rtao.md](rtao.md): public RTAmbientOcclusion, SurfaceInputs camera/explicit profiles and TracingSceneResources/TracingSnapshot now exist. Reuse dense IDs, retained material tables, scalar R16 output and explicit renderedSample keys. AO has independent quality dimensions via ExtentDomain::Scaled. No history/filtering or visible controls are implemented here. Legacy SoftShadowPass retains its separate eight-cutout-pair limit; reconcile that consumer during integration/review. Native pipeline GLSL users may include tracing.glsl without DRAW_TRACE_QUERIES; compute-query users define it first.
+
+## M03-05 actual GI handoff
+
+[rtgi.md](rtgi.md) records public RTGlobalIllumination, native Vulkan raygen/miss/closest-hit/any-hit with depth one, Metal compute queries, shared material tables and explicit receivers. RGBA16 output is incoming diffuse radiance/pi before receiver albedo with alpha validity; invalid zero restores diffuse IBL. RendererDeferred selects IBL/AO/GI independently of retained settings, preserves specular IBL and supports scaled GI inputs. History/filter/UI and baked presence policy remain pending. Reuse this exact normalization and matching-capacity snapshot ownership.
+
+## M03-06 delivered contract
+
+[rt-reflections.md](rt-reflections.md) records RTReflections, native stages, display-relative quality, source normal/tangent convention, unpremultiplied HDR hit radiance and fractional confidence, lifecycle and validation limits. Delivery awaits project lead compilation/runtime validation.

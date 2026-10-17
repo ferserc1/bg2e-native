@@ -36,6 +36,7 @@ struct RayTracingPipelineDescription {
     gpu::PipelineLayout* layout = nullptr;         // non-owning; caller must keep alive
     uint32_t maxRecursionDepth = 1;                // Vulkan max ray recursion depth
     std::string debugName;
+    gpu::ShaderModule* anyHitShader = nullptr; // Optional Vulkan cutout stage; Metal uses native compute.
 };
 
 class BG2E_API RayTracingPipeline : public DeviceResource {

@@ -89,6 +89,7 @@ class BG2E_API PipelineLayout : public gpu::PipelineLayout {
         case ShaderStage::Miss:
             return 0;
         case ShaderStage::ClosestHit:
+        case ShaderStage::AnyHit:
             return 0;
         }
         return 0;

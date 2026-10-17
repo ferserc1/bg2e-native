@@ -1,5 +1,12 @@
 # Build an interactive scene with selection and manipulation tools
 
+The steps below develop the scene/manipulation foundation. Their renderer factory
+now uses the current shipped defaults. Complete the current effect-settings wiring
+in [Advanced lighting and visible controls](#advanced-lighting-and-visible-controls)
+to reproduce the shipped example's graphics window; it is not added by MainLoop.
+The linked source is authoritative for full class declarations and cleanup.
+
+
 In this tutorial you will build the manipulation example from an empty C++
 file. You will first give a deferred scene an orbit camera, then make its
 objects selectable, add transform handles, and decide which mouse gestures go
@@ -246,11 +253,21 @@ SceneDelegate::SceneDelegate()
 draw::RendererConfiguration SceneDelegate::makeRendererConfiguration()
 {
     draw::RendererConfiguration configuration;
+    // Render at a fixed 70% of the output dimensions to demonstrate picking
+    // with a scaled image. The shared settings catalog can change this scale.
+    // init() uses the same constant to configure the selection API.
     configuration.resolution = std::make_shared<draw::ResolutionSettings>();
     configuration.resolution->setEnabled(true);
     configuration.resolution->setScale(RenderScale);
-    configuration.overlays.push_back(
-        std::make_shared<manipulation::GizmoAndSelectionRenderer>());
+    configuration.upscaler = std::make_shared<draw::FsrUpscaler>();
+    std::static_pointer_cast<draw::FsrUpscaler>(configuration.upscaler)->setEnabled(false);
+    configuration.finalProcessor = std::make_shared<draw::pipeline::SMAAProcessor>();
+    configuration.indirectLighting = draw::IndirectLightingMode::GlobalIllumination;
+    configuration.globalIllumination = std::make_shared<draw::pipeline::RTGlobalIllumination>();
+    configuration.globalIllumination->setEnabled(true);
+    configuration.reflections = std::make_shared<draw::pipeline::RTReflections>();
+    configuration.reflections->setEnabled(true);
+    configuration.overlays.push_back(std::make_shared<manipulation::GizmoAndSelectionRenderer>());
     return configuration;
 }
 ```
@@ -259,7 +276,7 @@ draw::RendererConfiguration SceneDelegate::makeRendererConfiguration()
 still draws the scene; this pass adds selection highlights and tool geometry.
 Giving the configuration a shared pass keeps it alive with the renderer.
 
-The scale is deliberately fixed at 70% to demonstrate picking at a different
+The initial renderer scale is 70% to demonstrate picking at a different
 pixel density. `ResolutionSettings` controls scene rendering. The picker has
 its own setting, which we must configure explicitly in the next step.
 
@@ -302,7 +319,7 @@ output surface may not have arrived yet, so that extent can be zero.
 On Retina, scene rendering uses 70% of the physical output, while our picker
 uses 70% of the logical window dimensions. Their pixel counts can differ; the
 important agreement is between pick coordinates, pick viewport and pick image
-scale. No runtime scale refresh is needed because this factor is constant.
+scale. The pick factor stays constant even if Graphics settings changes the independent renderer scale.
 
 `onSelect()` requests a scene frame so a new highlight becomes visible.
 Selection entries are weak references; the callback also uses a weak delegate
@@ -794,7 +811,7 @@ void SceneDelegate::requestBestView()
         delegate->_state.sceneContext->updateCamera();
         if (auto* deferred = dynamic_cast<draw::RendererDeferred*>(&renderer))
         {
-            deferred->resetUpscaler();
+            deferred->invalidateHistories();
         }
     });
 }
@@ -862,7 +879,7 @@ void UiDelegate::init(draw::Engine* engine, ui::UserInterface* interface)
         {
             if (auto* deferred = dynamic_cast<draw::RendererDeferred*>(&renderer))
             {
-                deferred->resetUpscaler();
+                deferred->invalidateHistories();
             }
             active->requestRedraw();
         }
@@ -900,7 +917,7 @@ void UiDelegate::edit(const std::shared_ptr<SceneDelegate>& delegate,
             operation(active->state());
             if (auto* deferred = dynamic_cast<draw::RendererDeferred*>(&renderer))
             {
-                deferred->resetUpscaler();
+                deferred->invalidateHistories();
             }
         }
     });
@@ -984,7 +1001,7 @@ if (drawable)
         patch.applyAll(*drawable, std::string("body/front"));
         if (auto* deferred = dynamic_cast<draw::RendererDeferred*>(&renderer))
         {
-            deferred->resetUpscaler();
+            deferred->invalidateHistories();
         }
     });
 }
@@ -1257,3 +1274,196 @@ For API details see [selection and gizmos](../../api/manipulation/index.md),
 [MaterialModifier](../../api/utils/MaterialModifier.md),
 [DrawMaterialEditor](../../api/ui/Material_Editors.md#drawmaterialeditor) and
 [ViewpointAnalyzer](../../api/utils/ViewpointAnalyzer.md).
+
+## Advanced lighting and visible controls
+
+Use the existing executable and loop from this tutorial, not a new example target.
+The complete [current source](../../../examples/draw/11_manipulation/src/main.cpp)
+contains the settings window members, startup wiring and per-frame draw calls.
+Add these includes to the UI translation unit:
+
+```cpp
+#include <bg2e/app/PreferencesStore.hpp>
+#include <bg2e/draw/RenderSettingsPreferences.hpp>
+#include <bg2e/ui/GraphicsSettingsWindow.hpp>
+#include <bg2e/ui/ReflectionWidget.hpp>
+#include <bg2e/reflection/Builder.hpp>
+```
+
+The UI delegate retains these members alongside the existing scene controls:
+
+```cpp
+std::shared_ptr<draw::RenderSettingsPreferences> _preferences;
+ui::GraphicsSettingsWindow _graphics;
+```
+
+Replace the basic UI constructor with this current source implementation; construct
+the UI object before the render delegate's first target attachment:
+
+```cpp
+    explicit UiDelegate(std::weak_ptr<SceneDelegate> delegate) : _delegate(std::move(delegate))
+    {
+        _controls.setTitle("Manipulation");
+        _controls.setPosition(10, 10);
+        _controls.setSize(430, 700);
+        auto active = _delegate.lock();
+        if (!active)
+        {
+            throw std::logic_error("Graphics settings require a live scene delegate");
+        }
+        // Connect before the first renderer attachment; callbacks rebind on replacement.
+        auto& store = app::PreferencesStore::instance().preferences("draw.manipulation.graphics");
+        _preferences = std::make_shared<draw::RenderSettingsPreferences>(&store);
+        const auto weakDelegate = _delegate;
+        _preferences->connect(active, [weakDelegate](draw::Renderer& renderer, draw::SettingsCatalog& catalog)
+        {
+            auto delegate = weakDelegate.lock();
+            if (!delegate)
+            {
+                return;
+            }
+            using Transform = scene::TransformComponent;
+            reflection::TypeInfoBuilder<Transform> type("draw.manipulation.lightPose.v1");
+            type.accessor<glm::vec3>("position", [](const Transform& transform)
+            {
+                return transform.translation();
+            }, [](Transform& transform, const glm::vec3& value)
+            {
+                transform.setTranslation(value);
+            }).displayName("Position XYZ (local)").category("Local transform").drag().step(0.1);
+            type.accessor<glm::vec3>("orientationDegrees", [](const Transform& transform)
+            {
+                return transform.eulerRotation();
+            }, [](Transform& transform, const glm::vec3& value)
+            {
+                transform.setEulerRotation(value);
+            }).displayName("Orientation XYZ (degrees)").category("Local transform").drag().step(1).range(-180,180);
+            for (const auto& node : delegate->state().lightNodes)
+            {
+                // Node ownership keeps its component alive; catalog generation guards queued edits.
+                catalog.add({"lightPose/"+node->identifier(),type.build(),node->transform(),node,{},
+                    [weakDelegate,&renderer]
+                    {
+                        if (auto owner = weakDelegate.lock())
+                        {
+                            owner->state().animateLights = false;
+                        }
+                        renderer.invalidateHistories();
+                    },{}});
+            }
+        });
+        _graphics.bind(_preferences);
+        _graphics.setPosition(460, 10);
+        _graphics.setSize(520, 620);
+        _graphics.open();
+    }
+```
+
+The facade's weak lifecycle callbacks clear/rebind targets on renderer changes.
+It borrows the PreferencesStore scope, which outlives the facade. Nothing restores
+preferences automatically. Call `_graphics.draw()` at the start of the existing
+`drawUI()` after checking the delegate/scene. Inside the scene controls add:
+
+```cpp
+if (ui::Button::button("Graphics settings"))
+{
+    _graphics.open();
+}
+```
+
+Both examples show the window initially. Expand Renderer > Indirect lighting to
+select GI and Global illumination > Enabled to activate it. Reflections > Enabled
+is independent. Check available/status and selected graph; stored requests may
+remain enabled when hardware/shaders are unavailable. GI requires Vulkan native
+pipeline support or Metal query support plus indexed tables/HDR formats; FSR is
+not a prerequisite. Renderer-created tracing defaults are disabled; manipulation
+explicitly enables GI/reflections, while deferred leaves them disabled. Both inject
+disabled FSR and SMAA; fallback stays ordinary resampling. Manipulation's initial
+scale is 0.7; deferred's resolution policy is disabled/1.0.
+
+Pause camera/light animation for convergence. Compare IBL versus GI, then reflection
+off/on. Lighting debug views 11..14 expose resolved visibility, diffuse GI,
+reflected radiance and confidence; these are last-layer signals, with final color
+still affecting display. Temporarily disable temporal/denoise to inspect raw noise.
+Restore them separately; filtering must not feed the history. Read
+[signal/quality/ownership contracts](../../architecture/draw_advanced_lighting.md)
+for normalized GI versus confidence-weighted reflection meanings.
+
+All edits use queued facade/catalog handles with actual renderer generations. For
+custom scene/material mutations, call Renderer::invalidateHistories at a safe
+boundary, including partial failures, then request redraw. Do not mutate GPU/scene
+resources while drawing controls. Do not equate nominal history frameCount with an
+exact frame-average/export API.
+
+### Per-light property and pose editing
+
+The current constructor above extends the catalog with per-light live local
+position/Euler targets. The property panel uses the same descriptors and queued
+Graphics settings path, instead of a copied light model. Add this method to
+UiDelegate and call `drawLights(delegate)` inside `_controls.draw` before material
+presets. It uses the existing `edit` helper and retained light nodes:
+
+```cpp
+    void drawLights(const std::shared_ptr<SceneDelegate>& delegate)
+    {
+        if (!ui::Group::beginTree("Lights"))
+        {
+            return;
+        }
+        ui::Text::text("Editing a light pauses animation. Position and Euler angles are local to the Lights group.");
+        ui::Text::text("Orientation affects spot and directional lights; point lights emit in every direction.");
+        const auto descriptors = _preferences->catalog().properties(true);
+        for (const auto& node : delegate->state().lightNodes)
+        {
+            if (!ui::Group::beginTree(node->name()+"##lightEditor"+node->identifier()))
+            {
+                continue;
+            }
+            const auto properties = "light/"+node->identifier();
+            const auto pose = "lightPose/"+node->identifier();
+            for (const auto& descriptor : descriptors)
+            {
+                if (descriptor.handle.component != properties && descriptor.handle.component != pose)
+                {
+                    continue;
+                }
+                auto value = _preferences->catalog().read(descriptor.handle);
+                auto property = descriptor.property;
+                if (ui::ReflectionWidget::editValue(value,property,descriptor.available && !_graphics.pending()))
+                {
+                    // Use the same validated queued path as Graphics settings, not live UI writes.
+                    edit(delegate, [](SceneState& state)
+                    {
+                        state.animateLights = false;
+                    });
+                    _graphics.queueEdit(descriptor.handle,std::move(value));
+                }
+            }
+            ui::Group::endTree();
+        }
+        ui::Group::endTree();
+    }
+```
+
+Editing from this section pauses animation, preserving the current Lights parent
+rotation. XYZ position and Euler degrees are local to that parent. Point lights
+ignore orientation; spot and directional lights use transformed local +Z. Position
+and orientation setters preserve other TRS components. Spot controls follow the
+actual light type; shadow/reflection participation remains independently editable.
+
+The existing UI cleanup must clear `_graphics` and `_preferences` before renderer
+teardown alongside `_editor.cleanup()`. The shipped SceneDelegate calls this through
+its existing weak UI cleanup callback. Light poses round-trip through JSON/preferences
+with stable catalog IDs, but those example IDs are not a generic document schema.
+For material patches, use the callback renderer's generic invalidateHistories
+before a possibly partial operation; the shipped edit helper does so.
+
+### Native resources and verification
+
+Use the common [build/deployment guide](../../apps/draw_deferred_renderer.md), deploy
+all paired draw effect/final-processing shaders and retain official SMAA lookup
+headers/licenses. Do not infer effect availability from an executable starting.
+The [manual integration matrix](../../../tests/draw/advanced_integration/README.md)
+covers native diagnostics, missing SDK/profiles, no RT, edits/resize/rebind and
+output-owner lifetime. Tutorial snippets were checked against declarations/source;
+no compilation/runtime execution was performed by the documentation agent.

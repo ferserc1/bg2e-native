@@ -44,3 +44,9 @@ Record actual API, ownership and verification in the milestone review. Follow [t
 ## M01-16 reviewed baseline
 
 Preserve the real draw_deferred_renderer target and later accepted products; disposition each manual M01 probe explicitly rather than claiming an automatic test suite. Keep paired shaders/src/draw pipeline paths, gpu::vk::FidelityFXBridge optional SDK linkage and recursive standalone copies. Remove legacy-only shaders/targets only after the per-file manifest confirms no surviving consumer. See [M01 review](../milestone_01_deferred_renderer/review.md).
+
+## M03-10 reviewed implementation requirement
+
+Retain native paired draw tracing/effect/SMAA shaders and official lookup dependency in installed products. Reconcile manual fixture headers with surviving supported harnesses; do not delete useful no-RT/scalar/partial-profile coverage with legacy targets. Verify example-specific GI/reflection defaults and explicit settings-window registration after canonical entrypoint changes.
+
+Source and validation boundaries: [M03 technical review](../milestone_03_ray_tracing/review.md). Include these conditions in this step's implementation and exit checks.

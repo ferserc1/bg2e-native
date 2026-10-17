@@ -55,3 +55,7 @@ to the application at a queued safe boundary. This design checkpoint must select
 the future tracing mutation/reset contract explicitly; it must not treat
 `RendererDeferred::resetUpscaler()` as the eventual effect-history API. See the
 [M02 review](../milestone_02_manipulation/review.md).
+
+## Delivered checkpoint
+
+See [rt-design.md](rt-design.md) for the concrete source comparison, alternatives, recommended contracts/capacities and validation handoff. The project lead accepted the recommendation by continuation with M03-02. Changes reopen the design before dependent implementation. No speculative API/table framework is implemented in this step.

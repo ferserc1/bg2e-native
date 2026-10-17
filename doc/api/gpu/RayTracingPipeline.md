@@ -4,7 +4,7 @@
 **Namespace:** `bg2e::gpu`
 
 A **RayTracingPipeline** dispatches ray tracing shaders (ray generation, miss,
-closest hit) against an acceleration structure. It is the core abstraction for
+closest hit, optional any-hit on Vulkan) against an acceleration structure. It is the core abstraction for
 ray-traced effects: global illumination, reflections, soft shadows, and path
 tracing.
 
@@ -27,7 +27,7 @@ The ray tracing pipeline follows the same resource creation model as
 |--------|--------|-------|
 | Pipeline type | Real `VK_KHR_ray_tracing_pipeline` | `MTLComputePipelineState` from `.rgen.metallib` |
 | Shader Binding Table | Internal, auto-created | N/A |
-| Miss/closestHit shaders | Required SPIR-V modules | Ignored (null accepted) |
+| Miss/closestHit shaders | Optional SPIR-V modules; provide stages needed by dispatched rays | Ignored (null accepted) |
 | Dispatch | `vkCmdTraceRaysKHR` | Compute `dispatchThreadgroups` |
 | Ray tracing model | Hardware RT pipeline | Compute + intersector |
 
@@ -45,6 +45,7 @@ struct RayTracingPipelineDescription {
     gpu::PipelineLayout* layout           = nullptr;
     uint32_t             maxRecursionDepth = 1;
     std::string          debugName;
+    gpu::ShaderModule*   anyHitShader = nullptr; // optional Vulkan stage
 };
 ```
 
@@ -55,6 +56,7 @@ struct RayTracingPipelineDescription {
 | `closestHitShader`| `ShaderModule*`   | Closest hit shader (null on Metal).                |
 | `layout`          | `PipelineLayout*` | Pipeline layout with descriptor bindings.         |
 | `maxRecursionDepth`| `uint32_t`       | Maximum ray recursion depth (default: 1).         |
+| `anyHitShader`    | `ShaderModule*`   | Optional Vulkan alpha-candidate rejection stage; rejected if supplied to Metal. |
 | `debugName`       | `std::string`     | Optional label for GPU debug tools.               |
 
 ### `gpu::RayTracingPipeline`
@@ -134,3 +136,11 @@ cmd->traceRays(width, height);
 - [`Device`](Device.md) — `createRayTracingPipeline()` factory
 - [`RayTracingMesh`](RayTracingMesh.md) — bottom-level acceleration structures
 - [`RayTracingScene`](RayTracingScene.md) — top-level acceleration structures
+
+## Any-hit and material-resource prerequisites
+
+`ShaderLib::anyHit()` resolves `.rahit.spv` with entry `main`; an absent Metal file may return null. Vulkan uses one triangle hit group containing optional closest-hit/any-hit modules, with all hit material addressing supplied through primitive buffers/resources. Modules must be valid, correctly staged and belong to the pipeline device. Recursion and dispatch dimensions obey native device limits. Missing miss/hit SBT regions are zero; provide every stage required by rays actually dispatched.
+
+Use `ResourceBinding::additionalStages` to expose the same descriptor to raygen, closest-hit and any-hit without duplicate set/binding entries. Bounded image/sampler tables require `Device::resourceArrayCapabilities()`, separately from tracing support. Metal advanced tracing remains independently authored compute/intersection-query code. See [ResourceSet](ResourceSet.md) for arrays and lifetime rules. No high-level AO/GI/reflection pass is supplied by these primitive changes.
+
+The separate high-level [draw effects](../draw/index.md) now consume these primitives. GPU itself owns no scene, material or effect policy; its Metal compute/query boundary remains unchanged.

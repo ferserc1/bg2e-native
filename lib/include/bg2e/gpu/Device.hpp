@@ -82,6 +82,10 @@ class BG2E_API Device {
     {
         return {};
     }
+    virtual ResourceArrayCapabilities resourceArrayCapabilities() const
+    {
+        return {};
+    }
     virtual FormatCapabilities formatCapabilities(PixelFormat format) const
     {
         return {};

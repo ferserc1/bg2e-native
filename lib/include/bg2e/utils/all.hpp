@@ -22,3 +22,5 @@
 #include <bg2e/utils/ViewpointAnalyzer.hpp>
 #include <bg2e/utils/TextureCache.hpp>
 #include <bg2e/utils/MaterialModifier.hpp>
+
+#include <bg2e/utils/BlueNoise.hpp>

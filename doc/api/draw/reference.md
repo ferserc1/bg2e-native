@@ -28,3 +28,12 @@ See [MainLoop](../app/MainLoop.md), [architecture](../../architecture/MainLoop_r
 - [Drawable, material, scene and bindings](Resources.md): typed coexistence, deep clones and safe edits.
 - [Environment tools](Environment.md): public conversion/IBL and HDR precision.
 - [Settings and upscaling](Settings.md): live catalog, codec/facade/UI, resolution and optional FSR.
+
+## Advanced effect contracts
+
+- [SurfaceInputs](SurfaceInputs.md): camera reconstruction and explicit world surfaces.
+- [TracingSceneResources](TracingSceneResources.md): packed tables and retained snapshots.
+- [RTAmbientOcclusion](RTAmbientOcclusion.md), [RTGlobalIllumination](RTGlobalIllumination.md), [RTReflections](RTReflections.md).
+- [TemporalAccumulator](TemporalAccumulator.md), [MotionVectorGenerator](MotionVectorGenerator.md), [DenoiseFilter](DenoiseFilter.md).
+- [FinalProcessor and SMAAProcessor](SMAAProcessor.md).
+- [Advanced lighting architecture](../../architecture/draw_advanced_lighting.md).

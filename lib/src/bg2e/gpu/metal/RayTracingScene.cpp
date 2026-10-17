@@ -78,7 +78,7 @@ void RayTracingScene::build(MTL::CommandBuffer* cmd)
     for (const auto& inst : _instances)
     {
         auto* metalMesh = dynamic_cast<metal::RayTracingMesh*>(inst.mesh);
-        if (!metalMesh || !metalMesh->isBuilt())
+        if (!metalMesh || metalMesh->device() != device() || !metalMesh->isBuilt())
         {
             throw std::runtime_error("metal::RayTracingScene::build: instance references an unbuilt RayTracingMesh");
         }
@@ -203,6 +203,7 @@ bool RayTracingScene::isValid() const
 {
     return false;
 }
+
 void RayTracingScene::cleanup()
 {
     _instances.clear();

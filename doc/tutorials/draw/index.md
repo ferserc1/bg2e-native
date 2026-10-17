@@ -65,3 +65,7 @@ resources and commands used inside draw delegates.
 - [Buffer](../../api/gpu/Buffer.md)
 - [FrameResourceRing](../../api/gpu/FrameResourceRing.md)
 - [CleanupManager](../../api/gpu/CleanupManager.md)
+
+## Advanced lighting in existing examples
+
+Tutorials [10](10_deferred_renderer.md#advanced-lighting-and-visible-controls) and [11](11_manipulation.md#advanced-lighting-and-visible-controls) now include actual settings-window wiring, GI/reflection activation, capability diagnostics, histories/denoise and final-AA choices. Tutorial 11 also covers per-light local position/orientation controls and active GI/reflection defaults. No extra example target is required.

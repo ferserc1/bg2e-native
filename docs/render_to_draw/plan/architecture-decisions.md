@@ -112,3 +112,15 @@ Keep deep CPU/GPU clones and borrowed Engine/device lifetimes, phase-specific pr
 ## Incremental documentation closure (project lead direction, 2026-10-15)
 
 M01–M09 each add a final documentation step after their technical review, updating canonical maintained doc/ to the implementation delivered so far. Do not document unimplemented later milestones as available. M10 remains as a lighter final audit of the cumulative documentation, retaining its stable step IDs and original final coverage. [Documentation policy](documentation-policy.md) maps every former M10 authoring requirement to its milestone owner. This scheduling change does not authorize implementing documentation steps in the planning-update turn.
+
+## M03-01 proposed advanced tracing contract — pending acceptance
+
+The [checkpoint](milestone_03_ray_tracing/rt-design.md) recommends Vulkan native raygen/miss/closest-hit/any-hit and Metal compute/intersection queries, packed indexed geometry, bounded native image/sampler arrays and explicit tracing/history invalidation. It compares alternatives, capabilities, profile capacities, cutout behavior and deferred blended secondary transport. These are proposed decisions; they become operative only on project-lead acceptance/continuation of M03-01. Existing eight-pair shadows, public headers and production rendering are unchanged.
+
+## M03-01 acceptance and M03-02 implementation
+
+The lead's next-step instruction accepts the [M03-01 recommendation](milestone_03_ray_tracing/rt-design.md); its earlier pending status above is historical. [M03-02](milestone_03_ray_tracing/rt-gpu-data.md) delivers AnyHit/native SBT hardening, additional Vulkan visibility and full fixed sampled-resource arrays with explicit Metal argument-buffer indices. Logical-device capacities and matching 32/128/256 shader profiles are separate from RT flags. GPU remains policy-free; public draw snapshot/material construction is M03-04. Metal array support is currently compute/RT color 2D only. No CMake change or build/runtime execution accompanies this delivery.
+
+## M03-03 noise layout implementation
+
+utils::BlueNoiseData/sampleNoise2D expose the existing ranked bytes without graphics initialization; utils::BlueNoise uses a borrowed gpu::Device and shared image/sampler ownership. Logical layers are stacked in a single color 2D RGBA8 atlas with exact byte expansion and paired native tile-local sampling helpers. This avoids introducing general image-array primitives solely for the four immutable tiles. Disabled/missing noise selects an explicit deterministic hash path. Effects/bake own rendered-sample sequencing and reserve resource bindings explicitly. The existing private byte header is shared from its historical render source path until M09 relocation; no production API is changed. See [blue-noise.md](milestone_03_ray_tracing/blue-noise.md).

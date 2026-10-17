@@ -44,16 +44,19 @@ work. Debug output is not a whole-scene transparency composite.
 
 `pipeline::SoftShadowPass` uses optional ray queries, not a ray-tracing pipeline.
 No-query hardware retains raster PBR/IBL. Alpha-aware traversal supports at most
-eight distinct cutout albedo image/sampler pairs, with explicit overflow rejection;
-it does not drop occluders. Transparent objects are excluded from default
+eight distinct cutout albedo image/sampler pairs. The standalone table builder
+throws ShadowTextureCapacityError (a length_error) on overflow; the pass catches
+that condition, reports sceneSupported=false/status and renders neutral whole-scene
+visibility, retrying next frame. It never drops individual occluders. Transparent objects are excluded from default
 occluders. Alpha cutoff zero preserves coverage; positive cutoff discards texels.
 Configure every submesh: the standard cube has six face submeshes.
 
 The delivered example's HDR precision failure has been corrected and confirmed
 by the project lead. A separately reported transparency issue remains explicitly
 deferred; transparency implementation is not a claim of complete runtime acceptance.
-Advanced AO/GI/reflection tracing, general histories, baking, offscreen draw and
-editor manipulation are not part of this renderer delivery.
+Public AO/GI/reflection tracing, effect histories, spatial filtering and manipulation
+are available. Draw baking and windowless application orchestration are not yet
+delivered. See [advanced lighting](../../architecture/draw_advanced_lighting.md).
 
 ## Public extension contracts
 
@@ -75,3 +78,39 @@ See the injected CountingGBuffer in the [tutorial](../../tutorials/draw/10_defer
 
 See [resources](Resources.md), [environment](Environment.md) and
 [settings/upscaling](Settings.md).
+
+See [RTAmbientOcclusion](RTAmbientOcclusion.md) for the optional public scalar AO pass and shared tracing snapshots.
+
+See [RTGlobalIllumination](RTGlobalIllumination.md) for the optional diffuse HDR GI pass and IBL/AO/GI mode selection.
+
+See [RTReflections](RTReflections.md) for output-relative traced HDR specular radiance and confidence-based IBL composition.
+
+See [TemporalAccumulator](TemporalAccumulator.md) for independent rendered-view effect histories, borrowed public surfaces, camera motion, bounded convergence and invalidateHistories application notifications.
+
+See [DenoiseFilter](DenoiseFilter.md) for reusable scalar/HDR bilateral filtering after temporal accumulation, explicit surface guides, confidence semantics and live accessor metadata.
+
+## Effect and final-processing configuration
+
+RendererConfiguration appends shared ambientOcclusion, globalIllumination,
+reflections, temporal, denoise and finalProcessor components; matching renderer
+accessors return their actual live owners. Null tracing components create disabled
+public defaults. Null temporal creates enabled maxFrames=32; null denoise creates
+enabled radius=2. Indirect mode defaults to AmbientOcclusion, but the AO component
+must also be enabled. Reflection activation is independent. A null finalProcessor
+adds no extra final processing. The manipulation example explicitly selects GI
+and enables GI/reflections; these are not global renderer defaults.
+
+Compatible components are initialized/cleaned with the renderer lifecycle; injected
+shaderRoot/interface/prefix must match the native ABI. Callers can substitute
+objects and metadata/settingsInstance without private-target access. Graph selection
+accounts for compatible injected lighting contracts; usesAmbientOcclusion,
+usesGlobalIllumination and usesReflections report graph support, not merely enabled.
+
+Renderer supplies a shared BlueNoise atlas for available effects without injected
+noise. Individual injected owners take precedence; missing atlas falls back to
+hash sampling with noiseStatus. invalidateHistories resets effect generation and
+SDK history; resetUpscaler remains a forwarding compatibility hook.
+
+[FinalProcessor/SMAAProcessor](SMAAProcessor.md) runs only after current final color,
+once per rendered frame, before overlays/UI. See [signal/quality/surface contracts](../../architecture/draw_advanced_lighting.md)
+and [settings](Settings.md) for actual modes/diagnostic IDs.

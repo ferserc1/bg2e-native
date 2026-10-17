@@ -352,3 +352,15 @@ bound by their Metal argument index directly.
 
 See [rendering/subresources and transfer](Subresources_and_rendering.md) for
 MRT attachments, explicit views/layouts, capability limits and synchronous IO.
+
+## Fixed sampled-resource arrays
+
+`setSampledImages(ShaderBinding, std::span<const ImageView>)` and `setSamplers(ShaderBinding, std::span<gpu::Sampler* const>)` assign complete fixed-size arrays matching `ResourceBinding::count`. Every element, including unused entries, must contain a valid same-device resource. `update()` rejects incomplete arrays. Scalar setters still address scalar bindings; storage images/buffers and acceleration structures remain scalar. Color 2D sampled views are the portable array profile.
+
+`Device::resourceArrayCapabilities()` reports enabled nonuniform indexing and conservative image/sampler/resource/storage-buffer limits. Its `profileCapacity(reservedImages, reservedSamplers, reservedResources)` chooses 256/128/32 or zero after other resources are reserved. Shader declared counts must match the layout. Zero is unavailable, and a scene exceeding a supported capacity is an explicit error; no truncation or implicit texture substitution occurs.
+
+Vulkan uses fixed descriptors and nonuniform shader indices. On Metal, set `ResourceBinding::metalArgumentBuffer` to an explicit compute/RT buffer slot (1..30); `binding.metal` then selects the first `id` inside that argument buffer. Image/sampler arrays may share the buffer using disjoint ID ranges. Tier-2 support and argument-buffer-compatible samplers are required; GPU sampler construction enables that compatibility. Array graphics-stage bindings are currently rejected on Metal. `additionalStages` is native Vulkan visibility; Metal additional stages must share one native encoder domain.
+
+The set borrows source resources through GPU completion and owns its native descriptor/argument storage. Keep the device/layout and every source owner alive. Update only at a retired slot or drained edit boundary. Metal declares indirect texture residency at command encoding; array updates re-encode owned buffers and preserve direct scalar bindings. No partial binding/update-after-bind, texture atlas, unbounded bindless allocation or higher-level material policy is implied.
+
+A concrete higher-level consumer is [draw tracing snapshots](../draw/TracingSceneResources.md), with fully initialized separate image/sampler tables. Its material/count policy belongs to draw, not gpu.

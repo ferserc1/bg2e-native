@@ -24,6 +24,8 @@
 #include <bg2e/gpu/vk/RayTracingScene.hpp>
 #include <bg2e/gpu/vk/extensions.hpp>
 #include <bg2e/base/Log.hpp>
+#include <bg2e/gpu/Device.hpp>
+#include <algorithm>
 
 #include <stdexcept>
 
@@ -34,6 +36,7 @@ namespace vk {
 ResourceSet::ResourceSet(gpu::Device* gpuDevice, VkDevice device, const vk::PipelineLayout* layout, uint32_t setIndex, const std::string& debugName)
     : gpu::ResourceSet(gpuDevice), _device(device), _setIndex(setIndex)
 {
+    _bindings = layout->description().resourceBindings;
     VkDescriptorSetLayout dsLayout = layout->descriptorSetLayout(setIndex);
     if (dsLayout == VK_NULL_HANDLE)
     {
@@ -140,6 +143,7 @@ ResourceSet::ResourceSet(gpu::Device* gpuDevice, VkDevice device, const vk::Pipe
     if (result != VK_SUCCESS)
     {
         bg2e_log_error << "vk::ResourceSet: vkAllocateDescriptorSets failed with result " << result << bg2e_log_end;
+        cleanup();
         throw std::runtime_error("Failed to allocate Vulkan descriptor set");
     }
 
@@ -170,6 +174,7 @@ void ResourceSet::setStorageImage(ShaderBinding binding, gpu::Image* image)
 
 void ResourceSet::setStorageImage(ShaderBinding binding, const ImageView& view)
 {
+    bindingDescription(binding, ResourceType::StorageImage);
     auto* image = view.image;
     if (!image || image->device() != device() || !hasFlag(image->usage(), ImageUsage::Storage))
     {
@@ -218,81 +223,104 @@ void ResourceSet::setSampledImage(ShaderBinding binding, gpu::Image* image)
     setSampledImage(binding, image->fullView());
 }
 
+ResourceBinding ResourceSet::bindingDescription(ShaderBinding binding, ResourceType type, size_t count) const
+{
+    for (const auto& rb : _bindings)
+    {
+        if (rb.set == _setIndex && rb.binding.vulkan == binding.vulkan && rb.type == type && rb.count == count)
+        {
+            return rb;
+        }
+    }
+    throw std::invalid_argument("Resource binding type/count does not match its layout");
+}
+
 void ResourceSet::setSampledImage(ShaderBinding binding, const ImageView& view)
 {
-    auto* image = view.image;
-    if (!image || image->device() != device() || !hasFlag(image->usage(), ImageUsage::Sampled))
-    {
-        throw std::invalid_argument("Image view device/usage is incompatible with this resource set");
-    }
-    image->view(view.range);
-    auto* vkImage = dynamic_cast<vk::Image*>(image);
-    if (!vkImage)
-    {
-        throw std::runtime_error("vk::ResourceSet::setSampledImage: invalid image");
-    }
-
-    const size_t infoIndex = _imageInfos.size();
-
-    VkDescriptorImageInfo imageInfo{};
-    imageInfo.imageView = vkImage->subresourceView(view.range);
-    imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-
-    _imageInfos.push_back(imageInfo);
-
-    VkWriteDescriptorSet write{};
-    write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    write.dstSet = _descriptorSet;
-    write.dstBinding = binding.vulkan;
-    write.dstArrayElement = 0;
-    write.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-    write.descriptorCount = 1;
-    // pImageInfo is resolved in update() to avoid dangling pointers.
-    write.pImageInfo = nullptr;
-
-    _pendingWrites.push_back(write);
-    _writeInfoKinds.push_back(WriteInfoKind::Image);
-    _writeInfoIndices.push_back(infoIndex);
+    setSampledImages(binding, std::span<const ImageView>(&view, 1));
 }
 
 void ResourceSet::setSampler(ShaderBinding binding, gpu::Sampler* sampler)
 {
-    auto* vkSampler = dynamic_cast<vk::Sampler*>(sampler);
-    if (!vkSampler)
+    setSamplers(binding, std::span<gpu::Sampler* const>(&sampler, 1));
+}
+
+void ResourceSet::setSampledImages(ShaderBinding binding, std::span<const ImageView> views)
+{
+    bindingDescription(binding, ResourceType::SampledImage, views.size());
+    std::vector<VkDescriptorImageInfo> infos;
+    for (const auto& view : views)
     {
-        throw std::runtime_error("vk::ResourceSet::setSampler: invalid sampler");
+        auto* image = dynamic_cast<vk::Image*>(view.image);
+        if (!image || image->device() != device() || !image->isValid() || !hasFlag(image->usage(), ImageUsage::Sampled) ||
+            (views.size() > 1 && (image->imageType() != ImageType::Image2D || isDepthFormat(image->pixelFormat()))))
+        {
+            throw std::invalid_argument("Sampled image device/type/usage is incompatible");
+        }
+        image->validateRange(view.range);
+        infos.push_back({VK_NULL_HANDLE, image->subresourceView(view.range), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL});
     }
-
-    const size_t infoIndex = _imageInfos.size();
-
-    VkDescriptorImageInfo imageInfo{};
-    imageInfo.sampler = vkSampler->handle();
-
-    _imageInfos.push_back(imageInfo);
-
+    const size_t start = _imageInfos.size();
+    _imageInfos.insert(_imageInfos.end(), infos.begin(), infos.end());
     VkWriteDescriptorSet write{};
     write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
     write.dstSet = _descriptorSet;
     write.dstBinding = binding.vulkan;
-    write.dstArrayElement = 0;
-    write.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
-    write.descriptorCount = 1;
-    // pImageInfo is resolved in update() to avoid dangling pointers.
-    write.pImageInfo = nullptr;
-
+    write.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+    write.descriptorCount = static_cast<uint32_t>(views.size());
     _pendingWrites.push_back(write);
     _writeInfoKinds.push_back(WriteInfoKind::Image);
-    _writeInfoIndices.push_back(infoIndex);
+    _writeInfoIndices.push_back(start);
+    if (views.size() > 1)
+    {
+        _pendingArrays.push_back(binding.vulkan);
+    }
+}
+
+void ResourceSet::setSamplers(ShaderBinding binding, std::span<gpu::Sampler* const> samplers)
+{
+    bindingDescription(binding, ResourceType::Sampler, samplers.size());
+    std::vector<VkDescriptorImageInfo> infos;
+    for (auto* value : samplers)
+    {
+        auto* sampler = dynamic_cast<vk::Sampler*>(value);
+        if (!sampler || sampler->device() != device() || !sampler->isValid())
+        {
+            throw std::invalid_argument("Sampler device/state is incompatible");
+        }
+        infos.push_back({sampler->handle(), VK_NULL_HANDLE, VK_IMAGE_LAYOUT_UNDEFINED});
+    }
+    const size_t start = _imageInfos.size();
+    _imageInfos.insert(_imageInfos.end(), infos.begin(), infos.end());
+    VkWriteDescriptorSet write{};
+    write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    write.dstSet = _descriptorSet;
+    write.dstBinding = binding.vulkan;
+    write.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
+    write.descriptorCount = static_cast<uint32_t>(samplers.size());
+    _pendingWrites.push_back(write);
+    _writeInfoKinds.push_back(WriteInfoKind::Image);
+    _writeInfoIndices.push_back(start);
+    if (samplers.size() > 1)
+    {
+        _pendingArrays.push_back(binding.vulkan);
+    }
 }
 
 void ResourceSet::setUniformBuffer(ShaderBinding binding, gpu::Buffer* buffer)
 {
+    bindingDescription(binding, ResourceType::UniformBuffer);
     auto* vkBuffer = dynamic_cast<vk::Buffer*>(buffer);
-    if (!vkBuffer)
+    if (!vkBuffer || vkBuffer->device() != device() || !vkBuffer->isValid())
     {
         throw std::runtime_error("vk::ResourceSet::setUniformBuffer: invalid buffer");
     }
 
+    if (!hasFlag(buffer->usage(), BufferUsage::Uniform) || !buffer->byteSize() ||
+        (hasFlag(buffer->usage(), BufferUsage::Storage) && buffer->byteSize() > device()->resourceArrayCapabilities().maxStorageBufferRange))
+    {
+        throw std::invalid_argument("Buffer range/usage is incompatible");
+    }
     const size_t infoIndex = _bufferInfos.size();
 
     VkDescriptorBufferInfo bufferInfo{};
@@ -319,12 +347,18 @@ void ResourceSet::setUniformBuffer(ShaderBinding binding, gpu::Buffer* buffer)
 
 void ResourceSet::setStorageBuffer(ShaderBinding binding, gpu::Buffer* buffer)
 {
+    bindingDescription(binding, ResourceType::StorageBuffer);
     auto* vkBuffer = dynamic_cast<vk::Buffer*>(buffer);
-    if (!vkBuffer)
+    if (!vkBuffer || vkBuffer->device() != device() || !vkBuffer->isValid())
     {
         throw std::runtime_error("vk::ResourceSet::setStorageBuffer: invalid buffer");
     }
 
+    if (!hasFlag(buffer->usage(), BufferUsage::Storage) || !buffer->byteSize() ||
+        (hasFlag(buffer->usage(), BufferUsage::Storage) && buffer->byteSize() > device()->resourceArrayCapabilities().maxStorageBufferRange))
+    {
+        throw std::invalid_argument("Buffer range/usage is incompatible");
+    }
     const size_t infoIndex = _bufferInfos.size();
 
     VkDescriptorBufferInfo bufferInfo{};
@@ -351,8 +385,9 @@ void ResourceSet::setStorageBuffer(ShaderBinding binding, gpu::Buffer* buffer)
 
 void ResourceSet::setRayTracingScene(ShaderBinding binding, gpu::RayTracingScene* scene)
 {
+    bindingDescription(binding, ResourceType::AccelerationStructure);
     auto* vkScene = dynamic_cast<vk::RayTracingScene*>(scene);
-    if (!vkScene)
+    if (!vkScene || vkScene->device() != device() || !vkScene->isValid())
     {
         throw std::runtime_error("vk::ResourceSet::setRayTracingScene: invalid ray tracing scene");
     }
@@ -378,6 +413,15 @@ void ResourceSet::setRayTracingScene(ShaderBinding binding, gpu::RayTracingScene
 
 void ResourceSet::update()
 {
+    for (const auto& rb : _bindings)
+    {
+        if (rb.set == _setIndex && rb.count > 1 &&
+            std::find(_initializedArrays.begin(), _initializedArrays.end(), rb.binding.vulkan) == _initializedArrays.end() &&
+            std::find(_pendingArrays.begin(), _pendingArrays.end(), rb.binding.vulkan) == _pendingArrays.end())
+        {
+            throw std::invalid_argument("Every array element must be initialized before update");
+        }
+    }
     if (_pendingWrites.empty())
     {
         return;
@@ -418,6 +462,14 @@ void ResourceSet::update()
     vkUpdateDescriptorSets(_device, static_cast<uint32_t>(_pendingWrites.size()),
                            _pendingWrites.data(), 0, nullptr);
 
+    for (auto binding : _pendingArrays)
+    {
+        if (std::find(_initializedArrays.begin(), _initializedArrays.end(), binding) == _initializedArrays.end())
+        {
+            _initializedArrays.push_back(binding);
+        }
+    }
+    _pendingArrays.clear();
     _pendingWrites.clear();
     _imageInfos.clear();
     _bufferInfos.clear();
@@ -434,6 +486,8 @@ bool ResourceSet::isValid() const
 
 void ResourceSet::cleanup()
 {
+    _initializedArrays.clear();
+    _pendingArrays.clear();
     _pendingWrites.clear();
     _imageInfos.clear();
     _bufferInfos.clear();

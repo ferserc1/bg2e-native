@@ -35,3 +35,9 @@ Delegate compilation and applicable runtime checks to the project lead; perform 
 M08-05 validates full CLI parity. M09 determines final installed executable naming from surviving targets without restoring old API support.
 
 Record actual API, ownership and verification in the milestone review. Follow [the review protocol](../review-protocol.md) and edit affected pending steps when actual contracts differ.
+
+## M03-10 reviewed implementation requirement
+
+Import stable live effect settings through the codec at a stopped boundary with explicit required-capability checks. UI-only lightPose/document targets need a declared mapping or reject/skip diagnostic policy. Keep CLI dimensions/sample overrides last; no implicit preferences or RendererDeferred dependency for UV tracing.
+
+Source and validation boundaries: [M03 technical review](../milestone_03_ray_tracing/review.md). Include these conditions in this step's implementation and exit checks.

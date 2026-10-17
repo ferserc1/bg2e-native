@@ -43,6 +43,9 @@ class BG2E_API ResourceSet : public gpu::ResourceSet {
     void setStorageBuffer(ShaderBinding binding, gpu::Buffer* buffer) override;
     void setRayTracingScene(ShaderBinding binding, gpu::RayTracingScene* scene) override;
 
+    void setSampledImages(ShaderBinding binding, std::span<const ImageView> views) override;
+    void setSamplers(ShaderBinding binding, std::span<gpu::Sampler* const> samplers) override;
+
     void update() override;
 
     uint32_t setIndex() const override
@@ -58,6 +61,10 @@ class BG2E_API ResourceSet : public gpu::ResourceSet {
     }
 
   private:
+    ResourceBinding bindingDescription(ShaderBinding binding, ResourceType type, size_t count = 1) const;
+    std::vector<ResourceBinding> _bindings;
+    std::vector<uint32_t> _initializedArrays;
+    std::vector<uint32_t> _pendingArrays;
     VkDevice _device{VK_NULL_HANDLE};
     uint32_t _setIndex{0};
     VkDescriptorPool _descriptorPool{VK_NULL_HANDLE};

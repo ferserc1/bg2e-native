@@ -1,0 +1,34 @@
+/*
+ *    business grade graphic engine (bg2e engine)
+ *    Copyright (C) 2026  Fernando Serrano Carpena
+ *
+ *    This program is free software: you can redistribute it and/or modify
+ *    it under the terms of the GNU General Public License as published by
+ *    the Free Software Foundation, either version 3 of the License, or
+ *    (at your option) any later version.
+ *
+ *    This program is distributed in the hope that it will be useful,
+ *    but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *    GNU General Public License for more details.
+ *
+ *    You should have received a copy of the GNU General Public License
+ *    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
+#version 460
+#extension GL_GOOGLE_include_directive : require
+#extension GL_EXT_nonuniform_qualifier : require
+#extension GL_EXT_ray_tracing : require
+#define RT_COUNT 128
+#include "../lib/rt_probe.glsl"
+hitAttributeEXT vec2 bary;
+void main()
+{
+    uint instance = uint(gl_InstanceCustomIndexEXT);
+    float cutoff = materials[instances[instance].ranges.w].parameters.x;
+    if (surface(instance, uint(gl_PrimitiveID), bary, gl_LaunchIDEXT.x).a < cutoff)
+    {
+        ignoreIntersectionEXT;
+    }
+}

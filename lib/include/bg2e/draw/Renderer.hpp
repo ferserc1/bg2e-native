@@ -29,10 +29,17 @@ namespace bg2e {
 namespace draw {
 namespace pipeline {
 class SoftShadowPass;
+class RTAmbientOcclusion;
+class RTGlobalIllumination;
+class RTReflections;
+class TemporalAccumulator;
+class DenoiseFilter;
+class FinalProcessor;
 }
 
 // Describes a resolved single-sample rendering surface, not a window size.
 // Resolution policy is implemented later; minimized windows skip rendering.
+enum class IndirectLightingMode { IBL, AmbientOcclusion, GlobalIllumination };
 struct RendererConfiguration {
     gpu::Size2D outputExtent;
     gpu::Size2D internalExtent;
@@ -45,6 +52,13 @@ struct RendererConfiguration {
     std::shared_ptr<ResolutionSettings> resolution; // Null preserves fixed/follow-output policy.
     // Optional ordered post-final passes; shared ownership, one renderer lifecycle each.
     std::vector<std::shared_ptr<pipeline::OverlayPass>> overlays;
+    std::shared_ptr<pipeline::RTAmbientOcclusion> ambientOcclusion; // Null selects disabled public default.
+    std::shared_ptr<pipeline::RTGlobalIllumination> globalIllumination;
+    IndirectLightingMode indirectLighting = IndirectLightingMode::AmbientOcclusion;
+    std::shared_ptr<pipeline::RTReflections> reflections;
+    std::shared_ptr<pipeline::TemporalAccumulator> temporal;
+    std::shared_ptr<pipeline::DenoiseFilter> denoise;
+    std::shared_ptr<pipeline::FinalProcessor> finalProcessor; // Optional post-tone-map AA, before overlays.
 };
 
 // Public runtime renderer family. The delegate exclusively owns its renderer
@@ -83,6 +97,10 @@ class BG2E_API Renderer {
     virtual void update(const FrameContext& frame) = 0;
     virtual void record(const FrameContext& frame) = 0;
     virtual void cleanup() = 0;
+    // Application mutation/camera-cut boundary; no scene ownership in editing utilities.
+    virtual void invalidateHistories()
+    {
+    }
 
     // Structural validation before allocating resources. Device capabilities,
     // actual shader ABI and feature availability also require backend checks.
@@ -195,7 +213,8 @@ class BG2E_API Renderer {
             const auto extent = slots[i].extent == pipeline::ExtentDomain::Output
                 ? context.configuration.outputExtent : context.configuration.internalExtent;
             if (bindings[i].semantic != slots[i].semantic || !image || !image->isValid() ||
-                image->imageType() != slots[i].type || image->size() != extent ||
+                image->imageType() != slots[i].type || image->size().isZero() ||
+                (slots[i].extent != pipeline::ExtentDomain::Scaled && image->size() != extent) ||
                 image->pixelFormat() != slots[i].format ||
                 (image->usage() & slots[i].usage) != slots[i].usage ||
                 image->device() != context.frame.engine.device())

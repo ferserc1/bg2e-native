@@ -141,6 +141,7 @@ void CommandBuffer::transition(gpu::Image* image, ImageLayout newLayout)
     }
     transition(image, newLayout, image->fullRange());
 }
+
 void CommandBuffer::transition(gpu::Image* image, ImageLayout newLayout, const ImageSubresourceRange& range)
 {
     if (!_recording || hasActiveScope() || !dynamic_cast<metal::Image*>(image) || !image->isValid() || image->device() != _device)
@@ -298,6 +299,7 @@ void CommandBuffer::beginRendering(gpu::Image* colorImage, uint32_t mipLevel)
     description.colors.back().subresource = {mipLevel, 1, 0, 1};
     beginRendering(description);
 }
+
 void CommandBuffer::beginRendering(gpu::Image* colorImage, gpu::Image* depthImage, uint32_t mipLevel)
 {
     RenderingDescription description;
@@ -310,6 +312,7 @@ void CommandBuffer::beginRendering(gpu::Image* colorImage, gpu::Image* depthImag
     }
     beginRendering(description);
 }
+
 void CommandBuffer::beginRendering(gpu::CubeMap* cubemap, CubemapFace face, uint32_t mipLevel)
 {
     if (!cubemap || !cubemap->isValid() || static_cast<uint32_t>(face) >= 6)
@@ -625,6 +628,7 @@ void CommandBuffer::pushConstants(ShaderStage stage, uint32_t offset, uint32_t s
     case ShaderStage::RayGeneration:
     case ShaderStage::Miss:
     case ShaderStage::ClosestHit:
+    case ShaderStage::AnyHit:
         if (!_computeEncoder)
         {
             throw std::runtime_error("metal::CommandBuffer::pushConstants: no active compute scope; call beginCompute() first");
@@ -639,7 +643,7 @@ void CommandBuffer::pushConstants(ShaderStage stage, uint32_t offset, uint32_t s
 void CommandBuffer::bindResourceSet(gpu::GraphicsPipeline* /*pipeline*/, uint32_t /*setIndex*/, gpu::ResourceSet* set)
 {
     auto* metalSet = dynamic_cast<metal::ResourceSet*>(set);
-    if (!metalSet)
+    if (!metalSet || metalSet->device() != _device || !metalSet->isValid())
     {
         throw std::runtime_error("metal::CommandBuffer::bindResourceSet(GraphicsPipeline): not a metal::ResourceSet");
     }
@@ -721,13 +725,17 @@ void CommandBuffer::bindResourceSet(gpu::ComputePipeline* /*pipeline*/, uint32_t
     }
 
     auto* metalSet = dynamic_cast<metal::ResourceSet*>(set);
-    if (!metalSet)
+    if (!metalSet || metalSet->device() != _device || !metalSet->isValid())
     {
         throw std::runtime_error("metal::CommandBuffer::bindResourceSet(ComputePipeline): not a metal::ResourceSet");
     }
 
     for (const auto& entry : metalSet->entries())
     {
+        for (auto* texture : entry.indirectTextures)
+        {
+            _computeEncoder->useResource(texture, MTL::ResourceUsageRead);
+        }
         if (entry.texture)
         {
             _computeEncoder->setTexture(entry.texture, entry.index);
@@ -823,6 +831,7 @@ void CommandBuffer::copyImage(gpu::Image* source, gpu::Image* destination)
 {
     copyImage(ImageView{source, {}}, ImageView{destination, {}});
 }
+
 void CommandBuffer::copyImage(const ImageView& source, const ImageView& destination)
 {
     if (!_recording || hasActiveScope() || !_device || !_cmd)
@@ -847,6 +856,7 @@ void CommandBuffer::copyImage(const ImageView& source, const ImageView& destinat
         destination.range.baseArrayLayer, destination.range.baseMipLevel, MTL::Origin{0, 0, 0});
     encoder->endEncoding();
 }
+
 void CommandBuffer::generateMipmaps(gpu::Image* image, ImageLayout finalLayout)
 {
     auto* native = dynamic_cast<metal::Image*>(image);
@@ -869,6 +879,7 @@ void CommandBuffer::generateMipmaps(gpu::Image* image, ImageLayout finalLayout)
     }
     transition(image, finalLayout);
 }
+
 void CommandBuffer::blitImage(gpu::Image* source, gpu::Image* destination)
 {
     if (!source || !destination || source->size() != destination->size())
@@ -942,7 +953,7 @@ void CommandBuffer::bindResourceSet(gpu::RayTracingPipeline* /*pipeline*/, uint3
     }
 
     auto* metalSet = dynamic_cast<metal::ResourceSet*>(set);
-    if (!metalSet)
+    if (!metalSet || metalSet->device() != _device || !metalSet->isValid())
     {
         throw std::runtime_error("metal::CommandBuffer::bindResourceSet(RayTracingPipeline): not a metal::ResourceSet");
     }
@@ -950,6 +961,10 @@ void CommandBuffer::bindResourceSet(gpu::RayTracingPipeline* /*pipeline*/, uint3
     // Reuse the same resource binding logic as compute pipelines
     for (const auto& entry : metalSet->entries())
     {
+        for (auto* texture : entry.indirectTextures)
+        {
+            _computeEncoder->useResource(texture, MTL::ResourceUsageRead);
+        }
         if (entry.texture)
         {
             _computeEncoder->setTexture(entry.texture, entry.index);
@@ -1002,35 +1017,44 @@ bool CommandBuffer::isValid() const
 CommandBuffer::~CommandBuffer()
 {
 }
+
 void CommandBuffer::begin()
 {
 }
+
 void CommandBuffer::end()
 {
 }
+
 bool CommandBuffer::hasActiveScope() const
 {
     return false;
 }
+
 void CommandBuffer::transition(gpu::Image*, ImageLayout, const ImageSubresourceRange&)
 {
     throw std::runtime_error("Metal backend is not available on this platform");
 }
+
 void CommandBuffer::copyImage(const ImageView&, const ImageView&)
 {
     throw std::runtime_error("Metal backend is not available on this platform");
 }
+
 void CommandBuffer::generateMipmaps(gpu::Image*, ImageLayout)
 {
     throw std::runtime_error("Metal backend is not available on this platform");
 }
+
 void CommandBuffer::transition(gpu::Image*, ImageLayout)
 {
 }
+
 void CommandBuffer::beginRendering(const RenderingDescription&)
 {
     throw std::runtime_error("Metal backend is not available on this platform");
 }
+
 void CommandBuffer::beginRendering(gpu::SurfaceFrame*)
 {
     if (_attachmentRendering)
@@ -1039,6 +1063,7 @@ void CommandBuffer::beginRendering(gpu::SurfaceFrame*)
     }
     _attachmentRendering.reset();
 }
+
 void CommandBuffer::beginRendering(gpu::Image*, uint32_t)
 {
     if (_attachmentRendering)
@@ -1047,6 +1072,7 @@ void CommandBuffer::beginRendering(gpu::Image*, uint32_t)
     }
     _attachmentRendering.reset();
 }
+
 void CommandBuffer::beginRendering(gpu::Image*, gpu::Image*, uint32_t)
 {
     if (_attachmentRendering)
@@ -1055,6 +1081,7 @@ void CommandBuffer::beginRendering(gpu::Image*, gpu::Image*, uint32_t)
     }
     _attachmentRendering.reset();
 }
+
 void CommandBuffer::beginRendering(gpu::CubeMap*, CubemapFace, uint32_t)
 {
     if (_attachmentRendering)
@@ -1063,72 +1090,95 @@ void CommandBuffer::beginRendering(gpu::CubeMap*, CubemapFace, uint32_t)
     }
     _attachmentRendering.reset();
 }
+
 void CommandBuffer::endRendering()
 {
 }
+
 void CommandBuffer::beginCompute()
 {
 }
+
 void CommandBuffer::endCompute()
 {
 }
+
 void CommandBuffer::clearColor(uint32_t, const gpu::Color&)
 {
 }
+
 void CommandBuffer::clearDepth(float)
 {
 }
+
 void CommandBuffer::bindPipeline(gpu::GraphicsPipeline*)
 {
 }
+
 void CommandBuffer::draw(uint32_t, uint32_t, uint32_t, uint32_t)
 {
 }
+
 void CommandBuffer::bindPipeline(gpu::ComputePipeline*)
 {
 }
+
 void CommandBuffer::dispatch(uint32_t, uint32_t, uint32_t)
 {
 }
+
 void CommandBuffer::pushConstants(ShaderStage, uint32_t, uint32_t, const void*)
 {
 }
+
 void CommandBuffer::bindResourceSet(gpu::GraphicsPipeline*, uint32_t, gpu::ResourceSet*)
 {
 }
+
 void CommandBuffer::bindResourceSet(gpu::ComputePipeline*, uint32_t, gpu::ResourceSet*)
 {
 }
+
 void CommandBuffer::bindVertexBuffer(uint32_t, gpu::Buffer*, uint64_t)
 {
 }
+
 void CommandBuffer::bindIndexBuffer(gpu::Buffer*, uint64_t)
 {
 }
+
 void CommandBuffer::drawIndexed(uint32_t, uint32_t, uint32_t, int32_t, uint32_t)
 {
 }
+
 void CommandBuffer::copyImage(gpu::Image*, gpu::Image*)
 {
 }
+
 void CommandBuffer::blitImage(gpu::Image*, gpu::Image*)
 {
 }
+
 void CommandBuffer::buildRayTracingMesh(gpu::RayTracingMesh*)
 {
 }
+
 void CommandBuffer::buildRayTracingScene(gpu::RayTracingScene*)
 {
 }
+
 void CommandBuffer::bindPipeline(gpu::RayTracingPipeline*)
 {
 }
+
 void CommandBuffer::bindResourceSet(gpu::RayTracingPipeline*, uint32_t, gpu::ResourceSet*)
 {
 }
+
 void CommandBuffer::traceRays(uint32_t, uint32_t, uint32_t)
 {
 }
+
 bool CommandBuffer::isValid() const
 {
     return false;

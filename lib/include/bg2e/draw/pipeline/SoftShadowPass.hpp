@@ -25,10 +25,15 @@
 #include <bg2e/gpu/ResourceSet.hpp>
 #include <bg2e/gpu/Sampler.hpp>
 #include <filesystem>
+#include <stdexcept>
 
 namespace bg2e::draw::pipeline {
 inline constexpr uint32_t MaxShadowAlphaTextures = 8;
 inline constexpr uint32_t MaxShadowSamples = 64;
+class BG2E_API ShadowTextureCapacityError : public std::length_error {
+  public:
+    using std::length_error::length_error;
+};
 struct SoftShadowSettings {
     bool enabled = true;
     float bias = 0.01f;
@@ -65,6 +70,7 @@ class BG2E_API SoftShadowPass : public RenderLayer {
     SoftShadowSettings& settings();
     const SoftShadowSettings& settings() const;
     bool available() const;
+    bool sceneSupported() const;
     const std::string& status() const;
     const PassContract& contract() const override;
     void initialize(Engine& engine, const LayerConfiguration& configuration) override;
@@ -94,6 +100,7 @@ class BG2E_API SoftShadowPass : public RenderLayer {
     Engine* _engine = nullptr;
     PassContract _contract;
     std::string _status = "Not initialized";
+    bool _sceneSupported = true;
     std::shared_ptr<gpu::ShaderModule> _shader;
     std::shared_ptr<gpu::PipelineLayout> _layout;
     std::shared_ptr<gpu::ComputePipeline> _pipeline;

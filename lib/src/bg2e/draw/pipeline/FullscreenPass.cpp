@@ -54,6 +54,7 @@ void FullscreenPass::initialize(Engine& engine, const std::filesystem::path& sha
     _sets.resize(slots);
     _serial.assign(slots, std::numeric_limits<uint64_t>::max());
 }
+
 void FullscreenPass::beginFrame(const FrameContext& frame)
 {
     if (&frame.engine != _engine || frame.frameSlot >= _sets.size())
@@ -66,12 +67,14 @@ void FullscreenPass::beginFrame(const FrameContext& frame)
         _serial[frame.frameSlot] = frame.frameNumber;
     }
 }
+
 void FullscreenPass::draw(const FrameContext& frame, gpu::Image& output,
     const std::vector<gpu::Image*>& inputs, uint32_t imageSet,
-    const std::vector<std::pair<uint32_t, gpu::ResourceSet*>>& sets, const void* push, uint32_t pushSize, const std::vector<uint32_t>& metalImages)
+    const std::vector<std::pair<uint32_t, gpu::ResourceSet*>>& sets, const void* push, uint32_t pushSize, const std::vector<uint32_t>& metalImages, const std::vector<uint32_t>& metalSamplers)
 {
     beginFrame(frame);
-    if (!metalImages.empty() && metalImages.size() != inputs.size())
+    if ((!metalImages.empty() && metalImages.size() != inputs.size()) ||
+        (!metalSamplers.empty() && metalSamplers.size() != inputs.size()))
     {
         throw std::invalid_argument("Fullscreen native image map must match input count");
     }
@@ -86,7 +89,7 @@ void FullscreenPass::draw(const FrameContext& frame, gpu::Image& output,
         command.transition(inputs[i], gpu::ImageLayout::ShaderReadOnly);
         const auto metal = metalImages.empty() ? i : metalImages[i];
         resources->setSampledImage({i, metal}, inputs[i]);
-        resources->setSampler({uint32_t(inputs.size()) + i, metal}, _sampler.get());
+        resources->setSampler({uint32_t(inputs.size()) + i, metalSamplers.empty() ? metal : metalSamplers[i]}, _sampler.get());
     }
     resources->update();
     _sets[frame.frameSlot].push_back(resources);
@@ -108,6 +111,7 @@ void FullscreenPass::draw(const FrameContext& frame, gpu::Image& output,
     command.endRendering();
     command.transition(&output, gpu::ImageLayout::ShaderReadOnly);
 }
+
 void FullscreenPass::cleanup()
 {
     if (_engine)

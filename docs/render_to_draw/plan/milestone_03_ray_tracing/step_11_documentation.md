@@ -26,3 +26,32 @@ Actual accepted backend RT data/binding design; capability versus SDK/runtime su
 - Relevant API reference, tutorials, app/CLI/build guidance and navigation are updated; all applicable former M10 authoring requirements are covered or explicitly assigned to an unimplemented milestone owner.
 - Source/links/snippet checks and actual validation ownership are recorded; no invented compilation/backend coverage.
 - Deliver this documentation step for lead acceptance before entering M04. Follow the normal one-step execution protocol. M10 audits the accumulated result and does not defer missing authoring work to itself.
+
+## M03-07 actual temporal handoff
+
+Use [temporal.md](temporal.md): public TemporalAccumulator returns owned sampled scalar/HDR output or borrowed raw pass-through; SurfaceInputs/TemporalView expose inputs without private renderer access. Keys separate signal/view/layer, sceneFrameNumber advances actual work, maxFrames bounds per-pixel arithmetic/rolling/frozen accumulation. GI binary validity and reflection fractional confidence remain distinct. Renderer::invalidateHistories coordinates SDK and engine histories; resetUpscaler forwards for existing adapters. Exact extraction/settings signatures detect identity/value changes; in-place uploads/custom shaders and same-camera teleports require app notification. Object motion conservatively resets until previous-object vectors are added. Fresh history images and per-slot retained versions avoid overwrite; same ordered queue/submission discipline is required.
+
+## M03-08 actual filter handoff
+
+Use [denoise.md](denoise.md): RendererDeferred injects/exposes DenoiseFilter and resolves tracing -> temporal -> spatial -> lighting. Inputs reuse SurfaceInputs; output keeps scalar R16/HDR RGBA16 and independent source extent. GI validity and reflection confidence are explicit; filtered RGB stays unpremultiplied and never replaces temporal history. Camera thresholds use linear view Z, explicit profiles use world distance. Virtual settingsType/settingsInstance accessors support live catalog binding; M03-09 must register real controls/preferences and avoid copied settings values. Unsupported profiles return borrowed source; fresh output owners and per-slot descriptors remain alive through completion.
+
+## M03-09 concrete integration handoff
+
+Use [integration contracts](../milestone_03_ray_tracing/integration.md): live
+requested effect settings persist independently of capability status; renderer
+mode selects IBL/AO/GI separately from reflections. Existing examples inject
+optional disabled FSR and SMAA. FinalProcessor/SMAAProcessor apply final scene AA
+after color/reconstruction and before overlays/UI, with standalone borrowed/owned
+output and retired-slot contracts. Reuse shared noise and explicit invalidation.
+Legacy query shadows retain an eight-pair limit but degrade the entire scene to
+neutral visibility with sceneSupported/status on overflow; advanced tables remain
+independent and never truncated. Review no-RT/partial support and the manual matrix.
+Keep official AreaTex/SearchTex bytes and original licenses in iryku_smaa during
+production retirement: draw SMAA now consumes those resources. Do not use spatial
+AA or denoised histories as bake averages. Runtime checks remain lead-owned.
+
+## M03-10 reviewed implementation requirement
+
+Reconcile the real startup/reopen graphics windows and explicit facade ownership in both examples, example-only active GI/reflection defaults and local lightPose targets. Cover SurfaceInputs formats, normalization/confidence, bounded histories versus exact averaging and optional post-color FinalProcessor/SMAA. Preserve lead evidence limits; do not present baking/headless APIs as implemented.
+
+Source and validation boundaries: [M03 technical review](../milestone_03_ray_tracing/review.md). Include these conditions in this step's implementation and exit checks.

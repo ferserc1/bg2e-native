@@ -50,6 +50,7 @@ void storage(Engine& engine, std::shared_ptr<gpu::Buffer>& buffer, const void* d
     }
 }
 }
+
 ShadowQueryTable buildShadowQueryTable(const CollectRayTracingInstancesVisitor& collection)
 {
     ShadowQueryTable table;
@@ -74,7 +75,7 @@ ShadowQueryTable buildShadowQueryTable(const CollectRayTracingInstancesVisitor& 
             {
                 if (table.alphaTextures.size() >= MaxShadowAlphaTextures)
                 {
-                    throw std::length_error("Query cutouts support eight distinct albedo image/sampler pairs; no occluders are truncated");
+                    throw ShadowTextureCapacityError("Query cutouts support eight distinct albedo image/sampler pairs; no occluders are truncated");
                 }
                 table.alphaTextures.push_back(texture);
                 data.ranges.z = uint32_t(table.alphaTextures.size() - 1);
@@ -105,6 +106,7 @@ ShadowQueryTable buildShadowQueryTable(const CollectRayTracingInstancesVisitor& 
     }
     return table;
 }
+
 PassContract softShadowContract(gpu::PixelFormat depth)
 {
     const auto hdr = gpu::PixelFormat::R16G16B16A16_SFLOAT;
@@ -112,6 +114,7 @@ PassContract softShadowContract(gpu::PixelFormat depth)
         {{"shadow0", hdr, ExtentDomain::Internal, gpu::ImageUsage::Storage | gpu::ImageUsage::Sampled | gpu::ImageUsage::ColorAttachment},
          {"shadow1", hdr, ExtentDomain::Internal, gpu::ImageUsage::Storage | gpu::ImageUsage::Sampled | gpu::ImageUsage::ColorAttachment}}};
 }
+
 gpu::PipelineLayoutDescription softShadowBindingLayout()
 {
     using T = gpu::ResourceType;
@@ -136,31 +139,38 @@ gpu::PipelineLayoutDescription softShadowBindingLayout()
     }
     return result;
 }
+
 SoftShadowPass::SoftShadowPass(std::filesystem::path shaderRoot, uint32_t slots, gpu::PixelFormat depth)
     : _shaderRoot(shaderRoot.empty() ? base::PlatformTools::shaderPath() : std::move(shaderRoot)),
       _requestedSlots(slots), _contract(softShadowContract(depth))
 {
 }
+
 SoftShadowSettings& SoftShadowPass::settings()
 {
     return _settings;
 }
+
 const SoftShadowSettings& SoftShadowPass::settings() const
 {
     return _settings;
 }
+
 bool SoftShadowPass::available() const
 {
     return bool(_pipeline);
 }
+
 const std::string& SoftShadowPass::status() const
 {
     return _status;
 }
+
 const PassContract& SoftShadowPass::contract() const
 {
     return _contract;
 }
+
 void SoftShadowPass::initialize(Engine& engine, const LayerConfiguration& configuration)
 {
     if (_engine)
@@ -208,6 +218,7 @@ void SoftShadowPass::initialize(Engine& engine, const LayerConfiguration& config
         _status = std::string("Query shadows unavailable: ") + error.what();
     }
 }
+
 void SoftShadowPass::attachScene(std::shared_ptr<scene::Node>)
 {
     if (_engine)
@@ -219,13 +230,16 @@ void SoftShadowPass::attachScene(std::shared_ptr<scene::Node>)
         slot = Slot{};
     }
 }
+
 void SoftShadowPass::resize(const LayerConfiguration&)
 {
     attachScene(nullptr);
 }
+
 void SoftShadowPass::update(const FrameContext&)
 {
 }
+
 void SoftShadowPass::prepare(const FrameContext& frame, const RenderQueue& queue,
     const glm::mat4& view, const glm::mat4& projection)
 {
@@ -267,10 +281,27 @@ void SoftShadowPass::prepare(const FrameContext& frame, const RenderQueue& queue
     slot.sets.clear(); // Retire only this completed slot's previous bindings.
     slot.active = false;
     slot.built = false;
+    _status = "Query shadows ready";
+    _sceneSupported = true;
     if (_settings.enabled && lights)
     {
         slot.collection.collect(queue);
-        slot.table = buildShadowQueryTable(slot.collection);
+        try
+        {
+            slot.table = buildShadowQueryTable(slot.collection);
+        }
+        catch (const ShadowTextureCapacityError& error)
+        {
+            // Neutral shadow output for the whole scene; advanced tables are independent.
+            slot.scene.reset();
+            slot.collection = {};
+            slot.table = {};
+            slot.serial = frame.frameNumber;
+            slot.prepared = true;
+            _sceneSupported = false;
+            _status = std::string("Scene query shadows unavailable; neutral visibility: ")+error.what();
+            return;
+        }
         if (!slot.table.instances.empty())
         {
             if (!slot.scene)
@@ -320,6 +351,7 @@ void SoftShadowPass::prepare(const FrameContext& frame, const RenderQueue& queue
     slot.serial = frame.frameNumber;
     slot.prepared = true;
 }
+
 void SoftShadowPass::record(const PassContext& context)
 {
     if (!available() || &context.frame.engine != _engine)
@@ -386,6 +418,7 @@ void SoftShadowPass::record(const PassContext& context)
         command.transition(output.image, gpu::ImageLayout::ShaderReadOnly);
     }
 }
+
 void SoftShadowPass::cleanup()
 {
     if (_engine)
@@ -400,4 +433,10 @@ void SoftShadowPass::cleanup()
     _engine = nullptr;
     _status = "Not initialized";
 }
+
+bool SoftShadowPass::sceneSupported() const
+{
+    return available() && _sceneSupported;
+}
+
 }

@@ -81,3 +81,9 @@ validate current scene membership and document generation, mark unsaved changes,
 and notify render histories, bake jobs, selection and previews after material,
 geometry, component or scene replacement. A renderer generation alone does not
 protect an async import or document swap.
+
+## M03-10 reviewed implementation requirement
+
+Reuse actual visible settings ownership and synchronized light/material/transform controls. Persist requested values separately from availability/status; remap document light targets and mark unsaved state. Invalidate scene/job/renderer generations appropriately when nodes/resources or output profiles change; direct in-place uploads require explicit history notification.
+
+Source and validation boundaries: [M03 technical review](../milestone_03_ray_tracing/review.md). Include these conditions in this step's implementation and exit checks.

@@ -129,3 +129,5 @@ and queues edits/imports at the renderer safe boundary. It reads live reflected
 metadata and values, refreshes on generations and reports availability/errors.
 See [settings contract](../draw/Settings.md). Production RenderSettingsWindow
 and UISettingsWindow keep the contracts above.
+
+For the current draw window lifecycle, target IDs, availability and code wiring, see [GraphicsSettingsWindow](GraphicsSettingsWindow.md) and [live settings](../draw/Settings.md). It must be explicitly connected, bound and drawn by the application.

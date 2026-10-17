@@ -40,13 +40,16 @@ PassContract gbufferContract(gpu::PixelFormat depth)
     result.outputs.push_back({"depth", depth, ExtentDomain::Internal, gpu::ImageUsage::DepthStencil | gpu::ImageUsage::Sampled});
     return result;
 }
+
 GBuffer::GBuffer(std::filesystem::path shaderRoot, gpu::PixelFormat depth) : _shaderRoot(shaderRoot.empty() ? base::PlatformTools::shaderPath() : std::move(shaderRoot)), _contract(gbufferContract(depth))
 {
 }
+
 const PassContract& GBuffer::contract() const
 {
     return _contract;
 }
+
 void GBuffer::initialize(Engine& engine, const LayerConfiguration& configuration)
 {
     if (_engine)
@@ -73,15 +76,19 @@ void GBuffer::initialize(Engine& engine, const LayerConfiguration& configuration
     description.addVertexBufferDescription(Drawable::DrawMesh::vertexBufferDescription());
     _pipeline = engine.device()->createGraphicsPipeline(description);
 }
+
 void GBuffer::attachScene(std::shared_ptr<scene::Node>)
 {
 }
+
 void GBuffer::resize(const LayerConfiguration&)
 {
 }
+
 void GBuffer::update(const FrameContext&)
 {
 }
+
 void GBuffer::record(const PassContext& context)
 {
     const auto* raster = context.raster;
@@ -133,6 +140,7 @@ void GBuffer::record(const PassContext& context)
         command.transition(output.image, gpu::ImageLayout::ShaderReadOnly);
     }
 }
+
 void GBuffer::cleanup()
 {
     if (_engine)

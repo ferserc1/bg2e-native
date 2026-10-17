@@ -59,3 +59,27 @@ that resets each affected history at the same safe boundary; do not couple the
 generic MaterialModifier utility to renderer history ownership. Geometry/topology
 replacement additionally invalidates selection identities and requires fresh
 extraction, not only a material-history reset. See [M02 review](../milestone_02_manipulation/review.md).
+
+## M03-01 checkpoint handoff — accepted by lead continuation
+
+Implement the accepted [M03-01 mutation/reset contract](rt-design.md): a public effect/renderer invalidation entry point, tracing scene revisions, per-rendered-view/layer sequence, independent AO/GI/reflection validity and previous-object correspondence. Material/light/environment/texture edits at the drained pre-acquire boundary update snapshots and reset affected histories; geometry/scene replacement also rebuilds acceleration data. Distinguish camera cuts, resize/quality/pass changes, pause and pick/overlay-only frames. Coordinate FSR resets without treating resetUpscaler or acquired-slot indexing as the effect-history API.
+
+## M03-03 actual noise input
+
+Reuse [utils::BlueNoise](blue-noise.md): CPU layer-major rank data and an explicitly shared RGBA8 color 2D atlas, with uint4 metadata and paired bg2eBlueNoise2/bg2eHashNoise2 helpers under draw/lib. Logical layers are stacked in Y; physical arrayLayers is one. Do not copy production sampler2DArray bindings or assume general image-array support. Effects own rendered-view/sample keys and disabled/missing-noise variants without texture access; the utility does not advance presentation/slot state or reserve tracing-table capacity implicitly. Retain image/sampler owners and metadata snapshots through completion.
+
+## M03-04 actual implementation handoff
+
+Use [rtao.md](rtao.md): public RTAmbientOcclusion, SurfaceInputs camera/explicit profiles and TracingSceneResources/TracingSnapshot now exist. Reuse dense IDs, retained material tables, scalar R16 output and explicit renderedSample keys. AO has independent quality dimensions via ExtentDomain::Scaled. No history/filtering or visible controls are implemented here. Legacy SoftShadowPass retains its separate eight-cutout-pair limit; reconcile that consumer during integration/review. Native pipeline GLSL users may include tracing.glsl without DRAW_TRACE_QUERIES; compute-query users define it first.
+
+## M03-05 actual GI handoff
+
+[rtgi.md](rtgi.md) records public RTGlobalIllumination, native Vulkan raygen/miss/closest-hit/any-hit with depth one, Metal compute queries, shared material tables and explicit receivers. RGBA16 output is incoming diffuse radiance/pi before receiver albedo with alpha validity; invalid zero restores diffuse IBL. RendererDeferred selects IBL/AO/GI independently of retained settings, preserves specular IBL and supports scaled GI inputs. History/filter/UI and baked presence policy remain pending. Reuse this exact normalization and matching-capacity snapshot ownership.
+
+## M03-06 actual reflection handoff
+
+Use [rt-reflections.md](rt-reflections.md): public RTReflections reuses retained scene tables and camera/explicit surfaces, with receiver roughness and camera position. Quality scales display output independently of G-buffer/internal/FSR extent. RGBA16 RGB is mean geometry-hit radiance before receiver BRDF, unpremultiplied; alpha is finite accepted hits/actualSamples. Preserve fractional confidence and rejected masks separately from GI binary validity and AO scalar visibility. The lighting pass blends prefiltered IBL with traced radiance using confidence and applies split-sum BRDF once. FullscreenPass supports an optional independent Metal sampler map; reflection texture16 shares nearest sampler0. Histories/filter/UI remain pending.
+
+## M03-07 delivered contract
+
+[temporal.md](temporal.md) records public inputs, independent keys, immutable history ownership, actual scene sequencing, reprojection/normal-position rejection, fractional confidence and bounded counts. Moving-object vectors are not implemented: transform/geometry changes conservatively reset effects and FSR. MotionVectorGenerator is the public CPU camera reference; existing FSR GPU motion generation remains intact. Lead compilation/runtime validation is pending.

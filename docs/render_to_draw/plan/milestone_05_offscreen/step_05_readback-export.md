@@ -45,3 +45,9 @@ Record actual API, ownership and verification in the milestone review. Follow [t
 ## M01-03 primitive readback baseline
 
 `gpu::Image::readPixels(bytes, range, finalLayout)` already provides synchronous packed color readback for a single full mip/layer, including HDR/integer formats. Reuse or extend that API for the required output/region/completion semantics; do not duplicate native staging helpers outside gpu. Export conversion, accumulated output selection and format/encoding orchestration remain this milestone's work.
+
+## M03-10 reviewed implementation requirement
+
+Validate N=1 and controlled N-sample HDR average before one final color/optional SMAA operation and typed completed readback. Cover disabled/unavailable processors, sRGB/UNORM conversion and headless import of requested-but-unavailable effect values separately from strict required-job capability failure.
+
+Source and validation boundaries: [M03 technical review](../milestone_03_ray_tracing/review.md). Include these conditions in this step's implementation and exit checks.

@@ -21,227 +21,184 @@
 #include <bg2e/gpu/vk/PipelineLayout.hpp>
 #include <bg2e/gpu/vk/Device.hpp>
 #include <bg2e/gpu/vk/extensions.hpp>
-#include <bg2e/base/Log.hpp>
 
+#include <algorithm>
+#include <cstring>
 #include <stdexcept>
 #include <vector>
-#include <cstring>
 
-namespace bg2e {
-namespace gpu {
-namespace vk {
+namespace bg2e::gpu::vk {
+namespace {
+uint64_t alignUp(uint64_t value, uint64_t alignment)
+{
+    if (!alignment)
+    {
+        throw std::runtime_error("Invalid shader binding table alignment");
+    }
+    return (value + alignment - 1) / alignment * alignment;
+}
+}
 
-RayTracingPipeline::RayTracingPipeline(
-    gpu::Device* gpuDevice, VkDevice device, VmaAllocator allocator,
+RayTracingPipeline::RayTracingPipeline(gpu::Device* gpuDevice, VkDevice device, VmaAllocator allocator,
     const gpu::RayTracingPipelineDescription& description)
     : gpu::RayTracingPipeline(gpuDevice), _device(device), _allocator(allocator)
 {
-    auto* vkRgenModule = dynamic_cast<vk::ShaderModule*>(description.raygenShader);
-    auto* vkLayout = dynamic_cast<vk::PipelineLayout*>(description.layout);
-
-    if (!vkRgenModule || !vkLayout)
+    try
     {
-        throw std::runtime_error("vk::RayTracingPipeline: description contains non-Vulkan objects");
-    }
-
-    _layoutHandle = vkLayout->handle();
-
-    // --- Shader stages ---
-    std::vector<VkPipelineShaderStageCreateInfo> stages;
-    std::vector<VkRayTracingShaderGroupCreateInfoKHR> groups;
-
-    // Stage 0: Ray generation (always present)
-    VkPipelineShaderStageCreateInfo rgenStage{};
-    rgenStage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-    rgenStage.stage = VK_SHADER_STAGE_RAYGEN_BIT_KHR;
-    rgenStage.module = vkRgenModule->handle();
-    rgenStage.pName = vkRgenModule->entryPoint().c_str();
-    stages.push_back(rgenStage);
-
-    // Raygen group (general)
-    VkRayTracingShaderGroupCreateInfoKHR rgenGroup{};
-    rgenGroup.sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_KHR;
-    rgenGroup.type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR;
-    rgenGroup.generalShader = 0;
-    rgenGroup.closestHitShader = VK_SHADER_UNUSED_KHR;
-    rgenGroup.anyHitShader = VK_SHADER_UNUSED_KHR;
-    rgenGroup.intersectionShader = VK_SHADER_UNUSED_KHR;
-    groups.push_back(rgenGroup);
-
-    // Stage 1: Miss shader (optional)
-    uint32_t missStageIndex = VK_SHADER_UNUSED_KHR;
-    if (description.missShader && description.missShader->isValid())
-    {
-        auto* vkMissModule = dynamic_cast<vk::ShaderModule*>(description.missShader);
-        if (vkMissModule)
+        auto* nativeDevice = dynamic_cast<vk::Device*>(gpuDevice);
+        auto* layout = dynamic_cast<vk::PipelineLayout*>(description.layout);
+        if (!nativeDevice || !gpuDevice->rayTracingCapabilities().pipelineSupported() ||
+            !createRayTracingPipelines || !getRayTracingShaderGroupHandles || !layout || layout->device() != gpuDevice || !layout->isValid() || !description.raygenShader)
         {
-            VkPipelineShaderStageCreateInfo missStage{};
-            missStage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-            missStage.stage = VK_SHADER_STAGE_MISS_BIT_KHR;
-            missStage.module = vkMissModule->handle();
-            missStage.pName = vkMissModule->entryPoint().c_str();
-            missStageIndex = static_cast<uint32_t>(stages.size());
-            stages.push_back(missStage);
+            throw std::invalid_argument("Vulkan tracing requires a supported device, layout and raygen shader");
+        }
+        _layoutHandle = layout->handle();
+        VkPhysicalDeviceRayTracingPipelinePropertiesKHR properties{};
+        properties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_PROPERTIES_KHR;
+        VkPhysicalDeviceProperties2 deviceProperties{};
+        deviceProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+        deviceProperties.pNext = &properties;
+        vkGetPhysicalDeviceProperties2(nativeDevice->physicalDeviceHandle(), &deviceProperties);
+        if (!description.maxRecursionDepth || description.maxRecursionDepth > properties.maxRayRecursionDepth)
+        {
+            throw std::invalid_argument("Ray recursion depth exceeds the device limit");
+        }
 
-            VkRayTracingShaderGroupCreateInfoKHR missGroup{};
-            missGroup.sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_KHR;
-            missGroup.type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR;
-            missGroup.generalShader = missStageIndex;
-            missGroup.closestHitShader = VK_SHADER_UNUSED_KHR;
-            missGroup.anyHitShader = VK_SHADER_UNUSED_KHR;
-            missGroup.intersectionShader = VK_SHADER_UNUSED_KHR;
+        std::vector<VkPipelineShaderStageCreateInfo> stages;
+        auto addStage = [&](gpu::ShaderModule* module, ShaderStage expected, VkShaderStageFlagBits flag)
+        {
+            if (!module)
+            {
+                return uint32_t(VK_SHADER_UNUSED_KHR);
+            }
+            auto* native = dynamic_cast<vk::ShaderModule*>(module);
+            if (!native || native->device() != gpuDevice || !native->isValid() || native->stage() != expected)
+            {
+                throw std::invalid_argument("Tracing shader stage/device is incompatible");
+            }
+            VkPipelineShaderStageCreateInfo stage{};
+            stage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+            stage.stage = flag;
+            stage.module = native->handle();
+            stage.pName = native->entryPoint().c_str();
+            stages.push_back(stage);
+            return static_cast<uint32_t>(stages.size() - 1);
+        };
+        const auto raygen = addStage(description.raygenShader, ShaderStage::RayGeneration, VK_SHADER_STAGE_RAYGEN_BIT_KHR);
+        const auto miss = addStage(description.missShader, ShaderStage::Miss, VK_SHADER_STAGE_MISS_BIT_KHR);
+        const auto closest = addStage(description.closestHitShader, ShaderStage::ClosestHit, VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR);
+        const auto any = addStage(description.anyHitShader, ShaderStage::AnyHit, VK_SHADER_STAGE_ANY_HIT_BIT_KHR);
+        std::vector<VkRayTracingShaderGroupCreateInfoKHR> groups;
+        auto group = [](VkRayTracingShaderGroupTypeKHR type)
+        {
+            VkRayTracingShaderGroupCreateInfoKHR result{};
+            result.sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_KHR;
+            result.type = type;
+            result.generalShader = VK_SHADER_UNUSED_KHR;
+            result.closestHitShader = VK_SHADER_UNUSED_KHR;
+            result.anyHitShader = VK_SHADER_UNUSED_KHR;
+            result.intersectionShader = VK_SHADER_UNUSED_KHR;
+            return result;
+        };
+        auto raygenGroup = group(VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR);
+        raygenGroup.generalShader = raygen;
+        groups.push_back(raygenGroup);
+        uint32_t missGroupIndex = VK_SHADER_UNUSED_KHR;
+        if (miss != VK_SHADER_UNUSED_KHR)
+        {
+            auto missGroup = group(VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR);
+            missGroup.generalShader = miss;
+            missGroupIndex = static_cast<uint32_t>(groups.size());
             groups.push_back(missGroup);
         }
-    }
-
-    // Stage 2: Closest hit shader (optional)
-    uint32_t chitStageIndex = VK_SHADER_UNUSED_KHR;
-    if (description.closestHitShader && description.closestHitShader->isValid())
-    {
-        auto* vkChitModule = dynamic_cast<vk::ShaderModule*>(description.closestHitShader);
-        if (vkChitModule)
+        uint32_t hitGroupIndex = VK_SHADER_UNUSED_KHR;
+        if (closest != VK_SHADER_UNUSED_KHR || any != VK_SHADER_UNUSED_KHR)
         {
-            VkPipelineShaderStageCreateInfo chitStage{};
-            chitStage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-            chitStage.stage = VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR;
-            chitStage.module = vkChitModule->handle();
-            chitStage.pName = vkChitModule->entryPoint().c_str();
-            chitStageIndex = static_cast<uint32_t>(stages.size());
-            stages.push_back(chitStage);
-
-            // Hit group with closest hit
-            VkRayTracingShaderGroupCreateInfoKHR hitGroup{};
-            hitGroup.sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_KHR;
-            hitGroup.type = VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_KHR;
-            hitGroup.generalShader = VK_SHADER_UNUSED_KHR;
-            hitGroup.closestHitShader = chitStageIndex;
-            hitGroup.anyHitShader = VK_SHADER_UNUSED_KHR;
-            hitGroup.intersectionShader = VK_SHADER_UNUSED_KHR;
+            auto hitGroup = group(VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_KHR);
+            hitGroup.closestHitShader = closest;
+            hitGroup.anyHitShader = any;
+            hitGroupIndex = static_cast<uint32_t>(groups.size());
             groups.push_back(hitGroup);
         }
+        VkRayTracingPipelineCreateInfoKHR pipelineInfo{};
+        pipelineInfo.sType = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR;
+        pipelineInfo.stageCount = static_cast<uint32_t>(stages.size());
+        pipelineInfo.pStages = stages.data();
+        pipelineInfo.groupCount = static_cast<uint32_t>(groups.size());
+        pipelineInfo.pGroups = groups.data();
+        pipelineInfo.maxPipelineRayRecursionDepth = description.maxRecursionDepth;
+        pipelineInfo.layout = _layoutHandle;
+        if (createRayTracingPipelines(_device, VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &_pipeline) != VK_SUCCESS)
+        {
+            throw std::runtime_error("Failed to create Vulkan tracing pipeline");
+        }
+
+        const uint64_t handleSize = properties.shaderGroupHandleSize;
+        const uint64_t stride = alignUp(handleSize, properties.shaderGroupHandleAlignment);
+        const uint64_t slotSize = alignUp(stride, properties.shaderGroupBaseAlignment);
+        if (!handleSize || stride > properties.maxShaderGroupStride)
+        {
+            throw std::runtime_error("Shader binding table stride exceeds the device limit");
+        }
+        std::vector<uint8_t> handles(handleSize * groups.size());
+        if (getRayTracingShaderGroupHandles(_device, _pipeline, 0, static_cast<uint32_t>(groups.size()),
+                handles.size(), handles.data()) != VK_SUCCESS)
+        {
+            throw std::runtime_error("Failed to get tracing shader group handles");
+        }
+        // Extra prefix permits an aligned device address independently of VMA's base alignment.
+        const uint64_t bytes = slotSize * groups.size() + properties.shaderGroupBaseAlignment;
+        VkBufferCreateInfo bufferInfo{};
+        bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+        bufferInfo.size = bytes;
+        bufferInfo.usage = VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
+        VmaAllocationCreateInfo allocation{};
+        allocation.usage = VMA_MEMORY_USAGE_AUTO_PREFER_HOST;
+        allocation.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT;
+        if (vmaCreateBuffer(_allocator, &bufferInfo, &allocation, &_sbtBuffer, &_sbtAllocation, nullptr) != VK_SUCCESS)
+        {
+            throw std::runtime_error("Failed to allocate shader binding table");
+        }
+        VkBufferDeviceAddressInfo addressInfo{};
+        addressInfo.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;
+        addressInfo.buffer = _sbtBuffer;
+        const auto address = vkGetBufferDeviceAddress(_device, &addressInfo);
+        const auto aligned = alignUp(address, properties.shaderGroupBaseAlignment);
+        const auto prefix = aligned - address;
+        if (!address)
+        {
+            throw std::runtime_error("Shader binding table has no device address");
+        }
+        void* mapped = nullptr;
+        if (vmaMapMemory(_allocator, _sbtAllocation, &mapped) != VK_SUCCESS)
+        {
+            throw std::runtime_error("Failed to map shader binding table");
+        }
+        std::memset(mapped, 0, bytes);
+        for (size_t i = 0; i < groups.size(); ++i)
+        {
+            std::memcpy(static_cast<uint8_t*>(mapped) + prefix + i * slotSize, handles.data() + i * handleSize, handleSize);
+        }
+        const auto flushResult = vmaFlushAllocation(_allocator, _sbtAllocation, 0, bytes);
+        vmaUnmapMemory(_allocator, _sbtAllocation);
+        if (flushResult != VK_SUCCESS)
+        {
+            throw std::runtime_error("Failed to flush shader binding table");
+        }
+        _raygenRegion = {aligned, stride, stride};
+        if (missGroupIndex != VK_SHADER_UNUSED_KHR)
+        {
+            _missRegion = {aligned + missGroupIndex * slotSize, stride, stride};
+        }
+        if (hitGroupIndex != VK_SHADER_UNUSED_KHR)
+        {
+            _hitRegion = {aligned + hitGroupIndex * slotSize, stride, stride};
+        }
     }
-
-    // --- Pipeline creation ---
-    VkRayTracingPipelineCreateInfoKHR pipelineInfo{};
-    pipelineInfo.sType = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR;
-    pipelineInfo.stageCount = static_cast<uint32_t>(stages.size());
-    pipelineInfo.pStages = stages.data();
-    pipelineInfo.groupCount = static_cast<uint32_t>(groups.size());
-    pipelineInfo.pGroups = groups.data();
-    pipelineInfo.maxPipelineRayRecursionDepth = description.maxRecursionDepth;
-    pipelineInfo.layout = _layoutHandle;
-    pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
-
-    VkResult result = createRayTracingPipelines(
-        _device, VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &_pipeline);
-
-    if (result != VK_SUCCESS)
+    catch (...)
     {
-        bg2e_log_debug << "vk::RayTracingPipeline: createRayTracingPipelines failed with result "
-                       << result << bg2e_log_end;
-        throw std::runtime_error("Failed to create Vulkan ray tracing pipeline");
-    }
-
-    // --- SBT creation ---
-    // Query properties for handle size and alignment
-    VkPhysicalDeviceRayTracingPipelinePropertiesKHR rtProps{};
-    rtProps.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_PROPERTIES_KHR;
-    VkPhysicalDeviceProperties2 props2{};
-    props2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
-    props2.pNext = &rtProps;
-
-    // Get the physical device from the Device
-    auto* vkDevice = dynamic_cast<vk::Device*>(gpuDevice);
-    VkPhysicalDevice physDev = vkDevice->physicalDeviceHandle();
-
-    if (physDev != VK_NULL_HANDLE)
-    {
-        vkGetPhysicalDeviceProperties2(physDev, &props2);
-    }
-
-    uint32_t handleSize = rtProps.shaderGroupHandleSize;
-    uint32_t handleAlignment = rtProps.shaderGroupBaseAlignment;
-    uint32_t alignedHandleSize = (handleSize + handleAlignment - 1) & ~(handleAlignment - 1);
-
-    uint32_t groupCount = static_cast<uint32_t>(groups.size());
-    uint32_t sbtSize = alignedHandleSize * groupCount;
-
-    // getRayTracingShaderGroupHandles writes handles tightly packed (handleSize each).
-    // The SBT buffer needs them at alignedHandleSize intervals, so we copy with stride.
-    uint32_t packedHandlesSize = handleSize * groupCount;
-    std::vector<uint8_t> shaderHandleStorage(packedHandlesSize);
-    result = getRayTracingShaderGroupHandles(
-        _device, _pipeline, 0, groupCount, packedHandlesSize, shaderHandleStorage.data());
-
-    if (result != VK_SUCCESS)
-    {
-        throw std::runtime_error("Failed to get ray tracing shader group handles");
-    }
-
-    // Create SBT buffer
-    VkBufferCreateInfo bufferInfo{};
-    bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-    bufferInfo.size = sbtSize;
-    bufferInfo.usage = VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
-
-    VmaAllocationCreateInfo allocInfo{};
-    allocInfo.usage = VMA_MEMORY_USAGE_AUTO_PREFER_HOST;
-    allocInfo.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT;
-
-    VK_ASSERT(vmaCreateBuffer(_allocator, &bufferInfo, &allocInfo, &_sbtBuffer, &_sbtAllocation, nullptr));
-
-    // Copy each handle to its aligned slot in the SBT buffer
-    void* mapped = nullptr;
-    VK_ASSERT(vmaMapMemory(_allocator, _sbtAllocation, &mapped));
-    std::memset(mapped, 0, sbtSize);
-    auto* dst = static_cast<uint8_t*>(mapped);
-    const auto* src = shaderHandleStorage.data();
-    for (uint32_t i = 0; i < groupCount; ++i)
-    {
-        std::memcpy(dst + static_cast<size_t>(i) * alignedHandleSize,
-                    src + static_cast<size_t>(i) * handleSize,
-                    handleSize);
-    }
-    vmaUnmapMemory(_allocator, _sbtAllocation);
-
-    // Get buffer device address
-    VkBufferDeviceAddressInfo addressInfo{};
-    addressInfo.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;
-    addressInfo.buffer = _sbtBuffer;
-    VkDeviceAddress sbtAddress = vkGetBufferDeviceAddress(_device, &addressInfo);
-
-    // Set up SBT regions
-    // Region layout: [raygen] [miss] [hit] [callable]
-    uint32_t raygenOffset = 0;
-    uint32_t missOffset = alignedHandleSize;             // after raygen
-    uint32_t hitOffset = missOffset + alignedHandleSize; // after miss
-    // callable is empty
-
-    _raygenRegion.deviceAddress = sbtAddress + raygenOffset;
-    _raygenRegion.stride = alignedHandleSize;
-    _raygenRegion.size = alignedHandleSize;
-
-    _missRegion.deviceAddress = sbtAddress + missOffset;
-    _missRegion.stride = alignedHandleSize;
-    _missRegion.size = (missStageIndex != VK_SHADER_UNUSED_KHR) ? alignedHandleSize : 0;
-
-    _hitRegion.deviceAddress = sbtAddress + hitOffset;
-    _hitRegion.stride = alignedHandleSize;
-    _hitRegion.size = (chitStageIndex != VK_SHADER_UNUSED_KHR) ? alignedHandleSize : 0;
-
-    _callableRegion.deviceAddress = 0;
-    _callableRegion.stride = 0;
-    _callableRegion.size = 0;
-
-    // Debug naming
-    if (base::Log::isDebug() && !description.debugName.empty() && setDebugUtilsObjectName != nullptr)
-    {
-        VkDebugUtilsObjectNameInfoEXT nameInfo{};
-        nameInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
-        nameInfo.objectType = VK_OBJECT_TYPE_PIPELINE;
-        nameInfo.objectHandle = reinterpret_cast<uint64_t>(_pipeline);
-        nameInfo.pObjectName = description.debugName.c_str();
-        setDebugUtilsObjectName(_device, &nameInfo);
+        cleanup();
+        throw;
     }
 }
 
@@ -268,8 +225,10 @@ void RayTracingPipeline::cleanup()
         vkDestroyPipeline(_device, _pipeline, nullptr);
         _pipeline = VK_NULL_HANDLE;
     }
+    _raygenRegion = {};
+    _missRegion = {};
+    _hitRegion = {};
+    _callableRegion = {};
 }
 
-}
-}
 }

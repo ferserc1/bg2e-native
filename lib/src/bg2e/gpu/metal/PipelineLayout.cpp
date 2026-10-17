@@ -17,6 +17,7 @@
  */
 
 #include <bg2e/gpu/metal/PipelineLayout.hpp>
+#include <bg2e/gpu/Device.hpp>
 
 namespace bg2e {
 namespace gpu {
@@ -27,6 +28,61 @@ PipelineLayout::PipelineLayout(gpu::Device* gpuDevice, const gpu::PipelineLayout
 {
     validatePushConstantRanges(description.pushConstants);
     validateMetalBufferBindings(description.resourceBindings);
+    validateResourceArrays(description, gpuDevice->resourceArrayCapabilities());
+    auto domain = [](ShaderStage stage)
+    {
+        return stage == ShaderStage::Vertex ? 0 : stage == ShaderStage::Fragment ? 1 : 2;
+    };
+    for (const auto& rb : description.resourceBindings)
+    {
+        for (auto stage : rb.additionalStages)
+        {
+            if (domain(stage) != domain(rb.stage))
+            {
+                throw std::invalid_argument("Metal additional stages must share the same native encoder domain");
+            }
+        }
+        if (rb.count > 1 || rb.metalArgumentBuffer != UINT32_MAX)
+        {
+            if (rb.metalArgumentBuffer == UINT32_MAX || rb.metalArgumentBuffer >= 31 ||
+                (rb.type != ResourceType::SampledImage && rb.type != ResourceType::Sampler) ||
+                rb.stage == ShaderStage::Vertex || rb.stage == ShaderStage::Fragment ||
+                uint64_t(rb.binding.metal) + rb.count > 4096)
+            {
+                throw std::invalid_argument("Sampled arrays require explicit compute/RT argument-buffer indices");
+            }
+            for (auto stage : rb.additionalStages)
+            {
+                if (stage == ShaderStage::Vertex || stage == ShaderStage::Fragment)
+                {
+                    throw std::invalid_argument("Sampled argument arrays currently support compute/RT stages only");
+                }
+            }
+            for (const auto& other : description.resourceBindings)
+            {
+                if (&rb == &other)
+                {
+                    continue;
+                }
+                if (other.metalArgumentBuffer == rb.metalArgumentBuffer)
+                {
+                    if (other.set != rb.set || other.stage != rb.stage ||
+                        (uint64_t(rb.binding.metal) < uint64_t(other.binding.metal) + other.count &&
+                         uint64_t(other.binding.metal) < uint64_t(rb.binding.metal) + rb.count))
+                    {
+                        throw std::invalid_argument("Argument-buffer groups must share set/stage and disjoint id ranges");
+                    }
+                }
+                else if (other.metalArgumentBuffer == UINT32_MAX && other.stage != ShaderStage::Vertex &&
+                    other.stage != ShaderStage::Fragment && other.binding.metal == rb.metalArgumentBuffer &&
+                    (other.type == ResourceType::UniformBuffer || other.type == ResourceType::StorageBuffer ||
+                     other.type == ResourceType::AccelerationStructure))
+                {
+                    throw std::invalid_argument("Argument-buffer slot collides with a direct buffer binding");
+                }
+            }
+        }
+    }
 }
 
 PipelineLayout::~PipelineLayout()

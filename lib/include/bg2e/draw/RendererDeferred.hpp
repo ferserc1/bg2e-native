@@ -21,6 +21,12 @@
 #include <bg2e/draw/Renderer.hpp>
 #include <bg2e/draw/pipeline/GBuffer.hpp>
 #include <bg2e/draw/pipeline/SoftShadowPass.hpp>
+#include <bg2e/draw/pipeline/RTAmbientOcclusion.hpp>
+#include <bg2e/draw/pipeline/RTGlobalIllumination.hpp>
+#include <bg2e/draw/pipeline/RTReflections.hpp>
+#include <bg2e/draw/pipeline/TemporalAccumulator.hpp>
+#include <bg2e/draw/pipeline/DenoiseFilter.hpp>
+#include <bg2e/draw/pipeline/FinalProcessor.hpp>
 #include <bg2e/draw/pipeline/DeferredLayer.hpp>
 #include <bg2e/draw/environment/EnvironmentGenerator.hpp>
 #include <bg2e/draw/environment/SkyboxRenderer.hpp>
@@ -48,7 +54,13 @@ class BG2E_API RendererDeferred : public Renderer {
     // Explicit camera overrides first enabled scene camera; no camera uses identity.
     void setCamera(const glm::mat4& view, const glm::mat4& projection);
     void useSceneCamera();
-    void resetUpscaler(); // Call at a stopped boundary after camera cuts/discontinuous edits.
+    void resetUpscaler(); // Compatibility hook: resets both effect and SDK histories.
+    void invalidateHistories() override;
+    uint64_t historyGeneration() const;
+    std::shared_ptr<pipeline::TemporalAccumulator> temporal() const;
+    std::shared_ptr<pipeline::DenoiseFilter> denoise() const;
+    std::shared_ptr<pipeline::FinalProcessor> finalProcessor() const;
+    const std::string& noiseStatus() const;
     std::shared_ptr<Upscaler> upscaler() const;
     std::shared_ptr<ResolutionSettings> resolution() const;
     void setCameraParameters(float nearPlane, float farPlane, float verticalFovRadians);
@@ -57,6 +69,14 @@ class BG2E_API RendererDeferred : public Renderer {
     const RenderQueue& queue() const;
     std::shared_ptr<pipeline::SoftShadowPass> softShadows() const;
     bool usesQueryShadows() const;
+    std::shared_ptr<pipeline::RTAmbientOcclusion> ambientOcclusion() const;
+    bool usesAmbientOcclusion() const;
+    std::shared_ptr<pipeline::RTGlobalIllumination> globalIllumination() const;
+    bool usesGlobalIllumination() const;
+    std::shared_ptr<pipeline::RTReflections> reflections() const;
+    bool usesReflections() const;
+    IndirectLightingMode indirectLightingMode() const;
+    void setIndirectLightingMode(IndirectLightingMode value);
     bool inspectOpaqueLayer() const;
     void setInspectOpaqueLayer(bool value);
     environment::EnvironmentGenerator* environmentGenerator() const;
@@ -68,12 +88,14 @@ class BG2E_API RendererDeferred : public Renderer {
         UpscalerCamera camera;
         glm::mat4 jitteredProjection{1};
         std::vector<std::shared_ptr<gpu::Image>> shadows;
+        std::shared_ptr<gpu::Image> ao, gi, reflections;
         RenderQueue queue;
         uint64_t serial = 0;
         bool prepared = false;
     };
 
     void buildTargets();
+    std::vector<uint8_t> temporalSignature(const RenderQueue& queue) const;
     UpscalerConfiguration upscaleConfiguration() const;
     pipeline::OverlayConfiguration overlayConfiguration() const;
 
@@ -87,6 +109,11 @@ class BG2E_API RendererDeferred : public Renderer {
     RendererConfiguration _configuration;
     pipeline::LayerConfiguration _shadowConfiguration;
     bool _queryShadows = false;
+    bool _ambientOcclusion = false;
+    bool _globalIllumination = false;
+    bool _reflections = false;
+    uint64_t _historyGeneration = 1;
+    std::vector<uint8_t> _historySignature;
     std::shared_ptr<scene::Node> _scene;
     std::unique_ptr<environment::EnvironmentGenerator> _generator;
     std::shared_ptr<const environment::EnvironmentResources> _environment;
@@ -100,8 +127,11 @@ class BG2E_API RendererDeferred : public Renderer {
     RenderQueue _queue;
     glm::mat4 _view{1}, _projection{1};
     bool _explicitCamera = false;
+    const void* _temporalCameraIdentity = nullptr;
     bool _inspectOpaqueLayer = false;
     std::string _environmentError;
+    std::shared_ptr<utils::BlueNoise> _sharedNoise;
+    std::string _noiseStatus = "No shared atlas allocated; effects use injected noise or hash";
     std::shared_ptr<ResamplingUpscaler> _fallback;
     UpscalerCamera _upscaleCamera;
 };

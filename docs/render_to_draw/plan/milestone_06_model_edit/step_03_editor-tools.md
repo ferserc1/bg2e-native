@@ -86,3 +86,9 @@ must queue scene/property edits, validate current-scene membership and document
 generation, request redraw/reset after partial failure, and detach widget/tool
 resources before UI/Engine teardown. Reloaded/replaced geometry requires fresh
 queue/binding snapshots; keep unsaved-document dirty state in the app.
+
+## M03-10 reviewed implementation requirement
+
+Explicitly own RenderSettingsPreferences, connect before first renderer bind, bind/draw/reopen GraphicsSettingsWindow and rebind on document/resource replacement. The M03 omission demonstrates metadata registration alone is insufficient. Map live light properties and local transforms to document IDs; queue edits, invalidate histories including partial failure and mark unsaved state. Example-only lightPose IDs/defaults are not a generic document schema.
+
+Source and validation boundaries: [M03 technical review](../milestone_03_ray_tracing/review.md). Include these conditions in this step's implementation and exit checks.

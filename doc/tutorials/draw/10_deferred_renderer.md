@@ -1,5 +1,12 @@
 # Build a deferred scene from scratch
 
+The steps below develop the scene/manipulation foundation. Their renderer factory
+now uses the current shipped defaults. Complete the current effect-settings wiring
+in [Advanced lighting and visible controls](#advanced-lighting-and-visible-controls)
+to reproduce the shipped example's graphics window; it is not added by MainLoop.
+The linked source is authoritative for full class declarations and cleanup.
+
+
 This tutorial builds a complete C++20 application with bg2e. By the end, you
 will have a window displaying a textured scene with an HDR environment, opaque
 and transparent models, procedural textures, an orbiting camera, four rotating
@@ -351,9 +358,19 @@ Add the start of the class below. It remains open while we implement
 class SceneDelegate final : public draw::DefaultRenderLoopDelegate {
   public:
     SceneDelegate()
-        : DefaultRenderLoopDelegate(std::make_unique<draw::RendererDeferred>())
+        : DefaultRenderLoopDelegate(std::make_unique<draw::RendererDeferred>(), makeRendererConfiguration())
     {
         setContinuousRendering(true);
+    }
+
+    static draw::RendererConfiguration makeRendererConfiguration()
+    {
+        draw::RendererConfiguration configuration;
+        configuration.resolution = std::make_shared<draw::ResolutionSettings>();
+        configuration.upscaler = std::make_shared<draw::FsrUpscaler>();
+        std::static_pointer_cast<draw::FsrUpscaler>(configuration.upscaler)->setEnabled(false);
+        configuration.finalProcessor = std::make_shared<draw::pipeline::SMAAProcessor>();
+        return configuration;
     }
 
     SceneState& state()
@@ -1056,3 +1073,96 @@ to `RendererDeferred`, nodes and components describe the scene, and a small UI
 queues edits to its rendered data. Additional scene objects can follow the same
 sequence: construct geometry and materials, load the drawable, attach a node,
 and retain only the references needed for later interaction.
+
+## Advanced lighting and visible controls
+
+Use the existing executable and loop from this tutorial, not a new example target.
+The complete [current source](../../../examples/draw/10_deferred_renderer/src/main.cpp)
+contains the settings window members, startup wiring and per-frame draw calls.
+Add these includes to the UI translation unit:
+
+```cpp
+#include <bg2e/app/PreferencesStore.hpp>
+#include <bg2e/draw/RenderSettingsPreferences.hpp>
+#include <bg2e/ui/GraphicsSettingsWindow.hpp>
+#include <bg2e/ui/ReflectionWidget.hpp>
+#include <bg2e/reflection/Builder.hpp>
+```
+
+The UI delegate retains these members alongside the existing scene controls:
+
+```cpp
+std::shared_ptr<draw::RenderSettingsPreferences> _preferences;
+ui::GraphicsSettingsWindow _graphics;
+```
+
+Replace the basic UI constructor with this current source implementation; construct
+the UI object before the render delegate's first target attachment:
+
+```cpp
+    explicit UiDelegate(std::weak_ptr<SceneDelegate> delegate) : _delegate(std::move(delegate))
+    {
+        _controls.setTitle("Deferred scene");
+        _controls.setPosition(10, 10);
+        _controls.setSize(360, 620);
+        auto active = _delegate.lock();
+        if (!active)
+        {
+            throw std::logic_error("Graphics settings require a live scene delegate");
+        }
+        // Connect before the first renderer attachment; callbacks rebind on replacement.
+        auto& store = app::PreferencesStore::instance().preferences("draw.deferred.graphics");
+        _preferences = std::make_shared<draw::RenderSettingsPreferences>(&store);
+        _preferences->connect(active);
+        _graphics.bind(_preferences);
+        _graphics.setPosition(390, 10);
+        _graphics.setSize(520, 620);
+        _graphics.open();
+    }
+```
+
+The facade's weak lifecycle callbacks clear/rebind targets on renderer changes.
+It borrows the PreferencesStore scope, which outlives the facade. Nothing restores
+preferences automatically. Call `_graphics.draw()` at the start of the existing
+`drawUI()` after checking the delegate/scene. Inside the scene controls add:
+
+```cpp
+if (ui::Button::button("Graphics settings"))
+{
+    _graphics.open();
+}
+```
+
+Both examples show the window initially. Expand Renderer > Indirect lighting to
+select GI and Global illumination > Enabled to activate it. Reflections > Enabled
+is independent. Check available/status and selected graph; stored requests may
+remain enabled when hardware/shaders are unavailable. GI requires Vulkan native
+pipeline support or Metal query support plus indexed tables/HDR formats; FSR is
+not a prerequisite. Renderer-created tracing defaults are disabled; manipulation
+explicitly enables GI/reflections, while deferred leaves them disabled. Both inject
+disabled FSR and SMAA; fallback stays ordinary resampling. Manipulation's initial
+scale is 0.7; deferred's resolution policy is disabled/1.0.
+
+Pause camera/light animation for convergence. Compare IBL versus GI, then reflection
+off/on. Lighting debug views 11..14 expose resolved visibility, diffuse GI,
+reflected radiance and confidence; these are last-layer signals, with final color
+still affecting display. Temporarily disable temporal/denoise to inspect raw noise.
+Restore them separately; filtering must not feed the history. Read
+[signal/quality/ownership contracts](../../architecture/draw_advanced_lighting.md)
+for normalized GI versus confidence-weighted reflection meanings.
+
+All edits use queued facade/catalog handles with actual renderer generations. For
+custom scene/material mutations, call Renderer::invalidateHistories at a safe
+boundary, including partial failures, then request redraw. Do not mutate GPU/scene
+resources while drawing controls. Do not equate nominal history frameCount with an
+exact frame-average/export API.
+
+### Native resources and verification
+
+Use the common [build/deployment guide](../../apps/draw_deferred_renderer.md), deploy
+all paired draw effect/final-processing shaders and retain official SMAA lookup
+headers/licenses. Do not infer effect availability from an executable starting.
+The [manual integration matrix](../../../tests/draw/advanced_integration/README.md)
+covers native diagnostics, missing SDK/profiles, no RT, edits/resize/rebind and
+output-owner lifetime. Tutorial snippets were checked against declarations/source;
+no compilation/runtime execution was performed by the documentation agent.

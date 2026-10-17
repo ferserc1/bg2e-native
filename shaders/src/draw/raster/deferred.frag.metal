@@ -89,6 +89,22 @@ fragment float4 fragMain(float4 position [[position]],
     {
         return float4(baked, 1.0);
     }
+    if (lightingDebug.x == 11u)
+    {
+        return float4(float3(1.0),1.0);
+    }
+    if (lightingDebug.x == 12u)
+    {
+        return float4((float4(0.0)).rgb,1.0);
+    }
+    if (lightingDebug.x == 13u)
+    {
+        return float4((float4(0.0)).rgb,1.0);
+    }
+    if (lightingDebug.x == 14u)
+    {
+        return float4(float3((float4(0.0)).a),1.0);
+    }
     float3 direct = float3(0.0);
     float3 indirect = float3(0.0);
     float3 emission = a.rgb * normalEmission.a;

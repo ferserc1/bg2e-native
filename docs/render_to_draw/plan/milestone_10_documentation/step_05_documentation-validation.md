@@ -20,3 +20,9 @@ Audit existing maintained `doc/` pages and M01–M09 documentation handoffs agai
 All maintained inventory entries have resolved audit dispositions; no broken navigation or obsolete working-code guidance remains.
 
 Perform relevant static checks. Compilation/runtime validation belongs to the project lead unless explicitly requested. Deliver one step, update progress and wait for lead acceptance under the execution protocol. No new engine feature, build-system change or future API documentation is authorized by this audit.
+
+## M03-10 reviewed implementation requirement
+
+Check that visible-window/app initialization snippets actually connect/bind/draw settings, with rebind/cleanup and current defaults. Link actual lead evidence separately from source/static checks; continuation acceptance is not hardware-specific numeric/performance proof. Confirm all M03 documentation obligations were authored during M03-11, not deferred to this audit.
+
+Source and validation boundaries: [M03 technical review](../milestone_03_ray_tracing/review.md). Include these conditions in this step's implementation and exit checks.

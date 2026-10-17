@@ -20,6 +20,7 @@
 #include <bg2e/gpu/metal/ShaderModule.hpp>
 #include <bg2e/gpu/metal/PipelineLayout.hpp>
 #include <bg2e/base/Log.hpp>
+#include <bg2e/gpu/Device.hpp>
 
 #include <stdexcept>
 
@@ -37,7 +38,9 @@ RayTracingPipeline::RayTracingPipeline(
     auto* metalRgenModule = dynamic_cast<metal::ShaderModule*>(description.raygenShader);
     auto* metalLayout = dynamic_cast<metal::PipelineLayout*>(description.layout);
 
-    if (!metalRgenModule)
+    if (!gpuDevice->rayTracingCapabilities().pipelineSupported() || !metalLayout ||
+        metalLayout->device() != gpuDevice || !metalRgenModule || metalRgenModule->device() != gpuDevice ||
+        metalRgenModule->stage() != ShaderStage::RayGeneration || description.anyHitShader)
     {
         throw std::runtime_error("metal::RayTracingPipeline: raygen shader is not a metal::ShaderModule");
     }

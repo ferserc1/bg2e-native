@@ -17,6 +17,9 @@
  */
 
 #include <bg2e.hpp>
+#include <bg2e/app/PreferencesStore.hpp>
+#include <bg2e/draw/RenderSettingsPreferences.hpp>
+#include <bg2e/ui/GraphicsSettingsWindow.hpp>
 
 #include <cmath>
 #include <cstdint>
@@ -121,9 +124,19 @@ struct SceneState {
 class SceneDelegate final : public draw::DefaultRenderLoopDelegate {
   public:
     SceneDelegate()
-        : DefaultRenderLoopDelegate(std::make_unique<draw::RendererDeferred>())
+        : DefaultRenderLoopDelegate(std::make_unique<draw::RendererDeferred>(), makeRendererConfiguration())
     {
         setContinuousRendering(true);
+    }
+
+    static draw::RendererConfiguration makeRendererConfiguration()
+    {
+        draw::RendererConfiguration configuration;
+        configuration.resolution = std::make_shared<draw::ResolutionSettings>();
+        configuration.upscaler = std::make_shared<draw::FsrUpscaler>();
+        std::static_pointer_cast<draw::FsrUpscaler>(configuration.upscaler)->setEnabled(false);
+        configuration.finalProcessor = std::make_shared<draw::pipeline::SMAAProcessor>();
+        return configuration;
     }
 
     SceneState& state()
@@ -328,6 +341,19 @@ class UiDelegate final : public ui::UserInterfaceDelegate {
         _controls.setTitle("Deferred scene");
         _controls.setPosition(10, 10);
         _controls.setSize(360, 620);
+        auto active = _delegate.lock();
+        if (!active)
+        {
+            throw std::logic_error("Graphics settings require a live scene delegate");
+        }
+        // Connect before the first renderer attachment; callbacks rebind on replacement.
+        auto& store = app::PreferencesStore::instance().preferences("draw.deferred.graphics");
+        _preferences = std::make_shared<draw::RenderSettingsPreferences>(&store);
+        _preferences->connect(active);
+        _graphics.bind(_preferences);
+        _graphics.setPosition(390, 10);
+        _graphics.setSize(520, 620);
+        _graphics.open();
     }
 
     void drawUI() override
@@ -337,9 +363,14 @@ class UiDelegate final : public ui::UserInterfaceDelegate {
         {
             return;
         }
+        _graphics.draw();
         auto& state = delegate->state();
         _controls.draw([&]
         {
+            if (ui::Button::button("Graphics settings"))
+            {
+                _graphics.open();
+            }
             ui::Text::text("Scene controls");
             if (ui::Button::checkBox("Animate camera", &state.animateCamera))
             {
@@ -401,16 +432,19 @@ class UiDelegate final : public ui::UserInterfaceDelegate {
     void edit(const std::shared_ptr<SceneDelegate>& delegate, std::function<void(SceneState&)> operation)
     {
         const auto weakDelegate = std::weak_ptr<SceneDelegate>(delegate);
-        delegate->enqueueRendererUpdate(delegate->rendererGeneration(), [weakDelegate, operation = std::move(operation)](draw::Renderer&)
+        delegate->enqueueRendererUpdate(delegate->rendererGeneration(), [weakDelegate, operation = std::move(operation)](draw::Renderer& renderer)
         {
             if (auto activeDelegate = weakDelegate.lock())
             {
+                renderer.invalidateHistories();
                 operation(activeDelegate->state());
             }
         });
     }
 
     std::weak_ptr<SceneDelegate> _delegate;
+    std::shared_ptr<draw::RenderSettingsPreferences> _preferences;
+    ui::GraphicsSettingsWindow _graphics;
     ui::Window _controls;
 };
 

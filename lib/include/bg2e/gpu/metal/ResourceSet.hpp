@@ -37,6 +37,7 @@ struct ResourceEntry {
     TextureHandle texture = nullptr;     // for Sampled/Storage image
     SampleStateHandle sampler = nullptr; // for Sampler
     BufferHandle buffer = nullptr;       // for Uniform/Storage buffer
+    std::vector<TextureHandle> indirectTextures; // Argument-buffer residency.
     RayTracingScene* rtScene = nullptr;  // for AccelerationStructure
 };
 
@@ -53,6 +54,9 @@ class BG2E_API ResourceSet : public gpu::ResourceSet {
     void setUniformBuffer(ShaderBinding binding, gpu::Buffer* buffer) override;
     void setStorageBuffer(ShaderBinding binding, gpu::Buffer* buffer) override;
     void setRayTracingScene(ShaderBinding binding, gpu::RayTracingScene* scene) override;
+
+    void setSampledImages(ShaderBinding binding, std::span<const ImageView> views) override;
+    void setSamplers(ShaderBinding binding, std::span<gpu::Sampler* const> samplers) override;
 
     void update() override;
 
@@ -72,6 +76,15 @@ class BG2E_API ResourceSet : public gpu::ResourceSet {
     void setBufferBinding(ShaderBinding binding, gpu::Buffer* buffer,
                           ResourceType type, const char* debugTag);
 
+    struct ArrayBinding {
+        ResourceBinding description;
+        std::vector<TextureHandle> images;
+        std::vector<SampleStateHandle> samplers;
+    };
+    ArrayBinding& arrayBinding(ShaderBinding binding, ResourceType type, size_t count);
+    std::vector<ArrayBinding> _arrays;
+    bool _arraysDirty = false;
+    std::vector<BufferHandle> _argumentBuffers; // Owned; ordinary entries are borrowed.
     uint32_t _setIndex{0};
     const metal::PipelineLayout* _layout = nullptr;
     std::vector<ResourceEntry> _entries;
