@@ -1,5 +1,9 @@
 # Lightmap architecture
 
+This family documents the production render implementation. The experimental
+[integrated draw/bake tutorial](../../tutorials/draw/12_lightmaps.md) and
+[bake reference](../../api/bake/index.md) describe the separate delivered path.
+
 Lightmap baking evaluates illumination at surface points addressed by a UV2
 atlas. It uses the production Vulkan `bg2e::render` framework. The UV atlas is
 one image per target Drawable, including all of its submeshes; other scene

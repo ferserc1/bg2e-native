@@ -53,3 +53,17 @@ M01 raw/reference JSON IO and raw completed color readback are building blocks, 
 Reuse M04 chart-isolated raw-signal averaging and declared validity/HDR normalization, not TemporalAccumulator frameCount or denoised histories. Retain immutable snapshots and output owners until submitted work completes on cancel/error. Preflight required tracing/capacity before model/map output; preserve protected-input/overwrite guarantees.
 
 Source and validation boundaries: [M03 technical review](../milestone_03_ray_tracing/review.md). Include these conditions in this step's implementation and exit checks.
+
+
+## M04-04 actual output handoff
+
+Reuse public UvTemporalAccumulator/LightmapCompositionPass with completed history and fresh per-record outputs. Standalone scheduling must commit only completed current jobs, validate all requested covered counts/numerics, and compose/dilate before exporting LightmapPixels. Keep exact integer counts/raw float sums separate from denoise, preserve source/target/geometry identity and reject current half-float GI saturation at 65504. GPU/CPU output shares nearest-chart padding and linear top-row-v=0 semantics; float HDR has no exposure/clamp, byte GI alone applies exposure. Final validation/readback is synchronous, not a new async staging interface.
+
+See [output implementation](../milestone_04_lightmaps/accumulation-output.md).
+
+
+## M04-07 reviewed implementation requirement
+
+Export the completed typed RGB pixels and real image files before publishing model/material copies. Preserve indirectTextureMode strings (ao/bakedAO/bakedGI), UV2 and linear color on reload. A retained sampled GPU image and copied sampler settings are not an exported resource. Keep RGB32F HDR output distinct from the interactive RGBA16F range limit; apply exposure/clamp only to the explicit RGB8 GI conversion. Implement actual batch/writer types here: current bake namespace only forward-declares Batch/SceneAssembler and supplies no new writer.
+
+Source and evidence: [M04 technical review](../milestone_04_lightmaps/review.md).

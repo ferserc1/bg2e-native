@@ -44,7 +44,7 @@ Image-Based Lighting (IBL) precomputes lighting information from an environment 
 
 The `CubemapRenderPass` helper iterates the six faces and, for multi-mip cubemaps, all mip levels. The callback receives the current face, mip level, and the precomputed projection/view matrices.
 
-**Reference:** [GPU API -- CubemapRenderPass header](../../lib/include/bg2e/gpu/CubemapRenderPass.hpp)
+**Reference:** [GPU API -- CubemapRenderPass header](../../../lib/include/bg2e/gpu/CubemapRenderPass.hpp)
 
 ## Step-by-step code explanation
 
@@ -284,7 +284,7 @@ device->immediateSubmit([&](gpu::CommandBuffer* cmd)
 
 The callback receives the current face, mip level, and matrices. For the specular map, the `mipLevel` parameter is used to select the appropriate roughness resource set.
 
-**Reference:** [GPU API -- CubemapRenderPass header](../../lib/include/bg2e/gpu/CubemapRenderPass.hpp)
+**Reference:** [GPU API -- CubemapRenderPass header](../../../lib/include/bg2e/gpu/CubemapRenderPass.hpp)
 
 ### 7. Render loop with controls
 

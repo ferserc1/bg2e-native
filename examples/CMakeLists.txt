@@ -50,3 +50,6 @@ add_subdirectory(draw/10_deferred_renderer)
 
 # M02 interactive selection and material modification over the experimental draw API.
 add_subdirectory(draw/11_manipulation)
+
+# M04 integrated baking and applied indirect maps over the draw API.
+add_subdirectory(draw/12_lightmaps)

@@ -36,3 +36,10 @@ Delegate compilation and applicable runtime checks to the project lead; perform 
 M09-05 removes obsolete shader/build/package/test paths; M10 documents backend-native seams and the final public extension surface.
 
 Record actual API, ownership and verification in the milestone review. Follow [the review protocol](../review-protocol.md) and edit affected pending steps when actual contracts differ.
+
+
+## M04-07 reviewed implementation requirement
+
+Keep the bake namespace implementation and its public draw/gpu dependencies; it contains no production rendering algorithm wrapper. Remove legacy render bake/output/preview classes only after M08 parity. The CPU UV diagnostic is an accepted implementation refinement, not a native rendering bridge that should be moved into gpu.
+
+Source and evidence: [M04 technical review](../milestone_04_lightmaps/review.md).

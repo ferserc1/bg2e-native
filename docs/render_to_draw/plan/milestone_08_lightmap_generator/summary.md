@@ -64,3 +64,28 @@ The [advanced tracing design](../milestone_03_ray_tracing/rt-design.md) was acce
 ## M03 reviewed dependency
 
 [M03 technical review](../milestone_03_ray_tracing/review.md) is the actual source/ownership/signal/settings baseline. Its pending-plan impact table and the concrete additions in this milestone's step files supersede historical statements that explicit profiles or effect controls are still unimplemented. Keep exact averaging, chart isolation, required-job capabilities and actual validation evidence distinct from interactive fallback/history behavior.
+
+
+## M04-06 material/application handoff
+
+The [integrated example](../../../../examples/draw/12_lightmaps/README.md) now
+uses explicit MaterialAttributes::IndirectTextureMode (ao/bakedAO/bakedGI in
+JSON), linear RGB UV2 maps through the AO slot and an HDR G-buffer multiplier.
+Original scalar AO and a baked multiplier do not coexist in the same six-slot
+material. Actual image export is still required for GPU-only baked sources;
+sampler settings/empty paths alone cannot round-trip a lightmap. Preserve
+RGB32F HDR and explicit mode/UV2 metadata in editor/export/batch integration.
+See [material API](../../../../doc/api/draw/BakedIndirectMaps.md). Backend visual
+validation is delegated to the lead; the upcoming M04 review reconciles the full
+pending-consumer impact.
+
+
+## M04 reviewed dependency
+
+The [M04 technical review](../milestone_04_lightmaps/review.md) records actual
+integrated bake/sample/result ownership, RGB UV2 material semantics, preview
+implementation and native shader deployment. Its impact table and concrete
+pending-step requirements supersede assumptions that M04 already implements a
+headless scheduler, batch writer, full GPU-only resource export or camera-image
+averaging. Continuation acceptance does not establish hardware-specific numeric,
+performance or exported-file evidence. Preserve production references until M09.

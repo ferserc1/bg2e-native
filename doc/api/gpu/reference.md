@@ -35,7 +35,7 @@ backend-specific sub-namespaces (`bg2e::gpu::vk`, `bg2e::gpu::metal`).
 | [ComputePipelineDescription](ComputePipeline.md#computepipelinedescription) | `gpu/ComputePipeline.hpp` | Compute shader and layout. |
 | [RayTracingMeshDescription](RayTracingMesh.md#raytracingmeshdescription) | `gpu/RayTracingMesh.hpp` | Shared vertex/index buffers + submesh range for a bottom-level acceleration structure. |
 | [RayTracingInstance](RayTracingScene.md#raytracinginstance) | `gpu/RayTracingScene.hpp` | One instance of a RayTracingMesh in a scene: mesh, transform, id, mask. |
-| [RayTracingPipelineDescription](RayTracingPipeline.md#raytracingpipelinedescription) | `gpu/RayTracingPipeline.hpp` | Configuration for creating a ray tracing pipeline: shaders, layout, and recursion depth. |
+| [RayTracingPipelineDescription](RayTracingPipeline.md#api-reference) | `gpu/RayTracingPipeline.hpp` | Configuration for creating a ray tracing pipeline: shaders, layout, and recursion depth. |
 
 ## Classes
 

@@ -50,7 +50,9 @@ counts. maxFrames bounds the arithmetic then rolling/frozen display history.
 frameCount is nominal convergence, not an exact whole-image N-sample result.
 Object motion conservatively resets; there are no previous-object motion vectors.
 Spatial denoise uses geometry guides/confidence and keeps HDR unpremultiplied.
-There is no chart-ID isolation or exact bake/offscreen averaging product here.
+The display denoiser has no chart-ID guide. Exact UV bake averaging and chart-safe
+padding now belong to [bake](../api/bake/LightmapOutput.md); exact camera-image
+averaging and windowless execution remain separate pending products.
 
 Queued settings/editor/light/transform changes happen at a synchronized boundary,
 reset SDK and engine histories and request scene work. Direct camera teleport,
@@ -76,3 +78,6 @@ Actual backend/scenario coverage is not inferred from source inspection. The lea
 accepted M03 implementation by continuation; specific GI/reflection measurements
 were not supplied. The [manual validation matrix](../../tests/draw/advanced_integration/README.md)
 lists remaining device/numerical/failure-path checks.
+
+See [integrated UV2 lightmaps](../tutorials/draw/12_lightmaps.md) for immutable
+bake snapshots, exact completion and explicit material adoption.

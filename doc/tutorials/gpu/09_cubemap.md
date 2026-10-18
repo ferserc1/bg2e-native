@@ -254,7 +254,7 @@ cubemapTextureSet->update();
 
 The cubemap is bound to descriptor set 2 of the reflection layout using `setSampledCubeMap()`. This method extracts the underlying `gpu::Image*` from the `CubeMap` and binds it as a sampled image, which the GLSL shader accesses via `textureCube`.
 
-**Reference:** [GPU API -- Quick Start: Cubemap creation](../../api/gpu/quick_start.md#recipe-9-cubemap-rendering), [GPU API -- ResourceSet::setSampledCubeMap()](../../api/gpu/ResourceSet.md#void-setsampledcubemap)
+**Reference:** [GPU API -- Quick Start: Cubemap creation](../../api/gpu/quick_start.md#recipe-9-cubemap-rendering), [GPU API -- ResourceSet::setSampledCubeMap()](../../api/gpu/ResourceSet.md#methods)
 
 ### 4. Camera UBO (persistent)
 

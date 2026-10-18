@@ -66,3 +66,10 @@ Use actual SettingsCatalog/SettingsCodec and renderer/upscaler target identifier
 Implement the planned FrameAccumulator as exact linear HDR scene averaging, independent of bounded/reprojected TemporalAccumulator. Freeze scene and explicit sample keys; define whether effect histories/FSR warm up or contribute and count only requested completed scene samples. Final tone/color and optional SMAA must operate on the resolved average once. UI exports may contain example-owned lightPose targets: provide explicit scene-ID mapping/catalog extensions or reject/skip with diagnostics, never silently import into unrelated objects.
 
 Source and validation boundaries: [M03 technical review](../milestone_03_ray_tracing/review.md). Include these conditions in this step's implementation and exit checks.
+
+
+## M04-07 reviewed implementation requirement
+
+Implement camera-image exact averaging separately from bake::UvTemporalAccumulator. The existing accumulator requires BakeSample, UV chart/coverage identities and AO/GI signal semantics; adapting its private implementation or passing camera images as fake UV surfaces is not a supported reuse. Keep FSR/EMA histories, rendered-scene counts and bake completed-update counts separate.
+
+Source and evidence: [M04 technical review](../milestone_04_lightmaps/review.md).

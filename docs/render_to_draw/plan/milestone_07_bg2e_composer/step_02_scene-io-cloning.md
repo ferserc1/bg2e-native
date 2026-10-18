@@ -43,3 +43,10 @@ See [db-levels.md](../milestone_01_deferred_renderer/db-levels.md). Raw scene do
 ## M01-16 reviewed baseline
 
 Node::clone creates fresh node identifiers and DrawableComponent typed clones invoke independent CPU/GPU draw resources. Preserve those semantics and distinguish them from reference-only IO. Selectable schema/draw hooks come from M02; complete resource save remains dependent on M06. Never silently switch an existing component between Production/Draw contexts without the explicit clear boundary. See [M01 review](../milestone_01_deferred_renderer/review.md).
+
+
+## M04-07 reviewed implementation requirement
+
+Exercise scenes with marked linear RGB UV2 maps: preserve IndirectTextureMode and exported image paths, including GPU-clone independence. Empty GPU texture paths are incomplete resources, not successful serialized lightmaps. Reuse M06's completed readback/materialization and keep unmarked scalar AO semantics unchanged.
+
+Source and evidence: [M04 technical review](../milestone_04_lightmaps/review.md).

@@ -26,8 +26,9 @@ std::vector<gpu::PixelFormat> gbufferFormats()
 {
     using F = gpu::PixelFormat;
     return {F::R8G8B8A8_UNORM, F::R16G16B16A16_SFLOAT, F::R8G8B8A8_UNORM,
-        F::R8G8B8A8_UNORM, F::R8G8B8A8_UNORM, F::R8G8B8A8_UNORM};
+        F::R8G8B8A8_UNORM, F::R8G8B8A8_UNORM, F::R16G16B16A16_SFLOAT};
 }
+
 PassContract gbufferContract(gpu::PixelFormat depth)
 {
     PassContract result{"draw.raster.gbuffer.v1", {}, {}};

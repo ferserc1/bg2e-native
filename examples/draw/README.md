@@ -322,3 +322,10 @@ application shaders. The target follows existing platform bundle/output and
 packaging conventions. Agent work does not establish compilation/runtime success:
 see the [manual acceptance checklist](10_deferred_renderer/README.md) and
 [implementation handoff](../../docs/render_to_draw/plan/milestone_01_deferred_renderer/working-example.md).
+
+## 12: Integrated lightmaps
+
+`draw_lightmaps` generates independent UV2 atlases, bakes GI/AO and applies
+completed RGB maps with live indirect passes disabled. It includes settings,
+progress/cancel/restart, comparison and UV/result previews. See the
+[example guide and manual checks](12_lightmaps/README.md).

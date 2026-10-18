@@ -76,3 +76,12 @@ M01 review delivery: [actual contracts and M02–M10 impact](milestone_01_deferr
 ## Distributed documentation closure
 
 Each milestone documentation step updates the canonical maintained pages for the cumulative implementation, not future planned APIs. M09 finishes production-status/retirement and whole-document reconciliation; M10 audits that delivered set. The [coverage/ownership policy](documentation-policy.md) preserves all original final documentation outcomes.
+
+
+## M04 technical review handoff
+
+The [implemented M04 review](milestone_04_lightmaps/review.md) records integrated
+baking, explicit RGB UV2 material adoption, CPU UV diagnostics and corrected
+paired bake shader deployment, with validation provenance and pending impacts.
+M04-07 delivery is followed by M04-08 cumulative documentation; M05 is not yet
+started. Use [progress](progress.md) for the active acceptance/next-step pointer.

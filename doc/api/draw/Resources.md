@@ -35,8 +35,10 @@ node/submesh identity is distinct from transparent sorting and dense query order
 These IDs are not persistent editor selection IDs.
 
 CPU materials retain two UV sets (UV0/UV1), packed-channel selection, texture
-scales and inversion. Reserved baked-map inputs do not provide a draw baking
-workflow. The [deferred example](../../tutorials/draw/10_deferred_renderer.md)
+scales and inversion. [Baked indirect maps](BakedIndirectMaps.md) explicitly
+interpret the AO slot as scalar AO or linear RGB baked AO/GI on UV2. GPU-only
+source settings are not an exported image; preserve live/stored material modes
+and materialize image data before saving a reloadable resource. The [deferred example](../../tutorials/draw/10_deferred_renderer.md)
 contains clone, UV1 and packed-channel probes.
 
 See [database representation/resource IO](../db/SceneReferences.md).

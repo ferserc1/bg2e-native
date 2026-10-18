@@ -57,7 +57,7 @@ SDL window creation, instance, surface, physical device, and logical device are 
 gpu::CleanupManager cleanup(surface.get());
 ```
 
-**Reference:** [GPU API -- CleanupManager: Construction](../../api/gpu/CleanupManager.md#construction)
+**Reference:** [GPU API -- CleanupManager: Construction](../../api/gpu/CleanupManager.md#ordered-cleanup)
 
 ### 2. Pipeline layout (set 0, 1, 2)
 
@@ -187,7 +187,7 @@ The sequence is:
 
 The closure captures `useSphere` to log which mesh is being destroyed (for debugging).
 
-**Reference:** [GPU API -- CleanupManager::defer()](../../api/gpu/CleanupManager.md#defer)
+**Reference:** [GPU API -- CleanupManager::defer()](../../api/gpu/CleanupManager.md#deferred-cleanup)
 
 ### 6. Render loop and flushDeferred() timing
 
@@ -233,7 +233,7 @@ The key ordering is:
 
 This guarantees the GPU is done with the previous frame's resources before the deferred closures execute.
 
-**Reference:** [GPU API -- CleanupManager: Render loop integration](../../api/gpu/CleanupManager.md#render-loop-integration)
+**Reference:** [GPU API -- CleanupManager: Render loop integration](../../api/gpu/CleanupManager.md#deferred-cleanup)
 
 ### 7. Window resize handling
 

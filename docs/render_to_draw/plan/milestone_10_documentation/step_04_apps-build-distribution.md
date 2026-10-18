@@ -20,3 +20,10 @@ Audit existing maintained `doc/` pages and M01–M09 documentation handoffs agai
 Existing application and deployment instructions point to correct supported targets, resources and actual behavior.
 
 Perform relevant static checks. Compilation/runtime validation belongs to the project lead unless explicitly requested. Deliver one step, update progress and wait for lead acceptance under the execution protocol. No new engine feature, build-system change or future API documentation is authorized by this audit.
+
+
+## M04-07 reviewed implementation requirement
+
+Audit both draw and bake native library build/install/bundle refresh paths. Include the missing-metallib regression and check the final installed source/target names after M09. Saved sampler metadata for a GPU-only image is not complete model/batch output; trace real file materialization to the accepted M06/M08 implementations.
+
+Source and evidence: [M04 technical review](../milestone_04_lightmaps/review.md).

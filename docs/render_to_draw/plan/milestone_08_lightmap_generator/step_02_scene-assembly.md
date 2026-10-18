@@ -50,3 +50,14 @@ selection/resource mappings.
 ## M03-01 tracing checkpoint dependency
 
 The [advanced tracing design](../milestone_03_ray_tracing/rt-design.md) was accepted by project-lead continuation. [M03-02](../milestone_03_ray_tracing/rt-gpu-data.md) delivers primitive arrays/stages; the draw snapshot builder and bake infrastructure remain pending. After M03 implementation/review, reuse the public draw::pipeline tracing snapshot, packed geometry/material data, bounded image/sampler resources and shared cutout predicate. Supply explicit UV-space world-position/normal/coverage surfaces without a camera RendererDeferred. Check effective capacities and required tracing support before a job; invalidate scene/baker generations after material/texture/topology edits. Keep bake sample accumulation separate from rendered-view histories and FSR state. Do not duplicate a private table/shading family or silently bake with truncated/unsupported resources.
+
+## M04-02 actual replacement and surface inputs
+
+Reuse [implemented UV surfaces/reload](../milestone_04_lightmaps/uv-surfaces.md). generateUv2AndReload returns an independent loaded Drawable for explicit stopped adoption; refresh scene/tracing generations and ownership. Surface inputs need no camera. Four MRTs plus R8 compute coverage preserve 32-byte compatibility and UV-v=0 top orientation. Charts are local to prepared geometry and material seams; standalone filtering/accumulation must consume those identities, not infer them from black pixels or submesh IDs.
+
+
+## M04-07 reviewed implementation requirement
+
+Assemble unbaked immutable sources before starting target jobs. UV2 generation returns an independent replacement drawable and requires queue/tracing/target refresh. If material maps are adopted between targets, advance source generation and rebuild snapshots; alternatively defer all adoption until every target completes, as draw_lightmaps does. Transparent display objects are not automatic supported receivers or occluders; preserve the explicit tracing inclusion policy.
+
+Source and evidence: [M04 technical review](../milestone_04_lightmaps/review.md).

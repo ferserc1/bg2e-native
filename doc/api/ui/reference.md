@@ -623,3 +623,13 @@ indirect-lighting switch and mode (RTAO / RTGI), RT-reflection switch, temporal
 accumulator and denoise filter. Disabling live indirect lighting retains IBL,
 baked lightmaps, direct lighting and direct shadows; disabling RT reflections
 retains environment-map reflections.
+
+
+## Draw bake previews
+
+[BakeLightmapPreview](../bake/BakeLightmapPreview.md) registers retained completed
+bake/UV diagnostic images through the draw UI session. Use
+[bake::UvMapPreviewRenderer](../bake/UvMapPreviewRenderer.md) for CPU UV1/UV2
+inspection and rebind images after geometry/resolution/session changes. Production
+UvMapPreview remains a separate render-compatible widget. Clear draw preview
+handles before UI/Engine teardown; no ImGui/native type enters application code.

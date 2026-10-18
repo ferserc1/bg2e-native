@@ -165,7 +165,7 @@ vec4 composite()
         vec3 ambient = ((1.0 - f) * (1.0 - metallic) * irradiance * a.rgb / DRAW_PI + prefiltered * (f0 * brdf.x + brdf.y)) * ao;
         ambient += sheenRefraction.rgb * material.w * pow(1.0 - nv, 5.0) * irradiance / DRAW_PI * ao;
         vec4 gi = texture(sampler2D(giSignal,giSampler),uv);
-        if (gi.a > 0.5)
+        if (gi.a > 0.5 && (flags & 32u) == 0u)
         {
             vec3 diffuseIBL = (1.0-f)*(1.0-metallic)*irradiance*a.rgb/DRAW_PI*ao;
             vec3 diffuseGI = (1.0-f)*(1.0-metallic)*a.rgb*gi.rgb*ao;
@@ -175,7 +175,8 @@ vec4 composite()
         vec3 reflectedIBL = prefiltered*(f0*brdf.x+brdf.y)*ao;
         vec3 reflectedHit = reflected.rgb*(f0*brdf.x+brdf.y)*ao;
         ambient += (reflectedHit-reflectedIBL)*clamp(reflected.a,0.0,1.0);
-        indirect = ambient * baked;
+        vec3 preservedSpecular = (flags & 64u) != 0u ? reflectedIBL + (reflectedHit - reflectedIBL) * clamp(reflected.a, 0.0, 1.0) : vec3(0.0);
+        indirect = ((ambient - preservedSpecular) * baked + preservedSpecular);
         color += indirect + emission;
     }
     else

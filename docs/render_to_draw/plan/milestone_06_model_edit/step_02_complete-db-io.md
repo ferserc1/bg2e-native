@@ -44,3 +44,10 @@ Build on [db-levels.md](../milestone_01_deferred_renderer/db-levels.md): readSce
 ## M01-16 reviewed baseline
 
 Existing readSceneDocument/writeSceneDocument preserve raw JSON; loadScene schema/reference IO does not realize resources. Node/Component::loadResources, draw BG2/OBJ overloads and strict mode/context rejection exist. Complete high-level draw save currently rejects resource export; OBJ maps in the example are explicitly assigned, not MTL import. Implement the actual missing glTF/MTL, edited/GPU-only resource save, joint/custom-component round trips using M05 readback and preserve production overloads. See [M01 review](../milestone_01_deferred_renderer/review.md).
+
+
+## M04-07 reviewed implementation requirement
+
+Materialize GPU-authored indirect maps before writing material references. M04 stores explicit IndirectTextureMode but its GPU-backed Texture settings can have an empty source path; serializeMaterial alone cannot export the image. Save/reload actual RGB content, linear interpretation, ao/bakedAO/bakedGI mode, UV2 and sampler/scale without converting HDR to UNORM. Cover clone-after-bake and stored-definition/live-realization agreement.
+
+Source and evidence: [M04 technical review](../milestone_04_lightmaps/review.md).

@@ -46,3 +46,27 @@ The [advanced tracing design](../milestone_03_ray_tracing/rt-design.md) was acce
 Implement separate exact raw AO/GI sample sums and validity/sample-count policy; never accumulate denoised display histories. DenoiseFilter has no chart-ID input: add a compatible chart guide/profile or isolate charts in separate invocations before atlas filtering. Demonstrate adjacent charts at similar world position/normal cannot bleed, including dilation. Preserve HDR and one-time receiver albedo/PI composition.
 
 Source and validation boundaries: [M03 technical review](../milestone_03_ray_tracing/review.md). Include these conditions in this step's implementation and exit checks.
+
+## M04-01 delivered contract handoff
+
+Implement LightmapResult/readPixels for the delivered typed LightmapPixels contract. Preserve linear top-row-v=0 RGB, exact raw valid counts and source/target generations. GI multiplier divides incoming radiance/pi by unoccluded environment irradiance/pi; zero reference channels produce zero, invalid/unbaked is explicitly separate. Apply exposure only to GI RGB8; float CPU/GPU results must not clip HDR, and actual GPU precision/capability overflow is diagnosed. Null denoise means no filtering; any injected filter requires chart isolation. Validate current complete result before publishing/readback.
+
+See [public contract and mapping](contracts.md); abstract interfaces are not implementations.
+
+## M04-02 actual UV surface handoff
+
+Consume R32_UINT submesh (zero-based, UINT_MAX invalid), one-based chart (zero invalid), and exact R8 coverage from UvSurfaceResult alongside raw AO/GI. Native outputs use four MRTs at 32 bytes/sample plus a coverage compute adapter; do not add a fifth MRT requirement. Chart IDs are conservative/generation-local and may split material seams. Filter/dilate within chart/coverage explicitly; preserve v=0-top orientation on GPU and CPU.
+
+See [UV implementation contract](uv-surfaces.md).
+
+
+## M04-03 actual execution handoff
+
+Consume IntegratedLightmapBaker::latestSample only after context.completeFrame confirms submission completion. BakeSample retains raw signal, UV charts/coverage, tracing/environment owners, logical lights and sampleIndex. One live target and one in-flight bake frame per context currently serialize sampling. Implement exact accumulation/composition before publishing Complete/result/readPixels; all requested raw samples currently leave Running/composition pending. Integrate per-sample accumulation into the recording lifecycle before releasing/replacing raw samples; do not average only latestSample or increment on record. Chart-unsafe denoise is rejected in M04-03. Preserve explicit completion/abandon semantics and stopped reset/replacement boundaries.
+
+See [integrated execution](integrated-context.md).
+
+
+## M04-04 delivered implementation
+
+Actual public APIs, GPU formats, validity/count and conservative saturation policy, exact nearest-chart padding, synchronous completed publication/readback, typed codec and verification limits are recorded in [accumulation-output.md](accumulation-output.md). Optional chart-unsafe denoise is explicitly rejected. Progress records current acceptance; preview/application remain M04-05/M04-06.

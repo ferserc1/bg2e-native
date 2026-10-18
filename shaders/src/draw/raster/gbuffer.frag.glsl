@@ -48,12 +48,14 @@ void main()
     n = dot(mapped, mapped) > 1e-8 ? normalize(mapped) : n;
     float metallic = clamp(drawScalarSample(drawSampleMaterial(1u, uv0, uv1), m.channels.x, m.invert.x) * m.factors.x, 0.0, 1.0);
     float roughness = clamp(drawScalarSample(drawSampleMaterial(2u, uv0, uv1), m.channels.y, m.invert.y) * m.factors.y, 0.04, 1.0);
-    float ao = clamp(drawSampleMaterial(4u, uv0, uv1)[m.channels.z], 0.0, 1.0);
+    vec4 indirectMap = drawSampleMaterial(4u, uv0, uv1);
+    bool hasBaked = (flags & 32u) != 0u;
+    float ao = hasBaked ? 1.0 : clamp(indirectMap[m.channels.z], 0.0, 1.0);
     float emission = max(drawScalarSample(drawSampleMaterial(5u, uv0, uv1), m.channels.w, m.invert.z) * m.emissionAlpha.x, 0.0);
     gAlbedo = vec4(a.rgb, (flags & 4u) == 0u ? 1.0 : a.a);
     gNormal = vec4(n * 0.5 + 0.5, emission);
     gMaterial = vec4(metallic, roughness, ao, m.factors.z);
     gFresnel = vec4(m.fresnelTint.rgb, float(flags) / 255.0);
     gSheen = vec4(m.sheenColor.rgb, m.factors.w);
-    gBaked = vec4(1.0);
+    gBaked = hasBaked ? vec4(max(indirectMap.rgb, vec3(0.0)), 1.0) : vec4(1.0);
 }

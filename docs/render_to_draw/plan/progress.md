@@ -8,15 +8,15 @@ This is the execution record for all implementation chats. The **Next step to im
 
 | Field | Value |
 |---|---|
-| Workflow state | `awaiting_project_lead` |
-| Current milestone | M03 — Complete advanced ray tracing |
-| Active step | M03-11 — final cumulative documentation closure delivered |
-| Last implemented step | M03-11 — cumulative maintained documentation through M03 (last step of milestone) |
-| Last accepted step | M03-10 — accepted by project lead continuation instruction; backend/scenario coverage not specified |
-| Awaiting project lead validation | M03-11 — documentation closure / final M03 acceptance |
-| Next step to implement | [M04-01 — Bake namespace and public configuration/pixel contracts](milestone_04_lightmaps/step_01_bake-contracts.md) |
-| Next action | `wait_for_project_lead` |
-| Condition before starting | Project lead acceptance of M03-11 closes M03 and authorizes M04-01 under the continuation convention. |
+| Workflow state | `in_progress` |
+| Current milestone | M04 — Integrated lightmap generation in bake |
+| Active step | M04-08 — Cumulative implementation documentation |
+| Last implemented step | M04-07 — Review M04 reusable maps |
+| Last accepted step | M04-07 technical review — accepted by project lead continuation; backend/scenario coverage not specified |
+| Awaiting project lead validation | None — M04-08 in progress |
+| Next step to implement | [M04-08 — Cumulative implementation documentation](milestone_04_lightmaps/step_08_documentation.md) |
+| Next action | `resume` |
+| Condition before starting | None — project lead continuation accepted M04-07 and selected documentation. |
 | Record initialization baseline | `b955833f314d09a191de13b83c90cacc10666ae7`; working tree was clean before this workflow documentation update. |
 | Validation owner | Human user / project lead |
 | Agent build/runtime execution | Not performed; delegated to the project lead by default. |
@@ -68,7 +68,8 @@ Add a row for each started step. Steps absent from this table are `not_started`.
 | [M03-08](milestone_03_ray_tracing/step_08_denoise.md) | `accepted` | HEAD `15f67dff9efad51c878740bc1ddbce94f880ed46` plus preserved prior uncommitted work; public DenoiseFilter, paired profiles, after-temporal renderer integration, virtual accessor metadata, manual fixture and docs. Uncommitted. | Thirteen new source files, eight native wrappers, logical/native bindings/ABI, ownership/ordering, live metadata definitions, licenses/delimiters/preprocessor/includes and local links; git diff --check. No compilation/runtime execution. | Accepted by project lead continuation; backend/scenario coverage unspecified. | See denoise.md; exact scalar/HDR profiles, explicit surface guides, confidence/validity, per-call scratch; visible controls/preferences remain M03-09. |
 | [M03-09](milestone_03_ray_tracing/step_09_existing-example-integration.md) | `accepted` | HEAD `15f67dff9efad51c878740bc1ddbce94f880ed46` plus preserved earlier uncommitted work; live effect settings/codec, two existing examples, final processor/SMAA native kernels, shared noise, debug signals, query-capacity fallback, manual fixtures and handoff docs. Uncommitted. | 59 source licenses/includes/lexical delimiters; eight SMAA wrappers and binding/ABI review; graph ordering, live target registration, local links; git diff --check. No compilation/runtime. | Accepted by project lead continuation instruction, including corrected visible UI and requested manipulation light controls/defaults; backend/scenario coverage not specified. | See integration.md and advanced_integration manual matrix. Next M03-10, then M03-11 cumulative docs. |
 | [M03-10](milestone_03_ray_tracing/step_10_review.md) | `accepted` | HEAD `15f67dff9efad51c878740bc1ddbce94f880ed46` plus preserved uncommitted baseline; review.md, rt-design reconciliation, 19 pending step files/seven downstream summaries, cosmetic separators in three pipeline implementations. | Opening GPL scan across 338 scoped files; native/source/signal/settings/ownership review; focused static checks, local Markdown links, non-whitespace-token equality for cosmetic edits and git diff --check. No compilation/runtime. | Accepted by project lead continuation instruction; backend/scenario coverage not specified. | Next M03-11 cumulative docs; M04 not yet authorized. |
-| [M03-11](milestone_03_ray_tracing/step_11_documentation.md) | `awaiting_project_lead` | HEAD `15f67dff9efad51c878740bc1ddbce94f880ed46` plus preserved prior work; five new/twenty-four updated maintained pages, documentation.md coverage and review handoff. Documentation only. | 29 maintained pages, 344 local links/anchors, 73 header/source references, code fences, source-backed tutorial wiring/defaults, git diff --check. No compile/runtime. | Pending project lead documentation/final M03 acceptance. | Last M03 step; next M04-01 after acceptance. |
+| [M03-11](milestone_03_ray_tracing/step_11_documentation.md) | `accepted` | HEAD `15f67dff9efad51c878740bc1ddbce94f880ed46` plus preserved prior work; five new/twenty-four updated maintained pages, documentation.md coverage and review handoff. Documentation only. | 29 maintained pages, 344 local links/anchors, 73 header/source references, code fences, source-backed tutorial wiring/defaults, git diff --check. No compile/runtime. | Accepted by project lead continuation instruction; M03 closed, backend/scenario coverage not specified. | Last M03 step; next M04-01 after acceptance. |
+| [M04-01](milestone_04_lightmaps/step_01_bake-contracts.md) | `accepted` | HEAD `95190d6d042bb85d6e9d72153b155192dac64377`; new bake Types/LightmapSettings/LightmapPixels/BakerContext/LightmapBaker/all headers, three CPU implementations, manual contract fixture and source/mapping docs. Uncommitted. | Ten source GPL/includes/dependencies/delimiters; eleven accessor metadata properties and declarations/definitions/export checks; local links and git diff --check. No compile/runtime. | Accepted by project lead continuation instruction; backend/scenario coverage not specified. | Abstract execution only; no UV/GPU baker or preview promised. Next M04-02. |
 
 ## Open issues
 
@@ -127,6 +128,12 @@ Future entries should record actual interfaces/paths/decisions and pending-plan 
 | [M03-01](milestone_03_ray_tracing/step_01_rt-design-checkpoint.md) | `accepted` | Baseline `15f67dff9efad51c878740bc1ddbce94f880ed46`, clean entry; uncommitted design and pending-plan updates only. | GPU native pipeline/resource/query and draw material/identity comparison; native primary docs, scoped links and `git diff --check`; no build/runtime execution. | M02 accepted on explicit macOS Metal/Linux Vulkan report and continuation; M03-01 accepted by project lead continuation. | See rt-design.md. Design accepted by continuation to M03-02; source baseline findings retained in rt-design.md. |
 | [M03-02](milestone_03_ray_tracing/step_02_rt-gpu-data.md) | `accepted` | Baseline `15f67dff9efad51c878740bc1ddbce94f880ed46` plus preserved uncommitted M03-01 work. GPU Common/Device/ResourceSet/ShaderLib/RT headers and native implementations; primitive paired shader profiles and manual fixture; API and plan handoffs. Uncommitted. | Signatures/callers/native API names, bindings/packing/profile discovery, optional SBT layout/flush/cleanup, array ownership/limits and acceleration ordering, licenses/delimiters/GPU dependencies, scoped links and `git diff --check`. No compile/shader/runtime execution. | M03-01 accepted by lead continuation; M03-02 accepted by project lead continuation; compilation/checks assumed successful, backend/scenario coverage unspecified. | See rt-gpu-data.md and tests/gpu/advanced_tracing/README.md. No CMake/production rendering edits. M03-03 authorized by project-lead continuation. |
 | [M03-03](milestone_03_ray_tracing/step_03_blue-noise-utils.md) | `accepted` | Baseline `15f67dff9efad51c878740bc1ddbce94f880ed46` plus preserved M03-01/02 edits; new utils/BlueNoise header/source and umbrella export, paired noise helpers/probe kernels, manual fixture and API/plan documentation. Uncommitted. | CPU/native metadata/sequence/bindings, upload/readback/retained owners and replacement paths, embedded asset shape/histograms, source licenses/includes/delimiters, scoped links and git diff --check. No compilation or CPU/GPU test execution. | M03-02 accepted by continuation; M03-03 lead-reported GLSL sampler-constructor failure corrected in source, awaiting recompile/validation. | See blue-noise.md and tests/utils/blue_noise/README.md. Logical-layer atlas, no physical image-array extension; production noise and CMake untouched. Next M03-04 pending acceptance. |
+| [M04-02](milestone_04_lightmaps/step_02_uv2-surface.md) | `accepted` | HEAD `95190d6d042bb85d6e9d72153b155192dac64377` plus preserved M04-01 work; public UV mesh/pass/reload, safe draw app callback, six native shaders, manual fixture and API/plan handoffs. Uncommitted. | Seventeen source licenses/includes/delimiters, declarations/definitions, 64/128-byte layouts, native bindings, depthless MRT/coverage ordering, reload ownership, documentation links and git diff --check. No compilation/runtime. | Accepted by project lead continuation instruction; backend/scenario coverage not specified. | See uv-surfaces.md; four MRT outputs plus derived R8 coverage. Scheduling/accumulation/preview remain subsequent steps. |
+| [M04-03](milestone_04_lightmaps/step_03_integrated-context.md) | `accepted` | HEAD `95190d6d042bb85d6e9d72153b155192dac64377` plus preserved M04-01/02 work; IntegratedBakerContext/IntegratedLightmapBaker and LightmapBakeExecutor, manual lifecycle fixture, maintained API and pending-step handoffs. Uncommitted. | Five new source GPL/include/style/delimiter checks; public definitions, exact completion counter, frame/source/target guards, retained partial-record owners, selected native pass/profile and copied environment ownership; seven pages/62 local links; earlier bake checks and git diff --check. No compile/runtime. | Accepted by project lead continuation instruction; backend/scenario coverage not specified. | See integrated-context.md. One live target/in-flight bake frame per context; raw samples only. M04-04 implements accumulation/composition/dilation/results. |
+| [M04-04](milestone_04_lightmaps/step_04_accumulation-output.md) | `accepted` | HEAD `95190d6d042bb85d6e9d72153b155192dac64377` plus preserved earlier M04 work; public accumulator/composition, ten native shader files, integrated commit/publication/typed cache, output fixtures and maintained/pending API handoffs. Uncommitted. | Twenty-two source license/include/control/delimiter checks; five native binding profiles/16-byte uniform layout; valid counts/commit/publication and typed codec checks; eleven pages/93 links; 6080 script-level nearest-seed/reference comparisons; previous bake checks and git diff --check. No compilation/native fixture/runtime. | Accepted by project lead continuation instruction; backend/scenario coverage unspecified. | See accumulation-output.md. Full-float output and conservative half-float GI saturation rejection; final synchronous validation/readback. Next M04-05 preview/UI. |
+| [M04-05](milestone_04_lightmaps/step_05_uv-preview.md) | `accepted` | HEAD `95190d6d042bb85d6e9d72153b155192dac64377` plus preserved earlier M04 work; bake UV diagnostic renderer, BakeLightmapPreview UI bridge and API handoff. Uncommitted. | GPL/header, API/ownership, resolution/rebind and mesh nonmutation source inspection; `git diff --check`; no build/runtime/UI/GPU execution. | Accepted by project lead continuation instruction; backend/scenario coverage unspecified. | CPU-rasterized UV1/UV2 diagnostic (submesh fill/wireframe and atlas boundary) uploaded as sampled RGBA8 via gpu::Image; completed lightmap images bind directly into draw UI. Next M04-06 working example. |
+| [M04-06](milestone_04_lightmaps/step_06_working-example.md) | `accepted` | HEAD `95190d6d042bb85d6e9d72153b155192dac64377` plus preserved earlier M04 work; draw_lightmaps example/target, explicit indirect material metadata and JSON, HDR G-buffer and 16 native shader pairs, UI filtering fallback and API/manual guide. Uncommitted. | 41 source/license/delimiter checks; 16 shader-pair and flag/composition checks; 9000 scalar algebra comparisons; four pages/27 local links; git diff --check. No compilation/shader tools/app/GPU execution. | Accepted including shader deployment correction by project lead continuation; backend/scenario coverage unspecified. | Existing reserved baked output now samples linear RGB UV2. Synchronous per-sample submission in prepareFrame proves completion before completeFrame; no render-loop API extension. All targets finish before adoption. Correction: missing bake shader compilation/bundle/install tree fixed in lib/CMakeLists.txt and cmake/utils.cmake; static path/dependency checks only, lead rebuild required. Next M04-07 technical review. |
+| [M04-07](milestone_04_lightmaps/step_07_review.md) | `accepted` | HEAD `95190d6d042bb85d6e9d72153b155192dac64377` plus preserved M04 working tree; review.md, root decisions/index, twenty pending-step requirements, six future summaries and M04-08 handoff. Markdown only. | Actual source/application/shader/deployment contracts, 91 owned source style inventory, local Markdown links and git diff --check; no build/runtime execution. | Accepted by project lead continuation; backend/scenario coverage unspecified. | Records intentional CPU UV diagnostic and AO-slot material interpretation, HDR ranges, serial completion and future export/headless obligations. Next M04-08 documentation; milestone remains open. |
 
 ## M01-01 handoff
 
@@ -979,3 +986,269 @@ specified in review.md, not inferred from documentation checks.
 M03-11 is the last ordered milestone-3 step, delivered awaiting project lead.
 Continuation accepts this documentation closure and selects M04-01; M04 is not
 implemented or authorized by this delivery alone. Next pointer names its real file.
+
+## M04-01 bake contract delivery
+
+M03-11 accepted by project lead continuation instruction; M03 closed. Backend and
+scenario coverage not specified. Current baseline HEAD is
+95190d6d042bb85d6e9d72153b155192dac64377; prior work is preserved, no reset/commit.
+
+Added bg2e::bake types and public LightmapSettings with actual accessor/metadata
+storage, checked scalar constraints plus coupled validation, and independent
+LightmapPixels RGB8/RGB32F payload/overflow/finite-HDR validation. Added abstract
+noncopyable BakerContext/LightmapBaker contracts, Device/scene/environment/pass
+ownership configurations, completed-slot/serial and source/target generations,
+progress/cancel/reset/result/readback semantics. Compatible public draw AO/GI/
+filter owners and replaceable UV surface owner are injectable; concrete executors
+are not implemented here and integrated use does not depend on M08 classes.
+
+contracts.md records all legacy public/private responsibilities and exact world
+surface, raw signal, normalized RGB multiplier, required-capability, empty GI,
+chart isolation, byte exposure, row orientation and output-presence policies.
+Production render remains untouched; UV2 preprocessing stays geo/app. Metadata
+binds actual settings, while concrete execution must freeze/validate a job copy.
+Null denoise is off; any future injected filter requires chart-safe orchestration.
+Standalone/assembly/batch/preview names are forward declarations, not features.
+
+Added a manual CPU contract fixture for live metadata/strict codec, coupled and
+scalar settings rejection, typed HDR/byte payloads, overflow and missing owners.
+Updated actual M04-02/03/04/05 and M08-01 handoffs and a truthful maintained bake
+contract reference. No CMake or production render modification, new example target,
+shader, concrete GPU bake, configure/build, fixture/app or packaging execution.
+Agent static checks pass for ten new source files, eleven live metadata entries,
+header/definition/export/dependency/lexical checks, links and diff whitespace.
+
+M04-01 remains awaiting project lead compilation/link/manual validation. Next
+M04-02 implements safe UV2 reload and actual explicit UV surfaces/chart coverage;
+M04-03/04 implement scheduling/accumulation/results, not claimed by these interfaces.
+
+
+## M04-02 UV surface and safe reload delivery
+
+M04-01 accepted by project lead continuation; backend/scenario coverage was not
+specified. Baseline remains 95190d6d042bb85d6e9d72153b155192dac64377 with earlier
+uncommitted M04-01 work preserved.
+
+Added public CPU UV surface packing and Device-backed UvSurfacePass. Position
+RGBA32F, signed normal RGBA16F, integer submesh and chart outputs use four
+depthless attachments (32 bytes/sample); a compute pass derives R8 coverage.
+Charts connect shared source-index edges within each submesh; duplicated seam
+vertices remain separate. Vulkan and Metal shader pairs share explicit bindings,
+world transforms and top-row/texture-v=0 orientation. Per-invocation retained
+owners support multiple targets and completed-slot reuse; diagnostic readback
+decodes floats, half floats and integers explicitly. WorldPositionCoverage is
+exposed through the existing public surface-input contract.
+
+UV2 generation uses the geo modifier/validator at a stopped waitIdle boundary.
+It prepares an independent drawable/mesh/material realization before publication,
+preserving other source references and rebuilding available tracing geometry.
+The app safe-update adapter guards cancellation, scene/target/renderer identity,
+invalidates renderer histories and exposes before-change/completion hooks for
+caller-owned bake generations, selection and previews. Concrete orchestration
+must supply these hooks and adopt/re-extract the replacement.
+
+Actual API/lifetimes and backend checks are in
+[uv-surfaces.md](milestone_04_lightmaps/uv-surfaces.md), the maintained
+[API reference](../../../doc/api/bake/UvSurfacePass.md), and the
+[manual fixture](../../../tests/bake/uv_surface/README.md). The fixture covers
+CPU atlas rejection/chart partitioning and GPU transforms, orientation, typed
+clears, independent targets/slot reuse, safe rebuild and generated-UV rasterization.
+It has not been compiled or executed.
+
+Static source, ABI/binding, ordering, ownership and local documentation-link
+checks pass, together with git diff --check. No build, shader compilation, fixture,
+application, CMake, production render or GPU primitive modification. M04-02 awaits
+project lead validation; M04-03 implements the concrete integrated context and
+is the next linked step. Accumulation, finished lightmaps and preview are not
+implemented by this surface primitive.
+
+
+## M04-03 integrated execution delivery
+
+M04-02 accepted by project lead continuation instruction; backend/scenario coverage
+not specified. Baseline remains 95190d6d042bb85d6e9d72153b155192dac64377, preserving
+prior uncommitted M04-01/02 work. No reset, commit or new worktree.
+
+Implemented IntegratedBakerContext/IntegratedLightmapBaker and the reusable
+LightmapBakeExecutor using the existing draw Engine, explicit environment snapshots,
+UV surfaces and public full-resolution AO/GI effects. The selected effect creates
+bake-owned matching-capacity tracing snapshots/TLAS/material bindings, independent
+of renderer/picking resources. Public native world-space shader variants are reused;
+no duplicate bake shader/shading family, GPU extension or production-render change.
+
+Context preparation validates global serial, slot, source generation, target and
+scene snapshot. Recording validates exact prepared command and one attempt per
+frame. CompleteFrame follows caller-confirmed GPU completion and alone increments
+completedSamples; cancellation/stale/failed work cannot advance it. Abandon requires
+a discarded/reset unsubmitted command. Sources/targets are rechecked on completion;
+opaque in-place changes require explicit stopped invalidation. Reset freezes live
+settings and advances target generation. Environment structs retain copied image/
+sampler owners, with a stopped replacement API and no second environment renderer.
+
+One live baker and one open/in-flight bake frame per context deliberately serialize
+raw sample sequencing; independent presentation remains available. Explicit cleanup
+requires retirement/abandonment and drains submitted owners. Unsupported required
+effects/profiles/formats and empty traceable GI fail explicitly. Chart-unsafe
+denoise is rejected. All requested raw samples leave Running/composition pending,
+result() empty and readPixels() unavailable: finished output is M04-04.
+
+Actual API, execution contract, limitations and downstream consumption are in
+[integrated-context.md](milestone_04_lightmaps/integrated-context.md) and the
+[maintained API](../../../doc/api/bake/IntegratedBakerContext.md). Added the
+[manual fixture](../../../tests/bake/integrated/README.md) for lifecycle failures,
+completion, cancellation, reset/generations, retained raw samples and absent final
+output, plus lead checks for real presentation/selection, edits, aborts, environment
+replacement and unavailable profiles. M04-04/M04-06/M08-01 handoffs are updated.
+
+Static checks pass for five new sources, public methods, lifecycle/ownership and
+selected pass invariants, seven pages/62 local links; earlier source/UV contracts
+and git diff --check also pass. No compilation, shader tools, C++ fixture, app or
+GPU execution. No CMake, production render or GPU source changes. M04-03 awaits
+project lead validation; next linked step is M04-04.
+
+
+## M04-04 accumulated lightmap output delivery
+
+M04-03 accepted by project lead continuation instruction; backend/scenario coverage
+not specified. Baseline remains 95190d6d042bb85d6e9d72153b155192dac64377 with all
+previous uncommitted M04 work preserved. No reset, commit or new worktree.
+
+Added Device-backed UvTemporalAccumulator and LightmapCompositionPass, public
+configuration/native interface prefixes and exclusive injectable output owners.
+Fresh RGBA32F raw sums plus R32_UINT exact valid-update counts are recorded after
+each raw effect; only completed current work commits history. The last command
+normalizes AO/GI, divides GI by environment irradiance/pi, then dilates from
+original chart texels using a horizontal/vertical exact nearest-seed search.
+Covered interiors never change; padding copies one seed, breaks ties deterministically
+and never averages charts. Radius zero is valid, outside padding is neutral white.
+
+Integrated completeFrame now validates final coverage/charts/counts/numeric flags,
+reads the identical padded RGBA32F GPU texture, caches typed RGB8/RGB32F pixels, and
+publishes Complete/LightmapResult only on success. HDR float output remains
+unclipped; byte GI alone applies exposure before clamp/round. Invalid/missing
+covered GI, saturation, empty coverage, bad reference or float overflow fail with
+no output. Public half-float GI currently saturates at 65504; the new accumulator
+conservatively rejects that boundary, including exact boundary values. Final
+validation/readback is synchronous and can drain other Device submissions.
+
+Five Vulkan/Metal shader pairs implement accumulation, AO/GI composition and the
+two dilation scans. No private shading estimator, GPU extension, new target,
+CMake or production render change. Context-owned invocation resources retain
+partial/discarded/submitted owners; reset/cancel/source generations hide stale
+results. Optional chart-unsafe denoise remains explicitly rejected.
+
+Actual contracts and verification limits:
+[accumulation-output.md](milestone_04_lightmaps/accumulation-output.md),
+[maintained API](../../../doc/api/bake/LightmapOutput.md), and
+[manual fixtures](../../../tests/bake/output/README.md). Known-value fixtures
+cover AO means/chart ties/neutral padding, GI irradiance normalization/HDR/zero
+reference and CPU byte/float conversion. Updated the integrated fixture for final
+publication and corrected its callback to Device::immediateSubmit's actual
+CommandBuffer* signature. Fixtures were not compiled or executed. M04-05/06, M05
+readback/export and M08 batch-output handoffs reflect the actual output API.
+
+Agent static checks pass for 22 source files, public method/16-byte uniform/native
+binding/ownership/publication/codec invariants, eleven pages/93 local links and
+6080 script-level comparisons of the separable dilation algorithm against an
+exhaustive nearest-original-seed reference. Previous source/UV/lifecycle checks
+and git diff --check also pass. These are mathematical/source evidence, not native
+shader or numerical/backend execution. No build, compiler, C++ fixture or app run.
+M04-04 awaits project lead validation; next linked step is M04-05 preview/UI.
+
+
+## M04-06 integrated working example delivery
+
+M04-05 accepted by project lead continuation; backend/scenario coverage not
+specified. The lead explicitly requested resolving the implementation gaps.
+Baseline remains 95190d6d042bb85d6e9d72153b155192dac64377 with previous uncommitted
+M04 work preserved. No reset, commit or new worktree.
+
+Implemented examples/draw/12_lightmaps and its requested shared-bundle target
+registration. Static scene reuses DefaultRenderLoopDelegate/RendererDeferred,
+public environment resources, safe UV2 rebuild and IntegratedBakerContext. Floor,
+white cube and independent red clone bake sequentially from immutable source
+snapshots. One synchronous Device::immediateSubmit per prepareFrame returns after
+GPU completion, then completeFrame commits exact progress. No general completion
+hook or GPU backend modification was necessary. Cancellation/restart/settings
+edits occur between completed samples; failures leave ordinary scene display
+usable. All targets' GPU/typed CPU results are captured before bake context
+cleanup and application of materials. UV and result previews retain/rebind image
+owners and clear before UI/Engine teardown.
+
+The previously reserved bakedMultiplier output existed but always wrote one.
+Explicit MaterialAttributes::IndirectTextureMode now marks the AO slot as scalar
+AO, baked AO or baked GI, with linear RGB/UV2/opaque validation and serialized
+metadata. Both raster shaders write its RGB to an RGBA16F attachment (32 total
+color bytes), avoiding UNORM clamping above one. All 16 paired deferred variants
+apply marked maps, bypass live AO/GI per marked pixel and preserve direct light,
+emission and GI specular IBL/reflection contributions. Scalar AO remains the
+default. The example disables live indirect and reflection passes globally,
+updates live/stored submesh metadata and supports before/after map toggling.
+
+The half-float display map must remain finite in [0,65504]; the example rejects
+overflow instead of clipping it. Bake RGBA32F and CPU RGB32F remain full precision.
+CPU RGB8/exposure selection does not quantize the GPU map used for display.
+The six-slot material supports a baked map or original scalar AO in that slot;
+it does not support both concurrently. GPU-only source settings are not a saved
+texture: full export/materialization remains M06/M07/M08 work. The example keeps
+source materials and regenerates a fresh unbaked scene before every new job.
+
+[Example/manual verification](../../../examples/draw/12_lightmaps/README.md),
+[material API](../../../doc/api/draw/BakedIndirectMaps.md) and the step handoff
+record actual contracts and limitations. Agent checks: 41 source/header/shader
+license and balanced-delimiter inspections, 16 paired shader profiles and flag
+paths, 9000 scalar composition algebra comparisons, four Markdown pages/27 local
+links and git diff --check. These are source/mathematical checks only. No build,
+CMake configure, shader compilation, C++ fixture, application or GPU execution.
+Vulkan/Metal/no-RT and original draw regression checks remain with the lead.
+M04-06 awaits validation; next linked step is M04-07 technical review, followed by
+M04-08 cumulative documentation. The milestone is not yet closed.
+
+
+### M04-06 correction — missing bake shader libraries
+
+The lead reported Metal failing to load bake/uv_surface/surface.vert.metallib.
+The source prefix is correctly spelled uv_surface, but the engine CMake invoked
+compile_paired_shader_tree only for draw. Bake sources therefore produced no
+compiled output. Incremental bundle refresh likewise copied only draw, and
+RuntimeShaders installation omitted bake. The earlier claim that recursive engine
+shader deployment already covered bake was incorrect.
+
+Registered the bake source/output tree, made per-tree shader targets and Metal
+intermediate directories distinct, and retained the existing paired-shader
+aggregate dependency for engine/application builds. Both native trees now copy
+into app bundles on shader-only rebuilds and install through RuntimeShaders.
+Static checks cover all eight bake stage pairs, expected surface.vert.metallib
+path, distinct output/target/intermediate names, aggregate dependency and copies.
+No CMake configure, build, compiler or application execution by the agent. The
+lead must reload CMake and rebuild draw_lightmaps, then retry the bake. M04-06
+remains awaiting validation; M04-07 remains the next conditional step.
+
+
+## M04-07 technical review delivery (2026-10-18)
+
+The lead continuation accepts M04-06 including its bake shader compilation,
+bundle refresh and RuntimeShaders installation correction; later backend/scenario
+coverage remains unspecified. Review starting/finishing HEAD is unchanged at
+95190d6d042bb85d6e9d72153b155192dac64377 with prior uncommitted code preserved.
+
+Created [M04 review](milestone_04_lightmaps/review.md) from actual public headers,
+implementations, shader packing/signal/output paths, example scheduling/adoption
+and corrected native deployment. It records implemented contracts, equivalent
+scheduling refinements, intentional CPU preview/single indirect-slot changes,
+precision/capability limits and evidence gaps. GPU resource ownership and typed
+pixels do not imply exported files. Window-only Engine initialization, camera
+image averaging, complete texture/model export and standalone/batch scheduling
+remain assigned to M05/M06/M07/M08. Production removal stays gated at M09.
+
+Updated twenty concrete pending M05–M10 steps, all six future summaries, root
+index/architecture decisions and the M04 summary/documentation handoff. Source
+style inventory inspected 91 current changed/new owned C/C++/shader files with
+no reported GPL/control/function-separation findings; private source includes,
+namespace layout and API grouping were reviewed with the existing source baseline.
+Static links and diff whitespace checked. No compilation, shader tools, CMake
+configuration, fixture, app, package or GPU run. No backend-specific numeric,
+performance or exported artifact is invented from continuation acceptance.
+
+M04-07 awaits lead acceptance. Next is M04-08 cumulative documentation and its
+coverage inventory; M04 is not closed and M05 has not started.

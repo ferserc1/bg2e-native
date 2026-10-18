@@ -26,3 +26,21 @@ Bake contracts and public draw pipeline reuse; UV2/texCoord1 mapping and surface
 - Relevant API reference, tutorials, app/CLI/build guidance and navigation are updated; all applicable former M10 authoring requirements are covered or explicitly assigned to an unimplemented milestone owner.
 - Source/links/snippet checks and actual validation ownership are recorded; no invented compilation/backend coverage.
 - Deliver this documentation step for lead acceptance before entering M05. Follow the normal one-step execution protocol. M10 audits the accumulated result and does not defer missing authoring work to itself.
+
+
+## M04-07 reviewed documentation baseline
+
+Use [review.md](review.md), including the accepted missing-metallib correction.
+Inventory the existing doc/api/bake pages, draw/BakedIndirectMaps.md, draw/bake/UI
+navigation and examples/draw/12_lightmaps guide before adding parallel pages.
+Reconcile all current build/distribution pages with both paired native trees and
+incremental bundle/install coverage. Explicitly explain CPU UV diagnostic versus
+Device-backed bake raster, live/stored material mode metadata, the single AO/map
+slot, actual result/CPU/display precision, serial sample completion and context
+ownership. Supply an integrated-bake tutorial grounded in the example, including
+cancellation/restart/rebind/teardown and unsupported required-job behavior.
+
+Do not teach standalone/batch/image-export or offscreen camera averaging as
+implemented. Record the per-page source mapping, retained/updated/displaced page
+dispositions, snippet/link/style checks and lead-only runtime evidence in
+documentation.md. M05 begins only after this documentation delivery is accepted.

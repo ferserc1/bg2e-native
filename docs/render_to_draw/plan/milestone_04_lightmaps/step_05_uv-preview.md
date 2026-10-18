@@ -24,7 +24,7 @@ Current sources to inspect: [lib/include/bg2e/render/UvMapPreviewRenderer.hpp](.
 
 ## Implementation work
 
-1. Reimplement public UvMapPreviewRenderer in bake for selected CPU UV sets, submesh fills/wireframes and atlas boundary rendering through GPU primitives.
+1. Implement public UvMapPreviewRenderer in bake for selected CPU UV sets, submesh fills/wireframes and atlas boundary rendering. The diagnostic is rasterized on CPU and uploaded through gpu::Image, avoiding a dependency on the production renderer or backend-specific drawing APIs.
 2. Expose completed sampled output as a draw/GPU texture resource with clear ownership, synchronous convenience and resolution replacement semantics.
 3. Adapt the UV widget using a draw/bake overload or a new name if structurally simpler; preserve production UI path until M09.
 4. Keep mesh inspection nonmutating; no native Vulkan drawing or ImGui types in public preview APIs.
@@ -41,3 +41,22 @@ Delegate compilation and applicable runtime checks to the project lead; perform 
 M06/M07 use this exact preview service; M08 may use it as a diagnostic, not as a batch requirement.
 
 Record actual API, ownership and verification in the milestone review. Follow [the review protocol](../review-protocol.md) and edit affected pending steps when actual contracts differ.
+
+## M04-01 delivered contract handoff
+
+UvMapPreviewRenderer is now a concrete bake service backed by CPU rasterization and a sampled gpu::Image upload. Its source mesh input is read-only. BakeLightmapPreview accepts both completed LightmapResult values and general sampled images; the draw UI session owns the descriptor snapshot. Resolution replacement and UI/Device teardown remain stopped boundaries.
+
+See [public contract and mapping](contracts.md); abstract interfaces are not implementations.
+
+## M04-02 actual UV surface handoff
+
+Use the draw regenerateDraw completion callback to refetch replaced Drawable/resource owners and refresh previews/selection. Public UvSurfacePass::readDiagnostic decodes completed float/uint/half outputs; it is not the UV preview renderer or an active-record readback API. The preview reads the supplied CPU geo::Mesh and does not prepare a bake target or alter bake generations.
+
+See [UV implementation contract](uv-surfaces.md).
+
+
+## M04-04 actual output handoff
+
+Integrated result() now exposes a retained sampled RGBA32F padded multiplier only after final completion/strict validation, with UV set 1 and source/target generations. readPixels returns cached typed RGB. Original chart/coverage remain in the completed raw/accumulation surfaces; alpha one or nonwhite RGB never establishes validity. Preview must retain image owners/register draw UI handles independently, respect v=0 top orientation, and rebind after stopped reset/reload/resolution changes. Mesh inspection stays nonmutating and must not call bake preparation or alter generations.
+
+See [output implementation](accumulation-output.md).

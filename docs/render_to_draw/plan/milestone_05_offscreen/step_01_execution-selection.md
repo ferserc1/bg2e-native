@@ -35,3 +35,10 @@ Delegate compilation and applicable runtime checks to the project lead; perform 
 M05-02/M05-03 use these public types. M08 standalone contexts reuse device ownership, and M09 makes the draw path canonical without legacy overloads.
 
 Record actual API, ownership and verification in the milestone review. Follow [the review protocol](../review-protocol.md) and edit affected pending steps when actual contracts differ.
+
+
+## M04-07 reviewed implementation requirement
+
+Define completed-frame hooks and failure retirement for the new offscreen execution itself. M04's sample application uses Device::immediateSubmit followed by completeFrame; it does not add completion callbacks to the window RenderLoop and does not provide an offscreen application implementation.
+
+Source and evidence: [M04 technical review](../milestone_04_lightmaps/review.md).

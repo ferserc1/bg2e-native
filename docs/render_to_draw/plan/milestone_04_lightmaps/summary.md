@@ -79,3 +79,13 @@ Review the lead validation matrix before claiming backend coverage.
 ## M03 reviewed dependency
 
 [M03 technical review](../milestone_03_ray_tracing/review.md) is the actual source/ownership/signal/settings baseline. Its pending-plan impact table and the concrete additions in this milestone's step files supersede historical statements that explicit profiles or effect controls are still unimplemented. Keep exact averaging, chart isolation, required-job capabilities and actual validation evidence distinct from interactive fallback/history behavior.
+
+
+## M04-07 technical review delivery
+
+[Review](review.md) reconciles the actual integrated example and public bake
+contracts, intentional CPU-preview/six-slot-material refinements, HDR precision
+limits and corrected paired bake deployment. Corrected M04-06 is accepted by
+project lead continuation with backend/scenario coverage unspecified. The review
+updates concrete pending M05–M10 requirements and leaves M04-08 cumulative
+documentation as the next required step; it does not close M04 or start M05.

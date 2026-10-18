@@ -26,6 +26,7 @@ glm::vec4 color(const base::Color& c)
 {
     return {c.r, c.g, c.b, c.a};
 }
+
 void finite(const glm::vec4& value)
 {
     for (int i = 0; i < 4; ++i)
@@ -36,6 +37,7 @@ void finite(const glm::vec4& value)
         }
     }
 }
+
 void invertible(const glm::mat4& value)
 {
     for (int i = 0; i < 4; ++i)
@@ -49,6 +51,7 @@ void invertible(const glm::mat4& value)
     }
 }
 }
+
 MaterialData packMaterial(const MaterialBase& material)
 {
     const auto& a = material.materialAttributes();
@@ -66,6 +69,21 @@ MaterialData packMaterial(const MaterialBase& material)
     uint32_t flags = (a.isUnlit() ? MaterialUnlit : 0u) | (a.alphaCutoff() > 0 ? MaterialAlphaTest : 0u) |
         (a.isTransparent() ? MaterialTransparent : 0u) | (a.isSolid() ? MaterialSolid : 0u) |
         (a.aoTexture() ? MaterialHasAOTexture : 0u);
+    using IndirectMode = base::MaterialAttributes::IndirectTextureMode;
+    const auto indirectMode = a.indirectTextureMode();
+    if (indirectMode != IndirectMode::AmbientOcclusion)
+    {
+        if ((indirectMode != IndirectMode::BakedAmbientOcclusion && indirectMode != IndirectMode::BakedGlobalIllumination) ||
+            !a.aoTexture() || !material.aoTexture() || a.aoUVSet() != 1 || material.aoTexture()->colorType() != base::Color::TypeLinear || a.isTransparent())
+        {
+            throw std::invalid_argument("Baked indirect maps require an opaque material, a linear RGB texture and UV2");
+        }
+        flags |= MaterialBakedMultiplier;
+        if (indirectMode == IndirectMode::BakedGlobalIllumination)
+        {
+            flags |= MaterialBakedGI;
+        }
+    }
     uint32_t decodeMask = 0;
     uint32_t colorMask = 0;
     for (uint32_t i = 0; i < 6; ++i)
@@ -120,6 +138,7 @@ MaterialData packMaterial(const MaterialBase& material)
     }
     return result;
 }
+
 FrameData packFrame(const FrameContext& frame, const glm::mat4& view, const glm::mat4& projection)
 {
     invertible(view);

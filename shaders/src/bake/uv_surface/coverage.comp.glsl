@@ -1,0 +1,33 @@
+/*
+ *    business grade graphic engine (bg2 engine)
+ *    Copyright (C) 2026  Fernando Serrano Carpena
+ *
+ *    This program is free software: you can redistribute it and/or modify
+ *    it under the terms of the GNU General Public License as published by
+ *    the Free Software Foundation, either version 3 of the License, or
+ *    (at your option) any later version.
+ *
+ *    This program is distributed in the hope that it will be useful,
+ *    but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *    GNU General Public License for more details.
+ *
+ *    You should have received a copy of the GNU General Public License
+ *    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
+#version 450
+layout(set=0,binding=0) uniform utexture2D chartImage;
+layout(set=0,binding=1) uniform sampler nearestSampler;
+layout(set=0,binding=2,r8) uniform writeonly image2D coverageImage;
+layout(local_size_x=16,local_size_y=16,local_size_z=1) in;
+void main()
+{
+    ivec2 pixel = ivec2(gl_GlobalInvocationID.xy);
+    if (any(greaterThanEqual(pixel,imageSize(coverageImage))))
+    {
+        return;
+    }
+    uint chart = texelFetch(usampler2D(chartImage,nearestSampler),pixel,0).r;
+    imageStore(coverageImage,pixel,vec4(chart != 0u ? 1.0 : 0.0));
+}

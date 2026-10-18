@@ -319,18 +319,20 @@ function(bundle_resources)
     endif()
 
     # Shader-only edits do not relink an app, so POST_BUILD alone leaves bundle
-    # resources stale. Refresh the new draw tree on each requested app build.
+    # resources stale. Refresh both paired native trees on each app build.
     if(TARGET ${BG2E_LIB_TARGET}_paired_shaders AND "${BL_SRC_PATH}" STREQUAL "${BG2E_SHADER_DIR}"
         AND (APPLE OR CMAKE_CONFIGURATION_TYPES OR NOT "${BL_SRC_PATH}" STREQUAL "${PRODUCT_DIR}/${BL_SUBPATH}"))
         if(APPLE)
-            set(DRAW_RESOURCE_DST "$<TARGET_FILE_DIR:${BL_TARGET_NAME}>/../Resources/${BL_SUBPATH}/draw")
+            set(PAIRED_RESOURCE_DST "$<TARGET_FILE_DIR:${BL_TARGET_NAME}>/../Resources/${BL_SUBPATH}")
         else()
-            set(DRAW_RESOURCE_DST "$<TARGET_FILE_DIR:${BL_TARGET_NAME}>/${BL_SUBPATH}/draw")
+            set(PAIRED_RESOURCE_DST "$<TARGET_FILE_DIR:${BL_TARGET_NAME}>/${BL_SUBPATH}")
         endif()
         # TARGET_FILE_DIR does not add an app dependency under CMP0112 (NEW).
         add_custom_target(${BL_TARGET_NAME}_draw_resources
             COMMAND ${CMAKE_COMMAND} -E copy_directory
-                "${BL_SRC_PATH}/draw" "${DRAW_RESOURCE_DST}"
+                "${BL_SRC_PATH}/draw" "${PAIRED_RESOURCE_DST}/draw"
+            COMMAND ${CMAKE_COMMAND} -E copy_directory
+                "${BL_SRC_PATH}/bake" "${PAIRED_RESOURCE_DST}/bake"
             DEPENDS ${BG2E_LIB_TARGET}_paired_shaders VERBATIM)
         add_dependencies(${BL_TARGET_NAME} ${BL_TARGET_NAME}_draw_resources)
     endif()
@@ -558,6 +560,10 @@ endfunction()
 # Paired native sources, with relative pipeline paths preserved at deployment.
 # Unlike the historical ShaderLib helper above, GLSL keeps its actual main entry.
 function(compile_paired_shader_tree TARGET_NAME VULKAN_SDK_PATH SRC_PATH DST_PATH)
+    # Each source tree has its own output target; retain a single public aggregate
+    # dependency for the engine and bundle refresh targets.
+    get_filename_component(TREE_NAME "${SRC_PATH}" NAME)
+    set(TREE_TARGET "${TARGET_NAME}_${TREE_NAME}_paired_shaders")
     file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS "${SRC_PATH}/*.glsl" "${SRC_PATH}/*.metal")
     # Conservatively rebuild stages on any shared-include change. Includes are
     # native backend code and deliberately have no independent shader output.
@@ -586,7 +592,7 @@ function(compile_paired_shader_tree TARGET_NAME VULKAN_SDK_PATH SRC_PATH DST_PAT
                 COMMENT "Compiling paired GLSL ${RELATIVE}" VERBATIM)
             list(APPEND OUTPUTS "${OUTPUT}")
         elseif(APPLE)
-            set(AIR "${CMAKE_CURRENT_BINARY_DIR}/paired_air/${TARGET_NAME}/${DIRECTORY}/${NAME}.air")
+            set(AIR "${CMAKE_CURRENT_BINARY_DIR}/paired_air/${TREE_TARGET}/${DIRECTORY}/${NAME}.air")
             get_filename_component(AIR_DIR "${AIR}" DIRECTORY)
             set(OUTPUT "${OUTPUT_DIR}/${NAME}.metallib")
             add_custom_command(OUTPUT "${AIR}"
@@ -602,6 +608,10 @@ function(compile_paired_shader_tree TARGET_NAME VULKAN_SDK_PATH SRC_PATH DST_PAT
             list(APPEND OUTPUTS "${OUTPUT}")
         endif()
     endforeach()
-    add_custom_target(${TARGET_NAME}_paired_shaders ALL DEPENDS ${OUTPUTS})
+    add_custom_target(${TREE_TARGET} ALL DEPENDS ${OUTPUTS})
+    if(NOT TARGET ${TARGET_NAME}_paired_shaders)
+        add_custom_target(${TARGET_NAME}_paired_shaders)
+    endif()
+    add_dependencies(${TARGET_NAME}_paired_shaders ${TREE_TARGET})
     add_dependencies(${TARGET_NAME} ${TARGET_NAME}_paired_shaders)
 endfunction()

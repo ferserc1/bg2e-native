@@ -30,7 +30,7 @@ inline constexpr uint32_t MaxLights = 8;
 enum MaterialFlags : uint32_t
 {
     MaterialUnlit = 1, MaterialAlphaTest = 2, MaterialTransparent = 4,
-    MaterialSolid = 8, MaterialHasAOTexture = 16
+    MaterialSolid = 8, MaterialHasAOTexture = 16, MaterialBakedMultiplier = 32, MaterialBakedGI = 64
 };
 // Only 16-byte vectors/matrices: identical std140 and Metal layouts.
 struct alignas(16) MaterialData {

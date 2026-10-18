@@ -34,3 +34,10 @@ Delegate compilation and applicable runtime checks to the project lead; perform 
 M08 standalone jobs preserve target/output identity and validation but use a windowless scheduler instead of this integrated UI path.
 
 Record actual API, ownership and verification in the milestone review. Follow [the review protocol](../review-protocol.md) and edit affected pending steps when actual contracts differ.
+
+
+## M04-07 reviewed implementation requirement
+
+Serial targets must release the previous IntegratedLightmapBaker before createBaker on the same context. Capture every typed output/current result before source edits; either adopt the completed batch together or rebuild generation/snapshots after each adoption. Preserve marked bakedAO/bakedGI mode and UV2 on live and stored submeshes, validate finite half-float display range separately from RGB32F export, and use the bake preview/UI bridge rather than production widgets.
+
+Source and evidence: [M04 technical review](../milestone_04_lightmaps/review.md).

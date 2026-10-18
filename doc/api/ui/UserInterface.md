@@ -227,3 +227,13 @@ for private Vulkan/Metal source excerpts, acquired-frame preparation/composition
 encoder ownership, context lifetime and render shutdown ownership.
 Scene-dependent UI components must use resources compatible with their engine
 contract.
+
+
+## Draw bake previews
+
+[BakeLightmapPreview](../bake/BakeLightmapPreview.md) registers retained completed
+bake/UV diagnostic images through the draw UI session. Use
+[bake::UvMapPreviewRenderer](../bake/UvMapPreviewRenderer.md) for CPU UV1/UV2
+inspection and rebind images after geometry/resolution/session changes. Production
+UvMapPreview remains a separate render-compatible widget. Clear draw preview
+handles before UI/Engine teardown; no ImGui/native type enters application code.

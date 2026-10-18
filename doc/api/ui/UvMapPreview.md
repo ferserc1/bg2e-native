@@ -3,6 +3,11 @@
 **Header:** `<bg2e/ui/UvMapPreview.hpp>`
 **Namespace:** `bg2e::ui`
 
+This is the production render widget. For draw Engines use
+[bake::UvMapPreviewRenderer](../bake/UvMapPreviewRenderer.md) with
+[ui::BakeLightmapPreview](../bake/BakeLightmapPreview.md); this class has no
+draw Engine overload.
+
 `UvMapPreview` is an embeddable immediate-mode widget that displays a CPU
 mesh's UV layout and validation result. It offers UV1/UV2 controls, shows
 coverage or an error message, and uses `render::UvMapPreviewRenderer` plus the

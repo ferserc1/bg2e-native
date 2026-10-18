@@ -50,3 +50,10 @@ Preserve the real draw_deferred_renderer target and later accepted products; dis
 Retain native paired draw tracing/effect/SMAA shaders and official lookup dependency in installed products. Reconcile manual fixture headers with surviving supported harnesses; do not delete useful no-RT/scalar/partial-profile coverage with legacy targets. Verify example-specific GI/reflection defaults and explicit settings-window registration after canonical entrypoint changes.
 
 Source and validation boundaries: [M03 technical review](../milestone_03_ray_tracing/review.md). Include these conditions in this step's implementation and exit checks.
+
+
+## M04-07 reviewed implementation requirement
+
+Preserve both engine native shader trees and their aggregate dependency, unique per-tree targets/Metal intermediates, incremental bundle copies and RuntimeShaders install paths. Exercise draw_lightmaps after legacy shader deletion. M04 previously omitted bake from compilation/copy; the accepted correction must survive cleanup and standalone/package regeneration.
+
+Source and evidence: [M04 technical review](../milestone_04_lightmaps/review.md).

@@ -41,3 +41,10 @@ Record actual API, ownership and verification in the milestone review. Follow [t
 Import stable live effect settings through the codec at a stopped boundary with explicit required-capability checks. UI-only lightPose/document targets need a declared mapping or reject/skip diagnostic policy. Keep CLI dimensions/sample overrides last; no implicit preferences or RendererDeferred dependency for UV tracing.
 
 Source and validation boundaries: [M03 technical review](../milestone_03_ray_tracing/review.md). Include these conditions in this step's implementation and exit checks.
+
+
+## M04-07 reviewed implementation requirement
+
+Deploy both paired shader trees, draw and bake, through the engine shader aggregate and RuntimeShaders installation. Check bake/uv_surface/surface.vert.metallib (Metal) and its SPIR-V peer in installed/package resources; test an incremental shader-only rebuild as well as a fresh build. Keep required bake support distinct from no-RT raster fallback; the interactive example's exception UI is not CLI exit/error policy.
+
+Source and evidence: [M04 technical review](../milestone_04_lightmaps/review.md).

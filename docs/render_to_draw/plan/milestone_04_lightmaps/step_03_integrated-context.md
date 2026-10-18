@@ -86,3 +86,25 @@ Reuse [RTAO contracts](../milestone_03_ray_tracing/rtao.md): SurfaceInputs::Worl
 Use TracingSceneResources(device, capacity), prepare(queue), retained TracingSnapshot and effect prepareSnapshot with compatible capacity/device. Call snapshot build only in its one recording/submission; discard after aborted recording. Schedule begin/prepare/record against completed slots, retain source/environment owners on cancellation and use explicit renderedSample keys. No RendererDeferred private target dependency.
 
 Source and validation boundaries: [M03 technical review](../milestone_03_ray_tracing/review.md). Include these conditions in this step's implementation and exit checks.
+
+## M04-01 delivered contract handoff
+
+Implement the existing abstract bake::BakerContext/LightmapBaker interfaces, retaining BakerContextConfiguration and LightmapBakerConfiguration. Freeze/validate live LightmapSettings at job start; map samples/bounces/ranges to exclusive public draw pass instances at full target extent. Reject missing required native profiles/environment and unsupported empty-geometry GI before successful output. Count completed GPU samples only, reject stale/duplicate slots/generations and retain cancellation owners. No future standalone class is a prerequisite.
+
+See [public contract and mapping](contracts.md); abstract interfaces are not implementations.
+
+## M04-02 actual UV surface handoff
+
+Use the implemented UvSurfacePass/UvSurfaceGeometry/UvSurfaceResult. Prepare immutable geometry at stopped boundaries; beginFrame once per completed slot/serial, record all targets into independent retained outputs, then feed result.surfaceInputs() to matching-capacity AO/GI passes. Context must validate opaque source/target generation tags and current node/Drawable identity; the primitive does not validate scene job chronology. Call generateUv2AndReload/regenerateDraw, re-extract and invalidate before adopting replacements. No camera/depth or private renderer input is needed.
+
+See [UV implementation contract](uv-surfaces.md).
+
+
+## M04-03 delivered implementation
+
+Actual public APIs and lifecycle: [integrated-context.md](integrated-context.md).
+The implementation reuses existing draw world-space native profiles rather than
+adding duplicate bake shader families. One live target/in-flight bake frame per
+context, explicit GPU completion/abort notification, retained snapshots and source
+invalidation provide raw AO/GI execution. Finished accumulation/results remain
+M04-04. See progress for acceptance state and the manual backend verification.

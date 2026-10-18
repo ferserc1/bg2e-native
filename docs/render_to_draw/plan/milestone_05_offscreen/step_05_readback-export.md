@@ -51,3 +51,17 @@ Record actual API, ownership and verification in the milestone review. Follow [t
 Validate N=1 and controlled N-sample HDR average before one final color/optional SMAA operation and typed completed readback. Cover disabled/unavailable processors, sRGB/UNORM conversion and headless import of requested-but-unavailable effect values separately from strict required-job capability failure.
 
 Source and validation boundaries: [M03 technical review](../milestone_03_ray_tracing/review.md). Include these conditions in this step's implementation and exit checks.
+
+
+## M04-04 actual output handoff
+
+Bake now has strict completed RGBA32F readback and convertRgba32 -> LightmapPixels RGB8/RGB32F. Reuse its explicit top-row/UV-v=0 layout and linear codec for bake export: GI exposure applies only to RGB8; no gamma, clipping float HDR or receiver material multiplication. The GPU texture and CPU pixels share the same chart padding. This does not supply an asynchronous staging primitive or define offscreen camera-image codecs implicitly.
+
+See [output implementation](../milestone_04_lightmaps/accumulation-output.md).
+
+
+## M04-07 reviewed implementation requirement
+
+Validate raw RGBA32F transfer length and explicit conversion before generic DB encoding. Bake LightmapPixels is linear RGB, row zero UV-v=0; RGB8 GI exposure is a bake CPU conversion policy, not a universal scene-tone-map policy. Test marked UV2 RGB maps through the updated RGBA16F G-buffer and preserve custom-layer format validation.
+
+Source and evidence: [M04 technical review](../milestone_04_lightmaps/review.md).

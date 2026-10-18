@@ -72,3 +72,21 @@ Reuse [RTAO contracts](../milestone_03_ray_tracing/rtao.md): SurfaceInputs::Worl
 Consume public WorldPositionCoverage and matching-capacity snapshots directly, not camera renderer internals. Validate required AO/GI primitive/material-array/format profiles before publishing a job; unsupported required baking fails explicitly even though interactive raster fallback exists. Own slots, rendered sample keys, frozen scene generations and completion-safe cancellation.
 
 Source and validation boundaries: [M03 technical review](../milestone_03_ray_tracing/review.md). Include these conditions in this step's implementation and exit checks.
+
+## M04-01 names and ownership
+
+[Delivered bake contracts](../milestone_04_lightmaps/contracts.md) define abstract BakerContext/LightmapBaker, shared live target settings, typed pixels and generation/progress semantics. StandaloneBakerContext, SceneAssembler and Batch are forward declarations only; implement them in this milestone without a production alias. Concrete integrated execution must not depend on them.
+
+
+## M04-03 actual execution handoff
+
+Reuse the delivered Device-backed LightmapBakeExecutor for explicit UV surfaces and public draw AO/GI snapshot recording. It does not submit or accumulate. Preserve matching capacity, fresh per-recording snapshots, required-effect failures, immutable environment owner copies and completed-slot lifetime. IntegratedBakerContext is now a concrete draw Engine scheduler with one live target/in-flight frame; standalone should provide its own scheduler over the executor rather than borrow a viewport renderer or extend the production render context.
+
+See [integrated execution](../milestone_04_lightmaps/integrated-context.md).
+
+
+## M04-07 reviewed implementation requirement
+
+Reuse LightmapBakeExecutor, UvTemporalAccumulator and LightmapCompositionPass as isolated public recording/output owners. IntegratedBakerContext remains draw-Engine/window-lifecycle-bound and serial; its example's synchronous submission is not a headless initializer. M05 must deliver genuine windowless ownership first. Keep explicit per-job completion/abandonment, immutable source/environment ownership and required-capability failures; do not create RendererDeferred to borrow private state.
+
+Source and evidence: [M04 technical review](../milestone_04_lightmaps/review.md).

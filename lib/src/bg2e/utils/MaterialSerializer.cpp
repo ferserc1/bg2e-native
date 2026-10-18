@@ -19,6 +19,7 @@
 #include <bg2e/utils/MaterialSerializer.hpp>
 #include <bg2e/json/JsonParser.hpp>
 #include <bg2e/json/NodeReader.hpp>
+#include <stdexcept>
 
 namespace bg2e::utils {
 
@@ -46,6 +47,27 @@ bool parseMaterial(
     if (!reader.isValid())
     {
         return false;
+    }
+
+    if (auto value = reader.getString("indirectTextureMode"))
+    {
+        using Mode = base::MaterialAttributes::IndirectTextureMode;
+        if (*value == "bakedAO")
+        {
+            result.setIndirectTextureMode(Mode::BakedAmbientOcclusion);
+        }
+        else if (*value == "bakedGI")
+        {
+            result.setIndirectTextureMode(Mode::BakedGlobalIllumination);
+        }
+        else if (*value == "ao")
+        {
+            result.setIndirectTextureMode(Mode::AmbientOcclusion);
+        }
+        else
+        {
+            throw std::invalid_argument("Unknown indirectTextureMode");
+        }
     }
 
     if (auto value = reader.getString("name"))
@@ -152,6 +174,10 @@ bool parseMaterial(
     }
     if (auto value = texture("ambientOcclussion"))
     {
+        if (result.indirectTextureMode() != base::MaterialAttributes::IndirectTextureMode::AmbientOcclusion)
+        {
+            value->setColorType(base::Color::TypeLinear);
+        }
         result.setAoTexture(value);
         result.setAoScale(scale("ambientOcclussionScale"));
         result.setAoChannel(index("ambientOcclussionChannel"));
@@ -308,6 +334,10 @@ std::string MaterialSerializer::serializeMaterial(
 
     obj["sheenIntensity"] = JSON(mat.sheenIntensity());
     obj["sheenColor"] = JSON(mat.sheenColor());
+
+    using IndirectMode = base::MaterialAttributes::IndirectTextureMode;
+    obj["indirectTextureMode"] = JSON(std::string(mat.indirectTextureMode() == IndirectMode::BakedGlobalIllumination ? "bakedGI" :
+        mat.indirectTextureMode() == IndirectMode::BakedAmbientOcclusion ? "bakedAO" : "ao"));
 
     if (mat.aoTexture().get())
     {

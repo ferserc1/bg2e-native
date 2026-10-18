@@ -44,3 +44,47 @@ Derive scene/application integration from examples/draw/10_deferred_renderer; se
 Start from the actual manipulation/deferred settings-window wiring, not assumed MainLoop auto-registration. When baked multipliers are applied explicitly disable live indirect AO/GI to avoid double lighting; decide reflection behavior separately. Verify chart isolation, full geometry reload and immutable snapshot ownership.
 
 Source and validation boundaries: [M03 technical review](../milestone_03_ray_tracing/review.md). Include these conditions in this step's implementation and exit checks.
+
+
+## M04-03 actual execution handoff
+
+Use IntegratedBakerContext(engine,configuration), createBaker, prepareFrame/record and completeFrame only after the actual submitted frame fence completes. One target and one bake frame may be active per context; serialize targets or own separate exclusive contexts. Capture explicit EnvironmentResources snapshots and route replacements through setEnvironmentResources plus reset. Wire safe-edit beforeChange to invalidateSources and restart after adoption/selection refresh. Do not submit partially failed recordings; discard/abandon them. Finished texture output remains dependent on M04-04, not the raw latestSample API.
+
+See [integrated execution](integrated-context.md).
+
+
+## M04-04 actual output handoff
+
+CompleteFrame now records exact completed progress and publishes final output after validating requested covered sample counts/numerics and reading the padded texture. Drive it from actual GPU completion, expect a final synchronous readback cost, and show explicit Failed/Cancelled/Invalidated states. Apply the retained RGBA32F RGB multiplier/UV2 metadata only after Complete; capture CPU output before material adoption invalidates source state. RGB32F remains HDR, RGB8 applies exposure only to GI. Optional denoise is rejected; do not enable display AA/denoise over exact accumulation.
+
+See [output implementation](accumulation-output.md).
+
+
+## M04-06 implementation handoff
+
+The runnable `draw_lightmaps` target uses the shared example bundle helper and
+existing engine shader deployment. No additional assets or private estimators.
+The scene is static and generates independent floor/cube/clone UV2 replacements
+from retained original drawables. One synchronous `Device::immediateSubmit`
+per prepareFrame completes before `completeFrame`; no general render-loop
+callback is required. Unsupported bake effects/profiles leave scene display
+available and report the reason. UI edits actual idle LightmapSettings; partial
+results are previewable but never adopted. Cancel/restart and all application
+mutations run before window acquisition. Results and CPU pixels are captured for
+all targets before context teardown and material adoption.
+
+MaterialAttributes now carries explicit IndirectTextureMode metadata for the AO
+texture slot, serialized as ao/bakedAO/bakedGI. The G-buffer previously wrote only
+neutral one into its reserved baked output; it now samples marked RGB UV2 maps,
+bypasses scalar AO and retains HDR using RGBA16F. Deferred shader variants preserve
+direct/emission and specular IBL for GI, and bypass live AO/GI on marked pixels.
+The example globally disables those live passes and independently disables live
+reflections. Half-float display overflow is rejected, while bake/CPU float output
+remains RGBA32F/RGB32F. Stored definitions receive metadata, but GPU-only image
+sources still require real materialization in future export steps.
+
+[Maintained material API](../../../../doc/api/draw/BakedIndirectMaps.md) and
+[example guide/manual checks](../../../../examples/draw/12_lightmaps/README.md)
+record lifecycle, limitations and the lead validation matrix. The lead must
+compile/run the new target and existing draw examples on available Vulkan/Metal;
+no agent build, shader compilation or application execution is claimed.

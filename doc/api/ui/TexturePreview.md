@@ -13,3 +13,13 @@ Preview registrations and resources are retained until submitted UI draws have
 completed. A preview becomes invalid when its `UserInterface` session is
 cleaned up, so do not retain or draw it across UI/engine teardown. See the
 [UI overview](index.md) for the production and experimental draw widget split.
+
+
+## Draw bake previews
+
+[BakeLightmapPreview](../bake/BakeLightmapPreview.md) registers retained completed
+bake/UV diagnostic images through the draw UI session. Use
+[bake::UvMapPreviewRenderer](../bake/UvMapPreviewRenderer.md) for CPU UV1/UV2
+inspection and rebind images after geometry/resolution/session changes. Production
+UvMapPreview remains a separate render-compatible widget. Clear draw preview
+handles before UI/Engine teardown; no ImGui/native type enters application code.

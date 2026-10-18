@@ -53,3 +53,9 @@ Use the stopped-boundary mesh update contract from the [M02 review](../milestone
 Implement depthless UV surface outputs as RGBA32 world position, signed RGBA16 world normal and R8 coverage with matching extents. Generate explicit chart identity/isolation data for later atlas filtering. Do not fabricate a camera or reuse picking depth; GPU mesh reload creates a new tracing geometry identity.
 
 Source and validation boundaries: [M03 technical review](../milestone_03_ray_tracing/review.md). Include these conditions in this step's implementation and exit checks.
+
+## M04-01 delivered contract handoff
+
+Use bake/Types.hpp, BakerContextConfiguration and the contracts in contracts.md. Native UV outputs must preserve top-row/texture-v=0 orientation and supply signed RGBA16 normals, RGBA32 positions, R8 coverage plus integer identity/chart isolation. Geometry reload invalidates source/target generations; do not reinterpret material AO presence as baked data.
+
+See [public contract and mapping](contracts.md); abstract interfaces are not implementations.

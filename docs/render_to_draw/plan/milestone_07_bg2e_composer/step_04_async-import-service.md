@@ -52,3 +52,10 @@ Use actual delegate rendererGeneration and catalog generation with weak target r
 Keep scene/import job validity separate from renderer/catalog generations. After stopped adoption reload geometry identities, replace retained tracing/material snapshots, invalidate effect/SDK histories and rebind live settings/selection. Do not let asynchronous jobs retain a borrowed catalog target from a removed scene.
 
 Source and validation boundaries: [M03 technical review](../milestone_03_ray_tracing/review.md). Include these conditions in this step's implementation and exit checks.
+
+
+## M04-07 reviewed implementation requirement
+
+Stop or retire an active bake before main-thread scene/texture/geometry adoption. Imported replacement nodes must not be published into an existing frozen bake baseline. Explicitly invalidate sources/reset targets, reacquire environment snapshots and rebind UV/result previews; a worker token alone does not establish GPU completion or valid target generations.
+
+Source and evidence: [M04 technical review](../milestone_04_lightmaps/review.md).

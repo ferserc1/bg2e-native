@@ -29,6 +29,9 @@ namespace bg2e {
 namespace scene {
 class Node;
 }
+namespace draw {
+class DefaultRenderLoopDelegate;
+}
 namespace app {
 
 struct SafeUpdateToken;
@@ -61,6 +64,8 @@ struct Uv2RegenerationResult {
 // the helper verifies the submesh count and reports failure otherwise. After a
 // successful reload, callers must invalidate any active bake accumulation and
 // refresh UV previews (UvMapPreview::refresh) through the completion callback.
+// The description above is for production regenerate(). regenerateDraw() below
+// uses the draw delegate boundary and publishes an independent replacement.
 class BG2E_API Uv2SafeReload {
   public:
     using CompletionCallback = std::function<void(const Uv2RegenerationResult&)>;
@@ -73,6 +78,18 @@ class BG2E_API Uv2SafeReload {
         std::weak_ptr<scene::Node> targetNode,
         const geo::Uv2AtlasOptions& options = {},
         CompletionCallback onComplete = nullptr);
+
+    // Draw-specific queued edit; retains no renderer pointer. Generation/root,
+    // component/mesh identity and weak cancellation are checked before mutation.
+    // beforeChange invalidates application-owned bake/source state at the drained
+    // boundary (also on a later failure). Success replaces this node's Drawable
+    // with an independent realization; completion must refresh selection/previews.
+    static std::shared_ptr<SafeUpdateToken> regenerateDraw(
+        std::weak_ptr<draw::DefaultRenderLoopDelegate> delegate,
+        std::weak_ptr<scene::Node> targetNode,
+        const geo::Uv2AtlasOptions& options = {},
+        CompletionCallback onComplete = nullptr,
+        std::function<void()> beforeChange = {});
 };
 
 }

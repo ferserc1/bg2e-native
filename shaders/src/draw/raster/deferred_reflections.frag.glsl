@@ -161,7 +161,8 @@ vec4 composite()
         vec3 reflectedIBL = prefiltered*(f0*brdf.x+brdf.y)*ao;
         vec3 reflectedHit = reflected.rgb*(f0*brdf.x+brdf.y)*ao;
         ambient += (reflectedHit-reflectedIBL)*clamp(reflected.a,0.0,1.0);
-        indirect = ambient * baked;
+        vec3 preservedSpecular = (flags & 64u) != 0u ? reflectedIBL + (reflectedHit - reflectedIBL) * clamp(reflected.a, 0.0, 1.0) : vec3(0.0);
+        indirect = ((ambient - preservedSpecular) * baked + preservedSpecular);
         color += indirect + emission;
     }
     else

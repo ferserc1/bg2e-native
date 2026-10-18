@@ -46,3 +46,10 @@ collapse CPU definitions and live draw material targets into a whole-material
 write during API cleanup.
 
 Record actual API, ownership and verification in the milestone review. Follow [the review protocol](../review-protocol.md) and edit affected pending steps when actual contracts differ.
+
+
+## M04-07 reviewed implementation requirement
+
+Retain bake::UvMapPreviewRenderer (CPU diagnostic plus generic image upload) and ui::BakeLightmapPreview as canonical draw-compatible replacements. Delete the production render::UvMapPreviewRenderer/ui::UvMapPreview coupling only after actual editor callers have migrated. Preserve explicit IndirectTextureMode metadata, linear UV2 sampling and live/stored material consistency while removing legacy overloads.
+
+Source and evidence: [M04 technical review](../milestone_04_lightmaps/review.md).

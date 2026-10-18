@@ -263,3 +263,15 @@ replacement for document/import/bake-job generations.
 See [renderer lifecycle](api/draw/RendererDeferred.md), [settings](api/draw/Settings.md)
 and [temporal ownership](api/draw/TemporalAccumulator.md). This addition does not
 migrate production safeUpdateScene callers or create a draw bake scheduler.
+
+
+## Integrated draw bake edits
+
+The [draw lightmap tutorial](tutorials/draw/12_lightmaps.md) freezes scene,
+material, light and environment sources while samples are prepared/submitted.
+Before a queued UV2/scene/material replacement, retire submitted work or discard
+and abandon an unsubmitted frame. Then invalidate sources/reset target state or
+release/recreate the context. Reacquire replaced drawable/tracing/selection/preview
+owners after adoption. A settings generation/token does not establish GPU
+completion. The example captures all targets' completed GPU and typed CPU outputs
+before material adoption; applying one map mid-batch would invalidate its baseline.

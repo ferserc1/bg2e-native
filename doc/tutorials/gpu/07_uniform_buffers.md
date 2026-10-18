@@ -631,7 +631,7 @@ Then run the binary from the `bin/` directory. On macOS you will be prompted to 
 ## Next steps
 
 - **[08_render_to_texture](08_render_to_texture.md)** -- Render to an offscreen texture and use it as input.
-- **[09_multiple_objects](09_multiple_objects.md)** -- Draw multiple objects with per-object transforms.
+- **[GPU tutorial index](index.md)** -- Continue with the delivered examples and per-object resource patterns.
 - **[GPU API -- Buffer](../../api/gpu/Buffer.md)** -- Full reference for uniform and storage buffers.
 - **[GPU API -- FrameResourceRing](../../api/gpu/FrameResourceRing.md)** -- Full reference for per-frame resource management.
 - **[GPU API -- ResourceSet](../../api/gpu/ResourceSet.md)** -- Full reference for descriptor set binding.

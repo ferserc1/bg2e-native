@@ -37,3 +37,7 @@ See [MainLoop](../app/MainLoop.md), [architecture](../../architecture/MainLoop_r
 - [TemporalAccumulator](TemporalAccumulator.md), [MotionVectorGenerator](MotionVectorGenerator.md), [DenoiseFilter](DenoiseFilter.md).
 - [FinalProcessor and SMAAProcessor](SMAAProcessor.md).
 - [Advanced lighting architecture](../../architecture/draw_advanced_lighting.md).
+
+[Integrated bake](../bake/index.md) supplies actual UV2 AO/GI maps independently
+of a camera renderer. [BakedIndirectMaps](BakedIndirectMaps.md) documents AO-slot
+mode metadata, live/stored adoption and the updated HDR G-buffer format.

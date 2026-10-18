@@ -80,7 +80,7 @@ fragment float4 fragMain(float4 position [[position]],
     float metallic = material.x;
     float roughness = max(material.y, 0.04);
     float ao = material.z;
-    float rayAO = aoVisibility.sample(aoSampler,uv).r;
+    float rayAO = (flags & 32u) != 0u ? 1.0 : aoVisibility.sample(aoSampler,uv).r;
     float3 f0 = mix(float3(0.04) * fresnelFlags.rgb, a.rgb, metallic);
     if (lightingDebug.x == 1u)
     {
@@ -164,7 +164,8 @@ fragment float4 fragMain(float4 position [[position]],
         float3 reflectedIBL = prefiltered*(f0*brdf.x+brdf.y)*ao;
         float3 reflectedHit = reflected.rgb*(f0*brdf.x+brdf.y)*ao;
         ambient += (reflectedHit-reflectedIBL)*clamp(reflected.a,0.0,1.0);
-        indirect = ambient * baked * rayAO;
+        float3 preservedSpecular = (flags & 64u) != 0u ? reflectedIBL + (reflectedHit - reflectedIBL) * clamp(reflected.a, 0.0, 1.0) : float3(0.0);
+        indirect = ((ambient - preservedSpecular) * baked + preservedSpecular) * rayAO;
         color += indirect + emission;
     }
     else

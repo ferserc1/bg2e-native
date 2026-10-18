@@ -79,7 +79,7 @@ fragment float4 fragMain(float4 position [[position]],
     float metallic = material.x;
     float roughness = max(material.y, 0.04);
     float ao = material.z;
-    float rayAO = aoVisibility.sample(aoSampler,uv).r;
+    float rayAO = (flags & 32u) != 0u ? 1.0 : aoVisibility.sample(aoSampler,uv).r;
     float3 f0 = mix(float3(0.04) * fresnelFlags.rgb, a.rgb, metallic);
     if (lightingDebug.x == 1u)
     {
@@ -159,7 +159,7 @@ fragment float4 fragMain(float4 position [[position]],
         float3 ambient = ((1.0 - f) * (1.0 - metallic) * irradiance * a.rgb / DRAW_PI + prefiltered * (f0 * brdf.x + brdf.y)) * ao;
         ambient += sheenRefraction.rgb * material.w * pow(1.0 - nv, 5.0) * irradiance / DRAW_PI * ao;
         float4 gi = giSignal.sample(giSampler,uv);
-        if (gi.a > 0.5)
+        if (gi.a > 0.5 && (flags & 32u) == 0u)
         {
             float3 diffuseIBL = (1.0-f)*(1.0-metallic)*irradiance*a.rgb/DRAW_PI*ao;
             float3 diffuseGI = (1.0-f)*(1.0-metallic)*a.rgb*gi.rgb*ao;
@@ -169,7 +169,8 @@ fragment float4 fragMain(float4 position [[position]],
         float3 reflectedIBL = prefiltered*(f0*brdf.x+brdf.y)*ao;
         float3 reflectedHit = reflected.rgb*(f0*brdf.x+brdf.y)*ao;
         ambient += (reflectedHit-reflectedIBL)*clamp(reflected.a,0.0,1.0);
-        indirect = ambient * baked * rayAO;
+        float3 preservedSpecular = (flags & 64u) != 0u ? reflectedIBL + (reflectedHit - reflectedIBL) * clamp(reflected.a, 0.0, 1.0) : float3(0.0);
+        indirect = ((ambient - preservedSpecular) * baked + preservedSpecular) * rayAO;
         color += indirect + emission;
     }
     else

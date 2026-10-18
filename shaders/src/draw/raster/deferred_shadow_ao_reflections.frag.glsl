@@ -85,7 +85,7 @@ vec4 composite()
     float metallic = material.x;
     float roughness = max(material.y, 0.04);
     float ao = material.z;
-    float rayAO = texture(sampler2D(aoVisibility,aoSampler),uv).r;
+    float rayAO = (flags & 32u) != 0u ? 1.0 : texture(sampler2D(aoVisibility,aoSampler),uv).r;
     vec3 f0 = mix(vec3(0.04) * fresnelFlags.rgb, a.rgb, metallic);
     if (lightingDebug.value.x == 1u)
     {
@@ -169,7 +169,8 @@ vec4 composite()
         vec3 reflectedIBL = prefiltered*(f0*brdf.x+brdf.y)*ao;
         vec3 reflectedHit = reflected.rgb*(f0*brdf.x+brdf.y)*ao;
         ambient += (reflectedHit-reflectedIBL)*clamp(reflected.a,0.0,1.0);
-        indirect = ambient * baked * rayAO;
+        vec3 preservedSpecular = (flags & 64u) != 0u ? reflectedIBL + (reflectedHit - reflectedIBL) * clamp(reflected.a, 0.0, 1.0) : vec3(0.0);
+        indirect = ((ambient - preservedSpecular) * baked + preservedSpecular) * rayAO;
         color += indirect + emission;
     }
     else

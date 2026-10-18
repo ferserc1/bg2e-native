@@ -215,7 +215,7 @@ The camera UBO stores the **inverse** view and projection matrices. The ray gene
 
 The `misc` field passes the frame count (for progressive accumulation), image width, and image height to the shader.
 
-**Reference:** [GPU API -- Buffer: createUniformBuffer()](../../api/gpu/Buffer.md#createuniformbuffer)
+**Reference:** [GPU API -- Buffer: createUniformBuffer()](../../api/gpu/Buffer.md#uniform-and-storage-buffer-methods)
 
 ### 7. Cornell box geometry creation
 
@@ -372,7 +372,7 @@ The SSBO is bound to descriptor set 2 and accessed in the closest hit shader as:
 layout(set = 2, binding = 0) buffer InstanceBuffer { InstanceData data[]; } instances;
 ```
 
-**Reference:** [GPU API -- Buffer: createStorageBuffer()](../../api/gpu/Buffer.md#createstoragebuffer)
+**Reference:** [GPU API -- Buffer: createStorageBuffer()](../../api/gpu/Buffer.md#uniform-and-storage-buffer-methods)
 
 ### 11. Resource set creation
 

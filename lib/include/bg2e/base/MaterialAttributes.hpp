@@ -28,6 +28,8 @@
 
 #include <memory>
 #include <array>
+#include <cstdint>
+#include <stdexcept>
 
 namespace bg2e {
 namespace base {
@@ -342,6 +344,28 @@ class BG2E_API MaterialAttributes {
         _sheenColor = color;
     }
 
+    // The AO texture slot can explicitly carry a baked RGB indirect multiplier.
+    // The selector/scale remain aoUVSet()/aoScale(); scalar AO is bypassed for
+    // baked maps. GI affects diffuse IBL only, while baked AO affects all IBL.
+    enum class IndirectTextureMode : uint32_t
+    {
+        AmbientOcclusion, BakedAmbientOcclusion, BakedGlobalIllumination
+    };
+
+    IndirectTextureMode indirectTextureMode() const
+    {
+        return _indirectTextureMode;
+    }
+    void setIndirectTextureMode(IndirectTextureMode mode)
+    {
+        if (mode != IndirectTextureMode::AmbientOcclusion && mode != IndirectTextureMode::BakedAmbientOcclusion &&
+            mode != IndirectTextureMode::BakedGlobalIllumination)
+        {
+            throw std::invalid_argument("Unknown indirect texture interpretation");
+        }
+        _indirectTextureMode = mode;
+    }
+
     inline std::shared_ptr<Texture> aoTexture() const
     {
         return _aoTexture;
@@ -539,6 +563,7 @@ class BG2E_API MaterialAttributes {
     float _sheenIntensity = 0.0f;
     Color _sheenColor = Color::White();
 
+    IndirectTextureMode _indirectTextureMode = IndirectTextureMode::AmbientOcclusion;
     std::shared_ptr<Texture> _aoTexture;
     glm::vec2 _aoScale{1.0f, 1.0f};
     uint32_t _aoChannel = 0;

@@ -55,8 +55,9 @@ The delivered example's HDR precision failure has been corrected and confirmed
 by the project lead. A separately reported transparency issue remains explicitly
 deferred; transparency implementation is not a claim of complete runtime acceptance.
 Public AO/GI/reflection tracing, effect histories, spatial filtering and manipulation
-are available. Draw baking and windowless application orchestration are not yet
-delivered. See [advanced lighting](../../architecture/draw_advanced_lighting.md).
+are available. [Integrated bake](../bake/index.md) now supplies completed RGB UV2
+maps through [explicit material modes](BakedIndirectMaps.md). Windowless draw
+application execution and standalone baking are not delivered. See [advanced lighting](../../architecture/draw_advanced_lighting.md).
 
 ## Public extension contracts
 

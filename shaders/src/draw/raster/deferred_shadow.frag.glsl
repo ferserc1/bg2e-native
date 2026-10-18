@@ -160,7 +160,8 @@ vec4 composite()
         }
         vec3 ambient = ((1.0 - f) * (1.0 - metallic) * irradiance * a.rgb / DRAW_PI + prefiltered * (f0 * brdf.x + brdf.y)) * ao;
         ambient += sheenRefraction.rgb * material.w * pow(1.0 - nv, 5.0) * irradiance / DRAW_PI * ao;
-        indirect = ambient * baked;
+        vec3 preservedSpecular = (flags & 64u) != 0u ? prefiltered * (f0 * brdf.x + brdf.y) * ao : vec3(0.0);
+        indirect = ((ambient - preservedSpecular) * baked + preservedSpecular);
         color += indirect + emission;
     }
     else

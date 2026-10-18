@@ -34,3 +34,10 @@ Perform relevant static checks. Compilation/runtime validation belongs to the pr
 Audit SurfaceInputs formats, snapshot capacity/lifetime, signal normalization/confidence, requested settings versus availability and example-owned transforms against final source. Distinguish bounded display histories from exact bake/offscreen accumulation and final SMAA from denoise; preserve retirement-era renames without retaining deleted APIs.
 
 Source and validation boundaries: [M03 technical review](../milestone_03_ray_tracing/review.md). Include these conditions in this step's implementation and exit checks.
+
+
+## M04-07 reviewed implementation requirement
+
+Audit M04's actual contracts: one live integrated target/open frame, exact valid counts, AO/GI normalization and zero-reference policy, strict half-float raw-GI saturation rejection, nearest-seed dilation, RGB32F versus display-half limits, explicit indirectTextureMode, CPU UV preview and UI-session resource ownership. Standalone/batch/export APIs are future M08 implementations until their owning deliveries.
+
+Source and evidence: [M04 technical review](../milestone_04_lightmaps/review.md).

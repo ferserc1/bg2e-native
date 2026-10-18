@@ -29,8 +29,8 @@ if (backendType == gpu::BackendType::Vulkan)
 {
     auto vsPath = (shaderPath / "cube.vert.spv").string();
     auto fsPath = (shaderPath / "cube.frag.spv").string();
-    vs = device->createShaderModule({ vsPath, "vertMain", gpu::ShaderStage::Vertex,   "Cube VS" });
-    fs = device->createShaderModule({ fsPath, "fragMain", gpu::ShaderStage::Fragment, "Cube FS" });
+    vs = device->createShaderModule({ vsPath, "main", gpu::ShaderStage::Vertex,   "Cube VS" });
+    fs = device->createShaderModule({ fsPath, "main", gpu::ShaderStage::Fragment, "Cube FS" });
 }
 else  // Metal
 {
@@ -123,12 +123,12 @@ Entry points are backend-specific: GLSL uses `main`, Metal uses `<stage>Main`.
 The `<stage>Main` naming convention is specific to Metal shaders. GLSL requires
 the entry point to be named `main` in both source and compiled SPIR-V output.
 
-**GLSL note:** GLSL requires the entry point to be named `main`. The
-`compile_shaders_shaderlib()` CMake function no longer passes `-e <stage>Main`
-for GLSL — the compiled SPIR-V retains `main` as the entry point. ShaderLib
-maps the `<stage>Main` API call to `main` for Vulkan/SPIR-V. The production
-`compile_shaders()` function is not affected and continues to use `main` for the
-existing `bg2e::render` shaders.
+**GLSL note:** Current engine draw/bake stages use compile_paired_shader_tree(),
+which retains `main` in source and SPIR-V; ShaderLib selects `main` for Vulkan.
+The historical compile_shaders_shaderlib() helper has different stage-specific
+`-e` command arguments and is not the engine paired-tree deployment path.
+Production compile_shaders() remains separate. Always match the loaded binary's
+entry point to the helper/native profile that produced it.
 
 **Metal note:** MSL does not allow `main` as a function name (it conflicts with
 the C/C++ program entry point). The source function is named `vertMain`,
@@ -530,3 +530,25 @@ all work exactly as before.
 - [`Device`](Device.md) — `createShaderModule()` reference
 - [`Backend`](Backend.md) — `createShaderLib()` and `backendType()`
 - [`GraphicsPipeline`](GraphicsPipeline.md) — how shader modules attach to pipelines
+
+
+## Engine paired draw/bake deployment
+
+The actual library build invokes compile_paired_shader_tree for both
+`shaders/src/draw` and `shaders/src/bake`. Relative subdirectories and stage names
+are preserved under runtime `shaders/draw` and `shaders/bake`. For example:
+
+| Source | Vulkan runtime | Metal runtime |
+|---|---|---|
+| bake/uv_surface/surface.vert.glsl or .metal | bake/uv_surface/surface.vert.spv | bake/uv_surface/surface.vert.metallib |
+| bake/accumulation/sum.comp.glsl or .metal | bake/accumulation/sum.comp.spv | bake/accumulation/sum.comp.metallib |
+
+Per-tree shader targets and Metal AIR directories are distinct. A shared paired
+aggregate orders engine/application dependencies. Bundle refresh copies both
+trees when shaders change without relinking the app; RuntimeShaders installation
+retains both directories. Do not remove the bake dependency while preserving only
+draw, or rely on POST_BUILD alone for shader-only changes. The
+[draw_lightmaps guide](../../apps/draw_lightmaps.md#build-and-resources) describes
+how to recover an older bundle missing the bake UV library. Current source:
+[lib/CMakeLists](../../../lib/CMakeLists.txt), [paired helper and bundle copy](../../../cmake/utils.cmake).
+No native compile/install/package execution is claimed by this reference update.

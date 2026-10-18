@@ -317,7 +317,7 @@ The `setRayTracingScene()` method writes the acceleration structure descriptor:
 
 After `update()`, the descriptor set is ready for binding. The UBO contents can be updated each frame via `updateUniformBuffer()` without re-calling `update()`.
 
-**Reference:** [GPU API -- ResourceSet::setRayTracingScene()](../../api/gpu/ResourceSet.md#virtualvoidsetraytracingscene)
+**Reference:** [GPU API -- ResourceSet::setRayTracingScene()](../../api/gpu/ResourceSet.md#methods)
 
 ### 9. Graphics pipeline
 
@@ -448,7 +448,7 @@ for (auto& obj : objects)
 
 Each object has its own resource set for the model matrix and albedo. The camera (set 0) and light (set 2) resource sets are bound once before the loop, since they are shared across all objects.
 
-**Reference:** [GPU API -- RayTracingScene::buildOrUpdate()](../../api/gpu/RayTracingScene.md#virtualvoidbuildorupdate)
+**Reference:** [GPU API -- RayTracingScene::buildOrUpdate()](../../api/gpu/RayTracingScene.md#methods)
 
 ## Shader code explanation
 
@@ -689,7 +689,7 @@ cmd->end();
 
 The TLAS build **must** happen outside the rendering scope (between `cmd->begin()` and `cmd->beginRendering()`). This is because `buildOrUpdate()` may need to perform barrier transitions that are incompatible with an active rendering pass.
 
-**Reference:** [GPU API -- RayTracingScene::buildOrUpdate(): Build/update the top-level acceleration structure](../../api/gpu/RayTracingScene.md#virtualvoidbuildorupdate)
+**Reference:** [GPU API -- RayTracingScene::buildOrUpdate(): Build/update the top-level acceleration structure](../../api/gpu/RayTracingScene.md#methods)
 
 ### Resource set update without re-calling update()
 

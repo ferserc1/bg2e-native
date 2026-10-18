@@ -34,3 +34,10 @@ Delegate compilation and applicable runtime checks to the project lead; perform 
 M09 cannot remove the behavior reference while a required standalone workflow remains unimplemented or unverified under the chosen acceptance policy.
 
 Record actual API, ownership and verification in the milestone review. Follow [the review protocol](../review-protocol.md) and edit affected pending steps when actual contracts differ.
+
+
+## M04-07 reviewed implementation requirement
+
+Record actual independent file reload, pixel type/orientation/HDR and per-target mode/UV2 metadata. M04 continuation acceptance and source-level composition checks are not batch export artifacts or backend-specific numeric evidence. Test packaged and incrementally refreshed bake stage libraries, partial failures/cancellation and source protection with real output paths.
+
+Source and evidence: [M04 technical review](../milestone_04_lightmaps/review.md).

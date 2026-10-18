@@ -22,3 +22,10 @@ For manipulation tutorials, compare examples against the [M02 review](../milesto
 Existing tutorials describe supported delivered products and match their actual source; execution evidence remains honestly attributed.
 
 Perform relevant static checks. Compilation/runtime validation belongs to the project lead unless explicitly requested. Deliver one step, update progress and wait for lead acceptance under the execution protocol. No new engine feature, build-system change or future API documentation is authorized by this audit.
+
+
+## M04-07 reviewed implementation requirement
+
+Compare the lightmap tutorial with draw_lightmaps's actual synchronous pre-acquisition sample submission, all-target adoption, frozen settings/source snapshots, cancellation and preview rebinding. Do not describe the example as a headless scheduler, async service, image exporter or GPU-rasterized UV diagnostic.
+
+Source and evidence: [M04 technical review](../milestone_04_lightmaps/review.md).

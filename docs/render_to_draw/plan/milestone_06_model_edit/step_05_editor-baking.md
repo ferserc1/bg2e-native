@@ -41,3 +41,10 @@ Delegate compilation and applicable runtime checks to the project lead; perform 
 M07 scene-wide jobs and M08 standalone batch adapt these proven target/publication/export semantics; they must not copy window scheduling into CLI.
 
 Record actual API, ownership and verification in the milestone review. Follow [the review protocol](../review-protocol.md) and edit affected pending steps when actual contracts differ.
+
+
+## M04-07 reviewed implementation requirement
+
+Reuse IntegratedBakerContext's one-live-target/one-open-frame contract and exact completed-sample publication. Capture result()/readPixels() before applying maps or replacing sources. Complete all targets against an immutable baseline, or explicitly invalidate and rebuild after each material adoption; the example demonstrates deferred all-target adoption. A responsive scheduler must retain commands/owners and confirm real completion; synchronous per-sample submission is the existing working policy, not an asynchronous engine service. Reject chart-unsafe denoise. Rebind previews after CPU/GPU target replacement and clear session handles before UI/Engine teardown.
+
+Source and evidence: [M04 technical review](../milestone_04_lightmaps/review.md).

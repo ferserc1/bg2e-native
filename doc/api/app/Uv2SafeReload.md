@@ -90,3 +90,30 @@ Result defaults are false success, empty message, zero width/height/chart count
 and zero utilization. The callback is optional. Recreate bake resources after
 UV topology changes; resetting accumulation alone does not repair stale scene
 bindings. See [editor architecture](../../architecture/lightmaps/preview_and_editors.md).
+
+
+## Draw-specific queued replacement
+
+The existing regenerate() description above is the production path. The public
+draw overload is:
+
+```cpp
+static std::shared_ptr<SafeUpdateToken> regenerateDraw(
+    std::weak_ptr<draw::DefaultRenderLoopDelegate> delegate,
+    std::weak_ptr<scene::Node> targetNode,
+    const geo::Uv2AtlasOptions& options = {},
+    CompletionCallback onComplete = nullptr,
+    std::function<void()> beforeChange = {});
+```
+
+It queues independent drawable replacement with weak delegate/node, renderer
+generation, scene membership and geometry identity guards. Retain the cancellation
+token. beforeChange runs at the drained boundary to invalidate application-owned
+bake/source state even if a later generation/adoption operation fails. Completion
+must refetch drawable/mesh owners, selection and UV/result previews. A token alone
+does not retire an open bake frame. Do not call a production preview widget with
+draw resources. For direct stopped-boundary use see
+[generateUv2AndReload](../bake/UvSurfacePass.md) and the
+[draw lightmap tutorial](../../tutorials/draw/12_lightmaps.md).
+
+Draw implementation: [DrawUv2SafeReload.cpp](../../../lib/src/bg2e/app/DrawUv2SafeReload.cpp).

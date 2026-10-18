@@ -124,3 +124,30 @@ The lead's next-step instruction accepts the [M03-01 recommendation](milestone_0
 ## M03-03 noise layout implementation
 
 utils::BlueNoiseData/sampleNoise2D expose the existing ranked bytes without graphics initialization; utils::BlueNoise uses a borrowed gpu::Device and shared image/sampler ownership. Logical layers are stacked in a single color 2D RGBA8 atlas with exact byte expansion and paired native tile-local sampling helpers. This avoids introducing general image-array primitives solely for the four immutable tiles. Disabled/missing noise selects an explicit deterministic hash path. Effects/bake own rendered-sample sequencing and reserve resource bindings explicitly. The existing private byte header is shared from its historical render source path until M09 relocation; no production API is changed. See [blue-noise.md](milestone_03_ray_tracing/blue-noise.md).
+
+
+## M04 reviewed implementation baseline (2026-10-18)
+
+Integrated bake lives in bake and reuses public draw AO/GI world-surface profiles.
+One live target and one open frame per context serialize sample completion.
+Separate public raw-sum/count, composition and nearest-seed dilation owners
+publish RGBA32F multipliers only after completed-work validation. Byte GI CPU
+conversion applies exposure/clamp; float output does not. Raw half-float GI
+saturation at 65504 is rejected conservatively. The windowed example confirms
+completion through one synchronous immediateSubmit per update; headless context
+ownership and exact camera-frame averaging remain M05/M08 work.
+
+Explicit MaterialAttributes::IndirectTextureMode reuses the AO texture slot for
+scalar AO or baked RGB AO/GI on UV2; simultaneous authored AO plus baked-map
+textures are outside this six-slot representation. Baked GI preserves specular
+IBL/reflection contributions, direct light and emission. The RGBA16F G-buffer
+multiplier has a display range separate from the full-float bake result. CPU
+UV-map diagnostic rasterization plus generic sampled-image upload replaces the
+proposed GPU geometry preview implementation; it is not a native API wrapper.
+Both refinements are recorded as intentional contract changes accepted by lead
+continuation, with their limitations visible in the [review](milestone_04_lightmaps/review.md).
+
+Paired draw and bake libraries now have distinct compile/intermediate trees,
+shared aggregate dependencies, incremental bundle refresh and install coverage.
+GPU-only live texture ownership/JSON mode metadata do not constitute export;
+complete image materialization and standalone batch policy remain future owners.

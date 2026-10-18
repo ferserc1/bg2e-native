@@ -51,3 +51,12 @@ its own filterable storage/lookup formats as [SMAA](../api/draw/SMAAProcessor.md
 The agent performed static documentation/source checks only. Lead continuation
 accepts delivered implementation without specifying all devices/scenarios;
 no measured GI/reflection performance or packaged shader availability is asserted.
+
+
+## Shared engine bake shaders
+
+Current engine shader dependencies also compile/deploy the separate paired bake
+tree used by [draw_lightmaps](draw_lightmaps.md). RuntimeShaders installation and
+incremental app resource refresh include both draw and bake; this does not turn
+the ordinary deferred example into a bake scheduler. See
+[ShaderLibraries](../api/gpu/ShaderLibraries.md#engine-paired-drawbake-deployment).

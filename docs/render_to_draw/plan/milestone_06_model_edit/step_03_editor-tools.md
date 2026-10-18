@@ -92,3 +92,10 @@ queue/binding snapshots; keep unsaved-document dirty state in the app.
 Explicitly own RenderSettingsPreferences, connect before first renderer bind, bind/draw/reopen GraphicsSettingsWindow and rebind on document/resource replacement. The M03 omission demonstrates metadata registration alone is insufficient. Map live light properties and local transforms to document IDs; queue edits, invalidate histories including partial failure and mark unsaved state. Example-only lightPose IDs/defaults are not a generic document schema.
 
 Source and validation boundaries: [M03 technical review](../milestone_03_ray_tracing/review.md). Include these conditions in this step's implementation and exit checks.
+
+
+## M04-07 reviewed implementation requirement
+
+Expose the AO-slot interpretation explicitly when editing baked materials. Selecting an ordinary AO map must reset the baked mode deliberately; a missing texture or UV2 selection alone must not enable a lightmap. The current six-slot material supports scalar AO or a baked RGB map in that slot, not two independent sources. Bind bake::UvMapPreviewRenderer output with ui::BakeLightmapPreview::setImage; do not instantiate production UvMapPreview for a draw UI session.
+
+Source and evidence: [M04 technical review](../milestone_04_lightmaps/review.md).

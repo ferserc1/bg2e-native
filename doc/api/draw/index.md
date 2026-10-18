@@ -111,3 +111,12 @@ See [DenoiseFilter](DenoiseFilter.md) for reusable scalar/HDR bilateral filterin
 - [TemporalAccumulator](TemporalAccumulator.md), [MotionVectorGenerator](MotionVectorGenerator.md), [DenoiseFilter](DenoiseFilter.md).
 - [FinalProcessor and SMAAProcessor](SMAAProcessor.md).
 - [Advanced lighting architecture](../../architecture/draw_advanced_lighting.md).
+
+The separate [bake namespace](../bake/index.md) provides validated settings/pixels,
+Device-backed UV surfaces, integrated AO/GI execution, exact accumulation and
+composition/dilation, finished maps and CPU UV diagnostics. The
+[lightmap tutorial](../../tutorials/draw/12_lightmaps.md) follows actual material
+adoption and UI ownership. Standalone scheduling/batch export is not implemented.
+
+See [Baked indirect maps](BakedIndirectMaps.md) for explicit RGB lightmap metadata,
+UV2 sampling, HDR G-buffer storage and application through the AO texture slot.

@@ -35,7 +35,7 @@ Factory::init(BackendType)
     -> backend->sharedInstance()
 ```
 
-See [doc/api/gpu/index.md](../api/gpu/index.md) for the full class hierarchy.
+See [doc/api/gpu/index.md](../../api/gpu/index.md) for the full class hierarchy.
 
 ## Step-by-step code explanation
 
@@ -81,7 +81,7 @@ This is the critical first call. `Factory::init()` does two things:
 
 After this call, the GPU abstraction layer is ready to create objects. The `Factory` class is entirely static -- you never instantiate it yourself.
 
-**Reference:** [Factory API](../api/gpu/index.md) -- `Factory::init(BackendType)` is the entry point for the object creation flow.
+**Reference:** [Factory API](../../api/gpu/index.md) -- `Factory::init(BackendType)` is the entry point for the object creation flow.
 
 ### 4. Getting the shared instance
 
@@ -106,7 +106,7 @@ instance->create(window);              // attach to an SDL window (windowed)
 instance->create();                    // headless mode (offscreen)
 ```
 
-**Reference:** [Instance API](../api/gpu/index.md) -- the `Instance` class provides `create(SDL_Window*)` for windowed rendering and `create()` for headless/offscreen use.
+**Reference:** [Instance API](../../api/gpu/index.md) -- the `Instance` class provides `create(SDL_Window*)` for windowed rendering and `create()` for headless/offscreen use.
 
 ### 5. Printing a confirmation
 
@@ -174,4 +174,4 @@ Hello instance
 
 - **[02_device](02_device.md)** -- Create an SDL window, select a physical GPU device, query its properties, and run an event loop.
 - **[03_offscreen_device](03_offscreen_device.md)** -- Initialize the GPU without a window for headless/offscreen rendering.
-- **[GPU API Reference](../api/gpu/index.md)** -- Full class hierarchy, object creation flow, and backend-specific accessors.
+- **[GPU API Reference](../../api/gpu/index.md)** -- Full class hierarchy, object creation flow, and backend-specific accessors.

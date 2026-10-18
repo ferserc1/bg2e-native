@@ -26,6 +26,7 @@ exercise the experimental APIs separately from that production path.
 | 09 | [Ray Tracing Pipeline](09_ray_tracing_pipeline.md) | Cornell box path tracing, progressive HDR accumulation, per-slot camera data, and sampled retained output |
 | 10 | [Deferred renderer](10_deferred_renderer.md) | Scene resources, query shadows, live settings, public pass injection and reduced resolution/optional FSR |
 | 11 | [Scene manipulation](11_manipulation.md) | Build a selectable scene step by step, route camera/tool gestures, edit materials and apply analyzed viewpoints |
+| 12 | [Integrated lightmaps](12_lightmaps.md) | Independent UV2, exact completed bake samples, RGB material adoption and preview ownership |
 
 New tutorials will be added to this table as the draw example series grows.
 The numbering follows the corresponding directories in `examples/draw/`.

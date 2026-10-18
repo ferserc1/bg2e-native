@@ -19,3 +19,8 @@ production database formats. Its umbrella header is `<bg2e/db/all.hpp>`.
 
 [Scene references and draw resource loading](SceneReferences.md) explains raw
 document preservation, graphics-free typed graphs and synchronous realization.
+
+The new [integrated bake](../bake/index.md) publishes typed pixels and sampled
+GPU maps, but the production LightmapOutputWriter above is not a bake-namespace
+writer. Persisting indirectTextureMode metadata alone does not materialize a
+GPU-only texture or guarantee complete draw model/scene export.

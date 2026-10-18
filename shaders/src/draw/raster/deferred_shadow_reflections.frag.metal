@@ -162,7 +162,8 @@ fragment float4 fragMain(float4 position [[position]],
         float3 reflectedIBL = prefiltered*(f0*brdf.x+brdf.y)*ao;
         float3 reflectedHit = reflected.rgb*(f0*brdf.x+brdf.y)*ao;
         ambient += (reflectedHit-reflectedIBL)*clamp(reflected.a,0.0,1.0);
-        indirect = ambient * baked;
+        float3 preservedSpecular = (flags & 64u) != 0u ? reflectedIBL + (reflectedHit - reflectedIBL) * clamp(reflected.a, 0.0, 1.0) : float3(0.0);
+        indirect = ((ambient - preservedSpecular) * baked + preservedSpecular);
         color += indirect + emission;
     }
     else

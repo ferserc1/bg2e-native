@@ -18,6 +18,8 @@
 
 #pragma once
 
+#include <bg2e/ui/BakeLightmapPreview.hpp>
+
 #include <bg2e/ui/UserInterface.hpp>
 #include <bg2e/ui/UserInterfaceDelegate.hpp>
 #include <bg2e/ui/Layout.hpp>
